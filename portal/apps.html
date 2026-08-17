@@ -31,6 +31,9 @@ body{margin:0;background:var(--bg);color:var(--ink);
 
 /* ── hero ── */
 .hero{text-align:center;padding:44px 0 8px;position:relative}
+.hero::before{content:"";position:absolute;left:50%;top:-30%;width:120vw;height:150%;
+  transform:translateX(-50%);pointer-events:none;
+  background:radial-gradient(46% 55% at 50% 32%,rgba(228,189,95,.12),transparent 70%)}
 .badge{display:inline-flex;align-items:center;gap:8px;padding:7px 16px;border:1px solid var(--line);
   border-radius:999px;color:var(--leaf);font-weight:800;font-size:.78rem;letter-spacing:.14em;text-transform:uppercase}
 h1{font-family:var(--disp);font-weight:600;color:var(--cream);
@@ -54,7 +57,7 @@ h1 em{font-style:normal;color:var(--gold)}
   mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
 .strip .track{display:flex;gap:12px;width:max-content;animation:drift 60s linear infinite}
 .strip.rev .track{animation-name:drift-rev;animation-duration:75s}
-.strip img{width:120px;height:120px;border-radius:20px;flex:none;display:block}
+.strip img{width:132px;height:132px;border-radius:22px;flex:none;display:block}
 @keyframes drift{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 @keyframes drift-rev{from{transform:translateX(-50%)}to{transform:translateX(0)}}
 @media (max-width:600px){.strip img{width:88px;height:88px;border-radius:15px}}
@@ -67,7 +70,9 @@ h1 em{font-style:normal;color:var(--gold)}
 .trust small{color:var(--muted)}
 
 /* ── need rows ── */
-.need{margin-top:44px}
+.need{margin-top:48px}
+.kick{display:block;color:var(--gold);font-weight:800;font-size:.75rem;
+  letter-spacing:.16em;text-transform:uppercase;margin-bottom:7px}
 h2{font-family:var(--disp);font-weight:600;color:var(--cream);font-size:clamp(1.6rem,4.5vw,2.2rem);
   line-height:1.05;margin:0 0 6px}
 .need .sub{color:var(--muted);font-size:1.02rem;max-width:56ch;margin:0 0 16px}
@@ -84,6 +89,13 @@ h2{font-family:var(--disp);font-weight:600;color:var(--cream);font-size:clamp(1.
 .app small{color:var(--muted);font-size:.85rem;line-height:1.4}
 .app .tag{align-self:flex-start;margin-top:2px;padding:2px 9px;border:1px solid var(--line);
   border-radius:999px;color:var(--leaf);font-size:.7rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+/* Stephen: cards "could probably be two wide" on a phone — his art carries
+   the card, so two-up stays readable down to small screens. */
+@media (max-width:640px){
+  .grid,.grid.tight{grid-template-columns:repeat(2,1fr)}
+  .app b{font-size:.95rem}
+  .app small{font-size:.8rem}
+}
 
 /* ── full shelf ── */
 .shelf-head{margin-top:60px;text-align:center}
@@ -125,8 +137,8 @@ footer a{color:var(--leaf)}
   </div>
 
   <div class="strips">
-    <div class="strip " aria-hidden="true"><div class="track"><img src="/portal-assets/sws-thumbs/sitter-sheet.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/baby-log.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/pill-schedule.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/caregiver-log.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/grocery-list.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/specials-planner.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/sub-plans.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/grade-sheet.svg" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/signup-sheets.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/team-parent.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/secret-santa.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/wedding-timeline.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/sitter-sheet.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/baby-log.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/pill-schedule.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/caregiver-log.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/grocery-list.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/specials-planner.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/sub-plans.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/grade-sheet.svg" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/signup-sheets.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/team-parent.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/secret-santa.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/wedding-timeline.png" alt="" width="256" height="256" decoding="async"></div></div>
-    <div class="strip rev" aria-hidden="true"><div class="track"><img src="/portal-assets/sws-thumbs/seating-chart.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/bracket-maker.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/wheel-picker.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/scan-to-pdf.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/pdf-tools.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/image-compressor.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/signature-maker.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/qr-maker.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/moving-boxes.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/packing-list.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/home-inventory.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/bill-splitter.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/seating-chart.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/bracket-maker.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/wheel-picker.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/scan-to-pdf.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/pdf-tools.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/image-compressor.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/signature-maker.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/qr-maker.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/moving-boxes.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/packing-list.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/home-inventory.png" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/bill-splitter.png" alt="" width="256" height="256" decoding="async"></div></div>
+    <div class="strip " aria-hidden="true"><div class="track"><img src="/portal-assets/sws-thumbs/sitter-sheet.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/baby-log.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/pill-schedule.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/caregiver-log.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/grocery-list.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/specials-planner.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/sub-plans.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/grade-sheet.svg?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/signup-sheets.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/team-parent.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/secret-santa.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/wedding-timeline.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/sitter-sheet.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/baby-log.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/pill-schedule.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/caregiver-log.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/grocery-list.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/specials-planner.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/sub-plans.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/grade-sheet.svg?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/signup-sheets.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/team-parent.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/secret-santa.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/wedding-timeline.png?v=2" alt="" width="256" height="256" decoding="async"></div></div>
+    <div class="strip rev" aria-hidden="true"><div class="track"><img src="/portal-assets/sws-thumbs/seating-chart.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/bracket-maker.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/wheel-picker.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/scan-to-pdf.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/pdf-tools.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/image-compressor.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/signature-maker.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/qr-maker.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/moving-boxes.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/packing-list.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/home-inventory.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/bill-splitter.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/seating-chart.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/bracket-maker.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/wheel-picker.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/scan-to-pdf.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/pdf-tools.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/image-compressor.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/signature-maker.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/qr-maker.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/moving-boxes.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/packing-list.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/home-inventory.png?v=2" alt="" width="256" height="256" decoding="async"><img src="/portal-assets/sws-thumbs/bill-splitter.png?v=2" alt="" width="256" height="256" decoding="async"></div></div>
   </div>
 
   <div class="trust">
@@ -137,21 +149,22 @@ footer a{color:var(--leaf)}
   </div>
 
     <section class="need reveal" id="needs" style="scroll-margin-top:18px">
+      <span class="kick">01 · The wedding</span>
       <h2>Planning a wedding?</h2>
       <p class="sub">So nobody asks &ldquo;when is hair again?&rdquo; — the day minute by minute, the tables settled, and a sheet for who brings what.</p>
       <div class="grid">
         <a class="app" style="--i:0" href="https://sws-apps-9646d.web.app/wedding-timeline/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/wedding-timeline.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/wedding-timeline.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Wedding Day Timeline</b>
           <small>So nobody asks &ldquo;when is hair again?&rdquo;</small>
         </a>
         <a class="app" style="--i:1" href="https://sws-apps-9646d.web.app/seating-chart/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/seating-chart.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/seating-chart.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Seating Chart</b>
           <small>Tables, seats and who must not sit together</small>
         </a>
         <a class="app" style="--i:2" href="https://sws-apps-9646d.web.app/signup-sheets/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/signup-sheets.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/signup-sheets.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Signup Sheets</b>
           <small>Claim a spot in seconds — signing up needs no account</small>
           <span class="tag">Shared online</span>
@@ -160,21 +173,22 @@ footer a{color:var(--leaf)}
     </section>
 
     <section class="need reveal" style="scroll-margin-top:18px">
+      <span class="kick">02 · The school year</span>
       <h2>Teaching this year?</h2>
       <p class="sub">Plan the whole year once, keep grades on your own computer, and have the sub folder ready before you are sick.</p>
       <div class="grid">
         <a class="app" style="--i:0" href="https://sws-apps-9646d.web.app/specials-planner/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/specials-planner.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/specials-planner.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Specials Planner</b>
           <small>Art, music, PE, library — plan the year once</small>
         </a>
         <a class="app" style="--i:1" href="https://sws-apps-9646d.web.app/sub-plans/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/sub-plans.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/sub-plans.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Sub Plans</b>
           <small>Your substitute folder, ready before you are sick</small>
         </a>
         <a class="app" style="--i:2" href="https://sws-apps-9646d.web.app/grade-sheet/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/grade-sheet.svg" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/grade-sheet.svg?v=2" alt="" width="256" height="256" decoding="async">
           <b>Grade Sheet</b>
           <small>Grades for every class you teach, on this device only</small>
         </a>
@@ -187,21 +201,22 @@ footer a{color:var(--leaf)}
     </section>
 
     <section class="need reveal" style="scroll-margin-top:18px">
+      <span class="kick">03 · The newborn shift</span>
       <h2>New baby at home?</h2>
       <p class="sub">One-thumb logging at 3am, everything the sitter needs on one page, and a grocery list the whole house can add to.</p>
       <div class="grid">
         <a class="app" style="--i:0" href="https://sws-apps-9646d.web.app/baby-log/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/baby-log.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/baby-log.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Baby Log</b>
           <small>Feeds, sleep and nappies — one thumb, 3am</small>
         </a>
         <a class="app" style="--i:1" href="https://sws-apps-9646d.web.app/sitter-sheet/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/sitter-sheet.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/sitter-sheet.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Sitter Sheet</b>
           <small>Everything the babysitter needs, on one page</small>
         </a>
         <a class="app" style="--i:2" href="https://sws-apps-9646d.web.app/grocery-list/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/grocery-list.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/grocery-list.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Grocery List</b>
           <small>One list the whole household can add to</small>
           <span class="tag">Shared online</span>
@@ -210,23 +225,24 @@ footer a{color:var(--leaf)}
     </section>
 
     <section class="need reveal" style="scroll-margin-top:18px">
+      <span class="kick">04 · The season</span>
       <h2>Running the team this season?</h2>
       <p class="sub">One link for the whole season, sign-ups without the group-chat chaos, and a bracket to settle game night properly.</p>
       <div class="grid">
         <a class="app" style="--i:0" href="https://sws-apps-9646d.web.app/team-parent/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/team-parent.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/team-parent.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Team Parent</b>
           <small>One link for the whole season</small>
           <span class="tag">Shared online</span>
         </a>
         <a class="app" style="--i:1" href="https://sws-apps-9646d.web.app/signup-sheets/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/signup-sheets.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/signup-sheets.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Signup Sheets</b>
           <small>Claim a spot in seconds — signing up needs no account</small>
           <span class="tag">Shared online</span>
         </a>
         <a class="app" style="--i:2" href="https://sws-apps-9646d.web.app/bracket-maker/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/bracket-maker.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/bracket-maker.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Bracket Maker</b>
           <small>Game night, settled properly</small>
         </a>
@@ -234,17 +250,18 @@ footer a{color:var(--leaf)}
     </section>
 
     <section class="need reveal" style="scroll-margin-top:18px">
+      <span class="kick">05 · The care team</span>
       <h2>Caring for someone?</h2>
       <p class="sub">A shared notebook for the family caring at home, and a large-print medication card for the fridge.</p>
       <div class="grid">
         <a class="app" style="--i:0" href="https://sws-apps-9646d.web.app/caregiver-log/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/caregiver-log.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/caregiver-log.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Caregiver Log</b>
           <small>A shared notebook for the family caring at home</small>
           <span class="tag">Shared online</span>
         </a>
         <a class="app" style="--i:1" href="https://sws-apps-9646d.web.app/pill-schedule/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/pill-schedule.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/pill-schedule.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Pill Schedule</b>
           <small>A large-print medication card for the fridge</small>
         </a>
@@ -252,21 +269,22 @@ footer a{color:var(--leaf)}
     </section>
 
     <section class="need reveal" style="scroll-margin-top:18px">
+      <span class="kick">06 · The move</span>
       <h2>Moving house?</h2>
       <p class="sub">Know which box has the can opener, never forget the charger, and photograph everything before you need the insurance claim.</p>
       <div class="grid">
         <a class="app" style="--i:0" href="https://sws-apps-9646d.web.app/moving-boxes/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/moving-boxes.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/moving-boxes.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Moving Boxes</b>
           <small>Which box has the can opener?</small>
         </a>
         <a class="app" style="--i:1" href="https://sws-apps-9646d.web.app/packing-list/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/packing-list.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/packing-list.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Packing List</b>
           <small>Never forget the charger again</small>
         </a>
         <a class="app" style="--i:2" href="https://sws-apps-9646d.web.app/home-inventory/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/home-inventory.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/home-inventory.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Home Inventory</b>
           <small>Photograph it before you need it</small>
         </a>
@@ -274,26 +292,27 @@ footer a{color:var(--leaf)}
     </section>
 
     <section class="need reveal" style="scroll-margin-top:18px">
+      <span class="kick">07 · The paperwork</span>
       <h2>Drowning in paperwork?</h2>
       <p class="sub">Scan it, merge it, sign it, shrink it — all on your device. Nothing uploaded, no watermark held for ransom.</p>
       <div class="grid">
         <a class="app" style="--i:0" href="https://sws-apps-9646d.web.app/scan-to-pdf/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/scan-to-pdf.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/scan-to-pdf.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Scan to PDF</b>
           <small>No watermark, no ransom, no upload</small>
         </a>
         <a class="app" style="--i:1" href="https://sws-apps-9646d.web.app/pdf-tools/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/pdf-tools.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/pdf-tools.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>PDF Tools</b>
           <small>Merge, split, rotate — nothing uploaded</small>
         </a>
         <a class="app" style="--i:2" href="https://sws-apps-9646d.web.app/signature-maker/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/signature-maker.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/signature-maker.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Signature Maker</b>
           <small>Draw it once, use it everywhere</small>
         </a>
         <a class="app" style="--i:3" href="https://sws-apps-9646d.web.app/image-compressor/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/image-compressor.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/image-compressor.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Image Compressor</b>
           <small>Shrink photos without uploading them</small>
         </a>
@@ -301,26 +320,27 @@ footer a{color:var(--leaf)}
     </section>
 
     <section class="need reveal" style="scroll-margin-top:18px">
+      <span class="kick">08 · The party</span>
       <h2>Throwing the party?</h2>
       <p class="sub">Draw names without the chaos, spin for who goes first, split the bill fairly, and point everyone anywhere with one code.</p>
       <div class="grid">
         <a class="app" style="--i:0" href="https://sws-apps-9646d.web.app/secret-santa/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/secret-santa.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/secret-santa.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Secret Santa</b>
           <small>Draw names without the group-chat chaos</small>
         </a>
         <a class="app" style="--i:1" href="https://sws-apps-9646d.web.app/wheel-picker/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/wheel-picker.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/wheel-picker.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Wheel Picker</b>
           <small>Spin to choose — no ads spinning back</small>
         </a>
         <a class="app" style="--i:2" href="https://sws-apps-9646d.web.app/bill-splitter/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/bill-splitter.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/bill-splitter.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Bill Splitter</b>
           <small>Split it, settle up, nothing leaves your device</small>
         </a>
         <a class="app" style="--i:3" href="https://sws-apps-9646d.web.app/qr-maker/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/qr-maker.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/qr-maker.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>QR Maker</b>
           <small>Codes that never expire</small>
         </a>
@@ -328,6 +348,7 @@ footer a{color:var(--leaf)}
     </section>
 
     <section class="need reveal" style="scroll-margin-top:18px">
+      <span class="kick">09 · Winding down</span>
       <h2>Can&rsquo;t sleep? Need to make something?</h2>
       <p class="sub">A sound machine that lets the room go quiet, a groovebox in your pocket, and plant art grown from any name.</p>
       <div class="grid">
@@ -358,28 +379,28 @@ footer a{color:var(--leaf)}
       <h3>Family &amp; Home</h3>
       <div class="grid tight">
         <a class="app" style="--i:0" href="https://sws-apps-9646d.web.app/sitter-sheet/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/sitter-sheet.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/sitter-sheet.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Sitter Sheet</b>
           <small>Everything the babysitter needs, on one page</small>
         </a>
         <a class="app" style="--i:1" href="https://sws-apps-9646d.web.app/baby-log/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/baby-log.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/baby-log.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Baby Log</b>
           <small>Feeds, sleep and nappies — one thumb, 3am</small>
         </a>
         <a class="app" style="--i:2" href="https://sws-apps-9646d.web.app/pill-schedule/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/pill-schedule.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/pill-schedule.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Pill Schedule</b>
           <small>A large-print medication card for the fridge</small>
         </a>
         <a class="app" style="--i:3" href="https://sws-apps-9646d.web.app/caregiver-log/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/caregiver-log.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/caregiver-log.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Caregiver Log</b>
           <small>A shared notebook for the family caring at home</small>
           <span class="tag">Shared online</span>
         </a>
         <a class="app" style="--i:4" href="https://sws-apps-9646d.web.app/grocery-list/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/grocery-list.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/grocery-list.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Grocery List</b>
           <small>One list the whole household can add to</small>
           <span class="tag">Shared online</span>
@@ -391,17 +412,17 @@ footer a{color:var(--leaf)}
       <h3>School</h3>
       <div class="grid tight">
         <a class="app" style="--i:0" href="https://sws-apps-9646d.web.app/specials-planner/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/specials-planner.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/specials-planner.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Specials Planner</b>
           <small>Art, music, PE, library — plan the year once</small>
         </a>
         <a class="app" style="--i:1" href="https://sws-apps-9646d.web.app/sub-plans/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/sub-plans.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/sub-plans.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Sub Plans</b>
           <small>Your substitute folder, ready before you are sick</small>
         </a>
         <a class="app" style="--i:2" href="https://sws-apps-9646d.web.app/grade-sheet/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/grade-sheet.svg" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/grade-sheet.svg?v=2" alt="" width="256" height="256" decoding="async">
           <b>Grade Sheet</b>
           <small>Grades for every class you teach, on this device only</small>
         </a>
@@ -412,39 +433,39 @@ footer a{color:var(--leaf)}
       <h3>Events &amp; Groups</h3>
       <div class="grid tight">
         <a class="app" style="--i:0" href="https://sws-apps-9646d.web.app/signup-sheets/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/signup-sheets.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/signup-sheets.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Signup Sheets</b>
           <small>Claim a spot in seconds — signing up needs no account</small>
           <span class="tag">Shared online</span>
         </a>
         <a class="app" style="--i:1" href="https://sws-apps-9646d.web.app/team-parent/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/team-parent.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/team-parent.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Team Parent</b>
           <small>One link for the whole season</small>
           <span class="tag">Shared online</span>
         </a>
         <a class="app" style="--i:2" href="https://sws-apps-9646d.web.app/secret-santa/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/secret-santa.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/secret-santa.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Secret Santa</b>
           <small>Draw names without the group-chat chaos</small>
         </a>
         <a class="app" style="--i:3" href="https://sws-apps-9646d.web.app/wedding-timeline/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/wedding-timeline.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/wedding-timeline.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Wedding Day Timeline</b>
           <small>So nobody asks &ldquo;when is hair again?&rdquo;</small>
         </a>
         <a class="app" style="--i:4" href="https://sws-apps-9646d.web.app/seating-chart/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/seating-chart.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/seating-chart.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Seating Chart</b>
           <small>Tables, seats and who must not sit together</small>
         </a>
         <a class="app" style="--i:5" href="https://sws-apps-9646d.web.app/bracket-maker/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/bracket-maker.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/bracket-maker.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Bracket Maker</b>
           <small>Game night, settled properly</small>
         </a>
         <a class="app" style="--i:6" href="https://sws-apps-9646d.web.app/wheel-picker/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/wheel-picker.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/wheel-picker.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Wheel Picker</b>
           <small>Spin to choose — no ads spinning back</small>
         </a>
@@ -455,27 +476,27 @@ footer a{color:var(--leaf)}
       <h3>Paper &amp; Files</h3>
       <div class="grid tight">
         <a class="app" style="--i:0" href="https://sws-apps-9646d.web.app/scan-to-pdf/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/scan-to-pdf.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/scan-to-pdf.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Scan to PDF</b>
           <small>No watermark, no ransom, no upload</small>
         </a>
         <a class="app" style="--i:1" href="https://sws-apps-9646d.web.app/pdf-tools/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/pdf-tools.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/pdf-tools.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>PDF Tools</b>
           <small>Merge, split, rotate — nothing uploaded</small>
         </a>
         <a class="app" style="--i:2" href="https://sws-apps-9646d.web.app/image-compressor/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/image-compressor.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/image-compressor.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Image Compressor</b>
           <small>Shrink photos without uploading them</small>
         </a>
         <a class="app" style="--i:3" href="https://sws-apps-9646d.web.app/signature-maker/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/signature-maker.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/signature-maker.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Signature Maker</b>
           <small>Draw it once, use it everywhere</small>
         </a>
         <a class="app" style="--i:4" href="https://sws-apps-9646d.web.app/qr-maker/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/qr-maker.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/qr-maker.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>QR Maker</b>
           <small>Codes that never expire</small>
         </a>
@@ -486,17 +507,17 @@ footer a{color:var(--leaf)}
       <h3>Moving &amp; Travel</h3>
       <div class="grid tight">
         <a class="app" style="--i:0" href="https://sws-apps-9646d.web.app/moving-boxes/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/moving-boxes.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/moving-boxes.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Moving Boxes</b>
           <small>Which box has the can opener?</small>
         </a>
         <a class="app" style="--i:1" href="https://sws-apps-9646d.web.app/packing-list/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/packing-list.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/packing-list.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Packing List</b>
           <small>Never forget the charger again</small>
         </a>
         <a class="app" style="--i:2" href="https://sws-apps-9646d.web.app/home-inventory/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/home-inventory.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/home-inventory.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Home Inventory</b>
           <small>Photograph it before you need it</small>
         </a>
@@ -507,7 +528,7 @@ footer a{color:var(--leaf)}
       <h3>Money</h3>
       <div class="grid tight">
         <a class="app" style="--i:0" href="https://sws-apps-9646d.web.app/bill-splitter/" target="_blank" rel="noopener">
-          <img src="/portal-assets/sws-thumbs/bill-splitter.png" alt="" width="256" height="256" decoding="async">
+          <img src="/portal-assets/sws-thumbs/bill-splitter.png?v=2" alt="" width="256" height="256" decoding="async">
           <b>Bill Splitter</b>
           <small>Split it, settle up, nothing leaves your device</small>
         </a>

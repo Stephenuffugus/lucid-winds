@@ -42,9 +42,12 @@ while ((s = secRe.exec(hub))) {
       console.error(`MISSING ART: portal-assets/sws-thumbs/${slug}.png — copy it from the SWS-apps repo first`);
       process.exit(1);
     }
+    /* ?v=2: the first sws-thumbs generation was the impostor icon set (see
+       2026-08-17); the SW caches these cache-first by full URL, so replaced
+       content needs a new URL. */
     APPS[slug] = { name, line, shared: !!shared,
       url: `${ORIGIN}/${slug}/`,
-      art: existsSync(png) ? `/portal-assets/sws-thumbs/${slug}.png` : `/portal-assets/sws-thumbs/${slug}.svg` };
+      art: (existsSync(png) ? `/portal-assets/sws-thumbs/${slug}.png` : `/portal-assets/sws-thumbs/${slug}.svg`) + '?v=2' };
     slugs.push(slug);
   }
   CATS.push({ title, slugs });
@@ -66,23 +69,23 @@ const total = swsCount + Object.keys(TOOLS).length;
 
 /* ---- the needs — the questions people actually arrive with ---- */
 const NEEDS = [
-  { q: 'Planning a wedding?', sub: 'So nobody asks &ldquo;when is hair again?&rdquo; — the day minute by minute, the tables settled, and a sheet for who brings what.',
+  { kick: 'The wedding', q: 'Planning a wedding?', sub: 'So nobody asks &ldquo;when is hair again?&rdquo; — the day minute by minute, the tables settled, and a sheet for who brings what.',
     apps: ['wedding-timeline', 'seating-chart', 'signup-sheets'] },
-  { q: 'Teaching this year?', sub: 'Plan the whole year once, keep grades on your own computer, and have the sub folder ready before you are sick.',
+  { kick: 'The school year', q: 'Teaching this year?', sub: 'Plan the whole year once, keep grades on your own computer, and have the sub folder ready before you are sick.',
     apps: ['specials-planner', 'sub-plans', 'grade-sheet', 'ttq'] },
-  { q: 'New baby at home?', sub: 'One-thumb logging at 3am, everything the sitter needs on one page, and a grocery list the whole house can add to.',
+  { kick: 'The newborn shift', q: 'New baby at home?', sub: 'One-thumb logging at 3am, everything the sitter needs on one page, and a grocery list the whole house can add to.',
     apps: ['baby-log', 'sitter-sheet', 'grocery-list'] },
-  { q: 'Running the team this season?', sub: 'One link for the whole season, sign-ups without the group-chat chaos, and a bracket to settle game night properly.',
+  { kick: 'The season', q: 'Running the team this season?', sub: 'One link for the whole season, sign-ups without the group-chat chaos, and a bracket to settle game night properly.',
     apps: ['team-parent', 'signup-sheets', 'bracket-maker'] },
-  { q: 'Caring for someone?', sub: 'A shared notebook for the family caring at home, and a large-print medication card for the fridge.',
+  { kick: 'The care team', q: 'Caring for someone?', sub: 'A shared notebook for the family caring at home, and a large-print medication card for the fridge.',
     apps: ['caregiver-log', 'pill-schedule'] },
-  { q: 'Moving house?', sub: 'Know which box has the can opener, never forget the charger, and photograph everything before you need the insurance claim.',
+  { kick: 'The move', q: 'Moving house?', sub: 'Know which box has the can opener, never forget the charger, and photograph everything before you need the insurance claim.',
     apps: ['moving-boxes', 'packing-list', 'home-inventory'] },
-  { q: 'Drowning in paperwork?', sub: 'Scan it, merge it, sign it, shrink it — all on your device. Nothing uploaded, no watermark held for ransom.',
+  { kick: 'The paperwork', q: 'Drowning in paperwork?', sub: 'Scan it, merge it, sign it, shrink it — all on your device. Nothing uploaded, no watermark held for ransom.',
     apps: ['scan-to-pdf', 'pdf-tools', 'signature-maker', 'image-compressor'] },
-  { q: 'Throwing the party?', sub: 'Draw names without the chaos, spin for who goes first, split the bill fairly, and point everyone anywhere with one code.',
+  { kick: 'The party', q: 'Throwing the party?', sub: 'Draw names without the chaos, spin for who goes first, split the bill fairly, and point everyone anywhere with one code.',
     apps: ['secret-santa', 'wheel-picker', 'bill-splitter', 'qr-maker'] },
-  { q: 'Can&rsquo;t sleep? Need to make something?', sub: 'A sound machine that lets the room go quiet, a groovebox in your pocket, and plant art grown from any name.',
+  { kick: 'Winding down', q: 'Can&rsquo;t sleep? Need to make something?', sub: 'A sound machine that lets the room go quiet, a groovebox in your pocket, and plant art grown from any name.',
     apps: ['hush', 'padlab', 'growname'] },
 ];
 const covered = new Set(NEEDS.flatMap(n => n.apps));
@@ -105,6 +108,7 @@ const needCard = (id, i) => { const a = get(id); return `        <a class="app" 
 
 const needRow = (n, idx) => `
     <section class="need reveal" ${idx === 0 ? 'id="needs" ' : ''}style="scroll-margin-top:18px">
+      <span class="kick">${String(idx + 1).padStart(2, '0')} · ${n.kick}</span>
       <h2>${n.q}</h2>
       <p class="sub">${n.sub}</p>
       <div class="grid">
@@ -160,6 +164,9 @@ body{margin:0;background:var(--bg);color:var(--ink);
 
 /* ── hero ── */
 .hero{text-align:center;padding:44px 0 8px;position:relative}
+.hero::before{content:"";position:absolute;left:50%;top:-30%;width:120vw;height:150%;
+  transform:translateX(-50%);pointer-events:none;
+  background:radial-gradient(46% 55% at 50% 32%,rgba(228,189,95,.12),transparent 70%)}
 .badge{display:inline-flex;align-items:center;gap:8px;padding:7px 16px;border:1px solid var(--line);
   border-radius:999px;color:var(--leaf);font-weight:800;font-size:.78rem;letter-spacing:.14em;text-transform:uppercase}
 h1{font-family:var(--disp);font-weight:600;color:var(--cream);
@@ -183,7 +190,7 @@ h1 em{font-style:normal;color:var(--gold)}
   mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
 .strip .track{display:flex;gap:12px;width:max-content;animation:drift 60s linear infinite}
 .strip.rev .track{animation-name:drift-rev;animation-duration:75s}
-.strip img{width:120px;height:120px;border-radius:20px;flex:none;display:block}
+.strip img{width:132px;height:132px;border-radius:22px;flex:none;display:block}
 @keyframes drift{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 @keyframes drift-rev{from{transform:translateX(-50%)}to{transform:translateX(0)}}
 @media (max-width:600px){.strip img{width:88px;height:88px;border-radius:15px}}
@@ -196,7 +203,9 @@ h1 em{font-style:normal;color:var(--gold)}
 .trust small{color:var(--muted)}
 
 /* ── need rows ── */
-.need{margin-top:44px}
+.need{margin-top:48px}
+.kick{display:block;color:var(--gold);font-weight:800;font-size:.75rem;
+  letter-spacing:.16em;text-transform:uppercase;margin-bottom:7px}
 h2{font-family:var(--disp);font-weight:600;color:var(--cream);font-size:clamp(1.6rem,4.5vw,2.2rem);
   line-height:1.05;margin:0 0 6px}
 .need .sub{color:var(--muted);font-size:1.02rem;max-width:56ch;margin:0 0 16px}
@@ -213,6 +222,13 @@ h2{font-family:var(--disp);font-weight:600;color:var(--cream);font-size:clamp(1.
 .app small{color:var(--muted);font-size:.85rem;line-height:1.4}
 .app .tag{align-self:flex-start;margin-top:2px;padding:2px 9px;border:1px solid var(--line);
   border-radius:999px;color:var(--leaf);font-size:.7rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+/* Stephen: cards "could probably be two wide" on a phone — his art carries
+   the card, so two-up stays readable down to small screens. */
+@media (max-width:640px){
+  .grid,.grid.tight{grid-template-columns:repeat(2,1fr)}
+  .app b{font-size:.95rem}
+  .app small{font-size:.8rem}
+}
 
 /* ── full shelf ── */
 .shelf-head{margin-top:60px;text-align:center}
