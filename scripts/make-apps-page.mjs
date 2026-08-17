@@ -57,7 +57,7 @@ if (swsCount < 24) { console.error(`only ${swsCount} apps parsed from the hub �
 /* Hush is the one Arcade-side tool that lives here — Stephen: "can't sleep,
    we've got stuff for that". PadLab / Grow Your Name / Times Table Quest
    belong in the Arcade (his call, round two). */
-const HUSH = { name: 'Hush', line: 'A sleep sound machine that is honest about the science — settles the room, then lets it go quiet. Free, offline, no ads.', url: '/hush/', art: '/portal-assets/sws-thumbs/hush.png' };
+const HUSH = { name: 'Hush', line: 'A sleep sound machine that is honest about the science. It settles the room, then lets it go quiet. Free, offline, no ads.', url: '/hush/', art: '/portal-assets/sws-thumbs/hush.png' };
 if (!existsSync(join(REPO, HUSH.art))) { console.error('MISSING: hush icon'); process.exit(1); }
 const total = swsCount + 1;
 
@@ -65,17 +65,17 @@ const total = swsCount + 1;
    with. Hard-fails if the hub grows a category with no wording here. */
 const CAT_META = {
   'Family &amp; Home': { kick: 'The household', q: 'Keeping the house running?',
-    sub: 'The sitter, the baby, the meds, the groceries — the everyday logistics of the people you love.' },
+    sub: 'The sitter, the baby, the meds, the groceries. The everyday logistics of the people you love.' },
   'School': { kick: 'The school year', q: 'Teaching this year?',
     sub: 'Plan the whole year once, keep grades on your own computer, and have the sub folder ready before you are sick.' },
   'Events &amp; Groups': { kick: 'The big days', q: 'Planning a big day?',
-    sub: 'Weddings, seasons, sign-ups, game nights — one link for everyone instead of a group-chat avalanche.' },
+    sub: 'Weddings, seasons, sign-ups, game nights. One link for everyone instead of a group-chat avalanche.' },
   'Paper &amp; Files': { kick: 'The paperwork', q: 'Drowning in paperwork?',
-    sub: 'Scan it, merge it, sign it, shrink it — all on your device. Nothing uploaded, no watermark held for ransom.' },
+    sub: 'Scan it, merge it, sign it, shrink it, all on your device. Nothing gets uploaded and nothing holds your file for ransom.' },
   'Moving &amp; Travel': { kick: 'The move', q: 'On the move?',
     sub: 'Which box has the can opener, what goes in the suitcase, and photos of everything before the insurance claim needs them.' },
   'Money': { kick: 'Settling up', q: 'Who owes what?',
-    sub: 'Split the trip, the dinner, the house bills — fairly, on your device, no accounts.' },
+    sub: 'Split the trip, the dinner, the house bills. Fairly, on your device, no accounts.' },
 };
 for (const c of CATS) if (!CAT_META[c.title]) { console.error(`No wording for hub category "${c.title}" — add it to CAT_META`); process.exit(1); }
 
@@ -154,11 +154,11 @@ const html = `<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Sky Wolf Studios — free apps for real life</title>
-<meta name="description" content="What are you planning? A wedding, a season, a school year, a move — ${total} free apps for real life. No ads, no subscriptions, no tracking.">
+<title>Sky Wolf Studios: free apps for real life</title>
+<meta name="description" content="What are you planning? A wedding, a season, a school year, a move. ${total} free apps for real life. No ads, no subscriptions, no tracking.">
 <meta name="theme-color" content="#080c09">
-<meta property="og:title" content="Sky Wolf Studios — free apps for real life">
-<meta property="og:description" content="What are you planning? ${total} free apps — planners, sign-ups, checklists, PDF tools and more. No ads, ever.">
+<meta property="og:title" content="Sky Wolf Studios: free apps for real life">
+<meta property="og:description" content="What are you planning? ${total} free apps: planners, sign-ups, checklists, PDF tools and more. No ads, ever.">
 <meta property="og:image" content="https://lucidwinds.com/portal-assets/sws-thumbs/specials-planner.png">
 <link rel="icon" href="/favicon.ico">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -311,7 +311,7 @@ footer a{color:var(--leaf)}
     <span class="badge">Sky Wolf Studios · free apps</span>
     <h1>What are you <em>planning?</em></h1>
     <p class="lede">A wedding. A season. A school year. A move. A night you actually sleep.
-      We build free apps for real life — <b>${total} so far</b>, every one free forever.
+      We build free apps for real life. <b>${total} so far</b>, every one free forever.
       <b>No ads. No subscriptions. No tracking.</b></p>
     <div class="cta-row">
       <a class="btn gold" href="#needs">Find your app</a>
@@ -345,7 +345,7 @@ ${card(HUSH, 0)}
     <h2>It&rsquo;s all free. Seriously.</h2>
     <p>One small studio, ${total} apps, zero ads. If one of them saves your week, the tip jar inside it is the whole business model.</p>
     <div class="cta-row" style="margin:0">
-      <a class="btn gold" href="/portal/">Visit the Arcade — 160+ free games</a>
+      <a class="btn gold" href="/portal/">Visit the Arcade and its 160+ free games</a>
     </div>
   </div>
 
