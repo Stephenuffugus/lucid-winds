@@ -35,7 +35,14 @@ body{margin:0;background:var(--bg);color:var(--ink);
   background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'26'%20height%3D'200'%20viewBox%3D'0%200%2026%20200'%20fill%3D'none'%20stroke%3D'%23e4bd5f'%20stroke-width%3D'1'%20stroke-linecap%3D'round'%3E%3Cpath%20d%3D'M13%200%20C%205%2034%2C%2021%2066%2C%2013%20100%20C%205%20134%2C%2021%20166%2C%2013%20200'%2F%3E%3Cpath%20d%3D'M12%2036%20C%207%2034%2C%204%2030%2C%204%2024%20C%2010%2026%2C%2012%2030%2C%2012%2036%20Z'%2F%3E%3Cpath%20d%3D'M14%20104%20C%2019%20102%2C%2022%2098%2C%2022%2092%20C%2016%2094%2C%2014%2098%2C%2014%20104%20Z'%2F%3E%3Cpath%20d%3D'M12%20170%20C%207%20168%2C%204%20164%2C%204%20158%20C%2010%20160%2C%2012%20164%2C%2012%20170%20Z'%2F%3E%3Ccircle%20cx%3D'13'%20cy%3D'68'%20r%3D'1.5'%2F%3E%3Ccircle%20cx%3D'13'%20cy%3D'137'%20r%3D'1.5'%2F%3E%3C%2Fsvg%3E");background-repeat:repeat-y;background-position:center 0}
 .rail.l{left:12px}
 .rail.r{right:12px;transform:scaleX(-1)}
-@media (max-width:1180px){.rail{display:none}}
+/* On narrow screens the rails slim down and hug the edge instead of
+   disappearing — Stephen wants the filigree on the phone too. The wrap's
+   16px gutter keeps them clear of the cards. */
+@media (max-width:1180px){
+  .rail{width:14px;background-size:14px auto;opacity:.24}
+  .rail.l{left:2px}
+  .rail.r{right:2px}
+}
 
 /* ── section flourishes: the same line, horizontal ── */
 .flourish{display:flex;justify-content:center;color:var(--gold);opacity:.5;margin:46px 0 0}

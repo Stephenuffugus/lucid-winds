@@ -147,7 +147,14 @@ body{margin:0;background:var(--bg);color:var(--ink);
   background-image:url("${VINE}");background-repeat:repeat-y;background-position:center 0}
 .rail.l{left:12px}
 .rail.r{right:12px;transform:scaleX(-1)}
-@media (max-width:1180px){.rail{display:none}}
+/* On narrow screens the rails slim down and hug the edge instead of
+   disappearing — Stephen wants the filigree on the phone too. The wrap's
+   16px gutter keeps them clear of the cards. */
+@media (max-width:1180px){
+  .rail{width:14px;background-size:14px auto;opacity:.24}
+  .rail.l{left:2px}
+  .rail.r{right:2px}
+}
 
 /* ── section flourishes: the same line, horizontal ── */
 .flourish{display:flex;justify-content:center;color:var(--gold);opacity:.5;margin:46px 0 0}
