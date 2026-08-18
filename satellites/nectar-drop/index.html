@@ -387,7 +387,7 @@ var GARDENERS=[
  {id:'firefly_pilot',   name:'Firefly Pilot',    comp:'✨', unlock:84, desc:'Green arcs a spark chain through nearby blooms.',
    fire:function(pg,b){ rainbowChain(pg); } },
  {id:'thistle_hedgehog',name:'Thistle Hedgehog', comp:'🦔', unlock:96, desc:'Green turns filler blooms into power blooms.',
-   fire:function(pg,b){ pegSwap(); bloomBurst(pg.x,pg.y); } },
+   fire:function(pg,b){ pegSwap(pg); bloomBurst(pg.x,pg.y); } },
  {id:'starling_gardener',name:'Starling Gardener',comp:'🐦', unlock:108,desc:'Green lights a lantern that doubles this shot’s nectar.',
    fire:function(pg,b){ G.lantern=2; floater(pg.x,pg.y,'×2 NECTAR'); sfx('free'); } },
  {id:'sky_wolf_pup',    name:'Sky Wolf Pup',     comp:'🐺', unlock:118,desc:'Green unleashes a huge blast: great against bosses.',
@@ -422,8 +422,26 @@ function goldRush(x,y){ // gild up to 6 nearest non-red, non-green unhit pegs in
   cand.sort(function(a,b){return a.d-b.d;});
   for(i=0;i<6&&i<cand.length;i++){ G.pegs[cand[i].i].type='purple'; spark(G.pegs[cand[i].i].x,G.pegs[cand[i].i].y,'purple'); }
 }
-function pegSwap(){ var blues=[],i; for(i=0;i<G.pegs.length;i++) if(G.pegs[i].type==='blue'&&!G.pegs[i].hit) blues.push(i);
-  for(var n=0;n<3&&blues.length;n++){ var j=Math.floor(Math.random()*blues.length); G.pegs[blues[j]].type='green'; spark(G.pegs[blues[j]].x,G.pegs[blues[j]].y,'green'); blues.splice(j,1); } }
+/* ⛔ DETERMINISTIC, because the Daily promises "one seeded board, same for
+   everyone". This picked its three blooms with UNSEEDED Math.random(), so two
+   players taking identical shots on the same Daily board got DIFFERENT power
+   blooms, and green blooms are worth nectar. The board was seeded; this was the
+   one thing on top of it that was not, which is the worst kind of bug to have:
+   invisible unless you compare two players.
+   Every other ability in this family already picks by distance (goldRush takes
+   the six nearest, rainbowChain arcs to the nearest). So does this now: the three
+   nearest to the bloom that fired it, which also reads better than three at
+   random across the board.
+   ⛔ The index tiebreak is not decoration. Two blooms at an identical distance
+   would otherwise resolve by sort stability, and "probably stable" is not the
+   same promise as "the same board for everyone". */
+function pegSwap(from){ var blues=[],i; for(i=0;i<G.pegs.length;i++) if(G.pegs[i].type==='blue'&&!G.pegs[i].hit) blues.push(i);
+  if(from){ blues.sort(function(a,b){
+    var A=G.pegs[a], B=G.pegs[b];
+    var da=(A.x-from.x)*(A.x-from.x)+(A.y-from.y)*(A.y-from.y);
+    var db=(B.x-from.x)*(B.x-from.x)+(B.y-from.y)*(B.y-from.y);
+    return (da-db) || (a-b); }); }
+  for(var n=0;n<3&&n<blues.length;n++){ G.pegs[blues[n]].type='green'; spark(G.pegs[blues[n]].x,G.pegs[blues[n]].y,'green'); } }
 function rainbowChain(pg){ // arc a spark chain to nearest unhit pegs, depth 2, breadth 3
   var seen={}, frontier=[pg], depth=0;
   while(frontier.length && depth<3){
