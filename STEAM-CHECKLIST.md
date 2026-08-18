@@ -66,16 +66,44 @@ through two correction passes and every claim in it has been checked against the
 code.
 **Done when:** every field in that file has been pasted.
 
+_Checked for you 2026-08-18: all ten fields Steam asks for are present in that
+file (name, short description, About This Game, tags, genre, system requirements,
+legal, release date, developer, publisher), and there are no placeholders or notes
+left in the live copy._
+
 ### ☐ 5. YOU · Upload the art
-All of it already exists in **`store/jimothy-steam/capsules/out/`**.
-⛔ Upload the **larger** files where a pair exists: `462x174`, `920x430`,
-`1232x706`, `748x896`, not the legacy half-size ones.
-Plus the five screenshots from `capsules/out/screenshots/`.
-**Done when:** every capsule slot on the page has an image and there are 5 screenshots.
+All of it already exists in **`store/jimothy-steam/capsules/out/`**. There is more
+than one file per slot, so here is the exact list. Upload these twelve and ignore
+everything else in that folder.
+
+```
+small_capsule_462x174.png          -> Small Capsule
+header_capsule_920x430.png         -> Header Capsule
+main_capsule_1232x706.png          -> Main Capsule
+vertical_capsule_748x896.png       -> Vertical Capsule
+library_capsule_600x900.png        -> Library Capsule
+library_hero_3840x1240.png         -> Library Hero
+library_logo_1280x720.png          -> Library Logo
+page_background_1438x810.png       -> Page Background
+
+screenshots/01-rush-hour_1920x1080.png
+screenshots/02-pike-market_1920x1080.png
+screenshots/03-the-canal_1920x1080.png
+screenshots/04-fremont_1920x1080.png
+screenshots/05-deep-city_1920x1080.png
+```
+
+⛔ Those are the LARGER of each pair. The folder also holds legacy half-size ones
+and `_idle` / `_sit` pose variants; none of those go to Steam.
+⛔ The Library Hero deliberately has no wordmark on it, because Steam lays the
+Library Logo on top. Do not swap in one with the name baked in or it renders twice.
+
+**Done when:** eight capsule slots have an image and there are five screenshots.
 
 ### ☐ 6. YOU · Fill the two forms, then submit the page for review
 - **AI disclosure** — the honest text is in `STORE_PAGE_FILL.md`. Paste it.
-- **Content rating survey** — the answers are in `store/jimothy-steam/CONTENT_RATING.md`.
+- **Content rating survey** — the answers are in `store/jimothy-steam/CONTENT_RATING.md`
+  (17 answers, all written out; you are copying, not deciding).
 Then **mark the store page ready for review**.
 
 **Done when:** Steamworks says the page is submitted. ⭐ **This starts the 14 day
