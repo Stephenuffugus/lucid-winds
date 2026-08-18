@@ -69,13 +69,26 @@ is `dir`. Do not zip it.
 
 ### Two honest gaps in the exe
 
-- **No icon and no version metadata are embedded.** Setting those on a Windows
-  exe needs `rcedit`, which needs wine, which this Linux box does not have. It
-  is cosmetic: Steam shows your capsule art everywhere a player looks, but the
-  taskbar and the raw exe show the default Electron atom. Fixed either by
-  installing wine here or by running `npm run dist:win` once on a Windows
-  machine, and it needs an `.ico` that does not exist yet anyway. Add it to the
-  art list.
+- **No icon and no version metadata are embedded — but the .ico now exists.**
+  `python3 capsules/icon.py` builds `capsules/out/jimothy.ico` (256/128/64/48/32/
+  24/16) from the same painted hero the capsules use, so the taskbar matches what
+  a Steam player sees everywhere else. `build.win.icon` in package.json points at
+  it.
+
+  ⛔ **It still will not embed from this box, and the reason is not only wine.**
+  `build.win.signAndEditExecutable` is `false`, which makes electron-builder skip
+  the rcedit step entirely, so an `.ico` alone changes nothing. Embedding needs
+  BOTH that flag true AND rcedit, which needs wine, which is not installed here.
+  Do not flip the flag on Linux; it breaks the build that currently works. Run
+  `npm run dist:win` once on a Windows machine with the flag on, or install wine
+  here. Still cosmetic: Steam draws the capsule art, not the exe icon.
+
+  ⛔ **The old `assets/icons/jimothy-512.png` is the wrong source for an icon**,
+  even though it is lovely: it is the paper keyart, with a wordmark, a skyline and
+  Mount Rainier around a small raccoon. An icon gets ONE shape, and at the 16px a
+  taskbar draws that is an unreadable smudge. `icon.py` uses two crops, head and
+  shoulders below 32px, and writes `icon_contact_sheet.png` so the small sizes get
+  looked at instead of assumed.
 - **The exe is not code signed.** Steam does not require it. Unsigned means
   Windows SmartScreen may warn on first launch outside Steam. A certificate runs
   a few hundred dollars a year. Not a launch blocker, revisit if players report
@@ -101,10 +114,37 @@ Every field is written and paste ready in `marketing/steam-jimothy.md`: name,
 short description, About This Game, features, tags, genre, system requirements,
 and the honest AI disclosure that Valve now requires as a form.
 
-Still missing, and all art: the capsule set (sizes listed in that file), at
-least five 1920x1080 screenshots, and ideally a trailer. Steam weights the
-small capsule hardest because it appears everywhere, and nothing survives it but
-the logo and Jimothy's face.
+⛔ **This paragraph used to say the capsule set and screenshots were missing. As
+of 2026-08-01 they are not.** `capsules/build.js` generates all seven capsules at
+Valve's exact sizes and `capsules/shots.js` the five 1920x1080 screenshots, both
+out of art the game already ships, into `capsules/out/`. Verified by
+`node capsules/preflight.js`.
+
+**A trailer is the one store asset still genuinely missing**, and it needs
+Stephen. Steam weights the small capsule hardest because it appears everywhere,
+and nothing survives it but the logo and Jimothy's face.
+
+⚖ Art direction on the capsules is Stephen's; `capsules/README.md` says they are
+drafts to react to. He has since said he likes the paper style thumbnail, so do
+not restyle anything without asking.
+
+## ⛔ VERIFY THE COMMERCE STRIP AT RUNTIME, NOT BY ITS FLAG
+
+    node store/jimothy-steam/runtime_preflight.mjs     # needs a server on :8777
+
+`capsules/preflight.js` checks the commerce flag is present and set before the
+game reads it. That is necessary and it is not sufficient: **a flag nothing acts
+on passes it**, which is exactly the failure recorded below. Valve does not review
+flags, they open the game and click things.
+
+`runtime_preflight.mjs` boots the real vendored build and walks every route a
+player has into the payment screen. Current result: the **web** build shows 3 of 3
+doors open, which proves the check can see a door at all, and the **Steam** build
+shows 0 of 3 with all three routes actually walked, no payment host contacted, and
+no external request of any kind.
+
+⛔ It reports an UNREACHED route as a failure, not a pass. "Not shown" on a screen
+the run never opened is a vacuous pass and looks identical to a real one.
 
 ## Commerce: fixed, and it was broken
 
