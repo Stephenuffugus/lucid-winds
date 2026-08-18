@@ -12,12 +12,14 @@ Sep 1 is gone. The binding clock is **14 days of public Coming Soon**, and that
 clock only starts when Valve **approves** the store page, not when you write it.
 
 ```
-store page submitted        Aug 19   (step 6 below)
-Valve approves it           ~Aug 25  (they state 3 to 5 business days)
-14 day Coming Soon ends     ~Sep 8
-30 day fee clock ended      Aug 29   ✅ already satisfied
-        REALISTIC RELEASE   ~Sep 8 to 9
+store page submitted        the day you finish step 6
+Valve approves it           + 3 to 5 business days
+14 day Coming Soon ends     + 14 days from THAT approval
+30 day fee clock ended      Aug 29   ✅ already satisfied, never the constraint
 ```
+Finish step 6 tomorrow and release lands around **Sep 8 or 9**. Every day step 6
+waits moves the release by a day, one for one. It is the only thing in this file
+with a clock on it.
 
 Nothing is broken. It is a week later than the old plan, and the old plan assumed
 the store page went in on Aug 6. **Every day you delay step 6 moves release by a
@@ -27,36 +29,53 @@ day**, so steps 1 to 6 are the only urgent things in this file.
 
 # PART ONE — get the store page submitted. Nothing else matters until this is done.
 
-### ☐ 1. YOU · Open Steamworks and look at the price field. Do not change it.
-App **5043360** → Store Presence → Pricing.
-**Just report what it says.** One of two things is true and they lead to opposite
-actions:
-- **Nothing set yet** → step 2a
-- **$2.99 already set** → step 2b
+### ☐ 1. YOU · Set the price. $2.99.
 
-⛔ Do not raise a price that is already entered. Valve blocks discounting for
-**30 days** after any price increase, which would delete your launch discount and
-push release to October.
+**Decided 2026-08-18, Stephen:** *"i still think 2.99 is our best bet i dont think
+people would pay 5$ for an AI made game on steam but maybe and 3$ gets it started."*
+That is the right read and there is nothing left to weigh here. An AI-disclosed
+game at $4.99 from a studio nobody has heard of invites the reaction he has
+already had in public; at $2.99 it is an impulse buy nobody argues about.
 
-**Done when:** you have told me which it is.
+```
+https://partner.steamgames.com/apps/pricing/5043360
+```
+Base **US $2.99** → then click **Generate Suggested Prices** and take Valve's table
+for every other currency wholesale. Do not hand-edit regions.
 
-### ☐ 2a. YOU · Nothing was set → enter $4.99, then Generate Suggested Prices
-Base **US $4.99**. Click **Generate Suggested Prices** and take Valve's table for
-every other currency wholesale. Do not hand-edit regions.
-**Done when:** $4.99 is saved and the currency table is filled.
+⛔ Once this is saved, **do not raise it later**. Valve blocks discounting for 30
+days after any price increase, which would delete a launch discount. Lowering is
+always allowed.
 
-### ☐ 2b. YOU · $2.99 was already set → leave it alone
-Keep $2.99. You lose nothing that matters; see step 3.
-**Done when:** you have confirmed you changed nothing.
+**Done when:** $2.99 is saved and the currency table is filled.
 
-### ☐ 3. YOU · Configure the launch discount
-- If you did 2a: **20%**, seven days → sells at **$3.99**
-- If you did 2b: **20%**, seven days → sells at **$2.39**
+### ☐ 2. YOU · Configure the launch discount. 20%, seven days.
 
-⛔ A launch discount **must be configured before you press Release**. It cannot be
-added afterwards, and a new title cannot run any other discount in its first 30
-days. This is the one setting in the whole process you genuinely cannot fix later.
+Same page or **Store Presence → Discounts**. It sells at **$2.39** for the first
+week.
+
+Why 20% and not Valve's suggested 10%: at this price the discount is not about the
+money, it is 60 cents either way. Its job is the strikethrough on the tile and
+getting into the launch and Specials surfaces, and 20% reads as a real discount
+where 10% reads as nothing. It is well inside Valve's 40% cap.
+
+⛔ **This must be configured BEFORE you press Release.** It cannot be added
+afterwards, and a new title cannot run any other discount in its first 30 days.
+This is the one setting in the whole process that genuinely cannot be fixed later.
+
+**The honest number:** after Steam's 30%, $2.39 nets you about **$1.67** a copy,
+and $2.99 nets about **$2.09** once the launch week ends.
+
 **Done when:** the discount shows as scheduled.
+
+### ☐ 3. YOU · Set the release date to a date you can actually hit
+
+Use **Sep 9** or later. Sep 1 is not reachable: the 14 day Coming Soon clock only
+starts when Valve APPROVES the store page, which is step 6 plus their 3 to 5
+business days. A date can be moved later without penalty; a missed one cannot be
+un-missed.
+
+**Done when:** a release date is set.
 
 ### ☐ 4. YOU · Paste the store page
 Everything is written and paste-ready in **`store/jimothy-steam/STORE_PAGE_FILL.md`**.
@@ -172,5 +191,6 @@ SteamPipe upload.
 
 ## If you only do one thing today
 
-**Step 1.** Look at the price field and tell me what it says. Everything else in
-Part One follows from that one answer, and step 6 is what starts your clock.
+**Steps 1 to 3.** They are three fields on two pages and they are the only
+decisions in the whole process that cannot be changed afterwards. Everything from
+step 4 on is copying and pasting from files that are already written.

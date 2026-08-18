@@ -436,7 +436,7 @@ for; it is the second most common store page rejection after platform claims.
 |---|---|
 | Base price | **US $2.99** (ratified by Stephen 2026-07-31) |
 | Other currencies | Click **Generate Suggested Prices** and take Valve's table wholesale |
-| Launch discount | **10%**, seven days, giving **$2.69** |
+| Launch discount | **20%**, seven days, giving **$2.39** (raised from 10% on 2026-08-18: at this price the discount is not about the money, it is 60 cents either way, it is about the strikethrough on the tile and the launch surfaces, and 10% reads as nothing) |
 
 ⛔ Two rules that bite:
 
