@@ -348,3 +348,64 @@ has been near a headset.
 flagship VR candidate, and it stopped existing as a title last night when it shipped as
 PadLab's fourth tab. Cairn is not in the repo at all. The games that are actually 3D, and that
 it never mentioned, are Dewball, Super Slice 3D and Create A Critter. **Dewball is the pick.**
+
+---
+
+# PART 7 — THE THIRTEEN GAMES THAT MOVED HOUSE (2026-08-18)
+
+**Try this:** open the arcade and play **Litter Bug**, **Sweet Spot**, **Sixfold**,
+**Tally**, **Wild Wardens** and **HUNCH**. Look at the address bar. It should say
+`lucidwinds.com` and never `github.io`. Then in each one, find the way back to the arcade
+and press it.
+
+**Was:** those thirteen cards opened `stephenuffugus.github.io` (twelve) and
+`hunch-mauve.vercel.app` (one) in a frame. A Horizon Store app is a TWA, so any of them
+would have thrown a headset player out of the app into a browser. They also could not be
+cached by the arcade's own service worker and they went down whenever GitHub Pages did.
+Full detail in `VENDORING.md`.
+
+**The upstream repos are still the source of truth.** Edit there, then
+`node scripts/vendor_satellites.mjs --vendor <slug>`. Never edit the copy under
+`satellites/`, because `--check` will call it drift and the next vendor will overwrite it.
+
+## The one that would have hurt
+
+Nine of these games' service workers deleted **every cache on the origin**, not just their
+own. On github.io they were already quietly wiping each other, so playing two of your games
+in a row made both re-download everything. Moved onto lucidwinds.com, the first one a
+player opened would have wiped the arcade shell, Lucid Winds, PadLab and Hush. That is the
+same failure that took the fleet down once already. Fixed in all nine repos.
+
+## Wild Wardens did not load at all
+
+It was a white "Unmatched Route" screen: its Expo bundle has `/BarBrawl/` baked in, so at
+any other address the app's own code 404s. Worth playing a full round of, because it is the
+one where the move could have broken something structural.
+
+## What being in the fleet turned up
+
+These thirteen had been outside every check we run, because every check reads `satellites/`.
+Now that they are in it:
+
+- **73 dashes in player copy** across six games, rewritten as sentences. Chameleon 3D alone
+  had 26, because it is carded separately at `abduct-3d.html` and the sweep only ever read
+  each game's `index.html`.
+- **Skitterlings' coin sync** could not tell a dead server from an agreeing one, so a
+  refused write left you on a balance the server never accepted.
+- **Ten exits improved.** Litter Bug's was wired to a single button and invisible to
+  everything; nine others reloaded the whole arcade instead of stepping back to it.
+
+## ⚖ For you
+
+- **HUNCH's daily leaderboard is broken on production**, and was before this work.
+  `GET /api/leaderboard` returns `TypeError: fetch failed`, which is its Upstash Redis
+  call. Drawing and guessing both work. Needs your Upstash credentials.
+- **Tomato Man, Glyph Forge and Tarot Run 404 on some optional art slots.** They did on
+  github.io too, and each has a fallback, so it is console noise rather than a hole on
+  screen. Closing it needs art, or deleting the slots.
+- **Wild Wardens' How To Play still has a dash in it.** That copy lives inside the Expo
+  bundle rather than in HTML, and its source is a pnpm monorepo on the repo's other branch.
+- **The dev pages came along.** Litter Bug ships six lab pages, Chameleon a level editor and
+  a perf variant, Tomato Man an older `umbra-v4`. All were already public on github.io, so
+  nothing new is exposed, but they are reachable on lucidwinds.com now. Say the word and
+  they come out.
