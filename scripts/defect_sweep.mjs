@@ -16,6 +16,7 @@
    games to a handful of places to look, not issuing verdicts.
 */
 import { readFileSync, existsSync, readdirSync } from "fs";
+import { catalog } from "./catalog.mjs";
 
 /* strip comments and string bodies before analysing: a `//` inside a URL and the
    word "window" inside a clue about a house have both cost real time here. */
@@ -26,8 +27,18 @@ function strip(s) {
 }
 
 const CLASSES = [
+  /* ⛔ A page that loads /arcade-exit.js is NOT exit-gated: the injector supplies
+     the referrer based exit at runtime, which is exactly how the exit audit
+     scores those games (GRAFT). Without this, Abduct a Chameleon reads as
+     gated because it has a `window.parent!==window` const for its EARN bridge,
+     which has nothing to do with its exit. A permanent false positive on a
+     gate teaches people to ignore the gate. */
   { id: "exit-gated-on-frame", why: "exit affordance only renders when framed, and the portal navigates top level for /satellites/",
-    test: c => /window\.parent\s*!==\s*window|parent\s*!=\s*window|self\s*!==\s*top/.test(c) && !/document\.referrer/.test(c) },
+    /* ⛔ reads RAW as well as stripped: strip() blanks string BODIES, so
+       src="/arcade-exit.js" is already src="" by the time a detector sees it.
+       Same trap as the guard pattern noted below. */
+    test: (c, raw) => /window\.parent\s*!==\s*window|parent\s*!=\s*window|self\s*!==\s*top/.test(c)
+               && !/document\.referrer/.test(c) && !/arcade-exit\.js/.test(raw || c) },
   { id: "parse-without-validation", why: "try/catch around JSON.parse is not validation; anything that merely parses is truthy",
     /* ⛔ The guard pattern must survive strip(), which blanks string BODIES. An
        earlier version looked for `typeof x !== "object"` and never matched,
@@ -102,6 +113,9 @@ if (process.argv.includes("--selftest")) {
     say(c.test(strip(fires)) === true, id + " fires on a real case");
     say(c.test(strip(quiet)) === false, id + " stays quiet on a guarded case");
   }
+  const inj = `if(window.parent!==window){earn();}<script src="/arcade-exit.js"></script>`;
+  say(CLASSES[0].test(strip(inj), inj) === false,
+      "exit-gated-on-frame stays quiet when the runtime exit injector is loaded");
   say(dashesInCopy(`<p>a long sentence — with an em dash in it here</p>`).length === 1, "dash check finds an em dash in copy");
   say(dashesInCopy(`<p>the score range is 10-20 across all of the levels</p>`).length === 0, "dash check ignores a number range");
   /* ⛔ the reason strip() exists at all */
@@ -131,13 +145,41 @@ const dirs = readdirSync("satellites", { withFileTypes: true })
   .map(d => d.name)
   .filter(n => !only.length || only.includes(n));
 
+/* ⛔ index.html is not the whole game. A few satellites are carded TWICE, and
+   reading only index.html meant Abduct a Chameleon 3D, which has its own card
+   at abduct-3d.html, was never swept at all.
+
+   ⛔ The first fix here swept every sibling .html, which is wrong the other way:
+   it dragged in dev labs (litter-bug ships six), a perf variant, a level editor
+   and an old version of Tomato Man, and reported 47 dashes in pages no player
+   can reach. Ask the CATALOG which pages the portal actually cards. It is the
+   one thing that knows, and guessing at filenames is how this project has
+   miscounted itself five times. */
+const CARDED_PAGES = (() => {
+  const map = {};
+  try {
+    for (const g of catalog().sats) {
+      const m = String(g.url || "").match(/^\/satellites\/([a-z0-9-]+)\/([^?#]*\.html)(?:[?#]|$)/);
+      if (m && m[2] && m[2] !== "index.html") (map[m[1]] ||= []).push("satellites/" + m[1] + "/" + m[2]);
+    }
+  } catch (e) { console.error("defect_sweep: catalog unreadable, sweeping index.html only:", e.message); }
+  return map;
+})();
+function extraPages(dir) {
+  return (CARDED_PAGES[dir] || []).filter(f => existsSync(f));
+}
+
 let total = 0;
 const rows = [];
 for (const d of dirs) {
   const raw = readFileSync("satellites/" + d + "/index.html", "utf8");
   const code = strip(raw);
-  const hits = CLASSES.filter(c => c.test(code)).map(c => c.id);
+  const hits = CLASSES.filter(c => c.test(code, raw)).map(c => c.id);
   const dashes = dashesInCopy(raw);
+  for (const f of extraPages(d)) {
+    const extra = dashesInCopy(readFileSync(f, "utf8"));
+    for (const x of extra) dashes.push(x.replace(/^/, f.split("/").pop() + ": "));
+  }
   if (dashes.length) hits.push("dashes-in-copy(" + dashes.length + ")");
   const broke = earnPromiseBroken(raw);
   if (broke) hits.push("EARN-PROMISE-BROKEN: " + broke);

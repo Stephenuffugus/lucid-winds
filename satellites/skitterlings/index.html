@@ -195,7 +195,7 @@
 </head>
 <body>
 <div id="app">
-  <div id="rotateHint"><span class="rot">⟳</span><span>Rotate your phone — Skitterlings plays best in landscape</span><button id="rotateX" aria-label="dismiss">✕</button></div>
+  <div id="rotateHint"><span class="rot">⟳</span><span>Rotate your phone. Skitterlings plays best in landscape</span><button id="rotateX" aria-label="dismiss">✕</button></div>
   <div id="hud">
     <div class="badge"><span class="coin"></span><span id="coinCount">0</span></div>
     <div class="score-wrap"><div class="s" id="scoreNow">0</div><div class="l" id="stageLabel">Score</div></div>
@@ -219,7 +219,7 @@
   <div class="scroll" style="display:flex;flex-direction:column;justify-content:center">
     <div class="title"><span class="v">SKITTERLINGS</span></div>
     <div class="tagline">chase the glimmer</div>
-    <div class="story">Every skitterling is a spark of the <b>Glimmer</b> — the first light that broke into a hundred worlds. Chase it home: you'll never quite catch it, but the chase wakes the worlds and calls new skitterlings out of hiding.</div>
+    <div class="story">Every skitterling is a spark of the <b>Glimmer</b>, the first light that broke into a hundred worlds. Chase it home: you'll never quite catch it, but the chase wakes the worlds and calls new skitterlings out of hiding.</div>
     <div class="favbar" id="favBar"></div>
     <div id="dailyCard" class="daily"></div>
     <div class="menu-btns">
@@ -301,7 +301,7 @@
 <div class="screen" id="themeScreen">
   <div class="scroll">
     <div class="sheet-head"><h2>Worlds</h2><button class="icon-btn" data-close>✕</button></div>
-    <div class="muted" style="font-size:12px">Your run journeys through every world as you survive — each one you reach unlocks. Pick where to start, or buy ahead.</div>
+    <div class="muted" style="font-size:12px">Your run journeys through every world as you survive, and each one you reach unlocks. Pick where to start, or buy ahead.</div>
     <div id="themeList"></div>
   </div>
 </div>
@@ -310,7 +310,7 @@
 <div class="screen" id="shopScreen">
   <div class="scroll">
     <div class="sheet-head"><h2>Boosters</h2><button class="icon-btn" data-close>✕</button></div>
-    <div class="muted" style="font-size:12px">Spend coins on boosters. Everything here is earnable by playing — nothing gates skins or worlds.</div>
+    <div class="muted" style="font-size:12px">Spend coins on boosters. Everything here is earnable by playing, and nothing gates skins or worlds.</div>
     <div id="shopCoins" class="center" style="margin:10px 0 2px;font-weight:800"></div>
     <div id="shopList"></div>
   </div>
@@ -2511,18 +2511,26 @@ function syncRemote(op, amount, reason) {
   try {
     fetch(url, { method: "POST", headers: authHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ uid: SK_CFG.uid, game: "skitterlings", op: op, amount: amount, reason: reason, txid: newTxid(), ts: Date.now() }) })
-      .then(r => (r && r.json) ? r.json() : null)
+      // fetch does NOT reject on 404 or 500, so .catch() alone is not error
+      // handling: the server can refuse the write and this would still read a
+      // body, fail to parse it, and swallow that quietly, leaving the player on
+      // a balance the server never agreed to.
+      .then(r => { if (!r.ok) throw new Error("sync " + op + " HTTP " + r.status); return r.json(); })
       .then(d => { if (d && typeof d.balance === "number") Wallet.set(d.balance); })   // optional server-authoritative reconcile
-      .catch(() => {});
+      .catch(e => { try { console.warn("[skitterlings] coin sync failed, keeping the local balance:", e.message); } catch (_) {} });
   } catch (e) {}
 }
 function pullBalance() {
   const ep = SK_CFG.endpoints; if (!ep || !ep.getBalance) return;
   try {
     fetch(ep.getBalance + (SK_CFG.uid ? ("?uid=" + encodeURIComponent(SK_CFG.uid)) : ""), { headers: authHeaders() })
-      .then(r => r.json())
+      // A 404 or a 500 here used to reach r.json(), throw on the error page's
+      // body, and be swallowed, so a dead endpoint was indistinguishable from
+      // an agreeing one. Local stays the source of truth either way; the point
+      // is that the failure is visible instead of silent.
+      .then(r => { if (!r.ok) throw new Error("balance HTTP " + r.status); return r.json(); })
       .then(d => { if (d && typeof d.balance === "number") Wallet.set(d.balance); })
-      .catch(() => {});
+      .catch(e => { try { console.warn("[skitterlings] balance fetch failed, keeping the local balance:", e.message); } catch (_) {} });
   } catch (e) {}
 }
 
