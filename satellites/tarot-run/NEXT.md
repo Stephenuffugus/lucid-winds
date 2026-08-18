@@ -1,6 +1,6 @@
 # Tarot Run — NEXT (the checklist to go down when we restart)
 
-_Live game (Codespace-independent, 24/7): **https://stephenuffugus.github.io/Tarot_Run/** — title should read **B24 · THE SHADOW DECK**._
+_Live game: **https://lucidwinds.com/satellites/tarot-run/** — vendored same origin into the arcade on 2026-08-18, so github.io is no longer the canonical home. This repo is still the source of truth: edit here, then re-vendor with `node scripts/vendor_satellites.mjs --vendor tarot-run` in the lucid-winds repo._
 
 How this works: **you tick Part 1 while you playtest** (one word per line is enough — "good", "boring", "too strong", "confusing"). When we restart, you hand me Part 1, I turn the exact dial each line maps to. Parts 2–4 are the queue after that. Nothing here is urgent. Test in the order that's fun.
 

@@ -21,9 +21,28 @@
 
 const fs = require('fs');
 const html = fs.readFileSync(require('path').join(__dirname, 'index.html'), 'utf8');
-const code = html.match(/<script>([\s\S]+?)<\/script>/)[1];
+/* ⛔ THE LARGEST inline block, not the FIRST one.
+   This used to read html.match(/<script>...<\/script>/)[1], which takes the first
+   block in the file. When the SWS embed protocol block was later added near the
+   top of index.html, this harness silently stopped reading the game and started
+   reading a fifteen line snippet instead. All five suites died at once, and the
+   symptom was a ReferenceError on location.search that looked like a missing DOM
+   stub rather than the harness testing the wrong code entirely.
+   RESUME.md still claimed "test-cards 0 err + diag A-H + sim clean" on every build
+   the whole time. Take the biggest block: the game is always the biggest block. */
+const code = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)]
+  .map(m => m[1]).sort((a, b) => b.length - a.length)[0];
 
 const domStub = `
+  /* Stub location and history too. All five harnesses stubbed document, window,
+     navigator and localStorage but NOT location, and then the SWS embed protocol
+     block was added to the game, whose very first line reads location.search AT
+     LOAD. That threw ReferenceError before a single assertion ran, so all five
+     suites had been dead for some time while RESUME.md still claimed
+     "test-cards 0 err + diag A-H + sim clean" on every build. A suite that cannot
+     load looks exactly like a suite with nothing to say. */
+  const location = { search:'', hash:'', href:'https://example.invalid/', pathname:'/', hostname:'example.invalid', protocol:'https:', origin:'https://example.invalid', replace(){}, assign(){}, reload(){} };
+  const history = { length:1, back(){}, forward(){}, go(){}, pushState(){}, replaceState(){} };
   const _stub = () => ({
     addEventListener:()=>{}, classList:{add:()=>{},remove:()=>{},contains:()=>false},
     appendChild:()=>{}, removeChild:()=>{}, setAttribute:()=>{}, getAttribute:()=>'',
