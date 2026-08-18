@@ -40,6 +40,39 @@
     return c.display !== 'none' && c.visibility !== 'hidden' && +c.opacity !== 0 && r.width > 6 && r.height > 6;
   }
 
+  /* How much does the player lose if the chip covers this point?
+     ⛔ 2026-08-18, three tries. (1) The original only avoided buttons, links and
+     canvas, so on Wild Wardens the chip landed on the game's own streak readout,
+     which is a plain div. (2) Asking for a corner containing literally nothing
+     never matches in an app whose root covers the viewport, so it fell straight
+     back to rule 1 and chose the same corner. (3) Scoring the TOP element still
+     tied every corner, because this runs while a How To Play modal is open and
+     its full-screen backdrop is the top element everywhere.
+
+     So look THROUGH full-viewport layers. elementsFromPoint gives the whole
+     stack; anything covering nearly the entire screen is a backdrop, not
+     content, and what the player will actually see in that corner is the first
+     thing underneath it. */
+  function occupancy(x, y) {
+    var stack = document.elementsFromPoint ? document.elementsFromPoint(x, y) : [document.elementFromPoint(x, y)];
+    var area = innerWidth * innerHeight;
+    for (var i = 0; i < stack.length; i++) {
+      var el = stack[i];
+      if (!el || el.id === 'sws-arcade-exit') continue;          // never score ourselves
+      if (el === document.body || el === document.documentElement) return 0;
+      var r = el.getBoundingClientRect();
+      if (r.width * r.height >= area * 0.9) continue;            // a backdrop, not content
+      if (el.closest && el.closest('button,a,[role="button"],input,select,canvas')) return 3;
+      if ((el.textContent || '').trim()) return 2;               // a readout: covering it hides information
+      var cs = getComputedStyle(el);
+      var paints = (cs.backgroundImage && cs.backgroundImage !== 'none') ||
+        (cs.backgroundColor && cs.backgroundColor !== 'transparent' &&
+         cs.backgroundColor.replace(/\s/g, '') !== 'rgba(0,0,0,0)');
+      return paints ? 1 : 0;
+    }
+    return 0;                                                    // only backdrops here: free
+  }
+
   function freeCorner() {
     // bottom-right is the feedback fab's; never contend for it
     var spots = [
@@ -47,12 +80,13 @@
       { css: 'right:10px; top:calc(10px + env(safe-area-inset-top,0px));',    x: innerWidth - 34, y: 34 },
       { css: 'left:10px;  bottom:calc(10px + env(safe-area-inset-bottom,0px));', x: 34, y: innerHeight - 34 }
     ];
+    var best = spots[0], bestScore = Infinity;
     for (var i = 0; i < spots.length; i++) {
-      var hit = document.elementFromPoint(spots[i].x, spots[i].y);
-      var blocked = hit && hit.closest && hit.closest('button,a,[role="button"],input,select,canvas');
-      if (!blocked) return spots[i].css;
+      var sc = occupancy(spots[i].x, spots[i].y);
+      if (sc === 0) return spots[i].css;
+      if (sc < bestScore) { bestScore = sc; best = spots[i]; }
     }
-    return spots[0].css;   // everything is busy: top-left is still the least-worst
+    return best.css;    // everything is busy: the least costly one, ties to top-left
   }
 
   function boot() {
@@ -89,7 +123,9 @@
         chip.type = 'button';
         chip.textContent = '\u25C4';
         chip.setAttribute('aria-label', 'Back to the Sky Wolf Studios arcade');
-        chip.setAttribute('style', 'position:fixed;' + freeCorner() +
+        var corner = freeCorner();
+        chip.setAttribute('data-corner', corner);
+        chip.setAttribute('style', 'position:fixed;' + corner +
           'z-index:2147481000;width:48px;height:48px;border-radius:14px;' +
           'border:1px solid rgba(255,255,255,.24);background:rgba(8,10,16,.72);' +
           'color:#e8dcc8;font:600 17px/1 system-ui,sans-serif;cursor:pointer;' +
@@ -151,11 +187,34 @@
     } catch (e) { /* an exit button must never be the thing that breaks a game */ }
   }
 
+  /* ⛔ 2026-08-18: the corner chip was placed while the page was still EMPTY.
+     boot() runs at DOMContentLoaded and again shortly after load, and a React or
+     Expo app has painted nothing by then, so every corner measured as free, the
+     chip took the first one, and the game's own streak readout rendered
+     underneath it a second later. boot() also returns early once the chip
+     exists, so it never reconsidered.
+
+     So look once more after the app has actually drawn something, and move the
+     chip only if a genuinely better corner now exists. Once, not on a timer:
+     a control that wanders while you are reaching for it is worse than one in a
+     slightly busy corner. */
+  function settle() {
+    try {
+      var chip = document.getElementById('sws-arcade-exit');
+      if (!chip || !chip.hasAttribute('data-corner')) return;   // no chip, or the title-screen button
+      var next = freeCorner();
+      if (next === chip.getAttribute('data-corner')) return;
+      chip.setAttribute('data-corner', next);
+      chip.setAttribute('style', chip.getAttribute('style').replace(
+        /(left|right):[^;]*;\s*(top|bottom):[^;]*;/, next));
+    } catch (e) {}
+  }
+
   if (document.readyState === 'complete' || document.readyState === 'interactive') {
     setTimeout(boot, 0);
   } else {
     document.addEventListener('DOMContentLoaded', boot);
   }
   // some games build their title screen after load; try once more
-  window.addEventListener('load', function () { setTimeout(boot, 400); });
+  window.addEventListener('load', function () { setTimeout(boot, 400); setTimeout(settle, 2200); });
 })();
