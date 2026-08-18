@@ -30,21 +30,23 @@ const hub = await (await fetch(ORIGIN + '/')).text();
 const CATS = [];
 const APPS = {};
 const secRe = /<section class="group" data-group>\s*<h2>([\s\S]*?)<\/h2>([\s\S]*?)<\/section>/g;
-const cardRe = /<a class="card" href="\.\/([a-z-]+)\/"[\s\S]*?<b>([^<]+)<\/b><span>([^<]+)<\/span>(<span class="tag">Shared online<\/span>)?/g;
+const cardRe = /<a class="card" href="\.\/([a-z-]+)\/"[\s\S]*?<b>([^<]+)<\/b><span>([^<]+)<\/span>(<span class="tag">(?:Shared online|In testing)<\/span>)?/g;
 let s;
 while ((s = secRe.exec(hub))) {
   const [, title, body] = s;
   const slugs = [];
   let m; cardRe.lastIndex = 0;
   while ((m = cardRe.exec(body))) {
-    const [, slug, name, line, shared] = m;
+    const [, slug, name, line, tag] = m;
     const png = join(REPO, 'portal-assets', 'sws-thumbs', slug + '.png');
     const svg = join(REPO, 'portal-assets', 'sws-thumbs', slug + '.svg');
     if (!existsSync(png) && !existsSync(svg)) {
       console.error(`MISSING ART: portal-assets/sws-thumbs/${slug}.png — copy it from the SWS-apps repo first`);
       process.exit(1);
     }
-    APPS[slug] = { name, line, shared: !!shared,
+    APPS[slug] = { name, line,
+      shared: !!tag && tag.includes('Shared online'),
+      beta: !!tag && tag.includes('In testing'),
       url: `${ORIGIN}/${slug}/`,
       art: (existsSync(png) ? `/portal-assets/sws-thumbs/${slug}.png` : `/portal-assets/sws-thumbs/${slug}.svg`) + '?v=4' };
     slugs.push(slug);
@@ -78,13 +80,17 @@ const CAT_META = {
     sub: 'Split the trip, the dinner, the house bills. Fairly, on your device, no accounts.' },
   'Body &amp; Mind': { kick: 'Your own corner', q: 'Working on you?',
     sub: 'A to-do list that feels as good as paper to cross off, and a strength app that writes your next workout for you. Small wins, stacked up.' },
+  'Night Sky': { kick: 'The night sky', q: 'Looking up tonight?',
+    sub: 'A star atlas you collect from: real planet positions, live NASA data, lessons and citizen science. In testing behind a passphrase while it grows.' },
+  'Outdoors': { kick: 'The field', q: 'Out in the field?',
+    sub: 'A rockhounding log for every find: photo, GPS and label, all on your device. In testing behind a passphrase while it grows.' },
 };
 for (const c of CATS) if (!CAT_META[c.title]) { console.error(`No wording for hub category "${c.title}" — add it to CAT_META`); process.exit(1); }
 
 const card = (a, i) => `        <a class="app" style="--i:${i}" href="${a.url}"${a.url.startsWith('http') ? ' target="_blank" rel="noopener"' : ''}>
           <img src="${a.art}" alt="" width="256" height="256" decoding="async">
           <b>${a.name}</b>
-          <small>${a.line}</small>${a.shared ? '\n          <span class="tag">Shared online</span>' : ''}
+          <small>${a.line}</small>${a.shared ? '\n          <span class="tag">Shared online</span>' : a.beta ? '\n          <span class="tag">In testing</span>' : ''}
         </a>`;
 
 /* Thin-lined gold ornament, eclectic on purpose (Stephen: "a little more
