@@ -23,22 +23,31 @@ const t = (n, ok, extra) => ok ? (pass++, console.log("  ok   " + n))
 
 const b = await p.launch({ headless: "new", args: ["--no-sandbox"] });
 
+/* ⛔ ONE BROWSER CONTEXT PER RUN, AND A WIPED SAVE.
+   All three runs hit the same origin, so they shared one localStorage. The Steam
+   runs granted the pack and the ladder, and then the "free build" run READ THAT
+   SAVE and reported 25 of 45 owned. It looked like the free site was handing out
+   the paid pack. Worse, the two Steam assertions before it only passed because
+   the grants happened to accumulate in the order the file runs them: the suite
+   was order dependent and would have gone green on a lie.
+   The save is also WIPED rather than merged, so "fresh" means fresh. */
 async function boot(steam, maxLevel) {
-  const pg = await b.newPage();
+  const ctx = await b.createBrowserContext();
+  const pg = await ctx.newPage();
+  pg.__ctx = ctx;
   await pg.setViewport({ width: 390, height: 844 });
   await pg.evaluateOnNewDocument((isSteam, lv) => {
     if (isSteam) window.__STEAM_BUILD = true;
     try {
-      const raw = JSON.parse(localStorage.getItem("sh_prog") || "{}");
-      raw.adv = { maxLevel: lv, stars: {} };
-      raw.caps = 0;
-      localStorage.setItem("sh_prog", JSON.stringify(raw));
+      localStorage.clear();
+      localStorage.setItem("sh_prog", JSON.stringify({ adv: { maxLevel: lv, stars: {} }, caps: 0 }));
     } catch (e) {}
   }, steam, maxLevel);
   await pg.goto(BASE + "/satellites/stream-hop/", { waitUntil: "domcontentloaded" });
   await sleep(4200);
   return pg;
 }
+async function shut(pg) { const c = pg.__ctx; await pg.close(); if (c) await c.close(); }
 
 /* click a visible control by its label, scrolling it into view first */
 async function tap(pg, rx, label) {
@@ -63,27 +72,54 @@ async function tap(pg, rx, label) {
     const r = el.getBoundingClientRect();
     return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) };
   }, rx.source);
-  if (!hit) { console.log(`        (no control for ${label})`); return false; }
+  if (!hit) {
+    /* ⛔ Say what WAS on screen. "(no control for X)" gives you nothing to act on
+       and reads like a harmless skip while the whole run is quietly off the rails. */
+    const saw = await pg.evaluate(() => ({
+      screens: [...document.querySelectorAll(".screen.on")].map(e => e.id).join(",") || "(none)",
+      buttons: [...document.querySelectorAll("button,.btn,[onclick]")]
+        .filter(e => { const r = e.getBoundingClientRect();
+          return r.width > 8 && r.height > 8 && getComputedStyle(e).display !== "none"; })
+        .map(e => (e.textContent || "").trim().slice(0, 18) || e.id).join(" | ").slice(0, 180),
+    }));
+    console.log(`        (no control for ${label}; on ${saw.screens}; saw: ${saw.buttons})`);
+    return false;
+  }
   await pg.mouse.click(hit.x, hit.y);
   await sleep(1300);
   return true;
 }
 
-async function openBin(pg) {
-  /* ⛔ ONE CLICK IS NOT ENOUGH. The splash holds for a minimum time, so a single
-     click fired right after boot races it and silently does nothing; the run
-     then reads a screen that never changed. Keep tapping until it is gone. */
-  for (let i = 0; i < 10; i++) {
-    const onSplash = await pg.evaluate(() => {
-      const el = document.getElementById("s-splash");
-      return !!(el && el.classList.contains("on"));
-    });
-    if (!onSplash) break;
-    await pg.mouse.click(195, 422);
-    await sleep(700);
+/* ⛔ GET TO THE TITLE BY CLEARING WHATEVER IS UP, not by assuming a fixed flow.
+   A splash-only loop was not enough. On a genuinely first-run save the FREE build
+   gifts a critter and puts the prize bin reveal card over the splash, whose only
+   button says "Nice", so clicking splash coordinates hit the reveal instead and the
+   run sat on s-splash forever reporting "no control for Prize Bin". That gate had
+   never appeared before because every earlier run inherited a save.
+   The Steam build does not show it, which is exactly why an asymmetric flow has to
+   be handled generically rather than per build. */
+async function reachTitle(pg) {
+  for (let i = 0; i < 14; i++) {
+    const where = await pg.evaluate(() => ({
+      onTitle: !!document.querySelector("#s-title.on"),
+      onSplash: !!document.querySelector("#s-splash.on"),
+      reveal: (() => { const e = document.getElementById("bin-reveal");
+        return !!(e && getComputedStyle(e).display !== "none" && e.getBoundingClientRect().height > 8); })(),
+      claim: (() => { const e = document.getElementById("reward-ov");
+        return !!(e && getComputedStyle(e).display !== "none"); })(),
+    }));
+    if (where.onTitle && !where.reveal && !where.claim) return true;
+    if (where.reveal) { await tap(pg, /^nice$/i, "the reveal card"); continue; }
+    if (where.claim)  { await tap(pg, /^later$/i, "the daily claim"); continue; }
+    if (where.onSplash) { await pg.mouse.click(195, 422); await sleep(700); continue; }
+    await sleep(500);
   }
-  await sleep(900);
-  await tap(pg, /^later$/, "dismiss any daily claim");
+  return false;
+}
+
+async function openBin(pg) {
+  const home = await reachTitle(pg);
+  if (!home) console.log("        (never reached the title screen)");
   await tap(pg, /prize bin/i, "Prize Bin");
   return pg.evaluate(() => {
     const txt = id => { const e = document.getElementById(id); return e ? e.textContent.trim() : null; };
@@ -96,7 +132,14 @@ async function openBin(pg) {
     const el = document.getElementById("s-skins");
     const opened = !!(el && el.classList.contains("on"));
     const body = opened ? (el.innerText || "") : "";
-    return { screen: on, opened: opened, weeklyHeader: txt("weekly-h"), codeHeader: txt("code-h"),
+    /* The store page promises "Fourteen costumes, included from the start in this
+       version, because you already bought the game". That is a countable claim, so
+       count it: the Prize Bin prints "N of 45 found". */
+    const countEl = document.getElementById("bin-count");
+    const m = countEl ? (countEl.textContent || "").match(/(\d+)\s+of\s+(\d+)\s+found/i) : null;
+    const owned = m ? +m[1] : null, cast = m ? +m[2] : null;
+    return { screen: on, opened: opened, owned: owned, cast: cast,
+             weeklyHeader: txt("weekly-h"), codeHeader: txt("code-h"),
              /* ⛔ NUMBERED. The static blurb legitimately reads "Clear Adventure
                 levels and they are yours", so an unnumbered match flagged the
                 page's own correct copy as an outstanding requirement. Only a
@@ -121,7 +164,11 @@ t("it states a real condition", bin.hasLevelCopy === true, bin.bodySample);
 t("it does NOT talk about a return streak", bin.hasStreakCopy === false, bin.bodySample);
 t("the weekly header is rewritten", /earn these by playing/i.test(bin.weeklyHeader || ""), bin.weeklyHeader);
 t("the code header offers a second door", /earn these, or use a code/i.test(bin.codeHeader || ""), bin.codeHeader);
-await pg.close();
+/* 1 starter + 14 pack. The pack is GRANTED on a bought build rather than hidden,
+   because hiding the buy button would otherwise lock its costumes away behind a
+   button the build never draws. The store page sells this, so it is asserted. */
+t("the 14 costume pack is granted at install (15 of 45)", bin.owned === 15, `${bin.owned} of ${bin.cast}`);
+await shut(pg);
 
 /* ---------- the bought build, campaign cleared ---------- */
 console.log("\nSTEAM BUILD, campaign cleared (maxLevel 101)");
@@ -136,7 +183,8 @@ const done = bin.opened ? await pg.evaluate(() => {
            sample: b.replace(/\s+/g, " ").slice(0, 220) };
 }) : { allWeekly: false, sample: "the bin never opened" };
 if (bin.opened) t("the ladder reports itself finished", done.allWeekly === true, done.sample);
-await pg.close();
+t("pack plus the whole ladder is 25 of 45", bin.owned === 25, `${bin.owned} of ${bin.cast}`);
+await shut(pg);
 
 /* ---------- the free build, which must be untouched ---------- */
 console.log("\nFREE WEB BUILD (baseline, must not change)");
@@ -146,7 +194,10 @@ t("the free build still talks about the streak", bin.hasStreakCopy === true, bin
 t("no ladder copy leaks into the free build", bin.hasLevelCopy === false, bin.bodySample);
 t("the free header is unchanged", /come back for these/i.test(bin.weeklyHeader || ""), bin.weeklyHeader);
 t("the free code header is unchanged", /codes unlock these/i.test(bin.codeHeader || ""), bin.codeHeader);
-await pg.close();
+/* On the free web build nothing is granted: just Jimothy. If this ever reads 15,
+   the pack is being handed out for free on the live site. */
+t("the free build grants NO pack (1 of 45)", bin.owned === 1, `${bin.owned} of ${bin.cast}`);
+await shut(pg);
 
 await b.close();
 console.log(`\n${pass} ok, ${fail} failed`);

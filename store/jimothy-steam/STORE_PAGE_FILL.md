@@ -198,9 +198,10 @@ Every Adventure level is a fixed course. Level 47 is the same road on your first
 [list]
 [*][b]Twelve Seattle critters[/b] out of the Prize Bin, bought with bottlecaps you found in the road. The bin never hands you the same one twice.
 [*][b]Fourteen costumes[/b], included from the start in this version, because you already bought the game.
-[*][b]Five you cannot buy at any price[/b], earned one at a time for showing up seven days in a row.
-[*][b]Six found out on the street[/b]. Nobody will tell you how. One of them takes all eight hidden Seattle landmarks.
-[*][b]And the code ones.[/b] Unlock codes go out in posts and videos and to the people who helped make this. They work in this version too.
+[*][b]Ten you cannot buy at any price[/b], handed to you as you clear the campaign, one every ten levels from ten to a hundred.
+[*][b]Seven found out on the street[/b]. Nobody will tell you how. One of them takes all eight hidden Seattle landmarks.
+[*][b]One that only a code opens.[/b] Unlock codes go out in posts and videos and to the people who helped make this. They work offline in this version too.
+[*][b]And Jimothy[/b], who you start with.
 [/list]
 
 [hr][/hr]
@@ -240,7 +241,8 @@ these two lines where marked. If you do not upload them, leave them out; a broke
 |---|---|---|
 | "Hop lane by lane through a hand built city" | **Two separate lies.** The art is generated, so "hand built" is exactly the claim this audience punishes. And the levels are not hand authored either; they are deterministically generated from a per level seed. | Dropped entirely. Replaced with the claim that is both true and better: *the levels are fixed, so a level you keep failing is a level you can learn.* That is a real design decision and it sells harder than "hand built" ever would. |
 | "100 fixed levels through ten Seattle neighborhoods ... (course v2; adjust count if shipped different)" | A **parenthetical note to ourselves** left inside paste ready copy. It shipped once and Valve would have seen it. | Verified against `DECADES` and `DEC_LEN`: ten chapters of ten. Note removed, number confirmed. |
-| "45 costumes to pull from the Prize Bin, plus secret critters for true collectors" | **Wrong.** 45 is the whole cast. Only 12 are in the bin. 14 are the pack, 5 are the weekly, 6 are secrets, the rest are codes. A player who bought expecting 45 bin pulls has a legitimate complaint. | Broken out by lane, with the honest count for each. Reads richer *and* is true. |
+| "45 costumes to pull from the Prize Bin, plus secret critters for true collectors" | **Wrong.** 45 is the whole cast. Only 12 are in the bin. | Broken out by lane, with the honest count for each. Reads richer *and* is true. |
+| "Five you cannot buy at any price, earned one at a time for showing up seven days in a row" | **Wrong as of 2026-08-18, and it was the copy's fault second.** The build changed: a bought game no longer gates costumes behind a calendar, so those five plus five of the six code ones are on a campaign ladder now. The page was advertising a seven day return grind the build does not have. It also said **six** secrets where the code has **seven**. | *Ten you cannot buy at any price, handed to you as you clear the campaign, one every ten levels from ten to a hundred*, seven secrets, and one code only. Derived from `CHARS` by parsing it, not counting by eye: 1 starter + 12 bin + 14 pack + 10 ladder + 7 secret + 1 code = 45. |
 | "A Daily run shared by every player in the world. One try counts." | Right, but it buried the interesting part. | Kept and expanded: *your first run of the day is the one that counts.* That rule is the reason the Daily is worth anything and it is a genuinely good hook. |
 | No mention of Endless, Rush or Zen | Three of the five modes were invisible. | All five listed with one line each. |
 | No mention of what a Steam player gets that a web player does not | This is a $2.99 purchase competing against a free web version. | "Everything is included / no account / no internet" is now its own section. It is the strongest argument on the page. |
