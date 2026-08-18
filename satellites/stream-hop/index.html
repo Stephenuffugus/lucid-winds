@@ -947,11 +947,11 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
 
       <!-- the two lanes bottlecaps cannot reach. They sit in the shop on purpose: people
            should see what showing up and following along are worth. -->
-      <div class="sec-h">Come Back For These <span class="sec-n" id="weekly-n"></span></div>
-      <div class="sec-sub">Not for sale, at any price. One costume for every seven days in a row.</div>
+      <div class="sec-h" id="weekly-h">Come Back For These <span class="sec-n" id="weekly-n"></span></div>
+      <div class="sec-sub" id="weekly-sub">Not for sale, at any price. One costume for every seven days in a row.</div>
       <div class="skinrow" id="weekly-row"></div>
 
-      <div class="sec-h">Codes Unlock These <span class="sec-n" id="coden"></span></div>
+      <div class="sec-h" id="code-h">Codes Unlock These <span class="sec-n" id="coden"></span></div>
       <div class="sec-sub">Codes turn up in posts, in videos, and in the hands of people who helped make this. Got one? Tap any of them.</div>
       <div class="skinrow" id="code-row"></div>
     </div>
@@ -2495,6 +2495,7 @@ function achMet(id){
 /* Evaluated after anything that could move a counter. Cheap: 18 switch cases. */
 function achCheck(){
   if(!PROG.ach) PROG.ach={};
+  try{ storeUnlockCheck(); }catch(e){}   /* earned just now, so this one DOES get a card */
   var won=[];
   for(var i=0;i<ACH.length;i++){ var a=ACH[i];
     if(!PROG.ach[a.id] && achMet(a.id)){ PROG.ach[a.id]=1; PROG.caps=(PROG.caps||0)+25; won.push(a); } }
@@ -3373,7 +3374,70 @@ function claimReward(streak, caps, skinId, token){
   else if(token){ revealToken(); }
   try{ paintDaily(); }catch(e){}
 }
-function maybeDailyReward(){ if(rewardReady()) setTimeout(openDailyReward, 320); }
+/* ===== A BOUGHT GAME EARNS EVERYTHING BY PLAYING =====================
+   On the free web build, five costumes come off a seven day return streak and
+   six more need a code from a post. That is a fair trade for a free game: it is
+   what showing up and following along are worth.
+
+   It is the wrong deal entirely for somebody who PAID. They would be made to
+   launch the game on 35 separate calendar days, and then go hunting the
+   internet for codes, to see content they already own. So on a storefront build
+   every one of those costumes is on a campaign ladder instead, and the codes
+   still work for anyone who has one. Nothing is taken away; a second door is
+   added.
+
+   ⛔ THE BARNACLE IS DELIBERATELY NOT HERE. Its own note in CHARS says it is
+   "handing it to exactly one man" — it is a tribute, not content, and putting
+   it on a ladder would hand it to everybody. It stays code only. ⚖ Stephen's.
+
+   maxLevel is the highest level UNLOCKED, so it reads one PAST the last one
+   cleared. `> 10` means level 10 is done, which is the same test the badges and
+   the soundtrack already use. */
+function isStoreBuild(){ try{ return window.__STEAM_BUILD===true || window.__ITCH_BUILD===true; }catch(e){ return false; } }
+function advMaxLevel(){ try{ return (PROG.adv&&PROG.adv.maxLevel)||1; }catch(e){ return 1; } }
+function clearedLevel(n){ return advMaxLevel() > n; }
+
+var STORE_UNLOCKS=[
+  {id:'froggery',  lv:10 }, {id:'dino',      lv:20 }, {id:'knight', lv:30 },
+  {id:'hazmat',    lv:40 }, {id:'pirate',    lv:50 }, {id:'astronaut', lv:60 },
+  {id:'alien',     lv:70 }, {id:'disco',     lv:80 }, {id:'robot',  lv:90 },
+  {id:'wizard',    lv:100}
+];
+function storeUnlockFor(id){
+  if(!isStoreBuild()) return null;
+  for(var i=0;i<STORE_UNLOCKS.length;i++) if(STORE_UNLOCKS[i].id===id) return STORE_UNLOCKS[i];
+  return null;
+}
+/* The one line the Prize Bin shows instead of "come back tomorrow" / "needs a code". */
+function storeUnlockHint(id){
+  var u=storeUnlockFor(id); if(!u) return null;
+  return clearedLevel(u.lv) ? 'Earned' : ('Clear Adventure level '+u.lv);
+}
+/* Runs off achCheck, which already fires on every level clear and every run end.
+   ⛔ `quiet` MATTERS. The boot call is a catch up: somebody who already cleared
+   the levels gets handed everything they earned in one go. Celebrating that put a
+   reveal overlay ON TOP OF THE SPLASH SCREEN, which then swallowed the tap that
+   dismisses it, so a bought build with a finished campaign could not get past its
+   own splash. A catch up is silent; only something earned just now gets a card. */
+function storeUnlockCheck(quiet){
+  if(!isStoreBuild()) return 0;
+  var won=[];
+  for(var i=0;i<STORE_UNLOCKS.length;i++){
+    var u=STORE_UNLOCKS[i];
+    if(charOwned(u.id) || !clearedLevel(u.lv)) continue;
+    PROG.chars[u.id]=1; won.push(charById(u.id));
+  }
+  if(won.length){ saveProg();
+    if(!quiet){ try{ sfx('unlock'); }catch(e){} try{ revealChar(won[0]); }catch(e){} } }
+  return won.length;
+}
+
+function maybeDailyReward(){
+  /* ⛔ A bought game must never gate content behind a calendar. On a storefront
+     build the whole daily reward loop is off and STORE_UNLOCKS carries those
+     costumes instead. */
+  if(isStoreBuild()) return;
+  if(rewardReady()) setTimeout(openDailyReward, 320); }
 
 /* ===== 🎟 REDEEM CODES ============================================================
    Stephen wanted two things a code can do: hand ONE friend the costume she invented,
@@ -4306,7 +4370,9 @@ function renderBin(){
   $('cos-n').textContent=nCos+' of '+tCos;
   $('crit-n').textContent=nCrit+' of '+tCrit;
   $('sec-n').textContent=nSec+' of '+tSec;
-  if(!cosR.children.length) cosR.innerHTML='<div class="sec-sub">No costumes yet. The weekly streak gives one away, and the Shop sells the rest.</div>';
+  if(!cosR.children.length) cosR.innerHTML='<div class="sec-sub">'+(isStoreBuild()
+    ? 'No costumes yet. Clearing Adventure levels hands them over, and the Shop sells the rest.'
+    : 'No costumes yet. The weekly streak gives one away, and the Shop sells the rest.')+'</div>';
   if(!critR.children.length) critR.innerHTML='<div class="sec-sub">No critters yet. Open the bin in the Shop tab.</div>';
   var cc=curChar(), cf=curFin();
   $('coll-wearing').innerHTML='Playing as <b style="color:var(--cream)">'+cc.name+'</b>'
@@ -4351,7 +4417,11 @@ function renderLanes(){
     var c=charById(REWARD_SKINS[i]);
     if(charOwned(c.id)){ owned++; continue; }
     wait++;
-    var sub = (c.id===tgt)
+    /* ⛔ On a bought build these are NOT a calendar any more, so the card must
+       not say they are. STORE_UNLOCKS is the real condition; say that. */
+    var storeHint = storeUnlockHint(c.id);
+    var sub = storeHint ? storeHint
+      : (c.id===tgt)
       ? (st.left+' more day'+(st.left===1?'':'s')+' in a row')
       : ('Play '+wait+' week'+(wait===1?'':'s'));
     (function(ch,isNext){
@@ -4360,11 +4430,22 @@ function renderLanes(){
         paint:function(cv){ drawSkinPreview(cv,ch,1,'');
           if(ch.art&&ch.sheet){ var im=spr(ch.sheet+'/idle');
             if(!imgReady(im)) im.addEventListener('load',function(){ drawSkinPreview(cv,ch,1,''); }); } },
-        onTap:function(){ binNote(ch.name+' is not for sale. Show up seven days in a row and he is yours.'); sfx('ui'); }
+        onTap:function(){ var h=storeUnlockHint(ch.id);
+          binNote(h ? (ch.name+' is not for sale. '+h+' and he is yours.')
+                    : (ch.name+' is not for sale. Show up seven days in a row and he is yours.'));
+          sfx('ui'); }
       }));
     })(c, c.id===tgt);
   }
   $('weekly-n').textContent=owned+' of '+REWARD_SKINS.length+' earned';
+  /* "Come Back For These" is a lie on a build with no calendar in it. */
+  if(isStoreBuild()){
+    var wh=$('weekly-h'); if(wh) wh.childNodes[0].nodeValue='Earn These By Playing ';
+    var chh=$('code-h');  if(chh) chh.childNodes[0].nodeValue='Earn These, Or Use A Code ';
+    /* ⛔ the static blurb under the header is its own hardcoded string and said
+       "one costume for every seven days in a row" long after the streak was gone */
+    var ws=$('weekly-sub'); if(ws) ws.textContent='Not for sale, at any price. Clear Adventure levels and they are yours.';
+  }
   if(!host.children.length) host.innerHTML='<div class="sec-sub">You have earned every one of them. Day seven pays double bottlecaps now.</div>';
 
   var ch2=$('code-row'); if(!ch2)return; ch2.innerHTML='';
@@ -4372,8 +4453,10 @@ function renderLanes(){
   CHARS.forEach(function(c){
     if(c.via!=='code')return; tot++;
     if(charOwned(c.id)){ got++; return; }
+    /* Codes still work, and on a bought build there is a way in without one. */
+    var codeHint = storeUnlockHint(c.id);
     ch2.appendChild(shopCard({
-      name:cardName(c), sub:'needs a code', rar:c.rar, cant:true,
+      name:cardName(c), sub:(codeHint || 'needs a code'), rar:c.rar, cant:true,
       paint:function(cv){ drawSkinPreview(cv,c,1,'');
         if(c.art&&c.sheet){ var im=spr(c.sheet+'/idle');
           if(!imgReady(im)) im.addEventListener('load',function(){ drawSkinPreview(cv,c,1,''); }); } },
@@ -4389,6 +4472,23 @@ function renderLanes(){
 function renderWeekly(){
   var host=$('weekly-strip'); if(!host)return;
   var tgt=rewardTarget(), st=rewardStand();
+  /* ⛔ On a bought build there IS no streak, so this strip must not talk about
+     one. Same prize, named and shown the same way, with the real condition
+     under it and nothing to tap. */
+  if(isStoreBuild()){
+    if(!tgt){ host.innerHTML='<div class="wk"><div><div class="wk-lab">NEXT COSTUME</div>'
+        +'<div class="wk-name">Every one of them is yours</div>'
+        +'<div class="wk-sub">Nothing left on the ladder. Nice work.</div></div></div>'; return; }
+    host.innerHTML='<div class="wk"><canvas id="wk-cv" width="52" height="52"></canvas>'
+      +'<div style="min-width:0;flex:1"><div class="wk-lab">NEXT COSTUME</div>'
+      +'<div class="wk-name">'+tgt.name+'</div>'
+      +'<div class="wk-sub">'+(storeUnlockHint(tgt.id)||'Keep playing')+'</div></div></div>';
+    var scv=$('wk-cv');
+    if(scv){ drawSkinPreview(scv, tgt, 0.9, '');
+      if(tgt.art && tgt.sheet){ var sim=spr(tgt.sheet+'/idle');
+        if(!imgReady(sim)) sim.addEventListener('load', function(){ drawSkinPreview(scv, tgt, 0.9, ''); }); } }
+    return;
+  }
   if(!tgt){ host.innerHTML='<div class="wk"><div><div class="wk-lab">WEEKLY PRIZE</div>'
       +'<div class="wk-name">Every weekly skin is yours</div>'
       +'<div class="wk-sub">Day seven pays double bottlecaps until there are more costumes.</div></div></div>';
@@ -5078,6 +5178,10 @@ function boot(){
     navigator.serviceWorker.register('sw.js?v='+SWV);
   }catch(e){} }
   JMUS.autostart(); musicCheck();
+  /* Grant the ladder costumes at BOOT too, not only after the next run. Somebody
+     who updates mid campaign has already earned them and should not have to go
+     and finish another level to be handed what they already did. */
+  try{ storeUnlockCheck(true); }catch(e){}   /* quiet: a catch up, not a celebration */
 }
 
 /* ===== THE JIMOTHY OST — six original tracks by Stephen. Cartridge Moonwalk is the
