@@ -27,6 +27,37 @@ day**, so steps 1 to 6 are the only urgent things in this file.
 
 ---
 
+# WHEN YOU SIT DOWN, READ ONLY THIS BOX
+
+**There is nothing left to make.** Every asset Steam wants already exists in this
+repo. Tonight is pasting and uploading, not creating.
+
+- ⛔ **You do NOT need a demo.** The "Add Demo" button you saw is optional. Ignore it.
+- ⛔ **You do NOT need a trailer to submit.** It is a nice-to-have you can add after
+  Valve approves the page.
+- ✅ **All 5 screenshots exist**, already built, edges already handled (each is the
+  real game frame on its own blurred backdrop, never plain black).
+- ✅ **All 8 capsules exist**, already at Valve's exact pixel sizes.
+- ✅ **Every word of the store page is written** and has been through two
+  correction passes.
+
+**Realistic time for steps 1 to 6: 30 to 45 minutes.** That gets the page
+submitted, which is the only thing with a clock on it. Steps 7 to 9 (the build)
+can be a completely different night.
+
+**If you have 10 minutes and no energy:** do steps 1, 2 and 3 only. Three fields.
+They are the only choices in the whole process that cannot be changed later, and
+everything after them is mechanical.
+
+**If you have 45 minutes:** do 1 through 6 and stop. Then the clock is running
+while you sleep.
+
+⛔ **Do not read anything else in this repo tonight.** Not AUTO-MODE.md, not
+HANDOFF.md, not the audit files. They are for other days. This file is the whole
+job.
+
+---
+
 # PART ONE — get the store page submitted. Nothing else matters until this is done.
 
 ### ☐ 1. YOU · Set the price. $2.99.
