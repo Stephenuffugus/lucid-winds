@@ -76,6 +76,8 @@ const CAT_META = {
     sub: 'Which box has the can opener, what goes in the suitcase, and photos of everything before the insurance claim needs them.' },
   'Money': { kick: 'Settling up', q: 'Who owes what?',
     sub: 'Split the trip, the dinner, the house bills. Fairly, on your device, no accounts.' },
+  'Body &amp; Mind': { kick: 'Your own corner', q: 'Working on you?',
+    sub: 'A to-do list that feels as good as paper to cross off, and a strength app that writes your next workout for you. Small wins, stacked up.' },
 };
 for (const c of CATS) if (!CAT_META[c.title]) { console.error(`No wording for hub category "${c.title}" — add it to CAT_META`); process.exit(1); }
 
