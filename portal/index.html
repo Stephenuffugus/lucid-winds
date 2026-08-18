@@ -542,6 +542,23 @@
   .app-card .med{width:44px;height:44px;flex:0 0 auto;border-radius:12px;display:grid;place-items:center;font-size:22px;
     background:radial-gradient(circle at 34% 28%, rgba(200,168,75,.28), rgba(0,0,0,.42));border:1px solid var(--line)}
   .app-card small{color:var(--muted);display:block;font-size:.85rem;line-height:1.4}
+  .app-card .med img{width:100%;height:100%;border-radius:11px;object-fit:cover;display:block}
+  .feature .art.sws-collage{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:18px;align-content:center}
+  .feature .art.sws-collage img{position:static;inset:auto;width:100%;height:auto;aspect-ratio:1;
+    border-radius:16px;object-fit:cover;-webkit-mask-image:none;mask-image:none}
+  /* The doorway art matches the business card: every app thumb, two rows
+     drifting opposite ways. The extra-specific img rule matters — the bare
+     .feature .art img above absolutely positions and full-covers anything
+     less specific, and the 860px block masks it (the same trap that once
+     stretched the card's thumbs into a blur). */
+  .feature .art.sws-strips{display:grid;gap:10px;padding:16px 0;align-content:center;overflow:hidden}
+  .feature .art.sws-strips .apps-strip{overflow:hidden}
+  .feature .art.sws-strips .apps-track{display:flex;gap:10px;width:max-content;animation:apps-drift 70s linear infinite}
+  .feature .art.sws-strips .apps-strip.rev .apps-track{animation-name:apps-drift-rev;animation-duration:80s}
+  .feature .art.sws-strips img{position:static;inset:auto;width:88px;height:88px;flex:none;
+    border-radius:15px;object-fit:cover;-webkit-mask-image:none;mask-image:none}
+  @keyframes apps-drift{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  @keyframes apps-drift-rev{from{transform:translateX(-50%)}to{transform:translateX(0)}}
 
   /* scroll reveal + shine sweeps */
   .reveal{opacity:0;transform:translateY(30px);transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1)}
@@ -563,7 +580,7 @@
   @media (prefers-reduced-motion:reduce){
     .reveal{opacity:1;transform:none;transition:none}
     .sky::after,.masthead img,.flagship::before,.flagship h1,.feature .art img,.feature::before,.members::before,.card:hover::after,
-    .masthead .st,.masthead .aw,.masthead .sub{animation:none!important;opacity:1!important}
+    .masthead .st,.masthead .aw,.masthead .sub,.feature .art.sws-strips .apps-track{animation:none!important;opacity:1!important}
   }
 
   /* LITE MODE (old-iPad lifesaver 2026-07-27): applied automatically on
@@ -664,6 +681,27 @@
     <span class="fbadge"><span class="eyebrow">New</span></span>
   </section>
 
+  <!-- PRACTICAL APPS DOORWAY (2026-08-17, Stephen): "have a section that says…
+       for people who like to stay organized and have events… they can click
+       there and it would open up a page with all of our apps with our nice
+       thumbnails and very basic descriptions". The 24-card wall shipped
+       earlier today was wrong twice — 44px art, hotlinked cross-origin. His
+       art now lives in portal-assets/sws-thumbs/ (in this repo) and shows
+       big on its own page, /portal/apps.html. This is the front door. -->
+  <section class="feature reveal">
+    <div class="copy">
+      <span class="eyebrow">Not here to play?</span>
+      <h2>Practical Apps</h2>
+      <p class="tag">For people who keep life organized: lesson planners, sign-up sheets, checklists, PDF tools and more, free from the studio. No ads, no subscriptions, no tracking.</p>
+      <div class="why"><span class="dot"></span>Free forever, and most never leave your device</div>
+      <div class="cta-row"><a class="btn play" href="/portal/apps.html">What are you planning?</a></div>
+    </div>
+    <div class="art sws-strips" aria-hidden="true">
+      <div class="apps-strip"><div class="apps-track"><img src="/portal-assets/sws-thumbs/baby-log.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/bill-splitter.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/bracket-maker.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/caregiver-log.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/grade-sheet.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/grocery-list.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/home-inventory.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/hush.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/image-compressor.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/moving-boxes.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/packing-list.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/pdf-tools.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/pill-schedule.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/cross-off.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/baby-log.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/bill-splitter.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/bracket-maker.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/caregiver-log.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/grade-sheet.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/grocery-list.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/home-inventory.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/hush.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/image-compressor.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/moving-boxes.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/packing-list.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/pdf-tools.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/pill-schedule.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/cross-off.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"></div></div>
+      <div class="apps-strip rev"><div class="apps-track"><img src="/portal-assets/sws-thumbs/qr-maker.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/scan-to-pdf.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/seating-chart.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/secret-santa.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/signature-maker.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/signup-sheets.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/sitter-sheet.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/specials-planner.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/sub-plans.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/team-parent.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/wedding-timeline.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/wheel-picker.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/overload.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/qr-maker.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/scan-to-pdf.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/seating-chart.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/secret-santa.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/signature-maker.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/signup-sheets.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/sitter-sheet.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/specials-planner.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/sub-plans.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/team-parent.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/wedding-timeline.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/wheel-picker.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/overload.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"></div></div>
+    </div>
+  </section>
+
   <!-- Soundtrack — large, can't-miss button. -->
   <button id="music-fab" type="button" title="Soundtrack" aria-label="Play soundtrack">
     <span class="mf-thumb"><img src="/portal-assets/music-thumb.png" alt="" onerror="this.remove()"><span class="glyph">&#9835;</span></span>
@@ -730,7 +768,7 @@
            lives here and not on the arcade grid: direct link, no bridge.
            Source of truth: hush/ (BUILD-PLAN + research in incoming/hush). -->
       <a class="app-card" href="/hush/">
-        <span class="med">🌙</span>
+        <span class="med"><img src="/portal-assets/sws-thumbs/hush.png" alt="" width="44" height="44" loading="lazy" decoding="async"></span>
         <span><b>Hush</b><br><small>A free sleep sound machine that is honest about the science. Settles the room, then lets it go quiet. No ads, no account, works offline.</small></span>
       </a>
       <a class="app-card" href="/name/">
@@ -741,7 +779,12 @@
         <span class="med">🔢</span>
         <span><b>Times Table Quest</b><br><small>A big colorful multiplication chart kids play on, from counting by 10s to mastery.</small></span>
       </a>
+      <a class="app-card" href="/portal/apps.html">
+        <span class="med"><img src="/portal-assets/sws-thumbs/specials-planner.png?v=4" alt="" width="44" height="44" loading="lazy" decoding="async"></span>
+        <span><b>Practical Apps</b><br><small>All 24 of the studio's everyday tools on their own page: planners, sign-ups, checklists, PDF tools, with proper thumbnails.</small></span>
+      </a>
     </div>
+
   </section>
 
   <!-- Support row (Stephen 2026-07-29: "some payment on the main page").
