@@ -25,9 +25,18 @@ sections below has been overtaken — they are kept for history, not as a to-do 
 
 **Still genuinely open** (small, and all Stephen's call, not build work):
 - Pad-ride tightening — old 🟡 #4, one number, still unratified.
-- The **◀ Sky Wolf Studios Arcade** button on the Steam title screen: the one
-  outbound surface still visible in the Steam build. Valve allows outbound links;
-  it just reads odd in a bought desktop game. Say hide or keep.
+- ~~The **◀ Sky Wolf Studios Arcade** button on the Steam title screen~~ ✅
+  **CLOSED 2026-08-18, and it had already been half closed.** The button was
+  ALREADY hidden on STEAM_BUILD in code (2026-07-31); this note went stale and
+  kept asking for a decision that was made. What was genuinely missing is that
+  hiding it left nothing on the title screen saying who made the game.
+  Stephen's call: *"probably not an outbound link but we should have some way to
+  promote the studio."* So `#studio-note` is a line of TEXT, not a control:
+  "Made by Sky Wolf Studios / Everything else we make is free in your browser at
+  lucidwinds.com". Nothing to tap means nothing can eject a player out of the app,
+  which is the whole reason the link went in the first place.
+  ⛔ **No game count in that string.** It is baked into a shipped binary and can
+  never be updated, so any number would be wrong the moment the catalog moves.
 
 ### Steam — where it actually stands
 $100 Steam Direct fee **paid Jul 30**, so earliest release **Aug 29**, target

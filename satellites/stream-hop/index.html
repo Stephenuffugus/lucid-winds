@@ -683,6 +683,25 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
       </div>
       <button class="btn sm" id="b-support"><img class="bicon" id="ic-support" alt="" style="width:40px;height:40px">Support the Studio</button>
       <button class="btn ghost sm" id="b-exit">◄ Sky Wolf Studios Arcade</button>
+      <!-- ⛔ NOT A LINK, and not a button. On a bought desktop game the arcade
+           back-link is hidden (see STEAM_BUILD below), which left nothing saying
+           who made this. Stephen 2026-08-18: "probably not an outbound link but
+           we should have some way to promote the studio." So: a line of text.
+           Nothing to tap means nothing can eject a player out of the app, which
+           is the whole reason the link went.
+           ⛔ NO GAME COUNT IN HERE. This string is baked into a shipped binary
+           and can never be updated, so "160+ games" would be wrong the moment
+           the catalog moves. Evergreen wording only. -->
+      <!-- ⛔ Contrast, judged off the shot. At var(--muted) with no shadow this was
+           unreadable over the painted wet street behind the title screen: a credit
+           line nobody can read is the same as no credit line. -->
+      <div id="studio-note" style="display:none;max-width:400px;margin:2px auto 0;
+        color:#cfd6c2;font:600 12px/1.55 Nunito,system-ui,sans-serif;text-align:center;
+        letter-spacing:.01em;text-shadow:0 1px 3px rgba(0,0,0,.95),0 0 10px rgba(0,0,0,.7);
+        -webkit-user-select:text;user-select:text">
+        Made by <b style="color:#c8a84b;font-weight:800">Sky Wolf Studios</b><br>
+        Everything else we make is free in your browser at lucidwinds.com
+      </div>
     </div>
     <div class="foot" id="buildstamp"></div>
   </div></div>
@@ -5538,6 +5557,9 @@ var SUP=(function(){
        and on Steam this is the last surface that pointed anywhere off the machine.
        Kept on itch, where the game sits in a page and the cross promo belongs. */
     var ex=$('b-exit'); if(STEAM_BUILD&&ex)ex.style.display='none';
+    /* the studio line takes the link's place, on storefront builds only: on the web
+       the player is already ON the arcade and the real back button is right there. */
+    var sn=$('studio-note'); if(sn)sn.style.display=STORE_BUILD?'':'none';
     /* ⛔ The in-game bug form POSTs the player's message and user-agent to our cloud
        function. On a storefront build that is data collection, which drags a privacy
        policy and a disclosure onto the store page for a channel Steam already
