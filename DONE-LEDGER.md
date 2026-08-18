@@ -112,6 +112,11 @@ instead of acting on it. **A hit is a candidate, never a verdict.**
 | **Measuring the wrong symptom** | Same probe called a crash "survives" because buttons rendered *before* the throw. **An uncaught error is the finding.** |
 | **Flagging absolutely, not vs baseline** | `buttons===0` fired on stream-hop, which boots to 0 buttons normally. |
 | **`node x.js \| tail`** | Returns *tail's* exit code. Twice made a red suite look clean. |
+| **Three green signals on a dead page** | Wild Wardens returned 200, threw nothing and rendered an exit button, on a screen reading "Unmatched Route, page could not be found". A boot probe must read the RENDERED TEXT. |
+| **A checker's fixture colliding with real data** | The service worker scope check seeded fake neighbours named `padlab-v10` and `hush-v3`, which are those apps' REAL cache names, so three workers correctly cleaning their own stale caches read as wiping neighbours. Three false positives out of three hits. |
+| **A directory skipped for the right reason, once** | The exit audit skipped any dir called `assets`, correct while every satellite was hand-written HTML. Tally is Vite-built and its whole bundle is `assets/index-<hash>.js`, so the audit read its `index.html`, saw the exit defined, never saw the bundle that CALLS it, and said STRANDED. |
+| **`index.html` is not the whole game** | The defect sweep only read each satellite's `index.html`. Chameleon 3D is carded separately at `abduct-3d.html` and had never been swept at all. Fixing it by sweeping every sibling `.html` was wrong the other way and dragged in six dev labs. **Ask the catalog which pages are carded.** |
+| **Half a base path** | Rewriting Expo's `/BarBrawl/` fixed every asset and still left every route unmatched, because the bundle also carries `baseUrl":"/BarBrawl"` with no trailing slash and THAT is what the router reads. |
 | **Catastrophic regex backtracking** | `.{0,55}`-style context patterns in grep hang for minutes. Use fixed patterns. |
 | **CPU contention** | `fleet_verify` reports "1 red" when browsers run alongside it. **Run it alone.** Clean serialized runs: 32 green, 0 red, 2209 assertions. |
 
@@ -122,10 +127,12 @@ answering it and fix the instrument.**
 
 ## 5. KNOWN AND DELIBERATELY NOT FIXED
 
-- **13 games live on another origin** (12 on `stephenuffugus.github.io`, 1 on Vercel),
-  including Litter Bug and Sweet Spot. A Horizon Store app is a TWA, so these would
-  **eject the player out of the app**. Fix is vendoring them same-origin like Aura
-  Farm. Must happen before store packaging.
+- ~~**13 games live on another origin**~~ ✅ **DONE 2026-08-18. All 13 vendored.**
+  See `VENDORING.md`. `node scripts/vendor_satellites.mjs --check` must read CLEAN.
+  ⛔ Never hand-edit `satellites/<slug>/` for a vendored game; fix upstream and
+  re-vendor. HUNCH's three serverless functions stay on Vercel and it calls them
+  across origins, which is fine for a TWA because only the XHR leaves the origin.
+  ⚠ HUNCH's leaderboard returns a 500 on production and did before this work.
 - **Petalvex's "How to play" heading** is dark green on light beige and hard to read.
   Colour call on Stephen's art. ⚖ his.
 - **~40 satellites have had a machine sweep but no real audit.** A sweep cannot tell
@@ -164,6 +171,12 @@ node scripts/advertised_count_check.mjs     # every advertised number is true
 node scripts/defect_sweep.mjs               # 0 actionable
 node scripts/quest_triage.mjs --report      # 186 triaged, 0 blocked
 node scripts/fleet_verify.mjs               # 32 green, 0 red — RUN THIS ALONE
+                                           #   ⛔ ALSO needs a server on :8777 served
+                                           #   from the REPO ROOT, or 2 suites die on
+                                           #   ERR_CONNECTION_REFUSED and read as red
+node scripts/sw_cache_scope_check.mjs --fleet  # no worker wipes a neighbour's cache
+node scripts/vendor_satellites.mjs --check     # vendored: CLEAN, not BEHIND or EDITED
+node scripts/vendored_boot_probe.mjs           # they boot, and not to a dead screen
 ```
 Every script above takes `--selftest` and proves its own detectors can fire *and*
 stay quiet. **Run the selftest before believing a report.**

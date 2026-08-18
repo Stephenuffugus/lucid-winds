@@ -45,6 +45,7 @@ const PAGES = [
   ["skitterlings",       "/satellites/skitterlings/"],
   ["wild-wardens",       "/satellites/wild-wardens/"],
   ["tally",              "/satellites/tally/"],
+  ["hunch",              "/satellites/hunch/"],
 ];
 
 /* A control counts only if the point a thumb would land on actually hits it. */

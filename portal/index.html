@@ -806,8 +806,9 @@ var FEATURED = [
      `node scripts/vendor_satellites.mjs --vendor <slug>` and bump the ?v=.
      `--check` reports BEHIND (upstream moved) separately from EDITED (somebody
      hand edited the vendored copy, which is drift and must be undone).
-     ⚠ HUNCH is deliberately still on Vercel: it calls three serverless
-     functions, and same origin those paths would hit this repo's own /api. */
+     HUNCH is vendored too. Its three endpoints stay on Vercel and it calls them
+     across origins, which is fine for a TWA because only the XHR leaves the
+     origin, never a navigation. */
   {nm:"Lucid Winds", ds:"The flagship garden where 66 mini games grow living, one of a kind plant art.", url:"https://lucidwinds.com/?from=portal", hub:true, ic:"🌱", thumb:"/assets/splash-seed-v2.png"},
   {nm:"Tomato Man", ds:"Dash from shadow to shadow gathering aloe before the deadly sun burns you up.", cat:"action", url:"/satellites/tomato-man/?v=20260818a", ic:"🍅", thumb:"/portal-assets/thumbs/tomato-man.png"},
   // Abduct a Chameleon: backend-free standalone (localStorage only, no Firestore).
@@ -909,7 +910,7 @@ var FEATURED = [
   // a Claude vision model + judge call per round (real per-play API cost).
   // Lowered sunbeam yield to respect compute; positioned as PREMIUM to
   // signal that this one's structurally different from the free nodes.
-  {nm:"HUNCH", ds:"A drawing duel against Claude, the studio's premium flagship.", cat:"creative", url:"https://hunch-mauve.vercel.app", ic:"🎨", premium:true, thumb:"/portal-assets/thumbs/hunch.png"},
+  {nm:"HUNCH", ds:"A drawing duel against Claude, the studio's premium flagship.", cat:"creative", url:"/satellites/hunch/?v=20260818a", ic:"🎨", premium:true, thumb:"/portal-assets/thumbs/hunch.png"},
   // Shell Shuffle: cozy cup-shuffle timing game, PWA-ready. Daily streak
   // retention, 70 cup + 21 ball cosmetics, all client-side. Earn rate
   // calibrated: 3/win + 5/daily yields ~23-41 per casual session.

@@ -74,12 +74,13 @@ export const MANIFEST = [
        found" screen. Slashed first, bare second. */
     rewrite:[["/BarBrawl/", "/satellites/wild-wardens/"], ["/BarBrawl", "/satellites/wild-wardens"]] },
   { slug:"tally",              repo:"Tally",              ref:"main", card:"Tally", build:"vite-dist" },
-  /* ⚠ HUNCH is NOT flipped over yet. Its page vendors fine, but it fetches
-     /api/claude, /api/leaderboard and /api/report, which are Vercel serverless
-     functions. Same origin on lucidwinds.com those paths would hit THIS repo's
-     own /api directory instead. See VENDORING.md. */
+  /* HUNCH's three endpoints are Vercel serverless functions, so api/ is dropped
+     and the page calls Vercel across origins. That is safe for a TWA: only the
+     XHR leaves the origin, never a navigation, so nobody gets ejected. All three
+     functions already send Access-Control-Allow-Origin: *, verified against the
+     live deployment, and upstream now resolves its API base by hostname. */
   { slug:"hunch",              repo:"Hunch",              ref:"main", card:"HUNCH",
-    drop:["api/","scripts/"], needsExit:["index.html","hunch.html"], hold:true },
+    drop:["api/","scripts/"], needsExit:["index.html","hunch.html"] },
 ];
 
 const ALWAYS_DROP = [".git/", ".github/", ".gitignore", ".env.example"];
