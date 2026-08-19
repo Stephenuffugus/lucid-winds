@@ -84,3 +84,10 @@ Number one means: never repeats (worklet), fills the room (stereo bed),
 never startles (caps, fades, preset volume ruling), tells the truth about
 the science (already does), free with no catch (already is), and survives
 the screen going dark on both platforms (Android yes, iOS round 3).
+
+## The tagline (Stephen, 2026-08-19)
+
+**"Pick your sound. Lock your screen. Go to sleep."** — verbatim on the
+Play listing (Android, where the middle sentence is true). The web page
+runs "Pick your sound. Go to sleep." until iOS stage 2 makes the lock
+claim true there too; then the full line goes everywhere.
