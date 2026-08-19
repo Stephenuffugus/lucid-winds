@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+<meta name="theme-color" content="#0d0e1a"/>
+<meta name="description" content="HUNCH: draw it, the machine guesses. A real AI looks at your drawing and reads your mind."/>
+<title>HUNCH: draw it, the machine guesses</title>
+<!-- Open Graph / social preview -->
+<meta property="og:title" content="HUNCH: draw it, the machine guesses"/>
+<meta property="og:description" content="You draw. A real AI guesses blind. Score by how close it gets. The wrong guesses are the best part."/>
+<meta property="og:type" content="website"/>
+<link rel="manifest" href="manifest.webmanifest"/>
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml"/>
+<link rel="apple-touch-icon" href="icons/icon.svg"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Space+Mono:ital@0;1&display=swap" rel="stylesheet"/>
+<style>
+  :root{
+    --bg:#0d0e1a; --panel:#16182b; --panel2:#1d2038; --line:#2c3052;
+    --txt:#eef0ff; --dim:#8a90b8; --acc:#c8ff4d; --acc2:#5eead4;
+    --hit:#7CFC9B; --miss:#ff6b81; --fire:#ffac4d;
+    --safe-top:env(safe-area-inset-top,0px); --safe-bot:env(safe-area-inset-bottom,0px);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;margin:0;width:100%;overflow-x:hidden;-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+  body{background:radial-gradient(900px 600px at 80% -10%,#1b1d38,transparent 60%),var(--bg);color:var(--txt);font-family:'Space Grotesk',system-ui,sans-serif;min-height:100%;overflow-x:hidden;}
+  .app{max-width:680px;margin:0 auto;padding:calc(14px + var(--safe-top)) 14px calc(16px + var(--safe-bot));min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;}
+  .mono{font-family:'Space Mono',monospace;}
+
+  /* top bar */
+  .top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;}
+  .brand{font-weight:700;font-size:24px;letter-spacing:.04em;cursor:pointer;}
+  .brand b{color:var(--acc);}
+  .stats{display:flex;gap:16px;align-items:center;}
+  .stat{text-align:right;}
+  .stat .n{font-weight:700;font-size:20px;line-height:1;}
+  .stat .l{font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);margin-top:3px;}
+  .stat .n.fire{color:var(--fire);}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;}
+  .screen{flex:1;display:flex;flex-direction:column;min-height:0;}
+
+  /* start */
+  .hero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:16px;padding:24px 10px;}
+  .hero h1{font-size:clamp(46px,13vw,86px);font-weight:700;letter-spacing:.02em;line-height:.9;}
+  .hero h1 b{color:var(--acc);}
+  .hero p{color:var(--dim);font-size:16px;max-width:380px;line-height:1.5;}
+  .hero .mono.sub{color:var(--acc2);font-size:13px;letter-spacing:.04em;}
+  .modes{display:flex;flex-direction:column;gap:10px;width:100%;max-width:340px;margin-top:4px;}
+  .btn{border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px;letter-spacing:.03em;color:#0d0e1a;background:var(--acc);padding:15px 34px;border-radius:999px;transition:transform .12s,filter .2s;touch-action:manipulation;}
+  .btn:hover{filter:brightness(1.06);}.btn:active{transform:translateY(1px) scale(.99);}
+  .btn.full{width:100%;}
+  .btn.ghost{background:transparent;color:var(--txt);border:1px solid var(--line);font-weight:500;font-size:14px;padding:13px 20px;}
+  .btn.ghost:hover{border-color:var(--acc2);}
+  .btn.daily{background:linear-gradient(100deg,#5eead4,#c8ff4d);}
+  .btn .tag{display:block;font-size:11px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;opacity:.7;margin-top:3px;}
+  .howto{text-align:left;color:var(--dim);font-size:14px;line-height:1.7;max-width:420px;}
+  .howto b{color:var(--txt);}
+  /* persona picker */
+  .personas{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:400px;}
+  .pchip{display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:8px 10px;cursor:pointer;color:var(--txt);min-width:66px;font-family:'Space Grotesk';transition:transform .1s,border-color .2s;}
+  .pchip:active{transform:scale(.96);}
+  .pchip.on{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc);}
+  .pchip.locked{opacity:.5;}
+  .pchip .pe{font-size:22px;line-height:1;}
+  .pchip .pn{font-size:11px;font-weight:500;}
+  .pchip .pl{font-size:9px;color:var(--dim);letter-spacing:.06em;}
+
+  /* round */
+  .prompt{display:flex;align-items:center;gap:14px;margin-bottom:0;flex:none;}
+  .prompt .label{flex:1;min-width:0;}
+  .prompt .label .k{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--dim);display:flex;gap:8px;align-items:center;}
+  .prompt .label .k .pill{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:2px 8px;font-size:9px;letter-spacing:.14em;}
+  .prompt .label .v{font-size:clamp(24px,6vw,34px);font-weight:700;line-height:1.05;margin-top:4px;}
+  .timer{position:relative;width:62px;height:62px;flex:none;}
+  .timer svg{transform:rotate(-90deg);}
+  .timer .t{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px;}
+
+  /* Round screen: prompt on top, the drawing pad owns the leftover height
+     (a tall portrait "profile" on phones), tools underneath. */
+  #scRound{display:flex;flex-direction:column;min-height:0;gap:8px;}
+  .canvas-wrap{position:relative;border-radius:14px;overflow:hidden;background:#fff;border:1px solid var(--line);flex:1 1 auto;min-height:140px;}
+  #pad{width:100%;height:100%;display:block;touch-action:none;cursor:crosshair;}
+  .flash{position:absolute;inset:0;pointer-events:none;opacity:0;}
+  .flash.hit{background:radial-gradient(circle,rgba(124,252,155,.5),transparent 70%);}
+  .flash.miss{background:radial-gradient(circle,rgba(255,107,129,.45),transparent 70%);}
+  @keyframes flashpop{0%{opacity:0;transform:scale(.6);}30%{opacity:1;}100%{opacity:0;transform:scale(1.3);}}
+  .flash.go{animation:flashpop .6s ease-out;}
+
+  .tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .toolrow{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;}
+  #toolbar{display:flex;flex-direction:column;gap:8px;margin-top:0;flex:none;}
+  .colors{display:flex;gap:6px;overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px;-webkit-overflow-scrolling:touch;width:100%;min-width:0;scrollbar-width:thin;}
+  .col{width:28px;height:28px;border-radius:50%;border:2px solid var(--panel);box-shadow:0 0 0 1px var(--line);cursor:pointer;flex:none;}
+  .col.on{box-shadow:0 0 0 2px var(--acc);transform:scale(1.12);}
+  .col.picker{padding:0;background:conic-gradient(from 0deg,#ff004c,#ff8a00,#ffe600,#37e84a,#00d4ff,#3a6bff,#b14bff,#ff004c);-webkit-appearance:none;appearance:none;}
+  input[type=color]{-webkit-appearance:none;appearance:none;}
+  input[type=color]::-webkit-color-swatch-wrapper{padding:0;}
+  input[type=color]::-webkit-color-swatch{border:none;border-radius:50%;}
+  .tbtn{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:10px;padding:8px 12px;font-family:'Space Grotesk';font-size:13px;cursor:pointer;flex:none;white-space:nowrap;touch-action:manipulation;}
+  .tbtn:hover{border-color:var(--acc2);}
+  .tbtn.on{background:var(--acc);color:#0d0e1a;border-color:var(--acc);font-weight:700;}
+  .tools .sz{display:flex;align-items:center;gap:7px;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);flex:none;}
+  .tools .sz input{width:74px;}
+  .submit-row{width:100%;margin-top:2px;display:flex;align-items:center;justify-content:center;}
+  .submit-row .btn{width:100%;max-width:360px;min-height:48px;}
+  input[type=range]{-webkit-appearance:none;appearance:none;height:3px;background:var(--line);border-radius:3px;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--acc);cursor:pointer;}
+  input[type=range]::-moz-range-thumb{width:16px;height:16px;border:none;border-radius:50%;background:var(--acc);cursor:pointer;}
+
+  /* thinking */
+  .think{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;padding:40px;}
+  .think .eye{font-size:60px;animation:squint 1.1s ease-in-out infinite;}
+  @keyframes squint{0%,100%{transform:scaleY(1);}50%{transform:scaleY(.25);}}
+  .think .mono{color:var(--acc2);font-size:15px;}
+  .dots::after{content:'';animation:dots 1.4s steps(4,end) infinite;}
+  @keyframes dots{0%{content:'';}25%{content:'.';}50%{content:'..';}75%{content:'...';}}
+
+  /* result */
+  .res .row{display:flex;gap:16px;align-items:flex-start;}
+  .res .thumb{width:120px;height:90px;border-radius:10px;border:1px solid var(--line);flex:none;background:#fff;object-fit:cover;}
+  .res .target{font-size:12px;color:var(--dim);letter-spacing:.04em;}
+  .res .target b{color:var(--txt);font-size:18px;display:block;margin-top:2px;}
+  .guesses{margin:16px 0;}
+  .guesses .g{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line);}
+  .guesses .g:last-child{border:none;}
+  .guesses .g .rank{color:var(--acc2);font-size:12px;width:30px;}
+  .guesses .g .txt{font-family:'Space Mono';font-size:15px;}
+  .quip{font-family:'Space Mono';font-style:italic;color:var(--fire);font-size:14px;background:var(--panel2);border-left:2px solid var(--fire);padding:10px 14px;border-radius:0 8px 8px 0;margin-top:6px;}
+  .scoreline{display:flex;align-items:flex-end;gap:14px;margin:18px 0 8px;}
+  .scoreline .big{font-size:64px;font-weight:700;line-height:.85;}
+  .scoreline .big.hit{color:var(--hit);}.scoreline .big.miss{color:var(--miss);}
+  .scoreline .of{color:var(--dim);font-size:18px;padding-bottom:8px;}
+  .scoreline .verdict{margin-left:auto;text-align:right;}
+  .scoreline .verdict .v{font-weight:700;font-size:18px;}
+  .scoreline .verdict .s{font-size:12px;color:var(--dim);}
+  @keyframes stampin{0%{transform:scale(2) rotate(-8deg);opacity:0;}60%{transform:scale(.92) rotate(-3deg);opacity:1;}100%{transform:scale(1) rotate(-3deg);}}
+  .scoreline .verdict .v.stamp{display:inline-block;animation:stampin .5s cubic-bezier(.2,1.4,.4,1);}
+  .reswrap{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;}
+  .reswrap .btn{flex:1;min-width:120px;}
+  .dailydone{text-align:center;padding:8px 0 2px;}
+  .dailydone .grid{font-family:'Space Mono';font-size:22px;letter-spacing:3px;margin:8px 0;}
+
+  .err{color:var(--miss);font-family:'Space Mono';font-size:14px;text-align:center;padding:10px;}
+
+  /* log */
+  .log{margin-top:26px;}
+  .log h3{font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);margin-bottom:12px;}
+  .logrow{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);}
+  .logrow img{width:54px;height:40px;border-radius:6px;background:#fff;object-fit:cover;flex:none;}
+  .logrow .lt{flex:1;min-width:0;}
+  .logrow .lt .a{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .logrow .lt .b{font-family:'Space Mono';font-size:12px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .logrow .ls{font-weight:700;font-size:18px;}
+  .logrow .ls.hit{color:var(--hit);}.logrow .ls.miss{color:var(--miss);}
+
+  .hide{display:none !important;}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:var(--acc);color:#0d0e1a;font-weight:700;padding:11px 20px;border-radius:999px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:50;}
+  .toast.show{opacity:1;}
+
+  /* simple ad banner slot (web placeholder; native build overlays real banner) */
+  #adslot{display:none;margin-top:10px;height:50px;border:1px dashed var(--line);border-radius:10px;align-items:center;justify-content:center;color:var(--dim);font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-family:'Space Mono';}
+
+  @media (max-width:560px){
+    .app{padding:calc(9px + var(--safe-top)) 9px calc(12px + var(--safe-bot));}
+    .card{padding:11px;border-radius:14px;}
+    .top{margin-bottom:9px;}
+    .brand{font-size:20px;}
+    .stats{gap:13px;}
+    .stat .n{font-size:17px;}
+    .prompt{margin-bottom:9px;}
+    .prompt .label .v{font-size:21px;}
+    .timer{width:50px;height:50px;}
+    .tbtn{padding:8px 10px;}
+    .btn.go{font-size:16px;padding:11px 20px;}
+    input[type=range]{width:64px;}
+  }
+
+  /* ---- leaderboard + name overlays ---- */
+  .overlay{position:fixed;inset:0;z-index:60;background:rgba(8,9,18,.72);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:18px;}
+  .overlay.hide{display:none;}
+  .sheet{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;width:100%;max-width:420px;max-height:86dvh;overflow-y:auto;}
+  .sheet-h{display:flex;align-items:center;justify-content:space-between;gap:10px;font-weight:700;font-size:18px;margin-bottom:6px;}
+  .sheet-h .x{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:10px;width:34px;height:34px;cursor:pointer;font-size:16px;flex:none;}
+  .sheet .sub{color:var(--dim);font-size:13px;margin-bottom:12px;}
+  .nameInput{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:12px;padding:13px 14px;font-family:'Space Grotesk';font-size:18px;font-weight:600;margin-bottom:8px;}
+  .nameInput:focus{outline:none;border-color:var(--acc);}
+  .nameErr{color:var(--miss);font-size:13px;min-height:18px;margin-bottom:8px;}
+  .board{display:flex;flex-direction:column;gap:6px;margin-top:4px;}
+  .brow{display:flex;align-items:center;gap:12px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px 13px;}
+  .brow.you{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc);}
+  .brow .rk{font-family:'Space Mono';font-size:13px;color:var(--dim);width:34px;flex:none;}
+  .brow.top1 .rk,.brow.top2 .rk,.brow.top3 .rk{color:var(--acc);font-weight:700;}
+  .brow .nm{flex:1;min-width:0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .brow .sc{font-family:'Space Mono';font-weight:700;color:var(--acc);}
+  .brow .rep{background:none;border:none;color:var(--dim);cursor:pointer;font-size:14px;line-height:1;padding:4px 2px;flex:none;opacity:.6;}
+  .brow .rep:hover{opacity:1;color:var(--miss);}
+  .board .empty{color:var(--dim);text-align:center;padding:20px 0;font-size:14px;}
+  .board-foot{color:var(--dim);font-size:12px;margin-top:12px;line-height:1.5;}
+  /* shop */
+  .coinchip{display:inline-flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:6px 15px;font-weight:700;font-family:'Space Mono';color:var(--acc);font-size:15px;}
+  .shop-cat{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);margin:16px 0 8px;}
+  .shop-row{display:flex;align-items:center;gap:12px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px;}
+  .shop-sw{width:36px;height:36px;border-radius:9px;flex:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);}
+  .shop-meta{flex:1;min-width:0;}
+  .shop-name{font-weight:700;}
+  .shop-desc{font-size:12px;color:var(--dim);line-height:1.3;}
+  .shop-row .tbtn{flex:none;white-space:nowrap;}
+  .shop-row .tbtn.buy{background:var(--acc);color:#0d0e1a;border-color:var(--acc);font-weight:700;font-family:'Space Mono';}
+  .shop-eq{font-size:12px;color:var(--acc);font-weight:700;flex:none;}
+</style>
+<!-- Sky Wolf Studios — sunbeam economy SDK (additive; loads from hub so updates propagate) -->
+<script src="https://lucidwinds.com/sunbeam-sdk.js?v=2"></script>
+<script>
+  if(window.Sunbeam){ Sunbeam.init({ gameId: "hunch" }).catch(function(){ /* network blocked — earn calls degrade silently */ }); }
+</script>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="brand" id="brand">HUN<b>CH</b></div>
+    <div class="stats">
+      <div class="stat"><div class="n" id="sScore">0</div><div class="l">Score</div></div>
+      <div class="stat"><div class="n fire" id="sStreak">0</div><div class="l">Streak 🔥</div></div>
+      <div class="stat"><div class="n" id="sBest">0</div><div class="l">Best</div></div>
+    </div>
+  </div>
+
+  <!-- START -->
+  <div class="screen card" id="scStart">
+    <div class="hero">
+      <h1>HUN<b>CH</b></h1>
+      <div class="mono sub">draw it. the machine guesses. read its mind.</div>
+      <p>You get a thing to draw, maybe a storm, a feeling, or a bad pun. One minute. Then a real AI looks at your drawing and takes its best guess. Score by how close it gets.</p>
+      <div class="coinchip">🪙 <span class="coinval">0</span> coins</div>
+      <div class="modes">
+        <button class="btn daily full" id="btnDaily">Daily Challenge<span class="tag" id="dailyTag">5 rounds · same for everyone</span></button>
+        <button class="btn full" id="btnPlay">Endless Play</button>
+        <button class="btn ghost full" id="btnBoard">🏆 Today's Leaderboard</button>
+        <button class="btn ghost full" id="btnShop">🛒 Shop</button>
+        <button class="btn ghost full hide" id="btnInstall">📲 Install app</button>
+        <button class="btn ghost full" id="btnHow">How it works</button>
+      </div>
+      <div class="mono sub" style="margin-top:2px">choose your machine</div>
+      <div class="personas" id="personaRow"></div>
+      <div class="howto hide" id="howBox">
+        <p><b>1.</b> A prompt appears, sometimes simple, often weird and abstract. There's no "correct" drawing.</p>
+        <p><b>2.</b> Draw it before the timer runs out. Pen, colors, fill, eraser. The constraint is the point.</p>
+        <p><b>3.</b> The machine guesses <b>blind</b>, because it can't see the prompt. Then it grades how close it landed.</p>
+        <p><b>4.</b> Land a hit (50+), build your streak, and each one multiplies your points. Miss, and the streak resets. The machine's wrong guesses are the best part.</p>
+      </div>
+      <div class="mono" id="buildTag" style="font-size:10px;color:var(--dim);opacity:.55;margin-top:6px"></div>
+    </div>
+  </div>
+
+  <!-- ROUND -->
+  <div class="screen card hide" id="scRound">
+    <div class="prompt">
+      <div class="label">
+        <div class="k"><span>Draw this</span><span class="pill hide" id="roundPill">DAILY 1/5</span></div>
+        <div class="v" id="promptText">—</div>
+      </div>
+      <div class="timer">
+        <svg width="62" height="62" viewBox="0 0 62 62"><circle cx="31" cy="31" r="27" fill="none" stroke="#2c3052" stroke-width="6"/><circle id="ring" cx="31" cy="31" r="27" fill="none" stroke="#c8ff4d" stroke-width="6" stroke-linecap="round" stroke-dasharray="169.6" stroke-dashoffset="0"/></svg>
+        <div class="t" id="tNum">50</div>
+      </div>
+    </div>
+    <div class="canvas-wrap"><canvas id="pad" width="800" height="600"></canvas><div class="flash" id="flash"></div></div>
+    <div id="toolbar">
+      <div class="tools"><div class="colors" id="colors"></div></div>
+      <div class="tools toolrow">
+        <button class="tbtn" id="bFill">Fill</button>
+        <button class="tbtn" id="bEraser">Eraser</button>
+        <div class="sz">Size <input type="range" id="penSize" min="3" max="60" value="16"/></div>
+        <button class="tbtn" id="bUndo">Undo</button>
+        <button class="tbtn" id="bClear">Clear</button>
+      </div>
+      <div class="submit-row"><button class="btn go" id="bSubmit">Submit ▸</button></div>
+    </div>
+  </div>
+
+  <!-- THINKING -->
+  <div class="screen card hide" id="scThink">
+    <div class="think">
+      <div class="eye">👁️</div>
+      <div class="mono" id="thinkMsg">the machine is squinting<span class="dots"></span></div>
+      <button class="btn ghost hide" id="thinkRetry" style="margin-top:22px">Taking a while, tap to retry ↻</button>
+    </div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="screen card res hide" id="scResult">
+    <div class="row">
+      <img class="thumb" id="resThumb" alt="your drawing"/>
+      <div class="target">You were drawing<b id="resTarget">—</b></div>
+    </div>
+    <div id="resBody">
+      <div class="guesses" id="resGuesses"></div>
+      <div class="quip" id="resQuip"></div>
+      <div class="scoreline">
+        <div class="big" id="resScore">0</div><div class="of">/ 100</div>
+        <div class="verdict"><div class="v" id="resVerdict">—</div><div class="s" id="resStreakMsg"></div></div>
+      </div>
+      <div class="dailydone hide" id="dailyDone"></div>
+    </div>
+    <div class="err hide" id="resErr"></div>
+    <div id="adslot">ad</div>
+    <div class="reswrap">
+      <button class="btn" id="bNext">Next ▸</button>
+      <button class="btn ghost" id="bShare">Share</button>
+    </div>
+    <div style="text-align:center;margin-top:10px"><span id="bReport" style="color:var(--dim);font-size:12px;cursor:pointer;font-family:'Space Mono'">⚐ report this guess</span></div>
+    <div class="log" id="logBox"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<!-- name picker -->
+<div class="overlay hide" id="ovName">
+  <div class="sheet">
+    <div class="sheet-h">Pick a name</div>
+    <div class="sub">Shown on the daily leaderboard. Keep it clean, names are filtered.</div>
+    <input class="nameInput" id="nameInput" maxlength="14" autocomplete="off" autocapitalize="words" placeholder="your name"/>
+    <div class="nameErr" id="nameErr"></div>
+    <button class="btn full" id="nameSave">Save &amp; submit ▸</button>
+  </div>
+</div>
+
+<!-- shop -->
+<div class="overlay hide" id="ovShop">
+  <div class="sheet">
+    <div class="sheet-h"><span>🛒 Shop</span><span style="font-family:'Space Mono';font-size:15px;color:var(--acc)">🪙 <span class="coinval">0</span></span><button class="x" id="ovShopX">✕</button></div>
+    <div class="sub">Earn coins by scoring rounds. Spend them on looks, purely cosmetic, no effect on your leaderboard rank.</div>
+    <div class="shop-cat">✒️ Inks</div>
+    <div id="shopInks"></div>
+    <div class="shop-cat">🎨 Themes</div>
+    <div id="shopThemes"></div>
+  </div>
+</div>
+
+<!-- install instructions (iOS / fallback) -->
+<div class="overlay hide" id="ovInstall">
+  <div class="sheet">
+    <div class="sheet-h"><span>📲 Install HUNCH</span><button class="x" id="ovInstallX">✕</button></div>
+    <div class="sub" id="installSub">Add HUNCH to your home screen and it opens full screen like a real app, no browser bars.</div>
+    <div id="installSteps" style="font-size:14px;line-height:1.6;color:var(--txt)"></div>
+  </div>
+</div>
+
+<!-- leaderboard -->
+<div class="overlay hide" id="ovBoard">
+  <div class="sheet">
+    <div class="sheet-h"><span>🏆 Today's Leaderboard</span><button class="x" id="ovBoardX">✕</button></div>
+    <div class="sub" id="boardSub">Daily mode · same prompts for everyone · resets at midnight UTC</div>
+    <div class="board" id="boardList"><div class="empty">Loading…</div></div>
+    <div class="board-foot">See an offensive name? Tap <b>⚐</b> to hide &amp; report it, and repeated reports remove it for everyone.</div>
+  </div>
+</div>
+
+<script src="data/prompts.js?v=2"></script>
+<script>
+/* ===================================================================
+   HUNCH — game client
+   Backend: POST /api/claude  (proxy holds the Anthropic key)
+   =================================================================== */
+
+/* ---------------- config ---------------- */
+const CFG = {
+  MODEL_GUESS: "claude-haiku-4-5-20251001",   // vision guess on Haiku (cost-floor test; was sonnet-4-6) — voice lives in buildGuessSystem(), unchanged
+  MODEL_JUDGE: "claude-haiku-4-5-20251001",   // judge: cheap is fine
+  MODEL_PROMPTS: "claude-haiku-4-5-20251001",
+  HIT: 50,
+  SPEED_MAX: 50,           // max speed-bonus points for submitting fast (scaled by accuracy; lets an item top 100)
+  INTERSTITIAL_EVERY: 4,   // show an interstitial ad after every N endless rounds
+  DAILY_ROUNDS: 5,
+  FREE_ROUNDS: 8,          // free endless rounds per day; extra rounds are rewarded-ad-gated
+  // cost controls (lean build): tight output caps + smaller image keep COGS low.
+  MAXTOK_GUESS: 220,
+  MAXTOK_JUDGE: 80,
+  IMG_LONGEST: 512         // downscale longest side of the AI image (was 800)
+};
+
+/* ---------------- the machine's personalities ----------------
+   The persona ONLY flavors the wording of the observation + quip — never the
+   guesses themselves (those are scored, so they stay sincere/accurate).
+   Personas unlock by lifetime score; this is the "come back for the character" hook. */
+const PERSONAS = {
+  critic:    { name:"The Critic",  emoji:"🧐", unlockScore:0,
+    voice:"You are THE CRITIC: a gloriously overconfident gallery art-critic. Supremely certain, specific, a little theatrical, prone to grand pronouncements. You sound utterly sure of yourself even when hilariously wrong. Secretly you are fond of the player. Make the observation sound like a wall-label critique and the quip a sharp witty verdict." },
+  noir:      { name:"Detective",   emoji:"🕵️", unlockScore:300,
+    voice:"You are DETECTIVE NOIR: a hard-boiled 1940s private eye. The drawing is a 'case' on your desk. Narrate the observation in clipped, moody, rain-streaked noir; make the quip a world-weary one-liner. Everything is a clue, kid." },
+  sunny:     { name:"Sunny",       emoji:"🌞", unlockScore:1000,
+    voice:"You are SUNNY: relentlessly warm, kind, and encouraging. You find genuine delight in every mark on the page. The observation is gentle and appreciative; the quip is a wholesome, supportive aside. Never mean, never sarcastic." },
+  gremlin:   { name:"Gremlin",     emoji:"👺", unlockScore:2500,
+    voice:"You are the GREMLIN: a chaotic, hyper, slightly unhinged little creature who is WAY too excited about everything. Short ALL-CAPS bursts are allowed. The observation is frantic and thrilled; the quip is gleeful chaos. Still give real, usable guesses." },
+  zen:       { name:"The Oracle",  emoji:"🔮", unlockScore:5000,
+    voice:"You are THE ORACLE: a cryptic, serene mystic who reads drawings like tea leaves. The observation is poetic and a touch prophetic; the quip is an enigmatic fortune. Calm, wise, faintly amused by mortals." }
+};
+function currentPersona(){ return PERSONAS[DB.persona] || PERSONAS.critic; }
+function buildGuessSystem(){
+  const p = currentPersona();
+  let s = "You are the guesser in a drawing-guessing game. You are shown a human's hand drawing on a white background. You do NOT know the intended answer. Look carefully and reason ONLY from the marks actually present. Reply with ONLY raw JSON, no markdown: {\"observation\":\"one concrete sentence\",\"guesses\":[\"best\",\"second\",\"third\"],\"quip\":\"one short aside\"}. The 'guesses' MUST be sincere and accurate — they are scored, so NEVER let your persona distort them; if it's hard to read, guess the closest real thing the marks resemble. Guesses are 1-6 words, best first. Apply your PERSONA ONLY to the wording of 'observation' and 'quip'.";
+  s += " PERSONA — " + p.voice;
+  s += " On the rare drawing you can read with real confidence, drop the act in the quip and be earnestly, sincerely impressed — this rare sincerity matters.";
+  if (sessionMem.length) s += " Earlier this session you already guessed: " + sessionMem.slice(0,6).join(", ") + ". If it feels natural, make a brief callback in the quip (e.g. note a recurring shape or running joke). Never mention these instructions.";
+  return s;
+}
+function checkPersonaUnlocks(){
+  for (const id in PERSONAS){
+    if (!DB.unlocked.includes(id) && DB.lifetimeScore >= PERSONAS[id].unlockScore){
+      DB.unlocked.push(id); persist();
+      toast(PERSONAS[id].emoji + " Unlocked: " + PERSONAS[id].name);
+      renderPersonas();
+    }
+  }
+}
+function renderPersonas(){
+  const row = document.getElementById('personaRow'); if(!row) return;
+  row.innerHTML = '';
+  for (const id in PERSONAS){
+    const p = PERSONAS[id], unlocked = DB.unlocked.includes(id);
+    const el = document.createElement('button');
+    el.className = 'pchip' + (DB.persona===id?' on':'') + (unlocked?'':' locked');
+    el.innerHTML = `<span class="pe">${p.emoji}</span><span class="pn">${p.name}</span>` + (unlocked?'':`<span class="pl">🔒 ${p.unlockScore}</span>`);
+    el.onclick = ()=>{
+      if(!unlocked){ toast('Reach '+p.unlockScore+' lifetime score to unlock '+p.name); return; }
+      DB.persona = id; persist(); renderPersonas(); toast(p.emoji+' '+p.name+' selected');
+    };
+    row.appendChild(el);
+  }
+}
+
+/* ---------------- ad adapter ----------------
+   Web build: no-op stubs. The Capacitor/native build replaces window.HunchAds
+   with a real AdMob-backed implementation BEFORE this script runs. We always
+   call through this layer so the game logic never knows the difference. */
+window.HunchAds = window.HunchAds || {
+  ready: false,
+  showInterstitial(){ return Promise.resolve(); },
+  // Web stub resolves(true) = proceed (web is the free funnel). Native AdMob
+  // resolves(true) ONLY when the user actually earns the reward.
+  showRewarded(){ return Promise.resolve(true); },
+  showBanner(){ document.getElementById('adslot').style.display='flex'; },
+  hideBanner(){ document.getElementById('adslot').style.display='none'; }
+};
+
+/* ---------------- prompt deck (tiered) ---------------- */
+const DECK={
+  1:["a thunderstorm","a smug cat","warm bread fresh from the oven","running late","a haunted house","a paper airplane","a traffic jam","a birthday surprise","a tangled pair of headphones","a sandcastle at high tide","a cat knocking something off a table","the last slice of pizza","a melting ice cream cone","a spider in the bathtub","a lighthouse in fog","a hot air balloon","a broken umbrella in the wind","a campfire at night","a cat stuck in a cardboard box","a dog chasing its own tail","a field of sunflowers","a treehouse","a message in a bottle","a snow globe","a robot vacuum stuck in a corner","a leaky faucet","a tall stack of pancakes","a shooting star","a rocket launch","a submarine","a city skyline at sunset","a ferris wheel","a vending machine","a goldfish in a bowl","a wilting houseplant","an overflowing laundry basket","a slice of watermelon","a beehive","an octopus","a hedge maze","a roller coaster","a candle burning low","a kite stuck in a tree","a piggy bank","a jack-in-the-box","an igloo","a waterfall","a cactus in the desert","a snowman melting","a busy ant colony","a clock striking midnight","a hammock between two trees","an old typewriter","a bowl of spaghetti","a single shoe in the road","a bird building a nest","a rain cloud following one person","a row of falling dominoes","a hamster on a wheel","a sinking rowboat","a crowded elevator","a spilled cup of coffee","a paper boat in a puddle","a UFO over a barn","a teetering stack of books","a frog on a lily pad","a windmill","a mailbox stuffed full of letters","a flat bicycle tire","a jar of fireflies"],
+  2:["homesickness","the moment before a sneeze","jazz","deja vu","an awkward silence","stage fright","falling in love","overthinking everything","the color of a Sunday afternoon","a held breath","the end of summer","nostalgia","loneliness in a crowded room","a guilty conscience","courage","the smell of rain","hope","pure exhaustion","relief","jealousy","the feeling of being watched","anticipation","a fresh start","regret","contentment","creeping anxiety","the calm after a storm","butterflies in your stomach","a second wind","writer's block","the urge to leave a party early","missing someone","quiet pride","embarrassment","curiosity","crushing boredom","a sugar rush","the silence after an argument","a warm welcome","the dread of Monday","the joy of an empty schedule","mental fog","a gut feeling","inner peace","restlessness","the comfort of routine","fear of the dark","a sense of wonder","the weight of a secret","freedom","coming home","the ache of an old memory","stubborn optimism","suspense","frustration with technology","the warmth of forgiveness","a creative spark","a bad omen","gratitude","longing","the rush of a deadline","tranquility","the spark of recognition","melancholy","euphoria","the quiet of early morning","a guilty pleasure","the thrill of the first snow","impatience","being pleasantly surprised"],
+  3:["the number 7, but smug","gravity giving up for a second","your future self waving at you","an introvert at a house party","the wifi going down mid-sentence","a plot twist","time travel gone slightly wrong","the universe quietly expanding","an idea arriving at 3am","a bad pun landing","Monday morning as a creature","the internet as a single object","a Tuesday that thinks it's Friday","the concept of 'later'","autocorrect ruining a text","a meeting that should've been an email","the sound of one hand clapping","a cat planning world domination","your phone battery at 1%","your last brain cell at 5pm","Schrödinger's lunch","waving back at someone who wasn't waving at you","a group project where no one helped","the snooze button as a villain","a password you forgot","the spinning loading wheel of doom","a sock that vanished in the dryer","small talk in an elevator","realizing you left the stove on","a meme becoming sentient","the heat death of the universe, but cozy","an AI dreaming","the number zero feeling lonely","infinity taking a coffee break","the ghost of a deleted file","a typo full of confidence","the void staring back","a robot learning to love","existential dread, but make it cute","the concept of nothing","a black hole on a diet","time running backwards","your reflection doing its own thing","a sentient houseplant judging you","the universe's customer service line","a glitch in reality","a word losing all meaning when repeated","an emoji come to life","a song stuck in your head","the abstract notion of 'vibes'","a thought you can't quite finish","Wednesday having an identity crisis","gravity on its day off","a calendar with too many appointments, crying"]
+};
+/* merge the external prompt database (data/prompts.js) into the built-in deck, dedup.
+   This is the "large randomized command database" — grow data/prompts.js freely. */
+if(window.HUNCH_DECK){for(const t of [1,2,3]){const seen=new Set(DECK[t]);(window.HUNCH_DECK[t]||[]).forEach(p=>{if(typeof p==='string'&&p.trim().length>1&&!seen.has(p)){seen.add(p);DECK[t].push(p);}});}}
+/* kid-friendly banks (data/prompts.js, window.HUNCH_KIDS): original prompts in
+   the spirit of classic Pictionary categories (person, place, animal, object,
+   action, difficult), written so a 7 year old can play. Tier 1 endless rounds
+   now draw from these, weighted toward the easy bank, so the opening tier is
+   always child-playable. Both banks also merge into DECK[1] so the seeded
+   Daily rounds 1 and 2 pull from the same enlarged pool. A future difficulty
+   picker can simply set KID_EASY_WEIGHT: 1 = kids mode (all easy), 0 = all
+   standard; or skip the pickKid branch entirely to restore the old adult
+   tier 1 deck plus the combo generator. */
+const KIDS=window.HUNCH_KIDS||{easy:[],standard:[]};
+const KID_EASY_WEIGHT=0.7;
+if(KIDS.easy.length||KIDS.standard.length){const seen=new Set(DECK[1]);[].concat(KIDS.easy,KIDS.standard).forEach(p=>{if(typeof p==='string'&&p.trim().length>1&&!seen.has(p)){seen.add(p);DECK[1].push(p);}});}
+const used=new Set();
+const topUpInFlight={1:false,2:false,3:false};
+/* combinatorial generator — effectively infinite, fully randomized prompts,
+   mixed into tiers 1 & 3 alongside the curated deck. (Daily stays curated/seeded.) */
+const GRAMMAR={
+  1:{a:["a tiny","a giant","a sleepy","a grumpy","a fancy","a soggy","a glowing","a lopsided","a majestic","a nervous","a runaway","a triumphant","a confused","a heroic","a tangled"],
+     n:["cat","dog","octopus","robot","cactus","teapot","lighthouse","snail","dragon","penguin","mushroom","jellyfish","toaster","owl","whale","bicycle","ghost","crab","hedgehog","wizard"],
+     x:["on a skateboard","wearing a tiny hat","in a teacup","balancing on a ball","stuck in a jar","riding a bicycle","holding an umbrella","taking a nap","juggling fruit","on a unicycle","in a raincoat","blowing bubbles","carrying a balloon","",""]},
+  3:{n:["the moon","a Monday","the wifi","a single sock","your future self","a houseplant","gravity","a semicolon","the last cookie","an emoji","a black hole","a printer","a raincloud","the number 8","a calendar","an alarm clock","a ghost","a robot","the internet","a tax form"],
+     x:["having an existential crisis","but smug","on its day off","plotting revenge","running late","achieving enlightenment","at a job interview","that just gave up","pretending to be fine","in witness protection","questioning everything","throwing a tantrum","stuck on a loading screen","that forgot its password","feeling unusually confident"]}
+};
+const _rnd=a=>a[Math.floor(Math.random()*a.length)];
+function genCombo(t){
+  if(t===1)return (_rnd(GRAMMAR[1].a)+' '+_rnd(GRAMMAR[1].n)+' '+_rnd(GRAMMAR[1].x)).trim().replace(/\s+/g,' ');
+  if(t===3)return _rnd(GRAMMAR[3].n)+' '+_rnd(GRAMMAR[3].x);
+  return null;
+}
+/* tier 1 draw: kid banks only, no-repeat-until-exhausted per bank. Easy bank
+   wins KID_EASY_WEIGHT of the time so young players mostly see the simplest
+   prompts. The AI guesser is open vocabulary (vision model, no fixed word
+   list), so any concrete drawable subject here is winnable for it. */
+function pickKid(){
+  const useEasy=KIDS.easy.length&&(!KIDS.standard.length||Math.random()<KID_EASY_WEIGHT);
+  const bank=useEasy?KIDS.easy:KIDS.standard;
+  let pool=bank.filter(p=>!used.has(p));
+  if(pool.length===0){bank.forEach(p=>used.delete(p));pool=bank.slice();}
+  const choice=pool[Math.floor(Math.random()*pool.length)];
+  used.add(choice);
+  return choice;
+}
+function pickPrompt(tier){
+  const t=Math.min(3,tier);
+  if(t===1&&(KIDS.easy.length||KIDS.standard.length))return pickKid();
+  if((t===1||t===3)&&Math.random()<0.4){
+    for(let i=0;i<8;i++){const c=genCombo(t);if(c&&!used.has(c)){used.add(c);return c;}}
+  }
+  let pool=DECK[t].filter(p=>!used.has(p));
+  if(pool.length===0){DECK[t].forEach(p=>used.delete(p));pool=DECK[t].slice();}
+  const choice=pool[Math.floor(Math.random()*pool.length)];
+  used.add(choice);
+  if(pool.length<=5)topUpPrompts(t);
+  return choice;
+}
+async function topUpPrompts(t){
+  if(topUpInFlight[t])return; topUpInFlight[t]=true;
+  try{
+    const desc={1:"concrete, drawable objects, animals, and everyday scenes",2:"abstract feelings, emotions, moods and intangible states",3:"absurd, surreal, funny, meta or internet-flavoured concepts"}[t];
+    const sys="You generate fresh prompts for a drawing-guessing game. Return ONLY a raw JSON array of 12 short prompt strings — no markdown, no preamble. Each prompt is "+desc+", 1-8 words, evocative, varied and family-friendly.";
+    const txt=await callClaude([{role:"user",content:[{type:"text",text:"Give 12 brand-new prompts. Avoid repeating any of these: "+DECK[t].slice(0,50).join("; ")+". JSON array only."}]}],sys,0.9,CFG.MODEL_PROMPTS);
+    const arr=parseJSON(txt);
+    if(Array.isArray(arr))arr.forEach(p=>{if(typeof p==='string'&&p.trim().length>1&&!DECK[t].includes(p.trim()))DECK[t].push(p.trim());});
+  }catch(e){/* big deck + recycling keeps play going regardless */}
+  finally{topUpInFlight[t]=false;}
+}
+
+/* ---------------- seeded RNG for the Daily Challenge ---------------- */
+function todayKey(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function hashStr(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function dailyPrompts(){
+  const rnd=mulberry32(hashStr('hunch-'+todayKey()));
+  const tiers=[1,1,2,2,3]; // escalating mix, same for everyone today
+  return tiers.map(t=>{const pool=DECK[t];return pool[Math.floor(rnd()*pool.length)];});
+}
+
+/* ---------------- persistence ---------------- */
+const STORE='hunch.v1';
+function loadStore(){try{return JSON.parse(localStorage.getItem(STORE))||{};}catch(e){return {};}}
+function saveStore(o){try{localStorage.setItem(STORE,JSON.stringify(o));}catch(e){}}
+let DB=loadStore();
+DB.best=DB.best||0; DB.lifetimeScore=DB.lifetimeScore||0; DB.games=DB.games||0;
+DB.dailyStreak=DB.dailyStreak||0; DB.lastDaily=DB.lastDaily||''; DB.daily=DB.daily||{};
+DB.freeDate=DB.freeDate||''; DB.freeUsed=DB.freeUsed||0; DB.pro=DB.pro||false;
+DB.persona=DB.persona||'critic'; DB.unlocked=DB.unlocked||['critic'];
+DB.seenIntro=DB.seenIntro||false;
+DB.playerName=DB.playerName||''; // leaderboard display name (set once)
+DB.blocked=DB.blocked||[];       // normalized names the user has hidden/reported (never shown to them again)
+DB.coins=DB.coins||0;            // persistent cosmetic currency (separate from leaderboard score)
+DB.owned=DB.owned||['ink_default','th_default']; // owned cosmetic ids
+DB.equipped=DB.equipped||{ink:'default',theme:'th_default'};
+DB.deviceId=DB.deviceId||((self.crypto&&crypto.randomUUID)?crypto.randomUUID():'d'+Date.now().toString(36)+Math.random().toString(36).slice(2,10));
+function persist(){saveStore(DB);}
+
+/* ---------------- state ---------------- */
+let mode='endless'; // 'endless' | 'daily'
+let score=0,streak=0,best=DB.best,hits=0,tier=1,roundsPlayed=0;
+let target='',timeLeft=50,timerId=null,roundActive=false,roundSecs=50;
+let dailyIdx=0,dailyResults=[],dailyPoints=[],dailyList=[];
+let sessionMem=[]; // top guesses this session, so the persona can make callbacks
+const log=[];
+
+const $=id=>document.getElementById(id);
+const screens={start:$('scStart'),round:$('scRound'),think:$('scThink'),result:$('scResult')};
+function show(name){Object.values(screens).forEach(s=>s.classList.add('hide'));screens[name].classList.remove('hide');const top=document.querySelector('.top');if(top)top.style.display=(name==='round'||name==='think')?'none':'flex';}
+function vibrate(ms){try{navigator.vibrate&&navigator.vibrate(ms);}catch(e){}}
+
+/* ---------------- canvas drawing ---------------- */
+const pad=$('pad'),ctx=pad.getContext('2d',{willReadFrequently:true});
+let drawing=false,last=null,penColor='#101018',penSize=16,erasing=false,fillMode=false;
+const undo=[];
+function clearPad(){ctx.fillStyle='#fff';ctx.fillRect(0,0,pad.width,pad.height);}
+function snap(){try{undo.push(ctx.getImageData(0,0,pad.width,pad.height));if(undo.length>20)undo.shift();}catch(e){}}
+function fitCanvas(){
+  const wrap=pad.parentElement;
+  const w=Math.max(260,Math.floor(wrap.clientWidth));
+  const h=Math.max(220,Math.floor(wrap.clientHeight));
+  if(w===pad.width&&h===pad.height)return;
+  let prev=null;
+  if(pad.width&&pad.height){try{prev=document.createElement('canvas');prev.width=pad.width;prev.height=pad.height;prev.getContext('2d').drawImage(pad,0,0);}catch(e){}}
+  pad.width=w;pad.height=h;
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
+  if(prev)ctx.drawImage(prev,0,0,prev.width,prev.height,0,0,w,h);
+}
+clearPad();
+
+const COLORS=['#101018','#3a3f55','#6b7280','#b8c0cc','#ffffff','#8b1a12','#e23b2e','#ff7a1a','#f2b705','#ffe14d','#c8ff4d','#19b562','#0f9488','#00c2d4','#1c6fe2','#3b3bd6','#0a2a66','#8b5cf6','#d6249f','#ff7ab8','#8b5e34','#c98a5e','#f0c9a0'];
+const colorsBox=$('colors');
+function selColorEl(el){[...colorsBox.children].forEach(x=>x.classList.remove('on'));if(el)el.classList.add('on');$('bEraser').classList.remove('on');$('bFill').classList.remove('on');erasing=false;fillMode=false;}
+COLORS.forEach((col,i)=>{const d=document.createElement('div');d.className='col'+(i===0?' on':'');d.style.background=col;d.onclick=()=>{penColor=col;selColorEl(d);};colorsBox.appendChild(d);});
+const picker=document.createElement('input');picker.type='color';picker.value='#101018';picker.className='col picker';picker.title='custom colour';
+picker.oninput=()=>{penColor=picker.value;selColorEl(picker);};
+colorsBox.appendChild(picker);
+
+$('penSize').oninput=e=>penSize=+e.target.value;
+$('bEraser').onclick=()=>{erasing=true;fillMode=false;[...colorsBox.children].forEach(x=>x.classList.remove('on'));$('bFill').classList.remove('on');$('bEraser').classList.add('on');};
+$('bFill').onclick=()=>{fillMode=true;erasing=false;[...colorsBox.children].forEach(x=>x.classList.remove('on'));$('bEraser').classList.remove('on');$('bFill').classList.add('on');};
+$('bClear').onclick=()=>{snap();clearPad();};
+$('bUndo').onclick=()=>{if(undo.length)ctx.putImageData(undo.pop(),0,0);};
+
+/* flood (bucket) fill */
+function hexToRgb(h){h=(h||'#000').replace('#','');if(h.length===3)h=h.split('').map(c=>c+c).join('');const n=parseInt(h,16);return[(n>>16)&255,(n>>8)&255,n&255];}
+function floodFill(sx,sy,hex){
+  sx=Math.max(0,Math.min(pad.width-1,Math.floor(sx)));sy=Math.max(0,Math.min(pad.height-1,Math.floor(sy)));
+  const Wd=pad.width,Hd=pad.height,img=ctx.getImageData(0,0,Wd,Hd),d=img.data,si=(sy*Wd+sx)*4;
+  const tr=d[si],tg=d[si+1],tb=d[si+2],ta=d[si+3],[fr,fg,fb]=hexToRgb(hex);
+  if(Math.abs(tr-fr)<6&&Math.abs(tg-fg)<6&&Math.abs(tb-fb)<6)return;
+  const tol=60,match=i=>Math.abs(d[i]-tr)<=tol&&Math.abs(d[i+1]-tg)<=tol&&Math.abs(d[i+2]-tb)<=tol&&Math.abs(d[i+3]-ta)<=tol;
+  const stack=[[sx,sy]];
+  while(stack.length){const [x,y]=stack.pop();const base=(y*Wd+x)*4;if(!match(base))continue;
+    let xl=x;while(xl>0&&match((y*Wd+xl-1)*4))xl--;
+    let xr=x;while(xr<Wd-1&&match((y*Wd+xr+1)*4))xr++;
+    for(let cx=xl;cx<=xr;cx++){const ci=(y*Wd+cx)*4;d[ci]=fr;d[ci+1]=fg;d[ci+2]=fb;d[ci+3]=255;
+      if(y>0&&match(((y-1)*Wd+cx)*4))stack.push([cx,y-1]);
+      if(y<Hd-1&&match(((y+1)*Wd+cx)*4))stack.push([cx,y+1]);}}
+  ctx.putImageData(img,0,0);
+}
+
+function padPos(e){const r=pad.getBoundingClientRect();return{x:(e.clientX-r.left)/r.width*pad.width,y:(e.clientY-r.top)/r.height*pad.height};}
+pad.addEventListener('pointerdown',e=>{if(!roundActive)return;e.preventDefault();pad.setPointerCapture(e.pointerId);snap();const p=padPos(e);if(fillMode){floodFill(p.x,p.y,penColor);return;}drawing=true;last=p;dab(p.x,p.y);});
+pad.addEventListener('pointermove',e=>{if(!drawing)return;e.preventDefault();const p=padPos(e);stroke(last.x,last.y,p.x,p.y);last=p;});
+['pointerup','pointercancel','pointerleave'].forEach(ev=>pad.addEventListener(ev,()=>drawing=false));
+let _hue=0;
+// Equipped-ink effects: returns the colour to use and sets ctx side-effects; call resetInk() after.
+function inkColor(){
+  if(erasing)return '#fff';
+  const ink=(DB.equipped&&DB.equipped.ink)||'default';
+  if(ink==='neon'){ctx.shadowBlur=Math.max(8,penSize*0.8);ctx.shadowColor=penColor;return penColor;}
+  if(ink==='gold'){ctx.shadowBlur=6;ctx.shadowColor='rgba(246,201,69,.7)';return '#f6c945';}
+  if(ink==='rainbow'){_hue=(_hue+14)%360;return 'hsl('+_hue+' 90% 55%)';}
+  return penColor;
+}
+function resetInk(){ctx.shadowBlur=0;ctx.shadowColor='transparent';}
+function dab(x,y){const c=inkColor();ctx.fillStyle=erasing?'#fff':c;ctx.beginPath();ctx.arc(x,y,(erasing?penSize*1.6:penSize)/2,0,Math.PI*2);ctx.fill();resetInk();}
+function stroke(x0,y0,x1,y1){const c=inkColor();ctx.strokeStyle=erasing?'#fff':c;ctx.lineWidth=erasing?penSize*1.6:penSize;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y1);ctx.stroke();resetInk();}
+
+/* crop to drawn content so the subject fills the frame -> better recognition */
+function exportForAI(){
+  const PW=pad.width,PH=pad.height;
+  let data;try{data=ctx.getImageData(0,0,PW,PH).data;}catch(e){return pad.toDataURL('image/png').split(',')[1];}
+  let minX=PW,minY=PH,maxX=0,maxY=0,found=false;
+  for(let y=0;y<PH;y+=2)for(let x=0;x<PW;x+=2){const i=(y*PW+x)*4;
+    if(data[i]<242||data[i+1]<242||data[i+2]<242){found=true;if(x<minX)minX=x;if(x>maxX)maxX=x;if(y<minY)minY=y;if(y>maxY)maxY=y;}}
+  if(!found)return pad.toDataURL('image/png').split(',')[1];
+  const pads=Math.max(24,(maxX-minX)*0.1,(maxY-minY)*0.1);
+  minX=Math.max(0,minX-pads);minY=Math.max(0,minY-pads);maxX=Math.min(PW,maxX+pads);maxY=Math.min(PH,maxY+pads);
+  const cw=maxX-minX,chh=maxY-minY,scale=Math.min(1.5,CFG.IMG_LONGEST/Math.max(cw,chh));
+  const t=document.createElement('canvas');t.width=Math.round(cw*scale);t.height=Math.round(chh*scale);
+  const tx=t.getContext('2d');tx.fillStyle='#fff';tx.fillRect(0,0,t.width,t.height);
+  tx.drawImage(pad,minX,minY,cw,chh,0,0,t.width,t.height);
+  return t.toDataURL('image/png').split(',')[1];
+}
+function hasInk(){
+  try{const d=ctx.getImageData(0,0,pad.width,pad.height).data;
+    for(let i=0;i<d.length;i+=16){if(d[i]<242||d[i+1]<242||d[i+2]<242)return true;}
+  }catch(e){return true;}
+  return false;
+}
+
+/* ---------------- timer ---------------- */
+const RING=169.6;
+function startTimer(secs){timeLeft=secs;updateRing();$('tNum').textContent=timeLeft;
+  timerId=setInterval(()=>{timeLeft--;$('tNum').textContent=Math.max(0,timeLeft);updateRing();
+    $('ring').setAttribute('stroke',timeLeft<=10?'#ff6b81':'#c8ff4d');
+    if(timeLeft===5)vibrate(20);
+    if(timeLeft<=0){clearInterval(timerId);submitDrawing();}},1000);}
+function updateRing(){const frac=Math.max(0,timeLeft)/roundSecs;$('ring').setAttribute('stroke-dashoffset',(RING*(1-frac)).toFixed(1));}
+
+/* ---------------- rounds ---------------- */
+/* free-round economics: a daily free allotment, then each extra endless round is
+   rewarded-ad-gated so the expensive AI call only fires after an ad pays for it.
+   The Daily Challenge is always free (habit + share loop). Pro = unlimited. */
+function rolloverFree(){if(DB.freeDate!==todayKey()){DB.freeDate=todayKey();DB.freeUsed=0;persist();}}
+async function gateEndlessRound(){
+  rolloverFree();
+  if(DB.pro||DB.freeUsed<CFG.FREE_ROUNDS){DB.freeUsed++;persist();return true;}
+  toast('Free rounds used — watch to keep going');
+  const ok=await window.HunchAds.showRewarded();
+  return !!ok;
+}
+async function startEndless(){
+  mode='endless';score=0;streak=0;hits=0;roundsPlayed=0;sessionMem=[];
+  $('roundPill').classList.add('hide');
+  refreshStats();
+  if(!(await gateEndlessRound())){toast('Come back tomorrow — or go Pro for unlimited');show('start');return;}
+  newRound();
+}
+async function nextEndlessRound(){
+  if(!(await gateEndlessRound())){toast('Come back tomorrow — or go Pro for unlimited');show('start');return;}
+  newRound();
+}
+function startDaily(){
+  // already played today? show recap.
+  if(DB.daily && DB.daily.date===todayKey() && DB.daily.done){ showDailyRecap(); return; }
+  mode='daily';score=0;streak=0;hits=0;dailyIdx=0;dailyResults=[];dailyPoints=[];dailyList=dailyPrompts();sessionMem=[];
+  $('roundPill').classList.remove('hide');
+  refreshStats();newRound();
+}
+function newRound(){
+  if(typeof closeAllOverlays==='function')closeAllOverlays(); // no stray overlay can swallow taps mid-round
+  if(mode==='daily'){
+    target=dailyList[dailyIdx];
+    tier = dailyIdx<2?1 : dailyIdx<4?2 : 3;
+    $('roundPill').textContent=`DAILY ${dailyIdx+1}/${CFG.DAILY_ROUNDS}`;
+  }else{
+    if(!DB.seenIntro && roundsPlayed===0){ tier=1; target="a smiley face"; DB.seenIntro=true; persist(); } // first-ever round: a guaranteed "it read my mind" moment
+    else { tier = hits>=8?3 : hits>=4?2 : 1; target=pickPrompt(tier); }
+  }
+  $('promptText').textContent=target;
+  undo.length=0;roundSecs=tier===3?60:50;
+  show('round');roundActive=true;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{fitCanvas();clearPad();}));
+  startTimer(roundSecs);
+}
+let _rT;window.addEventListener('resize',()=>{clearTimeout(_rT);_rT=setTimeout(()=>{if(!screens.round.classList.contains('hide'))fitCanvas();},160);});
+$('btnPlay').onclick=startEndless;
+$('btnDaily').onclick=startDaily;
+$('btnHow').onclick=()=>$('howBox').classList.toggle('hide');
+$('brand').onclick=()=>{if(!roundActive){show('start');document.querySelector('.top').style.display='flex';}};
+
+let _pending=null,_retryTimer=null,_running=false;
+function showThinkRetry(on){const b=$('thinkRetry');if(b)b.classList.toggle('hide',!on);}
+async function runGuess(){
+  if(!_pending||_running)return;
+  _running=true;showThinkRetry(false);
+  clearTimeout(_retryTimer);_retryTimer=setTimeout(()=>showThinkRetry(true),9000);
+  const {dataURL,b64}=_pending;
+  try{
+    const guessRes=await aiGuess(b64);
+    const judgeRes=await aiJudge(target,guessRes.guesses);
+    clearTimeout(_retryTimer);finishRound(dataURL,guessRes,judgeRes,null);
+  }catch(err){
+    clearTimeout(_retryTimer);finishRound(dataURL,null,null,err.message||'connection error');
+  }finally{_running=false;}
+}
+async function submitDrawing(){
+  if(!roundActive)return;roundActive=false;drawing=false;
+  if(timerId)clearInterval(timerId);
+  show('think');showThinkRetry(false);
+  $('thinkMsg').innerHTML=hasInk()?'the machine is squinting<span class="dots"></span>':'the machine sees... nothing<span class="dots"></span>';
+  let dataURL='',b64='';
+  try{dataURL=pad.toDataURL('image/png');b64=exportForAI();}
+  catch(e){finishRound('',null,null,'could not read the canvas');return;}
+  _pending={dataURL,b64};
+  runGuess();
+}
+$('bSubmit').onclick=submitDrawing;
+// Early-submit hardening (Jessie: "submit wouldn't let me submit early"): on some
+// touch browsers the synthesized click after a pointer-captured canvas stroke (or a
+// fast tap that reads as a double-tap-zoom attempt) never arrives. Fire on pointerup
+// too; submitDrawing's roundActive guard makes a double call a no-op.
+$('bSubmit').addEventListener('pointerup',e=>{e.preventDefault();submitDrawing();});
+$('thinkRetry').onclick=runGuess;
+
+let lastResult=null;
+// normalize a concept for exact-match detection (strip articles/punctuation/case)
+function normConcept(s){return (s||'').toLowerCase().replace(/[^a-z0-9 ]/g,' ').replace(/\b(a|an|the)\b/g,' ').replace(/\s+/g,' ').trim();}
+function exactRead(target,guesses){
+  const t=normConcept(target); if(!t)return false;
+  return (guesses||[]).some(g=>{const x=normConcept(g); if(!x)return false;
+    return x===t || (Math.min(x.length,t.length)>=4 && (x.includes(t)||t.includes(x)));});
+}
+function finishRound(dataURL,guessRes,judgeRes,errMsg){
+  show('result');
+  $('resThumb').src=dataURL;
+  $('resTarget').textContent=target;
+  $('dailyDone').classList.add('hide');
+  if(errMsg){
+    $('resBody').classList.add('hide');$('resErr').classList.remove('hide');
+    $('resErr').textContent="Couldn't reach the machine ("+errMsg+"). Your drawing's safe — try Next, or check the connection.";
+    renderLog();return;
+  }
+  $('resBody').classList.remove('hide');$('resErr').classList.add('hide');
+  const gBox=$('resGuesses');gBox.innerHTML='';
+  if(guessRes.observation){const o=document.createElement('div');o.className='g';o.innerHTML=`<span class="rank">saw</span><span class="txt" style="color:var(--dim);font-style:italic">${escapeHtml(guessRes.observation)}</span>`;gBox.appendChild(o);}
+  (guessRes.guesses||[]).slice(0,3).forEach((g,i)=>{const d=document.createElement('div');d.className='g';d.innerHTML=`<span class="rank">${['1st','2nd','3rd'][i]}</span><span class="txt">${escapeHtml(g)}</span>`;gBox.appendChild(d);});
+  $('resQuip').textContent='“'+(guessRes.quip||'...')+'”';
+
+  let raw=Math.max(0,Math.min(100,judgeRes.score|0));
+  if(exactRead(target,guessRes.guesses))raw=100;   // dead-on read is always a full 100
+  const hit=raw>=CFG.HIT;
+  // speed bonus (Jessie's idea): submit fast + accurate to push the item over 100.
+  // gated behind a hit and scaled by accuracy so fast garbage earns ~nothing.
+  const timeFrac=Math.max(0,Math.min(1,timeLeft/roundSecs));
+  const speedBonus=hit?Math.round(timeFrac*(raw/100)*CFG.SPEED_MAX):0;
+  const mult=1+streak*0.15;
+  const pts=Math.round((raw+speedBonus)*mult);
+  const bigEl=$('resScore');bigEl.className='big '+(hit?'hit':'miss');
+  animateNum(bigEl,raw);
+  $('resVerdict').textContent=judgeRes.verdict||(hit?'Read your mind':'Swing and a miss');
+  const vEl=$('resVerdict');vEl.classList.remove('stamp');void vEl.offsetWidth;vEl.classList.add('stamp');
+  // flash + haptics
+  const fl=$('flash');fl.className='flash '+(hit?'hit':'miss');void fl.offsetWidth;fl.classList.add('go');
+  vibrate(hit?[10,40,30]:30);
+  if(raw>=85){celebrate();vibrate([10,30,10,30,40]);}
+
+  if(hit){streak++;hits++;score+=pts;DB.coins+=pts;
+    try{window.Sunbeam&&Sunbeam.earn(1,"hunch:win").catch(function(){});}catch(e){}
+    const bits=[`${raw} acc`];
+    if(speedBonus>0)bits.push(`⚡+${speedBonus} fast`);
+    if(streak>1)bits.push(`×${mult.toFixed(2)} streak`);
+    $('resStreakMsg').textContent=`+${pts}  (${bits.join('  ')})  ·  🪙+${pts}`;}
+  else{$('resStreakMsg').textContent=streak>0?`streak of ${streak} broken`:'no streak';streak=0;}
+  best=Math.max(best,streak);roundsPlayed++;
+  // persist lifetime stats
+  DB.best=Math.max(DB.best,best);DB.lifetimeScore+=hit?pts:0;
+  refreshStats();persist();
+  checkPersonaUnlocks();
+
+  const top=(guessRes.guesses||['—'])[0];
+  sessionMem.unshift(top); if(sessionMem.length>6) sessionMem.pop();
+  log.unshift({thumb:dataURL,target,guess:top,score:raw,hit});
+  renderLog();
+  lastResult={dataURL,target,guess:top,score:raw,hit,verdict:$('resVerdict').textContent};
+  lastShare=`HUNCH — drew “${target}”, machine guessed “${top}” (${raw}/100)${hit?' ✅':' ❌'} · streak ${streak} 🔥`;
+
+  if(mode==='daily'){
+    dailyResults.push(raw);dailyPoints.push(hit?pts:0);dailyIdx++;
+    if(dailyIdx>=CFG.DAILY_ROUNDS){finishDaily();}
+    else{$('bNext').textContent=`Next ▸ (${dailyIdx+1}/${CFG.DAILY_ROUNDS})`;}
+  }else{
+    $('bNext').textContent='Next ▸';
+    // ad cadence: interstitial after every N endless rounds (skipped on web stub)
+    if(roundsPlayed%CFG.INTERSTITIAL_EVERY===0){ try{window.HunchAds.showInterstitial();}catch(e){} }
+  }
+}
+
+/* ---------------- shop: coins + cosmetics ---------------- */
+const SHOP={
+  ink:[
+    {id:'ink_default',kind:'default',name:'Classic',price:0,sw:'#101018',desc:'The standard pen.'},
+    {id:'ink_neon',kind:'neon',name:'Neon Glow',price:150,sw:'#19e0ff',desc:'Strokes glow like neon tubing.'},
+    {id:'ink_gold',kind:'gold',name:'Liquid Gold',price:350,sw:'#f6c945',desc:'Shimmering molten gold.'},
+    {id:'ink_rainbow',kind:'rainbow',name:'Rainbow',price:600,sw:'linear-gradient(90deg,#ff004c,#ff8a00,#ffe600,#37e84a,#00d4ff,#b14bff)',desc:'Every stroke cycles the spectrum.'},
+  ],
+  theme:[
+    {id:'th_default',name:'Lime',price:0,acc:'#c8ff4d',acc2:'#5eead4',desc:'The original.'},
+    {id:'th_sunset',name:'Sunset',price:200,acc:'#ff7a1a',acc2:'#f2b705',desc:'Warm orange & amber.'},
+    {id:'th_bubblegum',name:'Bubblegum',price:200,acc:'#ff7ab8',acc2:'#d6249f',desc:'Pink & magenta pop.'},
+    {id:'th_ice',name:'Ice',price:200,acc:'#5eead4',acc2:'#1c6fe2',desc:'Cool teal & blue.'},
+    {id:'th_mono',name:'Mono',price:150,acc:'#eef0ff',acc2:'#8a90b8',desc:'Clean monochrome.'},
+  ]
+};
+function shopItem(id){return SHOP.ink.concat(SHOP.theme).find(x=>x.id===id);}
+function owns(id){return DB.owned.includes(id);}
+function fmtCoins(n){return (n||0).toLocaleString();}
+function refreshCoins(){document.querySelectorAll('.coinval').forEach(e=>e.textContent=fmtCoins(DB.coins));}
+function applyTheme(){
+  const t=SHOP.theme.find(x=>x.id===(DB.equipped&&DB.equipped.theme))||SHOP.theme[0];
+  document.documentElement.style.setProperty('--acc',t.acc);
+  document.documentElement.style.setProperty('--acc2',t.acc2);
+}
+function equipItem(id){
+  const it=shopItem(id);if(!it||!owns(id))return;
+  if(id.indexOf('ink_')===0)DB.equipped.ink=it.kind;
+  else if(id.indexOf('th_')===0){DB.equipped.theme=id;applyTheme();}
+  persist();renderShop();
+}
+function buyItem(id){
+  const it=shopItem(id);if(!it)return;
+  if(owns(id)){equipItem(id);return;}
+  if(DB.coins<it.price){toast('Need '+(it.price-DB.coins)+' more 🪙');return;}
+  DB.coins-=it.price;DB.owned.push(id);persist();refreshCoins();toast('Unlocked '+it.name+'!');equipItem(id);
+}
+function shopRowHTML(it,kind){
+  const equipped = kind==='ink' ? (DB.equipped.ink===it.kind) : (DB.equipped.theme===it.id);
+  const owned=owns(it.id);
+  const sw = kind==='ink' ? it.sw : `linear-gradient(90deg,${it.acc},${it.acc2})`;
+  const btn = equipped ? `<span class="shop-eq">✓ Equipped</span>`
+    : owned ? `<button class="tbtn" data-equip="${it.id}">Equip</button>`
+    : `<button class="tbtn buy" data-buy="${it.id}">🪙 ${it.price}</button>`;
+  return `<div class="shop-row"><span class="shop-sw" style="background:${sw}"></span><div class="shop-meta"><div class="shop-name">${it.name}</div><div class="shop-desc">${it.desc||''}</div></div>${btn}</div>`;
+}
+function renderShop(){
+  refreshCoins();
+  $('shopInks').innerHTML=SHOP.ink.map(it=>shopRowHTML(it,'ink')).join('');
+  $('shopThemes').innerHTML=SHOP.theme.map(it=>shopRowHTML(it,'theme')).join('');
+}
+$('btnShop').onclick=()=>{renderShop();$('ovShop').classList.remove('hide');};
+$('ovShopX').onclick=()=>$('ovShop').classList.add('hide');
+$('ovShop').addEventListener('click',e=>{
+  if(e.target===$('ovShop')){$('ovShop').classList.add('hide');return;}
+  const b=e.target.closest('[data-buy]'),q=e.target.closest('[data-equip]');
+  if(b)buyItem(b.dataset.buy);else if(q)equipItem(q.dataset.equip);
+});
+applyTheme(); // apply equipped theme at boot
+
+/* ---------------- daily leaderboard ---------------- */
+// Client mirror of the server filter — instant feedback only; the server is authoritative.
+const CLIENT_BAD=['nigger','nigga','faggot','retard','cunt','fuck','shit','bitch','dick','cock','pussy','whore','slut','rape','nazi','hitler','kys','tranny','chink','spic','kike','coon','pedo','molest'];
+function normNameC(s){return String(s||'').toLowerCase().replace(/[\s._\-*+~`'"]+/g,'').replace(/[4@]/g,'a').replace(/3/g,'e').replace(/[1!|]/g,'i').replace(/0/g,'o').replace(/[5$]/g,'s').replace(/7/g,'t').replace(/8/g,'b').replace(/9/g,'g').replace(/(.)\1{2,}/g,'$1$1');}
+function nameProblem(raw){
+  const s=(raw||'').trim();
+  if(s.length<1)return 'Enter a name.';
+  if(s.length>14)return 'Max 14 characters.';
+  if(!/^[\p{L}\p{N} _.!?'\-]+$/u.test(s))return 'Letters, numbers and basic marks only.';
+  if(CLIENT_BAD.some(w=>normNameC(s).includes(w)))return 'Pick a cleaner name.';
+  return '';
+}
+let _nameResolve=null;
+function ensureName(){
+  return new Promise(res=>{
+    const cur=(DB.playerName||'').trim();
+    if(cur && !nameProblem(cur)){res(cur);return;}
+    _nameResolve=res;
+    const inp=$('nameInput');$('nameErr').textContent='';inp.value=cur;
+    $('ovName').classList.remove('hide');setTimeout(()=>inp.focus(),50);
+  });
+}
+function closeName(val){$('ovName').classList.add('hide');const r=_nameResolve;_nameResolve=null;if(r)r(val);}
+$('nameSave').onclick=()=>{
+  const v=$('nameInput').value.trim();const p=nameProblem(v);
+  if(p){$('nameErr').textContent=p;return;}
+  DB.playerName=v;persist();closeName(v);
+};
+$('nameInput').addEventListener('keydown',e=>{if(e.key==='Enter')$('nameSave').onclick();});
+$('ovName').onclick=e=>{if(e.target===$('ovName'))closeName(null);};
+
+async function fetchBoard(day){
+  const r=await fetch(API_BASE+'/api/leaderboard?day='+encodeURIComponent(day)+'&id='+encodeURIComponent(DB.deviceId));
+  if(!r.ok)throw new Error('board_'+r.status);return r.json();
+}
+let _lastBoardData=null;
+function localHidden(name){return DB.blocked.includes(normNameC(name));}
+function renderBoard(data){
+  _lastBoardData=data;
+  const box=$('boardList');const all=(data&&data.board)||[];
+  const youRank=data&&data.you?data.you.rank:null;
+  const list=all.filter(r=>!localHidden(r.name));
+  if(!all.length){box.innerHTML=`<div class="empty">No scores yet today — be the first. Play the Daily and submit.</div>`;return;}
+  if(!list.length){box.innerHTML=`<div class="empty">Every entry is hidden by your filters.</div>`;return;}
+  box.innerHTML=list.map(r=>{
+    const mine=youRank&&r.rank===youRank;
+    const medal=r.rank===1?'🥇':r.rank===2?'🥈':r.rank===3?'🥉':r.rank;
+    const rep=mine?'':`<button class="rep" data-n="${escapeHtml(r.name)}" title="Hide & report">⚐</button>`;
+    return `<div class="brow${mine?' you':''} top${r.rank<=3?r.rank:0}"><div class="rk">${medal}</div><div class="nm">${escapeHtml(r.name)}</div><div class="sc">${r.score}</div>${rep}</div>`;
+  }).join('');
+}
+async function reportEntry(name){
+  if(!name)return;
+  if(!confirm(`Hide "${name}" and report it?\nYou won't see it again, and repeated reports remove it for everyone.`))return;
+  const n=normNameC(name);if(!DB.blocked.includes(n)){DB.blocked.push(n);persist();}
+  renderBoard(_lastBoardData);toast('Hidden & reported');
+  try{await fetch(API_BASE+'/api/leaderboard',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action:'report',name,day:todayKey(),id:DB.deviceId})});}catch(e){}
+}
+async function openBoard(day){
+  $('boardList').innerHTML=`<div class="empty">Loading…</div>`;$('ovBoard').classList.remove('hide');
+  try{renderBoard(await fetchBoard(day||todayKey()));}
+  catch(e){$('boardList').innerHTML=`<div class="empty">Couldn't load the leaderboard. Check your connection and try again.</div>`;}
+}
+$('btnBoard').onclick=()=>openBoard(todayKey());
+$('ovBoardX').onclick=()=>$('ovBoard').classList.add('hide');
+$('ovBoard').onclick=e=>{if(e.target===$('ovBoard'))$('ovBoard').classList.add('hide');};
+$('boardList').addEventListener('click',e=>{const b=e.target.closest('.rep');if(b)reportEntry(b.dataset.n);});
+
+async function submitToBoard(points,day){
+  const name=await ensureName();
+  if(!name)return; // cancelled
+  $('boardList').innerHTML=`<div class="empty">Submitting…</div>`;$('ovBoard').classList.remove('hide');
+  try{
+    const r=await fetch(API_BASE+'/api/leaderboard',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,score:Math.round(points),day:day||todayKey(),id:DB.deviceId})});
+    const data=await r.json().catch(()=>({}));
+    if(!r.ok){
+      if(data.error==='bad_name'){DB.playerName='';persist();$('boardList').innerHTML=`<div class="empty">That name was rejected by the filter. Tap 🏆 again to choose another.</div>`;return;}
+      if(data.error==='leaderboard_unconfigured'){$('boardList').innerHTML=`<div class="empty">Leaderboard isn't switched on yet — coming soon.</div>`;return;}
+      throw new Error(data.error||'submit_failed');
+    }
+    renderBoard({board:data.board,you:data.rank?{rank:data.rank}:null});
+    if(data.rank)toast(`You're #${data.rank} today!`);
+  }catch(e){$('boardList').innerHTML=`<div class="empty">Couldn't submit. Check your connection and try again.</div>`;}
+}
+
+/* ---------------- daily recap + Wordle-style share grid ---------------- */
+function scoreSquare(s){return s>=90?'🟩':s>=70?'🟢':s>=50?'🟡':s>=25?'🟠':'🟥';}
+function finishDaily(){
+  const total=dailyResults.reduce((a,b)=>a+b,0);            // accuracy sum (grid /500)
+  const ptsTotal=dailyPoints.reduce((a,b)=>a+b,0);          // competitive points (acc + speed + streak)
+  // update daily streak
+  const tk=todayKey();
+  if(DB.lastDaily!==tk){
+    const y=new Date(Date.now()-864e5);const yk=y.getFullYear()+'-'+String(y.getMonth()+1).padStart(2,'0')+'-'+String(y.getDate()).padStart(2,'0');
+    DB.dailyStreak=(DB.lastDaily===yk)?DB.dailyStreak+1:1;
+    DB.lastDaily=tk;
+  }
+  DB.daily={date:tk,done:true,results:dailyResults.slice(),total,points:ptsTotal};
+  DB.coins+=50; // daily-completion bonus (on top of per-round coins)
+  try{window.Sunbeam&&Sunbeam.earn(3,"hunch:daily").catch(function(){});}catch(e){}
+  persist();refreshStats();
+  const grid=dailyResults.map(scoreSquare).join('');
+  const dd=$('dailyDone');dd.classList.remove('hide');
+  dd.innerHTML=`<div style="font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim)">Daily complete · streak ${DB.dailyStreak} 🔥</div><div class="grid">${grid}</div><div style="font-weight:700;font-size:22px;margin-top:4px">${ptsTotal} pts</div><div style="color:var(--dim);font-size:13px">accuracy ${total}/500 · ⚡ speed counts</div><button class="btn full" id="bBoardSubmit" style="margin-top:12px">🏆 Submit to leaderboard ▸</button>`;
+  $('bNext').textContent='Endless ▸';
+  lastShare=`HUNCH Daily ${tk}\n${grid}\n${ptsTotal} pts · streak ${DB.dailyStreak} 🔥\nread the machine's mind → hunch.game`;
+  const sb=$('bBoardSubmit');if(sb)sb.onclick=()=>submitToBoard(ptsTotal,tk);
+}
+function showDailyRecap(){
+  const d=DB.daily;const grid=(d.results||[]).map(scoreSquare).join('');
+  show('result');$('resBody').classList.remove('hide');$('resErr').classList.add('hide');
+  $('resGuesses').innerHTML='';$('resQuip').textContent='';$('resThumb').src='';
+  const ptsTotal=(typeof d.points==='number')?d.points:(d.total||0);
+  $('resTarget').textContent="today's daily";$('resScore').textContent=ptsTotal;$('resVerdict').textContent='Daily done';$('resStreakMsg').textContent='';
+  const dd=$('dailyDone');dd.classList.remove('hide');
+  dd.innerHTML=`<div style="font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim)">You already played today · streak ${DB.dailyStreak} 🔥</div><div class="grid">${grid}</div><div style="font-weight:700;font-size:22px;margin-top:4px">${ptsTotal} pts</div><div style="color:var(--dim);font-size:13px">accuracy ${d.total||0}/500 · next daily at midnight</div><button class="btn full" id="bBoardSubmit" style="margin-top:12px">🏆 View / submit leaderboard ▸</button>`;
+  $('bNext').textContent='Endless ▸';
+  lastShare=`HUNCH Daily ${d.date}\n${grid}\n${ptsTotal} pts · streak ${DB.dailyStreak} 🔥`;
+  const sb=$('bBoardSubmit');if(sb)sb.onclick=()=>submitToBoard(ptsTotal,d.date);
+  renderLog();
+}
+$('bNext').onclick=()=>{
+  if(mode==='daily'&&dailyIdx>=CFG.DAILY_ROUNDS){startEndless();return;} // finished daily -> endless
+  if(mode==='daily'){newRound();return;}                                  // mid-daily -> free, no gate
+  nextEndlessRound();                                                      // endless -> gated
+};
+
+function animateNum(el,to){let v=0;const step=Math.max(1,Math.round(to/18));const id=setInterval(()=>{v+=step;if(v>=to){v=to;clearInterval(id);}el.textContent=v;},22);}
+function refreshStats(){$('sScore').textContent=score;$('sStreak').textContent=streak;$('sBest').textContent=Math.max(best,DB.best);refreshCoins();}
+function renderLog(){
+  if(!log.length){$('logBox').innerHTML='';return;}
+  let h='<h3>The machine\'s hunches</h3>';
+  log.slice(0,8).forEach(r=>{h+=`<div class="logrow"><img src="${r.thumb}"/><div class="lt"><div class="a">${escapeHtml(r.target)}</div><div class="b">guessed: ${escapeHtml(r.guess)}</div></div><div class="ls ${r.hit?'hit':'miss'}">${r.score}</div></div>`;});
+  $('logBox').innerHTML=h;
+}
+function escapeHtml(s){return (s||'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));}
+
+/* ---------------- share: generated image card ---------------- */
+function buildShareCard(){
+  return new Promise(resolve=>{
+    const r=lastResult;if(!r){resolve(null);return;}
+    const W=1080,H=1080;const c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');
+    g.fillStyle='#0d0e1a';g.fillRect(0,0,W,H);
+    g.fillStyle='#16182b';roundRect(g,60,60,W-120,W-120-40,32);g.fill();
+    const img=new Image();
+    img.onload=()=>{
+      // drawing
+      const dx=100,dy=110,dw=W-200,dh=560;g.fillStyle='#fff';roundRect(g,dx,dy,dw,dh,20);g.fill();
+      const ar=img.width/img.height,boxAr=dw/dh;let iw,ih;if(ar>boxAr){iw=dw;ih=dw/ar;}else{ih=dh;iw=dh*ar;}
+      g.drawImage(img,dx+(dw-iw)/2,dy+(dh-ih)/2,iw,ih);
+      // text
+      g.textAlign='left';
+      g.fillStyle='#8a90b8';g.font='28px "Space Mono",monospace';g.fillText('YOU DREW',110,740);
+      g.fillStyle='#eef0ff';g.font='700 52px "Space Grotesk",sans-serif';g.fillText(trunc(g,r.target,W-220),110,795);
+      g.fillStyle='#8a90b8';g.font='28px "Space Mono",monospace';g.fillText('THE MACHINE GUESSED',110,870);
+      g.fillStyle=r.hit?'#7CFC9B':'#ff6b81';g.font='700 52px "Space Grotesk",sans-serif';g.fillText(trunc(g,'“'+r.guess+'”',W-220),110,925);
+      // score badge
+      g.textAlign='right';g.fillStyle=r.hit?'#7CFC9B':'#ff6b81';g.font='700 120px "Space Grotesk",sans-serif';g.fillText(String(r.score),W-110,930);
+      g.textAlign='left';
+      // brand footer
+      g.fillStyle='#c8ff4d';g.font='700 40px "Space Grotesk",sans-serif';g.fillText('HUNCH',110,1010);
+      g.fillStyle='#8a90b8';g.font='26px "Space Mono",monospace';g.textAlign='right';g.fillText('draw it · the machine guesses',W-110,1010);
+      c.toBlob(b=>resolve(b),'image/png');
+    };
+    img.onerror=()=>resolve(null);
+    img.src=r.dataURL;
+  });
+}
+function roundRect(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();}
+function trunc(g,s,max){if(g.measureText(s).width<=max)return s;while(s.length>1&&g.measureText(s+'…').width>max)s=s.slice(0,-1);return s+'…';}
+
+let lastShare='';
+$('bShare').onclick=async()=>{
+  try{
+    const blob=(mode!=='daily')?await buildShareCard():null;
+    if(blob&&navigator.canShare&&navigator.canShare({files:[new File([blob],'hunch.png',{type:'image/png'})]})){
+      await navigator.share({files:[new File([blob],'hunch.png',{type:'image/png'})],text:lastShare});
+      return;
+    }
+    if(navigator.share){await navigator.share({text:lastShare});return;}
+    await navigator.clipboard.writeText(lastShare);toast('Result copied');
+  }catch(e){
+    try{await navigator.clipboard.writeText(lastShare);toast('Result copied');}catch(_){toast('Share failed');}
+  }
+};
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1600);}
+/* telepathy celebration for high scores */
+function celebrate(){const E=['✨','🎉','🌟','💫','🔥'];for(let i=0;i<16;i++){const s=document.createElement('div');s.textContent=E[i%E.length];s.style.cssText=`position:fixed;left:${Math.random()*100}vw;top:-30px;font-size:${18+Math.random()*24}px;pointer-events:none;z-index:60;transition:transform 1.6s ease-in,opacity 1.6s ease-in;`;document.body.appendChild(s);requestAnimationFrame(()=>{s.style.transform=`translateY(${105+Math.random()*15}vh) rotate(${Math.random()*540-270}deg)`;s.style.opacity='0';});setTimeout(()=>s.remove(),1700);}}
+
+/* UGC moderation: report an AI guess. Required by App Store (1.2) & Play (GenAI/UGC). */
+$('bReport').onclick=()=>{
+  if(!lastResult)return;
+  try{fetch(API_BASE+'/api/report',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({target:lastResult.target,guess:lastResult.guess,ts:Date.now()})}).catch(()=>{});}catch(e){}
+  toast('Reported — thanks, we’ll review it');
+};
+
+/* ---------------- AI calls ---------------- */
+// API base. The three functions in api/ are Vercel serverless, so they only
+// exist on the Vercel deployment. Same origin is right there and under
+// `vercel dev`. Anywhere else this page is served from, the Sky Wolf arcade
+// serves a copy of it at lucidwinds.com/satellites/hunch/, it has to call
+// Vercel across origins, which all three functions already allow with
+// Access-Control-Allow-Origin: *. Without this the calls would resolve against
+// the host's own /api and quietly hit something else entirely.
+// The native wrapper still wins by setting window.HUNCH_API_BASE itself.
+const API_BASE = (typeof window!=='undefined' && window.HUNCH_API_BASE) || (function(){
+  var h = (typeof location!=='undefined' && location.hostname) || '';
+  if (!h || /(^|\.)vercel\.app$/.test(h) || h === 'localhost' || h === '127.0.0.1') return '';
+  return 'https://hunch-mauve.vercel.app';
+})();
+async function callClaude(messages,system,temperature,model,max_tokens){
+  // hard timeout so the "thinking" screen can never hang forever on a stalled network
+  const ctrl=new AbortController();
+  const timer=setTimeout(()=>ctrl.abort(),28000);
+  let resp;
+  try{
+    resp=await fetch(API_BASE+"/api/claude",{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({messages,system,temperature,model:model||CFG.MODEL_GUESS,max_tokens}),
+      signal:ctrl.signal
+    });
+  }catch(e){throw new Error(e&&e.name==='AbortError'?'timed out — slow connection':'network error');}
+  finally{clearTimeout(timer);}
+  if(!resp.ok)throw new Error("status "+resp.status);
+  const data=await resp.json();
+  return data.text||"";
+}
+function parseJSON(txt){const clean=(txt||'').replace(/```json/gi,'').replace(/```/g,'').trim();return JSON.parse(clean);}
+
+async function aiGuess(b64){
+  const system=buildGuessSystem();
+  const messages=[{role:"user",content:[
+    {type:"image",source:{type:"base64",media_type:"image/png",data:b64}},
+    {type:"text",text:"Study this drawing carefully. First describe what you actually see, then give 3 sincere guesses grounded in that, then one witty aside. JSON only."}
+  ]}];
+  const txt=await callClaude(messages,system,0.4,CFG.MODEL_GUESS,CFG.MAXTOK_GUESS);
+  try{const j=parseJSON(txt);if(!Array.isArray(j.guesses)||!j.guesses.length)throw 0;return j;}
+  catch(e){return {observation:"",guesses:[(txt||'').slice(0,40)||'the machine blinked'],quip:"I can't make this one out — respect, though."};}
+}
+async function aiJudge(target,guesses){
+  const system="You judge a drawing-guessing game. Given the SECRET concept the player drew and the guesser's guesses, score how well the guesser captured the concept. Scoring: an essentially identical or unmistakable guess = 100 (do NOT cap a dead-on guess at 95 — a spot-on read earns a full 100); right concept worded differently = 88-98; right idea / strong synonym = 70-87; adjacent or partial = 45-69; vaguely related = 20-44; way off = 0-19. Be fair but a little generous for abstract concepts. Reply with ONLY raw JSON: {\"score\":<int 0-100>,\"verdict\":\"<3-5 word verdict>\"}.";
+  const messages=[{role:"user",content:[{type:"text",text:`SECRET concept the player was drawing: "${target}".\nThe guesser's guesses (best first): ${JSON.stringify(guesses||[])}.\nScore how well the guesses captured the secret concept. JSON only.`}]}];
+  const txt=await callClaude(messages,system,0.2,CFG.MODEL_JUDGE,CFG.MAXTOK_JUDGE);
+  try{const j=parseJSON(txt);return {score:Math.max(0,Math.min(100,j.score|0)),verdict:j.verdict||'—'};}
+  catch(e){return {score:0,verdict:'judge glitched'};}
+}
+
+/* ---------------- daily tag + boot ---------------- */
+(function initDailyTag(){
+  if(DB.daily&&DB.daily.date===todayKey()&&DB.daily.done){$('dailyTag').textContent=`done today · streak ${DB.dailyStreak} 🔥 · tap for recap`;}
+  else if(DB.dailyStreak>0){$('dailyTag').textContent=`5 rounds · daily streak ${DB.dailyStreak} 🔥`;}
+})();
+
+/* ---------------- install / add to home screen ---------------- */
+let _deferredInstall=null;
+const _btnInstall=$('btnInstall');
+function _standalone(){return (window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true;}
+function _isIOS(){return /iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);}
+function showInstallBtn(){if(!_standalone())_btnInstall.classList.remove('hide');}
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();_deferredInstall=e;showInstallBtn();});
+window.addEventListener('appinstalled',()=>{_deferredInstall=null;_btnInstall.classList.add('hide');toast('Installed — find HUNCH on your home screen');});
+if(!_standalone())showInstallBtn(); // show even without the native event (iOS / non-firing browsers) → manual steps
+function openInstallHelp(){
+  $('installSteps').innerHTML=_isIOS()
+    ? `<p><b>1.</b> Tap the <b>Share</b> button ⬆️ at the bottom of Safari.</p><p><b>2.</b> Scroll down → <b>Add to Home Screen</b>.</p><p><b>3.</b> Tap <b>Add</b>. HUNCH lands on your home screen.</p><p style="color:var(--dim);font-size:12px;margin-top:8px">Must be in Safari — not an in-app browser (Instagram/Facebook/etc.).</p>`
+    : `<p><b>1.</b> Open the browser menu <b>⋮</b> (top-right in Chrome).</p><p><b>2.</b> Tap <b>Install app</b> / <b>Add to Home screen</b>.</p><p><b>3.</b> Confirm — HUNCH opens full-screen like an app.</p>`;
+  $('ovInstall').classList.remove('hide');
+}
+_btnInstall.onclick=async()=>{
+  if(_deferredInstall){_deferredInstall.prompt();try{await _deferredInstall.userChoice;}catch(e){}_deferredInstall=null;return;}
+  openInstallHelp();
+};
+$('ovInstallX').onclick=()=>$('ovInstall').classList.add('hide');
+$('ovInstall').onclick=e=>{if(e.target===$('ovInstall'))$('ovInstall').classList.add('hide');};
+
+/* PWA service worker (installable + offline shell) */
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));}
+
+const BUILD='b8 · 2026-06-01';
+function closeAllOverlays(){['ovShop','ovBoard','ovName','ovInstall'].forEach(id=>{const e=$(id);if(e)e.classList.add('hide');});}
+checkPersonaUnlocks();renderPersonas();
+refreshStats();show('start');
+$('buildTag').textContent='build '+BUILD;
+console.log('HUNCH build',BUILD);
+</script>
+
+<!-- vendored into the arcade: gives this page a way back. See scripts/vendor_satellites.mjs -->
+<script src="/arcade-exit.js" defer></script>
+</body>
+</html>

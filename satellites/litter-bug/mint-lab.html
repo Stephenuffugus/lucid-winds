@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Litter Bug / mint lab</title>
+<style>
+  :root { color-scheme: dark; }
+  html, body { margin: 0; padding: 0; background: #0d100c; color: #e8dcc8;
+    font: 15px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-tap-highlight-color: transparent; }
+  header { padding: 14px 16px 8px; border-bottom: 1px solid #1c1f1a; }
+  h1 { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: .02em; }
+  .sub { margin-top: 3px; font-size: 12px; color: #8a9178; max-width: 46ch; }
+  main { padding: 14px; max-width: 460px; margin: 0 auto; }
+
+  .stage { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+
+  .trialhead { display: flex; align-items: baseline; justify-content: space-between;
+    width: 100%; font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 12px; color: #8a9178; }
+  .trialhead .count { color: #c8a84b; }
+
+  .board { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;
+    width: 100%; aspect-ratio: 1 / 1; touch-action: manipulation; }
+  .cell { background: #15191a; border: 1px solid #22271f; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    transition: background .06s, transform .06s; user-select: none;
+    font-size: 20px; color: #3a4634; min-height: 44px; }
+  .cell:active { transform: scale(.94); }
+  .cell.target { background: #2a3a1f; border-color: #7ab356;
+    box-shadow: 0 0 14px rgba(122,179,86,.35); color: #b6e08a; }
+  .cell.hit { background: #34301a; border-color: #c8a84b; }
+  .board.done .cell { opacity: .45; cursor: default; }
+  @keyframes hitpop { 0% { transform: scale(1); } 40% { transform: scale(1.14); } 100% { transform: scale(1); } }
+  .cell.pop { animation: hitpop .22s ease-out; }
+  .charge { height: 8px; background: #15191a; border: 1px solid #22271f; border-radius: 5px; overflow: hidden; margin-top: 10px; }
+  .chargefill { height: 100%; width: 0; background: linear-gradient(90deg, #7ab356, #c8a84b);
+    border-radius: 5px; transition: width .18s ease; box-shadow: 0 0 8px rgba(200,168,75,.5); }
+  @media (prefers-reduced-motion: reduce) { .cell.pop { animation: none; } }
+
+  .btnrow { display: flex; gap: 8px; width: 100%; flex-wrap: wrap; }
+  button { flex: 1 1 auto; padding: 12px 14px; background: #1d251c; color: #e8dcc8;
+    border: 1px solid #3a4634; border-radius: 10px; font-size: 15px;
+    min-height: 48px; cursor: pointer; }
+  button:active { background: #2a3527; }
+  button.primary { background: #2a3a1f; border-color: #7ab356; color: #d8ecc4; }
+  button:disabled { opacity: .4; cursor: default; }
+
+  .result { width: 100%; display: none; flex-direction: column; align-items: center;
+    gap: 8px; padding-top: 4px; }
+  .result.show { display: flex; }
+  .bugwrap { background: #131614; border: 1px solid #1f231d; border-radius: 16px;
+    padding: 14px; }
+  .bugwrap svg { width: 200px; height: 200px; display: block; }
+  .bugname { font-size: 18px; font-weight: 600; color: #c8a84b; text-align: center; }
+  .bugspecies { font-style: italic; font-size: 13px; color: #8a9178; margin-top: -2px; }
+  .bugdesig { font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 10.5px; color: #6f7766; letter-spacing: .04em; }
+  .grownote { text-align: center; font-size: 12px; color: #6f7a68;
+    margin: 2px 0 10px; letter-spacing: .2px; }
+  .buglore { white-space: pre-line; text-align: center; font-size: 13.5px;
+    line-height: 1.55; color: #cdbfa6; max-width: 32ch; margin: 4px auto 2px;
+    font-style: italic; }
+  .fighter { width: 100%; background: #10140f; border: 1px solid #1f231d;
+    border-radius: 10px; padding: 10px 12px; box-sizing: border-box; }
+  .fhead { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+  .tbadge { font-size: 11px; font-weight: 700; letter-spacing: .05em;
+    text-transform: uppercase; padding: 3px 8px; border-radius: 6px; color: #0d100c; }
+  .fmeta { font-size: 12px; color: #cdbfa6; }
+  .fmeta .pwr { color: #c8a84b; font-weight: 600; }
+  .fmeta .rar { font-weight: 600; }
+  .fkit { font-size: 11px; color: #8a9178; margin-bottom: 8px; font-style: italic; }
+  .statrow { display: grid; grid-template-columns: 32px 1fr 26px; align-items: center;
+    gap: 8px; margin: 3px 0; font-size: 11px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .statrow .lbl { color: #8a9178; }
+  .statrow .track { height: 7px; background: #1c211a; border-radius: 4px; overflow: hidden; }
+  .statrow .fill { height: 100%; border-radius: 4px; }
+  .statrow .val { color: #cdbfa6; text-align: right; }
+  .ftags { margin-top: 7px; font-size: 10.5px; color: #6f7766; letter-spacing: .03em; }
+  .fmatch { margin-top: 8px; font-size: 11px; color: #9aa48c; line-height: 1.45; }
+  .fmatch b { color: #cdbfa6; } .fmatch .up { color: #7ab356; } .fmatch .down { color: #c86a4b; }
+  .collnote { font-size: 12px; color: #7ab356; text-align: center; }
+  .codeblock { font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11px; color: #7ab356; word-break: break-all; text-align: center;
+    background: #10140f; border: 1px solid #1f231d; border-radius: 8px;
+    padding: 8px 10px; width: 100%; box-sizing: border-box; }
+  .codeblock .lbl { color: #6f7766; display: block; margin-bottom: 3px;
+    font-size: 10px; letter-spacing: .06em; text-transform: uppercase; }
+  .trace { font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 10.5px; color: #6f7766; word-break: break-all; text-align: center;
+    width: 100%; }
+  .verdict { font-size: 12px; min-height: 16px; }
+  .verdict.ok { color: #7ab356; }
+  .verdict.bad { color: #c86a4b; }
+
+  footer { padding: 14px 16px 28px; color: #6f7766; font-size: 12px;
+    border-top: 1px solid #1c1f1a; max-width: 460px; margin: 8px auto 0; }
+  footer code { background: #15191a; padding: 1px 5px; border-radius: 4px; }
+  footer .salt { color: #8a9178; }
+</style>
+</head>
+<body>
+<script>
+/* Sky Wolf portal embed: announce alive on every page, so the arcade's
+   black-screen recovery never mistakes an in-game navigation for a dead
+   frame (it yanked players back to the arcade mid-trial, Stephen 7/30). */
+if (window.parent !== window) {
+  var swsHi = function () { try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {} };
+  swsHi(); window.addEventListener('load', swsHi); setTimeout(swsHi, 700);
+}
+</script>
+
+<header>
+  <h1>Litter Bug / mint lab</h1>
+  <div class="sub">Phase 0. Play the trial. Your taps and timing become a
+    codeblock (SHA-256). The codeblock rolls your bug. Same recorded play
+    always mints the same bug, which is what a server can verify later.</div>
+</header>
+<main>
+  <div class="stage">
+    <div class="trialhead">
+      <span id="prompt">Tap start, then hit the lit cells.</span>
+      <span class="count"><span id="tapCount">0</span>/<span id="tapGoal">8</span></span>
+    </div>
+
+    <div id="board" class="board" aria-label="mint trial board"></div>
+    <div class="charge" aria-hidden="true"><div class="chargefill" id="chargefill"></div></div>
+
+    <div class="btnrow">
+      <button id="startBtn" class="primary">Start trial</button>
+    </div>
+
+    <div id="result" class="result">
+      <div class="bugwrap" id="bugwrap"></div>
+      <div class="grownote" id="grownote">Level 1 hatchling. It grows new limbs, wings and armor as you train it.</div>
+      <div class="bugname" id="bugname"></div>
+      <div class="bugspecies" id="bugspecies"></div>
+      <div class="bugdesig" id="bugdesig"></div>
+      <div class="buglore" id="buglore"></div>
+      <div class="fighter" id="fighter"></div>
+      <div class="collnote" id="collnote"></div>
+      <div class="codeblock">
+        <span class="lbl">codeblock</span>
+        <span id="cbHex"></span>
+      </div>
+      <div class="trace" id="traceStr"></div>
+      <div class="btnrow">
+        <button id="verifyBtn">Verify (re-mint same play)</button>
+        <button id="againBtn" class="primary">Play again</button>
+      </div>
+      <div class="verdict" id="verdict"></div>
+    </div>
+  </div>
+</main>
+<footer>
+  The salt folded into your play is a fixed local stand-in
+  (<code class="salt" id="saltLbl"></code>). In the real game this is a
+  per-player secret held server-side, so nobody can replay an input to farm a
+  specific bug. Everything here runs on <code>bug-engine.js</code>, the same
+  module a battle screen and the map will share.
+</footer>
+
+<script src="bug-engine.js"></script>
+<script src="world-engine.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  // Phase 0 salt: a fixed local stand-in for the per-player server secret
+  // (director decision 2026-07-17: "fold in a server secret"). The mint seam
+  // is here today; the secret moves server-side at the hardening phase.
+  var DEMO_SALT = 'litterbug-phase0-local-salt';
+  var TRIAL_LEN = 8;
+  var GRID = 25; // 5x5
+
+  var boardEl = document.getElementById('board');
+  var startBtn = document.getElementById('startBtn');
+  var verifyBtn = document.getElementById('verifyBtn');
+  var againBtn = document.getElementById('againBtn');
+  var resultEl = document.getElementById('result');
+  var promptEl = document.getElementById('prompt');
+  var tapCountEl = document.getElementById('tapCount');
+  var chargeEl = document.getElementById('chargefill');
+  function buzz(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }
+  document.getElementById('tapGoal').textContent = TRIAL_LEN;
+  document.getElementById('saltLbl').textContent = DEMO_SALT;
+
+  var cells = [];
+  var trace = [];        // [{ i: cellIndex, dt: ms since previous tap }]
+  var target = -1;
+  var lastT = 0;
+  var playing = false;
+  var startClock = 0;
+
+  // Build the board once.
+  for (var c = 0; c < GRID; c++) {
+    var cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.setAttribute('data-i', c);
+    cell.textContent = '·'; // middle dot
+    boardEl.appendChild(cell);
+    cells.push(cell);
+  }
+
+  // Deterministic-enough game randomness for WHERE the target shows. This
+  // only drives the chase; the player's real signal is which cell they hit
+  // and their reaction timing, both captured into the trace.
+  function pickTarget() {
+    var next;
+    do { next = Math.floor(Math.random() * GRID); } while (next === target);
+    if (target >= 0) cells[target].classList.remove('target');
+    target = next;
+    cells[target].classList.add('target');
+  }
+
+  function nowMs() {
+    // performance.now when available (monotonic, sub-ms); Date.now fallback.
+    return (typeof performance !== 'undefined' && performance.now)
+      ? performance.now() : Date.now();
+  }
+
+  function startTrial() {
+    trace = [];
+    target = -1;
+    lastT = 0;
+    playing = true;
+    startClock = nowMs();
+    resultEl.classList.remove('show');
+    boardEl.classList.remove('done');
+    cells.forEach(function (el) { el.classList.remove('hit', 'target'); });
+    tapCountEl.textContent = '0';
+    if (chargeEl) chargeEl.style.width = '0%';
+    promptEl.textContent = 'Hit the lit cells.';
+    startBtn.disabled = true;
+    pickTarget();
+  }
+
+  function onCellTap(idx) {
+    if (!playing) return;
+    var t = nowMs();
+    // dt: ms since the previous tap (or since start for the first tap),
+    // rounded to an integer. This timing IS the unique human signal.
+    var prev = lastT || startClock;
+    var dt = Math.round(t - prev);
+    lastT = t;
+    trace.push({ i: idx, dt: dt });
+
+    var hitCell = cells[idx];
+    hitCell.classList.add('hit', 'pop');
+    setTimeout(function () { hitCell.classList.remove('pop'); }, 240);
+    buzz(trace.length >= TRIAL_LEN ? 30 : 12);
+    tapCountEl.textContent = String(trace.length);
+    if (chargeEl) chargeEl.style.width = Math.round(trace.length / TRIAL_LEN * 100) + '%';
+
+    if (trace.length >= TRIAL_LEN) {
+      finishTrial();
+    } else {
+      pickTarget();
+    }
+  }
+
+  boardEl.addEventListener('click', function (e) {
+    var el = e.target.closest ? e.target.closest('.cell') : null;
+    if (!el) return;
+    onCellTap(parseInt(el.getAttribute('data-i'), 10));
+  });
+
+  // Build the fighter card (type badge + class/rarity/power + stat bars).
+  var TYPE_COLOR = { Rust:'#b06a3a', Moss:'#5a9a52', Spark:'#d99a2f',
+    Ooze:'#8a6fb0', Glass:'#6fa8c4', Ash:'#7a7a74' };
+  var RARITY_COLOR = { Common:'#8a9178', Uncommon:'#7ab356', Rare:'#4a9ad4',
+    Epic:'#b06fd4', Legendary:'#e0a13c' };
+  function renderFighter(st) {
+    var tcol = TYPE_COLOR[st.type] || '#8a9178';
+    var order = [['HP','hp'],['ATK','atk'],['DEF','def'],['SPD','spd'],['ACC','acc'],['EVA','eva']];
+    var bars = order.map(function (o) {
+      var v = st.stats[o[1]];
+      var w = Math.min(100, Math.round(v / 120 * 100));
+      return '<div class="statrow"><span class="lbl">' + o[0] + '</span>'
+        + '<span class="track"><span class="fill" style="width:' + w + '%;background:' + tcol + '"></span></span>'
+        + '<span class="val">' + v + '</span></div>';
+    }).join('');
+    var t2 = st.type2 ? ' <span class="tbadge" style="background:' + (TYPE_COLOR[st.type2] || '#8a9178') + '">' + st.type2 + '</span>' : '';
+    var nat = st.nature && st.nature.up ? '  &middot;  +' + st.nature.up + ' -' + st.nature.down : '';
+    document.getElementById('fighter').innerHTML =
+      '<div class="fhead"><span class="tbadge" style="background:' + tcol + '">' + st.type + '</span>' + t2
+      + '<span class="fmeta">' + st.cls + ' &middot; <span class="rar" style="color:'
+      + (RARITY_COLOR[st.rarity] || '#cdbfa6') + '">' + st.rarity + '</span> &middot; '
+      + '<span class="pwr">PWR ' + st.power + '</span></span></div>'
+      + '<div class="fkit">' + st.kit + '</div>' + bars
+      + '<div class="ftags">' + st.tags.join('  &middot;  ') + nat + '</div>'
+      + matchLine(st.type);
+  }
+  // Friendly matchup summary for the bug's primary type, from the live chart.
+  function matchLine(type) {
+    var strong = [], weak = [];
+    TYPES.forEach(function (d) { var m = typeMatchup(type, d); if (m > 1) strong.push(d); else if (m < 1) weak.push(d); });
+    return '<div class="fmatch"><b>' + type + '</b> hits are <span class="up">strong vs ' + strong.join(', ')
+      + '</span>, <span class="down">weak vs ' + weak.join(', ') + '</span></div>';
+  }
+
+  // Save each newly minted bug into the shared collection (localStorage),
+  // so it shows up in your World roster to deploy and battle.
+  function saveToCollection(cb) {
+    var note = document.getElementById('collnote');
+    try {
+      var Wld = window.WORLD_ENGINE;
+      if (!Wld) { note.textContent = ''; return; }
+      var vault = Wld.browserLoad();
+      var before = vault.bugs.length;
+      Wld.addBug(vault, cb);
+      Wld.browserSave(vault);
+      note.textContent = vault.bugs.length > before
+        ? 'Saved to your collection (' + vault.bugs.length + ' bugs). Deploy it in the World.'
+        : 'Already in your collection (' + vault.bugs.length + ' bugs).';
+    } catch (e) { note.textContent = ''; }
+  }
+
+  async function finishTrial() {
+    playing = false;
+    boardEl.classList.add('done');
+    if (target >= 0) cells[target].classList.remove('target');
+    startBtn.disabled = false;
+    promptEl.textContent = 'Trial complete. Your bug:';
+
+    var cb = await window.mintCodeblock(DEMO_SALT, trace);
+    var bug = window.bugFromCodeblock(cb, 200, 1);
+
+    document.getElementById('bugwrap').innerHTML = bug.svg;
+    document.getElementById('bugname').textContent = bug.identity.name;
+    document.getElementById('bugspecies').textContent = bug.identity.species;
+    document.getElementById('bugdesig').textContent = bug.identity.designation;
+    document.getElementById('buglore').textContent = bug.identity.lore;
+    renderFighter(bug.stats);
+    saveToCollection(cb);
+    document.getElementById('cbHex').textContent = cb;
+    document.getElementById('traceStr').textContent = window.serializeTrace(trace);
+    document.getElementById('verdict').textContent = '';
+    document.getElementById('verdict').className = 'verdict';
+    resultEl.classList.add('show');
+
+    // Stash for the verify button.
+    resultEl.dataset.cb = cb;
+  }
+
+  // Verify: re-mint from the exact captured trace and confirm the codeblock
+  // is identical. This is the determinism guarantee a server relies on to
+  // check that a submitted bug really came from the submitted play.
+  verifyBtn.addEventListener('click', async function () {
+    var v = document.getElementById('verdict');
+    var expected = resultEl.dataset.cb;
+    var again = await window.mintCodeblock(DEMO_SALT, trace);
+    if (again === expected) {
+      v.textContent = 'Verified: same play re-mints the same codeblock.';
+      v.className = 'verdict ok';
+    } else {
+      v.textContent = 'MISMATCH: ' + again.slice(0, 12) + ' != ' + expected.slice(0, 12);
+      v.className = 'verdict bad';
+    }
+  });
+
+  startBtn.addEventListener('click', startTrial);
+  againBtn.addEventListener('click', startTrial);
+})();
+</script>
+</body>
+</html>

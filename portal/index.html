@@ -840,8 +840,20 @@
 <script>
 /* ---- Featured satellites (separate standalone games, real live URLs) + the Lucid Winds hub ---- */
 var FEATURED = [
+  /* ⛔ 2026-08-18: THESE TWELVE WERE MOVED OFF github.io AND VENDORED SAME ORIGIN.
+     A Horizon Store app is a TWA, so a url outside `scope` opens a browser
+     overlay and the player is ejected from the app. They also could not be
+     cached by the arcade's service worker and they went down whenever GitHub
+     Pages did.
+     The upstream repo is still the source of truth. Edit THERE, then re run
+     `node scripts/vendor_satellites.mjs --vendor <slug>` and bump the ?v=.
+     `--check` reports BEHIND (upstream moved) separately from EDITED (somebody
+     hand edited the vendored copy, which is drift and must be undone).
+     HUNCH is vendored too. Its three endpoints stay on Vercel and it calls them
+     across origins, which is fine for a TWA because only the XHR leaves the
+     origin, never a navigation. */
   {nm:"Lucid Winds", ds:"The flagship garden where 66 mini games grow living, one of a kind plant art.", url:"https://lucidwinds.com/?from=portal", hub:true, ic:"🌱", thumb:"/assets/splash-seed-v2.png"},
-  {nm:"Tomato Man", ds:"Dash from shadow to shadow gathering aloe before the deadly sun burns you up.", cat:"action", url:"https://stephenuffugus.github.io/Tomato_Man/", ic:"🍅", thumb:"/portal-assets/thumbs/tomato-man.png"},
+  {nm:"Tomato Man", ds:"Dash from shadow to shadow gathering aloe before the deadly sun burns you up.", cat:"action", url:"/satellites/tomato-man/?v=20260818a", ic:"🍅", thumb:"/portal-assets/thumbs/tomato-man.png"},
   // Abduct a Chameleon: backend-free standalone (localStorage only, no Firestore).
   // Own WebSocket relay for multiplayer (separate Node host; game finds it via
   // same-origin /ws or ?mp=wss://…). Hosted on GitHub Pages; iframes like the
@@ -849,7 +861,7 @@ var FEATURED = [
   // final copy to be confirmed against the live site (was still deploying when
   // wired 2026-07-20). No _G/earn hooks by design — a postMessage earn bridge
   // is available later if the director wants portal rewards wired in.
-  {nm:"Abduct a Chameleon", ds:"Paint yourself to match the ground and hold still until the alien hunters give up.", cat:"party", url:"https://stephenuffugus.github.io/abduct_a_chameleon/?v=20260801a", ic:"🦎", thumb:"/portal-assets/thumbs/abduct-a-chameleon.png"},
+  {nm:"Abduct a Chameleon", ds:"Paint yourself to match the ground and hold still until the alien hunters give up.", cat:"party", url:"/satellites/abduct-a-chameleon/?v=20260818a", ic:"🦎", thumb:"/portal-assets/thumbs/abduct-a-chameleon.png"},
   // Abductee 3D — the 3D multiplayer sibling (Playroom-based lobby).
   // ⛔ 2026-07-29: UN-FORKED. This card spent a day pointing at a vendored copy at
   // /satellites/chameleon-3d/ because the fixes could not be pushed upstream from
@@ -858,12 +870,12 @@ var FEATURED = [
   // missing prop colormap, the hider head start, the colour pass), and the live
   // github.io build is now byte-identical to what we were serving. The vendored
   // folder is deleted — one copy again, no drift.
-  {nm:"Abduct a Chameleon 3D", ds:"The 3D multiplayer chameleon hunt, live with friends and still in development.", cat:"party", url:"https://stephenuffugus.github.io/abduct_a_chameleon/abduct-3d.html?v=20260808a", ic:"🛸", thumb:"/portal-assets/thumbs/abduct-a-chameleon.png", beta:true},
-  {nm:"Glyph Forge", ds:"Forge glyphs, hunt combos, break everything.", cat:"puzzle", url:"https://stephenuffugus.github.io/glyph_forge/", ic:"⚒️", thumb:"/portal-assets/thumbs/glyph-forge.png", beta:true},
+  {nm:"Abduct a Chameleon 3D", ds:"The 3D multiplayer chameleon hunt, live with friends and still in development.", cat:"party", url:"/satellites/abduct-a-chameleon/abduct-3d.html?v=20260818a", ic:"🛸", thumb:"/portal-assets/thumbs/abduct-a-chameleon.png", beta:true},
+  {nm:"Glyph Forge", ds:"Forge glyphs, hunt combos, break everything.", cat:"puzzle", url:"/satellites/glyph-forge/?v=20260818a", ic:"⚒️", thumb:"/portal-assets/thumbs/glyph-forge.png", beta:true},
   // Hashblock flagships on the workbench (2026-07-30). Both stay beta:true
   // behind the tester wall until Stephen opens them. "The Attic" is the
   // working title on purpose; never "Retro Attic" (that is the store's name).
-  {nm:"Litter Bug", ds:"Play a trial and mint a one of one bug made of trash, then battle for the dumpster.", cat:"action", url:"https://stephenuffugus.github.io/Litter_Bug/", ic:"🪲", thumb:"/portal-assets/thumbs/litter-bug.png", beta:true, fresh:true},
+  {nm:"Litter Bug", ds:"Play a trial and mint a one of one bug made of trash, then battle for the dumpster.", cat:"action", url:"/satellites/litter-bug/?v=20260818a", ic:"🪲", thumb:"/portal-assets/thumbs/litter-bug.png", beta:true, fresh:true},
   {nm:"The Attic", ds:"Rummage up one of one fake vintage records, tapes, and toys, and pray for factory sealed.", cat:"creative", url:"/satellites/attic/?v=20260731a", ic:"📼", thumb:"/portal-assets/thumbs/the-attic.png", beta:true, fresh:true},
   // LOAF: the cat app. Scan a real cat, mint the card, meet her in 3D.
   // loaf.html carries its own dev-gate (wolfden) on top of the portal's
@@ -881,11 +893,11 @@ var FEATURED = [
   // /party/play.html with the room code. Practice transport (same browser)
   // until the PARTY_CLOUD_SETUP.md console switch-on.
   {nm:"Whack Box", ds:"Party night. One big screen, everyone joins on their phone, and six games to pick from on the couch.", cat:"party", url:"/party/host.html?v=20260808b", ic:"🎪", beta:true, fresh:true},
-  {nm:"Sweet Spot", ds:"Time your swing and nail the tiny gold sweet spot for an ACE.", cat:"action", url:"https://stephenuffugus.github.io/Sweet-Spot/", ic:"🎾", thumb:"/portal-assets/thumbs/sweet-spot.png", ownMusic:true},
-  {nm:"Tarot Run", ds:"A fast combo card run through a reading of blades.", cat:"card", url:"https://stephenuffugus.github.io/Tarot_Run/", ic:"🃏", thumb:"/portal-assets/thumbs/tarot-run.png", beta:true},
-  {nm:"Sixfold", ds:"Read your foe in a six stance duel and break the bind in under a minute.", cat:"card", url:"https://stephenuffugus.github.io/sixfold/", ic:"⚔️", thumb:"/portal-assets/thumbs/sixfold.png", ownMusic:true},
-  {nm:"Letter Launch", ds:"Plink letter tiles through bumpers, then trace words to score.", cat:"word", url:"https://stephenuffugus.github.io/letter_launch/", ic:"🔤", thumb:"/portal-assets/thumbs/letter-launch.png"},
-  {nm:"Skitterlings", ds:"Hop your one button critter through 100 worlds collecting skitterlings.", cat:"action", url:"https://stephenuffugus.github.io/skitterlings/?embed=1&origin=https://lucidwinds.com", ic:"🐾", thumb:"/portal-assets/thumbs/skitterlings.png"},
+  {nm:"Sweet Spot", ds:"Time your swing and nail the tiny gold sweet spot for an ACE.", cat:"action", url:"/satellites/sweet-spot/?v=20260818a", ic:"🎾", thumb:"/portal-assets/thumbs/sweet-spot.png", ownMusic:true},
+  {nm:"Tarot Run", ds:"A fast combo card run through a reading of blades.", cat:"card", url:"/satellites/tarot-run/?v=20260818a", ic:"🃏", thumb:"/portal-assets/thumbs/tarot-run.png", beta:true},
+  {nm:"Sixfold", ds:"Read your foe in a six stance duel and break the bind in under a minute.", cat:"card", url:"/satellites/sixfold/?v=20260818a", ic:"⚔️", thumb:"/portal-assets/thumbs/sixfold.png", ownMusic:true},
+  {nm:"Letter Launch", ds:"Plink letter tiles through bumpers, then trace words to score.", cat:"word", url:"/satellites/letter-launch/?v=20260818a", ic:"🔤", thumb:"/portal-assets/thumbs/letter-launch.png"},
+  {nm:"Skitterlings", ds:"Hop your one button critter through 100 worlds collecting skitterlings.", cat:"action", url:"/satellites/skitterlings/?v=20260818a", ic:"🐾", thumb:"/portal-assets/thumbs/skitterlings.png"},
   // Aura Farm (Aug 15): Stephen's codespace build, adopted into the studio.
   // Emotional-harvest sim: lift a crowd for renewable joy or husk them for
   // more, 14-day runs, Broker contracts + cross-run reputation, Mara rival.
@@ -936,12 +948,12 @@ var FEATURED = [
   // section). Card corrected to the destination's OWN title rather than a new name,
   // and flipped to IN DEVELOPMENT so it is playable instead of a dead button.
   // ⚠️ STEPHEN: confirm the name, and whether thumbs/brawl.png is still its art.
-  {nm:"Wild Wardens", ds:"Tame the wild, tend your grove, and walk the real world for territory.", cat:"creative", url:"https://stephenuffugus.github.io/BarBrawl/", ic:"🐾", beta:true, thumb:"/portal-assets/thumbs/brawl.png", fresh:true},
+  {nm:"Wild Wardens", ds:"Tame the wild, tend your grove, and walk the real world for territory.", cat:"creative", url:"/satellites/wild-wardens/?v=20260818a", ic:"🐾", beta:true, thumb:"/portal-assets/thumbs/brawl.png", fresh:true},
   // HUNCH: the studio's premium flagship drawing-and-guessing game with
   // a Claude vision model + judge call per round (real per-play API cost).
   // Lowered sunbeam yield to respect compute; positioned as PREMIUM to
   // signal that this one's structurally different from the free nodes.
-  {nm:"HUNCH", ds:"A drawing duel against Claude, the studio's premium flagship.", cat:"creative", url:"https://hunch-mauve.vercel.app", ic:"🎨", premium:true, thumb:"/portal-assets/thumbs/hunch.png"},
+  {nm:"HUNCH", ds:"A drawing duel against Claude, the studio's premium flagship.", cat:"creative", url:"/satellites/hunch/?v=20260818a", ic:"🎨", premium:true, thumb:"/portal-assets/thumbs/hunch.png"},
   // Shell Shuffle: cozy cup-shuffle timing game, PWA-ready. Daily streak
   // retention, 70 cup + 21 ball cosmetics, all client-side. Earn rate
   // calibrated: 3/win + 5/daily yields ~23-41 per casual session.
@@ -985,7 +997,7 @@ var FEATURED = [
   // sunbeam earns (1 per first-ever word, 40/day cap) reach the vault.
   // Canonical source: Stephenuffugus/Blooming_Words — re-vendor on updates.
   {nm:"Blooming Words", ds:"Trace letters, grow a crossword garden, press wildflowers for pollen.", cat:"word", url:"/satellites/blooming-words/", ic:"🌸", thumb:"/portal-assets/thumbs/blooming-words.png"},
-  {nm:"Tally", ds:"Combine the numbers and hit the target, with a pocketful of pals cheering you on.", cat:"math", url:"https://stephenuffugus.github.io/Tally/", ic:"🧮", thumb:"/portal-assets/thumbs/tally.png"},
+  {nm:"Tally", ds:"Combine the numbers and hit the target, with a pocketful of pals cheering you on.", cat:"math", url:"/satellites/tally/?v=20260818a", ic:"🧮", thumb:"/portal-assets/thumbs/tally.png"},
   // Picnic Panic: Galaga remake, vendored same-origin (Jul 02) so its sunbeam
   // earns (run_end -> capped daily) reach the vault. Its own 🍯 nectar economy
   // stays game-local via PicnicPanicStorage (localStorage). No own music (SFX).

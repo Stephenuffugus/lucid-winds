@@ -220,6 +220,46 @@ html,body{height:100%; height:100dvh; background:#000; overflow:hidden; overscro
   background:radial-gradient(120% 80% at 50% 0%, #101610 0%, #05070a 70%, #000 100%)}
 #stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center;
   background:#0b0f0b; overflow:hidden; box-shadow:0 0 60px #000a}
+/* ===== THE SIDE BEZEL =====
+   Jimothy is a 540x960 portrait game. On a 1920x1080 screen it scales to 607px
+   wide and leaves 656px of dead space on EACH side, which is what a maximised or
+   fullscreen desktop player actually sees. Stretching to fill it is the one
+   option that makes a portrait game look broken rather than deliberate, so
+   instead the dead space becomes the neighbourhood you are running through:
+   the current zone's own card art, blurred right down and darkened, with a
+   vignette pulling the eye back to the stage.
+
+   ⛔ It only appears when there IS spare width. On a phone, and in the Steam
+   build's normal aspect-locked window, there is none and this never renders.
+   ⛔ No per-frame work: two crossfading divs, a CSS drift, and a 600ms poll for
+   the zone. The game already runs a canvas at 60fps and must not pay for decor. */
+#bezel{position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none;
+  opacity:0; transition:opacity .9s ease; background:#05070a}
+#bezel.on{opacity:1}
+#bezel .bz{position:absolute; inset:-10%; background-position:center; background-repeat:no-repeat;
+  background-size:cover; opacity:0; transition:opacity 1.2s ease;
+  /* ⛔ Tuned by LOOKING at it. The first pass was blur(34px) brightness(.32),
+     which turned the art into an almost black smear: technically not a black
+     bar, but it did not read as a PLACE, which is the entire point. */
+  filter:blur(20px) saturate(.78) brightness(.62); transform:scale(1.14);
+  /* Own layer, so the blur rasterises ONCE instead of every frame of the drift.
+     This game runs a canvas at 60fps and decoration must not compete with it.
+     ⚠️ Still wants a real device check; a headless container cannot tell you
+     what a cheap laptop does with a 1920x1080 blurred layer. */
+  will-change:transform;
+  animation:bzdrift 46s ease-in-out infinite alternate}
+#bezel .bz.show{opacity:1}
+@keyframes bzdrift{ from{transform:scale(1.14) translate3d(0,-1.4%,0)} to{transform:scale(1.18) translate3d(0,1.4%,0)} }
+/* the stage has to sit above the bezel; it is a positioned element with z-index
+   auto, so without this it depends on document order */
+#stage{z-index:1}
+/* ⛔ The first version darkened the CENTRE hardest, which is exactly where the
+   stage sits and covers it, so all that darkness landed where nobody can see it
+   while the outer edges stayed bright. Dark at the OUTER edge, clear beside the
+   stage, so the game sits in a pool of light instead of a hole. */
+#bezel .bz-vig{position:absolute; inset:0; background:
+  radial-gradient(ellipse 58% 100% at 50% 50%, rgba(0,0,0,0) 0%, rgba(0,0,0,.10) 34%, rgba(0,0,0,.46) 68%, rgba(0,0,0,.80) 100%)}
+@media (prefers-reduced-motion: reduce){ #bezel .bz{animation:none} }
 canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block; touch-action:none}
 /* Split thumb controls: a cluster in each bottom corner (up + down + the side arrow),
    so either thumb can hop up or down. The middle stays tap/swipe-through (canvas). */
@@ -643,6 +683,25 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
       </div>
       <button class="btn sm" id="b-support"><img class="bicon" id="ic-support" alt="" style="width:40px;height:40px">Support the Studio</button>
       <button class="btn ghost sm" id="b-exit">◄ Sky Wolf Studios Arcade</button>
+      <!-- ⛔ NOT A LINK, and not a button. On a bought desktop game the arcade
+           back-link is hidden (see STEAM_BUILD below), which left nothing saying
+           who made this. Stephen 2026-08-18: "probably not an outbound link but
+           we should have some way to promote the studio." So: a line of text.
+           Nothing to tap means nothing can eject a player out of the app, which
+           is the whole reason the link went.
+           ⛔ NO GAME COUNT IN HERE. This string is baked into a shipped binary
+           and can never be updated, so "160+ games" would be wrong the moment
+           the catalog moves. Evergreen wording only. -->
+      <!-- ⛔ Contrast, judged off the shot. At var(--muted) with no shadow this was
+           unreadable over the painted wet street behind the title screen: a credit
+           line nobody can read is the same as no credit line. -->
+      <div id="studio-note" style="display:none;max-width:400px;margin:2px auto 0;
+        color:#cfd6c2;font:600 12px/1.55 Nunito,system-ui,sans-serif;text-align:center;
+        letter-spacing:.01em;text-shadow:0 1px 3px rgba(0,0,0,.95),0 0 10px rgba(0,0,0,.7);
+        -webkit-user-select:text;user-select:text">
+        Made by <b style="color:#c8a84b;font-weight:800">Sky Wolf Studios</b><br>
+        Everything else we make is free in your browser at lucidwinds.com
+      </div>
     </div>
     <div class="foot" id="buildstamp"></div>
   </div></div>
@@ -907,11 +966,11 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
 
       <!-- the two lanes bottlecaps cannot reach. They sit in the shop on purpose: people
            should see what showing up and following along are worth. -->
-      <div class="sec-h">Come Back For These <span class="sec-n" id="weekly-n"></span></div>
-      <div class="sec-sub">Not for sale, at any price. One costume for every seven days in a row.</div>
+      <div class="sec-h" id="weekly-h">Come Back For These <span class="sec-n" id="weekly-n"></span></div>
+      <div class="sec-sub" id="weekly-sub">Not for sale, at any price. One costume for every seven days in a row.</div>
       <div class="skinrow" id="weekly-row"></div>
 
-      <div class="sec-h">Codes Unlock These <span class="sec-n" id="coden"></span></div>
+      <div class="sec-h" id="code-h">Codes Unlock These <span class="sec-n" id="coden"></span></div>
       <div class="sec-sub">Codes turn up in posts, in videos, and in the hands of people who helped make this. Got one? Tap any of them.</div>
       <div class="skinrow" id="code-row"></div>
     </div>
@@ -2455,6 +2514,7 @@ function achMet(id){
 /* Evaluated after anything that could move a counter. Cheap: 18 switch cases. */
 function achCheck(){
   if(!PROG.ach) PROG.ach={};
+  try{ storeUnlockCheck(); }catch(e){}   /* earned just now, so this one DOES get a card */
   var won=[];
   for(var i=0;i<ACH.length;i++){ var a=ACH[i];
     if(!PROG.ach[a.id] && achMet(a.id)){ PROG.ach[a.id]=1; PROG.caps=(PROG.caps||0)+25; won.push(a); } }
@@ -3333,7 +3393,70 @@ function claimReward(streak, caps, skinId, token){
   else if(token){ revealToken(); }
   try{ paintDaily(); }catch(e){}
 }
-function maybeDailyReward(){ if(rewardReady()) setTimeout(openDailyReward, 320); }
+/* ===== A BOUGHT GAME EARNS EVERYTHING BY PLAYING =====================
+   On the free web build, five costumes come off a seven day return streak and
+   six more need a code from a post. That is a fair trade for a free game: it is
+   what showing up and following along are worth.
+
+   It is the wrong deal entirely for somebody who PAID. They would be made to
+   launch the game on 35 separate calendar days, and then go hunting the
+   internet for codes, to see content they already own. So on a storefront build
+   every one of those costumes is on a campaign ladder instead, and the codes
+   still work for anyone who has one. Nothing is taken away; a second door is
+   added.
+
+   ⛔ THE BARNACLE IS DELIBERATELY NOT HERE. Its own note in CHARS says it is
+   "handing it to exactly one man" — it is a tribute, not content, and putting
+   it on a ladder would hand it to everybody. It stays code only. ⚖ Stephen's.
+
+   maxLevel is the highest level UNLOCKED, so it reads one PAST the last one
+   cleared. `> 10` means level 10 is done, which is the same test the badges and
+   the soundtrack already use. */
+function isStoreBuild(){ try{ return window.__STEAM_BUILD===true || window.__ITCH_BUILD===true; }catch(e){ return false; } }
+function advMaxLevel(){ try{ return (PROG.adv&&PROG.adv.maxLevel)||1; }catch(e){ return 1; } }
+function clearedLevel(n){ return advMaxLevel() > n; }
+
+var STORE_UNLOCKS=[
+  {id:'froggery',  lv:10 }, {id:'dino',      lv:20 }, {id:'knight', lv:30 },
+  {id:'hazmat',    lv:40 }, {id:'pirate',    lv:50 }, {id:'astronaut', lv:60 },
+  {id:'alien',     lv:70 }, {id:'disco',     lv:80 }, {id:'robot',  lv:90 },
+  {id:'wizard',    lv:100}
+];
+function storeUnlockFor(id){
+  if(!isStoreBuild()) return null;
+  for(var i=0;i<STORE_UNLOCKS.length;i++) if(STORE_UNLOCKS[i].id===id) return STORE_UNLOCKS[i];
+  return null;
+}
+/* The one line the Prize Bin shows instead of "come back tomorrow" / "needs a code". */
+function storeUnlockHint(id){
+  var u=storeUnlockFor(id); if(!u) return null;
+  return clearedLevel(u.lv) ? 'Earned' : ('Clear Adventure level '+u.lv);
+}
+/* Runs off achCheck, which already fires on every level clear and every run end.
+   ⛔ `quiet` MATTERS. The boot call is a catch up: somebody who already cleared
+   the levels gets handed everything they earned in one go. Celebrating that put a
+   reveal overlay ON TOP OF THE SPLASH SCREEN, which then swallowed the tap that
+   dismisses it, so a bought build with a finished campaign could not get past its
+   own splash. A catch up is silent; only something earned just now gets a card. */
+function storeUnlockCheck(quiet){
+  if(!isStoreBuild()) return 0;
+  var won=[];
+  for(var i=0;i<STORE_UNLOCKS.length;i++){
+    var u=STORE_UNLOCKS[i];
+    if(charOwned(u.id) || !clearedLevel(u.lv)) continue;
+    PROG.chars[u.id]=1; won.push(charById(u.id));
+  }
+  if(won.length){ saveProg();
+    if(!quiet){ try{ sfx('unlock'); }catch(e){} try{ revealChar(won[0]); }catch(e){} } }
+  return won.length;
+}
+
+function maybeDailyReward(){
+  /* ⛔ A bought game must never gate content behind a calendar. On a storefront
+     build the whole daily reward loop is off and STORE_UNLOCKS carries those
+     costumes instead. */
+  if(isStoreBuild()) return;
+  if(rewardReady()) setTimeout(openDailyReward, 320); }
 
 /* ===== 🎟 REDEEM CODES ============================================================
    Stephen wanted two things a code can do: hand ONE friend the costume she invented,
@@ -4266,7 +4389,9 @@ function renderBin(){
   $('cos-n').textContent=nCos+' of '+tCos;
   $('crit-n').textContent=nCrit+' of '+tCrit;
   $('sec-n').textContent=nSec+' of '+tSec;
-  if(!cosR.children.length) cosR.innerHTML='<div class="sec-sub">No costumes yet. The weekly streak gives one away, and the Shop sells the rest.</div>';
+  if(!cosR.children.length) cosR.innerHTML='<div class="sec-sub">'+(isStoreBuild()
+    ? 'No costumes yet. Clearing Adventure levels hands them over, and the Shop sells the rest.'
+    : 'No costumes yet. The weekly streak gives one away, and the Shop sells the rest.')+'</div>';
   if(!critR.children.length) critR.innerHTML='<div class="sec-sub">No critters yet. Open the bin in the Shop tab.</div>';
   var cc=curChar(), cf=curFin();
   $('coll-wearing').innerHTML='Playing as <b style="color:var(--cream)">'+cc.name+'</b>'
@@ -4311,7 +4436,11 @@ function renderLanes(){
     var c=charById(REWARD_SKINS[i]);
     if(charOwned(c.id)){ owned++; continue; }
     wait++;
-    var sub = (c.id===tgt)
+    /* ⛔ On a bought build these are NOT a calendar any more, so the card must
+       not say they are. STORE_UNLOCKS is the real condition; say that. */
+    var storeHint = storeUnlockHint(c.id);
+    var sub = storeHint ? storeHint
+      : (c.id===tgt)
       ? (st.left+' more day'+(st.left===1?'':'s')+' in a row')
       : ('Play '+wait+' week'+(wait===1?'':'s'));
     (function(ch,isNext){
@@ -4320,11 +4449,22 @@ function renderLanes(){
         paint:function(cv){ drawSkinPreview(cv,ch,1,'');
           if(ch.art&&ch.sheet){ var im=spr(ch.sheet+'/idle');
             if(!imgReady(im)) im.addEventListener('load',function(){ drawSkinPreview(cv,ch,1,''); }); } },
-        onTap:function(){ binNote(ch.name+' is not for sale. Show up seven days in a row and he is yours.'); sfx('ui'); }
+        onTap:function(){ var h=storeUnlockHint(ch.id);
+          binNote(h ? (ch.name+' is not for sale. '+h+' and he is yours.')
+                    : (ch.name+' is not for sale. Show up seven days in a row and he is yours.'));
+          sfx('ui'); }
       }));
     })(c, c.id===tgt);
   }
   $('weekly-n').textContent=owned+' of '+REWARD_SKINS.length+' earned';
+  /* "Come Back For These" is a lie on a build with no calendar in it. */
+  if(isStoreBuild()){
+    var wh=$('weekly-h'); if(wh) wh.childNodes[0].nodeValue='Earn These By Playing ';
+    var chh=$('code-h');  if(chh) chh.childNodes[0].nodeValue='Earn These, Or Use A Code ';
+    /* ⛔ the static blurb under the header is its own hardcoded string and said
+       "one costume for every seven days in a row" long after the streak was gone */
+    var ws=$('weekly-sub'); if(ws) ws.textContent='Not for sale, at any price. Clear Adventure levels and they are yours.';
+  }
   if(!host.children.length) host.innerHTML='<div class="sec-sub">You have earned every one of them. Day seven pays double bottlecaps now.</div>';
 
   var ch2=$('code-row'); if(!ch2)return; ch2.innerHTML='';
@@ -4332,8 +4472,10 @@ function renderLanes(){
   CHARS.forEach(function(c){
     if(c.via!=='code')return; tot++;
     if(charOwned(c.id)){ got++; return; }
+    /* Codes still work, and on a bought build there is a way in without one. */
+    var codeHint = storeUnlockHint(c.id);
     ch2.appendChild(shopCard({
-      name:cardName(c), sub:'needs a code', rar:c.rar, cant:true,
+      name:cardName(c), sub:(codeHint || 'needs a code'), rar:c.rar, cant:true,
       paint:function(cv){ drawSkinPreview(cv,c,1,'');
         if(c.art&&c.sheet){ var im=spr(c.sheet+'/idle');
           if(!imgReady(im)) im.addEventListener('load',function(){ drawSkinPreview(cv,c,1,''); }); } },
@@ -4349,6 +4491,23 @@ function renderLanes(){
 function renderWeekly(){
   var host=$('weekly-strip'); if(!host)return;
   var tgt=rewardTarget(), st=rewardStand();
+  /* ⛔ On a bought build there IS no streak, so this strip must not talk about
+     one. Same prize, named and shown the same way, with the real condition
+     under it and nothing to tap. */
+  if(isStoreBuild()){
+    if(!tgt){ host.innerHTML='<div class="wk"><div><div class="wk-lab">NEXT COSTUME</div>'
+        +'<div class="wk-name">Every one of them is yours</div>'
+        +'<div class="wk-sub">Nothing left on the ladder. Nice work.</div></div></div>'; return; }
+    host.innerHTML='<div class="wk"><canvas id="wk-cv" width="52" height="52"></canvas>'
+      +'<div style="min-width:0;flex:1"><div class="wk-lab">NEXT COSTUME</div>'
+      +'<div class="wk-name">'+tgt.name+'</div>'
+      +'<div class="wk-sub">'+(storeUnlockHint(tgt.id)||'Keep playing')+'</div></div></div>';
+    var scv=$('wk-cv');
+    if(scv){ drawSkinPreview(scv, tgt, 0.9, '');
+      if(tgt.art && tgt.sheet){ var sim=spr(tgt.sheet+'/idle');
+        if(!imgReady(sim)) sim.addEventListener('load', function(){ drawSkinPreview(scv, tgt, 0.9, ''); }); } }
+    return;
+  }
   if(!tgt){ host.innerHTML='<div class="wk"><div><div class="wk-lab">WEEKLY PRIZE</div>'
       +'<div class="wk-name">Every weekly skin is yours</div>'
       +'<div class="wk-sub">Day seven pays double bottlecaps until there are more costumes.</div></div></div>';
@@ -4651,7 +4810,62 @@ function vpH(){
 }
 function setAppH(){ try{ document.documentElement.style.setProperty('--app-h', vpH()+'px'); }catch(e){} }
 function fit(){ setAppH(); var s=Math.min(vpW()/VW, vpH()/VH);
-  var st=$('stage'); if(st) st.style.transform='translateZ(0) scale('+s+')'; }
+  var st=$('stage'); if(st) st.style.transform='translateZ(0) scale('+s+')';
+  bezelFit(s); }
+
+/* ===== THE SIDE BEZEL =====
+   See the #bezel CSS for why this exists. Two layers so a zone change crossfades
+   instead of popping, and a poll rather than a hook because the zone advances
+   down THREE different paths (a run start, a non-adventure zone change, and an
+   adventure chapter change) and a decoration must not be the reason one of them
+   breaks. Everything here is wrapped so a missing image can never stop the game. */
+var BZ = { wrap:null, a:null, b:null, cur:null, flip:false, armed:false };
+
+function bezelBuild(){
+  if(BZ.wrap) return BZ.wrap;
+  try{
+    var w=$('wrap'); if(!w) return null;
+    var d=document.createElement('div'); d.id='bezel'; d.setAttribute('aria-hidden','true');
+    BZ.a=document.createElement('div'); BZ.a.className='bz';
+    BZ.b=document.createElement('div'); BZ.b.className='bz';
+    var v=document.createElement('div'); v.className='bz-vig';
+    d.appendChild(BZ.a); d.appendChild(BZ.b); d.appendChild(v);
+    w.insertBefore(d, w.firstChild);   /* behind the stage in document order too */
+    BZ.wrap=d;
+  }catch(e){}
+  return BZ.wrap;
+}
+
+/* Only ever shown when the window is genuinely wider than the game needs. */
+function bezelFit(s){
+  try{
+    var d=bezelBuild(); if(!d) return;
+    var spare = vpW() - (VW*s);
+    var on = spare > 160;                       /* ~80px a side before it is worth anything */
+    d.classList.toggle('on', on);
+    if(on && !BZ.armed){ BZ.armed=true; bezelPoll(); setInterval(bezelPoll, 600); }
+  }catch(e){}
+}
+
+/* Which picture belongs on the walls right now. */
+function bezelWant(){
+  try{
+    if(G && typeof G.zone==='number' && ZONES[G.zone]) return 'assets/'+ZONES[G.zone].bg+'.jpg';
+  }catch(e){}
+  return 'assets/bg/splash.jpg';               /* menus, shop, anywhere outside a run */
+}
+
+function bezelPoll(){
+  try{
+    var want=bezelWant();
+    if(want===BZ.cur) return;
+    BZ.cur=want;
+    var next = BZ.flip ? BZ.a : BZ.b, prev = BZ.flip ? BZ.b : BZ.a;
+    BZ.flip = !BZ.flip;
+    next.style.backgroundImage = "url('" + want + "?a=" + ARTV + "')";
+    next.classList.add('show'); prev.classList.remove('show');
+  }catch(e){}
+}
 var SHARE_URL="https://lucidwinds.com/jimothy/";
 function shareIt(){ var txt=shareText();
   if(navigator.share){ navigator.share({text:txt,url:SHARE_URL}).catch(function(){}); return; }
@@ -4983,6 +5197,10 @@ function boot(){
     navigator.serviceWorker.register('sw.js?v='+SWV);
   }catch(e){} }
   JMUS.autostart(); musicCheck();
+  /* Grant the ladder costumes at BOOT too, not only after the next run. Somebody
+     who updates mid campaign has already earned them and should not have to go
+     and finish another level to be handed what they already did. */
+  try{ storeUnlockCheck(true); }catch(e){}   /* quiet: a catch up, not a celebration */
 }
 
 /* ===== THE JIMOTHY OST — six original tracks by Stephen. Cartridge Moonwalk is the
@@ -5339,6 +5557,9 @@ var SUP=(function(){
        and on Steam this is the last surface that pointed anywhere off the machine.
        Kept on itch, where the game sits in a page and the cross promo belongs. */
     var ex=$('b-exit'); if(STEAM_BUILD&&ex)ex.style.display='none';
+    /* the studio line takes the link's place, on storefront builds only: on the web
+       the player is already ON the arcade and the real back button is right there. */
+    var sn=$('studio-note'); if(sn)sn.style.display=STORE_BUILD?'':'none';
     /* ⛔ The in-game bug form POSTs the player's message and user-agent to our cloud
        function. On a storefront build that is data collection, which drags a privacy
        policy and a disclosure onto the store page for a channel Steam already

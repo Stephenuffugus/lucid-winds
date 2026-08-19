@@ -1,0 +1,196 @@
+# SIXFOLD — Findings Log
+
+Append-only. Newest entries at top. Record decisions, surprises, deviations from
+validated numbers (with justification), and anything the next instance needs.
+
+---
+
+## 2026-06-18 — Skin system + art sheet + stale-art-ref fix
+
+Added a cosmetic **skin layer** (`src/skins.js`, +15 tests). A skin = one sprite
+atlas (2×3: idle/strike/hit/ko/guard/win); frames are sliced by CSS
+`background-position`, so the artist's single sheet IS the game asset and a new
+skin is one REGISTRY line + rebuild. Ships a generated vector demo ("Inkblade")
+so the pipeline is exercised with no art files. `ART_SHEET.md` is the artist
+brief (grid, anchor/contract, one-shot generation prompt, drop-in steps, 3/2-frame
+fallbacks). Pillar held: skins expose no damage/odds/meter surface (asserted).
+
+- **stage.js** gained `setFrame(side,name)` (frozen-API addition) and now hard-cuts
+  atlas frames through choreography (strike on lunge, hit on the loser, guard in the
+  bind, idle on settle); the glue sets win/ko on match-over. Decoupled from Skins:
+  the glue precomputes `el._framePos`, stage just shifts background-position. Vector
+  placeholder has no `.sprite`, so frame calls are inert and pose rides the CSS
+  transform — unchanged behavior.
+- **Latent bug fixed (would have shown in the browser pass):** `newGame()` called
+  `Stage.init()` with the art elements, then `renderFighter()` *replaced* those
+  elements via innerHTML — so Stage animated detached, stale nodes. Reordered to
+  render first, init second. All pose/lunge/flinch transforms now target live nodes.
+- **domcheck:** added `encodeURIComponent` to the sandbox (the demo atlas needs it)
+  and `Skins` to the global check (now 8 modules). Still deterministic + green.
+- Shipped file grew ~83.8k → ~91k bytes (the new module). Build order now
+  predictor→resolve→readout→personalities→**skins**→stage→assists→engine.
+
+---
+
+## 2026-06-18 — Phase 3 complete (animation + single-file ship)
+
+`stage.js` + `anim.css` (spec §4) and the `tools/build.js` inliner landed, producing
+the shipped single-file `sixfold.html`. `tools/domcheck.js` runs the inlined script in
+a `vm` sandbox with a minimal DOM stub and drives a full match (incl. binds + meter
+spends) headlessly — all smoke checks pass with no npm deps.
+
+- **State at handoff:** 7 suites / 111 assertions green; harness all targets met; build
+  byte-identical to a fresh `node tools/build.js`; domcheck passes.
+- **Bind choreography matches spec §4 by construction:** engine emits bind-tie as
+  `{kind:"clash"}` (→ stage spark + mutual recoil) and bind-win as `{kind:"glance"}`
+  (→ shove + loser flinch). So each of clean/glance/whiff/bind-win/bind-tie has a
+  distinct `playReveal` branch — the "distinct choreography per outcome" gate is
+  satisfied structurally, not just by no-error.
+- **anim.css is transform/opacity only** (compositor-friendly) with a fixed 50%/88%
+  pivot anchor, and `@media (prefers-reduced-motion:reduce)` kills all transitions/
+  animations while `stage.wait()` collapses to 0ms — reduced-motion hard-swaps.
+- **build byte-count gotcha:** `build.js` logs `tpl.length` (UTF-8 char count, ~83.6k);
+  the file on disk is ~83.8k bytes due to multibyte glyphs. Not a staleness bug.
+- **Only open acceptance item:** live-browser visual pass (real 60fps on mid mobile +
+  the actual look of the choreography). Everything else in §8/§6 is automated-green.
+
+---
+
+## 2026-06-17 — Phase 0 + 1 (cold start)
+
+Picked the project up cold. Only spec, handoff, prototype (`sixfold.html`),
+README existed. Working solo in dependency order rather than dispatching parallel
+subagents — the modules share a frozen event bus and contracts, and the
+acceptance gate is strict, so coherence beats parallelism here.
+
+**Phase 0 complete.** `CONTRACTS.md` + `tools/harness.py` written; harness
+reproduces every Section 8 target.
+
+**dead% definition (resolved surprise):** my first pass pooled all dead rounds
+over all rounds and got 22% (bind) / 33% (control) vs the spec's 19% / 28%.
+The engine numbers (median 5, p90 7, p99 9, bind tie ⅓, 50/50 decisive,
+reader 50%) matched *exactly*, so the gap was purely how dead% is averaged.
+Switching to **mean-of-per-match-ratios** lands control at 28.2% and bind at
+18.4% — matching the spec table to the decimal. Conclusion: the spec author
+reports dead rounds as the per-match average, not pooled. Harness now prints
+both; acceptance band 0.17–0.21. Engine constants unchanged.
+
+**Phase 1 complete.** `src/predictor.js` + 19 tests green. Two design calls worth
+noting: (1) `cycle` *abstains* (returns null) without a steady non-zero step, so
+it never self-penalises and reaches accuracy 1.0 on true rotations — ties with
+markov1 then resolve to `cycle` via NAMES order, giving the intended tell.
+(2) "Unreadable" = genuine randomness, NOT balance — a perfect round-robin is
+readable by `antiRepeat`. Tests assert mean readability over many *random*
+streams ≈ 0, not that a hand-crafted "balanced" stream is.
+
+**Phase 2 (personalities) complete.** `src/personalities.js` + 16 tests green.
+- Tuned Drunkard/Stone weights (more habit, less noise) so their scripted
+  counters clear the ≥65% bar — personality weights are design knobs, NOT the
+  frozen engine constants, so this is in-bounds. All 5 habit archetypes beaten
+  65–96%; Ghost 49.9% vs random (unexploitable); difficulty monotonic on Echo.
+- **Two negative-modulo bugs in the TEST harness** (not the modules): `(b-a)%6`
+  and `(aB-pB)%3` are negative in JS when the minuend is smaller, silently
+  misclassifying outcomes and biasing wins toward the AI. Must always wrap
+  `((x)%n+n)%n`. The engine/prototype already wrap correctly — the engine module
+  MUST keep doing so.
+- Test harness lesson: the player's bind pick must use an RNG stream INDEPENDENT
+  of the AI's sampling RNG, or binds correlate with AI stances and skew win-rate.
+- Insight: vs a uniform-random stance player, `d=(b−a)%6` is uniform regardless
+  of the AI's pick, so any AI ≈ 49.86% vs random (matrix symmetry). Good sanity
+  check for the meter/symmetry tests later.
+
+**Phase 2 complete.** `resolve.js`/`assists.js`/`readout.js` + `engine.js`, all
+tested (predictor 19, personalities 16, resolve 15, assists 16, readout 12,
+engine 24 = 102 assertions). Harness still green.
+
+**Spec inconsistency fixed (bind cycle):** §3.5's `d3` formula (`(aB−pB)%3`,
+`1`=player wins) and its parenthetical flavor ("Drive>Trap>Slip>Drive") describe
+OPPOSITE RPS cycles. The formula is authoritative — the harness and
+`personalities.beatsBind` already use it — so the real cycle is
+**Drive>Slip>Trap>Drive** (player wins when `aB=pB+1`). Updated the spec prose
+and engine comment to match. No stats change (RPS is symmetric either way).
+
+**Meter honesty proven at the engine level:** identical seed + identical scripted
+picks, run with all spends firing vs no spends — winner, final HP, total damage,
+and round count are byte-identical. Spends consume meter + emit info only; they
+never reach the damage path and never consume the RNG, so picks are unchanged.
+
+**Deployed live (2026-06-18):** GitHub Pages from `main`/root —
+https://stephenuffugus.github.io/sixfold/ . The codespace's `GITHUB_TOKEN`
+cannot enable Pages via API (403 "not accessible by integration"); the first
+enable must be done by the repo owner in Settings → Pages. After that, every
+push to `main` auto-publishes. PWA paths are all relative, so the project
+subpath (`/sixfold/`) works without a base href.
+
+**Mobile wheel collapse (fixed):** `.wheelwrap` is a direct child of the body
+column flexbox. On a phone the page exceeds viewport height, so flexbox shrank
+the wheel vertically *despite* `height:296px` — down to ~21px on a 320px screen,
+piling all 6 stance nodes on top of each other. Fix: `flex-shrink:0` on
+`.wheelwrap`. Added `tools/render-check.js` (Playwright, dev-only) — renders the
+shipped game at phone viewports, measures every node's box, and fails on
+overlap/clipping. This is the regression test the headless `domcheck` stub
+*can't* be (no layout engine). `node_modules` + screenshots are gitignored;
+runtime stays zero-dep.
+
+**Playtest polish (2026-06-18):** (1) Clash Bind moved out of the 120px hub into
+a full-screen overlay (`#bindstage`): backdrop blur+dim, `.hero` scales .5→1 with
+an overshoot bezier so the choices rush forward, big buttons labelled with what
+they beat, screen-shake on entry, reduced-motion safe. (2) First-run "How to
+duel" overlay (`#howto`, remembered via `localStorage.sixfold_seen`) because the
+teaching rings only fire on hover and so never show on touch — this was the
+"confusing" feedback. `Stage.bindPrompt()` now needs `els.bindStage`; SW cache
+bumped (→ v3) on each deploy so phones drop the stale shell.
+
+**Juice / game-feel pass 1 (2026-06-18):** added `src/audio.js` — a Web Audio
+synth with NO sound files (cosmetic; keeps the single zero-asset file). Exported
+as **`Sfx`**, NOT `Audio` (that would clobber the built-in HTMLAudioElement
+ctor). Lazy context primed on first pointer gesture (browser autoplay rule).
+Cues wired to a synced impact (~330ms into the reveal), plus haptics
+(`navigator.vibrate`), a clean-finish screen flash, and a real Victory/Defeat
+result overlay (`#resultscreen`) with rounds/unpredictability/streak/sunbeams +
+Duel-again / Change-foe. Win streak best persists in `localStorage`.
+`audioCues` + `haptics` (already in the assists a11y model) now default **on**
+and are surfaced as Sound/Haptics toggles; assists test unaffected (it only
+checks `colorblind`). build ORDER gains `audio` first; domcheck tracks the 9th
+global; render-check now plays a full match and screenshots the result screen.
+All effects reduced-motion safe. Next polish candidates the user may pick:
+visual identity (dojo backdrop/art), flow & retention, in-match clarity. Bigger
+roadmap the user floated: async Ghost-duel PvP → live PvP, with a sunbeam/dew
+*wager* — keep wagers OFF the combat path (pillar) and flag gambling/ratings
+implications for an Asia launch to the game manager.
+
+**Visual identity pass (2026-06-18):** art direction locked to **paper +
+watercolor** (owner call — not one of the presets). Built a data-driven
+`#scene` backdrop with `THEMES` (dojo/sunset/bamboo/torii), each a future
+unlockable "area" — adding one = a `THEMES` entry + a `ridgeURI` silhouette
+kind. Watercolor washes (blurred screen-blend), feTurbulence paper grain,
+sun/moon disc, silhouette ridge, vignette — all CSS/SVG, zero assets. Frosted
+panels (backdrop-blur), grounded fighters, brush wordmark underline. Arena
+picker in the foe drawer. `ART_SHEET.md` style line updated to the watercolor
+house style + a starter roster of 8 character concepts mapped to foe ids; the
+owner generates sheets in Midjourney/GPT and they drop in via one `REGISTRY`
+line. Owner's stated direction for the product: a LARGE unlockable cast +
+many areas as single-player rewards (cosmetic per pillar) — the theme + skin
+registries are the foundation for that.
+
+**Serious audit + testplay (2026-06-18, 20-fighter build):**
+- Pillar/fairness INTACT: harness all targets met; a truly-random player wins
+  ~50% on EVERY Ascent rung regardless of difficulty/archetype. So the difficulty
+  knob never raises the AI's raw strength — it only punishes *predictability*
+  harder (and lets a reading player exploit a low-diff AI for >50%). Felt
+  difficulty is real for humans (who leak patterns) but caps at 50% for perfect
+  unpredictable play. Implication: the 23-rung campaign's challenge is
+  collection + learning unpredictability, not an escalating raw-strength wall.
+- BALANCE SPIKE: a patterned (stance-rotation) player vs Mirror @ rung 4 wins
+  only ~4.5% (Mirror hard-counters rotations). Reader foes (trickster/ghost/echo)
+  sit ~28-37% for patterned play; habit foes ~50%. Curve is archetype-driven and
+  jagged, not monotonic in the displayed ★ difficulty. Mirror appearing at rung 4
+  is an early wall for beginners who fall into rhythms.
+- PERF: cold load ~284ms; lazy-cache SW (precache shell + ronin only) keeps it
+  flat as the roster grows; no console errors; 23-rung ladder scrolls.
+- ART: 20 distinct sheets; anchor/scale varies (standing vs crouched-yokai vs
+  floating-spirit). Minor at game scale; a per-skin anchorY/scale would normalize.
+- Quick-win shipped: Ascent auto-scrolls to the current rung on open.
+See the session's audit report for the prioritized improvement list.
+
+(continued below as work lands…)

@@ -1,0 +1,4258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<meta name="theme-color" content="#0d0a08" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>Glyph Forge</title>
+<link rel="manifest" href="manifest.json" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=IM+Fell+English:ital@0;1&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+  /* ============================================================
+     GLYPH FORGE — Aesthetic: illuminated manuscript / dark codex
+     Palette locked. Edit CSS vars to retheme.
+     ============================================================ */
+  :root {
+    --ink-deep:     #0a0705;
+    --ink-mid:      #14100b;
+    --ink-warm:     #1f1810;
+    --parchment:    #e8dcc3;
+    --parchment-dk: #c9b896;
+    --parchment-sh: #8a7a5e;
+    --gilt:         #d4a849;
+    --gilt-bright:  #f0c46a;
+    --verdigris:    #5a8d6a;
+    --crimson:      #a83232;
+    --crimson-dk:   #6b1d1d;
+    --violet:       #6b4d8c;
+    --vellum:       #f4e8d0;
+    --shadow:       rgba(0,0,0,0.65);
+    --grain:        url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.85  0 0 0 0 0.78  0 0 0 0 0.6  0 0 0 0.18 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0;
+    height: 100%;
+    background: var(--ink-deep);
+    color: var(--parchment);
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 16px;
+    line-height: 1.4;
+    overflow: hidden;
+    overscroll-behavior: none;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+  }
+  body {
+    background:
+      radial-gradient(ellipse at top, rgba(212,168,73,0.08), transparent 60%),
+      radial-gradient(ellipse at bottom, rgba(107,77,140,0.06), transparent 70%),
+      var(--ink-deep);
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: var(--grain);
+    opacity: 0.5;
+    pointer-events: none;
+    mix-blend-mode: overlay;
+    z-index: 1;
+  }
+
+  #app {
+    position: relative;
+    width: 100vw; height: 100vh;
+    height: 100dvh;
+    height: 100svh;   /* smallest viewport: the bottom controls are NEVER
+                          drawn under browser/OS chrome (Android nav bar,
+                          iOS toolbar) — fixes bottom-button clipping */
+    max-width: 540px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    z-index: 2;
+  }
+
+  /* ============ SCREENS ============ */
+  .screen { display: none; flex: 1; min-height: 0; flex-direction: column; }
+  .screen.active { display: flex; }
+
+  /* ============ TITLE SCREEN ============ */
+  #title-screen {
+    align-items: center;
+    justify-content: center;
+    padding: 32px 24px;
+    text-align: center;
+  }
+  .title-mark {
+    width: 200px; height: 200px;
+    margin-bottom: 24px;
+    background: var(--ink-mid);
+    border: 1px solid var(--gilt);
+    border-radius: 50%;
+    display: grid; place-items: center;
+    position: relative;
+    box-shadow:
+      0 0 60px rgba(212,168,73,0.25),
+      inset 0 0 40px rgba(212,168,73,0.1);
+  }
+  .title-mark::after {
+    content: '';
+    position: absolute; inset: 8px;
+    border: 1px solid var(--gilt);
+    border-radius: 50%;
+    opacity: 0.4;
+  }
+  .title-mark img {
+    width: 70%; height: 70%;
+    object-fit: contain;
+    filter: drop-shadow(0 0 20px var(--gilt));
+  }
+  .title-mark.placeholder::before {
+    content: '✶';
+    font-size: 100px;
+    color: var(--gilt);
+    text-shadow: 0 0 30px var(--gilt-bright);
+  }
+  h1.title {
+    font-family: 'Cinzel Decorative', serif;
+    font-weight: 900;
+    font-size: 44px;
+    letter-spacing: 0.1em;
+    color: var(--gilt);
+    margin: 0 0 8px;
+    text-shadow: 0 0 30px rgba(212,168,73,0.5);
+  }
+  .subtitle {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-size: 18px;
+    color: var(--parchment-dk);
+    letter-spacing: 0.05em;
+    margin-bottom: 20px;
+    max-width: 280px;
+  }
+  .title-meta {
+    display: flex; flex-wrap: wrap; justify-content: center;
+    gap: 6px 8px; max-width: 340px; margin-bottom: 26px;
+  }
+  .title-meta:empty { display: none; }
+  .tm-chip {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    letter-spacing: 0.04em; color: var(--parchment-sh);
+    border: 1px solid rgba(212,168,73,0.22); border-radius: 3px;
+    padding: 4px 8px; cursor: help;
+  }
+  .tm-chip b { color: var(--gilt-bright); font-weight: 700; }
+  .mastery-track {
+    display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px;
+  }
+  .mseal {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    letter-spacing: 0.04em; padding: 5px 9px; border-radius: 3px;
+    border: 1px solid rgba(212,168,73,0.18); color: var(--parchment-sh);
+    cursor: help; opacity: 0.55;
+  }
+  .mseal.got {
+    opacity: 1; color: var(--gilt-bright);
+    border-color: var(--gilt);
+    background: rgba(212,168,73,0.08);
+    box-shadow: 0 0 10px rgba(212,168,73,0.15);
+  }
+  /* Ascension picker (Sigil modal) */
+  .asc-picker {
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    margin: 4px 0 14px; padding: 10px;
+    border: 1px solid rgba(168,50,50,0.3); border-radius: 4px;
+    background: rgba(168,50,50,0.06);
+  }
+  .asc-picker button {
+    width: 34px; height: 34px; font-size: 18px; line-height: 1;
+    background: var(--ink-warm); color: var(--gilt);
+    border: 1px solid var(--gilt); border-radius: 4px; cursor: pointer;
+  }
+  .asc-picker button:disabled { opacity: 0.3; cursor: default; }
+  .asc-picker .asc-info { flex: 1; text-align: center; }
+  .asc-picker .asc-name {
+    font-family: 'Cinzel Decorative', serif; font-size: 14px; color: var(--gilt-bright);
+  }
+  .asc-picker .asc-blurb {
+    font-family: 'IM Fell English', serif; font-style: italic;
+    font-size: 12px; color: var(--parchment-dk); margin-top: 2px;
+  }
+  .menu-buttons {
+    display: flex; flex-direction: column;
+    gap: 14px; width: 100%; max-width: 320px;
+  }
+
+  /* ============ BUTTONS ============ */
+  button.btn {
+    font-family: 'Cinzel Decorative', serif;
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: 0.18em;
+    color: var(--parchment);
+    background: linear-gradient(to bottom, var(--ink-warm), var(--ink-mid));
+    border: 1px solid var(--gilt);
+    border-radius: 2px;
+    padding: 16px 24px;
+    cursor: pointer;
+    text-transform: uppercase;
+    position: relative;
+    transition: transform 0.12s, box-shadow 0.12s, background 0.2s;
+    box-shadow: 0 2px 0 var(--ink-deep), 0 4px 12px rgba(0,0,0,0.4);
+    min-height: 50px;
+  }
+  button.btn::before, button.btn::after {
+    content: '';
+    position: absolute;
+    top: 50%; transform: translateY(-50%);
+    width: 12px; height: 12px;
+    border: 1px solid var(--gilt);
+    opacity: 0.6;
+  }
+  button.btn::before { left: 8px; border-right: 0; border-bottom: 0; }
+  button.btn::after  { right: 8px; border-left: 0; border-top: 0; }
+  button.btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 0 0 var(--ink-deep), 0 2px 8px rgba(0,0,0,0.4);
+  }
+  button.btn.primary {
+    background: linear-gradient(to bottom, #2a1f10, var(--ink-warm));
+    color: var(--gilt-bright);
+    border-color: var(--gilt-bright);
+  }
+  button.btn.danger { color: var(--crimson); border-color: var(--crimson-dk); }
+  button.btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  button.btn.small { padding: 8px 14px; font-size: 12px; min-height: 36px; }
+  .gf-itch-link {
+    display: inline-block; margin-top: 18px;
+    color: var(--gilt); text-decoration: none;
+    font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase;
+    opacity: 0.72; transition: opacity 0.2s, color 0.2s;
+    border-bottom: 1px solid rgba(212,168,73,0.35); padding-bottom: 2px;
+  }
+  .gf-itch-link:hover { opacity: 1; color: var(--gilt-bright); }
+  .gf-toast {
+    position: fixed; left: 50%; bottom: 7%; transform: translateX(-50%);
+    background: var(--ink-warm); color: var(--parchment);
+    border: 1px solid var(--gilt); border-radius: 4px;
+    padding: 10px 18px; font-size: 13px; letter-spacing: 0.04em;
+    box-shadow: 0 6px 24px var(--shadow); z-index: 9999;
+    animation: gf-toast-in 0.25s ease-out;
+  }
+  @keyframes gf-toast-in { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
+  button.btn.icon {
+    padding: 8px; min-height: 36px; min-width: 36px;
+    font-size: 14px;
+  }
+
+  /* ============ GAME SCREEN ============ */
+  #game-screen { padding: 0; }
+
+  .hud {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px 8px;
+    padding-top: max(12px, env(safe-area-inset-top));
+    border-bottom: 1px solid rgba(212,168,73,0.2);
+    background: var(--ink-deep);
+  }
+  .hud-depth {
+    flex-shrink: 0;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px;
+    padding: 5px 16px;
+    background: var(--ink-mid);
+    border-bottom: 1px solid rgba(212,168,73,0.12);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 0.06em;
+    color: var(--parchment-sh);
+  }
+  .hud-depth .dchip { color: var(--gilt); }
+  .hud-depth .dchip b { color: var(--gilt-bright); font-weight: 700; }
+  .hud-depth .dchip.dim { color: var(--parchment-sh); }
+  .hud-depth .dprophecy.done { color: var(--verdigris); }
+  .hud-depth .dchase { color: #b48ad8; }
+  .hud-depth .dchase b { color: #d9b6f0; }
+  /* tap-tooltip: title= is dead on touch — these chips are tappable */
+  .hud-depth .dchip[data-tip], .hud-stat[data-tip] { cursor: help; }
+  .hud-depth .dchip[data-tip]::after {
+    content: ''; display: inline-block; width: 11px; height: 11px;
+    margin-left: 4px; vertical-align: -1px; opacity: 0.5;
+    border: 1px solid currentColor; border-radius: 50%;
+    background: radial-gradient(circle at 50% 42%, currentColor 0 1px, transparent 1.5px);
+  }
+  .dchip.gf-tip-open { outline: 1px solid var(--gilt); outline-offset: 1px; }
+  /* relic rarity tokens */
+  .rtok { display:inline-block; width:6px; height:6px; margin-left:4px;
+    border-radius:50%; vertical-align:1px; }
+  .rtok.r-common   { background: var(--parchment-sh); }
+  .rtok.r-uncommon { background: var(--verdigris); }
+  .rtok.r-rare     { background: var(--violet); box-shadow: 0 0 5px var(--violet); }
+  .rtok.r-mythic   { background: var(--crimson); box-shadow: 0 0 6px var(--crimson); }
+  #gf-tip {
+    position: fixed; z-index: 120; max-width: 76vw;
+    background: var(--ink-deep); color: var(--parchment);
+    border: 1px solid var(--gilt);
+    box-shadow: 0 6px 24px rgba(0,0,0,0.7), 0 0 16px rgba(212,168,73,0.25);
+    padding: 9px 12px; border-radius: 4px;
+    font-family: 'Cormorant Garamond', serif; font-size: 14px; line-height: 1.35;
+    pointer-events: none; opacity: 0; transform: translateY(4px);
+    transition: opacity 0.14s ease, transform 0.14s ease;
+  }
+  #gf-tip.show { opacity: 1; transform: translateY(0); }
+  .hud-left, .hud-right { display: flex; align-items: center; gap: 10px; }
+  .hud-stat {
+    font-family: 'IM Fell English', serif;
+    color: var(--parchment-dk);
+    font-size: 13px;
+    letter-spacing: 0.05em;
+  }
+  .hud-stat strong {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--gilt-bright);
+    font-weight: 700;
+    margin-left: 4px;
+  }
+  .hp-bar {
+    width: 80px; height: 8px;
+    background: var(--ink-warm);
+    border: 1px solid var(--parchment-sh);
+    border-radius: 1px;
+    overflow: hidden;
+    position: relative;
+  }
+  .hp-bar > div {
+    height: 100%;
+    background: linear-gradient(to right, var(--crimson-dk), var(--crimson));
+    transition: width 0.4s ease-out;
+  }
+
+  /* ----- Enemy region ----- */
+  /* The play area (enemy + spell + hand) scrolls as one region so the cast
+     button is ALWAYS pinned on-screen above the phone's nav bar, no matter how
+     short the viewport. In fullscreen (or on a tall screen) it never scrolls. */
+  .play-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: column;
+  }
+  .enemy-stage {
+    /* grow to fill spare height and centre, but NEVER shrink below the enemy's
+       own content — so the portrait, HP bar and intent are always fully visible
+       and can't clip into the HUD. play-scroll scrolls if the screen is tiny. */
+    flex: 1 0 auto;
+    min-height: 0;
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 10px 16px;
+    background:
+      radial-gradient(ellipse at center, rgba(168,50,50,0.08), transparent 70%),
+      var(--ink-deep);
+  }
+  .enemy {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+    text-align: center;
+  }
+  .enemy-portrait {
+    width: clamp(64px, 12vh, 112px);
+    height: clamp(64px, 12vh, 112px);
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--ink-warm);
+    border: 1px solid var(--crimson-dk);
+    display: grid; place-items: center;
+    position: relative;
+    box-shadow:
+      0 0 40px rgba(168,50,50,0.3),
+      inset 0 0 30px rgba(0,0,0,0.5);
+    overflow: hidden;
+  }
+  .enemy-portrait img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    filter: contrast(1.1) brightness(0.9);
+  }
+  .enemy-portrait.placeholder::after {
+    content: '⌬';
+    font-size: clamp(36px, 8vh, 60px);
+    color: var(--crimson);
+    text-shadow: 0 0 30px var(--crimson);
+  }
+  .enemy-portrait.hit {
+    animation: shake 0.58s, flash 0.5s;
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    12% { transform: translateX(-12px) scale(0.97); }
+    28% { transform: translateX(10px); }
+    46% { transform: translateX(-7px); }
+    64% { transform: translateX(5px); }
+    82% { transform: translateX(-2px); }
+  }
+  @keyframes flash {
+    0%, 100% { filter: none; }
+    30% { filter: brightness(2) saturate(0.5); }
+  }
+  .enemy-name {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 17px;
+    color: var(--parchment);
+    letter-spacing: 0.12em;
+  }
+  .enemy-hp-row {
+    display: flex; align-items: center; gap: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--crimson);
+  }
+  .enemy-hp-bar {
+    width: 160px; height: 12px;
+    background: var(--ink-warm);
+    border: 1px solid var(--crimson-dk);
+    overflow: hidden;
+    position: relative;
+  }
+  .enemy-hp-bar > div {
+    position: absolute; left: 0; top: 0;
+    height: 100%;
+  }
+  /* chip damage: a pale ghost that lags the red fill, then catches up */
+  #enemy-hp-ghost {
+    background: rgba(240, 196, 106, 0.55);
+    transition: width 0.65s ease-out 0.18s;
+  }
+  #enemy-hp-fill {
+    background: linear-gradient(to right, var(--crimson), var(--crimson-dk));
+    transition: width 0.28s ease-out;
+  }
+  .threat-meter {
+    display: flex; flex-direction: column; align-items: center; gap: 4px; margin-top: 2px;
+  }
+  .threat-pips { display: flex; gap: 4px; }
+  .threat-pip {
+    width: 10px; height: 10px;
+    border: 1px solid var(--crimson-dk);
+    background: var(--ink-deep);
+    transform: rotate(45deg);
+  }
+  .threat-pip.active { background: var(--crimson); box-shadow: 0 0 6px var(--crimson); }
+  /* Enemy INTENT — the telegraphed next action (Batch B). Reading the enemy is
+     now a per-turn decision, not an invisible flat tax. */
+  .enemy-intent {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.06em;
+    padding: 3px 11px; border-radius: 12px;
+    border: 1px solid var(--crimson-dk); background: rgba(40, 12, 12, 0.55); color: var(--crimson);
+    cursor: pointer;
+  }
+  .enemy-intent .ei-icon { font-size: 13px; line-height: 1; }
+  .enemy-intent .ei-num  { font-weight: 700; color: var(--parchment); }
+  .enemy-intent.intent-unleash {
+    border-color: var(--crimson); color: #ff9b7a; background: rgba(120, 18, 18, 0.5);
+    box-shadow: 0 0 14px rgba(168, 50, 50, 0.55);
+    animation: gf-intent-pulse 1.05s ease-in-out infinite;
+  }
+  .enemy-intent.intent-charge { border-color: #b78a35; color: #e8c46a; background: rgba(58, 42, 12, 0.5); }
+  .enemy-intent.intent-mend   { border-color: #347b58; color: #7fd4a0; background: rgba(14, 44, 30, 0.5); }
+  @keyframes gf-intent-pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+  @media (prefers-reduced-motion: reduce) { .enemy-intent.intent-unleash { animation: none; } }
+  /* Sovereign "reads your line" badge (Batch E) */
+  .boss-read {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.06em;
+    color: #c98ad0; border: 1px solid #6b3a78; background: rgba(48, 18, 56, 0.5);
+    padding: 2px 9px; border-radius: 10px; cursor: pointer;
+  }
+  .boss-read b { color: #e6b8ee; }
+  .reward-rune.sigil-advanced { opacity: 0.78; }
+  /* Enemy armor badge (Batch C1) */
+  .enemy-armor {
+    display: inline-flex; align-items: center; gap: 3px;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #c79b6a;
+    margin-left: 8px;
+  }
+  /* Floating note over the enemy (armor shrug / pierce / status) */
+  .gf-float-note {
+    position: absolute; left: 50%; top: 22%;
+    transform: translateX(-50%);
+    font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700;
+    color: #c79b6a; text-shadow: 0 1px 3px #000; pointer-events: none; z-index: 6;
+    animation: gf-float-up 1.1s ease-out forwards;
+  }
+  @keyframes gf-float-up {
+    0% { opacity: 0; transform: translate(-50%, 6px); }
+    20% { opacity: 1; }
+    100% { opacity: 0; transform: translate(-50%, -26px); }
+  }
+  @media (prefers-reduced-motion: reduce) { .gf-float-note { animation: none; opacity: 1; } }
+
+  /* Floating damage numbers */
+  .damage-pop {
+    position: absolute;
+    font-family: 'Cinzel Decorative', serif;
+    font-weight: 900;
+    font-size: 38px;
+    color: var(--gilt-bright);
+    text-shadow:
+      0 0 10px var(--gilt),
+      0 2px 0 var(--ink-deep),
+      0 4px 12px rgba(0,0,0,0.8);
+    pointer-events: none;
+    animation: damageFloat 1.2s cubic-bezier(0.2, 0.6, 0.3, 1) forwards;
+    z-index: 50;
+  }
+  .damage-pop.crit {
+    color: var(--crimson);
+    font-size: 52px;
+  }
+  @keyframes damageFloat {
+    0%   { transform: translate(-50%, 0) scale(0.5); opacity: 0; }
+    20%  { transform: translate(-50%, -10px) scale(1.2); opacity: 1; }
+    100% { transform: translate(-50%, -120px) scale(0.9); opacity: 0; }
+  }
+  /* magnitude tiers — bigger hits read bigger & hotter */
+  .damage-pop.tier-1 { font-size: 30px; }
+  .damage-pop.tier-2 { font-size: 40px; }
+  .damage-pop.tier-3 { font-size: 54px; color: var(--gilt-bright);
+    text-shadow: 0 0 16px var(--gilt), 0 0 34px var(--gilt), 0 2px 0 var(--ink-deep); }
+  .damage-pop.tier-4 { font-size: 70px; color: #ffe6a0;
+    text-shadow: 0 0 22px var(--gilt-bright), 0 0 48px var(--crimson), 0 2px 0 var(--ink-deep); }
+  .damage-pop.crit { color: var(--crimson); }
+  .damage-pop.crit.tier-3, .damage-pop.crit.tier-4 {
+    color: #ff7a5c; text-shadow: 0 0 24px var(--crimson), 0 0 52px var(--crimson); }
+
+  /* full-viewport flash on big payoffs (inert under reduced-motion) */
+  #gf-screen-flash {
+    position: fixed; inset: 0; z-index: 90;
+    pointer-events: none; opacity: 0;
+    background: radial-gradient(ellipse at center, rgba(240,196,106,0.42), rgba(168,50,50,0.10) 60%, transparent 75%);
+  }
+  #gf-screen-flash.fire { animation: gfFlash 0.42s ease-out; }
+  @keyframes gfFlash { 0% { opacity: 0; } 18% { opacity: 1; } 100% { opacity: 0; } }
+  /* red danger-vignette when the FOE lands a blow on you (edges, not centre) */
+  #gf-screen-flash.hurt {
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(150,26,26,0.6) 100%);
+    animation: gfHurtFlash 0.5s ease-out;
+  }
+  @keyframes gfHurtFlash { 0% { opacity: 0; } 14% { opacity: 1; } 100% { opacity: 0; } }
+  /* the enemy winds up and lunges DOWN toward you before the strike connects */
+  .enemy-portrait.lunge { animation: gfLunge 0.5s cubic-bezier(0.3,0.85,0.3,1); }
+  @keyframes gfLunge {
+    0%   { transform: translateY(0) scale(1); }
+    34%  { transform: translateY(-9px) scale(0.93); }
+    56%  { transform: translateY(15px) scale(1.09); filter: brightness(1.35); }
+    100% { transform: translateY(0) scale(1); }
+  }
+  /* the damage YOU take, floating up off the HP bar */
+  .gf-player-hurt {
+    position: fixed; z-index: 96; pointer-events: none;
+    transform: translate(-50%, 0);
+    font-family: 'Cinzel Decorative', serif; font-weight: 700; font-size: 20px;
+    color: #ff6a5c; text-shadow: 0 0 12px rgba(168,30,30,0.9);
+    animation: gfPlayerHurt 0.9s ease-out forwards;
+  }
+  @keyframes gfPlayerHurt {
+    0%   { opacity: 0; transform: translate(-50%, 4px) scale(0.8); }
+    20%  { opacity: 1; transform: translate(-50%, -2px) scale(1.15); }
+    100% { opacity: 0; transform: translate(-50%, -26px) scale(1); }
+  }
+
+  /* screen shake — transform only, never reflows the flex layout */
+  #app.gf-shake-1 { animation: gfShake1 0.26s ease-in-out; }
+  #app.gf-shake-2 { animation: gfShake2 0.42s ease-in-out; }
+  @keyframes gfShake1 {
+    0%,100% { transform: translate(0,0); }
+    25% { transform: translate(-3px,1px); } 50% { transform: translate(3px,-1px); }
+    75% { transform: translate(-2px,1px); }
+  }
+  @keyframes gfShake2 {
+    0%,100% { transform: translate(0,0); }
+    15% { transform: translate(-7px,2px); } 30% { transform: translate(6px,-3px); }
+    45% { transform: translate(-6px,2px); } 60% { transform: translate(5px,-2px); }
+    80% { transform: translate(-3px,1px); }
+  }
+  /* readout "heat": the live damage preview warms as it climbs */
+  .spell-damage.heat-2 { color: #ffd97a; text-shadow: 0 0 8px rgba(240,196,106,0.6); }
+  .spell-damage.heat-3 { color: #ffb15c; text-shadow: 0 0 12px rgba(240,160,90,0.8); }
+  .spell-damage.heat-4 { color: #ff7a5c;
+    text-shadow: 0 0 14px var(--crimson), 0 0 26px rgba(168,50,50,0.7); }
+
+  /* ----- Spell slots ----- */
+  .spell-area {
+    flex-shrink: 0;
+    padding: 8px 16px;
+    background: var(--ink-mid);
+    border-top: 1px solid rgba(212,168,73,0.15);
+    border-bottom: 1px solid rgba(212,168,73,0.15);
+  }
+  .spell-readout {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    gap: 4px 10px;
+    margin-bottom: 8px;
+    font-family: 'IM Fell English', serif;
+    color: var(--parchment-dk);
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    font-style: italic;
+  }
+  /* Batch D: the live POWER → XMULT → fluency breakdown (legibility) */
+  #spell-formula { flex: 1 1 0; min-width: 0; line-height: 1.55; font-style: normal; }
+  #spell-formula .fb-pow    { color: #8ab4e8; }
+  #spell-formula .fb-xm     { color: var(--gilt-bright); font-weight: 700; }
+  #spell-formula .fb-rs     { color: var(--parchment-sh); margin-left: 3px; }
+  #spell-formula .fb-fl     { color: #c79b6a; }
+  #spell-formula .fb-armor  { color: #c79b6a; }
+  #spell-formula .fb-pierce { color: #7fd4a0; }
+  #spell-formula .fb-op     { color: #6b5a3e; margin: 0 4px; }
+  .spell-damage { flex: 0 0 auto; }
+  .spell-damage {
+    font-family: 'Cinzel Decorative', serif;
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--gilt-bright);
+    letter-spacing: 0.1em;
+  }
+  .spell-slots {
+    display: flex; gap: 8px; justify-content: center;
+  }
+  .spell-coach {
+    margin-top: 7px; text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px; letter-spacing: 0.03em;
+    color: #c7a155; opacity: 0.9;
+    transition: opacity 0.25s ease;
+  }
+  .spell-coach:empty { display: none; }
+  .spell-slot {
+    flex: 1;
+    aspect-ratio: 1;
+    max-width: 74px;
+    border: 1px dashed var(--parchment-sh);
+    background: rgba(0,0,0,0.4);
+    border-radius: 4px;
+    display: grid; place-items: center;
+    color: var(--parchment-sh);
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .spell-slot.filled {
+    border-style: solid;
+    border-color: var(--gilt);
+    background: var(--ink-warm);
+    cursor: pointer;
+  }
+  /* A rune is SET into its slot — it drops in and settles with weight, like
+     pressing a seal into wax, rather than a quick pop. */
+  .spell-slot.gf-fill { animation: gfSlotFill 0.5s cubic-bezier(0.34, 1.25, 0.4, 1); }
+  @keyframes gfSlotFill {
+    0%   { transform: scale(0.62) translateY(-9px); opacity: 0; }
+    42%  { opacity: 1; }
+    68%  { transform: scale(1.11) translateY(0); }
+    100% { transform: scale(1); }
+  }
+  /* Charge-up: on Inscribe, each staged rune flares in turn (I→II→III via an
+     inline animation-delay) — the spell winding up before it releases. */
+  .spell-slot.gf-charge { animation: gfCharge 0.46s ease-out both; z-index: 2; }
+  @keyframes gfCharge {
+    0%   { transform: scale(1); filter: brightness(1); box-shadow: 0 0 0 0 rgba(240,196,106,0); }
+    45%  { transform: scale(1.16); filter: brightness(1.7); box-shadow: 0 0 24px 5px rgba(240,196,106,0.9); }
+    100% { transform: scale(1); filter: brightness(1); box-shadow: 0 0 0 0 rgba(240,196,106,0); }
+  }
+  .spell-slot.synergy-element { box-shadow: 0 0 0 1px var(--verdigris), 0 0 12px rgba(90,141,106,0.4); animation: gfThrobV 1.5s ease-in-out infinite; }
+  .spell-slot.synergy-shape { box-shadow: 0 0 0 1px var(--violet), 0 0 12px rgba(107,77,140,0.4); animation: gfThrobP 1.5s ease-in-out infinite; }
+  .spell-slot.synergy-both {
+    box-shadow:
+      0 0 0 1px var(--gilt-bright),
+      0 0 16px rgba(240,196,106,0.5);
+    animation: gfThrobG 1.3s ease-in-out infinite;
+  }
+  @keyframes gfThrobV { 0%,100% { box-shadow: 0 0 0 1px var(--verdigris), 0 0 10px rgba(90,141,106,0.35); } 50% { box-shadow: 0 0 0 1px var(--verdigris), 0 0 20px rgba(90,141,106,0.7); } }
+  @keyframes gfThrobP { 0%,100% { box-shadow: 0 0 0 1px var(--violet), 0 0 10px rgba(107,77,140,0.35); } 50% { box-shadow: 0 0 0 1px var(--violet), 0 0 20px rgba(107,77,140,0.7); } }
+  @keyframes gfThrobG { 0%,100% { box-shadow: 0 0 0 1px var(--gilt-bright), 0 0 14px rgba(240,196,106,0.4); } 50% { box-shadow: 0 0 0 1px var(--gilt-bright), 0 0 26px rgba(240,196,106,0.8); } }
+
+  /* ----- Hand area ----- */
+  .hand-area {
+    flex-shrink: 0;
+    padding: 12px 12px;
+    background: var(--ink-deep);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+  }
+  .hand-label {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0 4px;
+  }
+  .hand-label span {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    color: var(--parchment-dk);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+  }
+  .hand-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* ----- Rune card ----- */
+  .rune {
+    aspect-ratio: 5/7;
+    background: linear-gradient(135deg, var(--vellum), var(--parchment-dk));
+    border: 1px solid var(--gilt);
+    border-radius: 3px;
+    padding: 4px;
+    display: flex; flex-direction: column;
+    color: var(--ink-deep);
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 2px 6px var(--shadow), inset 0 0 12px rgba(139,109,68,0.15);
+    overflow: hidden;
+  }
+  .rune::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: var(--grain);
+    opacity: 0.4;
+    pointer-events: none;
+    mix-blend-mode: multiply;
+  }
+  .rune:active { transform: translateY(2px) scale(0.97); }
+  .rune.placed { opacity: 0.3; pointer-events: none; }
+  .rune.rarity-uncommon { border-color: var(--verdigris); }
+  .rune.rarity-rare     { border-color: var(--violet); box-shadow: 0 2px 6px var(--shadow), 0 0 12px rgba(107,77,140,0.3), inset 0 0 12px rgba(107,77,140,0.1); }
+  .rune.rarity-mythic   { border-color: var(--crimson); box-shadow: 0 2px 6px var(--shadow), 0 0 18px rgba(168,50,50,0.4), inset 0 0 14px rgba(168,50,50,0.15); }
+
+  .rune-art {
+    flex: 1;
+    background: var(--ink-warm);
+    border: 1px solid var(--parchment-sh);
+    border-radius: 2px;
+    display: grid; place-items: center;
+    overflow: hidden;
+    position: relative;
+    margin-bottom: 3px;
+  }
+  .rune-art img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+  }
+  .rune-art.placeholder::after {
+    content: attr(data-glyph);
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 28px;
+    color: var(--gilt);
+    text-shadow: 0 0 8px var(--gilt);
+  }
+  .rune-name {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-align: center;
+    color: var(--ink-warm);
+    line-height: 1.1;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .rune-stats {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    color: var(--ink-warm);
+    padding: 0 2px;
+  }
+  .rune-stat-power {
+    font-weight: 700;
+    color: var(--crimson);
+  }
+  .rune-element-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 2px;
+    vertical-align: middle;
+  }
+
+  /* Element colors (small visual indicators) */
+  .el-fire    { background: #d4633a; }
+  .el-water   { background: #3a7dd4; }
+  .el-earth   { background: #8a6b3a; }
+  .el-air     { background: #c4d4e0; }
+  .el-void    { background: #2a2030; }
+  .el-light   { background: #f0e0a0; box-shadow: 0 0 4px #f0e0a0; }
+  .el-shadow  { background: #1a1015; }
+  .el-order   { background: #d4a849; }
+  .el-chaos   { background: #b03a8a; }
+
+  /* ----- Cast button ----- */
+  .cast-row {
+    display: flex; gap: 8px;
+    flex-shrink: 0;
+    padding: 8px 16px 12px;
+    /* NO viewport-fit=cover (Chrome Android then sizes the page ABOVE the
+       3-button nav bar instead of under it). Android Chrome does not report
+       env(safe-area-inset-bottom) for the nav bar, so we can't depend on it
+       — a hard 56px floor reliably clears a 3-button bar (~48px) with margin;
+       the safe-area term still helps iOS / installed-PWA where it's set. */
+    padding-bottom: max(56px, calc(env(safe-area-inset-bottom) + 20px));
+    background: var(--ink-deep);
+    border-top: 1px solid rgba(212,168,73,0.15);
+  }
+  .cast-row button { flex: 1; }
+  .cast-row button.cast {
+    font-size: 18px;
+    background: linear-gradient(to bottom, var(--crimson-dk), #4a1414);
+    color: var(--gilt-bright);
+    border-color: var(--gilt);
+  }
+  .cast-row button.cast:not(:disabled) {
+    animation: pulseGlow 2.2s ease-in-out infinite;
+  }
+  @keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 2px 0 var(--ink-deep), 0 0 0 rgba(212,168,73,0); }
+    50% { box-shadow: 0 2px 0 var(--ink-deep), 0 0 20px rgba(212,168,73,0.4); }
+  }
+
+  /* ============ IN-RUN FIELD GUIDE (dockable, non-blocking) ============ */
+  #game-screen { position: relative; }
+  #guide-panel {
+    display: none;
+    position: absolute; top: 0; left: 0; right: 0;
+    /* covers the enemy/spell area only — hand + cast row stay visible &
+       tappable so you can read the guide WHILE looking at your hand */
+    height: 60%;
+    background: rgba(10,7,5,0.97);
+    border-bottom: 2px solid var(--gilt);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+    overflow-y: auto; -webkit-overflow-scrolling: touch;
+    z-index: 60;
+    padding: 14px 14px 18px;
+  }
+  #guide-panel.open { display: block; }
+  #btn-guide-close {
+    position: absolute; top: 8px; right: 8px; z-index: 2;
+  }
+  #guide-panel-body { padding-top: 2px; }
+
+  /* ============ MOBILE READABILITY — single dial: --ui ============ */
+  /* Bigger hand cards + text NOW (pre-art). Tune --ui up/down to taste;
+     it scales the hand grid sizing. Card-internal & control fonts bumped
+     to comfortable phone sizes. */
+  :root { --ui: 1.15; }
+  .hand-grid {
+    grid-template-columns: repeat(4, 1fr);   /* was 5 — ~55% more card area */
+    gap: 8px;
+  }
+  .rune-name  { font-size: 11px; }
+  .rune-stats { font-size: 10px; }
+  .rune-art.placeholder::after { font-size: calc(28px * var(--ui)); }
+  .spell-readout #spell-formula { font-size: 13px; }
+  .spell-damage { font-size: 24px; }
+  .spell-coach { font-size: 12px; }
+  .hand-label span { font-size: 13px; }
+  .cast-row button { font-size: 16px; min-height: 52px; }
+  .cast-row button.cast { font-size: 19px; }
+
+  /* ============ MODAL / OVERLAY ============ */
+  .modal-bg {
+    position: fixed; inset: 0;
+    background: rgba(10,7,5,0.92);
+    z-index: 100;
+    display: none;
+    align-items: center; justify-content: center;
+    padding: 20px;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+  .modal-bg.active { display: flex; animation: gfModalBg 0.22s ease-out; }
+  @keyframes gfModalBg { from { opacity: 0; } to { opacity: 1; } }
+  .modal-bg.active .modal { animation: gfModalIn 0.28s cubic-bezier(0.2,0.7,0.3,1.15); }
+  @keyframes gfModalIn {
+    0% { opacity: 0; transform: translateY(14px) scale(0.94); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .modal {
+    background: var(--ink-mid);
+    border: 1px solid var(--gilt);
+    border-radius: 4px;
+    padding: 28px 24px;
+    max-width: 380px; width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+    text-align: center;
+    box-shadow: 0 0 50px rgba(212,168,73,0.2), 0 12px 40px var(--shadow);
+    position: relative;
+  }
+  .modal::before, .modal::after {
+    content: '';
+    position: absolute;
+    width: 20px; height: 20px;
+    border: 1px solid var(--gilt);
+  }
+  .modal::before { top: 6px; left: 6px; border-right: 0; border-bottom: 0; }
+  .modal::after  { bottom: 6px; right: 6px; border-left: 0; border-top: 0; }
+  .modal h2 {
+    font-family: 'Cinzel Decorative', serif;
+    font-weight: 900;
+    color: var(--gilt);
+    letter-spacing: 0.12em;
+    font-size: 22px;
+    margin: 0 0 8px;
+  }
+  .modal p {
+    font-family: 'IM Fell English', serif;
+    color: var(--parchment-dk);
+    font-style: italic;
+    margin: 0 0 18px;
+  }
+  .modal .choices {
+    display: flex; flex-direction: column; gap: 10px;
+    margin-top: 16px;
+  }
+  .modal .reward-rune {
+    display: flex; gap: 10px;
+    background: var(--ink-warm);
+    border: 1px solid var(--parchment-sh);
+    border-radius: 3px;
+    padding: 12px;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.15s;
+  }
+  .modal .reward-rune:active { transform: scale(0.97); }
+  .modal .reward-rune:hover, .modal .reward-rune:active {
+    border-color: var(--gilt);
+  }
+  .modal .reward-rune .rune {
+    width: 60px;
+    min-width: 60px;
+    aspect-ratio: 5/7;
+  }
+  .modal .reward-rune-info {
+    flex: 1;
+    display: flex; flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+  }
+  .modal .reward-rune-info .name {
+    font-family: 'Cinzel Decorative', serif;
+    font-weight: 700;
+    color: var(--gilt-bright);
+    font-size: 14px;
+    letter-spacing: 0.06em;
+  }
+  .modal .reward-rune-info .desc {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    color: var(--parchment-dk);
+    font-size: 12px;
+    line-height: 1.3;
+  }
+  .modal .reward-rune-info .tags {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--parchment-sh);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* ============ TOOLTIP ============ */
+  .tooltip {
+    position: fixed;
+    background: var(--ink-deep);
+    border: 1px solid var(--gilt);
+    padding: 8px 12px;
+    border-radius: 3px;
+    max-width: 240px;
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    color: var(--parchment);
+    font-size: 13px;
+    z-index: 200;
+    pointer-events: none;
+    box-shadow: 0 8px 24px var(--shadow);
+    line-height: 1.4;
+  }
+  .tooltip .tt-name {
+    font-family: 'Cinzel Decorative', serif;
+    font-weight: 700;
+    color: var(--gilt);
+    font-style: normal;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    display: block;
+  }
+  .tooltip .tt-tags {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--parchment-sh);
+    font-style: normal;
+    margin-top: 4px;
+    display: block;
+    letter-spacing: 0.05em;
+  }
+
+  /* ============ CODEX / META SCREENS ============ */
+  #codex-screen, #map-screen { padding: 20px 16px; overflow-y: auto;
+    padding-bottom: max(24px, calc(env(safe-area-inset-bottom) + 24px)); }
+  .codex-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 18px;
+    padding-top: env(safe-area-inset-top);
+  }
+  .codex-header h2 {
+    font-family: 'Cinzel Decorative', serif;
+    color: var(--gilt);
+    letter-spacing: 0.12em;
+    margin: 0;
+    font-size: 22px;
+  }
+  .codex-stats {
+    display: flex; gap: 12px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+  .codex-stat {
+    flex: 1;
+    min-width: 100px;
+    background: var(--ink-mid);
+    border: 1px solid var(--parchment-sh);
+    padding: 10px;
+    text-align: center;
+  }
+  .codex-stat .label {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    color: var(--parchment-sh);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+  }
+  .codex-stat .value {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--gilt-bright);
+    font-size: 24px;
+    font-weight: 700;
+  }
+  .codex-section-title {
+    font-family: 'Cinzel Decorative', serif;
+    color: var(--parchment-dk);
+    letter-spacing: 0.1em;
+    font-size: 13px;
+    margin: 18px 0 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--parchment-sh);
+  }
+  .codex-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+  .codex-combo {
+    background: var(--ink-mid);
+    border: 1px solid var(--parchment-sh);
+    padding: 10px 12px;
+    margin-bottom: 6px;
+    border-radius: 2px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .codex-combo .name {
+    font-family: 'Cinzel Decorative', serif;
+    color: var(--gilt);
+    font-size: 13px;
+    letter-spacing: 0.08em;
+  }
+  .codex-combo .glyphs {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--parchment-sh);
+    font-size: 11px;
+  }
+  .codex-combo .peak {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--crimson);
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .codex-rune-locked {
+    background: var(--ink-warm);
+    border: 1px dashed var(--parchment-sh);
+    aspect-ratio: 5/7;
+    display: grid; place-items: center;
+    color: var(--parchment-sh);
+    font-size: 24px;
+    opacity: 0.4;
+  }
+
+  /* ============ MAP / PATH SCREEN ============ */
+  .map-path {
+    display: flex; flex-direction: column;
+    gap: 16px;
+    margin-top: 20px;
+  }
+  .map-node {
+    background: var(--ink-mid);
+    border: 1px solid var(--parchment-sh);
+    padding: 16px;
+    border-radius: 3px;
+    display: flex; align-items: center; gap: 14px;
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.15s, background 0.2s;
+  }
+  .map-node.current {
+    border-color: var(--gilt);
+    background: var(--ink-warm);
+    box-shadow: 0 0 20px rgba(212,168,73,0.25);
+  }
+  .map-node.completed { opacity: 0.4; }
+  .map-node.locked { opacity: 0.25; pointer-events: none; }
+  .map-node:active:not(.locked):not(.completed) { transform: scale(0.98); }
+  .map-node-icon {
+    width: 40px; height: 40px;
+    border: 1px solid var(--gilt);
+    border-radius: 50%;
+    display: grid; place-items: center;
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 18px;
+    color: var(--gilt);
+    flex-shrink: 0;
+  }
+  .map-node-icon.boss { border-color: var(--crimson); color: var(--crimson); }
+  .map-node-info { flex: 1; }
+  .map-node-info .title {
+    font-family: 'Cinzel Decorative', serif;
+    color: var(--parchment);
+    font-size: 14px;
+    letter-spacing: 0.08em;
+  }
+  .map-node-info .sub {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    color: var(--parchment-dk);
+    font-size: 12px;
+  }
+
+  /* ============ VICTORY / DEFEAT ============ */
+  .result-screen { text-align: center; padding: 40px 24px; }
+  .result-icon {
+    font-size: 80px;
+    color: var(--gilt);
+    margin-bottom: 16px;
+    animation: resultEnter 0.8s cubic-bezier(0.2, 0.6, 0.3, 1.2);
+  }
+  .result-icon.defeat { color: var(--crimson); }
+  @keyframes resultEnter {
+    0% { opacity: 0; transform: scale(0.3) rotate(-10deg); }
+    100% { opacity: 1; transform: scale(1) rotate(0); }
+  }
+
+  /* ============ SCROLLBAR ============ */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--ink-deep); }
+  ::-webkit-scrollbar-thumb { background: var(--parchment-sh); }
+
+  /* ============ COMBO BANNER ============ */
+  .combo-banner {
+    position: fixed;
+    top: 35%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--ink-deep);
+    border: 1px solid var(--gilt);
+    padding: 16px 32px;
+    z-index: 90;
+    text-align: center;
+    pointer-events: none;
+    animation: comboBanner 1.6s ease-out forwards;
+    box-shadow: 0 0 40px var(--gilt);
+  }
+  @keyframes comboBanner {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+    20% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+    30% { transform: translate(-50%, -50%) scale(1); }
+    80% { opacity: 1; }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+  }
+  .combo-banner .label {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    color: var(--parchment-dk);
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+  .combo-banner .name {
+    font-family: 'Cinzel Decorative', serif;
+    font-weight: 900;
+    color: var(--gilt-bright);
+    font-size: 24px;
+    letter-spacing: 0.15em;
+    margin-top: 4px;
+  }
+  .combo-banner.new::after {
+    content: 'INSCRIBED';
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--verdigris);
+    letter-spacing: 0.3em;
+    margin-top: 6px;
+  }
+  /* a heavier banner for a brand-new or high-magnitude fusion */
+  .combo-banner.big {
+    border-color: var(--gilt-bright);
+    box-shadow: 0 0 60px var(--gilt-bright), 0 0 120px rgba(168,50,50,0.35);
+  }
+  .combo-banner.big .name { font-size: 30px; color: #ffe6a0;
+    text-shadow: 0 0 18px var(--gilt-bright); }
+
+  /* ----- Story beat: a calm interstitial line when the archive deepens ----- */
+  .story-beat {
+    position: fixed; inset: 0; z-index: 95;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 32px;
+    background: radial-gradient(ellipse at center, rgba(8,6,4,0.82), rgba(8,6,4,0.96));
+    animation: storyBeat 4.6s ease-in-out forwards;
+    cursor: pointer;
+  }
+  .story-beat .sb-place {
+    font-family: 'Cinzel Decorative', serif; font-weight: 700;
+    color: var(--gilt-bright); font-size: 22px; letter-spacing: 0.18em;
+    text-shadow: 0 0 22px rgba(212,168,73,0.5); margin-bottom: 14px;
+  }
+  .story-beat .sb-line {
+    font-family: 'IM Fell English', serif; font-style: italic;
+    color: var(--parchment); font-size: 16px; line-height: 1.7; max-width: 30ch;
+  }
+  .story-beat .sb-tap {
+    margin-top: 22px; font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    letter-spacing: 0.3em; color: var(--parchment-sh); text-transform: uppercase; opacity: 0.7;
+  }
+  @keyframes storyBeat {
+    0% { opacity: 0; } 10% { opacity: 1; } 88% { opacity: 1; } 100% { opacity: 0; }
+  }
+
+  /* ----- Juice: tap targets (44px min) + reduced-motion ----- */
+  button.btn.small { min-height: 44px; }
+  button.btn.icon  { min-height: 44px; min-width: 44px; }
+  .spell-slot, .rune { -webkit-tap-highlight-color: transparent; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+    .enemy-portrait.hit { animation: none; }
+    .damage-pop { animation: none; opacity: 1; }
+    #gf-screen-flash { display: none !important; }
+  }
+</style>
+</head>
+<body>
+<div id="gf-screen-flash" aria-hidden="true"></div>
+<div id="app">
+
+  <!-- ============ TITLE ============ -->
+  <section id="title-screen" class="screen active">
+    <div class="title-mark placeholder" data-art-slot="title-mark">
+      <!-- Claude Code: swap in art-slots/title-mark.png (1024x1024) -->
+    </div>
+    <h1 class="title">Glyph Forge</h1>
+    <p class="subtitle">A codex of bound sigils, awaiting their first inscription.</p>
+    <div class="title-meta" id="title-meta"></div>
+    <div class="menu-buttons">
+      <button class="btn primary" id="btn-new-run">Begin Inscription</button>
+      <button class="btn" id="btn-continue">Continue</button>
+      <button class="btn" id="btn-codex">The Codex</button>
+      <button class="btn small" id="btn-daily">Daily Sigil</button>
+      <button class="btn small" id="btn-howto">How to Play</button>
+      <button class="btn small" id="btn-mute">🔊 Sound</button>
+      <button class="btn small" id="btn-sws-exit" style="min-height:44px">← All Sky Wolf games</button>
+    </div>
+    <a id="gf-itch-link" class="gf-itch-link" href="#" target="_blank" rel="noopener" hidden>Pay-what-you-want on itch.io ↗</a>
+  </section>
+
+  <!-- ============ MAP / PATH ============ -->
+  <section id="map-screen" class="screen">
+    <div class="codex-header">
+      <h2>The Path</h2>
+      <button class="btn icon" id="btn-back-title">✕</button>
+    </div>
+    <p style="font-family: 'IM Fell English', serif; font-style: italic; color: var(--parchment-dk); text-align: center;">
+      Thirteen sigils stand between you and the Sovereign.
+    </p>
+    <div class="map-path" id="map-path"></div>
+  </section>
+
+  <!-- ============ GAME / COMBAT ============ -->
+  <section id="game-screen" class="screen">
+    <div id="guide-panel" aria-label="Field guide">
+      <button class="btn icon small" id="btn-guide-close" aria-label="Close guide">✕</button>
+      <div id="guide-panel-body"></div>
+    </div>
+    <div class="hud">
+      <div class="hud-left">
+        <span class="hud-stat">⚔ <strong id="hud-encounter">1</strong>/13</span>
+        <div class="hp-bar"><div id="hud-hp-fill" style="width: 100%"></div></div>
+        <span class="hud-stat">♥ <strong id="hud-hp">50</strong></span>
+        <span class="hud-stat fluency-stat" id="hud-fluency-wrap" data-tip="Fluency — each defeated enemy boosts spell damage by +6% (up to +72%)">✦ <strong id="hud-fluency">×1.00</strong></span>
+      </div>
+      <div class="hud-right">
+        <button class="btn icon small" id="btn-fs-hud" aria-label="Toggle fullscreen" data-tip="Fullscreen — hides the phone's nav/URL bars so the Inscribe button is never covered">⛶</button>
+        <button class="btn icon small" id="btn-mute-hud" aria-label="Toggle sound">🔊</button>
+        <button class="btn icon small" id="btn-flee">⌫</button>
+      </div>
+    </div>
+    <div class="hud-depth" id="hud-depth"></div>
+
+    <div class="play-scroll">
+    <div class="enemy-stage" id="enemy-stage">
+      <div class="enemy">
+        <div class="enemy-portrait placeholder" id="enemy-portrait"
+             data-art-slot="enemy-{id}">
+        </div>
+        <div class="enemy-name" id="enemy-name">—</div>
+        <div class="enemy-hp-row">
+          <div class="enemy-hp-bar"><div id="enemy-hp-ghost" style="width: 100%"></div><div id="enemy-hp-fill" style="width: 100%"></div></div>
+          <span id="enemy-hp-text">0/0</span>
+        </div>
+        <div class="threat-meter" id="threat-meter"></div>
+      </div>
+    </div>
+
+    <div class="spell-area">
+      <div class="spell-readout">
+        <span id="spell-formula" style="font-family: 'JetBrains Mono', monospace; font-size: 11px;">—</span>
+        <span class="spell-damage" id="spell-damage" data-tip="Damage = POWER × XMULT × fluency. XMULT is a MULTIPLIER that compounds when your runes share an element or a shape (3-of-a-kind multiplies hard) — that's where the big numbers come from. Tap a rune to read it.">0</span>
+      </div>
+      <div class="spell-slots" id="spell-slots">
+        <div class="spell-slot" data-slot="0">I</div>
+        <div class="spell-slot" data-slot="1">II</div>
+        <div class="spell-slot" data-slot="2">III</div>
+      </div>
+      <div class="spell-coach" id="spell-coach"></div>
+    </div>
+
+    <div class="hand-area">
+      <div class="hand-label">
+        <span>Hand</span>
+        <span id="deck-info">deck: 0 / discard: 0</span>
+      </div>
+      <div class="hand-grid" id="hand-grid"></div>
+    </div>
+    </div><!-- /.play-scroll -->
+
+    <div class="cast-row">
+      <button class="btn" id="btn-guide-bar" aria-label="Field guide — open/close while you read your hand">✦ Codex</button>
+      <button class="btn cast" id="btn-cast" disabled>Inscribe</button>
+    </div>
+  </section>
+
+  <!-- ============ CODEX ============ -->
+  <section id="codex-screen" class="screen">
+    <div class="codex-header">
+      <h2>The Codex</h2>
+      <button class="btn icon" id="btn-codex-back">✕</button>
+    </div>
+    <div class="codex-stats" id="codex-stats"></div>
+    <div class="codex-section-title">Mastery <span id="codex-mastery-count"></span></div>
+    <div class="mastery-track" id="codex-mastery"></div>
+    <div class="codex-section-title">Discovered Fusions</div>
+    <div id="codex-combos"></div>
+    <div class="codex-section-title">Bound Glyphs</div>
+    <div class="codex-grid" id="codex-runes"></div>
+  </section>
+
+</div>
+
+<!-- ============ MODALS ============ -->
+<div class="modal-bg" id="modal-bg">
+  <div class="modal" id="modal-content"></div>
+</div>
+
+<!-- ============ TOOLTIP ============ -->
+<div class="tooltip" id="tooltip" style="display:none"></div>
+
+<script>
+/* ===== Sky Wolf Studios embed protocol =====
+   The portal (lucidwinds.com/portal/) frames games with ?embed=1 and
+   listens for {sws:'ready'} and {sws:'close'}.
+   Rules when embedded:
+     - NEVER history.back() or navigate location — an iframe with no
+       history entry goes blank (the black-screen bug).
+     - The in-game back/X returns to the game's OWN menu screen.
+     - Only the menu's explicit exit control calls SWS_EXIT(). */
+(function(){
+  var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
+  window.SWS_EMBED=SWS_EMBED;
+  window.SWS_EXIT=function(){
+    if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'close'},'*');}catch(e){} return;}
+    /* Came from the arcade: step back so the portal is restored instantly
+       instead of reloading a large page and losing its scroll. */
+    if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();return;}
+    location.href='https://lucidwinds.com/portal/';
+  };
+  if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'ready'},'*');}catch(e){}}
+})();
+</script>
+
+<script>
+/* ================================================================
+   GLYPH FORGE — game logic
+   Stack: vanilla JS, no deps. Single file. PWA-ready.
+   Persistence: localStorage (key = 'glyph-forge-v1').
+   ================================================================ */
+
+/* ----- 0. AUDIO — zero-dependency synthesized SFX -----
+   No asset files, no libraries: a tiny Web Audio synth. INERT in Node — both
+   test.js and sim-run.js stub `window` without AudioContext, so `AC` is falsy,
+   the IIFE returns no-ops, and nothing is constructed at load (tests stay
+   green). Mute preference persists under its OWN key 'gf-muted'; the save
+   schema 'glyph-forge-v1' is never touched (additive discipline). */
+const GFAudio = (function(){
+  const AC = (typeof window !== 'undefined') && (window.AudioContext || window.webkitAudioContext);
+  const NOOP = { cast(){}, combo(){}, reward(){}, hit(){}, victory(){}, defeat(){},
+                 tap(){}, toggleMute(){return false;}, isMuted(){return false;}, _unlock(){} };
+  if(!AC) return NOOP;
+
+  let ctx = null, master = null, muted = false;
+  try { muted = localStorage.getItem('gf-muted') === '1'; } catch(e){}
+
+  function ensure(){
+    if(ctx){ if(ctx.state === 'suspended') ctx.resume(); return ctx; }
+    try {
+      ctx = new AC();
+      master = ctx.createGain();
+      master.gain.value = 0.30;
+      master.connect(ctx.destination);
+    } catch(e){ ctx = null; }
+    return ctx;
+  }
+  function tone(freq, t0, dur, type, peak){
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type || 'sine';
+    o.frequency.setValueAtTime(freq, t0);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(peak || 0.4, t0 + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(master);
+    o.start(t0); o.stop(t0 + dur + 0.02);
+  }
+  function sweep(f1, f2, t0, dur, type, peak){
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type || 'sine';
+    o.frequency.setValueAtTime(f1, t0);
+    o.frequency.exponentialRampToValueAtTime(f2, t0 + dur);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(peak || 0.4, t0 + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(master);
+    o.start(t0); o.stop(t0 + dur + 0.02);
+  }
+  function noise(t0, dur, peak){
+    const n = Math.floor(ctx.sampleRate * dur);
+    const buf = ctx.createBuffer(1, n, ctx.sampleRate), d = buf.getChannelData(0);
+    for(let i=0;i<n;i++) d[i] = (Math.random()*2-1) * (1 - i/n);
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(peak || 0.35, t0);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1700;
+    src.connect(lp); lp.connect(g); g.connect(master);
+    src.start(t0); src.stop(t0 + dur + 0.02);
+  }
+  function arp(freqs, step, type, peak){
+    const t = ctx.currentTime;
+    freqs.forEach((f,i)=> tone(f, t + i*step, step*1.7, type, peak));
+  }
+  const guard = fn => function(){ if(muted || !ensure()) return; try { fn.apply(null, arguments); } catch(e){} };
+
+  const api = {
+    tap:    guard(()=>{ tone(420, ctx.currentTime, 0.05, 'triangle', 0.16); }),
+    cast:   guard((crit)=>{ const t = ctx.currentTime;
+                  sweep(crit?320:255, crit?920:600, t, 0.22, 'sawtooth', 0.32);
+                  if(crit) tone(1320, t+0.10, 0.18, 'sine', 0.22); }),
+    combo:  guard((isNew)=>{ arp(isNew?[523,659,784,1047]:[523,659,784], 0.07, 'square', 0.24); }),
+    reward: guard(()=>{ arp([392,523,659,784], 0.08, 'sine', 0.28); }),
+    hit:    guard((crit)=>{ const t = ctx.currentTime;
+                  noise(t, crit?0.22:0.13, crit?0.46:0.30);
+                  tone(crit?90:130, t, 0.12, 'square', 0.22); }),
+    victory:guard(()=>{ arp([523,659,784,1047,1319], 0.12, 'sine', 0.32); }),
+    defeat: guard(()=>{ const t = ctx.currentTime;
+                  sweep(330, 70, t, 0.9, 'sawtooth', 0.32); tone(110, t, 0.9, 'sine', 0.18); }),
+    toggleMute(){ muted = !muted; try { localStorage.setItem('gf-muted', muted?'1':'0'); } catch(e){}
+                  if(!muted) ensure(); return muted; },
+    isMuted(){ return muted; },
+    _unlock(){ if(!muted) ensure(); },
+  };
+  if(typeof window !== 'undefined' && window.addEventListener){
+    const unlock = ()=>{ api._unlock();
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock); };
+    window.addEventListener('pointerdown', unlock);
+    window.addEventListener('keydown', unlock);
+  }
+  return api;
+})();
+
+/* ----- 0b. JUICE HELPERS — motion/haptic, Node-safe -----
+   gfReducedMotion(): honour the OS "reduce motion" setting (and go quiet in
+   Node, where matchMedia is absent). gfHaptic(): a guarded vibrate — silent
+   on desktop / unsupported / reduced-motion. Both are pure no-ops in the
+   test/sim stubs (no window.matchMedia, no navigator.vibrate). */
+function gfReducedMotion(){
+  try { return typeof window !== 'undefined' && window.matchMedia
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+  catch(e){ return false; }
+}
+function gfHaptic(ms){
+  try { if(gfReducedMotion()) return;
+    if(typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(ms||10); }
+  catch(e){}
+}
+let _gfPrevSpell = [null, null, null];  // tracks slot fills for the fill anim
+
+/* ----- 1. RUNE DEFINITIONS -----
+   Properties:
+     id          stable string used in saves
+     name        display
+     element     Fire/Water/Earth/Air/Void/Light/Shadow/Order/Chaos
+     shape       Bolt/Wave/Burst/Spiral/Chain/Pulse/Sigil
+     basePower   0..9, baseline damage contribution
+     rarity      common/uncommon/rare/mythic
+     glyph       fallback unicode if no art swapped
+     desc        flavor + mechanic in plain language
+     effect      function(ctx) hook into spell pipeline
+     starter     bool: appears in default starter pool
+*/
+const RUNES = [
+  // ---------- COMMON (starter pool, basic damage + simple effects) ----------
+  { id:'ember',  name:'Ember',  element:'Fire',   shape:'Bolt',   basePower:2, rarity:'common', glyph:'☄',
+    desc:'A small spark, hungry for tinder.', starter:true },
+  { id:'drop',   name:'Drop',   element:'Water',  shape:'Wave',   basePower:1, rarity:'common', glyph:'❍',
+    desc:'Heals 1 HP on cast.', starter:true,
+    effect:(ctx)=>{ ctx.healSelf += 1; } },
+  { id:'stone',  name:'Stone',  element:'Earth',  shape:'Burst',  basePower:3, rarity:'common', glyph:'◈',
+    desc:'Heavy. Sure.', starter:true },
+  { id:'gust',   name:'Gust',   element:'Air',    shape:'Pulse',  basePower:1, rarity:'common', glyph:'≋',
+    desc:'+1 power to the next rune in line.', starter:true,
+    effect:(ctx,i)=>{ if(ctx.runes[i+1]) ctx.runeMod[i+1].add += 1; } },
+  { id:'hollow', name:'Hollow', element:'Void',   shape:'Sigil',  basePower:1, rarity:'common', glyph:'⊘',
+    desc:"Strips the foe's armor this turn — your hit ignores it.", starter:true,
+    effect:(ctx)=>{ ctx.ignoreWard = true; } },
+  { id:'ray',    name:'Ray',    element:'Light',  shape:'Bolt',   basePower:2, rarity:'common', glyph:'✦',
+    desc:'+50% vs Shadow-aligned foes.', starter:true,
+    effect:(ctx)=>{ if(ctx.enemyTag==='shadow') ctx.globalMult *= 1.5; } },
+  { id:'veil',   name:'Veil',   element:'Shadow', shape:'Pulse',  basePower:1, rarity:'common', glyph:'☽',
+    desc:'Draw +1 card after cast.', starter:true,
+    effect:(ctx)=>{ ctx.bonusDraw += 1; } },
+  { id:'tally',  name:'Tally',  element:'Order',  shape:'Sigil',  basePower:2, rarity:'common', glyph:'┼',
+    desc:'+1 power per other Order rune in spell.', starter:true,
+    effect:(ctx,i)=>{
+      const orderCt = ctx.runes.filter(r=>r && r.element==='Order').length;
+      ctx.runeMod[i].add += (orderCt - 1);
+    } },
+  { id:'roll',   name:'Roll',   element:'Chaos',  shape:'Spiral', basePower:0, rarity:'common', glyph:'※',
+    desc:'Random power: 1 to 5.', starter:true,
+    effect:(ctx,i)=>{ ctx.runeMod[i].add += 1 + Math.floor(ctx.rng()*5); } },
+
+  // ---------- UNCOMMON (modifiers and amplifiers) ----------
+  { id:'echo',     name:'Echo',     element:'Order',  shape:'Sigil',  basePower:0, rarity:'uncommon', glyph:'⟲',
+    desc:'Triggers the rune to its left a second time.',
+    effect:(ctx,i)=>{
+      const left = ctx.runes[i-1];
+      if(left){
+        ctx.runeMod[i-1].repeats += 1;
+      }
+    } },
+  { id:'mirror',   name:'Mirror',   element:'Chaos',  shape:'Spiral', basePower:0, rarity:'uncommon', glyph:'◐',
+    desc:'Copies the element and shape of the rune to its left.',
+    effect:(ctx,i)=>{
+      const left = ctx.runes[i-1];
+      if(left){
+        ctx.runes[i] = { ...ctx.runes[i], element: left.element, shape: left.shape };
+      }
+    } },
+  { id:'surge',    name:'Surge',    element:'Fire',   shape:'Burst',  basePower:2, rarity:'uncommon', glyph:'❋',
+    desc:'+50% power to runes beside it.',
+    effect:(ctx,i)=>{
+      if(ctx.runes[i-1]) ctx.runeMod[i-1].mult *= 1.5;
+      if(ctx.runes[i+1]) ctx.runeMod[i+1].mult *= 1.5;
+    } },
+  { id:'cascade',  name:'Cascade',  element:'Water',  shape:'Chain',  basePower:0, rarity:'uncommon', glyph:'⥥',
+    desc:'All later runes also deal their damage as bonus.',
+    effect:(ctx,i)=>{
+      for(let j=i+1; j<ctx.runes.length; j++) if(ctx.runes[j]) ctx.runeMod[j].add += ctx.runes[j].basePower;
+    } },
+  { id:'anchor',   name:'Anchor',   element:'Earth',  shape:'Sigil',  basePower:1, rarity:'uncommon', glyph:'⚓',
+    desc:'+1 power to every other Earth rune.',
+    effect:(ctx,i)=>{
+      ctx.runes.forEach((r,j)=>{ if(j!==i && r && r.element==='Earth') ctx.runeMod[j].add += 1; });
+    } },
+  { id:'drift',    name:'Drift',    element:'Air',    shape:'Wave',   basePower:0, rarity:'uncommon', glyph:'∽',
+    desc:'+2 power for each rune to its right.',
+    effect:(ctx,i)=>{
+      const right = ctx.runes.slice(i+1).filter(Boolean).length;
+      ctx.runeMod[i].add += right * 2;
+    } },
+  { id:'drain',    name:'Drain',    element:'Shadow', shape:'Wave',   basePower:2, rarity:'uncommon', glyph:'∝',
+    desc:'Heals you for half its damage.',
+    effect:(ctx,i)=>{ ctx.runeMod[i].lifesteal = 0.5; } },
+  { id:'beacon',   name:'Beacon',   element:'Light',  shape:'Pulse',  basePower:0, rarity:'uncommon', glyph:'☼',
+    desc:'+100% to next rune cast after this one.',
+    effect:(ctx,i)=>{ if(ctx.runes[i+1]) ctx.runeMod[i+1].mult *= 2; } },
+  { id:'sympathy', name:'Sympathy', element:'Void',   shape:'Spiral', basePower:0, rarity:'uncommon', glyph:'∞',
+    desc:'Copies your most-played rune this run.',
+    effect:(ctx,i)=>{
+      const fav = ctx.meta.favoriteRune;
+      if(fav && fav !== 'sympathy'){
+        const r = RUNES.find(x=>x.id===fav);
+        if(r){ ctx.runes[i] = { ...r }; if(r.effect) r.effect(ctx,i); }
+      }
+    } },
+
+  // ---------- RARE (heavy synergy pieces) ----------
+  { id:'ouroboros',  name:'Ouroboros', element:'Chaos',  shape:'Spiral', basePower:0, rarity:'rare', glyph:'∮',
+    desc:'Re-casts the entire spell once. Once per turn.',
+    effect:(ctx)=>{ ctx.spellRetrigger = Math.min(ctx.spellRetrigger + 1, 1); } },
+  { id:'twin',       name:'Twin',      element:'Order',  shape:'Sigil',  basePower:0, rarity:'rare', glyph:'⧉',
+    desc:'First rune in the spell fires twice more.',
+    effect:(ctx)=>{ if(ctx.runes[0]) ctx.runeMod[0].repeats += 2; } },
+  { id:'triskel',    name:'Triskelion',element:'Order',  shape:'Spiral', basePower:3, rarity:'rare', glyph:'☘',
+    desc:'+200% if all three slots share an element.',
+    effect:(ctx)=>{
+      const els = ctx.runes.filter(Boolean).map(r=>r.element);
+      if(els.length===3 && els[0]===els[1] && els[1]===els[2]) ctx.globalMult *= 3;
+    } },
+  { id:'wildfire',   name:'Wildfire',  element:'Fire',   shape:'Chain',  basePower:3, rarity:'rare', glyph:'✺',
+    desc:'Strikes twice. Burns for 2 next turn.',
+    effect:(ctx,i)=>{ ctx.runeMod[i].repeats += 1; ctx.burnNext += 2; } },
+  { id:'tidewall',   name:'Tidewall',  element:'Water',  shape:'Wave',   basePower:1, rarity:'rare', glyph:'⌒',
+    desc:'+1 damage per missing HP of yours.',
+    effect:(ctx,i)=>{
+      const missing = ctx.maxHp - ctx.hp;
+      ctx.runeMod[i].add += missing;
+    } },
+  { id:'quake',      name:'Quake',     element:'Earth',  shape:'Burst',  basePower:5, rarity:'rare', glyph:'☷',
+    desc:'Stuns the enemy. Skips their next attack.',
+    effect:(ctx)=>{ ctx.stun = true; } },
+  { id:'tempest',    name:'Tempest',   element:'Air',    shape:'Chain',  basePower:2, rarity:'rare', glyph:'⌇',
+    desc:'+1 power per other Air rune in your hand or deck.',
+    effect:(ctx,i)=>{
+      const cnt = [...ctx.hand, ...ctx.deck].filter(id=>{
+        const r = RUNES.find(x=>x.id===id); return r && r.element==='Air';
+      }).length;
+      ctx.runeMod[i].add += cnt;
+    } },
+  { id:'eclipse',    name:'Eclipse',   element:'Shadow', shape:'Sigil',  basePower:0, rarity:'rare', glyph:'☋',
+    desc:'True damage — your spell pierces all armor this turn.',
+    effect:(ctx)=>{ ctx.trueDamage = true; } },
+
+  // ---------- MYTHIC (the broken pieces) ----------
+  { id:'recursion',  name:'Recursion', element:'Order',  shape:'Spiral', basePower:0, rarity:'mythic', glyph:'∾',
+    desc:'Triggers itself once. Stacks with other Recursions.',
+    effect:(ctx,i)=>{
+      const stacks = ctx.runes.filter(r=>r && r.id==='recursion').length;
+      ctx.globalMult *= (1 + Math.min(stacks, 4));
+    } },
+  { id:'pandemonium',name:'Pandemonium',element:'Chaos', shape:'Sigil',  basePower:0, rarity:'mythic', glyph:'⚝',
+    desc:'Every rune in your hand also fires this turn.',
+    effect:(ctx)=>{ ctx.pandemonium = true; } },
+  { id:'singularity',name:'Singularity',element:'Void',  shape:'Burst',  basePower:0, rarity:'mythic', glyph:'⊙',
+    desc:'Multiplies all damage by your hand size.',
+    effect:(ctx)=>{ ctx.globalMult *= Math.max(1, ctx.hand.length); } },
+  { id:'aurora',     name:'Aurora',    element:'Light',  shape:'Pulse',  basePower:0, rarity:'mythic', glyph:'❂',
+    desc:'×5 damage if all three slots are different elements.',
+    effect:(ctx)=>{
+      const els = ctx.runes.filter(Boolean).map(r=>r.element);
+      const unique = new Set(els);
+      if(unique.size === 3) ctx.globalMult *= 5;
+    } },
+
+  // ---------- Phase 2: order-dependent XMULT payoffs (place LAST) ----------
+  { id:'crescendo',  name:'Crescendo',  element:'Order',  shape:'Chain',  basePower:0, rarity:'rare',   glyph:'⋰', xmultScale:0.06,
+    desc:'XMULT ×(1 + 6% of all power inscribed before it). Reward for going last.' },
+  { id:'culminate',  name:'Culminate',  element:'Void',   shape:'Burst',  basePower:0, rarity:'mythic', glyph:'⤢', xmultScale:0.11,
+    desc:'XMULT ×(1 + 11% of all power inscribed before it). The final word.' },
+
+  // ---------- Expansion: under-served elements + keystone ability-words ----------
+  { id:'squall',   name:'Squall',   element:'Air',    shape:'Chain',  basePower:1, rarity:'uncommon', glyph:'⌁',
+    desc:'+1 power per other Air rune in the spell, ×2 if it is in slot III.',
+    effect:(ctx,i)=>{ const a=ctx.runes.filter((r,j)=>j!==i && r && r.element==='Air').length;
+      ctx.runeMod[i].add += a * (i===2 ? 2 : 1); } },
+  { id:'undertow', name:'Undertow', element:'Water',  shape:'Wave',   basePower:2, rarity:'rare', glyph:'≈',
+    desc:'+1 power to every later rune for each Water rune placed before it.',
+    effect:(ctx,i)=>{ const wBefore = ctx.runes.filter((r,j)=>j<i && r && r.element==='Water').length;
+      for(let j=i+1;j<ctx.runes.length;j++) if(ctx.runes[j]) ctx.runeMod[j].add += wBefore + 1; } },
+  { id:'umbral',   name:'Umbral Knot', element:'Shadow', shape:'Spiral', basePower:0, rarity:'rare', glyph:'⊗',
+    desc:'KEYSTONE · globalMult ×1.6 if any earlier rune has basePower ≥ 3.',
+    effect:(ctx,i)=>{ const heavy = ctx.runes.some((r,j)=>j<i && r && r.basePower>=3);
+      if(heavy) ctx.globalMult *= 1.6; } },
+  { id:'lumen',    name:'Lumen',    element:'Light',  shape:'Burst',  basePower:0, rarity:'mythic', glyph:'❉', xmultScale:0.08,
+    desc:'KEYSTONE · XMULT ×(1 + 8% of all power inscribed before it). Place last.' },
+];
+
+/* ----- 1b. RUNE TAGS (ability-words + enabler/engine/payoff roles) -----
+   Phase 1 depth layer. Pure metadata: attached to rune objects so combo
+   matchers and (later) relics/archetypes can read structural roles.
+   Roles: enabler -> engine -> payoff -> scaler.
+   Ability-words: attunement (rewards same-element), cascade (rewards being
+   later in the spell), order-dependent (cares about slot position),
+   xmult (multiplicative payoff tier), retrigger/repeat/copy/draw/etc. */
+const RUNE_TAGS = {
+  ember:['payoff','fire'],            drop:['enabler','heal','water'],
+  stone:['payoff','earth'],           gust:['enabler','air','order-dependent'],
+  hollow:['enabler','void','pierce'], ray:['payoff','light'],
+  veil:['enabler','shadow','draw'],   tally:['scaler','order','attunement'],
+  roll:['payoff','chaos','random'],
+  echo:['engine','order','repeat'],   mirror:['engine','chaos','copy'],
+  surge:['engine','fire','mult'],     cascade:['engine','water','cascade'],
+  anchor:['scaler','earth','attunement'], drift:['scaler','air','order-dependent'],
+  drain:['payoff','shadow','lifesteal'], beacon:['engine','light','mult','order-dependent'],
+  sympathy:['engine','void','copy'],
+  ouroboros:['engine','chaos','retrigger','payoff'], twin:['engine','order','repeat'],
+  triskel:['payoff','order','attunement'], wildfire:['payoff','fire','repeat'],
+  tidewall:['scaler','water'],        quake:['payoff','earth','stun'],
+  tempest:['scaler','air','attunement'], eclipse:['enabler','shadow','pierce'],
+  recursion:['engine','order','xmult','attunement'], pandemonium:['payoff','chaos'],
+  singularity:['payoff','void','xmult','scaler'], aurora:['payoff','light','xmult'],
+  // Phase 2 order-dependent XMULT payoff runes:
+  crescendo:['payoff','order','xmult','order-dependent'],
+  culminate:['payoff','void','xmult','order-dependent'],
+  squall:['scaler','air','order-dependent'],
+  undertow:['engine','water','scaler','cascade'],
+  umbral:['payoff','shadow','keystone'],
+  lumen:['payoff','light','xmult','keystone','order-dependent'],
+};
+RUNES.forEach(r=>{ r.tags = RUNE_TAGS[r.id] || []; });
+
+/* ----- 2. ENEMIES ----- */
+const ENEMIES = [
+  // tier 1: introduction. should fall in 2-3 spells.
+  { id:'cinder',     name:'Cinder',          tier:1, hp:8,   threat:2, tag:'shadow', glyph:'⌬',
+    desc:'A reluctant spark.' },
+  { id:'wisp',       name:'Wisp',            tier:1, hp:10,  threat:2, tag:'air',    glyph:'◌',
+    desc:'Half here, half elsewhere.' },
+  { id:'fenmote',    name:'Fenmote',         tier:1, hp:12,  threat:2, tag:'earth',  glyph:'⌖',
+    desc:'Stubborn. Lichen-clad.' },
+  // tier 2: requires basic synergies. 4-5 spells.
+  { id:'wight',      name:'Hollow Wight',    tier:2, hp:26,  threat:3, tag:'void',   glyph:'⌘',
+    desc:'A grammar of teeth.' },
+  { id:'sirenshade', name:'Sirenshade',      tier:2, hp:30,  threat:3, tag:'water',  glyph:'⌭',
+    desc:'Sings in the wrong key.' },
+  // tier 3: needs amplifiers / mythics. 5-8 spells. ARMOR (Batch C1) is a
+  // late-game texture: it shaves a FLAT amount off each hit, so it rewards the
+  // built-up engine (a big hit barely notices it) and the pierce runes that
+  // bypass it (Hollow/Eclipse/Storm Sigil) — never on tier 1-2 (keep onboarding
+  // gentle for the new-player cliff).
+  { id:'revenant',   name:'Brass Revenant',  tier:3, hp:48,  threat:4, tag:'order',  glyph:'❖', armor:3,
+    desc:'It remembers being a bell. Its brass turns aside soft blows.' },
+  { id:'glasswyrm',  name:'Glass Wyrm',      tier:3, hp:60,  threat:4, tag:'chaos',  glyph:'☖', armor:2,
+    desc:'Counts your reflections.' },
+  // tier 4: the wall. 8-12 spells. mythic territory. Armor is texture (rewards
+  // pierce/burst), HP trimmed to keep total kill-effort ≈ the pre-armor baseline.
+  { id:'sovereign',  name:'The Sovereign',   tier:4, hp:200, threat:5, tag:'void',   glyph:'✺', armor:3,
+    desc:'It signed your name first.', boss:true },
+];
+
+/* ----- 2b. ENEMY INTENT (Batch B) -----
+   Every player turn the enemy LOCKS and SHOWS its next action, flavored by its
+   element tag, so each turn is a readable decision instead of an invisible flat
+   tax. PURE + deterministic (seeded by encIdx*5237 + turnInEnc — a prime ≠ the
+   cast seed 7919), no DOM — so sim-run.js calls the SAME lockIntent/executeIntent
+   and the balance + determinism asserts hold. Expected damage/turn ≈ the old
+   flat threat, so a no-Sigil run takes about the same total (Free baseline kept).
+     attack  — strike for ~threat (shown as a number)
+     charge  — wind up (chip now) then a telegraphed UNLEASH (~1.6× threat) next turn
+     mend    — heal itself a little and strike softly (drag the fight out)
+   Each enemy tag rolls from its own table, so the 8 once-inert element tags now
+   give every foe a distinct rhythm. */
+const INTENT_TABLES = {
+  shadow:  [['attack',0.75],['charge',0.20],['mend',0.05]],  // Cinder — relentless
+  air:     [['attack',0.82],['charge',0.13],['mend',0.05]],  // Wisp — quick jabs
+  earth:   [['attack',0.55],['charge',0.45]],                // Fenmote — slow, heavy windups
+  void:    [['attack',0.70],['charge',0.16],['mend',0.14]],  // Wight / Sovereign — drains life
+  water:   [['attack',0.62],['charge',0.10],['mend',0.28]],  // Sirenshade — regenerates
+  order:   [['attack',0.66],['charge',0.34]],                // Brass Revenant — metronomic
+  chaos:   [['attack',0.50],['charge',0.30],['mend',0.20]],  // Glass Wyrm — erratic
+  default: [['attack',0.80],['charge',0.15],['mend',0.05]],
+};
+function intentEnemy(run){ return ENEMIES.find(e=>e.id===run.path[run.encounterIdx].enemyId); }
+// Batch E: the Sovereign fights in 3 phases by remaining HP.
+function bossPhase(run){
+  const e = intentEnemy(run);
+  if(!e || !e.boss) return 0;
+  const frac = run.enemyMaxHp ? run.enemyHp/run.enemyMaxHp : 1;
+  return frac > 0.66 ? 1 : frac > 0.33 ? 2 : 3;
+}
+// The element this run leans on hardest (what the boss will counter).
+function runDominantElement(run){
+  const t = run && run.patternTally;
+  if(!t) return null;
+  const top = Object.entries(t).sort((a,b)=>b[1]-a[1])[0];
+  return (top && top[1] > 0) ? top[0] : null;
+}
+// Lock the action the enemy will take on the UPCOMING player turn (and show it).
+function lockIntent(run){
+  const enemy = intentEnemy(run);
+  let t = run.currentThreat || enemy.threat;
+  if(enemy.boss && bossPhase(run) >= 3) t += 2;   // Batch E: the final verse hits harder
+  const recoil = 0;  // (was a Final Page per-turn tax — removed; it made the mythic a net loss)
+  run.turnInEnc = (run.turnInEnc || 0) + 1;
+  // A charge always resolves into a telegraphed UNLEASH on the following turn.
+  if(run.pendingUnleash){
+    run.pendingUnleash = false;
+    run.intent = { kind:'unleash', dmg: Math.round(t*1.6) + recoil };
+    return run.intent;
+  }
+  const rng = mulberry32((run.rngSeed||0) + run.encounterIdx*5237 + run.turnInEnc);
+  const table = INTENT_TABLES[enemy.tag] || INTENT_TABLES.default;
+  let roll = rng(), kind = 'attack';
+  for(const [k,w] of table){ if(roll < w){ kind = k; break; } roll -= w; }
+  if(kind === 'charge'){
+    run.pendingUnleash = true;
+    // chip while winding up, but carry the pending UNLEASH size so the HUD can
+    // telegraph the incoming heavy blow (not the tiny chip) — see intentView.
+    run.intent = { kind:'charge', dmg: Math.round(t*0.4) + recoil, unleashDmg: Math.round(t*1.6) + recoil };
+  } else if(kind === 'mend'){
+    // full strike AND heals — mend is added pressure ("don't let it stall"),
+    // not a breather, so it stays damage-neutral vs the old flat threat.
+    run.intent = { kind:'mend', heal: Math.max(2, Math.round(run.enemyMaxHp*0.06)), dmg: t + recoil };
+  } else {
+    run.intent = { kind:'attack', dmg: t + recoil };
+  }
+  return run.intent;
+}
+// Batch C1: enemy ARMOR shaves a flat amount off each hit, UNLESS the spell
+// pierces (trueDamage — Eclipse / Storm Sigil) or strips armor (ignoreWard —
+// Hollow / Storm Sigil). Pure + shared by cast() and the sim so the matrix
+// stays honest and the dead pierce plumbing finally matters.
+function netEnemyDamage(run, rawDamage, result){
+  const enemy = intentEnemy(run);
+  const pierces = result && (result.trueDamage || result.ignoreWard);
+  const armor = pierces ? 0 : (enemy.armor || 0);
+  return Math.max(0, Math.round(rawDamage) - armor);
+}
+// Resolve the locked intent against the run (player HP / enemy HP). No DOM.
+function executeIntent(run){
+  const it = run.intent;
+  if(!it){ run.hp = Math.max(0, run.hp - (run.currentThreat||0)); return; }  // resumed-save fallback
+  if(it.kind === 'mend') run.enemyHp = Math.min(run.enemyMaxHp, run.enemyHp + (it.heal||0));
+  if(it.dmg) run.hp = Math.max(0, run.hp - it.dmg);
+}
+// Display model for the current intent (icon/label/colour/number).
+function intentView(run){
+  const it = run && run.intent;
+  if(!it){ const d = run ? (run.currentThreat || (intentEnemy(run)||{}).threat || 1) : 1;
+           return { icon:'⚔', label:'ATTACK', cls:'attack', num:d, dmg:d }; }
+  if(it.kind==='charge')  return { icon:'⚡', label:'CHARGING → UNLEASH', cls:'charge', num:(it.unleashDmg||it.dmg), dmg:(it.unleashDmg||it.dmg) };
+  if(it.kind==='unleash') return { icon:'✸', label:'UNLEASH',   cls:'unleash', num:it.dmg,      dmg:it.dmg };
+  if(it.kind==='mend')    return { icon:'✚', label:'MEND',      cls:'mend',    num:'+'+it.heal, dmg:it.dmg };
+  return { icon:'⚔', label:'ATTACK', cls:'attack', num:it.dmg, dmg:it.dmg };
+}
+function intentTip(run){
+  const it = run && run.intent;
+  if(!it) return 'The foe will strike next turn.';
+  if(it.kind==='charge')  return `Winding up — it UNLEASHES ${it.unleashDmg||'a heavy blow'} next turn. Race it down, or brace.`;
+  if(it.kind==='unleash') return `A heavy blow incoming: ${it.dmg} damage this turn.`;
+  if(it.kind==='mend')    return `It mends ${it.heal} of its wounds and strikes for ${it.dmg}. Don't let it stall.`;
+  return `It strikes for ${it.dmg} this turn.`;
+}
+
+/* ----- 3. COMBO NAMING -----
+   The Codex names spells you've cast based on their composition.
+   Hashes spell shape+element+rune-id signature. Some named "broken combos"
+   are detected via signature; the rest get procedural names.
+*/
+const NAMED_COMBOS = [
+  { id:'thrice-fire', match: (rs)=> rs.length===3 && rs.every(r=>r.element==='Fire'), name:'Triple Conflagration' },
+  { id:'thrice-water',match: (rs)=> rs.length===3 && rs.every(r=>r.element==='Water'), name:'The Drowned Choir' },
+  { id:'thrice-order',match: (rs)=> rs.length===3 && rs.every(r=>r.element==='Order'), name:'Three Laws Bound' },
+  { id:'thrice-chaos',match: (rs)=> rs.length===3 && rs.every(r=>r.element==='Chaos'), name:'Pandaemonium Triad' },
+  { id:'echo-stack',  match: (rs)=> rs.filter(r=>r.id==='echo').length>=2, name:'Stuttering Bell' },
+  { id:'mirror-echo', match: (rs)=> rs.some(r=>r.id==='echo') && rs.some(r=>r.id==='mirror'), name:'False Twin' },
+  { id:'aurora-spire',match: (rs)=> rs.length===3 && new Set(rs.map(r=>r.element)).size===3 && rs.some(r=>r.id==='aurora'), name:'Aurora Spire' },
+  { id:'singular',    match: (rs)=> rs.some(r=>r.id==='singularity'), name:'The Singular Inscription' },
+  { id:'recursive',   match: (rs)=> rs.filter(r=>r.id==='recursion').length>=2, name:'Spiral of Spirals' },
+  { id:'pandemonium', match: (rs)=> rs.some(r=>r.id==='pandemonium'), name:'All Glyphs Speak' },
+  { id:'all-shape',   match: (rs)=> rs.length===3 && new Set(rs.map(r=>r.shape)).size===1, name:'Resonant Form' },
+  { id:'twin-first',  match: (rs)=> rs.length>=2 && rs.some(r=>r.id==='twin'), name:'Doubled Prologue' },
+  { id:'wildfire',    match: (rs)=> rs.some(r=>r.id==='wildfire') && rs.some(r=>r.id==='surge'), name:'Sun-Up Hex' },
+  { id:'ouroboros',   match: (rs)=> rs.some(r=>r.id==='ouroboros'), name:'Tail-Eater' },
+
+  // ---- Phase 1: structural combo graph (tag-based, append-only) ----
+  // Specific first, broad last (findComboName returns first match).
+  { id:'thrice-earth', match:(rs)=> rs.length===3 && rs.every(r=>r.element==='Earth'),  name:'The Sealed Mountain' },
+  { id:'thrice-air',   match:(rs)=> rs.length===3 && rs.every(r=>r.element==='Air'),    name:'The Tempest Verse' },
+  { id:'thrice-void',  match:(rs)=> rs.length===3 && rs.every(r=>r.element==='Void'),   name:'The Unwritten Page' },
+  { id:'thrice-light', match:(rs)=> rs.length===3 && rs.every(r=>r.element==='Light'),  name:'The Gilded Dawn' },
+  { id:'thrice-shadow',match:(rs)=> rs.length===3 && rs.every(r=>r.element==='Shadow'), name:'The Blotted Psalm' },
+  { id:'detonation',   match:(rs)=> rs.some(r=>r.tags.includes('xmult')) && rs.some(r=>r.tags.includes('payoff') && !r.tags.includes('xmult')), name:'Detonation Sigil' },
+  { id:'xmult-stack',  match:(rs)=> rs.filter(r=>r.tags.includes('xmult')).length>=2, name:'Compounding Catastrophe' },
+  { id:'echo-unending',match:(rs)=> rs.some(r=>r.tags.includes('retrigger')) && rs.filter(r=>r.tags.includes('engine')).length>=2, name:'Echo Unending' },
+  { id:'devotion',     match:(rs)=> rs.length===3 && rs.filter(r=>r.tags.includes('attunement')).length>=2 && new Set(rs.map(r=>r.element)).size===1, name:"Devotion's Crown" },
+  { id:'cascade-flood',match:(rs)=> rs.some(r=>r.tags.includes('cascade')) && rs.filter(r=>r.tags.includes('payoff')).length>=2, name:'The Cascading Flood' },
+  { id:'forged-chain', match:(rs)=> rs.length===3 && rs.some(r=>r.tags.includes('enabler')) && rs.some(r=>r.tags.includes('engine')) && rs.some(r=>r.tags.includes('payoff')), name:'The Forged Chain' },
+  { id:'perpetual',    match:(rs)=> rs.filter(r=>r.tags.includes('engine')).length>=3, name:'Perpetual Mechanism' },
+  { id:'hall-mirrors', match:(rs)=> rs.filter(r=>r.tags.includes('copy')).length>=2, name:'Hall of Mirrors' },
+  { id:'repeat-choir', match:(rs)=> rs.filter(r=>r.tags.includes('repeat')).length>=2, name:'The Stuttering Choir' },
+  { id:'unwarded',     match:(rs)=> rs.some(r=>r.tags.includes('pierce')) && rs.some(r=>r.tags.includes('payoff')), name:'Unwarded Strike' },
+  { id:'sustaining',   match:(rs)=> rs.some(r=>r.tags.includes('lifesteal')) && rs.some(r=>r.tags.includes('heal')), name:'The Sustaining Rite' },
+  { id:'discordant',   match:(rs)=> rs.length===3 && new Set(rs.map(r=>r.shape)).size===3 && new Set(rs.map(r=>r.element)).size===3, name:'The Discordant Verse' },
+  { id:'two-mythic',   match:(rs)=> rs.filter(r=>r.rarity==='mythic').length>=2, name:'Mythic Resonance' },
+  { id:'sequenced',    match:(rs)=> rs.filter(r=>r.tags.includes('order-dependent')).length>=2, name:'The Sequenced Inscription' },
+  { id:'compounding',  match:(rs)=> rs.filter(r=>r.tags.includes('scaler')).length>=2, name:'Compounding Glyph' },
+  // ---- Expansion combos (specific-first; placed before the broad catch-alls) ----
+  { id:'umbral-pierce',match:(rs)=> rs.some(r=>r.element==='Shadow'&&r.tags.includes('pierce')) && rs.some(r=>r.tags.includes('xmult')), name:'The Blinding Dark' },
+  { id:'eclipse-rite', match:(rs)=> rs.some(r=>r.element==='Shadow') && rs.some(r=>r.element==='Light'), name:'The Eclipse Rite' },
+  { id:'tidal-surge',  match:(rs)=> rs.length===3 && rs.filter(r=>r.element==='Water').length>=2 && rs.some(r=>r.tags.includes('scaler')), name:'The Rising Tide' },
+  { id:'storm-front',  match:(rs)=> rs.length===3 && rs.filter(r=>r.element==='Air').length>=2 && rs.some(r=>r.tags.includes('order-dependent')), name:'The Gathering Storm' },
+  { id:'galeforce',    match:(rs)=> rs.length===3 && rs.every(r=>r.element==='Air') && rs.some(r=>r.tags.includes('draw')||r.tags.includes('order-dependent')), name:'The Unbroken Gale' },
+  { id:'tide-engine',  match:(rs)=> rs.filter(r=>r.tags.includes('cascade')||r.tags.includes('scaler')).length>=2 && rs.some(r=>r.element==='Water'), name:'The Engine of Tides' },
+  { id:'twin-keystone',match:(rs)=> rs.filter(r=>r.tags.includes('keystone')).length>=2, name:'The Doubled Axiom' },
+  { id:'keystone-payoff',match:(rs)=> rs.some(r=>r.tags.includes('keystone')) && rs.some(r=>r.tags.includes('xmult')), name:'The Cornerstone' },
+  { id:'pierce-mythic',match:(rs)=> rs.some(r=>r.tags.includes('pierce')) && rs.some(r=>r.rarity==='mythic'), name:'The Unbarred Gate' },
+  { id:'heal-payoff',  match:(rs)=> rs.some(r=>r.tags.includes('heal')||r.tags.includes('lifesteal')) && rs.filter(r=>r.tags.includes('payoff')).length>=2, name:'The Vampiric Verse' },
+  { id:'scaler-trio',  match:(rs)=> rs.length===3 && rs.every(r=>r.tags.includes('scaler')), name:'The Compounding Trinity' },
+  { id:'enabler-trio', match:(rs)=> rs.length===3 && rs.every(r=>r.tags.includes('enabler')), name:'The Open Grammar' },
+  { id:'engine-pair',  match:(rs)=> rs.filter(r=>r.tags.includes('engine')).length>=2, name:'Geared Inscription' },
+  { id:'attune-pair',  match:(rs)=> rs.length>=2 && new Set(rs.filter(Boolean).map(r=>r.element)).size===1, name:'Resonant Pair' },
+];
+
+function findComboName(spellRunes){
+  for(const c of NAMED_COMBOS){ if(c.match(spellRunes)) return c; }
+  return null;
+}
+
+/* ============================================================
+   DEPTH SYSTEMS (Phases 3-6): relics, sigils, champion,
+   the Rune Web (progressive reveal), counter-boss.
+   Additive & save-tolerant: ensureRunDepth() lazily defaults
+   missing run.* fields so old saves and the sim harness (bare
+   run literals) keep working, and a run with no sigil/relics/
+   progression resolves byte-identical to the Phase-2 baseline.
+   ============================================================ */
+
+// ---- Phase 3: RELICS — passive hooks into the spell pipeline ----
+const RELICS = [
+  { id:'inkwell',     name:'The Eternal Inkwell', rarity:'common',
+    desc:'+1 POWER to the first rune in every spell.',
+    hook:(ctx)=>{ if(ctx.runeMod[0]) ctx.runeMod[0].add += 1; } },
+  { id:'gilded-leaf', name:'Gilded Leaf',         rarity:'common',
+    desc:'+0.4 XMULT if the spell uses 3 runes.',
+    phase:'post', hook:(ctx)=>{ if(ctx.runes.filter(Boolean).length===3) ctx.xmult += 0.4; } },
+  { id:'ashen-quill', name:'Ashen Quill',         rarity:'uncommon',
+    desc:'Fire & Chaos runes deal ×1.5 in their slot.',
+    hook:(ctx)=>{ ctx.runes.forEach((r,i)=>{ if(r&&(r.element==='Fire'||r.element==='Chaos')) ctx.runeMod[i].mult*=1.5; }); } },
+  { id:'hourglass',   name:'Broken Hourglass',    rarity:'uncommon',
+    desc:'+6% XMULT per rune in your hand (up to 5).',
+    phase:'post', hook:(ctx)=>{ ctx.xmult *= 1 + Math.min(ctx.hand.length,5)*0.06; } },
+  { id:'serpent-coil',name:"Serpent's Coil",      rarity:'rare',
+    desc:'Order-dependent runes scale 60% harder.',
+    hook:(ctx)=>{ ctx.xmultScaleBoost *= 1.6; } },
+  { id:'unseen-hand', name:'The Unseen Hand',     rarity:'rare',
+    desc:'Same-element triples gain an extra ×1.5 XMULT.',
+    phase:'post', hook:(ctx)=>{ if(ctx._maxEl>=3) ctx.xmult *= 1.5; } },
+  { id:'final-page',  name:'The Final Page',      rarity:'mythic',
+    desc:'High XMULT (≥2.5) is raised to the 1.4 power; a weaker spell instead gains +0.5 XMULT. Costs globalMult ×0.85.',
+    phase:'post', hook:(ctx)=>{ ctx.xmult = ctx.xmult >= 2.5 ? Math.pow(ctx.xmult, 1.4) : ctx.xmult + 0.5; ctx.globalMult *= 0.85; } },
+  // ---- Expansion relics ----
+  { id:'tidal-ledger',  name:'The Tidal Ledger',   rarity:'common',
+    desc:'+2 POWER to the first rune while you are below half HP.',
+    hook:(ctx)=>{ if(ctx.hp*2 < ctx.maxHp && ctx.runeMod[0]) ctx.runeMod[0].add += 2; } },
+  { id:'whisper-glass',  name:'Whisper Glass',      rarity:'common',
+    desc:'Shadow & Light runes deal ×1.4 in their slot.',
+    hook:(ctx)=>{ ctx.runes.forEach((r,i)=>{ if(r&&(r.element==='Shadow'||r.element==='Light')) ctx.runeMod[i].mult*=1.4; }); } },
+  { id:'updraft-fan',    name:'The Updraft Fan',    rarity:'uncommon',
+    desc:'+0.6 XMULT if every rune in the spell is a different shape.',
+    phase:'post', hook:(ctx)=>{ const sh=ctx.runes.filter(Boolean).map(r=>r.shape); if(sh.length>=2 && new Set(sh).size===sh.length) ctx.xmult += 0.6; } },
+  { id:'salt-circle',    name:'The Salt Circle',    rarity:'uncommon',
+    desc:'+2 POWER to every later rune that shares slot I’s element.',
+    hook:(ctx)=>{ const a=ctx.runes[0]; if(a) ctx.runes.forEach((r,i)=>{ if(i>0&&r&&r.element===a.element) ctx.runeMod[i].add+=2; }); } },
+  { id:'low-lantern',    name:'The Low Lantern',    rarity:'uncommon',
+    desc:'Lean casting: spells of 2 or fewer runes gain XMULT ×2.6.',
+    phase:'post', hook:(ctx)=>{ if(ctx.runes.filter(Boolean).length<=2) ctx.xmult *= 2.6; } },
+  { id:'riptide-knot',   name:'The Riptide Knot',   rarity:'rare',
+    desc:'Each rune past the first adds +0.20 XMULT.',
+    phase:'post', hook:(ctx)=>{ const n=ctx.runes.filter(Boolean).length; if(n>1) ctx.xmult *= 1 + (n-1)*0.20; } },
+  { id:'mourning-bell',  name:'The Mourning Bell',  rarity:'rare',
+    desc:'If the spell heals or lifesteals, XMULT ×1.6.',
+    phase:'post', hook:(ctx)=>{ if(ctx.healSelf>0 || ctx.runeMod.some(m=>m&&m.lifesteal>0)) ctx.xmult *= 1.6; } },
+  { id:'storm-sigil',    name:'The Storm Sigil',    rarity:'rare',
+    desc:'KEYSTONE. Air runes pierce armor & deal true damage; +0.25 XMULT per Air rune.',
+    phase:'post', hook:(ctx)=>{ const a=ctx.runes.filter(r=>r&&r.element==='Air').length; if(a>0){ ctx.ignoreWard=true; ctx.trueDamage=true; ctx.xmult *= 1 + a*0.25; } } },
+  { id:'twin-eclipse',   name:'The Twin Eclipse',   rarity:'mythic',
+    desc:'KEYSTONE. XMULT raised to the 1.5 power; no bonus draw this turn; globalMult ×0.8.',
+    phase:'post', hook:(ctx)=>{ ctx.xmult = Math.pow(ctx.xmult, 1.5); ctx.bonusDraw = 0; ctx.globalMult *= 0.8; } },
+  { id:'undertow-anchor',name:'The Undertow Anchor',rarity:'mythic',
+    desc:'KEYSTONE. 3-rune spells retrigger 25% (globalMult ×0.9); smaller spells globalMult ×0.5.',
+    phase:'post', hook:(ctx)=>{ if(ctx.runes.filter(Boolean).length===3){ ctx.spellRetrigger = Math.min(ctx.spellRetrigger + 0.25, 1); ctx.globalMult *= 0.9; } else ctx.globalMult *= 0.5; } },
+  // Hidden transmutation rewards (never offered; granted by bound triads)
+  { id:'tx-fire',  name:'Wildfire Ascendant', rarity:'mythic', hidden:true,
+    desc:'Transmutation: every Fire rune +2 POWER.',
+    hook:(ctx)=>{ ctx.runes.forEach((r,i)=>{ if(r&&r.element==='Fire') ctx.runeMod[i].add+=2; }); } },
+  { id:'tx-order', name:'The Bound Law',      rarity:'mythic', hidden:true,
+    desc:'Transmutation: same-element XMULT ×1.5 extra.',
+    phase:'post', hook:(ctx)=>{ if(ctx._maxEl>=2) ctx.xmult*=1.5; } },
+  { id:'tx-void',  name:'The Open Void',      rarity:'mythic', hidden:true,
+    desc:'Transmutation: +0.5 flat XMULT per rune in hand.',
+    phase:'post', hook:(ctx)=>{ ctx.xmult += ctx.hand.length*0.5; } },
+  { id:'tx-tide',  name:'The Endless Reservoir', rarity:'mythic', hidden:true,
+    desc:'Transmutation: Water runes +1 POWER and the spell heals +3.',
+    hook:(ctx)=>{ ctx.runes.forEach((r,i)=>{ if(r&&r.element==='Water') ctx.runeMod[i].add+=1; }); ctx.healSelf += 3; } },
+  { id:'tx-air',   name:'The Eye of the Storm',  rarity:'mythic', hidden:true,
+    desc:'Transmutation: +0.4 XMULT per Air rune in hand or deck.',
+    phase:'post', hook:(ctx)=>{ const ct=[...ctx.hand,...ctx.deck].filter(id=>{ const r=RUNES.find(x=>x.id===id); return r&&r.element==='Air'; }).length; ctx.xmult *= 1 + ct*0.4; } },
+];
+// Phase 5: hidden 3-rune families. Bind all members in one run -> transmute.
+const TRANSMUTATIONS = [
+  { id:'tx-fire',  name:'Wildfire Ascendant', members:['ember','surge','wildfire'] },
+  { id:'tx-order', name:'The Bound Law',      members:['tally','echo','recursion'] },
+  { id:'tx-void',  name:'The Open Void',      members:['hollow','sympathy','singularity'] },
+  { id:'tx-tide',  name:'The Endless Reservoir', members:['drop','cascade','tidewall'] },
+  { id:'tx-air',   name:'The Eye of the Storm',  members:['gust','drift','squall'] },
+];
+
+// ---- Phase 4: SIGILS — run-start identity (bless AND forbid) ----
+const SIGILS = [
+  { id:'free',  name:'Free Inscription', desc:'No bond, no ban. The classic codex.',
+    forbid:[], maxHp:50 },
+  { id:'ember', name:'The Emberheart', desc:'Fire spells ×1.12 & a Fire-rich pool. Water runes are sealed.',
+    element:'Fire', forbid:['Water'], maxHp:50, champion:'pyre-heart',
+    boon:(ctx)=>{ if(ctx.runes.some(r=>r&&r.element==='Fire')) ctx.globalMult *= 1.2; } },
+  { id:'order', name:'The Clockwork Vow', desc:'Same-element XMULT ×1.2 (pair) / ×1.4 (triple). Chaos sealed.',
+    element:'Order', forbid:['Chaos'], maxHp:50, champion:'true-name',
+    boon:(ctx)=>{ if(ctx._maxEl>=2) ctx.xmult *= 1 + 0.2*(ctx._maxEl-1); } },
+  { id:'void',  name:'The Hungering Maw', desc:'Void spells XMULT ×1.12. Start at 38 HP. Light runes sealed.',
+    element:'Void', forbid:['Light'], maxHp:38, champion:'event-horizon',
+    boon:(ctx)=>{ if(ctx.runes.some(r=>r&&r.element==='Void')) ctx.xmult *= 1.12; } },
+  { id:'tide',  name:'The Tidemother', desc:'Water spells XMULT ×1.14, ×1.30 if 2+ Water. 56 HP. Fire sealed.',
+    element:'Water', forbid:['Fire'], maxHp:56, champion:'deep-current',
+    boon:(ctx)=>{ const w = ctx.runes.filter(r=>r&&r.element==='Water').length;
+      if(w>=1) ctx.xmult *= (w>=2 ? 1.30 : 1.14); } },
+  { id:'zephyr', name:'The Stormcaller', desc:'Air spells globalMult ×1.18; +retrigger on a pure Air triple. Earth sealed.',
+    element:'Air', forbid:['Earth'], maxHp:48, champion:'gale-crown',
+    boon:(ctx)=>{ if(ctx.runes.some(r=>r&&r.element==='Air')) ctx.globalMult *= 1.18;
+      if(ctx._maxEl>=3 && ctx.runes.every(r=>!r||r.element==='Air')) ctx.spellRetrigger = Math.min(ctx.spellRetrigger + 0.5, 1); } },
+  { id:'umbra', name:'The Eclipsed Crown', desc:'Shadow/Light XMULT ×1.16; ×1.40 if the spell mixes both. 44 HP. Order sealed.',
+    element:'Shadow', forbid:['Order'], maxHp:44, champion:'penumbra',
+    boon:(ctx)=>{ const hasSh = ctx.runes.some(r=>r&&r.element==='Shadow');
+      const hasLi = ctx.runes.some(r=>r&&r.element==='Light');
+      if(hasSh && hasLi) ctx.xmult *= 1.40;
+      else if(hasSh || hasLi) ctx.xmult *= 1.16; } },
+];
+// Champion: a Sigil-bound signature power that LEVELS at encounters 4/8/12
+// (Monster-Train style). No slottable rune — it's a scaling identity boon, so
+// there is no rune-resolution / deck / art surface to break.
+const CHAMPIONS = {
+  'pyre-heart':    { name:'Pyre Heart',
+    desc:'Champion: if the spell has any Fire rune, globalMult ×(1 + 0.32 × level).',
+    apply:(ctx,lvl,path)=>{ if(ctx.runes.some(r=>r&&r.element==='Fire')) ctx.globalMult *= 1 + 0.32*lvl;
+      if(path===1) ctx.runes.forEach((r,i)=>{ if(r&&r.element==='Fire') ctx.runeMod[i].add += 1; }); } },
+  'true-name':     { name:'The True Name',
+    desc:'Champion: same-element XMULT ×(1 + 0.12 × level), doubled on a mono triple.',
+    apply:(ctx,lvl,path)=>{ const tri = path===1 ? (ctx._maxSh>=3) : false;
+      if(ctx._maxEl>=2 || tri) ctx.xmult *= 1 + 0.12*lvl*((ctx._maxEl>=3||tri)?2:1); } },
+  'event-horizon': { name:'Event Horizon',
+    desc:'Champion: XMULT ×(1 + level × 0.16 × handSize / 5).',
+    apply:(ctx,lvl,path)=>{ ctx.xmult *= 1 + lvl*0.16*(ctx.hand.length/5);
+      if(path===1) ctx.xmult += 0.3; } },
+  'deep-current':  { name:'The Deep Current',
+    desc:'Champion: XMULT ×(1 + 0.13 × level) per Water rune in the spell (cap 3).',
+    apply:(ctx,lvl,path)=>{ const cap = path===1 ? 4 : 3;
+      const w = Math.min(cap, ctx.runes.filter(r=>r&&r.element==='Water').length);
+      if(w>0) ctx.xmult *= 1 + 0.13*lvl*w; } },
+  'gale-crown':    { name:'The Gale Crown',
+    desc:'Champion: globalMult ×(1 + 0.20 × level) if the spell has any Air rune.',
+    apply:(ctx,lvl,path)=>{ if(ctx.runes.some(r=>r&&r.element==='Air')) ctx.globalMult *= 1 + 0.20*lvl;
+      if(path===1 && ctx._maxEl>=3 && ctx.runes.every(r=>!r||r.element==='Air')) ctx.spellRetrigger = Math.min(ctx.spellRetrigger + 0.4, 1); } },
+  'penumbra':      { name:'The Penumbra',
+    desc:'Champion: XMULT ×(1 + 0.15 × level) if the spell holds both Shadow and Light.',
+    apply:(ctx,lvl,path)=>{ const hasSh=ctx.runes.some(r=>r&&r.element==='Shadow'), hasLi=ctx.runes.some(r=>r&&r.element==='Light');
+      if((hasSh&&hasLi) || (path===1&&hasSh)) ctx.xmult *= 1 + 0.15*lvl; } },
+};
+const CHAMPION_UPS = {
+  'pyre-heart':    ['Level up (+1)', 'Level up & +1 to all Fire runes'],
+  'true-name':     ['Level up (+1)', 'Level up & mono-shape also qualifies'],
+  'event-horizon': ['Level up (+1)', 'Level up & +0.3 flat XMULT'],
+  'deep-current':  ['Level up (+1)', 'Level up & Water cap raised to 4'],
+  'gale-crown':    ['Level up (+1)', 'Level up & +0.4 retrigger on a pure Air triple'],
+  'penumbra':      ['Level up (+1)', 'Level up & also fires on Shadow-only spells'],
+};
+
+function ensureRunDepth(run){
+  if(!run) return;
+  if(!run.relics) run.relics = [];
+  if(run.sigil === undefined) run.sigil = 'free';
+  if(run.champion === undefined) run.champion = null;
+  // backfill progression sub-keys (old mid-run saves may lack some) — C1 fix
+  if(!run.progression) run.progression = {};
+  const _p = run.progression;
+  if(!_p.bound) _p.bound = [];
+  if(!_p.revealed) _p.revealed = [];
+  if(_p.prophecy === undefined) _p.prophecy = null;
+  if(!_p.transmuted) _p.transmuted = [];
+  if(!_p._boundIds) _p._boundIds = [];
+  if(!run.boundElements) run.boundElements = [];
+  if(typeof run.castCount !== 'number') run.castCount = 0;
+  // Batch B: enemy-intent state (resumed pre-B saves backfill to a safe default;
+  // renderGame/executeIntent fall back to a flat strike until the next lock).
+  if(typeof run.turnInEnc !== 'number') run.turnInEnc = 0;
+  if(run.intent === undefined) run.intent = null;
+  if(typeof run.pendingUnleash !== 'boolean') run.pendingUnleash = false;
+  // Batch E: per-run dominant-pattern tally (boss counter) + boss-phase banner latch
+  if(!run.patternTally) run.patternTally = {};
+  if(typeof run.bossPhaseSeen !== 'number') run.bossPhaseSeen = 0;
+}
+function sigilOf(run){ return SIGILS.find(s=>s.id===(run&&run.sigil))||SIGILS[0]; }
+/* Apprentice Inscription — onboarding scaffolding for the new-player cliff.
+   Sim-derived (tools/retention-sim.js): a railed deck + teaching the strong
+   line, TOGETHER, lift D7 ~+6pts (Lapsed everWon 0→92%); either alone barely
+   moves. Gate to low Ascension / pre-first-win so it never flattens the build
+   depth that retains veterans (A≥3 → fully off, baseline unchanged). Only the
+   reward-pool weighting + a hint string change — combat math (resolveSpell) is
+   untouched, so the balance/determinism sims still hold. 0 off / 1 light / 2 full. */
+function runHelp(){
+  const m = state.meta || {};
+  const asc = (state.run && state.run.asc) || 0;
+  if(asc >= 3) return 0;                                  // veterans: no scaffolding
+  if((m.runsCompleted||0) === 0 && asc === 0) return 2;   // brand-new: full
+  return 1;                                               // climbing / has won: light
+}
+// Depth hooks merged into the spell pipeline. 'pre' runs before the tally
+// (POWER edits); 'post' runs after element/shape synergy (XMULT edits).
+function applyDepth(ctx, run, phase){
+  ensureRunDepth(run);
+  const sg = sigilOf(run);
+  if(phase==='pre'){
+    ctx.runes.forEach((r,i)=>{ if(r && sg.forbid && sg.forbid.includes(r.element)) ctx.runeMod[i].mult = 0; });
+    RELICS.forEach(rel=>{ if(run.relics.includes(rel.id) && (rel.phase||'pre')==='pre'){ try{ rel.hook(ctx); }catch(e){} } });
+  } else {
+    if(sg.boon){ try{ sg.boon(ctx); }catch(e){} }
+    if(run.champion && CHAMPIONS[run.champion.id]){
+      try{ CHAMPIONS[run.champion.id].apply(ctx, run.champion.level||1, run.champion.path||0); }catch(e){}
+    }
+    RELICS.forEach(rel=>{ if(run.relics.includes(rel.id) && rel.phase==='post'){ try{ rel.hook(ctx); }catch(e){} } });
+    // Batch E counter-boss — the Sovereign reads YOUR run's dominant element
+    // (the line you actually leaned on, not just "any mono triple") and, once
+    // it drops past phase 1 (66% HP), dampens spells built on it — so you must
+    // bring a real second line for the climax. Telegraphed in the UI; partial
+    // (×0.55) so your primary still works, just not as a finisher. Lives in the
+    // shared resolveSpell path, so the sim measures it automatically.
+    const node = run.path && run.path[run.encounterIdx];
+    if(node && node.enemyId==='sovereign'){
+      const ph = bossPhase(run);
+      if(ph >= 2){
+        const dom = runDominantElement(run);
+        const elc = {}; ctx.runes.forEach(r=>{ if(r) elc[r.element] = (elc[r.element]||0)+1; });
+        if(dom && (elc[dom]||0) >= 3) ctx.xmult *= 0.6;         // your full mono line, countered
+        else if(ctx._maxEl >= 3) ctx.xmult *= 0.9;             // any other mono triple, lightly
+      }
+    }
+  }
+}
+
+// Phase 5: called from cast() once a spell resolves. Binds elements, fires
+// hidden transmutations, and resolves the run prophecy.
+function onSpellBound(run, present, result){
+  ensureRunDepth(run);
+  present.forEach(r=>{ if(r && !run.boundElements.includes(r.element)) run.boundElements.push(r.element); });
+  // Batch E: track the run's dominant line so the Sovereign can read & counter
+  // YOUR actual grammar (not just "any mono triple"). Tally the element a spell
+  // leans on (2+ of one element). Pure + shared, so the sim sees it too.
+  const _elc = {};
+  present.forEach(r=>{ if(r) _elc[r.element] = (_elc[r.element]||0)+1; });
+  const _dom = Object.entries(_elc).sort((a,b)=>b[1]-a[1])[0];
+  if(_dom && _dom[1] >= 2){ run.patternTally = run.patternTally || {}; run.patternTally[_dom[0]] = (run.patternTally[_dom[0]]||0)+1; }
+  const boundIds = new Set([...(run.progression._boundIds||[]), ...present.map(r=>r.id)]);
+  run.progression._boundIds = [...boundIds];
+  TRANSMUTATIONS.forEach(tx=>{
+    if(run.progression.transmuted.includes(tx.id)) return;
+    if(tx.members.every(m=>boundIds.has(m))){
+      run.progression.transmuted.push(tx.id);
+      if(!run.relics.includes(tx.id)) run.relics.push(tx.id);
+      if(state.meta) state.meta.transmutationsEver = (state.meta.transmutationsEver||0) + 1;  // Batch F goal
+      showComboBanner('TRANSMUTED · ' + tx.name, true);
+    }
+  });
+  const pr = run.progression.prophecy;
+  if(pr && !pr.done && result.comboMatch && result.comboMatch.id===pr.id){
+    pr.done = true;
+    run.hp = Math.min(run.maxHp, run.hp + 12);
+    showComboBanner('PROPHECY FULFILLED · +12 HP', true);
+  }
+}
+function prophecyPick(run, rng){
+  // Daily runs must be reproducible from the seed ALONE — never filter by
+  // cross-run meta (would desync players on the same daily seed). H5 fix.
+  const isDaily = run && typeof run.seed === 'string' && /^daily-/.test(run.seed);
+  let poolP = NAMED_COMBOS;
+  if(!isDaily){
+    const undiscovered = NAMED_COMBOS.filter(c=>!state.meta.discoveredCombos[c.id]);
+    if(undiscovered.length) poolP = undiscovered;
+  }
+  const c = poolP[Math.floor((rng?rng():Math.random()) * poolP.length)];
+  return c ? { id:c.id, name:c.name, done:false } : null;
+}
+
+/* ----- 4. RNG (seeded) ----- */
+function mulberry32(seed){
+  let s = seed >>> 0;
+  return function(){
+    s = (s + 0x6D2B79F5) | 0;
+    let t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function hashString(s){
+  let h = 1779033703 ^ s.length;
+  for(let i=0;i<s.length;i++){
+    h = Math.imul(h ^ s.charCodeAt(i), 3432918353);
+    h = (h << 13) | (h >>> 19);
+  }
+  return h;
+}
+
+/* ----- 4b. ASCENSION — the meta-progression difficulty ladder -----
+   Tier 0 is the sim-validated base game (byte-identical: every modifier is
+   neutral). Each tier stacks one more constraint. Beating a tier (13/13)
+   unlocks the next — the "one more run" engine. Modifiers are applied ONLY
+   at run construction / beginEncounter (never in resolveSpell), so the
+   balance sim — which always builds tier-0 runs — is untouched. */
+const ASCENSIONS = [
+  { t:0, name:'Inscription',          blurb:'The codex as written.',                bossHp:1.00, enemyHp:1.00, threat:0, heal:8, hp:0 },
+  { t:1, name:'Deeper Inscription I', blurb:'The Sovereign endures longer (+20% HP).', bossHp:1.20, enemyHp:1.00, threat:0, heal:8, hp:0 },
+  { t:2, name:'Deeper Inscription II',blurb:'Every foe strikes harder (+1 threat).',  bossHp:1.20, enemyHp:1.00, threat:1, heal:8, hp:0 },
+  { t:3, name:'Deeper Inscription III',blurb:'The ink replenishes less (heal 8→5).',  bossHp:1.20, enemyHp:1.00, threat:1, heal:5, hp:0 },
+  { t:4, name:'Deeper Inscription IV',blurb:'All foes harden (+10% HP) & the Sovereign swells (+44%).', bossHp:1.44, enemyHp:1.10, threat:1, heal:5, hp:0 },
+  { t:5, name:'The Unwritten',        blurb:'You begin frailer (−6 max HP).',         bossHp:1.44, enemyHp:1.10, threat:1, heal:5, hp:-6 },
+];
+function ascById(t){ return ASCENSIONS[Math.max(0, Math.min(ASCENSIONS.length-1, t|0))] || ASCENSIONS[0]; }
+
+/* Codex Mastery — long-arc goals derived purely from existing meta (no power
+   granted → balance/sim untouched). The "collection ladder" that gives the
+   codex a reason to exist beyond a log. */
+const MASTERY = [
+  { id:'first',     name:'First Fusion',   tip:'Name your first fusion.',
+    done:m=>Object.keys(m.discoveredCombos||{}).length >= 1 },
+  { id:'adept',     name:'Adept',          tip:'Name 12 fusions.',
+    done:m=>Object.keys(m.discoveredCombos||{}).length >= 12 },
+  { id:'scholar',   name:'Scholar',        tip:'Name 24 fusions.',
+    done:m=>Object.keys(m.discoveredCombos||{}).length >= 24 },
+  { id:'archivist', name:'Archivist',      tip:'Name every fusion in the codex.',
+    done:m=>Object.keys(m.discoveredCombos||{}).length >= NAMED_COMBOS.length },
+  { id:'glyphwright',name:'Glyphwright',   tip:'Bind every glyph.',
+    done:m=>(m.discoveredRunes||[]).length >= RUNES.length },
+  { id:'sealed',    name:'Codex Sealed',   tip:'Win a full 13/13 run.',
+    done:m=>(m.runsCompleted||0) >= 1 },
+  { id:'veteran',   name:'Veteran',        tip:'Seal 10 codices (10 wins).',
+    done:m=>(m.runsCompleted||0) >= 10 },
+  { id:'pantheon',  name:'Pantheon',       tip:'Win with all 7 Sigils.',
+    done:m=>Object.keys(m.sigilWins||{}).length >= 7 },
+  { id:'ascendant', name:'Ascendant',      tip:'Clear Ascension 1.',
+    done:m=>(m.ascensionBeaten||0) >= 1 },
+  { id:'deeper',    name:'Deep Ascendant', tip:'Clear Ascension 3.',
+    done:m=>(m.ascensionBeaten||0) >= 3 },
+  { id:'unwritten', name:'The Unwritten',  tip:'Clear the final Ascension.',
+    done:m=>(m.ascensionBeaten||0) >= ASCENSIONS.length-1 },
+  // Batch F: win-free goals — reachable while still learning the engine.
+  { id:'detonator', name:'Detonator',      tip:'Land a single spell for 200+ damage.',
+    done:m=>(m.peakDamage||0) >= 200 },
+  { id:'alchemist', name:'Alchemist',      tip:'Complete a hidden transmutation triad.',
+    done:m=>(m.transmutationsEver||0) >= 1 },
+  { id:'wayfarer',  name:'Wayfarer',       tip:'Reach encounter 10 in a run.',
+    done:m=>(m.deepestReached||0) >= 10 },
+];
+
+/* ----- 5. STATE ----- */
+const SAVE_KEY = 'glyph-forge-v1';
+let state = loadState();
+
+function defaultState(){
+  return {
+    meta: {
+      discoveredRunes: RUNES.filter(r=>r.starter).map(r=>r.id),
+      discoveredCombos: {},      // id -> { name, peakDamage, runeIds, firstSeen }
+      runeUseCount: {},          // id -> int
+      runsCompleted: 0,
+      runsAttempted: 0,
+      bestRun: 0,
+      seenIntro: false,
+      // ---- meta-progression (additive; old saves merge-default in) ----
+      ascension: 0,            // highest UNLOCKED Ascension tier
+      ascensionBeaten: 0,      // highest tier cleared 13/13
+      sigilWins: {},           // sigilId -> 13/13 win count
+      daily: { lastDate:null, streak:0, bestStreak:0, scores:{} },
+      mastery: { seals:[] },   // earned milestone seal ids
+      // Batch F: reachable, win-free progress (so the ~80% who never win still
+      // have goals tied to experimentation). Additive; old saves merge-default.
+      peakDamage: 0,           // biggest single spell ever landed
+      transmutationsEver: 0,   // hidden triads ever completed
+      deepestReached: 0,       // furthest encounter reached in any run
+    },
+    run: null,
+  };
+}
+function loadState(){
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if(!raw) return defaultState();
+    const parsed = JSON.parse(raw);
+    return { ...defaultState(), ...parsed, meta: { ...defaultState().meta, ...parsed.meta } };
+  } catch { return defaultState(); }
+}
+function saveState(){
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch {}
+}
+
+/* ----- 6. RUN INIT ----- */
+function startNewRun(seedStr, sigilId, asc){
+  const sg = SIGILS.find(s=>s.id===sigilId) || SIGILS[0];
+  const A = ascById(asc || 0);
+  const seed = hashString(seedStr || (Date.now() + ':' + Math.random()));
+  const rng = mulberry32(seed);
+
+  const starterDeck = RUNES.filter(r => r.starter).map(r => r.id);
+  // shuffle starter deck
+  for(let i=starterDeck.length-1; i>0; i--){
+    const j = Math.floor(rng() * (i+1));
+    [starterDeck[i], starterDeck[j]] = [starterDeck[j], starterDeck[i]];
+  }
+
+  // generate path of 13 encounters
+  const path = [];
+  for(let i=0; i<13; i++){
+    const isBoss = i === 12;
+    if(isBoss){
+      path.push({ type:'enemy', enemyId:'sovereign', completed:false });
+    } else {
+      let tier;
+      if(i < 3) tier = 1;
+      else if(i < 7) tier = 2;
+      else tier = 3;
+      const candidates = ENEMIES.filter(e => e.tier === tier && !e.boss);
+      const enemy = candidates[Math.floor(rng() * candidates.length)];
+      path.push({ type:'enemy', enemyId: enemy.id, completed:false });
+    }
+  }
+
+  state.run = {
+    seed: seedStr || String(seed),
+    rngSeed: seed,
+    encounterIdx: 0,
+    hp: Math.max(1, (sg.maxHp || 50) + A.hp),
+    maxHp: Math.max(1, (sg.maxHp || 50) + A.hp),
+    asc: A.t,
+    healAmt: A.heal,
+    threatBonus: A.threat,
+    bossHpMult: A.bossHp,
+    enemyHpMult: A.enemyHp,
+    deck: starterDeck.slice(),
+    hand: [],
+    discard: [],
+    spell: [null, null, null],
+    path,
+    currentThreat: 0,
+    enemyHp: 0,
+    enemyMaxHp: 0,
+    burns: 0,
+    stunNext: false,
+    fluency: 0,
+    // ---- Depth (Phases 3-6) ----
+    sigil: sg.id,
+    relics: [],
+    champion: sg.champion ? { id: sg.champion, level: 1, path: 0 } : null,
+    progression: { bound:[], revealed:[], prophecy:null, transmuted:[] },
+    boundElements: [],
+    castCount: 0,
+    // Batch B: enemy intent (beginEncounter locks turn 1's action)
+    turnInEnc: 0,
+    intent: null,
+    pendingUnleash: false,
+    // Batch E: boss-counter pattern tally + phase-banner latch
+    patternTally: {},
+    bossPhaseSeen: 0,
+  };
+  state.run.progression.prophecy = prophecyPick(state.run, mulberry32(seed + 999));
+  state.meta.runsAttempted += 1;
+  beginEncounter();
+  saveState();
+}
+
+function beginEncounter(){
+  const run = state.run;
+  ensureRunDepth(run);
+  const node = run.path[run.encounterIdx];
+  const enemy = ENEMIES.find(e=>e.id===node.enemyId);
+  // scale boss / late enemies slightly with progression
+  const scale = 1 + (run.encounterIdx * 0.05);
+  // Ascension: boss/enemy HP mult + threat bonus (default-neutral at tier 0,
+  // and for any pre-Ascension saved run resumed mid-flight).
+  const hpMult = enemy.boss ? (run.bossHpMult || 1) : (run.enemyHpMult || 1);
+  run.enemyHp = Math.floor(enemy.hp * scale * hpMult);
+  run.enemyMaxHp = run.enemyHp;
+  run.currentThreat = enemy.threat + (run.threatBonus || 0);
+  run.spell = [null, null, null];
+  run.burns = 0;
+  run.stunNext = false;
+  // Batch B: fresh encounter → reset intent state (locked after the hand fills)
+  run.turnInEnc = 0;
+  run.intent = null;
+  run.pendingUnleash = false;
+  // restore HP between encounters (the ink replenishes; less at high Ascension)
+  if(run.encounterIdx > 0){
+    run.hp = Math.min(run.maxHp, run.hp + (run.healAmt == null ? 8 : run.healAmt));
+  }
+  // refill hand to 5
+  while(run.hand.length < 5 && (run.deck.length > 0 || run.discard.length > 0)){
+    drawOne();
+  }
+  lockIntent(run);   // Batch B: telegraph the enemy's first action of the fight
+  // Story beat when the archive deepens (a tier we haven't narrated yet). Guard
+  // on run.storyTier so it fires once per crossing, never on a resumed save.
+  const _tier = enemy.tier || 1;
+  if(_tier > (run.storyTier || 1) && GF_STORY.tierBeats[_tier]){
+    run.storyTier = _tier;
+    const beat = GF_STORY.tierBeats[_tier];
+    showStoryBeat(beat.place, beat.line);
+  } else if(_tier > (run.storyTier || 1)){
+    run.storyTier = _tier;
+  }
+  saveState();
+  renderGame();
+}
+
+function drawOne(){
+  const run = state.run;
+  if(run.deck.length === 0){
+    // reshuffle discard
+    run.deck = run.discard.slice();
+    run.discard = [];
+    const rng = mulberry32(run.rngSeed + run.encounterIdx*1000 + run.hand.length);
+    for(let i=run.deck.length-1; i>0; i--){
+      const j = Math.floor(rng()*(i+1));
+      [run.deck[i], run.deck[j]] = [run.deck[j], run.deck[i]];
+    }
+  }
+  if(run.deck.length > 0) run.hand.push(run.deck.shift());
+}
+
+/* ----- 7. SPELL RESOLUTION -----
+   Builds a context, runs each rune's effect, accumulates final damage.
+*/
+function resolveSpell(){
+  const run = state.run;
+  const runeObjs = run.spell.map(id => id ? { ...RUNES.find(r=>r.id===id) } : null);
+  const present = runeObjs.filter(Boolean);
+  if(present.length === 0) return null;
+
+  // favorite rune so far
+  const usageCounts = state.meta.runeUseCount;
+  let favoriteRune = null;
+  let favCt = -1;
+  Object.entries(usageCounts).forEach(([k,v])=>{ if(v > favCt){ favCt = v; favoriteRune = k; }});
+
+  const enemyTag = ENEMIES.find(e=>e.id===run.path[run.encounterIdx].enemyId).tag;
+
+  // context: modifiers per rune slot
+  const ctx = {
+    runes: runeObjs,
+    runeMod: runeObjs.map(()=>({ mult:1, add:0, repeats:1, lifesteal:0 })),
+    globalMult: 1,
+    xmult: 1,          // Phase 2: multiplicative payoff track (synergy + order-dependent runes)
+    xmultScaleBoost: 1,// Phase 3: relics can amplify order-dependent rune scaling
+    _maxEl: 0, _runeCt: 0,
+    healSelf: 0,
+    bonusDraw: 0,
+    spellRetrigger: 0,
+    pandemonium: false,
+    burnNext: 0,
+    stun: false,
+    ignoreWard: false,
+    trueDamage: false,
+    enemyTag,
+    hp: run.hp, maxHp: run.maxHp,
+    hand: run.hand.slice(),
+    deck: run.deck.slice(),
+    rng: mulberry32(run.rngSeed + run.encounterIdx*7919 + (run.castCount||0)),
+    meta: { favoriteRune },
+  };
+
+  // Phase 3/4: relics + sigil seal + pre-tally hooks
+  applyDepth(ctx, run, 'pre');
+
+  // pass 1: each rune applies its effect in order
+  runeObjs.forEach((r,i)=>{
+    if(r && r.effect) r.effect(ctx, i);
+  });
+
+  // H2 fix: re-apply the Sigil seal AFTER effects, so mirror/sympathy that
+  // mutate a rune INTO a forbidden element are correctly nulled (and a rune
+  // mutated OUT of the forbidden element is no longer wrongly sealed).
+  (function(){
+    const _sgF = sigilOf(run);
+    if(_sgF && _sgF.forbid && _sgF.forbid.length){
+      ctx.runes.forEach((r,i)=>{
+        if(r && _sgF.forbid.includes(r.element)) ctx.runeMod[i].mult = 0;
+        else if(r && ctx.runeMod[i].mult === 0 && !_sgF.forbid.includes(r.element)) ctx.runeMod[i].mult = 1;
+      });
+    }
+  })();
+
+  // pass 2 (if pandemonium): hand runes contribute their basePower
+  let pandemoniumBonus = 0;
+  if(ctx.pandemonium){
+    run.hand.forEach(id=>{
+      const r = RUNES.find(x=>x.id===id);
+      if(r) pandemoniumBonus += r.basePower;
+    });
+  }
+
+  // element synergy
+  const elementCounts = {};
+  ctx.runes.forEach(r=>{ if(r) elementCounts[r.element] = (elementCounts[r.element]||0)+1; });
+  const maxEl = Math.max(0, ...Object.values(elementCounts));
+  // Phase 2: synergy is now EXPONENTIAL and feeds the XMULT track, so
+  // committing to one element/shape scales multiplicatively (build identity).
+  const elementMult = maxEl >= 3 ? 3.0 : maxEl === 2 ? 1.6 : 1;
+
+  // shape resonance
+  const shapeCounts = {};
+  ctx.runes.forEach(r=>{ if(r) shapeCounts[r.shape] = (shapeCounts[r.shape]||0)+1; });
+  const maxSh = Math.max(0, ...Object.values(shapeCounts));
+  const shapeMult = maxSh >= 3 ? 2.0 : maxSh === 2 ? 1.3 : 1;
+
+  ctx.xmult *= elementMult * shapeMult;
+  ctx._maxEl = maxEl; ctx._maxSh = maxSh; ctx._runeCt = present.length;
+  // Phase 3/4: sigil boon + champion + post-synergy relics (XMULT track)
+  applyDepth(ctx, run, 'post');
+
+  // damage tally
+  let totalDamage = 0;
+  let totalLifesteal = 0;
+  let _baseBefore = 0;   // Phase 2: power assembled in EARLIER slots (order matters)
+  const _tr = [];
+  ctx.runes.forEach((r,i)=>{
+    if(!r) return;
+    const mod = ctx.runeMod[i];
+    // Order-dependent XMULT: a rune's payoff scales off everything inscribed
+    // before it, so placement (slot I/II/III) is a skill expression.
+    if(r.xmultScale) ctx.xmult *= 1 + _baseBefore * r.xmultScale * (ctx.xmultScaleBoost||1);
+    if(r.xmultFlat)  ctx.xmult *= r.xmultFlat;
+    const perRune = (r.basePower + mod.add) * mod.mult;
+    const repeatedDmg = perRune * Math.max(1, mod.repeats);
+    totalDamage += repeatedDmg;
+    _baseBefore += repeatedDmg;
+    if(mod.lifesteal > 0) totalLifesteal += repeatedDmg * mod.lifesteal;
+    _tr.push({ id:r.id, name:r.name, base:r.basePower, add:mod.add, mult:mod.mult, repeats:Math.max(1,mod.repeats), sub:repeatedDmg });
+  });
+
+  // pandemonium adds hand-rune base power
+  totalDamage += pandemoniumBonus;
+  const _baseSum = totalDamage;
+
+  totalDamage *= ctx.globalMult;
+  totalDamage *= ctx.xmult;            // Phase 2: the multiplicative payoff track
+  const _spellRetrigger = ctx.spellRetrigger;
+  if(ctx.spellRetrigger > 0) totalDamage *= (1 + ctx.spellRetrigger);
+
+  // Fluency: the player learns. Each defeated enemy permanently boosts damage by +6%, cap +72%.
+  const fluencyMult = 1 + Math.min(0.72, (run.fluency || 0) * 0.06);
+  totalDamage *= fluencyMult;
+  const _preFloor = totalDamage;
+  totalDamage = Math.floor(totalDamage);
+
+  // combo detection
+  const comboMatch = findComboName(present);
+
+  return {
+    damage: totalDamage,
+    healing: ctx.healSelf + Math.floor(totalLifesteal),
+    bonusDraw: ctx.bonusDraw,
+    stun: ctx.stun,
+    burn: ctx.burnNext,
+    trueDamage: ctx.trueDamage,
+    ignoreWard: ctx.ignoreWard,
+    elementMult, shapeMult,
+    globalMult: ctx.globalMult,
+    xmult: ctx.xmult,
+    fluencyMult,
+    comboMatch,
+    presentRunes: present,
+    crit: ctx.xmult * ctx.globalMult >= 3,
+    trace: { perRune:_tr, pandemoniumBonus, baseSum:_baseSum, elementMult, shapeMult,
+             globalMult:ctx.globalMult, xmult:ctx.xmult, spellRetrigger:_spellRetrigger,
+             fluencyMult, preFloor:_preFloor, final:totalDamage },
+  };
+}
+
+/* preview (no random spending) — used to update damage readout */
+function previewSpellDamage(){
+  const result = resolveSpell();
+  return result ? result.damage : 0;
+}
+
+/* ----- 8. CAST ----- */
+function cast(){
+  const run = state.run;
+  // Charge-up beat: on first press, flare the staged runes I → II → III and
+  // DEFER the strike so the spell visibly assembles before it fires. Re-entry
+  // (after the wind-up) resolves the SAME result — never re-rolls crit/random runes.
+  let result = run._pendingCast;
+  if(result){
+    run._pendingCast = null;
+  } else {
+    result = resolveSpell();
+    if(!result || result.presentRunes.length === 0) return;
+    const slots = (typeof document !== 'undefined' && document.querySelectorAll)
+      ? document.querySelectorAll('#spell-slots .spell-slot.filled') : [];
+    if(!gfReducedMotion() && slots.length){
+      run._pendingCast = result;
+      slots.forEach((s,i)=>{ s.style.animationDelay = (i*0.14)+'s'; void s.offsetWidth; s.classList.add('gf-charge'); });
+      const btn = document.getElementById('btn-cast'); if(btn) btn.disabled = true;
+      if(GFAudio && GFAudio.tap) GFAudio.tap();
+      setTimeout(cast, 640);
+      return;
+    }
+  }
+
+  // record rune usage
+  result.presentRunes.forEach(r=>{
+    state.meta.runeUseCount[r.id] = (state.meta.runeUseCount[r.id]||0) + 1;
+  });
+
+  // apply damage to enemy (Batch C1: minus armor, unless the spell pierces)
+  const netDmg = netEnemyDamage(run, result.damage, result);
+  const ehpBefore = run.enemyHp;
+  run.enemyHp = Math.max(0, run.enemyHp - netDmg);
+  if(result.burn > 0) run.burns = (run.burns||0) + result.burn;  // Wildfire DoT — ticks next enemy turn
+  // Batch F: track the biggest hit ever (a win-free Mastery goal)
+  if(netDmg > (state.meta.peakDamage||0)) state.meta.peakDamage = netDmg;
+  // Batch D: overkill flourish — a spell that buries the foe with room to spare
+  const overkill = netDmg >= ehpBefore * 2 && ehpBefore >= 12;
+  // Batch E: Sovereign phase-transition reveal (fires once per threshold crossed)
+  if((intentEnemy(run)||{}).boss && run.enemyHp > 0){
+    const ph = bossPhase(run);
+    if(ph > (run.bossPhaseSeen||0)){
+      run.bossPhaseSeen = ph;
+      const dom = runDominantElement(run);
+      if(ph===2) showComboBanner(dom ? `THE SOVEREIGN READS YOUR ${dom.toUpperCase()}` : 'THE SOVEREIGN READS YOUR GRAMMAR', true, true);
+      else if(ph===3) showComboBanner('THE SOVEREIGN — THE FINAL VERSE', true, true);
+    }
+  }
+
+  // healing
+  if(result.healing > 0){
+    run.hp = Math.min(run.maxHp, run.hp + result.healing);
+  }
+
+  // record combo
+  if(result.comboMatch){
+    const id = result.comboMatch.id;
+    const existing = state.meta.discoveredCombos[id];
+    const isNew = !existing;
+    state.meta.discoveredCombos[id] = {
+      name: result.comboMatch.name,
+      peakDamage: Math.max(existing?.peakDamage || 0, result.damage),
+      runeIds: result.presentRunes.map(r=>r.id),
+      firstSeen: existing?.firstSeen || Date.now(),
+    };
+    showComboBanner(result.comboMatch.name, isNew, isNew || result.damage >= 120);
+    GFAudio.combo(isNew);
+  }
+
+  // Phase 5/6: bind elements, fire transmutations/prophecy, advance the
+  // deterministic per-run cast counter (replaces Date.now seed entropy).
+  onSpellBound(run, result.presentRunes, result);
+  run.castCount = (run.castCount || 0) + 1;
+
+  // discard used runes + reset spell
+  run.spell.forEach((id,i)=>{
+    if(id){
+      run.discard.push(id);
+    }
+  });
+  run.spell = [null, null, null];
+
+  // draw bonus
+  for(let i=0;i<result.bonusDraw;i++) drawOne();
+
+  // play damage pop (the ACTUAL number that landed, after armor)
+  GFAudio.cast(result.crit);
+  showDamage(netDmg, result.crit);
+  // armor feedback: if the foe shrugged off part of the hit, say so (and praise
+  // a pierce that ignored it) — teaches the player WHY a number shrank.
+  const _enemyArmor = (intentEnemy(run) || {}).armor || 0;
+  if(_enemyArmor > 0){
+    if(result.trueDamage || result.ignoreWard) gfFloatNote('⛊ pierced!', '#7fd4a0');
+    else if(result.damage > netDmg) gfFloatNote(`⛊ −${result.damage - netDmg} armor`, '#c79b6a');
+  }
+  // Batch D: ASCENDED — a wide-overkill blow earns a flame celebration
+  if(overkill){
+    showComboBanner('✦ ASCENDED ✦', true, true);
+    const fl = document.getElementById('gf-screen-flash');
+    if(fl && !gfReducedMotion()){ fl.classList.remove('fire'); void fl.offsetWidth; fl.classList.add('fire'); }
+  }
+
+  // enemy reaction — a heavier, longer recoil
+  const stage = document.getElementById('enemy-portrait');
+  GFAudio.hit(result.crit);
+  stage.classList.add('hit');
+  setTimeout(()=>stage.classList.remove('hit'), 620);
+
+  // Hold on the blow: show the emptied slots + the enemy recoiling + HP draining
+  // BEFORE the hand replenishes, so the strike is the moment — not a blur of new
+  // cards. Then, in deliberate beats, draw fresh runes, then let the foe answer.
+  saveState();
+  renderGame();
+  const _reduced = gfReducedMotion();
+  setTimeout(()=>{
+    while(run.hand.length < 5 && (run.deck.length > 0 || run.discard.length > 0)) drawOne();
+    saveState();
+    renderGame();
+  }, _reduced ? 120 : 560);
+  setTimeout(()=>{
+    if(run.enemyHp <= 0){
+      onEnemyDefeated();
+    } else {
+      enemyTurn(result.stun);
+    }
+  }, _reduced ? 350 : 1150);
+}
+
+function enemyTurn(stunned){
+  const run = state.run;
+  // Wildfire burn ticks at the start of the foe's turn ("next turn" = one tick),
+  // then clears. A burn-kill ends the encounter before the enemy can act.
+  if(run.burns > 0){
+    run.enemyHp = Math.max(0, run.enemyHp - run.burns);
+    run.burns = 0;
+    if(run.enemyHp <= 0){ saveState(); renderGame(); setTimeout(()=>onEnemyDefeated(), 600); return; }
+  }
+  // Batch B: resolve the telegraphed intent the player saw this turn. A stun
+  // skips it. When the foe actually lands a blow, give it weight: it winds up,
+  // lunges, and the strike CONNECTS (red flash + shake + −N + haptic) — the
+  // mirror of the player's cast. Non-damaging / stunned / reduced-motion resolve
+  // instantly.
+  const intent = run.intent;
+  const dealsDamage = !stunned && intent && intent.dmg > 0;
+  const bigHit = !!(intent && intent.kind === 'unleash');
+  if(!dealsDamage || gfReducedMotion()){
+    if(!stunned) executeIntent(run);
+    if(run.hp > 0) lockIntent(run);
+    saveState();
+    renderGame();
+    if(run.hp <= 0) setTimeout(()=>onDefeat(), 600);
+    return;
+  }
+  const portrait = document.getElementById('enemy-portrait');
+  if(portrait){ portrait.classList.remove('lunge'); void portrait.offsetWidth; portrait.classList.add('lunge'); }
+  const hpBefore = run.hp;
+  setTimeout(()=>{
+    executeIntent(run);                         // the blow connects — damage lands now
+    gfPlayerHit(hpBefore - run.hp, bigHit);
+    if(GFAudio && GFAudio.hit) GFAudio.hit(bigHit);
+    if(portrait) portrait.classList.remove('lunge');
+    if(run.hp > 0) lockIntent(run);
+    saveState();
+    renderGame();
+    if(run.hp <= 0) setTimeout(()=>onDefeat(), 750);
+  }, 300);
+}
+
+/* ----- 9. ENCOUNTER OUTCOMES ----- */
+function onEnemyDefeated(){
+  const run = state.run;
+  run.path[run.encounterIdx].completed = true;
+  run.fluency = (run.fluency || 0) + 1;
+  // award: pick from 3 random runes
+  showRewardModal();
+}
+
+function onDefeat(){
+  GFAudio.defeat();
+  const seed = state.run && state.run.seed;
+  const reached = state.run ? state.run.encounterIdx + 1 : 1;
+  state.meta.deepestReached = Math.max(state.meta.deepestReached||0, reached);  // Batch F goal
+  window._gfResult = { seed, reached, won: false };
+  const dd = recordDailyResult(seed, reached, false);
+  const dailyLine = dd ? `<br><span style="color:var(--gilt)">Daily score ${dailyScore(reached,false)} · ${dd.streak}-day streak 🔥</span>` : '';
+  showModal({
+    title: 'The Ink Runs Dry',
+    body: `<span style="font-family:'IM Fell English',serif;font-style:italic;color:var(--parchment)">${GF_STORY.defeat}</span><br><br>You reached encounter ${reached} of 13.${dailyLine}`,
+    icon: '✗',
+    iconDefeat: true,
+    choices: [
+      { label: 'Share result', onClick: gfShare },
+      ...(GF_LINKS.itch ? [{ label: 'Get the full codex ↗', onClick: gfOpenItch }] : []),
+      { label: 'Return to the Codex', onClick: ()=>{ state.run = null; saveState(); showScreen('title-screen'); } }
+    ]
+  });
+}
+
+function onVictory(){
+  GFAudio.victory();
+  const run = state.run || {};
+  const asc = run.asc || 0;
+  const isDaily = /^daily-/.test(run.seed || '');
+  window._gfResult = { seed: run.seed, reached: 13, won: true, asc };
+  state.meta.runsCompleted += 1;
+  state.meta.bestRun = Math.max(state.meta.bestRun, 13);
+  state.meta.deepestReached = Math.max(state.meta.deepestReached||0, 13);  // Batch F goal
+  if(run.sigil) state.meta.sigilWins[run.sigil] = (state.meta.sigilWins[run.sigil] || 0) + 1;
+  // Ascension unlock: clearing the highest tier you've reached opens the next.
+  // Daily runs are fixed at tier 0 (fair shared seed) and never advance it.
+  if(!isDaily){
+    state.meta.ascensionBeaten = Math.max(state.meta.ascensionBeaten || 0, asc);
+    if(asc >= (state.meta.ascension || 0) && asc + 1 < ASCENSIONS.length){
+      state.meta.ascension = asc + 1;
+    }
+  }
+  const newTierUnlocked = !isDaily && asc + 1 < ASCENSIONS.length && (state.meta.ascension === asc + 1);
+  const dd = recordDailyResult(run.seed, 13, true);
+  state.run = null;
+  saveState();
+  const ascLine = asc > 0 ? ` <span style="color:var(--crimson)">[${ascById(asc).name}]</span>` : '';
+  const unlockLine = newTierUnlocked
+    ? `<br><b style="color:var(--gilt-bright)">✦ Unlocked: ${ascById(asc+1).name}</b> — ${ascById(asc+1).blurb}`
+    : (dd ? `<br><span style="color:var(--gilt)">Daily score ${dailyScore(13,true)} · ${dd.streak}-day streak 🔥</span>`
+          : '');
+  showModal({
+    title: 'The Sovereign Falls',
+    body: `<span style="font-family:'IM Fell English',serif;font-style:italic;color:var(--parchment)">${GF_STORY.victory}</span><br><br>You have inscribed every glyph. The codex is whole.${ascLine}${unlockLine}`,
+    icon: '✷',
+    choices: [
+      { label: 'Share victory', onClick: gfShare },
+      ...(GF_LINKS.itch ? [{ label: 'Name your price ↗', onClick: gfOpenItch }] : []),
+      { label: 'Begin Anew', onClick: ()=>{ showScreen('title-screen'); } }
+    ]
+  });
+}
+
+/* ----- 10. REWARD MODAL ----- */
+function showRewardModal(){
+  GFAudio.reward();
+  const run = state.run;
+  const rng = mulberry32(run.rngSeed + run.encounterIdx * 31);
+
+  // Build a weighted pool of runes from the entire set, biased toward what's not already in deck
+  const allOwned = new Set([...run.deck, ...run.hand, ...run.discard, ...run.spell.filter(Boolean)]);
+
+  // tier rule: early = mostly common/uncommon, later = uncommon/rare, last few = rare/mythic
+  let pool;
+  if(run.encounterIdx < 4){
+    pool = RUNES.filter(r => r.rarity === 'common' || r.rarity === 'uncommon');
+  } else if(run.encounterIdx < 9){
+    pool = RUNES.filter(r => r.rarity === 'uncommon' || r.rarity === 'rare');
+  } else {
+    pool = RUNES.filter(r => r.rarity === 'rare' || r.rarity === 'mythic');
+  }
+
+  // Phase 5: progressive reveal — a deep (rare/mythic) rune only appears once
+  // you've BOUND its element this run (cast a spell containing it). Engaging a
+  // branch is what reveals the branch (Neon-Abyss). Sigil element is pre-bound.
+  ensureRunDepth(run);
+  const _bound = new Set([...(run.boundElements||[]), sigilOf(run).element].filter(Boolean));
+  pool = pool.filter(r => (r.rarity==='common'||r.rarity==='uncommon') || _bound.has(r.element));
+
+  // Phase 4 + Apprentice rail: bias offers toward your Sigil's element so the
+  // build identity can snowball (StS-style curated pools). Rail STRENGTH scales
+  // with onboarding help — a railed deck is what makes the taught line
+  // assemble-able for shallow players (sim: DR alone +1.2 D7, DR+P2 +6.0).
+  const _sg = sigilOf(run);
+  if(_sg && _sg.element){
+    const _help = runHelp();
+    const boost = pool.filter(r=> r.element===_sg.element);
+    if(_help >= 2){
+      // strong rail (≈ sim DR): pool ≈ on-element ∪ basic runes
+      const railed = pool.filter(r=> r.element===_sg.element || r.rarity==='common' || r.rarity==='uncommon');
+      if(railed.length >= 3) pool = railed;
+    } else {
+      pool = pool.concat(boost);                  // baseline ~2x (UNCHANGED at A≥3)
+      if(_help === 1) pool = pool.concat(boost);  // light ~3x while climbing
+    }
+  }
+  if(pool.length < 3) pool = RUNES.filter(r=> r.rarity==='common'||r.rarity==='uncommon'); // safety
+
+  const offered = [];
+  while(offered.length < 3 && pool.length > 0){
+    const idx = Math.floor(rng() * pool.length);
+    const r = pool[idx];
+    if(!offered.find(o=>o.id===r.id)){
+      offered.push(r);
+    }
+    pool = pool.filter(x=>x.id !== r.id);
+  }
+
+  const isBoss = run.encounterIdx === 12;
+  if(isBoss){
+    // boss completed = win
+    return onVictory();
+  }
+
+  const advance = ()=>{ run.encounterIdx += 1; hideModal(); beginEncounter(); };
+
+  // Phase 4: Champion level-up at encounters 4 & 8 (idx 3 & 7)
+  if(run.champion && (run.encounterIdx === 3 || run.encounterIdx === 7 || run.encounterIdx === 11)){
+    const ch = CHAMPIONS[run.champion.id];
+    const ups = CHAMPION_UPS[run.champion.id] || ['Level up (+1)'];
+    return renderPickModal(`${ch.name} Awakens`, ch.desc, ups.map((label,i)=>({
+      name: label, desc: `Champion level ${ (run.champion.level||1) } → ${ (run.champion.level||1)+1 }`,
+      tags: 'champion', onClick: ()=>{ run.champion.level = (run.champion.level||1)+1; run.champion.path = i; advance(); }
+    })));
+  }
+
+  // Phase 3: Relic offer at encounters 3, 6, 10 (idx 2, 5, 9)
+  if([2,5,9].includes(run.encounterIdx)){
+    const rrng = mulberry32(run.rngSeed + run.encounterIdx*31 + 777);
+    let rpool = RELICS.filter(x=>!x.hidden && !run.relics.includes(x.id) && (x.rarity!=='mythic' || state.meta.runsCompleted>=1));
+    const rOffered = [];
+    while(rOffered.length < 3 && rpool.length > 0){
+      const i = Math.floor(rrng() * rpool.length);
+      rOffered.push(rpool[i]); rpool = rpool.filter((_,k)=>k!==i);
+    }
+    if(rOffered.length){
+      return renderPickModal('A Relic Surfaces', 'Bind one. It reshapes every spell for the rest of the run.',
+        rOffered.map(rel=>({
+          name: rel.name, desc: rel.desc, tags: `relic · ${rel.rarity}`,
+          onClick: ()=>{ run.relics.push(rel.id); advance(); }
+        })).concat([{ name:'Mend The Vellum', desc:'Skip. Restore 10 HP.', tags:'heal',
+          onClick: ()=>{ run.hp = Math.min(run.maxHp, run.hp + 10); advance(); } }]));
+    }
+  }
+
+  const choices = offered.map(r => ({
+    rune: r,
+    onClick: ()=>{
+      run.deck.push(r.id);
+      if(!state.meta.discoveredRunes.includes(r.id)){
+        state.meta.discoveredRunes.push(r.id);
+      }
+      run.encounterIdx += 1;
+      hideModal();
+      beginEncounter();
+    }
+  }));
+  // also offer "skip + heal" as a fourth option
+  choices.push({
+    isSkip: true,
+    onClick: ()=>{
+      run.hp = Math.min(run.maxHp, run.hp + 10);
+      run.encounterIdx += 1;
+      hideModal();
+      beginEncounter();
+    }
+  });
+
+  // Batch E: deck-thinning — sculpt the deck instead of growing it. Self-
+  // limiting (you forgo this reward) and floored so it can't degenerate. Great
+  // for excising a Sigil-sealed dead draw. Human-only: the sim never thins, so
+  // the balance baseline is unchanged and this can only help, never break it.
+  const _totalRunes = run.deck.length + run.discard.length + run.hand.length + run.spell.filter(Boolean).length;
+  if(_totalRunes > 6){
+    choices.push({
+      isForget: true,
+      onClick: ()=> forgetGlyphPicker(
+        ()=>{ run.encounterIdx += 1; hideModal(); beginEncounter(); },
+        ()=> renderRewardModal(choices))
+    });
+  }
+
+  renderRewardModal(choices);
+}
+
+// Remove a single instance of a rune id from wherever it lives in the deck.
+function removeOneFromDeck(run, id){
+  for(const pile of [run.hand, run.deck, run.discard]){
+    const i = pile.indexOf(id);
+    if(i !== -1){ pile.splice(i, 1); return true; }
+  }
+  const si = run.spell.indexOf(id);
+  if(si !== -1){ run.spell[si] = null; return true; }
+  return false;
+}
+
+// Batch E: the Forget-a-Glyph picker — strike one rune from the run forever.
+function forgetGlyphPicker(advance, onCancel){
+  const run = state.run;
+  const sg = sigilOf(run);
+  const all = [...run.deck, ...run.discard, ...run.hand, ...run.spell.filter(Boolean)];
+  const counts = {};
+  all.forEach(id=>{ counts[id] = (counts[id]||0)+1; });
+  const m = document.getElementById('modal-content');
+  m.innerHTML = `<h2>Forget a Glyph</h2>
+    <p>Strike one rune from your codex for the rest of this run — a leaner deck draws your strongest lines more often.</p>
+    <div class="choices" id="forget-list"></div>`;
+  const list = m.querySelector('#forget-list');
+  Object.keys(counts).sort((a,b)=>{
+    const ra=RUNES.find(x=>x.id===a), rb=RUNES.find(x=>x.id===b);
+    const sa = sg.forbid&&ra&&sg.forbid.includes(ra.element)?0:1;
+    const sb = sg.forbid&&rb&&sg.forbid.includes(rb.element)?0:1;
+    return sa-sb || a.localeCompare(b);          // sealed dead-draws first
+  }).forEach(id=>{
+    const r = RUNES.find(x=>x.id===id); if(!r) return;
+    const sealed = sg.forbid && sg.forbid.includes(r.element);
+    const el = document.createElement('div');
+    el.className = 'reward-rune';
+    el.innerHTML = `${runeCardHTML(r, true)}
+      <div class="reward-rune-info">
+        <span class="name">${r.name}${counts[id]>1?` ×${counts[id]}`:''}${sealed?' · <span style="color:var(--crimson)">SEALED</span>':''}</span>
+        <span class="desc">${r.desc}</span>
+        <span class="tags">${r.element} · ${r.shape}${sealed?' · dead draw — your Sigil seals it':''}</span>
+      </div>`;
+    el.onclick = ()=>{ removeOneFromDeck(run, id); GFAudio.reward(); advance(); };
+    list.appendChild(el);
+  });
+  const back = document.createElement('div');
+  back.className = 'reward-rune';
+  back.style.justifyContent = 'center';
+  back.innerHTML = `<div class="reward-rune-info" style="text-align:center"><span class="name">← Keep them all</span><span class="desc">Back to the offering.</span></div>`;
+  back.onclick = ()=> (onCancel ? onCancel() : hideModal());
+  list.appendChild(back);
+  document.getElementById('modal-bg').classList.add('active');
+}
+
+/* Phase 3/4: generic card-list picker (relics, champion, etc.) */
+function renderPickModal(title, subtitle, items){
+  const modal = document.getElementById('modal-content');
+  modal.innerHTML = `<h2>${title}</h2><p>${subtitle}</p><div class="choices" id="reward-choices"></div>`;
+  const list = modal.querySelector('#reward-choices');
+  items.forEach(it=>{
+    const el = document.createElement('div');
+    el.className = 'reward-rune';
+    el.innerHTML = `
+      <div class="rune" style="display:grid;place-items:center;font-size:22px;color:var(--gilt);">◆</div>
+      <div class="reward-rune-info">
+        <span class="name">${it.name}</span>
+        <span class="desc">${it.desc}</span>
+        <span class="tags">${it.tags||''}</span>
+      </div>`;
+    el.onclick = it.onClick;
+    list.appendChild(el);
+  });
+  document.getElementById('modal-bg').classList.add('active');
+}
+
+function renderRewardModal(choices){
+  const modal = document.getElementById('modal-content');
+  modal.innerHTML = `
+    <h2>The Sigil Yields</h2>
+    <p>Choose what to inscribe into your codex.</p>
+    <div class="choices" id="reward-choices"></div>
+  `;
+  const list = modal.querySelector('#reward-choices');
+  choices.forEach(c=>{
+    if(c.isSkip){
+      const el = document.createElement('div');
+      el.className = 'reward-rune';
+      el.innerHTML = `
+        <div class="rune" style="display:grid;place-items:center;">
+          <div style="font-size:24px;color:var(--gilt);">+10</div>
+        </div>
+        <div class="reward-rune-info">
+          <span class="name">Mend The Vellum</span>
+          <span class="desc">Skip the offering. Restore 10 HP.</span>
+          <span class="tags">heal</span>
+        </div>
+      `;
+      el.onclick = c.onClick;
+      list.appendChild(el);
+    } else if(c.isForget){
+      const el = document.createElement('div');
+      el.className = 'reward-rune';
+      el.innerHTML = `
+        <div class="rune" style="display:grid;place-items:center;">
+          <div style="font-size:24px;color:var(--crimson);">⊘</div>
+        </div>
+        <div class="reward-rune-info">
+          <span class="name">Forget a Glyph</span>
+          <span class="desc">Strike one rune from your deck forever. A leaner deck finds your best lines.</span>
+          <span class="tags">thin · sculpt</span>
+        </div>
+      `;
+      el.onclick = c.onClick;
+      list.appendChild(el);
+    } else {
+      const r = c.rune;
+      const el = document.createElement('div');
+      el.className = 'reward-rune';
+      el.innerHTML = `
+        ${runeCardHTML(r, true)}
+        <div class="reward-rune-info">
+          <span class="name">${r.name}</span>
+          <span class="desc">${r.desc}</span>
+          <span class="tags">${r.element} · ${r.shape} · ${r.rarity}</span>
+        </div>
+      `;
+      el.onclick = c.onClick;
+      list.appendChild(el);
+    }
+  });
+  document.getElementById('modal-bg').classList.add('active');
+}
+
+/* ----- 11. RENDER ----- */
+function runeCardHTML(rune, small){
+  const slotAttr = `data-art-slot="rune-${rune.id}"`;
+  return `
+    <div class="rune rarity-${rune.rarity}">
+      <div class="rune-art placeholder" ${slotAttr} data-glyph="${rune.glyph}">
+        <!-- Swap in art-slots/rune-${rune.id}.png -->
+      </div>
+      ${small ? '' : `<div class="rune-name">${rune.name}</div>`}
+      ${small ? '' : `<div class="rune-stats">
+        <span><span class="rune-element-dot el-${rune.element.toLowerCase()}"></span>${rune.shape[0]}</span>
+        <span class="rune-stat-power">${rune.basePower}</span>
+      </div>`}
+    </div>
+  `;
+}
+
+/* ----- ART AUTO-LOADER -----
+   On each render, look for [data-art-slot] elements still showing a placeholder
+   and attempt to load /art-slots/<slot>.png. If the image loads successfully,
+   replace the placeholder content with an <img>. Failed loads are cached so
+   we don't retry on every render.
+*/
+const ART_CACHE = new Map();  // slot -> 'loaded' | 'missing' | 'pending'
+function hydrateArt(){
+  document.querySelectorAll('[data-art-slot]').forEach(el=>{
+    const slot = el.getAttribute('data-art-slot');
+    if(!slot || !el.classList.contains('placeholder')) return;
+    if(el.querySelector('img')) return;
+    const cached = ART_CACHE.get(slot);
+    if(cached === 'missing') return;
+    if(cached === 'pending') return;
+    ART_CACHE.set(slot, 'pending');
+    const img = new Image();
+    img.onload = ()=>{
+      ART_CACHE.set(slot, 'loaded');
+      // re-query (the original element may have re-rendered)
+      document.querySelectorAll(`[data-art-slot="${slot}"]`).forEach(target=>{
+        target.classList.remove('placeholder');
+        target.innerHTML = '';
+        const ix = new Image();
+        ix.src = `art-slots/${slot}.png`;
+        target.appendChild(ix);
+      });
+    };
+    img.onerror = ()=>{ ART_CACHE.set(slot, 'missing'); };
+    img.src = `art-slots/${slot}.png`;
+  });
+}
+
+function renderGame(){
+  const run = state.run;
+  if(!run) return;
+
+  const node = run.path[run.encounterIdx];
+  const enemy = ENEMIES.find(e=>e.id===node.enemyId);
+
+  // HUD
+  document.getElementById('hud-encounter').textContent = run.encounterIdx + 1;
+  document.getElementById('hud-hp').textContent = run.hp;
+  document.getElementById('hud-hp-fill').style.width = (100 * run.hp / run.maxHp) + '%';
+  const fluencyMult = 1 + Math.min(0.72, (run.fluency || 0) * 0.06);
+  document.getElementById('hud-fluency').textContent = '×' + fluencyMult.toFixed(2);
+  document.getElementById('deck-info').textContent = `deck: ${run.deck.length} / discard: ${run.discard.length}`;
+
+  // Depth status strip — make Sigil/relics/champion/prophecy/bound legible.
+  ensureRunDepth(run);
+  const dEl = document.getElementById('hud-depth');
+  if(dEl){
+    const sg = sigilOf(run);
+    const chips = [];
+    chips.push(`<span class="dchip" data-tip="${sg.desc||'Your run identity — blesses and forbids.'}">◈ <b>${sg.name}</b></span>`);
+    if(run.champion && CHAMPIONS[run.champion.id]){
+      chips.push(`<span class="dchip" data-tip="${CHAMPIONS[run.champion.id].desc}">★ ${CHAMPIONS[run.champion.id].name} <b>Lv${run.champion.level||1}</b></span>`);
+    }
+    const relObjs = (run.relics||[]).map(id=>RELICS.find(x=>x.id===id)).filter(Boolean);
+    const pips = relObjs.map(r=>`<i class="rtok r-${r.rarity}"></i>`).join('');
+    const relTip = relObjs.length ? relObjs.map(r=>`${r.name} — ${r.desc}`).join(' · ') : 'No relics bound yet.';
+    chips.push(`<span class="dchip${relObjs.length?'':' dim'}" data-tip="${relTip}">⬡ relics <b>${relObjs.length}</b>${pips}</span>`);
+    const pr = run.progression && run.progression.prophecy;
+    if(pr){
+      chips.push(`<span class="dchip dprophecy ${pr.done?'done':''}" data-tip="Fulfil the named fusion '${pr.name}' for +12 HP">✦ ${pr.done?'prophecy ✓':'prophecy: '+pr.name}</span>`);
+    }
+    const bound = (run.boundElements||[]);
+    if(bound.length) chips.push(`<span class="dchip dim" data-tip="Elements bound this run unlock their deeper runes">⛓ ${bound.join(' ')}</span>`);
+    if(sg.forbid && sg.forbid.length) chips.push(`<span class="dchip dim" data-tip="Sealed by your Sigil — these runes deal 0">⊘ ${sg.forbid.join(' ')}</span>`);
+    // Batch E: transmutation chase — surface the closest hidden triad as a
+    // visible build goal (it was an invisible easter egg that drove no drafting).
+    const _boundIds = new Set(run.progression._boundIds || []);
+    let _bestTx = null, _bestN = 0;
+    TRANSMUTATIONS.forEach(tx=>{
+      if(run.progression.transmuted.includes(tx.id)) return;
+      const n = tx.members.filter(m=>_boundIds.has(m)).length;
+      if(n > _bestN){ _bestN = n; _bestTx = tx; }
+    });
+    if(_bestTx && _bestN >= 1){
+      const need = _bestTx.members.filter(m=>!_boundIds.has(m)).map(m=>{ const r=RUNES.find(x=>x.id===m); return r?r.name:m; });
+      chips.push(`<span class="dchip dchase" data-tip="Cast all three of this hidden triad in one run to TRANSMUTE → a run-rewiring relic. Still need: ${need.join(', ')}.">⚗ ${_bestTx.name} <b>${_bestN}/3</b></span>`);
+    }
+    dEl.innerHTML = chips.join('');
+  }
+
+  // Enemy
+  document.getElementById('enemy-name').textContent = enemy.name;
+  const armorBadge = enemy.armor
+    ? ` <span class="enemy-armor" data-tip="Armor — shrugs off ${enemy.armor} from every hit. Pierce it (Hollow, Eclipse, Air via the Storm Sigil) or just strike bigger.">⛊${enemy.armor}</span>`
+    : '';
+  document.getElementById('enemy-hp-text').innerHTML = `${run.enemyHp}/${run.enemyMaxHp}${armorBadge}`;
+  const hpPct = (100 * run.enemyHp / run.enemyMaxHp) + '%';
+  document.getElementById('enemy-hp-fill').style.width = hpPct;
+  const _ghost = document.getElementById('enemy-hp-ghost');
+  if(_ghost) _ghost.style.width = hpPct;
+  const portrait = document.getElementById('enemy-portrait');
+  portrait.setAttribute('data-art-slot', `enemy-${enemy.id}`);
+  portrait.setAttribute('data-glyph', enemy.glyph);
+  // Batch B: enemy INTENT — telegraph what it will do this turn (icon + number),
+  // with magnitude pips. Tap the chip for an explanation (existing tip system).
+  const threatMeter = document.getElementById('threat-meter');
+  const iv = intentView(run);
+  const pipBase = Math.max(1, Math.round((enemy.threat || 1) * 0.6));
+  const pipN = Math.max(0, Math.min(5, Math.ceil((iv.dmg || 0) / pipBase)));
+  let pips = '';
+  for(let i=0;i<5;i++) pips += `<span class="threat-pip${i < pipN ? ' active' : ''}"></span>`;
+  threatMeter.innerHTML =
+    `<div class="enemy-intent intent-${iv.cls}" data-tip="${intentTip(run)}">` +
+      `<span class="ei-icon">${iv.icon}</span><span class="ei-label">${iv.label}</span>` +
+      (iv.num != null ? `<span class="ei-num">${iv.num}</span>` : '') +
+    `</div>` +
+    `<div class="threat-pips">${pips}</div>`;
+  // Show the line the Sovereign is reading as soon as it appears (phase ≥1), so
+  // the player is warned BEFORE the counter bites — not after a third of its HP.
+  if(bossPhase(run) >= 1){
+    const dom = runDominantElement(run);
+    if(dom) threatMeter.innerHTML +=
+      `<div class="boss-read" data-tip="The Sovereign dampens spells built on ${dom} — the element you leaned on most. Finish it with a second line.">⟁ counters <b>${dom}</b></div>`;
+  }
+
+  // Spell slots
+  const slotsEl = document.getElementById('spell-slots');
+  slotsEl.innerHTML = '';
+  run.spell.forEach((id, i)=>{
+    const slot = document.createElement('div');
+    const justFilled = id && _gfPrevSpell[i] !== id;
+    slot.className = 'spell-slot' + (id ? ' filled' : '') + (justFilled ? ' gf-fill' : '');
+    slot.dataset.slot = i;
+    if(id){
+      const rune = RUNES.find(r=>r.id===id);
+      slot.innerHTML = runeCardHTML(rune);
+    } else {
+      slot.textContent = ['I','II','III'][i];
+    }
+    slot.onclick = ()=> handleSlotTap(i);
+    slotsEl.appendChild(slot);
+  });
+  _gfPrevSpell = run.spell.slice();
+
+  // Synergy hints on slots
+  const present = run.spell.filter(Boolean).map(id => RUNES.find(r=>r.id===id));
+  if(present.length >= 2){
+    const elCounts = {};
+    const shCounts = {};
+    present.forEach(r=>{
+      elCounts[r.element] = (elCounts[r.element]||0)+1;
+      shCounts[r.shape] = (shCounts[r.shape]||0)+1;
+    });
+    const hasEl = Object.values(elCounts).some(v=>v>=2);
+    const hasSh = Object.values(shCounts).some(v=>v>=2);
+    [...slotsEl.children].forEach((sl,i)=>{
+      if(!run.spell[i]) return;
+      const r = RUNES.find(x=>x.id===run.spell[i]);
+      const elMatch = hasEl && elCounts[r.element] >= 2;
+      const shMatch = hasSh && shCounts[r.shape] >= 2;
+      if(elMatch && shMatch) sl.classList.add('synergy-both');
+      else if(elMatch) sl.classList.add('synergy-element');
+      else if(shMatch) sl.classList.add('synergy-shape');
+    });
+  }
+
+  // Spell readout (Batch D: show the ACTUAL post-armor number AND the live
+  // POWER → XMULT → fluency breakdown so the player can SEE why a number is
+  // what it is — the engine was previously invisible behind a dev gate).
+  const _pv = resolveSpell();
+  const rawDmg = _pv ? _pv.damage : 0;
+  const dmg = _pv ? netEnemyDamage(run, rawDmg, _pv) : 0;
+  const sdEl = document.getElementById('spell-damage');
+  sdEl.textContent = dmg > 0 ? dmg : '—';
+  const heat = dmg <= 0 ? 0 : gfDamageTier(dmg);
+  sdEl.className = 'spell-damage' + (heat >= 2 ? ' heat-' + heat : '');
+  document.getElementById('spell-formula').innerHTML = formulaBreakdown(_pv, present, run);
+
+  // P2 "teach the ceiling": point brand-new players at the strong multi-rune
+  // line. The deck-rail (above) makes ≥3 of one element actually land in hand,
+  // so this advice is followable. Fades once they stage it / win / climb.
+  const coachEl = document.getElementById('spell-coach');
+  if(coachEl){
+    let msg = '';
+    if(runHelp() >= 2){
+      // Teach whichever synergy the hand can ACTUALLY make this turn. The
+      // starter deck rarely holds an element pair but always holds a SHAPE pair
+      // (Bolt: ember+ray, Pulse: gust+veil, Sigil: hollow+tally), so a brand-new
+      // player can feel the multiplier jump on their very first cast.
+      const byEl = {}, bySh = {};
+      run.hand.forEach(id=>{ const r=RUNES.find(x=>x.id===id); if(r){ byEl[r.element]=(byEl[r.element]||0)+1; bySh[r.shape]=(bySh[r.shape]||0)+1; } });
+      const topEl = Object.keys(byEl).sort((a,b)=>byEl[b]-byEl[a])[0];
+      const topSh = Object.keys(bySh).sort((a,b)=>bySh[b]-bySh[a])[0];
+      const monoElStaged = present.length>=3 && new Set(present.map(r=>r.element)).size===1;
+      const monoShStaged = present.length>=3 && new Set(present.map(r=>r.shape)).size===1;
+      // Boss pivot: once the Sovereign is dampening the player's dominant line,
+      // teach the ESCAPE (a second element) — the exact skill the retention sim
+      // credits for rescuing new players. Wins over the mono-stack advice above.
+      if(bossPhase(run) >= 2){
+        const dom = runDominantElement(run);
+        msg = dom ? `▲ The Sovereign dampens ${dom} — cast a spell that ISN'T mostly ${dom}`
+                  : '▲ The Sovereign counters your main line — bring a second element';
+      } else if(!monoElStaged && topEl && byEl[topEl] >= 3){
+        msg = `▲ Fuse 3 ${topEl} runes in one spell — huge hit`;
+      } else if(!monoShStaged && topSh && bySh[topSh] >= 3){
+        msg = `▲ Fuse 3 ${topSh}-shape runes — same idea, big XMULT`;
+      } else if(present.length===0 && topEl && byEl[topEl] >= 2){
+        msg = `▲ Stack your ${topEl} runes — same element multiplies`;
+      } else if(present.length===0 && topSh && bySh[topSh] >= 2){
+        msg = `▲ Stack 2 ${topSh}-shape runes — same shape multiplies`;
+      }
+    }
+    coachEl.textContent = msg;
+  }
+
+  // keep the dockable guide live as the hand changes (stage/recall/draw)
+  if(document.getElementById('guide-panel').classList.contains('open')) renderGuidePanel();
+
+  // Hand
+  const handEl = document.getElementById('hand-grid');
+  handEl.innerHTML = '';
+  run.hand.forEach((id, i)=>{
+    const rune = RUNES.find(r=>r.id===id);
+    const card = document.createElement('div');
+    card.innerHTML = runeCardHTML(rune);
+    const cardEl = card.firstElementChild;
+    cardEl.dataset.handIdx = i;
+    cardEl.onclick = ()=> handleHandTap(i);
+    cardEl.oncontextmenu = (e)=>{ e.preventDefault(); showTooltipFor(cardEl, rune); };
+    bindLongPress(cardEl, ()=> showTooltipFor(cardEl, rune));
+    handEl.appendChild(cardEl);
+  });
+
+  // Cast button
+  document.getElementById('btn-cast').disabled = present.length === 0;
+
+  // Try to hydrate any dropped art for runes/enemies
+  hydrateArt();
+}
+
+function formulaText(runes){
+  if(runes.length === 0) return '—';
+  return runes.map(r=>{
+    const el = r.element[0];
+    return `${el}·${r.basePower}`;
+  }).join(' + ');
+}
+
+/* Batch D: the legible breakdown — POWER → ×XMULT [reasons] → ×fluency = N.
+   Reuses the trace resolveSpell already builds (was dev-gated). The single
+   biggest fix for the retention cliff: the 80% who never win could not SEE
+   the multiplier that wins. Colour language matches Balatro: POWER blue-ish,
+   XMULT gold. */
+function formulaBreakdown(result, present, run){
+  if(!result || !result.trace || !present.length) return '<span class="fb-op">stage runes to inscribe a spell</span>';
+  const t = result.trace;
+  const segs = [`<span class="fb-pow">POWER ${Math.round(t.baseSum)}</span>`];
+  const mult = (t.globalMult || 1) * (t.xmult || 1);
+  if(mult > 1.005){
+    const els = {}, shs = {};
+    present.forEach(r=>{ els[r.element] = (els[r.element]||0)+1; shs[r.shape] = (shs[r.shape]||0)+1; });
+    const topEl = Object.entries(els).sort((a,b)=>b[1]-a[1])[0];
+    const topSh = Object.entries(shs).sort((a,b)=>b[1]-a[1])[0];
+    const rs = [];
+    if(t.elementMult > 1 && topEl) rs.push(`${topEl[1]} ${topEl[0]}`);
+    if(t.shapeMult   > 1 && topSh) rs.push(`${topSh[1]} ${topSh[0]}`);
+    segs.push(`<span class="fb-xm">×${mult.toFixed(mult < 10 ? 2 : 1)} XMULT</span>${rs.length ? `<span class="fb-rs">[${rs.join(' · ')}]</span>` : ''}`);
+  }
+  if(t.spellRetrigger) segs.push(`<span class="fb-xm">×${(1 + t.spellRetrigger).toFixed(2)} retrigger</span>`);
+  if(t.fluencyMult > 1.005) segs.push(`<span class="fb-fl">×${t.fluencyMult.toFixed(2)} fluency</span>`);
+  // armor step (Batch C1) — show the foe shaving the hit, or a pierce
+  const enemy = run && intentEnemy(run);
+  if(enemy && enemy.armor){
+    if(result.trueDamage || result.ignoreWard) segs.push(`<span class="fb-pierce">pierces armor</span>`);
+    else segs.push(`<span class="fb-armor">−${enemy.armor} armor</span>`);
+  }
+  return segs.join('<span class="fb-op">→</span>');
+}
+
+function handleHandTap(handIdx){
+  const run = state.run;
+  const runeId = run.hand[handIdx];
+  if(!runeId) return;
+  const emptySlot = run.spell.indexOf(null);
+  if(emptySlot === -1) return;
+  run.spell[emptySlot] = runeId;
+  run.hand.splice(handIdx, 1);
+  renderGame();
+}
+
+function handleSlotTap(slotIdx){
+  const run = state.run;
+  GFAudio.tap();
+  if(run.spell[slotIdx]){
+    run.hand.push(run.spell[slotIdx]);
+    run.spell[slotIdx] = null;
+    renderGame();
+  }
+}
+
+function clearSpell(){
+  state.run.spell.forEach(id => { if(id) state.run.hand.push(id); });
+  state.run.spell = [null, null, null];
+  renderGame();
+}
+
+/* ----- 12. SCREENS ----- */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(id === 'codex-screen') renderCodex();
+  if(id === 'title-screen') renderTitleMeta();
+}
+
+/* Title progression strip — the at-a-glance "what have I earned / what's
+   next" that turns the title screen into a goal board. */
+function renderTitleMeta(){
+  const el = document.getElementById('title-meta');
+  if(!el) return;
+  const m = state.meta;
+  const unlocked = m.ascension || 0;
+  const beaten = m.ascensionBeaten || 0;
+  const cur = ascById(unlocked);
+  const combos = Object.keys(m.discoveredCombos||{}).length;
+  const runes = (m.discoveredRunes||[]).length;
+  const d = m.daily || {};
+  const parts = [];
+  parts.push(`<span class="tm-chip" data-tip="Highest Ascension you've unlocked. Win at your top tier to open the next.">⛰ Depth <b>${cur.name}</b>${beaten<unlocked?` · next: clear ${ascById(beaten+1).name}`:''}</span>`);
+  if(d.streak > 0) parts.push(`<span class="tm-chip" data-tip="Consecutive days you've played the Daily Sigil. Best: ${d.bestStreak||d.streak}.">🔥 Daily streak <b>${d.streak}</b></span>`);
+  parts.push(`<span class="tm-chip" data-tip="Your codex: named fusions and bound glyphs discovered.">✦ Codex <b>${combos}/${NAMED_COMBOS.length}</b> · <b>${runes}/${RUNES.length}</b></span>`);
+  if(m.runsCompleted > 0) parts.push(`<span class="tm-chip" data-tip="Full 13/13 codices you've sealed.">✷ Wins <b>${m.runsCompleted}</b></span>`);
+  parts.push(`<span class="tm-chip" style="opacity:.5" data-tip="App build currently loaded. If this doesn't change after a fix, force-refresh.">build ${GF_BUILD}</span>`);
+  el.innerHTML = parts.join('');
+}
+
+function renderCodex(){
+  const stats = document.getElementById('codex-stats');
+  stats.innerHTML = `
+    <div class="codex-stat"><div class="value">${state.meta.discoveredRunes.length}/${RUNES.length}</div><div class="label">glyphs bound</div></div>
+    <div class="codex-stat"><div class="value">${Object.keys(state.meta.discoveredCombos).length}/${NAMED_COMBOS.length}</div><div class="label">fusions named</div></div>
+    <div class="codex-stat"><div class="value">${state.meta.runsCompleted}</div><div class="label">codices sealed</div></div>
+  `;
+  // Mastery track
+  const m = state.meta;
+  const earned = MASTERY.filter(s=>{ try { return s.done(m); } catch(e){ return false; } });
+  m.mastery = m.mastery || { seals:[] };
+  const earnedIds = earned.map(s=>s.id);
+  if(earnedIds.join(',') !== (m.mastery.seals||[]).join(',')){ m.mastery.seals = earnedIds; saveState(); }
+  const mcEl = document.getElementById('codex-mastery-count');
+  if(mcEl) mcEl.textContent = `${earned.length}/${MASTERY.length}`;
+  const mtEl = document.getElementById('codex-mastery');
+  if(mtEl){
+    mtEl.innerHTML = MASTERY.map(s=>{
+      const got = earnedIds.includes(s.id);
+      return `<span class="mseal${got?' got':''}" data-tip="${s.tip}${got?' ✓ earned':''}">${got?'◆':'◇'} ${s.name}</span>`;
+    }).join('');
+  }
+  // combos
+  const cEl = document.getElementById('codex-combos');
+  cEl.innerHTML = '';
+  const prophecyId = state.run && state.run.progression && state.run.progression.prophecy
+    ? state.run.progression.prophecy.id : null;
+  // Forward-looking codex: every named fusion is listed; undiscovered ones
+  // show as locked silhouettes so you can hunt them. Prophecy is starred.
+  NAMED_COMBOS.forEach(combo=>{
+    const c = state.meta.discoveredCombos[combo.id];
+    const el = document.createElement('div');
+    el.className = 'codex-combo';
+    const star = combo.id===prophecyId ? ' ✦' : '';
+    if(c){
+      const glyphs = c.runeIds.map(rid=>RUNES.find(r=>r.id===rid)?.glyph||'·').join(' ');
+      el.innerHTML = `<div><div class="name">${c.name}${star}</div><div class="glyphs">${glyphs}</div></div><div class="peak">${c.peakDamage}</div>`;
+    } else {
+      el.style.opacity = '0.45';
+      el.innerHTML = `<div><div class="name">??? ${combo.id===prophecyId?'· PROPHECY ✦':'· locked'}</div><div class="glyphs">▢ ▢ ▢</div></div><div class="peak">—</div>`;
+    }
+    cEl.appendChild(el);
+  });
+  // runes
+  const rEl = document.getElementById('codex-runes');
+  rEl.innerHTML = '';
+  RUNES.forEach(r=>{
+    if(state.meta.discoveredRunes.includes(r.id)){
+      const card = document.createElement('div');
+      card.innerHTML = runeCardHTML(r);
+      const el = card.firstElementChild;
+      bindLongPress(el, ()=>showTooltipFor(el, r));
+      el.onclick = ()=>showTooltipFor(el, r);
+      rEl.appendChild(el);
+    } else {
+      const locked = document.createElement('div');
+      locked.className = 'codex-rune-locked';
+      locked.textContent = '?';
+      rEl.appendChild(locked);
+    }
+  });
+}
+
+/* ----- 13. MODALS, TOOLTIPS, EFFECTS ----- */
+function showModal({title, body, icon, iconDefeat, choices}){
+  const m = document.getElementById('modal-content');
+  m.innerHTML = `
+    <div class="result-icon ${iconDefeat?'defeat':''}">${icon || '◆'}</div>
+    <h2>${title}</h2>
+    <p>${body}</p>
+    <div class="choices"></div>
+  `;
+  const list = m.querySelector('.choices');
+  (choices || []).forEach(c=>{
+    const b = document.createElement('button');
+    b.className = 'btn primary';
+    b.textContent = c.label;
+    b.onclick = c.onClick;
+    list.appendChild(b);
+  });
+  document.getElementById('modal-bg').classList.add('active');
+}
+function hideModal(){
+  document.getElementById('modal-bg').classList.remove('active');
+}
+
+/* In-run field guide — what you KNOW (named fusions) plus which of them your
+   hand can make RIGHT NOW (hand brute-forced through findComboName, ≤3 = the
+   slot cap). Read-only overlay; never reveals undiscovered combos — the
+   discovery pillar stays intact. Pairs with the b11 coach. */
+function renderGuidePanel(){
+  const body = document.getElementById('guide-panel-body');
+  if(!body) return;
+  const run = state.run;
+  const known = state.meta.discoveredCombos || {};
+  const knownIds = Object.keys(known);
+  const readyNow = {};  // comboId -> [glyph,…] of the hand runes that hit it
+  if(run && run.hand && run.hand.length){
+    const hand = run.hand.map(id=>RUNES.find(r=>r.id===id)).filter(Boolean);
+    const n = hand.length;
+    const test = (idxs)=>{
+      const c = findComboName(idxs.map(i=>hand[i]));
+      if(c && known[c.id] && !readyNow[c.id]) readyNow[c.id] = idxs.map(i=>hand[i].glyph);
+    };
+    for(let i=0;i<n;i++){ test([i]);
+      for(let j=0;j<n;j++){ if(j===i) continue; test([i,j]);
+        for(let k=0;k<n;k++){ if(k===i||k===j) continue; test([i,j,k]); } } }
+  }
+  const readyIds = Object.keys(readyNow);
+  const glyphsOf = ids => ids.map(rid=>{ const r=RUNES.find(x=>x.id===rid); return r?r.glyph:'·'; }).join(' ');
+  const lbl = t => `<div style="text-align:left;font-family:'JetBrains Mono',monospace;font-size:11px;color:#c7a155;text-transform:uppercase;letter-spacing:.06em;margin:0 0 4px;">${t}</div>`;
+
+  let html = `<h2 style="margin:0 32px 4px 0;font-size:18px;">✦ Field Guide</h2>
+    <p style="color:var(--parchment-sh);font-size:12px;margin:0 0 12px;">What you've named — and what this hand can make right now.</p>`;
+
+  html += lbl('Ready from your hand');
+  if(readyIds.length){
+    html += `<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;">` +
+      readyIds.map(id=>`<div class="codex-combo"><div><div class="name">${known[id].name}</div><div class="glyphs">${readyNow[id].join(' ')}</div></div><div class="peak">▲</div></div>`).join('') +
+      `</div>`;
+  } else {
+    html += `<p style="color:var(--parchment-sh);font-size:12px;margin:0 0 14px;font-style:italic;">Nothing you've named is buildable from this hand. Try stacking 3 of one element — or 3 of one shape — to find a new fusion.</p>`;
+  }
+
+  html += lbl(`Fusions you've named · ${knownIds.length}/${NAMED_COMBOS.length}`);
+  if(knownIds.length){
+    const sorted = knownIds.slice().sort((a,b)=> (readyNow[b]?1:0)-(readyNow[a]?1:0) || (known[b].peakDamage||0)-(known[a].peakDamage||0));
+    html += `<div style="display:flex;flex-direction:column;gap:6px;">` +
+      sorted.map(id=>{
+        const c = known[id], rdy = !!readyNow[id];
+        return `<div class="codex-combo"${rdy?' style="box-shadow:inset 0 0 0 1px rgba(199,161,85,.55);"':''}><div><div class="name">${c.name}${rdy?' · ready':''}</div><div class="glyphs">${glyphsOf(c.runeIds||[])}</div></div><div class="peak">${c.peakDamage||0}</div></div>`;
+      }).join('') +
+      `</div>`;
+  } else {
+    html += `<p style="color:var(--parchment-sh);font-size:12px;margin:0;font-style:italic;">You haven't named a fusion yet. Fuse 3 runes that share an element or a shape — the codex remembers what you discover, forever.</p>`;
+  }
+
+  body.innerHTML = html;
+}
+function toggleGuide(){
+  const p = document.getElementById('guide-panel');
+  const open = p.classList.toggle('open');
+  if(open) renderGuidePanel();
+  if(window.GFAudio && GFAudio.tap) GFAudio.tap();
+}
+
+/* Phase 4: choose your Sigil (run identity) before a fresh run */
+function showIntro(){
+  const m = document.getElementById('modal-content');
+  m.innerHTML = `
+    <h2>How to Play</h2>
+    <div style="font-family:'IM Fell English',serif;color:var(--parchment-dk);font-size:14px;line-height:1.6;text-align:left;padding:4px 4px 12px;">
+      <p style="margin:0 0 8px;">Fight 13 foes, then a boss. Each turn you fuse runes into one spell:</p>
+      <p style="margin:0 0 6px;">① Tap up to <b>3 runes</b> from your hand — they fill slots <b>I · II · III</b>.</p>
+      <p style="margin:0 0 6px;">② <b>Order matters.</b> The gold number is live damage = POWER × <b>XMULT</b>. The little line beside it shows exactly how it adds up.</p>
+      <p style="margin:0 0 6px;">③ <b>XMULT</b> is a multiplier that compounds when your runes share an <b>element</b> or a <b>shape</b> — 3 of a kind multiplies <i>hard</i>. That's where big numbers come from.</p>
+      <p style="margin:0 0 6px;">④ Tap <b>Inscribe</b> to cast. Survive, take a reward, repeat.</p>
+      <p style="margin:8px 0 0;color:var(--parchment-sh);">Your <b>Sigil</b> (picked at run start) blesses one element and seals another — that's your build. Casting a rune <b>binds</b> its element and reveals deeper runes. Combos you discover are named in the codex forever.</p>
+    </div>
+    <div class="choices" id="intro-choices"></div>`;
+  const list = m.querySelector('#intro-choices');
+  const b = document.createElement('button');
+  b.className = 'btn primary'; b.textContent = 'Begin';
+  b.onclick = ()=>{ state.meta.seenIntro = true; saveState(); hideModal(); };
+  list.appendChild(b);
+  document.getElementById('modal-bg').classList.add('active');
+}
+
+function chooseSigil(){
+  const m = document.getElementById('modal-content');
+  const maxAsc = state.meta.ascension || 0;
+  let pick = maxAsc;  // default to the hardest you've earned
+  m.innerHTML = `<h2>Choose Your Sigil</h2>
+    <p>Your bond shapes the whole run. Some power is given; some is sealed away.</p>
+    ${maxAsc > 0 ? `<div class="asc-picker">
+      <button id="asc-dn" aria-label="Lower Ascension">−</button>
+      <div class="asc-info">
+        <div class="asc-name" id="asc-name"></div>
+        <div class="asc-blurb" id="asc-blurb"></div>
+      </div>
+      <button id="asc-up" aria-label="Higher Ascension">+</button>
+    </div>` : ''}
+    <div class="choices" id="sigil-choices"></div>`;
+  function paintAsc(){
+    const A = ascById(pick);
+    const nm = m.querySelector('#asc-name'), bl = m.querySelector('#asc-blurb');
+    if(nm) nm.textContent = `${A.name}${pick>0?` (Ascension ${pick})`:''}`;
+    if(bl) bl.textContent = pick === 0 ? 'The base codex — as the sim balanced it.' : A.blurb;
+    const up = m.querySelector('#asc-up'), dn = m.querySelector('#asc-dn');
+    if(up) up.disabled = pick >= maxAsc;
+    if(dn) dn.disabled = pick <= 0;
+  }
+  if(maxAsc > 0){
+    m.querySelector('#asc-up').onclick = ()=>{ if(pick<maxAsc){ pick++; GFAudio.tap(); paintAsc(); } };
+    m.querySelector('#asc-dn').onclick = ()=>{ if(pick>0){ pick--; GFAudio.tap(); paintAsc(); } };
+    paintAsc();
+  }
+  const list = m.querySelector('#sigil-choices');
+  // Batch F: plain-language "good for" lines so a new player can pick by
+  // intent, not by parsing boon math. Free (no element rail) is shown LAST and
+  // flagged "advanced" so it isn't the path-of-least-resistance blandest start.
+  const SIGIL_TAGLINES = {
+    free:  '◆ no element rail — for players who know the codex (advanced)',
+    ember: '🔥 good for: stacking Fire — aggressive, high tempo',
+    order: '┼ good for: one-element symmetry — XMULT compounds',
+    void:  '⊙ good for: high-risk Void payoffs — fragile, explosive',
+    tide:  '≈ good for: Water scaling — tanky, snowballs late',
+    zephyr:'≋ good for: Air chains & retrigger loops',
+    umbra: '☾ good for: Shadow + Light eclipse combos',
+  };
+  const ordered = SIGILS.slice().sort((a,b)=> (a.id==='free'?1:0) - (b.id==='free'?1:0));
+  ordered.forEach(s=>{
+    const forb = (s.forbid&&s.forbid.length) ? ` · seals ${s.forbid.join('/')}` : '';
+    const champ = s.champion && CHAMPIONS[s.champion] ? ` · Champion: ${CHAMPIONS[s.champion].name}` : '';
+    const tagline = SIGIL_TAGLINES[s.id] || '';
+    const el = document.createElement('div');
+    el.className = 'reward-rune' + (s.id==='free' ? ' sigil-advanced' : '');
+    el.innerHTML = `
+      <div class="rune" style="display:grid;place-items:center;font-size:26px;color:var(--gilt);">${s.element?s.element[0]:'∅'}</div>
+      <div class="reward-rune-info">
+        <span class="name">${s.name}</span>
+        ${tagline ? `<span class="desc" style="color:var(--gilt)">${tagline}</span>` : ''}
+        <span class="desc">${s.desc}</span>
+        <span class="tags">${(s.maxHp||50)} HP${forb}${champ}</span>
+      </div>`;
+    el.onclick = ()=>{ hideModal(); startNewRun(undefined, s.id, pick); showScreen('game-screen'); };
+    list.appendChild(el);
+  });
+  document.getElementById('modal-bg').classList.add('active');
+}
+
+function showTooltipFor(el, rune){
+  const t = document.getElementById('tooltip');
+  t.innerHTML = `
+    <span class="tt-name">${rune.name}</span>
+    ${rune.desc}
+    <span class="tt-tags">${rune.element.toUpperCase()} · ${rune.shape.toUpperCase()} · PWR ${rune.basePower} · ${rune.rarity.toUpperCase()}</span>
+  `;
+  t.style.display = 'block';
+  const r = el.getBoundingClientRect();
+  const tw = t.offsetWidth, th = t.offsetHeight;
+  let x = r.left + r.width/2 - tw/2;
+  let y = r.top - th - 10;
+  if(y < 8) y = r.bottom + 10;
+  x = Math.max(8, Math.min(window.innerWidth - tw - 8, x));
+  t.style.left = x + 'px';
+  t.style.top = y + 'px';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(()=>{ t.style.display = 'none'; }, 2000);
+}
+
+function bindLongPress(el, fn){
+  let timer;
+  const start = ()=>{ timer = setTimeout(fn, 380); };
+  const cancel = ()=>{ clearTimeout(timer); };
+  el.addEventListener('touchstart', start, {passive:true});
+  el.addEventListener('touchend', cancel);
+  el.addEventListener('touchmove', cancel);
+  el.addEventListener('mousedown', start);
+  el.addEventListener('mouseup', cancel);
+  el.addEventListener('mouseleave', cancel);
+}
+
+function gfDamageTier(amount){
+  if(amount >= 250) return 4;
+  if(amount >= 80)  return 3;
+  if(amount >= 25)  return 2;
+  return 1;
+}
+/* screen-level payoff feedback — flash + shake, scaled, all transform/opacity
+   so the flex layout never reflows. Silent under prefers-reduced-motion. */
+function gfImpact(tier, crit){
+  if(gfReducedMotion()) return;
+  const big = tier >= 4;
+  if(tier >= 3 || crit){
+    const fl = document.getElementById('gf-screen-flash');
+    if(fl){ fl.classList.remove('fire'); void fl.offsetWidth; fl.classList.add('fire'); }
+  }
+  const app = document.getElementById('app');
+  if(app && (tier >= 3 || crit)){
+    const cls = big ? 'gf-shake-2' : 'gf-shake-1';
+    app.classList.remove('gf-shake-1','gf-shake-2'); void app.offsetWidth;
+    app.classList.add(cls);
+    setTimeout(()=>app.classList.remove(cls), big ? 440 : 280);
+  }
+  gfHaptic(big ? [12,40,18] : tier >= 3 ? 22 : crit ? 16 : 8);
+}
+function showDamage(amount, crit){
+  const stage = document.getElementById('enemy-stage');
+  const r = stage.getBoundingClientRect();
+  const portrait = document.getElementById('enemy-portrait').getBoundingClientRect();
+  const tier = gfDamageTier(amount);
+  const pop = document.createElement('div');
+  pop.className = 'damage-pop tier-' + tier + (crit ? ' crit' : '');
+  pop.textContent = amount;
+  pop.style.left = (portrait.left + portrait.width/2 - r.left) + 'px';
+  pop.style.top = (portrait.top - r.top + portrait.height/2) + 'px';
+  stage.appendChild(pop);
+  // count-up: the number BUILDS toward its total so the hit lands with weight —
+  // and you watch the damage accumulate instead of it just appearing. Applies to
+  // all but the tiniest hits, and takes its time (the drama is in the climb).
+  if(!gfReducedMotion() && amount >= 10 && typeof requestAnimationFrame === 'function'){
+    const dur = Math.min(820, 420 + tier*110), t0 = (typeof performance!=='undefined'?performance.now():Date.now());
+    const step = (now)=>{
+      const k = Math.min(1, (now - t0)/dur);
+      pop.textContent = Math.round(amount * (1 - Math.pow(1-k, 3)));
+      if(k < 1) requestAnimationFrame(step); else pop.textContent = amount;
+    };
+    requestAnimationFrame(step);
+  }
+  gfImpact(tier, crit);
+  setTimeout(()=>pop.remove(), 1600);
+}
+
+/* Small floating note over the enemy (armor shrug / pierce / status) — teaches
+   the player why a number changed. Cheap, transform/opacity only. */
+function gfFloatNote(text, color){
+  const stage = document.getElementById('enemy-stage');
+  if(!stage) return;
+  const n = document.createElement('div');
+  n.className = 'gf-float-note';
+  n.textContent = text;
+  if(color) n.style.color = color;
+  stage.appendChild(n);
+  setTimeout(()=>n.remove(), 1100);
+}
+
+/* The player takes a blow: red edge-flash, screen shake (heavier for an
+   UNLEASH), a −N floating off the HP bar, and a haptic thud. Reduced-motion
+   safe (no-ops on the visual bits). */
+function gfPlayerHit(dmg, big){
+  if(gfReducedMotion()) return;
+  const fl = document.getElementById('gf-screen-flash');
+  if(fl){ fl.classList.remove('hurt'); void fl.offsetWidth; fl.classList.add('hurt');
+          setTimeout(()=>fl.classList.remove('hurt'), 520); }
+  const app = document.getElementById('app');
+  if(app){ const cls = big ? 'gf-shake-2' : 'gf-shake-1';
+           app.classList.remove('gf-shake-1','gf-shake-2'); void app.offsetWidth;
+           app.classList.add(cls); setTimeout(()=>app.classList.remove(cls), big ? 440 : 280); }
+  if(dmg > 0){
+    const anchor = document.getElementById('hud-hp');
+    if(anchor && typeof anchor.getBoundingClientRect === 'function'){
+      const r = anchor.getBoundingClientRect();
+      const n = document.createElement('div');
+      n.className = 'gf-player-hurt';
+      n.textContent = '−' + dmg;
+      n.style.left = (r.left + r.width/2) + 'px';
+      n.style.top = (r.top - 6) + 'px';
+      document.body.appendChild(n);
+      setTimeout(()=>n.remove(), 900);
+    }
+  }
+  gfHaptic(big ? [14,50,20] : 18);
+}
+
+function showComboBanner(name, isNew, big){
+  const b = document.createElement('div');
+  b.className = 'combo-banner' + (isNew ? ' new' : '') + (big ? ' big' : '');
+  b.innerHTML = `
+    <div class="label">fusion</div>
+    <div class="name">${name}</div>
+  `;
+  document.body.appendChild(b);
+  setTimeout(()=>b.remove(), 1700);
+}
+
+/* ----- STORY: the Scribe unwriting a contract the Sovereign signed ----- */
+const GF_STORY = {
+  prologue: [
+    { place: 'THE CODEX',   line: 'They signed your name first — a contract you never read, in ink you never spilled.' },
+    { place: 'THE DEBT',    line: 'The Sovereign holds the only copy. To be free you must unwrite it: rune by rune, verse by verse, back to the hand that signed.' },
+    { place: 'THE ASCENT',  line: 'Thirteen wardens stand between you and the Signatory. Inscribe your spells. Climb the archive. Unwrite your name.' },
+  ],
+  // keyed by the tier being ENTERED (2,3,4)
+  tierBeats: {
+    2: { place: 'THE DEEPS',      line: 'The threshold gives way. The ink runs deeper here.' },
+    3: { place: 'THE WORKS',      line: 'Brass and order. The archive remembers what you erased.' },
+    4: { place: 'THE SIGNATORY',  line: 'A door with your name on it. Beyond it, the hand that signed.' },
+  },
+  victory: 'The last stroke lifts. Your name unwrites itself from the Codex — and for the first time, it is yours to sign.',
+  defeat:  'The ink closes over you. The Codex keeps your name a while longer.',
+};
+
+// A calm full-screen interstitial line; taps (or ~4.5s) dismiss it.
+function showStoryBeat(place, line, onDone){
+  const el = document.createElement('div');
+  el.className = 'story-beat';
+  el.innerHTML =
+    `<div class="sb-place">${place}</div><div class="sb-line">${line}</div>` +
+    `<div class="sb-tap">tap to continue</div>`;
+  let done = false;
+  const finish = ()=>{ if(done) return; done = true; el.remove(); if(onDone) onDone(); };
+  el.addEventListener('pointerdown', (e)=>{ e.stopPropagation(); finish(); });
+  document.body.appendChild(el);
+  setTimeout(finish, 4600);
+}
+
+// First-launch prologue: three beats, then the How-to-Play primer.
+function showPrologue(){
+  let i = 0;
+  const step = ()=>{
+    if(i < GF_STORY.prologue.length){
+      const b = GF_STORY.prologue[i++];
+      showStoryBeat(b.place, b.line, step);
+    } else {
+      state.meta.seenPrologue = true; state.meta.seenIntro = true; saveState();
+      showIntro();
+    }
+  };
+  step();
+}
+
+/* Build stamp — bump on every deploy so the title screen proves which
+   version you're actually running (kills "did the patch land?" during
+   playtest). */
+const GF_BUILD = '2026-07-05 · b25 enemy-weight';
+
+/* ----- 13b. LINKS + SHARE (the funnel) -----
+   Set GF_LINKS.itch to your itch.io page URL once it exists. While empty,
+   the storefront CTAs stay hidden so nothing looks broken at launch. The
+   Share button works immediately and is the viral driver to that page. */
+const GF_LINKS = {
+  itch: ''   // e.g. 'https://stephen.itch.io/glyph-forge'
+};
+/* Daily streak/score — the retention heartbeat. Records the FIRST result for
+   a given Daily date (one attempt, in the spirit of the mode); a consecutive
+   calendar day extends the streak, a gap resets it. Deterministic; no RNG. */
+function dailyScore(reached, won){ return reached*100 + (won?1500:0); }
+function recordDailyResult(seed, reached, won){
+  if(!seed || !/^daily-/.test(seed)) return null;
+  const date = seed.replace('daily-','');
+  const d = state.meta.daily || (state.meta.daily = { lastDate:null, streak:0, bestStreak:0, scores:{} });
+  if(d.scores && d.scores[date]) return d;          // one attempt — already logged
+  const score = dailyScore(reached, won);
+  d.scores = d.scores || {};
+  d.scores[date] = { reached, won, score };
+  if(d.lastDate){
+    const gap = (Date.parse(date) - Date.parse(d.lastDate)) / 86400000;
+    d.streak = (gap === 1) ? (d.streak||0) + 1 : 1;
+  } else {
+    d.streak = 1;
+  }
+  d.bestStreak = Math.max(d.bestStreak||0, d.streak);
+  d.lastDate = date;
+  saveState();
+  return d;
+}
+function gfShareText(){
+  const res = window._gfResult || {};
+  const daily = res.seed && /^daily-/.test(res.seed);
+  const tag = daily ? ('Daily Sigil ' + res.seed.replace('daily-','')) : 'a run';
+  const line = res.won ? 'inscribed the whole codex — 13/13 ✷'
+                       : ('fell at encounter ' + (res.reached || 1) + '/13');
+  const d = state.meta.daily || {};
+  const extra = daily ? `\nScore ${dailyScore(res.reached||1, !!res.won)}${d.streak?` · ${d.streak}-day streak 🔥`:''}` : '';
+  return `Glyph Forge — ${tag}\nI ${line}.${extra}\nFuse runes. Find what shouldn't work.\n${location.origin}${location.pathname}`;
+}
+async function gfShare(){
+  const text = gfShareText();
+  if(navigator.share){
+    try{ await navigator.share({ title:'Glyph Forge', text }); }catch(e){}
+    return;
+  }
+  try{
+    await navigator.clipboard.writeText(text);
+    gfToast('Result copied — paste it anywhere');
+  }catch(e){
+    window.prompt('Copy your result:', text);
+  }
+}
+function gfToast(msg){
+  const t = document.createElement('div');
+  t.className = 'gf-toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 2200);
+}
+function gfOpenItch(){
+  if(GF_LINKS.itch) window.open(GF_LINKS.itch, '_blank', 'noopener');
+}
+
+/* ----- 14. EVENT WIRING ----- */
+document.getElementById('btn-new-run').onclick = ()=>{
+  chooseSigil();
+};
+document.getElementById('btn-continue').onclick = ()=>{
+  if(state.run){
+    showScreen('game-screen');
+    renderGame();
+  } else {
+    showModal({ title:'No Inscription', body:'There is no run to continue.', choices:[{label:'OK', onClick:hideModal}]});
+  }
+};
+document.getElementById('btn-howto').onclick = ()=>showIntro();
+function updateMuteUI(){
+  const m = GFAudio.isMuted();
+  const b1 = document.getElementById('btn-mute');
+  const b2 = document.getElementById('btn-mute-hud');
+  if(b1) b1.textContent = m ? '🔇 Muted' : '🔊 Sound';
+  if(b2) b2.textContent = m ? '🔇' : '🔊';
+}
+function toggleMute(){ GFAudio.toggleMute(); if(!GFAudio.isMuted()) GFAudio.tap(); updateMuteUI(); }
+document.getElementById('btn-mute').onclick = toggleMute;
+document.getElementById('btn-mute-hud').onclick = toggleMute;
+updateMuteUI();
+
+/* Tap-tooltips: title= never fires on touch, so depth chips / stats with
+   [data-tip] were invisible on phones (a real bug). Tap a chip to toggle its
+   explanation; tap anywhere else to dismiss. Guarded so the Node test/sim
+   stubs (no document.addEventListener) skip it entirely. */
+if(typeof document !== 'undefined' && typeof document.addEventListener === 'function'){
+  const tip = document.createElement('div');
+  tip.id = 'gf-tip';
+  document.body.appendChild(tip);
+  let tipFor = null;
+  function hideTip(){
+    tip.classList.remove('show');
+    if(tipFor){ tipFor.classList.remove('gf-tip-open'); tipFor = null; }
+  }
+  function showTip(el){
+    const text = el.getAttribute('data-tip');
+    if(!text){ hideTip(); return; }
+    if(tipFor) tipFor.classList.remove('gf-tip-open');
+    tip.textContent = text;
+    tip.classList.add('show');
+    el.classList.add('gf-tip-open');
+    tipFor = el;
+    const r = el.getBoundingClientRect();
+    const tw = tip.offsetWidth, th = tip.offsetHeight;
+    let left = r.left + r.width/2 - tw/2;
+    left = Math.max(8, Math.min(left, window.innerWidth - tw - 8));
+    let top = r.bottom + 8;
+    if(top + th > window.innerHeight - 8) top = r.top - th - 8;
+    tip.style.left = left + 'px';
+    tip.style.top = Math.max(8, top) + 'px';
+  }
+  document.addEventListener('click', (e)=>{
+    const el = e.target && e.target.closest && e.target.closest('[data-tip]');
+    if(el){
+      if(tipFor === el){ hideTip(); }
+      else { showTip(el); }
+    } else {
+      hideTip();
+    }
+  }, true);
+  window.addEventListener('scroll', hideTip, true);
+  window.addEventListener('resize', hideTip);
+}
+document.getElementById('btn-codex').onclick = ()=>showScreen('codex-screen');
+document.getElementById('btn-codex-back').onclick = ()=>showScreen('title-screen');
+document.getElementById('btn-back-title').onclick = ()=>showScreen('title-screen');
+/* Sky Wolf embed protocol: the ONLY control that leaves the game. */
+document.getElementById('btn-sws-exit').onclick = ()=>window.SWS_EXIT();
+document.getElementById('btn-daily').onclick = ()=>{
+  const today = new Date().toISOString().slice(0,10);
+  startNewRun('daily-' + today);
+  showScreen('game-screen');
+};
+if(GF_LINKS.itch){
+  const il = document.getElementById('gf-itch-link');
+  il.href = GF_LINKS.itch;
+  il.hidden = false;
+}
+document.getElementById('btn-cast').onclick = cast;
+document.getElementById('btn-guide-bar').onclick = toggleGuide;
+document.getElementById('btn-guide-close').onclick = ()=>document.getElementById('guide-panel').classList.remove('open');
+
+/* Tap-to-fullscreen. Android Chrome hides the system nav + URL bars while a
+   page is fullscreen, but it must be requested from a user gesture — so fire
+   on the first interaction (and re-arm if they later exit, so a tap restores
+   it). Silently no-ops where unsupported (iOS tab — there the home-screen
+   install gives true fullscreen, manifest is already display:fullscreen). */
+function gfIsFullscreen(){ return !!(document.fullscreenElement || document.webkitFullscreenElement); }
+function gfGoFullscreen(){
+  if(gfIsFullscreen()) return;
+  const el = document.documentElement;
+  const req = el.requestFullscreen || el.webkitRequestFullscreen;
+  if(!req) return;
+  try { const p = req.call(el); if(p && p.catch) p.catch(()=>{}); } catch(e){}
+}
+function gfExitFullscreen(){
+  const ex = document.exitFullscreen || document.webkitExitFullscreen;
+  if(!ex) return;
+  try { const p = ex.call(document); if(p && p.catch) p.catch(()=>{}); } catch(e){}
+}
+let gfWantWindowed = false;   // set when the user explicitly exits, so the
+                              // auto-fullscreen pointerdown doesn't re-force it
+function gfToggleFullscreen(){
+  if(gfIsFullscreen()){ gfWantWindowed = true; gfExitFullscreen(); }
+  else { gfWantWindowed = false; gfGoFullscreen(); }
+}
+function gfSyncFsBtn(){
+  const b = document.getElementById('btn-fs-hud');
+  if(!b) return;
+  b.textContent = gfIsFullscreen() ? '⛗' : '⛶';
+}
+// Only auto-fullscreen on the first touch (coarse pointer) — never hijack a
+// desktop tab on click, and never inside the portal iframe (it owns the chrome)
+// or once the user has chosen to stay windowed. The ⛶ button still works everywhere.
+if(!window.SWS_EMBED && window.matchMedia && matchMedia('(pointer: coarse)').matches){
+  window.addEventListener('pointerdown', ()=>{ if(!gfWantWindowed) gfGoFullscreen(); });
+}
+if(document.addEventListener){
+  document.addEventListener('fullscreenchange', gfSyncFsBtn);
+  document.addEventListener('webkitfullscreenchange', gfSyncFsBtn);
+}
+{ const _fb = document.getElementById('btn-fs-hud');
+  if(_fb) _fb.onclick = (e)=>{ e.stopPropagation(); gfToggleFullscreen(); }; }
+document.getElementById('btn-flee').onclick = ()=>{
+  if(confirm('Abandon this inscription? Progress will be lost.')){
+    state.run = null;
+    saveState();
+    showScreen('title-screen');
+  }
+};
+
+/* hide modal on bg tap */
+document.getElementById('modal-bg').onclick = (e)=>{
+  if(e.target.id === 'modal-bg'){ /* keep modal locked unless explicit */ }
+};
+
+/* PWA install: register service worker + auto-apply new builds. When a new
+   SW takes control (new deploy), reload once so the player always lands on
+   the latest — no manual cache clearing during playtest/iteration.
+   Skipped when embedded (?embed=1): the portal owns caching there, and a
+   controllerchange reload inside the iframe = staleness/black-screen risk. */
+if(!window.SWS_EMBED && typeof navigator !== 'undefined' && navigator.serviceWorker){
+  let _gfReloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', ()=>{
+    if(_gfReloaded) return; _gfReloaded = true; location.reload();
+  });
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').then(reg=>{
+      reg.update();
+      setInterval(()=>reg.update(), 60000);  // catch deploys mid-session
+    }).catch(()=>{});
+  });
+}
+
+/* Initial render */
+if(state.run){
+  // resume mid-run automatically
+  showScreen('game-screen');
+  renderGame();
+} else {
+  showScreen('title-screen');
+}
+if(!state.meta.seenIntro && !state.run){
+  // Brand-new players get the prologue (which chains into the How-to primer);
+  // anyone who's seen the prologue but not the primer just gets the primer.
+  setTimeout(state.meta.seenPrologue ? showIntro : showPrologue, 350);
+}
+hydrateArt();
+
+/* re-hydrate when changing screens */
+const _origShow = showScreen;
+window.showScreen = (id)=>{ _origShow(id); setTimeout(hydrateArt, 0); };
+
+/* expose for debugging */
+window.GLYPH_FORGE = { state, RUNES, ENEMIES, NAMED_COMBOS, resolveSpell, RELICS, SIGILS, CHAMPIONS };
+
+/* ===== DEV SANDBOX — gated; inert for normal players ======================
+   Toggle: backtick key (`) or click the tiny "⚙ dev" badge (bottom-left).
+   Active only on localhost / *.app.github.dev, OR if you run
+   localStorage.gfDev='1' once on any host. Real players never see it. */
+(function(){
+  let GF_DEV=false;
+  try{
+    const h=location.hostname;
+    GF_DEV = h===''||h==='localhost'||h==='127.0.0.1'
+      || /\.app\.github\.dev$/.test(h) || /\.github\.dev$/.test(h)
+      || /\.gitpod\.io$/.test(h) || localStorage.getItem('gfDev')==='1';
+  }catch(e){}
+  if(!GF_DEV) return;
+
+  const css=`
+  #gf-badge{position:fixed;left:2px;top:50%;transform:translateY(-50%);z-index:99998;font:10px/1 monospace;
+   color:#d4a849;background:rgba(10,7,5,.8);border:1px solid #5a4a2e;border-radius:4px;
+   padding:5px 8px;cursor:pointer;opacity:.5;letter-spacing:.08em;user-select:none}
+  #gf-badge:hover{opacity:1}
+  #gf-panel{position:fixed;left:8px;right:8px;bottom:40px;max-height:72vh;overflow:auto;
+   z-index:99999;display:none;background:rgba(8,6,4,.97);border:1px solid #6b1d1d;
+   border-radius:6px;color:#e8dcc3;font:12px/1.45 monospace;padding:12px;box-shadow:0 10px 40px #000}
+  #gf-panel.open{display:block}
+  #gf-panel h4{margin:12px 0 6px;color:#f0c46a;font-size:11px;letter-spacing:.12em;
+   text-transform:uppercase;border-bottom:1px solid #3a2e1c;padding-bottom:3px}
+  #gf-panel h4:first-child{margin-top:0}
+  #gf-panel button{background:#1f1810;color:#e8dcc3;border:1px solid #5a4a2e;border-radius:3px;
+   padding:5px 8px;margin:2px;cursor:pointer;font:11px monospace}
+  #gf-panel button:hover{border-color:#d4a849;color:#f0c46a}
+  #gf-panel button.q{background:#2a1414;border-color:#6b1d1d}
+  #gf-panel input{width:64px;background:#14100b;color:#e8dcc3;border:1px solid #5a4a2e;
+   border-radius:3px;padding:4px;font:11px monospace}
+  #gf-panel .grid{display:flex;flex-wrap:wrap;gap:2px}
+  #gf-panel .rar{color:#8a7a5e;width:100%;margin-top:4px}
+  #gf-bd{white-space:pre;background:#0f0c08;border:1px solid #3a2e1c;border-radius:3px;
+   padding:8px;margin-top:4px;font-size:11px;color:#c9b896}
+  #gf-bd b{color:#f0c46a}
+  #gf-x{float:right;color:#a83232;cursor:pointer}`;
+  const st=document.createElement('style'); st.textContent=css; document.head.appendChild(st);
+  const badge=document.createElement('div'); badge.id='gf-badge'; badge.textContent='⚙ dev';
+  const panel=document.createElement('div'); panel.id='gf-panel';
+  document.body.appendChild(badge); document.body.appendChild(panel);
+
+  let open=false,timer=null;
+  function ensureRun(){ if(!state.run) startNewRun(); showScreen('game-screen'); }
+  function num(id){ const v=parseInt((document.getElementById(id)||{}).value,10); return isNaN(v)?null:v; }
+  function fmt(n){ return Math.round(n*100)/100; }
+  function rebuild(){
+    const rar={common:[],uncommon:[],rare:[],mythic:[]};
+    RUNES.forEach(r=>{ (rar[r.rarity]=rar[r.rarity]||[]).push(r); });
+    const runeBtns=Object.keys(rar).map(k=>`<div class="rar">${k}</div><div class="grid">`+
+      rar[k].map(r=>`<button data-rune="${r.id}">${r.name}</button>`).join('')+`</div>`).join('');
+    const encBtns=Array.from({length:13},(_,i)=>`<button data-enc="${i}">${i+1}${i===12?'★':''}</button>`).join('');
+    panel.innerHTML=`<span id="gf-x">✕ close</span><h4>Run</h4>`+
+      `<button class="q" data-act="newrun">New run</button>`+
+      `<button class="q" data-act="newdaily">New daily</button>`+
+      `<h4>Jump to encounter (★=boss, sets fluency to match)</h4><div class="grid">${encBtns}</div>`+
+      `<h4>Player</h4><button data-act="fullhp">Full HP</button> HP <input id="gf-hp" type="number">`+
+      ` <button data-act="sethp">set</button> &nbsp; fluency <input id="gf-fl" type="number">`+
+      ` <button data-act="setfl">set</button>`+
+      `<h4>Enemy</h4>enemy HP <input id="gf-ehp" type="number"> <button data-act="setehp">set</button>`+
+      ` <button class="q" data-act="kill">Defeat enemy →</button>`+
+      `<h4>Add rune to hand</h4>${runeBtns}`+
+      `<h4>Codex</h4><button data-act="revealcombos">Reveal all combos</button>`+
+      `<button class="q" data-act="wipecodex">Wipe codex</button>`+
+      `<h4>Live damage breakdown</h4><div id="gf-bd">build a spell to see the math</div>`;
+  }
+  function act(a){
+    if(a==='newrun'){ startNewRun(); showScreen('game-screen'); }
+    else if(a==='newdaily'){ startNewRun('daily-'+new Date().toISOString().slice(0,10)); showScreen('game-screen'); }
+    else if(a==='fullhp'){ ensureRun(); state.run.hp=state.run.maxHp; saveState(); renderGame(); }
+    else if(a==='sethp'){ ensureRun(); const v=num('gf-hp'); if(v!=null){ state.run.hp=Math.max(1,Math.min(state.run.maxHp,v)); saveState(); renderGame(); } }
+    else if(a==='setfl'){ ensureRun(); const v=num('gf-fl'); if(v!=null){ state.run.fluency=Math.max(0,v); saveState(); renderGame(); } }
+    else if(a==='setehp'){ ensureRun(); const v=num('gf-ehp'); if(v!=null){ state.run.enemyHp=Math.max(0,v); saveState(); renderGame(); } }
+    else if(a==='kill'){ ensureRun(); state.run.enemyHp=0; saveState(); renderGame();
+      if(state.run.encounterIdx===12) onVictory(); else onEnemyDefeated(); }
+    else if(a==='revealcombos'){ NAMED_COMBOS.forEach(c=>{ if(!state.meta.discoveredCombos[c.id])
+      state.meta.discoveredCombos[c.id]={name:c.name,peakDamage:0,runeIds:[],firstSeen:Date.now()}; });
+      saveState(); if(document.getElementById('codex-screen').classList.contains('active')) renderCodex(); }
+    else if(a==='wipecodex'){ state.meta.discoveredCombos={}; state.meta.discoveredRunes=[]; saveState();
+      if(document.getElementById('codex-screen').classList.contains('active')) renderCodex(); }
+  }
+  panel.addEventListener('click',e=>{
+    const t=e.target;
+    if(t.id==='gf-x'){ toggle(false); return; }
+    if(t.dataset.act){ act(t.dataset.act); }
+    else if(t.dataset.enc!=null){ ensureRun(); const i=+t.dataset.enc;
+      state.run.encounterIdx=i; state.run.fluency=i; beginEncounter(); showScreen('game-screen'); }
+    else if(t.dataset.rune){ ensureRun(); state.run.hand.push(t.dataset.rune); saveState(); renderGame(); }
+  });
+  function refreshBD(){
+    const bd=document.getElementById('gf-bd'); if(!bd) return;
+    if(!state.run){ bd.textContent='no active run'; return; }
+    let res=null; try{ res=resolveSpell(); }catch(e){ bd.textContent='—'; return; }
+    if(!res||!res.trace){ bd.textContent='build a spell to see the math'; return; }
+    const tr=res.trace;
+    let s=tr.perRune.map(p=>`${(p.name||'').padEnd(12)} (${p.base}+${p.add})×${fmt(p.mult)}×${p.repeats} = ${fmt(p.sub)}`).join('\n');
+    if(tr.pandemoniumBonus) s+=`\n+ pandemonium hand   = ${tr.pandemoniumBonus}`;
+    s+=`\nPOWER (base sum)     = ${fmt(tr.baseSum)}`;
+    if(tr.globalMult!==1) s+=`\n× global mult        ×${fmt(tr.globalMult)}`;
+    s+=`\n× XMULT              ×${fmt(tr.xmult)}   (elem ×${fmt(tr.elementMult)} · shape ×${fmt(tr.shapeMult)} · order)`;
+    if(tr.spellRetrigger) s+=`\n× retrigger          ×${fmt(1+tr.spellRetrigger)}`;
+    s+=`\n× fluency            ×${fmt(tr.fluencyMult)}`;
+    s+=`\n= ${fmt(tr.preFloor)}  →  FINAL ${tr.final}`;
+    if(res.comboMatch) s+=`\ncombo → ${res.comboMatch.name}`;
+    bd.innerHTML=`<b>${tr.final}</b> damage\n`+s;
+  }
+  function toggle(v){
+    open=(v===undefined)?!open:v;
+    if(open){ rebuild(); panel.classList.add('open'); refreshBD(); timer=setInterval(refreshBD,180); }
+    else { panel.classList.remove('open'); clearInterval(timer); }
+  }
+  badge.addEventListener('click',()=>toggle());
+  window.addEventListener('keydown',e=>{ if(e.key==='`'||e.key==='~'){ e.preventDefault(); toggle(); } });
+  console.log('%cGlyph Forge DEV sandbox — press ` (backtick) or click ⚙ dev (bottom-left)','color:#d4a849;font-weight:bold');
+})();
+</script>
+</body>
+</html>

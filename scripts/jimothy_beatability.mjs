@@ -90,12 +90,17 @@ console.log('constants',JSON.stringify(analyze));
 
 const all={adventure:[],modes:{}};
 let worstGap=9, worstCov=9, totalIssues=0;
-for(let lv=1;lv<=100;lv++){
+/* ⛔ 1..120, not 1..100. The campaign RESOLVES to 120: past the level 100 feast
+   the last three decades cycle so it never dead-ends, and those levels are
+   playable, carded and reachable. Checking to 100 left 20 live levels unproven.
+   Override with LV_MAX if a future course is longer still. */
+const LV_MAX = +(process.env.LV_MAX || 120);
+for(let lv=1;lv<=LV_MAX;lv++){
   const r=await p.evaluate(lv=>__probe('adventure',lv,__J.ADV_LEN),lv);
   if(r.issues.length){ all.adventure.push(...r.issues); totalIssues+=r.issues.length; }
   if(r.stats.minGapT<worstGap)worstGap=r.stats.minGapT;
   if(r.stats.minPadCov<worstCov)worstCov=r.stats.minPadCov;
-  if(lv%20===0)console.log('adventure through level',lv,'issues so far',totalIssues);
+  if(lv%20===0)console.log('adventure through level',lv,'of',LV_MAX,'issues so far',totalIssues);
 }
 for(const mode of ['endless','rush','zen','daily']){
   const runs=mode==='daily'?1:5, agg=[];

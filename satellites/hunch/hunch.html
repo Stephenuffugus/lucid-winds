@@ -1,0 +1,474 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>HUNCH — draw it, the machine guesses</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Space+Mono:ital@0;1&display=swap" rel="stylesheet"/>
+<style>
+  :root{
+    --bg:#0d0e1a; --panel:#16182b; --panel2:#1d2038; --line:#2c3052;
+    --txt:#eef0ff; --dim:#8a90b8; --acc:#c8ff4d; --acc2:#5eead4;
+    --hit:#7CFC9B; --miss:#ff6b81; --fire:#ffac4d;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{background:radial-gradient(900px 600px at 80% -10%,#1b1d38,transparent 60%),var(--bg);color:var(--txt);font-family:'Space Grotesk',system-ui,sans-serif;min-height:100%;overflow-x:hidden;}
+  .app{max-width:680px;margin:0 auto;padding:14px 14px 16px;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;}
+  .mono{font-family:'Space Mono',monospace;}
+
+  /* top bar */
+  .top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;}
+  .brand{font-weight:700;font-size:24px;letter-spacing:.04em;}
+  .brand b{color:var(--acc);}
+  .stats{display:flex;gap:16px;align-items:center;}
+  .stat{text-align:right;}
+  .stat .n{font-weight:700;font-size:20px;line-height:1;}
+  .stat .l{font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);margin-top:3px;}
+  .stat .n.fire{color:var(--fire);}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;}
+  .screen{flex:1;display:flex;flex-direction:column;}
+
+  /* start */
+  .hero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:18px;padding:30px 10px;}
+  .hero h1{font-size:clamp(46px,13vw,86px);font-weight:700;letter-spacing:.02em;line-height:.9;}
+  .hero h1 b{color:var(--acc);}
+  .hero p{color:var(--dim);font-size:16px;max-width:380px;line-height:1.5;}
+  .hero .mono.sub{color:var(--acc2);font-size:13px;letter-spacing:.04em;}
+  .btn{border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px;letter-spacing:.03em;color:#0d0e1a;background:var(--acc);padding:15px 34px;border-radius:999px;transition:transform .12s,filter .2s;}
+  .btn:hover{filter:brightness(1.06);}.btn:active{transform:translateY(1px) scale(.99);}
+  .btn.ghost{background:transparent;color:var(--txt);border:1px solid var(--line);font-weight:500;font-size:14px;padding:11px 20px;}
+  .btn.ghost:hover{border-color:var(--acc2);}
+  .howto{text-align:left;color:var(--dim);font-size:14px;line-height:1.7;max-width:420px;}
+  .howto b{color:var(--txt);}
+
+  /* round */
+  .prompt{display:flex;align-items:center;gap:14px;margin-bottom:14px;}
+  .prompt .label{flex:1;}
+  .prompt .label .k{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--dim);}
+  .prompt .label .v{font-size:clamp(24px,6vw,34px);font-weight:700;line-height:1.05;margin-top:3px;}
+  .timer{position:relative;width:62px;height:62px;flex:none;}
+  .timer svg{transform:rotate(-90deg);}
+  .timer .t{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px;}
+
+  .canvas-wrap{position:relative;border-radius:14px;overflow:hidden;background:#fff;border:1px solid var(--line);flex:none;min-height:0;height:62vh;}
+  #pad{width:100%;height:100%;display:block;touch-action:none;cursor:crosshair;}
+
+  .tools{display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap;}
+  .colors{display:flex;gap:6px;}
+  .col{width:26px;height:26px;border-radius:50%;border:2px solid var(--panel);box-shadow:0 0 0 1px var(--line);cursor:pointer;}
+  .col.on{box-shadow:0 0 0 2px var(--acc);transform:scale(1.12);}
+  .tbtn{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:10px;padding:8px 12px;font-family:'Space Grotesk';font-size:13px;cursor:pointer;}
+  .tbtn:hover{border-color:var(--acc2);}
+  .tbtn.on{background:var(--acc);color:#0d0e1a;border-color:var(--acc);font-weight:700;}
+  #toolbar{display:flex;flex-direction:column;gap:8px;margin-top:10px;}
+  #toolbar .tools{margin-top:0;}
+  .colors{display:flex;gap:6px;overflow-x:auto;flex-wrap:nowrap;padding-bottom:2px;-webkit-overflow-scrolling:touch;}
+  .col{flex:none;}
+  .col.picker{padding:0;background:conic-gradient(from 0deg,#ff004c,#ff8a00,#ffe600,#37e84a,#00d4ff,#3a6bff,#b14bff,#ff004c);-webkit-appearance:none;appearance:none;}
+  input[type=color]{-webkit-appearance:none;appearance:none;}
+  input[type=color]::-webkit-color-swatch-wrapper{padding:0;}
+  input[type=color]::-webkit-color-swatch{border:none;border-radius:50%;}
+  .tools .sz{display:flex;align-items:center;gap:7px;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);}
+  .tools .sz input{width:74px;}
+  .tools .go{margin-left:auto;}
+  input[type=range]{-webkit-appearance:none;appearance:none;height:3px;background:var(--line);border-radius:3px;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--acc);cursor:pointer;}
+  input[type=range]::-moz-range-thumb{width:16px;height:16px;border:none;border-radius:50%;background:var(--acc);cursor:pointer;}
+
+  /* thinking */
+  .think{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;padding:40px;}
+  .think .eye{font-size:60px;animation:squint 1.1s ease-in-out infinite;}
+  @keyframes squint{0%,100%{transform:scaleY(1);}50%{transform:scaleY(.25);}}
+  .think .mono{color:var(--acc2);font-size:15px;}
+  .dots::after{content:'';animation:dots 1.4s steps(4,end) infinite;}
+  @keyframes dots{0%{content:'';}25%{content:'.';}50%{content:'..';}75%{content:'...';}}
+
+  /* result */
+  .res .row{display:flex;gap:16px;align-items:flex-start;}
+  .res .thumb{width:120px;height:90px;border-radius:10px;border:1px solid var(--line);flex:none;background:#fff;object-fit:cover;}
+  .res .target{font-size:12px;color:var(--dim);letter-spacing:.04em;}
+  .res .target b{color:var(--txt);font-size:18px;display:block;margin-top:2px;}
+  .guesses{margin:16px 0;}
+  .guesses .g{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line);}
+  .guesses .g:last-child{border:none;}
+  .guesses .g .rank{color:var(--acc2);font-size:12px;width:26px;}
+  .guesses .g .txt{font-family:'Space Mono';font-size:15px;}
+  .quip{font-family:'Space Mono';font-style:italic;color:var(--fire);font-size:14px;background:var(--panel2);border-left:2px solid var(--fire);padding:10px 14px;border-radius:0 8px 8px 0;margin-top:6px;}
+  .scoreline{display:flex;align-items:flex-end;gap:14px;margin:18px 0 8px;}
+  .scoreline .big{font-size:64px;font-weight:700;line-height:.85;}
+  .scoreline .big.hit{color:var(--hit);}.scoreline .big.miss{color:var(--miss);}
+  .scoreline .of{color:var(--dim);font-size:18px;padding-bottom:8px;}
+  .scoreline .verdict{margin-left:auto;text-align:right;}
+  .scoreline .verdict .v{font-weight:700;font-size:18px;}
+  .scoreline .verdict .s{font-size:12px;color:var(--dim);}
+  .reswrap{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;}
+  .reswrap .btn{flex:1;}
+
+  .err{color:var(--miss);font-family:'Space Mono';font-size:14px;text-align:center;padding:10px;}
+
+  /* log */
+  .log{margin-top:26px;}
+  .log h3{font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);margin-bottom:12px;}
+  .logrow{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);}
+  .logrow img{width:54px;height:40px;border-radius:6px;background:#fff;object-fit:cover;flex:none;}
+  .logrow .lt{flex:1;}
+  .logrow .lt .a{font-weight:500;}
+  .logrow .lt .b{font-family:'Space Mono';font-size:12px;color:var(--dim);}
+  .logrow .ls{font-weight:700;font-size:18px;}
+  .logrow .ls.hit{color:var(--hit);}.logrow .ls.miss{color:var(--miss);}
+  .hide{display:none !important;}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:var(--acc);color:#0d0e1a;font-weight:700;padding:11px 20px;border-radius:999px;opacity:0;transition:opacity .3s;pointer-events:none;}
+  .toast.show{opacity:1;}
+  @media (max-width:560px){
+    .app{padding:9px 9px 12px;}
+    .card{padding:11px;border-radius:14px;}
+    .top{margin-bottom:9px;}
+    .brand{font-size:20px;}
+    .stats{gap:13px;}
+    .stat .n{font-size:17px;}
+    .prompt{margin-bottom:9px;}
+    .prompt .label .v{font-size:21px;}
+    .prompt .label .k{font-size:10px;}
+    .timer{width:50px;height:50px;}
+    .canvas-wrap{min-height:0;}
+    .tools{gap:7px;margin-top:9px;}
+    .col{width:30px;height:30px;}
+    .colors{gap:5px;}
+    .tbtn{padding:8px 10px;}
+    .btn.go{font-size:16px;padding:11px 20px;}
+    input[type=range]{width:64px;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="brand">HUN<b>CH</b></div>
+    <div class="stats">
+      <div class="stat"><div class="n" id="sScore">0</div><div class="l">Score</div></div>
+      <div class="stat"><div class="n fire" id="sStreak">0</div><div class="l">Streak 🔥</div></div>
+      <div class="stat"><div class="n" id="sBest">0</div><div class="l">Best</div></div>
+    </div>
+  </div>
+
+  <!-- START -->
+  <div class="screen card" id="scStart">
+    <div class="hero">
+      <h1>HUN<b>CH</b></h1>
+      <div class="mono sub">draw it. the machine guesses. read its mind.</div>
+      <p>You get a thing to draw — a storm, a feeling, a bad pun. You get one minute. Then a real AI looks at your drawing and takes its best guess. Score by how close it gets.</p>
+      <button class="btn" id="btnPlay">Play</button>
+      <button class="btn ghost" id="btnHow">How it works</button>
+      <div class="howto hide" id="howBox">
+        <p><b>1.</b> A prompt appears — sometimes simple, often weird and abstract. There's no "correct" drawing.</p>
+        <p><b>2.</b> Draw it before the timer runs out. Pen, colors, eraser. That's it. The constraint is the point.</p>
+        <p><b>3.</b> The AI guesses <b>blind</b> — it can't see the prompt. Then it grades how close its guess was to your secret word.</p>
+        <p><b>4.</b> Land a hit (50+), build your streak — each one multiplies your points. Miss, and the streak resets. The machine's wrong guesses are the best part.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROUND -->
+  <div class="screen card hide" id="scRound">
+    <div class="prompt">
+      <div class="label"><div class="k">Draw this</div><div class="v" id="promptText">—</div></div>
+      <div class="timer">
+        <svg width="62" height="62" viewBox="0 0 62 62"><circle cx="31" cy="31" r="27" fill="none" stroke="#2c3052" stroke-width="6"/><circle id="ring" cx="31" cy="31" r="27" fill="none" stroke="#c8ff4d" stroke-width="6" stroke-linecap="round" stroke-dasharray="169.6" stroke-dashoffset="0"/></svg>
+        <div class="t" id="tNum">50</div>
+      </div>
+    </div>
+    <div class="canvas-wrap"><canvas id="pad" width="800" height="600"></canvas></div>
+    <div id="toolbar">
+      <div class="tools"><div class="colors" id="colors"></div></div>
+      <div class="tools">
+        <button class="tbtn" id="bFill">Fill</button>
+        <button class="tbtn" id="bEraser">Eraser</button>
+        <div class="sz">Size <input type="range" id="penSize" min="3" max="60" value="14"/></div>
+        <button class="tbtn" id="bUndo">Undo</button>
+        <button class="tbtn" id="bClear">Clear</button>
+        <button class="btn go" id="bSubmit">Submit ▸</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- THINKING -->
+  <div class="screen card hide" id="scThink">
+    <div class="think">
+      <div class="eye">👁️</div>
+      <div class="mono">the machine is squinting<span class="dots"></span></div>
+    </div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="screen card res hide" id="scResult">
+    <div class="row">
+      <img class="thumb" id="resThumb" alt="your drawing"/>
+      <div class="target">You were drawing<b id="resTarget">—</b></div>
+    </div>
+    <div id="resBody">
+      <div class="guesses" id="resGuesses"></div>
+      <div class="quip" id="resQuip"></div>
+      <div class="scoreline">
+        <div class="big" id="resScore">0</div><div class="of">/ 100</div>
+        <div class="verdict"><div class="v" id="resVerdict">—</div><div class="s" id="resStreakMsg"></div></div>
+      </div>
+    </div>
+    <div class="err hide" id="resErr"></div>
+    <div class="reswrap">
+      <button class="btn" id="bNext">Next ▸</button>
+      <button class="btn ghost" id="bShare">Copy result</button>
+    </div>
+    <div class="log" id="logBox"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------------- prompt deck (tiered) ---------------- */
+const DECK={
+  1:["a thunderstorm","a smug cat","warm bread fresh from the oven","running late","a haunted house","a paper airplane","a traffic jam","a birthday surprise","a tangled pair of headphones","a sandcastle at high tide","a cat knocking something off a table","the last slice of pizza","a melting ice cream cone","a spider in the bathtub","a lighthouse in fog","a hot air balloon","a broken umbrella in the wind","a campfire at night","a cat stuck in a cardboard box","a dog chasing its own tail","a field of sunflowers","a treehouse","a message in a bottle","a snow globe","a robot vacuum stuck in a corner","a leaky faucet","a tall stack of pancakes","a shooting star","a rocket launch","a submarine","a city skyline at sunset","a ferris wheel","a vending machine","a goldfish in a bowl","a wilting houseplant","an overflowing laundry basket","a slice of watermelon","a beehive","an octopus","a hedge maze","a roller coaster","a candle burning low","a kite stuck in a tree","a piggy bank","a jack-in-the-box","an igloo","a waterfall","a cactus in the desert","a snowman melting","a busy ant colony","a clock striking midnight","a hammock between two trees","an old typewriter","a bowl of spaghetti","a single shoe in the road","a bird building a nest","a rain cloud following one person","a row of falling dominoes","a hamster on a wheel","a sinking rowboat","a crowded elevator","a spilled cup of coffee","a paper boat in a puddle","a UFO over a barn","a teetering stack of books","a frog on a lily pad","a windmill","a mailbox stuffed full of letters","a flat bicycle tire","a jar of fireflies"],
+  2:["homesickness","the moment before a sneeze","jazz","deja vu","an awkward silence","stage fright","falling in love","overthinking everything","the color of a Sunday afternoon","a held breath","the end of summer","nostalgia","loneliness in a crowded room","a guilty conscience","courage","the smell of rain","hope","pure exhaustion","relief","jealousy","the feeling of being watched","anticipation","a fresh start","regret","contentment","creeping anxiety","the calm after a storm","butterflies in your stomach","a second wind","writer's block","the urge to leave a party early","missing someone","quiet pride","embarrassment","curiosity","crushing boredom","a sugar rush","the silence after an argument","a warm welcome","the dread of Monday","the joy of an empty schedule","mental fog","a gut feeling","inner peace","restlessness","the comfort of routine","fear of the dark","a sense of wonder","the weight of a secret","freedom","coming home","the ache of an old memory","stubborn optimism","suspense","frustration with technology","the warmth of forgiveness","a creative spark","a bad omen","gratitude","longing","the rush of a deadline","tranquility","the spark of recognition","melancholy","euphoria","the quiet of early morning","a guilty pleasure","the thrill of the first snow","impatience","being pleasantly surprised"],
+  3:["the number 7, but smug","gravity giving up for a second","your future self waving at you","an introvert at a house party","the wifi going down mid-sentence","a plot twist","time travel gone slightly wrong","the universe quietly expanding","an idea arriving at 3am","a bad pun landing","Monday morning as a creature","the internet as a single object","a Tuesday that thinks it's Friday","the concept of 'later'","autocorrect ruining a text","a meeting that should've been an email","the sound of one hand clapping","a cat planning world domination","your phone battery at 1%","your last brain cell at 5pm","Schrödinger's lunch","waving back at someone who wasn't waving at you","a group project where no one helped","the snooze button as a villain","a password you forgot","the spinning loading wheel of doom","a sock that vanished in the dryer","small talk in an elevator","realizing you left the stove on","a meme becoming sentient","the heat death of the universe, but cozy","an AI dreaming","the number zero feeling lonely","infinity taking a coffee break","the ghost of a deleted file","a typo full of confidence","the void staring back","a robot learning to love","existential dread, but make it cute","the concept of nothing","a black hole on a diet","time running backwards","your reflection doing its own thing","a sentient houseplant judging you","the universe's customer service line","a glitch in reality","a word losing all meaning when repeated","an emoji come to life","a song stuck in your head","the abstract notion of 'vibes'","a thought you can't quite finish","Wednesday having an identity crisis","gravity on its day off","a calendar with too many appointments, crying"]
+};
+const used=new Set();
+const topUpInFlight={1:false,2:false,3:false};
+function pickPrompt(tier){
+  const t=Math.min(3,tier);
+  let pool=DECK[t].filter(p=>!used.has(p));
+  if(pool.length===0){DECK[t].forEach(p=>used.delete(p));pool=DECK[t].slice();}
+  const choice=pool[Math.floor(Math.random()*pool.length)];
+  used.add(choice);
+  if(pool.length<=5)topUpPrompts(t); // quietly extend the deck via AI so it never dries up
+  return choice;
+}
+async function topUpPrompts(t){
+  if(topUpInFlight[t])return; topUpInFlight[t]=true;
+  try{
+    const desc={1:"concrete, drawable objects, animals, and everyday scenes",2:"abstract feelings, emotions, moods and intangible states",3:"absurd, surreal, funny, meta or internet-flavoured concepts"}[t];
+    const sys="You generate fresh prompts for a drawing-guessing game. Return ONLY a raw JSON array of 12 short prompt strings — no markdown, no preamble. Each prompt is "+desc+", 1-8 words, evocative, varied and family-friendly.";
+    const txt=await callClaude([{role:"user",content:[{type:"text",text:"Give 12 brand-new prompts. Avoid repeating any of these: "+DECK[t].slice(0,50).join("; ")+". JSON array only."}]}],sys);
+    const arr=parseJSON(txt);
+    if(Array.isArray(arr))arr.forEach(p=>{if(typeof p==='string'&&p.trim().length>1&&!DECK[t].includes(p.trim()))DECK[t].push(p.trim());});
+  }catch(e){/* big deck + recycling keeps play going regardless */}
+  finally{topUpInFlight[t]=false;}
+}
+
+/* ---------------- state ---------------- */
+let score=0,streak=0,best=0,hits=0,tier=1;
+let target='',timeLeft=50,timerId=null,roundActive=false;
+const log=[];
+
+const $=id=>document.getElementById(id);
+const screens={start:$('scStart'),round:$('scRound'),think:$('scThink'),result:$('scResult')};
+function show(name){Object.values(screens).forEach(s=>s.classList.add('hide'));screens[name].classList.remove('hide');const top=document.querySelector('.top');if(top)top.style.display=(name==='round'||name==='think')?'none':'flex';}
+
+/* ---------------- canvas drawing ---------------- */
+const pad=$('pad'),ctx=pad.getContext('2d');
+let drawing=false,last=null,penColor='#101018',penSize=14,erasing=false,fillMode=false;
+const undo=[];
+function clearPad(){ctx.fillStyle='#fff';ctx.fillRect(0,0,pad.width,pad.height);}
+function snap(){try{undo.push(ctx.getImageData(0,0,pad.width,pad.height));if(undo.length>15)undo.shift();}catch(e){}}
+function fitCanvas(){
+  const wrap=pad.parentElement;
+  const tools=document.getElementById('toolbar');
+  const top=wrap.getBoundingClientRect().top;
+  const toolsH=tools?tools.offsetHeight:140;
+  const avail=Math.max(240,Math.floor((window.innerHeight||document.documentElement.clientHeight)-top-toolsH-12));
+  wrap.style.height=avail+'px';
+  const w=Math.max(260,Math.floor(wrap.clientWidth));
+  const h=Math.max(220,Math.floor(wrap.clientHeight));
+  if(w===pad.width&&h===pad.height)return;
+  let prev=null;
+  if(pad.width&&pad.height){try{prev=document.createElement('canvas');prev.width=pad.width;prev.height=pad.height;prev.getContext('2d').drawImage(pad,0,0);}catch(e){}}
+  pad.width=w;pad.height=h;
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
+  if(prev)ctx.drawImage(prev,0,0,prev.width,prev.height,0,0,w,h);
+}
+clearPad();
+
+const COLORS=['#101018','#6b7280','#ffffff','#e23b2e','#ff7a1a','#f2b705','#ffe14d','#19b562','#0f9488','#1c6fe2','#3b3bd6','#8b5cf6','#d6249f','#ff7ab8','#8b5e34'];
+const colorsBox=$('colors');
+function selColorEl(el){[...colorsBox.children].forEach(x=>x.classList.remove('on'));if(el)el.classList.add('on');$('bEraser').classList.remove('on');$('bFill').classList.remove('on');erasing=false;fillMode=false;}
+COLORS.forEach((col,i)=>{const d=document.createElement('div');d.className='col'+(i===0?' on':'');d.style.background=col;d.onclick=()=>{penColor=col;selColorEl(d);};colorsBox.appendChild(d);});
+const picker=document.createElement('input');picker.type='color';picker.value='#101018';picker.className='col picker';picker.title='custom colour';
+picker.oninput=()=>{penColor=picker.value;selColorEl(picker);};
+colorsBox.appendChild(picker);
+
+$('penSize').oninput=e=>penSize=+e.target.value;
+$('bEraser').onclick=()=>{erasing=true;fillMode=false;[...colorsBox.children].forEach(x=>x.classList.remove('on'));$('bFill').classList.remove('on');$('bEraser').classList.add('on');};
+$('bFill').onclick=()=>{fillMode=true;erasing=false;[...colorsBox.children].forEach(x=>x.classList.remove('on'));$('bEraser').classList.remove('on');$('bFill').classList.add('on');};
+$('bClear').onclick=()=>{snap();clearPad();};
+$('bUndo').onclick=()=>{if(undo.length)ctx.putImageData(undo.pop(),0,0);};
+
+/* flood (bucket) fill */
+function hexToRgb(h){h=(h||'#000').replace('#','');if(h.length===3)h=h.split('').map(c=>c+c).join('');const n=parseInt(h,16);return[(n>>16)&255,(n>>8)&255,n&255];}
+function floodFill(sx,sy,hex){
+  sx=Math.max(0,Math.min(pad.width-1,Math.floor(sx)));sy=Math.max(0,Math.min(pad.height-1,Math.floor(sy)));
+  const Wd=pad.width,Hd=pad.height,img=ctx.getImageData(0,0,Wd,Hd),d=img.data,si=(sy*Wd+sx)*4;
+  const tr=d[si],tg=d[si+1],tb=d[si+2],ta=d[si+3],[fr,fg,fb]=hexToRgb(hex);
+  if(Math.abs(tr-fr)<6&&Math.abs(tg-fg)<6&&Math.abs(tb-fb)<6)return;
+  const tol=60,match=i=>Math.abs(d[i]-tr)<=tol&&Math.abs(d[i+1]-tg)<=tol&&Math.abs(d[i+2]-tb)<=tol&&Math.abs(d[i+3]-ta)<=tol;
+  const stack=[[sx,sy]];
+  while(stack.length){const [x,y]=stack.pop();const base=(y*Wd+x)*4;if(!match(base))continue;
+    let xl=x;while(xl>0&&match((y*Wd+xl-1)*4))xl--;
+    let xr=x;while(xr<Wd-1&&match((y*Wd+xr+1)*4))xr++;
+    for(let cx=xl;cx<=xr;cx++){const ci=(y*Wd+cx)*4;d[ci]=fr;d[ci+1]=fg;d[ci+2]=fb;d[ci+3]=255;
+      if(y>0&&match(((y-1)*Wd+cx)*4))stack.push([cx,y-1]);
+      if(y<Hd-1&&match(((y+1)*Wd+cx)*4))stack.push([cx,y+1]);}}
+  ctx.putImageData(img,0,0);
+}
+
+function padPos(e){const r=pad.getBoundingClientRect();return{x:(e.clientX-r.left)/r.width*pad.width,y:(e.clientY-r.top)/r.height*pad.height};}
+pad.addEventListener('pointerdown',e=>{if(!roundActive)return;e.preventDefault();pad.setPointerCapture(e.pointerId);snap();const p=padPos(e);if(fillMode){floodFill(p.x,p.y,penColor);return;}drawing=true;last=p;dab(p.x,p.y);});
+pad.addEventListener('pointermove',e=>{if(!drawing)return;e.preventDefault();const p=padPos(e);stroke(last.x,last.y,p.x,p.y);last=p;});
+['pointerup','pointercancel','pointerleave'].forEach(ev=>pad.addEventListener(ev,()=>drawing=false));
+function dab(x,y){ctx.fillStyle=erasing?'#fff':penColor;ctx.beginPath();ctx.arc(x,y,(erasing?penSize*1.6:penSize)/2,0,Math.PI*2);ctx.fill();}
+function stroke(x0,y0,x1,y1){ctx.strokeStyle=erasing?'#fff':penColor;ctx.lineWidth=erasing?penSize*1.6:penSize;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y1);ctx.stroke();}
+
+/* crop to the drawn content so the subject fills the frame -> far better recognition */
+function exportForAI(){
+  const PW=pad.width,PH=pad.height;
+  let data;try{data=ctx.getImageData(0,0,PW,PH).data;}catch(e){return pad.toDataURL('image/png').split(',')[1];}
+  let minX=PW,minY=PH,maxX=0,maxY=0,found=false;
+  for(let y=0;y<PH;y+=2)for(let x=0;x<PW;x+=2){const i=(y*PW+x)*4;
+    if(data[i]<242||data[i+1]<242||data[i+2]<242){found=true;if(x<minX)minX=x;if(x>maxX)maxX=x;if(y<minY)minY=y;if(y>maxY)maxY=y;}}
+  if(!found)return pad.toDataURL('image/png').split(',')[1];
+  const pads=Math.max(24,(maxX-minX)*0.1,(maxY-minY)*0.1);
+  minX=Math.max(0,minX-pads);minY=Math.max(0,minY-pads);maxX=Math.min(PW,maxX+pads);maxY=Math.min(PH,maxY+pads);
+  const cw=maxX-minX,chh=maxY-minY,scale=Math.min(2,800/Math.max(cw,chh));
+  const t=document.createElement('canvas');t.width=Math.round(cw*scale);t.height=Math.round(chh*scale);
+  const tx=t.getContext('2d');tx.fillStyle='#fff';tx.fillRect(0,0,t.width,t.height);
+  tx.drawImage(pad,minX,minY,cw,chh,0,0,t.width,t.height);
+  return t.toDataURL('image/png').split(',')[1];
+}
+
+/* ---------------- timer ---------------- */
+const RING=169.6;
+function startTimer(secs){timeLeft=secs;updateRing();$('tNum').textContent=timeLeft;
+  timerId=setInterval(()=>{timeLeft--;$('tNum').textContent=Math.max(0,timeLeft);updateRing();
+    $('ring').setAttribute('stroke',timeLeft<=10?'#ff6b81':'#c8ff4d');
+    if(timeLeft<=0){clearInterval(timerId);submitDrawing();}},1000);}
+function updateRing(){const frac=Math.max(0,timeLeft)/roundSecs;$('ring').setAttribute('stroke-dashoffset',(RING*(1-frac)).toFixed(1));}
+let roundSecs=50;
+
+/* ---------------- rounds ---------------- */
+function newRound(){
+  tier = hits>=8?3 : hits>=4?2 : 1;
+  target=pickPrompt(tier);
+  $('promptText').textContent=target;
+  undo.length=0;roundSecs=tier===3?60:50;
+  show('round');roundActive=true;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{fitCanvas();clearPad();}));
+  startTimer(roundSecs);
+}
+let _rT;window.addEventListener('resize',()=>{clearTimeout(_rT);_rT=setTimeout(()=>{if(!screens.round.classList.contains('hide'))fitCanvas();},160);});
+$('btnPlay').onclick=newRound;
+$('bNext').onclick=newRound;
+$('btnHow').onclick=()=>$('howBox').classList.toggle('hide');
+
+async function submitDrawing(){
+  if(!roundActive)return;roundActive=false;drawing=false;
+  if(timerId)clearInterval(timerId);
+  show('think');
+  const dataURL=pad.toDataURL('image/png');
+  const b64=exportForAI();
+  try{
+    const guessRes=await aiGuess(b64);
+    const judgeRes=await aiJudge(target,guessRes.guesses);
+    finishRound(dataURL,guessRes,judgeRes,null);
+  }catch(err){
+    finishRound(dataURL,null,null,err.message||'connection error');
+  }
+}
+$('bSubmit').onclick=submitDrawing;
+
+function finishRound(dataURL,guessRes,judgeRes,errMsg){
+  show('result');
+  $('resThumb').src=dataURL;
+  $('resTarget').textContent=target;
+  if(errMsg){
+    $('resBody').classList.add('hide');$('resErr').classList.remove('hide');
+    $('resErr').textContent="Couldn't reach the machine ("+errMsg+"). Your drawing's safe — try Next, or check the connection.";
+    renderLog();return;
+  }
+  $('resBody').classList.remove('hide');$('resErr').classList.add('hide');
+  // guesses
+  const gBox=$('resGuesses');gBox.innerHTML='';
+  if(guessRes.observation){const o=document.createElement('div');o.className='g';o.innerHTML=`<span class="rank">saw</span><span class="txt" style="color:var(--dim);font-style:italic">${escapeHtml(guessRes.observation)}</span>`;gBox.appendChild(o);}
+  (guessRes.guesses||[]).slice(0,3).forEach((g,i)=>{const d=document.createElement('div');d.className='g';d.innerHTML=`<span class="rank">${['1st','2nd','3rd'][i]}</span><span class="txt">${escapeHtml(g)}</span>`;gBox.appendChild(d);});
+  $('resQuip').textContent='“'+(guessRes.quip||'...')+'”';
+  // score
+  const raw=Math.max(0,Math.min(100,judgeRes.score|0));
+  const hit=raw>=50;
+  const mult=1+streak*0.15;
+  const pts=Math.round(raw*mult);
+  const bigEl=$('resScore');bigEl.className='big '+(hit?'hit':'miss');
+  animateNum(bigEl,raw);
+  $('resVerdict').textContent=judgeRes.verdict||(hit?'Read your mind':'Swing and a miss');
+  if(hit){streak++;hits++;score+=pts;$('resStreakMsg').textContent=`+${pts} (×${mult.toFixed(2)} streak)`;}
+  else{$('resStreakMsg').textContent=streak>0?`streak of ${streak} broken`:'no streak';streak=0;}
+  best=Math.max(best,streak);
+  refreshStats();
+  log.unshift({thumb:dataURL,target,guess:(guessRes.guesses||['—'])[0],score:raw,hit});
+  renderLog();
+  lastShare=`HUNCH — drew “${target}”, machine guessed “${(guessRes.guesses||['—'])[0]}” (${raw}/100)${hit?' ✅':' ❌'} · streak ${streak} 🔥`;
+}
+
+function animateNum(el,to){let v=0;const step=Math.max(1,Math.round(to/18));const id=setInterval(()=>{v+=step;if(v>=to){v=to;clearInterval(id);}el.textContent=v;},22);}
+function refreshStats(){$('sScore').textContent=score;$('sStreak').textContent=streak;$('sBest').textContent=best;}
+function renderLog(){
+  if(!log.length){$('logBox').innerHTML='';return;}
+  let h='<h3>The machine\'s hunches</h3>';
+  log.slice(0,8).forEach(r=>{h+=`<div class="logrow"><img src="${r.thumb}"/><div class="lt"><div class="a">${escapeHtml(r.target)}</div><div class="b">guessed: ${escapeHtml(r.guess)}</div></div><div class="ls ${r.hit?'hit':'miss'}">${r.score}</div></div>`;});
+  $('logBox').innerHTML=h;
+}
+function escapeHtml(s){return (s||'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));}
+
+let lastShare='';
+$('bShare').onclick=()=>{if(!lastShare)return;navigator.clipboard?.writeText(lastShare).then(()=>toast('Result copied'),()=>toast('Copy failed'));};
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1600);}
+
+/* ---------------- AI calls (Claude vision in-artifact) ---------------- */
+async function callClaude(messages,system,temperature){
+  const body={model:"claude-sonnet-4-20250514",max_tokens:1000,system,messages};
+  if(typeof temperature==='number')body.temperature=temperature;
+  const resp=await fetch("https://api.anthropic.com/v1/messages",{
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(body)
+  });
+  if(!resp.ok)throw new Error("status "+resp.status);
+  const data=await resp.json();
+  return (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join("\n");
+}
+function parseJSON(txt){const clean=(txt||'').replace(/```json/gi,'').replace(/```/g,'').trim();return JSON.parse(clean);}
+
+async function aiGuess(b64){
+  const system="You are playing a drawing-guessing game. You are shown a human's hand drawing on a white background. You do NOT know the intended answer. Look carefully and reason ONLY from the marks actually present. Reply with ONLY raw JSON, no markdown: {\"observation\":\"one concrete sentence describing the shapes/lines/objects you literally see\",\"guesses\":[\"best\",\"second\",\"third\"],\"quip\":\"one short playful aside\"}. Fill 'observation' first and base every guess on it. Guesses are 1-6 words, sincere, best first. Never let the quip change your guesses — if it's hard to read, guess at the closest real thing the marks resemble rather than something random.";
+  const messages=[{role:"user",content:[
+    {type:"image",source:{type:"base64",media_type:"image/png",data:b64}},
+    {type:"text",text:"Study this drawing carefully. First describe what you actually see, then give 3 sincere guesses grounded in that, then one witty aside. JSON only."}
+  ]}];
+  const txt=await callClaude(messages,system,0.4);
+  try{const j=parseJSON(txt);if(!Array.isArray(j.guesses)||!j.guesses.length)throw 0;return j;}
+  catch(e){return {observation:"",guesses:[(txt||'').slice(0,40)||'the machine blinked'],quip:"I can't make this one out — respect, though."};}
+}
+async function aiJudge(target,guesses){
+  const system="You judge a drawing-guessing game. Given the SECRET concept the player drew and the guesser's guesses, score how well the guesser captured the concept. Scoring: exact or clear match=90-100; right idea / strong synonym=70-89; adjacent or partial=45-69; vaguely related=20-44; way off=0-19. Be fair but a little generous for abstract concepts. Reply with ONLY raw JSON: {\"score\":<int 0-100>,\"verdict\":\"<3-5 word verdict>\"}.";
+  const txt=await callClaude(messages,system,0.2);
+  try{const j=parseJSON(txt);return {score:Math.max(0,Math.min(100,j.score|0)),verdict:j.verdict||'—'};}
+  catch(e){return {score:0,verdict:'judge glitched'};}
+}
+
+refreshStats();show('start');
+</script>
+
+<!-- vendored into the arcade: gives this page a way back. See scripts/vendor_satellites.mjs -->
+<script src="/arcade-exit.js" defer></script>
+</body>
+</html>

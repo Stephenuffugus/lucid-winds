@@ -1,0 +1,2377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SIXFOLD: stance duel</title>
+<meta name="theme-color" content="#171d30">
+<meta name="description" content="A six-stance power-wheel duel. Read your foe, break the bind, win in under a minute.">
+<!-- Social share preview (Open Graph + Twitter) -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="SIXFOLD: stance duel">
+<meta property="og:description" content="A six-stance power-wheel duel. Read your foe, break the bind, win in under a minute.">
+<meta property="og:url" content="https://stephenuffugus.github.io/sixfold/">
+<meta property="og:image" content="https://stephenuffugus.github.io/sixfold/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="SIXFOLD: stance duel">
+<meta name="twitter:description" content="Read your foe. Break the bind. Win in under a minute.">
+<meta name="twitter:image" content="https://stephenuffugus.github.io/sixfold/og.png">
+<!-- PWA: installable + offline (degrades gracefully when opened as a local file) -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="apple-touch-icon" href="icon.svg">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SIXFOLD">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;800&family=Zen+Maru+Gothic:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#13120f; --indigo:#171d30; --indigo2:#222b46; --line:#39425f;
+    --washi:#efe7d6; --washi-dim:#cabfa6;
+    --seal:#cf4130; --jade:#5f9173; --steel:#7b8494; --gold:#cda64f;
+    --disp:"Shippori Mincho",Georgia,serif; --ui:"Zen Maru Gothic",system-ui,sans-serif;
+  }
+  /* colorblind-safe palette (accessibility setting) */
+  body.cb{ --seal:#d55e00; --jade:#0072b2; --steel:#999999; --gold:#e69f00; }
+  body.contrast{ --washi:#ffffff; --washi-dim:#e8e2d2; --line:#6b76a0; }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:var(--ui); color:var(--washi);
+    background:radial-gradient(120% 80% at 50% -10%, #2a3458 0%, var(--indigo) 55%, #10131f 100%);
+    min-height:100%; overflow-x:hidden;
+    display:flex; flex-direction:column; align-items:center; padding:12px 12px 28px; gap:9px;
+  }
+  /* ===== painted-scroll backdrop: data-driven arena themes =====
+     #scene sits behind everything. applyTheme() sets the --sky / disc / ridge /
+     accent vars per theme; the watercolor washes + paper grain are constant so
+     every area shares one cohesive "wet pigment on washi" language. */
+  #scene{position:fixed;inset:0;z-index:-2;overflow:hidden;pointer-events:none;
+    background:var(--sky,linear-gradient(#2a3458,#10131f));transition:background .6s ease}
+  #scene .disc{position:absolute;left:50%;top:11%;width:160px;height:160px;margin-left:-80px;border-radius:50%;
+    background:var(--disc,radial-gradient(circle at 50% 45%,#f3ead6,#d8cbac 70%,transparent 72%));
+    filter:blur(.5px);opacity:.9;transition:background .6s ease}
+  #scene .glow{position:absolute;left:50%;top:11%;width:420px;height:420px;margin-left:-210px;margin-top:-130px;border-radius:50%;
+    background:radial-gradient(circle,var(--glow,#8ec0ff33) 0%,transparent 60%);transition:background .6s ease}
+  #scene .ridge{position:absolute;left:-5%;right:-5%;bottom:30%;height:46%;opacity:.5;
+    background:var(--ridge,none);background-size:cover;background-position:bottom center;transition:opacity .6s}
+  #scene .floor{position:absolute;left:0;right:0;bottom:0;height:34%;
+    background:linear-gradient(var(--floor1,#1a2138) ,var(--floor2,#0c0f18));opacity:.9;transition:background .6s ease}
+  /* watercolor pigment blooms — soft, irregular, multiply-blended */
+  #scene .wash{position:absolute;border-radius:50%;filter:blur(34px);mix-blend-mode:screen;opacity:.5}
+  #scene .w1{left:-8%;top:18%;width:55%;height:42%;background:var(--wash1,#3a4a8a)}
+  #scene .w2{right:-10%;top:34%;width:52%;height:46%;background:var(--wash2,#6a3550)}
+  /* paper fiber grain (static feTurbulence; cheap, no asset) */
+  #scene .grain{position:absolute;inset:0;opacity:.06;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size:200px 200px}
+  #scene .vignette{position:absolute;inset:0;background:radial-gradient(120% 90% at 50% 32%,transparent 40%,#0a0c14cc 100%)}
+  /* painted backdrop image (per-theme, drop-in like skins). When present it takes
+     over and the CSS-generated sky furniture hides, leaving grain + vignette to tie
+     it in. Portrait art, covers the viewport. */
+  #scene .scenebg{position:absolute;inset:0;background-size:cover;background-position:center top;opacity:0;transition:opacity .6s}
+  #scene.hasbg .scenebg{opacity:1}
+  /* PERF: with a painted arena image up, fully REMOVE the procedural sky furniture
+     from the compositing tree (display:none, not opacity:0). The .wash layers blur 34px
+     + screen-blend over half the viewport — leaving them composited (even invisible) is
+     the main cause of mobile jank now that every arena has a full-screen backdrop. */
+  #scene.hasbg .glow,#scene.hasbg .disc,#scene.hasbg .ridge,#scene.hasbg .wash,#scene.hasbg .floor{display:none}
+  body.reduce #scene *{transition:none}
+  /* ambient per-biome particles (embers/snow/petals/fireflies) — a thin drifting
+     layer over the arena, GPU-only (transform+opacity), behind the fighters.
+     Count kept low + paused under reduced motion (owner's mobile-perf guard). */
+  #scene .particles{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:1}
+  body.reduce #scene .particles{display:none}
+  .pt{position:absolute;top:-8%;border-radius:50%;opacity:0;will-change:transform,opacity}
+  .pt-snow{background:radial-gradient(circle,#fff,#ffffff55);animation:p-fall linear infinite}
+  .pt-petal{border-radius:55% 0 55% 55%;background:linear-gradient(#f6c1d6,#d98ab0);animation:p-sway linear infinite}
+  .pt-ember{top:auto;bottom:-6%;background:radial-gradient(circle,#ffd27f,#ff7a3c00);animation:p-rise linear infinite}
+  .pt-firefly{background:radial-gradient(circle,#ffe7a3,#cda64f00);animation:p-drift ease-in-out infinite}
+  @keyframes p-fall{0%{transform:translate3d(0,0,0);opacity:0}12%{opacity:.8}90%{opacity:.7}100%{transform:translate3d(var(--drift),118vh,0);opacity:0}}
+  @keyframes p-sway{0%{transform:translate3d(0,0,0) rotate(0);opacity:0}12%{opacity:.82}100%{transform:translate3d(var(--drift),118vh,0) rotate(240deg);opacity:0}}
+  @keyframes p-rise{0%{transform:translate3d(0,0,0);opacity:0}16%{opacity:.85}84%{opacity:.6}100%{transform:translate3d(var(--drift),-118vh,0);opacity:0}}
+  @keyframes p-drift{0%,100%{transform:translate3d(0,0,0);opacity:.18}50%{transform:translate3d(var(--drift),-34px,0);opacity:.8}}
+
+  header{width:100%;max-width:460px;display:flex;align-items:baseline;justify-content:space-between}
+  h1{font-family:var(--disp);font-weight:800;letter-spacing:.18em;margin:0;font-size:23px;color:var(--washi);
+    text-shadow:0 1px 0 #0006;position:relative}
+  h1 .dot{color:var(--seal)}
+  /* brush-stroke underline under the wordmark */
+  h1::after{content:"";position:absolute;left:0;right:38%;bottom:-4px;height:3px;border-radius:2px;
+    background:linear-gradient(90deg,var(--seal),transparent);opacity:.85}
+  .tag{font-size:11px;letter-spacing:.12em;color:var(--washi-dim);text-transform:uppercase}
+  .beambal{font-family:var(--ui);font-weight:800;font-size:12.5px;color:var(--gold);background:#cda64f1c;
+    border:1px solid #cda64f44;border-radius:999px;padding:3px 9px;letter-spacing:.02em;white-space:nowrap}
+  .dailyprompt{width:100%;max-width:460px;display:flex;align-items:center;gap:8px;cursor:pointer;text-align:left;
+    font-family:var(--ui);color:var(--washi);background:linear-gradient(90deg,#cda64f22,#cda64f0c);
+    border:1px solid #cda64f55;border-radius:11px;padding:9px 13px;font-size:12.5px}
+  .dailyprompt b{color:var(--gold);font-weight:800} .dailyprompt .go{margin-left:auto;color:var(--gold);font-weight:800}
+  .beambal.bump{animation:beambump .5s}
+  @keyframes beambump{0%{transform:scale(1)}40%{transform:scale(1.22)}100%{transform:scale(1)}}
+  body.reduce .beambal.bump{animation:none}
+
+  /* foe / mode bar */
+  .foebar{width:100%;max-width:460px;display:flex;align-items:center;justify-content:space-between;gap:8px;
+    background:#1a213af2;
+    border:1px solid #ffffff1c;border-radius:11px;padding:8px 12px;font-size:12px;box-shadow:0 4px 18px #0005}
+  .foebar .who{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .foebar .fn{font-family:var(--disp);font-weight:600;font-size:14px;color:var(--washi)}
+  .foebar .stars{color:var(--gold);letter-spacing:1px;font-size:11px}
+  .foebar .tell{color:var(--washi-dim);font-size:10.5px;max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .foebar button{font-family:var(--ui);font-size:11px;font-weight:700;color:var(--washi);background:#ffffff14;
+    border:1px solid #ffffff22;border-radius:8px;padding:7px 10px;cursor:pointer;white-space:nowrap}
+  .modetag{font-size:9.5px;letter-spacing:.1em;color:var(--jade);text-transform:uppercase}
+  .modetag.comp{color:var(--seal)}
+
+  .arena{width:100%;max-width:460px;display:flex;justify-content:space-between;gap:10px}
+  .fighter{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:5px}
+  .fighter .nm{font-family:var(--disp);font-size:14px;font-weight:600;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .stage{position:relative;width:132px;height:150px}
+  /* soft watercolor ground shadow at the art's foot anchor (~88% down) — wider +
+     darker to ground the larger fighters so they sit IN the arena, not float. */
+  .stage::after{content:"";position:absolute;left:50%;bottom:9px;width:88px;height:18px;margin-left:-44px;border-radius:50%;
+    background:radial-gradient(closest-side,#000b,transparent);filter:blur(3px);z-index:1}
+  .banner{position:absolute;top:-2px;width:30px;height:62px;border-radius:2px 2px 0 0;box-shadow:0 2px 6px #0007;z-index:1;
+    display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff8;transform-origin:top center}
+  .banner.left{left:6px;transform:rotate(-7deg)} .banner.right{right:6px;transform:rotate(7deg)}
+  .body{position:relative;z-index:2;filter:drop-shadow(0 4px 6px #0008)}
+  .face{position:absolute;z-index:3;top:26px;left:50%;transform:translateX(-50%);font-size:30px;filter:drop-shadow(0 1px 1px #0006)}
+  .weapon{position:absolute;z-index:4;bottom:6px;font-size:26px;filter:drop-shadow(0 1px 2px #0008)}
+  .weapon.left{right:2px;transform:scaleX(-1)} .weapon.right{left:2px}
+
+  .hp{display:flex;gap:4px;height:13px}
+  .pip{width:15px;height:13px;border-radius:2px;background:#0003;border:1px solid #ffffff22;transition:background .25s,transform .25s}
+  .pip.full{background:linear-gradient(#e8645a,var(--seal));border-color:#ffffff44;box-shadow:0 0 5px #cf413066}
+  .pip.lost{transform:scale(.7) rotate(8deg);opacity:.35}
+  .pip.justlost{animation:piploss .45s ease-out}
+  @keyframes piploss{0%{box-shadow:0 0 0 2px #fff,0 0 14px #cf4130cc;transform:scale(1.25)}100%{transform:scale(.7) rotate(8deg)}}
+  body.reduce .pip.justlost{animation:none}
+  /* floating damage numbers — the hit's weight + exact value, at the strike moment */
+  .dmgnum{position:absolute;left:50%;top:30%;z-index:6;pointer-events:none;font-family:var(--disp);font-weight:800;
+    font-size:30px;line-height:1;color:var(--seal);text-shadow:0 2px 5px #000b,0 0 14px #cf413099;
+    animation:dmgfloat .9s cubic-bezier(.2,.8,.3,1) forwards}
+  .dmgnum.glance{color:var(--jade);font-size:25px;text-shadow:0 2px 5px #000b,0 0 12px #5f917399}
+  .dmgnum.read{color:var(--gold);font-size:35px;text-shadow:0 2px 5px #000b,0 0 18px #cda64fdd}
+  @keyframes dmgfloat{0%{opacity:0;transform:translate(-50%,8px) scale(.6)}22%{opacity:1;transform:translate(-50%,-4px) scale(1.12)}100%{opacity:0;transform:translate(-50%,-38px) scale(1)}}
+  body.reduce .dmgnum{display:none}
+  /* combo momentum badge — builds as you chain damage-dealing rounds without taking a hit */
+  .combobadge{position:absolute;left:50%;top:-4px;transform:translateX(-50%) scale(.6);z-index:7;pointer-events:none;
+    font-family:var(--disp);font-weight:800;font-size:15px;letter-spacing:.04em;color:var(--gold);white-space:nowrap;
+    background:#1a1206d8;border:1px solid var(--gold);border-radius:999px;padding:3px 12px;opacity:0;
+    text-shadow:0 0 8px #cda64f99;box-shadow:0 2px 12px #cda64f55;transition:opacity .2s}
+  .combobadge.on{opacity:1;transform:translateX(-50%) scale(1)}
+  .combobadge.hot{color:#ff8a4c;border-color:#ff7a3c;text-shadow:0 0 11px #ff7a3c;box-shadow:0 2px 18px #ff7a3c66}
+  .combobadge.bump{animation:combobump .42s cubic-bezier(.2,1.5,.4,1)}
+  @keyframes combobump{0%{transform:translateX(-50%) scale(.7)}60%{transform:translateX(-50%) scale(1.28)}100%{transform:translateX(-50%) scale(1)}}
+  body.reduce .combobadge.bump{animation:none;transform:translateX(-50%) scale(1)}
+
+  /* stance ribbon + unpredictability bar */
+  .ribbon{display:flex;gap:3px;height:18px;align-items:center;justify-content:center}
+  .ribbon-cell{font-size:13px;width:17px;height:17px;border-radius:4px;display:flex;align-items:center;justify-content:center;
+    background:#ffffff10;border:1px solid #ffffff18;line-height:1}
+  .ribbon-cell.tint-seal{color:#fff;background:var(--seal);border-color:#fff4}
+  .ribbon-cell.tint-jade{color:#fff;background:var(--jade);border-color:#fff4}
+  .ribbon-cell.tint-steel{color:var(--washi);background:#ffffff14}
+  .ribbon-cell.tint-white{color:#222;background:#e9e2d0}
+  .bar{width:80px;height:8px;border-radius:5px;background:#ffffff14;position:relative;opacity:0;transition:opacity .3s;border:1px solid #ffffff14}
+  .bar.show{opacity:1}
+  .bar .bar-fill{height:100%;width:0;border-radius:5px;background:linear-gradient(90deg,var(--jade),var(--gold));transition:width .4s}
+  .bar .bar-num{position:absolute;right:-26px;top:-5px;font-size:10px;color:var(--gold);font-weight:700}
+  /* readable warning: low unpredictability = the foe can read you */
+  .bar.danger{border-color:var(--seal);box-shadow:0 0 8px #cf413088;animation:barwarn 1.1s infinite alternate}
+  .bar.danger .bar-fill{background:linear-gradient(90deg,#cf4130,#e0954a)}
+  .bar.danger .bar-num{color:var(--seal)}
+  @keyframes barwarn{to{box-shadow:0 0 13px #cf4130cc}}
+  body.reduce .bar.danger{animation:none}
+  .barwrap{display:flex;flex-direction:column;align-items:center;gap:3px}
+  .barlbl{font-size:9px;letter-spacing:.08em;color:var(--washi-dim);text-transform:uppercase}
+
+  /* WHEEL */
+  /* flex-shrink:0 is critical: body is a column flexbox, and on a phone the page
+     content exceeds viewport height — without this the wheel gets vertically
+     crushed and the 6 stance nodes collapse on top of each other. */
+  .wheelwrap{position:relative;width:296px;height:296px;margin:0;flex-shrink:0}
+  svg.links{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;overflow:visible}
+  .node{position:absolute;width:72px;height:72px;margin:-36px 0 0 -36px;border-radius:50%;
+    background:linear-gradient(#2a3556ee,#1a2135f2);border:1.5px solid #5a6a93;color:var(--washi);
+    box-shadow:0 4px 12px #0007,inset 0 1px 0 #ffffff1f;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;cursor:pointer;z-index:2;
+    transition:transform .12s,border-color .2s,box-shadow .2s;font-family:var(--ui)}
+  .node:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+  .node .g{font-size:22px;line-height:1}
+  .node .n{font-family:var(--disp);font-size:10.5px;letter-spacing:.04em;color:var(--washi-dim)}
+  .node:active{transform:scale(.93)}
+  @media(hover:hover){.node:hover{border-color:var(--gold);box-shadow:0 0 14px #cda64f44}}
+  .node.ppick{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold),0 0 18px #cda64f88}
+  /* aimed (selected, not yet struck): tap again to commit */
+  .node.aiming{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold),0 0 22px #cda64fcc;transform:scale(1.12);animation:aimpulse .7s infinite alternate}
+  @keyframes aimpulse{to{box-shadow:0 0 0 3px var(--gold),0 0 30px #cda64fff}}
+  body.reduce .node.aiming{animation:none}
+  .node.apick{border-color:var(--seal);box-shadow:0 0 0 2px var(--seal),0 0 18px #cf413088}
+  .node.both{border-color:#fff;box-shadow:0 0 0 2px #fff,0 0 22px #fff8}
+  .node.dim{opacity:.4}
+  .node.foresight{border-color:var(--jade);box-shadow:0 0 0 2px var(--jade),0 0 16px #5f917399;animation:fpulse 1s infinite alternate}
+  @keyframes fpulse{to{box-shadow:0 0 0 3px var(--jade),0 0 24px #5f9173cc}}
+  /* Foresight's recommended counter — the stance to STRIKE to land the read */
+  .node.calledshot{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold),0 0 18px #cda64fbb;animation:cspulse .85s infinite alternate}
+  .node.calledshot::after{content:"⚔";position:absolute;top:-9px;right:-3px;font-size:11px;color:var(--gold);text-shadow:0 0 4px #000}
+  @keyframes cspulse{to{box-shadow:0 0 0 3px var(--gold),0 0 28px #cda64fee}}
+  body.reduce .node.calledshot,body.reduce .node.foresight{animation:none}
+  .node .ring{position:absolute;inset:-4px;border-radius:50%;border:2px solid transparent;opacity:0;transition:opacity .15s}
+  .node.r-clean .ring{border-color:var(--seal);opacity:.9}
+  .node.r-glance .ring{border-color:var(--jade);opacity:.9}
+  .node.r-safe .ring{border-color:var(--steel);opacity:.7}
+  /* large tap targets (accessibility) */
+  body.bigtap .node{width:82px;height:82px;margin:-41px 0 0 -41px}
+
+  .hub{position:absolute;left:50%;top:50%;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;
+    background:radial-gradient(circle at 50% 38%, #f3ead6 0%, #d8cbac 60%, #b9a982 100%);color:var(--ink);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:3;
+    box-shadow:inset 0 0 0 2px #ffffff66,inset 0 0 0 4px #b9a98244,0 8px 24px #0009;text-align:center;padding:8px}
+  .hub .round{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#7a6a48}
+  .hub .verdict{font-family:var(--disp);font-weight:800;font-size:20px;line-height:1.05;margin-top:2px}
+  .hub .sub{font-size:10px;color:#6c5d3f;margin-top:3px;max-width:98px;line-height:1.25}
+  .hub.flash-clean{animation:flashc .5s} .hub.flash-glance{animation:flashg .5s}
+  .hub.flash-read{animation:flashr .6s}
+  @keyframes flashc{0%{box-shadow:inset 0 0 0 3px var(--seal),0 0 40px #cf4130cc}100%{}}
+  @keyframes flashg{0%{box-shadow:inset 0 0 0 3px var(--jade),0 0 30px #5f9173aa}100%{}}
+  @keyframes flashr{0%{box-shadow:inset 0 0 0 4px var(--gold),0 0 52px #cda64fee}100%{}}
+  .hub .verdict.read{color:#7a5e1a}
+  /* bind prompt — hub flips to 3 buttons */
+  .hub.bind-mode{background:radial-gradient(circle at 50% 38%,#f6dede,#d8b6ac 70%,#b98a82)}
+  .bind-title{font-family:var(--disp);font-weight:800;font-size:12px;letter-spacing:.2em;color:#7a3a30}
+  .bind-row{display:flex;gap:4px;margin-top:5px}
+  .bindbtn{display:flex;flex-direction:column;align-items:center;gap:1px;width:31px;padding:5px 2px;border-radius:8px;
+    border:1px solid #00000022;background:#fff7;cursor:pointer;font-family:var(--ui);color:var(--ink)}
+  .bindbtn:active{transform:scale(.92)}
+  .bindbtn .bg{font-size:16px;line-height:1} .bindbtn .bn{font-size:8.5px;letter-spacing:.03em}
+
+  .esc{font-size:11px;letter-spacing:.12em;color:var(--gold);height:14px;text-transform:uppercase;opacity:0;transition:opacity .3s}
+  .esc.on{opacity:1}
+
+  /* resolve meter */
+  .meter{width:100%;max-width:460px;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}
+  .resolve{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--washi-dim)}
+  .rpip{width:13px;height:13px;border-radius:3px;background:#ffffff14;border:1px solid #ffffff22;transition:background .25s,box-shadow .25s}
+  .rpip.full{background:linear-gradient(#8ec0ff,#3f6fb0);border-color:#fff4;box-shadow:0 0 6px #3f6fb088}
+  .spendbtn{font-family:var(--ui);font-weight:700;font-size:11.5px;color:var(--washi);background:#ffffff12;
+    border:1px solid #ffffff22;border-radius:8px;padding:7px 9px;cursor:pointer;display:flex;gap:5px;align-items:center}
+  .spendbtn .c{color:#8ec0ff;font-size:10px}
+  .spendbtn:disabled{opacity:.35;cursor:default}
+  /* glow when you can actually afford it — makes the perception layer discoverable */
+  .spendbtn.ready{border-color:var(--gold);color:#fff;animation:rpulse 1.5s infinite}
+  @keyframes rpulse{0%,100%{box-shadow:0 0 0 1px var(--gold),0 0 9px #cda64f55}50%{box-shadow:0 0 0 1px var(--gold),0 0 17px #cda64f99}}
+  body.reduce .spendbtn.ready{animation:none;box-shadow:0 0 0 1px var(--gold)}
+  .aimeter{font-size:10px;color:var(--steel);min-width:54px;text-align:right}
+
+  .controls{width:100%;max-width:460px;display:flex;flex-wrap:wrap;gap:8px}
+  button.act{flex:1 1 calc(50% - 4px);font-family:var(--ui);font-weight:700;font-size:13.5px;letter-spacing:.02em;padding:12px;border-radius:11px;
+    border:1px solid #ffffff22;cursor:pointer;color:var(--washi);background:linear-gradient(#2c3658,#202841)}
+  button.act:active{transform:translateY(1px)}
+  button.primary{background:linear-gradient(#d9694f,var(--seal));border-color:#ffffff33;color:#1a0f0c}
+  button.ghost{background:#ffffff10}
+
+  .legend{width:100%;max-width:460px;font-size:10.5px;color:var(--washi-dim);display:flex;flex-wrap:wrap;gap:8px 13px;justify-content:center;line-height:1;
+    background:#13182af0;border:1px solid #ffffff12;border-radius:10px;padding:9px 12px}
+  .legend b{color:var(--washi);font-weight:700}
+  .sw{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align:-1px;margin-right:4px}
+
+  /* post-match readout */
+  .postmatch{width:100%;max-width:460px;background:#ffffff0d;border:1px solid var(--gold);border-radius:12px;padding:12px 14px;
+    font-size:12px;line-height:1.5;display:none}
+  .postmatch.show{display:block}
+  .postmatch b{color:var(--gold)} .postmatch .dim{color:var(--washi-dim)}
+
+  /* drawers */
+  .drawer{width:100%;max-width:460px;background:#1a213af2;
+    border:1px solid #ffffff1a;border-radius:14px;overflow:hidden;box-shadow:0 4px 18px #0004;
+    transition:max-height .3s ease;max-height:46px}
+  .drawer.open{max-height:520px}
+  .drawer .dh{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;cursor:pointer;font-weight:700;font-size:13px;letter-spacing:.04em}
+  .drawer .dh .chev{transition:transform .3s} .drawer.open .dh .chev{transform:rotate(180deg)}
+  .dbody{padding:0 16px 16px;display:flex;flex-direction:column;gap:12px}
+  .row{display:flex;flex-direction:column;gap:6px}
+  .row label{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--washi-dim)}
+  .opts{display:flex;flex-wrap:wrap;gap:7px}
+  .opt{min-width:40px;height:40px;padding:0 8px;border-radius:9px;border:1.5px solid #ffffff22;background:#ffffff10;
+    display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;color:var(--washi);font-family:var(--ui)}
+  .opt.sml{font-size:12px;font-weight:700}
+  .opt.sel{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold)}
+  .opt.lock{opacity:.42;cursor:default} .opt.lock.sel{box-shadow:none;border-color:#ffffff22}
+  .opt.pal{position:relative}
+  .opt.crest{font-family:var(--disp);font-size:19px;font-weight:700}
+  .opt.buy{position:relative;opacity:.82}
+  .opt.buy .price{position:absolute;bottom:-7px;left:50%;transform:translateX(-50%);font-family:var(--ui);font-weight:800;
+    font-size:8.5px;color:var(--gold);background:#1a2135;border:1px solid #cda64f66;border-radius:6px;padding:0 3px;white-space:nowrap}
+  input.nm{font-family:var(--ui);font-size:14px;padding:9px 11px;border-radius:9px;border:1px solid #ffffff22;background:#ffffff10;color:var(--washi);width:100%}
+  input.nm::placeholder{color:#ffffff55}
+  input[type=range]{width:100%}
+  .toggle{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;padding:4px 0}
+  .toggle input{width:38px;height:22px;-webkit-appearance:none;appearance:none;background:#ffffff20;border-radius:12px;position:relative;cursor:pointer;transition:background .2s}
+  .toggle input:checked{background:var(--jade)}
+  .toggle input::after{content:"";position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:2px;left:2px;transition:left .2s}
+  .toggle input:checked::after{left:18px}
+  .hint{font-size:10.5px;color:var(--washi-dim);line-height:1.4}
+  .compbanner{font-size:11px;color:var(--seal);font-weight:700;text-align:center;padding:4px;display:none}
+  .compbanner.show{display:block}
+
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);opacity:0;background:#13182a;border:1px solid var(--gold);
+    color:var(--gold);font-weight:700;font-size:13px;padding:10px 18px;border-radius:30px;transition:.35s;z-index:20;pointer-events:none;letter-spacing:.04em}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  .shake{animation:shake .35s}
+  @keyframes shake{0%,100%{transform:translate(0,0)}20%{transform:translate(-5px,2px)}40%{transform:translate(5px,-2px)}60%{transform:translate(-4px,-1px)}80%{transform:translate(3px,2px)}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  body.reduce *{animation:none!important;transition:none!important}
+  @media (max-width:360px){.wheelwrap{width:266px;height:266px}.node{width:64px;height:64px;margin:-32px 0 0 -32px}}
+
+  /* ===== CLASH BIND — full-screen escalation moment =====
+     The bind is the duel's spike: the world pulls out of focus and the three
+     choices rush toward you. Backdrop blur dims the arena; .bind-hero scales
+     up with a slight overshoot so the buttons feel like they close in. */
+  .overlay{position:fixed;inset:0;z-index:60;display:none;flex-direction:column;align-items:center;justify-content:center;
+    gap:16px;padding:24px;background:rgba(9,11,20,.42);-webkit-backdrop-filter:blur(9px) brightness(.5);
+    backdrop-filter:blur(9px) brightness(.5);opacity:0;transition:opacity .26s ease}
+  .overlay.show{display:flex;opacity:1}
+  .overlay .hero{display:flex;flex-direction:column;align-items:center;gap:14px;max-width:420px;
+    transform:scale(.5);transition:transform .3s cubic-bezier(.18,1.5,.4,1)}
+  .overlay.show .hero{transform:scale(1)}
+  .clash-title{font-family:var(--disp);font-weight:800;font-size:38px;letter-spacing:.18em;color:var(--seal);
+    text-shadow:0 0 24px #cf4130aa,0 2px 0 #0008;margin:0}
+  .clash-sub{font-size:12.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--washi-dim);margin-top:-6px}
+  .bind-big-row{display:flex;gap:13px}
+  .bindbtn-lg{display:flex;flex-direction:column;align-items:center;gap:6px;width:94px;padding:18px 8px 12px;border-radius:16px;
+    border:2px solid #ffffff30;background:linear-gradient(#303a5e,#1b2138);color:var(--washi);cursor:pointer;font-family:var(--ui);
+    box-shadow:0 10px 30px #0009;transition:transform .1s,border-color .15s,box-shadow .15s}
+  .bindbtn-lg .bg{font-size:40px;line-height:1}
+  .bindbtn-lg .bn{font-size:16px;font-weight:800;letter-spacing:.04em}
+  .bindbtn-lg .bd{font-size:10px;color:var(--washi-dim);letter-spacing:.02em}
+  .bindbtn-lg:active{transform:scale(.93)}
+  .bindbtn-lg:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+  @media(hover:hover){.bindbtn-lg:hover{border-color:var(--gold);box-shadow:0 12px 34px #cda64f55,0 10px 30px #0009;transform:translateY(-2px)}}
+  .bind-timer{height:4px;width:210px;border-radius:3px;background:#ffffff1a;overflow:hidden;opacity:0;margin-top:2px}
+  .bind-timer.on{opacity:1}
+  .bind-timer .fill{height:100%;width:100%;background:linear-gradient(90deg,var(--seal),var(--gold));transform-origin:left;animation:bindcount 2s linear forwards}
+  @keyframes bindcount{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+
+  /* ===== HOW TO DUEL — first-run guide (reuses .overlay) ===== */
+  .howto{text-align:center}
+  .howto h2{font-family:var(--disp);font-weight:800;font-size:24px;letter-spacing:.14em;margin:0 0 4px;color:var(--washi)}
+  .howto ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:11px;text-align:left;font-size:13px;line-height:1.4}
+  .howto li{display:flex;gap:10px;align-items:flex-start}
+  .howto li .ic{flex:0 0 26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;
+    background:#ffffff14;border:1px solid #ffffff22}
+  .howto .k{color:var(--washi);font-weight:700}
+  .howto .c-clean{color:var(--seal);font-weight:700} .howto .c-glance{color:var(--jade);font-weight:700}
+  .howto .c-steel{color:var(--steel);font-weight:700} .howto .c-gold{color:var(--gold);font-weight:700}
+  .howto .gotit{margin-top:6px;font-family:var(--ui);font-weight:800;font-size:15px;letter-spacing:.04em;padding:13px 32px;border-radius:12px;
+    border:1px solid #ffffff33;cursor:pointer;color:#1a0f0c;background:linear-gradient(#d9694f,var(--seal))}
+  body.reduce .overlay,body.reduce .overlay .hero{transition:none}
+
+  /* clean-finish flash */
+  .flash{position:fixed;inset:0;z-index:55;background:#fff;opacity:0;pointer-events:none}
+  .flash.go{animation:flashgo .3s ease-out}
+  @keyframes flashgo{0%{opacity:.0}12%{opacity:.6}100%{opacity:0}}
+  body.reduce .flash.go{animation:none}
+  /* READ! gets its own gold wash (distinct from the white clean flash) */
+  .flash.read-go{background:radial-gradient(circle at 50% 42%,#ffe6a8,#cda64f 70%,#a8842e);animation:flashreadgo .6s ease-out}
+  @keyframes flashreadgo{0%{opacity:0}14%{opacity:.55}100%{opacity:0}}
+  body.reduce .flash.read-go{animation:none}
+  /* the big centered READ! stamp — the apex moment owns the screen for a beat */
+  .readstamp{position:fixed;left:0;right:0;top:38%;z-index:58;text-align:center;pointer-events:none;
+    font-family:var(--disp);font-weight:800;font-size:64px;letter-spacing:.14em;color:#ffe6a8;opacity:0;
+    text-shadow:0 0 36px #cda64f,0 2px 0 #0008}
+  .readstamp.go{animation:readstamp 1s cubic-bezier(.2,1.3,.5,1)}
+  @keyframes readstamp{0%{opacity:0;transform:scale(.5)}18%{opacity:1;transform:scale(1.12)}55%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.04)}}
+  body.reduce .readstamp.go{animation:none}
+  .hub.flash-whiff{animation:flashw .45s}
+  @keyframes flashw{0%{box-shadow:inset 0 0 0 3px var(--steel),0 0 22px #6a748055}100%{}}
+
+  /* ===== VICTORY / DEFEAT result screen (reuses .overlay) ===== */
+  .result{text-align:center;gap:16px}
+  .result-word{font-family:var(--disp);font-weight:800;font-size:46px;letter-spacing:.14em;margin:0;line-height:1}
+  .result.win .result-word{color:var(--gold);text-shadow:0 0 30px #cda64f88,0 2px 0 #0008}
+  /* victory gold-spark burst behind the result card content */
+  .winburst{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0;border-radius:inherit}
+  .winburst span{position:absolute;bottom:-6%;border-radius:50%;opacity:0;
+    background:radial-gradient(circle,#ffe7a3,#cda64f00);animation:winrise linear infinite}
+  @keyframes winrise{0%{opacity:0;transform:translate3d(0,0,0)}14%{opacity:.95}100%{opacity:0;transform:translate3d(var(--dx),-280px,0)}}
+  body.reduce .winburst{display:none}
+  .result.lose .result-word{color:var(--seal);text-shadow:0 0 26px #cf413088,0 2px 0 #0008}
+  .result-flavor{font-size:13px;letter-spacing:.06em;color:var(--washi-dim);margin-top:-8px}
+  .stat-chips{display:flex;gap:9px;justify-content:center;flex-wrap:wrap}
+  .chip{display:flex;flex-direction:column;align-items:center;gap:1px;min-width:62px;padding:9px 11px;border-radius:11px;
+    background:#ffffff10;border:1px solid #ffffff1e}
+  .chip b{font-family:var(--disp);font-size:19px;color:var(--washi);line-height:1}
+  .chip span{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--washi-dim)}
+  .chip.streak b{color:var(--gold)}
+  .chip.reads b{color:var(--gold)} .chip.reads{box-shadow:0 0 0 1px #cda64f55,0 0 12px #cda64f33}
+  .sunbeams{font-size:15px;font-weight:800;color:var(--gold);letter-spacing:.03em}
+  .result-tell{font-size:11px;color:var(--washi-dim);line-height:1.4;max-width:300px}
+  .result-tell b{color:var(--washi)}
+  .result-actions{display:flex;gap:9px;margin-top:4px}
+  .result-actions button{font-family:var(--ui);font-weight:800;font-size:14px;letter-spacing:.03em;padding:13px 22px;border-radius:12px;
+    border:1px solid #ffffff28;cursor:pointer;color:var(--washi);background:linear-gradient(#2c3658,#202841)}
+  .result-actions button.primary{color:#1a0f0c;background:linear-gradient(#d9694f,var(--seal));border-color:#ffffff33}
+  .result-actions button:active{transform:translateY(1px)}
+
+  /* ===== THE ASCENT — campaign ladder (reuses .overlay) ===== */
+  .ascent{text-align:center;width:100%;max-width:380px;max-height:88vh}
+  .ascent h2{font-family:var(--disp);font-weight:800;font-size:25px;letter-spacing:.16em;margin:0;color:var(--gold)}
+  .ascent .prog{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--washi-dim);margin-top:2px}
+  .ladder{display:flex;flex-direction:column;gap:8px;margin-top:6px;overflow-y:auto;max-height:62vh;padding:2px}
+  .rung{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:11px;border:1px solid #ffffff18;
+    background:#ffffff0c;text-align:left}
+  .rung.done{border-color:#5f917366;background:#5f917318}
+  .rung.cur{border-color:var(--gold);background:#cda64f22;box-shadow:0 0 0 1px var(--gold)}
+  .rung.lock{opacity:.5}
+  .chapter-head{text-align:left;padding:9px 4px 2px;margin-top:4px}
+  .chapter-head:first-child{margin-top:0}
+  .chapter-head .cn{display:block;font-family:var(--disp);font-weight:700;font-size:13px;letter-spacing:.1em;color:var(--gold)}
+  .chapter-head .cd{display:block;font-size:9.5px;letter-spacing:.04em;color:var(--washi-dim);text-transform:uppercase;margin-top:1px}
+  .rung .ic{flex:0 0 30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;
+    background:#ffffff14;border:1px solid #ffffff22}
+  .rung .meta{flex:1;min-width:0}
+  .rung .fn{font-family:var(--disp);font-weight:600;font-size:14px;color:var(--washi)}
+  .rung .rw{font-size:10.5px;color:var(--washi-dim)}
+  .rung .rw b{color:var(--gold)}
+  .rung .stars{font-size:9px;color:var(--gold);letter-spacing:1px}
+  .rung button{font-family:var(--ui);font-weight:800;font-size:12px;padding:9px 13px;border-radius:9px;cursor:pointer;
+    color:#1a0f0c;background:linear-gradient(#d9694f,var(--seal));border:1px solid #ffffff33;white-space:nowrap}
+  .ascent .close{margin-top:4px;font-family:var(--ui);font-weight:700;font-size:13px;padding:11px 26px;border-radius:11px;
+    border:1px solid #ffffff28;cursor:pointer;color:var(--washi);background:#ffffff12}
+  .reward-banner{font-size:13px;font-weight:800;color:var(--gold);letter-spacing:.03em;margin:2px 0}
+
+  /* ===== ROSTER / COLLECTION gallery (reuses .overlay) ===== */
+  .collection{text-align:center;width:100%;max-width:430px;max-height:88vh}
+  .collection h2{font-family:var(--disp);font-weight:800;font-size:25px;letter-spacing:.16em;margin:0;color:var(--gold)}
+  .collection .prog{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--washi-dim);margin-top:2px}
+  .coll-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:8px;overflow-y:auto;max-height:64vh;padding:3px}
+  .ccard{position:relative;border-radius:11px;border:1px solid #ffffff18;background:#ffffff0c;padding:8px 5px 7px;
+    display:flex;flex-direction:column;align-items:center;gap:4px}
+  .ccard.got{border-color:#5f917366;background:#5f917312;cursor:pointer;transition:transform .1s,border-color .15s,box-shadow .15s}
+  .ccard.got:active{transform:scale(.96)}
+  @media(hover:hover){.ccard.got:hover{border-color:var(--gold);box-shadow:0 4px 14px #0006}}
+  .ccard.equipped{border-color:var(--gold);background:#cda64f1e;box-shadow:0 0 0 1px var(--gold),0 4px 16px #cda64f33}
+  .ccard .eq{position:absolute;top:9px;left:9px;width:18px;height:18px;border-radius:50%;background:var(--gold);color:#1a1206;
+    font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px #000a}
+  .ccard.equipped .cs{color:var(--gold)}
+  .cthumb{width:78px;height:78px;border-radius:9px;overflow:hidden;background:radial-gradient(circle at 50% 38%,#ffffff12,#0003)}
+  .cthumb i{display:block;width:100%;height:100%;background-repeat:no-repeat;background-position:0% 0%;background-size:300% 200%}
+  .ccard.lock .cthumb i{filter:brightness(.05) contrast(.6)}
+  .ccard .lk{position:absolute;top:11px;right:11px;font-size:13px;filter:drop-shadow(0 1px 2px #000)}
+  .ccard .cn{font-family:var(--disp);font-weight:600;font-size:12px;color:var(--washi);line-height:1.05}
+  .ccard.lock .cn{color:var(--washi-dim)}
+  .ccard .cs{font-size:8.5px;letter-spacing:.02em;color:var(--washi-dim);line-height:1.15}
+  .ccard.got .cs{color:#8fae93}
+  .collection .close{margin-top:8px;font-family:var(--ui);font-weight:700;font-size:13px;padding:11px 26px;border-radius:11px;
+    border:1px solid #ffffff28;cursor:pointer;color:var(--washi);background:#ffffff12}
+
+  /* ===== PROFILE / lifetime stats (reuses .overlay) ===== */
+  .profile{text-align:center;width:100%;max-width:400px}
+  .profile h2{font-family:var(--disp);font-weight:800;font-size:25px;letter-spacing:.16em;margin:0;color:var(--gold)}
+  .profile .pgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px;width:100%}
+  .pstat{border-radius:11px;border:1px solid #ffffff18;background:#ffffff0c;padding:11px 8px;display:flex;flex-direction:column;gap:2px}
+  .pstat b{font-family:var(--disp);font-size:24px;color:var(--washi);line-height:1}
+  .pstat.gold b{color:var(--gold)}
+  .pstat span{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--washi-dim)}
+  .pstat.wide{grid-column:1 / -1;flex-direction:row;align-items:center;justify-content:center;gap:8px}
+  .pstat.wide b{font-size:22px}
+  .profile .close{margin-top:12px;font-family:var(--ui);font-weight:700;font-size:13px;padding:11px 26px;border-radius:11px;
+    border:1px solid #ffffff28;cursor:pointer;color:var(--washi);background:#ffffff12}
+
+  /* ===== DAILY DUEL (reuses .overlay) ===== */
+  .daily{text-align:center;width:100%;max-width:380px}
+  .daily h2{font-family:var(--disp);font-weight:800;font-size:25px;letter-spacing:.16em;margin:0;color:var(--gold)}
+  .daily .prog{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--washi-dim);margin-top:2px}
+  .daily-foe{margin:12px 0 4px;padding:14px;border-radius:13px;border:1px solid #ffffff1c;background:#ffffff0c}
+  .daily-foe .df-name{font-family:var(--disp);font-weight:800;font-size:20px;color:var(--washi)}
+  .daily-foe .df-stars{font-size:12px;color:var(--gold);letter-spacing:2px;margin-top:2px}
+  .daily-foe .df-tell{font-size:11px;color:var(--washi-dim);margin-top:6px;line-height:1.35}
+  .daily-foe .df-arena{font-size:11px;color:var(--washi);margin-top:8px;opacity:.85}
+  .trials{width:100%;margin-top:12px;text-align:left;border-top:1px solid #ffffff14;padding-top:8px}
+  .trials-h{font-size:10px;letter-spacing:.16em;color:var(--washi-dim);text-transform:uppercase;margin-bottom:5px;text-align:center}
+  .trial{display:flex;align-items:center;gap:8px;padding:6px 9px;border-radius:9px;background:#ffffff0a;border:1px solid #ffffff14;margin-bottom:5px;font-size:12px}
+  .trial .tk{color:var(--washi-dim);font-weight:800} .trial .tl{flex:1;color:var(--washi)} .trial .tp{color:var(--gold);font-weight:700}
+  .trial .tr{color:var(--gold);font-weight:800;font-size:11px}
+  .trial.done{border-color:#5f917366;background:#5f917318} .trial.done .tk{color:#7fcf9a} .trial.done .tl{color:var(--washi-dim)}
+  .daily .close{margin-top:10px;font-family:var(--ui);font-weight:700;font-size:13px;padding:11px 26px;border-radius:11px;
+    border:1px solid #ffffff28;cursor:pointer;color:var(--washi);background:#ffffff12}
+
+  /* ===== Ranked Duel (PvP) screen ===== */
+  .hero.duel h2{margin:0 0 2px}
+  .tiercard{display:flex;flex-direction:column;align-items:center;gap:6px;background:#ffffff0e;border:1px solid #ffffff1c;
+    border-radius:16px;padding:16px 18px;margin:6px 0 4px;width:100%;max-width:340px}
+  .tierbadge{display:flex;align-items:center;gap:10px}
+  .tierbadge .tg{font-size:34px;line-height:1}
+  .tierbadge .tn{font-family:var(--disp);font-weight:800;font-size:22px;letter-spacing:.06em;color:var(--gold)}
+  .tierbadge .tn small{display:block;font-family:var(--ui);font-weight:600;font-size:11px;letter-spacing:.02em;color:var(--washi-dim)}
+  .rankbar{width:100%;height:12px;border-radius:7px;background:#0006;border:1px solid #ffffff22;overflow:hidden;position:relative}
+  .rankbar > i{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:7px;
+    background:linear-gradient(90deg,var(--gold),#f0d98a);transition:width .9s cubic-bezier(.2,.8,.2,1)}
+  .rankmeta{display:flex;justify-content:space-between;width:100%;font-size:11px;color:var(--washi-dim)}
+  .rankrec{display:flex;gap:14px;font-size:12px;color:var(--washi);margin-top:2px}
+  .rankrec b{color:var(--gold)}
+  .duel-actions{display:flex;flex-direction:column;gap:9px;width:100%;max-width:340px;margin-top:8px}
+  .duel-actions button{font-family:var(--ui);font-weight:700;font-size:14px;padding:13px 18px;border-radius:12px;cursor:pointer;
+    border:1px solid #ffffff26;color:var(--washi);background:#ffffff12;transition:transform .1s,background .2s}
+  .duel-actions button.primary{background:linear-gradient(180deg,#b98a2e,#8a6420);border-color:#0003;color:#fff;box-shadow:0 4px 14px #0005}
+  .duel-actions button:active{transform:scale(.97)}
+  .duelstatus{min-height:30px;display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;max-width:340px;margin-top:4px}
+  .searchline{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--washi)}
+  .spinner{width:16px;height:16px;border-radius:50%;border:2px solid #ffffff33;border-top-color:var(--gold);animation:spin .8s linear infinite}
+  body.reduce .spinner{animation:none;border-top-color:#ffffff66}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .searchsub{font-size:11px;color:var(--washi-dim)}
+  .sentineloffer{background:#ffffff0e;border:1px solid #ffffff22;border-radius:13px;padding:12px;text-align:center;width:100%;max-width:340px}
+  .sentineloffer .so-t{font-weight:700;font-size:13px;color:var(--washi)}
+  .sentineloffer .so-s{font-size:11px;color:var(--washi-dim);margin:4px 0 9px}
+  .so-btns{display:flex;gap:8px;justify-content:center}
+  .so-btns button{font-family:var(--ui);font-weight:700;font-size:12px;padding:9px 14px;border-radius:10px;cursor:pointer;border:1px solid #ffffff26;color:var(--washi);background:#ffffff14}
+  .so-btns button.primary{background:linear-gradient(180deg,#b98a2e,#8a6420);border-color:#0003;color:#fff}
+  .ladderlist{width:100%;max-width:340px;margin-top:6px;border-top:1px solid #ffffff14;padding-top:8px}
+  .ladderlist .ll-h{font-size:10px;letter-spacing:.12em;color:var(--washi-dim);text-transform:uppercase;margin-bottom:5px;text-align:center}
+  .ll-row{display:flex;align-items:center;justify-content:space-between;font-size:12px;padding:3px 4px;border-radius:7px}
+  .ll-row.me{background:#cda64f22;border:1px solid #cda64f44}
+  .ll-row .ll-n{display:flex;align-items:center;gap:7px}
+  .ll-row .ll-r{color:var(--washi-dim);font-variant-numeric:tabular-nums}
+  .ll-note{font-size:10px;color:var(--washi-dim);text-align:center;margin-top:6px;font-style:italic}
+  .modetag.ranked{background:linear-gradient(180deg,#b98a2e,#8a6420);color:#fff;border-color:#0003}
+  /* PvP result extras (rendered inside #resultscreen) */
+  .pvp-rank{display:flex;flex-direction:column;align-items:center;gap:7px;margin:6px 0;width:100%;max-width:320px}
+  .pvp-delta{font-family:var(--disp);font-weight:800;font-size:26px}
+  .pvp-delta.up{color:#7ed957}.pvp-delta.down{color:var(--seal)}
+  .promo-banner{font-weight:800;font-size:14px;color:var(--gold);letter-spacing:.04em;padding:6px 12px;border:1px solid #cda64f55;border-radius:10px;background:#cda64f18}
+
+  /* ===== TITLE / HOME screen — the cinematic front door ===== */
+  #title{position:fixed;inset:0;z-index:70;display:none;flex-direction:column;align-items:center;justify-content:flex-start;
+    padding:calc(20px + env(safe-area-inset-top)) 20px 24px;overflow:hidden;opacity:0;transition:opacity .45s ease}
+  #title.show{display:flex;opacity:1}
+  #title .tbg{position:absolute;inset:0;z-index:0;background-size:cover;background-position:center top;transform:scale(1.08);
+    filter:saturate(1.06) contrast(1.02);animation:titledrift 26s ease-in-out infinite alternate}
+  @keyframes titledrift{from{transform:scale(1.08) translateY(0)}to{transform:scale(1.14) translateY(-12px)}}
+  #title .tscrim{position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,#0a0d18f0 0%,#0a0d1855 20%,#0a0d1838 42%,#0a0d18cc 72%,#0a0d18 100%)}
+  #title .tvig{position:absolute;inset:0;z-index:1;pointer-events:none;background:radial-gradient(120% 78% at 50% 30%,transparent 44%,#06080fe0 100%)}
+  #title .tinner{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;width:100%;max-width:430px;gap:12px;
+    transform:translateY(14px);opacity:0;transition:transform .55s cubic-bezier(.18,1.2,.4,1) .08s,opacity .55s .08s}
+  #title.show .tinner{transform:translateY(0);opacity:1}
+  #title .ttop{width:100%;display:flex;justify-content:space-between;align-items:center;min-height:26px}
+  #title .tbeam{font-family:var(--ui);font-weight:800;font-size:12.5px;color:var(--gold);background:#cda64f1c;border:1px solid #cda64f44;border-radius:999px;padding:3px 10px}
+  #title .trank{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--washi);background:#0007;border:1px solid #ffffff20;border-radius:999px;padding:3px 10px}
+  #title .trank .tg{font-family:var(--disp);font-size:15px;color:var(--gold);line-height:1}
+  #title .tmark{font-family:var(--disp);font-weight:800;letter-spacing:.2em;font-size:48px;line-height:1;color:var(--washi);
+    text-shadow:0 2px 0 #0009,0 0 46px #cda64f3a;margin:8px 0 0;position:relative}
+  #title .tmark .dot{color:var(--seal)}
+  #title .tmark::after{content:"";position:absolute;left:7%;right:28%;bottom:-8px;height:4px;border-radius:3px;
+    background:linear-gradient(90deg,var(--seal),#cda64f99,transparent)}
+  #title .ttag{font-size:11px;letter-spacing:.46em;text-transform:uppercase;color:var(--washi-dim);margin-top:11px;padding-left:.46em}
+  #title .thero{position:relative;width:230px;height:230px;margin:4px 0 0;flex:0 0 auto}
+  #title .thero .sprite{position:absolute;inset:0;background-repeat:no-repeat;background-position:0 0;
+    filter:drop-shadow(0 12px 20px #000b);animation:idle-breathe 3.6s ease-in-out infinite}
+  #title .thero::after{content:"";position:absolute;left:50%;bottom:16px;width:132px;height:24px;margin-left:-66px;border-radius:50%;
+    background:radial-gradient(closest-side,#000c,transparent);filter:blur(6px);z-index:-1}
+  #title .tmenu{display:flex;flex-direction:column;gap:9px;width:100%;max-width:328px;margin-top:2px}
+  #title .tbtn{font-family:var(--ui);font-weight:800;font-size:15px;letter-spacing:.02em;padding:14px 18px;border-radius:13px;cursor:pointer;
+    border:1px solid #ffffff24;color:var(--washi);background:#ffffff12;display:flex;align-items:center;justify-content:center;gap:9px;
+    transition:transform .1s,box-shadow .2s,background .2s}
+  #title .tbtn.primary{background:linear-gradient(180deg,#c63b2c,#8f2418);border-color:#0004;color:#fff;box-shadow:0 8px 24px #c63b2c44}
+  #title .tbtn.gold{background:linear-gradient(180deg,#b98a2e,#8a6420);border-color:#0004;color:#fff;box-shadow:0 8px 24px #cda64f44}
+  #title .tbtn:active{transform:scale(.97)}
+  @media(hover:hover){#title .tbtn:hover{transform:translateY(-1px)}}
+  #title .tgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;max-width:328px}
+  #title .tchip{font-family:var(--ui);font-weight:700;font-size:12.5px;padding:11px 8px;border-radius:11px;cursor:pointer;
+    border:1px solid #ffffff1c;color:var(--washi);background:#ffffff0d;display:flex;align-items:center;justify-content:center;gap:6px;transition:transform .1s}
+  #title .tchip:active{transform:scale(.96)}
+  #title .tfoot{display:flex;gap:18px;margin-top:7px}
+  #title .tfoot button{background:none;border:none;color:var(--washi-dim);font-family:var(--ui);font-size:12px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;min-height:44px;padding:10px 6px}
+  #title .tfoot{flex-wrap:wrap;justify-content:center}
+  body.reduce #title,body.reduce #title .tinner{transition:none} body.reduce #title .tbg{animation:none}
+  /* the wordmark in the header becomes a HOME button back to the title */
+  h1{cursor:pointer}
+
+  /*__ANIM_CSS__*/
+</style>
+<script>
+/* ===== Sky Wolf Studios embed protocol =====
+   The portal (lucidwinds.com/portal/) frames games with ?embed=1 and
+   listens for {sws:'ready'} and {sws:'close'}.
+   Rules when embedded:
+     - NEVER history.back() or navigate location — an iframe with no
+       history entry goes blank (the black-screen bug).
+     - The in-game back/X returns to the game's OWN menu screen.
+     - Only the menu's explicit exit control calls SWS_EXIT(). */
+(function(){
+  var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
+  window.SWS_EMBED=SWS_EMBED;
+  window.SWS_EXIT=function(){
+    if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'close'},'*');}catch(e){} return;}
+    /* Came from the arcade: step back so the portal is restored instantly
+       instead of reloading a large page and losing its scroll. */
+    if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();return;}
+    location.href='https://lucidwinds.com/portal/';
+  };
+  if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'ready'},'*');}catch(e){}}
+})();
+</script>
+<!-- Lucid Winds / Sky Wolf Studios — Sunbeam SDK (cross-game currency).
+     Async + fully optional: if it fails to load (offline / opened standalone),
+     window.Sunbeam is simply undefined and the game is unaffected. Earning is
+     post-match only (off the fair-play combat path). Fires `sunbeam-ready` on load
+     so the glue can init once it's available. -->
+<script async src="https://lucidwinds.com/sunbeam-sdk.js?v=2"
+        onload="try{window.dispatchEvent(new Event('sunbeam-ready'))}catch(e){}"
+        onerror="try{window.__sunbeamFailed=1}catch(e){}"></script>
+</head>
+<body>
+  <div id="scene" aria-hidden="true">
+    <div class="scenebg"></div>
+    <div class="glow"></div><div class="disc"></div>
+    <div class="wash w1"></div><div class="wash w2"></div>
+    <div class="ridge"></div><div class="floor"></div>
+    <div class="grain"></div><div class="vignette"></div>
+  </div>
+  <header>
+    <h1>SIX<span class="dot">·</span>FOLD</h1>
+    <span class="tag">stance duel</span>
+    <span class="beambal" id="beambal" title="Sunbeams — cosmetic currency">☀ 0</span>
+  </header>
+
+  <div class="foebar">
+    <div class="who">
+      <span class="fn" id="foename">—</span>
+      <span class="stars" id="foestars"></span>
+      <span class="tell" id="foetell"></span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+      <span class="modetag" id="modetag">Casual</span>
+      <button id="foebtn">Choose foe</button>
+    </div>
+  </div>
+
+  <!-- home Daily prompt (shown until you've played today) -->
+  <button class="dailyprompt" id="dailyprompt" style="display:none"></button>
+
+  <div class="arena">
+    <div class="fighter" id="pf">
+      <div class="nm" id="pname">You</div>
+      <div class="stage" id="pstage"></div>
+      <div class="hp" id="php"></div>
+      <div class="ribbon" id="pribbon"></div>
+      <div class="barwrap"><span class="barlbl">unpred</span>
+        <div class="bar" id="pbar"><div class="bar-fill"></div><span class="bar-num">—</span></div></div>
+    </div>
+    <div class="fighter" id="af">
+      <div class="nm" id="aname">Ronin</div>
+      <div class="stage" id="astage"></div>
+      <div class="hp" id="ahp"></div>
+      <div class="ribbon" id="aribbon"></div>
+      <div class="barwrap"><span class="barlbl">unpred</span>
+        <div class="bar" id="abar"><div class="bar-fill"></div><span class="bar-num">—</span></div></div>
+    </div>
+  </div>
+
+  <div class="esc" id="esc">⚡ Fury. Every blow strikes deeper</div>
+
+  <div class="wheelwrap" id="wheel">
+    <div class="combobadge" id="combobadge"></div>
+    <svg class="links" id="links" viewBox="0 0 300 300"></svg>
+    <div class="spark" id="spark"></div>
+    <div class="hub" id="hub">
+      <div class="round" id="roundlbl">Round 1</div>
+      <div class="verdict" id="verdict">Choose</div>
+      <div class="sub" id="sub">tap a stance</div>
+    </div>
+  </div>
+
+  <div class="meter">
+    <div class="resolve" id="presolve" title="Resolve — buys information, never force">資 <span class="rpips"></span></div>
+    <button class="spendbtn" id="insightbtn">Insight <span class="c">1</span></button>
+    <button class="spendbtn" id="foresightbtn">Foresight <span class="c">2</span></button>
+    <span class="aimeter" id="aimeter"></span>
+  </div>
+
+  <div class="legend">
+    <span><span class="sw" style="background:var(--gold)"></span><b>you</b></span>
+    <span><span class="sw" style="background:var(--seal)"></span>clean −2</span>
+    <span><span class="sw" style="background:var(--jade)"></span>glance −1</span>
+    <span><span class="sw" style="background:var(--steel)"></span>across = whiff</span>
+    <span>same = clash → bind</span>
+  </div>
+
+  <div class="postmatch" id="postmatch"></div>
+
+  <div class="controls">
+    <button class="act ghost" id="homebtn">⌂ Home</button>
+    <button class="act primary" id="duelbtn">⚔ Ranked Duel</button>
+    <button class="act primary" id="dailybtn">🗓 Daily Duel</button>
+    <button class="act ghost" id="ascentbtn">⛰ Ascent</button>
+    <button class="act ghost" id="collbtn">🎴 Roster</button>
+    <button class="act ghost" id="profbtn">📊 Profile</button>
+    <button class="act ghost" id="howbtn">How it works</button>
+    <button class="act primary" id="rematch" style="display:none">Rematch</button>
+  </div>
+
+  <div class="compbanner" id="compbanner">Assists off. Competitive.</div>
+
+  <!-- Foe select -->
+  <div class="drawer" id="foedrawer">
+    <div class="dh" id="foedh"><span>⚔ Choose your foe</span><span class="chev">▾</span></div>
+    <div class="dbody">
+      <div class="row"><label>Opponent</label><div class="opts" id="foes"></div></div>
+      <div class="row"><label>Difficulty (<span id="difflbl">★★★☆☆</span>)</label>
+        <input type="range" id="diff" min="0" max="1" step="0.05" value="0.5"></div>
+      <div class="row"><label>Arena</label><div class="opts" id="arenas"></div></div>
+      <div class="row"><label>Mode</label><div class="opts" id="modes"></div></div>
+    </div>
+  </div>
+
+  <!-- Settings: accessibility (free) + assist charms (casual only) -->
+  <div class="drawer" id="setdrawer">
+    <div class="dh" id="setdh"><span>⚙ Settings &amp; assists</span><span class="chev">▾</span></div>
+    <div class="dbody">
+      <div class="row"><label>Sound &amp; feel</label>
+        <div class="toggle"><span>Music</span><input type="checkbox" data-a11y="music"></div>
+        <div class="toggle"><span>Sound effects</span><input type="checkbox" data-a11y="audioCues"></div>
+        <div class="toggle"><span>Haptics (vibrate)</span><input type="checkbox" data-a11y="haptics"></div>
+      </div>
+      <div class="row"><label>Accessibility, always free</label>
+        <div class="toggle"><span>Colorblind-safe palette</span><input type="checkbox" data-a11y="colorblind"></div>
+        <div class="toggle"><span>Reduced motion</span><input type="checkbox" data-a11y="reducedMotion"></div>
+        <div class="toggle"><span>High contrast</span><input type="checkbox" data-a11y="highContrast"></div>
+        <div class="toggle"><span>Large tap targets</span><input type="checkbox" data-a11y="largeTapTargets"></div>
+        <div class="toggle"><span>Slower reveal</span><input type="checkbox" data-a11y="slowReveal"></div>
+      </div>
+      <div class="row"><label>Assist charm, casual and practice only</label>
+        <div class="opts" id="charms"></div>
+        <div class="hint" id="charmhint">Charms go inert the moment a match is ranked, seeded, or PvP.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Customizer -->
+  <div class="drawer" id="custdrawer">
+    <div class="dh" id="custdh"><span>🎨 Customize your warrior</span><span class="chev">▾</span></div>
+    <div class="dbody">
+      <div class="row"><label>Name</label><input class="nm" id="cname" maxlength="14" placeholder="name your warrior"></div>
+      <div class="row"><label>Fighter</label><div class="opts" id="skins"></div></div>
+      <div class="row"><label>Banner color</label><div class="opts" id="pals"></div></div>
+      <div class="row"><label>Banner crest</label><div class="opts" id="crests"></div></div>
+    </div>
+  </div>
+
+  <!-- clean-finish screen flash -->
+  <div class="flash" id="flash"></div>
+  <div class="readstamp" id="readstamp">READ!</div>
+
+  <!-- Clash Bind escalation overlay (populated by stage.js) -->
+  <div class="overlay" id="bindstage" aria-hidden="true" role="dialog" aria-label="Break the bind"></div>
+
+  <!-- Victory / Defeat result screen (populated by glue on match-over) -->
+  <div class="overlay" id="resultscreen" aria-hidden="true" role="dialog" aria-label="Match result"></div>
+
+  <!-- The Ascent campaign ladder (populated by glue) -->
+  <div class="overlay" id="ascent" aria-hidden="true" role="dialog" aria-label="The Ascent"></div>
+
+  <!-- The roster / collection gallery (populated by glue) -->
+  <div class="overlay" id="collection" aria-hidden="true" role="dialog" aria-label="Roster"></div>
+
+  <!-- Player profile / lifetime stats (populated by glue) -->
+  <div class="overlay" id="profile" aria-hidden="true" role="dialog" aria-label="Profile"></div>
+
+  <!-- Daily Duel — one seeded challenge per day (populated by glue) -->
+  <div class="overlay" id="dailyscreen" aria-hidden="true" role="dialog" aria-label="Daily Duel"></div>
+
+  <!-- Ranked Duel — live head-to-head matchmaking + tier ladder (populated by glue) -->
+  <div class="overlay" id="duelscreen" aria-hidden="true" role="dialog" aria-label="Ranked Duel"></div>
+
+  <!-- Title / home screen — the cinematic front door (populated by glue) -->
+  <div id="title" aria-hidden="true" role="dialog" aria-label="SIXFOLD — title"></div>
+
+  <!-- First-run / on-demand how-to guide -->
+  <div class="overlay" id="howto" aria-hidden="true" role="dialog" aria-label="How to play">
+    <div class="hero howto">
+      <h2>HOW TO DUEL</h2>
+      <ol>
+        <li><span class="ic">👆</span><span>Tap a stance on the wheel each round. You both reveal at once.</span></li>
+        <li><span class="ic">↻</span><span>You beat the <span class="k">2 stances clockwise</span> of yours: <span class="c-clean">CLEAN −2</span>, then <span class="c-glance">GLANCE −1</span>.</span></li>
+        <li><span class="ic">⇄</span><span>Directly <span class="c-steel">across = WHIFF</span>. Blades pass, no damage.</span></li>
+        <li><span class="ic">⚔</span><span><span class="k">Same stance = CLASH</span> → break the bind: <span class="c-gold">Drive ▸ Slip ▸ Trap ▸ Drive</span>.</span></li>
+        <li><span class="ic">資</span><span>Dead rounds build <span class="c-gold">Resolve</span>. Spend it to read the foe, never to hit harder. <span class="c-gold">Foresight</span> names their likely next stance, so you read the wheel and strike to land a <span class="c-gold">READ 🎯</span>.</span></li>
+        <li><span class="ic">🏆</span><span>Drop the foe's <span class="k">4 HP</span> first. Stay unpredictable, because they're reading you too.</span></li>
+      </ol>
+      <button class="gotit" id="howtoclose">Got it</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/*__MODULES__*/
+
+/* ============================ APP / GLUE ============================ */
+(function(){
+  const Engine = globalThis.Engine, Personalities = globalThis.Personalities,
+    Resolve = globalThis.Resolve, Readout = globalThis.Readout,
+    Stage = globalThis.Stage, Assists = globalThis.Assists, Predictor = globalThis.Predictor,
+    Sfx = globalThis.Sfx,
+    Rank = globalThis.Rank, Matchmaker = globalThis.Matchmaker, Net = globalThis.Net;
+
+  // juice helpers (cosmetic only). haptics honor the same setting flag as sound's sibling.
+  function buzz(ms){ try{ if(Assists.settings().haptics && typeof navigator!=="undefined" && navigator.vibrate) navigator.vibrate(ms); }catch(e){} }
+  function flash(){ if(reduced())return; const f=$("flash"); if(!f)return; f.classList.remove("go","read-go"); void f.offsetWidth; f.classList.add("go"); }
+  function flashRead(){ if(reduced())return; const f=$("flash"); if(!f)return; f.classList.remove("go","read-go"); void f.offsetWidth; f.classList.add("read-go"); }
+  function showReadStamp(){ const el=$("readstamp"); if(!el)return; el.classList.remove("go"); void el.offsetWidth; el.classList.add("go"); }
+  function shake(){ if(reduced())return; document.body.classList.add("shake"); setTimeout(()=>document.body.classList.remove("shake"),360); }
+  // floating damage number over the struck fighter — exact value + the hit's weight
+  function floatDamage(loserSide,outcome,isRead){
+    if(reduced())return;
+    const dmg=(outcome&&outcome.dmg)||0; if(dmg<=0)return;
+    const stage=$(loserSide==="P"?"pstage":"astage"); if(!stage||!stage.appendChild)return;
+    const el=document.createElement("div");
+    el.className="dmgnum"+(isRead?" read":(outcome.kind==="glance"?" glance":""));
+    el.textContent="−"+dmg;
+    stage.appendChild(el);
+    setTimeout(()=>{ try{ el.parentNode&&el.parentNode.removeChild&&el.parentNode.removeChild(el); }catch(e){} }, 950);
+  }
+  // combo momentum: consecutive rounds you DEAL damage without taking any. Breaks
+  // the instant you get hit; whiffs/ties stall it but don't reset it.
+  let combo=0, bestCombo=0;
+  function updateCombo(dealt,took){
+    const before=combo;
+    if(took) combo=0; else if(dealt) combo++;
+    if(combo>bestCombo)bestCombo=combo;
+    const b=$("combobadge"); if(!b)return;
+    if(combo>=2){
+      b.textContent="🔥 ×"+combo; b.classList.add("on"); b.classList.toggle("hot",combo>=4);
+      if(combo>before){ b.classList.remove("bump"); void b.offsetWidth; b.classList.add("bump"); if(combo>=3)buzz(combo>=5?[0,18,22,18]:14); }
+    }else{ b.classList.remove("on","hot","bump"); b.textContent=""; }
+  }
+  function resetCombo(){ combo=0; const b=$("combobadge"); if(b){b.classList.remove("on","hot","bump");b.textContent="";} }
+  // celebratory gold-spark burst behind the VICTORY card
+  function victoryBurst(){
+    if(reduced())return;
+    const rs=$("resultscreen"); const hero=rs&&rs.querySelector?rs.querySelector(".hero"):null; if(!hero||!hero.appendChild)return;
+    const layer=document.createElement("div"); layer.className="winburst";
+    for(let i=0;i<18;i++){
+      const s=document.createElement("span");
+      const x=8+Math.random()*84, dur=1.3+Math.random()*1.5, delay=(Math.random()*1.4).toFixed(2), size=(3+Math.random()*4).toFixed(1);
+      s.style.cssText=`left:${x.toFixed(0)}%;width:${size}px;height:${size}px;animation-duration:${dur.toFixed(2)}s;animation-delay:${delay}s;--dx:${Math.round((Math.random()*2-1)*32)}px`;
+      layer.appendChild(s);
+    }
+    hero.appendChild(layer);
+  }
+  // impact juice (sound + haptics + flash), fired at the strike moment. Cosmetic.
+  function outcomeJuice(o,isRead){
+    if(o.bind){
+      if(o.winner==="P"){Sfx.play("bindwin");buzz(35);flash();shake();}
+      else if(o.winner==="A"){Sfx.play("bindlose");buzz([20,30,20]);shake();}
+      else{Sfx.play("whiff");buzz(10);}
+      return;
+    }
+    if(o.kind==="clean"){Sfx.play("clean");buzz(60);if(!isRead)flash();shake();}   // read uses its own gold wash
+    else if(o.kind==="glance"){Sfx.play("glance");buzz(25);}
+    else{Sfx.play("whiff");buzz(10);}                                              // whiff now ticks (was silent)
+  }
+
+  const STANCES=[{n:"Heaven",g:"↑"},{n:"Tiger",g:"↗"},{n:"River",g:"↘"},{n:"Earth",g:"↓"},{n:"Crane",g:"↙"},{n:"Shadow",g:"↖"}];
+  const N=Engine.N, HP=Engine.HP, ESC=Engine.ESC_ROUND;
+  const FACES=["🦊","🐸","🐱","🐻","🐯","🐰","💀","👹","🐲","🦉"]; // vector-fallback only; never shown on real skins
+  const PALS=["#cf4130","#3f6fb0","#5f9173","#8a5bc0","#caa23a","#2b3550","#c96fa0","#46b0a6"];
+  // house-banner crests (kanji) — the banner flag is the one cosmetic that shows on real skins
+  const CRESTS=["家","武","龍","鬼","風","花","刀","雷","月","華","虎","忍"];
+  // Forge: premium cosmetics bought with sunbeams (cosmetic-only sink; off both the
+  // combat path AND the tower, so the lock-until-earned roster is untouched).
+  const PREMIUM_PALS=[{v:"#e8c878",cost:40},{v:"#13a8a0",cost:40},{v:"#d14a8a",cost:60},{v:"#7ed957",cost:60},{v:"#ff7a3c",cost:80},{v:"#b06bff",cost:80}];
+  const PREMIUM_CRESTS=[{v:"天",cost:30},{v:"侍",cost:30},{v:"心",cost:50},{v:"夢",cost:50},{v:"閃",cost:70},{v:"極",cost:90}];
+  let boughtCosmetics=(function(){try{return new Set(JSON.parse(localStorage.getItem("sixfold_shop")||"[]"));}catch(e){return new Set();}})();
+  function saveShop(){try{localStorage.setItem("sixfold_shop",JSON.stringify([...boughtCosmetics]));}catch(e){}}
+  const FOE_NAMES=["Ronin","Kage","Hattori","Mukade","Yurei","Tetsu","Onibi","Sora","Raiden"];
+  const rid=a=>a[Math.floor(Math.random()*a.length)];
+  const getCss=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const $=id=>document.getElementById(id);
+
+  // persistent cosmetic + selection state
+  let player={name:"You",face:"🦊",pal:"#cf4130",crest:"家",skin:"ronin"};
+  let ai={name:"Ronin",face:rid(FACES),pal:rid(PALS),crest:rid(CRESTS),skin:"inkblade"};
+  let foeId=rid(Personalities.ids()), difficulty=0.5, modeId="casual";
+  let game=null, busy=false, over=false, foresightNode=null, foresightStrike=null, matchWinner=null;
+  // ---- ranked duel (PvP) state ----
+  function loadPvp(){ try{ return JSON.parse(localStorage.getItem("sixfold_pvp")||"{}")||{}; }catch(e){ return {}; } }
+  function savePvp(){ try{ localStorage.setItem("sixfold_pvp",JSON.stringify(ladder.toJSON())); }catch(e){} }
+  let ladder=Rank.createLadder(loadPvp());
+  let isPvP=false, pvpSession=null, pvpOpp=null, pvpSearch=null, pvpResolved=false, offerCount=0;
+  let committedForesight=null;   // foresight read in play when the current pick was committed
+  let matchReads=0;              // called shots landed this match (mastery payoff)
+  let matchBindWon=false, matchUsedForesight=false;  // per-match flags for Trials
+  let lastUnpred=[];
+  let lifetimeReads=(function(){try{return parseInt(localStorage.getItem("sixfold_reads")||"0",10)||0;}catch(e){return 0;}})();
+  function addLifetimeReads(n){ lifetimeReads+=n; try{localStorage.setItem("sixfold_reads",String(lifetimeReads));}catch(e){} }
+  // ---- sunbeams: cosmetic currency (off the combat path). Earned on wins/trials,
+  // spent in the Forge on cosmetics. Persisted (was a phantom display-only number). ----
+  let sunbeams=(function(){try{return parseInt(localStorage.getItem("sixfold_sunbeams")||"0",10)||0;}catch(e){return 0;}})();
+  function saveSunbeams(){try{localStorage.setItem("sixfold_sunbeams",String(sunbeams));}catch(e){}}
+  function updateSunbeamUI(){ const el=$("beambal"); if(el){ el.textContent="☀ "+sunbeams; el.classList.remove("bump"); void el.offsetWidth; el.classList.add("bump"); } }
+  function addSunbeams(n){ if(!n)return; sunbeams+=n; saveSunbeams(); updateSunbeamUI(); }
+  function spendSunbeams(n){ if(sunbeams<n)return false; sunbeams-=n; saveSunbeams(); updateSunbeamUI(); return true; }
+
+  /* ---- Lucid Winds / Sky Wolf Studios — Sunbeam SDK (cross-game economy) ----
+     SEPARATE from SIXFOLD's local cosmetic sunbeams: this mints the ECOSYSTEM
+     currency into the player's Lucid Winds vault on a win, so playing SIXFOLD
+     (in the portal or standalone) earns toward the constellation wallet. Fully
+     optional + guarded — no SDK (offline/standalone) means a silent no-op — and
+     post-match ONLY, so it never touches the fair-play combat path. */
+  let lucidReady=false;
+  function initLucid(){
+    try{
+      if(lucidReady || typeof Sunbeam==="undefined" || !Sunbeam.init) return;
+      lucidReady=true;
+      Sunbeam.init({gameId:"sixfold"});   // matches the portal card + earn rule {win:3,combo:1}
+    }catch(e){}
+  }
+  function lucidEarn(win,reads){
+    try{
+      if(typeof Sunbeam==="undefined" || !Sunbeam.earn) return;
+      initLucid();
+      // Deliberately STINGY: a fast <1-min duel must not inflate the shared
+      // constellation economy. 1 sunbeam per WIN, nothing else. No per-loss, no
+      // combo bonus, no grind path.
+      if(win) Sunbeam.earn(1, "sixfold:win");
+    }catch(e){}
+  }
+  if(typeof window!=="undefined" && window.addEventListener) window.addEventListener("sunbeam-ready", initLucid);
+
+  /* ---- fighter rendering (placeholder shapes; art-wrap enables stage transforms) ---- */
+  function bodySVG(color){
+    return `<svg class="body" width="86" height="96" viewBox="0 0 86 96">
+      <defs><linearGradient id="g${color.replace('#','')}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="${color}"/><stop offset="1" stop-color="#000" stop-opacity=".45"/></linearGradient></defs>
+      <path d="M14 92 Q10 58 22 44 L30 50 Q43 40 56 50 L64 44 Q76 58 72 92 Z" fill="url(#g${color.replace('#','')})" stroke="#0007" stroke-width="2"/>
+      <path d="M22 44 Q43 30 64 44 L60 58 Q43 50 26 58 Z" fill="${color}" stroke="#0006" stroke-width="1.5"/>
+      <rect x="36" y="60" width="14" height="26" rx="3" fill="#0004"/>
+      <path d="M22 44 Q43 18 64 44 Q43 34 22 44Z" fill="#1a1d2b" stroke="#0007"/>
+      <path d="M30 40 q13 -16 26 0" fill="none" stroke="${color}" stroke-width="4" stroke-linecap="round"/></svg>`;
+  }
+  // foe skin: distinct from the player's, preferring real art (atlas with a url)
+  // over the vector demos so opponents look like actual different characters.
+  function pickFoeSkin(){
+    const pool=Skins.list().map(s=>s.id).filter(id=>id!==player.skin);
+    const real=pool.filter(id=>Skins.get(id).url);
+    return rid(real.length?real:(pool.length?pool:[player.skin]));
+  }
+  // the opponent's NAME should be the actual character it's wearing, from the
+  // skin registry — so a Kitsune is called "Kitsune", not a random/archetype name.
+  function skinName(id){ const s=Skins.get(id); return (s&&s.name)||id; }
+  function vectorInner(f,dir){ return bodySVG(f.pal)+`<div class="face">${f.face}</div>`; }
+  function renderFighter(side){
+    const f=side==="P"?player:ai, stage=$(side==="P"?"pstage":"astage"), dir=side==="P"?"left":"right";
+    const skin=Skins.get(f.skin||"placeholder");
+    let inner, artStyle="", atlas=false;
+    if(skin.kind==="atlas"){
+      const src=Skins.src(skin,f.pal);
+      atlas=true;
+      artStyle=`position:relative;width:128px;height:128px`;
+      inner=`<div class="sprite" style="background-image:url('${src}');background-size:${skin.cols*100}% ${skin.rows*100}%"></div>`;
+      // De-risk real PNG sheets: if the file fails to load (missing/blocked/malformed),
+      // hot-swap that fighter to the vector stand-in so a bad art drop never breaks play.
+      if(src && src.slice(0,5)!=="data:" && typeof Image!=="undefined"){
+        const probe=new Image();
+        probe.onerror=()=>{ const w=artEl(side); if(w){ w.style.cssText=""; w.innerHTML=vectorInner(f,dir); w._framePos=null; } };
+        probe.src=src;
+      }
+    }else{
+      inner=vectorInner(f,dir);
+    }
+    stage.innerHTML=
+      `<div class="banner ${dir}" style="background:${f.pal}">${f.crest}</div>`+
+      `<div class="art-wrap ${side==="A"?"opp":""}"><div class="fighter-art" style="${artStyle}">`+inner+`</div></div>`;
+    // precompute atlas frame positions so the stage can hard-cut frames cheaply
+    const el=artEl(side);
+    if(el){ el._framePos = atlas ? Skins.FRAMES.reduce((m,n)=>{m[n]=Skins.atlasPos(skin,n);return m;},{}) : null; }
+    $(side==="P"?"pname":"aname").textContent=f.name;
+    renderHP(side);
+  }
+  const prevHP={P:HP,A:HP};
+  function renderHP(side){
+    const hp=game?game.state()[side==="P"?"hpP":"hpA"]:HP, box=$(side==="P"?"php":"ahp");
+    const prev=prevHP[side]; prevHP[side]=hp;
+    box.innerHTML="";
+    for(let i=0;i<HP;i++){
+      const p=document.createElement("div"); const lost=i>=hp;
+      p.className="pip "+(lost?"lost":"full");
+      if(lost && i<prev && !reduced()) p.classList.add("justlost");   // newly lost this update -> flash
+      box.appendChild(p);
+    }
+  }
+  function artEl(side){ return $(side==="P"?"pstage":"astage").querySelector(".fighter-art"); }
+
+  /* ---- wheel ---- */
+  const wheel=$("wheel"), nodeEls=[];
+  function buildWheel(){
+    const R=110;
+    STANCES.forEach((s,i)=>{
+      const ang=(-90+i*60)*Math.PI/180;
+      const x=50+(Math.cos(ang)*R/300*100), y=50+(Math.sin(ang)*R/300*100);
+      const el=document.createElement("button");
+      el.className="node";el.style.left=x+"%";el.style.top=y+"%";
+      el.setAttribute("aria-label",s.n+" stance");
+      el.innerHTML=`<span class="ring"></span><span class="g">${s.g}</span><span class="n">${s.n}</span>`;
+      el.addEventListener("click",()=>onNode(i));
+      el.addEventListener("pointerenter",()=>preview(i));
+      el.addEventListener("pointerleave",clearPreview);
+      el.addEventListener("focus",()=>preview(i));
+      el.addEventListener("blur",clearPreview);
+      wheel.appendChild(el);nodeEls.push(el);
+    });
+  }
+  function nodeCenter(i){const R=110,ang=(-90+i*60)*Math.PI/180;return{x:150+Math.cos(ang)*R,y:150+Math.sin(ang)*R};}
+  let compassOn=false, aimed=null;
+  // Tap a stance to AIM (shows which stances it beats — the core teaching, now
+  // visible on touch); tap the aimed stance again to STRIKE. Re-tap any other to
+  // re-aim. This makes the clockwise rule legible on mobile (was hover-only).
+  function onNode(i){
+    if(introPlaying){ Sfx.unlock(); if(typeof Music!=="undefined")Music.unlock(); endFaceOff(); return; }   // tap skips the intro
+    if(busy||over||!game)return;
+    Sfx.unlock(); if(typeof Music!=="undefined")Music.unlock();
+    if(aimed===i){ commit(i); return; }
+    aim(i);
+  }
+  /* ---- pre-duel FACE-OFF: a brief guard-lean stare-down before round 1 ---- */
+  let introPlaying=false, introTimer=null;
+  function faceOff(){
+    if(reduced()){ introPlaying=false; return; }      // no intro under reduced motion
+    introPlaying=true; busy=true;
+    Stage.lockBlades();                               // both -> guard frame, leaning toward centre, spark
+    $("roundlbl").textContent=""; $("verdict").textContent="VS";
+    $("sub").textContent=player.name+" vs "+ai.name;
+    $("verdict").classList.add("vs");
+    Sfx.play("bind");   // no haptic here: faceOff can run pre-gesture (auto-start), and
+                        // navigator.vibrate warns if called before the first user tap
+    if(introTimer)clearTimeout(introTimer);
+    introTimer=setTimeout(endFaceOff, 1000);
+  }
+  function endFaceOff(){
+    if(!introPlaying)return; introPlaying=false;
+    if(introTimer){ clearTimeout(introTimer); introTimer=null; }
+    Stage.unlock();
+    $("verdict").classList.remove("vs");
+    $("roundlbl").textContent="Round 1"; $("verdict").textContent="Choose"; $("sub").textContent="tap a stance";
+    busy=false;
+  }
+  function aim(i){
+    aimed=i; Sfx.play("tap");
+    preview(i);
+    nodeEls.forEach((el,j)=>el.classList.toggle("aiming",j===i));
+    if(Stage.toStance)Stage.toStance("P",i);      // pre-pivot for anticipation
+    $("verdict").textContent="Strike?";
+    $("sub").textContent=STANCES[i].n+" — tap again";
+  }
+  function preview(i){
+    if(busy||over)return;
+    nodeEls.forEach((el,j)=>{
+      el.classList.remove("r-clean","r-glance","r-safe");
+      const d=((j-i)%N+N)%N;
+      if(d===1)el.classList.add("r-clean");else if(d===2)el.classList.add("r-glance");else if(d===3)el.classList.add("r-safe");
+    });
+  }
+  // restore the aimed stance's rings when a hover ends (desktop), else clear
+  function clearPreview(){ if(compassOn)return; if(aimed!=null){preview(aimed);return;} nodeEls.forEach(el=>el.classList.remove("r-clean","r-glance","r-safe")); }
+  function drawLink(p,a,color){
+    const links=$("links");
+    if(p===a){const c=nodeCenter(p);links.innerHTML=`<circle cx="${c.x}" cy="${c.y}" r="42" fill="none" stroke="#fff" stroke-width="3" opacity=".8"/>`;return;}
+    const A=nodeCenter(p),B=nodeCenter(a);
+    links.innerHTML=`<line x1="${A.x}" y1="${A.y}" x2="${B.x}" y2="${B.y}" stroke="${color}" stroke-width="4" stroke-linecap="round" opacity=".95"/>`;
+  }
+
+  /* ---- round flow (engine-driven) ---- */
+  const VERDICT={clean:"CLEAN!",glance:"Glance",whiff:"Whiff",clash:"Clash"};
+  function subText(o){
+    if(o.bind) return o.winner? (o.winner==="P"?"bind won — a cut":"bind lost — grazed") : "blades spark — locked";
+    return {clean:o.winner==="P"?"you struck deep":"you got opened up",
+      glance:o.winner==="P"?"a grazing cut":"grazed you",
+      whiff:"blades pass, nothing",clash:"stances mirror"}[o.kind];
+  }
+  // first-rounds coaching: explain WHY the round resolved, in clockwise terms
+  function teachReason(p,a){
+    if(p===a) return "both "+STANCES[p].n+" · clash → bind";
+    const d=((a-p)%N+N)%N;
+    if(d===3) return STANCES[p].n+" ↔ "+STANCES[a].n+" · opposite · whiff";
+    if(d===1) return STANCES[p].n+" → "+STANCES[a].n+" · 1 clockwise · CLEAN";
+    if(d===2) return STANCES[p].n+" → "+STANCES[a].n+" · 2 clockwise · glance";
+    if(d===4) return STANCES[a].n+" → "+STANCES[p].n+" · 2 clockwise · they glance";
+    return STANCES[a].n+" → "+STANCES[p].n+" · 1 clockwise · they CLEAN";
+  }
+
+  function commit(p){
+    if(busy||over||!game)return; busy=true; Sfx.unlock(); Sfx.play("tap");
+    aimed=null; nodeEls.forEach(el=>el.classList.remove("aiming")); clearPreview();
+    // snapshot the active read so round-revealed can tell if the player called it
+    committedForesight = (foresightNode!=null) ? {node:foresightNode, strike:foresightStrike, pick:p} : null;
+    clearForesight();
+    nodeEls.forEach(el=>el.classList.add("dim"));
+    nodeEls[p].classList.remove("dim"); nodeEls[p].classList.add("ppick");
+    $("verdict").textContent="…"; $("sub").textContent= isPvP?"rival is choosing…":"reading you";
+    if(isPvP){ pvpCommit(p); return; }
+    game.chooseStance(p);   // engine emits events; handlers below drive the rest
+  }
+  // PvP: commit my stance, exchange with the opponent (commit-reveal), then resolve
+  // the round through the engine's external-opponent path (same bus -> same juice).
+  function pvpCommit(p){
+    if(!pvpSession){ busy=false; return; }
+    const round=game.state().round, oppCtx=game.opponentCtx();
+    pvpSession.exchangeStance(round,p,oppCtx).then(({oppPick})=>{
+      if(over||!isPvP)return;
+      game.commitRound(p,oppPick);   // emits stance-selected + (clash-bind | round-revealed)
+    }).catch(()=>handlePvpDisconnect());
+  }
+
+  function showAiPick(a, p){
+    if(p===a){nodeEls[p].classList.remove("ppick");nodeEls[p].classList.add("both");}
+    else{nodeEls[a].classList.remove("dim");nodeEls[a].classList.add("apick");}
+  }
+
+  function wireEvents(g){
+    g.bus.on("stance-selected",({side,stance})=>{ Stage.toStance(side,stance); });
+    g.bus.on("clash-bind",()=>{
+      $("verdict").textContent="LOCK"; $("sub").textContent="break the bind";
+      drawLink(game.state().playerHist.slice(-1)[0], game.state().playerHist.slice(-1)[0], "#fff");
+      Stage.lockBlades();
+      Sfx.play("bind"); buzz([18,40,18]);
+      if(!reduced()){document.body.classList.add("shake");setTimeout(()=>document.body.classList.remove("shake"),360);}
+      if(isPvP){
+        // PvP clash: player picks a bind, then exchange with the opponent and resolve
+        Stage.bindPrompt().then(pBind=>{
+          if(over||!isPvP)return;
+          const round=game.state().round, oppCtx=game.opponentCtx();
+          pvpSession.exchangeBind(round,pBind,oppCtx).then(({oppBind})=>{
+            if(over||!isPvP)return;
+            game.commitBind(pBind,oppBind);
+          }).catch(()=>handlePvpDisconnect());
+        });
+      }else{
+        Stage.bindPrompt().then(b=>{ g.submitBind(b); });
+      }
+    });
+    g.bus.on("meter-changed",updateMeter);
+    g.bus.on("info-revealed",({side,action,payload})=>{
+      if(side==="P") applyReveal(action,payload);
+      // if you paid Insight to expose the foe's meter, you also catch it spending
+      else if(side==="A" && aiResolveVisible && action==="FORESIGHT") showToast("foe spends Foresight — reading you 👁");
+    });
+    g.bus.on("round-revealed",({pPick,aPick,outcome})=>{
+      showAiPick(aPick,pPick);
+      // a READ: Foresight was up, the foe walked into the predicted stance, AND
+      // YOU converted it into a clean strike yourself (you found the counter on the
+      // wheel — Foresight no longer hands it to you). Skill, not a free win.
+      const cf=committedForesight; committedForesight=null;
+      const read = !!(cf && aPick===cf.node && outcome.kind==="clean" && outcome.winner==="P");
+      const misread = !!(cf && aPick===cf.node && !read); // foe did as foreseen but you didn't land the clean
+      const colors={clean:getCss("--seal"),glance:getCss("--jade"),whiff:getCss("--steel"),clash:"#fff"};
+      drawLink(pPick,aPick,outcome.bind?"#fff":colors[outcome.kind]);
+      const vEl=$("verdict"); vEl.classList.toggle("read",read);
+      vEl.textContent= read ? "READ!" : (outcome.bind && outcome.winner ? "BIND!" : VERDICT[outcome.kind]);
+      const early=game.state().playerHist.length<=3;   // coach the clockwise rule early
+      $("sub").textContent= read ? "you read it — clean!" : (misread ? "you had the read — strike one BEFORE their stance" : (early?teachReason(pPick,aPick):subText(outcome)));
+      const hub=$("hub"); hub.classList.remove("flash-clean","flash-glance","flash-read","flash-whiff"); void hub.offsetWidth;
+      if(read)hub.classList.add("flash-read");
+      else if(outcome.winner&&outcome.kind==="clean")hub.classList.add("flash-clean");
+      else if(outcome.winner&&outcome.kind==="glance")hub.classList.add("flash-glance");
+      else if(outcome.kind==="whiff")hub.classList.add("flash-whiff");
+      if(read){ matchReads++; addLifetimeReads(1); onReadLanded(); }
+      if(outcome.bind && outcome.winner==="P") matchBindWon=true;   // for Trials
+      setTimeout(()=>outcomeJuice(outcome,read), reduced()?0:330); // sync cue to the strike
+      if(outcome.winner && (outcome.dmg||0)>0)                      // floating −N over the struck fighter
+        setTimeout(()=>floatDamage(outcome.winner==="P"?"A":"P", outcome, read), reduced()?0:330);
+      updateCombo(outcome.winner==="P"&&(outcome.dmg||0)>0, outcome.winner==="A"&&(outcome.dmg||0)>0);
+      if(read){ // the apex: gold wash + big stamp at impact, dedicated sting just after
+        setTimeout(()=>{ flashRead(); showReadStamp(); }, reduced()?0:330);
+        setTimeout(()=>{ Sfx.play("read"); buzz([0,30,40,30]); }, reduced()?0:430);
+      }
+      Stage.playReveal(pPick,aPick,outcome).then(()=>{
+        renderHP("P");renderHP("A");
+        Readout.render(game.state().playerHist,game.state().aiHist,game.state().outcomes,ribbonOpts());
+        predictNudge();
+        if(over){ if(matchWinner){
+          Stage.setFrame(matchWinner,"win");Stage.setFrame(matchWinner==="P"?"A":"P","ko");
+          // held victory beat: the winner swells + glows gold, the loser greys out
+          const win=$(matchWinner==="P"?"pstage":"astage"), lose=$(matchWinner==="P"?"astage":"pstage");
+          if(win)win.classList.add("victor"); if(lose)lose.classList.add("fallen");
+        } }
+        else endRoundUI();
+      });
+    });
+    g.bus.on("match-over",({winner,summary})=>{
+      over=true;busy=true;matchWinner=winner;
+      const win=winner==="P";
+      $("roundlbl").textContent="Match over";
+      $("verdict").textContent=win?"VICTORY":"DEFEAT";
+      $("verdict").style.color=win?getCss("--gold"):getCss("--seal");
+      $("sub").textContent=win?"the duel is yours":"struck down";
+      if(isPvP){ pvpMatchOver(win,summary); return; }
+      if(win){streak++; if(streak>bestStreak){bestStreak=streak;saveBest();}} else streak=0;
+      $("rematch").style.display="block";
+      const r=Readout.postMatch(game.state().playerHist,{rollingAvg: rollingAvg()});
+      lastUnpred.push(r.unpredictabilityPct); if(lastUnpred.length>20)lastUnpred.shift();
+      recordMatchStats(win,summary);
+      if(modeId==="daily") recordDaily(win,summary);
+      evaluateTrials({win,unpred:summary.unpredictabilityPct,reads:matchReads,bindWon:matchBindWon,usedForesight:matchUsedForesight,rounds:summary.rounds,streak,foe:foeId});
+      $("postmatch").classList.add("show");
+      // sunbeams are cosmetic currency (off the combat path) — reward reads here,
+      // never in damage. Out-reading the foe pays in shine, never in force.
+      const beams=win?(8+Math.round(summary.difficulty*8)+Math.round(summary.unpredictabilityPct/12)+matchReads*4):0;
+      if(beams)addSunbeams(beams);   // persist into the balance (was display-only)
+      lucidEarn(win,matchReads);     // mint cross-game Lucid Winds sunbeams (optional, off-combat)
+      setSpendEnabled(false);
+      // Ascent: a win on the current frontier rung clears it and grants the reward.
+      let ascentInfo=null;
+      if(ascentRun>=0){
+        const newReward=(win && ascentRun===ascentCleared) ? ASCENT[ascentRun].reward : null;
+        if(newReward){ ascentCleared=Math.min(ASCENT.length,ascentCleared+1); saveAscent(); refreshUnlocks(); }
+        ascentInfo={run:ascentRun, win:win, reward:newReward, hasNext:ascentCleared<ASCENT.length};
+      }
+      // sting right as the final blow lands, then HOLD on the win/ko pose for a
+      // beat (so those frames are actually seen) before the result screen slides in.
+      setTimeout(()=>{ Sfx.play(win?"victory":"defeat"); buzz(win?[0,45,45,45]:130); }, reduced()?0:950);
+      setTimeout(()=>{ showResult(win,summary,beams,ascentInfo); }, reduced()?0:2000);
+    });
+  }
+  /* ---- victory / defeat result screen ---- */
+  let streak=0;
+  let bestStreak=(function(){try{return parseInt(localStorage.getItem("sixfold_beststreak")||"0",10)||0;}catch(e){return 0;}})();
+  function saveBest(){try{localStorage.setItem("sixfold_beststreak",String(bestStreak));}catch(e){}}
+  // ---- lifetime stats (cosmetic profile only; never touches combat) ----
+  const STATSKEY="sixfold_stats";
+  let stats=(function(){try{return JSON.parse(localStorage.getItem(STATSKEY)||"{}")||{};}catch(e){return {};}})();
+  stats.matches=stats.matches||0; stats.wins=stats.wins||0; stats.bestUnpred=stats.bestUnpred||0;
+  stats.stance=Array.isArray(stats.stance)&&stats.stance.length===6?stats.stance:[0,0,0,0,0,0];
+  function saveStats(){try{localStorage.setItem(STATSKEY,JSON.stringify(stats));}catch(e){}}
+  function recordMatchStats(win,summary){
+    stats.matches++; if(win)stats.wins++;
+    if(summary&&summary.unpredictabilityPct>stats.bestUnpred)stats.bestUnpred=summary.unpredictabilityPct;
+    const h=game?game.state().playerHist:[]; for(const s of h){ if(s>=0&&s<6)stats.stance[s]++; }
+    saveStats();
+  }
+  function showResult(win,summary,beams,ascentInfo){
+    const tell=summary.tell||"well hidden — no clear tell";
+    const streakChip=streak>1?`<div class="chip streak"><b>×${streak}</b><span>win streak</span></div>`:"";
+    const readsChip=matchReads>0?`<div class="chip reads"><b>🎯 ${matchReads}</b><span>${matchReads===1?"read":"reads"} landed</span></div>`:"";
+    const comboChip=bestCombo>=3?`<div class="chip"><b>🔥 ×${bestCombo}</b><span>best combo</span></div>`:"";
+    const extra=win?`<div class="sunbeams">+${beams} ☀ sunbeams</div>`
+                   :`<div class="result-tell">best streak <b>${bestStreak}</b> · they read you this time</div>`;
+    const reward=ascentInfo&&ascentInfo.reward;
+    const rewardBanner=reward?`<div class="reward-banner">⭐ ${reward.type==="title"?"Title earned: ":"Unlocked: "}${reward.name}</div>`:"";
+    // actions differ for Ascent vs Casual
+    let actions;
+    if(ascentInfo){
+      if(win){
+        actions = ascentInfo.hasNext
+          ? `<button class="primary" id="resNext">Next climb ⟶</button><button id="resMap">Ascent map</button>`
+          : `<div class="reward-banner">🏔 The Ascent is conquered.</div><button class="primary" id="resMap">Ascent map</button>`;
+      }else{
+        actions = `<button class="primary" id="resRetry">Retry climb</button><button id="resMap">Ascent map</button>`;
+      }
+    }else{
+      actions = `<button class="primary" id="resAgain">Duel again</button><button id="resFoe">Change foe</button>`;
+    }
+    $("resultscreen").innerHTML=
+      `<div class="hero result ${win?"win":"lose"}">`+
+        `<div class="result-word">${win?"VICTORY":"DEFEAT"}</div>`+
+        `<div class="result-flavor">${win?(ai.name+" falls."):(ai.name+" stands over you.")}</div>`+
+        rewardBanner+
+        `<div class="stat-chips">`+
+          `<div class="chip"><b>${summary.rounds}</b><span>rounds</span></div>`+
+          `<div class="chip"><b>${summary.unpredictabilityPct}%</b><span>unpred</span></div>`+
+          readsChip+
+          comboChip+
+          streakChip+
+        `</div>`+extra+
+        `<div class="result-tell">your tell: <b>${tell}</b></div>`+
+        `<div class="result-actions">`+actions+`</div>`+
+      `</div>`;
+    const rs=$("resultscreen"); rs.setAttribute("aria-hidden","false");
+    if(rs.offsetWidth!==undefined) void rs.offsetWidth;
+    rs.classList.add("show");
+    if(win)victoryBurst();
+    const on=(id,fn)=>{const el=$(id); if(el) el.onclick=fn;};
+    on("resAgain",()=>{ hideResult(); newGame(); });
+    on("resFoe",()=>{ ascentRun=-1; hideResult(); $("foedrawer").classList.add("open"); $("foedrawer").scrollIntoView({behavior:"smooth",block:"nearest"}); });
+    on("resNext",()=>{ hideResult(); startAscentRung(ascentCleared); });
+    on("resRetry",()=>{ hideResult(); startAscentRung(ascentInfo.run); });
+    on("resMap",()=>{ hideResult(); openAscent(); });
+  }
+  function hideResult(){ const rs=$("resultscreen"); if(!rs)return; rs.classList.remove("show"); rs.setAttribute("aria-hidden","true"); setTimeout(()=>{rs.innerHTML="";}, reduced()?0:280); }
+  function rollingAvg(){ if(!lastUnpred.length)return null; return Math.round(lastUnpred.reduce((a,b)=>a+b,0)/lastUnpred.length); }
+
+  function endRoundUI(){
+    const s=game.state();
+    aimed=null;
+    nodeEls.forEach(el=>el.className="node");
+    $("links").innerHTML="";
+    $("roundlbl").textContent="Round "+s.round;
+    $("verdict").textContent="Choose"; $("sub").textContent="tap to aim";
+    if(s.round>ESC)$("esc").classList.add("on");
+    if(compassOn)preview(0);
+    busy=false;
+    setSpendEnabled(true);
+  }
+
+  /* ---- resolve meter UI ---- */
+  function updateMeter(state){
+    const pr=state||(game?game.meter.state():{player:0,ai:0});
+    const box=$("presolve").querySelector(".rpips"); box.innerHTML="";
+    for(let i=0;i<Resolve.RESOLVE_MAX;i++){const d=document.createElement("span");d.className="rpip "+(i<pr.player?"full":"");box.appendChild(d);}
+    setSpendEnabled(!busy&&!over);
+    // AI resolve only visible if Insight revealed it this match
+    if(aiResolveVisible) $("aimeter").textContent="foe 資 "+pr.ai;
+  }
+  let aiResolveVisible=false;
+  function setSpendEnabled(on){
+    const st=game?game.meter.state():{player:0};
+    const ins=!!(on&&st.player>=1), fore=!!(on&&st.player>=2);
+    $("insightbtn").disabled=!ins; $("foresightbtn").disabled=!fore;
+    $("insightbtn").classList.toggle("ready",ins);
+    $("foresightbtn").classList.toggle("ready",fore);
+    if(ins&&!busy&&!over) hintResolveOnce();
+  }
+  function hintResolveOnce(){
+    try{ if(localStorage.getItem("sixfold_resolvehint"))return; localStorage.setItem("sixfold_resolvehint","1"); }catch(e){}
+    showToast("資 Resolve ready — Insight reads their habits · Foresight glimpses their next stance");
+  }
+  function applyReveal(action,payload){
+    if(action==="FORESIGHT"&&payload.predict){
+      matchUsedForesight=true;
+      clearForesight();
+      // Foresight reveals the foe's LIKELY STANCE only — NOT the stance to strike.
+      // You still have to read the wheel and choose the counter yourself; that's
+      // the skill. (Handing you the exact 2-damage strike made it a free win.)
+      foresightNode=payload.predict.pick;
+      foresightStrike=null;
+      nodeEls[foresightNode].classList.add("foresight");           // foe's likely stance
+      showToast("Foresight: foe likely "+STANCES[foresightNode].n+" — read the wheel and punish it");
+    }else if(action==="INSIGHT"){
+      aiResolveVisible=true;
+      Readout.render(game.state().playerHist,game.state().aiHist,game.state().outcomes,{aiRibbonK:10});
+      $("aimeter").textContent="foe 資 "+payload.oppResolve;
+      showToast("Insight: foe ribbon + Resolve revealed");
+    }
+  }
+  // Teach the core skill at the moment it matters: when your live unpredictability
+  // sinks (you're forming a pattern the foe can read), warn you. Full teach once
+  // ever; a subtle reminder at most once per match after that. The bar also tints
+  // red whenever you're readable (ambient feedback, never a nag).
+  function predictNudge(){
+    if(!game)return;
+    const h=game.state().playerHist; if(h.length<5)return;
+    const up=Readout.unpredictabilityPct(h), readable=up<25;
+    const pb=$("pbar"); if(pb) pb.classList.toggle("danger",readable);
+    if(!readable)return;
+    let taught=false; try{taught=!!localStorage.getItem("sixfold_predicthint");}catch(e){}
+    if(!taught){
+      try{localStorage.setItem("sixfold_predicthint","1");}catch(e){}
+      predictNudge._m=true;
+      showToast("⚠ They're reading you — your picks are forming a pattern. Mix it up to break the read.");
+    }else if(!predictNudge._m){
+      predictNudge._m=true;
+      showToast("⚠ Getting readable — vary your stances");
+    }
+  }
+  function clearForesight(){
+    if(foresightNode!=null){nodeEls[foresightNode]&&nodeEls[foresightNode].classList.remove("foresight");foresightNode=null;}
+    if(foresightStrike!=null){nodeEls[foresightStrike]&&nodeEls[foresightStrike].classList.remove("calledshot");foresightStrike=null;}
+  }
+  // celebrate a landed called shot; teach the skill the very first time it happens
+  function onReadLanded(){
+    let first=false;
+    try{ first=!localStorage.getItem("sixfold_readhint"); if(first)localStorage.setItem("sixfold_readhint","1"); }catch(e){}
+    // the big on-screen READ! stamp carries repeat reads; only the first teaches
+    if(first) showToast("🎯 READ! That's the skill — predict, counter, win. Reading beats luck.");
+  }
+
+  function ribbonOpts(){
+    const charm=Assists.active(Engine.MODES[modeId]);
+    const k = (charm&&charm.id==="eye")?10:5;
+    return {aiRibbonK: aiResolveVisible?10:k, ribbonK:5};
+  }
+  function reduced(){ return Assists.settings().reducedMotion || (matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches); }
+
+  /* ---- new game ---- */
+  function newGame(){
+    // leaving a LIVE, unresolved ranked duel for any new match = a loss (anti-dodge)
+    if(isPvP && pvpSession && game && !over && !pvpResolved){ abandonPvp(); }
+    // every duel starts at the TOP of the page — the fighters + wheel in view, no scrolling up
+    try{ window.scrollTo(0,0); }catch(e){}
+    over=false;busy=false;aiResolveVisible=false;committedForesight=null;matchReads=0;aimed=null;matchBindWon=false;matchUsedForesight=false;clearForesight();
+    if(introTimer){clearTimeout(introTimer);introTimer=null;} introPlaying=false;
+    prevHP.P=HP; prevHP.A=HP; resetCombo();
+    $("pstage").classList.remove("victor","fallen");$("astage").classList.remove("victor","fallen");$("verdict").classList.remove("vs");
+    predictNudge._m=false; const _pb=$("pbar"); if(_pb)_pb.classList.remove("danger");
+    isPvP=(modeId==="pvp"); pvpResolved=false;
+    // leaving a ranked duel for any other mode: tear down the live session
+    if(!isPvP && pvpSession){ try{pvpSession.close();}catch(e){} pvpSession=null; pvpOpp=null; }
+    const mode=Engine.MODES[modeId];
+    const seed = mode.seeded ? dailySeed() : (Math.floor(Math.random()*1e9)>>>0);
+    game=Engine.createGame({archetype:foeId,difficulty,mode,seed});
+    matchWinner=null;
+    // fresh foe cosmetics + skin; the NAME is the character it wears (matches the art)
+    const foeSkin=pickFoeSkin();
+    ai={name:skinName(foeSkin),face:rid(FACES),pal:rid(PALS),crest:rid(CRESTS),skin:foeSkin};
+    // Ascent duels: the foe wears the rung's themed character; name it that character.
+    if(ascentRun>=0){ ai.skin=ASCENT[ascentRun].foeSkin; ai.name=skinName(ASCENT[ascentRun].foeSkin); }
+    // Ranked duels: the foe is the matched rival / Sentinel (name from matchmaking).
+    if(isPvP && pvpOpp){ ai.name=pvpOpp.name; }
+    // render BEFORE Stage.init so it captures the live art elements (renderFighter
+    // rebuilds the DOM; init must run after, never before).
+    renderFighter("P");renderFighter("A");
+    Stage.init({pArt:artEl("P"),aArt:artEl("A"),hub:$("hub"),spark:$("spark"),
+      bindStage:$("bindstage"),reducedMotion:reduced(),timed:mode.timed});
+    wireEvents(game);
+    // reset UI
+    nodeEls.forEach(el=>el.className="node");$("links").innerHTML="";
+    $("esc").classList.remove("on");$("verdict").style.color="";
+    $("roundlbl").textContent="Round 1";$("verdict").textContent="Choose";$("sub").textContent="tap a stance";
+    $("rematch").style.display="none";$("postmatch").classList.remove("show");$("aimeter").textContent="";
+    hideResult();
+    renderHP("P");renderHP("A");
+    Readout.render([],[],[],ribbonOpts());
+    $("pbar").classList.remove("show");$("abar").classList.remove("show");
+    updateFoeBar();updateMeter(game.meter.state());applyCompass();
+    mirrorTeachOnce(); refreshDailyPrompt();
+    faceOff();   // brief pre-duel stare-down before round 1 (skippable; off under reduced motion)
+  }
+  // Mirror copies your LAST stance — a hard wall if you don't know the trick.
+  // Teach it the first time you ever face one (Ascent or casual).
+  function mirrorTeachOnce(){
+    if(isPvP||foeId!=="mirror")return;
+    try{ if(localStorage.getItem("sixfold_mirrorhint"))return; localStorage.setItem("sixfold_mirrorhint","1"); }catch(e){}
+    setTimeout(()=>showToast("🪞 This foe copies your LAST stance — beat it by countering your own previous move."), reduced()?0:600);
+  }
+  function dailySeed(){ const d=new Date(); return (d.getUTCFullYear()*1e4+(d.getUTCMonth()+1)*100+d.getUTCDate())>>>0; }
+
+  function updateFoeBar(){
+    const a=Personalities.ARCHES[foeId];
+    const mt=$("modetag");
+    if(isPvP && pvpOpp){
+      // ranked: show the rival/Sentinel identity, not the internal archetype
+      $("foename").textContent=pvpOpp.name;
+      const t=Rank.tierFor(pvpOpp.rating);
+      $("foestars").textContent=t.glyph+" "+t.name;
+      $("foetell").textContent= pvpOpp.kind==="sentinel"
+        ? "Sentinel · practice bot at your "+t.name+" rank · reduced rank stakes"
+        : "Live rival · "+t.name+" tier · charms rest, pure wheel";
+      mt.textContent="Ranked"; mt.classList.add("comp","ranked");
+      $("compbanner").classList.toggle("show",false);
+      return;
+    }
+    mt.classList.remove("ranked");
+    // Ascent: name the specific CHARACTER you're climbing to beat. Casual: show the
+    // archetype you selected (the style) — the character's own name still floats over them.
+    $("foename").textContent = (ascentRun>=0 && ai && ai.name) ? ai.name : a.name;
+    $("foestars").textContent="★".repeat(a.stars)+"☆".repeat(5-a.stars);
+    $("foetell").textContent=a.tell;
+    const mode=Engine.MODES[modeId];
+    mt.textContent=mode.id[0].toUpperCase()+mode.id.slice(1);
+    mt.classList.toggle("comp",!mode.honorsAssists);
+    $("compbanner").classList.toggle("show",!mode.honorsAssists && !!Assists.current());
+  }
+
+  /* ---- arena themes (data-driven; each is an unlockable "area" later) ---- */
+  function ridgeURI(kind,c){
+    const W=600,H=200; let body="";
+    if(kind==="mountains") body=`<path d="M0 200 L120 70 L210 200 Z" fill="${c}"/><path d="M150 200 L330 44 L500 200 Z" fill="${c}" opacity=".85"/><path d="M380 200 L520 92 L600 150 L600 200 Z" fill="${c}" opacity=".7"/>`;
+    else if(kind==="roofline") body=`<path d="M0 200 L0 142 L44 142 L66 104 Q300 42 534 104 L556 142 L600 142 L600 200 Z" fill="${c}"/>`;
+    else if(kind==="bamboo"){ for(let i=0;i<10;i++){const x=18+i*62+(i%2)*9; body+=`<rect x="${x}" y="0" width="9" height="200" fill="${c}" opacity="${0.45+0.06*(i%3)}"/>`; for(let y=24;y<200;y+=44) body+=`<rect x="${x-2}" y="${y}" width="13" height="4" fill="${c}"/>`; } }
+    else if(kind==="torii"){ const g=(x,s)=>`<g transform="translate(${x} 0) scale(${s})"><rect x="-50" y="44" width="14" height="156" fill="${c}"/><rect x="36" y="44" width="14" height="156" fill="${c}"/><rect x="-68" y="36" width="136" height="15" fill="${c}"/><rect x="-58" y="58" width="116" height="9" fill="${c}"/></g>`; body=g(150,1)+g(450,.78); }
+    return "data:image/svg+xml,"+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${body}</svg>`);
+  }
+  const THEMES={
+    dojo:{name:"Moonlit Dojo",glyph:"🌙",sky:"linear-gradient(#20294a,#283357 45%,#3a3a5c)",
+      disc:"radial-gradient(circle at 50% 45%,#f6f1e0,#d9d2bb 66%,transparent 70%)",glow:"#cfe0ff44",
+      wash1:"#33407e",wash2:"#5b3a6e",floor1:"#171d33",floor2:"#0a0d17",ridge:ridgeURI("roofline","#10131f"),bg:"backgrounds/dojo.jpg"},
+    sunset:{name:"Sunset Cliff",glyph:"🌄",sky:"linear-gradient(#3a2c52,#7a3f4e 42%,#d98a4e 82%,#f0b85e)",
+      disc:"radial-gradient(circle at 50% 45%,#fff4d6,#ffb24d 60%,transparent 66%)",glow:"#ffae5577",
+      wash1:"#9c4a3a",wash2:"#e0954a",floor1:"#3a2438",floor2:"#1a1020",ridge:ridgeURI("mountains","#2a1830"),bg:"backgrounds/sunset.jpg"},
+    bamboo:{name:"Bamboo Grove",glyph:"🎋",sky:"linear-gradient(#23402f,#2f5a3e 50%,#4a7350)",
+      disc:"radial-gradient(circle at 50% 45%,#eef6da,#cfe0a8 60%,transparent 66%)",glow:"#d7f0a855",
+      wash1:"#2f6a45",wash2:"#7a8f3a",floor1:"#1c3326",floor2:"#0c1810",ridge:ridgeURI("bamboo","#16271b"),bg:"backgrounds/bamboo.jpg"},
+    torii:{name:"Night Torii",glyph:"⛩️",sky:"linear-gradient(#1a1530,#2a1d44 50%,#43264f)",
+      disc:"radial-gradient(circle at 50% 45%,#ffe3a8,#e08a3a 55%,transparent 60%)",glow:"#ff9a4d55",
+      wash1:"#3a2a66",wash2:"#7a2f50",floor1:"#1d1530",floor2:"#0c0814",ridge:ridgeURI("torii","#0e0a18"),bg:"backgrounds/torii.jpg"},
+  };
+  // --- second art drop: 12 more painted arenas (lock-until-earned). The painted
+  // bg is the star; the wash pair is only a fallback (hidden under .hasbg). ---
+  const ARENA_BASE={sky:"linear-gradient(#161b2c,#1f2740 55%,#2a3252)",disc:"radial-gradient(circle at 50% 45%,#f6f1e0,#d9d2bb 66%,transparent 70%)",glow:"#cfe0ff33",floor1:"#141826",floor2:"#080b12",ridge:ridgeURI("mountains","#0e1119")};
+  [
+    {id:"cherry",   name:"Cherry Riverbank", glyph:"🌸", wash1:"#b3617f", wash2:"#6a7fae"},
+    {id:"darkdojo", name:"Shadow Dojo",      glyph:"🥷", wash1:"#2a2f4a", wash2:"#4a3a5e"},
+    {id:"frozen",   name:"Frozen Lake",      glyph:"❄️", wash1:"#5b7a9c", wash2:"#acc6d6"},
+    {id:"maple",    name:"Maple Temple",     glyph:"🍁", wash1:"#a23a2a", wash2:"#d9863a"},
+    {id:"market",   name:"Lantern Market",   glyph:"🏮", wash1:"#9c3a2e", wash2:"#caa23a"},
+    {id:"graveyard",name:"Misty Graveyard",  glyph:"🪦", wash1:"#46506a", wash2:"#6a7480"},
+    {id:"ash",      name:"Ash Plain",        glyph:"🌋", wash1:"#7a3a2a", wash2:"#4a4450"},
+    {id:"village",  name:"Burning Village",  glyph:"🔥", wash1:"#b3432a", wash2:"#e0954a"},
+    {id:"coast",    name:"Stormy Coast",     glyph:"🌊", wash1:"#2f5a6a", wash2:"#5b6f9c"},
+    {id:"cloudsea", name:"Cloud Sea",        glyph:"☁️", wash1:"#5b6f9c", wash2:"#c98a6a"},
+    {id:"bloodmtn", name:"Blood Mountains",  glyph:"⛰️", wash1:"#7a2a2a", wash2:"#3a3550"},
+    {id:"palace",   name:"Dragon Palace",    glyph:"🐉", wash1:"#1f7a8c", wash2:"#3f6fb0"},
+  ].forEach(a=>{ THEMES[a.id]=Object.assign({},ARENA_BASE,{name:a.name,glyph:a.glyph,wash1:a.wash1,wash2:a.wash2,bg:"backgrounds/"+a.id+".jpg"}); });
+  // new arenas unlock as you climb (lock-until-earned, like the rest of the game)
+  const NEW_ARENA_AT={cherry:4,darkdojo:9,sunset:13,frozen:18,bamboo:22,maple:26,market:31,torii:35,village:39,graveyard:44,ash:48,coast:52,cloudsea:57,bloodmtn:61,palace:66};
+  let arenaId="dojo";
+  // arena -> biome music (5 tracks, similar key so they blend). Calm "Last Breath"
+  // for serene/eerie biomes, "Locked Blades" for the harsh/combat ones.
+  const MUSIC={ dojo:"lastbreath1",cherry:"lastbreath1",frozen:"lastbreath1",cloudsea:"lastbreath1",
+    bamboo:"lastbreath2",maple:"lastbreath2",palace:"lastbreath2",
+    graveyard:"lastbreath3",torii:"lastbreath3",darkdojo:"lastbreath3",
+    sunset:"lockedblades1",market:"lockedblades1",coast:"lockedblades1",
+    ash:"lockedblades2",village:"lockedblades2",bloodmtn:"lockedblades2" };
+  function musicFor(id){ return "music/"+(MUSIC[id]||"lastbreath1")+".mp3"; }
+  // each foe has a "home" arena, so picking a foe sets the scene (still overridable)
+  const FOE_ARENA={berserker:"sunset",stone:"dojo",drunkard:"torii",mirror:"bamboo",
+    metronome:"dojo",trickster:"bamboo",ghost:"torii",echo:"sunset"};
+  function setArena(id,force){ if(!THEMES[id])return; if(!force && !unlockedArenaSet().has(id))return; arenaId=id; applyTheme(id);
+    const box=$("arenas"); if(box){[...box.children].forEach(c=>c.classList.toggle("sel",c._arena===id));} }
+  // per-arena lighting tint on the FIGHTERS so they pick up each scene's colour
+  // temperature instead of looking pasted on. Grouped by biome mood; deliberately
+  // SUBTLE (brightness/saturation/warmth only — no hue-rotate that would skew art).
+  const TINT_WARM="saturate(1.09) brightness(.95) sepia(.12)";       // fire/sunset/autumn
+  const TINT_COOL="saturate(.98) brightness(1.02) contrast(1.03)";   // ice/water/sky
+  const TINT_NIGHT="saturate(.95) brightness(.9) contrast(1.05)";    // dark/eerie
+  const TINT_DAY="saturate(1.05) brightness(1.0)";                   // green/day
+  const ARENA_TINT={
+    dojo:TINT_NIGHT, darkdojo:TINT_NIGHT, torii:TINT_NIGHT, graveyard:TINT_NIGHT,
+    sunset:TINT_WARM, maple:TINT_WARM, market:TINT_WARM, village:TINT_WARM, ash:TINT_WARM, bloodmtn:TINT_WARM,
+    frozen:TINT_COOL, coast:TINT_COOL, cloudsea:TINT_COOL, palace:TINT_COOL,
+    bamboo:TINT_DAY, cherry:TINT_DAY,
+  };
+  // per-biome ambient particle type (same mood groups as the tint)
+  const ARENA_PARTICLE={
+    sunset:"ember", maple:"ember", market:"ember", village:"ember", ash:"ember", bloodmtn:"ember",
+    frozen:"snow", coast:"snow", cloudsea:"snow", palace:"snow",
+    bamboo:"petal", cherry:"petal",
+    dojo:"firefly", darkdojo:"firefly", torii:"firefly", graveyard:"firefly",
+  };
+  function setParticles(type){
+    const sc=$("scene"); if(!sc)return;
+    let layer=sc.querySelector(".particles");
+    if(reduced()||!type||type==="none"){ if(layer){layer.innerHTML="";layer._type=null;} return; }
+    if(!layer){ layer=document.createElement("div"); layer.className="particles"; sc.appendChild(layer); } // z-index:1 lifts it regardless of DOM order
+    if(layer._type===type)return;                       // already showing this biome's motes
+    layer._type=type; layer.innerHTML="";
+    const N=type==="firefly"?10:14;
+    for(let i=0;i<N;i++){
+      const p=document.createElement("span"); p.className="pt pt-"+type;
+      const big=type==="petal", size=big?(6+Math.random()*6):(2+Math.random()*3);
+      const dur=(type==="firefly"?7:6)+Math.random()*8, delay=-Math.random()*dur;
+      const drift=Math.round((Math.random()*2-1)*46);
+      p.style.cssText=`left:${Math.round(Math.random()*100)}%;width:${size.toFixed(1)}px;height:${size.toFixed(1)}px;animation-duration:${dur.toFixed(1)}s;animation-delay:${delay.toFixed(1)}s;--drift:${drift}px`;
+      layer.appendChild(p);
+    }
+  }
+  function applyTheme(id){
+    const t=THEMES[id]||THEMES.dojo, s=$("scene"); if(!s)return;
+    s.style.setProperty("--sky",t.sky); s.style.setProperty("--disc",t.disc); s.style.setProperty("--glow",t.glow);
+    s.style.setProperty("--wash1",t.wash1); s.style.setProperty("--wash2",t.wash2);
+    s.style.setProperty("--floor1",t.floor1); s.style.setProperty("--floor2",t.floor2);
+    // set on body so it inherits into .arena/.fighter-art (#scene is a separate subtree)
+    document.body.style.setProperty("--fighter-tint", ARENA_TINT[id]||"none");
+    setParticles(ARENA_PARTICLE[id]||"none");
+    const ridge=s.querySelector(".ridge"); if(ridge) ridge.style.backgroundImage='url("'+t.ridge+'")';
+    // optional painted backdrop (THEME.bg): drop-in image takes over the scene
+    const sb=s.querySelector(".scenebg");
+    if(sb){ if(t.bg){ sb.style.backgroundImage='url("'+t.bg+'")'; s.classList.add("hasbg"); } else { sb.style.backgroundImage=""; s.classList.remove("hasbg"); } }
+    if(typeof Music!=="undefined") Music.play(musicFor(id));   // biome-aware track
+  }
+  function buildArenaPicker(){
+    const box=$("arenas"); if(!box)return; box.innerHTML="";
+    const unlocked=unlockedArenaSet();
+    Object.keys(THEMES).forEach(id=>{
+      const open=unlocked.has(id);
+      const o=document.createElement("div");o.className="opt sml"+(id===arenaId?" sel":"")+(open?"":" lock");
+      o._arena=id;
+      o.textContent=THEMES[id].glyph+" "+THEMES[id].name+(open?"":" 🔒");
+      o.style.fontSize="11px";o.style.width="auto";o.style.padding="0 9px";
+      o.onclick=open?(()=>setArena(id)):(()=>showToast(THEMES[id].name+" — unlock in the Ascent ⛰"));
+      box.appendChild(o);
+    });
+  }
+
+  /* ---- THE ASCENT: single-player campaign ladder ----
+     Climb a fixed sequence of foes; each win unlocks a fighter or arena (cosmetic
+     reward only — never changes combat odds; difficulty is a fair, symmetric knob).
+     Casual stays a fully open sandbox; the Ascent is the structured progression. */
+  // The tower. You begin with the Ronin + the Dojo; every rung unlocks a fighter
+  // or arena (cosmetic only). Difficulty is the single fair, symmetric knob.
+  const ASCENT=[
+    {foe:"stone",diff:0.12,arena:"dojo",foeSkin:"komainu",reward:{type:"skin",id:"komainu",name:"Komainu"}},
+    {foe:"drunkard",diff:0.13,arena:"cherry",foeSkin:"komainucub",reward:{type:"skin",id:"komainucub",name:"Komainu Cub"}},
+    {foe:"stone",diff:0.15,arena:"darkdojo",foeSkin:"kawauso",reward:{type:"skin",id:"kawauso",name:"Kawauso"}},
+    {foe:"metronome",diff:0.16,arena:"sunset",foeSkin:"kijimuna",reward:{type:"skin",id:"kijimuna",name:"Kijimuna"}},
+    {foe:"stone",diff:0.17,arena:"frozen",foeSkin:"mujina",reward:{type:"skin",id:"mujina",name:"Mujina"}},
+    {foe:"drunkard",diff:0.18,arena:"bamboo",foeSkin:"battocat",reward:{type:"skin",id:"battocat",name:"Battō Cat"}},
+    {foe:"stone",diff:0.2,arena:"maple",foeSkin:"bakeneko",reward:{type:"skin",id:"bakeneko",name:"Bakeneko"}},
+    {foe:"metronome",diff:0.21,arena:"market",foeSkin:"tsukiusagi",reward:{type:"skin",id:"tsukiusagi",name:"Tsuki-usagi"}},
+    {foe:"stone",diff:0.22,arena:"torii",foeSkin:"kasaobake",reward:{type:"skin",id:"kasaobake",name:"Kasa-obake"}},
+    {foe:"drunkard",diff:0.23,arena:"village",foeSkin:"mochiknight",reward:{type:"skin",id:"mochiknight",name:"Moon-Rabbit Knight"}},
+    {foe:"stone",diff:0.25,arena:"graveyard",foeSkin:"rikishi",reward:{type:"skin",id:"rikishi",name:"Rikishi"}},
+    {foe:"metronome",diff:0.26,arena:"ash",foeSkin:"kyudoka",reward:{type:"skin",id:"kyudoka",name:"Kyudoka"}},
+    {foe:"stone",diff:0.27,arena:"coast",foeSkin:"beetle",reward:{type:"skin",id:"beetle",name:"Beetle Warrior"}},
+    {foe:"drunkard",diff:0.29,arena:"cloudsea",foeSkin:"kappa",reward:{type:"skin",id:"kappa",name:"Kappa Grappler"}},
+    {foe:"stone",diff:0.3,arena:"bloodmtn",foeSkin:"kappaknight",reward:{type:"skin",id:"kappaknight",name:"Kappa Shell Knight"}},
+    {foe:"metronome",diff:0.31,arena:"palace",foeSkin:"tetsu",reward:{type:"skin",id:"tetsu",name:"Iron Monk"}},
+    {foe:"stone",diff:0.32,arena:"dojo",foeSkin:"onnabugeisha",reward:{type:"skin",id:"onnabugeisha",name:"Onna-bugeisha"}},
+    {foe:"drunkard",diff:0.34,arena:"cherry",foeSkin:"painter",reward:{type:"skin",id:"painter",name:"Brush Duelist"}},
+    {foe:"berserker",diff:0.35,arena:"darkdojo",foeSkin:"maskmaker",reward:{type:"skin",id:"maskmaker",name:"Mask Maker"}},
+    {foe:"trickster",diff:0.36,arena:"sunset",foeSkin:"tanuki",reward:{type:"skin",id:"tanuki",name:"Tanuki Warrior"}},
+    {foe:"metronome",diff:0.38,arena:"frozen",foeSkin:"bakucalf",reward:{type:"skin",id:"bakucalf",name:"Baku Calf"}},
+    {foe:"mirror",diff:0.39,arena:"bamboo",foeSkin:"baku",reward:{type:"skin",id:"baku",name:"Baku"}},
+    {foe:"berserker",diff:0.4,arena:"maple",foeSkin:"kitsune",reward:{type:"skin",id:"kitsune",name:"Kitsune"}},
+    {foe:"trickster",diff:0.41,arena:"market",foeSkin:"kitsunebi",reward:{type:"skin",id:"kitsunebi",name:"Kitsune-bi"}},
+    {foe:"metronome",diff:0.43,arena:"torii",foeSkin:"nekomata",reward:{type:"skin",id:"nekomata",name:"Nekomata"}},
+    {foe:"mirror",diff:0.44,arena:"village",foeSkin:"karakasa",reward:{type:"skin",id:"karakasa",name:"Karakasa Twins"}},
+    {foe:"berserker",diff:0.45,arena:"graveyard",foeSkin:"jinmenju",reward:{type:"skin",id:"jinmenju",name:"Jinmenju"}},
+    {foe:"trickster",diff:0.46,arena:"ash",foeSkin:"tsuchinoko",reward:{type:"skin",id:"tsuchinoko",name:"Tsuchinoko"}},
+    {foe:"metronome",diff:0.48,arena:"coast",foeSkin:"shikigami",reward:{type:"skin",id:"shikigami",name:"Paper Shikigami"}},
+    {foe:"mirror",diff:0.49,arena:"cloudsea",foeSkin:"kabukimono",reward:{type:"skin",id:"kabukimono",name:"Kabukimono"}},
+    {foe:"berserker",diff:0.5,arena:"bloodmtn",foeSkin:"mukade",reward:{type:"skin",id:"mukade",name:"Centipede"}},
+    {foe:"trickster",diff:0.52,arena:"palace",foeSkin:"tsuchigumo",reward:{type:"skin",id:"tsuchigumo",name:"Tsuchigumo"}},
+    {foe:"metronome",diff:0.53,arena:"dojo",foeSkin:"jorogumo",reward:{type:"skin",id:"jorogumo",name:"Jorogumo"}},
+    {foe:"mirror",diff:0.54,arena:"cherry",foeSkin:"hannya",reward:{type:"skin",id:"hannya",name:"Hannya"}},
+    {foe:"berserker",diff:0.55,arena:"darkdojo",foeSkin:"sora",reward:{type:"skin",id:"sora",name:"Sky Crane"}},
+    {foe:"trickster",diff:0.57,arena:"sunset",foeSkin:"heron",reward:{type:"skin",id:"heron",name:"Snow Heron"}},
+    {foe:"ghost",diff:0.58,arena:"frozen",foeSkin:"tancho",reward:{type:"skin",id:"tancho",name:"Tancho Priestess"}},
+    {foe:"trickster",diff:0.59,arena:"bamboo",foeSkin:"moondeer",reward:{type:"skin",id:"moondeer",name:"Moon Deer Oracle"}},
+    {foe:"ghost",diff:0.6,arena:"maple",foeSkin:"yamabiko",reward:{type:"skin",id:"yamabiko",name:"Yamabiko"}},
+    {foe:"echo",diff:0.62,arena:"market",foeSkin:"yurei",reward:{type:"skin",id:"yurei",name:"Pale Ghost"}},
+    {foe:"ghost",diff:0.63,arena:"torii",foeSkin:"kage",reward:{type:"skin",id:"kage",name:"Shadow"}},
+    {foe:"trickster",diff:0.64,arena:"village",foeSkin:"lantern",reward:{type:"skin",id:"lantern",name:"Lantern Wraith"}},
+    {foe:"ghost",diff:0.66,arena:"graveyard",foeSkin:"spectraldog",reward:{type:"skin",id:"spectraldog",name:"Spectral Hound"}},
+    {foe:"echo",diff:0.67,arena:"ash",foeSkin:"yukionna",reward:{type:"skin",id:"yukionna",name:"Yuki-onna"}},
+    {foe:"ghost",diff:0.68,arena:"coast",foeSkin:"moth",reward:{type:"skin",id:"moth",name:"Moth Priestess"}},
+    {foe:"trickster",diff:0.69,arena:"cloudsea",foeSkin:"umibozu",reward:{type:"skin",id:"umibozu",name:"Umi-bōzu"}},
+    {foe:"ghost",diff:0.71,arena:"bloodmtn",foeSkin:"nureonna",reward:{type:"skin",id:"nureonna",name:"Nure-onna"}},
+    {foe:"echo",diff:0.72,arena:"palace",foeSkin:"honekage",reward:{type:"skin",id:"honekage",name:"Bonedrifter"}},
+    {foe:"ghost",diff:0.73,arena:"dojo",foeSkin:"zato",reward:{type:"skin",id:"zato",name:"Zato the Blind"}},
+    {foe:"trickster",diff:0.74,arena:"cherry",foeSkin:"gashadokuro",reward:{type:"skin",id:"gashadokuro",name:"Gashadokuro"}},
+    {foe:"ghost",diff:0.76,arena:"darkdojo",foeSkin:"onibi",reward:{type:"skin",id:"onibi",name:"Ember Oni"}},
+    {foe:"echo",diff:0.77,arena:"sunset",foeSkin:"seaserpent",reward:{type:"skin",id:"seaserpent",name:"Sea Serpent Ronin"}},
+    {foe:"ghost",diff:0.78,arena:"frozen",foeSkin:"mizuchi",reward:{type:"skin",id:"mizuchi",name:"Mizuchi"}},
+    {foe:"trickster",diff:0.8,arena:"bamboo",foeSkin:"frogshogun",reward:{type:"skin",id:"frogshogun",name:"Frog Shōgun"}},
+    {foe:"trickster",diff:0.81,arena:"maple",foeSkin:"shisa",reward:{type:"skin",id:"shisa",name:"Shisa"}},
+    {foe:"echo",diff:0.82,arena:"market",foeSkin:"tidelion",reward:{type:"skin",id:"tidelion",name:"Tide Guardian"}},
+    {foe:"echo",diff:0.83,arena:"torii",foeSkin:"toranokami",reward:{type:"skin",id:"toranokami",name:"Tora-no-Kami"}},
+    {foe:"ghost",diff:0.85,arena:"village",foeSkin:"shachihoko",reward:{type:"skin",id:"shachihoko",name:"Shachihoko"}},
+    {foe:"trickster",diff:0.86,arena:"graveyard",foeSkin:"yatagarasu",reward:{type:"skin",id:"yatagarasu",name:"Yatagarasu"}},
+    {foe:"echo",diff:0.87,arena:"ash",foeSkin:"tengu",reward:{type:"skin",id:"tengu",name:"Tengu"}},
+    {foe:"echo",diff:0.89,arena:"coast",foeSkin:"tengugeneral",reward:{type:"skin",id:"tengugeneral",name:"Tengu General"}},
+    {foe:"ghost",diff:0.9,arena:"cloudsea",foeSkin:"nue",reward:{type:"skin",id:"nue",name:"Nue"}},
+    {foe:"trickster",diff:0.91,arena:"bloodmtn",foeSkin:"raiden",reward:{type:"skin",id:"raiden",name:"Storm"}},
+    {foe:"echo",diff:0.92,arena:"palace",foeSkin:"raijin",reward:{type:"skin",id:"raijin",name:"Raijin"}},
+    {foe:"echo",diff:0.94,arena:"dojo",foeSkin:"fujin",reward:{type:"skin",id:"fujin",name:"Fujin"}},
+    {foe:"ghost",diff:0.95,arena:"cherry",foeSkin:"tatsumaiden",reward:{type:"skin",id:"tatsumaiden",name:"Tatsu Maiden"}},
+    {foe:"trickster",diff:0.96,arena:"darkdojo",foeSkin:"kirin",reward:{type:"skin",id:"kirin",name:"Kirin"}},
+    {foe:"echo",diff:0.97,arena:"sunset",foeSkin:"hoo",reward:{type:"skin",id:"hoo",name:"Hōō Dancer"}},
+    {foe:"echo",diff:0.99,arena:"frozen",foeSkin:"daimyo",reward:{type:"skin",id:"daimyo",name:"Daimyo"}},
+    {foe:"echo",diff:1,arena:"torii",foeSkin:"daimyo",reward:{type:"title",id:"champion",name:"Champion of the Sixfold"}},
+  ];
+  // chapters group the climb into a legible curve: habit foes first (learn to
+  // read), then mind-games (Mirror/Trickster turn your habits against you),
+  // then near-unpredictable phantoms, then foes that learn you in real time.
+  const CHAPTERS=[
+    {at:0,  name:"I · The Habit-Readers", sub:"learn to read a pattern"},
+    {at:18, name:"II · The Mind-Games",   sub:"they turn your habits against you"},
+    {at:36, name:"III · The Phantoms",    sub:"survive on your own unpredictability"},
+    {at:54, name:"IV · The Masters",      sub:"foes that learn you in real time"},
+  ];
+  // unlocks derive from how far you've climbed (base = Ronin + Dojo)
+  function unlockedSkinSet(){ const s=new Set(["ronin"]); for(let i=0;i<ascentCleared;i++){const r=ASCENT[i].reward; if(r.type==="skin")s.add(r.id);} return s; }
+  function unlockedArenaSet(){ const s=new Set(["dojo"]); for(let i=0;i<ascentCleared;i++){const r=ASCENT[i].reward; if(r.type==="arena")s.add(r.id);} for(const k in NEW_ARENA_AT){ if(ascentCleared>=NEW_ARENA_AT[k]) s.add(k);} return s; }
+  function refreshUnlocks(){ renderSkinPicker(); buildArenaPicker(); }
+  let ascentCleared=(function(){try{return Math.min(ASCENT.length,parseInt(localStorage.getItem("sixfold_ascent")||"0",10)||0);}catch(e){return 0;}})();
+  let ascentRun=-1; // index of the rung being fought, or -1 for free play
+  function saveAscent(){try{localStorage.setItem("sixfold_ascent",String(ascentCleared));}catch(e){}}
+  function ascentStars(d){const n=Math.round(d*4)+1;return "★".repeat(n)+"☆".repeat(5-n);}
+  function rewardLabel(r){return r.type==="title"?("Title — "+r.name):((r.type==="skin"?"Unlock fighter: ":"Unlock arena: ")+r.name);}
+  function openAscent(){renderAscent();const o=$("ascent");o.classList.add("show");o.setAttribute("aria-hidden","false");
+    const cur=o.querySelector(".rung.cur")||o.querySelector(".rung"); if(cur&&cur.scrollIntoView)cur.scrollIntoView({block:"center"});}
+  function closeAscent(){$("ascent").classList.remove("show");$("ascent").setAttribute("aria-hidden","true");}
+  function renderAscent(){
+    const rungs=ASCENT.map((r,i)=>{
+      const done=i<ascentCleared, cur=i===ascentCleared;
+      const a=Personalities.ARCHES[r.foe];
+      const status=done?"✓":(cur?"▶":"🔒"), cls=done?"done":(cur?"cur":"lock");
+      const btn=cur?`<button data-rung="${i}">${ascentCleared===0?"Begin":"Fight"}</button>`:"";
+      const ch=CHAPTERS.find(c=>c.at===i);
+      const head=ch?`<div class="chapter-head"><span class="cn">${ch.name}</span><span class="cd">${ch.sub}</span></div>`:"";
+      return head+`<div class="rung ${cls}"><div class="ic">${status}</div>`+
+        `<div class="meta"><div class="fn">${i+1}. ${a.name}</div>`+
+        `<div class="stars">${ascentStars(r.diff)}</div>`+
+        `<div class="rw">${done?"<b>✓ </b>":""}${rewardLabel(r.reward)}</div></div>${btn}</div>`;
+    }).join("");
+    $("ascent").innerHTML=
+      `<div class="hero ascent"><h2>THE ASCENT</h2>`+
+      `<div class="prog">${ascentCleared} / ${ASCENT.length} cleared</div>`+
+      `<div class="ladder">${rungs}</div>`+
+      `<button class="close" id="ascentclose">Close</button></div>`;
+    const c=$("ascentclose"); if(c) c.onclick=closeAscent;
+    Array.prototype.forEach.call($("ascent").querySelectorAll(".rung button[data-rung]"),(btn)=>{
+      btn.onclick=()=>startAscentRung(parseInt(btn.getAttribute("data-rung"),10));
+    });
+  }
+  function startAscentRung(i){
+    if(i<0||i>=ASCENT.length)return;
+    const r=ASCENT[i];
+    ascentRun=i; foeId=r.foe; difficulty=r.diff; modeId="casual";
+    closeAscent(); hideResult(); setArena(r.arena,true); updateFoeBar(); newGame();
+  }
+
+  /* ---- ROSTER / COLLECTION gallery: showcases the unlockable cast ---- */
+  // ordered: the Ronin starter, then every fighter the Ascent awards, in climb order.
+  function collectionEntries(){
+    const out=[{id:"ronin",rung:-1,foe:null}];
+    ASCENT.forEach((r,i)=>{ if(r.reward.type==="skin") out.push({id:r.reward.id,rung:i,foe:r.foe}); });
+    return out;
+  }
+  function openCollection(){ renderCollection(); const o=$("collection"); o.classList.add("show"); o.setAttribute("aria-hidden","false"); }
+  function closeCollection(){ const o=$("collection"); o.classList.remove("show"); o.setAttribute("aria-hidden","true"); }
+  // equip an unlocked fighter to play as. Safe mid-match: the visual swap is
+  // deferred to the next duel if one is live (re-rendering the player art would
+  // break the active Stage refs), otherwise it applies immediately.
+  function equipFighter(id){
+    if(!unlockedSkinSet().has(id)) return;
+    player.skin=id;
+    renderSkinPicker();                                   // keep the customizer in sync
+    if(!game || over || introPlaying) renderFighter("P"); // reflect now when not mid-duel
+    const live=(game && !over && !introPlaying);
+    showToast("Playing as "+Skins.get(id).name+(live?" — from your next duel":""));
+    renderCollection();                                  // refresh the equipped highlight
+  }
+  function renderCollection(){
+    const unlocked=unlockedSkinSet(), entries=collectionEntries();
+    const cards=entries.map(e=>{
+      const skin=Skins.get(e.id), got=unlocked.has(e.id), src=Skins.src(skin,player.pal);
+      const equipped=got&&(player.skin===e.id);
+      const thumb=src?`<i style="background-image:url('${src}')"></i>`:`<i></i>`;
+      let sub;
+      if(equipped) sub="✓ Playing as";
+      else if(e.rung<0) sub="Starter";
+      else if(got) sub="Won · rung "+(e.rung+1);
+      else { const a=Personalities.ARCHES[e.foe]; sub="Rung "+(e.rung+1)+" · beat "+(a?a.name:"?"); }
+      return `<div class="ccard ${got?"got":"lock"}${equipped?" equipped":""}"${got?` data-skin="${e.id}"`:""}><div class="cthumb">${thumb}</div>`+
+        (got?"":`<span class="lk">🔒</span>`)+(equipped?`<span class="eq">✓</span>`:"")+
+        `<div class="cn">${skin.name}</div><div class="cs">${sub}</div></div>`;
+    }).join("");
+    $("collection").innerHTML=
+      `<div class="hero collection"><h2>ROSTER</h2>`+
+      `<div class="prog">${unlocked.size} / ${entries.length} earned · tap a fighter to play as them</div>`+
+      `<div class="coll-grid">${cards}</div>`+
+      `<button class="close" id="collclose">Close</button></div>`;
+    const c=$("collclose"); if(c) c.onclick=closeCollection;
+    Array.prototype.forEach.call($("collection").querySelectorAll(".ccard.got[data-skin]"),(card)=>{
+      card.onclick=()=>equipFighter(card.getAttribute("data-skin"));
+    });
+  }
+
+  /* ---- PROFILE / lifetime stats ---- */
+  function openProfile(){ renderProfile(); const o=$("profile"); o.classList.add("show"); o.setAttribute("aria-hidden","false"); }
+  function closeProfile(){ const o=$("profile"); o.classList.remove("show"); o.setAttribute("aria-hidden","true"); }
+  function renderProfile(){
+    const winRate=stats.matches?Math.round(stats.wins/stats.matches*100):0;
+    const earned=unlockedSkinSet().size, total=collectionEntries().length;
+    let favI=-1,favN=0; stats.stance.forEach((c,i)=>{ if(c>favN){favN=c;favI=i;} });
+    const fav=favI<0?"—":(STANCES[favI].g+" "+STANCES[favI].n);
+    const stat=(v,l,cls)=>`<div class="pstat ${cls||""}"><b>${v}</b><span>${l}</span></div>`;
+    $("profile").innerHTML=
+      `<div class="hero profile"><h2>PROFILE</h2>`+
+      `<div class="pgrid">`+
+        stat(stats.matches,"duels")+
+        stat(winRate+"%","win rate")+
+        stat(bestStreak,"best streak","gold")+
+        stat(ladder.tier().glyph+" "+ladder.tier().name,"ranked tier","gold")+
+        stat(ladder.wins+"–"+ladder.losses,"ranked W–L")+
+        stat("🎯 "+lifetimeReads,"reads landed","gold")+
+        stat(stats.bestUnpred+"%","best unpred")+
+        stat(earned+" / "+total,"fighters")+
+        `<div class="pstat wide"><b>${fav}</b><span>favorite stance</span></div>`+
+      `</div>`+
+      `<button class="close" id="profclose">Close</button></div>`;
+    const c=$("profclose"); if(c) c.onclick=closeProfile;
+  }
+
+  /* ---- DAILY DUEL: one deterministic seeded challenge per UTC day ---- */
+  function utcKey(off){ const d=new Date(); if(off)d.setUTCDate(d.getUTCDate()+off);
+    return d.getUTCFullYear()+"-"+String(d.getUTCMonth()+1).padStart(2,"0")+"-"+String(d.getUTCDate()).padStart(2,"0"); }
+  function dailyChallenge(){ // foe/diff/arena are a pure function of today's date
+    const seed=dailySeed(), ids=Personalities.ids(), arenas=Object.keys(THEMES);
+    return { foe: ids[seed%ids.length],
+      diff: Math.round((0.4+((Math.floor(seed/7))%11)/10*0.5)*100)/100,   // fair 0.40–0.90 band
+      arena: arenas[Math.floor(seed/3)%arenas.length] };
+  }
+  let dailyState=(function(){try{return JSON.parse(localStorage.getItem("sixfold_daily")||"{}")||{};}catch(e){return{};}})();
+  function saveDaily(){try{localStorage.setItem("sixfold_daily",JSON.stringify(dailyState));}catch(e){}}
+
+  /* ---- TRIALS: rotating skill-pure daily objectives -> sunbeams (pillar-safe) ---- */
+  const TRIALS=[
+    {id:"reads3",  label:"Land 3 reads",                reward:30,target:3,tick:(c)=>c.reads},
+    {id:"win3",    label:"Win 3 duels",                 reward:35,target:3,tick:(c)=>c.win?1:0},
+    {id:"unpred70",label:"Win at ≥70% unpredictable",reward:30,check:(c)=>c.win&&c.unpred>=70},
+    {id:"bindwin", label:"Win a Clash Bind",            reward:20,check:(c)=>c.bindWon},
+    {id:"noFore",  label:"Win without Foresight",       reward:25,check:(c)=>c.win&&!c.usedForesight},
+    {id:"swift",   label:"Win in ≤4 rounds",        reward:25,check:(c)=>c.win&&c.rounds<=4},
+    {id:"streak3", label:"Reach a 3-win streak",        reward:30,check:(c)=>c.streak>=3},
+    {id:"readfoe", label:"Read a Ghost/Echo/Trickster", reward:40,check:(c)=>c.reads>0&&["ghost","echo","trickster"].indexOf(c.foe)>=0},
+  ];
+  let trialsState=(function(){try{return JSON.parse(localStorage.getItem("sixfold_trials")||"{}")||{};}catch(e){return{};}})();
+  function saveTrials(){try{localStorage.setItem("sixfold_trials",JSON.stringify(trialsState));}catch(e){}}
+  function todaysTrialIds(){ // deterministic 3-of-N, stable across the UTC day (bounded: no while-cycle risk)
+    const ids=TRIALS.map(t=>t.id), n=ids.length, seed=(dailySeed())>>>0, out=[];
+    const start=seed%n, stride=1+(seed%(n-1));
+    for(let k=0;k<n && out.length<3;k++){ const v=ids[(start+k*stride)%n]; if(out.indexOf(v)<0)out.push(v); }
+    for(let k=0;k<n && out.length<3;k++){ if(out.indexOf(ids[k])<0)out.push(ids[k]); } // guaranteed fill
+    return out;
+  }
+  function ensureTrialsToday(){ if(trialsState.date!==utcKey(0)){ trialsState={date:utcKey(0),ids:todaysTrialIds(),prog:{},done:{}}; saveTrials(); } return trialsState; }
+  const trialById=(id)=>TRIALS.find(t=>t.id===id);
+  function evaluateTrials(ctx){
+    ensureTrialsToday(); let earned=0,n=0;
+    trialsState.ids.forEach(id=>{
+      if(trialsState.done[id])return; const t=trialById(id); if(!t)return;
+      if(t.target){ trialsState.prog[id]=(trialsState.prog[id]||0)+(t.tick(ctx)||0); if(trialsState.prog[id]>=t.target){trialsState.done[id]=true;earned+=t.reward;n++;} }
+      else if(t.check(ctx)){ trialsState.done[id]=true; earned+=t.reward; n++; }
+    });
+    saveTrials();
+    if(earned){ addSunbeams(earned); setTimeout(()=>showToast("✓ Trial"+(n>1?"s":"")+" complete +☀"+earned), reduced()?0:1700); }
+  }
+  function trialsHTML(){
+    ensureTrialsToday();
+    const rows=trialsState.ids.map(id=>{ const t=trialById(id); if(!t)return "";
+      const done=!!trialsState.done[id];
+      const prog=t.target?` <span class="tp">${Math.min(trialsState.prog[id]||0,t.target)}/${t.target}</span>`:"";
+      return `<div class="trial${done?" done":""}"><span class="tk">${done?"✓":"◦"}</span><span class="tl">${t.label}${prog}</span><span class="tr">☀${t.reward}</span></div>`;
+    }).join("");
+    return `<div class="trials"><div class="trials-h">TODAY'S TRIALS</div>${rows}</div>`;
+  }
+  function recordDaily(win,summary){
+    if(dailyState.date===utcKey(0))return;                                 // only the first attempt of the day counts
+    const last=dailyState.date;
+    // streak protection: a single missed day is forgiven (grace); 2+ missed resets
+    const streak=(last===utcKey(-1)||last===utcKey(-2))?((dailyState.streak||0)+1):1;
+    const reward=25+(win?15:0)+Math.min(streak,10)*2;                       // base + win bonus + streak bonus
+    dailyState={date:utcKey(0),win:!!win,rounds:summary.rounds,unpred:summary.unpredictabilityPct,streak:streak,reward:reward};
+    saveDaily();
+    addSunbeams(reward);
+    setTimeout(()=>showToast("🗓 Daily complete +☀"+reward+" · "+streak+"🔥"), reduced()?0:1200);
+  }
+  function shareDaily(){
+    const s=dailyState; if(!s.date){showToast("Play today's duel first");return;}
+    const txt="SIXFOLD Daily "+s.date+"\n"+(s.win?"⚔ Victory":"☠ Defeat")+" · "+s.rounds+" rounds · "+s.unpred+"% unread · "+s.streak+"🔥\nstephenuffugus.github.io/sixfold";
+    if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(()=>showToast("Copied — share your duel"),()=>showToast("⚔ "+s.date));
+    else showToast("⚔ Daily "+s.date+" — "+(s.win?"Victory":"Defeat"));
+  }
+  function openDaily(){ renderDaily(); const o=$("dailyscreen"); o.classList.add("show"); o.setAttribute("aria-hidden","false"); }
+  function closeDaily(){ const o=$("dailyscreen"); o.classList.remove("show"); o.setAttribute("aria-hidden","true"); refreshDailyPrompt(); }
+  function renderDaily(){
+    const c=dailyChallenge(), a=Personalities.ARCHES[c.foe], th=THEMES[c.arena];
+    const played=dailyState.date===utcKey(0);
+    const result=played
+      ? `<div class="reward-banner">${dailyState.win?"⚔ Cleared today":"☠ Fell today"}</div>`+
+        `<div class="stat-chips"><div class="chip"><b>${dailyState.rounds}</b><span>rounds</span></div>`+
+        `<div class="chip"><b>${dailyState.unpred}%</b><span>unread</span></div>`+
+        `<div class="chip streak"><b>${dailyState.streak}🔥</b><span>day streak</span></div></div>`+
+        (dailyState.reward?`<div class="sunbeams">+${dailyState.reward} ☀ earned today</div>`:"")+
+        `<div class="result-tell">first attempt counts · new duel at 00:00 UTC</div>`
+      : (dailyState.streak?`<div class="result-tell">streak <b>${dailyState.streak}🔥</b> — a missed day is forgiven, two breaks it</div>`:`<div class="result-tell">win for <b>☀</b> + start a streak</div>`);
+    const actions=played
+      ? `<button class="primary" id="dailyShare">Share result</button><button id="dailyReplay">Replay</button>`
+      : `<button class="primary" id="dailyBegin">Begin duel</button>`;
+    $("dailyscreen").innerHTML=
+      `<div class="hero daily"><h2>DAILY DUEL</h2><div class="prog">${utcKey(0)} · UTC</div>`+
+      `<div class="daily-foe"><div class="df-name">${a.name}</div>`+
+      `<div class="df-stars">${ascentStars(c.diff)}</div>`+
+      `<div class="df-tell">${a.tell}</div>`+
+      `<div class="df-arena">${th.glyph} ${th.name}</div></div>`+
+      result+`<div class="result-actions">${actions}</div>`+
+      trialsHTML()+
+      `<button class="close" id="dailyClose">Close</button></div>`;
+    const on=(id,fn)=>{const el=$(id);if(el)el.onclick=fn;};
+    on("dailyClose",closeDaily); on("dailyShare",shareDaily);
+    on("dailyBegin",startDaily); on("dailyReplay",startDaily);
+  }
+  function startDaily(){
+    const c=dailyChallenge();
+    ascentRun=-1; modeId="daily"; foeId=c.foe; difficulty=c.diff;
+    closeDaily(); hideResult(); setArena(c.arena,true); updateFoeBar(); newGame();
+  }
+  // home-screen Daily nudge — the return hook, surfaced instead of buried
+  function refreshDailyPrompt(){
+    const el=$("dailyprompt"); if(!el)return;
+    if(dailyState.date===utcKey(0)){ el.style.display="none"; return; }   // already played today
+    const c=dailyChallenge(), a=Personalities.ARCHES[c.foe];
+    el.style.display="flex";
+    el.innerHTML=`🗓 <span>Daily — <b>${a.name}</b>${dailyState.streak?` · ${dailyState.streak}🔥`:""}</span><span class="go">Play ▸</span>`;
+    el.onclick=openDaily;
+  }
+
+  /* ---- RANKED DUEL (PvP): live head-to-head + Tier ladder ----
+     Transport-agnostic: matchmaking + the duel channel go through Net (LocalMock
+     today, Firebase later). Rank rewards OUTCOMES of symmetric duels only — never
+     the combat math. A Sentinel (no-opponent fallback) is a fair AI at the player's
+     rank, clearly labelled, at reduced rank stakes (can't be farmed). */
+  const nowMs=()=>{ try{ return Date.now(); }catch(e){ return 0; } };
+  function openDuel(){ renderDuel(); const o=$("duelscreen"); o.classList.add("show"); o.setAttribute("aria-hidden","false"); }
+  function closeDuel(){ if(pvpSearch){pvpSearch.cancel();pvpSearch=null;} const o=$("duelscreen"); o.classList.remove("show"); o.setAttribute("aria-hidden","true"); }
+  // honest "your standing" panel — REAL earned data only (peak / current / record /
+  // placement). No invented rivals: the global leaderboard arrives with cloud play.
+  function standingRows(){
+    const t=ladder.tier(), peakT=Rank.tierFor(ladder.peak);
+    const row=(label,val)=>`<div class="ll-row"><span class="ll-n">${label}</span><span class="ll-r">${val}</span></div>`;
+    return row("Current",`${t.glyph} ${t.name} · ${ladder.rating}`)+
+      row("Peak",`${peakT.glyph} ${peakT.name} · ${ladder.peak}`)+
+      row("Record",`${ladder.wins}–${ladder.losses} · ${ladder.winRate()}% win`)+
+      row("Best streak",`${ladder.bestStreak}🔥`);
+  }
+  function renderDuel(){
+    const t=ladder.tier();
+    const recHTML=`<div class="rankrec"><span><b>${ladder.wins}</b> W</span><span><b>${ladder.losses}</b> L</span>`+
+      `<span><b>${ladder.winRate()}%</b> win</span><span><b>${ladder.streak}</b>🔥</span></div>`;
+    const next = ladder.inPlacements() ? `Placement ${Rank.PROVISIONAL_GAMES-ladder.placementsLeft()+1}/${Rank.PROVISIONAL_GAMES} · sets your rank · no demotion yet`
+      : (t.isTop ? `Peak rank` : `${t.toNext} to ${t.next}`);
+    $("duelscreen").innerHTML=
+      `<div class="hero duel"><h2>RANKED DUEL</h2>`+
+      `<div class="ll-note" style="margin:-2px 0 4px">Live rivals arrive with cloud play — sharpen up against Sentinels (practice bots at your rank) now.</div>`+
+      `<div class="tiercard">`+
+        `<div class="tierbadge"><span class="tg">${t.glyph}</span><span class="tn">${t.name}<small>${ladder.rating} rating · ${next}</small></span></div>`+
+        `<div class="rankbar"><i style="width:${Math.round(t.progress*100)}%"></i></div>`+
+        `<div class="rankmeta"><span>${t.name}</span><span>${t.isTop?"":t.next}</span></div>`+
+        recHTML+
+      `</div>`+
+      `<div class="duelstatus" id="duelstatus"></div>`+
+      `<div class="duel-actions" id="duelactions"></div>`+
+      `<div class="ladderlist"><div class="ll-h">Your standing</div>${standingRows()}`+
+        `<div class="ll-note">Global leaderboard & live rivals arrive with cloud play. No fake opponents here.</div></div>`+
+      `<button class="close" id="duelclose">Close</button></div>`;
+    $("duelclose").onclick=closeDuel;
+    setDuelControls("idle");
+  }
+  function setDuelStatus(html){ const el=$("duelstatus"); if(el) el.innerHTML=html||""; }
+  function setDuelControls(state){
+    const box=$("duelactions"); if(!box)return;
+    if(state==="idle"){
+      box.innerHTML=`<button class="primary" id="findbtn">Find a rival ⚔</button>`;
+      $("findbtn").onclick=startSearch;
+    }else if(state==="searching"){
+      box.innerHTML=`<button id="cancelbtn">Cancel search</button>`;
+      $("cancelbtn").onclick=()=>{ if(pvpSearch){pvpSearch.cancel();pvpSearch=null;} setDuelStatus(""); setDuelControls("idle"); };
+    }
+  }
+  function startSearch(){
+    if(pvpSearch)pvpSearch.cancel();
+    pvpResolved=false; offerCount=0;
+    setDuelControls("searching");
+    const t=ladder.tier();
+    setDuelStatus(`<div class="searchline"><span class="spinner"></span><span>Searching for a ${t.name} rival…</span></div>`);
+    pvpSearch=Net.findMatch({rating:ladder.rating, name:ladder.name, selfId:ladder.playerId, tier:t.name});
+    pvpSearch.onState(onSearchState);
+  }
+  function onSearchState(s){
+    if(s.state==="searching"){
+      const widen = s.half===Infinity ? "anyone online" : ("±"+s.half+" rating");
+      setDuelStatus(`<div class="searchline"><span class="spinner"></span><span>Searching… (${widen})</span></div>`+
+        `<div class="searchsub">${Math.round(s.elapsedMs/1000)}s — widening the net</div>`);
+    }else if(s.state==="matched"){
+      acceptMatch(s.opponent, s.session);
+    }else if(s.state==="sentinel-offer"){
+      setDuelControls("searching");
+      offerCount++;
+      const honest = offerCount>1
+        ? `No human players are online yet — that's coming with cloud play. A <b>Sentinel</b> (a practice bot at your ${ladder.tier().name} rank) is your opponent for now. You still climb, with less rank at risk.`
+        : `Face a <b>Sentinel</b> — a practice bot tuned to your ${s.opponent.tierName||ladder.tier().name} rank. You still climb, but you risk less rank than against a human.`;
+      setDuelStatus(`<div class="sentineloffer"><div class="so-t">No live rivals online right now</div>`+
+        `<div class="so-s">${honest}</div>`+
+        `<div class="so-btns"><button class="primary" id="sokeep">Face Sentinel</button>`+
+        (offerCount>1?"":`<button id="sowait">Keep searching</button>`)+`</div></div>`);
+      $("sokeep").onclick=()=>{ if(pvpSearch)pvpSearch.acceptSentinel(); };
+      const sw=$("sowait"); if(sw) sw.onclick=()=>{ setDuelStatus(`<div class="searchline"><span class="spinner"></span><span>Re-checking for a human rival…</span></div>`); if(pvpSearch)pvpSearch.keepSearching(); };
+    }
+  }
+  function acceptMatch(opponent, session){
+    pvpSearch=null;
+    startPvpMatch(opponent, session);
+  }
+  function startPvpMatch(opponent, session){
+    pvpOpp=opponent; pvpSession=session; pvpResolved=false;
+    if(session && session.onDisconnect) session.onDisconnect(()=>handlePvpDisconnect());
+    ascentRun=-1; modeId="pvp"; foeId=opponent.archetype||"ghost"; difficulty=opponent.difficulty==null?0.5:opponent.difficulty;
+    const arenas=[...unlockedArenaSet()]; setArena(arenas.length?rid(arenas):"dojo",true);
+    closeDuel(); hideResult();
+    newGame();
+    // teach the pillar ONCE, proudly: ranked is pure — only your own reads help.
+    let taughtPillar=false; try{ taughtPillar=!!localStorage.getItem("sixfold_rankedpillar"); }catch(e){}
+    if(!taughtPillar){
+      try{localStorage.setItem("sixfold_rankedpillar","1");}catch(e){}
+      setTimeout(()=>showToast("⚔ Ranked is pure — assist charms rest. Only your own reads (Insight · Foresight) help here."), reduced()?0:500);
+    }else{
+      setTimeout(()=>showToast(opponent.kind==="sentinel"
+        ? "👻 Sentinel engaged — "+opponent.name+" · reduced stakes"
+        : "⚔ Rival found — "+opponent.name), reduced()?0:500);
+    }
+  }
+  // Abandoning a LIVE, in-progress ranked duel counts as a loss — no free dodge.
+  // (Closes the "navigate away while losing -> eat no rating" exploit.)
+  function abandonPvp(){
+    if(pvpResolved)return; pvpResolved=true;
+    const opp=pvpOpp||{rating:ladder.rating,kind:"live",id:null};
+    ladder.applyResult(false,{rating:opp.rating,kind:opp.kind,id:opp.id},nowMs());
+    savePvp();
+    if(pvpSession){ try{pvpSession.close();}catch(e){} }
+    showToast("Ranked duel abandoned — counted as a loss");
+  }
+  function leavePvp(){
+    if(pvpSession){ try{pvpSession.close();}catch(e){} }
+    pvpSession=null; pvpOpp=null; isPvP=false;
+    ascentRun=-1; modeId="casual"; foeId=rid(Personalities.ids()); difficulty=0.5;
+    if(FOE_ARENA[foeId])setArena(FOE_ARENA[foeId],true);
+    updateFoeBar(); newGame();
+  }
+  function pvpMatchOver(win,summary,opts){
+    if(pvpResolved)return; pvpResolved=true;
+    opts=opts||{};
+    $("rematch").style.display="none";
+    recordMatchStats(win,summary);                 // ranked duels count toward lifetime stats too
+    const opp = pvpOpp || {rating:ladder.rating, kind:"live", id:null};
+    // stakesKind lets a disconnect-award resolve at REDUCED stakes (can't be farmed)
+    const stakesKind = opts.stakesKind || opp.kind;
+    const res = ladder.applyResult(win, {rating:opp.rating, kind:stakesKind, id:opp.id}, nowMs());
+    savePvp();
+    // modest cosmetic sunbeams on a ranked win (off the combat path). Sentinel wins
+    // pay reduced beams (×stakes) so the bot can't be farmed for the Forge either.
+    const beamBase = 6+Math.round((opp.difficulty||0.5)*6);
+    const beams = win ? Math.max(1,Math.round(beamBase*(stakesKind==="sentinel"?Rank.SENTINEL_STAKES:1))) : 0;
+    if(beams)addSunbeams(beams);
+    lucidEarn(win,matchReads);     // mint cross-game Lucid Winds sunbeams (optional, off-combat)
+    if(pvpSession){ try{pvpSession.close();}catch(e){} }
+    setTimeout(()=>{ Sfx.play(win?"victory":"defeat"); buzz(win?[0,45,45,45]:130); }, reduced()?0:950);
+    setTimeout(()=>{ showPvpResult(win,summary,res,beams); }, reduced()?0:2000);
+  }
+  function showPvpResult(win,summary,res,beams){
+    const tA=res.tierAfter, span=(tA.ceil-tA.floor)||1;
+    const startPct=Math.max(0,Math.min(100,(res.before-tA.floor)/span*100));
+    const endPct=Math.round(tA.progress*100);
+    const deltaTxt=(res.delta>=0?"+":"")+res.delta;
+    const banner = res.protected ? `<div class="promo-banner">🛡 Placement — rank protected (you can't fall below ${Rank.tierFor(Rank.START_RATING).name} yet)</div>`
+      : res.promoted ? `<div class="promo-banner">▲ PROMOTED to ${tA.name}</div>`
+      : res.demoted ? `<div class="promo-banner" style="color:var(--seal);border-color:#cf413055;background:#cf413018">▼ Demoted to ${tA.name}</div>` : "";
+    const oppRating = pvpOpp?pvpOpp.rating:res.before;
+    const oppLabel = (pvpOpp&&pvpOpp.kind==="sentinel") ? `Sentinel · practice bot · ${oppRating} (reduced stakes)` : `${(pvpOpp?pvpOpp.name:"Rival")} · ${oppRating}`;
+    const beamLine = (win&&beams)?`<div class="sunbeams">+${beams} ☀ sunbeams</div>`:"";
+    $("resultscreen").innerHTML=
+      `<div class="hero result ${win?"win":"lose"}">`+
+        `<div class="result-word">${win?"VICTORY":"DEFEAT"}</div>`+
+        `<div class="result-flavor">vs ${oppLabel}</div>`+
+        banner+
+        `<div class="pvp-rank">`+
+          `<div class="pvp-delta ${res.delta>=0?"up":"down"}">${deltaTxt}</div>`+
+          `<div class="tierbadge"><span class="tg">${tA.glyph}</span><span class="tn">${tA.name}<small>${res.after} rating</small></span></div>`+
+          `<div class="rankbar"><i id="pvpbar" style="width:${Math.round(startPct)}%"></i></div>`+
+        `</div>`+
+        `<div class="stat-chips">`+
+          `<div class="chip"><b>${summary.rounds}</b><span>rounds</span></div>`+
+          `<div class="chip"><b>${summary.unpredictabilityPct}%</b><span>unpred</span></div>`+
+          `<div class="chip"><b>${ladder.wins}–${ladder.losses}</b><span>record</span></div>`+
+          `<div class="chip streak"><b>×${ladder.streak}</b><span>streak</span></div>`+
+        `</div>`+beamLine+
+        `<div class="result-actions"><button class="primary" id="pvpNext">Find next rival ⚔</button><button id="pvpDone">Done</button></div>`+
+      `</div>`;
+    const rs=$("resultscreen"); rs.setAttribute("aria-hidden","false"); if(rs.offsetWidth!==undefined) void rs.offsetWidth; rs.classList.add("show");
+    if(win)victoryBurst();
+    // animate the rank bar from before -> after
+    setTimeout(()=>{ const b=$("pvpbar"); if(b)b.style.width=endPct+"%"; }, reduced()?0:80);
+    const on=(id,fn)=>{const el=$(id); if(el) el.onclick=fn;};
+    on("pvpNext",()=>{ hideResult(); openDuel(); startSearch(); });
+    on("pvpDone",()=>{ hideResult(); leavePvp(); });
+  }
+  function handlePvpDisconnect(){
+    if(over||pvpResolved||!isPvP)return;
+    showToast("⚠ Rival disconnected — duel awarded to you");
+    over=true; busy=true; matchWinner="P";
+    $("roundlbl").textContent="Match over"; $("verdict").textContent="VICTORY"; $("verdict").style.color=getCss("--gold"); $("sub").textContent="rival fled the duel";
+    const st=game?game.state():{round:1,playerHist:[]};
+    const summary={winner:"P",rounds:st.round,unpredictabilityPct:Readout.unpredictabilityPct(st.playerHist||[]),difficulty,worstRound:0,tell:""};
+    // a local drop can't be authoritative (the bus dying mid-duel decides nothing
+    // real until Phase 2 makes results server-authoritative w/ a reconnect grace),
+    // so award the win at REDUCED stakes — discourages rage-quit-to-feed-wins.
+    pvpMatchOver(true,summary,{stakesKind:"sentinel"});
+  }
+
+  /* ---- foe / mode / difficulty selectors ---- */
+  function buildSelectors(){
+    const foes=$("foes");
+    Personalities.ids().forEach(id=>{
+      const a=Personalities.ARCHES[id];
+      const o=document.createElement("div");o.className="opt sml"+(id===foeId?" sel":"");
+      o.textContent=a.name;o.title=a.tell;
+      o.onclick=()=>{ascentRun=-1;if(modeId==="daily")modeId="casual";foeId=id;syncSel(foes,o);updateFoeBar();if(FOE_ARENA[id])setArena(FOE_ARENA[id]);};
+      foes.appendChild(o);
+    });
+    const modes=$("modes");
+    // Daily lives in its own screen (🗓 Daily Duel button), not this picker.
+    [["casual","Casual"],["practice","Practice"],["gauntlet","Gauntlet"]].forEach(([id,lbl])=>{
+      const o=document.createElement("div");o.className="opt sml"+(id===modeId?" sel":"");
+      o.textContent=lbl;
+      o.onclick=()=>{modeId=id;syncSel(modes,o);updateFoeBar();applyCompass();updateCharmUI();};
+      modes.appendChild(o);
+    });
+    const diff=$("diff");
+    const stars=v=>{const n=Math.round(v*4)+1;return "★".repeat(n)+"☆".repeat(5-n);};
+    diff.oninput=()=>{difficulty=parseFloat(diff.value);$("difflbl").textContent=stars(difficulty);};
+    $("difflbl").textContent=stars(difficulty);
+  }
+
+  /* ---- accessibility + charms ---- */
+  function applyA11y(){
+    const s=Assists.settings();
+    document.body.classList.toggle("cb",s.colorblind);
+    document.body.classList.toggle("contrast",s.highContrast);
+    document.body.classList.toggle("bigtap",s.largeTapTargets);
+    document.body.classList.toggle("reduce",s.reducedMotion);
+    if(Stage.setReduced)Stage.setReduced(reduced());
+    Sfx.setEnabled(s.audioCues);
+    if(typeof Music!=="undefined"){ Music.setEnabled(s.music); Music.play(musicFor(arenaId)); }
+  }
+  function buildSettings(){
+    document.querySelectorAll("[data-a11y]").forEach(inp=>{
+      const key=inp.getAttribute("data-a11y");
+      inp.checked=!!Assists.settings()[key];
+      inp.addEventListener("change",()=>{Assists.setSetting(key,inp.checked);applyA11y();
+        // Player turned OUR music on while the portal's studio soundtrack owns
+        // the audio → ask the host to hand it over instead of double-playing.
+        if(key==="music"&&inp.checked&&window.SWS_EMBED&&parent!==window){
+          try{parent.postMessage({sws:"game-music",on:true},"*");}catch(_){}
+        }});
+    });
+    const box=$("charms");
+    const charms=[{id:null,name:"None",glyph:"∅"}].concat(Object.values(Assists.CHARMS));
+    charms.forEach(c=>{
+      const o=document.createElement("div");o.className="opt"+((Assists.current()?Assists.current().id:null)===c.id?" sel":"");
+      o.textContent=c.glyph;o.title=c.name+(c.effect?" — "+c.effect:"");
+      o.onclick=()=>{Assists.equip(c.id);syncSel(box,o);updateCharmUI();applyCompass();updateFoeBar();};
+      box.appendChild(o);
+    });
+    updateCharmUI();
+  }
+  function updateCharmUI(){
+    const mode=Engine.MODES[modeId], active=Assists.active(mode), equipped=Assists.current();
+    $("charmhint").textContent = (!mode.honorsAssists && equipped)
+      ? equipped.name+" is INERT here — "+mode.id+" is competitive."
+      : "Charms go inert the moment a match is ranked, seeded, or PvP.";
+  }
+  function applyCompass(){
+    const charm=Assists.active(Engine.MODES[modeId]);
+    compassOn = !!(charm && charm.id==="compass");
+    if(!compassOn) clearPreview();
+    // scroll charm: keep postmatch-style log visible (handled by ribbon history already)
+  }
+
+  /* ---- customizer ---- */
+  // skin picker is gated: only fighters you've unlocked in the Ascent are equippable.
+  // (Demo/vector skins are hidden from players; the roster = real sheets with a url.)
+  function renderSkinPicker(){
+    const skins=$("skins"); if(!skins)return; skins.innerHTML="";
+    const unlocked=unlockedSkinSet();
+    Skins.list().filter(s=>Skins.get(s.id).url).forEach(s=>{
+      const open=unlocked.has(s.id);
+      const o=document.createElement("div");o.className="opt"+(s.id===player.skin?" sel":"")+(open?"":" lock");
+      o.textContent=s.name+(open?"":" 🔒");o.style.fontSize="11px";o.style.width="auto";o.style.padding="0 8px";
+      o.onclick=open?(()=>{player.skin=s.id;syncSel(skins,o);renderFighter("P");}):(()=>showToast(s.name+" — unlock in the Ascent ⛰"));
+      skins.appendChild(o);
+    });
+  }
+  function buildCustomizer(){
+    const pals=$("pals"),crests=$("crests"),cname=$("cname");
+    renderSkinPicker();
+    PALS.forEach(p=>{const o=document.createElement("div");o.className="opt pal"+(p===player.pal?" sel":"");
+      o.style.background=p;o.onclick=()=>{player.pal=p;syncSel(pals,o);renderFighter("P");};pals.appendChild(o);});
+    PREMIUM_PALS.forEach(p=>{ const key="pal:"+p.v, owned=boughtCosmetics.has(key);
+      const o=document.createElement("div");o.className="opt pal"+(p.v===player.pal?" sel":"")+(owned?"":" buy");
+      o.style.background=p.v; if(!owned)o.innerHTML=`<span class="price">☀${p.cost}</span>`;
+      o.onclick=()=>tryBuyOrSelect(key,p.cost,()=>{player.pal=p.v;},pals,o); pals.appendChild(o); });
+    CRESTS.forEach(c=>{const o=document.createElement("div");o.className="opt crest"+(c===player.crest?" sel":"");
+      o.textContent=c;o.onclick=()=>{player.crest=c;syncSel(crests,o);renderFighter("P");};crests.appendChild(o);});
+    PREMIUM_CRESTS.forEach(c=>{ const key="crest:"+c.v, owned=boughtCosmetics.has(key);
+      const o=document.createElement("div");o.className="opt crest"+(c.v===player.crest?" sel":"")+(owned?"":" buy");
+      o.textContent=c.v; if(!owned){const b=document.createElement("span");b.className="price";b.textContent="☀"+c.cost;o.appendChild(b);}
+      o.onclick=()=>tryBuyOrSelect(key,c.cost,()=>{player.crest=c.v;},crests,o); crests.appendChild(o); });
+    cname.value="";cname.oninput=()=>{player.name=cname.value.trim()||"You";$("pname").textContent=player.name;};
+  }
+  // Forge click: if not owned, try to buy with sunbeams; once owned, select it.
+  function tryBuyOrSelect(key,cost,apply,box,o){
+    if(!boughtCosmetics.has(key)){
+      if(!spendSunbeams(cost)){ showToast("Need ☀"+cost+" — win duels & trials to earn sunbeams"); return; }
+      boughtCosmetics.add(key); saveShop();
+      o.classList.remove("buy"); const pr=o.querySelector(".price"); if(pr)pr.remove();
+      showToast("Forged ✦ −☀"+cost);
+    }
+    apply(); syncSel(box,o); renderFighter("P");
+  }
+  function syncSel(box,sel){[...box.children].forEach(c=>c.classList.remove("sel"));sel.classList.add("sel");}
+
+  function showToast(t){const el=$("toast");el.textContent=t;el.classList.add("show");clearTimeout(showToast._t);showToast._t=setTimeout(()=>el.classList.remove("show"),2600);}
+
+  /* ---- TITLE / HOME screen: the cinematic front door + mode hub ---- */
+  // Menu track. The owner's standout/hero track drops in HERE when provided —
+  // swap MENU_MUSIC for its id and it becomes the title/Champion accent.
+  const MENU_MUSIC="lastbreath1";
+  function menuMusic(){ return "music/"+MENU_MUSIC+".mp3"; }
+  let titlePending=false;
+  function renderTitle(){
+    const t=ladder.tier();
+    // hero = the player's current fighter, idle frame, rendered large + breathing
+    const skin=Skins.get(player.skin||"ronin");
+    let heroHTML="";
+    if(skin && skin.kind==="atlas"){
+      const src=Skins.src(skin,player.pal), pos=(Skins.atlasPos?Skins.atlasPos(skin,"idle"):"0% 0%");
+      heroHTML=`<div class="sprite" style="background-image:url('${src}');background-size:${skin.cols*100}% ${skin.rows*100}%;background-position:${pos}"></div>`;
+    }
+    const bg=(THEMES[arenaId]&&THEMES[arenaId].bg)||"backgrounds/dojo.jpg";
+    $("title").innerHTML=
+      `<div class="tbg" style="background-image:url('${bg}')"></div><div class="tscrim"></div><div class="tvig"></div>`+
+      `<div class="tinner">`+
+        `<div class="ttop"><span class="trank"><span class="tg">${t.glyph}</span>${t.name}</span><span class="tbeam">☀ ${sunbeams}</span></div>`+
+        `<div class="tmark">SIX<span class="dot">·</span>FOLD</div>`+
+        `<div class="ttag">read · strike · ascend</div>`+
+        `<div class="thero">${heroHTML}</div>`+
+        `<div class="tmenu">`+
+          `<button class="tbtn primary" id="tDuel">⚔ Ranked Duel</button>`+
+          `<button class="tbtn gold" id="tFree">▶ Free Duel</button>`+
+        `</div>`+
+        `<div class="tgrid">`+
+          `<button class="tchip" id="tDaily">🗓 Daily</button>`+
+          `<button class="tchip" id="tAscent">⛰ Ascent</button>`+
+          `<button class="tchip" id="tRoster">🎴 Roster</button>`+
+          `<button class="tchip" id="tProfile">📊 Profile</button>`+
+        `</div>`+
+        `<div class="tfoot"><button id="tSettings">⚙ Settings</button><button id="tHow">How to play</button><button id="tExit">← All Sky Wolf games</button></div>`+
+      `</div>`;
+    const on=(id,fn)=>{const el=$(id); if(el) el.onclick=fn;};
+    on("tDuel",()=>{ closeTitle(); openDuel(); });
+    on("tFree",quickDuel);
+    on("tDaily",()=>{ closeTitle(); openDaily(); });
+    on("tAscent",()=>{ closeTitle(); openAscent(); });
+    on("tRoster",()=>{ closeTitle(); openCollection(); });
+    on("tProfile",()=>{ closeTitle(); openProfile(); });
+    on("tSettings",()=>{ closeTitle(); $("setdrawer").classList.add("open"); $("setdrawer").scrollIntoView({behavior:"smooth",block:"nearest"}); });
+    on("tHow",()=>{ closeTitle(); openHowto(); });
+    // Sky Wolf embed protocol: the ONLY control that leaves the game.
+    on("tExit",()=>{ if(window.SWS_EXIT) window.SWS_EXIT(); });
+  }
+  function openTitle(){
+    renderTitle();
+    const o=$("title"); o.classList.add("show"); o.setAttribute("aria-hidden","false");
+    Sfx.unlock(); if(typeof Music!=="undefined"){ Music.unlock(); Music.play(menuMusic()); }
+  }
+  function closeTitle(){
+    const o=$("title"); o.classList.remove("show"); o.setAttribute("aria-hidden","true");
+    if(typeof Music!=="undefined") Music.play(musicFor(arenaId));   // restore biome track
+  }
+  // Free Duel: jump straight into a casual match vs a fresh random foe.
+  function quickDuel(){
+    ascentRun=-1; modeId="casual"; foeId=rid(Personalities.ids()); difficulty=0.5;
+    if(FOE_ARENA[foeId]) setArena(FOE_ARENA[foeId],true);
+    closeTitle(); hideResult(); updateFoeBar(); newGame();
+  }
+
+  /* ---- wire up ---- */
+  function toggleDrawer(id){$(id).classList.toggle("open");}
+  $("foedh").onclick=()=>toggleDrawer("foedrawer");
+  $("setdh").onclick=()=>toggleDrawer("setdrawer");
+  $("custdh").onclick=()=>toggleDrawer("custdrawer");
+  $("foebtn").onclick=()=>{$("foedrawer").classList.add("open");$("foedrawer").scrollIntoView({behavior:"smooth",block:"nearest"});};
+  $("rematch").onclick=()=>newGame();
+  function openHowto(){$("howto").classList.add("show");$("howto").setAttribute("aria-hidden","false");}
+  function closeHowto(){$("howto").classList.remove("show");$("howto").setAttribute("aria-hidden","true");
+    try{localStorage.setItem("sixfold_seen","1");}catch(e){}
+    if(titlePending){ titlePending=false; openTitle(); }   // first-run: guide -> title
+  }
+  $("howbtn").onclick=openHowto;
+  $("howtoclose").onclick=closeHowto;
+  // the wordmark is a HOME button back to the title hub
+  { const h=(document.querySelector?document.querySelector("header h1"):null); if(h) h.onclick=openTitle; }
+  $("duelbtn").onclick=openDuel;
+  $("homebtn").onclick=openTitle;
+  $("ascentbtn").onclick=openAscent;
+  $("collbtn").onclick=openCollection;
+  $("profbtn").onclick=openProfile;
+  $("dailybtn").onclick=openDaily;
+  $("insightbtn").onclick=()=>{ if(game)game.spend("P","INSIGHT"); };
+  $("foresightbtn").onclick=()=>{ if(game)game.spend("P","FORESIGHT"); };
+
+  buildWheel();buildSelectors();buildArenaPicker();buildSettings();buildCustomizer();
+  applyA11y();setArena("dojo",true);renderFighter("P");renderFighter("A");
+  updateSunbeamUI();
+  newGame();
+
+  // Front door: first-run shows the how-to guide, then the title; returning
+  // players land straight on the title hub. (The duel board is built behind it.)
+  let firstRun=false; try{ firstRun=!localStorage.getItem("sixfold_seen"); }catch(e){}
+  if(firstRun){ titlePending=true; openHowto(); } else { openTitle(); }
+
+  initLucid();   // wire the Lucid Winds Sunbeam economy if the SDK is already present
+
+  // Prime the audio context on the very first user gesture (browser autoplay rule).
+  if(typeof window!=="undefined" && window.addEventListener) window.addEventListener("pointerdown",()=>{Sfx.unlock(); if(typeof Music!=="undefined")Music.unlock();},{passive:true});
+
+  // Come back to a calm HOME screen after stepping away — but only when you're idle
+  // (no duel in progress and no overlay already up), so it never interrupts a live
+  // match. The title's own fade + menu-music handle the rest.
+  if(typeof document!=="undefined" && document.addEventListener) document.addEventListener("visibilitychange",()=>{
+    if(document.visibilityState!=="visible") return;
+    const titleUp=$("title")&&$("title").classList.contains("show");
+    const anyOverlay=["resultscreen","bindstage","ascent","collection","profile","dailyscreen","duelscreen","howto"]
+      .some(id=>{const e=$(id);return e&&e.classList.contains("show");});
+    const idle=(over || !game || introPlaying);
+    if(idle && !titleUp && !anyOverlay) openTitle();
+  });
+
+  // PWA: register the service worker for offline play. Guarded so the game still
+  // runs when opened as a local file:// (no SW) or in a headless test sandbox.
+  try{
+    if(typeof navigator!=="undefined" && navigator.serviceWorker &&
+       typeof location!=="undefined" && /^https?:/.test(location.protocol)){
+      const reg=()=>navigator.serviceWorker.register("sw.js").catch(()=>{});
+      if(typeof window!=="undefined" && window.addEventListener) window.addEventListener("load",reg); else reg();
+    }
+  }catch(e){}
+})();
+</script>
+<script>
+/* ===== Sky Wolf Studios host-music handshake =====
+   When embedded in the portal jukebox, the studio soundtrack may own the audio.
+   The portal posts {sws:'host-music', on:true} => silence OUR music (studio
+   wins), on:false => play ours. We wrap Music.setEnabled so the game's own
+   re-asserts (arena changes call Music.setEnabled(s.music)) can't override a
+   host mute. Purely cosmetic; never touches combat. */
+(function(){
+  var M = window.Music;
+  if(!M || M.__swsHostWrapped) return;
+  var hostOn = false;                    // is the studio soundtrack active?
+  var wanted = true;                     // the game/player's own last request
+  var realSet = M.setEnabled;
+  M.setEnabled = function(v){ wanted = !!v; return realSet.call(M, hostOn ? false : v); };
+  window.addEventListener('message', function(e){
+    var d = e && e.data;
+    if(!d || d.sws !== 'host-music') return;
+    hostOn = !!d.on;
+    if(hostOn){ realSet.call(M, false); }
+    // Hand-back restores the PLAYER's setting — never force music on someone
+    // who has it off in our own settings.
+    else { realSet.call(M, wanted); if(wanted){ try{ if(M.unlock) M.unlock(); }catch(_){} } }
+  });
+  M.__swsHostWrapped = true;
+})();
+</script>
+</body>
+</html>

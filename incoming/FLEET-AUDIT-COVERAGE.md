@@ -8,6 +8,23 @@ same game twice and nothing quietly gets skipped. Update it when a game is cover
 A game counts as **AUDITED** only when someone read it end to end, wrote the defect list BEFORE
 editing, fixed worst first, and left a node check behind. An exit fix alone is **PARTIAL**.
 
+## VENDORED FROM OTHER ORIGINS — 2026-08-18 (12 games, newly in scope)
+
+`tomato-man · abduct-a-chameleon (+ abduct-3d) · glyph-forge · litter-bug ·
+sweet-spot · tarot-run · sixfold · letter-launch · skitterlings · wild-wardens ·
+tally`
+
+These were on `stephenuffugus.github.io` and therefore outside **every** check in
+this file for their whole lives. They are same origin now, so the fleet numbers
+below cover 111 satellites rather than 100. See `VENDORING.md`.
+
+⛔ **They are MACHINE SWEPT, not audited.** They pass the sweep, boot with no dead
+screen, and every one can get home. Nobody has read one end to end or played it.
+Treat them as NOT YET TOUCHED for audit purposes.
+
+⛔ **Never hand-edit `satellites/<slug>/` for a vendored game** — fix it upstream
+and re-vendor, or `vendor_satellites.mjs --check` will report it as drift.
+
 ## AUDITED (full pass, notes in the folder)
 
 deepwell · blackout · parallel · wireworm · siege — built then deepened, 1422 assertions total

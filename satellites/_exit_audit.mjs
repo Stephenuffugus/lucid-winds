@@ -73,8 +73,15 @@ function readSatellite(id) {
   const walk = (d, depth) => {
     if (depth > 2) return;
     for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+      /* ⛔ `assets` used to be skipped here with the art directories, which was
+         fine while every satellite was hand written HTML. It stopped being fine
+         the day a BUILT game joined the fleet: Vite emits the whole bundle to
+         assets/index-<hash>.js, so skipping it meant reading Tally's index.html,
+         seeing the exit defined and never seeing the bundle that calls it. The
+         audit reported it STRANDED when the exit works. The extension filter
+         below already keeps art out, so the directory name does not need to. */
       if (e.name.startsWith('.') || e.name === 'node_modules' ||
-          e.name === 'assets' || e.name === 'art' || e.name === 'og' ||
+          e.name === 'art' || e.name === 'og' ||
           e.name === 'icons' || e.name === 'art-drop') continue;
       const p = path.join(d, e.name);
       if (e.isDirectory()) walk(p, depth + 1);

@@ -1,6 +1,10 @@
 // HUSH service worker — cache-first, single asset.
 // Bump CACHE on every deploy to push an update.
 const CACHE = "hush-v1";
+/* Only ever delete OUR caches. `caches` is origin wide, so an unfiltered sweep
+   deletes the arcade's, Lucid Winds' and PadLab's caches too. This exact file is
+   the one that wiped the fleet once. */
+const OWNED = /^hush-/;
 const ASSETS = ["./", "./index.html"];
 
 self.addEventListener("install", e => {
@@ -10,7 +14,7 @@ self.addEventListener("install", e => {
 self.addEventListener("activate", e => {
   e.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+      .then(keys => Promise.all(keys.filter(k => k !== CACHE && OWNED.test(k)).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
