@@ -618,10 +618,12 @@ const MUTATIONS = [
 const WORKER_MUTATIONS = [
   ["worker deletes every cache on the origin",
     w => w.replace('k.indexOf("hush-") === 0 && k !== SHELL_VERSION', "k !== SHELL_VERSION")],
+  /* version-agnostic: these used to patch the literal "hush-shell-v1" and
+     silently stopped applying the first time the shell version moved */
   ["worker cache loses its prefix",
-    w => w.replace('"hush-shell-v1"', '"shell-v1"')],
+    w => w.replace(/"hush-shell-v(\d+)"/, '"shell-v$1"')],
   ["registration version drifts from the shell version",
-    w => w.replace('"hush-shell-v1"', '"hush-shell-v2"')]
+    w => w.replace(/"hush-shell-v(\d+)"/, (m, n) => `"hush-shell-v${Number(n) + 1}"`)]
 ];
 
 /* ================================================================== */

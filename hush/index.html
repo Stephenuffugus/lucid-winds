@@ -310,7 +310,11 @@ body.simple .actions{margin-bottom:14px}
         <div class="lab"><span>Tone</span><span id="v-tilt">flat</span></div>
         <input type="range" id="tilt" min="-100" max="100" value="0" aria-label="Tone">
       </div>
-      <p class="hint">Left is darker and deeper, right is brighter and airier. Same noise, different weather.</p>
+      <div class="row">
+        <div class="lab"><span>Width</span><span id="v-width">wide</span></div>
+        <input type="range" id="width" min="0" max="100" value="70" aria-label="Stereo width">
+      </div>
+      <p class="hint">Left is darker and deeper, right is brighter and airier. Same noise, different weather. Width spreads the sound between the ears: each side gets its own noise, which reads as air in the room. Turn it to mono for a single speaker across the nursery.</p>
     </div>
   </section>
 
@@ -728,7 +732,7 @@ const PHI = 1.6180339887;
 const pad2 = n => String(n).padStart(2, "0");
 
 const S = {
-  noise: "brown", tilt: 0,
+  noise: "brown", tilt: 0, width: 70,
   freq: 440, tuneMode: "off", amt: 0, q: 30, phiStack: false,
   mix: 0, rate: 18, depth: 45, fb: 30, combLock: false, phiDrift: false,
   pulse: "off", prate: 30, pamt: 50, chr: "off", clvl: 50,
@@ -763,7 +767,7 @@ let sharedPick = null;
    scale, preset and so on) are checked against the real tables in
    sanitiseEnums(), once those tables exist. */
 const SAVE_RANGES = {
-  tilt:[-100,100], freq:[20,16000], amt:[0,100], q:[0,100],
+  tilt:[-100,100], width:[0,100], freq:[20,16000], amt:[0,100], q:[0,100],
   mix:[0,100], rate:[0,100], depth:[0,100], fb:[0,92],
   prate:[0,100], pamt:[0,100], clvl:[0,100], swrate:[40,120], swblock:[0,100], swlvl:[0,100],
   carrier:[0,100], beat:[0,100], tlvl:[0,100],
@@ -861,14 +865,22 @@ function normalise(a, target = 0.85) {
   let pk = 0; for (let i = 0; i < a.length; i++) pk = Math.max(pk, Math.abs(a[i]));
   if (pk > 0) { const g = target / pk; for (let i = 0; i < a.length; i++) a[i] *= g; }
 }
+/* STEREO, and this is the depth. One noise stream copied to both ears sits
+   flat in the centre of the head; two INDEPENDENT streams, one per ear, read
+   as air in a room, the same trick every premium machine plays. The Width
+   stage in the graph lets it collapse to mono for a phone speaker across the
+   nursery, where decorrelation buys nothing. */
 function makeBuffer(type) {
   const sr = ctx.sampleRate, xf = Math.floor(sr * 0.06), len = Math.floor(sr * 10);
-  const raw = new Float32Array(len + xf);
-  fillNoise(raw, type); normalise(raw);
-  const buf = ctx.createBuffer(1, len, sr), d = buf.getChannelData(0);
-  d.set(raw.subarray(0, len));
-  // equal-power crossfade of the tail into the head so the loop point is inaudible
-  for (let i = 0; i < xf; i++) { const t = i / xf; d[i] = d[i]*Math.sqrt(t) + raw[len+i]*Math.sqrt(1-t); }
+  const buf = ctx.createBuffer(2, len, sr);
+  for (let ch = 0; ch < 2; ch++) {
+    const raw = new Float32Array(len + xf);
+    fillNoise(raw, type); normalise(raw);
+    const d = buf.getChannelData(ch);
+    d.set(raw.subarray(0, len));
+    // equal-power crossfade of the tail into the head so the loop point is inaudible
+    for (let i = 0; i < xf; i++) { const t = i / xf; d[i] = d[i]*Math.sqrt(t) + raw[len+i]*Math.sqrt(1-t); }
+  }
   return buf;
 }
 const SHAPE = {
@@ -895,6 +907,20 @@ function build() {
   n.lfo = ctx.createOscillator();  n.lfoGain = ctx.createGain();
   n.lfo2 = ctx.createOscillator(); n.lfo2Gain = ctx.createGain();
   n.lfo3 = ctx.createOscillator(); n.lfo3.type = "triangle"; n.lfo3Gain = ctx.createGain();
+
+  /* the width stage: the stereo bed splits into two legs, one forced down to
+     mono and one left wide, crossfaded equal-power by the Width slider. Zero
+     buys the old single-speaker behaviour exactly. */
+  n.bed = ctx.createGain();
+  n.bedMono = ctx.createGain();
+  n.bedMono.channelCount = 1; n.bedMono.channelCountMode = "explicit";
+  n.bedSt = ctx.createGain();
+
+  /* warmth drift: a sine far below perception (one cycle every five minutes,
+     under half a decibel) wanders the low shelf so the ear never finishes
+     adapting to the bed. Depth engineering, no control, always on. */
+  n.driftLfo = ctx.createOscillator(); n.driftLfo.frequency.value = 1/300;
+  n.driftGain = ctx.createGain(); n.driftGain.gain.value = 0.45;
 
   n.pulseGain = ctx.createGain();
   n.pulseLfo = ctx.createOscillator(); n.pulseDepth = ctx.createGain();
@@ -924,9 +950,12 @@ function build() {
 
   n.src.connect(n.shapeA); n.shapeA.connect(n.shapeB); n.shapeB.connect(n.lo); n.lo.connect(n.hi);
   n.hi.connect(n.peak); n.peak.connect(n.phi1); n.phi1.connect(n.phi2);
-  n.phi2.connect(n.dry); n.dry.connect(n.pulseGain);
+  n.phi2.connect(n.dry); n.dry.connect(n.bed);
   n.phi2.connect(n.delay); n.delay.connect(n.fbGain); n.fbGain.connect(n.delay);
-  n.delay.connect(n.wet); n.wet.connect(n.pulseGain);
+  n.delay.connect(n.wet); n.wet.connect(n.bed);
+  n.bed.connect(n.bedMono); n.bedMono.connect(n.pulseGain);
+  n.bed.connect(n.bedSt); n.bedSt.connect(n.pulseGain);
+  n.driftLfo.connect(n.driftGain); n.driftGain.connect(n.lo.gain);
   n.lfo.connect(n.lfoGain); n.lfoGain.connect(n.delay.delayTime);
   n.lfo2.connect(n.lfo2Gain); n.lfo2Gain.connect(n.hi.gain);
   n.lfo3.connect(n.lfo3Gain); n.lfo3Gain.connect(n.peak.frequency);
@@ -941,7 +970,7 @@ function build() {
   n.master.connect(n.limiter); n.limiter.connect(n.analyser); n.analyser.connect(ctx.destination);
 
   const t = ctx.currentTime;
-  [n.lfo,n.lfo2,n.lfo3,n.pulseLfo,n.isoLfo,n.oscL,n.oscR].forEach(o => o.start(t));
+  [n.lfo,n.lfo2,n.lfo3,n.pulseLfo,n.isoLfo,n.oscL,n.oscR,n.driftLfo].forEach(o => o.start(t));
   return n;
 }
 
@@ -957,6 +986,11 @@ for (let i = 0; i < 48; i++) { const t = i / 47; XF_UP[i] = Math.sqrt(t); XF_DOW
 
 function loadNoise(type) {
   if (!buffers[type]) buffers[type] = makeBuffer(type);
+  /* stereo buffers are twice the memory of the old mono ones, so the cache
+     keeps at most three spectra; a dropped one regenerates in a blink and the
+     crossfading old source holds its own reference until it stops */
+  const bk = Object.keys(buffers);
+  if (bk.length > 3) { const drop = bk.find(k => k !== type && k !== S.noise); if (drop) delete buffers[drop]; }
   const now = ctx.currentTime;
   const old = nodes.src, oldG = nodes.srcGain;
   const s = ctx.createBufferSource(), g = ctx.createGain();
@@ -993,6 +1027,10 @@ function apply() {
 
   const tilt = S.tilt / 100;
   P(n.lo.gain, -tilt * 12); P(n.hi.gain, tilt * 12);
+
+  const w = clamp((S.width ?? 70) / 100, 0, 1);
+  P(n.bedSt.gain, Math.sin(w * Math.PI / 2));
+  P(n.bedMono.gain, Math.cos(w * Math.PI / 2));
 
   const qv = 0.4 + Math.pow(S.q / 100, 2) * 17;
   P(n.peak.Q, qv); P(n.phi1.Q, qv); P(n.phi2.Q, qv);
@@ -1806,6 +1844,7 @@ function slider(id, key, fmt, after) {
   paintFns.push(paint); return paint;
 }
 slider("tilt","tilt", v => v==0 ? "flat" : (v>0?"+":"")+v);
+slider("width","width", v => v==0 ? "mono" : v<35 ? "narrow" : v<80 ? "wide" : "very wide");
 {
   const el = $("freq"), out = $("v-freq");
   const paint = () => {
@@ -2228,7 +2267,7 @@ window.addEventListener("keydown", e => {
      so a bare registration would never see an update. Bump in lockstep with
      SHELL_VERSION in sw.js. */
   if ("serviceWorker" in navigator && location.protocol !== "file:") {
-    window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=3").catch(()=>{}));
+    window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=6").catch(()=>{}));
   }
 })();
 
@@ -3481,7 +3520,7 @@ if ($("calStart")) {
 
    The evidence tier travels with the sound in the confirmation line: if we
    are honest about that everywhere else, we are honest about it here too. */
-const SHARE_KEYS = ["noise","tilt","freq","tuneMode","amt","q","phiStack","mix","rate",
+const SHARE_KEYS = ["noise","tilt","width","freq","tuneMode","amt","q","phiStack","mix","rate",
   "depth","fb","combLock","phiDrift","pulse","prate","pamt","chr","clvl","swOn","swrate","swblock",
   "swlvl","beatBand","carrier","beat","tlvl","iso","voice","vlvl","vdens","vbpm",
   "vscale","preset"];
