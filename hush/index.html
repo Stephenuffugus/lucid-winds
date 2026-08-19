@@ -296,7 +296,7 @@ body.simple .actions{margin-bottom:14px}
       <p class="hint">These are generated live, note by note. There are no audio files in this app. That is why it is one page, works offline, and never repeats itself.</p>
       <div class="note study">
         <b>The tempo range is not arbitrary.</b> Trials of music for insomnia keep landing on the same recipe: slow tempo between sixty and eighty beats a minute, one instrument, soft and smooth, simple structure, thirty to forty-five minutes before bed. The tempo slider only moves inside that window on purpose.
-        <cite>Jespersen et al., Cochrane 2015 (10 trials, 557 people): music improved sleep quality by about one standard deviation, moderate-quality evidence. Later reviews converge on the 60–80 bpm figure.</cite>
+        <cite>Jespersen et al., Cochrane 2015 (10 trials, 557 people): music improved sleep quality by about one standard deviation, moderate-quality evidence. Later reviews converge on the 60 to 80 bpm figure.</cite>
       </div>
     </div>
   </section>
@@ -479,7 +479,7 @@ body.simple .actions{margin-bottom:14px}
   <section class="panel" id="p-timer">
     <button aria-expanded="false"><span class="ptitle">Timer</span><span style="display:flex;align-items:center"><span class="psub" id="s-timer">off</span><i class="caret"></i></span></button>
     <div class="body">
-      <div class="countdown off" id="cd">—:—</div>
+      <div class="countdown off" id="cd">, :, </div>
       <div class="grid four" id="timerGrid"></div>
       <div class="row"><div class="lab"><span>Fade out over</span><span id="v-fade">60 s</span></div>
         <input type="range" id="fade" min="0" max="100" value="30" aria-label="Fade out length"></div>
@@ -564,7 +564,7 @@ body.simple .actions{margin-bottom:14px}
         <label class="opt" style="text-align:left;padding:9px 11px">REM<input type="number" id="mRem" placeholder="min" style="width:100%;background:none;border:0;font-family:var(--mono);font-size:16px;color:var(--glow);padding:4px 0 0"></label>
         <label class="opt" style="text-align:left;padding:9px 11px">Minutes to fall asleep<input type="number" id="mLat" placeholder="min" style="width:100%;background:none;border:0;font-family:var(--mono);font-size:16px;color:var(--glow);padding:4px 0 0"></label>
         <label class="opt" style="text-align:left;padding:9px 11px">Times woken<input type="number" id="mWake" placeholder="count" style="width:100%;background:none;border:0;font-family:var(--mono);font-size:16px;color:var(--glow);padding:4px 0 0"></label>
-        <label class="opt" style="text-align:left;padding:9px 11px">Sleep score<input type="number" id="mScore" placeholder="0–100" style="width:100%;background:none;border:0;font-family:var(--mono);font-size:16px;color:var(--glow);padding:4px 0 0"></label>
+        <label class="opt" style="text-align:left;padding:9px 11px">Sleep score<input type="number" id="mScore" placeholder="0 to 100" style="width:100%;background:none;border:0;font-family:var(--mono);font-size:16px;color:var(--glow);padding:4px 0 0"></label>
       </div>
       <p class="hint">Fill in whatever your tracker gives you. Anything you leave blank is simply ignored. If you only ever fill in the first slider, that still works.</p>
       <button class="bigbtn" id="saveLog" style="border-color:var(--glow);color:var(--glow)">Save this night</button>
@@ -646,7 +646,7 @@ body.simple .actions{margin-bottom:14px}
       <div class="note">
         <b>Hearing, separately.</b>
         All fourteen infant sound machines measured in a 2014 study exceeded the 50 dBA nursery limit at 30 cm on maximum volume, and three went past 85 dBA, an occupational limit for adults over eight hours. Distance and volume are the whole fix. That is what the room meter is for.
-        <cite>Hugh et al., Pediatrics 2014;133(4):677–681. AAP guidance: roughly 2 m / 7 ft from the head.</cite>
+        <cite>Hugh et al., Pediatrics 2014;133(4):677 to 681. AAP guidance: roughly 2 m / 7 ft from the head.</cite>
       </div>
       <div class="note study">
         <b>Where it does look promising.</b>
@@ -926,7 +926,7 @@ function build() {
   n.pulseLfo = ctx.createOscillator(); n.pulseDepth = ctx.createGain();
 
   /* 620, not 320: the knock component of the thump lives at 230-340 Hz and is
-     the only part of a heartbeat a phone speaker can say at all — and the old
+     the only part of a heartbeat a phone speaker can say at all, and the old
      320 Hz corner sat ON it, shaving the knock the thump was redesigned to
      carry (Stephen, 2026-08-19: womb heartbeat "so subtle I could hardly hear
      it"). The thump's spectrum is already controlled at synthesis, so the
@@ -1184,8 +1184,7 @@ function thump(t, amp) {
    Stephen (2026-08-17): "so many of the sounds sound exactly the same…
    the womb and car ride… we need uniqueness and depth and quality."
    He was right: every preset was the same noise bed in different EQ.
-   The bed gives a sound its weather; a character gives it its NAME —
-   a small procedural layer of continuous texture and scheduled events,
+   The bed gives a sound its weather; a character gives it its NAME, a small procedural layer of continuous texture and scheduled events,
    through one bus into the master chain so the timer fade, programs,
    the nursery cap and adaptive masking all still govern it. Everything
    is synthesised live; there are still no recordings in this app. */
@@ -1214,7 +1213,7 @@ function chrBuild() {
   if (S.chr === "womb") {
     /* The placental swoosh: a band of the bed noise, pumped at the same
        rate as the heartbeat. This rhythm-lock is what reads as "womb"
-       rather than "dark noise" — real recordings whoosh at the pulse. */
+       rather than "dark noise", real recordings whoosh at the pulse. */
     c.bp = ctx.createBiquadFilter(); c.bp.type = "bandpass"; c.bp.frequency.value = 260; c.bp.Q.value = 1.1;
     c.am = ctx.createGain(); c.am.gain.value = .3;
     c.lfo = ctx.createOscillator(); c.lfo.frequency.value = heartBpm/60;
@@ -1381,7 +1380,7 @@ let burstQueue = [], flashQueue = [];
 /* ---------------- programs ----------------
    A program is a list of phases. Each phase has a duration and a target
    level multiplier; the engine ramps between them. Every program ends at
-   zero — nothing here is designed to run until morning. */
+   zero, nothing here is designed to run until morning. */
 const PROGRAMS = [
   { id:"settle", name:"Settle & fade", d:"Steady while they go down, then out.",
     sound:"newborn",
@@ -1589,7 +1588,7 @@ const fadeSeconds = () => Math.round(5 + Math.pow(S.fade/100,2)*295);
 function paintTimer(left) {
   const el = $("cd");
   if (!timerEnd || left == null || left <= 0) {
-    el.textContent = "—:—"; el.classList.add("off");
+    el.textContent = ", :, "; el.classList.add("off");
     $("s-timer").textContent = S.timer ? S.timer+" min" : "off";
     if (!prog) paintVizLeft(null);
     return;
@@ -1669,7 +1668,7 @@ function adaptTick() {
   const target = excess > threshold
     ? clamp(1 + (excess - threshold) / 12 * (maxLift - 1), 1, maxLift)
     : 1;
-  // fast to rise, slow to fall — cover the event, then get out of the room
+  // fast to rise, slow to fall, cover the event, then get out of the room
   adaptGain += (target - adaptGain) * (target > adaptGain ? 0.5 : 0.02);
   setVolume();
 }
@@ -1721,7 +1720,7 @@ function mediaSession() {
 /* ---------------- sound presets ---------------- */
 const PRESETS = [
   /* The comb (mix/depth/fb) used to do the heavy lifting on these, and a comb
-     sweep on noise is the definition of a flanger — Stephen heard it in one
+     sweep on noise is the definition of a flanger, Stephen heard it in one
      listen. The beds are now mostly still; the character layers carry the
      identity, with just enough comb left to keep each bed from being static. */
   { id:"womb", name:"Womb", d:{ noise:"brown", tilt:-55, mix:10, rate:6, depth:35, fb:10, pulse:"heart", prate:32, pamt:85, chr:"womb", clvl:60, vol:22 } },
@@ -1782,8 +1781,8 @@ const PULSES = [{id:"off",n:"Off",s:"steady"},{id:"heart",n:"Heartbeat",s:"womb 
 const CHRS = [{id:"off",n:"Off",s:"clean bed"},{id:"womb",n:"Womb swoosh",s:"blood flow"},
   {id:"car",n:"Engine",s:"drone + passing"},{id:"rain",n:"Raindrops",s:"real patter"},
   {id:"surf",n:"Breaking waves",s:"build and wash"},{id:"fan",n:"Fan blades",s:"flutter + hum"}];
-const BEATS = [{id:"delta",n:"Delta",s:"0.5–4 Hz"},{id:"theta",n:"Theta",s:"4–8 Hz"},
-  {id:"alpha",n:"Alpha",s:"8–13 Hz"},{id:"beta",n:"Beta",s:"13–30 Hz"}];
+const BEATS = [{id:"delta",n:"Delta",s:"0.5 to 4 Hz"},{id:"theta",n:"Theta",s:"4 to 8 Hz"},
+  {id:"alpha",n:"Alpha",s:"8 to 13 Hz"},{id:"beta",n:"Beta",s:"13 to 30 Hz"}];
 const TIMES = [0,10,15,20,30,45,60,90];
 const VIZ_MODES = [{id:"aurora",n:"Aurora"},{id:"drift",n:"Drift"},{id:"ember",n:"Ember"},
   {id:"ring",n:"Ring"},{id:"void",n:"Void"}];
@@ -2278,12 +2277,12 @@ window.addEventListener("keydown", e => {
      so a bare registration would never see an update. Bump in lockstep with
      SHELL_VERSION in sw.js. */
   if ("serviceWorker" in navigator && location.protocol !== "file:") {
-    window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=7").catch(()=>{}));
+    window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=8").catch(()=>{}));
   }
 })();
 
 /* ============================================================================
-   VOICES — struck and plucked sounds, synthesised rather than sampled.
+   VOICES, struck and plucked sounds, synthesised rather than sampled.
    Everything here is additive: a few sine partials with exponential decays.
    Cheap enough to run all night, and it means no audio files, so the app
    stays a single page that works offline.
@@ -2343,7 +2342,7 @@ function droplet(t, f0, gain) {
   o.connect(g); g.connect(voiceBus);
   o.start(t); o.stop(t + 0.1);
 }
-// a short filtered noise transient — the knock, the splash, the breath
+// a short filtered noise transient, the knock, the splash, the breath
 function transient(t, freq, q, dur, gain) {
   buildVoices();
   if (!thumpBufs) makeThumps();
@@ -2376,7 +2375,7 @@ const degToHz = (root, scale, deg) => {
 };
 
 /* ============================================================================
-   VOICE SCHEDULERS — each returns the time of the next event
+   VOICE SCHEDULERS, each returns the time of the next event
    ============================================================================ */
 let vNext = {}, windPhase = 0;
 function voiceTick() {
@@ -2429,7 +2428,7 @@ function voiceTick() {
     }
     else if (v === "night") {
       // Generative night music built to the specification the sleep-music
-      // trials converge on: 60–80 bpm, instrumental, small intervals, simple.
+      // trials converge on: 60 to 80 bpm, instrumental, small intervals, simple.
       const bpm = 60 + (S.vbpm/100)*20;
       const beat = 60 / bpm;
       const scale = S.vscale || "hirajoshi";
@@ -2457,7 +2456,7 @@ function voiceTick() {
 let nightState = null;
 
 /* ============================================================================
-   THE LIBRARY — every sound, what it is, and how much to believe about it.
+   THE LIBRARY, every sound, what it is, and how much to believe about it.
    tier: 1 good evidence · 2 some evidence · 3 traditional, untested · 4 just nice
    ============================================================================ */
 const TIERS = {
@@ -2594,7 +2593,7 @@ function renderGuideResult() {
     const name = (PRESETS.find(p=>p.id===id)||{}).name || (VOICE_PRESETS.find(p=>p.id===id)||{}).name || id;
     const tier = TIERS[inf.tier||4];
     return '<div class="note" style="border-color:'+tier.col+'">'+
-      '<b>'+name+'</b> — '+(inf.what||"")+
+      '<b>'+name+'</b>, '+(inf.what||"")+
       '<cite>'+tier.label+(inf.from?" · "+inf.from:"")+'</cite>'+
       '<button class="bigbtn playpick" data-id="'+id+'" style="margin-top:8px;padding:10px">Play this</button></div>';
   }).join("");
@@ -2636,15 +2635,15 @@ function renderInfoCard(id) {
   const name = (PRESETS.find(p=>p.id===id)||{}).name || (VOICE_PRESETS.find(p=>p.id===id)||{}).name || id;
   const tier = TIERS[inf.tier];
   el.innerHTML = '<div class="note" style="border-color:'+tier.col+'">'+
-    '<b>'+name+'</b> — '+inf.what+'<br><br>'+inf.why+
+    '<b>'+name+'</b>, '+inf.what+'<br><br>'+inf.why+
     '<cite>'+tier.label+' · '+inf.from+'</cite></div>';
 }
 
 /* ============================================================================
-   TRIALS — n-of-1 randomised experiments
+   TRIALS, n-of-1 randomised experiments
    Statistics validated offline: t-CDF matches textbook critical values to 5 dp,
    Welch matches an independent implementation exactly, and the false-positive
-   rate sits at 3.8–5.0% against a nominal 5% across 5–20 nights per arm.
+   rate sits at 3.8 to 5.0% against a nominal 5% across 5 to 20 nights per arm.
    ============================================================================ */
 
 /* ---- incomplete beta / Student t ---- */
@@ -2722,7 +2721,7 @@ function diffCI(x,y){
   const w=welch(x,y);
   if(!w.df) return [0,0];
   const se=Math.sqrt(vari(x)/x.length+vari(y)/y.length);
-  // invert the t CDF by bisection — small df, so exactness matters
+  // invert the t CDF by bisection, small df, so exactness matters
   let lo=0,hi=100;
   for(let i=0;i<80;i++){ const mid=(lo+hi)/2; tP(mid,w.df)>0.05 ? lo=mid : hi=mid; }
   const tc=(lo+hi)/2, d=avg(x)-avg(y);
@@ -2737,7 +2736,7 @@ const METRICS = [
   { id:"rem",   n:"REM",         s:"minutes",      key:"rem",   higher:true,  unit:" min" },
   { id:"lat",   n:"Falling asleep", s:"minutes",   key:"lat",   higher:false, unit:" min" },
   { id:"wake",  n:"Awake",       s:"count or min", key:"wake",  higher:false, unit:"" },
-  { id:"score", n:"Sleep score", s:"0–100",        key:"score", higher:true,  unit:"" },
+  { id:"score", n:"Sleep score", s:"0 to 100",        key:"score", higher:true,  unit:"" },
   { id:"hrdrop",n:"Heart rate drop", s:"needs a strap", key:"hrdrop", higher:true, unit:" bpm" }
 ];
 
@@ -2832,7 +2831,7 @@ function renderTrialSetup() {
   paintPower();
 }
 // Power figures below come from the Monte-Carlo run in testing, not from a formula
-// pulled out of the air — 1,500 simulated trials at each cell.
+// pulled out of the air, 1,500 simulated trials at each cell.
 const POWER = { 10:{s:10,m:17,l:39}, 14:{s:11,m:24,l:52}, 20:{s:13,m:34,l:71}, 30:{s:20,m:47,l:87}, 45:{s:29,m:65,l:96} };
 function powerFor(n) {
   const keys = Object.keys(POWER).map(Number).sort((a,b)=>a-b);
@@ -2976,7 +2975,7 @@ function renderHistory() {
 }
 
 /* ============================================================================
-   IMPORTERS — all local, all streaming where the file may be huge
+   IMPORTERS, all local, all streaming where the file may be huge
    ============================================================================ */
 const SLEEP_MAP = {
   "HKCategoryValueSleepAnalysisAsleepDeep":"deep",
@@ -3304,7 +3303,7 @@ if (NIGHTS.length) $("s-data").textContent = NIGHTS.length + " nights";
 
 
 /* ============================================================================
-   SIMPLE MODE — the front door.
+   SIMPLE MODE, the front door.
    One recommendation, one button. Everything else is behind a link.
 
    The recommendation is not clever on purpose. The strongest finding in the
