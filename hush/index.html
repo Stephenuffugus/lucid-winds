@@ -373,7 +373,7 @@ body.simple .actions{margin-bottom:14px}
       <div class="grid" id="pulseGrid"></div>
       <div class="row"><div class="lab"><span>Speed</span><span id="v-prate">72 bpm</span></div>
         <input type="range" id="prate" min="0" max="100" value="30" aria-label="Pulse speed"></div>
-      <div class="row"><div class="lab"><span>Amount</span><span id="v-pamt">50%</span></div>
+      <div class="row"><div class="lab"><span id="lab-pamt">Amount</span><span id="v-pamt">50%</span></div>
         <input type="range" id="pamt" min="0" max="100" value="50" aria-label="Pulse amount"></div>
       <p class="hint"><b>Heartbeat</b> is a filtered low thump at a resting maternal rate. <b>Shush</b> is the rhythmic hiss caregivers make instinctively. <b>Waves</b> is a slow swell. <b>Breathe</b> swells at 5.5 cycles a minute, so you can pace your own breathing to it.</p>
       <div class="grid" id="chrGrid" style="margin-top:14px"></div>
@@ -925,11 +925,13 @@ function build() {
   n.pulseGain = ctx.createGain();
   n.pulseLfo = ctx.createOscillator(); n.pulseDepth = ctx.createGain();
 
-  /* 320, not 110: the knock component of the thump lives at 230-340 Hz, and
-     it is the only part of a heartbeat a phone speaker can say at all.
-     Measured through a 250 Hz speaker model: 7 dB more beat than the old
-     low-passed-noise thump, before the bed duck adds its masking release. */
-  n.heartLp = ctx.createBiquadFilter(); n.heartLp.type = "lowpass"; n.heartLp.frequency.value = 320; n.heartLp.Q.value = .8;
+  /* 620, not 320: the knock component of the thump lives at 230-340 Hz and is
+     the only part of a heartbeat a phone speaker can say at all — and the old
+     320 Hz corner sat ON it, shaving the knock the thump was redesigned to
+     carry (Stephen, 2026-08-19: womb heartbeat "so subtle I could hardly hear
+     it"). The thump's spectrum is already controlled at synthesis, so the
+     filter only needs to catch stray edge, not voice the sound. */
+  n.heartLp = ctx.createBiquadFilter(); n.heartLp.type = "lowpass"; n.heartLp.frequency.value = 620; n.heartLp.Q.value = .7;
   n.heartGain = ctx.createGain(); n.heartGain.gain.value = 0;
 
   n.swGain = ctx.createGain(); n.swGain.gain.value = 0;   // slow-wave burst bus
@@ -1074,7 +1076,13 @@ function apply() {
   else { P(n.pulseDepth.gain, 0); P(n.pulseGain.gain, 1); }
   heartBpm = 40 + (S.prate/100)*100;
   heartAmt = pamt;
-  P(n.heartGain.gain, S.pulse === "heart" ? 1.15 : 0, .1);
+  /* the heartbeat gets its own volume: the Amount slider IS the heartbeat
+     level when the pulse is a heartbeat (the label says so), and it now
+     drives the bus gain too, so 100% genuinely means loud instead of
+     "slightly less subtle" */
+  P(n.heartGain.gain, S.pulse === "heart" ? 1.05 + pamt*0.95 : 0, .1);
+  const pamtLab = $("lab-pamt");
+  if (pamtLab) pamtLab.textContent = S.pulse === "heart" ? "Heartbeat" : "Amount";
 
   // character layer: rebuild when the character changes, retune when it hasn't
   if (chrNodes ? chrNodes._chr !== S.chr : S.chr !== "off") chrBuild();
@@ -1141,10 +1149,13 @@ function duckBed(t) {
   /* The bed steps aside for each beat: a short dip in the very band the womb
      bed is loudest in, so the thump reads through instead of drowning. This
      is the trick every serious generated womb track uses. */
-  const g = nodes.pulseGain.gain, dip = 1 - heartAmt*.28;
+  /* .38, not .28: the deeper dip is most of why the beat reads. Loudness is
+     cheap; the masking RELEASE, the bed leaning away and back per beat, is
+     what the ear latches onto. */
+  const g = nodes.pulseGain.gain, dip = 1 - heartAmt*.38;
   try {
     g.setTargetAtTime(dip, t, .015);
-    g.setTargetAtTime(1, t + .1, .09);
+    g.setTargetAtTime(1, t + .12, .1);
   } catch {}
 }
 function heartTick() {

@@ -34,7 +34,23 @@ mutations caught, `scripts/hush_audit.js` 155 ok.
 `cd hush && python3 -m http.server 8000` — A/B the Width slider at 0 vs 70
 on headphones, then on a single speaker. Ship only after ears agree.
 
-## Round 2 — the infinite engine (next session)
+## Round 1.5 — the heartbeat reads (same branch, Stephen's first listen)
+
+Stephen on the live womb preset, 2026-08-19: heartbeat "so subtle I could
+hardly hear it", asked for a heartbeat-vs-bed volume split. Shipped: the
+heart bus lowpass opened 320 → 620 Hz (the old corner sat ON the knock
+band the thump was designed around), the Amount slider relabels to
+"Heartbeat" when the pulse is a heartbeat and now drives the bus gain
+(1.05–2.0) so 100% is genuinely loud, and the per-beat bed duck deepened
+.28 → .38 with a slower release — the masking release is what makes a
+beat read, more than raw level. The main ring stays the bed's volume, so
+the two-slider model he asked for exists: ring = sound, Heartbeat = beat.
+
+He also ruled on the loop: infinite generation is DEPRIORITISED — voicing
+quality first. Round 2 below only happens if a loop ever becomes audible
+in real use.
+
+## Round 2 — the infinite engine (deprioritised, see above)
 
 - **AudioWorklet generation.** Replace the 10-second looping buffer with a
   worklet that synthesises the noise sample-by-sample, forever: no loop
