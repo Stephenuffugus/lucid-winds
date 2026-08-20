@@ -136,6 +136,8 @@ body.squint .lid{transform:scaleY(.62);}
 @keyframes pupDizzy{0%{transform:translate(0,0)}25%{transform:translate(3.4px,-2.6px)}
   50%{transform:translate(0,-4px)}75%{transform:translate(-3.4px,-2.6px)}100%{transform:translate(0,0)}}
 .dizzy #pupPupils{animation:pupDizzy .24s linear 3;}
+@keyframes beanPop{0%{transform:scale(.6,.78)}55%{transform:scale(1.12,1.05)}100%{transform:scale(1,1)}}
+.beanPop{transform-box:fill-box;transform-origin:center;animation:beanPop .3s cubic-bezier(.3,1.6,.5,1);}
 #headGrp.bop{transform:scale(1.04,.955) translateY(3px);}
 
 /* ================= SOAP ================= */
@@ -864,7 +866,7 @@ body.calm .card:active{transform:none;}
         <button data-fl="dark" aria-pressed="false">dark</button>
         <button data-fl="white" aria-pressed="false">white</button>
       </div>
-      <div class="hint">snap along the grooves</div>
+      <div class="hint">peel the foil &middot; press a groove to score it, again to snap</div>
     </section>
 
     <section class="toy" id="toy-wall" role="group"
@@ -922,7 +924,7 @@ body.calm .card:active{transform:none;}
           <g id="cradleBalls"></g>
         </svg>
       </div>
-      <div class="hint">pull one out and let it go</div>
+      <div class="hint">pull one out, or grab a few &middot; both thumbs work</div>
     </section>
 
     <section class="toy" id="toy-spring" role="group" aria-label="Spring. Stretch it and let go.">
@@ -3059,20 +3061,26 @@ var gearSvg=$('#gearSvg');
 var GEARS=[
   {cx:60.0, cy:74.0, teeth:16, r:40, col:'#9FD6C0', ang:0, ang0:0},
   {cx:0,    cy:0,    teeth:11, r:28, col:'#F2B79E', ang:0, ang0:0},
-  {cx:0,    cy:0,    teeth:13, r:33, col:'#C3B0E0', ang:0, ang0:0}
+  {cx:0,    cy:0,    teeth:13, r:33, col:'#C3B0E0', ang:0, ang0:0},
+  {cx:0,    cy:0,    teeth:8,  r:20, col:'#EFD9A0', ang:0, ang0:0},
+  {cx:0,    cy:0,    teeth:10, r:25, col:'#A8C8E8', ang:0, ang0:0}
 ];
-var MESH=[[0,1],[1,2]];   // who actually touches whom
-/* Chain layout, computed rather than hand-placed: gear 1 sits 20 degrees
-   below-right of gear 0, gear 2 at 110 degrees off gear 1. Separation is
+/* Five gears now (Stephen: "you should be able to add more gears"): the big
+   green one drives orange, orange splits to purple below and blue above, and
+   purple hands off to the little gold one — so one drag turns the whole box
+   and the two ends of the chain visibly spin at very different speeds. */
+var MESH=[[0,1],[1,2],[2,3],[1,4]];   // who actually touches whom
+/* Chain layout, computed rather than hand-placed. Separation is
    pitch-tangent plus a little backlash, because these are straight-sided
    cartoon teeth, not involutes, and at full depth their corners clip as
    they enter the mesh. */
 (function placeGears(){
   var pr=function(g){ return g.r*0.87; }, SEP=2.5;
-  var a01=20*Math.PI/180, a12=110*Math.PI/180;
-  var d01=pr(GEARS[0])+pr(GEARS[1])+SEP, d12=pr(GEARS[1])+pr(GEARS[2])+SEP;
-  GEARS[1].cx=GEARS[0].cx+Math.cos(a01)*d01; GEARS[1].cy=GEARS[0].cy+Math.sin(a01)*d01;
-  GEARS[2].cx=GEARS[1].cx+Math.cos(a12)*d12; GEARS[2].cy=GEARS[1].cy+Math.sin(a12)*d12;
+  function place(i,j,deg){
+    var d=pr(GEARS[i])+pr(GEARS[j])+SEP, a=deg*Math.PI/180;
+    GEARS[j].cx=GEARS[i].cx+Math.cos(a)*d; GEARS[j].cy=GEARS[i].cy+Math.sin(a)*d;
+  }
+  place(0,1,20); place(1,2,110); place(2,3,5); place(1,4,-75);
 })();
 function gearPath(g){
   var d='',i,n=g.teeth,inner=g.r*0.74,outer=g.r;
@@ -3099,21 +3107,31 @@ function drawGears(){
   }
 }
 (function buildGears(){
-  /* Solve the rest phases so teeth interleave along each line of centres.
-     Tooth centres sit at ang0+(k+0.15)*step, gap centres at ang0+(k+0.65)*step
-     (that is just where gearPath puts them). Gear 0 aims a tooth at gear 1,
-     gear 1 answers with a gap; then gear 2's phase is corrected for how far
-     gear 1's nearest tooth actually sits from the 1-2 centre line. */
-  var g0=GEARS[0], g1=GEARS[1], g2=GEARS[2];
-  var st0=2*Math.PI/g0.teeth, st1=2*Math.PI/g1.teeth, st2=2*Math.PI/g2.teeth;
-  var f01=Math.atan2(g1.cy-g0.cy,g1.cx-g0.cx);
-  g0.ang0=f01-0.135*st0;
-  g1.ang0=(f01+Math.PI)-0.65*st1;
-  var f12=Math.atan2(g2.cy-g1.cy,g2.cx-g1.cx);
-  var t=g1.ang0+0.135*st1;                      // a tooth centre of gear 1
-  var k=Math.round((f12-t)/st1);
-  var delta=(t+k*st1)-f12;                       // signed miss at the 1-2 line
-  g2.ang0=(f12+Math.PI)-0.65*st2-delta*(g1.teeth/g2.teeth);
+  /* Solve the rest phases so teeth interleave along each line of centres,
+     walking the MESH chain from gear 0. Tooth centres sit at
+     ang0+(k+0.135)*step, gap centres at ang0+(k+0.65)*step (that is just
+     where gearPath puts them). For each mesh (known i -> new j): find i's
+     nearest tooth centre to the i->j line, and phase j so a gap answers it,
+     corrected for how far that tooth sits off the line. */
+  var solved={}, st=function(g){ return 2*Math.PI/g.teeth; };
+  var g0=GEARS[0];
+  var f01=Math.atan2(GEARS[1].cy-g0.cy,GEARS[1].cx-g0.cx);
+  g0.ang0=f01-0.135*st(g0); solved[0]=true;
+  var queue=[0];
+  while(queue.length){
+    var i=queue.shift();
+    for(var m=0;m<MESH.length;m++){
+      var j=MESH[m][0]===i?MESH[m][1]:(MESH[m][1]===i?MESH[m][0]:-1);
+      if(j<0||solved[j]) continue;
+      var gi=GEARS[i], gj=GEARS[j];
+      var fij=Math.atan2(gj.cy-gi.cy,gj.cx-gi.cx);
+      var t=gi.ang0+0.135*st(gi);
+      var k=Math.round((fij-t)/st(gi));
+      var delta=(t+k*st(gi))-fij;                // signed miss at the line
+      gj.ang0=(fij+Math.PI)-0.65*st(gj)-delta*(gi.teeth/gj.teeth);
+      solved[j]=true; queue.push(j);
+    }
+  }
   var s='',i;
   for(i=0;i<GEARS.length;i++){
     var g=GEARS[i];
@@ -3308,9 +3326,26 @@ $('#smoothSand').addEventListener('pointerdown',safe(function(e){
    through the still ones in the middle. The clack volume is the
    actual impact speed, so it fades as the swing dies down.
    ========================================================== */
+/* REBUILT 2026-08-20 (Stephen's playtest): every ball is now its OWN
+   pendulum with real contact physics between neighbours, instead of two
+   scripted end balls. What that buys, all at once:
+   - grab ANY ball, and dragging it inward shoves its neighbours along, so
+     pulling the second ball out brings two, the third brings three
+   - two fingers can hold a ball on each side at the same time
+   - grabbing one ball while the cradle is running holds THAT ball and
+     nothing else — the rest keep swinging (it used to hard-reset, which
+     punished exactly the people who were exploring)
+   - release with a moving finger and the ball is thrown, not dropped
+   - the classic two-out-two-back behaviour EMERGES from the collisions
+     instead of being faked
+   Also: the row is finally centred between the posts (ball 5 used to hang
+   inside the right post), and gravity is ~12x stronger — the old swing had
+   a 4.5 second period, which read as slow motion. */
 var cradleSvg=$('#cradleSvg'), cradleBalls=$('#cradleBalls');
-var CR_N=5, CR_R=17, CR_TOP=30, CR_LEN=140, CR_X0=54, CR_GAP=2*CR_R+2;
-var crL=0, crVL=0, crR=0, crVR=0, crDrag=null;
+var CR_N=5, CR_R=16, CR_TOP=30, CR_LEN=140, CR_GAP=34, CR_X0=42;
+var CR_G=0.0065, CR_DAMP=0.999, CR_MAXA=1.15;
+var crB=[], crHeld={};       // crHeld: pointerId -> ball index
+(function(){ for(var i=0;i<CR_N;i++) crB.push({a:0,v:0,held:false,hv:0,lastT:0}); })();
 (function buildCradle(){
   var s='',i;
   for(i=0;i<CR_N;i++){
@@ -3325,79 +3360,93 @@ var crL=0, crVL=0, crR=0, crVR=0, crDrag=null;
   }
   cradleBalls.innerHTML=s;
 })();
-var crShiverT=0, crShiverV=0, crShiverDir=1;
 function drawCradle(){
-  /* THE SIGN THAT MATTERS: every angle in this toy means "positive = ball to
-     the RIGHT", which is what the drag math and the physics both assume. But
-     rotate(+a) about a top pivot swings a hanging ball LEFT in svg space, so
-     the render is the one place the sign flips. Pulling right used to swing
-     left because this minus was missing. */
-  var i, now=performance.now(), dt=now-crShiverT;
-  var live=dt<460&&crShiverV>0;
-  for(i=0;i<CR_N;i++){
+  /* angles mean "positive = ball to the RIGHT"; rotate(+a) about a top pivot
+     swings a hanging ball LEFT in svg space, so the render flips the sign */
+  for(var i=0;i<CR_N;i++){
     var el=document.getElementById('cr'+i); if(!el) continue;
-    var x=CR_X0+i*CR_GAP, a=0;
-    if(i===0) a=crL; else if(i===CR_N-1) a=crR;
-    else if(live){
-      // the knock travelling through the still balls, fading as it goes
-      a=0.055*crShiverV*Math.sin(dt/26-i*1.1*crShiverDir)*Math.exp(-dt/150);
-    }
-    el.setAttribute('transform','rotate('+(-a*180/Math.PI).toFixed(2)+' '+x+' '+CR_TOP+')');
+    el.setAttribute('transform','rotate('+(-crB[i].a*180/Math.PI).toFixed(2)+
+      ' '+(CR_X0+i*CR_GAP)+' '+CR_TOP+')');
   }
 }
+function crBallX(i){ return CR_X0+i*CR_GAP+Math.sin(crB[i].a)*CR_LEN; }
 function cradleXY(e){ return vbXY(cradleSvg,220,240,e); }
 cradleSvg.addEventListener('pointerdown',safe(function(e){
-  var p=cradleXY(e);
-  if(p.x<110){ crDrag='L'; crVL=0; } else { crDrag='R'; crVR=0; }
+  var p=cradleXY(e), i, best=0, bd=1e9;
+  for(i=0;i<CR_N;i++){ var d=Math.abs(p.x-crBallX(i)); if(d<bd){ bd=d; best=i; } }
+  if(bd>46) return;
   try{ cradleSvg.setPointerCapture(e.pointerId); }catch(err){}
+  crHeld[e.pointerId]=best;
+  var b=crB[best];
+  b.held=true; b.hv=0; b.lastT=performance.now();
+  // holding a ball stops THAT ball under your finger; the rest keep going
+  b.a=clamp(Math.atan2(p.x-(CR_X0+best*CR_GAP),Math.max(20,p.y-CR_TOP)),-CR_MAXA,CR_MAXA);
+  b.v=0;
   ripple(e.clientX,e.clientY,'#B6AEC4');
 }));
 cradleSvg.addEventListener('pointermove',safe(function(e){
-  if(!crDrag) return;
-  var p=cradleXY(e);
-  if(crDrag==='L'){
-    var px=CR_X0;
-    crL=clamp(Math.atan2(p.x-px,Math.max(20,p.y-CR_TOP)),-1.15,0);
-  }else{
-    var px2=CR_X0+(CR_N-1)*CR_GAP;
-    crR=clamp(Math.atan2(p.x-px2,Math.max(20,p.y-CR_TOP)),0,1.15);
-  }
-  drawCradle();
-  setGlow(true,e.clientX,e.clientY,Math.abs(crDrag==='L'?crL:crR)/1.15);
+  var idx=crHeld[e.pointerId]; if(idx==null) return;
+  var p=cradleXY(e), b=crB[idx], now=performance.now();
+  var na=clamp(Math.atan2(p.x-(CR_X0+idx*CR_GAP),Math.max(20,p.y-CR_TOP)),-CR_MAXA,CR_MAXA);
+  var dt=Math.max(8,now-b.lastT);
+  b.hv=b.hv*0.5+((na-b.a)/dt*16.7)*0.5;   // finger velocity, per-frame units
+  b.a=na; b.lastT=now;
+  setGlow(true,e.clientX,e.clientY,Math.abs(na)/CR_MAXA);
 }));
-function cradleUp(){ crDrag=null; setGlow(false); }
+function cradleUp(e){
+  var idx=e&&e.pointerId!=null?crHeld[e.pointerId]:null;
+  if(idx!=null){
+    // a moving finger THROWS the ball; a still one just lets go
+    crB[idx].held=false; crB[idx].v=clamp(crB[idx].hv,-0.08,0.08);
+    delete crHeld[e.pointerId];
+  }else{ for(var k in crHeld){ crB[crHeld[k]].held=false; } crHeld={}; }
+  if(!Object.keys(crHeld).length) setGlow(false);
+}
 cradleSvg.addEventListener('pointerup',safe(cradleUp));
 cradleSvg.addEventListener('pointercancel',safe(cradleUp));
 (function cradleTick(){
   requestAnimationFrame(cradleTick);
-  if(curToy!=='cradle'&&Math.abs(crVL)<0.0001&&Math.abs(crVR)<0.0001
-     &&Math.abs(crL)<0.001&&Math.abs(crR)<0.001) return;
-  var g=0.00055, damp=0.9992;
-  if(crDrag!=='L'){
-    crVL+=-g*Math.sin(crL); crVL*=damp; crL+=crVL;
-    if(crL>=0&&crVL>0){                       // reached centre swinging right
-      var v=crVL; crL=0; crVL=0;
-      if(v>0.0008){ crVR=v; clack(v,'L'); }
+  var i,b,active=Object.keys(crHeld).length>0;
+  for(i=0;i<CR_N;i++){ b=crB[i];
+    if(Math.abs(b.v)>0.00008||Math.abs(b.a)>0.0015) active=true; }
+  if(curToy!=='cradle'&&!active) return;
+  // free swing
+  for(i=0;i<CR_N;i++){ b=crB[i];
+    if(b.held) continue;
+    b.v+=-CR_G*Math.sin(b.a); b.v*=CR_DAMP; b.a+=b.v;
+    if(Math.abs(b.v)<0.00005&&Math.abs(b.a)<0.001){ b.a=0; b.v=0; }
+  }
+  /* contact: neighbours may not overlap. A few passes settle chain hits, and
+     equal masses swapping velocities is what makes it a Newton's cradle. */
+  var pad=2*CR_R+0.6, hit=0, hitX=0, pass;
+  for(pass=0;pass<4;pass++){
+    for(i=0;i<CR_N-1;i++){
+      var L=crB[i], R=crB[i+1];
+      var over=pad-(crBallX(i+1)-crBallX(i));
+      if(over<=0) continue;
+      var da=over/CR_LEN;
+      if(L.held&&R.held){ continue; }             // fingers outrank physics
+      else if(L.held){ R.a+=da; if(R.v<L.hv) R.v=L.hv; }
+      else if(R.held){ L.a-=da; if(L.v>R.hv) L.v=R.hv; }
+      else{
+        L.a-=da/2; R.a+=da/2;
+        if(L.v>R.v){                              // approaching: exchange
+          var iv=L.v-R.v, t=L.v; L.v=R.v*0.995; R.v=t*0.995;
+          if(iv>hit){ hit=iv; hitX=(crBallX(i)+crBallX(i+1))/2; }
+        }
+      }
     }
   }
-  if(crDrag!=='R'){
-    crVR+=-g*Math.sin(crR); crVR*=damp; crR+=crVR;
-    if(crR<=0&&crVR<0){
-      var v2=-crVR; crR=0; crVR=0;
-      if(v2>0.0008){ crVL=-v2; clack(v2,'R'); }
-    }
-  }
+  if(hit>0.0025) crClack(hit,hitX);
   drawCradle();
 })();
-function clack(v,side){
-  // A cradle left swinging keeps its physics while you are on another toy, and
-  // it used to keep CLACKING there too. Motion travels, sound does not.
+var crClackT=0;
+function crClack(v,x){
+  // A cradle left swinging keeps its physics on other toys; not its sound.
   if(curToy!=='cradle') return;
-  var amt=clamp(v/0.03,0.05,1);
-  // the impact is visible: a shock ring at the contact point, and the knock
-  // shivers through the middle strings on its way to the far ball
-  crShiverT=performance.now(); crShiverV=amt; crShiverDir=(side==='L')?1:-1;
-  crRing(side==='L'?CR_X0+0.5*CR_GAP:CR_X0+3.5*CR_GAP, CR_TOP+CR_LEN, amt);
+  var now=performance.now(); if(now-crClackT<45) return; crClackT=now;
+  var amt=clamp(v/0.05,0.08,1);
+  crRing(x,CR_TOP+CR_LEN,amt);
   V.rib(0,900+amt*700,0.06+amt*0.22);
   tone({f0:300+amt*260,f1:180,dur:0.06,gain:0.05+amt*0.12,wave:'triangle',pan:0});
   // and it RINGS like steel, briefly: two quick inharmonic partials
@@ -3587,10 +3636,12 @@ SEQ_PAIRS.forEach(function(P,i){
    whole design and it sold for fifteen years.
    ========================================================== */
 var edaSvg=$('#edaSvg'), edaBeans=$('#edaBeans'), edaHits=$('#edaHits'), edaHint=$('#edaHint');
-var EDA_N=3, edaOut=[false,false,false], edaFace=[0,0,0];
+var EDA_N=3, edaOut=[false,false,false], edaFace=[0,0,0], edaGold=[false,false,false];
 var EDA_FACES=[
   'happy','sleepy','shocked','grumpy','wink','blush',
-  'silly','tiny','old','cool','worried','smug'
+  'silly','tiny','old','cool','worried','smug',
+  'heart','dizzy','star','cry','angry','kiss',
+  'sprout','sideeye','uwu','vampire','brows','zen'
 ];
 function edaFaceSvg(kind,cx,cy){
   var e=function(dx,dy,r){ return '<circle cx="'+(cx+dx)+'" cy="'+(cy+dy)+'" r="'+r+'" fill="#3A4A28"/>'; };
@@ -3607,17 +3658,30 @@ function edaFaceSvg(kind,cx,cy){
     case 'old':     return m('M'+(cx-11)+' '+(cy-4)+' q4,-3 8,0')+m('M'+(cx+3)+' '+(cy-4)+' q4,-3 8,0')+m('M'+(cx-7)+' '+(cy+8)+' q7,2 14,0')+m('M'+(cx-13)+' '+(cy-9)+' q5,-3 10,-1');
     case 'cool':    return '<rect x="'+(cx-13)+'" y="'+(cy-7)+'" width="26" height="8" rx="3" fill="#3A4A28"/>'+m('M'+(cx-5)+' '+(cy+8)+' q5,3 10,-1');
     case 'worried': return e(-7,-2,2.6)+e(7,-2,2.6)+m('M'+(cx-12)+' '+(cy-7)+' l7,-2')+m('M'+(cx+12)+' '+(cy-7)+' l-7,-2')+m('M'+(cx-5)+' '+(cy+9)+' q5,-4 10,0');
+    case 'heart':   return '<path d="M'+(cx-7)+','+(cy-3)+' m0,-2 q-3,-4 -5,0 q-1,3 5,6 q6,-3 5,-6 q-2,-4 -5,0" fill="#C9506A"/>'+'<path d="M'+(cx+7)+','+(cy-3)+' m0,-2 q-3,-4 -5,0 q-1,3 5,6 q6,-3 5,-6 q-2,-4 -5,0" fill="#C9506A"/>'+m('M'+(cx-5)+' '+(cy+7)+' q5,5 10,0');
+    case 'dizzy':   return m('M'+(cx-10)+' '+(cy-5)+' q5,-3 5,1 q0,4 -4,2 q-2,-1 0,-3')+m('M'+(cx+4)+' '+(cy-5)+' q5,-3 5,1 q0,4 -4,2 q-2,-1 0,-3')+'<ellipse cx="'+cx+'" cy="'+(cy+8)+'" rx="3.4" ry="4" fill="#3A4A28"/>';
+    case 'star':    return '<path d="M'+(cx-7)+','+(cy-7)+' l1.6,3.4 3.6,.4 -2.7,2.5 .7,3.6 -3.2,-1.8 -3.2,1.8 .7,-3.6 -2.7,-2.5 3.6,-.4z" fill="#3A4A28"/>'+'<path d="M'+(cx+7)+','+(cy-7)+' l1.6,3.4 3.6,.4 -2.7,2.5 .7,3.6 -3.2,-1.8 -3.2,1.8 .7,-3.6 -2.7,-2.5 3.6,-.4z" fill="#3A4A28"/>'+m('M'+(cx-5)+' '+(cy+7)+' q5,4 10,0');
+    case 'cry':     return e(-7,-3,2.6)+e(7,-3,2.6)+'<ellipse cx="'+(cx-7)+'" cy="'+(cy+4)+'" rx="1.8" ry="3.4" fill="#7FB8D8"/>'+m('M'+(cx-4)+' '+(cy+10)+' q4,-4 8,0');
+    case 'angry':   return e(-7,-1,2.6)+e(7,-1,2.6)+m('M'+(cx-12)+' '+(cy-9)+' l8,4')+m('M'+(cx+12)+' '+(cy-9)+' l-8,4')+m('M'+(cx-5)+' '+(cy+9)+' l10,0');
+    case 'kiss':    return m('M'+(cx-11)+' '+(cy-4)+' q4,-4 8,0')+m('M'+(cx+3)+' '+(cy-4)+' q4,-4 8,0')+'<path d="M'+cx+','+(cy+6)+' q-3,1.5 0,3 q3,1.5 0,3 q-1.5,.8 -2.6,0" stroke="#C9506A" stroke-width="2.2" fill="none" stroke-linecap="round"/>';
+    case 'sprout':  return e(-7,-3,2.6)+e(7,-3,2.6)+m('M'+(cx-4)+' '+(cy+7)+' q4,3 8,0')+'<path d="M'+cx+','+(cy-14)+' q-1,-7 5,-9 q1,6 -5,9 M'+cx+','+(cy-14)+' q1,-6 -4,-8 q-1,5 4,8" fill="#5F8043"/>';
+    case 'sideeye': return e(-5,-3,2.6)+e(9,-3,2.6)+m('M'+(cx-4)+' '+(cy+8)+' q5,1 9,-1');
+    case 'uwu':     return m('M'+(cx-11)+' '+(cy-3)+' q4,4 8,0')+m('M'+(cx+3)+' '+(cy-3)+' q4,4 8,0')+m('M'+(cx-5)+' '+(cy+6)+' q2.5,3 5,0 q2.5,3 5,0');
+    case 'vampire': return e(-7,-3,2.6)+e(7,-3,2.6)+m('M'+(cx-6)+' '+(cy+5)+' q6,4 12,0')+'<path d="M'+(cx-4)+','+(cy+7)+' l1.6,4 1.6,-4z" fill="#F2F7D8"/><path d="M'+(cx+1)+','+(cy+7)+' l1.6,4 1.6,-4z" fill="#F2F7D8"/>';
+    case 'brows':   return e(-7,-2,2.6)+e(7,-2,2.6)+'<rect x="'+(cx-11)+'" y="'+(cy-10)+'" width="8" height="2.6" rx="1.3" fill="#3A4A28"/><rect x="'+(cx+3)+'" y="'+(cy-10)+'" width="8" height="2.6" rx="1.3" fill="#3A4A28"/>'+m('M'+(cx-4)+' '+(cy+7)+' q4,2 8,0');
+    case 'zen':     return m('M'+(cx-11)+' '+(cy-3)+' l8,0')+m('M'+(cx+3)+' '+(cy-3)+' l8,0')+m('M'+(cx-4)+' '+(cy+7)+' l8,0');
     default:        return e(-7,-3,2.6)+e(7,-3,2.6)+m('M'+(cx-6)+' '+(cy+5)+' q6,7 12,-2');
   }
 }
-function drawEda(){
+function drawEda(popped){
   var s='',i;
   for(i=0;i<EDA_N;i++){
-    var cx=64+i*56, out=edaOut[i];
+    var cx=64+i*56, out=edaOut[i], gold=edaGold[i]&&out;
     var cy=out?52:80, r=out?27:24;
-    s+='<g style="transition:none">'+
+    s+='<g'+(i===popped?' class="beanPop"':'')+' style="transition:none">'+
        '<ellipse cx="'+cx+'" cy="'+(cy+3)+'" rx="'+r+'" ry="'+(r*0.9)+'" fill="#5F8043" opacity="'+(out?'.45':'.25')+'"/>'+
-       '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="'+(out?'#DCE8A8':'#B6CE7E')+'"/>'+
+       '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="'+(gold?'#EFD9A0':(out?'#DCE8A8':'#B6CE7E'))+'"/>'+
+       (gold?'<circle cx="'+cx+'" cy="'+cy+'" r="'+(r+3)+'" fill="none" stroke="#C8A84B" stroke-width="1.6" opacity=".8"/>':'')+
        '<ellipse cx="'+(cx-r*0.35)+'" cy="'+(cy-r*0.4)+'" rx="'+(r*0.3)+'" ry="'+(r*0.2)+
        '" fill="#F2F7D8" opacity=".5"/>'+
        (out?edaFaceSvg(EDA_FACES[edaFace[i]],cx,cy):'')+
@@ -3637,13 +3701,18 @@ edaSvg.addEventListener('pointerdown',safe(function(e){
     // a fresh face every single time it pops out — that is the toy
     edaFace[i]=Math.floor(Math.random()*EDA_FACES.length);
     edaOut[i]=true;
-    feel('bean',e.clientX,e.clientY,i*2);      // each pod position its own pitch
+    // and once in a rare while, the bean is GOLDEN
+    edaGold[i]=Math.random()<1/24;
+    feel('bean',e.clientX,e.clientY,i*2+(edaGold[i]?7:0));
+    if(edaGold[i]){ V.bell((e.clientX/window.innerWidth)*2-1);
+      bits(e.clientX,e.clientY,'#EFD9A0',7); }
+    else bits(e.clientX,e.clientY,'#DCE8A8',2);
     countPop(e.clientX,e.clientY);
   }else{
-    edaOut[i]=false;
+    edaOut[i]=false; edaGold[i]=false;
     feel('unbean',e.clientX,e.clientY,i*2);
   }
-  drawEda();
+  drawEda(i);
 }));
 drawEda();
 
@@ -3744,48 +3813,160 @@ var CHOC={
   dark :{top:'#4E3123',face:'#63402C',edge:'#372118',crackF:3000,crackG:0.30,semi:3},
   white:{top:'#DCC9A4',face:'#EEDCBB',edge:'#BFA983',crackF:1500,crackG:0.20,semi:-4}
 };
+/* REBUILT 2026-08-20 (Stephen: "all you do is tap on it and it disappears").
+   Now it is a ritual with three beats, which is what the real thing has:
+   1. UNWRAP — a fresh bar arrives in foil; drag it sideways to peel, with
+      the crinkle tracking your finger, and it flies off at the end.
+   2. SCORE — first press on a groove puts a hairline crack down it with a
+      dry tick. Nothing falls yet. You can feel where it will give.
+   3. SNAP — press the cracked groove again and the end of the bar breaks
+      off along it, tips, and falls away with crumbs, instead of blinking
+      out of existence. Snap the last piece and a new wrapped bar arrives. */
 var chocFlav='milk', chocCols=6, chocLock=false;
-function drawChoc(){
-  var c=CHOC[chocFlav];
+var chocFoil=true, chocFoilX=0, chocFoilDown=false, chocFoilPX=0, chocCracked=-1;
+function chocGeom(){
   var totalW=252, colW=totalW/6, w=colW*chocCols;
-  var x0=150-w/2, s='', i, j;
-  s+='<rect x="'+(x0-4)+'" y="58" width="'+(w+8)+'" height="92" rx="7" fill="'+c.edge+'"/>';
+  return {colW:colW, w:w, x0:150-w/2};
+}
+function crackPath(gx){
+  // a hairline that wanders like a real score line
+  var d='M'+gx+',58', y=58, x=gx;
+  while(y<150){ y=Math.min(150,y+14); x=gx+(Math.random()*5-2.5);
+    d+='L'+x.toFixed(1)+','+y; }
+  return d;
+}
+function drawChoc(){
+  var c=CHOC[chocFlav], G=chocGeom(), s='', i, j;
+  s+='<g id="chocBar">';
+  s+='<rect x="'+(G.x0-4)+'" y="58" width="'+(G.w+8)+'" height="92" rx="7" fill="'+c.edge+'"/>';
   for(i=0;i<chocCols;i++) for(j=0;j<2;j++){
-    var bx=x0+i*colW+3, by=62+j*44;
-    s+='<rect x="'+bx+'" y="'+by+'" width="'+(colW-6)+'" height="38" rx="4" fill="'+c.face+'"/>'+
-       '<rect x="'+bx+'" y="'+by+'" width="'+(colW-6)+'" height="8" rx="4" fill="'+c.top+'" opacity=".55"/>';
+    var bx=G.x0+i*G.colW+3, by=62+j*44;
+    s+='<rect x="'+bx+'" y="'+by+'" width="'+(G.colW-6)+'" height="38" rx="4" fill="'+c.face+'"/>'+
+       '<rect x="'+bx+'" y="'+by+'" width="'+(G.colW-6)+'" height="8" rx="4" fill="'+c.top+'" opacity=".55"/>';
   }
   for(i=1;i<chocCols;i++){              // the grooves you snap along
-    var gx=x0+i*colW;
-    s+='<rect class="groove" data-g="'+i+'" x="'+(gx-9)+'" y="52" width="18" height="104" fill="transparent"/>'+
-       '<line x1="'+gx+'" y1="58" x2="'+gx+'" y2="150" stroke="rgba(0,0,0,.32)" stroke-width="2"/>';
+    var gx=G.x0+i*G.colW;
+    /* the visible line and the crack are pointer-events:none, and the hit
+       rect is drawn LAST — otherwise a tap dead on the line (or on the crack
+       you just scored) lands on decoration and the snap never fires */
+    s+='<line x1="'+gx+'" y1="58" x2="'+gx+'" y2="150" stroke="rgba(0,0,0,.32)" stroke-width="2" pointer-events="none"/>';
+    if(chocCracked===i)
+      s+='<path d="'+crackPath(gx)+'" stroke="#1E130B" stroke-width="1.6" fill="none" opacity=".85" pointer-events="none"/>';
+    s+='<rect class="groove" data-g="'+i+'" x="'+(gx-9)+'" y="52" width="18" height="104" fill="transparent"/>';
   }
   if(chocCols===1)
-    s+='<rect class="groove" data-g="0" x="'+(x0-6)+'" y="52" width="'+(w+12)+'" height="104" fill="transparent"/>';
+    s+=(chocCracked===0?'<path d="'+crackPath(150)+'" stroke="#1E130B" stroke-width="1.6" fill="none" opacity=".85" pointer-events="none"/>':'')+
+       '<rect class="groove" data-g="0" x="'+(G.x0-6)+'" y="52" width="'+(G.w+12)+'" height="104" fill="transparent"/>';
+  s+='</g>';
+  if(chocFoil){
+    // the wrapper: silver, a few crinkle folds, and a lifted corner tab
+    s+='<g id="chocFoil" style="transform:translate('+chocFoilX.toFixed(1)+'px,0)">'+
+       '<rect x="'+(G.x0-8)+'" y="52" width="'+(G.w+16)+'" height="104" rx="9" fill="#B9C0CC"/>'+
+       '<rect x="'+(G.x0-8)+'" y="52" width="'+(G.w+16)+'" height="104" rx="9" fill="url(#foilShine)"/>'+
+       '<path d="M'+(G.x0+14)+',52 l10,104 M'+(G.x0+58)+',52 l-7,104 M'+(G.x0+G.w*0.55)+',52 l8,104 M'+(G.x0+G.w-30)+',52 l-9,104" stroke="rgba(255,255,255,.5)" stroke-width="1.6" fill="none"/>'+
+       '<path d="M'+(G.x0+30)+',52 l-6,104 M'+(G.x0+G.w*0.42)+',52 l12,104 M'+(G.x0+G.w*0.72)+',52 l-10,104 M'+(G.x0+G.w-10)+',52 l-14,104" stroke="rgba(40,48,60,.28)" stroke-width="2.2" fill="none"/>'+
+       '<path d="M'+(G.x0-8)+',96 l'+(G.w+16)+',-14 M'+(G.x0-8)+',128 l'+(G.w+16)+',9" stroke="rgba(255,255,255,.22)" stroke-width="1.2" fill="none"/>'+
+       '<path d="M'+(G.x0+G.w+8)+',52 l-16,18 l16,4 z" fill="#DDE2E8"/>'+
+       '</g>';
+    if(!document.getElementById('foilShine')){
+      s='<defs><linearGradient id="foilShine" x1="0" y1="0" x2="1" y2="1">'+
+        '<stop offset="0" stop-color="#fff" stop-opacity=".38"/>'+
+        '<stop offset=".45" stop-color="#fff" stop-opacity="0"/>'+
+        '<stop offset="1" stop-color="#000" stop-opacity=".22"/></linearGradient></defs>'+s;
+    }
+  }
   chocSvg.innerHTML=s;
+}
+function chocSnapOff(at,cx,cy){
+  var c=CHOC[chocFlav], G=chocGeom();
+  chocLock=true;
+  feel('crack',cx,cy,c.semi,c.crackF,c.crackG);
+  bits(cx,cy,c.face,8);
+  countPop(cx,cy);
+  // the broken piece: everything right of the crack tips off and falls
+  var from=(at===0)?0:at;
+  var pw=(chocCols-from)*G.colW, px=G.x0+from*G.colW;
+  var ns='http://www.w3.org/2000/svg';
+  var gEl=document.createElementNS(ns,'g'), inner='';
+  inner+='<rect x="'+px+'" y="58" width="'+(pw+4)+'" height="92" rx="7" fill="'+c.edge+'"/>';
+  for(var i=from;i<chocCols;i++) for(var j=0;j<2;j++){
+    var bx=G.x0+i*G.colW+3, by=62+j*44;
+    inner+='<rect x="'+bx+'" y="'+by+'" width="'+(G.colW-6)+'" height="38" rx="4" fill="'+c.face+'"/>';
+  }
+  gEl.innerHTML=inner;
+  chocCracked=-1;
+  if(chocCols<=1||at===0){ chocCols=6; chocFoil=true; chocFoilX=0; }
+  else chocCols=at;
+  drawChoc();
+  chocSvg.appendChild(gEl);
+  var t0=performance.now();
+  (function fall(){
+    var p=(performance.now()-t0)/560;
+    if(p>=1){ gEl.remove(); chocLock=false;
+      if(chocFoil) V.hinge(0);                     // the fresh bar slides in
+      return; }
+    gEl.setAttribute('transform','translate('+(p*30).toFixed(1)+','+(p*p*190).toFixed(1)+
+      ') rotate('+(p*26).toFixed(1)+' '+(px+pw/2)+' 104)');
+    gEl.setAttribute('opacity',String(1-p*p*0.6));
+    requestAnimationFrame(fall);
+  })();
+  setTimeout(function(){ V.thunk(0); },430);       // it lands somewhere soft
 }
 chocSvg.addEventListener('pointerdown',safe(function(e){
   if(chocLock) return;
+  if(chocFoil){
+    chocFoilDown=true; chocFoilPX=vbXY(chocSvg,300,200,e).x;
+    try{ chocSvg.setPointerCapture(e.pointerId); }catch(err){}
+    V.grain((e.clientX/window.innerWidth)*2-1,3200,0.06);
+    return;
+  }
   var g=e.target.closest?e.target.closest('.groove'):null; if(!g) return;
   var c=CHOC[chocFlav];
-  chocLock=true;
-  // the crack: a hard snap on top of a dry woody body, through feel() so a
-  // recording of a real bar can take it over
-  feel('crack',e.clientX,e.clientY,c.semi,c.crackF,c.crackG);
-  bits(e.clientX,e.clientY,c.face,6);
-  countPop(e.clientX,e.clientY);
   var at=+g.getAttribute('data-g');
-  setTimeout(function(){
-    if(chocCols<=1||at===0){ chocCols=6; V.hinge(0); }
-    else chocCols=at;
-    drawChoc(); chocLock=false;
-  },220);
+  if(chocCracked!==at){
+    // first press: SCORE it — a hairline and a dry tick, nothing falls yet
+    chocCracked=at;
+    V.rib((e.clientX/window.innerWidth)*2-1,c.crackF*0.7,0.14);
+    bits(e.clientX,e.clientY,c.face,2);
+    ripple(e.clientX,e.clientY,c.face);
+    if(S.buzz&&CAN_BUZZ){ try{ navigator.vibrate(8); }catch(err2){} }
+    drawChoc();
+    return;
+  }
+  chocSnapOff(at,e.clientX,e.clientY);             // second press: SNAP
 }));
+chocSvg.addEventListener('pointermove',safe(function(e){
+  if(!chocFoilDown||!chocFoil) return;
+  var x=vbXY(chocSvg,300,200,e).x;
+  chocFoilX+=(x-chocFoilPX); chocFoilPX=x;
+  var f=document.getElementById('chocFoil');
+  if(f) f.style.transform='translate('+chocFoilX.toFixed(1)+'px,0)';
+  if(Math.random()<0.4) V.grain((e.clientX/window.innerWidth)*2-1,2600+Math.random()*2600,0.05);
+  if(Math.abs(chocFoilX)>85){
+    // off it comes
+    chocFoil=false; chocFoilDown=false;
+    feel('peel',e.clientX,e.clientY);
+    bits(e.clientX,e.clientY,'#DDE2E8',5);
+    countPop(e.clientX,e.clientY);
+    drawChoc();
+  }
+}));
+['pointerup','pointercancel'].forEach(function(ev){
+  chocSvg.addEventListener(ev,safe(function(){
+    chocFoilDown=false;
+    if(chocFoil&&Math.abs(chocFoilX)>0){          // let go early: it settles back
+      chocFoilX=0; var f=document.getElementById('chocFoil');
+      if(f) f.style.transform='translate(0,0)';
+    }
+  }));
+});
 $$('.flavbar button').forEach(function(b){
   b.addEventListener('click',safe(function(){
     $$('.flavbar button').forEach(function(x){ x.setAttribute('aria-pressed','false'); });
     b.setAttribute('aria-pressed','true');
-    chocFlav=b.getAttribute('data-fl'); chocCols=6; drawChoc();
+    chocFlav=b.getAttribute('data-fl'); chocCols=6;
+    chocFoil=true; chocFoilX=0; chocCracked=-1;    // a new flavour arrives wrapped
+    drawChoc();
   }));
 });
 drawChoc();
@@ -4087,14 +4268,22 @@ if(blnSvg){
    ========================================================== */
 var shakeSvg=$('#shakeSvg'), shakeGrp=$('#shakeGrp'), shakeGrains=$('#shakeGrains'),
     shakePins=$('#shakePins'), shakeHint=$('#shakeHint');
+/* REAL PINS (2026-08-20, Stephen: "1000% better if the pellets actually
+   bounced off the angled lines inside"). The eleven drawn pins are now
+   collision geometry: every grain carries a cross-tube position and
+   velocity, ricochets off the pin faces and the tube walls, slides down
+   whichever way a pin slopes, and every ricochet is a TICK — so the sound
+   is literally the particles, unique every pour. Tipping the tube sideways
+   also slides the pile across, because gravity's cross component is real. */
 var SH_N=90, SH_TOP=42, SH_BOT=258;     // the run the grains have, in viewBox units
-var shGrains=[], shAng=0, shDown=false, shLast=null, shVoice=null, shLanded=0, shRattleT=0;
+var shGrains=[], SH_PINS=[], shAng=0, shDown=false, shLast=null, shVoice=null,
+    shLanded=0, shRattleT=0, shPinT=0;
 (function(){
   var i,s='';
   for(i=0;i<SH_N;i++){
     shGrains.push({
-      p:0.55+Math.random()*0.4, v:0,
-      x:(Math.random()*2-1)*17,           // across the tube, fixed per grain
+      y:SH_TOP+(0.55+Math.random()*0.4)*(SH_BOT-SH_TOP), v:0,
+      x:(Math.random()*2-1)*15, vx:0,
       rest:Math.random()*0.34,            // where in the pile this one settles
       sz:1.6+Math.random()*1.5
     });
@@ -4102,19 +4291,19 @@ var shGrains=[], shAng=0, shDown=false, shLast=null, shVoice=null, shLanded=0, s
   for(i=0;i<11;i++){                       // the pins they clatter down
     var y=56+i*19, dir=(i%2)?1:-1;
     s+='<line x1="'+(100-dir*17)+'" y1="'+y+'" x2="'+(100+dir*6)+'" y2="'+(y+9)+'"/>';
+    SH_PINS.push({x1:-dir*17, x2:dir*6, y1:y, dir:dir});
   }
   if(shakePins) shakePins.innerHTML=s;
 })();
 function shakeDraw(){
   if(!shakeGrp) return;
   shakeGrp.setAttribute('transform','rotate('+(shAng*180/Math.PI).toFixed(2)+' 100 150)');
-  var d='',i,g,y;
+  var d='',i,g;
   for(i=0;i<SH_N;i++){
     g=shGrains[i];
-    y=SH_TOP+g.p*(SH_BOT-SH_TOP);
     // a square per grain, all in one path: ninety attribute writes a frame is
     // how you make a phone hot
-    d+='M'+(100+g.x).toFixed(1)+','+y.toFixed(1)+'h'+g.sz.toFixed(1)+
+    d+='M'+(100+g.x).toFixed(1)+','+g.y.toFixed(1)+'h'+g.sz.toFixed(1)+
        'v'+g.sz.toFixed(1)+'h-'+g.sz.toFixed(1)+'z';
   }
   shakeGrains.setAttribute('d',d);
@@ -4148,24 +4337,51 @@ if(shakeSvg){
 (function shakeTick(){
   requestAnimationFrame(shakeTick);
   var here=(curToy==='shake');
-  var i,g,moving=0,flow=0,hits=0;
-  /* Tuned by simulating it, since there is no phone in this lane. The first
-     numbers ran the whole tube out in a second flat with the bed pinned at
-     full gain the entire time, so a nudge and a full turn sounded identical.
-     Terminal speed is now about 0.003 of the tube per frame: three to five
-     seconds end to end, which is what a real stick does, and the gain has
-     somewhere to go. */
-  var grav=Math.cos(shAng)*0.000045;     // upright means straight down the tube
+  var i,g,k,moving=0,flow=0,hits=0,now=performance.now();
+  /* Terminal speed keeps a full pour at three to five seconds, same tune as
+     before — the pins just make the path down honest now. */
+  var grav=Math.cos(shAng)*0.0097;       // upright means straight down the tube
+  var sideG=-Math.sin(shAng)*0.05;       // tip it sideways and the pile slides
+  var run=SH_BOT-SH_TOP;
   for(i=0;i<SH_N;i++){
     g=shGrains[i];
+    var prevY=g.y;
     g.v=(g.v+grav)*0.988;
-    if(Math.abs(g.v)>0.00002) g.v+=(Math.random()-0.5)*0.00004;   // pins scatter them
-    g.p+=g.v;
-    var lo=g.rest*0.5, hi=1-g.rest*0.5;
-    if(g.p>hi){ g.p=hi; if(g.v>0.0009) hits++; g.v=-g.v*0.22; }
-    if(g.p<lo){ g.p=lo; if(g.v<-0.0009) hits++; g.v=-g.v*0.22; }
-    if(Math.abs(g.v)>0.00012){ moving++; flow+=Math.abs(g.v); }
+    g.vx=(g.vx+sideG)*0.90;
+    g.y+=g.v; g.x+=g.vx;
+    // the tube walls
+    if(g.x>15){ g.x=15; g.vx=-g.vx*0.5; }
+    if(g.x<-15){ g.x=-15; g.vx=-g.vx*0.5; }
+    // the pins: cross a pin's face and you ricochet off it, downhill
+    if(Math.abs(g.v)>0.06){
+      for(k=0;k<11;k++){
+        var pin=SH_PINS[k];
+        if(g.y<pin.y1-2||g.y>pin.y1+11) continue;
+        var t=(g.x-pin.x1)/(pin.x2-pin.x1);
+        if(t<0||t>1) continue;
+        var surf=pin.y1+t*9;
+        if((prevY-surf)*(g.y-surf)>0) continue;    // did not cross it
+        var imp=Math.abs(g.v);
+        g.y=surf+(g.v>0?-1:1)*0.6;
+        g.v=-g.v*(0.22+Math.random()*0.14);
+        g.vx+=pin.dir*(0.35+Math.random()*0.5)*Math.min(imp,1.4)
+              +(Math.random()-0.5)*0.3;
+        /* every ricochet is a tick — pitched by which pin, loudness by how
+           hard it hit, spaced so a pour patters instead of machine-gunning */
+        if(here&&now-shPinT>34){
+          shPinT=now;
+          voice('rib',Math.sin(shAng)*0.5,
+            [2600-k*120+Math.random()*500, clamp(0.03+imp*0.06,0.03,0.11)]);
+        }
+        break;
+      }
+    }
+    var lo=SH_TOP+g.rest*0.5*run, hi=SH_BOT-g.rest*0.5*run;
+    if(g.y>hi){ g.y=hi; if(g.v>0.19) hits++; g.v=-g.v*0.22; g.vx*=0.6; }
+    if(g.y<lo){ g.y=lo; if(g.v<-0.19) hits++; g.v=-g.v*0.22; g.vx*=0.6; }
+    if(Math.abs(g.v)>0.026){ moving++; flow+=Math.abs(g.v); }
   }
+  flow=flow/216;                          // back to tube fractions for the bed
   if(!here){
     // the grains keep settling while you are away, in silence
     if(shVoice){ shVoice.stop(); shVoice=null; }
@@ -4212,18 +4428,20 @@ var coinSvg=$('#coinSvg'), coinGrp=$('#coinGrp'), coinFace=$('#coinFace'),
 var COIN_R=46;
 var cnSpin=0, cnOmega=0, cnTilt=0, cnWob=0, cnState='rest', cnFace=0,
     cnDown=false, cnSpeed=Speedo(), cnVoice=null, cnLastTick=0, cnPan=0;
+/* THE VISIBLE FLIP (2026-08-20, Stephen: "doesn't seem like it is even
+   flipping until the very end"). The real spin can run at strobe speed, so
+   the DISPLAYED flip phase (cnShow) is the wagon-wheel version: it advances
+   with the real spin but never faster than ~2.5 face-overs a second. The
+   face marker now swaps heads/tails at every half turn of the displayed
+   phase and stays visible whenever the coin is wide enough to read — so the
+   whole spin reads as a coin turning over and over, without a single
+   full-contrast flash. */
+var cnShow=0, cnShowFace=-1;
 function coinDraw(){
   if(!coinFace) return;
   var up=cnTilt;                                  // 1 on edge, 0 lying flat
-  /* A coin turning at half a radian a frame would show face, edge, face, edge
-     on consecutive frames: a strobe, which this app is not allowed to do to
-     anybody. Real eyes see a fast coin as a blurred disc, so the faster it
-     goes the more the width floor takes over and the flicker never happens.
-     Calm motion holds it at the blur the whole way. */
-  var blur=clamp(Math.abs(cnOmega)/0.016,0,1);
-  if(S.calm) blur=Math.max(blur,0.85);
-  var spinW=Math.max(Math.abs(Math.cos(cnSpin)),blur);
-  var rx=COIN_R*(up>0.5?Math.max(0.06,spinW):1);
+  var spinW=Math.abs(Math.cos(cnShow));
+  var rx=COIN_R*(up>0.5?Math.max(0.08,spinW):1);
   var ry=COIN_R*(0.30+0.70*up);
   var cy=120+(1-up)*34;                           // it comes down as it lies over
   coinFace.setAttribute('rx',rx.toFixed(1)); coinFace.setAttribute('ry',ry.toFixed(1));
@@ -4233,9 +4451,15 @@ function coinDraw(){
   // the rock: strongest as it collapses, gone by the time it is flat
   var rock=Math.sin(cnWob)*up*(1-up)*46;
   coinGrp.setAttribute('transform','rotate('+rock.toFixed(2)+' 100 '+cy.toFixed(1)+')');
-  var showFace=(1-up);
   if(coinMark){
-    coinMark.setAttribute('opacity',(showFace*showFace).toFixed(2));
+    var p=Math.floor(Math.abs(cnShow)/Math.PI)%2;
+    if(cnState==='rest') p=cnFace;
+    if(p!==cnShowFace){ cnShowFace=p; coinMarkFor(p);
+      // the two sides catch the light differently, which sells the turn
+      coinFace.setAttribute('fill', p ? '#D8C075' : '#C9B267');
+    }
+    var vis=cnState==='rest' ? 1 : Math.max(0,(spinW-0.3)/0.7)*(0.35+0.65*(1-up*0.4));
+    coinMark.setAttribute('opacity',vis.toFixed(2));
     coinMark.setAttribute('transform','translate(100,'+cy.toFixed(1)+') scale('+
       (rx/COIN_R).toFixed(3)+',1)');
   }
@@ -4254,6 +4478,11 @@ function coinMarkFor(f){
 }
 coinMarkFor(0);
 function coinFlick(vx){
+  /* No two flicks leave a thumb from the same seam. Without this the total
+     spin quantised (flick speeds saturate, decay is fixed) and the parity
+     came up the SAME face nearly every time — Stephen got twelve heads in a
+     row. The random starting orientation is the honest physical fix. */
+  cnSpin+=Math.random()*Math.PI*2;
   cnOmega=clamp(vx,-0.04,0.04);
   if(Math.abs(cnOmega)<0.006) cnOmega=(cnOmega<0?-1:1)*0.006;
   cnState='spin'; cnTilt=1; cnWob=0;
@@ -4303,6 +4532,7 @@ if(coinSvg){
     cnSpin+=cnOmega*dt;
     cnOmega*=0.993;
     cnWob+=0.05;
+    cnShow+=Math.min(Math.abs(cnOmega)*dt,S.calm?0.13:0.26);   // the visible flip
     if(Math.abs(cnOmega)<0.0075){ cnState='fall'; cnWob=0; cnLastTick=0; }
   }else if(cnState==='fall'){
     /* Euler's disk: as the tilt collapses the contact point circles faster.
@@ -4328,9 +4558,17 @@ if(coinSvg){
                                box.top+box.height*0.62,'#EFD9A0');
       }
     }
+    cnShow+=Math.min(Math.abs(cnOmega)*dt,(S.calm?0.13:0.26))*Math.max(cnTilt,0.15);
     if(cnTilt<=0.02){
       cnTilt=0; cnState='rest';
-      cnFace=(Math.floor(Math.abs(cnSpin)/Math.PI))%2;
+      /* which face: spin half-turns PLUS wobble half-turns. The old parity
+         used the spin alone, and because every flick decays through the same
+         band the total spin clustered on one parity — Stephen got heads
+         nearly every time. The wobble count varies chaotically with the
+         collapse, so folding it in makes the outcome honestly unpredictable
+         while still being deterministic from the flick. */
+      cnFace=(Math.floor(Math.abs(cnSpin)/Math.PI)+Math.floor(Math.abs(cnWob)/Math.PI))%2;
+      cnShowFace=-1;                          // force the mark to repaint
       coinMarkFor(cnFace);
       if(cnVoice){ cnVoice.stop(); cnVoice=null; }
       if(here){

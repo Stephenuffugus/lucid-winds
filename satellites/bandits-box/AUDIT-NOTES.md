@@ -352,3 +352,53 @@ bandit_gear_zoom.mjs, bandit_features_probe.mjs, bandit_retest.mjs).
   portrait letterbox). More gears or a portrait viewBox would fill it.
 - SFX recordings (SFX-SHOT-LIST.md) remain the biggest sound upgrade — now
   plus churr/sneeze/grumble rows.
+
+---
+
+# 2026-08-20 evening — Stephen's second pass (six toys, all rebuilt or deepened)
+
+His reports, verbatim intent -> what shipped. All verified by touch probes
+(scripts/bandit_round2_probe.mjs) plus screenshots read by eye.
+
+1. **Cradle: "grab more than one ball", "grabbing while running resets it",
+   "moves extremely slow", "balls aren't aligned with the frame".** The
+   scripted two-end-ball fake is GONE. Every ball is its own pendulum with
+   contact physics: neighbours exchange velocity on touch (the cradle
+   behaviour emerges instead of being faked), dragging a middle ball shoves
+   the outboard balls along (multi-ball grab), each pointer holds its own
+   ball (two thumbs work), grabbing while running holds THAT ball only, and
+   release velocity throws. Row recentred (42..178 in a 23..197 frame — ball
+   5 used to hang inside the right post) and gravity x12 (~1.3 s period,
+   was 4.5 s). First clack after release: ~62 ms in probe.
+2. **Gears: "add more gears".** Five now, one chain: green 16t -> orange 11t
+   -> purple 13t -> gold 8t, plus blue 10t off orange. Phase solver
+   generalised to walk any MESH tree. Probe ratios exact.
+3. **Edamame: "a bunch more faces, sounds and effects".** Face bank 12 -> 24
+   (heart, dizzy, star, cry, angry, kiss, sprout, sideeye, uwu, vampire,
+   brows, zen), squash-pop animation on the popped bean, confetti bits, and
+   a 1-in-24 GOLDEN bean with a bell.
+4. **Chocolate: "pointless, tap and it disappears".** Now a three-beat
+   ritual: peel the foil (drag, crinkle tracks the finger, flies off past
+   halfway, settles back if released early), SCORE a groove (hairline crack
+   + dry tick), SNAP it (the end of the bar visibly tips off and falls with
+   crumbs and a soft thunk). Fresh bars arrive wrapped. ⛔ TRAP FOUND: the
+   groove's visible line and the score crack sat ON TOP of the transparent
+   hit rect, and svg closest() cannot cross siblings — a tap dead on the
+   line (or on the crack you just scored!) hit decoration and did nothing.
+   Decoration is now pointer-events:none and hit rects are drawn last.
+5. **Rain stick: "pellets actually bouncing off the angled lines, sound
+   based on the particles".** The eleven drawn pins are now real collision
+   geometry: grains carry cross-tube position + velocity, ricochet off pin
+   faces downhill, bounce off the tube walls, and slide across when the
+   tube tips sideways (real lateral gravity). Every ricochet is a pitched
+   tick (per-pin pitch, impact loudness, 34 ms spacing) on top of the flow
+   bed — the sound IS the particles now.
+6. **Coin: "doesn't seem like it's flipping until the end", "only get
+   heads", "looks like crap".** Two real bugs: (a) the face marker was
+   hidden whenever the coin stood on edge and the width was pinned to a
+   blur floor, so the spin read as a static ellipse — there is now a
+   wagon-wheel display phase capped at ~2.5 flips/s with the heads/tails
+   marker swapping every half-turn and a light/dark side tint; (b) flick
+   speeds saturate and the decay is fixed, so total spin QUANTISED and the
+   parity came up heads nearly every time — 12/12 in probe. Each flick now
+   starts from a random seam orientation; 16 identical flicks landed 8/8.
