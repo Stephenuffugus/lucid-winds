@@ -292,3 +292,63 @@ not width). Fingers and screenshots only.
    should be cheap, but it has never run on a real phone.
 7. **The portal card `?v=` still says 20260816a.** It must be bumped on deploy
    or the host serves the old file. That is outside this folder.
+
+---
+
+# 2026-08-20 — Stephen's first hands-on pass (softball sideline testing)
+
+He played it on his phone; the Aug 16 build had never been LOOKED at, and it
+showed. Everything below verified by driving real touch gestures in headless
+Chrome and reading the screenshots (scripts/bandit_touch_probe.mjs,
+bandit_gear_zoom.mjs, bandit_features_probe.mjs, bandit_retest.mjs).
+
+## Fixed, from his reports
+1. **Spinner orbited off screen; spinner and gears turned the wrong way.**
+   `#spinGrp`/`#dialGrp`/gear groups had a CSS `transform-origin` stacked on
+   the `rotate(a cx cy)` attribute; Chrome maps the attribute onto CSS
+   transform, so BOTH pivots applied and everything orbited the bottom-right
+   corner of its viewBox instead of turning in place. Measured: the spinner's
+   centre swept x 101..712 on a 412px screen. A node simulation can never
+   catch this class of bug — it is renderer behaviour.
+2. **Spinner flicks were bearing-tracked**, so a flick near the hub wrapped
+   half a turn and shot off in a random direction. Now torque (r x v) with a
+   floored radius: hub flicks cancel, rim flicks unchanged.
+3. **Gears never meshed** — 3.6 units of daylight between "touching" gears,
+   every gear counter-rotated from the driven one regardless of the chain,
+   and touch coords ignored the letterbox so the wrong gear got picked.
+   Rebuilt: pitch-tangent positions computed from the chain, tooth phases
+   solved at build, rotation propagated by mesh adjacency (far gear
+   co-rotates with the big one), letterbox-correct vbXY() mapping. Ratios
+   verified exact (11/16, 11/13); zoomed screenshots confirm interleave.
+4. **Newton's cradle swung OPPOSITE the pull.** All the maths assumed
+   "positive = ball right" but rotate(+a) about a top pivot swings a hanging
+   ball LEFT; the render was the one place the sign had to flip and did not.
+   Ball now follows the finger (verified +53px screen movement on a
+   rightward pull, full clack cycle at ~1s).
+5. **vbXY() letterbox mapping** also applied to slime, stress ball, spring,
+   rip strip, and the raccoon's drag scale (sand keeps naive mapping on
+   purpose — its preserveAspectRatio is "none").
+
+## Added, per his ask (more activities per toy, better sound)
+- **Cradle impact package:** shock ring at the contact interface, the knock
+  visibly shivers through the middle strings toward the far ball, and the
+  clack now RINGS like steel (two quick inharmonic partials).
+- **Bandit reactions:** three quick nose boops = sneeze (ears kick loose,
+  'achoo'); a belly scribble = tickle (real raccoon churr trill + giggle
+  shake); tail hauled past 85% = a low grumble and a sulk. Calm mode keeps
+  sounds, skips theatrics. New voices churr/sneeze/grumble are in the
+  manifest, ripple and buzz tables — recordings can land later.
+- **Puppet:** slow jaw = a singing register (pentatonic hum ladder up the
+  mouth, glides between notes) so wandering drags come out a tune; fast jaw
+  still yaps. Googly eye pokes: plink + dizzy spin.
+- **Gears:** flywheel coast — release a moving train and it runs down with
+  slowing ticks and whir; grabbing it stops it, same grammar as the spinner.
+- **A small synthetic room** (0.22s convolver, wet 0.15) behind every synth
+  voice so one-shots stop sounding dead-dry. Behind the soften filter, so
+  soft mode darkens the tail too.
+
+## Still open
+- The gear cluster sits small in a tall phone viewport (square viewBox in a
+  portrait letterbox). More gears or a portrait viewBox would fill it.
+- SFX recordings (SFX-SHOT-LIST.md) remain the biggest sound upgrade — now
+  plus churr/sneeze/grumble rows.
