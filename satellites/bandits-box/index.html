@@ -260,7 +260,11 @@ body.squint .lid{transform:scaleY(.62);}
 
 /* ================= SPINNER ================= */
 #spinSvg{width:100%;height:100%;display:block;touch-action:none;}
-#spinGrp{transform-origin:100px 100px;}
+/* NO transform-origin on #spinGrp: the JS rotates with rotate(a 100 100),
+   and Chrome maps that attribute onto CSS transform, so a CSS origin here
+   ADDS to the attribute's own centre and the whole spinner orbits (200,200)
+   clean off the screen. Found by measurement 2026-08-20. Same rule for
+   #dialGrp and the gear groups. */
 .weights{display:flex;gap:8px;justify-content:center;flex:0 0 auto;padding:4px 0 0;}
 .weights button{padding:7px 15px;border-radius:14px;border:1px solid var(--edge);
   background:var(--slate);color:var(--dim);font-size:12px;letter-spacing:.1em;
@@ -289,7 +293,7 @@ body.squint .lid{transform:scaleY(.62);}
 #knobWrap::-webkit-scrollbar{display:none;}
 #dialBox{display:flex;align-items:center;justify-content:center;}
 #dialSvg{width:min(56%,190px);height:auto;touch-action:none;cursor:grab;}
-#dialGrp{transform-origin:60px 60px;}
+/* #dialGrp gets no transform-origin — see the #spinGrp note */
 .toggles{display:flex;gap:14px;justify-content:space-around;}
 .tgl{width:46px;height:74px;border-radius:12px;background:#221D2E;border:1px solid var(--edge);
   position:relative;cursor:pointer;padding:0;box-shadow:inset 0 2px 6px rgba(0,0,0,.5);}
@@ -1658,7 +1662,10 @@ var holdAmt=0, holdVoice=null;
 
 function svgScale(){
   var r=coon.getBoundingClientRect();
-  return r.width ? (200/r.width) : 1;   // px -> viewBox units
+  if(!r.width||!r.height) return 1;
+  // px -> viewBox units through the uniform "meet" scale, so a pull feels
+  // the same length whether the svg is width- or height-constrained
+  return 1/Math.min(r.width/200, r.height/236);
 }
 function applyPull(name){
   var st=pullState[name], cfg=PULLS[name];
@@ -2391,20 +2398,31 @@ var WEIGHTS={
   heavy :{drag:0.9976, whirLo:120, whirHi:1050, tickF:1000, tickG:0.15, blur:150}
 };
 var spinW='medium', spinAng=0, spinOmega=0, spinDown=false;
-var spinLastAng=null, spinLastT=0, spinLobe=0, spinTickT=0, spinVoice=null, spinLastFrame=0;
+var spinLastX=0, spinLastY=0, spinMinR=40;
+var spinLastT=0, spinLobe=0, spinTickT=0, spinVoice=null, spinLastFrame=0;
 
 function spinCenter(){
   var r=spinSvg.getBoundingClientRect();
   return {x:r.left+r.width/2, y:r.top+r.height/2};
 }
-function angleTo(cx,cy,x,y){ return Math.atan2(y-cy,x-cx); }
-function shortAngle(a){ while(a>Math.PI)a-=2*Math.PI; while(a<-Math.PI)a+=2*Math.PI; return a; }
+/* Letterbox-correct client->viewBox mapping for any "xMidYMid meet" svg.
+   Dividing by the raw rect width and height stretches the touch space on a
+   portrait phone (the gear you touched was not the gear the code picked).
+   This maps through the uniform scale the browser actually drew with. */
+function vbXY(svg,vw,vh,e){
+  var r=svg.getBoundingClientRect();
+  if(!r.width||!r.height) return {x:vw/2,y:vh/2};
+  var s=Math.min(r.width/vw,r.height/vh);
+  var ox=r.left+(r.width-vw*s)/2, oy=r.top+(r.height-vh*s)/2;
+  return {x:(e.clientX-ox)/s, y:(e.clientY-oy)/s};
+}
 
 spinSvg.addEventListener('pointerdown', safe(function(e){
   try{ spinSvg.setPointerCapture(e.pointerId); }catch(err){}
   spinDown=true;
-  var c=spinCenter();
-  spinLastAng=angleTo(c.x,c.y,e.clientX,e.clientY);
+  var r=spinSvg.getBoundingClientRect();
+  spinMinR=Math.min(r.width,r.height)*0.15;
+  spinLastX=e.clientX; spinLastY=e.clientY;
   spinLastT=performance.now();
   // grabbing a spinning one stops it dead, same as in real life
   if(Math.abs(spinOmega)>0.004){ feel('thunk',e.clientX,e.clientY); spinOmega=0; }
@@ -2413,16 +2431,26 @@ spinSvg.addEventListener('pointerdown', safe(function(e){
     Q:5.5,gain:0.15,body:220,bodyMix:0.5,keep:true});
 }));
 spinSvg.addEventListener('pointermove', safe(function(e){
-  if(!spinDown||spinLastAng===null) return;
+  if(!spinDown) return;
   var c=spinCenter(), now=performance.now();
-  var a=angleTo(c.x,c.y,e.clientX,e.clientY);
-  var d=shortAngle(a-spinLastAng), dt=Math.max(8,now-spinLastT);
+  var dt=Math.max(8,now-spinLastT);
+  /* Torque, not angle-tracking. The old code followed the pointer's bearing
+     from the hub, so a flick that passed NEAR the hub jumped half a turn in
+     one event and the spinner shot off in whichever direction the wrap
+     landed. r x v gives the true signed spin for any straight flick, and a
+     swipe straight through the middle now cancels itself out like a real
+     bearing would. The radius is floored because direction genuinely is
+     ambiguous right on the hub. */
+  var rx=e.clientX-c.x, ry=e.clientY-c.y;
+  var dx=e.clientX-spinLastX, dy=e.clientY-spinLastY;
+  var rr=Math.max(rx*rx+ry*ry, spinMinR*spinMinR);
+  var d=(rx*dy-ry*dx)/rr;
   spinAng+=d;
   spinOmega=spinOmega*0.35+(d/dt)*0.65;      // rad per ms
-  spinLastAng=a; spinLastT=now;
+  spinLastX=e.clientX; spinLastY=e.clientY; spinLastT=now;
   setGlow(true,e.clientX,e.clientY,clamp(Math.abs(spinOmega)/0.03,0,1));
 }));
-function spinUp(){ spinDown=false; spinLastAng=null; setGlow(false); }
+function spinUp(){ spinDown=false; setGlow(false); }
 spinSvg.addEventListener('pointerup',safe(spinUp));
 spinSvg.addEventListener('pointercancel',safe(spinUp));
 
@@ -2788,11 +2816,7 @@ function slimePath(){
   slimeShine.setAttribute('d','M'+(mx-20).toFixed(1)+','+(my-18).toFixed(1)+
     ' q10,-11 22,-3 q-8,11 -22,3 Z');
 }
-function slimeXY(e){
-  var r=slimeSvg.getBoundingClientRect();
-  if(!r.width) return {x:100,y:100};
-  return {x:(e.clientX-r.left)/r.width*200, y:(e.clientY-r.top)/r.height*200};
-}
+function slimeXY(e){ return vbXY(slimeSvg,200,200,e); }
 slimeSvg.addEventListener('pointerdown',safe(function(e){
   slimeDown=true; try{ slimeSvg.setPointerCapture(e.pointerId); }catch(err){}
   slimeTarget=slimeXY(e);
@@ -2863,20 +2887,42 @@ $$('.slimebar button').forEach(function(btn){
    the right direction. One click per tooth that passes.
    ========================================================== */
 var gearSvg=$('#gearSvg');
+/* A real gear train this time. The old layout put gear 0 and gear 1
+   71.6 units apart with 68 of combined radius — nothing touched anything,
+   every gear span opposite the one you dragged regardless of the chain, and
+   an inline transform-origin doubled the rotate() centre so they orbited
+   instead of turning. Now: pitch circles genuinely tangent (pitch radius =
+   0.87 x outer, positions computed from that), tooth phases solved at build
+   time so the teeth interleave at rest, and rotation propagates through the
+   MESH chain at tooth ratio — turn the big one and the far one turns WITH
+   it, because the middle one is between them. */
 var GEARS=[
-  {cx:70, cy:78, teeth:16, r:40, col:'#9FD6C0', ang:0},
-  {cx:135,cy:108,teeth:11, r:28, col:'#F2B79E', ang:0},
-  {cx:78, cy:150,teeth:13, r:33, col:'#C3B0E0', ang:0}
+  {cx:60.0, cy:74.0, teeth:16, r:40, col:'#9FD6C0', ang:0, ang0:0},
+  {cx:0,    cy:0,    teeth:11, r:28, col:'#F2B79E', ang:0, ang0:0},
+  {cx:0,    cy:0,    teeth:13, r:33, col:'#C3B0E0', ang:0, ang0:0}
 ];
+var MESH=[[0,1],[1,2]];   // who actually touches whom
+/* Chain layout, computed rather than hand-placed: gear 1 sits 20 degrees
+   below-right of gear 0, gear 2 at 110 degrees off gear 1. Separation is
+   pitch-tangent plus a little backlash, because these are straight-sided
+   cartoon teeth, not involutes, and at full depth their corners clip as
+   they enter the mesh. */
+(function placeGears(){
+  var pr=function(g){ return g.r*0.87; }, SEP=2.5;
+  var a01=20*Math.PI/180, a12=110*Math.PI/180;
+  var d01=pr(GEARS[0])+pr(GEARS[1])+SEP, d12=pr(GEARS[1])+pr(GEARS[2])+SEP;
+  GEARS[1].cx=GEARS[0].cx+Math.cos(a01)*d01; GEARS[1].cy=GEARS[0].cy+Math.sin(a01)*d01;
+  GEARS[2].cx=GEARS[1].cx+Math.cos(a12)*d12; GEARS[2].cy=GEARS[1].cy+Math.sin(a12)*d12;
+})();
 function gearPath(g){
   var d='',i,n=g.teeth,inner=g.r*0.74,outer=g.r;
   for(i=0;i<n;i++){
     var a0=(i/n)*Math.PI*2, step=(Math.PI*2/n);
     var pts=[
       [a0,               outer],
-      [a0+step*0.30,     outer],
-      [a0+step*0.42,     inner],
-      [a0+step*0.88,     inner]
+      [a0+step*0.27,     outer],
+      [a0+step*0.40,     inner],
+      [a0+step*0.90,     inner]
     ];
     pts.forEach(function(p,k){
       var x=g.cx+Math.cos(p[0])*p[1], y=g.cy+Math.sin(p[0])*p[1];
@@ -2885,11 +2931,33 @@ function gearPath(g){
   }
   return d+'Z';
 }
+function drawGears(){
+  for(var i=0;i<GEARS.length;i++){
+    var el=document.getElementById('gear'+i), g=GEARS[i];
+    if(el) el.setAttribute('transform','rotate('+((g.ang0+g.ang)*180/Math.PI).toFixed(2)+
+      ' '+g.cx+' '+g.cy+')');
+  }
+}
 (function buildGears(){
+  /* Solve the rest phases so teeth interleave along each line of centres.
+     Tooth centres sit at ang0+(k+0.15)*step, gap centres at ang0+(k+0.65)*step
+     (that is just where gearPath puts them). Gear 0 aims a tooth at gear 1,
+     gear 1 answers with a gap; then gear 2's phase is corrected for how far
+     gear 1's nearest tooth actually sits from the 1-2 centre line. */
+  var g0=GEARS[0], g1=GEARS[1], g2=GEARS[2];
+  var st0=2*Math.PI/g0.teeth, st1=2*Math.PI/g1.teeth, st2=2*Math.PI/g2.teeth;
+  var f01=Math.atan2(g1.cy-g0.cy,g1.cx-g0.cx);
+  g0.ang0=f01-0.135*st0;
+  g1.ang0=(f01+Math.PI)-0.65*st1;
+  var f12=Math.atan2(g2.cy-g1.cy,g2.cx-g1.cx);
+  var t=g1.ang0+0.135*st1;                      // a tooth centre of gear 1
+  var k=Math.round((f12-t)/st1);
+  var delta=(t+k*st1)-f12;                       // signed miss at the 1-2 line
+  g2.ang0=(f12+Math.PI)-0.65*st2-delta*(g1.teeth/g2.teeth);
   var s='',i;
   for(i=0;i<GEARS.length;i++){
     var g=GEARS[i];
-    s+='<g id="gear'+i+'" style="transform-origin:'+g.cx+'px '+g.cy+'px">'+
+    s+='<g id="gear'+i+'">'+
        '<path d="'+gearPath(g)+'" fill="'+g.col+'"/>'+
        '<circle cx="'+g.cx+'" cy="'+g.cy+'" r="'+(g.r*0.34).toFixed(1)+'" fill="#272233"/>'+
        '<circle cx="'+g.cx+'" cy="'+g.cy+'" r="'+(g.r*0.16).toFixed(1)+'" fill="#7A7389"/>'+
@@ -2898,13 +2966,26 @@ function gearPath(g){
   }
   s+='<circle id="gearHit" cx="100" cy="100" r="100" fill="transparent"/>';
   gearSvg.innerHTML=s;
+  drawGears();
 })();
-var gearDown=false, gearLast=null, gearTooth=0, gearDrag=0, gearVoice=null;
-function gearXY(e){
-  var r=gearSvg.getBoundingClientRect();
-  if(!r.width) return {x:100,y:100};
-  return {x:(e.clientX-r.left)/r.width*200,y:(e.clientY-r.top)/r.height*200};
+function gearTurn(from,d){
+  // rotation runs down the chain: each mesh partner counter-rotates at ratio
+  var seen={}, queue=[[from,d]];
+  seen[from]=true;
+  while(queue.length){
+    var it=queue.shift(), i=it[0], di=it[1], m, j;
+    for(m=0;m<MESH.length;m++){
+      j = MESH[m][0]===i ? MESH[m][1] : (MESH[m][1]===i ? MESH[m][0] : -1);
+      if(j<0||seen[j]) continue;
+      seen[j]=true;
+      var dj=-di*(GEARS[i].teeth/GEARS[j].teeth);
+      GEARS[j].ang+=dj;
+      queue.push([j,dj]);
+    }
+  }
 }
+var gearDown=false, gearLast=null, gearTooth=0, gearDrag=0, gearVoice=null;
+function gearXY(e){ return vbXY(gearSvg,200,200,e); }
 gearSvg.addEventListener('pointerdown',safe(function(e){
   var p=gearXY(e), i, best=-1, bd=1e9;
   for(i=0;i<GEARS.length;i++){
@@ -2926,18 +3007,9 @@ gearSvg.addEventListener('pointermove',safe(function(e){
   var d=a-gearLast; while(d>Math.PI)d-=2*Math.PI; while(d<-Math.PI)d+=2*Math.PI;
   gearLast=a;
   g.ang+=d;
-  // everything else turns from the driven gear, opposite way, by tooth ratio
-  var i;
-  for(i=0;i<GEARS.length;i++){
-    if(i===gearDrag) continue;
-    GEARS[i].ang -= d*(g.teeth/GEARS[i].teeth);
-  }
-  for(i=0;i<GEARS.length;i++){
-    var el=document.getElementById('gear'+i);
-    if(el) el.setAttribute('transform','rotate('+(GEARS[i].ang*180/Math.PI).toFixed(2)+
-      ' '+GEARS[i].cx+' '+GEARS[i].cy+')');
-  }
-  var sp=clamp(Math.abs(d)*9,0,1), pan=(e.clientX/window.innerWidth)*2-1;
+  gearTurn(gearDrag,d);
+  drawGears();
+  var i, sp=clamp(Math.abs(d)*9,0,1), pan=(e.clientX/window.innerWidth)*2-1;
   if(gearVoice) gearVoice.set(sp,0.7,pan);
   setGlow(true,e.clientX,e.clientY,sp);
   var tooth=Math.round(g.ang/(Math.PI*2/g.teeth));
@@ -3062,11 +3134,7 @@ function drawCradle(){
     el.setAttribute('transform','rotate('+(a*180/Math.PI).toFixed(2)+' '+x+' '+CR_TOP+')');
   }
 }
-function cradleXY(e){
-  var r=cradleSvg.getBoundingClientRect();
-  if(!r.width) return {x:110,y:120};
-  return {x:(e.clientX-r.left)/r.width*220,y:(e.clientY-r.top)/r.height*240};
-}
+function cradleXY(e){ return vbXY(cradleSvg,220,240,e); }
 cradleSvg.addEventListener('pointerdown',safe(function(e){
   var p=cradleXY(e);
   if(p.x<110){ crDrag='L'; crVL=0; } else { crDrag='R'; crVR=0; }
@@ -3146,8 +3214,7 @@ function drawSpring(){
 springSvg.addEventListener('pointerdown',safe(function(e){
   spDown=true; spVel=0;
   try{ springSvg.setPointerCapture(e.pointerId); }catch(err){}
-  var r=springSvg.getBoundingClientRect();
-  spStart=r.height?((e.clientY-r.top)/r.height*300):spLen;
+  spStart=vbXY(springSvg,200,300,e).y;
   spStartLen=spLen;
   if(spVoice) spVoice.stop();
   spVoice=Stretch({f0:150,rise:1.1,gain:0.13});
@@ -3155,8 +3222,7 @@ springSvg.addEventListener('pointerdown',safe(function(e){
 }));
 springSvg.addEventListener('pointermove',safe(function(e){
   if(!spDown) return;
-  var r=springSvg.getBoundingClientRect(); if(!r.height) return;
-  var y=(e.clientY-r.top)/r.height*300;
+  var y=vbXY(springSvg,200,300,e).y;
   spLen=clamp(spStartLen+(y-spStart),110,285);
   drawSpring();
   var t=clamp(Math.abs(spLen-SP_REST)/110,0,1);
@@ -3380,10 +3446,7 @@ function drawPeri(){
   periTornTop.setAttribute('d', periX>1?jagged(86,-1,x2):'');
   periTornBot.setAttribute('d', periX>1?jagged(114,1,x2):'');
 }
-function periXY(e){
-  var r=periSvg.getBoundingClientRect();
-  return r.width?((e.clientX-r.left)/r.width*300):150;
-}
+function periXY(e){ return vbXY(periSvg,300,200,e).x; }
 periSvg.addEventListener('pointerdown',safe(function(e){
   if(periLock) return;
   periDown=true;
@@ -3559,11 +3622,7 @@ var ballSvg=$('#ballSvg'), ballBlob=$('#ballBlob'), ballShine=$('#ballShine');
 var BALL_N=30, ballPts=[], ballTouch={}, ballVoice=null;
 (function(){ for(var i=0;i<BALL_N;i++)
   ballPts.push({a:i/BALL_N*Math.PI*2,dx:0,dy:0,vx:0,vy:0}); })();
-function ballXY(e){
-  var r=ballSvg.getBoundingClientRect();
-  if(!r.width) return {x:100,y:100};
-  return {x:(e.clientX-r.left)/r.width*200,y:(e.clientY-r.top)/r.height*200};
-}
+function ballXY(e){ return vbXY(ballSvg,200,200,e); }
 function drawBall(){
   var pts=[],i,p,x,y;
   for(i=0;i<BALL_N;i++){
@@ -4509,7 +4568,7 @@ loadS().then(function(){ applyS();
   if(location.protocol==='file:') return;
   if(!('serviceWorker' in navigator)) return;
   window.addEventListener('load',function(){
-    try{ navigator.serviceWorker.register('./sw.js?v=1'); }catch(e){}
+    try{ navigator.serviceWorker.register('./sw.js?v=2'); }catch(e){}
   });
 })();
 </script>
