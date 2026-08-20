@@ -293,6 +293,41 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;font-v
 
 /* result screen */
 #resTitle{font-size:30px;font-weight:800;letter-spacing:.02em}
+/* ---- staged drama (2026-08-20, Stephen: "everything happens instantly...
+   draw it out, create dramatic effect"). Every beat below is skipped
+   entirely under reduced motion (body.calm). ---- */
+@keyframes dwRise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes dwDrop{from{opacity:0;transform:translateY(-18px)}to{opacity:1;transform:none}}
+#resOvl.reveal #resTitle{animation:dwDrop .5s .1s both}
+#resOvl.reveal #resSub{animation:dwRise .45s .35s both}
+#resOvl.reveal #resBig{animation:dwRise .5s .55s both}
+#resOvl.reveal #manifest{animation:dwRise .45s .7s both}
+#resOvl.reveal .mline{opacity:0;animation:dwRise .4s both}
+#resOvl.reveal #resKnife{opacity:0;animation:dwRise .6s both}
+#resOvl.reveal #resLog{opacity:0;animation:dwRise .5s both}
+#resOvl.reveal .btnrow{opacity:0;animation:dwRise .5s both}
+#dwFade{position:fixed;inset:0;z-index:60;pointer-events:none}
+#dwFade.death{background:radial-gradient(120% 100% at 50% 60%, rgba(60,8,4,.85), #000 75%);animation:dwFadeIn .5s both}
+#dwFade.up{background:linear-gradient(0deg, rgba(240,167,66,0) 0%, rgba(240,167,66,.28) 45%, rgba(255,235,190,.55) 100%);animation:dwSweep .55s both}
+@keyframes dwFadeIn{from{opacity:0}to{opacity:1}}
+@keyframes dwSweep{from{opacity:0;transform:translateY(40%)}to{opacity:1;transform:none}}
+#dwLower{position:fixed;inset:0;z-index:70;background:#050403;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+#dwLower .rope{width:2px;height:34vh;background:linear-gradient(#7a5c33,#3a2c18);transform-origin:top;animation:dwRope .8s linear both}
+@keyframes dwRope{from{transform:scaleY(.2)}to{transform:scaleY(1)}}
+#dwLower .word{font-weight:800;letter-spacing:.24em;color:#f0a742;font-size:13px;animation:dwRise .5s .15s both}
+#runScreen.jolt{animation:dwJolt .16s}
+@keyframes dwJolt{25%{transform:translate(2px,-2px)}50%{transform:translate(-2px,1px)}75%{transform:translate(1px,2px)}}
+/* dust hanging in the lamp light */
+#shaft .dwdust{position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(1.5px 1.5px at 20% 30%,rgba(240,200,140,.22),transparent 60%),radial-gradient(1px 1px at 70% 60%,rgba(240,200,140,.18),transparent 60%),radial-gradient(1.2px 1.2px at 40% 80%,rgba(240,200,140,.15),transparent 60%),radial-gradient(1px 1px at 85% 20%,rgba(240,200,140,.13),transparent 60%);animation:dwDust 9s linear infinite alternate}
+@keyframes dwDust{from{transform:translateY(-12px)}to{transform:translateY(12px)}}
+body.calm #resOvl .mline,body.calm #resOvl #resKnife,body.calm #resOvl #resLog,body.calm #resOvl .btnrow{opacity:1;animation:none}
+body.calm #shaft .dwdust{animation:none}
+.mline.tip{color:#f0a742;font-size:12px;letter-spacing:.04em;border-top:1px solid rgba(240,167,66,.25);margin-top:6px;padding-top:6px}
+.permline{color:#f0a742;font-weight:800;letter-spacing:.14em;font-size:12px;text-align:center;margin:2px 0 10px}
+.ladder .lrow{display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-top:1px solid rgba(255,255,255,.05);font-size:13px}
+.ladder .lrow:first-of-type{border-top:0}
+.ladder .lrow.hit{color:#e8dcc8}.ladder .lrow.unhit{color:#6f675c}
+.ladder .ld{font-weight:800;min-width:52px}
 #resSub{font-size:14px;color:var(--muted);margin-top:3px}
 #manifest .mline{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid rgba(42,47,60,.6);font-size:14.5px}
 #manifest .mline .v{margin-left:auto;font-weight:800}
@@ -347,6 +382,7 @@ input[type=range]{width:100%;height:48px;accent-color:#f0a742;background:transpa
     <div id="shaft">
       <div id="shaftBand"></div>
       <div id="shaftScroll"></div>
+      <div class="dwdust"></div>
     </div>
 
     <header id="hud">
@@ -407,6 +443,7 @@ input[type=range]{width:100%;height:48px;accent-color:#f0a742;background:transpa
       </div>
       <div id="shopTracks"></div>
       <div class="card" id="dailyCard"></div>
+      <div class="card ladder" id="descentCard"></div>
       <div style="height:8px"></div>
     </div>
     <div class="stickybar">
@@ -2822,6 +2859,29 @@ function openShrine() {
   pad([146.83, 220, 261.63], 0.6, 1.4);
 }
 
+/* ---- drama helpers (2026-08-20) ---- */
+function dwCalm() { try { return G.save.settings.motion === 'on' || REDUCED; } catch (e) { return false; } }
+function dwFlash(kind, ms) {
+  if (!ms) return;
+  var f = document.createElement('div'); f.id = 'dwFade'; f.className = kind;
+  document.body.appendChild(f);
+  setTimeout(function () { f.remove(); }, ms + 300);
+}
+function dwCount(el, to, calm) {
+  if (calm || !(to > 0)) { el.textContent = to; return; }
+  var t0 = performance.now(), dur = 850;
+  (function tick() {
+    var p = Math.min(1, (performance.now() - t0) / dur);
+    el.textContent = Math.round(to * (1 - Math.pow(1 - p, 3)));
+    if (p < 1) requestAnimationFrame(tick);
+  })();
+}
+function dwJolt() {
+  if (dwCalm()) return;
+  var r = document.getElementById('runScreen');
+  r.classList.remove('jolt'); void r.offsetWidth; r.classList.add('jolt');
+}
+
 /* ---- result screen, the knife ---- */
 function openResult() {
   var st = G.run, o = st.over, s = G.save;
@@ -2834,6 +2894,7 @@ function openResult() {
     for (k in kept) html += '<div class="mline kept"><span>' + keptN[k] + ' ' + k + '</span><span class="v">' + kept[k] + '</span></div>';
     if (st.cash) html += '<div class="mline kept"><span>cash found below</span><span class="v">' + st.cash + '</span></div>';
     if (!html) html = '<div class="tiny">You came back with nothing but your lamp.</div>';
+    html += '<div class="mline tip">Banked for good. The outfitter up top sells PERMANENT gear.</div>';
     $('resTitle').textContent = 'SURFACED';
     $('resSub').textContent = 'Deepest this run ' + o.maxDepth + 'm';
     $('resKnife').textContent = '';
@@ -2841,6 +2902,8 @@ function openResult() {
     for (k in man) html += '<div class="mline lost"><span>' + manW[k] + ' ' + k + '</span><span class="v">' + man[k] + '</span></div>';
     if (st.cash) html += '<div class="mline kept"><span>cash found below, kept</span><span class="v">' + st.cash + '</span></div>';
     if (!Object.keys(man).length) html = '<div class="tiny">You were carrying nothing. Small mercy.</div>';
+    html += '<div class="mline tip">What you banked survives you. It buys PERMANENT gear at the surface.</div>';
+    if (o.reason !== 'collapse') html += '<div class="mline tip">Digging sips air. CLIMBING drinks it, and a heavy pack drinks fastest. Turn while the bar is honest.</div>';
     $('resTitle').textContent = o.reason === 'collapse' ? 'THE ROOF CAME DOWN' : 'THE AIR RAN OUT';
     $('resSub').textContent = o.reason === 'collapse' ? 'No braces left at ' + o.depth + 'm' : 'You stopped climbing at ' + (o.diedAt || 0) + 'm';
     var worst = null;
@@ -2849,13 +2912,30 @@ function openResult() {
   }
   $('manifest').innerHTML = html;
   setOdo($('resBig'), 0, 1);
-  $('resBig').textContent = o.banked;
   var logHtml = '';
   for (i = 0; i < st.log.length; i++) logHtml += st.log[i].s + '<br>';
   $('resLog').innerHTML = logHtml;
-  $('resOvl').classList.remove('hide');
-  if (o.reason === 'surfaced') { pad([146.83, 174.61, 220], 0.05, 1.2); haptic(25); }
-  else { noiseBurst(0.7, 320, 0.6); pluck(73.4, 1.2, 'sine'); haptic([30, 40, 80]); }
+  /* the reveal is a SEQUENCE now: a beat of dark (or rising light), the
+     verdict, the payout counting itself up, the manifest line by line, and
+     the knife last. Reduced motion gets the old instant screen. */
+  $('shrineOvl').classList.add('hide');   /* the mountain outranks the shrine */
+  var calm = dwCalm(), death = o.reason !== 'surfaced';
+  var hold = calm ? 0 : (death ? 620 : 460);
+  dwFlash(death ? 'death' : 'up', hold);
+  if (death) { noiseBurst(0.7, 320, 0.6); pluck(73.4, 1.2, 'sine'); haptic([30, 40, 80]); }
+  setTimeout(function () {
+    var ovl = $('resOvl');
+    ovl.classList.remove('reveal');
+    ovl.classList.remove('hide');
+    if (!calm) { void ovl.offsetWidth; ovl.classList.add('reveal'); }
+    var lines = ovl.querySelectorAll('.mline'), li;
+    for (li = 0; li < lines.length; li++) lines[li].style.animationDelay = (0.75 + li * 0.09) + 's';
+    $('resKnife').style.animationDelay = (0.9 + lines.length * 0.09) + 's';
+    $('resLog').style.animationDelay = (1.0 + lines.length * 0.09) + 's';
+    var br = ovl.querySelector('.btnrow'); if (br) br.style.animationDelay = (1.05 + lines.length * 0.09) + 's';
+    if (!death) { pad([146.83, 174.61, 220], 0.05, 1.2); haptic(25); }
+    dwCount($('resBig'), o.banked, calm);
+  }, hold);
 }
 
 /* ---- shop ---- */
@@ -2904,6 +2984,7 @@ function renderShop() {
   renderInstallRow();
   var s = G.save, html = '', i, k;
   $('cashBig').textContent = s.cash;
+  var perm = '<div class="permline">PERMANENT GEAR &middot; BOUGHT ONCE, KEPT FOREVER</div>';
   $('bestLine').textContent = s.stats.runs ? (s.stats.runs + ' runs, deepest ' + s.best.depth + 'm, best haul ' + s.best.banked) : 'no runs yet';
   for (i = 0; i < CONFIG.SHOP_ORDER.length; i++) {
     k = CONFIG.SHOP_ORDER[i];
@@ -2913,13 +2994,24 @@ function renderShop() {
       '<button class="buy ' + (isFinite(cost) && s.cash >= cost ? 'can' : '') + '" data-buy="' + k + '"' + (isFinite(cost) && s.cash >= cost ? '' : ' disabled') + '>' +
       (isFinite(cost) ? cost : 'MAXED') + '<small>' + (isFinite(cost) ? 'CASH' : 'DONE') + '</small></button></div>';
   }
-  $('shopTracks').innerHTML = html;
+  $('shopTracks').innerHTML = perm + html;
   var d = new Date(), ds = d.toISOString().slice(0, 10);
   var done = s.daily && s.daily.last === ds;
   $('dailyCard').innerHTML = '<div class="row"><div class="grow"><b>THE DAILY SHAFT</b><div class="tiny">Same well for everybody, fixed kit. ' +
     (done ? 'Today you banked ' + s.daily.best + '.' : 'Not dug today.') + (s.daily && s.daily.streak > 1 ? ' Streak ' + s.daily.streak + '.' : '') +
     '</div></div><button class="btn" id="btnDaily" style="min-width:110px">' + (done ? 'AGAIN' : 'DIG IT') + '</button></div>';
   $('btnDaily').onclick = function () { startRun(dailySeedFor(ds), CONFIG.DAILY_LOADOUT, true); };
+  /* THE DESCENT: what the well is hiding, and how far you have made it.
+     Unreached landmarks stay ????? on purpose — the mystery IS the goal
+     (2026-08-20, Stephen: "what are we building up towards?"). */
+  var lh = '<b>THE DESCENT</b><div class="tiny" style="margin:2px 0 6px">What the well is hiding. Your deepest stands at ' + s.best.depth + 'm.</div>';
+  for (i = 0; i < DEEPS.length; i++) {
+    var D = DEEPS[i], hit = s.best.depth >= D.depth;
+    lh += '<div class="lrow ' + (hit ? 'hit' : 'unhit') + '"><span class="ld">' + D.depth + 'm</span><span class="grow" style="text-align:left">' +
+      (hit ? D.name : '?????') + '</span><span>' + (hit ? '&#10003;' : '') + '</span></div>';
+  }
+  lh += '<div class="lrow unhit"><span class="ld">&#8595;</span><span class="grow" style="text-align:left">The well keeps going.</span><span></span></div>';
+  $('descentCard').innerHTML = lh;
 }
 function renderLog() {
   var s = G.save, html = '', i;
@@ -2983,6 +3075,7 @@ function handleEvent(e, beforeDepth) {
       pluck(587.33, 0.9, 'sine'); haptic(25); toast('DEEPER THAN YOU HAVE EVER BEEN');
     }
   } else if (e.t === 'mine') {
+    dwJolt();
     var tier = e.haul.length ? e.haul[0].tier : 1;
     noiseBurst(0.12, 500 + tier * 700, 0.5);
     pluck(146.83 * Math.pow(2, (tier - 1) / 6), 0.25);
@@ -3040,10 +3133,24 @@ function startRun(seed, upg, daily) {
   G.daily = !!daily;
   G.save = commitSave(store(), function (sv) { sv.run = G.run; });
   $('shopScreen').classList.add('hide');
-  $('runScreen').classList.remove('hide');
   $('resOvl').classList.add('hide');
-  render();
-  stampBand(bandAt(0).name);
+  if (!dwCalm()) {
+    /* the winch: one beat of rope before the rock takes you */
+    var L = document.createElement('div'); L.id = 'dwLower';
+    L.innerHTML = '<div class="rope"></div><div class="word">THE WINCH TAKES YOU DOWN</div>';
+    document.body.appendChild(L);
+    pluck(87, 0.9, 'sine'); noiseBurst(0.3, 500, 0.25); haptic(15);
+    setTimeout(function () {
+      L.remove();
+      $('runScreen').classList.remove('hide');
+      render();
+      stampBand(bandAt(0).name);
+    }, 850);
+  } else {
+    $('runScreen').classList.remove('hide');
+    render();
+    stampBand(bandAt(0).name);
+  }
 }
 function finishRun() {
   var st = G.run, o = st.over;
@@ -3258,6 +3365,7 @@ function syncOpts() {
   function sw(id, on) { var e = $(id); e.className = 'switch ' + (on ? 'on' : 'off'); e.textContent = on ? 'ON' : 'OFF'; }
   sw('optSound', s.sound); sw('optHap', s.haptics); sw('optTone', s.tone); sw('optConfirm', s.confirm);
   sw('optMotion', s.motion === 'on' || REDUCED);
+  document.body.classList.toggle('calm', s.motion === 'on' || REDUCED);
   $('optVol').value = Math.round(s.vol * 100);
   $('optSeed').textContent = 'SEED ' + (G.run ? G.run.seed : (G.seedOverride || 'random each run'));
   $('optVer').textContent = 'DEEPWELL build 20260816a';
