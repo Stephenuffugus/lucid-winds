@@ -1,5 +1,31 @@
 # FLOCK THE WORLD (FTW) — HANDOFF
 
+## Aug 20 pass (Stephen's playtest notes, ?v=20260820a)
+- **Title**: FLOCK amber / THE teal / WORLD red, initials enlarged + glowing so FTW reads.
+- **Map first**: HUD floats OVER the map (absolute, translucent; single row in landscape);
+  camera starts CONTAIN-fit (whole map visible, `v.containZ`, HUD height reserved via `v.insetEl`);
+  FIT button = whole map; portrait phones get a dismissible rotate-to-landscape hint (once per load).
+- **Menus pause**: openSheet stashes speed + setSpeed(0), closeSheet restores; pill shows PAUSED.
+  Event/doctrine/tutorial modals already paused.
+- **Wire**: continuous marquee ticker (~75px/s, content swaps only at loop seam), replaces the 4.3s flip.
+- **Enemy meter renamed Patriotism** (CRISIS mode still "Coalition"; internal var stays s.oversight).
+- **Explained in-UI**: World tab carries two legend cards (bars with ▲ fill / ▼ keep-low markers,
+  full words incl. MILITARY; what Enter/Agitate/Crackdown/Blackout/Concede do); action buttons carry
+  title tooltips + live prices; country tip explains how unsigned regions join.
+- **Every spend answers back**: sheet toast ("Spent $X · effect") + cash flashes red. Blackout now has
+  a 14d visible suppression window (NEWS DARK chip counts down) + 16d cooldown.
+- **Economy rebuilt** (money was pointless in minutes, 175 hoarded influence bought the whole shop):
+  coverage pays UPKEEP (upkeepK vs incomeK, scaled by militarization); action/event prices scale with
+  daily net income (aPrice/evScale, min old base); market entry scales with markets held (entryScale);
+  node prices inflate 3% per owned node; bubbles scale with net so they stay worth tapping;
+  LOBBYING BLITZ (World tab) converts cash to influence (15d cd, +0.4 patriotism) = late-game sink.
+- **Synergies 8 → 16** (new: skyanchor, hallmon, shotgun, fineprint, nonewfriends, curfewplus, oncue,
+  welcomemat); Feed tab now has a ledger: found ones named, 5 SEALED slots with hints, rest dark.
+- Balance (live-engine sims, ftw_balance harness + check.js): balanced Vendor bot with concede
+  10/10 WINS day ~1060-1140 at patriotism 33-50; human-greedy (100% bubbles) wins ~day 970 holding
+  $370-1150 through day 400 (was $40k+); dep rush still loses; do nothing still loses.
+- check.js: 57 checks; balanced bot now models concede (intended play, deflakes the gate).
+
 ## Aug 15 studio adoption round (?v=20260815b)
 - Branding typo fixed: "Sky Walk Studio presents" → "Sky Wolf Studios
   presents" (Stephen confirmed typo).

@@ -178,7 +178,20 @@ if (C) {
   const REGIONS = get('REGIONS'), NODES = get('NODES'), COMBOS = get('COMBOS');
   ok('14 regions defined', REGIONS.length === 14, 'got ' + REGIONS.length);
   ok('45 skill nodes defined', NODES.length >= 40, 'got ' + NODES.length);
-  ok('8 hidden synergies defined', COMBOS.length === 8, 'got ' + COMBOS.length);
+  ok('16 synergies defined (8 original + 8 of 2026-08-20)', COMBOS.length === 16, 'got ' + COMBOS.length);
+  ok('every synergy need refers to real nodes', COMBOS.every(c => c.need.every(id => NODES.some(n => n.id === id))),
+     COMBOS.filter(c => !c.need.every(id => NODES.some(n => n.id === id))).map(c => c.id).join(','));
+  ok('some synergies carry a hint, most stay dark', COMBOS.filter(c => c.hint).length >= 3 && COMBOS.filter(c => !c.hint).length >= 8,
+     'hinted=' + COMBOS.filter(c => c.hint).length);
+  /* 2026-08-20 pass: menus pause, the wire scrolls, the enemy is Patriotism */
+  ok('opening a sheet pauses the sim', /_pausePrev=S\.speed;setSpeed\(0\)/.test(GAME));
+  ok('closing the sheet restores speed', /closeSheet[\s\S]{0,260}_pausePrev=null;if\(!S\.over\)setSpeed\(p\)/.test(GAME));
+  ok('the wire is a scrolling track, not a flip card', /tickScroll/.test(SRC) && /animationiteration/.test(GAME));
+  ok('the enemy meter reads Patriotism by default', /\|\|'Patriotism'/.test(GAME) && SRC.indexOf('id="ovrName">Patriotism<') > 0);
+  ok('coverage carries an upkeep bill', /upkeepK/.test(GAME) && /income-upkeep/.test(GAME.replace(/\s/g, '')));
+  ok('node prices inflate with owned count', /nodeInflate/.test(GAME));
+  ok('market entry prices scale with markets held', /entryScale/.test(GAME));
+  ok('blackout has a visible duration and cooldown', /blackoutDays/.test(GAME) && /News dark/.test(GAME));
 
   let S = get("S=newState('CONTRACTOR','Vendor','NA');S");
   ok('newState seeds exactly one active region', REGIONS.filter(r => S.regions[r.id].active).length === 1);
@@ -231,7 +244,12 @@ if (C) {
       }
       if (strat.expand && d % 30 === 0) {
         const t = Object.keys(s.regions).map(k => s.regions[k]).filter(r => !r.active).sort((a, b) => cl('entryCost', a) - cl('entryCost', b));
-        if (t.length && s.cash > cl('entryCost', t[0]) * 1.5) { const r = t[0]; s.cash -= cl('entryCost', r); if (r.lost) { r.lost = false; s.lostCount = Math.max(0, s.lostCount - 1); r.unrest = 45; } r.active = true; r.coverage = 0.005; }
+        if (t.length && s.cash > cl('entryCost', t[0]) * 1.5) { const r = t[0]; s.cash -= cl('entryCost', r); if (r.lost) { r.lost = false; s.lostCount = Math.max(0, s.lostCount - 1); r.unrest = 45; } r.active = true; r.coverage = 0.005; s.activeCount++; }
+      }
+      /* intended play uses concede as the release valve (the World tab teaches
+         it); the balanced bot models that so the gate is not flaky */
+      if (strat.concede && d % 12 === 0) {
+        for (const k of Object.keys(s.regions)) { const r = s.regions[k]; if (r.active && r.resist > 52) { cl('doAction', 'concede', k); break; } }
       }
       if (!s.doctrine && s.subj >= 0.14) { s.doctrine = strat.doctrine || 'fist'; cl('recompute', s); }
       cl('tick');
@@ -239,7 +257,7 @@ if (C) {
     }
     return s;
   }
-  const win = botRun('CONTRACTOR', 'Vendor', 'NA', { buy: 1, expand: 1, doctrine: 'glove', collectP: 0.10 }, 4000);
+  const win = botRun('CONTRACTOR', 'Vendor', 'NA', { buy: 1, expand: 1, doctrine: 'glove', collectP: 0.10, concede: 1 }, 4000);
   ok('a balanced bot reaches an ending', win.over === true, 'day=' + win.day + ' subj=' + (win.subj * 100).toFixed(1));
   ok('that ending is a win', win.won === true, 'won=' + win.won + ' ovr=' + win.oversight.toFixed(1) + ' lost=' + win.lostCount);
   ok('the win takes a real campaign, not a handful of days', win.day > 300, 'day=' + win.day);
