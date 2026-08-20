@@ -262,7 +262,8 @@
       <button class="chipbtn" id="toolErase" title="eraser">🩹</button>
     </div>
     <div class="toolrow">
-      <button class="chipbtn sel" id="toolSize" title="line size"><span class="sizedot" style="width:16px;height:16px"></span></button>
+      <button class="chipbtn sel" id="toolPen" title="crayon">✏️</button>
+      <button class="chipbtn" id="toolSize" title="line size"><span class="sizedot" style="width:16px;height:16px"></span></button>
       <button class="chipbtn" data-group="face" title="face stickers">👁️</button>
       <button class="chipbtn" data-group="extras" title="accessory stickers">🎩</button>
       <button class="chipbtn" data-group="parts" title="animal part stickers">🦋</button>
@@ -1149,9 +1150,16 @@ function zoomAt(cx,cy,f){
   applyView();
 }
 function clearToolSel(){
-  ['toolErase','toolFill','toolRainbow'].forEach(function(id){ $(id).classList.remove('sel'); });
+  ['toolErase','toolFill','toolRainbow','toolPen'].forEach(function(id){ $(id).classList.remove('sel'); });
   document.querySelectorAll('[data-group]').forEach(function(b){ b.classList.remove('sel'); });
   closeFly();
+}
+/* the crayon chip lights whenever you are simply drawing — it is the
+   always-visible way OUT of stamps, textures, fill and the eraser.
+   (2026-08-20, Stephen: "once I select the eyes I can't unselect eyes") */
+function syncPen(){
+  $('toolPen').classList.toggle('sel',
+    brush.tool==='pen' && !brush.stamp && !brush.tex && !brush.rainbow);
 }
 var flyOpenGroup=null;
 function closeFly(){ $('fly').classList.remove('on'); flyOpenGroup=null; }
@@ -1446,7 +1454,7 @@ function buildPalette(){
       var back=keepStamp?keepGroup:(keepTex?'texture':null);
       if(back){ var gb3=document.querySelector('[data-group="'+back+'"]'); if(gb3) gb3.classList.add('sel'); }
       b.classList.add('sel');
-      SFX.tap();
+      syncPen(); SFX.tap();
     });
     row.appendChild(b);
   });
@@ -1478,9 +1486,14 @@ $('drawDice').addEventListener('click',function(){
   SFX.chirp();
 });
 
+$('toolPen').addEventListener('click',function(){
+  clearToolSel(); brush.stamp=null; brush.stampGroup=null; brush.tex=null;
+  brush.rainbow=false; brush.tool='pen';
+  syncPen(); SFX.tap();
+});
 var SIZES=[6,14,30], sizeIx=1;
 $('toolSize').addEventListener('click',function(){
-  if(brush.stamp||brush.tex){ clearToolSel(); brush.stamp=null; brush.stampGroup=null; brush.tex=null; brush.tool='pen'; }
+  if(brush.stamp||brush.tex){ clearToolSel(); brush.stamp=null; brush.stampGroup=null; brush.tex=null; brush.tool='pen'; syncPen(); }
   sizeIx=(sizeIx+1)%SIZES.length;
   brush.size=SIZES[sizeIx];
   var d=$('toolSize').querySelector('.sizedot');
@@ -1502,19 +1515,19 @@ $('toolErase').addEventListener('click',function(){
   var on = brush.tool!=='erase';
   clearToolSel(); brush.stamp=null; brush.stampGroup=null; brush.rainbow=false; brush.tex=null;
   brush.tool = on?'erase':'pen';
-  $('toolErase').classList.toggle('sel',on); SFX.tap();
+  $('toolErase').classList.toggle('sel',on); syncPen(); SFX.tap();
 });
 $('toolFill').addEventListener('click',function(){
   var on = brush.tool!=='fill';
   clearToolSel(); brush.stamp=null; brush.stampGroup=null; brush.rainbow=false; brush.tex=null;
   brush.tool = on?'fill':'pen';
-  $('toolFill').classList.toggle('sel',on); SFX.tap();
+  $('toolFill').classList.toggle('sel',on); syncPen(); SFX.tap();
 });
 $('toolRainbow').addEventListener('click',function(){
   var on = !brush.rainbow;
   clearToolSel(); brush.stamp=null; brush.stampGroup=null; brush.tex=null; brush.tool='pen';
   brush.rainbow = on;
-  $('toolRainbow').classList.toggle('sel',on); SFX.tap();
+  $('toolRainbow').classList.toggle('sel',on); syncPen(); SFX.tap();
 });
 /* sticker group buttons open a flyout of previews; picking one arms the
    stamp; tapping anything else closes the flyout */
@@ -1555,11 +1568,12 @@ function openFly(groupId){
       b2.className='flybtn'+(brush.tex===key?' sel':'');
       b2.appendChild(texPreview(key));
       b2.addEventListener('click',function(){
+        var again = brush.tex===key;      // picking it twice puts it away
         clearToolSel(); brush.rainbow=false; brush.stamp=null; brush.stampGroup=null; brush.tool='pen';
-        brush.tex=key;
-        var gb2=document.querySelector('[data-group="texture"]');
-        if(gb2) gb2.classList.add('sel');
-        SFX.tap();
+        brush.tex=again?null:key;
+        if(!again){ var gb2=document.querySelector('[data-group="texture"]');
+          if(gb2) gb2.classList.add('sel'); }
+        syncPen(); SFX.tap();
       });
       fly2.appendChild(b2);
     });
@@ -1575,11 +1589,12 @@ function openFly(groupId){
     b.className='flybtn'+(brush.stamp===id?' sel':'');
     b.appendChild(stickerPreview(id));
     b.addEventListener('click',function(){
+      var again = brush.stamp===id;       // picking it twice puts it away
       clearToolSel(); brush.rainbow=false; brush.tex=null; brush.tool='pen';
-      brush.stamp=id; brush.stampGroup=groupId;
-      var gb=document.querySelector('[data-group="'+groupId+'"]');
-      if(gb) gb.classList.add('sel');
-      SFX.tap();
+      brush.stamp=again?null:id; brush.stampGroup=again?null:groupId;
+      if(!again){ var gb=document.querySelector('[data-group="'+groupId+'"]');
+        if(gb) gb.classList.add('sel'); }
+      syncPen(); SFX.tap();
     });
     fly.appendChild(b);
   });
@@ -1593,9 +1608,14 @@ document.querySelectorAll('[data-group]').forEach(function(b){
     var hadSel = (brush.stamp||brush.tex) && b.classList.contains('sel');
     var keepStamp=brush.stamp, keepTex=brush.tex;
     clearToolSel(); brush.rainbow=false; brush.tool='pen'; brush.stamp=null; brush.stampGroup=null; brush.tex=null;
+    /* Armed + tray already open = you are tapping the chip to TURN IT OFF.
+       The old handler restored the selection on every tap, so once you had
+       eyes armed there was no way back to the crayon through this chip —
+       everything you touched grew more eyes. */
+    if(hadSel && wasOpen){ syncPen(); SFX.tap(); return; }
     if(hadSel){ brush.stamp=keepStamp; brush.stampGroup=keepStamp?gid:null; brush.tex=keepTex; b.classList.add('sel'); }
-    if(wasOpen){ SFX.tap(); return; }
-    openFly(gid); SFX.tap();
+    if(wasOpen){ syncPen(); SFX.tap(); return; }
+    openFly(gid); syncPen(); SFX.tap();
   });
 });
 $('toolUndo').addEventListener('click',doUndo);
