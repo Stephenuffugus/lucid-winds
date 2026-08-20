@@ -593,6 +593,46 @@
     animation:none!important;transition:none!important;
     -webkit-backdrop-filter:none!important;backdrop-filter:none!important;
     box-shadow:none!important;text-shadow:none!important}
+
+  /* ═══════════ PHASE 1 REDESIGN (2026-08-20) ═══════════
+     Find a Game near the top, one install path, compact promos.
+     Overrides live here so the original blocks stay readable. */
+  .findgame{margin:14px 0 4px;padding:14px;border:1px solid var(--line);border-radius:16px;
+    background:linear-gradient(160deg,rgba(18,26,17,.9),rgba(10,14,10,.9))}
+  #fg-search{display:block;width:100%;box-sizing:border-box;min-height:52px;padding:13px 16px;
+    background:#0b0f0b;border:1px solid rgba(95,192,138,.35);border-radius:12px;color:var(--cream);
+    font-size:16px;outline:none}
+  #fg-search:focus{border-color:var(--leaf,#5fc08a)}
+  #fg-search::placeholder{color:rgba(160,175,160,.6)}
+  .fg-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .fg-row button{flex:1 1 auto;min-height:48px;padding:10px 12px;border-radius:12px;cursor:pointer;
+    border:1px solid var(--line);background:rgba(20,28,20,.85);color:var(--cream);
+    font-family:var(--disp);font-weight:700;letter-spacing:.04em;font-size:.92rem}
+  .fg-row button:hover,.fg-row button:focus-visible{border-color:var(--gold,#c8a84b)}
+  #fg-results-wrap{margin-top:12px}
+  .fg-none{color:var(--muted);font-size:.9rem;padding:6px 2px}
+  /* slim featured strip (replaces the giant Jimothy panel) */
+  .featslim{display:flex;align-items:center;gap:14px;margin:14px 0;padding:10px 12px;
+    border:1px solid var(--line);border-radius:16px;background:rgba(14,20,14,.85)}
+  .featslim img{width:74px;height:74px;border-radius:12px;object-fit:cover;flex:0 0 auto}
+  .featslim .fs-copy{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+  .featslim .fs-copy b{font-family:var(--disp);font-size:1.05rem;color:#fff;line-height:1.15}
+  .featslim .fs-copy small{color:var(--muted);font-size:.82rem}
+  .featslim .btn.play{flex:0 0 auto;min-height:48px;display:inline-flex;align-items:center;padding:10px 22px}
+  /* the flagship stays gold and stays first, one screen instead of three */
+  .flagship .copy{padding:22px 16px 22px 24px;gap:10px}
+  .flagship h1{font-size:clamp(2rem,4.6vw,2.7rem)}
+  .flagship .tag{font-size:.95rem;max-width:46ch}
+  .flagship .facts{gap:18px}
+  .flagship .facts b{font-size:1.15rem}
+  .flagship{margin:14px 0}
+  /* the soundtrack is a control now, not a billboard */
+  #music-fab{max-width:340px;padding:9px 14px;gap:11px;margin:10px auto}
+  #music-fab .mf-thumb{width:38px;height:38px;border-radius:9px}
+  #music-fab .mf-label{font-size:14px}
+  #music-fab .mf-sub{font-size:11px}
+  #music-fab .glyph{font-size:20px}
+  @media (min-width:900px){#music-fab{max-width:340px}}
 </style>
 </head>
 <body>
@@ -609,9 +649,6 @@
     </button>
     <!-- 2026-08-08 (Stephen): people did not know the mark is an install button.
          This pill is the same action with the words written out. -->
-    <button class="install-cta" id="install-cta" type="button">
-      <span class="ic">📲</span><span>Add the Arcade to your home screen</span>
-    </button>
     <!-- Instructions sheet, filled per platform by the installer script below. -->
     <div class="inst-wrap" id="inst-wrap" role="dialog" aria-modal="true" aria-labelledby="inst-h">
       <div class="inst">
@@ -649,6 +686,23 @@
     </div>
   </div>
 
+  <!-- FIND A GAME (Phase 1 redesign, 2026-08-20): search or play within the
+       first screen. The box advertises the classic-name aliases out loud and
+       paints its top matches RIGHT HERE as a shelf row; Surprise me launches
+       a random released game through the normal card path. -->
+  <section class="findgame reveal" id="find-game">
+    <input id="fg-search" type="search" autocomplete="off"
+      placeholder="Search a title, a type, or a classic you know: Peggle, Wordle, Mahjong…">
+    <div id="fg-results-wrap" style="display:none">
+      <div class="shelf-wrap"><div class="shelf-row" id="fg-results"></div></div>
+    </div>
+    <div class="fg-row">
+      <button type="button" id="fg-surprise">🎲 Surprise me</button>
+      <button type="button" id="fg-mine">♥ My games</button>
+      <button type="button" id="fg-browse">Browse all</button>
+    </div>
+  </section>
+
   <!-- FLAGSHIP — Lucid Winds, the permanent gold-framed heart of the studio -->
   <section class="flagship reveal">
     <div class="copy">
@@ -668,39 +722,19 @@
     <div class="art"><img src="/assets/hash-mint-moment-540x540.jpg" alt="A freshly minted one-of-one Lucid Winds plant"></div>
   </section>
 
-  <!-- FEATURED THIS WEEK -->
-  <section class="feature reveal">
-    <div class="copy">
-      <span class="eyebrow">Featured this week</span>
-      <h2>Jumping Jimothy</h2>
-      <p class="tag">The Little Nugget. Hop Seattle's roundest, most beloved raccoon across the rainy city to the greatest dumpster feast in town.</p>
-      <div class="why"><span class="dot"></span>44 costumes and a fresh daily run</div>
-      <div class="cta-row"><a class="btn play" href="/jimothy/">Play Jimothy</a></div>
+  <!-- FEATURED THIS WEEK — a slim strip now (Stephen 2026-08-20: "not such a
+       massive thing in everyone's face"). Jimothy also leads the Start Here
+       shelf; this is the accent, not the door. -->
+  <section class="featslim reveal">
+    <img src="/satellites/stream-hop/assets/og-jimothy3.jpg" alt="Jimothy, a round Seattle raccoon">
+    <div class="fs-copy">
+      <span class="eyebrow">Featured this week · New</span>
+      <b>Jumping Jimothy</b>
+      <small>44 costumes and a fresh daily run.</small>
     </div>
-    <div class="art"><img src="/satellites/stream-hop/assets/og-jimothy3.jpg" alt="Jimothy, a round Seattle raccoon"></div>
-    <span class="fbadge"><span class="eyebrow">New</span></span>
+    <a class="btn play" href="/jimothy/">Play</a>
   </section>
 
-  <!-- PRACTICAL APPS DOORWAY (2026-08-17, Stephen): "have a section that says…
-       for people who like to stay organized and have events… they can click
-       there and it would open up a page with all of our apps with our nice
-       thumbnails and very basic descriptions". The 24-card wall shipped
-       earlier today was wrong twice — 44px art, hotlinked cross-origin. His
-       art now lives in portal-assets/sws-thumbs/ (in this repo) and shows
-       big on its own page, /portal/apps.html. This is the front door. -->
-  <section class="feature reveal">
-    <div class="copy">
-      <span class="eyebrow">Not here to play?</span>
-      <h2>Practical Apps</h2>
-      <p class="tag">For people who keep life organized: lesson planners, sign-up sheets, checklists, PDF tools and more, free from the studio. No ads, no subscriptions, no tracking.</p>
-      <div class="why"><span class="dot"></span>Free forever, and most never leave your device</div>
-      <div class="cta-row"><a class="btn play" href="/portal/apps.html">What are you planning?</a></div>
-    </div>
-    <div class="art sws-strips" aria-hidden="true">
-      <div class="apps-strip"><div class="apps-track"><img src="/portal-assets/sws-thumbs/baby-log.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/bill-splitter.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/bracket-maker.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/caregiver-log.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/grade-sheet.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/grocery-list.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/home-inventory.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/hush.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/image-compressor.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/moving-boxes.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/packing-list.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/pdf-tools.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/pill-schedule.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/cross-off.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/baby-log.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/bill-splitter.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/bracket-maker.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/caregiver-log.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/grade-sheet.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/grocery-list.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/home-inventory.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/hush.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/image-compressor.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/moving-boxes.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/packing-list.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/pdf-tools.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/pill-schedule.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/cross-off.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"></div></div>
-      <div class="apps-strip rev"><div class="apps-track"><img src="/portal-assets/sws-thumbs/qr-maker.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/scan-to-pdf.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/seating-chart.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/secret-santa.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/signature-maker.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/signup-sheets.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/sitter-sheet.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/specials-planner.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/sub-plans.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/team-parent.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/wedding-timeline.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/wheel-picker.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/overload.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/qr-maker.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/scan-to-pdf.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/seating-chart.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/secret-santa.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/signature-maker.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/signup-sheets.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/sitter-sheet.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/specials-planner.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/sub-plans.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/team-parent.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/wedding-timeline.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/wheel-picker.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/overload.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"></div></div>
-    </div>
-  </section>
 
   <!-- Soundtrack — large, can't-miss button. -->
   <button id="music-fab" type="button" title="Soundtrack" aria-label="Play soundtrack">
@@ -723,11 +757,6 @@
        underneath for anyone who wants it. -->
   <div id="shelves"></div>
 
-  <h2 class="arcade-h" id="everything-h">Everything <span>all 180, A to Z</span></h2>
-  <input id="gsearch" type="search" autocomplete="off" placeholder="Search the games. Try Scrabble, Peggle, Wordle, Mahjong…">
-  <div class="tabs" id="tabs"></div>
-  <div class="grid" id="garden"></div>
-
   <!-- SKY WOLF MEMBERS — a free studio account. Every perk here is real today. -->
   <section class="members reveal">
     <div class="m-inner">
@@ -749,12 +778,40 @@
     </div>
   </section>
 
+
+  <h2 class="arcade-h" id="everything-h">Everything <span>all 180, A to Z</span></h2>
+  <input id="gsearch" type="search" autocomplete="off" placeholder="Search the games. Try Scrabble, Peggle, Wordle, Mahjong…">
+  <div class="tabs" id="tabs"></div>
+  <div class="grid" id="garden"></div>
+
+
   <!-- FREE APPS (2026-08-08, Stephen): the studio makes more than games —
        a shelf so players can find the helpful free apps too.
        ⛔ 2026-08-16 (Stephen): "there's a couple mentioned at the very bottom"
        — it was unreachable. Nothing in the navigation pointed at it, so the
        only way to find the studio's apps was to scroll past 180 game cards.
        There is an Apps tab in the category bar now that jumps straight here. -->
+  <!-- PRACTICAL APPS DOORWAY (2026-08-17, Stephen): "have a section that says…
+       for people who like to stay organized and have events… they can click
+       there and it would open up a page with all of our apps with our nice
+       thumbnails and very basic descriptions". The 24-card wall shipped
+       earlier today was wrong twice — 44px art, hotlinked cross-origin. His
+       art now lives in portal-assets/sws-thumbs/ (in this repo) and shows
+       big on its own page, /portal/apps.html. This is the front door. -->
+  <section class="feature reveal">
+    <div class="copy">
+      <span class="eyebrow">Not here to play?</span>
+      <h2>Practical Apps</h2>
+      <p class="tag">For people who keep life organized: lesson planners, sign-up sheets, checklists, PDF tools and more, free from the studio. No ads, no subscriptions, no tracking.</p>
+      <div class="why"><span class="dot"></span>Free forever, and most never leave your device</div>
+      <div class="cta-row"><a class="btn play" href="/portal/apps.html">What are you planning?</a></div>
+    </div>
+    <div class="art sws-strips" aria-hidden="true">
+      <div class="apps-strip"><div class="apps-track"><img src="/portal-assets/sws-thumbs/baby-log.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/bill-splitter.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/bracket-maker.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/caregiver-log.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/grade-sheet.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/grocery-list.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/home-inventory.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/hush.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/image-compressor.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/moving-boxes.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/packing-list.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/pdf-tools.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/pill-schedule.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/cross-off.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/baby-log.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/bill-splitter.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/bracket-maker.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/caregiver-log.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/grade-sheet.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/grocery-list.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/home-inventory.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/hush.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/image-compressor.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/moving-boxes.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/packing-list.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/pdf-tools.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/pill-schedule.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/cross-off.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"></div></div>
+      <div class="apps-strip rev"><div class="apps-track"><img src="/portal-assets/sws-thumbs/qr-maker.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/scan-to-pdf.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/seating-chart.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/secret-santa.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/signature-maker.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/signup-sheets.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/sitter-sheet.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/specials-planner.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/sub-plans.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/team-parent.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/wedding-timeline.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/wheel-picker.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/overload.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/qr-maker.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/scan-to-pdf.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/seating-chart.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/secret-santa.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/signature-maker.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/signup-sheets.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/sitter-sheet.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/specials-planner.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/sub-plans.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/team-parent.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/wedding-timeline.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/wheel-picker.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/overload.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"></div></div>
+    </div>
+  </section>
+
   <section class="reveal" id="free-apps" style="margin-top:26px;scroll-margin-top:16px">
     <h2 class="arcade-h">Free Apps <span>more from the studio</span></h2>
     <div class="apps-row">
@@ -1767,11 +1824,11 @@ function _swsAliasWords(nm){
   var a=ALIASES[(nm||'').toLowerCase()]||'';
   return a? a.split(/\s+/).filter(function(w){return w.length>2;}) : [];
 }
-function searchGames(qraw){
+/* The matcher on its own, so the top-of-page Find a Game box and the
+   catalog wall share ONE ranking (title > classic alias > description).
+   Returns {out, items}. (Phase 1 redesign, 2026-08-20) */
+function searchCore(qraw){
   var q=(qraw||'').trim().toLowerCase();
-  var tabs=document.getElementById('tabs');
-  if(!q){ tabs.classList.remove('searching'); renderGarden(window._swsCat||'all'); return; }
-  tabs.classList.add('searching');
   var catName={}; for(var ci=0;ci<CATS.length;ci++) catName[CATS[ci][0]]=CATS[ci][1];
   var items=FEATURED.filter(function(g){return !g.hub;}).map(function(g){return {g:g,feat:true,nm:g.nm||'',ds:g.ds||'',cat:''};})
     .concat(GAMES.map(function(g){return {g:g,feat:false,nm:g[1]||'',ds:g[3]||'',cat:(catName[g[2]]||g[2]||'')};}));
@@ -1793,6 +1850,14 @@ function searchGames(qraw){
   }
   out.sort(function(a,b){ if(b.rank!==a.rank) return b.rank-a.rank;
     var x=a.nm.toLowerCase(),y=b.nm.toLowerCase(); return x<y?-1:(x>y?1:0); });
+  return {out:out, items:items};
+}
+function searchGames(qraw){
+  var q=(qraw||'').trim().toLowerCase();
+  var tabs=document.getElementById('tabs');
+  if(!q){ tabs.classList.remove('searching'); renderGarden(window._swsCat||'all'); return; }
+  tabs.classList.add('searching');
+  var r=searchCore(qraw), out=r.out, items=r.items;
   /* type-neighbours: only when the query was specific enough to be about a game */
   if(out.length && out.length<=3){
     var seen={}; for(var k=0;k<out.length;k++) seen[out[k].nm]=1;
@@ -1817,6 +1882,56 @@ function searchGames(qraw){
   if(!si)return;
   si.addEventListener('input',function(){ clearTimeout(t); var v=si.value; t=setTimeout(function(){ searchGames(v); },160); });
   si.addEventListener('search',function(){ searchGames(si.value); });   // the ✕ clear button
+})();
+
+/* ── FIND A GAME (Phase 1 redesign) ─────────────────────────────────────── */
+(function(){
+  var si=document.getElementById('fg-search'); if(!si) return;
+  var res=document.getElementById('fg-results'), wrap=document.getElementById('fg-results-wrap'), t=0;
+  function paint(v){
+    var q=(v||'').trim();
+    if(!q){ wrap.style.display='none'; res.innerHTML=''; return; }
+    var out=searchCore(q).out.slice(0,8);
+    window._swsHideKind=null;
+    if(!out.length){
+      res.innerHTML='<div class="fg-none">Nothing by that name yet. Try a classic: Peggle, Wordle, Zuma, Mahjong.</div>';
+    } else {
+      res.innerHTML=out.map(function(it){ return card(it.g, it.feat); }).join('');
+      if(window._lwLazyBoot) _lwLazyBoot();
+    }
+    wrap.style.display='block';
+  }
+  si.addEventListener('input',function(){ clearTimeout(t); var v=si.value; t=setTimeout(function(){ paint(v); },140); });
+  si.addEventListener('search',function(){ paint(si.value); });
+  document.getElementById('fg-surprise').addEventListener('click',function(){
+    /* a random RELEASED game, launched through a real card so analytics,
+       music handoff and the overlay all behave exactly as a tap would */
+    var pool=[].slice.call(document.querySelectorAll('#garden a.card'))
+      .filter(function(a){ return !a.getAttribute('data-indev') && !a.getAttribute('target'); });
+    if(!pool.length) return;
+    var pick=pool[Math.floor(Math.random()*pool.length)];
+    try{ gtag('event','portal_surprise_me',{ game_name:(pick.querySelector('.nm')||{}).textContent||'' }); }catch(e){}
+    pick.click();
+  });
+  function jumpWall(tab){
+    var tb=document.querySelector('#tabs button[data-c="'+tab+'"]'); if(tb) tb.click();
+    var h=document.getElementById('everything-h'); if(h&&h.scrollIntoView) h.scrollIntoView({behavior:'smooth',block:'start'});
+  }
+  document.getElementById('fg-mine').addEventListener('click',function(){ jumpWall('fav'); });
+  document.getElementById('fg-browse').addEventListener('click',function(){ jumpWall('all'); });
+})();
+
+/* ── derived counts (Phase 1): no player-facing number is typed by hand ── */
+(function(){
+  /* the SAME arithmetic as scripts/catalog.mjs (the counting authority):
+     every FEATURED row that is not gated — the Lucid Winds flagship included,
+     a visitor can open it — plus every native row not marked soon = 162 */
+  var open=FEATURED.filter(function(g){ return !g.beta; }).length
+         + GAMES.filter(function(g){ return g[4]!=='soon'; }).length;
+  var h=document.getElementById('everything-h');
+  if(h) h.innerHTML='Everything <span>'+open+' playable now · A to Z</span>';
+  var b=document.getElementById('fg-browse');
+  if(b) b.textContent='Browse all '+open;
 })();
 
 document.getElementById('tabs').innerHTML = CATS.map(function(c,i){
