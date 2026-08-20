@@ -38,7 +38,13 @@ if(!document.getElementById('bg-anim-style')){
     '.bg-team-us{color:#7ab356}'+
     '.bg-team-them{color:#dc8a8a}'+
     '.bg-pcard img{width:26px;height:26px;object-fit:contain;vertical-align:middle}'+
-    '.bg-pcard .bg-face{width:56px;box-sizing:border-box}';
+    '.bg-pcard .bg-face{width:56px;box-sizing:border-box}'+
+    '@keyframes bgDealIn{0%{transform:translateY(-16px) scale(.55);opacity:0}100%{transform:none;opacity:1}}'+
+    '.bg-deal-in{animation:bgDealIn .3s cubic-bezier(.35,1.3,.5,1) both}'+
+    '@keyframes bgShuffle{0%,100%{transform:translate(-50%,-50%) rotate(0deg)}15%{transform:translate(-56%,-52%) rotate(-8deg)}35%{transform:translate(-44%,-49%) rotate(7deg)}55%{transform:translate(-54%,-48%) rotate(-6deg)}75%{transform:translate(-46%,-52%) rotate(5deg)}}'+
+    '.bg-shuffling{animation:bgShuffle .38s ease-in-out infinite}'+
+    '@keyframes bgFlipUp{0%{transform:translate(-50%,-50%) rotateY(90deg) scale(1.15)}100%{transform:translate(-50%,-50%) rotateY(0deg) scale(1)}}'+
+    '.bg-flip-up{animation:bgFlipUp .45s ease-out both}';
   document.head.appendChild(_bgs);
 }
 
@@ -58,6 +64,8 @@ window._gameFns.bowergarden = function BG(a){
   var SAME_COLOR={hearts:'diamonds',diamonds:'hearts',clubs:'spades',spades:'clubs'};
   var SOUTH=0,WEST=1,NORTH=2,EAST=3;
   var PLAYER_NAMES=['You','West','Partner','East'];
+  // "You deal" vs "West deals" — South gets the second-person verb.
+  function vb(seat,you,they){return seat===SOUTH?('You '+you):(PLAYER_NAMES[seat]+' '+they);}
 
   var hands=[[],[],[],[]];
   var trick=[],trickCards=[null,null,null,null];
@@ -70,6 +78,16 @@ window._gameFns.bowergarden = function BG(a){
   var bidDecisions=[null,null,null,null];
   var lastBidSeat=-1; // the most recent bidder (for a brief 'fresh' highlight)
   var trickWinner=-1; // during trick-complete pause, the seat whose card won
+  // Dealing animation state — phase 'dealing' shows the shuffle + the
+  // authentic two-pass 3-2/2-3 deal before the upcard flips.
+  var dealSeq=[],dealStep=0,dealCounts=[0,0,0,0],deckLeft=24,shuffling=false;
+  var lastDealtSeat=-1,lastDealtN=0,justDealt=false;
+  // AI card memory — public information only (played cards, turned-down
+  // upcard, seats that failed to follow suit). Reset every deal.
+  var dead={},voids=[{},{},{},{}];
+  // Sim hook: when window._BGAUTO is set (headless AI-vs-AI testing),
+  // the South seat is played by the same AI. Inert in normal play.
+  function _auto(){return !!window._BGAUTO;}
 
   ms(a,'<span style="font-family:Georgia,serif;letter-spacing:.06em;">🃏 <strong id="BGs" style="color:#7ab356;font-size:1.2em;">0</strong> <span style="color:rgba(232,220,200,0.5);font-size:0.8em;">vs</span> <strong id="BGo" style="color:#dc8a8a;font-size:1.2em;">0</strong></span>');
   mm(a);
@@ -84,7 +102,11 @@ window._gameFns.bowergarden = function BG(a){
       +'<rect width="100%" height="100%" filter="url(#n)"/>'
     +'</svg>'
   );
-  pan.style.cssText='max-width:min(96vw,760px);margin:0 auto;padding:6px 14px 14px;user-select:none;box-sizing:border-box;'
+  // width:100% (not just max-width): the shell mounts games in a flex
+  // column, where margin:auto makes the panel shrink-wrap its content —
+  // the table visibly narrowed between hands and popped back out on the
+  // deal (Stephen 2026-08-20). A definite width pins it.
+  pan.style.cssText='width:100%;max-width:760px;margin:0 auto;padding:6px 14px 14px;user-select:none;box-sizing:border-box;'
     +'background:'
       +'url("'+_EU_FELT+'"),'
       +'radial-gradient(ellipse at 50% 0%,rgba(255,255,255,0.06) 0%,transparent 50%),'
@@ -127,6 +149,7 @@ window._gameFns.bowergarden = function BG(a){
     trumpSuit='';teamTricks=[0,0];callingTeam=-1;callingSeat=-1;trick=[];trickCards=[null,null,null,null];
     loner=false;sittingOut=-1;
     bidDecisions=[null,null,null,null];lastBidSeat=-1;
+    dead={};voids=[{},{},{},{}];
   }
   // Heuristic: should THIS hand go alone?
   // Strong indicators: both bowers + ace of trump, OR right bower + 3 more trumps.
@@ -145,6 +168,8 @@ window._gameFns.bowergarden = function BG(a){
     if(rb&&lb&&acet)return true;
     // Both bowers + 4 trumps total + at least 1 off ace = good odds
     if(rb&&lb&&trumps>=4&&offAce>=1)return true;
+    // Right bower + 4 trumps + an off ace: one probable loser at most
+    if(rb&&trumps>=4&&offAce>=1)return true;
     return false;
   }
   // Skip the sit-out partner during turn rotation when loner is in effect.
@@ -172,85 +197,242 @@ window._gameFns.bowergarden = function BG(a){
     for(var i=1;i<tp.length;i++){var v=cardVal(tp[i].card,t,ls);if(v>bv){bv=v;best=i;}}
     return tp[best].player;
   }
-  function aiOrderUp(p,uc){
-    var hand=hands[p];var t=uc.suit;var s=0;
+  // ── Hand evaluation (rewritten 2026-08-20) ──
+  // The old bidder called on ~3.5 pts of nothing and never noticed that
+  // ordering up HANDS THE DEALER THE UPCARD — the partner AI was
+  // gifting opponents a trump and then getting the team euchred.
+  // Points ≈ likely tricks × ~2.5: right bower 3, left 2.5, A 2, K 1.5,
+  // Q 1.3, 10 1.1, 9 1.0 in trump; off-suit aces 1.0; void suits +0.6
+  // each when holding 2+ trump (you can ruff into them).
+  function handStrength(hand,t){
+    var s=0,trumps=0,suitCount={hearts:0,diamonds:0,clubs:0,spades:0};
     for(var i=0;i<hand.length;i++){
-      var es=effSuit(hand[i],t);
+      var c=hand[i],es=effSuit(c,t);
+      suitCount[es]++;
       if(es===t){
-        if(hand[i].rank==='J'&&hand[i].suit===t)s+=4;
-        else if(hand[i].rank==='J'&&hand[i].suit===SAME_COLOR[t])s+=3.5;
-        else if(hand[i].rank==='A')s+=2;
-        else if(hand[i].rank==='K')s+=1.5;
-        else s+=0.5;
-      }else if(hand[i].rank==='A')s+=1;
+        trumps++;
+        if(c.rank==='J')s+=(c.suit===t?3.0:2.5);
+        else if(c.rank==='A')s+=2.0;
+        else if(c.rank==='K')s+=1.5;
+        else if(c.rank==='Q')s+=1.3;
+        else if(c.rank==='10')s+=1.1;
+        else s+=1.0;
+      }else if(c.rank==='A')s+=1.0;
     }
-    if(p===dealer)s+=1;
-    if((p+2)%4===dealer)s+=0.5;
-    return s>=4;
+    if(trumps>=2){
+      for(var si=0;si<SUITS.length;si++){
+        if(SUITS[si]!==t&&suitCount[SUITS[si]]===0)s+=0.6;
+      }
+    }
+    return s;
   }
-  function aiPickTrump(p){
-    var hand=hands[p];var bs='',bv=0;
+  // Dealer discard: never a trump (unless all-trump), never an ace if
+  // avoidable, and prefer emptying a short suit to create a ruff void.
+  function chooseDealerDiscard(hand,t){
+    var suitCount={hearts:0,diamonds:0,clubs:0,spades:0};
+    for(var i=0;i<hand.length;i++)suitCount[effSuit(hand[i],t)]++;
+    var best=null,bs=1e9;
+    for(var j=0;j<hand.length;j++){
+      var c=hand[j];if(effSuit(c,t)===t)continue;
+      var sc=RANK_ORDER[c.rank]+(c.rank==='A'?20:0)-(suitCount[c.suit]===1?3.5:0);
+      if(sc<bs){bs=sc;best=c;}
+    }
+    if(!best){
+      var h=hand.slice().sort(function(x,y){return cardVal(x,t,'x')-cardVal(y,t,'x');});
+      best=h[0];
+    }
+    return best;
+  }
+  function aiOrderUp(p,uc){
+    var t=uc.suit;
+    if(p===dealer){
+      // Dealer counts the upcard as part of the hand, minus the discard.
+      var h6=hands[p].slice();h6.push(uc);
+      var disc=chooseDealerDiscard(h6,t);
+      var h5=[];
+      for(var i=0;i<h6.length;i++)if(h6[i]!==disc)h5.push(h6[i]);
+      return handStrength(h5,t)>=6.4;
+    }
+    var s=handStrength(hands[p],t);
+    // Ordering up gives the DEALER the upcard. Gifting an opponent a
+    // trump (huge when it's the jack) needs a much stronger hand;
+    // handing it to your partner is a bonus instead.
+    var gift=uc.rank==='J'?2.2:uc.rank==='A'?1.3:uc.rank==='K'?0.9:0.6;
+    if(dealer%2!==p%2)s-=gift;else s+=gift*0.7;
+    return s>=6.5;
+  }
+  function aiPickTrump(p,forced){
+    var best='',bv=-1;
     for(var si=0;si<SUITS.length;si++){
       var suit=SUITS[si];if(suit===upcard.suit)continue;
-      var s=0;
-      for(var i=0;i<hand.length;i++){
-        var es=effSuit(hand[i],suit);
-        if(es===suit){
-          if(hand[i].rank==='J')s+=4;
-          else if(hand[i].rank==='A')s+=2;
-          else if(hand[i].rank==='K')s+=1.5;
-          else s+=0.5;
-        }else if(hand[i].rank==='A')s+=0.8;
-      }
-      if(s>bv){bv=s;bs=suit;}
+      var s=handStrength(hands[p],suit);
+      if(s>bv){bv=s;best=suit;}
     }
-    return bv>=3.5?bs:'';
+    if(forced)return best; // stick-the-dealer: least-bad suit, no floor
+    return bv>=6.0?best:'';
   }
+  // ── Play memory helpers — public info only, no peeking ──
+  // Live cards outranking c in its own effective suit, excluding mine.
+  function _liveAbove(c,hand){
+    var t=trumpSuit,es=effSuit(c,t),v=cardVal(c,t,es),n=0;
+    for(var si=0;si<SUITS.length;si++)for(var ri=0;ri<RANKS.length;ri++){
+      var oc={rank:RANKS[ri],suit:SUITS[si]};
+      if(effSuit(oc,t)!==es)continue;
+      if(cardVal(oc,t,es)<=v)continue;
+      if(dead[oc.rank+oc.suit])continue;
+      var mine=false;
+      for(var k=0;k<hand.length;k++)if(hand[k].rank===oc.rank&&hand[k].suit===oc.suit){mine=true;break;}
+      if(!mine)n++;
+    }
+    return n;
+  }
+  function isBoss(c,hand){return _liveAbove(c,hand)===0;}
+  function liveTrumpsOutside(hand){
+    var t=trumpSuit,n=0;
+    for(var si=0;si<SUITS.length;si++)for(var ri=0;ri<RANKS.length;ri++){
+      var oc={rank:RANKS[ri],suit:SUITS[si]};
+      if(effSuit(oc,t)!==t)continue;
+      if(dead[oc.rank+oc.suit])continue;
+      var mine=false;
+      for(var k=0;k<hand.length;k++)if(hand[k].rank===oc.rank&&hand[k].suit===oc.suit){mine=true;break;}
+      if(!mine)n++;
+    }
+    return n;
+  }
+  // ── Trick play (rewritten 2026-08-20) ──
+  // Boss-card awareness, second-hand-low, trust-your-partner, void
+  // tracking. Also fixes a real loner bug: the old code treated the 4th
+  // card as "last" — loner tricks only have 3, so the AI misplayed
+  // every loner hand.
   function aiPlayCard(p){
     var hand=hands[p];
-    var ls=trick.length>0?effSuit(trick[0].card,trumpSuit):'';
-    var pl=playable(hand,trumpSuit,ls);
+    var T=trumpSuit;
+    var ls=trick.length>0?effSuit(trick[0].card,T):'';
+    var pl=playable(hand,T,ls);
     if(pl.length===1)return pl[0];
-    var partner=(p+2)%4,isLead=trick.length===0,isLast=trick.length===3;
-    var amCaller=(p%2===callingTeam);
+    var partner=(p+2)%4;
+    var partnerOut=loner&&sittingOut===partner;
+    var seatsInTrick=loner?3:4;
+    var isLead=trick.length===0,isLast=trick.length===seatsInTrick-1;
+    var myTeamCalled=(p%2===callingTeam);
+    function lowIn(arr){return arr.slice().sort(function(a,b){return cardVal(a,T,ls)-cardVal(b,T,ls);})[0];}
+    function hiIn(arr){var s=arr.slice().sort(function(a,b){return cardVal(a,T,ls)-cardVal(b,T,ls);});return s[s.length-1];}
+    function lowPlain(arr){return arr.slice().sort(function(a,b){return cardVal(a,T,'x')-cardVal(b,T,'x');})[0];}
+    function dump(arr){
+      // Throw off-suit junk first; spend aces before trump, trump last.
+      var junk=arr.filter(function(c){return effSuit(c,T)!==T&&c.rank!=='A';});
+      if(junk.length)return lowPlain(junk);
+      var offs=arr.filter(function(c){return effSuit(c,T)!==T;});
+      if(offs.length)return lowPlain(offs);
+      return lowPlain(arr);
+    }
     if(isLead){
-      var tc=pl.filter(function(c){return effSuit(c,trumpSuit)===trumpSuit;});
-      var oa=pl.filter(function(c){return c.rank==='A'&&effSuit(c,trumpSuit)!==trumpSuit;});
-      // Lead-trump-after-call strategy: if AI's team called, lead a
-      // high trump on the FIRST trick to draw out opponents' trump.
-      // Without this, AI was hoarding trump and getting overrun on
-      // off-suit aces in late tricks.
-      var tricksDone=teamTricks[0]+teamTricks[1];
-      if(amCaller&&tricksDone===0&&tc.length>=2){
-        tc.sort(function(x,y){return cardVal(y,trumpSuit,trumpSuit)-cardVal(x,trumpSuit,trumpSuit);});
-        return tc[0]; // highest trump
+      var tr=pl.filter(function(c){return effSuit(c,T)===T;});
+      var off=pl.filter(function(c){return effSuit(c,T)!==T;});
+      var trumpOut=liveTrumpsOutside(hand)>0;
+      if(myTeamCalled&&tr.length){
+        var bossT=tr.filter(function(c){return isBoss(c,hand);});
+        if(p===callingSeat){
+          // I called: pull their trump while I hold the boss.
+          if(bossT.length&&trumpOut)return hiIn(bossT);
+          if(teamTricks[0]+teamTricks[1]===0&&tr.length>=2)return hiIn(tr);
+        }else if(!partnerOut&&callingSeat===partner&&trumpOut){
+          // Partner called: lead trump low into their bowers — unless
+          // my own top trump is already boss, then just cash it.
+          return isBoss(hiIn(tr),hand)?hiIn(tr):lowIn(tr);
+        }
       }
-      if(tc.length>=3){tc.sort(function(x,y){return cardVal(y,trumpSuit,trumpSuit)-cardVal(x,trumpSuit,trumpSuit);});return tc[0];}
-      if(oa.length>0)return oa[0]; // off-suit ace is a likely trick winner
-      // Otherwise lead the lowest non-trump to conserve big cards
-      var nonTrump=pl.filter(function(c){return effSuit(c,trumpSuit)!==trumpSuit;});
-      var lead=nonTrump.length>0?nonTrump:pl;
-      lead.sort(function(x,y){return cardVal(x,trumpSuit,'x')-cardVal(y,trumpSuit,'x');});
-      return lead[0];
+      // Boss off-suit cards are near-sure tricks — but skip suits an
+      // opponent has shown void in (they would ruff it).
+      var oppA=(p+1)%4,oppB=(p+3)%4;
+      function oppVoid(su){return !!(voids[oppA][su]||voids[oppB][su]);}
+      var bossOff=off.filter(function(c){return isBoss(c,hand);});
+      var safe=bossOff.filter(function(c){return !oppVoid(effSuit(c,T));});
+      if(safe.length)return hiIn(safe);
+      if(bossOff.length&&!trumpOut)return hiIn(bossOff);
+      if(off.length){
+        // Nothing sure: lead low from the shortest off suit (sets up a
+        // ruff if we hold trump), and never burn an ace as a duck.
+        var sc={hearts:0,diamonds:0,clubs:0,spades:0};
+        for(var i=0;i<hand.length;i++)sc[effSuit(hand[i],T)]++;
+        var cand=off.slice().sort(function(a,b){
+          var d=sc[effSuit(a,T)]-sc[effSuit(b,T)];
+          return d!==0?d:(cardVal(a,T,'x')-cardVal(b,T,'x'));
+        });
+        for(var j=0;j<cand.length;j++)if(cand[j].rank!=='A')return cand[j];
+        return cand[0];
+      }
+      return lowIn(pl); // all trump, not worth leading high
     }
-    var wSoFar=trick.length>0?trickWin(trick,trumpSuit):-1;
-    var pWin=(wSoFar===partner);
-    if(pWin){pl.sort(function(x,y){return cardVal(x,trumpSuit,ls)-cardVal(y,trumpSuit,ls);});return pl[0];}
-    if(isLast){
-      var ch=0;for(var t=0;t<trick.length;t++){var v=cardVal(trick[t].card,trumpSuit,ls);if(v>ch)ch=v;}
-      var w=pl.filter(function(c){return cardVal(c,trumpSuit,ls)>ch;});
-      if(w.length>0){w.sort(function(x,y){return cardVal(x,trumpSuit,ls)-cardVal(y,trumpSuit,ls);});return w[0];}
-      pl.sort(function(x,y){return cardVal(x,trumpSuit,ls)-cardVal(y,trumpSuit,ls);});return pl[0];
+    // Following —
+    var winSeat=trickWin(trick,T);
+    var winCard=null;
+    for(var wi=0;wi<trick.length;wi++)if(trick[wi].player===winSeat){winCard=trick[wi].card;break;}
+    var ch=cardVal(winCard,T,ls);
+    var winners=pl.filter(function(c){return cardVal(c,T,ls)>ch;});
+    var pWin=!partnerOut&&winSeat===partner;
+    if(pWin){
+      // Partner has it. Dump unless they can still be overtaken AND I
+      // can lock the trick with a boss.
+      if(isLast||isBoss(winCard,hand))return dump(pl);
+      var bossW=winners.filter(function(c){return isBoss(c,hand);});
+      return bossW.length?lowIn(bossW):dump(pl);
     }
-    var ch2=0;for(var t2=0;t2<trick.length;t2++){var v2=cardVal(trick[t2].card,trumpSuit,ls);if(v2>ch2)ch2=v2;}
-    var w2=pl.filter(function(c){return cardVal(c,trumpSuit,ls)>ch2;});
-    if(w2.length>0){w2.sort(function(x,y){return cardVal(x,trumpSuit,ls)-cardVal(y,trumpSuit,ls);});return w2[0];}
-    pl.sort(function(x,y){return cardVal(x,trumpSuit,ls)-cardVal(y,trumpSuit,ls);});return pl[0];
+    if(winners.length===0)return dump(pl);
+    if(isLast)return lowIn(winners);
+    var bossW2=winners.filter(function(c){return isBoss(c,hand);});
+    if(trick.length===1&&!(loner&&p===callingSeat)){
+      // Second seat, partner still behind: boss takes, a void ruffs
+      // low, otherwise second-hand-low.
+      if(bossW2.length)return lowIn(bossW2);
+      var ruffs=winners.filter(function(c){return effSuit(c,T)===T&&ls!==T;});
+      if(ruffs.length)return lowIn(ruffs);
+      return lowIn(pl);
+    }
+    // Last chance before an opponent closes the trick: cheapest boss,
+    // else cheapest winner.
+    return bossW2.length?lowIn(bossW2):lowIn(winners);
   }
   function newHand(){
     roundNum++;dealer=(dealer+1)%4;deal();
-    leader=(dealer+1)%4;currentPlayer=leader;phase='call1';render();
-    if(currentPlayer!==SOUTH)bwT(aiCall1,600);
+    leader=(dealer+1)%4;currentPlayer=leader;
+    // Authentic euchre deal (Stephen 2026-08-20): two passes around the
+    // table starting left of the dealer, batches alternating 3-2-3-2
+    // then reversing to 2-3-2-3 (odd hands start 2-3), so every player
+    // gets exactly 5 cards in two rounds — shown, not skipped.
+    var firstThree=(roundNum%2===1);
+    var order=[(dealer+1)%4,(dealer+2)%4,(dealer+3)%4,dealer];
+    dealSeq=[];
+    for(var r=0;r<2;r++)for(var s=0;s<4;s++){
+      var base=((s%2===0)===firstThree)?3:2;
+      dealSeq.push({seat:order[s],n:(r===0)?base:5-base});
+    }
+    dealStep=0;dealCounts=[0,0,0,0];deckLeft=24;shuffling=true;
+    lastDealtSeat=-1;lastDealtN=0;justDealt=false;
+    phase='dealing';render();
+    sm(vb(dealer,'shuffle…','shuffles…'));
+    bwT(function(){
+      shuffling=false;
+      sm(vb(dealer,'deal','deals'));
+      dealNext();
+    },1000);
+  }
+  function dealNext(){
+    if(phase!=='dealing')return;
+    if(dealStep>=dealSeq.length){
+      // All 20 cards out — flip the top of the kitty as the upcard.
+      justDealt=true;phase='call1';_play('flip');
+      sm(vb(dealer,'turn up','turns up')+' the '+upcard.rank+' '+SUIT_ICONS[upcard.suit]);
+      render();
+      if(currentPlayer!==SOUTH||_auto())bwT(aiCall1,900);
+      return;
+    }
+    var b=dealSeq[dealStep];dealStep++;
+    dealCounts[b.seat]+=b.n;deckLeft-=b.n;
+    lastDealtSeat=b.seat;lastDealtN=b.n;
+    _play('click');
+    render();
+    bwT(dealNext,290);
   }
   function aiCall1(){
     if(phase!=='call1')return;
@@ -261,15 +443,16 @@ window._gameFns.bowergarden = function BG(a){
       orderUp(currentPlayer,alone);return;
     }
     bidDecisions[currentPlayer]='pass';lastBidSeat=currentPlayer;
-    sm(PLAYER_NAMES[currentPlayer]+' passes');
+    sm(vb(currentPlayer,'pass','passes'));
     currentPlayer=(currentPlayer+1)%4;
     if(currentPlayer===leader){
       phase='call2';currentPlayer=leader;
+      dead[upcard.rank+upcard.suit]=true; // turned down = buried
       // Clear pass tags from round 1 so round-2 decisions don't pile up.
       bidDecisions=[null,null,null,null];lastBidSeat=-1;
-      if(currentPlayer!==SOUTH)bwT(aiCall2,600);else render();return;
+      if(currentPlayer!==SOUTH||_auto())bwT(aiCall2,600);else render();return;
     }
-    render();if(currentPlayer!==SOUTH)bwT(aiCall1,600);
+    render();if(currentPlayer!==SOUTH||_auto())bwT(aiCall1,600);
   }
   function aiCall2(){
     if(phase!=='call2')return;
@@ -281,33 +464,34 @@ window._gameFns.bowergarden = function BG(a){
       callTrump(currentPlayer,suit,alone);return;
     }
     if(currentPlayer===dealer){
-      var fb=aiPickTrump(currentPlayer);
-      if(!fb){var opts=SUITS.filter(function(x){return x!==upcard.suit;});fb=opts[Math.floor(Math.random()*opts.length)];}
+      // Stick the dealer: forced to pick their least-bad suit (the old
+      // code fell back to a RANDOM suit — instant euchre bait).
+      var fb=aiPickTrump(currentPlayer,true);
       var alone2=aiShouldGoAlone(currentPlayer,fb);
       bidDecisions[currentPlayer]={kind:'call',suit:fb,alone:alone2};
       lastBidSeat=currentPlayer;
       callTrump(currentPlayer,fb,alone2);return;
     }
     bidDecisions[currentPlayer]='pass';lastBidSeat=currentPlayer;
-    sm(PLAYER_NAMES[currentPlayer]+' passes');
+    sm(vb(currentPlayer,'pass','passes'));
     currentPlayer=(currentPlayer+1)%4;render();
-    if(currentPlayer!==SOUTH)bwT(aiCall2,600);
+    if(currentPlayer!==SOUTH||_auto())bwT(aiCall2,600);
   }
   function orderUp(p,goAlone){
     trumpSuit=upcard.suit;callingTeam=p%2;callingSeat=p;
     if(goAlone){loner=true;sittingOut=(p+2)%4;}
-    sm(PLAYER_NAMES[p]+' calls '+SUIT_ICONS[trumpSuit]+' Strong'+(goAlone?' (alone)':''));
+    sm(vb(p,'call','calls')+' '+SUIT_ICONS[trumpSuit]+' Strong'+(goAlone?' (alone)':''));
     var dh=hands[dealer];dh.push(upcard);
     // Human dealer picks up the turn card and chooses a discard by hand.
-    // AI dealer keeps the previous auto-discard-lowest behavior.
-    if(dealer===SOUTH){
+    if(dealer===SOUTH&&!_auto()){
       pickedUp=upcard; // remember which card was picked up for the NEW badge
       phase='discard';
       render();
       return;
     }
-    dh.sort(function(x,y){return cardVal(x,trumpSuit,'x')-cardVal(y,trumpSuit,'x');});
-    dh.shift();
+    // AI dealer: keep trump and aces, empty a short suit for the ruff.
+    var disc=chooseDealerDiscard(dh,trumpSuit);
+    for(var di=0;di<dh.length;di++){if(dh[di].rank===disc.rank&&dh[di].suit===disc.suit){dh.splice(di,1);break;}}
     startPlay();
   }
   function completeDiscard(card){
@@ -327,7 +511,7 @@ window._gameFns.bowergarden = function BG(a){
     if(goAlone){loner=true;sittingOut=(p+2)%4;}
     // SUIT_ICONS (plain ♥♦♣♠), not _pip() — the status line is textContent,
     // so _pip's floral <img> markup printed as raw HTML every hand.
-    sm(PLAYER_NAMES[p]+' calls '+SUIT_ICONS[suit]+' Strong'+(goAlone?' (alone)':''));
+    sm(vb(p,'call','calls')+' '+SUIT_ICONS[suit]+' Strong'+(goAlone?' (alone)':''));
     startPlay();
   }
   function startPlay(){
@@ -336,10 +520,11 @@ window._gameFns.bowergarden = function BG(a){
     // the lead passes to the next live seat instead.
     if(loner&&currentPlayer===sittingOut)currentPlayer=nextSeat(currentPlayer);
     render();
-    if(currentPlayer!==SOUTH)bwT(aiPlay,950);
+    if(currentPlayer!==SOUTH||_auto())bwT(aiPlay,950);
   }
   function aiPlay(){
-    if(phase!=='play'||currentPlayer===SOUTH)return;
+    if(phase!=='play')return;
+    if(currentPlayer===SOUTH&&!_auto())return;
     playCard(currentPlayer,aiPlayCard(currentPlayer));
   }
   function playCard(p,card){
@@ -348,6 +533,13 @@ window._gameFns.bowergarden = function BG(a){
     if(idx<0)return;
     hand.splice(idx,1);
     trick.push({player:p,card:card});trickCards[p]=card;
+    // Card memory: every played card is public; failing to follow suit
+    // publicly reveals a void.
+    dead[card.rank+card.suit]=true;
+    if(trick.length>1){
+      var _led=effSuit(trick[0].card,trumpSuit);
+      if(effSuit(card,trumpSuit)!==_led)voids[p][_led]=true;
+    }
     lastPlayed=p; // mark so render() applies the slide animation
     render();
     // Loner mode = 3 cards per trick instead of 4
@@ -368,13 +560,13 @@ window._gameFns.bowergarden = function BG(a){
           trick=[];trickCards=[null,null,null,null];lastPlayed=-1;
           if(teamTricks[0]+teamTricks[1]>=(loner?5:5)){scoreHand();return;}
           leader=winner;currentPlayer=leader;phase='play';render();
-          if(currentPlayer!==SOUTH)bwT(aiPlay,950);
+          if(currentPlayer!==SOUTH||_auto())bwT(aiPlay,950);
         },1700);
       },650);
       return;
     }
     currentPlayer=nextSeat(currentPlayer);render();
-    if(currentPlayer!==SOUTH)bwT(aiPlay,950);
+    if(currentPlayer!==SOUTH||_auto())bwT(aiPlay,950);
   }
   function scoreHand(){
     phase='handDone';
@@ -393,6 +585,8 @@ window._gameFns.bowergarden = function BG(a){
       team=1-callingTeam;pts=2;
     }
     teamScore[team]+=pts;
+    // Sim hook — headless AI-vs-AI stat collection. Inert in normal play.
+    if(window._BGSTATS)try{window._BGSTATS({hand:roundNum,callingTeam:callingTeam,callingSeat:callingSeat,loner:loner,orderedUp:trumpSuit===upcard.suit,tricks:teamTricks.slice(),team:team,pts:pts,euchred:(team!==callingTeam),score:teamScore.slice()});}catch(e){}
     var tn=team===0?'Your team':'Opponents';
     sm(tn+' +'+pts);
     // Earn only when YOUR team scores the hand (incl. the march bonus) —
@@ -487,12 +681,24 @@ window._gameFns.bowergarden = function BG(a){
           +'<div style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.12em;color:'+color+';text-transform:uppercase;">'+label+callerTag+'</div>'
           +'<div style="font-family:Georgia,serif;font-size:1.6rem;font-weight:700;color:#f5ebd0;line-height:1;margin-top:1px;text-shadow:0 2px 3px rgba(0,0,0,0.4);">'+score+'</div>'
         +'</div>'
-        +'<div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;opacity:'+(showFilled?'1':'0.45')+';">'
+        +'<div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0;opacity:'+(showFilled?'1':'0.45')+';">'
           +'<div style="font-family:DM Mono,monospace;font-size:0.48rem;letter-spacing:0.1em;color:rgba(232,220,200,0.55);">tricks</div>'
-          +'<div>'+tricksHtml+'</div>'
+          +'<div style="white-space:nowrap;">'+tricksHtml+'</div>'
         +'</div>'
       +'</div>'
     +'</div>';
+  }
+  // Small stack of card backs with a count — the deck while dealing,
+  // the face-down kitty after the upcard is turned down.
+  function _deckStackHtml(count,label){
+    var s='<div style="position:relative;width:52px;height:72px;margin:0 auto;">';
+    for(var i=0;i<3;i++){
+      s+='<div style="position:absolute;top:'+(i*2)+'px;left:'+(i*2)+'px;width:52px;height:72px;border-radius:6px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1.5px solid #2d4a1e;box-shadow:0 3px 8px rgba(0,0,0,0.4);"></div>';
+    }
+    s+='<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-weight:700;color:rgba(245,240,225,0.85);font-size:1rem;text-shadow:0 1px 3px rgba(0,0,0,0.8);">'+count+'</div>';
+    s+='</div>';
+    if(label)s+='<div style="margin-top:8px;font-family:Georgia,serif;font-style:italic;font-size:0.6rem;color:rgba(232,220,200,0.7);text-align:center;">'+label+'</div>';
+    return s;
   }
   function _headerHtml(){
     // Persistent trump chip (center) + dealer name (left) + alone badge
@@ -516,10 +722,12 @@ window._gameFns.bowergarden = function BG(a){
       h+='</div>';
     }else{
       // Placeholder pill with identical dimensions to the trump chip.
-      var uc=upcard?upcard.suit:null;
+      // The upcard suit is SECRET until it's turned up — never show it
+      // while the deal is still going out.
+      var uc=(upcard&&phase!=='dealing')?upcard.suit:null;
       var ucRed=(uc==='hearts'||uc==='diamonds');
       var ucCol=uc?(ucRed?'#e63946':'#f5ebd0'):'rgba(232,220,200,0.35)';
-      var promptLine = phase==='call1' ? 'Order up?' : phase==='call2' ? 'Call a suit' : 'Awaiting call';
+      var promptLine = phase==='dealing' ? (shuffling?'Shuffling…':'Dealing…') : phase==='call1' ? 'Order up?' : phase==='call2' ? 'Call a suit' : 'Awaiting call';
       h+='<div style="display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border:2px dashed rgba(232,220,200,0.3);border-radius:999px;background:linear-gradient(180deg,rgba(0,0,0,0.3),rgba(0,0,0,0.45));">';
       h+='<span style="font-size:1.6rem;line-height:1;color:'+ucCol+';opacity:'+(uc?'0.85':'0.4')+';">'+(uc?_pip(uc):'♠')+'</span>';
       h+='<div style="font-family:Georgia,serif;line-height:1.1;">';
@@ -560,6 +768,10 @@ window._gameFns.bowergarden = function BG(a){
     }
     // Legacy name — keep activeClass working for any older code paths.
     var activeClass=seatClasses;
+    // While dealing, seats show only the cards dealt to them so far;
+    // the newest batch pops in via .bg-deal-in.
+    function seatCount(seat){return phase==='dealing'?dealCounts[seat]:hands[seat].length;}
+    function dealCls(seat,idx,count){return (phase==='dealing'&&lastDealtSeat===seat&&idx>=count-lastDealtN)?'bg-deal-in':'';}
     // ── CONTROLS BAR — top right, unobtrusive ──
     var bgStyleName = (window._cdStyleLabel && typeof window._cdStyle==='function') ? window._cdStyleLabel(window._cdStyle()) : 'Floral';
     h+='<div style="display:flex;justify-content:flex-end;align-items:center;gap:6px;margin-bottom:6px;">';
@@ -576,20 +788,36 @@ window._gameFns.bowergarden = function BG(a){
     h+=_headerHtml();
     // North (partner) hand - face down. Bumped to 38x52 (was 32x44).
     h+='<div style="text-align:center;padding:6px;" class="'+activeClass(NORTH).replace(/^\s+/,'')+'"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:#7ab356;letter-spacing:0.1em;margin-bottom:5px;">PARTNER'+dealerBadge(NORTH)+_bidTag(NORTH)+sittingOutBadge(NORTH)+'</div><div style="display:inline-flex;justify-content:center;">';
-    for(var n=0;n<hands[NORTH].length;n++)h+='<div style="width:38px;height:52px;border-radius:5px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1.5px solid #2d4a1e;margin-left:'+(n===0?'0':'-22px')+';"></div>';
+    var nCt=seatCount(NORTH);
+    for(var n=0;n<nCt;n++)h+='<div class="'+dealCls(NORTH,n,nCt)+'" style="width:38px;height:52px;border-radius:5px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1.5px solid #2d4a1e;margin-left:'+(n===0?'0':'-22px')+';"></div>';
     h+='</div></div>';
     // Middle: West | Trick | East. Bumped min-height + side card sizes.
     h+='<div style="display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:6px 4px;min-height:236px;">';
     // West — bumped to 32x46 (was 28x40)
     h+='<div class="'+activeClass(WEST).replace(/^\s+/,'')+'" style="padding:4px;width:64px;text-align:center;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.72rem;color:#dc8a8a;text-align:center;letter-spacing:0.08em;margin-bottom:5px;line-height:1.5;">WEST'+dealerBadge(WEST)+'<br>'+_bidTag(WEST)+sittingOutBadge(WEST)+'</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
-    for(var w=0;w<hands[WEST].length;w++)h+='<div style="width:32px;height:46px;border-radius:5px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1.5px solid #2d4a1e;margin-top:'+(w===0?'0':'-32px')+';"></div>';
+    var wCt=seatCount(WEST);
+    for(var w=0;w<wCt;w++)h+='<div class="'+dealCls(WEST,w,wCt)+'" style="width:32px;height:46px;border-radius:5px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1.5px solid #2d4a1e;margin-top:'+(w===0?'0':'-32px')+';"></div>';
     h+='</div></div>';
     // Trick area — bumped min-height
     h+='<div style="position:relative;min-height:236px;background:rgba(26,31,23,0.3);border-radius:8px;">';
-    if(upcard&&phase==='call1'){
+    if(phase==='dealing'){
+      // The deck at table center: wiggles during the shuffle, counts
+      // down as the batches go out.
+      h+='<div class="'+(shuffling?'bg-shuffling':'')+'" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);">';
+      h+=_deckStackHtml(deckLeft,shuffling?'shuffling…':'dealing…');
+      h+='</div>';
+    } else if(upcard&&phase==='call1'){
       var ucol=upcard.suit==='hearts'||upcard.suit==='diamonds'?'#c47a7a':'#1a1f17';
-      h+='<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#F5F0E1;color:'+ucol+';border:2px solid #C4B998;border-radius:6px;padding:6px;font-weight:700;">';
+      h+='<div class="'+(justDealt?'bg-flip-up':'')+'" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);">';
+      h+='<div style="position:relative;">';
+      h+='<div style="position:absolute;top:4px;left:4px;right:-4px;bottom:-4px;border-radius:6px;background:linear-gradient(135deg,#3f6b2d,#2f4f20);border:1.5px solid #2d4a1e;"></div>';
+      h+='<div style="position:relative;background:#F5F0E1;color:'+ucol+';border:2px solid #C4B998;border-radius:6px;padding:6px 10px;font-weight:700;">';
       h+='<div style="font-size:0.95rem;">'+upcard.rank+'</div><div style="font-size:1.4rem;text-align:center;">'+_pip(upcard.suit)+'</div></div>';
+      h+='</div></div>';
+    } else if(upcard&&phase==='call2'){
+      h+='<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);opacity:0.55;">';
+      h+=_deckStackHtml(4,'turned down');
+      h+='</div>';
     }
     // Played cards positioned. Now bigger (was font-size 0.7rem) and
     // animated in via .bg-played-{seat} class on the most recent play.
@@ -614,7 +842,8 @@ window._gameFns.bowergarden = function BG(a){
     h+='</div>';
     // East — bumped to 32x46
     h+='<div class="'+activeClass(EAST).replace(/^\s+/,'')+'" style="padding:4px;width:64px;text-align:center;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.72rem;color:#dc8a8a;text-align:center;letter-spacing:0.08em;margin-bottom:5px;line-height:1.5;">EAST'+dealerBadge(EAST)+'<br>'+_bidTag(EAST)+sittingOutBadge(EAST)+'</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
-    for(var e=0;e<hands[EAST].length;e++)h+='<div style="width:32px;height:46px;border-radius:5px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1.5px solid #2d4a1e;margin-top:'+(e===0?'0':'-32px')+';"></div>';
+    var eCt=seatCount(EAST);
+    for(var e=0;e<eCt;e++)h+='<div class="'+dealCls(EAST,e,eCt)+'" style="width:32px;height:46px;border-radius:5px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1.5px solid #2d4a1e;margin-top:'+(e===0?'0':'-32px')+';"></div>';
     h+='</div></div>';
     h+='</div>';
     // South (player) hand
@@ -640,7 +869,13 @@ window._gameFns.bowergarden = function BG(a){
       });
     }
     var isDiscardPhase=(phase==='discard');
-    for(var k=0;k<sortedHand.length;k++){
+    if(phase==='dealing'){
+      // Your cards arrive face-down in the dealt batches, then flip up
+      // together when the upcard turns.
+      var sCt=dealCounts[SOUTH];
+      for(var sd=0;sd<sCt;sd++)h+='<div class="'+dealCls(SOUTH,sd,sCt)+'" style="width:50px;height:70px;border-radius:6px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:2.5px solid #2d4a1e;box-shadow:0 2px 6px rgba(0,0,0,0.35);"></div>';
+    }
+    else for(var k=0;k<sortedHand.length;k++){
       var cc=sortedHand[k];var canPlay=false;
       for(var m=0;m<pl2.length;m++)if(pl2[m].rank===cc.rank&&pl2[m].suit===cc.suit){canPlay=true;break;}
       // Left bower flag: a J whose suit matches the SAME-COLOR partner
@@ -663,7 +898,7 @@ window._gameFns.bowergarden = function BG(a){
       var oc='';
       if(canDiscard)oc=' onclick="_BGDC(\''+cc.rank+'\',\''+cc.suit+'\')"';
       else if(canPlay)oc=' onclick="_BGCC(\''+cc.rank+'\',\''+cc.suit+'\')"';
-      h+='<div style="'+sty+'"'+oc+'><span style="font-size:0.78rem;position:absolute;top:2px;left:5px;">'+cc.rank+'</span>';
+      h+='<div class="'+(justDealt?'bg-deal-in':'')+'" style="'+sty+'"'+oc+'><span style="font-size:0.78rem;position:absolute;top:2px;left:5px;">'+cc.rank+'</span>';
       if(isPickedUp)h+='<span style="font-size:0.42rem;color:#3a2a08;background:#ffdc70;position:absolute;top:-8px;right:-6px;padding:1px 4px;border-radius:3px;font-family:Bebas Neue,sans-serif;letter-spacing:0.06em;box-shadow:0 1px 3px rgba(0,0,0,0.5);">NEW</span>';
       if(isLeftBower)h+='<span style="font-size:0.42rem;color:#c8a84b;position:absolute;top:2px;right:4px;font-family:Bebas Neue,sans-serif;letter-spacing:0.06em;">L</span>';
       if(isRightBower)h+='<span style="font-size:0.42rem;color:#c8a84b;position:absolute;top:2px;right:4px;font-family:Bebas Neue,sans-serif;letter-spacing:0.06em;">R</span>';
@@ -714,8 +949,8 @@ window._gameFns.bowergarden = function BG(a){
     // doesn't re-trigger the bid-flash or slide-in on elements that already
     // animated. The CSS animation runs to completion on the already-mounted
     // DOM node; the next render produces a fresh node without the class.
-    if(lastPlayed>=0||lastBidSeat>=0){
-      bwT(function(){ lastPlayed=-1; lastBidSeat=-1; }, 50);
+    if(lastPlayed>=0||lastBidSeat>=0||lastDealtSeat>=0||justDealt){
+      bwT(function(){ lastPlayed=-1; lastBidSeat=-1; lastDealtSeat=-1; lastDealtN=0; justDealt=false; }, 50);
     }
   }
 
@@ -756,6 +991,7 @@ window._gameFns.bowergarden = function BG(a){
     currentPlayer=(currentPlayer+1)%4;
     if(currentPlayer===leader){
       phase='call2';currentPlayer=leader;
+      dead[upcard.rank+upcard.suit]=true; // turned down = buried
       bidDecisions=[null,null,null,null];lastBidSeat=-1;
     }
     render();
