@@ -5,21 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0d100c">
 <title>Bramblewick</title>
-<!-- Social preview (2026-07-25). 80 of 83 satellites had no og:image, so every
-     link posted rendered as a bare grey box. Card art from the portal thumb. -->
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="Sky Wolf Studios">
-<meta property="og:title" content="Bramblewick">
-<meta property="og:description" content="Bramblewick. Free to play at Sky Wolf Studios.">
-<meta property="og:url" content="https://lucidwinds.com/satellites/bramblewick/">
-<meta property="og:image" content="https://lucidwinds.com/satellites/bramblewick/og/card.jpg">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Bramblewick">
-<meta name="twitter:description" content="Bramblewick. Free to play at Sky Wolf Studios.">
-<meta name="twitter:image" content="https://lucidwinds.com/satellites/bramblewick/og/card.jpg">
-
 <style>
   :root{ --bg:#0d100c; --sage:#7ab356; --gold:#c8a84b; --cream:#e8dcc8; --muted:#8a9178; }
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -32,14 +17,12 @@
   .layer{ position:absolute; inset:0; display:none; align-items:center; justify-content:center; pointer-events:none; }
   .layer.on{ display:flex; }
   #menu.on{ background:linear-gradient(rgba(6,9,5,0.72),rgba(6,9,5,0.9)), url('assets/menu.jpg?v=2026-07-06.art') center/cover no-repeat; }
-  #how.on{ background:rgba(5,8,4,0.94); z-index:5; }
-  #coach.on{ background:rgba(5,8,4,0.78); z-index:6; }
   .panel{ pointer-events:auto; width:min(88vw,420px); max-height:92vh; overflow-y:auto;
     background:rgba(13,16,12,0.92); border:1px solid rgba(200,168,75,0.4); border-radius:16px;
     padding:22px 20px 26px; text-align:center; box-shadow:0 12px 48px rgba(0,0,0,0.6); }
   h1.logo{ margin:6px 0 2px; font-size:2.1rem; letter-spacing:1px; color:var(--cream);
     text-shadow:0 0 18px rgba(122,179,86,0.35); }
-  .tag{ color:var(--muted); font-size:0.82rem; margin:0 0 16px; font-style:italic; }
+  .tag{ color:var(--muted); font-size:0.95rem; margin:0 0 16px; font-style:italic; }
   .btn{ pointer-events:auto; display:inline-flex; align-items:center; justify-content:center;
     min-height:48px; padding:12px 22px; margin:6px 4px; border-radius:12px; cursor:pointer;
     font-size:1rem; font-weight:600; border:1px solid rgba(200,168,75,0.5);
@@ -48,46 +31,24 @@
   .btn:active{ transform:translateY(1px); }
   .row{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; align-items:center; margin:10px 0; }
   .seg{ display:inline-flex; border:1px solid rgba(200,168,75,0.4); border-radius:10px; overflow:hidden; }
-  .seg button{ min-height:48px; min-width:48px; padding:8px 12px; border:0; background:transparent; color:var(--cream); font-size:0.95rem; cursor:pointer; }
+  .seg button{ min-height:44px; min-width:44px; padding:8px 12px; border:0; background:transparent; color:var(--cream); font-size:0.95rem; cursor:pointer; }
   .seg button.sel{ background:rgba(122,179,86,0.35); color:#0d100c; font-weight:700; }
   .seg.stages{ display:flex; flex-wrap:wrap; max-width:340px; }
-  .seg.stages button{ font-size:0.82rem; padding:8px 10px; }
+  .seg.stages button{ font-size:0.9rem; padding:8px 10px; }
   .seg button:disabled{ opacity:0.4; cursor:default; }
-  .lbl{ font-size:0.8rem; color:var(--muted); margin:12px 0 2px; text-transform:uppercase; letter-spacing:1px; }
+  .lbl{ font-size:0.9rem; color:var(--muted); margin:12px 0 2px; text-transform:uppercase; letter-spacing:1px; }
   .toggle{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 4px; border-top:1px solid rgba(255,255,255,0.06); }
   .toggle span{ font-size:0.9rem; }
   .sw{ width:52px; height:30px; border-radius:16px; background:rgba(255,255,255,0.14); position:relative; cursor:pointer; flex:0 0 auto; }
-  .sw::before{ content:''; position:absolute; inset:-9px; }   /* invisible hit-slop: 30px switch -> 48px tap target */
+  .sw::before{ content:''; position:absolute; inset:-8px; }   /* invisible hit-slop → 46px tap target (44px touch floor) */
   .sw::after{ content:""; position:absolute; top:3px; left:3px; width:24px; height:24px; border-radius:50%; background:#cfc7b4; transition:left .12s; }
   .sw.on{ background:var(--sage); } .sw.on::after{ left:25px; background:#0d100c; }
-  .small{ font-size:0.78rem; color:var(--muted); line-height:1.45; }
-  .how{ text-align:left; font-size:0.82rem; color:var(--cream); line-height:1.5; margin:10px 2px 0; }
+  .small{ font-size:0.92rem; color:var(--muted); line-height:1.45; }
+  .how{ text-align:left; font-size:0.95rem; color:var(--cream); line-height:1.5; margin:10px 2px 0; }
   .how b{ color:var(--gold); }
   /* level-up draft cards are drawn on canvas; menus only for meta screens */
   #dev{ position:absolute; left:6px; top:6px; z-index:9; font:11px/1.3 monospace; color:#9fd; background:rgba(0,0,0,0.5); padding:4px 6px; border-radius:6px; display:none; white-space:pre; pointer-events:none; }
-  /* ---- Back to the arcade (fleet exit audit 2026-08-16) ----
-     Unlike the rest of the fleet this game has NO scaled 540x960 stage: the
-     canvas fills the viewport and menus are HTML panels sized in real CSS px,
-     so 48px here really is 48 rendered px.
-     It lives at the TOP of the menu panel, left aligned, rather than floating
-     in a corner. The panel is width:min(88vw,420px) and CENTRED, so a chip
-     pinned to the viewport's top left would sit on the panel's rounded corner
-     and on the left edge of the logo image at phone widths. The panel scrolls
-     from the top, so first child = always on screen without scrolling.
-     Not bottom right, ever: the fleet feedback fab (/feedback.js) owns roughly
-     x=W-90..W-12, y=H-174..H-96 at z-index 2147482000 and no game out-stacks it. */
-  .homerow{ text-align:left; margin:0 0 6px; }
-  #lw-home{ pointer-events:auto; display:inline-flex; align-items:center; gap:8px;
-    min-height:48px; padding:10px 18px; border-radius:12px; cursor:pointer;
-    font-family:inherit; font-size:0.9rem; font-weight:600; letter-spacing:0.04em;
-    border:1px solid rgba(200,168,75,0.32); background:rgba(13,16,12,0.72); color:var(--cream); }
-  #lw-home:active{ transform:translateY(1px); }
 </style>
-<!-- Same-origin Sunbeam SDK (2026-07-28: this game announced earn moments over
-     postMessage, but nothing on the portal side ever listened, so it paid nothing.
-     Now on the house standard: SDK + a 30/day capped helper. -->
-<script src="/sunbeam-sdk.js?v=7"></script>
-<script>window.Sunbeam&&Sunbeam.init({gameId:"bramblewick"}).catch(function(){});</script>
 </head>
 <body>
 <div id="wrap"><canvas id="c"></canvas></div>
@@ -96,7 +57,6 @@
 <!-- MENU -->
 <div class="layer on" id="menu">
   <div class="panel">
-    <div class="homerow"><button id="lw-home" type="button" aria-label="Back to the arcade">← Arcade</button></div>
     <h1 class="logo"><img src="assets/logo.png?v=2026-07-06.art" alt="BRAMBLEWICK" style="display:block;width:100%;max-width:360px;height:auto;margin:0 auto;filter:drop-shadow(0 4px 14px rgba(0,0,0,0.55))" onerror="this.parentNode.textContent='🌿 BRAMBLEWICK'"></h1>
     <p class="tag">Wake the garden. Its chemistry does the killing.</p>
     <div class="lbl">Ground</div>
@@ -105,7 +65,7 @@
     <div class="lbl" style="margin-top:12px">Verdancy (difficulty)</div>
     <div class="seg" id="verSeg"></div>
     <div class="small" id="verDesc" style="margin-top:6px"></div>
-    <div class="row"><button class="btn primary" id="playBtn">PLANT &amp; PLAY</button><button class="btn" id="howBtn">HOW TO PLAY</button></div>
+    <div class="row"><button class="btn primary" id="playBtn">PLANT &amp; PLAY</button></div>
     <div class="toggle"><span>Manual aim (advanced routing)</span><div class="sw" id="swAim"></div></div>
     <div class="toggle"><span>Reduced motion</span><div class="sw" id="swMotion"></div></div>
     <div class="toggle"><span>Sound</span><div class="sw on" id="swSound"></div></div>
@@ -127,87 +87,22 @@
     <p class="tag" id="overSub"></p>
     <div class="small" id="overStats" style="margin:8px 0 4px"></div>
     <div class="row"><button class="btn primary" id="againBtn">GROW AGAIN</button>
-    <button class="btn" id="shareBtn">SHARE</button>
     <button class="btn" id="menuBtn">MENU</button></div>
   </div>
 </div>
 
-<!-- HOW TO PLAY (opens from the menu HOW TO PLAY button) -->
-<div class="layer" id="how">
-  <div class="panel" id="howtoPanel">
-    <h1 class="logo" style="font-size:1.4rem">How to play</h1>
-    <div class="how">
-      <b>Drag</b> anywhere to steer your rooted plant around the field. Weapons fire on their own.<br><br>
-      Your shots barely scratch pests. They <b>paint</b> statuses on them. When two statuses meet
-      on one pest they <b>react</b>, and the reaction is what kills.<br><br>
-      <b>Pollen</b> supercharges the next reaction. <b>Spore</b> spreads it to the crowd.
-      <b>Nectar</b> lures swarms into a tight ball. <b>Frost</b> stores damage for a shatter.<br><br>
-      Sweep up <b>Loam</b> motes from fallen pests to level up, then draft new weapons,
-      passives, and companions to shape your build.<br><br>
-      <b>Win:</b> survive long enough to face the ground's final boss and take it down.<br>
-      <b>Lose:</b> pests that touch your plant drain its health. At zero, the garden sleeps.
-    </div>
-    <div class="row" style="margin-top:14px"><button class="btn primary" id="howClose">GOT IT</button></div>
-  </div>
-</div>
-
-<!-- FIRST-RUN COACH CARD (one time, before the first planting) -->
-<div class="layer" id="coach">
-  <div class="panel" style="max-width:340px">
-    <div class="how" style="text-align:center">
-      <b>DRAG</b> anywhere to move your plant.<br>
-      Weapons fire on their own. When two statuses meet on one pest they
-      <b>react</b>, and reactions do the killing.
-    </div>
-    <div class="row" style="margin-top:12px"><button class="btn primary" id="coachBtn">GOT IT</button></div>
-  </div>
-</div>
-
 <script>
-/* Fleet earn standard (SUNBEAM_EARN_POLICY.md): 30 sunbeams/day/game, granted
-   through this capped helper rather than raw Sunbeam.earn. */
-window._sbCapEarn=function(n,tag){
-  var granted=0;
-  try{ var k='sw_sb_bramblewick';
-    var s={}; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){}
-    var d=Math.floor(Date.now()/864e5); if(s.d!==d) s={d:d,n:0};
-    n=Math.min(n,Math.max(0,30-(s.n||0))); if(n<=0) return 0;
-    s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s)); granted=n;
-  }catch(e){}
-  if(granted>0 && window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(granted,tag).catch(function(){});
-  return granted;
-};
-
 /* =====================================================================
    Sky Wolf Studios embed protocol (copy-verbatim; do not modify)
    ===================================================================== */
 (function(){
   var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
   window.SWS_EMBED=SWS_EMBED;
-  /* ⛔ FRAMING IS DETECTED DIRECTLY, NOT FROM ?embed=1 (fleet exit audit 2026-08-16).
-     The portal's click router frames only /play/<id>.html and github.io urls. A
-     relative /satellites/<id>/ url falls through it and NAVIGATES TOP LEVEL, so
-     this page never carries ?embed=1 and window.parent===window. Everything that
-     was gated on SWS_EMBED therefore never ran once in production: the ready post
-     never fired and the close branch was dead. The unframed referrer path below is
-     what actually runs, and #lw-home on the menu panel is what calls it. */
-  var SWS_FRAMED=false; try{ SWS_FRAMED = window.parent!==window; }catch(e){ SWS_FRAMED=true; }
-  window.SWS_FRAMED=SWS_FRAMED;
   window.SWS_EXIT=function(){
-    if(SWS_FRAMED){try{parent.postMessage({sws:'close'},'*');}catch(e){} return;}
-    if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}else{location.replace('https://lucidwinds.com/portal/');}
+    if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'close'},'*');}catch(e){} return;}
+    location.href='https://lucidwinds.com/portal/';
   };
-  if(SWS_FRAMED){
-    try{parent.postMessage({sws:'ready'},'*');}catch(e){}
-    window.addEventListener('load',function(){try{parent.postMessage({sws:'ready'},'*');}catch(e){}});
-  }
-  function wireHome(){
-    var b=document.getElementById('lw-home');
-    if(!b||b._lwWired) return; b._lwWired=1;
-    b.addEventListener('click',function(ev){ ev.preventDefault(); window.SWS_EXIT(); });
-  }
-  wireHome();
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',wireHome);
+  if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'ready'},'*');}catch(e){}}
 })();
 
 /* =====================================================================
@@ -448,7 +343,7 @@ function recompute(){
 }
 function hasCompanion(id){ for(var i=0;i<G.companions.length;i++){ if(G.companions[i].def.id===id) return true; } return false; }
 function addCompanion(id){ if(hasCompanion(id)) return; var def=COMPANIONS[id]; if(!def) return;
-  G.companions.push({ def:def, angle:Math.random()*6.283, timer:(def.every||1200)*Math.random(), x:G.player.x, y:G.player.y }); }
+  G.companions.push({ def:def, angle:Math.random()*6.283, timer:(def.every||1200)*Math.random(), x:G.player.x, y:G.player.y, actT:0 }); }
 
 /* ---------------- conditional graft web (evolution layer) ----------------
    A graft is BASE weapon + a condition (lane pressure / state gate / season).
@@ -513,9 +408,19 @@ var PESTS={
   scale:{ id:'scale', name:'Scale Insect', shape:'limpet', hp:30, spd:0, r:13, dmg:0, col:'#b0885a', armor:0.5, xp:3 },
   mealybug:{ id:'mealybug', name:'Mealybug', shape:'fuzz', hp:22, spd:34, r:12, dmg:8, col:'#d8d0c0', armor:0, xp:2, firstImmune:1 },
   cutworm:{ id:'cutworm', name:'Cutworm', shape:'crescent', hp:32, spd:40, r:13, dmg:12, col:'#9a8a5a', armor:0.1, xp:3 },
-  thrip:{ id:'thrip', name:'Thrip', shape:'sliver', hp:6, spd:54, r:8, dmg:4, col:'#c0b8a0', armor:0, xp:1 },
-  vineborer:{ id:'vineborer', name:'Vine Borer', shape:'drill', hp:240, spd:32, r:22, dmg:16, col:'#6a8a4a', armor:0.2, xp:8, elite:1 }
+  thrip:{ id:'thrip', name:'Thrip', shape:'sliver', hp:6, spd:54, r:8, dmg:4, col:'#c0b8a0', armor:0, xp:1, weave:1 },
+  vineborer:{ id:'vineborer', name:'Vine Borer', shape:'drill', hp:240, spd:32, r:22, dmg:16, col:'#6a8a4a', armor:0.2, xp:8, elite:1 },
+  spittle:{ id:'spittle', name:'Spittlebug', shape:'pear', hp:15, spd:40, r:11, dmg:6, col:'#86b06a', armor:0, xp:2, ranged:1 }
 };
+/* every pest carries a soft halo in a lightened version of its own colour,
+   so the dark ones stop disappearing into the dark background */
+(function(){
+  function lighten(hex,f){ var n=parseInt(hex.slice(1),16),r=(n>>16)&255,g=(n>>8)&255,b=n&255;
+    r=Math.round(r+(255-r)*f); g=Math.round(g+(255-g)*f); b=Math.round(b+(255-b)*f);
+    return 'rgba('+r+','+g+','+b+','; }
+  for(var k in PESTS) PESTS[k].glowCol=lighten(PESTS[k].col,0.45);
+  window._lwLighten=lighten;
+})();
 
 /* ---------------- verdancy tiers (hybrid difficulty dial) ---------------- */
 var VERD=[
@@ -535,31 +440,31 @@ var G=null;
    Each: distinct pest pool + pacing + palette + boss arc. Reaction-lane themed.
    hazard field is data for a follow-up pass (env hazards) — currently no-op. ---------------- */
 var STAGES=[
- { id:'greenhouse', name:'Greenhouse Floor', flavor:'Home turf. No gimmick, just you and the reaction engine.',
+ { id:'greenhouse', name:'Greenhouse Floor', flavor:'Home turf. No gimmick — just you and the reaction engine.',
    pal:{t:'#0f150d',b:'#070a06',acc:'122,179,86'},
-   pool:function(t){ if(t<25)return['aphid','aphid','mite','thrip']; if(t<70)return['aphid','mite','locust','beetle','thrip','weevil']; if(t<140)return['aphid','locust','beetle','slug','wasp','mite','weevil','mealybug']; return['aphid','locust','beetle','slug','wasp','mite','weevil','mealybug','scale','cutworm','beetle','wasp']; },
+   pool:function(t){ if(t<25)return['aphid','aphid','mite','thrip']; if(t<70)return['aphid','mite','locust','beetle','thrip','weevil']; if(t<140)return['aphid','locust','beetle','slug','wasp','mite','weevil','mealybug','spittle']; return['aphid','locust','beetle','slug','wasp','mite','weevil','mealybug','scale','cutworm','beetle','wasp','spittle']; },
    tune:{rateMul:1,hpMul:1,burstEvery:60,eliteEvery:72,eliteStart:55}, hazard:null,
-   bosses:[{id:'grubfather',at:150,intro:'GRUBFATHER: break the shell with Rot (Spore + Sap)'},{id:'stormwing',afterPrev:45,final:true,intro:'STORMWING, the Locust Queen. Dodge the volleys'}] },
+   bosses:[{id:'grubfather',at:150,intro:'GRUBFATHER — break the shell with Rot (Spore + Sap)'},{id:'stormwing',afterPrev:45,final:true,intro:'STORMWING, the Locust Queen — dodge the volleys'}] },
  { id:'sunkenbeds', name:'The Sunken Beds', flavor:'Slow and thick. Sap cracks the shell.',
    pal:{t:'#0e1a16',b:'#040a08',acc:'74,138,118'},
    pool:function(t){ if(t<20)return['aphid','aphid','mite','mealybug']; if(t<70)return['aphid','mite','mealybug','mealybug','scale','beetle']; if(t<140)return['mealybug','scale','beetle','beetle','slug','slug','cutworm','mite']; return['slug','slug','scale','scale','beetle','cutworm','cutworm','mealybug','weevil','thrip']; },
    tune:{rateMul:0.8,hpMul:1.0,burstEvery:60,eliteEvery:999,eliteStart:999}, hazard:{type:'pools',n:4,r:66},
-   bosses:[{id:'tideshell',at:130,final:true,crackOn:{status:'sap',hits:1},intro:'TIDESHELL, the Bog Matron. Any Sap reaction cracks her shell'}] },
+   bosses:[{id:'tideshell',at:130,final:true,crackOn:{status:'sap',hits:1},intro:'TIDESHELL, the Bog Matron — any Sap reaction cracks her shell'}] },
  { id:'sundrift', name:'The Sundrift Meadow', flavor:'Fast and light. A dense, squishy swarm.',
    pal:{t:'#241a08',b:'#0f0a04',acc:'230,210,74'},
-   pool:function(t){ if(t<20)return['aphid','aphid','aphid','thrip']; if(t<60)return['aphid','thrip','thrip','mite','wasp']; if(t<130)return['wasp','wasp','locust','locust','thrip','mite','aphid']; return['wasp','wasp','locust','locust','locust','thrip','thrip','mite','aphid','weevil']; },
+   pool:function(t){ if(t<20)return['aphid','aphid','aphid','thrip']; if(t<60)return['aphid','thrip','thrip','mite','wasp']; if(t<130)return['wasp','wasp','locust','locust','thrip','mite','aphid']; return['wasp','wasp','locust','locust','locust','thrip','thrip','mite','aphid','weevil','spittle']; },
    tune:{rateMul:1.33,hpMul:0.9,burstEvery:45,eliteEvery:999,eliteStart:999}, hazard:{type:'heat'},
-   bosses:[{id:'stormwing',at:100,final:true,tune:{fireT:1.4,addMix:['wasp','locust']},intro:'THE SOLSTICE QUEEN: Stormwing at her hottest'}] },
+   bosses:[{id:'stormwing',at:100,final:true,tune:{fireT:1.4,addMix:['wasp','locust']},intro:'THE SOLSTICE QUEEN — Stormwing at her hottest'}] },
  { id:'understory', name:'The Hothouse Understory', flavor:'Immune-heavy. Spore the crowd, then chain.',
    pal:{t:'#120a1a',b:'#06040a',acc:'155,122,214'},
    pool:function(t){ if(t<25)return['aphid','mite','weevil']; if(t<80)return['weevil','weevil','beetle','mealybug','mite']; if(t<150)return['mealybug','mealybug','weevil','beetle','beetle','cutworm','locust']; return['mealybug','mealybug','weevil','weevil','beetle','cutworm','cutworm','scale','vineborer']; },
    tune:{rateMul:1.0,hpMul:1.05,burstEvery:60,eliteEvery:45,eliteStart:40}, hazard:{type:'sporefog',cycle:35,active:8},
-   bosses:[{id:'broodmother',at:160,final:true,crackOn:{status:'spore',hits:8},intro:'CORDYCEPS BROODMOTHER: land Spore reactions to break her ward'}] },
+   bosses:[{id:'broodmother',at:160,final:true,crackOn:{status:'spore',hits:8},intro:'CORDYCEPS BROODMOTHER — land Spore reactions to break her ward'}] },
  { id:'longdark', name:'The Long Dark Conservatory', flavor:'Everything, at once, at its coldest. Shatter them.',
    pal:{t:'#060a12',b:'#010208',acc:'143,208,232'},
-   pool:function(t){ if(t<15)return['aphid','mite','thrip']; return['aphid','locust','beetle','beetle','slug','wasp','mite','weevil','weevil','scale','mealybug','cutworm','cutworm','thrip']; },
+   pool:function(t){ if(t<15)return['aphid','mite','thrip']; return['aphid','locust','beetle','beetle','slug','wasp','mite','weevil','weevil','scale','mealybug','cutworm','cutworm','thrip','spittle']; },
    tune:{rateMul:1.1,hpMul:1.15,burstEvery:40,eliteEvery:50,eliteStart:30}, hazard:{type:'frostsnap',snap:20,wave:30},
-   bosses:[{id:'frostmaw',at:135,intro:'FROSTMAW: it hits harder while it is frozen'},{id:'wiltqueen',afterPrev:50,final:true,intro:'THE WILT QUEEN: the true end'}] }
+   bosses:[{id:'frostmaw',at:135,intro:'FROSTMAW — it hits harder while it is frozen'},{id:'wiltqueen',afterPrev:50,final:true,intro:'THE WILT QUEEN — the true end'}] }
 ];
 var BOSS_SPAWN={grubfather:spawnGrubfather, stormwing:spawnStormwing, tideshell:spawnTideshell, broodmother:spawnBroodmother, frostmaw:spawnFrostmaw, wiltqueen:spawnWiltQueen};
 var BOSS_NAMES={grubfather:'The Grubfather', stormwing:'Stormwing', tideshell:'Tideshell', broodmother:'The Broodmother', frostmaw:'Frostmaw', wiltqueen:'The Wilt Queen'};
@@ -571,9 +476,9 @@ function newGame(verdancy, stageId){
     time:0, kills:0, loamRun:0, over:false, win:false,
     player:{ x:VW/2, y:VH*0.62, r:15, hp:100, maxhp:100, spd:150, iframe:0, hurtFlash:0 },
     weapons:[], passives:{}, weaponTimers:{}, weaponLevel:{},
-    bloom:0, bloomNext:6, level:1, pendingLevels:0,
+    bloom:0, bloomNext:6, level:1,
     aim:{x:VW/2,y:VH*0.4, active:false},
-    boss:null, stageId:(stageId||0), stage:(STAGES[stageId||0]||STAGES[0]), bossIdx:0, bossTimes:[], bossDownIds:{}, zones:[], hzT:0, heat:0, shade:[], toast:null, bossesDown:0,
+    boss:null, stageId:(stageId||0), stage:(STAGES[stageId||0]||STAGES[0]), bossIdx:0, bossTimes:[], bossDownIds:{}, zones:[], webs:[], hzT:0, heat:0, shade:[], toast:null, bossesDown:0,
     shake:0, slow:0,
     draft:null,            // level-up card set
     spawnAcc:0, phase:0,
@@ -604,6 +509,34 @@ var motes=new Pool(function(){ return { active:false, x:0,y:0, vx:0,vy:0, xp:1, 
 var fx=new Pool(function(){ return { active:false, x:0,y:0, vx:0,vy:0, life:0, max:0.4, r:10, kind:'ring', col:'#fff' }; }, MAX_FX);
 var hazards=new Pool(function(){ return { active:false, x:0,y:0, vx:0,vy:0, life:0, r:6 }; }, 240); // enemy bullets (Stormwing)
 
+/* ---------------- floating text (2026-08-20, Stephen's playtest pass) ----------------
+   The reaction engine is the whole game and it used to fire INVISIBLY — a
+   name in the code, an achievement counter, and nothing on the board. Every
+   reaction now announces itself where it happened. */
+var texts=[];
+function spawnText(x,y,str,col,big){
+  /* chained reactions in one cluster used to stack their names into soup:
+     a repeat of a name still on screen nearby just refreshes it instead */
+  for(var i=0;i<texts.length;i++){ var e=texts[i];
+    if(e.str===str && Math.abs(e.x-x)<70 && Math.abs(e.y-y)<52){ e.t=Math.max(e.t,1.0); return; } }
+  texts.push({x:x+(Math.random()*26-13),y:Math.max(24,y),str:str,col:col||'#e8dcc8',t:1.1,big:big||0});
+  if(texts.length>14) texts.shift();
+}
+function updateTexts(dt){ for(var i=texts.length-1;i>=0;i--){ var t=texts[i]; t.t-=dt*0.75; t.y-=dt*24; if(t.t<=0) texts.splice(i,1); } }
+function drawTexts(){
+  for(var i=0;i<texts.length;i++){ var t=texts[i];
+    ctx.globalAlpha=Math.min(1,t.t*1.5);
+    ctx.font=(t.big?'bold 18px':'bold 14px')+' sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.strokeStyle='rgba(0,0,0,0.75)'; ctx.lineWidth=3.5; ctx.strokeText(t.str,t.x,t.y);
+    ctx.fillStyle=t.col; ctx.fillText(t.str,t.x,t.y);
+  }
+  ctx.globalAlpha=1; ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+}
+/* a visible streak from a companion to whatever it just did something to */
+function spawnZip(x1,y1,x2,y2,col){
+  var f=fx.spawn(); if(!f) return;
+  f.x=x1; f.y=y1; f.x2=x2; f.y2=y2; f.kind='zip'; f.col=col; f.r=0; f.life=0.32; f.max=0.32; f.vx=0; f.vy=0;
+}
 function spawnFX(x,y,kind,col,r,life){ if(store.settings.reducedMotion && kind==='burst') return;
   var f=fx.spawn(); if(!f) return; f.x=x; f.y=y; f.kind=kind; f.col=col||'#fff'; f.r=r||14; f.life=life||0.4; f.max=f.life; f.vx=0; f.vy=0; }
 function spawnBurst(x,y,col,n){ if(store.settings.reducedMotion){ spawnFX(x,y,'ring',col,20,0.3); return; }
@@ -621,8 +554,10 @@ function spawnPest(typeId, x, y){
   var hp=base.hp*G.vd.hp*(1+G.time*0.006)*G.stage.tune.hpMul;
   p.hp=hp; p.maxhp=hp; p.r=base.r; p.spd=base.spd; p.dmg=base.dmg; p.armor=base.armor; p.xp=base.xp;
   p.aerial=base.aerial||0; p.sunweak=base.sunweak||0; p.web=base.web||0; p.dash=base.dash||0; p.firstImmuneUsed=0;
+  p.weave=base.weave||0; p.ranged=base.ranged||0;
   for(var i=0;i<7;i++){ p.st[i]=0; p.stt[i]=0; }
-  p.rcd=0; p.slowT=0; p.rootT=0; p.freezeT=0; p.brittle=0; p.bleedx=1; p.dashT=0; p.seed=Math.random()*6.28;
+  p.rcd=0; p.slowT=0; p.rootT=0; p.freezeT=0; p.brittle=0; p.bleedx=1; p.dashT=1.5+Math.random()*2; p.seed=Math.random()*6.28;
+  p.orbA=p.seed; p.spitT=1.4+Math.random()*1.6; p.webT=2+Math.random()*2.5;
   if(x==null){ // spawn just off a random edge
     var edge=(Math.random()*4)|0;
     if(edge===0){ p.x=Math.random()*VW; p.y=-20; }
@@ -660,6 +595,7 @@ function runSpawner(dt){
    BOSS — Grubfather (slice boss)
    ================================================================== */
 function _bossBase(type,meta,r,spd,dmg,hp){ var p=pests.spawn(); if(!p) return null;
+  meta.glowCol=window._lwLighten(meta.col,0.45);
   p.boss=true; p.type=type; p.meta=meta; p.x=VW/2; p.y=-40; p.r=r; p.spd=spd; p.dmg=dmg;
   var h=hp*G.vd.hp; p.hp=h; p.maxhp=h; for(var i=0;i<7;i++){ p.st[i]=0; p.stt[i]=0; }
   p.rcd=0; p.slowT=0; p.rootT=0; p.freezeT=0; p.brittle=0; p.bleedx=1; p.seed=0; p.elite=false; p.crackOn=null; p.crackHits=0; return p; }
@@ -683,7 +619,7 @@ function updateStormwing(p,dt){
   p.addT-=dt; if(p.addT<=0){ p.addT=5.5; var mix=p.addMix||['locust']; for(var i=0;i<3&&pests.n<MAX_PESTS;i++) spawnPest(mix[(Math.random()*mix.length)|0]); }
 }
 function updateTideshell(p,dt){ _grubMove(p,dt); p.seed+=dt;
-  if(!p.armorBack){ p.slimeT-=dt; if(p.slimeT<=0){ p.slimeT=1.4; var h=hazards.spawn(); if(h){ h.x=p.x; h.y=p.y; h.vx=0; h.vy=0; h.life=5; h.r=10; } } } }
+  if(!p.armorBack){ p.slimeT-=dt; if(p.slimeT<=0){ p.slimeT=1.4; var h=hazards.spawn(); if(h){ h.x=p.x; h.y=p.y; h.vx=0; h.vy=0; h.life=5; h.r=10; h.dmg=12; } } } }
 function updateBroodmother(p,dt){ p.seed+=dt;
   if(p.y<VH*0.34){ p.y+=70*dt; return; } // glide down into the arena, then root and pulse
   p.pulseT-=dt; if(p.pulseT<=0){ p.pulseT=3.5; spawnFX(p.x,p.y,'ring','#9b7ad6',110,0.5); gridQuery(p.x,p.y,120,function(o){ if(o.active&&!o.boss) applyStatus(o,'spore',2); }); }
@@ -694,9 +630,9 @@ function updateWiltQueen(p,dt){ var pl=_grubMove(p,dt);
 function stormBurst(p,pl){
   p.burstN=(p.burstN||0)+1;
   if(p.burstN%2===0){ // full ring
-    var n=14; for(var i=0;i<n;i++){ var a=i/n*6.283 + p.seed; var h=hazards.spawn(); if(!h) break; h.x=p.x; h.y=p.y; h.vx=Math.cos(a)*130; h.vy=Math.sin(a)*130; h.life=6; h.r=6; }
+    var n=14; for(var i=0;i<n;i++){ var a=i/n*6.283 + p.seed; var h=hazards.spawn(); if(!h) break; h.x=p.x; h.y=p.y; h.vx=Math.cos(a)*130; h.vy=Math.sin(a)*130; h.life=6; h.r=6; h.dmg=12; }
   } else { // aimed 5-shot spread at the player
-    var base=Math.atan2(pl.y-p.y,pl.x-p.x); for(var j=-2;j<=2;j++){ var a2=base+j*0.22; var h2=hazards.spawn(); if(!h2) break; h2.x=p.x; h2.y=p.y; h2.vx=Math.cos(a2)*170; h2.vy=Math.sin(a2)*170; h2.life=5; h2.r=6; }
+    var base=Math.atan2(pl.y-p.y,pl.x-p.x); for(var j=-2;j<=2;j++){ var a2=base+j*0.22; var h2=hazards.spawn(); if(!h2) break; h2.x=p.x; h2.y=p.y; h2.vx=Math.cos(a2)*170; h2.vy=Math.sin(a2)*170; h2.life=5; h2.r=6; h2.dmg=12; }
   }
   sndReact(1);
 }
@@ -803,6 +739,8 @@ function _doReaction(p, a, b){
   G.shake=Math.min(0.5, G.shake + (triple?0.35:0.12));
   // earn moment: first time each reaction triggers
   var nm=rx.name; if(!G.reactCount[nm]){ G.reactCount[nm]=1; earn('first_reaction',{reaction:nm}); if(triple) earn('triple_reaction',{reaction:nm}); }
+  // the reaction SAYS ITS NAME where it happened — this engine used to fire invisibly
+  spawnText(cx, cy-18, nm+(nova?'!':''), ST_META[a]?ST_META[a].col:'#e8c24b', (nova||triple)?1:0);
   if(!store.codex[nm]){ store.codex[nm]=1; saveSoon(); } // Codex: reactions across runs
 }
 /* Nectar lure: pull nectar-marked pests toward a point (clumps the swarm) */
@@ -825,7 +763,7 @@ function killPest(p){
   // drop loam mote(s) — elites drop a cache
   var drops=p.elite?6:1;
   for(var di=0;di<drops;di++){ var m=motes.spawn(); if(m){ m.x=p.x+(drops>1?Math.random()*44-22:0); m.y=p.y+(drops>1?Math.random()*44-22:0); m.xp=p.elite?3:p.xp; m.t=13; m.vx=(Math.random()*60-30); m.vy=(Math.random()*60-30); } }
-  if(p.elite){ earn('elite_down',{}); if(window._sbCapEarn) window._sbCapEarn(1,'bramblewick:elite'); }
+  if(p.elite) earn('elite_down',{});
   if((G.passives.guttation||(G.laneMul&&G.laneMul.lifesteal)) && G.player.hp<G.player.maxhp){ G.player.hp=Math.min(G.player.maxhp,G.player.hp+2); }
   if(G.familyTier.mycelium>=3){ gridQuery(p.x,p.y,40,function(o){ if(o.active) applyStatus(o,'spore',1); }); } // Mycelium T3: spore puff on kill
   spawnBurst(p.x,p.y,p.meta.col,5);
@@ -833,7 +771,7 @@ function killPest(p){
 function bossDefeated(p){
   var type=p.type; p.active=false; G.boss=null; G.kills++; G.bossesDown++;
   spawnBurst(p.x,p.y,'#e8c24b',24); G.shake=0.6; sndLevel();
-  earn('boss_down',{boss:type}); if(window._sbCapEarn) window._sbCapEarn(5,'bramblewick:boss');
+  earn('boss_down',{boss:type});
   // big loam cache
   for(var i=0;i<14;i++){ var m=motes.spawn(); if(m){ m.x=p.x+(Math.random()*80-40); m.y=p.y+(Math.random()*80-40); m.xp=3; m.t=14; m.vx=Math.random()*80-40; m.vy=Math.random()*80-40; } }
   // boss walker: record time, then advance to the next boss OR win on the final
@@ -932,21 +870,39 @@ function updateCompanions(dt){
     c.timer-=dt*1000; if(c.timer<=0){ c.timer=c.def.every||1200; companionAction(c,pl); }
   }
 }
+/* Every action is VISIBLE now (2026-08-20, Stephen: "I don't see what my
+   critter companions are actually doing"): dives and lobs draw a streak from
+   the familiar to its target, marks ping the cluster, auras show their
+   circle and pulse when they seed, heals say so, and the familiar itself
+   flashes bigger the moment it acts. */
 function companionAction(c,pl){
   var k=c.def.kit, st=c.def.status;
-  if(k==='dive'){ var t=c.def.elite?strongestPest(pl.x,pl.y,340):nearestPest(pl.x,pl.y,340); if(t){ applyStatus(t,st,2); damagePest(t,3,'hit'); spawnFX(t.x,t.y,'react',ST_META[st].col,18,0.22); } }
-  else if(k==='lob'){ var t2=c.def.id==='owl'?strongestPest(pl.x,pl.y,380):nearestPest(pl.x,pl.y,380); if(t2){ applyStatus(t2,st,2); spawnFX(t2.x,t2.y,'ring',ST_META[st].col,24,0.3); gridQuery(t2.x,t2.y,34,function(o){ if(o.active&&o!==t2) applyStatus(o,st,1); }); } }
-  else if(k==='mark'){ var d=densestPoint(pl.x,pl.y,260); if(d){ var seeded=0; gridQuery(d.x,d.y,64,function(o){ if(o.active&&seeded<6){ applyStatus(o,st,2); seeded++; } }); spawnFX(d.x,d.y,'ring',ST_META[st].col,64,0.35); } }
-  else if(k==='markAll'){ var n=0; for(var i=0;i<pests.n&&n<120;i++){ var o=pests.a[i]; if(o.active){ applyStatus(o,st,1); n++; } } spawnFX(pl.x,pl.y,'nova','#e8c24b',130,0.5); }
-  else if(k==='aura'){ var r=c.def.auraR||80, seed=0; gridQuery(c.x,c.y,r,function(o){ if(o.active&&seed<5&&dist2(c.x,c.y,o.x,o.y)<=r*r){ applyStatus(o,st,1); seed++; } }); }
-  else if(k==='shock'){ var r2=c.def.shockR||110; spawnFX(pl.x,pl.y,'ring',ST_META[st].col,r2,0.4); gridQuery(pl.x,pl.y,r2,function(o){ if(o.active&&dist2(pl.x,pl.y,o.x,o.y)<=r2*r2){ applyStatus(o,st,1); damagePest(o,5,'hit'); var a=Math.atan2(o.y-pl.y,o.x-pl.x); o.x+=Math.cos(a)*14; o.y+=Math.sin(a)*14; } }); }
-  else if(k==='heal'){ if(pl.hp<pl.maxhp) pl.hp=Math.min(pl.maxhp,pl.hp+3); }
-  else if(k==='trail'){ gridQuery(pl.x,pl.y,26,function(o){ if(o.active) applyStatus(o,st,1); }); }
+  var col=st?ST_META[st].col:'#9ccf6a';
+  var acted=false;
+  if(k==='dive'){ var t=c.def.elite?strongestPest(pl.x,pl.y,340):nearestPest(pl.x,pl.y,340); if(t){ applyStatus(t,st,2); damagePest(t,3,'hit'); spawnZip(c.x,c.y,t.x,t.y,col); spawnFX(t.x,t.y,'react',col,18,0.22); acted=true; } }
+  else if(k==='lob'){ var t2=c.def.id==='owl'?strongestPest(pl.x,pl.y,380):nearestPest(pl.x,pl.y,380); if(t2){ applyStatus(t2,st,2); spawnZip(c.x,c.y,t2.x,t2.y,col); spawnFX(t2.x,t2.y,'ring',col,24,0.3); gridQuery(t2.x,t2.y,34,function(o){ if(o.active&&o!==t2) applyStatus(o,st,1); }); acted=true; } }
+  else if(k==='mark'){ var d=densestPoint(pl.x,pl.y,260); if(d){ var seeded=0; gridQuery(d.x,d.y,64,function(o){ if(o.active&&seeded<6){ applyStatus(o,st,2); seeded++; } }); spawnZip(c.x,c.y,d.x,d.y,col); spawnFX(d.x,d.y,'ring',col,64,0.35); acted=seeded>0; } }
+  else if(k==='markAll'){ var n=0; for(var i=0;i<pests.n&&n<120;i++){ var o=pests.a[i]; if(o.active){ applyStatus(o,st,1); n++; } } spawnFX(pl.x,pl.y,'nova','#e8c24b',130,0.5); if(n) spawnText(pl.x,pl.y-46,'OMNISIGHT','#e8c24b',1); acted=true; }
+  else if(k==='aura'){ var r=c.def.auraR||80, seed=0; gridQuery(c.x,c.y,r,function(o){ if(o.active&&seed<5&&dist2(c.x,c.y,o.x,o.y)<=r*r){ applyStatus(o,st,1); seed++; } }); if(seed){ spawnFX(c.x,c.y,'ring',col,r,0.4); acted=true; } }
+  else if(k==='shock'){ var r2=c.def.shockR||110; spawnFX(pl.x,pl.y,'ring',ST_META[st].col,r2,0.4); gridQuery(pl.x,pl.y,r2,function(o){ if(o.active&&dist2(pl.x,pl.y,o.x,o.y)<=r2*r2){ applyStatus(o,st,1); damagePest(o,5,'hit'); var a=Math.atan2(o.y-pl.y,o.x-pl.x); o.x+=Math.cos(a)*14; o.y+=Math.sin(a)*14; } }); G.shake=Math.min(0.5,G.shake+0.15); acted=true; }
+  else if(k==='heal'){ if(pl.hp<pl.maxhp){ pl.hp=Math.min(pl.maxhp,pl.hp+3); spawnText(pl.x,pl.y-30,'+3','#9ccf6a',0); spawnBurst(pl.x,pl.y,'#9ccf6a',3); acted=true; } }
+  else if(k==='trail'){ gridQuery(pl.x,pl.y,26,function(o){ if(o.active) applyStatus(o,st,1); }); spawnFX(pl.x+((Math.random()*18)-9),pl.y+12,'ring',col,10,0.35); acted=true; }
+  if(acted) c.actT=0.35;
 }
 function drawCompanions(){ for(var i=0;i<G.companions.length;i++){ var c=G.companions[i]; var col=c.def.status?ST_META[c.def.status].col:'#9ccf6a';
-  ctx.save(); ctx.translate(c.x,c.y);
-  if(!ART.tryImg('companion_'+c.def.id, ctx, 32)){   // painted familiar, bigger so the art reads (else the coloured dot)
-    ctx.fillStyle=col; ctx.strokeStyle='rgba(0,0,0,0.45)'; ctx.lineWidth=1; ctx.beginPath(); ctx.arc(0,0,4.6,0,6.283); ctx.fill(); ctx.stroke();
+  // an aura familiar shows its working circle all the time, faintly
+  if(c.def.kit==='aura'&&c.def.auraR){
+    ctx.globalAlpha=0.07; ctx.fillStyle=col; ctx.beginPath(); ctx.arc(c.x,c.y,c.def.auraR,0,6.283); ctx.fill();
+    ctx.globalAlpha=0.18; ctx.strokeStyle=col; ctx.lineWidth=1; ctx.beginPath(); ctx.arc(c.x,c.y,c.def.auraR,0,6.283); ctx.stroke();
+    ctx.globalAlpha=1;
+  }
+  if(c.actT>0) c.actT-=STEP;
+  var pop=c.actT>0 ? 1+c.actT*1.6 : 1;   // it visibly JUMPS when it acts
+  ctx.save(); ctx.translate(c.x,c.y); ctx.scale(pop,pop);
+  if(c.actT>0){ ctx.globalAlpha=0.55; ctx.strokeStyle=col; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(0,0,13,0,6.283); ctx.stroke(); ctx.globalAlpha=1; }
+  if(!ART.tryImg('companion_'+c.def.id, ctx, 32)){   // painted familiar (else a readable glowing dot, not a speck)
+    ctx.globalAlpha=0.35; ctx.fillStyle=col; ctx.beginPath(); ctx.arc(0,0,10,0,6.283); ctx.fill(); ctx.globalAlpha=1;
+    ctx.fillStyle=col; ctx.strokeStyle='rgba(0,0,0,0.5)'; ctx.lineWidth=1.4; ctx.beginPath(); ctx.arc(0,0,7,0,6.283); ctx.fill(); ctx.stroke();
   }
   if(c.def.rare){ ctx.strokeStyle='#e8c24b'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(0,0,18,0,6.283); ctx.stroke(); }
   ctx.restore(); } }
@@ -980,7 +936,7 @@ function update(dt){
   for(var i=0;i<pests.n;i++){ if(pests.a[i].active) gridInsert(pests.a[i]); }
 
   runSpawner(dt);
-  fireWeapons(dt); updateBeams(dt); updateCompanions(dt);
+  fireWeapons(dt); updateBeams(dt); updateCompanions(dt); updateTexts(dt);
 
   // lush regen
   if(G.laneMul&&G.laneMul.regen>0&&pl.hp<pl.maxhp) pl.hp=Math.min(pl.maxhp,pl.hp+G.laneMul.regen*dt);
@@ -1034,13 +990,14 @@ function update(dt){
   for(i=0;i<hazards.n;i++){ var hz=hazards.a[i]; if(!hz.active) continue; hz.life-=dt; if(hz.life<=0){ hz.active=false; continue; }
     hz.x+=hz.vx*dt; hz.y+=hz.vy*dt;
     if(hz.x<-24||hz.x>VW+24||hz.y<-24||hz.y>VH+24){ hz.active=false; continue; }
-    if(dist2(hz.x,hz.y,pl.x,pl.y) < (pl.r+hz.r)*(pl.r+hz.r)){ hurtPlayer(12); hz.active=false; } }
+    if(dist2(hz.x,hz.y,pl.x,pl.y) < (pl.r+hz.r)*(pl.r+hz.r)){ hurtPlayer(hz.dmg||12); hz.active=false; } }
   hazards.compact();
+  // mite webs age out
+  for(i=G.webs.length-1;i>=0;i--){ G.webs[i].t-=dt; if(G.webs[i].t<=0) G.webs.splice(i,1); }
   if(G.toast){ G.toast.t-=dt; if(G.toast.t<=0) G.toast=null; }
 
   // milestone earn (every 60s survived)
-  var ms=(G.time/60)|0; if(ms>G.milestone){ G.milestone=ms; earn('milestone_min',{minute:ms});
-    if(window._sbCapEarn) window._sbCapEarn(2,'bramblewick:minute'); }   /* 2 per survived minute, 30/day cap */
+  var ms=(G.time/60)|0; if(ms>G.milestone){ G.milestone=ms; earn('milestone_min',{minute:ms}); }
   if(saveT) saveNow();
 }
 function projBurst(pr){ spawnFX(pr.x,pr.y,'ring',ST_META[pr.status].col, pr.burstR, 0.3);
@@ -1056,7 +1013,46 @@ function updatePest(p,dt){
   if(p.rootT>0||p.freezeT>0) sp=0;
   // dash pest: periodic lunge
   if(p.dash){ p.dashT-=dt; if(p.dashT<=0){ p.dashT=2.2; sp*=3.2; } }
-  // web pest slows the player when near (mobility denial)
+  /* MOVEMENT VARIETY (2026-08-20): pests stopped all walking the same
+     straight line at the plant. */
+  // weaver (thrip): serpentine approach, hard to line a shot on
+  if(p.weave){ ang+=Math.sin(G.time*5+p.seed*7)*0.55; }
+  // aerial (wasp): circles the plant at range, then dives in a straight rush
+  if(p.aerial){
+    p.dashT-=dt;
+    if(p.dashT>1.1){
+      p.orbA+=dt*1.4;
+      var ox=pl.x+Math.cos(p.orbA)*138, oy=pl.y+Math.sin(p.orbA)*138;
+      ang=Math.atan2(oy-p.y,ox-p.x);
+      if(dist2(p.x,p.y,ox,oy)<400) sp*=0.5;   // arrived on the circle: hover
+    }else{
+      sp*=1.9;                                 // the dive
+      if(p.dashT<=0) p.dashT=3+Math.random()*1.5;
+    }
+  }
+  // web spinner (mite): leaves sticky patches that slow the PLANT, not pests
+  if(p.web){
+    p.webT-=dt;
+    if(p.webT<=0 && G.webs.length<7 && dist2(p.x,p.y,pl.x,pl.y)<300*300){
+      p.webT=4+Math.random()*2;
+      G.webs.push({x:p.x,y:p.y,t:9,r:34});
+      spawnFX(p.x,p.y,'ring','#c98fd0',34,0.4);
+    }
+  }
+  // spitter (spittlebug): keeps its distance and lobs sap globs at the plant
+  if(p.ranged){
+    var dp=dist2(p.x,p.y,pl.x,pl.y);
+    if(dp<150*150) ang+=Math.PI;              // too close: back away
+    else if(dp<230*230) sp*=0.25;             // in the pocket: hold and shoot
+    p.spitT-=dt;
+    if(p.spitT<=0 && dp<300*300 && p.freezeT<=0 && p.rootT<=0){
+      p.spitT=2.4+Math.random()*0.8;
+      var h=hazards.spawn();
+      if(h){ var sa=Math.atan2(pl.y-p.y,pl.x-p.x);
+        h.x=p.x; h.y=p.y; h.vx=Math.cos(sa)*145; h.vy=Math.sin(sa)*145; h.life=3.2; h.r=6; h.dmg=8; }
+      spawnFX(p.x,p.y,'ring','#86b06a',14,0.25);
+    }
+  }
   p.x+=Math.cos(ang)*sp*dt; p.y+=Math.sin(ang)*sp*dt;
 }
 function tickStatuses(p,dt){
@@ -1072,18 +1068,10 @@ function tickStatuses(p,dt){
 
 /* ---------------- loam / level-up / draft ---------------- */
 function collectMote(m){ G.bloom+=m.xp; G.loamRun+=m.xp; sndPickup();
-  while(G.bloom>=G.bloomNext){ G.bloom-=G.bloomNext; levelUp(); }
-  presentDraftIfPending(); }
+  while(G.bloom>=G.bloomNext){ G.bloom-=G.bloomNext; levelUp(); } }
 function bloomReq(lv){ return Math.round((6 + lv*lv*0.9 + lv*2) * (G&&G.passives&&G.passives.mycorrhizae?0.82:1)); }
-// Each level gained QUEUES a draft; drafts are presented one at a time (see
-// presentDraftIfPending + chooseDraft). Previously levelUp() built G.draft
-// directly, so multiple level-ups in one frame (common on boss loam caches)
-// overwrote each other and the player silently lost every draft but the last.
 function levelUp(){ G.level++; G.bloomNext=bloomReq(G.level); sndLevel();
-  G.pendingLevels=(G.pendingLevels||0)+1; }
-// Show the next queued level-up draft only from PLAY — never stack a second
-// draft over an open one, so exactly one draft is on screen at a time.
-function presentDraftIfPending(){ if((G.pendingLevels||0)>0 && G.state==='PLAY'){ G.pendingLevels--; G.draft=buildDraft(); G.state='LEVELUP'; } }
+  G.draft=buildDraft(); G.state='LEVELUP'; }
 function buildDraft(){
   // pool: new weapons (not owned), weapon-ups (owned), passives (not owned)
   var opts=[];
@@ -1121,10 +1109,8 @@ function chooseDraft(idx){
   else if(c.t==='companion'){ addCompanion(c.id); if(c.rare) earn('beholder',{}); }
   else if(c.t==='graft'){ G.grafts[c.base]=c.id; earn('graft_discovered',{graft:c.id}); toast('Grafted: '+c.name); if(!store.codex['graft:'+c.id]){ store.codex['graft:'+c.id]=1; saveSoon(); } }
   recompute(); // build changed → refresh lanes / family tiers / maxhp
+  G.draft=null; G.state='PLAY'; G.slow=0.25;
   earn('draft',{level:G.level});
-  // present the next queued level-up draft, or return to play when none remain
-  if((G.pendingLevels||0)>0){ G.pendingLevels--; G.draft=buildDraft(); }
-  else { G.draft=null; G.state='PLAY'; G.slow=0.25; }
 }
 
 /* ---------------- end run ---------------- */
@@ -1146,22 +1132,10 @@ function endRun(win){
     'Time survived: <b>'+fmtTime(G.time)+'</b><br>Pests cleared: <b>'+G.kills+'</b><br>Loam banked: <b>'+G.loamRun+'</b> 🌱'+
     (stageUnlocked?'<br><b style="color:#7ab356">New ground unlocked: '+STAGES[store.stagesUnlocked-1].name+'</b>':'')+
     (unlocked?'<br><b style="color:#c8a84b">New Verdancy unlocked: '+VERD[store.maxVerdancy].name+'</b>':'')+
-    '<br><span class="small">Codex · Reactions '+rxDisc+'/25 · Grafts '+gfDisc+'/15 · Total Loam '+store.loam+'</span>';
-  _lastResult={ time:G.time, kills:G.kills, stage:(G.stage?G.stage.name:''), win:win };
+    '<br><span class="small">Codex — Reactions '+rxDisc+'/25 · Grafts '+gfDisc+'/15 · Total Loam '+store.loam+'</span>';
   showLayer('over');
 }
 function fmtTime(t){ var m=Math.floor(t/60), s=Math.floor(t%60); return m+':'+(s<10?'0':'')+s; }
-
-/* ---- fleet-standard Share ---- */
-var _lastResult=null;
-function shareBramblewick(){
-  var url="https://lucidwinds.com/satellites/bramblewick/";
-  var r=_lastResult||{ time:(G?G.time:0), kills:(G?G.kills:0), stage:(G&&G.stage?G.stage.name:''), win:(G?G.win:false) };
-  var verb=r.win?"held the night for ":"survived ";
-  var txt="Bramblewick: "+verb+fmtTime(r.time)+", "+r.kills+" pests cleared on "+r.stage+"! Can you beat it?";
-  if(navigator.share){ navigator.share({text:txt,url:url}).catch(function(){}); return; }
-  if(navigator.clipboard){ navigator.clipboard.writeText(txt+"\n"+url).then(function(){ if(typeof toast==='function') toast('Copied!'); }).catch(function(){}); }
-}
 
 /* ==================================================================
    RENDER
@@ -1179,6 +1153,14 @@ function draw(){
   if(!G){ return; }
   // lure nodes
   for(var L=0;L<lureNodes.length;L++){ var ln=lureNodes[L]; ctx.globalAlpha=0.14*(ln.t/2.2); ctx.fillStyle='#e79a3a'; ctx.beginPath(); ctx.arc(ln.x,ln.y,ln.r*0.6,0,6.283); ctx.fill(); ctx.globalAlpha=1; }
+  // mite webs (they slow the plant, so they must read as ground truth)
+  for(L=0;L<G.webs.length;L++){ var wb=G.webs[L]; var wa=Math.min(1,wb.t/3);
+    ctx.globalAlpha=wa*0.3; ctx.strokeStyle='#d8c8e0'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.arc(wb.x,wb.y,wb.r,0,6.283); ctx.stroke();
+    ctx.beginPath(); ctx.arc(wb.x,wb.y,wb.r*0.55,0,6.283); ctx.stroke();
+    ctx.beginPath(); for(var sk=0;sk<6;sk++){ var ska=sk/6*6.283;
+      ctx.moveTo(wb.x,wb.y); ctx.lineTo(wb.x+Math.cos(ska)*wb.r,wb.y+Math.sin(ska)*wb.r); }
+    ctx.stroke(); ctx.globalAlpha=1; }
   // motes
   for(var i=0;i<motes.n;i++){ var m=motes.a[i]; if(!m.active) continue; ctx.fillStyle=m.xp>=3?'#e8c24b':'#9ccf6a'; ctx.beginPath(); ctx.arc(m.x,m.y, m.xp>=3?4:3, 0,6.283); ctx.fill(); }
   // pests
@@ -1191,6 +1173,7 @@ function draw(){
   // fx + enemy bullets
   drawFX();
   drawHazards();
+  drawTexts();
   drawStageHazardOver();
   // manual aim reticle
   if(store.settings.manualAim && G.state==='PLAY' && G.aim.active){ ctx.strokeStyle='rgba(232,220,200,0.6)'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(G.aim.x,G.aim.y,16,0,6.283); ctx.moveTo(G.aim.x-22,G.aim.y); ctx.lineTo(G.aim.x+22,G.aim.y); ctx.moveTo(G.aim.x,G.aim.y-22); ctx.lineTo(G.aim.x,G.aim.y+22); ctx.stroke(); }
@@ -1245,7 +1228,9 @@ function initStageHazard(){
 }
 function inZone(x,y,kind){ if(!G.zones) return false; for(var i=0;i<G.zones.length;i++){ var z=G.zones[i]; if(z.kind===kind && dist2(x,y,z.x,z.y)<z.r*z.r) return true; } return false; }
 // speed multiplier at a point — bog slow + cold chill (read from the movement block)
-function hazMoveMul(x,y){ var m=1; if(G && G.playerChill>0) m*=0.5; if(G && G.stage.hazard && G.stage.hazard.type==='pools' && inZone(x,y,'pool')) m*=0.58; return m; }
+function hazMoveMul(x,y){ var m=1; if(G && G.playerChill>0) m*=0.5; if(G && G.stage.hazard && G.stage.hazard.type==='pools' && inZone(x,y,'pool')) m*=0.58;
+  if(G && G.webs){ for(var w=0;w<G.webs.length;w++){ var z=G.webs[w]; if(dist2(x,y,z.x,z.y)<z.r*z.r){ m*=0.6; break; } } }
+  return m; }
 function updateStageHazard(dt){
   if(!G) return;
   if(G.playerChill>0) G.playerChill-=dt;
@@ -1358,6 +1343,11 @@ function drawPlant(){
 function drawPest(p){
   var col=p.meta.col; ctx.save(); ctx.translate(p.x,p.y);
   if(p.freezeT>0) col='#bfe6f2'; else if(p.rootT>0) col='#c9d67a';
+  // the halo: one cheap arc that makes every pest pop off the dark ground
+  if(p.meta.glowCol){
+    ctx.fillStyle=p.meta.glowCol+(p.boss?'0.3)':'0.22)');
+    ctx.beginPath(); ctx.arc(0,0,p.r*(p.boss?1.35:1.55),0,6.283); ctx.fill();
+  }
   ctx.fillStyle=col; ctx.strokeStyle='rgba(0,0,0,0.4)'; ctx.lineWidth=1.5;
   var r=p.r, s=p.meta.shape;
   var _artSz=p.boss? r*2.7 : (p.elite? Math.max(r*3.4,44) : Math.max(r*3.6,36));   // show the painted art bigger than the (fair) hitbox so you can actually see it
@@ -1420,7 +1410,7 @@ function drawStatusGlyphs(p){
     var meta=ST_META[ST[idx]]; var cnt=Math.round(p.st[idx]);
     ctx.fillStyle=meta.col; ctx.strokeStyle=meta.col; ctx.lineWidth=1.4;
     drawGlyph(meta.glyph, gx, gy, 4.2);
-    if(cnt>3){ ctx.fillStyle='#0d100c'; ctx.font='bold 7px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(cnt, gx, gy+0.5); }
+    if(cnt>3){ ctx.fillStyle='#0d100c'; ctx.font='bold 9px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(cnt, gx, gy+0.5); }
   }
 }
 function drawGlyph(kind,x,y,r){
@@ -1436,18 +1426,24 @@ function drawGlyph(kind,x,y,r){
 }
 function drawBossBar(p){ var w=VW*0.7, x=(VW-w)/2, y=54; ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fillRect(x-2,y-2,w+4,12);
   ctx.fillStyle=p.armorBack?'#8a6a4a':'#c65b5b'; ctx.fillRect(x,y,w*Math.max(0,p.hp/p.maxhp),8);
-  ctx.fillStyle='#e8dcc8'; ctx.font='bold 11px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='alphabetic';
-  ctx.fillText(p.meta.name.toUpperCase()+(p.armorBack?' (shell up)':''), VW/2, y-6); }
+  ctx.fillStyle='#e8dcc8'; ctx.font='bold 13px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='alphabetic';
+  ctx.fillText(p.meta.name.toUpperCase()+(p.armorBack?' — shell up':''), VW/2, y-6); }
 function drawFX(){
   for(var i=0;i<fx.n;i++){ var f=fx.a[i]; if(!f.active) continue; var t=f.life/f.max;
     if(f.kind==='ring'||f.kind==='react'||f.kind==='nova'){ ctx.globalAlpha=t*0.8; ctx.strokeStyle=f.col; ctx.lineWidth=(f.kind==='nova')?4:2.5; ctx.beginPath(); ctx.arc(f.x,f.y, f.r*(1-t*0.5), 0,6.283); ctx.stroke();
       if(f.kind==='nova'){ ctx.globalAlpha=t*0.25; ctx.fillStyle=f.col; ctx.beginPath(); ctx.arc(f.x,f.y,f.r*(1-t*0.5),0,6.283); ctx.fill(); } }
     else if(f.kind==='arc'){ ctx.globalAlpha=t*0.5; ctx.fillStyle=f.col; ctx.beginPath(); ctx.arc(f.x,f.y,f.r*0.4,0,6.283); ctx.fill(); }
     else if(f.kind==='spark'){ ctx.globalAlpha=t; ctx.fillStyle=f.col; ctx.beginPath(); ctx.arc(f.x,f.y,f.r,0,6.283); ctx.fill(); }
+    else if(f.kind==='zip'){ // companion action streak, with a bright head racing along it
+      var q=1-t;
+      ctx.globalAlpha=t*0.85; ctx.strokeStyle=f.col; ctx.lineWidth=2.5;
+      ctx.beginPath(); ctx.moveTo(f.x,f.y); ctx.lineTo(f.x+(f.x2-f.x)*Math.min(1,q*2.4), f.y+(f.y2-f.y)*Math.min(1,q*2.4)); ctx.stroke();
+      var hx=f.x+(f.x2-f.x)*Math.min(1,q*2.4), hy=f.y+(f.y2-f.y)*Math.min(1,q*2.4);
+      ctx.globalAlpha=t; ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(hx,hy,3,0,6.283); ctx.fill(); }
     ctx.globalAlpha=1; }
 }
 function drawHazards(){ for(var i=0;i<hazards.n;i++){ var h=hazards.a[i]; if(!h.active) continue;
-  ctx.fillStyle='#e85b5b'; ctx.strokeStyle='#ffd0d0'; ctx.lineWidth=1; ctx.beginPath();
+  var _sap=h.dmg===8; ctx.fillStyle=_sap?'#9fc57a':'#e85b5b'; ctx.strokeStyle=_sap?'#e6f2d0':'#ffd0d0'; ctx.lineWidth=1; ctx.beginPath();
   for(var k=0;k<4;k++){ var a=k/4*6.283+0.785; var fn=k?'lineTo':'moveTo'; ctx[fn](h.x+Math.cos(a)*h.r,h.y+Math.sin(a)*h.r); } ctx.closePath(); ctx.fill(); ctx.stroke(); } }
 function drawHUD(){
   var pl=G.player;
@@ -1455,23 +1451,23 @@ function drawHUD(){
   ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(12,14,150,14);
   ctx.fillStyle=pl.hp>30?'#7ab356':'#c65b5b'; ctx.fillRect(12,14,150*(pl.hp/pl.maxhp),14);
   ctx.strokeStyle='rgba(200,168,75,0.5)'; ctx.lineWidth=1; ctx.strokeRect(12,14,150,14);
-  ctx.fillStyle='#e8dcc8'; ctx.font='bold 10px sans-serif'; ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.fillText(Math.ceil(pl.hp)+' HP', 18, 21);
+  ctx.fillStyle='#e8dcc8'; ctx.font='bold 12px sans-serif'; ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.fillText(Math.ceil(pl.hp)+' HP', 18, 21);
   // bloom bar (xp) bottom or under hp
   ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(12,32,150,6); ctx.fillStyle='#c8a84b'; ctx.fillRect(12,32,150*(G.bloom/G.bloomNext),6);
   // level + time + kills top-right
-  ctx.textAlign='right'; ctx.fillStyle='#e8dcc8'; ctx.font='bold 13px sans-serif'; ctx.textBaseline='top';
+  ctx.textAlign='right'; ctx.fillStyle='#e8dcc8'; ctx.font='bold 16px sans-serif'; ctx.textBaseline='top';
   ctx.fillText('Lv '+G.level+'   '+fmtTime(G.time), VW-12, 14);
-  ctx.font='11px sans-serif'; ctx.fillStyle='#8a9178'; ctx.fillText(G.kills+' cleared   🌱'+G.loamRun, VW-12, 32);
+  ctx.font='13px sans-serif'; ctx.fillStyle='#8a9178'; ctx.fillText(G.kills+' cleared   🌱'+G.loamRun, VW-12, 36);
   // lane chips (only nonzero) — the six keyword lanes feeding your reactions
-  var lx=12, ly=46; ctx.font='bold 9px sans-serif'; ctx.textAlign='left'; ctx.textBaseline='middle';
+  var lx=12, ly=46; ctx.font='bold 11px sans-serif'; ctx.textAlign='left'; ctx.textBaseline='middle';
   var LN=[['Sw','swift','#8fd0e8'],['Th','thorned','#c65b5b'],['Ro','rooted','#b9d24a'],['Lu','lush','#7ab356'],['Ha','hardy','#c8a84b'],['Re','restless','#e79a3a']];
   for(var li=0;li<LN.length;li++){ var v=G.lanes[LN[li][1]]||0; if(v>0){ ctx.fillStyle=LN[li][2]; var txt=LN[li][0]+v; ctx.fillText(txt, lx, ly); lx+=ctx.measureText(txt).width+7; } }
   // active family tier badges
   for(var f in G.familyTier){ if(G.familyTier[f]>=2){ ctx.fillStyle=G.familyTier[f]>=3?'#e8c24b':'#8a9178'; ctx.fillText(capW(f).slice(0,3)+'·T'+G.familyTier[f], lx, ly); lx+=ctx.measureText(capW(f).slice(0,3)+'·T'+G.familyTier[f]).width+7; } }
   // Graft Compass: the nearest pending evolution
-  if(!G.boss){ var ng=nextGraft(); if(ng){ ctx.textAlign='center'; ctx.fillStyle='#c8a84b'; ctx.font='bold 10px sans-serif'; ctx.textBaseline='middle'; ctx.fillText('\u25c8 '+ng.name+' \u00b7 '+graftHint(ng), VW/2, 60); ctx.textAlign='left'; } }
+  if(!G.boss){ var ng=nextGraft(); if(ng){ ctx.textAlign='center'; ctx.fillStyle='#c8a84b'; ctx.font='bold 12px sans-serif'; ctx.textBaseline='middle'; ctx.fillText('\u25c8 '+ng.name+' \u2014 '+graftHint(ng), VW/2, 60); ctx.textAlign='left'; } }
   // toast line (boss cues, phase transitions)
-  if(G.toast){ ctx.textAlign='center'; ctx.fillStyle='rgba(232,220,200,'+Math.min(1,G.toast.t)+')'; ctx.font='bold 12px sans-serif'; ctx.textBaseline='middle'; ctx.fillText(G.toast.text, VW/2, 112); }
+  if(G.toast){ ctx.textAlign='center'; ctx.fillStyle='rgba(232,220,200,'+Math.min(1,G.toast.t)+')'; ctx.font='bold 15px sans-serif'; ctx.textBaseline='middle'; ctx.fillText(G.toast.text, VW/2, 112); }
   // exit hint
   ctx.textAlign='left';
 }
@@ -1481,10 +1477,10 @@ function drawDraft(){
   // dim
   ctx.fillStyle='rgba(5,7,4,0.72)'; ctx.fillRect(0,0,VW,VH);
   ctx.fillStyle='#e8dcc8'; ctx.font='bold 20px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.fillText('LEVEL '+G.level+': DRAFT', VW/2, VH*0.30);
-  ctx.font='12px sans-serif'; ctx.fillStyle='#8a9178'; ctx.fillText('Tap a card', VW/2, VH*0.30+22);
-  var cards=G.draft.cards; var cw=VW-64, ch=96, gap=14; var startY=VH*0.38;
-  for(var i=0;i<cards.length;i++){ var c=cards[i]; var x=32, y=startY+i*(ch+gap);
+  ctx.fillText('LEVEL '+G.level+' — DRAFT', VW/2, VH*0.30);
+  ctx.font='14px sans-serif'; ctx.fillStyle='#8a9178'; ctx.fillText('Tap a card', VW/2, VH*0.30+24);
+  var cards=G.draft.cards; var cw=VW-56, ch=108, gap=14; var startY=VH*0.37;
+  for(var i=0;i<cards.length;i++){ var c=cards[i]; var x=28, y=startY+i*(ch+gap);
     c._box={x:x,y:y,w:cw,h:ch};
     ctx.fillStyle='rgba(13,16,12,0.95)'; ctx.strokeStyle= c.graft?'#e8c24b':(c.t==='passive'?'#c8a84b':(c.status?ST_META[c.status].col:'#7ab356')); ctx.lineWidth=c.graft?3:2;
     roundRect(x,y,cw,ch,12); ctx.fill(); ctx.stroke();
@@ -1502,9 +1498,9 @@ function drawDraft(){
     }
     ctx.restore();
     // text
-    ctx.textAlign='left'; ctx.fillStyle='#e8dcc8'; ctx.font='bold 15px sans-serif'; ctx.textBaseline='top'; ctx.fillText(c.name, x+62, y+16);
-    ctx.fillStyle='#b9c1a8'; ctx.font='11px sans-serif'; wrapText(c.desc, x+62, y+38, cw-74, 13);
-    if(c.preview){ ctx.fillStyle='#c8a84b'; ctx.font='italic 11px sans-serif'; ctx.fillText(c.preview, x+62, y+ch-20); }
+    ctx.textAlign='left'; ctx.fillStyle='#e8dcc8'; ctx.font='bold 17px sans-serif'; ctx.textBaseline='top'; ctx.fillText(c.name, x+64, y+14);
+    ctx.fillStyle='#b9c1a8'; ctx.font='13px sans-serif'; wrapText(c.desc, x+64, y+38, cw-78, 16);
+    if(c.preview){ ctx.fillStyle='#c8a84b'; ctx.font='italic 12px sans-serif'; ctx.fillText(c.preview, x+64, y+ch-19); }
   }
   ctx.textAlign='left'; ctx.textBaseline='alphabetic';
 }
@@ -1575,8 +1571,8 @@ requestAnimationFrame(frame);
 /* ==================================================================
    UI WIRING
    ================================================================== */
-function showLayer(id){ ['menu','over','how','coach'].forEach(function(l){ document.getElementById(l).classList.toggle('on', l===id); }); }
-function hideLayers(){ ['menu','over','how','coach'].forEach(function(l){ document.getElementById(l).classList.remove('on'); }); }
+function showLayer(id){ ['menu','over'].forEach(function(l){ document.getElementById(l).classList.toggle('on', l===id); }); }
+function hideLayers(){ document.getElementById('menu').classList.remove('on'); document.getElementById('over').classList.remove('on'); }
 
 // verdancy segmented control
 var verSeg=document.getElementById('verSeg'), verDesc=document.getElementById('verDesc');
@@ -1589,7 +1585,7 @@ var STAGE_SHORT=['Greenhouse','Sunken Beds','Sundrift','Understory','Long Dark']
 var stageSeg=document.getElementById('stageSeg'), stageDesc=document.getElementById('stageDesc');
 var selStage=Math.min(store.stagesUnlocked-1, STAGES.length-1);
 function renderStageSeg(){ stageSeg.innerHTML=''; for(var i=0;i<STAGES.length;i++){ (function(i){ var locked=i>=store.stagesUnlocked; var b=document.createElement('button'); b.textContent=(locked?'🔒 ':'')+(STAGE_SHORT[i]||STAGES[i].name); if(locked){ b.disabled=true; } if(i===selStage) b.className='sel'; b.onclick=function(){ if(i>=store.stagesUnlocked) return; selStage=i; renderStageSeg(); }; stageSeg.appendChild(b); })(i); }
-  var st=STAGES[selStage]; stageDesc.textContent=st.name+' · '+st.flavor; }
+  var st=STAGES[selStage]; stageDesc.textContent=st.name+' — '+st.flavor; }
 renderStageSeg();
 
 // toggles
@@ -1600,24 +1596,8 @@ bindSw('swSound', function(){return store.settings.sound;}, function(v){store.se
 
 document.getElementById('playBtn').onclick=function(){ audio(); startGame(selVer, selStage); };
 document.getElementById('againBtn').onclick=function(){ startGame(G?G.verdancy:selVer, G?G.stageId:selStage); };
-document.getElementById('shareBtn').onclick=function(){ shareBramblewick(); };
 document.getElementById('menuBtn').onclick=function(){ G=null; showLayer('menu'); selStage=Math.min(selStage, store.stagesUnlocked-1); renderVerSeg(); renderStageSeg(); };
-
-// HOW TO PLAY panel (overlays the menu; closing returns to it)
-document.getElementById('howBtn').onclick=function(){ document.getElementById('how').classList.add('on'); };
-document.getElementById('howClose').onclick=function(){ document.getElementById('how').classList.remove('on'); };
-
-// one-time coach card before the very first planting (localStorage flag)
-var COACH_KEY='lw_bramblewick_coach1';
-var pendingStart=null;
-function coachSeen(){ try{ return !!localStorage.getItem(COACH_KEY); }catch(e){ return true; } }
-document.getElementById('coachBtn').onclick=function(){
-  try{ localStorage.setItem(COACH_KEY,'1'); }catch(e){}
-  var ps=pendingStart||[selVer,selStage]; pendingStart=null;
-  hideLayers(); newGame(ps[0], ps[1]||0); };
-function startGame(v,s){
-  if(!coachSeen()){ pendingStart=[v,s||0]; document.getElementById('coach').classList.add('on'); return; }
-  hideLayers(); newGame(v, s||0); }
+function startGame(v,s){ hideLayers(); newGame(v, s||0); }
 
 /* ==================================================================
    DEV BRIDGE (?bramblewicktest=1)
@@ -1628,7 +1608,7 @@ function updateDev(){ var d=document.getElementById('dev'); d.style.display='blo
 if(DEV){
   window.__bw={
     start:function(v,s){ startGame(v||0, s||0); return 'started stage '+(s||0); },
-    state:function(){ return G?{t:G.time,state:G.state,level:G.level,pending:G.pendingLevels,kills:G.kills,hp:G.player.hp,pests:pests.n,weapons:G.weapons.slice(),passives:Object.keys(G.passives),win:G.win,over:G.over,fps:fps}:null; },
+    state:function(){ return G?{t:G.time,state:G.state,level:G.level,kills:G.kills,hp:G.player.hp,pests:pests.n,weapons:G.weapons.slice(),passives:Object.keys(G.passives),win:G.win,over:G.over,fps:fps}:null; },
     spawn:function(type,n){ n=n||1; for(var i=0;i<n;i++) spawnPest(type||'aphid'); return pests.n; },
     grantStatus:function(status,stacks){ var p=pests.a[0]; if(p&&p.active){ for(var i=0;i<7;i++){} p.st[ST_I[status]]=stacks||3; p.stt[ST_I[status]]=5; return 'ok'; } return 'no pest'; },
     forceReaction:function(a,b){ var p=spawnPest('slug', G.player.x, G.player.y-80); if(!p) return 'no pest'; applyStatus(p,a,2); applyStatus(p,b,2); return REACT[rkey(a,b)]?REACT[rkey(a,b)].name:'?'; },
@@ -1637,7 +1617,7 @@ if(DEV){
     addCompanion:function(id){ if(COMPANIONS[id]){ addCompanion(id); recompute(); return G.companions.map(function(c){return c.def.id;}); } return 'bad'; },
     lanes:function(){ return {lanes:G.lanes, mul:G.laneMul, familyCount:G.familyCount, familyTier:G.familyTier, companions:G.companions.map(function(c){return c.def.id;})}; },
     companionCount:function(){ return Object.keys(COMPANIONS).length; },
-    levelUp:function(){ levelUp(); presentDraftIfPending(); return G.draft?G.draft.cards.map(function(c){return c.name;}):[]; },
+    levelUp:function(){ levelUp(); return G.draft.cards.map(function(c){return c.name;}); },
     pick:function(i){ chooseDraft(i); return G.weapons.slice(); },
     skipToBoss:function(){ if(G){ var e=G.stage.bosses[G.bossIdx]; if(e&&e.at!=null){ G.time=Math.max(G.time,e.at-1); } else if(e&&G.bossIdx>0){ G.bossTimes[G.bossIdx-1]=G.time-(e.afterPrev||0)-1; } return (e?e.id:'?')+' soon'; } return 'no game'; },
     skipToFinal:function(){ if(G){ var bs=G.stage.bosses; while(G.bossIdx<bs.length-1){ G.bossTimes[G.bossIdx]=G.time; G.bossDownIds[G.bossIdx]=1; G.bossIdx++; } if(G.boss){ G.boss.active=false; G.boss=null; } var fe=bs[bs.length-1]; (BOSS_SPAWN[fe.id]||spawnGrubfather)(fe); return fe.id; } return 'no game'; },
@@ -1655,7 +1635,8 @@ if(DEV){
     paint:function(status,stacks){ var pl=G.player; var t=nearestPest(pl.x,pl.y); if(!t) return 'no pest'; applyStatus(t,status,stacks||1); return {hp:Math.round(t.hp),armor:t.armor}; },
     inspect:function(){ var pl=G.player; var t=nearestPest(pl.x,pl.y); return t?{type:t.type,hp:Math.round(t.hp),armor:t.armor,st:Array.from(t.st),root:Math.round(t.rootT*100)/100,freeze:Math.round(t.freezeT*100)/100}:'none'; },
     haz:function(){ if(!G) return null; return {type:G.stage.hazard?G.stage.hazard.type:null, zones:(G.zones||[]).length, z:(G.zones||[]).map(function(o){return [Math.round(o.x),Math.round(o.y),o.r,o.kind];}), heat:Math.round(G.heat*100)/100, fog:Math.round(G.fog*100)/100, chill:Math.round(G.playerChill*100)/100, coldWave:!!G.coldWave, cw:(G.coldWave?{x:Math.round(G.coldWave.x),gapY:Math.round(G.coldWave.gapY)}:null), hzT:Math.round(G.hzT*10)/10, hzT2:Math.round(G.hzT2*10)/10, moveMul:Math.round(hazMoveMul(G.player.x,G.player.y)*100)/100}; },
-    setPos:function(x,y){ if(G){ G.player.x=x; G.player.y=y; } return {x:G.player.x,y:G.player.y}; }
+    setPos:function(x,y){ if(G){ G.player.x=x; G.player.y=y; } return {x:G.player.x,y:G.player.y}; },
+    fxCounts:function(){ return G?{texts:texts.map(function(t){return t.str;}), webs:G.webs.length, haz:hazards.n}:null; }
   };
   updateDev();
 }
@@ -1665,6 +1646,5 @@ window.__bwExit=window.SWS_EXIT;
 
 })();
 </script>
-<script>/* fleet feedback fab (2026-07-27) */addEventListener('load',function(){var s=document.createElement('script');s.src='/feedback.js?v=6';s.onload=function(){if(window.LW_Feedback)window.LW_Feedback.mountFab({game:'bramblewick',surface:'satellite'});};document.head.appendChild(s);});</script>
 </body>
 </html>
