@@ -26,14 +26,19 @@ const m = await p.evaluate(() => {
   return {
     fgSearch: top(document.getElementById('fg-search')),
     firstCard: top(document.querySelector('.shelf .card')),
-    everything: top(document.getElementById('everything-h')),
     members: top(document.querySelector('.members')),
-    garden: top(document.getElementById('garden')),
+    tiles: document.querySelectorAll('#browse-tiles .tile').length,
+    tileCounts: [...document.querySelectorAll('#browse-tiles .tc')].map(e => parseInt(e.textContent, 10)),
+    famCards: document.querySelectorAll('#fam-shelf .card').length,
+    testlab: !!document.getElementById('test-lab'),
+    gardenCards: document.querySelectorAll('#garden .card').length,
+    domCards: document.querySelectorAll('.card').length,
     ctaGone: !document.getElementById('install-cta'),
     markThere: !!document.getElementById('hdr-install'),
     musicH: document.getElementById('music-fab') ? Math.round(document.getElementById('music-fab').getBoundingClientRect().height) : 999,
     headingTxt: (document.getElementById('everything-h') || {}).textContent || '',
     pageH: document.documentElement.scrollHeight,
+    imgs: document.images.length,
   };
 });
 
@@ -41,9 +46,46 @@ const searchBound = BREAK ? 100 : 950;
 t('search sits in the first screens', m.fgSearch !== null && m.fgSearch < searchBound, m.fgSearch + 'px, bound ' + searchBound);
 t('a playable card appears within ~2 viewports', m.firstCard !== null && m.firstCard < 1900, m.firstCard + 'px');
 t('the duplicate install CTA is gone, the mark remains', m.ctaGone && m.markThere);
-t('the members pitch sits ABOVE the wall', m.members !== null && m.garden !== null && m.members < m.garden, m.members + ' < ' + m.garden);
+t('the members pitch is on the storefront', m.members !== null, m.members + 'px');
 t('the soundtrack is a control, not a billboard', m.musicH < 70, m.musicH + 'px tall');
 t('the wall heading derives the openable count (' + c.open + ')', m.headingTxt.indexOf(String(c.open)) >= 0, JSON.stringify(m.headingTxt.trim()));
+// Phase 2: the landing page stopped pre-rendering the wall
+t('the wall does NOT pre-render on load', m.gardenCards === 0, m.gardenCards + ' garden cards');
+t('the landing page carries a curated card count, not 283', m.domCards < 60, m.domCards + ' cards in DOM');
+t('the landing page is a storefront, not 37 viewports', m.pageH < 16000, m.pageH + 'px');
+t('six genre tiles with live counts', m.tiles === 6 && m.tileCounts.every(n => n > 0), JSON.stringify(m.tileCounts));
+t('Familiar favorites shelf is present', m.famCards >= 5, m.famCards + ' cards');
+t('the Test Lab door exists', m.testlab);
+
+// Browse all enters Catalog Mode, renders the wall, back returns
+await p.evaluate(() => document.getElementById('fg-browse').click());
+await sleep(900);
+const cat1 = await p.evaluate(() => ({
+  open: document.body.classList.contains('catalog-open'),
+  cards: document.querySelectorAll('#garden .card').length,
+  storefrontHidden: document.querySelector('.members').offsetParent === null,
+}));
+t('Browse all opens Catalog Mode with the full wall', cat1.open && cat1.cards > 150 && cat1.storefrontHidden,
+  cat1.cards + ' cards, storefront hidden ' + cat1.storefrontHidden);
+await p.goBack();
+await sleep(700);
+const cat2 = await p.evaluate(() => ({
+  open: document.body.classList.contains('catalog-open'),
+  members: !!document.querySelector('.members').offsetParent,
+}));
+t('phone back returns to the storefront', !cat2.open && cat2.members);
+
+// a genre tile opens the catalog on its tab
+await p.evaluate(() => document.querySelector('#browse-tiles [data-tile="card"]').click());
+await sleep(800);
+const cat3 = await p.evaluate(() => ({
+  open: document.body.classList.contains('catalog-open'),
+  tab: (document.querySelector('#tabs button.on') || {}).getAttribute ? document.querySelector('#tabs button.on').getAttribute('data-c') : null,
+  cards: document.querySelectorAll('#garden .card').length,
+}));
+t('a genre tile opens Catalog Mode on its tab', cat3.open && cat3.tab === 'card' && cat3.cards > 5,
+  'tab ' + cat3.tab + ', ' + cat3.cards + ' cards');
+await p.goBack(); await sleep(500);
 
 // classic-name search paints inline results
 await p.type('#fg-search', 'peggle');

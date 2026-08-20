@@ -594,6 +594,39 @@
     -webkit-backdrop-filter:none!important;backdrop-filter:none!important;
     box-shadow:none!important;text-shadow:none!important}
 
+
+  /* ═══════════ PHASE 2: CATALOG MODE + TILES ═══════════ */
+  #catalog{display:none}
+  body.catalog-open .wrap>*:not(#catalog):not(header){display:none !important}
+  body.catalog-open #catalog{display:block}
+  .cat-head{display:flex;align-items:center;gap:12px;margin:12px 0 4px}
+  .cat-head h2{margin:0;flex:1}
+  #cat-back{min-height:48px;padding:10px 16px;border-radius:12px;cursor:pointer;
+    border:1px solid var(--line);background:rgba(20,28,20,.9);color:var(--cream);
+    font-family:var(--disp);font-weight:700;font-size:.92rem;white-space:nowrap}
+  #cat-back:hover,#cat-back:focus-visible{border-color:var(--gold,#c8a84b)}
+  .tilegrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:6px 0 18px}
+  @media (min-width:760px){.tilegrid{grid-template-columns:repeat(3,1fr)}}
+  .tile{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;
+    min-height:96px;padding:14px;border-radius:16px;cursor:pointer;
+    border:1px solid var(--line);background:linear-gradient(155deg,rgba(20,28,20,.92),rgba(11,15,11,.92));
+    color:var(--cream)}
+  .tile:hover,.tile:focus-visible{border-color:var(--gold,#c8a84b)}
+  .tile .ti{font-size:22px;line-height:1}
+  .tile .tn{font-family:var(--disp);font-weight:700;font-size:1rem;margin-top:2px}
+  .tile .td{color:var(--muted);font-size:.76rem;line-height:1.3}
+  .tile .tc{color:var(--gold);font-size:.76rem;font-weight:700;margin-top:2px}
+  .testlab{display:flex;align-items:center;gap:14px;max-width:560px;margin:26px auto 0;
+    padding:14px 16px;border:1px dashed rgba(200,168,75,.55);border-radius:16px;
+    background:rgba(18,17,10,.8)}
+  .testlab .tl-copy{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+  .testlab .tl-copy b{font-family:var(--disp);font-size:1rem;color:var(--gold)}
+  .testlab .tl-copy small{color:var(--muted);font-size:.8rem;line-height:1.4}
+  .testlab .btn{min-height:48px;padding:10px 18px;border-radius:12px;cursor:pointer;
+    border:1px solid var(--line);background:rgba(20,28,20,.9);color:var(--cream);
+    font-family:var(--disp);font-weight:700}
+  .testlab .btn:hover{border-color:var(--gold)}
+
   /* ═══════════ PHASE 1 REDESIGN (2026-08-20) ═══════════
      Find a Game near the top, one install path, compact promos.
      Overrides live here so the original blocks stay readable. */
@@ -757,6 +790,9 @@
        underneath for anyone who wants it. -->
   <div id="shelves"></div>
 
+  <!-- FAMILIAR FAVORITES (Phase 2): the alias bridge as a visible shelf -->
+  <div id="fam-shelf"></div>
+
   <!-- SKY WOLF MEMBERS — a free studio account. Every perk here is real today. -->
   <section class="members reveal">
     <div class="m-inner">
@@ -779,10 +815,26 @@
   </section>
 
 
-  <h2 class="arcade-h" id="everything-h">Everything <span>all 180, A to Z</span></h2>
-  <input id="gsearch" type="search" autocomplete="off" placeholder="Search the games. Try Scrabble, Peggle, Wordle, Mahjong…">
-  <div class="tabs" id="tabs"></div>
-  <div class="grid" id="garden"></div>
+  <!-- BROWSE BY GAME TYPE (Phase 2): six tiles with live counts replace the
+       seven long category shelves. Tapping one opens Catalog Mode on that
+       shelf's tab. -->
+  <h2 class="arcade-h" id="browse-h">Browse by game type</h2>
+  <div class="tilegrid" id="browse-tiles"></div>
+
+  <!-- CATALOG MODE (Phase 2, 2026-08-20): the complete wall lives HERE now
+       and renders only when a player deliberately asks for it (Browse all,
+       See all, a genre tile, My games). The homepage stopped pre-rendering
+       185 cards and ~336 images it may never need. Entering pushes
+       #catalog so the phone back button returns to the storefront. -->
+  <section id="catalog" aria-hidden="true">
+    <div class="cat-head">
+      <button id="cat-back" type="button">&#8249; Storefront</button>
+      <h2 class="arcade-h" id="everything-h">Everything <span>all 180, A to Z</span></h2>
+    </div>
+    <input id="gsearch" type="search" autocomplete="off" placeholder="Search the games. Try Scrabble, Peggle, Wordle, Mahjong…">
+    <div class="tabs" id="tabs"></div>
+    <div class="grid" id="garden"></div>
+  </section>
 
 
   <!-- FREE APPS (2026-08-08, Stephen): the studio makes more than games —
@@ -842,6 +894,16 @@
       </a>
     </div>
 
+  </section>
+
+  <!-- THE TEST LAB (Phase 2): the tester program gets an intentional door
+       instead of locked cards ambushing strangers mid-browse. -->
+  <section class="testlab reveal" id="test-lab">
+    <div class="tl-copy">
+      <b>&#128679; The Test Lab</b>
+      <small><span id="tl-count">0</span> unfinished games on the workbench, open to testers. A tester key unlocks them all &middot; ask the studio for one.</small>
+    </div>
+    <button class="btn" id="tl-enter" type="button">Step inside</button>
   </section>
 
   <!-- Support row (Stephen 2026-07-29: "some payment on the main page").
@@ -1622,22 +1684,17 @@ function renderShelves(){
     .map(function(g){ return {g:g, feat:true}; }));
   var html = "";
   html += shelf("Start here", "six good minutes", byName(START_HERE), {lead:true});
-  html += shelf("New", "just shipped", fresh);
+  /* Phase 2: New is a curated row of 8 with a See all, and the seven long
+     category shelves are gone — the six genre tiles below carry browsing,
+     so a shelf game no longer appears twice on the landing page. */
+  html += shelf("New", "just shipped", fresh.slice(0,8), fresh.length>8?{cat:'new',count:fresh.length}:{});
   html += shelf("Made by the studio", "the big ones", byName(FLAGSHIPS));
-  ["action","puzzle","card","creative","word","math","party"].forEach(function(c){
-    var all = inCat(c);
-    html += shelf(CAT_LABEL[c], "", all.slice(0,12), {cat:c, count:all.length});
-  });
   host.innerHTML = html;
   /* See all jumps to the wall with that tab already chosen */
   host.addEventListener("click", function(e){
     var b = e.target.closest ? e.target.closest("[data-jump]") : null;
     if (!b) return;
-    var c = b.getAttribute("data-jump");
-    var tab = document.querySelector('#tabs button[data-c="'+c+'"]');
-    if (tab) tab.click();
-    var h = document.getElementById("everything-h");
-    if (h) h.scrollIntoView({behavior:"smooth", block:"start"});
+    openCatalog(b.getAttribute("data-jump"));
   });
 }
 
@@ -1904,21 +1961,27 @@ function searchGames(qraw){
   si.addEventListener('input',function(){ clearTimeout(t); var v=si.value; t=setTimeout(function(){ paint(v); },140); });
   si.addEventListener('search',function(){ paint(si.value); });
   document.getElementById('fg-surprise').addEventListener('click',function(){
-    /* a random RELEASED game, launched through a real card so analytics,
-       music handoff and the overlay all behave exactly as a tap would */
-    var pool=[].slice.call(document.querySelectorAll('#garden a.card'))
-      .filter(function(a){ return !a.getAttribute('data-indev') && !a.getAttribute('target'); });
+    /* a random RELEASED game straight from the registries (the wall no
+       longer pre-renders). A throwaway real card is clicked so analytics,
+       music handoff and the overlay behave exactly as a tap would. */
+    var pool=FEATURED.filter(function(g){ return !g.hub && !g.beta && g.url && g.url.charAt(0)==='/'; })
+      .map(function(g){ return {g:g, feat:true}; })
+      .concat(GAMES.filter(function(g){ return g[4]!=='soon' && !g[5]; })
+      .map(function(g){ return {g:g, feat:false}; }));
     if(!pool.length) return;
-    var pick=pool[Math.floor(Math.random()*pool.length)];
+    var it=pool[Math.floor(Math.random()*pool.length)];
+    var tmp=document.createElement('div');
+    window._swsHideKind=null;
+    tmp.innerHTML=card(it.g, it.feat);
+    var pick=tmp.querySelector('a.card'); if(!pick) return;
+    tmp.style.cssText='position:fixed;left:-9999px;top:0;';
+    document.body.appendChild(tmp);
     try{ gtag('event','portal_surprise_me',{ game_name:(pick.querySelector('.nm')||{}).textContent||'' }); }catch(e){}
     pick.click();
+    setTimeout(function(){ tmp.remove(); }, 4000);
   });
-  function jumpWall(tab){
-    var tb=document.querySelector('#tabs button[data-c="'+tab+'"]'); if(tb) tb.click();
-    var h=document.getElementById('everything-h'); if(h&&h.scrollIntoView) h.scrollIntoView({behavior:'smooth',block:'start'});
-  }
-  document.getElementById('fg-mine').addEventListener('click',function(){ jumpWall('fav'); });
-  document.getElementById('fg-browse').addEventListener('click',function(){ jumpWall('all'); });
+  document.getElementById('fg-mine').addEventListener('click',function(){ openCatalog('fav'); });
+  document.getElementById('fg-browse').addEventListener('click',function(){ openCatalog('all'); });
 })();
 
 /* ── derived counts (Phase 1): no player-facing number is typed by hand ── */
@@ -1944,14 +2007,112 @@ document.getElementById('tabs').addEventListener('click',function(e){
      the grid's own tab selected, so the player does not come back to an empty
      grid wondering where the games went. */
   if(c === 'apps'){
-    var sec = document.getElementById('free-apps');
-    if(sec && sec.scrollIntoView) sec.scrollIntoView({behavior:'smooth', block:'start'});
+    catExitTo('#free-apps');
     return;
   }
   [].forEach.call(this.children,function(b){b.classList.remove('on');});
   e.target.classList.add('on'); renderGarden(c);
 });
-renderShelves(); renderGarden("all");
+/* ── CATALOG MODE (Phase 2) ──────────────────────────────────────────────
+   The wall renders on first entry, not on page load. Entering pushes
+   #catalog so the phone back button is the way out; opening a game from
+   inside the catalog stacks #play on top and back walks home in order. */
+function openCatalog(tab, push){
+  var was = document.body.classList.contains('catalog-open');
+  if(!was){
+    document.body.classList.add('catalog-open');
+    var cat = document.getElementById('catalog');
+    if(cat) cat.setAttribute('aria-hidden','false');
+    if(push !== false){ try{ history.pushState({swsCatalog:1}, '', '#catalog'); }catch(e){} }
+    if(!window._catBooted){ window._catBooted = true; renderGarden(tab||'all'); markTab(tab||'all'); }
+    try{ gtag('event','portal_catalog_open',{ tab: tab||'all' }); }catch(e){}
+  }
+  if(tab && (was || window._catBooted)){
+    var tb = document.querySelector('#tabs button[data-c="'+tab+'"]');
+    if(tb) tb.click();
+  }
+  scrollTo(0,0);
+}
+function closeCatalog(){
+  document.body.classList.remove('catalog-open');
+  var cat = document.getElementById('catalog');
+  if(cat) cat.setAttribute('aria-hidden','true');
+}
+function markTab(c){
+  var tabs=document.getElementById('tabs');
+  [].forEach.call(tabs.children,function(b){ b.classList.toggle('on', b.getAttribute('data-c')===c); });
+}
+/* leave the catalog toward a storefront section (the Apps tab does this) */
+function catExitTo(sel){
+  var go=function(){ var el=document.querySelector(sel); if(el&&el.scrollIntoView) el.scrollIntoView({behavior:'smooth',block:'start'}); };
+  if(document.body.classList.contains('catalog-open')){ try{ history.back(); }catch(e){} setTimeout(go, 120); }
+  else go();
+}
+document.getElementById('cat-back').addEventListener('click', function(){
+  try{ history.back(); }catch(e){ closeCatalog(); }
+  setTimeout(function(){ if(document.body.classList.contains('catalog-open')) closeCatalog(); }, 250);
+});
+window.addEventListener('popstate', function(){
+  var st = history.state || {};
+  var open = document.body.classList.contains('catalog-open');
+  if(st.swsCatalog && !open) openCatalog(null, false);
+  else if(!st.swsCatalog && !st.swsGame && open) closeCatalog();
+});
+if(location.hash === '#catalog'){
+  try{ history.replaceState({swsCatalog:1}, '', '#catalog'); }catch(e){}
+  openCatalog(null, false);
+}
+
+/* ── BROWSE BY GAME TYPE: six tiles, live counts from the registries ── */
+(function(){
+  var host=document.getElementById('browse-tiles'); if(!host) return;
+  function countOf(c){
+    return FEATURED.filter(function(g){ return !g.hub && !g.beta && inGroup(g.cat, c); }).length
+         + GAMES.filter(function(g){ return g[4]!=='soon' && inGroup(g[2], c); }).length;
+  }
+  var TILES=[
+    ['action','&#127918;','Arcade & Action','fast hands, timing, survival'],
+    ['puzzle','&#129513;','Puzzle & Logic','solve, match, plan, deduce'],
+    ['card','&#127136;','Cards & Board','solitaire, tricks, tabletop'],
+    ['creative','&#127912;','Creative & Sandbox','draw, build, grow, compose'],
+    ['word','&#128292;','Word Games','find, build and guess words'],
+    ['math','&#128290;','Numbers','arithmetic and number logic']
+  ];
+  host.innerHTML=TILES.map(function(t){
+    return '<button type="button" class="tile" data-tile="'+t[0]+'">'
+      +'<span class="ti">'+t[1]+'</span><span class="tn">'+t[2]+'</span>'
+      +'<span class="td">'+t[3]+'</span><span class="tc">'+countOf(t[0])+' games</span></button>';
+  }).join('');
+  host.addEventListener('click',function(e){
+    var b=e.target.closest?e.target.closest('[data-tile]'):null; if(!b) return;
+    openCatalog(b.getAttribute('data-tile'));
+  });
+})();
+
+/* ── FAMILIAR FAVORITES: the alias bridge, visible ── */
+(function(){
+  var host=document.getElementById('fam-shelf'); if(!host) return;
+  var FAM=['Nectar Drop','Word Sprout','Jade Garden','Word Trellis','Berry Vine','Vine Words','Acorn Drop','Sled Vine'];
+  var items=[];
+  FAM.forEach(function(n){
+    var f=FEATURED.find(function(g){ return g.nm===n && !g.beta; });
+    if(f){ items.push({g:f, feat:true}); return; }
+    var nat=GAMES.find(function(g){ return g[1]===n && g[4]!=='soon'; });
+    if(nat) items.push({g:nat, feat:false});
+  });
+  if(items.length) host.innerHTML=shelf('Familiar favorites',
+    'our takes on Peggle, Wordle, Mahjong, Scrabble, Zuma, Boggle and more', items);
+})();
+
+/* ── THE TEST LAB door ── */
+(function(){
+  var n=FEATURED.filter(function(g){ return !!g.beta; }).length;
+  var el=document.getElementById('tl-count'); if(el) el.textContent=n;
+  var btn=document.getElementById('tl-enter');
+  if(btn) btn.addEventListener('click',function(){ openCatalog('indev'); });
+})();
+
+renderShelves();
 
 // Analytics: which games actually get opened from the portal (Stephen Jul 10
 // note #10 — favorites + opens = where to focus energy). Delegated so it
