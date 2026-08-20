@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#0E1220">
-<meta name="description" content="Free noise machine for sleep, calm and focus. Programs, deep-sleep stimulation, a room loudness meter and a full-screen visualizer. No ads, no account, no subscription.">
+<meta name="description" content="Pick your sound. Go to sleep. A free noise machine, honest about the science: no ads, no account, no subscription, nothing recorded.">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
@@ -296,7 +296,7 @@ body.simple .actions{margin-bottom:14px}
       <p class="hint">These are generated live, note by note. There are no audio files in this app. That is why it is one page, works offline, and never repeats itself.</p>
       <div class="note study">
         <b>The tempo range is not arbitrary.</b> Trials of music for insomnia keep landing on the same recipe: slow tempo between sixty and eighty beats a minute, one instrument, soft and smooth, simple structure, thirty to forty-five minutes before bed. The tempo slider only moves inside that window on purpose.
-        <cite>Jespersen et al., Cochrane 2015 (10 trials, 557 people): music improved sleep quality by about one standard deviation, moderate-quality evidence. Later reviews converge on the 60–80 bpm figure.</cite>
+        <cite>Jespersen et al., Cochrane 2015 (10 trials, 557 people): music improved sleep quality by about one standard deviation, moderate-quality evidence. Later reviews converge on the 60 to 80 bpm figure.</cite>
       </div>
     </div>
   </section>
@@ -310,7 +310,11 @@ body.simple .actions{margin-bottom:14px}
         <div class="lab"><span>Tone</span><span id="v-tilt">flat</span></div>
         <input type="range" id="tilt" min="-100" max="100" value="0" aria-label="Tone">
       </div>
-      <p class="hint">Left is darker and deeper, right is brighter and airier. Same noise, different weather.</p>
+      <div class="row">
+        <div class="lab"><span>Width</span><span id="v-width">wide</span></div>
+        <input type="range" id="width" min="0" max="100" value="70" aria-label="Stereo width">
+      </div>
+      <p class="hint">Left is darker and deeper, right is brighter and airier. Same noise, different weather. Width spreads the sound between the ears: each side gets its own noise, which reads as air in the room. Turn it to mono for a single speaker across the nursery.</p>
     </div>
   </section>
 
@@ -369,7 +373,7 @@ body.simple .actions{margin-bottom:14px}
       <div class="grid" id="pulseGrid"></div>
       <div class="row"><div class="lab"><span>Speed</span><span id="v-prate">72 bpm</span></div>
         <input type="range" id="prate" min="0" max="100" value="30" aria-label="Pulse speed"></div>
-      <div class="row"><div class="lab"><span>Amount</span><span id="v-pamt">50%</span></div>
+      <div class="row"><div class="lab"><span id="lab-pamt">Amount</span><span id="v-pamt">50%</span></div>
         <input type="range" id="pamt" min="0" max="100" value="50" aria-label="Pulse amount"></div>
       <p class="hint"><b>Heartbeat</b> is a filtered low thump at a resting maternal rate. <b>Shush</b> is the rhythmic hiss caregivers make instinctively. <b>Waves</b> is a slow swell. <b>Breathe</b> swells at 5.5 cycles a minute, so you can pace your own breathing to it.</p>
       <div class="grid" id="chrGrid" style="margin-top:14px"></div>
@@ -475,7 +479,7 @@ body.simple .actions{margin-bottom:14px}
   <section class="panel" id="p-timer">
     <button aria-expanded="false"><span class="ptitle">Timer</span><span style="display:flex;align-items:center"><span class="psub" id="s-timer">off</span><i class="caret"></i></span></button>
     <div class="body">
-      <div class="countdown off" id="cd">—:—</div>
+      <div class="countdown off" id="cd">, :, </div>
       <div class="grid four" id="timerGrid"></div>
       <div class="row"><div class="lab"><span>Fade out over</span><span id="v-fade">60 s</span></div>
         <input type="range" id="fade" min="0" max="100" value="30" aria-label="Fade out length"></div>
@@ -560,7 +564,7 @@ body.simple .actions{margin-bottom:14px}
         <label class="opt" style="text-align:left;padding:9px 11px">REM<input type="number" id="mRem" placeholder="min" style="width:100%;background:none;border:0;font-family:var(--mono);font-size:16px;color:var(--glow);padding:4px 0 0"></label>
         <label class="opt" style="text-align:left;padding:9px 11px">Minutes to fall asleep<input type="number" id="mLat" placeholder="min" style="width:100%;background:none;border:0;font-family:var(--mono);font-size:16px;color:var(--glow);padding:4px 0 0"></label>
         <label class="opt" style="text-align:left;padding:9px 11px">Times woken<input type="number" id="mWake" placeholder="count" style="width:100%;background:none;border:0;font-family:var(--mono);font-size:16px;color:var(--glow);padding:4px 0 0"></label>
-        <label class="opt" style="text-align:left;padding:9px 11px">Sleep score<input type="number" id="mScore" placeholder="0–100" style="width:100%;background:none;border:0;font-family:var(--mono);font-size:16px;color:var(--glow);padding:4px 0 0"></label>
+        <label class="opt" style="text-align:left;padding:9px 11px">Sleep score<input type="number" id="mScore" placeholder="0 to 100" style="width:100%;background:none;border:0;font-family:var(--mono);font-size:16px;color:var(--glow);padding:4px 0 0"></label>
       </div>
       <p class="hint">Fill in whatever your tracker gives you. Anything you leave blank is simply ignored. If you only ever fill in the first slider, that still works.</p>
       <button class="bigbtn" id="saveLog" style="border-color:var(--glow);color:var(--glow)">Save this night</button>
@@ -642,7 +646,7 @@ body.simple .actions{margin-bottom:14px}
       <div class="note">
         <b>Hearing, separately.</b>
         All fourteen infant sound machines measured in a 2014 study exceeded the 50 dBA nursery limit at 30 cm on maximum volume, and three went past 85 dBA, an occupational limit for adults over eight hours. Distance and volume are the whole fix. That is what the room meter is for.
-        <cite>Hugh et al., Pediatrics 2014;133(4):677–681. AAP guidance: roughly 2 m / 7 ft from the head.</cite>
+        <cite>Hugh et al., Pediatrics 2014;133(4):677 to 681. AAP guidance: roughly 2 m / 7 ft from the head.</cite>
       </div>
       <div class="note study">
         <b>Where it does look promising.</b>
@@ -728,7 +732,7 @@ const PHI = 1.6180339887;
 const pad2 = n => String(n).padStart(2, "0");
 
 const S = {
-  noise: "brown", tilt: 0,
+  noise: "brown", tilt: 0, width: 70,
   freq: 440, tuneMode: "off", amt: 0, q: 30, phiStack: false,
   mix: 0, rate: 18, depth: 45, fb: 30, combLock: false, phiDrift: false,
   pulse: "off", prate: 30, pamt: 50, chr: "off", clvl: 50,
@@ -763,7 +767,7 @@ let sharedPick = null;
    scale, preset and so on) are checked against the real tables in
    sanitiseEnums(), once those tables exist. */
 const SAVE_RANGES = {
-  tilt:[-100,100], freq:[20,16000], amt:[0,100], q:[0,100],
+  tilt:[-100,100], width:[0,100], freq:[20,16000], amt:[0,100], q:[0,100],
   mix:[0,100], rate:[0,100], depth:[0,100], fb:[0,92],
   prate:[0,100], pamt:[0,100], clvl:[0,100], swrate:[40,120], swblock:[0,100], swlvl:[0,100],
   carrier:[0,100], beat:[0,100], tlvl:[0,100],
@@ -861,14 +865,22 @@ function normalise(a, target = 0.85) {
   let pk = 0; for (let i = 0; i < a.length; i++) pk = Math.max(pk, Math.abs(a[i]));
   if (pk > 0) { const g = target / pk; for (let i = 0; i < a.length; i++) a[i] *= g; }
 }
+/* STEREO, and this is the depth. One noise stream copied to both ears sits
+   flat in the centre of the head; two INDEPENDENT streams, one per ear, read
+   as air in a room, the same trick every premium machine plays. The Width
+   stage in the graph lets it collapse to mono for a phone speaker across the
+   nursery, where decorrelation buys nothing. */
 function makeBuffer(type) {
   const sr = ctx.sampleRate, xf = Math.floor(sr * 0.06), len = Math.floor(sr * 10);
-  const raw = new Float32Array(len + xf);
-  fillNoise(raw, type); normalise(raw);
-  const buf = ctx.createBuffer(1, len, sr), d = buf.getChannelData(0);
-  d.set(raw.subarray(0, len));
-  // equal-power crossfade of the tail into the head so the loop point is inaudible
-  for (let i = 0; i < xf; i++) { const t = i / xf; d[i] = d[i]*Math.sqrt(t) + raw[len+i]*Math.sqrt(1-t); }
+  const buf = ctx.createBuffer(2, len, sr);
+  for (let ch = 0; ch < 2; ch++) {
+    const raw = new Float32Array(len + xf);
+    fillNoise(raw, type); normalise(raw);
+    const d = buf.getChannelData(ch);
+    d.set(raw.subarray(0, len));
+    // equal-power crossfade of the tail into the head so the loop point is inaudible
+    for (let i = 0; i < xf; i++) { const t = i / xf; d[i] = d[i]*Math.sqrt(t) + raw[len+i]*Math.sqrt(1-t); }
+  }
   return buf;
 }
 const SHAPE = {
@@ -896,14 +908,30 @@ function build() {
   n.lfo2 = ctx.createOscillator(); n.lfo2Gain = ctx.createGain();
   n.lfo3 = ctx.createOscillator(); n.lfo3.type = "triangle"; n.lfo3Gain = ctx.createGain();
 
+  /* the width stage: the stereo bed splits into two legs, one forced down to
+     mono and one left wide, crossfaded equal-power by the Width slider. Zero
+     buys the old single-speaker behaviour exactly. */
+  n.bed = ctx.createGain();
+  n.bedMono = ctx.createGain();
+  n.bedMono.channelCount = 1; n.bedMono.channelCountMode = "explicit";
+  n.bedSt = ctx.createGain();
+
+  /* warmth drift: a sine far below perception (one cycle every five minutes,
+     under half a decibel) wanders the low shelf so the ear never finishes
+     adapting to the bed. Depth engineering, no control, always on. */
+  n.driftLfo = ctx.createOscillator(); n.driftLfo.frequency.value = 1/300;
+  n.driftGain = ctx.createGain(); n.driftGain.gain.value = 0.45;
+
   n.pulseGain = ctx.createGain();
   n.pulseLfo = ctx.createOscillator(); n.pulseDepth = ctx.createGain();
 
-  /* 320, not 110: the knock component of the thump lives at 230-340 Hz, and
-     it is the only part of a heartbeat a phone speaker can say at all.
-     Measured through a 250 Hz speaker model: 7 dB more beat than the old
-     low-passed-noise thump, before the bed duck adds its masking release. */
-  n.heartLp = ctx.createBiquadFilter(); n.heartLp.type = "lowpass"; n.heartLp.frequency.value = 320; n.heartLp.Q.value = .8;
+  /* 620, not 320: the knock component of the thump lives at 230-340 Hz and is
+     the only part of a heartbeat a phone speaker can say at all, and the old
+     320 Hz corner sat ON it, shaving the knock the thump was redesigned to
+     carry (Stephen, 2026-08-19: womb heartbeat "so subtle I could hardly hear
+     it"). The thump's spectrum is already controlled at synthesis, so the
+     filter only needs to catch stray edge, not voice the sound. */
+  n.heartLp = ctx.createBiquadFilter(); n.heartLp.type = "lowpass"; n.heartLp.frequency.value = 620; n.heartLp.Q.value = .7;
   n.heartGain = ctx.createGain(); n.heartGain.gain.value = 0;
 
   n.swGain = ctx.createGain(); n.swGain.gain.value = 0;   // slow-wave burst bus
@@ -924,9 +952,12 @@ function build() {
 
   n.src.connect(n.shapeA); n.shapeA.connect(n.shapeB); n.shapeB.connect(n.lo); n.lo.connect(n.hi);
   n.hi.connect(n.peak); n.peak.connect(n.phi1); n.phi1.connect(n.phi2);
-  n.phi2.connect(n.dry); n.dry.connect(n.pulseGain);
+  n.phi2.connect(n.dry); n.dry.connect(n.bed);
   n.phi2.connect(n.delay); n.delay.connect(n.fbGain); n.fbGain.connect(n.delay);
-  n.delay.connect(n.wet); n.wet.connect(n.pulseGain);
+  n.delay.connect(n.wet); n.wet.connect(n.bed);
+  n.bed.connect(n.bedMono); n.bedMono.connect(n.pulseGain);
+  n.bed.connect(n.bedSt); n.bedSt.connect(n.pulseGain);
+  n.driftLfo.connect(n.driftGain); n.driftGain.connect(n.lo.gain);
   n.lfo.connect(n.lfoGain); n.lfoGain.connect(n.delay.delayTime);
   n.lfo2.connect(n.lfo2Gain); n.lfo2Gain.connect(n.hi.gain);
   n.lfo3.connect(n.lfo3Gain); n.lfo3Gain.connect(n.peak.frequency);
@@ -941,7 +972,7 @@ function build() {
   n.master.connect(n.limiter); n.limiter.connect(n.analyser); n.analyser.connect(ctx.destination);
 
   const t = ctx.currentTime;
-  [n.lfo,n.lfo2,n.lfo3,n.pulseLfo,n.isoLfo,n.oscL,n.oscR].forEach(o => o.start(t));
+  [n.lfo,n.lfo2,n.lfo3,n.pulseLfo,n.isoLfo,n.oscL,n.oscR,n.driftLfo].forEach(o => o.start(t));
   return n;
 }
 
@@ -957,6 +988,11 @@ for (let i = 0; i < 48; i++) { const t = i / 47; XF_UP[i] = Math.sqrt(t); XF_DOW
 
 function loadNoise(type) {
   if (!buffers[type]) buffers[type] = makeBuffer(type);
+  /* stereo buffers are twice the memory of the old mono ones, so the cache
+     keeps at most three spectra; a dropped one regenerates in a blink and the
+     crossfading old source holds its own reference until it stops */
+  const bk = Object.keys(buffers);
+  if (bk.length > 3) { const drop = bk.find(k => k !== type && k !== S.noise); if (drop) delete buffers[drop]; }
   const now = ctx.currentTime;
   const old = nodes.src, oldG = nodes.srcGain;
   const s = ctx.createBufferSource(), g = ctx.createGain();
@@ -993,6 +1029,10 @@ function apply() {
 
   const tilt = S.tilt / 100;
   P(n.lo.gain, -tilt * 12); P(n.hi.gain, tilt * 12);
+
+  const w = clamp((S.width ?? 70) / 100, 0, 1);
+  P(n.bedSt.gain, Math.sin(w * Math.PI / 2));
+  P(n.bedMono.gain, Math.cos(w * Math.PI / 2));
 
   const qv = 0.4 + Math.pow(S.q / 100, 2) * 17;
   P(n.peak.Q, qv); P(n.phi1.Q, qv); P(n.phi2.Q, qv);
@@ -1036,7 +1076,13 @@ function apply() {
   else { P(n.pulseDepth.gain, 0); P(n.pulseGain.gain, 1); }
   heartBpm = 40 + (S.prate/100)*100;
   heartAmt = pamt;
-  P(n.heartGain.gain, S.pulse === "heart" ? 1.15 : 0, .1);
+  /* the heartbeat gets its own volume: the Amount slider IS the heartbeat
+     level when the pulse is a heartbeat (the label says so), and it now
+     drives the bus gain too, so 100% genuinely means loud instead of
+     "slightly less subtle" */
+  P(n.heartGain.gain, S.pulse === "heart" ? 1.05 + pamt*0.95 : 0, .1);
+  const pamtLab = $("lab-pamt");
+  if (pamtLab) pamtLab.textContent = S.pulse === "heart" ? "Heartbeat" : "Amount";
 
   // character layer: rebuild when the character changes, retune when it hasn't
   if (chrNodes ? chrNodes._chr !== S.chr : S.chr !== "off") chrBuild();
@@ -1103,10 +1149,13 @@ function duckBed(t) {
   /* The bed steps aside for each beat: a short dip in the very band the womb
      bed is loudest in, so the thump reads through instead of drowning. This
      is the trick every serious generated womb track uses. */
-  const g = nodes.pulseGain.gain, dip = 1 - heartAmt*.28;
+  /* .38, not .28: the deeper dip is most of why the beat reads. Loudness is
+     cheap; the masking RELEASE, the bed leaning away and back per beat, is
+     what the ear latches onto. */
+  const g = nodes.pulseGain.gain, dip = 1 - heartAmt*.38;
   try {
     g.setTargetAtTime(dip, t, .015);
-    g.setTargetAtTime(1, t + .1, .09);
+    g.setTargetAtTime(1, t + .12, .1);
   } catch {}
 }
 function heartTick() {
@@ -1135,8 +1184,7 @@ function thump(t, amp) {
    Stephen (2026-08-17): "so many of the sounds sound exactly the same…
    the womb and car ride… we need uniqueness and depth and quality."
    He was right: every preset was the same noise bed in different EQ.
-   The bed gives a sound its weather; a character gives it its NAME —
-   a small procedural layer of continuous texture and scheduled events,
+   The bed gives a sound its weather; a character gives it its NAME, a small procedural layer of continuous texture and scheduled events,
    through one bus into the master chain so the timer fade, programs,
    the nursery cap and adaptive masking all still govern it. Everything
    is synthesised live; there are still no recordings in this app. */
@@ -1165,7 +1213,7 @@ function chrBuild() {
   if (S.chr === "womb") {
     /* The placental swoosh: a band of the bed noise, pumped at the same
        rate as the heartbeat. This rhythm-lock is what reads as "womb"
-       rather than "dark noise" — real recordings whoosh at the pulse. */
+       rather than "dark noise", real recordings whoosh at the pulse. */
     c.bp = ctx.createBiquadFilter(); c.bp.type = "bandpass"; c.bp.frequency.value = 260; c.bp.Q.value = 1.1;
     c.am = ctx.createGain(); c.am.gain.value = .3;
     c.lfo = ctx.createOscillator(); c.lfo.frequency.value = heartBpm/60;
@@ -1332,7 +1380,7 @@ let burstQueue = [], flashQueue = [];
 /* ---------------- programs ----------------
    A program is a list of phases. Each phase has a duration and a target
    level multiplier; the engine ramps between them. Every program ends at
-   zero — nothing here is designed to run until morning. */
+   zero, nothing here is designed to run until morning. */
 const PROGRAMS = [
   { id:"settle", name:"Settle & fade", d:"Steady while they go down, then out.",
     sound:"newborn",
@@ -1540,7 +1588,7 @@ const fadeSeconds = () => Math.round(5 + Math.pow(S.fade/100,2)*295);
 function paintTimer(left) {
   const el = $("cd");
   if (!timerEnd || left == null || left <= 0) {
-    el.textContent = "—:—"; el.classList.add("off");
+    el.textContent = ", :, "; el.classList.add("off");
     $("s-timer").textContent = S.timer ? S.timer+" min" : "off";
     if (!prog) paintVizLeft(null);
     return;
@@ -1620,7 +1668,7 @@ function adaptTick() {
   const target = excess > threshold
     ? clamp(1 + (excess - threshold) / 12 * (maxLift - 1), 1, maxLift)
     : 1;
-  // fast to rise, slow to fall — cover the event, then get out of the room
+  // fast to rise, slow to fall, cover the event, then get out of the room
   adaptGain += (target - adaptGain) * (target > adaptGain ? 0.5 : 0.02);
   setVolume();
 }
@@ -1672,7 +1720,7 @@ function mediaSession() {
 /* ---------------- sound presets ---------------- */
 const PRESETS = [
   /* The comb (mix/depth/fb) used to do the heavy lifting on these, and a comb
-     sweep on noise is the definition of a flanger — Stephen heard it in one
+     sweep on noise is the definition of a flanger, Stephen heard it in one
      listen. The beds are now mostly still; the character layers carry the
      identity, with just enough comb left to keep each bed from being static. */
   { id:"womb", name:"Womb", d:{ noise:"brown", tilt:-55, mix:10, rate:6, depth:35, fb:10, pulse:"heart", prate:32, pamt:85, chr:"womb", clvl:60, vol:22 } },
@@ -1733,8 +1781,8 @@ const PULSES = [{id:"off",n:"Off",s:"steady"},{id:"heart",n:"Heartbeat",s:"womb 
 const CHRS = [{id:"off",n:"Off",s:"clean bed"},{id:"womb",n:"Womb swoosh",s:"blood flow"},
   {id:"car",n:"Engine",s:"drone + passing"},{id:"rain",n:"Raindrops",s:"real patter"},
   {id:"surf",n:"Breaking waves",s:"build and wash"},{id:"fan",n:"Fan blades",s:"flutter + hum"}];
-const BEATS = [{id:"delta",n:"Delta",s:"0.5–4 Hz"},{id:"theta",n:"Theta",s:"4–8 Hz"},
-  {id:"alpha",n:"Alpha",s:"8–13 Hz"},{id:"beta",n:"Beta",s:"13–30 Hz"}];
+const BEATS = [{id:"delta",n:"Delta",s:"0.5 to 4 Hz"},{id:"theta",n:"Theta",s:"4 to 8 Hz"},
+  {id:"alpha",n:"Alpha",s:"8 to 13 Hz"},{id:"beta",n:"Beta",s:"13 to 30 Hz"}];
 const TIMES = [0,10,15,20,30,45,60,90];
 const VIZ_MODES = [{id:"aurora",n:"Aurora"},{id:"drift",n:"Drift"},{id:"ember",n:"Ember"},
   {id:"ring",n:"Ring"},{id:"void",n:"Void"}];
@@ -1806,6 +1854,7 @@ function slider(id, key, fmt, after) {
   paintFns.push(paint); return paint;
 }
 slider("tilt","tilt", v => v==0 ? "flat" : (v>0?"+":"")+v);
+slider("width","width", v => v==0 ? "mono" : v<35 ? "narrow" : v<80 ? "wide" : "very wide");
 {
   const el = $("freq"), out = $("v-freq");
   const paint = () => {
@@ -2228,12 +2277,12 @@ window.addEventListener("keydown", e => {
      so a bare registration would never see an update. Bump in lockstep with
      SHELL_VERSION in sw.js. */
   if ("serviceWorker" in navigator && location.protocol !== "file:") {
-    window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=3").catch(()=>{}));
+    window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=8").catch(()=>{}));
   }
 })();
 
 /* ============================================================================
-   VOICES — struck and plucked sounds, synthesised rather than sampled.
+   VOICES, struck and plucked sounds, synthesised rather than sampled.
    Everything here is additive: a few sine partials with exponential decays.
    Cheap enough to run all night, and it means no audio files, so the app
    stays a single page that works offline.
@@ -2293,7 +2342,7 @@ function droplet(t, f0, gain) {
   o.connect(g); g.connect(voiceBus);
   o.start(t); o.stop(t + 0.1);
 }
-// a short filtered noise transient — the knock, the splash, the breath
+// a short filtered noise transient, the knock, the splash, the breath
 function transient(t, freq, q, dur, gain) {
   buildVoices();
   if (!thumpBufs) makeThumps();
@@ -2326,7 +2375,7 @@ const degToHz = (root, scale, deg) => {
 };
 
 /* ============================================================================
-   VOICE SCHEDULERS — each returns the time of the next event
+   VOICE SCHEDULERS, each returns the time of the next event
    ============================================================================ */
 let vNext = {}, windPhase = 0;
 function voiceTick() {
@@ -2379,7 +2428,7 @@ function voiceTick() {
     }
     else if (v === "night") {
       // Generative night music built to the specification the sleep-music
-      // trials converge on: 60–80 bpm, instrumental, small intervals, simple.
+      // trials converge on: 60 to 80 bpm, instrumental, small intervals, simple.
       const bpm = 60 + (S.vbpm/100)*20;
       const beat = 60 / bpm;
       const scale = S.vscale || "hirajoshi";
@@ -2407,7 +2456,7 @@ function voiceTick() {
 let nightState = null;
 
 /* ============================================================================
-   THE LIBRARY — every sound, what it is, and how much to believe about it.
+   THE LIBRARY, every sound, what it is, and how much to believe about it.
    tier: 1 good evidence · 2 some evidence · 3 traditional, untested · 4 just nice
    ============================================================================ */
 const TIERS = {
@@ -2544,7 +2593,7 @@ function renderGuideResult() {
     const name = (PRESETS.find(p=>p.id===id)||{}).name || (VOICE_PRESETS.find(p=>p.id===id)||{}).name || id;
     const tier = TIERS[inf.tier||4];
     return '<div class="note" style="border-color:'+tier.col+'">'+
-      '<b>'+name+'</b> — '+(inf.what||"")+
+      '<b>'+name+'</b>, '+(inf.what||"")+
       '<cite>'+tier.label+(inf.from?" · "+inf.from:"")+'</cite>'+
       '<button class="bigbtn playpick" data-id="'+id+'" style="margin-top:8px;padding:10px">Play this</button></div>';
   }).join("");
@@ -2586,15 +2635,15 @@ function renderInfoCard(id) {
   const name = (PRESETS.find(p=>p.id===id)||{}).name || (VOICE_PRESETS.find(p=>p.id===id)||{}).name || id;
   const tier = TIERS[inf.tier];
   el.innerHTML = '<div class="note" style="border-color:'+tier.col+'">'+
-    '<b>'+name+'</b> — '+inf.what+'<br><br>'+inf.why+
+    '<b>'+name+'</b>, '+inf.what+'<br><br>'+inf.why+
     '<cite>'+tier.label+' · '+inf.from+'</cite></div>';
 }
 
 /* ============================================================================
-   TRIALS — n-of-1 randomised experiments
+   TRIALS, n-of-1 randomised experiments
    Statistics validated offline: t-CDF matches textbook critical values to 5 dp,
    Welch matches an independent implementation exactly, and the false-positive
-   rate sits at 3.8–5.0% against a nominal 5% across 5–20 nights per arm.
+   rate sits at 3.8 to 5.0% against a nominal 5% across 5 to 20 nights per arm.
    ============================================================================ */
 
 /* ---- incomplete beta / Student t ---- */
@@ -2672,7 +2721,7 @@ function diffCI(x,y){
   const w=welch(x,y);
   if(!w.df) return [0,0];
   const se=Math.sqrt(vari(x)/x.length+vari(y)/y.length);
-  // invert the t CDF by bisection — small df, so exactness matters
+  // invert the t CDF by bisection, small df, so exactness matters
   let lo=0,hi=100;
   for(let i=0;i<80;i++){ const mid=(lo+hi)/2; tP(mid,w.df)>0.05 ? lo=mid : hi=mid; }
   const tc=(lo+hi)/2, d=avg(x)-avg(y);
@@ -2687,7 +2736,7 @@ const METRICS = [
   { id:"rem",   n:"REM",         s:"minutes",      key:"rem",   higher:true,  unit:" min" },
   { id:"lat",   n:"Falling asleep", s:"minutes",   key:"lat",   higher:false, unit:" min" },
   { id:"wake",  n:"Awake",       s:"count or min", key:"wake",  higher:false, unit:"" },
-  { id:"score", n:"Sleep score", s:"0–100",        key:"score", higher:true,  unit:"" },
+  { id:"score", n:"Sleep score", s:"0 to 100",        key:"score", higher:true,  unit:"" },
   { id:"hrdrop",n:"Heart rate drop", s:"needs a strap", key:"hrdrop", higher:true, unit:" bpm" }
 ];
 
@@ -2782,7 +2831,7 @@ function renderTrialSetup() {
   paintPower();
 }
 // Power figures below come from the Monte-Carlo run in testing, not from a formula
-// pulled out of the air — 1,500 simulated trials at each cell.
+// pulled out of the air, 1,500 simulated trials at each cell.
 const POWER = { 10:{s:10,m:17,l:39}, 14:{s:11,m:24,l:52}, 20:{s:13,m:34,l:71}, 30:{s:20,m:47,l:87}, 45:{s:29,m:65,l:96} };
 function powerFor(n) {
   const keys = Object.keys(POWER).map(Number).sort((a,b)=>a-b);
@@ -2926,7 +2975,7 @@ function renderHistory() {
 }
 
 /* ============================================================================
-   IMPORTERS — all local, all streaming where the file may be huge
+   IMPORTERS, all local, all streaming where the file may be huge
    ============================================================================ */
 const SLEEP_MAP = {
   "HKCategoryValueSleepAnalysisAsleepDeep":"deep",
@@ -3254,7 +3303,7 @@ if (NIGHTS.length) $("s-data").textContent = NIGHTS.length + " nights";
 
 
 /* ============================================================================
-   SIMPLE MODE — the front door.
+   SIMPLE MODE, the front door.
    One recommendation, one button. Everything else is behind a link.
 
    The recommendation is not clever on purpose. The strongest finding in the
@@ -3481,7 +3530,7 @@ if ($("calStart")) {
 
    The evidence tier travels with the sound in the confirmation line: if we
    are honest about that everywhere else, we are honest about it here too. */
-const SHARE_KEYS = ["noise","tilt","freq","tuneMode","amt","q","phiStack","mix","rate",
+const SHARE_KEYS = ["noise","tilt","width","freq","tuneMode","amt","q","phiStack","mix","rate",
   "depth","fb","combLock","phiDrift","pulse","prate","pamt","chr","clvl","swOn","swrate","swblock",
   "swlvl","beatBand","carrier","beat","tlvl","iso","voice","vlvl","vdens","vbpm",
   "vscale","preset"];

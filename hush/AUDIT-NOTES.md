@@ -1,4 +1,4 @@
-# HUSH — audit notes
+# HUSH, audit notes
 
 Audited 2026-08-16 against the live drop at `hush/index.html` (3137 lines),
 `hush/sw.js`, `hush/manifest.webmanifest`, with `incoming/hush/BUILD-PLAN.md`,
@@ -40,7 +40,7 @@ fresh `browser.createBrowserContext()` per assertion.
 
 ## What the audit found, worst first
 
-### S1 — a shared link is dead on arrival in the default mode  (FIXED)
+### S1, a shared link is dead on arrival in the default mode  (FIXED)
 
 `readSharedLink()` decodes the fragment into `S` correctly. But it runs at the
 end of boot, after `setMode()` has already drawn the simple front door, and the
@@ -61,7 +61,7 @@ the shared sound with its own eyebrow and its evidence tier in the copy, so the
 big button plays exactly what was sent, and the honesty label travels with the
 link into the mode 100 percent of people are actually in.
 
-### S2 — a corrupt saved state defeats the nursery volume cap  (FIXED)
+### S2, a corrupt saved state defeats the nursery volume cap  (FIXED)
 
 The load path is `Object.assign(S, saved, { timer:0, micOn:false, adapt:false,
 program:null })`. There is no validation of anything else.
@@ -82,7 +82,7 @@ range rules the share path uses, drops unknown keys, and hard clamps `vol` to
 0..100 and `cap` to a real boolean. A junk save now degrades to defaults instead
 of to full volume.
 
-### S3 — shared frequencies are clamped in the wrong unit  (FIXED)
+### S3, shared frequencies are clamped in the wrong unit  (FIXED)
 
 `clampToControl(key, v)` reads `min`/`max` off the DOM control with that id.
 For every other numeric key that is right, because the slider position and the
@@ -99,7 +99,7 @@ is the single most personal setting in the app, sent the wrong notch.
 (`s2f(0)` to `s2f(1000)`, i.e. 20 Hz to 16000 Hz) instead of against the
 slider's position numbers. Asserted both directions.
 
-### S4 — the sleep timer's fade out was the first thing a browser throttles  (FIXED)
+### S4, the sleep timer's fade out was the first thing a browser throttles  (FIXED)
 
 `startTimer` ran the fade on a 250 ms `setInterval`, recomputing `progGain` from
 `Date.now()`. A hidden tab is throttled to roughly 1 Hz, and a sleeping device
@@ -119,7 +119,7 @@ authority for when the timer is *over* (so a suspended context cannot leave a
 sound running past its bedtime), and if it ever arrives before the ramp has
 finished, the finish is a 1.2 s ramp rather than a snap.
 
-### S5 — WebKit's `interrupted` audio state was never resumed  (FIXED)
+### S5, WebKit's `interrupted` audio state was never resumed  (FIXED)
 
 The only resume path was `visibilitychange` and it only handled
 `ctx.state === "suspended"`. Safari can leave an AudioContext in
@@ -131,7 +131,7 @@ the ring is lit, and nothing is playing.
 pointer or key event, both idempotent, both no-ops when not playing. Resume is
 also attempted on `pageshow` for the bfcache return.
 
-### S6 — every preset silently rewrites the volume  (FIXED)
+### S6, every preset silently rewrites the volume  (FIXED)
 
 All seventeen presets carry a `vol` in their `d` block (16 to 26) and
 `applyPreset` assigns it, including with `quiet:true` from `startProgram()` and
@@ -148,7 +148,7 @@ is the case where it is useful. **While sound is already playing, the current
 volume is kept.** The person is in the room with the sleeping child and has
 already set the level; nothing gets to raise it behind their back.
 
-### S7 — changing sound spliced two uncorrelated noise buffers  (FIXED)
+### S7, changing sound spliced two uncorrelated noise buffers  (FIXED)
 
 `loadNoise` stopped the old source and started a new one at the same instant.
 The seam *inside* a buffer gets a careful 60 ms equal power crossfade; the seam
@@ -159,13 +159,13 @@ full amplitude is a step discontinuity, which is a tick.
 sound is a 120 ms equal power crossfade with the old source stopped after it has
 faded. Same trick as the loop seam, one level up.
 
-### S8 — "Safety and evidence" did not open safety  (FIXED)
+### S8, "Safety and evidence" did not open safety  (FIXED)
 
 `$("toSafety")` opened `p-eq`, the evidence panel. The nursery volume cap, which
 is the single most important control in the app, lives in `p-safe`, further
 down, closed. **Fix:** both panels open, and the scroll lands on the cap.
 
-### S9 — the audio look ahead was shorter than the timer feeding it  (FIXED)
+### S9, the audio look ahead was shorter than the timer feeding it  (FIXED)
 
 `heartTick` scheduled 0.4 s ahead and `swTick` 0.6 s ahead, both off a 200 ms
 interval. A hidden tab's 1 Hz throttle is longer than either, so heartbeat
@@ -178,7 +178,7 @@ room to spare, and the tick interval keeps topping up as before. Cost is a
 slightly longer response when you change the pulse rate, which nobody does at
 3am.
 
-### S10 — iOS lock screen is stage 1 only  (DOCUMENTED, NOT FAKED)
+### S10, iOS lock screen is stage 1 only  (DOCUMENTED, NOT FAKED)
 
 Verified in source: there is no `<audio>` element sink and no
 `OfflineAudioContext` render anywhere in the file, so stage 2 of the plan is
@@ -195,7 +195,7 @@ standalone PWA, and to confirm that a baked in fade sounds right, because iOS
 ignores `element.volume`. **I do not have an iPhone. This stays unbuilt and
 unclaimed rather than shipped on a guess.** See "Still open" below.
 
-### S11 — the handoff's assertions had only partly shipped  (FIXED)
+### S11, the handoff's assertions had only partly shipped  (FIXED)
 
 `scripts/hush_audit.js` exists and is green at 155 assertions, covering
 programs, evidence tiers, the guide, the shortlist, defaults, the Schade
@@ -240,12 +240,12 @@ three places.
 `scripts/hush_audit.js` (155 assertions) is unaffected and still green. Between
 them that is 274 assertions on this app.
 
-### S12 — dashes in player facing copy  (FIXED in prose)
+### S12, dashes in player facing copy  (FIXED in prose)
 
 36 em dashes in prose against the no dashes rule. Rewritten as commas, colons
 and full stops. The `—` used as an empty value placeholder (the countdown at
 rest, the meter before the mic is on) is a typographic blank rather than copy
-and stays. En dashes inside numeric ranges (`0.5–4 Hz`) and the true minus sign
+and stays. En dashes inside numeric ranges (`0.5 to 4 Hz`) and the true minus sign
 in `−3 dB / octave` are mathematics, not punctuation, and stay.
 
 ---
