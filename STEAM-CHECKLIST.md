@@ -69,8 +69,14 @@ game at $4.99 from a studio nobody has heard of invites the reaction he has
 already had in public; at $2.99 it is an impulse buy nobody argues about.
 
 ```
-https://partner.steamgames.com/apps/pricing/5043360
+https://partner.steamgames.com/packages/pricing/1748610
 ```
+⛔ The price lives on the STORE PACKAGE (1748610), NOT the app. The old
+`apps/pricing/5043360` link dead-ends on an app info page with no price field
+(verified the hard way 2026-08-20). If the link above doesn't land on a pricing
+form: Steamworks home → **Apps & Packages → All Packages** → click the
+**Jumping Jimothy** package → **Edit Pricing**.
+
 Base **US $2.99** → then click **Generate Suggested Prices** and take Valve's table
 for every other currency wholesale. Do not hand-edit regions.
 

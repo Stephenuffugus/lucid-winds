@@ -1,6 +1,6 @@
 # JUMPING JIMOTHY — Steam store page, field by field
 
-**App 5043360 · depot 5043361 · Sky Wolf Studios · written 2026-08-01**
+**App 5043360 · depot 5043361 · Sky Wolf Studio · written 2026-08-01**
 
 Everything below is paste ready. Fields are in the order Steamworks presents them.
 Nothing here is aspirational: every number was read out of
@@ -86,12 +86,12 @@ schema and in the web `<meta keywords>`; it is stripped out of the Steam build b
 
 ### Developer
 ```
-Sky Wolf Studios
+Sky Wolf Studio
 ```
 
 ### Publisher
 ```
-Sky Wolf Studios
+Sky Wolf Studio
 ```
 
 ### Franchise
@@ -258,7 +258,7 @@ seven songs from `MUSIC`, six backdrops from `ZONES`, borrowed whiskers from
 ## 1.4 Legal / Copyright and Trademark notice
 
 ```
-Copyright 2026 Sky Wolf Studios. Jumping Jimothy is a trademark of Sky Wolf Studios. This product includes software from the Electron and Chromium projects; their licences are included with the game. Typefaces used under the SIL Open Font License.
+Copyright 2026 Sky Wolf Studio. Jumping Jimothy is a trademark of Sky Wolf Studio. This product includes software from the Electron and Chromium projects; their licences are included with the game. Typefaces used under the SIL Open Font License.
 ```
 
 ⛔ Do not write "All rights reserved. All trademarks are property of their
