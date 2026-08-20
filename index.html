@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.08.20.01';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.08.20.02';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -5396,6 +5396,9 @@
     .gp-cat-banner{display:block;width:100%;height:auto;object-fit:cover;}
     .gp-cat-text-fallback{display:none;align-items:center;gap:8px;padding:10px 12px;flex:1;}
     .gp-cat-text-fallback.show{display:flex;}
+    /* IN DEVELOPMENT has no banner ON PURPOSE — it is the workbench row.
+       A dashed hazard edge makes the missing art read as intent. */
+    .gp-cat[data-cat="indev"] .gp-cat-hdr{background:rgba(20,18,10,0.7);border-top:1px dashed rgba(200,168,75,0.4);border-bottom:1px dashed rgba(200,168,75,0.4);}
     .gp-cat-icon{font-size:1.1rem;flex-shrink:0;width:28px;text-align:center;}
     .gp-cat-label{font-family:'Bebas Neue',sans-serif;font-size:0.75rem;letter-spacing:0.1em;color:var(--gold);flex:1;text-align:left;}
     .gp-cat-count{position:absolute;top:8px;right:44px;font-family:'DM Mono',monospace;font-size:0.5rem;color:var(--cream);background:rgba(8,10,6,0.85);padding:3px 9px;border-radius:12px;flex-shrink:0;box-shadow:0 2px 6px rgba(0,0,0,0.5);border:1px solid rgba(200,168,75,0.3);}
@@ -41487,7 +41490,7 @@ document.addEventListener('keydown', function(e) {
     var _web = !!(window.LW_WebPay && window.LW_WebPay.showUsd());
     var _wUsd = _web && window.LW_WebPay.priceStr('slot');
     var _bodyCopy = _web
-      ? 'Add <b>10 slots</b> for <b>' + _wUsd + '</b>. Pay in any crypto?'
+      ? 'Add <b>10 slots</b> for <b>' + _wUsd + '</b>. Pay by card or crypto?'
       : _piOn
         ? 'Add slot ' + (current + 1) + ' for <b>1 Pi</b>?'
         : 'Add slot ' + (current + 1) + '?';
@@ -41539,7 +41542,7 @@ document.addEventListener('keydown', function(e) {
     _lwConfirm({
       title: 'EXPAND GREENHOUSE',
       body: _web
-        ? ('Add <b>10 slots</b> for <b>' + _wUsd + '</b>. Pay in any crypto?')
+        ? ('Add <b>10 slots</b> for <b>' + _wUsd + '</b>. Pay by card or crypto?')
         : ('Add ' + qty + ' slots (slot ' + (current + 1) + ' through ' + (current + qty) + ')' + (_piOn ? ' for <b>' + cost + ' Pi</b>?' : '?')),
       yes: _web ? ('PAY ' + _wUsd) : (_piOn ? ('PAY ' + cost + ' PI') : 'EXPAND'),
       no: 'NOT YET'
@@ -41624,7 +41627,7 @@ document.addEventListener('keydown', function(e) {
     wrap.innerHTML = '<div onclick="_closeBloomStore()" style="position:fixed;inset:0;background:rgba(5,7,4,0.82);z-index:100050;"></div>'
       + '<div style="position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(92vw,380px);background:#12160f;border:1px solid rgba(200,168,75,0.5);border-radius:16px;padding:18px 16px 14px;z-index:100051;box-shadow:0 12px 40px rgba(0,0,0,0.6);">'
       + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.25rem;letter-spacing:0.12em;color:var(--gold);margin-bottom:2px;">GROW YOUR GARDEN</div>'
-      + '<div style="font-size:0.72rem;color:var(--muted);margin-bottom:12px;">' + ((window.LW_WebPay && LW_WebPay.showUsd()) ? 'Pay in any crypto. Unlocks are permanent and synced to your account.' : 'Unlocks are permanent and synced to your account.') + '</div>'
+      + '<div style="font-size:0.72rem;color:var(--muted);margin-bottom:12px;">' + ((window.LW_WebPay && LW_WebPay.showUsd()) ? 'Pay by card, Apple Pay, Google Pay, or any crypto. Unlocks are permanent and synced to your account.' : 'Unlocks are permanent and synced to your account.') + '</div>'
       + rows
       + '<button onclick="_closeBloomStore()" style="display:block;width:100%;min-height:48px;margin-top:12px;background:transparent;border:1px solid rgba(138,145,120,0.35);border-radius:12px;color:var(--muted);font-family:\'Bebas Neue\',sans-serif;font-size:0.9rem;letter-spacing:0.1em;cursor:pointer;">NOT YET</button>'
       + '<button onclick="_closeBloomStore();if(window._openCompendiumUI){_openCompendiumUI();setTimeout(function(){if(window._bosSetTab)_bosSetTab(\'about\');},250);}" style="display:block;width:100%;min-height:44px;margin-top:8px;background:transparent;border:none;color:var(--muted);font-family:DM Mono,monospace;font-size:0.68rem;cursor:pointer;text-decoration:underline;text-underline-offset:3px;">Prefer to simply leave a tip? The tip jar is here ♡</button>'
@@ -41641,7 +41644,7 @@ document.addEventListener('keydown', function(e) {
     var price = (window.LW_WebPay && LW_WebPay.priceStr(kind)) || (kind === 'full_bloom' ? '$10' : '$5');
     _lwConfirm({
       title: label.toUpperCase() + ' UPGRADE',
-      body: 'Unlock the <b>' + label + '</b> upgrade for <b>' + price + '</b> &mdash; pay in any crypto? Your garden expands the moment the payment confirms.',
+      body: 'Unlock the <b>' + label + '</b> upgrade for <b>' + price + '</b> &mdash; pay by card or crypto? Your garden expands the moment the payment confirms.',
       yes: 'PAY ' + price,
       no: 'NOT YET'
     }, function(){
@@ -63347,8 +63350,6 @@ var G_CATS=[
   {key:'creative',label:'CREATIVE',       icon:'\ud83c\udfb5'},
   {key:'card',    label:'CARD GAMES',     icon:'\ud83c\udca1'},
   {key:'puzzle',  label:'PUZZLES',        icon:'\ud83e\udde9'},
-  {key:'word',    label:'WORD GAMES',     icon:'\ud83d\udd24'},
-  {key:'math',    label:'MATH GAMES',     icon:'\ud83d\udd22'},
   {key:'board',   label:'BOARD GAMES',    icon:'\u265f'},
   {key:'pattern', label:'PATTERN & MEMORY',icon:'\ud83e\udde0'},
   {key:'dice',    label:'DICE GAMES',     icon:'\ud83c\udfb2'},
@@ -63358,6 +63359,12 @@ var G_CATS=[
   // players know they're works in progress. Set beta:true to add a game here.
   {key:'indev',   label:'IN DEVELOPMENT', icon:'\ud83d\udea7'}
 ];
+/* WORD and MATH were half-born categories: four games each and no banner
+   art, so they rendered as bare text rows between the painted headers
+   (Stephen 2026-08-20: "they just look like crap"). Their games live under
+   PUZZLES until they earn their own art and roster \u2014 the games keep their
+   own cat: so splitting them back out later is one line. */
+function _gCatOf(g){ return (g.cat==='word'||g.cat==='math')?'puzzle':g.cat; }
 var G=[
 {id:'set',n:'Three Sisters',i:'\ud83c\udccf',r:'Tap 3 cards where each trait is ALL same or ALL different.',cat:'pattern',thumb:'assets/games/thumbs/threesisters.png'},
 {id:'stopten',n:'Stop at Ten',i:'\u23f1\ufe0f',r:'Start the clock. Stop it at exactly 10.00 seconds. Closer = better.',cat:'pattern',thumb:'assets/games/thumbs/stopten-trimmed.png'},
@@ -64900,7 +64907,7 @@ function _bp(){var p=document.getElementById('fg-pk');if(!p)return;p.innerHTML='
   allBtn.addEventListener('click',_op);p.appendChild(allBtn);
   // Category chips — quick-filter by type
   G_CATS.forEach(function(cat){
-    var count=G.filter(function(g){return !_gHiddenHere(g)&&(cat.key==='indev'?!!g.beta:(g.cat===cat.key&&!g.beta))}).length;
+    var count=G.filter(function(g){return !_gHiddenHere(g)&&(cat.key==='indev'?!!g.beta:(_gCatOf(g)===cat.key&&!g.beta))}).length;
     if(!count)return;
     var c=document.createElement('div');c.className='fg-c';
     c.innerHTML='<span class="fi">'+(window._lwEmojiSprite?_lwEmojiSprite(cat.icon,28):cat.icon)+'</span><span class="fn">'+cat.label+'</span>';
@@ -64940,7 +64947,7 @@ function _op(){var o=document.getElementById('fg-ov'),rc=_gr();
   // Category accordions
   var gi=0;
   G_CATS.forEach(function(cat){
-    var games=G.filter(function(g){return !_gHiddenHere(g)&&(cat.key==='indev'?!!g.beta:(g.cat===cat.key&&!g.beta))});
+    var games=G.filter(function(g){return !_gHiddenHere(g)&&(cat.key==='indev'?!!g.beta:(_gCatOf(g)===cat.key&&!g.beta))});
     games.sort(function(a,b){var x=(a.n||'').toLowerCase(),y=(b.n||'').toLowerCase();return x<y?-1:(x>y?1:0);}); // alphabetical order (Stephen 2026-07-09)
     if(!games.length)return;
     h+='<div class="gp-cat" data-cat="'+cat.key+'">';
@@ -77276,25 +77283,64 @@ var LW_WebPay = {
     return '$' + (c % 100 === 0 ? (c/100).toFixed(0) : (c/100).toFixed(2));
   },
   bundleQty: function(type){ var s=this._usd[type]; return (s && s.bundle) || 1; },
+  /* Two rails on the open web (2026-08-20, Stephen: "have all the payments
+     possible"): CARD (Stripe hosted checkout: card / Apple Pay / Google Pay)
+     and CRYPTO (NOWPayments, ~300 coins). Same server catalog, same prices,
+     same webOrders watcher, same fulfillment. Pi Browser never sees any of
+     this — the Pi rail is the only rail there, as Pi requires. */
   buy: function(metadata, memo, onSuccess, onCancel){
     if (_wpInPiBrowser()){ if(onCancel)onCancel(); return; }
     if (!_wpFnsReady()){ _wpToast('Web payments need a moment to load. Try again.'); if(onCancel)onCancel(); return; }
     if (!_wpSignedIn()){ _wpToast('Sign in first to buy.'); if(onCancel)onCancel(); return; }
     var order = _wpToOrder(metadata);
     if (!order.type){ if(onCancel)onCancel(); return; }
+    LW_WebPay._chooseRail(function(rail){
+      if (!rail){ if(onCancel)onCancel(); return; }
+      LW_WebPay._start(rail, order, memo, onSuccess, onCancel);
+    });
+  },
+  // A small two-button sheet: card or crypto. cb(null) = dismissed.
+  _chooseRail: function(cb){
+    var old = document.getElementById('lw-railpick'); if (old) old.remove();
+    var wrap = document.createElement('div');
+    wrap.id = 'lw-railpick';
+    wrap.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:flex-end;justify-content:center;background:rgba(5,7,4,0.72);';
+    wrap.innerHTML =
+      '<div style="width:100%;max-width:420px;background:#121711;border:1px solid rgba(200,168,75,0.5);border-radius:18px 18px 0 0;padding:16px 14px calc(16px + env(safe-area-inset-bottom,0px));">'
+      + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.05rem;letter-spacing:0.1em;color:var(--cream);margin:0 0 10px;text-align:center;">HOW WOULD YOU LIKE TO PAY?</div>'
+      + '<button data-rail="card" style="display:block;width:100%;min-height:52px;margin:0 0 10px;padding:12px 14px;background:rgba(122,179,86,0.1);border:1px solid rgba(122,179,86,0.45);border-radius:12px;color:var(--cream);text-align:left;cursor:pointer;">'
+      +   '<span style="font-family:\'Bebas Neue\',sans-serif;font-size:0.95rem;letter-spacing:0.08em;color:var(--sage);">💳 CARD · APPLE PAY · GOOGLE PAY</span>'
+      +   '<span style="display:block;font-size:0.72rem;color:var(--muted);margin-top:2px;">Secure Stripe checkout. Unlocks in seconds.</span></button>'
+      + '<button data-rail="crypto" style="display:block;width:100%;min-height:52px;margin:0 0 10px;padding:12px 14px;background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.45);border-radius:12px;color:var(--cream);text-align:left;cursor:pointer;">'
+      +   '<span style="font-family:\'Bebas Neue\',sans-serif;font-size:0.95rem;letter-spacing:0.08em;color:var(--gold);">🪙 ANY CRYPTO</span>'
+      +   '<span style="display:block;font-size:0.72rem;color:var(--muted);margin-top:2px;">Around 300 coins at the live rate. Unlocks after it confirms on chain.</span></button>'
+      + '<button data-rail="" style="display:block;width:100%;min-height:48px;background:transparent;border:1px solid rgba(138,145,120,0.4);border-radius:12px;color:var(--muted);cursor:pointer;">Not now</button>'
+      + '</div>';
+    wrap.addEventListener('click', function(e){
+      var b = e.target.closest ? e.target.closest('[data-rail]') : null;
+      if (b){ wrap.remove(); cb(b.getAttribute('data-rail') || null); return; }
+      if (e.target === wrap){ wrap.remove(); cb(null); }
+    });
+    document.body.appendChild(wrap);
+  },
+  _start: function(rail, order, memo, onSuccess, onCancel){
     _wpToast('Opening secure checkout…');
+    var fnName = rail === 'card' ? 'stripeCreateCheckout' : 'nowCreateInvoice';
     var fn;
-    try { fn = firebase.functions().httpsCallable('nowCreateInvoice'); }
+    try { fn = firebase.functions().httpsCallable(fnName); }
     catch(e){ _wpToast('Web payments unavailable right now.'); if(onCancel)onCancel(); return; }
     fn(order).then(function(res){
       var d = (res && res.data) || {};
-      if (!d.ok || !d.orderId || !d.invoiceUrl){ _wpToast('Could not start checkout. Try again.'); if(onCancel)onCancel(); return; }
-      try { window.open(d.invoiceUrl, '_blank', 'noopener'); }
-      catch(e){ try { location.href = d.invoiceUrl; } catch(e2){} }
-      _wpToast('Checkout opened in a new tab. Pick any coin — your item unlocks here automatically once it confirms on-chain (usually a few minutes).', {duration:9000});
+      var url = d.invoiceUrl || d.url;
+      if (!d.ok || !d.orderId || !url){ _wpToast('Could not start checkout. Try again.'); if(onCancel)onCancel(); return; }
+      try { window.open(url, '_blank', 'noopener'); }
+      catch(e){ try { location.href = url; } catch(e2){} }
+      _wpToast(rail === 'card'
+        ? 'Checkout opened in a new tab. Your item unlocks here automatically a few seconds after you pay.'
+        : 'Checkout opened in a new tab. Pick any coin — your item unlocks here automatically once it confirms on-chain (usually a few minutes).', {duration:9000});
       LW_WebPay._watch(d.orderId, memo, onSuccess, onCancel);
     }).catch(function(err){
-      console.error('[WebPay] invoice error', err && err.code, err && err.message);
+      console.error('[WebPay] checkout error', fnName, err && err.code, err && err.message);
       _wpToast((err && err.message) || 'Checkout failed. Try again.');
       if(onCancel)onCancel();
     });
