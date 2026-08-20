@@ -127,9 +127,30 @@ body.squint .lid{transform:scaleY(.62);}
 @keyframes coonGiggle{0%,100%{transform:rotate(0)}20%{transform:rotate(2.6deg)}
   45%{transform:rotate(-2.6deg)}70%{transform:rotate(1.8deg)}}
 .giggling #headGrp{animation:coonGiggle .55s ease;}
-@keyframes coonSneeze{0%{transform:rotate(0) translateY(0)}30%{transform:rotate(-4deg) translateY(-5px)}
-  55%{transform:rotate(6deg) translateY(4px)}100%{transform:rotate(0) translateY(0)}}
-.sneezing #headGrp{animation:coonSneeze .5s ease;}
+/* The sneeze has comedy timing now: two sniffing wind-ups tilting the head
+   back, a beat of nothing, the SNAP forward, then a woozy settle. The body
+   rocks with it and the cheeks catch the follow-through. */
+@keyframes coonSneeze{
+  0%{transform:rotate(0) translateY(0)}
+  14%{transform:rotate(-3deg) translateY(-4px)}
+  22%{transform:rotate(-1deg) translateY(-1px)}
+  38%{transform:rotate(-6deg) translateY(-8px)}
+  46%{transform:rotate(-7deg) translateY(-9px)}
+  54%{transform:rotate(11deg) translateY(9px) scale(1.02)}
+  66%{transform:rotate(7deg) translateY(5px)}
+  80%{transform:rotate(-2deg) translateY(-1px)}
+  100%{transform:rotate(0) translateY(0)}}
+.sneezing #headGrp{animation:coonSneeze 1.15s cubic-bezier(.3,.7,.4,1);}
+@keyframes coonSneezeBody{
+  0%,30%{transform:scale(1,1)}
+  44%{transform:scale(0.97,1.05)}
+  54%{transform:scale(1.06,0.93)}
+  70%{transform:scale(0.99,1.01)}
+  100%{transform:scale(1,1)}}
+.sneezing .breathe{animation:coonSneezeBody 1.15s cubic-bezier(.3,.7,.4,1) !important;}
+@keyframes cheekWob{0%,50%{transform:translate(0,0)}58%{transform:translate(0,3.4px)}
+  72%{transform:translate(0,-1.6px)}86%{transform:translate(0,.8px)}100%{transform:translate(0,0)}}
+.sneezing #pCheekL,.sneezing #pCheekR{animation:cheekWob 1.15s ease;}
 @keyframes coonGrump{0%{transform:rotate(0)}25%{transform:rotate(-6deg)}
   75%{transform:rotate(-6deg)}100%{transform:rotate(0)}}
 .grump #headGrp{animation:coonGrump .62s ease;}
@@ -1414,14 +1435,19 @@ var V = {
       tone({f0:base-i*14+Math.random()*20,f1:(base-i*14)*0.72,bend:.024,dur:.035,gain:.1,wave:'square',pan:pan});
       noiseHit({dur:.012,type:'bandpass',freq:1500+Math.random()*600,Q:4,gain:.05,pan:pan});
     },i*34+Math.random()*8); })(i); },
-  /* the third boop in a row: a little inhale, then the sneeze */
+  /* the third boop in a row: the BLAST (the sniffy wind-up is staged by the
+     raccoon's own sequence, so a recording of a real sneeze lands right on
+     the snap). A big wet burst with a falling body, a comic top note, and a
+     sheepish little sniffle a beat later. */
   sneeze:function(pan){
-    noiseHit({dur:.16,type:'bandpass',freq:900,sweepTo:2400,Q:2,gain:.07,attack:.06,pan:pan});
+    noiseHit({dur:.13,type:'bandpass',freq:2000,sweepTo:420,Q:1,gain:.4,pan:pan});
+    noiseHit({dur:.05,type:'highpass',freq:3400,gain:.14,pan:pan});
+    tone({f0:760,f1:180,bend:.12,dur:.2,gain:.2,wave:'sawtooth',pan:pan});
+    tone({f0:1500,f1:600,bend:.08,dur:.1,gain:.07,wave:'triangle',pan:pan});
+    setTimeout(function(){ tone({f0:300,f1:170,bend:.14,dur:.16,gain:.08,pan:pan}); },110);
     setTimeout(function(){
-      noiseHit({dur:.09,type:'bandpass',freq:1800,sweepTo:500,Q:1.2,gain:.3,pan:pan});
-      tone({f0:640,f1:210,bend:.1,dur:.16,gain:.16,wave:'sawtooth',pan:pan});
-      setTimeout(function(){ tone({f0:330,f1:190,bend:.12,dur:.14,gain:.08,pan:pan}); },90);
-    },200); },
+      noiseHit({dur:.09,type:'bandpass',freq:900,sweepTo:1600,Q:3,gain:.06,attack:.03,pan:pan});
+    },430); },
   /* pulled too hard on the tail: a low, put-upon rumble */
   grumble:function(pan){
     tone({f0:110,f1:78,bend:.3,dur:.38,gain:.16,wave:'sawtooth',pan:pan});
@@ -1802,12 +1828,23 @@ coon.addEventListener('pointerdown', safe(function(e){
       boopN=(nw-boopT<1500)?boopN+1:1; boopT=nw;
       if(boopN>=3){
         boopN=0;
-        coonReact('sneezing',520);
-        feel('sneeze',x,y);
-        floatWord(x,y-30,'achoo');
-        // the sneeze kicks his ears loose
-        pullState.earL.vy=2.6; pullState.earL.vx=-1.6;
-        pullState.earR.vy=2.6; pullState.earR.vx=1.6;
+        /* comedy timing: two sniffs tilting him back, a held beat, THEN the
+           blast — the keyframes and these timeouts are the same clock */
+        coonReact('sneezing',1150);
+        noiseHit({dur:.12,type:'bandpass',freq:700,sweepTo:1400,Q:2.4,gain:.07,attack:.05,pan:0});
+        setTimeout(function(){
+          noiseHit({dur:.13,type:'bandpass',freq:850,sweepTo:1800,Q:2.4,gain:.11,attack:.05,pan:0});
+        },300);
+        setTimeout(function(){
+          feel('sneeze',x,y);
+          floatWord(x,y-30,'ACHOO');
+          bits(x,y+16,'#DED7CB',9);              // the spray
+          // the blast kicks his ears loose and flicks his tail
+          pullState.earL.vy=3.2; pullState.earL.vx=-2;
+          pullState.earR.vy=3.2; pullState.earR.vx=2;
+          if(pullState.tail){ pullState.tail.vx=-2.6; pullState.tail.vy=1.2; }
+          if(S.buzz&&CAN_BUZZ){ try{ navigator.vibrate([28,50,12]); }catch(err){} }
+        },600);
       }else{ feel('squeak',x,y); bop(); }
     }
     else if(s==='bell'){ feel('bell',x,y); }
