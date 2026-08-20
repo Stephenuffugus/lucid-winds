@@ -518,8 +518,13 @@ var DY0=400, DY1=112;               /* landing y at depth 0 and 1 */
 var BOARD_F=1.2;                    /* worldX to board x */
 var RINGC={x:270,y:262}, SQ=0.56;   /* the bullseye and its tilt squish */
 var RINGS=[[26,50],[60,40],[96,30],[132,20]];
+/* Corner hundreds widened 2026-08-20 (Stephen: "impossible to hit, my ball
+   bounces off constantly, not a single one in"). With HR=25/HSQ=0.6 the
+   pocket accepted a 6.5% launch window and everything past full power was
+   hard-ruled a wall bounce — see the grace band in toFlight(). Still the
+   hardest shot on the board, no longer a lie. */
 var H100=[{x:104,y:128,id:'L'},{x:436,y:128,id:'R'}];
-var HSQ=0.6, HR=25;
+var HSQ=0.72, HR=28;
 var TRAY_Y=398;
 
 function laneHalf(y){ y=clamp(y,LANE_TOP,LANE_BOT);
@@ -620,7 +625,11 @@ function toFlight(){
   rumbleStop(); sfx('hop');
   var rs=G.vy;
   var df=(rs-RS_MIN)/(RS_MAX-RS_MIN);
-  var over=df>1; df=clamp(df,0,1);
+  /* GRACE BAND: up to 15% past full power still lands on the back band and
+     JUDGES. The corner hundreds live at exactly that depth, and the old
+     hard over=wall made the documented recipe ("a full power roll on an
+     edge line") physically impossible — a full send always bounced off. */
+  var over=df>1.15; df=clamp(df,0,1);
   G.T=0.5+0.34*df; G.dfrac=df; G.hopH=46+50*df;
   var wxl=G.worldX + G.vxW*0.55*G.T + 0.5*G.wind*G.T*G.T;
   G.fx0=laneX(G.worldX,RAMP_LIP); G.fy0=RAMP_LIP;
@@ -996,6 +1005,13 @@ function measureBoard(){
 var flies=[]; (function(){ var i; for(i=0;i<8;i++) flies.push({
   x:60+Math.random()*420, y:70+Math.random()*260, r:1+Math.random()*1.6,
   p:Math.random()*TAU, s:5+Math.random()*9 }); })();
+/* night sky: fixed stars (seeded once, so the sky never flickers between
+   frames) and dew glints on the felt (2026-08-20 detail pass) */
+var stars=[]; (function(){ var i; for(i=0;i<42;i++) stars.push({
+  x:Math.random()*540, y:Math.random()*200, r:0.5+Math.random()*1.1,
+  p:Math.random()*TAU, tw:0.4+Math.random()*1.2 }); })();
+var dews=[]; (function(){ var i; for(i=0;i<14;i++) dews.push({
+  x:84+Math.random()*372, y:104+Math.random()*290, p:Math.random()*TAU }); })();
 
 function frame(){
   var t=now(), dt=Math.min(0.05,t-lastT); lastT=t;
@@ -1040,6 +1056,20 @@ function draw(t){
   g.addColorStop(0,'#0c1420'); g.addColorStop(0.5,'#080c14'); g.addColorStop(1,'#04060a');
   ctx.fillStyle=g; ctx.fillRect(-20,-20,VW+40,VH+40);
 
+  /* the night above the garden: a low moon and a fixed twinkle of stars */
+  var si,st_;
+  ctx.save();
+  var moon=ctx.createRadialGradient(468,54,4,468,54,44);
+  moon.addColorStop(0,'rgba(240,238,220,.9)'); moon.addColorStop(0.25,'rgba(220,220,200,.35)');
+  moon.addColorStop(1,'rgba(200,205,190,0)');
+  ctx.fillStyle=moon; ctx.beginPath(); ctx.arc(468,54,44,0,TAU); ctx.fill();
+  for(si=0;si<stars.length;si++){ st_=stars[si];
+    var tw=0.25+0.3*Math.sin(t*st_.tw+st_.p);
+    ctx.fillStyle='rgba(220,228,240,'+Math.max(0.06,tw).toFixed(3)+')';
+    ctx.beginPath(); ctx.arc(st_.x,st_.y,st_.r,0,TAU); ctx.fill();
+  }
+  ctx.restore();
+
   var onPlay=(cur==='s-play');
   BB_POS.cy = onPlay ? 248 : MENU.cy;
   BB_POS.sc = onPlay ? 1 : MENU.sc;
@@ -1047,6 +1077,17 @@ function draw(t){
   if(onPlay){
     drawLane(t);
     drawBoard(t,true);
+    /* fireflies drift over the garden during play too, dimmer so they
+       never fight the ball */
+    if(SET.motion){
+      var fi,fm,fa;
+      for(fi=0;fi<flies.length;fi+=2){ fm=flies[fi];
+        fa=0.06+0.08*Math.sin(t*0.8+fm.p);
+        ctx.fillStyle='rgba(255,217,122,'+fa.toFixed(3)+')';
+        ctx.beginPath();
+        ctx.arc(fm.x+Math.sin(t*0.35+fm.p)*9, fm.y+Math.sin(t*0.5+fm.p*2)*6, fm.r, 0, TAU); ctx.fill();
+      }
+    }
     drawBallLayer(t);
     drawFx(t);
     drawHud(t);
@@ -1145,6 +1186,27 @@ function drawBoard(t,live){
   /* back wall lip */
   ctx.strokeStyle='rgba(90,110,150,.4)'; ctx.lineWidth=3*sc;
   ctx.beginPath(); ctx.moveTo(p[0]+8*sc,p[1]+5*sc); ctx.lineTo(p[0]+400*sc,p[1]+5*sc); ctx.stroke();
+  /* dew glints on the felt — the garden at night is WET */
+  var di,dd,dp2,da;
+  for(di=0;di<dews.length;di++){ dd=dews[di]; dp2=boardPt(dd.x,dd.y);
+    da=0.05+0.11*Math.max(0,Math.sin(t*0.7+dd.p));
+    ctx.fillStyle='rgba(190,220,255,'+da.toFixed(3)+')';
+    ctx.beginPath(); ctx.arc(dp2[0],dp2[1],1.3*sc,0,TAU); ctx.fill();
+  }
+  /* moss creeping over the frame edges */
+  ctx.strokeStyle='rgba(52,84,54,.36)'; ctx.lineWidth=4*sc; ctx.lineCap='round';
+  var mossSeg=[[70,96,150,90],[330,88,406,94],[68,300,70,396],[470,220,468,330],[120,412,240,416],[330,414,430,410]];
+  for(di=0;di<mossSeg.length;di++){ var ms=mossSeg[di];
+    var m0=boardPt(ms[0],ms[1]), m1=boardPt(ms[2],ms[3]);
+    ctx.beginPath(); ctx.moveTo(m0[0],m0[1]);
+    ctx.quadraticCurveTo((m0[0]+m1[0])/2,(m0[1]+m1[1])/2+4*sc,m1[0],m1[1]); ctx.stroke();
+  }
+  ctx.fillStyle='rgba(74,116,72,.5)';
+  var mdots=[[92,92],[368,90],[70,348],[469,262],[180,415],[392,412]];
+  for(di=0;di<mdots.length;di++){ var md=boardPt(mdots[di][0],mdots[di][1]);
+    ctx.beginPath(); ctx.arc(md[0],md[1],3.2*sc,0,TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(md[0]+5*sc,md[1]+2*sc,2.1*sc,0,TAU); ctx.fill();
+  }
 
   /* bullseye rings, outermost first */
   var rc=boardPt(RINGC.x,RINGC.y), i;
@@ -1187,6 +1249,25 @@ function drawBoard(t,live){
   /* the corner hundreds: little burrow mounds with gold mouths */
   for(i=0;i<2;i++){
     var h=H100[i]; p=boardPt(h.x,h.y);
+    /* dug earth around the mouth: a dirt rim with thrown crumbs, so the
+       burrow reads as a real animal's front door and not a painted ring */
+    ctx.fillStyle='rgba(74,56,32,.55)';
+    ell(p[0],p[1]+2*sc,(HR+11)*sc,(HR*HSQ+9)*sc); ctx.fill();
+    ctx.fillStyle='rgba(52,40,22,.7)';
+    var cbi, cba, cbd=[[-1.15,1.28],[0.4,1.34],[2.2,1.3],[3.3,1.26],[4.4,1.32]];
+    for(cbi=0;cbi<cbd.length;cbi++){ cba=cbd[cbi][0];
+      ctx.beginPath();
+      ctx.arc(p[0]+Math.cos(cba)*(HR+9)*cbd[cbi][1]*sc, p[1]+Math.sin(cba)*(HR*HSQ+8)*cbd[cbi][1]*sc, 2.4*sc, 0, TAU);
+      ctx.fill(); }
+    /* little paw prints hopping toward the mouth */
+    ctx.fillStyle='rgba(150,128,96,.4)';
+    var pwSide=i===0?1:-1, pw;
+    for(pw=0;pw<3;pw++){
+      var pwx=p[0]+pwSide*(HR+26+pw*17)*sc, pwy=p[1]+(20+pw*9)*sc;
+      ell(pwx,pwy,3*sc,2.2*sc); ctx.fill();
+      ell(pwx+pwSide*5*sc,pwy-4*sc,1.5*sc,1.2*sc); ctx.fill();
+      ell(pwx-pwSide*1*sc,pwy-5*sc,1.5*sc,1.2*sc); ctx.fill();
+    }
     /* mound shadow */
     ctx.fillStyle='rgba(0,0,0,.35)';
     ell(p[0],p[1]+8*sc,(HR+13)*sc,(HR*HSQ+7)*sc); ctx.fill();
