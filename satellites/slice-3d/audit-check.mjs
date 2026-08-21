@@ -163,11 +163,19 @@ console.log('\n[3] a failed run does not silently discard progress');
     const go = document.getElementById('s-go');
     const t0 = Date.now();
     for (let i = 0; i < 8000; i++) { const g = S.state(); if (!g) break; S.stepN(1, 16); if (go.classList.contains('on')) break; if (Date.now() - t0 > 90000) break; }
+    /* 2026-08-21: the shaft is salted per attempt now, so a no-input dive may
+       cut any number of slabs on the way down before it sticks. Expectations
+       come from the LIVE tallies at fail time (slabsCut ticks up as slabs are
+       cut, comboBest lives on G); the check still goes red if failLevel()
+       never writes them to disk. */
+    const expSlabs = S.prog().slabsCut;
+    const expCombo = Math.max(9, S.prog().bestCombo || 0);
     const raw = localStorage.getItem('s3d_prog');
     let disk = null; try { disk = JSON.parse(raw); } catch (e) {}
     return {
       failed: /STUCK/.test(document.getElementById('go-title').textContent),
       wroteAnything: raw != null,
+      expSlabs, expCombo,
       onDisk: disk ? (disk.slabsCut === undefined ? -1 : disk.slabsCut) : -1,
       bestCombo: disk ? (disk.bestCombo === undefined ? -1 : disk.bestCombo) : -1,
       detail: document.getElementById('go-detail').textContent
@@ -175,8 +183,8 @@ console.log('\n[3] a failed run does not silently discard progress');
   });
   ok('the dive really did fail (precondition)', r.failed, JSON.stringify(r));
   ok('a failed dive writes PROG to disk at all', r.wroteAnything, JSON.stringify(r));
-  ok('slabs cut on a failed dive reach disk', r.onDisk === 7, JSON.stringify(r));
-  ok('best combo on a failed dive reaches disk', r.bestCombo === 9, JSON.stringify(r));
+  ok('slabs cut on a failed dive reach disk', r.onDisk === r.expSlabs && r.onDisk >= 7, JSON.stringify(r));
+  ok('best combo on a failed dive reaches disk', r.bestCombo === r.expCombo && r.bestCombo >= 9, JSON.stringify(r));
   await ctx.close();
 }
 

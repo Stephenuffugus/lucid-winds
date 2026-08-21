@@ -154,12 +154,16 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
       <button class="btn primary" id="b-play">Journey &middot; Level <span id="t-lvl">1</span></button>
       <button class="btn ff" id="b-ff">Freefall &middot; Level <span id="t-fflvl">1</span></button>
       <button class="btn endless" id="b-endless">Endless &middot; best <span id="t-ebest">0</span>m</button>
-      <!-- Wall Climb moved to its own arcade listing (Super Slice Wall Climb,
-           /satellites/slice-3d/?mode=climb) per Stephen 2026-07-26; the mode code and
-           the ?mode=climb boot stay, only the menu button left. -->
+      <!-- 2026-08-21, Stephen: "I don't like having four super slice or six super
+           slice games... combine this without taking away from their unique
+           mechanics." The arcade now lists ONE Super Slice card and this menu is
+           the hub, so Wall Climb comes back to the stack (reversing the 7/26
+           card-only ruling) and the original 2D game gets a door here too. -->
+      <button class="btn climb" id="b-climb">Wall Climb &middot; best x<span id="t-cbest">0</span></button>
       <div class="row">
         <button class="btn sm" id="b-how">How</button>
         <button class="btn sm" id="b-forge">&#9874; Forge</button>
+        <button class="btn sm" id="b-classic" title="The original 2D Super Slice">Classic 2D</button>
         <button class="btn sm" id="b-music" title="Soundtrack" aria-label="Open studio soundtrack">&#9835;</button>
       </div>
     </div>
@@ -239,7 +243,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 <script>
 (function(){
 "use strict";
-var BUILD="v5.7";
+var BUILD="v6.0";
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 
@@ -1109,9 +1113,29 @@ function buildLevel(lvl){
 }
 
 /* ---------- FREEFALL: the canyon shaft (Jessie's favorite, rebuilt) ---------- */
+/* 2026-08-21, Stephen: "the level needs to be kind of randomized. maybe there
+   needs to be levels. maybe even worlds." Two answers here:
+   1. G_FFSALT stirs the layout seed per ATTEMPT, so no two dives of the same
+      level (or two endless runs) are the same shaft. Difficulty still comes
+      from lvl (depth, density), so the curve is untouched.
+   2. FF_WORLDS: every five levels the canyon changes world (sky, strata,
+      rock, rim). Endless draws a world per run. */
+var G_FFSALT=0;
+var FF_WORLDS=[
+  {sky:['#2a4d5e','#4a7a6a','#c9b46a'], strata:['#5d7a4e','#6e5a3a','#5a4430','#3a2c20'],
+   wallL:0x6a5138, wallR:0x5f4832, ledge:0x4e3b28, rim:0x3c5a34, tree:0x3f7a38},
+  {sky:['#1e2a4e','#3a5a7a','#bcd8e8'], strata:['#8a9eb0','#5a7086','#46586e','#2c3a4c'],
+   wallL:0x5a7086, wallR:0x4c6078, ledge:0x3a4c60, rim:0x9ab8cc, tree:0xd8ecf6},
+  {sky:['#2a1420','#5e2a1e','#e8a05a'], strata:['#6e3a2a','#5a2c22','#46201a','#2c1210'],
+   wallL:0x6e3a2a, wallR:0x5e3020, ledge:0x3c1e16, rim:0x4a2c1e, tree:0xd86a3c},
+  {sky:['#101a2a','#1e3a4a','#3ee8c8'], strata:['#2a4a4e','#1e3a42','#16303a','#0c2028'],
+   wallL:0x2a4a4e, wallR:0x223e46, ledge:0x14282e, rim:0x1e5a50, tree:0x3ee8c8}
+];
 function buildFreefall(lvl){
   clearWorld();
-  var rng=mulberry32(((lvl*1597334677)>>>0)^0xFA11);
+  var rng=mulberry32(((((lvl*1597334677)>>>0)^0xFA11)^G_FFSALT)>>>0);
+  var FW=FF_WORLDS[G_ENDLESS ? Math.floor(rng()*FF_WORLDS.length)
+                             : Math.floor((lvl-1)/5)%FF_WORLDS.length];
   var SW=9.2;                                   // shaft half-width (wider = fairer with deadly walls)
   var depth=(G_ENDLESS?900:(170+Math.min(lvl,45)*26)); // much longer dives; endless = a very deep pit
   var floorY=-depth;
@@ -1120,7 +1144,7 @@ function buildFreefall(lvl){
     var cv=document.createElement('canvas'); cv.width=64; cv.height=256;
     var g2=cv.getContext('2d');
     var grd=g2.createLinearGradient(0,0,0,256);
-    grd.addColorStop(0,'#2a4d5e'); grd.addColorStop(0.6,'#4a7a6a'); grd.addColorStop(1,'#c9b46a');
+    grd.addColorStop(0,FW.sky[0]); grd.addColorStop(0.6,FW.sky[1]); grd.addColorStop(1,FW.sky[2]);
     g2.fillStyle=grd; g2.fillRect(0,0,64,256);
     var sky=addMesh(new THREE.Mesh(new THREE.PlaneGeometry(160,90), new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cv), fog:false})));
     sky.position.set(0,34,-30);
@@ -1132,7 +1156,7 @@ function buildFreefall(lvl){
     var cv=document.createElement('canvas'); cv.width=64; cv.height=512;
     var g2=cv.getContext('2d');
     var grd=g2.createLinearGradient(0,0,0,512);
-    grd.addColorStop(0,'#5d7a4e'); grd.addColorStop(0.25,'#6e5a3a'); grd.addColorStop(0.6,'#5a4430'); grd.addColorStop(1,'#3a2c20');
+    grd.addColorStop(0,FW.strata[0]); grd.addColorStop(0.25,FW.strata[1]); grd.addColorStop(0.6,FW.strata[2]); grd.addColorStop(1,FW.strata[3]);
     g2.fillStyle=grd; g2.fillRect(0,0,64,512);
     g2.fillStyle='rgba(0,0,0,0.12)';
     for(var st=40;st<512;st+=54){ g2.fillRect(0,st,64,7); }
@@ -1141,15 +1165,15 @@ function buildFreefall(lvl){
   })();
   // shaft side walls: chunky rock with grass rim at the top
   for(var side=-1;side<=1;side+=2){
-    var wallM=addMesh(new THREE.Mesh(new THREE.BoxGeometry(6, depth+34, 13), new THREE.MeshLambertMaterial({color:side<0?0x6a5138:0x5f4832})));
+    var wallM=addMesh(new THREE.Mesh(new THREE.BoxGeometry(6, depth+34, 13), new THREE.MeshLambertMaterial({color:side<0?FW.wallL:FW.wallR})));
     wallM.position.set(side*(SW+3), -depth/2+9, 0);
     for(var wy=4;wy>-depth-2;wy-=9+rng()*6){
-      var ledge=addMesh(new THREE.Mesh(new THREE.BoxGeometry(1.6,0.8+rng()*1.4,10+rng()*2), new THREE.MeshLambertMaterial({color:0x4e3b28})));
+      var ledge=addMesh(new THREE.Mesh(new THREE.BoxGeometry(1.6,0.8+rng()*1.4,10+rng()*2), new THREE.MeshLambertMaterial({color:FW.ledge})));
       ledge.position.set(side*(SW+0.4), wy, 0);
     }
-    var rim=addMesh(new THREE.Mesh(new THREE.BoxGeometry(7,2.2,14), new THREE.MeshLambertMaterial({color:0x3c5a34})));
+    var rim=addMesh(new THREE.Mesh(new THREE.BoxGeometry(7,2.2,14), new THREE.MeshLambertMaterial({color:FW.rim})));
     rim.position.set(side*(SW+3.2), 8.2, 0);
-    var rimTree=addMesh(new THREE.Mesh(new THREE.SphereGeometry(2.6,9,7), new THREE.MeshLambertMaterial({color:0x3f7a38})));
+    var rimTree=addMesh(new THREE.Mesh(new THREE.SphereGeometry(2.6,9,7), new THREE.MeshLambertMaterial({color:FW.tree})));
     rimTree.position.set(side*(SW+2.2), 11.6, -2);
   }
   var blocks=[], items=[], crystals=[], pads=[], slabs=[], wasps=[], planks=[], thorns=[];
@@ -1518,6 +1542,7 @@ function newFF(lvl, endless){
   try{ hideClimbToggle(); }catch(e){}
   if(!initGL()){ alert('This device does not support 3D (WebGL).'); return; }
   attractOn=false; worldIsAttract=false;
+  G_FFSALT=(Math.random()*4294967295)>>>0;   /* every dive gets a fresh shaft */
   G_ENDLESS = !!endless;
   var built=buildFreefall(lvl);
   G_ENDLESS = false;
@@ -2288,6 +2313,7 @@ function failLevel(){
   $('go-next').textContent=G.endless?'Dive Again':'Try Again';
   var tf=$('t-fflvl'); if(tf)tf.textContent=PROG.ffLevel;
   var te=$('t-ebest'); if(te)te.textContent=PROG.endlessBest||0;
+  var tc=$('t-cbest'); if(tc)tc.textContent=PROG.climbBest||0;
   show('s-go');
 }
 function finishLevel(){
@@ -2342,6 +2368,7 @@ function finishLevel(){
     $('go-sun').textContent='\u25c6 +'+awardSlivers()+' slivers';
     $('go-next').textContent='Dive Again';
     var te2=$('t-ebest'); if(te2)te2.textContent=PROG.endlessBest||0;
+    var tc2=$('t-cbest'); if(tc2)tc2.textContent=PROG.climbBest||0;
     show('s-go'); return;
   }
   $('go-next').textContent = ff ? 'Next Dive' : 'Next Level';
@@ -2436,6 +2463,8 @@ tap('b-play',function(){ newGame(PROG.level); });
 tap('b-ff',function(){ newFF(PROG.ffLevel); });
 /* b-climb removed with the menu button; climb boots via ?mode=climb */
 tap('b-endless',function(){ newEndless(); });
+tap('b-climb',function(){ newClimb(PROG.climbLevel||1); });
+tap('b-classic',function(){ location.href='/satellites/slice-master/'; });
 tap('b-forge',function(){ renderForge(); show('s-forge'); });
 tap('forge-back',function(){ show('s-title'); });
 function drawSkinIcon(sk,cvs){
@@ -2487,6 +2516,7 @@ $('t-lvl').textContent=PROG.level;
 $('t-fflvl').textContent=PROG.ffLevel;
 if(!PROG.endlessBest)PROG.endlessBest=0;
 $('t-ebest').textContent=PROG.endlessBest;
+var tcb=$('t-cbest'); if(tcb)tcb.textContent=PROG.climbBest||0;
 (function(){var e=$('t-clvl'); if(e)e.textContent=PROG.climbLevel||1;})();  // span left with the removed menu button
 /* Wall Climb portal card entry: /satellites/slice-3d/?mode=climb drops straight in */
 if(/[?&]mode=climb/.test(location.search)){ setTimeout(function(){ newClimb(PROG.climbLevel||1); },80); }
@@ -2544,11 +2574,11 @@ if(/[?&]dev=1/.test(location.search)){
 })();
 
 /* ---------- service worker ---------- */
-if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=63'); }catch(e){} }
+if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=64'); }catch(e){} }
 })();
 </script>
 <script>/* shared arcade exit (2026-07-28): 30 satellites had no way back to the
      portal at all — see arcade-exit.js */addEventListener('load',function(){var s=document.createElement('script');s.src='/arcade-exit.js?v=2';document.head.appendChild(s);});</script>
-<script>/* fleet feedback fab (2026-07-27) */addEventListener('load',function(){var s=document.createElement('script');s.src='/feedback.js?v=6';s.onload=function(){if(window.LW_Feedback)window.LW_Feedback.mountFab({game:'slice-3d',surface:'satellite'});};document.head.appendChild(s);});</script>
+<script>/* fleet feedback fab (2026-07-27) */addEventListener('load',function(){var s=document.createElement('script');s.src='/feedback.js?v=7';s.onload=function(){if(window.LW_Feedback)window.LW_Feedback.mountFab({game:'slice-3d',surface:'satellite',home:'top-right'});};document.head.appendChild(s);});</script>
 </body>
 </html>
