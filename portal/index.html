@@ -3226,5 +3226,22 @@ document.addEventListener('click', function(e){
   }catch(e){}
 })();
 </script>
+<script>
+/* Visit counter, privacy first (Stephen 2026-08-21: "not track people but
+   know how much traffic the portal is getting"). One ping per browser
+   session; the request carries a source label and NOTHING else, no id, no
+   cookie, nothing stored about the visitor. The sticker QR codes point at
+   /portal/?from=sticker so library finds count in their own column. Fails
+   silently until the function is deployed; a counter must never break the
+   page. */
+try{
+  if(!sessionStorage.getItem('sws_visit_counted')){
+    sessionStorage.setItem('sws_visit_counted','1');
+    var _vsrc=(location.search.match(/[?&]from=([a-z0-9-]{1,24})/i)||[])[1]||'direct';
+    fetch('https://us-central1-focus-grove-fffa8.cloudfunctions.net/portalPing?src='+encodeURIComponent(_vsrc.toLowerCase()),
+      {method:'POST',keepalive:true}).catch(function(){});
+  }
+}catch(e){}
+</script>
 </body>
 </html>
