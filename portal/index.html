@@ -1815,6 +1815,16 @@ var ALIASES={
      the alias was still keyed on "leaf fit" after the game became Tetroku. Each old
      name is folded into the keyword list so the previous title still finds it.
      RENAME CHECKLIST: change the key here in the same commit as the card. */
+  /* 2026-08-21 (Stephen: "I typed Tetris and Block Drop didn't even show"):
+     a classic-coverage sweep. Keys are CURRENT display names, lowercase. */
+  'block drop':'tetris tetromino falling blocks clear rows stack line',
+  'bloom breaker':'breakout arkanoid brick breaker paddle ball',
+  'petal match':'bejeweled candy crush match three match 3 gems swap',
+  'sea battle':'battleship ships grid salvo',
+  'code breaker':'mastermind guess the code pegs',
+  'echo':'simon says repeat the pattern memory sequence',
+  'sproing':'doodle jump hop bounce climb higher',
+  'nonogram bloom':'picross griddlers paint by numbers logic picture',
   'blackout':'murder mystery deduction detective clue cluedo whodunit logic grid case suspects solver',
   'deepwell':'mining dig depth push your luck roguelite ore shaft greed spelunky motherload miner',
   'parallel':'mirror twin puzzle platformer two characters sync desync grid levels solver par',
@@ -3039,6 +3049,11 @@ document.addEventListener('click', function(e){
   function load(){ var a; try{ a=JSON.parse(localStorage.getItem(LSKEY)||'null'); }catch(e){} if(!a)a=def();
     var d=def(); for(var k in d){ if(a[k]==null)a[k]=d[k]; } return a; }
   function save(a){ try{ localStorage.setItem(LSKEY, JSON.stringify(a)); }catch(e){}
+    /* every pick shows up EVERYWHERE the keeper lives, immediately —
+       picking one and seeing nothing change is what "pointless" feels like
+       (Stephen 2026-08-21) */
+    try{ var chip=document.getElementById('sws-av-chip'); if(chip)chip.innerHTML=avatarSVG(a,42); }catch(e){}
+    try{ if(window.renderYourArcade) renderYourArcade(); }catch(e){}
     if(window.gtag){ try{ gtag('event','portal_avatar_save',{base:a.base,color:a.color,hat:a.hat,frame:a.frame}); }catch(e){} } }
   var A = load();
 
