@@ -122,7 +122,7 @@
         chip.id = 'sws-arcade-exit';
         chip.type = 'button';
         chip.textContent = '\u25C4';
-        chip.setAttribute('aria-label', 'Back to the Sky Wolf Studios arcade');
+        chip.setAttribute('aria-label', 'Back to the Sky Wolf Studio arcade');
         var corner = freeCorner();
         chip.setAttribute('data-corner', corner);
         chip.setAttribute('style', 'position:fixed;' + corner +
@@ -145,7 +145,7 @@
       b.type = 'button';
       b.className = last ? last.className : '';
       b.textContent = '◄ All Sky Wolf games';
-      b.setAttribute('aria-label', 'Back to the Sky Wolf Studios arcade');
+      b.setAttribute('aria-label', 'Back to the Sky Wolf Studio arcade');
       b.style.opacity = '0.82';
       b.style.marginTop = '10px';
       // Sibling buttons are often in a narrow flex ROW, where the label would be
