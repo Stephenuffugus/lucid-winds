@@ -156,7 +156,7 @@ function staticChecks(src) {
   const exitDef = /window\.SWS_EXIT=function\(\)\{[\s\S]{0,400}?\};/.exec(src);
   ok('exit: falls back to document.referrer when unframed',
     !!exitDef && exitDef[0].includes('document.referrer'));
-  ok('exit: branded per the studio rule', /Sky Wolf Studios Arcade/.test(src));
+  ok('exit: branded per the studio rule', /Sky Wolf Studio Arcade/.test(src));
 
   /* 2. IN-PLAY CHROME. show('s-play') was called against an element that did
         not exist, so a running meadow had no home button and no way out. */

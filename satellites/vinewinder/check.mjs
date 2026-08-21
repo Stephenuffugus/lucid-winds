@@ -167,7 +167,7 @@ function staticChecks(src) {
   ok('exit: lives in its own row appended to the overlay',
     /row\.id='lwExitRow'/.test(src) && /host\.appendChild\(row\)/.test(src));
   ok('exit: nothing hides that row', !/lwExitRow[\s\S]{0,200}?display='none'/.test(src));
-  ok('exit: branded per the studio rule', /Sky Wolf Studios Arcade/.test(src));
+  ok('exit: branded per the studio rule', /Sky Wolf Studio Arcade/.test(src));
 
   /* 2. THE FRONT DOOR. The menu opened on four garden cards, a shop, a missions
         button, a daily card and a how-to, and no plain way to just start. */
