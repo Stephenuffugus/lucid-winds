@@ -724,7 +724,7 @@
        paints its top matches RIGHT HERE as a shelf row; Surprise me launches
        a random released game through the normal card path. -->
   <section class="findgame reveal" id="find-game">
-    <input id="fg-search" type="search" autocomplete="off"
+    <input id="fg-search" type="search" name="game-search" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" aria-label="Search games" readonly onfocus="this.removeAttribute('readonly')"
       placeholder="Search a title, a type, or a classic you know: Peggle, Wordle, Mahjong…">
     <div id="fg-results-wrap" style="display:none">
       <div class="shelf-wrap"><div class="shelf-row" id="fg-results"></div></div>
@@ -820,6 +820,7 @@
        shelf's tab. -->
   <h2 class="arcade-h" id="browse-h">Browse by game type</h2>
   <div class="tilegrid" id="browse-tiles"></div>
+  <button type="button" class="cat-door" id="cat-door">Open the full catalog</button>
 
   <!-- CATALOG MODE (Phase 2, 2026-08-20): the complete wall lives HERE now
        and renders only when a player deliberately asks for it (Browse all,
@@ -831,69 +832,24 @@
       <button id="cat-back" type="button">&#8249; Storefront</button>
       <h2 class="arcade-h" id="everything-h">Everything <span>all 180, A to Z</span></h2>
     </div>
-    <input id="gsearch" type="search" autocomplete="off" placeholder="Search the games. Try Scrabble, Peggle, Wordle, Mahjong…">
+    <input id="gsearch" type="search" name="catalog-search" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" aria-label="Search the catalog" readonly onfocus="this.removeAttribute('readonly')" placeholder="Search the games. Try Scrabble, Peggle, Wordle, Mahjong…">
     <div class="tabs" id="tabs"></div>
     <div class="grid" id="garden"></div>
   </section>
 
 
-  <!-- FREE APPS (2026-08-08, Stephen): the studio makes more than games —
-       a shelf so players can find the helpful free apps too.
-       ⛔ 2026-08-16 (Stephen): "there's a couple mentioned at the very bottom"
-       — it was unreachable. Nothing in the navigation pointed at it, so the
-       only way to find the studio's apps was to scroll past 180 game cards.
-       There is an Apps tab in the category bar now that jumps straight here. -->
-  <!-- PRACTICAL APPS DOORWAY (2026-08-17, Stephen): "have a section that says…
-       for people who like to stay organized and have events… they can click
-       there and it would open up a page with all of our apps with our nice
-       thumbnails and very basic descriptions". The 24-card wall shipped
-       earlier today was wrong twice — 44px art, hotlinked cross-origin. His
-       art now lives in portal-assets/sws-thumbs/ (in this repo) and shows
-       big on its own page, /portal/apps.html. This is the front door. -->
-  <section class="feature reveal">
-    <div class="copy">
-      <span class="eyebrow">Not here to play?</span>
-      <h2>Practical Apps</h2>
-      <p class="tag">For people who keep life organized: lesson planners, sign-up sheets, checklists, PDF tools and more, free from the studio. No ads, no subscriptions, no tracking.</p>
-      <div class="why"><span class="dot"></span>Free forever, and most never leave your device</div>
-      <div class="cta-row"><a class="btn play" href="/portal/apps.html">What are you planning?</a></div>
+  <!-- MORE FROM THE STUDIO (compacted 2026-08-21, Stephen: "we don't need
+       all these apps listed at the bottom, it's just extra space"). One
+       strip: the door to all 24 practical apps plus the three standouts. -->
+  <section class="testlab reveal" id="studio-apps" style="border-style:solid;border-color:var(--line)">
+    <div class="tl-copy">
+      <b>&#129520; Practical apps &amp; tools</b>
+      <small>Planners, sign-up sheets, checklists and PDF tools, free from the studio &middot;
+        <a href="/padlab/" style="color:var(--gold)">PadLab</a> &middot;
+        <a href="/hush/" style="color:var(--gold)">Hush</a> &middot;
+        <a href="/name/" style="color:var(--gold)">Grow Your Name</a></small>
     </div>
-    <div class="art sws-strips" aria-hidden="true">
-      <div class="apps-strip"><div class="apps-track"><img src="/portal-assets/sws-thumbs/baby-log.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/bill-splitter.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/bracket-maker.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/caregiver-log.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/grade-sheet.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/grocery-list.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/home-inventory.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/hush.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/image-compressor.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/moving-boxes.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/packing-list.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/pdf-tools.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/pill-schedule.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/cross-off.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/baby-log.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/bill-splitter.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/bracket-maker.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/caregiver-log.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/grade-sheet.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/grocery-list.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/home-inventory.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/hush.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/image-compressor.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/moving-boxes.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/packing-list.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/pdf-tools.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/pill-schedule.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/cross-off.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"></div></div>
-      <div class="apps-strip rev"><div class="apps-track"><img src="/portal-assets/sws-thumbs/qr-maker.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/scan-to-pdf.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/seating-chart.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/secret-santa.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/signature-maker.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/signup-sheets.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/sitter-sheet.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/specials-planner.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/sub-plans.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/team-parent.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/wedding-timeline.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/wheel-picker.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/overload.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/qr-maker.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/scan-to-pdf.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/seating-chart.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/secret-santa.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/signature-maker.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/signup-sheets.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/sitter-sheet.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/specials-planner.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/sub-plans.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/team-parent.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/wedding-timeline.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/wheel-picker.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"><img src="/portal-assets/sws-thumbs/overload.png?v=4" alt="" width="88" height="88" loading="lazy" decoding="async"></div></div>
-    </div>
-  </section>
-
-  <section class="reveal" id="free-apps" style="margin-top:26px;scroll-margin-top:16px">
-    <h2 class="arcade-h">Free Apps <span>more from the studio</span></h2>
-    <div class="apps-row">
-      <a class="app-card" href="/padlab/">
-        <span class="med">🎹</span>
-        <span><b>PadLab</b><br><small>A pocket groovebox. Tap the pads and build beats, plug in a MIDI controller and really play, or drop marbles on a plate and watch your beat bounce.</small></span>
-      </a>
-      <!-- Hush (Aug 16): a sleep sound machine that cites the study arguing
-           against its own category. Every program fades to silence and there
-           is no infinite mode, which is the whole posture. Utility, so it
-           lives here and not on the arcade grid: direct link, no bridge.
-           Source of truth: hush/ (BUILD-PLAN + research in incoming/hush). -->
-      <a class="app-card" href="/hush/">
-        <span class="med"><img src="/portal-assets/sws-thumbs/hush.png" alt="" width="44" height="44" loading="lazy" decoding="async"></span>
-        <span><b>Hush</b><br><small>A free sleep sound machine that is honest about the science. Settles the room, then lets it go quiet. No ads, no account, works offline.</small></span>
-      </a>
-      <a class="app-card" href="/name/">
-        <span class="med">🌱</span>
-        <span><b>Grow Your Name</b><br><small>Type any name and grow it into living plant art that is one of one, ready to share.</small></span>
-      </a>
-      <a class="app-card" href="/satellites/multiplication-chart/">
-        <span class="med">🔢</span>
-        <span><b>Times Table Quest</b><br><small>A big colorful multiplication chart kids play on, from counting by 10s to mastery.</small></span>
-      </a>
-      <a class="app-card" href="/portal/apps.html">
-        <span class="med"><img src="/portal-assets/sws-thumbs/specials-planner.png?v=4" alt="" width="44" height="44" loading="lazy" decoding="async"></span>
-        <span><b>Practical Apps</b><br><small>All 24 of the studio's everyday tools on their own page: planners, sign-ups, checklists, PDF tools, with proper thumbnails.</small></span>
-      </a>
-    </div>
-
+    <a class="btn" href="/portal/apps.html" style="display:inline-flex;align-items:center;text-decoration:none;color:var(--cream)">See all 24</a>
   </section>
 
   <!-- THE TEST LAB (Phase 2): the tester program gets an intentional door
@@ -1038,14 +994,14 @@ var FEATURED = [
   // (his call whether that distance from Sky Wolf is intentional). Mature
   // satire, no gore: beta while he decides shelf placement. Source of truth:
   // satellites/flock-the-world (HANDOFF.md inside; sim.js balance harness).
-  {nm:"Flock the World", ds:"A satire sim where you play the surveillance vendor and the whole world learns to fight back.", cat:"puzzle", url:"/satellites/flock-the-world/?v=20260820a", ic:"🛰️", thumb:"/portal-assets/thumbs/flock-the-world.png", beta:true, fresh:true},
+  {nm:"Flock the World", ds:"A satire sim where you play the surveillance vendor and the whole world learns to fight back.", cat:"puzzle", url:"/satellites/flock-the-world/?v=20260820a", ic:"🛰️", thumb:"/portal-assets/thumbs/flock-the-world.png", fresh:true},
   // Bandit's Box (Aug 16): a quiet fidget box, 21 toys on a continuous friction
   // engine. Deliberately has no earns, no unlocks and no tally by default — the
   // sensory research this was built from names coercive gamification as harmful,
   // and every competitor in the category gates its toys behind rewarded video.
   // Source of truth: satellites/bandits-box (BUILD-PLAN + SFX-SHOT-LIST in
   // incoming/bandits-box). Framed, so it speaks the embed protocol.
-  {nm:"Bandit's Box", ds:"A quiet box of fidget toys that feel real under your finger. No ads, nothing to unlock.", cat:"creative", url:"/satellites/bandits-box/?v=20260820d", ic:"🦝", thumb:"/portal-assets/thumbs/bandits-box.png", beta:true, fresh:true},
+  {nm:"Bandit's Box", ds:"A quiet box of fidget toys that feel real under your finger. No ads, nothing to unlock.", cat:"creative", url:"/satellites/bandits-box/?v=20260820d", ic:"🦝", thumb:"/portal-assets/thumbs/bandits-box.png", fresh:true},
   // HANDOFF-11 games (Aug 16): four single file PWAs built in one block, each one
   // a pure state machine with a skin. Every one ships a headless assertion suite
   // (node satellites/<id>/sim.js --test) and resolves its own balance by
@@ -1609,7 +1565,7 @@ function catGroupOf(key){
    computed. Everything below it is derived, so shipping a game puts it on
    the right shelf without anyone remembering to do anything. */
 var START_HERE = ["Jumping Jimothy","Nectar Drop","Dewball","Bloom Breaker",
-                  "Vinewinder","Super Slice"];
+                  "Vinewinder","Super Slice 3D Free Fall"];
 var FLAGSHIPS  = ["Lucid Winds","Aura Farm","Create A Critter","LOAF","Litter Bug",
                   "The Attic","Abduct a Chameleon 3D","Flock the World","Whack Box",
                   "Power Scalers","Bandit's Box","HUNCH"];
@@ -1688,7 +1644,11 @@ function renderShelves(){
      category shelves are gone — the six genre tiles below carry browsing,
      so a shelf game no longer appears twice on the landing page. */
   html += shelf("New", "just shipped", fresh.slice(0,8), fresh.length>8?{cat:'new',count:fresh.length}:{});
-  html += shelf("Made by the studio", "the big ones", byName(FLAGSHIPS));
+  /* released only (Stephen 2026-08-21: "half of those are in development and
+     people can't even play those") — a gated flagship returns the moment it
+     ships, no list edit needed */
+  html += shelf("Made by the studio", "the big ones",
+    byName(FLAGSHIPS).filter(function(it){ return !it.g.beta; }));
   host.innerHTML = html;
   /* See all jumps to the wall with that tab already chosen */
   host.addEventListener("click", function(e){
@@ -1995,6 +1955,9 @@ function searchGames(qraw){
   if(h) h.innerHTML='Everything <span>'+open+' playable now · A to Z</span>';
   var b=document.getElementById('fg-browse');
   if(b) b.textContent='Browse all '+open;
+  var d=document.getElementById('cat-door');
+  if(d){ d.textContent='Open the full catalog · all '+open+' games, A to Z';
+    d.addEventListener('click',function(){ openCatalog('all'); }); }
 })();
 
 document.getElementById('tabs').innerHTML = CATS.map(function(c,i){
@@ -2007,7 +1970,7 @@ document.getElementById('tabs').addEventListener('click',function(e){
      the grid's own tab selected, so the player does not come back to an empty
      grid wondering where the games went. */
   if(c === 'apps'){
-    catExitTo('#free-apps');
+    catExitTo('#studio-apps');
     return;
   }
   [].forEach.call(this.children,function(b){b.classList.remove('on');});
@@ -2113,6 +2076,11 @@ if(location.hash === '#catalog'){
 })();
 
 renderShelves();
+/* ⛔ REGRESSION FIX (Stephen 2026-08-21: "missing all the thumbnails"): the
+   shelves never booted their own lazy images — the wall's boot render was
+   doing it for them by accident. The wall no longer renders at boot, so the
+   storefront promotes its images itself. */
+_lwLazyBoot();
 
 // Analytics: which games actually get opened from the portal (Stephen Jul 10
 // note #10 — favorites + opens = where to focus energy). Delegated so it
