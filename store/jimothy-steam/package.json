@@ -1,0 +1,40 @@
+{
+  "name": "jumping-jimothy",
+  "version": "1.0.0",
+  "description": "Hop Seattle's roundest raccoon across the rainy city to the greatest dumpster feast in town.",
+  "main": "main.js",
+  "author": "Sky Wolf Studio",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "vendor": "./vendor.sh",
+    "start": "npm run vendor && electron .",
+    "dist:win": "npm run vendor && electron-builder --win --x64",
+    "dist:mac": "npm run vendor && electron-builder --mac --universal"
+  },
+  "devDependencies": {
+    "electron": "^32.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "com.skywolfstudios.jimothy",
+    "productName": "Jumping Jimothy",
+    "files": [
+      "main.js",
+      "app/**/*"
+    ],
+    "win": {
+      "target": [
+        "dir"
+      ],
+      "signAndEditExecutable": false,
+      "icon": "capsules/out/jimothy.ico"
+    },
+    "mac": {
+      "target": [
+        "dir"
+      ],
+      "category": "public.app-category.games"
+    }
+  }
+}
