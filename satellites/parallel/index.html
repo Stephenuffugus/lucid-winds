@@ -188,6 +188,22 @@ input[type=range]{flex:1;min-height:48px;accent-color:var(--accent)}
   background:#1a1e2b;border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:13px;
   z-index:80;opacity:0;transition:opacity .18s ease-out;pointer-events:none;max-width:88vw;text-align:center}
 #toast.on{opacity:1}
+/* the one rule sheet */
+#teachDemo{display:flex;align-items:center;justify-content:center;gap:14px;margin:16px 0 6px;font-size:26px}
+#teachDemo .td{display:flex;align-items:center;gap:6px}
+#teachDemo .td.a{color:#8b7cf6}
+#teachDemo .td.b{color:#e8b05a}
+#teachDemo .td i{font-style:normal;font-size:18px;animation:tdnudge 1.1s ease-in-out infinite}
+#teachDemo .td.mid{font-size:12px;color:var(--dim);letter-spacing:1px;text-transform:uppercase}
+@keyframes tdnudge{0%,100%{transform:translateX(0)}50%{transform:translateX(5px)}}
+#teachDemo .td.b i{animation-name:tdnudgeL}
+@keyframes tdnudgeL{0%,100%{transform:translateX(0)}50%{transform:translateX(-5px)}}
+/* hint pulse on the pad + a mirrored move arrow over each avatar */
+#pad button.hint, #btnHint.hint{animation:hintp 550ms ease-in-out 3}
+@keyframes hintp{0%,100%{box-shadow:0 0 0 0 rgba(139,124,246,.85)}50%{box-shadow:0 0 0 10px rgba(139,124,246,0)}}
+.mvArrow{position:absolute;top:0;left:0;text-align:center;font-weight:800;pointer-events:none;z-index:6;
+  animation:mvfade .65s ease-out forwards}
+@keyframes mvfade{from{opacity:1}to{opacity:0;translate:0 -10px}}
 
 #testpanel{position:fixed;inset:0;background:#06070b;color:#cfe;z-index:99;overflow:auto;padding:12px;
   font:12px/1.5 ui-monospace,Menlo,Consolas,monospace;display:none;white-space:pre-wrap}
@@ -234,6 +250,7 @@ input[type=range]{flex:1;min-height:48px;accent-color:var(--accent)}
     <span>off mirror <b class="tnum" id="hDrift">0</b></span>
     <span class="sp"></span>
     <span>par <b class="tnum" id="hPar">0</b></span>
+    <button class="btn" id="btnHint" style="min-width:48px;min-height:48px;border:1px solid var(--line);border-radius:12px;background:var(--panel);font-size:12px;font-weight:800;letter-spacing:1px" aria-label="Hint">HINT</button>
     <button class="btn" id="btnRestart" style="min-width:48px;min-height:48px;border:1px solid var(--line);border-radius:12px;background:var(--panel);font-size:16px" aria-label="Restart">↺</button>
   </div>
 
@@ -292,9 +309,26 @@ input[type=range]{flex:1;min-height:48px;accent-color:var(--accent)}
   <div class="row"><span class="sp">Reduced motion</span><button class="tog" id="oMotion">OFF</button></div>
   <div class="row"><span class="sp">Ghost path</span><button class="tog" id="oGhost">ON</button></div>
   <p style="margin-top:14px">Player A is the violet circle. Player B is the amber diamond. Press left and A goes left while B goes right. A wall stops one of you and not the other, and that is the whole game.</p>
+  <button class="big ghostb" id="oTeach">THE ONE RULE</button>
   <button class="big ghostb" id="oShare">SHARE THIS LEVEL</button>
   <button class="big ghostb" id="oWipe">ERASE PROGRESS</button>
   <button class="big ghostb" id="oExit">BACK TO ARCADE</button>
+</div>
+
+<!-- The one rule, up front. It used to live only in OPTIONS, which is why a
+     playtester bounced off level 1 (2026-08-21, Stephen: "parallel doesn't
+     make sense to me... I can't get past the first puzzle"). -->
+<div class="sheet" id="shTeach">
+  <h2>THE ONE RULE</h2>
+  <div id="teachDemo" aria-hidden="true">
+    <span class="td a">●<i>▶</i></span>
+    <span class="td mid">you press RIGHT</span>
+    <span class="td b"><i>◀</i>◆</span>
+  </div>
+  <p><b style="color:#8b7cf6">A obeys you.</b> <b style="color:#e8b05a">B is your mirror.</b> Press right and A walks right while B walks left. Jump and wait are shared.</p>
+  <p>A wall stops one of you and not the other. That is the whole game: use the walls to break the mirror.</p>
+  <p>Win by standing <b>both of you on both doors at the same moment</b>. Stuck? The <b>HINT</b> button beside the restart arrow shows your next move.</p>
+  <button class="big" id="teachGo">BEGIN</button>
 </div>
 
 <div id="toast"></div>
@@ -2188,7 +2222,9 @@ function startLevel(num, mode){
   G.lastA = [[G.st.ax, G.st.ay]]; G.lastB = [[G.st.bx, G.st.by]];
   $('wincard').className = '';
   $('nudge').style.display = 'none';
-  setMsg(b ? ('your best ' + b.moves + '   par ' + G.lv.par) : 'both of you, both doors');
+  setMsg(b ? ('your best ' + b.moves + '   par ' + G.lv.par)
+           : (G.lv && G.lv.tier <= 1 ? 'A obeys. B mirrors. Both doors at once.'
+                                     : 'both of you, both doors'));
   SAVE.stats.plays++;
   fitBoard();
   flushSave();
@@ -2218,6 +2254,7 @@ function doInput(inp){
   G.log += IN_CHARS.charAt(inp);
   G.lastA.push([ns.ax, ns.ay]); G.lastB.push([ns.bx, ns.by]);
   SAVE.stats.moves++;
+  if (SAVE.stats.moves <= 10) spawnMoveArrows(inp, ns);
   var drift = mirrorDrift(G.lv, ns);
   voices(ns.desync, drift);
   haptic(ns.desync ? 14 : 8);
@@ -2445,6 +2482,50 @@ wire('kUp', function(){ press(IN_UP); });
 wire('kWait', function(){ press(IN_WAIT); });
 wire('btnRestart', function(){ restart(false); });
 
+/* ---- HINT: every campaign board carries its solver verified line, so the
+   game can always show the next correct input. If the player's moves so far
+   sit on that line, glow the next key; if they have wandered off it, rewind
+   first. Free everywhere: the wall this game must not have is comprehension. */
+function flashHint(ch){
+  var id = { L:'kLeft', R:'kRight', U:'kUp', W:'kWait' }[ch];
+  if (!id) return;
+  var el = $(id);
+  el.classList.remove('hint'); void el.offsetWidth; el.classList.add('hint');
+}
+function hintNow(){
+  var sol = G.lv && G.lv.sol;
+  if (!sol){ toast('No hint for a generated board.'); return; }
+  if (!G.st.dead && sol.indexOf(G.log) === 0 && G.log.length < sol.length){
+    flashHint(sol.charAt(G.log.length));
+  } else {
+    restart(false);
+    toast('Rewound. Follow the glow.');
+    setTimeout(function(){ flashHint(sol.charAt(0)); }, 220);
+  }
+}
+wire('btnHint', hintNow);
+
+/* the mirror, SHOWN: for the first ten inputs a new player ever makes, a
+   brief arrow rides each avatar so B moving opposite reads as the rule and
+   not as a bug */
+function spawnMoveArrows(inp, ns){
+  var host = $('avA') && $('avA').parentNode;
+  if (!host) return;
+  function arr(x, y, ch, col){
+    var d = document.createElement('div');
+    d.className = 'mvArrow'; d.textContent = ch;
+    d.style.color = col; d.style.width = G.cell + 'px';
+    d.style.fontSize = Math.round(G.cell * 0.5) + 'px';
+    d.style.transform = 'translate(' + (x * G.cell) + 'px,' + ((y - 0.85) * G.cell) + 'px)';
+    host.appendChild(d);
+    setTimeout(function(){ if (d.parentNode) d.parentNode.removeChild(d); }, 680);
+  }
+  var chA = inp === IN_LEFT ? '◀' : inp === IN_RIGHT ? '▶' : inp === IN_UP ? '▲' : '■';
+  var chB = inp === IN_LEFT ? '▶' : inp === IN_RIGHT ? '◀' : chA;
+  arr(ns.ax, ns.ay, chA, '#8b7cf6');
+  arr(ns.bx, ns.by, chB, '#e8b05a');
+}
+
 document.addEventListener('keydown', function(e){
   var k = e.key;
   if (k === 'ArrowLeft' || k === 'a'){ e.preventDefault(); press(IN_LEFT); }
@@ -2551,6 +2632,11 @@ wire('oMotion', function(){ SAVE.settings.motion = SAVE.settings.motion ? 0 : 1;
 wire('oGhost', function(){ SAVE.settings.ghost = SAVE.settings.ghost ? 0 : 1; syncOpts(); drawGhosts(); flushSave(); });
 $('oVol').addEventListener('input', function(){ SAVE.settings.vol = parseInt(this.value, 10) || 0; applyVolume(); });
 $('oVol').addEventListener('change', flushSave);
+wire('oTeach', function(){ closeSheet('shOpts'); openSheet('shTeach'); });
+wire('teachGo', function(){
+  SAVE.settings.teach = 1; flushSave();
+  closeSheet('shTeach');
+});
 wire('oWipe', function(){
   SAVE = freshSave();
   try { localStorage.setItem(CONFIG.SAVE_KEY, JSON.stringify(SAVE)); } catch (e){}
@@ -2638,6 +2724,8 @@ if (!booted && (params.day || params.level === 'daily')){
 }
 if (!booted) startLevel(startAt, 'level');
 setTimeout(function(){ if (!G.daily) buildDaily(); }, 400);
+/* first ever visit: the one rule, before the first tap */
+if (!SAVE.settings.teach) openSheet('shTeach');
 setTimeout(fitBoard, 60);
 setTimeout(fitBoard, 350);
 
@@ -2651,7 +2739,7 @@ document.addEventListener('mousedown', function once2(){ audioReady(); document.
 try {
   if ('serviceWorker' in navigator){
     self.addEventListener('load', function(){
-      navigator.serviceWorker.register('./sw.js?v=2').catch(function(){});
+      navigator.serviceWorker.register('./sw.js?v=3').catch(function(){});
     });
   }
 } catch (e){}
