@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.08.21.02';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.08.21.03';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -105093,6 +105093,32 @@ window.LW_Comp = (function(){
     }catch(err){ if(window._toast)window._toast('Could not share the garden right now.'); }
   };
 })();
+</script>
+<script>
+/* Sky Wolf visit counter, privacy first (see portal/index.html for the full
+   note). This page gets its own bucket prefix so a QR scan that lands on the
+   game front door still shows up in the count, labeled lw-*. Nothing about
+   the visitor is stored or sent beyond the bucket name. */
+try{
+  if(!sessionStorage.getItem('lw_visit_counted')){
+    sessionStorage.setItem('lw_visit_counted','1');
+    var _vsrc=(location.search.match(/[?&]from=([a-z0-9-]{1,24})/i)||[])[1];
+    if(!_vsrc){
+      var _sa=false;
+      try{ _sa=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||window.navigator.standalone===true; }catch(e2){}
+      if(_sa)_vsrc='app';
+      else{
+        var _ref=document.referrer||'';
+        var _ext=_ref&&_ref.indexOf(location.hostname)===-1;
+        var _first=false;
+        try{ _first=!localStorage.getItem('sws_seen'); localStorage.setItem('sws_seen','1'); }catch(e3){}
+        _vsrc=_ext?'referred':(_first?'new-direct':'return-direct');
+      }
+    }
+    fetch('https://us-central1-focus-grove-fffa8.cloudfunctions.net/portalPing?src=lw-'+encodeURIComponent(_vsrc.toLowerCase()),
+      {method:'POST',keepalive:true}).catch(function(){});
+  }
+}catch(e){}
 </script>
 </body>
 </html>

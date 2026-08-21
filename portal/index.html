@@ -3237,7 +3237,31 @@ document.addEventListener('click', function(e){
 try{
   if(!sessionStorage.getItem('sws_visit_counted')){
     sessionStorage.setItem('sws_visit_counted','1');
-    var _vsrc=(location.search.match(/[?&]from=([a-z0-9-]{1,24})/i)||[])[1]||'direct';
+    /* Source buckets, none of which identify anyone (2026-08-21, Stephen: the
+       printed QR stickers carry the PLAIN url, so labeling cannot ride a
+       query param; and his own opens come from the installed app button):
+         app           running as the installed app (display-mode standalone)
+         new-direct    first visit this browser has ever made, arrived with no
+                       referrer: typed urls and QR scans land here, and the
+                       stickers are nearly all of these
+         return-direct direct arrival from a browser that has been here before
+         referred      followed a link from another site
+       ?from=<label> still wins when present, for future sticker printings.
+       The first-visit flag lives in the visitor's OWN storage and is never
+       sent; only the bucket name travels. */
+    var _vsrc=(location.search.match(/[?&]from=([a-z0-9-]{1,24})/i)||[])[1];
+    if(!_vsrc){
+      var _sa=false;
+      try{ _sa=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||window.navigator.standalone===true; }catch(e2){}
+      if(_sa)_vsrc='app';
+      else{
+        var _ref=document.referrer||'';
+        var _ext=_ref&&_ref.indexOf(location.hostname)===-1;
+        var _first=false;
+        try{ _first=!localStorage.getItem('sws_seen'); localStorage.setItem('sws_seen','1'); }catch(e3){}
+        _vsrc=_ext?'referred':(_first?'new-direct':'return-direct');
+      }
+    }
     fetch('https://us-central1-focus-grove-fffa8.cloudfunctions.net/portalPing?src='+encodeURIComponent(_vsrc.toLowerCase()),
       {method:'POST',keepalive:true}).catch(function(){});
   }

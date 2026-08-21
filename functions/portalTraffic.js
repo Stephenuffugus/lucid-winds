@@ -10,9 +10,15 @@
  *    The Firestore documents hold integers and a date string, full stop.
  *  - The client pings once per browser session (sessionStorage flag that
  *    never leaves the device) so the numbers mean "visits", not "paints".
- *  - `src` labels where a visit came from (the sticker QR points at
- *    /portal/?from=sticker). It is sanitized to [a-z0-9-]{1,24} and only
- *    ever increments a counter named after itself.
+ *  - `src` labels where a visit came from. The printed stickers carry the
+ *    PLAIN url (learned 2026-08-21 after they were already out in the wild),
+ *    so the client derives buckets that need no query param:
+ *      app / new-direct / return-direct / referred   (portal)
+ *      lw-app / lw-new-direct / ...                  (game front door)
+ *    A QR scan is a first-time direct visit, so stickers land almost
+ *    entirely in new-direct. ?from=<label> still wins when present, for
+ *    future printings. Sanitized to [a-z0-9-]{1,24}; a label only ever
+ *    increments a counter named after itself.
  *
  * Data shape:
  *   portalStats/{YYYY-MM-DD}  { hits: N, src: { sticker: N, direct: N, ... } }
