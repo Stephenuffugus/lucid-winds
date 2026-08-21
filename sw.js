@@ -4,7 +4,7 @@
 // Version tag drives cache busting on deploy
 // ═══════════════════════════════════════════════════════════════════
 
-var CACHE_VERSION = 'lw-v36';
+var CACHE_VERSION = 'lw-v37';
 var ASSET_CACHE = 'lw-assets-v21';
 var GAME_CACHE = 'lw-games-v20';
 var TILE_CACHE = 'lw-tiles-v1';
@@ -16,7 +16,7 @@ var TILE_MAX_ENTRIES = 1000; // ~25 km² at zoom 16 — fits comfortably
 // a broken app. No external assets, since by definition the network is unwell.
 var OFFLINE_PAGE = '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">'
   + '<meta name="viewport" content="width=device-width,initial-scale=1">'
-  + '<title>Sky Wolf Studios</title><style>'
+  + '<title>Sky Wolf Studio</title><style>'
   + 'html,body{height:100%;margin:0;background:#0d100c;color:#e8dcc8;'
   + 'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif}'
   + 'main{min-height:100%;display:flex;flex-direction:column;align-items:center;'
