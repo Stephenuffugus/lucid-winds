@@ -1,7 +1,10 @@
 # Jumping Jimothy: beatability evidence
 
-**Re-run 2026-08-18 against the current build, and extended from 100 levels to
-120.** Four commits had touched the game since the Aug 7 evidence, so the old
+**Re-run 2026-08-21 against the current build (three commits had landed since
+the 2026-08-18 run: Steam credit line, storefront costume ladder, bezel art).
+Still ZERO flags; worst road window unchanged at 0.36s, worst water 45%.**
+
+**Previous run 2026-08-18, extended from 100 levels to 120.** Four commits had touched the game since the Aug 7 evidence, so the old
 file could not be trusted; and the campaign RESOLVES to 120, because past the
 level 100 feast the last three decades cycle so it never dead-ends. Twenty live,
 reachable levels had never been checked. **Still zero flags.** The worst road
