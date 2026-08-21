@@ -885,17 +885,21 @@ window._gameFns.pollen = function PN(a){
   // matches the folder structure Stephen ships art in. Fallback to flat
   // assets/games/masterpollinator/<slug>.png is checked too via two img
   // tags chained by onerror.
-  function renderCard(card,isReserved){
+  function renderCard(card,isReserved,compact){
     var aff=canAfford(me(),card);
     var border=aff.affordable?'2px solid #7ab356':'2px solid rgba(110,96,81,0.55)';
     var bgShade=card.tier===1?'#4a7c35':card.tier===2?'#c8a84b':'#ffd700';
-    var W=96, H=120;
+    /* compact cards let all three tiers stand on screen at once
+       (Stephen 2026-08-21: "I don't like having to switch between
+       tiers"). Tap still opens the full-art inspect with BUY/RESERVE. */
+    var W=compact?76:96, H=compact?96:120;
     // CSS chips read clean at small sizes (no painted seed art any
     // more) so the cost bar can be tighter than the seed-era 30-42px
     // range. Cards stay shorter; art gets more vertical space.
     var costCount=0;for(var ck in card.cost)costCount+=card.cost[ck];
     var CHIP=costCount<=4?14:costCount<=6?12:10;
     var BARH=costCount<=4?22:costCount<=6?26:30;
+    if(compact){CHIP=Math.max(9,CHIP-3);BARH=Math.max(18,BARH-4);}
     var GP_PILL=card.gp>0?
       '<div style="position:absolute;top:3px;left:4px;width:24px;height:24px;border-radius:50%;background:linear-gradient(180deg,#fff5d4,#e8c860);color:#2a1f0a;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;z-index:3;box-shadow:0 2px 5px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.5);border:1px solid rgba(120,90,20,0.6);">'+card.gp+'</div>'
       :'';
@@ -987,7 +991,7 @@ window._gameFns.pollen = function PN(a){
     }
     h+='</div>';
     var active=me();
-    if(GS.phase==='player')h+='<div style="text-align:center;color:var(--sage);font-size:0.7rem;padding:2px;">'+esc(active.name)+"'s turn</div>";
+    if(GS.phase==='player')h+='<div style="text-align:center;color:var(--sage);font-size:0.7rem;padding:2px;">'+(active.name==='You'?'Your turn':esc(active.name)+"'s turn")+'</div>';
     else if(GS.phase==='ai')h+='<div style="text-align:center;color:#c47a7a;font-size:0.7rem;padding:2px;">'+esc(active.name)+' is thinking…</div>';
     // Pollinators
     h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--cream);letter-spacing:0.1em;margin:8px 0 4px;text-align:center;">POLLINATORS</div>';
@@ -1029,49 +1033,41 @@ window._gameFns.pollen = function PN(a){
       h+='</div>';
     });
     h+='</div>';
-    // Market — tabbed by tier so each tier's full-size cards fit one
-    // screen without horizontal scroll on phone. Stephen 2026-05-11:
-    // restructure was "see board + cards + chips + actions all on one
-    // screen, don't lose image size." Tabs cut market height by ~2/3.
+    // Market — ALL THREE TIERS at once, compact cards, top tier first.
+    // The 2026-05-11 tabs hid two thirds of the market; Stephen
+    // 2026-08-21: "I don't like having to switch between tiers." Seeing
+    // what is coming IS the planning in this kind of game, so every
+    // tier stands on screen and the tap-to-inspect keeps the big art.
     var _tiers=[
-      {n:1,name:'SEEDLING',icon:'🌱',mkt:GS.market1,deck:GS.deck1},
+      {n:3,name:'ANCIENT', icon:'🌳',mkt:GS.market3,deck:GS.deck3},
       {n:2,name:'SAPLING', icon:'🌿',mkt:GS.market2,deck:GS.deck2},
-      {n:3,name:'ANCIENT', icon:'🌳',mkt:GS.market3,deck:GS.deck3}
+      {n:1,name:'SEEDLING',icon:'🌱',mkt:GS.market1,deck:GS.deck1}
     ];
-    var _at=GS.activeTier||1;
-    // Tab strip — small chips with tier name + remaining deck count.
-    // Active tier has gold border.
-    h+='<div style="display:flex;gap:4px;justify-content:center;margin:6px 0 4px;">';
     _tiers.forEach(function(t){
-      var act=(t.n===_at);
-      var bg=act?'rgba(200,168,75,0.18)':'rgba(26,31,23,0.55)';
-      var bd=act?'var(--gold)':'rgba(122,179,86,0.15)';
-      var clr=act?'var(--gold)':'var(--cream)';
-      h+='<button onclick="_PNtier('+t.n+')" '
-        +'style="flex:1;max-width:130px;min-height:48px;padding:6px 4px;background:'+bg+';border:1.5px solid '+bd+';border-radius:8px;color:'+clr+';cursor:pointer;font-family:Bebas Neue,sans-serif;letter-spacing:0.06em;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1;-webkit-tap-highlight-color:transparent;">'
-        +'<div style="font-size:0.7rem;">T'+t.n+' '+t.icon+' '+t.name+'</div>'
-        +'<div style="font-size:0.7rem;color:var(--muted);margin-top:1px;">'+t.deck.length+' left</div>'
-        +'</button>';
+      h+='<div style="display:flex;align-items:stretch;gap:4px;margin:3px 0;">';
+      // Tier edge label: icon + deck count in a slim vertical strip.
+      h+='<div style="flex:0 0 26px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:rgba(26,31,23,0.55);border:1px solid rgba(122,179,86,0.15);border-radius:8px;">'
+        +'<div style="font-size:13px;">'+t.icon+'</div>'
+        +'<div style="font-size:0.7rem;color:var(--muted);font-family:DM Mono,monospace;">'+t.deck.length+'</div>'
+        +'</div>';
+      h+='<div style="flex:1;overflow-x:auto;-webkit-overflow-scrolling:touch;display:flex;gap:4px;align-items:flex-start;padding-bottom:1px;">';
+      t.mkt.forEach(function(c){if(c)h+=renderCard(c,false,true);});
+      if(t.mkt.length===0)h+='<div style="flex:1;text-align:center;color:var(--muted);font-size:0.7rem;padding:24px 0;">Tier exhausted</div>';
+      h+='</div>';
+      h+='</div>';
     });
-    h+='</div>';
-    // Active tier's card row.
-    var _activeT=_tiers[_at-1];
-    h+='<div style="display:flex;align-items:center;gap:6px;margin:4px 0;">';
-    h+='<div style="flex:1;overflow-x:auto;-webkit-overflow-scrolling:touch;display:flex;gap:6px;align-items:flex-start;justify-content:flex-start;padding-bottom:2px;min-height:160px;">';
-    _activeT.mkt.forEach(function(c){if(c)h+=renderCard(c,false);});
-    if(_activeT.mkt.length===0)h+='<div style="flex:1;text-align:center;color:var(--muted);font-size:0.7rem;padding:30px 0;">Tier exhausted</div>';
-    h+='</div>';
-    h+='</div>';
     // Supply
     h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--cream);letter-spacing:0.1em;margin:8px 0 4px;">SUPPLY</div>';
-    h+='<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">';
+    h+='<div style="display:flex;gap:5px;justify-content:center;flex-wrap:nowrap;">';
     COLORS.concat(['gold']).forEach(function(c){
       var sel=GS.selectedTokens.indexOf(c)>=0;
       // Supply pills — primary view of currency. Big enough that the
       // painted seed art actually shows. Stacks chip ABOVE count so
       // both read clearly without a horizontal squeeze.
-      var sty='padding:10px 14px;background:'+(sel?'rgba(122,179,86,0.22)':'rgba(26,31,23,0.65)')+';border:2px solid '+(sel?'#7ab356':'rgba(122,179,86,0.22)')+';border-radius:14px;min-height:78px;min-width:74px;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;';
-      h+='<div class="pn-tok'+(sel?' sel':'')+'" style="'+sty+'" onclick="_PNsup(\''+c+'\')">'+tokDot(c,46)+'<span style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;color:var(--cream);line-height:1;font-weight:800;">'+GS.supply[c]+'</span></div>';
+      /* six pills must stand on ONE row at 375px wide, or the last two
+         hide behind the action dock (seen on screen 2026-08-21) */
+      var sty='padding:7px 6px;background:'+(sel?'rgba(122,179,86,0.22)':'rgba(26,31,23,0.65)')+';border:2px solid '+(sel?'#7ab356':'rgba(122,179,86,0.22)')+';border-radius:12px;min-height:64px;min-width:52px;flex:1 1 0;max-width:72px;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;';
+      h+='<div class="pn-tok'+(sel?' sel':'')+'" style="'+sty+'" onclick="_PNsup(\''+c+'\')">'+tokDot(c,36)+'<span style="font-family:Bebas Neue,sans-serif;font-size:1rem;color:var(--cream);line-height:1;font-weight:800;">'+GS.supply[c]+'</span></div>';
     });
     h+='</div>';
     // Active player area — shows whoever's turn it is (hides others'
@@ -1094,15 +1090,26 @@ window._gameFns.pollen = function PN(a){
       h+='</div>';
     }
     h+='</div>';
-    // Actions
+    // Actions — DOCKED to the bottom of the screen so making a move
+    // never means scrolling (Stephen 2026-08-21: "it's hard to make
+    // your moves because the stuff is off the bottom of the screen").
+    // Always present, so the layout never jumps between phases.
+    h+='<div id="pnDock" style="position:fixed;left:0;right:0;bottom:0;z-index:9000;'
+      +'background:linear-gradient(180deg,rgba(13,16,12,0.88),rgba(13,16,12,0.98));'
+      +'border-top:1px solid rgba(122,179,86,0.3);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);'
+      +'padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));display:flex;gap:6px;align-items:center;justify-content:center;">';
     if(GS.phase==='player'){
-      h+='<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin:4px 0;">';
-      h+='<button class="gb" onclick="_PNact(\'collect3\')" style="min-height:48px;padding:8px;background:'+(GS.action==='collect3'?'rgba(122,179,86,0.3)':'')+';">3 DIFF</button>';
-      h+='<button class="gb" onclick="_PNact(\'collect2\')" style="min-height:48px;padding:8px;background:'+(GS.action==='collect2'?'rgba(122,179,86,0.3)':'')+';">2 SAME</button>';
-      if(GS.selectedTokens.length>0)h+='<button class="gb" onclick="_PNconfirm()" style="min-height:48px;padding:8px;background:rgba(200,168,75,0.2);color:var(--gold);border-color:rgba(200,168,75,0.5);">✓ CONFIRM</button>';
-      if(GS.action)h+='<button class="gb" onclick="_PNcancel()" style="min-height:48px;min-width:48px;padding:8px;">✕</button>';
-      h+='</div>';
+      h+='<button class="gb" onclick="_PNact(\'collect3\')" style="min-height:52px;padding:8px 12px;background:'+(GS.action==='collect3'?'rgba(122,179,86,0.3)':'')+';">3 DIFF</button>';
+      h+='<button class="gb" onclick="_PNact(\'collect2\')" style="min-height:52px;padding:8px 12px;background:'+(GS.action==='collect2'?'rgba(122,179,86,0.3)':'')+';">2 SAME</button>';
+      if(GS.selectedTokens.length>0)h+='<button class="gb" onclick="_PNconfirm()" style="min-height:52px;padding:8px 12px;background:rgba(200,168,75,0.2);color:var(--gold);border-color:rgba(200,168,75,0.5);">✓ CONFIRM</button>';
+      if(GS.action)h+='<button class="gb" onclick="_PNcancel()" style="min-height:52px;min-width:52px;padding:8px;">✕</button>';
+      h+='<span style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--muted);margin-left:4px;">'+totalTok(me().tokens)+'/10</span>';
+    } else {
+      h+='<span style="font-family:DM Mono,monospace;font-size:0.75rem;color:#c47a7a;">'+esc(me().name)+' is thinking…</span>';
     }
+    h+='</div>';
+    // Clearance so scrolled content is never hidden under the dock.
+    h+='<div style="height:84px;"></div>';
     pan.innerHTML=h;
   }
 
