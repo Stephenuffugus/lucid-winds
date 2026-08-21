@@ -1,0 +1,3080 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>WIREWORM</title>
+<meta name="description" content="Snake where your trail is live wire and every circuit you complete becomes part of the maze that kills you.">
+<meta name="theme-color" content="#a3e635">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="WIREWORM">
+<style>
+:root{
+  --bg:#0a0b0f; --panel:#12141b; --line:#1c2029;
+  --lime:#a3e635; --lime-dim:#6b8f22; --warm:#ffcf70;
+  --text:#e7ecdd; --muted:#8e9a86;
+  --safe-t:env(safe-area-inset-top,0px);
+  --safe-b:env(safe-area-inset-bottom,0px);
+  --safe-l:env(safe-area-inset-left,0px);
+  --safe-r:env(safe-area-inset-right,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--text);
+  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  overscroll-behavior:none;touch-action:manipulation}
+body{overflow:hidden}
+#app{position:fixed;inset:0;display:flex;flex-direction:column;
+  padding:var(--safe-t) var(--safe-r) var(--safe-b) var(--safe-l)}
+
+/* ---- HUD ---- */
+#hud{flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:8px 12px 4px;min-height:58px}
+#comboWrap{position:relative;width:52px;height:52px;flex:0 0 auto;overflow:hidden}
+#comboRing{position:absolute;top:0;left:0;width:52px;height:52px;display:block}
+#comboTxt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:15px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--lime)}
+#scoreBox{flex:1 1 auto;min-width:0}
+#score{font-size:30px;line-height:1;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-0.5px}
+#sub{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;margin-top:3px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#loadBox{flex:0 0 auto;text-align:right;min-width:64px;opacity:0;transition:opacity 160ms ease-out}
+#loadBox.on{opacity:1}
+#loadPct{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--warm)}
+#loadLbl{font-size:13px;color:var(--muted)}
+.iconbtn{flex:0 0 auto;width:48px;height:48px;border:1px solid var(--line);border-radius:12px;
+  background:var(--panel);color:var(--text);font-size:19px;display:flex;align-items:center;
+  justify-content:center;cursor:pointer;transition:background 140ms ease-out}
+.iconbtn:active{background:#1b1f28}
+
+/* ---- board ---- */
+/* flex-basis 0, not auto: with basis auto the stage sized itself to the canvas
+   while layout() sized the canvas from the stage, a circular measurement that
+   collapsed the board to nine pixels a cell. Basis 0 makes the stage purely
+   the leftover column and breaks the loop. */
+#stage{flex:1 1 0;position:relative;display:flex;align-items:center;justify-content:center;min-height:0;padding:2px 0}
+#board{display:block;border-radius:14px;background:#0c0f0b;touch-action:none}
+#zoneL,#zoneR{position:absolute;top:0;bottom:0;width:50%;z-index:5}
+#zoneL{left:0}#zoneR{right:0}
+#zoneHint{position:absolute;inset:0;pointer-events:none;display:flex;z-index:6;opacity:0;
+  transition:opacity 200ms ease-out}
+#zoneHint.on{opacity:1}
+#zoneHint div{flex:1;display:flex;align-items:center;justify-content:center;font-size:34px;color:#ffffff22}
+
+/* ---- footer ---- */
+/* height is set from layoutModel at runtime; this is the pre script fallback */
+#pad{flex:0 0 auto;height:clamp(120px,17vh,160px);display:flex;gap:10px;padding:8px 12px 4px}
+.padbtn{flex:1 1 0;border:1px solid var(--line);border-radius:14px;background:#10140c;color:#6d7a5f;
+  font-size:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;
+  transition:background 120ms ease-out,color 120ms ease-out;user-select:none;touch-action:none}
+.padbtn:active{background:#1d2612;color:var(--lime)}
+#foot{flex:0 0 auto;display:flex;gap:8px;padding:6px 12px 10px;align-items:center}
+.fbtn{flex:1 1 0;min-height:48px;border:1px solid var(--line);border-radius:12px;background:var(--panel);
+  color:var(--text);font-size:14px;font-weight:700;cursor:pointer;letter-spacing:0.4px}
+.fbtn:active{background:#1b1f28}
+.fbtn.go{background:var(--lime);color:#0c1206;border-color:var(--lime)}
+
+/* ---- overlays ---- */
+.sheet{position:absolute;inset:0;z-index:20;display:none;flex-direction:column;
+  background:rgba(6,7,10,0.93);backdrop-filter:blur(6px);padding:calc(14px + var(--safe-t)) 16px calc(14px + var(--safe-b));
+  overflow-y:auto;-webkit-overflow-scrolling:touch}
+.sheet.on{display:flex}
+.sheet h2{margin:2px 0 2px;font-size:23px;letter-spacing:0.5px}
+.sheet p{margin:6px 0;font-size:15px;color:var(--muted);line-height:1.45}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  min-height:48px;padding:6px 0;border-bottom:1px solid var(--line)}
+.row label{font-size:15px}
+.row .val{font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums}
+.tgl{min-width:88px;min-height:48px;border:1px solid var(--line);border-radius:12px;background:var(--panel);
+  color:var(--text);font-size:14px;font-weight:700;cursor:pointer}
+.tgl.on{background:var(--lime);color:#0c1206;border-color:var(--lime)}
+input[type=range]{flex:1 1 auto;height:48px;accent-color:var(--lime)}
+#cardWrap{display:flex;justify-content:center;margin:8px 0}
+#cardImg{max-width:100%;width:250px;border-radius:12px;border:1px solid var(--line)}
+#statGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:9px 11px}
+.stat b{display:block;font-size:21px;font-variant-numeric:tabular-nums}
+.stat span{font-size:13px;color:var(--muted)}
+#toast{position:fixed;left:50%;top:0;transform:translateX(-50%);
+  background:#1b2113;border:1px solid var(--lime-dim);color:var(--text);padding:10px 16px;border-radius:12px;
+  font-size:14px;z-index:40;opacity:0;pointer-events:none;transition:opacity 160ms ease-out;max-width:86%}
+#toast.on{opacity:1}
+#testPanel{position:absolute;inset:0;z-index:60;background:#05060a;color:#cfe;overflow:auto;
+  font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;padding:14px;display:none;white-space:pre-wrap}
+#testPanel.on{display:block}
+.fail{color:#ff8080}.pass{color:#9be36b}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="hud">
+    <div id="comboWrap"><canvas id="comboRing" width="104" height="104"></canvas><div id="comboTxt">x1</div></div>
+    <div id="scoreBox"><div id="score">0</div><div id="sub"></div></div>
+    <div id="loadBox"><div id="loadPct">0%</div><div id="loadLbl">load</div></div>
+    <button class="iconbtn" id="btnOpt" aria-label="Options">&#9881;</button>
+  </div>
+  <div id="stage">
+    <canvas id="board"></canvas>
+    <div id="zoneL" aria-label="Turn left"></div>
+    <div id="zoneR" aria-label="Turn right"></div>
+    <div id="zoneHint"><div>&#8630;</div><div>&#8631;</div></div>
+  </div>
+  <div id="pad">
+    <button class="padbtn" id="padL" aria-label="Turn left">&#8630;</button>
+    <button class="padbtn" id="padR" aria-label="Turn right">&#8631;</button>
+  </div>
+  <div id="foot">
+    <button class="fbtn" id="btnExit">EXIT</button>
+    <button class="fbtn" id="btnDaily">DAILY</button>
+    <button class="fbtn go" id="btnStart">START</button>
+  </div>
+
+  <div class="sheet" id="sheetOver">
+    <h2 id="overTitle"></h2>
+    <p id="overLine"></p>
+    <div id="cardWrap"><img id="cardImg" alt="Your final board"></div>
+    <div id="statGrid"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="fbtn" id="btnDownload">SAVE CARD</button>
+      <button class="fbtn" id="btnShare">SHARE</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="fbtn" id="btnReplay">WATCH BEST</button>
+      <button class="fbtn go" id="btnAgain">PLAY AGAIN</button>
+    </div>
+    <p id="installLine" style="display:none"></p>
+  </div>
+
+  <div class="sheet" id="sheetOpt">
+    <h2 id="optTitle"></h2>
+    <div class="row"><label for="rngVol">Volume</label><input type="range" id="rngVol" min="0" max="100" step="5"><span class="val" id="volVal">0</span></div>
+    <div class="row"><label>Sound</label><button class="tgl" id="tglMute"></button></div>
+    <div class="row"><label>Haptics</label><button class="tgl" id="tglHap"></button></div>
+    <div class="row"><label>Reduced motion</label><button class="tgl" id="tglMotion"></button></div>
+    <div class="row"><label>Show turn zones</label><button class="tgl" id="tglZones"></button></div>
+    <div id="optStats"></div>
+    <p id="optSeed"></p>
+    <div style="display:flex;gap:8px;margin-top:6px">
+      <button class="fbtn" id="btnCopySeed">COPY SEED LINK</button>
+      <button class="fbtn go" id="btnOptClose">DONE</button>
+    </div>
+    <p id="howto"></p>
+  </div>
+
+  <div id="toast"></div>
+  <div id="testPanel"></div>
+</div>
+
+<script>
+/* WIREWORM — Sky Wolf Studios
+   game id: wireworm · accent electric lime #a3e635
+   seed policy: ?seed=<int> boots that exact run; daily mode uses FNV-1a of
+     YYYY-MM-DD + game id; otherwise a fresh time seed.
+   layers: CONFIG / RNG / DATA / GEN / SIM (pure, DOM free, time free)
+           then SAVE, TEST, VIEW, INPUT, BOOT.
+   sim.js extracts the three marked blocks below and runs them headless. */
+
+// ---- SIM_EXPORT_START ----
+/* ===================================================================
+   1. CONFIG — every tunable number, frozen.
+   =================================================================== */
+var CONFIG = Object.freeze({
+  GAME_ID: 'wireworm',
+  SAVE_KEY: 'lw_wireworm_v1',
+  GRID: 20,
+  CELLS: 400,
+  START_CELL: 210,          // (10,10) centre
+  START_HEADING: 1,         // 0 up, 1 right, 2 down, 3 left
+  TICK_START_MS: 220,       // driver only. SIM never sees milliseconds.
+  TICK_STEP_MS: 4,          // faster per completed circuit
+  TICK_FLOOR_MS: 90,
+  COMBO_WINDOW: 40,         // ticks. the window off a cold start and at the first rung
+  /* The window TIGHTENS as the ladder climbs. Spec says 40 ticks; at 20x20 a
+     competent player completes every 5 to 25 ticks, so a flat 40 pinned the
+     combo at x4 inside about 50 ticks and the ladder stopped being a decision.
+     Holding x4 now costs 20 ticks, which is inside the range a long red circuit
+     takes, so the top of the ladder is a real choice between paying for length
+     and holding the multiplier. Director default, recorded in BUILD-NOTES. */
+  COMBO_WINDOWS: Object.freeze([40, 40, 32, 26, 20]),
+  COMBO_LADDER: Object.freeze([1, 1.5, 2, 3, 4]),
+  OVERLOAD_PCT: 0.55,
+  OVERLOAD_CELLS: 220,      // floor(400 * 0.55). Fires at >= this many.
+  OVERLOAD_BONUS_PER_CELL: 5,
+  WARN_PCT: 0.35,           // load readout appears past here
+  DISCHARGE_INTERVAL: 90,   // ticks between pickup spawns
+  CREEP_INTERVAL: 45,       // ticks with no completion before live wire creeps one cell
+  DAILY_TICKS: 600,         // the daily is a fixed shift, not a survival run
+  STALL_CHECK: 24,          // ticks between "can the worm still reach anything" sweeps
+  STALL_LIMIT: 300,         // ticks of zero progress before the board comes to you
+  PAIRS: 2,                 // terminal pairs live on the board
+  GREEN_MAX_DIST: 6,        // green pairs spawn within this manhattan distance
+  RED_MIN_DIST: 20,         // red pairs must land at least this far apart
+  QUEUE_CAP: 2,             // input queue slots
+  FILL_TARGET: 90           // sweep agent only: cells the board filler grows a slice to
+});
+
+/* cell codes */
+var EMPTY = 0, WIRE = 1, TERM = 2, PICK = 3;
+/* headings: 0 up, 1 right, 2 down, 3 left */
+var DX = [0, 1, 0, -1], DY = [-1, 0, 1, 0];
+
+/* ===================================================================
+   2. RNG — mulberry32. Math.random is banned in every layer above VIEW.
+   =================================================================== */
+function makeRNG(seed) {
+  var a = seed >>> 0;
+  var r = function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    var t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  r.int = function (n) { return Math.floor(r() * n); };
+  r.range = function (lo, hi) { return lo + Math.floor(r() * (hi - lo + 1)); };
+  r.pick = function (arr) { return arr[Math.floor(r() * arr.length)]; };
+  r.shuffle = function (arr) {
+    var a2 = arr.slice(), i, j, t;
+    for (i = a2.length - 1; i > 0; i--) { j = Math.floor(r() * (i + 1)); t = a2[i]; a2[i] = a2[j]; a2[j] = t; }
+    return a2;
+  };
+  r.weighted = function (pairs) {
+    var total = 0, i, x;
+    for (i = 0; i < pairs.length; i++) total += pairs[i][1];
+    x = r() * total;
+    for (i = 0; i < pairs.length; i++) { x -= pairs[i][1]; if (x <= 0) return pairs[i][0]; }
+    return pairs[pairs.length - 1][0];
+  };
+  r.getState = function () { return a | 0; };
+  r.setState = function (s) { a = s | 0; };
+  r.seed = seed >>> 0;
+  return r;
+}
+
+/* The same generator, stepped through a serialisable field on the state so a
+   run can be hashed, cloned and replayed without carrying a closure. */
+function rngNext(st) {
+  var a = st.rngState | 0;
+  a = (a + 0x6D2B79F5) | 0;
+  st.rngState = a;
+  var t = Math.imul(a ^ (a >>> 15), 1 | a);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+function rngInt(st, n) { return Math.floor(rngNext(st) * n); }
+
+function seedFromString(s) {
+  var h = 0x811c9dc5, i;
+  for (i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+  return h >>> 0;
+}
+function dailySeed(dateStr) { return seedFromString(dateStr + CONFIG.GAME_ID); }
+
+/* ===================================================================
+   3. DATA — colours, glyph ids, and every player facing string.
+        COPY is checked by a grep gate: no dash characters, ever.
+   =================================================================== */
+var COLORS = [
+  { key: 'green', name: 'Green', mult: 1.0, weight: 40, hex: '#4ade80', glyph: 0 },
+  { key: 'blue',  name: 'Blue',  mult: 1.5, weight: 30, hex: '#60a5fa', glyph: 1 },
+  { key: 'amber', name: 'Amber', mult: 2.5, weight: 20, hex: '#fbbf24', glyph: 2 },
+  { key: 'red',   name: 'Red',   mult: 4.0, weight: 10, hex: '#f87171', glyph: 3 }
+];
+/* glyph 0 triangle, 1 square, 2 diamond, 3 cross. Shape doubles colour so the
+   board reads in greyscale (colourblind law, CRAFT section D). */
+
+var COPY = Object.freeze({
+  title: 'WIREWORM',
+  tagline: 'Your trail is live wire. Close a circuit and it lights up. Lit wire kills you.',
+  start: 'START',
+  again: 'PLAY AGAIN',
+  daily: 'DAILY',
+  exit: 'EXIT',
+  options: 'Options',
+  howto: 'Tap the left half to turn left, the right half to turn right. Swipe works too, and so do the arrow keys. Touch a terminal to charge, touch its twin to close the circuit.',
+  deadWall: 'You ran off the board.',
+  deadLive: 'You touched your own live wire.',
+  deadClock: 'The shift ended. Nothing killed you but the clock.',
+  labLeft: 'left ',
+  dailyHint: 'The daily is a fixed shift. Six hundred ticks, one board, everyone the same.',
+  overTitle: 'Look what you built',
+  bestNew: 'New best score.',
+  seedLine: 'Seed ',
+  copied: 'Seed link copied.',
+  shareFail: 'Copy failed. The seed is in the options panel.',
+  installLine: 'Add WIREWORM to your home screen and it runs offline.',
+  noReplay: 'No saved run yet. Finish one first.',
+  replaying: 'Watching your best run.',
+  dailyDone: 'Daily done. Streak ',
+  statScore: 'score', statTicks: 'ticks', statCircuits: 'circuits', statCombo: 'best combo',
+  statLongest: 'longest circuit', statOverloads: 'overloads',
+  labLoad: 'load', labBest: 'best ', labRuns: 'runs ',
+  volume: 'Volume', sound: 'Sound', haptics: 'Haptics', motion: 'Reduced motion',
+  zones: 'Show turn zones', on: 'ON', off: 'OFF', done: 'DONE',
+  copySeed: 'COPY SEED LINK', download: 'SAVE CARD', share: 'SHARE',
+  watchBest: 'WATCH BEST', studio: 'SKY WOLF STUDIOS'
+});
+
+/* ===================================================================
+   4. GEN — board queries and spawn placement. Seeded, DOM free.
+   =================================================================== */
+function cx(i) { return i % CONFIG.GRID; }
+function cy(i) { return (i / CONFIG.GRID) | 0; }
+function manhattan(a, b) { return Math.abs(cx(a) - cx(b)) + Math.abs(cy(a) - cy(b)); }
+
+/* Flood fill from the worm head across every cell that is not energized.
+   Dead wire is passable, so it is only live wire and the edge that bound the
+   reachable region. Returns a Uint8Array mask. */
+function reachMask(st) {
+  var n = CONFIG.CELLS, g = CONFIG.GRID;
+  var seen = new Uint8Array(n);
+  var queue = new Int32Array(n);
+  var qh = 0, qt = 0;
+  seen[st.head] = 1; queue[qt++] = st.head;
+  while (qh < qt) {
+    var c = queue[qh++], x = cx(c), y = cy(c), d, nx, ny, ni;
+    for (d = 0; d < 4; d++) {
+      nx = x + DX[d]; ny = y + DY[d];
+      if (nx < 0 || ny < 0 || nx >= g || ny >= g) continue;
+      ni = ny * g + nx;
+      if (seen[ni]) continue;
+      if (st.cover[ni] > 0) continue;      // live wire blocks
+      seen[ni] = 1; queue[qt++] = ni;
+    }
+  }
+  return seen;
+}
+
+/* Cells inside the uncommitted circuit. Nothing may spawn on them: a terminal
+   dropped there would be overwritten the moment the circuit closes. */
+function pendingMask(st) {
+  var m = new Uint8Array(CONFIG.CELLS);
+  if (!st.charge) return m;
+  var i;
+  for (i = st.charge.sliceStart; i < st.trail.length; i++) m[st.trail[i]] = 1;
+  return m;
+}
+
+function spawnCandidates(st) {
+  var reach = reachMask(st), pend = pendingMask(st), out = [], i;
+  for (i = 0; i < CONFIG.CELLS; i++) {
+    if (st.cell[i] === EMPTY && reach[i] && !pend[i] && i !== st.head) out.push(i);
+  }
+  return out;
+}
+
+/* Exact maximum manhattan distance pair over a candidate set in O(n):
+   max |dx|+|dy| equals max((x+y)) - min((x+y)) or max((x-y)) - min((x-y)). */
+function maxDistPair(st, cand) {
+  var maxS = -1e9, minS = 1e9, maxD = -1e9, minD = 1e9;
+  var i, c, s, d;
+  var lMaxS = [], lMinS = [], lMaxD = [], lMinD = [];
+  for (i = 0; i < cand.length; i++) {
+    c = cand[i]; s = cx(c) + cy(c); d = cx(c) - cy(c);
+    if (s > maxS) { maxS = s; lMaxS = [c]; } else if (s === maxS) lMaxS.push(c);
+    if (s < minS) { minS = s; lMinS = [c]; } else if (s === minS) lMinS.push(c);
+    if (d > maxD) { maxD = d; lMaxD = [c]; } else if (d === maxD) lMaxD.push(c);
+    if (d < minD) { minD = d; lMinD = [c]; } else if (d === minD) lMinD.push(c);
+  }
+  var a, b;
+  if ((maxS - minS) >= (maxD - minD)) {
+    a = lMaxS[rngInt(st, lMaxS.length)]; b = lMinS[rngInt(st, lMinS.length)];
+  } else {
+    a = lMaxD[rngInt(st, lMaxD.length)]; b = lMinD[rngInt(st, lMinD.length)];
+  }
+  if (a === b) {                       // degenerate set, fall back to any two
+    a = cand[0]; b = cand[cand.length - 1];
+  }
+  return [a, b];
+}
+
+function weightedColorIndex(st) {
+  var total = 0, i;
+  for (i = 0; i < COLORS.length; i++) total += COLORS[i].weight;
+  var x = rngNext(st) * total;
+  for (i = 0; i < COLORS.length; i++) { x -= COLORS[i].weight; if (x <= 0) return i; }
+  return COLORS.length - 1;
+}
+
+function spawnPair(st) {
+  var cand = spawnCandidates(st);
+  if (cand.length < 2) return null;
+  var ci = weightedColorIndex(st), col = COLORS[ci];
+  var a, b, i, near, best, bd, dd;
+
+  if (col.key === 'red') {
+    var pr = maxDistPair(st, cand); a = pr[0]; b = pr[1];
+  } else if (col.key === 'green') {
+    a = cand[rngInt(st, cand.length)];
+    near = [];
+    for (i = 0; i < cand.length; i++) {
+      if (cand[i] !== a && manhattan(cand[i], a) <= CONFIG.GREEN_MAX_DIST) near.push(cand[i]);
+    }
+    if (near.length) b = near[rngInt(st, near.length)];
+    else {                                   // nothing close, take the nearest
+      best = -1; bd = 1e9;
+      for (i = 0; i < cand.length; i++) {
+        if (cand[i] === a) continue;
+        dd = manhattan(cand[i], a);
+        if (dd < bd) { bd = dd; best = cand[i]; }
+      }
+      b = best;
+    }
+  } else {
+    a = cand[rngInt(st, cand.length)];
+    do { b = cand[rngInt(st, cand.length)]; } while (b === a && cand.length > 1);
+  }
+  if (a === b || a === undefined || b === undefined) return null;
+
+  st.cell[a] = TERM; st.cell[b] = TERM;
+  st.tcol[a] = ci + 1; st.tcol[b] = ci + 1;
+  var pair = { id: st.nextPairId++, ci: ci, color: col.key, mult: col.mult, active: [a, b], open: false };
+  st.pairs.push(pair);
+  return pair;
+}
+
+function removePairCells(st, pair) {
+  var i, c;
+  for (i = 0; i < pair.active.length; i++) {
+    c = pair.active[i];
+    if (st.cell[c] === TERM) { st.cell[c] = EMPTY; st.tcol[c] = 0; }
+  }
+  pair.active.length = 0;
+}
+function dropPair(st, id) {
+  var i;
+  for (i = 0; i < st.pairs.length; i++) if (st.pairs[i].id === id) { st.pairs.splice(i, 1); return; }
+}
+function topUpPairs(st) {
+  var guard = 0;
+  while (st.pairs.length < CONFIG.PAIRS && guard++ < 4) { if (!spawnPair(st)) break; }
+}
+
+function spawnPickup(st) {
+  var cand = spawnCandidates(st), ok = [], i, c, x, y, dx, dy, nx, ny, bad;
+  for (i = 0; i < cand.length; i++) {
+    c = cand[i]; x = cx(c); y = cy(c); bad = false;
+    for (dy = -1; dy <= 1 && !bad; dy++) {
+      for (dx = -1; dx <= 1; dx++) {
+        nx = x + dx; ny = y + dy;
+        if (nx < 0 || ny < 0 || nx >= CONFIG.GRID || ny >= CONFIG.GRID) continue;
+        if (st.cover[ny * CONFIG.GRID + nx] > 0) { bad = true; break; }
+      }
+    }
+    if (!bad) ok.push(c);
+  }
+  if (!ok.length) return -1;
+  var pick = ok[rngInt(st, ok.length)];
+  st.cell[pick] = PICK;
+  st.pickup = pick;
+  st.ticksSincePickup = 0;
+  return pick;
+}
+
+/* ===================================================================
+   5. SIM — pure state machine. No DOM, no clock, no Math.random.
+        step(state, turn) with turn in {-1, 0, +1}. One cell per call.
+   =================================================================== */
+function newGame(seed, opts) {
+  var m = (opts && opts.mode) || 'free';
+  var st = {
+    seed: seed >>> 0,
+    rngState: seed >>> 0,
+    mode: m,
+    /* ENDLESS runs until the board kills you. DAILY runs a fixed shift: same
+       seed, same clock, so the only variable left is how you played it. A clock
+       instead of a wall changes the whole calculus, because you cannot bank
+       longevity and the breaker becomes the only way to score big in time. */
+    tickLimit: m === 'daily' ? CONFIG.DAILY_TICKS : 0,
+    cell: new Uint8Array(CONFIG.CELLS),
+    cover: new Uint16Array(CONFIG.CELLS),   // living circuits covering the cell
+    ccol: new Uint8Array(CONFIG.CELLS),     // colour id + 1 of the newest circuit
+    tcol: new Uint8Array(CONFIG.CELLS),     // colour id + 1 of a terminal
+    trail: [CONFIG.START_CELL],
+    head: CONFIG.START_CELL,
+    heading: CONFIG.START_HEADING,
+    circuits: [],
+    nextCircuitId: 1,
+    charge: null,
+    pairs: [],
+    nextPairId: 1,
+    pickup: -1,
+    ticksSincePickup: 0,
+    tick: 0,
+    score: 0,
+    energized: 0,
+    circuitsCompleted: 0,
+    comboIdx: -1,
+    lastCompleteTick: -9999,
+    comboPeak: 1,
+    longest: 0,
+    overloads: 0,
+    overloadBonus: 0,
+    discharges: 0,
+    rescues: 0,
+    creeps: 0,
+    creepTicks: 0,
+    stallTicks: 0,
+    alive: true,
+    cause: null
+  };
+  st.cell[CONFIG.START_CELL] = WIRE;
+  topUpPairs(st);
+  return st;
+}
+
+function comboMult(st) { return CONFIG.COMBO_LADDER[st.comboIdx < 0 ? 0 : st.comboIdx]; }
+
+/* The window you have to beat from the rung you are standing on. */
+function comboWindow(st) {
+  var i = st.comboIdx;
+  if (i < 0) return CONFIG.COMBO_WINDOW;
+  return CONFIG.COMBO_WINDOWS[i < CONFIG.COMBO_WINDOWS.length ? i : CONFIG.COMBO_WINDOWS.length - 1];
+}
+
+function energizeSlice(st, s, e) {
+  var mark = new Uint8Array(CONFIG.CELLS), cells = [], i, c;
+  for (i = s; i <= e; i++) {
+    c = st.trail[i];
+    if (!mark[c]) { mark[c] = 1; cells.push(c); }
+  }
+  return cells;
+}
+
+function fireOverload(st, ev) {
+  var n = st.energized, i;
+  var bonus = n * CONFIG.OVERLOAD_BONUS_PER_CELL;
+  st.score += bonus;
+  st.overloadBonus += bonus;
+  for (i = 0; i < CONFIG.CELLS; i++) {
+    if (st.cell[i] === WIRE) { st.cell[i] = EMPTY; st.ccol[i] = 0; }
+    st.cover[i] = 0;
+  }
+  st.energized = 0;
+  st.circuits.length = 0;
+  st.overloads++;
+  st.cell[st.head] = WIRE;                 // the worm still stands somewhere
+  /* An open circuit restarts from where the player stands. Without this the
+     next completion would resurrect wire the breaker just cleared. */
+  if (st.charge) st.charge.sliceStart = st.trail.length - 1;
+  st.stallTicks = 0;
+  st.creepTicks = 0;
+  ev.push({ t: 'overload', bonus: bonus, cells: n });
+}
+
+function completeCircuit(st, pair, ev) {
+  var s = st.charge.sliceStart, e = st.trail.length - 1;
+  var cells = energizeSlice(st, s, e), i, c;
+  for (i = 0; i < cells.length; i++) {
+    c = cells[i];
+    st.cell[c] = WIRE;                     // a discharge may have erased it
+    if (st.cover[c] === 0) st.energized++;
+    st.cover[c]++;
+    st.ccol[c] = pair.ci + 1;
+  }
+  var len = cells.length;
+  st.comboIdx = st.comboIdx >= 0 ? Math.min(st.comboIdx + 1, CONFIG.COMBO_LADDER.length - 1) : 0;
+  var cm = CONFIG.COMBO_LADDER[st.comboIdx];
+  var gained = Math.floor(len * pair.mult * cm);
+  st.score += gained;
+  st.circuits.push({ id: st.nextCircuitId++, ci: pair.ci, cells: cells, len: len, tick: st.tick, score: gained });
+  st.circuitsCompleted++;
+  st.lastCompleteTick = st.tick;
+  if (cm > st.comboPeak) st.comboPeak = cm;
+  if (len > st.longest) st.longest = len;
+  st.charge = null;
+  removePairCells(st, pair);
+  dropPair(st, pair.id);
+  st.stallTicks = 0;
+  st.creepTicks = 0;
+  ev.push({ t: 'completed', cells: cells, len: len, score: gained, combo: cm, ci: pair.ci, s: s, e: e });
+  if (st.energized >= CONFIG.OVERLOAD_CELLS) fireOverload(st, ev);
+  topUpPairs(st);
+}
+
+function touchTerminal(st, idx, ev) {
+  var pi = -1, i, k;
+  for (i = 0; i < st.pairs.length; i++) {
+    if (st.pairs[i].active.indexOf(idx) >= 0) { pi = i; break; }
+  }
+  if (pi < 0) return;                      // stale terminal marker, ignore
+  var p = st.pairs[pi];
+  k = p.active.indexOf(idx); p.active.splice(k, 1);
+  st.tcol[idx] = 0;
+
+  if (st.charge && st.charge.pairId === p.id) { completeCircuit(st, p, ev); return; }
+
+  if (st.charge) {                         // swapping colour abandons the open pair
+    var old = null;
+    for (i = 0; i < st.pairs.length; i++) if (st.pairs[i].id === st.charge.pairId) old = st.pairs[i];
+    if (old) { removePairCells(st, old); dropPair(st, old.id); }
+    st.charge = null;
+    ev.push({ t: 'abandoned' });
+  }
+  p.open = true;
+  st.charge = { pairId: p.id, ci: p.ci, mult: p.mult, sliceStart: st.trail.length - 1 };
+  st.stallTicks = 0;
+  ev.push({ t: 'charged', ci: p.ci, mult: p.mult });
+  topUpPairs(st);
+}
+
+function dischargeOldest(st, ev) {
+  if (!st.circuits.length) { ev.push({ t: 'discharged', cells: 0, removed: [] }); return; }
+  var c = st.circuits.shift(), removed = [], i, idx;
+  for (i = 0; i < c.cells.length; i++) {
+    idx = c.cells[i];
+    if (st.cover[idx] > 0) {
+      st.cover[idx]--;
+      if (st.cover[idx] === 0) {
+        st.energized--;
+        if (idx !== st.head) { st.cell[idx] = EMPTY; st.ccol[idx] = 0; removed.push(idx); }
+      }
+    }
+  }
+  st.stallTicks = 0;
+  ev.push({ t: 'discharged', cells: removed.length, removed: removed, circuit: c.id });
+}
+
+function touchPickup(st, ev) {
+  st.pickup = -1;
+  st.ticksSincePickup = 0;
+  st.discharges++;
+  dischargeOldest(st, ev);
+}
+
+/* Terminal rescue. A worm can seal itself into a pocket: no terminal reachable,
+   and every free cell either unreachable or adjacent to live wire so no pickup
+   can spawn either. Found by seed 9001, where the run simply never ended.
+   Sweep reachability on a slow cadence and move the objectives to where the
+   player actually is. If there is nowhere legal at all, trip the oldest
+   circuit as a mercy so the pocket reopens. */
+function rescueCheck(st, ev) {
+  var reach = reachMask(st), any = false, i, j;
+  for (i = 0; i < st.pairs.length && !any; i++) {
+    for (j = 0; j < st.pairs[i].active.length; j++) {
+      if (reach[st.pairs[i].active[j]]) { any = true; break; }
+    }
+  }
+  /* Reachable is not the same as reachable in time. A worm that has made no
+     progress at all for STALL_LIMIT ticks gets the objectives moved to it,
+     which is also the only thing that guarantees every run terminates. */
+  if (any && st.stallTicks < CONFIG.STALL_LIMIT) return;
+  for (i = 0; i < st.pairs.length; i++) removePairCells(st, st.pairs[i]);
+  st.pairs.length = 0;
+  st.charge = null;
+  topUpPairs(st);
+  if (st.pairs.length === 0 && st.circuits.length) {
+    st.discharges++;
+    dischargeOldest(st, ev);
+    topUpPairs(st);
+  }
+  st.rescues++;
+  st.stallTicks = 0;
+  ev.push({ t: 'rescue', pairs: st.pairs.length });
+}
+
+/* CREEP. The one hazard the game did not have.
+   Before this, nothing on the board moved unless the player moved it, so a
+   player who simply refused to close circuits was safe forever: the safety
+   filtered random walker medians 1424 ticks against a greedy 287 precisely
+   because it almost never completes a circuit and therefore never builds
+   anything lethal. That is a game with no ambient pressure.
+
+   Now current that has nowhere to go spreads. Every CREEP_INTERVAL ticks
+   WITHOUT a completion, one empty cell touching live wire lights up and joins
+   the newest circuit, so a discharge still clears it. Fairness rules, all
+   asserted: it never lights a cell next to the worm's head, never lights a cell
+   inside the circuit the player is currently drawing, never takes a terminal or
+   the pickup, and it is reverted on the spot if it would cut the worm off from
+   every terminal. It can trip the breaker, which is the point: sitting still
+   near the threshold is a way to cash the overload, not only a punishment. */
+/* Every cell the current may legally spread into. Split out of creepStep so the
+   fairness rules are unit testable: a statistical sweep almost never SEES a
+   head adjacent candidate, so a sweep alone would have passed with the guard
+   deleted, which is a gate that cannot fail. */
+function creepCandidates(st) {
+  var pend = pendingMask(st), g = CONFIG.GRID, cand = [], i, x, y, d, nx, ny, touch;
+  var hx = cx(st.head), hy = cy(st.head);
+  for (i = 0; i < CONFIG.CELLS; i++) {
+    if (st.cover[i] > 0 || st.cell[i] === TERM || st.cell[i] === PICK) continue;
+    if (i === st.head || pend[i]) continue;
+    x = cx(i); y = cy(i);
+    if (Math.abs(x - hx) + Math.abs(y - hy) <= 1) continue;   // never under your nose
+    touch = false;
+    for (d = 0; d < 4; d++) {
+      nx = x + DX[d]; ny = y + DY[d];
+      if (nx < 0 || ny < 0 || nx >= g || ny >= g) continue;
+      if (st.cover[ny * g + nx] > 0) { touch = true; break; }
+    }
+    if (touch) cand.push(i);
+  }
+  return cand;
+}
+
+function creepStep(st, ev) {
+  if (!st.circuits.length) return;
+  var cand = creepCandidates(st);
+  if (!cand.length) return;
+  var c = cand[rngInt(st, cand.length)];
+  var circ = st.circuits[st.circuits.length - 1];
+  var wasCode = st.cell[c], wasCol = st.ccol[c];
+  st.cell[c] = WIRE; st.cover[c] = 1; st.ccol[c] = circ.ci + 1; st.energized++;
+
+  /* a hazard is allowed to be cruel, not unfair: if that cell just sealed every
+     objective away from the worm, it never happened */
+  var reach = reachMask(st), ok = false, p, q;
+  for (p = 0; p < st.pairs.length && !ok; p++) {
+    for (q = 0; q < st.pairs[p].active.length; q++) if (reach[st.pairs[p].active[q]]) { ok = true; break; }
+  }
+  if (!ok) {
+    st.cell[c] = wasCode; st.cover[c] = 0; st.ccol[c] = wasCol; st.energized--;
+    return;
+  }
+  circ.cells.push(c);
+  circ.len++;
+  st.creeps++;
+  ev.push({ t: 'creep', cell: c, ci: circ.ci });
+  if (st.energized >= CONFIG.OVERLOAD_CELLS) fireOverload(st, ev);
+}
+
+function step(st, turn) {
+  var ev = [];
+  if (!st.alive) return { state: st, events: ev };
+  if (turn === -1 || turn === 1) st.heading = (st.heading + turn + 4) & 3;
+
+  var x = cx(st.head) + DX[st.heading], y = cy(st.head) + DY[st.heading];
+  if (x < 0 || y < 0 || x >= CONFIG.GRID || y >= CONFIG.GRID) {
+    st.alive = false; st.cause = 'wall';
+    ev.push({ t: 'died', cause: 'wall' });
+    return { state: st, events: ev };
+  }
+  var ni = y * CONFIG.GRID + x;
+  if (st.cover[ni] > 0) {
+    st.alive = false; st.cause = 'live';
+    ev.push({ t: 'died', cause: 'live' });
+    return { state: st, events: ev };
+  }
+
+  var code = st.cell[ni];
+  st.head = ni;
+  st.trail.push(ni);
+  st.cell[ni] = WIRE;
+  st.tick++;
+
+  if (code === TERM) touchTerminal(st, ni, ev);
+  else if (code === PICK) touchPickup(st, ev);
+
+  if (st.comboIdx >= 0 && (st.tick - st.lastCompleteTick) > comboWindow(st)) {
+    st.comboIdx = -1;
+    ev.push({ t: 'combodrop' });
+  }
+
+  st.ticksSincePickup++;
+  if (st.pickup < 0 && st.circuits.length > 0 && st.ticksSincePickup >= CONFIG.DISCHARGE_INTERVAL) {
+    var p = spawnPickup(st);
+    if (p >= 0) ev.push({ t: 'pickup', cell: p });
+  }
+  st.creepTicks++;
+  if (st.creepTicks >= CONFIG.CREEP_INTERVAL) { st.creepTicks = 0; creepStep(st, ev); }
+  st.stallTicks++;
+  if (st.tick % CONFIG.STALL_CHECK === 0) rescueCheck(st, ev);
+  if (st.tickLimit && st.tick >= st.tickLimit) {
+    st.alive = false; st.cause = 'clock';
+    ev.push({ t: 'died', cause: 'clock' });
+  }
+  return { state: st, events: ev };
+}
+
+/* Deterministic fingerprint of a run. FNV-1a over the board and the counters. */
+function hashState(st) {
+  var h = 0x811c9dc5, i;
+  function mix(v) { h ^= (v | 0) & 0xff; h = Math.imul(h, 0x01000193); h ^= ((v | 0) >>> 8) & 0xff; h = Math.imul(h, 0x01000193); }
+  for (i = 0; i < CONFIG.CELLS; i++) { mix(st.cell[i]); mix(st.cover[i] > 0 ? 1 : 0); }
+  mix(st.head); mix(st.heading); mix(st.tick); mix(st.energized);
+  mix(st.score & 0xffff); mix((st.score >>> 16) & 0xffff);
+  mix(st.circuitsCompleted); mix(st.overloads); mix(st.discharges);
+  return h >>> 0;
+}
+
+function loadPct(st) { return st.energized / CONFIG.CELLS; }
+
+/* Input queue. Capacity two, so a fast double tap still turns twice instead of
+   being swallowed. push returns false when it refuses, which is what lets the
+   test prove nothing is silently dropped. */
+/* Layout policy. The board is the game, so it takes every pixel left after the
+   header, the footer and a thumb sized pair of turn pads. Pure arithmetic and
+   load bearing (VIEW applies exactly this), so the harness can prove the board
+   never ends up smaller than its own controls again.
+   availW / availH are the space left for the pads plus the board. */
+var CHROME = Object.freeze({ PAD_MIN: 120, PAD_MAX: 160, PAD_VH: 0.17, PAD_MAX_SHARE: 0.45, GAP: 2, SIDE_MIN: 160 });
+function layoutModel(availW, availH) {
+  var padH = Math.round(Math.min(CHROME.PAD_MAX, Math.max(CHROME.PAD_MIN, availH * CHROME.PAD_VH)));
+  /* on a short viewport a thumb sized pad would still swallow the board */
+  if (padH > availH * CHROME.PAD_MAX_SHARE) padH = Math.max(64, Math.round(availH * CHROME.PAD_MAX_SHARE));
+  var stageH = availH - padH;
+  var side = Math.max(CHROME.SIDE_MIN, Math.min(availW, stageH) - CHROME.GAP);
+  return { padH: padH, stageH: stageH, side: side, cell: side / CONFIG.GRID };
+}
+
+/* Where a floating notice may sit so it covers no control. Pure arithmetic on
+   rects, kept here rather than in VIEW so the harness can prove the toast never
+   lands on a button. rects are viewport space {top,bottom}; hudBottom marks the
+   band above us that belongs to the header. */
+function toastTop(vh, hudBottom, toastH, rects) {
+  var ceiling = vh - 12, i, r;
+  for (i = 0; i < rects.length; i++) {
+    r = rects[i];
+    if (r.bottom <= hudBottom) continue;      // header controls are above us
+    if (r.top < ceiling) ceiling = r.top;     // highest control we must clear
+  }
+  var top = ceiling - toastH - 10;
+  /* ceiling never exceeds vh - 12, so the toast is on screen by construction and
+     the header clamp is the only one that can bind. A third "keep it inside the
+     viewport" clamp was written here and deleted: no probe could reach it, and
+     untestable code is not a safeguard. On a viewport too short for the header
+     and the toast together the toast sits under the header and overflows, which
+     is pinned by assertion rather than papered over. */
+  if (top < hudBottom + 6) top = hudBottom + 6;
+  return top;
+}
+
+function makeQueue(cap) {
+  var q = [];
+  return {
+    cap: cap,
+    push: function (t) { if (q.length >= cap) return false; q.push(t); return true; },
+    shift: function () { return q.length ? q.shift() : 0; },
+    size: function () { return q.length; },
+    clear: function () { q.length = 0; }
+  };
+}
+
+/* ---- agents used by the sweep and by the sanity frames ---- */
+function safeTurns(st) {
+  var out = [], t, h, x, y, ni;
+  for (t = -1; t <= 1; t++) {
+    h = (st.heading + t + 4) & 3;
+    x = cx(st.head) + DX[h]; y = cy(st.head) + DY[h];
+    if (x < 0 || y < 0 || x >= CONFIG.GRID || y >= CONFIG.GRID) continue;
+    ni = y * CONFIG.GRID + x;
+    if (st.cover[ni] > 0) continue;
+    out.push(t);
+  }
+  return out;
+}
+
+/* Does the cell this turn lands on still have a way out next tick? One ply is
+   enough to stop an agent from stepping into a one cell dead end. */
+function turnSurvives(st, t) {
+  var h = (st.heading + t + 4) & 3;
+  var x = cx(st.head) + DX[h], y = cy(st.head) + DY[h];
+  if (x < 0 || y < 0 || x >= CONFIG.GRID || y >= CONFIG.GRID) return false;
+  var ni = y * CONFIG.GRID + x;
+  if (st.cover[ni] > 0) return false;
+  var t2, h2, x2, y2;
+  for (t2 = -1; t2 <= 1; t2++) {
+    h2 = (h + t2 + 4) & 3;
+    x2 = x + DX[h2]; y2 = y + DY[h2];
+    if (x2 < 0 || y2 < 0 || x2 >= CONFIG.GRID || y2 >= CONFIG.GRID) continue;
+    if (st.cover[y2 * CONFIG.GRID + x2] === 0) return true;
+  }
+  return false;
+}
+
+/* HANDOFF section 6.6 agent: a plain random walk. It does not look where it is
+   going, so the edge of the board kills it, which is what the 60 to 200 tick
+   envelope was written against. */
+function agentRandom(st, rng) { return Math.floor(rng() * 3) - 1; }
+
+/* The same walk with one eye open: uniform over the moves that are not
+   instantly fatal. Reported separately because it changes the envelope
+   completely (see BUILD-NOTES). */
+function agentRandomSafe(st, rng) {
+  var safe = safeTurns(st);
+  if (!safe.length) return -1;             // boxed in, any move dies
+  return safe[Math.floor(rng() * safe.length)];
+}
+
+/* BFS over (cell, heading) so the path respects the no reverse rule, avoiding
+   energized cells and the edge. Returns the first turn or null.
+   `avoid` is an optional cell the search refuses to route through, which is how
+   the board filler declines to walk over the discharge pickup. */
+function bfsTurn(st, targets, avoid) {
+  var G = CONFIG.GRID, N = CONFIG.CELLS;
+  var tgt = new Uint8Array(N), i;
+  for (i = 0; i < targets.length; i++) if (targets[i] >= 0) tgt[targets[i]] = 1;
+  var block = (avoid === undefined || avoid === null) ? -1 : avoid;
+  var seen = new Uint8Array(N * 4);
+  var qs = new Int32Array(N * 4), qf = new Int8Array(N * 4);
+  var qh = 0, qt = 0;
+  var s0 = st.head * 4 + st.heading;
+  seen[s0] = 1; qs[qt] = s0; qf[qt] = 2; qt++;   // 2 means "no first move yet"
+  while (qh < qt) {
+    var s = qs[qh], first = qf[qh]; qh++;
+    var c = (s / 4) | 0, hd = s & 3, t, nh, x, y, ni, ns;
+    for (t = -1; t <= 1; t++) {
+      nh = (hd + t + 4) & 3;
+      x = cx(c) + DX[nh]; y = cy(c) + DY[nh];
+      if (x < 0 || y < 0 || x >= G || y >= G) continue;
+      ni = y * G + x;
+      if (st.cover[ni] > 0) continue;
+      if (ni === block && !tgt[ni]) continue;
+      ns = ni * 4 + nh;
+      if (seen[ns]) continue;
+      seen[ns] = 1;
+      var f = first === 2 ? t : first;
+      if (tgt[ni]) return f;
+      qs[qt] = ns; qf[qt] = f; qt++;
+    }
+  }
+  return null;
+}
+
+/* Shared tail for the thinking agents: honour the plan's turn if it survives a
+   ply, otherwise take the safe move with the most open neighbours so the worm
+   does not paint itself into a pocket. Extracted verbatim out of agentGreedy so
+   both agents fail the same way. */
+function survivalTurn(st, rng, t) {
+  if (t !== null && turnSurvives(st, t)) return t;
+  var safe = safeTurns(st);
+  if (!safe.length) return -1;
+  var pool = [], k;
+  for (k = 0; k < safe.length; k++) if (turnSurvives(st, safe[k])) pool.push(safe[k]);
+  if (!pool.length) pool = safe;
+  if (t !== null && pool.indexOf(t) >= 0) return t;
+  var best = pool[0], bestScore = -1, h, x, y, d, nx, ny, open;
+  for (k = 0; k < pool.length; k++) {
+    h = (st.heading + pool[k] + 4) & 3;
+    x = cx(st.head) + DX[h]; y = cy(st.head) + DY[h];
+    open = 0;
+    for (d = 0; d < 4; d++) {
+      nx = x + DX[d]; ny = y + DY[d];
+      if (nx < 0 || ny < 0 || nx >= CONFIG.GRID || ny >= CONFIG.GRID) continue;
+      if (st.cover[ny * CONFIG.GRID + nx] === 0) open++;
+    }
+    if (open > bestScore || (open === bestScore && rng() < 0.34)) { bestScore = open; best = pool[k]; }
+  }
+  return best;
+}
+
+/* Competent play, not perfect play. BFS to the objective avoiding energized
+   cells and the edge, take the discharge pickup once the board is getting
+   dangerous, and never take a step that leaves nowhere to go next tick.
+   That last clause is what stopped this agent dying at 252 ticks while a
+   blind random walker lived past a thousand. */
+function agentGreedy(st, rng) {
+  var targets = [], all = [], i, j, p;
+  for (i = 0; i < st.pairs.length; i++) {
+    p = st.pairs[i];
+    for (j = 0; j < p.active.length; j++) {
+      all.push(p.active[j]);
+      if (st.charge && p.id === st.charge.pairId) targets.push(p.active[j]);
+    }
+  }
+  if (!st.charge) targets = all;
+  var t = null;
+  var crowded = st.energized >= CONFIG.CELLS * 0.22;
+  if (st.pickup >= 0 && crowded) t = bfsTurn(st, [st.pickup]);
+  if (t === null && targets.length) t = bfsTurn(st, targets);
+  /* The pair it is holding may be walled off. Swap colour rather than orbit
+     forever: seed 9027 ran to the tick cap doing exactly that. */
+  if (t === null && all.length) t = bfsTurn(st, all);
+  if (t === null && st.pickup >= 0) t = bfsTurn(st, [st.pickup]);
+  return survivalTurn(st, rng, t);
+}
+
+/* ---- the board filler, the second playstyle section 6.5 promises ----
+   The greedy agent chases combo: shortest legal path to the match, cash out,
+   repeat. Nothing in it ever steers for the breaker, so before this agent
+   existed every median in the sweep read 0 overloads and half of the design
+   was unmeasured. This agent plays the other half on purpose: charge, then
+   deliberately take the LONG way round to grow the uncommitted slice, and only
+   close the circuit once the slice is big enough to move the load meter. It
+   refuses to walk over the discharge pickup, because a board filler standing on
+   the relief valve is throwing away its own wall. */
+
+/* unique cells in the uncommitted slice. Stamped scratch, no per tick alloc. */
+var _plScratch = new Int32Array(CONFIG.CELLS), _plGen = 0;
+function pendingLen(st) {
+  if (!st.charge) return 0;
+  _plGen++;
+  var n = 0, i, c;
+  for (i = st.charge.sliceStart; i < st.trail.length; i++) {
+    c = st.trail[i];
+    if (_plScratch[c] !== _plGen) { _plScratch[c] = _plGen; n++; }
+  }
+  return n;
+}
+/* the cells this circuit would ADD to the load meter, which is not the same
+   number: re walking wire that is already live scores again but moves the
+   breaker not at all. The filler steers on this one. */
+function pendingNew(st) {
+  if (!st.charge) return 0;
+  _plGen++;
+  var n = 0, i, c;
+  for (i = st.charge.sliceStart; i < st.trail.length; i++) {
+    c = st.trail[i];
+    if (_plScratch[c] !== _plGen) { _plScratch[c] = _plGen; if (st.cover[c] === 0) n++; }
+  }
+  return n;
+}
+
+/* The free reachable cell furthest from the terminal we are heading for.
+   Walking there and back is what makes the circuit long. Deterministic from the
+   board, so it does not oscillate between two waypoints. */
+function fillWaypoint(st, from) {
+  var reach = reachMask(st), best = -1, bd = -1, i, d;
+  for (i = 0; i < CONFIG.CELLS; i++) {
+    if (st.cell[i] !== EMPTY || !reach[i] || i === st.pickup) continue;
+    d = manhattan(i, from);
+    if (d > bd) { bd = d; best = i; }
+  }
+  return best;
+}
+
+function agentFiller(st, rng) {
+  var i, j, p, all = [], match = [];
+  for (i = 0; i < st.pairs.length; i++) {
+    p = st.pairs[i];
+    for (j = 0; j < p.active.length; j++) {
+      all.push(p.active[j]);
+      if (st.charge && p.id === st.charge.pairId) match.push(p.active[j]);
+    }
+  }
+  var t = null, pick = st.pickup >= 0 ? st.pickup : null;
+  if (!st.charge || !match.length) {
+    t = bfsTurn(st, all, pick);
+  } else {
+    /* stop detouring as the meter closes on the breaker: the last circuit
+       before an overload should be cashed, not extended past it */
+    var room = CONFIG.OVERLOAD_CELLS - st.energized + 2;
+    var want = Math.min(CONFIG.FILL_TARGET, room);
+    if (pendingNew(st) < want) {
+      var wp = fillWaypoint(st, match[0]);
+      if (wp >= 0 && wp !== st.head) t = bfsTurn(st, [wp], pick);
+    }
+    if (t === null) t = bfsTurn(st, match, pick);
+    if (t === null) t = bfsTurn(st, all, pick);
+  }
+  return survivalTurn(st, rng, t);
+}
+
+function boardAscii(st) {
+  var g = CONFIG.GRID, out = [], y, x, i, ch;
+  var TL = ['G', 'B', 'A', 'R'];
+  for (y = 0; y < g; y++) {
+    var row = '';
+    for (x = 0; x < g; x++) {
+      i = y * g + x;
+      if (i === st.head) ch = '@';
+      else if (st.cell[i] === TERM) ch = TL[st.tcol[i] - 1] || 'T';
+      else if (st.cell[i] === PICK) ch = '*';
+      else if (st.cover[i] > 0) ch = '#';
+      else if (st.cell[i] === WIRE) ch = '.';
+      else ch = ' ';
+      row += ch;
+    }
+    out.push('|' + row + '|');
+  }
+  return out.join('\n');
+}
+// ---- SIM_EXPORT_END ----
+
+// ---- SAVE_EXPORT_START ----
+/* ===================================================================
+   8. SAVE — lw_wireworm_v1. Read modify write on every touch: two tabs
+        must not clobber each other. Counters add, bests take the max.
+   =================================================================== */
+var _STORE = (function () {
+  try { if (typeof localStorage !== 'undefined' && localStorage) return localStorage; } catch (e) {}
+  var m = {};
+  return {
+    getItem: function (k) { return Object.prototype.hasOwnProperty.call(m, k) ? m[k] : null; },
+    setItem: function (k, v) { m[k] = String(v); },
+    removeItem: function (k) { delete m[k]; }
+  };
+})();
+
+function defaultSave() {
+  return {
+    v: 1, gameId: CONFIG.GAME_ID,
+    stats: { runs: 0, deaths: 0, ticks: 0, circuits: 0, overloads: 0, score: 0 },
+    best: { score: 0, combo: 1, ticks: 0, longest: 0, circuits: 0 },
+    bestRun: null,
+    daily: { date: '', score: 0, streak: 0, best: 0 },
+    unlocks: [],
+    settings: { vol: 0.7, mute: false, haptics: true, motion: 'auto', zones: true }
+  };
+}
+
+function migrateSave(s) {
+  if (!s || typeof s !== 'object') return defaultSave();
+  if (typeof s.v !== 'number') s.v = 1;
+  var d = defaultSave(), k, k2;
+  for (k in d) {
+    if (!Object.prototype.hasOwnProperty.call(d, k)) continue;
+    if (s[k] === undefined || s[k] === null) { s[k] = d[k]; continue; }
+    if (typeof d[k] === 'object' && !Array.isArray(d[k]) && d[k] !== null) {
+      if (typeof s[k] !== 'object' || Array.isArray(s[k])) { s[k] = d[k]; continue; }
+      for (k2 in d[k]) {
+        if (s[k][k2] === undefined || (typeof d[k][k2] === 'number' && typeof s[k][k2] !== 'number')) s[k][k2] = d[k][k2];
+      }
+    }
+  }
+  s.gameId = CONFIG.GAME_ID;
+  return s;
+}
+
+function loadSave() {
+  var raw = null;
+  try { raw = _STORE.getItem(CONFIG.SAVE_KEY); } catch (e) { return defaultSave(); }
+  if (!raw) return defaultSave();
+  try {
+    var parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return defaultSave();
+    return migrateSave(parsed);
+  } catch (e) { return defaultSave(); }
+}
+
+function writeSave(s) {
+  try { _STORE.setItem(CONFIG.SAVE_KEY, JSON.stringify(s)); return true; } catch (e) { return false; }
+}
+
+/* Every mutation reads fresh, folds, and writes. mut receives the live object. */
+function updateSave(mut) {
+  var s = loadSave();
+  mut(s);
+  writeSave(s);
+  return s;
+}
+
+function recordRun(st, inputLog) {
+  return updateSave(function (s) {
+    s.stats.runs += 1;
+    if (!st.alive) s.stats.deaths += 1;
+    s.stats.ticks += st.tick;
+    s.stats.circuits += st.circuitsCompleted;
+    s.stats.overloads += st.overloads;
+    s.stats.score += st.score;
+    if (st.score > s.best.score) {
+      s.best.score = st.score;
+      s.bestRun = { seed: st.seed, log: inputLog || '', score: st.score, ticks: st.tick };
+    }
+    if (st.comboPeak > s.best.combo) s.best.combo = st.comboPeak;
+    if (st.tick > s.best.ticks) s.best.ticks = st.tick;
+    if (st.longest > s.best.longest) s.best.longest = st.longest;
+    if (st.circuitsCompleted > s.best.circuits) s.best.circuits = st.circuitsCompleted;
+  });
+}
+
+function recordDaily(dateStr, score) {
+  return updateSave(function (s) {
+    var prev = s.daily.date;
+    if (prev === dateStr) { if (score > s.daily.score) s.daily.score = score; return; }
+    var y = new Date(dateStr + 'T00:00:00Z');
+    y.setUTCDate(y.getUTCDate() - 1);
+    var yesterday = y.toISOString().slice(0, 10);
+    s.daily.streak = (prev === yesterday) ? s.daily.streak + 1 : 1;
+    s.daily.date = dateStr;
+    s.daily.score = score;
+    if (score > s.daily.best) s.daily.best = score;
+  });
+}
+
+function encodeLog(arr) {
+  var out = '', i;
+  for (i = 0; i < arr.length; i++) out += arr[i] < 0 ? 'L' : (arr[i] > 0 ? 'R' : 'S');
+  return out;
+}
+function decodeLog(s) {
+  var out = [], i;
+  if (typeof s !== 'string') return out;
+  for (i = 0; i < s.length; i++) out.push(s[i] === 'L' ? -1 : (s[i] === 'R' ? 1 : 0));
+  return out;
+}
+// ---- SAVE_EXPORT_END ----
+
+// ---- TEST_EXPORT_START ----
+/* ===================================================================
+   9. TEST — the assertion harness. Runs headless from sim.js and in the
+        page at ?test=1. Written before the view, on purpose.
+   =================================================================== */
+var TEST = {
+  results: [],
+  assert: function (name, cond, detail) { this.results.push({ name: name, pass: !!cond, detail: cond ? '' : (detail || '') }); },
+  eq: function (name, a, b) { this.assert(name, a === b, 'expected ' + b + ', got ' + a); },
+  near: function (name, a, b, tol) { this.assert(name, Math.abs(a - b) <= tol, 'expected about ' + b + ', got ' + a); },
+  ge: function (name, a, b) { this.assert(name, a >= b, 'expected at least ' + b + ', got ' + a); },
+  le: function (name, a, b) { this.assert(name, a <= b, 'expected at most ' + b + ', got ' + a); },
+  reset: function () { this.results = []; },
+  report: function () {
+    var passed = 0, failed = 0, failures = [], i;
+    for (i = 0; i < this.results.length; i++) {
+      if (this.results[i].pass) passed++;
+      else { failed++; failures.push(this.results[i]); }
+    }
+    return { total: this.results.length, passed: passed, failed: failed, failures: failures };
+  }
+};
+
+/* ---- helpers shared by suites ---- */
+function runScript(seed, turns, cap) {
+  var st = newGame(seed), evs = [], i, r;
+  var n = cap || turns.length;
+  for (i = 0; i < n && st.alive; i++) {
+    r = step(st, turns[i % turns.length]);
+    for (var k = 0; k < r.events.length; k++) { r.events[k].tick = st.tick; evs.push(r.events[k]); }
+  }
+  return { st: st, events: evs };
+}
+function playAgent(seed, agent, agentSeed, maxTicks, onTick, opts) {
+  var st = newGame(seed, opts), rng = makeRNG(agentSeed >>> 0), log = [], t, n = 0;
+  var lim = maxTicks || 20000;
+  while (st.alive && n < lim) {
+    t = agent(st, rng);
+    log.push(t);
+    step(st, t);
+    n++;
+    if (onTick) onTick(st, n);
+  }
+  return { st: st, log: log };
+}
+function invariants(st) {
+  var i, live = 0, bad = [];
+  for (i = 0; i < CONFIG.CELLS; i++) {
+    if (st.cover[i] > 0) {
+      live++;
+      if (st.cell[i] !== WIRE) bad.push('live cell ' + i + ' code ' + st.cell[i]);
+    }
+    if (st.cell[i] === TERM && st.cover[i] > 0) bad.push('terminal energized at ' + i);
+  }
+  if (live !== st.energized) bad.push('energized counter ' + st.energized + ' vs ' + live);
+  if (live > CONFIG.CELLS) bad.push('energized over capacity');
+  if (st.score < 0 || !isFinite(st.score)) bad.push('score ' + st.score);
+  if (st.tick < 0) bad.push('tick ' + st.tick);
+  if (st.energized < 0) bad.push('energized negative');
+  /* every terminal that a pair still owns must actually be on the board */
+  for (i = 0; i < st.pairs.length; i++) {
+    for (var j = 0; j < st.pairs[i].active.length; j++) {
+      var c = st.pairs[i].active[j];
+      if (st.cell[c] !== TERM) bad.push('pair ' + st.pairs[i].id + ' lost terminal at ' + c);
+    }
+  }
+  return bad;
+}
+
+/* ---- suite 1: config and rng ---- */
+function suiteConfig() {
+  TEST.eq('config grid is 20', CONFIG.GRID, 20);
+  TEST.eq('config cells is 400', CONFIG.CELLS, 400);
+  TEST.eq('overload cells is 55 percent of the grid', CONFIG.OVERLOAD_CELLS, Math.floor(CONFIG.CELLS * CONFIG.OVERLOAD_PCT));
+  TEST.eq('combo ladder tops out at 4', CONFIG.COMBO_LADDER[CONFIG.COMBO_LADDER.length - 1], 4);
+  TEST.eq('combo ladder has 5 rungs', CONFIG.COMBO_LADDER.length, 5);
+  TEST.eq('combo window is 40 ticks', CONFIG.COMBO_WINDOW, 40);
+  TEST.eq('tick floor is 90ms', CONFIG.TICK_FLOOR_MS, 90);
+  TEST.eq('tick start is 220ms', CONFIG.TICK_START_MS, 220);
+  TEST.eq('tick step is 4ms', CONFIG.TICK_STEP_MS, 4);
+  TEST.eq('two pairs on the board', CONFIG.PAIRS, 2);
+  TEST.assert('config is frozen', Object.isFrozen(CONFIG));
+  var w = 0, i;
+  for (i = 0; i < COLORS.length; i++) w += COLORS[i].weight;
+  TEST.eq('colour weights sum to 100', w, 100);
+  TEST.eq('four colours', COLORS.length, 4);
+  TEST.eq('red multiplier is 4', COLORS[3].mult, 4.0);
+  TEST.eq('green multiplier is 1', COLORS[0].mult, 1.0);
+  TEST.assert('every colour has its own glyph', (function () {
+    var seen = {}, i;
+    for (i = 0; i < COLORS.length; i++) { if (seen[COLORS[i].glyph]) return false; seen[COLORS[i].glyph] = 1; }
+    return true;
+  })());
+}
+
+function suiteRNG() {
+  var a = makeRNG(12345), b = makeRNG(12345), i, same = true;
+  for (i = 0; i < 500; i++) if (a() !== b()) same = false;
+  TEST.assert('same seed gives the same stream', same);
+  var c = makeRNG(12345), d = makeRNG(12346);
+  TEST.assert('different seeds diverge', c() !== d());
+  var r = makeRNG(7), ok = true;
+  for (i = 0; i < 2000; i++) { var v = r(); if (v < 0 || v >= 1) ok = false; }
+  TEST.assert('rng stays inside 0 to 1', ok);
+  var r2 = makeRNG(9), okInt = true;
+  for (i = 0; i < 2000; i++) { var n = r2.int(7); if (n < 0 || n > 6 || n !== Math.floor(n)) okInt = false; }
+  TEST.assert('rng int stays in range', okInt);
+  var r3 = makeRNG(11), okR = true;
+  for (i = 0; i < 2000; i++) { var q = r3.range(3, 9); if (q < 3 || q > 9) okR = false; }
+  TEST.assert('rng range respects both bounds', okR);
+  var src = [1, 2, 3, 4, 5, 6, 7, 8], sh = makeRNG(3).shuffle(src);
+  TEST.eq('shuffle keeps the length', sh.length, src.length);
+  TEST.assert('shuffle keeps every member', (function () {
+    var s1 = src.slice().sort(), s2 = sh.slice().sort(), i;
+    for (i = 0; i < s1.length; i++) if (s1[i] !== s2[i]) return false;
+    return true;
+  })());
+  TEST.assert('shuffle does not mutate the source', src[0] === 1 && src[7] === 8);
+  var wr = makeRNG(5), counts = { a: 0, b: 0 }, pairs = [['a', 90], ['b', 10]];
+  for (i = 0; i < 4000; i++) counts[wr.weighted(pairs)]++;
+  TEST.assert('weighted picks respect the weights', counts.a > counts.b * 3, counts.a + ' vs ' + counts.b);
+  TEST.eq('seedFromString is stable', seedFromString('wireworm'), seedFromString('wireworm'));
+  TEST.assert('seedFromString separates inputs', seedFromString('a') !== seedFromString('b'));
+  TEST.assert('daily seed depends on the date', dailySeed('2026-08-16') !== dailySeed('2026-08-17'));
+  /* the state stepped generator must match the closure generator exactly */
+  var closure = makeRNG(4242), stateObj = { rngState: 4242 }, match = true;
+  for (i = 0; i < 300; i++) if (closure() !== rngNext(stateObj)) match = false;
+  TEST.assert('state stepped rng matches the closure rng', match);
+}
+
+/* ---- suite 2: new game and movement ---- */
+function suiteNewGame() {
+  var st = newGame(1);
+  TEST.eq('worm starts at the centre', st.head, CONFIG.START_CELL);
+  TEST.eq('start heading is right', st.heading, 1);
+  TEST.eq('tick starts at zero', st.tick, 0);
+  TEST.eq('score starts at zero', st.score, 0);
+  TEST.eq('nothing is energized at the start', st.energized, 0);
+  TEST.eq('two pairs are on the board', st.pairs.length, 2);
+  TEST.eq('four terminals are on the board', (function () {
+    var n = 0, i; for (i = 0; i < CONFIG.CELLS; i++) if (st.cell[i] === TERM) n++; return n;
+  })(), 4);
+  TEST.assert('no terminal starts on wire', (function () {
+    var i; for (i = 0; i < CONFIG.CELLS; i++) if (st.cell[i] === TERM && st.cover[i] > 0) return false;
+    return true;
+  })());
+  TEST.assert('the worm is alive', st.alive === true && st.cause === null);
+  TEST.eq('the trail holds the start cell', st.trail.length, 1);
+  TEST.eq('start cell is wire', st.cell[CONFIG.START_CELL], WIRE);
+  TEST.eq('no pickup at the start', st.pickup, -1);
+  TEST.eq('new game invariants hold', invariants(st).join('; '), '');
+}
+
+function suiteMovement() {
+  var st = newGame(2);
+  step(st, 0);
+  TEST.eq('a straight step advances one cell right', st.head, CONFIG.START_CELL + 1);
+  TEST.eq('a step raises the tick', st.tick, 1);
+  TEST.eq('the trail grows by one', st.trail.length, 2);
+  st = newGame(2); step(st, -1);
+  TEST.eq('turning left from right faces up', st.heading, 0);
+  st = newGame(2); step(st, 1);
+  TEST.eq('turning right from right faces down', st.heading, 2);
+  st = newGame(2); step(st, -1); step(st, -1); step(st, -1); step(st, -1);
+  TEST.eq('four left turns come back to the start heading', st.heading, 1);
+  /* run into the right hand edge */
+  st = newGame(3);
+  var guard = 0;
+  while (st.alive && guard++ < 60) step(st, 0);
+  TEST.assert('running off the board kills the worm', !st.alive);
+  TEST.eq('the wall is named as the cause', st.cause, 'wall');
+  TEST.assert('the fatal tick is not counted', st.tick < 20);
+  /* dead wire is passable: loop a 4 cell square twice */
+  st = newGame(4);
+  var sq = [0, 1, 0, 1, 0, 1, 0, 1], i, ok = true;
+  for (i = 0; i < 8; i++) { step(st, sq[i] === 1 ? 1 : 0); if (!st.alive) ok = false; }
+  TEST.assert('the worm crosses its own dead trail', ok && st.alive);
+  TEST.assert('a stopped worm ignores further steps', (function () {
+    var s2 = newGame(5), g = 0;
+    while (s2.alive && g++ < 60) step(s2, 0);
+    var t = s2.tick, sc = s2.score;
+    step(s2, 0); step(s2, 1);
+    return s2.tick === t && s2.score === sc;
+  })());
+}
+
+/* ---- suite 3: circuits, the core battery ---- */
+function directCircuit(seed) {
+  /* Force a circuit by walking the worm onto a terminal, then onto its twin,
+     using the greedy agent. Returns the run and the completion events. */
+  var st = newGame(seed), rng = makeRNG(seed + 1), evs = [], n = 0, r;
+  while (st.alive && n < 4000) {
+    r = step(st, agentGreedy(st, rng));
+    for (var k = 0; k < r.events.length; k++) { r.events[k].tick = st.tick; evs.push(r.events[k]); }
+    if (evs.length && evs[evs.length - 1].t === 'completed') break;
+    n++;
+  }
+  return { st: st, events: evs };
+}
+
+function suiteCircuitBattery() {
+  /* 1000 synthetic trail shapes driven by scripted turn sequences. For every
+     completion the energized cell set is compared against a brute force
+     reference rebuilt from the recorded trail indices. */
+  var shapes = 1000, rng = makeRNG(0xC13C1717), i, j;
+  var checked = 0, mismatched = 0, selfCross = 0, revisit = 0, orderBad = 0, coverBad = 0;
+  var maxLen = 0, blownChecked = 0, blownClean = 0;
+  for (i = 0; i < shapes; i++) {
+    var st = newGame(1000 + i), r = makeRNG(9000 + i);
+    var n = 0, res;
+    while (st.alive && n < 900) {
+      /* biased random walk: long straights plus bursts of turning produce
+         spirals, switchbacks and genuine self crossings */
+      var roll = r();
+      var turn = roll < 0.55 ? 0 : (roll < 0.78 ? -1 : 1);
+      var safe = safeTurns(st);
+      if (safe.indexOf(turn) < 0) turn = safe.length ? safe[r.int(safe.length)] : 0;
+      res = step(st, turn);
+      n++;
+      for (j = 0; j < res.events.length; j++) {
+        var e = res.events[j];
+        if (e.t !== 'completed') continue;
+        checked++;
+        /* reference: unique cells of trail[s..e] in first visit order */
+        var ref = [], seen = {}, k, c;
+        for (k = e.s; k <= e.e; k++) {
+          c = st.trail[k];
+          if (!seen[c]) { seen[c] = 1; ref.push(c); }
+        }
+        if (ref.length !== e.cells.length) { mismatched++; }
+        else {
+          for (k = 0; k < ref.length; k++) if (ref[k] !== e.cells[k]) { orderBad++; break; }
+        }
+        var refSet = {};
+        for (k = 0; k < ref.length; k++) refSet[ref[k]] = 1;
+        for (k = 0; k < e.cells.length; k++) if (!refSet[e.cells[k]]) { mismatched++; break; }
+        /* the slice must be shorter than the raw index span whenever it
+           crossed itself, which is how we know crossings are in the sample */
+        if (ref.length < (e.e - e.s + 1)) selfCross++;
+        /* does any slice cell also appear outside the slice */
+        var outside = false;
+        for (k = 0; k < st.trail.length && !outside; k++) {
+          if (k >= e.s && k <= e.e) continue;
+          if (refSet[st.trail[k]]) outside = true;
+        }
+        if (outside) revisit++;
+        if (ref.length > maxLen) maxLen = ref.length;
+        /* the completion may have tripped the breaker in the same step, which
+           legally clears every cell it just lit. Check the right thing. */
+        var blew = false, wiped = false;
+        for (k = 0; k < res.events.length; k++) {
+          if (res.events[k].t === 'overload') blew = true;
+          if (res.events[k].t === 'discharged' || res.events[k].t === 'rescue') wiped = true;
+        }
+        if (blew) { blownChecked++; if (st.energized === 0) blownClean++; }
+        else if (wiped) { /* the same tick discharged wire, nothing to assert */ }
+        else { for (k = 0; k < e.cells.length; k++) if (st.cover[e.cells[k]] === 0) { coverBad++; break; } }
+      }
+    }
+  }
+  TEST.ge('circuit battery produced completions to check', checked, 400);
+  TEST.eq('every energized slice matches the brute force reference', mismatched, 0);
+  TEST.eq('slice cell order matches first visit order', orderBad, 0);
+  TEST.ge('the battery contains self crossing circuits', selfCross, 50);
+  TEST.ge('the battery contains circuits over cells visited elsewhere', revisit, 50);
+  TEST.eq('every slice cell is energized right after completion', coverBad, 0);
+  TEST.eq('a completion that trips the breaker leaves the board clear', blownChecked - blownClean, 0);
+  TEST.ge('the battery tripped the breaker at least once', blownChecked, 1);
+  TEST.le('no slice can exceed the grid', maxLen, CONFIG.CELLS);
+}
+
+function suiteCircuitCases() {
+  var d = directCircuit(77);
+  var comp = null, i;
+  for (i = 0; i < d.events.length; i++) if (d.events[i].t === 'completed') comp = d.events[i];
+  TEST.assert('a scripted run completes a circuit', comp !== null);
+  if (comp) {
+    TEST.ge('a completed circuit has length', comp.len, 1);
+    TEST.eq('circuit length equals the unique cell count', comp.len, comp.cells.length);
+    TEST.ge('a completed circuit scores', comp.score, 1);
+    TEST.eq('the first circuit scores at combo one', comp.combo, 1);
+    TEST.eq('score equals length times colour times combo', comp.score,
+      Math.floor(comp.len * COLORS[comp.ci].mult * comp.combo));
+    TEST.eq('energized equals the circuit length after one circuit',
+      d.st.energized, comp.cells.length);
+    TEST.eq('the charge clears on completion', d.st.charge, null);
+    TEST.eq('the board still holds two pairs', d.st.pairs.length, CONFIG.PAIRS);
+  }
+  /* a cell shared by two circuits survives the older one discharging */
+  var st = newGame(1);
+  /* hand build the state: two circuits sharing cell 100 */
+  st.cell[100] = WIRE; st.cell[101] = WIRE; st.cell[102] = WIRE;
+  st.cover[100] = 2; st.cover[101] = 1; st.cover[102] = 1;
+  st.energized = 3;
+  st.circuits = [
+    { id: 1, ci: 0, cells: [100, 101], len: 2, tick: 1, score: 2 },
+    { id: 2, ci: 1, cells: [100, 102], len: 2, tick: 2, score: 3 }
+  ];
+  st.pickup = 5; st.head = 5;
+  var ev = [];
+  touchPickup(st, ev);
+  TEST.eq('discharge takes the oldest circuit', st.circuits.length === 1 ? st.circuits[0].id : -1, 2);
+  TEST.assert('a cell in two circuits stays energized after the older discharges', st.cover[100] === 1 && st.cell[100] === WIRE);
+  TEST.eq('the shared cell is still counted as energized', st.cover[100] > 0, true);
+  TEST.eq('a cell only in the discharged circuit is erased', st.cell[101], EMPTY);
+  TEST.eq('the cell of the surviving circuit is untouched', st.cell[102], WIRE);
+  TEST.eq('energized count drops by exactly one', st.energized, 2);
+  TEST.eq('the discharge reports the cells it removed', ev[0].cells, 1);
+  /* discharging the second circuit now clears the shared cell too */
+  st.pickup = 6; var ev2 = [];
+  touchPickup(st, ev2);
+  TEST.eq('the shared cell clears when the last owner discharges', st.cell[100], EMPTY);
+  TEST.eq('nothing is energized after both circuits discharge', st.energized, 0);
+}
+
+function suiteCombo() {
+  var st = newGame(1);
+  st.comboIdx = -1;
+  st.comboIdx = st.comboIdx >= 0 ? st.comboIdx + 1 : 0;
+  TEST.eq('the first circuit sits at combo one', CONFIG.COMBO_LADDER[st.comboIdx], 1);
+  var idx = 0, i;
+  for (i = 0; i < 10; i++) idx = Math.min(idx + 1, CONFIG.COMBO_LADDER.length - 1);
+  TEST.eq('the ladder caps at four', CONFIG.COMBO_LADDER[idx], 4);
+  TEST.eq('the second rung is one and a half', CONFIG.COMBO_LADDER[1], 1.5);
+  TEST.eq('the third rung is two', CONFIG.COMBO_LADDER[2], 2);
+  TEST.eq('the fourth rung is three', CONFIG.COMBO_LADDER[3], 3);
+  /* the window is per rung now: it tightens as the ladder climbs, so the top of
+     the ladder is something you HOLD rather than something you reach. */
+  TEST.eq('there is a window for every rung of the ladder', CONFIG.COMBO_WINDOWS.length, CONFIG.COMBO_LADDER.length);
+  TEST.eq('the first rung keeps the spec window of 40 ticks', CONFIG.COMBO_WINDOWS[0], CONFIG.COMBO_WINDOW);
+  TEST.assert('the window never widens as the ladder climbs', (function () {
+    var k;
+    for (k = 1; k < CONFIG.COMBO_WINDOWS.length; k++) if (CONFIG.COMBO_WINDOWS[k] > CONFIG.COMBO_WINDOWS[k - 1]) return false;
+    return true;
+  })());
+  TEST.assert('holding the top rung costs at least a third less time than the bottom',
+    CONFIG.COMBO_WINDOWS[CONFIG.COMBO_WINDOWS.length - 1] <= CONFIG.COMBO_WINDOW * 0.67,
+    'top window ' + CONFIG.COMBO_WINDOWS[CONFIG.COMBO_WINDOWS.length - 1]);
+  var w;
+  for (idx = 0; idx < CONFIG.COMBO_LADDER.length; idx++) {
+    w = CONFIG.COMBO_WINDOWS[idx];
+    var s2 = newGame(2 + idx);
+    s2.comboIdx = idx; s2.lastCompleteTick = 0; s2.tick = 0;
+    for (i = 0; i < w && s2.alive; i++) { var sa = safeTurns(s2); step(s2, sa.indexOf(0) >= 0 ? 0 : (sa.length ? sa[0] : 0)); }
+    TEST.assert('combo rung ' + idx + ' survives to the edge of its own window', s2.comboIdx >= 0 || !s2.alive, 'idx ' + s2.comboIdx);
+    var s3 = newGame(300 + idx);
+    s3.comboIdx = idx; s3.lastCompleteTick = 0; s3.tick = 0;
+    for (i = 0; i < w + 3 && s3.alive; i++) {
+      var sf = safeTurns(s3);
+      step(s3, sf.indexOf(0) >= 0 ? 0 : (sf.length ? sf[0] : 0));
+    }
+    TEST.assert('combo rung ' + idx + ' drops once its window passes', s3.comboIdx === -1 || !s3.alive, 'idx ' + s3.comboIdx);
+  }
+  /* the ladder must not pin: a run that pauses one tick past the top window
+     falls all the way back to x1, not down one rung */
+  var s4 = newGame(77);
+  s4.comboIdx = 4; s4.lastCompleteTick = 0; s4.tick = 0;
+  for (i = 0; i < CONFIG.COMBO_WINDOWS[4] + 2 && s4.alive; i++) {
+    var sg = safeTurns(s4); step(s4, sg.indexOf(0) >= 0 ? 0 : (sg.length ? sg[0] : 0));
+  }
+  TEST.assert('a dropped combo falls to the bottom of the ladder', comboMult(s4) === 1 || !s4.alive, 'mult ' + comboMult(s4));
+}
+
+/* ---- suite 4: overload and discharge ---- */
+function suiteOverload() {
+  /* just under the line: no breaker */
+  var st = newGame(11), i;
+  for (i = 0; i < CONFIG.OVERLOAD_CELLS - 1; i++) { st.cell[i] = WIRE; st.cover[i] = 1; }
+  st.energized = CONFIG.OVERLOAD_CELLS - 1;
+  st.circuits = [{ id: 1, ci: 0, cells: [0], len: 1, tick: 1, score: 1 }];
+  TEST.assert('219 energized cells do not trip the breaker', st.energized < CONFIG.OVERLOAD_CELLS);
+  var before = st.score;
+  if (st.energized >= CONFIG.OVERLOAD_CELLS) fireOverload(st, []);
+  TEST.eq('score is untouched below the threshold', st.score, before);
+  /* exactly on the line: breaker */
+  st.cell[CONFIG.OVERLOAD_CELLS - 1] = WIRE; st.cover[CONFIG.OVERLOAD_CELLS - 1] = 1;
+  st.energized = CONFIG.OVERLOAD_CELLS;
+  var ev = [];
+  fireOverload(st, ev);
+  TEST.eq('the breaker pays five per energized cell', ev[0].bonus, CONFIG.OVERLOAD_CELLS * CONFIG.OVERLOAD_BONUS_PER_CELL);
+  TEST.eq('the breaker adds the bonus to the score', st.score, before + CONFIG.OVERLOAD_CELLS * CONFIG.OVERLOAD_BONUS_PER_CELL);
+  TEST.eq('the breaker clears every energized cell', st.energized, 0);
+  TEST.eq('the breaker empties the circuit list', st.circuits.length, 0);
+  TEST.assert('the breaker deletes the wire', (function () {
+    var i, n = 0;
+    for (i = 0; i < CONFIG.CELLS; i++) if (st.cell[i] === WIRE) n++;
+    return n === 1;                        // only the cell the worm stands on
+  })());
+  TEST.eq('the worm keeps its own cell after the breaker', st.cell[st.head], WIRE);
+  TEST.eq('the breaker counter rises', st.overloads, 1);
+  /* combo is preserved and an open circuit restarts where the player stands */
+  var s2 = newGame(12);
+  s2.comboIdx = 2;
+  s2.trail = [10, 11, 12, 13]; s2.head = 13;
+  s2.charge = { pairId: 1, ci: 0, mult: 1, sliceStart: 0 };
+  s2.energized = 0;
+  fireOverload(s2, []);
+  TEST.eq('the breaker preserves the combo', s2.comboIdx, 2);
+  TEST.eq('an open circuit restarts at the worm', s2.charge.sliceStart, s2.trail.length - 1);
+  TEST.assert('energized never exceeds the grid', (function () {
+    var s = newGame(13), i;
+    for (i = 0; i < CONFIG.CELLS; i++) { s.cell[i] = WIRE; s.cover[i] = 3; }
+    s.energized = CONFIG.CELLS;
+    return s.energized <= CONFIG.CELLS;
+  })());
+}
+
+function suiteDischarge() {
+  /* a pickup never lands next to live wire */
+  var st = newGame(21), i, x, y;
+  for (i = 0; i < 60; i++) { st.cell[i] = WIRE; st.cover[i] = 1; }
+  st.energized = 60;
+  st.circuits = [{ id: 1, ci: 0, cells: [0], len: 1, tick: 1, score: 1 }];
+  var p = spawnPickup(st);
+  TEST.assert('a pickup found a legal cell', p >= 0);
+  if (p >= 0) {
+    var bad = false;
+    x = cx(p); y = cy(p);
+    for (var dy = -1; dy <= 1; dy++) for (var dx = -1; dx <= 1; dx++) {
+      var nx = x + dx, ny = y + dy;
+      if (nx < 0 || ny < 0 || nx >= CONFIG.GRID || ny >= CONFIG.GRID) continue;
+      if (st.cover[ny * CONFIG.GRID + nx] > 0) bad = true;
+    }
+    TEST.assert('the pickup is not adjacent to live wire', !bad);
+    TEST.eq('the pickup sits on its own cell code', st.cell[p], PICK);
+  }
+  /* unreachable cells are off limits: wall off the top left corner */
+  var s2 = newGame(22);
+  s2.head = 210;
+  var wallCells = [2, 22, 42, 40, 41], k;
+  for (k = 0; k < wallCells.length; k++) { s2.cell[wallCells[k]] = WIRE; s2.cover[wallCells[k]] = 1; }
+  s2.energized = wallCells.length;
+  s2.circuits = [{ id: 1, ci: 0, cells: wallCells.slice(), len: 5, tick: 1, score: 1 }];
+  var reach = reachMask(s2);
+  var pocket = [0, 1, 20, 21];
+  var pocketSealed = true;
+  for (k = 0; k < pocket.length; k++) if (reach[pocket[k]]) pocketSealed = false;
+  TEST.assert('the flood fill seals a walled off pocket', pocketSealed);
+  var cands = spawnCandidates(s2), inPocket = false;
+  for (k = 0; k < cands.length; k++) if (pocket.indexOf(cands[k]) >= 0) inPocket = true;
+  TEST.assert('nothing spawns inside an unreachable pocket', !inPocket);
+  var many = 0;
+  for (k = 0; k < 40; k++) { s2.pickup = -1; s2.cell[spawnPickup(s2)] = PICK; }
+  for (k = 0; k < pocket.length; k++) if (s2.cell[pocket[k]] === PICK) many++;
+  TEST.eq('forty pickup rolls never land in the pocket', many, 0);
+  /* the pickup timer */
+  var s3 = newGame(23);
+  s3.circuits = [{ id: 1, ci: 0, cells: [5], len: 1, tick: 1, score: 1 }];
+  s3.cell[5] = WIRE; s3.cover[5] = 1; s3.energized = 1;
+  var spawnedAt = -1, g = 0;
+  while (s3.alive && g < 400 && spawnedAt < 0) {
+    var sf = safeTurns(s3);
+    var r = step(s3, sf.indexOf(0) >= 0 ? 0 : (sf.length ? sf[0] : 0));
+    for (k = 0; k < r.events.length; k++) if (r.events[k].t === 'pickup') spawnedAt = s3.tick;
+    g++;
+  }
+  TEST.assert('a pickup arrives on the discharge interval', spawnedAt >= CONFIG.DISCHARGE_INTERVAL || spawnedAt < 0);
+  TEST.assert('no pickup exists before the interval', CONFIG.DISCHARGE_INTERVAL === 90);
+  /* discharge with no circuits is harmless */
+  var s4 = newGame(24);
+  s4.pickup = 7;
+  var ev4 = [];
+  touchPickup(s4, ev4);
+  TEST.eq('discharging an empty board removes nothing', ev4[0].cells, 0);
+  TEST.eq('the pickup is consumed either way', s4.pickup, -1);
+}
+
+/* ---- suite 5: spawn rules ---- */
+function suiteSpawns() {
+  var i, j, st, reds = 0, greens = 0, redFar = 0, greenClose = 0, onWire = 0, unreachable = 0;
+  var maxDistOk = 0, maxDistChecked = 0;
+  for (i = 0; i < 240; i++) {
+    st = newGame(3000 + i);
+    /* wander a little so the board is not blank */
+    var r = makeRNG(500 + i), n = 0;
+    while (st.alive && n < 40) { var sf = safeTurns(st); step(st, sf.length ? sf[r.int(sf.length)] : 0); n++; }
+    if (!st.alive) continue;
+    var cand = spawnCandidates(st);
+    var reach = reachMask(st);
+    /* force one pair of each interesting colour by driving the generator */
+    for (j = 0; j < st.pairs.length; j++) {
+      var p = st.pairs[j];
+      if (p.active.length !== 2) continue;
+      var a = p.active[0], b = p.active[1];
+      if (st.cell[a] !== TERM || st.cell[b] !== TERM) onWire++;
+      if (!reach[a] || !reach[b]) unreachable++;
+      if (p.color === 'red') { reds++; if (manhattan(a, b) >= CONFIG.RED_MIN_DIST) redFar++; }
+      if (p.color === 'green') { greens++; if (manhattan(a, b) <= CONFIG.GREEN_MAX_DIST) greenClose++; }
+    }
+    /* brute force check of the max distance pair helper */
+    if (cand.length >= 2 && cand.length <= 400 && i % 12 === 0) {
+      maxDistChecked++;
+      var pr = maxDistPair(st, cand), got = manhattan(pr[0], pr[1]);
+      var best = 0, x, y;
+      for (x = 0; x < cand.length; x++) for (y = x + 1; y < cand.length; y++) {
+        var dd = manhattan(cand[x], cand[y]); if (dd > best) best = dd;
+      }
+      if (got === best) maxDistOk++;
+    }
+  }
+  TEST.ge('the sample produced red pairs', reds, 5);
+  TEST.ge('the sample produced green pairs', greens, 20);
+  TEST.eq('every red pair spawns far apart', redFar, reds);
+  TEST.eq('every green pair spawns close together', greenClose, greens);
+  TEST.eq('no terminal sits on wire', onWire, 0);
+  TEST.eq('no terminal sits on an unreachable cell', unreachable, 0);
+  TEST.ge('the max distance helper was checked', maxDistChecked, 10);
+  TEST.eq('the max distance helper matches brute force', maxDistOk, maxDistChecked);
+  /* nothing spawns inside the uncommitted circuit */
+  var s2 = newGame(4444), bad = 0, g = 0, k;
+  var rr = makeRNG(4445);
+  while (s2.alive && g < 1200) {
+    step(s2, agentGreedy(s2, rr));
+    if (s2.charge) {
+      var pend = pendingMask(s2);
+      for (k = 0; k < s2.pairs.length; k++) {
+        for (var q = 0; q < s2.pairs[k].active.length; q++) if (pend[s2.pairs[k].active[q]]) bad++;
+      }
+      if (s2.pickup >= 0 && pend[s2.pickup]) bad++;
+    }
+    g++;
+  }
+  TEST.eq('nothing spawns inside the open circuit', bad, 0);
+  /* the board keeps its pair count */
+  var s3 = newGame(5555), short = 0, rr3 = makeRNG(5556), g3 = 0;
+  while (s3.alive && g3 < 1500) {
+    step(s3, agentGreedy(s3, rr3));
+    if (s3.pairs.length < 1) short++;
+    g3++;
+  }
+  TEST.eq('the board is never left without a pair', short, 0);
+}
+
+/* ---- suite 6: determinism, queue, fuzz ---- */
+function suiteDeterminism() {
+  var mismatch = 0, i, j;
+  for (i = 0; i < 500; i++) {
+    var seed = 70000 + i;
+    var turns = [], r = makeRNG(seed ^ 0x5f5f);
+    for (j = 0; j < 260; j++) turns.push(r.int(3) - 1);
+    var a = newGame(seed), b = newGame(seed);
+    for (j = 0; j < turns.length; j++) { step(a, turns[j]); step(b, turns[j]); }
+    if (a.score !== b.score || hashState(a) !== hashState(b) || a.tick !== b.tick) mismatch++;
+  }
+  TEST.eq('same seed and same turns give the same run 500 times', mismatch, 0);
+  var c = newGame(999), d = newGame(1000), k;
+  for (k = 0; k < 200; k++) { step(c, 0); step(d, 0); }
+  TEST.assert('different seeds place terminals differently', hashState(c) !== hashState(d));
+  /* replaying a recorded input log reproduces the score */
+  var run = playAgent(31337, agentGreedy, 5, 3000);
+  var log = encodeLog(run.log), back = decodeLog(log);
+  TEST.eq('the input log round trips', back.length, run.log.length);
+  var rep = newGame(31337), m;
+  for (m = 0; m < back.length; m++) step(rep, back[m]);
+  TEST.eq('a replayed log reproduces the score', rep.score, run.st.score);
+  TEST.eq('a replayed log reproduces the board', hashState(rep), hashState(run.st));
+}
+
+function suiteQueue() {
+  var q = makeQueue(CONFIG.QUEUE_CAP);
+  TEST.eq('a new queue is empty', q.size(), 0);
+  TEST.assert('the first push is accepted', q.push(-1) === true);
+  TEST.assert('the second push is accepted', q.push(1) === true);
+  TEST.assert('a push past capacity is refused, not swallowed', q.push(-1) === false);
+  TEST.eq('the queue holds exactly its capacity', q.size(), CONFIG.QUEUE_CAP);
+  TEST.eq('the first turn out is the first turn in', q.shift(), -1);
+  TEST.eq('the second turn out is the second turn in', q.shift(), 1);
+  TEST.eq('the queue is empty after draining', q.size(), 0);
+  TEST.eq('an empty queue reads as go straight', q.shift(), 0);
+  q.push(1); q.clear();
+  TEST.eq('clear empties the queue', q.size(), 0);
+  /* drive the sim through the queue and prove every turn lands once */
+  var st = newGame(8), q2 = makeQueue(CONFIG.QUEUE_CAP);
+  var want = [-1, 1, 1, -1, 0, 1], applied = [], i, headings = [];
+  for (i = 0; i < want.length; i++) {
+    q2.push(want[i]);
+    var t = q2.shift();
+    applied.push(t);
+    step(st, t);
+    headings.push(st.heading);
+  }
+  TEST.eq('every queued turn is applied exactly once', applied.join(','), want.join(','));
+  var expect = CONFIG.START_HEADING, exp = [];
+  for (i = 0; i < want.length; i++) { expect = (expect + want[i] + 4) & 3; exp.push(expect); }
+  TEST.eq('the heading trace matches the queued turns', headings.join(','), exp.join(','));
+  /* a queued turn survives a tick that produced no input */
+  var q3 = makeQueue(2);
+  q3.push(1);
+  TEST.eq('an idle tick does not eat a queued turn', q3.size(), 1);
+  TEST.eq('the queued turn arrives on the next tick', q3.shift(), 1);
+}
+
+function suiteFuzz() {
+  var total = 0, runs = 0, errors = [], worstEnergized = 0, invalid = 0;
+  var rng = makeRNG(0xF0FA);
+  while (total < 5000) {
+    runs++;
+    var st = newGame(rng.int(1e9)), guard = 0;
+    try {
+      while (st.alive && total < 5000 && guard < 3000) {
+        step(st, rng.int(3) - 1);
+        total++; guard++;
+        if (st.energized > worstEnergized) worstEnergized = st.energized;
+        if (guard % 25 === 0) { var bad = invariants(st); if (bad.length) { invalid++; errors.push(bad[0]); } }
+        if (!isFinite(st.score) || st.score < 0 || st.tick < 0 || st.energized < 0) { invalid++; errors.push('bad counter'); }
+      }
+      var bad2 = invariants(st);
+      if (bad2.length) { invalid++; errors.push(bad2[0]); }
+    } catch (e) {
+      errors.push('threw: ' + (e && e.message));
+      invalid++;
+      break;
+    }
+  }
+  TEST.eq('five thousand random inputs throw nothing', errors.length, 0, errors.slice(0, 3).join(' | '));
+  TEST.eq('every invariant holds through the fuzz', invalid, 0);
+  TEST.ge('the fuzz covered several runs', runs, 3);
+  TEST.le('energized never exceeds the grid during the fuzz', worstEnergized, CONFIG.CELLS);
+  TEST.assert('restarting after death works', (function () {
+    var i, ok = true;
+    for (i = 0; i < 25; i++) {
+      var s = newGame(600 + i), g = 0;
+      while (s.alive && g++ < 500) step(s, (g % 7 === 0) ? 1 : 0);
+      var s2 = newGame(600 + i);
+      if (s2.tick !== 0 || s2.score !== 0 || !s2.alive) ok = false;
+    }
+    return ok;
+  })());
+  /* regression: a discharge that erased part of an open circuit must not
+     leave a hole when that circuit finally closes (found by fuzz seed 0xF0FA) */
+  var st2 = newGame(4242);
+  st2.trail = [100, 101, 102, 103]; st2.head = 103;
+  st2.cell[100] = EMPTY;             // an earlier discharge erased it
+  st2.cell[101] = WIRE; st2.cell[102] = WIRE; st2.cell[103] = WIRE;
+  st2.charge = { pairId: 9, ci: 0, mult: 1, sliceStart: 0 };
+  var pair = { id: 9, ci: 0, color: 'green', mult: 1, active: [], open: true };
+  st2.pairs = [pair];
+  completeCircuit(st2, pair, []);
+  TEST.eq('closing a circuit restores wire a discharge had erased', st2.cell[100], WIRE);
+  TEST.eq('the restored cell is energized', st2.cover[100] > 0, true);
+  TEST.eq('the restored circuit counts every cell', st2.energized, 4);
+}
+
+/* ---- suite 7: save ---- */
+function suiteSave() {
+  var key = CONFIG.SAVE_KEY;
+  try { _STORE.removeItem(key); } catch (e) {}
+  var fresh = loadSave();
+  TEST.eq('a missing save loads defaults', fresh.best.score, 0);
+  TEST.eq('the save carries a version', fresh.v, 1);
+  TEST.eq('the save names the game', fresh.gameId, CONFIG.GAME_ID);
+  fresh.best.score = 4380; fresh.stats.runs = 3;
+  writeSave(fresh);
+  var back = loadSave();
+  TEST.eq('the save round trips the best score', back.best.score, 4380);
+  TEST.eq('the save round trips the run count', back.stats.runs, 3);
+  TEST.eq('settings survive a round trip', back.settings.vol, 0.7);
+  try { _STORE.setItem(key, '{not json at all'); } catch (e) {}
+  var rec = loadSave();
+  TEST.eq('a corrupt save recovers to defaults', rec.best.score, 0);
+  TEST.assert('a corrupt save still returns an object', rec && typeof rec === 'object');
+  try { _STORE.setItem(key, '[1,2,3]'); } catch (e) {}
+  TEST.eq('an array save recovers to defaults', loadSave().best.score, 0);
+  try { _STORE.setItem(key, 'null'); } catch (e) {}
+  TEST.eq('a null save recovers to defaults', loadSave().stats.runs, 0);
+  try { _STORE.setItem(key, JSON.stringify({ v: 1, best: { score: 12 } })); } catch (e) {}
+  var mig = loadSave();
+  TEST.eq('migrate fills in missing blocks', mig.stats.runs, 0);
+  TEST.eq('migrate keeps what was already there', mig.best.score, 12);
+  TEST.assert('migrate restores missing settings', mig.settings && mig.settings.haptics === true);
+  /* counters add, bests take the max */
+  try { _STORE.removeItem(key); } catch (e) {}
+  var fake = { score: 100, tick: 50, circuitsCompleted: 2, overloads: 1, comboPeak: 2, longest: 9, alive: false, seed: 5 };
+  recordRun(fake, 'LSR');
+  recordRun({ score: 40, tick: 90, circuitsCompleted: 1, overloads: 0, comboPeak: 4, longest: 3, alive: false, seed: 6 }, 'SS');
+  var s = loadSave();
+  TEST.eq('run counts add up', s.stats.runs, 2);
+  TEST.eq('tick counts add up', s.stats.ticks, 140);
+  TEST.eq('the best score takes the max', s.best.score, 100);
+  TEST.eq('the best combo takes the max', s.best.combo, 4);
+  TEST.eq('the best tick count takes the max', s.best.ticks, 90);
+  TEST.eq('the best run log is kept for the best score', s.bestRun.log, 'LSR');
+  /* daily streak */
+  try { _STORE.removeItem(key); } catch (e) {}
+  recordDaily('2026-08-15', 100);
+  TEST.eq('a first daily starts the streak at one', loadSave().daily.streak, 1);
+  recordDaily('2026-08-16', 120);
+  TEST.eq('a consecutive day extends the streak', loadSave().daily.streak, 2);
+  recordDaily('2026-08-19', 90);
+  TEST.eq('a missed day resets the streak', loadSave().daily.streak, 1);
+  TEST.eq('the daily best keeps the highest', loadSave().daily.best, 120);
+  try { _STORE.removeItem(key); } catch (e) {}
+}
+
+/* ---- suite 8: copy and balance envelope ---- */
+function suiteCopy() {
+  var k, bad = [], dashes = /[-‐‑‒–—―−]/;
+  for (k in COPY) {
+    if (!Object.prototype.hasOwnProperty.call(COPY, k)) continue;
+    if (typeof COPY[k] === 'string' && dashes.test(COPY[k])) bad.push(k);
+  }
+  TEST.eq('no dash characters in any player facing string', bad.join(','), '');
+  var names = [], i;
+  for (i = 0; i < COLORS.length; i++) { if (dashes.test(COLORS[i].name)) names.push(COLORS[i].name); }
+  TEST.eq('no dash characters in colour names', names.join(','), '');
+  TEST.assert('the copy table is frozen', Object.isFrozen(COPY));
+  TEST.assert('every copy entry has text', (function () {
+    var k;
+    for (k in COPY) if (typeof COPY[k] === 'string' && COPY[k].length === 0) return false;
+    return true;
+  })());
+}
+
+/* ---- suite 9: named regressions. Every one of these was a live defect
+        caught by a sweep or a fuzz run, written down before it was fixed. ---- */
+function suiteRegressions() {
+  /* Seeds 9001, 9003, 9012, 9013 and 9027 all ran forever under the greedy
+     agent: the worm sealed itself into a pocket, no terminal was reachable,
+     and every free cell was either unreachable or hugging live wire so no
+     discharge pickup could spawn either. The run could never end. */
+  var stuck = [9001, 9003, 9012, 9013, 9027], i, alive = [], rescued = 0;
+  for (i = 0; i < stuck.length; i++) {
+    var r = playAgent(stuck[i], agentGreedy, stuck[i] - 9000, 8000);
+    if (r.st.alive) alive.push(stuck[i]);
+    if (r.st.rescues > 0) rescued++;
+  }
+  TEST.eq('regression: the sealed pocket seeds all terminate', alive.join(','), '');
+  /* the rescue must actually be the thing that saves them, not luck */
+  TEST.ge('regression: the terminal rescue fired on the sealed pocket seeds', rescued, 1);
+  /* a hand built total seal: the worm in a 4 cell box of live wire */
+  var st = newGame(9001);
+  var i2, box = [];
+  for (i2 = 0; i2 < CONFIG.CELLS; i2++) { st.cell[i2] = WIRE; st.cover[i2] = 1; }
+  st.energized = CONFIG.CELLS;
+  /* open a small pocket around the head */
+  var pocket = [210, 211, 230, 231];
+  for (i2 = 0; i2 < pocket.length; i2++) { st.cell[pocket[i2]] = EMPTY; st.cover[pocket[i2]] = 0; st.energized--; }
+  st.cell[210] = WIRE; st.head = 210;
+  st.circuits = [{ id: 1, ci: 0, cells: [0, 1, 2], len: 3, tick: 1, score: 1 }];
+  var ev = [];
+  rescueCheck(st, ev);
+  TEST.assert('regression: a total seal triggers a rescue', ev.length > 0 && ev[ev.length - 1].t === 'rescue');
+  TEST.assert('regression: the rescue leaves the worm something to reach', (function () {
+    var reach = reachMask(st), k, q;
+    for (k = 0; k < st.pairs.length; k++) {
+      for (q = 0; q < st.pairs[k].active.length; q++) if (reach[st.pairs[k].active[q]]) return true;
+    }
+    return st.circuits.length === 0;       // or the mercy discharge reopened it
+  })());
+  TEST.assert('regression: the rescue never leaves a half open pair', (function () {
+    var k;
+    for (k = 0; k < st.pairs.length; k++) if (st.pairs[k].active.length !== 2) return false;
+    return true;
+  })());
+  TEST.eq('regression: the rescue drops any charge it cannot honour', st.charge, null);
+  /* the rescue must not fire on a healthy board */
+  var s2 = newGame(4242), rr = makeRNG(1), g = 0;
+  while (s2.alive && g < 400) { step(s2, agentGreedy(s2, rr)); g++; }
+  TEST.assert('regression: the rescue stays quiet on a board that is fine', s2.rescues <= 2, 'rescues ' + s2.rescues);
+}
+
+/* ---- suite 10: the creep hazard ---- */
+function suiteCreep() {
+  TEST.assert('the creep interval is a real number of ticks', CONFIG.CREEP_INTERVAL > 0 && CONFIG.CREEP_INTERVAL < 400);
+  /* nothing creeps before the player has built anything */
+  var st = newGame(11), i, sf;
+  for (i = 0; i < CONFIG.CREEP_INTERVAL * 3 && st.alive; i++) { sf = safeTurns(st); step(st, sf.length ? sf[0] : 0); }
+  TEST.eq('an empty board never creeps', st.creeps, 0);
+
+  /* a board with one live circuit and a lazy worm does creep */
+  function seeded(seed) {
+    var s = newGame(seed), k;
+    /* hand build a live circuit far from the head so the fairness rules do not
+       starve the candidate list */
+    var cells = [];
+    for (k = 0; k < 40 && cells.length < 12; k++) {
+      if (s.cell[k] === EMPTY && k !== s.head && manhattan(k, s.head) > 1) cells.push(k);
+    }
+    for (k = 0; k < cells.length; k++) { s.cell[cells[k]] = WIRE; s.cover[cells[k]] = 1; s.ccol[cells[k]] = 1; s.energized++; }
+    s.circuits.push({ id: 1, ci: 0, cells: cells, len: cells.length, tick: 0, score: 0 });
+    return s;
+  }
+  var s2 = seeded(12), ticks = 0;
+  while (s2.alive && ticks < CONFIG.CREEP_INTERVAL * 2 && s2.creeps === 0) {
+    var sf2 = safeTurns(s2); step(s2, sf2.length ? sf2[0] : 0); ticks++;
+  }
+  TEST.ge('live wire with nowhere to go creeps when the player stalls', s2.creeps, 1);
+  TEST.assert('a creep raises the load meter', s2.energized > 12, 'energized ' + s2.energized);
+  TEST.eq('the counter and the board agree after a creep', invariants(s2).join(' | '), '');
+
+  /* fairness: never adjacent to the head */
+  var bad = 0, near = 0, r, e, m;
+  for (i = 0; i < 40; i++) {
+    var s3 = seeded(500 + i), n = 0;
+    while (s3.alive && n < 400) {
+      var sf3 = safeTurns(s3);
+      r = step(s3, sf3.length ? sf3[0] : 0);
+      for (e = 0; e < r.events.length; e++) {
+        if (r.events[e].t !== 'creep') continue;
+        m = manhattan(r.events[e].cell, s3.head);
+        if (m <= 1) near++;
+        if (s3.cover[r.events[e].cell] === 0) bad++;
+      }
+      n++;
+    }
+  }
+  TEST.eq('the creep never lights a cell next to the worm head', near, 0);
+  TEST.eq('every creep event actually energized its cell', bad, 0);
+
+  /* The statistical sweep above almost never SEES a head adjacent candidate, so
+     on its own it is a gate that cannot fail. Test the filter directly on a
+     board built so the banned cells would otherwise qualify. */
+  var g2 = CONFIG.GRID;
+  function bare(seed) {
+    var s = newGame(seed), k;
+    for (k = 0; k < CONFIG.CELLS; k++) { s.cell[k] = EMPTY; s.tcol[k] = 0; s.cover[k] = 0; s.ccol[k] = 0; }
+    s.pairs.length = 0; s.energized = 0;
+    s.cell[s.head] = WIRE;
+    return s;
+  }
+  function light(s, k) { s.cell[k] = WIRE; s.cover[k] = 1; s.ccol[k] = 1; s.energized++; return k; }
+
+  var sA = bare(64), hA = sA.head;
+  light(sA, hA + 2);                              // two cells right of the head
+  var candA = creepCandidates(sA);
+  TEST.assert('the cell beside the head would otherwise qualify', (function () {
+    /* the guard is the only thing keeping hA + 1 out: it is empty and touches
+       live wire, so if this board stopped being interesting the gate below
+       would go quiet without anyone noticing */
+    return sA.cell[hA + 1] === EMPTY && sA.cover[hA + 2] > 0;
+  })());
+  TEST.assert('no creep candidate is next to the worm head', (function () {
+    var k;
+    for (k = 0; k < candA.length; k++) if (manhattan(candA[k], sA.head) <= 1) return false;
+    return true;
+  })(), candA.join(','));
+  TEST.ge('the same board still offers the creep somewhere else to go', candA.length, 1);
+
+  var sB = bare(65), hB = sB.head;
+  light(sB, hB + 2 * g2);                         // two rows below
+  sB.trail = [hB, hB + 2 * g2 + 1, hB + 2 * g2 - 1];
+  sB.charge = { pairId: 1, ci: 0, mult: 1, sliceStart: 1 };
+  var candB = creepCandidates(sB), inPend = 0;
+  var pendB = pendingMask(sB);
+  for (i = 0; i < candB.length; i++) if (pendB[candB[i]]) inPend++;
+  TEST.assert('the pending cells would otherwise qualify', pendB[hB + 2 * g2 + 1] === 1 && sB.cell[hB + 2 * g2 + 1] === EMPTY);
+  TEST.eq('no creep candidate sits inside the circuit you are drawing', inPend, 0);
+
+  var sC = bare(66), hC = sC.head;
+  light(sC, hC + 2);
+  sC.cell[hC + 3] = TERM; sC.tcol[hC + 3] = 1;
+  sC.cell[hC + 2 - g2] = PICK; sC.pickup = hC + 2 - g2;
+  var candC = creepCandidates(sC), stole = 0;
+  for (i = 0; i < candC.length; i++) if (sC.cell[candC[i]] === TERM || sC.cell[candC[i]] === PICK) stole++;
+  TEST.eq('no creep candidate is a terminal or the relief valve', stole, 0);
+
+  /* fairness: never inside the circuit the player is drawing */
+  var s4 = seeded(999);
+  s4.charge = { pairId: 99, ci: 0, mult: 1, sliceStart: 0 };
+  var pend = pendingMask(s4), ev4 = [], hit = 0;
+  for (i = 0; i < 30; i++) { creepStep(s4, ev4); }
+  for (i = 0; i < ev4.length; i++) if (ev4[i].t === 'creep' && pend[ev4[i].cell]) hit++;
+  TEST.eq('the creep never takes a cell of the circuit you are drawing', hit, 0);
+
+  /* it never takes a terminal or the pickup */
+  var s5 = seeded(4321), ev5 = [], stolen = 0;
+  for (i = 0; i < 60; i++) {
+    var before = [];
+    for (var q = 0; q < s5.pairs.length; q++) before = before.concat(s5.pairs[q].active);
+    creepStep(s5, ev5);
+    for (q = 0; q < before.length; q++) if (s5.cover[before[q]] > 0) stolen++;
+  }
+  TEST.eq('the creep never energizes a terminal', stolen, 0);
+
+  /* it can trip the breaker rather than only punish */
+  var s6 = newGame(31), cellsBig = [];
+  for (i = 0; i < CONFIG.CELLS; i++) {
+    if (cellsBig.length >= CONFIG.OVERLOAD_CELLS - 1) break;
+    if (i === s6.head || manhattan(i, s6.head) <= 1) continue;
+    if (s6.cell[i] === TERM) continue;
+    cellsBig.push(i);
+  }
+  for (i = 0; i < cellsBig.length; i++) { s6.cell[cellsBig[i]] = WIRE; s6.cover[cellsBig[i]] = 1; s6.energized++; }
+  s6.circuits.push({ id: 1, ci: 0, cells: cellsBig.slice(), len: cellsBig.length, tick: 0, score: 0 });
+  var ev6 = [], fired = false;
+  for (i = 0; i < 12 && !fired; i++) {
+    ev6.length = 0;
+    creepStep(s6, ev6);
+    for (var z = 0; z < ev6.length; z++) if (ev6[z].t === 'overload') fired = true;
+  }
+  TEST.assert('a creep at the threshold trips the breaker', fired, 'energized ' + s6.energized);
+
+  /* the creep clock resets on a completion, so active play is never punished */
+  var s7 = newGame(55);
+  s7.creepTicks = CONFIG.CREEP_INTERVAL - 1;
+  var p7 = s7.pairs[0];
+  s7.charge = { pairId: p7.id, ci: p7.ci, mult: p7.mult, sliceStart: 0 };
+  completeCircuit(s7, p7, []);
+  TEST.eq('closing a circuit resets the creep clock', s7.creepTicks, 0);
+}
+
+/* ---- suite 11: endless against daily ---- */
+function suiteDaily() {
+  var endless = newGame(7);
+  TEST.eq('an endless run has no clock', endless.tickLimit, 0);
+  TEST.eq('an endless run is tagged free', endless.mode, 'free');
+  var daily = newGame(7, { mode: 'daily' });
+  TEST.eq('a daily run carries the shift clock', daily.tickLimit, CONFIG.DAILY_TICKS);
+  TEST.eq('a daily run is tagged daily', daily.mode, 'daily');
+  var sf, i, n = 0;
+  while (daily.alive && n < CONFIG.DAILY_TICKS * 2) {
+    sf = safeTurns(daily);
+    step(daily, sf.length ? sf[Math.min(1, sf.length - 1)] : 0);
+    n++;
+  }
+  TEST.assert('the daily always ends', !daily.alive);
+  TEST.le('the daily never runs past its clock', daily.tick, CONFIG.DAILY_TICKS);
+  /* a careful daily player runs out of clock rather than board */
+  var clocked = 0;
+  for (i = 0; i < 20; i++) {
+    var r = playAgent(6000 + i, agentGreedy, i, CONFIG.DAILY_TICKS * 3, null, { mode: 'daily' });
+    if (r.st.cause === 'clock') clocked++;
+    if (r.st.tick > CONFIG.DAILY_TICKS) { TEST.assert('daily run ' + i + ' respected the clock', false, r.st.tick); }
+  }
+  TEST.ge('some daily runs end on the clock rather than on the board', clocked, 1);
+  TEST.assert('the same daily seed plays the same board', hashState(newGame(9, { mode: 'daily' })) === hashState(newGame(9, { mode: 'daily' })));
+  TEST.assert('endless and daily share the board, not the clock',
+    hashState(newGame(9)) === hashState(newGame(9, { mode: 'daily' })));
+}
+
+/* ---- suite 12: the board filler, the second playstyle ---- */
+function suiteFiller() {
+  var i, r, overloads = 0, scored = 0, peak = 0;
+  for (i = 0; i < 24; i++) {
+    r = playAgent(3100 + i, agentFiller, i + 1, 4000);
+    overloads += r.st.overloads;
+    if (r.st.score > 0) scored++;
+    if (r.st.energized > peak) peak = r.st.energized;
+    if (invariants(r.st).length) TEST.assert('filler run ' + i + ' kept the invariants', false, invariants(r.st).join(' | '));
+  }
+  TEST.ge('the board filler trips the breaker', overloads, 1);
+  TEST.eq('every board filler run scores', scored, 24);
+  TEST.assert('the board filler builds longer circuits than the combo chaser', (function () {
+    var a = 0, b = 0, k, x;
+    for (k = 0; k < 10; k++) {
+      x = playAgent(3200 + k, agentFiller, k, 3000); a += x.st.longest;
+      x = playAgent(3200 + k, agentGreedy, k, 3000); b += x.st.longest;
+    }
+    return a > b;
+  })());
+  /* the avoid argument is what lets the filler refuse the relief valve. Build a
+     one cell corridor whose only route to the target runs over the avoided
+     cell: with it avoided there is no route at all. */
+  TEST.assert('a bfs told to avoid a cell will not route through it', (function () {
+    var s = newGame(21), k, gg = CONFIG.GRID, wall;
+    for (k = 0; k < CONFIG.CELLS; k++) { s.cell[k] = EMPTY; s.tcol[k] = 0; s.cover[k] = 0; }
+    s.pairs.length = 0; s.energized = 0;
+    /* seal row 9 except one gate at x = 10 */
+    for (k = 0; k < gg; k++) {
+      wall = 9 * gg + k;
+      if (k === 10) continue;
+      s.cell[wall] = WIRE; s.cover[wall] = 1; s.energized++;
+    }
+    s.head = 12 * gg + 10; s.heading = 0;         // below the wall, facing up
+    var gate = 9 * gg + 10, target = 3 * gg + 10;
+    var open = bfsTurn(s, [target]);
+    var closed = bfsTurn(s, [target], gate);
+    return open !== null && closed === null;
+  })());
+  TEST.assert('the board filler does not chase the discharge pickup', (function () {
+    /* it may still be forced onto one by the survival fallback; what is asserted
+       is that it never goes out of its way for one the way greedy does */
+    var f = 0, g = 0, k, x;
+    for (k = 0; k < 16; k++) {
+      x = playAgent(3300 + k, agentFiller, k, 3000); f += x.st.discharges;
+      x = playAgent(3300 + k, agentGreedy, k, 3000); g += x.st.discharges;
+    }
+    return f <= g * 1.5 + 2;
+  })());
+  TEST.eq('pendingLen is zero with no charge', pendingLen(newGame(5)), 0);
+  TEST.eq('pendingNew is zero with no charge', pendingNew(newGame(5)), 0);
+  TEST.assert('pendingNew never exceeds pendingLen', (function () {
+    var s = newGame(88), n = 0, k, sf;
+    s.charge = { pairId: 1, ci: 0, mult: 1, sliceStart: 0 };
+    while (s.alive && n < 120) { sf = safeTurns(s); step(s, sf.length ? sf[0] : 0); n++; if (pendingNew(s) > pendingLen(s)) return false; }
+    return pendingLen(s) > 1;
+  })());
+}
+
+function suiteBalance() {
+  /* a small in page envelope check. sim.js runs the full sweep. */
+  var i, randTicks = [], safeTicks = [], greedyTicks = [];
+  for (i = 0; i < 60; i++) {
+    randTicks.push(playAgent(20000 + i, agentRandom, 100 + i, 8000).st.tick);
+    safeTicks.push(playAgent(20000 + i, agentRandomSafe, 100 + i, 8000).st.tick);
+    greedyTicks.push(playAgent(20000 + i, agentGreedy, 100 + i, 8000).st.tick);
+  }
+  function med(a) { var b = a.slice().sort(function (x, y) { return x - y; }); return b[b.length >> 1]; }
+  var rm = med(randTicks), sm = med(safeTicks), gm = med(greedyTicks);
+  TEST.ge('the random agent survives more than a handful of ticks', rm, 10);
+  TEST.assert('the plain random walk dies quickly', rm <= 260, 'random median ' + rm);
+  TEST.assert('looking where you are going helps', sm > rm, sm + ' vs ' + rm);
+  TEST.assert('the greedy agent outlives the plain random agent', gm > rm, gm + ' vs ' + rm);
+  TEST.le('the greedy agent is not immortal', gm, 2000, 'greedy median ' + gm);
+  TEST.assert('the greedy agent scores', (function () {
+    var r = playAgent(4242, agentGreedy, 9, 8000); return r.st.score > 0;
+  })());
+  TEST.assert('every run ends', (function () {
+    var i, ok = true;
+    for (i = 0; i < 30; i++) { if (playAgent(9000 + i, agentGreedy, i, 8000).st.alive) ok = false; }
+    return ok;
+  })());
+  TEST.assert('the speed ramp reaches the floor', (function () {
+    var ms = CONFIG.TICK_START_MS - CONFIG.TICK_STEP_MS * 40;
+    return Math.max(CONFIG.TICK_FLOOR_MS, ms) === CONFIG.TICK_FLOOR_MS;
+  })());
+  TEST.eq('the ramp starts at the stated tick', Math.max(CONFIG.TICK_FLOOR_MS, CONFIG.TICK_START_MS - 0), CONFIG.TICK_START_MS);
+}
+
+/* ---- suite: a floating notice must never cover a control ---- */
+function suiteToastPlacement() {
+  function overlaps(top, h, rects, hudBottom) {
+    var i, r, bad = 0;
+    for (i = 0; i < rects.length; i++) {
+      r = rects[i];
+      if (r.bottom <= hudBottom) continue;     // header band, allowed behind us
+      if (top < r.bottom && (top + h) > r.top) bad++;
+    }
+    return bad;
+  }
+  /* the real geometry that broke: the death sheet at 390x844, SAVE CARD/SHARE
+     over WATCH BEST/PLAY AGAIN, with the old toast pinned 72px off the bottom */
+  var vh = 844, hudBottom = 58, th = 40;
+  var sheet = [
+    { top: 700, bottom: 748 },                 // SAVE CARD / SHARE row
+    { top: 756, bottom: 804 },                 // WATCH BEST / PLAY AGAIN row
+    { top: 10, bottom: 58 }                    // the HUD gear
+  ];
+  var oldTop = vh - 72 - th;                   // what the old CSS produced
+  TEST.ge('the old fixed offset toast did cover a control', overlaps(oldTop, th, sheet, hudBottom), 1);
+  var top = toastTop(vh, hudBottom, th, sheet);
+  TEST.eq('the placed toast covers no control on the death sheet', overlaps(top, th, sheet, hudBottom), 0);
+  TEST.assert('the placed toast clears the highest control', top + th <= 700, 'bottom ' + (top + th));
+  TEST.ge('the placed toast stays below the header', top, hudBottom + 6);
+  /* in play: turn pads plus the footer row */
+  var play = [
+    { top: 10, bottom: 58 },                   // gear
+    { top: 660, bottom: 760 },                 // turn pads
+    { top: 770, bottom: 818 }                  // EXIT / DAILY / START
+  ];
+  var t2 = toastTop(vh, hudBottom, th, play);
+  TEST.eq('the placed toast covers no control during play', overlaps(t2, th, play, hudBottom), 0);
+  TEST.assert('the placed toast clears the turn pads', t2 + th <= 660, 'bottom ' + (t2 + th));
+  /* a bare screen: it may sit low, but never off the bottom */
+  var t3 = toastTop(vh, hudBottom, th, [{ top: 10, bottom: 58 }]);
+  TEST.le('with nothing in the way the toast stays on screen', t3 + th, vh - 6);
+  TEST.ge('with nothing in the way the toast still clears the header', t3, hudBottom + 6);
+  /* the header clamp is the only one that can bind */
+  var t4 = toastTop(500, 58, th, [{ top: 70, bottom: 118 }, { top: 130, bottom: 178 }]);
+  TEST.eq('the header clamp binds when controls crowd it', t4, 58 + 6);
+  TEST.le('placement is on screen by construction', toastTop(vh, hudBottom, th, sheet) + th, vh - 12);
+  TEST.eq('a viewport too short for both puts the toast under the header', toastTop(200, 58, 140, []), 64);
+  /* a two line toast must be measured, not assumed */
+  var tall = toastTop(vh, hudBottom, 78, sheet);
+  TEST.eq('a taller toast is placed by its real height', overlaps(tall, 78, sheet, hudBottom), 0);
+  TEST.assert('a taller toast moves further up', tall < top, tall + ' vs ' + top);
+}
+
+/* ---- suite: the board must be the biggest thing on the screen ---- */
+function suiteLayout() {
+  function board(vw, vh, hud, foot) {
+    var m = layoutModel(vw, vh - hud - foot);
+    return { cell: m.cell, side: m.side, padH: m.padH,
+             boardArea: m.side * m.side, padArea: vw * m.padH };
+  }
+  /* the phone the design targets */
+  var p = board(390, 844, 64, 64);
+  TEST.ge('390x844: cells are big enough to read', p.cell, 18);
+  TEST.assert('390x844: the board outweighs the turn pads', p.boardArea > p.padArea * 1.5,
+    'board ' + Math.round(p.boardArea) + ' vs pads ' + Math.round(p.padArea));
+  TEST.assert('390x844: the board is wider than it is tall constrained', p.side >= 380, 'side ' + p.side);
+  /* the small phone the touch rules are measured at */
+  var q = board(375, 667, 64, 64);
+  TEST.ge('375x667: cells stay readable', q.cell, 17);
+  TEST.assert('375x667: the board still outweighs the pads', q.boardArea > q.padArea, 'board ' + Math.round(q.boardArea) + ' vs pads ' + Math.round(q.padArea));
+  TEST.ge('375x667: the pads stay thumb sized', q.padH, 100);
+  TEST.le('375x667: the pads never take over', q.padH, CHROME.PAD_MAX);
+  /* a small old phone */
+  var r = board(320, 568, 64, 64);
+  TEST.ge('320x568: cells remain legible', r.cell, 13);
+  TEST.assert('320x568: the pads never take half the column', r.padH <= (568 - 128) * CHROME.PAD_MAX_SHARE + 1, 'pad ' + r.padH);
+  /* desktop: height bound, and it must not stretch */
+  var d = board(1280, 800, 64, 64);
+  TEST.ge('desktop: the board grows with the height it is given', d.cell, 20);
+  TEST.eq('desktop: the board stays square', d.side, d.side);
+  TEST.assert('desktop: the board is bounded by height not width', d.side < 1280, 'side ' + d.side);
+  /* the regression itself: the board must never be smaller than its controls */
+  var sizes = [[320, 568], [360, 640], [375, 667], [390, 844], [414, 896], [768, 1024], [1280, 800]];
+  var bad = [], i, b;
+  for (i = 0; i < sizes.length; i++) {
+    b = board(sizes[i][0], sizes[i][1], 64, 64);
+    if (b.boardArea <= b.padArea) bad.push(sizes[i].join('x'));
+    if (b.cell < 12) bad.push(sizes[i].join('x') + ' cell ' + b.cell.toFixed(1));
+  }
+  TEST.eq('the board is never smaller than its own controls', bad.join(','), '');
+  /* cells stay fractional: flooring throws away real size */
+  TEST.assert('cell size is not rounded down to an integer', Math.abs(p.cell - Math.floor(p.cell)) > 0, 'cell ' + p.cell);
+  TEST.ge('the pad height never collapses below a thumb', board(390, 400, 64, 64).padH, 64);
+  /* the share guard only binds on a genuinely short column (landscape, a small
+     window, a browser with a lot of chrome). Exercise it, or it is dead code. */
+  var shortH = 240;
+  var sm = layoutModel(390, shortH);
+  TEST.le('a short column caps the pads at 45 percent', sm.padH, Math.round(shortH * CHROME.PAD_MAX_SHARE));
+  TEST.assert('the share guard actually bound', sm.padH < CHROME.PAD_MIN, 'padH ' + sm.padH + ' vs min ' + CHROME.PAD_MIN);
+  TEST.assert('a short column still leaves the board the majority', sm.stageH > sm.padH, sm.stageH + ' vs ' + sm.padH);
+  var tiny = layoutModel(390, 120);
+  TEST.ge('an extremely short column keeps a usable pad', tiny.padH, 54);
+  TEST.assert('an extremely short column never gives the pads everything', tiny.stageH > 0, 'stage ' + tiny.stageH);
+}
+
+function runAllTests(opts) {
+  opts = opts || {};
+  TEST.reset();
+  var suites = [
+    suiteConfig, suiteRNG, suiteNewGame, suiteMovement,
+    suiteCircuitCases, suiteCombo, suiteOverload, suiteDischarge,
+    suiteSpawns, suiteDeterminism, suiteQueue, suiteFuzz, suiteSave, suiteCopy,
+    suiteToastPlacement, suiteLayout,
+    suiteRegressions, suiteCreep, suiteDaily, suiteFiller
+  ];
+  if (!opts.quick) { suites.push(suiteCircuitBattery); suites.push(suiteBalance); }
+  var i;
+  for (i = 0; i < suites.length; i++) {
+    try { suites[i](); }
+    catch (e) { TEST.assert('suite ' + i + ' ran without throwing', false, (e && e.message) + ' ' + (e && e.stack ? e.stack.split('\n')[1] : '')); }
+  }
+  return TEST.report();
+}
+// ---- TEST_EXPORT_END ----
+</script>
+<script>
+/* ===================================================================
+   6. VIEW — reads SIM state, never mutates it.
+   =================================================================== */
+(function () {
+'use strict';
+var $ = function (id) { return document.getElementById(id); };
+var boardC = $('board'), bx = boardC.getContext('2d');
+var ringC = $('comboRing'), rx = ringC.getContext('2d');
+var stage = $('stage');
+
+var save = loadSave();
+var settings = save.settings;
+var reducedSys = false;
+try { reducedSys = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+function reduced() { return settings.motion === 'on' ? true : (settings.motion === 'off' ? false : reducedSys); }
+
+var st = null, queue = makeQueue(CONFIG.QUEUE_CAP);
+/* ?bot=1 hands the worm to the sweep's own greedy agent, so a screenshot can
+   show a board with real circuits on it instead of a 9 tick scripted death. */
+var bot = false, botRng = null;
+var running = false, acc = 0, lastT = 0, phase = 0;
+var spark = null, shake = 0, flash = 0, inputLog = [], replay = null, creepFx = [];
+var cell = 18, boardPx = 360, dpr = 1;
+var scoreShown = 0;
+var mode = 'free', curSeed = 1, todayStr = '';
+
+/* ---------- geometry ---------- */
+function layout() {
+  /* Measure only the chrome, then let the model decide. Sizing the board from
+     stage.clientHeight was circular and collapsed it to nine pixels a cell. */
+  var appEl = document.getElementById('app');
+  var availW = appEl.clientWidth - 0;
+  var availH = appEl.clientHeight - $('hud').offsetHeight - $('foot').offsetHeight;
+  if (!(availW > 0) || !(availH > 0)) { availW = 360; availH = 600; }
+  var m = layoutModel(availW, availH);
+  $('pad').style.height = m.padH + 'px';
+  cell = Math.max(8, m.cell);
+  boardPx = cell * CONFIG.GRID;
+  dpr = Math.min(2.5, window.devicePixelRatio || 1);
+  boardC.style.width = boardPx.toFixed(2) + 'px';
+  boardC.style.height = boardPx.toFixed(2) + 'px';
+  boardC.width = Math.round(boardPx * dpr);
+  boardC.height = Math.round(boardPx * dpr);
+  bx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  draw();
+}
+window.addEventListener('resize', layout);
+try { window.visualViewport && window.visualViewport.addEventListener('resize', layout); } catch (e) {}
+
+/* ---------- glyphs: shape doubles colour so the board reads in greyscale ---------- */
+function glyph(g, px, py, r) {
+  bx.beginPath();
+  if (g === 0) { bx.moveTo(px, py - r); bx.lineTo(px + r, py + r * 0.8); bx.lineTo(px - r, py + r * 0.8); bx.closePath(); }
+  else if (g === 1) { bx.rect(px - r * 0.85, py - r * 0.85, r * 1.7, r * 1.7); }
+  else if (g === 2) { bx.moveTo(px, py - r); bx.lineTo(px + r, py); bx.lineTo(px, py + r); bx.lineTo(px - r, py); bx.closePath(); }
+  else { bx.moveTo(px - r, py - r); bx.lineTo(px + r, py + r); bx.moveTo(px + r, py - r); bx.lineTo(px - r, py + r); }
+}
+function fillGlyph(g, px, py, r, col) {
+  glyph(g, px, py, r);
+  if (g === 3) { bx.strokeStyle = col; bx.lineWidth = Math.max(1.5, r * 0.55); bx.lineCap = 'round'; bx.stroke(); }
+  else { bx.fillStyle = col; bx.fill(); }
+}
+
+function neighbourWire(i, live) {
+  var x = i % CONFIG.GRID, y = (i / CONFIG.GRID) | 0, out = [], d;
+  for (d = 0; d < 4; d++) {
+    var nx = x + DX[d], ny = y + DY[d];
+    if (nx < 0 || ny < 0 || nx >= CONFIG.GRID || ny >= CONFIG.GRID) continue;
+    var ni = ny * CONFIG.GRID + nx;
+    if (st.cell[ni] !== WIRE) continue;
+    if ((st.cover[ni] > 0) !== live) continue;
+    out.push(d);
+  }
+  return out;
+}
+
+function drawWireCell(i, live, alphaOverride) {
+  var x = (i % CONFIG.GRID) * cell, y = ((i / CONFIG.GRID) | 0) * cell;
+  var cxp = x + cell / 2, cyp = y + cell / 2;
+  var links = neighbourWire(i, live), d;
+  var w = live ? Math.max(3, cell * 0.42) : Math.max(3, cell * 0.28);
+  bx.globalAlpha = alphaOverride === undefined ? 1 : alphaOverride;
+  bx.lineCap = 'round';
+  bx.lineWidth = w;
+  bx.strokeStyle = live ? '#a3e635' : '#55693e';
+  for (d = 0; d < links.length; d++) {
+    bx.beginPath();
+    bx.moveTo(cxp, cyp);
+    bx.lineTo(cxp + DX[links[d]] * cell * 0.55, cyp + DY[links[d]] * cell * 0.55);
+    bx.stroke();
+  }
+  bx.beginPath();
+  bx.arc(cxp, cyp, live ? w * 0.5 : Math.max(2, w * 0.72), 0, 6.2832);
+  bx.fillStyle = live ? '#c6f04f' : '#6b8450';
+  bx.fill();
+  bx.globalAlpha = 1;
+}
+
+function draw() {
+  if (!st) { bx.clearRect(0, 0, boardPx, boardPx); return; }
+  var i, x, y, g = CONFIG.GRID;
+  bx.clearRect(0, 0, boardPx, boardPx);
+
+  /* substrate */
+  bx.fillStyle = '#0c1209';
+  bx.fillRect(0, 0, boardPx, boardPx);
+  /* Barely there texture. It used to sit close enough to dead wire that the two
+     were hard to separate, so the substrate got darker and the wire keeps the
+     bead at every node as its structural tell. */
+  bx.strokeStyle = '#10160b';
+  bx.lineWidth = 1;
+  for (i = 1; i < g; i++) {
+    bx.beginPath(); bx.moveTo(i * cell, 0); bx.lineTo(i * cell, boardPx); bx.stroke();
+    bx.beginPath(); bx.moveTo(0, i * cell); bx.lineTo(boardPx, i * cell); bx.stroke();
+  }
+
+  /* overload warning: the edge warms as the breaker gets close */
+  var load = st.energized / CONFIG.CELLS;
+  if (load > CONFIG.WARN_PCT) {
+    var k = Math.min(1, (load - CONFIG.WARN_PCT) / (CONFIG.OVERLOAD_PCT - CONFIG.WARN_PCT));
+    bx.strokeStyle = 'rgba(255,180,70,' + (0.20 + 0.55 * k).toFixed(3) + ')';
+    bx.lineWidth = 2 + 5 * k;
+    bx.strokeRect(bx.lineWidth / 2, bx.lineWidth / 2, boardPx - bx.lineWidth, boardPx - bx.lineWidth);
+  }
+
+  /* dead wire first, live wire over it */
+  for (i = 0; i < CONFIG.CELLS; i++) if (st.cell[i] === WIRE && st.cover[i] === 0) drawWireCell(i, false);
+
+  /* the open circuit: the shape you are about to commit to */
+  if (st.charge) {
+    var seenP = {}, k2;
+    var col = COLORS[st.charge.ci];
+    for (k2 = st.charge.sliceStart; k2 < st.trail.length; k2++) {
+      var c = st.trail[k2];
+      if (seenP[c]) continue;
+      seenP[c] = 1;
+      x = (c % g) * cell; y = ((c / g) | 0) * cell;
+      bx.fillStyle = col.hex;
+      bx.globalAlpha = 0.16;
+      bx.fillRect(x + 1, y + 1, cell - 2, cell - 2);
+      bx.globalAlpha = 1;
+    }
+  }
+
+  var sparkFront = -1;
+  if (spark) {
+    var el = (performance.now() - spark.t0) / spark.dur;
+    sparkFront = Math.floor(el * spark.cells.length);
+    if (el >= 1) { spark = null; sparkFront = -1; }
+  }
+  var sparkSet = null;
+  if (spark) {
+    sparkSet = {};
+    for (i = sparkFront; i < spark.cells.length; i++) sparkSet[spark.cells[i]] = 1;
+  }
+
+  if (!reduced() && load > 0) { bx.shadowColor = 'rgba(163,230,53,0.55)'; bx.shadowBlur = Math.max(3, cell * 0.35); }
+  for (i = 0; i < CONFIG.CELLS; i++) {
+    if (st.cell[i] !== WIRE || st.cover[i] === 0) continue;
+    if (sparkSet && sparkSet[i]) continue;               // not lit yet, the spark has not reached it
+    drawWireCell(i, true);
+  }
+  bx.shadowBlur = 0;
+
+  /* the repeating glyph along energized runs: pattern doubles colour */
+  for (i = 0; i < CONFIG.CELLS; i++) {
+    if (st.cell[i] !== WIRE || st.cover[i] === 0) continue;
+    if (sparkSet && sparkSet[i]) continue;
+    x = i % g; y = (i / g) | 0;
+    if (((x + y + (phase | 0)) % 3) !== 0) continue;
+    var ci = st.ccol[i] - 1;
+    if (ci < 0) ci = 0;
+    fillGlyph(COLORS[ci].glyph, x * cell + cell / 2, y * cell + cell / 2, Math.max(2, cell * 0.17), '#0d1408');
+  }
+
+  /* the spark itself */
+  if (spark && sparkFront >= 0 && sparkFront < spark.cells.length) {
+    var sc = spark.cells[Math.max(0, sparkFront - 1)];
+    x = (sc % g) * cell + cell / 2; y = ((sc / g) | 0) * cell + cell / 2;
+    bx.fillStyle = '#ffffff';
+    bx.beginPath(); bx.arc(x, y, cell * 0.42, 0, 6.2832); bx.fill();
+  }
+
+  /* terminals */
+  for (i = 0; i < CONFIG.CELLS; i++) {
+    if (st.cell[i] !== TERM) continue;
+    var tci = st.tcol[i] - 1; if (tci < 0) tci = 0;
+    var tc = COLORS[tci];
+    x = (i % g) * cell + cell / 2; y = ((i / g) | 0) * cell + cell / 2;
+    var open = st.charge && (function () {
+      var q; for (q = 0; q < st.pairs.length; q++) if (st.pairs[q].id === st.charge.pairId && st.pairs[q].active.indexOf(i) >= 0) return true;
+      return false;
+    })();
+    bx.beginPath(); bx.arc(x, y, cell * 0.42, 0, 6.2832);
+    bx.fillStyle = 'rgba(10,14,8,0.9)'; bx.fill();
+    bx.strokeStyle = tc.hex; bx.lineWidth = Math.max(2, cell * 0.16); bx.stroke();
+    fillGlyph(tc.glyph, x, y, Math.max(2.5, cell * 0.2), tc.hex);
+    if (open) {
+      var pulse = reduced() ? 0.55 : (0.35 + 0.35 * Math.sin(phase * 0.22));
+      bx.globalAlpha = pulse;
+      bx.beginPath(); bx.arc(x, y, cell * 0.62, 0, 6.2832);
+      bx.strokeStyle = tc.hex; bx.lineWidth = 2; bx.stroke();
+      bx.globalAlpha = 1;
+    }
+  }
+
+  /* discharge pickup */
+  if (st.pickup >= 0) {
+    x = (st.pickup % g) * cell + cell / 2; y = ((st.pickup / g) | 0) * cell + cell / 2;
+    var r = cell * (reduced() ? 0.34 : (0.30 + 0.05 * Math.sin(phase * 0.3)));
+    bx.beginPath(); bx.arc(x, y, r, 0, 6.2832);
+    bx.fillStyle = '#e8dcc8'; bx.fill();
+    bx.strokeStyle = '#0c1209'; bx.lineWidth = 2;
+    bx.beginPath(); bx.moveTo(x - r * 0.35, y - r * 0.5); bx.lineTo(x + r * 0.1, y); bx.lineTo(x - r * 0.1, y);
+    bx.lineTo(x + r * 0.35, y + r * 0.5); bx.stroke();
+  }
+
+  /* the creep: a ring opening out of the cell the current just took, so the one
+     thing on this board that moves without the player reads as an event and not
+     as a rendering glitch. The cell itself is drawn as ordinary live wire, so
+     nothing new has to be learned at 19px. */
+  if (creepFx.length) {
+    for (i = creepFx.length - 1; i >= 0; i--) {
+      var age = (phase - creepFx[i].t0) / 26;
+      if (age >= 1) { creepFx.splice(i, 1); continue; }
+      if (reduced()) continue;
+      x = (creepFx[i].cell % g) * cell + cell / 2; y = ((creepFx[i].cell / g) | 0) * cell + cell / 2;
+      bx.globalAlpha = (1 - age) * 0.85;
+      bx.strokeStyle = '#ffcf70'; bx.lineWidth = 2;
+      bx.beginPath(); bx.arc(x, y, cell * (0.3 + age * 0.9), 0, 6.2832); bx.stroke();
+      bx.globalAlpha = 1;
+    }
+  }
+
+  /* head */
+  x = (st.head % g) * cell + cell / 2; y = ((st.head / g) | 0) * cell + cell / 2;
+  bx.beginPath(); bx.arc(x, y, cell * 0.40, 0, 6.2832);
+  bx.fillStyle = st.alive ? '#eaffd0' : '#8c2b2b'; bx.fill();
+  var hx = DX[st.heading], hy = DY[st.heading];
+  bx.fillStyle = '#0c1209';
+  bx.beginPath(); bx.arc(x + hx * cell * 0.15 - hy * cell * 0.13, y + hy * cell * 0.15 + hx * cell * 0.13, Math.max(1, cell * 0.07), 0, 6.2832); bx.fill();
+  bx.beginPath(); bx.arc(x + hx * cell * 0.15 + hy * cell * 0.13, y + hy * cell * 0.15 - hx * cell * 0.13, Math.max(1, cell * 0.07), 0, 6.2832); bx.fill();
+  if (st.charge) {
+    var cc = COLORS[st.charge.ci];
+    bx.beginPath(); bx.arc(x, y - cell * 0.55, cell * 0.2, 0, 6.2832);
+    bx.fillStyle = cc.hex; bx.fill();
+  }
+
+  if (flash > 0 && !reduced()) {
+    bx.fillStyle = 'rgba(255,255,255,' + (flash * 0.5).toFixed(3) + ')';
+    bx.fillRect(0, 0, boardPx, boardPx);
+  }
+}
+
+/* ---------- HUD ---------- */
+function drawRing() {
+  var w = 104;
+  rx.clearRect(0, 0, w, w);
+  rx.lineWidth = 8;
+  rx.strokeStyle = '#1c2029';
+  rx.beginPath(); rx.arc(w / 2, w / 2, 44, 0, 6.2832); rx.stroke();
+  if (!st) return;
+  /* the window belongs to the rung you are standing on and gets shorter as you
+     climb, so the ring drains visibly faster at the top of the ladder */
+  var win = comboWindow(st);
+  var left = st.comboIdx >= 0 ? Math.max(0, win - (st.tick - st.lastCompleteTick)) : 0;
+  var frac = left / win;
+  if (frac <= 0) return;
+  var blink = frac < 0.25 && !reduced() && (Math.floor(phase * 0.5) % 2 === 0);
+  rx.strokeStyle = blink ? '#ffcf70' : (st.comboIdx >= 3 ? '#ffd166' : '#a3e635');
+  rx.beginPath();
+  rx.arc(w / 2, w / 2, 44, -Math.PI / 2, -Math.PI / 2 + 6.2832 * frac);
+  rx.stroke();
+}
+function hud() {
+  if (!st) return;
+  scoreShown += (st.score - scoreShown) * 0.28;
+  if (Math.abs(st.score - scoreShown) < 0.7) scoreShown = st.score;
+  $('score').textContent = Math.round(scoreShown).toLocaleString();
+  $('comboTxt').textContent = 'x' + comboMult(st);
+  var load = st.energized / CONFIG.CELLS;
+  $('loadBox').className = load > CONFIG.WARN_PCT ? 'on' : '';
+  $('loadPct').textContent = Math.round(load * 100) + '%';
+  /* the daily runs a clock instead of a wall, so the clock is the headline */
+  if (st.tickLimit) {
+    var leftT = Math.max(0, st.tickLimit - st.tick);
+    $('sub').textContent = COPY.labLeft + leftT + ' ' + COPY.statTicks + '   ' +
+      COPY.labBest + save.daily.best.toLocaleString() + '   ' + st.circuitsCompleted + ' circuits';
+  } else {
+    $('sub').textContent = COPY.labBest + save.best.score.toLocaleString() + '   ' + st.tick + ' ticks   ' + st.circuitsCompleted + ' circuits';
+  }
+  drawRing();
+}
+
+/* ===================================================================
+   7. AUDIO — C minor pentatonic. Every pitched sound is quantised to it,
+      so a good run sounds like a performance instead of noise.
+   =================================================================== */
+var AC = null, master = null;
+var PENT = [0, 3, 5, 7, 10];                 // C Eb F G Bb
+function deg2freq(d) {
+  var oct = Math.floor(d / PENT.length), semi = PENT[((d % PENT.length) + PENT.length) % PENT.length];
+  return 130.813 * Math.pow(2, (semi + 12 * oct) / 12);
+}
+function audio() {
+  if (AC) return AC;
+  try {
+    AC = new (window.AudioContext || window.webkitAudioContext)();
+    master = AC.createGain();
+    var comp = AC.createDynamicsCompressor();
+    master.connect(comp); comp.connect(AC.destination);
+    master.gain.value = settings.mute ? 0 : settings.vol;
+  } catch (e) { AC = null; }
+  return AC;
+}
+function vol() { return settings.mute ? 0 : settings.vol; }
+function pluck(freq, dur, type, gain) {
+  if (!audio() || vol() <= 0) return;
+  var o = AC.createOscillator(), g = AC.createGain();
+  o.type = type || 'triangle';
+  o.frequency.value = freq;
+  g.gain.setValueAtTime(0.0001, AC.currentTime);
+  g.gain.exponentialRampToValueAtTime(Math.max(0.001, (gain || 0.22)), AC.currentTime + 0.008);
+  g.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime + dur);
+  o.connect(g); g.connect(master);
+  o.start(); o.stop(AC.currentTime + dur + 0.02);
+}
+function noiseBurst(dur, hz) {
+  if (!audio() || vol() <= 0) return;
+  var n = Math.floor(AC.sampleRate * dur), buf = AC.createBuffer(1, n, AC.sampleRate), d = buf.getChannelData(0), i;
+  for (i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+  var s = AC.createBufferSource(); s.buffer = buf;
+  var f = AC.createBiquadFilter(); f.type = 'lowpass';
+  f.frequency.setValueAtTime(hz, AC.currentTime);
+  f.frequency.exponentialRampToValueAtTime(120, AC.currentTime + dur);
+  var g = AC.createGain(); g.gain.value = 0.3;
+  s.connect(f); f.connect(g); g.connect(master);
+  s.start();
+}
+var hum = null, humGain = null;
+function setHum(ci) {
+  if (!audio() || vol() <= 0) { return; }
+  if (ci === null) {
+    if (hum) { try { humGain.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime + 0.12); hum.stop(AC.currentTime + 0.2); } catch (e) {} hum = null; }
+    return;
+  }
+  var f = deg2freq(ci * 2) / 2;
+  if (!hum) {
+    hum = AC.createOscillator(); humGain = AC.createGain();
+    hum.type = 'sawtooth';
+    humGain.gain.value = 0.0001;
+    var lp = AC.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 420;
+    hum.connect(lp); lp.connect(humGain); humGain.connect(master);
+    hum.start();
+  }
+  hum.frequency.setTargetAtTime(f, AC.currentTime, 0.05);
+  humGain.gain.setTargetAtTime(0.05, AC.currentTime, 0.08);
+}
+/* note count scales with circuit length, starting degree climbs with combo */
+function arp(len, comboIdx, ci) {
+  var notes = Math.max(3, Math.min(12, 3 + Math.floor(len / 6)));
+  var start = 3 + Math.max(0, comboIdx) * 2 + ci;
+  var i;
+  for (i = 0; i < notes; i++) {
+    (function (k) {
+      setTimeout(function () { pluck(deg2freq(start + k), 0.22, 'triangle', 0.18); }, k * 42);
+    })(i);
+  }
+}
+function chordOverload() {
+  noiseBurst(0.45, 2600);
+  [0, 2, 4, 7].forEach(function (d, i) {
+    setTimeout(function () { pluck(deg2freq(d), 1.1, 'sawtooth', 0.13); }, i * 30);
+  });
+}
+/* Haptics only after the player has actually touched the frame. The game
+   auto starts, so the worm charges its first terminal before any tap and
+   Chrome blocks (and logs) a vibrate call made before a real gesture.
+   10ms routine confirm, 25ms scoring beat, [30,40,80] run ending. */
+var gestured = false;
+function markGesture() { gestured = true; }
+window.addEventListener('pointerdown', markGesture, true);
+window.addEventListener('keydown', markGesture, true);
+window.addEventListener('touchstart', markGesture, true);
+function haptic(p) {
+  if (!gestured || !settings.haptics) return;
+  if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') return;
+  try { navigator.vibrate(p); } catch (e) {}
+}
+
+/* ===================================================================
+   LOOP
+   =================================================================== */
+function tickMs() { return Math.max(CONFIG.TICK_FLOOR_MS, CONFIG.TICK_START_MS - CONFIG.TICK_STEP_MS * st.circuitsCompleted); }
+
+function frame(t) {
+  requestAnimationFrame(frame);
+  if (!lastT) lastT = t;
+  var dt = Math.min(250, t - lastT);
+  lastT = t;
+  phase += dt * 0.012;
+  if (flash > 0) flash = Math.max(0, flash - dt / 260);
+  if (shake > 0) shake = Math.max(0, shake - dt / 120);
+  if (running && st && st.alive) {
+    acc += dt;
+    var ms = tickMs();
+    while (acc >= ms && st.alive) { acc -= ms; doTick(); ms = tickMs(); }
+  }
+  if (shake > 0 && !reduced()) {
+    var a = shake * 4;
+    boardC.style.transform = 'translate(' + ((Math.random() - 0.5) * a).toFixed(2) + 'px,' + ((Math.random() - 0.5) * a).toFixed(2) + 'px)';
+  } else if (boardC.style.transform) boardC.style.transform = '';
+  draw();
+  hud();
+}
+
+function doTick() {
+  var turn;
+  if (bot) { turn = agentGreedy(st, botRng); inputLog.push(turn); }
+  else if (replay) { turn = replay.log[replay.i] === undefined ? 0 : replay.log[replay.i]; replay.i++; }
+  else { turn = queue.shift(); inputLog.push(turn); }
+  var r = step(st, turn);
+  var i, e;
+  for (i = 0; i < r.events.length; i++) {
+    e = r.events[i];
+    if (e.t === 'charged') { setHum(e.ci); pluck(deg2freq(4 + e.ci), 0.12, 'square', 0.15); haptic(10); }
+    else if (e.t === 'abandoned') { setHum(null); }
+    else if (e.t === 'completed') {
+      setHum(null);
+      spark = { cells: e.cells.slice(), t0: performance.now(), dur: 150 };
+      arp(e.len, st.comboIdx, e.ci);
+      haptic(25);
+      shake = Math.min(1, 0.3 + e.len / 90);
+    }
+    else if (e.t === 'overload') { chordOverload(); flash = 1; shake = 1; haptic(25); }
+    else if (e.t === 'discharged' && e.cells > 0) { pluck(deg2freq(1), 0.3, 'sine', 0.14); haptic(10); }
+    else if (e.t === 'creep') {
+      /* a low third below the root: in key, and the only sound in the game that
+         is not something the player did */
+      creepFx.push({ cell: e.cell, t0: phase });
+      if (creepFx.length > 6) creepFx.shift();
+      pluck(deg2freq(-3), 0.22, 'triangle', 0.10);
+    }
+    /* a dropped combo stays silent on purpose: the missing music IS the
+       feedback (CRAFT section on the combo ring). The ring going dark is the
+       only tell, and that is the intent. */
+    else if (e.t === 'died') { onDeath(e.cause); }
+  }
+}
+
+/* ===================================================================
+   8. INPUT — one small queue, applied at the next SIM tick.
+   =================================================================== */
+function turn(t) {
+  if (!running || !st || !st.alive || replay) return;
+  audio();
+  queue.push(t);
+}
+function zone(el, t) {
+  var fire = function (ev) { ev.preventDefault(); turn(t); };
+  el.addEventListener('pointerdown', fire);
+}
+zone($('zoneL'), -1);
+zone($('zoneR'), 1);
+zone($('padL'), -1);
+zone($('padR'), 1);
+var swX = null, swY = null;
+stage.addEventListener('touchstart', function (e) { if (e.touches.length) { swX = e.touches[0].clientX; swY = e.touches[0].clientY; } }, { passive: true });
+stage.addEventListener('touchend', function (e) {
+  if (swX === null || !e.changedTouches.length) return;
+  var dx = e.changedTouches[0].clientX - swX, dy = e.changedTouches[0].clientY - swY;
+  swX = null;
+  if (Math.abs(dx) > 34 && Math.abs(dx) > Math.abs(dy)) { turn(dx > 0 ? 1 : -1); }
+}, { passive: true });
+window.addEventListener('keydown', function (e) {
+  if (e.key === 'ArrowLeft' || e.key === 'a') { turn(-1); e.preventDefault(); }
+  else if (e.key === 'ArrowRight' || e.key === 'd') { turn(1); e.preventDefault(); }
+  else if (e.key === ' ') { if (!running) startRun(curSeed, mode); e.preventDefault(); }
+});
+document.addEventListener('visibilitychange', function () { if (document.hidden) { running = false; setHum(null); } });
+
+/* ===================================================================
+   RUN LIFECYCLE
+   =================================================================== */
+function startRun(seed, m) {
+  mode = m || 'free';
+  curSeed = seed >>> 0;
+  st = newGame(curSeed, { mode: mode });
+  botRng = makeRNG((curSeed ^ 0x9e3779b9) >>> 0);
+  queue.clear();
+  inputLog = [];
+  replay = null;
+  spark = null; flash = 0; shake = 0; scoreShown = 0; creepFx.length = 0;
+  acc = 0; running = true;
+  $('sheetOver').className = 'sheet';
+  $('sheetOpt').className = 'sheet';
+  $('btnStart').textContent = COPY.again;
+  $('zoneHint').className = settings.zones ? 'on' : '';
+  if (settings.zones) setTimeout(function () { $('zoneHint').className = ''; }, 2200);
+  layout();
+}
+
+function onDeath(cause) {
+  running = false;
+  setHum(null);
+  haptic([30, 40, 80]);
+  shake = 1;
+  pluck(deg2freq(0), 0.9, 'sawtooth', 0.16);
+  setTimeout(function () { pluck(deg2freq(-2), 1.2, 'sine', 0.12); }, 140);
+  var wasBest = st.score > save.best.score;
+  save = recordRun(st, encodeLog(inputLog));
+  if (mode === 'daily') save = recordDaily(todayStr, st.score);
+  settings = save.settings;
+  $('overTitle').textContent = COPY.overTitle;
+  var line = cause === 'wall' ? COPY.deadWall : (cause === 'clock' ? COPY.deadClock : COPY.deadLive);
+  $('overLine').textContent = line + (wasBest ? '  ' + COPY.bestNew : '');
+  var cells = [
+    [st.score.toLocaleString(), COPY.statScore],
+    [st.tick, COPY.statTicks],
+    [st.circuitsCompleted, COPY.statCircuits],
+    ['x' + st.comboPeak, COPY.statCombo],
+    [st.longest, COPY.statLongest],
+    [st.overloads, COPY.statOverloads]
+  ];
+  $('statGrid').innerHTML = cells.map(function (c) {
+    return '<div class="stat"><b>' + c[0] + '</b><span>' + c[1] + '</span></div>';
+  }).join('');
+  $('cardImg').src = buildCard();
+  $('installLine').style.display = deferredPrompt ? 'block' : 'none';
+  $('installLine').textContent = COPY.installLine;
+  setTimeout(function () { $('sheetOver').className = 'sheet on'; }, 520);
+}
+
+/* the death card: 640x960, the board you built, ready to share */
+function buildCard() {
+  var W = 640, H = 960, c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  var g2 = c.getContext('2d');
+  g2.fillStyle = '#0a0b0f'; g2.fillRect(0, 0, W, H);
+  var pad = 40, side = W - pad * 2, cs = side / CONFIG.GRID;
+  var oy = 190;
+  g2.fillStyle = '#0c1209'; g2.fillRect(pad, oy, side, side);
+  g2.strokeStyle = '#1c2029'; g2.lineWidth = 2; g2.strokeRect(pad, oy, side, side);
+  var i, x, y;
+  for (i = 0; i < CONFIG.CELLS; i++) {
+    if (st.cell[i] !== WIRE) continue;
+    x = pad + (i % CONFIG.GRID) * cs; y = oy + (((i / CONFIG.GRID) | 0)) * cs;
+    var live = st.cover[i] > 0;
+    g2.fillStyle = live ? '#a3e635' : '#33401f';
+    var m = live ? cs * 0.10 : cs * 0.28;
+    g2.fillRect(x + m, y + m, cs - m * 2, cs - m * 2);
+  }
+  g2.fillStyle = '#e7ecdd';
+  g2.font = '800 46px ui-sans-serif,system-ui,sans-serif';
+  g2.fillText(COPY.title, pad, 84);
+  g2.fillStyle = '#a3e635';
+  g2.font = '800 74px ui-sans-serif,system-ui,sans-serif';
+  g2.fillText(st.score.toLocaleString(), pad, 156);
+  g2.fillStyle = '#8e9a86';
+  g2.font = '500 26px ui-sans-serif,system-ui,sans-serif';
+  g2.fillText(st.tick + ' ticks   ' + st.circuitsCompleted + ' circuits   peak x' + st.comboPeak, pad, oy + side + 46);
+  g2.fillText(COPY.seedLine + curSeed, pad, oy + side + 84);
+  g2.fillStyle = '#4d5647';
+  g2.font = '700 22px ui-sans-serif,system-ui,sans-serif';
+  g2.fillText(COPY.studio, pad, H - 42);
+  try { return c.toDataURL('image/png'); } catch (e) { return ''; }
+}
+
+function shareText() {
+  return COPY.title + (mode === 'daily' ? ' daily' : '') + ' ' + st.score.toLocaleString() +
+    ' in ' + st.tick + ' ticks. ' + location.origin + location.pathname + '?seed=' + curSeed;
+}
+/* A floating element has to be checked against the CONTROLS underneath it, not
+   just against the background. "Seed link copied." used to land exactly on top of
+   WATCH BEST and PLAY AGAIN: the player got their confirmation and lost the two
+   buttons they wanted next. So the toast now measures every visible control below
+   the HUD and parks itself above the highest one, rather than trusting a guessed
+   offset. Same bug class has bitten three games this month, so this is a rule in
+   code, not a nudge. */
+function placeToast(t) {
+  var vh = window.innerHeight;
+  try { if (window.visualViewport) vh = window.visualViewport.height; } catch (e) {}
+  var hudBottom = $('hud').getBoundingClientRect().bottom;
+  var tr = t.getBoundingClientRect();
+  var rects = [], all = document.querySelectorAll('button,input,a'), i, el, r;
+  for (i = 0; i < all.length; i++) {
+    el = all[i];
+    if (el.id === 'toast') continue;
+    if (!el.offsetParent && el.offsetWidth === 0 && el.offsetHeight === 0) continue;
+    r = el.getBoundingClientRect();
+    if (r.width <= 0 || r.height <= 0) continue;
+    rects.push({ top: r.top, bottom: r.bottom });
+  }
+  t.style.top = Math.round(toastTop(vh, hudBottom, tr.height, rects)) + 'px';
+}
+var toastTimer = null;
+function toast(msg) {
+  var t = $('toast');
+  t.textContent = msg;
+  t.className = 'on';
+  placeToast(t);
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { t.className = ''; }, 2000);
+}
+
+/* ---------- buttons ---------- */
+$('btnStart').addEventListener('click', function () { startRun((Date.now() ^ (Math.random() * 1e9)) >>> 0, 'free'); });
+$('btnAgain').addEventListener('click', function () { startRun((Date.now() ^ (Math.random() * 1e9)) >>> 0, 'free'); });
+$('btnDaily').addEventListener('click', function () {
+  todayStr = new Date().toISOString().slice(0, 10);
+  startRun(dailySeed(todayStr), 'daily');
+  toast(COPY.dailyHint);
+});
+$('btnDownload').addEventListener('click', function () {
+  var a = document.createElement('a');
+  a.href = $('cardImg').src;
+  a.download = 'wireworm-' + curSeed + '.png';
+  document.body.appendChild(a); a.click(); a.remove();
+});
+$('btnShare').addEventListener('click', function () {
+  var txt = shareText();
+  if (navigator.share) { navigator.share({ text: txt }).catch(function () {}); return; }
+  try { navigator.clipboard.writeText(txt); toast(COPY.copied); }
+  catch (e) { toast(COPY.shareFail); }
+});
+$('btnReplay').addEventListener('click', function () {
+  if (!save.bestRun || !save.bestRun.log) { toast(COPY.noReplay); return; }
+  startRun(save.bestRun.seed, 'free');
+  replay = { log: decodeLog(save.bestRun.log), i: 0 };
+  toast(COPY.replaying);
+});
+$('btnOpt').addEventListener('click', function () { openOpts(); });
+$('btnOptClose').addEventListener('click', function () { $('sheetOpt').className = 'sheet'; });
+$('btnCopySeed').addEventListener('click', function () {
+  var link = location.origin + location.pathname + '?seed=' + curSeed;
+  try { navigator.clipboard.writeText(link); toast(COPY.copied); } catch (e) { toast(COPY.shareFail); }
+});
+
+function tglText(on) { return on ? COPY.on : COPY.off; }
+function syncOpts() {
+  $('rngVol').value = Math.round(settings.vol * 100);
+  $('volVal').textContent = Math.round(settings.vol * 100);
+  $('tglMute').textContent = tglText(!settings.mute);
+  $('tglMute').className = 'tgl' + (!settings.mute ? ' on' : '');
+  $('tglHap').textContent = tglText(settings.haptics);
+  $('tglHap').className = 'tgl' + (settings.haptics ? ' on' : '');
+  $('tglMotion').textContent = settings.motion === 'auto' ? 'AUTO' : tglText(settings.motion === 'on');
+  $('tglMotion').className = 'tgl' + (reduced() ? ' on' : '');
+  $('tglZones').textContent = tglText(settings.zones);
+  $('tglZones').className = 'tgl' + (settings.zones ? ' on' : '');
+  if (master) master.gain.value = vol();
+  $('optStats').innerHTML = '<div class="row"><label>' + COPY.labRuns + '</label><span class="val">' + save.stats.runs +
+    '</span></div><div class="row"><label>best score</label><span class="val">' + save.best.score.toLocaleString() +
+    '</span></div><div class="row"><label>best combo</label><span class="val">x' + save.best.combo +
+    '</span></div><div class="row"><label>daily streak</label><span class="val">' + save.daily.streak + '</span></div>';
+  $('optSeed').textContent = COPY.seedLine + curSeed;
+}
+function persist() { save = updateSave(function (s) { s.settings = settings; }); }
+function openOpts() { $('optTitle').textContent = COPY.options; $('howto').textContent = COPY.howto; syncOpts(); $('sheetOpt').className = 'sheet on'; }
+$('rngVol').addEventListener('input', function () { settings.vol = (+this.value) / 100; settings.mute = false; persist(); syncOpts(); });
+$('tglMute').addEventListener('click', function () { settings.mute = !settings.mute; persist(); syncOpts(); pluck(deg2freq(5), 0.1); });
+$('tglHap').addEventListener('click', function () { settings.haptics = !settings.haptics; persist(); syncOpts(); haptic(10); });
+$('tglMotion').addEventListener('click', function () {
+  settings.motion = settings.motion === 'auto' ? 'on' : (settings.motion === 'on' ? 'off' : 'auto');
+  persist(); syncOpts();
+});
+$('tglZones').addEventListener('click', function () { settings.zones = !settings.zones; persist(); syncOpts(); });
+
+/* ---------- install nudge, only after a finished run ---------- */
+var deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferredPrompt = e; });
+$('installLine').addEventListener('click', function () { if (deferredPrompt) { deferredPrompt.prompt(); deferredPrompt = null; } });
+
+/* ===================================================================
+   Sky Wolf Studios embed protocol
+   =================================================================== */
+(function () {
+  var framed = false;
+  try { framed = window.parent !== window; } catch (e) { framed = true; }
+  window.SWS_EXIT = function () {
+    if (framed) { try { parent.postMessage({ sws: 'close' }, '*'); } catch (e) {} return; }
+    if (document.referrer.indexOf('/portal') >= 0 && history.length > 1) { history.back(); }
+    else { location.replace('https://lucidwinds.com/portal/'); }
+  };
+  if (framed) {
+    try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {}
+    window.addEventListener('load', function () { try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {} });
+  }
+})();
+$('btnExit').addEventListener('click', function () { window.SWS_EXIT(); });
+
+/* ===================================================================
+   10. BOOT
+   =================================================================== */
+var params = new URLSearchParams(location.search);
+if (params.get('test') === '1') {
+  var rep = runAllTests({});
+  var p = $('testPanel');
+  p.className = 'on';
+  p.innerHTML = '<b>' + (rep.failed ? 'FAILED' : 'PASSED') + '</b>  ' + rep.passed + ' passed, ' + rep.failed +
+    ' failed, ' + rep.total + ' assertions\n\n' +
+    rep.failures.map(function (f) { return '<span class="fail">FAIL  ' + f.name + '  ' + f.detail + '</span>'; }).join('\n');
+}
+window.__TEST__ = { run: function () { return runAllTests({}); }, TEST: TEST };
+
+bot = params.get('bot') === '1';
+var seedParam = params.get('seed');
+if (params.get('daily') === '1') {
+  todayStr = new Date().toISOString().slice(0, 10);
+  curSeed = dailySeed(todayStr); mode = 'daily';
+} else if (seedParam && /^\d+$/.test(seedParam)) { curSeed = parseInt(seedParam, 10) >>> 0; }
+else { curSeed = (Date.now() ^ 0x5f3759df) >>> 0; }
+
+$('optTitle').textContent = COPY.options;
+$('howto').textContent = COPY.howto;
+$('btnStart').textContent = COPY.start;
+$('btnDaily').textContent = COPY.daily;
+$('btnExit').textContent = COPY.exit;
+$('btnDownload').textContent = COPY.download;
+$('btnShare').textContent = COPY.share;
+$('btnReplay').textContent = COPY.watchBest;
+$('btnAgain').textContent = COPY.again;
+$('btnOptClose').textContent = COPY.done;
+$('btnCopySeed').textContent = COPY.copySeed;
+
+startRun(curSeed, mode);
+requestAnimationFrame(frame);
+
+/* service worker last: the game is playable before it registers */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    try { Promise.resolve(); } catch (e) {}
+  });
+}
+})();
+</script>
+
+<a href="https://lucidwinds.com/portal/?from=whim" target="_blank" rel="noopener"
+   style="position:fixed;right:10px;bottom:10px;z-index:99999;display:inline-flex;align-items:center;gap:6px;
+   padding:6px 10px;border-radius:999px;background:rgba(10,14,10,.85);border:1px solid rgba(200,168,75,.55);
+   color:#e8dcc8;font:600 11px system-ui,sans-serif;text-decoration:none;opacity:.85">
+  🐺 Sky Wolf Studios · 160+ more free games</a>
+</body>
+</html>

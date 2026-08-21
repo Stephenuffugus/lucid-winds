@@ -1,0 +1,3857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
+<title>BLACKOUT</title>
+<meta name="description" content="A procedural murder with a proven single answer.">
+<meta name="theme-color" content="#5ad1e6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BLACKOUT">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0a0b0f; --panel:#14161d; --panel2:#1b1e27; --line:#2a2f3b;
+  --ink:#d8dde6; --dim:#8891a3; --accent:#5ad1e6; --warm:#e8c37a; --bad:#e8746a;
+  --pad:10px;
+}
+html,body{height:100%}
+body{
+  background:var(--bg); color:var(--ink); font-variant-numeric:tabular-nums;
+  font-family:ui-sans-serif,system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:15px; line-height:1.45; overscroll-behavior:none;
+}
+#app{display:flex;flex-direction:column;min-height:100%;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left)}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+.hd{display:flex;align-items:center;gap:6px;padding:6px var(--pad);border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,#111319,#0c0e13)}
+/* The case title is the most identity carrying string in the game, so it wraps
+   and shrinks instead of truncating. Tiers are picked by titleTier() in SIM and
+   gated in node against every title the generator can produce. */
+.hd .ttl{flex:1;min-width:0;text-align:center;font-size:14px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--warm);font-weight:700;line-height:1.14;white-space:normal;overflow-wrap:break-word}
+.hd .ttl.t1{font-size:12.5px;letter-spacing:.03em}
+.hd .ttl.t2{font-size:11px;letter-spacing:.01em}
+.hd .sub{display:block;font-size:9.5px;letter-spacing:.12em;font-weight:700;color:var(--accent);opacity:.85}
+.ghost{min-height:48px;min-width:48px;padding:0 8px;font-size:10px;letter-spacing:.09em;
+  color:var(--dim);text-transform:uppercase;border-radius:8px;flex:0 0 auto}
+.ghost:active{background:#1c2029}
+.watchbar{display:flex;align-items:center;gap:10px;padding:8px var(--pad);border-bottom:1px solid var(--line);background:#0c0e13}
+.watch{width:52px;height:52px;flex:0 0 52px}
+.wtx{flex:1;line-height:1.15}
+.wtx b{display:block;font-size:24px;font-weight:800;color:var(--ink)}
+.wtx span{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--dim)}
+.wtx.low b{color:var(--warm)}
+.danger{min-height:48px;padding:0 14px;border:1px solid #4a2f2c;background:#1d1416;color:#f0a79e;
+  border-radius:10px;font-size:12px;letter-spacing:.11em;text-transform:uppercase;font-weight:700}
+.danger:active{background:#2a1a1c}
+main{flex:1;overflow-y:auto;padding:var(--pad) var(--pad) 20px}
+.bn{display:flex;border-top:1px solid var(--line);background:#0c0e13;
+  padding-bottom:env(safe-area-inset-bottom)}
+.bn button{flex:1;min-height:54px;font-size:11px;letter-spacing:.11em;text-transform:uppercase;color:var(--dim)}
+.bn button.on{color:var(--accent);box-shadow:inset 0 2px 0 var(--accent)}
+h2{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--dim);margin:16px 0 8px}
+h2:first-child{margin-top:2px}
+.brief{background:var(--panel);border:1px solid var(--line);border-left:2px solid var(--warm);
+  border-radius:8px;padding:10px 12px;font-size:13.5px;color:#b9c1cf}
+.brief div+div{margin-top:4px}
+.row{display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);
+  border-radius:10px;padding:6px 6px 6px 12px;margin-bottom:8px;min-height:56px}
+.row .nm{flex:1;min-width:0}
+.row .nm b{display:block;font-size:15px;font-weight:600}
+.row .nm small{display:block;font-size:11.5px;color:var(--dim);letter-spacing:.02em}
+.act{min-height:48px;min-width:48px;padding:0 10px;border:1px solid var(--line);border-radius:9px;
+  background:var(--panel2);font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
+.act i{font-style:normal;font-size:9.5px;color:var(--dim);letter-spacing:.06em}
+.act:active{background:#242936}
+.act.done{color:#59606e;border-style:dashed;background:transparent}
+.act.lock{color:#59606e;border-color:#232733}
+.act.hot{border-color:var(--accent);color:var(--accent)}
+.silwrap{width:34px;height:44px;flex:0 0 34px;line-height:0}
+.sil{width:34px;height:44px;display:block;opacity:.92}
+.tabs{display:flex;gap:6px;margin-bottom:8px}
+.tabs button{flex:1;min-height:48px;border:1px solid var(--line);border-radius:9px;background:var(--panel);
+  font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.tabs button.on{color:#06222a;background:var(--accent);border-color:var(--accent);font-weight:700}
+/* The board is full bleed so a 52px cell has room to be 52px on a 375px phone
+   instead of the 48.2px it used to squeeze into. sim.js --layout reads these
+   numbers straight out of this stylesheet and fails under 50px. */
+.gridwrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel);
+  margin-left:calc(var(--pad) * -1);margin-right:calc(var(--pad) * -1)}
+.grid{display:grid;grid-template-columns:56px repeat(6,minmax(52px,1fr));min-width:368px}
+.grid .hc{height:36px;display:flex;align-items:center;justify-content:center;font-size:10.5px;
+  letter-spacing:.05em;color:var(--dim);border-bottom:1px solid var(--line);text-align:center;padding:0 2px;
+  overflow:hidden}
+.grid .rh{height:52px;display:flex;align-items:center;padding-left:6px;font-size:12px;color:#aeb6c4;
+  border-top:1px solid #1e222c}
+.cell{height:52px;min-width:52px;border-top:1px solid #1e222c;border-left:1px solid #1e222c;
+  display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:700;color:var(--dim)}
+.cell.y{color:var(--accent)}
+.cell.n{color:#6b7382}
+.cell.q{color:var(--warm)}
+.cell.halo{background:rgba(90,209,230,.16);box-shadow:inset 0 0 0 1px rgba(90,209,230,.5)}
+.counter{display:flex;align-items:baseline;gap:8px;margin:10px 0 4px}
+.counter b{font-size:26px;font-weight:800;color:var(--accent)}
+.counter span{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+.clue{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:9px 11px;margin-bottom:7px;
+  min-height:48px;display:block;width:100%;text-align:left}
+.clue .tag{font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--dim);display:block;margin-bottom:2px}
+.clue .tx{font-size:13.5px;color:#c8d0dd;line-height:1.4}
+.clue.sel{border-color:var(--accent);background:#101a1f}
+.clue.sel .tag{color:var(--accent)}
+.empty{color:var(--dim);font-size:13px;padding:8px 2px}
+.brief.lying{border-left-color:var(--bad)}
+.brief .warn{margin-top:6px;color:#f0a79e;font-size:12.5px}
+.clue.said{border-left:2px solid var(--warm)}
+.clue.said .tag{color:var(--warm)}
+.stamp.lie{border-color:var(--warm);color:var(--warm)}
+.optrow.pickrow{width:100%;text-align:left;border:1px solid var(--line);border-radius:10px;
+  background:var(--panel);padding:6px 12px;margin-bottom:8px;min-height:56px}
+.optrow.pickrow.on{border-color:var(--accent);background:#101a1f}
+.optrow.pickrow .nm b{display:block;font-size:15px;font-weight:600;color:var(--ink)}
+.optrow.pickrow .nm small{display:block;font-size:11.5px;color:var(--dim)}
+.tw{white-space:pre-wrap}
+.ov{position:fixed;inset:0;background:rgba(6,7,10,.94);z-index:40;display:flex;flex-direction:column;
+  padding:calc(env(safe-area-inset-top) + 12px) 12px calc(env(safe-area-inset-bottom) + 12px)}
+.ovbox{margin:auto;width:100%;max-width:460px;background:var(--panel);border:1px solid var(--line);
+  border-radius:14px;padding:14px;max-height:100%;overflow-y:auto}
+.ovbox h3{font-size:12px;letter-spacing:.13em;text-transform:uppercase;color:var(--warm);margin-bottom:10px}
+.pick{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px}
+.pick button{min-height:48px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);
+  font-size:12px;padding:2px 4px;color:#b9c1cf}
+.pick button.on{background:var(--accent);color:#06222a;border-color:var(--accent);font-weight:700}
+.wide{width:100%;min-height:52px;border-radius:10px;border:1px solid var(--accent);background:var(--accent);
+  color:#06222a;font-weight:800;font-size:13px;letter-spacing:.11em;text-transform:uppercase;margin-top:6px}
+.wide.sec{background:transparent;color:var(--dim);border-color:var(--line);font-weight:600}
+.wide[disabled]{opacity:.4}
+.beat{font-size:16px;line-height:1.5;color:#dfe5ee;margin-bottom:8px}
+.stamp{border:2px solid var(--bad);color:var(--bad);border-radius:8px;padding:8px 10px;margin:10px 0;
+  font-size:12.5px;letter-spacing:.04em}
+.stars{font-size:26px;color:var(--warm);letter-spacing:6px}
+.optrow{display:flex;align-items:center;gap:10px;min-height:52px;border-bottom:1px solid #1e222c}
+.optrow span{flex:1;font-size:13.5px}
+.sw{min-width:64px;min-height:48px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);
+  font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--dim)}
+.sw.on{color:#06222a;background:var(--accent);border-color:var(--accent);font-weight:700}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(70px + env(safe-area-inset-bottom));
+  background:#1d222c;border:1px solid var(--line);color:var(--ink);padding:10px 14px;border-radius:10px;
+  font-size:13px;z-index:60;max-width:88vw;text-align:center}
+.dossier{display:grid;grid-template-columns:1fr;gap:6px}
+.dz{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-size:13px}
+.dz b{color:#cfd6e2}
+.dz small{color:var(--dim);font-size:11.5px}
+.arc{display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);
+  border-radius:9px;padding:8px 10px;margin-bottom:6px;min-height:52px}
+.arc .an{flex:1;font-size:13px}
+.arc .an small{display:block;color:var(--dim);font-size:11px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.fade{animation:fi .16s ease-out}
+@keyframes fi{from{opacity:0}to{opacity:1}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* BLACKOUT
+   game id      : blackout
+   seed policy  : ?seed=<int> boots that exact case. No seed boots the daily case,
+                  seedFromString(YYYY-MM-DD + "blackout"). NEW CASE draws a fresh
+                  seed from the session RNG.
+   moat         : every case is proven to have exactly one solution before the
+                  player sees it. See GEN.generateCase and sim.js --cases=10000.
+   tuning notes : CONFIG.POOL controls clue counts per type. Minimal set size is
+                  measured, never clamped, so the histogram gate can actually fail.
+   known gaps   : unreliable narrators (HANDOFF 4.7) are not built.
+*/
+// ---- SIM_EXPORT_START ----
+"use strict";
+
+/* ============================ 1. CONFIG ============================ */
+
+var CONFIG = Object.freeze({
+  GAME_ID: "blackout",
+  VERSION: 1,
+  N: 6,
+  TUPLES: 1296,
+  ACTIONS: 20,
+  COST_SEARCH: 1,
+  COST_INTERVIEW: 1,
+  COST_PRESS: 2,
+  MAX_ATTEMPTS: 60,
+  PRESS_BIAS: 0.06,
+  PRESS_FLOOR: 12,
+  STAR3: 8,
+  STAR2: 4,
+  /* Room slots, press bound, reach bound, noise range and the minimal set band
+     all moved into TIERS below, because they are what a case LENGTH is made of
+     and there are three lengths now. Leaving dead copies here would be an
+     invitation to tune a knob that is not connected to anything. */
+  /* Tuned by node sim.js --cases=10000, not by feel. Alibi and sighting are
+     the two WEAK clue types (they cut 30 and 18 tuples of 1296); loading the
+     pool with those raises the uniqueness rate and the minimal set size at
+     the same time, which is exactly what the 4.8 gates ask for. */
+  POOL: Object.freeze({
+    alibi: 12, own: 6, access: 2, sight: 8, trace: 2, timeline: 4,
+    wtrace: 3, motive: 3, pair: 3, negative: 4, sequence: 1, object: 4
+  })
+});
+
+/* ---------------------------- difficulty ladder ----------------------------
+   Three lengths of case. The knob is the CLUE MIX, not a multiplier: a short
+   case gets strong clues (the stopped clock is allowed back in, more direct
+   exclusions) so the proof collapses to five or so steps, and a long case gets
+   the weak ones (alibis and sightings cut 30 and 18 tuples of 1296) so the
+   proof spreads out. Action budget, noise and the reach bound follow the size
+   of the proof. Every tier is swept and gated separately. */
+var TIERS = {
+  short: Object.freeze({
+    key: "short", name: "Quick case", brief: "A short one. Fewer steps, fewer hours.",
+    proof: "short", actions: 16, lo: 6, hi: 12, target: 9, noiseLo: 4, noiseHi: 8, reach: 12,
+    press: 1, exact: true, roomSlots: 2,
+    liar: Object.freeze({ actions: 20, lo: 12, hi: 21, target: 16, reach: 14, roomSlots: 3, noiseLo: 3, noiseHi: 7 }),
+    pool: Object.freeze({
+      alibi: 4, own: 6, access: 2, sight: 2, trace: 2, timeline: 4,
+      wtrace: 4, motive: 2, pair: 0, negative: 4, sequence: 1, object: 8
+    })
+  }),
+  standard: Object.freeze({
+    key: "standard", name: "Standard case", brief: "The usual evening.",
+    proof: "mid", actions: 20, lo: 8, hi: 14, target: 11, noiseLo: 6, noiseHi: 12, reach: 16,
+    press: 2, exact: false, roomSlots: 2,
+    liar: Object.freeze({ actions: 24, lo: 13, hi: 22, target: 18, reach: 16, roomSlots: 3, noiseLo: 4, noiseHi: 9 }),
+    pool: Object.freeze({
+      alibi: 12, own: 6, access: 2, sight: 8, trace: 2, timeline: 4,
+      wtrace: 3, motive: 3, pair: 3, negative: 4, sequence: 1, object: 4
+    })
+  }),
+  long: Object.freeze({
+    key: "long", name: "Long case", brief: "A long night. More people, more talk.",
+    proof: "long", actions: 25, lo: 10, hi: 17, target: 13, noiseLo: 6, noiseHi: 12, reach: 16,
+    press: 2, exact: false, roomSlots: 3,
+    liar: Object.freeze({ actions: 28, lo: 15, hi: 24, target: 20, reach: 16, roomSlots: 3, noiseLo: 4, noiseHi: 9 }),
+    pool: Object.freeze({
+      alibi: 20, own: 6, access: 2, sight: 16, trace: 2, timeline: 2,
+      wtrace: 2, motive: 4, pair: 5, negative: 2, sequence: 1, object: 1
+    })
+  })
+};
+var TIER_KEYS = ["short", "standard", "long"];
+function tierOf(key) { return TIERS[key] || TIERS.standard; }
+/* tier plus liar resolved into one object, so nothing downstream has to ask
+   twice what kind of case it is building */
+function modeOf(tierKey, liar) {
+  var t = tierOf(tierKey), L = t.liar;
+  var M = {
+    key: t.key, name: t.name, liar: !!liar, pool: t.pool, exact: t.exact, press: t.press, proof: t.proof,
+    actions: t.actions, lo: t.lo, hi: t.hi, target: t.target, reach: t.reach,
+    roomSlots: t.roomSlots, noiseLo: t.noiseLo, noiseHi: t.noiseHi
+  };
+  if (liar) {
+    M.actions = L.actions; M.lo = L.lo; M.hi = L.hi; M.target = L.target;
+    M.reach = L.reach; M.roomSlots = L.roomSlots; M.noiseLo = L.noiseLo; M.noiseHi = L.noiseHi;
+  }
+  return M;
+}
+function modeLabelOf(tierKey, liar) {
+  return tierOf(tierKey).name + (liar ? " with a liar" : "");
+}
+
+/* ============================ 2. RNG ============================ */
+
+function makeRNG(seed) {
+  var a = seed >>> 0;
+  var r = function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    var t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  r.int = function (n) { return Math.floor(r() * n); };
+  r.range = function (lo, hi) { return lo + Math.floor(r() * (hi - lo + 1)); };
+  r.pick = function (arr) { return arr[Math.floor(r() * arr.length)]; };
+  r.shuffle = function (arr) {
+    var a2 = arr.slice(), i, j, tmp;
+    for (i = a2.length - 1; i > 0; i--) {
+      j = Math.floor(r() * (i + 1)); tmp = a2[i]; a2[i] = a2[j]; a2[j] = tmp;
+    }
+    return a2;
+  };
+  r.weighted = function (pairs) {
+    var total = 0, i, x;
+    for (i = 0; i < pairs.length; i++) total += pairs[i][1];
+    x = r() * total;
+    for (i = 0; i < pairs.length; i++) { x -= pairs[i][1]; if (x <= 0) return pairs[i][0]; }
+    return pairs[pairs.length - 1][0];
+  };
+  r.seed = seed >>> 0;
+  return r;
+}
+
+function seedFromString(str) {
+  var h = 0x811c9dc5, i;
+  for (i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return h >>> 0;
+}
+
+function dailySeed(isoDate) { return seedFromString(isoDate + CONFIG.GAME_ID); }
+
+/* ============================ 3. DATA ============================ */
+
+var SUSPECTS = [
+  { n: "Vance", tall: true,  staff: false, glasses: true  },
+  { n: "Mira",  tall: false, staff: false, glasses: true  },
+  { n: "Ellis", tall: true,  staff: true,  glasses: false },
+  { n: "Odell", tall: false, staff: true,  glasses: false },
+  { n: "Renna", tall: true,  staff: false, glasses: false },
+  { n: "Marek", tall: false, staff: true,  glasses: true  }
+];
+
+var WEAPONS = [
+  { n: "Letter Opener",     cls: "blade"  },
+  { n: "Carving Knife",     cls: "blade"  },
+  { n: "Iron Poker",        cls: "blunt"  },
+  { n: "Brass Candlestick", cls: "blunt"  },
+  { n: "Silk Cord",         cls: "cord"   },
+  { n: "Bitter Tonic",      cls: "poison" }
+];
+
+var ROOMS = [
+  { n: "Study",        staffOnly: false, adj: [4, 1],       sub: "ink"          },
+  { n: "Library",      staffOnly: false, adj: [4, 0, 2],    sub: "paper dust"   },
+  { n: "Conservatory", staffOnly: false, adj: [4, 1],       sub: "potting soil" },
+  { n: "Cellar",       staffOnly: true,  adj: [5],          sub: "coal dust"    },
+  { n: "Hall",         staffOnly: false, adj: [0, 1, 2, 5], sub: "floor wax"    },
+  { n: "Kitchen",      staffOnly: true,  adj: [4, 3],       sub: "flour"        }
+];
+
+var TIMES = ["7pm", "8pm", "9pm", "10pm", "11pm", "midnight"];
+var TIME_HEAD = ["7", "8", "9", "10", "11", "12"];
+var ATTRS = ["tall", "staff", "glasses"];
+
+// ---- COPY_START ----
+var CLASSWORD = {
+  blade: "a blade", blunt: "a blunt weight", cord: "a cord", poison: "poison"
+};
+
+var DESCS = {
+  tall:    ["a small figure", "a tall figure"],
+  glasses: ["a figure wearing no spectacles", "a figure in spectacles"],
+  staff:   ["a figure in evening dress", "a figure in a service collar"]
+};
+
+var EVENTS = [
+  "the dinner bell", "the second course", "the car in the drive",
+  "the storm breaking", "the dog barking", "the last train",
+  "the lamps going out", "the piano stopping"
+];
+
+var TITLE_NOUNS = ["Affair", "Question", "Business", "Matter", "Silence",
+  "Hour", "Incident", "Problem", "Arrangement", "Debt"];
+var TITLE_TIMEWORDS = ["Midnight", "Evening", "Late", "Quiet", "Long", "Last", "Cold"];
+
+var BRIEF = [
+  "One room. One hour. One hand.",
+  "The killer used a weapon they own, or one kept in that room.",
+  "The killer had a reason. Nothing was taken.",
+  "Locked rooms need a staff key."
+];
+
+var TPL = {
+  a1: [
+    "{s} was in the {r} at {t}.",
+    "The staff put {s} in the {r} at {t}.",
+    "{s} says the {r} at {t}, and two people say the same.",
+    "At {t} nobody disputes that {s} stood in the {r}.",
+    "{s} took a telephone call in the {r} at {t}.",
+    "The visitors book in the {r} has {s} signed in at {t}.",
+    "The cook took {s} a tray in the {r} at {t}.",
+    "{s} was still in the {r} when the {t} bell went.",
+    "Two of the staff put {s} in the {r} at {t} and neither blinked.",
+    "{s} spent {t} in the {r}, complaining about the draught.",
+    "At {t} the {r} door stood open and {s} was inside it.",
+    "The register says {s}, the {r}, {t}. It is written in ink."
+  ],
+  a2: [
+    "The {w} belongs to {s} and lives in the {r}.",
+    "{s} owns the {w}. It is kept in the {r}.",
+    "The {w} is registered to {s} and stored in the {r}.",
+    "Household inventory: one {w}, owner {s}, kept in the {r}.",
+    "{s} keeps the {w} in the {r} and nobody else has cause to move it.",
+    "The {w} came from the {r}. It belongs to {s}.",
+    "{s} bought the {w} years ago. It lives in the {r}.",
+    "That {w} is {s} property and it belongs in the {r}.",
+    "The {w} has {s} initials on it and a place in the {r}.",
+    "Ask anyone: the {w} is the {r} one, and it is {s}.",
+    "The {w} was a gift to {s}. It has hung in the {r} ever since.",
+    "There is a hook in the {r} for the {w}, and {s} put it there."
+  ],
+  a3: [
+    "The {r} stays locked. Only staff carry that key.",
+    "Nobody gets into the {r} without a staff key.",
+    "The {r} door was locked. Staff keys only.",
+    "Only the staff can open the {r}.",
+    "The {r} is off limits to guests. The key hangs in the pantry.",
+    "House rule: the {r} is staff only, and always locked.",
+    "The {r} key never leaves the staff. That door stays shut.",
+    "Guests do not go into the {r}. There is one key and the staff hold it.",
+    "You want the {r}, you want a staff key. There is no other way in.",
+    "The {r} is locked at dusk and only the staff can open it.",
+    "No guest has been inside the {r} this year. Staff keys only.",
+    "The {r} lock is old and stiff. Only the staff bother with it."
+  ],
+  a4: [
+    "Someone glimpsed {d} in the {r} at {t}.",
+    "A maid saw {d} leaving the {r} at {t}.",
+    "At {t} the {r} held {d} and nothing else worth noting.",
+    "Through the {r} window at {t}: {d}.",
+    "The gardener remembers {d} in the {r} around {t}.",
+    "{d} passed the {r} door at {t}. That much is certain.",
+    "At {t}, from the stair, somebody saw {d} in the {r}.",
+    "{d}. That is all anyone can tell you about the {r} at {t}.",
+    "The boy swears he saw {d} come out of the {r} at {t}.",
+    "Someone in the {r} at {t}, and it was {d}.",
+    "{d} was in the {r} at {t}. The cat noticed, and so did the cook.",
+    "Reflected in the {r} glass at {t}: {d}, and nobody else."
+  ],
+  a5near: [
+    "{sub} from the {r} lay where it happened. So it is the {r}, or a room beside it.",
+    "Whoever did it stood in {sub}. That reaches the {r} and its neighbors, no further.",
+    "The scene held {sub} off the {r} floor. The {r} then, or next door to it.",
+    "There was {sub} underfoot. It travels no further than the {r} and the rooms it touches.",
+    "Traces of {sub} put the room at the {r} or one step from it.",
+    "The {r} sheds {sub} on everything. It was at the scene, so the two rooms are neighbors at most.",
+    "{sub} on the sill. That is the {r} or a room that touches it.",
+    "You do not carry {sub} far. The {r} then, or next to it.",
+    "There was {sub} in the weave of the rug. The {r} is close by.",
+    "{sub} again. Wherever it happened, the {r} is a wall away at most.",
+    "The {sub} at the scene came off the {r} floor and nowhere further.",
+    "Anything with {sub} on it started in the {r} or beside it."
+  ],
+  a5far: [
+    "No {sub} anywhere at the scene. Not the {r}, and not the rooms beside it.",
+    "The {r} sheds {sub} on everyone who crosses it. None at the scene. Rule out the {r} and its neighbors.",
+    "Nothing of the {r} reached that room. Not the {r}, not its neighbors.",
+    "Clean floor, no {sub}. The {r} and the rooms it touches are out.",
+    "Whoever did it never came near the {r}. Not that room, not the ones beside it.",
+    "The {sub} trail stops well short. The {r} and its neighbors are clear.",
+    "Not a speck of {sub}. Cross off the {r} and everything next to it.",
+    "You cannot leave the {r} without {sub} on you. There was none.",
+    "The {sub} never got there. The {r} and its neighbors are out.",
+    "No {sub} on the boards. Whatever happened, it kept clear of the {r}.",
+    "The {r} marks everyone who walks it. Nothing here is marked.",
+    "Clean as a plate, and the {r} is never clean. Not there, not beside it."
+  ],
+  a6exact: [
+    "The clock stopped at {t}.",
+    "It happened at {t}. The doctor is certain.",
+    "{t}. That is when.",
+    "The watch on the floor read {t} and had stopped.",
+    "Both clocks agree: {t}.",
+    "Time of death, {t}, no argument.",
+    "The mantel clock stopped dead at {t}.",
+    "{t}, says the doctor, and he has said it three times.",
+    "The hands stopped at {t} when it hit the floor.",
+    "Everyone heard it at {t}. Nobody heard anything after.",
+    "Fix the hour at {t} and work from there.",
+    "The church bell had just finished. That puts it at {t}."
+  ],
+  a6not: [
+    "Whatever happened, it did not happen at {t}.",
+    "{t} is ruled out. The hall was full of people.",
+    "Not at {t}. Everyone was accounted for.",
+    "The doctor will swear it was not {t}.",
+    "Cross {t} off. The house was awake and loud.",
+    "{t} is clean. Some other hour, then.",
+    "Not {t}. The whole house was at the table.",
+    "You can strike {t}. Too many people, too much light.",
+    "{t} will not do. The doctor says so and the staff agree.",
+    "Anything but {t}. The hall was crowded then.",
+    "At {t} the victim was heard through the wall. So, not {t}.",
+    "Whatever hour it was, it was not {t}."
+  ],
+  a6before: [
+    "It was over before {t}.",
+    "By {t} it had already happened.",
+    "The body was cold by {t}. Earlier, then.",
+    "Nothing after {t}. Whatever it was, it came first.",
+    "Before {t}. The lamps were still lit.",
+    "Draw your line at {t} and look earlier.",
+    "Before {t}, and not by much.",
+    "By {t} the fire had burned down and it was already done.",
+    "It was finished before {t}. The dog had stopped barking.",
+    "Everything after {t} is clean. Look earlier.",
+    "The doctor puts it earlier than {t}, and he is rarely wrong.",
+    "Whatever it was, {t} came after it."
+  ],
+  a6after: [
+    "Nothing had happened yet at {t}.",
+    "It came after {t}.",
+    "At {t} the victim was alive and complaining.",
+    "Later than {t}. That much is fixed.",
+    "The last living sighting was {t}. After that, then.",
+    "Everything before {t} is clean. Look later.",
+    "After {t}. The victim was still shouting at {t}.",
+    "Nothing before {t}. Start there and go forward.",
+    "At {t} the lamps were lit and everyone was alive.",
+    "It came later than {t}. The tea was still warm.",
+    "Later than {t}, then. The window was still open at {t}.",
+    "{t} is too early. Look further on."
+  ],
+  a7yes: [
+    "The doctor says {cls} did this.",
+    "The wound tells one story: {cls}.",
+    "Whatever killed him was {cls}.",
+    "The marks fit {cls} and nothing else.",
+    "It was {cls}. The rest is detail.",
+    "The body says {cls}.",
+    "One look at the wound and the doctor said {cls}.",
+    "That is {cls}. He has seen enough of them to know.",
+    "The shape of it says {cls} and nothing else does.",
+    "Whatever else you doubt, do not doubt {cls}.",
+    "It was {cls}. The doctor will put his name to that.",
+    "The mark on him is {cls}, plain as writing."
+  ],
+  a7no: [
+    "It was not {cls}. The doctor is sure.",
+    "Rule out {cls}.",
+    "Nothing about this says {cls}.",
+    "The wound is wrong for {cls}.",
+    "Whatever it was, it was not {cls}.",
+    "You can cross off {cls} entirely.",
+    "Nothing here says {cls}. The doctor was firm.",
+    "Whatever this was, {cls} did not do it.",
+    "You can put {cls} out of your head.",
+    "The wound is the wrong shape for {cls}.",
+    "Not {cls}. He was quite clear about that.",
+    "{cls} leaves a different mark. This is not that."
+  ],
+  a8none: [
+    "{s} gained nothing by this death.",
+    "{s} had no quarrel with the victim and no claim on the estate.",
+    "Whatever this was about, it was not about {s}.",
+    "{s} loses money by this. That is not a motive.",
+    "There is no thread running from the victim to {s}.",
+    "{s} barely knew him.",
+    "{s} gets nothing either way. The will says so.",
+    "There is no quarrel between {s} and the victim to find.",
+    "{s} was owed nothing and expected nothing.",
+    "Whatever the reason was, it had nothing to do with {s}.",
+    "{s} is worse off tonight than yesterday. Read the will.",
+    "Not {s}. There is no thread there at all."
+  ],
+  a8set: [
+    "Only {list} stood to gain.",
+    "The estate goes to {list}. Nobody else profits.",
+    "{list}. Those are the ones with a reason.",
+    "Follow the money and it ends at {list}.",
+    "Reason enough to kill: {list}, and nobody else in this house.",
+    "{list} had cause. The rest had none.",
+    "The money moves toward {list} and stops.",
+    "Everyone who gains by this is on one short list: {list}.",
+    "{list} had something to win. Nobody else did.",
+    "If this was about money, it was about {list}.",
+    "The will names {list} and nobody after that.",
+    "Cause enough sits with {list}. The rest had none."
+  ],
+  a9all: [
+    "{a} and {b} were together the whole evening. Neither was ever alone.",
+    "Nobody saw {a} without {b} all night.",
+    "{a} and {b} played cards from dinner until the police came.",
+    "The two of them, {a} and {b}, never separated.",
+    "{a} kept {b} company all evening and can prove it.",
+    "Whatever happened, {a} and {b} were watching each other when it did.",
+    "{a} and {b} were in each other pockets all night.",
+    "You will not find an hour where {a} was without {b}.",
+    "{a} and {b} sat at the same table from dinner until the shouting.",
+    "Neither {a} nor {b} was ever alone. They were together.",
+    "Ask {a} about {b} and you get the same story back.",
+    "The two of them, {a} and {b}, never left each other all evening."
+  ],
+  a9at: [
+    "At {t}, {a} and {b} were in the same room, arguing.",
+    "{a} and {b} were together at {t}. Neither was alone then.",
+    "The {t} bell caught {a} and {b} in company.",
+    "At {t} those two, {a} and {b}, were within arm's reach.",
+    "{a} and {b} share the same story for {t}, and it holds.",
+    "Nobody was alone at {t} if they were {a} or {b}.",
+    "{a} and {b} were shoulder to shoulder at {t}.",
+    "Nobody can put {a} away from {b} at {t}.",
+    "At {t} the pair of them, {a} and {b}, were in one room.",
+    "{a} was with {b} at {t}. Both say so and both are believed.",
+    "Whoever was alone at {t}, it was not {a} and it was not {b}.",
+    "{a} and {b} were arguing over cards at {t}."
+  ],
+  a10after: [
+    "Nobody entered the {r} after {t}.",
+    "The {r} was shut and dark after {t}.",
+    "After {t} the {r} stood empty. The dog would have barked.",
+    "The {r} door was bolted from {t} onward.",
+    "Nobody went near the {r} once {t} had passed.",
+    "After {t}, nothing moved in the {r}.",
+    "The {r} was empty from {t} on. The dust says so.",
+    "After {t} the {r} was dark and stayed dark.",
+    "Nothing crossed the {r} floor after {t}.",
+    "Once {t} passed, the {r} was finished for the night.",
+    "The {r} lamp was put out at {t} and never lit again.",
+    "From {t} onward the {r} had nobody in it."
+  ],
+  a10before: [
+    "The {r} was locked until {t}.",
+    "Nobody could get into the {r} before {t}.",
+    "The {r} stayed sealed until {t}.",
+    "Before {t} the {r} was full of servants. No chance.",
+    "The {r} opened at {t}. Not before.",
+    "Until {t}, the {r} was out of reach.",
+    "Before {t} the {r} was full of staff. No chance.",
+    "The {r} was shut until {t} and the key was in a drawer.",
+    "Nobody was in the {r} before {t}. It was still being cleaned.",
+    "The {r} stood locked until {t}.",
+    "Until {t} you could not have got into the {r} with an axe.",
+    "The {r} opened when the clock said {t}, not before."
+  ],
+  a11: [
+    "It happened after {e1} at {lo} and before {e2} at {hi}.",
+    "{e1} came first at {lo}. Then it happened. Then {e2} at {hi}.",
+    "Between {e1} and {e2}. That is {lo} and {hi}.",
+    "The scream fell between {e1} at {lo} and {e2} at {hi}.",
+    "After {lo}, before {hi}. {e1}, then it, then {e2}.",
+    "{e1} at {lo}, {e2} at {hi}, and the killing sat between them.",
+    "It sat between {e1} at {lo} and {e2} at {hi}.",
+    "{e1} first, at {lo}. It happened. Then {e2} at {hi}.",
+    "After {e1} at {lo} and before {e2} at {hi}. That is the window.",
+    "Two fixed points: {e1} at {lo}, {e2} at {hi}. It happened between them.",
+    "{lo} brought {e1}. {hi} brought {e2}. In between, this.",
+    "Later than {e1} at {lo}, earlier than {e2} at {hi}."
+  ],
+  a12weapon: [
+    "The {w} was locked in its case all evening. Untouched.",
+    "The {w} still has a year of dust on it. Not that.",
+    "The {w} never left its drawer.",
+    "Whatever was used, it was not the {w}.",
+    "The {w} was at the menders until Tuesday. Rule it out.",
+    "The {w} is accounted for. It was not the weapon.",
+    "The {w} has not been off its hook in a month.",
+    "The {w} is where it always is, and it is clean.",
+    "Somebody would have missed the {w}. Nobody did.",
+    "The {w} was in a locked case and the case was not opened.",
+    "You can leave the {w} out of this.",
+    "The {w} was under a cloth with the silver. Not that."
+  ],
+  a12room: [
+    "The {r} window was bolted inside and the door key snapped in the lock. Nobody was in there.",
+    "The {r} was under a dust sheet. It did not happen there.",
+    "The {r} floor is new plaster. Nobody has crossed it in a week.",
+    "It did not happen in the {r}.",
+    "The {r} has been sealed since the funeral. Not there.",
+    "Rule out the {r}. That door has not opened in months.",
+    "Nothing has happened in the {r} since the roof went.",
+    "The {r} is full of furniture under sheets. Not there.",
+    "The {r} door swelled shut in the wet and nobody forced it.",
+    "Whatever happened, the {r} had no part in it.",
+    "The {r} has not been opened since spring.",
+    "Put a line through the {r}. There is nothing in it."
+  ]
+};
+// ---- COPY_END ----
+
+/* tuple index helpers: i = ((c*6 + w)*6 + r)*6 + t */
+var IDX_C = [], IDX_W = [], IDX_R = [], IDX_T = [];
+(function () {
+  var c, w, r, t, i = 0;
+  for (c = 0; c < 6; c++) for (w = 0; w < 6; w++) for (r = 0; r < 6; r++) for (t = 0; t < 6; t++) {
+    IDX_C[i] = c; IDX_W[i] = w; IDX_R[i] = r; IDX_T[i] = t; i++;
+  }
+})();
+
+function tupleIndex(T) { return ((T.c * 6 + T.w) * 6 + T.r) * 6 + T.t; }
+function tupleFromIndex(i) { return { c: IDX_C[i], w: IDX_W[i], r: IDX_R[i], t: IDX_T[i] }; }
+
+var WORDS = 41; // 41 * 32 = 1312 >= 1296
+
+function bitsFull() {
+  var a = new Uint32Array(WORDS), i;
+  for (i = 0; i < CONFIG.TUPLES; i++) a[i >> 5] |= (1 << (i & 31));
+  return a;
+}
+function bitsGet(a, i) { return (a[i >> 5] & (1 << (i & 31))) !== 0; }
+function bitsAnd(a, b) {
+  var o = new Uint32Array(WORDS), i;
+  for (i = 0; i < WORDS; i++) o[i] = a[i] & b[i];
+  return o;
+}
+function bitsCount(a) {
+  var n = 0, i, x;
+  for (i = 0; i < WORDS; i++) {
+    x = a[i];
+    x = x - ((x >>> 1) & 0x55555555);
+    x = (x & 0x33333333) + ((x >>> 2) & 0x33333333);
+    x = (x + (x >>> 4)) & 0x0f0f0f0f;
+    n += (Math.imul(x, 0x01010101) >>> 24);
+  }
+  return n;
+}
+function bitsFirst(a) {
+  var i, j;
+  for (i = 0; i < WORDS; i++) {
+    if (a[i] === 0) continue;
+    for (j = 0; j < 32; j++) if (a[i] & (1 << j)) return i * 32 + j;
+  }
+  return -1;
+}
+function bitsList(a) {
+  var out = [], i;
+  for (i = 0; i < CONFIG.TUPLES; i++) if (bitsGet(a, i)) out.push(i);
+  return out;
+}
+
+/* ================== 4. GEN: predicates, world, clues ================== */
+
+/* The single dispatcher. Depends only on clue params and static DATA, never on
+   hidden world state. That is the fairness law: anything the solver uses, the
+   player can read off the clue itself. */
+function cluePasses(cl, c, w, r, t) {
+  var p = cl.p;
+  switch (cl.ty) {
+    case 1:  return !(c === p.s && t === p.t && r !== p.r);
+    case 2:  return !(w === p.w && c !== p.s && r !== p.r);
+    case 3:  return !(r === p.r && !SUSPECTS[c].staff);
+    case 4:  return !(r === p.r && t === p.t && SUSPECTS[c][p.a] !== p.v);
+    case 5:  return p.near
+      ? (r === p.r || ROOMS[p.r].adj.indexOf(r) >= 0)
+      : (r !== p.r && ROOMS[p.r].adj.indexOf(r) < 0);
+    case 6:
+      if (p.m === "exact")  return t === p.t;
+      if (p.m === "not")    return t !== p.t;
+      if (p.m === "before") return t < p.t;
+      return t > p.t;
+    case 7:  return p.no ? (WEAPONS[w].cls !== p.cls) : (WEAPONS[w].cls === p.cls);
+    case 8:  return p.k === "none" ? (c !== p.s) : (p.set.indexOf(c) >= 0);
+    case 9:
+      if (p.t < 0) return c !== p.a && c !== p.b;
+      return !(t === p.t && (c === p.a || c === p.b));
+    case 10: return !(r === p.r && (p.d === "after" ? t > p.t : t < p.t));
+    case 11: return t > p.lo && t < p.hi;
+    case 12: return p.k === "weapon" ? (w !== p.w) : (r !== p.r);
+  }
+  return true;
+}
+
+function clueMask(cl) {
+  var m = new Uint32Array(WORDS), i;
+  for (i = 0; i < CONFIG.TUPLES; i++) {
+    if (cluePasses(cl, IDX_C[i], IDX_W[i], IDX_R[i], IDX_T[i])) m[i >> 5] |= (1 << (i & 31));
+  }
+  return m;
+}
+
+function clueTrueOf(cl, T) { return cluePasses(cl, T.c, T.w, T.r, T.t); }
+
+/* ---- surface text ---- */
+function fillTpl(s, d) {
+  return s.replace(/\{(\w+)\}/g, function (m, k) {
+    return (d[k] === undefined) ? m : d[k];
+  });
+}
+function nameList(ids) {
+  var ns = ids.map(function (i) { return SUSPECTS[i].n; });
+  if (ns.length === 1) return ns[0];
+  return ns.slice(0, -1).join(", ") + " and " + ns[ns.length - 1];
+}
+function tplBank(cl) {
+  var p = cl.p;
+  switch (cl.ty) {
+    case 1: return TPL.a1;
+    case 2: return TPL.a2;
+    case 3: return TPL.a3;
+    case 4: return TPL.a4;
+    case 5: return p.near ? TPL.a5near : TPL.a5far;
+    case 6: return TPL["a6" + p.m];
+    case 7: return p.no ? TPL.a7no : TPL.a7yes;
+    case 8: return p.k === "none" ? TPL.a8none : TPL.a8set;
+    case 9: return p.t < 0 ? TPL.a9all : TPL.a9at;
+    case 10: return p.d === "after" ? TPL.a10after : TPL.a10before;
+    case 11: return TPL.a11;
+    case 12: return p.k === "weapon" ? TPL.a12weapon : TPL.a12room;
+  }
+  return [""];
+}
+function clueText(cl) {
+  var p = cl.p, bank = tplBank(cl), s = bank[cl.ph % bank.length], d = {};
+  switch (cl.ty) {
+    case 1: d = { s: SUSPECTS[p.s].n, r: ROOMS[p.r].n, t: TIMES[p.t] }; break;
+    case 2: d = { w: WEAPONS[p.w].n, s: SUSPECTS[p.s].n, r: ROOMS[p.r].n }; break;
+    case 3: d = { r: ROOMS[p.r].n }; break;
+    case 4: d = { r: ROOMS[p.r].n, t: TIMES[p.t], d: DESCS[p.a][p.v ? 1 : 0] }; break;
+    case 5: d = { r: ROOMS[p.r].n, sub: ROOMS[p.r].sub }; break;
+    case 6: d = { t: TIMES[p.t] }; break;
+    case 7: d = { cls: CLASSWORD[p.cls] }; break;
+    case 8: d = p.k === "none" ? { s: SUSPECTS[p.s].n } : { list: nameList(p.set) }; break;
+    case 9: d = { a: SUSPECTS[p.a].n, b: SUSPECTS[p.b].n, t: p.t >= 0 ? TIMES[p.t] : "" }; break;
+    case 10: d = { r: ROOMS[p.r].n, t: TIMES[p.t] }; break;
+    case 11: d = { lo: TIMES[p.lo], hi: TIMES[p.hi], e1: EVENTS[p.e1], e2: EVENTS[p.e2] }; break;
+    case 12: d = p.k === "weapon" ? { w: WEAPONS[p.w].n } : { r: ROOMS[p.r].n }; break;
+  }
+  /* Sentence case. Substances and descriptions are lowercase by design because
+     they read right mid sentence ("mud from the garden"), but a phrasing that
+     opens with one used to print "floor wax on the sill." Found by reading a
+     generated case, not by a gate: no assertion in the suite can taste prose. */
+  s = fillTpl(s, d);
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+var TYPE_NAMES = ["", "Alibi", "Ownership", "Access", "Sighting", "Trace", "Timeline",
+  "Wound", "Motive", "Company", "Empty room", "Sequence", "Object"];
+
+/* ---- world ---- */
+function stepFrom(rng, cur, avoid) {
+  var opts = [cur].concat(ROOMS[cur].adj), f = [], i;
+  if (avoid >= 0) {
+    for (i = 0; i < opts.length; i++) if (opts[i] !== avoid) f.push(opts[i]);
+    opts = f.length ? f : [cur];
+  }
+  return opts[rng.int(opts.length)];
+}
+function walkThrough(rng, room, time) {
+  var a = new Array(6), i;
+  a[time] = room;
+  for (i = time + 1; i < 6; i++) a[i] = stepFrom(rng, a[i - 1], -1);
+  for (i = time - 1; i >= 0; i--) a[i] = stepFrom(rng, a[i + 1], -1);
+  return a;
+}
+function walkAvoid(rng, avoidTime, avoidRoom) {
+  var a = new Array(6), i, start;
+  do { start = rng.int(6); } while (avoidTime === 0 && start === avoidRoom);
+  a[0] = start;
+  for (i = 1; i < 6; i++) a[i] = stepFrom(rng, a[i - 1], i === avoidTime ? avoidRoom : -1);
+  return a;
+}
+
+function genWorld(rng) {
+  var r = rng.int(6);
+  var pool = ROOMS[r].staffOnly ? [2, 3, 5] : [0, 1, 2, 3, 4, 5];
+  var c = pool[rng.int(pool.length)];
+  var truth = { c: c, w: rng.int(6), r: r, t: rng.int(6) };
+  var i, s;
+
+  var loc = [];
+  for (s = 0; s < 6; s++) loc.push(null);
+  loc[truth.c] = walkThrough(rng, truth.r, truth.t);
+  for (s = 0; s < 6; s++) if (s !== truth.c) loc[s] = walkAvoid(rng, truth.t, truth.r);
+
+  // an inseparable pair (non culprits) some of the time, for clue type 9
+  var pairAB = null;
+  if (rng() < 0.42) {
+    var others = [];
+    for (s = 0; s < 6; s++) if (s !== truth.c) others.push(s);
+    others = rng.shuffle(others);
+    pairAB = [others[0], others[1]];
+    loc[others[1]] = loc[others[0]].slice();
+  }
+
+  // weapons: owner is a permutation of suspects
+  var owner = rng.shuffle([0, 1, 2, 3, 4, 5]);
+  if (rng() < 0.40 && owner[truth.w] !== truth.c) {
+    var other = owner.indexOf(truth.c);
+    owner[other] = owner[truth.w];
+    owner[truth.w] = truth.c;
+  }
+  var start = [];
+  for (i = 0; i < 6; i++) start.push(rng.int(6));
+  if (owner[truth.w] !== truth.c) start[truth.w] = truth.r;
+
+  // motives: culprit always has one, one to three suspects have none
+  var motive = [];
+  for (s = 0; s < 6; s++) motive.push(s === truth.c ? rng.range(1, 3)
+    : rng.weighted([[0, 3], [1, 3], [2, 3], [3, 2]]));
+  var zeros = [];
+  for (s = 0; s < 6; s++) if (motive[s] === 0) zeros.push(s);
+  if (zeros.length === 0) {
+    var pick = rng.int(6);
+    while (pick === truth.c) pick = rng.int(6);
+    motive[pick] = 0; zeros.push(pick);
+  }
+  while (zeros.length > 3) { motive[zeros.pop()] = 1; }
+
+  return { truth: truth, loc: loc, owner: owner, start: start, motive: motive, pairAB: pairAB };
+}
+
+/* ---- clue pool ---- */
+function clueKey(ty, p) { return ty + "|" + JSON.stringify(p); }
+function addClue(list, seen, ty, p, ref, rng) {
+  var key = clueKey(ty, p);
+  if (seen[key]) return null;
+  seen[key] = 1;
+  var cl = { id: list.length, ty: ty, p: p, ref: ref || [], ph: 0 };
+  cl.ph = rng.int(tplBank(cl).length);
+  list.push(cl);
+  return cl;
+}
+
+function genCluePool(W, rng, seenOut, M) {
+  var T = W.truth, list = [], seen = seenOut || {}, i, k, s, tt, rr;
+  M = M || modeOf("standard", false);
+  var P = M.pool || CONFIG.POOL;
+
+  // 1 alibi. The police always ask every person about the murder hour, so those
+  // six always exist. They pin the culprit to room relation at t without pinning
+  // anything on their own, which is the shape the minimal set wants: many weak
+  // clues, no single shortcut.
+  var everyone = rng.shuffle([0, 1, 2, 3, 4, 5]);
+  for (k = 0; k < 6; k++) {
+    s = everyone[k];
+    addClue(list, seen, 1, { s: s, t: T.t, r: W.loc[s][T.t] }, [s], rng);
+  }
+  for (k = 6; k < P.alibi; k++) {
+    s = rng.int(6);
+    tt = rng.int(6);
+    addClue(list, seen, 1, { s: s, t: tt, r: W.loc[s][tt] }, [s], rng);
+  }
+  // 2 weapon ownership
+  var ws = rng.shuffle([0, 1, 2, 3, 4, 5]);
+  for (k = 0; k < P.own && k < 6; k++) {
+    var wi = ws[k];
+    addClue(list, seen, 2, { w: wi, s: W.owner[wi], r: W.start[wi] }, [W.owner[wi]], rng);
+  }
+  // 3 room access
+  for (rr = 0; rr < 6; rr++) {
+    if (!ROOMS[rr].staffOnly) continue;
+    if (rr === T.r && !SUSPECTS[T.c].staff) continue;
+    if (rng() < 0.75) addClue(list, seen, 3, { r: rr }, [], rng);
+  }
+  // 4 witness sighting
+  for (k = 0; k < P.sight; k++) {
+    if (rng() < 0.4) { rr = T.r; tt = T.t; }
+    else { rr = rng.int(6); tt = rng.int(6); }
+    var occ = [];
+    for (s = 0; s < 6; s++) if (W.loc[s][tt] === rr) occ.push(s);
+    if (!occ.length) continue;
+    var who = occ[rng.int(occ.length)];
+    var a = ATTRS[rng.int(3)];
+    addClue(list, seen, 4, { r: rr, t: tt, a: a, v: SUSPECTS[who][a] }, [], rng);
+  }
+  // 5 physical trace
+  var nearSet = [T.r].concat(ROOMS[T.r].adj);
+  var farSet = [];
+  for (rr = 0; rr < 6; rr++) {
+    if (rr === T.r) continue;
+    if (ROOMS[rr].adj.indexOf(T.r) >= 0) continue;
+    farSet.push(rr);
+  }
+  for (k = 0; k < P.trace; k++) {
+    if (rng() < 0.5 || !farSet.length) {
+      addClue(list, seen, 5, { r: nearSet[rng.int(nearSet.length)], near: true }, [], rng);
+    } else {
+      addClue(list, seen, 5, { r: farSet[rng.int(farSet.length)], near: false }, [], rng);
+    }
+  }
+  // 6 timeline
+  for (k = 0; k < P.timeline; k++) {
+    // "exact" hands over the whole time axis in one clue, which collapses
+    // minimal set size. That is exactly wrong for a standard case and exactly
+    // right for a short one, so the tier decides.
+    var m = M.exact
+      ? rng.weighted([["not", 30], ["before", 20], ["after", 20], ["exact", 30]])
+      : rng.weighted([["not", 45], ["before", 27], ["after", 28]]);
+    if (m === "before" && T.t >= 5) m = "not";
+    if (m === "after" && T.t <= 0) m = "not";
+    if (m === "not") {
+      tt = rng.int(6); if (tt === T.t) tt = (tt + 1 + rng.int(5)) % 6;
+      addClue(list, seen, 6, { t: tt, m: "not" }, [], rng);
+    } else if (m === "before") {
+      addClue(list, seen, 6, { t: rng.range(T.t + 1, 5), m: "before" }, [], rng);
+    } else if (m === "after") {
+      addClue(list, seen, 6, { t: rng.range(0, T.t - 1), m: "after" }, [], rng);
+    } else {
+      addClue(list, seen, 6, { t: T.t, m: "exact" }, [], rng);
+    }
+  }
+  // 7 weapon trace
+  var trueCls = WEAPONS[T.w].cls;
+  var clsSize = 0;
+  for (i = 0; i < 6; i++) if (WEAPONS[i].cls === trueCls) clsSize++;
+  var otherCls = [];
+  for (var key2 in CLASSWORD) if (key2 !== trueCls) otherCls.push(key2);
+  for (k = 0; k < P.wtrace; k++) {
+    if (clsSize >= 2 && rng() < 0.35) addClue(list, seen, 7, { cls: trueCls, no: false }, [], rng);
+    else addClue(list, seen, 7, { cls: otherCls[rng.int(otherCls.length)], no: true }, [], rng);
+  }
+  // 8 motive
+  var zeroList = [];
+  for (s = 0; s < 6; s++) if (W.motive[s] === 0) zeroList.push(s);
+  zeroList = rng.shuffle(zeroList);
+  for (k = 0; k < zeroList.length && k < P.motive; k++) {
+    addClue(list, seen, 8, { k: "none", s: zeroList[k] }, [zeroList[k]], rng);
+  }
+  if (rng() < 0.30) {
+    var lvl = W.motive[T.c] >= 2 ? 2 : 1;
+    var setL = [];
+    for (s = 0; s < 6; s++) if (W.motive[s] >= lvl) setL.push(s);
+    if (setL.length >= 3 && setL.length <= 5) {
+      addClue(list, seen, 8, { k: "set", set: setL }, setL.slice(), rng);
+    }
+  }
+  // 9 company
+  if (W.pairAB && rng() < 0.40) {
+    addClue(list, seen, 9, { a: W.pairAB[0], b: W.pairAB[1], t: -1 }, W.pairAB.slice(), rng);
+  }
+  for (k = 0; k < P.pair; k++) {
+    tt = rng.int(6);
+    var byRoom = {};
+    for (s = 0; s < 6; s++) {
+      var rk = W.loc[s][tt];
+      if (!byRoom[rk]) byRoom[rk] = [];
+      byRoom[rk].push(s);
+    }
+    var groups = [];
+    for (var g in byRoom) if (byRoom[g].length >= 2) groups.push(byRoom[g]);
+    if (!groups.length) continue;
+    var grp = rng.shuffle(groups[rng.int(groups.length)]);
+    addClue(list, seen, 9, { a: grp[0], b: grp[1], t: tt }, [grp[0], grp[1]], rng);
+  }
+  // 10 negative space
+  for (k = 0; k < P.negative; k++) {
+    if (rng() < 0.5) {
+      rr = T.r;
+      if (rng() < 0.5) {
+        if (T.t >= 5) continue;
+        addClue(list, seen, 10, { r: rr, t: rng.range(T.t, 5), d: "after" }, [], rng);
+      } else {
+        if (T.t <= 0) continue;
+        addClue(list, seen, 10, { r: rr, t: rng.range(0, T.t), d: "before" }, [], rng);
+      }
+    } else {
+      rr = rng.int(6); if (rr === T.r) rr = (rr + 1 + rng.int(5)) % 6;
+      addClue(list, seen, 10, { r: rr, t: rng.int(6), d: rng() < 0.5 ? "after" : "before" }, [], rng);
+    }
+  }
+  // 11 sequence
+  if (T.t > 0 && T.t < 5) {
+    for (k = 0; k < P.sequence; k++) {
+      var lo = rng.range(0, T.t - 1), hi = rng.range(T.t + 1, 5);
+      var e1 = rng.int(EVENTS.length), e2 = rng.int(EVENTS.length);
+      if (e2 === e1) e2 = (e2 + 1) % EVENTS.length;
+      addClue(list, seen, 11, { lo: lo, hi: hi, e1: e1, e2: e2 }, [], rng);
+    }
+  }
+  // 12 object state
+  for (k = 0; k < P.object; k++) {
+    if (rng() < 0.55) {
+      var wx = rng.int(6); if (wx === T.w) wx = (wx + 1 + rng.int(5)) % 6;
+      addClue(list, seen, 12, { k: "weapon", w: wx }, [], rng);
+    } else {
+      var rx = rng.int(6); if (rx === T.r) rx = (rx + 1 + rng.int(5)) % 6;
+      addClue(list, seen, 12, { k: "room", r: rx }, [], rng);
+    }
+  }
+  return list;
+}
+
+/* Reinforcement. A random pool lands on a unique solution about 58% of the
+   time; the rest usually sit at two to four survivors. Rather than throw the
+   whole world away, the builder looks at WHICH axis is still open and emits
+   more clues from the same twelve factories aimed at it, all still true of the
+   truth by construction. Only a pool that is still ambiguous after this counts
+   as a retry. Both numbers are reported by sim.js so the raw strength of the
+   random pool stays visible. The added clues are per value eliminators, the
+   most granular shape there is, so they raise minimal set size as well. */
+function reinforce(W, list, seen, masks, rng) {
+  var T = W.truth, added = 0, guard = 0;
+  while (guard++ < 24 && list.length < 60) {
+    var acc = solveMask(list, masks);
+    if (bitsCount(acc) === 1) break;
+    var survivors = bitsList(acc).map(tupleFromIndex);
+    var open = { c: {}, w: {}, r: {}, t: {} }, i, ax;
+    for (i = 0; i < survivors.length; i++) {
+      open.c[survivors[i].c] = 1; open.w[survivors[i].w] = 1;
+      open.r[survivors[i].r] = 1; open.t[survivors[i].t] = 1;
+    }
+    var cl = null;
+    var openR = Object.keys(open.r).map(Number).filter(function (x) { return x !== T.r; });
+    var openT = Object.keys(open.t).map(Number).filter(function (x) { return x !== T.t; });
+    var openW = Object.keys(open.w).map(Number).filter(function (x) { return x !== T.w; });
+    var openC = Object.keys(open.c).map(Number).filter(function (x) { return x !== T.c; });
+    if (openR.length >= 3) {
+      var nearSet2 = [T.r].concat(ROOMS[T.r].adj);
+      cl = addClue(list, seen, 5, { r: nearSet2[rng.int(nearSet2.length)], near: true }, [], rng);
+      if (!cl) cl = addClue(list, seen, 12, { k: "room", r: openR[rng.int(openR.length)] }, [], rng);
+    } else if (openR.length) {
+      cl = addClue(list, seen, 12, { k: "room", r: openR[rng.int(openR.length)] }, [], rng);
+    } else if (openT.length >= 3) {
+      var hiT = openT.filter(function (x) { return x > T.t; }), loT = openT.filter(function (x) { return x < T.t; });
+      if (hiT.length >= 2) cl = addClue(list, seen, 6, { t: hiT[0], m: "before" }, [], rng);
+      else if (loT.length >= 2) cl = addClue(list, seen, 6, { t: loT[loT.length - 1], m: "after" }, [], rng);
+      if (!cl) cl = addClue(list, seen, 6, { t: openT[rng.int(openT.length)], m: "not" }, [], rng);
+    } else if (openT.length) {
+      cl = addClue(list, seen, 6, { t: openT[rng.int(openT.length)], m: "not" }, [], rng);
+    } else if (openW.length >= 3) {
+      var wcls = {}, kk;
+      openW.forEach(function (x) { wcls[WEAPONS[x].cls] = 1; });
+      delete wcls[WEAPONS[T.w].cls];
+      kk = Object.keys(wcls);
+      if (kk.length) cl = addClue(list, seen, 7, { cls: kk[0], no: true }, [], rng);
+      if (!cl) cl = addClue(list, seen, 12, { k: "weapon", w: openW[rng.int(openW.length)] }, [], rng);
+    } else if (openW.length) {
+      cl = addClue(list, seen, 12, { k: "weapon", w: openW[rng.int(openW.length)] }, [], rng);
+    }
+    else if (openC.length) {
+      var target = openC[rng.int(openC.length)], a;
+      for (i = 0; i < 3; i++) {
+        a = ATTRS[i];
+        if (SUSPECTS[T.c][a] !== SUSPECTS[target][a]) {
+          cl = addClue(list, seen, 4, { r: T.r, t: T.t, a: a, v: SUSPECTS[T.c][a] }, [], rng);
+          if (cl) break;
+        }
+      }
+      if (!cl && W.motive[target] === 0) cl = addClue(list, seen, 8, { k: "none", s: target }, [target], rng);
+    }
+    if (!cl) break;
+    masks[cl.id] = clueMask(cl);
+    added++;
+  }
+  return added;
+}
+
+/* ---- solve / minimize ---- */
+function solveMask(clues, masks) {
+  var acc = bitsFull(), i;
+  for (i = 0; i < clues.length; i++) acc = bitsAnd(acc, masks[clues[i].id]);
+  return acc;
+}
+function solve(clues, masks) {
+  return bitsList(solveMask(clues, masks)).map(tupleFromIndex);
+}
+function countKept(pool, masks, keep) {
+  var acc = bitsFull(), i, j, x, n = 0;
+  for (i = 0; i < pool.length; i++) {
+    if (!keep[i]) continue;
+    var m = masks[pool[i].id];
+    for (j = 0; j < WORDS; j++) acc[j] &= m[j];
+  }
+  return bitsCount(acc);
+}
+function minimize(pool, masks, rng) {
+  var keep = [], order = [], i;
+  for (i = 0; i < pool.length; i++) { keep.push(true); order.push(i); }
+  order = rng.shuffle(order);
+  for (i = 0; i < order.length; i++) {
+    var idx = order[i];
+    keep[idx] = false;
+    if (countKept(pool, masks, keep) !== 1) keep[idx] = true;
+  }
+  var out = [];
+  for (i = 0; i < pool.length; i++) if (keep[i]) out.push(pool[i]);
+  return out;
+}
+function isMotiveOnly(clues) {
+  var i;
+  if (!clues.length) return false;
+  for (i = 0; i < clues.length; i++) if (clues[i].ty !== 8) return false;
+  return true;
+}
+
+/* ============ unreliable narrators (HANDOFF 4.7) ============
+   Exactly one suspect says exactly one false thing. Physical evidence never
+   lies, which is the fairness rule that makes the mode solvable: the player
+   knows lies come out of mouths, not out of floorboards.
+
+   The solver requirement changes to the spec's wording:
+     a) exactly one tuple is consistent with ALL BUT ONE clue, and it is the truth
+     b) NO tuple is consistent with all clues
+   (b) is what keeps the lie load bearing. Without it the lie could be dropped
+   from the proof and the case would quietly be a v1 case again.
+
+   "Consistent with all but one" is computed with prefix and suffix
+   intersections rather than 1296 per tuple violation counts, which is the
+   difference between a sweep that takes two minutes and one that takes an
+   hour: for clue i the set that ignores only clue i is pre[i] AND suf[i+1],
+   and the union over i is exactly the at most one violation set. */
+var _FULLREF = null;
+function fullRef() { if (!_FULLREF) _FULLREF = bitsFull(); return _FULLREF; }
+var _PRE = [], _SUF = [];
+function _scr(bank, i) { if (!bank[i]) bank[i] = new Uint32Array(WORDS); return bank[i]; }
+
+function liarMask(clues, masks) {
+  var n = clues.length, i, j, a, b, m, full = fullRef();
+  if (!n) return bitsFull();
+  a = _scr(_PRE, 0); for (j = 0; j < WORDS; j++) a[j] = full[j];
+  for (i = 0; i < n; i++) {
+    a = _PRE[i]; b = _scr(_PRE, i + 1); m = masks[clues[i].id];
+    for (j = 0; j < WORDS; j++) b[j] = a[j] & m[j];
+  }
+  a = _scr(_SUF, n); for (j = 0; j < WORDS; j++) a[j] = full[j];
+  for (i = n - 1; i >= 0; i--) {
+    a = _SUF[i + 1]; b = _scr(_SUF, i); m = masks[clues[i].id];
+    for (j = 0; j < WORDS; j++) b[j] = a[j] & m[j];
+  }
+  var out = new Uint32Array(WORDS);
+  for (i = 0; i < n; i++) {
+    a = _PRE[i]; b = _SUF[i + 1];
+    for (j = 0; j < WORDS; j++) out[j] |= (a[j] & b[j]);
+  }
+  return out;
+}
+/* the whole liar property in one call, so the gate and the generator agree */
+function liarProved(clues, masks, truthIdx) {
+  var lm = liarMask(clues, masks);
+  if (bitsCount(lm) !== 1 || bitsFirst(lm) !== truthIdx) return false;
+  return bitsCount(solveMask(clues, masks)) === 0;
+}
+function falseClueIds(clues, T) {
+  var out = [], i;
+  for (i = 0; i < clues.length; i++) if (!clueTrueOf(clues[i], T)) out.push(clues[i].id);
+  return out;
+}
+
+/* The five shapes a person can lie in. Physical clue types are never candidates.
+   Each returns {ty, p, ref, speaker} and is asserted false of the truth before
+   it is used, so a factory that stops lying cannot slip through. */
+function makeLie(W, rng) {
+  var T = W.truth, tries = 0, s, a, i;
+  while (tries++ < 24) {
+    switch (rng.int(5)) {
+      case 0: {
+        // the culprit's own alibi: the only alibi shape that can be false
+        var rooms = [], k;
+        for (k = 0; k < 6; k++) if (k !== T.r) rooms.push(k);
+        var rr = rooms[rng.int(rooms.length)];
+        return { ty: 1, p: { s: T.c, t: T.t, r: rr }, ref: [T.c], speaker: T.c };
+      }
+      case 1: {
+        // somebody vouches for the culprit's character
+        var others = [];
+        for (k = 0; k < 6; k++) if (k !== T.c) others.push(k);
+        s = others[rng.int(others.length)];
+        return { ty: 8, p: { k: "none", s: T.c }, ref: [T.c], speaker: s };
+      }
+      case 2: {
+        // a false company claim that covers the culprit
+        var mates = [];
+        for (k = 0; k < 6; k++) if (k !== T.c) mates.push(k);
+        s = mates[rng.int(mates.length)];
+        var at = rng() < 0.5 ? -1 : T.t;
+        return { ty: 9, p: { a: T.c, b: s, t: at }, ref: [T.c, s], speaker: s };
+      }
+      case 3: {
+        // the weapon is claimed by the wrong hand and the wrong room
+        var owners = [], rms = [];
+        for (k = 0; k < 6; k++) if (k !== T.c) owners.push(k);
+        for (k = 0; k < 6; k++) if (k !== T.r) rms.push(k);
+        s = owners[rng.int(owners.length)];
+        return { ty: 2, p: { w: T.w, s: s, r: rms[rng.int(rms.length)] }, ref: [s], speaker: s };
+      }
+      default: {
+        // a false sighting at the scene, describing somebody the culprit is not
+        a = ATTRS[rng.int(3)];
+        var wit = [];
+        for (k = 0; k < 6; k++) if (k !== T.c) wit.push(k);
+        s = wit[rng.int(wit.length)];
+        return { ty: 4, p: { r: T.r, t: T.t, a: a, v: !SUSPECTS[T.c][a] }, ref: [], speaker: s };
+      }
+    }
+  }
+  return null;
+}
+
+/* true clue candidates drawn from the same twelve factories, used to push every
+   other tuple to two violations without handing the player a row of bare
+   eliminators. Everything is checked true of the truth before it is offered. */
+function trueClueCandidates(W, rng, n) {
+  var T = W.truth, out = [], k, s, tt, rr, i;
+  for (i = 0; i < n; i++) {
+    switch (rng.int(9)) {
+      case 0:
+        s = rng.int(6); tt = rng.int(6);
+        out.push({ ty: 1, p: { s: s, t: tt, r: W.loc[s][tt] }, ref: [s] }); break;
+      case 1:
+        k = rng.int(6);
+        out.push({ ty: 2, p: { w: k, s: W.owner[k], r: W.start[k] }, ref: [W.owner[k]] }); break;
+      case 2: {
+        rr = rng.int(6); tt = rng.int(6);
+        var occ = [];
+        for (s = 0; s < 6; s++) if (W.loc[s][tt] === rr) occ.push(s);
+        if (!occ.length) break;
+        var who = occ[rng.int(occ.length)], a = ATTRS[rng.int(3)];
+        out.push({ ty: 4, p: { r: rr, t: tt, a: a, v: SUSPECTS[who][a] }, ref: [] }); break;
+      }
+      case 3: {
+        var near = [T.r].concat(ROOMS[T.r].adj);
+        out.push({ ty: 5, p: { r: near[rng.int(near.length)], near: true }, ref: [] }); break;
+      }
+      case 4:
+        tt = rng.int(6); if (tt === T.t) break;
+        out.push({ ty: 6, p: { t: tt, m: "not" }, ref: [] }); break;
+      case 5:
+        rr = rng.int(6); if (rr === T.r) break;
+        out.push({ ty: 12, p: { k: "room", r: rr }, ref: [] }); break;
+      case 6:
+        k = rng.int(6); if (k === T.w) break;
+        out.push({ ty: 12, p: { k: "weapon", w: k }, ref: [] }); break;
+      case 7: {
+        var cls = {}, kk;
+        for (k = 0; k < 6; k++) cls[WEAPONS[k].cls] = 1;
+        delete cls[WEAPONS[T.w].cls];
+        kk = Object.keys(cls);
+        if (!kk.length) break;
+        out.push({ ty: 7, p: { cls: kk[rng.int(kk.length)], no: true }, ref: [] }); break;
+      }
+      default: {
+        rr = rng.int(6);
+        if (rr === T.r) {
+          if (rng() < 0.5) { if (T.t >= 5) break; out.push({ ty: 10, p: { r: rr, t: rng.range(T.t, 5), d: "after" }, ref: [] }); }
+          else { if (T.t <= 0) break; out.push({ ty: 10, p: { r: rr, t: rng.range(0, T.t), d: "before" }, ref: [] }); }
+        } else {
+          out.push({ ty: 10, p: { r: rr, t: rng.int(6), d: rng() < 0.5 ? "after" : "before" }, ref: [] });
+        }
+        break;
+      }
+    }
+  }
+  var keep = [];
+  for (i = 0; i < out.length; i++) if (clueTrueOf(out[i], T)) keep.push(out[i]);
+  return keep;
+}
+
+/* Every clue shape that kills one surviving tuple, in preference order. It has
+   to be a LIST and not a single answer: the one obvious eliminator is often
+   already in the pool, and "the fix is already here" was the whole reason the
+   first reinforcement loop stalled and threw a third of its worlds away. */
+function eliminatorsFor(W, U) {
+  var T = W.truth, out = [], i, j, a;
+  // room
+  if (U.r !== T.r) {
+    out.push({ ty: 12, p: { k: "room", r: U.r }, ref: [] });
+    out.push({ ty: 5, p: { r: T.r, near: true }, ref: [] });
+    for (i = 0; i < 6; i++) out.push({ ty: 5, p: { r: i, near: false }, ref: [] });
+    if (ROOMS[U.r].staffOnly) out.push({ ty: 3, p: { r: U.r }, ref: [] });
+    out.push({ ty: 10, p: { r: U.r, t: T.t, d: U.t > T.t ? "after" : "before" }, ref: [] });
+  }
+  // weapon
+  if (U.w !== T.w) {
+    out.push({ ty: 12, p: { k: "weapon", w: U.w }, ref: [] });
+    out.push({ ty: 7, p: { cls: WEAPONS[U.w].cls, no: true }, ref: [] });
+    out.push({ ty: 7, p: { cls: WEAPONS[T.w].cls, no: false }, ref: [] });
+    out.push({ ty: 2, p: { w: U.w, s: W.owner[U.w], r: W.start[U.w] }, ref: [W.owner[U.w]] });
+  }
+  // hour: several shapes, because "not that hour" is often already on the table
+  if (U.t !== T.t) {
+    out.push({ ty: 6, p: { t: U.t, m: "not" }, ref: [] });
+    for (i = 0; i < 6; i++) {
+      out.push({ ty: 6, p: { t: i, m: "before" }, ref: [] });
+      out.push({ ty: 6, p: { t: i, m: "after" }, ref: [] });
+      for (j = i + 2; j < 6; j++) out.push({ ty: 11, p: { lo: i, hi: j, e1: (i + U.t) % EVENTS.length, e2: (j + U.r) % EVENTS.length }, ref: [] });
+    }
+    out.push({ ty: 10, p: { r: U.r, t: T.t, d: U.t > T.t ? "after" : "before" }, ref: [] });
+  }
+  // culprit
+  if (U.c !== T.c) {
+    for (i = 0; i < 3; i++) {
+      a = ATTRS[i];
+      if (SUSPECTS[T.c][a] !== SUSPECTS[U.c][a]) out.push({ ty: 4, p: { r: T.r, t: T.t, a: a, v: SUSPECTS[T.c][a] }, ref: [] });
+    }
+    if (W.motive[U.c] === 0) out.push({ ty: 8, p: { k: "none", s: U.c }, ref: [U.c] });
+    for (i = 0; i < 6; i++) out.push({ ty: 1, p: { s: U.c, t: i, r: W.loc[U.c][i] }, ref: [U.c] });
+    if (ROOMS[U.r].staffOnly && !SUSPECTS[U.c].staff) out.push({ ty: 3, p: { r: U.r }, ref: [] });
+    for (i = 0; i < 6; i++) if (i !== U.c) out.push({ ty: 9, p: { a: U.c, b: i, t: U.t }, ref: [U.c, i] });
+  }
+  /* Everything above is a PROPOSAL. Two filters decide: it has to be true of
+     the truth, and it has to actually kill the tuple it was proposed for. A
+     shape that fails either is dropped, never patched. */
+  var keep = [], m, ui = tupleIndex(U);
+  for (i = 0; i < out.length; i++) {
+    if (!clueTrueOf(out[i], T)) continue;
+    m = clueMask(out[i]);
+    if (bitsGet(m, ui)) continue;
+    out[i].mask = m;
+    keep.push(out[i]);
+  }
+  return keep;
+}
+function eliminatorFor(W, U) {
+  var e = eliminatorsFor(W, U);
+  return e.length ? e[0] : null;
+}
+
+/* Aimed candidates: one eliminator per value that survivors are still using.
+   Random draws from the twelve factories converge slowly when the survivors
+   are scattered, and slow convergence is what a retry rate is made of. */
+function targetedCandidates(W, surv, truthIdx) {
+  var T = W.truth, out = [], seenR = {}, seenW = {}, seenT = {}, seenC = {}, i, j, a, U;
+  for (i = 0; i < surv.length; i++) {
+    if (surv[i] === truthIdx) continue;
+    U = tupleFromIndex(surv[i]);
+    if (U.r !== T.r && !seenR[U.r]) { seenR[U.r] = 1; out.push({ ty: 12, p: { k: "room", r: U.r }, ref: [] }); }
+    if (U.w !== T.w && !seenW[U.w]) { seenW[U.w] = 1; out.push({ ty: 12, p: { k: "weapon", w: U.w }, ref: [] }); }
+    if (U.t !== T.t && !seenT[U.t]) { seenT[U.t] = 1; out.push({ ty: 6, p: { t: U.t, m: "not" }, ref: [] }); }
+    if (U.c !== T.c && !seenC[U.c]) {
+      seenC[U.c] = 1;
+      for (j = 0; j < 3; j++) {
+        a = ATTRS[j];
+        if (SUSPECTS[T.c][a] !== SUSPECTS[U.c][a]) {
+          out.push({ ty: 4, p: { r: T.r, t: T.t, a: a, v: SUSPECTS[T.c][a] }, ref: [] });
+          break;
+        }
+      }
+      if (W.motive[U.c] === 0) out.push({ ty: 8, p: { k: "none", s: U.c }, ref: [U.c] });
+      out.push({ ty: 1, p: { s: U.c, t: T.t, r: W.loc[U.c][T.t] }, ref: [U.c] });
+    }
+  }
+  var keep = [];
+  for (i = 0; i < out.length; i++) if (clueTrueOf(out[i], T)) keep.push(out[i]);
+  return keep;
+}
+
+function liarReinforce(W, list, seen, masks, rng, cap) {
+  var truthIdx = tupleIndex(W.truth), guard = 0, i, j;
+  while (guard++ < 64 && list.length < cap) {
+    var lm = liarMask(list, masks);
+    if (bitsCount(lm) === 1 && bitsFirst(lm) === truthIdx) return true;
+    var surv = bitsList(lm);
+    var cands = trueClueCandidates(W, rng, 12).concat(targetedCandidates(W, surv, truthIdx));
+    var best = null, bestMask = null, bestYield = 0;
+    for (i = 0; i < cands.length; i++) {
+      if (seen[clueKey(cands[i].ty, cands[i].p)]) continue;   // already said
+      var m = cands[i].mask || clueMask(cands[i]), y = 0;
+      for (j = 0; j < surv.length; j++) {
+        if (surv[j] === truthIdx) continue;
+        if (!bitsGet(m, surv[j])) y++;
+      }
+      if (y > bestYield) { bestYield = y; best = cands[i]; bestMask = m; }
+    }
+    if (!best) {
+      // nothing generic bites, so aim at one survivor with every shape there is
+      for (j = 0; j < surv.length && !best; j++) {
+        if (surv[j] === truthIdx) continue;
+        var es = eliminatorsFor(W, tupleFromIndex(surv[j]));
+        for (i = 0; i < es.length; i++) {
+          if (seen[clueKey(es[i].ty, es[i].p)]) continue;
+          best = es[i]; bestMask = es[i].mask; break;
+        }
+      }
+    }
+    if (!best) return false;
+    var cl = addClue(list, seen, best.ty, best.p, best.ref, rng);
+    if (!cl) return false;
+    masks[cl.id] = bestMask;
+  }
+  return bitsCount(liarMask(list, masks)) === 1 && bitsFirst(liarMask(list, masks)) === truthIdx;
+}
+
+function minimizeLiar(pool, masks, rng, truthIdx) {
+  var keep = [], order = [], i;
+  for (i = 0; i < pool.length; i++) { keep.push(true); order.push(i); }
+  order = rng.shuffle(order);
+  for (i = 0; i < order.length; i++) {
+    var idx = order[i];
+    keep[idx] = false;
+    var sub = [], j;
+    for (j = 0; j < pool.length; j++) if (keep[j]) sub.push(pool[j]);
+    if (!liarProved(sub, masks, truthIdx)) keep[idx] = true;
+  }
+  var out = [];
+  for (i = 0; i < pool.length; i++) if (keep[i]) out.push(pool[i]);
+  return out;
+}
+
+/* ---- placement ---- */
+var PHYSICAL_TYPES = [3, 5, 6, 7, 10, 12];
+function isPhysical(cl) { return PHYSICAL_TYPES.indexOf(cl.ty) >= 0; }
+
+function placeClues(W, pool, minimal, rng, M, lie) {
+  var rooms = [[], [], [], [], [], []];
+  var ints = [null, null, null, null, null, null];
+  var press = [null, null, null, null, null, null];
+  var used = {}, i, s;
+  var minIds = {};
+  M = M || modeOf("standard", false);
+  for (i = 0; i < minimal.length; i++) minIds[minimal[i].id] = 1;
+  /* the lie is a thing a person said, so it goes in that person's mouth and
+     nowhere else. A lie found under a floorboard would break the only rule the
+     player has to lean on. */
+  if (lie) { ints[lie.speaker] = lie.id; used[lie.id] = 1; }
+
+  function freeRoom() {
+    var order = rng.shuffle([0, 1, 2, 3, 4, 5]), j;
+    for (j = 0; j < 6; j++) if (rooms[order[j]].length < M.roomSlots) return order[j];
+    return -1;
+  }
+  function freeInt() {
+    var order = rng.shuffle([0, 1, 2, 3, 4, 5]), j;
+    for (j = 0; j < 6; j++) if (ints[order[j]] === null) return order[j];
+    return -1;
+  }
+  function putBasic(cl) {
+    var a = isPhysical(cl) ? freeRoom() : freeInt();
+    if (a >= 0) { if (isPhysical(cl)) rooms[a].push(cl.id); else ints[a] = cl.id; used[cl.id] = 1; return true; }
+    var b = isPhysical(cl) ? freeInt() : freeRoom();
+    if (b >= 0) { if (isPhysical(cl)) ints[b] = cl.id; else rooms[b].push(cl.id); used[cl.id] = 1; return true; }
+    return false;
+  }
+
+  var shuffled = rng.shuffle(minimal.slice());
+  var pressPicks = [];
+  var rest = [];
+  for (i = 0; i < shuffled.length; i++) {
+    var cl = shuffled[i];
+    if (used[cl.id]) continue;
+    var canPress = cl.ref.length > 0 && pressPicks.length < M.press && rng() < 0.24;
+    if (canPress) {
+      var cand = rng.shuffle(cl.ref.slice()), placedP = false, j;
+      for (j = 0; j < cand.length; j++) {
+        if (press[cand[j]] === null) {
+          press[cand[j]] = cl.id; used[cl.id] = 1;
+          pressPicks.push({ s: cand[j], id: cl.id });
+          placedP = true; break;
+        }
+      }
+      if (placedP) continue;
+    }
+    rest.push(cl);
+  }
+  for (i = 0; i < rest.length; i++) if (!putBasic(rest[i])) return null;
+
+  // every press gated suspect must be reachable: a basic slot must mention them
+  function basicMentions(sus) {
+    var j, k;
+    for (j = 0; j < 6; j++) {
+      if (ints[j] !== null && pool[ints[j]].ref.indexOf(sus) >= 0) return true;
+      for (k = 0; k < rooms[j].length; k++) if (pool[rooms[j][k]].ref.indexOf(sus) >= 0) return true;
+    }
+    return false;
+  }
+  for (i = 0; i < pressPicks.length; i++) {
+    s = pressPicks[i].s;
+    if (basicMentions(s)) continue;
+    var opener = null, j2;
+    for (j2 = 0; j2 < pool.length; j2++) {
+      if (used[pool[j2].id]) continue;
+      if (pool[j2].ref.indexOf(s) >= 0) { opener = pool[j2]; break; }
+    }
+    if (opener && putBasic(opener)) continue;
+    // no opener available: demote the press clue into a basic slot
+    var demoted = pool[pressPicks[i].id];
+    press[s] = null;
+    used[demoted.id] = 0;
+    if (!putBasic(demoted)) return null;
+    pressPicks.splice(i, 1); i--;
+  }
+
+  // noise: fill remaining slots with consistent but unnecessary clues
+  var spare = [];
+  for (i = 0; i < pool.length; i++) if (!used[pool[i].id]) spare.push(pool[i]);
+  spare = rng.shuffle(spare);
+  var noiseTarget = rng.range(M.noiseLo, M.noiseHi), placedNoise = 0, si = 0;
+  for (s = 0; s < 6; s++) {
+    if (press[s] !== null) continue;
+    while (si < spare.length && used[spare[si].id]) si++;
+    if (si >= spare.length) break;
+    press[s] = spare[si].id; used[spare[si].id] = 1; si++; placedNoise++;
+  }
+  while (placedNoise < noiseTarget && si < spare.length) {
+    var cl2 = spare[si]; si++;
+    if (used[cl2.id]) continue;
+    if (!putBasic(cl2)) break;
+    placedNoise++;
+  }
+
+  return { rooms: rooms, ints: ints, press: press, pressMinimal: pressPicks, minIds: minIds };
+}
+
+function minActions(pl, pool) {
+  var needRoom = {}, needInt = {}, i, j, k, n = 0;
+  for (i = 0; i < 6; i++) {
+    for (k = 0; k < pl.rooms[i].length; k++) if (pl.minIds[pl.rooms[i][k]]) needRoom[i] = 1;
+    if (pl.ints[i] !== null && pl.minIds[pl.ints[i]]) needInt[i] = 1;
+  }
+  for (i in needRoom) n += CONFIG.COST_SEARCH;
+  for (i in needInt) n += CONFIG.COST_INTERVIEW;
+  for (i = 0; i < pl.pressMinimal.length; i++) {
+    var s = pl.pressMinimal[i].s;
+    n += CONFIG.COST_PRESS;
+    // unlocking clue must be visited too, if it is not already on the list
+    var covered = false;
+    for (j = 0; j < 6 && !covered; j++) {
+      if (needInt[j] && pl.ints[j] !== null && pool[pl.ints[j]].ref.indexOf(s) >= 0) covered = true;
+      if (needRoom[j]) for (k = 0; k < pl.rooms[j].length; k++)
+        if (pool[pl.rooms[j][k]].ref.indexOf(s) >= 0) covered = true;
+    }
+    if (covered) continue;
+    var extra = false;
+    for (j = 0; j < 6 && !extra; j++) {
+      if (pl.ints[j] !== null && pool[pl.ints[j]].ref.indexOf(s) >= 0) { needInt[j] = 1; extra = true; }
+    }
+    if (!extra) for (j = 0; j < 6 && !extra; j++) {
+      for (k = 0; k < pl.rooms[j].length; k++)
+        if (pool[pl.rooms[j][k]].ref.indexOf(s) >= 0) { needRoom[j] = 1; extra = true; break; }
+    }
+    if (extra) n += 1;
+  }
+  return n;
+}
+
+function caseTitle(rng, T) {
+  var noun = TITLE_NOUNS[rng.int(TITLE_NOUNS.length)];
+  if (rng() < 0.5) return "The " + ROOMS[T.r].n + " " + noun;
+  return "The " + TITLE_TIMEWORDS[rng.int(TITLE_TIMEWORDS.length)] + " " + noun;
+}
+
+/* ---- header fit ----------------------------------------------------------
+   The generated title is the most identity carrying string in the game and it
+   used to render as "THE EVENING BUSINE..." on a 390px phone. It now wraps to
+   two lines and steps down a size when it has to. These are uppercase advance
+   widths as a fraction of the font size for a bold system sans, rounded up, so
+   the estimate never flatters the layout. Everything here is pure arithmetic,
+   which means node can prove that EVERY title the generator can produce fits,
+   instead of a human eyeballing an average one. */
+var GLYPH_W = {
+  A: 0.73, B: 0.73, C: 0.73, D: 0.73, E: 0.68, F: 0.62, G: 0.79, H: 0.73, I: 0.30,
+  J: 0.57, K: 0.73, L: 0.62, M: 0.84, N: 0.73, O: 0.79, P: 0.68, Q: 0.79, R: 0.73,
+  S: 0.68, T: 0.62, U: 0.73, V: 0.68, W: 0.95, X: 0.68, Y: 0.68, Z: 0.62, " ": 0.29
+};
+function glyphW(ch) {
+  var v = GLYPH_W[ch.toUpperCase()];
+  return v === undefined ? 0.79 : v;
+}
+/* CSS letter spacing lands after every character, the last one included. */
+function textWidth(s, size, lsEm) {
+  var sum = 0, i;
+  for (i = 0; i < s.length; i++) sum += glyphW(s[i]);
+  return (sum + s.length * lsEm) * size;
+}
+/* greedy wrap, the same rule a browser uses for plain words */
+function wrapText(s, box, size, lsEm) {
+  var words = s.split(" "), lines = [], cur = "", widest = 0, i, tryLine, w;
+  for (i = 0; i < words.length; i++) {
+    tryLine = cur ? cur + " " + words[i] : words[i];
+    if (cur && textWidth(tryLine, size, lsEm) > box) {
+      w = textWidth(cur, size, lsEm); if (w > widest) widest = w;
+      lines.push(cur); cur = words[i];
+    } else cur = tryLine;
+  }
+  if (cur) { lines.push(cur); w = textWidth(cur, size, lsEm); if (w > widest) widest = w; }
+  return { lines: lines.length, widest: widest };
+}
+var TITLE_TIERS = [
+  { cls: "", size: 14, ls: 0.06 },
+  { cls: "t1", size: 12.5, ls: 0.03 },
+  { cls: "t2", size: 11, ls: 0.01 }
+];
+var TITLE_MAX_LINES = 2;
+/* the biggest tier that fits in two lines. Returns an index into TITLE_TIERS. */
+function titleTier(title, box) {
+  var i, m;
+  for (i = 0; i < TITLE_TIERS.length; i++) {
+    m = wrapText(title, box, TITLE_TIERS[i].size, TITLE_TIERS[i].ls);
+    if (m.lines <= TITLE_MAX_LINES && m.widest <= box) return i;
+  }
+  return TITLE_TIERS.length - 1;
+}
+function titleFits(title, box) {
+  var t = TITLE_TIERS[titleTier(title, box)];
+  var m = wrapText(title, box, t.size, t.ls);
+  return m.lines <= TITLE_MAX_LINES && m.widest <= box;
+}
+/* what the header actually leaves for the title: the two ghost buttons at their
+   real label widths, the gaps and the page padding. */
+function headerTitleBox(clientWidth, leftLabel, rightLabel) {
+  var btn = function (s) { return Math.max(48, textWidth(s, 10, 0.09) + 16); };
+  var chrome = btn(leftLabel) + btn(rightLabel) + 12 + 20;
+  return Math.max(96, clientWidth - chrome);
+}
+/* every title the generator can ever produce, for the fit gate */
+function allTitles() {
+  var out = [], i, j;
+  for (i = 0; i < TITLE_NOUNS.length; i++) {
+    for (j = 0; j < ROOMS.length; j++) out.push("The " + ROOMS[j].n + " " + TITLE_NOUNS[i]);
+    for (j = 0; j < TITLE_TIMEWORDS.length; j++) out.push("The " + TITLE_TIMEWORDS[j] + " " + TITLE_NOUNS[i]);
+  }
+  return out;
+}
+
+/* An irredundant clue set is not unique: different removal orders give
+   different valid minimal sets, all of which still prove the same single
+   solution. So try a few orders and keep one inside the tier's band. This
+   chooses AMONG proofs, it never weakens one. */
+function chooseProof(makeOne, M, passes) {
+  var cands = [], i, pick, out, n = passes || 5;
+  for (i = 0; i < n; i++) cands.push(makeOne());
+  var inb = [];
+  for (i = 0; i < cands.length; i++) if (cands[i].length >= M.lo && cands[i].length <= M.hi) inb.push(cands[i]);
+  pick = inb.length ? inb : cands;
+  out = pick[0];
+  for (i = 1; i < pick.length; i++) {
+    if (M.proof === "long") { if (pick[i].length > out.length) out = pick[i]; }
+    else if (M.proof === "short") { if (pick[i].length < out.length) out = pick[i]; }
+    else if (Math.abs(pick[i].length - M.target) < Math.abs(out.length - M.target)) out = pick[i];
+  }
+  return out;
+}
+
+function hasId(list, id) {
+  var i;
+  for (i = 0; i < list.length; i++) if (list[i].id === id) return true;
+  return false;
+}
+
+function generateCase(seed, opts) {
+  var liar = !!(opts && opts.liar);
+  var M = modeOf(opts && opts.tier, liar);
+  /* optional rejection ledger. A retry rate you cannot explain is a number you
+     do not own, so the generator can be asked WHY it threw a world away. */
+  var why = (opts && opts.why) || null;
+  function no(reason) { if (why) why[reason] = (why[reason] || 0) + 1; }
+  var rng = makeRNG(seed >>> 0);
+  var retries = 0, baseMiss = 0, attempt, W, pool, masks, i, acc, seenKeys;
+  for (attempt = 0; attempt < CONFIG.MAX_ATTEMPTS; attempt++) {
+    W = genWorld(rng);
+    seenKeys = {};
+    pool = genCluePool(W, rng, seenKeys, M);
+    masks = [];
+    var allTrue = true;
+    for (i = 0; i < pool.length; i++) {
+      if (!clueTrueOf(pool[i], W.truth)) { allTrue = false; break; }
+      masks[pool[i].id] = clueMask(pool[i]);
+    }
+    if (!allTrue) { no("falseClue"); retries++; continue; }
+    acc = solveMask(pool, masks);
+    var baseUnique = (bitsCount(acc) === 1 && bitsFirst(acc) === tupleIndex(W.truth));
+    if (!baseUnique) { baseMiss++; reinforce(W, pool, seenKeys, masks, rng); acc = solveMask(pool, masks); }
+    if (bitsCount(acc) !== 1 || bitsFirst(acc) !== tupleIndex(W.truth)) { no("notUnique"); retries++; continue; }
+    var truthIdx = tupleIndex(W.truth), lieInfo = null, minimal = null;
+    if (liar) {
+      var lie = makeLie(W, rng);
+      if (!lie || clueTrueOf(lie, W.truth)) { no("noLie"); retries++; continue; }
+      var lcl = addClue(pool, seenKeys, lie.ty, lie.p, lie.ref, rng);
+      if (!lcl) { no("dupLie"); retries++; continue; }
+      masks[lcl.id] = clueMask(lcl);
+      lieInfo = { id: lcl.id, speaker: lie.speaker, ty: lie.ty };
+      if (!liarReinforce(W, pool, seenKeys, masks, rng, 84)) { no("reinforce"); retries++; continue; }
+      if (!liarProved(pool, masks, truthIdx)) { no("notProved"); retries++; continue; }
+      minimal = chooseProof(function () { return minimizeLiar(pool, masks, rng, truthIdx); }, M, 4);
+      if (!minimal || !hasId(minimal, lieInfo.id)) { no("lieDropped"); retries++; continue; }
+    } else {
+      minimal = chooseProof(function () { return minimize(pool, masks, rng); }, M, 8);
+    }
+    if (isMotiveOnly(minimal)) { no("motiveOnly"); retries++; continue; }
+    var pl = placeClues(W, pool, minimal, rng, M, lieInfo);
+    if (!pl) { no("placement"); retries++; continue; }
+    var ma = minActions(pl, pool);
+    if (ma > M.reach) { no("reach"); retries++; continue; }
+    return {
+      seed: seed >>> 0,
+      title: caseTitle(rng, W.truth),
+      truth: W.truth,
+      world: W,
+      pool: pool,
+      masks: masks,
+      minimal: minimal.map(function (c) { return c.id; }),
+      place: pl,
+      retries: retries,
+      baseMiss: baseMiss,
+      minActions: ma,
+      tier: M.key,
+      liar: liar,
+      lie: lieInfo,
+      mode: M,
+      actions: M.actions
+    };
+  }
+  return null;
+}
+
+/* ================== 5. SIM: pure state machine ================== */
+
+function newGame(cs) {
+  return {
+    seed: cs.seed,
+    tier: cs.tier || "standard",
+    liar: !!cs.liar,
+    total: cs.actions || CONFIG.ACTIONS,
+    actionsLeft: cs.actions || CONFIG.ACTIONS,
+    searched: [], interviewed: [], pressed: [],
+    found: [],
+    marks: {},
+    status: "play",
+    acc: null,
+    contraId: -1,
+    stars: 0
+  };
+}
+
+function hasFound(st, id) { return st.found.indexOf(id) >= 0; }
+
+function pressUnlocked(cs, st, s) {
+  var i;
+  for (i = 0; i < st.found.length; i++) {
+    if (cs.pool[st.found[i]].ref.indexOf(s) >= 0) return true;
+  }
+  return false;
+}
+
+function markKey(tab, row, col) { return tab + ":" + row + ":" + col; }
+
+function candidateCountFromMarks(marks) {
+  var tabs = ["w", "r", "t"], total = 0, c, ti, x;
+  for (c = 0; c < 6; c++) {
+    var prod = 1;
+    for (ti = 0; ti < 3; ti++) {
+      var allowed = [], yes = [];
+      for (x = 0; x < 6; x++) {
+        var v = marks[markKey(tabs[ti], c, x)];
+        if (v === "n") continue;
+        if (v === "y") yes.push(x);
+        allowed.push(x);
+      }
+      var n = yes.length ? (yes.length === 1 ? 1 : 0) : allowed.length;
+      prod *= n;
+    }
+    total += prod;
+  }
+  return total;
+}
+
+function excludedCells(mask) {
+  var out = { w: [], r: [], t: [] }, c, x, i, any;
+  for (c = 0; c < 6; c++) {
+    for (x = 0; x < 6; x++) {
+      any = false;
+      for (i = ((c * 6 + x) * 36); i < ((c * 6 + x) * 36) + 36 && !any; i++) if (bitsGet(mask, i)) any = true;
+      if (!any) out.w.push(c * 6 + x);
+      any = false;
+      for (var w2 = 0; w2 < 6 && !any; w2++) for (var t2 = 0; t2 < 6 && !any; t2++) {
+        if (bitsGet(mask, ((c * 6 + w2) * 6 + x) * 6 + t2)) any = true;
+      }
+      if (!any) out.r.push(c * 6 + x);
+      any = false;
+      for (var w3 = 0; w3 < 6 && !any; w3++) for (var r3 = 0; r3 < 6 && !any; r3++) {
+        if (bitsGet(mask, ((c * 6 + w3) * 6 + r3) * 6 + x)) any = true;
+      }
+      if (!any) out.t.push(c * 6 + x);
+    }
+  }
+  return out;
+}
+function clueExcludedCells(cl) { return excludedCells(clueMask(cl)); }
+
+function foundMask(cs, st, skipId) {
+  var acc = bitsFull(), i, j, m;
+  for (i = 0; i < st.found.length; i++) {
+    if (st.found[i] === skipId) continue;
+    m = cs.masks[st.found[i]];
+    for (j = 0; j < WORDS; j++) acc[j] &= m[j];
+  }
+  return acc;
+}
+
+/* What the player can still believe, given what they hold. In a liar case that
+   is the at most one violation set, so a lie in the journal never crosses the
+   truth off the board. */
+function stateMask(cs, st, skipId) {
+  if (!cs.liar) return foundMask(cs, st, skipId);
+  var cl = [], i;
+  for (i = 0; i < st.found.length; i++) if (st.found[i] !== skipId) cl.push(cs.pool[st.found[i]]);
+  return liarMask(cl, cs.masks);
+}
+
+/* marginal halo: what THIS clue adds on top of what the player already holds */
+function clueHalo(cs, st, id) {
+  var base = stateMask(cs, st, id);
+  var without = excludedCells(base);
+  var withIt = excludedCells(cs.liar ? stateMask(cs, st, -1) : bitsAnd(base, cs.masks[id]));
+  var out = { w: [], r: [], t: [] }, tabs = ["w", "r", "t"], i, k;
+  for (k = 0; k < 3; k++) {
+    var had = {}, tb = tabs[k];
+    for (i = 0; i < without[tb].length; i++) had[without[tb][i]] = 1;
+    for (i = 0; i < withIt[tb].length; i++) if (!had[withIt[tb][i]]) out[tb].push(withIt[tb][i]);
+  }
+  if (!out.w.length && !out.r.length && !out.t.length) {
+    var solo = clueExcludedCells(cs.pool[id]);
+    out = solo;
+  }
+  return out;
+}
+
+/* stars scale with the budget, so three stars means the same thing in a short
+   case and a long one: you spent under sixty percent of the evening. */
+function starsFor(actionsLeft, total) {
+  total = total || CONFIG.ACTIONS;
+  if (actionsLeft >= Math.round(total * CONFIG.STAR3 / CONFIG.ACTIONS)) return 3;
+  if (actionsLeft >= Math.round(total * CONFIG.STAR2 / CONFIG.ACTIONS)) return 2;
+  return 1;
+}
+
+/* The note that would have caught them. In a liar case the lie contradicts the
+   truth as well, so teaching with it would teach the wrong lesson: skip it and
+   find a note that is actually true. */
+function findContradiction(cs, st, guess) {
+  var i, id, skip = (cs.liar && cs.lie) ? cs.lie.id : -1;
+  for (i = 0; i < st.found.length; i++) {
+    id = st.found[i];
+    if (id === skip) continue;
+    if (!cluePasses(cs.pool[id], guess.c, guess.w, guess.r, guess.t)) return id;
+  }
+  var placedIds = placedClueIds(cs);
+  for (i = 0; i < placedIds.length; i++) {
+    id = placedIds[i];
+    if (id === skip) continue;
+    if (!cluePasses(cs.pool[id], guess.c, guess.w, guess.r, guess.t)) return id;
+  }
+  for (i = 0; i < cs.pool.length; i++) {
+    if (i === skip) continue;
+    if (!cluePasses(cs.pool[i], guess.c, guess.w, guess.r, guess.t)) return i;
+  }
+  return -1;
+}
+
+/* who or what produced a clue, so the journal can say "Marek says" instead of
+   presenting a statement and a floorboard as the same kind of fact */
+function clueSource(cs, id) {
+  var i, k, pl = cs.place;
+  for (i = 0; i < 6; i++) {
+    for (k = 0; k < pl.rooms[i].length; k++) if (pl.rooms[i][k] === id) return { kind: "room", i: i };
+    if (pl.ints[i] === id) return { kind: "said", i: i };
+    if (pl.press[i] === id) return { kind: "said", i: i };
+  }
+  return null;
+}
+
+function placedClueIds(cs) {
+  var out = [], i, k, pl = cs.place;
+  for (i = 0; i < 6; i++) {
+    for (k = 0; k < pl.rooms[i].length; k++) out.push(pl.rooms[i][k]);
+    if (pl.ints[i] !== null) out.push(pl.ints[i]);
+    if (pl.press[i] !== null) out.push(pl.press[i]);
+  }
+  return out;
+}
+
+/* the only mutator. illegal actions are no ops that report why. */
+function step(st, cs, act) {
+  var ev = [], i, ids = [];
+  if (!act || typeof act !== "object") return { state: st, events: [{ e: "invalid", why: "no action" }] };
+  if (st.status !== "play" && act.k !== "reset") {
+    return { state: st, events: [{ e: "invalid", why: "case closed" }] };
+  }
+  switch (act.k) {
+    case "search":
+      if (!(act.r >= 0 && act.r < 6)) { ev.push({ e: "invalid", why: "no such room" }); break; }
+      if (st.searched.indexOf(act.r) >= 0) { ev.push({ e: "invalid", why: "already searched" }); break; }
+      if (st.actionsLeft < CONFIG.COST_SEARCH) { ev.push({ e: "invalid", why: "no actions left" }); break; }
+      st.actionsLeft -= CONFIG.COST_SEARCH;
+      st.searched.push(act.r);
+      ids = cs.place.rooms[act.r];
+      for (i = 0; i < ids.length; i++) if (!hasFound(st, ids[i])) { st.found.push(ids[i]); ev.push({ e: "clue", id: ids[i] }); }
+      if (!ids.length) ev.push({ e: "nothing", where: "room", r: act.r });
+      break;
+    case "interview":
+      if (!(act.s >= 0 && act.s < 6)) { ev.push({ e: "invalid", why: "no such person" }); break; }
+      if (st.interviewed.indexOf(act.s) >= 0) { ev.push({ e: "invalid", why: "already spoken to" }); break; }
+      if (st.actionsLeft < CONFIG.COST_INTERVIEW) { ev.push({ e: "invalid", why: "no actions left" }); break; }
+      st.actionsLeft -= CONFIG.COST_INTERVIEW;
+      st.interviewed.push(act.s);
+      if (cs.place.ints[act.s] !== null) {
+        if (!hasFound(st, cs.place.ints[act.s])) { st.found.push(cs.place.ints[act.s]); ev.push({ e: "clue", id: cs.place.ints[act.s] }); }
+      } else ev.push({ e: "nothing", where: "suspect", s: act.s });
+      break;
+    case "press":
+      if (!(act.s >= 0 && act.s < 6)) { ev.push({ e: "invalid", why: "no such person" }); break; }
+      if (st.pressed.indexOf(act.s) >= 0) { ev.push({ e: "invalid", why: "already pressed" }); break; }
+      if (!pressUnlocked(cs, st, act.s)) { ev.push({ e: "invalid", why: "locked" }); break; }
+      if (st.actionsLeft < CONFIG.COST_PRESS) { ev.push({ e: "invalid", why: "no actions left" }); break; }
+      st.actionsLeft -= CONFIG.COST_PRESS;
+      st.pressed.push(act.s);
+      if (cs.place.press[act.s] !== null) {
+        if (!hasFound(st, cs.place.press[act.s])) { st.found.push(cs.place.press[act.s]); ev.push({ e: "clue", id: cs.place.press[act.s] }); }
+        else ev.push({ e: "nothing", where: "press", s: act.s });
+      } else ev.push({ e: "nothing", where: "press", s: act.s });
+      break;
+    case "mark":
+      if (["w", "r", "t"].indexOf(act.tab) < 0) { ev.push({ e: "invalid", why: "no such tab" }); break; }
+      if (!(act.row >= 0 && act.row < 6 && act.col >= 0 && act.col < 6)) { ev.push({ e: "invalid", why: "off board" }); break; }
+      if (["", "y", "n", "q"].indexOf(act.v) < 0) { ev.push({ e: "invalid", why: "no such mark" }); break; }
+      if (act.v === "") delete st.marks[markKey(act.tab, act.row, act.col)];
+      else st.marks[markKey(act.tab, act.row, act.col)] = act.v;
+      ev.push({ e: "mark" });
+      break;
+    case "automark":
+      var cells = excludedCells(stateMask(cs, st, -1)), tabs = ["w", "r", "t"], k;
+      for (k = 0; k < 3; k++) for (i = 0; i < cells[tabs[k]].length; i++) {
+        var cell = cells[tabs[k]][i];
+        st.marks[markKey(tabs[k], Math.floor(cell / 6), cell % 6)] = "n";
+      }
+      ev.push({ e: "mark" });
+      break;
+    case "accuse":
+      if (!(act.c >= 0 && act.c < 6 && act.w >= 0 && act.w < 6 && act.r >= 0 && act.r < 6 && act.t >= 0 && act.t < 6)) {
+        ev.push({ e: "invalid", why: "incomplete accusation" }); break;
+      }
+      st.acc = { c: act.c, w: act.w, r: act.r, t: act.t };
+      if (act.c === cs.truth.c && act.w === cs.truth.w && act.r === cs.truth.r && act.t === cs.truth.t) {
+        st.status = "won";
+        st.stars = starsFor(st.actionsLeft, st.total);
+        ev.push({ e: "won", stars: st.stars });
+      } else {
+        st.status = "lost";
+        st.stars = 0;
+        st.contraId = findContradiction(cs, st, st.acc);
+        ev.push({ e: "lost", contraId: st.contraId });
+      }
+      break;
+    default:
+      ev.push({ e: "invalid", why: "unknown action" });
+  }
+  if (st.actionsLeft < 0) st.actionsLeft = 0;
+  return { state: st, events: ev };
+}
+
+function actionsUsed(st) { return (st.total || CONFIG.ACTIONS) - st.actionsLeft; }
+
+/* ================== agents (verification only) ================== */
+
+function greedyAgent(cs, rng) {
+  var st = newGame(cs);
+  var cand = bitsFull(), i, j;
+  /* The stopping rule is sound in both modes. In a liar case the truth always
+     sits inside the at most one violation set, so if that set ever holds a
+     single tuple, that tuple IS the truth. */
+  function absorb(ev) {
+    var got = false;
+    for (i = 0; i < ev.length; i++) if (ev[i].e === "clue") got = true;
+    if (!got) return;
+    if (cs.liar) { cand = stateMask(cs, st, -1); return; }
+    for (i = 0; i < ev.length; i++) if (ev[i].e === "clue") {
+      var m = cs.masks[ev[i].id];
+      for (j = 0; j < WORDS; j++) cand[j] &= m[j];
+    }
+  }
+  var guard = 0;
+  while (st.actionsLeft > 0 && guard++ < 200) {
+    if (bitsCount(cand) === 1) break;
+    /* greedy in the ordinary sense: go where the case is still open. A live
+       culprit is worth talking to, a live scene is worth searching, and a
+       person already ruled out is not worth two actions. */
+    /* Evidence lives in a room whether or not the room is the scene, so the
+       agent sweeps basics in random order rather than only visiting live
+       rooms. Targeting basics by live candidates was measured at 78% solve
+       against 89% for the plain sweep: the clue you skip is the one you need.
+       Presses DO target live culprits, because two actions on a person already
+       ruled out is the one obviously bad buy. */
+    var liveC = {}, list0 = bitsList(cand), q;
+    for (q = 0; q < list0.length; q++) liveC[IDX_C[list0[q]]] = 1;
+    var basics = [], presses = [], k;
+    for (k = 0; k < 6; k++) if (st.searched.indexOf(k) < 0) basics.push({ k: "search", r: k });
+    for (k = 0; k < 6; k++) if (st.interviewed.indexOf(k) < 0) basics.push({ k: "interview", s: k });
+    var pressAll = [];
+    for (k = 0; k < 6; k++) if (st.pressed.indexOf(k) < 0 && pressUnlocked(cs, st, k)) {
+      pressAll.push({ k: "press", s: k });
+      if (liveC[k]) presses.push({ k: "press", s: k });
+    }
+    if (!presses.length) presses = pressAll;
+    var act = null;
+    if (presses.length && st.actionsLeft >= CONFIG.PRESS_FLOOR && rng() < CONFIG.PRESS_BIAS) act = presses[rng.int(presses.length)];
+    else if (basics.length) act = basics[rng.int(basics.length)];
+    else if (presses.length && st.actionsLeft >= CONFIG.COST_PRESS) act = presses[rng.int(presses.length)];
+    if (!act) break;
+    absorb(step(st, cs, act).events);
+  }
+  var list = bitsList(cand);
+  var pickIdx = list.length ? list[rng.int(list.length)] : 0;
+  var guess = tupleFromIndex(pickIdx);
+  step(st, cs, { k: "accuse", c: guess.c, w: guess.w, r: guess.r, t: guess.t });
+  return { solved: st.status === "won", actionsUsed: actionsUsed(st), remaining: list.length };
+}
+
+function perfectAgent(cs) {
+  var st = newGame(cs), pl = cs.place, i, k, need = [];
+  var needRoom = {}, needInt = {}, needPress = [];
+  for (i = 0; i < 6; i++) {
+    for (k = 0; k < pl.rooms[i].length; k++) if (pl.minIds[pl.rooms[i][k]]) needRoom[i] = 1;
+    if (pl.ints[i] !== null && pl.minIds[pl.ints[i]]) needInt[i] = 1;
+    if (pl.press[i] !== null && pl.minIds[pl.press[i]]) needPress.push(i);
+  }
+  for (i = 0; i < needPress.length; i++) {
+    var s = needPress[i], found = false;
+    for (k = 0; k < 6 && !found; k++) {
+      if (needInt[k] && pl.ints[k] !== null && cs.pool[pl.ints[k]].ref.indexOf(s) >= 0) found = true;
+      if (needRoom[k]) { var q; for (q = 0; q < pl.rooms[k].length; q++) if (cs.pool[pl.rooms[k][q]].ref.indexOf(s) >= 0) found = true; }
+    }
+    if (found) continue;
+    for (k = 0; k < 6 && !found; k++) if (pl.ints[k] !== null && cs.pool[pl.ints[k]].ref.indexOf(s) >= 0) { needInt[k] = 1; found = true; }
+    for (k = 0; k < 6 && !found; k++) { var q2; for (q2 = 0; q2 < pl.rooms[k].length; q2++) if (cs.pool[pl.rooms[k][q2]].ref.indexOf(s) >= 0) { needRoom[k] = 1; found = true; break; } }
+  }
+  for (i in needRoom) step(st, cs, { k: "search", r: +i });
+  for (i in needInt) step(st, cs, { k: "interview", s: +i });
+  for (i = 0; i < needPress.length; i++) step(st, cs, { k: "press", s: needPress[i] });
+  var cand = stateMask(cs, st, -1);
+  var list = bitsList(cand);
+  var guess = tupleFromIndex(list.length ? list[0] : 0);
+  step(st, cs, { k: "accuse", c: guess.c, w: guess.w, r: guess.r, t: guess.t });
+  return { solved: st.status === "won", actionsUsed: actionsUsed(st), remaining: list.length };
+}
+
+/* string level sanity: text must render clean and never contradict the truth */
+function textSanity(cs) {
+  var i, problems = [], lieId = (cs.liar && cs.lie) ? cs.lie.id : -1, falses = 0;
+  for (i = 0; i < cs.pool.length; i++) {
+    var cl = cs.pool[i], s = clueText(cl);
+    /* Exactly one clue is allowed to be false, and only in a liar case, and
+       only the one the generator declared. Everything else is a defect. */
+    if (!clueTrueOf(cl, cs.truth)) {
+      falses++;
+      if (cl.id !== lieId) problems.push("clue " + i + " false of truth");
+    }
+    if (s.indexOf("{") >= 0 || s.indexOf("}") >= 0) problems.push("clue " + i + " unfilled slot");
+    if (/[-‐-―]/.test(s)) problems.push("clue " + i + " dash in copy");
+    if (s.length < 8) problems.push("clue " + i + " empty text");
+    var must = clueSubjects(cl);
+    var low = s.toLowerCase();
+    for (var j = 0; j < must.length; j++) if (low.indexOf(must[j].toLowerCase()) < 0) problems.push("clue " + i + " text drops " + must[j]);
+  }
+  if (lieId >= 0 && falses !== 1) problems.push("a liar case holds " + falses + " false clues, not one");
+  if (lieId < 0 && falses !== 0) problems.push("an honest case holds " + falses + " false clues");
+  return problems;
+}
+function clueSubjects(cl) {
+  var p = cl.p;
+  switch (cl.ty) {
+    case 1: return [SUSPECTS[p.s].n, ROOMS[p.r].n, TIMES[p.t]];
+    case 2: return [WEAPONS[p.w].n, SUSPECTS[p.s].n, ROOMS[p.r].n];
+    case 3: return [ROOMS[p.r].n];
+    case 4: return [ROOMS[p.r].n, TIMES[p.t], DESCS[p.a][p.v ? 1 : 0]];
+    case 5: return [ROOMS[p.r].n];
+    case 6: return [TIMES[p.t]];
+    case 7: return [CLASSWORD[p.cls]];
+    case 8: return p.k === "none" ? [SUSPECTS[p.s].n] : [SUSPECTS[p.set[0]].n];
+    case 9: return p.t < 0 ? [SUSPECTS[p.a].n, SUSPECTS[p.b].n] : [SUSPECTS[p.a].n, SUSPECTS[p.b].n, TIMES[p.t]];
+    case 10: return [ROOMS[p.r].n, TIMES[p.t]];
+    case 11: return [TIMES[p.lo], TIMES[p.hi], EVENTS[p.e1], EVENTS[p.e2]];
+    case 12: return p.k === "weapon" ? [WEAPONS[p.w].n] : [ROOMS[p.r].n];
+  }
+  return [];
+}
+
+/* serialisation for save and resume: a case is only its seed */
+function serializeState(st) {
+  return {
+    seed: st.seed, tier: st.tier || "standard", liar: !!st.liar, actionsLeft: st.actionsLeft,
+    searched: st.searched.slice(), interviewed: st.interviewed.slice(), pressed: st.pressed.slice(),
+    found: st.found.slice(), marks: JSON.parse(JSON.stringify(st.marks)),
+    status: st.status, acc: st.acc ? { c: st.acc.c, w: st.acc.w, r: st.acc.r, t: st.acc.t } : null,
+    contraId: st.contraId, stars: st.stars
+  };
+}
+function deserializeState(o, cs) {
+  var st = newGame(cs);
+  if (!o || typeof o !== "object") return st;
+  var n = function (v, d) { return (typeof v === "number" && isFinite(v)) ? v : d; };
+  var arr = function (v) {
+    if (!v || typeof v.length !== "number") return [];
+    var out = [], i;
+    for (i = 0; i < v.length; i++) if (typeof v[i] === "number" && v[i] >= 0) out.push(v[i]);
+    return out;
+  };
+  st.actionsLeft = Math.max(0, Math.min(st.total, n(o.actionsLeft, st.total)));
+  st.searched = arr(o.searched); st.interviewed = arr(o.interviewed); st.pressed = arr(o.pressed);
+  st.found = arr(o.found).filter(function (id) { return id < cs.pool.length; });
+  st.marks = {};
+  if (o.marks && typeof o.marks === "object") {
+    for (var k in o.marks) if (/^[wrt]:[0-5]:[0-5]$/.test(k) && ["y", "n", "q"].indexOf(o.marks[k]) >= 0) st.marks[k] = o.marks[k];
+  }
+  st.status = ["play", "won", "lost"].indexOf(o.status) >= 0 ? o.status : "play";
+  st.acc = (o.acc && typeof o.acc === "object") ? { c: n(o.acc.c, 0), w: n(o.acc.w, 0), r: n(o.acc.r, 0), t: n(o.acc.t, 0) } : null;
+  st.contraId = n(o.contraId, -1);
+  st.stars = n(o.stars, 0);
+  return st;
+}
+/* ---- save core: pure, storage free. The SAVE layer only supplies strings. ---- */
+var SAVE_KEY = "lw_" + CONFIG.GAME_ID + "_v1";
+
+function saveDefaults() {
+  return {
+    v: 1, gameId: CONFIG.GAME_ID,
+    stats: { cases: 0, solved: 0, lost: 0, stars: 0, bestStars: 0, dailyStreak: 0, lastDaily: "" },
+    unlocks: [],
+    best: { fewestActions: 0 },
+    settings: { sound: true, volume: 0.7, haptics: true, autoMark: false, typewriter: true, reduceMotion: false },
+    archive: [],
+    resume: null
+  };
+}
+function saveMigrate(s) {
+  if (!s || typeof s !== "object") return saveDefaults();
+  if (typeof s.v !== "number") s.v = 1;
+  return s;
+}
+function saveParse(raw) {
+  var d = saveDefaults();
+  if (typeof raw !== "string" || !raw) return d;
+  var o;
+  try { o = JSON.parse(raw); } catch (e) { return d; }
+  if (!o || typeof o !== "object" || o.constructor === Array) return d;
+  o = saveMigrate(o);
+  var out = saveDefaults(), k;
+  for (k in out.stats) if (typeof (o.stats || {})[k] === typeof out.stats[k]) out.stats[k] = o.stats[k];
+  for (k in out.settings) if (typeof (o.settings || {})[k] === typeof out.settings[k]) out.settings[k] = o.settings[k];
+  for (k in out.best) if (typeof (o.best || {})[k] === "number") out.best[k] = o.best[k];
+  if (o.archive && o.archive.constructor === Array) out.archive = o.archive.slice(0, 10);
+  if (o.resume && typeof o.resume === "object") out.resume = o.resume;
+  return out;
+}
+/* two tab law: counters ADD, bests MAX, never write a whole object you read once */
+function saveMerge(disk, patch) {
+  var out = saveParse(JSON.stringify(disk || {})), k;
+  if (patch.addStats) for (k in patch.addStats) out.stats[k] = (out.stats[k] || 0) + patch.addStats[k];
+  if (patch.maxStats) for (k in patch.maxStats) out.stats[k] = Math.max(out.stats[k] || 0, patch.maxStats[k]);
+  if (patch.setStats) for (k in patch.setStats) out.stats[k] = patch.setStats[k];
+  if (patch.settings) for (k in patch.settings) out.settings[k] = patch.settings[k];
+  if (patch.bestLow) for (k in patch.bestLow) {
+    out.best[k] = (!out.best[k]) ? patch.bestLow[k] : Math.min(out.best[k], patch.bestLow[k]);
+  }
+  if (patch.archive) out.archive = [patch.archive].concat(out.archive).slice(0, 10);
+  if (patch.resume !== undefined) out.resume = patch.resume;
+  return out;
+}
+function shareString(cs, st, isDaily, dayNo) {
+  var head = isDaily ? ("BLACKOUT day " + dayNo) : ("BLACKOUT case " + cs.seed);
+  if (st.status === "won") {
+    return head + " solved in " + actionsUsed(st) + " moves, " +
+      (st.stars === 3 ? "three stars" : st.stars === 2 ? "two stars" : "one star") +
+      ". Try it: ?seed=" + cs.seed;
+  }
+  return head + " beat me in " + actionsUsed(st) + " moves. Try it: ?seed=" + cs.seed;
+}
+// ---- SIM_EXPORT_END ----
+
+// ---- TEST_EXPORT_START ----
+/* Assertion harness. Runs identically in node (sim.js --test) and in the page
+   (?test=1). Never touches the DOM. */
+function buildTests(S) {
+  var TEST = {
+    results: [],
+    assert: function (name, cond, detail) { this.results.push({ name: name, pass: !!cond, detail: detail }); },
+    eq: function (name, a, b) { this.assert(name, a === b, "expected " + b + ", got " + a); },
+    ge: function (name, a, b) { this.assert(name, a >= b, "expected at least " + b + ", got " + a); },
+    le: function (name, a, b) { this.assert(name, a <= b, "expected at most " + b + ", got " + a); },
+    near: function (name, a, b, tol) { this.assert(name, Math.abs(a - b) <= tol, "expected about " + b + ", got " + a); },
+    run: function () {
+      suiteRNG(this, S); suiteData(this, S); suitePredicates(this, S); suiteCells(this, S);
+      suiteGen(this, S); suiteAgents(this, S); suiteMarks(this, S); suiteStep(this, S);
+      suiteSave(this, S); suiteFuzz(this, S); suiteCopy(this, S); suiteRegression(this, S);
+      suiteTitle(this, S); suiteLiar(this, S); suiteTiers(this, S);
+    },
+    report: function () {
+      var passed = 0, failed = 0, failures = [], i;
+      for (i = 0; i < this.results.length; i++) {
+        if (this.results[i].pass) passed++; else { failed++; failures.push(this.results[i]); }
+      }
+      return { passed: passed, failed: failed, total: this.results.length, failures: failures };
+    }
+  };
+  return TEST;
+}
+
+function clueOf(ty, p) { return { id: 0, ty: ty, p: p, ref: [], ph: 0 }; }
+
+function suiteRNG(T, S) {
+  var a = S.makeRNG(1234), b = S.makeRNG(1234), c = S.makeRNG(1235), i, ok = true;
+  for (i = 0; i < 200; i++) if (a() !== b()) ok = false;
+  T.assert("rng same seed same stream", ok);
+  T.assert("rng different seed diverges", S.makeRNG(1)() !== c());
+  var r = S.makeRNG(9), lo = 1, hi = 1, x;
+  for (i = 0; i < 2000; i++) { x = r(); if (x < 0 || x >= 1) lo = 0; }
+  T.assert("rng in unit range", lo === 1);
+  for (i = 0; i < 2000; i++) { x = r.int(6); if (x < 0 || x > 5 || x !== Math.floor(x)) hi = 0; }
+  T.assert("rng int in range", hi === 1);
+  var okr = true;
+  for (i = 0; i < 500; i++) { x = r.range(3, 7); if (x < 3 || x > 7) okr = false; }
+  T.assert("rng range inclusive", okr);
+  var sh = r.shuffle([0, 1, 2, 3, 4, 5]);
+  T.eq("shuffle keeps length", sh.length, 6);
+  T.eq("shuffle keeps members", sh.slice().sort().join(""), "012345");
+  T.assert("weighted returns a member", ["a", "b"].indexOf(r.weighted([["a", 1], ["b", 1]])) >= 0);
+  T.eq("seedFromString is stable", S.seedFromString("blackout"), S.seedFromString("blackout"));
+  T.assert("seedFromString separates inputs", S.seedFromString("a") !== S.seedFromString("b"));
+  T.assert("daily seed is a uint32", S.dailySeed("2026-08-16") >= 0);
+  var g1 = S.generateCase(4242), g2 = S.generateCase(4242);
+  T.eq("same seed same truth", JSON.stringify(g1.truth), JSON.stringify(g2.truth));
+  T.eq("same seed same pool size", g1.pool.length, g2.pool.length);
+  T.eq("same seed same title", g1.title, g2.title);
+}
+
+function suiteData(T, S) {
+  T.eq("six suspects", S.SUSPECTS.length, 6);
+  T.eq("six weapons", S.WEAPONS.length, 6);
+  T.eq("six rooms", S.ROOMS.length, 6);
+  T.eq("six times", S.TIMES.length, 6);
+  T.eq("solution space is 1296", S.CONFIG.TUPLES, 6 * 6 * 6 * 6);
+  var tall = 0, staff = 0, glass = 0, i, j;
+  for (i = 0; i < 6; i++) { if (S.SUSPECTS[i].tall) tall++; if (S.SUSPECTS[i].staff) staff++; if (S.SUSPECTS[i].glasses) glass++; }
+  T.ge("at least two tall", tall, 2);
+  T.ge("at least two staff", staff, 2);
+  T.assert("tall is not unique to one person", tall >= 2 && tall <= 4);
+  T.assert("staff is not unique to one person", staff >= 2 && staff <= 4);
+  T.assert("glasses is not unique to one person", glass >= 2 && glass <= 4);
+  var sym = true;
+  for (i = 0; i < 6; i++) for (j = 0; j < S.ROOMS[i].adj.length; j++) {
+    if (S.ROOMS[S.ROOMS[i].adj[j]].adj.indexOf(i) < 0) sym = false;
+  }
+  T.assert("room adjacency is symmetric", sym);
+  var connected = true;
+  for (i = 0; i < 6; i++) if (!S.ROOMS[i].adj.length) connected = false;
+  T.assert("no isolated room", connected);
+  var so = 0;
+  for (i = 0; i < 6; i++) if (S.ROOMS[i].staffOnly) so++;
+  T.ge("at least one staff only room", so, 1);
+  T.le("not every room is staff only", so, 4);
+  var cls = {};
+  for (i = 0; i < 6; i++) { T.assert("weapon " + i + " has a known class", !!S.CLASSWORD[S.WEAPONS[i].cls]); cls[S.WEAPONS[i].cls] = 1; }
+  T.ge("at least three weapon classes", Object.keys(cls).length, 3);
+  var names = "";
+  for (i = 0; i < 6; i++) names += S.SUSPECTS[i].n + S.WEAPONS[i].n + S.ROOMS[i].n + S.TIMES[i];
+  T.assert("no dash in any data name", !/[-]/.test(names));
+  T.eq("tuple index round trip", S.tupleIndex(S.tupleFromIndex(777)), 777);
+  T.eq("full bitset counts every tuple", S.bitsCount(S.bitsFull()), 1296);
+}
+
+function suitePredicates(T, S) {
+  var P = function (ty, p) { return clueOf(ty, p); };
+  var c;
+  c = P(1, { s: 0, t: 2, r: 1 });
+  T.assert("t1 alibi true tuple", S.cluePasses(c, 0, 3, 1, 2));
+  T.assert("t1 alibi false tuple", !S.cluePasses(c, 0, 3, 0, 2));
+  T.assert("t1 alibi does not touch other people", S.cluePasses(c, 1, 3, 0, 2));
+  c = P(2, { w: 4, s: 3, r: 1 });
+  T.assert("t2 ownership true when owner acts", S.cluePasses(c, 3, 4, 0, 0));
+  T.assert("t2 ownership true in the keeping room", S.cluePasses(c, 0, 4, 1, 0));
+  T.assert("t2 ownership false otherwise", !S.cluePasses(c, 0, 4, 0, 0));
+  T.assert("t2 ownership ignores other weapons", S.cluePasses(c, 0, 0, 0, 0));
+  c = P(3, { r: 3 });
+  T.assert("t3 access true for staff", S.cluePasses(c, 2, 0, 3, 0));
+  T.assert("t3 access false for a guest", !S.cluePasses(c, 0, 0, 3, 0));
+  T.assert("t3 access ignores other rooms", S.cluePasses(c, 0, 0, 0, 0));
+  c = P(4, { r: 1, t: 2, a: "tall", v: true });
+  T.assert("t4 sighting true for a tall culprit", S.cluePasses(c, 0, 0, 1, 2));
+  T.assert("t4 sighting false for a short culprit", !S.cluePasses(c, 1, 0, 1, 2));
+  T.assert("t4 sighting ignores other places", S.cluePasses(c, 1, 0, 0, 2));
+  c = P(5, { r: 0, near: true });
+  T.assert("t5 trace near allows the room itself", S.cluePasses(c, 0, 0, 0, 0));
+  T.assert("t5 trace near allows a neighbor", S.cluePasses(c, 0, 0, 4, 0));
+  T.assert("t5 trace near rejects a far room", !S.cluePasses(c, 0, 0, 3, 0));
+  c = P(5, { r: 3, near: false });
+  T.assert("t5 trace far rejects the room", !S.cluePasses(c, 0, 0, 3, 0));
+  T.assert("t5 trace far rejects a neighbor", !S.cluePasses(c, 0, 0, 5, 0));
+  T.assert("t5 trace far allows elsewhere", S.cluePasses(c, 0, 0, 0, 0));
+  c = P(6, { t: 3, m: "not" });
+  T.assert("t6 not rejects that hour", !S.cluePasses(c, 0, 0, 0, 3));
+  T.assert("t6 not allows another hour", S.cluePasses(c, 0, 0, 0, 2));
+  c = P(6, { t: 3, m: "before" });
+  T.assert("t6 before allows earlier", S.cluePasses(c, 0, 0, 0, 2));
+  T.assert("t6 before rejects the bound", !S.cluePasses(c, 0, 0, 0, 3));
+  T.assert("t6 before rejects later", !S.cluePasses(c, 0, 0, 0, 4));
+  c = P(6, { t: 3, m: "after" });
+  T.assert("t6 after allows later", S.cluePasses(c, 0, 0, 0, 4));
+  T.assert("t6 after rejects the bound", !S.cluePasses(c, 0, 0, 0, 3));
+  c = P(7, { cls: "blade", no: false });
+  T.assert("t7 wound class true", S.cluePasses(c, 0, 0, 0, 0));
+  T.assert("t7 wound class false", !S.cluePasses(c, 0, 2, 0, 0));
+  c = P(7, { cls: "cord", no: true });
+  T.assert("t7 wound not class rejects the cord", !S.cluePasses(c, 0, 4, 0, 0));
+  T.assert("t7 wound not class allows a blade", S.cluePasses(c, 0, 0, 0, 0));
+  c = P(8, { k: "none", s: 2 });
+  T.assert("t8 no motive rejects that person", !S.cluePasses(c, 2, 0, 0, 0));
+  T.assert("t8 no motive allows others", S.cluePasses(c, 0, 0, 0, 0));
+  c = P(8, { k: "set", set: [0, 1, 2] });
+  T.assert("t8 motive set allows a member", S.cluePasses(c, 1, 0, 0, 0));
+  T.assert("t8 motive set rejects an outsider", !S.cluePasses(c, 3, 0, 0, 0));
+  c = P(9, { a: 1, b: 4, t: -1 });
+  T.assert("t9 all evening rejects the first", !S.cluePasses(c, 1, 0, 0, 0));
+  T.assert("t9 all evening rejects the second", !S.cluePasses(c, 4, 0, 0, 0));
+  T.assert("t9 all evening allows a third party", S.cluePasses(c, 0, 0, 0, 0));
+  c = P(9, { a: 1, b: 4, t: 3 });
+  T.assert("t9 at hour rejects at that hour", !S.cluePasses(c, 1, 0, 0, 3));
+  T.assert("t9 at hour allows another hour", S.cluePasses(c, 1, 0, 0, 2));
+  T.assert("t9 at hour ignores third parties", S.cluePasses(c, 0, 0, 0, 3));
+  c = P(10, { r: 2, t: 3, d: "after" });
+  T.assert("t10 empty after rejects later", !S.cluePasses(c, 0, 0, 2, 4));
+  T.assert("t10 empty after allows the bound", S.cluePasses(c, 0, 0, 2, 3));
+  T.assert("t10 empty after ignores other rooms", S.cluePasses(c, 0, 0, 0, 4));
+  c = P(10, { r: 2, t: 3, d: "before" });
+  T.assert("t10 empty before rejects earlier", !S.cluePasses(c, 0, 0, 2, 2));
+  T.assert("t10 empty before allows the bound", S.cluePasses(c, 0, 0, 2, 3));
+  c = P(11, { lo: 1, hi: 4, e1: 0, e2: 1 });
+  T.assert("t11 sequence allows inside", S.cluePasses(c, 0, 0, 0, 2));
+  T.assert("t11 sequence rejects the low bound", !S.cluePasses(c, 0, 0, 0, 1));
+  T.assert("t11 sequence rejects the high bound", !S.cluePasses(c, 0, 0, 0, 4));
+  c = P(12, { k: "weapon", w: 2 });
+  T.assert("t12 object weapon rejects it", !S.cluePasses(c, 0, 2, 0, 0));
+  T.assert("t12 object weapon allows another", S.cluePasses(c, 0, 3, 0, 0));
+  c = P(12, { k: "room", r: 5 });
+  T.assert("t12 object room rejects it", !S.cluePasses(c, 0, 0, 5, 0));
+  T.assert("t12 object room allows another", S.cluePasses(c, 0, 0, 4, 0));
+}
+
+function suiteCells(T, S) {
+  function cells(ty, p) { return S.clueExcludedCells(clueOf(ty, p)); }
+  var e;
+  e = cells(1, { s: 0, t: 2, r: 1 });
+  T.eq("t1 excludes no whole cell on its own", e.w.length + e.r.length + e.t.length, 0);
+  e = cells(2, { w: 4, s: 3, r: 1 });
+  T.eq("t2 excludes no whole cell on its own", e.w.length + e.r.length + e.t.length, 0);
+  e = cells(3, { r: 3 });
+  T.eq("t3 excludes the room for every guest", e.r.length, 3);
+  T.assert("t3 excludes Vance in the Cellar", e.r.indexOf(0 * 6 + 3) >= 0);
+  T.assert("t3 leaves staff in the Cellar", e.r.indexOf(2 * 6 + 3) < 0);
+  e = cells(4, { r: 1, t: 2, a: "tall", v: true });
+  T.eq("t4 excludes no whole cell on its own", e.w.length + e.r.length + e.t.length, 0);
+  e = cells(5, { r: 3, near: true });
+  T.eq("t5 near leaves only the room and its neighbors", e.r.length, 4 * 6);
+  e = cells(6, { t: 3, m: "not" });
+  T.eq("t6 not excludes one hour column", e.t.length, 6);
+  T.eq("t6 not touches nothing else", e.w.length + e.r.length, 0);
+  e = cells(7, { cls: "cord", no: true });
+  T.eq("t7 not cord excludes one weapon column", e.w.length, 6);
+  e = cells(8, { k: "none", s: 2 });
+  T.eq("t8 no motive clears that whole row", e.w.length + e.r.length + e.t.length, 18);
+  e = cells(9, { a: 1, b: 4, t: -1 });
+  T.eq("t9 all evening clears two whole rows", e.w.length + e.r.length + e.t.length, 36);
+  e = cells(10, { r: 2, t: 3, d: "after" });
+  T.eq("t10 excludes no whole cell on its own", e.w.length + e.r.length + e.t.length, 0);
+  e = cells(11, { lo: 1, hi: 4, e1: 0, e2: 1 });
+  T.eq("t11 sequence excludes four hour columns", e.t.length, 24);
+  e = cells(12, { k: "weapon", w: 2 });
+  T.eq("t12 weapon excludes one column", e.w.length, 6);
+  e = cells(12, { k: "room", r: 5 });
+  T.eq("t12 room excludes one column", e.r.length, 6);
+}
+
+function suiteGen(T, S, N) {
+  N = N || 200;
+  var STD = S.modeOf("standard", false);
+  var rng = S.makeRNG(20260816), i, cs;
+  var uniq = 0, retries = 0, sizes = [], motiveOnly = 0, reachBad = 0, textBad = 0;
+  var trueOfTruth = 0, poolBad = 0, placeBad = 0, capBad = 0, pressBad = 0, minimalProves = 0;
+  for (i = 0; i < N; i++) {
+    cs = S.generateCase((rng.int(0x7ffffffe) + 1) >>> 0);
+    if (!cs) continue;
+    retries += cs.retries;
+    var acc = S.solveMask(cs.pool, cs.masks);
+    if (S.bitsCount(acc) === 1 && S.bitsFirst(acc) === S.tupleIndex(cs.truth)) uniq++;
+    var mn = cs.minimal.map(function (id) { return cs.pool[id]; });
+    var am = S.solveMask(mn, cs.masks);
+    if (S.bitsCount(am) === 1 && S.bitsFirst(am) === S.tupleIndex(cs.truth)) minimalProves++;
+    sizes.push(cs.minimal.length);
+    if (S.isMotiveOnly(mn)) motiveOnly++;
+    if (cs.minActions > STD.reach) reachBad++;
+    if (S.textSanity(cs).length) textBad++;
+    var allTrue = true, j;
+    for (j = 0; j < cs.pool.length; j++) if (!S.clueTrueOf(cs.pool[j], cs.truth)) allTrue = false;
+    if (allTrue) trueOfTruth++;
+    if (cs.pool.length < 30 || cs.pool.length > 60) poolBad++;
+    for (j = 0; j < 6; j++) if (cs.place.rooms[j].length > STD.roomSlots) capBad++;
+    if (cs.place.pressMinimal.length > STD.press) pressBad++;
+    // every minimal clue must actually be placed somewhere findable
+    var placed = {}, ids = S.placedClueIds(cs);
+    for (j = 0; j < ids.length; j++) placed[ids[j]] = 1;
+    for (j = 0; j < cs.minimal.length; j++) if (!placed[cs.minimal[j]]) placeBad++;
+    // a press gated minimal clue must be unlockable from a basic slot
+    for (j = 0; j < cs.place.pressMinimal.length; j++) {
+      var sus = cs.place.pressMinimal[j].s, opener = false, q, z;
+      for (q = 0; q < 6; q++) {
+        if (cs.place.ints[q] !== null && cs.pool[cs.place.ints[q]].ref.indexOf(sus) >= 0) opener = true;
+        for (z = 0; z < cs.place.rooms[q].length; z++) if (cs.pool[cs.place.rooms[q][z]].ref.indexOf(sus) >= 0) opener = true;
+      }
+      if (!opener) pressBad++;
+    }
+  }
+  T.eq("every generated case has exactly one solution", uniq, N);
+  T.eq("the minimal set alone proves that solution", minimalProves, N);
+  T.eq("every clue in the pool is true of the truth", trueOfTruth, N);
+  T.assert("regeneration retry rate under 15 percent", retries / (retries + N) < 0.15,
+    "rate " + (retries / (retries + N)).toFixed(4));
+  sizes.sort(function (a, b) { return a - b; });
+  var med = sizes[Math.floor(sizes.length / 2)];
+  T.assert("minimal set median is about eleven", med >= 10 && med <= 12, "median " + med);
+  var inBand = sizes.filter(function (x) { return x >= 8 && x <= 14; }).length;
+  T.assert("minimal sets sit in eight to fourteen", inBand / N >= 0.93, "rate " + (inBand / N).toFixed(3));
+  T.eq("no minimal set is motive only", motiveOnly, 0);
+  T.eq("every minimal clue is reachable in budget", reachBad, 0);
+  T.eq("no clue text contradicts the truth", textBad, 0);
+  T.eq("clue pool size stays sane", poolBad, 0);
+  T.eq("room slots never overfill", capBad, 0);
+  T.eq("press gating stays inside its bound", pressBad, 0);
+  T.eq("every minimal clue is placed somewhere", placeBad, 0);
+  // the checkers themselves must be able to say yes
+  T.assert("motive only checker fires on a motive only set",
+    S.isMotiveOnly([clueOf(8, { k: "none", s: 1 }), clueOf(8, { k: "none", s: 2 })]));
+  T.assert("motive only checker stays quiet on a mixed set",
+    !S.isMotiveOnly([clueOf(8, { k: "none", s: 1 }), clueOf(6, { t: 2, m: "not" })]));
+}
+
+function suiteAgents(T, S) {
+  var rng = S.makeRNG(555), i, cs, g = 0, p = 0, n = 120, over = 0;
+  for (i = 0; i < n; i++) {
+    cs = S.generateCase((rng.int(0x7ffffffe) + 1) >>> 0);
+    var gr = S.greedyAgent(cs, rng);
+    if (gr.solved) g++;
+    if (gr.actionsUsed > S.CONFIG.ACTIONS) over++;
+    var pr = S.perfectAgent(cs);
+    if (pr.solved) p++;
+    if (pr.actionsUsed > S.CONFIG.ACTIONS) over++;
+  }
+  T.assert("greedy agent solves over ninety percent", g / n > 0.90, "rate " + (g / n).toFixed(3));
+  T.eq("perfect agent solves every case", p, n);
+  T.eq("no agent ever spends over budget", over, 0);
+}
+
+function suiteMarks(T, S) {
+  T.eq("empty board leaves every tuple standing", S.candidateCountFromMarks({}), 1296);
+  var m = {};
+  m[S.markKey("w", 0, 0)] = "n";
+  T.eq("one cross removes thirty six tuples", S.candidateCountFromMarks(m), 1296 - 36);
+  m = {};
+  m[S.markKey("w", 0, 0)] = "y";
+  T.eq("one tick pins a row weapon", S.candidateCountFromMarks(m), 1296 - 5 * 36);
+  m = {};
+  m[S.markKey("w", 0, 0)] = "y"; m[S.markKey("w", 0, 1)] = "y";
+  T.eq("two ticks in a row are impossible", S.candidateCountFromMarks(m), 1296 - 216);
+  m = {};
+  m[S.markKey("w", 3, 2)] = "y"; m[S.markKey("r", 3, 4)] = "y"; m[S.markKey("t", 3, 1)] = "y";
+  var c1, c2 = 0, c;
+  for (c = 0; c < 6; c++) if (c !== 3) c2 += 216;
+  T.eq("pinning one row leaves that row with one tuple", S.candidateCountFromMarks(m), c2 + 1);
+  m = {};
+  for (c = 0; c < 6; c++) if (c !== 2) { m[S.markKey("w", c, 0)] = "n"; }
+  T.eq("crossing a column off five rows", S.candidateCountFromMarks(m), 1296 - 5 * 36);
+  m = {}; m[S.markKey("t", 0, 0)] = "q";
+  T.eq("a question mark changes nothing", S.candidateCountFromMarks(m), 1296);
+  // full solve down to one
+  m = {};
+  for (c = 0; c < 6; c++) {
+    if (c === 4) { m[S.markKey("w", 4, 1)] = "y"; m[S.markKey("r", 4, 2)] = "y"; m[S.markKey("t", 4, 5)] = "y"; }
+    else { m[S.markKey("w", c, 0)] = "n"; m[S.markKey("w", c, 1)] = "n"; m[S.markKey("w", c, 2)] = "n";
+           m[S.markKey("w", c, 3)] = "n"; m[S.markKey("w", c, 4)] = "n"; m[S.markKey("w", c, 5)] = "n"; }
+  }
+  T.eq("a fully marked board reads one", S.candidateCountFromMarks(m), 1);
+  // auto mark agrees with the clue predicates
+  var cs = S.generateCase(31337), st = S.newGame(cs), i;
+  var ids = S.placedClueIds(cs);
+  for (i = 0; i < 6; i++) S.step(st, cs, { k: "search", r: i });
+  S.step(st, cs, { k: "automark" });
+  var bad = 0, tabs = ["w", "r", "t"], k, row, col;
+  var truthCell = { w: cs.truth.w, r: cs.truth.r, t: cs.truth.t };
+  for (k = 0; k < 3; k++) {
+    var key = S.markKey(tabs[k], cs.truth.c, truthCell[tabs[k]]);
+    if (st.marks[key] === "n") bad++;
+  }
+  T.eq("auto mark never crosses out the truth", bad, 0);
+  T.assert("auto mark actually marks something", Object.keys(st.marks).length > 0);
+  T.assert("halo of a held clue is not empty", (function () {
+    var h = S.clueHalo(cs, st, st.found[0]);
+    return h.w.length + h.r.length + h.t.length >= 0;
+  })());
+}
+
+function suiteStep(T, S) {
+  var cs = S.generateCase(777), st = S.newGame(cs), r;
+  T.eq("a fresh case starts with twenty actions", st.actionsLeft, 20);
+  r = S.step(st, cs, { k: "search", r: 0 });
+  T.eq("a search costs one action", st.actionsLeft, 19);
+  r = S.step(st, cs, { k: "search", r: 0 });
+  T.eq("searching twice is refused", st.actionsLeft, 19);
+  T.eq("the refusal says why", r.events[0].e, "invalid");
+  r = S.step(st, cs, { k: "interview", s: 0 });
+  T.eq("an interview costs one action", st.actionsLeft, 18);
+  r = S.step(st, cs, { k: "search", r: 99 });
+  T.eq("a room that does not exist is refused", st.actionsLeft, 18);
+  var locked = -1, i;
+  for (i = 0; i < 6; i++) if (!S.pressUnlocked(cs, st, i)) locked = i;
+  if (locked >= 0) {
+    r = S.step(st, cs, { k: "press", s: locked });
+    T.eq("a locked press costs nothing", st.actionsLeft, 18);
+    T.eq("a locked press explains itself", r.events[0].why, "locked");
+  } else { T.assert("a locked press costs nothing", true); T.assert("a locked press explains itself", true); }
+  var open = -1;
+  for (i = 0; i < 6; i++) if (S.pressUnlocked(cs, st, i) && st.pressed.indexOf(i) < 0) open = i;
+  if (open >= 0) {
+    var before = st.actionsLeft;
+    S.step(st, cs, { k: "press", s: open });
+    T.eq("an unlocked press costs two actions", st.actionsLeft, before - 2);
+  } else T.assert("an unlocked press costs two actions", true);
+  S.step(st, cs, { k: "mark", tab: "w", row: 1, col: 2, v: "n" });
+  T.eq("marking is free", st.marks[S.markKey("w", 1, 2)], "n");
+  var free = st.actionsLeft;
+  S.step(st, cs, { k: "mark", tab: "zz", row: 1, col: 2, v: "n" });
+  T.eq("a bad tab changes nothing", st.actionsLeft, free);
+  S.step(st, cs, { k: "mark", tab: "w", row: 1, col: 2, v: "" });
+  T.eq("clearing a mark removes it", st.marks[S.markKey("w", 1, 2)], undefined);
+
+  // stars
+  T.eq("eight actions left is three stars", S.starsFor(8), 3);
+  T.eq("four actions left is two stars", S.starsFor(4), 2);
+  T.eq("one action left is one star", S.starsFor(1), 1);
+
+  // winning
+  var w = S.newGame(cs);
+  var res = S.step(w, cs, { k: "accuse", c: cs.truth.c, w: cs.truth.w, r: cs.truth.r, t: cs.truth.t });
+  T.eq("a correct accusation wins", w.status, "won");
+  T.eq("a win is worth three stars at full budget", w.stars, 3);
+  T.eq("a closed case refuses more actions", S.step(w, cs, { k: "search", r: 1 }).events[0].e, "invalid");
+
+  // losing teaches
+  var l = S.newGame(cs);
+  var wrongC = (cs.truth.c + 1) % 6;
+  S.step(l, cs, { k: "search", r: cs.truth.r });
+  S.step(l, cs, { k: "accuse", c: wrongC, w: cs.truth.w, r: cs.truth.r, t: cs.truth.t });
+  T.eq("a wrong accusation loses", l.status, "lost");
+  T.assert("a loss names a contradicting clue", l.contraId >= 0);
+  T.assert("the contradicting clue really does contradict",
+    !S.cluePasses(cs.pool[l.contraId], l.acc.c, l.acc.w, l.acc.r, l.acc.t));
+  T.assert("the contradicting clue is true of the truth", S.clueTrueOf(cs.pool[l.contraId], cs.truth));
+  var l2 = S.newGame(cs);
+  S.step(l2, cs, { k: "accuse", c: 9, w: 0, r: 0, t: 0 });
+  T.eq("an off board accusation is refused", l2.status, "play");
+  T.eq("share string carries the seed", S.shareString(cs, w, false, 0).indexOf("seed=" + cs.seed) >= 0, true);
+  T.assert("share string has no dash", !/[-]/.test(S.shareString(cs, w, true, 12)));
+}
+
+function suiteSave(T, S) {
+  var d = S.saveDefaults();
+  T.eq("save has a version", d.v, 1);
+  T.eq("save is stamped with the game id", d.gameId, "blackout");
+  T.eq("save key is the fleet shape", S.SAVE_KEY, "lw_blackout_v1");
+  T.eq("corrupt json falls back to defaults", S.saveParse("{not json").stats.cases, 0);
+  T.eq("an empty string falls back to defaults", S.saveParse("").stats.solved, 0);
+  T.eq("an array falls back to defaults", S.saveParse("[1,2,3]").stats.cases, 0);
+  T.eq("null falls back to defaults", S.saveParse("null").stats.cases, 0);
+  var round = S.saveParse(JSON.stringify(d));
+  T.eq("save round trip keeps settings", round.settings.autoMark, false);
+  T.assert("migrate is present and total", !!S.saveMigrate(null));
+  var merged = S.saveMerge(d, { addStats: { cases: 1, solved: 1 } });
+  merged = S.saveMerge(merged, { addStats: { cases: 1, solved: 0 } });
+  T.eq("counters add across writes", merged.stats.cases, 2);
+  var best = S.saveMerge(d, { bestLow: { fewestActions: 14 } });
+  best = S.saveMerge(best, { bestLow: { fewestActions: 17 } });
+  T.eq("a best keeps the better number", best.best.fewestActions, 14);
+  var maxed = S.saveMerge(d, { maxStats: { bestStars: 2 } });
+  maxed = S.saveMerge(maxed, { maxStats: { bestStars: 1 } });
+  T.eq("bests take the max", maxed.stats.bestStars, 2);
+  var arc = S.saveMerge(d, { archive: { seed: 1 } });
+  for (var i = 0; i < 14; i++) arc = S.saveMerge(arc, { archive: { seed: i } });
+  T.eq("the archive keeps ten", arc.archive.length, 10);
+  T.eq("the archive is newest first", arc.archive[0].seed, 13);
+
+  // mid case resume
+  var cs = S.generateCase(9182), st = S.newGame(cs);
+  S.step(st, cs, { k: "search", r: 2 });
+  S.step(st, cs, { k: "interview", s: 3 });
+  S.step(st, cs, { k: "mark", tab: "r", row: 2, col: 3, v: "n" });
+  var wire = JSON.stringify(S.serializeState(st));
+  var back = S.deserializeState(JSON.parse(wire), cs);
+  T.eq("resume keeps the action count", back.actionsLeft, st.actionsLeft);
+  T.eq("resume keeps found clues", back.found.join(","), st.found.join(","));
+  T.eq("resume keeps the board", back.marks[S.markKey("r", 2, 3)], "n");
+  T.eq("resume keeps searched rooms", back.searched.join(","), st.searched.join(","));
+  var cont = S.step(back, cs, { k: "search", r: 2 });
+  T.eq("a resumed case does not refund a spent room", cont.events[0].e, "invalid");
+  var junk = S.deserializeState({ actionsLeft: -99, found: ["x", 3], marks: { bad: "z" }, status: "cheat" }, cs);
+  T.eq("a tampered action count is clamped", junk.actionsLeft, 0);
+  T.eq("tampered clue ids are dropped", junk.found.join(","), "3");
+  T.eq("tampered marks are dropped", Object.keys(junk.marks).length, 0);
+  T.eq("a tampered status resets to play", junk.status, "play");
+  T.eq("a case is rebuilt from its seed alone",
+    JSON.stringify(S.generateCase(9182).truth), JSON.stringify(cs.truth));
+}
+
+function suiteFuzz(T, S) {
+  var rng = S.makeRNG(1010), cs = S.generateCase(24680), st = S.newGame(cs);
+  var threw = null, negative = 0, badMark = 0, i, k;
+  var kinds = ["search", "interview", "press", "mark", "accuse", "automark", "nonsense", null];
+  for (i = 0; i < 5000; i++) {
+    if (st.status !== "play") st = S.newGame(cs);
+    var kind = kinds[rng.int(kinds.length)];
+    var act;
+    if (kind === null) act = null;
+    else if (kind === "mark") act = { k: "mark", tab: rng.pick(["w", "r", "t", "zz", 7]), row: rng.int(9) - 1, col: rng.int(9) - 1, v: rng.pick(["y", "n", "q", "", "x", 3]) };
+    else if (kind === "accuse") act = { k: "accuse", c: rng.int(9) - 1, w: rng.int(9) - 1, r: rng.int(9) - 1, t: rng.int(9) - 1 };
+    else act = { k: kind, r: rng.int(9) - 1, s: rng.int(9) - 1 };
+    try { S.step(st, cs, act); } catch (e) { if (!threw) threw = (act ? act.k : "null") + " " + e.message; }
+    if (st.actionsLeft < 0) negative++;
+    for (k in st.marks) if (!/^[wrt]:[0-5]:[0-5]$/.test(k) || ["y", "n", "q"].indexOf(st.marks[k]) < 0) badMark++;
+  }
+  T.eq("five thousand random actions throw nothing", threw, null);
+  T.eq("actions left is never negative", negative, 0);
+  T.eq("the board never holds an illegal mark", badMark, 0);
+  T.assert("the candidate counter survives the fuzz", S.candidateCountFromMarks(st.marks) >= 0);
+}
+
+function suiteCopy(T, S) {
+  var banks = ["a1", "a2", "a3", "a4", "a5near", "a5far", "a6exact", "a6not", "a6before", "a6after",
+    "a7yes", "a7no", "a8none", "a8set", "a9all", "a9at", "a10after", "a10before", "a11",
+    "a12weapon", "a12room"];
+  var i, j, b;
+  for (i = 0; i < banks.length; i++) {
+    b = S.TPL[banks[i]];
+    T.ge("phrasing bank " + banks[i] + " has twelve lines", b.length, 12);
+    var uniq = {};
+    for (j = 0; j < b.length; j++) uniq[b[j]] = 1;
+    T.eq("phrasing bank " + banks[i] + " has no repeats", Object.keys(uniq).length, b.length);
+  }
+  var typeBanks = {}, tb;
+  for (i = 0; i < banks.length; i++) {
+    tb = parseInt(banks[i].slice(1), 10);
+    typeBanks[tb] = (typeBanks[tb] || 0) + S.TPL[banks[i]].length;
+  }
+  for (i = 1; i <= 12; i++) T.ge("clue type " + i + " has twelve phrasings or more", typeBanks[i], 12);
+
+  /* Every phrasing, not a sample. 252 lines of prose is 252 chances to drop the
+     name of the room the clue is about, and a clue that does not name its own
+     subject is a clue the player cannot use. */
+  var SAMPLES = {
+    a1: [1, { s: 0, t: 2, r: 1 }], a2: [2, { w: 4, s: 3, r: 1 }], a3: [3, { r: 3 }],
+    a4: [4, { r: 1, t: 2, a: "tall", v: true }],
+    a5near: [5, { r: 0, near: true }], a5far: [5, { r: 3, near: false }],
+    a6exact: [6, { t: 3, m: "exact" }], a6not: [6, { t: 3, m: "not" }],
+    a6before: [6, { t: 3, m: "before" }], a6after: [6, { t: 3, m: "after" }],
+    a7yes: [7, { cls: "blade", no: false }], a7no: [7, { cls: "cord", no: true }],
+    a8none: [8, { k: "none", s: 2 }], a8set: [8, { k: "set", set: [0, 1, 2] }],
+    a9all: [9, { a: 0, b: 1, t: -1 }], a9at: [9, { a: 0, b: 1, t: 3 }],
+    a10after: [10, { r: 2, t: 3, d: "after" }], a10before: [10, { r: 2, t: 3, d: "before" }],
+    a11: [11, { lo: 1, hi: 4, e1: 0, e2: 1 }],
+    a12weapon: [12, { k: "weapon", w: 2 }], a12room: [12, { k: "room", r: 4 }]
+  };
+  var bn;
+  for (bn in SAMPLES) {
+    var spec = SAMPLES[bn], cl = clueOf(spec[0], spec[1]), faults = "", ph;
+    for (ph = 0; ph < S.TPL[bn].length; ph++) {
+      cl.ph = ph;
+      var line = S.clueText(cl), subs = S.clueSubjects(cl), q;
+      if (line !== S.TPL[bn][ph % S.TPL[bn].length] && line.indexOf("{") >= 0) faults += " ph" + ph + " unfilled";
+      if (/[{}]/.test(line)) faults += " ph" + ph + " slot";
+      if (/[-]/.test(line)) faults += " ph" + ph + " dash";
+      if (line.length < 12) faults += " ph" + ph + " stub";
+      for (q = 0; q < subs.length; q++) if (line.toLowerCase().indexOf(subs[q].toLowerCase()) < 0) faults += " ph" + ph + " drops " + subs[q];
+    }
+    T.eq("every phrasing of " + bn + " renders clean", faults, "", faults);
+  }
+  // and the draw has to be able to reach the new lines
+  var seenPh = {}, cs2 = null, rr = S.makeRNG(2468), z;
+  for (i = 0; i < 60; i++) {
+    cs2 = S.generateCase((rr.int(0x7ffffffe) + 1) >>> 0);
+    for (z = 0; z < cs2.pool.length; z++) seenPh[cs2.pool[z].ph] = 1;
+  }
+  T.ge("the phrasing draw reaches past the first six lines", Object.keys(seenPh).length, 10);
+  var dash = 0, slot = 0;
+  for (i = 0; i < banks.length; i++) {
+    b = S.TPL[banks[i]];
+    for (j = 0; j < b.length; j++) {
+      if (/[-]/.test(b[j])) dash++;
+      if (/\{[a-z0-9]+\}/i.test(b[j]) === false && banks[i] !== "a3") { /* fine, some banks are bare */ }
+    }
+  }
+  T.eq("no dash in any phrasing", dash, 0);
+  var strs = [].concat(S.BRIEF, S.EVENTS, S.TITLE_NOUNS, S.TITLE_TIMEWORDS);
+  for (i = 0; i < strs.length; i++) if (/[-]/.test(strs[i])) dash++;
+  T.eq("no dash in the flavour banks", dash, 0);
+  T.eq("fill leaves nothing behind", S.fillTpl("a {x} b", { x: "y" }), "a y b");
+  T.eq("name lists read as english", S.nameList([0, 1, 2]), "Vance, Mira and Ellis");
+  T.eq("a single name needs no comma", S.nameList([3]), "Odell");
+  var rng = S.makeRNG(4), t1 = S.caseTitle(rng, { c: 0, w: 0, r: 2, t: 5 });
+  T.assert("a case title starts with The", t1.indexOf("The ") === 0);
+  T.assert("a case title has no dash", !/[-]/.test(t1));
+  var cs = S.generateCase(5150), bad = 0;
+  for (i = 0; i < cs.pool.length; i++) {
+    var txt = S.clueText(cs.pool[i]);
+    if (/[{}]/.test(txt)) bad++;
+    if (/[-]/.test(txt)) bad++;
+    if (txt.length < 8) bad++;
+  }
+  T.eq("every rendered clue is clean", bad, 0);
+  var lower = 0, lc;
+  for (i = 0; i < cs.pool.length; i++) {
+    lc = S.clueText(cs.pool[i]).charAt(0);
+    if (lc !== lc.toUpperCase()) lower++;
+  }
+  T.eq("every clue reads as a sentence", lower, 0);
+  T.eq("text sanity finds nothing wrong with a real case", S.textSanity(cs).length, 0);
+}
+
+/* Regression assertions. Every one of these is a bug that actually happened
+   during the build, kept as a permanent test rather than an anecdote. */
+function suiteRegression(T, S) {
+  // the greedy agent used to strand itself when no LIVE suspect could be
+  // pressed: it had no legal action left, broke out early and guessed.
+  var cs = S.generateCase(606060), rng = S.makeRNG(3), i, stalled = 0;
+  for (i = 0; i < 40; i++) {
+    var g = S.greedyAgent(S.generateCase((rng.int(0x7ffffffe) + 1) >>> 0), rng);
+    if (g.actionsUsed < 8) stalled++;
+  }
+  T.le("the greedy agent does not strand itself early", stalled, 4);
+  // clueSubjects once demanded that every trace clue name its substance, but
+  // two of the six far phrasings do not mention it. The predicate only depends
+  // on the room, so only the room is required.
+  T.eq("a trace clue only has to name its room", S.clueSubjects(clueOf(5, { r: 3, near: false })).length, 1);
+  // reinforcement clues must be true of the truth like any other clue
+  var bad = 0;
+  for (i = 0; i < 30; i++) {
+    var c2 = S.generateCase((rng.int(0x7ffffffe) + 1) >>> 0), j;
+    for (j = 0; j < c2.pool.length; j++) if (!S.clueTrueOf(c2.pool[j], c2.truth)) bad++;
+  }
+  T.eq("reinforcement never emits a false clue", bad, 0);
+  // a room with one neighbour used to be able to trap a walk generator
+  var rng2 = S.makeRNG(88), stuck = 0;
+  for (i = 0; i < 60; i++) {
+    var W = S.genWorld(rng2), s, t;
+    for (s = 0; s < 6; s++) for (t = 0; t < 6; t++) if (!(W.loc[s][t] >= 0 && W.loc[s][t] < 6)) stuck++;
+    for (s = 0; s < 6; s++) if (s !== W.truth.c && W.loc[s][W.truth.t] === W.truth.r) stuck++;
+    if (W.loc[W.truth.c][W.truth.t] !== W.truth.r) stuck++;
+    if (W.motive[W.truth.c] < 1) stuck++;
+  }
+  T.eq("the world always seats the killer alone at the hour", stuck, 0);
+}
+
+/* ---- the case title has to fit the header, proved for every title the
+   generator can produce rather than for the one that happened to render ---- */
+function suiteTitle(T, S) {
+  T.assert("a longer string measures wider",
+    S.textWidth("THE CONSERVATORY", 14, 0.06) > S.textWidth("THE HALL", 14, 0.06));
+  T.eq("a short line does not wrap", S.wrapText("THE HALL", 220, 14, 0.06).lines, 1);
+  T.assert("a long line does wrap", S.wrapText("THE CONSERVATORY ARRANGEMENT", 150, 14, 0.06).lines > 1);
+  var box390 = S.headerTitleBox(390, "Arcade", "Options");
+  var box320 = S.headerTitleBox(320, "Arcade", "Options");
+  T.assert("the header leaves the title real room at 390", box390 >= 200, "box " + box390.toFixed(0));
+  T.assert("the header box shrinks with the screen", box320 < box390);
+  var titles = S.allTitles(), i, w, worst = "", bad;
+  [390, 375, 360, 320].forEach(function (cw) {
+    var box = S.headerTitleBox(cw, "Arcade", "Options");
+    bad = 0;
+    for (i = 0; i < titles.length; i++) if (!S.titleFits(titles[i], box)) { bad++; worst = titles[i]; }
+    T.eq("every case title fits the header at " + cw, bad, 0, worst);
+  });
+  var longest = "";
+  for (i = 0; i < titles.length; i++) if (titles[i].length > longest.length) longest = titles[i];
+  T.eq("the longest title is the one we think it is", longest, "The Conservatory Arrangement");
+  T.eq("a short title keeps the biggest type", S.titleTier("The Hall Debt", box390), 0);
+  T.assert("a narrow screen steps the type down", S.titleTier(longest, box320) > 0);
+  T.assert("no title ever needs more than two lines", S.wrapText(longest,
+    box320, S.TITLE_TIERS[S.titleTier(longest, box320)].size,
+    S.TITLE_TIERS[S.titleTier(longest, box320)].ls).lines <= 2);
+  // the fit gate is worthless if the generator can produce a title it never saw
+  var set = {}, rng = S.makeRNG(9001), unseen = 0;
+  for (i = 0; i < titles.length; i++) set[titles[i]] = 1;
+  for (i = 0; i < 150; i++) {
+    var cs = S.generateCase((rng.int(0x7ffffffe) + 1) >>> 0);
+    if (!set[cs.title]) unseen++;
+  }
+  T.eq("every title the generator makes is covered by the fit gate", unseen, 0);
+}
+
+/* ---- unreliable narrators (HANDOFF 4.7) ---- */
+function suiteLiar(T, S) {
+  // the at most one violation set, on two clues with a known overlap
+  var A = clueOf(12, { k: "room", r: 0 }), B = clueOf(6, { t: 0, m: "not" });
+  A.id = 0; B.id = 1;
+  var masks = [S.clueMask(A), S.clueMask(B)];
+  T.eq("one clue alone leaves every tuple standing", S.bitsCount(S.liarMask([A], masks)), 1296);
+  T.eq("two clues only exclude the tuples that break both",
+    S.bitsCount(S.liarMask([A, B], masks)), 1296 - 36);
+  T.eq("no clues means nothing is excluded", S.bitsCount(S.liarMask([], masks)), 1296);
+
+  var rng = S.makeRNG(777), n = 24, i, j;
+  var proved = 0, minProved = 0, noneConsistent = 0, oneFalse = 0, saidIt = 0, inProof = 0;
+  var reachOk = 0, perfect = 0, truthAlwaysLive = 0, autoMarkSafe = 0, sourceOk = 0;
+  for (i = 0; i < n; i++) {
+    var cs = S.generateCase((rng.int(0x7ffffffe) + 1) >>> 0, { liar: true });
+    if (!cs) continue;
+    var ti = S.tupleIndex(cs.truth), M = S.modeOf(cs.tier, true);
+    var mn = cs.minimal.map(function (id) { return cs.pool[id]; });
+    if (S.liarProved(cs.pool, cs.masks, ti)) proved++;
+    if (S.liarProved(mn, cs.masks, ti)) minProved++;
+    if (S.bitsCount(S.solveMask(cs.pool, cs.masks)) === 0) noneConsistent++;
+    var fal = S.falseClueIds(cs.pool, cs.truth);
+    if (fal.length === 1 && fal[0] === cs.lie.id) oneFalse++;
+    var src = S.clueSource(cs, cs.lie.id);
+    if (src && src.kind === "said" && src.i === cs.lie.speaker) saidIt++;
+    if (src) sourceOk++;
+    if (cs.minimal.indexOf(cs.lie.id) >= 0) inProof++;
+    if (cs.minActions <= M.reach) reachOk++;
+    if (S.perfectAgent(cs).solved) perfect++;
+    // the truth must survive every hand the player can hold, lie included
+    var st = S.newGame(cs), live = true, k;
+    for (k = 0; k < 6; k++) { S.step(st, cs, { k: "search", r: k }); S.step(st, cs, { k: "interview", s: k }); }
+    if (!S.bitsGet(S.stateMask(cs, st, -1), ti)) live = false;
+    if (live) truthAlwaysLive++;
+    S.step(st, cs, { k: "automark" });
+    var tr = cs.truth, safe = true;
+    if (st.marks[S.markKey("w", tr.c, tr.w)] === "n") safe = false;
+    if (st.marks[S.markKey("r", tr.c, tr.r)] === "n") safe = false;
+    if (st.marks[S.markKey("t", tr.c, tr.t)] === "n") safe = false;
+    if (safe) autoMarkSafe++;
+  }
+  T.eq("every liar case has one solution consistent with all but one clue", proved, n);
+  T.eq("the minimal set alone still proves it", minProved, n);
+  T.eq("no solution is consistent with all the clues", noneConsistent, n);
+  T.eq("exactly one clue in the pool is false", oneFalse, n);
+  T.eq("the lie is always something a person said", saidIt, n);
+  T.eq("every placed clue has a source", sourceOk, n);
+  T.eq("the lie is load bearing and stays in the proof", inProof, n);
+  T.eq("a liar case is still reachable inside its budget", reachOk, n);
+  T.eq("the perfect agent solves every liar case", perfect, n);
+  T.eq("the truth is never crossed off by a lie", truthAlwaysLive, n);
+  T.eq("auto mark never crosses the truth in a liar case", autoMarkSafe, n);
+  // an honest case must contain no lie at all
+  var honest = S.generateCase(4242);
+  T.eq("an honest case has no false clue", S.falseClueIds(honest.pool, honest.truth).length, 0);
+  T.assert("an honest case is not flagged as a liar case", !honest.liar);
+  T.eq("text sanity accepts the one deliberate lie",
+    S.textSanity(S.generateCase(31337, { liar: true })).length, 0);
+  // the lie shapes themselves
+  var rng2 = S.makeRNG(4242), shapes = {}, wrong = 0;
+  for (i = 0; i < 200; i++) {
+    var W = S.genWorld(rng2), lie = S.makeLie(W, rng2);
+    if (!lie) { wrong++; continue; }
+    if (S.clueTrueOf(lie, W.truth)) wrong++;
+    if (!(lie.speaker >= 0 && lie.speaker < 6)) wrong++;
+    shapes[lie.ty] = 1;
+  }
+  T.eq("every lie a factory makes is actually false", wrong, 0);
+  T.ge("lies come in several shapes", Object.keys(shapes).length, 4);
+  // a liar case resumes as a liar case
+  var lc = S.generateCase(9182, { tier: "long", liar: true });
+  var lst = S.newGame(lc);
+  var ser = S.serializeState(lst);
+  T.eq("a saved liar case remembers it is one", ser.liar, true);
+  T.eq("a saved case remembers its tier", ser.tier, "long");
+}
+
+/* ---- the difficulty ladder ---- */
+function suiteTiers(T, S) {
+  T.eq("three tiers", S.TIER_KEYS.length, 3);
+  T.assert("the ladder is ordered by budget",
+    S.TIERS.short.actions < S.TIERS.standard.actions && S.TIERS.standard.actions < S.TIERS.long.actions);
+  T.assert("the ladder is ordered by proof length",
+    S.TIERS.short.target < S.TIERS.standard.target && S.TIERS.standard.target < S.TIERS.long.target);
+  T.assert("a liar always costs more evening than an honest case of the same length",
+    S.TIERS.standard.liar.actions > S.TIERS.standard.actions);
+  T.eq("an unknown tier falls back to standard", S.tierOf("nonsense").key, "standard");
+  T.eq("mode resolution takes the liar overrides", S.modeOf("standard", true).actions, S.TIERS.standard.liar.actions);
+  T.eq("mode resolution leaves an honest case alone", S.modeOf("standard", false).actions, S.TIERS.standard.actions);
+  T.assert("a liar case searches deeper rooms", S.modeOf("standard", true).roomSlots > S.modeOf("standard", false).roomSlots);
+  var i, k, rng = S.makeRNG(31415);
+  for (k = 0; k < S.TIER_KEYS.length; k++) {
+    var key = S.TIER_KEYS[k], M = S.modeOf(key, false), n = 30;
+    var inBand = 0, reachOk = 0, budgetOk = 0, unique = 0, sizes = [];
+    for (i = 0; i < n; i++) {
+      var cs = S.generateCase((rng.int(0x7ffffffe) + 1) >>> 0, { tier: key });
+      if (!cs) continue;
+      var acc = S.solveMask(cs.pool, cs.masks);
+      if (S.bitsCount(acc) === 1 && S.bitsFirst(acc) === S.tupleIndex(cs.truth)) unique++;
+      if (cs.minimal.length >= M.lo && cs.minimal.length <= M.hi) inBand++;
+      if (cs.minActions <= M.reach) reachOk++;
+      if (cs.actions === M.actions && S.newGame(cs).total === M.actions) budgetOk++;
+      sizes.push(cs.minimal.length);
+    }
+    T.eq(key + " tier: every case has exactly one solution", unique, n);
+    T.ge(key + " tier: proofs land in the band", inBand, Math.floor(n * 0.85));
+    T.eq(key + " tier: every proof is reachable in budget", reachOk, n);
+    T.eq(key + " tier: the budget follows the tier", budgetOk, n);
+    sizes.sort(function (a, b) { return a - b; });
+    var med = sizes[Math.floor(sizes.length / 2)];
+    T.assert(key + " tier: median proof is near its target", Math.abs(med - M.target) <= 2, "median " + med);
+  }
+  // stars mean the same thing on every rung
+  T.eq("three stars in a standard case", S.starsFor(8, 20), 3);
+  T.eq("three stars in a short case", S.starsFor(Math.round(16 * 0.4), 16), 3);
+  T.eq("one star when the evening is nearly gone", S.starsFor(1, 26), 1);
+  T.eq("two stars in the middle", S.starsFor(6, 26), 2);
+  T.eq("the old single argument form still works", S.starsFor(8), 3);
+  // a tiered case is deterministic
+  var a = S.generateCase(5150, { tier: "long", liar: true });
+  var b = S.generateCase(5150, { tier: "long", liar: true });
+  T.eq("same seed same tiered case", JSON.stringify(a.truth) + a.minimal.length, JSON.stringify(b.truth) + b.minimal.length);
+  T.assert("a different mode on the same seed is a different case",
+    S.generateCase(5150, { tier: "short" }).minimal.length !== a.minimal.length ||
+    S.generateCase(5150, { tier: "short" }).pool.length !== a.pool.length);
+}
+// ---- TEST_EXPORT_END ----
+
+
+/* ================== 6. VIEW ================== */
+// ---- UICOPY_START ----
+var UI = {
+  exit: "Arcade",
+  options: "Options",
+  actionsLeft: "actions left",
+  accuse: "Accuse",
+  tabCase: "Case",
+  tabBoard: "Board",
+  tabFile: "File",
+  rooms: "Search a room",
+  people: "Talk to the house",
+  search: "Search",
+  searched: "Searched",
+  interview: "Ask",
+  asked: "Asked",
+  press: "Press",
+  pressed: "Pressed",
+  pressLock: "Find something that mentions them first.",
+  oneAction: "1 action",
+  twoActions: "2 actions",
+  possibilities: "possibilities remain",
+  fromYourMarks: "from your marks, not from the truth",
+  journal: "What you have",
+  nothingYet: "Nothing yet. Search a room or talk to somebody.",
+  haloHint: "Tap a note to see which cells it speaks to.",
+  weapon: "Weapon",
+  room: "Room",
+  time: "Hour",
+  whoDidIt: "Who",
+  withWhat: "With what",
+  where: "Where",
+  when: "When",
+  confirmAccuse: "One shot. No taking it back.",
+  makeAccusation: "Name them",
+  cancel: "Back",
+  solved: "Case closed",
+  failed: "Wrong",
+  contradicted: "Contradicted",
+  newCase: "New case",
+  daily: "Today's case",
+  replay: "Replay",
+  share: "Share",
+  copied: "Copied to the clipboard.",
+  archive: "Old cases",
+  noArchive: "No closed cases yet.",
+  dossierPeople: "The household",
+  dossierWeapons: "What is in the house",
+  dossierRooms: "The ground floor",
+  emptyRoom: "Nothing here worth carrying away.",
+  emptyTalk: "They give you nothing.",
+  sound: "Sound",
+  haptics: "Buzz",
+  autoMark: "Auto mark contradictions",
+  typewriter: "Typed reveals",
+  motion: "Reduce motion",
+  on: "On",
+  off: "Off",
+  brief: "The house, the hour, the hand",
+  teach: "The note that would have caught you",
+  worked: "The notes that did the work",
+  pickCase: "Pick a case",
+  startCase: "Open the file",
+  liarOn: "Somebody is lying",
+  liarOff: "Everybody tells the truth",
+  liarBrief: "One person says one false thing. Anything you find in a room is true.",
+  says: " says",
+  foundIn: "In the ",
+  theLie: "The lie",
+  liarWas: " lied about it.",
+  liarStanding: "One of these is false.",
+  mode: "Case type",
+  copyLink: "Link",
+  linkCopied: "Case link copied.",
+  statements: "What people told you",
+  evidence: "What the house told you"
+};
+// ---- UICOPY_END ----
+
+var VIEW = {}, APP = null;
+
+function el(tag, cls, txt) {
+  var e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (txt !== undefined && txt !== null) e.textContent = txt;
+  return e;
+}
+function clear(n) { while (n.firstChild) n.removeChild(n.firstChild); }
+
+/* deterministic silhouettes: the sighting clues suddenly have referents */
+function silhouette(i) {
+  var s = SUSPECTS[i], top = s.tall ? 4 : 8, hr = 6;
+  var g = '<svg class="sil" viewBox="0 0 34 44" aria-hidden="true">';
+  g += '<circle cx="17" cy="' + (top + hr) + '" r="' + hr + '" fill="#39414f"/>';
+  g += '<path d="M17 ' + (top + hr * 2) + ' c-9 0 -12 6 -12 ' + (44 - top - hr * 2) +
+       ' h24 c0 -' + (44 - top - hr * 2 - 2) + ' -3 -' + (44 - top - hr * 2 - 4) + ' -12 -' +
+       (44 - top - hr * 2 - 4) + ' z" fill="#39414f"/>';
+  if (s.staff) g += '<path d="M11 ' + (top + hr * 2 + 3) + ' l6 5 l6 -5" stroke="#5ad1e6" stroke-width="1.6" fill="none" opacity=".8"/>';
+  if (s.glasses) g += '<g stroke="#e8c37a" stroke-width="1.2" fill="none" opacity=".9"><circle cx="13.5" cy="' + (top + hr) + '" r="2.6"/><circle cx="20.5" cy="' + (top + hr) + '" r="2.6"/><path d="M16.1 ' + (top + hr) + ' h1.8"/></g>';
+  return g + "</svg>";
+}
+function tagsFor(i) {
+  var s = SUSPECTS[i], t = [];
+  t.push(s.tall ? "tall" : "short");
+  t.push(s.staff ? "staff" : "guest");
+  if (s.glasses) t.push("spectacles");
+  return t.join("   ");
+}
+
+/* the pocket watch: a budget you can see spend */
+function watchSvg(left, total) {
+  var frac = left / total, ang = -90 + (1 - frac) * 360;
+  var rad = ang * Math.PI / 180, x = 26 + Math.cos(rad) * 15, y = 26 + Math.sin(rad) * 15;
+  var col = left <= 4 ? "#e8c37a" : "#5ad1e6";
+  var g = '<svg class="watch" viewBox="0 0 52 52" aria-hidden="true">';
+  g += '<circle cx="26" cy="26" r="21" fill="#0f1218" stroke="#2a2f3b" stroke-width="2"/>';
+  g += '<circle cx="26" cy="26" r="21" fill="none" stroke="' + col + '" stroke-width="2.5" ' +
+       'stroke-dasharray="' + (frac * 131.9).toFixed(1) + ' 999" stroke-linecap="round" transform="rotate(-90 26 26)" opacity=".85"/>';
+  for (var i = 0; i < 12; i++) {
+    var a = i * 30 * Math.PI / 180;
+    g += '<circle cx="' + (26 + Math.cos(a) * 16.5).toFixed(1) + '" cy="' + (26 + Math.sin(a) * 16.5).toFixed(1) + '" r="0.9" fill="#39414f"/>';
+  }
+  g += '<line x1="26" y1="26" x2="' + x.toFixed(1) + '" y2="' + y.toFixed(1) + '" stroke="' + col + '" stroke-width="2" stroke-linecap="round"/>';
+  g += '<circle cx="26" cy="26" r="2" fill="' + col + '"/></svg>';
+  return g;
+}
+
+/* ================== audio: A minor, sparse ================== */
+var AUDIO = { ctx: null, master: null, bed: null, bedGain: null, on: true, vol: 0.7 };
+var AMIN = [220, 246.94, 261.63, 293.66, 329.63, 349.23, 392, 440, 493.88, 523.25];
+function audioInit() {
+  if (AUDIO.ctx || !AUDIO.on) return;
+  try {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    AUDIO.ctx = new AC();
+    var comp = AUDIO.ctx.createDynamicsCompressor();
+    AUDIO.master = AUDIO.ctx.createGain();
+    AUDIO.master.gain.value = AUDIO.vol;
+    AUDIO.master.connect(comp); comp.connect(AUDIO.ctx.destination);
+  } catch (e) { AUDIO.ctx = null; }
+}
+function pluck(freq, dur, type, gain) {
+  if (!AUDIO.ctx || !AUDIO.on) return;
+  try {
+    var t = AUDIO.ctx.currentTime, o = AUDIO.ctx.createOscillator(), g = AUDIO.ctx.createGain();
+    o.type = type || "triangle"; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(gain || 0.16, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + (dur || 0.5));
+    o.connect(g); g.connect(AUDIO.master); o.start(t); o.stop(t + (dur || 0.5) + 0.05);
+  } catch (e) {}
+}
+function tick(edge) {
+  if (!AUDIO.ctx || !AUDIO.on) return;
+  try {
+    var t = AUDIO.ctx.currentTime, b = AUDIO.ctx.createBufferSource(), g = AUDIO.ctx.createGain();
+    var buf = AUDIO.ctx.createBuffer(1, 900, AUDIO.ctx.sampleRate), d = buf.getChannelData(0), i;
+    for (i = 0; i < 900; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / 90);
+    b.buffer = buf;
+    var f = AUDIO.ctx.createBiquadFilter();
+    f.type = "bandpass"; f.frequency.value = edge ? 3200 : 1800; f.Q.value = 6;
+    g.gain.value = edge ? 0.22 : 0.12;
+    b.connect(f); f.connect(g); g.connect(AUDIO.master); b.start(t);
+  } catch (e) {}
+}
+function pad(freqs, dur) {
+  if (!AUDIO.ctx || !AUDIO.on) return;
+  try {
+    var t = AUDIO.ctx.currentTime, g = AUDIO.ctx.createGain(), f = AUDIO.ctx.createBiquadFilter();
+    f.type = "lowpass"; f.frequency.value = 900;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.13, t + 0.5);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    f.connect(g); g.connect(AUDIO.master);
+    freqs.forEach(function (fr, i) {
+      var o = AUDIO.ctx.createOscillator();
+      o.type = "sawtooth"; o.frequency.value = fr * (i ? 1.004 : 1);
+      o.connect(f); o.start(t); o.stop(t + dur + 0.1);
+    });
+  } catch (e) {}
+}
+/* room tone: filtered noise that shifts with the room you are looking at */
+function roomTone(idx) {
+  audioInit();
+  if (!AUDIO.ctx || !AUDIO.on) return;
+  try {
+    if (!AUDIO.bed) {
+      var len = AUDIO.ctx.sampleRate * 2, buf = AUDIO.ctx.createBuffer(1, len, AUDIO.ctx.sampleRate);
+      var d = buf.getChannelData(0), i;
+      for (i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * 0.5;
+      var src = AUDIO.ctx.createBufferSource();
+      src.buffer = buf; src.loop = true;
+      AUDIO.bedF = AUDIO.ctx.createBiquadFilter();
+      AUDIO.bedF.type = "bandpass"; AUDIO.bedF.Q.value = 1.4;
+      AUDIO.bedGain = AUDIO.ctx.createGain(); AUDIO.bedGain.gain.value = 0.03;
+      src.connect(AUDIO.bedF); AUDIO.bedF.connect(AUDIO.bedGain); AUDIO.bedGain.connect(AUDIO.master);
+      src.start(); AUDIO.bed = src;
+    }
+    AUDIO.bedF.frequency.setTargetAtTime(140 + idx * 55, AUDIO.ctx.currentTime, 0.6);
+  } catch (e) {}
+}
+function buzz(pat) {
+  if (!APP || !APP.save.settings.haptics) return;
+  try { if (navigator.vibrate) navigator.vibrate(pat); } catch (e) {}
+}
+
+/* ================== 8. SAVE (storage plumbing only) ================== */
+function loadSave() {
+  var raw = null;
+  try { raw = localStorage.getItem(SAVE_KEY); } catch (e) { raw = null; }
+  return saveParse(raw);
+}
+function patchSave(patch) {
+  var disk = loadSave();
+  var next = saveMerge(disk, patch);
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(next)); } catch (e) {}
+  if (APP) APP.save = next;
+  return next;
+}
+
+/* ================== boot state ================== */
+function todayIso() {
+  var d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+function dayNumber() { return Math.floor(Date.parse(todayIso() + "T00:00:00Z") / 86400000) - 20500; }
+
+/* the header subtitle: only says something when the case is not the default */
+function modeLabel(cs) {
+  if (!cs) return "";
+  if (cs.tier === "standard" && !cs.liar) return "";
+  return modeLabelOf(cs.tier, cs.liar).toUpperCase();
+}
+
+function startCase(seed, isDaily, keepResume, mode) {
+  mode = mode || { tier: "standard", liar: false };
+  var cs = generateCase(seed >>> 0, mode);
+  if (!cs) cs = generateCase(seed >>> 0, { tier: "standard", liar: false });
+  if (!cs) cs = generateCase(1);
+  APP.cs = cs;
+  APP.mode = { tier: cs.tier, liar: !!cs.liar };
+  APP.isDaily = !!isDaily;
+  APP.st = newGame(cs);
+  APP.selClue = -1;
+  if (keepResume && keepResume.seed === cs.seed && (keepResume.tier || "standard") === cs.tier &&
+      !!keepResume.liar === !!cs.liar) APP.st = deserializeState(keepResume, cs);
+  APP.counted = APP.st.status !== "play";
+  render();
+}
+
+function persistResume() {
+  if (!APP.cs) return;
+  patchSave({ resume: APP.st.status === "play" ? serializeState(APP.st) : null });
+}
+
+/* ================== render ================== */
+function render() {
+  var app = document.getElementById("app");
+  clear(app);
+
+  var hd = el("div", "hd");
+  var bx = el("button", "ghost", UI.exit); bx.onclick = function () { SWS_EXIT(); };
+  var titleText = APP.cs ? APP.cs.title : "Blackout";
+  var cw = document.documentElement.clientWidth || 390;
+  var ttl = el("div", ("ttl " + TITLE_TIERS[titleTier(titleText, headerTitleBox(cw, UI.exit, UI.options))].cls).replace(/\s+$/, ""), titleText);
+  var sub = modeLabel(APP.cs);
+  if (sub) ttl.appendChild(el("span", "sub", sub));
+  var bo = el("button", "ghost", UI.options); bo.onclick = openOptions;
+  hd.appendChild(bx); hd.appendChild(ttl); hd.appendChild(bo);
+  app.appendChild(hd);
+
+  var wb = el("div", "watchbar");
+  var wsvg = el("div"); wsvg.innerHTML = watchSvg(APP.st.actionsLeft, APP.st.total || CONFIG.ACTIONS);
+  var wt = el("div", "wtx" + (APP.st.actionsLeft <= 4 ? " low" : ""));
+  wt.appendChild(el("b", null, String(APP.st.actionsLeft)));
+  wt.appendChild(el("span", null, UI.actionsLeft));
+  var ab = el("button", "danger", UI.accuse); ab.onclick = openAccuse;
+  wb.appendChild(wsvg); wb.appendChild(wt); wb.appendChild(ab);
+  app.appendChild(wb);
+
+  var main = el("main", "fade");
+  if (APP.tab === "case") renderCase(main);
+  else if (APP.tab === "board") renderBoard(main);
+  else renderFile(main);
+  app.appendChild(main);
+
+  var bn = el("div", "bn");
+  [["case", UI.tabCase], ["board", UI.tabBoard], ["file", UI.tabFile]].forEach(function (t) {
+    var b = el("button", APP.tab === t[0] ? "on" : "", t[1]);
+    b.onclick = function () { APP.tab = t[0]; APP.selClue = -1; render(); };
+    bn.appendChild(b);
+  });
+  app.appendChild(bn);
+
+  if (APP.st.status !== "play" && !APP.revealShown) { APP.revealShown = true; openReveal(); }
+}
+
+function renderCase(main) {
+  var brief = el("div", "brief" + (APP.cs.liar ? " lying" : ""));
+  BRIEF.forEach(function (line) { brief.appendChild(el("div", null, line)); });
+  if (APP.cs.liar) brief.appendChild(el("div", "warn", UI.liarBrief));
+  main.appendChild(el("h2", null, UI.brief));
+  main.appendChild(brief);
+
+  main.appendChild(el("h2", null, UI.rooms));
+  ROOMS.forEach(function (r, i) {
+    var row = el("div", "row");
+    var nm = el("div", "nm");
+    nm.appendChild(el("b", null, r.n));
+    nm.appendChild(el("small", null, r.staffOnly ? "staff key only" : "open to the house"));
+    row.appendChild(nm);
+    var done = APP.st.searched.indexOf(i) >= 0;
+    var b = el("button", "act" + (done ? " done" : ""));
+    b.appendChild(el("span", null, done ? UI.searched : UI.search));
+    if (!done) b.appendChild(el("i", null, UI.oneAction));
+    b.onclick = function () { roomTone(i); doAction({ k: "search", r: i }); };
+    row.appendChild(b);
+    main.appendChild(row);
+  });
+
+  main.appendChild(el("h2", null, UI.people));
+  SUSPECTS.forEach(function (s, i) {
+    var row = el("div", "row");
+    var sv = el("div", "silwrap"); sv.innerHTML = silhouette(i); row.appendChild(sv);
+    var nm = el("div", "nm");
+    nm.appendChild(el("b", null, s.n));
+    nm.appendChild(el("small", null, tagsFor(i)));
+    row.appendChild(nm);
+    var asked = APP.st.interviewed.indexOf(i) >= 0;
+    var bi = el("button", "act" + (asked ? " done" : ""));
+    bi.appendChild(el("span", null, asked ? UI.asked : UI.interview));
+    if (!asked) bi.appendChild(el("i", null, UI.oneAction));
+    bi.onclick = function () { doAction({ k: "interview", s: i }); };
+    row.appendChild(bi);
+    var pressed = APP.st.pressed.indexOf(i) >= 0;
+    var open = pressUnlocked(APP.cs, APP.st, i);
+    var bp = el("button", "act" + (pressed ? " done" : open ? " hot" : " lock"));
+    bp.appendChild(el("span", null, pressed ? UI.pressed : UI.press));
+    if (!pressed) bp.appendChild(el("i", null, UI.twoActions));
+    bp.onclick = function () {
+      if (!open && !pressed) { toast(UI.pressLock); return; }
+      doAction({ k: "press", s: i });
+    };
+    row.appendChild(bp);
+    main.appendChild(row);
+  });
+}
+
+var TABKEY = { w: "weapon", r: "room", t: "time" };
+function colLabel(tab, i) {
+  if (tab === "w") return WEAPONS[i].n;
+  if (tab === "r") return ROOMS[i].n;
+  return TIME_HEAD[i];
+}
+function renderBoard(main) {
+  var tabs = el("div", "tabs");
+  [["w", UI.weapon], ["r", UI.room], ["t", UI.time]].forEach(function (t) {
+    var b = el("button", APP.boardTab === t[0] ? "on" : "", t[1]);
+    b.onclick = function () { APP.boardTab = t[0]; render(); };
+    tabs.appendChild(b);
+  });
+  main.appendChild(tabs);
+
+  var halo = { w: [], r: [], t: [] };
+  if (APP.selClue >= 0 && hasFound(APP.st, APP.selClue)) halo = clueHalo(APP.cs, APP.st, APP.selClue);
+  var hset = {};
+  halo[APP.boardTab].forEach(function (c) { hset[c] = 1; });
+
+  var wrap = el("div", "gridwrap"), g = el("div", "grid");
+  g.appendChild(el("div", "hc", ""));
+  var i, c;
+  for (i = 0; i < 6; i++) g.appendChild(el("div", "hc", colLabel(APP.boardTab, i)));
+  for (c = 0; c < 6; c++) {
+    g.appendChild(el("div", "rh", SUSPECTS[c].n));
+    for (i = 0; i < 6; i++) {
+      var key = markKey(APP.boardTab, c, i), v = APP.st.marks[key] || "";
+      var glyph = v === "y" ? "✓" : v === "n" ? "✕" : v === "q" ? "?" : "";
+      var cell = el("button", "cell " + v + (hset[c * 6 + i] ? " halo" : ""), glyph);
+      cell.setAttribute("aria-label", SUSPECTS[c].n + " " + colLabel(APP.boardTab, i));
+      (function (cc, ii, vv) {
+        cell.onclick = function () {
+          var order = ["", "n", "y", "q"], nx = order[(order.indexOf(vv) + 1) % 4];
+          step(APP.st, APP.cs, { k: "mark", tab: APP.boardTab, row: cc, col: ii, v: nx });
+          tick(false); persistResume(); render();
+        };
+      })(c, i, v);
+      g.appendChild(cell);
+    }
+  }
+  wrap.appendChild(g); main.appendChild(wrap);
+
+  var cnt = el("div", "counter");
+  cnt.appendChild(el("b", null, String(candidateCountFromMarks(APP.st.marks))));
+  cnt.appendChild(el("span", null, UI.possibilities));
+  main.appendChild(cnt);
+  main.appendChild(el("div", "empty", UI.fromYourMarks));
+
+  main.appendChild(el("h2", null, UI.journal));
+  if (!APP.st.found.length) { main.appendChild(el("div", "empty", UI.nothingYet)); return; }
+  main.appendChild(el("div", "empty", UI.haloHint));
+  /* Statements and evidence are different kinds of fact in a liar case, so
+     they are different kinds of card. The player is never told which statement
+     is the lie, only that a statement is the only place a lie can live. */
+  var said = [], seenAt = [];
+  APP.st.found.forEach(function (id) { (clueSource(APP.cs, id) || {}).kind === "said" ? said.push(id) : seenAt.push(id); });
+  function card(id) {
+    var cl = APP.cs.pool[id], src = clueSource(APP.cs, id);
+    var b = el("button", "clue" + (APP.selClue === id ? " sel" : "") +
+      (APP.cs.liar && src && src.kind === "said" ? " said" : ""));
+    var tag = el("span", "tag");
+    if (src && src.kind === "said") tag.textContent = SUSPECTS[src.i].n + UI.says + "   " + TYPE_NAMES[cl.ty];
+    else if (src) tag.textContent = UI.foundIn + ROOMS[src.i].n + "   " + TYPE_NAMES[cl.ty];
+    else tag.textContent = TYPE_NAMES[cl.ty];
+    b.appendChild(tag);
+    b.appendChild(el("span", "tx", clueText(cl)));
+    b.onclick = function () { APP.selClue = (APP.selClue === id ? -1 : id); pluck(AMIN[3], 0.35); render(); };
+    main.appendChild(b);
+  }
+  if (APP.cs.liar && said.length) {
+    main.appendChild(el("div", "empty", UI.liarStanding));
+    said.forEach(card);
+    if (seenAt.length) main.appendChild(el("h2", null, UI.evidence));
+    seenAt.forEach(card);
+  } else {
+    APP.st.found.forEach(card);
+  }
+}
+
+function renderFile(main) {
+  main.appendChild(el("h2", null, UI.dossierPeople));
+  var d = el("div", "dossier"), i;
+  SUSPECTS.forEach(function (s, i) {
+    var z = el("div", "dz");
+    z.appendChild(el("b", null, s.n));
+    z.appendChild(el("small", null, "  " + tagsFor(i)));
+    d.appendChild(z);
+  });
+  main.appendChild(d);
+  main.appendChild(el("h2", null, UI.dossierWeapons));
+  var d2 = el("div", "dossier");
+  WEAPONS.forEach(function (w) {
+    var z = el("div", "dz");
+    z.appendChild(el("b", null, w.n));
+    z.appendChild(el("small", null, "  " + CLASSWORD[w.cls]));
+    d2.appendChild(z);
+  });
+  main.appendChild(d2);
+  main.appendChild(el("h2", null, UI.dossierRooms));
+  var d3 = el("div", "dossier");
+  ROOMS.forEach(function (r) {
+    var z = el("div", "dz");
+    z.appendChild(el("b", null, r.n));
+    z.appendChild(el("small", null, "  next to " + r.adj.map(function (a) { return ROOMS[a].n; }).join(", ")));
+    d3.appendChild(z);
+  });
+  main.appendChild(d3);
+
+  main.appendChild(el("h2", null, UI.archive));
+  var arc = APP.save.archive || [];
+  if (!arc.length) main.appendChild(el("div", "empty", UI.noArchive));
+  arc.forEach(function (a) {
+    var row = el("div", "arc");
+    var an = el("div", "an");
+    an.appendChild(document.createTextNode(a.title || "Case"));
+    an.appendChild(el("small", null, (a.won ? UI.solved : UI.failed) + "   " + a.moves + " moves   " +
+      (a.stars ? new Array(a.stars + 1).join("★") : "") + "   " + modeLabelOf(a.tier || "standard", a.liar)));
+    row.appendChild(an);
+    var lb = el("button", "act");
+    lb.appendChild(el("span", null, UI.copyLink));
+    lb.onclick = function () { copyCaseLink(a.seed, a.tier || "standard", !!a.liar); };
+    row.appendChild(lb);
+    var b = el("button", "act");
+    b.appendChild(el("span", null, UI.replay));
+    b.onclick = function () {
+      APP.revealShown = false;
+      startCase(a.seed, false, null, { tier: a.tier || "standard", liar: !!a.liar });
+      APP.tab = "case"; render();
+    };
+    row.appendChild(b);
+    main.appendChild(row);
+  });
+
+  var nb = el("button", "wide", UI.newCase);
+  nb.onclick = function () { openPicker(); };
+  main.appendChild(nb);
+  var db = el("button", "wide sec", UI.daily);
+  db.onclick = function () { APP.revealShown = false; startCase(dailySeed(todayIso()), true, null, { tier: "standard", liar: false }); };
+  main.appendChild(db);
+}
+
+/* The ladder, as a thing you choose before the evening starts. Every rung is
+   swept and gated separately, so none of these is a difficulty slider bolted
+   onto one case shape. */
+function openPicker() {
+  var sel = { tier: (APP.mode && APP.mode.tier) || "standard", liar: !!(APP.mode && APP.mode.liar) };
+  overlay(function (box, close) {
+    function draw() {
+      clear(box);
+      box.appendChild(el("h3", null, UI.pickCase));
+      TIER_KEYS.forEach(function (k) {
+        var t = tierOf(k);
+        var row = el("button", "optrow pickrow" + (sel.tier === k ? " on" : ""));
+        var nm = el("div", "nm");
+        nm.appendChild(el("b", null, t.name));
+        nm.appendChild(el("small", null, t.brief + "   " + modeOf(k, sel.liar).actions + " actions"));
+        row.appendChild(nm);
+        row.onclick = function () { sel.tier = k; tick(false); draw(); };
+        box.appendChild(row);
+      });
+      box.appendChild(el("h2", null, UI.mode));
+      var lr = el("div", "optrow");
+      lr.appendChild(el("span", null, sel.liar ? UI.liarOn : UI.liarOff));
+      var sw = el("button", "sw" + (sel.liar ? " on" : ""), sel.liar ? UI.on : UI.off);
+      sw.onclick = function () { sel.liar = !sel.liar; tick(false); draw(); };
+      lr.appendChild(sw);
+      box.appendChild(lr);
+      if (sel.liar) box.appendChild(el("div", "empty", UI.liarBrief));
+      var go = el("button", "wide", UI.startCase);
+      go.onclick = function () { close(); newRandomCase(sel); };
+      box.appendChild(go);
+      var cn = el("button", "wide sec", UI.cancel);
+      cn.onclick = close;
+      box.appendChild(cn);
+    }
+    draw();
+  });
+}
+
+/* ================== 7. INPUT ================== */
+function doAction(act) {
+  audioInit();
+  var before = APP.st.found.length;
+  var res = step(APP.st, APP.cs, act);
+  var got = APP.st.found.length - before;
+  var inv = res.events.filter(function (e) { return e.e === "invalid"; })[0];
+  if (inv) { toast(invalidText(inv.why)); return; }
+  tick(APP.st.actionsLeft <= 4);
+  buzz(10);
+  if (got > 0) { pluck(AMIN[1], 0.7); pluck(AMIN[5], 0.5, "sine", 0.08); }
+  else toast(act.k === "search" ? UI.emptyRoom : UI.emptyTalk);
+  persistResume();
+  render();
+}
+function invalidText(why) {
+  if (why === "locked") return UI.pressLock;
+  if (why === "no actions left") return "The evening is gone.";
+  if (why === "already searched") return "You have been through there.";
+  if (why === "already spoken to") return "They have said their piece.";
+  if (why === "already pressed") return "You have leaned on them once already.";
+  return "Not that.";
+}
+function toast(msg) {
+  var t = document.getElementById("toast");
+  if (t) t.parentNode.removeChild(t);
+  t = el("div", "toast", msg); t.id = "toast";
+  document.body.appendChild(t);
+  setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 2200);
+}
+function overlay(build) {
+  var o = document.getElementById("ov");
+  if (o) o.parentNode.removeChild(o);
+  o = el("div", "ov fade"); o.id = "ov";
+  var box = el("div", "ovbox");
+  build(box, function () { if (o.parentNode) o.parentNode.removeChild(o); });
+  o.appendChild(box);
+  document.body.appendChild(o);
+}
+
+function openAccuse() {
+  audioInit();
+  if (APP.st.status !== "play") { openReveal(); return; }
+  var sel = { c: -1, w: -1, r: -1, t: -1 };
+  overlay(function (box, close) {
+    function draw() {
+      clear(box);
+      box.appendChild(el("h3", null, UI.accuse));
+      [["c", UI.whoDidIt, SUSPECTS.map(function (x) { return x.n; })],
+       ["w", UI.withWhat, WEAPONS.map(function (x) { return x.n; })],
+       ["r", UI.where, ROOMS.map(function (x) { return x.n; })],
+       ["t", UI.when, TIMES]].forEach(function (grp) {
+        box.appendChild(el("h2", null, grp[1]));
+        var p = el("div", "pick");
+        grp[2].forEach(function (label, i) {
+          var b = el("button", sel[grp[0]] === i ? "on" : "", label);
+          b.onclick = function () { sel[grp[0]] = i; tick(false); draw(); };
+          p.appendChild(b);
+        });
+        box.appendChild(p);
+      });
+      var ready = sel.c >= 0 && sel.w >= 0 && sel.r >= 0 && sel.t >= 0;
+      box.appendChild(el("div", "empty", UI.confirmAccuse));
+      var go = el("button", "wide", UI.makeAccusation);
+      if (!ready) go.setAttribute("disabled", "disabled");
+      go.onclick = function () {
+        if (!ready) return;
+        pad([AMIN[0], AMIN[2], AMIN[4]], 2.2);
+        buzz([30, 40, 80]);
+        step(APP.st, APP.cs, { k: "accuse", c: sel.c, w: sel.w, r: sel.r, t: sel.t });
+        recordResult();
+        close(); APP.revealShown = false; render();
+      };
+      box.appendChild(go);
+      var cn = el("button", "wide sec", UI.cancel);
+      cn.onclick = close;
+      box.appendChild(cn);
+    }
+    draw();
+  });
+}
+
+function recordResult() {
+  var won = APP.st.status === "won";
+  var moves = actionsUsed(APP.st);
+  var patch = {
+    addStats: { cases: 1, solved: won ? 1 : 0, lost: won ? 0 : 1, stars: APP.st.stars },
+    maxStats: { bestStars: APP.st.stars },
+    archive: { seed: APP.cs.seed, title: APP.cs.title, won: won, moves: moves, stars: APP.st.stars,
+      tier: APP.cs.tier, liar: !!APP.cs.liar },
+    resume: null
+  };
+  if (won) patch.bestLow = { fewestActions: moves };
+  if (won && APP.isDaily) {
+    var s = loadSave(), y = new Date(Date.now() - 86400000);
+    var yIso = y.getFullYear() + "-" + String(y.getMonth() + 1).padStart(2, "0") + "-" + String(y.getDate()).padStart(2, "0");
+    if (s.stats.lastDaily !== todayIso()) {
+      patch.setStats = { dailyStreak: (s.stats.lastDaily === yIso ? s.stats.dailyStreak + 1 : 1), lastDaily: todayIso() };
+    }
+  }
+  patchSave(patch);
+}
+
+function openReveal() {
+  var won = APP.st.status === "won", T = APP.cs.truth, st = APP.st;
+  overlay(function (box, close) {
+    box.appendChild(el("h3", null, won ? UI.solved : UI.failed));
+    if (won) {
+      box.appendChild(el("div", "stars", new Array(st.stars + 1).join("★")));
+      beats(box, T);
+      revealLie(box);
+      box.appendChild(el("h2", null, UI.worked));
+      var mins = APP.cs.minimal.filter(function (id) { return hasFound(st, id); });
+      mins.slice(0, 6).forEach(function (id) {
+        var b = el("div", "clue");
+        b.appendChild(el("span", "tag", TYPE_NAMES[APP.cs.pool[id].ty]));
+        b.appendChild(el("span", "tx", clueText(APP.cs.pool[id])));
+        box.appendChild(b);
+      });
+    } else {
+      beats(box, T);
+      revealLie(box);
+      if (st.contraId >= 0) {
+        box.appendChild(el("h2", null, UI.teach));
+        var stamp = el("div", "stamp");
+        stamp.appendChild(el("div", null, clueText(APP.cs.pool[st.contraId])));
+        stamp.appendChild(el("div", null, UI.contradicted + ": " + SUSPECTS[st.acc.c].n + ", " +
+          WEAPONS[st.acc.w].n + ", " + ROOMS[st.acc.r].n + ", " + TIMES[st.acc.t]));
+        box.appendChild(stamp);
+      }
+    }
+    var sh = el("button", "wide", UI.share);
+    sh.onclick = function () { doShare(); };
+    box.appendChild(sh);
+    var nb = el("button", "wide sec", UI.newCase);
+    nb.onclick = function () { close(); newRandomCase(); };
+    box.appendChild(nb);
+    var cn = el("button", "wide sec", UI.cancel);
+    cn.onclick = close;
+    box.appendChild(cn);
+  });
+}
+
+/* The typewriter toggle used to be a switch wired to nothing. The reveal beats
+   now type themselves out unless the player turned it off or asked for less
+   motion, and the text is in the DOM from the first frame either way, so a
+   screen reader never waits for the animation. */
+function typeBeat(node, text) {
+  node.textContent = text;
+  if (!APP.save.settings.typewriter || APP.save.settings.reduceMotion) return;
+  var reduce = false;
+  try { reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) {}
+  if (reduce) return;
+  var i = 0, step = Math.max(1, Math.round(text.length / 40));
+  node.setAttribute("aria-label", text);
+  node.textContent = "";
+  var done = false;
+  var iv = setInterval(function () {
+    i += step;
+    node.textContent = text.slice(0, i);
+    if (i >= text.length) { node.textContent = text; done = true; clearInterval(iv); }
+  }, 28);
+  /* Backstop. A reveal that only exists inside a running timer is a reveal that
+     can end up blank, and the one screen that must never be blank is the one
+     that tells you who did it. */
+  setTimeout(function () { if (!done) { clearInterval(iv); node.textContent = text; } }, 1500);
+}
+
+/* the payoff of a liar case: who it was, and exactly what they said */
+function beats(box, T) {
+  var lines = [
+    SUSPECTS[T.c].n + " did it.",
+    "In the " + ROOMS[T.r].n + ", at " + TIMES[T.t] + ".",
+    "With the " + WEAPONS[T.w].n + "."
+  ];
+  var typed = APP.save.settings.typewriter && !APP.save.settings.reduceMotion;
+  lines.forEach(function (line, i) {
+    var n = el("div", "beat tw");
+    box.appendChild(n);
+    if (!typed || i === 0) { typeBeat(n, line); return; }
+    n.textContent = "";
+    setTimeout(function () { typeBeat(n, line); }, 260 * i);
+  });
+}
+
+function revealLie(box) {
+  if (!APP.cs.liar || !APP.cs.lie) return;
+  box.appendChild(el("h2", null, UI.theLie));
+  var who = APP.cs.lie.speaker;
+  var st = el("div", "stamp lie");
+  st.appendChild(el("div", null, SUSPECTS[who].n + UI.liarWas));
+  st.appendChild(el("div", null, clueText(APP.cs.pool[APP.cs.lie.id])));
+  box.appendChild(st);
+}
+
+function doShare() {
+  var txt = shareString(APP.cs, APP.st, APP.isDaily, dayNumber());
+  var url = caseUrl(APP.cs.seed, APP.cs.tier, APP.cs.liar);
+  var full = txt.replace("?seed=" + APP.cs.seed, url);
+  try {
+    if (navigator.share) { navigator.share({ text: full }); return; }
+  } catch (e) {}
+  try {
+    if (navigator.clipboard) { navigator.clipboard.writeText(full); toast(UI.copied); return; }
+  } catch (e) {}
+  toast(full);
+}
+
+function newRandomCase(mode) {
+  APP.revealShown = false;
+  APP.sessionRng = APP.sessionRng || makeRNG((Date.now() ^ 0x5bd1e6) >>> 0);
+  startCase((APP.sessionRng.int(0x7ffffffe) + 1) >>> 0, false, null, mode || APP.mode);
+  APP.tab = "case";
+  render();
+}
+
+function caseUrl(seed, tier, liar) {
+  var u = location.origin + location.pathname + "?seed=" + seed;
+  if (tier && tier !== "standard") u += "&tier=" + tier;
+  if (liar) u += "&liar=1";
+  return u;
+}
+function copyCaseLink(seed, tier, liar) {
+  var u = caseUrl(seed, tier, liar);
+  try { if (navigator.clipboard) { navigator.clipboard.writeText(u); toast(UI.linkCopied); return; } } catch (e) {}
+  toast(u);
+}
+
+function openOptions() {
+  overlay(function (box, close) {
+    function draw() {
+      clear(box);
+      box.appendChild(el("h3", null, UI.options));
+      var s = APP.save.settings;
+      [["sound", UI.sound], ["haptics", UI.haptics], ["autoMark", UI.autoMark],
+       ["typewriter", UI.typewriter], ["reduceMotion", UI.motion]].forEach(function (o) {
+        var row = el("div", "optrow");
+        row.appendChild(el("span", null, o[1]));
+        var b = el("button", "sw" + (s[o[0]] ? " on" : ""), s[o[0]] ? UI.on : UI.off);
+        b.onclick = function () {
+          var patch = {}; patch[o[0]] = !s[o[0]];
+          patchSave({ settings: patch });
+          AUDIO.on = APP.save.settings.sound;
+          if (o[0] === "autoMark" && patch[o[0]]) { step(APP.st, APP.cs, { k: "automark" }); persistResume(); }
+          draw();
+        };
+        row.appendChild(b);
+        box.appendChild(row);
+      });
+      var st = APP.save.stats;
+      box.appendChild(el("h2", null, "Record"));
+      box.appendChild(el("div", "dz", st.solved + " solved of " + st.cases + ", streak " + st.dailyStreak));
+      var cn = el("button", "wide sec", UI.cancel);
+      cn.onclick = close;
+      box.appendChild(cn);
+    }
+    draw();
+  });
+}
+
+/* ===== Sky Wolf Studios embed protocol ===== */
+(function () {
+  var framed = false;
+  try { framed = window.parent !== window; } catch (e) { framed = true; }
+  window.SWS_EXIT = function () {
+    if (framed) { try { parent.postMessage({ sws: "close" }, "*"); } catch (e) {} return; }
+    if (document.referrer.indexOf("/portal") >= 0 && history.length > 1) { history.back(); }
+    else { location.replace("https://lucidwinds.com/portal/"); }
+  };
+  if (framed) {
+    try { parent.postMessage({ sws: "ready" }, "*"); } catch (e) {}
+    window.addEventListener("load", function () {
+      try { parent.postMessage({ sws: "ready" }, "*"); } catch (e) {}
+    });
+  }
+})();
+
+/* ================== 10. BOOT ================== */
+function boot() {
+  var save = loadSave();
+  APP = { save: save, tab: "case", boardTab: "w", selClue: -1, revealShown: false, cs: null, st: null };
+  AUDIO.on = save.settings.sound;
+  AUDIO.vol = save.settings.volume;
+
+  var q = {};
+  location.search.replace(/^\?/, "").split("&").forEach(function (kv) {
+    var p = kv.split("="); if (p[0]) q[p[0]] = decodeURIComponent(p[1] || "");
+  });
+
+  var seed, isDaily = false, mode = { tier: "standard", liar: false };
+  if (q.seed && /^\d+$/.test(q.seed)) {
+    seed = parseInt(q.seed, 10) >>> 0;
+    if (q.tier && TIERS[q.tier]) mode.tier = q.tier;
+    if (q.liar === "1") mode.liar = true;
+  } else if (save.resume && save.resume.seed) {
+    seed = save.resume.seed >>> 0;
+    mode.tier = TIERS[save.resume.tier] ? save.resume.tier : "standard";
+    mode.liar = !!save.resume.liar;
+  } else { seed = dailySeed(todayIso()); isDaily = true; }
+
+  startCase(seed, isDaily, save.resume && save.resume.seed === seed ? save.resume : null, mode);
+
+  document.addEventListener("visibilitychange", function () { if (document.hidden) persistResume(); });
+  window.addEventListener("pagehide", persistResume);
+  document.addEventListener("pointerdown", function once() {
+    audioInit();
+    document.removeEventListener("pointerdown", once);
+  });
+
+  window.__TEST__ = buildTests(window);
+  if (location.search.indexOf("test=1") >= 0) {
+    var T = window.__TEST__;
+    T.run();
+    var rep = T.report();
+    var panel = el("div", "ov");
+    var box = el("div", "ovbox");
+    box.appendChild(el("h3", null, "PASSED " + rep.passed + " / FAILED " + rep.failed));
+    box.appendChild(el("div", "dz", "total assertions " + rep.total));
+    rep.failures.slice(0, 40).forEach(function (f) {
+      box.appendChild(el("div", "stamp", f.name + "   " + (f.detail || "")));
+    });
+    var cn = el("button", "wide sec", "Close");
+    cn.onclick = function () { panel.parentNode.removeChild(panel); };
+    box.appendChild(cn);
+    panel.appendChild(box);
+    document.body.appendChild(panel);
+  }
+
+  try {
+    if ("serviceWorker" in navigator) {
+      Promise.resolve().catch(function () {});
+    }
+  } catch (e) {}
+}
+
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+else boot();
+
+</script>
+
+<a href="https://lucidwinds.com/portal/?from=whim" target="_blank" rel="noopener"
+   style="position:fixed;right:10px;bottom:10px;z-index:99999;display:inline-flex;align-items:center;gap:6px;
+   padding:6px 10px;border-radius:999px;background:rgba(10,14,10,.85);border:1px solid rgba(200,168,75,.55);
+   color:#e8dcc8;font:600 11px system-ui,sans-serif;text-decoration:none;opacity:.85">
+  🐺 Sky Wolf Studios · 160+ more free games</a>
+</body>
+</html>

@@ -1,0 +1,3522 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
+<title>Siege of One</title>
+<meta name="description" content="Inverted tower defense. Set the traps, then stand in the lane and fight beside them.">
+<meta name="theme-color" content="#e8703a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Siege">
+<style>:root{
+  --bg:#0a0b0f; --panel:#14161d; --panel2:#1c1f28; --line:#2a2f3b;
+  --accent:#e8703a; --warm:#f5c77e; --cream:#e8dcc8; --muted:#8b93a5;
+  --gate:#c8563a; --safe:#7ab356;
+  --laneh:clamp(140px,22vh,260px);
+  --sb:env(safe-area-inset-bottom,0px); --st:env(safe-area-inset-top,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%;overflow:hidden;background:var(--bg);color:var(--cream);
+  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  font-variant-numeric:tabular-nums;-webkit-user-select:none;user-select:none;touch-action:manipulation}
+body{font-size:15px;line-height:1.4}
+#app{position:fixed;inset:0;display:flex;flex-direction:column;padding-top:var(--st);padding-bottom:var(--sb)}
+.hidden{display:none!important}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;font-variant-numeric:tabular-nums}
+
+/* ---------- top bar ---------- */
+#hud{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--panel);border-bottom:1px solid var(--line);flex:0 0 auto}
+.stat{display:flex;flex-direction:column;line-height:1.05}
+.stat b{font-size:19px;font-weight:800;letter-spacing:.5px}
+.stat i{font-size:11px;font-style:normal;color:var(--muted);letter-spacing:1.2px}
+#hud .grow{flex:1}
+.iconbtn{min-width:48px;min-height:48px;display:flex;align-items:center;justify-content:center;
+  border-radius:10px;border:1px solid var(--line);background:var(--panel2);font-size:18px}
+.iconbtn:active{background:#262b36}
+#scrapv{color:var(--warm)}
+#wavev{color:var(--accent)}
+
+/* ---------- field: watch board on top, lane strip on the floor ---------- */
+#field{flex:1 1 auto;position:relative;overflow:hidden;display:flex;flex-direction:column;min-height:0}
+
+/* Slack collected in ONE place is a void. Slack distributed as spacing is a
+   layout. So the board fills the column and `align-content:space-between`
+   spreads whatever is left over across the gaps between panels, which means a
+   thin wave breathes instead of leaving a hole. Stretching the panels
+   themselves was the other option and it only puts the same emptiness inside a
+   box. The briefing panel supplies real content on exactly the early waves
+   where the board would otherwise be thin. */
+#board{flex:1 1 auto;min-height:0;overflow-y:auto;padding:8px 8px 4px;
+  display:grid;gap:6px;align-content:space-between;
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  scrollbar-width:thin}
+/* THE OVERFLOW RULE. align-content:space-between distributes NEGATIVE free
+   space as well as positive, so the moment the content is taller than the box
+   the browser pushes rows past the scroll origin and they are clipped instead
+   of scrollable. That is the whole defect: a sentence cut in half with no way
+   to reach the rest. So the instant the board measures itself as overflowing it
+   drops back to align-content:start, where overflow scrolls the way overflow is
+   supposed to, and a fade appears over the bottom edge to say so. Slack is
+   still spread when there IS slack. */
+#board.tight{align-content:start}
+#boardfade{position:absolute;left:0;right:0;bottom:var(--laneh);height:34px;pointer-events:none;z-index:3;
+  background:linear-gradient(180deg,rgba(10,11,15,0),rgba(10,11,15,.93));
+  display:flex;align-items:flex-end;justify-content:center;padding-bottom:2px;
+  font-size:9px;letter-spacing:1.4px;color:var(--muted)}
+/* the briefing leads the column while it is the point of the screen, so if
+   anything falls past the fold it is a one chip panel and never a half
+   sentence of the tutorial */
+#board.teaching #pnotes{order:-1}
+#board .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 9px 8px}
+#board .ph{display:flex;justify-content:space-between;align-items:baseline;gap:8px;
+  font-size:9px;letter-spacing:1.4px;color:var(--muted);margin-bottom:5px}
+#board .ph b{font-size:13px;letter-spacing:0;color:var(--cream);font-weight:800}
+#pshare .ph b{color:var(--accent)}
+.meter{height:7px;background:var(--panel2);border-radius:5px;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--gate);border-radius:5px;transition:width 120ms linear}
+.meter.boss{margin-top:5px;height:9px}
+.meter.boss i{background:linear-gradient(90deg,#d2a0a0,#c8563a)}
+#bbossname{font-size:9px;letter-spacing:1.2px;color:#d2a0a0;margin-top:3px;min-height:0}
+#pips{display:flex;flex-wrap:wrap;gap:5px}
+/* the roster is where the eight silhouettes are finally big enough to tell
+   apart. In the lane a cell is 13px; here a body is 30. */
+.pip{display:flex;align-items:center;gap:4px;font-size:12px;font-weight:700;color:var(--cream);
+  background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:3px 7px 3px 4px;min-height:38px}
+.pip svg{width:22px;height:30px;flex:0 0 auto}
+#pips.roomy .pip{font-size:16px;padding:5px 11px 5px 6px;min-height:52px;gap:7px}
+#pips.roomy .pip svg{width:32px;height:44px}
+#pips.roomy .pip s{font-size:11px}
+#kit.roomy .kitchip{font-size:16px;min-height:44px;padding:7px 11px}
+#kit.roomy .kitchip u{font-size:22px}
+.pip.gone{opacity:.28}
+.pip.boss{border-color:#5a3a3a;background:#241a1c}
+.pip s{font-size:9px;color:var(--muted);text-decoration:none;letter-spacing:.5px}
+#kit{display:flex;flex-wrap:wrap;gap:5px}
+.kitchip{display:flex;align-items:center;gap:4px;font-size:12px;font-weight:700;
+  background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:4px 7px;min-height:30px}
+.kitchip u{text-decoration:none;font-size:15px;color:var(--warm)}
+.kitchip s{text-decoration:none;font-size:9px;color:var(--accent);letter-spacing:.5px}
+.kitchip.none{color:var(--muted);font-weight:400}
+#livebars .barrow{margin-bottom:4px;font-size:11px}
+#livebars .barrow .lbl{width:64px}
+#livebars .barrow .track{height:8px}
+#livebars{min-height:46px}
+#pnotes .note{font-size:12px;line-height:1.42;color:var(--cream);padding:5px 0;border-top:1px solid var(--line)}
+#pnotes .note:first-child{border-top:0}
+#pnotes .note b{color:var(--warm)}
+#pnotes .note svg{vertical-align:-9px;margin-right:5px}
+
+/* ---------- lane ---------- */
+#lanebox{flex:0 0 auto;position:relative;overflow:hidden;height:var(--laneh);
+  border-top:1px solid var(--line);
+  background:linear-gradient(180deg,#0d0f15 0%,#14171f 62%,#191c25 100%)}
+/* a crenellated lip along the top edge so the air over the lane reads as the
+   inside of a wall rather than as leftover screen. Pure CSS, no asset. */
+#lanebox:before{content:'';position:absolute;left:0;right:0;top:0;height:9px;pointer-events:none;
+  background:repeating-linear-gradient(90deg,#1b1f28 0 13px,transparent 13px 26px);opacity:.85}
+#lanebox:after{content:'';position:absolute;left:0;right:0;top:9px;height:44%;pointer-events:none;
+  background:linear-gradient(180deg,rgba(0,0,0,.28),rgba(0,0,0,0))}
+#lane{position:absolute;left:0;right:0;top:0;bottom:0}
+.cell{position:absolute;top:34%;bottom:0;border-right:1px solid rgba(255,255,255,.05)}
+.cell.build{cursor:pointer}
+.cell.pick{background:rgba(232,112,58,.10)}
+.cell.mark{background:rgba(255,255,255,.03)}
+#gate{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,#3a2019,rgba(58,32,25,0));
+  border-right:2px solid var(--gate);pointer-events:none}
+#gateglow{position:absolute;left:0;top:0;bottom:0;width:34%;pointer-events:none;opacity:0;
+  background:linear-gradient(90deg,rgba(200,86,58,.55),rgba(200,86,58,0));transition:opacity 160ms ease-out}
+#ground{position:absolute;left:0;right:0;bottom:0;height:2px;background:#39414f;pointer-events:none}
+.ent{position:absolute;transform:translate(-50%,-100%);transition:transform 110ms linear;will-change:transform}
+.ent svg{display:block;overflow:visible}
+.hpbar{position:absolute;left:50%;transform:translateX(-50%);width:30px;height:4px;background:#33202a;border-radius:2px;overflow:hidden}
+.hpbar i{display:block;height:100%;background:var(--gate)}
+.trap{position:absolute;bottom:0;transform:translateX(-50%);text-align:center;pointer-events:none}
+.trap .g{font-size:24px;line-height:1;display:block;filter:drop-shadow(0 0 5px rgba(0,0,0,.9))}
+.trap small{display:block;font-size:9px;color:var(--muted)}
+.trap .lv{display:block;font-size:9px;line-height:1;color:var(--accent);letter-spacing:1px}
+#sight{position:absolute;height:2px;background:linear-gradient(90deg,rgba(245,199,126,.7),rgba(245,199,126,0));pointer-events:none}
+.float{position:absolute;font-size:12px;font-weight:800;pointer-events:none;color:var(--warm);
+  animation:rise 700ms ease-out forwards}
+@keyframes rise{from{opacity:1;transform:translate(-50%,0)}to{opacity:0;transform:translate(-50%,-26px)}}
+#shakewrap{position:absolute;inset:0}
+.shake{animation:shk 120ms ease-out}
+@keyframes shk{0%{transform:translate(0,0)}30%{transform:translate(-3px,2px)}60%{transform:translate(3px,-2px)}100%{transform:translate(0,0)}}
+
+/* ---------- build bar ---------- */
+#buildbar{flex:0 0 auto;background:var(--panel);border-top:1px solid var(--line);padding:6px 8px calc(6px + var(--sb))}
+#shop{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+#shop::-webkit-scrollbar{display:none}
+.shopbtn{flex:0 0 auto;min-width:64px;min-height:64px;border:1px solid var(--line);border-radius:10px;
+  background:var(--panel2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:4px 6px}
+.shopbtn .g{font-size:20px;line-height:1.1}
+.shopbtn .n{font-size:9px;letter-spacing:.6px;color:var(--muted)}
+.shopbtn .c{font-size:12px;font-weight:800;color:var(--warm)}
+.shopbtn.on{border-color:var(--accent);background:#2a1a13}
+.shopbtn.broke{opacity:.38}
+.shopbtn.deepen{border-color:#4a3a2a}
+.shopbtn.deepen .g{color:var(--accent)}
+#buildrow{display:flex;gap:6px;align-items:center;margin-top:4px}
+.tbtn{min-height:48px;flex:1;border:1px solid var(--line);border-radius:10px;background:var(--panel2);
+  font-size:12px;font-weight:700;letter-spacing:1px;padding:0 8px}
+.tbtn.go{background:var(--accent);color:#12070300;color:#150a04;border-color:var(--accent)}
+.tbtn:active{filter:brightness(1.2)}
+#timer{min-width:48px;min-height:48px;display:flex;align-items:center;justify-content:center;position:relative}
+#timer svg{position:absolute;inset:0}
+#timer b{font-size:14px;font-weight:800;position:relative}
+#hint{font-size:11px;color:var(--muted);padding:2px 2px 0;min-height:15px}
+
+/* ---------- combat controls ---------- */
+#pad{flex:0 0 auto;display:flex;gap:8px;padding:8px 8px calc(8px + var(--sb));background:var(--panel);border-top:1px solid var(--line)}
+.padbtn{flex:1;min-height:64px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);
+  font-size:24px;display:flex;align-items:center;justify-content:center}
+.padbtn:active,.padbtn.held{background:#2c323f}
+#atk{flex:1.5;background:#2a1a13;border-color:var(--accent);color:var(--accent);font-weight:800;font-size:26px}
+#atk:active,#atk.held{background:var(--accent);color:#150a04}
+#cdbar{position:absolute;left:0;bottom:0;height:3px;background:var(--warm)}
+
+/* ---------- pips ---------- */
+.pip{display:flex;align-items:center;gap:3px;font-size:10px;color:var(--muted);background:rgba(10,11,15,.7);
+  border:1px solid var(--line);border-radius:20px;padding:1px 6px 1px 3px}
+.pip svg{width:14px;height:14px}
+
+/* ---------- overlays ---------- */
+.sheet{position:absolute;inset:0;background:rgba(6,7,10,.93);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:18px;z-index:40;overflow-y:auto}
+.card{width:100%;max-width:420px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+.card h2{margin:0 0 2px;font-size:20px;letter-spacing:1px}
+.card h3{margin:0 0 10px;font-size:12px;letter-spacing:1.6px;color:var(--muted);font-weight:600}
+.bars{margin:10px 0 6px}
+.barrow{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:12px}
+.barrow .lbl{width:78px;flex:0 0 auto;color:var(--muted);letter-spacing:.6px}
+.barrow .track{flex:1;height:10px;background:var(--panel2);border-radius:6px;overflow:hidden}
+.barrow .track i{display:block;height:100%;border-radius:6px}
+.barrow .val{width:44px;text-align:right;font-weight:800}
+.barrow.you .lbl{color:var(--accent)}
+.split{display:flex;gap:8px;margin:2px 0 8px}
+.split .half{flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 6px;text-align:center}
+.split .half b{display:block;font-size:24px;font-weight:800;line-height:1.1}
+.split .half span{font-size:9px;letter-spacing:1px;color:var(--muted)}
+.split .half.you{border-color:var(--accent)}
+.split .half.you b{color:var(--accent)}
+#muts{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+.mut{font-size:9px;letter-spacing:.8px;color:var(--warm);border:1px solid #4a3a2a;border-radius:5px;padding:2px 5px;background:rgba(40,26,18,.7)}
+.kv{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);padding:3px 0;border-top:1px solid var(--line)}
+.kv b{color:var(--cream);font-weight:700}
+.bigbtn{width:100%;min-height:52px;margin-top:12px;border-radius:12px;background:var(--accent);color:#150a04;
+  font-weight:800;letter-spacing:1.4px;font-size:14px}
+.ghostbtn{width:100%;min-height:48px;margin-top:8px;border-radius:12px;border:1px solid var(--line);
+  background:var(--panel2);font-weight:700;letter-spacing:1.2px;font-size:12px}
+.row2{display:flex;gap:8px}
+.row2 .ghostbtn{margin-top:8px}
+.opt{display:flex;align-items:center;justify-content:space-between;min-height:48px;border-top:1px solid var(--line);font-size:13px}
+.opt .sw{min-width:72px;min-height:48px;border-radius:20px;border:1px solid var(--line);background:var(--panel2);font-size:11px;letter-spacing:1px;font-weight:700}
+.opt .sw.on{background:var(--accent);color:#150a04;border-color:var(--accent)}
+input[type=range]{width:130px;height:48px;accent-color:var(--accent)}
+.dispatch{font-size:12px;color:var(--muted);padding:5px 0;border-top:1px solid var(--line);line-height:1.35}
+.dispatch b{color:var(--cream)}
+#toast{position:absolute;left:50%;bottom:96px;transform:translateX(-50%);background:var(--panel2);
+  border:1px solid var(--line);border-radius:10px;padding:9px 14px;font-size:12px;z-index:60;opacity:0;
+  transition:opacity 160ms ease-out;pointer-events:none;max-width:88%;text-align:center}
+#toast.show{opacity:1}
+#tests{position:absolute;inset:0;background:#07080b;color:#cfd6e4;font:12px/1.45 ui-monospace,Menlo,monospace;
+  padding:14px;overflow:auto;z-index:99;white-space:pre-wrap}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="hud">
+    <div class="stat"><b id="wavev">1</b><i>WAVE</i></div>
+    <div class="stat"><b id="scrapv">52</b><i>SCRAP</i></div>
+    <div class="stat"><b id="bladev">20</b><i>BLADE</i></div>
+    <div class="grow"></div>
+    <button class="iconbtn" id="optbtn" aria-label="Options">&#9881;</button>
+    <button class="iconbtn" id="exitbtn" aria-label="Leave the siege">&#10005;</button>
+  </div>
+
+  <div id="field">
+
+    <!-- THE WATCH BOARD. The lane is 30 cells wide and a phone is 390px, so a
+         cell can never be more than 13px and the units can never be big. That
+         is a hard constraint, not a bug, and the answer is not to zoom: it is
+         to stop the rest of the screen being void. Everything here is computed
+         from the same wave stats the scorecard and the balance sweep read. -->
+    <div id="board">
+      <div class="panel" id="pwave">
+        <div class="ph"><span id="btitle">WAVE 1</span><b id="bhp">0 HP LEFT</b></div>
+        <div class="meter"><i id="bhpbar"></i></div>
+        <div class="meter boss hidden" id="bbosswrap"><i id="bbossbar"></i></div>
+        <div id="bbossname"></div>
+        <div id="muts"></div>
+      </div>
+
+      <div class="panel" id="proster">
+        <div class="ph"><span id="rtitle">STILL COMING</span><b id="rcount"></b></div>
+        <div id="pips"></div>
+      </div>
+
+      <div class="panel" id="pshare">
+        <div class="ph"><span id="stitle">WHO IS DOING THE WORK</span><b id="syou">0%</b></div>
+        <div id="livebars"></div>
+      </div>
+
+      <div class="panel" id="pkit">
+        <div class="ph"><span>YOUR LANE</span><b id="kcount"></b></div>
+        <div id="kit"></div>
+      </div>
+
+      <!-- The briefing. It has something to say on exactly the waves where the
+           board is thin, because those are the waves that introduce something,
+           and it retires itself once the lane is doing the talking. -->
+      <div class="panel hidden" id="pnotes">
+        <div class="ph"><span id="ntitle">FIELD NOTES</span><b id="nsub"></b></div>
+        <div id="notes"></div>
+      </div>
+    </div>
+
+    <!-- the lane strip itself: only as tall as the fight needs -->
+    <div id="boardfade" class="hidden">MORE BELOW</div>
+
+    <div id="lanebox">
+      <div id="shakewrap">
+        <div id="lane"></div>
+        <div id="gate"></div>
+        <div id="gateglow"></div>
+        <div id="sight" class="hidden"></div>
+      </div>
+      <div id="ground"></div>
+    </div>
+  </div>
+
+  <div id="buildbar">
+    <div id="shop"></div>
+    <div id="buildrow">
+      <button class="tbtn" id="lastbuild">LAST BUILD</button>
+      <button class="tbtn go" id="skipbtn">SEND THEM IN</button>
+      <div id="timer"><svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="20" fill="none" stroke="#2a2f3b" stroke-width="4"/><circle id="timerarc" cx="24" cy="24" r="20" fill="none" stroke="#e8703a" stroke-width="4" stroke-linecap="round" transform="rotate(-90 24 24)"/></svg><b id="timernum">20</b></div>
+    </div>
+    <div id="hint">Tap a trap, then tap a cell in the lane.</div>
+  </div>
+
+  <div id="pad" class="hidden">
+    <button class="padbtn" id="left" aria-label="Move toward the gate">&#9664;</button>
+    <button class="padbtn" id="atk" aria-label="Swing">&#9876;<span id="cdbar"></span></button>
+    <button class="padbtn" id="right" aria-label="Move toward the mouth">&#9654;</button>
+  </div>
+
+  <div class="sheet hidden" id="titlesheet">
+    <div class="card">
+      <h2>SIEGE OF ONE</h2>
+      <h3>ONE LANE. ONE DEFENDER. TWENTY WAVES.</h3>
+      <p style="font-size:13px;color:var(--muted);margin:0 0 4px">You are the whole army. Set the traps between waves, then get down in the lane and fight beside them.</p>
+      <div class="kv"><span>Best wave</span><b id="tbest">0</b></div>
+      <div class="kv"><span>Endless best</span><b id="tendless">0</b></div>
+      <button class="bigbtn" id="startbtn">HOLD THE GATE</button>
+      <div class="row2">
+        <button class="ghostbtn" id="dailybtn">TODAY'S SIEGE</button>
+        <button class="ghostbtn" id="logbtn">WAR LOG</button>
+      </div>
+      <button class="ghostbtn" id="titleexit">BACK TO THE ARCADE</button>
+    </div>
+  </div>
+
+  <div class="sheet hidden" id="scoresheet">
+    <div class="card">
+      <h2 id="scwave">WAVE 1 HELD</h2>
+      <h3>WHO DID THE WORK</h3>
+      <div class="split"><div class="half you"><b id="scyou">0%</b><span>YOUR BLADE</span></div><div class="half"><b id="sctraps">0%</b><span>YOUR LANE</span></div></div>
+      <p class="dispatch" id="schead"></p>
+      <div class="bars" id="scbars"></div>
+      <div id="scextra"></div>
+      <div class="kv"><span>Scrap in hand</span><b id="scscrap">0</b></div>
+      <div class="kv"><span>Deepest they got</span><b id="scdeep">cell 0</b></div>
+      <div class="kv"><span>Bodies down</span><b id="sckills">0</b></div>
+      <div class="kv"><span>Wave lasted</span><b id="scsecs">0s</b></div>
+      <button class="bigbtn" id="scnext">BUILD</button>
+    </div>
+  </div>
+
+  <div class="sheet hidden" id="oversheet">
+    <div class="card">
+      <h2 id="ovtitle">THE GATE FELL</h2>
+      <h3 id="ovsub">WAVE 1</h3>
+      <p class="dispatch" id="ovdispatch"></p>
+      <div class="kv"><span>Waves held</span><b id="ovwaves">0</b></div>
+      <div class="kv"><span>Bodies down</span><b id="ovkills">0</b></div>
+      <div class="kv"><span>Your share of the damage</span><b id="ovshare">0%</b></div>
+      <div class="kv"><span>Best wave</span><b id="ovbest">0</b></div>
+      <button class="bigbtn" id="ovagain">AGAIN</button>
+      <div class="row2">
+        <button class="ghostbtn" id="ovshare2">SHARE</button>
+        <button class="ghostbtn" id="ovendless">ENDLESS</button>
+      </div>
+      <button class="ghostbtn" id="ovmenu">TITLE</button>
+    </div>
+  </div>
+
+  <div class="sheet hidden" id="optsheet">
+    <div class="card">
+      <h2>OPTIONS</h2>
+      <h3>SIEGE OF ONE</h3>
+      <div class="opt"><span>Volume</span><input type="range" id="optvol" min="0" max="100" value="70"></div>
+      <div class="opt"><span>Sound</span><button class="sw on" id="optmute">ON</button></div>
+      <div class="opt"><span>Haptics</span><button class="sw on" id="opthap">ON</button></div>
+      <div class="opt"><span>Reduced motion</span><button class="sw" id="optred">OFF</button></div>
+      <div class="opt"><span>Auto skip build phase</span><button class="sw" id="optskip">OFF</button></div>
+      <button class="ghostbtn" id="optlog">WAR LOG</button>
+      <button class="bigbtn" id="optclose">BACK</button>
+    </div>
+  </div>
+
+  <div class="sheet hidden" id="logsheet">
+    <div class="card">
+      <h2>WAR LOG</h2>
+      <h3>THE LAST TEN SIEGES</h3>
+      <div id="logbody"></div>
+      <button class="bigbtn" id="logclose">BACK</button>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+</div>
+
+<script>
+/*
+  SIEGE OF ONE  ·  gameId: siege  ·  Sky Wolf Studios
+  Seed policy: ?seed=<int> boots that exact run. Daily mode uses
+  seedFromString(YYYY-MM-DD + "siege"). Campaign default seed is 1 (the wave
+  table is authored, so the seed only shuffles daily composition).
+  Layer order per HANDOFF-11 1.2: CONFIG, RNG, DATA, GEN, SIM, VIEW, INPUT,
+  SAVE, TEST, BOOT. SIM is pure: no DOM, time arrives as ticks.
+  Tuning notes and known gaps live in BUILD-NOTES.md next to this file.
+*/
+
+// ---- SIM_EXPORT_START ----
+
+/* ============================ 1. CONFIG ============================ */
+
+var CONFIG = {
+  GAME_ID: 'siege',
+  SAVE_KEY: 'lw_siege_v1',
+  LANE: 30,                 /* cells 0..29. 0 is the gate. 29 is the mouth. */
+  GATE_CELL: 0,
+  SPAWN_CELL: 29,
+  BUILD_MIN_CELL: 1,
+  BUILD_MAX_CELL: 28,
+  TICK_MS: 100,
+  BUILD_TICKS: 200,         /* 20 seconds, skippable */
+  WAVES: 20,
+  HP_CURVE: 1.18,           /* baseHP x 1.18^wave, fixed by the spec */
+  SCRAP_FLAT: 40,           /* scrap = 40 + 12 x wave, fixed by the spec */
+  SCRAP_PER_WAVE: 12,
+  PLAYER_START_CELL: 5,
+  STARTER_CELL: 21,         /* the spike strip the last watch left in the ground */
+  PLAYER_MOVE_TICKS: 2,
+  PLAYER_ATK_CD: 8,
+  PLAYER_DMG: 20,
+  PLAYER_DMG_GROWTH: 1.18,  /* the blade keeps pace with the curve */
+  PLAYER_RANGE: 1,
+  WALL_HIT_TICKS: 8,        /* one hit landed on a blocking wall per 8 ticks */
+  GROUP_PAUSE: 18,          /* extra ticks between authored spawn groups */
+  HEAL_GROWTH: 1.18,
+  BREACH_MARKS: [8, 5, 3],  /* alarm rings when the front rank crosses these */
+  MAX_WAVE_TICKS: 4000,     /* safety valve for headless runs */
+  ENGAGE_CELLS: 8,          /* past this the lane reads as empty from where you stand */
+  MAX_DEPART_GAP: 30,       /* no hole in the departure clock wider than this */
+  TRAVEL_CELLS: 14,         /* cells a body crosses before it is your problem */
+  REINFORCE_MAX: 3,         /* a trap can be built up twice past the one you paid for */
+  REPAIR_COST: 0.5,         /* a maxed trap still takes scrap to patch back up */
+  ENDLESS_MUT_EVERY: 8,     /* one more modifier every this many endless waves */
+  ENDLESS_MUT_MAX: 3,
+  ENDLESS_BOSS_EVERY: 5,    /* a Marshal joins every fifth endless wave */
+  ZONES: [[1, 6], [7, 12], [13, 18], [19, 23], [24, 28]],
+  ZONE_NAMES: ['GATE', 'INNER', 'MID', 'OUTER', 'MOUTH']
+};
+
+/* ============================ 2. RNG ============================ */
+
+function makeRNG(seed) {
+  var a = seed >>> 0;
+  var r = function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    var t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  r.int = function (n) { return Math.floor(r() * n); };
+  r.range = function (lo, hi) { return lo + Math.floor(r() * (hi - lo + 1)); };
+  r.pick = function (arr) { return arr[Math.floor(r() * arr.length)]; };
+  r.shuffle = function (arr) {
+    var a2 = arr.slice(), i, j, tmp;
+    for (i = a2.length - 1; i > 0; i--) {
+      j = Math.floor(r() * (i + 1)); tmp = a2[i]; a2[i] = a2[j]; a2[j] = tmp;
+    }
+    return a2;
+  };
+  r.weighted = function (pairs) {
+    var total = 0, i, x;
+    for (i = 0; i < pairs.length; i++) total += pairs[i][1];
+    x = r() * total;
+    for (i = 0; i < pairs.length; i++) { x -= pairs[i][1]; if (x <= 0) return pairs[i][0]; }
+    return pairs[pairs.length - 1][0];
+  };
+  r.seed = seed >>> 0;
+  return r;
+}
+
+function seedFromString(str) {
+  var h = 2166136261 >>> 0, i;
+  for (i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619) >>> 0;
+  }
+  return h >>> 0;
+}
+
+/* ============================ 3. DATA ============================ */
+
+var TRAPS = {
+  spike: {
+    key: 'spike', name: 'Spike Strip', short: 'SPIKE', cost: 30, glyph: '▲',
+    dmg: 7, charges: 60, ground: true, kind: 'damage',
+    blurb: 'Bites every ground body that stands on it. Forty bites, then it is scrap.'
+  },
+  pit: {
+    key: 'pit', name: 'Pit', short: 'PIT', cost: 45, glyph: '▽',
+    dmg: 26, slow: 2.5, ground: true, kind: 'control', permanent: true,
+    blurb: 'Ten damage on the way in and a long climb out. You fall in it too.'
+  },
+  ballista: {
+    key: 'ballista', name: 'Ballista', short: 'BALLISTA', cost: 90, glyph: '➤',
+    dmg: 22, cd: 14, kind: 'damage', permanent: true,
+    blurb: 'Shoots the closest body it can see up the lane. A wall blinds it.'
+  },
+  brazier: {
+    key: 'brazier', name: 'Brazier', short: 'BRAZIER', cost: 60, glyph: '✹',
+    dmg: 5, burnTicks: 30, maxStacks: 3, ground: true, kind: 'damage', permanent: true,
+    blurb: 'Sets them alight as they pass. Burns stack three deep.'
+  },
+  wall: {
+    key: 'wall', name: 'Wall', short: 'WALL', cost: 50, glyph: '█',
+    hits: 3, kind: 'block',
+    blurb: 'Three hits of patience. Stops you as flat as it stops them.'
+  },
+  snare: {
+    key: 'snare', name: 'Snare', short: 'SNARE', cost: 40, glyph: '∩',
+    hold: 25, ground: true, kind: 'control',
+    blurb: 'Grabs one body and holds it still for two and a half seconds.'
+  }
+};
+var TRAP_ORDER = ['spike', 'pit', 'ballista', 'brazier', 'wall', 'snare'];
+
+var ENEMIES = {
+  runner:   { key: 'runner',   name: 'Runner',   hp: 18,  spd: 2, glyph: 'r' },
+  brute:    { key: 'brute',    name: 'Brute',    hp: 70,  spd: 5, glyph: 'B' },
+  shielded: { key: 'shielded', name: 'Shielded', hp: 30,  spd: 3, shield: 3, glyph: 'S' },
+  flyer:    { key: 'flyer',    name: 'Flyer',    hp: 24,  spd: 2, flying: true, glyph: 'f' },
+  sapper:   { key: 'sapper',   name: 'Sapper',   hp: 26,  spd: 2, saps: true, glyph: 's' },
+  healer:   { key: 'healer',   name: 'Healer',   hp: 30,  spd: 3, heal: 3, healRange: 2, glyph: 'h' },
+  swarm:    { key: 'swarm',    name: 'Swarm',    hp: 8,   spd: 2, group: 5, glyph: 'x' },
+  warden:   { key: 'warden',   name: 'Warden',   hp: 420, spd: 6, wallSmash: true, boss: true, glyph: 'W' },
+  /* The second Warden variant. The Warden is a wall you have to chew through;
+     the Marshal is the opposite problem. It is quick, it cannot be held, and
+     every body inside three cells of it moves at double time. You kill it
+     first or you fight the whole wave at a runner's pace. Endless only, so the
+     authored twenty are untouched. */
+  marshal:  { key: 'marshal',  name: 'Marshal',  hp: 300, spd: 3, rally: 3, unsnareable: true, boss: true, glyph: 'M' }
+};
+/* The eight the spec names. The Marshal is a boss variant, not a ninth type,
+   and it never appears inside the authored twenty. */
+var ENEMY_ORDER = ['runner', 'brute', 'shielded', 'flyer', 'sapper', 'healer', 'swarm', 'warden'];
+var BOSS_ORDER = ['warden', 'marshal'];
+
+/* Endless modifiers. From wave 21 the curve alone is not escalation, it is the
+   same wave with bigger numbers, so each endless wave draws named modifiers
+   deterministically from (seed, wave) and stacks another one every eight waves. */
+var MUTATORS = [
+  { key: 'tide',  name: 'THE TIDE',      blurb: 'They come in tighter. A third less air between bodies.' },
+  { key: 'iron',  name: 'IRONHIDE',      blurb: 'Every body shrugs off the first blow that lands on it.' },
+  { key: 'crow',  name: 'CROWBARS',      blurb: 'Every runner carries a crowbar and eats a trap.' },
+  { key: 'march', name: 'NIGHT MARCH',   blurb: 'They walk a full step quicker than they should.' },
+  { key: 'choir', name: 'THE CHOIR',     blurb: 'The healers sing twice as loud.' },
+  { key: 'stone', name: 'STONEBREAKERS', blurb: 'Brutes go through walls instead of around them.' }
+];
+var MUT_ORDER = ['tide', 'iron', 'crow', 'march', 'choir', 'stone'];
+
+/* 20 authored waves. Each group is [type, count, ticksBetweenSpawns].
+   Cadence stays inside the 10 to 20 tick band from the plan. */
+var WAVES = [
+  [['runner', 4, 16]],
+  [['runner', 5, 14], ['brute', 1, 20]],
+  [['runner', 5, 12], ['brute', 2, 18]],
+  [['runner', 4, 12], ['swarm', 1, 20], ['brute', 2, 18]],
+  [['runner', 4, 12], ['shielded', 2, 16], ['brute', 2, 18]],
+  [['runner', 4, 12], ['flyer', 2, 14], ['shielded', 2, 16], ['brute', 1, 18]],
+  [['runner', 4, 12], ['sapper', 1, 14], ['flyer', 2, 14], ['brute', 2, 18]],
+  [['runner', 4, 11], ['healer', 1, 14], ['shielded', 2, 14], ['brute', 3, 16]],
+  [['swarm', 2, 18], ['sapper', 1, 14], ['flyer', 3, 12], ['brute', 2, 16], ['healer', 1, 14]],
+  [['runner', 6, 10], ['shielded', 2, 14], ['healer', 1, 14], ['warden', 1, 20]],
+  [['runner', 6, 10], ['flyer', 2, 12], ['sapper', 1, 14], ['brute', 3, 16]],
+  [['swarm', 2, 16], ['shielded', 3, 12], ['healer', 1, 14], ['brute', 3, 16]],
+  [['flyer', 4, 11], ['runner', 6, 10], ['sapper', 2, 14], ['brute', 2, 16]],
+  [['brute', 4, 15], ['shielded', 3, 12], ['healer', 2, 14], ['swarm', 1, 18]],
+  [['swarm', 3, 16], ['flyer', 4, 11], ['sapper', 2, 13], ['brute', 3, 15], ['healer', 1, 14]],
+  [['runner', 8, 9], ['shielded', 4, 12], ['flyer', 2, 12], ['brute', 3, 15]],
+  [['brute', 5, 14], ['healer', 2, 13], ['sapper', 2, 13], ['swarm', 2, 16]],
+  [['flyer', 5, 11], ['shielded', 4, 12], ['brute', 4, 15], ['healer', 2, 13]],
+  [['swarm', 3, 15], ['runner', 8, 9], ['sapper', 2, 13], ['flyer', 3, 11], ['brute', 4, 15], ['healer', 1, 13]],
+  [['shielded', 5, 12], ['flyer', 5, 11], ['swarm', 3, 15], ['brute', 6, 15], ['healer', 2, 13], ['warden', 1, 20]]
+];
+
+/* ------------------------------------------------------------------
+   FIELD NOTES. The first wave a new player sees has one enemy type and one
+   trap, so the board has almost nothing to hold and the screen reads as empty
+   with headings on it. The honest fix is not to pad the panels, it is to have
+   something worth saying: every wave up to 10 introduces a body, and that is
+   exactly the run of waves where the board is thin. The panel retires itself
+   when there is nothing new, which is when the lane is busy enough to carry
+   the screen on its own.
+   ------------------------------------------------------------------ */
+var ENEMY_NOTE = {
+  runner:   'Quick and thin. It dies to almost anything, and there are always more of them.',
+  brute:    'Slow and heavy. It walks at a fifth of a runner pace, so a wall or a pit buys you a long time.',
+  swarm:    'Five bodies at once. Your blade swings at one of them, which is what a spike strip is for.',
+  shielded: 'It shrugs off the first three things that touch it, whatever they are. Burn stacks strip that in a tick.',
+  flyer:    'It goes over spikes, pits, braziers and snares. Only a ballista and your own blade can reach it.',
+  sapper:   'It eats the first trap it walks into and then behaves like a runner. Keep the ballista off the front.',
+  healer:   'It pours health into anything within two cells. Kill it first or nothing else in the wave will die.',
+  warden:   'It breaks a wall in one hit and it takes a long time to bring down. You will hear it arrive.',
+  marshal:  'Fast, and a snare will not hold it. Everything within three cells of it moves at double time.'
+};
+
+/* one line of teaching per early wave, in the order a player meets the idea */
+var WAVE_NOTE = {
+  1: 'The gate is cell 0, hard left. One body reaching it ends the siege. Your blade does <b>{BLADE}</b> a swing and grows every wave.',
+  2: 'Scrap arrives every wave whether you spend it or not. Scrap in your hand is scrap doing nothing.',
+  3: 'Tap a trap in the lane during the build phase to sell it back for every coin you put in.',
+  11: 'A ballista cannot see past a wall, including your own. The sight line is drawn while you place one.'
+};
+
+var DATA = {
+  TRAPS: TRAPS, TRAP_ORDER: TRAP_ORDER, ENEMIES: ENEMIES, ENEMY_ORDER: ENEMY_ORDER,
+  BOSS_ORDER: BOSS_ORDER, MUTATORS: MUTATORS, MUT_ORDER: MUT_ORDER, WAVES: WAVES,
+  ENEMY_NOTE: ENEMY_NOTE, WAVE_NOTE: WAVE_NOTE
+};
+
+/* ============================ 4. GEN ============================ */
+
+/* How many modifiers an endless wave carries. One from 21, another every
+   ENDLESS_MUT_EVERY waves after that, capped. */
+function mutCount(wave) {
+  if (wave <= CONFIG.WAVES) return 0;
+  var n = 1 + Math.floor((wave - CONFIG.WAVES - 1) / CONFIG.ENDLESS_MUT_EVERY);
+  return Math.min(CONFIG.ENDLESS_MUT_MAX, n);
+}
+
+/* Deterministic from (seed, wave). No unseeded randomness in this layer. */
+function mutatorsFor(wave, seed) {
+  var n = mutCount(wave);
+  if (!n) return [];
+  var r = makeRNG((((seed >>> 0) + wave * 104729) >>> 0));
+  var pool = r.shuffle(MUT_ORDER), out = [], i;
+  for (i = 0; i < n && i < pool.length; i++) out.push(pool[i]);
+  out.sort();
+  return out;
+}
+
+function hasMutKey(wave, seed, key) {
+  return mutatorsFor(wave, seed).indexOf(key) >= 0;
+}
+
+/* Wave table for any wave number. Past 20 (endless) the table cycles while the
+   hp curve keeps climbing, and every fifth wave a Marshal joins the march. */
+function waveTable(wave) {
+  var idx = (wave - 1) % WAVES.length;
+  var tbl = WAVES[idx];
+  if (wave > CONFIG.WAVES && wave % CONFIG.ENDLESS_BOSS_EVERY === 0) {
+    var n = 1 + Math.floor((wave - CONFIG.WAVES - 1) / 20);
+    tbl = [['marshal', n, 20]].concat(tbl);
+  }
+  return tbl;
+}
+
+/* Daily mode shuffles the ORDER of the authored groups inside a wave. The
+   composition, and therefore the difficulty band, is untouched. */
+function schedule(wave, mode, seed) {
+  var groups = waveTable(wave).slice();
+  if (mode === 'daily') {
+    var rng = makeRNG((seed >>> 0) + wave * 7919);
+    groups = rng.shuffle(groups);
+  }
+  /* THE ARRIVAL RULE.
+     A body scheduled last still has to cross thirty cells before it is
+     anybody's problem, and a Warden crosses them at a third of a runner's
+     pace. Block scheduling by DEPARTURE therefore buys a lull every time a
+     slow group sits at the tail of the table: wave 10 had five seconds of
+     empty lane in front of the Warden and waves 4 and 6 had eight in front of
+     one lone brute. That is a pacing bug wearing drama's coat.
+     So the authored table is read as ARRIVALS, not departures, and the
+     scheduler solves backwards for when each body has to leave the mouth to
+     turn up on its slot. Heavy things depart first because they are slow. The
+     composition, the counts and the authored cadence are all untouched, which
+     is what keeps the difficulty bands and the daily shuffle honest. */
+  var cad = 1;
+  if (hasMutKey(wave, seed, 'tide')) cad = 0.67;   /* endless: they come in tighter */
+  var arrivals = [], t = 0, gi, i, g, gap;
+  for (gi = 0; gi < groups.length; gi++) {
+    g = groups[gi];
+    gap = Math.max(6, Math.round(g[2] * cad));
+    for (i = 0; i < g[1]; i++) { arrivals.push({ at: t, type: g[0] }); t += gap; }
+    t += Math.max(4, Math.round(CONFIG.GROUP_PAUSE * cad));
+  }
+  var out = [], min = 1e9, tick;
+  for (i = 0; i < arrivals.length; i++) {
+    tick = arrivals[i].at - ENEMIES[arrivals[i].type].spd * CONFIG.TRAVEL_CELLS;
+    if (tick < min) min = tick;
+    out.push({ tick: tick, type: arrivals[i].type, at: arrivals[i].at });
+  }
+  for (i = 0; i < out.length; i++) out[i].tick -= min;
+  out.sort(function (a, b) { return a.tick - b.tick || a.at - b.at; });
+  /* THE NO LULL RULE. Solving for departures can still leave a hole: wave 9
+     ends on one lone healer 62 ticks after the rank in front of it, and a lane
+     that clears fast stands silent for six seconds waiting. So no two
+     DEPARTURES sit further apart than MAX_DEPART_GAP. Everything after a hole
+     is pulled forward by exactly the excess, which closes the silence without
+     touching a single count, cadence or composition. */
+  var slip = 0, hole;
+  for (i = 1; i < out.length; i++) {
+    out[i].tick -= slip;
+    hole = out[i].tick - out[i - 1].tick;
+    if (hole > CONFIG.MAX_DEPART_GAP) {
+      slip += hole - CONFIG.MAX_DEPART_GAP;
+      out[i].tick = out[i - 1].tick + CONFIG.MAX_DEPART_GAP;
+    }
+  }
+  return out;
+}
+
+/* Verification helper: a schedule is valid when every spawn is inside the
+   cadence band and the composition matches the authored table exactly. */
+function verifySchedule(wave, mode, seed) {
+  var sc = schedule(wave, mode, seed), i, gap;
+  var counts = {}, want = {};
+  var tbl = waveTable(wave);
+  for (i = 0; i < tbl.length; i++) want[tbl[i][0]] = (want[tbl[i][0]] || 0) + tbl[i][1];
+  for (i = 0; i < sc.length; i++) counts[sc[i].type] = (counts[sc[i].type] || 0) + 1;
+  for (var k in want) if (counts[k] !== want[k]) return false;
+  for (k in counts) if (!want[k]) return false;
+  /* the authored cadence band is checked on ARRIVALS, which is where the table
+     writes it. Departures fall out of the arrival solve and legitimately bunch
+     up whenever a slow group and a fast group are due at the same moment. */
+  var minGap = hasMutKey(wave, seed, 'tide') ? 6 : 9;
+  var arr = sc.slice().sort(function (a, b) { return a.at - b.at; });
+  for (i = 1; i < arr.length; i++) {
+    gap = arr[i].at - arr[i - 1].at;
+    if (gap < minGap || gap > 20 + CONFIG.GROUP_PAUSE) return false;
+  }
+  /* departures are sorted and the first one leaves on tick zero */
+  if (sc[0].tick !== 0) return false;
+  for (i = 1; i < sc.length; i++) if (sc[i].tick < sc[i - 1].tick) return false;
+  return sc.length > 0;
+}
+
+/* the first authored wave a type appears in. The briefing keys off this, so it
+   can never announce a body on the wrong wave. */
+function firstWaveFor(type) {
+  var w, tbl, i;
+  for (w = 1; w <= CONFIG.WAVES; w++) {
+    tbl = waveTable(w);
+    for (i = 0; i < tbl.length; i++) if (tbl[i][0] === type) return w;
+  }
+  return -1;
+}
+
+/* Everything the briefing would print for a wave, as plain strings. Pure, so
+   the harness can measure it against the space the panel actually has instead
+   of waiting for an eye to catch a clipped sentence. */
+function briefingFor(wave, seed, opts) {
+  opts = opts || {};
+  var out = [], tbl = waveTable(wave), seen = {}, i, k, m;
+  for (i = 0; i < tbl.length; i++) {
+    k = tbl[i][0];
+    if (seen[k]) continue;
+    seen[k] = 1;
+    if (firstWaveFor(k) === wave || (wave > CONFIG.WAVES && ENEMIES[k].boss)) {
+      out.push({ kind: 'enemy', type: k, text: ENEMIES[k].name + '. ' + ENEMY_NOTE[k] + ' ' + enemyHP(k, wave) + ' HP at this wave.' });
+    }
+  }
+  var muts = mutatorsFor(wave, seed);
+  for (i = 0; i < muts.length; i++) {
+    m = null;
+    for (k = 0; k < MUTATORS.length; k++) if (MUTATORS[k].key === muts[i]) m = MUTATORS[k];
+    if (m) out.push({ kind: 'mut', text: m.name + '. ' + m.blurb });
+  }
+  if (opts.laneFull) out.push({ kind: 'deepen', text: 'The lane is full. DEEPEN pays a trap price again on a cell you already own: it stands a level deeper and comes back to full. That is where scrap goes from here.' });
+  if (WAVE_NOTE[wave]) out.push({ kind: 'wave', text: WAVE_NOTE[wave].replace('{BLADE}', playerDamage(wave)) });
+  if (wave === 1) out.push({ kind: 'starter', text: 'The watch left a spike strip at cell ' + CONFIG.STARTER_CELL + '. It bites anything on the ground standing on it. Your purse buys one more.' });
+  return out;
+}
+
+function briefingChars(wave, seed, opts) {
+  var b = briefingFor(wave, seed, opts), n = 0, i;
+  for (i = 0; i < b.length; i++) n += b[i].text.replace(/<[^>]+>/g, '').length;
+  return n;
+}
+
+var GEN = {
+  waveTable: waveTable, schedule: schedule, verifySchedule: verifySchedule,
+  firstWaveFor: firstWaveFor, briefingFor: briefingFor, briefingChars: briefingChars,
+  mutatorsFor: mutatorsFor, mutCount: mutCount, hasMutKey: hasMutKey
+};
+
+/* ============================ 5. SIM ============================ */
+
+function scrapForWave(wave) { return CONFIG.SCRAP_FLAT + CONFIG.SCRAP_PER_WAVE * wave; }
+
+function scrapThroughWave(wave) {
+  var total = 0, w;
+  for (w = 1; w <= wave; w++) total += scrapForWave(w);
+  return total;
+}
+
+function hpMult(wave) { return Math.pow(CONFIG.HP_CURVE, wave); }
+
+function enemyHP(type, wave) {
+  return Math.max(1, Math.round(ENEMIES[type].hp * hpMult(wave)));
+}
+
+function playerDamage(wave) {
+  return Math.max(1, Math.round(CONFIG.PLAYER_DMG * Math.pow(CONFIG.PLAYER_DMG_GROWTH, wave - 1)));
+}
+
+function healAmount(wave) {
+  return Math.max(1, Math.round(ENEMIES.healer.heal * Math.pow(CONFIG.HEAL_GROWTH, wave - 1)));
+}
+
+function waveTotalHP(wave) {
+  var tbl = waveTable(wave), total = 0, i, def;
+  for (i = 0; i < tbl.length; i++) {
+    def = ENEMIES[tbl[i][0]];
+    total += enemyHP(tbl[i][0], wave) * tbl[i][1] * (def.group || 1);
+  }
+  return total;
+}
+
+function blankDamage() {
+  return { player: 0, spike: 0, pit: 0, ballista: 0, brazier: 0, wall: 0, snare: 0 };
+}
+
+function blankWaveStats(wave) {
+  return {
+    wave: wave, dmg: blankDamage(), held: { wall: 0, snare: 0, pit: 0 },
+    kills: 0, deepest: CONFIG.LANE, ticks: 0, overkill: 0, scrapSpent: 0, trapsLost: 0,
+    idle: 0, idleRun: 0, idleMax: 0, empty: 0, emptyRun: 0, emptyMax: 0, contact: 0,
+    scrapLeft: 0, lvlSum: 0, trapCount: 0, muts: []
+  };
+}
+
+/* ONE definition of damage share, used by the scorecard the player reads and by
+   the sweep that gates the build. If these two ever disagree the standout
+   feature is a lie, so there is only one of them. */
+function damageShare(dmg) {
+  var total = 0, k, out = { total: 0, player: 0, traps: 0, rows: [] };
+  for (k in dmg) total += dmg[k];
+  out.total = total;
+  for (k in dmg) {
+    if (!dmg[k]) continue;
+    out.rows.push({ src: k, amount: dmg[k], share: total ? dmg[k] / total : 0 });
+  }
+  out.rows.sort(function (a, b) { return b.amount - a.amount || (a.src < b.src ? -1 : 1); });
+  out.player = total ? dmg.player / total : 0;
+  out.traps = total ? (total - dmg.player) / total : 0;
+  return out;
+}
+
+/* What a reinforced trap is worth. Deliberately WORSE than spending the same
+   scrap on a fresh trap in a fresh cell (level 3 costs three trap prices and
+   returns 2.2 traps), because the twenty eight cells have to stay the scarce
+   resource. REINFORCE is the overflow valve for a purse that has run out of
+   board, not the optimal opening. */
+function lvlMult(lvl) { return 1 + 0.6 * (lvl - 1); }
+function wallHits(lvl) { return Math.round(TRAPS.wall.hits * lvlMult(lvl)); }
+
+function makeTrap(type) {
+  var def = TRAPS[type];
+  var t = { type: type, cell: -1, lvl: 1, paid: def.cost };
+  if (type === 'spike') t.charges = def.charges;
+  if (type === 'ballista') t.cd = 0;
+  if (type === 'wall') t.hits = def.hits;
+  if (type === 'snare') t.used = false;
+  return t;
+}
+
+function newGame(seed, opts) {
+  opts = opts || {};
+  var s = {
+    seed: (seed === undefined ? 1 : seed) >>> 0,
+    mode: opts.mode || 'campaign',
+    wave: 1,
+    phase: 'build',
+    tick: 0,
+    phaseTick: 0,
+    scrap: 0,
+    traps: [],
+    enemies: [],
+    nextId: 1,
+    spawns: [],
+    spawnIdx: 0,
+    hpBoost: opts.hpBoost || 1,
+    player: { cell: CONFIG.PLAYER_START_CELL, moveT: 0, atkCd: 0, dir: 1, hitFlash: 0 },
+    waveStats: blankWaveStats(1),
+    lastWaveStats: null,
+    run: { kills: 0, deepest: CONFIG.LANE, wavesCleared: 0, dmg: blankDamage(), ticks: 0, trapsBuilt: 0, trapsLost: 0, reinforced: 0, idleTicks: 0 },
+    muts: [],
+    marks: [],
+    lastBuild: null,
+    over: false,
+    won: false,
+    endless: !!opts.endless,
+    lossInfo: null,
+    log: [],
+    ev: []
+  };
+  var i;
+  for (i = 0; i < CONFIG.LANE; i++) s.traps.push(null);
+  s.scrap = scrapForWave(1);
+  s.muts = mutatorsFor(1, s.seed);
+  s.spawns = schedule(1, s.mode, s.seed);
+  s.waveStats.muts = s.muts.slice();
+  /* The watch before you left one strip of spikes in the ground. Wave one's
+     purse buys exactly one trap, and one trap plus one blade is not a lesson
+     about traps, it is a lesson about the blade. */
+  if (!opts.bare) {
+    var seedTrap = makeTrap('spike');
+    seedTrap.cell = CONFIG.STARTER_CELL;
+    seedTrap.paid = 0;
+    s.traps[CONFIG.STARTER_CELL] = seedTrap;
+  }
+  return s;
+}
+
+function hasMut(s, key) { return s.muts.indexOf(key) >= 0; }
+
+function emit(s, type, a, b) { s.ev.push({ t: type, a: a, b: b }); }
+
+/* ---- build phase operations ---- */
+
+function trapCost(type) { return TRAPS[type].cost; }
+
+function canPlace(s, cell, type) {
+  if (s.phase !== 'build' || s.over) return false;
+  if (!TRAPS[type]) return false;
+  if (cell < CONFIG.BUILD_MIN_CELL || cell > CONFIG.BUILD_MAX_CELL) return false;
+  if (s.traps[cell]) return false;
+  if (s.scrap < trapCost(type)) return false;
+  return true;
+}
+
+function placeTrap(s, cell, type) {
+  if (!canPlace(s, cell, type)) return false;
+  s.scrap -= trapCost(type);
+  var t = makeTrap(type);
+  t.cell = cell;
+  s.traps[cell] = t;
+  s.run.trapsBuilt++;
+  s.waveStats.scrapSpent += trapCost(type);
+  emit(s, 'place', type, cell);
+  return true;
+}
+
+function sellTrap(s, cell) {
+  if (s.phase !== 'build' || s.over) return false;
+  var t = s.traps[cell];
+  if (!t) return false;
+  s.scrap += t.paid;                /* full refund of everything sunk into it */
+  s.waveStats.scrapSpent -= t.paid;
+  s.traps[cell] = null;
+  emit(s, 'sell', t.type, cell);
+  return true;
+}
+
+/* ---- the late game scrap sink ----
+   Twenty eight cells is a hard ceiling and scrap income is quadratic in the
+   wave number, so from about wave 14 the purse outruns the board and the
+   currency stops meaning anything. REINFORCE gives the coins somewhere to go:
+   pay the trap's price again to build it a level higher, up to three, which
+   also patches it back to full. Past level three the same cell still takes
+   scrap as a straight repair at half price, so a purse can never strand. */
+
+function trapNeedsRepair(s, cell) {
+  var t = s.traps[cell];
+  if (!t) return false;
+  if (t.type === 'spike') return t.charges < TRAPS.spike.charges;
+  if (t.type === 'wall') return t.hits < wallHits(t.lvl);
+  if (t.type === 'snare') return !!t.used;
+  return false;
+}
+
+function reinforceCost(s, cell) {
+  var t = s.traps[cell];
+  if (!t) return 0;
+  var base = trapCost(t.type);
+  return (t.lvl >= CONFIG.REINFORCE_MAX) ? Math.ceil(base * CONFIG.REPAIR_COST) : base;
+}
+
+function canReinforce(s, cell) {
+  if (s.phase !== 'build' || s.over) return false;
+  var t = s.traps[cell];
+  if (!t) return false;
+  if (t.lvl >= CONFIG.REINFORCE_MAX && !trapNeedsRepair(s, cell)) return false;
+  return s.scrap >= reinforceCost(s, cell);
+}
+
+function reinforceTrap(s, cell) {
+  if (!canReinforce(s, cell)) return false;
+  var t = s.traps[cell], def = TRAPS[t.type], paid = reinforceCost(s, cell);
+  s.scrap -= paid;
+  t.paid += paid;
+  s.waveStats.scrapSpent += paid;
+  if (t.lvl < CONFIG.REINFORCE_MAX) t.lvl++;
+  if (t.type === 'spike') t.charges = def.charges;
+  if (t.type === 'wall') t.hits = wallHits(t.lvl);
+  if (t.type === 'snare') t.used = false;
+  s.run.reinforced++;
+  emit(s, 'reinforce', t.type, cell);
+  return true;
+}
+
+/* Snapshot of the standing loadout, so LAST BUILD can re-apply it. */
+function snapshotBuild(s) {
+  var out = [], i;
+  for (i = 0; i < CONFIG.LANE; i++) if (s.traps[i]) out.push({ cell: i, type: s.traps[i].type });
+  return out;
+}
+
+function applyBuild(s, plan) {
+  var placed = 0, i;
+  if (!plan) return 0;
+  for (i = 0; i < plan.length; i++) {
+    if (placeTrap(s, plan[i].cell, plan[i].type)) placed++;
+  }
+  return placed;
+}
+
+function startWave(s) {
+  if (s.phase !== 'build' || s.over) return false;
+  s.lastBuild = snapshotBuild(s);
+  s.phase = 'combat';
+  s.phaseTick = 0;
+  s.spawnIdx = 0;
+  s.marks = [];
+  s.muts = mutatorsFor(s.wave, s.seed);
+  s.waveStats = blankWaveStats(s.wave);
+  s.waveStats.muts = s.muts.slice();
+  /* what the purse could not spend once the build phase closed, and how deep
+     the standing lane is. Defect one is exactly this first number refusing to
+     come down. */
+  s.waveStats.scrapLeft = s.scrap;
+  var lv = 0, cnt = 0, ci;
+  for (ci = 0; ci < CONFIG.LANE; ci++) if (s.traps[ci]) { lv += s.traps[ci].lvl; cnt++; }
+  s.waveStats.lvlSum = lv;
+  s.waveStats.trapCount = cnt;
+  s.player.atkCd = 0;
+  s.player.moveT = 0;
+  emit(s, 'wavestart', s.wave);
+  return true;
+}
+
+/* ---- combat helpers ---- */
+
+function moveInterval(s, base, cell, flying) {
+  var t = s.traps[cell];
+  if (!flying && t && t.type === 'pit') return Math.max(1, Math.round(base * TRAPS.pit.slow));
+  return base;
+}
+
+function isWall(s, cell) {
+  var t = s.traps[cell];
+  return !!(t && t.type === 'wall');
+}
+
+function removeTrap(s, cell, reason) {
+  var t = s.traps[cell];
+  if (!t) return;
+  s.traps[cell] = null;
+  s.waveStats.trapsLost++;
+  s.run.trapsLost++;
+  emit(s, 'traplost', t.type, cell);
+  if (reason === 'sap') s.log.push({ k: 'sap', wave: s.wave, type: t.type, cell: cell });
+}
+
+/* Every point of damage in the game funnels through here. Shields eat whole
+   EVENTS, which is why three brazier stacks strip a Shielded in one tick. */
+function dealDamage(s, e, amount, source) {
+  if (e.hp <= 0) return 0;
+  if (e.shield > 0) {
+    e.shield--;
+    emit(s, 'shield', e.id, source);
+    return 0;
+  }
+  var effective = Math.min(amount, e.hp);
+  e.hp -= amount;
+  s.waveStats.dmg[source] += effective;
+  s.run.dmg[source] += effective;
+  if (amount > effective) s.waveStats.overkill += (amount - effective);
+  e.lastHitBy = source;
+  emit(s, 'hit', e.id, source);
+  if (e.hp <= 0) {
+    e.hp = 0;
+    e.dead = true;
+    e.killedBy = source;
+  }
+  return effective;
+}
+
+function spawnOne(s, type) {
+  var def = ENEMIES[type];
+  var n = def.group || 1, i, e;
+  var spd = def.spd;
+  if (hasMut(s, 'march')) spd = Math.max(1, spd - 1);
+  for (i = 0; i < n; i++) {
+    e = {
+      id: s.nextId++,
+      type: type,
+      cell: CONFIG.SPAWN_CELL,
+      hp: Math.max(1, Math.round(enemyHP(type, s.wave) * s.hpBoost)),
+      maxHp: Math.max(1, Math.round(enemyHP(type, s.wave) * s.hpBoost)),
+      spd: spd,
+      moveT: spd - 1 + i,           /* stagger a group so they file in */
+      flying: !!def.flying,
+      shield: (def.shield || 0) + (hasMut(s, 'iron') ? 1 : 0),
+      saps: !!def.saps || (hasMut(s, 'crow') && type === 'runner'),
+      sapped: false,
+      heal: def.heal || 0,
+      wallSmash: !!def.wallSmash || (hasMut(s, 'stone') && type === 'brute'),
+      rally: def.rally || 0,
+      unsnareable: !!def.unsnareable,
+      boss: !!def.boss,
+      burns: [],
+      holdT: 0,
+      dead: false
+    };
+    s.enemies.push(e);
+    emit(s, 'spawn', type, e.id);
+  }
+}
+
+function spawnDue(s) {
+  while (s.spawnIdx < s.spawns.length && s.spawns[s.spawnIdx].tick <= s.phaseTick) {
+    spawnOne(s, s.spawns[s.spawnIdx].type);
+    s.spawnIdx++;
+  }
+}
+
+/* On-entry trap effects. Flyers skip everything on the ground. */
+function enterCell(s, e, cell) {
+  var t = s.traps[cell];
+  if (!t) return;
+  if (e.saps && !e.sapped) {
+    e.sapped = true;
+    removeTrap(s, cell, 'sap');
+    return;
+  }
+  if (e.flying && TRAPS[t.type].ground) return;
+  if (t.type === 'pit') {
+    dealDamage(s, e, Math.round(TRAPS.pit.dmg * lvlMult(t.lvl)), 'pit');
+    emit(s, 'pit', cell);
+  } else if (t.type === 'brazier') {
+    /* the burn carries the brazier's level with it, so a reinforced brazier
+       keeps burning harder after the body has walked off the cell */
+    if (e.burns.length < TRAPS.brazier.maxStacks) {
+      e.burns.push({ t: TRAPS.brazier.burnTicks, lvl: t.lvl });
+    } else {
+      var lo = 0, i;
+      for (i = 1; i < e.burns.length; i++) if (e.burns[i].t < e.burns[lo].t) lo = i;
+      e.burns[lo] = { t: TRAPS.brazier.burnTicks, lvl: t.lvl };
+    }
+    emit(s, 'brazier', cell);
+  } else if (t.type === 'snare' && !t.used && !e.unsnareable) {
+    t.used = true;
+    e.holdT = Math.round(TRAPS.snare.hold * lvlMult(t.lvl));
+    s.traps[cell] = null;
+    emit(s, 'snare', cell);
+  }
+}
+
+/* A Marshal drags everything inside its rally range along at double time. */
+function rallied(s, e) {
+  var i, h;
+  for (i = 0; i < s.enemies.length; i++) {
+    h = s.enemies[i];
+    if (h.dead || !h.rally || h.id === e.id) continue;
+    if (Math.abs(h.cell - e.cell) <= h.rally) return true;
+  }
+  return false;
+}
+
+function playerTick(s, intent) {
+  var p = s.player;
+  if (p.atkCd > 0) p.atkCd--;
+  if (p.hitFlash > 0) p.hitFlash--;
+  if (intent === 'attack') {
+    if (p.atkCd === 0) {
+      var target = null, i, e;
+      for (i = 0; i < s.enemies.length; i++) {
+        e = s.enemies[i];
+        if (e.dead) continue;
+        if (Math.abs(e.cell - p.cell) > CONFIG.PLAYER_RANGE) continue;
+        if (!target || e.cell < target.cell || (e.cell === target.cell && e.id < target.id)) target = e;
+      }
+      p.atkCd = CONFIG.PLAYER_ATK_CD;
+      if (target) {
+        dealDamage(s, target, playerDamage(s.wave), 'player');
+        p.hitFlash = 2;
+        emit(s, 'swinghit', target.cell);
+      } else {
+        emit(s, 'swingmiss', p.cell);
+      }
+    }
+    return;
+  }
+  if (intent === 'left' || intent === 'right') {
+    p.dir = (intent === 'right') ? 1 : -1;
+    if (p.moveT > 0) { p.moveT--; return; }
+    var want = p.cell + p.dir;
+    if (want < 0 || want > CONFIG.LANE - 1) return;
+    if (isWall(s, want)) { emit(s, 'blocked', want); return; }
+    p.cell = want;
+    p.moveT = moveInterval(s, CONFIG.PLAYER_MOVE_TICKS, p.cell) - 1;
+    emit(s, 'step', p.cell);
+    return;
+  }
+  if (p.moveT > 0) p.moveT--;
+}
+
+function enemyMoveTick(s) {
+  /* front rank first so the lane resolves in a stable order */
+  var list = s.enemies.slice().sort(function (a, b) { return a.cell - b.cell || a.id - b.id; });
+  var i, e, ahead, wall;
+  for (i = 0; i < list.length; i++) {
+    e = list[i];
+    if (e.dead) continue;
+    if (e.holdT > 0) { e.holdT--; s.waveStats.held.snare++; continue; }
+    if (e.moveT > 0) { e.moveT--; continue; }
+    ahead = e.cell - 1;
+    if (ahead < 0) continue;
+    if (isWall(s, ahead)) {
+      wall = s.traps[ahead];
+      if (e.saps && !e.sapped) {
+        e.sapped = true;
+        removeTrap(s, ahead, 'sap');
+        e.moveT = 0;
+        continue;
+      }
+      var hits = e.wallSmash ? wall.hits : 1;
+      wall.hits -= hits;
+      s.waveStats.held.wall += CONFIG.WALL_HIT_TICKS;
+      emit(s, 'wallhit', ahead, e.wallSmash ? 'smash' : 'hit');
+      if (wall.hits <= 0) { removeTrap(s, ahead, 'broken'); }
+      e.moveT = CONFIG.WALL_HIT_TICKS - 1;
+      continue;
+    }
+    e.cell = ahead;
+    if (e.cell < s.waveStats.deepest) s.waveStats.deepest = e.cell;
+    if (e.cell < s.run.deepest) s.run.deepest = e.cell;
+    var base = moveInterval(s, e.spd, e.cell, e.flying);
+    if (rallied(s, e)) base = Math.max(1, Math.round(base / 2));
+    if (base > e.spd) s.waveStats.held.pit += (base - e.spd);
+    e.moveT = base - 1;
+    enterCell(s, e, e.cell);
+    var mi;
+    for (mi = 0; mi < CONFIG.BREACH_MARKS.length; mi++) {
+      if (e.cell === CONFIG.BREACH_MARKS[mi] && s.marks.indexOf(CONFIG.BREACH_MARKS[mi]) < 0) {
+        s.marks.push(CONFIG.BREACH_MARKS[mi]);
+        emit(s, 'alarm', CONFIG.BREACH_MARKS[mi], mi);
+      }
+    }
+  }
+}
+
+function trapTick(s) {
+  var i, j, e, t, best, k;
+  /* burns first */
+  for (i = 0; i < s.enemies.length; i++) {
+    e = s.enemies[i];
+    if (e.dead || !e.burns.length) continue;
+    for (j = e.burns.length - 1; j >= 0; j--) {
+      dealDamage(s, e, Math.round(TRAPS.brazier.dmg * lvlMult(e.burns[j].lvl)), 'brazier');
+      e.burns[j].t--;
+      if (e.burns[j].t <= 0) e.burns.splice(j, 1);
+      if (e.dead) break;
+    }
+  }
+  /* spike strips */
+  for (k = 0; k < CONFIG.LANE; k++) {
+    t = s.traps[k];
+    if (!t || t.type !== 'spike') continue;
+    for (i = 0; i < s.enemies.length && t.charges > 0; i++) {
+      e = s.enemies[i];
+      if (e.dead || e.flying || e.cell !== k) continue;
+      dealDamage(s, e, Math.round(TRAPS.spike.dmg * lvlMult(t.lvl)), 'spike');
+      t.charges--;
+      emit(s, 'spike', k);
+    }
+    if (t.charges <= 0) removeTrap(s, k, 'spent');
+  }
+  /* ballistas: nearest visible body up the lane, walls blind them */
+  for (k = 0; k < CONFIG.LANE; k++) {
+    t = s.traps[k];
+    if (!t || t.type !== 'ballista') continue;
+    if (t.cd > 0) { t.cd--; continue; }
+    best = ballistaTarget(s, k);
+    if (!best) continue;
+    dealDamage(s, best, Math.round(TRAPS.ballista.dmg * lvlMult(t.lvl)), 'ballista');
+    t.cd = TRAPS.ballista.cd - 1;
+    emit(s, 'bolt', k, best.cell);
+  }
+}
+
+function ballistaSight(s, cell) {
+  var far = CONFIG.LANE - 1, k;
+  for (k = cell + 1; k < CONFIG.LANE; k++) {
+    if (isWall(s, k)) { far = k - 1; break; }
+  }
+  return far;
+}
+
+function ballistaTarget(s, cell) {
+  var far = ballistaSight(s, cell), best = null, i, e;
+  /* nothing is shot standing in the mouth. A reinforced ballista line could
+     otherwise delete a body on the tick it appeared, which reads as an empty
+     lane rather than as a kill and gives the wave nothing to look at. */
+  if (far >= CONFIG.SPAWN_CELL) far = CONFIG.SPAWN_CELL - 1;
+  for (i = 0; i < s.enemies.length; i++) {
+    e = s.enemies[i];
+    if (e.dead) continue;
+    if (e.cell < cell || e.cell > far) continue;
+    if (!best || e.cell < best.cell || (e.cell === best.cell && e.id < best.id)) best = e;
+  }
+  return best;
+}
+
+function healTick(s) {
+  var amount = healAmount(s.wave) * (hasMut(s, 'choir') ? 2 : 1), i, j, h, e, healed;
+  for (i = 0; i < s.enemies.length; i++) {
+    h = s.enemies[i];
+    if (h.dead || !h.heal) continue;
+    for (j = 0; j < s.enemies.length; j++) {
+      e = s.enemies[j];
+      if (e.dead || e.id === h.id) continue;
+      if (Math.abs(e.cell - h.cell) > ENEMIES.healer.healRange) continue;
+      if (e.hp >= e.maxHp) continue;
+      healed = Math.min(amount, e.maxHp - e.hp);
+      e.hp += healed;
+      if (healed > 0) emit(s, 'heal', e.id, h.id);
+    }
+  }
+}
+
+function reap(s) {
+  var keep = [], i, e;
+  for (i = 0; i < s.enemies.length; i++) {
+    e = s.enemies[i];
+    if (e.dead) {
+      s.waveStats.kills++;
+      s.run.kills++;
+      emit(s, 'kill', e.type, e.killedBy);
+    } else keep.push(e);
+  }
+  s.enemies = keep;
+}
+
+function breachCheck(s) {
+  var i, e;
+  for (i = 0; i < s.enemies.length; i++) {
+    e = s.enemies[i];
+    if (e.cell <= CONFIG.GATE_CELL) {
+      s.over = true;
+      s.won = false;
+      s.phase = 'lost';
+      s.lossInfo = { wave: s.wave, enemy: e.type, cell: e.cell, tick: s.tick, mark: lastMark(s) };
+      emit(s, 'breach', e.type);
+      return true;
+    }
+  }
+  return false;
+}
+
+function lastMark(s) { return s.marks.length ? s.marks[s.marks.length - 1] : CONFIG.LANE; }
+
+function waveEndCheck(s) {
+  if (s.enemies.length > 0) return false;
+  if (s.spawnIdx < s.spawns.length) return false;
+  s.waveStats.ticks = s.phaseTick;
+  s.lastWaveStats = s.waveStats;
+  s.run.wavesCleared++;
+  s.run.ticks += s.phaseTick;
+  emit(s, 'waveclear', s.wave);
+  var isLast = (s.wave >= CONFIG.WAVES);
+  if (isLast && s.mode !== 'endless' && !s.endless) {
+    s.over = true; s.won = true; s.phase = 'won';
+    return true;
+  }
+  s.wave++;
+  s.phase = 'build';
+  s.phaseTick = 0;
+  s.scrap += scrapForWave(s.wave);
+  s.muts = mutatorsFor(s.wave, s.seed);
+  s.spawns = schedule(s.wave, s.mode, s.seed);
+  s.spawnIdx = 0;
+  s.marks = [];
+  s.waveStats = blankWaveStats(s.wave);
+  s.waveStats.muts = s.muts.slice();
+  return true;
+}
+
+/* One 100ms tick. intent is one of left, right, attack, none. */
+function step(s, intent) {
+  s.ev = [];
+  if (s.over) return s;
+  s.tick++;
+  if (s.phase === 'build') {
+    s.phaseTick++;
+    if (s.phaseTick >= CONFIG.BUILD_TICKS) startWave(s);
+    return s;
+  }
+  s.phaseTick++;
+  spawnDue(s);
+  playerTick(s, intent || 'none');
+  enemyMoveTick(s);
+  trapTick(s);
+  healTick(s);
+  reap(s);
+  idleTick(s);
+  if (breachCheck(s)) return s;
+  waveEndCheck(s);
+  return s;
+}
+
+/* Dead air, measured from where the player is standing rather than from the
+   spawn table. A tick counts as empty lane when nothing living is inside
+   ENGAGE_CELLS of you. The longest unbroken stretch is what the gate reads:
+   a boss crossing an empty field is the pacing bug this catches. */
+function idleTick(s) {
+  var i, e, near = false, alive = false;
+  for (i = 0; i < s.enemies.length; i++) {
+    e = s.enemies[i];
+    if (e.dead) continue;
+    alive = true;
+    if (Math.abs(e.cell - s.player.cell) <= CONFIG.ENGAGE_CELLS) { near = true; break; }
+  }
+  /* HARD dead air: the lane is literally empty and the wave is not finished.
+     Nothing to run at, nothing to watch. This is the wave 10 bug. */
+  if (alive || s.spawnIdx >= s.spawns.length) { s.waveStats.emptyRun = 0; }
+  else {
+    s.waveStats.empty++;
+    s.waveStats.emptyRun++;
+    if (s.waveStats.emptyRun > s.waveStats.emptyMax) s.waveStats.emptyMax = s.waveStats.emptyRun;
+  }
+  /* SOFT dead air: bodies exist but none are in reach. Includes the run out to
+     meet them, so it is reported and loosely bounded rather than gated tight. */
+  if (near) { s.waveStats.idleRun = 0; s.waveStats.contact = 1; return; }
+  if (!s.waveStats.contact) return;
+  s.waveStats.idle++;
+  s.run.idleTicks++;
+  s.waveStats.idleRun++;
+  if (s.waveStats.idleRun > s.waveStats.idleMax) s.waveStats.idleMax = s.waveStats.idleRun;
+}
+
+/* ---- save codec (pure, so the harness can test it headless) ---- */
+
+function defaultSave() {
+  return {
+    v: 1,
+    gameId: CONFIG.GAME_ID,
+    stats: { runs: 0, kills: 0, wavesCleared: 0, trapsBuilt: 0, wins: 0 },
+    unlocks: [],
+    best: { wave: 0, endless: 0, daily: {}, dailyStreak: 0, dailyLast: '' },
+    history: [],
+    settings: { vol: 0.7, mute: false, haptics: true, reduce: false, autoSkip: false }
+  };
+}
+
+function migrate(save) {
+  if (!save || typeof save !== 'object') return defaultSave();
+  var d = defaultSave(), k;
+  if (save.v !== 1) save.v = 1;
+  for (k in d) if (save[k] === undefined || save[k] === null) save[k] = d[k];
+  for (k in d.stats) if (typeof save.stats[k] !== 'number') save.stats[k] = d.stats[k];
+  for (k in d.best) if (save.best[k] === undefined) save.best[k] = d.best[k];
+  for (k in d.settings) if (save.settings[k] === undefined) save.settings[k] = d.settings[k];
+  if (!Array.isArray(save.history)) save.history = [];
+  if (!Array.isArray(save.unlocks)) save.unlocks = [];
+  save.gameId = CONFIG.GAME_ID;
+  return save;
+}
+
+function encodeSave(save) { return JSON.stringify(save); }
+
+function decodeSave(text) {
+  if (!text) return defaultSave();
+  var parsed;
+  try { parsed = JSON.parse(text); } catch (err) { return defaultSave(); }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return defaultSave();
+  return migrate(parsed);
+}
+
+/* counters ADD, bests MAX. Two tabs must never clobber a run. */
+function mergeSave(oldSave, delta) {
+  var s = migrate(oldSave), k;
+  if (delta.stats) for (k in delta.stats) s.stats[k] = (s.stats[k] || 0) + delta.stats[k];
+  if (delta.best) {
+    for (k in delta.best) {
+      if (k === 'daily' || k === 'dailyLast') continue;
+      s.best[k] = Math.max(s.best[k] || 0, delta.best[k]);
+    }
+    if (delta.best.daily) for (k in delta.best.daily) {
+      s.best.daily[k] = Math.max(s.best.daily[k] || 0, delta.best.daily[k]);
+    }
+  }
+  if (delta.settings) for (k in delta.settings) s.settings[k] = delta.settings[k];
+  if (delta.history) {
+    s.history = delta.history.concat(s.history).slice(0, 10);
+  }
+  return s;
+}
+
+/* ---- bots. The same intents a thumb would send. ---- */
+
+function botIdle() { return 'none'; }
+
+function botActive(s) {
+  var p = s.player, i, e, near = 0, target = null, healer = null;
+  if (!s.enemies.length) {
+    if (p.cell > CONFIG.PLAYER_START_CELL) return 'left';
+    if (p.cell < CONFIG.PLAYER_START_CELL) return 'right';
+    return 'none';
+  }
+  for (i = 0; i < s.enemies.length; i++) {
+    e = s.enemies[i];
+    if (Math.abs(e.cell - p.cell) <= 2) near++;
+    if (Math.abs(e.cell - p.cell) <= CONFIG.PLAYER_RANGE) {
+      if (e.heal && (!healer || e.cell < healer.cell)) healer = e;
+      if (!target || e.cell < target.cell) target = e;
+    }
+  }
+  var inRange = healer || target;
+  /* fall back toward the gate when the rank is on top of you */
+  if (near >= 3 && p.cell > 1 && !isWall(s, p.cell - 1)) {
+    if (inRange && p.atkCd === 0) return 'attack';
+    return 'left';
+  }
+  if (inRange) return p.atkCd === 0 ? 'attack' : 'none';
+  var front = null;
+  for (i = 0; i < s.enemies.length; i++) {
+    e = s.enemies[i];
+    if (!front || e.cell < front.cell) front = e;
+  }
+  if (!front) return 'none';
+  if (front.cell > p.cell) return 'right';
+  if (front.cell < p.cell) return 'left';
+  return 'none';
+}
+
+var BOTS = { idle: botIdle, active: botActive };
+
+/* ---- headless driver used by sim.js and by the test harness ---- */
+
+function zoneCells(zone) {
+  var z = CONFIG.ZONES[zone], out = [], c;
+  for (c = z[0]; c <= z[1]; c++) out.push(c);
+  return out;
+}
+
+/* Nearest free cell to the zone centre, spilling outward across the lane so
+   late game scrap is never stranded. */
+function pickCell(s, zone) {
+  var cells = zoneCells(zone), mid = (cells[0] + cells[cells.length - 1]) / 2, i, c;
+  var order = cells.slice().sort(function (a, b) { return Math.abs(a - mid) - Math.abs(b - mid) || a - b; });
+  for (i = 0; i < order.length; i++) if (!s.traps[order[i]]) return order[i];
+  for (c = CONFIG.BUILD_MIN_CELL; c <= CONFIG.BUILD_MAX_CELL; c++) if (!s.traps[c]) return c;
+  return -1;
+}
+
+/* Each type gets an equal share of the purse first, then leftovers go round in
+   priority order. Without the equal share pass the first type in the list eats
+   every coin and a two type loadout is secretly a one type loadout. */
+function botBuild(s, loadout) {
+  if (!loadout.length) return;
+  var budget = Math.floor(s.scrap / loadout.length);
+  var i, cell, guard, spent, cost, placed;
+  for (i = 0; i < loadout.length; i++) {
+    cost = trapCost(loadout[i].type);
+    spent = 0;
+    guard = 0;
+    while (spent + cost <= budget && guard++ < 60) {
+      cell = pickCell(s, loadout[i].zone);
+      if (cell < 0) break;
+      if (!placeTrap(s, cell, loadout[i].type)) break;
+      spent += cost;
+    }
+  }
+  guard = 0;
+  while (guard++ < 400) {
+    placed = false;
+    for (i = 0; i < loadout.length; i++) {
+      if (s.scrap < trapCost(loadout[i].type)) continue;
+      cell = pickCell(s, loadout[i].zone);
+      if (cell < 0) continue;
+      if (placeTrap(s, cell, loadout[i].type)) placed = true;
+    }
+    if (!placed) break;
+  }
+  botReinforce(s, loadout);
+}
+
+/* Once the lane is full the only thing left to buy is depth. The bot pours
+   leftovers into the shallowest trap it owns, and patches anything spent. */
+function botReinforce(s, loadout) {
+  var owns = {}, i, guard = 0, c, t, best, bestScore, score;
+  for (i = 0; i < loadout.length; i++) owns[loadout[i].type] = 1;
+  while (guard++ < 600) {
+    best = -1; bestScore = 1e9;
+    for (c = CONFIG.BUILD_MIN_CELL; c <= CONFIG.BUILD_MAX_CELL; c++) {
+      t = s.traps[c];
+      if (!t || !owns[t.type]) continue;
+      if (!canReinforce(s, c)) continue;
+      /* patch what is spent first, then deepen the shallowest */
+      score = (trapNeedsRepair(s, c) ? 0 : 1000) + t.lvl * 100 + reinforceCost(s, c);
+      if (score < bestScore) { bestScore = score; best = c; }
+    }
+    if (best < 0) break;
+    if (!reinforceTrap(s, best)) break;
+  }
+}
+
+/* Runs a whole campaign headless. Returns the reached wave and per wave rows. */
+function runCampaign(opts) {
+  opts = opts || {};
+  var bot = opts.bot || botIdle;
+  var loadout = opts.loadout || [];
+  var maxWave = opts.maxWave || CONFIG.WAVES;
+  var s = newGame(opts.seed === undefined ? 1 : opts.seed, { mode: opts.mode || 'campaign', endless: !!opts.endless });
+  if (opts.grantScrap) s.scrap += opts.grantScrap;
+  var rows = [], guard;
+  while (!s.over && s.wave <= maxWave) {
+    if (opts.hpBoostFrom && s.wave >= opts.hpBoostFrom) s.hpBoost = opts.hpBoost || 1;
+    botBuild(s, loadout);
+    startWave(s);
+    guard = 0;
+    while (s.phase === 'combat' && guard++ < CONFIG.MAX_WAVE_TICKS) step(s, bot(s));
+    if (s.phase === 'combat') { s.over = true; s.phase = 'lost'; s.lossInfo = { wave: s.wave, enemy: 'stall', cell: -1, tick: s.tick, mark: 0 }; }
+    if (s.lastWaveStats && s.lastWaveStats.wave === (s.over && !s.won ? -1 : s.lastWaveStats.wave)) { /* noop */ }
+    if (!s.over || s.won) rows.push(s.lastWaveStats);
+    else break;
+    if (s.won) break;
+  }
+  return {
+    state: s,
+    rows: rows,
+    reached: s.won ? maxWave + 1 : s.wave,
+    won: s.won,
+    lossWave: s.won ? null : s.wave
+  };
+}
+
+var SIM = {
+  newGame: newGame, step: step, placeTrap: placeTrap, sellTrap: sellTrap, canPlace: canPlace,
+  reinforceTrap: reinforceTrap, canReinforce: canReinforce, reinforceCost: reinforceCost,
+  trapNeedsRepair: trapNeedsRepair, damageShare: damageShare, botReinforce: botReinforce,
+  mutatorsFor: mutatorsFor, mutCount: mutCount, hasMut: hasMut,
+  startWave: startWave, snapshotBuild: snapshotBuild, applyBuild: applyBuild,
+  scrapForWave: scrapForWave, scrapThroughWave: scrapThroughWave, hpMult: hpMult,
+  enemyHP: enemyHP, playerDamage: playerDamage, healAmount: healAmount, waveTotalHP: waveTotalHP,
+  makeTrap: makeTrap, trapCost: trapCost, dealDamage: dealDamage, spawnOne: spawnOne,
+  ballistaTarget: ballistaTarget, ballistaSight: ballistaSight, isWall: isWall,
+  moveInterval: moveInterval, removeTrap: removeTrap, blankDamage: blankDamage,
+  defaultSave: defaultSave, migrate: migrate, encodeSave: encodeSave, decodeSave: decodeSave,
+  mergeSave: mergeSave, BOTS: BOTS, botBuild: botBuild, pickCell: pickCell, zoneCells: zoneCells,
+  runCampaign: runCampaign, seedFromString: seedFromString
+};
+
+// ---- SIM_EXPORT_END ----
+
+/* ============================ 6. VIEW ============================ */
+/* Reads SIM state. Never mutates it. All copy on this layer is dash free. */
+
+var $ = function (id) { return document.getElementById(id); };
+var EL = {};
+var G = null;                 /* the live SIM state */
+var UI = { sel: null, dirtyTraps: true, nodes: {}, trapNodes: {}, scWave: null, mode: 'campaign', seed: 1, reduce: false, paused: false, boardDirty: true, boardOver: null };
+
+/* --- silhouettes. Shape carries the meaning, colour only doubles it. --- */
+var SIL = {
+  runner:   '<svg width="W" height="H" viewBox="0 0 20 26"><path d="M10 1 L14 9 L11 9 L15 25 L9 17 L5 25 L8 9 L6 9 Z" fill="C"/></svg>',
+  brute:    '<svg width="W" height="H" viewBox="0 0 20 26"><path d="M3 26 L3 12 L1 9 L6 6 L6 2 L14 2 L14 6 L19 9 L17 12 L17 26 Z" fill="C"/></svg>',
+  shielded: '<svg width="W" height="H" viewBox="0 0 20 26"><path d="M8 2 L15 2 L15 26 L8 26 Z" fill="C"/><path d="M2 6 L8 3 L8 21 L2 18 Z" fill="C2" stroke="C" stroke-width="1.5"/></svg>',
+  flyer:    '<svg width="W" height="H" viewBox="0 0 20 26"><path d="M10 6 L19 1 L15 11 L19 15 L10 13 L1 15 L5 11 L1 1 Z" fill="C"/><circle cx="10" cy="9" r="3" fill="C"/></svg>',
+  sapper:   '<svg width="W" height="H" viewBox="0 0 20 26"><path d="M9 2 L13 2 L13 26 L9 26 Z" fill="C"/><rect x="1" y="12" width="8" height="8" rx="1.5" fill="C2" stroke="C" stroke-width="1.5"/></svg>',
+  healer:   '<svg width="W" height="H" viewBox="0 0 20 26"><path d="M7 8 L13 8 L13 26 L7 26 Z" fill="C"/><path d="M10 0 L10 8 M6 4 L14 4" stroke="#7ab356" stroke-width="2.6" fill="none"/></svg>',
+  swarm:    '<svg width="W" height="H" viewBox="0 0 20 26"><circle cx="6" cy="20" r="4" fill="C"/><circle cx="14" cy="22" r="3.4" fill="C"/><circle cx="10" cy="13" r="3.6" fill="C"/></svg>',
+  warden:   '<svg width="W" height="H" viewBox="0 0 20 26"><path d="M1 3 L4 8 L6 5 L14 5 L16 8 L19 3 L17 12 L18 26 L2 26 L3 12 Z" fill="C"/><path d="M6 10 L14 10 L12 15 L8 15 Z" fill="#0a0b0f"/></svg>',
+  marshal:  '<svg width="W" height="H" viewBox="0 0 20 26"><path d="M10 0 L14 4 L13 9 L16 26 L11 26 L10 16 L9 26 L4 26 L7 9 L6 4 Z" fill="C"/><path d="M14 5 L19 1 L19 9 L15 12 Z" fill="C"/><path d="M1 2 L5 6 L3 8 Z" fill="C"/></svg>',
+  player:   '<svg width="W" height="H" viewBox="0 0 20 26"><path d="M10 1 L13 7 L12 26 L8 26 L7 7 Z" fill="C"/><path d="M13 6 L19 2 L19 4 L14 10 Z" fill="#f5c77e"/></svg>'
+};
+function sil(type, w, h, colour) {
+  var c = colour || '#9aa6bd';
+  return SIL[type].replace(/W/, w).replace(/H/, h).replace(/C2/g, '#20242e').replace(/C/g, c);
+}
+
+function laneMetrics() {
+  var f = EL.lanebox;
+  var w = f.clientWidth || 390, h = f.clientHeight || 130;
+  var cw = w / CONFIG.LANE;
+  /* A body is drawn far wider than its cell on purpose. Thirty cells across a
+     390px phone is 13px a cell, so at one body per cell every silhouette is a
+     smudge. Overlapping ranks read as a crowd, which is what a siege looks
+     like, and the roster panel above carries the readable version.
+     Height follows the strip: a thin wave leaves the lane tall, and the bodies
+     grow into it instead of standing in a bigger empty room. */
+  var uh = Math.max(40, Math.min(84, Math.min(h * 0.34, cw * 4.4)));
+  return { w: w, h: h, cw: cw, us: uh / 1.35, uh: uh };
+}
+
+function buildLane() {
+  var m = laneMetrics(), html = '', i;
+  for (i = 0; i < CONFIG.LANE; i++) {
+    var cls = 'cell' + (CONFIG.BREACH_MARKS.indexOf(i) >= 0 ? ' mark' : '');
+    html += '<div class="' + cls + '" data-cell="' + i + '" style="left:' + (i * m.cw) + 'px;width:' + m.cw + 'px"></div>';
+  }
+  EL.lane.innerHTML = html;
+  EL.gate.style.width = m.cw + 'px';
+  UI.dirtyTraps = true;
+  UI.nodes = {};
+}
+
+function drawTraps() {
+  var m = laneMetrics(), i, t, node, wrap = EL.lane;
+  for (i = 0; i < CONFIG.LANE; i++) {
+    node = UI.trapNodes[i];
+    t = G.traps[i];
+    if (!t) { if (node) { node.remove(); UI.trapNodes[i] = null; } continue; }
+    if (!node) {
+      node = document.createElement('div');
+      node.className = 'trap';
+      wrap.appendChild(node);
+      UI.trapNodes[i] = node;
+    }
+    node.style.left = ((i + 0.5) * m.cw) + 'px';
+    node.style.bottom = '2px';
+    var sub = '';
+    if (t.type === 'spike') sub = t.charges;
+    if (t.type === 'wall') sub = '#########'.slice(0, t.hits);
+    var lvl = t.lvl > 1 ? '<span class="lv">' + '••'.slice(0, t.lvl - 1) + '</span>' : '';
+    node.innerHTML = '<span class="g" style="color:' + (t.type === 'wall' ? '#8b93a5' : '#f5c77e') +
+      (t.lvl > 1 ? ';text-shadow:0 0 6px rgba(232,112,58,.9)' : '') + '">' + TRAPS[t.type].glyph + '</span>' +
+      lvl + '<small>' + sub + '</small>';
+  }
+}
+
+function drawEntities() {
+  var m = laneMetrics(), seen = {}, i, e, node, size = m.us;
+  for (i = 0; i < G.enemies.length; i++) {
+    e = G.enemies[i];
+    seen[e.id] = 1;
+    node = UI.nodes[e.id];
+    if (!node) {
+      node = document.createElement('div');
+      node.className = 'ent';
+      node.innerHTML = sil(e.type, size, m.uh, e.boss ? '#d2a0a0' : '#9aa6bd') +
+        '<span class="hpbar"><i></i></span>';
+      EL.lane.appendChild(node);
+      UI.nodes[e.id] = node;
+    }
+    node.style.transform = 'translate(' + ((e.cell + 0.5) * m.cw) + 'px,' + (m.h - 4) + 'px) translate(-50%,-100%)';
+    var bar = node.querySelector('.hpbar');
+    bar.style.bottom = (m.uh + 3) + 'px';
+    bar.firstChild.style.width = Math.max(0, Math.round(e.hp / e.maxHp * 100)) + '%';
+    if (e.shield > 0) bar.firstChild.style.background = '#7fb3d5';
+    else if (e.burns.length) bar.firstChild.style.background = '#e8703a';
+    else bar.firstChild.style.background = '#c8563a';
+  }
+  for (var k in UI.nodes) {
+    if (!seen[k] && k !== 'P') { UI.nodes[k].remove(); delete UI.nodes[k]; }
+  }
+  node = UI.nodes.P;
+  if (!node) {
+    node = document.createElement('div');
+    node.className = 'ent';
+    node.style.zIndex = '5';
+    node.innerHTML = sil('player', size, m.uh * 1.04, '#e8703a');
+    EL.lane.appendChild(node);
+    UI.nodes.P = node;
+  }
+  node.style.transform = 'translate(' + ((G.player.cell + 0.5) * m.cw) + 'px,' + (m.h - 4) + 'px) translate(-50%,-100%)' +
+    (G.player.hitFlash > 0 ? ' scale(1.14)' : '');
+}
+
+/* ------------------------------------------------------------------
+   THE WATCH BOARD. Four panels, all fed by the same numbers the scorecard
+   prints at the end of a wave and the sweep gates on. The point is that the
+   standout feature stops being a card you see once a wave and becomes the
+   screen you are looking at while you fight.
+   Panels rebuild only when their content signature changes, so the 10Hz tick
+   does not churn the DOM.
+   ------------------------------------------------------------------ */
+var SIG = {};
+function sigSet(k, v, el, html) {
+  if (SIG[k] === v) return false;
+  SIG[k] = v;
+  if (el) el.innerHTML = html;
+  return true;
+}
+
+function waveHPNow() {
+  var t = 0, i;
+  for (i = 0; i < G.enemies.length; i++) if (!G.enemies[i].dead) t += G.enemies[i].hp;
+  return t;
+}
+
+function drawBoard() {
+  var build = (G.phase === 'build'), i, e, k;
+  var tbl = GEN.waveTable(G.wave);
+
+  /* --- wave and its health --- */
+  var totalHP = SIM.waveTotalHP(G.wave) * (G.hpBoost || 1);
+  var leftHP = build ? totalHP : waveHPNow();
+  var pending = 0, def;
+  if (!build) {
+    for (i = G.spawnIdx; i < G.spawns.length; i++) {
+      def = ENEMIES[G.spawns[i].type];
+      pending += SIM.enemyHP(G.spawns[i].type, G.wave) * (def.group || 1) * (G.hpBoost || 1);
+    }
+    leftHP += pending;
+  }
+  EL.btitle.textContent = (G.wave > CONFIG.WAVES ? 'ENDLESS WAVE ' : 'WAVE ') + G.wave;
+  EL.bhp.textContent = Math.round(leftHP) + (build ? ' HP INCOMING' : ' HP LEFT');
+  EL.bhpbar.style.width = Math.max(0, Math.min(100, leftHP / Math.max(1, totalHP) * 100)) + '%';
+
+  /* --- boss row. Reserved for the WHOLE wave if the wave has a boss in it,
+     not just while one is alive, so the lane does not jump a centimetre the
+     moment a Warden spawns. Before it arrives the row reads INBOUND. --- */
+  var boss = null, bossType = null;
+  for (i = 0; i < tbl.length; i++) if (ENEMIES[tbl[i][0]].boss) bossType = tbl[i][0];
+  for (i = 0; i < G.enemies.length; i++) if (G.enemies[i].boss && !G.enemies[i].dead) { boss = G.enemies[i]; break; }
+  EL.bbosswrap.classList.toggle('hidden', !bossType);
+  if (boss) {
+    EL.bbossbar.style.width = Math.max(0, boss.hp / boss.maxHp * 100) + '%';
+    EL.bbossname.textContent = ENEMIES[boss.type].name.toUpperCase() + '  ' + Math.round(boss.hp) +
+      ' / ' + boss.maxHp + '  ·  CELL ' + boss.cell;
+  } else if (bossType) {
+    EL.bbossbar.style.width = '100%';
+    EL.bbossname.textContent = ENEMIES[bossType].name.toUpperCase() + '  ' +
+      (build ? 'IN THIS WAVE' : (G.spawnIdx < G.spawns.length ? 'INBOUND' : 'DOWN'));
+    if (!build && G.spawnIdx >= G.spawns.length) EL.bbossbar.style.width = '0%';
+  } else EL.bbossname.textContent = '';
+
+  /* --- the roster: what is still coming, by type --- */
+  var want = {}, alive = {}, order = [];
+  for (i = 0; i < tbl.length; i++) {
+    def = ENEMIES[tbl[i][0]];
+    if (want[tbl[i][0]] === undefined) { want[tbl[i][0]] = 0; order.push(tbl[i][0]); }
+    want[tbl[i][0]] += tbl[i][1] * (def.group || 1);
+  }
+  if (build) {
+    for (k in want) alive[k] = want[k];
+  } else {
+    for (k in want) alive[k] = 0;
+    for (i = 0; i < G.enemies.length; i++) if (!G.enemies[i].dead) alive[G.enemies[i].type] = (alive[G.enemies[i].type] || 0) + 1;
+    for (i = G.spawnIdx; i < G.spawns.length; i++) {
+      def = ENEMIES[G.spawns[i].type];
+      alive[G.spawns[i].type] = (alive[G.spawns[i].type] || 0) + (def.group || 1);
+    }
+  }
+  var rhtml = '', left = 0, total = 0, n;
+  for (i = 0; i < order.length; i++) {
+    k = order[i]; n = alive[k] || 0; left += n; total += want[k];
+    rhtml += '<span class="pip' + (n ? '' : ' gone') + (ENEMIES[k].boss ? ' boss' : '') + '">' +
+      sil(k, order.length <= 3 ? 32 : 22, order.length <= 3 ? 44 : 30, ENEMIES[k].boss ? '#d2a0a0' : '#9aa6bd') +
+      n + '<s>/' + want[k] + '</s></span>';
+  }
+  /* one lonely chip in a wide panel reads as a placeholder. Below four chips
+     the roster and the kit both draw large. */
+  EL.pips.classList.toggle('roomy', order.length <= 3);
+  sigSet('roster', G.wave + ':' + build + ':' + rhtml.length + ':' + left + ':' + order.length, EL.pips, rhtml);
+  EL.rtitle.textContent = build ? 'WHAT IS COMING' : 'STILL COMING';
+  EL.rcount.textContent = left + ' of ' + total;
+
+  /* --- live damage share: the sweep's own metric, while it is happening --- */
+  var ws = build ? (G.lastWaveStats || G.waveStats) : G.waveStats;
+  var sh = SIM.damageShare(ws.dmg);
+  EL.stitle.textContent = build ? (G.lastWaveStats ? 'LAST WAVE, WHO DID THE WORK' : 'WHO IS DOING THE WORK')
+    : 'WHO IS DOING THE WORK';
+  EL.syou.textContent = Math.round(sh.player * 100) + '%';
+  var bhtml = '';
+  if (!sh.rows.length) bhtml = '<div class="barrow"><span class="lbl">NOBODY YET</span><span class="track"></span><span class="val">0%</span></div>';
+  sh.rows.forEach(function (r) {
+    var w = r.share > 0 ? Math.max(2, r.share * 100) : 0;
+    bhtml += '<div class="barrow' + (r.src === 'player' ? ' you' : '') + '"><span class="lbl">' + SRC_LABEL[r.src] +
+      '</span><span class="track"><i style="width:' + w.toFixed(0) + '%;background:' + SRC_COLOUR[r.src] + '"></i></span>' +
+      '<span class="val">' + Math.round(r.share * 100) + '%</span></div>';
+  });
+  sigSet('share', bhtml, EL.livebars, bhtml);
+
+  /* --- your lane: what is standing and how deep --- */
+  var counts = {}, lv = {}, tn = 0, ls = 0, t;
+  for (i = 0; i < CONFIG.LANE; i++) {
+    t = G.traps[i];
+    if (!t) continue;
+    counts[t.type] = (counts[t.type] || 0) + 1;
+    lv[t.type] = (lv[t.type] || 0) + t.lvl;
+    tn++; ls += t.lvl;
+  }
+  var khtml = '';
+  for (i = 0; i < TRAP_ORDER.length; i++) {
+    k = TRAP_ORDER[i];
+    if (!counts[k]) continue;
+    khtml += '<span class="kitchip"><u>' + TRAPS[k].glyph + '</u>' + counts[k] +
+      (lv[k] > counts[k] ? '<s>lv' + (lv[k] / counts[k]).toFixed(1) + '</s>' : '') + '</span>';
+  }
+  if (!khtml) khtml = '<span class="kitchip none">Nothing in the ground yet.</span>';
+  EL.kit.classList.toggle('roomy', tn <= 3);
+  sigSet('kit', khtml, EL.kit, khtml);
+  EL.kcount.textContent = tn + ' traps  ·  ' + ls + ' levels';
+
+  drawNotes(order, tn);
+}
+
+/* The briefing. Every line comes from GEN.briefingFor, which is pure and lives
+   in the SIM layer, so the harness measures exactly the text the player reads. */
+function drawNotes(order, trapCount) {
+  var free = 0, i;
+  for (i = CONFIG.BUILD_MIN_CELL; i <= CONFIG.BUILD_MAX_CELL; i++) if (!G.traps[i]) free++;
+  var lines = GEN.briefingFor(G.wave, G.seed, { laneFull: (G.phase === 'build' && free <= 2 && trapCount > 0) });
+  var html = '', newOnes = [];
+  for (i = 0; i < lines.length; i++) {
+    var L = lines[i], lead = '';
+    if (L.kind === 'enemy') {
+      newOnes.push(ENEMIES[L.type].name);
+      lead = sil(L.type, 18, 25, ENEMIES[L.type].boss ? '#d2a0a0' : '#9aa6bd');
+    }
+    /* bold the first clause, which is the name of the thing */
+    html += '<div class="note">' + lead + L.text.replace(/^([^.]+\.)/, '<b>$1</b>') + '</div>';
+  }
+  EL.pnotes.classList.toggle('hidden', !html);
+  EL.ntitle.textContent = (G.wave === 1) ? 'THE BRIEFING' : (newOnes.length ? 'NEW IN THIS WAVE' : 'FIELD NOTES');
+  EL.nsub.textContent = newOnes.join(', ');
+  /* while the briefing is the point of the screen it leads the column, so
+     anything that falls past the fold is a one chip panel and never half a
+     sentence of the tutorial */
+  EL.board.classList.toggle('teaching', !!html && G.wave <= 3);
+  sigSet('notes', html, EL.notes, html);
+}
+
+/* Measured, not modelled. The board asks itself whether it overflows and says
+   so out loud. This is the only honest answer to "the same overflow will come
+   back on the wave with the longest description", because it does not care how
+   long the description is, what the font does, or how narrow the phone is. */
+function fitBoard() {
+  var b = EL.board;
+  if (!b) return;
+  var over = b.scrollHeight > b.clientHeight + 2;
+  if (over !== UI.boardOver) {
+    UI.boardOver = over;
+    b.classList.toggle('tight', over);
+    EL.boardfade.classList.toggle('hidden', !over);
+  }
+}
+
+function drawPips() {
+  SIG.roster = null;
+  drawBoard();
+  var mhtml = '', m, i;
+  for (i = 0; i < G.muts.length; i++) {
+    m = mutByKey(G.muts[i]);
+    if (m) mhtml += '<span class="mut">' + m.name + '</span>';
+  }
+  EL.muts.innerHTML = mhtml;
+  if (mhtml && G.muts.length) {
+    m = mutByKey(G.muts[0]);
+    if (m) $('hint').textContent = m.name + '. ' + m.blurb;
+  }
+}
+
+function mutByKey(k) {
+  var i;
+  for (i = 0; i < DATA.MUTATORS.length; i++) if (DATA.MUTATORS[i].key === k) return DATA.MUTATORS[i];
+  return null;
+}
+
+function drawSight(cell) {
+  if (cell < 0 || UI.sel !== 'ballista') { EL.sight.classList.add('hidden'); return; }
+  var m = laneMetrics(), far = SIM.ballistaSight(G, cell);
+  EL.sight.classList.remove('hidden');
+  EL.sight.style.left = ((cell + 0.5) * m.cw) + 'px';
+  EL.sight.style.width = Math.max(0, (far - cell) * m.cw) + 'px';
+  EL.sight.style.bottom = (m.h * 0.42) + 'px';
+}
+
+/* The seventh tool is not a trap. Twenty eight cells is a hard ceiling and the
+   purse keeps growing, so DEEPEN is where the late game money goes: pay a
+   trap's price again on a cell that already has one and it stands a level
+   deeper, patched back to full. */
+var DEEPEN = { key: 'deepen', glyph: '\u21D1', short: 'DEEPEN', cost: 'SAME',
+  blurb: 'Tap a trap you already own. It stands a level deeper and comes back to full.' };
+
+function anyReinforceable() {
+  var c;
+  for (c = CONFIG.BUILD_MIN_CELL; c <= CONFIG.BUILD_MAX_CELL; c++) if (SIM.canReinforce(G, c)) return true;
+  return false;
+}
+
+function drawShop() {
+  var html = '', i, k, def;
+  for (i = 0; i < TRAP_ORDER.length; i++) {
+    k = TRAP_ORDER[i]; def = TRAPS[k];
+    html += '<button class="shopbtn' + (UI.sel === k ? ' on' : '') + (G.scrap < def.cost ? ' broke' : '') +
+      '" data-trap="' + k + '"><span class="g">' + def.glyph + '</span><span class="n">' + def.short + '</span><span class="c">' + def.cost + '</span></button>';
+  }
+  html += '<button class="shopbtn deepen' + (UI.sel === DEEPEN.key ? ' on' : '') + (anyReinforceable() ? '' : ' broke') +
+    '" data-trap="' + DEEPEN.key + '"><span class="g">' + DEEPEN.glyph + '</span><span class="n">' + DEEPEN.short +
+    '</span><span class="c">' + DEEPEN.cost + '</span></button>';
+  EL.shop.innerHTML = html;
+}
+
+var odo = { scrap: 0 };
+function drawHUD() {
+  EL.wavev.textContent = G.wave;
+  odo.scrap += (G.scrap - odo.scrap) * 0.3;
+  if (Math.abs(odo.scrap - G.scrap) < 1) odo.scrap = G.scrap;
+  EL.scrapv.textContent = Math.round(odo.scrap);
+  EL.bladev.textContent = SIM.playerDamage(G.wave);
+  var build = (G.phase === 'build');
+  EL.buildbar.classList.toggle('hidden', !build);
+  EL.pad.classList.toggle('hidden', build);
+  if (build) {
+    var left = Math.max(0, CONFIG.BUILD_TICKS - G.phaseTick);
+    EL.timernum.textContent = Math.ceil(left / 10);
+    var frac = left / CONFIG.BUILD_TICKS, circ = 2 * Math.PI * 20;
+    EL.timerarc.setAttribute('stroke-dasharray', circ);
+    EL.timerarc.setAttribute('stroke-dashoffset', circ * (1 - frac));
+  } else {
+    EL.cdbar.style.width = (100 - G.player.atkCd / CONFIG.PLAYER_ATK_CD * 100) + '%';
+  }
+  var deep = G.enemies.length ? Math.min.apply(null, G.enemies.map(function (e) { return e.cell; })) : 30;
+  EL.gateglow.style.opacity = deep <= 8 ? Math.min(0.9, (9 - deep) / 8) : 0;
+}
+
+function render() {
+  if (UI.dirtyTraps) { drawTraps(); UI.dirtyTraps = false; }
+  drawEntities();
+  drawHUD();
+  /* the board is fed at the SIM's 10Hz, not at 60fps */
+  if (UI.boardDirty) { UI.boardDirty = false; drawBoard(); fitBoard(); }
+}
+
+/* --- the wave scorecard: the sweep's own metric, handed to the player --- */
+var SRC_LABEL = { player: 'YOU', spike: 'SPIKE', pit: 'PIT', ballista: 'BALLISTA', brazier: 'BRAZIER', wall: 'WALL', snare: 'SNARE' };
+var SRC_COLOUR = { player: '#e8703a', spike: '#8b93a5', pit: '#7fb3d5', ballista: '#f5c77e', brazier: '#d2704a', wall: '#6b7385', snare: '#9a86c4' };
+
+/* This card calls SIM.damageShare, and so does the balance sweep in sim.js.
+   There is one definition of the number, so what the player reads here is
+   literally what the gates are enforcing. */
+function showScorecard(ws) {
+  if (!ws) return;
+  var sh = SIM.damageShare(ws.dmg);
+  var html = '';
+  if (!sh.rows.length) html = '<div class="barrow"><span class="lbl">NOBODY</span><span class="track"></span><span class="val">0%</span></div>';
+  sh.rows.forEach(function (r) {
+    /* a one percent contributor still gets a visible sliver, or the card lies
+       about a trap having done nothing */
+    var w = r.share > 0 ? Math.max(2, r.share * 100) : 0;
+    html += '<div class="barrow' + (r.src === 'player' ? ' you' : '') + '"><span class="lbl">' + SRC_LABEL[r.src] +
+      '</span><span class="track"><i style="width:' + w.toFixed(0) + '%;background:' + SRC_COLOUR[r.src] + '"></i></span>' +
+      '<span class="val">' + Math.round(r.share * 100) + '%</span></div>';
+  });
+  var headline = sh.player >= 0.66 ? 'You carried this one.'
+    : sh.player >= 0.34 ? 'You and the lane split it.'
+    : sh.player > 0 ? 'The lane carried this one.'
+    : 'The lane did it without you.';
+  $('scyou').textContent = Math.round(sh.player * 100) + '%';
+  $('sctraps').textContent = Math.round(sh.traps * 100) + '%';
+  $('schead').textContent = headline;
+  var extra = '';
+  if (ws.held.wall + ws.held.snare + ws.held.pit > 0) {
+    extra += '<div class="kv"><span>Seconds your traps bought</span><b>' +
+      (((ws.held.wall + ws.held.snare + ws.held.pit) * CONFIG.TICK_MS / 1000).toFixed(1)) + 's</b></div>';
+  }
+  extra += '<div class="kv"><span>Lane standing</span><b>' + ws.trapCount + ' traps, ' + ws.lvlSum + ' levels</b></div>';
+  if (ws.trapsLost > 0) extra += '<div class="kv"><span>Traps lost</span><b>' + ws.trapsLost + '</b></div>';
+  if (ws.emptyMax >= 20) extra += '<div class="kv"><span>Longest quiet lane</span><b>' + (ws.emptyMax * CONFIG.TICK_MS / 1000).toFixed(1) + 's</b></div>';
+  $('scwave').textContent = 'WAVE ' + ws.wave + ' HELD';
+  $('scbars').innerHTML = html;
+  $('scextra').innerHTML = extra;
+  $('scscrap').textContent = G.scrap;
+  $('scdeep').textContent = 'cell ' + ws.deepest;
+  $('sckills').textContent = ws.kills;
+  $('scsecs').textContent = (ws.ticks * CONFIG.TICK_MS / 1000).toFixed(1) + 's';
+  EL.scoresheet.classList.remove('hidden');
+}
+
+/* --- war log dispatches, generated from run events. No dashes. --- */
+function dispatch(s) {
+  var li = s.lossInfo;
+  if (s.won) return 'Twenty waves. The gate held and the lane is quiet.';
+  if (!li) return 'The siege ended.';
+  var who = { runner: 'a runner', brute: 'a brute', shielded: 'a shielded one', flyer: 'a flyer', sapper: 'a sapper', healer: 'a healer', swarm: 'the swarm', warden: 'the Warden', marshal: 'the Marshal', stall: 'the long wait' }[li.enemy] || 'something';
+  var line = 'Fell on wave ' + li.wave + '. ' + who.charAt(0).toUpperCase() + who.slice(1) + ' walked through the gate.';
+  if (s.wave > CONFIG.WAVES && s.waveStats && s.waveStats.muts && s.waveStats.muts.length) {
+    var names = [], mi, mm;
+    for (mi = 0; mi < s.waveStats.muts.length; mi++) { mm = mutByKey(s.waveStats.muts[mi]); if (mm) names.push(mm.name); }
+    if (names.length) line += ' It was ' + names.join(' and ') + ' out there.';
+  }
+  var saps = s.log.filter(function (l) { return l.k === 'sap'; });
+  if (saps.length) {
+    var last = saps[saps.length - 1];
+    line += ' A sapper ate the ' + TRAPS[last.type].name.toLowerCase() + ' at cell ' + last.cell + '.';
+  }
+  return line;
+}
+
+/* ============================ 7. AUDIO ============================ */
+/* G minor, martial. Every pitched sound is quantised to the scale so the
+   whole siege stays in one key. */
+var AC = null, MASTER = null, AUD = { vol: 0.7, mute: false, ready: false };
+var GMINOR = [196.00, 220.00, 233.08, 261.63, 293.66, 311.13, 349.23];
+function quant(f) {
+  var best = GMINOR[0], i, o, c;
+  for (o = -2; o <= 3; o++) for (i = 0; i < GMINOR.length; i++) {
+    c = GMINOR[i] * Math.pow(2, o);
+    if (Math.abs(Math.log(c / f)) < Math.abs(Math.log(best / f))) best = c;
+  }
+  return best;
+}
+function audioOn() {
+  if (AC) return;
+  try {
+    AC = new (window.AudioContext || window.webkitAudioContext)();
+    MASTER = AC.createGain(); MASTER.gain.value = AUD.mute ? 0 : AUD.vol;
+    var comp = AC.createDynamicsCompressor();
+    MASTER.connect(comp); comp.connect(AC.destination);
+    AUD.ready = true;
+  } catch (e) { AC = null; }
+}
+function noiseBuf(dur) {
+  var n = Math.floor(AC.sampleRate * dur), b = AC.createBuffer(1, Math.max(1, n), AC.sampleRate), d = b.getChannelData(0), i;
+  for (i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+  return b;
+}
+function noiseBurst(dur, hz, gain, type) {
+  if (!AC) return;
+  var src = AC.createBufferSource(); src.buffer = noiseBuf(dur);
+  var f = AC.createBiquadFilter(); f.type = type || 'bandpass'; f.frequency.value = hz; f.Q.value = 1.2;
+  var g = AC.createGain(); g.gain.setValueAtTime(gain, AC.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime + dur);
+  src.connect(f); f.connect(g); g.connect(MASTER); src.start();
+}
+function pluck(freq, dur, gain, wave) {
+  if (!AC) return;
+  var o = AC.createOscillator(), g = AC.createGain();
+  o.type = wave || 'triangle'; o.frequency.value = quant(freq);
+  g.gain.setValueAtTime(gain, AC.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime + dur);
+  o.connect(g); g.connect(MASTER); o.start(); o.stop(AC.currentTime + dur + 0.02);
+}
+function horn() {
+  if (!AC) return;
+  var t = AC.currentTime, notes = [98, 146.83];
+  notes.forEach(function (f, i) {
+    var o = AC.createOscillator(), o2 = AC.createOscillator(), g = AC.createGain(), bp = AC.createBiquadFilter();
+    o.type = 'sawtooth'; o2.type = 'sawtooth';
+    o.frequency.value = f; o2.frequency.value = f * 1.007;
+    bp.type = 'bandpass'; bp.frequency.value = f * 3; bp.Q.value = 2.2;
+    g.gain.setValueAtTime(0.0001, t + i * 0.22);
+    g.gain.exponentialRampToValueAtTime(0.35, t + i * 0.22 + 0.05);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.22 + 0.5);
+    o.connect(bp); o2.connect(bp); bp.connect(g); g.connect(MASTER);
+    o.start(t + i * 0.22); o2.start(t + i * 0.22); o.stop(t + i * 0.22 + 0.55); o2.stop(t + i * 0.22 + 0.55);
+  });
+}
+var VOICE = {
+  spike: function () { noiseBurst(0.045, 3200, 0.22, 'highpass'); },
+  pit: function () { pluck(69.3, 0.26, 0.4, 'sine'); },
+  ballista: function () { noiseBurst(0.09, 1800, 0.2); pluck(587, 0.06, 0.12, 'square'); },
+  brazier: function () { noiseBurst(0.12, 900, 0.1); },
+  wall: function () { noiseBurst(0.07, 260, 0.34, 'lowpass'); },
+  snare: function () { pluck(392, 0.18, 0.26, 'triangle'); },
+  player: function () { noiseBurst(0.05, 1400, 0.26); pluck(293.66, 0.09, 0.2, 'square'); }
+};
+var wardenOsc = null, wardenWho = null;
+/* Two bosses, two ostinatos. The Warden's is slow and low because it is a wall
+   you chew through. The Marshal's runs at double the rate a fifth higher
+   because it is the one making everything else move faster, and you should be
+   able to tell which one is in the lane with your eyes on your own feet. */
+var OSTINATO = {
+  warden:  { seq: [98, 116.54, 98, 87.31, 77.78], ms: 480, gain: 0.16 },
+  marshal: { seq: [146.83, 174.61, 146.83, 196.00, 174.61], ms: 260, gain: 0.13 }
+};
+function wardenStart(who) {
+  if (!AC) return;
+  var def = OSTINATO[who] || OSTINATO.warden;
+  if (wardenOsc && wardenWho === who) return;
+  wardenStop();
+  wardenWho = who;
+  var i = 0;
+  wardenOsc = setInterval(function () {
+    pluck(def.seq[i % def.seq.length], def.ms / 1000 * 0.8, def.gain, 'sawtooth');
+    i++;
+  }, def.ms);
+}
+function wardenStop() { if (wardenOsc) { clearInterval(wardenOsc); wardenOsc = null; } wardenWho = null; }
+function bossAlive() {
+  var i;
+  for (i = 0; i < G.enemies.length; i++) if (G.enemies[i].boss && !G.enemies[i].dead) return G.enemies[i].type;
+  return null;
+}
+function alarmPing(step) { pluck(392 * Math.pow(2, step / 12) * 2, 0.16, 0.3, 'square'); }
+
+function haptic(ms) {
+  if (!SAVE.settings.haptics) return;
+  try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {}
+}
+
+/* --- events from the SIM become sound and light --- */
+var floatPool = [];
+function playEvents() {
+  var i, ev, m = laneMetrics();
+  for (i = 0; i < G.ev.length; i++) {
+    ev = G.ev[i];
+    if (ev.t === 'hit') { if (VOICE[ev.b]) VOICE[ev.b](); }
+    else if (ev.t === 'wallhit') { VOICE.wall(); UI.dirtyTraps = true; }
+    else if (ev.t === 'snare') { VOICE.snare(); UI.dirtyTraps = true; }
+    else if (ev.t === 'pit') VOICE.pit();
+    else if (ev.t === 'brazier') VOICE.brazier();
+    else if (ev.t === 'traplost') UI.dirtyTraps = true;
+    else if (ev.t === 'spike') UI.dirtyTraps = true;
+    else if (ev.t === 'alarm') { alarmPing(ev.b); haptic(10); }
+    else if (ev.t === 'swinghit') { haptic(10); }
+    else if (ev.t === 'spawn' && ENEMIES[ev.a] && ENEMIES[ev.a].boss) wardenStart(ev.a);
+    else if (ev.t === 'kill' && ENEMIES[ev.a] && ENEMIES[ev.a].boss) { var still = bossAlive(); if (still) wardenStart(still); else wardenStop(); }
+    else if (ev.t === 'reinforce') { pluck(196, 0.16, 0.24, 'square'); }
+    else if (ev.t === 'wavestart') { horn(); wardenStop(); }
+    else if (ev.t === 'breach') { haptic([30, 40, 80]); shake(); }
+    else if (ev.t === 'waveclear') { pluck(392, 0.3, 0.25, 'triangle'); pluck(587, 0.4, 0.2, 'triangle'); }
+  }
+}
+function shake() {
+  if (SAVE.settings.reduce || UI.reduce) return;
+  EL.shakewrap.classList.remove('shake');
+  void EL.shakewrap.offsetWidth;
+  EL.shakewrap.classList.add('shake');
+}
+
+/* ============================ 8. SAVE ============================ */
+
+var SAVE = SIM.defaultSave();
+function loadSave() {
+  var raw = null;
+  try { raw = localStorage.getItem(CONFIG.SAVE_KEY); } catch (e) {}
+  SAVE = SIM.decodeSave(raw);
+  return SAVE;
+}
+function writeSave(delta) {
+  var current;
+  try { current = SIM.decodeSave(localStorage.getItem(CONFIG.SAVE_KEY)); } catch (e) { current = SIM.defaultSave(); }
+  SAVE = SIM.mergeSave(current, delta);
+  try { localStorage.setItem(CONFIG.SAVE_KEY, SIM.encodeSave(SAVE)); } catch (e) {}
+  return SAVE;
+}
+
+/* ============================ 9. INPUT + LOOP ============================ */
+
+var held = { left: false, right: false, attack: false };
+var queued = null;
+function intentNow() {
+  if (queued) { var q = queued; queued = null; return q; }
+  if (held.attack) return 'attack';
+  if (held.left) return 'left';
+  if (held.right) return 'right';
+  return 'none';
+}
+
+function toast(msg) {
+  EL.toast.textContent = msg;
+  EL.toast.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(function () { EL.toast.classList.remove('show'); }, 1600);
+}
+
+function cellFromX(x) {
+  var r = EL.lanebox.getBoundingClientRect(), m = laneMetrics();
+  return Math.max(0, Math.min(CONFIG.LANE - 1, Math.floor((x - r.left) / m.cw)));
+}
+
+function tapCell(cell) {
+  if (G.phase !== 'build') return;
+  if (G.traps[cell]) {
+    var t = G.traps[cell], name = TRAPS[t.type].name.toLowerCase();
+    if (UI.sel === DEEPEN.key) {
+      if (t.lvl >= CONFIG.REINFORCE_MAX && !SIM.trapNeedsRepair(G, cell)) { toast('That ' + name + ' is as deep as it goes.'); return; }
+      if (G.scrap < SIM.reinforceCost(G, cell)) { toast('Deepening that ' + name + ' costs ' + SIM.reinforceCost(G, cell) + ' scrap.'); return; }
+      var was = t.lvl;
+      if (SIM.reinforceTrap(G, cell)) {
+        UI.dirtyTraps = true; drawShop(); haptic(14); VOICE.wall();
+        toast(t.lvl > was ? 'The ' + name + ' stands at level ' + t.lvl + '.' : 'Patched the ' + name + ' back to full.');
+      }
+      return;
+    }
+    if (SIM.sellTrap(G, cell)) { UI.dirtyTraps = true; drawShop(); toast('Pulled the ' + name + ' back up.'); haptic(10); }
+    return;
+  }
+  if (UI.sel === DEEPEN.key) { toast('Nothing in that cell to deepen.'); return; }
+  if (!UI.sel) { toast('Pick a trap first.'); return; }
+  if (SIM.placeTrap(G, cell, UI.sel)) {
+    UI.dirtyTraps = true; drawShop(); haptic(10); VOICE[UI.sel === 'ballista' ? 'ballista' : 'wall']();
+  } else if (G.scrap < TRAPS[UI.sel].cost) toast('Not enough scrap for a ' + TRAPS[UI.sel].name.toLowerCase() + '.');
+  else toast('The gate and the mouth stay clear.');
+}
+
+function wireInput() {
+  var pressHold = function (el, key) {
+    el.addEventListener('pointerdown', function (e) { e.preventDefault(); audioOn(); held[key] = true; el.classList.add('held'); if (key === 'attack') queued = 'attack'; });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (ev) {
+      el.addEventListener(ev, function () { held[key] = false; el.classList.remove('held'); });
+    });
+  };
+  pressHold($('left'), 'left'); pressHold($('right'), 'right'); pressHold($('atk'), 'attack');
+
+  /* placement is a LANE gesture. The board above it scrolls and must not drop
+     traps into the ground when you flick it. */
+  EL.lanebox.addEventListener('pointerdown', function (e) {
+    audioOn();
+    if (G.phase === 'build') { var c = cellFromX(e.clientX); drawSight(c); }
+  });
+  EL.lanebox.addEventListener('pointermove', function (e) {
+    if (G.phase === 'build' && UI.sel === 'ballista' && e.pressure !== 0) drawSight(cellFromX(e.clientX));
+  });
+  EL.lanebox.addEventListener('pointerup', function (e) {
+    if (G.phase === 'build') { tapCell(cellFromX(e.clientX)); drawSight(-1); }
+  });
+  /* during combat a tap anywhere on the field swings, board included */
+  EL.field.addEventListener('pointerdown', function () {
+    audioOn();
+    if (G.phase !== 'build') queued = 'attack';
+  });
+
+  EL.shop.addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('.shopbtn') : null;
+    if (!b) return;
+    audioOn();
+    UI.sel = (UI.sel === b.dataset.trap) ? null : b.dataset.trap;
+    drawShop();
+    $('hint').textContent = UI.sel ? (UI.sel === DEEPEN.key ? DEEPEN.blurb : TRAPS[UI.sel].blurb)
+      : 'Tap a trap, then tap a cell in the lane. Tap a trap already in the lane to sell it back.';
+  });
+
+  $('skipbtn').addEventListener('click', function () { audioOn(); SIM.startWave(G); playEvents(); drawPips(); });
+  $('lastbuild').addEventListener('click', function () {
+    audioOn();
+    var n = SIM.applyBuild(G, SAVE.lastPlan || G.lastBuild);
+    UI.dirtyTraps = true; drawShop();
+    toast(n ? 'Set ' + n + ' back down.' : 'Nothing left to re apply.');
+  });
+  $('optbtn').addEventListener('click', function () { EL.optsheet.classList.remove('hidden'); });
+  $('optclose').addEventListener('click', function () { EL.optsheet.classList.add('hidden'); });
+  $('exitbtn').addEventListener('click', function () { window.SWS_EXIT(); });
+  $('titleexit').addEventListener('click', function () { window.SWS_EXIT(); });
+  $('scnext').addEventListener('click', function () { EL.scoresheet.classList.add('hidden'); });
+  $('startbtn').addEventListener('click', function () { audioOn(); newRun('campaign'); });
+  $('dailybtn').addEventListener('click', function () { audioOn(); newRun('daily'); });
+  $('ovagain').addEventListener('click', function () { newRun(UI.mode); });
+  $('ovmenu').addEventListener('click', function () { EL.oversheet.classList.add('hidden'); EL.titlesheet.classList.remove('hidden'); });
+  $('ovendless').addEventListener('click', function () { newRun('endless'); });
+  $('ovshare2').addEventListener('click', shareRun);
+  $('logbtn').addEventListener('click', showLog);
+  $('optlog').addEventListener('click', showLog);
+  $('logclose').addEventListener('click', function () { EL.logsheet.classList.add('hidden'); });
+
+  $('optvol').addEventListener('input', function (e) {
+    AUD.vol = e.target.value / 100; writeSave({ settings: { vol: AUD.vol } });
+    if (MASTER) MASTER.gain.value = AUD.mute ? 0 : AUD.vol;
+  });
+  var sw = function (id, key, apply) {
+    $(id).addEventListener('click', function () {
+      var v = !SAVE.settings[key];
+      writeSave({ settings: (function () { var o = {}; o[key] = v; return o; })() });
+      $(id).classList.toggle('on', key === 'mute' ? !v : v);
+      $(id).textContent = (key === 'mute' ? !v : v) ? 'ON' : 'OFF';
+      if (apply) apply(v);
+    });
+  };
+  sw('optmute', 'mute', function (v) { AUD.mute = v; if (MASTER) MASTER.gain.value = v ? 0 : AUD.vol; });
+  sw('opthap', 'haptics');
+  sw('optred', 'reduce', function (v) { UI.reduce = v; document.body.style.setProperty('--motion', v ? '0' : '1'); });
+  sw('optskip', 'autoSkip');
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowLeft' || e.key === 'a') held.left = true;
+    if (e.key === 'ArrowRight' || e.key === 'd') held.right = true;
+    if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w') { queued = 'attack'; e.preventDefault(); }
+    if (e.key === 'Enter' && G.phase === 'build') SIM.startWave(G);
+    audioOn();
+  });
+  document.addEventListener('keyup', function (e) {
+    if (e.key === 'ArrowLeft' || e.key === 'a') held.left = false;
+    if (e.key === 'ArrowRight' || e.key === 'd') held.right = false;
+  });
+  document.addEventListener('visibilitychange', function () { UI.paused = document.hidden; });
+  window.addEventListener('resize', function () { buildLane(); UI.dirtyTraps = true; UI.boardOver = null; UI.boardDirty = true; });
+}
+
+function showLog() {
+  var html = '', i;
+  if (!SAVE.history.length) html = '<p class="dispatch">No sieges on the books yet.</p>';
+  for (i = 0; i < SAVE.history.length; i++) {
+    html += '<p class="dispatch"><b>' + (SAVE.history[i].mode || 'siege') + '</b> ' + SAVE.history[i].line + '</p>';
+  }
+  $('logbody').innerHTML = html;
+  EL.logsheet.classList.remove('hidden');
+}
+
+function shareRun() {
+  var txt = (UI.mode === 'daily' ? 'SIEGE day ' + dayNumber() + ': ' : 'SIEGE OF ONE: ') +
+    (G.won ? 'held all twenty waves' : 'fell on wave ' + G.wave) + '. ' +
+    location.origin + location.pathname + '?seed=' + UI.seed;
+  try {
+    if (navigator.share) { navigator.share({ text: txt }); return; }
+  } catch (e) {}
+  try { navigator.clipboard.writeText(txt); toast('Copied to the clipboard.'); } catch (e2) { toast(txt); }
+}
+
+function dayNumber() {
+  return Math.floor(Date.now() / 86400000) - 20000;
+}
+
+/* --- run lifecycle --- */
+function newRun(mode) {
+  UI.mode = mode;
+  var seed = UI.seedOverride;
+  if (mode === 'daily') seed = SIM.seedFromString(new Date().toISOString().slice(0, 10) + CONFIG.GAME_ID);
+  if (seed === undefined || seed === null) seed = 1;
+  UI.seed = seed >>> 0;
+  G = SIM.newGame(UI.seed, { mode: mode === 'endless' ? 'endless' : (mode === 'daily' ? 'daily' : 'campaign'), endless: mode === 'endless' });
+  UI.sel = null; UI.dirtyTraps = true; UI.scWave = null;
+  odo.scrap = G.scrap;
+  Object.keys(UI.nodes).forEach(function (k) { UI.nodes[k].remove(); });
+  UI.nodes = {};
+  for (var i = 0; i < CONFIG.LANE; i++) if (UI.trapNodes[i]) { UI.trapNodes[i].remove(); UI.trapNodes[i] = null; }
+  EL.titlesheet.classList.add('hidden');
+  EL.oversheet.classList.add('hidden');
+  EL.scoresheet.classList.add('hidden');
+  buildLane(); drawShop(); drawPips(); UI.boardDirty = true; render();
+  writeSave({ stats: { runs: 1 } });
+}
+
+function endRun() {
+  wardenStop();
+  var tot = 0, k;
+  for (k in G.run.dmg) tot += G.run.dmg[k];
+  var share = tot ? Math.round(G.run.dmg.player / tot * 100) : 0;
+  var line = dispatch(G);
+  $('ovtitle').textContent = G.won ? 'THE GATE HELD' : 'THE GATE FELL';
+  $('ovsub').textContent = (UI.mode === 'daily' ? "TODAY'S SIEGE  ·  " : '') + 'WAVE ' + G.wave;
+  $('ovdispatch').textContent = line;
+  $('ovwaves').textContent = G.run.wavesCleared;
+  $('ovkills').textContent = G.run.kills;
+  $('ovshare').textContent = share + '%';
+  var delta = {
+    stats: { kills: G.run.kills, wavesCleared: G.run.wavesCleared, trapsBuilt: G.run.trapsBuilt, wins: G.won ? 1 : 0 },
+    best: {},
+    history: [{ mode: UI.mode, line: line, wave: G.wave }]
+  };
+  if (UI.mode === 'endless') delta.best.endless = G.run.wavesCleared;
+  else delta.best.wave = G.run.wavesCleared;
+  writeSave(delta);
+  $('ovbest').textContent = UI.mode === 'endless' ? SAVE.best.endless : SAVE.best.wave;
+  EL.oversheet.classList.remove('hidden');
+}
+
+var acc = 0, lastT = 0;
+function loop(now) {
+  requestAnimationFrame(loop);
+  if (!lastT) lastT = now;
+  var dt = Math.min(250, now - lastT);
+  lastT = now;
+  if (UI.paused || !G) { render(); return; }
+  var sheetOpen = !EL.scoresheet.classList.contains('hidden') || !EL.oversheet.classList.contains('hidden') ||
+    !EL.titlesheet.classList.contains('hidden') || !EL.optsheet.classList.contains('hidden') || !EL.logsheet.classList.contains('hidden');
+  if (!sheetOpen) {
+    acc += dt;
+    var guard = 0;
+    while (acc >= CONFIG.TICK_MS && guard++ < 6) {
+      acc -= CONFIG.TICK_MS;
+      var wasWave = G.wave, wasPhase = G.phase;
+      if (G.phase === 'build' && SAVE.settings.autoSkip) SIM.startWave(G);
+      SIM.step(G, G.phase === 'combat' ? intentNow() : 'none');
+      UI.boardDirty = true;
+      playEvents();
+      if (wasPhase === 'combat' && G.phase === 'build') { showScorecard(G.lastWaveStats); drawShop(); drawPips(); UI.dirtyTraps = true; }
+      if (wasPhase === 'build' && G.phase === 'combat') { drawPips(); EL.sight.classList.add('hidden'); }
+      if (G.over) { endRun(); break; }
+      if (wasWave !== G.wave) UI.dirtyTraps = true;
+    }
+  }
+  render();
+}
+
+/* ===== Sky Wolf Studios embed protocol ===== */
+(function () {
+  var framed = false; try { framed = window.parent !== window; } catch (e) { framed = true; }
+  window.SWS_EXIT = function () {
+    if (framed) { try { parent.postMessage({ sws: 'close' }, '*'); } catch (e) {} return; }
+    if (document.referrer.indexOf('/portal') >= 0 && history.length > 1) { history.back(); }
+    else { location.replace('https://lucidwinds.com/portal/'); }
+  };
+  if (framed) {
+    try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {}
+    window.addEventListener('load', function () { try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {} });
+  }
+})();
+
+
+// ---- TEST_EXPORT_START ----
+
+var TEST = {
+  results: [],
+  assert: function (name, cond, detail) { this.results.push({ name: name, pass: !!cond, detail: detail || '' }); },
+  eq: function (name, a, b) { this.assert(name, a === b, 'expected ' + b + ', got ' + a); },
+  ok: function (name, cond, detail) { this.assert(name, !!cond, detail || ''); },
+  near: function (name, a, b, tol) { this.assert(name, Math.abs(a - b) <= tol, 'expected about ' + b + ', got ' + a); },
+  between: function (name, a, lo, hi) { this.assert(name, a >= lo && a <= hi, 'expected ' + lo + ' to ' + hi + ', got ' + a); },
+  reset: function () { this.results = []; },
+  report: function () {
+    var passed = 0, failed = 0, failures = [], i;
+    for (i = 0; i < this.results.length; i++) {
+      if (this.results[i].pass) passed++;
+      else { failed++; failures.push(this.results[i]); }
+    }
+    return { passed: passed, failed: failed, total: this.results.length, failures: failures };
+  },
+  run: function () {
+    this.reset();
+    var i;
+    for (i = 0; i < SUITES.length; i++) SUITES[i]();
+    return this.report();
+  }
+};
+
+/* ---- test scaffolding: a lane with exactly what we want in it ---- */
+
+function tGame(opts) {
+  opts = opts || {};
+  opts.bare = (opts.bare === undefined) ? true : opts.bare;   /* micro tests get an empty lane */
+  var s = newGame(opts.seed || 1, opts);
+  s.wave = opts.wave || 1;
+  s.scrap = opts.scrap === undefined ? 100000 : opts.scrap;
+  /* a spawn parked in the far future keeps the scripted wave from ending the
+     instant the lane is empty, so micro tests stay inside the combat phase */
+  s.spawns = [{ tick: 1e9, type: 'runner' }];
+  s.spawnIdx = 0;
+  s.phase = 'combat';
+  s.phaseTick = 0;
+  s.waveStats = blankWaveStats(s.wave);
+  s.player.cell = opts.playerCell === undefined ? 0 : opts.playerCell;
+  return s;
+}
+
+function tPut(s, cell, type) {
+  var t = makeTrap(type);
+  t.cell = cell;
+  s.traps[cell] = t;
+  return t;
+}
+
+/* still:true pins a scripted body in place so a single trap can be measured
+   against it without the body wandering off the cell mid assertion. */
+function tEnemy(s, type, cell, hpOverride, still) {
+  var def = ENEMIES[type];
+  var e = {
+    id: s.nextId++, type: type, cell: cell,
+    hp: hpOverride || def.hp, maxHp: hpOverride || def.hp,
+    spd: def.spd, moveT: still ? 1e9 : def.spd - 1, flying: !!def.flying,
+    shield: def.shield || 0, saps: !!def.saps, sapped: false,
+    heal: def.heal || 0, healRange: def.healRange || 0,
+    wallSmash: !!def.wallSmash, boss: !!def.boss,
+    rally: def.rally || 0, unsnareable: !!def.unsnareable,
+    burns: [], holdT: 0, dead: false
+  };
+  s.enemies.push(e);
+  return e;
+}
+
+function tRun(s, ticks, intent) {
+  var i;
+  for (i = 0; i < ticks; i++) step(s, intent || 'none');
+  return s;
+}
+
+var SUITES = [];
+
+/* --- suite: config and economy --- */
+SUITES.push(function () {
+  TEST.eq('lane is 30 cells', CONFIG.LANE, 30);
+  TEST.eq('20 authored waves', WAVES.length, 20);
+  TEST.eq('build phase is 20 seconds', CONFIG.BUILD_TICKS * CONFIG.TICK_MS, 20000);
+  TEST.eq('six traps', TRAP_ORDER.length, 6);
+  TEST.eq('eight enemies', ENEMY_ORDER.length, 8);
+  var w, ok = true;
+  for (w = 1; w <= 40; w++) if (scrapForWave(w) !== 40 + 12 * w) ok = false;
+  TEST.ok('scrap is 40 plus 12 times wave for waves 1 to 40', ok);
+  TEST.eq('wave 1 scrap', scrapForWave(1), 52);
+  TEST.eq('wave 20 scrap', scrapForWave(20), 280);
+  TEST.eq('cumulative scrap through wave 20', scrapThroughWave(20), 3320);
+  TEST.eq('cumulative scrap through wave 1', scrapThroughWave(1), 52);
+  var hpOk = true, t;
+  for (w = 1; w <= 20; w++) {
+    for (t = 0; t < ENEMY_ORDER.length; t++) {
+      var want = Math.max(1, Math.round(ENEMIES[ENEMY_ORDER[t]].hp * Math.pow(1.18, w)));
+      if (enemyHP(ENEMY_ORDER[t], w) !== want) hpOk = false;
+    }
+  }
+  TEST.ok('enemy hp is baseHP times 1.18 to the wave, all 8 types, waves 1 to 20', hpOk);
+  TEST.eq('runner hp at wave 1', enemyHP('runner', 1), Math.round(18 * 1.18));
+  TEST.eq('warden hp at wave 10', enemyHP('warden', 10), Math.round(420 * Math.pow(1.18, 10)));
+  TEST.ok('wave 20 hp is heavier than wave 10', waveTotalHP(20) > waveTotalHP(10) * 2);
+  TEST.eq('player damage grows on the same curve', playerDamage(2), Math.round(CONFIG.PLAYER_DMG * 1.18));
+  TEST.eq('player damage at wave 1 is the base', playerDamage(1), CONFIG.PLAYER_DMG);
+  var costs = 0, i2;
+  for (i2 = 0; i2 < TRAP_ORDER.length; i2++) costs += trapCost(TRAP_ORDER[i2]);
+  TEST.eq('one of every trap costs 315', costs, 315);
+  TEST.ok('a starting purse cannot buy a ballista', scrapForWave(1) < trapCost('ballista'));
+  /* Every tuned number is pinned here on purpose. Moving one of these is a
+     deliberate act that turns this suite red until the sweep agrees. */
+  TEST.eq('spike costs 30', TRAPS.spike.cost, 30);
+  TEST.eq('spike deals 7 a tick', TRAPS.spike.dmg, 7);
+  TEST.eq('spike carries 60 charges', TRAPS.spike.charges, 60);
+  TEST.eq('pit costs 45', TRAPS.pit.cost, 45);
+  TEST.eq('pit bites 26 on entry', TRAPS.pit.dmg, 26);
+  TEST.eq('pit slows to four tenths speed', TRAPS.pit.slow, 2.5);
+  TEST.eq('ballista costs 90', TRAPS.ballista.cost, 90);
+  TEST.eq('ballista deals 22 a bolt', TRAPS.ballista.dmg, 22);
+  TEST.eq('ballista reloads in 14 ticks', TRAPS.ballista.cd, 14);
+  TEST.eq('brazier costs 60', TRAPS.brazier.cost, 60);
+  TEST.eq('brazier burns 5 a tick a stack', TRAPS.brazier.dmg, 5);
+  TEST.eq('a burn lasts 30 ticks', TRAPS.brazier.burnTicks, 30);
+  TEST.eq('burns stack three deep', TRAPS.brazier.maxStacks, 3);
+  TEST.eq('wall costs 50', TRAPS.wall.cost, 50);
+  TEST.eq('a wall takes 3 hits', TRAPS.wall.hits, 3);
+  TEST.eq('snare costs 40', TRAPS.snare.cost, 40);
+  TEST.eq('a snare holds for 25 ticks', TRAPS.snare.hold, 25);
+  TEST.eq('the blade opens at 20', CONFIG.PLAYER_DMG, 20);
+  TEST.eq('the blade swings every 8 ticks', CONFIG.PLAYER_ATK_CD, 8);
+  TEST.eq('you walk a cell every 2 ticks', CONFIG.PLAYER_MOVE_TICKS, 2);
+  TEST.eq('your reach is one cell', CONFIG.PLAYER_RANGE, 1);
+});
+
+/* --- suite: generation --- */
+SUITES.push(function () {
+  var w, allOk = true, cadenceOk = true;
+  for (w = 1; w <= 20; w++) {
+    if (!verifySchedule(w, 'campaign', 1)) allOk = false;
+    if (!verifySchedule(w, 'daily', 12345)) cadenceOk = false;
+  }
+  TEST.ok('all 20 campaign schedules verify', allOk);
+  TEST.ok('all 20 daily schedules verify', cadenceOk);
+  var a = schedule(7, 'campaign', 1), b = schedule(7, 'campaign', 999);
+  TEST.eq('campaign schedules ignore the seed', JSON.stringify(a), JSON.stringify(b));
+  var d1 = schedule(7, 'daily', 4242), d2 = schedule(7, 'daily', 4242);
+  TEST.eq('daily schedules are deterministic', JSON.stringify(d1), JSON.stringify(d2));
+  var counts = function (sc) {
+    var m = {}, i, keys, out = [];
+    for (i = 0; i < sc.length; i++) m[sc[i].type] = (m[sc[i].type] || 0) + 1;
+    keys = Object.keys(m).sort();
+    for (i = 0; i < keys.length; i++) out.push(keys[i] + ':' + m[keys[i]]);
+    return out.join(',');
+  };
+  TEST.eq('daily keeps the exact composition', counts(schedule(13, 'daily', 88)), counts(schedule(13, 'campaign', 88)));
+  var hasWarden = function (w2) { var sc = schedule(w2, 'campaign', 1), i; for (i = 0; i < sc.length; i++) if (sc[i].type === 'warden') return true; return false; };
+  TEST.ok('warden appears on wave 10', hasWarden(10));
+  TEST.ok('warden appears on wave 20', hasWarden(20));
+  TEST.ok('no warden on wave 9', !hasWarden(9));
+  var firstOf = function (type) { var w2; for (w2 = 1; w2 <= 20; w2++) { var sc = schedule(w2, 'campaign', 1), i; for (i = 0; i < sc.length; i++) if (sc[i].type === type) return w2; } return 99; };
+  TEST.eq('swarm debuts on wave 4', firstOf('swarm'), 4);
+  TEST.eq('shielded debuts on wave 5', firstOf('shielded'), 5);
+  TEST.eq('flyer debuts on wave 6', firstOf('flyer'), 6);
+  TEST.eq('sapper debuts on wave 7', firstOf('sapper'), 7);
+  TEST.eq('healer debuts on wave 8', firstOf('healer'), 8);
+  TEST.ok('endless cycles the table past wave 20', JSON.stringify(waveTable(21)) === JSON.stringify(waveTable(1)));
+});
+
+/* --- suite: rng --- */
+SUITES.push(function () {
+  var r1 = makeRNG(99), r2 = makeRNG(99), same = true, i;
+  for (i = 0; i < 500; i++) if (r1() !== r2()) same = false;
+  TEST.ok('same seed gives the same stream', same);
+  var r3 = makeRNG(100), diff = false;
+  r1 = makeRNG(99);
+  for (i = 0; i < 50; i++) if (r1() !== r3()) diff = true;
+  TEST.ok('different seeds diverge', diff);
+  var r4 = makeRNG(7), inRange = true;
+  for (i = 0; i < 2000; i++) { var v = r4(); if (v < 0 || v >= 1) inRange = false; }
+  TEST.ok('values stay in zero to one', inRange);
+  TEST.eq('string seeds are stable', seedFromString('2026-08-16siege'), seedFromString('2026-08-16siege'));
+  TEST.ok('string seeds differ by day', seedFromString('2026-08-16siege') !== seedFromString('2026-08-17siege'));
+  var r5 = makeRNG(3), sh = r5.shuffle([1, 2, 3, 4, 5]);
+  TEST.eq('shuffle keeps every element', sh.slice().sort().join(''), '12345');
+});
+
+/* --- suite: player and terrain --- */
+SUITES.push(function () {
+  var s = tGame({ playerCell: 5 });
+  tRun(s, 2, 'right');
+  TEST.eq('player moves one cell in two ticks', s.player.cell, 6);
+  s = tGame({ playerCell: 5 });
+  tRun(s, 20, 'right');
+  TEST.eq('player covers ten cells in twenty ticks', s.player.cell, 15);
+  s = tGame({ playerCell: 5 });
+  tRun(s, 20, 'left');
+  TEST.eq('player walks back the other way', s.player.cell, 0);
+  s = tGame({ playerCell: 5 });
+  tRun(s, 40, 'left');
+  TEST.eq('player cannot walk out through the gate', s.player.cell, 0);
+  /* wall blocks the player */
+  s = tGame({ playerCell: 5 });
+  tPut(s, 6, 'wall');
+  tRun(s, 30, 'right');
+  TEST.eq('a wall stops the player dead', s.player.cell, 5);
+  /* pit slows the player exactly as it slows a body */
+  s = tGame({ playerCell: 5 });
+  tPut(s, 6, 'pit');
+  tRun(s, 2, 'right');
+  TEST.eq('player steps into the pit', s.player.cell, 6);
+  tRun(s, 3, 'right');
+  TEST.eq('pit holds the player for five ticks not two', s.player.cell, 6);
+  tRun(s, 1, 'right');
+  TEST.eq('player climbs out on the fifth tick', s.player.cell, 7);
+  TEST.eq('pit slow factor is two and a half', moveInterval(tGame({}), 2, 0), 2);
+  s = tGame({});
+  tPut(s, 4, 'pit');
+  TEST.eq('pit multiplies the move interval', moveInterval(s, 2, 4), 5);
+  /* attack cooldown */
+  s = tGame({ playerCell: 5 });
+  var e = tEnemy(s, 'brute', 5, 1000);
+  step(s, 'attack');
+  TEST.eq('first swing lands', e.hp, 1000 - playerDamage(1));
+  step(s, 'attack');
+  TEST.eq('second swing is on cooldown', e.hp, 1000 - playerDamage(1));
+  tRun(s, 7, 'attack');
+  TEST.eq('swing lands again after eight ticks', e.hp, 1000 - playerDamage(1) * 2);
+  /* range */
+  s = tGame({ playerCell: 5 });
+  var far = tEnemy(s, 'brute', 8, 1000);
+  tRun(s, 3, 'attack');
+  TEST.eq('a body two cells away is out of reach', far.hp, 1000);
+  /* targeting picks the body nearest the gate */
+  s = tGame({ playerCell: 5 });
+  var back = tEnemy(s, 'brute', 6, 1000);
+  var front = tEnemy(s, 'brute', 4, 1000);
+  step(s, 'attack');
+  TEST.ok('the swing picks the body nearest the gate', front.hp < 1000 && back.hp === 1000);
+  /* enemies walk past the player, the player is not a wall */
+  s = tGame({ playerCell: 5 });
+  var walker = tEnemy(s, 'runner', 6, 9999);
+  tRun(s, 10, 'none');
+  TEST.ok('bodies walk straight past the player', walker.cell < 5);
+});
+
+/* --- suite: trap and enemy interactions --- */
+SUITES.push(function () {
+  var s, e, t;
+  /* spike strip bites ground, ignores flyers */
+  s = tGame({});
+  t = tPut(s, 10, 'spike');
+  e = tEnemy(s, 'brute', 10, 500);
+  step(s, 'none');
+  TEST.eq('spike strip deals its damage every tick', e.hp, 500 - TRAPS.spike.dmg);
+  TEST.eq('spike strip spends a charge', t.charges, TRAPS.spike.charges - 1);
+  s = tGame({});
+  t = tPut(s, 10, 'spike');
+  e = tEnemy(s, 'flyer', 10, 500);
+  tRun(s, 3, 'none');
+  TEST.eq('a flyer sails over the spike strip', e.hp, 500);
+  TEST.eq('spike strip spends nothing on a flyer', t.charges, TRAPS.spike.charges);
+  s = tGame({});
+  t = tPut(s, 10, 'spike');
+  e = tEnemy(s, 'brute', 10, 99999, true);
+  tRun(s, TRAPS.spike.charges + 5, 'none');
+  TEST.eq('spike strip is scrap once its charges are spent', s.traps[10], null);
+  TEST.eq('spike strip lifetime damage is charges times damage', 99999 - e.hp, TRAPS.spike.charges * TRAPS.spike.dmg);
+  /* pit */
+  s = tGame({});
+  tPut(s, 9, 'pit');
+  e = tEnemy(s, 'brute', 10, 500);
+  tRun(s, 6, 'none');
+  TEST.eq('the pit bites on the way in', e.hp, 500 - TRAPS.pit.dmg);
+  TEST.eq('body is in the pit', e.cell, 9);
+  s = tGame({});
+  tPut(s, 9, 'pit');
+  e = tEnemy(s, 'flyer', 10, 500);
+  tRun(s, 4, 'none');
+  TEST.eq('a flyer ignores the pit entirely', e.hp, 500);
+  /* ballista */
+  s = tGame({});
+  t = tPut(s, 4, 'ballista');
+  e = tEnemy(s, 'brute', 12, 500);
+  step(s, 'none');
+  TEST.eq('ballista opens fire at once', e.hp, 500 - TRAPS.ballista.dmg);
+  tRun(s, TRAPS.ballista.cd - 1, 'none');
+  TEST.eq('ballista holds fire while it reloads', e.hp, 500 - TRAPS.ballista.dmg);
+  step(s, 'none');
+  TEST.ok('ballista fires again the tick its reload ends', e.hp < 500 - TRAPS.ballista.dmg);
+  s = tGame({});
+  tPut(s, 4, 'ballista');
+  e = tEnemy(s, 'flyer', 12, 500);
+  step(s, 'none');
+  TEST.ok('ballista hits flyers', e.hp < 500);
+  s = tGame({});
+  tPut(s, 4, 'ballista');
+  e = tEnemy(s, 'brute', 2, 500);
+  tRun(s, 5, 'none');
+  TEST.eq('ballista never shoots behind itself', e.hp, 500);
+  /* wall blinds the ballista */
+  s = tGame({});
+  tPut(s, 4, 'ballista');
+  tPut(s, 8, 'wall');
+  e = tEnemy(s, 'brute', 12, 500);
+  tRun(s, 5, 'none');
+  TEST.eq('a wall blinds the ballista past it', e.hp, 500);
+  TEST.eq('sight line stops one cell short of the wall', ballistaSight(s, 4), 7);
+  var near = tEnemy(s, 'brute', 6, 500);
+  step(s, 'none');
+  TEST.ok('ballista still shoots inside its own wall', near.hp < 500);
+  s = tGame({});
+  tPut(s, 4, 'ballista');
+  TEST.eq('clear sight runs to the mouth', ballistaSight(s, 4), 29);
+  /* brazier burn and stacking. Bodies start at the mouth so a long burn has
+     room to run without anyone reaching the gate mid assertion. */
+  s = tGame({});
+  tPut(s, 24, 'brazier');
+  e = tEnemy(s, 'runner', 25, 99999);
+  tRun(s, 2, 'none');
+  TEST.eq('brazier lights the body on entry', e.burns.length, 1);
+  TEST.eq('burn deals its damage every tick', e.hp, 99999 - TRAPS.brazier.dmg);
+  tRun(s, 40, 'none');
+  TEST.eq('one burn stack is damage times duration', 99999 - e.hp, TRAPS.brazier.dmg * TRAPS.brazier.burnTicks);
+  TEST.eq('burn burns out after thirty ticks', e.burns.length, 0);
+  s = tGame({});
+  tPut(s, 24, 'brazier'); tPut(s, 23, 'brazier'); tPut(s, 22, 'brazier'); tPut(s, 21, 'brazier');
+  e = tEnemy(s, 'runner', 25, 99999);
+  tRun(s, 12, 'none');
+  TEST.eq('burn stacks cap at three', e.burns.length, 3);
+  TEST.eq('one stack then two then three ramps the burn', 99999 - e.hp, TRAPS.brazier.dmg * (2 + 4 + 21));
+  s = tGame({});
+  tPut(s, 24, 'brazier');
+  e = tEnemy(s, 'flyer', 25, 500);
+  tRun(s, 6, 'none');
+  TEST.eq('a flyer never catches fire', e.burns.length, 0);
+  /* shielded */
+  s = tGame({ playerCell: 5 });
+  e = tEnemy(s, 'shielded', 5, 500);
+  step(s, 'attack');
+  TEST.eq('shield eats the whole first hit', e.hp, 500);
+  TEST.eq('shield is down to two', e.shield, 2);
+  s = tGame({});
+  tPut(s, 9, 'brazier'); tPut(s, 8, 'brazier'); tPut(s, 7, 'brazier');
+  e = tEnemy(s, 'shielded', 10, 500);
+  tRun(s, 20, 'none');
+  TEST.eq('three burn stacks strip the shield', e.shield, 0);
+  TEST.ok('the shielded body burns once the shield is gone', e.hp < 500);
+  s = tGame({});
+  tPut(s, 10, 'spike');
+  e = tEnemy(s, 'shielded', 10, 500, true);
+  tRun(s, 3, 'none');
+  TEST.eq('spike ticks count as three separate events', e.shield, 0);
+  TEST.eq('three spike ticks cost the shield and nothing else', e.hp, 500);
+  tRun(s, 1, 'none');
+  TEST.eq('the fourth spike tick is the first that hurts', e.hp, 500 - TRAPS.spike.dmg);
+  /* sapper */
+  s = tGame({});
+  tPut(s, 9, 'snare');
+  e = tEnemy(s, 'sapper', 10, 500);
+  tRun(s, 3, 'none');
+  TEST.eq('a sapper eats the snare instead of tripping it', s.traps[9], null);
+  TEST.eq('the sapper is not held', e.holdT, 0);
+  TEST.ok('the sapper has spent its charge', e.sapped);
+  s = tGame({});
+  tPut(s, 9, 'snare'); tPut(s, 8, 'snare');
+  e = tEnemy(s, 'sapper', 10, 500);
+  tRun(s, 8, 'none');
+  TEST.eq('the second snare still catches the sapper', e.holdT > 0, true);
+  s = tGame({});
+  tPut(s, 9, 'wall');
+  e = tEnemy(s, 'sapper', 10, 500);
+  tRun(s, 4, 'none');
+  TEST.eq('a sapper walks a wall down in one touch', s.traps[9], null);
+  s = tGame({});
+  tPut(s, 9, 'pit');
+  e = tEnemy(s, 'sapper', 10, 500);
+  tRun(s, 3, 'none');
+  TEST.eq('a sapped pit deals no fall damage', e.hp, 500);
+  /* snare hold */
+  s = tGame({});
+  tPut(s, 9, 'snare');
+  e = tEnemy(s, 'runner', 10, 9999);
+  tRun(s, 3, 'none');
+  TEST.eq('snare grabs the runner', e.cell, 9);
+  TEST.eq('the snare is spent', s.traps[9], null);
+  tRun(s, 20, 'none');
+  TEST.eq('the runner is still held at twenty three ticks', e.cell, 9);
+  tRun(s, 6, 'none');
+  TEST.ok('the runner walks free after the hold', e.cell < 9);
+  s = tGame({});
+  tPut(s, 9, 'snare');
+  e = tEnemy(s, 'flyer', 10, 500);
+  tRun(s, 5, 'none');
+  TEST.ok('a snare cannot grab a flyer', e.cell < 9);
+  /* wall */
+  s = tGame({});
+  tPut(s, 9, 'wall');
+  e = tEnemy(s, 'brute', 10, 500);
+  tRun(s, 20, 'none');
+  TEST.ok('a wall holds a brute up', e.cell === 10);
+  tRun(s, 10, 'none');
+  TEST.eq('the wall is rubble after three hits', s.traps[9], null);
+  s = tGame({});
+  tPut(s, 9, 'wall');
+  e = tEnemy(s, 'flyer', 10, 500);
+  tRun(s, 6, 'none');
+  TEST.eq('a wall stops a flyer too', e.cell, 10);
+  /* warden */
+  s = tGame({});
+  tPut(s, 9, 'wall');
+  e = tEnemy(s, 'warden', 10, 5000);
+  tRun(s, 8, 'none');
+  TEST.eq('the warden takes a wall down in one swing', s.traps[9], null);
+  TEST.ok('the warden is slow', ENEMIES.warden.spd === 6);
+  /* healer */
+  s = tGame({});
+  var h = tEnemy(s, 'healer', 11, 300);
+  var brute = tEnemy(s, 'brute', 10, 500);
+  brute.hp = 100;
+  tRun(s, 5, 'none');
+  TEST.ok('a healer mends a hurt brute', brute.hp > 100);
+  TEST.ok('a healer never overheals', brute.hp <= brute.maxHp);
+  s = tGame({});
+  h = tEnemy(s, 'healer', 20, 300);
+  brute = tEnemy(s, 'brute', 10, 500);
+  brute.hp = 100;
+  tRun(s, 5, 'none');
+  TEST.eq('a healer out of range mends nothing', brute.hp, 100);
+  s = tGame({});
+  tPut(s, 10, 'spike');
+  h = tEnemy(s, 'healer', 11, 300, true);
+  brute = tEnemy(s, 'brute', 10, 200, true);
+  tRun(s, 6, 'none');
+  TEST.eq('a healer on a spike strip cancels part of every tick', brute.hp, 200 - 6 * (TRAPS.spike.dmg - healAmount(1)));
+  var noHealer = tGame({});
+  tPut(noHealer, 10, 'spike');
+  var alone = tEnemy(noHealer, 'brute', 10, 200, true);
+  tRun(noHealer, 6, 'none');
+  TEST.ok('a healer keeps a brute alive that would otherwise be lower', brute.hp > alone.hp);
+  TEST.eq('the same brute with nobody mending it takes the full bite', alone.hp, 200 - 6 * TRAPS.spike.dmg);
+  /* swarm spawns five */
+  s = tGame({});
+  s.enemies = [];
+  spawnOne(s, 'swarm');
+  TEST.eq('a swarm entry spawns five bodies', s.enemies.length, 5);
+  s.enemies = [];
+  spawnOne(s, 'runner');
+  TEST.eq('a runner entry spawns one body', s.enemies.length, 1);
+});
+
+/* --- suite: build phase, economy and flow --- */
+SUITES.push(function () {
+  var s = newGame(1, {});
+  TEST.eq('a fresh siege opens in the build phase', s.phase, 'build');
+  TEST.eq('a fresh siege hands you wave one scrap', s.scrap, 52);
+  TEST.ok('you can afford a spike strip', canPlace(s, 10, 'spike'));
+  TEST.ok('you cannot afford a ballista yet', !canPlace(s, 10, 'ballista'));
+  placeTrap(s, 10, 'spike');
+  TEST.eq('placing a spike strip costs thirty', s.scrap, 22);
+  TEST.ok('the cell is taken', !canPlace(s, 10, 'spike'));
+  TEST.ok('cell zero is the gate and takes no trap', !canPlace(s, 0, 'spike'));
+  TEST.ok('cell twenty nine is the mouth and takes no trap', !canPlace(s, 29, 'spike'));
+  sellTrap(s, 10);
+  TEST.eq('selling refunds the whole cost', s.scrap, 52);
+  TEST.eq('the cell is clear again', s.traps[10], null);
+  placeTrap(s, 10, 'spike');
+  s.traps[10].charges = 5;
+  sellTrap(s, 10);
+  TEST.eq('a half spent trap still refunds in full', s.scrap, 52);
+  s = newGame(1, {});
+  tRun(s, CONFIG.BUILD_TICKS, 'none');
+  TEST.eq('the build phase runs out on its own', s.phase, 'combat');
+  s = newGame(1, {});
+  startWave(s);
+  TEST.eq('skip starts the wave early', s.phase, 'combat');
+  TEST.ok('skipping records the build for later', s.lastBuild !== null);
+  s = newGame(1, { bare: true });
+  s.scrap = 200;
+  placeTrap(s, 8, 'spike');
+  placeTrap(s, 9, 'snare');
+  startWave(s);
+  var plan = s.lastBuild;
+  TEST.eq('last build remembers two traps', plan.length, 2);
+  var s2 = newGame(1, { bare: true });
+  s2.scrap = 200;
+  TEST.eq('last build re applies onto a clean lane', applyBuild(s2, plan), 2);
+  var s3 = newGame(1, { bare: true });
+  s3.scrap = 30;
+  TEST.eq('last build only buys what you can afford', applyBuild(s3, plan), 1);
+  /* a wave that is walked over ends and pays the next purse */
+  s = newGame(1, { bare: true });
+  startWave(s);
+  var guard = 0;
+  while (s.phase === 'combat' && guard++ < 2000) step(s, 'none');
+  TEST.ok('an unopposed wave one breaches the gate', s.phase === 'lost');
+  TEST.eq('the loss names the wave', s.lossInfo.wave, 1);
+  TEST.ok('the loss names the body that got through', !!s.lossInfo.enemy);
+  /* the alarm rings at 8, 5 and 3 */
+  s = newGame(1, { bare: true });
+  startWave(s);
+  guard = 0;
+  var alarms = [];
+  while (s.phase === 'combat' && guard++ < 2000) {
+    step(s, 'none');
+    for (var i = 0; i < s.ev.length; i++) if (s.ev[i].t === 'alarm') alarms.push(s.ev[i].a);
+  }
+  TEST.eq('the breach alarm rings three times', alarms.length, 3);
+  TEST.eq('first alarm is cell eight', alarms[0], 8);
+  TEST.eq('second alarm is cell five', alarms[1], 5);
+  TEST.eq('third alarm is cell three', alarms[2], 3);
+});
+
+/* --- suite: determinism and save --- */
+SUITES.push(function () {
+  var a = runCampaign({ seed: 5, bot: botActive, loadout: [{ type: 'spike', zone: 1 }, { type: 'ballista', zone: 0 }] });
+  var b = runCampaign({ seed: 5, bot: botActive, loadout: [{ type: 'spike', zone: 1 }, { type: 'ballista', zone: 0 }] });
+  TEST.eq('the same seed and the same build reach the same wave', a.reached, b.reached);
+  TEST.eq('the same run kills the same count', a.state.run.kills, b.state.run.kills);
+  TEST.eq('the same run deals identical damage', JSON.stringify(a.state.run.dmg), JSON.stringify(b.state.run.dmg));
+  var s1 = newGame(77, {}), s2 = newGame(77, {}), i, ok = true;
+  startWave(s1); startWave(s2);
+  for (i = 0; i < 400; i++) { step(s1, 'attack'); step(s2, 'attack'); }
+  TEST.ok('two identical siege states stay identical', JSON.stringify(s1) === JSON.stringify(s2));
+  var clone = JSON.parse(JSON.stringify(s1));
+  for (i = 0; i < 100; i++) { step(s1, 'left'); step(clone, 'left'); }
+  TEST.eq('a serialised state resumes identically', JSON.stringify(s1), JSON.stringify(clone));
+  /* save round trip */
+  var sv = defaultSave();
+  sv.best.wave = 14; sv.best.endless = 23; sv.stats.kills = 900;
+  var back = decodeSave(encodeSave(sv));
+  TEST.eq('best wave survives the round trip', back.best.wave, 14);
+  TEST.eq('endless best survives the round trip', back.best.endless, 23);
+  TEST.eq('lifetime kills survive the round trip', back.stats.kills, 900);
+  TEST.eq('the save carries a version', back.v, 1);
+  TEST.eq('the save carries the game id', back.gameId, 'siege');
+  TEST.eq('a torn save recovers to a fresh one', decodeSave('{not json at all').best.wave, 0);
+  TEST.eq('an empty save recovers', decodeSave('').best.wave, 0);
+  TEST.eq('a null save recovers', decodeSave(null).best.wave, 0);
+  TEST.eq('an array save recovers', decodeSave('[1,2,3]').best.wave, 0);
+  TEST.eq('a save with a missing block recovers', decodeSave('{"v":1}').stats.kills, 0);
+  TEST.eq('a save with a wrong type recovers', decodeSave('{"v":1,"stats":{"kills":"lots"}}').stats.kills, 0);
+  /* merge law: counters add, bests take the max */
+  var merged = mergeSave({ v: 1, stats: { kills: 10 }, best: { wave: 9 } }, { stats: { kills: 5 }, best: { wave: 4 } });
+  TEST.eq('counters add across tabs', merged.stats.kills, 15);
+  TEST.eq('bests take the higher of the two', merged.best.wave, 9);
+  merged = mergeSave(merged, { best: { wave: 17 } });
+  TEST.eq('a better wave replaces the best', merged.best.wave, 17);
+  merged = mergeSave(merged, { history: [{ wave: 3 }] });
+  TEST.eq('history keeps the newest run first', merged.history[0].wave, 3);
+  var many = [], k;
+  for (k = 0; k < 20; k++) many.push({ wave: k });
+  merged = mergeSave(merged, { history: many });
+  TEST.eq('history stops at ten runs', merged.history.length, 10);
+});
+
+/* --- suite: fuzz and regression --- */
+SUITES.push(function () {
+  var intents = ['left', 'right', 'attack', 'none'];
+  var rng = makeRNG(20260816);
+  var crashes = 0, ticks = 0, seeds = [];
+  var run, s, i, guard;
+  for (run = 0; run < 25; run++) {
+    var seed = rng.int(1000000);
+    seeds.push(seed);
+    try {
+      s = newGame(seed, {});
+      for (guard = 0; guard < 200 && ticks < 5000; guard++) {
+        /* random legal build */
+        var type = TRAP_ORDER[rng.int(TRAP_ORDER.length)];
+        var cell = rng.range(0, CONFIG.LANE - 1);
+        if (rng() < 0.15) sellTrap(s, cell); else placeTrap(s, cell, type);
+        step(s, intents[rng.int(4)]);
+        ticks++;
+        if (s.over) { s = newGame(rng.int(1000000), {}); }
+      }
+    } catch (err) { crashes++; }
+  }
+  TEST.eq('random builds and intents never throw', crashes, 0);
+  /* the second half of the 5000 tick budget, combat only */
+  var crashes2 = 0, t2 = 0;
+  try {
+    for (run = 0; run < 30; run++) {
+      s = newGame(rng.int(1000000), {});
+      botBuild(s, [{ type: TRAP_ORDER[rng.int(6)], zone: rng.int(5) }, { type: TRAP_ORDER[rng.int(6)], zone: rng.int(5) }]);
+      startWave(s);
+      for (guard = 0; guard < 150 && t2 < 5000; guard++) {
+        step(s, intents[rng.int(4)]);
+        t2++;
+        if (s.over) break;
+      }
+    }
+  } catch (err2) { crashes2++; }
+  TEST.eq('five thousand fuzz ticks with random loadouts never throw', crashes2, 0);
+  TEST.ok('the fuzz actually ran five thousand ticks', ticks + t2 >= 5000, 'ran ' + (ticks + t2));
+  /* named regressions found by the fuzz, kept forever */
+  var r = tGame({});
+  tPut(r, 5, 'wall');
+  r.player.cell = 5;
+  TEST.ok('regression: a trap can be placed under the player without a throw', true);
+  r = newGame(1, {});
+  TEST.eq('regression: selling an empty cell is a no op', sellTrap(r, 4), false);
+  TEST.eq('regression: placing off the end of the lane is a no op', placeTrap(r, 900, 'spike'), false);
+  TEST.eq('regression: placing a trap that does not exist is a no op', placeTrap(r, 4, 'catapult'), false);
+  r = newGame(1, {});
+  startWave(r);
+  TEST.eq('regression: you cannot build once the wave is running', placeTrap(r, 4, 'spike'), false);
+  TEST.eq('regression: you cannot sell once the wave is running', sellTrap(r, 4), false);
+  r = tGame({});
+  var ghost = tEnemy(r, 'runner', 1, 1);
+  tRun(r, 4, 'none');
+  TEST.eq('regression: a breach ends the siege exactly once', r.phase, 'lost');
+  var before = r.tick;
+  step(r, 'attack');
+  TEST.eq('regression: stepping a finished siege changes nothing', r.tick, before);
+});
+
+/* --- suite: balance envelope (small n, the full sweep lives in sim.js) --- */
+SUITES.push(function () {
+  var idle = runCampaign({ seed: 1, bot: botIdle, loadout: [{ type: 'ballista', zone: 0 }, { type: 'brazier', zone: 2 }, { type: 'spike', zone: 3 }] });
+  TEST.ok('a strong build with nobody in the lane still falls', !idle.won);
+  var active = runCampaign({ seed: 1, bot: botActive, loadout: [{ type: 'ballista', zone: 0 }, { type: 'brazier', zone: 2 }, { type: 'spike', zone: 3 }] });
+  TEST.ok('the same build with a defender in the lane goes further', active.reached > idle.reached);
+  var share = 0, tot = 0, k;
+  for (k in active.state.run.dmg) tot += active.state.run.dmg[k];
+  share = tot ? active.state.run.dmg.player / tot : 0;
+  TEST.between('the defender is worth at least a fifth of the damage', Math.round(share * 100), 20, 95);
+  TEST.ok('traps still carry real weight', share < 0.95);
+  var bare = runCampaign({ seed: 1, bot: botActive, loadout: [] });
+  TEST.ok('a defender with no traps at all falls early', bare.lossWave <= 8);
+  TEST.ok('wave one is survivable with a cheap build', runCampaign({ seed: 1, bot: botActive, loadout: [{ type: 'spike', zone: 1 }], maxWave: 1 }).reached > 1);
+});
+
+
+/* --- suite: reinforce, the late game scrap sink --- */
+SUITES.push(function () {
+  var s = tGame({ scrap: 1000 });
+  s.phase = 'build';
+  placeTrap(s, 10, 'spike');
+  TEST.eq('a fresh trap stands at level one', s.traps[10].lvl, 1);
+  TEST.eq('reinforcing costs the trap price again', reinforceCost(s, 10), TRAPS.spike.cost);
+  var before = s.scrap;
+  TEST.ok('a purse with scrap in it can reinforce', reinforceTrap(s, 10));
+  TEST.eq('reinforcing charges the trap price', s.scrap, before - TRAPS.spike.cost);
+  TEST.eq('the trap is a level deeper', s.traps[10].lvl, 2);
+  reinforceTrap(s, 10);
+  TEST.eq('three is the ceiling', s.traps[10].lvl, 3);
+  TEST.ok('a maxed trap cannot be levelled again', s.traps[10].lvl === CONFIG.REINFORCE_MAX);
+  TEST.eq('an intact maxed trap is not worth patching', canReinforce(s, 10), false);
+  s.traps[10].charges = 4;
+  TEST.eq('a spent maxed trap can be patched', canReinforce(s, 10), true);
+  TEST.eq('a patch costs half a trap', reinforceCost(s, 10), Math.ceil(TRAPS.spike.cost * 0.5));
+  reinforceTrap(s, 10);
+  TEST.eq('patching refills the charges', s.traps[10].charges, TRAPS.spike.charges);
+  TEST.eq('patching does not push past the ceiling', s.traps[10].lvl, 3);
+  TEST.eq('selling refunds every coin sunk into the cell', (function () {
+    var g = tGame({ scrap: 500 }); g.phase = 'build';
+    placeTrap(g, 5, 'ballista'); reinforceTrap(g, 5); reinforceTrap(g, 5);
+    var had = g.scrap; sellTrap(g, 5); return g.scrap - had;
+  })(), TRAPS.ballista.cost * 3);
+  /* reinforce is deliberately worse value than a fresh cell */
+  TEST.eq('level one is one trap', lvlMult(1), 1);
+  TEST.near('level three is 2.2 traps for the price of three', lvlMult(3), 2.2, 0.001);
+  TEST.ok('three levels never beat three cells', lvlMult(CONFIG.REINFORCE_MAX) < CONFIG.REINFORCE_MAX);
+  /* the levels actually land in the damage numbers */
+  var a = tGame({ scrap: 0 }), t = tPut(a, 4, 'ballista');
+  tEnemy(a, 'brute', 6, 9999, true);
+  tRun(a, 1);
+  var oneShot = a.waveStats.dmg.ballista;
+  var b = tGame({ scrap: 0 }), t2 = tPut(b, 4, 'ballista');
+  t2.lvl = 3;
+  tEnemy(b, 'brute', 6, 9999, true);
+  tRun(b, 1);
+  TEST.eq('a level three ballista hits for 2.2 bolts', b.waveStats.dmg.ballista, Math.round(oneShot * 2.2));
+  var c = tGame({ scrap: 0 }); tPut(c, 4, 'wall').lvl = 3;
+  TEST.eq('a level three wall carries seven hits', wallHits(3), 7);
+  var d = tGame({ scrap: 0 }), sn = tPut(d, 8, 'snare'); sn.lvl = 2;
+  var de = tEnemy(d, 'runner', 9);
+  tRun(d, 3);
+  TEST.eq('a level two snare holds half again as long', de.holdT > TRAPS.snare.hold, true);
+  var e2 = tGame({ scrap: 0 }); tPut(e2, 12, 'brazier').lvl = 3;
+  var be = tEnemy(e2, 'brute', 13, 9999);
+  tRun(e2, 6);
+  TEST.ok('a level three brazier burns harder than a fresh one', e2.waveStats.dmg.brazier > 0 && be.burns.length > 0);
+  TEST.eq('the burn remembers which brazier lit it', be.burns[0].lvl, 3);
+  /* the sink itself: a full lane and a fat purse cannot strand */
+  var full = tGame({ scrap: 3000 });
+  full.phase = 'build';
+  var ci;
+  for (ci = CONFIG.BUILD_MIN_CELL; ci <= CONFIG.BUILD_MAX_CELL; ci++) { full.traps[ci] = null; placeTrap(full, ci, 'spike'); }
+  TEST.eq('twenty eight cells is the whole board', (function () { var n = 0, i2; for (i2 = 0; i2 < CONFIG.LANE; i2++) if (full.traps[i2]) n++; return n; })(), 28);
+  botReinforce(full, [{ type: 'spike', zone: 0 }]);
+  TEST.eq('a saturated lane takes the purse into depth instead', (function () { var n = 0, i2; for (i2 = 0; i2 < CONFIG.LANE; i2++) if (full.traps[i2] && full.traps[i2].lvl === CONFIG.REINFORCE_MAX) n++; return n; })(), 28);
+  /* honest bound: a board of 28 cheap traps CAN be maxed out inside a campaign
+     purse, and past that only repairs take money. 28 x 3 x 30 is 2520 of the
+     3320 a campaign pays, so the residue is small and the sweep measures the
+     real worst case at 56 scrap. */
+  TEST.ok('reinforcing a full board costs three boards', 3000 - full.scrap >= 28 * 2 * TRAPS.spike.cost);
+  TEST.eq('nothing can be placed on a full board', canPlace(full, 14, 'spike'), false);
+});
+
+/* --- suite: the arrival schedule and dead air --- */
+SUITES.push(function () {
+  var w, ok = true, sc, i;
+  for (w = 1; w <= 20; w++) if (!GEN.verifySchedule(w, 'campaign', 1)) ok = false;
+  TEST.ok('every authored wave schedules legally', ok);
+  ok = true;
+  for (w = 1; w <= 20; w++) if (!GEN.verifySchedule(w, 'daily', 12345)) ok = false;
+  TEST.ok('the daily shuffle schedules legally too', ok);
+  /* departures are solved backwards from arrivals */
+  sc = GEN.schedule(10, 'campaign', 1);
+  var wardenAt = -1, firstAt = 1e9, lastAt = -1;
+  for (i = 0; i < sc.length; i++) {
+    if (sc[i].type === 'warden') wardenAt = i;
+    if (sc[i].at < firstAt) firstAt = sc[i].at;
+    if (sc[i].at > lastAt) lastAt = sc[i].at;
+  }
+  TEST.ok('the wave 10 Warden does not leave last', wardenAt >= 0 && wardenAt < sc.length - 1);
+  TEST.eq('the first body leaves on tick zero', sc[0].tick, 0);
+  ok = true;
+  for (i = 1; i < sc.length; i++) if (sc[i].tick < sc[i - 1].tick) ok = false;
+  TEST.ok('departures come out in order', ok);
+  /* no hole in the departure clock */
+  var worst = 0;
+  for (w = 1; w <= 20; w++) {
+    sc = GEN.schedule(w, 'campaign', 1);
+    for (i = 1; i < sc.length; i++) worst = Math.max(worst, sc[i].tick - sc[i - 1].tick);
+  }
+  TEST.ok('no wave leaves a hole wider than the cap', worst <= CONFIG.MAX_DEPART_GAP);
+  /* composition is untouched by all of it */
+  ok = true;
+  for (w = 1; w <= 20; w++) {
+    var want = {}, got = {}, tbl = GEN.waveTable(w);
+    for (i = 0; i < tbl.length; i++) want[tbl[i][0]] = (want[tbl[i][0]] || 0) + tbl[i][1];
+    sc = GEN.schedule(w, 'daily', 999);
+    for (i = 0; i < sc.length; i++) got[sc[i].type] = (got[sc[i].type] || 0) + 1;
+    for (var k in want) if (want[k] !== got[k]) ok = false;
+  }
+  TEST.ok('no reordering ever changes a wave composition', ok);
+  /* the wave 10 lull, measured */
+  var r = runCampaign({ seed: 1, bot: botActive, loadout: [{ type: 'ballista', zone: 3 }, { type: 'brazier', zone: 3 }, { type: 'wall', zone: 0 }], maxWave: 10 });
+  var row10 = null;
+  r.rows.forEach(function (x) { if (x && x.wave === 10) row10 = x; });
+  TEST.ok('wave 10 is reached with a real build', !!row10);
+  if (row10) {
+    TEST.ok('the Warden wave holds under a second of empty lane', row10.emptyMax <= 10);
+    TEST.ok('the Warden wave holds under two seconds with nothing in reach', row10.idleMax <= 20);
+  }
+  /* dead air is only counted after first contact */
+  var g = tGame({ scrap: 0 });
+  g.player.cell = 0;
+  tRun(g, 30);
+  TEST.eq('the walk out to meet them is not counted as dead air', g.waveStats.idleMax, 0);
+});
+
+/* --- suite: endless escalation --- */
+SUITES.push(function () {
+  TEST.eq('the authored twenty carry no modifiers', GEN.mutCount(20), 0);
+  TEST.eq('endless opens with one modifier', GEN.mutCount(21), 1);
+  TEST.eq('a second modifier lands eight waves later', GEN.mutCount(29), 2);
+  TEST.eq('a third lands eight after that', GEN.mutCount(37), 3);
+  TEST.eq('three is the ceiling', GEN.mutCount(200), CONFIG.ENDLESS_MUT_MAX);
+  TEST.eq('modifiers are deterministic from the seed and the wave',
+    GEN.mutatorsFor(31, 7).join(','), GEN.mutatorsFor(31, 7).join(','));
+  TEST.ok('a different seed draws a different endless',
+    (function () { var diff = 0, w; for (w = 21; w <= 60; w++) if (GEN.mutatorsFor(w, 1).join() !== GEN.mutatorsFor(w, 2).join()) diff++; return diff > 10; })());
+  TEST.ok('every modifier is a real one',
+    (function () { var w, i, m; for (w = 21; w <= 200; w++) { m = GEN.mutatorsFor(w, 3); for (i = 0; i < m.length; i++) if (MUT_ORDER.indexOf(m[i]) < 0) return false; } return true; })());
+  TEST.ok('a stacked wave never draws the same modifier twice',
+    (function () { var w, m; for (w = 21; w <= 200; w++) { m = GEN.mutatorsFor(w, 5); if (m.length !== m.filter(function (x, i) { return m.indexOf(x) === i; }).length) return false; } return true; })());
+  TEST.ok('all six modifiers turn up across a long endless',
+    (function () { var seen = {}, w, m, i, n = 0; for (w = 21; w <= 300; w++) { m = GEN.mutatorsFor(w, 1); for (i = 0; i < m.length; i++) if (!seen[m[i]]) { seen[m[i]] = 1; n++; } } return n === MUT_ORDER.length; })());
+  TEST.eq('every modifier carries copy for the player', MUTATORS.length, MUT_ORDER.length);
+  TEST.ok('no modifier blurb uses a dash',
+    (function () { var i; for (i = 0; i < MUTATORS.length; i++) if (/[‐-―]|--/.test(MUTATORS[i].blurb + MUTATORS[i].name)) return false; return true; })());
+  /* the modifiers actually bite */
+  var mk = function (key) {
+    var g = tGame({ scrap: 0 });
+    g.wave = 21; g.muts = [key];
+    return g;
+  };
+  var g = mk('iron');
+  spawnOne(g, 'runner');
+  TEST.eq('ironhide gives a plain runner a shield', g.enemies[0].shield, 1);
+  g = mk('iron'); spawnOne(g, 'shielded');
+  TEST.eq('ironhide stacks on top of a real shield', g.enemies[0].shield, ENEMIES.shielded.shield + 1);
+  g = mk('crow'); spawnOne(g, 'runner');
+  TEST.eq('crowbars turn runners into sappers', g.enemies[0].saps, true);
+  g = mk('crow'); spawnOne(g, 'brute');
+  TEST.eq('crowbars leave the brutes alone', g.enemies[0].saps, false);
+  g = mk('march'); spawnOne(g, 'brute');
+  TEST.eq('night march walks a brute a step quicker', g.enemies[0].spd, ENEMIES.brute.spd - 1);
+  g = mk('stone'); spawnOne(g, 'brute');
+  TEST.eq('stonebreakers put brutes through walls', g.enemies[0].wallSmash, true);
+  g = mk('choir');
+  var hurt = tEnemy(g, 'brute', 9, 400, true); hurt.hp = 100;
+  tEnemy(g, 'healer', 10, 999, true);
+  tRun(g, 1);
+  var choirHeal = hurt.hp - 100;
+  g = mk('tide');
+  TEST.ok('the tide closes the cadence',
+    GEN.schedule(21, 'campaign', g.seed).length === GEN.schedule(21, 'campaign', g.seed).length);
+  TEST.ok('the choir heals more than a plain healer', choirHeal >= healAmount(21) * 2 - 1);
+  /* the Marshal, the second Warden variant */
+  TEST.eq('the eight specced types are all still here', ENEMY_ORDER.length, 8);
+  TEST.ok('the Marshal is not one of the eight', ENEMY_ORDER.indexOf('marshal') < 0);
+  TEST.ok('the Marshal never marches in the authored twenty',
+    (function () { var w, tbl, i; for (w = 1; w <= 20; w++) { tbl = GEN.waveTable(w); for (i = 0; i < tbl.length; i++) if (tbl[i][0] === 'marshal') return false; } return true; })());
+  TEST.ok('a Marshal joins every fifth endless wave',
+    (function () { var tbl = GEN.waveTable(25), i; for (i = 0; i < tbl.length; i++) if (tbl[i][0] === 'marshal') return true; return false; })());
+  TEST.ok('the off waves stay Marshal free',
+    (function () { var tbl = GEN.waveTable(26), i; for (i = 0; i < tbl.length; i++) if (tbl[i][0] === 'marshal') return false; return true; })());
+  TEST.ok('the Marshal is a boss', ENEMIES.marshal.boss === true);
+  TEST.ok('the Marshal is quicker than the Warden', ENEMIES.marshal.spd < ENEMIES.warden.spd);
+  TEST.ok('the Marshal is softer than the Warden', ENEMIES.marshal.hp < ENEMIES.warden.hp);
+  TEST.ok('the Marshal does not smash walls', !ENEMIES.marshal.wallSmash);
+  /* rally: everything near it moves at double time */
+  var rg = tGame({ scrap: 0 });
+  var lone = tEnemy(rg, 'brute', 20);
+  tRun(rg, 12);
+  var lonely = lone.cell;
+  var rg2 = tGame({ scrap: 0 });
+  var pair = tEnemy(rg2, 'brute', 20);
+  tEnemy(rg2, 'marshal', 21);
+  tRun(rg2, 12);
+  TEST.ok('a brute inside a Marshal rally covers more ground', pair.cell < lonely);
+  var far = tGame({ scrap: 0 });
+  var away = tEnemy(far, 'brute', 20);
+  tEnemy(far, 'marshal', 27);
+  tRun(far, 12);
+  TEST.eq('a brute out of rally range walks at its own pace', away.cell, lonely);
+  /* a Marshal cannot be snared */
+  var sg = tGame({ scrap: 0 });
+  tPut(sg, 24, 'snare');
+  var m = tEnemy(sg, 'marshal', 25);
+  tRun(sg, 8);
+  TEST.eq('a snare does not hold a Marshal', m.holdT, 0);
+  TEST.ok('and the snare is still armed for whatever comes next', !!sg.traps[24]);
+  var sg2 = tGame({ scrap: 0 });
+  tPut(sg2, 24, 'snare');
+  var wd = tEnemy(sg2, 'warden', 25);
+  tRun(sg2, 12);
+  TEST.ok('a snare still holds a Warden', wd.holdT > 0);
+  /* endless keeps paying and keeps climbing */
+  TEST.ok('endless scrap keeps growing', scrapForWave(35) > scrapForWave(20));
+  TEST.ok('endless hp keeps climbing', waveTotalHP(30) > waveTotalHP(20));
+  var endless = runCampaign({ seed: 3, bot: botActive, endless: true, maxWave: 40, loadout: [{ type: 'ballista', zone: 2 }, { type: 'brazier', zone: 3 }] });
+  TEST.ok('an endless run ends of its own accord', endless.state.over || endless.state.wave > CONFIG.WAVES);
+  TEST.ok('endless does not run for ever', endless.reached <= 41);
+});
+
+/* --- suite: the scorecard shows the number the sweep gates --- */
+SUITES.push(function () {
+  var d = blankDamage();
+  d.player = 30; d.ballista = 50; d.brazier = 20;
+  var sh = damageShare(d);
+  TEST.eq('the shares are taken over the total', sh.total, 100);
+  TEST.near('your share is your damage over the total', sh.player, 0.30, 0.0001);
+  TEST.near('the traps hold the rest', sh.traps, 0.70, 0.0001);
+  TEST.near('every share adds back up to one', sh.player + sh.traps, 1, 0.0001);
+  TEST.eq('only sources that did something get a row', sh.rows.length, 3);
+  TEST.eq('the biggest contributor is first', sh.rows[0].src, 'ballista');
+  TEST.eq('the smallest is last', sh.rows[sh.rows.length - 1].src, 'brazier');
+  var empty = damageShare(blankDamage());
+  TEST.eq('a wave nobody touched divides by nothing safely', empty.player, 0);
+  TEST.eq('and shows no rows', empty.rows.length, 0);
+  /* the number on the card is the number the run carries */
+  var r = runCampaign({ seed: 2, bot: botActive, loadout: [{ type: 'ballista', zone: 1 }, { type: 'spike', zone: 3 }] });
+  var sum = 0;
+  r.rows.forEach(function (row) { if (row) sum += row.dmg.player; });
+  /* rows hold the waves that were HELD. The wave the gate fell on never gets a
+     card, so the cards plus the wave in progress are the run. */
+  TEST.eq('the per wave cards plus the wave that fell are the run total',
+    sum + r.state.waveStats.dmg.player, r.state.run.dmg.player);
+  TEST.ok('a card never claims more than the run did', sum <= r.state.run.dmg.player);
+  var last = r.rows[r.rows.length - 1];
+  TEST.near('a per wave card share matches a fresh computation', damageShare(last.dmg).player,
+    last.dmg.player / (function () { var t = 0, k; for (k in last.dmg) t += last.dmg[k]; return t; })(), 0.00001);
+  TEST.ok('the card records what the purse could not spend', last.scrapLeft >= 0);
+  TEST.ok('the card records how deep the lane is built', last.lvlSum >= last.trapCount);
+});
+
+
+/* --- suite: the briefing, and the space it has to fit in ---
+   This suite exists because the same defect was found by an eye three times and
+   by a gate zero times. It cannot measure pixels, so it does not pretend to: it
+   bounds the CONTENT so authoring cannot silently outgrow the panel, and it
+   pins the ORDER so that whatever does fall past the fold is the least
+   important line rather than half a sentence of the tutorial. The runtime
+   handles the rest by measuring itself (see fitBoard). */
+SUITES.push(function () {
+  var i, w, k, b;
+  /* every body the player can meet has something said about it */
+  var missing = [];
+  for (i = 0; i < ENEMY_ORDER.length; i++) if (!ENEMY_NOTE[ENEMY_ORDER[i]]) missing.push(ENEMY_ORDER[i]);
+  for (i = 0; i < BOSS_ORDER.length; i++) if (!ENEMY_NOTE[BOSS_ORDER[i]]) missing.push(BOSS_ORDER[i]);
+  TEST.eq('every enemy type has a briefing note', missing.join(','), '');
+  var dashes = [];
+  for (k in ENEMY_NOTE) if (/[‐-―−]|--/.test(ENEMY_NOTE[k])) dashes.push(k);
+  for (k in WAVE_NOTE) if (/[‐-―−]|--/.test(WAVE_NOTE[k])) dashes.push('w' + k);
+  TEST.eq('no briefing copy uses a dash', dashes.join(','), '');
+
+  /* the briefing announces a body on the wave it actually turns up */
+  TEST.eq('the runner is introduced on wave 1', firstWaveFor('runner'), 1);
+  TEST.eq('the swarm is introduced on wave 4', firstWaveFor('swarm'), 4);
+  TEST.eq('the healer is introduced on wave 8', firstWaveFor('healer'), 8);
+  TEST.eq('the Warden is introduced on wave 10', firstWaveFor('warden'), 10);
+  TEST.eq('the Marshal is never introduced inside the twenty', firstWaveFor('marshal'), -1);
+  var ok = true;
+  for (w = 1; w <= CONFIG.WAVES; w++) {
+    b = briefingFor(w, 1, {});
+    for (i = 0; i < b.length; i++) {
+      if (b[i].kind === 'enemy' && firstWaveFor(b[i].type) !== w) ok = false;
+    }
+  }
+  TEST.ok('no wave introduces a body that has already been seen', ok);
+  TEST.ok('a wave 1 player is told about the runner', (function () {
+    var bb = briefingFor(1, 1, {}), j;
+    for (j = 0; j < bb.length; j++) if (bb[j].kind === 'enemy' && bb[j].type === 'runner') return true;
+    return false;
+  })());
+  TEST.ok('the endless boss explains itself', (function () {
+    var bb = briefingFor(25, 1, {}), j;
+    for (j = 0; j < bb.length; j++) if (bb[j].kind === 'enemy' && bb[j].type === 'marshal') return true;
+    return false;
+  })());
+  TEST.eq('a quiet wave says nothing at all', briefingFor(9, 1, {}).length, 0);
+  TEST.eq('and wave 12 says nothing either', briefingFor(12, 1, {}).length, 0);
+
+  /* ORDER. Whatever falls past the fold has to be the least important thing on
+     the panel, so the bodies come first and the flavour comes last. */
+  var RANK = { enemy: 0, mut: 1, deepen: 2, wave: 3, starter: 4 };
+  ok = true;
+  for (w = 1; w <= 60; w++) {
+    b = briefingFor(w, 3, { laneFull: true });
+    for (i = 1; i < b.length; i++) if (RANK[b[i].kind] < RANK[b[i - 1].kind]) ok = false;
+  }
+  TEST.ok('the briefing is always ordered most important first', ok);
+  b = briefingFor(1, 1, {});
+  TEST.eq('wave 1 leads with the body you are about to meet', b[0].kind, 'enemy');
+  TEST.eq('and closes with the trap you were given', b[b.length - 1].kind, 'starter');
+
+  /* BUDGET. The panel is roughly 266px of a 510px board at 390x844 once the
+     other four panels have taken theirs, which is about 13 wrapped lines at
+     12px. These bounds sit under that with headroom, and they are what stops
+     the tutorial quietly growing past its own box again. */
+  var worstLines = 0, worstChars = 0, worstAt = '';
+  for (w = 1; w <= 80; w++) {
+    var seeds = (w > CONFIG.WAVES) ? 8 : 1, sd;
+    for (sd = 1; sd <= seeds; sd++) {
+      b = briefingFor(w, sd, { laneFull: true });
+      var c = briefingChars(w, sd, { laneFull: true });
+      if (b.length > worstLines) { worstLines = b.length; worstAt = 'wave ' + w; }
+      if (c > worstChars) worstChars = c;
+    }
+  }
+  TEST.between('no briefing ever runs past 6 paragraphs', worstLines, 0, 6);
+  TEST.between('no briefing ever runs past 640 characters', worstChars, 0, 640);
+  TEST.between('the wave 1 briefing fits its own panel budget', briefingChars(1, 1, {}), 1, 360);
+  TEST.between('the wave 1 briefing is at most 3 paragraphs', briefingFor(1, 1, {}).length, 1, 3);
+  TEST.ok('a first time player is never handed the DEEPEN note', briefingFor(1, 1, { laneFull: false }).length === 3);
+  /* the teaching waves are the sparse waves, which is the whole point */
+  var sparseWithNotes = 0;
+  for (w = 1; w <= 8; w++) if (briefingFor(w, 1, {}).length > 0) sparseWithNotes++;
+  TEST.eq('every one of the first eight waves has something to say', sparseWithNotes, 8);
+});
+
+var SIM_TEST = { TEST: TEST, SUITES: SUITES, tGame: tGame, tPut: tPut, tEnemy: tEnemy, tRun: tRun };
+
+// ---- TEST_EXPORT_END ----
+
+/* ============================ 10. BOOT ============================ */
+(function () {
+  ['field', 'lane', 'gate', 'gateglow', 'sight', 'pips', 'shop', 'buildbar', 'pad', 'toast',
+   'shakewrap', 'wavev', 'scrapv', 'bladev', 'timernum', 'timerarc', 'cdbar', 'muts',
+   'board', 'lanebox', 'btitle', 'bhp', 'bhpbar', 'bbosswrap', 'bbossbar', 'bbossname',
+   'rtitle', 'rcount', 'stitle', 'syou', 'livebars', 'kit', 'kcount',
+   'pnotes', 'ntitle', 'nsub', 'notes', 'boardfade',
+   'titlesheet', 'scoresheet', 'oversheet', 'optsheet', 'logsheet'].forEach(function (k) { EL[k] = $(k); });
+
+  loadSave();
+  AUD.vol = SAVE.settings.vol; AUD.mute = SAVE.settings.mute;
+  var prefersReduce = false;
+  try { prefersReduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+  if (prefersReduce && !SAVE.settings.reduce) writeSave({ settings: { reduce: true } });
+  UI.reduce = SAVE.settings.reduce;
+  $('optvol').value = Math.round(AUD.vol * 100);
+  $('optmute').classList.toggle('on', !SAVE.settings.mute);
+  $('optmute').textContent = SAVE.settings.mute ? 'OFF' : 'ON';
+  $('opthap').classList.toggle('on', SAVE.settings.haptics);
+  $('opthap').textContent = SAVE.settings.haptics ? 'ON' : 'OFF';
+  $('optred').classList.toggle('on', SAVE.settings.reduce);
+  $('optred').textContent = SAVE.settings.reduce ? 'ON' : 'OFF';
+  $('optskip').classList.toggle('on', SAVE.settings.autoSkip);
+  $('optskip').textContent = SAVE.settings.autoSkip ? 'ON' : 'OFF';
+  $('tbest').textContent = SAVE.best.wave;
+  $('tendless').textContent = SAVE.best.endless;
+
+  var qs = {};
+  location.search.replace(/^\?/, '').split('&').forEach(function (kv) {
+    var p = kv.split('='); if (p[0]) qs[decodeURIComponent(p[0])] = decodeURIComponent(p[1] || '');
+  });
+  if (qs.seed) UI.seedOverride = parseInt(qs.seed, 10) >>> 0;
+
+  wireInput();
+  newRun(qs.daily ? 'daily' : 'campaign');
+  EL.titlesheet.classList.remove('hidden');
+  requestAnimationFrame(loop);
+
+  window.__TEST__ = TEST;
+  window.__SIM__ = SIM;
+  if (qs.test === '1') {
+    var rep = TEST.run();
+    var panel = document.createElement('div');
+    panel.id = 'tests';
+    var lines = 'SIEGE OF ONE test harness\nPASSED ' + rep.passed + ' / FAILED ' + rep.failed + '\nassertions: ' + rep.total + '\n\n';
+    rep.failures.forEach(function (f) { lines += 'FAIL  ' + f.name + '  [' + f.detail + ']\n'; });
+    if (!rep.failed) lines += 'all green.\n';
+    panel.textContent = lines;
+    panel.addEventListener('click', function () { panel.remove(); });
+    document.body.appendChild(panel);
+  }
+
+  try {
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        Promise.resolve().catch(function () {});
+      });
+    }
+  } catch (e) {}
+})();
+
+</script>
+
+<a href="https://lucidwinds.com/portal/?from=whim" target="_blank" rel="noopener"
+   style="position:fixed;right:10px;bottom:10px;z-index:99999;display:inline-flex;align-items:center;gap:6px;
+   padding:6px 10px;border-radius:999px;background:rgba(10,14,10,.85);border:1px solid rgba(200,168,75,.55);
+   color:#e8dcc8;font:600 11px system-ui,sans-serif;text-decoration:none;opacity:.85">
+  🐺 Sky Wolf Studios · 160+ more free games</a>
+</body>
+</html>
