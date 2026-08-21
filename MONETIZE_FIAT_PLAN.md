@@ -1,4 +1,12 @@
 # LUCID WINDS — FIAT MONEY PLAN (Ko-fi + Printed Keepsakes)
+
+> ⛔ **NOWPAYMENTS IS DEAD — STRIPE IS THE RAIL.** Stephen switched to Stripe and
+> makes payment links himself; the crypto rail below was built, never switched on,
+> and is not coming back. Corrected 2026-08-21 after this document sent an agent
+> to recommend a 20 minute NOWPayments go-live that had already been abandoned.
+> Live Stripe links today: `portal/index.html` and `support.html` share one, and
+> `hush/index.html` has its own. **Lucid Winds has no tip link yet.**
+
 # Drafted 2026-07-01. Companion to PAYMENT_GOLIVE.md (crypto rail) and PROMOTE_PLAYBOOK.md (reach).
 # Voice rule: warm, human, dad angle where it fits, ZERO en/em dashes.
 

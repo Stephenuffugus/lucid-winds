@@ -1,4 +1,12 @@
 # LUCID WINDS — PROMOTE + OPS PLAYBOOK
+
+> ⛔ **NOWPAYMENTS IS DEAD — STRIPE IS THE RAIL.** Stephen switched to Stripe and
+> makes payment links himself; the crypto rail below was built, never switched on,
+> and is not coming back. Corrected 2026-08-21 after this document sent an agent
+> to recommend a 20 minute NOWPayments go-live that had already been abandoned.
+> Live Stripe links today: `portal/index.html` and `support.html` share one, and
+> `hush/index.html` has its own. **Lucid Winds has no tip link yet.**
+
 The plan we don't lose. Last updated 2026-06-24. Lead angle: the cozy one-of-one garden.
 
 This is the master plan for getting Lucid Winds in front of people and for deciding what an agent can run versus what Stephen has to do himself. It combines the verified promotion research (110-agent deep research, claims adversarially checked) with the live work items and the automation strategy.

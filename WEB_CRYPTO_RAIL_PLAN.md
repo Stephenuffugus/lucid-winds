@@ -1,5 +1,13 @@
 # PLAN — USD-priced, pay-in-any-crypto rail for the open-web / PWA build
 
+> ⛔ **NOWPAYMENTS IS DEAD — STRIPE IS THE RAIL.** Stephen switched to Stripe and
+> makes payment links himself; the crypto rail below was built, never switched on,
+> and is not coming back. Corrected 2026-08-21 after this document sent an agent
+> to recommend a 20 minute NOWPayments go-live that had already been abandoned.
+> Live Stripe links today: `portal/index.html` and `support.html` share one, and
+> `hush/index.html` has its own. **Lucid Winds has no tip link yet.**
+
+
 > **Status:** PROPOSAL — plan doc only, no app code changed. Awaiting Stephen's go + answers (bottom).
 > **Author:** Claude Code · **Date:** 2026-06-18
 > **Goal (Stephen, verbatim intent):** set a **dollar amount** for an item and let players pay in

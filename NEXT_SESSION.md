@@ -1,4 +1,12 @@
 # NEXT SESSION — start here
+
+> ⛔ **NOWPAYMENTS IS DEAD — STRIPE IS THE RAIL.** Stephen switched to Stripe and
+> makes payment links himself; the crypto rail below was built, never switched on,
+> and is not coming back. Corrected 2026-08-21 after this document sent an agent
+> to recommend a 20 minute NOWPayments go-live that had already been abandoned.
+> Live Stripe links today: `portal/index.html` and `support.html` share one, and
+> `hush/index.html` has its own. **Lucid Winds has no tip link yet.**
+
 Two priorities, in order: get payments live, then start the marketing push. Everything below is built and waiting. Updated 2026-06-24.
 
 ---

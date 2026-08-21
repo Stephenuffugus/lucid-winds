@@ -1,4 +1,12 @@
 # PAYMENT GO-LIVE — web crypto rail (NOWPayments)
+
+> ⛔ **NOWPAYMENTS IS DEAD — STRIPE IS THE RAIL.** Stephen switched to Stripe and
+> makes payment links himself; the crypto rail below was built, never switched on,
+> and is not coming back. Corrected 2026-08-21 after this document sent an agent
+> to recommend a 20 minute NOWPayments go-live that had already been abandoned.
+> Live Stripe links today: `portal/index.html` and `support.html` share one, and
+> `hush/index.html` has its own. **Lucid Winds has no tip link yet.**
+
 Copy-paste runbook to turn on real USD payments for web (non Pi Browser) visitors. The code is already built and committed (inert behind a flag). This is just the switch-on. Budget about 20 to 30 minutes.
 
 Reference: the build lives in functions/fulfill.js, functions/nowCreateInvoice.js, functions/nowIpn.js, and the client LW_WebPay in index.html. Pricing is in functions/fulfill.js (LW_WEB_PRICES).
