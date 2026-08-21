@@ -16,12 +16,12 @@ const POLICIES = [
   { rel: 0.45, drop: false }, { rel: 0.45, drop: true },
   { rel: 0.22, drop: false }, { rel: 0.60, drop: false }
 ];
-for (let li = 0; li < 6; li++) {
+for (let li = 0; li < 24; li++) {
   let res = null, used = null;
   for (const pol of POLICIES) {
     res = await p.evaluate(async (li, pol) => {
     const D = window.RB_DEV;
-    D.start(0); if (li) D.startLevel(li);
+    D.start(0); D.startLevel(li);
     const G = D.full();
     const T = 40;
     const solid = (c) => { const g = G.lvl.grid; return !!(g[22] && g[22][c]); };
@@ -76,4 +76,4 @@ for (let li = 0; li < 6; li++) {
   if (!res.cleared) { console.error('DOJO ' + (li + 1) + ' UNSOLVABLE BY EVERY POLICY'); process.exitCode = 1; }
 }
 await b.close();
-console.log(process.exitCode ? 'SOLVER FAILED' : 'ALL 6 DOJOS SOLVABLE');
+console.log(process.exitCode ? 'SOLVER FAILED' : 'ALL 24 DOJOS SOLVABLE');
