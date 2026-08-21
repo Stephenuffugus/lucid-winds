@@ -252,6 +252,13 @@ function GPY(a){
       var _vw=window.innerWidth||360;
       var stkW=Math.round(Math.max(56,Math.min(110,_vw*0.135)));
       var stkH=Math.round(Math.max(78,Math.min(154,_vw*0.19)));
+      // ⛔ THE CAPTION STAYS IN FLOW. Pinning this slot to the stock card's
+      // height to stop the controls settling ~26px at the end of the deal was
+      // tried and reverted: the caption then hangs out of the slot and on a
+      // 375x667 phone it prints straight across the New Game button, because
+      // there is only about 5px between the deck and the controls there. A
+      // one-off 26px settle beats text on top of a button, and it is what
+      // Hearts and Spades already do.
       stEl.innerHTML=_cdDeckHtml(52-(rowsOut*(rowsOut+1)/2),stkW,stkH,
         {shuffling:shuffling,label:shuffling?'shuffling\u2026':'dealing\u2026'});
     }
