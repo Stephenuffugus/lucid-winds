@@ -8,21 +8,21 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Rabbit Samurai">
-<title>Rabbit Samurai · Sky Wolf Studios</title>
+<meta name="apple-mobile-web-app-title" content="Vine Ronin">
+<title>Vine Ronin · Sky Wolf Studios</title>
 <!-- Social preview (2026-07-25). 80 of 83 satellites had no og:image, so every
      link posted rendered as a bare grey box. Card art from the portal thumb. -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Sky Wolf Studios">
-<meta property="og:title" content="Rabbit Samurai">
-<meta property="og:description" content="Rabbit Samurai. Free to play at Sky Wolf Studios.">
+<meta property="og:title" content="Vine Ronin">
+<meta property="og:description" content="Vine Ronin. A rabbit ronin swings through bramble canyons on a grappling vine. Free to play at Sky Wolf Studios.">
 <meta property="og:url" content="https://lucidwinds.com/satellites/rabbit-samurai/">
 <meta property="og:image" content="https://lucidwinds.com/satellites/rabbit-samurai/og/card.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Rabbit Samurai">
-<meta name="twitter:description" content="Rabbit Samurai. Free to play at Sky Wolf Studios.">
+<meta name="twitter:title" content="Vine Ronin">
+<meta name="twitter:description" content="Vine Ronin. A rabbit ronin swings through bramble canyons on a grappling vine.">
 <meta name="twitter:image" content="https://lucidwinds.com/satellites/rabbit-samurai/og/card.jpg">
 
 <script src="/sunbeam-sdk.js?v=7"></script>
@@ -74,6 +74,14 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
 .go-lab{font-size:13px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-top:2px}
 .sun-earn{margin-top:12px; font-size:20px; color:var(--gold); font-weight:800}
 .pill{display:inline-block; padding:5px 14px; border-radius:20px; background:#2a1810; border:1px solid var(--line); color:var(--gold); font-weight:800; font-size:13px; margin-top:8px}
+.shopline{display:flex; align-items:center; gap:12px; width:100%; max-width:460px; margin:0 auto 12px; padding:14px; border:1px solid var(--line); border-radius:14px; background:#140f0c}
+.shopline .ic{font-size:26px; width:44px; text-align:center; flex:none}
+.shopline .nm{font-weight:800; font-size:16px}
+.shopline .ds{color:var(--muted); font-size:12.5px; line-height:1.35; margin-top:2px}
+.shopline .tier{color:var(--sage); font-size:12px; letter-spacing:2px; margin-top:3px}
+.shopline button{flex:none; min-width:96px; min-height:52px; border-radius:12px; border:1px solid #e88a80;
+  background:linear-gradient(180deg,#d0574a,#9a2f27); color:#fff2ee; font-weight:800; font-size:15px; cursor:pointer}
+.shopline button:disabled{background:#241a15; border-color:var(--line); color:var(--muted)}
 </style>
 </head>
 <body>
@@ -83,12 +91,13 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <!-- TITLE -->
   <div class="screen center on" id="s-title"><div class="pad center">
     <div style="flex:1"></div>
-    <div class="title-word"><b>Rabbit</b> Samurai</div>
+    <div class="title-word"><b>Vine</b> Ronin</div>
     <div class="title-sub">Sky Wolf Studios</div>
-    <div class="ribbon">A little bunny warrior hops through crate yards and burrow tunnels. Gather <b class="hl">carrots</b>, free three caged <b class="hl">mice</b>, fling off spinning porcupines with your <b class="hl">rope</b>, ride <b class="hl">bounce pads</b> and <b class="hl">cannons</b> up to high ledges, then grab the <b class="hl">diamond</b> at the end.</div>
+    <div class="ribbon">A rabbit ronin and a dagger on a vine. <b class="hl">Swing</b> the bramble canyons, slice through <b class="hl">hedgehogs and crows at full speed</b>, free the caged <b class="hl">mice</b>, and spend your <b class="hl">carrots</b> at the dojo shop on a longer vine, a mightier fling and a fourth heart.</div>
     <div style="flex:1"></div>
     <div class="stack">
       <button class="btn primary" id="b-play">Start Dojo</button>
+      <button class="btn sm" id="b-shop">Dojo Shop &middot; <span id="t-bank" style="color:var(--gold)">0</span> carrots</button>
       <div class="row">
         <button class="btn sm" id="b-how">How to Play</button>
         <button class="btn sm" id="b-set">Comfort</button>
@@ -102,10 +111,10 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <h2 class="sc-h">How to play</h2>
     <div class="helprow"><div class="hi">1</div><div><b>Get to the diamond.</b> Each level is a small maze of platforms. Reach the sparkling diamond at the far end to clear it. An old mole rat pops up and gives you a thumbs up.</div></div>
     <div class="helprow"><div class="hi">2</div><div><b>Move and jump.</b> Hold the <b>left</b> and <b>right</b> pads at the bottom to run. Tap the big <b class="hl">JUMP</b> button to hop. On a keyboard use the arrow keys and the space bar.</div></div>
-    <div class="helprow"><div class="hi">3</div><div><b>Throw your rope.</b> Press and hold anywhere on the screen near a spinning porcupine to grab on, then <b class="hl">drag left or right</b> to swing where you want. Let go to fling off (or tap JUMP).</div></div>
-    <div class="helprow"><div class="hi">4</div><div><b>Bounce and launch.</b> Land on a green <b>bounce pad</b> to spring high. Step onto a <b>cannon</b> and it shoots you way up to reach the top ledges.</div></div>
-    <div class="helprow"><div class="hi">5</div><div><b>Free the mice.</b> Three mice sit in little cages. Run into a cage to pop the mouse out. Freed mice follow you in a happy line.</div></div>
-    <div class="helprow"><div class="hi">6</div><div><b>Grab every carrot</b> for a bigger score. Watch the spikes in the pits. Fall in and you lose a heart. Clear a level to earn sunbeams.</div></div>
+    <div class="helprow"><div class="hi">3</div><div><b>Throw your vine.</b> Hold the <b class="hl">VINE</b> button (or press anywhere on the field) and your dagger flies to the nearest glowing anchor. <b class="hl">Drag left or right</b> to pump the swing, release to fling. The ring shows which anchor you will catch.</div></div>
+    <div class="helprow"><div class="hi">4</div><div><b>Speed is your blade.</b> Swing fast enough and you slice straight through hedgehogs and crows. Touch them slowly and they hurt you. You can also stomp a hedgehog from above.</div></div>
+    <div class="helprow"><div class="hi">5</div><div><b>Free the mice.</b> Three mice sit in little cages. Run into a cage to pop the mouse out. Freed mice follow you in a happy line. Bounce pads and cannons launch you to the high ledges.</div></div>
+    <div class="helprow"><div class="hi">6</div><div><b>Carrots are coin.</b> Every carrot you carry out of a cleared dojo goes into your bank. Spend them at the <b class="hl">Dojo Shop</b>: longer vine, mightier fling, swifter paws, a fourth heart. Big spike pits have no floor worth landing on. Swing them.</div></div>
     <div style="height:18px"></div>
     <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
   </div></div>
@@ -118,6 +127,15 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <div class="settingline"><span>Haptics</span><div class="toggle on" id="tg-haptic"><b></b></div></div>
     <div style="height:8px"></div>
     <button class="btn ghost sm" id="set-back" style="max-width:400px;margin:0 auto">Back</button>
+  </div></div>
+
+  <!-- DOJO SHOP -->
+  <div class="screen" id="s-shop"><div class="pad">
+    <h2 class="sc-h">Dojo Shop</h2>
+    <div style="color:var(--muted);font-size:14px;margin-bottom:10px">Carrots banked: <b id="shop-bank" style="color:var(--gold);font-size:18px">0</b></div>
+    <div id="shop-items"></div>
+    <div style="height:14px"></div>
+    <button class="btn ghost sm" id="shop-back" style="max-width:400px;margin:0 auto">Back</button>
   </div></div>
 
   <!-- RESULTS -->
@@ -147,7 +165,7 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
-var BUILD='v1.0';
+var BUILD='v2.0';
 var TESTMODE=/[?&]rstest=1/.test(location.search);
 
 /* ---------- world constants ---------- */
@@ -156,7 +174,7 @@ var GRAV=2200, MAXFALL=1500, MOVE=232, ACCEL=1700, FRIC=1500;
 var JUMP=770, BOUNCE=1250, CANNON=1560;
 var ROPE_MAX=235, ROPE_MIN=62, ASSIST=1050;
 var HW=12, HH=16; /* bunny half extents */
-var LEVELS=3;
+var LEVELS=6;
 
 /* ---------- storage + settings ---------- */
 var LS={ get:function(k){try{return localStorage.getItem(k);}catch(e){return null;}}, set:function(k,v){try{localStorage.setItem(k,v);}catch(e){}} };
@@ -164,9 +182,29 @@ var SET={ sound:true, haptic:true };
 (function(){ try{ var s=JSON.parse(LS.get('rs_set')||'{}'); ['sound','haptic'].forEach(function(k){ if(typeof s[k]==='boolean')SET[k]=s[k]; }); }catch(e){} })();
 function saveSet(){ LS.set('rs_set', JSON.stringify(SET)); }
 
-var PROG={ bestScore:0, bestLevel:0, totalMice:0 };
-(function(){ try{ var s=JSON.parse(LS.get('rabbitsamurai_save')||'{}'); for(var k in s){ if(s.hasOwnProperty(k))PROG[k]=s[k]; } }catch(e){} })();
+var PROG={ bestScore:0, bestLevel:0, totalMice:0, bank:0, up:{vine:0,fling:0,heart:0,paws:0} };
+(function(){ try{ var s=JSON.parse(LS.get('rabbitsamurai_save')||'{}'); for(var k in s){ if(s.hasOwnProperty(k))PROG[k]=s[k]; } }catch(e){}
+  if(!PROG.up||typeof PROG.up!=='object')PROG.up={};
+  ['vine','fling','heart','paws'].forEach(function(k){ if(typeof PROG.up[k]!=='number')PROG.up[k]=0; });
+  if(typeof PROG.bank!=='number'||!(PROG.bank>=0))PROG.bank=0; })();
 function save(){ try{ LS.set('rabbitsamurai_save', JSON.stringify(PROG)); }catch(e){} }
+
+/* ---------- upgrades (Dojo Shop) — carrots are the coin ---------- */
+var SHOP=[
+  { key:'vine',  ic:'🌿', nm:'Longer Vine',  costs:[30,70,120],
+    ds:'The dagger reaches farther anchors. +45 reach per tier.' },
+  { key:'fling', ic:'💨', nm:'Mighty Fling', costs:[40,90],
+    ds:'Releasing the vine throws you harder and faster.' },
+  { key:'paws',  ic:'🐾', nm:'Swift Paws',   costs:[35,80],
+    ds:'Run 12 percent faster per tier.' },
+  { key:'heart', ic:'❤️', nm:'Fourth Heart', costs:[150],
+    ds:'Start every dojo with four hearts instead of three.' }
+];
+function ropeMax(){ return ROPE_MAX + PROG.up.vine*45; }
+function flingHop(){ return 150 + PROG.up.fling*85; }     /* release kick */
+function flingCap(){ return 760 + PROG.up.fling*70; }     /* momentum cap on release */
+function moveSpd(){ return MOVE * (1 + PROG.up.paws*0.12); }
+function maxLives(){ return 3 + (PROG.up.heart?1:0); }
 
 /* ---------- sunbeam earn (30/day cap; ~12 per level) ---------- */
 window._sbCapEarn=function(n,tag){ var granted=0;
@@ -193,6 +231,8 @@ function sfx(kind){ if(!SET.sound)return;
   else if(kind==='mouse')blip(880,0.10,'square',0.09);
   else if(kind==='clear'){ blip(523,0.14,'triangle',0.13); setTimeout(function(){blip(784,0.22,'triangle',0.12);},130); setTimeout(function(){blip(1046,0.26,'sine',0.11);},280); }
   else if(kind==='hurt')blip(150,0.20,'sawtooth',0.10);
+  else if(kind==='slash'){ blip(980,0.05,'sawtooth',0.10); setTimeout(function(){blip(620,0.09,'square',0.08);},40); }
+  else if(kind==='buy'){ blip(660,0.09,'triangle',0.10); setTimeout(function(){blip(990,0.12,'sine',0.09);},80); }
   else if(kind==='ui')blip(440,0.05,'sine',0.07);
 }
 function closeAC(){ try{ if(AC){AC.close();AC=null;} }catch(e){} }
@@ -228,7 +268,8 @@ window.addEventListener('resize',fit); fit();
 
 /* ---------- screens ---------- */
 var G=null, running=false, lastTs=0, curScreen='s-title';
-function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id; running=false; }
+function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id; running=false;
+  if(id==='s-title'){ var tb=$('t-bank'); if(tb)tb.textContent=PROG.bank; } }
 function toPlay(){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); curScreen='s-play';
   /* advanceLevel() reaches here from INSIDE the running loop; scheduling a
      second rAF loop leaves a zombie stepping dt=0 every frame, whose
@@ -238,53 +279,116 @@ function toPlay(){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.l
 
 /* ---------- level generation ---------- */
 function solidChar(){ return true; }
+/* 2026-08-21 rebuild (Stephen: "this game was supposed to be grappling hook
+   style... swing around the level. full rebuild"). The old anchors hung at
+   rows 7 to 9 — 470px above the ground against a 235px vine, so the grapple
+   was geometrically unreachable outside a cannon flight and the game played
+   as a flat runner. Now every wide pit hangs a SWING ANCHOR at jump-catch
+   height, wide pits are floored with spikes wall to wall (you swing them,
+   you do not jump them), carrots trace the swing arcs, and hedgehogs + crows
+   patrol the path. Speed is the blade: hit them fast and you slice through. */
+var DOJO_NAMES=['The Yard','The Canyon','The Burrow','The Cliffs','The Grove','The Falls'];
 function genLevel(li){
   var rng=mulberry32(4210+li*911);
-  var W=[34,42,50][li]||40;
-  var grid=[]; var r,c,k;
+  var W=[34,44,52,58,66,74][li]||50;
+  var grid=[]; var r,c,k,i;
   for(r=0;r<ROWS;r++){ grid[r]=[]; for(c=0;c<W;c++)grid[r][c]=false; }
-  /* solid ground rows 22,23 with small jumpable pits */
   for(c=0;c<W;c++){ grid[22][c]=true; grid[23][c]=true; }
-  c=6;
-  while(c<W-8){
-    if(rng()<0.30){ var pw=2; for(k=0;k<pw;k++){ if(c+k<W-6){ grid[22][c+k]=false; grid[23][c+k]=false; } } c+=pw+3; }
-    else c+=1+Math.floor(rng()*3);
-  }
-  /* keep landing zones near spawn + diamond solid */
-  for(c=0;c<5;c++){ grid[22][c]=true; grid[23][c]=true; }
-  for(c=W-5;c<W;c++){ grid[22][c]=true; grid[23][c]=true; }
-  /* high floating platforms (unreachable by a plain jump; reward for bounce/rope) */
-  var plats=[]; var np=3+li;
-  for(var i=0;i<np;i++){ var pr=9+Math.floor(rng()*5); var pc=6+Math.floor(rng()*(W-13)); var pwid=3+Math.floor(rng()*3);
-    for(k=0;k<pwid;k++){ if(pc+k<W-1)grid[pr][pc+k]=true; } plats.push({r:pr,c:pc,w:pwid}); }
 
-  var lvl={ li:li, W:W, H:ROWS, grid:grid, theme:(li===1?'burrow':'crate') };
+  var lvl={ li:li, W:W, H:ROWS, grid:grid,
+    theme:['crate','burrow','grove'][li%3], name:DOJO_NAMES[li]||('Dojo '+(li+1)) };
   lvl.spawn={ x:1.5*T, y:21*T+HH };
   lvl.diamond={ x:(W-2.5)*T, y:21*T-2, got:false };
   lvl.carrots=[]; lvl.porcs=[]; lvl.bounces=[]; lvl.cannons=[]; lvl.cells=[]; lvl.spikes=[];
+  lvl.hogs=[]; lvl.crows=[];
 
-  /* ground-line carrots along the path */
-  for(c=4;c<W-4;c+=2){ if(grid[22][c] && rng()<0.62) lvl.carrots.push({ x:c*T+T/2, y:21*T-4, got:false }); }
-  /* high carrots on platforms */
+  /* ---- pits: small ones are jumps, WIDE ones are swings ---- */
+  var widePits=[]; var nWide=1+Math.min(4,li);        /* 1..5 swing pits */
+  /* capped at 6: a 7 tile pit put the swing's landing 7px short of the far
+     lip (measured by the solver bot) — later dojos escalate with MORE pits
+     and more enemies, never with an uncrossable one */
+  var wideW=4+Math.min(2,li);
+  c=7;
+  var wideLeft=nWide, gap=Math.floor((W-16)/(nWide+1));
+  while(c<W-10){
+    if(wideLeft>0 && c>7+((nWide-wideLeft)+0.35)*gap){
+      var pw=wideW-Math.floor(rng()*2);
+      for(k=0;k<pw;k++){ if(c+k<W-6){ grid[22][c+k]=false; grid[23][c+k]=false; } }
+      widePits.push({c:c,w:pw}); wideLeft--; c+=pw+4;
+    } else if(rng()<0.26){
+      for(k=0;k<2;k++){ if(c+k<W-6){ grid[22][c+k]=false; grid[23][c+k]=false; } }
+      c+=2+3;
+    } else c+=1+Math.floor(rng()*3);
+  }
+  for(c=0;c<6;c++){ grid[22][c]=true; grid[23][c]=true; }
+  for(c=W-6;c<W;c++){ grid[22][c]=true; grid[23][c]=true; }
+
+  /* floating platforms up high: bonus routes, not the critical path */
+  var plats=[]; var np=2+li;
+  for(i=0;i<np;i++){ var pr=10+Math.floor(rng()*4); var pc=6+Math.floor(rng()*(W-13)); var pwid=3+Math.floor(rng()*3);
+    for(k=0;k<pwid;k++){ if(pc+k<W-1)grid[pr][pc+k]=true; } plats.push({r:pr,c:pc,w:pwid}); }
+
+  /* ---- swing anchors ---- */
+  /* one over EVERY wide pit at jump-catch height: from the pit's lip a hop
+     puts the dagger well inside base vine reach (235). Row 15 = y 620;
+     mid-jump the bunny is ~700, dist ~180. */
+  for(i=0;i<widePits.length;i++){ var wp=widePits[i];
+    /* anchor a half tile PAST centre: the swing exits on the far side, so the
+       arc should favour the landing lip */
+    lvl.porcs.push({ x:(wp.c+wp.w/2+0.6)*T, y:(15-Math.floor(rng()*2))*T+T/2, spin:rng()*6.28, dir:rng()<0.5?1:-1, key:true });
+    /* carrots along the swing arc under the anchor */
+    var ax=(wp.c+wp.w/2)*T, ay=(15-1)*T, arcR=150+rng()*30;
+    for(k=-2;k<=2;k++){ var aa=k*0.42;
+      lvl.carrots.push({ x:ax+Math.sin(aa)*arcR, y:ay+Math.cos(aa)*arcR*0.9, got:false }); }
+  }
+  /* extra chain anchors on long flat stretches + high ones near platforms.
+     Skip any spot within 3 tiles of an existing anchor: two rings overlapping
+     read as clutter and make the throw ambiguous. */
+  function anchorClear(x2,y2){ for(var q=0;q<lvl.porcs.length;q++){ var pq=lvl.porcs[q];
+    if(Math.abs(pq.x-x2)<3*T && Math.abs(pq.y-y2)<3*T) return false; } return true; }
+  var nExtra=1+li;
+  for(i=0;i<nExtra;i++){ var qc=8+Math.floor((i+0.5)/nExtra*(W-16));
+    var ex=qc*T+T/2, ey=(13+Math.floor(rng()*3))*T+T/2;
+    if(anchorClear(ex,ey)) lvl.porcs.push({ x:ex, y:ey, spin:rng()*6.28, dir:rng()<0.5?1:-1 }); }
+  for(i=0;i<plats.length&&i<2+li;i++){ var pp=plats[i];
+    var hx=(pp.c+pp.w/2)*T, hy=(pp.r-4)*T+T/2;
+    if(anchorClear(hx,hy)) lvl.porcs.push({ x:hx, y:hy, spin:rng()*6.28, dir:rng()<0.5?1:-1 }); }
+
+  /* ground-line + platform carrots */
+  for(c=4;c<W-4;c+=2){ if(grid[22][c] && rng()<0.55) lvl.carrots.push({ x:c*T+T/2, y:21*T-4, got:false }); }
   for(i=0;i<plats.length;i++){ var p=plats[i]; for(k=0;k<p.w;k+=2){ lvl.carrots.push({ x:(p.c+k)*T+T/2, y:(p.r-1)*T+T/2, got:false }); } }
 
-  /* porcupine grapple nodes above the path */
-  var nPorc=2+li;
-  for(i=0;i<nPorc;i++){ var qc=8+Math.floor((i+0.5)/nPorc*(W-16)); var qr=7+Math.floor(rng()*3);
-    lvl.porcs.push({ x:qc*T+T/2, y:qr*T+T/2, spin:rng()*6.28, dir:rng()<0.5?1:-1 }); }
-
-  /* helper to find a solid ground col near a target col */
   function groundCol(target){ target=Math.max(4,Math.min(W-6,target|0)); for(var d=0;d<W;d++){ if(grid[22][target+d]&&grid[22][target+d+1])return target+d; if(target-d>=3&&grid[22][target-d]&&grid[22][target-d+1])return target-d; } return 4; }
 
-  /* bounce pads on the ground under some high carrots */
-  var nb=1+li;
+  /* ---- enemies ---- */
+  /* hedgehogs patrol solid ground runs (and one platform from dojo 3) */
+  var nHogs=1+li;
+  for(i=0;i<nHogs;i++){ var hc=groundCol(10+Math.floor((i+0.5)/nHogs*(W-20)));
+    var lo=hc, hi=hc;
+    while(lo>2 && grid[22][lo-1]) lo--;
+    while(hi<W-2 && grid[22][hi+1]) hi++;
+    if(hi-lo<3) continue;
+    lvl.hogs.push({ x:hc*T+T/2, y:21*T+12, dir:rng()<0.5?1:-1, min:(lo+0.5)*T, max:(hi+0.5)*T, dead:false });
+  }
+  if(li>=2 && plats.length){ var hp=plats[0];
+    if(hp.w>=3) lvl.hogs.push({ x:(hp.c+hp.w/2)*T, y:(hp.r-1)*T+28, dir:1, min:(hp.c+0.5)*T, max:(hp.c+hp.w-0.5)*T, dead:false }); }
+  /* crows fly sine paths through the swing corridors */
+  var nCrows=Math.max(0,li-1);
+  for(i=0;i<nCrows;i++){ var cx0=12+Math.floor((i+0.7)/nCrows*(W-24));
+    lvl.crows.push({ x0:cx0*T, y0:(17+Math.floor(rng()*2))*T, span:3.2*T+rng()*2*T, ph:rng()*6.28, spd:0.55+rng()*0.3, x:cx0*T, y:17*T, dead:false }); }
+
+  /* bounce pads + cannon + cages */
+  var nb=1+Math.min(2,li);
   for(i=0;i<nb;i++){ var bc=groundCol(9+Math.floor(i/nb*(W-16))); lvl.bounces.push({ x:bc*T+T/2, y:22*T-7 }); }
-  /* one cannon */
   var cc=groundCol(Math.floor(W*0.6)); lvl.cannons.push({ x:cc*T+T/2, y:22*T-24, cd:0 });
-  /* three mouse cages spaced along the ground */
   for(i=0;i<3;i++){ var mc=groundCol(Math.floor((i+1)/4*W)); lvl.cells.push({ x:mc*T+T/2, y:21*T, freed:false }); }
-  /* spikes at the bottom of pits (avoidable; you jump over pits) */
-  for(c=6;c<W-6;c++){ if(!grid[22][c] && rng()<0.7) lvl.spikes.push({ x:c*T+T/2, y:23*T+T/2 }); }
+
+  /* spikes: EVERY wide-pit floor tile gets one (swing it, do not jump it);
+     narrow pits keep the old sometimes-spiked floor */
+  for(c=6;c<W-6;c++){ if(grid[22][c]) continue;
+    var inWide=false; for(i=0;i<widePits.length;i++){ if(c>=widePits[i].c&&c<widePits[i].c+widePits[i].w){ inWide=true; break; } }
+    if(inWide || rng()<0.7) lvl.spikes.push({ x:c*T+T/2, y:23*T+T/2 });
+  }
 
   return lvl;
 }
@@ -293,7 +397,7 @@ function genLevel(li){
 function startRun(){ startLevel(0, true); }
 function startLevel(li, freshRun){
   var lvl=genLevel(li);
-  var keepLives=(G&&!freshRun)?G.lives:3;
+  var keepLives=(G&&!freshRun)?G.lives:maxLives();
   var keepScore=(G&&!freshRun)?G.score:0;
   var keepMice=(G&&!freshRun)?G.miceTotal:0;
   G={ lvl:lvl, li:li, phase:'play', t:0,
@@ -325,19 +429,31 @@ function resolveAxis(axis,dir){
 function approach(a,b,st){ if(a<b)return Math.min(a+st,b); return Math.max(a-st,b); }
 
 /* ---------- rope ---------- */
-function tryGrapple(){ if(G.rope.attached)return false;
-  var best=null,bd=ROPE_MAX*ROPE_MAX;
+/* which anchor a throw would catch. Prefers anchors AHEAD of the facing
+   direction: at a pit lip the nearest anchor can be a chain anchor 20px
+   BEHIND you, and nearest-wins hooked it, swung the player backward and
+   flung them into the spikes (caught by the solver bot on dojo 6). The
+   highlight ring uses this same rule, so what glows is what you get. */
+function aimAnchor(){
+  var RM=ropeMax(), best=null, bd=RM*RM, bestB=null, bdB=RM*RM;
   for(var i=0;i<G.lvl.porcs.length;i++){ var p=G.lvl.porcs[i];
     if(p.y>G.by+50)continue; var dx=p.x-G.bx, dy=p.y-G.by, d2=dx*dx+dy*dy;
-    if(d2<bd){ bd=d2; best=p; } }
+    if(dx*G.facing>=-30){ if(d2<bd){ bd=d2; best=p; } }
+    else if(d2<bdB){ bdB=d2; bestB=p; } }
+  return best||bestB;
+}
+function tryGrapple(){ if(G.rope.attached)return false;
+  var RM=ropeMax();
+  var best=aimAnchor();
   if(!best)return false;
+  var ddx=best.x-G.bx, ddy=best.y-G.by, bd=ddx*ddx+ddy*ddy;
   var dd=Math.sqrt(bd)||1; G.rope.attached=true; G.rope.node=best;
-  G.rope.len=Math.max(ROPE_MIN,Math.min(ROPE_MAX,dd)); sfx('rope'); haptic(10); return true;
+  G.rope.len=Math.max(ROPE_MIN,Math.min(RM,dd)); sfx('rope'); haptic(10); return true;
 }
 function releaseRope(hop){ if(!G.rope.attached)return false; G.rope.attached=false; G.rope.node=null;
-  if(hop){ G.vy-=150; sfx('fling'); haptic(14); }
-  /* keep flung momentum but cap */
-  var sp=Math.sqrt(G.vx*G.vx+G.vy*G.vy); var cap=760; if(sp>cap){ G.vx*=cap/sp; G.vy*=cap/sp; } return true;
+  if(hop){ G.vy-=flingHop(); sfx('fling'); haptic(14); }
+  /* keep flung momentum but cap (Mighty Fling raises both) */
+  var sp=Math.sqrt(G.vx*G.vx+G.vy*G.vy); var cap=flingCap(); if(sp>cap){ G.vx*=cap/sp; G.vy*=cap/sp; } return true;
 }
 function pendulum(dt){ var n=G.rope.node; if(!n){ G.rope.attached=false; return; }
   G.vy+=GRAV*dt;
@@ -346,7 +462,11 @@ function pendulum(dt){ var n=G.rope.node; if(!n){ G.rope.attached=false; return;
   var nx=dx/d, ny=dy/d;
   G.bx=n.x+nx*G.rope.len; G.by=n.y+ny*G.rope.len;
   var rad=G.vx*nx+G.vy*ny; G.vx-=rad*nx; G.vy-=rad*ny; /* keep tangential only */
-  var tx=-ny, ty=nx; var tv=G.vx*tx+G.vy*ty;
+  /* 2026-08-21: tangential was (-ny,nx), which at the BOTTOM of the arc points
+     LEFT — holding right pumped the swing leftward. The solver bot hung on it
+     (swing never rose on the far side); a thumb felt it as "drag the wrong
+     way". (ny,-nx) points rightward at the bottom. */
+  var tx=ny, ty=-nx; var tv=G.vx*tx+G.vy*ty;
   var pump=0; if(G.held.left)pump-=1; if(G.held.right)pump+=1;
   var sign=pump!==0?pump:(tv>=0?1:-1);
   G.vx+=tx*ASSIST*sign*dt; G.vy+=ty*ASSIST*sign*dt;
@@ -379,6 +499,25 @@ function interact(dt){
     if(!G.rope.attached && cn.cd<=0 && ovl(G.bx,G.by,HW,HH,cn.x,cn.y,18,24)){
       G.vy=-CANNON; G.vx*=0.3; G.onGround=false; cn.cd=0.7; sfx('cannon'); haptic([12,20,12]);
       floatUp(cn.x,cn.y-24,'blast off!'); burst(cn.x,cn.y-16,'#c8a84b',12); } }
+  /* enemies: SPEED IS THE BLADE. Swinging (or flung) fast enough, the ronin
+     slices straight through; a slow touch hurts. A falling stomp also works
+     on hedgehogs. */
+  var spd=Math.sqrt(G.vx*G.vx+G.vy*G.vy);
+  var slicing = G.rope.attached ? spd>340 : spd>430;
+  for(i=0;i<L.hogs.length;i++){ var hg2=L.hogs[i]; if(hg2.dead)continue;
+    if(!ovl(G.bx,G.by,HW,HH,hg2.x,hg2.y,16,14)) continue;
+    var stomp = !G.rope.attached && G.vy>250 && G.by<hg2.y-8;
+    if(slicing||stomp){ hg2.dead=true; G.score+=30; sfx('slash'); haptic(14);
+      floatUp(hg2.x,hg2.y-20,'slash!'); burst(hg2.x,hg2.y,'#d9cfe6',10);
+      if(stomp){ G.vy=-460; G.onGround=false; } }
+    else if(G.invuln<=0) hurt();
+  }
+  for(i=0;i<L.crows.length;i++){ var cw2=L.crows[i]; if(cw2.dead)continue;
+    if(!ovl(G.bx,G.by,HW,HH,cw2.x,cw2.y,17,12)) continue;
+    if(slicing){ cw2.dead=true; G.score+=40; sfx('slash'); haptic(14);
+      floatUp(cw2.x,cw2.y-20,'slash!'); burst(cw2.x,cw2.y,'#3a3f4a',10); }
+    else if(G.invuln<=0) hurt();
+  }
   /* spikes */
   for(i=0;i<L.spikes.length;i++){ var sp=L.spikes[i];
     if(G.invuln<=0 && ovl(G.bx,G.by,HW,HH,sp.x,sp.y,15,12)) hurt(); }
@@ -390,7 +529,7 @@ function interact(dt){
 function hurt(){ if(G.invuln>0||G.phase!=='play')return; G.lives--; sfx('hurt'); haptic([20,40,20]);
   releaseRope(false);
   if(G.lives<=0){ /* Jessie: dying restarts THIS level, not the whole game — keep your run score/progress */
-    G.lives=3; startLevel(G.li,false); floatUp(G.bx,G.by-30,'try again!'); return; }
+    G.lives=maxLives(); startLevel(G.li,false); floatUp(G.bx,G.by-30,'try again!'); return; }
   /* respawn at level start, keep collected progress */
   G.bx=G.lvl.spawn.x; G.by=G.lvl.spawn.y; G.vx=0; G.vy=0; G.invuln=1.4; G.followers=[]; G.trail=[];
   floatUp(G.bx,G.by-30,'ouch!');
@@ -401,7 +540,11 @@ function levelClear(){ if(G.phase!=='play')return; G.phase='clear'; G.clearT=2.0
   G.levelsCleared++; sfx('clear'); haptic([10,30,10,30]);
   if(G.score>(PROG.bestScore||0))PROG.bestScore=G.score;
   if(G.li>(PROG.bestLevel||0))PROG.bestLevel=G.li;
-  PROG.totalMice=(PROG.totalMice||0)+G.mice; save();
+  PROG.totalMice=(PROG.totalMice||0)+G.mice;
+  /* carrots carried out of a cleared dojo become shop coin */
+  PROG.bank=(PROG.bank||0)+G.carrots;
+  floatUp(G.bx,G.by-46,'+'+G.carrots+' banked');
+  save();
   var amt=Math.min(12, 8+G.mice+Math.floor(G.carrots/4));
   var granted=0; try{ if(window._sbCapEarn)granted=window._sbCapEarn(amt,'rabbitsamurai:lvl'+G.li)||0; }catch(e){}
   G.sunAmt=(G.sunAmt||0)+granted;
@@ -413,11 +556,11 @@ function gameOver(){ G.phase='over'; running=false; if(G.score>(PROG.bestScore||
 function showResults(win){
   $('go-title').textContent = win?'Dojo cleared!':'The bunny is worn out';
   var mice=G.miceTotal||0;
-  var st=''; var starN=win?(mice>=6?3:mice>=3?2:1):(G.li>=1?1:0); for(var i=0;i<3;i++)st+=(i<starN?'★':'☆'); $('go-stars').textContent=st;
+  var st=''; var starN=win?(mice>=14?3:mice>=8?2:1):(G.li>=2?1:0); for(var i=0;i<3;i++)st+=(i<starN?'★':'☆'); $('go-stars').textContent=st;
   $('go-score').textContent=G.score;
   $('go-lab').textContent = win?('score · reached the last dojo'):('score · reached dojo '+(G.li+1));
   $('go-best').textContent='best '+(PROG.bestScore||0);
-  $('go-extra').textContent='mice freed '+mice+' · dojos cleared '+(G.levelsCleared||0);
+  $('go-extra').textContent='mice freed '+mice+' · dojos cleared '+(G.levelsCleared||0)+' · bank '+PROG.bank+' carrots';
   $('go-sun').textContent = (G.sunAmt>0)?('+'+G.sunAmt+' sunbeams'):'no sunbeams this run';
   show('s-go');
 }
@@ -441,6 +584,15 @@ function processInput(){
 function step(dt){ if(!G)return; if(dt>0.05)dt=0.05; G.t+=dt;
   /* spin porcupines always */
   for(var i=0;i<G.lvl.porcs.length;i++){ G.lvl.porcs[i].spin+=G.lvl.porcs[i].dir*6*dt; }
+  /* enemies keep walking and flying even during the clear parade */
+  for(i=0;i<G.lvl.hogs.length;i++){ var hg=G.lvl.hogs[i]; if(hg.dead)continue;
+    hg.x+=hg.dir*64*dt;
+    if(hg.x<hg.min){ hg.x=hg.min; hg.dir=1; }
+    if(hg.x>hg.max){ hg.x=hg.max; hg.dir=-1; } }
+  for(i=0;i<G.lvl.crows.length;i++){ var cw=G.lvl.crows[i]; if(cw.dead)continue;
+    cw.ph+=cw.spd*dt;
+    cw.x=cw.x0+Math.sin(cw.ph)*cw.span;
+    cw.y=cw.y0+Math.sin(cw.ph*2.3)*26; }
   for(i=G.parts.length-1;i>=0;i--){ var p=G.parts[i]; p.vy+=300*dt; p.x+=p.vx*dt; p.y+=p.vy*dt; p.life-=dt*1.3; if(p.life<=0)G.parts.splice(i,1); }
   for(i=G.floats.length-1;i>=0;i--){ G.floats[i].y-=26*dt; G.floats[i].life-=dt; if(G.floats[i].life<=0)G.floats.splice(i,1); }
 
@@ -454,7 +606,7 @@ function step(dt){ if(!G)return; if(dt>0.05)dt=0.05; G.t+=dt;
   else {
     G.ropeVisual=Math.max(0,G.ropeVisual-dt*6);
     var dir=(G.held.right?1:0)-(G.held.left?1:0);
-    if(dir!==0){ G.vx=approach(G.vx,dir*MOVE,ACCEL*dt); G.facing=dir; }
+    if(dir!==0){ G.vx=approach(G.vx,dir*moveSpd(),ACCEL*dt); G.facing=dir; }
     else G.vx=approach(G.vx,0,FRIC*dt);
     G.vy+=GRAV*dt; if(G.vy>MAXFALL)G.vy=MAXFALL;
     G.onGround=false;
@@ -498,9 +650,28 @@ function render(){ if(!ctx||!G)return; var L=G.lvl, cam=G.cam, i;
   for(i=0;i<L.cells.length;i++)drawCell(L.cells[i]);
   for(i=0;i<L.carrots.length;i++){ if(!L.carrots[i].got)drawCarrot(L.carrots[i]); }
   for(i=0;i<L.porcs.length;i++)drawPorc(L.porcs[i]);
+  for(i=0;i<L.hogs.length;i++){ if(!L.hogs[i].dead)drawHog(L.hogs[i]); }
+  for(i=0;i<L.crows.length;i++){ if(!L.crows[i].dead)drawCrow(L.crows[i]); }
   if(!L.diamond.got||G.phase==='clear')drawDiamond(L.diamond);
-  /* rope line */
-  if(G.rope.attached&&G.rope.node){ ctx.strokeStyle='rgba(230,210,160,0.9)'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(G.bx,G.by-4); ctx.lineTo(G.rope.node.x,G.rope.node.y); ctx.stroke(); }
+  /* which anchor the dagger would catch: a pulsing ring + a faint sight line,
+     so throwing the vine is never a guess */
+  if(!G.rope.attached && G.phase==='play'){
+    var bestA=aimAnchor();
+    if(bestA){ var pu=0.5+0.4*Math.sin(G.t*6);
+      ctx.globalAlpha=0.20; ctx.strokeStyle='#9ec46a'; ctx.lineWidth=1.5; ctx.setLineDash([4,7]);
+      ctx.beginPath(); ctx.moveTo(G.bx,G.by-6); ctx.lineTo(bestA.x,bestA.y); ctx.stroke(); ctx.setLineDash([]);
+      ctx.globalAlpha=0.35+0.35*pu; ctx.strokeStyle='#c6f090'; ctx.lineWidth=2.5;
+      ctx.beginPath(); ctx.arc(bestA.x,bestA.y,26+4*pu,0,6.28); ctx.stroke(); ctx.globalAlpha=1;
+    }
+  }
+  /* the vine: a living green line with leaf tufts, dagger at the anchor end */
+  if(G.rope.attached&&G.rope.node){ var vn=G.rope.node;
+    ctx.strokeStyle='#6f9c44'; ctx.lineWidth=3.5; ctx.beginPath(); ctx.moveTo(G.bx,G.by-4); ctx.lineTo(vn.x,vn.y); ctx.stroke();
+    ctx.strokeStyle='#9ec46a'; ctx.lineWidth=1.4; ctx.beginPath(); ctx.moveTo(G.bx,G.by-4); ctx.lineTo(vn.x,vn.y); ctx.stroke();
+    var vdx=vn.x-G.bx, vdy=vn.y-(G.by-4);
+    for(var vt=0.22;vt<0.95;vt+=0.24){ var lx=G.bx+vdx*vt, ly=G.by-4+vdy*vt;
+      ctx.fillStyle='#7ab356'; ctx.beginPath(); ctx.ellipse(lx+3,ly-2,4.5,2.2,-0.6+vt,0,6.28); ctx.fill(); }
+  }
   /* followers (mice) */
   for(i=0;i<G.followers.length;i++)drawMouse(G.followers[i].x,G.followers[i].y,G.t+i);
   /* bunny */
@@ -525,13 +696,18 @@ function drawTile(x,y,theme,capped){
     ctx.fillStyle='#4a382a'; ctx.fillRect(x+3,y+3,T-6,6);
     ctx.strokeStyle='#251a12'; ctx.lineWidth=1; ctx.strokeRect(x+0.5,y+0.5,T-1,T-1);
     ctx.fillStyle='rgba(0,0,0,0.18)'; ctx.fillRect(x+6,y+T-8,T-12,4);
+  } else if(theme==='grove'){ /* mossy stone */
+    ctx.fillStyle='#3c4a34'; roundRect(x,y,T,T,3); ctx.fill();
+    ctx.fillStyle='#48583e'; ctx.fillRect(x+3,y+3,T-6,6);
+    ctx.strokeStyle='#26301f'; ctx.lineWidth=1; ctx.strokeRect(x+0.5,y+0.5,T-1,T-1);
+    ctx.fillStyle='rgba(158,196,106,0.20)'; ctx.fillRect(x+5,y+T-10,T-14,5);
   } else { /* crate */
     ctx.fillStyle='#7a5330'; roundRect(x,y,T,T,3); ctx.fill();
     ctx.fillStyle='#8f6238'; ctx.fillRect(x+3,y+3,T-6,T-6);
     ctx.strokeStyle='#5c3d22'; ctx.lineWidth=2; ctx.strokeRect(x+3.5,y+3.5,T-7,T-7);
     ctx.beginPath(); ctx.moveTo(x+4,y+4); ctx.lineTo(x+T-4,y+T-4); ctx.moveTo(x+T-4,y+4); ctx.lineTo(x+4,y+T-4); ctx.strokeStyle='#6b482a'; ctx.lineWidth=1.4; ctx.stroke();
   }
-  if(!capped && theme==='crate'){ ctx.fillStyle='#9ec46a'; ctx.fillRect(x+2,y-2,T-4,4); }
+  if(!capped && (theme==='crate'||theme==='grove')){ ctx.fillStyle='#9ec46a'; ctx.fillRect(x+2,y-2,T-4,4); }
 }
 function drawCarrot(o){ var x=o.x, y=o.y, bob=Math.sin(G.t*3+x)*2; ctx.save(); ctx.translate(x,y+bob);
   ctx.fillStyle='#e07a1f'; ctx.beginPath(); ctx.moveTo(-7,-8); ctx.lineTo(7,-8); ctx.lineTo(0,12); ctx.closePath(); ctx.fill();
@@ -545,6 +721,33 @@ function drawPorc(o){ ctx.save(); ctx.translate(o.x,o.y); ctx.rotate(o.spin);
   ctx.fillStyle='#2a2233'; ctx.beginPath(); ctx.arc(-4,-2,1,0,6.28); ctx.arc(4,-2,1,0,6.28); ctx.fill();
   ctx.restore();
   ctx.globalAlpha=0.5+0.3*Math.sin(G.t*4); ctx.strokeStyle='#c8a84b'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(o.x,o.y,ROPE_MIN*0.5,0,6.28); ctx.stroke(); ctx.globalAlpha=1; }
+function drawHog(o){ ctx.save(); ctx.translate(o.x,o.y); ctx.scale(o.dir,1);
+  var wob=Math.sin(G.t*10+o.x)*1.2;
+  /* spiny back */
+  ctx.fillStyle='#5a4630'; for(var k=0;k<7;k++){ var ka=-2.4+k*0.4;
+    ctx.beginPath(); ctx.moveTo(-10+k*3,wob-2); ctx.lineTo(-6+k*3,wob-14-Math.abs(3-k)); ctx.lineTo(-2+k*3,wob-2); ctx.closePath(); ctx.fill(); }
+  /* body */
+  ctx.fillStyle='#7a6248'; ctx.beginPath(); ctx.ellipse(0,wob+2,15,10,0,0,6.28); ctx.fill();
+  /* snout */
+  ctx.fillStyle='#8d7458'; ctx.beginPath(); ctx.ellipse(13,wob+4,6,4.5,0,0,6.28); ctx.fill();
+  ctx.fillStyle='#2a2320'; ctx.beginPath(); ctx.arc(17,wob+4,1.6,0,6.28); ctx.fill();
+  ctx.beginPath(); ctx.arc(8,wob,1.6,0,6.28); ctx.fill();
+  /* feet */
+  ctx.fillStyle='#4e3d2c'; ctx.beginPath(); ctx.ellipse(-6,wob+11,3,2.2,0,0,6.28); ctx.ellipse(6,wob+11,3,2.2,0,0,6.28); ctx.fill();
+  ctx.restore(); }
+function drawCrow(o){ ctx.save(); ctx.translate(o.x,o.y);
+  var flap=Math.sin(G.t*11+o.ph)*8;
+  var dirC=Math.cos(o.ph)>=0?1:-1; ctx.scale(dirC,1);
+  /* wings */
+  ctx.fillStyle='#2c313c'; ctx.beginPath(); ctx.moveTo(-2,-2); ctx.quadraticCurveTo(-14,-8-flap,-22,-2-flap); ctx.quadraticCurveTo(-12,2,-2,2); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(2,-2); ctx.quadraticCurveTo(10,-8-flap,18,-4-flap); ctx.quadraticCurveTo(10,2,2,2); ctx.closePath(); ctx.fill();
+  /* body + head */
+  ctx.fillStyle='#3a3f4a'; ctx.beginPath(); ctx.ellipse(0,0,9,6,0,0,6.28); ctx.fill();
+  ctx.beginPath(); ctx.arc(8,-3,4.5,0,6.28); ctx.fill();
+  ctx.fillStyle='#e0a83c'; ctx.beginPath(); ctx.moveTo(12,-3); ctx.lineTo(18,-1.4); ctx.lineTo(12,0.4); ctx.closePath(); ctx.fill();
+  ctx.fillStyle='#f0f0f0'; ctx.beginPath(); ctx.arc(9,-4,1.4,0,6.28); ctx.fill();
+  ctx.fillStyle='#111'; ctx.beginPath(); ctx.arc(9.4,-4,0.7,0,6.28); ctx.fill();
+  ctx.restore(); }
 function drawBounce(o){ ctx.save(); ctx.translate(o.x,o.y);
   ctx.fillStyle='#2b3a1c'; roundRect(-22,-2,44,10,4); ctx.fill();
   ctx.fillStyle='#8ec462'; roundRect(-20,-8,40,8,4); ctx.fill();
@@ -623,12 +826,13 @@ function drawBunny(){ var x=G.bx, y=G.by, f=G.facing; ctx.save(); ctx.translate(
 
 /* ---------- HUD + controls ---------- */
 function drawHUD(){
-  ctx.textAlign='left'; ctx.fillStyle='#f3ebdc'; ctx.font='800 20px system-ui'; ctx.fillText('Dojo '+(G.li+1)+' / '+LEVELS, 62, 30);
+  ctx.textAlign='left'; ctx.fillStyle='#f3ebdc'; ctx.font='800 20px system-ui'; ctx.fillText('Dojo '+(G.li+1)+' / '+LEVELS+' · '+(G.lvl.name||''), 62, 30);
   /* carrots + mice */
   ctx.font='800 17px system-ui'; ctx.fillStyle='#e08a2a'; ctx.fillText('• '+G.carrots, 62, 52);
   ctx.fillStyle='#c9ccd4'; ctx.fillText('  mice '+G.mice+'/3', 118, 52);
-  /* hearts */
-  for(var i=0;i<3;i++){ drawHeart(VW-30-i*30, 22, i<G.lives); }
+  /* hearts (Fourth Heart upgrade adds one) */
+  var mh=maxLives();
+  for(var i=0;i<mh;i++){ drawHeart(VW-30-i*30, 22, i<G.lives); }
   /* score */
   ctx.textAlign='right'; ctx.fillStyle='#c8a84b'; ctx.font='800 16px system-ui'; ctx.fillText('score '+G.score, VW-16, 52);
   /* pause button */
@@ -645,7 +849,8 @@ function drawControls(){ if(G.phase!=='play'&&G.phase!=='clear')return;
   padBtn(BLEFT,'◀', G.held.left);
   padBtn(BRIGHT,'▶', G.held.right);
   padBtn(BJUMP,'JUMP', G.held.jump, '#3f6b34');
-  /* rope has no button now — press/hold anywhere on the field to throw + swing (Jessie) */
+  /* the VINE gets a real button (2026-08-21 rebuild). Field press still works. */
+  padBtn(BROPE,'VINE', G.held.rope, '#2e4a2a');
   if(G.rope.attached){ ctx.globalAlpha=0.5+0.3*Math.sin(G.t*10); ctx.fillStyle='#e6cd6a'; ctx.font='700 13px system-ui'; ctx.textAlign='center'; ctx.fillText('drag to swing · release to fling', VW/2, VH-24); ctx.globalAlpha=1; ctx.textAlign='left'; }
 }
 function padBtn(b,label,active,tint){ var cx=b.x+b.w/2, cy=b.y+b.h/2, r=b.w/2;
@@ -673,8 +878,10 @@ function applyPointers(pts){ if(!G)return;
     if(inCircle(p,BLEFT)){ L=true; continue; }
     if(inCircle(p,BRIGHT)){ R=true; continue; }
     if(inCircle(p,BJUMP)){ J=true; continue; }
+    if(inCircle(p,BROPE)){ Ro=true; continue; }
     if(inRect(p,PAUSE)) continue;
-    /* Jessie: no ROPE button — any touch on the open field throws/holds the rope */
+    /* any touch on the open field also throws/holds the vine (Jessie),
+       and now there is a VINE button too (Stephen rebuild) */
     Ro=true; ropePt=p;
   }
   /* drag where you want to swing: the rope touch steers the pendulum */
@@ -714,12 +921,40 @@ function syncKeys(){ if(!G)return;
 }
 
 /* ---------- share ---------- */
-function shareIt(){ var url='https://lucidwinds.com/satellites/rabbit-samurai/'; var txt='I cleared '+((G&&G.levelsCleared)||0)+' dojos in Rabbit Samurai and freed '+((G&&G.miceTotal)||0)+' mice. Play at '+url;
-  if(navigator.share){ navigator.share({title:'Rabbit Samurai',text:txt,url:url}).catch(function(){}); }
+function shareIt(){ var url='https://lucidwinds.com/satellites/rabbit-samurai/'; var txt='I cleared '+((G&&G.levelsCleared)||0)+' dojos in Vine Ronin and freed '+((G&&G.miceTotal)||0)+' mice. Play at '+url;
+  if(navigator.share){ navigator.share({title:'Vine Ronin',text:txt,url:url}).catch(function(){}); }
   else if(navigator.clipboard){ navigator.clipboard.writeText(txt).catch(function(){}); } }
+
+/* ---------- dojo shop ---------- */
+function renderShop(){
+  $('shop-bank').textContent=PROG.bank;
+  var tb=$('t-bank'); if(tb)tb.textContent=PROG.bank;
+  var html='';
+  for(var i=0;i<SHOP.length;i++){ var it=SHOP[i];
+    var lvl2=PROG.up[it.key]||0, maxed=lvl2>=it.costs.length;
+    var cost=maxed?0:it.costs[lvl2];
+    var pips=''; for(var k=0;k<it.costs.length;k++)pips+=(k<lvl2?'●':'○');
+    html+='<div class="shopline"><div class="ic">'+it.ic+'</div>'+
+      '<div style="flex:1"><div class="nm">'+it.nm+'</div><div class="ds">'+it.ds+'</div>'+
+      '<div class="tier">'+pips+'</div></div>'+
+      '<button data-buy="'+it.key+'" '+((maxed||PROG.bank<cost)?'disabled':'')+'>'+
+      (maxed?'MAXED':(cost+' 🥕'))+'</button></div>';
+  }
+  $('shop-items').innerHTML=html;
+}
+$('shop-items').addEventListener('click',function(e){
+  var b=e.target.closest?e.target.closest('button[data-buy]'):null; if(!b||b.disabled)return;
+  var key=b.getAttribute('data-buy');
+  for(var i=0;i<SHOP.length;i++){ var it=SHOP[i]; if(it.key!==key)continue;
+    var lvl2=PROG.up[key]||0; if(lvl2>=it.costs.length)return;
+    var cost=it.costs[lvl2]; if(PROG.bank<cost)return;
+    PROG.bank-=cost; PROG.up[key]=lvl2+1; save(); sfx('buy'); haptic(12); renderShop(); return; }
+});
 
 /* ---------- wiring ---------- */
 tap('b-play',function(){ sfx('ui'); startRun(); });
+tap('b-shop',function(){ sfx('ui'); renderShop(); show('s-shop'); });
+tap('shop-back',function(){ sfx('ui'); renderShop(); show('s-title'); });
 tap('b-how',function(){ sfx('ui'); show('s-how'); });
 tap('b-set',function(){ sfx('ui'); show('s-set'); });
 tap('how-back',function(){ sfx('ui'); show('s-title'); });
@@ -730,7 +965,8 @@ tap('go-share',function(){ sfx('ui'); shareIt(); });
 function wireToggle(id,key){ var el=$(id); function paint(){ if(SET[key])el.classList.add('on'); else el.classList.remove('on'); } paint();
   var host=el.parentNode||el; host.addEventListener('click',function(e){ e.preventDefault(); SET[key]=!SET[key]; paint(); saveSet(); sfx('ui'); }); }
 wireToggle('tg-sound','sound'); wireToggle('tg-haptic','haptic');
-$('buildstamp').textContent='Rabbit Samurai '+BUILD;
+$('buildstamp').textContent='Vine Ronin '+BUILD+' (formerly Rabbit Samurai)';
+renderShop();
 window.addEventListener('pagehide',closeAC); window.addEventListener('beforeunload',closeAC);
 
 /* ---------- snapshot ---------- */
@@ -797,8 +1033,12 @@ if(TESTMODE){
       /* carrot */
       startRun(); var fc=window.RB_DEV.firstCarrot(); var c0=G.carrots; window.RB_DEV.teleport(fc.x,fc.y); step(1/60);
       res.carrot=(G.carrots>c0);
-      /* complete level 1 */
-      startRun(); var ap=window.RB_DEV.autoplay(6000); res.complete=ap.completed; res.completeInfo=ap;
+      /* the diamond still ends the level. Route solvability lives in
+         scripts/rs_solver.mjs (the greedy walker cannot swing, and since the
+         2026-08-21 rebuild every dojo REQUIRES swings — its failure here was
+         a false alarm, not a broken level). */
+      startRun(); var dm=G.lvl.diamond; window.RB_DEV.teleport(dm.x-4,dm.y-4); step(1/60);
+      res.complete=(G.phase==='clear'||dm.got===true);
       res.ok=!!(res.jump&&res.grapple&&res.carrot&&res.complete);
       return res; }
   };
