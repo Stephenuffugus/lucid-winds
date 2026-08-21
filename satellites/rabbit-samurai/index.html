@@ -183,12 +183,14 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
-var BUILD='v2.1';
+var BUILD='v2.2';
 var TESTMODE=/[?&]rstest=1/.test(location.search);
 
 /* ---------- world constants ---------- */
 var T=40, ROWS=24;
-var GRAV=2200, MAXFALL=1500, MOVE=232, ACCEL=1700, FRIC=1500;
+/* MOVE 232 -> 208 (2026-08-21, Stephen: "it moves pretty quick... plays a
+   little fast still") — a tenth off the run speed; jump and swing untouched */
+var GRAV=2200, MAXFALL=1500, MOVE=208, ACCEL=1700, FRIC=1500;
 var JUMP=770, BOUNCE=1250, CANNON=1560;
 var ROPE_MAX=235, ROPE_MIN=62, ASSIST=1050;
 var HW=12, HH=16; /* bunny half extents */
@@ -432,6 +434,20 @@ function genLevel(li){
   for(i=0;i<nb;i++){ var bc=groundCol(9+Math.floor(i/nb*(W-16))); lvl.bounces.push({ x:bc*T+T/2, y:22*T-7 }); }
   var cc=groundCol(Math.floor(W*0.6)); lvl.cannons.push({ x:cc*T+T/2, y:22*T-24, cd:0 });
   for(i=0;i<3;i++){ var mc=groundCol(Math.floor((i+1)/4*W)); lvl.cells.push({ x:mc*T+T/2, y:21*T, freed:false }); }
+
+  /* no carrot inside solid rock: arc carrots under an anchor and platform
+     carrots can land inside a tile, which reads as a prize you can never
+     have (Stephen 2026-08-21: "carrots inside a box that you can't get").
+     Anything whose cell is solid, or whose bottom tip pokes into rock with
+     rock above it too, is culled. */
+  lvl.carrots=lvl.carrots.filter(function(ca){
+    var cc3=Math.floor(ca.x/T), rr3=Math.floor(ca.y/T);
+    if(cc3<0||cc3>=W||rr3<0||rr3>=ROWS)return false;
+    if(grid[rr3]&&grid[rr3][cc3])return false;
+    var below=grid[rr3+1]&&grid[rr3+1][cc3], above=grid[rr3-1]&&grid[rr3-1][cc3];
+    if(above&&below)return false;   /* wedged in a one tile slot */
+    return true;
+  });
 
   /* spikes: EVERY wide-pit floor tile gets one (swing it, do not jump it);
      narrow pits keep the old sometimes-spiked floor */

@@ -1,10 +1,11 @@
 import puppeteer from 'puppeteer';
 const b = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox'] });
 const p = await b.newPage();
+await p.evaluateOnNewDocument(() => { try { localStorage.setItem('rabbitsamurai_save', JSON.stringify({ cleared: 6, up: {vine:0,fling:0,heart:0,paws:0}, bank:0, stars:{} })); } catch (e) {} });
 await p.goto('http://127.0.0.1:8777/satellites/rabbit-samurai/index.html?rstest=1', { waitUntil: 'domcontentloaded' });
 await p.waitForFunction('!!window.RB_DEV');
 const out = await p.evaluate(() => {
-  const D = window.RB_DEV; D.start(0); D.startLevel(2);
+  const D = window.RB_DEV; D.start(0); D.startLevel(23);
   const G = D.full(), T = 40;
   const solid = c => !!(G.lvl.grid[22] && G.lvl.grid[22][c]);
   let row = ''; for (let c = 0; c < G.lvl.W; c++) row += solid(c) ? '#' : '.';
