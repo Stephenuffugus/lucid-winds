@@ -90,6 +90,15 @@ window._gameFns.cribbage = function CRIB(a){
     var _bg=gen;
     _bannerTimer=setTimeout(function(){if(_bg!==gen)return;G.banner=null;render();},1100);
   }
+  // ── THE DEAL ── Cribbage deals six each, alternating, and then the
+  // non-dealer CUTS for the starter. The cut is the whole ceremony of the
+  // game's opening and it was happening invisibly, several seconds later, at
+  // the end of the discard. Here the six-and-six goes out one card at a time
+  // and the deck stays on the table waiting to be cut, which is what it does
+  // in life. See games/_cards.js for _cdDeal and the generation guard.
+  var dealtP=0,dealtA=0,cbShuffling=false,cbDealHandle=null,cbDealing=false;
+  function pShown(){return cbDealing?dealtP:G.pHand.length;}
+  function aShown(){return cbDealing?dealtA:G.aHand.length;}
   function dealHand(){
     G.roundNum++;
     G.deck=makeDeck();
@@ -100,9 +109,21 @@ window._gameFns.cribbage = function CRIB(a){
     G.pPass=false;G.aPass=false;G.seqLead=null;G.lastScoreBreakdown='';
     G.dealer=G.dealer==='ai'?'player':'ai';
     G.phase='discard';
-    render();
+    dealtP=0;dealtA=0;cbShuffling=true;cbDealing=true;render();
+    if(cbDealHandle)cbDealHandle.cancel();
+    // alternating, non-dealer first, the way it is actually dealt
+    var seq=[],first=(G.dealer==='ai')?'p':'a';
+    for(var k=0;k<6;k++){ seq.push(first); seq.push(first==='p'?'a':'p'); }
+    cbDealHandle=_cdDeal({
+      steps:seq, shuffleMs:800, stepMs:140,
+      alive:function(){return cbDealing;},
+      onShuffleEnd:function(){cbShuffling=false;render();},
+      onStep:function(st){ if(st==='p')dealtP++; else dealtA++; render(); },
+      onDone:function(){ cbDealing=false; render(); }
+    });
   }
   function toggleSelect(idx){
+    if(cbDealing)return;                 // no picking cards out of a deal in flight
     if(G.phase!=='discard')return;
     var pos=G.pSelected.indexOf(idx);
     if(pos>=0)G.pSelected.splice(pos,1);
@@ -497,7 +518,8 @@ window._gameFns.cribbage = function CRIB(a){
     h+='</div>';
     // ── STATUS ROW — phase + round + dealer chip ──
     var st='';
-    if(G.phase==='discard')st='Select 2 for the crib';
+    if(cbDealing)st=cbShuffling?'Shuffling\u2026':'Dealing\u2026';
+    else if(G.phase==='discard')st='Select 2 for the crib';
     else if(G.phase==='peg')st='The play';
     else if(G.phase==='show')st='Scoring';
     else st='Game Over';
@@ -528,13 +550,22 @@ window._gameFns.cribbage = function CRIB(a){
     if(G.phase==='show'||G.phase==='gameover'){
       G.aHand.forEach(function(c){h+=_cardHtml(c,false,false,false,false);});
     }else{
-      for(var i=0;i<G.aHand.length;i++){
+      for(var i=0;i<aShown();i++){
         var played=G.aPlayed.indexOf(i)>=0;
-        h+='<div style="'+_cdBackStyle(48,66,6)+(played?'opacity:.35;':'')+'"></div>';
+        h+='<div class="'+(cbDealing&&i===dealtA-1?'cd-deal-in':'')+'" style="'+_cdBackStyle(48,66,6)+(played?'opacity:.35;':'')+'"></div>';
       }
     }
     h+='</div></div>';
     // ── STARTER CARD + PEGGING COUNT ──
+    // While the hand goes out, the deck sits where the starter will be cut
+    // from. It is the same pile: deal from it, then cut it.
+    if(cbDealing){
+      // ⛔ _cdDeckHtml returns the stack AND its caption as two siblings, so a
+      // flex ROW puts the caption beside the deck. Column, so it sits under it.
+      h+='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 0 6px;">'
+        +_cdDeckHtml(52-dealtP-dealtA,48,66,{shuffling:cbShuffling,
+          label:cbShuffling?'shuffling\u2026':'dealing\u2026'})+'</div>';
+    }
     if(G.starter){
       h+='<div style="display:flex;gap:8px;justify-content:center;align-items:center;padding:4px 0 6px;">';
       h+='<div style="display:flex;flex-direction:column;align-items:center;gap:2px;">';
@@ -586,7 +617,7 @@ window._gameFns.cribbage = function CRIB(a){
     if(G.phase==='discard')h+='<div style="font-family:Georgia,serif;font-style:italic;font-size:0.7rem;color:rgba(232,220,200,0.7);">'+(2-G.pSelected.length)+' more for the crib</div>';
     h+='</div>';
     h+='<div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;min-height:72px;align-items:center;">';
-    G.pHand.forEach(function(c,i){
+    G.pHand.slice(0,pShown()).forEach(function(c,i){
       var isSel=G.pSelected.indexOf(i)>=0;
       var isPlayed=G.pPlayed.indexOf(i)>=0;
       var canPlay=G.phase==='peg'&&!isPlayed&&G.playCount+c.val<=31;
