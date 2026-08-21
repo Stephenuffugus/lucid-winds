@@ -32,6 +32,14 @@ window._gameFns.juniper = function Juniper(a){
   var playerScore=0,aiScore=0,playerWins=0,aiWins=0;
   if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){var o=document.getElementById('JU-over');if(o)o.remove();});
   var phase='',turnCount=0;
+  // ── THE DEAL ── Gin is dealt one card at a time, alternating, ten each, and
+  // then the top of the stock is turned to start the discard pile. That last
+  // turn is the moment the hand becomes playable, so it gets its own beat and
+  // a flip rather than just appearing. Twenty steps is fine here because this
+  // table is much smaller than the four seat games; see games/_cards.js.
+  var dealtP=0,dealtA=0,shuffling=false,dealHandle=null,dealFlip=false;
+  function pCount(){return phase==='dealing'?dealtP:playerHand.length;}
+  function aCount(){return phase==='dealing'?dealtA:aiHand.length;}
   // Generation token: bumped by New Game so stale AI/overlay timers from the
   // previous hand can't mutate a fresh deal.
   var gen=0;
@@ -264,7 +272,21 @@ window._gameFns.juniper = function Juniper(a){
     stock=deck.slice(20);discardPile=[stock.pop()];
     sortBySuit(playerHand);turnCount=0;phase='draw';
   }
-  function newHand(){deal();lastDrawnFromDiscard=null;sm('Your turn, draw a card');render();}
+  function newHand(){
+    deal();lastDrawnFromDiscard=null;
+    dealtP=0;dealtA=0;dealFlip=false;shuffling=true;phase='dealing';
+    sm('Shuffling…');render();
+    if(dealHandle)dealHandle.cancel();
+    var seq=[];for(var k=0;k<10;k++){seq.push('p');seq.push('a');}
+    seq.push('flip');                                   // the turn-up that starts the discard
+    dealHandle=_cdDeal({
+      steps:seq, shuffleMs:850, stepMs:function(i,st){return st==='flip'?420:95;},
+      alive:function(){return phase==='dealing';},
+      onShuffleEnd:function(){shuffling=false;sm('Dealing…');render();},
+      onStep:function(st){ if(st==='p')dealtP++; else if(st==='a')dealtA++; else dealFlip=true; render(); },
+      onDone:function(){ phase='draw'; sm('Your turn, draw a card'); render(); }
+    });
+  }
   function drawRound(){
     sm('Stock empty, round is a draw');
     var g=gen;
@@ -425,24 +447,35 @@ window._gameFns.juniper = function Juniper(a){
     // ── AI HAND (face-down fan) ─────────────────────────────────
     h+='<div style="text-align:center;padding:4px 6px 8px;">';
     var thinkBadge = aiThinking ? ' <span style="margin-left:8px;font-family:Georgia,serif;font-style:italic;font-size:0.62rem;color:#ffdc70;animation:juThink 1.2s ease-in-out infinite;">thinking…</span>' : '';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:#dc8a8a;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;margin-bottom:5px;">JUNIPER <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;">×'+aiHand.length+'</span>'+thinkBadge+'</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:#dc8a8a;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;margin-bottom:5px;">JUNIPER <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;">×'+aCount()+'</span>'+thinkBadge+'</div>';
     h+='<div style="display:inline-flex;justify-content:center;">';
-    for(var i=0;i<aiHand.length;i++)h+='<div style="'+_cdBackStyle(28,40,4)+'margin-left:'+(i===0?'0':'-18px')+';"></div>';
+    for(var i=0;i<aCount();i++)h+='<div class="'+(phase==='dealing'&&i===dealtA-1?'cd-deal-in':'')+'" style="'+_cdBackStyle(28,40,4)+'margin-left:'+(i===0?'0':'-18px')+';"></div>';
     h+='</div></div>';
     // ── STOCK + DISCARD ─────────────────────────────────────────
     var canPickup = phase==='draw';
     h+='<div style="display:flex;align-items:center;justify-content:center;gap:18px;padding:6px 8px 10px;">';
     // Stock
     h+='<div style="text-align:center;">';
-    h+='<div onclick="_JUDS()" style="width:72px;height:100px;border-radius:8px;background:linear-gradient(135deg,#1a4a2e,#0c2a18);border:2px solid '+(canPickup?'#ffdc70':'rgba(180,140,70,0.35)')+';display:flex;align-items:center;justify-content:center;'+(canPickup?'cursor:pointer;box-shadow:0 0 14px rgba(255,220,112,0.35),inset 0 1px 0 rgba(255,255,255,0.1);':'cursor:default;opacity:0.7;box-shadow:inset 0 1px 0 rgba(255,255,255,0.05);')+'position:relative;font-family:Georgia,serif;color:rgba(245,235,208,0.65);font-size:1.2rem;">🂠';
-    h+='<span style="font-family:DM Mono,monospace;font-size:0.55rem;color:#ffdc70;position:absolute;bottom:4px;left:0;right:0;text-shadow:0 1px 3px #000;letter-spacing:0.05em;">'+stock.length+' left</span></div>';
+    // the stock was a flat gradient with a 🂠 glyph on it; it is the deck, so it
+    // shows the deck art, and it riffles while the hand is being dealt
+    h+='<div onclick="_JUDS()" class="'+(shuffling?'cd-shuffling':'')+'" style="'+_cdBackStyle(72,100,8)
+      +'display:flex;align-items:center;justify-content:center;position:relative;'
+      +(canPickup?'cursor:pointer;outline:2px solid #ffdc70;outline-offset:-2px;':'cursor:default;opacity:0.85;')+'">';
+    h+='<span style="font-family:DM Mono,monospace;font-size:0.55rem;color:#ffdc70;position:absolute;bottom:4px;left:0;right:0;text-shadow:0 1px 3px #000;letter-spacing:0.05em;">'+(phase==='dealing'?(52-dealtP-dealtA):stock.length)+' left</span></div>';
     h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.18em;color:rgba(232,220,200,0.6);margin-top:5px;text-transform:uppercase;">Stock</div></div>';
     // Discard
     h+='<div style="text-align:center;">';
-    if(discardPile.length>0){
+    // ⛔ the discard exists in the model from the instant deal() runs, so
+    // without this gate the turn-up card was already sitting face up on the
+    // table while the hands were still going out. It only appears when it is
+    // actually turned, on the last step of the deal.
+    if(phase==='dealing'&&!dealFlip){
+      h+='<div style="'+_cdBackStyle(72,100,8)+'opacity:.35;"></div>';
+    } else if(discardPile.length>0){
       var top=discardPile[discardPile.length-1];
       var col=top.suit==='hearts'||top.suit==='diamonds'?'#b42a2a':'#1a1a1a';
       var hoverGlow = aiHoverDiscard ? 'box-shadow:0 0 18px rgba(220,138,138,0.7),inset 0 1px 0 rgba(255,255,255,0.5);transform:translateY(-4px);' : '';
+      var flipCls = (phase==='dealing'&&dealFlip)?'cd-flip':'';
       h+='<div onclick="_JUDD()" style="width:72px;height:100px;border-radius:8px;background:linear-gradient(180deg,#faf3dd,#f0e7c8);border:2px solid '+(canPickup?'#ffdc70':aiHoverDiscard?'#dc8a8a':'#c4b998')+';display:flex;flex-direction:column;align-items:center;justify-content:center;'+(canPickup?'cursor:pointer;box-shadow:0 0 14px rgba(255,220,112,0.35),inset 0 1px 0 rgba(255,255,255,0.5);':'cursor:default;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 3px 6px rgba(0,0,0,0.5);')+hoverGlow+'transition:transform .2s,box-shadow .2s;color:'+col+';font-weight:700;font-family:Georgia,serif;position:relative;">';
       h+='<span style="font-size:0.78rem;position:absolute;top:3px;left:5px;line-height:1;">'+top.rank+'</span>';
       h+='<span style="font-size:1.7rem;line-height:1;">'+_pip(top.suit)+'</span>';
@@ -481,7 +514,7 @@ window._gameFns.juniper = function Juniper(a){
     // ── PLAYER HAND with auto-meld tints ────────────────────────
     var info = playerHand.length<=11 ? _handMeldMap(playerHand) : null;
     h+='<div style="display:flex;justify-content:center;padding:6px 2px;flex-wrap:wrap;gap:3px;">';
-    for(var k=0;k<playerHand.length;k++){
+    for(var k=0;k<pCount();k++){
       var c=playerHand[k];
       var meldIdxNum = info ? info.meldOf[k] : undefined;
       var meldKind = info ? info.kindOf[k] : null;
