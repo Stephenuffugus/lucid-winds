@@ -110,7 +110,11 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;fon
 #pnotes .note svg{vertical-align:-9px;margin-right:5px}
 
 /* ---------- lane ---------- */
+/* combat is fought in the lane, so in combat the lane gets the screen.
+   The board keeps its scroll; the strip nearly doubles. */
+body.combat{--laneh:clamp(190px,30vh,340px)}
 #lanebox{flex:0 0 auto;position:relative;overflow:hidden;height:var(--laneh);
+  transition:height .4s ease;
   border-top:1px solid var(--line);
   background:linear-gradient(180deg,#0d0f15 0%,#14171f 62%,#191c25 100%)}
 /* a crenellated lip along the top edge so the air over the lane reads as the
@@ -141,6 +145,30 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;fon
 .float{position:absolute;font-size:12px;font-weight:800;pointer-events:none;color:var(--warm);
   animation:rise 700ms ease-out forwards}
 @keyframes rise{from{opacity:1;transform:translate(-50%,0)}to{opacity:0;transform:translate(-50%,-26px)}}
+/* a wall being chewed must LOOK chewed: the wall jolts, the chewer lunges */
+.trap.chew{animation:chewjolt 240ms ease-out}
+@keyframes chewjolt{0%{transform:translateX(-50%)}30%{transform:translateX(-50%) translateX(-3px) scaleY(.94)}
+  60%{transform:translateX(-50%) translateX(2px)}100%{transform:translateX(-50%)}}
+.trap .wbar{display:block;width:22px;height:3px;margin:0 auto 2px;background:#26262e;border-radius:2px;overflow:hidden}
+.trap .wbar i{display:block;height:100%;background:#8b93a5;border-radius:2px}
+.trap .wbar i.hurt{background:#d2a0a0}
+/* a wall the size of the thing it does: a lane tall stone barricade, not a
+   24px glyph. Courses of stone via gradient; cracks appear as it loses hits. */
+.trap.wallt .g{display:none}
+.trap.wallt .wall-body{display:block;margin:0 auto;border-radius:3px 3px 0 0;
+  background:repeating-linear-gradient(180deg,#57607a 0 9px,#454c61 9px 18px);
+  box-shadow:inset 0 0 0 1px #2c3242,inset 0 3px 6px rgba(255,255,255,.10)}
+.trap.wallt .wall-body.cracked{
+  background:repeating-linear-gradient(180deg,#4a5163 0 9px,#3b4152 9px 18px),
+    repeating-linear-gradient(52deg,transparent 0 7px,rgba(10,11,15,.55) 7px 9px);
+  background-blend-mode:normal,multiply;
+  box-shadow:inset 0 0 0 1px #3a2c2c,inset 0 3px 6px rgba(210,160,160,.10)}
+.ent.lunge>svg{animation:lungebite 240ms ease-out}
+@keyframes lungebite{0%{transform:translateX(0)}40%{transform:translateX(-7px) rotate(-6deg)}100%{transform:translateX(0)}}
+.ent.vault>svg{animation:vaulthop 480ms ease-out}
+@keyframes vaulthop{0%{transform:translateY(0)}45%{transform:translateY(-26px) rotate(8deg)}100%{transform:translateY(0)}}
+#atk.urge{animation:urgep 900ms ease-in-out infinite}
+@keyframes urgep{0%,100%{box-shadow:0 0 0 0 rgba(232,112,58,.75)}55%{box-shadow:0 0 0 12px rgba(232,112,58,0)}}
 #shakewrap{position:absolute;inset:0}
 .shake{animation:shk 120ms ease-out}
 @keyframes shk{0%{transform:translate(0,0)}30%{transform:translate(-3px,2px)}60%{transform:translate(3px,-2px)}100%{transform:translate(0,0)}}
@@ -419,6 +447,7 @@ var CONFIG = {
   PLAYER_DMG: 20,
   PLAYER_DMG_GROWTH: 1.18,  /* the blade keeps pace with the curve */
   PLAYER_RANGE: 1,
+  PLAYER_VAULT_TICKS: 6,    /* climbing your own wall costs three moves of time */
   WALL_HIT_TICKS: 8,        /* one hit landed on a blocking wall per 8 ticks */
   GROUP_PAUSE: 18,          /* extra ticks between authored spawn groups */
   HEAL_GROWTH: 1.18,
@@ -502,7 +531,7 @@ var TRAPS = {
   wall: {
     key: 'wall', name: 'Wall', short: 'WALL', cost: 50, glyph: '█',
     hits: 3, kind: 'block',
-    blurb: 'Three hits of patience. Stops you as flat as it stops them.'
+    blurb: 'Three hits of patience. They chew through it. You vault over it, and your blade reaches through it at whatever is chewing.'
   },
   snare: {
     key: 'snare', name: 'Snare', short: 'SNARE', cost: 40, glyph: '∩',
@@ -848,7 +877,7 @@ function makeTrap(type) {
   var t = { type: type, cell: -1, lvl: 1, paid: def.cost };
   if (type === 'spike') t.charges = def.charges;
   if (type === 'ballista') t.cd = 0;
-  if (type === 'wall') t.hits = def.hits;
+  if (type === 'wall') { t.hits = def.hits; t.maxHits = def.hits; }
   if (type === 'snare') t.used = false;
   return t;
 }
@@ -981,7 +1010,7 @@ function reinforceTrap(s, cell) {
   s.waveStats.scrapSpent += paid;
   if (t.lvl < CONFIG.REINFORCE_MAX) t.lvl++;
   if (t.type === 'spike') t.charges = def.charges;
-  if (t.type === 'wall') t.hits = wallHits(t.lvl);
+  if (t.type === 'wall') { t.hits = wallHits(t.lvl); t.maxHits = wallHits(t.lvl); }
   if (t.type === 'snare') t.used = false;
   s.run.reinforced++;
   emit(s, 'reinforce', t.type, cell);
@@ -1167,7 +1196,12 @@ function playerTick(s, intent) {
       for (i = 0; i < s.enemies.length; i++) {
         e = s.enemies[i];
         if (e.dead) continue;
-        if (Math.abs(e.cell - p.cell) > CONFIG.PLAYER_RANGE) continue;
+        var pd = Math.abs(e.cell - p.cell);
+        /* murder hole: standing at your own wall, the blade reaches through
+           it to the body chewing on the far side. One way only; they cannot
+           reach back through. This is why a wall is worth defending. */
+        if (pd > CONFIG.PLAYER_RANGE &&
+            !(pd === 2 && isWall(s, (e.cell + p.cell) / 2))) continue;
         if (!target || e.cell < target.cell || (e.cell === target.cell && e.id < target.id)) target = e;
       }
       p.atkCd = CONFIG.PLAYER_ATK_CD;
@@ -1186,7 +1220,16 @@ function playerTick(s, intent) {
     if (p.moveT > 0) { p.moveT--; return; }
     var want = p.cell + p.dir;
     if (want < 0 || want > CONFIG.LANE - 1) return;
-    if (isWall(s, want)) { emit(s, 'blocked', want); return; }
+    if (isWall(s, want)) {
+      /* your own wall is not a cage: vault over it, slowly. Blocked only
+         when the far side is another wall or the lane's edge. */
+      var past = want + p.dir;
+      if (past < 0 || past > CONFIG.LANE - 1 || isWall(s, past)) { emit(s, 'blocked', want); return; }
+      p.cell = past;
+      p.moveT = CONFIG.PLAYER_VAULT_TICKS - 1;
+      emit(s, 'vault', past);
+      return;
+    }
     p.cell = want;
     p.moveT = moveInterval(s, CONFIG.PLAYER_MOVE_TICKS, p.cell) - 1;
     emit(s, 'step', p.cell);
@@ -1680,7 +1723,7 @@ function laneMetrics() {
      like, and the roster panel above carries the readable version.
      Height follows the strip: a thin wave leaves the lane tall, and the bodies
      grow into it instead of standing in a bigger empty room. */
-  var uh = Math.max(40, Math.min(84, Math.min(h * 0.34, cw * 4.4)));
+  var uh = Math.max(40, Math.min(110, Math.min(h * 0.42, cw * 6.5)));
   return { w: w, h: h, cw: cw, us: uh / 1.35, uh: uh };
 }
 
@@ -1712,7 +1755,17 @@ function drawTraps() {
     node.style.bottom = '2px';
     var sub = '';
     if (t.type === 'spike') sub = t.charges;
-    if (t.type === 'wall') sub = '#########'.slice(0, t.hits);
+    node.classList.toggle('wallt', t.type === 'wall');
+    if (t.type === 'wall') {
+      /* an HP bar, not a hash string nobody could read. Hurt walls redden. */
+      var wmx = t.maxHits || t.hits || 1;
+      var wfr = Math.max(0, Math.min(1, t.hits / wmx));
+      var ww = Math.max(18, Math.round(m.cw * 1.35));
+      var wh = Math.round(m.uh * 1.18);
+      sub = '<span class="wbar" style="width:' + (ww + 6) + 'px"><i class="' + (wfr < 1 ? 'hurt' : '') + '" style="width:' +
+        Math.round(wfr * 100) + '%"></i></span>' +
+        '<span class="wall-body' + (wfr <= 0.67 ? ' cracked' : '') + '" style="width:' + ww + 'px;height:' + wh + 'px"></span>';
+    }
     var lvl = t.lvl > 1 ? '<span class="lv">' + '••'.slice(0, t.lvl - 1) + '</span>' : '';
     node.innerHTML = '<span class="g" style="color:' + (t.type === 'wall' ? '#8b93a5' : '#f5c77e') +
       (t.lvl > 1 ? ';text-shadow:0 0 6px rgba(232,112,58,.9)' : '') + '">' + TRAPS[t.type].glyph + '</span>' +
@@ -1993,6 +2046,7 @@ function drawHUD() {
   EL.scrapv.textContent = Math.round(odo.scrap);
   EL.bladev.textContent = SIM.playerDamage(G.wave);
   var build = (G.phase === 'build');
+  document.body.classList.toggle('combat', !build);
   EL.buildbar.classList.toggle('hidden', !build);
   EL.pad.classList.toggle('hidden', build);
   if (build) {
@@ -2185,16 +2239,41 @@ function haptic(ms) {
 
 /* --- events from the SIM become sound and light --- */
 var floatPool = [];
+function spawnFloat(cell, txt, col) {
+  var m = laneMetrics();
+  var f = document.createElement('span');
+  f.className = 'float';
+  f.textContent = txt;
+  if (col) f.style.color = col;
+  f.style.left = ((cell + 0.5) * m.cw) + 'px';
+  f.style.top = Math.max(4, m.h - m.uh - 26) + 'px';
+  EL.lane.appendChild(f);
+  setTimeout(function () { if (f.parentNode) f.parentNode.removeChild(f); }, 750);
+}
+function retrig(node, cls) {
+  if (!node) return;
+  node.classList.remove(cls); void node.offsetWidth; node.classList.add(cls);
+}
+function chewFX(cell, smash) {
+  retrig(UI.trapNodes[cell], 'chew');
+  var i, e;
+  for (i = 0; i < G.enemies.length; i++) {
+    e = G.enemies[i];
+    if (!e.dead && e.cell === cell + 1) { retrig(UI.nodes[e.id], 'lunge'); break; }
+  }
+  if (smash) spawnFloat(cell, 'SMASH', '#d2a0a0');
+}
 function playEvents() {
   var i, ev, m = laneMetrics();
   for (i = 0; i < G.ev.length; i++) {
     ev = G.ev[i];
     if (ev.t === 'hit') { if (VOICE[ev.b]) VOICE[ev.b](); }
-    else if (ev.t === 'wallhit') { VOICE.wall(); UI.dirtyTraps = true; }
+    else if (ev.t === 'wallhit') { VOICE.wall(); UI.dirtyTraps = true; chewFX(ev.a, ev.b === 'smash'); }
     else if (ev.t === 'snare') { VOICE.snare(); UI.dirtyTraps = true; }
     else if (ev.t === 'pit') VOICE.pit();
     else if (ev.t === 'brazier') VOICE.brazier();
-    else if (ev.t === 'traplost') UI.dirtyTraps = true;
+    else if (ev.t === 'traplost') { UI.dirtyTraps = true; if (ev.a === 'wall') { spawnFloat(ev.b, 'WALL DOWN', '#d2a0a0'); shake(); } }
+    else if (ev.t === 'vault') { pluck(523, 0.12, 0.22, 'triangle'); haptic(8); retrig(UI.nodes.P, 'vault'); }
     else if (ev.t === 'spike') UI.dirtyTraps = true;
     else if (ev.t === 'alarm') { alarmPing(ev.b); haptic(10); }
     else if (ev.t === 'swinghit') { haptic(10); }
@@ -2234,9 +2313,28 @@ function writeSave(delta) {
 
 var held = { left: false, right: false, attack: false };
 var queued = null;
+/* first swing coach: until this player has EVER swung, the sword button
+   pulses whenever a body is close. He played a full session not knowing
+   the attack button existed; that cannot happen to the next player. */
+var urgeDone = false;
+try { urgeDone = localStorage.getItem('siege-swung') === '1'; } catch (e) {}
+function urgeOff() {
+  if (urgeDone) return;
+  urgeDone = true;
+  try { localStorage.setItem('siege-swung', '1'); } catch (e) {}
+  var a = $('atk'); if (a) a.classList.remove('urge');
+}
+function urgeTick() {
+  if (urgeDone || !G || G.phase === 'build') return;
+  var near = false, i;
+  for (i = 0; i < G.enemies.length; i++) {
+    if (!G.enemies[i].dead && Math.abs(G.enemies[i].cell - G.player.cell) <= 5) { near = true; break; }
+  }
+  var a = $('atk'); if (a) a.classList.toggle('urge', near);
+}
 function intentNow() {
-  if (queued) { var q = queued; queued = null; return q; }
-  if (held.attack) return 'attack';
+  if (queued) { var q = queued; queued = null; if (q === 'attack') urgeOff(); return q; }
+  if (held.attack) { urgeOff(); return 'attack'; }
   if (held.left) return 'left';
   if (held.right) return 'right';
   return 'none';
@@ -2458,6 +2556,7 @@ function loop(now) {
       SIM.step(G, G.phase === 'combat' ? intentNow() : 'none');
       UI.boardDirty = true;
       playEvents();
+      urgeTick();
       if (wasPhase === 'combat' && G.phase === 'build') { showScorecard(G.lastWaveStats); drawShop(); drawPips(); UI.dirtyTraps = true; }
       if (wasPhase === 'build' && G.phase === 'combat') { drawPips(); EL.sight.classList.add('hidden'); }
       if (G.over) { endRun(); break; }
@@ -2682,11 +2781,30 @@ SUITES.push(function () {
   s = tGame({ playerCell: 5 });
   tRun(s, 40, 'left');
   TEST.eq('player cannot walk out through the gate', s.player.cell, 0);
-  /* wall blocks the player */
+  /* the player VAULTS his own wall (2026-08-21: a wall used to cage him in
+     with nothing to do while bodies chewed the far side — softlock by build) */
   s = tGame({ playerCell: 5 });
   tPut(s, 6, 'wall');
+  tRun(s, 2, 'right');
+  TEST.eq('a vault clears the wall in one go', s.player.cell, 7);
+  tRun(s, 4, 'right');
+  TEST.eq('the vault costs three moves of time', s.player.cell, 7);
+  tRun(s, 2, 'right');
+  TEST.eq('after the vault he walks on', s.player.cell, 8);
+  s = tGame({ playerCell: 5 });
+  tPut(s, 6, 'wall'); tPut(s, 7, 'wall');
   tRun(s, 30, 'right');
-  TEST.eq('a wall stops the player dead', s.player.cell, 5);
+  TEST.eq('a double wall is a real block', s.player.cell, 5);
+  /* murder hole: the blade reaches through an adjacent wall to the chewer */
+  s = tGame({ playerCell: 5 });
+  tPut(s, 6, 'wall');
+  var mh = tEnemy(s, 'brute', 7, 1000, true);
+  tRun(s, 1, 'attack');
+  TEST.eq('the blade reaches through the wall', mh.hp, 1000 - playerDamage(1));
+  s = tGame({ playerCell: 5 });
+  var mh2 = tEnemy(s, 'brute', 7, 1000, true);
+  tRun(s, 1, 'attack');
+  TEST.eq('no wall, no reach: two cells is still too far', mh2.hp, 1000);
   /* pit slows the player exactly as it slows a body */
   s = tGame({ playerCell: 5 });
   tPut(s, 6, 'pit');
@@ -3507,7 +3625,7 @@ var SIM_TEST = { TEST: TEST, SUITES: SUITES, tGame: tGame, tPut: tPut, tEnemy: t
   try {
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {
-        navigator.serviceWorker.register('sw.js?v=20260816e').catch(function () {});
+        navigator.serviceWorker.register('sw.js?v=20260821a').catch(function () {});
       });
     }
   } catch (e) {}

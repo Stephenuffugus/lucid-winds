@@ -12,7 +12,7 @@
    Bump SHELL_VERSION on every deploy, AND the ?v= on the registration in
    index.html in lockstep — this host edge-pins bare sw.js URLs for 7 days. */
 
-const SHELL_VERSION = "siege-shell-v5";
+const SHELL_VERSION = "siege-shell-v6";
 const NAV_TIMEOUT_MS = 8000;
 
 const SHELL_ASSETS = [
