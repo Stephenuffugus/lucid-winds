@@ -50,6 +50,9 @@ var _RANK_SYM=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 var _SUIT_NAME=['shroom','flower','bee','bird'];
 var _CD_BASE='assets/games/cards/';
 var _CD_BACK=_CD_BASE+'playing-card-backs.png';
+// the same art with the baked-in photographic surround measured off, so it can
+// sit edge to edge in a card div (see the kit at the bottom of this file)
+var _CD_BACK_ART='assets/games/cards/card-back.png';
 
 // ─── Floral deck (line-art: 4 suit pips + J/Q/K/A in red & black) ─
 var _FL_BASE='assets/decks/floral/';
@@ -211,6 +214,22 @@ function _cdFndEmpty(el, suitIdx){
   }
 }
 
+// ⛔ ONE BACK, ONE SOURCE. Three places used to decide what a face-down card
+// looks like and they disagreed: the lw style pointed at the ORIGINAL
+// playing-card-backs.png (which has the house frame baked in, so it drew the
+// card photographed on a dark surface), floral synthesised a cross-hatch from
+// gradients with a comment saying it was a stand-in "until there is dedicated
+// card-back art", and the kit's deck stacks drew the real art. Spider ended up
+// showing a knotwork stock above a cross-hatch tableau in the same frame.
+// There IS dedicated card-back art now, so floral and lw both use it. Classic
+// keeps its navy weave on purpose: that style exists to look like a standard
+// shop-bought deck, and a standard deck's back is not botanical.
+function _cdBackBg(){
+  if(_cdStyle()==='classic'){
+    return 'background-color:#1a3a6a;background-image:repeating-linear-gradient(45deg,#1a3a6a 0,#1a3a6a 8px,#244a7a 8px,#244a7a 16px),linear-gradient(135deg,#1a3a6a,#244a7a);';
+  }
+  return "background-image:url('"+_CD_BACK_ART+"');background-size:100% 100%;";
+}
 function _cdBackStyle(el){
   var style=_cdStyle();
   if(style==='classic'){
@@ -218,17 +237,11 @@ function _cdBackStyle(el){
     el.style.backgroundImage='repeating-linear-gradient(45deg,#1a3a6a 0,#1a3a6a 8px,#244a7a 8px,#244a7a 16px),linear-gradient(135deg,#1a3a6a,#244a7a)';
     el.style.backgroundColor='#1a3a6a';
     el.style.backgroundSize='auto, auto';
-  }else if(style==='floral'){
-    // Floral card back: cream with a soft botanical cross-hatch, echoing
-    // the line-art set. No dedicated card-back art in the floral pack yet,
-    // so we synthesise one from layered gradients tinted with burgundy.
-    el.style.backgroundColor='#efe5cf';
-    el.style.backgroundImage='repeating-linear-gradient(45deg,rgba(180,42,42,0.12) 0,rgba(180,42,42,0.12) 2px,transparent 2px,transparent 8px),'
-      +'repeating-linear-gradient(-45deg,rgba(180,42,42,0.10) 0,rgba(180,42,42,0.10) 2px,transparent 2px,transparent 8px),'
-      +'linear-gradient(135deg,#f4ead2,#e8ddbd)';
-    el.style.backgroundSize='auto, auto, auto';
   }else{
-    el.style.backgroundImage="url('"+_CD_BACK+"')";
+    // floral and lw: the real deck art, edge to edge
+    el.style.backgroundColor='';
+    el.style.backgroundImage="url('"+_CD_BACK_ART+"')";
+    el.style.backgroundSize='100% 100%';
   }
 }
 
@@ -530,7 +543,6 @@ window._CD_BACK=_CD_BACK;
 // So the pattern euchre proved is the pattern here: stage the STATE, re-render,
 // and let CSS pop in only the newest batch. It reads as dealing and it survives
 // a full repaint.
-var _CD_BACK_ART='assets/games/cards/card-back.png';
 var _CD_BACK_AR=208/146;               // the art's true aspect, for sizing helpers
 
 // One face-down card. Pass width and height; height defaults to the real ratio
@@ -548,8 +560,7 @@ function _cdBackCss(w,h,r){
   // instead of as five cards. The old flat rectangles got this for free from
   // their 1.5px border. A dark ring separates card from card, and the inner
   // cream hairline keeps the top card from disappearing into the felt.
-  return 'width:'+w+'px;height:'+h+'px;border-radius:'+r+'px;'
-    +"background-image:url('"+_CD_BACK_ART+"');background-size:100% 100%;"
+  return 'width:'+w+'px;height:'+h+'px;border-radius:'+r+'px;'+_cdBackBg()
     +'box-shadow:0 0 0 1px rgba(10,18,8,0.95),inset 0 0 0 1px rgba(232,220,200,0.20),'
     +'2px 2px 6px rgba(0,0,0,0.55);';
 }
