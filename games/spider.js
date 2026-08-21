@@ -8,10 +8,36 @@ var _cdMk=window._cdMk,_cdSh=window._cdSh,_cdEl=window._cdEl,_cdArt=window._cdAr
 var _cdRnk=window._cdRnk,_cdSuit=window._cdSuit,_cdIsRed=window._cdIsRed,_cdBackStyle=window._cdBackStyle;
 var _SUIT_SYM=window._SUIT_SYM,_SUIT_CLR=window._SUIT_CLR,_RANK_SYM=window._RANK_SYM;
 var _SUIT_NAME=window._SUIT_NAME,_CD_BASE=window._CD_BASE,_CD_BACK=window._CD_BACK;
+// Tangibility kit (shuffle wiggle, staged deal scheduler, real card backs)
+var _cdDeal=window._cdDeal,_cdDeckHtml=window._cdDeckHtml;
 
 function GSP(a){
   var tab=[],stock=[],completed=0,sel=null,gameOver=false,moves=0,suits=1;
   var history=[]; // LIFO stack of pre-move snapshots for undo
+  // ── THE DEAL (2026-08-21) ─────────────────────────────────────────────────
+  // Spider used to arrive fully laid out in a single frame: fifty-four cards
+  // in ten columns, no sense that anything had been dealt to you. The model is
+  // still built instantly in init(); `dealing` only limits how much of it rn()
+  // is allowed to draw, so no rule, no undo snapshot and no run detection had
+  // to learn about a half-built table.
+  //
+  // ⛔ ROW BY ROW, NOT COLUMN BY COLUMN. A Spider dealer sweeps across all ten
+  // columns and comes back for the next row, and that sweep is the whole reason
+  // this reads as a deal instead of ten piles appearing one after another. It
+  // also keeps the step count at six: rn() rebuilds the entire board's innerHTML
+  // on every step, and six rebuilds is cheap on a phone where fifty-four is not.
+  //
+  // So `dealt` counts ROWS, not cards — row r of column c is just tab[c][r],
+  // which makes "draw the partial table" one Math.min per column.
+  var dealt=0,shuffling=false,dealHandle=null,dealing=false;
+  var DEAL_ROWS=6;   // cols 0-3 hold six cards, cols 4-9 hold five → six rows deep
+  // 850 shuffle + 6 × 360 = 3010ms end to end. Slower per step than the trick
+  // games because each of these steps lays ten cards, not four.
+  var DEAL_SHUFFLE_MS=850,DEAL_STEP_MS=360;
+  function colCount(c){return dealing?Math.min(dealt,tab[c].length):tab[c].length;}
+  function isNewlyDealt(c,i){return dealing&&i===dealt-1;}
+  // Cards still in the dealer's hand: the whole two decks minus everything laid.
+  function deckLeft(){var n=104;for(var c=0;c<10;c++)n-=colCount(c);return n;}
   ms(a,'Runs: <strong id="SPrn">0</strong>/8 · Moves: <strong id="SPmv">0</strong>');mm(a);
   var gd=document.createElement('div');gd.id='SPgd';a.appendChild(gd);
   var _spStyleLbl='🃏 Style';
@@ -27,7 +53,7 @@ function GSP(a){
     else{b.disabled=true;b.style.opacity='0.45';}
   }
   window._SPUndo=function(){
-    if(history.length===0||gameOver)return;
+    if(history.length===0||gameOver||dealing)return;
     var snap=JSON.parse(history.pop());
     tab=snap.tab; stock=snap.stock; completed=snap.completed; moves=snap.moves;
     sel=null;
@@ -51,6 +77,10 @@ function GSP(a){
   }
   window._cdActiveRn=function(){try{rn()}catch(e){}};
   function init(){
+    // ⛔ CANCEL FIRST. New Game mid-deal would otherwise leave the previous
+    // deal's timers advancing `dealt` into a table that has been rebuilt under
+    // them — rows would keep landing on cards that are no longer there.
+    if(dealHandle)dealHandle.cancel();
     var deck=mkDeck();
     tab=[];stock=[];completed=0;sel=null;gameOver=false;moves=0;
     history=[];
@@ -60,7 +90,25 @@ function GSP(a){
       for(var i=0;i<cnt;i++){var cd=deck.pop();cd.up=(i===cnt-1);tab[c].push(cd);}
     }
     stock=deck.slice();
-    upd();rn();
+    // The model above is already final. Everything below is presentation: hold
+    // the table empty, riffle the deck, then let the rows land.
+    dealt=0;dealing=true;shuffling=true;
+    upd();rn();refreshUndoBtn();
+    var rows=[];for(var r=0;r<DEAL_ROWS;r++)rows.push(r);
+    try{
+      dealHandle=_cdDeal({
+        steps:rows, shuffleMs:DEAL_SHUFFLE_MS, stepMs:DEAL_STEP_MS,
+        alive:function(){return dealing;},
+        onShuffle:function(){shuffling=true;},
+        onShuffleEnd:function(){shuffling=false;rn();},
+        onStep:function(step,i){dealt=i+1;rn();},
+        onDone:function(){dealing=false;rn();}
+      });
+    }catch(e){
+      // A missing or broken kit must not strand the player looking at an empty
+      // felt — fall back to the old instant table.
+      dealHandle=null;dealt=DEAL_ROWS;dealing=false;shuffling=false;rn();
+    }
   }
   function upd(){
     var el=document.getElementById('SPrn');if(el)el.textContent=completed;
@@ -87,7 +135,7 @@ function GSP(a){
     return len;
   }
   function tapCol(ci,idx){
-    if(gameOver)return;
+    if(gameOver||dealing)return;
     var col=tab[ci];
     if(sel){
       // Try to place
@@ -111,7 +159,7 @@ function GSP(a){
     }
   }
   function dealStock(){
-    if(gameOver||stock.length===0)return;
+    if(gameOver||dealing||stock.length===0)return;
     for(var c=0;c<10;c++){if(tab[c].length===0){sm('Fill empty columns first');return;}}
     snapshot();
     for(var c=0;c<10;c++){
@@ -129,23 +177,45 @@ function GSP(a){
     // Smart-drop source — the head (bottom, lowest-rank) of the selected run.
     var srcHead=null, srcColIdx=-1;
     if(sel){ srcHead=tab[sel.col][sel.idx]; srcColIdx=sel.col; }
+    // 10-column Spider — tightest horizontal budget of any solitaire.
+    // Hoisted above the top row because the deck is sized off the tableau card:
+    // it should read as the same deck those cards are coming out of.
+    var fit=window._cdFit?window._cdFit(10,{maxW:72,gap:2,pad:6}):{w:'clamp(40px,10.5vw,70px)',h:'clamp(56px,14.7vw,98px)',font:'clamp(.55rem,1.5vw,.72rem)',gap:'2px',raw:{w:70,h:98}};
+    var spW=fit.w,spH=fit.h,spF=fit.font;
     var topRow=document.createElement('div');
     // min(100vw,700px) + right padding — the old clamp(...,100vw,...) with a
     // flex:1 spacer pushed the runs counter flush past the right edge
     // ("0/8 ru" at every phone width).
     topRow.style.cssText='display:flex;gap:clamp(4px,1.2vw,6px);justify-content:center;padding:clamp(2px,1vw,4px) 12px;width:min(calc(100vw - 8px),700px);max-width:100%;margin:0 auto;align-items:center;box-sizing:border-box';
+    // ── The deck ────────────────────────────────────────────────
+    // One element doing two jobs: the dealer's hand while the table fills, and
+    // the stock pile afterwards. Both go through _cdDeckHtml so the pile is a
+    // stack of real card backs instead of a single flat rectangle.
+    // 48px floor — this is a tap target on the narrowest phone.
+    var deckW=Math.max(48,Math.min(66,fit.raw.w+10));
+    var deckH=Math.round(deckW*1.425);
     var stEl=document.createElement('div');
-    if(stock.length>0){stEl.className='gc gc-dn';_cdBackStyle(stEl);stEl.style.cursor='pointer';stEl.innerHTML='<span style="color:rgba(200,168,78,.6);font-size:clamp(.55rem,1.8vw,.75rem);font-weight:700;text-shadow:0 1px 4px rgba(0,0,0,.9)">'+Math.ceil(stock.length/10)+'</span>';stEl.onclick=function(){dealStock()};}
-    else{stEl.className='gc gc-empty';}
+    // ⛔ The caption's height is reserved whether or not a caption is showing.
+    // Without it the entire tableau jumps up the screen on the frame the deal
+    // ends and "dealing…" disappears.
+    stEl.style.cssText='display:flex;flex-direction:column;align-items:center;justify-content:flex-start;flex-shrink:0;height:'+(deckH+30)+'px';
+    if(dealing){
+      stEl.innerHTML=_cdDeckHtml(deckLeft(),deckW,deckH,{shuffling:shuffling,label:shuffling?'shuffling\u2026':'dealing\u2026'});
+    }else if(stock.length>0){
+      // The number on the pile stays what it has always been here: DEALS left,
+      // not cards left. One tap sends ten cards out.
+      stEl.innerHTML=_cdDeckHtml(Math.ceil(stock.length/10),deckW,deckH,{});
+      stEl.style.cursor='pointer';stEl.onclick=function(){dealStock()};
+    }else{
+      var emp=document.createElement('div');emp.className='gc gc-empty';
+      emp.style.width=deckW+'px';emp.style.height=deckH+'px';stEl.appendChild(emp);
+    }
     topRow.appendChild(stEl);
     var sp=document.createElement('div');sp.style.flex='1';topRow.appendChild(sp);
     var info=document.createElement('div');info.style.cssText='color:var(--gold);font-family:DM Mono,monospace;font-size:clamp(.55rem,1.8vw,.75rem)';
     info.textContent=completed+'/8 runs';topRow.appendChild(info);
     gd.appendChild(topRow);
     var tabRow=document.createElement('div');
-    // 10-column Spider — tightest horizontal budget of any solitaire.
-    var fit=window._cdFit?window._cdFit(10,{maxW:72,gap:2,pad:6}):{w:'clamp(40px,10.5vw,70px)',h:'clamp(56px,14.7vw,98px)',font:'clamp(.55rem,1.5vw,.72rem)',gap:'2px',raw:{w:70,h:98}};
-    var spW=fit.w,spH=fit.h,spF=fit.font;
     tabRow.style.cssText='display:flex;gap:'+fit.gap+';justify-content:center;padding:4px 0;width:100%;max-width:100vw;margin:0 auto';
     for(var c=0;c<10;c++){
       var colDiv=document.createElement('div');colDiv.className='gc-stk';
@@ -156,7 +226,10 @@ function GSP(a){
         if(tab[c].length===0)colLegal=true;
         else{var topC=tab[c][tab[c].length-1];if(topC.up&&topC.r===srcHead.r+1)colLegal=true;}
       }
-      if(tab[c].length===0){
+      // Mid-deal a column shows only the rows that have landed on it; once the
+      // deal is done colCount() is just tab[c].length again.
+      var shown=colCount(c);
+      if(shown===0){
         var em=document.createElement('div');em.className='gc gc-empty';em.style.width=spW;em.style.height=spH;
         if(colLegal)em.classList.add('gc-legal');
         (function(ci){em.onclick=function(){tapCol(ci)}})(c);
@@ -165,7 +238,7 @@ function GSP(a){
         // Peek math — Spider piles can grow to 18+ cards, so the peek
         // compresses with depth but starts at Klondike's 28% reveal so
         // ranks and suits are legible on all but the deepest piles.
-        var depth=tab[c].length;
+        var depth=shown;
         var depthMult=depth>14?0.5:depth>11?0.65:depth>8?0.8:1.0;
         // Stephen 2026-06-28: deep piles (15+) compressed to a ~14% reveal,
         // "smooshing" the rank+suit corner so it was both illegible AND too
@@ -185,6 +258,10 @@ function GSP(a){
           if(i<depth-1)cd.classList.add('gc-peek');
           if(sel&&sel.col===c&&i>=sel.idx)cd.className+=' gc-sel';
           if(colLegal&&i===depth-1)cd.classList.add('gc-legal');
+          // ⛔ ONLY the row that just landed animates. rn() rebuilds every card
+          // from scratch, so tagging anything older would re-run the pop on the
+          // whole table at every step.
+          if(isNewlyDealt(c,i))cd.classList.add('cd-deal-in');
           (function(ci,ii){cd.onclick=function(){tapCol(ci,ii)}})(c,i);
           colDiv.appendChild(cd);
         }

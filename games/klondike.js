@@ -8,11 +8,39 @@ var _cdMk=window._cdMk,_cdSh=window._cdSh,_cdEl=window._cdEl,_cdArt=window._cdAr
 var _cdRnk=window._cdRnk,_cdSuit=window._cdSuit,_cdIsRed=window._cdIsRed,_cdBackStyle=window._cdBackStyle;
 var _SUIT_SYM=window._SUIT_SYM,_SUIT_CLR=window._SUIT_CLR,_RANK_SYM=window._RANK_SYM;
 var _SUIT_NAME=window._SUIT_NAME,_CD_BASE=window._CD_BASE,_CD_BACK=window._CD_BACK;
+var _cdDeckHtml=window._cdDeckHtml,_cdDeal=window._cdDeal;
 
 function GKL(a){
   var tableau=[],stock=[],waste=[],fnd=[],sel=null,gameOver=false,moves=0,drawCount=1,lastTap=0,lastTapCard=null;
   var history=[]; // LIFO stack of pre-move snapshots for undo
   var autoGen=0;  // auto-complete cascade generation (cancelled on new deal / exit)
+  // ── THE DEAL (2026-08-21) ───────────────────────────────────────────────
+  // Klondike went from "New Game" to a finished twenty-eight card tableau in
+  // one frame. Same cards, same layout, but nothing ever LOOKED dealt, so the
+  // board arrived as a puzzle diagram instead of as a hand somebody just laid
+  // out for you.
+  //
+  // The choreography is the real one, card by card: one to columns 1-7, then
+  // 2-7, then 3-7, down to a single card in column 7. Twenty-eight steps in
+  // seven passes. Hearts batches a whole round per step because four hands of
+  // thirteen would be 52 rebuilds; here 28 IS the showpiece — the staircase
+  // building itself left to right is the most recognisable deal in solitaire
+  // and batching a pass would throw the staircase away.
+  //
+  // Each pass hands its own column the face-up capstone FIRST, which is why
+  // the flip falls out of the model for free: tableau[c][i] is face-up exactly
+  // when i===c, and column c gets index c on pass c. The capstone wears
+  // cd-flip, every other freshly laid card cd-deal-in.
+  //
+  // ⛔ NOTHING FLIES ACROSS THE TABLE. rn() rebuilds gd.innerHTML wholesale on
+  // every step, which would kill any in-flight transition mid-air. We stage
+  // state, re-render, and let CSS pop the newest card — that survives a full
+  // repaint.
+  //
+  // Budget: 850ms shuffle + 28 x 80ms = 3090ms, inside the 2-3.5s window.
+  var dealt=[0,0,0,0,0,0,0]; // cards revealed per column; the model is already complete
+  var dealing=false,shuffling=false,dealHandle=null,laidCol=-1,laidIdx=-1,stockPop=false;
+  function dealtTotal(){var n=0;for(var d=0;d<7;d++)n+=dealt[d];return n;}
   // sel = {src:'tab'|'waste', col:N, idx:N} or null
   ms(a,'Moves: <strong id="KLmv">0</strong>');mm(a);
   var gd=document.createElement('div');gd.id='KLgd';a.appendChild(gd);
@@ -34,7 +62,7 @@ function GKL(a){
     else{b.disabled=true;b.style.opacity='0.45';}
   }
   window._KLUndo=function(){
-    if(history.length===0||gameOver)return;
+    if(dealing||history.length===0||gameOver)return;
     var snap=JSON.parse(history.pop());
     tableau=snap.tableau; stock=snap.stock; waste=snap.waste; fnd=snap.fnd; moves=snap.moves;
     sel=null; lastTap=0; lastTapCard=null;
@@ -47,7 +75,7 @@ function GKL(a){
   // Auto-complete eligibility — every tableau card must be face-up. Stock and
   // waste can still have cards; the cascade will drain them too.
   function autoEligible(){
-    if(gameOver)return false;
+    if(dealing||gameOver)return false;
     for(var c=0;c<7;c++){
       var col=tableau[c];
       for(var i=0;i<col.length;i++){if(!col[i].up)return false;}
@@ -63,7 +91,7 @@ function GKL(a){
   // top that can go to any foundation, send it there, then schedule the next
   // step 40ms later. Rising-pitch chime per step. Stops when nothing legal.
   window._KLAuto=function(){
-    if(!autoEligible())return;
+    if(dealing||!autoEligible())return;
     sel=null;
     // Generation token: bumped by init() and the exit cleanup so a cascade
     // can't keep chirping/moving (or fire game_win under another game) after
@@ -159,7 +187,35 @@ function GKL(a){
     stock=deck.slice();
     for(var si=0;si<stock.length;si++)stock[si].up=false;
     var el=document.getElementById('KLmv');if(el)el.textContent='0';
+    startDeal();
+  }
+
+  // The model above is already finished and correct. startDeal only controls
+  // how much of it rn() is allowed to draw, so the cards never move behind the
+  // player's back and undo/win logic never sees a half-built tableau.
+  function startDeal(){
+    // ⛔ CANCEL FIRST. New Game and the Draw 1/3 selector both re-enter init()
+    // whenever the player likes, and a deal still in flight would keep firing
+    // timers into a tableau that has been replaced underneath it.
+    if(dealHandle)dealHandle.cancel();
+    dealt=[0,0,0,0,0,0,0];laidCol=-1;laidIdx=-1;stockPop=false;
+    dealing=true;shuffling=true;
     rn();
+    // Seven passes: pass k lays one card on every column from k to 6, and its
+    // own column k gets that pass's first card (the face-up capstone).
+    var order=[];
+    for(var k=0;k<7;k++){for(var c=k;c<7;c++)order.push(c);}
+    dealHandle=_cdDeal({
+      steps:order, shuffleMs:850, stepMs:80,
+      alive:function(){return dealing;},
+      onShuffle:function(){shuffling=true;},
+      onShuffleEnd:function(){shuffling=false;rn();},
+      onStep:function(col){laidCol=col;dealt[col]++;laidIdx=dealt[col]-1;rn();},
+      // The last beat is the stock: 24 cards left in hand get set down as a
+      // pile, so the deck reads as "put down" rather than just stopping.
+      onDone:function(){dealing=false;laidCol=-1;laidIdx=-1;stockPop=true;rn();
+        refreshUndoBtn();refreshAutoBtn();}
+    });
   }
 
   function mm_up(txt){
@@ -246,6 +302,7 @@ function GKL(a){
   }
 
   function tapStock(){
+    if(dealing)return;
     sel=null;
     if(stock.length===0){
       if(waste.length===0)return;
@@ -266,7 +323,7 @@ function GKL(a){
   }
 
   function tapWaste(){
-    if(waste.length===0)return;
+    if(dealing||waste.length===0)return;
     var now=Date.now();
     var topCard=waste[waste.length-1];
     // Double-tap auto-route: foundation first (if safe), then tableau fallback.
@@ -296,6 +353,7 @@ function GKL(a){
   }
 
   function tapFnd(fi){
+    if(dealing)return;
     if(!sel){return}
     var card=null;
     if(sel.src==='waste'){
@@ -324,7 +382,7 @@ function GKL(a){
   }
 
   function tapTab(ci,cardIdx){
-    if(gameOver)return;
+    if(dealing||gameOver)return;
     var col=tableau[ci];
 
     // Tap on empty column
@@ -423,6 +481,10 @@ function GKL(a){
     var _ag=document.getElementById('fg-ag');
     var _scrollY=_ag?_ag.scrollTop:0;
     gd.innerHTML='';
+    // One-shot: the stock's landing pop must fire on exactly the render that
+    // follows the deal, not on every render after it (rn() rebuilds the node,
+    // so a sticky flag would restart the animation on every tap).
+    var pop=stockPop;stockPop=false;
     // Smart-drop highlight source. When a card/run is selected, every legal
     // destination glows green so the player sees their options at a glance.
     var srcCard=null, srcIsSingle=true, srcColIdx=-1;
@@ -439,23 +501,50 @@ function GKL(a){
     var topRow=document.createElement('div');
     // Auto-fit: 7 tableau columns drive sizing; top-row spacer absorbs leftover.
     // Cap at 72 so landscape phones aren't swamped by huge cards.
-    var fit=window._cdFit?window._cdFit(7,{maxW:72,gap:3,pad:10}):{w:'clamp(52px,13.5vw,72px)',h:'clamp(72px,18.9vw,100px)',font:'clamp(.6rem,1.7vw,.8rem)',peek:'14px',raw:{h:100,peek:14}};
+    var fit=window._cdFit?window._cdFit(7,{maxW:72,gap:3,pad:10}):{w:'clamp(52px,13.5vw,72px)',h:'clamp(72px,18.9vw,100px)',font:'clamp(.6rem,1.7vw,.8rem)',peek:'14px',raw:{w:66,h:100,peek:14}};
     var klW=fit.w,klH=fit.h,klF=fit.font;
     topRow.style.cssText='display:flex;gap:'+fit.gap+';justify-content:center;padding:4px 0;width:100%;max-width:100vw;margin:0 auto;align-items:flex-start;flex-wrap:nowrap';
 
-    // Stock
+    // Stock. During the deal it is the undealt DECK — a stack of backs that
+    // wiggles, counts down 52 to 24 and captions itself; it is the only thing
+    // on the table that moves while the cards go out. Once the deal lands it
+    // goes back to the ordinary stock slot, which is style-aware (_cdBackStyle
+    // paints floral/classic/garden backs) where the shared deck art is not, and
+    // the stock has to match the face-down tableau cards beside it.
+    //
+    // ⛔ THE DECK FLOATS IN A FIXED SLOT, the way Hearts and Spades park theirs
+    // in an absolutely positioned box. That caption is a real block element,
+    // and in normal flow it would grow the top row ~20px for the length of the
+    // deal and collapse it again the instant the deal ended — a whole-tableau
+    // jolt on the very frame the player is watching the last card land. The
+    // deck is sized to leave the caption room inside one slot, so out of flow
+    // it costs nothing and the row never moves.
     var stEl=document.createElement('div');
-    if(stock.length>0){
+    if(dealing){
+      var dkH=Math.max(30,fit.raw.h-28),dkW=Math.max(22,Math.round(dkH/1.4247));
+      stEl.style.cssText='position:relative;flex-shrink:0;width:'+klW+';height:'+klH+';';
+      stEl.innerHTML='<div style="position:absolute;left:0;right:0;top:0;display:flex;'
+        +'flex-direction:column;align-items:center;">'
+        +_cdDeckHtml(52-dealtTotal(),dkW,dkH,
+          {shuffling:shuffling,label:shuffling?'shuffling\u2026':'dealing\u2026'})
+        +'</div>';
+    }else if(stock.length>0){
       stEl.className='gc gc-dn';
       _cdBackStyle(stEl);
       stEl.innerHTML='<span style="color:rgba(200,168,78,.6);font-size:clamp(.55rem,1.8vw,.75rem);font-weight:700;text-shadow:0 1px 4px rgba(0,0,0,.9)">'+stock.length+'</span>';
       stEl.style.cursor='pointer';
+      stEl.style.width=klW;stEl.style.height=klH;stEl.style.fontSize=klF;
+      // The deal's last beat: the 24 cards still in hand are set down as the
+      // stock, so the pile arrives instead of simply being there.
+      if(pop)stEl.classList.add('cd-deal-in');
+      stEl.onclick=function(){tapStock()};
     }else{
       stEl.className='gc gc-empty';
       if(waste.length>0)stEl.innerHTML='<span style="color:var(--muted);font-size:clamp(.6rem,1.8vw,.8rem)">↺</span>';
+      stEl.style.width=klW;stEl.style.height=klH;stEl.style.fontSize=klF;
+      stEl.style.cursor='pointer';
+      stEl.onclick=function(){tapStock()};
     }
-    stEl.style.width=klW;stEl.style.height=klH;stEl.style.fontSize=klF;
-    stEl.onclick=function(){tapStock()};
     topRow.appendChild(stEl);
 
     // Waste (show top card only for draw-1; top 3 fanned for draw-3)
@@ -526,8 +615,12 @@ function GKL(a){
       // Smart-drop for this column — legal if source exists, column isn't the
       // source column, and the run head can be placed here.
       var colLegal = (srcCard && c!==srcColIdx && canPlaceOnTab(srcCard, c));
+      // Mid-deal the column is drawn short. The model behind it is already
+      // whole — dealt[c] is a curtain, not a build order — so face-up/face-down
+      // and every rule that reads tableau[] stay exactly as they were.
+      var shown = dealing ? dealt[c] : tableau[c].length;
 
-      if(tableau[c].length===0){
+      if(shown===0){
         var em=document.createElement('div');
         em.className='gc gc-empty';
         if(colLegal)em.classList.add('gc-legal');
@@ -536,7 +629,7 @@ function GKL(a){
         (function(ci){em.onclick=function(){tapTab(ci,0)}})(c);
         colDiv.appendChild(em);
       }else{
-        var depth=tableau[c].length;
+        var depth=shown;
         // Compress peek when the pile grows deep so the bottom stays on-screen.
         var depthMult = depth>14 ? 0.5 : depth>11 ? 0.65 : depth>8 ? 0.8 : 1.0;
         for(var i=0;i<depth;i++){
@@ -560,7 +653,10 @@ function GKL(a){
           }
           // Smart-drop: last card of a legal column glows.
           if(colLegal&&i===depth-1)cdEl.classList.add('gc-legal');
-          if(card.up){
+          // Exactly one card animates per step. The capstone arrives face up,
+          // so it turns (cd-flip); the buried cards just land (cd-deal-in).
+          if(dealing&&c===laidCol&&i===laidIdx)cdEl.classList.add(card.up?'cd-flip':'cd-deal-in');
+          if(card.up&&!dealing){
             cdEl.style.cursor='pointer';
             (function(ci,idx){cdEl.onclick=function(ev){ev.stopPropagation();tapTab(ci,idx)}})(c,i);
           }
@@ -580,6 +676,8 @@ function GKL(a){
   // resize-renderer hook so it stops retaining this game's state.
   if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){
     autoGen++;
+    dealing=false;
+    if(dealHandle)dealHandle.cancel();
     if(window._cdActiveRn)window._cdActiveRn=null;
   });
   init();
