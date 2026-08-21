@@ -56,6 +56,13 @@ Every one is a puzzle, word, math or card game that a stranger can open today.
 ⛔ **Pace it.** Conor is one person with a 200 deep queue and he prioritised ours
 as a favour. Send three or four, not ten, and say plainly they are the puzzle ones.
 
+⛔ **Daily determinism, checked 2026-08-21: see `LISTDLE-DAILY-EVIDENCE.md`.**
+Only **meadow-weave** is proven so far. The other eight are UNPROVEN, not broken
+and not fine, because the generic harness could not reliably reach their dailies.
+Do not put "the same board for everyone" in a submission for a game that is not
+in the proven list. Per game entry hooks through each game's own `*_DEV` surface
+are the fix and are about twenty minutes each.
+
 ⛔ **Prove the daily before claiming one.** Any submission that says "the same
 board for everyone" has to actually be that. Nectar Drop's copy promised exactly
 that and was wrong until 2026-08-18: the board was seeded and one ability on top
