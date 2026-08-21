@@ -62,7 +62,32 @@ button{font-family:var(--round);}
      background:
        radial-gradient(circle at 50% 50%, var(--slate) 0 17px, transparent 17.5px),
        radial-gradient(circle at 50% 50%, var(--edge) 0 18px, transparent 18.5px);}
-.stage{flex:1 1 auto;position:relative;overflow:hidden;}
+/* ── THE TOY SITS SOMEWHERE (2026-08-21) ────────────────────────────────────
+   Every toy in here floated in a flat void. A fidget toy has to look
+   TOUCHABLE, and nothing reads as touchable while it hangs in empty space with
+   no light on it and no shadow under it. One rule on .stage does all four toys
+   at once: a warm overhead pool, a surface for them to sit on, and a vignette
+   so the eye goes to the middle.
+   ⛔ Backgrounds only. No filters and no blend modes on the toy itself: this is
+   a screen a child mashes with both hands, and per-element filters are the
+   thing that stutters on iOS. */
+.stage{flex:1 1 auto;position:relative;overflow:hidden;
+  background:
+    /* the light, hanging above and slightly left */
+    radial-gradient(70% 46% at 46% 12%,rgba(255,232,196,.13),rgba(255,232,196,0) 70%),
+    /* the surface it is all sitting on, lit near, dark at the back */
+    linear-gradient(180deg,rgba(0,0,0,0) 0 60%,rgba(146,132,168,.10) 66%,rgba(0,0,0,0) 100%),
+    /* the far wall meeting the surface */
+    linear-gradient(180deg,rgba(0,0,0,.22) 0 58%,rgba(0,0,0,0) 63%),
+    /* corners pulled down so the middle is the brightest thing */
+    radial-gradient(120% 86% at 50% 44%,rgba(0,0,0,0) 42%,rgba(0,0,0,.42) 100%);}
+/* the shadow the toy casts on that surface. Sits behind everything in .fill,
+   so each toy gets one without any of them knowing about it. */
+/* ⛔ A contact shadow was tried here as .fill:before and it was WRONG: the svg
+   letterboxes inside .fill (preserveAspectRatio="xMidYMid meet"), so a percentage
+   from the bottom of the container lands in the empty band under the art, not
+   under the toy's feet. Each toy draws its own shadow in viewBox coordinates
+   instead, welded to the thing casting it. */
 .toy{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;}
 .toy.on{display:flex;}
 .fill{flex:1 1 auto;width:100%;min-height:0;position:relative;}
@@ -568,9 +593,42 @@ body.calm .card:active{transform:none;}
     <section class="toy on" id="toy-coon" role="group" aria-label="Bandit the raccoon. Pull his ears, tail and paws, rub his head, boop his nose.">
       <div class="fill">
         <svg id="coon" viewBox="0 0 200 236" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-          <defs><radialGradient id="furG" cx="42%" cy="28%">
-            <stop offset="0%" stop-color="#948CA3"/><stop offset="100%" stop-color="#6E677C"/>
-          </radialGradient></defs>
+          <defs>
+            <!-- ⛔ He was a vector sticker: big flat masses with one shallow
+                 gradient on them. A fidget toy has to look like something you
+                 want to squeeze, and that is entirely light: a hot top-left
+                 highlight where the lamp is, a cool rim down the far side, and
+                 occlusion where one form sits on another. Gradients only, no
+                 filters — this is a screen that gets mashed with both hands and
+                 per-element filters are what stutters on iOS. -->
+            <radialGradient id="furG" cx="38%" cy="24%" r="78%">
+              <stop offset="0%" stop-color="#A99FBA"/>
+              <stop offset="46%" stop-color="#8A8298"/>
+              <stop offset="100%" stop-color="#5C5568"/>
+            </radialGradient>
+            <linearGradient id="rimG" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#ffffff" stop-opacity="0"/>
+              <stop offset="72%" stop-color="#ffffff" stop-opacity="0"/>
+              <stop offset="100%" stop-color="#CFC4E4" stop-opacity=".40"/>
+            </linearGradient>
+            <radialGradient id="sheenG" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#ffffff" stop-opacity=".30"/>
+              <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+            </radialGradient>
+            <radialGradient id="castG" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#0A0610" stop-opacity=".66"/>
+              <stop offset="70%" stop-color="#0A0610" stop-opacity=".18"/>
+              <stop offset="100%" stop-color="#0A0610" stop-opacity="0"/>
+            </radialGradient>
+            <linearGradient id="aoG" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#1A1522" stop-opacity=".45"/>
+              <stop offset="100%" stop-color="#1A1522" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+
+          <!-- the shadow he casts on the table. In viewBox units so it stays
+               under his paws whatever the container does. -->
+          <ellipse cx="100" cy="228" rx="62" ry="10" fill="url(#castG)" pointer-events="none"/>
 
           <g id="pTail">
             <path d="M60 178 C18 178,8 148,20 126 C28 112,44 110,52 120" stroke="#6E677C"
@@ -585,6 +643,10 @@ body.calm .card:active{transform:none;}
           <g class="breathe">
             <ellipse cx="100" cy="190" rx="52" ry="40" fill="url(#furG)"/>
             <ellipse cx="100" cy="200" rx="31" ry="26" fill="#B9B1BF" opacity=".5"/>
+            <!-- ⛔ the head was floating in front of the chest with no weight on
+                 it. This is the shadow it casts. -->
+            <ellipse cx="100" cy="158" rx="46" ry="17" fill="url(#aoG)" pointer-events="none"/>
+            <ellipse cx="100" cy="190" rx="52" ry="40" fill="url(#rimG)" pointer-events="none"/>
           </g>
           <g id="pPawL"><ellipse cx="76" cy="219" rx="15" ry="11" fill="#5F596E"/></g>
           <g id="pPawR"><ellipse cx="124" cy="219" rx="15" ry="11" fill="#5F596E"/></g>
@@ -600,11 +662,15 @@ body.calm .card:active{transform:none;}
           <circle cx="97" cy="157" r="3" fill="#F7E6B8"/>
 
           <g id="headGrp">
-            <g id="pEarL"><circle cx="56" cy="64" r="21" fill="#6E677C"/>
+            <g id="pEarL"><circle cx="56" cy="64" r="21" fill="url(#furG)"/>
               <circle cx="56" cy="66" r="12" fill="#C98F92"/></g>
-            <g id="pEarR"><circle cx="144" cy="64" r="21" fill="#6E677C"/>
+            <g id="pEarR"><circle cx="144" cy="64" r="21" fill="url(#furG)"/>
               <circle cx="144" cy="66" r="12" fill="#C98F92"/></g>
             <circle cx="100" cy="105" r="54" fill="url(#furG)"/>
+            <!-- the ears sit in front of the skull, so the skull is darker where
+                 they overlap it, and the far side of the head catches the rim -->
+            <circle cx="100" cy="105" r="54" fill="url(#rimG)" pointer-events="none"/>
+            <ellipse cx="86" cy="72" rx="30" ry="15" fill="url(#sheenG)" pointer-events="none"/>
             <path d="M100 53 C92 69,92 81,100 91 C108 81,108 69,100 53" fill="#D9D2C6" opacity=".8"/>
             <path d="M56 97 C62 81,84 77,92 93 C96 103,88 115,74 115 C62 115,54 109,56 97 Z" fill="#2A2434"/>
             <path d="M144 97 C138 81,116 77,108 93 C104 103,112 115,126 115 C138 115,146 109,144 97 Z" fill="#2A2434"/>
@@ -5078,7 +5144,7 @@ loadS().then(function(){ applyS();
   if(location.protocol==='file:') return;
   if(!('serviceWorker' in navigator)) return;
   window.addEventListener('load',function(){
-    try{ navigator.serviceWorker.register('./sw.js?v=2'); }catch(e){}
+    try{ navigator.serviceWorker.register('./sw.js?v=3'); }catch(e){}
   });
 })();
 </script>

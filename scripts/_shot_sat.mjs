@@ -12,6 +12,10 @@ await pg.evaluateOnNewDocument(s=>{try{localStorage.clear();localStorage.setItem
 await pg.goto(`http://127.0.0.1:8777/satellites/${slug}/`,{waitUntil:"domcontentloaded",timeout:45000});
 await sleep(2500);
 for(const c of clicks){
+  /* "@x,y" clicks a point instead of matching text — some games listen on the
+     document ("tap anywhere to begin") and have no button to find. */
+  if(c[0]==="@"){ const [x,y]=c.slice(1).split("x").map(Number);
+    await pg.mouse.click(x,y); await sleep(1400); continue; }
   await pg.evaluate(t=>{
     const re=new RegExp(t,"i");
     const vis=e=>{const r=e.getBoundingClientRect();return r.width>4&&r.height>4;};
