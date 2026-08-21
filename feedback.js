@@ -1058,6 +1058,20 @@
     // able to clear the button). Hidden until tomorrow, then it returns.
     try { if (localStorage.getItem('lwfb_hidden_day') === dayKey()) return; } catch (e) {}
     var b = button(opts);
+    /* opts.home — a game whose controls are PAINTED (canvas/SVG) has nothing
+       the yield scanner can detect, so the bottom-right park can sit dead on
+       a drawn button and eat its touches. Shot on screen 2026-08-21: Rabbit
+       Samurai's JUMP circle at bottom-right, mini fab + badge on top of it,
+       every solo jump tap swallowed. Such games opt into a different home.
+       40px top clearance = 26px badge overhang + margin. */
+    if (opts && opts.home === 'top-right') {
+      b.style.bottom = 'auto';
+      b.style.top = 'calc(40px + env(safe-area-inset-top,0px))';
+    } else if (opts && opts.home === 'top-left') {
+      b.style.bottom = 'auto'; b.style.right = 'auto';
+      b.style.top = 'calc(40px + env(safe-area-inset-top,0px))';
+      b.style.left = '40px';
+    }
     // x badge — one tap hides the fab for the rest of the day
     var x = document.createElement('span');
     x.className = 'lwfb-fab-x';

@@ -229,7 +229,12 @@ window.addEventListener('resize',fit); fit();
 /* ---------- screens ---------- */
 var G=null, running=false, lastTs=0, curScreen='s-title';
 function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id; running=false; }
-function toPlay(){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); curScreen='s-play'; running=true; lastTs=0; requestAnimationFrame(loop); }
+function toPlay(){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); curScreen='s-play';
+  /* advanceLevel() reaches here from INSIDE the running loop; scheduling a
+     second rAF loop leaves a zombie stepping dt=0 every frame, whose
+     unconditional onGround=false made jump dead from dojo 2 onward. Only
+     start a loop when none is alive. */
+  if(!running){ running=true; lastTs=0; requestAnimationFrame(loop); } else { lastTs=0; } }
 
 /* ---------- level generation ---------- */
 function solidChar(){ return true; }
@@ -804,6 +809,6 @@ show('s-title');
 </script>
 <script>/* shared arcade exit (2026-07-28): 30 satellites had no way back to the
      portal at all — see arcade-exit.js */addEventListener('load',function(){var s=document.createElement('script');s.src='/arcade-exit.js?v=2';document.head.appendChild(s);});</script>
-<script>/* fleet feedback fab (2026-07-27) */addEventListener('load',function(){var s=document.createElement('script');s.src='/feedback.js?v=6';s.onload=function(){if(window.LW_Feedback)window.LW_Feedback.mountFab({game:'rabbit-samurai',surface:'satellite'});};document.head.appendChild(s);});</script>
+<script>/* fleet feedback fab (2026-07-27) */addEventListener('load',function(){var s=document.createElement('script');s.src='/feedback.js?v=7';s.onload=function(){if(window.LW_Feedback)window.LW_Feedback.mountFab({game:'rabbit-samurai',surface:'satellite',home:'top-right'});};document.head.appendChild(s);});</script>
 </body>
 </html>
