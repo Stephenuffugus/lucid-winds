@@ -6,7 +6,7 @@ import fs from "fs";
 import path from "path";
 const [dir, outPrefix, perSheet = "24", cols = "6"] = process.argv.slice(2);
 const files = fs.readdirSync(dir).filter(f => f.endsWith(".png")).sort();
-const PER = +perSheet, COLS = +cols, TW = 180, TH = 260;
+const PER = +perSheet, COLS = +cols, TW = +(process.env.TW||180), TH = +(process.env.TH||260);
 const br = await puppeteer.launch({ headless: "new", args: ["--no-sandbox"] });
 for (let s = 0; s * PER < files.length; s++) {
   const chunk = files.slice(s * PER, s * PER + PER);
