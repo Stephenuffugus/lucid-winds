@@ -56,6 +56,8 @@ t('the landing page is a storefront, not 37 viewports', m.pageH < 16000, m.pageH
 t('six genre tiles with live counts', m.tiles === 6 && m.tileCounts.every(n => n > 0), JSON.stringify(m.tileCounts));
 t('Familiar favorites shelf is present', m.famCards >= 5, m.famCards + ' cards');
 t('the Test Lab door exists', m.testlab);
+t('Your arcade stays hidden for a brand new visitor',
+  await p.evaluate(() => document.getElementById('your-arcade').offsetParent === null));
 
 // Browse all enters Catalog Mode, renders the wall, back returns
 await p.evaluate(() => document.getElementById('fg-browse').click());
@@ -136,6 +138,20 @@ let opened = false;
 try { opened = await p.evaluate(() => document.body.classList.contains('game-open')); } catch (e) {}
 const nav = p.url() !== beforeUrl;
 t('Surprise me launches a game (overlay or navigation)', opened || nav, opened ? 'overlay' : (nav ? p.url().split('/').slice(-2).join('/') : 'nothing'));
+
+// Phase 4: the surprise launch above must have been recorded; a return
+// visit shows Your arcade. (Surprise may have navigated off the portal.)
+await p.goto('http://127.0.0.1:8777/portal/index.html', { waitUntil: 'networkidle2' });
+await sleep(1600);
+const rec = await p.evaluate(() => JSON.parse(localStorage.getItem('sws_recent') || '[]').length);
+t('the launched game was recorded to Recently Played', rec > 0, rec + ' entries');
+const ya2 = await p.evaluate(() => ({
+  visible: !!document.getElementById('your-arcade').offsetParent,
+  jump: document.querySelectorAll('#recent-shelf .card').length,
+  chips: document.querySelectorAll('.you-chip').length,
+}));
+t('a returning visitor gets Your arcade with Jump back in', ya2.visible && ya2.jump > 0 && ya2.chips === 3,
+  ya2.jump + ' recent cards, ' + ya2.chips + ' chips');
 
 await b.close();
 console.log('\nportal_ux_check: ' + pass + ' ok, ' + fail + ' failed');

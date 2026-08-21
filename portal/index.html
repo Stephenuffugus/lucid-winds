@@ -596,6 +596,21 @@
 
 
 
+
+  /* ═══════════ PHASE 4: YOUR ARCADE ═══════════ */
+  .yourarcade{margin:14px 0 4px;padding:14px;border:1px solid var(--line);border-radius:16px;
+    background:linear-gradient(160deg,rgba(18,26,17,.88),rgba(10,14,10,.88))}
+  .yourarcade .arcade-h{margin-top:0}
+  .you-strip{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 6px}
+  .you-chip{display:inline-flex;align-items:center;gap:8px;min-height:48px;padding:8px 14px;
+    border-radius:999px;cursor:pointer;border:1px solid var(--line);
+    background:rgba(20,28,20,.85);color:var(--cream);font-size:.9rem;font-weight:600}
+  .you-chip b{color:var(--gold)}
+  .you-chip:hover,.you-chip:focus-visible{border-color:var(--gold,#c8a84b)}
+  .you-av{display:inline-flex;width:34px;height:34px;border-radius:50%;overflow:hidden;
+    background:rgba(0,0,0,.3);align-items:center;justify-content:center}
+  .you-av svg{display:block}
+
   /* ═══════════ PHASE 3: VIBES + SIX GENRES ═══════════ */
   .vibes{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px}
   .vibes.storefront{margin:6px 0 20px}
@@ -735,6 +750,19 @@
       </div>
     </div>
   </div>
+
+  <!-- YOUR ARCADE (Phase 4, 2026-08-21): the returning player's surface.
+       Hidden until there is something personal to show; Recently Played
+       needs no account (localStorage sws_recent, capped at 20). -->
+  <section class="yourarcade reveal" id="your-arcade" style="display:none">
+    <h2 class="arcade-h">Your arcade</h2>
+    <div class="you-strip" id="you-strip">
+      <button type="button" class="you-chip" id="you-keeper"><span class="you-av" id="you-av"></span><span id="you-name">Your keeper</span></button>
+      <button type="button" class="you-chip" id="you-favs">&#9829; <b id="you-fav-n">0</b> favorites</button>
+      <button type="button" class="you-chip" id="you-beams">&#9728;&#65039; <b id="you-beam-n">&mdash;</b> sunbeams</button>
+    </div>
+    <div id="recent-shelf"></div>
+  </section>
 
   <!-- FIND A GAME (Phase 1 redesign, 2026-08-20): search or play within the
        first screen. The box advertises the classic-name aliases out loud and
@@ -2066,6 +2094,76 @@ if(location.hash === '#catalog'){
   openCatalog(null, false);
 }
 
+/* ── YOUR ARCADE (Phase 4): recently played + the personal cluster ── */
+var REC_KEY='sws_recent';
+function recList(){ try{ var a=JSON.parse(localStorage.getItem(REC_KEY)||'[]'); return Array.isArray(a)?a:[]; }catch(e){ return []; } }
+function recAdd(href){
+  if(!href || href.charAt(0)==='#') return;
+  /* read-modify-write against the freshest copy — two tabs must add, not clobber */
+  try{
+    var a=recList().filter(function(r){ return r && r.u!==href; });
+    a.unshift({u:href,t:Date.now()});
+    if(a.length>20) a.length=20;
+    localStorage.setItem(REC_KEY,JSON.stringify(a));
+  }catch(e){}
+  renderYourArcade();
+}
+/* own listener: recording must work even when analytics is blocked */
+document.addEventListener('click',function(e){
+  var a=e.target&&e.target.closest?e.target.closest('a.card'):null;
+  if(a) recAdd(a.getAttribute('href')||'');
+});
+function recItem(u){
+  /* match on the PATH, never the full url — a game's ?v= cache stamp bumps
+     on every deploy and must not orphan it from Recently Played */
+  var path=String(u).split('?')[0];
+  var f=FEATURED.find(function(g){ return !g.hub && String(g.url||'').split('?')[0]===path; });
+  if(f) return {g:f,feat:true};
+  var m=path.match(/\/play\/([a-z0-9]+)\.html/i);
+  if(m){ var n=GAMES.find(function(g){ return g[0]===m[1]; }); if(n && n[4]!=='soon') return {g:n,feat:false}; }
+  var x=GAMES.find(function(g){ return String(g[5]||'').split('?')[0]===path; });
+  return x?{g:x,feat:false}:null;
+}
+function renderYourArcade(){
+  var sec=document.getElementById('your-arcade'); if(!sec) return;
+  var items=[], seen={};
+  recList().forEach(function(r){
+    var it=r&&recItem(r.u); if(!it) return;
+    var nm=it.feat?it.g.nm:it.g[1];
+    if(!seen[nm]){ seen[nm]=1; items.push(it); }
+  });
+  items=items.slice(0,10);
+  var favN=Object.keys(favMap()).length;
+  var fe=document.getElementById('you-fav-n'); if(fe) fe.textContent=favN;
+  var host=document.getElementById('recent-shelf');
+  window._swsHideKind=null;
+  host.innerHTML=items.length?shelf('Jump back in','where you left off',items):'';
+  sec.style.display=(items.length||favN)?'block':'none';
+  if(items.length) _lwLazyBoot();
+  try{
+    if(window._swsAvatarSVG){
+      var A=JSON.parse(localStorage.getItem('sws_avatar')||'null')||{};
+      document.getElementById('you-av').innerHTML=_swsAvatarSVG(
+        {base:A.base||'sprout',color:A.color||'sage',hat:A.hat||'none',frame:A.frame||'none'},34);
+      if(A.name) document.getElementById('you-name').textContent=A.name;
+    }
+  }catch(e){}
+}
+document.getElementById('you-favs').addEventListener('click',function(){ openCatalog('fav'); });
+document.getElementById('you-keeper').addEventListener('click',function(){ if(window._swsOpenKeeper) _swsOpenKeeper(); });
+document.getElementById('you-beams').addEventListener('click',function(){
+  var m=document.querySelector('.members'); if(m&&m.scrollIntoView) m.scrollIntoView({behavior:'smooth',block:'start'});
+});
+renderYourArcade();
+/* the strip's sunbeam number mirrors the live wallet */
+(function(){
+  var b=document.getElementById('bal'), y=document.getElementById('you-beam-n');
+  if(!b||!y) return;
+  var sync=function(){ y.textContent=b.textContent; };
+  sync();
+  try{ new MutationObserver(sync).observe(b,{childList:true,characterData:true,subtree:true}); }catch(e){}
+})();
+
 /* ── PICK A VIBE: verified playstyle chips, storefront + catalog ── */
 var VIBE_DEFS=[
   ['quick','⚡ Quick play'],
@@ -3077,6 +3175,12 @@ document.addEventListener('click', function(e){
   });
   document.getElementById('sws-tabrow').addEventListener('click',function(e){ var b=e.target.closest?e.target.closest('.sws-tab'):null; if(!b)return; curTab=b.getAttribute('data-tab'); renderTabs(); renderPanel(); });
   function openProf(){ renderTabs(); renderPanel(); renderPreview(); bg.classList.add('on'); }
+  /* Phase 4: the Your Arcade strip opens the same editor and draws the same
+     avatar — exposures are add-only, nothing else changes. */
+  window._swsOpenKeeper = openProf;
+  window._swsAvatarSVG = avatarSVG;
+  /* the Your Arcade strip booted before this module — repaint its avatar */
+  try{ if(window.renderYourArcade) renderYourArcade(); }catch(e){}
   function closeProf(){ bg.classList.remove('on'); }
   document.getElementById('sws-x').addEventListener('click',closeProf);
   document.getElementById('sws-done').addEventListener('click',closeProf);
