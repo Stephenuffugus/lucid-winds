@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.08.20.02';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.08.21.01';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -41474,6 +41474,16 @@ document.addEventListener('keydown', function(e) {
     renderGreenhouse();
   };
 
+  /* Paid expansions never grant free anymore (Stephen 2026-08-21: "they
+     just gave me the expansion without paying"). Rails: Pi in Pi Browser,
+     card/crypto on the web. With no rail live, the honest answer is a
+     message, not a gift — except for unlocked testers, who still get the
+     old free EXPAND so testing never stalls. */
+  window._lwDevFree = function(){ try{ return localStorage.getItem('lw_dev_unlocked')==='1'; }catch(e){ return false; } };
+  window._lwPayNotReady = function(){
+    if (window._toast) _toast('Payments are being set up. Expansions open soon.');
+    else if (window.showHexMsg) showHexMsg('Payments are being set up. Expansions open soon.');
+  };
   window.expandGHSlot = function() {
     var current = getGHSlots();
     if (current >= GH_SLOTS_MAX) {
@@ -41515,8 +41525,18 @@ document.addEventListener('keydown', function(e) {
         // so we only auto-claim reserve here. renderGreenhouse + hex
         // message fire from inside buySlot.
         window.LW_Pi.buySlot(current + 1, function(ok){ if (ok) _claimFromReserve(); });
-      } else {
+      } else if (_web && window.LW_WebPay && LW_WebPay.buy) {
+        // web rail sells the 10-pack; the server grants and the vault
+        // reload inside the order watcher reconciles the count
+        LW_WebPay.buy({type:'slot'}, 'greenhouse slots', function(){
+          if (window._invalidateGHCache) _invalidateGHCache();
+          renderGreenhouse(); _claimFromReserve();
+          showHexMsg('Greenhouse expanded. Thank you!');
+        });
+      } else if (window._lwDevFree()) {
         _applyExpansion();
+      } else {
+        window._lwPayNotReady();
       }
     });
   };
@@ -41579,8 +41599,16 @@ document.addEventListener('keydown', function(e) {
             _claimFromReserve();
           }
         });
-      } else {
+      } else if (_web && window.LW_WebPay && LW_WebPay.buy) {
+        LW_WebPay.buy({type:'slot'}, 'greenhouse slots', function(){
+          if (window._invalidateGHCache) _invalidateGHCache();
+          renderGreenhouse(); for (var k2 = 0; k2 < 10; k2++) _claimFromReserve();
+          showHexMsg('Greenhouse expanded. Thank you!');
+        });
+      } else if (window._lwDevFree()) {
         _apply();
+      } else {
+        window._lwPayNotReady();
       }
     });
   };
@@ -47277,7 +47305,7 @@ document.addEventListener('keydown', function(e) {
     var _web = !!(window.LW_WebPay && window.LW_WebPay.showUsd());
     var _wUsd = _web && window.LW_WebPay.priceStr('nursery_clipping_slot', {slot: current + 1});
     var _bodyCopy = _web
-      ? 'Add clipping slot ' + (current + 1) + ' for <b>' + _wUsd + '</b>. Pay in any crypto?'
+      ? 'Add clipping slot ' + (current + 1) + ' for <b>' + _wUsd + '</b>. Pay by card or crypto?'
       : _piOn
         ? 'Add clipping slot ' + (current + 1) + ' for <b>' + _price + ' Pi</b>?'
         : 'Add clipping slot ' + (current + 1) + '?';
@@ -47296,8 +47324,15 @@ document.addEventListener('keydown', function(e) {
       };
       if (_piOn && window.LW_Pi && window.LW_Pi.buyNurseryClippingSlot) {
         window.LW_Pi.buyNurseryClippingSlot(current + 1, function(){});
-      } else {
+      } else if (_web && window.LW_WebPay && LW_WebPay.buy) {
+        LW_WebPay.buy({type:'nursery_clipping_slot'}, 'clipping slot', function(){
+          if (window.renderNursery) renderNursery();
+          if (window.showHexMsg) showHexMsg('Clipping slots expanded. Thank you!');
+        });
+      } else if (window._lwDevFree()) {
         _applyExpansion();
+      } else {
+        window._lwPayNotReady();
       }
     });
   };
@@ -47325,7 +47360,7 @@ document.addEventListener('keydown', function(e) {
     var _web = !!(window.LW_WebPay && window.LW_WebPay.showUsd());
     var _wUsd = _web && window.LW_WebPay.priceStr('nursery_slot', {slot: current + 1});
     var _bodyCopy = _web
-      ? 'Add slot ' + (current + 1) + ' for <b>' + _wUsd + '</b>. Pay in any crypto?'
+      ? 'Add slot ' + (current + 1) + ' for <b>' + _wUsd + '</b>. Pay by card or crypto?'
       : _piOn
         ? 'Add slot ' + (current + 1) + ' for <b>' + _price + ' Pi</b>?'
         : 'Add slot ' + (current + 1) + '?';
@@ -47347,8 +47382,15 @@ document.addEventListener('keydown', function(e) {
           // Pi wrapper handles slot increment + render on success.
           // Nothing further needed here.
         });
-      } else {
+      } else if (_web && window.LW_WebPay && LW_WebPay.buy) {
+        LW_WebPay.buy({type:'nursery_slot'}, 'nursery slot', function(){
+          if (window.renderNursery) renderNursery();
+          if (window.showHexMsg) showHexMsg('Nursery expanded. Thank you!');
+        });
+      } else if (window._lwDevFree()) {
         _applyExpansion();
+      } else {
+        window._lwPayNotReady();
       }
     });
   };
@@ -77313,7 +77355,7 @@ var LW_WebPay = {
       +   '<span style="display:block;font-size:0.72rem;color:var(--muted);margin-top:2px;">Secure Stripe checkout. Unlocks in seconds.</span></button>'
       + '<button data-rail="crypto" style="display:block;width:100%;min-height:52px;margin:0 0 10px;padding:12px 14px;background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.45);border-radius:12px;color:var(--cream);text-align:left;cursor:pointer;">'
       +   '<span style="font-family:\'Bebas Neue\',sans-serif;font-size:0.95rem;letter-spacing:0.08em;color:var(--gold);">🪙 ANY CRYPTO</span>'
-      +   '<span style="display:block;font-size:0.72rem;color:var(--muted);margin-top:2px;">Around 300 coins at the live rate. Unlocks after it confirms on chain.</span></button>'
+      +   '<span style="display:block;font-size:0.72rem;color:var(--muted);margin-top:2px;">Around 300 coins at the live rate. Heads up: many coins need a few dollars minimum, so cards suit the small packs better.</span></button>'
       + '<button data-rail="" style="display:block;width:100%;min-height:48px;background:transparent;border:1px solid rgba(138,145,120,0.4);border-radius:12px;color:var(--muted);cursor:pointer;">Not now</button>'
       + '</div>';
     wrap.addEventListener('click', function(e){
