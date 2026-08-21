@@ -504,5 +504,148 @@ window._SUIT_NAME=_SUIT_NAME;
 window._CD_BASE=_CD_BASE;
 window._CD_BACK=_CD_BACK;
 
+// ═══════════════════════════════════════════════════════════════════════════
+// TANGIBILITY KIT (2026-08-21) — the shared card feel
+//
+// Director: Euchre "needs a card back", and "the rest of the games given that
+// level of care with dealing, shuffling, all the CSS. It makes it a lot more
+// tangible and involved for human players."
+//
+// Euchre (games/bowergarden.js) already had the deal; it just drew its
+// face-down cards as a flat green gradient rectangle. Everything here exists so
+// that the other ten card games get the same three things without ten people
+// inventing them separately: a real back, a shuffle beat, and a staged deal.
+//
+// ⛔ THE BACK IS STEPHEN'S EXISTING ART, NOT A NEW DESIGN.
+// assets/games/cards/playing-card-backs.png has been in the repo since July and
+// the six solitaires already point at it. It could not sit edge to edge in a
+// card div because the HOUSE FRAME WAS BAKED IN: the png is the card
+// photographed on a dark surface, so about 22% of it is background and shadow.
+// card-back.png is that same art with the surround measured off (art rows
+// 30..237, cols 17..162 -> 146x208, which is ratio 1.425, the real playing card
+// ratio). The original file is untouched.
+//
+// ⛔ THE DEAL DOES NOT FLY CARDS ACROSS THE TABLE. Every one of these games
+// re-renders by rebuilding innerHTML, which destroys any in-flight transition.
+// So the pattern euchre proved is the pattern here: stage the STATE, re-render,
+// and let CSS pop in only the newest batch. It reads as dealing and it survives
+// a full repaint.
+var _CD_BACK_ART='assets/games/cards/card-back.png';
+var _CD_BACK_AR=208/146;               // the art's true aspect, for sizing helpers
+
+// One face-down card. Pass width and height; height defaults to the real ratio
+// so nobody has to remember it.
+function _cdBackStyle(w,h,r){
+  h=h||Math.round(w*_CD_BACK_AR);
+  r=(r==null)?Math.max(3,Math.round(w*0.085)):r;
+  // ⛔ THE EDGE IS NOT DECORATION. Hands are drawn overlapping (euchre leaves
+  // 14-16px of each card showing), and this back is dense knotwork, so without
+  // a hard edge five overlapped cards photograph as ONE strip of texture
+  // instead of as five cards. The old flat rectangles got this for free from
+  // their 1.5px border. A dark ring separates card from card, and the inner
+  // cream hairline keeps the top card from disappearing into the felt.
+  return 'width:'+w+'px;height:'+h+'px;border-radius:'+r+'px;'
+    +"background-image:url('"+_CD_BACK_ART+"');background-size:100% 100%;"
+    +'box-shadow:0 0 0 1px rgba(10,18,8,0.95),inset 0 0 0 1px rgba(232,220,200,0.20),'
+    +'2px 2px 6px rgba(0,0,0,0.55);';
+}
+function _cdBackHtml(w,h,o){
+  o=o||{};
+  return '<div class="cd-back '+(o.cls||'')+'" style="'+_cdBackStyle(w,h,o.radius)+(o.style||'')+'"'
+    +(o.attrs||'')+'></div>';
+}
+// A stack of backs with the count on top: the deck while dealing, the stock
+// pile, the kitty. `o.shuffling` adds the wiggle, `o.label` the caption.
+function _cdDeckHtml(n,w,h,o){
+  o=o||{}; w=w||52; h=h||Math.round(w*_CD_BACK_AR);
+  var depth=Math.max(1,Math.min(4,Math.ceil((n||0)/6)));
+  var s='<div class="cd-deck'+(o.shuffling?' cd-shuffling':'')+'" style="position:relative;width:'
+    +(w+depth*2)+'px;height:'+(h+depth*2)+'px;margin:0 auto;'+(o.style||'')+'">';
+  for(var i=0;i<depth;i++){
+    s+='<div style="position:absolute;top:'+(i*2)+'px;left:'+(i*2)+'px;'+_cdBackStyle(w,h,o.radius)+'"></div>';
+  }
+  if(o.count!==false){
+    s+='<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;'
+      +'font-family:Georgia,serif;font-weight:700;font-size:'+Math.max(11,Math.round(w*0.30))+'px;'
+      +'color:rgba(245,240,225,0.95);text-shadow:0 1px 4px rgba(0,0,0,0.95),0 0 10px rgba(0,0,0,0.8);">'
+      +(n||0)+'</div>';
+  }
+  s+='</div>';
+  if(o.label)s+='<div class="cd-deck-label">'+o.label+'</div>';
+  return s;
+}
+
+// The shared stylesheet. Injected once per page, guarded by its own id so a
+// game can call it from render() without piling up <style> tags.
+function _cdKitCss(){
+  if(document.getElementById('cd-kit-css'))return;
+  var st=document.createElement('style'); st.id='cd-kit-css';
+  st.textContent=
+   /* the newest batch of a deal pops in; everything else is already on the table */
+   '@keyframes cdDealIn{0%{opacity:0;transform:translateY(-14px) scale(.82) rotate(-4deg)}'
+   +'60%{opacity:1;transform:translateY(2px) scale(1.04) rotate(1deg)}'
+   +'100%{opacity:1;transform:none}}'
+   +'.cd-deal-in{animation:cdDealIn .34s cubic-bezier(.34,1.4,.5,1) both}'
+   /* the shuffle: the deck riffles in place before anything goes out */
+   +'@keyframes cdShuffle{0%,100%{transform:translate(0,0) rotate(0)}'
+   +'20%{transform:translate(-3px,1px) rotate(-2.4deg)}'
+   +'40%{transform:translate(3px,-1px) rotate(2.4deg)}'
+   +'60%{transform:translate(-2px,-1px) rotate(-1.6deg)}'
+   +'80%{transform:translate(2px,1px) rotate(1.6deg)}}'
+   +'.cd-shuffling{animation:cdShuffle .26s ease-in-out infinite}'
+   /* a card turning face up: the upcard, the cut, a tableau card unblocking */
+   +'@keyframes cdFlip{0%{transform:rotateY(90deg) scale(.94);opacity:.25}'
+   +'55%{transform:rotateY(-8deg) scale(1.03);opacity:1}100%{transform:none;opacity:1}}'
+   +'.cd-flip{animation:cdFlip .30s ease-out both;backface-visibility:hidden}'
+   /* cards you can actually pick up should say so under a finger */
+   +'.cd-lift{transition:transform .12s ease,box-shadow .12s ease}'
+   +'.cd-lift:hover{transform:translateY(-5px);box-shadow:0 8px 16px rgba(0,0,0,.6)}'
+   +'.cd-deck-label{margin-top:7px;font-family:Georgia,serif;font-style:italic;font-size:0.6rem;'
+   +'color:rgba(232,220,200,0.7);text-align:center;letter-spacing:.02em}'
+   /* ⛔ a player who has asked the OS to stop animating gets a still table, not
+      a four second wait staring at a deck that will not move */
+   +'@media (prefers-reduced-motion:reduce){.cd-deal-in,.cd-shuffling,.cd-flip{animation:none!important}}';
+  document.head.appendChild(st);
+}
+
+// The staged deal scheduler. The kit does not know or care what a "step" is:
+// the game defines its own batches (Euchre 3-2-3-2, Hearts 13 each, Klondike a
+// growing cascade of 7 columns) and just gets told when to advance one.
+//
+// ⛔ THE GENERATION GUARD IS NOT OPTIONAL. Every one of these games has a New
+// Game button, and without it a deal already in flight keeps firing timers into
+// a table that has been rebuilt underneath it.
+var _cdDealGen=0;
+function _cdDeal(o){
+  o=o||{};
+  var gen=++_cdDealGen, steps=o.steps||[], i=0;
+  function live(){ return gen===_cdDealGen && (!o.alive || o.alive()!==false); }
+  function next(){
+    if(!live())return;
+    if(i>=steps.length){ if(o.onDone)o.onDone(); return; }
+    var s=steps[i], at=i; i++;
+    if(o.onStep)o.onStep(s,at);
+    var ms=(typeof o.stepMs==='function')?o.stepMs(at,s):(o.stepMs==null?280:o.stepMs);
+    setTimeout(next,ms);
+  }
+  var sh=(o.shuffleMs==null)?900:o.shuffleMs;
+  if(o.onShuffle)o.onShuffle();
+  if(sh<=0){ next(); }
+  else setTimeout(function(){ if(!live())return; if(o.onShuffleEnd)o.onShuffleEnd(); next(); },sh);
+  return { cancel:function(){ if(gen===_cdDealGen)_cdDealGen++; },
+           live:function(){ return live(); } };
+}
+function _cdCancelDeal(){ _cdDealGen++; }
+
+window._CD_BACK_ART=_CD_BACK_ART;
+window._cdBackStyle=_cdBackStyle;
+window._cdBackHtml=_cdBackHtml;
+window._cdDeckHtml=_cdDeckHtml;
+window._cdKitCss=_cdKitCss;
+window._cdDeal=_cdDeal;
+window._cdCancelDeal=_cdCancelDeal;
+try{ _cdKitCss(); }catch(e){}
+
+
 console.log('[LW] Card utilities loaded, style:',_cdStyle());
 })();

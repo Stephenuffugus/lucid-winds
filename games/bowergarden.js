@@ -691,14 +691,11 @@ window._gameFns.bowergarden = function BG(a){
   // Small stack of card backs with a count — the deck while dealing,
   // the face-down kitty after the upcard is turned down.
   function _deckStackHtml(count,label){
-    var s='<div style="position:relative;width:52px;height:72px;margin:0 auto;">';
-    for(var i=0;i<3;i++){
-      s+='<div style="position:absolute;top:'+(i*2)+'px;left:'+(i*2)+'px;width:52px;height:72px;border-radius:6px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1.5px solid #2d4a1e;box-shadow:0 3px 8px rgba(0,0,0,0.4);"></div>';
-    }
-    s+='<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-weight:700;color:rgba(245,240,225,0.85);font-size:1rem;text-shadow:0 1px 3px rgba(0,0,0,0.8);">'+count+'</div>';
-    s+='</div>';
-    if(label)s+='<div style="margin-top:8px;font-family:Georgia,serif;font-style:italic;font-size:0.6rem;color:rgba(232,220,200,0.7);text-align:center;">'+label+'</div>';
-    return s;
+    // ⛔ was a flat green gradient rectangle: the one thing Stephen named about
+    // this game ("still needs card back"). The shared kit draws the real back
+    // (assets/games/cards/card-back.png), so the deck, the kitty and every
+    // face-down hand in every card game are the same deck.
+    return _cdDeckHtml(count,52,72,{label:label,shuffling:shuffling&&phase==='dealing'});
   }
   function _headerHtml(){
     // Persistent trump chip (center) + dealer name (left) + alone badge
@@ -757,7 +754,14 @@ window._gameFns.bowergarden = function BG(a){
       if(isSittingOut){cls+=' bg-sitting-out';return cls;}
       var isActive=(seat===currentPlayer&&(phase==='play'||phase==='call1'||phase==='call2'));
       if(isActive)cls+=' bg-active';
-      else if(phase==='play'||phase==='call1'||phase==='call2')cls+=' bg-inactive';
+      // ⛔ NEVER DIM THE PLAYER'S OWN HAND. bg-inactive drops a seat to 55%
+      // opacity to show whose turn it is, which is right for the three seats
+      // that are only card backs. Applied to SOUTH it washed the player's own
+      // cream cards out to pale sage over the green felt, so your hand looked
+      // disabled for most of every hand — and your hand is the one thing you
+      // are reading the whole time, planning the next lead while the AI acts.
+      // The active seat still glows and the status line still names the turn.
+      else if(seat!==SOUTH&&(phase==='play'||phase==='call1'||phase==='call2'))cls+=' bg-inactive';
       // Caller badge persists through the hand — marks whoever won the bid.
       var isCaller = trumpSuit && callingTeam===seat%2 && phase!=='call1' && phase!=='call2';
       if(isCaller && seat===callingSeat)cls+=' bg-seat-caller';
@@ -789,14 +793,14 @@ window._gameFns.bowergarden = function BG(a){
     // North (partner) hand - face down. Bumped to 38x52 (was 32x44).
     h+='<div style="text-align:center;padding:6px;" class="'+activeClass(NORTH).replace(/^\s+/,'')+'"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:#7ab356;letter-spacing:0.1em;margin-bottom:5px;">PARTNER'+dealerBadge(NORTH)+_bidTag(NORTH)+sittingOutBadge(NORTH)+'</div><div style="display:inline-flex;justify-content:center;">';
     var nCt=seatCount(NORTH);
-    for(var n=0;n<nCt;n++)h+='<div class="'+dealCls(NORTH,n,nCt)+'" style="width:38px;height:52px;border-radius:5px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1.5px solid #2d4a1e;margin-left:'+(n===0?'0':'-22px')+';"></div>';
+    for(var n=0;n<nCt;n++)h+='<div class="'+dealCls(NORTH,n,nCt)+'" style="'+_cdBackStyle(38,52,5)+'margin-left:'+(n===0?'0':'-22px')+';"></div>';
     h+='</div></div>';
     // Middle: West | Trick | East. Bumped min-height + side card sizes.
     h+='<div style="display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:6px 4px;min-height:236px;">';
     // West — bumped to 32x46 (was 28x40)
     h+='<div class="'+activeClass(WEST).replace(/^\s+/,'')+'" style="padding:4px;width:64px;text-align:center;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.72rem;color:#dc8a8a;text-align:center;letter-spacing:0.08em;margin-bottom:5px;line-height:1.5;">WEST'+dealerBadge(WEST)+'<br>'+_bidTag(WEST)+sittingOutBadge(WEST)+'</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
     var wCt=seatCount(WEST);
-    for(var w=0;w<wCt;w++)h+='<div class="'+dealCls(WEST,w,wCt)+'" style="width:32px;height:46px;border-radius:5px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1.5px solid #2d4a1e;margin-top:'+(w===0?'0':'-32px')+';"></div>';
+    for(var w=0;w<wCt;w++)h+='<div class="'+dealCls(WEST,w,wCt)+'" style="'+_cdBackStyle(32,46,4)+'margin-top:'+(w===0?'0':'-32px')+';"></div>';
     h+='</div></div>';
     // Trick area — bumped min-height
     h+='<div style="position:relative;min-height:236px;background:rgba(26,31,23,0.3);border-radius:8px;">';
@@ -843,7 +847,7 @@ window._gameFns.bowergarden = function BG(a){
     // East — bumped to 32x46
     h+='<div class="'+activeClass(EAST).replace(/^\s+/,'')+'" style="padding:4px;width:64px;text-align:center;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.72rem;color:#dc8a8a;text-align:center;letter-spacing:0.08em;margin-bottom:5px;line-height:1.5;">EAST'+dealerBadge(EAST)+'<br>'+_bidTag(EAST)+sittingOutBadge(EAST)+'</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
     var eCt=seatCount(EAST);
-    for(var e=0;e<eCt;e++)h+='<div class="'+dealCls(EAST,e,eCt)+'" style="width:32px;height:46px;border-radius:5px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1.5px solid #2d4a1e;margin-top:'+(e===0?'0':'-32px')+';"></div>';
+    for(var e=0;e<eCt;e++)h+='<div class="'+dealCls(EAST,e,eCt)+'" style="'+_cdBackStyle(32,46,4)+'margin-top:'+(e===0?'0':'-32px')+';"></div>';
     h+='</div></div>';
     h+='</div>';
     // South (player) hand
@@ -873,7 +877,7 @@ window._gameFns.bowergarden = function BG(a){
       // Your cards arrive face-down in the dealt batches, then flip up
       // together when the upcard turns.
       var sCt=dealCounts[SOUTH];
-      for(var sd=0;sd<sCt;sd++)h+='<div class="'+dealCls(SOUTH,sd,sCt)+'" style="width:50px;height:70px;border-radius:6px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:2.5px solid #2d4a1e;box-shadow:0 2px 6px rgba(0,0,0,0.35);"></div>';
+      for(var sd=0;sd<sCt;sd++)h+='<div class="'+dealCls(SOUTH,sd,sCt)+'" style="'+_cdBackStyle(50,70,6)+'"></div>';
     }
     else for(var k=0;k<sortedHand.length;k++){
       var cc=sortedHand[k];var canPlay=false;
