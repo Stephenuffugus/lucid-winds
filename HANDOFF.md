@@ -141,9 +141,10 @@ writing. Sixfold, Cosmic Cadets and Nectar Drop were never added and never
 refused — either passed over or still in his 200-submission backlog. The door is
 explicitly open for more.
 
-⛔⛔ **Nectar Drop's daily is broken**: its own copy promises everyone the same
-board and one place uses unseeded randomness. It is **submitted but NOT listed**,
-so it is not publicly wrong today. Fix it before it is ever resubmitted.
+~~Nectar Drop's daily is broken~~ **FIXED (commit ada4c65a) and PROVEN
+deterministic 2026-08-21** — two fresh loads, ten identical shots with powers,
+identical boards and scores. Safe to send to Listdle. (The remaining candidates
+with dailies still need the same determinism proof before submission.)
 
 ⭐ The real job: find every puzzle game in the catalog with a daily, **verify the
 daily is genuinely deterministic rather than trusting the label**, and send the

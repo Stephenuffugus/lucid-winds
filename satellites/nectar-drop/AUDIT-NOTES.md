@@ -68,10 +68,16 @@ on the same daily who fire the same power get different boards from that point
 on. The *starting* board is identical, which is what the comment is literally
 about, so this is a soft violation rather than a broken promise.
 
-**Not fixed.** Making it deterministic means threading a per-run seeded rng
-through the power system, which changes how every power behaves, and that is a
-gameplay change on a shelf game, not a bug fix. Recorded here with the line
-number so the call is Stephen's.
+**FIXED (commit ada4c65a) and PROVEN 2026-08-21.** pegSwap now picks the
+three blues NEAREST the bloom that fired it, with an index tiebreak — same
+distance-based family as goldRush and rainbowChain, so no per-run rng thread
+was needed and no other power's behaviour changed. Every remaining
+Math.random() in the file is visual or audio only (sparks, vfx rotation,
+screenshake, sfx pitch) plus the autoPlay test hook. Empirical proof: two
+fresh page loads of the same Daily, ten identical shots each with powers
+firing, produced identical boards start to finish (hit flags included) and
+identical 41,546 scores. The Daily keeps its promise and is safe to submit
+to Listdle.
 
 ### Core loop — good, and the best juice of the four
 `newGame` builds pegs from a per level `build()`, `cleanPegs` de-overlaps them,
