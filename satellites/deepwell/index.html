@@ -311,6 +311,23 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;font-v
 #dwFade.up{background:linear-gradient(0deg, rgba(240,167,66,0) 0%, rgba(240,167,66,.28) 45%, rgba(255,235,190,.55) 100%);animation:dwSweep .55s both}
 @keyframes dwFadeIn{from{opacity:0}to{opacity:1}}
 @keyframes dwSweep{from{opacity:0;transform:translateY(40%)}to{opacity:1;transform:none}}
+/* the descent briefing: the dive used to open on an 850ms rope beat straight
+   into the full dashboard. Stephen 2026-08-21: "everything happens so fast I
+   don't have time to read or anything." The briefing waits for a tap. */
+#dwBrief{position:fixed;inset:0;z-index:72;background:rgba(5,4,3,.97);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:26px 20px calc(26px + env(safe-area-inset-bottom,0px));gap:13px}
+#dwBrief .bh{font-weight:800;letter-spacing:.26em;color:#f0a742;font-size:14px}
+#dwBrief .bp{max-width:400px;background:#171a22;border:1px solid #2a2f3c;border-radius:14px;padding:12px 14px;
+  color:#d8d2c4;font-size:13.5px;line-height:1.55}
+#dwBrief .bp b{color:#f0a742}
+#dwBrief .bgear{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:400px}
+#dwBrief .bgear span{background:#12151d;border:1px solid #2a2f3c;border-radius:10px;padding:6px 10px;
+  font-size:11.5px;letter-spacing:.08em;color:#9aa3b2}
+#dwBrief .bgear b{color:#e8dcc8}
+#dwBrief .bdue{font-size:12px;color:#8b93a5;letter-spacing:.04em}
+#dwBrief button{margin-top:6px;min-height:56px;padding:14px 34px;border-radius:14px;border:1px solid #f0a742;
+  background:linear-gradient(180deg,#3a2c14,#241a0a);color:#f0a742;font-weight:800;letter-spacing:.2em;font-size:14px;cursor:pointer}
+#dwBrief button:active{filter:brightness(1.3)}
 #dwLower{position:fixed;inset:0;z-index:70;background:#050403;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
 #dwLower .rope{width:2px;height:34vh;background:linear-gradient(#7a5c33,#3a2c18);transform-origin:top;animation:dwRope .8s linear both}
 @keyframes dwRope{from{transform:scaleY(.2)}to{transform:scaleY(1)}}
@@ -423,7 +440,7 @@ input[type=range]{width:100%;height:48px;accent-color:#f0a742;background:transpa
     <div id="actions">
       <button id="btnDescend" class="big"><b>DESCEND</b><small></small></button>
       <button id="btnMine" class="big"><b>MINE</b><small></small></button>
-      <button id="btnAscend" class="big"><b>ASCEND</b><small></small></button>
+      <button id="btnAscend" class="big"><b>WINCH OUT</b><small></small></button>
     </div>
     <button id="btnCargo"><span class="cl">CARGO</span><span class="cw" id="cargoW">0</span><span class="cv" id="cargoV">0</span></button>
   </section>
@@ -2786,7 +2803,7 @@ function render() {
   if (st.depth === 0) { note.textContent = 'Nothing to climb yet. The way out is free.'; }
   else if (margin < 0) { note.textContent = 'YOU CANNOT AFFORD THE WAY OUT'; note.className = 'bad'; }
   else if (margin < 0.15) { note.textContent = 'CUTTING IT FINE'; note.className = 'warn'; }
-  else note.textContent = 'The climb costs ' + (cost.perDepth).toFixed(2) + ' air a meter at this weight';
+  else note.textContent = 'The climb costs ' + (cost.perDepth).toFixed(2) + ' air a meter at this weight. Ore pays out only at the top.';
   /* the live number and its cap are separate nodes so the cap can be dropped on
      a narrow screen without touching the number */
   setMeterText('mAir', 'cAir', Math.floor(st.air), st.caps.air);
@@ -2819,7 +2836,13 @@ function render() {
     var n2 = currentNode(st), tk = veinTicks(st, n2), tc = tickCost(st);
     bm.querySelector('small').textContent = tk + (tk === 1 ? ' tick, ' : ' ticks, ') + Math.ceil(tc.air * tk) + ' air';
   } else bm.querySelector('small').textContent = mr === 'nothing to work' ? 'nothing to work' : mr.toLowerCase();
-  ba.querySelector('small').textContent = st.depth === 0 ? 'you are at the top' : Math.ceil(cost.air) + ' air to the top';
+  /* WINCH OUT is the resurface commit: one press rides the whole way up
+     (or dies partway). The label says exactly what the ride banks, so the
+     resurfacing rule lives on the button itself (Stephen 2026-08-21: "I'm
+     not completely sure how the resurfacing works"). */
+  ba.querySelector('small').textContent = st.depth === 0 ? 'you are at the top'
+    : (Math.ceil(cost.air) + ' air, banks ' + cargoValue(st.cargo) + ' ore'
+      + (st.cash ? ', ' + st.cash + ' cash is already yours' : ''));
   ba.disabled = st.depth === 0;
   $('cargoW').textContent = st.cargo.length + (st.cargo.length === 1 ? ' ore' : ' ore');
   $('cargoV').textContent = cargoValue(st.cargo) + (st.cash ? ' plus ' + st.cash + ' cash' : '');
@@ -3134,23 +3157,45 @@ function startRun(seed, upg, daily) {
   G.save = commitSave(store(), function (sv) { sv.run = G.run; });
   $('shopScreen').classList.add('hide');
   $('resOvl').classList.add('hide');
-  if (!dwCalm()) {
-    /* the winch: one beat of rope before the rock takes you */
-    var L = document.createElement('div'); L.id = 'dwLower';
-    L.innerHTML = '<div class="rope"></div><div class="word">THE WINCH TAKES YOU DOWN</div>';
-    document.body.appendChild(L);
-    pluck(87, 0.9, 'sine'); noiseBurst(0.3, 500, 0.25); haptic(15);
-    setTimeout(function () {
-      L.remove();
+  /* the briefing waits for a tap, so there is all the reading time in the
+     world before the rock takes you */
+  var B = document.createElement('div'); B.id = 'dwBrief';
+  var caps = G.run.caps, nextDeep = null, di;
+  for (di = 0; di < DEEPS.length; di++) { if (DEEPS[di].depth > (G.save.best.depth || 0)) { nextDeep = DEEPS[di]; break; } }
+  B.innerHTML =
+    '<div class="bh">' + (daily ? 'THE DAILY SHAFT' : 'THE CONTRACT') + '</div>' +
+    '<div class="bp"><b>Ore becomes cash at the top of the well and nowhere else.</b> Ride the winch out and the pack pays. Stay too long and it stays down there with you. Cash from deals is yours the moment you shake.</div>' +
+    '<div class="bp"><b>AIR TO SURFACE</b> is the price of the climb from wherever you stand. It rises with every meter and every kilo. The moment it passes the air you have left, the well owns you.</div>' +
+    '<div class="bgear">' +
+      '<span>TANK <b>' + caps.air + '</b></span>' +
+      '<span>LAMP <b>' + caps.lamp + '</b></span>' +
+      '<span>PACK <b>' + caps.pack + ' KILO</b></span>' +
+      '<span>BRACES <b>' + caps.integrity + '</b></span>' +
+    '</div>' +
+    (nextDeep ? '<div class="bdue">Something is due at ' + nextDeep.depth + 'm that no dive of yours has reached.</div>'
+              : '<div class="bdue">You have stood in every landmark the well admits to. It keeps going.</div>') +
+    '<button id="dwBriefGo">TAKE THE WINCH</button>';
+  document.body.appendChild(B);
+  $('dwBriefGo').onclick = function () {
+    B.remove();
+    if (!dwCalm()) {
+      /* the winch: one beat of rope before the rock takes you */
+      var L = document.createElement('div'); L.id = 'dwLower';
+      L.innerHTML = '<div class="rope"></div><div class="word">THE WINCH TAKES YOU DOWN</div>';
+      document.body.appendChild(L);
+      pluck(87, 0.9, 'sine'); noiseBurst(0.3, 500, 0.25); haptic(15);
+      setTimeout(function () {
+        L.remove();
+        $('runScreen').classList.remove('hide');
+        render();
+        stampBand(bandAt(0).name);
+      }, 850);
+    } else {
       $('runScreen').classList.remove('hide');
       render();
       stampBand(bandAt(0).name);
-    }, 850);
-  } else {
-    $('runScreen').classList.remove('hide');
-    render();
-    stampBand(bandAt(0).name);
-  }
+    }
+  };
 }
 function finishRun() {
   var st = G.run, o = st.over;
@@ -3393,7 +3438,7 @@ function boot() {
     toSurface();
   }
   try {
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=20260816b').catch(function () {});
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=20260821a').catch(function () {});
   } catch (e) {}
   document.addEventListener('pointerdown', firstGesture, { once: true });
 }

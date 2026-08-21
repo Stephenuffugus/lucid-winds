@@ -12,7 +12,7 @@
    Bump SHELL_VERSION on every deploy, AND the ?v= on the registration in
    index.html in lockstep — this host edge-pins bare sw.js URLs for 7 days. */
 
-const SHELL_VERSION = "deepwell-shell-v2";
+const SHELL_VERSION = "deepwell-shell-v3";
 const SFX_CACHE     = "deepwell-unused-v1"; // no recorded audio: every sound is synthesised
 const NAV_TIMEOUT_MS = 8000;
 
