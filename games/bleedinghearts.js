@@ -39,6 +39,20 @@ window._gameFns.bleedinghearts = function BH(a){
   var gen=0; // bumped by _BHN so stale AI/round timers can't touch a fresh game
   var trick=[],trickCards=[null,null,null,null];
   var leader=0,currentPlayer=0,phase='',heartsBroken=false;
+  // ── THE DEAL (2026-08-21) ─────────────────────────────────────────────────
+  // Hearts used to go from "New Game" to thirteen cards already in your hand,
+  // in one frame. The cards were the same cards; it just never looked like a
+  // game had started. phase='dealing' holds the table while the deck riffles
+  // and the hands fill up a round at a time.
+  //
+  // ⛔ A ROUND AT A TIME, NOT A CARD AT A TIME. A real dealer goes one player
+  // at a time, which here would be 52 steps, and render() rebuilds the whole
+  // table's innerHTML on every one of them. Thirteen rebuilds reads exactly as
+  // clearly and costs a quarter of the work on a phone.
+  var dealt=[0,0,0,0],shuffling=false,dealHandle=null;
+  function seatCount(p){return phase==='dealing'?dealt[p]:hands[p].length;}
+  function dealtCards(p){return phase==='dealing'?hands[p].slice(0,dealt[p]):hands[p];}
+  function isNewlyDealt(p,i){return phase==='dealing'&&i===dealt[p]-1;}
   var passDir=0,passSelection=[],roundNum=0,trickNum=0;
   // Per-seat void tracking. Populated when a seat can't follow lead suit —
   // subsequent tricks use voids[p][suit] to put a struck-through suit glyph
@@ -183,6 +197,19 @@ window._gameFns.bleedinghearts = function BH(a){
   function newRound(){
     roundNum++;deal();passDir=(roundNum-1)%4;
     var re=document.getElementById('BHr');if(re)re.textContent=roundNum;
+    // hold everything behind the deal; afterDeal() picks up where this used to
+    dealt=[0,0,0,0];shuffling=true;phase='dealing';render();
+    if(dealHandle)dealHandle.cancel();
+    var rounds=[];for(var k=0;k<13;k++)rounds.push(k);
+    dealHandle=_cdDeal({
+      steps:rounds, shuffleMs:850, stepMs:145,
+      alive:function(){return phase==='dealing';},
+      onShuffleEnd:function(){shuffling=false;render();},
+      onStep:function(){ for(var q=0;q<4;q++)dealt[q]++; render(); },
+      onDone:afterDeal
+    });
+  }
+  function afterDeal(){
     if(passDir<3){
       phase='passing';passSelection=[];
       for(var p=1;p<4;p++){
@@ -338,7 +365,10 @@ window._gameFns.bleedinghearts = function BH(a){
   function _seatCls(seat){
     var isActive=(seat===currentPlayer&&(phase==='play'||phase==='passing'));
     if(isActive)return 'bh-seat bh-active';
-    if(phase==='play'||phase==='passing')return 'bh-seat bh-inactive';
+    // ⛔ never dim the player's own hand: bh-inactive is 55% opacity, which is
+    // the right cue for the three seats that are only card backs and the wrong
+    // one for the cards you are reading the whole time. Same call as euchre.
+    if(seat!==S&&(phase==='play'||phase==='passing'))return 'bh-seat bh-inactive';
     return 'bh-seat';
   }
   // Void tags for a seat — struck-through suit glyphs under the seat label.
@@ -415,18 +445,23 @@ window._gameFns.bleedinghearts = function BH(a){
     }
     h+='</div>';
     // North — face-down cards with horizontal overlap for compactness
-    h+='<div class="'+_seatCls(N)+'" style="text-align:center;padding:6px;border-radius:10px;"><div style="font-family:DM Mono,monospace;font-size:0.6rem;color:'+PLAYER_COLORS[N]+';letter-spacing:0.14em;margin-bottom:5px;text-transform:uppercase;font-weight:700;">NORTH <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;margin-left:4px;">×'+hands[N].length+'</span>'+_voidTags(N)+'</div><div style="display:inline-flex;justify-content:center;">';
+    h+='<div class="'+_seatCls(N)+'" style="text-align:center;padding:6px;border-radius:10px;"><div style="font-family:DM Mono,monospace;font-size:0.6rem;color:'+PLAYER_COLORS[N]+';letter-spacing:0.14em;margin-bottom:5px;text-transform:uppercase;font-weight:700;">NORTH <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;margin-left:4px;">×'+seatCount(N)+'</span>'+_voidTags(N)+'</div><div style="display:inline-flex;justify-content:center;">';
     // Tight overlap — 13 backs fanning horizontally shouldn't eat the whole row.
-    for(var n=0;n<hands[N].length;n++)h+='<span style="margin-left:'+(n===0?'0':'-22px')+';">'+_cardHtml(null,true)+'</span>';
+    for(var n=0;n<seatCount(N);n++)h+='<span class="'+(isNewlyDealt(N,n)?'cd-deal-in':'')+'" style="display:inline-block;margin-left:'+(n===0?'0':'-22px')+';">'+_cardHtml(null,true)+'</span>';
     h+='</div></div>';
     // West | Trick | East — vertical-overlap for side hands
     h+='<div style="display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:6px 4px;min-height:160px;">';
-    h+='<div class="'+_seatCls(W)+'" style="padding:4px;border-radius:10px;"><div style="font-family:DM Mono,monospace;font-size:0.6rem;color:'+PLAYER_COLORS[W]+';text-align:center;letter-spacing:0.14em;margin-bottom:5px;text-transform:uppercase;font-weight:700;">WEST <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;margin-left:2px;">×'+hands[W].length+'</span>'+_voidTags(W)+'</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
+    h+='<div class="'+_seatCls(W)+'" style="padding:4px;border-radius:10px;"><div style="font-family:DM Mono,monospace;font-size:0.6rem;color:'+PLAYER_COLORS[W]+';text-align:center;letter-spacing:0.14em;margin-bottom:5px;text-transform:uppercase;font-weight:700;">WEST <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;margin-left:2px;">×'+seatCount(W)+'</span>'+_voidTags(W)+'</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
     // Aggressive overlap — 13 card backs show as a slim stack, not a tower.
-    for(var w=0;w<hands[W].length;w++)h+='<span style="margin-top:'+(w===0?'0':'-34px')+';">'+_cardHtml(null,true)+'</span>';
+    for(var w=0;w<seatCount(W);w++)h+='<span class="'+(isNewlyDealt(W,w)?'cd-deal-in':'')+'" style="display:block;margin-top:'+(w===0?'0':'-34px')+';">'+_cardHtml(null,true)+'</span>';
     h+='</div></div>';
     // Trick
     h+='<div style="position:relative;min-height:160px;background:rgba(26,31,23,0.3);border-radius:8px;">';
+    if(phase==='dealing'){
+      var left=52-(dealt[0]+dealt[1]+dealt[2]+dealt[3]);
+      h+='<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">'
+        +_cdDeckHtml(left,48,68,{shuffling:shuffling,label:shuffling?'shuffling\u2026':'dealing\u2026'})+'</div>';
+    }
     var pos={};pos[S]='bottom:8px;left:50%;transform:translateX(-50%);';pos[W]='left:8px;top:50%;transform:translateY(-50%);';pos[N]='top:8px;left:50%;transform:translateX(-50%);';pos[E]='right:8px;top:50%;transform:translateY(-50%);';
     for(var pl=0;pl<4;pl++){
       var c=trickCards[pl];if(!c)continue;
@@ -442,8 +477,8 @@ window._gameFns.bleedinghearts = function BH(a){
       h+='<div style="font-size:0.9rem;">'+c.rank+'</div><div style="font-size:1.2rem;line-height:1;">'+_pip(c.suit)+'</div></div>';
     }
     h+='</div>';
-    h+='<div class="'+_seatCls(E)+'" style="padding:4px;border-radius:10px;"><div style="font-family:DM Mono,monospace;font-size:0.6rem;color:'+PLAYER_COLORS[E]+';text-align:center;letter-spacing:0.14em;margin-bottom:5px;text-transform:uppercase;font-weight:700;">EAST <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;margin-left:2px;">×'+hands[E].length+'</span>'+_voidTags(E)+'</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
-    for(var e=0;e<hands[E].length;e++)h+='<span style="margin-top:'+(e===0?'0':'-34px')+';">'+_cardHtml(null,true)+'</span>';
+    h+='<div class="'+_seatCls(E)+'" style="padding:4px;border-radius:10px;"><div style="font-family:DM Mono,monospace;font-size:0.6rem;color:'+PLAYER_COLORS[E]+';text-align:center;letter-spacing:0.14em;margin-bottom:5px;text-transform:uppercase;font-weight:700;">EAST <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;margin-left:2px;">×'+seatCount(E)+'</span>'+_voidTags(E)+'</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
+    for(var e=0;e<seatCount(E);e++)h+='<span class="'+(isNewlyDealt(E,e)?'cd-deal-in':'')+'" style="display:block;margin-top:'+(e===0?'0':'-34px')+';">'+_cardHtml(null,true)+'</span>';
     h+='</div></div>';
     h+='</div>';
     // Pass UI — dedicated screen with giant directional arrow + 3 ghost
@@ -492,8 +527,9 @@ window._gameFns.bleedinghearts = function BH(a){
     var playable=[];
     if(phase==='play'&&currentPlayer===S)playable=getPlayable(hands[S],leadS,trickNum===0);
     else if(phase==='passing')playable=hands[S].slice();
-    for(var i=0;i<hands[S].length;i++){
-      var cc=hands[S][i];
+    var myCards=dealtCards(S);
+    for(var i=0;i<myCards.length;i++){
+      var cc=myCards[i];
       var canP=playable.some(function(p){return p.rank===cc.rank&&p.suit===cc.suit;});
       var isSel=passSelection.some(function(p){return p.rank===cc.rank&&p.suit===cc.suit;});
       var isQS=(cc.rank==='Q'&&cc.suit==='spades');
