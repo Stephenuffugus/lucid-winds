@@ -8,10 +8,34 @@ var _cdMk=window._cdMk,_cdSh=window._cdSh,_cdEl=window._cdEl,_cdArt=window._cdAr
 var _cdRnk=window._cdRnk,_cdSuit=window._cdSuit,_cdIsRed=window._cdIsRed,_cdBackStyle=window._cdBackStyle;
 var _SUIT_SYM=window._SUIT_SYM,_SUIT_CLR=window._SUIT_CLR,_RANK_SYM=window._RANK_SYM;
 var _SUIT_NAME=window._SUIT_NAME,_CD_BASE=window._CD_BASE,_CD_BACK=window._CD_BACK;
+// Tangibility kit (also games/_cards.js) — the shared deck art + deal scheduler
+var _cdDeckHtml=window._cdDeckHtml,_cdDeal=window._cdDeal;
 
 function GPY(a){
   var pyr=[],stock=[],waste=[],sel=null,gameOver=false,moves=0,removed={};
   var history=[]; // LIFO stack of pre-move snapshots for undo
+  // ── THE DEAL (2026-08-21) ─────────────────────────────────────────────────
+  // Pyramid used to arrive whole: 28 cards already stacked into a triangle and
+  // a stock already sitting under it, in a single frame. The SHAPE is the whole
+  // identity of this game and the player never got to watch it get built.
+  //
+  // ⛔ A ROW AT A TIME, APEX DOWN — NOT A CARD AT A TIME. 28 card-by-card beats
+  // at a readable pace blows well past four seconds, and rn() rebuilds the
+  // board's innerHTML on every one of them. Seven rows is the thing the eye
+  // actually reads (the triangle widening under it) for seven repaints instead
+  // of twenty-eight. An eighth beat drops the leftover 24 into the stock, so
+  // the deck the cards came out of visibly becomes the pile the player draws
+  // from. 850ms shuffle + 8 steps x 300ms = 3250ms.
+  //
+  // ⛔ THE MODEL IS DEALT INSTANTLY. init() builds the finished pyramid and
+  // stock exactly the way it always did; `dealt` only limits how much of it rn()
+  // is allowed to draw. isExposed / checkLoss / undo never see a half-built
+  // pyramid, so none of the game logic had to learn about dealing.
+  var dealt=0,shuffling=false,dealHandle=null,dealing=false;
+  function dealtRows(){return dealing?Math.min(dealt,7):7;}
+  // Step 8 is the stock landing; before that the remainder is still "in hand".
+  function stockDealt(){return !dealing||dealt>=8;}
+  function isNewRow(r){return dealing&&r===dealt-1;}
   ms(a,'Cleared: <strong id="PYcl">0</strong>/28 · Moves: <strong id="PYmv">0</strong>');mm(a);
   var gd=document.createElement('div');gd.id='PYgd';a.appendChild(gd);
   var _pyStyleLbl='🃏 Style';
@@ -27,7 +51,8 @@ function GPY(a){
     else{b.disabled=true;b.style.opacity='0.45';}
   }
   window._PYUndo=function(){
-    if(history.length===0||gameOver)return;
+    // ⛔ every input path is gated on the deal being finished — see init()
+    if(dealing||history.length===0||gameOver)return;
     var snap=JSON.parse(history.pop());
     stock=snap.stock; waste=snap.waste; moves=snap.moves; removed=snap.removed;
     sel=null;
@@ -49,7 +74,22 @@ function GPY(a){
     history=[];
     for(var i=0;i<28;i++){var cd=deck.pop();cd.up=true;pyr.push(cd);}
     stock=deck.slice();for(var i=0;i<stock.length;i++)stock[i].up=false;
-    upd();rn();
+    // ⛔ CANCEL FIRST. New Game is one tap away at every moment, including the
+    // middle of a deal, and a deal still in flight would keep firing rn() into
+    // a board that has been rebuilt underneath it.
+    if(dealHandle)dealHandle.cancel();
+    dealt=0;shuffling=true;dealing=true;
+    upd();rn();refreshUndoBtn();
+    // steps 0-6 = pyramid rows apex to base, step 7 = the stock pile
+    var steps=[0,1,2,3,4,5,6,7];
+    dealHandle=_cdDeal({
+      steps:steps, shuffleMs:850, stepMs:300,
+      alive:function(){return dealing;},
+      onShuffle:function(){shuffling=true;},
+      onShuffleEnd:function(){shuffling=false;rn();},
+      onStep:function(step,i){dealt=i+1;rn();},
+      onDone:function(){dealing=false;dealt=8;upd();rn();refreshUndoBtn();}
+    });
   }
   function upd(){
     var cl=0;for(var k in removed)cl++;
@@ -99,7 +139,7 @@ function GPY(a){
     if(!gameOver&&checkLoss()){gameOver=true;mm_up('No moves left');_e('game_loss');_play('lose');_sr('pyramid',{w:false,s:moves});rn();if(window._lwCardEnd)_lwCardEnd({key:'pyramid',won:false,title:'NO MOVES LEFT',line:'the pyramid held this time',retry:window._PYN});}
   }
   function tapPyr(idx){
-    if(gameOver||removed[idx]||!isExposed(idx))return;
+    if(dealing||gameOver||removed[idx]||!isExposed(idx))return;
     var card=pyr[idx];
     if(isKing(card)){snapshot();removePyr(idx);moves++;_play('tap');_e('progress');
       if(checkWin()){gameOver=true;mm_up('🏆 Cleared!');_play('win');_playWin();_e('game_win');_sr('pyramid',{w:true,s:moves,lo:1});if(window._lwCardEnd)_lwCardEnd({key:'pyramid',won:true,title:'PYRAMID CLEARED',line:moves+' moves',retry:window._PYN});}
@@ -123,7 +163,7 @@ function GPY(a){
     sel={type:'pyr',idx:idx};rn();
   }
   function tapWaste(){
-    if(gameOver||waste.length===0)return;
+    if(dealing||gameOver||waste.length===0)return;
     var card=waste[waste.length-1];
     if(isKing(card)){snapshot();waste.pop();moves++;_play('tap');_e('progress');sel=null;upd();rn();refreshUndoBtn();maybeLoss();return;}
     if(sel&&sel.type==='pyr'){
@@ -137,7 +177,7 @@ function GPY(a){
     sel={type:'waste'};rn();
   }
   function tapStock(){
-    if(gameOver||stock.length===0)return;
+    if(dealing||gameOver||stock.length===0)return;
     snapshot();
     var cd=stock.pop();cd.up=true;waste.push(cd);_play('tap');sel=null;rn();refreshUndoBtn();
     maybeLoss();
@@ -160,18 +200,28 @@ function GPY(a){
     var pyrDiv=document.createElement('div');
     pyrDiv.style.cssText='display:flex;flex-direction:column;align-items:center;padding:4px 0';
     var idx=0;
+    var rowsOut=dealtRows();
     for(var r=0;r<7;r++){
       var rowDiv=document.createElement('div');
       rowDiv.style.cssText='display:flex;gap:'+fit.gap+';justify-content:center';
       if(r>0)rowDiv.style.marginTop=(-rowOverlap)+'px';
+      var fresh=isNewRow(r);
       for(var c=0;c<=r;c++){
         var pi=idx;
-        if(removed[pi]){
+        // ⛔ AN UNDEALT ROW STILL TAKES UP ITS FULL GEOMETRY. Skipping the row
+        // outright would let the triangle grow downward and shove the stock and
+        // waste further down the screen seven times during one deal. With the
+        // spacers the pyramid fills into a frame that never moves — which is
+        // also why the same empty div already stands in for a removed card.
+        if(r>=rowsOut||removed[pi]){
           var em=document.createElement('div');em.style.cssText='width:'+pyW+';height:'+pyH;
           rowDiv.appendChild(em);
         }else{
           var cd=_cdEl(pyr[pi]);
           cd.style.width=pyW;cd.style.height=pyH;cd.style.fontSize=pyF;
+          // Only the row that just landed pops in; everything above it is
+          // already on the table and must not re-animate on the next repaint.
+          if(fresh)cd.className+=' cd-deal-in';
           if(!isExposed(pi))cd.style.opacity='.5';
           else cd.style.cursor='pointer';
           if(sel&&sel.type==='pyr'&&sel.idx===pi)cd.className+=' gc-sel';
@@ -193,7 +243,19 @@ function GPY(a){
     var botRow=document.createElement('div');
     botRow.style.cssText='display:flex;gap:clamp(4px,1.2vw,6px);justify-content:center;padding:clamp(3px,1vw,6px) 0;align-items:center';
     var stEl=document.createElement('div');
-    if(stock.length>0){stEl.className='gc gc-dn';_cdBackStyle(stEl);stEl.innerHTML='<span style="color:rgba(200,168,78,.6);font-size:clamp(.55rem,1.8vw,.75rem);font-weight:700;text-shadow:0 1px 4px rgba(0,0,0,.9)">'+stock.length+'</span>';stEl.style.cursor='pointer';stEl.onclick=function(){tapStock()};}
+    if(!stockDealt()){
+      // ⛔ SHOW THE DECK THE CARDS ARE COMING OUT OF, in the stock's own slot,
+      // so the final beat of the deal is the very pile the player then taps.
+      // .gc takes its size from a CSS clamp in index.html, so the clamp is
+      // mirrored here instead of guessed — pick a different number and the deck
+      // visibly resizes at the moment it becomes the stock.
+      var _vw=window.innerWidth||360;
+      var stkW=Math.round(Math.max(56,Math.min(110,_vw*0.135)));
+      var stkH=Math.round(Math.max(78,Math.min(154,_vw*0.19)));
+      stEl.innerHTML=_cdDeckHtml(52-(rowsOut*(rowsOut+1)/2),stkW,stkH,
+        {shuffling:shuffling,label:shuffling?'shuffling\u2026':'dealing\u2026'});
+    }
+    else if(stock.length>0){stEl.className='gc gc-dn';_cdBackStyle(stEl);stEl.innerHTML='<span style="color:rgba(200,168,78,.6);font-size:clamp(.55rem,1.8vw,.75rem);font-weight:700;text-shadow:0 1px 4px rgba(0,0,0,.9)">'+stock.length+'</span>';stEl.style.cursor='pointer';stEl.onclick=function(){tapStock()};}
     else{stEl.className='gc gc-empty';}
     botRow.appendChild(stEl);
     var wEl;

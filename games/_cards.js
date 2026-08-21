@@ -634,6 +634,20 @@ var _cdDealGen=0;
 function _cdDeal(o){
   o=o||{};
   var gen=++_cdDealGen, steps=o.steps||[], i=0;
+  /* ⛔ THE CSS WAS NOT THE WHOLE FIX. The stylesheet disables cd-deal-in and
+     cd-shuffling under prefers-reduced-motion, but the SCHEDULER kept running,
+     so a player who has asked the OS to stop animating sat through three
+     silent seconds of nothing moving before they could touch the table. Honour
+     the preference where it actually costs time: deal it out in one go. */
+  var _rm=false;
+  try{ _rm=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){}
+  if(_rm){
+    if(o.onShuffle)o.onShuffle();
+    if(o.onShuffleEnd)o.onShuffleEnd();
+    for(var q=0;q<steps.length;q++){ if(o.onStep)o.onStep(steps[q],q); }
+    if(o.onDone)o.onDone();
+    return { cancel:function(){}, live:function(){ return false; } };
+  }
   function live(){ return gen===_cdDealGen && (!o.alive || o.alive()!==false); }
   function next(){
     if(!live())return;

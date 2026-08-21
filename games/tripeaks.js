@@ -29,7 +29,7 @@ function GTP(a){
     else{b.disabled=true;b.style.opacity='0.45';}
   }
   window._TPUndo=function(){
-    if(history.length===0||gameOver)return;
+    if(dealing||history.length===0||gameOver)return;
     var snap=JSON.parse(history.pop());
     peaks=snap.peaks; stock=snap.stock; waste=snap.waste; moves=snap.moves; streak=snap.streak; removed=snap.removed;
     _play('tap');
@@ -49,6 +49,51 @@ function GTP(a){
   // Peak 2: indices 12, 13,14, 15,16,17
   // Base row: indices 18-27 (10 cards)
   var removed={};
+
+  // ── THE DEAL (2026-08-21) ─────────────────────────────────────────────────
+  // TriPeaks used to arrive whole: twenty-eight cards, a stock and a face-up
+  // waste, all in the frame after "New Game". Three peaks is the only shape in
+  // the card set that is neither a grid nor a hand, and landing all at once it
+  // reads as one lumpy drift of cards. Dealing it TIER BY TIER from the summits
+  // down — 3, then 6, then 9, then the 10-card base — draws the three pyramids
+  // in the air before the player has to pick them out of a static board. That
+  // is why this game's choreography is by row and not by seat like Hearts.
+  //
+  // ⛔ THE MODEL IS BUILT INSTANTLY; ONLY THE VIEW IS STAGED. init() lays the
+  // whole deal exactly as it always did and `dealt` just limits how much of it
+  // rn() is allowed to draw. Building the model a tier at a time would run
+  // isExposed(), flipParents() and the loss check against a half-built table.
+  var TIERS=[[0,6,12],[1,2,7,8,13,14],[3,4,5,9,10,11,15,16,17],[18,19,20,21,22,23,24,25,26,27]];
+  // Six beats: the four tiers, the stock landing, then the first waste card
+  // turning over. 850ms shuffle + 6 x 350ms = 2950ms, inside the 2-3.5s the
+  // rest of the card set deals in.
+  var DEAL_STEPS=['tier0','tier1','tier2','base','stock','waste'];
+  var dealt=0,shuffling=false,dealHandle=null,dealing=false;
+  // `dealt` counts completed steps, so step i is on the table once dealt>i.
+  // Every gate answers true when we are not dealing — one code path renders
+  // both the staged table and the finished one.
+  function tierDealt(ri){return !dealing||dealt>ri;}
+  function tierNew(ri){return dealing&&dealt===ri+1;}
+  function stockDealt(){return !dealing||dealt>4;}
+  function stockNew(){return dealing&&dealt===5;}
+  function wasteDealt(){return !dealing||dealt>5;}
+  function wasteNew(){return dealing&&dealt===6;}
+  // What is still in the dealer's hand: 52 minus everything already on felt.
+  function deckLeft(){
+    var n=0;
+    for(var t=0;t<TIERS.length;t++)if(tierDealt(t))n+=TIERS[t].length;
+    if(stockDealt())n+=stock.length;
+    if(wasteDealt())n+=waste.length;
+    return 52-n;
+  }
+  // _cdDeckHtml needs real pixels, but the bottom row is sized by the .gc clamp
+  // in index.html, not by _cdFit (which only sizes the 10-wide tableau). Mirror
+  // that clamp so deck, stock and waste card are all one size. If .gc changes,
+  // change this with it.
+  function botCardSize(){
+    var w=Math.max(56,Math.min(110,Math.round((window.innerWidth||360)*0.135)));
+    return {w:w,h:Math.round(w*1.4)};
+  }
 
   window._cdActiveRn=function(){try{rn()}catch(e){}};
   function init(){
@@ -70,7 +115,29 @@ function GTP(a){
     var first=deck.pop();first.up=true;
     waste=[first];stock=deck.slice();
     for(var i=0;i<stock.length;i++)stock[i].up=false;
-    upd();rn();
+    upd();startDeal();
+  }
+  function startDeal(){
+    // ⛔ CANCEL FIRST. "New Game" is one tap away at all times, and a deal still
+    // in flight would keep firing its timers into a table that has been rebuilt
+    // underneath it — peaks it laid would reappear over the new ones.
+    if(dealHandle)dealHandle.cancel();
+    dealt=0;dealing=true;shuffling=true;rn();
+    if(typeof _cdDeal!=='function'){
+      // Card kit not up yet: show the finished table rather than an empty one.
+      dealt=DEAL_STEPS.length;dealing=false;shuffling=false;rn();refreshUndoBtn();return;
+    }
+    dealHandle=_cdDeal({
+      steps:DEAL_STEPS, shuffleMs:850, stepMs:350,
+      alive:function(){return dealing;},
+      onShuffle:function(){shuffling=true;},
+      onShuffleEnd:function(){shuffling=false;rn();},
+      // ⛔ STAGE, RE-RENDER, LET CSS POP THE NEW TIER IN. rn() rebuilds the
+      // whole board's innerHTML, which would kill any card mid-flight across
+      // the table, so nothing flies — the tier simply arrives.
+      onStep:function(step,i){dealt=i+1;rn();},
+      onDone:function(){dealing=false;dealt=DEAL_STEPS.length;rn();refreshUndoBtn();}
+    });
   }
   function upd(){
     var left=0;for(var i=0;i<28;i++)if(!removed[i])left++;
@@ -107,7 +174,7 @@ function GTP(a){
     return true;
   }
   function tapPeak(idx){
-    if(gameOver||removed[idx]||!isExposed(idx)||!peaks[idx].up)return;
+    if(dealing||gameOver||removed[idx]||!isExposed(idx)||!peaks[idx].up)return;
     if(!canPlay(peaks[idx])){sm('Need ±1 from waste');return;}
     snapshot();
     waste.push(peaks[idx]);removed[idx]=true;streak++;moves++;_play('tap');_e('progress');
@@ -117,7 +184,7 @@ function GTP(a){
     if(!gameOver&&checkLoss()){gameOver=true;var left=0;for(var i=0;i<28;i++)if(!removed[i])left++;mm_up(left+' left, stuck');_e('game_loss');_play('lose');_sr('tripeaks',{w:false,s:28-left});if(window._lwCardEnd)_lwCardEnd({key:'tripeaks',won:false,title:'STUCK ON THE SLOPES',line:left+' cards left on the peaks',retry:window._TPN});}
   }
   function tapStock(){
-    if(gameOver||stock.length===0)return;
+    if(dealing||gameOver||stock.length===0)return;
     snapshot();
     var cd=stock.pop();cd.up=true;waste.push(cd);streak=0;_play('tap');upd();rn();refreshUndoBtn();
     if(checkLoss()){gameOver=true;var left=0;for(var i=0;i<28;i++)if(!removed[i])left++;mm_up(left+' left, stuck');_e('game_loss');_play('lose');_sr('tripeaks',{w:false,s:28-left});if(window._lwCardEnd)_lwCardEnd({key:'tripeaks',won:false,title:'STUCK ON THE SLOPES',line:left+' cards left on the peaks',retry:window._TPN});}
@@ -130,7 +197,7 @@ function GTP(a){
     var peakDiv=document.createElement('div');
     peakDiv.style.cssText='display:flex;flex-direction:column;align-items:center;padding:4px 0';
     // Row 0: 3 peak tops (indices 0,6,12) with gaps
-    var rows=[[0,6,12],[1,2,7,8,13,14],[3,4,5,9,10,11,15,16,17],[18,19,20,21,22,23,24,25,26,27]];
+    var rows=TIERS;
     // 10-column base row drives sizing.
     var fit=window._cdFit?window._cdFit(10,{maxW:64,gap:2,pad:6}):{w:'clamp(42px,9.5vw,62px)',h:'clamp(59px,13.3vw,87px)',font:'clamp(.6rem,1.7vw,.8rem)',gap:'2px',raw:{w:62,h:87}};
     var tpW=fit.w,tpH=fit.h,tpF=fit.font;
@@ -153,7 +220,10 @@ function GTP(a){
           gap.style.cssText='width:'+gapW;
           rowDiv.appendChild(gap);
         }
-        if(removed[pi]){
+        // An undealt tier holds its slots open with the same spacer a removed
+        // card leaves behind, so the peaks fill in place instead of shoving the
+        // stock and waste down the screen four times on the way in.
+        if(removed[pi]||!tierDealt(ri)){
           var em=document.createElement('div');em.style.cssText='width:'+tpW+';height:'+tpH;
           rowDiv.appendChild(em);
         }else{
@@ -166,6 +236,9 @@ function GTP(a){
           if(!peaks[pi].up){cd.className='gc gc-dn';_cdBackStyle(cd);cd.style.width=tpW;cd.style.height=tpH;cd.innerHTML='';}
           else if(isExposed(pi)){cd.style.cursor='pointer';(function(ii){cd.onclick=function(){tapPeak(ii)}})(pi);}
           else{cd.style.opacity='.5';}
+          // Only the tier that just landed pops. Set last: the face-down branch
+          // above reassigns className outright and would wipe it.
+          if(tierNew(ri))cd.classList.add('cd-deal-in');
           rowDiv.appendChild(cd);
         }
       }
@@ -175,12 +248,28 @@ function GTP(a){
     // Stock + Waste
     var botRow=document.createElement('div');
     botRow.style.cssText='display:flex;gap:clamp(4px,1.2vw,6px);justify-content:center;padding:clamp(3px,1vw,6px) 0;align-items:center';
+    // The deck deals from the slot the stock will occupy, so the pile the
+    // player taps for the rest of the game is visibly the leftovers of the
+    // shuffle they just watched, not a new object that appeared beside it.
+    var bs=botCardSize();
     var stEl=document.createElement('div');
-    if(stock.length>0){stEl.className='gc gc-dn';_cdBackStyle(stEl);stEl.innerHTML='<span style="color:rgba(200,168,78,.6);font-size:clamp(.55rem,1.8vw,.75rem);font-weight:700;text-shadow:0 1px 4px rgba(0,0,0,.9)">'+stock.length+'</span>';stEl.style.cursor='pointer';stEl.onclick=function(){tapStock()};}
+    stEl.style.flex='0 0 auto'; // .gc gave the old stock flex-shrink:0 for free
+    if(!stockDealt()){
+      stEl.innerHTML=_cdDeckHtml(deckLeft(),bs.w,bs.h,{shuffling:shuffling,label:shuffling?'shuffling\u2026':'dealing\u2026'});
+    }else if(stock.length>0){
+      stEl.innerHTML=_cdDeckHtml(stock.length,bs.w,bs.h,{});
+      if(stockNew())stEl.className='cd-deal-in';
+      if(!dealing){stEl.style.cursor='pointer';stEl.onclick=function(){tapStock()};}
+    }
     else{stEl.className='gc gc-empty';}
     botRow.appendChild(stEl);
     var wEl;
-    if(waste.length>0){wEl=_cdEl(waste[waste.length-1]);wEl.style.boxShadow='0 0 8px rgba(200,168,78,.3)';}
+    // The last beat of the deal: the opening waste card turns over. It stays an
+    // empty slot until then so the turn is something the player sees happen.
+    if(waste.length>0&&wasteDealt()){
+      wEl=_cdEl(waste[waste.length-1]);wEl.style.boxShadow='0 0 8px rgba(200,168,78,.3)';
+      if(wasteNew())wEl.classList.add('cd-flip');
+    }
     else{wEl=document.createElement('div');wEl.className='gc gc-empty';}
     botRow.appendChild(wEl);
     var sp=document.createElement('div');sp.style.flex='1';botRow.appendChild(sp);
