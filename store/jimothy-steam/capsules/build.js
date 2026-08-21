@@ -8,6 +8,26 @@ const BASE='http://localhost:8942';
 const OUT=__dirname+'/out';
 require('fs').mkdirSync(OUT,{recursive:true});
 
+/* ⛔ 2026-08-21: the script SILENTLY produced black wordmark-only capsules when
+   nothing served 8942 (every asset 404'd; networkidle0 was perfectly happy).
+   Serve the repo in-process, same as shots_costume.js, so the script cannot
+   run without its art again. */
+const _path=require('path'), _fs=require('fs'), _http=require('http');
+const _ROOT='/workspaces/lucid-winds';
+const _MIME={'.html':'text/html','.js':'text/javascript','.css':'text/css','.png':'image/png',
+ '.jpg':'image/jpeg','.jpeg':'image/jpeg','.json':'application/json','.woff2':'font/woff2',
+ '.woff':'font/woff','.ttf':'font/ttf','.svg':'image/svg+xml','.webp':'image/webp'};
+const _server=_http.createServer((req,res)=>{
+ const clean=decodeURIComponent(req.url.split('?')[0]);
+ let fp=_path.normalize(_path.join(_ROOT,clean));
+ if(!fp.startsWith(_ROOT)){res.writeHead(403);res.end();return;}
+ _fs.readFile(fp,(e,buf)=>{ if(e){res.writeHead(404);res.end();return;}
+  /* ACAO required: pages are built via setContent (opaque origin) and browsers
+     block cross-origin FONT loads without it - images load, fonts ERR_FAILED. */
+  res.writeHead(200,{'Content-Type':_MIME[_path.extname(fp)]||'application/octet-stream',
+   'Access-Control-Allow-Origin':'*'});res.end(buf); });
+});
+
 /* ⛔⛔ TWO SETS, AND THE BIG ONES ARE THE ONES YOU UPLOAD (2026-08-01).
    Valve's Store Assets page moved to double-resolution capsules years ago. The
    four store capsules below ship at the CURRENT required sizes; the legacy
@@ -72,22 +92,34 @@ function page(w,h,mode){
    ${(mode==='bg'||mode==='hero')?'':`<div class="type">
      <div class="l1">Jumping</div>
      <div class="l2">Jimothy</div>
-     ${(mode==='wide'||mode==='tall')?'<div class="tag">The Little Nugget</div>':''}
+     ${''/* tagline removed 2026-08-21: Steamworks upload attestation requires no
+        text on capsules beyond the name/logo, and "The Little Nugget" reads as
+        marketing copy under that rule. It lives on in the title screen ribbon. */}
    </div>`}
  </div></body></html>`;
 }
 
 (async()=>{
+ await new Promise(r=>_server.listen(8942,'127.0.0.1',r));
  const b=await puppeteer.launch({headless:'new',args:['--no-sandbox','--disable-setuid-sandbox']});
  for(const s of SIZES){
   const p=await b.newPage();
+  /* ⛔ fail LOUDLY on a missing asset instead of composing a black capsule */
+  let missing=[];
+  /* ERR_ABORTED is Chrome cancelling a duplicate font fetch (fonts.css declares
+     one file per weight) - benign. Anything else failed for real. */
+  p.on('requestfailed',r=>{ const t=(r.failure()||{}).errorText||'';
+    if(t!=='net::ERR_ABORTED') missing.push(r.url()+' ('+t+')'); });
+  p.on('response',r=>{ if(r.status()>=400) missing.push(r.url()+' (HTTP '+r.status()+')'); });
   await p.setViewport({width:s.w,height:s.h,deviceScaleFactor:1});
   await p.setContent(page(s.w,s.h,s.mode),{waitUntil:'networkidle0',timeout:60000});
   await new Promise(r=>setTimeout(r,900));
+  if(missing.length){ console.error('  '+s.f+' '+s.w+'x'+s.h+': MISSING ASSETS, not writing:'); missing.forEach(u=>console.error('    '+u)); await p.close(); continue; }
   const tag=process.env.POSE?('_'+process.env.POSE):'';
   await p.screenshot({path:`${OUT}/${s.f}_${s.w}x${s.h}${tag}.png`});
   console.log('  wrote '+s.f+'  '+s.w+'x'+s.h);
   await p.close();
  }
  await b.close();
+ _server.close();
 })();
