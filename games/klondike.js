@@ -531,7 +531,7 @@ function GKL(a){
     }else if(stock.length>0){
       stEl.className='gc gc-dn';
       _cdBackStyle(stEl);
-      stEl.innerHTML='<span style="color:rgba(200,168,78,.6);font-size:clamp(.55rem,1.8vw,.75rem);font-weight:700;text-shadow:0 1px 4px rgba(0,0,0,.9)">'+stock.length+'</span>';
+      stEl.innerHTML='<span style="color:rgba(245,240,225,.95);font-size:clamp(.62rem,2vw,.82rem);font-weight:700;text-shadow:0 1px 4px rgba(0,0,0,.95),0 0 10px rgba(0,0,0,.85)">'+stock.length+'</span>';
       stEl.style.cursor='pointer';
       stEl.style.width=klW;stEl.style.height=klH;stEl.style.fontSize=klF;
       // The deal's last beat: the 24 cards still in hand are set down as the

@@ -262,7 +262,7 @@ function GPY(a){
       stEl.innerHTML=_cdDeckHtml(52-(rowsOut*(rowsOut+1)/2),stkW,stkH,
         {shuffling:shuffling,label:shuffling?'shuffling\u2026':'dealing\u2026'});
     }
-    else if(stock.length>0){stEl.className='gc gc-dn';_cdBackStyle(stEl);stEl.innerHTML='<span style="color:rgba(200,168,78,.6);font-size:clamp(.55rem,1.8vw,.75rem);font-weight:700;text-shadow:0 1px 4px rgba(0,0,0,.9)">'+stock.length+'</span>';stEl.style.cursor='pointer';stEl.onclick=function(){tapStock()};}
+    else if(stock.length>0){stEl.className='gc gc-dn';_cdBackStyle(stEl);stEl.innerHTML='<span style="color:rgba(245,240,225,.95);font-size:clamp(.62rem,2vw,.82rem);font-weight:700;text-shadow:0 1px 4px rgba(0,0,0,.95),0 0 10px rgba(0,0,0,.85)">'+stock.length+'</span>';stEl.style.cursor='pointer';stEl.onclick=function(){tapStock()};}
     else{stEl.className='gc gc-empty';}
     botRow.appendChild(stEl);
     var wEl;
