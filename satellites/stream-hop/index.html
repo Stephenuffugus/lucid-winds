@@ -1840,7 +1840,24 @@ var G=null, cv, ctx, running=false, lastTs=0, advRetryLevel=1;
    a daily: a player who lived thirty seconds longer burned extra draws on gulls and
    weather, and every lane after that came out different. Two players, same day, same
    seed, two completely different courses from row 21 on. Keep these apart. */
+/* WHIM DEMO (2026-08-21): the marketplace demo build sets window.__WHIM_DEMO
+   and gets exactly the first five Adventure levels. Without the flag every
+   line below is inert. The wall names what the full game holds. */
+function _demoWall(msg){
+  var old=document.getElementById('whim-demo-wall'); if(old) old.remove();
+  var d=document.createElement('div'); d.id='whim-demo-wall';
+  d.style.cssText='position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(12,10,6,.94);padding:24px;text-align:center;';
+  d.innerHTML='<div style="font:800 26px system-ui;color:#f0e6d2;max-width:22ch;">'+msg+'</div>'
+    +'<div style="font:600 15px system-ui;color:#bfae8f;max-width:34ch;line-height:1.5;">The full game is 120 levels across all of Seattle, 44 costumes to earn, endless and rush and daily modes, and the greatest dumpster feast in town.</div>'
+    +'<div style="font:800 17px system-ui;color:#f0a742;">Get the full game on this page.</div>'
+    +'<button id="whim-demo-ok" style="min-height:48px;padding:12px 28px;border-radius:12px;border:0;background:#f0a742;color:#241c06;font:800 16px system-ui;cursor:pointer;">Back to the start</button>';
+  document.body.appendChild(d);
+  document.getElementById('whim-demo-ok').addEventListener('click',function(){ location.reload(); });
+}
 function newGame(mode, startLevel){
+  if(window.__WHIM_DEMO && mode!=='adventure'){
+    _demoWall('The demo is the first five Adventure levels.'); return;
+  }
   /* starting anything at all ends the run you were in — including "Start over" from the
      pause menu, which is the other way out of a Daily. Finalise it before G is replaced. */
   if(G && G.dailyOfficial) dailyMark(true);
@@ -1848,6 +1865,7 @@ function newGame(mode, startLevel){
   if(mode==='daily'){ seed=daySeed(); rng=mkRng(seed^0x9e3779b9); lrng=mkRng(seed); }
   else { seed=(Date.now()>>>0)^(Math.floor(Math.random()*1e9)); rng=mkRng(seed); lrng=mkRng(seed^0x9e3779b9); }
   var advL=(mode==='adventure')?Math.max(1,startLevel||1):0;
+  if(window.__WHIM_DEMO && advL>5) advL=5;
   var startRow=advL>1?(advL-1)*ADV_LEN:0;
   if(mode==='adventure') advRetryLevel=advL;
   /* claimed BEFORE the state object exists, so the day is spoken for the instant you tap
@@ -2634,6 +2652,7 @@ function advLevelUp(newLevel){
     if(newLevel>(PROG.adv.maxLevel||1)) PROG.adv.maxLevel=newLevel;
     if(newLevel>(PROG.best.adventure||0)) PROG.best.adventure=newLevel;
     saveProg();
+    if(window.__WHIM_DEMO && newLevel>5){ _demoWall('You cleared all five demo levels!'); return; }
     // skin unlocks by furthest level reached
     checkAdvUnlocks(); achCheck();
     /* ⛔ Two of the 2026-07-24 costumes are FOUND, never sold. Mothman turns up on a
@@ -2783,7 +2802,9 @@ function renderLevels(){
       cell.style.animationDelay=(Math.min(gi,24)*0.02)+'s'; gi++;
       var top=document.createElement('div'); top.className='lv-n'; top.textContent=unlocked?n:'🔒'; cell.appendChild(top);
       var sd=document.createElement('div'); sd.className='lv-st'; sd.textContent=unlocked?starStr(n):''; cell.appendChild(sd);
-      if(unlocked){ (function(nn){ cell.addEventListener('click',function(){ sfx('ui'); ac(); newGame('adventure',nn); }); })(n); }
+      if(unlocked){ (function(nn){ cell.addEventListener('click',function(){ sfx('ui'); ac();
+        if(window.__WHIM_DEMO && nn>5){ _demoWall('The demo is the first five levels.'); return; }
+        newGame('adventure',nn); }); })(n); }
       if(n===maxLv)curCell=cell;
       grid.appendChild(cell);
     }
