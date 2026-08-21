@@ -79,3 +79,31 @@ no control is a stub. Everything below is a defect at the edges.
   still never run on a physical phone, iOS Safari or the Pi Browser.
 - The share text is plain prose. An emoji pip line (one glyph per firefly)
   would travel better in a chat, but it is a design call, not a defect.
+
+## v2.0 — 2026-08-21 (Stephen's playtest pass: out of development + variety overhaul)
+
+Stephen: "take stop the light out of development... different shaped levels...
+infinity signs and squares... multiple lights... different colored buttons...
+banking is cool but only if it keeps going. right now it stops after three
+banks... needs a lot more diversity."
+
+- **Ungated.** dev-gate script removed, portal card beta flag dropped. The
+  check.js gate assertion now asserts the gate is GONE (it cross-checks the
+  card, which is live).
+- **Endless banking.** A bank no longer spends the firefly: it moves the pot
+  to the run total and restarts the climb at round 1 with the same firefly.
+  Only a miss (or tiring out) spends one; the run ends after three misses.
+- **Track shapes.** Rounds 3 to 4 run a rounded square, 7 to 8 a lemniscate,
+  from 9 the shapes cycle. Pure render mapping: physics stays angular, px()
+  maps angle onto the shaped path by arc length, so the measured fairness
+  floors (62ms band / 40ms heart) are untouched. Figure-eight normals are
+  oriented per lobe (one consistent left normal points INTO the second lobe;
+  the petals grew inward as a snowflake tangle until that flip).
+- **Twin rounds.** Every third round from 9: a violet firefly runs the track
+  mirrored, each light has its own coloured stop button (84px), both must
+  land, pays double (heart pays 6x only if BOTH stop in the heart). The
+  violet light is judged on a virtual angle that advances through the same
+  speed field, so windowMs applies to it unchanged and the widening loop
+  clears the floor for both starts. First twin gets a note card.
+- check.js updated for the new bank contract; all 63 pass. Browser scenes for
+  square, infinity and twin rounds screenshotted and read.

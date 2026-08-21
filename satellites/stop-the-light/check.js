@@ -78,7 +78,9 @@ ok('SWS_EXIT posts close when framed', /sws:'close'/.test(PROTOCOL));
 ok('SWS_EXIT falls back to referrer history', /document\.referrer/.test(PROTOCOL) && /history\.back\(\)/.test(PROTOCOL));
 ok('SWS_EXIT has a portal fallback', /location\.replace\('https:\/\/lucidwinds\.com\/portal\//.test(PROTOCOL));
 ok('the exit is wired to a button the player can see', /b-exit/.test(GAME));
-ok('in development gate is loaded (card is beta:true)', /dev-gate\.js/.test(SRC));
+/* 2026-08-21: Stephen took the game out of development. The gate must be
+   GONE now, matching the ungated portal card. */
+ok('the in development gate is gone (card is live)', !/<script src="\/dev-gate\.js/.test(SRC));
 
 /* ------------------------------------------------------ touch targets */
 /* the stage is 540x960 scaled to fit; at 375x667 the scale is 0.6944, so a
@@ -206,16 +208,21 @@ if (H) {
     const banked = G.pot;
     H.click('ch-bank'); H.pump(0.2);
     ok('banking moves the pot into the run total', G.runTotal === banked, 'runTotal=' + G.runTotal);
-    ok('banking spends the firefly', G.fireflies === 2, 'fireflies=' + G.fireflies);
+    /* 2026-08-21: a bank no longer spends the firefly. It restarts the climb
+       from round 1 with the same firefly; only a miss spends one. */
+    ok('banking keeps the firefly', G.fireflies === 3, 'fireflies=' + G.fireflies);
+    ok('banking restarts the climb from round 1', G.chainRound === 1 && G.pot === 0, 'round=' + G.chainRound + ' pot=' + G.pot);
     ok('banking writes lifetime stats', (JSON.parse(store.stl_stats || '{}').banks || 0) === 1, store.stl_stats);
     ok('a bank pays sunbeams under the fleet cap', (JSON.parse(store['sw_sb_stop-the-light'] || '{}').n || 0) > 0, store['sw_sb_stop-the-light']);
 
     /* --- a miss burns the pot, not the banked total --- */
     H.pump(0.8); STL.aim('miss'); H.pump(2.0);
     ok('a miss loses the unbanked pot only', G.pot === 0 && G.runTotal === banked, 'pot=' + G.pot + ' total=' + G.runTotal);
-    ok('a miss spends a firefly', G.fireflies === 1, 'fireflies=' + G.fireflies);
+    ok('a miss spends a firefly', G.fireflies === 2, 'fireflies=' + G.fireflies);
 
-    /* --- the run ends after the third firefly --- */
+    /* --- the run ends after the third MISS --- */
+    H.pump(0.8); STL.aim('miss'); H.pump(2.0);
+    ok('a second miss spends the second firefly', G.fireflies === 1, 'fireflies=' + G.fireflies);
     H.pump(0.8); STL.aim('miss'); H.pump(2.0);
     ok('the run ends when the fireflies run out', G.phase === 'idle', 'phase=' + G.phase);
     ok('the summary screen is the one showing', H.el('s-sum').classList.contains('on'));

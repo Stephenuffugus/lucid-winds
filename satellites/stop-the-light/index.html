@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#05070a">
-<script src="/dev-gate.js?v=2"></script>
+<!-- dev-gate removed 2026-08-21: Stephen took Stop the Light out of development -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -106,6 +106,20 @@ h2.sc-h{font-size:25px; color:var(--warm); font-weight:800; margin-bottom:6px}
   border:1px solid var(--line); background:rgba(10,15,23,.72); color:var(--cream); font-size:20px; cursor:pointer;
   display:flex; align-items:center; justify-content:center}
 #pausebtn:active{filter:brightness(1.3)}
+/* twin round buttons: one stops the gold light, one stops the violet one.
+   Hidden except on twin rounds. 84px targets, colour carries the meaning. */
+#twinbar{position:absolute; left:0; right:0; bottom:calc(20px + env(safe-area-inset-bottom,0px));
+  display:none; justify-content:center; gap:64px; pointer-events:none}
+#twinbar.on{display:flex}
+#twinbar button{pointer-events:auto; width:84px; height:84px; border-radius:50%; cursor:pointer;
+  border:2px solid; background:rgba(10,15,23,.72); position:relative}
+#twinbar button:after{content:''; position:absolute; inset:22px; border-radius:50%}
+#tb-gold{border-color:rgba(224,174,66,.9); box-shadow:0 0 18px rgba(224,174,66,.35)}
+#tb-gold:after{background:radial-gradient(circle,#fff4d6 0%,#e0ae42 70%)}
+#tb-violet{border-color:rgba(178,122,255,.9); box-shadow:0 0 18px rgba(150,90,255,.4)}
+#tb-violet:after{background:radial-gradient(circle,#f2e9ff 0%,#a276e8 70%)}
+#twinbar button.done{opacity:.35}
+#twinbar button:active{filter:brightness(1.4)}
 
 /* overlays */
 .ov{position:absolute; inset:0; display:none; z-index:40; flex-direction:column; align-items:center; justify-content:center; padding:24px}
@@ -214,6 +228,10 @@ h2.sc-h{font-size:25px; color:var(--warm); font-weight:800; margin-bottom:6px}
   <!-- ============ PLAY (transparent HUD layer over canvas) ============ -->
   <div class="screen clear" id="s-play">
     <button id="pausebtn" class="hit" aria-label="Pause">&#10073;&#10073;</button>
+    <div id="twinbar">
+      <button id="tb-gold" aria-label="Stop the gold firefly"></button>
+      <button id="tb-violet" aria-label="Stop the violet firefly"></button>
+    </div>
   </div>
 
   <!-- ============ RUN SUMMARY ============ -->
@@ -333,7 +351,7 @@ h2.sc-h{font-size:25px; color:var(--warm); font-weight:800; margin-bottom:6px}
 <script>
 (function(){
 "use strict";
-var BUILD='v1.1';
+var BUILD='v2.0';
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(!el) return;
   el.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); fn(e); }); }
@@ -392,7 +410,7 @@ function saveStats(){
 var MOM = (function(){ var r=obj(jGet(K_MOM,null));
   return { first_bank:flag(r.first_bank), deep_run:flag(r.deep_run),
            pb_date:str(r.pb_date), daily_date:str(r.daily_date) }; })();
-var SEEN = (function(){ var r=obj(jGet(K_SEEN,null)); return { drift:flag(r.drift) }; })();
+var SEEN = (function(){ var r=obj(jGet(K_SEEN,null)); return { drift:flag(r.drift), twin:flag(r.twin) }; })();
 var BEST  = parseInt(lsGet(K_BEST,'0'),10)||0;
 var DAILYBEST = parseInt(lsGet(K_DAILYBEST,'0'),10)||0;
 /* a best is a MAX against disk, so a stale tab can never lower one */
@@ -517,6 +535,19 @@ function ampFor(r){
   return a;
 }
 function driftsOn(r){ return r>=5 && r!==6; }
+/* track shape by depth: the ring teaches, the square bends time at its
+   corners, the infinity crosses itself. Deterministic from the round number
+   alone so daily seeds spend rng exactly as they always did. */
+function shapeFor(r){
+  if(r<3) return 'ring';
+  if(r<5) return 'square';
+  if(r<7) return 'ring';        /* drift is introduced on the honest ring */
+  if(r<9) return 'inf';
+  return ['ring','square','inf'][r%3];
+}
+/* twin rounds: a second violet firefly runs the mirrored field and needs its
+   own violet button. Both must land. Pays double. */
+function twinOn(r){ return r>=9 && r%3===0; }
 
 /* ------------------------------------------------------------- game state */
 var G = {
@@ -532,7 +563,14 @@ var G = {
      lands (flash, sound, sparks, +N). paid flips at payoffAt. */
   gain:0, paid:true, payoffAt:0, paidAt:0, burst:[],
   /* drift telegraph: before flyAt the band moves but the firefly is held */
-  flyAt:0, teleDrift:false, lapTick:0
+  flyAt:0, teleDrift:false, lapTick:0,
+  /* the shaped track this round runs on, and the twin (violet) light.
+     m2 is the violet light's VIRTUAL angle: it advances exactly like theta
+     through the same speed field, is judged directly against the band, and
+     is DRAWN mirrored across the band centre. Same physics, same measured
+     fairness window, opposite direction on screen. */
+  shape:'ring', twin:false, m2:0, revs2:0, frozen2:true, hit2:'',
+  trail2:[], theta2Frozen:0, teleTwin:false
 };
 
 function speedAt(th){ /* revolutions per second at ring angle th */
@@ -600,6 +638,10 @@ function startRound(){
      Drawn HERE, before the widening loop, so widening the band never rerolls
      it and the daily seed consumes rng in the same order it always did. */
   var off = (100 + G.rng()*130)*D2R;
+  /* twin rounds draw the violet start here too, so rng order inside a round
+     is fixed. Only twin rounds consume it. */
+  var isTwin = twinOn(r);
+  var off2 = isTwin ? (150 + G.rng()*120)*D2R : 0;
 
   /* fairness floor: widen until the MEASURED window clears 62ms band /
      40ms heart. Measured, not estimated: see windowMs. A player who misses
@@ -610,12 +652,19 @@ function startRound(){
      hearts, under the floor this game promises. The clamp now runs FIRST, so
      what is measured is exactly what the player is asked to hit, and the 96
      degree cap no longer breaks out with an unverified pair. */
-  var guard, bMs, hMs, th0;
+  var guard, bMs, hMs, th0, th0b;
   for(guard=0; guard<40; guard++){
     if(hDeg>wDeg*0.5) hDeg=wDeg*0.5;
     th0 = norm(c - wDeg*D2R/2 - off);
     bMs = windowMs(th0, c, dr, wDeg*D2R/2);
     hMs = windowMs(th0, c, dr, hDeg*D2R/2);
+    /* on twin rounds the violet light must clear the same floors from ITS
+       start; it runs the same speed field so windowMs applies unchanged */
+    if(isTwin){
+      th0b = norm(c - wDeg*D2R/2 - off2);
+      bMs = Math.min(bMs, windowMs(th0b, c, dr, wDeg*D2R/2));
+      hMs = Math.min(hMs, windowMs(th0b, c, dr, hDeg*D2R/2));
+    }
     if(bMs>=62 && hMs>=40) break;
     if(bMs<62) wDeg = wDeg*Math.min(1.30, Math.max(1.04, 62/Math.max(1,bMs)));
     if(hMs<40){
@@ -628,6 +677,11 @@ function startRound(){
 
   G.bandC=c; G.bandW=wDeg*D2R; G.heartW=hDeg*D2R; G.drift=dr;
   G.theta = norm(c - G.bandW/2 - off);
+
+  G.shape = shapeFor(r);
+  G.twin = isTwin;
+  G.frozen2 = !isTwin; G.hit2=''; G.trail2.length=0; G.revs2=0;
+  if(isTwin) G.m2 = norm(c - G.bandW/2 - off2);
 
   G.trail.length=0; G.revs=0; G.hit=''; G.flash=0; G.frozen=false;
   G.gain=0; G.paid=true; G.burst.length=0; G.lapTick=0;
@@ -648,8 +702,11 @@ function startRound(){
 }
 
 /* ------------------------------------------------------------------ input */
-function stopLight(evTime){
+function stopLight(evTime, which){
   if(G.phase!=='run') return;
+  which = which || 'gold';
+  if(which==='gold' && G.frozen) return;
+  if(which==='violet' && (!G.twin || G.frozen2)) return;
   var dt=0;
   if(typeof evTime==='number' && isFinite(evTime)){
     /* same clock base as now(): the tap is placed between frames, so the
@@ -659,29 +716,45 @@ function stopLight(evTime){
        can only ever be judged on light they actually saw */
     if(e>G.lastT) dt=Math.min(e-G.lastT, 0.05);
   }
-  if(dt>0){ G.theta=advance(G.theta,dt); G.bandC=norm(G.bandC+G.drift*TAU*dt); }
-
-  G.frozen=true;
-  var d=Math.abs(angDiff(G.theta,G.bandC));
-  if(d<=G.heartW/2){
-    G.hit='heart'; G.gain=G.roundVal*3; G.pot+=G.gain;
-    STATS.hearts++;
-  } else if(d<=G.bandW/2){
-    G.hit='glow'; G.gain=G.roundVal; G.pot+=G.gain;
-  } else {
-    G.hit='miss'; G.gain=0; G.flash=.5; G.shake=SET.motion?9:0; sfx('miss');
+  if(dt>0){
+    if(which==='gold') G.theta=advance(G.theta,dt); else G.m2=advance(G.m2,dt);
+    G.bandC=norm(G.bandC+G.drift*TAU*dt);
   }
+
+  /* the violet light is judged on its VIRTUAL angle, same test as gold */
+  var ang = (which==='gold') ? G.theta : G.m2;
+  var d=Math.abs(angDiff(ang,G.bandC));
+  var tier = (d<=G.heartW/2) ? 'heart' : (d<=G.bandW/2) ? 'glow' : 'miss';
+  if(which==='gold'){ G.frozen=true; G.hit=tier; }
+  else { G.frozen2=true; G.hit2=tier; G.theta2Frozen=norm(2*G.bandC-G.m2); }
+
   if(G.chainRound>G.deepest) G.deepest=G.chainRound;
   if(G.chainRound>STATS.deepest){ STATS.deepest=G.chainRound; saveStats(); }
 
-  if(G.hit==='miss'){ G.phase='fail'; after(1.15, loseChain); }
-  else {
-    /* a beat of stillness, then the payoff. The world stops dead with the
-       firefly for 0.24s, silent, then flash + chime + sparks land together.
-       Hearts get a visibly bigger landing than band hits: contrast is the fun. */
-    G.phase='stop'; G.paid=false; G.payoffAt=now()+0.24;
-    after(G.hit==='heart'?1.35:0.98, openChoice);
+  if(tier==='miss'){
+    /* either light missing fails the round on the spot */
+    G.frozen=true; if(G.twin && !G.frozen2){ G.frozen2=true; G.theta2Frozen=norm(2*G.bandC-G.m2); }
+    G.hit='miss'; G.gain=0; G.flash=.5; G.shake=SET.motion?9:0; sfx('miss');
+    G.phase='fail'; after(1.15, loseChain); return;
   }
+  if(G.twin && !(G.frozen && G.frozen2)){
+    /* first of the pair landed: a quiet chime, the other light runs on */
+    sfx(tier==='heart'?'heart':'glow');
+    return;
+  }
+
+  var mult = G.twin ? 2 : 1;
+  var bothHeart = G.twin ? (G.hit==='heart' && G.hit2==='heart') : (tier==='heart');
+  G.hit = bothHeart ? 'heart' : 'glow';
+  G.gain = G.roundVal * (bothHeart?3:1) * mult;
+  G.pot += G.gain;
+  if(bothHeart) STATS.hearts++;
+
+  /* a beat of stillness, then the payoff. The world stops dead with the
+     firefly for 0.24s, silent, then flash + chime + sparks land together.
+     Hearts get a visibly bigger landing than band hits: contrast is the fun. */
+  G.phase='stop'; G.paid=false; G.payoffAt=now()+0.24;
+  after(G.hit==='heart'?1.35:0.98, openChoice);
 }
 function payoff(){
   G.paid=true; G.paidAt=now();
@@ -707,7 +780,9 @@ function payoff(){
 function after(sec, fn){ G.resultAt=now()+sec; G.resultFn=fn; }
 
 function tireOut(){
-  G.frozen=true; G.hit='miss'; G.flash=.4; G.shake=SET.motion?6:0;
+  G.frozen=true;
+  if(G.twin && !G.frozen2){ G.frozen2=true; G.theta2Frozen=norm(2*G.bandC-G.m2); }
+  G.hit='miss'; G.flash=.4; G.shake=SET.motion?6:0;
   sfx('miss'); G.phase='fail'; after(1.15, loseChain);
 }
 
@@ -718,7 +793,9 @@ function openChoice(){
   $('ch-fly').textContent='firefly '+G.fly+' of 3';
   $('ch-pot').textContent=G.pot;
   $('ch-lab').textContent = (G.hit==='heart') ? 'heart. you are holding' : 'you are holding';
-  $('ch-line').textContent='Round '+next+' pays '+roundValue(next)+', heart pays '+(roundValue(next)*3)+'.';
+  var nMult = twinOn(next)?2:1;
+  $('ch-line').textContent='Round '+next+' pays '+(roundValue(next)*nMult)+', heart pays '+(roundValue(next)*3*nMult)+
+    (twinOn(next)?'. Twin round: two lights, two buttons.':'.');
   /* the risk at a glance: both bars on one scale, 66 degrees = full width.
      The degree number sits beside each bar because a few-pixel width delta
      between consecutive rounds is honest but illegible on a phone. */
@@ -728,12 +805,13 @@ function openChoice(){
   $('bv-next-n').textContent = Math.round(bandDeg(next))+'°';
   $('ch-warn').textContent='miss and all '+G.pot+' is gone';
   $('ch-bank').firstChild.nodeValue='Bank '+G.pot;
-  $('ch-bank-sub').textContent = (G.fireflies>1) ? 'keep it, then firefly '+(G.fly+1)+' of 3' : 'keep it, last firefly of the run';
+  $('ch-bank-sub').textContent = 'keep it, climb again from round 1';
   var narrower = bandDeg(next) < bandDeg(G.chainRound);
   /* one short line: a two line sub label made this button taller than Bank
      and broke the parity of the two options */
   $('ch-again-sub').textContent =
-    (driftsOn(next) && !driftsOn(G.chainRound)) ? 'risk all '+G.pot+', the band drifts now'
+    (twinOn(next) && !twinOn(G.chainRound)) ? 'risk all '+G.pot+', a violet light joins'
+    : (driftsOn(next) && !driftsOn(G.chainRound)) ? 'risk all '+G.pot+', the band drifts now'
     : (narrower ? 'risk all '+G.pot+' on a tighter band'
                 : 'risk all '+G.pot+' on a kinder band');
   showOv('o-choice');
@@ -753,7 +831,11 @@ function doBank(){
   window._sbCapEarn && window._sbCapEarn(Math.min(8, r+1),'stop-the-light:bank');
   fireFirstBank(r,pot);
   if(r>=8) fireDeepRun(r,pot);
-  nextFirefly();
+  /* 2026-08-21, Stephen: banking used to spend the firefly, so a run died
+     after three banks no matter how well you flew. Now a bank keeps the
+     firefly and restarts the climb from round 1: only a MISS spends one.
+     A clean flyer can bank all night. */
+  startChain();
 }
 function doAgain(){
   hideOv('o-choice');
@@ -765,6 +847,14 @@ function doAgain(){
     G.teleDrift=true;   /* startRound holds the firefly while the band slides */
     showNote('&#8635;','The petals drift',
       'From here the gold band slides around the ring while the firefly runs. You are stopping a moving light on a moving gap. Watch the band before you tap.',
+      startRound);
+    return;
+  }
+  if(twinOn(G.chainRound) && !SEEN.twin){
+    SEEN.twin=1; jSet(K_SEEN,SEEN);
+    G.phase='paused';
+    showNote('&#10047;','A second firefly',
+      'A violet firefly runs the track the other way. The gold button stops the gold light, the violet button stops the violet one. Land BOTH in the band. Twin rounds pay double.',
       startRound);
     return;
   }
@@ -964,7 +1054,7 @@ tap('set-reset', function(){
   resetArmed=0; btn.textContent='Scores cleared';
   setTimeout(function(){ btn.textContent='Clear my scores'; }, 1600);
   lsDel(K_BEST); lsDel(K_STATS); lsDel(K_DAILY); lsDel(K_DAILYBEST); lsDel(K_SEEN);
-  BEST=0; DAILYBEST=0; STATS={runs:0,banks:0,deepest:0,totalBanked:0,hearts:0}; SEEN={drift:0};
+  BEST=0; DAILYBEST=0; STATS={runs:0,banks:0,deepest:0,totalBanked:0,hearts:0}; SEEN={drift:0,twin:0};
   refreshMenu();
 });
 function bindToggle(id,key){
@@ -1045,9 +1135,33 @@ function onDown(e){
 }
 cv.addEventListener('pointerdown', onDown, {passive:false});
 cv.addEventListener('touchstart', function(e){ e.preventDefault(); }, {passive:false});
+/* twin buttons: same honesty rules as the canvas tap */
+function btnStop(which,e){
+  if(e && e.preventDefault) e.preventDefault();
+  if(cur!=='s-play') return;
+  if(now()<inputLock) return;
+  if(G.phase==='ready'){ G.waitShake=now(); sfx('wait'); return; }
+  if(G.phase!=='run') return;
+  var ts=(e && typeof e.timeStamp==='number' && e.timeStamp>0) ? e.timeStamp : performance.now();
+  if(Math.abs(ts-performance.now())>3000) ts=performance.now();
+  stopLight(ts, which);
+}
+$('tb-gold').addEventListener('pointerdown', function(e){ btnStop('gold',e); }, {passive:false});
+$('tb-violet').addEventListener('pointerdown', function(e){ btnStop('violet',e); }, {passive:false});
+var twinBarOn=false;
+function syncTwinbar(){
+  var want = (cur==='s-play') && G.twin && (G.phase==='ready'||G.phase==='run');
+  if(want!==twinBarOn){ twinBarOn=want; $('twinbar').classList.toggle('on',want); }
+  if(want){
+    $('tb-gold').classList.toggle('done',G.frozen);
+    $('tb-violet').classList.toggle('done',G.frozen2);
+  }
+}
 document.addEventListener('keydown', function(e){
   if(e.key===' '||e.key==='Enter'){
     if(cur==='s-play' && (G.phase==='run'||G.phase==='ready')){ e.preventDefault(); onDown(null); }
+  } else if(e.key==='x'||e.key==='X'){
+    if(cur==='s-play' && (G.phase==='run'||G.phase==='ready')){ e.preventDefault(); btnStop('violet',null); }
   } else if(e.key==='Escape'){
     if(cur==='s-play' && G.phase!=='choice' && G.phase!=='idle'){ e.preventDefault(); openPause(); }
   }
@@ -1080,28 +1194,124 @@ var motes=[]; (function(){ for(var i=0;i<26;i++) motes.push({
   x:Math.random()*VW, y:Math.random()*VH, r:0.7+Math.random()*1.5,
   s:4+Math.random()*10, p:Math.random()*TAU }); })();
 
-function px(th,r){ var rr=r*RSC; return [RCX+rr*Math.sin(th), RCY-rr*Math.cos(th)]; }
+/* ---------------------------------------------------------------- shapes
+   A shape is a pure render mapping: physics stays angular (theta 0..TAU),
+   and px() maps (angle, radius) onto a closed path plus its outward normal,
+   parameterised UNIFORMLY BY ARC LENGTH so the light glides at constant
+   visual speed. The band, ticks, petals, trail and light all route through
+   px(), so every element follows the shape for free. Menu screens always
+   draw the ring. */
+var CURSHAPE='ring';
+var PATHN=512, PATHS={};
+function buildPath(shape){
+  var raw=[], i, t, x, y;
+  if(shape==='square'){
+    /* rounded square, half extent S, corner radius q, clockwise from top */
+    var S=RT*0.94, q=RT*0.36, e=S-q, seg;
+    var P=[], push=function(px_,py_){ P.push([px_,py_]); };
+    for(i=0;i<PATHN*2;i++){
+      t=i/(PATHN*2);
+      /* walk the perimeter param 0..1: 4 edges + 4 quarter arcs, clockwise
+         starting at top centre */
+      var L=8*e + TAU*q, s=t*L, a;
+      if(s< e){ push(s, -S); continue; } s-=e;
+      if(s< TAU*q/4){ a=s/q; push(e+q*Math.sin(a), -e-q*Math.cos(a)); continue; } s-=TAU*q/4;
+      if(s< 2*e){ push(S, -e+s); continue; } s-=2*e;
+      if(s< TAU*q/4){ a=s/q; push(e+q*Math.cos(a), e+q*Math.sin(a)); continue; } s-=TAU*q/4;
+      if(s< 2*e){ push(e-s, S); continue; } s-=2*e;
+      if(s< TAU*q/4){ a=s/q; push(-e-q*Math.sin(a), e+q*Math.cos(a)); continue; } s-=TAU*q/4;
+      if(s< 2*e){ push(-S, e-s); continue; } s-=2*e;
+      if(s< TAU*q/4){ a=s/q; push(-e-q*Math.cos(a), -e-q*Math.sin(a)); continue; } s-=TAU*q/4;
+      push(-e+s, -S);
+    }
+    raw=P;
+  } else if(shape==='inf'){
+    /* Gerono lemniscate, horizontal figure eight, resampled by arc length */
+    var A=RT*1.28, B=RT*1.15, pts=[], n=4096, len=[0], tot=0, j;
+    for(i=0;i<=n;i++){ t=i/n*TAU;
+      x=A*Math.sin(t); y=B*Math.sin(t)*Math.cos(t);
+      pts.push([x,y]);
+      if(i){ var dx=x-pts[i-1][0], dy=y-pts[i-1][1]; tot+=Math.sqrt(dx*dx+dy*dy); len.push(tot); }
+    }
+    j=0;
+    for(i=0;i<PATHN*2;i++){
+      var want=i/(PATHN*2)*tot;
+      while(j<n && len[j+1]<want) j++;
+      var f=(want-len[j])/Math.max(1e-9,(len[j+1]-len[j]));
+      raw.push([pts[j][0]+(pts[j+1][0]-pts[j][0])*f, pts[j][1]+(pts[j+1][1]-pts[j][1])*f]);
+    }
+  } else return null;
+  /* downsample to PATHN with normals from neighbours */
+  var out={pts:[],nrm:[]};
+  for(i=0;i<PATHN;i++){
+    var p=raw[i*2], p0=raw[(i*2-2+raw.length)%raw.length], p1=raw[(i*2+2)%raw.length];
+    var tx=p1[0]-p0[0], ty=p1[1]-p0[1], tl=Math.sqrt(tx*tx+ty*ty)||1;
+    /* outward normal of clockwise travel in y-down canvas coords: at the top
+       of the ring travel is +x and outward is up (0,-1) = (ty,-tx) */
+    out.pts.push(p); out.nrm.push([ ty/tl, -tx/tl ]);
+  }
+  if(shape==='inf'){
+    /* a figure eight runs clockwise round one lobe and counterclockwise round
+       the other, so one consistent left normal points INTO the second lobe
+       and the petals grew inward as a snowflake tangle (seen on screen).
+       Point every normal away from its own lobe's centre instead. */
+    var LA=RT*1.28*0.55;
+    for(i=0;i<PATHN;i++){
+      var pp=out.pts[i], lcx=(pp[0]>=0?1:-1)*LA;
+      if(out.nrm[i][0]*(pp[0]-lcx)+out.nrm[i][1]*pp[1] < 0){ out.nrm[i][0]*=-1; out.nrm[i][1]*=-1; }
+    }
+  }
+  return out;
+}
+function getPath(shape){ if(!PATHS[shape]) PATHS[shape]=buildPath(shape); return PATHS[shape]; }
+function px(th,r){
+  if(CURSHAPE==='ring'){ var rr=r*RSC; return [RCX+rr*Math.sin(th), RCY-rr*Math.cos(th)]; }
+  var P=getPath(CURSHAPE);
+  var u=norm(th)/TAU*PATHN, i0=Math.floor(u)%PATHN, i1=(i0+1)%PATHN, f=u-Math.floor(u);
+  var p0=P.pts[i0], p1=P.pts[i1], n0=P.nrm[i0], n1=P.nrm[i1];
+  var bx=p0[0]+(p1[0]-p0[0])*f, by=p0[1]+(p1[1]-p0[1])*f;
+  var nx=n0[0]+(n1[0]-n0[0])*f, ny=n0[1]+(n1[1]-n0[1])*f;
+  var off=(r-RT);
+  return [RCX+(bx+nx*off)*RSC, RCY+(by+ny*off)*RSC];
+}
+/* stroke a stretch of the track (any shape) as a sampled polyline */
+function strokeSeg(r,a0,a1){
+  var n=Math.max(2, Math.ceil(Math.abs(a1-a0)/(TAU/220))), i, p;
+  ctx.beginPath();
+  for(i=0;i<=n;i++){ p=px(a0+(a1-a0)*i/n, r); if(i)ctx.lineTo(p[0],p[1]); else ctx.moveTo(p[0],p[1]); }
+  ctx.stroke();
+}
 function ca(th){ return th-Math.PI/2; }
 
 function frame(){
   var t=now(), dt=Math.min(0.05, t-G.lastT); G.lastT=t;
 
-  if(cur==='s-play' && (G.phase==='ready'||G.phase==='run') && !G.frozen){
+  if(cur==='s-play' && (G.phase==='ready'||G.phase==='run') && !(G.frozen && (!G.twin || G.frozen2))){
     var held = (G.phase==='ready' && t<G.flyAt);   /* drift telegraph: band moves, firefly waits */
-    var before=G.theta;
-    if(!held) G.theta=advance(G.theta,dt);
+    if(!G.frozen){
+      var before=G.theta;
+      if(!held) G.theta=advance(G.theta,dt);
+      G.revs += (G.theta-before)/TAU;
+      G.theta=norm(G.theta);
+    }
     G.bandC=norm(G.bandC+G.drift*TAU*dt);
-    G.revs += (G.theta-before)/TAU;
-    G.theta=norm(G.theta);
+    if(G.twin && !G.frozen2 && !held){
+      var b2=G.m2; G.m2=advance(G.m2,dt);
+      G.revs2 += (G.m2-b2)/TAU; G.m2=norm(G.m2);
+    }
     if(G.phase==='ready' && t>=G.armAt){ G.phase='run'; }
     if(G.phase==='run'){
-      var lap=Math.floor(G.revs);
+      var lap=Math.floor(Math.max(G.revs, G.twin?G.revs2:0));
       if(lap>G.lapTick){ G.lapTick=lap; sfx('lap'); }
-      if(G.revs>=4){ tireOut(); }
+      if(G.revs>=4 || (G.twin && !G.frozen2 && G.revs2>=4)){ tireOut(); }
     }
-    if(!held){ G.trail.push(G.theta); }
     var maxTrail = SET.motion?11:5;
+    if(!held && !G.frozen){ G.trail.push(G.theta); }
     while(G.trail.length>maxTrail) G.trail.shift();
+    if(G.twin && !G.frozen2 && !held){
+      G.trail2.push(norm(2*G.bandC-G.m2));
+      while(G.trail2.length>maxTrail) G.trail2.shift();
+    }
   }
   if(G.phase==='stop' && !G.paid && t>=G.payoffAt){ payoff(); }
   /* the result timer HOLDS while paused. Without this guard, pausing inside
@@ -1120,6 +1330,7 @@ function frame(){
     }
   }
 
+  syncTwinbar();
   draw(t);
   requestAnimationFrame(frame);
 }
@@ -1136,6 +1347,7 @@ function draw(t){
   /* the ring position drives everything else so the two layouts stay in sync */
   var onPlay=(cur==='s-play');
   RCX=CX; RCY = onPlay ? CY : MENU.cy; RSC = onPlay ? 1 : MENU.sc;
+  CURSHAPE = onPlay ? (G.shape||'ring') : 'ring';
   var rg=ctx.createRadialGradient(RCX,RCY,20,RCX,RCY,410*RSC+90);
   rg.addColorStop(0,'rgba(46,36,72,.42)'); rg.addColorStop(1,'rgba(0,0,0,0)');
   ctx.fillStyle=rg; ctx.fillRect(0,0,VW,VH);
@@ -1234,10 +1446,10 @@ function drawRing(t){
   ctx.save();
   ctx.lineCap='butt';
   ctx.strokeStyle='rgba(24,32,50,.95)'; ctx.lineWidth=LW;
-  ctx.beginPath(); ctx.arc(RCX,RCY,rt,0,TAU); ctx.stroke();
+  strokeSeg(RT,0,TAU);
   ctx.strokeStyle='rgba(64,80,116,.55)'; ctx.lineWidth=1.2;
-  ctx.beginPath(); ctx.arc(RCX,RCY,rt-LW*0.54,0,TAU); ctx.stroke();
-  ctx.beginPath(); ctx.arc(RCX,RCY,rt+LW*0.54,0,TAU); ctx.stroke();
+  strokeSeg(RT-LW*0.54/RSC,0,TAU);
+  strokeSeg(RT+LW*0.54/RSC,0,TAU);
 
   if(lit){
     ctx.globalAlpha=alph;
@@ -1245,11 +1457,11 @@ function drawRing(t){
     ctx.lineCap='butt';
     ctx.strokeStyle = hi?'#ffcf2e':'rgba(224,174,66,.98)'; ctx.lineWidth=LW;
     ctx.shadowColor='rgba(255,200,90,.8)'; ctx.shadowBlur=SET.motion?22:0;
-    ctx.beginPath(); ctx.arc(RCX,RCY,rt,ca(bStart),ca(bEnd),false); ctx.stroke();
+    strokeSeg(RT,bStart,bEnd);
     ctx.shadowBlur=0;
     /* the heart */
     ctx.strokeStyle = hi?'#ffffff':'#fff6dd'; ctx.lineWidth=LW;
-    ctx.beginPath(); ctx.arc(RCX,RCY,rt,ca(hStart),ca(hEnd),false); ctx.stroke();
+    strokeSeg(RT,hStart,hEnd);
     /* edge ticks sit clear of the arc: drawn ON it they read as scoring
        divisions chopping the band into four, which is the opposite of the job */
     ctx.strokeStyle='rgba(255,228,158,.95)'; ctx.lineWidth=2.6*RSC; ctx.lineCap='round';
@@ -1262,13 +1474,13 @@ function drawRing(t){
       var sgn=G.drift>0?1:-1, rr=(RT+LW/RSC*0.95);
       var a0=G.bandC - sgn*bandW*0.42, a1=G.bandC + sgn*(bandW*0.42+0.20);
       ctx.strokeStyle='rgba(255,215,122,.75)'; ctx.lineWidth=3*RSC; ctx.lineCap='round';
-      ctx.beginPath();
-      ctx.arc(RCX,RCY,rr*RSC, ca(sgn>0?a0:a1), ca(sgn>0?a1:a0), false); ctx.stroke();
+      strokeSeg(rr, sgn>0?a0:a1, sgn>0?a1:a0);
       /* the head is a chevron lying ALONG the rail at the same radius, so it
          can never poke radially into the petal tips the way the old floating
-         triangle did when the band crossed the sprig side */
-      var hp=px(a1,rr);
-      ctx.save(); ctx.translate(hp[0],hp[1]); ctx.rotate(a1 + (sgn>0?0:Math.PI));
+         triangle did when the band crossed the sprig side. Rotation follows
+         the PATH tangent so it lies flat on any shape. */
+      var hp=px(a1,rr), hq=px(a1+0.03*sgn,rr);
+      ctx.save(); ctx.translate(hp[0],hp[1]); ctx.rotate(Math.atan2(hq[1]-hp[1],hq[0]-hp[0]));
       ctx.strokeStyle='rgba(255,215,122,.95)'; ctx.lineWidth=3*RSC; ctx.lineCap='round';
       ctx.beginPath(); ctx.moveTo(-5*RSC,-6*RSC); ctx.lineTo(0,0); ctx.lineTo(-5*RSC,6*RSC); ctx.stroke();
       ctx.restore();
@@ -1280,9 +1492,10 @@ function drawRing(t){
      let a lap and a half go by, so round one is never cluttered by a meter
      that has nothing to say yet, and it is never sage green (which in this
      palette means good) for a thing that is running out. */
-  if(playing && (G.phase==='ready'||G.phase==='run') && G.revs>1.2){
-    var left=clamp(1-G.revs/4,0,1);
-    var fade=clamp((G.revs-1.2)/0.7,0,1);
+  var revsShown = G.twin ? Math.max(G.revs, G.revs2) : G.revs;
+  if(playing && (G.phase==='ready'||G.phase==='run') && revsShown>1.2){
+    var left=clamp(1-revsShown/4,0,1);
+    var fade=clamp((revsShown-1.2)/0.7,0,1);
     ctx.save();
     ctx.globalAlpha=fade;
     ctx.strokeStyle= left<0.35 ? 'rgba(224,138,74,.95)' : 'rgba(180,176,158,.42)';
@@ -1325,6 +1538,31 @@ function drawRing(t){
       ctx.globalAlpha=Math.max(0,G.flash); ctx.stroke();
     }
     ctx.globalAlpha=1;
+
+    /* the violet twin, mirrored across the band centre */
+    if(playing && G.twin){
+      var th2 = G.frozen2 ? G.theta2Frozen : norm(2*G.bandC - G.m2);
+      var vp=px(th2,RT);
+      if(SET.motion && G.trail2.length>1){
+        ctx.save(); ctx.globalCompositeOperation='lighter';
+        for(var k2=0;k2<G.trail2.length;k2++){
+          var tp2=px(G.trail2[k2],RT), f2=k2/G.trail2.length;
+          ctx.fillStyle='rgba(122,80,200,'+(0.02+0.62*f2*f2*f2).toFixed(3)+')';
+          ctx.beginPath(); ctx.arc(tp2[0],tp2[1], (1.5+8.5*f2*f2)*RSC, 0, TAU); ctx.fill();
+        }
+        ctx.restore();
+      }
+      var missed2 = G.hit==='miss' || G.hit2==='miss';
+      var glow2 = missed2 ? 0.35 : 1;
+      var GR2=34*RSC;
+      var gv=ctx.createRadialGradient(vp[0],vp[1],1,vp[0],vp[1],GR2);
+      gv.addColorStop(0,'rgba(240,226,255,'+(0.85*glow2)+')');
+      gv.addColorStop(0.35,'rgba(190,140,255,'+(0.35*glow2)+')');
+      gv.addColorStop(1,'rgba(150,90,255,0)');
+      ctx.fillStyle=gv; ctx.beginPath(); ctx.arc(vp[0],vp[1],GR2,0,TAU); ctx.fill();
+      ctx.fillStyle = missed2 ? '#5c4a6d' : '#f2e9ff';
+      ctx.beginPath(); ctx.arc(vp[0],vp[1], (G.frozen2?9.5:8)*RSC, 0, TAU); ctx.fill();
+    }
   }
 
   /* payoff sparks (heart hits throw a real burst, band hits a handful) */
@@ -1419,7 +1657,8 @@ function drawHud(t){
   ctx.fillStyle='#c8a84b'; ctx.font='800 19px system-ui,sans-serif';
   ctx.fillText('ROUND '+G.chainRound, CX, 742);
   ctx.fillStyle='rgba(206,198,176,.9)'; ctx.font='600 14px system-ui,sans-serif';
-  ctx.fillText('band pays '+G.roundVal+'   ·   heart pays '+(G.roundVal*3), CX, 768);
+  var vMult=G.twin?2:1;
+  ctx.fillText('band pays '+(G.roundVal*vMult)+'   ·   heart pays '+(G.roundVal*3*vMult)+(G.twin?'   ·   twin':''), CX, 768);
   if(G.drift!==0){
     ctx.fillStyle='rgba(224,138,74,.95)'; ctx.font='700 13px system-ui,sans-serif';
     ctx.fillText('the band is drifting', CX, 792);
@@ -1435,7 +1674,11 @@ function drawHud(t){
     col = (G.flyAt && t<G.flyAt) ? 'rgba(224,138,74,.9)' : 'rgba(138,145,120,.8)';
     size=20; wt=600;
   }
-  else if(G.phase==='run'){ msg='TAP TO STOP'; col='#ffd77a'; size=44; }
+  else if(G.phase==='run'){
+    /* twin rounds: the two coloured buttons live where this prompt sits and
+       ARE the instruction, so the text stands down */
+    msg = G.twin ? '' : 'TAP TO STOP'; col='#ffd77a'; size=44;
+  }
   else if(G.phase==='stop'||G.phase==='choice'){
     msg = G.hit==='heart' ? 'HEART' : 'GOOD';
     col = G.hit==='heart' ? '#fff3d2' : '#a8d47e';
@@ -1508,9 +1751,14 @@ if(/[?&]stl_test=1(&|$)/.test(location.search) || lsGet('stl_test','')==='1'){
     aim:function(kind){
       if(G.phase==='ready'){ G.phase='run'; }
       if(G.phase!=='run') return false;
-      G.theta = (kind==='heart') ? G.bandC :
+      var tgt = (kind==='heart') ? G.bandC :
                 (kind==='band' ? G.bandC + (G.heartW/2 + G.bandW/2)/2 : G.bandC + Math.PI);
-      stopLight(); return true;
+      G.theta = tgt;
+      stopLight();
+      /* twin rounds: land the violet light the same way so a driven chain
+         resolves the round instead of hanging on a second stop */
+      if(G.twin && !G.frozen2 && G.phase==='run'){ G.m2 = tgt; stopLight(undefined,'violet'); }
+      return true;
     }};
 }
 })();
