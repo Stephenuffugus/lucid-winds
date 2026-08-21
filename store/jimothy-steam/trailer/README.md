@@ -7,7 +7,8 @@ sheet in `../STORE_PAGE_FILL.md` Part 4.3, beat for beat, captions verbatim.
     out/microtrailer_6s.mp4                   0:07 to 0:13, the trail climbing then dying
     out/poster_1920x1080.png                  poster frame, the spec's choice
     out/poster_alt_coldopen_1920x1080.png     poster frame, the alternative (see below)
-    clips/beat*.mp4                           each beat on its own, for recutting
+    clips/beat*.mp4                           each beat on its own, for recutting (gitignored;
+                                              rig/assemble.js rebuilds them in ~90s)
     rig/                                      the capture and assembly rig
 
 **It is silent on purpose.** Valve autoplays muted, so Part 4.3 puts the story in
