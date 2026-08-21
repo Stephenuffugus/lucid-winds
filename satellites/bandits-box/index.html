@@ -221,7 +221,28 @@ body.squint .lid{transform:scaleY(.62);}
       text-transform:lowercase;cursor:pointer;padding:5px 9px;flex:0 0 auto;}
 
 /* ================= BUBBLES ================= */
-#popGrid{position:absolute;inset:0;display:grid;gap:5px;padding:8px;}
+/* ⛔ THE POP IT WAS WALLPAPER. The bubble grid ran edge to edge with an 8px
+   padding, so it read as a texture filling the screen rather than as a THING
+   you are holding. A real pop-it is a moulded silicone tray: a thick rounded
+   rim, a dished face the bubbles sit in, and a shadow under it. The tray is
+   what makes it an object, and an object is what makes it satisfying to press. */
+#popTray{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:min(92%,calc((100% - 2vh) * 0.92));max-width:none;
+  aspect-ratio:1/1.06;border-radius:12% / 11%;pointer-events:none;
+  background:
+    /* the dish the bubbles sit in */
+    radial-gradient(120% 110% at 50% 38%,rgba(0,0,0,.30),rgba(0,0,0,.10) 62%,rgba(0,0,0,.34) 100%),
+    /* the moulded body */
+    linear-gradient(160deg,#7EC0A8 0%,#5E9C85 42%,#4A7D6A 100%);
+  box-shadow:
+    inset 0 3px 0 rgba(255,255,255,.34),
+    inset 0 -5px 0 rgba(0,0,0,.30),
+    inset 0 0 0 9px rgba(255,255,255,.06),
+    0 14px 26px rgba(6,4,10,.6),
+    0 3px 0 rgba(0,0,0,.35);}
+#popGrid{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:min(92%,calc((100% - 2vh) * 0.92));aspect-ratio:1/1.06;
+  display:grid;gap:5px;padding:5.5%;z-index:1;}
 .bub{border-radius:50%;border:none;padding:0;cursor:pointer;min-width:0;min-height:0;
      background:radial-gradient(circle at 34% 30%,#F6F1E8,var(--soap) 62%,#6FAF99);
      box-shadow:0 3px 0 rgba(0,0,0,.28),inset 0 -3px 5px rgba(0,0,0,.12);
@@ -725,7 +746,7 @@ body.calm .card:active{transform:none;}
     </section>
 
     <section class="toy" id="toy-pop" role="group" aria-label="Pop it. Tap the bubbles.">
-      <div class="fill"><div id="popGrid"></div></div>
+      <div class="fill"><div id="popTray"></div><div id="popGrid"></div></div>
       <div class="sizes">
         <button data-cols="4" aria-pressed="false">big</button>
         <button data-cols="7" aria-pressed="true">medium</button>
@@ -774,10 +795,39 @@ body.calm .card:active{transform:none;}
       <div class="fill">
         <svg id="spinSvg" viewBox="0 0 200 200" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
           <defs>
-            <radialGradient id="lobeG" cx="36%" cy="30%">
-              <stop offset="0%" stop-color="#B6AEC4"/><stop offset="100%" stop-color="#6E677C"/>
+            <!-- ⛔ The spinner was a flat pinwheel with one shallow gradient and
+                 no weight. A spinner is a machined object: the body is one
+                 moulded piece catching light from above left, the caps are
+                 inset, and the bearing is METAL. -->
+            <radialGradient id="lobeG" cx="34%" cy="26%" r="76%">
+              <stop offset="0%" stop-color="#C6BDD4"/>
+              <stop offset="52%" stop-color="#8B8399"/>
+              <stop offset="100%" stop-color="#575065"/>
+            </radialGradient>
+            <!-- ⛔ v1 of this was applied as a FILL over each lobe and it
+                 washed them into flat pale discs — a 22% white wash across the
+                 whole face is not a rim light, it is fog. A rim lives on the
+                 EDGE, so it is a stroke. -->
+            <linearGradient id="spinRim" x1="0" y1="0" x2=".8" y2="1">
+              <stop offset="0%" stop-color="#EDE6F7" stop-opacity=".62"/>
+              <stop offset="42%" stop-color="#ffffff" stop-opacity="0"/>
+              <stop offset="78%" stop-color="#ffffff" stop-opacity="0"/>
+              <stop offset="100%" stop-color="#CFC2E8" stop-opacity=".42"/>
+            </linearGradient>
+            <linearGradient id="bearG" x1="0" y1="0" x2=".3" y2="1">
+              <stop offset="0%" stop-color="#F7F3EA"/>
+              <stop offset="48%" stop-color="#BDB5A8"/>
+              <stop offset="100%" stop-color="#8A8276"/>
+            </linearGradient>
+            <radialGradient id="spinCast" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#0A0610" stop-opacity=".55"/>
+              <stop offset="72%" stop-color="#0A0610" stop-opacity=".14"/>
+              <stop offset="100%" stop-color="#0A0610" stop-opacity="0"/>
             </radialGradient>
           </defs>
+          <!-- the shadow it throws on the table, in viewBox units so it stays
+               put whatever the container does -->
+          <ellipse cx="100" cy="176" rx="86" ry="17" fill="url(#spinCast)" pointer-events="none"/>
           <g id="spinGrp">
             <circle cx="100" cy="46"  r="33" fill="url(#lobeG)"/>
             <circle cx="147" cy="127" r="33" fill="url(#lobeG)"/>
@@ -787,8 +837,13 @@ body.calm .card:active{transform:none;}
             <circle cx="147" cy="127" r="17" fill="#F2B79E"/>
             <circle cx="53"  cy="127" r="17" fill="#C3B0E0"/>
             <circle cx="100" cy="100" r="21" fill="#3E374F"/>
-            <circle cx="100" cy="100" r="13" fill="#E4DED2"/>
-            <circle cx="100" cy="100" r="6"  fill="#524B62"/>
+            <circle cx="100" cy="100" r="13" fill="url(#bearG)"/>
+            <circle cx="100" cy="100" r="6"  fill="#3B3548"/>
+            <!-- the moulded body catches the light along its top left edge -->
+            <circle cx="100" cy="46"  r="31.6" fill="none" stroke="url(#spinRim)" stroke-width="2.8" pointer-events="none"/>
+            <circle cx="147" cy="127" r="31.6" fill="none" stroke="url(#spinRim)" stroke-width="2.8" pointer-events="none"/>
+            <circle cx="53"  cy="127" r="31.6" fill="none" stroke="url(#spinRim)" stroke-width="2.8" pointer-events="none"/>
+            <circle cx="100" cy="100" r="20"   fill="none" stroke="url(#spinRim)" stroke-width="2" pointer-events="none"/>
           </g>
           <circle id="spinHit" cx="100" cy="100" r="96" fill="transparent"/>
         </svg>
@@ -804,20 +859,50 @@ body.calm .card:active{transform:none;}
     <section class="toy" id="toy-pup" role="group" aria-label="Sock puppet. Drag up and down to work his mouth.">
       <div class="fill">
         <svg id="pupSvg" viewBox="0 0 200 224" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-          <path d="M150 158 Q176 182 172 220 L40 220 Q36 182 58 160 Z" fill="#7C5E8C"/>
+          <defs>
+            <!-- ⛔ The puppet was flat construction paper: five solid purples,
+                 no light anywhere. It is a sock on a hand, so it needs cloth
+                 volume — lit along the top where the lamp is, falling into
+                 shadow underneath, and a soft crease where the jaw folds. -->
+            <linearGradient id="pupSleeve" x1=".2" y1="0" x2=".8" y2="1">
+              <stop offset="0%" stop-color="#8E6C9F"/>
+              <stop offset="55%" stop-color="#7C5E8C"/>
+              <stop offset="100%" stop-color="#5A4266"/>
+            </linearGradient>
+            <linearGradient id="pupUp" x1=".25" y1="0" x2=".7" y2="1">
+              <stop offset="0%" stop-color="#B79AC6"/>
+              <stop offset="48%" stop-color="#9B7BAB"/>
+              <stop offset="100%" stop-color="#7A5C8A"/>
+            </linearGradient>
+            <linearGradient id="pupLow" x1=".3" y1="0" x2=".6" y2="1">
+              <stop offset="0%" stop-color="#8B6C9B"/>
+              <stop offset="60%" stop-color="#9B7BAB"/>
+              <stop offset="100%" stop-color="#6E5280"/>
+            </linearGradient>
+            <radialGradient id="pupCast" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#0A0610" stop-opacity=".58"/>
+              <stop offset="72%" stop-color="#0A0610" stop-opacity=".15"/>
+              <stop offset="100%" stop-color="#0A0610" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <ellipse cx="104" cy="220" rx="82" ry="12" fill="url(#pupCast)" pointer-events="none"/>
+          <path d="M150 158 Q176 182 172 220 L40 220 Q36 182 58 160 Z" fill="url(#pupSleeve)"/>
           <path d="M150 158 Q176 182 172 220 L40 220 Q36 182 58 160 Z"
                 fill="repeating-linear" opacity="0"/>
           <path id="pupMouth" d="M152 120 L14 92 L14 152 Z" fill="#8E3A4A"/>
           <g id="pupLower" class="jaw">
             <path d="M152 118 L34 118 Q14 124 18 141 Q24 164 58 168 L138 168 Q158 163 158 140 Z"
-                  fill="#9B7BAB"/>
+                  fill="url(#pupLow)"/>
             <path d="M152 124 L44 124 Q28 130 32 141 Q38 156 62 159 L136 159 Q150 155 150 141 Z"
                   fill="#B695C4" opacity=".55"/>
             <ellipse id="pupTongue" cx="72" cy="141" rx="34" ry="11" fill="#D9697E"/>
           </g>
           <g id="pupUpper" class="jaw">
             <path d="M152 122 L36 122 Q16 118 18 100 Q23 70 56 60 L134 57 Q158 60 158 88 L158 122 Z"
-                  fill="#9B7BAB"/>
+                  fill="url(#pupUp)"/>
+            <!-- the fold where the head meets the sleeve, so the jaw reads as
+                 cloth bending rather than two shapes butted together -->
+            <path d="M152 122 L36 122 Q16 118 18 100 L158 112 Z" fill="#3A2A44" opacity=".22"/>
             <path d="M158 78 L28 84 Q22 92 20 100 L158 96 Z" fill="#9FD6C0" opacity=".8"/>
             <ellipse cx="30" cy="106" rx="12" ry="8" fill="#7C5E8C"/>
             <g id="pupEyes">
@@ -5144,7 +5229,7 @@ loadS().then(function(){ applyS();
   if(location.protocol==='file:') return;
   if(!('serviceWorker' in navigator)) return;
   window.addEventListener('load',function(){
-    try{ navigator.serviceWorker.register('./sw.js?v=3'); }catch(e){}
+    try{ navigator.serviceWorker.register('./sw.js?v=4'); }catch(e){}
   });
 })();
 </script>
