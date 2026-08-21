@@ -70,13 +70,32 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;fon
    anything falls past the fold it is a one chip panel and never a half
    sentence of the tutorial */
 #board.teaching #pnotes{order:-1}
-#board .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 9px 8px}
+/* ⛔ THESE are the five stacked slabs on the play screen, not .card — .card is
+   the menus. I restyled the wrong selector first and it changed nothing on the
+   screen I was looking at. CHECK WHICH CLASS THE THING ACTUALLY WEARS.
+   Same problem either way: identical fill, identical border, stacked, so
+   everything read as equally important and nothing led. */
+#board .panel{border:1px solid var(--line);border-radius:10px;padding:7px 9px 8px;position:relative;
+  background:linear-gradient(180deg,#181c26 0%,#141821 64%,#111420 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 3px 9px rgba(0,0,0,.38)}
+/* the briefing is the one panel you are meant to read before you spend scrap,
+   so it gets a warm edge the others do not have */
+#board #pnotes{border-color:rgba(232,112,58,.30)}
+#board #pnotes:before{content:'';position:absolute;left:0;top:9px;bottom:9px;width:3px;
+  border-radius:0 3px 3px 0;
+  background:linear-gradient(180deg,rgba(245,199,126,.9),rgba(232,112,58,.4),rgba(232,112,58,0))}
 #board .ph{display:flex;justify-content:space-between;align-items:baseline;gap:8px;
   font-size:9px;letter-spacing:1.4px;color:var(--muted);margin-bottom:5px}
 #board .ph b{font-size:13px;letter-spacing:0;color:var(--cream);font-weight:800}
 #pshare .ph b{color:var(--accent)}
-.meter{height:7px;background:var(--panel2);border-radius:5px;overflow:hidden}
-.meter i{display:block;height:100%;background:var(--gate);border-radius:5px;transition:width 120ms linear}
+.meter{height:8px;border-radius:5px;overflow:hidden;position:relative;
+  background:linear-gradient(180deg,#0d1017,#161b26);
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.75), inset 0 -1px 0 rgba(255,255,255,.05)}
+/* ⛔ this is the tension meter — the one thing on screen that says how much is
+   about to walk at you — and it was a flat orange block with square ends. */
+.meter i{display:block;height:100%;border-radius:5px;transition:width 120ms linear;
+  background:linear-gradient(180deg,#f0a05e 0%,#e8703a 46%,#c2492a 100%);
+  box-shadow:inset 0 1px 0 rgba(255,225,190,.45), 0 0 10px rgba(232,112,58,.42)}
 .meter.boss{margin-top:5px;height:9px}
 .meter.boss i{background:linear-gradient(90deg,#d2a0a0,#c8563a)}
 #bbossname{font-size:9px;letter-spacing:1.2px;color:#d2a0a0;margin-top:3px;min-height:0}
@@ -310,7 +329,17 @@ body.combat{--laneh:clamp(190px,30vh,340px)}
 /* ---------- overlays ---------- */
 .sheet{position:absolute;inset:0;background:rgba(6,7,10,.93);display:flex;flex-direction:column;
   align-items:center;justify-content:center;padding:18px;z-index:40;overflow-y:auto}
-.card{width:100%;max-width:420px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+/* ⛔ FIVE IDENTICAL FLAT SLABS. Same fill, same border, same radius, stacked —
+   so everything read as equally important, which means nothing did. A card
+   should sit ON the page, not be a rectangle drawn on it: a lit top edge, a
+   shadow under it, and a fill that is not perfectly even. */
+.card{width:100%;max-width:420px;border-radius:14px;padding:16px;position:relative;
+  background:linear-gradient(180deg,#191d27 0%,#141821 62%,#111520 100%);
+  border:1px solid var(--line);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.055), 0 6px 16px rgba(0,0,0,.42), 0 1px 0 rgba(0,0,0,.5)}
+/* the briefing is the one card you are meant to read before you spend, so it
+   gets a warm edge the others do not have */
+
 .card h2{margin:0 0 2px;font-size:20px;letter-spacing:1px}
 .card h3{margin:0 0 10px;font-size:12px;letter-spacing:1.6px;color:var(--muted);font-weight:600}
 .bars{margin:10px 0 6px}
@@ -3980,7 +4009,7 @@ var SIM_TEST = { TEST: TEST, SUITES: SUITES, tGame: tGame, tPut: tPut, tEnemy: t
   try {
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {
-        navigator.serviceWorker.register('sw.js?v=20260821d').catch(function () {});
+        navigator.serviceWorker.register('sw.js?v=20260821e').catch(function () {});
       });
     }
   } catch (e) {}
