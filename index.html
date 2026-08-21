@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.08.21.01';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.08.21.02';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -41480,6 +41480,16 @@ document.addEventListener('keydown', function(e) {
      message, not a gift — except for unlocked testers, who still get the
      old free EXPAND so testing never stalls. */
   window._lwDevFree = function(){ try{ return localStorage.getItem('lw_dev_unlocked')==='1'; }catch(e){ return false; } };
+  /* π is Pi Browser's currency and NOWHERE else's (Stephen 2026-08-21: "the
+     buttons still have the pi symbol... everything's not pi Network").
+     One helper decides every price tag: π inside Pi Browser, $ on the web. */
+  window._lwInPi = function(){ try{ return !!(window.LW_WebPay && LW_WebPay.inPiBrowser()); }catch(e){ return false; } };
+  window._lwTag = function(piStr, usdType, opts, usdFallback){
+    if (window._lwInPi()) return piStr;
+    var d = null;
+    try{ d = window.LW_WebPay && LW_WebPay.priceStr(usdType, opts); }catch(e){}
+    return d || usdFallback || '';
+  };
   window._lwPayNotReady = function(){
     if (window._toast) _toast('Payments are being set up. Expansions open soon.');
     else if (window.showHexMsg) showHexMsg('Payments are being set up. Expansions open soon.');
@@ -42331,20 +42341,32 @@ document.addEventListener('keydown', function(e) {
             el.onclick = function(){ if (window.expandGHSlot) expandGHSlot(); };
             el.innerHTML =
               '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);letter-spacing:0.08em;">EXPAND</div>' +
-              '<img src="assets/buttons/btn-pi.png" alt="" style="width:96px;height:96px;object-fit:contain;display:block;">' +
-              '<div style="font-family:Bebas Neue,sans-serif;font-size:1rem;color:var(--gold);letter-spacing:0.12em;line-height:1;">+ 1 SLOT</div>' +
-              '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:var(--cream);letter-spacing:0.1em;">1 π</div>';
+              (window._lwInPi()
+                ? '<img src="assets/buttons/btn-pi.png" alt="" style="width:96px;height:96px;object-fit:contain;display:block;">'
+                : '<div style="font-size:3.4rem;line-height:1;">🪴</div>') +
+              (window._lwInPi()
+                ? '<div style="font-family:Bebas Neue,sans-serif;font-size:1rem;color:var(--gold);letter-spacing:0.12em;line-height:1;">+ 1 SLOT</div>' +
+                  '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:var(--cream);letter-spacing:0.1em;">1 π</div>'
+                : '<div style="font-family:Bebas Neue,sans-serif;font-size:1rem;color:var(--gold);letter-spacing:0.12em;line-height:1;">+ 10 SLOTS</div>' +
+                  '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:var(--cream);letter-spacing:0.1em;">' + (window._lwTag('', 'slot', null, '$1') || '$1') + '</div>');
           } else {
             // BULK +10 — same chunky size as +1 so it doesn't look
             // smaller. Stephen 2026-04-30: "the +10 slots is actually
             // a smaller emoji". Now matches +1 dimensions.
             el.style.cssText = 'background:linear-gradient(180deg,rgba(20,30,40,0.92),rgba(14,22,30,0.95));border:2px solid rgba(160,196,232,0.55);box-shadow:0 4px 14px rgba(0,0,0,0.55),0 0 16px rgba(160,196,232,0.18);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;aspect-ratio:544/736;';
-            el.onclick = function(){ if (window.expandGHSlot10) expandGHSlot10(); else if (window.expandGHSlot) expandGHSlot(); };
+            el.onclick = function(){
+              if (!window._lwInPi() && window._openBloomStore) { _openBloomStore(); return; }
+              if (window.expandGHSlot10) expandGHSlot10(); else if (window.expandGHSlot) expandGHSlot(); };
             el.innerHTML =
-              '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:rgba(160,196,232,0.85);letter-spacing:0.08em;">BULK</div>' +
-              '<img src="assets/buttons/btn-pi.png" alt="" style="width:96px;height:96px;object-fit:contain;display:block;">' +
-              '<div style="font-family:Bebas Neue,sans-serif;font-size:1rem;color:rgba(160,196,232,1);letter-spacing:0.12em;line-height:1;">+ 10 SLOTS</div>' +
-              '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:var(--cream);letter-spacing:0.1em;">10 π</div>';
+              '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:rgba(160,196,232,0.85);letter-spacing:0.08em;">' + (window._lwInPi() ? 'BULK' : 'BUNDLES') + '</div>' +
+              (window._lwInPi()
+                ? '<img src="assets/buttons/btn-pi.png" alt="" style="width:96px;height:96px;object-fit:contain;display:block;">'
+                : '<div style="font-size:3.4rem;line-height:1;">🌼</div>') +
+              (window._lwInPi()
+                ? '<div style="font-family:Bebas Neue,sans-serif;font-size:1rem;color:rgba(160,196,232,1);letter-spacing:0.12em;line-height:1;">+ 10 SLOTS</div>' +
+                  '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:var(--cream);letter-spacing:0.1em;">10 π</div>'
+                : '<div style="font-family:Bebas Neue,sans-serif;font-size:1rem;color:rgba(160,196,232,1);letter-spacing:0.12em;line-height:1;">GROW BIGGER</div>' +
+                  '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:var(--cream);letter-spacing:0.1em;">$5 · $10</div>');
           }
         }
       }
@@ -46961,7 +46983,9 @@ document.addEventListener('keydown', function(e) {
         nurExpBtn.style.display = '';
         var _seedPrice = window._nurSlotPrice ? window._nurSlotPrice(maxSeedSlots + 1) : 5;
         var _seedLbl = nurExpBtn.querySelector('.nur-expand-label');
-        if (_seedLbl) _seedLbl.textContent = '+ SEED   ' + _seedPrice + ' \u03c0';
+        if (_seedLbl) _seedLbl.textContent = '+ SEED   ' + (window._lwInPi()
+          ? (_seedPrice + ' \u03c0')
+          : (window._lwTag('', 'nursery_slot', {slot: (FG_Data.getNurSlots ? FG_Data.getNurSlots() : 3) + 1}, '$2') || '$2'));
       }
     }
     var nurExpClipBtn = document.getElementById('nur-expand-clip-btn');
@@ -46973,7 +46997,9 @@ document.addEventListener('keydown', function(e) {
         nurExpClipBtn.style.display = '';
         var _clipPrice = window._nurClipSlotPrice ? window._nurClipSlotPrice(_curClips + 1) : 3;
         var _clipLbl = nurExpClipBtn.querySelector('.nur-expand-clip-label');
-        if (_clipLbl) _clipLbl.textContent = '+ CLIPPING   ' + _clipPrice + ' \u03c0';
+        if (_clipLbl) _clipLbl.textContent = '+ CLIPPING   ' + (window._lwInPi()
+          ? (_clipPrice + ' \u03c0')
+          : (window._lwTag('', 'nursery_clipping_slot', {slot: _curClips + 1}, '$1') || '$1'));
       }
     }
     // Hide the "HOW CROSS-POLLINATION WORKS" tutorial box for L7+ players.
@@ -47838,7 +47864,7 @@ document.addEventListener('keydown', function(e) {
         _lwPressure({
           title: 'NURSERY FULL',
           body: 'Your nursery holds <b>'+nurLen+'/'+nurMax+'</b>. Bloom a seed, abandon one, or expand the nursery.',
-          pi: { label: (window.LW_WebPay && LW_WebPay.active()) ? ('+1 SLOT · ' + (LW_WebPay.priceStr('nursery_slot',{slot:nurMax+1}) || '$2')) : '+1 SLOT · 1 π', action: function(){ if (window.expandNurSlot) expandNurSlot(); } },
+          pi: { label: window._lwInPi() ? '+1 SLOT · 1 π' : ('+1 SLOT · ' + (window._lwTag('', 'nursery_slot', {slot:nurMax+1}, '$2') || '$2')), action: function(){ if (window.expandNurSlot) expandNurSlot(); } },
           alts: [
             { label: 'OPEN NURSERY', action: function(){ if (window.switchTab) switchTab('nursery'); } }
           ]
@@ -56336,7 +56362,7 @@ function _doCollectFeral(f,mk){
     _lwPressure({
       title: 'SEED POUCH FULL',
       body: 'Your pouch is full. Send a seed to the nursery to grow it, or expand the pouch.',
-      pi: { label: (window.LW_WebPay && LW_WebPay.showUsd()) ? ('+5 SEEDS · ' + (LW_WebPay.priceStr('seed_pouch_slot',{tier:'seed15'}) || '$1')) : '+5 SEEDS · 1 π', action: function(){ if (window.LW_HUT && LW_HUT.buySeedPouchSlotPi) LW_HUT.buySeedPouchSlotPi(); } },
+      pi: { label: window._lwInPi() ? '+5 SEEDS · 1 π' : ('+5 SEEDS · ' + (window._lwTag('', 'seed_pouch_slot', {tier:'seed15'}, '$1') || '$1')), action: function(){ if (window.LW_HUT && LW_HUT.buySeedPouchSlotPi) LW_HUT.buySeedPouchSlotPi(); } },
       alts: [
         { label: 'OPEN BACKPACK', action: function(){ if (window.FG_Backpack && FG_Backpack.toggle) FG_Backpack.toggle(); } }
       ]
