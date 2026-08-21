@@ -427,7 +427,7 @@ window._gameFns.juniper = function Juniper(a){
     var thinkBadge = aiThinking ? ' <span style="margin-left:8px;font-family:Georgia,serif;font-style:italic;font-size:0.62rem;color:#ffdc70;animation:juThink 1.2s ease-in-out infinite;">thinking…</span>' : '';
     h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:#dc8a8a;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;margin-bottom:5px;">JUNIPER <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;">×'+aiHand.length+'</span>'+thinkBadge+'</div>';
     h+='<div style="display:inline-flex;justify-content:center;">';
-    for(var i=0;i<aiHand.length;i++)h+='<div style="width:28px;height:40px;border-radius:4px;background:linear-gradient(135deg,#1a4a2e,#0c2a18);border:1.5px solid #051208;margin-left:'+(i===0?'0':'-18px')+';box-shadow:inset 0 1px 0 rgba(255,255,255,0.06);"></div>';
+    for(var i=0;i<aiHand.length;i++)h+='<div style="'+_cdBackStyle(28,40,4)+'margin-left:'+(i===0?'0':'-18px')+';"></div>';
     h+='</div></div>';
     // ── STOCK + DISCARD ─────────────────────────────────────────
     var canPickup = phase==='draw';

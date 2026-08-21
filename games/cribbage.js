@@ -530,10 +530,7 @@ window._gameFns.cribbage = function CRIB(a){
     }else{
       for(var i=0;i<G.aHand.length;i++){
         var played=G.aPlayed.indexOf(i)>=0;
-        h+='<div style="width:48px;height:66px;border-radius:6px;background:'
-          +'linear-gradient(135deg,#4A7C35,#2c4d1e);border:2px solid #1a2f12;'
-          +'box-shadow:inset 0 1px 0 rgba(255,255,255,0.1),0 2px 4px rgba(0,0,0,0.4);'
-          +(played?'opacity:.35;':'')+'"></div>';
+        h+='<div style="'+_cdBackStyle(48,66,6)+(played?'opacity:.35;':'')+'"></div>';
       }
     }
     h+='</div></div>';

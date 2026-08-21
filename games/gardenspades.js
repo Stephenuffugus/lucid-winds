@@ -425,7 +425,7 @@ window._gameFns.gardenspades = function GardenSpades(a){
         +_bidPill(N)
       +'</div>'
       +'<div style="display:inline-flex;justify-content:center;">';
-    for(var n=0;n<hands[N].length;n++)h+='<div style="width:30px;height:42px;border-radius:5px;background:linear-gradient(135deg,#1a4a2e,#0c2a18);border:1.5px solid #051208;margin-left:'+(n===0?'0':'-22px')+';box-shadow:inset 0 1px 0 rgba(255,255,255,0.06);"></div>';
+    for(var n=0;n<hands[N].length;n++)h+='<div style="'+_cdBackStyle(30,42,5)+'margin-left:'+(n===0?'0':'-22px')+';"></div>';
     h+='</div></div>';
     // ── MIDDLE ROW: WEST | TRICK | EAST ─────────────────────────
     h+='<div style="display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:6px 4px;min-height:160px;">';
@@ -434,7 +434,7 @@ window._gameFns.gardenspades = function GardenSpades(a){
         +'WEST <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;margin-left:2px;">×'+hands[W].length+'</span>'+_bidPill(W)
       +'</div>'
       +'<div style="display:inline-flex;flex-direction:column;align-items:center;">';
-    for(var w=0;w<hands[W].length;w++)h+='<div style="width:30px;height:42px;border-radius:5px;background:linear-gradient(135deg,#1a4a2e,#0c2a18);border:1.5px solid #051208;margin-top:'+(w===0?'0':'-34px')+';box-shadow:inset 0 1px 0 rgba(255,255,255,0.06);"></div>';
+    for(var w=0;w<hands[W].length;w++)h+='<div style="'+_cdBackStyle(30,42,5)+'margin-top:'+(w===0?'0':'-34px')+';"></div>';
     h+='</div></div>';
     // ── TRICK AREA ──────────────────────────────────────────────
     h+='<div style="position:relative;min-height:160px;background:radial-gradient(ellipse at 50% 50%,rgba(0,0,0,0.18) 0%,rgba(0,0,0,0.4) 100%);border-radius:8px;border:1px solid rgba(0,0,0,0.5);box-shadow:inset 0 2px 8px rgba(0,0,0,0.45);">';
@@ -455,7 +455,7 @@ window._gameFns.gardenspades = function GardenSpades(a){
         +'EAST <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;margin-left:2px;">×'+hands[E].length+'</span>'+_bidPill(E)
       +'</div>'
       +'<div style="display:inline-flex;flex-direction:column;align-items:center;">';
-    for(var e=0;e<hands[E].length;e++)h+='<div style="width:30px;height:42px;border-radius:5px;background:linear-gradient(135deg,#1a4a2e,#0c2a18);border:1.5px solid #051208;margin-top:'+(e===0?'0':'-34px')+';box-shadow:inset 0 1px 0 rgba(255,255,255,0.06);"></div>';
+    for(var e=0;e<hands[E].length;e++)h+='<div style="'+_cdBackStyle(30,42,5)+'margin-top:'+(e===0?'0':'-34px')+';"></div>';
     h+='</div></div>';
     h+='</div>';
     // ── BID UI ──────────────────────────────────────────────────
