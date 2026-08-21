@@ -518,7 +518,7 @@
   function setTitle() {
     var t = document.getElementById('shell-title');
     if (t) t.textContent = LW_PLAY.name || 'Game';
-    document.title = (LW_PLAY.name || 'Play') + ' — Sky Wolf Studios';
+    document.title = (LW_PLAY.name || 'Play') + ' — Sky Wolf Studio';
   }
 
   // ── Mount the game once everything is ready ──
