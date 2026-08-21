@@ -169,6 +169,21 @@ body.combat{--laneh:clamp(190px,30vh,340px)}
 @keyframes vaulthop{0%{transform:translateY(0)}45%{transform:translateY(-26px) rotate(8deg)}100%{transform:translateY(0)}}
 #atk.urge{animation:urgep 900ms ease-in-out infinite}
 @keyframes urgep{0%,100%{box-shadow:0 0 0 0 rgba(232,112,58,.75)}55%{box-shadow:0 0 0 12px rgba(232,112,58,0)}}
+/* traps that visibly DO their job (2026-08-21: "the traps are stagnant") */
+.trap.bite .g{animation:bitey 220ms ease-out}
+@keyframes bitey{0%{transform:translateY(0)}40%{transform:translateY(-7px) scaleY(1.3)}100%{transform:translateY(0)}}
+.trap.snap .g{animation:snapy 260ms ease-out}
+@keyframes snapy{0%{transform:scale(1) rotate(0)}40%{transform:scale(1.5) rotate(14deg)}100%{transform:scale(1) rotate(0)}}
+.trap.recoil .g{animation:recoily 220ms ease-out}
+@keyframes recoily{0%{transform:translateX(0)}30%{transform:translateX(-5px)}100%{transform:translateX(0)}}
+.trap.flare .g{animation:flarey 320ms ease-out}
+@keyframes flarey{0%{transform:scale(1)}40%{transform:scale(1.4)}100%{transform:scale(1)}}
+.trap.brz .g{animation:brflick 1.3s ease-in-out infinite}
+@keyframes brflick{0%,100%{filter:drop-shadow(0 0 5px rgba(0,0,0,.9)) brightness(1)}
+  50%{filter:drop-shadow(0 0 9px rgba(232,112,58,.8)) brightness(1.3)}}
+.arrowfx{position:absolute;height:2px;pointer-events:none;transform-origin:left center;
+  background:linear-gradient(90deg,rgba(245,199,126,.05),#f5c77e);animation:arrf 220ms ease-out forwards}
+@keyframes arrf{from{opacity:1}to{opacity:0}}
 #shakewrap{position:absolute;inset:0}
 .shake{animation:shk 120ms ease-out}
 @keyframes shk{0%{transform:translate(0,0)}30%{transform:translate(-3px,2px)}60%{transform:translate(3px,-2px)}100%{transform:translate(0,0)}}
@@ -448,6 +463,11 @@ var CONFIG = {
   PLAYER_DMG_GROWTH: 1.18,  /* the blade keeps pace with the curve */
   PLAYER_RANGE: 1,
   PLAYER_VAULT_TICKS: 6,    /* climbing your own wall costs three moves of time */
+  /* hero ladder (2026-08-21, Stephen: "character needs more ability...
+     level up and evolve. maybe start with the sword and get a bow").
+     XP comes only from kills the PLAYER lands; resets every run. */
+  HERO_XP_LEVELS: [0, 25, 70, 140, 240],
+  LONGBOW_RANGE: 8,
   WALL_HIT_TICKS: 8,        /* one hit landed on a blocking wall per 8 ticks */
   GROUP_PAUSE: 18,          /* extra ticks between authored spawn groups */
   HEAL_GROWTH: 1.18,
@@ -821,6 +841,18 @@ function playerDamage(wave) {
   return Math.max(1, Math.round(CONFIG.PLAYER_DMG * Math.pow(CONFIG.PLAYER_DMG_GROWTH, wave - 1)));
 }
 
+/* the hero ladder. Level from xp; the L5 Evolved Blade cuts 30% deeper. */
+function heroLevelFor(xp) {
+  var L = CONFIG.HERO_XP_LEVELS, l = 1, i;
+  for (i = 1; i < L.length; i++) { if (xp >= L[i]) l = i + 1; }
+  return l;
+}
+function heroDamage(s) {
+  var d = playerDamage(s.wave);
+  if (s.player.lvl >= 5) d = Math.round(d * 1.3);
+  return Math.max(1, d);
+}
+
 function healAmount(wave) {
   return Math.max(1, Math.round(ENEMIES.healer.heal * Math.pow(CONFIG.HEAL_GROWTH, wave - 1)));
 }
@@ -898,7 +930,7 @@ function newGame(seed, opts) {
     spawns: [],
     spawnIdx: 0,
     hpBoost: opts.hpBoost || 1,
-    player: { cell: CONFIG.PLAYER_START_CELL, moveT: 0, atkCd: 0, dir: 1, hitFlash: 0 },
+    player: { cell: CONFIG.PLAYER_START_CELL, moveT: 0, atkCd: 0, dir: 1, hitFlash: 0, xp: 0, lvl: 1 },
     waveStats: blankWaveStats(1),
     lastWaveStats: null,
     run: { kills: 0, deepest: CONFIG.LANE, wavesCleared: 0, dmg: blankDamage(), ticks: 0, trapsBuilt: 0, trapsLost: 0, reinforced: 0, idleTicks: 0 },
@@ -1100,6 +1132,14 @@ function dealDamage(s, e, amount, source) {
     e.hp = 0;
     e.dead = true;
     e.killedBy = source;
+    /* xp for the hero's OWN kills only: a trap doing the work teaches the
+       trap, not the swordsman */
+    if (source === 'player' && s.player) {
+      s.player.xp += Math.max(1, Math.round(e.maxHp / 10));
+      var nl = heroLevelFor(s.player.xp);
+      if (nl > s.player.lvl) { s.player.lvl = nl; emit(s, 'herolvl', nl); }
+      if (s.player.lvl >= 4) s.player.atkCd = 0;   /* L4 Battle Fury */
+    }
   }
   return effective;
 }
@@ -1192,7 +1232,7 @@ function playerTick(s, intent) {
   if (p.hitFlash > 0) p.hitFlash--;
   if (intent === 'attack') {
     if (p.atkCd === 0) {
-      var target = null, i, e;
+      var target = null, hits = [], i, e;
       for (i = 0; i < s.enemies.length; i++) {
         e = s.enemies[i];
         if (e.dead) continue;
@@ -1202,13 +1242,31 @@ function playerTick(s, intent) {
            reach back through. This is why a wall is worth defending. */
         if (pd > CONFIG.PLAYER_RANGE &&
             !(pd === 2 && isWall(s, (e.cell + p.cell) / 2))) continue;
+        hits.push(e);
         if (!target || e.cell < target.cell || (e.cell === target.cell && e.id < target.id)) target = e;
       }
       p.atkCd = CONFIG.PLAYER_ATK_CD;
       if (target) {
-        dealDamage(s, target, playerDamage(s.wave), 'player');
+        /* L2 Cleave: the swing carries through every body in reach */
+        if (p.lvl >= 2) { for (i = 0; i < hits.length; i++) dealDamage(s, hits[i], heroDamage(s), 'player'); }
+        else dealDamage(s, target, heroDamage(s), 'player');
         p.hitFlash = 2;
         emit(s, 'swinghit', target.cell);
+      } else if (p.lvl >= 3) {
+        /* L3 Longbow: nothing in blade reach, so loose an arrow at the
+           closest body the hero can SEE up the lane. Walls block the shot
+           the same way they blind a ballista. Half damage. */
+        var far = p.cell + CONFIG.LONGBOW_RANGE, bowT = null, k;
+        for (k = p.cell + 1; k <= far && k < CONFIG.LANE; k++) { if (isWall(s, k)) { far = k - 1; break; } }
+        for (i = 0; i < s.enemies.length; i++) {
+          e = s.enemies[i];
+          if (e.dead || e.cell <= p.cell || e.cell > far) continue;
+          if (!bowT || e.cell < bowT.cell || (e.cell === bowT.cell && e.id < bowT.id)) bowT = e;
+        }
+        if (bowT) {
+          dealDamage(s, bowT, Math.max(1, Math.round(heroDamage(s) / 2)), 'player');
+          emit(s, 'arrow', p.cell, bowT.cell);
+        } else emit(s, 'swingmiss', p.cell);
       } else {
         emit(s, 'swingmiss', p.cell);
       }
@@ -1676,7 +1734,7 @@ var SIM = {
   mutatorsFor: mutatorsFor, mutCount: mutCount, hasMut: hasMut,
   startWave: startWave, snapshotBuild: snapshotBuild, applyBuild: applyBuild,
   scrapForWave: scrapForWave, scrapThroughWave: scrapThroughWave, hpMult: hpMult,
-  enemyHP: enemyHP, playerDamage: playerDamage, healAmount: healAmount, waveTotalHP: waveTotalHP,
+  enemyHP: enemyHP, playerDamage: playerDamage, heroDamage: heroDamage, heroLevelFor: heroLevelFor, healAmount: healAmount, waveTotalHP: waveTotalHP,
   makeTrap: makeTrap, trapCost: trapCost, dealDamage: dealDamage, spawnOne: spawnOne,
   ballistaTarget: ballistaTarget, ballistaSight: ballistaSight, isWall: isWall,
   moveInterval: moveInterval, removeTrap: removeTrap, blankDamage: blankDamage,
@@ -1756,6 +1814,7 @@ function drawTraps() {
     var sub = '';
     if (t.type === 'spike') sub = t.charges;
     node.classList.toggle('wallt', t.type === 'wall');
+    node.classList.toggle('brz', t.type === 'brazier');
     if (t.type === 'wall') {
       /* an HP bar, not a hash string nobody could read. Hurt walls redden. */
       var wmx = t.maxHits || t.hits || 1;
@@ -1803,7 +1862,7 @@ function drawEntities() {
     node = document.createElement('div');
     node.className = 'ent';
     node.style.zIndex = '5';
-    node.innerHTML = sil('player', size, m.uh * 1.04, '#e8703a');
+    node.innerHTML = sil('player', size, m.uh * 1.04, G.player.lvl >= 5 ? '#ffd76a' : '#e8703a');
     EL.lane.appendChild(node);
     UI.nodes.P = node;
   }
@@ -2044,7 +2103,7 @@ function drawHUD() {
   odo.scrap += (G.scrap - odo.scrap) * 0.3;
   if (Math.abs(odo.scrap - G.scrap) < 1) odo.scrap = G.scrap;
   EL.scrapv.textContent = Math.round(odo.scrap);
-  EL.bladev.textContent = SIM.playerDamage(G.wave);
+  EL.bladev.textContent = SIM.heroDamage(G) + (G.player.lvl > 1 ? ' · L' + G.player.lvl : '');
   var build = (G.phase === 'build');
   document.body.classList.toggle('combat', !build);
   EL.buildbar.classList.toggle('hidden', !build);
@@ -2254,6 +2313,18 @@ function retrig(node, cls) {
   if (!node) return;
   node.classList.remove(cls); void node.offsetWidth; node.classList.add(cls);
 }
+function snareSnapFX(cell) { if (typeof cell === 'number') retrig(UI.trapNodes[cell], 'snap'); }
+function flareFX(cell) { if (typeof cell === 'number') retrig(UI.trapNodes[cell], 'flare'); }
+function arrowFX(fromCell, toCell) {
+  var m = laneMetrics();
+  var y = m.h - m.uh * 0.62;
+  var x0 = (fromCell + 0.5) * m.cw + 8, x1 = (toCell + 0.5) * m.cw;
+  var a = document.createElement('span');
+  a.className = 'arrowfx';
+  a.style.left = x0 + 'px'; a.style.top = y + 'px'; a.style.width = Math.max(8, x1 - x0) + 'px';
+  EL.lane.appendChild(a);
+  setTimeout(function () { if (a.parentNode) a.parentNode.removeChild(a); }, 240);
+}
 function chewFX(cell, smash) {
   retrig(UI.trapNodes[cell], 'chew');
   var i, e;
@@ -2269,12 +2340,21 @@ function playEvents() {
     ev = G.ev[i];
     if (ev.t === 'hit') { if (VOICE[ev.b]) VOICE[ev.b](); }
     else if (ev.t === 'wallhit') { VOICE.wall(); UI.dirtyTraps = true; chewFX(ev.a, ev.b === 'smash'); }
-    else if (ev.t === 'snare') { VOICE.snare(); UI.dirtyTraps = true; }
+    else if (ev.t === 'snare') { VOICE.snare(); UI.dirtyTraps = true; snareSnapFX(ev.a); }
     else if (ev.t === 'pit') VOICE.pit();
-    else if (ev.t === 'brazier') VOICE.brazier();
+    else if (ev.t === 'brazier') { VOICE.brazier(); flareFX(ev.a); }
+    else if (ev.t === 'bolt') { retrig(UI.trapNodes[ev.a], 'recoil'); }
+    else if (ev.t === 'arrow') { arrowFX(ev.a, ev.b); pluck(880, 0.08, 0.18, 'square'); }
+    else if (ev.t === 'herolvl') {
+      var HL = { 2: 'LEVEL 2 · CLEAVE', 3: 'LEVEL 3 · LONGBOW', 4: 'LEVEL 4 · BATTLE FURY', 5: 'LEVEL 5 · EVOLVED BLADE' };
+      spawnFloat(G.player.cell, HL[ev.a] || ('LEVEL ' + ev.a), '#f5c77e');
+      pluck(523, 0.14, 0.26, 'triangle'); pluck(784, 0.22, 0.22, 'triangle'); haptic([10, 30, 10]);
+      /* the evolved hero is redrawn gold */
+      if (ev.a >= 5 && UI.nodes.P) { UI.nodes.P.remove(); delete UI.nodes.P; }
+    }
     else if (ev.t === 'traplost') { UI.dirtyTraps = true; if (ev.a === 'wall') { spawnFloat(ev.b, 'WALL DOWN', '#d2a0a0'); shake(); } }
     else if (ev.t === 'vault') { pluck(523, 0.12, 0.22, 'triangle'); haptic(8); retrig(UI.nodes.P, 'vault'); }
-    else if (ev.t === 'spike') UI.dirtyTraps = true;
+    else if (ev.t === 'spike') { UI.dirtyTraps = true; retrig(UI.trapNodes[ev.a], 'bite'); }
     else if (ev.t === 'alarm') { alarmPing(ev.b); haptic(10); }
     else if (ev.t === 'swinghit') { haptic(10); }
     else if (ev.t === 'spawn' && ENEMIES[ev.a] && ENEMIES[ev.a].boss) wardenStart(ev.a);
@@ -2805,6 +2885,47 @@ SUITES.push(function () {
   var mh2 = tEnemy(s, 'brute', 7, 1000, true);
   tRun(s, 1, 'attack');
   TEST.eq('no wall, no reach: two cells is still too far', mh2.hp, 1000);
+  /* ---- the hero ladder (2026-08-21) ---- */
+  s = tGame({ playerCell: 5 });
+  TEST.eq('the hero starts at level 1', s.player.lvl, 1);
+  s.player.xp = 24;
+  var hx = tEnemy(s, 'runner', 6, 10, true);
+  tRun(s, 1, 'attack');
+  TEST.eq('a player kill pays xp and levels the hero', s.player.lvl, 2);
+  s = tGame({ playerCell: 5 });
+  var tx = tEnemy(s, 'runner', 6, 10, true);
+  tPut(s, 7, 'spike'); /* unrelated trap; xp must come only from player kills */
+  tRun(s, 1, 'attack');
+  TEST.eq('xp equals a tenth of the body felled', s.player.xp, 1);
+  /* L2 Cleave hits every body in reach, not just the front one */
+  s = tGame({ playerCell: 5 }); s.player.lvl = 2;
+  var c1 = tEnemy(s, 'runner', 6, 1000, true), c2 = tEnemy(s, 'runner', 5, 1000, true);
+  tRun(s, 1, 'attack');
+  TEST.eq('cleave carries through every body in reach', (c1.hp < 1000) && (c2.hp < 1000), true);
+  /* L3 Longbow: no melee target -> arrow at the closest visible body */
+  s = tGame({ playerCell: 5 }); s.player.lvl = 3;
+  var lb = tEnemy(s, 'runner', 10, 1000, true);
+  tRun(s, 1, 'attack');
+  TEST.eq('the longbow reaches a distant body at half damage', 1000 - lb.hp, Math.round(playerDamage(1) / 2));
+  s = tGame({ playerCell: 5 }); s.player.lvl = 3;
+  tPut(s, 7, 'wall');
+  var lb2 = tEnemy(s, 'runner', 10, 1000, true);
+  tRun(s, 1, 'attack');
+  TEST.eq('a wall blocks the arrow like it blinds a ballista', lb2.hp, 1000);
+  s = tGame({ playerCell: 5 }); s.player.lvl = 3;
+  var lb3 = tEnemy(s, 'runner', 5 + CONFIG.LONGBOW_RANGE + 2, 1000, true);
+  tRun(s, 1, 'attack');
+  TEST.eq('the longbow has a real range', lb3.hp, 1000);
+  /* L4 Battle Fury: a kill resets the swing */
+  s = tGame({ playerCell: 5 }); s.player.lvl = 4;
+  tEnemy(s, 'runner', 6, 1, true);
+  tRun(s, 1, 'attack');
+  TEST.eq('battle fury resets the swing after a kill', s.player.atkCd, 0);
+  /* L5 Evolved Blade cuts 30 percent deeper */
+  s = tGame({ playerCell: 5 }); s.player.lvl = 5;
+  var ev5 = tEnemy(s, 'runner', 6, 1000, true);
+  tRun(s, 1, 'attack');
+  TEST.eq('the evolved blade cuts 30 percent deeper', 1000 - ev5.hp, Math.round(playerDamage(1) * 1.3));
   /* pit slows the player exactly as it slows a body */
   s = tGame({ playerCell: 5 });
   tPut(s, 6, 'pit');
@@ -3625,7 +3746,7 @@ var SIM_TEST = { TEST: TEST, SUITES: SUITES, tGame: tGame, tPut: tPut, tEnemy: t
   try {
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {
-        navigator.serviceWorker.register('sw.js?v=20260821a').catch(function () {});
+        navigator.serviceWorker.register('sw.js?v=20260821b').catch(function () {});
       });
     }
   } catch (e) {}
