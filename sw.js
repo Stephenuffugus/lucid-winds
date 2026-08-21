@@ -4,7 +4,7 @@
 // Version tag drives cache busting on deploy
 // ═══════════════════════════════════════════════════════════════════
 
-var CACHE_VERSION = 'lw-v37';
+var CACHE_VERSION = 'lw-v38';
 var ASSET_CACHE = 'lw-assets-v21';
 var GAME_CACHE = 'lw-games-v20';
 var TILE_CACHE = 'lw-tiles-v1';
@@ -55,7 +55,7 @@ var PRECACHE = [
   // on a shared.css / shell.js / shell.css / sunbeam-sdk.js version bump.
   '/shared.css?v=20260718',
   '/play/shell.css?v=12',
-  '/play/shell.js?v=25',
+  '/play/shell.js?v=26',
   '/sunbeam-sdk.js?v=7'
 ];
 
