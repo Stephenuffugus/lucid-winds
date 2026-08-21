@@ -793,14 +793,14 @@ window._gameFns.bowergarden = function BG(a){
     // North (partner) hand - face down. Bumped to 38x52 (was 32x44).
     h+='<div style="text-align:center;padding:6px;" class="'+activeClass(NORTH).replace(/^\s+/,'')+'"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:#7ab356;letter-spacing:0.1em;margin-bottom:5px;">PARTNER'+dealerBadge(NORTH)+_bidTag(NORTH)+sittingOutBadge(NORTH)+'</div><div style="display:inline-flex;justify-content:center;">';
     var nCt=seatCount(NORTH);
-    for(var n=0;n<nCt;n++)h+='<div class="'+dealCls(NORTH,n,nCt)+'" style="'+_cdBackStyle(38,52,5)+'margin-left:'+(n===0?'0':'-22px')+';"></div>';
+    for(var n=0;n<nCt;n++)h+='<div class="'+dealCls(NORTH,n,nCt)+'" style="'+_cdBackCss(38,52,5)+'margin-left:'+(n===0?'0':'-22px')+';"></div>';
     h+='</div></div>';
     // Middle: West | Trick | East. Bumped min-height + side card sizes.
     h+='<div style="display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:6px 4px;min-height:236px;">';
     // West — bumped to 32x46 (was 28x40)
     h+='<div class="'+activeClass(WEST).replace(/^\s+/,'')+'" style="padding:4px;width:64px;text-align:center;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.72rem;color:#dc8a8a;text-align:center;letter-spacing:0.08em;margin-bottom:5px;line-height:1.5;">WEST'+dealerBadge(WEST)+'<br>'+_bidTag(WEST)+sittingOutBadge(WEST)+'</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
     var wCt=seatCount(WEST);
-    for(var w=0;w<wCt;w++)h+='<div class="'+dealCls(WEST,w,wCt)+'" style="'+_cdBackStyle(32,46,4)+'margin-top:'+(w===0?'0':'-32px')+';"></div>';
+    for(var w=0;w<wCt;w++)h+='<div class="'+dealCls(WEST,w,wCt)+'" style="'+_cdBackCss(32,46,4)+'margin-top:'+(w===0?'0':'-32px')+';"></div>';
     h+='</div></div>';
     // Trick area — bumped min-height
     h+='<div style="position:relative;min-height:236px;background:rgba(26,31,23,0.3);border-radius:8px;">';
@@ -847,7 +847,7 @@ window._gameFns.bowergarden = function BG(a){
     // East — bumped to 32x46
     h+='<div class="'+activeClass(EAST).replace(/^\s+/,'')+'" style="padding:4px;width:64px;text-align:center;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.72rem;color:#dc8a8a;text-align:center;letter-spacing:0.08em;margin-bottom:5px;line-height:1.5;">EAST'+dealerBadge(EAST)+'<br>'+_bidTag(EAST)+sittingOutBadge(EAST)+'</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
     var eCt=seatCount(EAST);
-    for(var e=0;e<eCt;e++)h+='<div class="'+dealCls(EAST,e,eCt)+'" style="'+_cdBackStyle(32,46,4)+'margin-top:'+(e===0?'0':'-32px')+';"></div>';
+    for(var e=0;e<eCt;e++)h+='<div class="'+dealCls(EAST,e,eCt)+'" style="'+_cdBackCss(32,46,4)+'margin-top:'+(e===0?'0':'-32px')+';"></div>';
     h+='</div></div>';
     h+='</div>';
     // South (player) hand
@@ -877,7 +877,7 @@ window._gameFns.bowergarden = function BG(a){
       // Your cards arrive face-down in the dealt batches, then flip up
       // together when the upcard turns.
       var sCt=dealCounts[SOUTH];
-      for(var sd=0;sd<sCt;sd++)h+='<div class="'+dealCls(SOUTH,sd,sCt)+'" style="'+_cdBackStyle(50,70,6)+'"></div>';
+      for(var sd=0;sd<sCt;sd++)h+='<div class="'+dealCls(SOUTH,sd,sCt)+'" style="'+_cdBackCss(50,70,6)+'"></div>';
     }
     else for(var k=0;k<sortedHand.length;k++){
       var cc=sortedHand[k];var canPlay=false;

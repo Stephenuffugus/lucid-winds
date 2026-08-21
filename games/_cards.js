@@ -535,7 +535,11 @@ var _CD_BACK_AR=208/146;               // the art's true aspect, for sizing help
 
 // One face-down card. Pass width and height; height defaults to the real ratio
 // so nobody has to remember it.
-function _cdBackStyle(w,h,r){
+// ⛔ NOT _cdBackStyle: that name is already taken above by the DOM-element
+// styler the solitaires use, and declaring it twice let function hoisting hand
+// every solitaire's face-down card to this one instead. It rendered blank
+// rectangles for a while before a screenshot caught it.
+function _cdBackCss(w,h,r){
   h=h||Math.round(w*_CD_BACK_AR);
   r=(r==null)?Math.max(3,Math.round(w*0.085)):r;
   // ⛔ THE EDGE IS NOT DECORATION. Hands are drawn overlapping (euchre leaves
@@ -551,7 +555,7 @@ function _cdBackStyle(w,h,r){
 }
 function _cdBackHtml(w,h,o){
   o=o||{};
-  return '<div class="cd-back '+(o.cls||'')+'" style="'+_cdBackStyle(w,h,o.radius)+(o.style||'')+'"'
+  return '<div class="cd-back '+(o.cls||'')+'" style="'+_cdBackCss(w,h,o.radius)+(o.style||'')+'"'
     +(o.attrs||'')+'></div>';
 }
 // A stack of backs with the count on top: the deck while dealing, the stock
@@ -562,7 +566,7 @@ function _cdDeckHtml(n,w,h,o){
   var s='<div class="cd-deck'+(o.shuffling?' cd-shuffling':'')+'" style="position:relative;width:'
     +(w+depth*2)+'px;height:'+(h+depth*2)+'px;margin:0 auto;'+(o.style||'')+'">';
   for(var i=0;i<depth;i++){
-    s+='<div style="position:absolute;top:'+(i*2)+'px;left:'+(i*2)+'px;'+_cdBackStyle(w,h,o.radius)+'"></div>';
+    s+='<div style="position:absolute;top:'+(i*2)+'px;left:'+(i*2)+'px;'+_cdBackCss(w,h,o.radius)+'"></div>';
   }
   if(o.count!==false){
     s+='<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;'
@@ -638,7 +642,7 @@ function _cdDeal(o){
 function _cdCancelDeal(){ _cdDealGen++; }
 
 window._CD_BACK_ART=_CD_BACK_ART;
-window._cdBackStyle=_cdBackStyle;
+window._cdBackCss=_cdBackCss;
 window._cdBackHtml=_cdBackHtml;
 window._cdDeckHtml=_cdDeckHtml;
 window._cdKitCss=_cdKitCss;

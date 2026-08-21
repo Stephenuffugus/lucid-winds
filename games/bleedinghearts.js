@@ -387,7 +387,7 @@ window._gameFns.bleedinghearts = function BH(a){
 
   function _cardHtml(c,faceDown,isPlayer,extraClass){
     // the real back, shared with every other card game (games/_cards.js)
-    if(faceDown){return '<div style="'+_cdBackStyle(28,40,4)+'display:inline-block;"></div>';}
+    if(faceDown){return '<div style="'+_cdBackCss(28,40,4)+'display:inline-block;"></div>';}
     var col=c.suit==='hearts'||c.suit==='diamonds'?'#c47a7a':'#1a1f17';
     var bc=extraClass==='sel'?'var(--gold)':extraClass==='play'?'#7AB956':'#C4B998';
     return '<div style="display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:42px;height:58px;border-radius:6px;background:#F5F0E1;border:2px solid '+bc+';color:'+col+';font-weight:700;position:relative;'+(extraClass==='play'?'cursor:pointer;':'')+(extraClass==='sel'?'transform:translateY(-6px);box-shadow:0 4px 12px rgba(200,168,75,0.4);cursor:pointer;':'')+'"><div style="font-size:0.75rem;position:absolute;top:2px;left:4px;">'+c.rank+'</div><div style="font-size:1.2rem;">'+_pip(c.suit)+'</div></div>';

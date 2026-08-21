@@ -206,6 +206,10 @@ window._gameFns.gardenspades = function GardenSpades(a){
     setTimeout(aiBidTurn,800);
   }
   function aiBidTurn(){
+    // ⛔ this had no phase guard at all, so a stale timer could drop an AI bid
+    // onto a table that had moved on — including onto a deal in flight after
+    // New Game. Every other AI entry point in this file guards; this one did not.
+    if(phase!=='bidding')return;
     if(currentPlayer===S){render();return;}
     var b=aiBid(currentPlayer);bids[currentPlayer]=b;
     sm(NAMES[currentPlayer]+' bids '+(b===0?'NIL':b));
@@ -450,7 +454,7 @@ window._gameFns.gardenspades = function GardenSpades(a){
         +_bidPill(N)
       +'</div>'
       +'<div style="display:inline-flex;justify-content:center;">';
-    for(var n=0;n<seatCount(N);n++)h+='<div class="'+(isNewlyDealt(N,n)?'cd-deal-in':'')+'" style="'+_cdBackStyle(30,42,5)+'margin-left:'+(n===0?'0':'-22px')+';"></div>';
+    for(var n=0;n<seatCount(N);n++)h+='<div class="'+(isNewlyDealt(N,n)?'cd-deal-in':'')+'" style="'+_cdBackCss(30,42,5)+'margin-left:'+(n===0?'0':'-22px')+';"></div>';
     h+='</div></div>';
     // ── MIDDLE ROW: WEST | TRICK | EAST ─────────────────────────
     h+='<div style="display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:6px 4px;min-height:160px;">';
@@ -459,7 +463,7 @@ window._gameFns.gardenspades = function GardenSpades(a){
         +'WEST <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;margin-left:2px;">×'+seatCount(W)+'</span>'+_bidPill(W)
       +'</div>'
       +'<div style="display:inline-flex;flex-direction:column;align-items:center;">';
-    for(var w=0;w<seatCount(W);w++)h+='<div class="'+(isNewlyDealt(W,w)?'cd-deal-in':'')+'" style="'+_cdBackStyle(30,42,5)+'margin-top:'+(w===0?'0':'-34px')+';"></div>';
+    for(var w=0;w<seatCount(W);w++)h+='<div class="'+(isNewlyDealt(W,w)?'cd-deal-in':'')+'" style="'+_cdBackCss(30,42,5)+'margin-top:'+(w===0?'0':'-34px')+';"></div>';
     h+='</div></div>';
     // ── TRICK AREA ──────────────────────────────────────────────
     h+='<div style="position:relative;min-height:160px;background:radial-gradient(ellipse at 50% 50%,rgba(0,0,0,0.18) 0%,rgba(0,0,0,0.4) 100%);border-radius:8px;border:1px solid rgba(0,0,0,0.5);box-shadow:inset 0 2px 8px rgba(0,0,0,0.45);">';
@@ -485,7 +489,7 @@ window._gameFns.gardenspades = function GardenSpades(a){
         +'EAST <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;margin-left:2px;">×'+seatCount(E)+'</span>'+_bidPill(E)
       +'</div>'
       +'<div style="display:inline-flex;flex-direction:column;align-items:center;">';
-    for(var e=0;e<seatCount(E);e++)h+='<div class="'+(isNewlyDealt(E,e)?'cd-deal-in':'')+'" style="'+_cdBackStyle(30,42,5)+'margin-top:'+(e===0?'0':'-34px')+';"></div>';
+    for(var e=0;e<seatCount(E);e++)h+='<div class="'+(isNewlyDealt(E,e)?'cd-deal-in':'')+'" style="'+_cdBackCss(30,42,5)+'margin-top:'+(e===0?'0':'-34px')+';"></div>';
     h+='</div></div>';
     h+='</div>';
     // ── BID UI ──────────────────────────────────────────────────

@@ -449,7 +449,7 @@ window._gameFns.juniper = function Juniper(a){
     var thinkBadge = aiThinking ? ' <span style="margin-left:8px;font-family:Georgia,serif;font-style:italic;font-size:0.62rem;color:#ffdc70;animation:juThink 1.2s ease-in-out infinite;">thinking…</span>' : '';
     h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:#dc8a8a;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;margin-bottom:5px;">JUNIPER <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;">×'+aCount()+'</span>'+thinkBadge+'</div>';
     h+='<div style="display:inline-flex;justify-content:center;">';
-    for(var i=0;i<aCount();i++)h+='<div class="'+(phase==='dealing'&&i===dealtA-1?'cd-deal-in':'')+'" style="'+_cdBackStyle(28,40,4)+'margin-left:'+(i===0?'0':'-18px')+';"></div>';
+    for(var i=0;i<aCount();i++)h+='<div class="'+(phase==='dealing'&&i===dealtA-1?'cd-deal-in':'')+'" style="'+_cdBackCss(28,40,4)+'margin-left:'+(i===0?'0':'-18px')+';"></div>';
     h+='</div></div>';
     // ── STOCK + DISCARD ─────────────────────────────────────────
     var canPickup = phase==='draw';
@@ -458,7 +458,7 @@ window._gameFns.juniper = function Juniper(a){
     h+='<div style="text-align:center;">';
     // the stock was a flat gradient with a 🂠 glyph on it; it is the deck, so it
     // shows the deck art, and it riffles while the hand is being dealt
-    h+='<div onclick="_JUDS()" class="'+(shuffling?'cd-shuffling':'')+'" style="'+_cdBackStyle(72,100,8)
+    h+='<div onclick="_JUDS()" class="'+(shuffling?'cd-shuffling':'')+'" style="'+_cdBackCss(72,100,8)
       +'display:flex;align-items:center;justify-content:center;position:relative;'
       +(canPickup?'cursor:pointer;outline:2px solid #ffdc70;outline-offset:-2px;':'cursor:default;opacity:0.85;')+'">';
     h+='<span style="font-family:DM Mono,monospace;font-size:0.55rem;color:#ffdc70;position:absolute;bottom:4px;left:0;right:0;text-shadow:0 1px 3px #000;letter-spacing:0.05em;">'+(phase==='dealing'?(52-dealtP-dealtA):stock.length)+' left</span></div>';
@@ -470,7 +470,7 @@ window._gameFns.juniper = function Juniper(a){
     // table while the hands were still going out. It only appears when it is
     // actually turned, on the last step of the deal.
     if(phase==='dealing'&&!dealFlip){
-      h+='<div style="'+_cdBackStyle(72,100,8)+'opacity:.35;"></div>';
+      h+='<div style="'+_cdBackCss(72,100,8)+'opacity:.35;"></div>';
     } else if(discardPile.length>0){
       var top=discardPile[discardPile.length-1];
       var col=top.suit==='hearts'||top.suit==='diamonds'?'#b42a2a':'#1a1a1a';

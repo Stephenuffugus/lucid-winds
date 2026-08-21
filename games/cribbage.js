@@ -552,7 +552,7 @@ window._gameFns.cribbage = function CRIB(a){
     }else{
       for(var i=0;i<aShown();i++){
         var played=G.aPlayed.indexOf(i)>=0;
-        h+='<div class="'+(cbDealing&&i===dealtA-1?'cd-deal-in':'')+'" style="'+_cdBackStyle(48,66,6)+(played?'opacity:.35;':'')+'"></div>';
+        h+='<div class="'+(cbDealing&&i===dealtA-1?'cd-deal-in':'')+'" style="'+_cdBackCss(48,66,6)+(played?'opacity:.35;':'')+'"></div>';
       }
     }
     h+='</div></div>';
