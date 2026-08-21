@@ -42,6 +42,14 @@ window._gameFns.gardenspades = function GardenSpades(a){
   var teamBids=[0,0];
   var trick=[],trickCards=[null,null,null,null];
   var leader=0,currentPlayer=0,phase='',spadesBroken=false,roundNum=0;
+  // ── THE DEAL ── same shape as Hearts (games/bleedinghearts.js): a round at a
+  // time rather than a card at a time, because render() rebuilds the whole
+  // table's innerHTML per step and thirteen rebuilds read as clearly as
+  // fifty-two. See games/_cards.js for _cdDeal and its generation guard.
+  var dealt=[0,0,0,0],shuffling=false,dealHandle=null;
+  function seatCount(p){return phase==='dealing'?dealt[p]:hands[p].length;}
+  function dealtCards(p){return phase==='dealing'?hands[p].slice(0,dealt[p]):hands[p];}
+  function isNewlyDealt(p,i){return phase==='dealing'&&i===dealt[p]-1;}
   // One-shot flag — fires the spades-broken animation only on the render
   // immediately after the break, not on every subsequent render.
   var spadesJustBroke=false;
@@ -174,7 +182,21 @@ window._gameFns.gardenspades = function GardenSpades(a){
     lastTrickWinner=-1;nilBrokenJust=-1;
   }
   function newRound(){
-    roundNum++;deal();phase='bidding';
+    roundNum++;deal();
+    var re0=document.getElementById('GSr');if(re0)re0.textContent=roundNum;
+    dealt=[0,0,0,0];shuffling=true;phase='dealing';render();
+    if(dealHandle)dealHandle.cancel();
+    var rounds=[];for(var k=0;k<13;k++)rounds.push(k);
+    dealHandle=_cdDeal({
+      steps:rounds, shuffleMs:850, stepMs:145,
+      alive:function(){return phase==='dealing';},
+      onShuffleEnd:function(){shuffling=false;render();},
+      onStep:function(){ for(var q=0;q<4;q++)dealt[q]++; render(); },
+      onDone:startBidding
+    });
+  }
+  function startBidding(){
+    phase='bidding';
     // Bidding now starts at WEST so all three AIs bid before SOUTH. The player
     // sees every other bid land before deciding — matches real-life flow and
     // gives the partner-pre-echo the research called for.
@@ -382,7 +404,10 @@ window._gameFns.gardenspades = function GardenSpades(a){
     var classes='gs-seat';
     var isActive = (seat===currentPlayer && (phase==='play'||phase==='bidding'));
     if(isActive)classes+=' gs-active';
-    else if(phase==='play'||phase==='bidding')classes+=' gs-inactive';
+    // ⛔ never dim the player's own hand (see euchre and hearts): 55% opacity
+    // is the right cue for seats that are only card backs, the wrong one for
+    // the cards you are reading while you decide your bid.
+    else if(seat!==S&&(phase==='play'||phase==='bidding'))classes+=' gs-inactive';
     if(seat===nilBrokenJust)classes+=' gs-nil-broken';
     return classes;
   }
@@ -421,23 +446,28 @@ window._gameFns.gardenspades = function GardenSpades(a){
     // ── PARTNER (NORTH) ─────────────────────────────────────────
     h+='<div class="'+_seatCls(N)+'" style="text-align:center;padding:6px;">'
       +'<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:'+_teamColor(N)+';letter-spacing:0.14em;margin-bottom:5px;text-transform:uppercase;font-weight:700;">'
-        +'PARTNER <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;margin-left:4px;">×'+hands[N].length+'</span>'
+        +'PARTNER <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;margin-left:4px;">×'+seatCount(N)+'</span>'
         +_bidPill(N)
       +'</div>'
       +'<div style="display:inline-flex;justify-content:center;">';
-    for(var n=0;n<hands[N].length;n++)h+='<div style="'+_cdBackStyle(30,42,5)+'margin-left:'+(n===0?'0':'-22px')+';"></div>';
+    for(var n=0;n<seatCount(N);n++)h+='<div class="'+(isNewlyDealt(N,n)?'cd-deal-in':'')+'" style="'+_cdBackStyle(30,42,5)+'margin-left:'+(n===0?'0':'-22px')+';"></div>';
     h+='</div></div>';
     // ── MIDDLE ROW: WEST | TRICK | EAST ─────────────────────────
     h+='<div style="display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:6px 4px;min-height:160px;">';
     h+='<div class="'+_seatCls(W)+'" style="padding:4px;">'
       +'<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:'+_teamColor(W)+';text-align:center;letter-spacing:0.14em;margin-bottom:5px;text-transform:uppercase;font-weight:700;">'
-        +'WEST <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;margin-left:2px;">×'+hands[W].length+'</span>'+_bidPill(W)
+        +'WEST <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;margin-left:2px;">×'+seatCount(W)+'</span>'+_bidPill(W)
       +'</div>'
       +'<div style="display:inline-flex;flex-direction:column;align-items:center;">';
-    for(var w=0;w<hands[W].length;w++)h+='<div style="'+_cdBackStyle(30,42,5)+'margin-top:'+(w===0?'0':'-34px')+';"></div>';
+    for(var w=0;w<seatCount(W);w++)h+='<div class="'+(isNewlyDealt(W,w)?'cd-deal-in':'')+'" style="'+_cdBackStyle(30,42,5)+'margin-top:'+(w===0?'0':'-34px')+';"></div>';
     h+='</div></div>';
     // ── TRICK AREA ──────────────────────────────────────────────
     h+='<div style="position:relative;min-height:160px;background:radial-gradient(ellipse at 50% 50%,rgba(0,0,0,0.18) 0%,rgba(0,0,0,0.4) 100%);border-radius:8px;border:1px solid rgba(0,0,0,0.5);box-shadow:inset 0 2px 8px rgba(0,0,0,0.45);">';
+    if(phase==='dealing'){
+      var gsLeft=52-(dealt[0]+dealt[1]+dealt[2]+dealt[3]);
+      h+='<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">'
+        +_cdDeckHtml(gsLeft,46,64,{shuffling:shuffling,label:shuffling?'shuffling\u2026':'dealing\u2026'})+'</div>';
+    }
     var pos={};pos[S]='bottom:8px;left:50%;transform:translateX(-50%);';pos[W]='left:8px;top:50%;transform:translateY(-50%);';pos[N]='top:8px;left:50%;transform:translateX(-50%);';pos[E]='right:8px;top:50%;transform:translateY(-50%);';
     for(var pl=0;pl<4;pl++){
       var c=trickCards[pl];if(!c)continue;
@@ -452,10 +482,10 @@ window._gameFns.gardenspades = function GardenSpades(a){
     h+='</div>';
     h+='<div class="'+_seatCls(E)+'" style="padding:4px;">'
       +'<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:'+_teamColor(E)+';text-align:center;letter-spacing:0.14em;margin-bottom:5px;text-transform:uppercase;font-weight:700;">'
-        +'EAST <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;margin-left:2px;">×'+hands[E].length+'</span>'+_bidPill(E)
+        +'EAST <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;margin-left:2px;">×'+seatCount(E)+'</span>'+_bidPill(E)
       +'</div>'
       +'<div style="display:inline-flex;flex-direction:column;align-items:center;">';
-    for(var e=0;e<hands[E].length;e++)h+='<div style="'+_cdBackStyle(30,42,5)+'margin-top:'+(e===0?'0':'-34px')+';"></div>';
+    for(var e=0;e<seatCount(E);e++)h+='<div class="'+(isNewlyDealt(E,e)?'cd-deal-in':'')+'" style="'+_cdBackStyle(30,42,5)+'margin-top:'+(e===0?'0':'-34px')+';"></div>';
     h+='</div></div>';
     h+='</div>';
     // ── BID UI ──────────────────────────────────────────────────
@@ -508,7 +538,8 @@ window._gameFns.gardenspades = function GardenSpades(a){
     var leadS=trick.length>0?trick[0].card.suit:'';
     var playable=[];
     if(phase==='play'&&currentPlayer===S)playable=getPlayable(hands[S],leadS);
-    for(var i=0;i<hands[S].length;i++){
+    var myCards=dealtCards(S);
+    for(var i=0;i<myCards.length;i++){
       var cc=hands[S][i];
       var canP=playable.some(function(p){return p.rank===cc.rank&&p.suit===cc.suit;});
       var col=cc.suit==='hearts'||cc.suit==='diamonds'?'#c47a7a':'#1a1f17';
