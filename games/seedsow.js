@@ -423,7 +423,7 @@ window._gameFns.seedsow=function SS(a){
     var ov=document.createElement('div');ov.id='SSrulesOV';
     ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});
     var h='<div class="card">';
-    h+='<h2>🌱 Mancala — How to Play</h2>';
+    h+='<h2>🌱 Mancala: How to Play</h2>';
     h+='<p>A classic Kalah-style Mancala. You control the <strong style="color:#8fc57a">bottom row</strong> and the <strong>green store</strong> on the right. The AI owns the top row and the coral store on the left.</p>';
     h+='<h2>Your turn</h2>';
     h+='<p>Tap one of your pits. The seeds inside sow counterclockwise, one per pit: into your row, into your store, into the computer\'s row, past the computer\'s store (skipped!), back to yours.</p>';
@@ -434,7 +434,7 @@ window._gameFns.seedsow=function SS(a){
     h+='<h2>Game end</h2>';
     h+='<p>When one side\'s row is completely empty, the other side sweeps all remaining seeds on its own side into its store. Most seeds in store wins.</p>';
     h+='<h2>Strategy</h2>';
-    h+='<p>• Plan for the free-turn landing in your store — double and triple turns dominate.<br>• Empty pits on your side are capture opportunities; leaving a pit empty with seeds across the way is a gift for the computer.<br>• Your last pit (pit 6, nearest the store) with exactly 1 seed and you sow it → bonus turn.</p>';
+    h+='<p>• Plan for the free-turn landing in your store, double and triple turns dominate.<br>• Empty pits on your side are capture opportunities; leaving a pit empty with seeds across the way is a gift for the computer.<br>• Your last pit (pit 6, nearest the store) with exactly 1 seed and you sow it → bonus turn.</p>';
     h+='<div style="text-align:center;margin-top:14px;"><button class="gb" onclick="document.getElementById(\'SSrulesOV\').remove()" style="min-height:48px;padding:10px 22px;">CLOSE</button></div>';
     h+='</div>';
     ov.innerHTML=h;

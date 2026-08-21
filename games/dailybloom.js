@@ -43,7 +43,7 @@ var EXERCISES={
     source:'Visual change detection paradigm'},
   stroop:{label:'COLOR NAMING',domain:'attention',
     trains:'Inhibition: tap the ink color of a word that spells a different color.',
-    source:'Stroop 1935 — the Stroop effect'},
+    source:'Stroop 1935, the Stroop effect'},
   nback:{label:'N-BACK',domain:'working',
     trains:'Working memory: "did this tile appear N steps ago?"',
     source:'Jaeggi et al. 2008, Proceedings of the National Academy of Sciences'},
@@ -362,7 +362,7 @@ function showReaction(){
       clearTimeout(S.exData.timer);
       S.exData.phase='early';
       var m=pan.querySelector('#DBrmsg');
-      if(m){ m.innerHTML='<span style="color:#c47a7a">Too early — wait for green.</span>'; }
+      if(m){ m.innerHTML='<span style="color:#c47a7a">Too early, wait for green.</span>'; }
       later(showReaction, 700);
       return;
     }

@@ -506,11 +506,11 @@ window._gameFns.numbergarden=function NG(a){
     h+='<h2>🎯 Goal</h2>';
     h+='<p>60-second drills. Solve as many problems as you can. 10+ correct = win. Each mode has its own personal best.</p>';
     h+='<h2>🎮 BASIC modes</h2>';
-    h+='<p><strong style="color:var(--gold)">ADD / SUB / MUL</strong> — the core operations, one at a time. Numbers grow as your streak does.</p>';
-    h+='<p><strong style="color:var(--gold)">MIX</strong> — all three operations interleaved. The unpredictable variant.</p>';
+    h+='<p><strong style="color:var(--gold)">ADD / SUB / MUL</strong>: the core operations, one at a time. Numbers grow as your streak does.</p>';
+    h+='<p><strong style="color:var(--gold)">MIX</strong>: all three operations interleaved. The unpredictable variant.</p>';
     h+='<h2>🧠 FOCUS modes</h2>';
-    h+='<p><strong style="color:var(--gold)">TABLES</strong> — rapid-fire times tables from 2×2 through 12×12. The foundation every Japanese grade-schooler drills until it\'s reflex.</p>';
-    h+='<p><strong style="color:var(--gold)">MAKE 10</strong> — Japanese <em>friends-of-ten</em> drill. You see a digit 1–9; type its complement. 7? Answer 3. 4? Answer 6. The mental reflex behind every fast addition.</p>';
+    h+='<p><strong style="color:var(--gold)">TABLES</strong>: rapid-fire times tables from 2×2 through 12×12. The foundation every Japanese grade-schooler drills until it\'s reflex.</p>';
+    h+='<p><strong style="color:var(--gold)">MAKE 10</strong>: Japanese <em>friends-of-ten</em> drill. You see a digit 1 to 9; type its complement. 7? Answer 3. 4? Answer 6. The mental reflex behind every fast addition.</p>';
     h+='<p><strong style="color:var(--gold)">MAKE 100</strong>, two-digit complements. 37? Answer 63. Unlocks fast mental addition of any 2-digit pair.</p>';
     h+='<p><strong style="color:var(--gold)">DIGIT SPAN</strong>, the classic working-memory benchmark. A short digit sequence flashes one at a time; type it back in order. Average adult span is about 7. Elite anzan-trained students reach 15 or more.</p>';
     h+='<h2>⚡ MASTER mode</h2>';

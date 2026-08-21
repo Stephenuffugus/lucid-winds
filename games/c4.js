@@ -272,7 +272,7 @@ function GC4(a){
   }
 
   // Encouraging copy
-  var _c4Enc=['Nice try! Go again 🌱','Almost had it! One more? 🌿','The garden grows through practice 🌻','Every loss plants a seed of wisdom 🍃','You learn more from losses — rematch? 🌸'];
+  var _c4Enc=['Nice try! Go again 🌱','Almost had it! One more? 🌿','The garden grows through practice 🌻','Every loss plants a seed of wisdom 🍃','You learn more from losses, rematch? 🌸'];
   var _c4Win=['Brilliant! You bloomed! 🌸','Your garden flourishes! 🌺','Masterful placement! 🌻','The grove is proud! 🌿','Four in a Row champion! 🏆'];
 
   function _recordResult(kind){
@@ -293,7 +293,7 @@ function GC4(a){
       _sr('c4',{w:false});
       _recordResult('loss');
     }else if(isFull()){
-      over=true;sm('A draw! Well matched — try again? 🌿');
+      over=true;sm('A draw! Well matched, try again? 🌿');
       _sr('c4',{w:false});_recordResult('draw');
     }else{
       turn=1;sm('Your turn');
@@ -378,7 +378,7 @@ function GC4(a){
             return;
           }
           if(isFull()){
-            over=true;sm('A draw! Well matched — try again? 🌿');
+            over=true;sm('A draw! Well matched, try again? 🌿');
             rn();_sr('c4',{w:false});_recordResult('draw');
             return;
           }
@@ -434,7 +434,7 @@ function GC4(a){
     mv=Math.max(0,mv-2);
     var _cm=document.getElementById('C4m');if(_cm)_cm.textContent=mv;
     turn=1;over=false;_lastDrop=-1;winCells=null;
-    sm('Undone — your turn');
+    sm('Undone, your turn');
     rn();
   };
   document.getElementById('C4hint').onclick=function(){

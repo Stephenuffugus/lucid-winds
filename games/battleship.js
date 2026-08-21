@@ -1183,7 +1183,7 @@ function GBS(a){
     pShotsLeft=1;aiShotsLeft=0;
     stats={started:0,finished:0,turns:0,playerShots:0,playerHits:0,playerStreak:0,playerBestStreak:0,aiShots:0,aiHits:0};
     var _bsph3=document.getElementById('BSph');if(_bsph3)_bsph3.innerHTML='Place your fleet';
-    sm('New battle — place your fleet');
+    sm('New battle, place your fleet');
     _bsSyncCfm();
     rn();
   };

@@ -701,7 +701,7 @@ function updateControls(){
 
 function playerPass(){
   if(S.phase!=='play'||S.turn!=='player')return;
-  if(S.bag.length>0){sm('Bag still has tiles — play or swap');return;}
+  if(S.bag.length>0){sm('Bag still has tiles, play or swap');return;}
   if(S.placed.length>0){sm('Finish or undo placements first');return;}
   S.passCount=(S.passCount||0)+1;
   sm('Passed');

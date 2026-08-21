@@ -17,7 +17,7 @@ window._gameFns.livingstones = function LS(a){
     beginner: [
       {size:5, goal:'ATARI CAPTURE', hint:'White has one liberty. Close it.',
        B:[[1,2],[2,1],[3,2]], W:[[2,2]], solution:[[2,3]], check:'captured'},
-      {size:5, goal:'EDGE ATARI', hint:'The edge is a wall — one more stone ends it.',
+      {size:5, goal:'EDGE ATARI', hint:'The edge is a wall, one more stone ends it.',
        B:[[0,0],[2,0]], W:[[1,0]], solution:[[1,1]], check:'captured'},
       {size:5, goal:'CORNER CAPTURE', hint:'Only one liberty remains in the corner.',
        B:[[1,0]], W:[[0,0]], solution:[[0,1]], check:'captured'},
@@ -34,7 +34,7 @@ window._gameFns.livingstones = function LS(a){
       // Beginner additions — distinctive single-liberty capture shapes.
       {size:5, goal:'HANE AT THE SIDE', hint:'Two white stones stretched along the side.',
        B:[[0,1],[1,0],[1,2],[2,0],[2,2]], W:[[1,1],[2,1]], solution:[[3,1]], check:'captured'},
-      {size:5, goal:'CROSS POINT', hint:'White is surrounded on three sides — close it.',
+      {size:5, goal:'CROSS POINT', hint:'White is surrounded on three sides, close it.',
        B:[[0,2],[1,1],[1,3]], W:[[1,2]], solution:[[2,2]], check:'captured'},
       {size:5, goal:'DOWN THE SIDE', hint:'Three white stones along the first line.',
        B:[[0,3],[1,0],[1,1],[1,2]], W:[[0,0],[0,1],[0,2]], solution:[[1,3]], check:'captured'},
@@ -86,7 +86,7 @@ window._gameFns.livingstones = function LS(a){
       // Advanced additions — long lines and classic teaching moves.
       {size:9, goal:'EIGHT IN A ROW', hint:'A wall of eight white stones with one last liberty.',
        B:[[0,8],[1,0],[1,1],[1,2],[1,3],[1,4],[1,5],[1,6]], W:[[0,0],[0,1],[0,2],[0,3],[0,4],[0,5],[0,6],[0,7]], solution:[[1,7]], check:'captured'},
-      {size:7, goal:'NET (GETA)', hint:'Cast a net — the right move leaves no escape.',
+      {size:7, goal:'NET (GETA)', hint:'Cast a net, the right move leaves no escape.',
        B:[[0,2],[1,1],[2,2],[3,3]], W:[[0,3]], solution:[[1,4]], check:'noop'},
       {size:7, goal:'CORNER TRIO', hint:'Three stones trapped in the corner.',
        B:[[0,3],[1,0],[1,1],[1,2]], W:[[0,0],[0,1],[0,2]], solution:[[1,3]], check:'captured'},
@@ -201,7 +201,7 @@ window._gameFns.livingstones = function LS(a){
   function renderMenu(){
     viewGen++;
     var h='<div style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;color:var(--sage);letter-spacing:0.22em;margin:12px 0;">LIVING STONES</div>';
-    h+='<div style="font-style:italic;font-size:0.76rem;color:var(--muted);margin-bottom:10px;">Go — 围棋 囲碁 바둑 — the 4000-year-old game</div>';
+    h+='<div style="font-style:italic;font-size:0.76rem;color:var(--muted);margin-bottom:10px;">Go · 围棋 囲碁 바둑 · the 4000-year-old game</div>';
     h+='<button class="gb" onclick="_LSlearn()" style="display:block;width:220px;margin:6px auto 14px;padding:8px;min-height:48px;background:rgba(122,179,86,0.18);border-color:rgba(122,179,86,0.5);color:#8fc57a;font-size:0.75rem;letter-spacing:0.1em;">? LEARN THE RULES</button>';
     h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:var(--gold);letter-spacing:0.16em;margin:8px 0 4px;">PUZZLES · TSUMEGO</div>';
     h+='<div style="font-style:italic;font-size:0.72rem;color:var(--muted);margin-bottom:8px;">12 verified life-and-death problems</div>';
@@ -229,11 +229,11 @@ window._gameFns.livingstones = function LS(a){
     h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1rem;color:#c8a84b;letter-spacing:0.18em;text-align:center;margin-bottom:10px;">HOW GO WORKS</div>';
     h+='<p style="margin:6px 0"><b style="color:#8fc57a">Place stones</b> on intersections. Black plays first. Stones don\'t move once placed.</p>';
     h+='<p style="margin:6px 0"><b style="color:#8fc57a">Liberties</b> are the empty intersections next to a stone. Stones lose liberties when opponents play next to them.</p>';
-    h+='<p style="margin:6px 0"><b style="color:#8fc57a">Capture</b> a stone or group by filling its last liberty — it\'s removed from the board.</p>';
-    h+='<p style="margin:6px 0"><b style="color:#8fc57a">Atari</b> means a group has only one liberty left — about to be captured.</p>';
+    h+='<p style="margin:6px 0"><b style="color:#8fc57a">Capture</b> a stone or group by filling its last liberty, it\'s removed from the board.</p>';
+    h+='<p style="margin:6px 0"><b style="color:#8fc57a">Atari</b> means a group has only one liberty left, about to be captured.</p>';
     h+='<p style="margin:6px 0"><b style="color:#8fc57a">Life</b> requires two separate eye spaces. Groups with two eyes are alive forever.</p>';
-    h+='<p style="margin:6px 0"><b style="color:#8fc57a">Ko rule</b> — you cannot play a move that would recreate the exact previous board position.</p>';
-    h+='<p style="margin:6px 0"><b style="color:#8fc57a">Winning</b> — at game end (both pass), you score the stones you have on the board plus any territory you surround.</p>';
+    h+='<p style="margin:6px 0"><b style="color:#8fc57a">Ko rule</b>: you cannot play a move that would recreate the exact previous board position.</p>';
+    h+='<p style="margin:6px 0"><b style="color:#8fc57a">Winning</b>: at game end (both pass), you score the stones you have on the board plus any territory you surround.</p>';
     h+='<p style="margin:8px 0 4px;color:rgba(232,220,200,0.6);font-style:italic;font-size:0.72rem">The puzzles below train your capture sense. Each has a single correct move that wins material.</p>';
     h+='</div>';
     h+='<button class="gb" onclick="_LSN()" style="min-height:48px;padding:8px 22px;margin:6px auto;display:block;">← BACK</button>';
@@ -490,7 +490,7 @@ window._gameFns.livingstones = function LS(a){
     }
     svg+='</svg>';
     var h='<div style="font-family:Bebas Neue,sans-serif;font-size:0.72rem;color:var(--gold);letter-spacing:0.14em;margin:6px 0;">YOU (Black) vs AI (White), '+aiSize+'×'+aiSize+' · komi 7.5</div>';
-    h+='<div style="font-size:0.78rem;color:var(--cream);margin-bottom:6px;">Captures — you: <span style="color:#8fc57a">'+aiPlayerCaps+'</span> · AI: <span style="color:#c47a7a">'+aiOppCaps+'</span></div>';
+    h+='<div style="font-size:0.78rem;color:var(--cream);margin-bottom:6px;">Captures, you: <span style="color:#8fc57a">'+aiPlayerCaps+'</span> · AI: <span style="color:#c47a7a">'+aiOppCaps+'</span></div>';
     h+=svg;
     h+='<div style="font-style:italic;font-size:0.8rem;color:var(--cream);min-height:1.2em;margin:4px 0;">'+(aiStatus||'')+'</div>';
     h+='<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:6px;">';
@@ -568,7 +568,7 @@ window._gameFns.livingstones = function LS(a){
     var s=aiScore();
     var result='Black '+s.black+' · White '+s.white;
     var won=s.black>s.white;
-    aiStatus=(msg?msg+' · ':'')+result+' — '+(won?'You win!':'Computer wins');
+    aiStatus=(msg?msg+' · ':'')+result+'. '+(won?'You win!':'Computer wins');
     if(won){_playWin();_e('game_win');}
     else{_play('lose');}
     _sr('livingstones',{w:won,s:s.black,lv:'ai'+aiSize,tp:Math.round(s.white)});
@@ -578,7 +578,7 @@ window._gameFns.livingstones = function LS(a){
       // Scoring has no dead-stone removal — a double-pass with unresolved
       // groups counts them as alive. Be upfront about it rather than let a
       // wrong "Computer wins" read as a bug.
-      var _note=(msg==='Both pass')?'Stones left on the board count as alive — capture dead stones before passing.':undefined;
+      var _note=(msg==='Both pass')?'Stones left on the board count as alive, capture dead stones before passing.':undefined;
       window._lwGameEnd({won:won,title:won?'You win!':'Computer wins',
         line:result+' (komi '+s.komi+')'+(msg?' · '+msg:''),
         sub:_note,
@@ -598,7 +598,7 @@ window._gameFns.livingstones = function LS(a){
   window._LSai=function(size,playouts){
     _pendingAI={size:size, playouts:playouts};
     var h='<div style="font-family:Bebas Neue,sans-serif;font-size:1rem;color:#c8a84b;letter-spacing:0.2em;margin:14px 0 4px;">HANDICAP</div>';
-    h+='<div style="font-style:italic;font-size:0.72rem;color:rgba(232,220,200,0.62);margin-bottom:10px;max-width:300px;margin-left:auto;margin-right:auto;line-height:1.5">Handicap gives Black (you) extra stones on the board before White moves. Start even, or choose 2–9 stones for a helping hand.</div>';
+    h+='<div style="font-style:italic;font-size:0.72rem;color:rgba(232,220,200,0.62);margin-bottom:10px;max-width:300px;margin-left:auto;margin-right:auto;line-height:1.5">Handicap gives Black (you) extra stones on the board before White moves. Start even, or choose 2 to 9 stones for a helping hand.</div>';
     h+='<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:280px;margin:0 auto;">';
     h+='<button class="gb" onclick="_LSaiStart(0)" style="min-width:72px;min-height:48px;padding:8px 14px;background:rgba(122,179,86,0.22);border-color:rgba(122,179,86,0.5);color:#8fc57a;">EVEN</button>';
     [2,3,4,5,6,7,8,9].forEach(function(n){
@@ -687,8 +687,8 @@ window._gameFns.livingstones = function LS(a){
     if(aiBoard[r][c]!==EMPTY)return;
     var res=aiApplyMove(r,c,BLACK);
     if(!res.valid){
-      if(res.ko) sm('Illegal — ko rule prevents re-creating the previous board');
-      else if(res.suicide) sm('Suicide — this move fills your own last liberty');
+      if(res.ko) sm('Illegal, ko rule prevents re-creating the previous board');
+      else if(res.suicide) sm('Suicide, this move fills your own last liberty');
       else sm('Invalid move');
       _play('lose');return;
     }

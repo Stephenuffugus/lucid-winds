@@ -171,7 +171,7 @@ var QUIZ=[
     q:'How much time do you have?',
     opts:[
       {label:'Under 2 minutes', maxDur:8},  // max phase cycle seconds
-      {label:'2–5 minutes',     maxDur:20},
+      {label:'2 to 5 minutes',     maxDur:20},
       {label:'5+ minutes',      maxDur:999}
     ]
   },

@@ -562,7 +562,7 @@ function useHint(){
       hintVal=snap[r][c];
     } else {
       hintVal=S.solution[r][c];
-      sm('Your path differs from mine — the hint may conflict with other cells');
+      sm('Your path differs from mine, the hint may conflict with other cells');
     }
   }
   if(S.player[r][c]===hintVal){sm('Already correct');return;}

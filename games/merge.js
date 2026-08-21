@@ -247,7 +247,7 @@ function GR(a){
           if(nv>_wasMax){
             for(var _u=0;_u<THEMES.length;_u++){
               if(THEMES[_u].unlock>_wasMax&&THEMES[_u].unlock<=nv&&THEMES[_u].unlock>0){
-                sm(THEMES[_u].wired?('🎨 Theme unlocked: '+THEMES[_u].name+'!'):('🎨 '+THEMES[_u].name+' theme unlocked — art arriving soon!'));
+                sm(THEMES[_u].wired?('🎨 Theme unlocked: '+THEMES[_u].name+'!'):('🎨 '+THEMES[_u].name+' theme unlocked, art arriving soon!'));
               }
             }
           }

@@ -748,7 +748,7 @@ window._gameFns.pollen = function PN(a){
     var h='<div class="pn-modal" style="max-width:440px;width:100%;max-height:86vh;overflow-y:auto;padding:20px 18px;">'
       +'<div style="text-align:center;margin-bottom:6px;">'
       +'<div style="font-family:Playfair Display,serif;font-style:italic;font-size:1.3rem;color:var(--cream);">Master Pollinator</div>'
-      +'<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;">An engine-builder for 1-4 players</div>'
+      +'<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;">An engine-builder for 1 to 4 players</div>'
       +'</div>'
       // Tokens legend at the very top — players need this to parse everything below
       +'<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;padding:10px;background:rgba(26,31,23,0.55);border-radius:8px;margin:10px 0 4px;">'+legend+'</div>'
@@ -762,24 +762,24 @@ window._gameFns.pollen = function PN(a){
       // 2. SETUP
       +sec('🌱 Setup',
         'Three tiers of plant cards face up:<br>'
-        +'&nbsp;&nbsp;• <strong>🌱 Tier 1</strong> — Seedlings. Cheap. Mostly 0 GP, some 1 GP.<br>'
-        +'&nbsp;&nbsp;• <strong>🌿 Tier 2</strong> — Saplings. Medium cost. 1–3 GP.<br>'
-        +'&nbsp;&nbsp;• <strong>🌳 Tier 3</strong> — Ancients. Expensive. 3–5 GP.<br><br>'
-        +'A row of <strong>Pollinators</strong> (3–5 based on player count, 3 GP each).<br>'
+        +'&nbsp;&nbsp;• <strong>🌱 Tier 1</strong>: Seedlings. Cheap. Mostly 0 GP, some 1 GP.<br>'
+        +'&nbsp;&nbsp;• <strong>🌿 Tier 2</strong>: Saplings. Medium cost. 1 to 3 GP.<br>'
+        +'&nbsp;&nbsp;• <strong>🌳 Tier 3</strong>: Ancients. Expensive. 3 to 5 GP.<br><br>'
+        +'A row of <strong>Pollinators</strong> (3 to 5 based on player count, 3 GP each).<br>'
         +'A <strong>Supply</strong> of pollen tokens in 5 colors + gold.'
       )
       // 3. ON YOUR TURN
-      +sec('🎴 Your Turn — Pick ONE',
-        '<div style="margin:4px 0 2px"><strong style="color:var(--sage)">① Take 3 different tokens</strong> — one each of three different colors.</div>'
-        +'<div style="margin:2px 0"><strong style="color:var(--sage)">② Take 2 same-color tokens</strong> — both the same color (must be 4+ of that color in supply).</div>'
-        +'<div style="margin:2px 0"><strong style="color:var(--sage)">③ Reserve a card</strong> — tap any card, confirm <strong>RESERVE</strong>. Holds it for you, adds <strong>1 gold</strong> (wild) to your pile. Max 3 reserved at a time.</div>'
-        +'<div style="margin:2px 0"><strong style="color:var(--sage)">④ Buy a card</strong> — any visible or reserved card you can afford.</div>'
+      +sec('🎴 Your Turn: Pick ONE',
+        '<div style="margin:4px 0 2px"><strong style="color:var(--sage)">① Take 3 different tokens</strong>: one each of three different colors.</div>'
+        +'<div style="margin:2px 0"><strong style="color:var(--sage)">② Take 2 same-color tokens</strong>: both the same color (must be 4+ of that color in supply).</div>'
+        +'<div style="margin:2px 0"><strong style="color:var(--sage)">③ Reserve a card</strong>: tap any card, confirm <strong>RESERVE</strong>. Holds it for you, adds <strong>1 gold</strong> (wild) to your pile. Max 3 reserved at a time.</div>'
+        +'<div style="margin:2px 0"><strong style="color:var(--sage)">④ Buy a card</strong>: any visible or reserved card you can afford.</div>'
         +tip('You can only do ONE of those four actions per turn.')
       )
       // 4. PRODUCTION vs TOKENS
       +sec('🌾 Production vs Tokens',
         'This is the engine-builder twist:<br><br>'
-        +b('Tokens')+' in your pile are currency — spent when you buy.<br>'
+        +b('Tokens')+' in your pile are currency, spent when you buy.<br>'
         +b('Plants you\'ve bought')+' grant <strong>permanent production</strong> in their '
         +'color (shown on the card\'s top-right chip). Production <strong>discounts</strong> future costs of that color.<br><br>'
         +'Example: you own two cards producing '+tokDot('green',14)+' green. A card that costs 3 green + 1 rose '
@@ -788,16 +788,16 @@ window._gameFns.pollen = function PN(a){
       )
       // 5. GOLD
       +sec('🟡 Gold Tokens',
-        b('Gold')+' is wild — it substitutes for any color when paying. '
+        b('Gold')+' is wild, it substitutes for any color when paying. '
         +'You get 1 gold each time you reserve a card. Use it to buy something you couldn\'t quite afford.'
       )
       // 6. POLLINATORS
       +sec('🦋 Pollinators',
         'Pollinators are attracted <strong>automatically</strong> when your production meets their requirement.<br><br>'
         +'Each pollinator shows production requirements at the bottom (e.g. 3 '+tokDot('green',14)+' + 3 '+tokDot('blue',14)+'). '
-        +'Tokens don\'t count — only <strong>plants you\'ve bought</strong>. At the end of any turn where '
+        +'Tokens don\'t count, only <strong>plants you\'ve bought</strong>. At the end of any turn where '
         +'your production meets a pollinator\'s requirement, it flies to your garden for <strong>3 GP</strong>.<br><br>'
-        +'You can\'t plan for more than one at once — the game picks the first matching pollinator if multiple qualify.'
+        +'You can\'t plan for more than one at once, the game picks the first matching pollinator if multiple qualify.'
       )
       // 7. TOKEN LIMIT
       +sec('🪴 Token Limit',
@@ -808,13 +808,13 @@ window._gameFns.pollen = function PN(a){
       +sec('🏆 Winning',
         'The moment any player reaches <strong>15 GP</strong>, play continues until the round finishes '
         +'(every player gets the same number of turns). Then the highest GP total wins.<br><br>'
-        +'Ties are broken by <strong>fewest plant cards</strong> — efficient play wins.'
+        +'Ties are broken by <strong>fewest plant cards</strong>: efficient play wins.'
       )
       // 9. SHORT TIP SECTION
       +sec('💡 Strategy Tips',
-        '• Buying a Tier 1 card is often better than hoarding tokens — production compounds.<br>'
+        '• Buying a Tier 1 card is often better than hoarding tokens, production compounds.<br>'
         +'• Watch the pollinators. Picking colors that match their requirements doubles your progress.<br>'
-        +'• Reserving gives you gold AND blocks an opponent\'s plan — the strongest Tier 3 cards are worth the slot.<br>'
+        +'• Reserving gives you gold AND blocks an opponent\'s plan, the strongest Tier 3 cards are worth the slot.<br>'
         +'• The token cap of 10 punishes greed. Take 2 of a color only when you\'ll spend it next turn.'
       )
       +'<div style="display:flex;gap:8px;justify-content:center;margin-top:16px;">'

@@ -384,7 +384,7 @@ window._gameFns.juniper = function Juniper(a){
     if(dw===0){endRound('player','gin');return;}
     // Deadwood low enough to knock: pause for the player's call instead of
     // rushing into the AI turn (this is the whole decision of gin rummy).
-    if(dw<=10){phase='knockChoice';sm('Deadwood '+dw+' — knock or pass?');render();return;}
+    if(dw<=10){phase='knockChoice';sm('Deadwood '+dw+', knock or pass?');render();return;}
     continueToAI();
   }
   function continueToAI(){

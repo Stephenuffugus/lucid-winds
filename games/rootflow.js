@@ -360,7 +360,7 @@ function useHint(){
     checkWin();
     return;
   }
-  sm('Nothing to hint — looks solved');
+  sm('Nothing to hint, looks solved');
 }
 
 function pathsEqual(a, b){
@@ -394,7 +394,7 @@ function checkWin(){
   if(connected!==S.pairs)return;
   if(covered!==S.size*S.size){
     // All pairs connected but cells left empty — show status, don't win
-    if(statusEl)statusEl.innerHTML='Connected all paths. Keep going — every cell must be covered.';
+    if(statusEl)statusEl.innerHTML='Connected all paths. Keep going, every cell must be covered.';
     return;
   }
   // Win
@@ -635,7 +635,7 @@ function updateProgress(){
   var pct=Math.round(100*filled/(S.size*S.size));
   if(statusEl && S.phase==='play'){
     if(conCount===S.pairs && filled<S.size*S.size){
-      statusEl.innerHTML='All paths connected. <em>'+pct+'%</em> filled — every cell must be covered.';
+      statusEl.innerHTML='All paths connected. <em>'+pct+'%</em> filled, every cell must be covered.';
     } else if(conCount===S.pairs){
       statusEl.innerHTML='<em>Solved.</em>';
     } else if(S.drawing){
@@ -752,7 +752,7 @@ function newPuzzle(){
   if(winCard){winCard.remove();winCard=null;}
   if(!S)return;
   var puz=generatePuzzle(S.size, S.pairs);
-  if(!puz){ sm('Generator failed — try again'); return; }
+  if(!puz){ sm('Generator failed, try again'); return; }
   S.cells=[];
   for(var r=0;r<S.size;r++){
     S.cells[r]=[];

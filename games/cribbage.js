@@ -212,7 +212,7 @@ window._gameFns.cribbage = function CRIB(a){
       // plays the LAST card of the sequence, once both sides are stuck.
       G.aPass=true;
       if(canPlaySide(G.pHand,G.pPlayed)){
-        sm('AI says "Go" — keep playing');
+        sm('AI says "Go", keep playing');
         render();
         // Player's turn (no auto-advance — wait for player card tap)
       }else{
@@ -749,7 +749,7 @@ window._gameFns.cribbage = function CRIB(a){
     G.pPass=true;
     if(canPlaySide(G.aHand,G.aPlayed)){
       // AI keeps playing; the go point lands at sequence end via seqEnd().
-      sm('You say "Go" — AI plays on');
+      sm('You say "Go", AI plays on');
       render();checkPegContinue();
     }else{
       seqEnd();

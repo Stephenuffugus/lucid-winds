@@ -635,7 +635,7 @@ window._gameFns.petalmatch = function PM(a){
     var b=document.createElement('button');
     b.type='button';
     b.style.cssText=PU_BTN;
-    b.title=it.n+' — '+it.d;
+    b.title=it.n+': '+it.d;
     b.setAttribute('aria-label',it.n+', '+it.c+' petals. '+it.d);
     /* ⛔ Bare number, NOT petalGlyph()+number. At 9px the mark rendered as a
        plus sign and "DIG +15" read as a reward of 15 rather than a price of 15.

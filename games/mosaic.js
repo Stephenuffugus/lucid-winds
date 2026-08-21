@@ -490,7 +490,7 @@ function scoringPhase(){
   S.player.score=Math.max(0, S.player.score+pBreak.net);
   S.ai.score=Math.max(0, S.ai.score+aBreak.net);
   if(pBreak.hadFirst)S.firstPlayerTakenLastRound=true;
-  showBreakdown('Round '+S.round+' — you', pBreak.lines, pBreak.net);
+  showBreakdown('Round '+S.round+', you', pBreak.lines, pBreak.net);
   _play('snap');
   updateAll(); // paint the wall transfers + new scores immediately
   var g=gen;
@@ -711,7 +711,7 @@ function updateStatus(){
   if(S.phase==='gameover'){txt='Final score tallied.';}
   else if(S.phase==='score'){txt='Transferring full rows to the wall.';}
   else if(S.selected){
-    txt='Picked <em>'+S.selected.tiles.length+' '+COLOR_NAMES[S.selected.color]+'</em>. Tap a highlighted row — or tap your floor to dump them.';
+    txt='Picked <em>'+S.selected.tiles.length+' '+COLOR_NAMES[S.selected.color]+'</em>. Tap a highlighted row, or tap your floor to dump them.';
   } else if(S.turn==='player'){
     txt='Tap any tile in a <em>bed</em> or the <em>pond</em> to take all of that color.';
   } else {

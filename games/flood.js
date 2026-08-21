@@ -146,7 +146,7 @@ function GFL(a){
     var mEl=document.getElementById('FFm'); if(mEl) mEl.style.color=(cap()-moves)<=3?'#c75050':'';
   }
   function idleMsg(){
-    if(daily){ var dd=dailyDone(); sm(dd?('Today’s garden — your best: '+dd.m+' moves · '+fmt(dd.t)):'Today’s garden. Everyone plays this exact board.'); return; }
+    if(daily){ var dd=dailyDone(); sm(dd?('Today’s garden, your best: '+dd.m+' moves · '+fmt(dd.t)):'Today’s garden. Everyone plays this exact board.'); return; }
     var b=getBest(),bt=getBT(); sm(b?('Best: '+b+' moves'+(bt?(' · '+fmt(bt)):'')):'');
   }
 
@@ -258,7 +258,7 @@ function GFL(a){
     over=true; stopTimer(); setStreak(0); updateHeader();
     _e('game_loss'); _play('lose');
     gd.classList.remove('ff-shake'); void gd.offsetWidth; gd.classList.add('ff-shake');
-    sm('Out of moves — the leaves scattered. Tap NEW to try again');
+    sm('Out of moves, the leaves scattered. Tap NEW to try again');
     _sr('flood',{w:false,s:0});
   }
 

@@ -600,13 +600,13 @@ window._gameFns.trellis = function TR(a){
     if(aiRack.length===0)aiScore+=pd;
     var won=playerScore>aiScore;
     if(won){
-      _e('game_win');_playWin();sm('🌱 You win! '+playerScore+' — '+aiScore);
+      _e('game_win');_playWin();sm('🌱 You win! '+playerScore+' to '+aiScore);
       stats.w++;stats.streak++;if(stats.streak>stats.best)stats.best=stats.streak;
     } else if(playerScore<aiScore){
-      _e('game_loss');_play('lose');sm('CPU wins. '+playerScore+' — '+aiScore);
+      _e('game_loss');_play('lose');sm('CPU wins. '+playerScore+' to '+aiScore);
       stats.l++;stats.streak=0;
     } else {
-      sm('Draw. '+playerScore+' — '+aiScore);stats.d++;stats.streak=0;
+      sm('Draw. '+playerScore+' to '+aiScore);stats.d++;stats.streak=0;
     }
     saveStats();
     _sr('trellis',{w:won,s:playerScore});
@@ -759,12 +759,12 @@ window._gameFns.trellis = function TR(a){
     var ov=document.createElement('div');ov.id='TRrulesOV';
     ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});
     var h='<div class="card">';
-    h+='<h2>🌱 Word Trellis — How to Play</h2>';
+    h+='<h2>🌱 Word Trellis: How to Play</h2>';
     h+='<p>Build words on a 15×15 board. Each tile has a letter and a value. Play words that connect to existing tiles. First word must cross the <strong style="color:#c8a84b">★ center star</strong>.</p>';
-    h+='<h2>Your turn — pick ONE</h2>';
-    h+='<p><strong style="color:var(--sage)">PLAY</strong> — Drag tiles from your rack onto the board (or tap a rack tile then tap the board). Your tiles must form a single line and connect to existing tiles. Tap <strong>PLAY</strong> to commit.</p>';
-    h+='<p><strong style="color:var(--sage)">SWAP</strong> — Exchange any number of tiles for new ones from the bag (needs 7+ in the bag). Costs your turn.</p>';
-    h+='<p><strong style="color:var(--sage)">PASS</strong> — Skip your turn. Four passes in a row ends the game.</p>';
+    h+='<h2>Your turn, pick ONE</h2>';
+    h+='<p><strong style="color:var(--sage)">PLAY</strong>: Drag tiles from your rack onto the board (or tap a rack tile then tap the board). Your tiles must form a single line and connect to existing tiles. Tap <strong>PLAY</strong> to commit.</p>';
+    h+='<p><strong style="color:var(--sage)">SWAP</strong>: Exchange any number of tiles for new ones from the bag (needs 7+ in the bag). Costs your turn.</p>';
+    h+='<p><strong style="color:var(--sage)">PASS</strong>: Skip your turn. Four passes in a row ends the game.</p>';
     h+='<h2>Premium squares</h2>';
     h+='<p><span style="color:#c75050">TW</span> Triple Word · <span style="color:#e89846">DW</span> Double Word · <span style="color:#3a8bd8">TL</span> Triple Letter · <span style="color:#5aa0e0">DL</span> Double Letter. Bonus applies only when you play a NEW tile on that square.</p>';
     h+='<h2>Bingo</h2>';

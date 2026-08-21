@@ -241,7 +241,7 @@ window._gameFns.dewtrail=function DT(a){
       try{
         var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);
         ta.select();document.execCommand('copy');document.body.removeChild(ta);
-        sm('Copied — paste it anywhere');
+        sm('Copied, paste it anywhere');
       }catch(e){sm('Copy failed');}
     }
   }
@@ -303,7 +303,7 @@ window._gameFns.dewtrail=function DT(a){
     // waypoint order
     var w=puzzle.wpOf[i];
     if(w!==undefined){
-      if(w!==nextWp){_play('lose');sm('Numbers in order — next is '+nextWp);return;}
+      if(w!==nextWp){_play('lose');sm('Numbers in order, next is '+nextWp);return;}
       nextWp++;
     }
     trail.push(i);_play('tap');
@@ -375,7 +375,7 @@ window._gameFns.dewtrail=function DT(a){
       h+='<div class="dt-done"><div class="big">'+(mode==='daily'?'TRAIL COMPLETE · ':'SOLVED · ')+fmt(elapsed)+'</div>';
       h+='<div class="dt-row"><button class="dt-btn gold" onclick="_DTshare()">📤 SHARE</button>'+(mode==='daily'?'<button class="dt-btn" onclick="_DTP()">PRACTICE</button>':'<button class="dt-btn" onclick="_DTP()">ANOTHER</button>')+'</div></div>';
     }else{
-      h+='<div style="text-align:center;font-family:Georgia,serif;font-style:italic;font-size:0.78rem;color:var(--muted,#8a9178);padding:2px 0 6px;">Drag one trail from 1 — touch every cell, numbers in order.</div>';
+      h+='<div style="text-align:center;font-family:Georgia,serif;font-style:italic;font-size:0.78rem;color:var(--muted,#8a9178);padding:2px 0 6px;">Drag one trail from 1, touch every cell, numbers in order.</div>';
       h+='<div class="dt-row">'+(mode==='practice'?'<button class="dt-btn" onclick="_DTD()">TODAY\'S DAILY</button>':'')+'<button class="dt-btn" onclick="_DTR()">↺ RESTART</button>'+(mode==='daily'?'<button class="dt-btn" onclick="_DTP()">PRACTICE</button>':'')+'</div>';
     }
     pan.innerHTML=h;

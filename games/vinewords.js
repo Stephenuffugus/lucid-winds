@@ -428,7 +428,7 @@ window._gameFns.vinewords=function VW(a){
       var bw=gridHost||document.getElementById('VWgrid');
       if(bw){bw.style.filter=paused?'blur(14px)':'';bw.style.pointerEvents=paused?'none':'';}
     }catch(e){}
-    if(paused){sm('Paused — board hidden');}else{sm('Go!');}
+    if(paused){sm('Paused, board hidden');}else{sm('Go!');}
   };
 
   // ── Timer ──
@@ -568,7 +568,7 @@ window._gameFns.vinewords=function VW(a){
     renderFound();
     rebuildBoardDOM(); // reseat the 16 cell nodes with the new dice faces
     drawPath();updateWordBar();
-    if(replayRound)sm('Replay — practice only, no sunbeam earns');
+    if(replayRound)sm('Replay, practice only, no sunbeam earns');
     timerId=setInterval(tick,1000);
   }
   window._VWN=function(){startRound(false);};

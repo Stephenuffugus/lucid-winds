@@ -268,7 +268,7 @@
         // r.ok === false means the SDK's anon rate caps zeroed the credit.
         // That used to be INVISIBLE (Stephen: "won euchre, got nothing") —
         // if we pay 0, say why.
-        if (r && r.ok === false) { showToast('☀ sunbeam cap reached — resets soon'); return; }
+        if (r && r.ok === false) { showToast('☀ sunbeam cap reached, resets soon'); return; }
         if (r && typeof r.balance === 'number') state.bal = r.balance;
         if (r && typeof r.pending === 'number') state.pending = r.pending;
         renderWallet();
@@ -518,7 +518,7 @@
   function setTitle() {
     var t = document.getElementById('shell-title');
     if (t) t.textContent = LW_PLAY.name || 'Game';
-    document.title = (LW_PLAY.name || 'Play') + ' — Sky Wolf Studio';
+    document.title = (LW_PLAY.name || 'Play') + ' · Sky Wolf Studio';
   }
 
   // ── Mount the game once everything is ready ──
@@ -629,7 +629,7 @@
     livingstones:{g:"Surround more territory than your opponent.",h:"Go. Stones with no breathing room are captured. Wall off space, keep your groups alive with two eyes, and count territory at the end. Start with the puzzles if you are new.",c:["Tap an intersection to place a stone","PASS when there is nothing left to gain","Choose puzzles or a full game from the menu"]},
     trellis:{g:"Outscore the computer with words on the board.",h:"Build crossword-style words with your seven tiles. Bonus squares multiply letters and words, and using all seven tiles at once earns a 50-point bloom.",c:["Drag tiles onto the board","SUBMIT plays your word","SWAP trades tiles and skips your turn"]},
     pollen:{g:"Be first to 15 Growth.",h:"An engine-builder. Collect pollen, spend it on upgrades that make every later turn stronger, and race the other players to full bloom. Playable solo against the computer or pass-and-play.",c:["Tap the actions and cards as the game offers them","Set any seat to CPU on the setup screen"]},
-    set:{g:"Spot the Phenos.",h:"A Pheno is three cards where each trait — color, shape, count, and shading — is either all the same or all different across the three. If two cards share something the third must too, or it is not a Pheno.",c:["Tap three cards to call a Pheno","More cards are dealt when none exist"]},
+    set:{g:"Spot the Phenos.",h:"A Pheno is three cards where every trait (color, shape, count, and shading) is either all the same or all different across the three. If two cards share something the third must too, or it is not a Pheno.",c:["Tap three cards to call a Pheno","More cards are dealt when none exist"]},
     stopten:{g:"Stop the clock at exactly 10.00 seconds.",h:"The clock hides partway through, so you count the rest in your head. Closest to perfect wins the round.",c:["Tap to start the clock","Tap again to stop it"]},
     memory:{g:"Match every pair.",h:"Flip two cards a turn. Matches stay face up. Remember what you have seen and clear the whole board in as few turns as you can.",c:["Tap a card to flip it"]},
     simon:{g:"Repeat the pattern as it grows.",h:"Watch the lights flash in order, then tap them back in the same order. Each round adds one more step.",c:["Watch first, then tap the lights in order"]},
@@ -639,7 +639,7 @@
     pottingbench:{g:"Sort the cards before time runs out.",h:"Play each card onto a pile that shares ANY attribute with it. Fast, clean sorting stretches your timer, and hesitating drains it.",c:["Tap the pile that matches your card","DRAW +2s trades cards for time"]},
     yahtzee:{g:"Score the best total across 13 categories.",h:"Roll up to three times, holding the dice you like between rolls. Every category can be scored only once, and 63+ in the upper section earns a bonus.",c:["Tap dice to hold them","Tap ROLL to reroll the rest","Tap a category to bank your score"]},
     farkle:{g:"Be first to 10,000 points.",h:"Ones and fives always score, and triples score big. After every roll set aside something that scores, then push your luck or bank. Roll nothing that scores and you Farkle, losing the turn's points.",c:["Tap dice to set them aside","ROLL pushes your luck","BANK keeps the turn's points"]},
-    doubleshutter:{g:"Shut every tile — the box has two rows.",h:"Roll two dice and shut tiles that add up to the roll, using the front row before the back. Shut everything for the perfect game.",c:["Tap tiles that sum to your roll","Confirm to lock them down","Roll again until nothing fits"]},
+    doubleshutter:{g:"Shut every tile, the box has two rows.",h:"Roll two dice and shut tiles that add up to the roll, using the front row before the back. Shut everything for the perfect game.",c:["Tap tiles that sum to your roll","Confirm to lock them down","Roll again until nothing fits"]},
     dewtrail:{g:"Draw one unbroken trail through every cell.",h:"Start at 1 and pass through every numbered cell IN ORDER, visiting every cell exactly once and never crossing your own trail.",c:["Drag from 1 through neighboring cells","Lift your finger to pause, keep dragging to continue","UNDO backs the trail up"]}
   };
 
@@ -720,7 +720,7 @@
     var d = DIRECTIONS[LW_PLAY.id] || null;
     // legacy per-page override: LW_PLAY.howto becomes the how-to paragraph
     if (!d && LW_PLAY && LW_PLAY.howto) d = { g:'', h: LW_PLAY.howto, c: [] };
-    if (!d) d = { g:'', h:'Jump in and explore — this one is best learned by playing.', c: [] };
+    if (!d) d = { g:'', h:'Jump in and explore, this one is best learned by playing.', c: [] };
     var ov = document.createElement('div');
     ov.id = 'shell-dir';
     ov.className = 'shell-dir';
