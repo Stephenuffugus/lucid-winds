@@ -75,6 +75,35 @@ const cat2 = await p.evaluate(() => ({
 }));
 t('phone back returns to the storefront', !cat2.open && cat2.members);
 
+// Phase 3: vibes + six genres
+const v1 = await p.evaluate(() => ({
+  storefrontChips: document.querySelectorAll('#vibe-row .vchip').length,
+  counts: [...document.querySelectorAll('#vibe-row .vchip small')].map(e => parseInt(e.textContent, 10)),
+  partyTab: !!document.querySelector('#tabs button[data-c="party"]'),
+}));
+t('six vibe chips with nonzero counts on the storefront', v1.storefrontChips === 6 && v1.counts.every(n => n > 0), JSON.stringify(v1.counts));
+t('Party is no longer a genre tab', !v1.partyTab);
+await p.evaluate(() => { [...document.querySelectorAll('#vibe-row .vchip')].find(c => c.getAttribute('data-vibe') === 'think').click(); });
+await sleep(900);
+const v2 = await p.evaluate(() => ({
+  open: document.body.classList.contains('catalog-open'),
+  cards: document.querySelectorAll('#garden .card').length,
+  chipOn: !!document.querySelector('#vibes .vchip.on'),
+}));
+t('a storefront vibe opens the catalog filtered', v2.open && v2.chipOn && v2.cards > 40 && v2.cards < 120, v2.cards + ' think games');
+await p.evaluate(() => { document.querySelector('#vibes .vchip.on').click(); });
+await sleep(700);
+const v3 = await p.evaluate(() => document.querySelectorAll('#garden .card').length);
+t('clearing the vibe restores the full tab', v3 > 150, v3 + ' cards');
+const v4 = await p.evaluate(() => {
+  const tb = document.querySelector('#tabs button[data-c="action"]'); tb.click();
+  return new Promise(res => setTimeout(() => {
+    res([...document.querySelectorAll('#garden .card .nm')].map(e => e.textContent));
+  }, 500));
+});
+t('party titles live under Arcade & Action now', v4.some(n => /chameleon|whack/i.test(n)), v4.filter(n => /chameleon|whack/i.test(n)).join(', '));
+await p.goBack(); await sleep(500);
+
 // a genre tile opens the catalog on its tab
 await p.evaluate(() => document.querySelector('#browse-tiles [data-tile="card"]').click());
 await sleep(800);
