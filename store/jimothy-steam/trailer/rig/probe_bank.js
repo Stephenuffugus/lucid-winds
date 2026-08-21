@@ -2,7 +2,7 @@
    That only works if the bank happens INSIDE the four second window, so find
    the frame it actually fires on rather than guessing a pre-roll. */
 const L=require('./lib.js'); const PILOT=require('./director.js');
-const CAND=[[78,15],[78,11],[64,15],[92,15],[100,15],[85,11],[31,11],[52,11],[58,15],[72,11]];
+const CAND=(process.argv[2]||'85:11').split(',').map(x=>x.split(':').map(Number));
 (async()=>{
  const srv=await L.serve(L.PORT);
  const b=await L.puppeteer.launch({headless:'new',args:['--no-sandbox','--disable-setuid-sandbox','--disable-gpu']});

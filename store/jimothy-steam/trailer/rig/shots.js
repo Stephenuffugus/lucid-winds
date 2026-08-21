@@ -25,8 +25,13 @@ module.exports=[
 
 /* ---- 0:07  4s  the trail climbs, then banks. THE POSTER FRAME. `pre` is set
    from probe_bank.js so the bank lands inside the window, not after it. ---- */
- {id:'b03_trail',   beat:3, kind:'play', frames:s(4), pre:90, lvl:85, gap:11,
-  note:'probe_bank.js: lvl 85 gap 11 banks on frame 185 at a combo of 8, which\n        is the BIG FEAST grade, and survives well past the window. pre 90 puts\n        that bank 95 frames in, leaving the fanfare inside the cut. The level\n        banner is gone by frame 78 so this reads as mid run, not as a start.'},
+ {id:'b03_trail',   beat:3, kind:'play', frames:s(4), pre:118, lvl:56, gap:11,
+  note:'probe_bank.js: level 56 at gap 11 banks on frame 213 at a combo of 8, '+
+       'the BIG FEAST grade, and survives to 349. pre 118 puts that bank 95 '+
+       'frames in, so the climb owns the beat and the fanfare closes it. '+
+       'Capitol Hill replaced the first pick (Georgetown 85), which was a wall '+
+       'of boats and kayaks with Jimothy lost in it. This frame is the POSTER, '+
+       'the thumbnail on the store page: a street reads, a harbour does not.'},
 
 /* ---- 0:11  2s  the same kind of run, one hop later, ends under a truck. ---- */
  {id:'b04_death',   beat:4, kind:'death', frames:s(2), lvl:58, gap:15,

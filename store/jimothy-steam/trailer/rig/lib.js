@@ -110,13 +110,24 @@ async function pumpRaf(p,ts){
    different first hop is a different run for the rest of its life. Both inputs
    now come from here so a probe cannot quietly measure a different game than
    the one being shot. */
+/* ⛔ OWN EVERYTHING, EARN NOTHING MID SHOT. The daily beat photographed a
+   "BADGE EARNED: Hot Jimothy Summer" modal sitting on top of the Daily card,
+   and the level 100 beat photographed two unlock reveals ("Wizothy", "The Trash
+   King") sitting on top of LEVEL CLEAR 100 — both shots reported OK because the
+   screen underneath really was up. Anything the game can award during a run is
+   pre-awarded here so nothing new can fire in front of the camera. It also
+   makes the wardrobe beat honest: all 45 present, in colour. */
+const ALL_CHARS='jimothy,pigeon,crow,seagull,opossum,skunk,slug,otter,heron,coyote,seal,salmon,orca,soggy,summer,nordic,barista,fishmonger,grad,labcoat,deckhand,market,hardhat,scout,firstfrost,garage,shark,froggery,dino,knight,hazmat,pirate,astronaut,alien,disco,robot,wizard,barnacle,mothman,trashking,chicken,shinothy,ghost,richuncle,sasquatch'.split(',');
+const ALL_ACH='first,rows100,rows300,combo10,combo20,chapter1,level20,stars30,critters5,crittersAll,landmarks,caps500,weather,dodge,allpowers,rush40,fogwalk,secrets,streak5,streak10,streak25'.split(',');
+const ALL_SEASONS='spring,summer,pride,spooky,winter'.split(',');
+const ALL_POWS='coffee,umbrella,trash,crosswalk,vest,boots,espresso,lamp,salmon'.split(',');
+const _on=list=>list.reduce((o,k)=>(o[k]=1,o),{});
 function baseProg(extra){
   const stars={};
   for(let n=1;n<=100;n++){ const r=(n*2654435761)%97; stars[n]= n>92?0 : r<26?3 : r<58?2 : r<86?1 : 0; }
-  return Object.assign({v:2, hopped:1, taughtPower:1, taughtEgg:1, char:'roon',
-    chars:{shark:1,dino:1,mothman:1,otter:1,gull:1,heron:1,sasquatch:1,chicken:1,koi:1,crow:1,
-           beaver:1,squirrel:1,possum:1,skunk:1,frog:1,slug:1,orca:1,seal:1,raccoon:1},
-    caps:214, adv:{maxLevel:100, stars:stars}, flowers:412, roads:288,
+  return Object.assign({v:2, hopped:1, taughtPower:1, taughtEgg:1, char:'jimothy',
+    chars:_on(ALL_CHARS), ach:_on(ALL_ACH), seasons:_on(ALL_SEASONS), pows:_on(ALL_POWS),
+    caps:214, adv:{maxLevel:100, stars:stars}, flowers:412, roads:288, maxCombo:14,
     best:{adventure:186,daily:74,zen:120,rush:88}}, extra||{});
 }
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));

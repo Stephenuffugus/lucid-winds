@@ -25,6 +25,51 @@ const pad=n=>String(n).padStart(5,'0');
 
 const baseProg=L.baseProg;
 
+/* ⛔ "the element exists" is not evidence. The daily beat passed its check with
+   the card fully occluded by a badge modal. This asks the SCREEN: is the thing
+   on stage, inside the viewport, and is the topmost pixel at its centre part of
+   it (elementFromPoint), rather than something covering it. */
+async function assertVisible(p, sel, label){
+  const v=await p.evaluate((sel)=>{
+    const e=document.querySelector(sel); if(!e) return {ok:false,why:'no element'};
+    const r=e.getBoundingClientRect();
+    if(r.width<8||r.height<8) return {ok:false,why:'zero size'};
+    if(r.bottom<0||r.top>innerHeight) return {ok:false,why:'off screen top '+Math.round(r.top)+' h '+Math.round(r.height)};
+    const cx=r.left+r.width/2, cy=Math.min(innerHeight-2, Math.max(2, r.top+r.height/2));
+    const hit=document.elementFromPoint(cx,cy);
+    const covered=!(hit===e||e.contains(hit)||(hit&&hit.contains(e)));
+    return {ok:!covered, why:covered?('covered by '+(hit?(hit.tagName+'#'+hit.id+'.'+hit.className).slice(0,60):'null')):null,
+            top:Math.round(r.top), h:Math.round(r.height)};
+  }, sel);
+  if(!v.ok) return {ok:false, why:label+' not visible: '+v.why};
+  return {ok:true};
+}
+/* close anything the game threw up in front of the shot */
+async function dismissModals(p){
+  for(let i=0;i<6;i++){
+    const hit=await p.evaluate(()=>{
+      const vis=e=>{const r=e.getBoundingClientRect();return r.width>4&&r.height>4;};
+      const el=Array.from(document.querySelectorAll('button,.btn')).filter(vis)
+        .find(e=>/^(Nice|Claim|Collect|OK|Continue|Got it|Close|✕)$/i.test((e.innerText||'').trim()));
+      if(el){ el.click(); return (el.innerText||'').trim(); } return null;
+    });
+    if(!hit) return i;
+    await L.sleep(260);
+  }
+  return 6;
+}
+/* bring an element into view inside its own scroller, rAF-free */
+async function scrollTo(p, sel){
+  await p.evaluate((sel)=>{
+    const e=document.querySelector(sel); if(!e) return;
+    let sc=e.parentElement;
+    while(sc && sc.scrollHeight<=sc.clientHeight+4) sc=sc.parentElement;
+    if(!sc) return;
+    sc.style.scrollBehavior='auto';
+    sc.scrollTop = e.offsetTop - sc.clientHeight*0.5 + e.offsetHeight*0.5;
+  }, sel);
+}
+
 async function frameLoop(p, dir, n, fn){
   for(let f=0;f<n;f++){
     const st=await fn(f);
@@ -123,17 +168,33 @@ async function shootLevels(b, sh){
     return {groups:h.children.length, scrollH:h.scrollHeight, clientH:h.clientHeight,
       scrollable:h.scrollHeight-h.clientHeight}; });
   if(info.scrollable<200){ await p.close(); return {ok:false, why:'level list does not scroll '+JSON.stringify(info)}; }
+  /* ⛔ scrolling to scrollHeight overshoots past level 100 into the locked
+     "QUEEN ANNE 2" loop chapter, and the spec ends this beat ON 100. Find the
+     cell and stop there. Covering the whole list in 4s also ran at ~2.5
+     chapters a second, which nobody can read; starting partway up keeps it near
+     one chapter a second while still opening on a chapter header. */
+  const stop=await p.evaluate(()=>{
+    const h=document.getElementById('lv-list');
+    const cell=Array.from(h.querySelectorAll('*')).filter(e=>!e.children.length)
+      .find(e=>(e.textContent||'').trim()==='100');
+    const host=cell?cell.closest('.lv-cell')||cell:null;
+    const max=h.scrollHeight-h.clientHeight;
+    const want=host?(host.offsetTop-h.clientHeight*0.62+host.offsetHeight):max;
+    return {end:Math.max(0,Math.min(max,want)), found:!!host, max:max};
+  });
+  if(!stop.found){ await p.close(); return {ok:false, why:'could not find the level 100 cell to stop on'}; }
+  const START=Math.max(0, stop.end-1180);
   const dir=shotDir(sh.id); clean(dir);
   await frameLoop(p, dir, sh.frames, async f=>{
-    await p.evaluate((f,n)=>{ const h=document.getElementById('lv-list');
-      const max=Math.max(0, h.scrollHeight-h.clientHeight);
-      /* ease out so it settles on level 100 instead of slamming into the end */
-      const t=f/(n-1), e=1-Math.pow(1-t,2.1);
-      h.scrollTop=max*e; }, f, sh.frames);
+    await p.evaluate((f,n,a,b2)=>{ const h=document.getElementById('lv-list');
+      /* smoothstep: dwell at both ends so the first chapter name and level 100
+         are both readable, and spend the speed in the middle */
+      const t=f/(n-1), e=t*t*(3-2*t);
+      h.scrollTop=a+(b2-a)*e; }, f, sh.frames, START, stop.end);
     return {};
   });
   await p.close();
-  return {ok:true, info:JSON.stringify(info)};
+  return {ok:true, info:'scrolled '+Math.round(START)+' to '+Math.round(stop.end)+' of '+Math.round(stop.max)+', stops on level 100'};
 }
 
 /* ---------- the wardrobe ---------- */
@@ -146,6 +207,9 @@ async function shootCollection(b, sh){
     const sc=h.closest('.pad')||h.parentElement;
     return {cos:h.children.length, crit:(document.getElementById('crit-row')||{children:[]}).children.length,
       pane:document.getElementById('coll-pane')?'coll-pane':'?', scrollH:sc.scrollHeight, clientH:sc.clientHeight}; });
+  await dismissModals(p);
+  const vis=await assertVisible(p,'#cos-row','costume row');
+  if(!vis.ok){ await p.close(); return {ok:false, why:vis.why}; }
   const dir=shotDir(sh.id); clean(dir);
   await frameLoop(p, dir, sh.frames, async f=>{
     await p.evaluate((f,n)=>{ const h=document.getElementById('cos-row');
@@ -171,6 +235,13 @@ async function shootDaily(b, sh){
     return {r:best, phase:s.phase}; });
   /* however the run ended, end it: the card is built from the finished run */
   await p.evaluate(()=>{ const g=SH_DEV.state(); if(g&&g.phase==='play') SH_DEV.hurt('squish'); });
+  /* let the death resolve into the card, then clear anything standing in front
+     of it and put the Daily block strip on screen before the shutter opens */
+  for(let i=0;i<40;i++){ await p.evaluate(t=>{ try{ SH_DEV.step(1/30); SH_DEV.render(); }catch(e){} window.__pump(t); }, 900+i*33); }
+  const closed=await dismissModals(p);
+  await scrollTo(p,'#go-daily');
+  const vis=await assertVisible(p,'#go-dl-strip','daily block strip');
+  if(!vis.ok){ await p.close(); return {ok:false, why:vis.why+' (closed '+closed+' modals)'}; }
   const dir=shotDir(sh.id); clean(dir);
   let card=false;
   await frameLoop(p, dir, sh.frames, async f=>{
@@ -181,10 +252,12 @@ async function shootDaily(b, sh){
               strip:d?d.querySelectorAll('#go-dl-strip *').length:-1}; }, 1000+f*33);
     if(s.go) card=true; return {};
   });
+  const still=await assertVisible(p,'#go-dl-strip','daily block strip');
   const end=await p.evaluate(()=>{ const d=document.getElementById('go-dl-strip');
-    return {no:(document.getElementById('go-dl-no')||{}).textContent, blocks:d?d.innerHTML.length:0}; });
+    return {no:(document.getElementById('go-dl-no')||{}).textContent, blocks:d?d.children.length:0}; });
   await p.close();
-  return {ok:card, why:card?null:'daily card never showed', info:'rows '+roll.r+' '+JSON.stringify(end)};
+  if(!still.ok) return {ok:false, why:'strip was covered by the last frame: '+still.why};
+  return {ok:true, info:'rows '+roll.r+', '+end.no+', '+end.blocks+' blocks, strip visible start and end'};
 }
 
 /* ---------- level 100 cleared: the feast ---------- */
@@ -194,6 +267,12 @@ async function shootClear(b, sh){
   const st=await p.evaluate(lv=>{ SH_DEV.screen('s-play'); SH_DEV.start('adventure',lv); __PILOT.reset();
     /* park below the level's gate with the goals met, then hop through it */
     return SH_DEV.advToGate(6,6); }, sh.lvl);
+  /* run the celebration out to the clear card, then clear the unlock reveals
+     ("Wizothy", "The Trash King") that were photographed sitting on top of it */
+  for(let i=0;i<105;i++){ await p.evaluate(t=>{ try{ SH_DEV.step(1/30); SH_DEV.render(); }catch(e){} window.__pump(t); }, 900+i*33); }
+  const closed=await dismissModals(p);
+  const vis=await assertVisible(p,'#s-clear.on','level clear card');
+  if(!vis.ok){ await p.close(); return {ok:false, why:vis.why+' (closed '+closed+' modals)'}; }
   const dir=shotDir(sh.id); clean(dir);
   let clear=false;
   await frameLoop(p, dir, sh.frames, async f=>{
@@ -202,8 +281,10 @@ async function shootClear(b, sh){
       return {clear:!!document.querySelector('#s-clear.on')}; }, 1000+f*33);
     if(s.clear) clear=true; return {};
   });
+  const still=await assertVisible(p,'#s-clear.on','level clear card');
   await p.close();
-  return {ok:true, info:JSON.stringify(st)+' clearCard:'+clear};
+  if(!still.ok) return {ok:false, why:'clear card covered at the end: '+still.why};
+  return {ok:true, info:'stars '+st.stars+', feasts '+st.feasts+', closed '+closed+' reveals, card clean start and end'};
 }
 
 const KIND={play:shootPlay, death:shootDeath, levels:shootLevels, collection:shootCollection,
