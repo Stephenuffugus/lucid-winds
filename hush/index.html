@@ -479,7 +479,7 @@ body.simple .actions{margin-bottom:14px}
   <section class="panel" id="p-timer">
     <button aria-expanded="false"><span class="ptitle">Timer</span><span style="display:flex;align-items:center"><span class="psub" id="s-timer">off</span><i class="caret"></i></span></button>
     <div class="body">
-      <div class="countdown off" id="cd">, :, </div>
+      <div class="countdown off" id="cd">—:—</div>
       <div class="grid four" id="timerGrid"></div>
       <div class="row"><div class="lab"><span>Fade out over</span><span id="v-fade">60 s</span></div>
         <input type="range" id="fade" min="0" max="100" value="30" aria-label="Fade out length"></div>
@@ -1588,7 +1588,7 @@ const fadeSeconds = () => Math.round(5 + Math.pow(S.fade/100,2)*295);
 function paintTimer(left) {
   const el = $("cd");
   if (!timerEnd || left == null || left <= 0) {
-    el.textContent = ", :, "; el.classList.add("off");
+    el.textContent = "—:—"; el.classList.add("off");
     $("s-timer").textContent = S.timer ? S.timer+" min" : "off";
     if (!prog) paintVizLeft(null);
     return;
@@ -2277,7 +2277,7 @@ window.addEventListener("keydown", e => {
      so a bare registration would never see an update. Bump in lockstep with
      SHELL_VERSION in sw.js. */
   if ("serviceWorker" in navigator && location.protocol !== "file:") {
-    window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=8").catch(()=>{}));
+    window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=9").catch(()=>{}));
   }
 })();
 
