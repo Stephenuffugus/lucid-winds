@@ -1,0 +1,16 @@
+import p from "puppeteer";
+const b=await p.launch({headless:"new",args:["--no-sandbox","--disable-gpu"]});
+const pg=await b.newPage(); await pg.setViewport({width:430,height:932});
+await pg.evaluateOnNewDocument(()=>{try{localStorage.clear();localStorage.setItem("sws_dir_bandits-box","1");}catch(e){}});
+await pg.goto("http://127.0.0.1:8777/satellites/bandits-box/",{waitUntil:"domcontentloaded"});
+const s=ms=>new Promise(r=>setTimeout(r,ms)); await s(2500);
+await pg.mouse.click(215,460); await s(1200);
+await pg.evaluate(()=>{const el=[...document.querySelectorAll("button,div")].find(e=>!e.children.length&&/^puppet$/i.test((e.textContent||"").trim()));el&&el.click();}); await s(1200);
+const r=await pg.evaluate(()=>document.getElementById("pupLower").getBoundingClientRect().toJSON());
+const cx=r.x+r.width*0.3, cy=r.y+r.height*0.5;
+await pg.screenshot({path:"scratch/shots/pup_before.png"});
+await pg.mouse.move(cx,cy); await pg.mouse.down(); for(let i=1;i<=12;i++){await pg.mouse.move(cx,cy+i*12);await s(30);} await s(200);
+const open=await pg.evaluate(()=>document.getElementById("pupLower").getAttribute("transform")+" | "+document.getElementById("pupUpper").getAttribute("transform"));
+await pg.screenshot({path:"scratch/shots/pup_after.png"}); await pg.mouse.up();
+console.log("after dragging DOWN 144px on the lower jaw:", open);
+await b.close();

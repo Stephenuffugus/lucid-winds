@@ -2851,8 +2851,13 @@ var pupHum=null, PUP_SCALE=[0,3,5,7,10];
 
 function drawPuppet(){
   var a=pupOpen*19;   // degrees each jaw swings
-  pupUpper.setAttribute('transform','rotate('+(-a).toFixed(2)+' 152 120)');
-  pupLower.setAttribute('transform','rotate('+a.toFixed(2)+' 152 120)');
+  /* ⛔ The hinge is at x=152 and both jaws extend LEFT of it. SVG rotate(+a)
+     is clockwise, which moves a point left of the pivot UP. So the old signs
+     swung the LOWER jaw up and the UPPER jaw down: the mouth closed on itself
+     as "open" grew. Stephen, phone, 2026-08-22: "things go the opposite
+     direction you try to move them." Upper gets +a (up), lower gets -a (down). */
+  pupUpper.setAttribute('transform','rotate('+a.toFixed(2)+' 152 120)');
+  pupLower.setAttribute('transform','rotate('+(-a).toFixed(2)+' 152 120)');
   pupPupils.setAttribute('transform','translate(0,'+eyeY.toFixed(2)+')');
 }
 pupSvg.addEventListener('pointerdown', safe(function(e){
@@ -2877,7 +2882,7 @@ pupSvg.addEventListener('pointerdown', safe(function(e){
     return;
   }
   pupMode='mouth';
-  pupStartY=e.clientY+pupOpen*150;   // pick up from wherever the jaw already is
+  pupStartY=e.clientY-pupOpen*150;   // pick up from wherever the jaw already is (drag DOWN opens)
 }));
 pupSvg.addEventListener('pointermove', safe(function(e){
   if(!pupMode) return;
@@ -2890,7 +2895,7 @@ pupSvg.addEventListener('pointermove', safe(function(e){
     return;
   }
   pupPrev=pupOpen;
-  pupOpen=clamp((pupStartY-y)/150,0,1);
+  pupOpen=clamp((y-pupStartY)/150,0,1);   // a hand puppet: pull the jaw DOWN to open it
   var d=pupOpen-pupPrev;
   eyeVY += -d*46;                     // the jaw yanking the eyes about
   setGlow(true,x,y,pupOpen);
