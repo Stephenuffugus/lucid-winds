@@ -1,6 +1,6 @@
 # HANDOFF: finish the codespace cleanup (any model; written Aug 22 2026, 2nd revision)
 
-State when this was written: **30 → 19 codespaces.** Scope `codespace` is already granted
+State when this was written: **30 → 10 codespaces.** Inspection of every box is DONE; no classification left. Scope `codespace` is already granted
 to the gh login in hosts.yml. Every command below MUST be prefixed
 `env -u GITHUB_TOKEN -u GH_TOKEN` (the ambient token is read-only for codespaces).
 Pushes from this box need: `git -c credential.helper= -c "credential.helper=!/usr/bin/gh auth git-credential" push ...`
@@ -15,7 +15,17 @@ Pushes from this box need: `git -c credential.helper= -c "credential.helper=!/us
   `effective-eureka-qwvvqj655wf4j7j` (Attention-Protocol, used Aug 22),
   `animated-trout-wqgj4jrv4pvh5jvv` (Sports-R-D, used Aug 22), `supreme-lamp-vjq7576p56j2wr6g` (SWS-apps, Aug 21).
 
-## What is left: 15 boxes, inspection was running in the background
+## What is left: exactly 6 boxes, ALL need a rescue before deletion (already inspected, do not re-inspect)
+| codespace | repo dir | what is in it |
+|---|---|---|
+| automatic-space-goggles-4pw9r9jq9qg2jqq7 | lucid-winds (main, NOT shallow) | 3 real unpushed commits from Jun 23: `git format-patch origin/main..HEAD --stdout` |
+| jubilant-space-funicular-p5pq6qj757p2rwgq | astravault | untracked PORTFOLIO_HANDOFF.md |
+| literate-orbit-9gj4x4765w73p7v7 | bountyhunter | MASTER_PLAN.md, JOB_APPLICATIONS_2026-06-08.md, APT_TARGETS.md modified + 13 untracked (GUITAR_LESSONS, INVENTION_VAULT, FRIEND_SECOND_BRAIN_PROMPT...) = his personal docs, HIGH VALUE. Also `inspect_evals` dir, branch harden/claude-setup-trusted-restore, 1 unpushed commit |
+| opulent-orbit-7jp4x4v7wvpfwpx7 | shell_shuffle | untracked shell-shuffle-handoff.zip + shell-shuffle-handoff/ |
+| urban-cod-gv7wpw4xpj7c5rw | create-a-critter | 5 modified (web/src/App.jsx, api.js, CreatureViewer.jsx, package.json; docs/ARCHITECTURE.md deleted) + 5 untracked (docs/assets/...). Also `skitterlings` 3 untracked. Ignore the NONGIT `tools` dir (5579 files, a Blender install) |
+| vigilant-space-couscous-xgvq4q5rqw4cvvqp | pallet_planner | untracked palette-planner.html + palette-finalize-brief.md |
+
+Old inspection files (reference only) live in
 Results land as one file per codespace in
 `/tmp/claude-1000/-workspaces-lucid-winds/beb0f847-3635-40d5-9e1a-414f5f036ec2/scratchpad/cs/<name>.txt`
 (a line `REPO <dir> ... unpushed_all=N tracked_mod=N untracked=N` per repo, `NONGIT <dir>` for loose dirs,
