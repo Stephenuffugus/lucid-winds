@@ -61,6 +61,43 @@ honest answer rather than a convenient one.
 
 ---
 
+## The one-command gate
+
+    node scripts/twa_ready.mjs bandits-box     # every gate for this app
+    node scripts/twa_ready.mjs --all           # the static gates, whole fleet
+
+Currently **✅ ready to list** — 10 gates, all green, including a cold offline
+launch. Watched failing on `siege` before it was trusted (unguarded portal exit,
+no privacy page), so it is a gate and not decoration.
+
+⚠️ **Fleet fact worth knowing before the next listing:** of 112 satellites,
+**80 have an unguarded portal exit.** Every one of them can walk a player to
+`portal/index.html` and its live Stripe checkout. That is fine on the web and
+fatal inside a Play app, so each needs the same `inTWA` guard *before* it can be
+listed. This is a gate, not a backlog — only the app being listed needs fixing.
+Hush and Jumping Jimothy will both need it when their turn comes.
+
+## Icons
+
+Play applies its own rounding and masking, so a listing icon should be a
+**full-bleed square with no transparency**. `icon-512.png` has fully transparent
+corners with rounding already baked in, so `play-icon-512.png` was generated
+alongside it: identical art, corners filled with the icon's own background
+(#1B1822), opaque RGB. The originals are untouched and the manifest still points
+at them, which is correct for the PWA.
+
+⚖️ **Honest note, having looked at it masked on a light background:** after
+Play's rounding the two are nearly identical, because the baked radius happens
+to match. Upload the full-bleed one anyway — it removes an unknown across
+Android versions — but it is insurance, not a visible fix.
+
+⚖️ **The real icon issue is contrast, and it is Stephen's call.** The icon is a
+grey-purple face on a near-black square: measured 4.05x luminance contrast
+between subject and background, and in a Play search row against white it reads
+as a dark blob beside colourful competitors. The icon is what earns the tap. A
+lighter background, or a warmer one pulled from the app's own theme, would carry
+much further in a search list. Not repainting his art unasked.
+
 ## Store listing
 
 **Title (30 char max):** `Bandit's Box: Fidget Toys`
