@@ -89562,10 +89562,15 @@ function _bosAboutContent() {
   // Pi-only tip flow (legal under Pi rules); outside it opens the existing
   // multi-method modal (Stripe + crypto + Pi). The .lw-tip-cta-multi
   // variant is CSS-hidden in Pi Browser as a safety net.
-  var _tipMedallionImg = '<img src="assets/buttons/btn-pi.png" alt="" class="lw-tip-cta-medallion" onerror="this.style.display=&apos;none&apos;;">';
+  /* ⛔ One medallion image was shared by BOTH tip buttons, so the Stripe
+     button (card, Apple Pay, Google Pay) showed a giant Pi Network coin to
+     people who are not in Pi Browser and have never heard of Pi. Stephen
+     caught it on his phone 2026-08-22. Pi art stays on the Pi button only. */
+  var _tipMedallionPi    = '<img src="assets/buttons/btn-pi.png" alt="" class="lw-tip-cta-medallion" onerror="this.style.display=&apos;none&apos;;">';
+  var _tipMedallionMulti = '<img src="assets/buttons/btn-medal.png" alt="" class="lw-tip-cta-medallion" onerror="this.style.display=&apos;none&apos;;">';
   if (_isPiBrowser) {
     h += '<button onclick="window._lwOpenPiTipModal&&window._lwOpenPiTipModal()" class="lw-tip-cta lw-tip-cta-pi" aria-label="Tip the studio in Pi">'+
-           _tipMedallionImg +
+           _tipMedallionPi +
            '<div class="lw-tip-cta-title">LIGHT A LANTERN</div>'+
            '<div class="lw-tip-cta-sub">a small Pi tip keeps the garden ad-free</div>'+
          '</button>';
@@ -89578,14 +89583,14 @@ function _bosAboutContent() {
     h += '<div class="lw-non-pi-tips">';
     if (c.stripeCardEnabled !== false) {
       h += '<button onclick="window._lwOpenTipModal()" class="lw-tip-cta lw-tip-cta-multi" aria-label="Light a lantern \u2014 tip the studio">'+
-             _tipMedallionImg +
+             _tipMedallionMulti +
              '<div class="lw-tip-cta-title">LIGHT A LANTERN</div>'+
              '<div class="lw-tip-cta-sub">tips keep this game ad-free \u00b7 anything is appreciated</div>'+
            '</button>';
     }
     else if (c.stripeUrl) {
       h += '<a href="' + c.stripeUrl + '" target="_blank" rel="noopener noreferrer" class="lw-tip-cta lw-tip-cta-multi" style="text-decoration:none;">'+
-             _tipMedallionImg +
+             _tipMedallionMulti +
              '<div class="lw-tip-cta-title">LIGHT A LANTERN</div>'+
              '<div class="lw-tip-cta-sub">support with card \u00b7 anything is appreciated</div>'+
            '</a>';
