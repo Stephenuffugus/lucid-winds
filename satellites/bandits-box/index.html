@@ -5197,7 +5197,7 @@ loadS().then(function(){ applyS();
 </script>
 
 <script>
-/* ===== Sky Wolf Studios embed protocol =====
+/* ===== Sky Wolf Studio embed protocol =====
    The portal opens satellites in an iframe and arms a black-screen recovery
    timer on every load: a page that never announces itself is assumed dead and
    the player gets bounced back to the arcade. So {sws:'ready'} goes out at
@@ -5206,7 +5206,25 @@ loadS().then(function(){ applyS();
 (function(){
   var framed=false; try{ framed = window.parent!==window; }catch(e){ framed=true; }
   var fromPortal = document.referrer.indexOf('/portal')>=0;
+  /* ⛔⛔ INSIDE THE ANDROID APP THERE IS NO WAY OUT, ON PURPOSE.
+     A TWA is not a packaged copy of this game — it is a wrapper around THIS
+     live URL, so whatever ships on the web is what is inside the app. That
+     means the arcade button cannot simply be deleted for the store build,
+     because there is no separate store build, and it cannot be left to the
+     framed/fromPortal guard either: if it ever showed, it walks the player to
+     portal/index.html, which carries a live buy.stripe.com "Tip the Arcade"
+     checkout. An out-of-Play payment flow reachable from inside a Play app is
+     the thing that gets an app pulled.
+     Chrome sets document.referrer to android-app://<package> for a Trusted Web
+     Activity, which is the documented way to know you are in one. When we are,
+     the exit is disabled outright rather than merely hidden — hiding is a CSS
+     state and this is a policy boundary. */
+  var inTWA = false;
+  try{ inTWA = document.referrer.indexOf('android-app://')===0
+       || (window.matchMedia && matchMedia('(display-mode: standalone)').matches
+           && /Android/i.test(navigator.userAgent)); }catch(e){}
   window.SWS_EXIT=function(){
+    if(inTWA) return;                       // ⛔ never leave the app
     if(framed){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; }
     if(fromPortal&&history.length>1){ history.back(); }
     else{ location.replace('https://lucidwinds.com/portal/'); }
@@ -5216,7 +5234,7 @@ loadS().then(function(){ applyS();
     window.addEventListener('load',function(){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} });
   }
   var b=document.getElementById('swsBack');
-  if(b&&(framed||fromPortal)){
+  if(b&&!inTWA&&(framed||fromPortal)){
     b.style.display='';
     b.addEventListener('click',function(){ window.SWS_EXIT(); });
   }
@@ -5229,7 +5247,7 @@ loadS().then(function(){ applyS();
   if(location.protocol==='file:') return;
   if(!('serviceWorker' in navigator)) return;
   window.addEventListener('load',function(){
-    try{ navigator.serviceWorker.register('./sw.js?v=4'); }catch(e){}
+    try{ navigator.serviceWorker.register('./sw.js?v=5'); }catch(e){}
   });
 })();
 </script>
