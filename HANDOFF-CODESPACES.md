@@ -1,4 +1,9 @@
-# HANDOFF: finish the codespace cleanup (any model; written Aug 22 2026, 2nd revision)
+# HANDOFF: finish the codespace cleanup (any model; written Aug 22 2026, rev 3)
+
+⛔⛔⛔ **NO MODEL DELETES A CODESPACE. EVER.** Stephen's rule, Aug 22. Your job is RESCUE ONLY:
+get the work onto a `rescue/*` branch on GitHub and verify it with `gh api`. Stephen deletes the box
+himself at github.com/codespaces after he sees the branch. Any `gh codespace delete` in this file is
+superseded by this line.
 
 State when this was written: **30 → 10 codespaces.** Inspection of every box is DONE; no classification left. Scope `codespace` is already granted
 to the gh login in hosts.yml. Every command below MUST be prefixed
@@ -40,19 +45,19 @@ on ssh (it eats stdin and kills loops). Stop each box after reading it.
 
 ## Decide per box, mechanically
 1. Every REPO line has unpushed_all=0, tracked_mod=0, untracked=0 and no NONGIT line
-   → `gh codespace delete -c <name> --force` (--force only overrides gh's stale cached status).
+   → report it as CLEAN. Do not delete it.
 2. Any dirty/untracked/NONGIT → rescue FIRST. Inside the box (its own token is DEAD, do not push from there):
        gh codespace ssh -c <name> -- 'cd /workspaces/<repo> && git checkout -q -b rescue/<repo>-aug22 && git add -A && git -c user.name=Stephenuffugus -c user.email=99242197+Stephenuffugus@users.noreply.github.com commit -qm "Rescue from codespace <name>" && git format-patch -1 HEAD --stdout' < /dev/null > /tmp/<repo>.patch
    Then from THIS box: shallow-clone the repo into /tmp (`git clone --depth 1`), `git checkout -b rescue/<repo>-aug22`,
    `git am /tmp/<repo>.patch` (if it fails: `git am --abort`, commit the .patch file itself), push with the
    credential-helper form above, VERIFY `gh api repos/Stephenuffugus/<repo>/branches/rescue/<repo>-aug22`,
-   and only then delete the box. A NONGIT dir: `cp -r` it into that box's main repo before the commit.
+   then STOP. Report the branch name. Stephen deletes. A NONGIT dir: `cp -r` it into that box's main repo before the commit.
    ⛔ Never push to main. ⛔ `cmd | tail; echo $?` reports tail's exit, check the server instead.
 3. unpushed_all>0 in a NON-shallow repo = real commits: same patch route (`git format-patch origin/<branch>..HEAD --stdout`).
    In a `shallow=true` repo that number is usually FAKE; confirm with `gh api repos/O/R/commits/<sha>`.
 
 ## Finish
-Print: deleted / rescued (branch names) / kept. Expect ~4-5 codespaces left. Append the tally to memory
+Print: rescued (codespace → branch name, verified) / kept. Delete nothing. Append the tally to memory
 `reference_codespaces_cleanup_and_consolidation.md` and push the memory repo.
 Then tell Stephen: one codespace, many repos → `cd /workspaces && gh repo clone Stephenuffugus/<repo>`;
 this box is ~29G/32G, delete node_modules or /workspaces/tools (1.2G Blender) when it fills.
