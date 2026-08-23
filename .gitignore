@@ -106,9 +106,15 @@ scratch/
 # audit packet progress (local, regenerable)
 scripts/.audit_packet_state.json
 
-# parked 2026-08-23, backup location pending Stephen
-# steamart/ = 51839266 bytes, already submitted to Valve.
-# dist/whim-jimothy/ = 44668389 bytes, build output.
-# These are IGNORED, not backed up. `git clean -fdx` would delete both.
+# Backed up 2026-08-23 as RELEASE ASSETS on the private repo
+# Stephenuffugus/lucid-winds-vault, tag vault-20260823 (round-trip verified,
+# SHA256SUMS.txt in the release). Restore: gh release download vault-20260823
+# -R Stephenuffugus/lucid-winds-vault. Neither belongs in this PUBLIC 3.3 GB repo.
+#   steamart/          51839266 bytes. 16/21 files are byte-identical to tracked
+#                      store/jimothy-steam/capsules/out/*; the unique part is the
+#                      Valve submission zip, which is in the vault tar.
+#   dist/whim-jimothy/ 44668389 bytes. Re-derivable: scripts/whim_jimothy_build.sh.
+#                      The upload zips it produces are in the vault.
+# Ignored paths are what `git clean -x` deletes, so still never run it here.
 steamart/
 dist/whim-jimothy/

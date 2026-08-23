@@ -129,7 +129,7 @@ and turn `play/power-scalers.html` into a redirect, so the URL keeps working
 - **Ignoring the 96 MB made it more deletable, not less** (Task 2). `git clean
   -fdx` targets ignored paths. `steamart/` (51839266 bytes) and
   `dist/whim-jimothy/` (44668389 bytes) have no backup and no git protection.
-  ⚖ Still waiting on where they should live.
+  ✅ RESOLVED by Fable later on Aug 23: release assets on private `lucid-winds-vault`, tag `vault-20260823`, round-trip verified.
 
 ---
 
