@@ -55,7 +55,13 @@ export const MANIFEST = [
     also:["Abduct a Chameleon 3D"], drop:["test/","docs/","server/","tools/","releases/"],
     needsExit:["index.html","abduct-3d.html"] },
   { slug:"glyph-forge",        repo:"glyph_forge",        ref:"main", card:"Glyph Forge" },
-  { slug:"litter-bug",         repo:"Litter_Bug",         ref:"main", card:"Litter Bug" },
+  /* inherited-engine.html is a 6.8 MB dev archive of the pre-split engine. The
+     running game never requests it; the only reference anywhere is a line in
+     the repo's own scripts/smoke.js, which is a build tool and is not vendored.
+     Shipping it made Litter Bug by far the heaviest satellite in the arcade for
+     a file no player can reach. */
+  { slug:"litter-bug",         repo:"Litter_Bug",         ref:"main", card:"Litter Bug",
+    drop:["inherited-engine.html"] },
   { slug:"sweet-spot",         repo:"Sweet-Spot",         ref:"main", card:"Sweet Spot" },
   { slug:"tarot-run",          repo:"Tarot_Run",          ref:"setup/project-structure", card:"Tarot Run" },
   { slug:"sixfold",            repo:"sixfold",            ref:"main", card:"Sixfold", drop:["tests/","tools/"] },
