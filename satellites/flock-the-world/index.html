@@ -39,21 +39,21 @@ h1 em{font-style:normal;color:var(--sodium)}
 .fl{font-size:1.18em;text-shadow:0 0 18px currentColor}
 .tag{font-size:10px;letter-spacing:.32em;color:var(--dim);text-transform:uppercase;text-align:center}
 .sub{max-width:360px;margin:12px auto 14px;font-size:12.5px;line-height:1.6;color:var(--ice);text-align:center}
-.howbtn{display:block;margin:0 auto 6px;padding:8px 18px;border:1px solid var(--line);border-radius:20px;
+.howbtn{display:block;margin:0 auto 6px;padding:8px 18px;min-height:48px;border:1px solid var(--line);border-radius:20px;
   font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ice)}
 .seclab{font-size:9.5px;letter-spacing:.24em;color:var(--dim);text-transform:uppercase;margin:16px 0 8px}
-.modecard{width:100%;text-align:left;border:1px solid var(--line);border-radius:13px;background:var(--panel);
+.modecard{width:100%;min-height:48px;text-align:left;border:1px solid var(--line);border-radius:13px;background:var(--panel);
   padding:12px 13px;margin-bottom:8px}
 .modecard.sel{border-color:var(--sodium);background:#191203}
 .modecard h3{margin:0 0 3px;font-size:14px}
 .modecard h3 span{font-size:9px;letter-spacing:.18em;color:var(--sodium);margin-left:8px;text-transform:uppercase}
 .modecard p{margin:0;font-size:11px;color:var(--dim);line-height:1.5}
 .difficulty{display:flex;gap:8px}
-.diffbtn{flex:1;padding:11px 6px;border:1px solid var(--line);border-radius:10px;font-size:11px;
+.diffbtn{flex:1;min-height:48px;padding:11px 6px;border:1px solid var(--line);border-radius:10px;font-size:11px;
   letter-spacing:.1em;text-transform:uppercase;color:var(--dim);background:var(--panel)}
 .diffbtn.sel{border-color:var(--sodium);color:var(--sodium);background:#1a1408}
 .diffdesc{font-size:10.5px;color:var(--dim);margin:8px 0 0;min-height:16px}
-.cta{display:block;width:100%;margin-top:18px;padding:15px;border-radius:12px;background:var(--sodium);
+.cta{display:block;width:100%;min-height:48px;margin-top:18px;padding:15px;border-radius:12px;background:var(--sodium);
   color:#100a00;font-weight:800;letter-spacing:.16em;text-transform:uppercase;font-size:13px;
   box-shadow:0 8px 30px #ffa2293d}
 .cta:active{transform:translateY(1px)}
@@ -98,7 +98,7 @@ h1 em{font-style:normal;color:var(--sodium)}
 .btrack{height:4px;border-radius:3px;background:#16202b;overflow:hidden}
 /* the population line: Penny's note (2026-08-23) is that a meter is a dashboard
    and a number made of people is a story. This is the story. */
-#ledline{display:flex;align-items:baseline;gap:7px;margin-top:5px;min-height:26px;
+#ledline{display:flex;align-items:center;gap:7px;margin-top:5px;min-height:48px;
   padding:2px 4px;border-radius:8px;cursor:pointer;-webkit-tap-highlight-color:transparent}
 #ledline:active{background:#ffa2291a}
 .lgl{font-size:9px;letter-spacing:.16em;color:var(--dim);text-transform:uppercase;flex:none}
@@ -133,7 +133,7 @@ h1 em{font-style:normal;color:var(--sodium)}
   /* the population line keeps its own row: it grows from "0" to ten characters
      as the run goes on, and a line that re-wraps mid-run silently moves every
      map overlay anchored to the HUD height. */
-  #ledline{flex:1 0 100%;margin-top:2px;min-height:22px}
+  #ledline{flex:1 0 100%;margin-top:2px;min-height:48px}
   /* the pick screen's map band shrinks as its footer grows, and the zoom column
      is three 48px targets tall. Adding the vendor input ate the headroom and
      clipped FIT past the bottom of the map. Keep the band tall enough for the
@@ -177,7 +177,7 @@ h1 em{font-style:normal;color:var(--sodium)}
   display:none;align-items:center;gap:8px;max-width:88%;padding:9px 14px;border-radius:12px;
   background:#141003f2;border:1px solid var(--sodium);color:#ffe9c9;font-size:12px;line-height:1.4}
 #rotHint.on{display:flex}
-#rotHint .rx{flex:none;font-size:16px;color:var(--dim);padding:6px 4px}
+#rotHint .rx{flex:none;width:48px;height:48px;font-size:16px;color:var(--dim);padding:0;display:flex;align-items:center;justify-content:center}
 /* action feedback toast: floats over the sheet so a spend is always visible */
 #shToast{position:absolute;left:50%;top:-46px;transform:translateX(-50%);z-index:5;
   padding:8px 14px;border-radius:10px;background:#141003f4;border:1px solid var(--sodium);
@@ -220,7 +220,7 @@ h1 em{font-style:normal;color:var(--sodium)}
   background:#141003f2;border:1px solid var(--sodium);font-size:11.5px;line-height:1.45;color:#ffe9c9;display:none}
 #guide.on{display:block}
 #guide b{color:var(--sodium)}
-#guide .gskip{margin-top:6px;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+#guide .gskip{min-height:48px;margin-top:6px;padding:0 8px;border:1px solid var(--line);border-radius:8px;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);display:flex;align-items:center;justify-content:center}
 /* region popover: Plague Inc plays by poking the map, not by opening a menu.
    Anchored to the tap, never pauses the sim, closes on a tap that misses. */
 #rpop{position:absolute;z-index:6;width:min(268px,72vw);padding:9px 10px;border-radius:11px;
@@ -235,9 +235,9 @@ h1 em{font-style:normal;color:var(--sodium)}
 #rpop .rpN .v{font-variant-numeric:tabular-nums;font-weight:700}
 #rpop .hint{font-size:10px;color:var(--dim)}
 #rpop .acts{display:flex;flex-wrap:wrap;gap:5px}
-#rpop .rpX{position:absolute;top:2px;right:2px;width:34px;height:34px;border:0;background:none;
+#rpop .rpX{position:absolute;top:2px;right:2px;width:48px;height:48px;border:0;background:none;
   color:var(--dim);font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center}
-#rpop .act,#rpop .buy{min-height:34px}
+#rpop .act,#rpop .buy{min-height:48px}
 #coWrap{display:block;margin:0 0 8px}
 #coWrap span{display:block;font-size:9px;letter-spacing:.16em;text-transform:uppercase;
   color:var(--dim);margin-bottom:4px}
@@ -349,12 +349,12 @@ h1 em{font-style:normal;color:var(--sodium)}
 .m .t{height:5px;border-radius:2px;background:#16202b;margin-top:3px;overflow:hidden}
 .m .f{height:100%;width:0}
 .acts{display:flex;gap:6px;margin-top:9px;flex-wrap:wrap}
-.act{flex:1;min-width:74px;padding:8px 4px;border-radius:8px;border:1px solid var(--line);
+.act{flex:1;min-width:74px;min-height:48px;padding:8px 4px;border-radius:8px;border:1px solid var(--line);
   font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--ice);background:var(--panel2)}
 .act.warn{border-color:var(--sodium);color:var(--sodium)}
 .act.danger{border-color:var(--blood);color:var(--blood)}
 .act[disabled]{opacity:.35}
-.buy{margin-top:9px;width:100%;padding:9px;border-radius:9px;border:1px solid var(--sodium);
+.buy{margin-top:9px;width:100%;min-height:48px;padding:9px;border-radius:9px;border:1px solid var(--sodium);
   color:var(--sodium);font-size:12px;letter-spacing:.08em;text-transform:uppercase;background:#1a1408}
 .buy[disabled]{border-color:var(--line);color:#3f4f5e;background:none}
 
@@ -384,7 +384,7 @@ h1 em{font-style:normal;color:var(--sodium)}
 .card h3{margin:8px 0;font-size:17px;line-height:1.25}
 .card .who{font-size:10px;color:var(--sodium);letter-spacing:.08em;margin-bottom:6px}
 .card p{margin:0 0 14px;font-size:12.5px;line-height:1.6;color:var(--ice)}
-.opt{width:100%;text-align:left;padding:12px;border:1px solid var(--line);border-radius:11px;margin-bottom:8px;background:var(--panel)}
+.opt{width:100%;min-height:48px;text-align:left;padding:12px;border:1px solid var(--line);border-radius:11px;margin-bottom:8px;background:var(--panel)}
 .opt .ol{font-size:12px;font-weight:700}
 .opt .oc{font-size:10px;color:var(--dim);margin-top:3px}
 .opt[disabled]{opacity:.4}
@@ -478,7 +478,7 @@ h1 em{font-style:normal;color:var(--sodium)}
     <div id="pill"><span class="rec"></span><span class="mono" id="pillTxt">LIVE</span></div>
     <div class="zoomui"><button class="zb" data-z="in">IN</button><button class="zb" data-z="out">OUT</button><button class="zb" data-z="fit">FIT</button></div>
     <div id="breaking"><b>BREAKING</b><span id="breakTxt"></span></div>
-    <div id="guide"><span id="guideTxt"></span><div class="gskip" id="guideSkip">Skip briefing</div></div>
+    <div id="guide"><span id="guideTxt"></span><button type="button" class="gskip" id="guideSkip">Skip briefing</button></div>
     <div id="ctip"><div class="cn" id="ctipTxt"></div><button id="ctipBtn">Region</button></div>
     <div id="rotHint"><span id="rotTxt">Tip: turn your phone sideways. In landscape the whole map fits the screen.</span><button class="rx" id="rotX">✕</button></div>
     <div id="ticker"><span class="wlab">WIRE</span><div id="tickWrap"><div id="tickTrack">Awaiting first deployment.</div></div></div>
@@ -1272,6 +1272,10 @@ function tick(){
   if(!s.doctrine&&s.subj>=0.14&&!$('modal').classList.contains('on'))doctrineModal();
 
   if(s.day%9===0)maybeEvent(s);
+  /* leak expiry and event effects add oversight AFTER the earlier clamp, and the
+     end condition then read the unclamped number, so a run could finish above
+     100%. Found by the 2026-08-23 external audit. */
+  s.oversight=clamp(s.oversight,0,100);
 
   guideTick();
   if(s.day%20===0)saveRun();
@@ -1334,6 +1338,7 @@ function worldMilestones(s){
 /* ============================ END ============================ */
 function finish(won,why){
   S.over=true;S.won=won;setSpeed(0);
+  cancelAnimationFrame(raf);raf=null;   /* drawFx reschedules itself forever otherwise */
   sfxBed('bed_hq',false);sfxBed('bed_tension',false);
   sfx(won?'win':why==='refusal'?'loss_refusal':'loss_coalition');
   lsDel(K_RUN);
@@ -1428,7 +1433,11 @@ function sfxUnlock(){
 }
 function sfxSetMuted(v){
   SFX.muted=!!v; lsSet(K_MUTE,v?'1':'0');
-  if(SFX.muted)for(const id in SFX.beds)sfxBed(id,false);
+  /* pause, do not deregister: sfxBed(id,false) deleted the bed, so unmuting had
+     nothing left to resume. Invisible today with no audio files, would surface
+     the moment they land. */
+  if(SFX.muted){for(const id in SFX.beds){const a=SFX.el[id];if(a){try{a.pause();}catch(e){}}}}
+  else{for(const id in SFX.beds)sfxPlay(id,true);}
   syncMuteBtn();
 }
 function syncMuteBtn(){
@@ -1514,9 +1523,16 @@ function saveRun(){
         cOrder:r.cOrder||null,cN:r.cN||1};}
     lsSet(K_RUN,JSON.stringify({v:1,modeKey:s.modeKey,diffKey:s.diffKey,startId:s.startId,
       day:s.day,cash:s.cash,inf:s.inf,oversight:s.oversight,warHeat:s.warHeat,doctrine:s.doctrine,net:s.net||0,lbCd:s.lbCd||0,
+      /* a reload used to wipe live bubbles, including a leak whose oversight
+         penalty had not landed yet, and to forget a pending choice event, so
+         reloading dodged the decision. It also dropped the HUD aggregates, so a
+         resumed screen showed new-game defaults until the next tick. */
+      subj:s.subj,avgSus:s.avgSus,avgMil:s.avgMil,avgRes:s.avgRes,unread:s.unread||0,nextBubble:s.nextBubble||0,
+      bubbles:(s.bubbles||[]).map(b=>({k:b.k,x:b.x,y:b.y,life:b.life,born:b.born,v:b.v})),
+      pendingEventId:s.pendingEventId||null,
       lostCount:s.lostCount,wmileDth:s.wmileDth||0,hq:s.hq,hqName:s.hqName,co:s.co,
       owned:[...s.owned],combos:[...s.combos],milestones:[...s.milestones],wmiles:[...s.wmiles],
-      popMiles:[...(s.popMiles||[])],
+      popMiles:[...(s.popMiles||[])],popPeakOrg:s.popPeakOrg||0,popHist:(s.popHist||[]).slice(-11),
       log:s.log.slice(0,40),regions:regs,stamp:Date.now()}));
   }catch(e){}
 }
@@ -1537,10 +1553,18 @@ function loadRun(){
   s.doctrine=(d.doctrine==='glove'||d.doctrine==='fist')?d.doctrine:null;
   s.lostCount=Math.max(0,num(d.lostCount,0));s.wmileDth=num(d.wmileDth,0);
   s.net=Math.max(0,num(d.net,0));s.lbCd=Math.max(0,num(d.lbCd,0));
+  s.subj=clamp(num(d.subj,0),0,1);s.avgSus=clamp(num(d.avgSus,0),0,100);
+  s.avgMil=clamp(num(d.avgMil,0),0,1);s.avgRes=clamp(num(d.avgRes,0),0,100);
+  s.unread=Math.max(0,num(d.unread,0));s.nextBubble=Math.max(0,num(d.nextBubble,0));
+  s.bubbles=Array.isArray(d.bubbles)?d.bubbles.filter(b=>b&&['cash','inf','leak'].indexOf(b.k)>=0)
+    .map(b=>({k:b.k,x:num(b.x,0),y:num(b.y,0),life:Math.max(0,num(b.life,0)),born:num(b.born,0),v:Math.max(0,num(b.v,0))}))
+    .filter(b=>b.life>0):[];
   const asSet=a=>new Set(Array.isArray(a)?a.filter(x=>typeof x==='string'||typeof x==='number'):[]);
   s.owned=asSet(d.owned);[...s.owned].forEach(id=>{if(!NBI[id])s.owned.delete(id);});
   s.combos=asSet(d.combos);s.milestones=asSet(d.milestones);s.wmiles=new Set((d.wmiles||[]).map(Number).filter(isFinite));
   s.popMiles=asSet(d.popMiles);
+  s.popPeakOrg=Math.max(0,num(d.popPeakOrg,0));
+  s.popHist=Array.isArray(d.popHist)?d.popHist.map(v=>Math.max(0,num(v,0))).slice(-11):[];
   for(const id in s.regions){
     const r=s.regions[id],o=d.regions[id];if(!o)continue;
     r.active=!!o.active;r.lost=!!o.lost;
@@ -1558,6 +1582,7 @@ function loadRun(){
   s.newsQ=s.log.slice(0,8).map(x=>x.t);
   s.activeCount=REGIONS.filter(r=>s.regions[r.id].active).length;
   s.events=EV();
+  s.pendingEventId=(typeof d.pendingEventId==='string'&&s.events.some(e=>e.id===d.pendingEventId))?d.pendingEventId:null;
   recompute(s);
   S=s;
   return true;
@@ -1947,13 +1972,13 @@ function popTotals(s){
    The last two are the ones that should land hardest, because they are counted
    in people who were never asked. */
 const POP_MILES=[
-  {id:'w10m', at:s=>s.popWatched>=1e7,   t:s=>`${s.co} passes ten million people watched.`},
-  {id:'w100m',at:s=>s.popWatched>=1e8,   t:s=>`${s.co} passes one hundred million watched. No vote was taken.`},
-  {id:'w500m',at:s=>s.popWatched>=5e8,   t:s=>`Half a billion people now live inside the ${s.co} frame.`},
-  {id:'w1b',  at:s=>s.popWatched>=1e9,   t:s=>`${s.co} passes one billion watched.`},
-  {id:'half', at:s=>s.popWatched>=WORLD_POP*PEOPLE/2, t:s=>`Half of humanity is inside the ${s.co} frame.`},
-  {id:'w2b',  at:s=>s.popWatched>=2e9,   t:s=>`${s.co} passes two billion watched.`},
-  {id:'w4b',  at:s=>s.popWatched>=4e9,   t:s=>`${s.co} passes four billion watched. Most of the species.`},
+  {id:'w10m', at:s=>s.popWatched>=1e7,   t:s=>`${escH(s.co)} passes ten million people watched.`},
+  {id:'w100m',at:s=>s.popWatched>=1e8,   t:s=>`${escH(s.co)} passes one hundred million watched. No vote was taken.`},
+  {id:'w500m',at:s=>s.popWatched>=5e8,   t:s=>`Half a billion people now live inside the ${escH(s.co)} frame.`},
+  {id:'w1b',  at:s=>s.popWatched>=1e9,   t:s=>`${escH(s.co)} passes one billion watched.`},
+  {id:'half', at:s=>s.popWatched>=WORLD_POP*PEOPLE/2, t:s=>`Half of humanity is inside the ${escH(s.co)} frame.`},
+  {id:'w2b',  at:s=>s.popWatched>=2e9,   t:s=>`${escH(s.co)} passes two billion watched.`},
+  {id:'w4b',  at:s=>s.popWatched>=4e9,   t:s=>`${escH(s.co)} passes four billion watched. Most of the species.`},
   /* ⛔ no `&& popFree>0` here. Total coverage drives popFree to exactly 0, which
      is the one moment this line has to land, and the guard silenced it. */
   {id:'free1b',at:s=>s.popFree<1e9, t:s=>`Fewer than a billion people have never been watched.`}
@@ -2307,6 +2332,7 @@ function doAction(act,rid){
 /* ============================ MODALS ============================ */
 function showEvent(ev){
   if(!noteModal(()=>showEvent(ev)))return;
+  S.pendingEventId=ev.id;saveRun();   /* reloading mid event must not dodge the choice */
   sfx('event_open');
   const prev=S.speed;setSpeed(0);
   /* event price tags scale with daily net income, so "$250 to Klein" is a
@@ -2327,7 +2353,7 @@ function showEvent(ev){
   c.querySelectorAll('[data-opt]').forEach(b=>b.onclick=()=>{
     const o=ev.o[+b.dataset.opt];
     if(o.cost){if(o.cost.cash){S.cash-=cashOf(o);flashCash();}if(o.cost.inf)S.inf-=o.cost.inf;}
-    o.f(S);noteCloseModal();setSpeed(prev||1);paintHud();});
+    o.f(S);S.pendingEventId=null;noteCloseModal();setSpeed(prev||1);paintHud();});
 }
 function doctrineModal(){
   if(!noteModal(()=>doctrineModal()))return;
@@ -2649,6 +2675,11 @@ function bootGame(resumed){
     refreshRpop();paintHud();if(gv)drawWorld(gv,S,null);
   });
   initTicker();
+  /* #ledline advertised role=button and an aria label saying it opens the
+     ledger, and did nothing at all. */
+  const led=$('ledline');
+  led.onclick=()=>openSheet('led');
+  led.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openSheet('led');}};
   $('guideSkip').onclick=endGuide;
   hideCtip();
   paintHud();
@@ -2656,6 +2687,7 @@ function bootGame(resumed){
   if(!resumed&&!tutSeen){tutSeen=true;startGuide();}
   else endGuide();
   setSpeed(1);
+  if(resumed&&S.pendingEventId){const ev=S.events.find(e=>e.id===S.pendingEventId);if(ev)showEvent(ev);}
 }
 function resumeRun(){ if(loadRun())bootGame(true); else refreshMenuExtras(); }
 
@@ -2675,7 +2707,7 @@ function leaveModal(){
   c.querySelectorAll('[data-lv]').forEach(b=>b.onclick=()=>{
     const k=b.dataset.lv;
     noteCloseModal();
-    if(k==='back'){setSpeed(prev||1);return;}
+    if(k==='back'){setSpeed(prev);return;}   /* prev||1 unpaused a paused game */
     clearInterval(tickTimer);tickTimer=null;clearInterval(tickerTimer);cancelAnimationFrame(raf);
     if(k==='exit'){if(window.SWS_EXIT)window.SWS_EXIT();return;}
     S=null;show('menu');menuBeds();initMenu();refreshMenuExtras();

@@ -676,6 +676,116 @@ if (C) {
     ok('unmuting survives a reload too', vm.runInContext('SFX.muted', cD) === false);
   }
 
+  /* ------------------------- external audit 2026-08-23: regressions ------- */
+  /* Every one of these guards a defect found by a second pair of eyes, not by
+     this suite. They exist so the same holes cannot reopen. */
+  group('audit regressions');
+  {
+    /* P0. The vendor name is player text. Milestone headlines interpolated it
+       RAW into the news log, and the wire and Feed write news with innerHTML,
+       so a name could execute. Reachable inside the 24 character limit. */
+    const PAYLOADS = ['<svg/onload=alert(1)>', '<img src=x onerror=alert(1)>', '"><b>x</b>'];
+    let leaked = [];
+    for (const evil of PAYLOADS) {
+      const cX = makeCtx();
+      vm.runInContext('S=newState("CONTRACTOR","Vendor","NA",null,null,' + JSON.stringify(evil) + ');' +
+        'for(const k of Object.keys(S.regions)){S.regions[k].active=true;S.regions[k].coverage=1;}popTotals(S);', cX);
+      const log = vm.runInContext('S.log.map(e=>e.t).join("|")', cX);
+      if (log.indexOf(evil) >= 0) leaked.push(evil);
+    }
+    ok('no population milestone puts raw player markup into the news', leaked.length === 0,
+      'leaked: ' + JSON.stringify(leaked));
+    ok('every milestone headline escapes the vendor name at source',
+      !/\$\{s\.co\}/.test(/const POP_MILES=\[([\s\S]*?)\n\];/.exec(GAME)[1]));
+
+    /* a reload must not wipe live bubbles: a leak bubble carries an oversight
+       penalty that had not landed yet, so losing it dodges the consequence */
+    const cR = makeCtx();
+    vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');S.bubbles=[{k:'leak',x:1,y:2,life:20,born:3,v:0}];S.nextBubble=44;saveRun();", cR);
+    const cR2 = makeCtx();
+    vm.runInContext('loadRun()', cR2);
+    const bb = vm.runInContext('S.bubbles', cR2);
+    ok('live bubbles survive a reload', Array.isArray(bb) && bb.length === 1 && bb[0].k === 'leak',
+      JSON.stringify(bb));
+    ok('the next bubble day survives a reload', vm.runInContext('S.nextBubble', cR2) === 44);
+    /* and a junk bubble in a hand edited save is refused, not booted into */
+    vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');saveRun();", cR);
+    store['ftw_run'] = store['ftw_run'].replace('"bubbles":[]', '"bubbles":[{"k":"evil","life":"x"},null,5]');
+    const cR3 = makeCtx();
+    vm.runInContext('loadRun()', cR3);
+    ok('a junk bubble in a save is dropped, not trusted',
+      vm.runInContext('S.bubbles.length', cR3) === 0, 'kept=' + vm.runInContext('S.bubbles.length', cR3));
+
+    /* a pending choice event must not be dodged by reloading */
+    const cE = makeCtx();
+    cE.doctrineModal = () => {};
+    vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');S.pendingEventId='foia';saveRun();", cE);
+    const cE2 = makeCtx();
+    vm.runInContext('loadRun()', cE2);
+    ok('a pending event id survives a reload', vm.runInContext('S.pendingEventId', cE2) === 'foia',
+      'got ' + vm.runInContext('S.pendingEventId', cE2));
+    ok('an unknown pending event id is refused', (() => {
+      vm.runInContext("S.pendingEventId='not-a-real-event';saveRun();", cE2);
+      const cE3 = makeCtx(); vm.runInContext('loadRun()', cE3);
+      return vm.runInContext('S.pendingEventId', cE3) === null;
+    })());
+    ok('choosing an option clears the pending event', /S\.pendingEventId=null;noteCloseModal\(\)/.test(GAME));
+    ok('a resumed run reopens the event it was interrupted on',
+      /if\(resumed&&S\.pendingEventId\)/.test(GAME));
+
+    /* the HUD aggregates must be right the instant a run resumes */
+    const cA2 = makeCtx();
+    vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');for(let i=0;i<120;i++)tick();saveRun();", cA2);
+    const want = vm.runInContext('({subj:S.subj,avgSus:S.avgSus,peak:S.popPeakOrg,hist:S.popHist.length})', cA2);
+    const cA3 = makeCtx();
+    vm.runInContext('loadRun()', cA3);
+    const got = vm.runInContext('({subj:S.subj,avgSus:S.avgSus,peak:S.popPeakOrg,hist:S.popHist.length})', cA3);
+    ok('subjugation is correct immediately on resume, before the next tick',
+      Math.abs(got.subj - want.subj) < 1e-9, want.subj + ' -> ' + got.subj);
+    ok('peak organized survives, so the end screen can report it',
+      Math.abs(got.peak - want.peak) < 1, want.peak + ' -> ' + got.peak);
+    ok('the population history survives a reload', got.hist === want.hist, want.hist + ' -> ' + got.hist);
+
+    /* oversight can never finish above 100 */
+    const cO = makeCtx();
+    vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');", cO);
+    let overMax = 0;
+    for (let i = 0; i < 400; i++) {
+      vm.runInContext('S.oversight=99.5;tick();', cO);
+      const o = vm.runInContext('S.oversight', cO);
+      if (o > overMax) overMax = o;
+    }
+    ok('Patriotism is clamped after late tick effects, never above 100', overMax <= 100,
+      'max=' + overMax);
+
+    /* the end screen stops the map animation loop */
+    ok('finish cancels the map animation frame', /function finish\([\s\S]{0,200}cancelAnimationFrame\(raf\)/.test(GAME));
+
+    /* muting must pause beds, not forget them */
+    const cMu = makeCtx();
+    vm.runInContext("sfxUnlock();S=newState('CONTRACTOR','Vendor','NA');sfxBed('bed_hq',true);sfxSetMuted(true);", cMu);
+    ok('muting keeps the bed registered so unmuting can resume it',
+      Object.keys(vm.runInContext('SFX.beds', cMu)).indexOf('bed_hq') >= 0,
+      'beds=' + JSON.stringify(Object.keys(vm.runInContext('SFX.beds', cMu))));
+
+    /* backing out of the leave modal must not unpause a paused game */
+    ok('backing out of the leave modal restores the exact speed',
+      /if\(k==='back'\)\{setSpeed\(prev\);/.test(GAME), 'prev||1 turns a paused game back on');
+
+    /* the watched odometer advertises role=button, so it must do something */
+    ok('the watched odometer actually opens the ledger',
+      /led\.onclick=\(\)=>openSheet\('led'\)/.test(GAME) && /led\.onkeydown/.test(GAME));
+
+    /* the 48px floor, on the controls the original gate never covered */
+    [['.act', 'min-height'], ['.buy', 'min-height'], ['.opt', 'min-height'], ['.cta', 'min-height'],
+     ['.modecard', 'min-height'], ['.diffbtn', 'min-height'], ['#ledline', 'min-height']].forEach(([sel, prop]) => {
+      const v = pxOf(ruleFor(sel), prop) || 0;
+      ok('touch target ' + sel + ' is at least 48px', v >= 48, prop + '=' + v);
+    });
+    ok('the region popover close control is at least 48px', (pxOf(ruleFor('#rpop .rpX'), 'width') || 0) >= 48);
+    ok('guide skip is a real button, not a clickable div', /<button[^>]*id="guideSkip"/.test(SRC));
+  }
+
   /* persistence */
   group('persistence');
   const hasSave = /LW_FTW|ftw_/.test(GAME);
