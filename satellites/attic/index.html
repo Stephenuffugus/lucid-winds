@@ -140,10 +140,25 @@
   .rummage {
     flex:1; min-height:56px; border:none; border-radius:10px; cursor:pointer;
     background:linear-gradient(180deg, #d9a94e, #a87a2c); color:#171310;
-    font-family:Georgia, serif; font-size:1.05rem; letter-spacing:0.18em;
+    /* was 1.05rem / 0.18em, which wrapped RUMMAGE . 1 TICKET onto two lines
+       on a 412px phone */
+    font-family:Georgia, serif; font-size:0.95rem; letter-spacing:0.08em;
     box-shadow:0 4px 14px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.35);
   }
   .rummage:active { transform:translateY(1px); }
+
+  /* ── TODAY'S FIND ──────────────────────────────────────────────────────
+     The reason to open the attic on a day the wallet is dry. Outlined and
+     not filled, deliberately: RUMMAGE stays the loudest thing on the screen
+     because it is the thing you do more than once. */
+  .daily { width:100%; margin:0 0 12px; }
+  .dailybtn { width:100%; min-height:56px; border-radius:10px; cursor:pointer;
+    background:#221b14; border:1px solid #6a552c; color:#f0d68a;
+    font-family:Georgia, serif; font-size:0.98rem; letter-spacing:0.12em; }
+  .dailybtn:active { background:#2f2417; }
+  .dailybtn[disabled] { opacity:0.5; border-color:#3a2e1e; color:#a8906a; }
+  .dailysub { font-size:0.7rem; color:#a8906a; text-align:center; margin-top:8px; line-height:1.6; }
+  .dailysub b { color:#e8c977; font-weight:normal; }
 
   .shelf { width:100%; margin-top:14px; }
   .shelf h2 { font-size:0.62rem; font-family:ui-monospace, monospace; letter-spacing:0.3em; color:#8a7a5e; margin-bottom:8px; font-weight:normal; }
@@ -336,6 +351,11 @@
     <button class="wantbtn" id="wantOpen">WANT LIST <b id="wantN">0/8</b></button>
   </div>
 
+  <div class="daily">
+    <button class="dailybtn" id="dailyGo" type="button">TODAY&rsquo;S FIND</button>
+    <div class="dailysub" id="dailySub"></div>
+  </div>
+
   <div class="btnRow"><button class="rummage" id="go">RUMMAGE &middot; 1 TICKET</button><button class="dustbtn" id="dustBtn">DUST OFF</button></div>
   <div class="brokenote" id="brokenote"></div>
 
@@ -408,6 +428,7 @@
   <p>A rummage costs one ticket, so a dig is a decision rather than a button you hold down. Five tickets arrive every day. A find in FINE or better pays one back, anything on your Want List pays three, and two things scrapped off the shelf make one more. When the tickets run dry, DUST OFF the old boxes and find some stubs.</p>
   <h3>The controls</h3>
   <ul>
+    <li>TODAY&rsquo;S FIND is free, once a day, and it is the same object for everybody</li>
     <li>RUMMAGE digs, and the condition is revealed last</li>
     <li>DUST OFF opens the grime panel: drag across it to wipe</li>
     <li>Tap anything on the shelf to look at it again, or to scrap it</li>
@@ -628,8 +649,14 @@
     var gi = E.gIdx(it.grade);
     if (gi > (WAL.best | 0)) WAL.best = gi;
     var got = checkGrails(it);
-    saveWallet(); paintWallet();
-    if (!got && earned) toast('A keeper. One ticket back.');
+    /* this week's wanted, paid once a week, on top of anything else */
+    var wp = 0;
+    if (E.wantedReady(WAL, dayIndex()) && grailMet(WANTED, it)) {
+      wp = E.payWanted(WAL, dayIndex());
+      toast('WANTED THIS WEEK: ' + WANTED.txt + '. The attic pays double, ' + wp + ' tickets.', 4600);
+    }
+    saveWallet(); paintWallet(); paintDaily();
+    if (!got && !wp && earned) toast('A keeper. One ticket back.');
     return earned;
   }
 
@@ -1019,6 +1046,47 @@
   document.getElementById('wantClose').onclick = function () { document.getElementById('wantSheet').className = 'sheet'; };
   document.getElementById('wantSheet').onclick = function (e) { if (e.target === this) this.className = 'sheet'; };
 
+  /* ── TODAY'S FIND, THE STREAK, AND THIS WEEK'S WANTED ────────────────
+     The only reason the old build gave you to come back was five tickets.
+     This is the other one: one object a day, free, the SAME object for
+     everybody, still under dust when it lands. Streak counts consecutive
+     days CLAIMED. And once a week the attic pays double for one described
+     thing, drawn on the week index so everybody is hunting it at once.
+     ⛔ The wanted pool excludes FACTORY SEALED and the class specific
+     factory errors. A weekly hunt with a 0.39% hit rate is not a hunt. */
+  function wantedPool() {
+    var P = grailPool(), out = [], i;
+    for (i = 0; i < P.length; i++) if (P[i].t !== 'sealed' && P[i].t !== 'errorCls') out.push(P[i]);
+    return out;
+  }
+  var WANTED = (function () {
+    var P = wantedPool();
+    return P[ATTIC.weeklyPick(ATTIC.weekIndex(dayIndex()), P.length)];
+  })();
+
+  function paintDaily() {
+    var d = dayIndex(), btn = document.getElementById('dailyGo'), sub = document.getElementById('dailySub');
+    var ready = E.dailyReady(WAL, d), bits = [];
+    if (ready) { btn.removeAttribute('disabled'); btn.textContent = 'TODAY’S FIND'; }
+    else { btn.setAttribute('disabled', 'disabled'); btn.textContent = 'TODAY’S FIND IS ON THE SHELF'; }
+    if (WAL.streak > 0) bits.push('<b>' + WAL.streak + '</b> day' + (WAL.streak === 1 ? '' : 's') + ' in a row.');
+    bits.push(E.wantedReady(WAL, d)
+      ? ('Wanted this week, paying double: <b>' + esc(WANTED.txt) + '</b>.')
+      : ('You already turned up this week’s wanted: ' + esc(WANTED.txt) + '.'));
+    sub.innerHTML = bits.join(' ');
+  }
+  document.getElementById('dailyGo').onclick = function () {
+    var d = dayIndex();
+    if (!E.dailyReady(WAL, d)) { toast('Today’s find is already on the shelf.'); return; }
+    var r = E.claimDaily(WAL, d);
+    saveWallet(); paintWallet(); paintDaily();
+    show(ATTIC.dailyHash(d));
+    if (card.scrollIntoView) { try { card.scrollIntoView({ block: 'nearest' }); } catch (e) { card.scrollIntoView(); } }
+    toast(r.bonus
+      ? ('Day ' + r.streak + ' in a row, and the seventh day pays a ticket.')
+      : ('Today’s find, the same one everybody gets. Day ' + r.streak + ' in a row.'), 3800);
+  };
+
   /* the day's allowance, granted once per day per device */
   (function grantDaily() {
     var first = WAL.day < 0;
@@ -1128,13 +1196,17 @@
       openCard: openFlip, closeCard: closeFlip,
       sortShelf: function (s) { SH_SORT = s; paintShelfSheet(true); return shelfSorted(); },
       shelfOrder: shelfSorted, found: function () { return found; },
-      drawCard: drawCard
+      drawCard: drawCard,
+      daily: function () { return { ready: E.dailyReady(WAL, dayIndex()), streak: WAL.streak,
+        hash: ATTIC.dailyHash(dayIndex()), wanted: WANTED, wkReady: E.wantedReady(WAL, dayIndex()) }; },
+      setDay: function (n) { WAL.dailyDay = n; saveWallet(); paintDaily(); return WAL.dailyDay; }
     };
   }
 
   renderShelf(); /* returning visitor sees their collection before the first pull */
   paintWants();
   paintWallet();
+  paintDaily();
   document.getElementById('hashIn').addEventListener('change', function () {
     var v = String(this.value).trim().toLowerCase();
     if (/^[0-9a-f]{64}$/.test(v)) { show(v); this.value = ''; }

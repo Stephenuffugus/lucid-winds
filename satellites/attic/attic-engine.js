@@ -352,8 +352,44 @@
     return item;
   }
 
+  /* ── THE DAILY FIND ───────────────────────────────────────────────────
+     One object a day, free, and the SAME object for every player. Derived
+     from the day index and a fixed salt and nothing else: no device id, no
+     time of day, no crypto random. Two people comparing notes have to be
+     looking at the same object or a daily is just a free dig.
+     ⛔ CHANGING DAILY_SALT CHANGES EVERY PAST DAILY. It is part of the save
+     format, not a tuning knob.
+     ⛔ It is still UNDER DUST when it arrives. The daily gives everybody the
+     same object, not the same answer. */
+  var DAILY_SALT = 'the-attic-daily-v1';
+  function dailyHash(day) {
+    day = Math.floor(Number(day));
+    if (!isFinite(day)) day = 0;
+    var r = stream(DAILY_SALT + ':' + day, 'daily'), out = '', i;
+    for (i = 0; i < 8; i++) out += ('0000000' + (r(0) >>> 0).toString(16)).slice(-8);
+    return out;
+  }
+
+  /* day 0 of the day index is 1 Jan 1970, a Thursday, so +4 lands the week
+     boundary on a Sunday. The week is what the WANTED object runs on. */
+  function weekIndex(day) {
+    day = Math.floor(Number(day));
+    if (!isFinite(day)) day = 0;
+    return Math.floor((day + 4) / 7);
+  }
+  /* which entry of a pool of n the attic is paying double for this week.
+     Same salt discipline as the daily: everybody hunts the same thing. */
+  function weeklyPick(week, n) {
+    n = Math.floor(Number(n));
+    if (!isFinite(n) || n <= 0) return 0;
+    week = Math.floor(Number(week));
+    if (!isFinite(week)) week = 0;
+    return stream(DAILY_SALT + ':wk:' + week, 'wanted')(n);
+  }
+
   var API = {
     hashToItem: hashToItem, _grade: grade, _class: classOf, _norm: normHash,
+    dailyHash: dailyHash, weekIndex: weekIndex, weeklyPick: weeklyPick,
     ERAS: ERAS, GRADE_ORDER: ['TRASHED', 'PLAYED', 'GOOD', 'FINE', 'NEAR MINT', 'MINT', 'FACTORY SEALED']
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;

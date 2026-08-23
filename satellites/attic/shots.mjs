@@ -111,6 +111,39 @@ must('the day granted 5 tickets', s.tix === '5', s);
 await shot('home_empty');
 await shot('home_empty', true);
 
+// ── 2b. TODAY'S FIND, free, once a day, the same for everybody ───────
+let dy = await p.evaluate(() => window.ATTIC_DEV.daily());
+must('the daily is ready on a fresh device', dy.ready, dy);
+must('the daily hash is 64 hex', /^[0-9a-f]{64}$/.test(dy.hash), dy);
+must('a wanted object is named for the week', !!(dy.wanted && dy.wanted.txt), dy);
+await shot('daily_ready');
+await tapSel('#dailyGo');
+s = await state();
+dy = await p.evaluate(() => window.ATTIC_DEV.daily());
+must('claiming the daily opened a card', /\bon\b/.test(s.card), s);
+must('the daily card is the daily hash', await p.evaluate(h =>
+  (document.querySelector('#card .meta') || {}).textContent.indexOf(h.slice(0, 16)) >= 0, dy.hash), s);
+must('the daily is spent for today', !dy.ready, dy);
+must('the streak started at one', dy.streak === 1, dy);
+must('the daily did not cost a ticket', s.tix === '5', s);
+await shot('daily_claimed');
+console.log('  daily: streak ' + dy.streak + ', wanted "' + dy.wanted.txt + '"');
+// determinism, the LISTDLE way: same day twice matches, a different day differs,
+// and a broken seed has to go red
+const det = await p.evaluate(() => {
+  const A = window.ATTIC;
+  const d = window.ATTIC_DEV.dayIndex();
+  const a1 = A.dailyHash(d), a2 = A.dailyHash(d), b = A.dailyHash(d + 1);
+  const n1 = A.hashToItem(a1).name, n2 = A.hashToItem(a2).name, nb = A.hashToItem(b).name;
+  // the daily must not drift with the time of day, only with the date
+  const noon = A.dailyHash(d + 0.5) === a1;
+  return { same: a1 === a2, sameName: n1 === n2, diff: a1 !== b, diffName: n1 !== nb, noon, n1, nb };
+});
+must('the same date twice is the same object', det.same && det.sameName, det);
+must('a different date is a different object', det.diff && det.diffName, det);
+must('the daily ignores the time of day and turns over at midnight', det.noon, det);
+console.log('  daily today: ' + det.n1 + ' | tomorrow: ' + det.nb);
+
 // ── 3. one honest rummage ────────────────────────────────────────────
 await tapSel('#go');
 s = await state();
