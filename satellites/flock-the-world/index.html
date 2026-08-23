@@ -442,6 +442,7 @@ h1 em{font-style:normal;color:var(--sodium)}
     </div>
     <div id="ctlrow">
       <button class="hudbtn" id="leaveBtn" aria-label="Pause and leave">&#9776;</button>
+      <button class="hudbtn" id="muteBtn" aria-label="Sound on, tap to mute">&#9834;</button>
       <div id="speeds"></div>
     </div>
     <div class="bars">
@@ -739,6 +740,7 @@ function checkCombos(s){
       recompute(s);
       /* first discovery ever, across every session, pays the fleet sunbeam */
       if(noteCombo(c.id)&&window._sbCapEarn)window._sbCapEarn(3,'flock-the-world:synergy');
+      sfx('synergy');
       pushNews(s,`SYNERGY UNLOCKED \u00b7 ${c.n}. ${c.d}`,'good');
       goldBanner(`${c.n}. ${c.d}`);
       if(s.hq)s.pings.push({x:s.hq[0],y:s.hq[1],t:0,kind:'syn'});
@@ -1023,6 +1025,7 @@ function noteBanner(txt,gold){
 function showBannerNow(txt,gold){
   const b=$('breaking');if(!b)return;
   NOTE.bannerUp=true;
+  sfx(gold?'milestone':'breaking');
   b.classList.toggle('gold',!!gold);
   $('breakTxt').textContent=' \u00b7 '+txt;
   b.classList.add('on');
@@ -1143,6 +1146,7 @@ function tick(){
     else if(r.unrest>=25)ns='murmur';
     if(prev==='uprising'&&r.unrest>=70)ns='uprising';
     r.pstate=ns;
+    if(ns!==prev&&ns!=='calm')sfx(ns);
     if(ns!==prev&&H[ns]&&(ns!=='calm'||prev==='peaceful'||prev==='violent'))
       pushNews(s,H[ns](r.name),ns==='uprising'?'crit':ns==='violent'?'crit':ns==='peaceful'?'bad':'');
     if(ns!==prev&&ns!=='calm'){const[ppx,ppy]=anchorOf(id);
@@ -1173,7 +1177,7 @@ function tick(){
       r.coverage=Math.max(0,r.coverage-0.0045);
       r.control=Math.max(0,r.control-0.004);
       if(r.coverage<0.02){
-        r.active=false;r.lost=true;r.pstate='calm';r.unrest=55;s.lostCount++;
+        r.active=false;r.lost=true;r.pstate='calm';r.unrest=55;s.lostCount++;sfx('region_lost');
         {const[xx2,xy2]=anchorOf(id);s.pings.push({x:xx2,y:xy2,t:0,kind:'x'});}
         pushNews(s,H.lost(r.name),'crit');
       }
@@ -1187,7 +1191,7 @@ function tick(){
       const key=r.id+m;
       if(r.coverage>=m-0.001&&!s.milestones.has(key)){
         s.milestones.add(key);s.inf+=2;
-        if(m===.97){pushNews(s,H.full(r.name),'good');s.oversight+=1;}
+        if(m===.97){sfx('region_full');pushNews(s,H.full(r.name),'good');s.oversight+=1;}
       }});
 
     if(r.coverage>0.12){
@@ -1264,6 +1268,7 @@ function adoptRegion(s,n,src,viaRoute){
   setSpreadOrder(s,n.id,anchorOf(src.id));
   s.pulses.push({r:n.id,t:0});
   if(viaRoute)s.dots.push({a:src.id,b:n.id,t:0,type:'air'});
+  sfx('region_join');
   pushNews(s,(viaRoute?H.routeAdopt:H.adopt)(src.name,n.name),'good');
 }
 function spawnBubble(s){
@@ -1313,6 +1318,8 @@ function worldMilestones(s){
 /* ============================ END ============================ */
 function finish(won,why){
   S.over=true;S.won=won;setSpeed(0);
+  sfxBed('bed_hq',false);sfxBed('bed_tension',false);
+  sfx(won?'win':why==='refusal'?'loss_refusal':'loss_coalition');
   lsDel(K_RUN);
   const recs=recordRun(S);
   if(window._sbCapEarn){
@@ -1368,7 +1375,90 @@ function finish(won,why){
      ftw_recs  lifetime records. Counters ADD, bests MAX, synergies union.
    Every read is defensive: a corrupt or half written blob is refused and the
    player starts fresh instead of booting into a broken world. */
-const K_RUN='ftw_run', K_RECS='ftw_recs', K_CO='ftw_co';
+const K_RUN='ftw_run', K_RECS='ftw_recs', K_CO='ftw_co', K_MUTE='ftw_mute';
+/* ======================== SOUND ========================
+   Stephen produces the audio (PLAN-AUG23 section 4 is the cue sheet); this is
+   the wiring, and it is provable before a single file exists. Every cue records
+   `sfx:<id>` whether or not a file is there, so check.js can watch a whole bot
+   run and confirm the game actually reaches each cue. Drop `sfx/<id>.mp3` in and
+   that id starts making noise with no code change.
+   ⛔ Nothing sounds before the first real gesture: iOS refuses audio started
+   without one, and a game that tries anyway logs errors on every tick. */
+const SFX_CUES={
+  ui_tap:'ui', ui_open:'ui', ui_close:'ui', buy_small:'ui', buy_large:'ui',
+  cant_afford:'ui', bubble_cash:'ui', bubble_inf:'ui', spend:'ui',
+  synergy:'world', region_join:'world', region_full:'world', region_lost:'world',
+  murmur:'world', peaceful:'world', violent:'world', uprising:'world',
+  crackdown:'world', crackdown_fail:'world', blackout:'world', agitate:'world',
+  concede:'world', breaking:'world', milestone:'world', doctrine:'world',
+  event_open:'world', win:'world', loss_refusal:'world', loss_coalition:'world',
+  theme_menu:'bed', bed_hq:'bed', bed_tension:'bed'
+};
+const SFX_GAIN={ui:0.5,world:0.7,bed:0.3};
+/* a burst of the same cue in one tick is one sound, not a machine gun */
+const SFX_CD={ui_tap:60, bubble_cash:80, bubble_inf:80, spend:120, breaking:400, milestone:600};
+/* ⛔ Which cues actually have a file on disk. Empty until Stephen delivers, and
+   that is the point: with auto probing, a game with no audio fires one 404 per
+   cue and prints a console error for each. Measured in a real browser: seven
+   cues, seven 404s, in a build that is meant to be silently stubbed. Add an id
+   here the moment `sfx/<id>.mp3` lands and that cue starts playing. */
+const SFX_HAVE=[];
+const SFX={unlocked:false,muted:false,log:[],last:{},el:{},missing:{},beds:{}};
+function sfxUnlock(){
+  if(SFX.unlocked)return;
+  SFX.unlocked=true;
+  SFX.muted=lsGet(K_MUTE)==='1';
+  syncMuteBtn();
+}
+function sfxSetMuted(v){
+  SFX.muted=!!v; lsSet(K_MUTE,v?'1':'0');
+  if(SFX.muted)for(const id in SFX.beds)sfxBed(id,false);
+  syncMuteBtn();
+}
+function syncMuteBtn(){
+  const b=$('muteBtn');if(!b)return;
+  b.textContent=SFX.muted?'\u2715':'\u266a';
+  b.setAttribute('aria-label',SFX.muted?'Sound off, tap to turn on':'Sound on, tap to mute');
+}
+function sfx(id){
+  if(!SFX_CUES[id]){SFX.log.push('sfx:?'+id);return;}   /* an unknown id is a typo, keep it loud */
+  if(!SFX.unlocked)return;
+  const now=Date.now(), cd=SFX_CD[id]||90;
+  if(SFX.last[id]&&now-SFX.last[id]<cd)return;
+  SFX.last[id]=now;
+  SFX.log.push('sfx:'+id); if(SFX.log.length>400)SFX.log.shift();
+  if(SFX.muted)return;
+  sfxPlay(id,false);
+}
+function sfxBed(id,on){
+  if(!SFX_CUES[id])return;
+  if(on){
+    if(SFX.beds[id])return;
+    SFX.beds[id]=1;
+    if(!SFX.unlocked)return;
+    SFX.log.push('sfx:'+id);
+    if(!SFX.muted)sfxPlay(id,true);
+  }else{
+    delete SFX.beds[id];
+    const a=SFX.el[id];if(a){try{a.pause();}catch(e){}}
+  }
+}
+/* the silent stub: with no file present this does nothing at all, and the log
+   above is the only evidence the cue fired. That is deliberate. */
+function sfxPlay(id,loop){
+  if(SFX_HAVE.indexOf(id)<0)return;   /* no file shipped for this cue yet: stay silent, the log is the evidence */
+  if(SFX.missing[id])return;
+  let a=SFX.el[id];
+  if(!a){
+    try{a=new Audio('sfx/'+id+'.mp3');}catch(e){SFX.missing[id]=1;return;}
+    a.addEventListener('error',function(){SFX.missing[id]=1;});
+    a.volume=SFX_GAIN[SFX_CUES[id]]||0.6;
+    if(loop)a.loop=true;
+    SFX.el[id]=a;
+  }
+  try{ if(!loop)a.currentTime=0; const q=a.play(); if(q&&q.catch)q.catch(function(){SFX.missing[id]=1;}); }
+  catch(e){ SFX.missing[id]=1; }
+}
 function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
 function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
 function lsDel(k){try{localStorage.removeItem(k);}catch(e){}}
@@ -1786,6 +1876,8 @@ function paintHud(){
      its rendered height. Every map overlay is anchored to that height, so a
      silent re-wrap slides the briefing card over this very line. Re-sync on any
      real height change, not just on resize. */
+  /* the tension bed rises with the enemy meter and drops back out again */
+  sfxBed('bed_tension',s.oversight>70&&!s.over);
   const hh=$('hud')?$('hud').offsetHeight:0;
   if(hh&&hh!==_hudH){_hudH=hh;syncOverlayTops();}
   const covered=REGIONS.reduce((a,r)=>a+s.regions[r.id].pop*s.regions[r.id].coverage,0);
@@ -1928,14 +2020,14 @@ function openSheet(tab){
      cost you what is happening on the map. Speed restores on close. */
   if(S._pausePrev==null&&S.speed>0){S._pausePrev=S.speed;setSpeed(0);}
   hideRpop();
-  S.sheet=tab;$('sheet').classList.add('on');
+  S.sheet=tab;$('sheet').classList.add('on');sfx('ui_open');
   document.querySelectorAll('.nb').forEach(b=>b.classList.toggle('hot',b.dataset.tab===tab));
   if(tab==='log')S.unread=0;
   renderSheet(tab);
   $('shBody').scrollTop=0; /* fresh tab starts at its top, not the last tab's scroll */
   paintHud();
 }
-function closeSheet(){S&&(S.sheet=null);$('sheet').classList.remove('on');
+function closeSheet(){S&&(S.sheet=null);$('sheet').classList.remove('on');sfx('ui_close');
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('hot'));
   if(S&&S._pausePrev!=null){const p=S._pausePrev;S._pausePrev=null;if(!S.over)setSpeed(p);}
   paintHud();}
@@ -2126,7 +2218,7 @@ function doAction(act,rid){
   if((act==='agitate'||act==='crack')&&r.cd>0)return;
   const pAg=aPrice(80,4),pCr=aPrice(120,6),pBl=aPrice(100,5);
   if(act==='agitate'&&s.has('agit')&&s.cash>=pAg){
-    s.cash-=pAg;r.cd=20;
+    s.cash-=pAg;r.cd=20;sfx('spend');sfx('agitate');
     shToast(`<span class="neg">Spent $${pAg.toLocaleString()}</span> · provocateurs deployed to ${r.name}`);
     flashCash();
     /* organized civilians film everything: provocateurs get unmasked */
@@ -2149,6 +2241,7 @@ function doAction(act,rid){
     const backRisk=(s.doctrine==='fist'?CFG.crackBackfire/2:CFG.crackBackfire)
       +(r._cBack||0)+r.media*r.resist/100*0.20;
     const backfire=Math.random()<backRisk;
+    sfx('spend');sfx(backfire?'crackdown_fail':'crackdown');
     if(backfire){
       r.unrest=clamp(r.unrest+22,0,100);s.oversight+=3;
       pushNews(s,H.crackfail(r.name),'crit');
@@ -2164,6 +2257,7 @@ function doAction(act,rid){
     }
   }
   else if(act==='blackout'&&s.has('blackout')&&s.cash>=pBl&&!(r.bcd>0)){
+    sfx('spend');sfx('blackout');
     s.cash-=pBl;
     const cut=10*(1.4-r.media*0.8)*(r._cBlack||1);
     r.suspicion=clamp(r.suspicion-cut,0,100);
@@ -2176,6 +2270,7 @@ function doAction(act,rid){
     pushNews(s,H.blackout(r.name),'good');
   }
   else if(act==='concede'){
+    sfx('concede');
     r.unrest=clamp(r.unrest-15,0,100);r.suspicion=clamp(r.suspicion-8,0,100);
     r.resist=clamp(r.resist-6,0,100);r.grudge=Math.max(0,r.grudge-8);
     r.control=Math.max(0,r.control-0.05);r.compliance=clamp(r.compliance-0.02,0,.98);
@@ -2188,6 +2283,7 @@ function doAction(act,rid){
 /* ============================ MODALS ============================ */
 function showEvent(ev){
   if(!noteModal(()=>showEvent(ev)))return;
+  sfx('event_open');
   const prev=S.speed;setSpeed(0);
   /* event price tags scale with daily net income, so "$250 to Klein" is a
      real decision on day 400 the way it was on day 40 */
@@ -2221,7 +2317,7 @@ function doctrineModal(){
       <div class="oc">Fear is cheaper than marketing. +Control depth, +militarization, crackdowns rarely backfire. Unrest runs hotter.</div></button>`;
   noteOpenModal();
   c.querySelectorAll('[data-doc]').forEach(b=>b.onclick=()=>{
-    S.doctrine=b.dataset.doc;recompute(S);
+    S.doctrine=b.dataset.doc;sfx('doctrine');recompute(S);
     pushNews(S,S.doctrine==='glove'
       ?'Doctrine adopted: The Velvet Glove. New tagline tests well: "Always There For You."'
       :'Doctrine adopted: The Iron Fist. New tagline tests adequately: "Always There."','good');
@@ -2268,8 +2364,9 @@ function buyNode(id){
   const n=NBI[id];if(!n||S.owned.has(id))return;
   if(nodeState(n)!=='avail')return;
   const c=nodeCost(n);
-  if(S.inf<c){flashCur();return;}
+  if(S.inf<c){flashCur();sfx('cant_afford');return;}
   S.inf-=c;S.owned.add(id);recompute(S);
+  sfx(c>=20?'buy_large':'buy_small');
   pushNews(S,`${n.n} activated across the network.`,'good');
   if(n.buyFx)n.buyFx(S);
   checkCombos(S);
@@ -2283,8 +2380,8 @@ function collectAt(sx,sy){
   for(let i=0;i<S.bubbles.length;i++){
     const b=S.bubbles[i];
     if(Math.hypot(b.x-wx,b.y-wy)<hit){
-      if(b.k==='cash'){S.cash+=b.v;pushNews(S,`Contract signed. +$${b.v}.`,'good');}
-      else if(b.k==='inf'){S.inf+=b.v;pushNews(S,`Board briefing lands. +${b.v} influence.`,'good');}
+      if(b.k==='cash'){S.cash+=b.v;sfx('bubble_cash');pushNews(S,`Contract signed. +$${b.v}.`,'good');}
+      else if(b.k==='inf'){S.inf+=b.v;sfx('bubble_inf');pushNews(S,`Board briefing lands. +${b.v} influence.`,'good');}
       else{S.inf+=1;S.oversight=Math.max(0,S.oversight-0.6);
         pushNews(S,'Leak intercepted before publication. +1 influence.','good');}
       S.bubbles.splice(i,1);paintHud();return true;
@@ -2424,6 +2521,7 @@ function chosenCo(){
   const v=e&&e.value?e.value.trim().slice(0,24):'';
   return v||coPlaceholder;
 }
+function menuBeds(){sfxBed('bed_hq',false);sfxBed('bed_tension',false);sfxBed('theme_menu',true);}
 function initMenu(){
   $('modes').innerHTML=Object.keys(MODES).map(k=>{const m=MODES[k];
     return `<button class="modecard ${k===chosenMode?'sel':''}" data-m="${k}">
@@ -2506,6 +2604,7 @@ function bootGame(resumed){
       if(innerWidth>innerHeight)$('rotHint').classList.remove('on');});
   }
   /* start fully zoomed out: the whole map on screen (Stephen 2026-08-20) */
+  sfxBed('theme_menu',false);sfxBed('bed_hq',true);
   gv.inited=false;gv.layout();
   drawWorld(gv,S,null);
   syncOverlayTops();
@@ -2555,7 +2654,7 @@ function leaveModal(){
     if(k==='back'){setSpeed(prev||1);return;}
     clearInterval(tickTimer);tickTimer=null;clearInterval(tickerTimer);cancelAnimationFrame(raf);
     if(k==='exit'){if(window.SWS_EXIT)window.SWS_EXIT();return;}
-    S=null;show('menu');initMenu();refreshMenuExtras();
+    S=null;show('menu');menuBeds();initMenu();refreshMenuExtras();
   });
 }
 function refreshMenuExtras(){
@@ -2589,7 +2688,7 @@ function shBodyClick(e){
       S.cash-=cost;
       if(r.lost){r.lost=false;S.lostCount=Math.max(0,S.lostCount-1);r.unrest=45;}
       r.active=true;r.coverage=0.005;
-      S.activeCount++;
+      S.activeCount++;sfx('region_join');
       setSpreadOrder(S,r.id,anchorOf(r.id));
       S.pulses.push({r:r.id,t:0});
       shToast(`<span class="neg">Spent $${cost.toLocaleString()}</span> · ${r.name} signed. Coverage starts growing there now.`);
@@ -2598,6 +2697,13 @@ function shBodyClick(e){
       renderSheet('reg');paintHud();drawWorld(gv,S,null);
     }}
 }
+/* the first real gesture unlocks audio, once, for the whole session */
+document.addEventListener('pointerdown',function(){sfxUnlock();if(!S)menuBeds();},{once:true});
+document.addEventListener('click',function(e){
+  const b=e.target.closest('button,.opt,.modecard,.diffbtn,.node,.rcard .act,.buy');
+  if(b&&!b.disabled)sfx('ui_tap');
+},true);
+$('muteBtn').onclick=()=>{sfxSetMuted(!SFX.muted);};
 $('startBtn').onclick=()=>{
   if(peekRun()){
     const c=$('modalCard');
