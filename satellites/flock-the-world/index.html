@@ -192,6 +192,23 @@ h1 em{font-style:normal;color:var(--sodium)}
 #guide.on{display:block}
 #guide b{color:var(--sodium)}
 #guide .gskip{margin-top:6px;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+/* region popover: Plague Inc plays by poking the map, not by opening a menu.
+   Anchored to the tap, never pauses the sim, closes on a tap that misses. */
+#rpop{position:absolute;z-index:6;width:min(268px,72vw);padding:9px 10px;border-radius:11px;
+  background:#0a1018f7;border:1px solid var(--sodium);box-shadow:0 8px 26px #000a;
+  font-size:11.5px;line-height:1.4;color:var(--ice);display:none}
+#rpop.on{display:block}
+#rpop .rpH{font-size:12px;color:var(--paper);font-weight:700;margin-bottom:1px}
+#rpop .rpS{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:6px}
+#rpop .rpN{display:flex;flex-direction:column;gap:2px;margin-bottom:7px}
+#rpop .rpN div{display:flex;justify-content:space-between;gap:8px}
+#rpop .rpN .k{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+#rpop .rpN .v{font-variant-numeric:tabular-nums;font-weight:700}
+#rpop .hint{font-size:10px;color:var(--dim)}
+#rpop .acts{display:flex;flex-wrap:wrap;gap:5px}
+#rpop .rpX{position:absolute;top:2px;right:2px;width:34px;height:34px;border:0;background:none;
+  color:var(--dim);font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center}
+#rpop .act,#rpop .buy{min-height:34px}
 #ctip{position:absolute;left:8px;right:8px;bottom:34px;z-index:5;padding:9px 12px;border-radius:11px;
   background:#0a1018f0;border:1px solid var(--line);font-size:11.5px;line-height:1.45;color:var(--ice);
   display:none;align-items:center;gap:10px}
@@ -402,6 +419,7 @@ h1 em{font-style:normal;color:var(--sodium)}
   </div>
   <div id="mapWrap">
     <canvas id="map"></canvas><canvas id="fx"></canvas><div class="crt"></div>
+    <div id="rpop"></div>
     <div id="pill"><span class="rec"></span><span class="mono" id="pillTxt">LIVE</span></div>
     <div class="zoomui"><button class="zb" data-z="in">IN</button><button class="zb" data-z="out">OUT</button><button class="zb" data-z="fit">FIT</button></div>
     <div id="breaking"><b>BREAKING</b><span id="breakTxt"></span></div>
@@ -1759,6 +1777,7 @@ function openSheet(tab){
   /* menus pause the sim (Stephen 2026-08-20): reading a tree should never
      cost you what is happening on the map. Speed restores on close. */
   if(S._pausePrev==null&&S.speed>0){S._pausePrev=S.speed;setSpeed(0);}
+  hideRpop();
   S.sheet=tab;$('sheet').classList.add('on');
   document.querySelectorAll('.nb').forEach(b=>b.classList.toggle('hot',b.dataset.tab===tab));
   if(tab==='log')S.unread=0;
@@ -1888,27 +1907,10 @@ function worldHTML(){
      ${s.cash<lbCost||s.lbCd>0?'disabled':''}>Lobbying blitz · $${lbCost.toLocaleString()} buys 8 influence${s.lbCd>0?` (${s.lbCd}d)`:''}</button>`;
   h+=REGIONS.map(r=>{
     const x=s.regions[r.id];
-    const cost=entryCost(x);
-    const pAg=aPrice(80,4),pCr=aPrice(120,6),pBl=aPrice(100,5);
     const bar=(v,c)=>`<div class="t"><div class="f" style="width:${(v*100).toFixed(0)}%;background:${c}"></div></div>`;
     const chip=`<span class="chip ${x.pstate}">${PSTATE_LABEL[x.pstate]}</span>`;
     const bchip=(x.black>0)?`<span class="chip fx">News dark ${x.black}d</span>`:'';
-    let acts='';
-    if(x.active){
-      acts='<div class="acts">';
-      const cd=x.cd>0?` (${x.cd}d)`:'';
-      if(s.has('agit'))acts+=`<button class="act warn" data-act="agitate" data-r="${r.id}"
-        title="Send provocateurs into a march. Unrest jumps, a peaceful march turns violent."
-        ${s.cash<pAg||x.pstate==='uprising'||x.cd>0?'disabled':''}>Agitate $${pAg.toLocaleString()}${cd}</button>`;
-      if(s.has('charter'))acts+=`<button class="act danger" data-act="crack" data-r="${r.id}"
-        title="Armored response. Unrest falls, compliance and militarization rise. Can backfire, always remembered."
-        ${s.cash<pCr||x.unrest<30||x.cd>0?'disabled':''}>Crackdown $${pCr.toLocaleString()}${cd}</button>`;
-      if(s.has('blackout'))acts+=`<button class="act" data-act="blackout" data-r="${r.id}"
-        title="Buy the news cycle. Suspicion drops and builds slower for two weeks. Weak where the press is free."
-        ${s.cash<pBl||x.bcd>0?'disabled':''}>Blackout $${pBl.toLocaleString()}${x.bcd>0?` (${x.bcd}d)`:''}</button>`;
-      acts+=`<button class="act" data-act="concede" data-r="${r.id}"
-        title="Free. Unrest, suspicion and organizing all ease. You give back some control.">Concede</button></div>`;
-    }
+    const acts=regionActionsHTML(r.id);
     return `<div class="rcard ${x.active?'':x.lost?'lost':'idle'}">
       <div class="rtop"><h3>${r.name}</h3>${x.active?chip:x.lost?'<span class="chip uprising">EXPELLED</span>':''}${bchip}
         <span class="pop mono">${r.pop}M</span></div>
@@ -1925,11 +1927,39 @@ function worldHTML(){
           copwatch:'cop-watch',crypto:'encryption',samizdat:'free press',jam:'lens brigades'};
         return `<span class="cchip">${NM[id]||id}</span>`;}).join('')+'</div>':''}
       ${acts}
-      ${x.active?'':`<button class="buy" data-enter="${r.id}" ${s.cash<cost?'disabled':''}>
-        ${x.lost?'Re-enter':'Enter'} market · $${cost.toLocaleString()}</button>`}
+      ${regionEnterHTML(r.id)}
     </div>`;
   }).join('');
   return h;
+}
+/* ⛔ ONE source for these buttons. The World tab and the map popover both call
+   these, so a price can never drift between the two surfaces: they are the same
+   string. check.js compares the two renders for every region to keep it that way. */
+function regionActionsHTML(rid){
+  const s=S,x=s.regions[rid];
+  if(!x||!x.active)return '';
+  const pAg=aPrice(80,4),pCr=aPrice(120,6),pBl=aPrice(100,5);
+  const cd=x.cd>0?` (${x.cd}d)`:'';
+  let acts='<div class="acts">';
+  if(s.has('agit'))acts+=`<button class="act warn" data-act="agitate" data-r="${rid}"
+        title="Send provocateurs into a march. Unrest jumps, a peaceful march turns violent."
+        ${s.cash<pAg||x.pstate==='uprising'||x.cd>0?'disabled':''}>Agitate $${pAg.toLocaleString()}${cd}</button>`;
+  if(s.has('charter'))acts+=`<button class="act danger" data-act="crack" data-r="${rid}"
+        title="Armored response. Unrest falls, compliance and militarization rise. Can backfire, always remembered."
+        ${s.cash<pCr||x.unrest<30||x.cd>0?'disabled':''}>Crackdown $${pCr.toLocaleString()}${cd}</button>`;
+  if(s.has('blackout'))acts+=`<button class="act" data-act="blackout" data-r="${rid}"
+        title="Buy the news cycle. Suspicion drops and builds slower for two weeks. Weak where the press is free."
+        ${s.cash<pBl||x.bcd>0?'disabled':''}>Blackout $${pBl.toLocaleString()}${x.bcd>0?` (${x.bcd}d)`:''}</button>`;
+  acts+=`<button class="act" data-act="concede" data-r="${rid}"
+        title="Free. Unrest, suspicion and organizing all ease. You give back some control.">Concede</button></div>`;
+  return acts;
+}
+function regionEnterHTML(rid){
+  const s=S,x=s.regions[rid];
+  if(!x||x.active)return '';
+  const cost=entryCost(x);
+  return `<button class="buy" data-enter="${rid}" ${s.cash<cost?'disabled':''}>
+        ${x.lost?'Re-enter':'Enter'} market · $${cost.toLocaleString()}</button>`;
 }
 function entryCost(x){
   const base=Math.round(70+x.pop*0.22+x.liberty*320+x.wealth*90);
@@ -2111,6 +2141,60 @@ function collectAt(sx,sy){
 }
 
 let ctipTO=null;
+/* ---- region popover ----------------------------------------------------
+   Stephen/Penny brief: "this is how Plague Inc plays, you poke the map, not a
+   menu". Absorbs what the old country tip said (country, HQ, rollout status,
+   how an unsigned region signs) and adds the people numbers and the region's
+   own actions. It does NOT pause: openSheet() pauses on purpose, this must not,
+   because the point is watching the map keep moving while you act on it. */
+let rpopRid=null,rpopCn='';
+function rpopHTML(rid,cn){
+  const s=S,x=s.regions[rid];if(!x)return '';
+  const w=x.pop*x.coverage*PEOPLE,cm=x.pop*x.control*PEOPLE,og=x.pop*(x.resist/100)*PEOPLE;
+  const chip=x.lost?'<span class="chip uprising">EXPELLED</span>'
+    :x.active?`<span class="chip ${x.pstate}">${PSTATE_LABEL[x.pstate]}</span>`
+    :'<span class="chip">Unsigned</span>';
+  const hq=(cn&&S.hqName===cn)?' \u00b7 HQ':'';
+  let h=`<button class="rpX" data-rpclose="1" aria-label="Close">\u2715</button>`
+    +`<div class="rpH">${cn?cn+' \u00b7 ':''}${x.name}${hq}</div><div class="rpS">${chip}</div>`;
+  h+=`<div class="rpN">
+    <div><span class="k">Watched</span><span class="v">${fmtShort(w)} of ${fmtShort(x.pop*PEOPLE)}</span></div>
+    <div><span class="k">Compliant</span><span class="v">${fmtShort(cm)}</span></div>
+    <div><span class="k">Organized</span><span class="v" style="color:#c792ff">${fmtShort(og)}</span></div>
+  </div>`;
+  const acts=regionActionsHTML(rid),ent=regionEnterHTML(rid);
+  if(acts||ent)h+=acts+ent;
+  if(!x.active&&!x.lost)h+='<div class="hint">Enter it here, or grow a neighbour until it signs on its own.</div>';
+  return h;
+}
+function refreshRpop(){
+  if(!rpopRid)return;
+  const e=$('rpop');if(!e||!e.classList.contains('on'))return;
+  e.innerHTML=rpopHTML(rpopRid,rpopCn);
+}
+function showRpop(rid,cn,sx,sy){
+  const e=$('rpop'),wrap=$('mapWrap');if(!e||!wrap)return;
+  /* tapping the region you already have open closes it. regionAtPoint falls
+     back to the nearest anchor within a wide tolerance for coastal taps, so an
+     "empty ocean" tap almost always still resolves to a region: without this
+     toggle the card had no reliable dismiss on a touchscreen. Found by tapping
+     the ocean in a real browser and watching it stay open. */
+  if(rpopRid===rid&&e.classList.contains('on')){hideRpop();return;}
+  rpopRid=rid;rpopCn=cn||'';
+  e.innerHTML=rpopHTML(rid,rpopCn);
+  e.classList.add('on');
+  /* anchor to the tap, then keep the whole card on screen: below the HUD,
+     above the wire, inside both edges. */
+  const wb=wrap.getBoundingClientRect(),cb=e.getBoundingClientRect();
+  const top=(_hudH||0)+10, bot=wb.height-cb.height-8;
+  let x=sx+12,y=sy+12;
+  if(x+cb.width>wb.width-8)x=sx-cb.width-12;
+  x=Math.max(8,Math.min(x,Math.max(8,wb.width-cb.width-8)));
+  y=Math.max(top,Math.min(y,Math.max(top,bot)));
+  e.style.left=x+'px';e.style.top=y+'px';
+}
+function hideRpop(){rpopRid=null;const e=$('rpop');if(e)e.classList.remove('on');}
+
 function showCtip(c){
   const r=S.regions[c.r];
   const rank=(r.cOrder&&r.cOrder[c.idx]!==undefined)?r.cOrder[c.idx]:0;
@@ -2227,11 +2311,26 @@ function bootGame(resumed){
     gv=makeView(wrap,$('map'),$('fx'),(sx,sy)=>{
       if(collectAt(sx,sy))return;
       const[wx,wy]=gv.toWorld(sx,sy);
-      const c=countryAtPoint(wx,wy);
-      if(c)showCtip(c);else hideCtip();
+      /* makeView only calls this when the pointer did not drag (7px threshold),
+         so panning the map never opens the card. */
+      const rid=regionAtPoint(wx,wy);
+      if(rid)showRpop(rid,(countryAtPoint(wx,wy)||{}).n,sx,sy);else hideRpop();
     });
     window._dbgGv=gv; /* probe/debug handle */
     gv.insetEl=$('hud');
+  /* dismiss on drag: makeView swallows the tap once the pointer moves, so the
+     card would otherwise sit there through a pan. Same 7px threshold makeView
+     uses, and taps that start inside the card are left alone. */
+  (function(){
+    let dx0=0,dy0=0,down=false;
+    wrap.addEventListener('pointerdown',e=>{if(e.target.closest('#rpop'))return;down=true;dx0=e.clientX;dy0=e.clientY;});
+    wrap.addEventListener('pointermove',e=>{
+      if(!down)return;
+      if(Math.hypot(e.clientX-dx0,e.clientY-dy0)>7){down=false;hideRpop();}
+    });
+    wrap.addEventListener('pointerup',()=>{down=false;});
+    wrap.addEventListener('pointercancel',()=>{down=false;});
+  })();
     bindZoomUi(wrap,gv,()=>drawWorld(gv,S,null));
     window.addEventListener('resize',()=>{gv.layout();drawWorld(gv,S,null);syncOverlayTops();
       if(innerWidth>innerHeight)$('rotHint').classList.remove('on');});
@@ -2249,6 +2348,13 @@ function bootGame(resumed){
   $('shClose').onclick=closeSheet;
   $('sheet').onclick=e=>{if(e.target.id==='sheet')closeSheet();};
   $('shBody').addEventListener('click',shBodyClick);
+  /* the same delegated handler, so an action costs and does the same thing from
+     the map as it does from the World tab. Then repaint what the action moved. */
+  $('rpop').addEventListener('click',e=>{
+    if(e.target.closest('[data-rpclose]')){hideRpop();return;}
+    shBodyClick(e);
+    refreshRpop();paintHud();if(gv)drawWorld(gv,S,null);
+  });
   initTicker();
   $('guideSkip').onclick=endGuide;
   hideCtip();

@@ -350,6 +350,75 @@ if (C) {
     ok('the ledger sheet names all six totals', ['Watched', 'Never watched', 'Compliant', 'Organized', 'In the streets', 'Expelled you'].every(k => lh.indexOf('>' + k + '<') >= 0));
   }
 
+  /* ------------------------------------------- F2: map tap region popover */
+  group('map tap popover');
+  {
+    const c8 = makeCtx();
+    /* a state where every action button actually renders: the region is live,
+       unrest is high enough for a crackdown, and the gating nodes are owned. */
+    vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');" +
+      "['agit','charter','blackout'].forEach(n=>S.owned.add(n));recompute(S);" +
+      "for(const k of Object.keys(S.regions)){const r=S.regions[k];r.active=true;r.coverage=0.4;r.control=0.2;r.unrest=55;}" +
+      "S.regions.SEA.active=false;S.regions.SEA.coverage=0;" +
+      "S.regions.EE.active=false;S.regions.EE.lost=true;S.regions.EE.coverage=0.3;" +
+      "S.cash=999999;popTotals(S);", c8);
+    const REG = vm.runInContext('REGIONS', c8);
+
+    let missing = [], noName = [];
+    for (const r of REG) {
+      c8.__rid = r.id;
+      const h = vm.runInContext('rpopHTML(__rid,null)', c8);
+      if (!h) missing.push(r.id);
+      else if (h.indexOf(r.name) < 0) noName.push(r.id);
+    }
+    ok('the popover renders for every region id', missing.length === 0 && noName.length === 0,
+      'empty=' + JSON.stringify(missing) + ' unnamed=' + JSON.stringify(noName));
+
+    /* the prices a player sees on the map must be the prices the World tab
+       charges. Both surfaces call regionActionsHTML/regionEnterHTML, and this
+       compares the two rendered strings region by region to keep it true. */
+    const world = vm.runInContext('worldHTML()', c8);
+    const priceOf = (html, rid) => {
+      const out = {};
+      const re = new RegExp('data-act="([a-z]+)" data-r="' + rid + '"[\\s\\S]*?>([^<]*)<', 'g');
+      let m; while ((m = re.exec(html))) out[m[1]] = m[2].trim();
+      const en = new RegExp('data-enter="' + rid + '"[\\s\\S]*?>([^<]*)<').exec(html);
+      if (en) out.enter = en[1].trim().replace(/\s+/g, ' ');
+      return out;
+    };
+    let drift = [], sawBtns = 0, sawEnter = 0;
+    for (const r of REG) {
+      c8.__rid = r.id;
+      const pop = priceOf(vm.runInContext('rpopHTML(__rid,null)', c8), r.id);
+      const wor = priceOf(world, r.id);
+      const keys = new Set([...Object.keys(pop), ...Object.keys(wor)]);
+      sawBtns += Object.keys(pop).filter(k => k !== 'enter').length;
+      if (pop.enter) sawEnter++;
+      for (const k of keys) if (pop[k] !== wor[k]) drift.push(r.id + '.' + k + ' map=' + pop[k] + ' world=' + wor[k]);
+    }
+    ok('the fixture rendered real action buttons to compare', sawBtns >= 40 && sawEnter >= 1,
+      'buttons=' + sawBtns + ' enter=' + sawEnter);
+    ok('every map action shows the World tab price, to the character', drift.length === 0,
+      drift.slice(0, 3).join(' | '));
+
+    /* an action from the map is the same call the World tab makes */
+    const before = vm.runInContext('S.cash', c8);
+    c8.__ev = { target: { closest: sel => (sel === '[data-act]' ? { dataset: { act: 'crack', r: 'NA' } } : null) } };
+    vm.runInContext('shBodyClick(__ev)', c8);
+    ok('a crackdown fired through the shared handler spends the money',
+      vm.runInContext('S.cash', c8) < before, 'cash ' + before + ' -> ' + vm.runInContext('S.cash', c8));
+
+    /* the popover must not pause: openSheet() pauses on purpose, this must not */
+    const showSrc = /function showRpop\([\s\S]*?\n\}/.exec(GAME)[0];
+    ok('opening the popover never pauses the sim',
+      !/setSpeed|openSheet|_pausePrev/.test(showSrc));
+    /* and a drag must not open it: makeView only dispatches onTap when the
+       pointer stayed put */
+    const tapDispatch = /if\(p&&!moved&&ptrs\.size===0&&onTap\)/.test(GAME);
+    ok('a dragged pointer never dispatches the map tap', tapDispatch);
+    ok('the map tap asks for a region, not just a country', /const rid=regionAtPoint\(wx,wy\);/.test(GAME));
+  }
+
   /* persistence */
   group('persistence');
   const hasSave = /LW_FTW|ftw_/.test(GAME);
