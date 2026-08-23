@@ -1,6 +1,9 @@
 /* ════════════════════════════════════════════════════════════════════
- * Sky Wolf Studios — Shared dice library (copy from index.html
- * lines 65911-66010). Provides window.LW_DICE + window._LW_tumble +
+ * Sky Wolf Studio — Shared dice library (copy from index.html, located by the
+ * `window.LW_DICE={` marker through the end of `window._LW_tumble`, NOT by a
+ * line number: the old hardcoded range rotted as index.html grew and the drift
+ * watchdog spent a long time comparing unrelated code). Provides
+ * window.LW_DICE + window._LW_tumble +
  * window._LW_dicePicker + window._LW_diceSelect. Required by the dice
  * games (farkle, yahtzee, doubleshutter) when loaded standalone.
  *

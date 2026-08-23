@@ -41,10 +41,18 @@ var INLINE_GAMES = [
   { id: 'backgammon',    fn: 'GBG', approxStart: 68766 }
 ];
 
-// The shared LW_DICE / _LW_tumble block (was at lines 65911-66010
-// when last extracted). The dice games (farkle, yahtzee, doubleshutter)
-// depend on this; if it drifts, _dice_lib.js needs regenerating too.
-var DICE_BLOCK_LINES = '65911-66010';
+// The shared LW_DICE / _LW_tumble block. The dice games (farkle, yahtzee,
+// doubleshutter) depend on it; if it drifts, _dice_lib.js needs regenerating.
+//
+// ⛔⛔ This was a hardcoded line range, '65911-66010', and it rotted. index.html
+// grew about 207 lines, the range slid off the dice code onto a puzzle grid
+// rotation and a chess cloneBoard, and this watchdog reported "_dice_lib
+// DRIFTED" about code that has nothing to do with dice. Its printed remedy
+// would then have re-baselined the wrong hundred lines and gone green forever.
+// Find it by marker, and throw rather than guess if the markers are not there:
+// a wrong comparison is worse than none, because it looks like a passing test.
+var DICE_START = 'window.LW_DICE={';
+var DICE_LAST  = 'window._LW_tumble=function';   // the LAST member of the block
 
 function sha256(s){ return crypto.createHash('sha256').update(s, 'utf8').digest('hex'); }
 
@@ -105,12 +113,42 @@ function extractBody(src, game){
   };
 }
 
+function findBlockEnd(text, startIdx){
+  var i = startIdx, depth = 0;
+  while (i < text.length && text[i] !== '{') i++;
+  if (i >= text.length) return -1;
+  depth = 1; i++;
+  var inS=false,inD=false,inT=false,inL=false,inB=false;
+  while (i < text.length && depth > 0) {
+    var ch = text[i], nx = text[i+1];
+    if (inL){ if (ch === '\n') inL = false; i++; continue; }
+    if (inB){ if (ch === '*' && nx === '/'){ inB=false; i+=2; continue; } i++; continue; }
+    if (inS){ if (ch === '\\'){ i+=2; continue; } if (ch === "'") inS=false; i++; continue; }
+    if (inD){ if (ch === '\\'){ i+=2; continue; } if (ch === '"') inD=false; i++; continue; }
+    if (inT){ if (ch === '\\'){ i+=2; continue; } if (ch === '`') inT=false; i++; continue; }
+    if (ch === '/' && nx === '/'){ inL=true; i+=2; continue; }
+    if (ch === '/' && nx === '*'){ inB=true; i+=2; continue; }
+    if (ch === "'"){ inS=true; i++; continue; }
+    if (ch === '"'){ inD=true; i++; continue; }
+    if (ch === '`'){ inT=true; i++; continue; }
+    if (ch === '{'){ depth++; i++; continue; }
+    if (ch === '}'){ depth--; i++; if (depth === 0) return i; continue; }
+    i++;
+  }
+  return -1;
+}
 function extractDiceBlock(src){
-  var lines = src.split('\n');
-  var parts = DICE_BLOCK_LINES.split('-');
-  var startLn = parseInt(parts[0], 10);
-  var endLn = parseInt(parts[1], 10);
-  return lines.slice(startLn - 1, endLn).join('\n');
+  var a = src.indexOf(DICE_START);
+  if (a < 0 || src.indexOf(DICE_START, a + 1) >= 0)
+    throw new Error('dice lib: expected exactly one "' + DICE_START + '" in index.html');
+  var b = src.indexOf(DICE_LAST);
+  if (b < 0 || src.indexOf(DICE_LAST, b + 1) >= 0)
+    throw new Error('dice lib: expected exactly one "' + DICE_LAST + '" in index.html');
+  if (b < a) throw new Error('dice lib: ' + DICE_LAST + ' appears before ' + DICE_START);
+  var end = findBlockEnd(src, b);
+  if (end < 0) throw new Error('dice lib: could not find the end of ' + DICE_LAST);
+  if (src.charAt(end) === ';') end++;
+  return src.slice(a, end);
 }
 
 // ─── Run ─────────────────────────────────────────────────────────────────

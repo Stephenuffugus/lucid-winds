@@ -188,18 +188,49 @@ INLINE_GAMES.forEach(function(game){
   console.log('  ✓ ' + game.id + '  (lines ' + ex.startLine + '-' + ex.endLine + ', ' + modSrc.length + ' bytes) → ' + 'games/_inline/' + game.id + '.js');
 });
 
-// Hash the LW_DICE / _LW_tumble block too (lines 65911-66010 in current
-// state — the dice games depend on it via games/_inline/_dice_lib.js).
+// Hash the shared dice library too: the dice games depend on it via
+// games/_inline/_dice_lib.js.
+//
+// ⛔⛔ THIS USED TO BE A HARDCODED LINE WINDOW, allLines.slice(65910, 66010),
+// and it rotted exactly the way you would expect. index.html grew by about 207
+// lines, the window slid off the dice code entirely and came to rest on a
+// puzzle grid rotation and a chess cloneBoard, and the drift watchdog spent
+// who knows how long reporting "_dice_lib DRIFTED" about code that has nothing
+// to do with dice. Worse, the remedy it printed, re-running this script, would
+// have re-baselined the WRONG hundred lines and gone green forever.
+//
+// So: find it by marker, the same way the ten games are found, and refuse to
+// guess if the markers are not exactly where they should be. A wrong hash is
+// worse than no hash, because a wrong hash looks like a passing test.
+var DICE_START = 'window.LW_DICE={';
+var DICE_LAST  = 'window._LW_tumble=function';   // the LAST member of the block
 var diceBlock;
-try {
-  var allLines = src.split('\n');
-  diceBlock = allLines.slice(65910, 66010).join('\n');
+(function () {
+  var startIdx = src.indexOf(DICE_START);
+  if (startIdx < 0 || src.indexOf(DICE_START, startIdx + 1) >= 0)
+    throw new Error('dice lib: expected exactly one "' + DICE_START + '" in index.html');
+  var lastIdx = src.indexOf(DICE_LAST);
+  if (lastIdx < 0 || src.indexOf(DICE_LAST, lastIdx + 1) >= 0)
+    throw new Error('dice lib: expected exactly one "' + DICE_LAST + '" in index.html');
+  if (lastIdx < startIdx)
+    throw new Error('dice lib: ' + DICE_LAST + ' appears before ' + DICE_START);
+  var endIdx = findFunctionEnd(src, lastIdx);
+  if (endIdx < 0) throw new Error('dice lib: could not find the end of ' + DICE_LAST);
+  // include the trailing semicolon if there is one
+  if (src.charAt(endIdx) === ';') endIdx++;
+  diceBlock = src.slice(startIdx, endIdx);
+  var startLine = lineNumber(src, startIdx), endLine = lineNumber(src, endIdx - 1);
   sourceHashes['_dice_lib'] = {
     sha256: sha256(diceBlock),
-    span: '65911-66010',
+    span: startLine + '-' + endLine,
     bytes: diceBlock.length
   };
-} catch (e) { /* best-effort */ }
+  console.log('  \u2713 _dice_lib  (lines ' + startLine + '-' + endLine + ', ' +
+    diceBlock.length + ' bytes, found by marker)');
+  console.log('      first line: ' + diceBlock.split('\n')[0].slice(0, 72));
+  var dl = diceBlock.split('\n');
+  console.log('      last line:  ' + dl[dl.length - 1].slice(0, 72));
+})();
 
 // Write the drift watchdog baseline. test_inline_drift.js reads this to
 // detect when an inline game in index.html has been edited without the
