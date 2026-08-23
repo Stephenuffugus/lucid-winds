@@ -18,13 +18,14 @@ const makeCtx=box.__mk;
    did nothing. Identical runs then reported 5/5, 4/5 and 3/5 wins, and I nearly
    read a CSS-only change as a balance regression. makeCtx hands the context the
    PROCESS's Math object, so seeding it here is what actually reaches the sim. */
-/* ⛔ STILL NOT FULLY DETERMINISTIC, and a reviewer should know it.
-   Seeding Math.random before makeCtx fixed one source and identical runs STILL
-   report 3/5 or 4/5 wins and 29 to 53 days banked. Something else in the sim
-   moves, most likely Date, which makeCtx also hands through from the process.
-   So treat every figure from this script as a RANGE over about five runs, never
-   as a point. The signal is enormous compared with the noise (660 days banked
-   before this work, 29 to 53 after) but do not quote a single number from it. */
+/* ⛔ HISTORY, corrected by the Fable review 2026-08-24. This comment used to say
+   the residual non-determinism was "most likely Date, which makeCtx also hands
+   through from the process". Wrong on both counts: the vm box contextifies its
+   OWN Date (the sandbox does not pass one), and no Date use reachable from the
+   headless sim affects state. The real cause was Math, found below: the sandbox
+   passes no Math either, so the box grew its own, and seeding the process's
+   Math.random never reached the sim. With both realms seeded (lines below),
+   three consecutive runs are byte identical and every figure here is a point. */
 const REAL_RANDOM=Math.random;
 function bot(strat,maxDays,seed){
   let n=seed>>>0;

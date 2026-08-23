@@ -242,11 +242,6 @@ h1 em{font-style:normal;color:var(--sodium)}
   #pick .zoomui{flex-direction:row;top:auto;bottom:6px;right:6px}
   #pickWrap{min-height:124px}
   #pickInfo{min-height:0}
-  #coWrap{display:flex;align-items:center;gap:10px;margin-bottom:6px}
-  #coWrap span{margin-bottom:0;flex:0 0 auto}
-  #coInput{flex:1 1 auto}
-  .nb{min-height:48px}.nb svg{width:13px;height:13px}
-  #nav{padding-top:5px;padding-bottom:calc(env(safe-area-inset-bottom) + 5px)}
 
 }
 /* desktop: controls stay hand-sized instead of stretching across the row */
@@ -463,6 +458,17 @@ h1 em{font-style:normal;color:var(--sodium)}
      image fill each one of the boxes better". Measured at 915x412 before this:
      4 screens of scrolling, 3 nodes visible at a time, node cards 292x140 with
      a 44px icon in them, so the icon was 31% of its own card's height. */
+  /* ⛔ Fable review: these five rules sat in the EARLY landscape block at the top
+     of the file, above their base rules (#coWrap at the pick styles, .nb/#nav in
+     the nav styles), and silently did nothing — the vendor label still stacked
+     above its input on the landscape pick screen and the nav stayed portrait
+     height, shortening the map. Same class of trap as everything else in this
+     block's history. They live here, below their bases, now. */
+  #coWrap{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+  #coWrap span{margin-bottom:0;flex:0 0 auto;display:inline-block}
+  #coInput{flex:1 1 auto}
+  .nb{min-height:48px}.nb svg{width:13px;height:13px}
+  #nav{padding-top:5px;padding-bottom:calc(env(safe-area-inset-bottom) + 5px)}
   .sheetbody{max-height:94%}
   .shead{padding:7px 12px 6px}
   .shead h2{font-size:13px}
@@ -487,24 +493,6 @@ h1 em{font-style:normal;color:var(--sodium)}
      58px icon plus the 9px gap. */
   .node .cst,.node .ds{margin-left:67px}
 
-  /* ⛔ The World tab is the screen where money is spent, and at 915x412 seven
-     stat tiles (most of them reading 0) plus two six line legend paragraphs took
-     the top 240px of 412 before a single control appeared. The acquisition bar
-     and every region action sat below the fold on arrival. Same complaint as the
-     trees: see more on each screen. Tiles go to one line, legends clamp, and the
-     things you actually press come up the page. Tap a legend to open it. */
-  .worldstat{gap:5px}
-  .ws{padding:4px 7px;display:flex;align-items:baseline;gap:7px}
-  .ws .k{font-size:8.5px;flex:none}
-  .ws .v{font-size:12px;margin-top:0}
-  /* ⛔ max-height cut the text mid glyph and read as a rendering fault rather
-     than as a deliberate clamp. line-clamp cuts on a line boundary. */
-  /* ⛔ Two lines left a sliver of a third showing under the clip, which reads as
-     a render fault rather than a clamp. One line is unambiguous, gives the desk
-     and the region actions more room, and still says what the panel is. Tap opens. */
-  .legend{padding:6px 9px;margin-bottom:6px;font-size:10.5px;line-height:1.4;cursor:pointer;
-    display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
-  .legend.open{-webkit-line-clamp:unset;display:block}
   .acqbar{padding:7px 10px;margin-bottom:8px}
   .acqtxt{font-size:10.5px;line-height:1.35}
 
@@ -544,6 +532,35 @@ h1 em{font-style:normal;color:var(--sodium)}
   padding:9px 11px;margin-bottom:10px;font-size:11.5px;line-height:1.55;color:#93a7b8}
 .legend b{color:var(--paper)}
 .legend .lg-up{color:var(--grn)}.legend .lg-dn{color:var(--blood)}
+
+/* ⛔⛔ Fable review, 2026-08-24: the late landscape block above committed the very
+   trap its own header warns about. These .worldstat/.ws/.legend overrides lived
+   in it — ABOVE the base rules you just read — so at identical specificity the
+   base won every conflicting property and most of the World tab compaction never
+   landed: tiles kept 14px portrait type and 8px padding, legends kept 11.5px at
+   full margins, and the acquisition bar sat that much lower toward the fold.
+   The one-line flex and the clamp survived only because the base never sets
+   those properties. THIS block must stay BELOW the base rules above it. */
+@media (orientation:landscape) and (max-height:560px){
+  /* ⛔ The World tab is the screen where money is spent, and at 915x412 seven
+     stat tiles (most of them reading 0) plus two six line legend paragraphs took
+     the top 240px of 412 before a single control appeared. The acquisition bar
+     and every region action sat below the fold on arrival. Same complaint as the
+     trees: see more on each screen. Tiles go to one line, legends clamp, and the
+     things you actually press come up the page. Tap a legend to open it. */
+  .worldstat{gap:5px}
+  .ws{padding:4px 7px;display:flex;align-items:baseline;gap:7px}
+  .ws .k{font-size:8.5px;flex:none}
+  .ws .v{font-size:12px;margin-top:0}
+  /* ⛔ max-height cut the text mid glyph and read as a rendering fault rather
+     than as a deliberate clamp. line-clamp cuts on a line boundary. */
+  /* ⛔ Two lines left a sliver of a third showing under the clip, which reads as
+     a render fault rather than a clamp. One line is unambiguous, gives the desk
+     and the region actions more room, and still says what the panel is. Tap opens. */
+  .legend{padding:6px 9px;margin-bottom:6px;font-size:10.5px;line-height:1.4;cursor:pointer;
+    display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+  .legend.open{-webkit-line-clamp:unset;display:block}
+}
 .rcard{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:11px 12px;margin-bottom:8px}
 .rcard.idle{opacity:.62}
 .rcard.lost{border-color:#3d1d1d;background:#150a0a;opacity:.9}
@@ -1159,13 +1176,13 @@ function EV(){ return [
 {id:'foia',w:12,when:s=>s.day>90&&s.avgSus>12,k:'choice',who:'vole',kick:'Records request',
  t:'A reporter files for your search audit logs',
  b:'Dir. Vole calls, unprompted: "The clerk handling this request has a cousin with a permit issue. Just context." The logs show 40,000 searches, none with warrants.',
- o:[{l:'Invoke the trade-secret rider',c:s=>s.cash>=120,cost:{cash:120*MONEY},
+ o:[{l:'Invoke the trade-secret rider',c:s=>s.cash>=120*MONEY,cost:{cash:120*MONEY},
      f:s=>{s.oversight+=1.2;pushNews(s,'Clerk releases 400 fully redacted pages. Reporter frames them.','good');}},
     {l:'Let it publish',f:s=>{s.oversight+=5;bumpSus(s,8);pushNews(s,'Search-log story runs front page. Two councils schedule hearings.','bad');}}]},
 {id:'ban',w:10,when:s=>s.avgSus>38,k:'choice',who:'brill',kick:'Legislation',
  t:'A national ban on warrantless readers gains sponsors',
  b:'Sec. Brill offers to testify that the ban "helps traffickers," in exchange for co-branding the next border rollout. The vest, she notes, photographs well against your logo.',
- o:[{l:'Fund the opposition blitz',c:s=>s.cash>=300,cost:{cash:300*MONEY},
+ o:[{l:'Fund the opposition blitz',c:s=>s.cash>=300*MONEY,cost:{cash:300*MONEY},
      f:s=>{s.oversight=Math.max(0,s.oversight-3);pushNews(s,'Ban dies in committee. Sponsors receive polling on their own districts.','good');}},
     {l:'Accept the co-brand',c:s=>s.inf>=5,cost:{inf:5},
      f:s=>{s.oversight-=1.5;globalCmp(s,.04);bumpSus(s,3);pushNews(s,'Brill testifies in your vest. The clip loops for a week.','good');}},
@@ -1173,13 +1190,13 @@ function EV(){ return [
 {id:'leakdb',w:8,when:s=>s.has('arch'),k:'choice',who:'klein',kick:'Breach',
  t:'Your archive sat on an open bucket for eleven days',
  b:'Sandoval-Klein calls first: "I already bought a copy. Question is whether anyone else did. I can make the researcher an employee by Friday."',
- o:[{l:'Let Klein hire the researcher',c:s=>s.cash>=250,cost:{cash:250*MONEY},
+ o:[{l:'Let Klein hire the researcher',c:s=>s.cash>=250*MONEY,cost:{cash:250*MONEY},
      f:s=>{s.oversight+=1.5;pushNews(s,'Researcher joins Sandoval-Klein "responsible disclosure" lab. Findings pending forever.','good');}},
     {l:'Blame client-side configuration',f:s=>{s.oversight+=4;globalCmp(s,-.05);pushNews(s,'Statement cites "customer misuse of default passwords." Customers notice.','bad');}}]},
 {id:'general',w:8,when:s=>s.has('border')&&s.warHeat<0.6,k:'choice',who:'prather',kick:'Consulting invoice',
  t:'Gen. Prather has found you a war',
  b:'"Small one. Photogenic terrain, no exports anyone likes, two factions who both take wire transfers. Ninety days of coverage, minimum. My fee is a rounding error."',
- o:[{l:'Wire the retainer',c:s=>s.cash>=350,cost:{cash:350*MONEY},
+ o:[{l:'Wire the retainer',c:s=>s.cash>=350*MONEY,cost:{cash:350*MONEY},
      f:s=>{s.warHeat=Math.min(1,s.warHeat+0.3);globalCmp(s,.05);s.oversight+=2;
         pushNews(s,'Shelling begins abroad. Domestic camera approvals triple by Friday.','crit');}},
     {l:'Decline politely',f:s=>{pushNews(s,'Prather takes the package to a competitor. The war happens anyway, unbranded.','bad');s.oversight+=1;}}]},
@@ -2818,7 +2835,7 @@ function worldHTML(){
     h+=`<div class="deskhead">The desk <span class="dim">three offers, and they turn over</span></div>
       <div class="desk">`+offs.map(o=>{
       const pr=opPrice(s,o), can=s.cash>=pr;
-      return `<button class="op${can?'':' poor'}" data-op="${o.id}">
+      return `<button class="op${can?'':' poor'}" data-op="${o.id}" ${can?'':'disabled'}>
         <div class="opk">${o.k}</div>
         <div class="opn">${o.n}</div>
         <div class="opd">${o.d}</div>
@@ -3074,7 +3091,7 @@ function collectAt(sx,sy){
   for(let i=0;i<S.bubbles.length;i++){
     const b=S.bubbles[i];
     if(Math.hypot(b.x-wx,b.y-wy)<hit){
-      if(b.k==='cash'){S.cash+=b.v;sfx('bubble_cash');pushNews(S,`Contract signed. +$${b.v}.`,'good');}
+      if(b.k==='cash'){S.cash+=b.v;sfx('bubble_cash');pushNews(S,`Contract signed. +${fmtMoney(b.v)}.`,'good');}
       else if(b.k==='inf'){S.inf+=b.v;sfx('bubble_inf');pushNews(S,`Board briefing lands. +${b.v} influence.`,'good');}
       else{S.inf+=1;S.oversight=Math.max(0,S.oversight-0.6);
         pushNews(S,'Leak intercepted before publication. +1 influence.','good');}
@@ -3374,6 +3391,7 @@ function shBodyClick(e){
   const op=e.target.closest('[data-op]');
   if(op){ const line=doOp(op.dataset.op);
     if(line){ shToast(`<span class="neg">Bought</span> · ${line}`); openSheet('reg'); }
+    else { shToast('The desk has moved on.'); openSheet('reg'); }
     return; }
   if(e.target.closest('#acqBtn')){
     if(doAcquire()){
