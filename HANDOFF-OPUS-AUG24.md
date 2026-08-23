@@ -716,3 +716,334 @@ Gates re-run at resume, all exit 0: portal_ux_check 26 ok, advertised_count
   and under the scrim it is very nearly invisible on the mint screen. It removes
   the flat-two-stop-gradient feel and nothing more. Real per-screen art is still
   outstanding, and F1/F6 are the places to spend it.
+
+## The Attic (PART 4, Opus agent) — STATUS, A2 to A6
+
+[AT] A2 STATUS (RECONSTRUCTED by the resume agent from commit e875c113 and the
+  code on disk; the killed agent never wrote this line). Shipped: THE SHELF
+  screen (#shelfSheet), every find at 260px sleeve art, 2 cols on a phone and 3
+  at >=620px, sorted NEWEST / CONDITION / TYPE, paged 24 at a time so a 400 item
+  shelf does not build a megabyte of SVG; a summary line counting the collection
+  by class that finally reads WAL.best. Sorting by CONDITION pins UNWIPED finds
+  to the END, because sorting them into the graded run leaks the grade by
+  POSITION. A per object card that FLIPS (#fcSheet): front is object + name +
+  sub + factory error + grade plate and carries its own WIPE button; back is the
+  paperwork (condition, era, year, found date, markings, error, story, full
+  hash). SAVE THE CARD and SHARE: a 640x960 canvas card drawn from the object's
+  own SVG, blob built when the card OPENS not when SHARE is tapped (an async
+  decode loses the user gesture on iOS). New attic_found_v1 map in attic-econ.js
+  (hash keyed, pruned to shelf, merged earliest-wins). Bugs fixed by looking:
+  the saved card had a BLACK HOLE where the object should be, because the
+  renderers emit &middot;/&hellip; which the HTML parser knows and the XML parser
+  inside an <img> does not (svgForImage now folds them to literals); wiping from
+  the main card left the shelf thumb dusty; record DIAGONAL ran the band name off
+  the right edge; the cereal price sticker landed on MORNING FOODS and the FREE
+  PRIZE burst on the title (wear() took a per shape sticker anchor); the board
+  game year sat where the sticker lands; the carded toy gimmick line clipped mid
+  word; "2 cereal boxs"; the pitch paragraph now folds away once there is a
+  collection, and a new find scrolls into view. Gates at that commit:
+  test/attic-check.js 62 passed 0 failed; walk 39 shots all assertions green.
+  ⚠ That commit also swept the Puppy Dash agent's uncommitted portal/index.html
+  card line in (shared working tree, broad `git add`) — see the [PD] P1 note.
+[AT] A3 STATUS (RECONSTRUCTED from commit 46446253). Shipped: TODAY'S FIND, one
+  object a day, free, the SAME object for every player, derived in
+  attic-engine.js from the day index and DAILY_SALT only (no device id, no time
+  of day, no crypto random) and still arriving UNDER DUST. Determinism proved in
+  the walk the LISTDLE way: same date twice matches, a different date differs,
+  and the hash ignores time of day so it turns over at midnight and nowhere else.
+  THE STREAK: consecutive days CLAIMED (not opened), paying 1 ticket every 7th
+  day = 0.14/day, which cannot outrun the 5 ticket allowance so the solvency
+  assertion does not move. THIS WEEK'S WANTED: one described object per week on
+  the week index, everybody hunting the same thing, paying double; FACTORY SEALED
+  and the class specific factory errors are EXCLUDED from that pool because a
+  weekly hunt with a 0.39% hit rate is not a hunt. Save layer: dailyDay, streak
+  and wkDay merge by MAX and a future stamped save resets them. Also fixed
+  RUMMAGE . 1 TICKET wrapping to two lines at 412px. Gates at that commit:
+  test/attic-check.js 62 passed 0 failed; walk 41 shots green.
+[AT] A4 DONE, commit db318d27. FIVE FAMILIES BECAME TEN: comics, paperbacks,
+  zines, LCD handhelds and lunchboxes join records, tapes, toys, board games
+  and cereal boxes. Each has its own grammar, its own renderer and its own
+  condition tells, because a comic does not wear the way a record wears
+  (comics roll at the spine and rust their staples; paperbacks crease white up
+  the spine, yellow at the page block and dog ear; zines fold in half, ring
+  with coffee and lift their toner; handhelds lose an LCD segment and corrode
+  in the battery bay; lunchboxes freckle with rust, dent and scrape to bare
+  steel). FACTORY SEALED is per family too: comics are bagged and boarded with
+  a header card, zines are still in the mailer, handhelds are on a blister.
+  Distinct titles per family over 40k pulls: 1397 to 3114. Exact duplicate
+  pulls 0.56% to 0.15%. Class split is a documented table on the raw byte
+  (RECORD 19.9 down to LUNCHBOX 4.3) and the suite reads its expectations OFF
+  that table now instead of carrying a stale copy of 35/25/20/12/8.
+  ⛔ THE CONDITION LEAK ALMOST REPEATED: every one of the five new families had
+  a notes bank with the 2026-08-16 toy defect written into it (a comic that
+  says "bagged, boarded, and never read again" BEFORE you wipe it has told you
+  it is MINT). Wear notes moved to _flaw, high grade notes to _mint, and the
+  hand written toy branch in hashToItem is now ONE path every class opts into.
+  ⛔ SEVEN GRADES, THREE PICTURES: found on the contact sheet. heavy fired on
+  TRASHED, mid on PLAYED and GOOD, and FINE/NEAR MINT/MINT were the same
+  drawing with the price sticker moved a few pixels. There is a patina ramp
+  now plus a FINE scuff, a NEAR MINT tick and a MINT sheen.
+  Found by LOOKING at the contact sheet at real render size: the VHS spine
+  label printed "HE CHURCH VAN THAT S" clipped at BOTH ends; the board game
+  premise ran off both sides of the lid; the toy price sticker landed on the
+  toy's own name; the paperback title was dark red on dark grey in the 1990s
+  palette (ink is picked by background luminance now); the lunchbox litho was
+  drawn dark on dark so the lid read as an empty cream field; and the dispatch
+  chain ended in a fallback to drawCereal so any family without a renderer
+  would silently have come out as breakfast.
+  The walk's seven fixture hashes all silently changed CLASS when the split
+  moved and it went on shooting them under their old names (the cell labelled
+  "cereal" was a handheld). Fourteen fixtures now, and the walk ASSERTS each
+  one is what it is called before it uses it.
+  ⚠ ONE TIME VISIBLE CHANGE for returning players: a saved find whose byte 0
+  now falls in a different band comes back as a different KIND of object, and
+  the want list reshuffles. Grades, eras and years untouched. Beta card.
+[AT] A5 DONE (commit pending walk). GRAPHICS, A1 items 3 through 7.
+  THE DUST. It was a flat #6b5f4c at 0.62, a brown wash you could read the
+  name, the sub line, COLLECT ALL 6 and the year straight through. It is two
+  stacked layers compounding to about 0.956 now, with cloud, grit, lint, a
+  cobweb in a hash picked corner and a thumb swipe cut through it as an even
+  odd hole. It took 0.956: at 0.91 the record's new high contrast title plate
+  still punched through. ⛔ NO SVG FILTERS anywhere in it (the studio's known
+  iOS killer), the density is layers and geometry. The word UNWIPED is GONE
+  from the artwork: 14px monospace with 5px letter spacing floating in the
+  middle of a picture is a debug label. The shelf chip still says UNWIPED,
+  which is where a label belongs. One dust renderer now, in sleeve-render.js,
+  used by every family; object-render carried a second copy that would have
+  drifted the first time either was tuned.
+  THE WIPE. The one dramatic beat was innerHTML swapping the dusty SVG for the
+  clean one between two frames. It is an animation now: the clean art is built
+  AT THE MOMENT OF THE WIPE (never before it, so the grade is not sitting in
+  the DOM waiting to be read), a cloth sweeps down over the object, the dust
+  layer clip-paths away under it, and twelve motes of dust throw off the
+  middle. Runs on the card AND on the shelf's object card, one function.
+  ⛔ Digging fast enough left every previous wipe's timer alive with twelve
+  animated divs each and thirteen digs in a row DETACHED THE FRAME in headless
+  Chrome. One wipe at a time per slot now. The walk reports a renderer crash
+  out loud, because "Attempted to use detached Frame" reads as puppeteer
+  misuse and is actually the page dying.
+  FACTORY SEALED. It got a gradient rectangle for a 1 in 256 pull. Now: the
+  card takes a gold hairline and a pulsing halo, twenty six gold flecks burst
+  from the plate, and a line underneath reads ONE IN 256 / "The first one you
+  have ever pulled" the first time or "Nobody has opened this. Nobody ever
+  will." after. Sealed finds carry a gold border on the shelf too. The generic
+  "A keeper. One ticket back." toast is suppressed on a sealed pull.
+  ⚠ ODDS COPY: the card says ONE IN 256, which is the DECLARED rate (grade()
+  returns FACTORY SEALED only on byte 2 === 0xFF, so 1/256 = 0.391%). The
+  handoff and the portal card say 0.383%, which is 1 in 261. See FOUND below.
+  DUST OFF IS A MINIGAME NOW. It was 48 divs with one class toggle each: one
+  snake drag wiped 46 of 48 in about three seconds with 87 of the 90 seconds
+  still on the clock, nothing could be missed, and wiped cells turned NEAR
+  BLACK so cleaning something made it darker. It is a canvas scrub: warm boards
+  under grey brown grime, a depth grid that IS the picture (upscaled as an
+  alpha mask, so the score and the visual cannot drift), ONE bite per cell per
+  stroke, dust settling back every 25 seconds, and a stub that only reads when
+  the grime over it is actually gone. MEASURED IN THE BROWSER: one snake drag
+  now clears 31 to 34% and finds ZERO of the ten stubs; a full clear takes 33
+  panel widths of dragging (about 10,200 stage px), which is 25 to 40 seconds
+  of committed scrubbing. The panel is square and 520px wide instead of a
+  small card floating in black.
+  THE ATTIC AS A SCENE: rafters, a round window with one shaft of light, a
+  hanging bulb, a stack of crates and a chair along the floor, and ten dust
+  motes drifting up through the beam. ⛔ pointer-events:none, aria-hidden, and
+  every tone within a few points of the page ground.
+  Overlay scrims: the WANT LIST and DUST OFF grounds were rgba(10,8,5,0.86)
+  and the page read through them. Both fully opaque with a blur behind now,
+  same rule the rules sheet got on 2026-08-16.
+  Also: toasts no longer outlive the card that earned them; the rules sheet
+  fits at 915x412 so START DIGGING is above the fold; the record STACK layout
+  was 55% empty cream field and has a bleed off disc, a rule stack and a title
+  plate now; the carded toy figure was a circle, a rounded rect, four limbs
+  and two dot eyes with no mouth, hands or feet on a fifth of every pull, and
+  is a real figure with a face and one hash picked accessory.
+[AT] A6 DONE, commit 1e294bd2. `satellites/attic/check.js`, house pattern (vm
+  for the page, ok()/group(), exit 0/1/2) plus ONE real browser group, because
+  48px is RENDERED pixels and a CSS declaration is not a measurement.
+  127 assertions with the browser, 98 with AT_NOBROWSER=1.
+  ⛔ It SUPERSEDES test/attic-check.js rather than orphaning it: that file is
+  now a five line shim that runs check.js and returns its exit code, so
+  `node test/attic-check.js` is still true and nothing asserts twice.
+  Groups: page compiles + every module it names exists; no dash characters and
+  no dead names in player copy; determinism; the declared class split over
+  60,000 draws; the condition ladder within 10% at every rung with FACTORY
+  SEALED at 1 in 256; generator depth per family; nothing says the condition
+  before the wipe (220 objects swept through all 256 values of the grade byte,
+  text AND dusty art); seven grades render seven different pictures FOR EVERY
+  FAMILY; daily determinism; economy solvency; corrupt save; the embed
+  handshake in a REAL iframe; every control at 375x667; DUST OFF is a
+  minigame; persistence survives a reload; zero console errors.
+  ⛔ THE CONTROLS GROUP: every rule is a predicate run a SECOND time against
+  deliberately broken code and the broken run has to go red. Ten controls, all
+  biting: clock seeded daily, frozen daily, daily that reads the time of day,
+  ladder with no grail, ladder tilted past tolerance, a name carrying the
+  grade, dusty art changing with the grade, a wholesale wallet write, a full
+  scrap refund, a loader that trusts a negative ticket count.
+  FOUR CHECKS WENT RED AGAINST THE REAL CODE AND FOUND REAL BUGS:
+   1. ⛔ THE DAILY GROUP WAS VACUOUS AND I WATCHED IT BE VACUOUS. I mixed
+      Date.now() into DAILY_SALT in the real engine and the WHOLE daily group
+      stayed green, because dailyHash(d) === dailyHash(d) calls the function
+      twice inside the same millisecond and a clock seeded daily agrees with
+      itself for a whole millisecond. Added `stableOverTime`, which busy waits
+      past a tick boundary and asks again, and reseeded the control off
+      Date.now() so it fails the way the real defect fails. Re broke the
+      engine after the fix: RED, exit 1. Restored: green, exit 0.
+   2. THE RECORD, THE FLAGSHIP CLASS, HAD THREE VISIBLE GRADES NOT SEVEN.
+      PLAYED and GOOD rendered byte for byte identically and so did FINE and
+      NEAR MINT, because A4's ramp was only wired into object-render and
+      records go through sleeve-render. Ramp moved to one place. Caught only
+      because the group sweeps EVERY family; the first version swept one base
+      hash and passed.
+   3. The page carried "Sky Wolf Studios", plural, against the house rule.
+   4. A hand injected condition leak in the sticker line was caught at 51,920
+      leaks out of 56,320 sweeps, so the guard on the game's one dramatic beat
+      bites against the real engine and not only against a mock.
+[AT] LOOKED, not just gated. Two contact sheets first, at REAL render size with
+  a flat BLACK column at 64px (the smallest size the art is ever drawn), all
+  ten families x five sizes and all ten families x dusty plus seven grades.
+  That sheet is where "seven grades, three pictures" and five of the six
+  clipping defects came from. Then 57 walk shots at 412x915 and 915x412 dsf2
+  touch fab hidden, plus nine focused looks at the home screen, the dust panel
+  fresh / one pass / cleared, and the sealed reveal dusty / mid wipe / done /
+  landscape. Every one opened with the Read tool.
+  What I SAW, honestly: the home screen is a room now, and the crates, the
+  rafters, the beam and the motes all sit far enough back that the cream body
+  copy is still the easiest thing to read. The dust hides the object: at 240px
+  a large display headline still ghosts through as a shape, which I am calling
+  acceptable (real dust does that, and what is being hidden is the CONDITION,
+  not the name) but it is not total. The dust panel at one pass shows the
+  stubs as faint shapes, not readable labels, which is the line I wanted. The
+  sealed reveal throws gold across the whole screen and reads as an event.
+  And on an EMPTY shelf the bottom 55% of the portrait screen is scenery only,
+  which reads as "the game is at the top and the picture is at the bottom"
+  until you have a find or two.
+[AT] GATES, all exit 0: check.js 127 passed 0 failed (98 with AT_NOBROWSER=1),
+  shots.mjs walk 95 assertions / 57 shots / no console or page errors,
+  portal_ux_check 26 ok, advertised_count_check 7 of 7 true, catalog 183
+  carded / 161 openable (unchanged, no card added or removed).
+[AT] ⛔ PORTAL CARD CHANGE I WANT APPLIED (I did not touch portal/index.html).
+  Line 1003 of portal/index.html, The Attic card. Three edits:
+   1. BUMP THE VERSION so the live site serves this build:
+      url:"/satellites/attic/?v=20260824a"  ->  url:"/satellites/attic/?v=20260824c"
+   2. The description still advertises five families out of ten. Replace:
+      ds:"Rummage up one of one fake vintage records, tapes, and toys, and pray for factory sealed."
+      with:
+      ds:"Rummage up one of one fake vintage records, comics, tapes, toys and handhelds, and pray for factory sealed."
+   3. The thumb portal-assets/thumbs/the-attic.png is dated 30 Jul and predates
+      the shelf, the daily, the ten families and the whole attic scene. Worth a
+      fresh shot from the real home screen via scripts/refresh_thumb.mjs (cap
+      150KB). Not blocking; the card works without it.
+  Everything else on that card is right: beta:true, fresh:true, ic 📼,
+  cat "creative". Card count must not move.
+[AT] FOUND: the odds copy disagrees with the code. grade() returns FACTORY
+  SEALED only when hash byte 2 === 0xFF, so the declared rate is 1/256 =
+  0.391%, and I put ONE IN 256 on the reveal. HANDOFF-OPUS-AUG24.md and the
+  PART 4 brief both say 0.383%, which is 1 in 261 and looks like a measured
+  sim artefact rather than the ladder. Not fixed anywhere outside the game.
+[AT] FOUND (not fixed, out of my named scope): at 915x412 the whole game is
+  still a 420px centre column with about 250px of unused width either side,
+  and RUMMAGE sits below the fold on a screen with 900px of width going spare.
+  This is A1 item 2, which belonged to A2. The concrete fix is a landscape
+  two column layout (controls left, card right) behind
+  `@media (orientation:landscape) and (max-height:620px)`. It is a layout
+  change, not a CSS tweak, and it wants Stephen's eye on it.
+[AT] FOUND (not fixed, out of scope): the game has NO AUDIO at all. A1 item 3
+  asked for the reveal to have weight and it now has motion and light, but a
+  wipe with no sound is still half a beat. The fleet has no shared audio kit
+  that I found in this tree, so this is a build decision rather than a patch.
+[AT] FOUND (not fixed, out of scope): the CSS class on the tagline is still
+  literally `.demo-note`, which the 2026-08-16 audit already called out.
+  Cosmetic, but it is the last thing in the file still calling this a demo.
+[AT] FOUND (amendment to the landscape item above, seen in shot 49 of the final
+  walk): THE SHELF screen has the same landscape problem as the home screen.
+  At 915x412 the title, the summary line and the three sort buttons eat 340 of
+  the 412 available pixels, so the first screen of the collection shows the top
+  seventy pixels of ONE row of cards and their names clip mid line. It scrolls,
+  so it works, but a collection screen whose first screenful is one and a bit
+  cards is not showing you a collection. Same fix as the home screen: a
+  landscape layout, not a CSS tweak.
+[AT] A4, A5 and A6 are DONE and committed (db318d27, 22d34891, 1e294bd2). The
+  working tree is clean. Nothing in PART 4 is half done. The three FOUND items
+  above are genuinely outside the A4/A5/A6 briefs: a landscape layout change,
+  an audio decision, and a CSS class name the previous audit already logged.
+
+## Main session, after both agents returned (Opus)
+
+Verified both agents independently before pushing anything, because a report is
+not evidence: Litter Bug upstream clean at 8f046cc with nothing ahead, the
+vendored index byte identical to upstream, `check.js` 83 ok / 0 FAIL on a cold
+run in this session, `satellites/attic/check.js` 128 passed / 0 failed on a cold
+run, and all three Attic commits path scoped to `satellites/attic/` only.
+
+Then LOOKED at Litter Bug, which is what found the rest of this. Real taps on
+real controls, every tap refused unless `elementFromPoint` at the control's
+centre actually hit it, every shot asserting the live screen before firing.
+Two of my own probes were wrong before the game was:
+  - the first pass drove `LB_DEV.show('s-dex')` and shot an EMPTY Bugdex reading
+    "BUGDEX 0" while the save held six bugs. `show()` does not run `paintDex()`.
+    A screen you jumped to is not a screen you opened.
+  - the first mint loop never awaited `doMint`, which is async, so it seeded
+    zero bugs and I nearly filed "the Bugdex is empty" as a defect.
+
+CONFIRMED FIXED by measurement, not by reading the commit: HOME's bug renders
+114x114 with 8848 chars of SVG (was 494x0), zero duplicate ids in the whole
+document, the grub hunt field is 378x660 with 16 items and ZERO at a negative
+offset (was 13 items in a 44px corner), THE DUMPSTER prints five named
+challengers with real stats and purses 8 to 20 and zero "?" and no raw DAY
+number, and one tapped move card produced a real exchange: "Velvet Skit used
+Ambush for 19 damage. Sir Ember Katydid used Retaliate for 31 damage."
+
+FIXED (mine, upstream 011fd74, re-vendored): the champion picker was slicing
+  every one of its six tiles, 33px off the bottom in portrait and 19px in
+  landscape. `.champstrip` declares height:124px but is a flex item in a column
+  flex parent, so flex-shrink:1 squeezed it to 69.5px while its 104px children
+  did not shrink, and overflow-y:hidden hid it. `flex:none` holds the height:
+  clientHeight 124 == scrollHeight 124, zero clipped, both orientations.
+  `scripts/clip_sweep.mjs` upstream is the gate for the whole class.
+  ⛔ The first version of that sweep was VACUOUS: it walked screens with
+  LB_DEV.show(), so every list it measured was empty and an empty list never
+  overflows. It reported CLEAN against the file that had the bug in it. Caught
+  only because I ran it against the known defect before trusting it. Rewritten
+  to navigate by real taps it reports the defect (cut 52px, box 70px, both
+  orientations) and reports clean on the fix.
+
+FIXED (mine): `scripts/refresh_thumb.mjs` handed back a 480x480 wall of RULES
+  TEXT for The Attic and exited 0 saying OK, because the game shows its HOW TO
+  PLAY sheet on a first visit and the script only seeds sws_dev_ok. Added
+  THUMB_SEED, a JSON object of localStorage keys, so a first run overlay can be
+  dismissed before the shot. Reshot with THUMB_SEED='{"attic_how_v1":"1"}' and
+  OPENED it: the title screen, the ten families, the ticket and shelf and want
+  list chips, TODAY'S FIND, the weekly wanted, both CTAs, the attic room dim
+  behind. 27 KB.
+
+FOUND: LITTER BUG'S JUNK IS TYPOGRAPHY, AND IT IS THE BIGGEST GAP LEFT. Every
+  piece in the grub hunt is the same grey rounded square with a lowercase word
+  in it (stub, tab, pin, nub, cap, nut, clip) and the grub is the SAME square in
+  green. There is no hunt: the one coloured tile is the only thing your eye can
+  land on. The agent filed this as F1 and F2 separately; they are one defect and
+  it is worth more than any remaining balance work.
+FOUND: at arena and list size the bugs do not read as different creatures. Five
+  challengers on THE DUMPSTER are five brown and grey smudges separated only by
+  tint, and the two fighters in the arena are the same silhouette recoloured.
+  The L3 work made the GRADE read from the drawn parts, which is right, but the
+  parts still do not read at the sizes the game actually draws them.
+FOUND: the exit pill overlaps the HOW TO PLAY button on Litter Bug's HOME,
+  bottom left. A painted control sitting on a game control.
+FOUND: the arena has a dead band of roughly 125 CSS px between the battle log
+  and the move cards, and the log itself is two unstyled lines flush left while
+  every other element on the screen is in a rounded card. It reads as debug text
+  dropped between two panels.
+FOUND: the grub hunt field's bottom third is empty; 16 items cluster in the top
+  two thirds of a 378x660 box.
+FOUND: Litter Bug calls itself LITTERBUGS on its own title screen while the
+  portal card says "Litter Bug". Two names for one game.
+FOUND: "Leave the dumpster" and "Back" are sentence case among otherwise
+  all caps controls.
+
+Attic portal card applied by the main session (agents were kept out of
+portal/index.html on purpose after yesterday's cross streaming): url
+20260824a -> 20260824c, ds rewritten for ten families, thumb reshot.
+Litter Bug card 20260818a -> 20260824a.
+
+Fleet gates, all exit 0: portal_ux_check 26 ok, advertised_count 7 true,
+catalog 183 carded / 161 openable, test_inline_drift 11 in sync 0 drifted,
+smoke_shells 66 pass.

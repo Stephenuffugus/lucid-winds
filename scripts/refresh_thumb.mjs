@@ -8,7 +8,16 @@ const PORT = process.env.PORT || 8777;
 const br = await puppeteer.launch({ headless: "new", args: ["--no-sandbox"] });
 const p = await br.newPage();
 await p.setViewport({ width: 540, height: 960, deviceScaleFactor: 1 });
-await p.evaluateOnNewDocument(() => { try { localStorage.setItem("sws_dev_ok", "1"); } catch (e) {} });
+/* ⛔ A game that shows a rules sheet on a first visit will hand you a thumb of
+   its RULES, and the script still exits 0 and prints OK. The Attic did exactly
+   that on 2026-08-24: a 480x480 wall of body text as a storefront tile. Pass
+   THUMB_SEED as a JSON object of localStorage keys to get past a first run
+   overlay, e.g. THUMB_SEED='{"attic_how_v1":"1"}'. */
+const SEED = (() => { try { return JSON.parse(process.env.THUMB_SEED || "{}"); } catch (e) { return {}; } })();
+await p.evaluateOnNewDocument((seed) => {
+  try { localStorage.setItem("sws_dev_ok", "1");
+        Object.keys(seed).forEach(k => localStorage.setItem(k, seed[k])); } catch (e) {}
+}, SEED);
 await p.goto(`http://127.0.0.1:${PORT}/satellites/${slug}/?probe=` + Math.random(), { waitUntil: "domcontentloaded" });
 await new Promise(r => setTimeout(r, 3500));
 /* The feedback chip parks anywhere the yield logic sends it, including the
