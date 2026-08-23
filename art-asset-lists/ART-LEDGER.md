@@ -15,7 +15,7 @@
 
 | Game | Pack / style | Sheets | Prompt pack | Listed | Notes |
 |---|---|---|---|---|---|
-| Flock the World | *Procurement Brochure* | 10 sheets (4 tree icon sheets 46 nodes + 3 plates, 16 synergy badges, 5 tree backdrops, wordmark + 5 store/end images, 20 UI icons, 8 cards, 5 cast + 8 countermeasures + 3 extras) | `flock-the-world/00-art-direction.md` + `01`..`10` (also Docs in 012Assets) | 2026-08-23 | Trees first (Stephen's named ask). Cut by connected components, never an even grid. Game ships with ZERO images today; every drop here is new, log it the moment it lands. Wiring task = F6 in `satellites/flock-the-world/PLAN-AUG23.md`. |
+| Flock the World | *Procurement Brochure* | 10 sheets (4 tree icon sheets 46 nodes + 3 plates, 16 synergy badges, 5 tree backdrops, wordmark + 5 store/end images, 20 UI icons, 8 cards, 5 cast + 8 countermeasures + 3 extras) | `flock-the-world/00-art-direction.md` + `01`..`10` (Docs "FTW Art 00".."10" in Drive › Github › FTW, folder 1Mvnfm7UPUXt8MmmYgdFoAiZgaCjV-o2W) | 2026-08-23 | Trees first (Stephen's named ask). Cut by connected components, never an even grid. Game ships with ZERO images today; every drop here is new, log it the moment it lands. Wiring task = F6 in `satellites/flock-the-world/PLAN-AUG23.md`. |
 
 ## Deployed packs (art live on main)
 

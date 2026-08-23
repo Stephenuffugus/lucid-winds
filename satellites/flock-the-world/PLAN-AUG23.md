@@ -128,7 +128,7 @@ for iOS, and a silent stub that logs `sfx:<id>` so wiring can be gated before fi
 ## 5. ART
 
 Pack: `art-asset-lists/flock-the-world/` (direction + 10 sheets), also delivered as
-Docs in 012Assets. Look: **Procurement Brochure** (the glossy vendor pitch-deck
+Docs in Drive › Github › FTW (Stephen's ask; not 012Assets for this game). Look: **Procurement Brochure** (the glossy vendor pitch-deck
 style, selling dystopia with a smile). Trees first, that is Stephen's named ask. Cut
 by connected components, never an even grid. Every drop gets an ART-LEDGER row the
 moment it lands. Art is generated; never described as hand-painted.
