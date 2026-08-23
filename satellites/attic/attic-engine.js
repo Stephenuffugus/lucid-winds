@@ -347,14 +347,21 @@
      exact leak the 2026-08-16 audit found in the toy class. */
   var K_NOTES = ['arrival date stamped on the cover in purple ink', 'somebody clipped the mail order coupon out of the back', 'price sticker over the cover price, and it is higher', 'a name and a paper route number on the top edge', 'the corner box has a fingerprint burned into it', 'a distributor mark in grease pencil across the logo'];
   var K_FLAWS = ['spine rolled, and it will not roll back', 'tape along the spine, applied with love', 'subscription crease straight down the middle', 'a child has coloured in one of the ads', 'the staples have rusted a halo into the fold', 'the back cover ad has been cut out with scissors', 'water ripple across the bottom third'];
+  /* ⛔ 9 of the 24 heroes and ALL 14 teams already carry their own article, so
+     a template that supplies one too printed "THE RELUCTANT THE CROSSING GUARD"
+     and "INCREDIBLE THE PALLBEARERS". That was 17.1% of every comic title.
+     Strip the article from the noun wherever the template provides it. This is
+     string surgery AFTER the picks, so the RNG stream is untouched and every
+     other field on the object is bit for bit what it was. */
+  function deThe(s) { return s.indexOf('THE ') === 0 ? s.slice(4) : s; }
   function comicName(r) {
     if (r(CLASSIC_ODDS) === 0) return pick(r, K_FLAT);
     var p = r(8);
-    if (p === 0) return 'THE ' + pick(r, K_ADJ) + ' ' + pick(r, K_HERO);
+    if (p === 0) return 'THE ' + pick(r, K_ADJ) + ' ' + deThe(pick(r, K_HERO));
     if (p === 1) return pick(r, K_HERO) + ' VS. ' + pick(r, K_VILLAIN);
     if (p === 2) return pick(r, K_HERO) + ' AND THE ' + pick(r, K_RELIC) + ' OF ' + pick(r, K_PLACE);
     if (p === 3) return 'TALES FROM ' + pick(r, K_PLACE);
-    if (p === 4) return pick(r, K_ADJ) + ' ' + pick(r, K_TEAM);
+    if (p === 4) return 'THE ' + pick(r, K_ADJ) + ' ' + deThe(pick(r, K_TEAM));
     if (p === 5) return 'THE ' + pick(r, K_RELIC) + ' OF ' + pick(r, K_PLACE);
     if (p === 6) return pick(r, K_HERO) + ' OF ' + pick(r, K_PLACE);
     return pick(r, K_TEAM) + ' VS. ' + pick(r, K_VILLAIN);

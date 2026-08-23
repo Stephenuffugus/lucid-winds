@@ -1047,3 +1047,59 @@ Litter Bug card 20260818a -> 20260824a.
 Fleet gates, all exit 0: portal_ux_check 26 ok, advertised_count 7 true,
 catalog 183 carded / 161 openable, test_inline_drift 11 in sync 0 drifted,
 smoke_shells 66 pass.
+
+## Main session, looking at The Attic (Opus)
+
+Spot checked the two claims that carry the most weight, by driving the real
+code rather than reading the commit.
+
+DUST OFF is a minigame now, measured. Panel 346x346, brush R21, bite 0.34,
+dust settling every 25s, 89s on the clock. ONE snake drag of three passes
+(1038 stage px) clears 12% and finds ZERO of the ten stubs. A full clear costs
+11418 stage px, which is 33 panel widths of dragging, and finds all ten. This
+morning one drag cleared 46 of 48 cells in about three seconds. A1 item 5 is
+genuinely closed, and the overlay scrim behind the sheet is opaque now, which
+closes A1 item 7 for this sheet.
+
+FACTORY SEALED earns it. Forced a real 0xFF hash through the real reveal path
+(no mocked grade): a bagged and boarded comic in a poly sleeve over a board,
+a 15 cent price box, imprint, a red banner blurb, the sealed suffix on the
+title, a full width gold plate, ONE IN 256, and "The first one you have ever
+pulled. Nobody has opened this." That is not the gradient rectangle A1 saw.
+
+FIXED (mine): 17.10% of every comic title was grammatically broken. Nine of the
+24 heroes and ALL FOURTEEN teams already carry their own article, and two
+templates supplied a second one, so the game printed "INCREDIBLE THE
+PALLBEARERS", "THE RELUCTANT THE CROSSING GUARD" and "DAUNTLESS THE SHORT
+ORDERS". Added deThe() and moved template 4 under the article. Broken rate
+17.10% -> 0.00% over 40k comics. They read as period comics now: THE INCREDIBLE
+PALLBEARERS, THE MIDNIGHT LAMPLIGHTER, THE UNCANNY NIGHT SHIFT.
+Proved the blast radius rather than asserting it: over 60k objects compared
+against the committed engine, 1238 names changed (2.06% of all objects, which
+is the 17.1% of comics) and ZERO other fields moved. Grade, era, year, class,
+lore, sub, flaws all bit for bit identical. The picks happen in the same order;
+the surgery is on the string afterwards. check.js still 128 passed / 0 failed.
+⛔ I measured this wrong first: a regex `^THE .+ THE ` called 34% broken by
+counting "THE SUMP KING VS. THE PAPERWORK", which is a good title. Re-measured
+against the actual K_ADJ / K_HERO / K_TEAM banks. Never regex a parseable
+structure, including your own bug report.
+
+FOUND: in landscape 915x412 the WIPE OFF THE DUST control sits at y 754 to 806
+  in a 412px viewport, 368px BELOW THE FOLD. The page scrolls (scrollHeight
+  1056) so it is reachable, but the single action the whole game is built on is
+  entirely off screen on arrival. My tap helper refused to fire on it, which is
+  how it was found: elementFromPoint at the control's centre returned null.
+  This is the measured version of the agent's own landscape FOUND.
+FOUND: on the sealed reveal the header still takes the top ~700 of 915 px, so
+  the rarest pull in the game begins below the fold. The A1 marketing paragraph
+  is gone, but the back chip, the title, the byline, three chips, TODAY'S FIND,
+  the wanted line and two CTAs are still above every card.
+FOUND: DUST OFF's uncovered ticket stubs are cream on tan and barely more
+  legible than the grime. The cleared band reads as lighter dust rather than as
+  a find. The scrub is good; the payoff needs contrast.
+FOUND: DUST OFF's only control is DONE, styled like a primary CTA, sitting next
+  to copy that says six more tickets are worth finding today. An early tap ends
+  the panel with no confirm.
+FOUND: the comic cover interior is the weakest art on a comic card. One
+  silhouette, a sunburst and a banner, inside sleeve furniture (bag, board,
+  price box, imprint) that is much more convincing than the cover it holds.
