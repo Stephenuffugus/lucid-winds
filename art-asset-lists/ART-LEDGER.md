@@ -15,6 +15,7 @@
 
 | Game | Pack / style | Sheets | Prompt pack | Listed | Notes |
 |---|---|---|---|---|---|
+| Flock the World (drop 1) | *Procurement Brochure* | 20 PNGs, ~2 MB each, UNIDENTIFIED | **Drive › Github › FTW › Assets** (folder `1Qi0665P-hf-yhtxDxSaynY8gqS5AMc0U`), delivered 2026-08-23 04:15 to 04:38 | not yet | 2026-08-23 | DROPPED. Filenames are `1..10` plus `6a`..`6k`, so which sheet each answers is not knowable from the name: they must be opened and identified before cutting. ⛔ Not yet copied into the repo, so they live only in Drive (rule 6 says copy to a committed location BEFORE cutting). Next: download to `satellites/flock-the-world/art-drop/`, identify each against sheets 01 to 10, then cut by connected components. That is task F6. |
 | Flock the World | *Procurement Brochure* | 10 sheets (4 tree icon sheets 46 nodes + 3 plates, 16 synergy badges, 5 tree backdrops, wordmark + 5 store/end images, 20 UI icons, 8 cards, 5 cast + 8 countermeasures + 3 extras) | `flock-the-world/00-art-direction.md` + `01`..`10` (Docs "FTW Art 00".."10" in Drive › Github › FTW, folder 1Mvnfm7UPUXt8MmmYgdFoAiZgaCjV-o2W) | 2026-08-23 | Trees first (Stephen's named ask). Cut by connected components, never an even grid. Game ships with ZERO images today; every drop here is new, log it the moment it lands. Wiring task = F6 in `satellites/flock-the-world/PLAN-AUG23.md`. |
 
 ## Deployed packs (art live on main)
