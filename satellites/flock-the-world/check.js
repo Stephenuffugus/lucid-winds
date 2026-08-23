@@ -419,6 +419,54 @@ if (C) {
     ok('the map tap asks for a region, not just a country', /const rid=regionAtPoint\(wx,wy\);/.test(GAME));
   }
 
+  /* ------------------------------------------------- F3: name your vendor */
+  group('name your vendor');
+  {
+    const c9 = makeCtx();
+    const NAMES = vm.runInContext('VENDOR_NAMES', c9);
+    ok('there are invented vendor names to choose from', Array.isArray(NAMES) && NAMES.length >= 4, 'n=' + (NAMES || []).length);
+    /* none of them may be a real company: they are all invented composites */
+    ok('the default name comes from VENDOR_NAMES', (() => {
+      vm.runInContext("S=newState('CONTRACTOR','Vendor','NA')", c9);
+      return NAMES.indexOf(vm.runInContext('S.co', c9)) >= 0;
+    })(), 'co=' + vm.runInContext('S.co', c9));
+    ok('a name given at deploy is the name the run carries', (() => {
+      vm.runInContext("S=newState('CONTRACTOR','Vendor','NA',null,null,'Kestrel Municipal')", c9);
+      return vm.runInContext('S.co', c9) === 'Kestrel Municipal';
+    })());
+
+    /* ⛔ the name is PLAYER TEXT and most of its call sites are innerHTML.
+       A name carrying markup must render as characters, never as tags. */
+    vm.runInContext("S=newState('CONTRACTOR','Vendor','NA',null,'Algeria','Evil <b>Corp</b>');" +
+      "S.regions.NAf.active=true;S.regions.NAf.coverage=0.3;popTotals(S);", c9);
+    c9.__cn = 'Algeria';
+    const hqLabel = vm.runInContext('rpopHTML("NAf",__cn)', c9);
+    ok('a name with markup renders as text in the HQ label',
+      hqLabel.indexOf('Evil &lt;b&gt;Corp&lt;/b&gt;') >= 0 && hqLabel.indexOf('Evil <b>Corp</b>') < 0,
+      hqLabel.slice(hqLabel.indexOf('HQ'), hqLabel.indexOf('HQ') + 60));
+    const headline = vm.runInContext('H.concede("Chile")', c9);
+    ok('a name with markup renders as text in a headline',
+      headline.indexOf('&lt;b&gt;') >= 0 && headline.indexOf('<b>') < 0, headline.slice(0, 70));
+    const lostLine = vm.runInContext('H.lost("Chile")', c9);
+    ok('the expulsion headline names the vendor being thrown out',
+      lostLine.indexOf('&lt;b&gt;Corp') >= 0, lostLine.slice(0, 70));
+
+    /* the name survives a reload with the rest of the run */
+    vm.runInContext("S=newState('CONTRACTOR','Vendor','NA',null,null,'Kestrel Municipal');" +
+      "for(let i=0;i<40;i++)tick();saveRun();", c9);
+    const cA = makeCtx();
+    const restored = vm.runInContext('loadRun()', cA);
+    ok('the vendor name survives a reload', restored && vm.runInContext('S.co', cA) === 'Kestrel Municipal',
+      'co=' + (restored ? vm.runInContext('S.co', cA) : 'loadRun falsy'));
+
+    /* ambient wire lines may now be functions; the consumer must call them */
+    const amb = vm.runInContext('AMBIENT', c9);
+    const fns = amb.filter(a => typeof a === 'function').length;
+    ok('the vendor-naming wire lines are wired as functions', fns >= 2, 'fns=' + fns);
+    ok('the wire consumer calls a function line instead of printing it',
+      /typeof amb==='function'\?amb\(\):amb/.test(GAME));
+  }
+
   /* persistence */
   group('persistence');
   const hasSave = /LW_FTW|ftw_/.test(GAME);

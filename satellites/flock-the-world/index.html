@@ -134,6 +134,20 @@ h1 em{font-style:normal;color:var(--sodium)}
      as the run goes on, and a line that re-wraps mid-run silently moves every
      map overlay anchored to the HUD height. */
   #ledline{flex:1 0 100%;margin-top:2px;min-height:22px}
+  /* the pick screen's map band shrinks as its footer grows, and the zoom column
+     is three 48px targets tall. Adding the vendor input ate the headroom and
+     clipped FIT past the bottom of the map. Keep the band tall enough for the
+     column, and put the input's label beside it instead of above. */
+  /* the zoom column is three 48px targets tall, taller than the map band on a
+     short landscape phone, so FIT hung past the bottom of the map. Lay it as a
+     row here: the band then only has to be one button tall, which leaves the
+     Deploy button on screen instead of 31px under the fold. */
+  #pick .zoomui{flex-direction:row;top:auto;bottom:6px;right:6px}
+  #pickWrap{min-height:124px}
+  #pickInfo{min-height:0}
+  #coWrap{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+  #coWrap span{margin-bottom:0;flex:0 0 auto}
+  #coInput{flex:1 1 auto}
   .nb{min-height:48px}.nb svg{width:13px;height:13px}
   #nav{padding-top:5px;padding-bottom:calc(env(safe-area-inset-bottom) + 5px)}
 }
@@ -209,6 +223,12 @@ h1 em{font-style:normal;color:var(--sodium)}
 #rpop .rpX{position:absolute;top:2px;right:2px;width:34px;height:34px;border:0;background:none;
   color:var(--dim);font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center}
 #rpop .act,#rpop .buy{min-height:34px}
+#coWrap{display:block;margin:0 0 8px}
+#coWrap span{display:block;font-size:9px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--dim);margin-bottom:4px}
+#coInput{width:100%;min-height:48px;padding:0 12px;border-radius:10px;background:#101822;
+  border:1px solid var(--line);color:var(--paper);font:inherit;font-size:14px}
+#coInput:focus{outline:none;border-color:var(--sodium)}
 #ctip{position:absolute;left:8px;right:8px;bottom:34px;z-index:5;padding:9px 12px;border-radius:11px;
   background:#0a1018f0;border:1px solid var(--line);font-size:11.5px;line-height:1.45;color:var(--ice);
   display:none;align-items:center;gap:10px}
@@ -391,6 +411,8 @@ h1 em{font-style:normal;color:var(--sodium)}
   </div>
   <div id="pickFoot">
     <div id="pickInfo">No region selected.</div>
+    <label id="coWrap"><span>Name your vendor</span>
+      <input id="coInput" type="text" maxlength="24" autocomplete="off" spellcheck="false"></label>
     <button class="cta" id="beginBtn" style="opacity:.4" disabled>Deploy first unit</button>
   </div>
 </section>
@@ -544,6 +566,23 @@ const ROUTES=[
 ];
 
 /* ============================ CAST ============================ */
+/* ==================== NAME YOUR VENDOR ====================
+   Penny, via Stephen (2026-08-23): Plague Inc lets you name your thing, and
+   that is half of why it sticks. Every name here is invented; the satire is
+   about an industry, never a real company. */
+const VENDOR_NAMES=['Halcyon Civic Systems','Meridian Sightline','Northlight Assurance',
+  'Paladin Grid','Vantage Municipal','Lumen Watch','Clearfield Analytics','Sentry Commons'];
+/* ⛔ The name is PLAYER TEXT and most of the places it lands are innerHTML:
+   headlines, the wire ticker, the popover. Store it raw so textContent surfaces
+   read it verbatim, and escape at every HTML output through CO(). */
+/* ⛔ split/join, not regex literals. A regex literal containing a quote
+   character (/"/g, /'/g) derails check.js's comment stripper, which then reads
+   source comments as player copy and reports dashes that no player can see.
+   Caught by the dash gate the moment this function was added. */
+function escH(t){return String(t==null?'':t)
+  .split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;')
+  .split('"').join('&quot;').split("'").join('&#39;');}
+function CO(){return escH((S&&S.co)||VENDOR_NAMES[0]);}
 const CAST={
   vole:{n:'Dir. Merrick Vole',t:'Bureau Director',q:'Loyalty is just compliance with better branding.'},
   brill:{n:'Sec. Tansy Brill',t:'Homeland Secretary',q:'The vest is tactical. The photographer is essential.'},
@@ -701,7 +740,7 @@ const TREES={
 const AMBIENT=[
  'City council approves camera expansion 6 to 1. The one dissenter receives a primary challenger.',
  'Poll: 61% feel safer. Same poll: 58% cannot say what the cameras record.',
- 'Vendor conference keynote titled "Consent At Scale" receives standing ovation.',
+ ()=>`${CO()} keynote titled "Consent At Scale" receives standing ovation.`,
  'Sec. Brill tours new checkpoint in fourth tactical vest this quarter.',
  'Dir. Vole publishes updated list of "entities of concern." List grows nine pages.',
  'Sandoval-Klein Holdings acquires a weather app. It was never about weather.',
@@ -714,7 +753,7 @@ const AMBIENT=[
  'Insurer offers discount for households with three or more registered lenses.',
  'Whistleblower deadline passes quietly. Severance cleared this morning.',
  'Transit ads now read: IF YOU SEE ANYTHING, SAY EVERYTHING.',
- 'Vendor CEO closes on a fourth home. The city he monitors closes two libraries the same week.',
+ ()=>`The ${CO()} chief executive closes on a fourth home. The city they monitor closes two libraries the same week.`,
  'Ordinance-camera fines land hardest in the poorest zip codes. The stock hits an all-time high.',
  'Data brokers resell civilian location trails to landlords, insurers, and one especially curious ex-husband.',
  'False facial match jails an innocent father for a weekend. Settlement sealed; algorithm re-licensed.',
@@ -733,13 +772,13 @@ const H={
  calm:r=>`Streets quiet in ${r}. Officials credit "the deterrent." Residents credit exhaustion.`,
  crackdown:r=>`Armored units clear the squares of ${r}. Order restored; footage restricted.`,
  crackfail:r=>`Crackdown in ${r} collapses as units refuse orders. Crowds swell overnight.`,
- lost:r=>`${r} expels the platform. Civilians pull the cameras down themselves; the poles become bike racks and bird boxes.`,
+ lost:r=>`${r} expels ${CO()}. Civilians pull the cameras down themselves; the poles become bike racks and bird boxes.`,
  adopt:(a,b)=>`${b} signs national framework after closed-door briefings with ${a} officials.`,
  routeAdopt:(a,b)=>`Delegation from ${b} returns from ${a} trade summit with a pilot agreement and matching lapel pins.`,
  full:r=>`${r} declared "fully resilient." Every block instrumented, every face enrolled.`,
  agitate:r=>`Violence "erupts" in ${r} on schedule. Emergency procurement session Tuesday.`,
  blackout:r=>`${r} outlets drop the surveillance story simultaneously. Editors cite "news judgment."`,
- concede:r=>`Vendor announces "listening tour" in ${r}, removes 4% of units, films the removal.`
+ concede:r=>`${CO()} announces a "listening tour" in ${r}, removes 4% of units, films the removal.`
 };
 
 /* ============================ RESISTANCE ============================
@@ -827,7 +866,7 @@ let S=null, tickTimer=null, tickerTimer=null, raf=null;
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v;
 
-function newState(modeKey,diffKey,startId,seed,hqName){
+function newState(modeKey,diffKey,startId,seed,hqName,co){
   const mode=MODES[modeKey], diff=DIFFS[diffKey];
   const s={
     mode, diff, modeKey, diffKey, startId, day:0, cash:mode.cash*diff.cash, inf:mode.inf, oversight:0, speed:1,
@@ -846,6 +885,7 @@ function newState(modeKey,diffKey,startId,seed,hqName){
   });
   const st=s.regions[startId]; st.active=true; st.coverage=0.006;
   s.hq=seed||anchorOf(startId); s.hqName=hqName||st.name;
+  s.co=(co&&String(co).trim())||VENDOR_NAMES[0];
   setSpreadOrder(s,startId,s.hq);
   if(mode.mod.preseed){
     const auth=REGIONS.filter(r=>r.liberty<0.35&&r.id!==startId)
@@ -854,7 +894,7 @@ function newState(modeKey,diffKey,startId,seed,hqName){
       setSpreadOrder(s,r.id,anchorOf(r.id));});
   }
   recompute(s);
-  pushNews(s,`First unit installed in ${s.hqName}. It is pointed at a parking lot.`,'good');
+  pushNews(s,`${escH(s.co)} installs its first unit in ${s.hqName}. It is pointed at a parking lot.`,'good');
   return s;
 }
 function recompute(s){
@@ -1128,7 +1168,8 @@ function tick(){
       return false;
     }return true;});
 
-  if(s.day%23===0)pushNews(s,AMBIENT[(Math.random()*AMBIENT.length)|0],'');
+  if(s.day%23===0){const amb=AMBIENT[(Math.random()*AMBIENT.length)|0];
+    pushNews(s,typeof amb==='function'?amb():amb,'');}
 
   if(!s.doctrine&&s.subj>=0.14&&!$('modal').classList.contains('on'))doctrineModal();
 
@@ -1202,7 +1243,7 @@ function finish(won,why){
   }
   const found=COMBOS.filter(c=>S.combos.has(c.id)).map(c=>c.n);
   lastResult=[
-    'FLOCK THE WORLD',
+    'FLOCK THE WORLD \u00b7 '+S.co,
     (won?'Contract fulfilled':why==='refusal'?'The great refusal':'Platform dismantled')
       +' · '+S.mode.n+' · '+S.diffKey,
     'Subjugation '+(S.subj*100).toFixed(1)+'% · '+(S.mode.mod.ovrName||'Patriotism')+' '
@@ -1228,15 +1269,15 @@ function finish(won,why){
   if(won){
     $('endKick').textContent='Contract fulfilled';
     $('endTitle').innerHTML='TOTAL <span style="color:var(--sodium)">COVERAGE</span>';
-    $('endText').textContent='Every innocent person on Earth now lives inside your frame. Billions of ordinary people who were never asked, farmed for fines and fear by a handful of vendors, lobbyists and landlords of the lens. There was never a vote. Only procurement. Your guidance is revised upward. Sit with what you just built.';
+    $('endText').textContent=S.co+' did this. Every innocent person on Earth now lives inside your frame. Billions of ordinary people who were never asked, farmed for fines and fear by a handful of vendors, lobbyists and landlords of the lens. There was never a vote. Only procurement. Your guidance is revised upward. Sit with what you just built.';
   }else if(why==='refusal'){
     $('endKick').textContent='The great refusal';
     $('endTitle').innerHTML='TORN <span style="color:var(--scan)">DOWN</span>';
-    $('endText').textContent='Ordinary people did this: the mappers and the mask-wearers, the cop-watchers and the encryption nerds, the tenants who unplugged and the streamers who filmed your provocateurs\u2019 pay stubs. Four regions rose at once and the inevitable turned out to be bolted to poles. It came down in a weekend. They kept the bird boxes.';
+    $('endText').textContent='Ordinary people took '+S.co+' apart: the mappers and the mask-wearers, the cop-watchers and the encryption nerds, the tenants who unplugged and the streamers who filmed your provocateurs\u2019 pay stubs. Four regions rose at once and the inevitable turned out to be bolted to poles. It came down in a weekend. They kept the bird boxes.';
   }else{
     $('endKick').textContent='Platform dismantled';
     $('endTitle').innerHTML='SHUT <span style="color:var(--scan)">DOWN</span>';
-    $('endText').textContent='The civilians you farmed learned faster than you deployed: they mapped the lenses, encrypted the graph, filmed the crackdowns, leaked the archive, and dragged the whole parasite class into a hearing room with the receipts. Contracts voided. Archive deleted. Three executives cooperating. Paperwork. The one weapon you never saw coming.';
+    $('endText').textContent='The civilians '+S.co+' farmed learned faster than it deployed: they mapped the lenses, encrypted the graph, filmed the crackdowns, leaked the archive, and dragged the whole parasite class into a hearing room with the receipts. Contracts voided. Archive deleted. Three executives cooperating. Paperwork. The one weapon you never saw coming.';
   }
   show('end');
 }
@@ -1249,7 +1290,7 @@ function finish(won,why){
      ftw_recs  lifetime records. Counters ADD, bests MAX, synergies union.
    Every read is defensive: a corrupt or half written blob is refused and the
    player starts fresh instead of booting into a broken world. */
-const K_RUN='ftw_run', K_RECS='ftw_recs';
+const K_RUN='ftw_run', K_RECS='ftw_recs', K_CO='ftw_co';
 function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
 function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
 function lsDel(k){try{localStorage.removeItem(k);}catch(e){}}
@@ -1289,7 +1330,7 @@ function saveRun(){
         cOrder:r.cOrder||null,cN:r.cN||1};}
     lsSet(K_RUN,JSON.stringify({v:1,modeKey:s.modeKey,diffKey:s.diffKey,startId:s.startId,
       day:s.day,cash:s.cash,inf:s.inf,oversight:s.oversight,warHeat:s.warHeat,doctrine:s.doctrine,net:s.net||0,lbCd:s.lbCd||0,
-      lostCount:s.lostCount,wmileDth:s.wmileDth||0,hq:s.hq,hqName:s.hqName,
+      lostCount:s.lostCount,wmileDth:s.wmileDth||0,hq:s.hq,hqName:s.hqName,co:s.co,
       owned:[...s.owned],combos:[...s.combos],milestones:[...s.milestones],wmiles:[...s.wmiles],
       log:s.log.slice(0,40),regions:regs,stamp:Date.now()}));
   }catch(e){}
@@ -1304,7 +1345,7 @@ function peekRun(){
 function loadRun(){
   const d=peekRun();if(!d)return false;
   let s;
-  try{s=newState(d.modeKey,d.diffKey,d.startId,Array.isArray(d.hq)?d.hq:null,d.hqName||null);}
+  try{s=newState(d.modeKey,d.diffKey,d.startId,Array.isArray(d.hq)?d.hq:null,d.hqName||null,d.co||null);}
   catch(e){return false;}
   s.day=num(d.day,0);s.cash=num(d.cash,0);s.inf=num(d.inf,0);
   s.oversight=clamp(num(d.oversight,0),0,100);s.warHeat=clamp(num(d.warHeat,0),0,1);
@@ -2154,7 +2195,7 @@ function rpopHTML(rid,cn){
   const chip=x.lost?'<span class="chip uprising">EXPELLED</span>'
     :x.active?`<span class="chip ${x.pstate}">${PSTATE_LABEL[x.pstate]}</span>`
     :'<span class="chip">Unsigned</span>';
-  const hq=(cn&&S.hqName===cn)?' \u00b7 HQ':'';
+  const hq=(cn&&S.hqName===cn)?` \u00b7 HQ of ${CO()}`:'';
   let h=`<button class="rpX" data-rpclose="1" aria-label="Close">\u2715</button>`
     +`<div class="rpH">${cn?cn+' \u00b7 ':''}${x.name}${hq}</div><div class="rpS">${chip}</div>`;
   h+=`<div class="rpN">
@@ -2256,6 +2297,22 @@ function guideTick(){
 /* ============================ SCREENS ============================ */
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id));}
 let chosenMode='CONTRACTOR',chosenDiff='Vendor',pickedRegion=null,pickedCountry=null,gv=null,pv=null,tutSeen=false,lastResult='';
+/* the input remembers what you called yourself last time; a first-time player
+   gets one of the invented names as a placeholder so the field is never a blank
+   demand. Leaving it empty is allowed and takes the placeholder. */
+let coPlaceholder=VENDOR_NAMES[0];
+function initCoInput(){
+  const e=$('coInput');if(!e)return;
+  coPlaceholder=VENDOR_NAMES[(Math.random()*VENDOR_NAMES.length)|0];
+  e.placeholder=coPlaceholder;
+  const saved=lsGet(K_CO);
+  if(saved)e.value=saved;
+}
+function chosenCo(){
+  const e=$('coInput');
+  const v=e&&e.value?e.value.trim().slice(0,24):'';
+  return v||coPlaceholder;
+}
 function initMenu(){
   $('modes').innerHTML=Object.keys(MODES).map(k=>{const m=MODES[k];
     return `<button class="modecard ${k===chosenMode?'sel':''}" data-m="${k}">
@@ -2267,7 +2324,7 @@ function initMenu(){
   $('diffDesc').textContent=DIFFS[chosenDiff].label;
 }
 function initPick(){
-  show('pick');pickedRegion=null;pickedCountry=null;
+  show('pick');initCoInput();pickedRegion=null;pickedCountry=null;
   $('beginBtn').disabled=true;$('beginBtn').style.opacity=.4;$('beginBtn').textContent='Deploy first unit';
   $('pickInfo').textContent='No country selected.';
   const wrap=$('pickWrap');
@@ -2298,7 +2355,9 @@ function initPick(){
 }
 function startGame(){
   const hc=pickedCountry!=null?COUNTRIES[pickedCountry]:null;
-  S=newState(chosenMode,chosenDiff,pickedRegion,hc?hc.c.slice():null,hc?hc.n:null);
+  const co=chosenCo();
+  lsSet(K_CO,co);
+  S=newState(chosenMode,chosenDiff,pickedRegion,hc?hc.c.slice():null,hc?hc.n:null,co);
   bootGame(false);
 }
 /* everything that wires the game screen to a state object, so a resumed run
@@ -2391,7 +2450,7 @@ function leaveModal(){
 function refreshMenuExtras(){
   const d=peekRun(),b=$('resumeBtn');
   if(d){b.style.display='block';
-    b.textContent='Resume your run · day '+Math.round(d.day)+' in '+(d.hqName||MODES[d.modeKey].n);}
+    b.textContent=(d.co?d.co+' \u00b7 day ':'Resume your run \u00b7 day ')+Math.round(d.day)+' in '+(d.hqName||MODES[d.modeKey].n);}
   else b.style.display='none';
   const r=getRecs();
   $('recLine').innerHTML=r.runs?('Runs '+r.runs+' · wins '+r.wins+' · best coverage '+r.bestSubj.toFixed(1)+'%'
