@@ -107,6 +107,9 @@ h1 em{font-style:normal;color:var(--sodium)}
 .lgs{font-size:9px;letter-spacing:.1em;color:var(--dim);text-transform:uppercase;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* ledger sheet */
+.combo.found{display:flex;align-items:center;gap:11px}
+.combo.found .ctx{flex:1 1 auto;min-width:0}
+.cbadge{width:52px;height:52px;flex:none;object-fit:contain}
 .ledgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
 .ledcell{border:1px solid var(--line);border-radius:10px;padding:8px 9px;background:#0d1520}
 .ledcell .k{font-size:9px;letter-spacing:.14em;color:var(--dim);text-transform:uppercase}
@@ -287,6 +290,22 @@ h1 em{font-style:normal;color:var(--sodium)}
 /* Node text sized to be READ, not decoded (Stephen 2026-08-20: descriptions
    were too small, make them fill the boxes). */
 .tree{position:relative}
+/* the tree art sits BEHIND the nodes at low opacity and fades out downward, so
+   it reads as atmosphere instead of a picture competing with the cards.
+   Stephen's note was that the trees looked cheap; this is most of why. */
+.tree::before{content:'';position:absolute;inset:-8px -8px 0;z-index:0;pointer-events:none;
+  background-image:var(--treebg);background-size:cover;background-position:top center;
+  background-repeat:no-repeat;
+  /* ⛔ Blurred hard and dropped right back on purpose. Unblurred at 16% you could
+     read individual cameras behind the node cards, which are THEMSELVES cameras:
+     the art competed with the icons and with the body text and the tree looked
+     busier, not better. Looked at it, and it was worse than no art. As texture
+     it does the job the brief asked for. */
+  filter:blur(7px) saturate(.75);
+  opacity:.10;
+  -webkit-mask-image:linear-gradient(#000 0%,#000 22%,#0000 62%);
+  mask-image:linear-gradient(#000 0%,#000 22%,#0000 62%)}
+.tree>*{position:relative;z-index:1}
 /* ⛔ minmax(0,1fr), not 1fr. A bare 1fr track cannot shrink below its
    min-content, so the moment a node card carried a 44px icon the longest word
    in "Fleet & Rideshare Cams" pushed the whole row 23px past the screen and
@@ -383,6 +402,10 @@ h1 em{font-style:normal;color:var(--sodium)}
 .card .kicker{font-size:9px;letter-spacing:.26em;color:var(--scan);text-transform:uppercase}
 .card h3{margin:8px 0;font-size:17px;line-height:1.25}
 .card .who{font-size:10px;color:var(--sodium);letter-spacing:.08em;margin-bottom:6px}
+.whorow{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.whorow .who{margin-bottom:0}
+.whopic{width:54px;height:54px;flex:none;border-radius:10px;object-fit:cover;
+  border:1px solid var(--line)}
 .card p{margin:0 0 14px;font-size:12.5px;line-height:1.6;color:var(--ice)}
 .opt{width:100%;min-height:48px;text-align:left;padding:12px;border:1px solid var(--line);border-radius:11px;margin-bottom:8px;background:var(--panel)}
 .opt .ol{font-size:12px;font-weight:700}
@@ -2094,7 +2117,7 @@ function renderSheet(tab){
        sealed slots. A few slots leak a hint on purpose; the others stay dark. */
     let chd=`<p class="treedesc" style="color:var(--sodium)">Synergies \u00b7 certain pairs of skills combine into something bigger. ${S.combos.size} of ${COMBOS.length} found.</p>`;
     chd+=COMBOS.map(c=>{
-      if(S.combos.has(c.id))return `<div class="combo"><b>${c.n}</b><div class="cd">${c.d}</div></div>`;
+      if(S.combos.has(c.id))return `<div class="combo found">${BADGE_ART[c.id]?`<img class="cbadge" src="art/badge/${c.id}.webp" alt="">`:''}<div class="ctx"><b>${c.n}</b><div class="cd">${c.d}</div></div></div>`;
       if(c.hint)return `<div class="combo mystery"><b>SEALED</b><div class="cd">${c.hint}</div></div>`;
       return '';
     }).join('');
@@ -2110,6 +2133,11 @@ function renderSheet(tab){
    error per node, and 46 of those on one screen is not a silent fallback.
    Cut from Stephen's sheets 1 to 4 by scripts/cut_ftw.py. Add an id here when
    its png lands. */
+/* Same explicit-manifest rule as NODE_ART and SFX_HAVE: never probe for a file
+   that may not be there. Cut from Stephen's sheets 5, 9 and 10. */
+const BADGE_ART={consent:1,curfewplus:1,fineprint:1,hallmon:1,lgm:1,memhole:1,nonewfriends:1,oncue:1,panopt:1,pipeline:1,precrime:1,shotgun:1,skyanchor:1,ticket:1,town:1,welcomemat:1};
+const CAST_ART={anchor:1,brill:1,cm_atlas:1,cm_boycott:1,cm_copwatch:1,cm_crypto:1,cm_jam:1,cm_masks:1,cm_plateswap:1,cm_samizdat:1,innocent:1,klein:1,prather:1,the_board:1,the_public:1,vole:1};
+const CARD_ART={diff_easy:1,diff_hard:1,diff_standard:1,doctrine_fist:1,doctrine_glove:1,mode_contractor:1,mode_crisis:1,mode_partnership:1};
 const NODE_ART={agit:1,anchor:1,arch:1,astro:1,auto:1,blackout:1,border:1,capt:1,charter:1,check:1,core:1,corps:1,door:1,drone:1,face:1,fleet:1,fusion:1,graph:1,hiway:1,hoa:1,legal:1,lobby:1,martial:1,mesh:1,muni:1,narr:1,nda:1,ord:1,panic:1,patrol:1,perp:1,pilot:1,plate:1,pr:1,precog:1,pretext:1,proxy:1,quota:1,retail:1,revo:1,sat:1,school:1,score:1,threat:1,trans:1,whis:1};
 function nodeCost(n){
   let c=n.c;
@@ -2129,7 +2157,8 @@ function nodeState(n){
 function treeHTML(t){
   const ns=NODES.filter(n=>n.t===t);
   const rows=Math.max(...ns.map(n=>n.r))+1;
-  let h='<div class="tree"><svg id="wires"></svg>';
+  const BG={dep:'bg_deployment',cap:'bg_watchlist',inf:'bg_narrative',war:'bg_crisis'}[t];
+  let h='<div class="tree"'+(BG?` style="--treebg:url(art/bg/${BG}.webp)"`:'')+'><svg id="wires"></svg>';
   for(let r=0;r<rows;r++){
     h+='<div class="trow">';
     for(let x=0;x<3;x++){
@@ -2139,7 +2168,7 @@ function treeHTML(t){
       const aff=st==='avail'&&S.inf>=c;
       const cst=st==='own'?'ACTIVE':st==='gated'?(n.gtxt||'GATED'):st==='exlocked'?'PATH CLOSED':c+' INF';
       const tut=(G.on&&GUIDE[G.step]&&GUIDE[G.step].node===n.id&&st==='avail')?'tut':'';
-      const ico=NODE_ART[n.id]?`<img class="nico" src="art/tree/${n.id}.png" alt="" draggable="false">`:'';
+      const ico=NODE_ART[n.id]?`<img class="nico" src="art/tree/${n.id}.webp" alt="" draggable="false">`:'';
       h+=`<div class="node ${st} ${aff?'afford':''} ${tut}" id="nd_${n.id}" data-node="${n.id}">
         <div class="nhead">${ico}<div class="nm">${n.n}</div></div>
         <div class="cst mono">${cst}</div><div class="ds">${n.d}</div></div>`;
@@ -2341,7 +2370,7 @@ function showEvent(ev){
   const cashOf=o=>o.cost&&o.cost.cash?Math.round(o.cost.cash*sc/5)*5:0;
   const c=$('modalCard'),who=ev.who?CAST[ev.who]:null;
   c.innerHTML=`<div class="kicker">${ev.kick}</div>
-    ${who?`<div class="who">${who.n} · ${who.t}</div>`:''}
+    ${who?`<div class="whorow">${CAST_ART[ev.who]?`<img class="whopic" src="art/cast/${ev.who}.webp" alt="">`:''}<div class="who">${who.n} · ${who.t}</div></div>`:''}
     <h3>${ev.t}</h3><p>${ev.b}</p>`
     +ev.o.map((o,i)=>{
       const cc=cashOf(o);

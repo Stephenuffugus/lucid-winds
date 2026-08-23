@@ -40,10 +40,17 @@ solid = ~bg
 solid = ndimage.binary_erosion(solid, np.ones((3, 3), bool), iterations=2)
 
 H, W = solid.shape
-# grouping mask only. Generous, because a sensor mesh is pucks joined by thin
-# glowing threads and the erosion above snaps those threads.
-merged = ndimage.binary_dilation(solid, np.ones((1, 3), bool), iterations=16)
-merged = ndimage.binary_dilation(merged, np.ones((3, 1), bool), iterations=10)
+ROWS_E, COLS_E = int(os.environ.get('FTW_ROWS', '0')), int(os.environ.get('FTW_COLS', '0'))
+# ⛔ Dilation exists ONLY to rejoin the parts of one object. When a grid is given
+# the cell buckets below already do that, so dilate barely at all: on sheets of
+# packed objects (enamel badges that touch, card panels, portrait tiles) a
+# generous dilation bridges NEIGHBOURING cells into one blob and the sheet
+# collapses. Sheet 5 came out as 3 objects instead of 16 that way.
+DX = int(os.environ.get('FTW_DIL_X', '2' if (ROWS_E and COLS_E) else '16'))
+DY = int(os.environ.get('FTW_DIL_Y', '1' if (ROWS_E and COLS_E) else '10'))
+merged = solid
+if DX: merged = ndimage.binary_dilation(merged, np.ones((1, 3), bool), iterations=DX)
+if DY: merged = ndimage.binary_dilation(merged, np.ones((3, 1), bool), iterations=DY)
 lbl, n = ndimage.label(merged)
 blobs = []
 for k, sl in enumerate(ndimage.find_objects(lbl), start=1):
@@ -63,7 +70,7 @@ for k, sl in enumerate(ndimage.find_objects(lbl), start=1):
 # shifts the name of every icon after it, which is exactly what happened to
 # sheet 1 on the first run: the mesh broke into three and the last four icons
 # all got the wrong id.
-ROWS, COLS = int(os.environ.get('FTW_ROWS', '0')), int(os.environ.get('FTW_COLS', '0'))
+ROWS, COLS = ROWS_E, COLS_E
 if ROWS and COLS:
     cellw, cellh = W / float(COLS), H / float(ROWS)
     buckets = {}
