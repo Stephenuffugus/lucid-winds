@@ -1931,9 +1931,15 @@ function drawFx(){
     ctx.globalAlpha=fade;
     ctx.beginPath();ctx.arc(b.x,b.y,rad,0,7);
     ctx.fillStyle=col+'22';ctx.fill();ctx.strokeStyle=col;ctx.lineWidth=1.5/wz*gv.fitZ+0.3;ctx.stroke();
-    ctx.fillStyle=col;ctx.font=`700 ${rad}px ui-monospace,monospace`;
-    ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText(b.k==='cash'?'$':b.k==='inf'?'\u25C8':'!',b.x,b.y+0.5);
+    const bim=uiImg(b.k==='cash'?'bubble_cash':b.k==='inf'?'bubble_influence':null);
+    if(bim){
+      const d2=rad*1.55;
+      ctx.drawImage(bim,b.x-d2/2,b.y-d2/2,d2,d2);
+    }else{
+      ctx.fillStyle=col;ctx.font=`700 ${rad}px ui-monospace,monospace`;
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(b.k==='cash'?'$':b.k==='inf'?'\u25C8':'!',b.x,b.y+0.5);
+    }
     ctx.globalAlpha=1;
   }
   if(gv.dirty){drawWorld(gv,S,null);gv.dirty=false;}
@@ -2160,6 +2166,23 @@ const UI_ART={act_agitate:1,act_blackout:1,act_concede:1,act_crackdown:1,act_ent
 /* ⛔ ONE source for a state chip. It is rendered in three places (World cards,
    the map popover, the Ledger rows) and before this each built its own string,
    which is exactly how the action-button prices nearly drifted in F2. */
+/* canvas cannot use an <img> tag, so the two bubble glyphs are preloaded here.
+   drawFx already runs on a rAF loop, so nothing needs to force a repaint: the
+   frame after the image decodes simply draws it. Until then the old glyph is
+   still drawn, so a slow or failed load degrades to exactly what shipped before.
+   ⛔ Only ids in UI_ART are ever requested, same manifest rule as everywhere. */
+const UIIMG={};
+function uiImg(id){
+  if(!UI_ART[id])return null;
+  let im=UIIMG[id];
+  if(im===undefined){
+    im=new Image();
+    im.onerror=function(){UIIMG[id]=null;};
+    im.src='art/ui/'+id+'.webp';
+    UIIMG[id]=im;
+  }
+  return (im&&im.complete&&im.naturalWidth>0)?im:null;
+}
 function uiIco(id,cls){return UI_ART[id]?`<img class="uico ${cls||''}" src="art/ui/${id}.webp" alt="">`:'';}
 function stateChip(x){
   if(x.lost)return `<span class="chip uprising">${uiIco('state_expelled')}Expelled</span>`;
