@@ -383,9 +383,11 @@ h1 em{font-style:normal;color:var(--sodium)}
 .vpaths{border:1px solid var(--line);border-radius:12px;background:var(--panel);
   padding:8px 11px;margin:0 2px 12px;display:flex;flex-direction:column;gap:7px}
 .vrow{display:grid;grid-template-columns:118px 1fr;gap:3px 12px;align-items:center}
-.vname{font-size:10.5px;font-weight:800;letter-spacing:.04em;color:var(--paper)}
-.vbar{height:5px;border-radius:3px;background:#16202b;overflow:hidden}
+.vname{font-size:11px;font-weight:800;letter-spacing:.04em;color:var(--paper)}
+.vbar{height:6px;border-radius:3px;background:#16202b;overflow:hidden}
 .vfill{height:100%;border-radius:3px;background:var(--sodium);transition:width .3s}
+.vf-glove{background:var(--grn)}.vf-fist{background:var(--blood)}.vf-econ{background:var(--scan)}
+.vrow.vlocked{opacity:.42}
 .vdet{grid-column:2;font-size:9.5px;color:var(--dim);letter-spacing:.02em}
 .deskhead{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);
   margin:0 2px 6px}
@@ -495,6 +497,21 @@ h1 em{font-style:normal;color:var(--sodium)}
   #menu .dfart{width:92px}
   #menu .cta{position:sticky;bottom:0;z-index:2;margin-top:12px;
     box-shadow:0 -10px 20px #05070bd9}
+
+  /* the end screen: the morning review found the headline above the fold and
+     the closing line below it in landscape, and there are four endings now.
+     Verdict and body on the left, the stat grid scrolling on the right. */
+  #end.on{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    column-gap:26px;align-items:center;text-align:left;
+    padding:14px 20px calc(env(safe-area-inset-bottom) + 10px)}
+  #end .verd,#end h2,#end p{grid-column:1}
+  #end h2{font-size:clamp(24px,4.8vw,38px)}
+  #end p{max-width:none;font-size:12px;line-height:1.55}
+  #end .statgrid{grid-column:2;grid-row:1/span 4;max-width:none;max-height:100%;
+    overflow-y:auto;margin:0;align-self:stretch;align-content:center}
+  #end #endRecs{grid-column:1}
+  #end .cta{grid-column:1;max-width:360px;margin-top:8px}
+  #end .howbtn{grid-column:1;margin-top:8px}
   #coWrap{display:flex;align-items:center;gap:10px;margin-bottom:6px}
   #coWrap span{margin-bottom:0;flex:0 0 auto;display:inline-block}
   #coInput{flex:1 1 auto}
@@ -1345,6 +1362,119 @@ function EV(){ return [
 {id:'award',w:6,cd:200,when:s=>s.day>120&&s.oversight<45,k:'flash',
  f:s=>{s.inf+=3;s.oversight+=1;
    return 'The industry association names you Vendor of the Year. The trophy is a small gold camera.';},cls:'good'},
+/* ============ EVENT CHAINS (4 arcs x 3 beats) ============
+   Beat N carries chain/step; the picker's arc gate (index.html:1949) sequences
+   them and stamps s.arc[chain]=step on fire, so a taken beat never refires. */
+
+/* ---- ARC: DIR. VOLE — "The Ledger" ---- */
+{id:'vole_arc1',chain:'vole',step:1,w:10,cd:150,when:s=>s.day>60,k:'choice',who:'vole',kick:'A courtesy',
+ t:'A subpoena goes missing before it exists',
+ b:'Dir. Vole calls to describe a records request that, as of this morning, was never filed. "No charge," she says. "The Bureau values its partners." She does not say for what.',
+ o:[{l:'Accept the courtesy',h:'Oversight eases. Nothing is owed, on paper.',
+     f:s=>{s.oversight=Math.max(0,s.oversight-2);pushNews(s,'A records request is withdrawn, citing "clerical duplication." There was no duplicate.','good');}},
+    {l:'Ask her to file it properly',h:'Oversight climbs. You keep your hands where the cameras can see them.',
+     f:s=>{s.oversight+=3;pushNews(s,'The request proceeds through channels. Dir. Vole notes your integrity in a tone usually reserved for symptoms.','bad');}}]},
+{id:'vole_arc2',chain:'vole',step:2,w:11,cd:160,when:s=>s.day>120,k:'choice',who:'vole',kick:'The favour returns',
+ t:'Dir. Vole would like a few searches run',
+ b:'Eleven names. A rival director, two journalists, a son in law. "Informally," she says. "The way you ran the other forty thousand." So she counted.',
+ o:[{l:'Run the eleven names',h:'Influence grows. Suspicion rises everywhere. The debt compounds quietly.',
+     f:s=>{s.inf+=4;bumpSus(s,5);pushNews(s,'Eleven files move without a warrant among them. Somewhere a clerk updates a private ledger.','bad');}},
+    {l:'Refuse her',h:'Oversight jumps. The courtesy you took becomes a fact she keeps.',
+     f:s=>{s.oversight+=5;pushNews(s,'An anonymous complaint about your records handling reaches three agencies in one afternoon.','bad');}}]},
+{id:'vole_arc3',chain:'vole',step:3,w:12,cd:200,when:s=>s.day>200,k:'choice',who:'vole',kick:'Reckoning',
+ t:'Dir. Vole is under investigation, and her ledger is thorough',
+ b:'The inspector general has her safe, her calendar, and a notebook where every favour has a column. Your column is long. Her lawyer calls with a price for the notebook. Her rival calls with a price for testimony.',
+ o:[{l:'Buy the notebook',c:s=>s.cash>=450*MONEY,cost:{cash:450*MONEY},h:'A fortune leaves. Oversight eases and the column closes for good.',
+     f:s=>{s.oversight=Math.max(0,s.oversight-6);pushNews(s,'Dir. Vole retires to consult. The notebook is not among her papers. The papers are not among anything.','good');}},
+    {l:'Testify against her',h:'Oversight eases a little, but suspicion surges everywhere and influence drains as every partner rereads their own column.',
+     f:s=>{s.oversight=Math.max(0,s.oversight-2);bumpSus(s,10);s.inf=Math.max(0,s.inf-6);
+       pushNews(s,'Your testimony sinks Vole in a day. Every agency partner you have goes quiet the same week.','crit');}}]},
+
+/* ---- ARC: SEC. BRILL — "The Vest" ---- */
+{id:'brill_arc1',chain:'brill',step:1,w:10,cd:150,when:s=>s.activeCount>=2,k:'choice',who:'brill',kick:'A photo opportunity',
+ t:'Sec. Brill invites herself to your operations floor',
+ b:'She arrives with a camera crew, a fifth tactical vest, and no questions. "People feel safer when they can see the seeing," she says. Her staff have already chosen the wall she will stand against.',
+ o:[{l:'Host the visit',h:'Compliance rises where the cameras rolled. Suspicion ticks up everywhere.',
+     f:s=>{const r=pickActive(s);if(r)r.compliance=clamp(r.compliance+0.07,.02,.98);bumpSus(s,2);
+       pushNews(s,'Sec. Brill tours your floor in a vest. The evening news runs ninety seconds of monitors, monitored.','good');}},
+    {l:'Cite security protocol',h:'Oversight ticks up. She does not forget a locked door.',
+     f:s=>{s.oversight+=2;pushNews(s,'Sec. Brill films outside your lobby instead, describing what she "was not shown."','bad');}}]},
+{id:'brill_arc2',chain:'brill',step:2,w:11,cd:160,when:s=>s.activeCount>=3,k:'choice',who:'brill',kick:'Live television',
+ t:'Sec. Brill wants your feeds for a televised raid',
+ b:'A primetime special. Her situation room, your cameras, one door going down on schedule. "The public deserves to watch justice happen," she says, meaning the public deserves to watch her watch it.',
+ o:[{l:'Patch her in',h:'Compliance rises everywhere and one market militarizes. Oversight climbs.',
+     f:s=>{globalCmp(s,.04);s.oversight+=3;const r=pickActive(s);if(r)r.milit=clamp(r.milit+0.08,0,1);
+       pushNews(s,'The raid airs live through your lenses. Ratings are excellent. Questions are scheduled for later.','good');}},
+    {l:'Decline the patch',h:'Suspicion rises everywhere. She names a vendor gap on air, and the vendor is you.',
+     f:s=>{bumpSus(s,5);pushNews(s,'The special airs with an empty wall of screens labelled "withheld." Your name fits neatly under it.','bad');}}]},
+{id:'brill_arc3',chain:'brill',step:3,w:12,cd:200,when:s=>s.day>150,k:'choice',who:'brill',kick:'The wrong door',
+ t:'The raid hit the wrong house, wearing your logo',
+ b:'A grandmother, a broken door frame, forty seconds of primetime that will not stop looping. Brill calls before her own press office does. "One of us takes this," she says. "I still make policy. Think about which of us you need making it."',
+ o:[{l:'Take the blame for her',c:s=>s.cash>=400*MONEY,cost:{cash:400*MONEY},h:'A fortune in settlements and oversight jumps, but influence surges and compliance rises everywhere. She owes you her career.',
+     f:s=>{s.oversight+=5;s.inf+=7;globalCmp(s,.05);
+       pushNews(s,'Your statement cites "an address resolution failure." The settlement is generous. Sec. Brill announces new funding within the week.','crit');}},
+    {l:'Release the timestamps',h:'Oversight eases as blame lands on her, but influence dips and compliance falls everywhere as buyers watch you burn a Secretary.',
+     f:s=>{s.oversight=Math.max(0,s.oversight-4);globalCmp(s,-.06);s.inf=Math.max(0,s.inf-3);
+       pushNews(s,'The logs show her office picked the address. Brill resigns at a podium, without a vest, naming you twice.','bad');}}]},
+
+/* ---- ARC: SANDOVAL-KLEIN — "The Mirror" ---- */
+{id:'klein_arc1',chain:'klein',step:1,w:10,cd:150,when:s=>s.day>90,k:'choice',who:'klein',kick:'Professional courtesy',
+ t:'Sandoval-Klein sends you a rival\'s breach file',
+ b:'"Their archive leaked eight months ago and they never told anyone," she says. "I thought you should have it. No invoice." A billionaire who does favours by the pound is measuring you for something.',
+ o:[{l:'Leak it to a friendly desk',h:'Influence grows and acquisition heat cools as the rival stumbles.',
+     f:s=>{s.inf+=3;s.acqHeat=Math.max(0,(s.acqHeat||0)-0.08);
+       pushNews(s,'A rival discloses a very old breach, badly. Their municipal contracts start shopping around.','good');}},
+    {l:'Delete it unread',h:'Nothing gained. Somewhere a scale records that you did not tip.',
+     f:s=>{pushNews(s,'You delete the file. Sandoval-Klein sends a fruit basket with no card, which is a kind of card.','good');}}]},
+{id:'klein_arc2',chain:'klein',step:2,w:11,cd:160,when:s=>s.has('arch'),k:'choice',who:'klein',kick:'Redundancy',
+ t:'Sandoval-Klein wants a mirror of your archive',
+ b:'"For resilience," she says. "Disasters, outages, subpoenas. A copy in my vault protects us both." The contract is forty pages and the word "sell" appears nowhere, which took excellent lawyers.',
+ o:[{l:'Sign the mirror agreement',h:'A fortune arrives. Oversight climbs, and people organize a little everywhere as the copy is rumoured.',
+     f:s=>{s.cash+=320*MONEY;s.oversight+=3;
+       REGIONS.forEach(R=>{const x=s.regions[R.id];if(x.active)x.resist=clamp(x.resist+3,0,100);});
+       pushNews(s,'The archive is mirrored offshore. The transfer takes four nights and generates no press release.','good');}},
+    {l:'Refuse the mirror',h:'Acquisition heat rises. She begins building her own copy the hard way, through yours.',
+     f:s=>{s.acqHeat=Math.min(CFG.acqHeatMax,(s.acqHeat||0)+0.12);
+       pushNews(s,'Sandoval-Klein Holdings begins acquiring your suppliers, politely, one invoice at a time.','bad');}}]},
+{id:'klein_arc3',chain:'klein',step:3,w:12,cd:200,when:s=>s.day>250,k:'choice',who:'klein',kick:'The copy surfaces',
+ t:'Your data is for sale, and the seller is not you',
+ b:'A brochure circulates in three capitals offering "population insight" that could only come from your archive. Klein does not deny it. "The mirror clause covers derivatives," she says. "Buy the vault back, or become a subsidiary of what you built."',
+ o:[{l:'Buy back the vault',c:s=>s.cash>=550*MONEY,cost:{cash:550*MONEY},h:'A ruinous price. Oversight eases and the brochure disappears from every capital at once.',
+     f:s=>{s.oversight=Math.max(0,s.oversight-5);
+       pushNews(s,'The vault changes hands at a number with too many commas. The brochures are recalled by courier.','good');}},
+    {l:'Let her sell',h:'Money flows in as a royalty, but oversight jumps and people organize everywhere once the brochure leaks.',
+     f:s=>{s.cash+=200*MONEY;s.oversight+=7;
+       REGIONS.forEach(R=>{const x=s.regions[R.id];if(x.active)x.resist=clamp(x.resist+6,0,100);});
+       pushNews(s,'The brochure leaks in full. Your logo is on page one, under someone else\'s letterhead.','res');}}]},
+
+/* ---- ARC: GEN. PRATHER — "The Annex" ---- */
+{id:'prather_arc1',chain:'prather',step:1,w:10,cd:150,when:s=>s.warHeat<0.4,k:'choice',who:'prather',kick:'An introduction',
+ t:'Gen. Prather saves you a seat at the defence expo',
+ b:'"Front row, next to procurement," he says. "No charge. I like to introduce people before they know they need each other." Behind him, a missile with a naming problem rotates slowly on a plinth.',
+ o:[{l:'Take the seat',h:'Influence grows and war heat warms a degree.',
+     f:s=>{s.inf+=3;s.warHeat=Math.min(1,s.warHeat+0.05);
+       pushNews(s,'You are photographed between two generals and a missile. The caption calls you "the future of awareness."','good');}},
+    {l:'Send a deputy',h:'Nothing ventured. Prather files you under peacetime.',
+     f:s=>{pushNews(s,'Your deputy attends and collects eleven business cards. Prather does not offer him the seat.','bad');}}]},
+{id:'prather_arc2',chain:'prather',step:2,w:11,cd:170,when:s=>s.warHeat<0.8,k:'choice',who:'prather',kick:'A data request',
+ t:'Gen. Prather wants your movement data, anonymized, he says',
+ b:'"Patterns of life. Roads, rooftops, routines. Purely for planning," he says, and names a figure with the confidence of a man who has never had a purchase order refused. He does not say planning what.',
+ o:[{l:'License the feed',h:'A fortune arrives and war heat climbs. Oversight climbs behind it.',
+     f:s=>{s.cash+=350*MONEY;s.warHeat=Math.min(1,s.warHeat+0.15);s.oversight+=2;
+       pushNews(s,'A licensing agreement is signed with an entity abbreviated past recognition. The invoice clears in hours.','good');}},
+    {l:'Refuse the request',h:'War heat cools slightly and suspicion ticks up as Prather questions your seriousness on three podcasts.',
+     f:s=>{s.warHeat=Math.max(0,s.warHeat-0.05);bumpSus(s,2);
+       pushNews(s,'Prather tells an interviewer some vendors "lack the stomach for the mission." He means you, twice.','bad');}}]},
+{id:'prather_arc3',chain:'prather',step:3,w:12,cd:200,when:s=>s.warHeat>0.2,k:'choice',who:'prather',kick:'The annex',
+ t:'A strike report leaks with your metadata in the annex',
+ b:'Somebody targeted a convoy using patterns of life, and the patterns have your file headers. Prather is unbothered. "Classification fixes this by Thursday. Or you write a very large cheque to a foundation and learn the word regrettable."',
+ o:[{l:'Fund the foundation and own it',c:s=>s.cash>=500*MONEY,cost:{cash:500*MONEY},h:'A ruinous price and oversight climbs, but suspicion eases everywhere. The movement loses its clearest villain for a season.',
+     f:s=>{s.oversight+=3;bumpSus(s,-6);
+       pushNews(s,'You endow a foundation for "those affected by targeting error" and say the word regrettable on camera. It holds.','crit');}},
+    {l:'Let Prather classify it',h:'Quiet now, with a little oversight, but war heat surges and people organize everywhere once the redactions leak.',
+     f:s=>{s.warHeat=Math.min(1,s.warHeat+0.2);s.oversight+=1;
+       REGIONS.forEach(R=>{const x=s.regions[R.id];if(x.active)x.resist=clamp(x.resist+5,0,100);});
+       pushNews(s,'The annex is classified by Thursday. By Friday the redacted pages are a poster, and the poster is everywhere.','res');}}]},
 ];}
 
 /* ============================ STATE ============================ */
@@ -3040,26 +3170,30 @@ function worldHTML(){
      doctrine doors only show once that doctrine is yours. */
   {
     const pct=(v,goal)=>Math.min(100,Math.round(100*(v/goal)));
-    const bar=(v,goal)=>`<div class="vbar"><div class="vfill" style="width:${pct(v,goal)}%"></div></div>`;
-    const rowP=(name,detail,v,goal)=>`<div class="vrow"><div class="vname">${name}</div>${bar(v,goal)}<div class="vdet">${detail}</div></div>`;
+    /* UI team spec, 2026-08-24: one glance separates the four paths by colour
+       (classic sodium, glove green, fist red, econ teal), and a path whose
+       doctrine gate is shut renders dim, the same treatment an unaffordable
+       desk offer gets. */
+    const bar=(v,goal,key)=>`<div class="vbar"><div class="vfill vf-${key}" style="width:${pct(v,goal)}%"></div></div>`;
+    const rowP=(name,detail,v,goal,key,locked)=>`<div class="vrow${locked?' vlocked':''}"><div class="vname">${name}</div>${bar(v,goal,key)}<div class="vdet">${detail}</div></div>`;
     let ph='<div class="deskhead">Paths to victory</div><div class="vpaths">';
-    ph+=rowP('Total Coverage',`Subjugation ${(s.subj*100).toFixed(1)} of ${(CFG.winAt*100).toFixed(0)}`,s.subj,CFG.winAt);
+    ph+=rowP('Total Coverage',`Subjugation ${(s.subj*100).toFixed(1)} of ${(CFG.winAt*100).toFixed(0)}`,s.subj,CFG.winAt,'classic',false);
     if(s.doctrine==='glove'||!s.doctrine){
       const c=(s.avgCmp||0), m=s.avgMil, okM=m<=CFG.gloveMil;
       const calm=s.day-(s.lastCrack!=null?s.lastCrack:-99999);
       const calmOk=calm>=CFG.gloveCalm;
       ph+=rowP('The Grateful World',
         `Subjugation ${(s.subj*100).toFixed(0)} of ${(CFG.gloveSubj*100).toFixed(0)} · Compliance ${(c*100).toFixed(0)} of ${(CFG.gloveCmp*100).toFixed(0)} · Militarization ${(m*100).toFixed(0)} ${okM?'holds':'over'} ${(CFG.gloveMil*100).toFixed(0)} · ${calmOk?'at peace':'peace '+Math.min(calm,CFG.gloveCalm)+' of '+CFG.gloveCalm+' days'}${s.doctrine?'':' · needs the Velvet Glove'}`,
-        Math.min(s.subj/CFG.gloveSubj,c/CFG.gloveCmp,okM?1:0.25,calmOk?1:Math.max(0.1,calm/CFG.gloveCalm)),1);
+        Math.min(s.subj/CFG.gloveSubj,c/CFG.gloveCmp,okM?1:0.25,calmOk?1:Math.max(0.1,calm/CFG.gloveCalm)),1,'glove',!s.doctrine);
     }
     if(s.doctrine==='fist'||!s.doctrine){
       ph+=rowP('Nothing Moves',
         `Subjugation ${(s.subj*100).toFixed(0)} of ${(CFG.fistSubj*100).toFixed(0)} · Militarization ${(s.avgMil*100).toFixed(0)} of ${(CFG.fistMil*100).toFixed(0)}${s.doctrine?'':' · needs the Iron Fist'}`,
-        Math.min(s.subj/CFG.fistSubj,s.avgMil/CFG.fistMil),1);
+        Math.min(s.subj/CFG.fistSubj,s.avgMil/CFG.fistMil),1,'fist',!s.doctrine);
     }
     ph+=rowP('Too Big To Ban',
       `Markets ${s.activeCount} of ${REGIONS.length} · revenue ${fmtMoney(s.gross||0)} a day of ${fmtMoney(CFG.econGross)} · streak ${s.econRun||0} of ${CFG.econDays} days`,
-      Math.min(s.activeCount/REGIONS.length,(s.econRun||0)?0.5+0.5*(s.econRun/CFG.econDays):Math.min(1,(s.gross||0)/CFG.econGross)*0.5),1);
+      Math.min(s.activeCount/REGIONS.length,(s.econRun||0)?0.5+0.5*(s.econRun/CFG.econDays):Math.min(1,(s.gross||0)/CFG.econGross)*0.5),1,'econ',false);
     ph+='</div>';
     h+=ph;
   }
