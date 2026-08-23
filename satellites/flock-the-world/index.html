@@ -351,6 +351,13 @@ h1 em{font-style:normal;color:var(--sodium)}
 .x{width:48px;height:48px;flex:none;border-radius:10px;border:1px solid var(--line);color:var(--dim);font-size:17px}
 .scroll{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 12px calc(env(safe-area-inset-bottom) + 20px)}
 .treedesc{font-size:12.5px;color:#8fa4b5;line-height:1.55;margin:0 2px 12px}
+.acqbar{display:flex;align-items:center;gap:11px;flex-wrap:wrap;border:1px solid var(--sodium);
+  border-radius:12px;padding:10px 12px;margin:0 2px 12px;background:#170f02}
+.acqtxt{flex:1 1 220px;min-width:0;font-size:11.5px;line-height:1.45;color:#ffe9c9}
+.acqtxt .dim{color:var(--dim);display:block;margin-top:3px}
+.wbtn.acq{flex:0 0 auto;min-height:48px;padding:0 14px;border-radius:10px;
+  border:1px solid var(--sodium);background:#2a1c02;color:var(--sodium);font-weight:800}
+.wbtn.acq:disabled{opacity:.4}
 
 /* ---------- tree ---------- */
 /* Node text sized to be READ, not decoded (Stephen 2026-08-20: descriptions
@@ -686,7 +693,7 @@ const CFG = {
   unrestNoise:0.35,
   crackBackfire:0.12,
   lostLimit:4,
-  winAt:0.97,
+  winAt:0.95,
   tickerMs:4300,
   /* ⛔ Aug 24, Stephen: bubbles should "disappear more rapidly thus forcing
      players to really focus on trying to get them before they disappear and not
@@ -704,6 +711,44 @@ const CFG = {
      $250 events vs $40k banked, 175 saved influence bought the whole shop).
      Costs now scale with the operation instead of staying day-1 flat. */
   upkeepK:0.0085,     /* per-tick network maintenance vs incomeK 0.020 gross */
+  /* ⛔ THE SURPLUS FIX, 2026-08-24. Stephen: "I had $200,000 left over with
+     nothing to spend it on". Measured with scratch/ftw_surplus.js on the
+     balanced bot check.js already proves wins: it ends every run holding about
+     660 DAYS OF INCOME. That is the whole complaint, reproduced.
+     Why it happened: income and upkeep were both LINEAR in pop*coverage*wealth,
+     so the margin was a constant, and then the skill tree multiplied income by
+     about 2.6x through (1+f.inc)*D.cash*cInc while upkeep got nothing. Margin
+     could only ever widen, so the last third of every run was a fountain.
+     The fix is structural rather than a price list: a planetary grid costs more
+     per node than a city grid does. Upkeep now grows with the SQUARE of the
+     network. Expansion pays handsomely early and squeezes late, so the endgame
+     is a business under pressure instead of a bank account.
+     upkeepCurve is the dial: upkeep multiplier is (1 + infra/upkeepCurve), and
+     infra at total world coverage is about 5862. */
+  upkeepCurve:3500,
+  /* every repeatable spend also costs this share of your treasury. See aPrice. */
+  pctOfTreasury:0.06,
+  /* ⛔ THE ALWAYS OPEN SINK, 2026-08-24.
+     Measured first, built second. Percentage pricing alone did nothing, because
+     every repeatable spend in the game is gated by a 20 day per region cooldown
+     and by preconditions: a bot playing 1,100 days and holding 112,000 managed to
+     spend between 0 and 20,825 on region actions across the whole run. The sink
+     was throttled, not priced, so income outran it at any price.
+     ACQUISITION is the answer: buy a competitor's install base. No cooldown, no
+     precondition, available the moment you have money, and priced as a share of
+     what you are sitting on. Every purchase raises the rate (acqHeat) because
+     regulators and sellers both notice a buyer who cannot stop, and the heat
+     bleeds off slowly. So a rich player converts money into coverage, and the
+     conversion gets worse the harder they lean on it. */
+  acqPct:0.14,        /* base share of treasury per acquisition */
+  acqHeatAdd:0.05,    /* each buy makes the next one this much dearer */
+  acqHeatDecay:0.004, /* per day */
+  acqHeatMax:0.55,
+  acqGain:0.055,      /* coverage added across held markets, scaled by spend */
+  /* buying your way in is noticed. ⛔ At 1.5 suspicion and 0.6 oversight per buy
+     this cost the bot every single run: it took all 14 markets, reached subj 0.7
+     and died of oversight around day 800. The scrutiny has to be felt, not fatal. */
+  acqSus:0.55, acqOvr:0.2,
   nodeInflate:0.03,   /* each owned node raises later node prices 3% */
   entryScale:0.55,    /* each active market raises the next entry price 55% */
   blackoutDays:14,    /* a bought news cycle suppresses suspicion this long */
@@ -1231,11 +1276,42 @@ function noteCloseModal(){
 function flashCash(){const e=$('vCash');if(!e)return;e.classList.add('spent');setTimeout(()=>e.classList.remove('spent'),450);}
 /* region action prices scale with daily net income (min the old base), so a
    crackdown costs real money on day 400 the way it did on day 40 */
+/* ⛔ PERCENTAGE OF TREASURY PRICING, 2026-08-24, Stephen's call.
+   The old rule was max(flat floor, days of net income). Both terms are FLOWS,
+   and a flow price cannot drain a STOCK: measured on the winning bot, an action
+   cost about 1,065 against a treasury of 175,000, so the bank bought 165 of them
+   and every action was rate limited by its 20 day cooldown rather than by money.
+   Income outran spending no matter what the price said. That is the whole reason
+   Stephen finished a close game holding 660 days of income with nothing to spend
+   it on.
+   The third term is a fraction of what you are SITTING ON, so the richer you are
+   the more each move costs, and a treasury decays geometrically the moment you
+   start using it. You can hold a pile or you can act; you cannot do both. */
 function aPrice(base,days){
-  const n=(S&&S.net)||0;
-  return Math.max(base,Math.round(n*days/5)*5);
+  const n=(S&&S.net)||0, cash=(S&&S.cash)||0;
+  return Math.max(base, Math.round(n*days/5)*5, Math.round(cash*CFG.pctOfTreasury/5)*5);
 }
 /* event choice costs scale the same way */
+function acqPrice(s){
+  const heat=(s&&s.acqHeat)||0;
+  return Math.max(60, Math.round((s.cash||0)*(CFG.acqPct+heat)/5)*5);
+}
+function doAcquire(){
+  const s=S, p=acqPrice(s);
+  if(s.cash<p||p<=0)return false;
+  s.cash-=p; flashCash();
+  s.acqHeat=Math.min(CFG.acqHeatMax,(s.acqHeat||0)+CFG.acqHeatAdd);
+  /* what the money buys: install base already in the ground, so coverage jumps
+     everywhere you already operate. It cannot open a market for you. */
+  let touched=0;
+  REGIONS.forEach(R=>{const r=s.regions[R.id];
+    if(!r.active)return; touched++;
+    r.coverage=clamp(r.coverage+CFG.acqGain*(1-r.coverage),0,1);
+    r.suspicion=clamp(r.suspicion+CFG.acqSus,0,100);});
+  s.oversight=clamp(s.oversight+CFG.acqOvr,0,100);
+  sfx('spend');
+  return touched>0;
+}
 function evScale(s){return clamp(((s&&s.net)||0)/10,1,25);}
 function dateStr(day){const d=new Date(2026,0,1);d.setDate(d.getDate()+day);
   return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
@@ -1400,7 +1476,8 @@ function tick(){
   /* the network costs money to run: maintenance scales with deployed
      hardware and with how militarized the whole thing has become.
      Without this, money stopped mattering minutes in (Stephen 2026-08-20). */
-  const upkeep=infra*CFG.upkeepK*(1+s.avgMil*0.8);
+  if(s.acqHeat)s.acqHeat=Math.max(0,s.acqHeat-CFG.acqHeatDecay);
+  const upkeep=infra*CFG.upkeepK*(1+s.avgMil*0.8)*(1+infra/CFG.upkeepCurve);
   s.cash+=income-upkeep;
   s.net=(s.net||0)*0.9+(income-upkeep)*0.1;
   if(s.cash<0){
@@ -2455,6 +2532,20 @@ function worldHTML(){
     <b>Crackdown</b> clears the streets and buys compliance, and the region never forgets it.
     <b>Blackout</b> buys the news cycle: suspicion drops now and stays quiet for two weeks. Weak where
     the press is free. <b>Concede</b> is the free release valve: everything cools, control slips.</div>`;
+  /* ⛔ THE ALWAYS OPEN SINK, at the top of the tab where money is spent.
+     A mechanic only a bot can reach is not a mechanic, and everything else on
+     this screen is gated by a cooldown or a precondition. This one is not. */
+  {
+    const ap=acqPrice(s), heat=(s.acqHeat||0);
+    const afford=s.cash>=ap;
+    const heatPct=Math.round((CFG.acqPct+heat)*100);
+    h+=`<div class="acqbar">
+      <div class="acqtxt"><b>Acquisition</b> · buy a rival's install base. Coverage jumps everywhere you
+        already operate. No cooldown, but every purchase makes the next one dearer and the sellers talk.
+        <span class="dim">Currently ${heatPct}% of your capital${heat>0.01?' · cooling':''}</span></div>
+      <button class="wbtn acq" id="acqBtn" ${afford?'':'disabled'}>Acquire · $${ap.toLocaleString()}</button>
+    </div>`;
+  }
   /* the cash sink Stephen asked for: late game money converts to influence,
      at a price the watchdogs notice */
   const lbCost=Math.max(500,Math.round(((s.net||0)*15)/25)*25);
@@ -2990,6 +3081,15 @@ function refreshMenuExtras(){
 function shBodyClick(e){
   const n=e.target.closest('[data-node]');if(n){buyNode(n.dataset.node);return;}
   const a=e.target.closest('[data-act]');if(a){doAction(a.dataset.act,a.dataset.r);return;}
+  if(e.target.closest('#acqBtn')){
+    if(doAcquire()){
+      shToast(`<span class="neg">Acquired</span> · a rival's install base is yours. Coverage up everywhere you operate.`);
+      openSheet('reg');   /* ⛔ 'reg' is the World tab. 'war' is Crisis, and
+                             sending the player there after an acquisition was
+                             a straight bug. */
+    }
+    return;
+  }
   const lb=e.target.closest('[data-lobby]');
   if(lb){
     const cost=Math.max(500,Math.round(((S.net||0)*15)/25)*25);
