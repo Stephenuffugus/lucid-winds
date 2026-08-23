@@ -453,7 +453,11 @@ if (C) {
       "for(const k of Object.keys(S.regions)){const r=S.regions[k];r.active=true;r.coverage=0.4;r.control=0.2;r.unrest=55;}" +
       "S.regions.SEA.active=false;S.regions.SEA.coverage=0;" +
       "S.regions.EE.active=false;S.regions.EE.lost=true;S.regions.EE.coverage=0.3;" +
-      "S.cash=999999;popTotals(S);", c8);
+      /* ⛔ was 999999, which stopped buying anything the moment money was
+         rescaled to real contractor units on 2026-08-24: a crackdown has a floor
+         of 120*MONEY. Denominate the fixture in MONEY so it cannot rot again the
+         next time the unit moves. */
+      "S.cash=99999*MONEY;popTotals(S);", c8);
     const REG = vm.runInContext('REGIONS', c8);
 
     let missing = [], noName = [];
@@ -715,9 +719,9 @@ if (C) {
        functions, so every id in the catalog is proven reachable, not just declared */
     /* the paid actions need their gating nodes and money, which this bot never
        bought: give it those and run the real doAction, not a stub */
-    vm.runInContext("['agit','charter','blackout'].forEach(n=>S.owned.add(n));recompute(S);S.cash=5e6;S.over=false;", cS);
+    vm.runInContext("['agit','charter','blackout'].forEach(n=>S.owned.add(n));recompute(S);S.cash=5e6*MONEY;S.over=false;", cS);
     vm.runInContext("(function(){for(let i=0;i<40;i++){for(const k of Object.keys(S.regions)){const r=S.regions[k];" +
-      "r.active=true;r.cd=0;r.bcd=0;r.unrest=95;S.cash=5e6;" +
+      "r.active=true;r.cd=0;r.bcd=0;r.unrest=95;S.cash=5e6*MONEY;" +
       "doAction('crack',k);doAction('agitate',k);doAction('blackout',k);}}})();", cS);
     /* A region in open revolt, walked through the states in order: unrest has to
        pass through the violent band before uprising or the 'violent' cue never
@@ -738,7 +742,7 @@ if (C) {
     vm.runInContext("openSheet('reg');closeSheet();menuBeds();", cS);
     vm.runInContext("S.oversight=80;S.over=false;paintHud();", cS);
     vm.runInContext("(function(){var n=NODES.find(x=>!S.owned.has(x.id));if(n){S.inf=0;buyNode(n.id);}})();", cS);
-    vm.runInContext("(function(){for(const k of Object.keys(S.regions)){const r=S.regions[k];if(r.active){r.unrest=90;r.cd=0;S.cash=1e6;doAction('agitate',k);doAction('blackout',k);break;}}})();", cS);
+    vm.runInContext("(function(){for(const k of Object.keys(S.regions)){const r=S.regions[k];if(r.active){r.unrest=90;r.cd=0;S.cash=1e6*MONEY;doAction('agitate',k);doAction('blackout',k);break;}}})();", cS);
     vm.runInContext("sfx('ui_tap');", cS);
     vm.runInContext("(function(){for(const k of Object.keys(S.regions)){const r=S.regions[k];r.unrest=90;}for(let i=0;i<4;i++)tick();})();", cS);
     const all = new Set(vm.runInContext('SFX.log', cS).map(x => x.replace(/^sfx:/, '')));
