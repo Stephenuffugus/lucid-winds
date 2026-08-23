@@ -851,7 +851,7 @@ if (C) {
           r.active=true;r.coverage=shape.cov;r.control=shape.ctl;
           r.compliance=shape.cmp;r.milit=shape.mil;r.unrest=5;r.resist=2;});
         sD.activeCount=14;sD.doctrine=shape.doc;
-        if(shape.net!=null)sD.net=shape.net;
+        if(shape.net!=null){sD.net=shape.net;sD.gross=shape.net;}
         if(shape.econRun!=null)sD.econRun=shape.econRun;
         let n=77;const f=()=>{n=(n*1664525+1013904223)>>>0;return n/4294967296;};
         const real=Math.random;Math.random=f;
@@ -867,12 +867,27 @@ if (C) {
       const fi=stage({cov:.7,ctl:.93,cmp:.5,mil:.62,doc:'fist'});
       ok('the Iron Fist wins Nothing Moves', fi.over&&fi.won&&fi.why==='win_fist', JSON.stringify(fi));
       const MONEYc = vm.runInContext('MONEY', C);
-      const e=stage({cov:.3,ctl:.4,cmp:.5,mil:.02,doc:'glove',net:200*MONEYc,econRun:149});
+      const e=stage({cov:.3,ctl:.4,cmp:.5,mil:.02,doc:'glove',net:300*MONEYc,econRun:149});
       ok('a full portfolio with held income wins Too Big To Ban', e.over&&e.won&&e.why==='win_econ', JSON.stringify(e));
       const c=stage({cov:.97,ctl:.995,cmp:.95,mil:.02,doc:'glove'});
       ok('classic subjugation still outranks every other door', c.over&&c.won&&c.why==='win', JSON.stringify(c));
       const none=stage({cov:.5,ctl:.5,cmp:.5,mil:.2,doc:'glove'});
       ok('a middling empire wins nothing (the doors are not open by default)', !none.over, JSON.stringify(none));
+      /* the long peace: an otherwise perfect glove empire with a fresh crackdown
+         on its record does not get thanked */
+      const cracked=(()=>{
+        const cD=makeCtx();cD.doctrineModal=()=>{};cD.showEvent=()=>{};
+        vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');",cD);
+        const sD=vm.runInContext('S',cD);
+        Object.keys(sD.regions).forEach(k=>{const r=sD.regions[k];
+          r.active=true;r.coverage=.6;r.control=.85;r.compliance=.92;r.milit=.02;r.unrest=5;r.resist=2;});
+        sD.activeCount=14;sD.doctrine='glove';sD.day=400;sD.lastCrack=390;
+        let n=77;const f=()=>{n=(n*1664525+1013904223)>>>0;return n/4294967296;};
+        const real=Math.random;Math.random=f;
+        vm.runInContext('recompute(S);tick()',cD);Math.random=real;
+        return {over:sD.over,why:sD.why};
+      })();
+      ok('a fresh crackdown holds The Grateful World shut for 180 days', !cracked.over, JSON.stringify(cracked));
     }
 
     group('capstones change the rules, and goodwill is a strategy');

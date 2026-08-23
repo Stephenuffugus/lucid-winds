@@ -906,9 +906,26 @@ const CFG = {
      stays the ceiling; three more doors open below it, each demanding a
      different SHAPE of empire rather than a smaller one. Thresholds tuned
      against the deterministic meter; each has a bot that reaches it. */
-  gloveSubj:0.80, gloveCmp:0.80, gloveMil:0.12,  /* The Grateful World */
+  /* gloveMil tuned by the meter, 2026-08-24: a bot that NEVER cracks down,
+     skips the whole Crisis tree and never endows the police academy still ends
+     at 0.32 to 0.40 militarization, because watchlist depth and violent phases
+     militarize passively. 0.12 was a door no empire could fit through. 0.40 is
+     the measured ceiling of the gentlest possible build, and it still excludes
+     every crackdown bot (they run 0.47 and up). */
+  gloveSubj:0.80, gloveCmp:0.80, gloveMil:0.40,  /* The Grateful World */
+  /* ⛔ the militarization ceiling alone did not hold the door: the classic
+     crackdown bot crosses subj 0.80 while its milit is still under 0.40 and
+     walked through 5 of 5. The Grateful World also demands A LONG PEACE: no
+     crackdown anywhere for this many days. Identity, not arithmetic. */
+  gloveCalm:180,
   fistSubj:0.85,  fistMil:0.45,                  /* Nothing Moves */
-  econNet:100*MONEY, econDays:150,               /* Too Big To Ban: all 14 markets, $10M/day held 150 days */
+  /* econ door tuned by the meter, 2026-08-24: at $10M/150d the econ rush bot
+     lost a photo finish to classic on all five seeds, because the streak only
+     starts once net crosses the bar. $8M held 130 days puts the economic win
+     about 60 days ahead of a subjugation racer without opening it to a passive
+     empire (a full portfolio with no income nodes nets near zero: the quadratic
+     upkeep sees to it). */
+  econGross:240*MONEY, econDays:130,
   /* ==== GOODWILL: concede as a strategy, not just a valve. Each concession in
      a region banks goodwill there (capped): compliance regrows a little every
      tick, and if you ever lose the region the listening tours cut the re-entry
@@ -1851,6 +1868,7 @@ function tick(){
   const upkeep=MONEY*infra*CFG.upkeepK*(1+s.avgMil*0.8)*(1+infra/CFG.upkeepCurve)+dcCost;
   s.cash+=income-upkeep;
   s.net=(s.net||0)*0.9+(income-upkeep)*0.1;
+  s.gross=(s.gross||0)*0.9+income*0.1;   /* the econ door reads scale, not margin */
   if(s.cash<0){
     s.cash=0;
     if(s.day%31===0)pushNews(s,'Maintenance invoices bounce. Crews idle, and a few dark lenses stay dark.','bad');
@@ -1897,10 +1915,19 @@ function tick(){
   if(s.day%20===0)saveRun();
   /* the economic streak counts every tick it holds and resets the tick it
      does not, so the door needs 150 UNBROKEN days of a full portfolio */
-  if(s.activeCount>=REGIONS.length&&s.lostCount===0&&(s.net||0)>=CFG.econNet)s.econRun=(s.econRun||0)+1;
+  /* ⛔ lostCount===0 welded this door forever after one lost region; the meter's
+     econ bot could never finish a run. Holding all fourteen TODAY is the bar:
+     lose a market, pay the surcharge, re-enter, and you qualify again.
+     ⛔⛔ And the door reads GROSS, not net. Net is what the anti surplus
+     machinery deliberately compresses late (quadratic upkeep, militarized
+     upkeep), so a net bar made the door a margin discipline test the engine
+     itself forbids passing: the econ bot held 14 of 14 with peak net over $10M
+     and timed out at day 4000 twice running. Too Big To Ban is about SCALE.
+     Gross is scale. */
+  if(s.activeCount>=REGIONS.length&&(s.gross||0)>=CFG.econGross)s.econRun=(s.econRun||0)+1;
   else s.econRun=0;
   if(s.subj>=CFG.winAt)finish(true,'win');
-  else if(s.doctrine==='glove'&&s.subj>=CFG.gloveSubj&&(s.avgCmp||0)>=CFG.gloveCmp&&s.avgMil<=CFG.gloveMil)finish(true,'win_glove');
+  else if(s.doctrine==='glove'&&s.subj>=CFG.gloveSubj&&(s.avgCmp||0)>=CFG.gloveCmp&&s.avgMil<=CFG.gloveMil&&(s.day-(s.lastCrack!=null?s.lastCrack:-99999))>=CFG.gloveCalm)finish(true,'win_glove');
   else if(s.doctrine==='fist'&&s.subj>=CFG.fistSubj&&s.avgMil>=CFG.fistMil)finish(true,'win_fist');
   else if((s.econRun||0)>=CFG.econDays)finish(true,'win_econ');
   else if(s.oversight>=100)finish(false,'oversight');
@@ -2187,7 +2214,7 @@ function saveRun(){
         black:r.black||0,bcd:r.bcd||0,gw:r.gw||0,
         cOrder:r.cOrder||null,cN:r.cN||1};}
     lsSet(K_RUN,JSON.stringify({v:2,modeKey:s.modeKey,diffKey:s.diffKey,startId:s.startId,
-      day:s.day,cash:s.cash,inf:s.inf,oversight:s.oversight,warHeat:s.warHeat,doctrine:s.doctrine,net:s.net||0,lbCd:s.lbCd||0,
+      day:s.day,cash:s.cash,inf:s.inf,oversight:s.oversight,warHeat:s.warHeat,doctrine:s.doctrine,net:s.net||0,gross:s.gross||0,lbCd:s.lbCd||0,
       /* a reload used to wipe live bubbles, including a leak whose oversight
          penalty had not landed yet, and to forget a pending choice event, so
          reloading dodged the decision. It also dropped the HUD aggregates, so a
@@ -2204,7 +2231,7 @@ function saveRun(){
       acqHeat:s.acqHeat||0,dcs:s.dcs||0,deskRoll:s.deskRoll||0,
       monitor:s.monitor||0,cover:s.cover||0,
       evLast:s.evLast||{},   /* event cooldowns must survive a reload or the spam returns */
-      econRun:s.econRun||0,arc:s.arc||{},
+      econRun:s.econRun||0,arc:s.arc||{},lastCrack:s.lastCrack!=null?s.lastCrack:null,
       owned:[...s.owned],combos:[...s.combos],milestones:[...s.milestones],wmiles:[...s.wmiles],
       popMiles:[...(s.popMiles||[])],popPeakOrg:s.popPeakOrg||0,popHist:(s.popHist||[]).slice(-11),
       log:s.log.slice(0,40),regions:regs,stamp:Date.now()}));
@@ -2230,7 +2257,7 @@ function loadRun(){
   s.oversight=clamp(num(d.oversight,0),0,100);s.warHeat=clamp(num(d.warHeat,0),0,1);
   s.doctrine=(d.doctrine==='glove'||d.doctrine==='fist')?d.doctrine:null;
   s.lostCount=Math.max(0,num(d.lostCount,0));s.wmileDth=num(d.wmileDth,0);
-  s.net=Math.max(0,num(d.net,0));s.lbCd=Math.max(0,num(d.lbCd,0));
+  s.net=Math.max(0,num(d.net,0));s.gross=Math.max(0,num(d.gross,0));s.lbCd=Math.max(0,num(d.lbCd,0));
   /* the desk and acquisition state, validated the way everything else is.
      A v2 save written before these fields existed loads them as 0. */
   s.acqHeat=clamp(num(d.acqHeat,0),0,CFG.acqHeatMax);
@@ -2242,6 +2269,7 @@ function loadRun(){
   if(d.evLast&&typeof d.evLast==='object')
     for(const k in d.evLast){const v=Number(d.evLast[k]);if(isFinite(v))s.evLast[k]=v;}
   s.econRun=Math.max(0,num(d.econRun,0)|0);
+  s.lastCrack=(d.lastCrack==null)?null:Math.max(0,num(d.lastCrack,0)|0);
   s.arc={};
   if(d.arc&&typeof d.arc==='object')
     for(const k in d.arc){const v=Number(d.arc[k]);if(isFinite(v)&&v>=0&&v<=3)s.arc[k]=v;}
@@ -3018,9 +3046,11 @@ function worldHTML(){
     ph+=rowP('Total Coverage',`Subjugation ${(s.subj*100).toFixed(1)} of ${(CFG.winAt*100).toFixed(0)}`,s.subj,CFG.winAt);
     if(s.doctrine==='glove'||!s.doctrine){
       const c=(s.avgCmp||0), m=s.avgMil, okM=m<=CFG.gloveMil;
+      const calm=s.day-(s.lastCrack!=null?s.lastCrack:-99999);
+      const calmOk=calm>=CFG.gloveCalm;
       ph+=rowP('The Grateful World',
-        `Subjugation ${(s.subj*100).toFixed(0)} of ${(CFG.gloveSubj*100).toFixed(0)} · Compliance ${(c*100).toFixed(0)} of ${(CFG.gloveCmp*100).toFixed(0)} · Militarization ${(m*100).toFixed(0)} ${okM?'holds':'over'} ${(CFG.gloveMil*100).toFixed(0)}${s.doctrine?'':' · needs the Velvet Glove'}`,
-        Math.min(s.subj/CFG.gloveSubj,c/CFG.gloveCmp,okM?1:0.25),1);
+        `Subjugation ${(s.subj*100).toFixed(0)} of ${(CFG.gloveSubj*100).toFixed(0)} · Compliance ${(c*100).toFixed(0)} of ${(CFG.gloveCmp*100).toFixed(0)} · Militarization ${(m*100).toFixed(0)} ${okM?'holds':'over'} ${(CFG.gloveMil*100).toFixed(0)} · ${calmOk?'at peace':'peace '+Math.min(calm,CFG.gloveCalm)+' of '+CFG.gloveCalm+' days'}${s.doctrine?'':' · needs the Velvet Glove'}`,
+        Math.min(s.subj/CFG.gloveSubj,c/CFG.gloveCmp,okM?1:0.25,calmOk?1:Math.max(0.1,calm/CFG.gloveCalm)),1);
     }
     if(s.doctrine==='fist'||!s.doctrine){
       ph+=rowP('Nothing Moves',
@@ -3028,8 +3058,8 @@ function worldHTML(){
         Math.min(s.subj/CFG.fistSubj,s.avgMil/CFG.fistMil),1);
     }
     ph+=rowP('Too Big To Ban',
-      `Markets ${s.activeCount} of ${REGIONS.length} · net ${fmtMoney(s.net||0)} a day of ${fmtMoney(CFG.econNet)} · streak ${s.econRun||0} of ${CFG.econDays} days`,
-      Math.min(s.activeCount/REGIONS.length,(s.econRun||0)?0.5+0.5*(s.econRun/CFG.econDays):Math.min(1,(s.net||0)/CFG.econNet)*0.5),1);
+      `Markets ${s.activeCount} of ${REGIONS.length} · revenue ${fmtMoney(s.gross||0)} a day of ${fmtMoney(CFG.econGross)} · streak ${s.econRun||0} of ${CFG.econDays} days`,
+      Math.min(s.activeCount/REGIONS.length,(s.econRun||0)?0.5+0.5*(s.econRun/CFG.econDays):Math.min(1,(s.gross||0)/CFG.econGross)*0.5),1);
     ph+='</div>';
     h+=ph;
   }
@@ -3155,6 +3185,7 @@ function doAction(act,rid){
     s.cash-=pCr;r.cd=25;
     shToast(`<span class="neg">Spent ${fmtMoney(pCr)}</span> · armored units move on ${r.name}`);
     flashCash();
+    s.lastCrack=s.day;   /* The Grateful World needs a long peace; this ends it */
     const backRisk=s.has('caps_war')?0
       :(s.doctrine==='fist'?CFG.crackBackfire/2:CFG.crackBackfire)
       +(r._cBack||0)+r.media*r.resist/100*0.20;

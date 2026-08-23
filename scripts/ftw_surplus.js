@@ -58,10 +58,13 @@ function bot(strat,maxDays,seed){
       if(b.k==='cash')s.cash+=b.v; else if(b.k==='inf')s.inf+=b.v;
       else {s.inf+=1;s.oversight=Math.max(0,s.oversight-0.6);}
       return false;});
-    if(strat.buy){const av=NODES.filter(x=>!s.owned.has(x.id)&&cl('nodeState',x)==='avail')
-        .sort((a,b)=>cl('nodeCost',a)-cl('nodeCost',b));
+    if(strat.buy){const av=NODES.filter(x=>!s.owned.has(x.id)&&cl('nodeState',x)==='avail'&&(!strat.avoidTree||x.t!==strat.avoidTree)&&(!strat.avoidFx||!(x.fx&&x.fx[strat.avoidFx])))
+        .sort((a,b)=>{
+          if(strat.treePref){const at=a.t===strat.treePref?0:1,bt=b.t===strat.treePref?0:1;if(at!==bt)return at-bt;}
+          if(strat.nodePref){const ai=(a.fx&&a.fx[strat.nodePref])?0:1,bi=(b.fx&&b.fx[strat.nodePref])?0:1;if(ai!==bi)return ai-bi;}
+          return cl('nodeCost',a)-cl('nodeCost',b);});
       if(av.length&&s.inf>=cl('nodeCost',av[0])){spentNodes+=cl('nodeCost',av[0]);cl('buyNode',av[0].id);}}
-    if(strat.expand&&d%30===0){
+    if(strat.expand&&d%(strat.expand>=2?6:30)===0){
       const t=Object.keys(s.regions).map(k=>s.regions[k]).filter(r=>!r.active)
         .sort((a,b)=>cl('entryCost',a)-cl('entryCost',b));
       if(t.length&&s.cash>cl('entryCost',t[0])*1.5){const r=t[0];const ec=cl('entryCost',r);
@@ -80,7 +83,7 @@ function bot(strat,maxDays,seed){
       for(const k of Object.keys(s.regions)){
         const r=s.regions[k]; if(!r.active||r.cd>0) continue;
         if(r.suspicion>45&&s.has&&s.has('blackout')){cl('doAction','blackout',k);}
-        else if(r.unrest>50){cl('doAction','crack',k);}
+        else if(r.unrest>(strat.crackAt||50)){cl('doAction','crack',k);}
         if(s.cash<before) break;   /* one purchase a day, like a person */
       }
       spentActions+=Math.max(0,before-s.cash);
@@ -98,7 +101,7 @@ function bot(strat,maxDays,seed){
          waits for it to come back down, and lets the heat bleed off. */
       /* the desk: buy whatever is on it that is a comfortable bite. This is what
          a player with money and three offers in front of them does. */
-      const offs=cl('deskOffers',s)||[];
+      const offs=(cl('deskOffers',s)||[]).filter(o=>!(strat.avoidOps&&strat.avoidOps.indexOf(o.id)>=0));
       for(const o of offs){
         const pr=cl('opPrice',s,o);
         if(pr>0&&s.cash-reserve>pr*1.8){const b3=s.cash;if(cl('doOp',o.id))spentOps+=Math.max(0,b3-s.cash);break;}
@@ -124,7 +127,8 @@ function bot(strat,maxDays,seed){
     return a+(R?R.pop*r.coverage*R.wealth:0);},0);
   const upk=infra*vm.runInContext('CFG',c).upkeepK*(1+(s.avgMil||0)*0.8);
   Math.random=REAL_RANDOM;
-  return {day:s.day,won:!!s.won,over:!!s.over,subj:+(s.subj||0).toFixed(3),
+  return {day:s.day,won:!!s.won,over:!!s.over,why:s.why||null,subj:+(s.subj||0).toFixed(3),
+    avgCmp:+((s.avgCmp||0)).toFixed(3),avgMil:+((s.avgMil||0)).toFixed(3),gross:Math.round(s.gross||0),
     infra:Math.round(infra),upkeep:Math.round(upk),
     grossEst:Math.round((s.net||0)+upk),
     marginPct:Math.round(100*(s.net||0)/Math.max(1,(s.net||0)+upk)),
@@ -149,16 +153,39 @@ function bot(strat,maxDays,seed){
 const MODE=process.argv[2]||'spend';
 /* 'tapper' models the player Stephen actually is: taps every bubble. The bot's
    default 10% collection understates a human's bubble income by an order of
-   magnitude, which is how a 17-days-of-net bubble hid from the economy work. */
-const STRAT=MODE==='tapper'
-  ?{buy:1,expand:1,doctrine:'glove',collectP:1.0,concede:1,spend:1}
-  :{buy:1,expand:1,doctrine:'glove',collectP:0.10,concede:1,spend:MODE==='spend'?1:0};
+   magnitude, which is how a 17-days-of-net bubble hid from the economy work.
+   'fist' and 'econ' are path bots for the 2026-08-24 win doors: fist prefers the
+   Crisis tree, cracks early and never concedes; econ enters every market it can
+   afford the moment it can and prefers income nodes. A door no bot can walk
+   through is a door that does not exist. */
+const STRATS={
+  spend:{buy:1,expand:1,doctrine:'glove',collectP:0.10,concede:1,spend:1},
+  hoard:{buy:1,expand:1,doctrine:'glove',collectP:0.10,concede:1,spend:0},
+  tapper:{buy:1,expand:1,doctrine:'glove',collectP:1.0,concede:1,spend:1},
+  fist:{buy:1,expand:1,doctrine:'fist',collectP:0.10,concede:1,spend:1,treePref:'war',crackAt:35},
+  /* econ is wide, rich and SHALLOW: it skips control-depth nodes entirely, so
+     subjugation lags and the streak completes first. That is the identity. */
+  /* ⛔ the first econ bot held 14 of 14 with peak net $10M to $12M and STILL
+     timed out, because its desk habit endowed the police academy over and over:
+     militarization 0.78 adds 62% to the quadratic upkeep and ground net to 12%
+     of peak, so the 130 day window never held. The door rewards completing the
+     portfolio while the margin is still fat; the academy is how you burn the
+     margin. It skips it now, and taps more to fund earlier entries. */
+  econ:{buy:1,expand:2,doctrine:'glove',collectP:0.55,concede:1,spend:1,nodePref:'inc',avoidFx:'dth',avoidOps:['academy']},
+  /* the grateful bot: no crackdowns ever, no Crisis tree, and it never endows
+     the police academy, because the meter proved the academy is where a glove
+     empire's militarization actually comes from (0.5 avgMil on bots that never
+     cracked past unrest 50: the desk did it, two points at a time). */
+  grateful:{buy:1,expand:1,doctrine:'glove',collectP:0.30,concede:1,spend:1,
+    avoidTree:'war',avoidOps:['academy'],crackAt:999,nodePref:'cmp'},
+};
+const STRAT=STRATS[MODE]||STRATS.spend;
 console.log('THE SURPLUS, balanced bot ('+(STRAT.spend?'A PLAYER WHO SPENDS':'the hoarder, spends on nothing repeatable')+')\n');
 const rows=[];
 for(const seed of [7,19,42,101,256]){
   const r=bot(STRAT,4000,seed); rows.push(r);
   console.log('  seed '+String(seed).padEnd(4)+' day '+String(r.day).padStart(4)
-    +'  '+(r.won?'WON ':'lost')+'  subj '+r.subj
+    +'  '+(r.won?'WON ':'lost')+' '+String(r.why||'').padEnd(9)+' subj '+r.subj+' cmp '+r.avgCmp+' mil '+r.avgMil+' gross '+Math.round((r.gross||0)/1e6)+'M'
     +'  endCash '+String(r.endCash).padStart(8)
     +'  net/day '+String(r.net).padStart(5)
     +'  peakNet '+String(r.peakNet).padStart(4)
