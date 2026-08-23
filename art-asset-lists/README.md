@@ -6,6 +6,9 @@ One folder per game. Inside: **`00-art-direction.md`** (concept + 2-3 style opti
 
 Art direction is now **per game** (no forced cozy-botanical): each ranges cozy → more polished/mature, always kid-friendly. Pick a look, generate its sheets one at a time, bring me the PNGs, I cut (magenta-key knockout) + wire.
 
+## 🎯 Launch pack in progress
+- **[Flock the World](flock-the-world/00-art-direction.md)** (Plague Inc satire sim, Google Play $1 launch) — *Procurement Brochure* · 10 sheets, trees first · LISTED 2026-08-23, zero art in the game today.
+
 ## ✅ Shipped games — art packs ready (incl. a cosmetics/economy sheet)
 These are **built and live** and render procedurally; this art is an optional upgrade + the customization catalog for the in-game economy (unlocks are mastery/score-free + seasonal rotations, no loot boxes).
 - **[Stream Hop](stream-hop/00-art-direction.md)** — *Lantern Ink* look · 7 sheets (💰 hopper-skins + trail/lane cosmetics). Lean on the 85 companions as hoppers.

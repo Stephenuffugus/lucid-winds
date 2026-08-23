@@ -8,6 +8,13 @@ Stephen's complaint, verbatim: "opus keeps getting stuck and having a good
 time." So, added to the rules below: a STEP BOX per task. When the box is
 spent, you write BLOCKED and stop. Being stuck is allowed. Exploring is not.
 
+## ⛔ PRIORITY CHANGE (Stephen, later on Aug 23): FLOCK THE WORLD COMES FIRST
+
+Read `satellites/flock-the-world/PLAN-AUG23.md`. Its build tasks F1 to F7 run
+BEFORE Task 3b below, one per session, same rules, STATUS still lands here.
+Order: F1 → F2 → F3 → F4 → F5 → (F6 as art drops land) → then 3b, 3c, 4, 5, 6, 7.
+F7 (Play packaging) only when Stephen says the game plays well on his phone.
+
 ## How to run this file
 
 - ONE task per fresh session. Finish it, append to STATUS, stop.
@@ -245,3 +252,4 @@ shots as its DONE condition.
 - 2026-08-23 Opus: FOUND: DONE-LEDGER.md headline count is stale. It says 186 carded / 162 openable (Aug 17); `node scripts/catalog.mjs` says 182 / 161 today. Player copy says "160+" so nothing advertised is wrong, but the ledger is the file everyone is told to trust instead of recounting.
 - 2026-08-23 Opus: FOUND: package.json + package-lock.json are gitignored BY DESIGN, so no dev-dep declaration travels; a fresh codespace has neither jsdom nor puppeteer and 67 scripts need puppeteer. workspace.sh installs nothing. Prerequisite recorded in smoke_shells.js header; whether workspace.sh should npm-install is ⚖ Stephen's.
 - 2026-08-23 Fable: the 96 MB question is CLOSED. Both folders are release assets on the private `lucid-winds-vault` repo, tag `vault-20260823`, round-trip verified (download, `sha256sum -c`, zip integrity). `.gitignore` now says so. `small_capsule_462x174.png` (the one Steam final missing from the tracked set) is now committed beside its siblings. Opus: nothing to do here; `git clean -x` is still forbidden.
+- 2026-08-23 Fable: FTW TRACK OPENED. Penny's note (name your thing, see the population dwindle in people) + Stephen's (popups and sound overhaul, art for all trees) → `satellites/flock-the-world/PLAN-AUG23.md`. Art pack `art-asset-lists/flock-the-world/` (10 sheets) LISTED in ART-LEDGER and delivered to 012Assets as Docs. SFX cue sheet in the plan, Stephen produces. Opus: next session = F1.

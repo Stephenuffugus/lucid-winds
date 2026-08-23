@@ -1,0 +1,12 @@
+<!-- Flock the World · Sheet 6: 5 skill-tree BACKDROP panels, generate ONE AT A TIME -->
+<!-- Each panel is its own image. Copy the shared style plus one panel line per generation. -->
+
+STYLE — "Procurement Brochure" (Flock the World). Clean flat corporate-vector illustration in the style of a surveillance vendor's glossy pitch deck: soft gradients, slightly isometric hardware, confident rounded shapes, cheerful stock-photo optimism selling something sinister. Palette: amber #ffa229 (hero accent), teal #39e6c3 (data, light, lenses), paper #dfe9f0 highlights, darks #101822 and #0a1018 for bodies, blood red #ff3b30 ONLY where the text says alarm. Key light upper-left amber, rim light lower-right teal. No text, no letters, no numbers, no logos, no real brands, no real faces. One object per cell, centered, ~75% of the cell, bold silhouette that reads at 44 px. Additional for backdrops: these sit BEHIND the node tiles at ~30% opacity, so: large soft shapes, low contrast, a vignette to #05070b at the edges, no small details, no focal object in the center. Think a brochure's full-bleed background art, not a poster.
+
+Panels: portrait 1024x1536 each. File names: ftw_bg_deployment.png, ftw_bg_watchlist.png, ftw_bg_narrative.png, ftw_bg_crisis.png, ftw_bg_synergy.png. NO magenta; these are full-bleed, not knockouts.
+
+1. ftw_bg_deployment — THE PYRAMID. A single pilot camera at the top apex, widening downward through rows of more and more hardware (doorbells, light poles, drones, satellites) until the base is a lit city grid seen from above. Amber lights on dark, teal scan sweeps.
+2. ftw_bg_watchlist — THE TWIN SPINE. Two tall vertical columns: the left is a server-rack spine of teal lenses, the right is a spine of riot shields and barriers, joined by faint horizontal rungs. Dark, symmetrical, a soft amber seam down the center.
+3. ftw_bg_narrative — THE WEB. A faint web of taut strings stretched between a TV studio, a city hall dome, a newsroom and a courthouse, a spider-shaped silhouette where they meet. Amber threads on deep blue-black.
+4. ftw_bg_crisis — THE LADDER. A ladder of escalating scenes climbing from bottom to top: a lone protest sign, a checkpoint, an armored vehicle, a siren sky. Red allowed as a glow at the top rung only.
+5. ftw_bg_synergy — THE TROPHY CASE. A dim velvet display wall with empty circular pin mounts in a grid, a single soft spotlight, amber dust in the beam.

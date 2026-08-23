@@ -11,6 +11,12 @@
 5. Prompt packs live in this folder (see `README.md`). This ledger tracks the *lifecycle*; the README tracks the *prompts and generate order*.
 6. **Copy every raw drop into a committed location (`satellites/<game>/art-drop/` or an `art-asset-lists/` zip) BEFORE cutting.** Scratchpad/tmp dies with the codespace — Spore Drift's raw sheets were lost this way Jul 16 (cut assets survived in-repo; a re-cut now needs a re-drop). The Dewball landing-spot rule (489ae258) is the standard.
 
+## LISTED (prompt packs written, awaiting Stephen's generation)
+
+| Game | Pack / style | Sheets | Prompt pack | Listed | Notes |
+|---|---|---|---|---|---|
+| Flock the World | *Procurement Brochure* | 10 sheets (4 tree icon sheets 46 nodes + 3 plates, 16 synergy badges, 5 tree backdrops, wordmark + 5 store/end images, 20 UI icons, 8 cards, 5 cast + 8 countermeasures + 3 extras) | `flock-the-world/00-art-direction.md` + `01`..`10` (also Docs in 012Assets) | 2026-08-23 | Trees first (Stephen's named ask). Cut by connected components, never an even grid. Game ships with ZERO images today; every drop here is new, log it the moment it lands. Wiring task = F6 in `satellites/flock-the-world/PLAN-AUG23.md`. |
+
 ## Deployed packs (art live on main)
 
 | Game | Pack / style | Sheets→assets | Drop source | Deploy commit(s) | Date | Notes |
