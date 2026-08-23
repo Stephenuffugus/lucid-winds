@@ -287,7 +287,11 @@ h1 em{font-style:normal;color:var(--sodium)}
 /* Node text sized to be READ, not decoded (Stephen 2026-08-20: descriptions
    were too small, make them fill the boxes). */
 .tree{position:relative}
-.trow{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px;position:relative;z-index:2}
+/* ⛔ minmax(0,1fr), not 1fr. A bare 1fr track cannot shrink below its
+   min-content, so the moment a node card carried a 44px icon the longest word
+   in "Fleet & Rideshare Cams" pushed the whole row 23px past the screen and
+   clipped the third column. Measured, not guessed. */
+.trow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:8px;position:relative;z-index:2}
 .node{border:1px solid var(--line);border-radius:11px;background:var(--panel);padding:10px 9px;
   min-height:84px;display:flex;flex-direction:column;gap:4px;opacity:.42;transition:.15s}
 .node.avail{opacity:1;border-color:#3a5064}
@@ -295,7 +299,19 @@ h1 em{font-style:normal;color:var(--sodium)}
 .node.afford{box-shadow:0 0 0 1px #ffa22955}
 .node.gated{opacity:.55}
 .node.exlocked{opacity:.30;border-style:dashed}
-.node .nm{font-size:13px;font-weight:700;line-height:1.25}
+/* icon ABOVE the name, not beside it. Beside it the name only got about 82px
+   on a 412px phone and broke mid word: "Paid Agitator / s", "Border Theatric /
+   s". Above it the name keeps the full card width and wraps where words end. */
+.nhead{display:flex;flex-direction:column;align-items:flex-start;gap:5px}
+/* 44px is the size these were cut for and checked at. The icon is decorative,
+   the name is the label, so it never shrinks the text. */
+.nico{width:40px;height:40px;flex:none;object-fit:contain;pointer-events:none;
+  filter:saturate(.9)}
+@media (min-width:560px){.nico{width:44px;height:44px}}
+.node.lock .nico,.node.exlocked .nico{filter:grayscale(1) brightness(.85)}
+.node.own .nico{filter:none}
+.node .nm{font-size:13px;font-weight:700;line-height:1.25;min-width:0;align-self:stretch;
+  overflow-wrap:break-word}
 .node .cst{font-size:11px;color:var(--sodium);letter-spacing:.05em}
 .node.own .cst{color:var(--grn)}
 .node .ds{font-size:11px;color:#93a7b8;line-height:1.45}
@@ -2064,6 +2080,12 @@ function renderSheet(tab){
       :'<div class="entry">Nothing yet. Give it a quarter.</div>');
   }
 }
+/* ⛔ An explicit manifest of which nodes have art on disk. Same reason as
+   SFX_HAVE: probing for a file that is not there costs a 404 and a console
+   error per node, and 46 of those on one screen is not a silent fallback.
+   Cut from Stephen's sheets 1 to 4 by scripts/cut_ftw.py. Add an id here when
+   its png lands. */
+const NODE_ART={agit:1,anchor:1,arch:1,astro:1,auto:1,blackout:1,border:1,capt:1,charter:1,check:1,core:1,corps:1,door:1,drone:1,face:1,fleet:1,fusion:1,graph:1,hiway:1,hoa:1,legal:1,lobby:1,martial:1,mesh:1,muni:1,narr:1,nda:1,ord:1,panic:1,patrol:1,perp:1,pilot:1,plate:1,pr:1,precog:1,pretext:1,proxy:1,quota:1,retail:1,revo:1,sat:1,school:1,score:1,threat:1,trans:1,whis:1};
 function nodeCost(n){
   let c=n.c;
   if(n.t==='war'&&S.mode.mod.warDiscount)c=Math.ceil(c*S.mode.mod.warDiscount);
@@ -2092,8 +2114,10 @@ function treeHTML(t){
       const aff=st==='avail'&&S.inf>=c;
       const cst=st==='own'?'ACTIVE':st==='gated'?(n.gtxt||'GATED'):st==='exlocked'?'PATH CLOSED':c+' INF';
       const tut=(G.on&&GUIDE[G.step]&&GUIDE[G.step].node===n.id&&st==='avail')?'tut':'';
+      const ico=NODE_ART[n.id]?`<img class="nico" src="art/tree/${n.id}.png" alt="" draggable="false">`:'';
       h+=`<div class="node ${st} ${aff?'afford':''} ${tut}" id="nd_${n.id}" data-node="${n.id}">
-        <div class="nm">${n.n}</div><div class="cst mono">${cst}</div><div class="ds">${n.d}</div></div>`;
+        <div class="nhead">${ico}<div class="nm">${n.n}</div></div>
+        <div class="cst mono">${cst}</div><div class="ds">${n.d}</div></div>`;
     }
     h+='</div>';
   }
