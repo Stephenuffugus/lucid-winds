@@ -726,6 +726,32 @@ if (C) {
     ok('no cue fired under an id the catalog does not know',
       ![...fired].some(c => c.charAt(0) === '?'), JSON.stringify([...fired].filter(c => c.charAt(0) === '?')));
 
+    /* ⛔ Fable review, 2026-08-24: the desk/acquisition state was NOT in saveRun,
+       so a reload erased every data centre's permanent upkeep (while the desk
+       sold you four more), reset acquisition heat (buy at max heat, reload, buy
+       cheap), and forgot the monitor and the liability cover. This suite passed
+       148/148 through all of it, because nothing asserted the round trip. */
+    group('the desk and acquisition state survive a save and reload');
+    {
+      const cR = makeCtx();
+      cR.doctrineModal = () => {};
+      vm.runInContext("S=newState('CONTRACTOR','Vendor','NA',null,null,'Kestrel Municipal');", cR);
+      vm.runInContext("S.acqHeat=0.31;S.dcs=3;S.deskRoll=7;S.monitor=2;S.cover=1;S.cash=123*MONEY;saveRun();", cR);
+      vm.runInContext("S=null;", cR);
+      const okLoad = vm.runInContext("loadRun()", cR);
+      ok('a saved run loads back', okLoad === true, 'loadRun=' + okLoad);
+      const back = vm.runInContext("({h:S.acqHeat,d:S.dcs,r:S.deskRoll,m:S.monitor,c:S.cover})", cR);
+      ok('acqHeat survives the round trip', Math.abs(back.h - 0.31) < 1e-9, 'got ' + back.h);
+      ok('data centres survive the round trip (their upkeep is forever, so losing them on reload is an exploit)', back.d === 3, 'got ' + back.d);
+      ok('deskRoll survives, so a reload cannot reroll the desk', back.r === 7, 'got ' + back.r);
+      ok('the consent-decree monitor and liability cover survive', back.m === 2 && back.c === 1, JSON.stringify(back));
+      /* and a junk blob cannot smuggle absurd values through the new fields */
+      vm.runInContext("(function(){const d=JSON.parse(localStorage.getItem('ftw_run_v1')||localStorage.getItem(K_RUN));d.dcs=999;d.acqHeat=40;localStorage.setItem(K_RUN,JSON.stringify(d));})()", cR);
+      vm.runInContext("S=null;loadRun();", cR);
+      const capped = vm.runInContext("({d:S.dcs,h:S.acqHeat})", cR);
+      ok('a hand-edited save cannot exceed the dc cap or the heat cap', capped.d <= vm.runInContext('CFG.dcMax', cR) && capped.h <= vm.runInContext('CFG.acqHeatMax', cR), JSON.stringify(capped));
+    }
+
     /* the cues the sim cannot reach on its own are driven through their real
        functions, so every id in the catalog is proven reachable, not just declared */
     /* the paid actions need their gating nodes and money, which this bot never

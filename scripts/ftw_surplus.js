@@ -28,7 +28,18 @@ const makeCtx=box.__mk;
 const REAL_RANDOM=Math.random;
 function bot(strat,maxDays,seed){
   let n=seed>>>0;
-  Math.random=()=>{n=(n*1664525+1013904223)>>>0;return n/4294967296;};
+  const rnd=()=>{n=(n*1664525+1013904223)>>>0;return n/4294967296;};
+  /* the meter's own loop (bubble collection etc) runs in the process */
+  Math.random=rnd;
+  /* ⛔ FOUND IT, 2026-08-24 (Fable review). The sandbox handed to
+     vm.createContext has NO Math in it, so the vm box grew its OWN contextified
+     Math global, and makeCtx (defined inside the box) hands the BOX's Math to
+     every game context. Seeding the process Math.random above therefore never
+     reached the sim at all: the meter's own bot logic was seeded while the game
+     underneath it kept rolling real dice. That is the whole "identical runs say
+     3/5 then 4/5" mystery. Seed the box's Math too, through the box. */
+  box.__rnd=rnd;
+  vm.runInContext('Math.random=__rnd;',box);
   const c=makeCtx();
   c.doctrineModal=()=>{};
   const s=vm.runInContext(`S=newState('CONTRACTOR','Vendor','NA');S`,c);

@@ -1532,7 +1532,14 @@ function doAcquire(){
   sfx('spend');
   return touched>0;
 }
-function evScale(s){return clamp(((s&&s.net)||0)/10,1,25);}
+/* ⛔ Fable review, 2026-08-24: this divisor was designed for OLD money units and
+   the rescale never touched it. With net now in dollars (day-1 net is tens of
+   thousands, endgame ~$13M/day) net/10 pinned the clamp at 25x almost from the
+   first tick, so every priced event option cost ~cost*25 — $300M against a $20M
+   treasury — and rendered as permanently disabled for most of the run. The whole
+   priced half of the event system was silently switched off. Dividing by MONEY
+   restores the intended old-unit ratio. */
+function evScale(s){return clamp(((s&&s.net)||0)/(10*MONEY),1,25);}
 function dateStr(day){const d=new Date(2026,0,1);d.setDate(d.getDate()+day);
   return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
 function pickActive(s){const a=REGIONS.map(r=>s.regions[r.id]).filter(r=>r.active&&r.coverage>.04);
@@ -2005,6 +2012,13 @@ function saveRun(){
       bubbles:(s.bubbles||[]).map(b=>({k:b.k,x:b.x,y:b.y,life:b.life,born:b.born,v:b.v})),
       pendingEventId:s.pendingEventId||null,
       lostCount:s.lostCount,wmileDth:s.wmileDth||0,hq:s.hq,hqName:s.hqName,co:s.co,
+      /* ⛔ Fable review, 2026-08-24: NONE of the desk/acquisition state was
+         saved. A reload wiped acqHeat (buy at max heat, reload, buy cheap),
+         erased every data centre's permanent upkeep while the desk happily sold
+         you four more, and forgot the consent-decree monitor and the liability
+         cover. The whole surplus fix was save-scummable. */
+      acqHeat:s.acqHeat||0,dcs:s.dcs||0,deskRoll:s.deskRoll||0,
+      monitor:s.monitor||0,cover:s.cover||0,
       owned:[...s.owned],combos:[...s.combos],milestones:[...s.milestones],wmiles:[...s.wmiles],
       popMiles:[...(s.popMiles||[])],popPeakOrg:s.popPeakOrg||0,popHist:(s.popHist||[]).slice(-11),
       log:s.log.slice(0,40),regions:regs,stamp:Date.now()}));
@@ -2031,6 +2045,13 @@ function loadRun(){
   s.doctrine=(d.doctrine==='glove'||d.doctrine==='fist')?d.doctrine:null;
   s.lostCount=Math.max(0,num(d.lostCount,0));s.wmileDth=num(d.wmileDth,0);
   s.net=Math.max(0,num(d.net,0));s.lbCd=Math.max(0,num(d.lbCd,0));
+  /* the desk and acquisition state, validated the way everything else is.
+     A v2 save written before these fields existed loads them as 0. */
+  s.acqHeat=clamp(num(d.acqHeat,0),0,CFG.acqHeatMax);
+  s.dcs=Math.min(CFG.dcMax,Math.max(0,num(d.dcs,0)|0));
+  s.deskRoll=Math.max(0,num(d.deskRoll,0)|0);
+  s.monitor=Math.max(0,num(d.monitor,0)|0);
+  s.cover=Math.max(0,num(d.cover,0)|0);
   s.subj=clamp(num(d.subj,0),0,1);s.avgSus=clamp(num(d.avgSus,0),0,100);
   s.avgMil=clamp(num(d.avgMil,0),0,1);s.avgRes=clamp(num(d.avgRes,0),0,100);
   s.unread=Math.max(0,num(d.unread,0));s.nextBubble=Math.max(0,num(d.nextBubble,0));
