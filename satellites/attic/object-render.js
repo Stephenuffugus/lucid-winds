@@ -38,22 +38,14 @@
     '1990s': { c: ['#d8d4c8', '#3a3a38', '#8a2b20', '#191917'], f: 'ui-monospace, monospace' }
   };
 
-  /* GRIME: the unrevealed state. Everything the player sees before they wipe
-     the dust has to be identical whether the box under it is TRASHED or
-     FACTORY SEALED, or the reveal button is decoration. Grade is not passed
-     in here at all, which is the point. Deterministic off the hash. */
-  function grime(h, bx, by, bw, bh) {
-    var w = '<rect x="' + bx + '" y="' + by + '" width="' + bw + '" height="' + bh + '" fill="#6b5f4c" opacity="0.62"/>', i, cx, cy, rr;
-    for (i = 0; i < 9; i++) {
-      cx = bx + 6 + hb(h, 20 + (i % 6)) % Math.max(1, bw - 12);
-      cy = by + 6 + hb(h, 21 + (i % 5)) % Math.max(1, bh - 12);
-      rr = 14 + (hb(h, 22 + (i % 4)) % 26);
-      w += '<circle cx="' + cx + '" cy="' + cy + '" r="' + rr + '" fill="#8a7c64" opacity="0.22"/>';
-    }
-    w += '<rect x="' + bx + '" y="' + by + '" width="' + bw + '" height="' + bh + '" fill="none" stroke="#3a3226" stroke-width="2" opacity="0.5"/>'
-      + '<text x="' + (bx + bw / 2) + '" y="' + (by + bh / 2 + 4) + '" text-anchor="middle" font-family="ui-monospace, monospace" font-size="13" letter-spacing="4" fill="#efe3c8" opacity="0.72">UNWIPED</text>';
-    return w;
-  }
+  /* ⛔ ONE DUST RENDERER, IN sleeve-render.js. This file used to carry a
+     second copy of the grime, so the record's dust and everything else's dust
+     were two functions that had to be tuned twice and would have drifted the
+     first time either one was. object-render already imports sleeve-render,
+     so it asks for it. Grade is not passed in here at all, which is the point.
+     Everything the player sees before they wipe has to be identical whether
+     the thing under it is TRASHED or FACTORY SEALED. */
+  function grime(h, bx, by, bw, bh) { return S.grime(h, bx, by, bw, bh); }
 
   /* ════════════════════════════════════════════════════════════════════
      DAMAGE PRIMITIVES. A condition tier has to read as DAMAGE at 90px, not
@@ -334,8 +326,10 @@
      Seen on the contact sheet 2026-08-24: six of the seven columns of the
      cereal row were the same box. A ladder you cannot see is not a ladder, and
      wiping to NEAR MINT has to LOOK better than wiping to FINE. */
+  /* ⛔ ONE RAMP, IN sleeve-render.js. It used to live here only, which is how
+     the record class ended up with three visible grades while everything else
+     had seven. */
   var LEVEL = { 'TRASHED': 0, 'PLAYED': 1, 'GOOD': 2, 'FINE': 3, 'NEAR MINT': 4, 'MINT': 5, 'FACTORY SEALED': 6 };
-  var PATINA = [0.22, 0.14, 0.09, 0.05, 0.02, 0, 0];
   function wear(h, grade, bx, by, bw, bh, opts) {
     if (typeof opts === 'number') opts = { sy: opts };
     opts = opts || {};
@@ -346,20 +340,9 @@
     var heavy = lv === 0, mid = lv === 1 || lv === 2;
     var t = TELLS[opts.kind] || TELLS._box;
     var w = t(h, grade, bx, by, bw, bh, heavy, mid, opts.scr);
-    /* the age wash. Every step down the ladder is a little grubbier than the
-       one above it, so two cards side by side always differ. */
-    if (PATINA[lv] > 0) w += '<rect x="' + bx + '" y="' + by + '" width="' + bw + '" height="' + bh + '" fill="#6b5232" opacity="' + PATINA[lv] + '"/>';
-    if (lv <= 1) w += '<rect x="' + bx + '" y="' + by + '" width="' + bw + '" height="' + bh + '" fill="none" stroke="#241c10" stroke-width="' + (heavy ? 7 : 4) + '" opacity="' + (heavy ? 0.34 : 0.2) + '"/>';
-    if (lv === 3) {   // FINE: handled, and looked after
-      w += scuff(bx + bw * 0.16, by + 4, bw * 0.42, 4, 0.11)
-        + '<path d="M' + (bx + bw) + ' ' + (by + bh) + ' l-13 0 l13 -13 Z" fill="#ffffff" opacity="0.14"/>';
-    }
-    if (lv === 4) {   // NEAR MINT: one tick, and you have to look for it
-      w += '<path d="M' + (bx + bw) + ' ' + by + ' l-7 0 l7 7 Z" fill="#ffffff" opacity="0.13"/>';
-    }
-    if (lv === 5) {   // MINT: never wrapped, never handled, and it shows
-      w += '<path d="M' + (bx + bw * 0.06) + ' ' + (by + bh) + ' L' + (bx + bw * 0.5) + ' ' + by + ' l' + (bw * 0.1) + ' 0 L' + (bx + bw * 0.16) + ' ' + (by + bh) + ' Z" fill="#ffffff" opacity="0.1"/>';
-    }
+    /* the age wash and the top of the ladder: every step is a little cleaner
+       than the one below it, so two cards side by side always differ */
+    w += S.ramp(grade, bx, by, bw, bh);
     if (lv <= 4) w += priceSticker(h, bx + bw - 34 - hb(h, 22) % 20, by + sy + hb(h, 23) % 24);
     if (lv === 6) w += (SEALED[opts.kind] || SEALED._box)(h, bx, by, bw, bh);
     return w;
@@ -421,18 +404,15 @@
       + '<text x="' + (bx + bw / 2) + '" y="' + (by + 68) + '" text-anchor="middle" font-family="' + look.f + '" font-size="' + fit(String(it.sub).slice(0, 44), 8.5, bw - 26) + '" fill="' + c[0] + '" opacity="0.9">' + esc(String(it.sub).slice(0, 44)) + '</text>';
     // the bubble + figure
     var cxm = bx + bw / 2, cym = by + 172, crushed = gr === 'TRASHED' || gr === 'PLAYED';
-    var R = 4 + hb(h, 17) % 5;
     var skin = ['#e8b06a', '#8ac46a', '#6a9ce8', '#e86a6a', '#c9c9c9', '#b98ae0'][hb(h, 18) % 6];
     var suit = c[(hb(h, 19) % 3) + 1];
-    g += '<g>'
-      + '<circle cx="' + cxm + '" cy="' + (cym - 44) + '" r="' + (14 + R) + '" fill="' + skin + '"/>'
-      + '<circle cx="' + (cxm - 6) + '" cy="' + (cym - 48) + '" r="2.4" fill="#1a1a1a"/><circle cx="' + (cxm + 6) + '" cy="' + (cym - 48) + '" r="2.4" fill="#1a1a1a"/>'
-      + '<rect x="' + (cxm - 17) + '" y="' + (cym - 24) + '" width="34" height="52" rx="10" fill="' + suit + '"/>'
-      + '<rect x="' + (cxm - 33) + '" y="' + (cym - 20) + '" width="14" height="38" rx="7" fill="' + skin + '" transform="rotate(' + (-14 + hb(h, 26) % 28) + ' ' + (cxm - 26) + ' ' + (cym - 18) + ')"/>'
-      + '<rect x="' + (cxm + 19) + '" y="' + (cym - 20) + '" width="14" height="38" rx="7" fill="' + skin + '" transform="rotate(' + (14 - hb(h, 27) % 28) + ' ' + (cxm + 26) + ' ' + (cym - 18) + ')"/>'
-      + '<rect x="' + (cxm - 14) + '" y="' + (cym + 26) + '" width="12" height="34" rx="6" fill="' + suit + '"/>'
-      + '<rect x="' + (cxm + 2) + '" y="' + (cym + 26) + '" width="12" height="34" rx="6" fill="' + suit + '"/>'
-      + '</g>';
+    g += figure(cxm, cym - 8, 1.42, skin, hb(h, 26) % 4 === 0, suit, true);
+    /* one accessory off the hash so two toys of the same palette are not the
+       same doll: a helmet, a hat, or a thing in the hand */
+    var acc = hb(h, 27) % 4;
+    if (acc === 0) g += '<path d="M' + (cxm - 15) + ' ' + (cym - 46) + ' q 15 -20 30 0 Z" fill="' + suit + '"/><rect x="' + (cxm - 19) + '" y="' + (cym - 48) + '" width="38" height="5" rx="2" fill="' + suit + '"/>';
+    else if (acc === 1) g += '<circle cx="' + cxm + '" cy="' + (cym - 40) + '" r="19" fill="none" stroke="#ffffff" stroke-width="3" opacity="0.7"/>';
+    else if (acc === 2) g += '<rect x="' + (cxm + 30) + '" y="' + (cym - 52) + '" width="6" height="34" rx="3" fill="' + c[2] + '" transform="rotate(24 ' + (cxm + 33) + ' ' + (cym - 36) + ')"/>';
     var bubblePath = crushed
       ? '<path d="M' + (cxm - 52) + ' ' + (cym + 66) + ' q -8 -70 22 -116 q 18 -22 44 -8 q 26 12 30 52 q 6 48 -14 74 Z" fill="#ffffff" opacity="0.2" stroke="#ffffff" stroke-opacity="0.5" stroke-width="2"/>'
       : '<ellipse cx="' + cxm + '" cy="' + (cym - 2) + '" rx="58" ry="76" fill="#ffffff" opacity="0.16" stroke="#ffffff" stroke-opacity="0.55" stroke-width="2"/>';
@@ -525,19 +505,32 @@
   /* a person shaped silhouette that is actually a person: shoulders, a
      stance, hands and feet. The toy figure was a circle, a rounded rect and
      four limbs with two dot eyes and no mouth, on a fifth of every pull. */
-  function figure(cx, cy, s, fill, cape) {
+  function figure(cx, cy, s, fill, cape, suit, face) {
     var g = '';
+    if (!suit) suit = fill;
     if (cape) g += '<path d="M' + (cx - 15 * s) + ' ' + (cy - 18 * s) + ' q ' + (15 * s) + ' ' + (46 * s) + ' ' + (30 * s) + ' 0 l' + (10 * s) + ' ' + (44 * s) + ' q -' + (25 * s) + ' ' + (12 * s) + ' -' + (50 * s) + ' 0 Z" fill="' + fill + '" opacity="0.72"/>';
     g += '<circle cx="' + cx + '" cy="' + (cy - 27 * s) + '" r="' + (9 * s) + '" fill="' + fill + '"/>'
-      + '<path d="M' + (cx - 13 * s) + ' ' + (cy - 16 * s) + ' q ' + (13 * s) + ' -' + (7 * s) + ' ' + (26 * s) + ' 0 l' + (3 * s) + ' ' + (28 * s) + ' q -' + (16 * s) + ' ' + (6 * s) + ' -' + (32 * s) + ' 0 Z" fill="' + fill + '"/>'
+      + '<path d="M' + (cx - 13 * s) + ' ' + (cy - 16 * s) + ' q ' + (13 * s) + ' -' + (7 * s) + ' ' + (26 * s) + ' 0 l' + (3 * s) + ' ' + (28 * s) + ' q -' + (16 * s) + ' ' + (6 * s) + ' -' + (32 * s) + ' 0 Z" fill="' + suit + '"/>'
       + '<path d="M' + (cx - 13 * s) + ' ' + (cy - 14 * s) + ' l-' + (14 * s) + ' ' + (20 * s) + ' l' + (6 * s) + ' ' + (4 * s) + ' l' + (13 * s) + ' -' + (18 * s) + ' Z" fill="' + fill + '"/>'
       + '<path d="M' + (cx + 13 * s) + ' ' + (cy - 14 * s) + ' l' + (15 * s) + ' -' + (12 * s) + ' l' + (5 * s) + ' ' + (6 * s) + ' l-' + (14 * s) + ' ' + (16 * s) + ' Z" fill="' + fill + '"/>'
       + '<circle cx="' + (cx - 26 * s) + '" cy="' + (cy + 8 * s) + '" r="' + (4 * s) + '" fill="' + fill + '"/>'
       + '<circle cx="' + (cx + 32 * s) + '" cy="' + (cy - 24 * s) + '" r="' + (4 * s) + '" fill="' + fill + '"/>'
-      + '<path d="M' + (cx - 10 * s) + ' ' + (cy + 12 * s) + ' l-' + (5 * s) + ' ' + (30 * s) + ' l' + (9 * s) + ' 0 l' + (4 * s) + ' -' + (28 * s) + ' Z" fill="' + fill + '"/>'
-      + '<path d="M' + (cx + 10 * s) + ' ' + (cy + 12 * s) + ' l' + (6 * s) + ' ' + (30 * s) + ' l-' + (9 * s) + ' 0 l-' + (4 * s) + ' -' + (28 * s) + ' Z" fill="' + fill + '"/>'
-      + '<path d="M' + (cx - 16 * s) + ' ' + (cy + 42 * s) + ' l' + (12 * s) + ' 0 l0 -' + (5 * s) + ' l-' + (12 * s) + ' 0 Z" fill="' + fill + '"/>'
-      + '<path d="M' + (cx + 16 * s) + ' ' + (cy + 42 * s) + ' l-' + (12 * s) + ' 0 l0 -' + (5 * s) + ' l' + (12 * s) + ' 0 Z" fill="' + fill + '"/>';
+      + '<path d="M' + (cx - 10 * s) + ' ' + (cy + 12 * s) + ' l-' + (5 * s) + ' ' + (30 * s) + ' l' + (9 * s) + ' 0 l' + (4 * s) + ' -' + (28 * s) + ' Z" fill="' + suit + '"/>'
+      + '<path d="M' + (cx + 10 * s) + ' ' + (cy + 12 * s) + ' l' + (6 * s) + ' ' + (30 * s) + ' l-' + (9 * s) + ' 0 l-' + (4 * s) + ' -' + (28 * s) + ' Z" fill="' + suit + '"/>'
+      + '<path d="M' + (cx - 16 * s) + ' ' + (cy + 42 * s) + ' l' + (12 * s) + ' 0 l0 -' + (5 * s) + ' l-' + (12 * s) + ' 0 Z" fill="' + suit + '"/>'
+      + '<path d="M' + (cx + 16 * s) + ' ' + (cy + 42 * s) + ' l-' + (12 * s) + ' 0 l0 -' + (5 * s) + ' l' + (12 * s) + ' 0 Z" fill="' + suit + '"/>';
+    /* ⛔ A FACE IS A MOUTH TOO. The carded toy shipped as a circle, a rounded
+       rect, four limbs and two dot eyes: no mouth, no hands, no feet, on a
+       fifth of every pull. A silhouette on a comic cover wants no face at all,
+       so this is opt in. */
+    if (face) {
+      g += '<circle cx="' + (cx - 3.6 * s) + '" cy="' + (cy - 29 * s) + '" r="' + (2.6 * s) + '" fill="#ffffff"/>'
+        + '<circle cx="' + (cx + 3.8 * s) + '" cy="' + (cy - 29 * s) + '" r="' + (2.6 * s) + '" fill="#ffffff"/>'
+        + '<circle cx="' + (cx - 3.2 * s) + '" cy="' + (cy - 28.6 * s) + '" r="' + (1.3 * s) + '" fill="#16130f"/>'
+        + '<circle cx="' + (cx + 4.2 * s) + '" cy="' + (cy - 28.6 * s) + '" r="' + (1.3 * s) + '" fill="#16130f"/>'
+        + '<path d="M' + (cx - 4.4 * s) + ' ' + (cy - 22 * s) + ' q ' + (4.4 * s) + ' ' + (4.2 * s) + ' ' + (8.8 * s) + ' 0" fill="none" stroke="#16130f" stroke-width="' + (1.5 * s) + '" stroke-linecap="round"/>'
+        + '<path d="M' + (cx - 8 * s) + ' ' + (cy - 34 * s) + ' q ' + (8 * s) + ' -' + (4 * s) + ' ' + (16 * s) + ' 0" fill="none" stroke="#16130f" stroke-width="' + (1.2 * s) + '" opacity="0.35"/>';
+    }
     return g;
   }
 
@@ -560,7 +553,7 @@
     if (hb(h, 18) % 3 === 0) g += '<path d="M' + (ax + 8) + ' ' + (ay + ah - 6) + ' q ' + (aw * 0.2) + ' -' + (ah * 0.34) + ' ' + (aw * 0.42) + ' -4 Z" fill="' + c[3] + '" opacity="0.55"/>';
     // masthead
     g += '<rect x="' + bx + '" y="' + by + '" width="' + bw + '" height="54" fill="' + c[3] + '"/>'
-      + '<text x="' + (bx + bw / 2 + 14) + '" y="' + (by + 26) + '" text-anchor="middle" font-family="' + look.f + '" font-weight="800" font-size="' + fit(it.name, 21, bw - 68) + '" fill="' + c[2] + '">' + esc(String(it.name).slice(0, 30)) + '</text>'
+      + '<text x="' + (bx + bw / 2 + 14) + '" y="' + (by + 26) + '" text-anchor="middle" font-family="' + look.f + '" font-weight="800" font-size="' + fit(String(it.name).slice(0, 44), 21, bw - 68) + '" fill="' + c[2] + '">' + esc(String(it.name).slice(0, 44)) + '</text>'
       + '<text x="' + (bx + bw / 2 + 14) + '" y="' + (by + 44) + '" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" letter-spacing="2" fill="' + c[0] + '" opacity="0.85">' + (it._issue || 1) + ' &middot; ' + it.year + '</text>';
     // corner box, bottom left of the masthead, where a real one lives
     g += '<rect x="' + (bx + 5) + '" y="' + (by + 5) + '" width="34" height="44" fill="' + c[0] + '" stroke="' + c[2] + '" stroke-width="1.5"/>'
@@ -741,7 +734,7 @@
     var fn = DRAW[it.cls];
     if (!fn) return null;
     g = fn(h, it, look, gr);
-    return { svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="' + size + '" height="' + size + '">' + g + '</svg>', item: it };
+    return { svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"' + (dusty ? ' data-dusty="1"' : '') + ' width="' + size + '" height="' + size + '">' + g + '</svg>', item: it };
   }
 
   var API = { renderItem: renderItem };

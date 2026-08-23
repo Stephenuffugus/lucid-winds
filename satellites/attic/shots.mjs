@@ -51,6 +51,10 @@ let shotN = 0;
 const br = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox'] });
 const p = await br.newPage();
 p.on('pageerror', e => errs.push('pageerror: ' + String(e).slice(0, 200)));
+/* ⛔ A RENDERER CRASH LOOKS LIKE A TEST BUG. Thirteen digs in a row detached
+   the frame and the stack said "Attempted to use detached Frame", which reads
+   as puppeteer misuse and is actually the page dying. Say so out loud. */
+p.on('error', e => { errs.push('RENDERER CRASHED: ' + String(e).slice(0, 200)); console.log('  RENDERER CRASHED: ' + e); });
 p.on('console', m => { if (m.type() === 'error') errs.push('console: ' + m.text().slice(0, 200)); });
 await p.setViewport(PORTRAIT);
 await p.evaluateOnNewDocument(() => { try { localStorage.setItem('sws_dev_ok', '1'); } catch (e) {} });
@@ -63,14 +67,14 @@ function state() {
     plate: (document.getElementById('gp') || {}).textContent || '',
     plateVisible: !!(document.getElementById('gp') && getComputedStyle(document.getElementById('gp')).display !== 'none'),
     name: (document.getElementById('nmSlot') || {}).textContent || '',
-    unwiped: /UNWIPED/.test((document.getElementById('artSlot') || {}).innerHTML || ''),
+    unwiped: !!document.querySelector('#artSlot svg[data-dusty]'),
     tix: (document.getElementById('tixN') || {}).textContent || '',
     shelfN: document.querySelectorAll('#shelf .slot').length,
     shelfVis: (document.getElementById('shelfWrap') || {}).style.display,
     want: (document.getElementById('wantSheet') || {}).className || '',
     dust: (document.getElementById('dustSheet') || {}).className || '',
-    dustCells: document.querySelectorAll('#dustGrid .dcell').length,
-    dustWiped: document.querySelectorAll('#dustGrid .dcell.wiped').length,
+    dustCells: document.querySelectorAll('#dustStage canvas').length,
+    dust2: (window.ATTIC_DEV && window.ATTIC_DEV.dustState()) || null,
     broke: (document.getElementById('brokenote') || {}).textContent || '',
     goDisabled: !!(document.getElementById('go') || {}).disabled,
     toast: (document.getElementById('toast') || {}).textContent || ''
@@ -174,9 +178,26 @@ await shot('card_dusty');
 
 // ── 4. the wipe ──────────────────────────────────────────────────────
 await tapSel('#gb');
+/* mid sweep: the dust layer and the clean art are BOTH on screen, which is
+   the whole point of the beat, so catch it there before catching the end */
+await new Promise(r => setTimeout(r, 260));
+let mid = await p.evaluate(() => ({
+  box: !!document.querySelector('#artSlot .wipeBox'),
+  clean: !!document.querySelector('#artSlot .wClean svg'),
+  dust: !!document.querySelector('#artSlot .wDust svg[data-dusty]'),
+  gone: !!document.querySelector('#artSlot .wDust.gone'),
+  puffs: document.querySelectorAll('#artSlot .puff').length,
+  cloth: document.querySelectorAll('#artSlot .cloth').length
+}));
+must('the wipe is an animation, not a repaint', mid.box && mid.clean && mid.dust, mid);
+must('the dust is actually being swept off', mid.gone, mid);
+must('dust comes off it', mid.puffs > 8 && mid.cloth === 1, mid);
+await shot('card_wiping');
 s = await state();
 must('WIPE revealed a grade plate', s.graded && s.plate.length > 0, s);
-must('the art is no longer UNWIPED', !s.unwiped, s);
+await new Promise(r => setTimeout(r, 1300));
+s = await state();
+must('the art is no longer under dust once the sweep ends', !s.unwiped, s);
 await shot('card_revealed');
 await shot('card_revealed', true);
 console.log('  revealed: ' + s.name.trim() + ' / ' + s.plate.trim());
@@ -186,6 +207,8 @@ await p.evaluate(() => window.ATTIC_DEV.setTix(40));
 for (let i = 0; i < 13; i++) {
   await tapSel('#go');
   await tapSel('#gb');
+  /* let the sweep finish. A player cannot dig again inside 900ms either. */
+  await new Promise(r => setTimeout(r, 140));
 }
 s = await state();
 must('the shelf filled up', s.shelfN >= 12, s);
@@ -205,25 +228,51 @@ must('WANT LIST closed', !/\bon\b/.test(s.want), s);
 await tapSel('#dustBtn');
 s = await state();
 must('DUST OFF opened', /\bon\b/.test(s.dust), s);
-must('the grime grid built 48 cells', s.dustCells === 48, s);
+must('the scrub panel built its two canvases', s.dustCells === 2, s);
+must('the panel starts filthy', s.dust2 && s.dust2.cleared < 0.02, s.dust2);
+must('the panel hid every stub', s.dust2 && s.dust2.found === 0 && s.dust2.stubs === 10, s.dust2);
 await shot('dust_fresh');
 await shot('dust_fresh', true);
-// drag across it the way a thumb would
-const grid = await p.evaluate(() => { const r = document.getElementById('dustGrid').getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; });
-await p.touchscreen.touchStart(grid.x + 8, grid.y + 8);
+
+/* ⛔ THE THING THIS PANEL EXISTS TO PROVE. The old grid died to ONE snake drag
+   in about three seconds with 87 of the 90 seconds unused, so the timer was
+   decoration. Drag the same snake now, through real touch events, and it must
+   NOT clear the panel. */
+const stage = await p.evaluate(() => { const r = document.getElementById('dustStage').getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; });
+await p.touchscreen.touchStart(stage.x + 8, stage.y + 8);
 for (let row = 0; row < 8; row++) {
   for (let k = 0; k <= 12; k++) {
-    const x = grid.x + 6 + (row % 2 ? (grid.w - 12) * (1 - k / 12) : (grid.w - 12) * (k / 12));
-    await p.touchscreen.touchMove(x, grid.y + 6 + (grid.h - 12) * (row / 7));
+    const x = stage.x + 6 + (row % 2 ? (stage.w - 12) * (1 - k / 12) : (stage.w - 12) * (k / 12));
+    await p.touchscreen.touchMove(x, stage.y + 6 + (stage.h - 12) * (row / 7));
   }
 }
 await p.touchscreen.touchEnd();
-await new Promise(r => setTimeout(r, 400));
+await new Promise(r => setTimeout(r, 300));
 s = await state();
-must('dragging actually wiped cells', s.dustWiped > 20, s);
+must('one snake drag really does scrub grime off', s.dust2 && s.dust2.cleared > 0.08, s.dust2);
+/* the number the whole rebuild exists for: ONE continuous drag is ONE pass */
+must('ONE snake drag does NOT clear the panel', s.dust2 && s.dust2.cleared < 0.5, s.dust2);
+must('and one pass does not hand you the stubs either', s.dust2 && s.dust2.found <= 2, s.dust2);
 await shot('dust_wiped');
+console.log('  one snake drag cleared ' + Math.round(s.dust2.cleared * 100) + '% and found ' + s.dust2.found + ' of ' + s.dust2.stubs + ' stubs');
+
+/* how much work a full clear actually is, driven through the real erase.
+   ⛔ MEASURE IT FROM A FRESH PANEL. The first version measured straight after
+   the snake drag above, which had already taken 31% off, so it reported a job
+   two thirds the size of the real one.
+   ⛔ AND THE BAR IS DRAG DISTANCE, NOT PASSES. Passes measures the brush, not
+   the work: a wider brush needs fewer rows per pass, so it would make the job
+   look harder while making it easier. Twelve panel widths of dragging is
+   roughly twenty five to thirty five seconds of committed scrubbing on a
+   phone, which is what makes ninety seconds a number and not decoration. */
+const sweeps = await p.evaluate(() => { window.ATTIC_DEV.dustReset(); return window.ATTIC_DEV.dustSweeps(40); });
+must('clearing the panel takes real drag distance', sweeps.screens >= 12, sweeps);
+must('but it IS clearable inside the ninety seconds', sweeps.cleared >= 0.9, sweeps);
+must('clearing it turns up the stubs', sweeps.found >= 8, sweeps);
+console.log('  full clear: ' + sweeps.screens + ' panel widths of dragging (' + sweeps.dist + 'px), ' + sweeps.found + ' of 10 stubs');
+await shot('dust_cleared');
 const dustT = await p.evaluate(() => +document.getElementById('dustT').textContent);
-console.log('  dust: ' + s.dustWiped + '/48 wiped with ' + dustT + 's still on the clock');
+console.log('  dust: ' + dustT + 's still on the clock');
 await tapSel('#dustDone');
 s = await state();
 must('DONE closed the dust panel', !/\bon\b/.test(s.dust), s);

@@ -25,18 +25,92 @@
   // 0.72em average glyph width for bold caps; avail = pixels the line may span
   function fit(text, max, avail) { return Math.min(max, (avail || 260) / (Math.max(6, text.length) * 0.72)); }
 
-  /* the unrevealed sleeve: grime over the whole 300x300, no ring wear, no
-     price sticker, no shrink gloss. A sealed record and a trashed one have
-     to look the same until the player wipes. */
-  function grimeLayer(h) {
-    var w = '<rect width="300" height="300" fill="#6b5f4c" opacity="0.62"/>', i;
-    for (i = 0; i < 9; i++) {
-      w += '<circle cx="' + (10 + hb(h, 20 + (i % 6)) % 280) + '" cy="' + (10 + hb(h, 21 + (i % 5)) % 280)
-        + '" r="' + (16 + hb(h, 22 + (i % 4)) % 30) + '" fill="#8a7c64" opacity="0.22"/>';
-    }
-    return w + '<text x="150" y="156" text-anchor="middle" font-family="ui-monospace, monospace" font-size="14" letter-spacing="5" fill="#efe3c8" opacity="0.72">UNWIPED</text>';
-  }
+  /* ════════════════════════════════════════════════════════════════════
+     THE DUST. One renderer, exported, used by every family: object-render.js
+     imports this file already, so a second copy of the grime would have drifted
+     the day either one was tuned.
 
+     ⛔ THIS IS THE GAME'S ONE DRAMATIC BEAT AND IT WAS A COLOUR CORRECTION.
+     Shipped as a flat #6b5f4c at 0.62, which is a brown wash you can read
+     straight through: at 240px the band name, the sub line, COLLECT ALL 6 and
+     the year were all legible under it, so the WIPE button revealed something
+     the player had already read. Combined opacity is about 0.91 now, which
+     hides 9 to 13px type completely and still lets the SHAPE of the object
+     through, because knowing you have found a lunchbox and not knowing what is
+     printed on it is exactly the right amount to know.
+     ⛔ AND THE WORD "UNWIPED" IS GONE. It was 14px monospace with 5px letter
+     spacing floating in the middle of the artwork, which is a debug label, not
+     art. The shelf chip already says UNWIPED in the UI where a label belongs.
+     ⛔ NO SVG FILTERS. A per element filter is the studio's known iOS killer
+     (feedback_svg_filters_per_element_breaks_ios), so the density comes from
+     two stacked layers and an even odd hole, never from feGaussianBlur. */
+  function grime(h, bx, by, bw, bh) {
+    var i, cx, cy, rr, w = '';
+    function b(n) { return hb(h, 16 + (n % 14)); }
+    /* the swipe: somebody has already run a thumb across this once, and it is
+       the only place you get a slightly better look */
+    var sy0 = by + bh * (0.34 + (b(3) % 30) / 100), amp = bh * 0.1;
+    var swipe = 'M' + bx + ' ' + sy0
+      + ' q ' + (bw * 0.3) + ' ' + (-amp) + ' ' + (bw * 0.62) + ' ' + (amp * 0.35)
+      + ' q ' + (bw * 0.22) + ' ' + (amp * 0.5) + ' ' + (bw * 0.38) + ' ' + (-amp * 0.2)
+      + ' l0 ' + (bh * 0.13)
+      + ' q -' + (bw * 0.38) + ' ' + (amp * 0.2) + ' -' + (bw * 0.6) + ' ' + (-amp * 0.35)
+      + ' q -' + (bw * 0.3) + ' ' + (-amp * 0.35) + ' -' + (bw * 0.4) + ' ' + (amp * 0.6) + ' Z';
+    /* two layers at 0.79 compound to 0.956, and it took that much: at 0.91 a
+       high contrast title plate (the record's, after the STACK layout got one)
+       still punched through and the band name was readable under the dust. */
+    w += '<rect x="' + bx + '" y="' + by + '" width="' + bw + '" height="' + bh + '" fill="#5c5142" opacity="0.79"/>';
+    w += '<path fill-rule="evenodd" fill="#5c5142" opacity="0.79" d="M' + bx + ' ' + by + ' h' + bw + ' v' + bh + ' h-' + bw + ' Z ' + swipe + '"/>';
+    /* cloudiness: where the dust has drifted and where it has not */
+    for (i = 0; i < 16; i++) {
+      cx = bx + 4 + (b(i) * (i + 5)) % Math.max(1, bw - 8);
+      cy = by + 4 + (b(i + 4) * (i + 3)) % Math.max(1, bh - 8);
+      rr = 12 + (b(i + 2) % 34);
+      w += '<circle cx="' + cx + '" cy="' + cy + '" r="' + rr + '" fill="' + (i % 3 ? '#786a55' : '#463d31') + '" opacity="0.2"/>';
+    }
+    /* grit, which is what actually says DUST rather than FOG */
+    for (i = 0; i < 34; i++) {
+      cx = bx + 3 + (b(i + 1) * (i * 7 + 11)) % Math.max(1, bw - 6);
+      cy = by + 3 + (b(i + 6) * (i * 5 + 13)) % Math.max(1, bh - 6);
+      w += '<circle cx="' + cx + '" cy="' + cy + '" r="' + (0.7 + (i % 4) * 0.55) + '" fill="' + (i % 5 ? '#3a3226' : '#a89a8d') + '" opacity="' + (0.28 + (i % 3) * 0.14) + '"/>';
+    }
+    /* lint, and a web in whichever corner the hash picks */
+    for (i = 0; i < 3; i++) {
+      cx = bx + 10 + (b(i + 9) * 3) % Math.max(1, bw - 20);
+      cy = by + 10 + (b(i + 11) * 3) % Math.max(1, bh - 20);
+      w += '<path d="M' + cx + ' ' + cy + ' q 14 -9 26 4 q 10 11 22 3" fill="none" stroke="#cfc3a8" stroke-width="0.9" opacity="0.3"/>';
+    }
+    var wx = (b(7) % 2) ? bx + bw : bx, ws = (b(7) % 2) ? -1 : 1, wy = (b(8) % 2) ? by + bh : by, hs = (b(8) % 2) ? -1 : 1;
+    for (i = 1; i <= 3; i++) {
+      w += '<path d="M' + (wx + ws * i * 15) + ' ' + wy + ' Q' + (wx + ws * i * 9) + ' ' + (wy + hs * i * 9) + ' ' + wx + ' ' + (wy + hs * i * 15) + '" fill="none" stroke="#cfc3a8" stroke-width="0.8" opacity="0.26"/>';
+    }
+    w += '<path d="M' + wx + ' ' + wy + ' L' + (wx + ws * 48) + ' ' + (wy + hs * 22) + ' M' + wx + ' ' + wy + ' L' + (wx + ws * 22) + ' ' + (wy + hs * 48) + '" stroke="#cfc3a8" stroke-width="0.8" opacity="0.26"/>';
+    /* the light catches the top edge of a dusty thing */
+    w += '<rect x="' + bx + '" y="' + by + '" width="' + bw + '" height="4" fill="#cfc3a8" opacity="0.16"/>';
+    return w;
+  }
+  function grimeLayer(h) { return grime(h, 0, 0, 300, 300); }
+
+  /* ⛔ THE SEVEN STEP RAMP LIVES HERE AND NOWHERE ELSE. It shipped in
+     object-render only, so the nine boxy families had seven visible grades and
+     the RECORD, the flagship class, had three: PLAYED and GOOD rendered
+     byte for byte identically, and so did FINE and NEAR MINT. Found by the
+     check's "no two grades render the same picture" group on 2026-08-24, which
+     is exactly the sort of thing nobody sees by eye because you never hold two
+     grades of the same object side by side unless a test does. */
+  var LEVEL = { 'TRASHED': 0, 'PLAYED': 1, 'GOOD': 2, 'FINE': 3, 'NEAR MINT': 4, 'MINT': 5, 'FACTORY SEALED': 6 };
+  var PATINA = [0.22, 0.14, 0.09, 0.05, 0.02, 0, 0];
+  function ramp(grade, bx, by, bw, bh) {
+    var lv = LEVEL[grade], w = '';
+    if (typeof lv !== 'number') lv = 2;
+    if (PATINA[lv] > 0) w += '<rect x="' + bx + '" y="' + by + '" width="' + bw + '" height="' + bh + '" fill="#6b5232" opacity="' + PATINA[lv] + '"/>';
+    if (lv <= 1) w += '<rect x="' + bx + '" y="' + by + '" width="' + bw + '" height="' + bh + '" fill="none" stroke="#241c10" stroke-width="' + (lv === 0 ? 7 : 4) + '" opacity="' + (lv === 0 ? 0.34 : 0.2) + '"/>';
+    if (lv === 3) w += '<rect x="' + (bx + bw * 0.16) + '" y="' + (by + 4) + '" width="' + (bw * 0.42) + '" height="4" rx="2" fill="#ffffff" opacity="0.11"/>'
+      + '<path d="M' + (bx + bw) + ' ' + (by + bh) + ' l-13 0 l13 -13 Z" fill="#ffffff" opacity="0.14"/>';
+    if (lv === 4) w += '<path d="M' + (bx + bw) + ' ' + by + ' l-7 0 l7 7 Z" fill="#ffffff" opacity="0.13"/>';
+    if (lv === 5) w += '<path d="M' + (bx + bw * 0.06) + ' ' + (by + bh) + ' L' + (bx + bw * 0.5) + ' ' + by + ' l' + (bw * 0.1) + ' 0 L' + (bx + bw * 0.16) + ' ' + (by + bh) + ' Z" fill="#ffffff" opacity="0.1"/>';
+    return w;
+  }
   function wearLayer(h, grade) {
     var w = '';
     if (grade === '?') return grimeLayer(h);
@@ -61,7 +135,7 @@
       w += '<path d="M0 210 L300 60 L300 96 L0 246 Z" fill="#ffffff" opacity="0.16"/>'
         + '<path d="M0 232 L300 82 L300 90 L0 240 Z" fill="#ffffff" opacity="0.28"/>';
     }
-    return w;
+    return w + ramp(grade, 0, 0, 300, 300);
   }
 
   function renderSleeve(h, size, opts) {
@@ -74,11 +148,21 @@
     var g = '';
 
     g += '<rect width="300" height="300" fill="' + c[0] + '"/>';
-    if (layout === 0) {          // STACK: big field, giant type up top
+    if (layout === 0) {
+      /* ⛔ STACK WAS 55 PERCENT EMPTY. The upper 168px carried one line of type
+         and nothing else, so more than half of the flagship object class was a
+         blank field. It has a motif now: a bleed off disc, a rule stack and the
+         band name on a plate it can be read against. */
+      g += '<circle cx="238" cy="52" r="74" fill="' + c[2] + '"/>'
+        + '<circle cx="238" cy="52" r="46" fill="' + c[1] + '"/>'
+        + '<circle cx="238" cy="52" r="16" fill="' + c[0] + '"/>';
+      var q; for (q = 0; q < 5; q++) g += '<rect x="16" y="' + (18 + q * 9) + '" width="' + (120 - q * 16) + '" height="4" fill="' + c[3] + '" opacity="' + (0.5 - q * 0.07) + '"/>';
       g += '<rect y="176" width="300" height="124" fill="' + c[1] + '"/>'
         + '<rect y="168" width="300" height="8" fill="' + c[2] + '"/>'
-        + '<text x="20" y="66" font-family="' + look.f + '" font-weight="800" font-size="' + fit(band, 34, 264) + '" fill="' + c[3] + '"' + (look.it ? ' font-style="italic"' : '') + '>' + esc(band) + '</text>'
-        + '<text x="20" y="222" font-family="' + look.f + '" font-size="17" fill="' + c[0] + '">' + esc(album) + '</text>';
+        + '<rect x="12" y="' + (108) + '" width="' + (276) + '" height="46" fill="' + c[3] + '" opacity="0.9"/>'
+        + '<text x="24" y="' + (140) + '" font-family="' + look.f + '" font-weight="800" font-size="' + fit(band, 30, 252) + '" fill="' + c[0] + '"' + (look.it ? ' font-style="italic"' : '') + '>' + esc(band) + '</text>'
+        + '<text x="20" y="222" font-family="' + look.f + '" font-size="17" fill="' + c[0] + '">' + esc(album) + '</text>'
+        + '<rect x="20" y="236" width="90" height="3" fill="' + c[2] + '"/>';
     } else if (layout === 1) {   // DIAGONAL: band name on an angle over a split field
       g += '<path d="M0 300 L300 0 L300 300 Z" fill="' + c[1] + '"/>'
         + '<g transform="rotate(-32 150 150)"><rect x="-40" y="130" width="380" height="44" fill="' + c[2] + '"/>'
@@ -97,10 +181,14 @@
     g += '<rect x="16" y="272" width="12" height="12" fill="' + c[2] + '"/>'
       + '<text x="34" y="282" font-family="ui-monospace, monospace" font-size="9" fill="' + c[3] + '" opacity="0.85">' + esc(it.sub.split('·')[1] || '') + ' · ' + it.year + '</text>';
     g += wearLayer(h, (opts && opts.dusty) ? '?' : it.grade);
-    return { svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="' + size + '" height="' + size + '">' + g + '</svg>', item: it };
+    /* ⛔ data-dusty is the ONLY way anything outside the renderer is allowed to
+       ask whether a render is under dust. The word UNWIPED used to be printed
+       into the middle of the artwork and the walk keyed off it, so removing a
+       debug label from the art broke a test that had no business reading it. */
+    return { svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"' + ((opts && opts.dusty) ? ' data-dusty="1"' : '') + ' width="' + size + '" height="' + size + '">' + g + '</svg>', item: it };
   }
 
-  var API = { renderSleeve: renderSleeve };
+  var API = { renderSleeve: renderSleeve, grime: grime, ramp: ramp };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else root.ATTIC_SLEEVE = API;
 })(this);

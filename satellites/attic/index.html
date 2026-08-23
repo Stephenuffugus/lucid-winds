@@ -33,7 +33,46 @@
     min-height:100%;
     user-select:none; -webkit-user-select:none;
   }
-  .wrap { width:100%; max-width:420px; display:flex; flex-direction:column; align-items:center; }
+  .wrap { width:100%; max-width:420px; display:flex; flex-direction:column; align-items:center;
+    position:relative; z-index:1; }
+
+  /* ── THE ATTIC ITSELF ───────────────────────────────────────────────────
+     The grid used to float on a flat brown gradient, which is a colour, not a
+     place. This is the room the game is set in: rafters, a round window with
+     one shaft of light coming through it, a hanging bulb, and a stack of
+     boxes along the floor.
+     ⛔ IT GOES FURTHER BACK THAN LOOKS RIGHT. Every tone here is within a few
+     points of the page ground on purpose (FTW lesson: art behind copy always
+     wants to be quieter than it feels like it should be). If you can see the
+     crates clearly you have made the cream body text harder to read.
+     ⛔ pointer-events:none on the whole layer. It is scenery, not surface. */
+  .atticbg { position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
+  .atticbg svg { position:absolute; inset:0; width:100%; height:100%; }
+  .motes { position:absolute; inset:0; }
+  .mote { position:absolute; width:3px; height:3px; border-radius:50%;
+    background:#e8d7a8; opacity:0; animation:drift linear infinite; }
+  @keyframes drift {
+    0%   { transform:translate3d(0,0,0) scale(0.7); opacity:0; }
+    12%  { opacity:0.5; }
+    88%  { opacity:0.32; }
+    100% { transform:translate3d(-26px,-160px,0) scale(1.15); opacity:0; }
+  }
+  @media (prefers-reduced-motion:reduce) { .mote { animation:none; opacity:0.22; } }
+  /* ⛔ THE ROOM ONLY WORKS PORTRAIT. The scene is a 420x900 viewBox on
+     xMidYMax slice, so at 915x412 it crops to the bottom band and scales it up
+     more than twice: the crates become enormous flat rectangles across the top
+     of the screen with a hard horizontal seam where the floor line lands, and
+     it reads as an abstract brown grid rather than a room. Shot at 915x412 and
+     looked at, 2026-08-24. A short screen gets the light and the dust and no
+     furniture, which is honest, rather than furniture at the wrong scale. */
+  @media (orientation:landscape) and (max-height:620px){
+    .atticbg svg { display:none; }
+    .atticbg {
+      background:
+        radial-gradient(120% 90% at 78% -20%, rgba(232,201,119,0.09) 0%, rgba(232,201,119,0) 60%),
+        radial-gradient(80% 60% at 6% 8%, rgba(240,214,138,0.06) 0%, rgba(240,214,138,0) 62%);
+    }
+  }
   h1 { font-size:1.35rem; letter-spacing:0.14em; color:#d9a94e; text-align:center; font-weight:normal; }
   h1 small { display:block; font-size:0.62rem; letter-spacing:0.3em; color:#8a7a5e; margin-top:4px; font-family:ui-monospace, monospace; }
   .demo-note { font-size:0.7rem; color:#8a7a5e; text-align:center; margin:8px 0 14px; line-height:1.5; max-width:340px; }
@@ -64,7 +103,12 @@
   .brokenote { font-size:0.68rem; color:#a8906a; text-align:center; margin-top:8px; line-height:1.5; }
 
   /* WANT LIST: the reason to come back tomorrow */
-  .sheet { position:fixed; inset:0; z-index:60; background:rgba(10,8,5,0.86); display:none;
+  /* ⛔ OPAQUE GROUND. This was rgba(10,8,5,0.86) and the page title, the
+     tagline and the card underneath all read clearly through it. The rules
+     sheet was fixed for exactly this on 2026-08-16 and the other two overlays
+     were left behind. See the rule written out above #howSheet. */
+  .sheet { position:fixed; inset:0; z-index:60; background:#0d0b0a; display:none;
+    -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
     align-items:center; justify-content:center; padding:18px; }
   .sheet.on { display:flex; }
   .sheetcard { width:100%; max-width:420px; max-height:88vh; overflow-y:auto; background:#1e1811;
@@ -100,6 +144,53 @@
 
   .art { width:100%; display:flex; justify-content:center; margin-bottom:12px; }
   .art svg { border-radius:4px; box-shadow:0 4px 18px rgba(0,0,0,0.5); max-width:100%; height:auto; }
+
+  /* ── THE WIPE ───────────────────────────────────────────────────────────
+     ⛔ THE ONE DRAMATIC BEAT USED TO BE A REPAINT. innerHTML swapped the dusty
+     SVG for the clean one between two frames and a 0.4s scale pop ran on a
+     rectangle beside it. Nothing moved, nothing came off, and the thing you
+     had been looking at simply became a different thing.
+     The clean art is only put into the DOM at the moment of the wipe, never
+     before it, so the grade is not sitting in the page waiting to be read. */
+  .wipeBox { position:relative; display:inline-block; line-height:0; }
+  .wipeBox > div { line-height:0; }
+  .wDust { position:absolute; left:0; top:0; right:0; bottom:0;
+    -webkit-clip-path:inset(0 0 0 0); clip-path:inset(0 0 0 0);
+    transition:-webkit-clip-path 0.9s cubic-bezier(0.32,0.72,0.24,1),
+      clip-path 0.9s cubic-bezier(0.32,0.72,0.24,1), opacity 0.9s ease-out; }
+  .wDust.gone { -webkit-clip-path:inset(0 0 100% 0); clip-path:inset(0 0 100% 0); opacity:0; }
+  .cloth { position:absolute; left:-12%; width:124%; height:34%; pointer-events:none;
+    background:linear-gradient(180deg, rgba(232,215,168,0) 0%, rgba(232,215,168,0.3) 46%, rgba(255,248,224,0.55) 60%, rgba(232,215,168,0) 100%);
+    transform:translateY(-40%); animation:sweep 0.9s cubic-bezier(0.32,0.72,0.24,1) forwards; }
+  @keyframes sweep { from { transform:translateY(-40%); } to { transform:translateY(320%); } }
+  .puff { position:absolute; border-radius:50%; background:#b8a071; pointer-events:none;
+    animation:puff 1s ease-out forwards; }
+  @keyframes puff {
+    0%   { transform:translate3d(0,0,0) scale(0.4); opacity:0.85; }
+    100% { transform:translate3d(var(--dx),var(--dy),0) scale(1.5); opacity:0; }
+  }
+
+  /* ── FACTORY SEALED, 1 IN 261 ───────────────────────────────────────────
+     It got a gradient rectangle. No burst, no card treatment, no line telling
+     you what you had just done, and nothing different about it on the shelf.
+     A grail has to know it is a grail. */
+  .card.sealedhit { border-color:#f5d87a;
+    box-shadow:0 0 0 1px rgba(245,216,122,0.55), 0 0 46px rgba(245,216,122,0.22), 0 8px 30px rgba(0,0,0,0.55);
+    animation:sealPulse 2.4s ease-out 2; }
+  @keyframes sealPulse { 0%,100% { box-shadow:0 0 0 1px rgba(245,216,122,0.5), 0 0 30px rgba(245,216,122,0.14), 0 8px 30px rgba(0,0,0,0.55); }
+    50% { box-shadow:0 0 0 1px rgba(245,216,122,0.9), 0 0 62px rgba(245,216,122,0.4), 0 8px 30px rgba(0,0,0,0.55); } }
+  .sealNote { margin-top:9px; text-align:center; font-family:ui-monospace, monospace;
+    font-size:0.64rem; letter-spacing:0.16em; color:#f0d68a; line-height:1.9; }
+  .sealNote span { display:block; font-family:Georgia, serif; letter-spacing:0;
+    font-size:0.78rem; color:#e6d8bc; }
+  .fleck { position:fixed; width:7px; height:7px; border-radius:1px; background:#f5d87a;
+    pointer-events:none; z-index:80; animation:fleck 1.5s cubic-bezier(0.15,0.7,0.4,1) forwards; }
+  @keyframes fleck {
+    0%   { transform:translate3d(0,0,0) rotate(0deg); opacity:1; }
+    100% { transform:translate3d(var(--fx),var(--fy),0) rotate(var(--fr)); opacity:0; }
+  }
+  .shCard.sealed { border-color:#f5d87a;
+    box-shadow:0 0 0 1px rgba(245,216,122,0.45), 0 6px 22px rgba(0,0,0,0.5); }
 
   .cls { font-family:ui-monospace, monospace; font-size:0.62rem; letter-spacing:0.28em; color:#d9a94e; }
   .nm { font-size:1.15rem; line-height:1.25; margin:4px 0 2px; color:#f0e4c8; }
@@ -178,22 +269,38 @@
   }
 
 /* ── DUST OFF: the second ticket source (plan section B2) ────────────────── */
-#dustSheet{ position:fixed; inset:0; z-index:60; display:none; background:#0d0b0ae8;
+#dustSheet{ position:fixed; inset:0; z-index:60; display:none; background:#0d0b0a;
+  -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
   align-items:center; justify-content:center; padding:16px }
 #dustSheet.on{ display:flex }
-.dustcard{ width:100%; max-width:460px; background:#191513; border:1px solid #3a322c; border-radius:14px;
+.dustcard{ width:100%; max-width:520px; background:#191513; border:1px solid #3a322c; border-radius:14px;
   padding:16px; box-shadow:0 20px 60px #000a }
+/* it is the minigame, so it gets the screen. A square panel on a phone and a
+   wide one when the screen is short, rather than a small card floating in the
+   middle of five hundred pixels of black either side of it. */
+@media (orientation:landscape) and (max-height:620px){
+  .dustcard{ max-width:none }
+  #dustStage{ aspect-ratio:auto; height:46vh; min-height:150px }
+}
 .dusthead{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px }
 .dusthead b{ color:#e0c68a; font-size:.95rem; letter-spacing:.12em }
 .dusthead .t{ font-family:ui-monospace,monospace; color:#c4b294; font-size:.9rem }
-#dustGrid{ display:grid; grid-template-columns:repeat(6,1fr); gap:5px; touch-action:none; user-select:none }
-.dcell{ position:relative; aspect-ratio:1; border-radius:6px; background:#4a423a;
-  box-shadow:inset 0 0 0 1px #5b5148; overflow:hidden }
-.dcell.wiped{ background:#201c19; box-shadow:inset 0 0 0 1px #2c2622 }
-.dcell .stub{ position:absolute; inset:12%; border-radius:4px; background:#e0c68a; opacity:0;
-  display:flex; align-items:center; justify-content:center; color:#241d12; font-size:.5rem; font-weight:800;
-  transition:opacity .18s ease }
-.dcell.wiped .stub{ opacity:1 }
+/* ⛔ DUST OFF WAS NOT A MINIGAME. 48 identical grey squares, one class toggle
+   per square, and ONE snake drag wiped 46 of 48 in about three seconds with 87
+   of the 90 seconds still on the clock. Nothing could be missed, so the timer
+   was decoration and the panel was a DONE button with extra steps. Wiped cells
+   also turned NEAR BLACK, so cleaning something made it darker.
+   It is a canvas scrub now: the grime has DEPTH (about four passes of the
+   brush to take a spot down to clean), it settles back over the panel every
+   twenty five seconds, and a stub only reads once the grime over it is
+   actually gone. Clearing the panel is roughly forty seconds of committed
+   dragging, which is what makes ninety seconds a number and not a decoration.
+   It is a drag surface and not a row of discrete targets, so the 48px rule
+   does not apply to it (that call is in AUDIT-NOTES.md and predates this). */
+#dustStage{ position:relative; width:100%; aspect-ratio:1/1; border-radius:8px; overflow:hidden;
+  touch-action:none; user-select:none; -webkit-user-select:none; background:#221c17;
+  box-shadow:inset 0 0 0 1px #3a322c }
+#dustStage canvas{ position:absolute; inset:0; width:100%; height:100%; display:block }
 .dustfoot{ margin-top:12px; display:flex; gap:10px; align-items:center }
 .dustfoot .msg{ flex:1; color:#c4b294; font-size:.78rem; line-height:1.35 }
 .dustbtn{ min-height:56px; padding:0 20px; border-radius:11px; border:1px solid #6a5a3a;
@@ -310,6 +417,17 @@
 .howcard ul{ margin:0; padding-left:0; list-style:none }
 .howcard li{ color:#d8cbb4; font-size:.88rem; line-height:1.5; margin:7px 0; padding-left:16px; position:relative }
 .howcard li:before{ content:"·"; position:absolute; left:2px; color:#e0c68a; font-weight:800 }
+/* at 915x412 this sheet was taller than the screen and the only button on it
+   sat below the fold on the first screen a new player ever sees */
+@media (orientation:landscape) and (max-height:560px){
+  #howSheet{ padding:12px }
+  .howcard{ max-width:640px; padding:14px 16px }
+  .howcard h2{ font-size:1.05rem }
+  .howcard h3{ margin:10px 0 4px }
+  .howcard p{ font-size:0.8rem; line-height:1.4; margin:0 0 5px }
+  .howcard li{ font-size:0.78rem; line-height:1.35; margin:4px 0 }
+  #howGo{ margin-top:12px !important }
+}
 </style>
 <!-- ⛔⛔ SWS EMBED PROTOCOL: announce ready on EVERY framed page, three times.
      The portal arms a black screen watchdog when it opens a game and rescues
@@ -319,7 +437,7 @@
      navigation with no portal chrome at all. The exit therefore cannot key off
      window.parent alone, it has to fall back to the referrer. -->
 <script>
-/* ===== Sky Wolf Studios embed protocol ===== */
+/* ===== Sky Wolf Studio embed protocol ===== */
 (function(){
   var framed=false; try{ framed = window.parent!==window; }catch(e){ framed=true; }
   window.SWS_EXIT=function(){
@@ -340,6 +458,73 @@
 </script>
 </head>
 <body>
+<!-- ⛔ SCENERY, NOT SURFACE. aria-hidden and pointer-events:none, and every
+     tone within a few points of the page ground so the cream body copy on top
+     of it stays the easiest thing to read. -->
+<div class="atticbg" aria-hidden="true">
+  <svg viewBox="0 0 420 900" preserveAspectRatio="xMidYMax slice" focusable="false">
+    <defs>
+      <linearGradient id="atBeam" x1="0.2" y1="0" x2="0.8" y2="1">
+        <stop offset="0" stop-color="#e8c977" stop-opacity="0.1"/>
+        <stop offset="0.55" stop-color="#e8c977" stop-opacity="0.05"/>
+        <stop offset="1" stop-color="#e8c977" stop-opacity="0"/>
+      </linearGradient>
+      <radialGradient id="atBulb" cx="0.5" cy="0.5" r="0.5">
+        <stop offset="0" stop-color="#f0d68a" stop-opacity="0.12"/>
+        <stop offset="1" stop-color="#f0d68a" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <rect width="420" height="900" fill="#171310"/>
+    <!-- the roof slope and its rafters -->
+    <path d="M0 0 L420 0 L420 74 L0 128 Z" fill="#1d1710"/>
+    <path d="M0 118 L420 64 L420 82 L0 136 Z" fill="#241c13"/>
+    <path d="M56 0 L84 0 L128 900 L96 900 Z" fill="#1b150e"/>
+    <path d="M352 0 L378 0 L410 900 L382 900 Z" fill="#1b150e"/>
+    <!-- the round window, and the one shaft of light in the room -->
+    <!-- ⛔ THE WINDOW AND THE BULB BOTH SAT BEHIND BODY COPY. The bulb's glow
+         landed in the middle of the pitch paragraph and the window's cross bars
+         ran through WANT LIST. Both moved out to the margins and dimmed: art
+         behind text always wants to be further back than it feels like it
+         should be, and further OVER too. -->
+    <circle cx="368" cy="150" r="50" fill="#1e180e"/>
+    <circle cx="368" cy="150" r="50" fill="none" stroke="#2b2418" stroke-width="5"/>
+    <path d="M368 100 L368 200 M318 150 L418 150" stroke="#2b2418" stroke-width="4"/>
+    <path d="M330 124 L410 124 L420 700 L150 790 Z" fill="url(#atBeam)"/>
+    <!-- the bulb on its flex, hard left, clear of the column of copy -->
+    <!-- ⛔ QUIETER, NOT MOVED. Moving the bulb out of the paragraph put a
+         filled trapezoid beside the BACK chip where it read as a stray UI icon,
+         because at this crop you see the shade and none of the ceiling it hangs
+         from. Both the shade and the window are outlines a shade off the page
+         ground now: present if you look for them, invisible if you are reading. -->
+    <path d="M42 0 L42 120" stroke="#241d14" stroke-width="2"/>
+    <path d="M26 120 L58 120 L51 142 L33 142 Z" fill="none" stroke="#2b2418" stroke-width="2"/>
+    <circle cx="42" cy="150" r="5" fill="#f0d68a" opacity="0.3"/>
+    <circle cx="42" cy="152" r="54" fill="url(#atBulb)"/>
+    <!-- the floor and what is stacked on it -->
+    <rect y="806" width="420" height="94" fill="#1a140e"/>
+    <path d="M0 806 L420 806" stroke="#2b2318" stroke-width="3"/>
+    <g fill="#1f1810">
+      <rect x="-14" y="676" width="132" height="130" rx="3"/>
+      <rect x="12" y="600" width="92" height="78" rx="3"/>
+      <rect x="288" y="700" width="146" height="106" rx="3"/>
+      <rect x="316" y="628" width="86" height="74" rx="3"/>
+      <rect x="150" y="742" width="120" height="64" rx="3"/>
+    </g>
+    <g fill="none" stroke="#2b2318" stroke-width="2">
+      <rect x="-14" y="676" width="132" height="130" rx="3"/>
+      <rect x="12" y="600" width="92" height="78" rx="3"/>
+      <rect x="288" y="700" width="146" height="106" rx="3"/>
+      <rect x="316" y="628" width="86" height="74" rx="3"/>
+      <rect x="150" y="742" width="120" height="64" rx="3"/>
+      <path d="M-14 720 L118 720 M12 638 L104 638 M288 748 L434 748 M150 772 L270 772"/>
+    </g>
+    <!-- a chair nobody has sat in for thirty years -->
+    <g stroke="#241c13" stroke-width="5" fill="none">
+      <path d="M196 806 L196 700 L246 700 L246 806 M196 748 L246 748 M204 700 L204 664 L240 664 L240 700"/>
+    </g>
+  </svg>
+  <div class="motes" id="motes"></div>
+</div>
 <div class="wrap">
   <div class="backrow"><button class="backchip" id="swsBack" type="button" aria-label="Back to the arcade">&#8249; BACK TO THE ARCADE</button></div>
   <h1>THE ATTIC<small>Sky Wolf Studio</small></h1>
@@ -411,10 +596,13 @@
 </div></div>
 
 <div id="dustSheet"><div class="dustcard">
-  <div class="dusthead"><b>DUST OFF</b><span class="t"><span id="dustT">90</span>s &middot; <span id="dustFound">0</span> stubs</span></div>
-  <div id="dustGrid"></div>
+  <div class="dusthead"><b>DUST OFF</b><span class="t"><span id="dustT">90</span>s &middot; <span id="dustFound">0</span> stubs &middot; <span id="dustPct">0</span>%</span></div>
+  <div id="dustStage">
+    <canvas id="dustScene"></canvas>
+    <canvas id="dustGrime"></canvas>
+  </div>
   <div class="dustfoot">
-    <div class="msg" id="dustMsg">Drag across the grime. Ticket stubs are buried in it.</div>
+    <div class="msg" id="dustMsg">Scrub the grime off. Ticket stubs are buried in it.</div>
     <button class="dustbtn" id="dustDone">DONE</button>
   </div>
 </div></div>
@@ -512,7 +700,87 @@
     return s;
   }
 
+  /* ── THE WIPE ────────────────────────────────────────────────────────
+     ⛔ THE CLEAN ART IS BUILT AT THE MOMENT OF THE WIPE, never before it. The
+     dusty render is the only thing in the DOM until the player asks, so the
+     grade is not sitting in the page waiting to be read out of it.
+     Runs on the card and on the shelf's object card, because an animation
+     that lives in one event handler drifts from the other one. */
+  function motion() {
+    try { return !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
+    catch (e) { return true; }
+  }
+  /* ⛔ ONE WIPE AT A TIME PER SLOT. Digging fast enough (and a walk script
+     does) left every previous wipe's timer alive with fourteen animated divs
+     each, all still running against a detached node. Thirteen digs in a row
+     detached the frame outright in headless Chrome. A new wipe finishes the
+     old one first. */
+  var WIPE_T = null, WIPE_SLOT = null, WIPE_CLEAN = '';
+  function wipeSettle() {
+    if (WIPE_T) { clearTimeout(WIPE_T); WIPE_T = null; }
+    if (WIPE_SLOT && WIPE_SLOT.parentNode && WIPE_SLOT.querySelector('.wipeBox')) WIPE_SLOT.innerHTML = WIPE_CLEAN;
+    WIPE_SLOT = null; WIPE_CLEAN = '';
+  }
+  function wipeReveal(slot, h, size) {
+    if (!slot) return;
+    wipeSettle();
+    var clean = ATTIC_OBJECT.renderItem(h, size).svg;
+    if (!motion()) { slot.innerHTML = clean; return; }
+    var dusty = ATTIC_OBJECT.renderItem(h, size, { dusty: true }).svg;
+    slot.innerHTML = '<div class="wipeBox"><div class="wClean">' + clean + '</div>'
+      + '<div class="wDust"><div class="wDustArt">' + dusty + '</div><div class="cloth"></div></div></div>';
+    var box = slot.querySelector('.wipeBox'), dust = slot.querySelector('.wDust'), i, d, a, r;
+    /* the dust that comes OFF. Fourteen motes, thrown from the middle of the
+       object, cleaned up after themselves so a long session does not leave a
+       thousand dead divs in the card. */
+    for (i = 0; i < 12; i++) {
+      d = document.createElement('i');
+      d.className = 'puff';
+      a = (i / 12) * Math.PI * 2 + (i % 3) * 0.4;
+      r = 40 + (i % 5) * 22;
+      d.style.left = (44 + (i * 37) % 60) + '%';
+      d.style.top = (40 + (i * 53) % 40) + '%';
+      d.style.width = d.style.height = (3 + (i % 4) * 2) + 'px';
+      d.style.setProperty('--dx', Math.round(Math.cos(a) * r) + 'px');
+      d.style.setProperty('--dy', Math.round(Math.sin(a) * r - 26) + 'px');
+      d.style.animationDelay = (i * 26) + 'ms';
+      box.appendChild(d);
+    }
+    /* one frame on screen at full dust, THEN the sweep, or the transition has
+       nothing to transition from and the whole thing is an instant swap again */
+    if (dust.getBoundingClientRect) dust.getBoundingClientRect();
+    setTimeout(function () { if (dust) dust.className = 'wDust gone'; }, 30);
+    WIPE_SLOT = slot; WIPE_CLEAN = clean;
+    WIPE_T = setTimeout(wipeSettle, 1250);
+  }
+
+  /* ── 1 IN 261 ────────────────────────────────────────────────────────
+     A FACTORY SEALED pull is 0.39% and it got a gradient rectangle. */
+  function sealBurst(fromEl) {
+    if (!motion() || !fromEl || !fromEl.getBoundingClientRect) return;
+    var r = fromEl.getBoundingClientRect(), i, f, a, d;
+    for (i = 0; i < 26; i++) {
+      f = document.createElement('i');
+      f.className = 'fleck';
+      a = (i / 26) * Math.PI * 2;
+      d = 90 + (i % 6) * 34;
+      f.style.left = (r.left + r.width / 2) + 'px';
+      f.style.top = (r.top + r.height / 2) + 'px';
+      f.style.setProperty('--fx', Math.round(Math.cos(a) * d) + 'px');
+      f.style.setProperty('--fy', Math.round(Math.sin(a) * d + 60) + 'px');
+      f.style.setProperty('--fr', (i * 47) + 'deg');
+      f.style.animationDelay = (i * 12) + 'ms';
+      document.body.appendChild(f);
+      (function (el) { setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 1700); })(f);
+    }
+  }
+
   var toastT = null;
+  function toastClear() {
+    var el = document.getElementById('toast');
+    if (el) el.style.opacity = '0';
+    if (toastT) { clearTimeout(toastT); toastT = null; }
+  }
   function toast(msg, ms) {
     var el = document.getElementById('toast'); if (!el) return;
     el.textContent = msg; el.style.opacity = '1';
@@ -673,8 +941,12 @@
      both call this. Idempotent: a hash already wiped pays nothing.
      WAL.best was a field the save layer merged and no code ever wrote; it is
      the highest grade index the player has ever pulled, and the shelf shows it. */
+  /* was this the first FACTORY SEALED this player has EVER turned up? WAL.best
+     is the highest grade index ever pulled, so ask BEFORE payReveal moves it. */
+  var LAST_FIRST_SEAL = false;
   function payForReveal(h, it) {
     if (revealed[h]) return 0;
+    LAST_FIRST_SEAL = it.grade === 'FACTORY SEALED' && (WAL.best | 0) < E.gIdx('FACTORY SEALED');
     revealed[h] = 1; saveRevealed();
     var earned = E.payReveal(WAL, it);
     var gi = E.gIdx(it.grade);
@@ -687,11 +959,17 @@
       toast('WANTED THIS WEEK: ' + WANTED.txt + '. The attic pays double, ' + wp + ' tickets.', 4600);
     }
     saveWallet(); paintWallet(); paintDaily();
-    if (!got && !wp && earned) toast('A keeper. One ticket back.');
+    /* the card already says ONE IN 256 and is throwing gold about the place;
+       "A keeper. One ticket back." under that reads like a shrug */
+    if (!got && !wp && earned && it.grade !== 'FACTORY SEALED') toast('A keeper. One ticket back.');
     return earned;
   }
 
   function show(h) {
+    /* ⛔ A TOAST OUTLIVED THE CARD THAT EARNED IT. "A keeper. One ticket back."
+       was still on screen over a TRASHED item on the next card. A new object
+       clears whatever the last one said. */
+    toastClear();
     var it = ATTIC.hashToItem(h);
     h = it.hash;
     var isRevealed = !!revealed[h];
@@ -726,12 +1004,22 @@
     }
     if (isRevealed) paintPlate();
     document.getElementById('gb').onclick = function () {
+      wipeReveal(document.getElementById('artSlot'), h, 240);
       paintPlate();
       gs.className = 'gradeSlot graded';
-      document.getElementById('artSlot').innerHTML = ATTIC_OBJECT.renderItem(h, 240).svg;
       if (it.revealSuffix) document.getElementById('nmSlot').textContent = it.name + it.revealSuffix;
       if (it.revealNote) document.getElementById('noteSlot').textContent = it.revealNote;
       payForReveal(h, it);
+      if (it.grade === 'FACTORY SEALED') {
+        card.className = 'card on sealedhit';
+        sealBurst(gp);
+        var note = document.createElement('div');
+        note.className = 'sealNote';
+        note.innerHTML = 'ONE IN 256<span>' + (LAST_FIRST_SEAL
+          ? 'The first one you have ever pulled. Nobody has opened this.'
+          : 'Nobody has opened this. Nobody ever will.') + '</span>';
+        gs.parentNode.insertBefore(note, gs.nextSibling);
+      }
       /* the shelf thumb was staying dusty until the next dig, so a wiped find
          still read as a to do on the strip right below it */
       renderShelf();
@@ -835,7 +1123,7 @@
     SH_SHOWN = Math.min(list.length, Math.max(SH_PAGE, SH_SHOWN));
     for (i = 0; i < SH_SHOWN; i++) {
       h = list[i]; it = ATTIC.hashToItem(h); wiped = !!revealed[h];
-      html += '<button class="shCard" data-h="' + h + '">'
+      html += '<button class="shCard' + (wiped && it.grade === 'FACTORY SEALED' ? ' sealed' : '') + '" data-h="' + h + '">'
         + ATTIC_OBJECT.renderItem(h, 260, { dusty: !wiped }).svg
         + '<div class="shName">' + esc(it.name) + (wiped && it.revealSuffix ? esc(it.revealSuffix) : '') + '</div>'
         + '<div class="shFoot">'
@@ -888,8 +1176,27 @@
     var w = document.getElementById('fcWipe');
     if (w) w.onclick = function (e) {
       e.stopPropagation();
+      var slot = document.querySelector('#fcFront .art');
       payForReveal(h, it);
-      paintFlip(); paintShelfSheet(false); renderShelf(); buildCardBlob(h);
+      /* the art animates in place; the paperwork under it repaints once the
+         sweep has finished, or the plate appears before the dust has moved */
+      wipeReveal(slot, h, 260);
+      var sealed = it.grade === 'FACTORY SEALED', first = LAST_FIRST_SEAL;
+      setTimeout(function () {
+        if (FC_H !== h) return;
+        paintFlip();
+        if (sealed) {
+          var pl = document.querySelector('#fcFront .gradePlate');
+          sealBurst(pl);
+          var note = document.createElement('div');
+          note.className = 'sealNote';
+          note.innerHTML = 'ONE IN 256<span>' + (first
+            ? 'The first one you have ever pulled. Nobody has opened this.'
+            : 'Nobody has opened this. Nobody ever will.') + '</span>';
+          document.getElementById('fcFront').appendChild(note);
+        }
+      }, 1000);
+      paintShelfSheet(false); renderShelf(); buildCardBlob(h);
     };
   }
   function row(k, v) { return '<div class="fcRow"><span class="k">' + k + '</span><span class="v">' + esc(v) + '</span></div>'; }
@@ -1138,46 +1445,237 @@
      old boxes; ticket stubs are buried in it. Deliberately low skill and low
      stress, because it exists to keep a dry wallet from ending the session,
      not to be the game. Capped per day, so it can never replace the daily. */
-  var DUST_SECS = 90;
+  /* ── DUST OFF ────────────────────────────────────────────────────────
+     The second ticket source. Ninety seconds of scrubbing grime off a panel
+     of old boxes; ticket stubs are buried in it. Deliberately low skill and
+     low stress, because it exists to keep a dry wallet from ending the
+     session, not to be the game. Capped per day, so it can never replace the
+     daily.
+
+     ⛔ IT WAS NOT A MINIGAME. 48 divs, one class toggle each. One snake drag
+     wiped 46 of 48 cells in about three seconds with 87 of the 90 seconds
+     still on the clock, so nothing could be missed, the timer was decoration
+     and the panel was a DONE button with extra steps. Cleaned cells also went
+     NEAR BLACK, so cleaning something made it darker.
+     Three rules make it a job now:
+       1. THE GRIME HAS DEPTH. A brush pass takes about a third of what is
+          left, so a spot needs roughly four passes. Clearing the panel is
+          about forty seconds of committed dragging, not three.
+       2. IT SETTLES BACK. Every 25 seconds a thin new layer lands over the
+          whole panel. You cannot clear it once and coast.
+       3. A STUB ONLY READS WHEN THE GRIME OVER IT IS ACTUALLY GONE, so the
+          bits you skipped cost you, which is what makes the timer a number.
+     ⛔ The coarse depth grid and the canvas are driven by the SAME erase call.
+     Two models of the same surface drift, and then the panel looks clean while
+     the game thinks it is filthy. */
+  var DUST_SECS = 90, DUST_STUBS = 10;
+  var DUST_BITE = 0.34;      // how much of what is left ONE stroke takes
+  var DUST_SETTLE_EVERY = 25, DUST_SETTLE = 0.2;
+  var GW = 64, GH = 48;      // the grime depth grid, in cells across the stage
   var DUST = null;
+
+  /* ⛔ ONE MODEL FOR THE PICTURE AND THE SCORE. The first version of this
+     panel erased freehand into the grime canvas AND kept a coarse depth grid
+     beside it, and the two disagreed immediately: the erase walked the segment
+     in overlapping steps, so a cell under the middle of a stroke was bitten
+     five times in one drag and the whole panel cleared in a single snake, on
+     the canvas AND in the grid. The walk caught it, which is the only reason
+     it is not shipping.
+     The grid IS the grime now. It is drawn by upscaling a GWxGH alpha mask
+     over the scene with smoothing on, which costs two drawImage calls and
+     gives soft edges for free, and it is the same array the stubs are scored
+     against. A cell can be bitten at most ONCE per stroke, so one continuous
+     drag is one pass no matter how fast or slow the thumb moves. */
+  function dustPaintScene(D) {
+    var cv = D.el.scene, x = cv.getContext('2d'), W = D.w, H = D.h, i;
+    x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, cv.width, cv.height); x.scale(D.dpr, D.dpr);
+    /* ⛔ WHAT IS UNDER THE DUST IS LIGHTER THAN THE DUST. The old panel turned
+       cleaned cells NEAR BLACK, so cleaning something made it darker, which is
+       the opposite of what cleaning does. Warm boards under grey brown grime. */
+    x.fillStyle = '#8a6a45'; x.fillRect(0, 0, W, H);
+    for (i = 0; i * 26 < H + 26; i++) {
+      x.fillStyle = i % 2 ? '#9b7a52' : '#82623f';
+      x.fillRect(0, i * 26, W, 24);
+      x.fillStyle = 'rgba(52,34,18,0.35)'; x.fillRect(0, i * 26 + 24, W, 2);
+    }
+    for (i = 0; i < 9; i++) {
+      x.fillStyle = 'rgba(255,244,214,0.13)';
+      x.fillRect((i * 97) % W, (i * 61) % H, 40 + (i * 13) % 60, 3);
+      x.fillStyle = 'rgba(52,34,18,0.16)';
+      x.fillRect((i * 53) % W, (i * 89) % H, 3, 20 + (i * 11) % 40);
+    }
+    x.strokeStyle = 'rgba(38,26,14,0.75)'; x.lineWidth = 3;
+    x.strokeRect(1.5, 1.5, W - 3, H - 3);
+    for (i = 0; i < D.stubs.length; i++) {
+      var st = D.stubs[i];
+      x.save(); x.translate(st.x, st.y); x.rotate(st.rot);
+      x.fillStyle = 'rgba(40,26,12,0.4)'; x.fillRect(-st.r + 3, -st.r * 0.62 + 3, st.r * 2, st.r * 1.24);
+      x.fillStyle = '#f2dc9e'; x.fillRect(-st.r, -st.r * 0.62, st.r * 2, st.r * 1.24);
+      x.fillStyle = '#d8b56a'; x.fillRect(-st.r, -st.r * 0.62, st.r * 0.42, st.r * 1.24);
+      x.strokeStyle = '#7a5f24'; x.lineWidth = 1.4;
+      x.strokeRect(-st.r, -st.r * 0.62, st.r * 2, st.r * 1.24);
+      x.setLineDash([3, 3]); x.beginPath();
+      x.moveTo(-st.r + st.r * 0.42, -st.r * 0.62); x.lineTo(-st.r + st.r * 0.42, st.r * 0.62); x.stroke();
+      x.setLineDash([]);
+      x.fillStyle = '#4a3a18';
+      x.font = 'bold ' + Math.round(st.r * 0.4) + 'px ui-monospace, monospace';
+      x.textAlign = 'center'; x.textBaseline = 'middle';
+      x.fillText('TICKET', st.r * 0.28, 0);
+      x.restore();
+    }
+  }
+  /* the grime, painted once into an offscreen at full strength, then punched
+     through by the depth mask every repaint */
+  function dustBakeGrime(D) {
+    var cv = D.el.base, x = cv.getContext('2d'), W = D.w, H = D.h, i;
+    x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, cv.width, cv.height); x.scale(D.dpr, D.dpr);
+    x.fillStyle = '#6b5f4c'; x.fillRect(0, 0, W, H);
+    x.globalAlpha = 0.5;
+    for (i = 0; i < 46; i++) {
+      x.fillStyle = i % 3 ? '#7d715c' : '#4e4436';
+      x.beginPath(); x.arc((i * 137) % W, (i * 89) % H, 10 + (i * 7) % 34, 0, 6.284); x.fill();
+    }
+    x.globalAlpha = 0.85;
+    for (i = 0; i < 170; i++) {
+      x.fillStyle = i % 4 ? '#4a4033' : '#a89a8d';
+      x.fillRect((i * 71) % W, (i * 43) % H, 1 + (i % 3), 1 + (i % 2));
+    }
+    x.globalAlpha = 1;
+  }
+  /* ⛔ THE GRIME MUST NOT GIVE AWAY ITS OWN ANSWERS. With a linear mask, one
+     pass took the grime to 66% opacity everywhere and all ten stubs were
+     legible through it at 31% cleared. The score said 0 found and the PICTURE
+     had already told you where to scrub, which is the same class of defect as
+     the condition leaking before the wipe. The curve means early scrubbing
+     barely lifts anything: a spot has to be nearly finished before it reads,
+     which lines up with the depth a stub is counted as found at. */
+  /* 1.9 was not enough: measured on screen at 34% cleared, all ten stubs were
+     still legible. The delta a stub shows through the grime is proportional to
+     (1 - alpha), so the exponent has to be steep enough that one pass is
+     effectively invisible: at 3.0, one pass leaves alpha 0.04 (nothing reads),
+     two passes leaves 0.31 (something is there), three passes is clean. */
+  var DUST_CURVE = 3;
+  function dustRepaint(D) {
+    var mx = D.el.mask.getContext('2d'), img = mx.createImageData(GW, GH), d = img.data, i, off;
+    for (i = 0; i < GW * GH; i++) {
+      off = Math.pow(1 - D.depth[i], DUST_CURVE);
+      d[i * 4] = 0; d[i * 4 + 1] = 0; d[i * 4 + 2] = 0;
+      d[i * 4 + 3] = Math.round(off * 255);   // alpha = how much READS as gone
+    }
+    mx.putImageData(img, 0, 0);
+    var cv = D.el.grime, x = cv.getContext('2d');
+    x.setTransform(1, 0, 0, 1, 0, 0);
+    x.globalCompositeOperation = 'source-over';
+    x.clearRect(0, 0, cv.width, cv.height);
+    x.drawImage(D.el.base, 0, 0);
+    x.globalCompositeOperation = 'destination-out';
+    x.imageSmoothingEnabled = true;
+    x.drawImage(D.el.mask, 0, 0, cv.width, cv.height);
+    x.globalCompositeOperation = 'source-over';
+  }
+  /* ⛔ ONE BITE PER CELL PER STROKE. A stroke is one pointerdown to pointerup,
+     or one programmatic dustStroke call. Without the stroke id a slow thumb
+     over one spot cleans it instantly and a fast snake clears the panel. */
+  function dustErase(D, x0, y0, x1, y1, stroke) {
+    var dx = x1 - x0, dy = y1 - y0, L2 = dx * dx + dy * dy, R = D.R;
+    var minx = Math.min(x0, x1) - R, maxx = Math.max(x0, x1) + R;
+    var miny = Math.min(y0, y1) - R, maxy = Math.max(y0, y1) + R;
+    var gx0 = Math.max(0, Math.floor(minx / D.cw)), gx1 = Math.min(GW - 1, Math.floor(maxx / D.cw));
+    var gy0 = Math.max(0, Math.floor(miny / D.ch)), gy1 = Math.min(GH - 1, Math.floor(maxy / D.ch));
+    var gx, gy, i, cx, cy, t, px, py;
+    for (gy = gy0; gy <= gy1; gy++) for (gx = gx0; gx <= gx1; gx++) {
+      i = gy * GW + gx;
+      if (D.stroke[i] === stroke) continue;              // already bitten this stroke
+      cx = (gx + 0.5) * D.cw; cy = (gy + 0.5) * D.ch;
+      t = L2 ? ((cx - x0) * dx + (cy - y0) * dy) / L2 : 0;
+      if (t < 0) t = 0; else if (t > 1) t = 1;
+      px = x0 + dx * t; py = y0 + dy * t;
+      if ((cx - px) * (cx - px) + (cy - py) * (cy - py) > R * R) continue;
+      D.stroke[i] = stroke;
+      if (D.depth[i] > 0) D.depth[i] = Math.max(0, D.depth[i] - DUST_BITE);
+    }
+    dustRepaint(D);
+  }
+  /* how much of the grime is GONE, averaged over the panel. Not a count of
+     fully clean cells: the ladder is continuous, and so is this. */
+  function dustCleared(D) {
+    var i, sum = 0;
+    for (i = 0; i < D.depth.length; i++) sum += (1 - D.depth[i]);
+    return sum / D.depth.length;
+  }
+  function dustStubDepth(D, st) {
+    var gx0 = Math.max(0, Math.floor((st.x - st.r) / D.cw)), gx1 = Math.min(GW - 1, Math.floor((st.x + st.r) / D.cw));
+    var gy0 = Math.max(0, Math.floor((st.y - st.r) / D.ch)), gy1 = Math.min(GH - 1, Math.floor((st.y + st.r) / D.ch));
+    var gx, gy, sum = 0, n = 0;
+    for (gy = gy0; gy <= gy1; gy++) for (gx = gx0; gx <= gx1; gx++) { sum += D.depth[gy * GW + gx]; n++; }
+    return n ? sum / n : 1;
+  }
+  function dustScan(D) {
+    var i, changed = 0;
+    for (i = 0; i < D.stubs.length; i++) {
+      if (D.stubs[i].found) continue;
+      if (dustStubDepth(D, D.stubs[i]) < 0.25) { D.stubs[i].found = 1; D.found++; changed++; }
+    }
+    if (changed) document.getElementById('dustFound').textContent = D.found;
+    document.getElementById('dustPct').textContent = Math.round(dustCleared(D) * 100);
+    return changed;
+  }
+
   function dustOpen() {
     if (DUST) return;
     if (E.dustLeft(WAL, dayIndex()) <= 0) { toast('You have dusted off everything worth dusting today.'); return; }
-    var cells = 48, hidden = 10, i;
+    document.getElementById('dustSheet').className = 'on';
+    var scene = document.getElementById('dustScene'), grime = document.getElementById('dustGrime');
+    var stage = document.getElementById('dustStage');
+    var box = stage.getBoundingClientRect();
+    var W = Math.max(160, Math.round(box.width)), H = Math.max(120, Math.round(box.height));
+    var dpr = Math.min(2, window.devicePixelRatio || 1);
+    scene.width = grime.width = Math.round(W * dpr);
+    scene.height = grime.height = Math.round(H * dpr);
+    var base = document.createElement('canvas');
+    base.width = scene.width; base.height = scene.height;
+    var mask = document.createElement('canvas');
+    mask.width = GW; mask.height = GH;
+    var depth = [], stroke = [], i;
+    for (i = 0; i < GW * GH; i++) { depth.push(1); stroke.push(-1); }
+    var stubs = [], guard = 900;
     /* placement is cosmetic and not asserted anywhere, so crypto is not
        needed, but the count must be exact or the loop below can spin */
-    var marks = {}, placed = 0, guard = 4000;
-    while (placed < hidden && guard-- > 0) {
-      var k = Math.floor(Math.random() * cells);
-      if (!marks[k]) { marks[k] = 1; placed++; }
+    while (stubs.length < DUST_STUBS && guard-- > 0) {
+      var r = Math.round(Math.min(W, H) * 0.075) + 4;
+      var sx = r + 8 + Math.random() * (W - 2 * r - 16), sy = r + 8 + Math.random() * (H - 2 * r - 16);
+      var okp = true, j;
+      for (j = 0; j < stubs.length; j++) {
+        if (Math.abs(stubs[j].x - sx) < r * 2.4 && Math.abs(stubs[j].y - sy) < r * 2) { okp = false; break; }
+      }
+      if (okp) stubs.push({ x: sx, y: sy, r: r, rot: (Math.random() - 0.5) * 0.5, found: 0 });
     }
-    DUST = { t: DUST_SECS, found: 0, over: false, marks: marks, wiped: {} };
-    var g = document.getElementById('dustGrid'); g.innerHTML = '';
-    for (i = 0; i < cells; i++) {
-      var d = document.createElement('div'); d.className = 'dcell'; d.setAttribute('data-i', i);
-      if (marks[i]) d.innerHTML = '<span class="stub">STUB</span>';
-      g.appendChild(d);
-    }
+    DUST = { t: DUST_SECS, found: 0, over: false, w: W, h: H, dpr: dpr,
+      el: { scene: scene, grime: grime, base: base, mask: mask, stage: stage },
+      R: Math.max(13, Math.round(Math.min(W, H) * 0.062)),
+      cw: W / GW, ch: H / GH, depth: depth, stroke: stroke, sid: 0,
+      stubs: stubs, settleAt: DUST_SECS - DUST_SETTLE_EVERY };
+    dustPaintScene(DUST);
+    dustBakeGrime(DUST);
+    dustRepaint(DUST);
     document.getElementById('dustT').textContent = DUST_SECS;
     document.getElementById('dustFound').textContent = '0';
+    document.getElementById('dustPct').textContent = '0';
     document.getElementById('dustMsg').textContent =
-      'Drag across the grime. ' + E.dustLeft(WAL, dayIndex()) + ' more tickets are worth finding today.';
-    document.getElementById('dustSheet').className = 'on';
+      'Scrub it off. ' + DUST_STUBS + ' stubs are under there and ' + E.dustLeft(WAL, dayIndex()) + ' more tickets are worth finding today.';
     DUST.timer = setInterval(function () {
       if (!DUST || DUST.over) return;
       DUST.t--; document.getElementById('dustT').textContent = DUST.t;
+      if (DUST.t <= DUST.settleAt && DUST.t > 0) {
+        DUST.settleAt -= DUST_SETTLE_EVERY;
+        var q;
+        for (q = 0; q < DUST.depth.length; q++) DUST.depth[q] = Math.min(1, DUST.depth[q] + DUST_SETTLE);
+        dustRepaint(DUST);
+        document.getElementById('dustMsg').textContent = 'More of it just came down off the rafters.';
+        dustScan(DUST);
+      }
       if (DUST.t <= 0) dustEnd();
     }, 1000);
-  }
-  function dustWipe(el) {
-    if (!DUST || DUST.over || !el || el.className.indexOf('dcell') < 0) return;
-    var i = el.getAttribute('data-i');
-    if (DUST.wiped[i]) return;
-    DUST.wiped[i] = 1; el.className = 'dcell wiped';
-    if (DUST.marks[i]) {
-      DUST.found++;
-      document.getElementById('dustFound').textContent = DUST.found;
-    }
   }
   function dustEnd() {
     if (!DUST || DUST.over) return;
@@ -1187,16 +1685,34 @@
     saveWallet(); paintWallet();
     document.getElementById('dustSheet').className = '';
     toast(earned > 0
-      ? ('Dusted off ' + found + ' stubs. That is ' + earned + ' ticket' + (earned === 1 ? '' : 's') + '.')
-      : ('Dusted off ' + found + ' stubs, which is not quite a ticket. ' + E.DUST_PER + ' stubs make one.'), 3600);
+      ? ('Dusted off ' + found + ' stub' + (found === 1 ? '' : 's') + '. That is ' + earned + ' ticket' + (earned === 1 ? '' : 's') + '.')
+      : ('Dusted off ' + found + ' stub' + (found === 1 ? '' : 's') + ', which is not quite a ticket. ' + E.DUST_PER + ' stubs make one.'), 3600);
     DUST = null;
   }
   (function wireDust() {
-    var g = document.getElementById('dustGrid'), down = false;
-    function at(x, y) { return document.elementFromPoint(x, y); }
-    g.addEventListener('pointerdown', function (e) { down = true; dustWipe(at(e.clientX, e.clientY)); e.preventDefault(); });
-    g.addEventListener('pointermove', function (e) { if (down) dustWipe(at(e.clientX, e.clientY)); });
+    var stage = document.getElementById('dustStage'), down = false, lx = 0, ly = 0;
+    function at(e) {
+      var r = stage.getBoundingClientRect();
+      return { x: (e.clientX - r.left) * (DUST ? DUST.w / r.width : 1),
+        y: (e.clientY - r.top) * (DUST ? DUST.h / r.height : 1) };
+    }
+    stage.addEventListener('pointerdown', function (e) {
+      if (!DUST || DUST.over) return;
+      down = true; DUST.sid++;
+      var p = at(e); lx = p.x; ly = p.y;
+      dustErase(DUST, p.x, p.y, p.x, p.y, DUST.sid); dustScan(DUST);
+      e.preventDefault();
+      if (stage.setPointerCapture) { try { stage.setPointerCapture(e.pointerId); } catch (er) {} }
+    });
+    stage.addEventListener('pointermove', function (e) {
+      if (!down || !DUST || DUST.over) return;
+      var p = at(e);
+      dustErase(DUST, lx, ly, p.x, p.y, DUST.sid); dustScan(DUST);
+      lx = p.x; ly = p.y;
+      e.preventDefault();
+    });
     addEventListener('pointerup', function () { down = false; });
+    addEventListener('pointercancel', function () { down = false; });
     document.getElementById('dustBtn').onclick = dustOpen;
     document.getElementById('dustDone').onclick = dustEnd;
     /* the panel is a full screen overlay, so system back has to close it
@@ -1219,7 +1735,56 @@
     window.ATTIC_DEV = {
       wallet: function () { return WAL; },
       dustLeft: function () { return E.dustLeft(WAL, dayIndex()); },
-      dustOpen: dustOpen, dustEnd: dustEnd, dustState: function () { return DUST; },
+      dustOpen: dustOpen, dustEnd: dustEnd,
+      /* the panel is a canvas, so a walk cannot count wiped divs any more.
+         This is the same model the game itself scores off, not a second one. */
+      dustState: function () {
+        if (!DUST) return null;
+        return { t: DUST.t, over: DUST.over, found: DUST.found, stubs: DUST.stubs.length,
+          cleared: dustCleared(DUST), w: DUST.w, h: DUST.h, R: DUST.R,
+          settleEvery: DUST_SETTLE_EVERY, bite: DUST_BITE };
+      },
+      /* one straight stroke across the panel, in stage coordinates, through
+         the REAL erase path. Tests drive the game, never a copy of it. */
+      dustSid: function () { return DUST ? DUST.sid : -1; },
+      /* put the grime back without banking anything, so a test can measure
+         the cost of a FRESH panel after it has already measured one drag */
+      dustReset: function () {
+        if (!DUST) return null;
+        var i;
+        for (i = 0; i < DUST.depth.length; i++) { DUST.depth[i] = 1; DUST.stroke[i] = -1; }
+        for (i = 0; i < DUST.stubs.length; i++) DUST.stubs[i].found = 0;
+        DUST.found = 0; DUST.sid++;
+        dustRepaint(DUST); dustScan(DUST);
+        return dustCleared(DUST);
+      },
+      dustStroke: function (x0, y0, x1, y1) {
+        if (!DUST || DUST.over) return null;
+        DUST.sid++;
+        dustErase(DUST, x0, y0, x1, y1, DUST.sid); dustScan(DUST);
+        return dustCleared(DUST);
+      },
+      /* ⛔ THE NUMBER THAT SAYS WHETHER THIS IS A MINIGAME OR A DONE BUTTON,
+         and it is DRAG DISTANCE, not passes. "Passes" was the first metric and
+         it was worthless: a pass is however many rows the brush happens to
+         need, so a wider brush made the job look harder while making it
+         easier. Distance in stage pixels is what a thumb actually spends. */
+      dustSweeps: function (max) {
+        if (!DUST || DUST.over) return null;
+        var n = 0, y, dist = 0, rows = Math.ceil(DUST.h / (DUST.R * 1.6));
+        while (n < (max || 40) && dustCleared(DUST) < 0.9) {
+          for (y = 0; y < rows; y++) {
+            var yy = (y + 0.5) * (DUST.h / rows);
+            DUST.sid++;
+            dustErase(DUST, 0, yy, DUST.w, yy, DUST.sid);
+            dist += DUST.w;
+          }
+          n++;
+        }
+        dustScan(DUST);
+        return { sweeps: n, dist: Math.round(dist), screens: +(dist / DUST.w).toFixed(1),
+          cleared: dustCleared(DUST), found: DUST.found };
+      },
       shelf: function () { return pulls.slice(0); },
       revealed: function () { return revealed; },
       item: function (h) { return ATTIC.hashToItem(h); },
@@ -1236,6 +1801,26 @@
       setDay: function (n) { WAL.dailyDay = n; saveWallet(); paintDaily(); return WAL.dailyDay; }
     };
   }
+
+  /* ── DUST IN THE BEAM ────────────────────────────────────────────────
+     Fourteen motes, drifting up through the shaft from the window. They are
+     the one animated thing in the scene and they carry the whole premise, so
+     they earn their place; anything more would be ambience for its own sake.
+     Cheap: transform only, no layout, and off entirely under reduced motion. */
+  (function motes() {
+    var box = document.getElementById('motes'), i, m;
+    if (!box) return;
+    for (i = 0; i < 10; i++) {
+      m = document.createElement('i');
+      m.className = 'mote';
+      m.style.left = (44 + (i * 41) % 52) + '%';   /* inside the shaft */
+      m.style.top = (26 + (i * 37) % 58) + '%';
+      m.style.width = m.style.height = (2 + (i % 3)) + 'px';
+      m.style.animationDuration = (11 + (i % 7) * 2.6) + 's';
+      m.style.animationDelay = (-i * 1.7) + 's';
+      box.appendChild(m);
+    }
+  })();
 
   renderShelf(); /* returning visitor sees their collection before the first pull */
   paintWants();
