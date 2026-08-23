@@ -128,7 +128,13 @@ h1 em{font-style:normal;color:var(--sodium)}
 
 /* ---------- pick ---------- */
 #pick .hdr{padding:calc(env(safe-area-inset-top) + 14px) 16px 10px}
-#pick h2{margin:6px 0 4px;font-size:19px}
+#pick .pickhdr{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding:7px 12px 6px}
+#pick h2{margin:0;font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--sodium)}
+.pickhint{font-size:10.5px;color:var(--dim);line-height:1.4}
+/* "the giant button to start is almost in the way": compact, centred, still 48px */
+.cta.pickcta{max-width:320px;margin:10px auto 0;padding:12px;font-size:13px}
+#pickFoot{padding-top:7px}
+#pickInfo{font-size:11px}
 #pickWrap{flex:1;position:relative;overflow:hidden;touch-action:none;background:#04121e}
 #pickMap,#pickFx{position:absolute;left:0;top:0}
 .crt{position:absolute;inset:0;pointer-events:none;opacity:.28;
@@ -740,11 +746,13 @@ h1 em{font-style:normal;color:var(--sodium)}
 
 <!-- PICK -->
 <section class="screen" id="pick">
-  <div class="hdr">
-    <div class="tag" style="text-align:left">Deployment briefing</div>
+  <!-- Stephen mid test 2026-08-24: "choose your launch country should be way
+       smaller at the top, clean up that UI." One compact line; the MAP is the
+       screen. The how-to sentence rides the same line and wraps under it on a
+       narrow phone. -->
+  <div class="hdr pickhdr">
     <h2>Choose your launch country</h2>
-    <p style="margin:0;font-size:12px;color:var(--dim);line-height:1.5">Tap any country. Your first cameras go up there,
-      then spread outward across its region and the world. Pinch or drag to look around.</p>
+    <span class="pickhint">Tap a country. Cameras go up there and spread. Pinch or drag to look around.</span>
   </div>
   <div id="pickWrap"><canvas id="pickMap"></canvas><canvas id="pickFx"></canvas><div class="crt"></div>
     <div class="zoomui"><button class="zb" data-z="in">IN</button><button class="zb" data-z="out">OUT</button><button class="zb" data-z="fit">FIT</button></div>
@@ -753,7 +761,7 @@ h1 em{font-style:normal;color:var(--sodium)}
     <div id="pickInfo">No region selected.</div>
     <label id="coWrap"><span>Name your vendor</span>
       <input id="coInput" type="text" maxlength="24" autocomplete="off" spellcheck="false"></label>
-    <button class="cta" id="beginBtn" style="opacity:.4" disabled>Deploy first unit</button>
+    <button class="cta pickcta" id="beginBtn" style="opacity:.4" disabled>Deploy first unit</button>
   </div>
 </section>
 
@@ -962,6 +970,7 @@ const CFG = {
      this cost the bot every single run: it took all 14 markets, reached subj 0.7
      and died of oversight around day 800. The scrutiny has to be felt, not fatal. */
   acqSus:0.55, acqOvr:0.2,
+  choiceGap:34,       /* minimum days between PAUSE THE GAME choice modals */
   nodeInflate:0.03,   /* each owned node raises later node prices 3% */
   entryScale:0.55,    /* each active market raises the next entry price 55% */
   entryGdp:0.42,      /* how hard the door price tracks the market's economy */
@@ -2107,7 +2116,15 @@ function maybeEvent(s){
      could refire forever, so the records request became a subscription. An
      event that fires now sleeps for its cooldown (per event `cd`, defaulting to
      150 days for choices, 75 for flashes). */
+  /* ⛔ Stephen mid test, 2026-08-24: "the bureau director and others pop up
+     waaaay too frequently, it's annoying me." The 9 day window with a half
+     chance meant a PAUSE THE GAME modal roughly every fourteen seconds at 1x,
+     and the 31 event pool keeps the window full. Flashes are news lines and can
+     keep the old cadence; a CHOICE modal demands a decision, so choice events
+     get a dedicated clock: at least CFG.choiceGap days since the last one. */
+  const canChoice=s.day-(s.lastChoice!=null?s.lastChoice:-9999)>=CFG.choiceGap;
   const pool=s.events.filter(e=>{
+    if(e.k!=='flash'&&!canChoice)return false;
     const last=s.evLast&&s.evLast[e.id];
     if(last!=null&&s.day-last<(e.cd!=null?e.cd:(e.k==='flash'?75:150)))return false;
     /* story chains: beat N waits for beat N-1, and a finished arc stays finished */
@@ -2120,6 +2137,7 @@ function maybeEvent(s){
   for(const e of pool){roll-=e.w;if(roll<=0){ev=e;break;}}
   (s.evLast||(s.evLast={}))[ev.id]=s.day;
   if(ev.chain)(s.arc||(s.arc={}))[ev.chain]=ev.step;
+  if(ev.k!=='flash')s.lastChoice=s.day;
   if(ev.k==='flash'){const t=ev.f(s);if(t)pushNews(s,t,ev.cls);}
   else showEvent(ev);
 }
@@ -2369,7 +2387,7 @@ function saveRun(){
       acqHeat:s.acqHeat||0,dcs:s.dcs||0,deskRoll:s.deskRoll||0,
       monitor:s.monitor||0,cover:s.cover||0,
       evLast:s.evLast||{},   /* event cooldowns must survive a reload or the spam returns */
-      econRun:s.econRun||0,arc:s.arc||{},lastCrack:s.lastCrack!=null?s.lastCrack:null,
+      econRun:s.econRun||0,arc:s.arc||{},lastCrack:s.lastCrack!=null?s.lastCrack:null,lastChoice:s.lastChoice!=null?s.lastChoice:null,
       owned:[...s.owned],combos:[...s.combos],milestones:[...s.milestones],wmiles:[...s.wmiles],
       popMiles:[...(s.popMiles||[])],popPeakOrg:s.popPeakOrg||0,popHist:(s.popHist||[]).slice(-11),
       log:s.log.slice(0,40),regions:regs,stamp:Date.now()}));
@@ -2408,6 +2426,7 @@ function loadRun(){
     for(const k in d.evLast){const v=Number(d.evLast[k]);if(isFinite(v))s.evLast[k]=v;}
   s.econRun=Math.max(0,num(d.econRun,0)|0);
   s.lastCrack=(d.lastCrack==null)?null:Math.max(0,num(d.lastCrack,0)|0);
+  s.lastChoice=(d.lastChoice==null)?null:Math.max(0,num(d.lastChoice,0)|0);
   s.arc={};
   if(d.arc&&typeof d.arc==='object')
     for(const k in d.arc){const v=Number(d.arc[k]);if(isFinite(v)&&v>=0&&v<=3)s.arc[k]=v;}

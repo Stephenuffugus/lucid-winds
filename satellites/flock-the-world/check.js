@@ -838,6 +838,39 @@ if (C) {
         shows > 0, 'shows=' + shows);
     }
 
+    /* Stephen mid test 2026-08-24: pause-the-game choice modals every few
+       seconds. Choice events now carry a dedicated clock: never two within
+       CFG.choiceGap days, however full the pool is. */
+    group('choice modals keep their distance');
+    {
+      const cG=makeCtx();cG.doctrineModal=()=>{};
+      const fires=[];cG.showEvent=()=>{fires.push(vm.runInContext('S.day',cG));};
+      vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');",cG);
+      const sG=vm.runInContext('S',cG);
+      sG.avgSus=50;sG.oversight=60;sG.activeCount=3;sG.cash=9999*vm.runInContext('MONEY',cG);
+      /* ⛔ the first version of this guard used the natural pool, and zeroing
+         CFG.choiceGap did not turn it red: the handful of eligible choice
+         events space themselves past 34 days through their own cooldowns, so
+         the assertion held without the mechanism. SATURATE the pool with
+         synthetic zero-cooldown choice events so that without the gap clock,
+         two fire within a few days and the guard bites. Watched red at gap 0
+         (minGap 2) before trusting this green. */
+      vm.runInContext("for(let i=0;i<10;i++)S.events.push({id:'syn'+i,w:50,cd:1,when:()=>true,k:'choice',o:[{l:'x',f:()=>{}}]});",cG);
+      let n6=31;const f6=()=>{n6=(n6*1664525+1013904223)>>>0;return n6/4294967296;};
+      const real6=Math.random;Math.random=f6;
+      for(let d=100;d<1300;d++){sG.day=d;vm.runInContext('maybeEvent(S)',cG);}
+      Math.random=real6;
+      const gaps=fires.slice(1).map((v,i)=>v-fires[i]);
+      const minGap=gaps.length?Math.min.apply(null,gaps):9999;
+      /* ⛔ second vacuity in this guard, and the worse one: it compared minGap
+         against the LIVE CFG.choiceGap, so zeroing the dial also zeroed the
+         bar and minGap>=0 passed trivially. A guard asserts the CONTRACT, not
+         the config: thirty days is the promise to the player, whatever the
+         dial reads. Watched red at gap 0 (minGap 2) before trusting green. */
+      ok('choice modals fire at all across a long run', fires.length>=5, 'fires='+fires.length);
+      ok('and never two inside thirty days', minGap>=30, 'minGap='+minGap);
+    }
+
     /* 2026-08-24: four doors to the ending. Each door is driven through the
        real tick with a staged world, and each threshold is later mutated red
        by scripts/ftw_door_mutations.sh style manual runs before trust. */
