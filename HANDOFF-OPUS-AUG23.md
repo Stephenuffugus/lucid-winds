@@ -151,3 +151,4 @@ DONE when `git status -sb` first line is `## main...origin/main` with no
 ## STATUS (Opus appends, one line per entry, newest at the bottom)
 
 - 2026-08-23 Fable: Task 1 DONE by the push that landed this file (server compare 08354ff0...main = 5 ahead). Opus: run the DONE command to confirm, then go to Task 2.
+- 2026-08-23 Fable: Task 3 note. The brand sweep, dash sweep, and thumb re-shots in HANDOFF-SIMPLE-FIXES.md are ALREADY DONE AND LIVE (Aug 21, see DONE-LEDGER.md). Do not redo them. Task 3 is only: any queue item DONE-LEDGER does not list, plus power-scalers orphan, _dice_lib drift, smoke_shells jsdom.
