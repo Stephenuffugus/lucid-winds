@@ -150,3 +150,4 @@ DONE when `git status -sb` first line is `## main...origin/main` with no
 
 ## STATUS (Opus appends, one line per entry, newest at the bottom)
 
+- 2026-08-23 Fable: Task 1 DONE by the push that landed this file (server compare 08354ff0...main = 5 ahead). Opus: run the DONE command to confirm, then go to Task 2.
