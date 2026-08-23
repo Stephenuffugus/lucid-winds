@@ -181,7 +181,17 @@ if (C) {
   const get = expr => vm.runInContext(expr, C);
   const call = (fn, ...args) => { C.__a = args; return vm.runInContext(fn + '(...__a)', C); };
   const live = () => vm.runInContext('S', C);
-  C.showEvent = ev => { const st = live(); for (const o of ev.o) { if (!o.c || o.c(st)) { if (o.cost) { if (o.cost.cash) st.cash -= o.cost.cash; if (o.cost.inf) st.inf -= o.cost.inf; } o.f(st); return; } } ev.o[ev.o.length - 1].f(st); };
+  /* ⛔ These stubs charged o.cost.cash RAW. The game charges
+     Math.round(o.cost.cash * evScale(S) / 5) * 5, and evScale climbs to 25x with
+     the size of the network, so the bot was paying up to 25 TIMES LESS than a
+     player for the same choice. Every economy number this suite has ever
+     reported was measured against a bot with a cheat code. Found 2026-08-24 by
+     an adversarial pass over an economy proposal; the proposal's own headline
+     numbers were computed against this same fiction. */
+  const evCost = (st, o) => { if (!o.cost || !o.cost.cash) return 0;
+    const sc = vm.runInContext('evScale(S)', C); return Math.round(o.cost.cash * sc / 5) * 5; };
+  C.showEvent = ev => { const st = live(); for (const o of ev.o) { const cc = evCost(st, o);
+    if ((!o.c || o.c(st)) && (!cc || st.cash >= cc)) { st.cash -= cc; if (o.cost && o.cost.inf) st.inf -= o.cost.inf; o.f(st); return; } } ev.o[ev.o.length - 1].f(st); };
   C.doctrineModal = () => {};
 
   const REGIONS = get('REGIONS'), NODES = get('NODES'), COMBOS = get('COMBOS');
@@ -238,7 +248,11 @@ if (C) {
     const s = vm.runInContext(`S=newState('${mode}','${diff}','${start}');S`, c);
     /* top level `let S` never attaches to the vm context, so the auto resolver
        has to close over the returned state object, not read c.S */
-    c.showEvent = ev => { for (const o of ev.o) { if (!o.c || o.c(s)) { if (o.cost) { if (o.cost.cash) s.cash -= o.cost.cash; if (o.cost.inf) s.inf -= o.cost.inf; } o.f(s); return; } } ev.o[ev.o.length - 1].f(s); };
+    c.showEvent = ev => { const evc = o => { if (!o.cost || !o.cost.cash) return 0;
+      return Math.round(o.cost.cash * vm.runInContext('evScale(S)', c) / 5) * 5; };
+      for (const o of ev.o) { const cc = evc(o);
+        if ((!o.c || o.c(s)) && (!cc || s.cash >= cc)) { s.cash -= cc; if (o.cost && o.cost.inf) s.inf -= o.cost.inf; o.f(s); return; } }
+      ev.o[ev.o.length - 1].f(s); };
     const cl = (fn, ...a) => { c.__a = a; return vm.runInContext(fn + '(...__a)', c); };
     const NODES2 = vm.runInContext('NODES', c);
     for (let d = 0; d < maxDays; d++) {
@@ -669,7 +683,10 @@ if (C) {
     vm.runInContext("sfxUnlock();S=newState('CONTRACTOR','Vendor','NA',null,null,'Kestrel Municipal');", cS);
     const sS = vm.runInContext('S', cS);
     cS.showEvent = ev => { vm.runInContext("sfx('event_open')", cS);
-      for (const o of ev.o) { if (!o.c || o.c(sS)) { if (o.cost) { if (o.cost.cash) sS.cash -= o.cost.cash; if (o.cost.inf) sS.inf -= o.cost.inf; } o.f(sS); return; } }
+      const evcS = o => { if (!o.cost || !o.cost.cash) return 0;
+        return Math.round(o.cost.cash * vm.runInContext('evScale(S)', cS) / 5) * 5; };
+      for (const o of ev.o) { const cc = evcS(o);
+        if ((!o.c || o.c(sS)) && (!cc || sS.cash >= cc)) { sS.cash -= cc; if (o.cost && o.cost.inf) sS.inf -= o.cost.inf; o.f(sS); return; } }
       ev.o[ev.o.length - 1].f(sS); };
     const clS = (fn, ...a) => { cS.__a = a; return vm.runInContext(fn + '(...__a)', cS); };
     const NODES3 = vm.runInContext('NODES', cS);
