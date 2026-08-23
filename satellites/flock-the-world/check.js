@@ -383,15 +383,21 @@ if (C) {
        charges. Both surfaces call regionActionsHTML/regionEnterHTML, and this
        compares the two rendered strings region by region to keep it true. */
     const world = vm.runInContext('worldHTML()', c8);
+    /* ⛔ Read the button's TEXT, tags stripped, not "everything up to the first
+       <". The moment the UI kit put an <img> glyph inside these buttons the old
+       pattern captured an empty string for every one of them and the parity
+       check started comparing "" with "": it could no longer fail. Caught only
+       because a companion assertion counts how many real buttons were parsed. */
+    const strip = h => h.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
     const priceOf = (html, rid) => {
       const out = {};
-      const re = new RegExp('data-act="([a-z]+)" data-r="' + rid + '"[\\s\\S]*?>([^<]*)<', 'g');
-      let m; while ((m = re.exec(html))) out[m[1]] = m[2].trim();
-      const en = new RegExp('data-enter="' + rid + '"[\\s\\S]*?>([^<]*)<').exec(html);
-      if (en) out.enter = en[1].trim().replace(/\s+/g, ' ');
+      const re = new RegExp('data-act="([a-z]+)" data-r="' + rid + '"([\\s\\S]*?)</button>', 'g');
+      let m; while ((m = re.exec(html))) out[m[1]] = strip(m[2].slice(m[2].indexOf('>') + 1));
+      const en = new RegExp('data-enter="' + rid + '"([\\s\\S]*?)</button>').exec(html);
+      if (en) out.enter = strip(en[1].slice(en[1].indexOf('>') + 1));
       return out;
     };
-    let drift = [], sawBtns = 0, sawEnter = 0;
+    let drift = [], sawBtns = 0, sawEnter = 0, emptyLabels = 0;
     for (const r of REG) {
       c8.__rid = r.id;
       const pop = priceOf(vm.runInContext('rpopHTML(__rid,null)', c8), r.id);
@@ -399,10 +405,14 @@ if (C) {
       const keys = new Set([...Object.keys(pop), ...Object.keys(wor)]);
       sawBtns += Object.keys(pop).filter(k => k !== 'enter').length;
       if (pop.enter) sawEnter++;
+      for (const k of Object.keys(pop)) if (!pop[k]) emptyLabels++;
       for (const k of keys) if (pop[k] !== wor[k]) drift.push(r.id + '.' + k + ' map=' + pop[k] + ' world=' + wor[k]);
     }
     ok('the fixture rendered real action buttons to compare', sawBtns >= 40 && sawEnter >= 1,
       'buttons=' + sawBtns + ' enter=' + sawEnter);
+    /* ⛔ a parity check over empty strings passes and proves nothing */
+    ok('the parsed button labels are not empty, so the parity check can still fail',
+      emptyLabels === 0, emptyLabels + ' of the parsed labels were blank');
     ok('every map action shows the World tab price, to the character', drift.length === 0,
       drift.slice(0, 3).join(' | '));
 

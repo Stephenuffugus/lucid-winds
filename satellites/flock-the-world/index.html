@@ -364,8 +364,14 @@ h1 em{font-style:normal;color:var(--sodium)}
 .rtop{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .rtop h3{margin:0;font-size:14px;flex:1}
 .rtop .pop{font-size:10.5px;color:var(--dim)}
-.chip{font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:9px;
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:9.5px;letter-spacing:.08em;
+  text-transform:uppercase;padding:2px 7px;border-radius:9px;
   border:1px solid var(--line);color:var(--dim)}
+/* the kit glyphs. Small on purpose: they label a word, they do not replace it. */
+.uico{width:14px;height:14px;flex:none;object-fit:contain;vertical-align:middle}
+.act .uico,.buy .uico{width:16px;height:16px;margin-right:5px}
+.ledcell .k .uico{width:13px;height:13px;margin-right:5px;opacity:.85}
+.ledcell .k{display:flex;align-items:center}
 .chip.calm{color:var(--dim)} .chip.murmur{color:var(--ice);border-color:var(--ice)}
 .chip.peaceful{color:var(--scan);border-color:var(--scan)}
 .chip.violent{color:var(--sodium);border-color:var(--sodium)}
@@ -2061,7 +2067,9 @@ function odoStart(){if(!ODO.timer)ODO.timer=setInterval(odoStep,100);}
 function ledgerHTML(){
   const s=S,W=WORLD_POP*PEOPLE;
   const per=popPerDay(s);
-  const cell=(k,v,share,col,dl)=>`<div class="ledcell"><div class="k">${k}</div>
+  const LEDICO={'Watched':'ledger_watched','Never watched':'ledger_free','Compliant':'ledger_compliant',
+    'Organized':'ledger_organized','In the streets':'ledger_streets','Expelled you':'state_expelled'};
+  const cell=(k,v,share,col,dl)=>`<div class="ledcell"><div class="k">${uiIco(LEDICO[k],'lki')}${k}</div>
     <div class="v" style="color:${col}">${fmtPeople(v)}</div>
     <div class="dl">${dl}</div>
     <div class="t"><div class="f" style="width:${Math.max(0,Math.min(100,share*100)).toFixed(1)}%;background:${col}"></div></div></div>`;
@@ -2079,7 +2087,7 @@ function ledgerHTML(){
   const rows=REGIONS.map(r=>s.regions[r.id]).sort((a,b)=>(b.pop*b.coverage)-(a.pop*a.coverage));
   h+=rows.map(x=>{
     const w=x.pop*x.coverage,pct=x.pop?(x.coverage*100):0;
-    const badge=x.lost?'<span class="chip">Expelled</span>':x.active?`<span class="chip ${x.pstate}">${PSTATE_LABEL[x.pstate]}</span>`:'<span class="chip">No contract</span>';
+    const badge=x.active||x.lost?stateChip(x):'<span class="chip">No contract</span>';
     return `<div class="ledrow"><div class="rn"><b>${x.name}</b> ${badge}
       <div class="sub">${fmtShort(w*PEOPLE)} of ${fmtShort(x.pop*PEOPLE)} watched (${pct.toFixed(0)}%)
         · ${fmtShort(x.pop*x.control*PEOPLE)} compliant
@@ -2148,6 +2156,16 @@ function renderSheet(tab){
    that may not be there. Cut from Stephen's sheets 5, 9 and 10. */
 const MODE_ART={CONTRACTOR:'mode_contractor',DEEPSTATE:'mode_partnership',CRISIS:'mode_crisis'};
 const DIFF_ART={Contractor:'diff_easy',Vendor:'diff_standard',Incumbent:'diff_hard'};
+const UI_ART={act_agitate:1,act_blackout:1,act_concede:1,act_crackdown:1,act_enter:1,act_lobby:1,bubble_cash:1,bubble_influence:1,hq_marker:1,ledger_compliant:1,ledger_free:1,ledger_organized:1,ledger_streets:1,ledger_watched:1,state_calm:1,state_expelled:1,state_murmur:1,state_peaceful:1,state_uprising:1,state_violent:1};
+/* ⛔ ONE source for a state chip. It is rendered in three places (World cards,
+   the map popover, the Ledger rows) and before this each built its own string,
+   which is exactly how the action-button prices nearly drifted in F2. */
+function uiIco(id,cls){return UI_ART[id]?`<img class="uico ${cls||''}" src="art/ui/${id}.webp" alt="">`:'';}
+function stateChip(x){
+  if(x.lost)return `<span class="chip uprising">${uiIco('state_expelled')}Expelled</span>`;
+  if(!x.active)return `<span class="chip">Unsigned</span>`;
+  return `<span class="chip ${x.pstate}">${uiIco('state_'+x.pstate)}${PSTATE_LABEL[x.pstate]}</span>`;
+}
 const BADGE_ART={consent:1,curfewplus:1,fineprint:1,hallmon:1,lgm:1,memhole:1,nonewfriends:1,oncue:1,panopt:1,pipeline:1,precrime:1,shotgun:1,skyanchor:1,ticket:1,town:1,welcomemat:1};
 const CAST_ART={anchor:1,brill:1,cm_atlas:1,cm_boycott:1,cm_copwatch:1,cm_crypto:1,cm_jam:1,cm_masks:1,cm_plateswap:1,cm_samizdat:1,innocent:1,klein:1,prather:1,the_board:1,the_public:1,vole:1};
 const CARD_ART={diff_easy:1,diff_hard:1,diff_standard:1,doctrine_fist:1,doctrine_glove:1,mode_contractor:1,mode_crisis:1,mode_partnership:1};
@@ -2237,15 +2255,15 @@ function worldHTML(){
   const lbCost=Math.max(500,Math.round(((s.net||0)*15)/25)*25);
   h+=`<button class="buy" data-lobby="1" style="margin:0 0 10px"
      title="Convert money into influence. Patriotism ticks up a little every time."
-     ${s.cash<lbCost||s.lbCd>0?'disabled':''}>Lobbying blitz · $${lbCost.toLocaleString()} buys 8 influence${s.lbCd>0?` (${s.lbCd}d)`:''}</button>`;
+     ${s.cash<lbCost||s.lbCd>0?'disabled':''}>${uiIco('act_lobby')}Lobbying blitz · $${lbCost.toLocaleString()} buys 8 influence${s.lbCd>0?` (${s.lbCd}d)`:''}</button>`;
   h+=REGIONS.map(r=>{
     const x=s.regions[r.id];
     const bar=(v,c)=>`<div class="t"><div class="f" style="width:${(v*100).toFixed(0)}%;background:${c}"></div></div>`;
-    const chip=`<span class="chip ${x.pstate}">${PSTATE_LABEL[x.pstate]}</span>`;
+    const chip=stateChip(x);
     const bchip=(x.black>0)?`<span class="chip fx">News dark ${x.black}d</span>`:'';
     const acts=regionActionsHTML(r.id);
     return `<div class="rcard ${x.active?'':x.lost?'lost':'idle'}">
-      <div class="rtop"><h3>${r.name}</h3>${x.active?chip:x.lost?'<span class="chip uprising">EXPELLED</span>':''}${bchip}
+      <div class="rtop"><h3>${r.name}</h3>${x.active||x.lost?chip:''}${bchip}
         <span class="pop mono">${r.pop}M</span></div>
       <div class="mini">
         <div class="m"><div class="k">Coverage <i class="up">▲</i></div>${bar(x.coverage,'var(--sodium)')}</div>
@@ -2276,15 +2294,15 @@ function regionActionsHTML(rid){
   let acts='<div class="acts">';
   if(s.has('agit'))acts+=`<button class="act warn" data-act="agitate" data-r="${rid}"
         title="Send provocateurs into a march. Unrest jumps, a peaceful march turns violent."
-        ${s.cash<pAg||x.pstate==='uprising'||x.cd>0?'disabled':''}>Agitate $${pAg.toLocaleString()}${cd}</button>`;
+        ${s.cash<pAg||x.pstate==='uprising'||x.cd>0?'disabled':''}>${uiIco('act_agitate')}Agitate $${pAg.toLocaleString()}${cd}</button>`;
   if(s.has('charter'))acts+=`<button class="act danger" data-act="crack" data-r="${rid}"
         title="Armored response. Unrest falls, compliance and militarization rise. Can backfire, always remembered."
-        ${s.cash<pCr||x.unrest<30||x.cd>0?'disabled':''}>Crackdown $${pCr.toLocaleString()}${cd}</button>`;
+        ${s.cash<pCr||x.unrest<30||x.cd>0?'disabled':''}>${uiIco('act_crackdown')}Crackdown $${pCr.toLocaleString()}${cd}</button>`;
   if(s.has('blackout'))acts+=`<button class="act" data-act="blackout" data-r="${rid}"
         title="Buy the news cycle. Suspicion drops and builds slower for two weeks. Weak where the press is free."
-        ${s.cash<pBl||x.bcd>0?'disabled':''}>Blackout $${pBl.toLocaleString()}${x.bcd>0?` (${x.bcd}d)`:''}</button>`;
+        ${s.cash<pBl||x.bcd>0?'disabled':''}>${uiIco('act_blackout')}Blackout $${pBl.toLocaleString()}${x.bcd>0?` (${x.bcd}d)`:''}</button>`;
   acts+=`<button class="act" data-act="concede" data-r="${rid}"
-        title="Free. Unrest, suspicion and organizing all ease. You give back some control.">Concede</button></div>`;
+        title="Free. Unrest, suspicion and organizing all ease. You give back some control.">${uiIco('act_concede')}Concede</button></div>`;
   return acts;
 }
 function regionEnterHTML(rid){
@@ -2292,7 +2310,7 @@ function regionEnterHTML(rid){
   if(!x||x.active)return '';
   const cost=entryCost(x);
   return `<button class="buy" data-enter="${rid}" ${s.cash<cost?'disabled':''}>
-        ${x.lost?'Re-enter':'Enter'} market · $${cost.toLocaleString()}</button>`;
+        ${uiIco('act_enter')}${x.lost?'Re-enter':'Enter'} market · $${cost.toLocaleString()}</button>`;
 }
 function entryCost(x){
   const base=Math.round(70+x.pop*0.22+x.liberty*320+x.wealth*90);
@@ -2492,9 +2510,7 @@ let rpopRid=null,rpopCn='';
 function rpopHTML(rid,cn){
   const s=S,x=s.regions[rid];if(!x)return '';
   const w=x.pop*x.coverage*PEOPLE,cm=x.pop*x.control*PEOPLE,og=x.pop*(x.resist/100)*PEOPLE;
-  const chip=x.lost?'<span class="chip uprising">EXPELLED</span>'
-    :x.active?`<span class="chip ${x.pstate}">${PSTATE_LABEL[x.pstate]}</span>`
-    :'<span class="chip">Unsigned</span>';
+  const chip=stateChip(x);
   const hq=(cn&&S.hqName===cn)?` \u00b7 HQ of ${CO()}`:'';
   let h=`<button class="rpX" data-rpclose="1" aria-label="Close">\u2715</button>`
     +`<div class="rpH">${cn?cn+' \u00b7 ':''}${x.name}${hq}</div><div class="rpS">${chip}</div>`;
