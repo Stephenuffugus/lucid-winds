@@ -803,6 +803,13 @@ const CFG = {
   acqSus:0.55, acqOvr:0.2,
   nodeInflate:0.03,   /* each owned node raises later node prices 3% */
   entryScale:0.55,    /* each active market raises the next entry price 55% */
+  entryGdp:0.42,      /* how hard the door price tracks the market's economy */
+  entryQuad:0.09,     /* ⛔ the squared term, swept and measured. At 0 the last market opens
+                         on day 690 and the doors cost 39% of everything you earn; at 0.20 it
+                         is day 1194 and 86%, which leaves nothing for anything else and makes
+                         the run one dimensional. 0.09 puts the last door at day 924 and 65% of
+                         lifetime income: expansion is the spine of the campaign without being
+                         the only thing in it. */
   blackoutDays:14,    /* a bought news cycle suppresses suspicion this long */
   blackoutCd:16
 };
@@ -1490,8 +1497,8 @@ function tick(){
       }
     }
 
-    income+=MONEY*r.pop*r.coverage*CFG.incomeK*r.wealth*(1+f.inc)*D.cash*cInc*(1-Math.min(0.15,r.resist/100*0.15));
-    infra+=r.pop*r.coverage*r.wealth;
+    income+=MONEY*R[id].gdp*r.coverage*CFG.incomeK*(1+f.inc)*D.cash*cInc*(1-Math.min(0.15,r.resist/100*0.15));
+    infra+=R[id].gdp*r.coverage;
     susW+=r.pop*r.suspicion; milW+=r.pop*r.milit; subj+=r.pop*r.control; resW+=r.pop*r.resist;
 
     [.25,.5,.75,.97].forEach(m=>{
@@ -1939,6 +1946,23 @@ const COUNTRIES=GEO.map(c=>{
     bb:[minx,miny,maxx,maxy],tint:((h>>>0)%9)-4,path:null};
 });
 COUNTRIES.forEach((c,i)=>c.idx=i);
+/* ⛔ PER REGION ECONOMIC WEIGHT, 2026-08-24. Stephen: "the different markets need
+   to have their respective influence on the world economy."
+   Income was already pop*wealth weighted, so markets DID differ; adding the urban
+   term on its own only moves any region's share by under two points (measured).
+   The change that earns its keep is using one weight for BOTH what a market pays
+   and what its door costs, so the whale and the expensive door are the same
+   place and which markets you take becomes a plan.
+   NORMALISED so sum(gdp) equals the old sum(pop*wealth): this moves the
+   distribution and deliberately does NOT move the size of the economy, because a
+   silent aggregate shift here would be indistinguishable from a balance change. */
+(function(){
+  var sPW=0,sG=0;
+  REGIONS.forEach(function(r){ r.gdp=r.pop*r.wealth*(0.55+0.45*r.urban);
+    sPW+=r.pop*r.wealth; sG+=r.gdp; });
+  var k=sG>0?sPW/sG:1;
+  REGIONS.forEach(function(r){ r.gdp*=k; });
+})();
 const byRegion={};REGIONS.forEach(r=>byRegion[r.id]=[]);
 COUNTRIES.forEach(c=>{(byRegion[c.r]||(byRegion[c.r]=[])).push(c);});
 function setSpreadOrder(s,rid,seed){
@@ -2665,10 +2689,20 @@ function regionEnterHTML(rid){
         ${uiIco('act_enter')}${x.lost?'Re-enter':'Enter'} market · ${fmtMoney(cost)}</button>`;
 }
 function entryCost(x){
-  const base=MONEY*Math.round(70+x.pop*0.22+x.liberty*320+x.wealth*90);
-  /* each market you already hold raises the price of the next: regulators
-     compare notes, so buying the whole world in a minute stops being a thing */
-  const mult=1+((S?S.activeCount:1)||1)*CFG.entryScale;
+  /* ⛔ ENTRY PRICE TRACKS WHAT THE MARKET IS WORTH, 2026-08-24. Stephen: "spending
+     to enter markets should be extremely high. It shouldn't be so easy. I can buy
+     into every market super fast."
+     The door is priced off the SAME weight that pays you, so the whale and the
+     expensive door are the same place and which markets you take is a plan
+     rather than a formality. Liberty still adds a premium on top: a free country
+     costs more to buy your way into, whatever it is worth. */
+  const g=x.gdp||(x.pop*x.wealth);
+  const base=MONEY*Math.round(40+g*CFG.entryGdp+x.liberty*260);
+  /* each market you already hold raises the price of the next, and the linear
+     term alone was not enough: regulators compare notes and the comparison gets
+     worse the longer your list is, so there is a squared term too. */
+  const n=((S?S.activeCount:1)||1);
+  const mult=1+n*CFG.entryScale+n*n*CFG.entryQuad;
   const c=Math.round(base*mult/5)*5;
   return x.lost?c*3:c;
 }

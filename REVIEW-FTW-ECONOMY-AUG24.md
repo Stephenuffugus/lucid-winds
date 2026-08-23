@@ -19,6 +19,8 @@ left over with nothing to spend it on."**
 | `47a491e9` | check.js event undercharge |
 | `041343c6` | the surplus fix: percentage pricing plus the acquisition sink |
 | `6da3de52` | the rescale to contractor money |
+| `9fcd95f3` | card art slots |
+| this one | per region weight and the entry curve |
 
 ## ⛔ THE ONE THING TO CHECK HARDEST
 
@@ -99,17 +101,35 @@ precondition, priced at a share of treasury, and each purchase raises the rate
   refuted its arithmetic (lifetime money understated 2.7x, the surplus did not
   close). **It was not implemented.** Do not resurrect it from the transcript.
 
-## Not done, and known
+## Done after the first draft of this brief
 
-- Per-region economic weight. Stephen asked for markets to carry different weight
-  in the world economy. Income is already `pop * wealth` weighted, so markets do
-  differ, but there is no `urban` term and no separate procurement or scrutiny
-  profile. Not started.
-- Market entry is not yet "extremely high". `entryCost` scales with `MONEY` and
-  with markets held, but the curve was not steepened, because the bot takes 14/14
-  and I did not want to break winnability without measuring it.
-- Spending variety. He asked for "tons and tons of variations". There is now ONE
-  new sink. That is the fix for the surplus, not the fix for the variety.
+- **Per-region economic weight.** `r.gdp = pop * wealth * (0.55 + 0.45*urban)`,
+  NORMALISED so `sum(gdp)` equals the old `sum(pop*wealth)`. That moves the
+  distribution and deliberately does not move the size of the economy, because a
+  silent aggregate shift would be indistinguishable from a balance change.
+  Verified neutral: peak net $17.0M either side. The same weight now prices the
+  DOOR as well as the payout, so the whale and the expensive door are the same
+  place. ⚖ On its own the urban term only moves any region's share by under two
+  points, so the differentiation here comes from the shared weight, not from
+  `urban`. A reviewer may reasonably say that is not enough differentiation and
+  that regions want separate procurement and scrutiny profiles.
+- **Market entry curve.** `entryCost` tracks gdp, plus a squared term in markets
+  held (`entryQuad` 0.09, swept).
+  ⛔ "Markets held" was the WRONG metric and answered 14/14 at every setting:
+  entry is a one time cost against an unbounded income stream, so given enough
+  days you can always afford everything. Stephen's complaint was buying in "super
+  fast", so the metrics are WHEN the last door opens and what the doors cost.
+
+  | entryQuad | last market | entry as share of lifetime income |
+  |---|---|---|
+  | 0.0, the old curve | day 690 | 39% |
+  | **0.09, shipped** | **day 945 to 1008** | **75 to 82%** |
+  | 0.20 | day 1194 | 86%, leaves nothing for anything else |
+
+## Still not done
+
+- Spending variety. He asked for "tons and tons of variations". There is ONE new
+  sink. That is the fix for the surplus, not the fix for the variety.
 
 ## How to re-run everything
 
