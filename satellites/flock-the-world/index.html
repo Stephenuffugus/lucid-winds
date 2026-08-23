@@ -185,6 +185,21 @@ h1 em{font-style:normal;color:var(--sodium)}
 #shToast.on{opacity:1}
 #shToast b{color:var(--grn)}
 #shToast .neg{color:var(--blood);font-weight:700}
+/* tier 1: the toast stack. It sits on the MAP, bottom left above the status
+   pill, because the old #shToast lived inside the sheet body and a spend made
+   from the map popover produced no visible confirmation at all (see
+   portal-assets/review/ftw-popups-aug23/). Width is capped so it can never
+   reach the zoom column, and it sits above the pill and below the HUD. */
+#toasts{position:absolute;left:8px;bottom:58px;z-index:7;display:flex;flex-direction:column;
+  gap:5px;max-width:min(58%,340px);pointer-events:none}
+.tst{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:10px;
+  background:#141003f4;border:1px solid var(--sodium);color:#ffe9c9;font-size:11.5px;
+  line-height:1.35;opacity:0;transform:translateY(6px);transition:opacity .2s,transform .2s}
+.tst.on{opacity:1;transform:none}
+.tst b{color:var(--grn)}
+.tst .neg{color:var(--blood);font-weight:700}
+.tst .tn{flex:none;margin-left:auto;font-size:10px;font-weight:700;color:var(--sodium);
+  font-variant-numeric:tabular-nums}
 #pill{position:absolute;bottom:34px;left:8px;display:flex;align-items:center;gap:6px;
   padding:4px 9px;border-radius:20px;background:#0a1018cc;border:1px solid var(--line);font-size:10px;color:var(--ice)}
 .rec{width:6px;height:6px;border-radius:50%;background:var(--blood);animation:blink 1.4s infinite}
@@ -441,6 +456,7 @@ h1 em{font-style:normal;color:var(--sodium)}
   </div>
   <div id="mapWrap">
     <canvas id="map"></canvas><canvas id="fx"></canvas><div class="crt"></div>
+    <div id="toasts"></div>
     <div id="rpop"></div>
     <div id="pill"><span class="rec"></span><span class="mono" id="pillTxt">LIVE</span></div>
     <div class="zoomui"><button class="zb" data-z="in">IN</button><button class="zb" data-z="out">OUT</button><button class="zb" data-z="fit">FIT</button></div>
@@ -886,6 +902,7 @@ function newState(modeKey,diffKey,startId,seed,hqName,co){
   const st=s.regions[startId]; st.active=true; st.coverage=0.006;
   s.hq=seed||anchorOf(startId); s.hqName=hqName||st.name;
   s.co=(co&&String(co).trim())||VENDOR_NAMES[0];
+  s.popMiles=new Set();
   setSpreadOrder(s,startId,s.hq);
   if(mode.mod.preseed){
     const auth=REGIONS.filter(r=>r.liberty<0.35&&r.id!==startId)
@@ -915,13 +932,7 @@ function pushNews(s,txt,cls){
   if(cls==='crit')breakingBanner(txt);
 }
 let breakTO=null;
-function breakingBanner(txt,gold){
-  const b=$('breaking');if(!b)return;
-  b.classList.toggle('gold',!!gold);
-  const bb=$('breakTxt');bb.textContent=' \u00b7 '+txt;
-  b.classList.add('on');
-  clearTimeout(breakTO);breakTO=setTimeout(()=>b.classList.remove('on'),gold?6500:5200);
-}
+function breakingBanner(txt,gold){noteBanner(txt,gold);}
 function goldBanner(txt){breakingBanner(txt,true);}
 /* The wire is a continuously scrolling news bar (Stephen 2026-08-20: the old
    flip card went by too fast to read). Content swaps only at the seam of each
@@ -963,10 +974,77 @@ function maybeRotHint(){
 }
 /* every spend answers back: toast in the sheet + the cash readout flashes red */
 let toastTO=null;
-function shToast(html){
-  const e=$('shToast');if(!e)return;
-  e.innerHTML=html;e.classList.add('on');
-  clearTimeout(toastTO);toastTO=setTimeout(()=>e.classList.remove('on'),2400);
+/* ==================== NOTIFICATIONS: ONE QUEUE, FOUR TIERS ====================
+   Before this there were seven independent surfaces that did not know about each
+   other, and the contact sheet in portal-assets/review/ftw-popups-aug23/ shows
+   what that cost: a spend made from the map was silent, four identical toasts
+   rendered as one, and a banner fired during a modal burned its timer behind the
+   scrim. Tiers: 0 wire (ambient, never interrupts), 1 toast, 2 breaking banner,
+   3 modal. A lower tier never covers a higher one. */
+const NOTE={toasts:[],banners:[],modalOpen:false,modalQ:[]};
+const TOAST_MS=2400, TOAST_MAX=3;
+
+function toastKey(html){return String(html).replace(/\s+/g,' ').trim();}
+function renderToasts(){
+  const wrap=$('toasts');if(!wrap)return;
+  wrap.innerHTML=NOTE.toasts.map(t=>
+    `<div class="tst on"><span class="tmsg">${t.html}</span>${t.n>1?`<span class="tn">\u00d7${t.n}</span>`:''}</div>`
+  ).join('');
+}
+/* tier 1. Repeats coalesce instead of stacking: four crackdowns in one second is
+   one line reading x4, not four lines shoving each other off screen. */
+function noteToast(html){
+  const k=toastKey(html), now=Date.now();
+  const hit=NOTE.toasts.find(t=>t.k===k);
+  if(hit){hit.n++;hit.until=now+TOAST_MS;}
+  else{
+    NOTE.toasts.push({k,html,n:1,until:now+TOAST_MS});
+    while(NOTE.toasts.length>TOAST_MAX)NOTE.toasts.shift();
+  }
+  renderToasts();
+  if(!NOTE.timer)NOTE.timer=setInterval(sweepToasts,200);
+}
+function sweepToasts(){
+  const now=Date.now(),before=NOTE.toasts.length;
+  NOTE.toasts=NOTE.toasts.filter(t=>t.until>now);
+  if(NOTE.toasts.length!==before)renderToasts();
+  if(!NOTE.toasts.length&&NOTE.timer){clearInterval(NOTE.timer);NOTE.timer=null;}
+}
+/* every existing caller keeps working and now lands somewhere a player can see */
+function shToast(html){noteToast(html);}
+
+/* tier 2. One banner at a time, and never under a modal: a banner fired while a
+   modal is up waits for the modal to close instead of spending its five seconds
+   behind the scrim. */
+function noteBanner(txt,gold){
+  if(NOTE.modalOpen||NOTE.bannerUp){NOTE.banners.push({txt,gold});return;}
+  showBannerNow(txt,gold);
+}
+function showBannerNow(txt,gold){
+  const b=$('breaking');if(!b)return;
+  NOTE.bannerUp=true;
+  b.classList.toggle('gold',!!gold);
+  $('breakTxt').textContent=' \u00b7 '+txt;
+  b.classList.add('on');
+  clearTimeout(breakTO);
+  breakTO=setTimeout(()=>{b.classList.remove('on');NOTE.bannerUp=false;drainBanners();},gold?6500:5200);
+}
+function drainBanners(){
+  if(NOTE.modalOpen||NOTE.bannerUp||!NOTE.banners.length)return;
+  const n=NOTE.banners.shift();showBannerNow(n.txt,n.gold);
+}
+/* tier 3. Never two modals: a second one queues behind the first. */
+function noteModal(fn){
+  if(NOTE.modalOpen){NOTE.modalQ.push(fn);return false;}
+  NOTE.modalOpen=true;return true;
+}
+function noteOpenModal(){NOTE.modalOpen=true;$('modal').classList.add('on');}
+function noteCloseModal(){
+  $('modal').classList.remove('on');
+  NOTE.modalOpen=false;
+  const next=NOTE.modalQ.shift();
+  if(next){setTimeout(next,120);return;}
+  drainBanners();
 }
 function flashCash(){const e=$('vCash');if(!e)return;e.classList.add('spent');setTimeout(()=>e.classList.remove('spent'),450);}
 /* region action prices scale with daily net income (min the old base), so a
@@ -1332,6 +1410,7 @@ function saveRun(){
       day:s.day,cash:s.cash,inf:s.inf,oversight:s.oversight,warHeat:s.warHeat,doctrine:s.doctrine,net:s.net||0,lbCd:s.lbCd||0,
       lostCount:s.lostCount,wmileDth:s.wmileDth||0,hq:s.hq,hqName:s.hqName,co:s.co,
       owned:[...s.owned],combos:[...s.combos],milestones:[...s.milestones],wmiles:[...s.wmiles],
+      popMiles:[...(s.popMiles||[])],
       log:s.log.slice(0,40),regions:regs,stamp:Date.now()}));
   }catch(e){}
 }
@@ -1355,6 +1434,7 @@ function loadRun(){
   const asSet=a=>new Set(Array.isArray(a)?a.filter(x=>typeof x==='string'||typeof x==='number'):[]);
   s.owned=asSet(d.owned);[...s.owned].forEach(id=>{if(!NBI[id])s.owned.delete(id);});
   s.combos=asSet(d.combos);s.milestones=asSet(d.milestones);s.wmiles=new Set((d.wmiles||[]).map(Number).filter(isFinite));
+  s.popMiles=asSet(d.popMiles);
   for(const id in s.regions){
     const r=s.regions[id],o=d.regions[id];if(!o)continue;
     r.active=!!o.active;r.lost=!!o.lost;
@@ -1748,9 +1828,38 @@ function popTotals(s){
   s.popExpelled=ex*PEOPLE;
   s.popFree=WORLD_POP*PEOPLE-s.popWatched;
   if(!s.popPeakOrg||s.popOrganized>s.popPeakOrg)s.popPeakOrg=s.popOrganized;
+  popMilestones(s);
   /* a ten day window so the ledger can show a per-day delta */
   (s.popHist=s.popHist||[]).push(s.popWatched);
   if(s.popHist.length>11)s.popHist.shift();
+}
+/* The ledger milestones. F1 wrote the numbers and deferred these to F4 because
+   they are tier 2 content and the banner queue did not exist yet. Each fires
+   once per run, names the vendor, and goes gold: these are the player's wins.
+   The last two are the ones that should land hardest, because they are counted
+   in people who were never asked. */
+const POP_MILES=[
+  {id:'w10m', at:s=>s.popWatched>=1e7,   t:s=>`${s.co} passes ten million people watched.`},
+  {id:'w100m',at:s=>s.popWatched>=1e8,   t:s=>`${s.co} passes one hundred million watched. No vote was taken.`},
+  {id:'w500m',at:s=>s.popWatched>=5e8,   t:s=>`Half a billion people now live inside the ${s.co} frame.`},
+  {id:'w1b',  at:s=>s.popWatched>=1e9,   t:s=>`${s.co} passes one billion watched.`},
+  {id:'half', at:s=>s.popWatched>=WORLD_POP*PEOPLE/2, t:s=>`Half of humanity is inside the ${s.co} frame.`},
+  {id:'w2b',  at:s=>s.popWatched>=2e9,   t:s=>`${s.co} passes two billion watched.`},
+  {id:'w4b',  at:s=>s.popWatched>=4e9,   t:s=>`${s.co} passes four billion watched. Most of the species.`},
+  /* ⛔ no `&& popFree>0` here. Total coverage drives popFree to exactly 0, which
+     is the one moment this line has to land, and the guard silenced it. */
+  {id:'free1b',at:s=>s.popFree<1e9, t:s=>`Fewer than a billion people have never been watched.`}
+];
+function popMilestones(s){
+  if(!s.popMiles)s.popMiles=new Set();
+  for(const m of POP_MILES){
+    if(s.popMiles.has(m.id))continue;
+    if(!m.at(s))continue;
+    s.popMiles.add(m.id);
+    goldBanner(m.t(s));
+    pushNews(s,m.t(s),'good');
+    if(s.hq)s.pings.push({x:s.hq[0],y:s.hq[1],t:0,k:'gold'});
+  }
 }
 function popPerDay(s){
   const h=s.popHist;
@@ -2078,6 +2187,7 @@ function doAction(act,rid){
 
 /* ============================ MODALS ============================ */
 function showEvent(ev){
+  if(!noteModal(()=>showEvent(ev)))return;
   const prev=S.speed;setSpeed(0);
   /* event price tags scale with daily net income, so "$250 to Klein" is a
      real decision on day 400 the way it was on day 40 */
@@ -2093,13 +2203,14 @@ function showEvent(ev){
       const cost=o.cost?`Costs ${cc?'$'+cc.toLocaleString():''}${o.cost.inf?o.cost.inf+' influence':''}`:'No direct cost';
       return `<button class="opt" data-opt="${i}" ${ok?'':'disabled'}>
         <div class="ol">${o.l}</div><div class="oc">${cost}</div></button>`;}).join('');
-  $('modal').classList.add('on');
+  noteOpenModal();
   c.querySelectorAll('[data-opt]').forEach(b=>b.onclick=()=>{
     const o=ev.o[+b.dataset.opt];
     if(o.cost){if(o.cost.cash){S.cash-=cashOf(o);flashCash();}if(o.cost.inf)S.inf-=o.cost.inf;}
-    o.f(S);$('modal').classList.remove('on');setSpeed(prev||1);paintHud();});
+    o.f(S);noteCloseModal();setSpeed(prev||1);paintHud();});
 }
 function doctrineModal(){
+  if(!noteModal(()=>doctrineModal()))return;
   const prev=S.speed;setSpeed(0);
   const c=$('modalCard');
   c.innerHTML=`<div class="kicker">Board directive</div><h3>Choose your doctrine</h3>
@@ -2108,13 +2219,13 @@ function doctrineModal(){
       <div class="oc">People consent to what feels like convenience. +Compliance everywhere, suspicion grows slower. Crackdowns stay risky.</div></button>
     <button class="opt" data-doc="fist"><div class="ol">The Iron Fist</div>
       <div class="oc">Fear is cheaper than marketing. +Control depth, +militarization, crackdowns rarely backfire. Unrest runs hotter.</div></button>`;
-  $('modal').classList.add('on');
+  noteOpenModal();
   c.querySelectorAll('[data-doc]').forEach(b=>b.onclick=()=>{
     S.doctrine=b.dataset.doc;recompute(S);
     pushNews(S,S.doctrine==='glove'
       ?'Doctrine adopted: The Velvet Glove. New tagline tests well: "Always There For You."'
       :'Doctrine adopted: The Iron Fist. New tagline tests adequately: "Always There."','good');
-    $('modal').classList.remove('on');setSpeed(prev||1);paintHud();});
+    noteCloseModal();setSpeed(prev||1);paintHud();});
 }
 
 /* ============================ TUTORIAL ============================ */
@@ -2138,11 +2249,11 @@ function showTutorial(done){
       <p>${s.b}</p>
       <button class="opt" id="tutNext"><div class="ol">${i<TUT.length-1?'Next':'Begin'}</div></button>
       ${i<TUT.length-1?'<button class="opt" id="tutSkip"><div class="ol" style="color:var(--dim)">Skip</div></button>':''}`;
-    $('modal').classList.add('on');
+    noteOpenModal();
     $('tutNext').onclick=()=>{i++;if(i>=TUT.length)end();else step();};
     const sk=$('tutSkip');if(sk)sk.onclick=end;
   };
-  const end=()=>{$('modal').classList.remove('on');if(S)setSpeed(prev||1);if(done)done();};
+  const end=()=>{noteCloseModal();if(S)setSpeed(prev||1);if(done)done();};
   step();
 }
 
@@ -2437,10 +2548,10 @@ function leaveModal(){
     +'<button class="opt" data-lv="back"><div class="ol">Back to the operation</div></button>'
     +'<button class="opt" data-lv="menu"><div class="ol">Save and go to the menu</div></button>'
     +'<button class="opt" data-lv="exit"><div class="ol">Leave for the Sky Wolf arcade</div></button>';
-  $('modal').classList.add('on');
+  noteOpenModal();
   c.querySelectorAll('[data-lv]').forEach(b=>b.onclick=()=>{
     const k=b.dataset.lv;
-    $('modal').classList.remove('on');
+    noteCloseModal();
     if(k==='back'){setSpeed(prev||1);return;}
     clearInterval(tickTimer);tickTimer=null;clearInterval(tickerTimer);cancelAnimationFrame(raf);
     if(k==='exit'){if(window.SWS_EXIT)window.SWS_EXIT();return;}
@@ -2495,9 +2606,9 @@ $('startBtn').onclick=()=>{
       +'<p>You have a saved run in progress. Starting a new one replaces it for good.</p>'
       +'<button class="opt" data-nw="0"><div class="ol">Keep the saved run</div></button>'
       +'<button class="opt" data-nw="1"><div class="ol">Start fresh anyway</div></button>';
-    $('modal').classList.add('on');
+    noteOpenModal();
     c.querySelectorAll('[data-nw]').forEach(b=>b.onclick=()=>{
-      $('modal').classList.remove('on');
+      noteCloseModal();
       if(b.dataset.nw==='1'){lsDel(K_RUN);initPick();}
       else{show('menu');refreshMenuExtras();}
     });

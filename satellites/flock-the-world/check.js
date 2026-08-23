@@ -467,6 +467,98 @@ if (C) {
       /typeof amb==='function'\?amb\(\):amb/.test(GAME));
   }
 
+  /* ------------------------------------------------ F4: notification queue */
+  group('notification queue');
+  {
+    const cN = makeCtx();
+    /* capture what the toast stack actually renders */
+    const toastEl = stubEl();
+    const breakEl = stubEl();
+    const breakTxt = stubEl();
+    const modalEl = stubEl();
+    const realGet = cN.document.getElementById;
+    cN.document.getElementById = id =>
+      id === 'toasts' ? toastEl :
+      id === 'breaking' ? breakEl :
+      id === 'breakTxt' ? breakTxt :
+      id === 'modal' ? modalEl : stubEl();
+    vm.runInContext("S=newState('CONTRACTOR','Vendor','NA')", cN);
+    const NOTE = () => vm.runInContext('NOTE', cN);
+
+    /* 4 identical toasts inside one second are ONE line reading x4 */
+    vm.runInContext("for(let i=0;i<4;i++)shToast('<span class=\"neg\">Spent $80</span> \u00b7 provocateurs deployed');", cN);
+    ok('four identical toasts coalesce into one entry', NOTE().toasts.length === 1,
+      'entries=' + NOTE().toasts.length);
+    ok('the coalesced toast counts them', NOTE().toasts[0] && NOTE().toasts[0].n === 4,
+      'n=' + (NOTE().toasts[0] || {}).n);
+    ok('the coalesced toast renders the count as x4', /\u00d74/.test(toastEl.innerHTML),
+      toastEl.innerHTML.slice(0, 120));
+
+    /* different toasts stack, but never more than three */
+    vm.runInContext("for(let i=0;i<6;i++)shToast('distinct message '+i);", cN);
+    ok('the toast stack never shows more than three', NOTE().toasts.length <= 3,
+      'entries=' + NOTE().toasts.length);
+
+    /* tier 2 under tier 3: a banner raised while a modal is open WAITS */
+    vm.runInContext("NOTE.toasts=[];NOTE.banners=[];NOTE.bannerUp=false;NOTE.modalOpen=false;", cN);
+    vm.runInContext("noteOpenModal();", cN);
+    ok('opening a modal records that one is open', NOTE().modalOpen === true);
+    vm.runInContext("breakingBanner('Open revolt in South Asia.');", cN);
+    ok('a banner raised during a modal is queued, not shown',
+      NOTE().banners.length === 1 && !breakEl.classList.contains('on'),
+      'queued=' + NOTE().banners.length + ' shown=' + breakEl.classList.contains('on'));
+    vm.runInContext("noteCloseModal();", cN);
+    ok('closing the modal releases the queued banner',
+      breakEl.classList.contains('on') && NOTE().banners.length === 0,
+      'shown=' + breakEl.classList.contains('on') + ' left=' + NOTE().banners.length);
+
+    /* tier 3: never two modals, the second waits for the first */
+    vm.runInContext("NOTE.modalOpen=false;NOTE.modalQ=[];NOTE.bannerUp=false;NOTE.banners=[];", cN);
+    vm.runInContext("__opened=0;doctrineModal();", cN);
+    ok('the first modal opens', NOTE().modalOpen === true);
+    const qBefore = NOTE().modalQ.length;
+    vm.runInContext("doctrineModal();", cN);
+    ok('a second modal never opens over the first, it queues',
+      NOTE().modalQ.length === qBefore + 1, 'queue=' + NOTE().modalQ.length);
+
+    /* tier 0 and 1 must not be able to sit on top of the HUD. check.js has no
+       layout engine, so this is the source-level half: the stack is anchored to
+       the BOTTOM of the map and width capped so it cannot reach the zoom column.
+       The measured half runs in the browser, see STATUS for the numbers. */
+    const css = /#toasts\{([^}]*)\}/.exec(SRC);
+    ok('the toast stack is declared bottom anchored, not top', !!css && /bottom:/.test(css[1]) && !/top:/.test(css[1]),
+      css ? css[1].slice(0, 90) : 'no #toasts rule');
+    ok('the toast stack is width capped so it cannot reach the zoom column',
+      !!css && /max-width:/.test(css[1]));
+    /* the ledger milestones F1 deferred here: tier 2 content that needed this queue */
+    {
+      const cM = makeCtx();
+      vm.runInContext("S=newState('CONTRACTOR','Vendor','NA',null,null,'Kestrel Municipal');" +
+        "for(const k of Object.keys(S.regions)){const r=S.regions[k];r.active=true;r.coverage=0.02;}popTotals(S);", cM);
+      const first = vm.runInContext('[...S.popMiles]', cM);
+      ok('crossing ten million watched fires a ledger milestone', first.indexOf('w10m') >= 0, JSON.stringify(first));
+      const logLen = vm.runInContext('S.log.length', cM);
+      vm.runInContext('popTotals(S)', cM);
+      ok('a milestone fires once per run, not once per tick',
+        vm.runInContext('S.log.length', cM) === logLen, 'log grew again');
+      vm.runInContext("for(const k of Object.keys(S.regions)){S.regions[k].coverage=1;}popTotals(S);", cM);
+      const all = vm.runInContext('[...S.popMiles]', cM);
+      ok('watching the whole world fires the half-the-world and four billion milestones',
+        all.indexOf('half') >= 0 && all.indexOf('w4b') >= 0 && all.indexOf('free1b') >= 0, JSON.stringify(all));
+      ok('a milestone names the vendor',
+        /Kestrel Municipal/.test(vm.runInContext('S.log.map(e=>e.t).join(" ")', cM)));
+      vm.runInContext('saveRun()', cM);
+      const cM2 = makeCtx();
+      vm.runInContext('loadRun()', cM2);
+      ok('fired milestones survive a reload so they never fire twice',
+        vm.runInContext('[...S.popMiles].length', cM2) === all.length,
+        'restored=' + vm.runInContext('[...S.popMiles].length', cM2) + ' want ' + all.length);
+    }
+
+    ok('the toast stack lives on the map, not inside the sheet body',
+      /<div id="toasts"><\/div>[\s\S]{0,80}<div id="rpop">/.test(SRC));
+  }
+
   /* persistence */
   group('persistence');
   const hasSave = /LW_FTW|ftw_/.test(GAME);
