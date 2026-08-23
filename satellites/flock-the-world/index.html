@@ -859,6 +859,8 @@ const CFG = {
   deskDays:24,        /* the desk turns over on this clock as well as on a purchase */
   dcUpkeep:0.34,      /* a data centre costs this share of BASE upkeep, forever */
   dcMax:4,            /* and you may run this many. See the note on the dc entry. */
+  monitorRelief:0.012, /* oversight retired per tick per consent-decree monitor (cap 3) */
+  coverPayoutDays:45,  /* days of net the insurer pays when a covered market is lost */
   dcGrow:0.05,        /* and buys this much deployment speed */
   /* buying your way in is noticed. ⛔ At 1.5 suspicion and 0.6 oversight per buy
      this cost the bot every single run: it took all 14 markets, reached subj 0.7
@@ -1440,7 +1442,7 @@ const OPS=[
      REGIONS.forEach(R=>{const r=s.regions[R.id];if(r.active)r.suspicion=clamp(r.suspicion-6,0,100);});
      return 'Nobody has sued you yet. The meter is running anyway.';}},
   {id:'decree',n:'Sign the Consent Decree',k:'Legal',band:2.2,
-   d:'Settle without admitting anything. A monitor moves into the building.',
+   d:'Settle without admitting anything. A monitor moves in, and their quarterly reports quietly retire findings for good.',
    f:s=>{s.oversight=clamp(s.oversight-22,0,100);s.monitor=(s.monitor||0)+1;
      return 'No wrongdoing is admitted. A stranger now has a desk on your floor.';}},
   {id:'door',n:'Revolving Door Hire',k:'Political',band:1.3,
@@ -1498,7 +1500,7 @@ const OPS=[
      if(r.active){r.compliance=clamp(r.compliance+0.05,.02,.98);r.milit=clamp(r.milit+0.02,0,1);}});
      return 'Every graduate has used your console since day one.';}},
   {id:'insure',n:'Buy the Liability Cover',k:'People',band:1.2,
-   d:'Underwriters will take almost anything if you show them the risk scores. Yours.',
+   d:'Underwriters will take almost anything if you show them the risk scores. Yours. If you ever lose a market, the policy pays out.',
    f:s=>{s.cover=(s.cover||0)+1;s.oversight=clamp(s.oversight-4,0,100);
      return 'You are insured against yourself, by a model you sold them.';}}
 ];
@@ -1677,6 +1679,12 @@ function tick(){
       r.control=Math.max(0,r.control-0.004);
       if(r.coverage<0.02){
         r.active=false;r.lost=true;r.pstate='calm';r.unrest=55;s.lostCount++;sfx('region_lost');
+        /* liability cover: you are insured against yourself, and losing a market
+           is the covered event. One policy pays out and is consumed. */
+        if(s.cover>0){s.cover--;
+          const payout=Math.max(150*MONEY,Math.round((s.net||0)*CFG.coverPayoutDays));
+          s.cash+=payout;
+          pushNews(s,'The insurer pays out on '+r.name+'. '+fmtMoney(payout)+', and the premium letter is already in the post.','good');}
         {const[xx2,xy2]=anchorOf(id);s.pings.push({x:xx2,y:xy2,t:0,kind:'x'});}
         pushNews(s,H.lost(r.name),'crit');
       }
@@ -1721,6 +1729,11 @@ function tick(){
      hardware and with how militarized the whole thing has become.
      Without this, money stopped mattering minutes in (Stephen 2026-08-20). */
   if(s.acqHeat)s.acqHeat=Math.max(0,s.acqHeat-CFG.acqHeatDecay);
+  /* the consent-decree monitor earns their desk: their quarterly reports quietly
+     retire findings. Steady oversight relief, capped at three monitors. Wired
+     2026-08-24 (Fable review found the counter written, saved, and read by
+     nothing — the desk was selling a placebo). */
+  if(s.monitor)s.oversight=Math.max(0,s.oversight-CFG.monitorRelief*Math.min(s.monitor,3));
   /* ⛔ a data centre is the one purchase that never stops charging you. That is
      the point of it: every other line on the desk is a one off. */
   const dcCost=MONEY*infra*CFG.upkeepK*CFG.dcUpkeep*(s.dcs||0);
@@ -1787,11 +1800,16 @@ function spawnBubble(s){
   let k='cash';
   if(roll>0.72)k='inf';
   if(roll>0.90&&s.avgSus>10)k='leak';
-  /* bubble value tracks the operation's daily net, so tapping one is worth
-     a couple of days of income all game long instead of becoming dust */
-  const cashScale=Math.max(1,(s.net||0)/9);
+  /* ⛔ Fable review, 2026-08-24: this comment used to promise "a couple of days
+     of income" while the formula paid 3 to 45 days per tap (mean ~17) — net/9
+     against a base that ran to 405 with the pop term. One tap dwarfed every
+     deliberate decision on the board. Now: base 37..272 (pop coefficient
+     halved), divisor 48, floor 2% of a MONEY unit so the first bubbles of a run
+     are still worth bending a thumb for. Measured band: 0.8 to 5.7 days of net,
+     mean ~2.5. A tap is a treat, not a payroll. */
+  const cashScale=Math.max(0.02*MONEY,(s.net||0)/48);
   s.bubbles.push({k,x:p[0],y:p[1],life:CFG.bubbleLife,born:s.day,
-    v:k==='cash'?Math.round((30+Math.round(Math.random()*90+r.pop*0.15))*cashScale)
+    v:k==='cash'?Math.round((30+Math.round(Math.random()*90+r.pop*0.08))*cashScale)
      :k==='inf'?1+(Math.random()*3|0)+Math.min(6,Math.floor(s.subj*8)):0});
 }
 function maybeEvent(s){

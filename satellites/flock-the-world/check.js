@@ -752,6 +752,68 @@ if (C) {
       ok('a hand-edited save cannot exceed the dc cap or the heat cap', capped.d <= vm.runInContext('CFG.dcMax', cR) && capped.h <= vm.runInContext('CFG.acqHeatMax', cR), JSON.stringify(capped));
     }
 
+    /* 2026-08-24: the desk counters were placebos (written, saved, read by
+       nothing) and a bubble tap paid 3 to 45 days of net while the code comment
+       promised "a couple". These pin the wiring and the proportion. */
+    group('the desk counters do something, and a bubble is a treat not a payroll');
+    {
+      const seedRand = (ctx, seed) => { let n = seed >>> 0; const f = () => { n = (n * 1664525 + 1013904223) >>> 0; return n / 4294967296; }; const real = Math.random; Math.random = f; return () => { Math.random = real; }; };
+      /* monitor: same seed, same start, 200 ticks, with and without monitors */
+      const ovrRun = (monitors) => {
+        const cM = makeCtx(); cM.doctrineModal = () => {}; cM.showEvent = () => {};
+        vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');", cM);
+        const st = vm.runInContext('S', cM);
+        st.oversight = 60; st.monitor = monitors;
+        const undo = seedRand(cM, 424242);
+        for (let d = 0; d < 200; d++) vm.runInContext('tick()', cM);
+        undo();
+        return st.oversight;
+      };
+      const ovr0 = ovrRun(0), ovr3 = ovrRun(3);
+      ok('three consent-decree monitors retire real oversight over 200 days',
+        ovr3 < ovr0 - 4, 'without=' + ovr0.toFixed(1) + ' with=' + ovr3.toFixed(1));
+      ok('the relief is capped: ten monitors work like three', Math.abs(ovrRun(10) - ovr3) < 0.01, 'ovr10=' + ovrRun(10).toFixed(1));
+
+      /* cover: losing a market pays out once and consumes the policy */
+      const cV = makeCtx(); cV.doctrineModal = () => {}; cV.showEvent = () => {};
+      vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');", cV);
+      const sv = vm.runInContext('S', cV);
+      sv.cover = 1; sv.net = 2e6;
+      /* ⛔ first fixture just set coverage low and expected loss; wrong — the
+         loss branch only fires while the region is in UPRISING (it is the
+         uprising's coverage drain that can push under 0.02). Stage the real
+         thing: an uprising in progress, coverage already at the brink. */
+      const dying = Object.keys(sv.regions).map(k => sv.regions[k]).find(r => !r.active);
+      dying.active = true; dying.coverage = 0.01; dying.pstate = 'uprising'; dying.unrest = 90; sv.activeCount++;
+      const cashBefore = sv.cash;
+      const undo2 = seedRand(cV, 7);
+      vm.runInContext('tick()', cV); undo2();
+      const MONEYv = vm.runInContext('MONEY', cV);
+      ok('losing a covered market pays the policy out', dying.lost === true && sv.cash > cashBefore + 100 * MONEYv,
+        'lost=' + dying.lost + ' delta=' + Math.round(sv.cash - cashBefore));
+      ok('the policy is consumed by the payout', sv.cover === 0, 'cover=' + sv.cover);
+
+      /* bubble proportion: v/net stays inside the promised band */
+      const cB = makeCtx(); cB.doctrineModal = () => {}; cB.showEvent = () => {};
+      vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');", cB);
+      const sb = vm.runInContext('S', cB);
+      sb.net = 14e6;
+      const r0 = Object.keys(sb.regions).map(k => sb.regions[k])[0]; r0.active = true; r0.coverage = 0.5;
+      const undo3 = seedRand(cB, 99);
+      const days = [];
+      for (let i = 0; i < 1500; i++) {
+        sb.bubbles.length = 0;
+        vm.runInContext("spawnBubble(S,'cash')", cB);
+        if (sb.bubbles.length && sb.bubbles[0].k === 'cash') days.push(sb.bubbles[0].v / sb.net);
+      }
+      undo3();
+      const mean = days.reduce((a, b) => a + b, 0) / Math.max(1, days.length);
+      const mx = Math.max(...days);
+      ok('a cash bubble averages a treat, not a payroll (1.5 to 4 days of net)',
+        days.length > 500 && mean > 1.5 && mean < 4, 'mean=' + mean.toFixed(2) + ' n=' + days.length);
+      ok('no single bubble exceeds seven days of net', mx < 7, 'max=' + mx.toFixed(2));
+    }
+
     /* the cues the sim cannot reach on its own are driven through their real
        functions, so every id in the catalog is proven reachable, not just declared */
     /* the paid actions need their gating nodes and money, which this bot never

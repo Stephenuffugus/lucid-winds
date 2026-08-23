@@ -147,7 +147,12 @@ function bot(strat,maxDays,seed){
     endNetPctOfPeak:(peakNet>0?Math.round(100*(s.net||0)/peakNet):null)};
 }
 const MODE=process.argv[2]||'spend';
-const STRAT={buy:1,expand:1,doctrine:'glove',collectP:0.10,concede:1,spend:MODE==='spend'?1:0};
+/* 'tapper' models the player Stephen actually is: taps every bubble. The bot's
+   default 10% collection understates a human's bubble income by an order of
+   magnitude, which is how a 17-days-of-net bubble hid from the economy work. */
+const STRAT=MODE==='tapper'
+  ?{buy:1,expand:1,doctrine:'glove',collectP:1.0,concede:1,spend:1}
+  :{buy:1,expand:1,doctrine:'glove',collectP:0.10,concede:1,spend:MODE==='spend'?1:0};
 console.log('THE SURPLUS, balanced bot ('+(STRAT.spend?'A PLAYER WHO SPENDS':'the hoarder, spends on nothing repeatable')+')\n');
 const rows=[];
 for(const seed of [7,19,42,101,256]){
