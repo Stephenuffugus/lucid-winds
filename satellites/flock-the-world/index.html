@@ -380,6 +380,13 @@ h1 em{font-style:normal;color:var(--sodium)}
   border-radius:12px;padding:10px 12px;margin:0 2px 12px;background:#170f02}
 .acqtxt{flex:1 1 220px;min-width:0;font-size:11.5px;line-height:1.45;color:#ffe9c9}
 .acqtxt .dim{color:var(--dim);display:block;margin-top:3px}
+.vpaths{border:1px solid var(--line);border-radius:12px;background:var(--panel);
+  padding:8px 11px;margin:0 2px 12px;display:flex;flex-direction:column;gap:7px}
+.vrow{display:grid;grid-template-columns:118px 1fr;gap:3px 12px;align-items:center}
+.vname{font-size:10.5px;font-weight:800;letter-spacing:.04em;color:var(--paper)}
+.vbar{height:5px;border-radius:3px;background:#16202b;overflow:hidden}
+.vfill{height:100%;border-radius:3px;background:var(--sodium);transition:width .3s}
+.vdet{grid-column:2;font-size:9.5px;color:var(--dim);letter-spacing:.02em}
 .deskhead{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);
   margin:0 2px 6px}
 .deskhead .dim{letter-spacing:.06em;text-transform:none;opacity:.7;margin-left:8px}
@@ -894,6 +901,19 @@ const CFG = {
   dcUpkeep:0.34,      /* a data centre costs this share of BASE upkeep, forever */
   dcMax:4,            /* and you may run this many. See the note on the dc entry. */
   monitorRelief:0.012, /* oversight retired per tick per consent-decree monitor (cap 3) */
+  /* ==== PATHS TO VICTORY, 2026-08-24 (Stephen: "diversify reaching the win
+     condition so people can try different playstyles"). Classic subjugation
+     stays the ceiling; three more doors open below it, each demanding a
+     different SHAPE of empire rather than a smaller one. Thresholds tuned
+     against the deterministic meter; each has a bot that reaches it. */
+  gloveSubj:0.80, gloveCmp:0.80, gloveMil:0.12,  /* The Grateful World */
+  fistSubj:0.85,  fistMil:0.45,                  /* Nothing Moves */
+  econNet:100*MONEY, econDays:150,               /* Too Big To Ban: all 14 markets, $10M/day held 150 days */
+  /* ==== GOODWILL: concede as a strategy, not just a valve. Each concession in
+     a region banks goodwill there (capped): compliance regrows a little every
+     tick, and if you ever lose the region the listening tours cut the re-entry
+     surcharge. The build where retreat is the plan. */
+  gwCap:4, gwCmp:0.0004, gwEntry:0.35,
   coverPayoutDays:45,  /* days of net the insurer pays when a covered market is lost */
   dcGrow:0.05,        /* and buys this much deployment speed */
   /* buying your way in is noticed. ⛔ At 1.5 suspicion and 0.6 oversight per buy
@@ -1047,7 +1067,20 @@ const NODES=[
 {id:'corps',t:'war',c:30,r:5,x:2,req:['pretext'],
  n:'Watch Corps',d:'A youth auxiliary with lanyards, hotlines, and quotas for reporting neighbours.',fx:{cmp:.25,dep:1.2,dth:.06,pac:.18}},
 {id:'perp',t:'war',c:60,r:6,x:1,req:['martial','corps'],
- n:'Perpetual Emergency',d:'The war never ends because it never specifically exists. Compliance becomes climate.',fx:{cmp:.5,fear:.12,sup:1.5,dec:.8,pac:.25}}
+ n:'Perpetual Emergency',d:'The war never ends because it never specifically exists. Compliance becomes climate.',fx:{cmp:.5,fear:.12,sup:1.5,dec:.8,pac:.25}},
+/* ---- CAPSTONES, 2026-08-24 (Stephen: builds should play differently, not just
+   cheaper). One per tree, unlocked by OWNING MOST OF THE TREE rather than a
+   parent chain, and each changes a RULE instead of stacking a number:
+   dep heals sabotage, cap deepens the take, inf makes blackout global, war
+   removes the backfire die. reqTree is counted in nodeState. */
+{id:'caps_dep',t:'dep',c:65,r:7,x:1,req:[],reqTree:8,
+ n:'The Lattice',d:'Own eight Deployment programs. The grid extends itself: every camera is a site survey for the next, and sabotage heals at twice the speed.',fx:{dep:.30,spr:.5}},
+{id:'caps_cap',t:'cap',c:65,r:7,x:1,req:[],reqTree:7,
+ n:'Total Recall',d:'Own seven Watchlist programs. Nothing observed is ever released. Depth compounds, and the archive quietly sells itself.',fx:{dth:.30,inc:.25}},
+{id:'caps_inf',t:'inf',c:65,r:7,x:1,req:[],reqTree:7,
+ n:'The Overton Dial',d:'Own seven Influence programs. BLACKOUT buys every market at once. The news cycle is a dial and your hand is on it.',fx:{sup:.6}},
+{id:'caps_war',t:'war',c:65,r:7,x:1,req:[],reqTree:7,
+ n:'Clean Hands',d:'Own seven Crisis programs. Crackdowns never backfire again. Force becomes a budget line with no receipts.',fx:{dec:.4}}
 ];
 const NBI={}; NODES.forEach(n=>NBI[n.id]=n);
 /* Hidden synergies — discovered, never listed in advance */
@@ -1308,7 +1341,7 @@ function newState(modeKey,diffKey,startId,seed,hqName,co){
     mode, diff, modeKey, diffKey, startId, day:0, cash:mode.cash*diff.cash, inf:mode.inf, oversight:0, speed:1,
     owned:new Set(), combos:new Set(), regions:{}, log:[], bubbles:[], pulses:[], dots:[], pk:[], pings:[], hqGlow:0, newsQ:[], newsIdx:0,
     warHeat:0, doctrine:null, over:false, won:false, milestones:new Set(), wmiles:new Set(), unread:0, avgRes:0,
-    sheet:null, lostCount:0, avgSus:0, avgMil:0, subj:0, activeCount:0, events:EV(), evLast:{},
+    sheet:null, lostCount:0, avgSus:0, avgMil:0, avgCmp:0, subj:0, activeCount:0, events:EV(), evLast:{}, econRun:0, arc:{},
     has(id){return this.owned.has(id)}
   };
   REGIONS.forEach(r=>{
@@ -1316,7 +1349,7 @@ function newState(modeKey,diffKey,startId,seed,hqName,co){
       liberty:r.liberty,media:r.media,nb:r.nb,
       active:false,lost:false,coverage:0,control:0,
       compliance:0.40+(1-r.liberty)*0.20, suspicion:0, unrest:5+r.liberty*8, cd:0,
-      resist:2+r.liberty*6+r.media*4, grudge:0, counters:new Set(),
+      resist:2+r.liberty*6+r.media*4, grudge:0, gw:0, counters:new Set(),
       milit:(1-r.liberty)*0.10, pstate:'calm', war:0, black:0, bcd:0};
   });
   const st=s.regions[startId]; st.active=true; st.coverage=0.006;
@@ -1646,7 +1679,7 @@ function tick(){
   const s=S; if(!s||s.over)return;
   s.day++;
   const f=s.fx, D=s.diff, M=s.mode.mod;
-  let income=0,susW=0,milW=0,subj=0,active=0,resW=0,infra=0;
+  let income=0,susW=0,milW=0,subj=0,active=0,resW=0,infra=0,cmpW=0;
 
   for(const id in s.regions){
     const r=s.regions[id];
@@ -1671,6 +1704,7 @@ function tick(){
     const friction=(1.18-r.liberty*0.45)/modeRes;
     const growth=CFG.deployK*(1+f.dep+CFG.dcGrow*(s.dcs||0))*ease*friction*(0.30+0.95*r.compliance)*(1-r.coverage)*pMul
       *cGrow*(1-Math.min(CFG.resistCap,r.resist/100*0.5));
+    if(s.has('caps_dep'))cDecay*=0.5;   /* The Lattice: sabotage heals at twice the speed */
     r.coverage=clamp(r.coverage+growth-cDecay*(r.coverage>0.05?1:0),0,1);
 
     const depth=Math.min(1,Math.max(0.05,CFG.depthBase+f.dth-cDth-(s.wmileDth||0))+r.milit*0.25);
@@ -1742,6 +1776,8 @@ function tick(){
       });
     }
 
+    /* goodwill: the listening tours keep paying. Willing compliance, slowly. */
+    if(r.gw)r.compliance=clamp(r.compliance+CFG.gwCmp*Math.min(r.gw,CFG.gwCap),.02,.98);
     if(ns==='murmur'){r.suspicion=clamp(r.suspicion+0.02,0,100);}
     else if(ns==='peaceful'){s.oversight+=0.011*D.over;r.suspicion=clamp(r.suspicion+0.04,0,100);}
     else if(ns==='violent'){
@@ -1767,7 +1803,7 @@ function tick(){
 
     income+=MONEY*R[id].gdp*r.coverage*CFG.incomeK*(1+f.inc)*D.cash*cInc*(1-Math.min(0.15,r.resist/100*0.15));
     infra+=R[id].gdp*r.coverage;
-    susW+=r.pop*r.suspicion; milW+=r.pop*r.milit; subj+=r.pop*r.control; resW+=r.pop*r.resist;
+    susW+=r.pop*r.suspicion; milW+=r.pop*r.milit; subj+=r.pop*r.control; resW+=r.pop*r.resist; cmpW+=r.pop*r.compliance;
 
     [.25,.5,.75,.97].forEach(m=>{
       const key=r.id+m;
@@ -1822,7 +1858,7 @@ function tick(){
   s.inf+=0.06+s.subj*0.34+(s.fx.cmp||0)*0.05;
   if(s.lbCd>0)s.lbCd--;
   s.activeCount=active;
-  s.avgSus=susW/WORLD_POP; s.avgMil=milW/WORLD_POP; s.subj=subj/WORLD_POP; s.avgRes=resW/WORLD_POP;
+  s.avgSus=susW/WORLD_POP; s.avgMil=milW/WORLD_POP; s.subj=subj/WORLD_POP; s.avgRes=resW/WORLD_POP; s.avgCmp=cmpW/WORLD_POP;
   popTotals(s);
   worldMilestones(s);
   s.warHeat=Math.max(0,s.warHeat-0.0009);
@@ -1859,7 +1895,14 @@ function tick(){
 
   guideTick();
   if(s.day%20===0)saveRun();
+  /* the economic streak counts every tick it holds and resets the tick it
+     does not, so the door needs 150 UNBROKEN days of a full portfolio */
+  if(s.activeCount>=REGIONS.length&&s.lostCount===0&&(s.net||0)>=CFG.econNet)s.econRun=(s.econRun||0)+1;
+  else s.econRun=0;
   if(s.subj>=CFG.winAt)finish(true,'win');
+  else if(s.doctrine==='glove'&&s.subj>=CFG.gloveSubj&&(s.avgCmp||0)>=CFG.gloveCmp&&s.avgMil<=CFG.gloveMil)finish(true,'win_glove');
+  else if(s.doctrine==='fist'&&s.subj>=CFG.fistSubj&&s.avgMil>=CFG.fistMil)finish(true,'win_fist');
+  else if((s.econRun||0)>=CFG.econDays)finish(true,'win_econ');
   else if(s.oversight>=100)finish(false,'oversight');
   else if(s.lostCount>=CFG.lostLimit)finish(false,'refusal');
 }
@@ -1902,6 +1945,8 @@ function maybeEvent(s){
   const pool=s.events.filter(e=>{
     const last=s.evLast&&s.evLast[e.id];
     if(last!=null&&s.day-last<(e.cd!=null?e.cd:(e.k==='flash'?75:150)))return false;
+    /* story chains: beat N waits for beat N-1, and a finished arc stays finished */
+    if(e.chain&&(((s.arc&&s.arc[e.chain])||0)!==(e.step-1)))return false;
     try{return e.when(s)}catch(_){return false}
   });
   if(!pool.length||Math.random()>0.5)return;
@@ -1909,6 +1954,7 @@ function maybeEvent(s){
   let roll=Math.random()*tot,ev=pool[0];
   for(const e of pool){roll-=e.w;if(roll<=0){ev=e;break;}}
   (s.evLast||(s.evLast={}))[ev.id]=s.day;
+  if(ev.chain)(s.arc||(s.arc={}))[ev.chain]=ev.step;
   if(ev.k==='flash'){const t=ev.f(s);if(t)pushNews(s,t,ev.cls);}
   else showEvent(ev);
 }
@@ -1932,7 +1978,7 @@ function worldMilestones(s){
 
 /* ============================ END ============================ */
 function finish(won,why){
-  S.over=true;S.won=won;setSpeed(0);
+  S.over=true;S.won=won;S.why=why;setSpeed(0);
   cancelAnimationFrame(raf);raf=null;   /* drawFx reschedules itself forever otherwise */
   sfxBed('bed_hq',false);sfxBed('bed_tension',false);
   sfx(won?'win':why==='refusal'?'loss_refusal':'loss_coalition');
@@ -1945,7 +1991,8 @@ function finish(won,why){
   const found=COMBOS.filter(c=>S.combos.has(c.id)).map(c=>c.n);
   lastResult=[
     'FLOCK THE WORLD \u00b7 '+S.co,
-    (won?'Contract fulfilled':why==='refusal'?'The great refusal':'Platform dismantled')
+    (won?(why==='win_glove'?'The grateful world':why==='win_fist'?'Nothing moves':why==='win_econ'?'Too big to ban':'Contract fulfilled')
+      :why==='refusal'?'The great refusal':'Platform dismantled')
       +' · '+S.mode.n+' · '+S.diffKey,
     'Subjugation '+(S.subj*100).toFixed(1)+'% · '+(S.mode.mod.ovrName||'Patriotism')+' '
       +S.oversight.toFixed(1)+'% · '+S.day+' days',
@@ -1978,7 +2025,19 @@ function finish(won,why){
       :'url(art/bg/bg_end_coalition.webp)');
   /* it is a bright image behind pale text, so it gets its own dimming */
   $('end').classList.toggle('daylight',!won&&why==='refusal');
-  if(won){
+  if(won&&why==='win_glove'){
+    $('endKick').textContent='Contract fulfilled, gratefully';
+    $('endTitle').innerHTML='THE GRATEFUL <span style="color:var(--sodium)">WORLD</span>';
+    $('endText').textContent=S.co+' never needed the last camera. Compliance did the work: four in five people living inside the frame and thanking you for the frame, rating the frame five stars, recommending the frame to family. The armored units were sold to a museum. Nobody marched, because nothing ever felt like marching weather. Sit with how gentle that was, and with what gentle cost them.';
+  }else if(won&&why==='win_fist'){
+    $('endKick').textContent='Contract fulfilled, by force';
+    $('endTitle').innerHTML='NOTHING <span style="color:var(--blood)">MOVES</span>';
+    $('endText').textContent='Armored units on every corner '+S.co+' wired, checkpoints where the bus stops used to be. The streets are clean because the streets are empty. Compliance is total and hollow: nobody believes any of it, and nobody has to. Your invoice was paid from the emergency budget, which is now the only budget. Sit with what an empty street sounds like.';
+  }else if(won&&why==='win_econ'){
+    $('endKick').textContent='Contract fulfilled, structurally';
+    $('endTitle').innerHTML='TOO BIG TO <span style="color:var(--scan)">BAN</span>';
+    $('endText').textContent='Fourteen markets, one vendor. The ban was drafted, then the drafters checked their pension funds and found '+S.co+' in all of them. Traffic lights, payrolls, school lunches, all routed through your grid. Nobody voted for this either, but unwinding it would cost a recession, so the hearing adjourned early. Sit with how quiet ownership is.';
+  }else if(won){
     $('endKick').textContent='Contract fulfilled';
     $('endTitle').innerHTML='TOTAL <span style="color:var(--sodium)">COVERAGE</span>';
     $('endText').textContent=S.co+' did this. Every innocent person on Earth now lives inside your frame. Billions of ordinary people who were never asked, farmed for fines and fear by a handful of vendors, lobbyists and landlords of the lens. There was never a vote. Only procurement. Your guidance is revised upward. Sit with what you just built.';
@@ -2125,7 +2184,7 @@ function saveRun(){
       regs[id]={active:r.active,lost:r.lost,coverage:r.coverage,control:r.control,
         compliance:r.compliance,suspicion:r.suspicion,unrest:r.unrest,cd:r.cd,resist:r.resist,
         grudge:r.grudge,counters:[...r.counters],milit:r.milit,pstate:r.pstate,war:r.war,
-        black:r.black||0,bcd:r.bcd||0,
+        black:r.black||0,bcd:r.bcd||0,gw:r.gw||0,
         cOrder:r.cOrder||null,cN:r.cN||1};}
     lsSet(K_RUN,JSON.stringify({v:2,modeKey:s.modeKey,diffKey:s.diffKey,startId:s.startId,
       day:s.day,cash:s.cash,inf:s.inf,oversight:s.oversight,warHeat:s.warHeat,doctrine:s.doctrine,net:s.net||0,lbCd:s.lbCd||0,
@@ -2145,6 +2204,7 @@ function saveRun(){
       acqHeat:s.acqHeat||0,dcs:s.dcs||0,deskRoll:s.deskRoll||0,
       monitor:s.monitor||0,cover:s.cover||0,
       evLast:s.evLast||{},   /* event cooldowns must survive a reload or the spam returns */
+      econRun:s.econRun||0,arc:s.arc||{},
       owned:[...s.owned],combos:[...s.combos],milestones:[...s.milestones],wmiles:[...s.wmiles],
       popMiles:[...(s.popMiles||[])],popPeakOrg:s.popPeakOrg||0,popHist:(s.popHist||[]).slice(-11),
       log:s.log.slice(0,40),regions:regs,stamp:Date.now()}));
@@ -2181,6 +2241,10 @@ function loadRun(){
   s.evLast={};
   if(d.evLast&&typeof d.evLast==='object')
     for(const k in d.evLast){const v=Number(d.evLast[k]);if(isFinite(v))s.evLast[k]=v;}
+  s.econRun=Math.max(0,num(d.econRun,0)|0);
+  s.arc={};
+  if(d.arc&&typeof d.arc==='object')
+    for(const k in d.arc){const v=Number(d.arc[k]);if(isFinite(v)&&v>=0&&v<=3)s.arc[k]=v;}
   s.subj=clamp(num(d.subj,0),0,1);s.avgSus=clamp(num(d.avgSus,0),0,100);
   s.avgMil=clamp(num(d.avgMil,0),0,1);s.avgRes=clamp(num(d.avgRes,0),0,100);
   s.unread=Math.max(0,num(d.unread,0));s.nextBubble=Math.max(0,num(d.nextBubble,0));
@@ -2202,6 +2266,7 @@ function loadRun(){
     r.grudge=Math.max(0,num(o.grudge,0));r.milit=clamp(num(o.milit,0),0,1);
     r.cd=Math.max(0,num(o.cd,0));r.war=Math.max(0,num(o.war,0));
     r.black=Math.max(0,num(o.black,0));r.bcd=Math.max(0,num(o.bcd,0));
+    r.gw=Math.min(CFG.gwCap,Math.max(0,num(o.gw,0)|0));
     r.pstate=PSTATE_LABEL[o.pstate]?o.pstate:'calm';
     r.counters=asSet(o.counters);
     if(o.cOrder&&typeof o.cOrder==='object'){r.cOrder=o.cOrder;r.cN=Math.max(1,num(o.cN,1));}
@@ -2858,6 +2923,8 @@ function nodeState(n){
   if(S.owned.has(n.id))return'own';
   if(n.excl&&[...S.owned].some(o=>NBI[o]&&NBI[o].excl===n.excl))return'exlocked';
   if(!n.req.every(r=>S.owned.has(r)))return'lock';
+  if(n.reqTree){let k=0;S.owned.forEach(id=>{const b=NBI[id];if(b&&b.t===n.t&&!b.reqTree)k++;});
+    if(k<n.reqTree)return'lock';}
   if(n.gate&&!n.gate(S))return'gated';
   return'avail';
 }
@@ -2939,6 +3006,32 @@ function worldHTML(){
         <span class="dim">Currently ${heatPct}% of your capital${heat>0.01?' · cooling':''}</span></div>
       <button class="wbtn acq" id="acqBtn" ${afford?'':'disabled'}>Acquire · ${fmtMoney(ap)}</button>
     </div>`;
+  }
+  /* PATHS TO VICTORY, 2026-08-24. Plague Inc never makes you guess how you are
+     doing; neither do we. Every door is listed with live progress, and the
+     doctrine doors only show once that doctrine is yours. */
+  {
+    const pct=(v,goal)=>Math.min(100,Math.round(100*(v/goal)));
+    const bar=(v,goal)=>`<div class="vbar"><div class="vfill" style="width:${pct(v,goal)}%"></div></div>`;
+    const rowP=(name,detail,v,goal)=>`<div class="vrow"><div class="vname">${name}</div>${bar(v,goal)}<div class="vdet">${detail}</div></div>`;
+    let ph='<div class="deskhead">Paths to victory</div><div class="vpaths">';
+    ph+=rowP('Total Coverage',`Subjugation ${(s.subj*100).toFixed(1)} of ${(CFG.winAt*100).toFixed(0)}`,s.subj,CFG.winAt);
+    if(s.doctrine==='glove'||!s.doctrine){
+      const c=(s.avgCmp||0), m=s.avgMil, okM=m<=CFG.gloveMil;
+      ph+=rowP('The Grateful World',
+        `Subjugation ${(s.subj*100).toFixed(0)} of ${(CFG.gloveSubj*100).toFixed(0)} · Compliance ${(c*100).toFixed(0)} of ${(CFG.gloveCmp*100).toFixed(0)} · Militarization ${(m*100).toFixed(0)} ${okM?'holds':'over'} ${(CFG.gloveMil*100).toFixed(0)}${s.doctrine?'':' · needs the Velvet Glove'}`,
+        Math.min(s.subj/CFG.gloveSubj,c/CFG.gloveCmp,okM?1:0.25),1);
+    }
+    if(s.doctrine==='fist'||!s.doctrine){
+      ph+=rowP('Nothing Moves',
+        `Subjugation ${(s.subj*100).toFixed(0)} of ${(CFG.fistSubj*100).toFixed(0)} · Militarization ${(s.avgMil*100).toFixed(0)} of ${(CFG.fistMil*100).toFixed(0)}${s.doctrine?'':' · needs the Iron Fist'}`,
+        Math.min(s.subj/CFG.fistSubj,s.avgMil/CFG.fistMil),1);
+    }
+    ph+=rowP('Too Big To Ban',
+      `Markets ${s.activeCount} of ${REGIONS.length} · net ${fmtMoney(s.net||0)} a day of ${fmtMoney(CFG.econNet)} · streak ${s.econRun||0} of ${CFG.econDays} days`,
+      Math.min(s.activeCount/REGIONS.length,(s.econRun||0)?0.5+0.5*(s.econRun/CFG.econDays):Math.min(1,(s.net||0)/CFG.econNet)*0.5),1);
+    ph+='</div>';
+    h+=ph;
   }
   /* THE DESK: three offers, drawn from a pool of 14, refreshing on a clock and
      whenever you buy. This is where the variety lives. */
@@ -3031,7 +3124,9 @@ function entryCost(x){
   const n=((S?S.activeCount:1)||1);
   const mult=1+n*CFG.entryScale+n*n*CFG.entryQuad;
   const c=Math.round(base*mult/5)*5;
-  return x.lost?c*3:c;
+  /* a lost region remembers your listening tours: goodwill cuts the re-entry
+     surcharge from 3x down toward 1.6x at the cap */
+  return x.lost?Math.round(c*Math.max(1.6,3-CFG.gwEntry*Math.min((x.gw||0),CFG.gwCap))):c;
 }
 
 /* ============================ ACTIONS ============================ */
@@ -3060,7 +3155,8 @@ function doAction(act,rid){
     s.cash-=pCr;r.cd=25;
     shToast(`<span class="neg">Spent ${fmtMoney(pCr)}</span> · armored units move on ${r.name}`);
     flashCash();
-    const backRisk=(s.doctrine==='fist'?CFG.crackBackfire/2:CFG.crackBackfire)
+    const backRisk=s.has('caps_war')?0
+      :(s.doctrine==='fist'?CFG.crackBackfire/2:CFG.crackBackfire)
       +(r._cBack||0)+r.media*r.resist/100*0.20;
     const backfire=Math.random()<backRisk;
     sfx('spend');sfx(backfire?'crackdown_fail':'crackdown');
@@ -3081,13 +3177,18 @@ function doAction(act,rid){
   else if(act==='blackout'&&s.has('blackout')&&s.cash>=pBl&&!(r.bcd>0)){
     sfx('spend');sfx('blackout');
     s.cash-=pBl;
-    const cut=10*(1.4-r.media*0.8)*(r._cBlack||1);
-    r.suspicion=clamp(r.suspicion-cut,0,100);
-    r.black=CFG.blackoutDays;r.bcd=CFG.blackoutCd;
-    if(r.media>0.6)s.oversight+=0.8;
+    /* The Overton Dial: one purchase silences every market you hold */
+    const targets=s.has('caps_inf')?Object.keys(s.regions).map(k=>s.regions[k]).filter(x=>x.active):[r];
+    let tappedCut=0;
+    targets.forEach(x=>{
+      const cut=10*(1.4-x.media*0.8)*(x._cBlack||1);
+      if(x===r)tappedCut=cut;
+      x.suspicion=clamp(x.suspicion-cut,0,100);
+      x.black=CFG.blackoutDays;x.bcd=CFG.blackoutCd;
+      if(x.media>0.6)s.oversight+=0.8;});
     /* the spend and the effect are both visible now: suspicion drops on the
        spot and a NEWS DARK chip counts down on the region card */
-    shToast(`<span class="neg">Spent ${fmtMoney(pBl)}</span> · ${r.name} suspicion falls ${cut.toFixed(0)}, story dark ${CFG.blackoutDays} days`);
+    shToast(`<span class="neg">Spent ${fmtMoney(pBl)}</span> · ${targets.length>1?targets.length+' markets go dark at once':r.name+' suspicion falls '+tappedCut.toFixed(0)}, story dark ${CFG.blackoutDays} days`);
     flashCash();
     pushNews(s,H.blackout(r.name),'good');
   }
@@ -3096,7 +3197,8 @@ function doAction(act,rid){
     r.unrest=clamp(r.unrest-15,0,100);r.suspicion=clamp(r.suspicion-8,0,100);
     r.resist=clamp(r.resist-6,0,100);r.grudge=Math.max(0,r.grudge-8);
     r.control=Math.max(0,r.control-0.05);r.compliance=clamp(r.compliance-0.02,0,.98);
-    shToast(`${r.name} cools: unrest, suspicion and organizing all ease. Control slips a little.`);
+    r.gw=Math.min(CFG.gwCap,(r.gw||0)+1);
+    shToast(`${r.name} cools: unrest, suspicion and organizing all ease. Control slips a little. The listening tour banks goodwill (${r.gw}).`);
     pushNews(s,H.concede(r.name),'');
   }
   renderSheet('reg');paintHud();

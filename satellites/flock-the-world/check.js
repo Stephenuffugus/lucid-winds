@@ -838,6 +838,88 @@ if (C) {
         shows > 0, 'shows=' + shows);
     }
 
+    /* 2026-08-24: four doors to the ending. Each door is driven through the
+       real tick with a staged world, and each threshold is later mutated red
+       by scripts/ftw_door_mutations.sh style manual runs before trust. */
+    group('four doors to the same ending');
+    {
+      const stage=(shape)=>{
+        const cD=makeCtx();cD.doctrineModal=()=>{};cD.showEvent=()=>{};
+        vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');",cD);
+        const sD=vm.runInContext('S',cD);
+        Object.keys(sD.regions).forEach(k=>{const r=sD.regions[k];
+          r.active=true;r.coverage=shape.cov;r.control=shape.ctl;
+          r.compliance=shape.cmp;r.milit=shape.mil;r.unrest=5;r.resist=2;});
+        sD.activeCount=14;sD.doctrine=shape.doc;
+        if(shape.net!=null)sD.net=shape.net;
+        if(shape.econRun!=null)sD.econRun=shape.econRun;
+        let n=77;const f=()=>{n=(n*1664525+1013904223)>>>0;return n/4294967296;};
+        const real=Math.random;Math.random=f;
+        vm.runInContext('recompute(S);tick()',cD);
+        Math.random=real;
+        return {over:sD.over,won:sD.won,why:sD.why};
+      };
+      const g=stage({cov:.6,ctl:.85,cmp:.92,mil:.02,doc:'glove'});
+      ok('the Velvet Glove wins The Grateful World', g.over&&g.won&&g.why==='win_glove', JSON.stringify(g));
+      /* ⛔ one real tick moves the staged aggregates before the door check reads
+         them (control and militarization both drift), so the fixtures stage a
+         margin above each threshold, not the threshold itself. */
+      const fi=stage({cov:.7,ctl:.93,cmp:.5,mil:.62,doc:'fist'});
+      ok('the Iron Fist wins Nothing Moves', fi.over&&fi.won&&fi.why==='win_fist', JSON.stringify(fi));
+      const MONEYc = vm.runInContext('MONEY', C);
+      const e=stage({cov:.3,ctl:.4,cmp:.5,mil:.02,doc:'glove',net:200*MONEYc,econRun:149});
+      ok('a full portfolio with held income wins Too Big To Ban', e.over&&e.won&&e.why==='win_econ', JSON.stringify(e));
+      const c=stage({cov:.97,ctl:.995,cmp:.95,mil:.02,doc:'glove'});
+      ok('classic subjugation still outranks every other door', c.over&&c.won&&c.why==='win', JSON.stringify(c));
+      const none=stage({cov:.5,ctl:.5,cmp:.5,mil:.2,doc:'glove'});
+      ok('a middling empire wins nothing (the doors are not open by default)', !none.over, JSON.stringify(none));
+    }
+
+    group('capstones change the rules, and goodwill is a strategy');
+    {
+      const cK=makeCtx();cK.doctrineModal=()=>{};cK.showEvent=()=>{};
+      vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');",cK);
+      const sK=vm.runInContext('S',cK);
+      const st0=vm.runInContext("nodeState(NBI['caps_dep'])",cK);
+      ok('a capstone is locked with an empty tree', st0==='lock', st0);
+      vm.runInContext("NODES.filter(n=>n.t==='dep'&&!n.reqTree).slice(0,8).forEach(n=>S.owned.add(n.id));recompute(S);",cK);
+      const st1=vm.runInContext("nodeState(NBI['caps_dep'])",cK);
+      ok('eight Deployment programs unlock The Lattice', st1==='avail', st1);
+      /* war capstone: with backRisk forced past 1, only Clean Hands prevents it */
+      vm.runInContext("S.cash=9999*MONEY;S.owned.add('charter');recompute(S);",cK);
+      /* ⛔ first version called a 32% backfire "guaranteed" and rolled real dice:
+         it passed once and failed on the next process. backRisk at media 1 and
+         resist 100 is 0.12+0.20=0.32, so the roll is SEEDED to land under it
+         (seed 77's first draw is 0.2659): without the capstone that is always a
+         backfire, with it the risk is literally zero. */
+      const fire=(withCap)=>{
+        let nf=77;const ff=()=>{nf=(nf*1664525+1013904223)>>>0;return nf/4294967296;};
+        const rf=Math.random;Math.random=ff;
+        const out=vm.runInContext("(function(){const r=S.regions.NA;r.active=true;r.coverage=.5;r.cd=0;r.media=1;r.resist=100;r.unrest=80;"
+          +(withCap?"S.owned.add('caps_war');":"S.owned.delete('caps_war');")
+          +"recompute(S);const u0=r.unrest;doAction('crack','NA');return S.regions.NA.unrest-u0;})()",cK);
+        Math.random=rf;return out;};
+      const dU_no=fire(false), dU_cap=fire(true);
+      ok('without Clean Hands a guaranteed backfire raises unrest', dU_no>0, 'delta='+dU_no);
+      ok('with Clean Hands the same crackdown cannot backfire', dU_cap<0, 'delta='+dU_cap);
+      /* goodwill: concede banks it, and it discounts a lost region's door */
+      vm.runInContext("(function(){const r=S.regions.WE;r.active=true;r.coverage=.4;r.unrest=60;doAction('concede','WE');doAction('concede','WE');})()",cK);
+      const gw=vm.runInContext("S.regions.WE.gw",cK);
+      ok('conceding banks goodwill', gw===2, 'gw='+gw);
+      const gap=vm.runInContext("(function(){const r=S.regions.WE;r.active=false;r.lost=true;const a=entryCost(r);r.gw=4;const b=entryCost(r);r.gw=2;return a-b;})()",cK);
+      ok('goodwill cuts the re-entry surcharge on a lost market', gap>0, 'discount='+gap);
+      /* arc machinery: beat 2 waits for beat 1 */
+      vm.runInContext("S.events.push({id:'t1',w:999,chain:'test',step:1,cd:0,when:()=>true,k:'flash',f:()=>'beat one'});"
+        +"S.events.push({id:'t2',w:999,chain:'test',step:2,cd:0,when:()=>true,k:'flash',f:()=>'beat two'});",cK);
+      let n3=9;const f3=()=>{n3=(n3*1664525+1013904223)>>>0;return n3/4294967296;};
+      const real3=Math.random;Math.random=f3;
+      vm.runInContext("S.events=S.events.filter(e=>e.chain==='test');for(let i=0;i<40;i++)maybeEvent(S);",cK);
+      Math.random=real3;
+      const arc=vm.runInContext("S.arc.test",cK);
+      const sawTwoEarly=vm.runInContext("S.log.some(x=>/beat two/.test(x.t))&&!S.log.some(x=>/beat one/.test(x.t))",cK);
+      ok('beat one fires before beat two ever can', arc>=1&&!sawTwoEarly, 'arc='+arc);
+    }
+
     /* the cues the sim cannot reach on its own are driven through their real
        functions, so every id in the catalog is proven reachable, not just declared */
     /* the paid actions need their gating nodes and money, which this bot never
