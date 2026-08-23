@@ -29,6 +29,16 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
 .screen[style*="--shot"]::after{content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
   background:radial-gradient(120% 90% at 50% 40%,#05070b33 0%,#05070bd0 62%,#05070bf2 100%)}
 .screen[style*="--shot"]>*{position:relative;z-index:1}
+/* the refusal backdrop is the one daylight image in the game. A bright picture
+   needs holding back harder than a dark one or the pale end-screen copy stops
+   being readable over it. Measured on the real screen, not guessed. */
+/* ⛔ Do NOT solve a bright backdrop by fading it out. At opacity .22 this became
+   a dark smudge and the one daylight image in the game read as another night
+   screen, which is the exact opposite of what this ending is for. Keep it
+   present and darken the IMAGE instead, so the sky stays blue and the trees stay
+   green at a value pale text can sit on. */
+#end.daylight::before{opacity:.62;filter:brightness(.42) saturate(1.05)}
+#end.daylight::after{background:radial-gradient(120% 90% at 50% 38%,#05070b4d 0%,#05070bc4 55%,#05070bee 100%)}
 .screen.on{display:flex}
 
 /* ---------- menu ---------- */
@@ -1421,14 +1431,17 @@ function finish(won,why){
    <div class="sg"><div class="k">Organized at peak</div><div class="v mono">${fmtPeople(S.popPeakOrg||0)}</div></div>
    <div class="sg"><div class="k">Expelled you</div><div class="v mono">${fmtPeople(S.popExpelled)}</div></div>
    <div class="sg" style="grid-column:1/-1"><div class="k">Never asked</div><div class="v mono">${fmtPeople(WORLD_POP*PEOPLE)} people were never asked.</div></div>`;
-  /* ⛔ REFUSAL has no backdrop on purpose. The pack asked for a daylight street
-     where the camera poles have become bird boxes, and that is the one image in
-     sheet 7 that was never generated. Every candidate in the drop is a night
-     city, a control room or a corporate lobby, and none of them says "ordinary
-     people won". A wrong picture would undercut the best ending in the game, so
-     it stays clean until the right one exists. */
+  /* Refusal is the ONLY daylight image in the game, and that is the point: the
+     whole rest of it is a night city under sodium light. Stephen delivered it
+     2026-08-23 after this ending sat deliberately bare rather than take a wrong
+     picture. A street in the sun, ordinary people, and the camera pole grown
+     over and turned into a bird box. */
   $('end').style.setProperty('--shot',
-    won?'url(art/bg/bg_end_win.webp)':why==='refusal'?'':'url(art/bg/bg_end_coalition.webp)');
+    won?'url(art/bg/bg_end_win.webp)'
+      :why==='refusal'?'url(art/bg/bg_end_refusal.webp)'
+      :'url(art/bg/bg_end_coalition.webp)');
+  /* it is a bright image behind pale text, so it gets its own dimming */
+  $('end').classList.toggle('daylight',!won&&why==='refusal');
   if(won){
     $('endKick').textContent='Contract fulfilled';
     $('endTitle').innerHTML='TOTAL <span style="color:var(--sodium)">COVERAGE</span>';
