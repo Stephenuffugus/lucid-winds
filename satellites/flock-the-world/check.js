@@ -284,7 +284,7 @@ if (C) {
   group('population ledger');
   {
     const W = get('WORLD_POP') * 1e6;
-    let ticks = 0, idErr = null, indepErr = null, negErr = null, cmpOver = 0;
+    let ticks = 0, idErr = null, indepErr = null, negErr = null, cmpOver = 0, nestErr = null;
     botRun('CONTRACTOR', 'Vendor', 'NA', { buy: 1, expand: 1, doctrine: 'glove', collectP: 0.10, concede: 1 }, 2000, s => {
       ticks++;
       if (idErr === null && !(Math.abs((s.popWatched + s.popFree) - W) < 1e-3))
@@ -306,6 +306,15 @@ if (C) {
         }
       }
       if (s.popCompliant > s.popWatched) cmpOver++;
+      /* the ledger has to nest or it prints nonsense: you cannot organise
+         against surveillance you have never met, and not everyone organised is
+         literally in the street. Watched >= organised >= in the streets. */
+      if (nestErr === null) {
+        if (s.popOrganized > s.popWatched + 1)
+          nestErr = 'day ' + s.day + ' organized ' + Math.round(s.popOrganized) + ' > watched ' + Math.round(s.popWatched);
+        else if (s.popStreets > s.popOrganized + 1)
+          nestErr = 'day ' + s.day + ' streets ' + Math.round(s.popStreets) + ' > organized ' + Math.round(s.popOrganized);
+      }
     });
     /* ⛔ do NOT tighten this toward 2000. The bot stops the moment the run
        ends and a balanced bot wins somewhere around day 800 to 1150, so a high
@@ -316,6 +325,19 @@ if (C) {
     ok('watched + never watched is the whole world, every tick', idErr === null, idErr);
     ok('watched counts every region, including expelled and unentered', indepErr === null, indepErr);
     ok('no population total goes negative, NaN or infinite', negErr === null, negErr);
+    ok('the ledger nests: watched >= organized >= in the streets, every tick', nestErr === null, nestErr);
+    /* and nobody organises in a country the vendor has never entered */
+    {
+      const cZ = makeCtx();
+      vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');popTotals(S);", cZ);
+      const z = vm.runInContext('({o:S.popOrganized,st:S.popStreets,w:S.popWatched})', cZ);
+      ok('on day zero almost nobody is organized, because you have barely arrived',
+        z.o <= z.w + 1 && z.o < 5e6, 'organized=' + Math.round(z.o) + ' watched=' + Math.round(z.w));
+      vm.runInContext("for(const k of Object.keys(S.regions)){const r=S.regions[k];r.resist=99;r.pstate='uprising';}popTotals(S);", cZ);
+      const z2 = vm.runInContext('({o:S.popOrganized,st:S.popStreets})', cZ);
+      ok('maxing resistance in regions you never entered still organizes nobody there',
+        z2.o <= z.w + 1, 'organized=' + Math.round(z2.o) + ' watched=' + Math.round(z.w));
+    }
     /* reported, never asserted: control and coverage are separate curves and
        compliant may legitimately lead watched (PLAN-AUG23 section 1). */
     console.log('  note compliant exceeded watched on ' + cmpOver + ' of ' + ticks + ' ticks (expected, not a failure)');

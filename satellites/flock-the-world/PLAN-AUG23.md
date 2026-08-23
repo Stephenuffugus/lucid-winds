@@ -26,12 +26,17 @@ pass that computes `s.subj` (index.html ~line 1061):
 |---|---|---|---|
 | `popWatched` | Σ pop × coverage | WATCHED | inside your frame |
 | `popCompliant` | Σ pop × control | COMPLIANT | stopped noticing (= Subjugation %) |
-| `popOrganized` | Σ pop × resist/100 | ORGANIZED | know what you are and are doing something |
-| `popStreets` | Σ pop where pstate ∈ peaceful/violent/uprising | IN THE STREETS | |
+| `popOrganized` | Σ over ENTERED regions of pop × resist/100 × coverage | ORGANIZED | know what you are and are doing something |
+| `popStreets` | Σ organized × street share (peaceful .35, violent .60, uprising .90) | IN THE STREETS | the visible fraction of a movement |
 | `popExpelled` | Σ pop where lost | EXPELLED YOU | |
 | `popFree` | WORLD_POP − popWatched | NEVER WATCHED | **the number that dwindles** |
 
 Identity that must hold every tick: `popWatched + popFree == WORLD_POP`.
+Nesting that must also hold: **watched >= organized >= in the streets.** The first
+version counted whole populations including regions never entered, so the end
+screen read "organized at peak 480,144,624" against "people watched 1,887,664".
+Stephen 2026-08-23: make them the realistic numbers. You cannot organise against
+surveillance you have never met.
 COMPLIANT can legitimately exceed WATCHED in some states (control vs coverage are
 separate curves); report it in check.js, do not assert it.
 

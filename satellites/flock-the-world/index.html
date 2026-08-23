@@ -2007,14 +2007,34 @@ function paintHud(){
    identity watched + free === WORLD_POP only holds if nothing is skipped.
    REGIONS[].pop is MILLIONS. */
 const PEOPLE=1e6;
+/* How much of a region's organised population is literally out in the street.
+   Not all of them, ever: a march is the visible fraction of a movement. */
+const STREET_SHARE={peaceful:0.35, violent:0.60, uprising:0.90};
 function popTotals(s){
   let w=0,c=0,o=0,st=0,ex=0;
   for(const id in s.regions){
     const r=s.regions[id];
     w+=r.pop*r.coverage;
+    /* COMPLIANT stays pop x control on purpose: it is the Subjugation bar
+       expressed in people, so popCompliant/WORLD_POP must keep equalling
+       s.subj or the ledger and the HUD would disagree with each other. */
     c+=r.pop*r.control;
-    o+=r.pop*(r.resist/100);
-    if(r.pstate==='peaceful'||r.pstate==='violent'||r.pstate==='uprising')st+=r.pop;
+    /* ⛔ ORGANISED and IN THE STREETS used to count whole populations, including
+       regions the player had never entered. The end screen could read
+       "organized at peak 480,144,624" against "people watched 1,887,664": half a
+       billion people organised against a vendor that had barely arrived, because
+       every region is seeded with some resistance at the start of the run.
+       Stephen, 2026-08-23: make them the realistic numbers.
+       Now they nest. You can only organise against surveillance you have
+       actually met, so organised scales with coverage in regions you are
+       actually operating in, and the street count is the visible fraction of
+       those organised people. streets <= organised <= watched, always. */
+    if(r.active){
+      const org=r.pop*(r.resist/100)*r.coverage;
+      o+=org;
+      const share=STREET_SHARE[r.pstate];
+      if(share)st+=org*share;
+    }
     if(r.lost)ex+=r.pop;
   }
   s.popWatched=w*PEOPLE;
