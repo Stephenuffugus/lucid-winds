@@ -383,6 +383,25 @@ if (C) {
     const lh = vm.runInContext('ledgerHTML()', c6);
     const rows = (lh.match(/class="ledrow"/g) || []).length;
     ok('the ledger sheet renders one row per region', rows === get('REGIONS').length, 'rows=' + rows + ' regions=' + get('REGIONS').length);
+    /* the closing line is the whole species, not a repeat of the tile above it */
+    {
+      const cW = makeCtx();
+      vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');for(const k of Object.keys(S.regions)){S.regions[k].active=true;S.regions[k].coverage=0.3;}popTotals(S);S.mode=MODES.CONTRACTOR;S.diffKey='Vendor';", cW);
+      let endHTML = '';
+      const endStats = stubEl();
+      Object.defineProperty(endStats, 'innerHTML', { set(v) { endHTML = v; }, get() { return endHTML; } });
+      cW.document.getElementById = id => (id === 'endStats' ? endStats : stubEl());
+      try { vm.runInContext('finish(true,"")', cW); } catch (e) {}
+      const nums = (endHTML.match(/>([0-9][0-9,]{6,})</g) || []).map(x => x.slice(1, -1));
+      ok('the end screen closing line uses the whole world, not a repeat of watched',
+        endHTML.indexOf(get('WORLD_POP') * 1e6 + '') >= 0 || /7,845,000,000/.test(endHTML),
+        endHTML.slice(endHTML.indexOf('Never asked'), endHTML.indexOf('Never asked') + 90));
+      const watched = (/People watched<\/div><div class="v mono">([0-9,]+)</.exec(endHTML) || [])[1];
+      const asked = (/Never asked<\/div><div class="v mono">([0-9,]+)/.exec(endHTML) || [])[1];
+      ok('the closing line does not duplicate the watched tile',
+        !watched || !asked || watched !== asked, 'both read ' + watched);
+    }
+
     ok('the ledger sheet names all six totals', ['Watched', 'Never watched', 'Compliant', 'Organized', 'In the streets', 'Expelled you'].every(k => lh.indexOf('>' + k + '<') >= 0));
   }
 
