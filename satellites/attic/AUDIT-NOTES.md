@@ -1,8 +1,29 @@
 # THE ATTIC — audit, 2026-08-16
 
-Run the gate: `node test/attic-check.js` (no browser, no network, about a second).
-55 assertions. Every one of them was watched RED against the build as it stood
-before this pass.
+> **2026-08-24 UPDATE, READ THIS FIRST.**
+> The gate moved: **`node satellites/attic/check.js`** is the suite now, in the
+> house pattern the rest of the fleet uses (vm + DOM stub, `ok()`/`group()`,
+> exit 0/1/2, plus a real browser group for anything that has to be measured in
+> RENDERED pixels). `test/attic-check.js` still works and still returns the real
+> exit code, because it now runs `check.js`. Nothing that pointed at it is
+> orphaned; nothing asserts twice.
+> The suite carries a **controls group**: every rule it guards is written as a
+> predicate and run a second time against deliberately broken code, and the
+> broken run has to go red. A check nobody has watched fail is decoration, and
+> "I broke it by hand once" is not repeatable.
+> The screenshot walk is `node satellites/attic/shots.mjs`, which asserts the
+> live screen after every step.
+> Three of the "STILL WORRIES ME" items at the bottom of this file are closed:
+> the reveal has been watched happening, the grime and the UNWIPED plate have
+> been looked at and rebuilt, and the "depth is in the names, not the objects"
+> problem was the whole of the A4/A5 pass (five families became ten, and the
+> condition ladder went from three pictures to seven).
+> The dust panel's 47.6px cells are gone with the grid; it is a canvas drag
+> surface now, and the 48px exemption for it still stands for the same reason.
+
+Run the gate: `node satellites/attic/check.js`.
+The notes below describe the 2026-08-16 pass and its 62 assertions. Every one of
+them was watched RED against the build as it stood before that pass.
 
 ---
 
