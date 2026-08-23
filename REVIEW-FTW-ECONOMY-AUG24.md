@@ -24,7 +24,7 @@ left over with nothing to spend it on."**
 
 ## ⛔ THE ONE THING TO CHECK HARDEST
 
-**`scratch/ftw_surplus.js` is the meter every economy number here comes from, and
+**`scripts/ftw_surplus.js` is the meter every economy number here comes from, and
 it is NOT fully deterministic.** Seeding `Math.random` before `makeCtx` fixed one
 source; identical runs still report 3/5 or 4/5 wins and 29 to 53 days banked.
 Something else moves, most likely `Date`, which `makeCtx` also passes through from
@@ -135,9 +135,9 @@ precondition, priced at a share of treasury, and each purchase raises the rate
 
 ```
 node satellites/flock-the-world/check.js          # 148 checks
-node scratch/ftw_surplus.js spend                 # the meter, run it 5 times
-node scratch/ftw_surplus.js hoard                 # the no-spend baseline
-node scratch/ftw_acq.mjs                          # the purchase, as a player
+node scripts/ftw_surplus.js spend                 # the meter, run it 5 times
+node scripts/ftw_surplus.js hoard                 # the no-spend baseline
+node scripts/ftw_acq.mjs                          # the purchase, as a player
 node scripts/ftw_landscape_audit.mjs              # HUD, trees, image fill
 ```
 A static server on 127.0.0.1:8777 must be running for anything with a browser in
