@@ -13,6 +13,13 @@
  * synchronously. Use real-browser verification for visual confirmation.
  *
  * Run: node scripts/smoke_shells.js
+ *
+ * PREREQUISITE: needs jsdom, which will NOT be present on a fresh clone.
+ *   npm install --save-dev jsdom
+ * package.json is gitignored on purpose (see .gitignore: the live game has
+ * no build system, dev tools are installed per codespace), so no dependency
+ * declaration travels with the repo and workspace.sh does not install any.
+ * The same applies to the ~67 scripts here that require puppeteer.
  * Exits non-zero on any failure.
  */
 
@@ -41,7 +48,14 @@ var FIRST_WAVE = [
   // shells (games/<id>.js + play/<id>.html) and Jade Garden is not one, so there
   // is no games/jade.js to smoke. Satellite coverage belongs in the fleet smoke,
   // not here. Do NOT re-add 'jade' to this array — it will fail forever.
-  'gardenlines', 'juniper', 'kakuro', 'mosaic',
+  'gardenlines',
+  // Garden Rummy became a card game in the 2026-08-21 card-kit pass and now
+  // calls _cdDeal/_cdBackCss. play/juniper.html has always loaded _cards.js;
+  // only this dep list was stale, so the suite reported a failure the real
+  // page never has. Verified 2026-08-23: every other _cd* user already
+  // declares the dep, and every card game's shell page loads it.
+  ['juniper', 'games/_cards.js'],
+  'kakuro', 'mosaic',
   'numbergarden', 'petalfall', 'petalmatch', 'pipe', 'pollen',
   'pottingbench', 'recall', 'rootflow', 'rootmaze', 'rootrush',
   'seedsow', 'seedtoss2', 'sprout', 'vinecross',
