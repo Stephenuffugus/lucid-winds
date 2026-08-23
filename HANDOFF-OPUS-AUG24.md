@@ -170,3 +170,86 @@ the usage reset; leave every tree committed.
   parts; the drop files may already be in satellites/puppy-dash/drop/.
 
 ## STATUS
+
+## Review 2026-08-24 (PART 1, Opus)
+
+**1. Checks that cannot fail.** Built `scripts/ftw_mutation_drive.js`: applies one
+realistic single-point defect to a COPY of index.html, runs the real suite via
+FTW_FILE, and reports BITES / WRONG / CRASH / VACUOUS / BADMUT per mutation.
+70 mutations across all six groups added yesterday plus persistence and sound.
+Result: **67 BITES, 1 CRASH, 0 silently vacuous** at runtime. Three checks were
+nonetheless passing on nothing and are now pinned, each proved by a mutation
+that the old form let through:
+  - `the ledger nests: watched >= organized >= in the streets` did NOT catch the
+    street count losing its coverage factor. The invariant is correct but
+    under-exercised: streets = organized x share with share >= 0.35, so it only
+    breaks where coverage < share, and a bot run never sits there. Pinned with a
+    direct low-coverage uprising fixture. review: nesting bites now.
+  - `the closing line does not duplicate the watched tile` asserted
+    `!watched || !asked || watched !== asked`: either regex missing was a pass.
+  - `a junk bubble in a save is dropped` did string surgery on the save blob and
+    never checked the replace landed.
+  - `no population milestone puts raw player markup into the news` (the P0 guard)
+    read S.log for a raw payload; an empty log passed it. First fix required the
+    ESCAPED name present, still too weak because the founding "installs its
+    first unit" line carries it with zero milestones fired. Now requires a real
+    POP_MILES headline in the log.
+  Also fixed the driver: exit != 0 with no FAIL lines means the suite DIED, not
+  that it passed. It reported that as VACUOUS until traced by hand.
+  146 -> 148 checks, 150 with FTW_SELFTEST=1.
+
+**2. Parsers over rendered HTML.** 21 parser sites audited. 2 provably VACUOUS
+(both fixed above). 7 VACUOUS-RISK left as FOUND, all of the same shape: a
+regex over game markup whose miss is indistinguishable from a pass. The parity
+parser is the safest of them because `emptyLabels` already guards it, but it
+guards only the popover side, not the World side.
+
+**3. Flaky assertions.** The sim calls Math.random 27 times and check.js never
+seeds it, so the suite runs against a genuinely stochastic model. 20 consecutive
+runs produced byte-identical verdicts across all 146 checks. No flip. The
+"a long run actually ticked" floor at >200 did not fire once.
+
+**4. Escape coverage.** 18 vendor-name output sites. 13 reach HTML and **13 of 13
+are escaped** (5 via CO(), 8 via inline escH(s.co), including all 8 population
+milestones: yesterday's P0 fix verified in place). 5 raw sites all land on sinks
+that cannot execute markup: 4 textContent, 1 navigator.share/clipboard. 26
+innerHTML assignments, zero insertAdjacentHTML, zero document.write, and **zero
+innerHTML sinks carry a raw vendor name**. escH escapes all five of & < > " '
+and uses split/join. **Item 4 passes: no unescaped path reaches HTML.**
+
+**5. Looked, not gated.** 24 screenshots in `portal-assets/review/ftw-morning-aug24/`,
+portrait 412x915 and landscape 915x412, opened and read. The walk script
+`scripts/ftw_review_shots.mjs` asserts the live screen after every navigation,
+because the first version logged "shot 05_game_landscape" while the screen was
+still the menu: it had FOUND the CTA, computed a rect below the landscape fold,
+and tapped empty space. Finding an element is not tapping it.
+
+**Gates, all exit 0:** FTW check.js 148, FTW_SELFTEST 150, portal_ux_check 26 ok,
+advertised_count_check 7 true, test_inline_drift aligned, smoke_shells 66 pass,
+catalog 161 openable.
+
+FOUND: showBannerNow double-escapes. `$('breakTxt').textContent=' · '+txt` is fed
+  already-escaped HTML, so a vendor named O'Brien Sightline shows the player
+  "O&#39;Brien Sightline". Visible defect, not a security one.
+FOUND: s.co has no length clamp in newState or loadRun. The 24 char limit lives
+  only in the UI (maxlength + slice in chosenCo). A hand-edited save can carry
+  any length.
+FOUND: the skill trees do not work in landscape, the game's intended Play
+  orientation. At 915x412 the sheet header eats ~150px of 412 and exactly ONE
+  node is visible; portrait shows five and the tree structure. Deployment,
+  Watchlist and Crisis all the same.
+FOUND: the end screen clips itself in landscape. The headline is cut off above
+  the fold and the "N people were never asked" closing line is cut off below it.
+  Portrait renders the whole card correctly. The stat grid is a narrow centre
+  column leaving ~560px of unused width either side.
+FOUND: the Population ledger renders its six figures with OS emoji while every
+  other surface got custom art. They also render differently per platform.
+FOUND: the ledger header rounds 3,511,169 to "4M" directly above a card reading
+  3,511,169. Two different numbers for the same quantity on one screen.
+FOUND: the NEVER WATCHED bar is full and white at game start, the loudest
+  element on the ledger. A full bar reads as an achievement; it means you have
+  barely begun.
+FOUND: the "Paid Agitators" crisis node icon is near black on a dark card and
+  does not read. Same class of problem as mesh/retail/drone.
+FOUND: the 1/5 briefing card covers the world map it is pointing at, so "Cameras
+  are live in Mali" hides Mali.
