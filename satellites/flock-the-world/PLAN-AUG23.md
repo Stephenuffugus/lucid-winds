@@ -87,7 +87,13 @@ at, before a line changes.
 
 ## 4. SOUND (Stephen produces, Opus wires)
 
-No audio exists. Stephen is the producer; this is the cue sheet. Deliver as mono
+No audio exists. Stephen is the producer; this is the cue sheet. **Suno (Pro, $10)
+is the right tool for the musical cues**: theme_menu, bed_hq, bed_tension, win,
+loss_refusal, loss_coalition, concede (the jingle), breaking (the news sting),
+synergy, milestone. Paid-plan Suno grants commercial use for songs made while
+subscribed, which a $1 app needs; confirm the current terms before launch. The
+short one-shots (taps, buys, stamps, matches, crowd steps) come from the DAW or
+recorded; Suno makes songs, not clicks. Deliver as mono
 `.mp3` 96k (UI ≤ 0.6 s, stings ≤ 3 s, loops seamless) into
 `satellites/flock-the-world/sfx/<id>.mp3`. Wiring: `sfx(id)` with a per-id cooldown,
 three volume groups (ui / world / bed), mute toggle persisted, first-gesture unlock
@@ -115,6 +121,7 @@ for iOS, and a silent stub that logs `sfx:<id>` so wiring can be gated before fi
 | doctrine | doctrine chosen | boardroom chord |
 | event_open | modal | folder opens |
 | win / loss_refusal / loss_coalition | end | 8 s each |
+| theme_menu | menu loop, 60 to 90 s | confident corporate-brochure synth, the vendor's hold music, slightly wrong |
 | bed_hq | loop | server-room hum, always |
 | bed_tension | loop | fades in as Patriotism > 70 |
 
@@ -150,6 +157,15 @@ today; each task adds its own and you watch the new check FAIL once before it pa
 Bump the portal card `?v=` on every deploy. STATUS goes in `HANDOFF-OPUS-AUG23.md`.
 
 ## F1 — Ledger totals + HUD odometer + Ledger sheet
+ANCHORS (index.html, today's line numbers, grep the strings if they moved):
+`function tick(){` 897 · totals go right after `s.subj=subj/WORLD_POP` 1061 ·
+HUD markup 355-368 (`#vSub`, `#vOvr` are the two bars; the odometer goes under
+them) · tab bar `.nb[data-tab]` 383-388 (add `data-tab="led"` FIRST, before dep) ·
+`function openSheet(tab)` 1617 builds `#shBody` per tab, add the `led` branch there ·
+end stats `$('endStats').innerHTML` 1164 · `WORLD_POP` 486 · `REGIONS[].pop` is millions.
+check.js: `ok(name,cond,detail)` + `group(n)`, runs the real script in a vm with a
+DOM stub; `FTW_SELFTEST=1` runs the mutation harness, use it to watch your new
+checks fail.
 FILES: `satellites/flock-the-world/index.html`, `check.js`, `portal/index.html` (v bump). STEP BOX 5.
 1. Compute the six totals in the tick pass. 2. HUD odometer. 3. Ledger sheet tab with
 totals + region rows. 4. End-screen people lines. 5. check.js: identity
@@ -159,6 +175,11 @@ DONE: check.js exit 0 with ≥3 new checks, both screenshots opened and three
 observations written, live probe of new `?v=` shows the string `WATCHED`.
 
 ## F2 — Map tap popover
+ANCHORS: `function regionAtPoint(wx,wy)` 1335 is the hit test · the map's
+`pointerup` handler is registered at 1414 (`surface.addEventListener('pointerup',up)`);
+inside `up`, after the bubble check (`collectAt` ~1957) and only when the pointer did
+not drag, call `regionAtPoint` and open the popover · the World tab's action
+buttons use `data-act="enter|agitate|crack|blackout|concede"`, reuse their handler.
 FILES: `index.html`, `check.js`. STEP BOX 4.
 Tap region → card with people numbers + the action buttons wired to the SAME
 handlers the World tab uses (no duplicated logic). Drag does not open it. Tap
@@ -168,6 +189,9 @@ DONE: check.js exit 0, landscape screenshot with popover open on East Asia, open
 and read.
 
 ## F3 — Name your vendor
+ANCHORS: pick screen `#pickFoot` 347, `#pickInfo` 348, `#beginBtn` 349 (input goes
+above the button) · HQ label `S.hqName===c.n` 1974 · `const H={` 678 templates ·
+`const AMBIENT=[` ~660 · `S.mode` / `S.hqName` are set where Deploy is confirmed.
 FILES: `index.html`, `check.js`. STEP BOX 3.
 Input, persistence, `CO()`, the listed call sites. check.js: a name containing
 `<b>` renders as text in the HQ label and in a headline (escape test); default
