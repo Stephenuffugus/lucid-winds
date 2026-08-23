@@ -160,8 +160,21 @@ function pdWrite(patch){
 const CFG = {
   // layout (fractions of stage size)
   horizonF:0.30, playerF:0.82, laneWF:0.23, dogF:0.92,  // dog size = laneW*dogF
-  // speed (screen-heights per second), linear ramp + cap
-  spd0:0.40, spdMax:0.84, rampDist:34,   // rampDist in screen-heights travelled
+  /* speed, in ROAD LENGTHS per second (the horizon to foot line gap), linear ramp.
+     ⛔ These are not the old screen-height numbers. The old model moved obstacles
+     down the screen at a CONSTANT rate, which is why the run never felt like a
+     runner: nothing accelerated toward you, so there was no closing cue at all,
+     and at top speed the whole road was 0.62s long with only 0.29s of it
+     readable. A person needs 400 to 500ms just to pick one of three verbs. */
+  spd0:0.755, spdMax:1.26, rampDist:34,
+  /* THE DEPTH BLEND. Screen speed at depth p is  v * (depthA + (1-depthA)*p^2).
+     depthA=1 is the old constant crawl. depthA=0 is a physically true 1/z camera,
+     which is WRONG for a game: it parks the obstacle at the horizon for 99% of
+     its life (measured: a 156 second road with 1.3s of it readable). 0.35 keeps
+     the acceleration you feel without the crawl. Time split across the three
+     thirds of the road goes 33/33/33 to 45/33/21. */
+  depthA:0.35,
+  mPerUnit:5.3,          // road lengths per second -> the "m" the player is shown
   spawn0:1.05, spawnMin:0.62,            // seconds between rows
   laneSnap:0.16,                          // lane tween time-ish (smaller=snappier)
   // jump arc, in DOG-SIZE units (S). apex ~1.3 S. computed against S at runtime.
@@ -316,7 +329,30 @@ window.addEventListener("resize",resize);
 
 // depth: progress 0 (far, at horizon) -> 1 (near, at player line)
 const prog = y => Math.max(0,Math.min(1,(y-L.HY)/L.travel));
-const dscale = p => 0.16 + 0.84*Math.pow(p,1.4);
+/* Scale is LINEAR in depth, which is what a real camera does, and it starts at
+   0.30 rather than 0.16 so an obstacle is legible the moment it exists.
+   ⛔ The scale curve is deliberately NOT the same shape as the motion curve
+   above. A camera couples them; a game does not have to, and decoupling them is
+   the whole trick here: the MOTION gives you the closing rush, the SCALE gives
+   you the early read. There is no reference geometry on screen for a player to
+   catch the mismatch with. Readable window at top speed: 0.29s -> 0.94s. */
+const dscale = p => 0.30 + 0.70*p;
+/* how fast a thing at depth p slides down the screen, px per second */
+const obVY = y => { const p=prog(y); return L.travel*state.speed*(CFG.depthA+(1-CFG.depthA)*p*p); };
+/* Advance one object by dt, SUB STEPPED.
+   ⛔ Screen speed now depends on where the object IS, so a single Euler step
+   over a long frame under advances it: it uses the slow far speed for the whole
+   trip. The suite caught this immediately, on the control check that exists to
+   prove the lane test is not vacuous, because it drives a deliberate 4 second
+   frame and the wall stopped 8px short of the contact line. The old model was
+   linear in dt so it never had this problem. Sub stepping at 1/50s makes the
+   motion dt independent again, which also means a hitched frame on a real phone
+   advances the world by the right amount instead of quietly slowing the game. */
+function obStep(y, dt){
+  var n = Math.max(1, Math.ceil(dt/0.02)), h = dt/n, i;
+  for(i=0;i<n;i++) y += obVY(y)*h;
+  return y;
+}
 const lfac   = p => 0.42 + 0.58*p;
 const obX = (lane,p) => L.CX + (lane-1)*L.LW*lfac(p);
 const dogX = () => L.CX + (state.laneF-1)*L.LW;
@@ -432,8 +468,7 @@ function update(dt){
   state.t+=dt;
   const diff=Math.min(1, state.dist/(CFG.rampDist* (H*0.01) ) ); // dist is "m"; ramp scaled
   state.speed = CFG.spd0 + (CFG.spdMax-CFG.spd0)*Math.min(1, state.dist/ (CFG.rampDist*10));
-  const vy = state.speed*H;          // px/sec downward
-  state.dist += vy*dt/ (H*0.10);     // ~screen-heights -> "meters"
+  state.dist += state.speed*CFG.mPerUnit*dt;   // road lengths -> the "m" on the HUD
 
   // lane tween (smooth, snappy)
   state.laneF += (state.targetLane-state.laneF)*Math.min(1, dt/CFG.laneSnap);
@@ -488,7 +523,7 @@ function update(dt){
   const cY = L.PY + L.S*CFG.contactOffset;
   const pcY = L.PY - state.jump - state.jetAlt - L.S*0.40;   // where the puppy grabs bones
   for(const ob of state.objs){
-    const py=ob.y; ob.y += vy*dt;
+    const py=ob.y; ob.y = obStep(ob.y, dt);   // per object: things accelerate as they close
     if(ob.kind==="bis"){
       const grabR = state.magnet>0 ? CFG.magnetGrab : CFG.biscuitGrab;   // magnet pulls bones in from every lane
       if(!ob.dead && py<pcY && ob.y>=pcY && Math.abs(ob.lane-state.laneF)<grabR){
@@ -553,13 +588,18 @@ function render(){
   ctx.moveTo(L.CX-1.6*L.LW*pTop, L.HY); ctx.lineTo(L.CX+1.6*L.LW*pTop, L.HY);
   ctx.lineTo(L.CX+1.6*L.LW*pBot, H);    ctx.lineTo(L.CX-1.6*L.LW*pBot, H); ctx.closePath(); ctx.fill();
   // lane dashes (scrolling for speed)
+  /* ⛔ These sat at +/- 1.0 lane widths, which is the ROAD EDGE, not a lane
+     boundary, so the game had three lanes and nothing on screen said so. Lane
+     centres are at CX + (lane-1)*LW*lfac, so the boundaries between them are at
+     +/- 0.5 LW. Two dash columns there give the player a lane grid, a depth read
+     and the strongest speed cue on the screen, all from one change. */
   ctx.strokeStyle=css("--path-dk");
   for(const k of [-0.5,0.5]){
     for(let i=0;i<14;i++){
       const yy=((i*H*0.10 + state.dist*4)%(H*1.0));
       const y0=L.HY+yy*(L.travel+H*0.2)/H; if(y0<L.HY||y0>H) continue;
-      const p0=prog(y0); const x0=L.CX+k*2*L.LW*lfac(p0);
-      const y1=y0+H*0.04, p1=prog(y1), x1=L.CX+k*2*L.LW*lfac(p1);
+      const p0=prog(y0); const x0=L.CX+k*L.LW*lfac(p0);
+      const y1=y0+H*0.04, p1=prog(y1), x1=L.CX+k*L.LW*lfac(p1);
       ctx.lineWidth=Math.max(2,16*dscale(p0));
       ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x1,y1); ctx.stroke();
     }
@@ -569,7 +609,13 @@ function render(){
   for(const ob of list){
     const p=prog(ob.y), sc=dscale(p);
     if(ob.kind==="bis"){
-      const x=obX(ob.lane,p); drawShadow(x,ob.y,L.S*0.5*sc,0);
+      /* ⛔ Was L.S*0.5*sc at full strength. The new scale curve is far more
+         generous at depth, so these grew into dark ellipses on the road that
+         read as potholes, and a dark patch on the running surface is the one
+         thing the PUDDLE obstacle owns. A bone floats: it gets a small faint
+         contact hint and nothing more. Found by looking at the frame, not by a
+         gate, and it was introduced by my own scale change. */
+      const x=obX(ob.lane,p); drawShadow(x,ob.y,L.S*0.22*sc,0.18);
       drawBiscuit(ctx,x,ob.y-L.S*0.55*sc,L.S*0.7*sc,ob.gold);
     } else if(ob.kind==="jet"){
       const x=obX(ob.lane,p); drawShadow(x,ob.y,L.S*0.5*sc,0);
