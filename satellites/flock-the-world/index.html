@@ -28,7 +28,15 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
   opacity:.30;filter:saturate(.85)}
 .screen[style*="--shot"]::after{content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
   background:radial-gradient(120% 90% at 50% 40%,#05070b33 0%,#05070bd0 62%,#05070bf2 100%)}
-.screen[style*="--shot"]>*{position:relative;z-index:1}
+/* ⛔ Stephen mid-test, 2026-08-24: "operation type is super dim on the menu."
+   This rule lifts DIRECT children above the two darkening overlays, and the
+   menu's children are now the two .mcol wrappers. In portrait the wrappers are
+   display:contents, which generates NO box, so the lift landed on nothing and
+   the entire menu painted UNDER the radial dark gradient. The title lives in
+   the gradient's light centre, the section labels live in its heavy zone,
+   which is exactly the "super dim" he saw. The wrapper's children get the lift
+   too. */
+.screen[style*="--shot"]>*,.screen[style*="--shot"] .mcol>*{position:relative;z-index:1}
 /* the refusal backdrop is the one daylight image in the game. A bright picture
    needs holding back harder than a dark one or the pale end-screen copy stops
    being readable over it. Measured on the real screen, not guessed. */
