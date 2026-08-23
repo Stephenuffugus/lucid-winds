@@ -505,3 +505,214 @@ the trees and not against the STATUS text:
   restarted; that is an environment failure, not a gate failure.
 Gates re-run at resume, all exit 0: portal_ux_check 26 ok, advertised_count
 7 true, catalog 183 carded / 161 openable.
+
+## Litter Bug (PART 3, Opus agent) — STATUS, L3 to L5
+
+[LB] L3 grade: reads drawn parts, distribution refit
+[LB] L3 DONE. The grade reads the parts that are DRAWN. gradeOf scored six trait
+  indices (wing/body/head/pattern/leg/antenna) that _generateBugSVG has never
+  looked at once: the renderer draws from seededRng(hash+'|grow') in a
+  completely separate stream, so LEGENDARY and COMMON could be the same picture.
+  Extracted that roll block VERBATIM into BUG_ENGINE.bugPlan(hash,pal) and made
+  the renderer CALL it, so the file has exactly ONE roll sequence. Proof it is
+  the same rolls, not a copy: 8000 renders (400 hashes x 5 levels x 4 sizes)
+  byte identical before and after the extraction, and forcing wingKind inside
+  bugPlan moves 8000/8000. Watched that check go red twice on purpose.
+  The scorer moved to bug-engine.js as bugGrade (Node AND browser, one
+  implementation; index.html's gradeOf is a 1 line wrapper, LB_DEV.grade still
+  reaches it so grade_sim_live.js/grade_tune.js are unchanged). It scores elytra
+  shell / four wings / membrane wings, plated carapace, horns, hooked pincers,
+  barbed stinger, extra eyes, dorsal spine count with a bonus for a FULL ridge,
+  raptorial forelegs, body segment count, patchwork material count. Rare = more
+  visibly built. It returns `marks`, the list of parts that scored, and the mint
+  and specimen screens print them under the grade pill, so the tier label has a
+  receipt you can point at on the art.
+  GRADE_CUT refit on 1,000,000 samples of the live scorer: COMMON 33.55 [33.8]
+  UNCOMMON 31.95 [32.0] RARE 23.37 [23.0] EPIC 9.11 [9.3] LEGENDARY 1.77 [1.62]
+  MYTHIC 0.226 [0.23] COSMIC 0.0252 [0.028], epic+ 11.13 [11.2]. All seven "ok".
+  The previous shipped fit had EPIC 1.5x over and COSMIC 2.9x over.
+  Stored grades are a cache now, recomputed in _cleanEntry on every load.
+  Also fixed in the same class: bugStats' `winged` read (t.wing % 5) !== 4, so a
+  bug drawn with NO WINGS could be tagged Flying and carry +22 spd and +12 eva
+  for wings you cannot see. It asks bugPlan. Agreement measured at 100%.
+[LB] L4 DONE (graphics). Contact sheet first: scripts/bug_contact_sheet.js draws
+  every bug at the REAL sizes index.html uses (58 champion picker, 84 BUGDEX,
+  150 HOME, 230 the mint) with a flat BLACK silhouette column at 58, the
+  smallest a bug is ever drawn, plus a second sheet of one row per grade at
+  BUGDEX size so "can you read the grade at 84px" gets an answer you can look
+  at. Opened it. Three things I saw and then fixed:
+  [G1] THE CAMERA. viewBox was a hard "0 0 200 200" and the fit only ever scales
+    DOWN (Math.min(1, 176/w, 182/h)), so a compact bug drew inside about a third
+    of its own box. At 84px in the Bugdex that is [LB-5]'s "four faint specks",
+    and the mint's 430px of dead space. The camera now frames the FINISHED ADULT
+    and holds still, so a level 1 grub sits small in the box it will grow to
+    fill, growth still reads, and both ends are legible. Bugs render ~1.6x larger
+    at every size. Camera only: 8000 renders proved no path moved.
+  [G2] SVG IDS WERE SHARED BETWEEN COPIES OF THE SAME BUG. uid was
+    hash.substr(0,6), and your champion is drawn FIVE times at once (HOME, the
+    dumpster champion card, the challenger strip, a ladder row, the arena). An
+    id reference resolves to the first match in document order, which is the
+    copy inside a display:none screen, and Chrome does not rasterize paint
+    servers in a hidden subtree. So every visible copy filled with url(#gb0...)
+    painted NOTHING: both arena portraits and 2 of 6 Bugdex cards were WIRE
+    SKELETONS of legs, antennae and stitches with no body. I found this in a
+    real 412x915 dsf2 screenshot; it is invisible at dsf5, which is why no
+    review had caught it. Ids are unique per RENDER now. This was the single
+    biggest art defect in the game and it was not in anyone's list.
+  [G3] SPARKS TRAVELLED IN PERCENT. Nine sparks per hit animated to
+    translate(cos(a)*d %, ...) where d is 26..72 and the element is 9px, so a
+    percentage transform on a 9px dot moved it 2 to 6 pixels. Nine particles per
+    exchange, none of which ever left the middle of the card. Pixels now.
+  Belt and braces on top of G2: the merge filter's blur+threshold (alpha must
+  clear 0.46) can still blow out at low device resolution, so the body is drawn
+  once UNFILTERED underneath the filtered group. Covered pixel for pixel when
+  the filter works, the whole bug when it does not.
+  Particles + hit flash on every exchange: VERIFIED BY LOOKING, not by grep.
+  hitFlash + dmgPop fire on every 'hit' event; I shot the frames at 70/170/430ms
+  after a real move tap and can see the "-11" pop, the HP bar drop and a gold
+  spark clear of the portrait. (A 'dot' event gets a pop but no flash and a
+  'break' gets neither: FOUND, not fixed.)
+  Backgrounds: one alley, drawn once, blurred to 34px under a scrim running
+  .86 to .985 alpha, tinted per room (dumpster/arena colder, dex greener, mint
+  brighter, jobs darker), behind every screen. The FTW lesson is that art behind
+  copy goes further back than looks right; this is at the safe end of that and
+  on the mint screen it is very nearly invisible. Honest read: it removes the
+  flat-gradient feel, it is not yet real background art.
+  The grade pill was a 1px grey outline on a dark ground, which on a COMMON read
+  as a DISABLED BUTTON ([LB-5]). It is a filled plate tinted by grade now, with
+  a real glow at LEGENDARY and up.
+[LB] LOOKED, not gated. Full walk of the real page, 13 shots at 412x915 and
+  915x412 dsf2 isMobile hasTouch, plus a zoomed dex grid, a contact sheet, an
+  8-size isolation sheet and 3 arena frames at 70/170/430ms. The walk script
+  ASSERTS the live screen after every step (LB_DEV.cur() compared with what the
+  step promised) rather than logging "tapped". All opened with the Read tool.
+  What I saw, beyond the fixes above:
+  - HOME: the champion is genuinely visible now, standing in the alley under
+    the streetlight, and reads at phone size. The alley itself is flat vector
+    rectangles with a hard-edged triangular light cone; it is a diagram of an
+    alley, not a picture of one.
+  - GRUB HUNT: [LB-1] is fixed, 15 pieces spread across the whole field. But
+    every piece of junk is a grey rounded square with a lowercase WORD in it
+    (cap, bolt, nub, clip, tab). The litter you sort is typography. And the grub
+    is a bright mint-green tile among identical grey tiles, so there is no hunt:
+    your eye lands on it instantly. FOUND, out of scope.
+  - THE MINT: the bug now fills its frame with a shell, stitches, pincers, a
+    catchlit eye and antennae, and the marks strip under the pill reads
+    "ELYTRA SHELL . HOOKED PINCERS . FOUR SCRAP PATCHWORK", which are exactly
+    the parts I can point at in the art above it.
+  - THE ARENA: the telegraph, damage band, hit percent, turn order, poise pips,
+    HP bars, damage pop and sparks are all real and all visible. There is a
+    ~280px band of empty black between the log line and the move cards before
+    the first exchange resolves. FOUND, out of scope.
+  - LANDSCAPE 915x412: the 540x960 stage letterboxes to a narrow centre column
+    with roughly 350px of dead space each side, on every screen. Nothing is
+    clipped or overlapping; it is wasteful, not broken. Matches L1. Not fixed:
+    a stage layout decision, not a bug.
+[LB] L5 gate: `check.js` in the repo root, 83 checks, and it LOADS index.html in
+  a real browser, which no gate in this repo has ever done. That is precisely
+  why L1's five defects survived to v1. Groups: boot and script block alive;
+  the four blocks lay out in a field with a real size (per job: field > 200x200,
+  measured ON SCREEN, nothing at a negative offset, nothing past the far edge,
+  pieces spread not stacked); the champion is visible on HOME (real rendered
+  height, camera not a fixed 200x200); THE DUMPSTER returns five real rows with
+  no "?" and no raw epoch day; a battle actually plays and finishes on the
+  INTERACTIVE path (move cards, >1 exchange, real damage, an end state, a damage
+  pop and a flash or spark seen); the day cannot be drained by tapping fast (58
+  taps through the REAL bump() path, not the raw currency function); six junk
+  saves each boot into a clean game on HOME with every field validated; the art
+  cannot vanish (zero duplicate ids in the document, every card paints filled
+  body geometry not just strokes); the grade reads the parts that are drawn;
+  48px measured in RENDERED px at 375x667 with an assertion that the stage
+  scale is actually < 1 so CSS px cannot lie; every page posts {sws:'ready'}
+  TO ITS EMBEDDER in an iframe; zero console errors across the whole run.
+[LB] L5 gate, the three checks I had to fix because they were asserting the
+  WRONG THING (the sibling of a check that cannot fail):
+  - "the game opens on HOME" went red on a clean browser because a FIRST RUN
+    correctly opens the rules screen. My earlier green run had localStorage left
+    over from a previous test. Now it accepts s-how or s-home and then asserts
+    that START WORKING lands on HOME.
+  - the {sws:'ready'} group monkeypatched parent.postMessage and reported all
+    EIGHT pages as silent. The pages are fine: the post is guarded by
+    `if (window.parent !== window)` which is correct, it only means anything to
+    an embedder. The check now FRAMES each page in an iframe the way the portal
+    does and listens in the parent, matching e.source. Eight broken assertions,
+    not eight broken pages.
+  - the daily-cap group drove earnShinies() directly, which is the DAY cap, and
+    reported 116 of 120 drained. The jobs call bump(), which is where the SHIFT
+    cap lives. It drives bump now (LB_DEV.bump added) and asserts both.
+[LB] L5 mutation driver: `scripts/lb_mutation_drive.js`, 12 mutations, each one a
+  regression of a defect that actually shipped or the removal of a guard added
+  because of one. 12 of 12 BITE. Watched red, then restored, every time:
+   1 jobs measure the field before show('s-play')          BITES (9 red)
+   2 the broad `.alley svg` selector comes back            BITES (1 red)
+   3 the shift cap removed from bump()                     BITES (2 red)
+   4 the save loader trusts the blob                       BITES (2 red)
+   5 SVG ids shared between copies of the same bug         BITES (1 red)
+   6 the camera back to a hard 200x200 viewBox             BITES (1 red)
+   7 the Flying tag back to a trait index nothing draws    BITES (1 red)
+   8 the grade stops naming the parts it scored            BITES (3 red)
+   9 the grade scores a trait index the renderer never draws BITES (3 red)
+  10 a touch target drops under 48px                       BITES (1 red)
+  11 the embed handshake removed                           BITES (2 red)
+  12 playMove stops resolving                              BITES (5 red)
+  Stability: THREE consecutive clean runs 83 ok / 0 FAIL after the flake fixes
+  (earlier: 1 of 4 red on the cap check, 1 of 4 on the exchange count).
+[LB] GATES, exit codes: Litter Bug check.js 83 ok 0 FAIL exit 0 (x3 consecutive);
+  lb_mutation_drive 12/12 BITE exit 0; node --check on bug-engine.js and
+  check.js and lb_mutation_drive.js; both index.html script blocks parse via
+  vm.createScript; portal_ux_check.mjs exit 0 (26 ok); advertised_count_check.mjs
+  exit 0 (7 true); catalog.mjs exit 0 (161 openable, unchanged);
+  vendor_satellites.mjs --check litter-bug = CLEAN @8f046ccc.
+[LB] SHIPPED AND LIVE. Upstream /workspaces/Litter_Bug pushed ef2d341 -> 8f046cc
+  (2 commits: ee1e566 the grade + the art, 8f046cc the gate). Re-vendored into
+  lucid-winds and committed cd1d94d2, path scoped to satellites/litter-bug plus
+  the one manifest line in scripts/vendor_satellites.mjs. NOT PUSHED: the main
+  session pushes lucid-winds.
+  The 6.8 MB inherited-engine.html is EXCLUDED via the manifest's own `drop`
+  config (no hand editing of the vendored tree). It is a dev archive of the
+  pre-split engine, the running game never requests it, and the only reference
+  anywhere is one line in the repo's scripts/smoke.js, a build tool that is not
+  vendored. satellites/litter-bug: 8.4 MB -> 1.9 MB, 111 files.
+  Probed at the vendored path on the live 8777 server with ?probe=$RANDOM: 200,
+  the NEW strings present in the served bug-engine.js and index.html, champion
+  SVG 114px tall, zero duplicate ids, zero console errors, all six Bugdex cards
+  solid at 84px. A 200 was not the evidence; the new marker was.
+[LB] PORTAL CARD CHANGE I WANT APPLIED (I did not touch portal/index.html):
+  line 1002, Litter Bug: change  url:"/satellites/litter-bug/?v=20260818a"
+                          to     url:"/satellites/litter-bug/?v=20260824a"
+  Nothing else on that card needs to move. The thumb is fine; the game's title
+  screen has not changed shape. beta:true and fresh:true stay as they are.
+[LB] FOUND (real, outside my named scope, NOT fixed):
+  F1 THE LITTER IS TYPOGRAPHY. Every piece of junk in every scavenge block is a
+     grey rounded square with a lowercase word in it (cap, bolt, nub, clip, tab,
+     stub, pin). ART_STYLE.md's whole premise is bugs sewn from litter and the
+     litter you actually sort is text. This is a bigger art gap than the bug art
+     and it is the first thing a player touches.
+  F2 GRUB HUNT HAS NO HUNT. The grub is a bright mint-green tile among identical
+     grey tiles: your eye lands on it before you have started. The block's verb
+     (search) is never exercised. Same class as the Attic's DUST OFF finding.
+  F3 The arena has a ~280px band of empty black between the log line and the
+     move cards before the first exchange resolves.
+  F4 A 'dot' (damage over time) event gets a damage pop but NO hit flash, and a
+     'break' event gets neither. Only 'hit' is fully dressed.
+  F5 LANDSCAPE. The 540x960 stage letterboxes to a narrow centre column with
+     roughly 350px of dead width each side at 915x412, on every screen. Nothing
+     clips or overlaps, so it is wasteful rather than broken, but the game is
+     unusable-feeling in the orientation a phone is often held in.
+  F6 The alley backdrop is flat vector rectangles with a hard-edged triangular
+     light cone that reads as a UI artifact rather than light. It is a diagram
+     of an alley, not a picture of one, and it is the only "art" on HOME.
+  F7 Bugs sit in the top ~35% of a Bugdex card leaving a gap before the name,
+     and card heights go ragged when a name wraps to two lines.
+  F8 scripts/smoke-render.js still needs `sharp`, which is not installed in this
+     repo (no node_modules at all upstream). 9 of 10 smoke harnesses run; that
+     one cannot. My new scripts use the lucid-winds puppeteer via an absolute
+     require path for the same reason.
+  F9 The repo's own STATUS.md / ROADMAP.md / NEXT_SESSION.md still describe the
+     pre-2026-08-24 state (battles dark behind ?battles=1, three blocks, no
+     levels). They are stale, not wrong-in-a-dangerous-way, so I left them.
+[LB] HALF DONE, honestly: L4's "background per screen" is the weakest thing I
+  shipped. It is ONE alley, blurred and tinted per room, not five backgrounds,
+  and under the scrim it is very nearly invisible on the mint screen. It removes
+  the flat-two-stop-gradient feel and nothing more. Real per-screen art is still
+  outstanding, and F1/F6 are the places to spend it.
