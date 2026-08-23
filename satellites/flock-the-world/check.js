@@ -129,7 +129,16 @@ group('the sim actually runs');
 function stubEl() {
   const el = {
     classList: { _s: {}, contains(c) { return !!this._s[c]; }, add(c) { this._s[c] = 1; }, remove(c) { delete this._s[c]; }, toggle(c, v) { if (v === undefined) v = !this._s[c]; if (v) this._s[c] = 1; else delete this._s[c]; } },
-    style: {}, innerHTML: '', textContent: '', value: '', dataset: {},
+    /* style is a real CSSStyleDeclaration in a browser, so the stub has to
+       answer setProperty too, or code that sets a CSS variable throws here and
+       passes in production. Added 2026-08-23 when the end-screen backdrops
+       started setting --shot. */
+    style: (function(){ const st={_v:{}};
+      st.setProperty=(k,v)=>{st._v[k]=v;};
+      st.removeProperty=k=>{delete st._v[k];};
+      st.getPropertyValue=k=>(k in st._v?st._v[k]:'');
+      return st; })(),
+    innerHTML: '', textContent: '', value: '', dataset: {},
     querySelector: () => stubEl(), querySelectorAll: () => [],
     appendChild() {}, removeChild() {}, setAttribute() {}, getAttribute() { return null; },
     addEventListener() {}, removeEventListener() {}, closest: () => null,

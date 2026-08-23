@@ -20,6 +20,15 @@ body{user-select:none}
 button{font-family:inherit;color:inherit;background:none;border:none;cursor:pointer}
 #app{position:fixed;inset:0;display:flex;flex-direction:column}
 .screen{position:absolute;inset:0;display:none;flex-direction:column}
+/* full screen backdrops. Set --shot on the section and the art appears behind
+   everything, dimmed and vignetted. Learned on the tree backdrop: art behind
+   copy has to be pushed much further back than looks right in isolation. */
+.screen[style*="--shot"]::before{content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
+  background-image:var(--shot);background-size:cover;background-position:center;
+  opacity:.30;filter:saturate(.85)}
+.screen[style*="--shot"]::after{content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(120% 90% at 50% 40%,#05070b33 0%,#05070bd0 62%,#05070bf2 100%)}
+.screen[style*="--shot"]>*{position:relative;z-index:1}
 .screen.on{display:flex}
 
 /* ---------- menu ---------- */
@@ -447,7 +456,7 @@ h1 em{font-style:normal;color:var(--sodium)}
 <div id="app">
 
 <!-- MENU -->
-<section class="screen on" id="menu">
+<section class="screen on" id="menu" style="--shot:url(art/bg/bg_menu.webp)">
   <div class="lens"></div>
   <div class="tag">Sky Wolf Studio presents</div>
   <img id="wordmark" src="art/bg/wordmark.webp" alt="Flock the World">
@@ -1412,6 +1421,14 @@ function finish(won,why){
    <div class="sg"><div class="k">Organized at peak</div><div class="v mono">${fmtPeople(S.popPeakOrg||0)}</div></div>
    <div class="sg"><div class="k">Expelled you</div><div class="v mono">${fmtPeople(S.popExpelled)}</div></div>
    <div class="sg" style="grid-column:1/-1"><div class="k">Never asked</div><div class="v mono">${fmtPeople(S.popWatched)} people were never asked.</div></div>`;
+  /* ⛔ REFUSAL has no backdrop on purpose. The pack asked for a daylight street
+     where the camera poles have become bird boxes, and that is the one image in
+     sheet 7 that was never generated. Every candidate in the drop is a night
+     city, a control room or a corporate lobby, and none of them says "ordinary
+     people won". A wrong picture would undercut the best ending in the game, so
+     it stays clean until the right one exists. */
+  $('end').style.setProperty('--shot',
+    won?'url(art/bg/bg_end_win.webp)':why==='refusal'?'':'url(art/bg/bg_end_coalition.webp)');
   if(won){
     $('endKick').textContent='Contract fulfilled';
     $('endTitle').innerHTML='TOTAL <span style="color:var(--sodium)">COVERAGE</span>';
