@@ -8,6 +8,8 @@
  *
  * BITES      the named check failed. The check is real.
  * WRONG      something failed, but not the named check. Mis-attributed guard.
+ * CRASH      the suite died on an uncaught throw. Detected, but not by a
+ *             named check, so no check can be credited with the guard.
  * VACUOUS    the whole suite stayed green. Nothing guards this line.
  * BADMUT     the find string was absent or not unique; mutation not applied.
  */
@@ -57,6 +59,14 @@ muts.forEach((m, i) => {
     const r = runSuite(file);
     const F = failedNames(r.out);
     if (r.code === 2) { verdict = 'BADMUT'; detail = 'harness refused the mutated file'; }
+    /* ⛔ exit != 0 with no FAIL lines means the suite DIED, not that it passed.
+       Reported as VACUOUS on 2026-08-24 until a mutation that crashes check.js
+       on an uncaught throw was traced by hand. A crash is loud detection, just
+       not by a named check, so it gets its own verdict. */
+    else if (F.length === 0 && r.code !== 0) {
+      verdict = 'CRASH';
+      detail = 'suite died before finishing: ' + (r.out.split('\n').filter(Boolean).pop() || '').slice(0, 80);
+    }
     else if (F.length === 0) { verdict = 'VACUOUS'; detail = 'suite stayed green'; }
     else if (F.some(f => f === m.checkName)) { verdict = 'BITES'; detail = F.length + ' check(s) red'; }
     else { verdict = 'WRONG'; detail = 'red instead: ' + F.slice(0, 3).join(' | '); }

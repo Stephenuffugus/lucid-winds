@@ -417,8 +417,12 @@ if (C) {
         endHTML.slice(endHTML.indexOf('Never asked'), endHTML.indexOf('Never asked') + 90));
       const watched = (/People watched<\/div><div class="v mono">([0-9,]+)</.exec(endHTML) || [])[1];
       const asked = (/Never asked<\/div><div class="v mono">([0-9,]+)/.exec(endHTML) || [])[1];
+      /* ⛔ was `!watched || !asked || watched !== asked`, which passed happily
+         when EITHER regex matched nothing. Both markup shapes must be found
+         before the comparison means anything. Proved vacuous 2026-08-24. */
       ok('the closing line does not duplicate the watched tile',
-        !watched || !asked || watched !== asked, 'both read ' + watched);
+        !!watched && !!asked && watched !== asked,
+        'watched=' + watched + ' asked=' + asked);
     }
 
     ok('the ledger sheet names all six totals', ['Watched', 'Never watched', 'Compliant', 'Organized', 'In the streets', 'Expelled you'].every(k => lh.indexOf('>' + k + '<') >= 0));
@@ -771,6 +775,17 @@ if (C) {
         'for(const k of Object.keys(S.regions)){S.regions[k].active=true;S.regions[k].coverage=1;}popTotals(S);', cX);
       const log = vm.runInContext('S.log.map(e=>e.t).join("|")', cX);
       if (log.indexOf(evil) >= 0) leaked.push(evil);
+      /* ⛔ positive control. `leaked` stays empty both when the name is properly
+         escaped AND when no milestone ever reached the log, so the absence of a
+         raw payload means nothing on its own. A first attempt asserted that the
+         ESCAPED name appears somewhere in the log: too weak, because the
+         founding "installs its first unit" line carries it too and satisfied
+         the control with zero milestones fired. Require a real POP_MILES
+         headline in the log. Both weaknesses proved by mutation 2026-08-24. */
+      const fired = vm.runInContext('POP_MILES.filter(m=>S.popMiles&&S.popMiles.has(m.id)).map(m=>m.t(S))', cX);
+      if (!fired.length || !fired.some(t => log.indexOf(t) >= 0)) {
+        leaked.push('no milestone headline reached the news log (' + fired.length + ' fired)');
+      }
     }
     ok('no population milestone puts raw player markup into the news', leaked.length === 0,
       'leaked: ' + JSON.stringify(leaked));
@@ -789,7 +804,13 @@ if (C) {
     ok('the next bubble day survives a reload', vm.runInContext('S.nextBubble', cR2) === 44);
     /* and a junk bubble in a hand edited save is refused, not booted into */
     vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');saveRun();", cR);
+    const preJunk = store['ftw_run'];
     store['ftw_run'] = store['ftw_run'].replace('"bubbles":[]', '"bubbles":[{"k":"evil","life":"x"},null,5]');
+    /* ⛔ if saveRun's shape drifts, the replace above is a no-op and the
+       assertion below passes against an untouched save. Prove it landed. */
+    ok('the junk bubble fixture actually modified the save',
+      store['ftw_run'] !== preJunk && store['ftw_run'].indexOf('"k":"evil"') >= 0,
+      'replace did not match the saved shape');
     const cR3 = makeCtx();
     vm.runInContext('loadRun()', cR3);
     ok('a junk bubble in a save is dropped, not trusted',
