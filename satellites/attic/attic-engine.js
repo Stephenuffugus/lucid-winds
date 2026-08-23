@@ -86,6 +86,18 @@
     for (i = 0; i < GRADES.length; i++) if (b < GRADES[i].hi) return GRADES[i].g;
     return 'GOOD';
   }
+  /* what fraction of pulls land AT OR ABOVE a grade, read off the same table
+     the grade itself comes from. The want list needs it to know whether a hunt
+     it is about to hand somebody is a hunt or a punishment. */
+  function gradeAtLeast(g) {
+    var i, lo = 0, n = 0, hit = false;
+    for (i = 0; i < GRADES.length; i++) {
+      if (GRADES[i].g === g) hit = true;
+      if (hit) n += (GRADES[i].hi - lo);
+      lo = GRADES[i].hi;
+    }
+    return hit ? n / 256 : 0;
+  }
 
   var ERRORS = [  // mutation byte: hb(3) >= 0xF0 (6.25%)
     'MISCUT: printing runs off the edge', 'WRONG LABEL: names a different item entirely',
@@ -244,7 +256,7 @@
        note are revealNote/revealSuffix, printed only after the wipe. */
     return {
       cls: 'TOY', name: toyName(r), sub: gim, sticker: null,
-      _flaw: pick(r, T_FLAWS)
+      _flaw: pick(r, T_FLAWS), _mint: ' (MINT ON CARD)'
     };
   }
 
@@ -260,13 +272,13 @@
   function gameName(r) {
     if (r(CLASSIC_ODDS) === 0) return pick(r, G_FLAT);
     var p = r(10);
-    if (p === 0) return pick(r, G_NOUN) + ' PANIC!';
+    if (p === 0) return pick(r, G_ADJ) + ' ' + pick(r, G_NOUN) + ' PANIC!';
     if (p === 1) return pick(r, G_NOUN) + ' BARONS OF ' + pick(r, G_PLACE);
-    if (p === 2) return 'DON’T WAKE ' + pick(r, G_REL) + ' ' + pick(r, G_NAME);
+    if (p === 2) return 'DON’T WAKE ' + pick(r, G_REL) + ' ' + pick(r, G_NAME) + ': ' + pick(r, G_NOUN) + ' EDITION';
     if (p === 3) return 'THE ' + pick(r, G_ADJ) + ' ' + pick(r, G_NOUN) + ' GAME';
-    if (p === 4) return pick(r, G_NOUN) + ' TYCOON';
-    if (p === 5) return 'ESCAPE FROM THE ' + pick(r, G_NOUN);
-    if (p === 6) return 'WHO TOOK THE ' + pick(r, G_NOUN) + '?';
+    if (p === 4) return pick(r, G_NOUN) + ' TYCOON OF ' + pick(r, G_PLACE);
+    if (p === 5) return 'ESCAPE FROM THE ' + pick(r, G_ADJ) + ' ' + pick(r, G_NOUN);
+    if (p === 6) return 'WHO TOOK THE ' + pick(r, G_NOUN) + ' FROM ' + pick(r, G_PLACE) + '?';
     if (p === 7) return pick(r, G_NOUN) + ': THE GATHERING ' + pick(r, G_STORM);
     if (p === 8) return pick(r, G_ADJ) + ' ' + pick(r, G_NOUN) + ' CHAMPIONSHIP';
     return pick(r, G_NOUN) + ' AND ' + pick(r, G_NOUN);
@@ -283,26 +295,31 @@
 
   // ── CEREAL ───────────────────────────────────────────────────────
   var C_FLAT = ['FROSTED GNOME BITES', 'ASTRO GRAINS', 'COUNT SLURPULA', 'HONEY BARGE', 'OAT COMMANDER', 'PUDDLE CRUNCH', 'BREAKFAST WOLVES', 'MR. FIBER’S MORNING SITUATION', 'ROOT CELLAR O’S', 'SUGAR CANOES'];
-  var C_ADJ = ['FROSTED', 'HONEY', 'SUGAR', 'ASTRO', 'DOUBLE', 'CRUNCHY', 'TOASTED', 'MAPLE', 'COCOA', 'BUTTERED', 'CARAMEL', 'ROOT CELLAR'];
-  var C_CREATURE = ['GNOME', 'WOLF', 'KRAKEN', 'BADGER', 'GOBLIN', 'MOOSE', 'HERON', 'YETI', 'TROLL', 'OTTER', 'RACCOON', 'CRAB'];
-  var C_GRAIN = ['BITES', 'GRAINS', 'CRUNCH', 'FLAKES', 'O’S', 'PUFFS', 'SQUARES', 'NUGGETS', 'WHEELS', 'RAFTS'];
-  var C_VESSEL = ['BARGE', 'CANOES', 'ROCKETS', 'WAGONS', 'DINGHIES', 'TUGBOATS', 'SLEDS', 'GONDOLAS'];
-  var C_RANK = ['COMMANDER', 'CAPTAIN', 'SERGEANT', 'ADMIRAL', 'MAYOR', 'DEPUTY', 'COUNT', 'PROFESSOR'];
-  var C_BASE = ['OAT', 'BRAN', 'CORN', 'RICE', 'WHEAT', 'BARLEY', 'MILLET'];
-  var C_HONORIFIC = ['MR.', 'MRS.', 'DR.', 'UNCLE', 'CAPTAIN', 'PROFESSOR'];
-  var C_SURNAME = ['FIBER', 'CRUMB', 'MOLASSES', 'HUSK', 'GRIDDLE', 'BUTTERWORTH JR.', 'OATLEY', 'SCOOP'];
-  var C_SITUATION = ['MORNING SITUATION', 'BREAKFAST PROGRAM', 'DAILY REQUIREMENT', 'FIBRE PLAN', 'GOOD START'];
+  var C_ADJ = ['FROSTED', 'HONEY', 'SUGAR', 'ASTRO', 'DOUBLE', 'CRUNCHY', 'TOASTED', 'MAPLE', 'COCOA', 'BUTTERED', 'CARAMEL', 'ROOT CELLAR', 'CINNAMON', 'MOLASSES', 'JUMBO', 'MIDNIGHT', 'DELUXE', 'ELECTRIC', 'GOLDEN', 'CHURNED'];
+  var C_CREATURE = ['GNOME', 'WOLF', 'KRAKEN', 'BADGER', 'GOBLIN', 'MOOSE', 'HERON', 'YETI', 'TROLL', 'OTTER', 'RACCOON', 'CRAB', 'PELICAN', 'MAMMOTH', 'SASQUATCH', 'PANGOLIN', 'WALRUS', 'HORNET', 'BEAVER', 'CONDOR'];
+  var C_GRAIN = ['BITES', 'GRAINS', 'CRUNCH', 'FLAKES', 'O’S', 'PUFFS', 'SQUARES', 'NUGGETS', 'WHEELS', 'RAFTS', 'PILLOWS', 'CLUSTERS', 'SHINGLES', 'PEBBLES'];
+  var C_VESSEL = ['BARGE', 'CANOES', 'ROCKETS', 'WAGONS', 'DINGHIES', 'TUGBOATS', 'SLEDS', 'GONDOLAS', 'HANDCARS', 'ZEPPELINS', 'SNOWPLOWS', 'FERRIES'];
+  var C_RANK = ['COMMANDER', 'CAPTAIN', 'SERGEANT', 'ADMIRAL', 'MAYOR', 'DEPUTY', 'COUNT', 'PROFESSOR', 'MARSHAL', 'CHANCELLOR', 'FOREMAN', 'BARON'];
+  var C_BASE = ['OAT', 'BRAN', 'CORN', 'RICE', 'WHEAT', 'BARLEY', 'MILLET', 'RYE', 'BUCKWHEAT', 'HOMINY'];
+  var C_HONORIFIC = ['MR.', 'MRS.', 'DR.', 'UNCLE', 'CAPTAIN', 'PROFESSOR', 'AUNT', 'DEACON'];
+  var C_SURNAME = ['FIBER', 'CRUMB', 'MOLASSES', 'HUSK', 'GRIDDLE', 'BUTTERWORTH JR.', 'OATLEY', 'SCOOP', 'PANTRY', 'SKILLET', 'BRIMLEY', 'THRESHER', 'KETTLE', 'BUSHEL'];
+  var C_SITUATION = ['MORNING SITUATION', 'BREAKFAST PROGRAM', 'DAILY REQUIREMENT', 'FIBRE PLAN', 'GOOD START', 'FIRST MEAL PLAN', 'SUNRISE ARRANGEMENT', 'DAWN PATROL RATION'];
   var C_CLAIMS = ['NOW WITH MORE HAT', 'the cereal of the space program’s contractors', 'he counts the marshmallows so you don’t have to', 'part of this complete situation', 'FREE PRIZE INSIDE (prize is a coupon for the prize)', 'stays crunchy through most of it', 'shapes may have settled into one shape', 'fortified with things the box does not name', 'the spoon is on the back, cut it out', 'now 4% larger box, same cereal', 'as seen during the weather'];
+  /* ⛔ EVERY PATTERN CARRIES ITS OWN WEIGHT. Half of these used to be two term
+     patterns drawn one time in eight, so BREAKFAST WOLVES was one of twelve
+     possible titles taking an eighth of the class. A pattern that can only
+     produce a couple of hundred titles is a repeat generator, whatever the
+     class total says. Bar is a low four figure count PER PATTERN now. */
   function cerealName(r) {
     if (r(CLASSIC_ODDS) === 0) return pick(r, C_FLAT);
     var p = r(8);
     if (p === 0) return pick(r, C_ADJ) + ' ' + pick(r, C_CREATURE) + ' ' + pick(r, C_GRAIN);
-    if (p === 1) return pick(r, C_ADJ) + ' ' + pick(r, C_VESSEL);
-    if (p === 2) return pick(r, C_BASE) + ' ' + pick(r, C_RANK);
-    if (p === 3) return 'BREAKFAST ' + pick(r, C_CREATURE) + 'S';
+    if (p === 1) return pick(r, C_ADJ) + ' ' + pick(r, C_CREATURE) + ' ' + pick(r, C_VESSEL);
+    if (p === 2) return pick(r, C_BASE) + ' ' + pick(r, C_RANK) + ' ' + pick(r, C_GRAIN);
+    if (p === 3) return 'BREAKFAST ' + pick(r, C_CREATURE) + 'S ' + pick(r, C_GRAIN);
     if (p === 4) return pick(r, C_HONORIFIC) + ' ' + pick(r, C_SURNAME) + '’S ' + pick(r, C_SITUATION);
-    if (p === 5) return pick(r, C_ADJ) + ' ' + pick(r, C_GRAIN);
-    if (p === 6) return pick(r, C_CREATURE) + ' ' + pick(r, C_GRAIN);
+    if (p === 5) return pick(r, C_ADJ) + ' ' + pick(r, C_BASE) + ' ' + pick(r, C_VESSEL);
+    if (p === 6) return pick(r, C_CREATURE) + ' ' + pick(r, C_RANK) + '’S ' + pick(r, C_GRAIN);
     return pick(r, C_ADJ) + ' ' + pick(r, C_BASE) + ' ' + pick(r, C_GRAIN);
   }
   function cereal(h) {
@@ -313,18 +330,220 @@
     };
   }
 
+  // ── COMICS ───────────────────────────────────────────────────────
+  var K_FLAT = ['THE ASTONISHING PLUMB BOB', 'CAPTAIN COUPON', 'THE MOLE COMMITTEE', 'SWAMP DEPUTY', 'THE TWELVE CENT MENACE', 'LADY LINOLEUM', 'THE INCREDIBLE OVERTIME', 'BOG SCOUTS OF AMERICA', 'THE QUIET AVENGER OF AISLE NINE'];
+  var K_ADJ = ['ASTONISHING', 'INCREDIBLE', 'UNCANNY', 'SENSATIONAL', 'AMAZING', 'MIGHTY', 'FEARLESS', 'SPECTACULAR', 'TERRIFIC', 'DAUNTLESS', 'ETERNAL', 'RELUCTANT', 'HONORARY', 'INVISIBLE', 'ELECTRIC', 'MIDNIGHT'];
+  var K_HERO = ['PLUMB BOB', 'CAPTAIN COUPON', 'LADY LINOLEUM', 'THE GUTTERMAN', 'SWAMP DEPUTY', 'MOTH KNIGHT', 'THE CROSSING GUARD', 'DOCTOR THERMOSTAT', 'THE NIGHT JANITOR', 'SPARKPLUG', 'THE APPRAISER', 'TOLLBOOTH TESS', 'BRICK MAJOR', 'THE LAMPLIGHTER', 'CINDER SAINT', 'THE UNDERSTUDY', 'HAYLOFT HAL', 'MISS MERIDIAN', 'THE BOILERMAN', 'GRISTLE GIRL', 'THE SUMP KING', 'ODOMETER OWL', 'THE BREAKWATER', 'AWNING ANNIE'];
+  var K_VILLAIN = ['THE PAPERWORK', 'BARON CULVERT', 'THE MOLE COMMITTEE', 'MISTER ASPHALT', 'THE THAW', 'DOCTOR VACANCY', 'THE LOW COUNCIL', 'MADAME KEROSENE', 'THE SECOND SHIFT', 'THE INSPECTOR GENERAL', 'THE SALT GUILD', 'PROFESSOR PAYPHONE', 'THE WET SEASON', 'THE LONG COMMUTE', 'THE ZONING BOARD', 'THE FIFTH BASEMENT', 'THE QUIET ARMY', 'THE NINTH ROW'];
+  var K_RELIC = ['LANTERN', 'LEDGER', 'KEYRING', 'THIMBLE', 'CROWBAR', 'COMPASS', 'THERMOS', 'SNOW GLOBE', 'CASSEROLE DISH', 'PARKING METER', 'HAND SAW', 'PAY STUB', 'SPARE TIRE', 'BRASS DOORKNOB', 'PILOT LIGHT', 'STORM WINDOW', 'BUS TOKEN', 'MITTEN', 'CHURCH KEY', 'FIRST AID TIN'];
+  var K_PLACE = ['THE FLATS', 'LOWER SANDUSKY', 'THE TOWPATH', 'AISLE NINE', 'THE OLD PLANT', 'CAMP KETTLE', 'THE SPILLWAY', 'ROUTE 8', 'THE BACK ACRE', 'THE COUNTY LINE', 'THE WEST ANNEX', 'THE LOADING DOCK', 'THE LOWER LEVEL', 'THE FAIRGROUND', 'THE NORTH SIDE', 'THE OTHER OHIO'];
+  var K_TEAM = ['THE OVERTIME SQUAD', 'THE BASEMENT SIX', 'THE HALL MONITORS', 'THE NIGHT SHIFT', 'THE VOLUNTEER BRIGADE', 'THE LOT ATTENDANTS', 'THE BOTTLE RETURNS', 'THE UNDERSTUDIES', 'THE SNOW BIRDS', 'THE ALTERNATES', 'THE PALLBEARERS', 'THE DEACONS', 'THE SHORT ORDERS', 'THE MAJORETTES'];
+  var K_BLURB = ['At last! The origin nobody demanded!', 'One of them will not clock out.', 'The issue the letters page warned you about!', 'A hero falls. Rates go up.', 'She was told no. She filed anyway.', 'Everything you know about the basement is true.', 'The team splits over a parking spot.', 'Guest starring somebody we could afford.', 'Continued from an issue that was never printed.', 'This one has the death in it. Probably.', 'The wedding issue. Nobody attends.', 'A very special issue about the gutters.', 'He gives up the cape for a pension.', 'Six pages of ads and a miracle.', 'The crossover event with itself.'];
+  var K_IMPRINT_A = ['Meridian', 'Bright Angle', 'Cinderblock', 'Foundry', 'Gravel', 'Beige', 'Third Shift', 'Lodge', 'Wharfside', 'Percolator', 'Curb', 'Vacancy'];
+  var K_IMPRINT_B = ['Comics', 'Comics Group', 'Periodicals', 'Publications', 'Features'];
+  /* ⛔ NEUTRAL MARKINGS ONLY. Anything that describes WEAR belongs in K_FLAWS
+     and anything that implies a high grade belongs in the mint note, or the
+     sticker line hands the player the condition before the wipe. This is the
+     exact leak the 2026-08-16 audit found in the toy class. */
+  var K_NOTES = ['arrival date stamped on the cover in purple ink', 'somebody clipped the mail order coupon out of the back', 'price sticker over the cover price, and it is higher', 'a name and a paper route number on the top edge', 'the corner box has a fingerprint burned into it', 'a distributor mark in grease pencil across the logo'];
+  var K_FLAWS = ['spine rolled, and it will not roll back', 'tape along the spine, applied with love', 'subscription crease straight down the middle', 'a child has coloured in one of the ads', 'the staples have rusted a halo into the fold', 'the back cover ad has been cut out with scissors', 'water ripple across the bottom third'];
+  function comicName(r) {
+    if (r(CLASSIC_ODDS) === 0) return pick(r, K_FLAT);
+    var p = r(8);
+    if (p === 0) return 'THE ' + pick(r, K_ADJ) + ' ' + pick(r, K_HERO);
+    if (p === 1) return pick(r, K_HERO) + ' VS. ' + pick(r, K_VILLAIN);
+    if (p === 2) return pick(r, K_HERO) + ' AND THE ' + pick(r, K_RELIC) + ' OF ' + pick(r, K_PLACE);
+    if (p === 3) return 'TALES FROM ' + pick(r, K_PLACE);
+    if (p === 4) return pick(r, K_ADJ) + ' ' + pick(r, K_TEAM);
+    if (p === 5) return 'THE ' + pick(r, K_RELIC) + ' OF ' + pick(r, K_PLACE);
+    if (p === 6) return pick(r, K_HERO) + ' OF ' + pick(r, K_PLACE);
+    return pick(r, K_TEAM) + ' VS. ' + pick(r, K_VILLAIN);
+  }
+  function comic(h) {
+    var r = stream(contentKey(h), 'comic');
+    var issue = 1 + r(340);
+    var cents = [10, 12, 15, 20, 25, 35, 40, 60, 75, 95][r(10)];
+    return {
+      cls: 'COMIC', name: comicName(r),
+      sub: 'issue #' + issue + ' · ' + pick(r, K_IMPRINT_A) + ' ' + pick(r, K_IMPRINT_B) + ' · ' + cents + ' cents · "' + pick(r, K_BLURB) + '"',
+      sticker: r(256) < 0x70 ? pick(r, K_NOTES) : null,
+      _flaw: pick(r, K_FLAWS), _mint: ' (BAGGED AND BOARDED)',
+      _issue: issue, _cents: cents
+    };
+  }
+
+  // ── ZINES ────────────────────────────────────────────────────────
+  var Z_FLAT = ['SHOUT AT THE LAUNDROMAT', 'BAD MAP OF A GOOD TOWN', 'EVERY BUS I HAVE MISSED', 'SNACKS OF THE NIGHT SHIFT', 'PLEASE DO NOT PHOTOCOPY THIS', 'A LIST OF DOORS', 'THE CASSETTE REVIEW', 'NOTES ON THE CEILING'];
+  var Z_ADJ = ['XEROX', 'STAPLED', 'FOLDED', 'BORROWED', 'CHEAP', 'HONEST', 'LOUD', 'DAMP', 'THIRD HAND', 'UNSIGNED', 'MIDNIGHT', 'BASEMENT', 'LAUNDRY', 'GRAVEL', 'SECONDHAND', 'UNPAID', 'PATIENT', 'RELUCTANT', 'HOURLY', 'OVERDUE'];
+  var Z_NOUN = ['DISPATCH', 'BULLETIN', 'QUARTERLY', 'REVIEW', 'DIGEST', 'LEDGER', 'GAZETTE', 'PAMPHLET', 'NEWSLETTER', 'ALMANAC', 'CIRCULAR', 'MANIFESTO', 'ANNUAL', 'READER', 'JOURNAL', 'COMPANION', 'ADVISOR', 'CATALOGUE'];
+  var Z_SUBJ = ['LAUNDROMAT', 'BUS ROUTE', 'NIGHT SHIFT', 'CUL DE SAC', 'PARKING LOT', 'BOWLING ALLEY', 'CHURCH VAN', 'STORAGE UNIT', 'FOOD COURT', 'PAY PHONE', 'SNOWPLOW', 'FREEZER AISLE', 'CROSSWALK', 'BAIT SHOP', 'FIRE HALL', 'CRAWL SPACE', 'RECYCLING', 'TOWPATH', 'LOADING DOCK', 'BREAK ROOM', 'VENDING MACHINE', 'DRIVE THRU', 'SWAP MEET', 'ICE RINK'];
+  var Z_VERBING = ['WAITING', 'WALKING', 'CLOCKING IN', 'COMPLAINING', 'MOVING OUT', 'SITTING STILL', 'GOING BACK', 'STAYING UP', 'LEAVING EARLY', 'ARGUING', 'APOLOGIZING', 'SWEEPING UP'];
+  var Z_MAKERS = ['made on a machine at work', 'run off after hours at a copy shop', 'photocopied at the library, forty at a time', 'printed on the back of somebody else’s flyers', 'traded through the mail for stamps', 'left in the free box outside a record store', 'stapled on a kitchen table', 'hand collated, badly'];
+  var Z_NOTES = ['a return address in ballpoint on the back', 'somebody wrote ARGUE WITH THIS in the margin', 'page 7 is a photocopy of a photocopy of a hand', 'one page is upside down and always was', 'a stamp still stuck to the back cover', 'the editor signed the inside cover with an initial'];
+  var Z_FLAWS = ['coffee ring on the cover, original', 'the staple has rusted through the fold', 'the cut here coupon has been cut here', 'the fold has gone soft and furry', 'toner has lifted off the cover in a thumb shape', 'somebody read it in the bath'];
+  var Z_DONE = ['SEEN', 'RUINED', 'LOVED', 'MISSED', 'CLEANED', 'AVOIDED', 'SLEPT IN', 'PAID FOR', 'WALKED PAST', 'BEEN THROWN OUT OF'];
+  function zineName(r) {
+    if (r(CLASSIC_ODDS) === 0) return pick(r, Z_FLAT);
+    var p = r(8);
+    if (p === 0) return 'THE ' + pick(r, Z_ADJ) + ' ' + pick(r, Z_SUBJ) + ' ' + pick(r, Z_NOUN);
+    if (p === 1) return pick(r, Z_ADJ) + ' ' + pick(r, Z_NOUN) + ', NUMBER ' + (2 + r(28));
+    if (p === 2) return 'NOTES FROM THE ' + pick(r, Z_ADJ) + ' ' + pick(r, Z_SUBJ);
+    if (p === 3) return pick(r, Z_VERBING) + ' AT THE ' + pick(r, Z_ADJ) + ' ' + pick(r, Z_SUBJ);
+    if (p === 4) return pick(r, Z_ADJ) + ' ' + pick(r, Z_SUBJ) + ' ' + pick(r, Z_NOUN);
+    if (p === 5) return 'A FIELD GUIDE TO THE ' + pick(r, Z_SUBJ) + ' ' + pick(r, Z_NOUN);
+    if (p === 6) return pick(r, Z_SUBJ) + ' ' + pick(r, Z_NOUN) + ', NUMBER ' + (2 + r(28));
+    return 'EVERY ' + pick(r, Z_ADJ) + ' ' + pick(r, Z_SUBJ) + ' I HAVE EVER ' + pick(r, Z_DONE);
+  }
+  function zine(h) {
+    var r = stream(contentKey(h), 'zine');
+    var run = [25, 40, 50, 60, 75, 100, 120, 200][r(8)];
+    var num = 1 + r(run);
+    return {
+      cls: 'ZINE', name: zineName(r),
+      sub: pick(r, Z_MAKERS) + ' · number ' + num + ' of ' + run + ' · half size, folded and stapled',
+      sticker: r(256) < 0x90 ? pick(r, Z_NOTES) : null,
+      _flaw: pick(r, Z_FLAWS), _mint: ' (STILL IN THE MAILER)',
+      _run: run, _num: num
+    };
+  }
+
+  // ── HANDHELDS ────────────────────────────────────────────────────
+  var D_FLAT = ['TURBO FROG', 'SPACE DENTIST', 'PANIC AT THE DEPOT', 'MOLE PATROL', 'CANOE COMMAND', 'GRIDLOCK 2000', 'ELEVATOR REPAIR', 'BASEMENT DEFENDER'];
+  var D_ADJ = ['TURBO', 'SUPER', 'DELUXE', 'ELECTRO', 'LASER', 'MEGA', 'POCKET', 'GALACTIC', 'ATOMIC', 'DOUBLE', 'CRAZY', 'NIGHT', 'CHROME', 'HYPER'];
+  var D_NOUN = ['FROG', 'DENTIST', 'FORKLIFT', 'CANOE', 'DEPOT', 'MOLE', 'ELEVATOR', 'GRIDLOCK', 'BOWLING', 'SNOWPLOW', 'JANITOR', 'TOLLBOOTH', 'PARACHUTE', 'CARWASH', 'FIREHOUSE', 'SUBMARINE', 'PANCAKE', 'PENGUIN', 'BADGER', 'CRANE', 'DIVER', 'BOULDER'];
+  var D_VERB = ['PATROL', 'COMMAND', 'PANIC', 'RESCUE', 'DERBY', 'SCRAMBLE', 'SHUFFLE', 'ALERT', 'DEFENDER', 'RUNNER', 'CATCHER', 'JUMP'];
+  var D_BRAND_A = ['Kestrel', 'Ovation', 'Merit', 'Duromatic', 'Bellwether', 'Chancery', 'Pinnacle', 'Colonade', 'Regency', 'Vantage', 'Torrance', 'Halifax'];
+  var D_BRAND_B = ['Electronics', 'Industries', 'Playthings', 'Novelty Co.', 'Game Works'];
+  var D_FEATURES = ['one screen, two speeds, no mercy', 'GAME A and GAME B, and GAME B is unfair', 'sound switch on the side, stuck on', 'four buttons, one of them optimistic', 'high score is not saved and never was', 'runs on a battery shaped like a coin', 'the demo mode plays better than you do', 'wrist strap included, wrist not'];
+  var D_NOTES = ['the instructions are folded into the box in eight', 'somebody wrote a high score on the back in marker', 'belt clip present, belt absent', 'the model number is stamped into the battery door', 'a shop repair sticker from a town that has no shops'];
+  var D_FLAWS = ['one segment of the screen never lights', 'battery door taped shut, tape original', 'volume switch snapped off at the nub', 'the button legends have worn away to blanks', 'green crust in the battery bay, carefully scraped', 'the screen is scratched in the shape of a pocket'];
+  function handheldName(r) {
+    if (r(CLASSIC_ODDS) === 0) return pick(r, D_FLAT);
+    var p = r(8);
+    if (p === 0) return pick(r, D_ADJ) + ' ' + pick(r, D_NOUN);
+    if (p === 1) return pick(r, D_NOUN) + ' ' + pick(r, D_VERB);
+    if (p === 2) return pick(r, D_ADJ) + ' ' + pick(r, D_NOUN) + ' ' + pick(r, D_VERB);
+    if (p === 3) return pick(r, D_ADJ) + ' ' + pick(r, D_NOUN) + ' ' + (1975 + r(25));
+    if (p === 4) return pick(r, D_ADJ) + ' ' + pick(r, D_NOUN) + ' ' + pick(r, D_VERB) + ' ' + (2 + r(8));
+    if (p === 5) return pick(r, D_NOUN) + ' VS ' + pick(r, D_NOUN);
+    if (p === 6) return 'THE ' + pick(r, D_ADJ) + ' ' + pick(r, D_NOUN) + ' GAME';
+    return pick(r, D_ADJ) + ' ' + pick(r, D_NOUN) + ' ' + pick(r, D_VERB);
+  }
+  function handheld(h) {
+    var r = stream(contentKey(h), 'handheld');
+    return {
+      cls: 'HANDHELD', name: handheldName(r),
+      sub: pick(r, D_BRAND_A) + ' ' + pick(r, D_BRAND_B) + ' · model ' + (100 + r(880)) + ' · ' + pick(r, D_FEATURES),
+      sticker: r(256) < 0x60 ? pick(r, D_NOTES) : null,
+      _flaw: pick(r, D_FLAWS), _mint: ' (SCREEN FILM NEVER PEELED)'
+    };
+  }
+
+  // ── PAPERBACKS ───────────────────────────────────────────────────
+  var B_FLAT = ['THE LONG WEEKEND OF EARL SPANGLER', 'NINE DOORS ON THE TOWPATH', 'A QUIET MAN IN A LOUD CAR', 'THE CASSEROLE MURDERS', 'SOMETHING IN THE CULVERT', 'THE WIDOW TAKES ROUTE 8', 'COLD SNAP AT THE FAIRGROUND'];
+  var B_ADJ = ['LONG', 'COLD', 'QUIET', 'CROOKED', 'BORROWED', 'LAST', 'SECOND', 'HOLLOW', 'SALTED', 'UNPAVED', 'DAMP', 'HONEST', 'PATIENT', 'NARROW', 'LATE', 'SUDDEN'];
+  var B_NOUN = ['WEEKEND', 'DOOR', 'CULVERT', 'LADDER', 'HARVEST', 'INHERITANCE', 'WITNESS', 'FERRY', 'ORCHARD', 'SNOWFALL', 'PAYPHONE', 'MILLPOND', 'BOILER', 'HANDSAW', 'AWNING', 'DRIVEWAY', 'TOLLBOOTH', 'BREAKWATER', 'HAYLOFT', 'SWITCHYARD', 'ODOMETER', 'THISTLE', 'LANTERN', 'CINDER', 'GRUDGE', 'APPRAISAL', 'VERDICT', 'INVENTORY'];
+  var B_PLACE = ['THE TOWPATH', 'LOWER SANDUSKY', 'THE FLATS', 'THE COUNTY LINE', 'ROUTE 8', 'THE SPILLWAY', 'THE BACK ACRE', 'THE OLD PLANT', 'THE FAIRGROUND', 'THE NORTH SIDE', 'THE LAKE', 'THE VALLEY', 'THE WEST ANNEX', 'CAMP KETTLE', 'THE LOADING DOCK', 'THE OTHER OHIO', 'THE LOWER LEVEL', 'THE CRAWL SPACE'];
+  var B_NAME = ['EARL SPANGLER', 'RHONDA VOSS', 'DUANE PRETTY', 'MARLENE HOYT', 'VERNON ABLE', 'BERNICE CULP', 'ARDEN MOSS', 'DOTTIE PRINE', 'CLIFF HANNAH', 'LORETTA BRAND', 'ROOSEVELT KEHR', 'GLORIA STAMP', 'MERLE OTTINGER', 'PEARL VANCE'];
+  var B_KIND = ['a novel of suspense', 'a western', 'a mystery', 'a romance', 'a thriller', 'science fiction', 'a gothic', 'true crime, mostly', 'a police procedural', 'a sea story'];
+  var B_BLURB = ['She knew the county. The county knew her back.', 'Somebody has to close the plant. Somebody has to survive it.', 'He came home for the funeral and stayed for the trouble.', 'Two hundred miles of road and one wrong turn.', 'The paperwork was the alibi.', 'Everyone in town signed it. Nobody read it.', 'A love that would not fit in the truck.', 'The lake gives things back. Eventually.', 'He had one weekend and four bad options.', 'They said the plant was empty. They were nearly right.'];
+  var B_IMPRINT = ['Wharfside', 'Meridian', 'Gravel', 'Curb', 'Beige', 'Lodge', 'Foundry', 'Vantage', 'Percolator', 'Tollgate'];
+  var B_NOTES = ['price clipped from the corner with scissors', 'a name and a year in the flyleaf, in fountain pen', 'a bus transfer used as a bookmark, still at page 84', 'somebody has underlined every use of the word DUSK', 'stamped WITHDRAWN FROM CIRCULATION on the edge', 'a grocery list on the inside back cover'];
+  var B_FLAWS = ['the spine is creased white in three places', 'the page block has gone the colour of weak tea', 'corner dog eared at the chapter somebody stopped on', 'the cover curls back on itself and will not lie flat', 'the first signature is loose and the glue has let go', 'a ring where a mug sat on it for one whole summer'];
+  function paperbackName(r) {
+    if (r(CLASSIC_ODDS) === 0) return pick(r, B_FLAT);
+    var p = r(8);
+    if (p === 0) return 'THE ' + pick(r, B_ADJ) + ' ' + pick(r, B_NOUN);
+    if (p === 1) return 'THE ' + pick(r, B_NOUN) + ' OF ' + pick(r, B_PLACE);
+    if (p === 2) return pick(r, B_NAME) + ' AND THE ' + pick(r, B_ADJ) + ' ' + pick(r, B_NOUN);
+    if (p === 3) return pick(r, B_ADJ) + ' ' + pick(r, B_NOUN) + ' AT ' + pick(r, B_PLACE);
+    if (p === 4) return 'THE ' + pick(r, B_NOUN) + ' THAT ' + pick(r, ['WAITED', 'ANSWERED', 'CAME BACK', 'WOULD NOT KEEP', 'BURNED', 'FROZE']);
+    if (p === 5) return pick(r, B_NAME) + ' TAKES ' + pick(r, B_PLACE);
+    if (p === 6) return 'NO ' + pick(r, B_NOUN) + ' FOR ' + pick(r, B_NAME);
+    return pick(r, B_ADJ) + ' ' + pick(r, B_NOUN) + ', ' + pick(r, B_ADJ) + ' ' + pick(r, B_NOUN);
+  }
+  function paperback(h) {
+    var r = stream(contentKey(h), 'paper');
+    var cents = [25, 35, 50, 60, 75, 95, 125, 150, 195, 250][r(10)];
+    return {
+      cls: 'PAPERBACK', name: paperbackName(r),
+      sub: pick(r, B_KIND) + ' · ' + pick(r, B_IMPRINT) + ' Books · ' + (cents < 100 ? cents + ' cents' : '$' + (cents / 100).toFixed(2)) + ' · "' + pick(r, B_BLURB) + '"',
+      sticker: r(256) < 0x80 ? pick(r, B_NOTES) : null,
+      _flaw: pick(r, B_FLAWS), _mint: ' (UNREAD, SPINE UNCRACKED)',
+      _cents: cents
+    };
+  }
+
+  // ── LUNCHBOXES ───────────────────────────────────────────────────
+  var L_FLAT = ['SHERIFF OWL AND DEPUTY OWL', 'THE BOG SCOUTS', 'CANAL BARONS', 'NIGHT JANITOR ADVENTURE HOUR', 'THE MOON UNION', 'GO KART COUNTY'];
+  var L_ADJ = ['MIGHTY', 'SUPER', 'HONORARY', 'GALACTIC', 'DELUXE', 'FEARLESS', 'ELECTRIC', 'CHROME', 'RELUCTANT', 'MIDNIGHT', 'TURBO', 'POLITE'];
+  var L_NOUN = ['SHERIFF', 'DEPUTY', 'RANGER', 'PILOT', 'DIVER', 'SCOUT', 'JANITOR', 'MECHANIC', 'CADET', 'MARSHAL', 'CAPTAIN', 'FOREMAN', 'LIFEGUARD', 'ASTRONAUT', 'REFEREE', 'CROSSING GUARD'];
+  var L_CRITTER = ['OWL', 'BADGER', 'MOOSE', 'HERON', 'OTTER', 'RACCOON', 'PONY', 'GOOSE', 'NEWT', 'FERRET', 'BISON', 'SKUNK', 'TOAD', 'MAGPIE'];
+  var L_WORLD = ['COUNTY', 'PATROL', 'ACADEMY', 'ADVENTURE HOUR', 'BRIGADE', 'SQUADRON', 'CLUBHOUSE', 'FUNTIME', 'ROUNDUP', 'JAMBOREE', 'SHOWDOWN', 'PLAYHOUSE'];
+  var L_THERMOS = ['with matching thermos', 'thermos long gone', 'thermos present, cork missing', 'thermos present, cup cracked', 'thermos replaced with the wrong thermos', 'thermos never opened'];
+  var L_NOTES = ['a name in nail polish on the lid', 'somebody stuck a band sticker over the sky', 'lunch smell, faint but committed', 'a bus number scratched into the base with a key', 'the maker mark is embossed into the back panel'];
+  var L_FLAWS = ['rust freckles inside the lid', 'a dent in the front where a door won', 'the litho has scuffed down to bare steel at the edges', 'the handle was replaced with a shoelace once', 'the latch no longer holds and never will again', 'one hinge has been riveted back on by hand'];
+  function lunchboxName(r) {
+    if (r(CLASSIC_ODDS) === 0) return pick(r, L_FLAT);
+    var p = r(8);
+    if (p === 0) return pick(r, L_ADJ) + ' ' + pick(r, L_NOUN) + ' ' + pick(r, L_CRITTER);
+    if (p === 1) return pick(r, L_CRITTER) + ' ' + pick(r, L_WORLD);
+    if (p === 2) return 'THE ' + pick(r, L_ADJ) + ' ' + pick(r, L_CRITTER) + ' ' + pick(r, L_WORLD);
+    if (p === 3) return pick(r, L_NOUN) + ' ' + pick(r, L_CRITTER) + ' AND THE ' + pick(r, L_WORLD);
+    if (p === 4) return pick(r, L_ADJ) + ' ' + pick(r, L_CRITTER) + ' ' + pick(r, L_WORLD);
+    if (p === 5) return pick(r, L_CRITTER) + ' ' + pick(r, L_NOUN) + ' ' + pick(r, L_WORLD);
+    if (p === 6) return 'THE ' + pick(r, L_ADJ) + ' ' + pick(r, L_NOUN) + ' ' + pick(r, L_CRITTER) + 'S';
+    return pick(r, L_ADJ) + ' ' + pick(r, L_NOUN) + ' ' + pick(r, L_WORLD);
+  }
+  function lunchbox(h) {
+    var r = stream(contentKey(h), 'lunch');
+    var seasons = 1 + r(6);
+    return {
+      cls: 'LUNCHBOX', name: lunchboxName(r),
+      sub: 'embossed steel lunch kit · ' + pick(r, L_THERMOS) + ' · the show ran ' + seasons + ' season' + (seasons === 1 ? '' : 's'),
+      sticker: r(256) < 0x70 ? pick(r, L_NOTES) : null,
+      _flaw: pick(r, L_FLAWS), _mint: ' (PAPER INSERT STILL INSIDE)'
+    };
+  }
+
   // ── the two stage split ──────────────────────────────────────────
   /* ⛔ thresholds are on the RAW byte, not on byte % 100. The old code did
      hb(0) % 100 against 35/60/80/92, which folds 0..255 unevenly and shipped
      RECORD at 43.2% and TOY at 16.0% against a documented 35/20. */
+  /* ⛔ TEN FAMILIES, 2026-08-24. The five original classes were the whole
+     premise's visual vocabulary and a player exhausted the SHAPES long before
+     the NAMES (the 2026-08-16 audit said exactly that under STILL WORRIES ME).
+     Comics, zines, handhelds, paperbacks and lunchboxes doubled it. The shares
+     below are the DECLARED odds and test/attic-check.js measures them against
+     the real byte, so if you retune one you retune the table and the check
+     together.
+     ⛔ THIS IS A ONE TIME VISIBLE CHANGE FOR RETURNING PLAYERS. The shelf
+     stores hashes and re-derives everything, so a saved find whose byte 0 now
+     falls in a different band comes back as a different KIND of object. Grades,
+     eras and years are untouched. Beta card, accepted, documented here. */
   var CLASS_SPLIT = [
-    { c: 'RECORD', hi: 90 },    // 90/256 = 35.2%
-    { c: 'VHS',    hi: 154 },   // 64/256 = 25.0%
-    { c: 'TOY',    hi: 205 },   // 51/256 = 19.9%
-    { c: 'GAME',   hi: 236 },   // 31/256 = 12.1%
-    { c: 'CEREAL', hi: 256 }    // 20/256 =  7.8%
+    { c: 'RECORD',    hi: 51 },   // 51/256 = 19.9%
+    { c: 'VHS',       hi: 89 },   // 38/256 = 14.8%
+    { c: 'TOY',       hi: 120 },  // 31/256 = 12.1%
+    { c: 'GAME',      hi: 143 },  // 23/256 =  9.0%
+    { c: 'CEREAL',    hi: 161 },  // 18/256 =  7.0%
+    { c: 'COMIC',     hi: 192 },  // 31/256 = 12.1%
+    { c: 'PAPERBACK', hi: 215 },  // 23/256 =  9.0%
+    { c: 'ZINE',      hi: 230 },  // 15/256 =  5.9%
+    { c: 'HANDHELD',  hi: 245 },  // 15/256 =  5.9%
+    { c: 'LUNCHBOX',  hi: 256 }   // 11/256 =  4.3%
   ];
-  var BUILD = { RECORD: record, VHS: vhs, TOY: toy, GAME: game, CEREAL: cereal };
+  /* what one of each is called in a sentence. The page used to keep its own
+     copy of this and the two drifted the moment a class was added. */
+  var CLASS_WORD = {
+    RECORD: ['record', 'records'], VHS: ['tape', 'tapes'], TOY: ['toy', 'toys'],
+    GAME: ['board game', 'board games'], CEREAL: ['cereal box', 'cereal boxes'],
+    COMIC: ['comic', 'comics'], PAPERBACK: ['paperback', 'paperbacks'],
+    ZINE: ['zine', 'zines'], HANDHELD: ['handheld', 'handhelds'],
+    LUNCHBOX: ['lunchbox', 'lunchboxes']
+  };
+  var BUILD = { RECORD: record, VHS: vhs, TOY: toy, GAME: game, CEREAL: cereal,
+    COMIC: comic, PAPERBACK: paperback, ZINE: zine, HANDHELD: handheld, LUNCHBOX: lunchbox };
   function classOf(h) {
     var b = hb(h, 0), i;
     for (i = 0; i < CLASS_SPLIT.length; i++) if (b < CLASS_SPLIT[i].hi) return CLASS_SPLIT[i].c;
@@ -341,14 +560,19 @@
     item.error = factoryError(h);
     item.provenance = provenance(h);
 
-    /* the two grade derived flourishes, held back until the wipe */
+    /* ── the two grade derived flourishes, held back until the wipe ──────
+       ⛔ ONE PATH FOR EVERY CLASS. This used to be a hand written `if` for the
+       toy class alone, so a new family with a flaw bank would have leaked it
+       into the sticker line by default rather than by mistake. A class opts in
+       by returning `_flaw` (printed only on TRASHED / PLAYED / GOOD) and
+       `_mint` (a name suffix printed only on MINT / FACTORY SEALED). Both are
+       deleted off the item afterwards so nothing downstream can read them. */
     item.revealSuffix = null;
     item.revealNote = null;
-    if (item.cls === 'TOY') {
-      if (item.grade === 'MINT' || item.grade === 'FACTORY SEALED') item.revealSuffix = ' (MINT ON CARD)';
-      else if (item.grade === 'TRASHED' || item.grade === 'PLAYED' || item.grade === 'GOOD') item.revealNote = item._flaw;
-      delete item._flaw;
-    }
+    var g = item.grade;
+    if (g === 'MINT' || g === 'FACTORY SEALED') { if (item._mint) item.revealSuffix = item._mint; }
+    else if (g === 'TRASHED' || g === 'PLAYED' || g === 'GOOD') { if (item._flaw) item.revealNote = item._flaw; }
+    delete item._flaw; delete item._mint;
     return item;
   }
 
@@ -389,6 +613,14 @@
 
   var API = {
     hashToItem: hashToItem, _grade: grade, _class: classOf, _norm: normHash,
+    CLASS_SPLIT: CLASS_SPLIT, CLASS_WORD: CLASS_WORD, gradeAtLeast: gradeAtLeast,
+    ERROR_RATE: 16 / 256,
+    CLASSES: (function () { var a = [], i; for (i = 0; i < CLASS_SPLIT.length; i++) a.push(CLASS_SPLIT[i].c); return a; })(),
+    classShare: function (c) {
+      var i, lo = 0;
+      for (i = 0; i < CLASS_SPLIT.length; i++) { if (CLASS_SPLIT[i].c === c) return (CLASS_SPLIT[i].hi - lo) / 256; lo = CLASS_SPLIT[i].hi; }
+      return 0;
+    },
     dailyHash: dailyHash, weekIndex: weekIndex, weeklyPick: weeklyPick,
     ERAS: ERAS, GRADE_ORDER: ['TRASHED', 'PLAYED', 'GOOD', 'FINE', 'NEAR MINT', 'MINT', 'FACTORY SEALED']
   };

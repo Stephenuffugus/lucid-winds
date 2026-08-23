@@ -14,7 +14,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Sky Wolf Studio">
 <meta property="og:title" content="The Attic">
-<meta property="og:description" content="Rummage up one of one fake vintage records, tapes, and toys, and pray for factory sealed.">
+<meta property="og:description" content="Rummage up one of one fake vintage records, comics, tapes, toys and handhelds, and pray for factory sealed.">
 <meta property="og:url" content="https://lucidwinds.com/satellites/attic/">
 <meta property="og:image" content="https://lucidwinds.com/portal-assets/thumbs/the-attic.png">
 <meta name="twitter:card" content="summary_large_image">
@@ -343,7 +343,7 @@
 <div class="wrap">
   <div class="backrow"><button class="backchip" id="swsBack" type="button" aria-label="Back to the arcade">&#8249; BACK TO THE ARCADE</button></div>
   <h1>THE ATTIC<small>Sky Wolf Studio</small></h1>
-  <p class="demo-note">Every rummage turns up one object that has never existed before and never will again. Records, tapes, carded toys, board games, and cereal boxes, each with its own era, its own wear, and its own story.</p>
+  <p class="demo-note">Every rummage turns up one object that has never existed before and never will again. Records, comics, tapes, carded toys, handheld games, lunchboxes, paperbacks, zines, board games and cereal boxes, each with its own era, its own wear, and its own story.</p>
 
   <div class="topbar">
     <span class="tix"><b id="tixN">0</b> tickets</span>
@@ -423,7 +423,7 @@
   <div class="kick">HOW TO PLAY</div>
   <h2>The Attic</h2>
   <h3>The goal</h3>
-  <p>Rummage up one of one fake vintage records, tapes, and toys, and pray for factory sealed. Everything you keep goes on the shelf, and eight grails on your Want List are yours alone.</p>
+  <p>Rummage up one of one fake vintage records, comics, tapes, toys and handhelds, and pray for factory sealed. Ten kinds of thing are buried up here and each one wears in its own way. Everything you keep goes on the shelf, and eight grails on your Want List are yours alone.</p>
   <h3>How it plays</h3>
   <p>A rummage costs one ticket, so a dig is a decision rather than a button you hold down. Five tickets arrive every day. A find in FINE or better pays one back, anything on your Want List pays three, and two things scrapped off the shelf make one more. When the tickets run dry, DUST OFF the old boxes and find some stubs.</p>
   <h3>The controls</h3>
@@ -529,10 +529,37 @@
      hunts. */
   var GRADE_ORDER = E.GRADE_ORDER;
   function gIdx(g) { return E.gIdx(g); }
-  var CLS_LIST = ['RECORD', 'VHS', 'TOY', 'GAME', 'CEREAL'];
-  var CLS_WORD = { RECORD: 'record', VHS: 'tape', TOY: 'toy', GAME: 'board game', CEREAL: 'cereal box' };
-  var CLS_PLURAL = { RECORD: 'records', VHS: 'tapes', TOY: 'toys', GAME: 'board games', CEREAL: 'cereal boxes' };
+  /* ⛔ ONE LIST, IN THE ENGINE. The page used to keep its own copy of the
+     class names and their singular and plural words, and the day a family
+     was added the two drifted: the want list would have kept offering five
+     kinds of object out of ten and the shelf summary would have counted
+     nothing for the other five. */
+  var CLS_LIST = ATTIC.CLASSES;
+  var CLS_WORD = {}, CLS_PLURAL = {}, CLS_ORDER = {};
+  (function () {
+    var i, c;
+    for (i = 0; i < CLS_LIST.length; i++) {
+      c = CLS_LIST[i];
+      CLS_WORD[c] = ATTIC.CLASS_WORD[c][0];
+      CLS_PLURAL[c] = ATTIC.CLASS_WORD[c][1];
+      CLS_ORDER[c] = i;
+    }
+  })();
   var ERA_LIST = ['1950s', '1960s', '1970s', '1980s', '1990s'];
+  /* what fraction of digs satisfies a hunt. A want list that can hand you
+     "a lunchbox in NEAR MINT or better" at 0.7% a dig is not a want list, it
+     is a wall, and the weekly WANTED has only seven days to be found in. */
+  function grailRate(g) {
+    var cs = g.c ? ATTIC.classShare(g.c) : 1;
+    var es = g.e ? 0.2 : 1;
+    var gs = g.g ? ATTIC.gradeAtLeast(g.g) : 1;
+    if (g.t === 'sealed') return ATTIC.gradeAtLeast('FACTORY SEALED');
+    if (g.t === 'error') return ATTIC.ERROR_RATE;
+    if (g.t === 'errorCls') return ATTIC.ERROR_RATE * cs;
+    return cs * es * gs;
+  }
+  var PERSONAL_FLOOR = 0.008;   // a standing grail may be long, not hopeless
+  var WEEKLY_FLOOR = 0.02;      // a seven day hunt has to be findable in seven days
   function grailPool() {
     var P = [], i, j, c;
     for (i = 0; i < CLS_LIST.length; i++) {
@@ -547,7 +574,10 @@
     P.push({ t: 'grade', g: 'MINT', txt: 'anything MINT or better' });
     P.push({ t: 'errorCls', c: 'CEREAL', txt: 'a cereal box with a factory error' });
     P.push({ t: 'errorCls', c: 'RECORD', txt: 'a record with a factory error' });
-    for (i = 0; i < P.length; i++) P[i].id = P[i].t + ':' + (P[i].c || '') + ':' + (P[i].g || '') + ':' + (P[i].e || '');
+    for (i = 0; i < P.length; i++) {
+      P[i].id = P[i].t + ':' + (P[i].c || '') + ':' + (P[i].g || '') + ':' + (P[i].e || '');
+      P[i].rate = grailRate(P[i]);
+    }
     return P;
   }
   function grailMet(gr, it) {
@@ -577,7 +607,8 @@
     return function () { h ^= h << 13; h >>>= 0; h ^= h >>> 17; h ^= h << 5; h >>>= 0; return h / 4294967296; };
   }
   var GRAILS = (function () {
-    var P = grailPool(), rng = seededRng(deviceId() + ':wants'), i, j, t;
+    var P = grailPool().filter(function (g) { return g.rate >= PERSONAL_FLOOR; });
+    var rng = seededRng(deviceId() + ':wants'), i, j, t;
     for (i = P.length - 1; i > 0; i--) { j = Math.floor(rng() * (i + 1)); t = P[i]; P[i] = P[j]; P[j] = t; }
     /* keep the eight varied: at most two of any one shape */
     var out = [], seen = {};
@@ -754,7 +785,6 @@
      the graded run would broadcast its grade by POSITION, which is exactly
      the tell the whole dusty render exists to prevent. Unwiped finds are
      therefore pinned to the end in newest first order, whatever they are. */
-  var CLS_ORDER = { RECORD: 0, VHS: 1, TOY: 2, GAME: 3, CEREAL: 4 };
   var SH_SORT = 'new', SH_SHOWN = 0, SH_PAGE = 24;
 
   function shelfSorted() {
@@ -1056,7 +1086,11 @@
      factory errors. A weekly hunt with a 0.39% hit rate is not a hunt. */
   function wantedPool() {
     var P = grailPool(), out = [], i;
-    for (i = 0; i < P.length; i++) if (P[i].t !== 'sealed' && P[i].t !== 'errorCls') out.push(P[i]);
+    for (i = 0; i < P.length; i++) {
+      if (P[i].t === 'sealed' || P[i].t === 'errorCls') continue;
+      if (P[i].rate < WEEKLY_FLOOR) continue;
+      out.push(P[i]);
+    }
     return out;
   }
   var WANTED = (function () {

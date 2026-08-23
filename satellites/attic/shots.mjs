@@ -17,13 +17,33 @@ const PORTRAIT = { width: 412, height: 915, deviceScaleFactor: 2, isMobile: true
 const LAND = { width: 915, height: 412, deviceScaleFactor: 2, isMobile: true, hasTouch: true };
 
 const H = {
-  record: '273926d44ff38a58750e6737e1f960204d9ff2dd707fd1fb6414dd4c8b204e81',
-  vhs: '646250325e2d17720860b8798db028267cc91263d29ce1a963b46428e4c93d09',
-  toy: 'ae8e25da927fff7a835cd3b6e023e20b18fd60c0d4318d8adab5572f613eb5e7',
-  game: 'cd2c7ebd9279c38fbc8b71fef640ba93520e533e44605d043ce73aea8c94c5a8',
-  cereal: 'ed9db91771e485c920e44818d51849ef87ac59328c11c66adf30810b848fc06d',
-  sealed: '7986ff256b69daf04bc0cf169d5729cabbde3a697ddb1086f1c949fe2c3fb648',
-  trashedToy: 'b4fc08bc895147be67e7770558c6b9bd94610a43055e82d8d9bd9d7c05baf116'
+  record:       '2537597f382740c8324f85947919eba5fdee8e26aedb79798328a785faa08d07',
+  vhs:          '58ba4606dd9505c32c13420518eb7e9fbbc8c92e0e179be48424dfef74fc7abd',
+  toy:          '6b601645c8f03e2441f519ca41f8dd80f8a6df9528e53f96ea2005bf879e6430',
+  game:         '7ce349283181d75c57bd295ae4b3b02e53a0d19b0c766c09654b5336fda74c7f',
+  cereal:       'a09d3d95413db66569f4c49b2994cf6cabba395e0d1a363ed1146d487c8eda9e',
+  comic:        'b68125a05eabd9240d2c132f0d37be2cf2eed74a102239badcc737f865af16de',
+  paperback:    'd525153719a23a9dd4eb7498afd0cec3ab6c7ead80faee598c2ca96eb23febdd',
+  zine:         'dc8b2e3d00799b6a62dd2fb124490ce9be28d52479905954acea06c2631768d3',
+  handheld:     'ed395a3c8353c77a8ca82290ec045f779e97d85f52fbfb0509cf37d5d401fc0c',
+  lunchbox:     'fd301c8f3639f14436988bb4b725b64eaeb0716ee305a8acff779a22ca203c41',
+  sealed:       '1a94ff5ca869b20278161c0db1b73f4c65c5d43e9d5ea14d03037967d2b97c20',
+  sealedComic:  'bd15ff80f09b6afd7d3a81714f71af20eb782cd098de684d0cd2c4ac4492f9cd',
+  trashedToy:   '5e8004f4b621ac0fce2820d75f72606b28f05335500db59438c823b419a9b0ac',
+  mintHandheld: 'edf5fed45efe6d7a674d0694309fa4567424399a9be275608d3fe8214feb46c0'
+};
+/* ⛔ WHAT A FIXTURE IS SUPPOSED TO BE. These are hand picked hashes and the
+   class they resolve to is a function of the class split, which moved on
+   2026-08-24 when the families went from five to ten. Every one of the old
+   seven silently became a different kind of object and the walk went on
+   shooting them under their old names: the cell labelled "cereal" was a
+   handheld. The walk now asserts the fixture before it uses it. */
+const H_WANT = {
+  record: ['RECORD', null], vhs: ['VHS', null], toy: ['TOY', null], game: ['GAME', null],
+  cereal: ['CEREAL', null], comic: ['COMIC', null], paperback: ['PAPERBACK', null],
+  zine: ['ZINE', null], handheld: ['HANDHELD', null], lunchbox: ['LUNCHBOX', null],
+  sealed: ['RECORD', 'FACTORY SEALED'], sealedComic: ['COMIC', 'FACTORY SEALED'],
+  trashedToy: ['TOY', 'TRASHED'], mintHandheld: ['HANDHELD', 'MINT']
 };
 
 const errs = [];
@@ -218,7 +238,17 @@ await shot('out_of_tickets');
 console.log('  broke note: ' + s.broke);
 
 // ── 9. every class, dusty and revealed ───────────────────────────────
-for (const k of ['record', 'vhs', 'toy', 'game', 'cereal', 'sealed', 'trashedToy']) {
+const FIXTURES = await p.evaluate((h) => {
+  const out = {};
+  for (const k in h) { const it = window.ATTIC.hashToItem(h[k]); out[k] = [it.cls, it.grade]; }
+  return out;
+}, H);
+for (const k of Object.keys(H_WANT)) {
+  const wantCls = H_WANT[k][0], wantGr = H_WANT[k][1], got = FIXTURES[k];
+  must('fixture ' + k + ' really is a ' + wantCls + (wantGr ? ' in ' + wantGr : ''),
+    got[0] === wantCls && (!wantGr || got[1] === wantGr), got);
+}
+for (const k of Object.keys(H_WANT)) {
   await p.evaluate((h) => window.ATTIC_DEV.show(h), H[k]);
   await new Promise(r => setTimeout(r, 300));
   s = await state();

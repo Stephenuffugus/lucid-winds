@@ -95,8 +95,11 @@ sec('B  DISTRIBUTION (the declared odds are the real odds)');
     eras[it.era] = (eras[it.era] || 0) + 1;
     if (it.error) err++;
   }
-  /* the class split the engine's own comment claims: 35/25/20/12/8 */
-  var WANT = { RECORD: 0.35, VHS: 0.25, TOY: 0.20, GAME: 0.12, CEREAL: 0.08 };
+  /* the class split the engine's own table claims. Read off CLASS_SPLIT so
+     adding a family cannot leave a stale expectation behind (it did: this
+     block still said 35/25/20/12/8 the day the ten family split landed). */
+  var WANT = {};
+  ATTIC.CLASSES.forEach(function (c) { WANT[c] = ATTIC.classShare(c); });
   Object.keys(WANT).forEach(function (k) {
     var got = (cls[k] || 0) / N;
     ok('class ' + k + ' lands on its declared share', near(got, WANT[k], 0.015),
@@ -182,7 +185,8 @@ sec('C  THE REVEAL (condition is revealed last, says the rules screen)');
 /* ═══ D. GENERATOR DEPTH ═══════════════════════════════════════════ */
 sec('D  GENERATOR DEPTH ("never existed before", measured)');
 (function () {
-  var names = { RECORD: {}, VHS: {}, TOY: {}, GAME: {}, CEREAL: {} };
+  var names = {};
+  ATTIC.CLASSES.forEach(function (c) { names[c] = {}; });
   var fulls = {}, dupFull = 0, j;
   for (j = 0; j < N; j++) {
     var it = ATTIC.hashToItem(HASHES[j]);
@@ -194,7 +198,8 @@ sec('D  GENERATOR DEPTH ("never existed before", measured)');
      cannot hand the same title back on the fourth pull. The bar: a player
      who digs 40 times in a class should almost never see a repeat title,
      which needs the name space in the low thousands, not the low tens. */
-  var BAR = { RECORD: 1200, VHS: 1200, TOY: 1200, GAME: 800, CEREAL: 800 };
+  var BAR = {};
+  ATTIC.CLASSES.forEach(function (c) { BAR[c] = 1200; });
   Object.keys(BAR).forEach(function (k) {
     var n = Object.keys(names[k]).length;
     ok(k + ' draws from a deep name space', n >= BAR[k], n + ' distinct titles in ' + N + ' pulls, bar is ' + BAR[k]);
