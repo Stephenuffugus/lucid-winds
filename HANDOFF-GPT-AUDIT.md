@@ -3,6 +3,19 @@
 You are auditing one game, **Flock the World**, ahead of a paid Google Play
 release. Be blunt. Stephen wants problems found, not reassurance.
 
+## 0. If you were given files instead of a repo
+
+You may have been handed these three files directly:
+
+- `FTW-AUDIT-BRIEF.md` — this document.
+- `FTW-game.html` — **the entire game.** One file, no build step, no
+  dependencies. Rename it to anything ending in `.html`, open it in a browser,
+  and it runs. This is the real shipping artifact, not an excerpt.
+- `FTW-check.js` — the test suite that guards it.
+
+If so, audit those directly. You do not need the repo. Everything below about
+paths still tells you where things live in the project.
+
 ## 1. Get the code and play it
 
 Public repo: `https://github.com/Stephenuffugus/lucid-winds`, branch `main`.
