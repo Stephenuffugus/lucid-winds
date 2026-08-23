@@ -704,6 +704,17 @@ if (C) {
       if (!sS.doctrine && sS.subj >= 0.14) { sS.doctrine = 'glove'; clS('sfx', 'doctrine'); clS('recompute', sS); }
       clS('tick');
     }
+    /* ⛔ FLAKY, and pinned 2026-08-24. `event_open` only fires when maybeEvent
+       happens to pick one during the campaign, so this whole cue group failed
+       about one run in five with `never fired: ["event_open"]` and passed the
+       other four. A check that flips is a bug in the check, not in the game.
+       If the campaign did not happen to raise an event, raise one deliberately:
+       it still goes through the real showEvent and the real sfx call, so the
+       cue is still being proved reachable through real game code. */
+    if (!vm.runInContext('SFX.log', cS).some(x => /event_open/.test(x))) {
+      try { vm.runInContext('for(let i=0;i<600;i++){maybeEvent(S);if(SFX.log.some(x=>/event_open/.test(x)))break;}', cS); }
+      catch (e) { /* recorded by the assertion below, not swallowed silently */ }
+    }
     const fired = new Set(vm.runInContext('SFX.log', cS).map(x => x.replace(/^sfx:/, '')));
     const wantWorld = ['region_join', 'milestone', 'peaceful', 'buy_small'];
     const missWorld = wantWorld.filter(c => !fired.has(c));

@@ -89,6 +89,19 @@ still said the old value after each "fix":
 There is now a late `@media (orientation:landscape)` block with a comment saying
 why it must stay below. **Worth grepping for any others.**
 
+## One flaky check, found while writing this brief and pinned
+
+`check.js` failed once in about five runs with
+`every cue in the catalog is reachable :: never fired: ["event_open"]`, and
+passed the other four. The cue only fires when `maybeEvent` happens to pick an
+event during the campaign, so the check was rolling dice. It now raises one
+deliberately if the campaign did not, still through the real `showEvent` and the
+real `sfx` call. Six consecutive clean runs after.
+
+Flagged because a gate that fails one run in five would have wasted a reviewer's
+first hour, and because it is the same lesson as the meter below: **a check that
+flips is a bug in the check.**
+
 ## Guards added today, and every one was watched failing first
 
 ```
