@@ -736,7 +736,7 @@ if (C) {
       const cR = makeCtx();
       cR.doctrineModal = () => {};
       vm.runInContext("S=newState('CONTRACTOR','Vendor','NA',null,null,'Kestrel Municipal');", cR);
-      vm.runInContext("S.acqHeat=0.31;S.dcs=3;S.deskRoll=7;S.monitor=2;S.cover=1;S.cash=123*MONEY;saveRun();", cR);
+      vm.runInContext("S.acqHeat=0.31;S.dcs=3;S.deskRoll=7;S.monitor=2;S.cover=1;S.evLast={foia:123};S.cash=123*MONEY;saveRun();", cR);
       vm.runInContext("S=null;", cR);
       const okLoad = vm.runInContext("loadRun()", cR);
       ok('a saved run loads back', okLoad === true, 'loadRun=' + okLoad);
@@ -745,6 +745,7 @@ if (C) {
       ok('data centres survive the round trip (their upkeep is forever, so losing them on reload is an exploit)', back.d === 3, 'got ' + back.d);
       ok('deskRoll survives, so a reload cannot reroll the desk', back.r === 7, 'got ' + back.r);
       ok('the consent-decree monitor and liability cover survive', back.m === 2 && back.c === 1, JSON.stringify(back));
+      ok('event cooldowns survive a reload, or the spam returns', vm.runInContext("S.evLast&&S.evLast.foia===123", cR) === true, JSON.stringify(vm.runInContext('S.evLast', cR)));
       /* and a junk blob cannot smuggle absurd values through the new fields */
       vm.runInContext("(function(){const d=JSON.parse(localStorage.getItem('ftw_run_v1')||localStorage.getItem(K_RUN));d.dcs=999;d.acqHeat=40;localStorage.setItem(K_RUN,JSON.stringify(d));})()", cR);
       vm.runInContext("S=null;loadRun();", cR);
@@ -812,6 +813,29 @@ if (C) {
       ok('a cash bubble averages a treat, not a payroll (1.5 to 4 days of net)',
         days.length > 500 && mean > 1.5 && mean < 4, 'mean=' + mean.toFixed(2) + ' n=' + days.length);
       ok('no single bubble exceeds seven days of net', mx < 7, 'max=' + mx.toFixed(2));
+    }
+
+    /* 2026-08-24, Stephen: "I can pay somebody off but it's literally the same
+       thing over and over." Events sleep for a cooldown after firing now. */
+    group('a fired event sleeps for its cooldown');
+    {
+      const cE = makeCtx(); cE.doctrineModal = () => {};
+      let shows = 0; cE.showEvent = () => { shows++; };
+      vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');", cE);
+      const sE = vm.runInContext('S', cE);
+      sE.day = 300; sE.avgSus = 50; sE.oversight = 60; sE.activeCount = 3;
+      vm.runInContext("S.events.forEach(e=>{S.evLast[e.id]=S.day-1;});", cE);
+      let n2 = 424242; const f2 = () => { n2 = (n2 * 1664525 + 1013904223) >>> 0; return n2 / 4294967296; };
+      const real2 = Math.random; Math.random = f2;
+      const news0 = sE.log.length;
+      for (let i = 0; i < 400; i++) vm.runInContext('maybeEvent(S)', cE);
+      ok('a pool where everything just fired stays silent', shows === 0 && sE.log.length === news0,
+        'shows=' + shows + ' newsDelta=' + (sE.log.length - news0));
+      vm.runInContext("S.evLast={};", cE);
+      for (let i = 0; i < 400; i++) vm.runInContext('maybeEvent(S)', cE);
+      Math.random = real2;
+      ok('with the cooldowns clear the same pool fires (the silence above is the filter, not a dead pool)',
+        shows > 0, 'shows=' + shows);
     }
 
     /* the cues the sim cannot reach on its own are driven through their real
