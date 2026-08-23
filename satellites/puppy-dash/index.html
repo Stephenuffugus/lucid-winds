@@ -175,6 +175,11 @@ const CFG = {
      thirds of the road goes 33/33/33 to 45/33/21. */
   depthA:0.35,
   mPerUnit:5.3,          // road lengths per second -> the "m" the player is shown
+  /* verge props. This is the speed cue: you read how fast you are going off the
+     world going PAST you, not off the obstacles. Before this the gap between the
+     horizon and the dog contained nothing at all, so the only moving things on
+     screen were the things that kill you and the run felt like a treadmill. */
+  propEvery:0.40,
   spawn0:1.05, spawnMin:0.62,            // seconds between rows
   laneSnap:0.16,                          // lane tween time-ish (smaller=snappier)
   // jump arc, in DOG-SIZE units (S). apex ~1.3 S. computed against S at runtime.
@@ -285,6 +290,42 @@ function drawActionIcon(ctx,action,x,y,sc){
   ctx.fillStyle="#fff"; ctx.font="bold "+(r*1.15)+"px Fredoka, sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
   ctx.fillText(m[0],x,y+r*0.06); ctx.restore();
 }
+/* The verb, painted FLAT ON THE ROAD in the obstacle's own lane.
+   ⛔ The floating badge alone was not doing the job. It sits a fixed 2 dog
+   heights above the obstacle, which for anything far away puts it in the SKY,
+   above the horizon, detached from the thing it describes: it read as HUD, not
+   as "that one, in that lane, needs this verb". A decal is a large flat shape,
+   so it stays legible at depths where a small upright object does not, it sits
+   in the lane so it doubles as a lane cue, and it scales with the projection so
+   it reads as depth too. Three jobs, one mark. */
+function drawRoadDecal(ctx,action,x,y,sc){
+  const col={jump:"#3aa0ff",slide:"#34c759",dodge:"#ff8a4c"}[action]; if(!col) return;
+  const w=L.S*sc*0.62, h=L.S*sc*0.26;
+  ctx.save();
+  ctx.globalAlpha=0.60; ctx.fillStyle=col;
+  /* ⛔ Drawn AT the obstacle's own y this landed under its footprint and its
+     shadow and you could not see it. It belongs on the road just in front of the
+     obstacle, between you and it, which is also how it reads: here comes this. */
+  ctx.translate(x,y+L.S*sc*0.95);
+  ctx.scale(1,0.42);                       // lie it down on the road
+  if(action==="dodge"){
+    for(const d of [-1,1]){
+      ctx.beginPath();
+      ctx.moveTo(d*w*0.28,-h); ctx.lineTo(d*w*0.95,0); ctx.lineTo(d*w*0.28,h);
+      ctx.lineTo(d*w*0.52,0); ctx.closePath(); ctx.fill();
+    }
+  } else {
+    const up = action==="jump" ? -1 : 1;
+    for(const o of [0,1]){
+      const yo=o*h*1.15*up;
+      ctx.beginPath();
+      ctx.moveTo(0,yo+up*h); ctx.lineTo(w,yo-up*h*0.25); ctx.lineTo(w*0.55,yo-up*h*0.7);
+      ctx.lineTo(0,yo+up*h*0.15); ctx.lineTo(-w*0.55,yo-up*h*0.7); ctx.lineTo(-w,yo-up*h*0.25);
+      ctx.closePath(); ctx.fill();
+    }
+  }
+  ctx.restore();
+}
 function drawBiscuit(ctx,x,y,s,gold){
   ctx.save(); ctx.translate(x,y);
   if(gold){
@@ -329,6 +370,12 @@ window.addEventListener("resize",resize);
 
 // depth: progress 0 (far, at horizon) -> 1 (near, at player line)
 const prog = y => Math.max(0,Math.min(1,(y-L.HY)/L.travel));
+/* ⛔ prog CLAMPS at the player line, which is right for anything on the road
+   because collision lives there. A verge prop has to keep going: clamped, a tree
+   stopped growing at the foot line and then slid off at a constant size, so
+   nothing ever swept past the camera and the biggest speed cue in the frame was
+   thrown away. Props use the unclamped depth. */
+const progRaw = y => Math.max(0,(y-L.HY)/L.travel);
 /* Scale is LINEAR in depth, which is what a real camera does, and it starts at
    0.30 rather than 0.16 so an obstacle is legible the moment it exists.
    ⛔ The scale curve is deliberately NOT the same shape as the motion curve
@@ -363,7 +410,7 @@ const state = {
   laneF:1, targetLane:1, laneVel:0,
   jump:0, jumpV:0, sliding:false, slideT:0, squashT:0, wasAir:false,
   bufferKind:null, bufferT:0,
-  objs:[], parts:[], shake:0, flashes:[], debug:false,
+  objs:[], props:[], parts:[], shake:0, flashes:[], debug:false,
   jet:0, jetAlt:0, jetSpawnT:0, jetBoneT:0, flash:0,
   combo:0, comboT:0, jetBones:0, wasJet:false, floaters:[], best:0, bestBis:0,
   spawnT:0, biscuits:0, totalStash:0, t:0,
@@ -372,7 +419,7 @@ const state = {
 function reset(){
   Object.assign(state,{ mode:"play", speed:CFG.spd0, dist:0, laneF:1, targetLane:1, laneVel:0,
     jump:0, jumpV:0, sliding:false, slideT:0, squashT:0, wasAir:false, bufferKind:null, bufferT:0,
-    objs:[], parts:[], shake:0, flashes:[], spawnT:0.5, biscuits:0, t:0,
+    objs:[], props:[], parts:[], shake:0, flashes:[], spawnT:0.5, propT:0, biscuits:0, t:0,
     jet:0, jetAlt:0, jetSpawnT:CFG.jetCooldown, jetBoneT:0, flash:0,
     combo:0, comboT:0, jetBones:0, wasJet:false, floaters:[],
     magnet:0, magnetSpawnT:CFG.magnetCooldown*0.55, jetpacksUsed:0 });
@@ -411,6 +458,73 @@ function gameOver(){
   console.log("[pd economy stub] run summary", { distance: state.dist|0, biscuits: state.biscuits, jetpacks: state.jetpacksUsed|0 });
 }
 
+/* ============ THE VERGE ============
+   ⛔ THE LAW: nothing decorative ever touches the running surface, and no prop
+   is ever red. The road carries obstacles and pickups and nothing else. The
+   moment a player has to ask whether a bench is a threat, they stop reading the
+   scenery, and the scenery is the whole point. Props live in their own array and
+   are never walked by the collide loop, so a prop physically cannot kill you. */
+/* ⛔ "lamp" was in here and it was wrong twice over: four lit lamp posts in a
+   bright morning dog park, and at this size the head rendered as a pale lozenge
+   on a stick that read as a cotton bud. Lamps belong to the NIGHT PARK biome
+   (sheet 2), not to the home one. Tall markers are trees here. */
+const PROPS=["tree","tree","tree","bench","tuft","tuft"];
+function spawnProp(){
+  state.props.push({ y:L.HY, side:(Math.random()<0.5?-1:1),
+    /* far enough out that the closest ones sweep the frame edge instead of
+       covering a third of the screen, near enough that they never leave early */
+    kind:PROPS[(Math.random()*PROPS.length)|0], out:0.60+Math.random()*0.70,
+    seed:Math.random() });
+}
+function drawProp(pr){
+  const p=progRaw(pr.y), sc=dscale(p);
+  /* off the road: road half width is 1.6 lane widths, props start beyond it */
+  const x=L.CX + pr.side*(1.6+pr.out)*L.LW*lfac(p);
+  const s=L.S*sc, y=pr.y;
+  if(x<-s*3||x>W+s*3) return;
+  ctx.save();
+  if(pr.kind==="tree"){
+    /* a tree is about three dogs tall. At one dog tall it read as a shrub and
+       swept past without registering, which is the whole job of a tall marker. */
+    ctx.fillStyle="#6b4a2b"; ctx.fillRect(x-s*0.13,y-s*2.30,s*0.26,s*2.30);
+    /* three overlapping masses, not one disc: at close range a single ellipse
+       reads as a flat green smear rather than as a tree going past */
+    ctx.fillStyle="#378032";
+    ctx.beginPath(); ctx.ellipse(x+s*0.34,y-s*2.52,s*0.70,s*0.62,0,0,7); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(x-s*0.46,y-s*2.60,s*0.62,s*0.56,0,0,7); ctx.fill();
+    ctx.fillStyle="#3f8f3a";
+    ctx.beginPath(); ctx.ellipse(x,y-s*2.78,s*0.94,s*0.82,0,0,7); ctx.fill();
+    ctx.fillStyle="#4fae46";
+    ctx.beginPath(); ctx.ellipse(x-s*0.26,y-s*3.04,s*0.60,s*0.50,0,0,7); ctx.fill();
+  } else if(pr.kind==="bench"){
+    /* ⛔ The slats were 0.10 of a dog thick, which is about 4px at mid depth, so
+       this rendered as a thin brown line with a detached post and read as broken
+       fencing. Chunky or it does not read. */
+    ctx.fillStyle="#6b4a2b";
+    ctx.fillRect(x-s*0.52,y-s*0.34,s*0.13,s*0.34);
+    ctx.fillRect(x+s*0.39,y-s*0.34,s*0.13,s*0.34);
+    ctx.fillStyle="#8a6a42";
+    ctx.fillRect(x-s*0.62,y-s*0.48,s*1.24,s*0.17);   // seat
+    ctx.fillRect(x-s*0.62,y-s*0.88,s*1.24,s*0.15);   // back rail
+    ctx.fillStyle="#6b4a2b";
+    ctx.fillRect(x-s*0.50,y-s*0.88,s*0.11,s*0.44);   // back posts
+    ctx.fillRect(x+s*0.39,y-s*0.88,s*0.11,s*0.44);
+  } else if(pr.kind==="lamp"){
+    ctx.fillStyle="#5c5f63"; ctx.fillRect(x-s*0.08,y-s*2.90,s*0.16,s*2.90);
+    ctx.fillStyle="#4a4d51";
+    ctx.fillRect(x-s*0.26,y-s*3.02,s*0.52,s*0.14);
+    ctx.fillStyle="#ffe9a8";
+    ctx.beginPath(); ctx.ellipse(x,y-s*2.96,s*0.30,s*0.20,0,0,7); ctx.fill();
+  } else {
+    /* low clutter reads fastest of all because it is closest to the ground */
+    ctx.fillStyle="#4fae46";
+    for(let i=0;i<3;i++){ const o=(i-1)*s*0.22;
+      ctx.beginPath(); ctx.ellipse(x+o,y-s*0.16,s*0.13,s*0.24,0,0,7); ctx.fill(); }
+    ctx.fillStyle= pr.seed<0.5 ? "#f6d15e" : "#e58fb0";
+    ctx.beginPath(); ctx.arc(x,y-s*0.40,s*0.11,0,7); ctx.fill();
+  }
+  ctx.restore();
+}
 function spawnRow(){
   const used=new Set();
   const n=Math.random()<0.30?2:1;
@@ -511,6 +625,13 @@ function update(dt){
   // spawn
   state.spawnT-=dt;
   if(state.spawnT<=0){ spawnRow(); state.spawnT=CFG.spawn0-(CFG.spawn0-CFG.spawnMin)*diff; }
+  /* the verge, on the SAME motion curve as the obstacles so the world and the
+     hazards close on you at one rate. Cadence scales with speed so the props do
+     not thin out as the run gets faster. */
+  state.propT-=dt;
+  if(state.propT<=0){ spawnProp(); state.propT=CFG.propEvery*(CFG.spd0/state.speed); }
+  for(const pr of state.props) pr.y=obStep(pr.y,dt);
+  if(state.props.length) state.props=state.props.filter(pr=>pr.y<H+L.S*4);
   if(state.jet<=0){ state.jetSpawnT-=dt; if(state.jetSpawnT<=0){ spawnJet(); state.jetSpawnT=CFG.jetCooldown; } }
   state.magnetSpawnT-=dt; if(state.magnetSpawnT<=0){ spawnMagnet(); state.magnetSpawnT=CFG.magnetCooldown; }
 
@@ -604,6 +725,9 @@ function render(){
       ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x1,y1); ctx.stroke();
     }
   }
+  // the verge, depth sorted, drawn before anything on the road
+  const pl=state.props.slice().sort((a,b)=>a.y-b.y);
+  for(const pr of pl) drawProp(pr);
   // sort near-last so closer things overlap farther things
   const list=state.objs.slice().sort((a,b)=>a.y-b.y);
   for(const ob of list){
@@ -615,7 +739,11 @@ function render(){
          thing the PUDDLE obstacle owns. A bone floats: it gets a small faint
          contact hint and nothing more. Found by looking at the frame, not by a
          gate, and it was introduced by my own scale change. */
-      const x=obX(ob.lane,p); drawShadow(x,ob.y,L.S*0.22*sc,0.18);
+      /* ⛔ No contact shadow on a bone. Even shrunk it read as a dark oval on the
+         road, detached from the bone floating above it, and a dark patch on the
+         running surface is the PUDDLE obstacle's alone. A bone does not touch
+         the ground, so it does not get a ground mark. */
+      const x=obX(ob.lane,p);
       drawBiscuit(ctx,x,ob.y-L.S*0.55*sc,L.S*0.7*sc,ob.gold);
     } else if(ob.kind==="jet"){
       const x=obX(ob.lane,p); drawShadow(x,ob.y,L.S*0.5*sc,0);
@@ -624,9 +752,14 @@ function render(){
       const x=obX(ob.lane,p); drawShadow(x,ob.y,L.S*0.5*sc,0);
       drawMagnetItem(ctx,x,ob.y,L.S*sc,state.t);
     } else {
-      const x=obX(ob.lane,p); drawShadow(x,ob.y,L.S*0.6*sc,0);
+      const x=obX(ob.lane,p);
+      drawRoadDecal(ctx,ob.o.action,x,ob.y,sc);
+      drawShadow(x,ob.y,L.S*0.6*sc,0);
       drawObstacle(ctx,ob.o,x,ob.y,L.S*sc);
-      if(ob.y<L.PY-L.S*0.3) drawActionIcon(ctx,ob.o.action,x,ob.y-L.S*2.0*sc,sc);
+      /* ⛔ clamped to the road. Unclamped this floated above the horizon and into
+         the sky for anything far away. */
+      if(ob.y<L.PY-L.S*0.3)
+        drawActionIcon(ctx,ob.o.action,x,Math.max(L.HY+L.S*0.30, ob.y-L.S*2.0*sc),sc);
     }
   }
   // player — feet on the contact line; lifted by jump and/or jetpack
@@ -799,7 +932,7 @@ if(/[?&]pd_test=1(&|$)/.test(location.search) || (function(){ try{ return localS
     state, CFG, OB_VBOX, OBSTACLES, DOG_STAND, DOG_SLIDE, DOG_FOOT, ANIMALS,
     L, reset, update, render, resize,
     moveLane, jump, slide, doJump, doSlide,
-    spawnRow, spawnJet, spawnMagnet, activateJet, pickObstacle,
+    spawnRow, spawnJet, spawnMagnet, activateJet, pickObstacle, spawnProp, PROPS,
     pdRead, pdWrite,
     obX, dogX, prog, dscale, lfac,
     startRun, gameOver, buildSelect
