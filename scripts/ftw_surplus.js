@@ -39,7 +39,7 @@ function bot(strat,maxDays,seed){
     ev.o[ev.o.length-1].f(s);};
   const cl=(fn,...a)=>{c.__a=a;return vm.runInContext(fn+'(...__a)',c);};
   const NODES=vm.runInContext('NODES',c);
-  let peakCash=0, spentEntry=0, spentNodes=0, peakNet=0, spentActions=0, spentAcq=0; const entryDays=[]; let grossIncome=0;
+  let peakCash=0, spentEntry=0, spentNodes=0, peakNet=0, spentActions=0, spentAcq=0, spentOps=0; const entryDays=[]; let grossIncome=0;
   for(let d=0;d<maxDays;d++){
     s.bubbles=s.bubbles.filter(b=>{
       if(Math.random()>(strat.collectP==null?1:strat.collectP))return b.life>1;
@@ -84,6 +84,13 @@ function bot(strat,maxDays,seed){
          0.55 cap and every purchase cost 69% of the treasury, forever. That is
          not a player, that is a compulsion. A person watches the price climb and
          waits for it to come back down, and lets the heat bleed off. */
+      /* the desk: buy whatever is on it that is a comfortable bite. This is what
+         a player with money and three offers in front of them does. */
+      const offs=cl('deskOffers',s)||[];
+      for(const o of offs){
+        const pr=cl('opPrice',s,o);
+        if(pr>0&&s.cash-reserve>pr*1.8){const b3=s.cash;if(cl('doOp',o.id))spentOps+=Math.max(0,b3-s.cash);break;}
+      }
       const ap=cl('acqPrice',s);
       const heat=(s.acqHeat||0);
       if(ap>0&&heat<0.18&&s.cash-reserve>ap*1.5){const b2=s.cash;if(cl('doAcquire'))spentAcq+=Math.max(0,b2-s.cash);}
@@ -120,7 +127,7 @@ function bot(strat,maxDays,seed){
        share of lifetime income the doors cost, are the questions that measure it. */
     lastMarketDay:entryDays.length?entryDays[entryDays.length-1]:null,
     halfMarketsDay:entryDays.length>=7?entryDays[6]:null,
-    entryPctOfIncome:grossIncome>0?Math.round(100*spentEntry/grossIncome):null,spentActions:Math.round(spentActions),spentAcq:Math.round(spentAcq),acqHeat:+((s.acqHeat)||0).toFixed(2),
+    entryPctOfIncome:grossIncome>0?Math.round(100*spentEntry/grossIncome):null,spentActions:Math.round(spentActions),spentAcq:Math.round(spentAcq),spentOps:Math.round(spentOps),dcs:(s.dcs||0),acqHeat:+((s.acqHeat)||0).toFixed(2),
     /* ⛔ "days of END income banked" divides by a number this change drives to
        zero, so it reported 231,756 days once. Peak net is the stable yardstick:
        how many days of your BEST income are you sitting on at the end. */
@@ -140,6 +147,7 @@ for(const seed of [7,19,42,101,256]){
     +'  peakNet '+String(r.peakNet).padStart(4)
     +'  banked '+String(r.daysOfPeakIncomeBanked).padStart(4)+'d of peak'
     +'  endNet '+String(r.endNetPctOfPeak).padStart(4)+'% of peak'
+    +'  desk $'+String(r.spentOps).padStart(9)+' dc '+r.dcs
     +'  lastMkt d'+String(r.lastMarketDay).padStart(4)
     +'  entry '+String(r.entryPctOfIncome).padStart(3)+'% of income'
     +'  mkts '+r.marketsHeld+'/14');

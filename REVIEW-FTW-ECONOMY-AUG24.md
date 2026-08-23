@@ -126,10 +126,37 @@ precondition, priced at a share of treasury, and each purchase raises the rate
   | **0.09, shipped** | **day 945 to 1008** | **75 to 82%** |
   | 0.20 | day 1194 | 86%, leaves nothing for anything else |
 
+- **Spending variety: THE DESK.** Three offers drawn from a pool of fourteen,
+  refreshing on a 24 day clock and whenever you buy. Something is always for
+  sale, it is rarely the same thing twice, and every price is a share of the
+  treasury so none of it re-opens the surplus.
+  The effects are deliberately DIFFERENT SHAPES rather than different prices:
+  Legal (standards seat, retainer, consent decree), Political (revolving door,
+  fund the challenger), Media (astroturf, documentary, bury the study), Capital
+  (data centre, poach the team, satellite lease), People (settle with the family,
+  endow the academy, liability cover).
+  ⛔ **The data centre is the one that charges you forever**, and uncapped it was
+  a trap: the bot bought TWELVE and drove its own net income to minus $2M a day.
+  Capped at four, with the price climbing per site. A reviewer should check that
+  cap is the right number and that the climbing price reads as a decision rather
+  than as a tax.
+
+  | | before all of this | now |
+  |---|---|---|
+  | end of run bank | 660 days of income | **6 days** |
+  | wins | 5/5, nothing to spend on | **5/5** |
+  | desk spend per run | n/a | about $1.9B |
+
+  ⚖ Six days of banked income may be TOO tight: the bot spends greedily because
+  there is always something worth buying, and a player with no reserve cannot
+  answer a crisis. `CFG.opPct` (0.09) and the 1.8x affordability the meter's bot
+  uses are the dials. This is the single most likely thing to need loosening
+  after Stephen plays.
+
 ## Still not done
 
-- Spending variety. He asked for "tons and tons of variations". There is ONE new
-  sink. That is the fix for the surplus, not the fix for the variety.
+- Nothing from Stephen's Aug 24 notes. Everything he raised is addressed; whether
+  it is addressed WELL is what this review is for.
 
 ## How to re-run everything
 

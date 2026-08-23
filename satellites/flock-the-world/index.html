@@ -366,6 +366,18 @@ h1 em{font-style:normal;color:var(--sodium)}
   border-radius:12px;padding:10px 12px;margin:0 2px 12px;background:#170f02}
 .acqtxt{flex:1 1 220px;min-width:0;font-size:11.5px;line-height:1.45;color:#ffe9c9}
 .acqtxt .dim{color:var(--dim);display:block;margin-top:3px}
+.deskhead{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);
+  margin:0 2px 6px}
+.deskhead .dim{letter-spacing:.06em;text-transform:none;opacity:.7;margin-left:8px}
+.desk{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.op{display:flex;flex-direction:column;gap:3px;text-align:left;min-height:48px;
+  border:1px solid var(--line);border-radius:11px;background:var(--panel);padding:9px 10px}
+.op:active{border-color:var(--sodium)}
+.op.poor{opacity:.42}
+.opk{font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--sodium)}
+.opn{font-size:12.5px;font-weight:700;color:var(--paper);line-height:1.25}
+.opd{font-size:10.5px;color:#93a7b8;line-height:1.4}
+.opc{font-size:12px;font-weight:800;color:var(--sodium);margin-top:auto;padding-top:4px}
 .wbtn.acq{flex:0 0 auto;min-height:48px;padding:0 14px;border-radius:10px;
   border:1px solid var(--sodium);background:#2a1c02;color:var(--sodium);font-weight:800}
 .wbtn.acq:disabled{opacity:.4}
@@ -469,8 +481,11 @@ h1 em{font-style:normal;color:var(--sodium)}
   .ws .v{font-size:12px;margin-top:0}
   /* ⛔ max-height cut the text mid glyph and read as a rendering fault rather
      than as a deliberate clamp. line-clamp cuts on a line boundary. */
+  /* ⛔ Two lines left a sliver of a third showing under the clip, which reads as
+     a render fault rather than a clamp. One line is unambiguous, gives the desk
+     and the region actions more room, and still says what the panel is. Tap opens. */
   .legend{padding:6px 9px;margin-bottom:6px;font-size:10.5px;line-height:1.4;cursor:pointer;
-    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
   .legend.open{-webkit-line-clamp:unset;display:block}
   .acqbar{padding:7px 10px;margin-bottom:8px}
   .acqtxt{font-size:10.5px;line-height:1.35}
@@ -797,6 +812,11 @@ const CFG = {
   acqHeatDecay:0.004, /* per day */
   acqHeatMax:0.55,
   acqGain:0.055,      /* coverage added across held markets, scaled by spend */
+  opPct:0.09,         /* a desk operation costs this share of treasury, times its band */
+  deskDays:24,        /* the desk turns over on this clock as well as on a purchase */
+  dcUpkeep:0.34,      /* a data centre costs this share of BASE upkeep, forever */
+  dcMax:4,            /* and you may run this many. See the note on the dc entry. */
+  dcGrow:0.05,        /* and buys this much deployment speed */
   /* buying your way in is noticed. ⛔ At 1.5 suspicion and 0.6 oversight per buy
      this cost the bot every single run: it took all 14 markets, reached subj 0.7
      and died of oversight around day 800. The scrutiny has to be felt, not fatal. */
@@ -1351,6 +1371,121 @@ function aPrice(base,days){
   return Math.max(base, Math.round(n*days/5)*5, Math.round(cash*CFG.pctOfTreasury/5)*5);
 }
 /* event choice costs scale the same way */
+/* ============================ THE DESK ============================
+   ⛔ Aug 24, Stephen: "there's not a lot of diversity to the stories on what you
+   spend it on, immediate blackouts and paying people off. But we should have
+   tons and tons of variations there."
+   The lesson from the surplus work is that a sink gated behind a cooldown is a
+   sink nobody uses: a bot holding 112,000 across 1,100 days spent as little as
+   zero on region actions. But if everything is always available you get one
+   button mashed forever, which is not variety either.
+   So: a DESK of three offers drawn from a pool, refreshing on a clock and when
+   you buy. Something is always for sale, it is rarely the same thing twice, and
+   the pool is where the variety lives. Every price is a share of the treasury,
+   so none of this re-opens the surplus.
+   Effects are deliberately DIFFERENT SHAPES, not different prices: some drop
+   oversight, some buy influence, some move a region, and one of them costs you
+   money forever. */
+const OPS=[
+  {id:'standards',n:'Standards Committee Seat',k:'Legal',band:1.5,
+   d:'Write the compliance standard your kit already meets. Everyone else has to catch up.',
+   f:s=>{s.oversight=clamp(s.oversight-9,0,100);s.inf+=3;
+     return 'The standard ships with your product name in the footnotes.';}},
+  {id:'retainer',n:'Retain the Firm',k:'Legal',band:1.0,
+   d:'A litigation reserve, on the books before anyone files.',
+   f:s=>{s.oversight=clamp(s.oversight-6,0,100);
+     REGIONS.forEach(R=>{const r=s.regions[R.id];if(r.active)r.suspicion=clamp(r.suspicion-6,0,100);});
+     return 'Nobody has sued you yet. The meter is running anyway.';}},
+  {id:'decree',n:'Sign the Consent Decree',k:'Legal',band:2.2,
+   d:'Settle without admitting anything. A monitor moves into the building.',
+   f:s=>{s.oversight=clamp(s.oversight-22,0,100);s.monitor=(s.monitor||0)+1;
+     return 'No wrongdoing is admitted. A stranger now has a desk on your floor.';}},
+  {id:'door',n:'Revolving Door Hire',k:'Political',band:1.3,
+   d:'Hire the regulator who wrote your last audit. She knows where the questions come from.',
+   f:s=>{s.oversight=clamp(s.oversight-11,0,100);s.inf+=2;
+     return 'Her old colleagues are delighted for her.';}},
+  {id:'challenger',n:'Fund the Challenger',k:'Political',band:1.2,
+   d:'Back the candidate who thinks the city is soft on crime.',
+   f:s=>{let n=0;REGIONS.forEach(R=>{const r=s.regions[R.id];
+     if(r.active&&r.compliance<0.9){r.compliance=clamp(r.compliance+0.08,.02,.98);n++;}});
+     return n?'The safety platform polls well. It always does.':'Nowhere left to swing.';}},
+  {id:'astro',n:'Astroturf the Neighbourhood',k:'Media',band:1.1,
+   d:'Buy a grassroots movement that wants what you were going to install anyway.',
+   f:s=>{REGIONS.forEach(R=>{const r=s.regions[R.id];
+     if(r.active)r.resist=clamp(r.resist-9,0,100);});
+     return 'Concerned residents write in. They use your talking points verbatim.';}},
+  {id:'doc',n:'Fund the Documentary',k:'Media',band:1.0,
+   d:'Ninety minutes on how hard this job is, with your logo in the credits.',
+   f:s=>{REGIONS.forEach(R=>{const r=s.regions[R.id];
+     if(r.active)r.suspicion=clamp(r.suspicion-11,0,100);});
+     return 'It screens at three festivals. The interviews are very moving.';}},
+  {id:'study',n:'Bury the Study',k:'Media',band:1.4,
+   d:'The one about false positives. Its authors are offered a partnership.',
+   f:s=>{REGIONS.forEach(R=>{const r=s.regions[R.id];
+     if(r.active){r.resist=clamp(r.resist-7,0,100);r.suspicion=clamp(r.suspicion-7,0,100);}});
+     s.oversight=clamp(s.oversight+3,0,100);
+     return 'The preprint comes down. Two people already have the PDF.';}},
+  /* ⛔ CAPPED, and dearer every time. Uncapped, the bot bought TWELVE and drove
+     its own net income to minus 2 million a day: an unlimited permanent cost is
+     not a decision, it is a trap, and a player would walk into it exactly the
+     same way. Four is a estate you could plausibly run, and the price climbing
+     per site means the fourth one is a real argument. */
+  {id:'dc',n:'Break Ground on a Data Centre',k:'Capital',band:2.6,
+   avail:s=>(s.dcs||0)<CFG.dcMax,
+   d:'Your own floor space and your own power. It will cost you every day it stands.',
+   f:s=>{s.dcs=(s.dcs||0)+1;
+     return 'The slab is poured. The bill starts today and does not stop.';}},
+  {id:'poach',n:'Poach the Rival Team',k:'Capital',band:1.6,
+   d:'Twelve engineers and, regrettably, their entire roadmap.',
+   f:s=>{s.inf+=5;s.acqHeat=Math.max(0,(s.acqHeat||0)-CFG.acqHeatAdd);
+     return 'Their notice periods are bought out by lunchtime.';}},
+  {id:'sat',n:'Lease Satellite Time',k:'Capital',band:1.8,
+   d:'Coverage in places that have not signed anything.',
+   f:s=>{let n=0;REGIONS.forEach(R=>{const r=s.regions[R.id];
+     if(r.active&&r.coverage<0.9){r.coverage=clamp(r.coverage+0.04*(1-r.coverage),0,1);n++;}});
+     return n?'Nobody in frame agreed to be in frame.':'Nothing left to point it at.';}},
+  {id:'family',n:'Settle with the Family',k:'People',band:1.7,
+   d:'The engineer who kept copies. His estate signs a very quiet agreement.',
+   f:s=>{s.oversight=clamp(s.oversight-16,0,100);
+     REGIONS.forEach(R=>{const r=s.regions[R.id];if(r.active)r.resist=clamp(r.resist+4,0,100);});
+     return 'The agreement is sealed. The organisers hear about it anyway.';}},
+  {id:'academy',n:'Endow the Police Academy',k:'People',band:1.3,
+   d:'A wing with your name on it, and your software in every classroom.',
+   f:s=>{REGIONS.forEach(R=>{const r=s.regions[R.id];
+     if(r.active){r.compliance=clamp(r.compliance+0.05,.02,.98);r.milit=clamp(r.milit+0.02,0,1);}});
+     return 'Every graduate has used your console since day one.';}},
+  {id:'insure',n:'Buy the Liability Cover',k:'People',band:1.2,
+   d:'Underwriters will take almost anything if you show them the risk scores. Yours.',
+   f:s=>{s.cover=(s.cover||0)+1;s.oversight=clamp(s.oversight-4,0,100);
+     return 'You are insured against yourself, by a model you sold them.';}}
+];
+function opPrice(s,o){
+  /* a second data centre costs more than the first, and so on */
+  const step=o.id==='dc'?(1+(s.dcs||0)*0.6):1;
+  return Math.max(30*MONEY,Math.round((s.cash||0)*CFG.opPct*o.band*step/5)*5);
+}
+/* the offers on the desk today. Deterministic in the day so a repaint cannot
+   reroll the shop under the player's thumb. */
+function deskOffers(s){
+  const seed=Math.floor((s.day||0)/CFG.deskDays)*7919+((s.deskRoll||0)*104729);
+  const pool=OPS.filter(o=>!o.avail||o.avail(s)); const out=[];
+  let x=seed>>>0;
+  const rnd=()=>{x=(x*1664525+1013904223)>>>0;return x/4294967296;};
+  for(let i=0;i<3&&pool.length;i++) out.push(pool.splice((rnd()*pool.length)|0,1)[0]);
+  return out;
+}
+function doOp(id){
+  const s=S,o=OPS.find(x=>x.id===id); if(!o)return false;
+  if(!deskOffers(s).some(x=>x.id===id))return false;   /* only what is on the desk */
+  if(o.avail&&!o.avail(s))return false;
+  const p=opPrice(s,o); if(s.cash<p)return false;
+  s.cash-=p; flashCash();
+  const line=o.f(s);
+  s.deskRoll=(s.deskRoll||0)+1;                        /* buying refreshes the desk */
+  recompute(s); sfx('spend');
+  pushNews(s,line,'good');
+  return line;
+}
 function acqPrice(s){
   const heat=(s&&s.acqHeat)||0;
   return Math.max(60*MONEY, Math.round((s.cash||0)*(CFG.acqPct+heat)/5)*5);
@@ -1407,7 +1542,7 @@ function tick(){
     const modeRes=(r.liberty>0.65&&M.freeResist)?M.freeResist:1;
     const ease=0.45+r.urban*0.85;
     const friction=(1.18-r.liberty*0.45)/modeRes;
-    const growth=CFG.deployK*(1+f.dep)*ease*friction*(0.30+0.95*r.compliance)*(1-r.coverage)*pMul
+    const growth=CFG.deployK*(1+f.dep+CFG.dcGrow*(s.dcs||0))*ease*friction*(0.30+0.95*r.compliance)*(1-r.coverage)*pMul
       *cGrow*(1-Math.min(CFG.resistCap,r.resist/100*0.5));
     r.coverage=clamp(r.coverage+growth-cDecay*(r.coverage>0.05?1:0),0,1);
 
@@ -1536,7 +1671,10 @@ function tick(){
      hardware and with how militarized the whole thing has become.
      Without this, money stopped mattering minutes in (Stephen 2026-08-20). */
   if(s.acqHeat)s.acqHeat=Math.max(0,s.acqHeat-CFG.acqHeatDecay);
-  const upkeep=MONEY*infra*CFG.upkeepK*(1+s.avgMil*0.8)*(1+infra/CFG.upkeepCurve);
+  /* ⛔ a data centre is the one purchase that never stops charging you. That is
+     the point of it: every other line on the desk is a one off. */
+  const dcCost=MONEY*infra*CFG.upkeepK*CFG.dcUpkeep*(s.dcs||0);
+  const upkeep=MONEY*infra*CFG.upkeepK*(1+s.avgMil*0.8)*(1+infra/CFG.upkeepCurve)+dcCost;
   s.cash+=income-upkeep;
   s.net=(s.net||0)*0.9+(income-upkeep)*0.1;
   if(s.cash<0){
@@ -2626,6 +2764,19 @@ function worldHTML(){
       <button class="wbtn acq" id="acqBtn" ${afford?'':'disabled'}>Acquire · ${fmtMoney(ap)}</button>
     </div>`;
   }
+  /* THE DESK: three offers, drawn from a pool of 14, refreshing on a clock and
+     whenever you buy. This is where the variety lives. */
+  {
+    const offs=deskOffers(s);
+    h+=`<div class="deskhead">The desk <span class="dim">three offers, and they turn over</span></div>
+      <div class="desk">`+offs.map(o=>{
+      const pr=opPrice(s,o), can=s.cash>=pr;
+      return `<button class="op${can?'':' poor'}" data-op="${o.id}">
+        <div class="opk">${o.k}</div>
+        <div class="opn">${o.n}</div>
+        <div class="opd">${o.d}</div>
+        <div class="opc">${fmtMoney(pr)}</div></button>`;}).join('')+`</div>`;
+  }
   /* the cash sink Stephen asked for: late game money converts to influence,
      at a price the watchdogs notice */
   const lbCost=Math.max(500*MONEY,Math.round(((s.net||0)*15)/25)*25);
@@ -3173,6 +3324,10 @@ function shBodyClick(e){
   const a=e.target.closest('[data-act]');if(a){doAction(a.dataset.act,a.dataset.r);return;}
   const lg=e.target.closest('.legend');
   if(lg){ lg.classList.toggle('open'); return; }   /* clamped in landscape */
+  const op=e.target.closest('[data-op]');
+  if(op){ const line=doOp(op.dataset.op);
+    if(line){ shToast(`<span class="neg">Bought</span> · ${line}`); openSheet('reg'); }
+    return; }
   if(e.target.closest('#acqBtn')){
     if(doAcquire()){
       shToast(`<span class="neg">Acquired</span> · a rival's install base is yours. Coverage up everywhere you operate.`);

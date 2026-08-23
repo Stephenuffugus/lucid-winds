@@ -43,5 +43,36 @@ console.log('AFTER   '+JSON.stringify(await p.evaluate(()=>{
     newLabel:b?(b.textContent||'').trim():'(gone)'};
 })));
 await p.screenshot({path:"/workspaces/lucid-winds/portal-assets/review/ftw-landscape-aug24/05_acquisition.png"});
+/* THE DESK: is it there, is it three offers, and can a player buy one */
+const desk=await p.evaluate(()=>{
+  const ops=[...document.querySelectorAll('[data-op]')];
+  if(!ops.length)return{err:'no desk offers in the DOM'};
+  return {count:ops.length, offers:ops.map(o=>({
+    id:o.dataset.op,
+    name:(o.querySelector('.opn')||{}).textContent,
+    cost:(o.querySelector('.opc')||{}).textContent,
+    h:Math.round(o.getBoundingClientRect().height)}))};
+});
+console.log('DESK    '+JSON.stringify(desk));
+if(!desk.err){
+  await p.evaluate(()=>{document.querySelector('[data-op]').scrollIntoView({block:'center'});});
+  await sleep(500);
+  const t=await p.evaluate(()=>{const o=document.querySelector('[data-op]');
+    const r=o.getBoundingClientRect(); const x=r.left+r.width/2,y=r.top+r.height/2;
+    const hit=document.elementFromPoint(x,y);
+    return {ok:!!hit&&(hit===o||o.contains(hit)),x,y,id:o.dataset.op,cashBefore:Math.round(S.cash)};});
+  if(!t.ok){console.log('DESK TAP DOES NOT LAND');}
+  else{
+    await p.touchscreen.tap(t.x,t.y); await sleep(1200);
+    console.log('BOUGHT  '+JSON.stringify(await p.evaluate(o=>({
+      wanted:o, cashAfter:Math.round(S.cash), dcs:S.dcs||0,
+      oversight:+((S.oversight)||0).toFixed(1), inf:S.inf,
+      deskNow:[...document.querySelectorAll('[data-op]')].map(x=>x.dataset.op)
+    }),t.id)));
+  }
+}
+await p.evaluate(()=>{const d=document.querySelector('.desk');if(d)d.scrollIntoView({block:'center'});});
+await sleep(500);
+await p.screenshot({path:"/workspaces/lucid-winds/portal-assets/review/ftw-landscape-aug24/09_desk.png"});
 console.log(errs.length?'ERRORS '+errs[0]:'no page errors');
 await br.close();
