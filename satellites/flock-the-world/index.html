@@ -179,7 +179,29 @@ h1 em{font-style:normal;color:var(--sodium)}
   /* "7.8B never watched" is the same fact from the other side and it already has
      a home in the Ledger sheet. In landscape it is just width. */
   .lgs{display:none}
-  .bars{flex:1 1 150px;min-width:150px}
+  /* ⛔ Two attempts before this one, both measured, both wrong.
+     At flex 1 1 150px the row fit on one line and the HUD came to 56px, but the
+     two bar labels collapsed into their own values: the screen read
+     "SUBJUGATION0.0%" and "PATRIOTISM0.0%" with no gap, because space-between
+     has nothing to space when the box is too narrow. At 210px the labels were
+     fine and the row overflowed 915px and wrapped anyway, putting the HUD back
+     to 108px, which was the whole thing I was trying to fix.
+     The row genuinely cannot hold date, capital, influence, six 48px controls,
+     two labelled bars AND the Watched figure at 915px. So the bars get a row of
+     their own, and it is a THIN one: two bars across the full width, labels with
+     room to breathe, about 16px. HUD lands near 72px instead of 110, with no
+     collisions and no abbreviating of player copy. */
+  /* ⛔ And a third wrong answer, also measured: giving .bars flex 1 0 100% put it
+     on its own row correctly, but #ledline comes AFTER it in the DOM, so the
+     line break pushed the Watched figure onto a THIRD row and the HUD went to
+     130px. Measured children: hudrow 212, ctlrow 313, bars 899, ledline 162.
+     DOM order is the bug, so reorder without touching the markup: Watched joins
+     row one, the bars take row two on their own. Row one is 212 + 313 + 162 plus
+     gaps = about 711 of 899, so it cannot wrap. */
+  .bars{flex:1 0 100%;order:2;margin-top:3px;gap:14px}
+  .blab{gap:10px;margin-bottom:1px}
+  .blab span:last-child{flex:none}
+  #ledline{order:1;margin-left:auto;padding-left:8px}
   /* the pick screen's map band shrinks as its footer grows, and the zoom column
      is three 48px targets tall. Adding the vendor input ate the headroom and
      clipped FIT past the bottom of the map. Keep the band tall enough for the
@@ -197,8 +219,6 @@ h1 em{font-style:normal;color:var(--sodium)}
   .nb{min-height:48px}.nb svg{width:13px;height:13px}
   #nav{padding-top:5px;padding-bottom:calc(env(safe-area-inset-bottom) + 5px)}
 
-  #guide{top:auto;bottom:8px;font-size:11px;padding:7px 10px;line-height:1.4}
-  #guide .gskip{margin-top:4px;min-height:48px}
 }
 /* desktop: controls stay hand-sized instead of stretching across the row */
 @media (min-width:900px){
@@ -418,6 +438,19 @@ h1 em{font-style:normal;color:var(--sodium)}
      two disconnected columns. Indent them to the same line the name starts on:
      58px icon plus the 9px gap. */
   .node .cst,.node .ds{margin-left:67px}
+
+  /* ⛔ These #guide rules were in the landscape block at the TOP of the file and
+     the `right` never applied: the base `#guide{left:8px;right:66px}` is defined
+     BELOW it, so it won on source order, exactly like the tree rules did. Same
+     trap, same fix, and it is why this block exists. */
+  /* bottom anchored so it stops covering the map it points at, but it also has
+     to stop being a slab: at the bottom, full width and full height, it swallowed
+     the LIVE status pill and the wire ticker underneath it. */
+  #guide{top:auto;bottom:6px;left:8px;right:150px;font-size:11px;padding:7px 10px;
+    line-height:1.38;max-height:34%;overflow:auto;
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  #guide.on{display:flex}
+  #guide .gskip{margin-top:0;min-height:48px;flex:none;order:2}
   .node .ds{font-size:10.5px;line-height:1.35;
     display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 }
