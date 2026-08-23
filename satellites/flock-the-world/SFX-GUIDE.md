@@ -1,0 +1,102 @@
+# FTW SOUND — how we make these together
+
+Written for Stephen, 2026-08-23. You said you have not used Suno for sound
+effects and want a way for us to work together on it. Here it is.
+
+## The short version
+
+**Suno makes songs. It does not make clicks.** So we split the 32 cues:
+
+- **10 are music.** Suno is genuinely good at these. Themes, beds, stings.
+- **22 are one-shots**, half a second of a click, a thunk, a stamp. Suno is the
+  wrong tool. You already own the right one: your DAW. These are faster to make
+  than to prompt for.
+
+You do not have to do all 32. **Do the 10 music cues in Suno first.** They carry
+most of the feel, and the game is fully playable with the other 22 still silent.
+
+## What I need back, exactly
+
+One file per cue, named exactly the cue id:
+
+```
+satellites/flock-the-world/sfx/ui_tap.mp3
+satellites/flock-the-world/sfx/theme_menu.mp3
+```
+
+- **mono, mp3, 96 kbps.** The whole game is 270 KB today; the audio must not
+  dwarf it.
+- **one-shots: 0.6 s or shorter.** Stings: 3 s or shorter. Endings: 8 s.
+- **Beds and the theme must loop seamlessly.** Trim on a zero crossing.
+- Leave no silence at the head of a one-shot. A 200 ms gap before a click reads
+  as lag.
+
+Drop them in that folder, tell me they are there, and I add each id to the
+`SFX_HAVE` list in the code and verify it fires. **A file alone does nothing
+until its id is in that list**, on purpose, so a half-finished folder never
+ships 404s to players.
+
+## The 10 Suno cues, with prompts
+
+In Suno use **Custom mode**, put the text below in **Style**, leave lyrics
+empty, and turn **Instrumental ON**. Then take the section you want and trim it.
+Ask for more than you need and cut; that is normal.
+
+| id | length | Suno style prompt |
+|---|---|---|
+| `theme_menu` | 60 to 90 s loop | *Corporate brochure synth, mid tempo, major key, clean DX7 electric piano and soft pads, confident and reassuring like a 1990s procurement video, one slightly sour note that never resolves, no drums after the intro, instrumental* |
+| `bed_hq` | 60 s loop | *Server room ambience as music. Deep static hum, slow filtered pad, faint rhythmic tick like cooling fans, almost no melody, hypnotic and neutral, instrumental drone* |
+| `bed_tension` | 60 s loop | *Slow dread. Low sustained strings, a heartbeat pulse under them, dissonant high shimmer creeping in, no resolution, no drums, instrumental* |
+| `win` | 8 s | *Triumphant corporate fanfare that curdles. Bright brass swell resolving into a cold minor chord and a single held synth note, instrumental* |
+| `loss_refusal` | 8 s | *Warm daylight release. Acoustic guitar and hand percussion, hopeful, human, a crowd feeling without voices, instrumental* |
+| `loss_coalition` | 8 s | *Institutional collapse. Slow piano chords in an empty room, a distant low string, resigned and formal, instrumental* |
+| `concede` | 2 s | *Insincere PR jingle. Four notes of chirpy ukulele and glockenspiel, television advert cheerful, ends on an unearned major chord, instrumental* |
+| `breaking` | 2 s | *Urgent news sting. Sharp brass hit, timpani, tense strings rising, television news bulletin, instrumental* |
+| `milestone` | 1.5 s | *Warm achievement chime. Sodium lamp warming up as music, low hum rising into a soft golden bell, instrumental* |
+| `synergy` | 2 s | *Secret discovery sting. Gold shimmer, harp gliss into a struck bell, satisfying and slightly conspiratorial, instrumental* |
+
+Two Suno habits that save time:
+- Generate, then use **Extend** or **Crop** rather than re-rolling from zero.
+- For the three loops, take a 30 to 60 s stretch from the MIDDLE of the track,
+  where it has settled, not the intro.
+
+## The 22 one-shots, made in your DAW
+
+These are all faster to build than to describe to a model. Rough recipes:
+
+| id | what it is | recipe |
+|---|---|---|
+| `ui_tap` | tiny dry click | short noise burst, 8 ms, high pass 2 kHz |
+| `ui_open` / `ui_close` | panel slide | filtered noise sweep up / down, 200 ms |
+| `buy_small` / `buy_large` | cash register thunk | low wood knock plus a coin tick; large is the same pitched down 4 semitones |
+| `cant_afford` | dull buzz | 120 Hz square, 90 ms, fast decay |
+| `bubble_cash` | coin ping | bright metallic ding, 250 ms |
+| `bubble_inf` | glass ping | struck glass, higher and cleaner than the coin |
+| `spend` | paper and coin swish | paper rustle plus one coin, 300 ms |
+| `region_join` | rubber stamp | wood thud with a paper slap layered on |
+| `region_full` | low gong plus stamp | the stamp again over a soft low gong |
+| `murmur` / `peaceful` / `violent` / `uprising` | crowd bed in four steps | one crowd recording, four intensities: distant murmur, chanting, shouting, roar. Same source so they escalate believably |
+| `region_lost` | poles falling, crowd cheer | metal clatter then the roar from above. **This one should feel good to hear and bad to earn** |
+| `crackdown` | armored rumble | low engine rumble plus boot stomps |
+| `crackdown_fail` | units refuse | a beat of near silence, then the crowd |
+| `blackout` | broadcast cut | TV click into a mains hum |
+| `agitate` | match strike | literal match strike, 400 ms |
+| `doctrine` | boardroom chord | one held minor piano chord, 2 s |
+| `event_open` | folder opens | paper and card, 300 ms |
+
+If you would rather not build all 22, freesound.org has CC0 material for every
+one of them. Check the licence is CC0 before using anything commercially.
+
+## How we work together on this
+
+1. You make a batch, even one file.
+2. Drop them in `satellites/flock-the-world/sfx/`.
+3. Tell me which ids you did.
+4. I add those ids to `SFX_HAVE`, run the gate, play the game with sound on,
+   and tell you honestly what it sounds like in context: too loud, too long,
+   fires too often, wrong feeling.
+5. You adjust the ones that need it. Repeat.
+
+Start with `theme_menu`, `bed_hq` and `milestone`. Those three change the feel
+of the whole game more than the other 29 combined, and they will tell us
+quickly whether Suno is giving us what we want.
