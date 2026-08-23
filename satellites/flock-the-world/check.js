@@ -223,7 +223,7 @@ if (C) {
   ok('a tap on open ocean resolves to nothing', !cSea, cSea ? cSea.n : '');
 
   /* full runs: a balanced bot wins, a do-nothing run loses */
-  function botRun(mode, diff, start, strat, maxDays) {
+  function botRun(mode, diff, start, strat, maxDays, onTick) {
     const c = makeCtx();
     c.doctrineModal = () => {};
     const s = vm.runInContext(`S=newState('${mode}','${diff}','${start}');S`, c);
@@ -253,6 +253,7 @@ if (C) {
       }
       if (!s.doctrine && s.subj >= 0.14) { s.doctrine = strat.doctrine || 'fist'; cl('recompute', s); }
       cl('tick');
+      if (onTick) onTick(s);
       if (s.over) break;
     }
     return s;
@@ -267,6 +268,87 @@ if (C) {
 
   const rush = botRun('CONTRACTOR', 'Vendor', 'NA', { buy: 1, expand: 1, doctrine: 'fist', collectP: 0.10 }, 4000);
   ok('a second bot run also terminates (no infinite state)', rush.over === true, 'day=' + rush.day);
+
+  /* ---------------------------------------------- F1: population ledger */
+  /* Penny (2026-08-23): a meter is a dashboard, a number made of people is a
+     story. These guard the numbers that tell it. */
+  group('population ledger');
+  {
+    const W = get('WORLD_POP') * 1e6;
+    let ticks = 0, idErr = null, indepErr = null, negErr = null, cmpOver = 0;
+    botRun('CONTRACTOR', 'Vendor', 'NA', { buy: 1, expand: 1, doctrine: 'glove', collectP: 0.10, concede: 1 }, 2000, s => {
+      ticks++;
+      if (idErr === null && !(Math.abs((s.popWatched + s.popFree) - W) < 1e-3))
+        idErr = 'day ' + s.day + ' watched+free=' + (s.popWatched + s.popFree) + ' want ' + W;
+      /* the real guard: recompute watched here over EVERY region. tick()'s own
+         accumulator loop opens with `if(!r.active)continue;`, so if popTotals is
+         ever folded into it, expelled and unentered regions silently vanish from
+         the count and this goes red. */
+      if (indepErr === null) {
+        let w = 0;
+        for (const k of Object.keys(s.regions)) w += s.regions[k].pop * s.regions[k].coverage;
+        if (Math.abs(w * 1e6 - s.popWatched) > 1)
+          indepErr = 'day ' + s.day + ' independent=' + (w * 1e6) + ' engine=' + s.popWatched;
+      }
+      if (negErr === null) {
+        for (const key of ['popWatched', 'popCompliant', 'popOrganized', 'popStreets', 'popExpelled', 'popFree']) {
+          const v = s[key];
+          if (!(typeof v === 'number' && isFinite(v) && v >= -1)) { negErr = key + '=' + v + ' on day ' + s.day; break; }
+        }
+      }
+      if (s.popCompliant > s.popWatched) cmpOver++;
+    });
+    ok('a 2000 day run actually ticked', ticks > 1000, 'ticks=' + ticks);
+    ok('watched + never watched is the whole world, every tick', idErr === null, idErr);
+    ok('watched counts every region, including expelled and unentered', indepErr === null, indepErr);
+    ok('no population total goes negative, NaN or infinite', negErr === null, negErr);
+    /* reported, never asserted: control and coverage are separate curves and
+       compliant may legitimately lead watched (PLAN-AUG23 section 1). */
+    console.log('  note compliant exceeded watched on ' + cmpOver + ' of ' + ticks + ' ticks (expected, not a failure)');
+
+    /* ⛔ The bot run above cannot catch a region being skipped: an unentered
+       region has coverage exactly 0, so it contributes nothing either way, and
+       a balanced glove+concede run never loses one. Forcing the ONLY state
+       where it shows: expelled, so active=false while coverage stays high.
+       Watched this go red against a popTotals that skipped inactive regions. */
+    {
+      const c7 = makeCtx();
+      vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');" +
+        "S.regions.WE.active=false;S.regions.WE.lost=true;S.regions.WE.coverage=0.5;" +
+        "S.regions.EA.active=false;S.regions.EA.lost=true;S.regions.EA.coverage=0.25;" +
+        "popTotals(S);", c7);
+      const s7 = vm.runInContext('S', c7);
+      const wantWE = 420 * 0.5 * 1e6, wantEA = 1600 * 0.25 * 1e6;
+      ok('an expelled region still counts its watched people',
+        s7.popWatched >= (wantWE + wantEA) - 1,
+        'popWatched=' + s7.popWatched + ' needs at least ' + (wantWE + wantEA));
+      ok('expelled people are counted as expelled',
+        Math.abs(s7.popExpelled - (420 + 1600) * 1e6) < 1, 'popExpelled=' + s7.popExpelled);
+      ok('never watched still completes the world after an expulsion',
+        Math.abs((s7.popWatched + s7.popFree) - W) < 1e-3);
+    }
+
+    /* the odometer must never show a fraction */
+    const c6 = makeCtx();
+    const seen = [];
+    const spy = stubEl();
+    Object.defineProperty(spy, 'textContent', { set(v) { seen.push(String(v)); }, get() { return seen.length ? seen[seen.length - 1] : ''; } });
+    c6.document.getElementById = id => (id === 'vWatch' ? spy : stubEl());
+    vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');popTotals(S);ODO.tgt=1234567.891;ODO.cur=0;ODO.shown=-1;", c6);
+    for (let i = 0; i < 60; i++) vm.runInContext('odoStep()', c6);
+    const bad = seen.filter(t => !/^[0-9][0-9,]*$/.test(t));
+    ok('the odometer never displays a non integer', seen.length > 5 && bad.length === 0,
+      'wrote ' + seen.length + ' values, bad=' + JSON.stringify(bad.slice(0, 3)));
+    ok('the odometer rolls toward the target instead of jumping', seen.length > 5 && seen[0] !== seen[seen.length - 1] && /,/.test(seen[seen.length - 1]),
+      'first=' + seen[0] + ' last=' + seen[seen.length - 1]);
+
+    /* the ledger sheet lists every region */
+    vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');popTotals(S);", c6);
+    const lh = vm.runInContext('ledgerHTML()', c6);
+    const rows = (lh.match(/class="ledrow"/g) || []).length;
+    ok('the ledger sheet renders one row per region', rows === get('REGIONS').length, 'rows=' + rows + ' regions=' + get('REGIONS').length);
+    ok('the ledger sheet names all six totals', ['Watched', 'Never watched', 'Compliant', 'Organized', 'In the streets', 'Expelled you'].every(k => lh.indexOf('>' + k + '<') >= 0));
+  }
 
   /* persistence */
   group('persistence');

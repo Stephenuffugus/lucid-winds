@@ -96,6 +96,30 @@ h1 em{font-style:normal;color:var(--sodium)}
 .blab{display:flex;justify-content:space-between;font-size:9px;letter-spacing:.12em;
   color:var(--dim);text-transform:uppercase;margin-bottom:2px}
 .btrack{height:4px;border-radius:3px;background:#16202b;overflow:hidden}
+/* the population line: Penny's note (2026-08-23) is that a meter is a dashboard
+   and a number made of people is a story. This is the story. */
+#ledline{display:flex;align-items:baseline;gap:7px;margin-top:5px;min-height:26px;
+  padding:2px 4px;border-radius:8px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+#ledline:active{background:#ffa2291a}
+.lgl{font-size:9px;letter-spacing:.16em;color:var(--dim);text-transform:uppercase;flex:none}
+.lgv{font-size:17px;font-weight:800;color:var(--sodium);font-variant-numeric:tabular-nums;
+  letter-spacing:.01em;flex:none}
+.lgs{font-size:9px;letter-spacing:.1em;color:var(--dim);text-transform:uppercase;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* ledger sheet */
+.ledgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.ledcell{border:1px solid var(--line);border-radius:10px;padding:8px 9px;background:#0d1520}
+.ledcell .k{font-size:9px;letter-spacing:.14em;color:var(--dim);text-transform:uppercase}
+.ledcell .v{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:2px}
+.ledcell .dl{font-size:9px;color:var(--dim);font-variant-numeric:tabular-nums;margin-top:1px}
+.ledcell .t{height:3px;border-radius:2px;background:#16202b;overflow:hidden;margin-top:5px}
+.ledcell .t .f{height:100%;border-radius:2px}
+.ledrow{display:flex;align-items:center;gap:8px;padding:7px 2px;border-bottom:1px solid #16202b}
+.ledrow .rn{flex:1 1 auto;min-width:0}
+.ledrow .rn b{font-size:12px;color:var(--paper);font-weight:600}
+.ledrow .rn .sub{font-size:10px;color:var(--dim);font-variant-numeric:tabular-nums}
+.ledrow .rv{flex:none;text-align:right;font-size:12px;font-weight:700;color:var(--sodium);
+  font-variant-numeric:tabular-nums}
 .bfill{height:100%;width:0;border-radius:3px;transition:width .3s linear}
 #subFill{background:linear-gradient(90deg,var(--sodium-d),var(--sodium))}
 #ovrFill{background:linear-gradient(90deg,#1f7f6c,var(--scan))}
@@ -106,6 +130,10 @@ h1 em{font-style:normal;color:var(--sodium)}
   .hudrow .stat{flex:0 0 auto}
   #ctlrow{margin-top:0;flex:0 0 auto}
   .bars{margin-top:0;flex:1 1 190px;min-width:190px}
+  /* the population line keeps its own row: it grows from "0" to ten characters
+     as the run goes on, and a line that re-wraps mid-run silently moves every
+     map overlay anchored to the HUD height. */
+  #ledline{flex:1 0 100%;margin-top:2px;min-height:22px}
   .nb{min-height:48px}.nb svg{width:13px;height:13px}
   #nav{padding-top:5px;padding-bottom:calc(env(safe-area-inset-bottom) + 5px)}
 }
@@ -368,6 +396,9 @@ h1 em{font-style:normal;color:var(--sodium)}
       <div class="bwrap"><div class="blab"><span id="ovrName">Patriotism</span><span id="vOvr">0.0%</span></div>
         <div class="btrack"><div class="bfill" id="ovrFill"></div></div></div>
     </div>
+    <div id="ledline" role="button" tabindex="0" aria-label="Open the population ledger">
+      <span class="lgl">Watched</span><span class="lgv mono" id="vWatch">0</span><span class="lgs" id="vWatchSub"></span>
+    </div>
   </div>
   <div id="mapWrap">
     <canvas id="map"></canvas><canvas id="fx"></canvas><div class="crt"></div>
@@ -380,6 +411,7 @@ h1 em{font-style:normal;color:var(--sodium)}
     <div id="ticker"><span class="wlab">WIRE</span><div id="tickWrap"><div id="tickTrack">Awaiting first deployment.</div></div></div>
   </div>
   <nav id="nav">
+    <button class="nb" data-tab="led"><svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><path d="M2 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M17 10h5M17 14h5M17 18h5"/></svg><span>Ledger</span></button>
     <button class="nb" data-tab="dep"><svg viewBox="0 0 24 24"><path d="M3 8h13l4 3v5H3z"/><circle cx="16" cy="12" r="2.2"/><path d="M6 16v3M18 16v3"/></svg><span>Deploy</span></button>
     <button class="nb" data-tab="cap"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg><span>Watch</span></button>
     <button class="nb" data-tab="inf"><svg viewBox="0 0 24 24"><path d="M4 19V9M10 19V5M16 19v-6M22 19V3"/></svg><span>Story</span></button>
@@ -856,6 +888,7 @@ function initTicker(){
 }
 /* the HUD floats over the map, so overlays anchored to the map top slide
    below whatever height the HUD renders at */
+let _hudH=0;
 function syncOverlayTops(){
   const h=$('hud')?$('hud').offsetHeight:0;
   const g=$('guide');if(g)g.style.top=(h+8)+'px';
@@ -1059,6 +1092,7 @@ function tick(){
   if(s.lbCd>0)s.lbCd--;
   s.activeCount=active;
   s.avgSus=susW/WORLD_POP; s.avgMil=milW/WORLD_POP; s.subj=subj/WORLD_POP; s.avgRes=resW/WORLD_POP;
+  popTotals(s);
   worldMilestones(s);
   s.warHeat=Math.max(0,s.warHeat-0.0009);
 
@@ -1167,7 +1201,12 @@ function finish(won,why){
    <div class="sg"><div class="k">Days</div><div class="v mono">${S.day}</div></div>
    <div class="sg"><div class="k">Markets held</div><div class="v mono">${S.activeCount}/${REGIONS.length}</div></div>
    <div class="sg"><div class="k">Regions lost</div><div class="v mono">${S.lostCount}</div></div>
-   <div class="sg"><div class="k">Mode</div><div class="v" style="font-size:12px">${S.mode.n} · ${S.diffKey}</div></div>`;
+   <div class="sg"><div class="k">Mode</div><div class="v" style="font-size:12px">${S.mode.n} · ${S.diffKey}</div></div>
+   <div class="sg"><div class="k">People watched</div><div class="v mono">${fmtPeople(S.popWatched)}</div></div>
+   <div class="sg"><div class="k">People compliant</div><div class="v mono">${fmtPeople(S.popCompliant)}</div></div>
+   <div class="sg"><div class="k">Organized at peak</div><div class="v mono">${fmtPeople(S.popPeakOrg||0)}</div></div>
+   <div class="sg"><div class="k">Expelled you</div><div class="v mono">${fmtPeople(S.popExpelled)}</div></div>
+   <div class="sg" style="grid-column:1/-1"><div class="k">Never asked</div><div class="v mono">${fmtPeople(S.popWatched)} people were never asked.</div></div>`;
   if(won){
     $('endKick').textContent='Contract fulfilled';
     $('endTitle').innerHTML='TOTAL <span style="color:var(--sodium)">COVERAGE</span>';
@@ -1601,6 +1640,15 @@ function paintHud(){
   $('vOvr').textContent=s.oversight.toFixed(1)+'%';
   $('subFill').style.width=(s.subj*100)+'%';
   $('ovrFill').style.width=s.oversight+'%';
+  if(s.popWatched==null)popTotals(s);
+  ODO.tgt=s.popWatched;odoStart();
+  $('vWatchSub').textContent=fmtShort(s.popFree)+' never watched';
+  /* the odometer widens as the number grows, which can re-wrap the HUD and move
+     its rendered height. Every map overlay is anchored to that height, so a
+     silent re-wrap slides the briefing card over this very line. Re-sync on any
+     real height change, not just on resize. */
+  const hh=$('hud')?$('hud').offsetHeight:0;
+  if(hh&&hh!==_hudH){_hudH=hh;syncOverlayTops();}
   const covered=REGIONS.reduce((a,r)=>a+s.regions[r.id].pop*s.regions[r.id].coverage,0);
   $('pillTxt').textContent=`${s.speed===0?'PAUSED':'LIVE'} · ${(covered*1.4).toFixed(0)}M NODES · ${s.activeCount} MKT`
     +(s.warHeat>0.05?` · WAR ${(s.warHeat*100)|0}%`:'');
@@ -1611,6 +1659,99 @@ function paintHud(){
   const warBtn=document.querySelector('[data-tab="war"]');
   warBtn.classList.toggle('locked',!(s.has('panic')||s.mode.mod.warOpen||s.has('threat')));
   if(s.sheet)renderSheet(s.sheet);
+}
+
+/* ==================== THE POPULATION LEDGER ====================
+   Penny, via Stephen (2026-08-23): Plague Inc shows the population actually
+   dwindling, in people. FTW showed a meter at 61%. Every number below was
+   already computed every tick and never shown as a person.
+
+   ⛔ This is its OWN pass over every region, not part of the accumulator loop
+   in tick(), because that loop opens with `if(!r.active)continue;`. A region
+   you were expelled from still has coverage and still holds people, and the
+   identity watched + free === WORLD_POP only holds if nothing is skipped.
+   REGIONS[].pop is MILLIONS. */
+const PEOPLE=1e6;
+function popTotals(s){
+  let w=0,c=0,o=0,st=0,ex=0;
+  for(const id in s.regions){
+    const r=s.regions[id];
+    w+=r.pop*r.coverage;
+    c+=r.pop*r.control;
+    o+=r.pop*(r.resist/100);
+    if(r.pstate==='peaceful'||r.pstate==='violent'||r.pstate==='uprising')st+=r.pop;
+    if(r.lost)ex+=r.pop;
+  }
+  s.popWatched=w*PEOPLE;
+  s.popCompliant=c*PEOPLE;
+  s.popOrganized=o*PEOPLE;
+  s.popStreets=st*PEOPLE;
+  s.popExpelled=ex*PEOPLE;
+  s.popFree=WORLD_POP*PEOPLE-s.popWatched;
+  if(!s.popPeakOrg||s.popOrganized>s.popPeakOrg)s.popPeakOrg=s.popOrganized;
+  /* a ten day window so the ledger can show a per-day delta */
+  (s.popHist=s.popHist||[]).push(s.popWatched);
+  if(s.popHist.length>11)s.popHist.shift();
+}
+function popPerDay(s){
+  const h=s.popHist;
+  if(!h||h.length<2)return 0;
+  return (h[h.length-1]-h[0])/(h.length-1);
+}
+/* 1,204,331,117 — the odometer wants every digit. */
+function fmtPeople(n){return Math.round(n).toLocaleString();}
+/* 312M / 1.2B — the rows and deltas want it short. */
+function fmtShort(n){
+  const a=Math.abs(n);
+  if(a>=1e9)return (n/1e9).toFixed(a>=1e10?0:1)+'B';
+  if(a>=1e6)return Math.round(n/1e6)+'M';
+  if(a>=1e3)return Math.round(n/1e3)+'K';
+  return String(Math.round(n));
+}
+
+/* The odometer rolls, it never jumps: a number that snaps reads as a dashboard
+   again. 100 ms cadence is the 10 DOM writes per second cap, and the write only
+   happens when the rounded integer actually changed. */
+const ODO={cur:0,tgt:0,shown:-1,timer:null};
+function odoReset(){ODO.cur=0;ODO.tgt=0;ODO.shown=-1;}
+function odoStep(){
+  const el=$('vWatch');if(!el)return;
+  const d=ODO.tgt-ODO.cur;
+  if(Math.abs(d)<1)ODO.cur=ODO.tgt; else ODO.cur+=d*0.4;
+  const v=Math.round(ODO.cur);
+  if(v!==ODO.shown){ODO.shown=v;el.textContent=fmtPeople(v);}
+}
+function odoStart(){if(!ODO.timer)ODO.timer=setInterval(odoStep,100);}
+
+function ledgerHTML(){
+  const s=S,W=WORLD_POP*PEOPLE;
+  const per=popPerDay(s);
+  const cell=(k,v,share,col,dl)=>`<div class="ledcell"><div class="k">${k}</div>
+    <div class="v" style="color:${col}">${fmtPeople(v)}</div>
+    <div class="dl">${dl}</div>
+    <div class="t"><div class="f" style="width:${Math.max(0,Math.min(100,share*100)).toFixed(1)}%;background:${col}"></div></div></div>`;
+  let h=`<div class="ledgrid">
+    ${cell('Watched',s.popWatched,s.popWatched/W,'var(--sodium)',(per>=0?'+':'')+fmtShort(per)+' per day')}
+    ${cell('Never watched',s.popFree,s.popFree/W,'var(--paper)',fmtShort(s.popFree/PEOPLE*PEOPLE)+' still outside')}
+    ${cell('Compliant',s.popCompliant,s.popCompliant/W,'var(--ice)','stopped noticing')}
+    ${cell('Organized',s.popOrganized,s.popOrganized/W,'#c792ff','know what you are')}
+    ${cell('In the streets',s.popStreets,s.popStreets/W,'var(--blood)','marching right now')}
+    ${cell('Expelled you',s.popExpelled,s.popExpelled/W,'var(--grn)','took the cameras down')}
+  </div>`;
+  h+=`<div class="legend">Every figure is people, not percent. <b>Watched</b> is how many live inside your
+    frame; <b>Never watched</b> is the number you are paid to shrink. <b>Organized</b> is the one that
+    fights back, and it remembers every crackdown.</div>`;
+  const rows=REGIONS.map(r=>s.regions[r.id]).sort((a,b)=>(b.pop*b.coverage)-(a.pop*a.coverage));
+  h+=rows.map(x=>{
+    const w=x.pop*x.coverage,pct=x.pop?(x.coverage*100):0;
+    const badge=x.lost?'<span class="chip">Expelled</span>':x.active?`<span class="chip ${x.pstate}">${PSTATE_LABEL[x.pstate]}</span>`:'<span class="chip">No contract</span>';
+    return `<div class="ledrow"><div class="rn"><b>${x.name}</b> ${badge}
+      <div class="sub">${fmtShort(w*PEOPLE)} of ${fmtShort(x.pop*PEOPLE)} watched (${pct.toFixed(0)}%)
+        · ${fmtShort(x.pop*x.control*PEOPLE)} compliant
+        · ${fmtShort(x.pop*(x.resist/100)*PEOPLE)} organized</div></div>
+      <div class="rv">${pct.toFixed(0)}%</div></div>`;
+  }).join('');
+  return h;
 }
 
 /* ============================ SHEETS ============================ */
@@ -1636,6 +1777,10 @@ function renderSheet(tab){
     $('shCur').textContent='◈ '+Math.floor(S.inf)+' influence';
     body.innerHTML=`<p class="treedesc">${TREES[tab].desc}</p>`+treeHTML(tab);
     requestAnimationFrame(wireTree);
+  }else if(tab==='led'){
+    $('shTitle').textContent='Population';
+    $('shCur').textContent=fmtShort(S.popWatched)+' watched';
+    body.innerHTML=ledgerHTML();
   }else if(tab==='reg'){
     $('shTitle').textContent='World';
     $('shCur').textContent='$'+Math.floor(S.cash).toLocaleString();
