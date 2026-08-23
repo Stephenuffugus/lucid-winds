@@ -326,6 +326,25 @@ if (C) {
     ok('watched counts every region, including expelled and unentered', indepErr === null, indepErr);
     ok('no population total goes negative, NaN or infinite', negErr === null, negErr);
     ok('the ledger nests: watched >= organized >= in the streets, every tick', nestErr === null, nestErr);
+    /* The nesting run above is necessary but NOT sufficient. streets = org*share
+       with share >= 0.35, so dropping the coverage factor from the street count
+       only breaks nesting where coverage < share, and a bot run never sits
+       there: by the time a region earns a pstate its coverage has already
+       climbed past 0.35. Proved on 2026-08-24 by mutating the street line and
+       watching the run-based check stay green. So pin it directly, in the one
+       state that can expose it. */
+    {
+      const cLo = makeCtx();
+      vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');" +
+        "for(const id in S.regions){S.regions[id].active=false;}" +
+        "const k=Object.keys(S.regions)[0];const r=S.regions[k];" +
+        "r.active=true;r.pop=100;r.resist=50;r.coverage=0.10;r.pstate='uprising';" +
+        "popTotals(S);", cLo);
+      const lo = vm.runInContext('({o:S.popOrganized,st:S.popStreets})', cLo);
+      ok('in the streets scales with coverage, not with raw regional population',
+        lo.st <= lo.o + 1 && lo.st > 0,
+        'coverage 0.10 uprising: organized=' + Math.round(lo.o) + ' streets=' + Math.round(lo.st));
+    }
     /* and nobody organises in a country the vendor has never entered */
     {
       const cZ = makeCtx();
