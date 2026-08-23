@@ -871,6 +871,40 @@ if (C) {
       ok('and never two inside thirty days', minGap>=30, 'minGap='+minGap);
     }
 
+    group('the small mercies: Greenland, the concede arm, the field notes');
+    {
+      ok('Greenland counts as Western Europe, not North America',
+        vm.runInContext("COUNTRIES.find(c=>c.n==='Greenland').r", C)==='WE',
+        vm.runInContext("COUNTRIES.find(c=>c.n==='Greenland').r", C));
+      const cC=makeCtx();cC.doctrineModal=()=>{};cC.showEvent=()=>{};
+      vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');",cC);
+      const sC=vm.runInContext('S',cC);
+      const rr=sC.regions.NA;rr.active=true;rr.coverage=.5;rr.unrest=60;rr.control=.4;
+      const u0=rr.unrest,c0=rr.control;
+      vm.runInContext("doAction('concede','NA')",cC);
+      ok('the first concede tap only arms: nothing moves',
+        rr.unrest===u0&&rr.control===c0&&vm.runInContext('!!S._concArm',cC),
+        'unrest '+u0+'->'+rr.unrest);
+      vm.runInContext("doAction('concede','NA')",cC);
+      ok('the second tap concedes for real',
+        rr.unrest<u0&&rr.control<c0&&rr.gw===1,
+        'unrest '+u0+'->'+rr.unrest+' gw='+rr.gw);
+      /* the field notes fire once, in the ticker, never twice */
+      const cN=makeCtx();cN.doctrineModal=()=>{};cN.showEvent=()=>{};
+      vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');",cN);
+      const sN=vm.runInContext('S',cN);
+      sN.oversight=55;
+      let n8=13;const f8=()=>{n8=(n8*1664525+1013904223)>>>0;return n8/4294967296;};
+      const real8=Math.random;Math.random=f8;
+      vm.runInContext('tick()',cN);
+      const once=sN.log.filter(x=>/oversight is half spent/i.test(x.t)).length;
+      sN.oversight=60;vm.runInContext('tick()',cN);
+      Math.random=real8;
+      const twice=sN.log.filter(x=>/oversight is half spent/i.test(x.t)).length;
+      ok('the oversight field note teaches once and only once', once===1&&twice===1,
+        'first='+once+' second='+twice);
+    }
+
     /* 2026-08-24: four doors to the ending. Each door is driven through the
        real tick with a staged world, and each threshold is later mutated red
        by scripts/ftw_door_mutations.sh style manual runs before trust. */
@@ -951,7 +985,10 @@ if (C) {
       ok('without Clean Hands a guaranteed backfire raises unrest', dU_no>0, 'delta='+dU_no);
       ok('with Clean Hands the same crackdown cannot backfire', dU_cap<0, 'delta='+dU_cap);
       /* goodwill: concede banks it, and it discounts a lost region's door */
-      vm.runInContext("(function(){const r=S.regions.WE;r.active=true;r.coverage=.4;r.unrest=60;doAction('concede','WE');doAction('concede','WE');})()",cK);
+      /* concede is two-tap now (arm, then confirm), so two CONCESSIONS are four
+         taps. This fixture broke the day the confirm shipped, which is the
+         guard doing its job: the contract changed and the test noticed. */
+      vm.runInContext("(function(){const r=S.regions.WE;r.active=true;r.coverage=.4;r.unrest=60;for(let i=0;i<4;i++)doAction('concede','WE');})()",cK);
       const gw=vm.runInContext("S.regions.WE.gw",cK);
       ok('conceding banks goodwill', gw===2, 'gw='+gw);
       const gap=vm.runInContext("(function(){const r=S.regions.WE;r.active=false;r.lost=true;const a=entryCost(r);r.gw=4;const b=entryCost(r);r.gw=2;return a-b;})()",cK);

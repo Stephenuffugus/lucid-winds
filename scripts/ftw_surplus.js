@@ -43,7 +43,7 @@ function bot(strat,maxDays,seed){
   vm.runInContext('Math.random=__rnd;',box);
   const c=makeCtx();
   c.doctrineModal=()=>{};
-  const s=vm.runInContext(`S=newState('CONTRACTOR','Vendor','NA');S`,c);
+  const s=vm.runInContext(`S=newState('CONTRACTOR','${DIFF}','NA');S`,c);
   c.showEvent=ev=>{const evc=o=>{if(!o.cost||!o.cost.cash)return 0;
       return Math.round(o.cost.cash*vm.runInContext('evScale(S)',c)/5)*5;};
     for(const o of ev.o){const cc=evc(o);
@@ -151,6 +151,7 @@ function bot(strat,maxDays,seed){
     endNetPctOfPeak:(peakNet>0?Math.round(100*(s.net||0)/peakNet):null)};
 }
 const MODE=process.argv[2]||'spend';
+const DIFF=process.argv[3]||'Vendor';   /* Contractor = easy, Incumbent = hard */
 /* 'tapper' models the player Stephen actually is: taps every bubble. The bot's
    default 10% collection understates a human's bubble income by an order of
    magnitude, which is how a 17-days-of-net bubble hid from the economy work.
