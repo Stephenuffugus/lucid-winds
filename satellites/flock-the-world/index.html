@@ -42,9 +42,19 @@ h1 em{font-style:normal;color:var(--sodium)}
 .howbtn{display:block;margin:0 auto 6px;padding:8px 18px;min-height:48px;border:1px solid var(--line);border-radius:20px;
   font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ice)}
 .seclab{font-size:9.5px;letter-spacing:.24em;color:var(--dim);text-transform:uppercase;margin:16px 0 8px}
-.modecard{width:100%;min-height:48px;text-align:left;border:1px solid var(--line);border-radius:13px;background:var(--panel);
+/* the menu wordmark replaces the CSS lettering. The h1 stays in the document
+   for screen readers and for anything that cannot load the image. */
+#wordmark{display:block;width:min(300px,78%);margin:2px auto 4px;height:auto}
+#wordmark+h1{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.modecard{display:flex;gap:11px;align-items:center;width:100%;min-height:48px;text-align:left;border:1px solid var(--line);border-radius:13px;background:var(--panel);
   padding:12px 13px;margin-bottom:8px}
 .modecard.sel{border-color:var(--sodium);background:#191203}
+.mcart{width:60px;height:80px;flex:none;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.mctx{flex:1 1 auto;min-width:0}
+.dfart{display:block;width:100%;height:52px;object-fit:cover;object-position:center 40%;
+  border-radius:6px;margin-bottom:5px;opacity:.85}
+.diffbtn.sel .dfart{opacity:1}
+.docart{display:block;width:100%;height:74px;object-fit:cover;border-radius:8px;margin-bottom:8px}
 .modecard h3{margin:0 0 3px;font-size:14px}
 .modecard h3 span{font-size:9px;letter-spacing:.18em;color:var(--sodium);margin-left:8px;text-transform:uppercase}
 .modecard p{margin:0;font-size:11px;color:var(--dim);line-height:1.5}
@@ -434,6 +444,7 @@ h1 em{font-style:normal;color:var(--sodium)}
 <section class="screen on" id="menu">
   <div class="lens"></div>
   <div class="tag">Sky Wolf Studio presents</div>
+  <img id="wordmark" src="art/bg/wordmark.webp" alt="Flock the World">
   <h1><span class="w1"><span class="fl">F</span>LOCK</span><br><span class="w2"><span class="fl">T</span>HE</span> <span class="w3"><span class="fl">W</span>ORLD</span></h1>
   <p class="sub">You play the parasite: the vendor class that farms ordinary people for data, fines and fear.
   It buys the media, arms the police, and writes its own oversight. The civilians in this game are innocent.
@@ -2135,6 +2146,8 @@ function renderSheet(tab){
    its png lands. */
 /* Same explicit-manifest rule as NODE_ART and SFX_HAVE: never probe for a file
    that may not be there. Cut from Stephen's sheets 5, 9 and 10. */
+const MODE_ART={CONTRACTOR:'mode_contractor',DEEPSTATE:'mode_partnership',CRISIS:'mode_crisis'};
+const DIFF_ART={Contractor:'diff_easy',Vendor:'diff_standard',Incumbent:'diff_hard'};
 const BADGE_ART={consent:1,curfewplus:1,fineprint:1,hallmon:1,lgm:1,memhole:1,nonewfriends:1,oncue:1,panopt:1,pipeline:1,precrime:1,shotgun:1,skyanchor:1,ticket:1,town:1,welcomemat:1};
 const CAST_ART={anchor:1,brill:1,cm_atlas:1,cm_boycott:1,cm_copwatch:1,cm_crypto:1,cm_jam:1,cm_masks:1,cm_plateswap:1,cm_samizdat:1,innocent:1,klein:1,prather:1,the_board:1,the_public:1,vole:1};
 const CARD_ART={diff_easy:1,diff_hard:1,diff_standard:1,doctrine_fist:1,doctrine_glove:1,mode_contractor:1,mode_crisis:1,mode_partnership:1};
@@ -2390,9 +2403,9 @@ function doctrineModal(){
   const c=$('modalCard');
   c.innerHTML=`<div class="kicker">Board directive</div><h3>Choose your doctrine</h3>
     <p>Fourteen percent of humanity is under meaningful control. The board wants a philosophy on the slide. This choice is permanent.</p>
-    <button class="opt" data-doc="glove"><div class="ol">The Velvet Glove</div>
+    <button class="opt docopt" data-doc="glove">${CARD_ART.doctrine_glove?'<img class="docart" src="art/card/doctrine_glove.webp" alt="">':''}<div class="ol">The Velvet Glove</div>
       <div class="oc">People consent to what feels like convenience. +Compliance everywhere, suspicion grows slower. Crackdowns stay risky.</div></button>
-    <button class="opt" data-doc="fist"><div class="ol">The Iron Fist</div>
+    <button class="opt docopt" data-doc="fist">${CARD_ART.doctrine_fist?'<img class="docart" src="art/card/doctrine_fist.webp" alt="">':''}<div class="ol">The Iron Fist</div>
       <div class="oc">Fear is cheaper than marketing. +Control depth, +militarization, crackdowns rarely backfire. Unrest runs hotter.</div></button>`;
   noteOpenModal();
   c.querySelectorAll('[data-doc]').forEach(b=>b.onclick=()=>{
@@ -2603,11 +2616,13 @@ function chosenCo(){
 function menuBeds(){sfxBed('bed_hq',false);sfxBed('bed_tension',false);sfxBed('theme_menu',true);}
 function initMenu(){
   $('modes').innerHTML=Object.keys(MODES).map(k=>{const m=MODES[k];
+    const art=CARD_ART[MODE_ART[k]]?`<img class="mcart" src="art/card/${MODE_ART[k]}.webp" alt="">`:'';
     return `<button class="modecard ${k===chosenMode?'sel':''}" data-m="${k}">
-      <h3>${m.n}<span>${m.tag}</span></h3><p>${m.d}</p></button>`;}).join('');
+      ${art}<div class="mctx"><h3>${m.n}<span>${m.tag}</span></h3><p>${m.d}</p></div></button>`;}).join('');
   document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{chosenMode=b.dataset.m;initMenu();});
   $('diffs').innerHTML=Object.keys(DIFFS).map(k=>
-    `<button class="diffbtn ${k===chosenDiff?'sel':''}" data-d="${k}">${k}</button>`).join('');
+    `<button class="diffbtn ${k===chosenDiff?'sel':''}" data-d="${k}">${
+      CARD_ART[DIFF_ART[k]]?`<img class="dfart" src="art/card/${DIFF_ART[k]}.webp" alt="">`:''}<span>${k}</span></button>`).join('');
   document.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{chosenDiff=b.dataset.d;initMenu();});
   $('diffDesc').textContent=DIFFS[chosenDiff].label;
 }
