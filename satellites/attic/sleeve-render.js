@@ -82,7 +82,7 @@
     } else if (layout === 1) {   // DIAGONAL: band name on an angle over a split field
       g += '<path d="M0 300 L300 0 L300 300 Z" fill="' + c[1] + '"/>'
         + '<g transform="rotate(-32 150 150)"><rect x="-40" y="130" width="380" height="44" fill="' + c[2] + '"/>'
-        + '<text x="150" y="160" text-anchor="middle" font-family="' + look.f + '" font-weight="800" font-size="' + fit(band, 26, 340) + '" fill="' + c[0] + '">' + esc(band) + '</text></g>'
+        + '<text x="150" y="160" text-anchor="middle" font-family="' + look.f + '" font-weight="800" font-size="' + fit(band, 26, 292) + '" fill="' + c[0] + '">' + esc(band) + '</text></g>'
         + '<text x="284" y="252" text-anchor="end" font-family="' + look.f + '" font-size="14" fill="' + c[3] + '">' + esc(album) + '</text>';
     } else if (layout === 2) {   // SUN: centered circle motif
       g += '<circle cx="150" cy="132" r="86" fill="' + c[2] + '"/><circle cx="150" cy="132" r="58" fill="' + c[1] + '"/><circle cx="150" cy="132" r="12" fill="' + c[0] + '"/>'

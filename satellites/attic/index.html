@@ -39,7 +39,7 @@
   .demo-note { font-size:0.7rem; color:#8a7a5e; text-align:center; margin:8px 0 14px; line-height:1.5; max-width:340px; }
 
   /* the economy bar: what you can spend, and what you are hunting */
-  .topbar { width:100%; display:flex; gap:10px; align-items:center; justify-content:space-between; margin:2px 0 12px; }
+  .topbar { width:100%; display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:center; margin:2px 0 12px; }
   .tix { display:inline-flex; align-items:center; gap:7px; min-height:44px; padding:0 14px;
     background:#221b14; border:1px solid #4a3b26; border-radius:24px; color:#e8c977;
     font-family:ui-monospace, monospace; font-size:0.78rem; letter-spacing:0.08em; }
@@ -186,6 +186,89 @@
 .dustbtn.go{ background:#e0c68a; color:#241d12; border-color:#f0dcae }
 #dustBtn{ margin-left:8px }
 
+/* ── THE SHELF: the collection screen ─────────────────────────────────────
+   The loop used to end at the reveal. Everything found was stored, and the
+   only way to see any of it was a strip of 90px thumbs below the fold that
+   showed the newest 24 of up to 400 and could not be sorted. A game whose
+   whole premise is one of one objects has to have somewhere to keep them.
+   ⛔ FULLY OPAQUE GROUND. This is a screen, not a scrim: the page behind it
+   must not read through, the way the want list and the dust panel still let
+   the title and the tagline bleed up into their own copy. */
+#shelfSheet{ position:fixed; inset:0; z-index:65; display:none; background:#100d0b;
+  overflow-y:auto; -webkit-overflow-scrolling:touch;
+  padding:14px 12px calc(22px + env(safe-area-inset-bottom, 0px)) }
+#shelfSheet.on{ display:block }
+.shWrap{ max-width:620px; margin:0 auto }
+.shTop{ display:flex; align-items:center; gap:10px; justify-content:space-between; margin-bottom:6px }
+.shTop h2{ font-family:ui-monospace, monospace; font-size:.72rem; letter-spacing:.28em;
+  color:#d9a94e; font-weight:normal }
+.shCount{ font-size:.72rem; color:#8a7a5e; line-height:1.55; margin-bottom:12px }
+.shCount b{ color:#c4b294; font-weight:normal }
+.shSort{ display:flex; gap:8px; margin-bottom:14px }
+.shSort button{ flex:1; min-height:48px; background:#1c1610; border:1px solid #3a2e1e; border-radius:9px;
+  color:#a8906a; font-family:ui-monospace, monospace; font-size:.6rem; letter-spacing:.14em; cursor:pointer }
+.shSort button.on{ background:#2f2417; border-color:#6a552c; color:#f0d68a }
+.shGrid{ display:grid; grid-template-columns:repeat(2, 1fr); gap:12px }
+@media (min-width:620px){ .shGrid{ grid-template-columns:repeat(3, 1fr) } }
+.shCard{ background:#1e1811; border:1px solid #3a2e1e; border-radius:10px; padding:8px 8px 10px;
+  display:flex; flex-direction:column; gap:7px; min-height:48px; cursor:pointer; text-align:left;
+  box-shadow:0 6px 18px rgba(0,0,0,0.45) }
+.shCard:active{ border-color:#6a552c }
+.shCard svg{ width:100%; height:auto; display:block; border-radius:4px }
+/* long titles were clipping mid word with no ellipsis, so THE SUMMER THAT
+   CLOCKED IN RETURNS read as "THE SUMMER THAT" */
+.shName{ font-size:.74rem; line-height:1.3; color:#e6d8bc; min-height:2.6em; overflow:hidden;
+  display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical }
+.shFoot{ display:flex; align-items:center; justify-content:space-between; gap:6px }
+.shChip{ font-family:ui-monospace, monospace; font-size:.54rem; letter-spacing:.14em;
+  padding:4px 8px; border-radius:20px; border:1px solid #4a3b26; color:#a8906a; white-space:nowrap }
+.shChip.sealed{ color:#171310; border-color:#f5d87a; font-weight:bold;
+  background:linear-gradient(100deg, #b8892e, #f5d87a 50%, #b8892e) }
+.shWhen{ font-family:ui-monospace, monospace; font-size:.54rem; color:#6f6350; white-space:nowrap }
+.shMore{ width:100%; min-height:48px; margin-top:14px; background:#1c1610; border:1px solid #4a3b26;
+  border-radius:9px; color:#c4b294; font-family:ui-monospace, monospace; font-size:.64rem;
+  letter-spacing:.18em; cursor:pointer }
+.shEmpty{ padding:34px 10px; text-align:center; color:#8a7a5e; font-size:.86rem; line-height:1.6 }
+
+/* ── THE OBJECT CARD: front is the thing, back is the paperwork ──────────
+   Flips on tap, like a plant card. The back is where a collection earns its
+   keep: what it is, when you found it, and the hash it came out of. */
+#fcSheet{ position:fixed; inset:0; z-index:75; display:none; background:#0d0b0a;
+  overflow-y:auto; -webkit-overflow-scrolling:touch;
+  padding:16px 14px calc(22px + env(safe-area-inset-bottom, 0px)) }
+#fcSheet.on{ display:block }
+.fcWrap{ max-width:430px; margin:0 auto }
+.fcFlip{ perspective:1500px; margin-bottom:12px }
+.fcInner{ position:relative; transform-style:preserve-3d; min-height:560px;
+  transition:transform 0.55s cubic-bezier(0.2,0.7,0.3,1) }
+.fcFlip.flipped .fcInner{ transform:rotateY(180deg) }
+.fcFace{ background:#221b14; border:1px solid #4a3b26; border-radius:12px; padding:14px;
+  -webkit-backface-visibility:hidden; backface-visibility:hidden;
+  box-shadow:0 10px 34px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.04) }
+.fcBack{ position:absolute; inset:0; transform:rotateY(180deg); overflow-y:auto }
+.fcFlipHint{ text-align:center; font-family:ui-monospace, monospace; font-size:.56rem;
+  letter-spacing:.2em; color:#6f6350; margin:2px 0 12px }
+.fcRow{ display:flex; gap:10px; padding:8px 0; border-top:1px solid #2e2418; font-size:.76rem; line-height:1.45 }
+.fcRow .k{ flex:none; width:96px; font-family:ui-monospace, monospace; font-size:.58rem;
+  letter-spacing:.14em; color:#8a7a5e; padding-top:2px }
+.fcRow .v{ flex:1; color:#d8c8a8; word-break:break-word }
+.fcHead{ display:flex; gap:10px; align-items:center; margin-bottom:8px }
+.fcHead svg{ width:64px; height:64px; flex:none; border-radius:4px }
+.fcHead .t{ font-size:.92rem; line-height:1.2; color:#f0e4c8 }
+.fcHead .s{ font-family:ui-monospace, monospace; font-size:.58rem; letter-spacing:.16em; color:#d9a94e }
+.fcHash{ font-family:ui-monospace, monospace; font-size:.56rem; color:#6f6350; line-height:1.6;
+  word-break:break-all }
+.fcBtns{ display:grid; grid-template-columns:1fr 1fr; gap:9px }
+.fcBtns button{ min-height:48px; background:#1c1610; border:1px solid #4a3b26; border-radius:9px;
+  color:#c4b294; font-family:ui-monospace, monospace; font-size:.62rem; letter-spacing:.16em; cursor:pointer }
+.fcBtns button:active{ background:#2a2016 }
+.fcBtns button.wide{ grid-column:1 / -1 }
+.fcBtns button.warn{ color:#a8906a }
+.fcMark{ margin-top:26px; padding-top:16px; border-top:1px solid #2e2418; text-align:center;
+  font-family:ui-monospace, monospace; font-size:.6rem; letter-spacing:.28em; color:#d9a94e; line-height:2 }
+.fcMark span{ display:block; font-family:Georgia, serif; font-size:.74rem; letter-spacing:0;
+  color:#8a7a5e; line-height:1.5; margin-top:6px }
+
 /* ── rules, shown once per device before the first dig ─────────────────────
    ⛔ OPAQUE, NOT NEARLY OPAQUE. This ground was #0d0b0af5. Eight digit hex, so
    the f5 is an ALPHA: 96%, which reads as solid in a colour swatch and is not.
@@ -249,6 +332,7 @@
 
   <div class="topbar">
     <span class="tix"><b id="tixN">0</b> tickets</span>
+    <button class="wantbtn" id="shelfOpen">THE SHELF <b id="shelfN">0</b></button>
     <button class="wantbtn" id="wantOpen">WANT LIST <b id="wantN">0/8</b></button>
   </div>
 
@@ -276,6 +360,35 @@
     <button class="closebtn" id="wantClose">CLOSE</button>
   </div>
 </div>
+
+<div id="shelfSheet"><div class="shWrap">
+  <div class="shTop">
+    <h2>THE SHELF</h2>
+    <button class="backchip" id="shelfClose" type="button">CLOSE</button>
+  </div>
+  <div class="shCount" id="shCount"></div>
+  <div class="shSort">
+    <button data-sort="new" class="on">NEWEST</button>
+    <button data-sort="cond">CONDITION</button>
+    <button data-sort="type">TYPE</button>
+  </div>
+  <div class="shGrid" id="shGrid"></div>
+  <button class="shMore" id="shMore" style="display:none"></button>
+</div></div>
+
+<div id="fcSheet"><div class="fcWrap">
+  <div class="fcFlip" id="fcFlip"><div class="fcInner">
+    <div class="fcFace" id="fcFront"></div>
+    <div class="fcFace fcBack" id="fcBack"></div>
+  </div></div>
+  <div class="fcFlipHint">TAP THE CARD TO TURN IT OVER</div>
+  <div class="fcBtns">
+    <button id="fcSave">SAVE THE CARD</button>
+    <button id="fcShare">SHARE</button>
+    <button id="fcScrap" class="warn">SCRAP THIS</button>
+    <button id="fcClose">CLOSE</button>
+  </div>
+</div></div>
 
 <div id="dustSheet"><div class="dustcard">
   <div class="dusthead"><b>DUST OFF</b><span class="t"><span id="dustT">90</span>s &middot; <span id="dustFound">0</span> stubs</span></div>
@@ -317,6 +430,7 @@
   var shelfWrap = document.getElementById('shelfWrap');
 
   var SHELF_KEY = 'attic_shelf_v1', W_KEY = 'attic_wallet_v1', R_KEY = 'attic_revealed_v1';
+  var F_KEY = 'attic_found_v1';
   function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
   function dayIndex() { return Math.floor(Date.now() / 864e5); }
@@ -348,6 +462,20 @@
     for (i = 0; i < pulls.length; i++) if (revealed[pulls[i]]) keep[pulls[i]] = 1;
     revealed = keep;
     lsSet(R_KEY, JSON.stringify(revealed));
+  }
+
+  /* when each find was found. Same shape and the same pruning discipline as
+     `revealed`: hash keyed, pruned to the shelf on every write, merged
+     earliest-wins so a second tab cannot re-date a find. Shelves that predate
+     this map simply have no date and say so. */
+  var found = E.readFound(lsGet(F_KEY));
+  function saveFound() { found = E.readFound(E.mergeFoundToDisk(lsGet(F_KEY), found, pulls)); lsSet(F_KEY, JSON.stringify(found)); }
+  function markFound(h) { if (!found[h]) { found[h] = Date.now(); saveFound(); } }
+  var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function foundWhen(h, long) {
+    if (!found[h]) return long ? 'before the shelf kept dates' : '';
+    var d = new Date(found[h]);
+    return long ? (d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear()) : (d.getDate() + ' ' + MONTHS[d.getMonth()]);
   }
 
   var GRADE_LOOK = {
@@ -382,6 +510,7 @@
   function gIdx(g) { return E.gIdx(g); }
   var CLS_LIST = ['RECORD', 'VHS', 'TOY', 'GAME', 'CEREAL'];
   var CLS_WORD = { RECORD: 'record', VHS: 'tape', TOY: 'toy', GAME: 'board game', CEREAL: 'cereal box' };
+  var CLS_PLURAL = { RECORD: 'records', VHS: 'tapes', TOY: 'toys', GAME: 'board games', CEREAL: 'cereal boxes' };
   var ERA_LIST = ['1950s', '1960s', '1970s', '1980s', '1990s'];
   function grailPool() {
     var P = [], i, j, c;
@@ -487,6 +616,23 @@
      MINT ON CARD in the toy's own name, and put the condition flaw in the
      sticker line, so the button revealed something the player had already
      been shown. test/attic-check.js section C holds this. */
+  /* THE ONE PLACE A WIPE IS PAID FOR. The card and the shelf's object card
+     both reveal, and an economy that lives in two event handlers drifts, so
+     both call this. Idempotent: a hash already wiped pays nothing.
+     WAL.best was a field the save layer merged and no code ever wrote; it is
+     the highest grade index the player has ever pulled, and the shelf shows it. */
+  function payForReveal(h, it) {
+    if (revealed[h]) return 0;
+    revealed[h] = 1; saveRevealed();
+    var earned = E.payReveal(WAL, it);
+    var gi = E.gIdx(it.grade);
+    if (gi > (WAL.best | 0)) WAL.best = gi;
+    var got = checkGrails(it);
+    saveWallet(); paintWallet();
+    if (!got && earned) toast('A keeper. One ticket back.');
+    return earned;
+  }
+
   function show(h) {
     var it = ATTIC.hashToItem(h);
     h = it.hash;
@@ -527,32 +673,31 @@
       document.getElementById('artSlot').innerHTML = ATTIC_OBJECT.renderItem(h, 240).svg;
       if (it.revealSuffix) document.getElementById('nmSlot').textContent = it.name + it.revealSuffix;
       if (it.revealNote) document.getElementById('noteSlot').textContent = it.revealNote;
-      if (revealed[h]) return;
-      revealed[h] = 1; saveRevealed();
-      var earned = E.payReveal(WAL, it);
-      if (earned) saveWallet();
-      var got = checkGrails(it);
-      saveWallet(); paintWallet();
-      if (!got && earned) toast('A keeper. One ticket back.');
+      payForReveal(h, it);
+      /* the shelf thumb was staying dusty until the next dig, so a wiped find
+         still read as a to do on the strip right below it */
+      renderShelf();
     };
     /* ⛔ SCRAPPING PAYS LESS THAN A DIG COSTS. It used to pay the full ticket
        straight back, which made a rummage free and the whole ticket economy
        decoration: dig, scrap, repeat, forever. */
     document.getElementById('scrap').onclick = function () {
-      var i;
-      for (i = 0; i < pulls.length; i++) if (pulls[i] === h) { pulls.splice(i, 1); break; }
-      saveShelf(); saveRevealed(); renderShelf();
-      var paid = E.payScrap(WAL); saveWallet(); paintWallet();
+      scrapHash(h);
       card.className = 'card';
-      toast(paid ? 'Back in the pile. That is one ticket.'
-                 : 'Back in the pile. One more scrap makes a ticket.');
     };
 
-    if (pulls.indexOf(h) < 0) { pulls.unshift(h); saveShelf(); }
+    if (pulls.indexOf(h) < 0) { pulls.unshift(h); saveShelf(); markFound(h); }
     renderShelf();
   }
 
   function renderShelf() {
+    var cnt = document.getElementById('shelfN');
+    if (cnt) cnt.textContent = pulls.length;
+    /* the pitch line has done its job once there is a collection under it, and
+       on a 915px tall phone it was four lines of the seven hundred that stood
+       between the player and their own find */
+    var note = document.querySelector('.demo-note');
+    if (note) note.style.display = pulls.length ? 'none' : '';
     if (!pulls.length) { shelfWrap.style.display = 'none'; shelf.innerHTML = ''; return; }
     shelfWrap.style.display = 'block';
     var head = shelfWrap.querySelector('h2');
@@ -575,10 +720,300 @@
     }
   }
 
+  /* ── THE SHELF SCREEN ────────────────────────────────────────────────
+     The collection, all of it, at a size you can actually look at. Sortable
+     three ways.
+     ⛔ SORTING BY CONDITION LEAKS THE CONDITION. An unwiped find sorted into
+     the graded run would broadcast its grade by POSITION, which is exactly
+     the tell the whole dusty render exists to prevent. Unwiped finds are
+     therefore pinned to the end in newest first order, whatever they are. */
+  var CLS_ORDER = { RECORD: 0, VHS: 1, TOY: 2, GAME: 3, CEREAL: 4 };
+  var SH_SORT = 'new', SH_SHOWN = 0, SH_PAGE = 24;
+
+  function shelfSorted() {
+    var a = pulls.slice(0), i, rev, un;
+    if (SH_SORT === 'cond') {
+      rev = []; un = [];
+      for (i = 0; i < a.length; i++) (revealed[a[i]] ? rev : un).push(a[i]);
+      rev.sort(function (x, y) { return gIdx(ATTIC.hashToItem(y).grade) - gIdx(ATTIC.hashToItem(x).grade); });
+      return rev.concat(un);
+    }
+    if (SH_SORT === 'type') {
+      a.sort(function (x, y) { return CLS_ORDER[ATTIC.hashToItem(x).cls] - CLS_ORDER[ATTIC.hashToItem(y).cls]; });
+    }
+    return a;
+  }
+
+  function shelfSummary() {
+    var i, wiped = 0, best = -1, byCls = {}, it;
+    for (i = 0; i < pulls.length; i++) {
+      it = ATTIC.hashToItem(pulls[i]);
+      byCls[it.cls] = (byCls[it.cls] || 0) + 1;
+      if (revealed[pulls[i]]) { wiped++; if (gIdx(it.grade) > best) best = gIdx(it.grade); }
+    }
+    var parts = [], k;
+    /* "cereal box" + "s" is "cereal boxs", so the plurals are spelled out */
+    for (k in CLS_ORDER) if (byCls[k]) parts.push(byCls[k] + ' ' + (byCls[k] === 1 ? CLS_WORD[k] : CLS_PLURAL[k]));
+    var s = '<b>' + pulls.length + '</b> on the shelf';
+    if (parts.length) s += ': ' + parts.join(', ');
+    s += '.';
+    if (pulls.length - wiped > 0) s += ' <b>' + (pulls.length - wiped) + '</b> still under dust.';
+    if (best >= 0) s += ' Best condition found: <b>' + GRADE_ORDER[best] + '</b>.';
+    return s;
+  }
+
+  function paintShelfSheet(reset) {
+    var grid = document.getElementById('shGrid'), more = document.getElementById('shMore');
+    var list = shelfSorted(), i, h, it, wiped, html = '';
+    if (reset) SH_SHOWN = 0;
+    document.getElementById('shCount').innerHTML = pulls.length ? shelfSummary()
+      : 'Nothing on the shelf yet.';
+    if (!pulls.length) {
+      grid.innerHTML = '';
+      grid.insertAdjacentHTML('beforeend',
+        '<div class="shEmpty" style="grid-column:1 / -1">The shelf is empty. Every find you keep lands here, dusty until you wipe it.</div>');
+      more.style.display = 'none';
+      return;
+    }
+    SH_SHOWN = Math.min(list.length, Math.max(SH_PAGE, SH_SHOWN));
+    for (i = 0; i < SH_SHOWN; i++) {
+      h = list[i]; it = ATTIC.hashToItem(h); wiped = !!revealed[h];
+      html += '<button class="shCard" data-h="' + h + '">'
+        + ATTIC_OBJECT.renderItem(h, 260, { dusty: !wiped }).svg
+        + '<div class="shName">' + esc(it.name) + (wiped && it.revealSuffix ? esc(it.revealSuffix) : '') + '</div>'
+        + '<div class="shFoot">'
+        + '<span class="shChip' + (wiped && it.grade === 'FACTORY SEALED' ? ' sealed' : '') + '">'
+        + (wiped ? esc(it.grade) : 'UNWIPED') + '</span>'
+        + '<span class="shWhen">' + esc(foundWhen(h)) + '</span>'
+        + '</div></button>';
+    }
+    grid.innerHTML = html;
+    var left = list.length - SH_SHOWN;
+    more.style.display = left > 0 ? 'block' : 'none';
+    more.textContent = left > 0 ? ('SHOW ' + Math.min(left, SH_PAGE) + ' MORE (' + left + ' LEFT)') : '';
+    var cards = grid.querySelectorAll('.shCard'), j;
+    for (j = 0; j < cards.length; j++) {
+      cards[j].onclick = function () { openFlip(this.getAttribute('data-h')); };
+    }
+  }
+  function openShelfSheet() { paintShelfSheet(true); document.getElementById('shelfSheet').className = 'on'; }
+  function closeShelfSheet() { document.getElementById('shelfSheet').className = ''; }
+
+  /* ── THE OBJECT CARD ────────────────────────────────────────────────── */
+  var FC_H = null, FC_BLOB = null;
+  function plateHTML(it, wiped) {
+    if (!wiped) return '<button class="gradeBtn" id="fcWipe" style="width:100%;min-height:52px">WIPE OFF THE DUST &middot; CHECK CONDITION</button>';
+    if (it.grade === 'FACTORY SEALED') return '<div class="gradePlate g-sealed" style="display:flex">&#9733; FACTORY SEALED &#9733;</div>';
+    var lk = GRADE_LOOK[it.grade] || GRADE_LOOK.GOOD;
+    return '<div class="gradePlate" style="display:flex;color:' + lk[0] + ';border-color:' + lk[0] + ';background:' + lk[1] + '">' + esc(it.grade) + '</div>';
+  }
+  function paintFlip() {
+    var h = FC_H, it = ATTIC.hashToItem(h), wiped = !!revealed[h];
+    document.getElementById('fcFront').innerHTML =
+      '<div class="art">' + ATTIC_OBJECT.renderItem(h, 260, { dusty: !wiped }).svg + '</div>'
+      + '<div class="cls">' + esc(it.cls) + ' &middot; ' + esc(it.era) + '</div>'
+      + '<div class="nm">' + esc(it.name) + (wiped && it.revealSuffix ? esc(it.revealSuffix) : '') + '</div>'
+      + (it.sub ? '<div class="sub">' + esc(it.sub) + '</div>' : '')
+      + (wiped && it.revealNote ? '<div class="sub">' + esc(it.revealNote) + '</div>' : '')
+      + (it.error ? '<div class="err"><b>FACTORY ERROR</b><br>' + esc(it.error) + '</div>' : '')
+      + '<div class="gradeSlot">' + plateHTML(it, wiped) + '</div>';
+    document.getElementById('fcBack').innerHTML =
+      '<div class="fcHead">' + ATTIC_OBJECT.renderItem(h, 64, { dusty: !wiped }).svg
+      + '<div><div class="s">' + esc(it.cls) + '</div><div class="t">' + esc(it.name) + '</div></div></div>'
+      + row('CONDITION', wiped ? it.grade : 'not wiped yet')
+      + row('ERA', it.era + ', dated ' + it.year)
+      + row('FOUND', foundWhen(h, true))
+      + (it.sticker ? row('MARKINGS', it.sticker) : '')
+      + (it.error ? row('ERROR', it.error) : '')
+      + row('STORY', it.provenance)
+      + '<div class="fcRow"><span class="k">HASH</span><span class="v fcHash">' + esc(h) + '</span></div>'
+      + '<div class="fcMark">ONE OF ONE<br><span>Nothing else came out of this hash and nothing else ever will.</span></div>';
+    var w = document.getElementById('fcWipe');
+    if (w) w.onclick = function (e) {
+      e.stopPropagation();
+      payForReveal(h, it);
+      paintFlip(); paintShelfSheet(false); renderShelf(); buildCardBlob(h);
+    };
+  }
+  function row(k, v) { return '<div class="fcRow"><span class="k">' + k + '</span><span class="v">' + esc(v) + '</span></div>'; }
+  function openFlip(h) {
+    FC_H = h; FC_BLOB = null;
+    document.getElementById('fcFlip').className = 'fcFlip';
+    paintFlip();
+    document.getElementById('fcSheet').className = 'on';
+    buildCardBlob(h);
+  }
+  function closeFlip() { document.getElementById('fcSheet').className = ''; FC_H = null; FC_BLOB = null; }
+
+  /* ── the shareable card ──────────────────────────────────────────────
+     640x960 canvas, the object drawn from its own SVG through a blob URL.
+     ⛔ Built when the card OPENS, not when SHARE is tapped: an image decode
+     is async, and a share fired after an await has lost its user gesture on
+     iOS and is refused. By the time the button exists, the blob is waiting. */
+  /* ⛔ NAMED ENTITIES ARE HTML, NOT XML. The renderers emit &middot; and
+     &hellip; and that is fine forever while the SVG goes through innerHTML,
+     because the HTML parser knows those names. The moment the same string is
+     handed to an <img> through a blob URL it is parsed as XML, where the only
+     named entities that exist are amp lt gt quot apos, so the document fails
+     to parse, onerror fires, and the saved card comes out with a black hole
+     where the object should be. Caught by LOOKING at the first saved card,
+     not by any assertion: the canvas drew, the blob was 60 KB, everything
+     downstream was green. attic-check.js now asserts no unknown entity is
+     left in the string this function returns. */
+  var XML_SAFE = { '&middot;': '·', '&hellip;': '…', '&nbsp;': ' ' };
+  function svgForImage(svg) {
+    var k;
+    for (k in XML_SAFE) if (XML_SAFE.hasOwnProperty(k)) svg = svg.split(k).join(XML_SAFE[k]);
+    return svg;
+  }
+
+  function wrapText(x, txt, cx, y, maxW, lineH, maxLines) {
+    var words = String(txt).split(' '), line = '', n = 0, i, test;
+    for (i = 0; i < words.length; i++) {
+      test = line ? line + ' ' + words[i] : words[i];
+      if (x.measureText(test).width > maxW && line) {
+        x.fillText(line, cx, y); y += lineH; line = words[i]; n++;
+        if (n >= maxLines - 1) break;
+      } else line = test;
+    }
+    if (line) { x.fillText(line, cx, y); y += lineH; }
+    return y;
+  }
+  function drawCard(h, cb) {
+    var it = ATTIC.hashToItem(h), wiped = !!revealed[h], W = 640, H = 960;
+    var cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    var x = cv.getContext('2d');
+    function finish() {
+      x.textAlign = 'center';
+      x.fillStyle = '#d9a94e'; x.font = '600 22px Georgia, serif';
+      x.fillText('T H E   A T T I C', W / 2, 60);
+      x.fillStyle = '#8a7a5e'; x.font = '15px ui-monospace, monospace';
+      x.fillText(it.cls + '  ' + it.era + '  ' + it.year, W / 2, 92);
+      var y = 620;
+      x.fillStyle = '#f0e4c8'; x.font = (String(it.name).length > 26 ? '30px' : '38px') + ' Georgia, serif';
+      y = wrapText(x, it.name + (wiped && it.revealSuffix ? it.revealSuffix : ''), W / 2, y, W - 90, 42, 2);
+      if (it.sub) {
+        x.fillStyle = '#b8a888'; x.font = 'italic 19px Georgia, serif';
+        y = wrapText(x, it.sub, W / 2, y + 12, W - 100, 26, 2);
+      }
+      /* the grade plate */
+      var pw = 380, ph = 62, px = (W - pw) / 2, py = 790;
+      var lk = GRADE_LOOK[it.grade] || GRADE_LOOK.GOOD, label = wiped ? it.grade : 'STILL UNDER DUST';
+      if (wiped && it.grade === 'FACTORY SEALED') {
+        var gd = x.createLinearGradient(px, 0, px + pw, 0);
+        gd.addColorStop(0, '#b8892e'); gd.addColorStop(0.5, '#fff3c4'); gd.addColorStop(1, '#b8892e');
+        x.fillStyle = gd; x.fillRect(px, py, pw, ph);
+        x.fillStyle = '#171310'; x.font = 'bold 26px ui-monospace, monospace';
+      } else {
+        x.fillStyle = wiped ? lk[1] : '#2a2620'; x.fillRect(px, py, pw, ph);
+        x.strokeStyle = wiped ? lk[0] : '#5e5240'; x.lineWidth = 2; x.strokeRect(px, py, pw, ph);
+        x.fillStyle = wiped ? lk[0] : '#8a8378'; x.font = '24px ui-monospace, monospace';
+      }
+      x.fillText(label, W / 2, py + 41);
+      x.fillStyle = '#6f6350'; x.font = '14px ui-monospace, monospace';
+      x.fillText(h.slice(0, 24) + '  ' + (found[h] ? foundWhen(h, true) : ''), W / 2, 894);
+      x.fillStyle = '#8a7a5e'; x.font = '14px ui-monospace, monospace';
+      x.fillText('one of one  ' + String.fromCharCode(183) + '  Sky Wolf Studio', W / 2, 922);
+      cb(cv);
+    }
+    x.fillStyle = '#171310'; x.fillRect(0, 0, W, H);
+    x.strokeStyle = '#4a3b26'; x.lineWidth = 3; x.strokeRect(16, 16, W - 32, H - 32);
+    var svg = svgForImage(ATTIC_OBJECT.renderItem(h, 460, { dusty: !wiped }).svg);
+    var url = null, im = new Image();
+    try { url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' })); } catch (e) { url = null; }
+    if (!url) { finish(); return; }
+    im.onload = function () { x.drawImage(im, 90, 118, 460, 460); try { URL.revokeObjectURL(url); } catch (e) {} finish(); };
+    im.onerror = function () { try { URL.revokeObjectURL(url); } catch (e) {} finish(); };
+    im.src = url;
+  }
+  function buildCardBlob(h) {
+    drawCard(h, function (cv) {
+      if (FC_H !== h) return;
+      if (cv.toBlob) cv.toBlob(function (b) { if (FC_H === h) FC_BLOB = b; }, 'image/png');
+    });
+  }
+  function cardFileName(it) {
+    return 'the-attic-' + String(it.name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) + '.png';
+  }
+  function downloadBlob(b, name) {
+    var u = URL.createObjectURL(b), a = document.createElement('a');
+    a.href = u; a.download = name; document.body.appendChild(a); a.click();
+    setTimeout(function () { document.body.removeChild(a); try { URL.revokeObjectURL(u); } catch (e) {} }, 800);
+  }
+  function saveCard() {
+    if (!FC_H) return;
+    var it = ATTIC.hashToItem(FC_H), name = cardFileName(it);
+    if (FC_BLOB) { downloadBlob(FC_BLOB, name); toast('Card saved.'); return; }
+    drawCard(FC_H, function (cv) {
+      if (!cv.toBlob) { toast('This browser cannot save the card.'); return; }
+      cv.toBlob(function (b) { downloadBlob(b, name); toast('Card saved.'); }, 'image/png');
+    });
+  }
+  function shareCard() {
+    if (!FC_H) return;
+    var it = ATTIC.hashToItem(FC_H), wiped = !!revealed[FC_H];
+    var line = it.name + ', a ' + it.era + ' ' + CLS_WORD[it.cls]
+      + (wiped ? ' in ' + it.grade + ' condition' : ', still under dust') + '. One of one, out of The Attic.';
+    var f = null;
+    if (FC_BLOB) { try { f = new File([FC_BLOB], cardFileName(it), { type: 'image/png' }); } catch (e) { f = null; } }
+    if (f && navigator.share && navigator.canShare && navigator.canShare({ files: [f] })) {
+      navigator.share({ files: [f], title: 'The Attic', text: line })['catch'](function () {});
+      return;
+    }
+    if (navigator.share) { navigator.share({ title: 'The Attic', text: line })['catch'](function () {}); return; }
+    saveCard();
+  }
+
+  /* scrapping happens from the card and from the shelf, so the shelf write,
+     the reveal prune and the payout live in one place */
+  function scrapHash(h) {
+    var i;
+    for (i = 0; i < pulls.length; i++) if (pulls[i] === h) { pulls.splice(i, 1); break; }
+    saveShelf(); saveRevealed(); saveFound(); renderShelf();
+    var paid = E.payScrap(WAL); saveWallet(); paintWallet();
+    toast(paid ? 'Back in the pile. That is one ticket.'
+               : 'Back in the pile. One more scrap makes a ticket.');
+    return paid;
+  }
+
+  document.getElementById('shelfOpen').onclick = openShelfSheet;
+  document.getElementById('shelfClose').onclick = closeShelfSheet;
+  document.getElementById('shMore').onclick = function () { SH_SHOWN += SH_PAGE; paintShelfSheet(false); };
+  (function wireSort() {
+    var b = document.querySelectorAll('.shSort button'), i;
+    for (i = 0; i < b.length; i++) {
+      b[i].onclick = function () {
+        var all = document.querySelectorAll('.shSort button'), j;
+        for (j = 0; j < all.length; j++) all[j].className = '';
+        this.className = 'on';
+        SH_SORT = this.getAttribute('data-sort');
+        paintShelfSheet(true);
+      };
+    }
+  })();
+  document.getElementById('fcFlip').onclick = function () {
+    this.className = this.className.indexOf('flipped') >= 0 ? 'fcFlip' : 'fcFlip flipped';
+  };
+  document.getElementById('fcClose').onclick = closeFlip;
+  document.getElementById('fcSave').onclick = saveCard;
+  document.getElementById('fcShare').onclick = shareCard;
+  document.getElementById('fcScrap').onclick = function () {
+    if (!FC_H) return;
+    scrapHash(FC_H); closeFlip(); paintShelfSheet(true);
+  };
+  addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    if (document.getElementById('fcSheet').className) { closeFlip(); return; }
+    if (document.getElementById('shelfSheet').className) closeShelfSheet();
+  });
+
   document.getElementById('go').onclick = function () {
     if (!E.spend(WAL, E.RUMMAGE_COST)) { toast('No tickets left.'); return; }
     saveWallet(); paintWallet();
     show(randHash());
+    /* the header is 700px tall on a phone, so a find dropped in below it was
+       landing off the bottom of the screen every single time */
+    if (card.scrollIntoView) { try { card.scrollIntoView({ block: 'nearest' }); } catch (e) { card.scrollIntoView(); } }
   };
   document.getElementById('wantOpen').onclick = function () { paintWants(); document.getElementById('wantSheet').className = 'sheet on'; };
   document.getElementById('wantClose').onclick = function () { document.getElementById('wantSheet').className = 'sheet'; };
@@ -688,7 +1123,12 @@
       item: function (h) { return ATTIC.hashToItem(h); },
       show: show,
       setTix: function (n) { WAL.tix = n; saveWallet(); paintWallet(); return WAL.tix; },
-      grails: function () { return GRAILS; }, dayIndex: dayIndex
+      grails: function () { return GRAILS; }, dayIndex: dayIndex,
+      openShelf: openShelfSheet, closeShelf: closeShelfSheet,
+      openCard: openFlip, closeCard: closeFlip,
+      sortShelf: function (s) { SH_SORT = s; paintShelfSheet(true); return shelfSorted(); },
+      shelfOrder: shelfSorted, found: function () { return found; },
+      drawCard: drawCard
     };
   }
 

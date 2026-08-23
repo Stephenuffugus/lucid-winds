@@ -170,6 +170,36 @@
     return out;
   }
 
+  /* ── WHEN a find was found ──────────────────────────────────────────
+     The shelf stores hashes and re-derives everything else, which is why it
+     costs 64 bytes a find, but a hash cannot say WHEN. A collection screen
+     that cannot date a find has nothing to sort by except the order of an
+     array, so the date lives here, in its own map, pruned to the shelf on
+     every write exactly like `revealed`.
+     ⛔ Two tabs: this is a FIRST WRITE WINS map, so the merge keeps the
+     EARLIEST timestamp for a hash. A later tab must never re-date a find. */
+  function readFound(raw) {
+    var out = {}, p = null, k, v;
+    try { p = (typeof raw === 'string') ? JSON.parse(raw) : raw; } catch (e) { p = null; }
+    if (!isObj(p)) return out;
+    for (k in p) {
+      if (!p.hasOwnProperty(k) || !/^[0-9a-f]{64}$/.test(k)) continue;
+      v = Number(p[k]);
+      if (!isFinite(v) || v <= 0) continue;
+      out[k] = Math.floor(v);
+    }
+    return out;
+  }
+  function mergeFoundToDisk(diskRaw, mine, shelf) {
+    var d = readFound(diskRaw), keep = {}, i, k, h;
+    for (k in mine) if (mine.hasOwnProperty(k)) {
+      if (!d[k] || mine[k] < d[k]) d[k] = mine[k];    // earliest wins
+    }
+    /* pruned to the shelf, or it grows by 76 bytes a dig forever */
+    for (i = 0; i < shelf.length; i++) { h = shelf[i]; if (d[h]) keep[h] = d[h]; }
+    return JSON.stringify(keep);
+  }
+
   /* the shelf is written newest first, so a merge from a stale tab keeps
      both tabs' finds without either losing one */
   function mergeShelfToDisk(diskRaw, mine) {
@@ -186,7 +216,8 @@
     newWallet: newWallet, readWallet: readWallet, mergeToDisk: mergeToDisk, writable: writable,
     grantDaily: grantDaily, spend: spend, payReveal: payReveal, payScrap: payScrap,
     payGrails: payGrails, dustLeft: dustLeft, bankDust: bankDust,
-    readShelf: readShelf, mergeShelfToDisk: mergeShelfToDisk
+    readShelf: readShelf, mergeShelfToDisk: mergeShelfToDisk,
+    readFound: readFound, mergeFoundToDisk: mergeFoundToDisk
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else root.ATTIC_ECON = API;

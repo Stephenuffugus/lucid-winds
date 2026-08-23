@@ -46,8 +46,13 @@
      gloss on FACTORY SEALED, a proud tape repair on TRASHED. Coordinates
      are the object's bounding box so wear lands ON the thing.
      grade === '?' means unrevealed: no condition marks at all, grime instead. */
-  function wear(h, grade, bx, by, bw, bh) {
+  /* `sy` is where a price sticker would actually have been slapped on THIS
+     shape, measured from the top of the object. The default 16 is right for a
+     clamshell and wrong for a cereal box, where it landed square on the
+     MORNING FOODS banner and ate the words. Seen at 240px, not asserted. */
+  function wear(h, grade, bx, by, bw, bh, sy) {
     var w = '';
+    if (typeof sy !== 'number') sy = 16;
     if (grade === '?') return grime(h, bx, by, bw, bh);
     var heavy = grade === 'TRASHED', mid = grade === 'PLAYED' || grade === 'GOOD';
     if (heavy || mid) {
@@ -59,7 +64,7 @@
         + '<rect x="' + bx + '" y="' + (by + 12 + hb(h, 21) % (bh - 40)) + '" width="' + bw + '" height="2" fill="#ffffff" opacity="0.25"/>';
     }
     if (grade !== 'FACTORY SEALED' && grade !== 'MINT') {
-      var px = bx + bw - 34 - hb(h, 22) % 20, py = by + 16 + hb(h, 23) % 24;
+      var px = bx + bw - 34 - hb(h, 22) % 20, py = by + sy + hb(h, 23) % 24;
       w += '<g transform="rotate(' + (-6 + hb(h, 24) % 12) + ' ' + px + ' ' + py + ')">'
         + '<ellipse cx="' + px + '" cy="' + py + '" rx="24" ry="13" fill="#f5efdd" stroke="#c9bfa4" stroke-width="1"/>'
         + '<text x="' + px + '" y="' + (py + 4) + '" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" fill="#5a4f3a">$' + (1 + hb(h, 25) % 5) + '.99</text></g>';
@@ -119,7 +124,9 @@
       + '<ellipse cx="' + (bx + bw / 2) + '" cy="' + (by + 16) + '" rx="14" ry="6" fill="#ffffff" opacity="0.9"/>';   // hang hole
     g += '<rect x="' + (bx + 8) + '" y="' + (by + 26) + '" width="' + (bw - 16) + '" height="52" fill="' + c[1] + '"/>'
       + '<text x="' + (bx + bw / 2) + '" y="' + (by + 50) + '" text-anchor="middle" font-family="' + look.f + '" font-weight="800" font-size="' + fit(it.name, 16, bw - 28) + '" fill="' + c[0] + '">' + esc(it.name) + '</text>'
-      + '<text x="' + (bx + bw / 2) + '" y="' + (by + 68) + '" text-anchor="middle" font-family="' + look.f + '" font-size="8.5" fill="' + c[0] + '" opacity="0.9">' + esc(String(it.sub).slice(0, 38)) + '</text>';
+      /* slice(0,38) alone left the gimmick line running off the card edge,
+         clipped mid word ("key included (wrong ke"). Fit it to the card. */
+      + '<text x="' + (bx + bw / 2) + '" y="' + (by + 68) + '" text-anchor="middle" font-family="' + look.f + '" font-size="' + fit(String(it.sub).slice(0, 44), 8.5, bw - 26) + '" fill="' + c[0] + '" opacity="0.9">' + esc(String(it.sub).slice(0, 44)) + '</text>';
     // the bubble + figure
     var cxm = bx + bw / 2, cym = by + 172, crushed = gr === 'TRASHED' || gr === 'PLAYED';
     var R = 4 + hb(h, 17) % 5;
@@ -174,7 +181,9 @@
     var players = String(it.sub).match(/\d+ to \d+ players/);
     g += '<rect x="' + (bx + bw - 108) + '" y="' + (by + bh - 44) + '" width="94" height="24" rx="12" fill="' + c[0] + '"/>'
       + '<text x="' + (bx + bw - 61) + '" y="' + (by + bh - 28) + '" text-anchor="middle" font-family="' + look.f + '" font-weight="700" font-size="10" fill="' + c[3] + '">' + esc(players ? players[0] : 'family fun') + '</text>';
-    g += '<text x="' + (bx + bw - 16) + '" y="' + (by + 24) + '" text-anchor="end" font-family="ui-monospace, monospace" font-size="9" fill="' + c[0] + '" opacity="0.8">' + it.year + '</text>';
+    /* the year sat in the top right corner, which is exactly where the price
+       sticker lands, so every priced lid showed "$2.99" over half a year */
+    g += '<text x="' + (bx + 16) + '" y="' + (by + bh - 16) + '" font-family="ui-monospace, monospace" font-size="9" fill="' + c[0] + '" opacity="0.8">' + it.year + '</text>';
     return g + wear(h, gr, bx, by, bw, bh);
   }
 
@@ -206,12 +215,15 @@
       g += '<circle cx="' + (bx + 34 + ((hb(h, 19) + i * 37) % (bw - 66))) + '" cy="' + (by + bh - 52 + (i % 3) * 5) + '" r="5" fill="' + pop + '" stroke="' + deep + '" stroke-width="1.4"/>';
     }
     // claim burst
-    g += '<g transform="rotate(-14 ' + (bx + 30) + ' ' + (by + 96) + ')">'
-      + '<circle cx="' + (bx + 30) + '" cy="' + (by + 96) + '" r="24" fill="' + c[0] + '"/>'
-      + '<text x="' + (bx + 30) + '" y="' + (by + 93) + '" text-anchor="middle" font-family="' + look.f + '" font-weight="800" font-size="7.5" fill="' + deep + '">FREE PRIZE</text>'
-      + '<text x="' + (bx + 30) + '" y="' + (by + 102) + '" text-anchor="middle" font-family="' + look.f + '" font-weight="800" font-size="7.5" fill="' + deep + '">INSIDE*</text></g>';
+    /* the burst used to sit at by+96 with the title baseline at by+76, so it
+       covered the first word of the name on every cereal box. It lives below
+       the title now, riding the mascot's shoulder the way a real one would. */
+    g += '<g transform="rotate(-14 ' + (bx + 28) + ' ' + (by + 116) + ')">'
+      + '<circle cx="' + (bx + 28) + '" cy="' + (by + 116) + '" r="23" fill="' + c[0] + '"/>'
+      + '<text x="' + (bx + 28) + '" y="' + (by + 113) + '" text-anchor="middle" font-family="' + look.f + '" font-weight="800" font-size="7.5" fill="' + deep + '">FREE PRIZE</text>'
+      + '<text x="' + (bx + 28) + '" y="' + (by + 122) + '" text-anchor="middle" font-family="' + look.f + '" font-weight="800" font-size="7.5" fill="' + deep + '">INSIDE*</text></g>';
     g += '<text x="' + (bx + bw / 2) + '" y="' + (by + bh - 12) + '" text-anchor="middle" font-family="ui-monospace, monospace" font-size="7.5" fill="' + deep + '" opacity="0.9">NET WT ' + (10 + hb(h, 26) % 14) + ' OZ &middot; ' + it.year + '</text>';
-    return g + wear(h, gr, bx, by, bw, bh);
+    return g + wear(h, gr, bx, by, bw, bh, 96);
   }
 
   // ── dispatch ─────────────────────────────────────────────────────
