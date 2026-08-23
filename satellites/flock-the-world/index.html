@@ -162,10 +162,24 @@ h1 em{font-style:normal;color:var(--sodium)}
   .hudrow .stat{flex:0 0 auto}
   #ctlrow{margin-top:0;flex:0 0 auto}
   .bars{margin-top:0;flex:1 1 190px;min-width:190px}
-  /* the population line keeps its own row: it grows from "0" to ten characters
-     as the run goes on, and a line that re-wraps mid-run silently moves every
-     map overlay anchored to the HUD height. */
-  #ledline{flex:1 0 100%;margin-top:2px;min-height:48px}
+  /* ⛔ Aug 24, Stephen: "the watched number doesn't have to be so big and take
+     up so much of the screen". Measured: #ledline had flex:1 0 100%, so the
+     Watched figure took a full width row of its own and the HUD came to 110px
+     of a 412px landscape screen, 27% of it. The map is fitted against what is
+     LEFT, so a fat HUD directly shrinks the thing he calls the focal point.
+     The original reason for the dedicated row was real and is kept: the number
+     grows from "0" to "7,800,000,000" over a run, and a line that re-wraps mid
+     run silently moves every map overlay anchored to the HUD height. So this
+     does not delete the row, it RESERVES the width the longest value needs and
+     sets it inline. Tabular numerals make the reserved width exact, so it still
+     cannot re-wrap. Keeps the 48px touch target: the row is at least that tall. */
+  #ledline{flex:0 0 auto;margin-top:0;min-height:48px;gap:6px}
+  .lgv{font-size:14px;min-width:98px;text-align:right}
+  .lgl{font-size:8px;letter-spacing:.12em}
+  /* "7.8B never watched" is the same fact from the other side and it already has
+     a home in the Ledger sheet. In landscape it is just width. */
+  .lgs{display:none}
+  .bars{flex:1 1 150px;min-width:150px}
   /* the pick screen's map band shrinks as its footer grows, and the zoom column
      is three 48px targets tall. Adding the vendor input ate the headroom and
      clipped FIT past the bottom of the map. Keep the band tall enough for the
@@ -182,6 +196,9 @@ h1 em{font-style:normal;color:var(--sodium)}
   #coInput{flex:1 1 auto}
   .nb{min-height:48px}.nb svg{width:13px;height:13px}
   #nav{padding-top:5px;padding-bottom:calc(env(safe-area-inset-bottom) + 5px)}
+
+  #guide{top:auto;bottom:8px;font-size:11px;padding:7px 10px;line-height:1.4}
+  #guide .gskip{margin-top:4px;min-height:48px}
 }
 /* desktop: controls stay hand-sized instead of stretching across the row */
 @media (min-width:900px){
@@ -364,6 +381,46 @@ h1 em{font-style:normal;color:var(--sodium)}
 .node.own .cst{color:var(--grn)}
 .node .ds{font-size:11px;color:#93a7b8;line-height:1.45}
 .node.empty{border:none;background:none;min-height:0}
+
+/* ⛔ THIS BLOCK MUST STAY BELOW THE TREE CSS ABOVE IT.
+   The first version of these rules lived in the landscape media query up at the
+   top of the file and silently did nothing: a media query adds NO specificity,
+   so the plain `.node{min-height:84px}`, `.nhead{flex-direction:column}` and
+   `@media(min-width:560px){.nico{width:44px}}` further down the sheet simply won
+   on source order. Measured: the icon was still 44px and .nhead was still a
+   column after the "fix". Caught by measuring the computed style rather than
+   trusting that the rule had landed. */
+@media (orientation:landscape) and (max-height:560px){
+  /* Aug 24, Stephen: the trees need to "see more on each screen but have the
+     image fill each one of the boxes better". Measured at 915x412 before this:
+     4 screens of scrolling, 3 nodes visible at a time, node cards 292x140 with
+     a 44px icon in them, so the icon was 31% of its own card's height. */
+  .sheetbody{max-height:94%}
+  .shead{padding:7px 12px 6px}
+  .shead h2{font-size:13px}
+  .scroll{padding:8px 10px calc(env(safe-area-inset-bottom) + 12px)}
+  /* the tree blurb is context, not instructions. Two lines is plenty and it buys
+     most of a node row back. */
+  .treedesc{font-size:11px;line-height:1.4;margin:0 2px 7px;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .trow{gap:6px;margin-bottom:6px}
+  .node{min-height:0;padding:7px 8px;gap:2px}
+  /* icon BESIDE the name here, not above it. The note on .nhead is right about a
+     412px portrait phone, where beside left the name about 82px and it broke mid
+     word. A landscape column is about 292px wide, so the name still gets 220 and
+     every card saves the icon's entire height. */
+  .nhead{flex-direction:row;align-items:center;gap:9px}
+  .nico,#sheet .nico{width:58px;height:58px}
+  .node .nm{font-size:12px;line-height:1.2}
+  /* ⛔ .nhead holds the icon and the name, but .cst and .ds are its SIBLINGS, so
+     with the icon inline the name was indented beside it while the cost and the
+     description started back at the card's left edge, under the icon. It read as
+     two disconnected columns. Indent them to the same line the name starts on:
+     58px icon plus the 9px gap. */
+  .node .cst,.node .ds{margin-left:67px}
+  .node .ds{font-size:10.5px;line-height:1.35;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+}
 #wires{position:absolute;inset:0;z-index:1;pointer-events:none}
 #wires line{stroke:#243444;stroke-width:1.5}
 #wires line.lit{stroke:var(--sodium-d)}
@@ -598,7 +655,16 @@ const CFG = {
   lostLimit:4,
   winAt:0.97,
   tickerMs:4300,
-  bubbleLife:34,
+  /* ⛔ Aug 24, Stephen: bubbles should "disappear more rapidly thus forcing
+     players to really focus on trying to get them before they disappear and not
+     allowing them to just play on full speed". This is in TICKS, and a tick is
+     800ms at 1x, 380ms at 2x and 150ms at 3x, so the real window was 27.2s at
+     1x, 12.9s at 2x and 5.1s at 3x. 27 seconds at 1x is a stroll. At 16 it is
+     12.8s / 6.1s / 2.4s: comfortable at 1x, tight at 2x, and at 3x you will
+     miss most of them, which is the point. 3x becomes a fast forward for when
+     nothing is happening rather than the default way to play.
+     This is a tuning dial. Move it, do not rewrite it. */
+  bubbleLife:16,
   resistCap:0.45,     /* max coverage-growth cut from organized civilians */
   pacCap:0.6,         /* max resistance suppression from narrative machinery */
   /* 2026-08-20 economy pass (Stephen: money went pointless in a minute,
@@ -1037,7 +1103,12 @@ function initTicker(){
 let _hudH=0;
 function syncOverlayTops(){
   const h=$('hud')?$('hud').offsetHeight:0;
-  const g=$('guide');if(g)g.style.top=(h+8)+'px';
+  /* ⛔ This sets an INLINE top, which wins over any media query, so the CSS
+     above could not move the briefing card off the map on its own. */
+  const land=innerWidth>innerHeight&&innerHeight<=560;
+  const g=$('guide');
+  if(g){ if(land){g.style.top='auto';g.style.bottom='8px';}
+         else {g.style.top=(h+8)+'px';g.style.bottom='';} }
   const b=$('breaking');if(b)b.style.top=(h+8)+'px';
   const z=document.querySelector('#mapWrap .zoomui');if(z)z.style.top=(h+8)+'px';
 }
@@ -1662,15 +1733,43 @@ function loadRun(){
    Equirectangular projection into world units (PW × PH).
    lat clamped to [-60, 85]. */
 const PW=1000, PH=1000*145/360; // ≈402.8
-const projX=lon=>(lon+180)/360*PW;
+/* ⛔ THE SEAM. Cut the world at 168W, in the Bering Strait just east of Russia's
+   eastern tip, instead of at the antimeridian.
+   The source rings carry longitudes OUTSIDE +/-180: Fiji has a ring at -181.4
+   and another at 180.1, and Russia's ran down to about -333. At the old seam
+   Russia therefore drew from x -424 to x 1028 on a 0..1000 map, half of it off
+   the far left of the screen and half off the far right. That is the "Russia is
+   on the left and the right" Stephen reported in landscape.
+   Measured after this change: nothing smears, nothing falls outside 0..1000,
+   Russia is contiguous at x 521..995, the USA at 0..281. */
+const LON0=-168;
+const projX=lon=>(lon-LON0)/360*PW;
+/* wrapped, for single points (centroids, region anchors) which are never
+   unwrapped as part of a ring */
+const projXw=lon=>((((lon-LON0)%360)+360)%360)/360*PW;
 const projY=lat=>(85-clamp(lat,-60,85))/145*PH;
+/* Unwrap a ring so no two consecutive points jump more than 180 degrees, then
+   slide the whole ring into the visible span. Without the unwrap, any ring that
+   straddles the seam draws a horizontal smear right across the map. */
+function normRing(ring){
+  const out=ring.map(p=>[p[0],p[1]]);
+  for(let i=1;i<out.length;i++){
+    let d=out[i][0]-out[i-1][0];
+    while(d>180){out[i][0]-=360;d=out[i][0]-out[i-1][0];}
+    while(d<-180){out[i][0]+=360;d=out[i][0]-out[i-1][0];}
+  }
+  let mid=0;for(let i=0;i<out.length;i++)mid+=out[i][0];mid/=out.length;
+  const k=Math.floor((mid-LON0)/360);
+  if(k)for(let i=0;i<out.length;i++)out[i][0]-=k*360;
+  return out;
+}
 const COUNTRIES=GEO.map(c=>{
-  const polys=c.p.map(ring=>ring.map(([lon,lat])=>[projX(lon),projY(lat)]));
+  const polys=c.p.map(ring=>normRing(ring).map(([lon,lat])=>[projX(lon),projY(lat)]));
   let minx=1e9,miny=1e9,maxx=-1e9,maxy=-1e9;
   polys.forEach(rg=>rg.forEach(([x,y])=>{if(x<minx)minx=x;if(y<miny)miny=y;if(x>maxx)maxx=x;if(y>maxy)maxy=y;}));
   // deterministic per-country tint offset for texture
   let h=0;for(let i=0;i<c.n.length;i++)h=(h*31+c.n.charCodeAt(i))|0;
-  return {n:c.n,r:c.r,c:[projX(c.c[0]),projY(c.c[1])],polys,
+  return {n:c.n,r:c.r,c:[projXw(c.c[0]),projY(c.c[1])],polys,
     bb:[minx,miny,maxx,maxy],tint:((h>>>0)%9)-4,path:null};
 });
 COUNTRIES.forEach((c,i)=>c.idx=i);
@@ -1690,7 +1789,7 @@ function countryPath(c){
     for(let i=1;i<rg.length;i++)p.lineTo(rg[i][0],rg[i][1]);p.closePath();});
   return c.path=p;
 }
-function anchorOf(id){const[lon,lat]=R[id].ll;return[projX(lon),projY(lat)];}
+function anchorOf(id){const[lon,lat]=R[id].ll;return[projXw(lon),projY(lat)];}
 function randPointIn(rid){
   const cs=byRegion[rid];if(!cs||!cs.length)return anchorOf(rid);
   const c=cs[(Math.random()*cs.length)|0];
@@ -1836,7 +1935,7 @@ function drawWorld(v,st,highlight){
   /* graticule */
   ctx.strokeStyle='#0a1926';ctx.lineWidth=0.7/v.z*v.fitZ+0.2;
   ctx.beginPath();
-  for(let lon=-180;lon<=180;lon+=30){const x=projX(lon);ctx.moveTo(x,0);ctx.lineTo(x,PH);}
+  for(let lon=LON0;lon<=LON0+360;lon+=30){const x=projX(lon);ctx.moveTo(x,0);ctx.lineTo(x,PH);}
   for(let lat=-60;lat<=85;lat+=30){const y=projY(lat);ctx.moveTo(0,y);ctx.lineTo(PW,y);}
   ctx.stroke();
   /* routes */
@@ -1957,7 +2056,7 @@ function drawFx(){
     const puls=1+Math.sin(t*3.2+b.born)*0.10;
     const rad=Math.max(11/wz,7)*puls;
     const col=b.k==='cash'?'#7ef0a6':b.k==='inf'?'#ffa229':'#39e6c3';
-    const fade=b.life<8?b.life/8:1;
+    const fade=b.life<4?b.life/4:1;   /* the same quarter-of-life fade as before */
     ctx.globalAlpha=fade;
     ctx.beginPath();ctx.arc(b.x,b.y,rad,0,7);
     ctx.fillStyle=col+'22';ctx.fill();ctx.strokeStyle=col;ctx.lineWidth=1.5/wz*gv.fitZ+0.3;ctx.stroke();
