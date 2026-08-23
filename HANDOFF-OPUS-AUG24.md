@@ -253,3 +253,255 @@ FOUND: the "Paid Agitators" crisis node icon is near black on a dark card and
   does not read. Same class of problem as mesh/retail/drone.
 FOUND: the 1/5 briefing card covers the world map it is pointing at, so "Cameras
   are live in Mali" hides Mali.
+
+[LB] L1 PLAYED IT. 20 shots at 412x915 and 915x412, all opened and read
+  (/tmp/claude-1000/-workspaces-lucid-winds/8db8172a.../scratchpad/lb/shots).
+  The game is not thin, it is BROKEN, and no gate in the repo loads index.html
+  so nothing has ever caught it. Five defects, in order of how badly they hurt:
+  [LB-1] ALL THREE JOBS LAY OUT IN A ZERO SIZE FIELD. startJob() calls
+    initSort/initGrub/initWire BEFORE show('s-play'), so the .screen is still
+    display:none and f.clientWidth/clientHeight are 0. Sorting spawns its tile
+    at left = 20 + rand*(0-106), i.e. NEGATIVE, so the falling junk rides half
+    off the left edge of a 494x755 empty box. Grub hunt puts all 13 pile items
+    at left/top -52..8: they stack in one 44px corner blob, the grub is buried
+    under junk, and 24 real taps on the grub's own centre scored ZERO over 13
+    seconds. Wire untangle drops all 4 pins in the same corner. Two of the three
+    jobs are unplayable and all three look like an empty rectangle.
+  [LB-2] YOU NEVER SEE YOUR BUG ON HOME. `.alley svg{position:absolute;inset:0;
+    width:100%;height:100%}` was written for the backdrop and also catches the
+    minted bug's SVG inside #home-bug, which computes to 494x0. Measured: the
+    element is there, 6636 chars of SVG, rendered height 0. With BUGDEX 9 the
+    alley is pixel identical to BUGDEX 0.
+  [LB-3] THE DUMPSTER HAS NEVER RETURNED A RESULT. paintDump calls
+    resolveBattle(buildFighter(a), buildFighter(b)) but resolveBattle takes
+    CODEBLOCKS and builds its own fighters, so bugStats(fighterObject) throws
+    on all five rows and the screen prints "?" five times. The ?battles=1 gate
+    was hiding a crash, not a balance question.
+  [LB-4] THE DAILY CAP DIES IN 22 SECONDS. Tapping the right bin at a brisk 380ms
+    scored 94 in 22s of a 60s shift and consumed the ENTIRE 90 Shiny day. The
+    done screen said "THAT IS THE LOT FOR TODAY" after the FIRST job, with 38
+    seconds still on the clock and nothing to earn. HOW TO PLAY promises "three
+    good shifts a day". No job has a rate limit: score is bounded only by how
+    fast a thumb moves.
+  [LB-5] The mint reads cheap. The bug renders ~130px in the middle of 430px of
+    dead space, the COMMON pill is grey on grey and reads as disabled, and the
+    lore repeats its own sentence ("It maps the drains by heart" twice in three
+    lines). At 84px in the Bugdex an UNCOMMON rendered as four faint specks.
+  Pacing answer: there is no pacing. One job, 22 seconds, day over. A mint does
+  NOT feel earned, it feels vended. The bug reads at phone size only on the mint
+  screen. Reason to come back tomorrow: none that the game shows you.
+  Landscape: the 540x960 stage scales to 232x412, a narrow column in the middle
+  of a 915px screen with black either side, on every screen.
+  FOUND: brand string is "Sky Wolf Studios" (plural) in <title>, og:site_name,
+    the home subtitle and the exit pill. House rule is Sky Wolf Studio singular.
+  FOUND: THE DUMPSTER prints "DAY 20688", a raw epoch day index, to the player.
+
+## The Attic (PART 4, Opus agent) — STATUS
+
+[AT] A1 PLAYED IT. `satellites/attic/shots.mjs` walks the real page and ASSERTS the
+  live screen after every step (state snapshot compared against what the step
+  promised, plus an elementFromPoint check that the tap point actually lands on
+  the target before tapping). 31 shots, 412x915 and 915x412, dsf2, touch, all
+  opened and read. Zero console errors, zero page errors. Every assertion green,
+  which is exactly why the list below matters: none of this is gate-visible.
+[AT] A1 WHAT I SAW, worst first.
+  1. THE COLLECTION IS INVISIBLE. Shot 08 is named shelf_full and there is no
+     shelf in it. After 14 finds the shelf exists in the DOM and is entirely
+     below the fold, under the card. On a phone you cannot see your own
+     collection without scrolling past the whole card, and you can never see
+     more than the newest 24 at 90px. The game's premise is one-of-one objects
+     and it has nowhere to keep them.
+  2. THE HEADER EATS THE GAME. Back chip + THE ATTIC + Sky Wolf Studio + a
+     four-line marketing paragraph + tickets + WANT LIST + two buttons = the top
+     700 of 915 px, on EVERY screen, forever. The object you just found is
+     always half below the fold. In landscape 915x412 the card is 100% below the
+     fold: the whole game is press a button, then scroll.
+  3. THE REVEAL IS A COLOUR CORRECTION. Dusty and wiped differ by: a brown 62%
+     wash comes off, and a price sticker appears. You can READ THE NAME, the sub
+     line, COLLECT ALL 6 and the year straight through the "dust". The word
+     UNWIPED floats in the middle in monospace, which is a debug label, not art.
+     No dust animation, no sound, no weight. The one dramatic beat is a
+     background-colour change plus a 0.4s scale pop on a rectangle.
+  4. FACTORY SEALED, 1 in 261, gets a gradient rectangle. Gold shine plate,
+     nothing else. No confetti, no shelf mark, no "first one you have ever
+     pulled", no different card treatment. Shot 27.
+  5. DUST OFF IS NOT A MINIGAME. 48 identical grey squares, no boxes, no attic,
+     no grime texture. One snake drag wiped 46 of 48 cells in about 3 seconds
+     with 87 of the 90 seconds still on the clock. Nothing can be missed, so the
+     timer is decoration and the panel is a DONE button with extra steps. Wiped
+     cells turn near black, so cleaning something makes it darker.
+  6. ART DEFECTS, all seen at 240px: record DIAGONAL layout runs the band name
+     off the right edge of the sleeve, clipped mid word (shot 17). Cereal: the
+     $4.99 price sticker lands on top of the MORNING FOODS banner text and the
+     FREE PRIZE burst lands on top of the title (shot 25). Record STACK layout
+     is 55% empty cream field with no art in it at all (shot 08). The toy figure
+     is a circle, a rounded rect and four limbs with two dot eyes, no mouth, no
+     hands, no feet, and it is 20% of every pull (shots 05, 21, 29). TRASHED
+     renders as a pale rectangle at the top left and a white scanline across the
+     card, which reads as a rendering glitch and not as damage (shot 29).
+  7. Overlay scrims are too thin: on the WANT LIST and DUST OFF sheets the page
+     title, tagline and the card underneath read clearly through the ground
+     (shots 10, 11, 13). Same class of defect the Aug 16 audit fixed for the
+     rules sheet, still present on the other two.
+  8. In landscape the rules sheet puts START DIGGING below the fold and the
+     welcome toast lands in the middle of a paragraph (shot 02).
+  9. RUMMAGE . 1 TICKET wraps to two lines in portrait.
+  10. Toasts outlive the card that earned them: "A keeper. One ticket back."
+     was still on screen over a TRASHED item on the next card (shot 29).
+  11. WHY WOULD YOU OPEN IT TOMORROW: five tickets, and a Want List whose
+     remaining rows are all of the shape "a cereal box in NEAR MINT or better".
+     There is no daily object, no streak, nothing dated, and nothing that is
+     different tomorrow. The answer today is: you would not.
+
+## Puppy Dash (PART 2, Opus agent) — STATUS
+
+[PD] P1 DONE. `satellites/puppy-dash/index.html` = the drop prototype extended in
+  place (not rewritten). Sky Wolf embed protocol copied verbatim from
+  satellites/flock-the-world/index.html (parse time + load time {sws:'ready'},
+  window.SWS_EXIT with the close/history/portal fallback chain); the auto
+  appended exit button targets #selectScreen, not #menu (this game has no
+  #menu, it would have silently no-opped). dev-gate.js?v=2 is first in <head>.
+  manifest.webmanifest added (theme #74c4ff, portrait, icon = the generated
+  thumb pending real art). Feedback fab mounted home:'top-right', game slug
+  'puppy-dash' (this game paints pause/mute/debug bottom right in CSS circles).
+  Portal card added after Burrow Bowl: beta:true, fresh:true, cat "action",
+  ic dog emoji, url ?v=20260824a, thumb shot from the live title screen via
+  scripts/refresh_thumb.mjs (19.7KB, well under the 150KB cap). git diff on
+  portal/index.html was exactly the 4 lines I added; nothing else touched.
+  catalog.mjs: 183 carded (+1), 161 openable (+0, card is gated as required).
+  advertised_count_check.mjs 7/7 ok. portal_ux_check.mjs 26/26 ok.
+  ⚠ NOTE for the main session: portal/index.html shows NO working tree diff
+  right now because The Attic agent's commit e875c113 ("The Attic A2: the
+  shelf is a real collection now") swept my already edited, uncommitted
+  Puppy Dash card line into its own commit (shared working tree, its `git add`
+  was broader than its own files). The content is correct and verified
+  (grep confirms the Puppy Dash line is present, all three gates above pass
+  against the committed file) — nothing lost, just attributed to someone
+  else's commit message. I did not touch portal/index.html again to avoid
+  compounding the cross streaming.
+[PD] P2 DONE. Persistence under one `pd_save` blob (best, stash, chosen
+  animal, mute) via pdRead()/pdWrite(), read modify write on every save:
+  pdWrite always re-reads current disk, merges (MAX on best, ADD on stash
+  delta, direct set on animal/mute), then writes. Verified in check.js with a
+  real two-context two-tab scenario: a second "tab" writes a bigger save while
+  the first is still open, and the first tab's next write neither rolls the
+  higher best backward nor clobbers the stash, only adds its own delta on top.
+  Corrupt save (`not json{{{`) does not throw on boot and gets replaced clean
+  on the next write.
+[PD] P3 DONE. `satellites/puppy-dash/check.js`, house pattern modelled on
+  satellites/stop-the-light/check.js (vm + DOM/canvas stub, ok()/group(),
+  exit 0/1/2). A gated `?pd_test=1` hook (window.PD) exposes state/CFG/
+  OB_VBOX/etc and the real update()/reset()/doJump()/pdRead()/pdWrite()
+  functions so every physics and persistence assertion runs the ACTUAL game
+  code, never a reimplementation. 66 checks: CFG sanity, all 6 obstacles map
+  onto the 3 verbs (jump/slide/dodge) with all 3 covered, swept contact proven
+  non-tunneling by feeding update() a 6 second single frame dt (no real frame
+  can exceed 0.04s) and confirming the crossing still resolves and still ends
+  the run, jump apex (~1.3 S, matches the spec's own documented number) clears
+  the jump box and slide height (~0.55 S) clears the slide box with margin, an
+  obstacle one lane over never kills (with a same lane control proving the
+  test is not just vacuously green), persistence survives a simulated reload
+  and two tab race, and 3 real headless Chrome touch target measurements at
+  375x667 (pauseBtn/muteBtn/dbg all >=48x48 rendered px — see the CSS fix in
+  P4 below). ⛔ WATCHED TWO OF THESE FAIL ON PURPOSE before trusting them:
+  (1) mutated the swept check into a narrow band test `Math.abs(ob.y-cY)<2` —
+  the exact tunneling defect class this test exists to catch — and 3 checks
+  correctly went red; (2) mutated pdWrite to skip the read-current step (a
+  wholesale overwrite) and the two tab non-clobber checks correctly went red.
+  Both restored, suite is 66/66 green on the real file.
+[PD] P4 DONE. Two new obstacles from the art bible: puddle (jump, flat low
+  ripple ellipse, never blocks a lane change) and trash can (dodge, full lane
+  width like the wall). Magnet power up: a horseshoe pickup, 6s duration,
+  widens the biscuit lane tolerance to 2.1 (covers all 3 lanes regardless of
+  player position) with a pulsing gold ring on the dog while active. Golden
+  biscuit: 18% chance per spawned biscuit row, worth 5 vs 1, gold glow render,
+  its own +N floater and a distinct 3 note chime. Rainbow poop jetpack
+  untouched, still the signature moment.
+[PD] P5 DONE. TODO[economy] left in place at the gameOver() call site exactly
+  as asked, now a one line console.log of the run summary (distance, biscuits,
+  jetpacks used). Verified by check.js that no Firebase/Firestore/Sunbeam call
+  sites exist anywhere in the file. Did NOT wire any mint, per the hard rule.
+[PD] FOUND (fixed, in scope, my own file): the drop prototype's CSS only had
+  `.screen.hidden{display:none}` (a compound selector). #hud, #pauseBtn,
+  #muteBtn, #dbg and #hintBar are toggled via a BARE "hidden" class from JS and
+  have no "screen" class, so none of that CSS ever matched them — the pause/
+  mute/debug buttons and the hint bar were visible from the very first frame,
+  before a run even starts, overlapping the title screen. Caught by actually
+  looking at screenshot 1, not by any gate (this is a pure visual defect, no
+  check would have seen it). Added a standalone `.hidden{display:none!important}`
+  rule. Also bumped #dbg/#pauseBtn/#muteBtn from 42x42 to 48x48 (real prototype
+  value, below the studio's 48px floor) and respaced their `right` offsets so
+  they no longer crowd each other.
+[PD] FOUND (not fixed, out of my named scope): in this sandboxed headless
+  Chrome, emoji characters (🦴 📏 ⏸ 🔊 🐞 🏆) render as tofu boxes across the
+  HUD pills, the game over card and the transport buttons (see shot 1 and
+  shot 2). This is very likely a missing-emoji-font artifact of THIS headless
+  environment rather than a real device defect (real Android/iOS Chrome ship
+  full color emoji fonts) — the same emoji-reliant pattern is already used
+  fleet wide (feedback_touch_targets etc history does not mention this game).
+  Flagging rather than fixing since I cannot tell from here whether it also
+  hits real desktop Chrome without a color emoji font installed.
+[PD] FOUND (not fixed, cosmetic, out of scope): when the player never moves
+  out of a biscuit lane, 2 to 3 uncollected biscuit rows can stack up close to
+  the camera and visually clump into a dense blob rather than a readable
+  trail (see shot 3, landscape). Only reproduced because my verification
+  script never issues a lane change input; a real player collecting as they
+  go would not see this. Worth a look once real art replaces the vector bones
+  (a sprite trail may read fine where flat shapes clump).
+[PD] LOOKED, not just gated. 3 screenshots, 412x915 x2 (title screen, mid run)
+  + 915x412 x1 (gameplay), dsf2, isMobile, hasTouch, fab hidden, all opened
+  with the Read tool. My own shot script (scratchpad pd_shots.mjs) asserts the
+  live DOM state after every tap (selectScreen actually hidden, hud actually
+  visible, distance counter actually advancing) rather than logging "tapped"
+  and moving on. What I saw: shot1 (after the .hidden fix) is a clean title
+  screen, all 4 animal cards read clearly, "Back to Sky Wolf" sits legibly on
+  the road art. shot2 landed on the GAME OVER card, not live action (the run
+  ended at 11m — a hydrant right at the start) — an honest capture, not what I
+  intended to show, but it confirmed persistence values (Total stash 0 on a
+  first ever run) and the composited scene behind the modal shows a puddle and
+  a biscuit train rendering correctly. shot3 (landscape, the worst angle on
+  purpose for a portrait locked game) letterboxes cleanly to the ~520px stage,
+  no overflow or stretching; it also happens to show 2 jump obstacles with
+  their telegraph icons, a puddle, and a golden biscuit glowing distinctly
+  gold among a tan biscuit train, all rendering as designed.
+[PD] GATES all exit 0: check.js 66/66 (2 mutations watched failing first),
+  portal_ux_check.mjs 26/26, advertised_count_check.mjs 7/7, catalog.mjs
+  (+1 carded, +0 openable). ART-LEDGER.md: added a LISTED row for Puppy Dash
+  pointing at PUPPY_DASH_ART_BIBLE.md section 9 (~50 frame minimum viable
+  set); explicitly notes the puddle/trash can obstacles added in P4 are not
+  yet in that bible section and want their own art rows later. Art: none
+  shipped, procedural vector fallback is what ships today and must keep
+  working once real art lands (documented in the ledger row).
+[PD] DONE for real: live behind the tester wall, all gates green, 3
+  screenshots opened and described honestly (including the one that did not
+  show what I meant it to). Nothing left undone in P1 through P5. The two
+  FOUND items above are genuinely out of this task's named scope (an
+  environment font question and a cosmetic clumping case that needs real art
+  to properly evaluate), left for Stephen or a later pass rather than
+  guessed at.
+
+## RESUME 2026-08-24 (codespace died mid run, Opus main session)
+
+The box stopped between subtasks. Recovered state at resume, verified against
+the trees and not against the STATUS text:
+- PART 1 review: DONE, committed bc59e6e3.
+- PART 2 Puppy Dash: P1 to P5 DONE, committed bda2cf3c.
+- PART 4 The Attic: A1, A2 (commit e875c113), A3 (commit 46446253) DONE. The
+  agent was killed before it wrote its A2/A3 STATUS lines; the commits carry
+  the detail. A4, A5, A6 outstanding.
+- PART 3 Litter Bug: L1 DONE (findings above). Upstream /workspaces/Litter_Bug
+  commit ef2d341 pushed to origin/main covers most of L2 and L3 (arena in the
+  game on the interactive path, one save with levels, daily challengers by
+  dayIndex, streak, crown, a fourth block PRY THE LIDS, per job spawn rates,
+  bugdex grade spread, save validation, brand singular). The agent was killed
+  mid edit: index.html carried an uncommitted set of LB_DEV test hooks
+  (growLvl/setKing/setChamp/loadSave/ladderOff/purse/crownPurse/shiftCap/
+  dailyShifts), which is a gate being written. The vendored copy in
+  satellites/litter-bug is STILL Aug 18 and does not have any of it, so none
+  of that work is live. Outstanding: the L3 grade-reads-from-drawn-parts fix,
+  L4 graphics, L5 build plus RE-VENDOR and card bump.
+- The local static server on 127.0.0.1:8777 does not survive a codespace stop.
+  portal_ux_check.mjs failed with ERR_CONNECTION_REFUSED until it was
+  restarted; that is an environment failure, not a gate failure.
+Gates re-run at resume, all exit 0: portal_ux_check 26 ok, advertised_count
+7 true, catalog 183 carded / 161 openable.
