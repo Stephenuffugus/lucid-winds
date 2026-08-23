@@ -149,4 +149,24 @@ their PART as their only scope; each writes its own STATUS lines prefixed
 [PD] [LB] [AT]. Main session polls, pushes, and resolves the gate lock. Stop at
 the usage reset; leave every tree committed.
 
+## Survey key findings (Fable's four readers, full text in the journal above)
+- LITTER BUG IS TWO PRODUCTS. index.html (the game: 3 jobs, 30 Shinies, Bugdex,
+  save lb_dex_v1) never loads world-engine.js, renders every bug full grown and
+  stores no level. The LABS (mint-lab, world, battle-lab, bugdex; save
+  litterbug_vault_v1) hold the tap-trial mint, levels 1 to 30, territory,
+  raids, breeding and the fully animated arena. The two saves never meet.
+  THE DUMPSTER in the game only auto-resolves five L1 bots to WIN/LOSE labels:
+  no tap, no move choice, no reward. L2 therefore = bring the lab arena INTO the
+  game (one save, battle-engine interactive path, move cards), not just drop
+  the ?battles=1 gate. This is the flagship gap.
+- gradeOf scores six trait indices (wing/body/head/pattern/leg/antenna) the
+  procedural renderer never draws, so LEGENDARY has no visual tell and the
+  same indices drive battle stats. Fix in L3: grade must read from drawn parts.
+- No gate loads index.html; 9 of 10 smoke harnesses green (smoke-render needs
+  sharp). No audio anywhere. 36 PNGs are 2026-05 placeholders, unused by the
+  game. The 6.8 MB inherited-engine.html ships in the vendored tree: exclude.
+- Attic, Puppy Dash and today's gate results: read the journal entries
+  survey:attic, survey:puppy-dash, survey:status+gates before starting those
+  parts; the drop files may already be in satellites/puppy-dash/drop/.
+
 ## STATUS
