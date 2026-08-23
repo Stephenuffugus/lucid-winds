@@ -2,7 +2,7 @@
  * Sky Wolf Studios — Inline game copy: bloomwheel
  *
  * COPY of the inline GBW mount function from index.html
- * lines 70561-70854.
+ * lines 70768-71061.
  *
  * DUPLICATE, NEVER MOVE. The original code in index.html is the
  * live source of truth for the in-LW play surface. This copy serves
