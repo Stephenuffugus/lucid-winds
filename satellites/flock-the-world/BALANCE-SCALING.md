@@ -347,3 +347,18 @@ econRun/econHeatRamp (60)) × max(0, 1 − subj/econHeatSubj (0.5))` per day.
   spawns 32%/38%/46%) and DIFFS.bubMiss 0.7/1.0/1.4 on the uncaught-leak
   penalty (base 1.6 patriotism + 3 suspicion). Suspicion above 10 is still the
   leak-spawn gate, so bribe-heavy runs literally spring leaks.
+
+## The Foreign Desk (2026-08-24 late)
+
+* **Law learned the hard way: choice slots are a conserved currency.** The
+  choice clock caps modals per run, so every new choice beat DISPLACES an old
+  event — including the relief events winning runs depend on. Content
+  additions must either bring their own relief/growth or reduce slot load
+  (flash beats, per-run rotation). Measured: 13 always-on beats flipped the
+  balanced Vendor bot from WIN to LOSS with direct effects of only ~+16
+  patriotism; rotation to 2-of-3 personal arcs restored the three-seed canary.
+* fdPages: dirty foreign choices write pages; the audit arc bills them late
+  (capped, then spent on publication). Collaboration options pay relief and
+  growth immediately — the deferred-bill design is the theme.
+* The canary is now seeded ×3 (11, 77, 2026); a flipping gate is a bug in the
+  gate.

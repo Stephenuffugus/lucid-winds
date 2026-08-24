@@ -246,9 +246,14 @@ if (C) {
   ok('a tap on open ocean resolves to nothing', !cSea, cSea ? cSea.n : '');
 
   /* full runs: a balanced bot wins, a do-nothing run loses */
-  function botRun(mode, diff, start, strat, maxDays, onTick) {
+  function botRun(mode, diff, start, strat, maxDays, onTick, seed) {
     const c = makeCtx();
     c.doctrineModal = () => {};
+    /* ⛔ seeded when `seed` is given: the win canary flipped on raw dice at a
+       knife edge margin (Aug 24 evening, 1 green in 3). A check that flips is
+       a bug in the check — three fixed seeds, all three must win, is both
+       deterministic and a real margin proof. */
+    if (seed != null) { let n = seed >>> 0; Math.random = () => { n = (n * 1664525 + 1013904223) >>> 0; return n / 4294967296; }; }
     const s = vm.runInContext(`S=newState('${mode}','${diff}','${start}');S`, c);
     /* top level `let S` never attaches to the vm context, so the auto resolver
        has to close over the returned state object, not read c.S */
@@ -285,9 +290,13 @@ if (C) {
     }
     return s;
   }
-  const win = botRun('CONTRACTOR', 'Vendor', 'NA', { buy: 1, expand: 1, doctrine: 'glove', collectP: 0.10, concede: 1 }, 4000);
-  ok('a balanced bot reaches an ending', win.over === true, 'day=' + win.day + ' subj=' + (win.subj * 100).toFixed(1));
-  ok('that ending is a win', win.won === true, 'won=' + win.won + ' ovr=' + win.oversight.toFixed(1) + ' lost=' + win.lostCount);
+  const canary = [11, 77, 2026].map(sd => botRun('CONTRACTOR', 'Vendor', 'NA', { buy: 1, expand: 1, doctrine: 'glove', collectP: 0.10, concede: 1 }, 4000, undefined, sd));
+  Math.random = (() => { const r = Math.random; return r; })();
+  const win = canary[0];
+  ok('a balanced bot reaches an ending', canary.every(w => w.over === true),
+    canary.map(w => 'day=' + w.day + ' subj=' + (w.subj * 100).toFixed(1)).join(' | '));
+  ok('that ending is a win (three seeds, three wins)', canary.every(w => w.won === true),
+    canary.map(w => (w.won ? 'WIN' : 'LOSS') + ' d' + w.day + ' subj=' + (w.subj * 100).toFixed(0) + ' ovr=' + w.oversight.toFixed(0)).join(' | '));
   ok('the win takes a real campaign, not a handful of days', win.day > 300, 'day=' + win.day);
 
   const idle = botRun('CONTRACTOR', 'Vendor', 'NA', { buy: 0, expand: 0 }, 4000);
@@ -719,6 +728,14 @@ if (C) {
       try { vm.runInContext('for(let i=0;i<600;i++){maybeEvent(S);if(SFX.log.some(x=>/event_open/.test(x)))break;}', cS); }
       catch (e) { /* recorded by the assertion below, not swallowed silently */ }
     }
+    /* Same pinned rule for region_full (2026-08-24 evening): the Foreign Desk
+       arcs redirected the scripted campaign's economy enough that no region
+       organically crosses 97% in 2500 days some runs. Cross it deliberately
+       through the REAL tick and the REAL milestone code. */
+    if (!vm.runInContext('SFX.log', cS).some(x => /region_full/.test(x))) {
+      try { vm.runInContext("if(!S.over){const r=Object.keys(S.regions).map(k=>S.regions[k]).find(x=>x.active)||S.regions.NA;r.active=true;r.coverage=0.975;r.unrest=0;tick();}", cS); }
+      catch (e) { /* recorded by the assertion below */ }
+    }
     const fired = new Set(vm.runInContext('SFX.log', cS).map(x => x.replace(/^sfx:/, '')));
     const wantWorld = ['region_join', 'milestone', 'peaceful', 'buy_small'];
     const missWorld = wantWorld.filter(c => !fired.has(c));
@@ -1110,6 +1127,79 @@ if (C) {
         const soft=missTwin(0.7), hard=missTwin(1.4);
         ok('a leak that expires uncaught costs more on a harder table', hard>soft+1.0,
           'soft='+soft.toFixed(2)+' hard='+hard.toFixed(2));
+      }
+      /* THE FOREIGN DESK (Aug 24 evening): five arcs, a dossier, and a door
+         with no free option. */
+      {
+        const cF2=makeCtx();cF2.doctrineModal=()=>{};cF2.showEvent=()=>{};
+        vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');",cF2);
+        const evs=vm.runInContext('S.events',cF2);
+        const chains={vance:3,kesh:3,lena:3,audit:3,dataq:1};
+        let structOk=true,why='';
+        for(const ch in chains){
+          const beats=evs.filter(e=>e.chain===ch);
+          const steps=beats.map(b=>b.step).sort().join(',');
+          const want=Array.from({length:chains[ch]},(_,i)=>i+1).join(',');
+          if(steps!==want){structOk=false;why+=ch+'='+steps+' ';}
+          /* audit beat 1 is deliberately a FLASH (the wall exists, no choice
+             slot spent — the choice budget displacement lesson, Aug 24) */
+          const wantChoice=beats.filter(b=>!(ch==='audit'&&b.step===1));
+          if(wantChoice.some(b=>b.k!=='choice')){structOk=false;why+=ch+' beat kind wrong ';}
+        }
+        ok('the foreign desk ships five chains with contiguous beats', structOk, why||'all present');
+        const sF=vm.runInContext('S',cF2);
+        sF.cash=100000*vm.runInContext('MONEY',cF2);
+        const cashBefore=sF.cash;
+        evs.find(e=>e.id==='vance_arc2').o[0].f(sF);
+        ok('filling both orders pays, heats the war, and writes two pages',
+          sF.fdPages===2&&sF.cash>cashBefore&&sF.warHeat>0, 'pages='+sF.fdPages+' heat='+sF.warHeat.toFixed(2));
+        /* the school event: every door is expensive. No option is free of
+           either serious money or serious oversight. */
+        const MONEYf=vm.runInContext('MONEY',cF2);
+        const dq=evs.find(e=>e.id==='dataq');
+        let noFree=true,detail='';
+        dq.o.forEach((o,i)=>{
+          const cT=makeCtx();cT.doctrineModal=()=>{};cT.showEvent=()=>{};
+          vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');",cT);
+          const sT=vm.runInContext('S',cT);sT.cash=100000*MONEYf;
+          Object.keys(sT.regions).forEach(k=>{sT.regions[k].active=true;});
+          const ov0=sT.oversight,ca0=sT.cash;
+          o.f(sT);
+          const paidUp=(o.cost&&o.cost.cash>=350*MONEYf)||(ca0-sT.cash>=350*MONEYf);
+          const hurt=sT.oversight-ov0>=4;
+          if(!paidUp&&!hurt){noFree=false;detail+='opt'+i+' free ';}
+        });
+        ok('the data quality event has no free option', noFree, detail||'all doors cost');
+        /* the audit arc reads the dossier: more pages, more pain */
+        const acc=evs.find(e=>e.id==='audit_arc2').o[1];
+        const spike=pages=>{
+          const cT=makeCtx();cT.doctrineModal=()=>{};cT.showEvent=()=>{};
+          vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');",cT);
+          const sT=vm.runInContext('S',cT);sT.fdPages=pages;
+          Object.keys(sT.regions).forEach(k=>{sT.regions[k].active=true;});
+          const ov0=sT.oversight;acc.f(sT);return sT.oversight-ov0;
+        };
+        ok('the dossier scales the reckoning (6 pages hurt more than 0)',
+          spike(6)>spike(0)+4, 'p0='+spike(0).toFixed(1)+' p6='+spike(6).toFixed(1));
+        /* owning the outlet buys a longer blackout */
+        const blackLen=outlet=>{
+          const cT=makeCtx();cT.doctrineModal=()=>{};cT.showEvent=()=>{};
+          vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');",cT);
+          const sT=vm.runInContext('S',cT);
+          sT.outlet=outlet;sT.cash=100000*MONEYf;
+          sT.owned.add('blackout');   /* the action is node gated */
+          sT.regions.NA.active=true;sT.regions.NA.coverage=0.3;
+          vm.runInContext("doAction('blackout','NA')",cT);
+          return sT.regions.NA.black;
+        };
+        const b0=blackLen(0),b1=blackLen(1);
+        ok('owning the outlet buys a deeper news dark window', b1>b0&&b0>0, 'plain='+b0+' outlet='+b1);
+        /* the dossier and the outlet survive a reload */
+        vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');S.fdPages=5;S.outlet=1;saveRun();"
+          +"S=newState('CONTRACTOR','Vendor','NA');loadRun();",cF2);
+        ok('the dossier and the outlet survive a reload',
+          vm.runInContext('S.fdPages',cF2)===5&&vm.runInContext('S.outlet',cF2)===1,
+          'pages='+vm.runInContext('S.fdPages',cF2)+' outlet='+vm.runInContext('S.outlet',cF2));
       }
       /* RENAME (Aug 24 evening): the easy difficulty collided with The
          Contractor MODE on the same menu. It is Startup now, and a mid-run

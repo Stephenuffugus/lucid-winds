@@ -1018,7 +1018,7 @@ const CFG = {
      this cost the bot every single run: it took all 14 markets, reached subj 0.7
      and died of oversight around day 800. The scrutiny has to be felt, not fatal. */
   acqSus:0.55, acqOvr:0.2,
-  choiceGap:34,       /* minimum days between PAUSE THE GAME choice modals */
+  choiceGap:30,       /* minimum days between PAUSE THE GAME choice modals */
   /* ⛔ 2026-08-24, Stephen's winning run: the day gap compresses with the speed
      dial (34 days is under 6 real seconds at 3x), so choice modals also keep a
      WALL CLOCK distance. Only enforced while the interval timer is pacing a
@@ -1050,7 +1050,8 @@ const CFG = {
                          lifetime income: expansion is the spine of the campaign without being
                          the only thing in it. */
   blackoutDays:14,    /* a bought news cycle suppresses suspicion this long */
-  blackoutCd:16
+  blackoutCd:16,
+  outletBlackDays:6   /* owning the outlet buys deeper, longer darkness (lena arc) */
 };
 
 /* bubInf: spawn roll above this is an influence (or leak) bubble — harder
@@ -1140,7 +1141,14 @@ const CAST={
   brill:{n:'Sec. Tansy Brill',t:'Homeland Secretary',q:'The vest is tactical. The photographer is essential.'},
   prather:{n:'Gen. Odum Prather',t:'Ret. General, consultant',q:'Show me a border and I will show you a budget.'},
   klein:{n:'Priya Sandoval-Klein',t:'Data-broker billionaire',q:'Privacy is a pricing tier.'},
-  anchor:{n:'The Anchor',t:'Prime-time personality',q:'We are just asking questions we were paid to ask.'}
+  anchor:{n:'The Anchor',t:'Prime-time personality',q:'We are just asking questions we were paid to ask.'},
+  /* THE FOREIGN DESK (Aug 24 evening). Composites of patterns, citations of
+     nothing: see the Art 11 doc for the guardrails these five live under. */
+  vance:{n:'Ferro Vance',t:'Arms fair fixer',q:'Every conflict is two customers who have not met me yet.'},
+  kesh:{n:'Min. Davor Kesh',t:'Interior minister, client state',q:'Stability is a product. We are merely loyal customers.'},
+  lena:{n:'Lena Okonjo Marsh',t:'War correspondent',q:'I do not report both sides of an invoice.'},
+  auditor:{n:'The Auditor',t:'Exiled procurement official',q:'I kept copies. I always kept copies.'},
+  hale:{n:'Amb. Cyrus Hale',t:'Coalition diplomat',q:'The coalition moves slowly. It arrives anyway.'}
 };
 
 /* ============================ SKILL TREES ============================ */
@@ -1583,6 +1591,145 @@ function EV(){ return [
      f:s=>{s.warHeat=Math.min(1,s.warHeat+0.2);s.oversight+=1;
        REGIONS.forEach(R=>{const x=s.regions[R.id];if(x.active)x.resist=clamp(x.resist+5,0,100);});
        pushNews(s,'The annex is classified by Thursday. By Friday the redacted pages are a poster, and the poster is everywhere.','res');}}]},
+
+/* ============ THE FOREIGN DESK (5 arcs, Aug 24 evening) ============
+   Stephen: "parody how despicably foreign affairs get handled... without
+   getting myself screwed." The guardrails (Art 11 doc): composites of
+   PATTERNS, citations of nothing; the horror carried by procurement
+   language, never depicted; punch up only. Dirty choices write fdPage()
+   entries the Auditor binds in the audit arc. */
+
+/* ---- ARC: FERRO VANCE, "The Arms Fair" ---- */
+{id:'vance_arc1',chain:'vance',step:1,w:6,cd:150,when:s=>s.fdOn&&s.fdOn.indexOf('vance')>=0&&s.day>110&&s.activeCount>=3,k:'choice',who:'vance',kick:'Invitation',
+ t:'Ferro Vance has a booth with your name on it',
+ b:'"The expo calls itself Critical Infrastructure Week. Everyone exhibits behind frosted glass. Ministries walk the floor with shopping lists, and nobody photographs the badges." His retainer is modest. His rolodex is not.',
+ o:[{l:'Take the booth',c:s=>s.cash>=200*MONEY,cost:{cash:200*MONEY},h:'Influence grows, patriotism eases a touch, war heat ticks up. A page is written somewhere.',
+     f:s=>{s.inf+=5;s.oversight=Math.max(0,s.oversight-2);s.warHeat=Math.min(1,s.warHeat+0.02);fdPage(s,1);
+       pushNews(s,'Your booth wins a design award under a name that is almost yours. Three ministries leave cards.','good');}},
+    {l:'Decline the invitation',h:'Nothing happens. That is its own price.',
+     f:s=>{pushNews(s,'Vance shrugs. The booth goes to a competitor whose glass is slightly less frosted.','');}}]},
+{id:'vance_arc2',chain:'vance',step:2,w:7,cd:160,when:s=>s.day>160,k:'choice',who:'vance',kick:'Two purchase orders',
+ t:'The ministry buys. So does the other side.',
+ b:'Minister Kesh signs for crowd management systems on Monday. On Thursday a reseller with the same surname as his rival asks for the same kit, delivered across the line. Vance calls it market depth. Both letters of credit clear the same bank.',
+ o:[{l:'Fill both orders',h:'A fortune arrives and patriotism eases, but war heat climbs, suspicion rises everywhere, and two pages are written.',
+     f:s=>{s.cash+=350*MONEY;s.oversight=Math.max(0,s.oversight-2);s.warHeat=Math.min(1,s.warHeat+0.04);bumpSus(s,2);fdPage(s,2);{const r=pickActive(s);if(r)r.coverage=clamp(r.coverage+0.06*(1-r.coverage),0,1);}
+       pushNews(s,'Two convoys leave one warehouse in opposite directions. The invoices say agricultural optics.','crit');}},
+    {l:'Sell to the ministry only',h:'Money arrives. One page is written.',
+     f:s=>{s.cash+=150*MONEY;fdPage(s,1);
+       pushNews(s,'One convoy, one invoice, one satisfied ministry. The reseller finds another vendor by Friday.','good');}},
+    {l:'Cancel both and eat the penalty',c:s=>s.cash>=120*MONEY,cost:{cash:120*MONEY},h:'Suspicion eases a little. Vance goes quiet.',
+     f:s=>{bumpSus(s,-2);
+       pushNews(s,'Vance pays the cancellation fee personally and stops returning your calls for a season.','');}}]},
+{id:'vance_arc3',chain:'vance',step:3,w:7,cd:200,when:s=>s.day>220,k:'choice',who:'vance',kick:'Provenance',
+ t:'A crate is photographed on the wrong side of the line',
+ b:'The serial numbers match your invoice. The photographer is freelance, the caption is careful, and the wire service wants a comment by five. Vance texts: "Equipment is neutral. Say it with me."',
+ o:[{l:'Buy the photographs',c:s=>s.cash>=260*MONEY,cost:{cash:260*MONEY},h:'No noise at all. A page is written.',
+     f:s=>{fdPage(s,1);
+       pushNews(s,'The photographs become the property of a foundation you fund. The caption survives in one notebook.','good');}},
+    {l:'Equipment is neutral',h:'Oversight jumps and suspicion rises everywhere.',
+     f:s=>{s.oversight+=4;bumpSus(s,4);
+       pushNews(s,'The statement runs verbatim. So does the photo of the crate, which is not neutral about anything.','bad');}},
+    {l:'Announce a recall',c:s=>s.cash>=180*MONEY,cost:{cash:180*MONEY},h:'Oversight ticks up, suspicion eases, and a page is written anyway.',
+     f:s=>{s.oversight+=2;bumpSus(s,-3);fdPage(s,1);
+       pushNews(s,'You recall four hundred units, praise your own transparency, and reship them in spring under a new part number.','good');}}]},
+
+/* ---- ARC: MIN. KESH, "The Pretext Procurement" ---- */
+{id:'kesh_arc1',chain:'kesh',step:1,w:6,cd:150,when:s=>s.fdOn&&s.fdOn.indexOf('kesh')>=0&&s.day>140,k:'choice',who:'kesh',kick:'Verification services',
+ t:'Min. Kesh would like an incident verified in advance',
+ b:'The contract is for verification of an event scheduled for next quarter. The event is not described. The deliverable is a certificate with your logo, dated the morning after. "Your cameras are trusted," Kesh says. "That is the entire product."',
+ o:[{l:'Sign the contract',h:'A fortune arrives and patriotism eases, but war heat climbs and two pages are written.',
+     f:s=>{s.cash+=300*MONEY;s.oversight=Math.max(0,s.oversight-2);s.warHeat=Math.min(1,s.warHeat+0.02);fdPage(s,2);
+       pushNews(s,'The retainer clears. A calendar invite arrives for a date with no subject line.','crit');}},
+    {l:'Decline',h:'A little oversight. The certificate will exist either way.',
+     f:s=>{s.oversight+=1;
+       pushNews(s,'Kesh signs with a competitor whose logo photographs almost as well.','bad');}}]},
+{id:'kesh_arc2',chain:'kesh',step:2,w:7,cd:160,when:s=>s.day>190,k:'choice',who:'kesh',kick:'On schedule',
+ t:'The incident occurs exactly when purchased',
+ b:'Your feed is first on scene because your feed was the scene. The certificate template is already filled in. Counsel notes that the word verified is doing heavy lifting and suggests the passive voice.',
+ o:[{l:'Issue the certificate',h:'Influence grows, patriotism eases and compliance rises everywhere, but suspicion climbs too and two pages are written.',
+     f:s=>{s.inf+=5;s.oversight=Math.max(0,s.oversight-3);globalCmp(s,.03);bumpSus(s,3);fdPage(s,2);
+       pushNews(s,'Three capitals cite your verification in the same news cycle, in the same phrasing.','crit');}},
+    {l:'Findings inconclusive',h:'Oversight climbs and money leaves as the client walks.',
+     f:s=>{s.oversight+=3;s.cash=Math.max(0,s.cash-120*MONEY);
+       pushNews(s,'Kesh calls the inconclusive finding a data quality issue on your side. The next contract goes elsewhere.','bad');}}]},
+{id:'kesh_arc3',chain:'kesh',step:3,w:7,cd:200,when:s=>s.day>250,k:'choice',who:'hale',kick:'The committee',
+ t:'A committee asks how you were first on scene',
+ b:'An international committee with no subpoena power and excellent stationery requests your telemetry. Ambassador Hale sits on it. So does a physicist who keeps using the word trajectory.',
+ o:[{l:'Provide a summary, not the telemetry',c:s=>s.cash>=300*MONEY,cost:{cash:300*MONEY},h:'Oversight ticks up. A page is written.',
+     f:s=>{s.oversight+=1;fdPage(s,1);
+       pushNews(s,'The summary is forty pages and answers nothing. The committee thanks you for your cooperation, in writing, coldly.','good');}},
+    {l:'Release the raw telemetry',h:'Oversight jumps hard and suspicion surges everywhere.',
+     f:s=>{s.oversight+=5;bumpSus(s,6);
+       pushNews(s,'The telemetry says what telemetry says. The physicist stops saying trajectory and starts saying targeting.','crit');}}]},
+
+/* ---- THE REGRETTABLE DATA QUALITY EVENT (single beat).
+   The school is never shown. Every option manages liability; none lets you
+   mourn. That absence is the indictment, and it is the whole design. */
+{id:'dataq',chain:'dataq',step:1,w:9,cd:9999,when:s=>s.day>420&&(((s.arc&&s.arc.kesh)||0)>=2||s.warHeat>0.45),k:'choice',kick:'Item four',
+ t:'The agenda calls it a data quality event',
+ b:'Counsel distributes one page, numbered, collected afterward. A client state ran a strike off your feed. The coordinates were a school. The page uses the words regrettable, upstream and indemnification. It does not use the word children, and nobody at the table uses it either, and the meeting runs eleven minutes.',
+ o:[{l:'Invoke the indemnification clause',c:s=>s.cash>=500*MONEY,cost:{cash:500*MONEY},h:'A fortune leaves, oversight climbs, suspicion rises everywhere, and three pages are written.',
+     f:s=>{s.oversight+=2;bumpSus(s,3);fdPage(s,3);
+       pushNews(s,'The clause holds. The invoice for invoking it is billed to the client, who bills it to a ministry, which bills it to a public.','crit');}},
+    {l:'Reclassify the feed as advisory',h:'Oversight jumps hard, compliance falls everywhere, and three pages are written.',
+     f:s=>{s.oversight+=6;globalCmp(s,-.03);fdPage(s,3);
+       pushNews(s,'The reclassification memo is four sentences. It leaks in nine days, annotated by the physicist.','crit');}},
+    {l:'Suspend the client, publicly',h:'A fortune in walked contracts and oversight still climbs, but suspicion eases everywhere.',
+     f:s=>{s.cash=Math.max(0,s.cash-350*MONEY);s.oversight+=1;bumpSus(s,-4);
+       pushNews(s,'The suspension statement is the only document this quarter that names the school. Kesh calls it theater. It plays one night.','bad');}}]},
+
+/* ---- ARC: LENA OKONJO MARSH, "The Correspondent" ---- */
+{id:'lena_arc1',chain:'lena',step:1,w:6,cd:150,when:s=>s.fdOn&&s.fdOn.indexOf('lena')>=0&&s.day>100&&s.avgSus>8,k:'choice',who:'lena',kick:'A preview, as a courtesy',
+ t:'Lena Okonjo Marsh sends questions before she files',
+ b:'Fourteen questions, each with a document number attached. Her editor owes your comms lead a favour from a previous life, which is why you are reading tomorrow today.',
+ o:[{l:'Kill the story',c:s=>s.cash>=220*MONEY,cost:{cash:220*MONEY},h:'Patriotism eases a touch. A page is written.',
+     f:s=>{s.oversight=Math.max(0,s.oversight-1);fdPage(s,1);
+       pushNews(s,'The story dies in legal review, citing sourcing concerns the sources do not share.','good');}},
+    {l:'Let it run',h:'Oversight jumps and suspicion rises everywhere.',
+     f:s=>{s.oversight+=3;bumpSus(s,3);
+       pushNews(s,'The piece runs with your logo above the fold. It is accurate, which is the problem.','bad');}}]},
+{id:'lena_arc2',chain:'lena',step:2,w:7,cd:160,when:s=>s.day>160,k:'choice',who:'lena',kick:'An outlet, gently for sale',
+ t:'Her outlet is available at a fair multiple',
+ b:'The holding company would prefer a quiet sale to a loud bankruptcy. Vance knows the banker. The newsroom would report to a foundation, and the foundation would report to nothing.',
+ o:[{l:'Buy the outlet',c:s=>s.cash>=400*MONEY,cost:{cash:400*MONEY},h:'Influence grows, patriotism eases, two pages are written, and BLACKOUT runs deeper and longer from now on.',
+     f:s=>{s.outlet=1;s.inf+=3;s.oversight=Math.max(0,s.oversight-3);fdPage(s,2);
+       pushNews(s,'The sale closes. The style guide gains a section on operational language. The news cycle is now an asset class you hold.','crit');}},
+    {l:'Pass',h:'Nothing happens today.',
+     f:s=>{pushNews(s,'A pension fund buys it instead and asks it to be profitable, which is its own kind of blackout.','');}}]},
+{id:'lena_arc3',chain:'lena',step:3,w:7,cd:200,when:s=>s.day>220,k:'choice',who:'lena',kick:'Her decision',
+ t:'Okonjo Marsh has a folder she has not filed yet',
+ b:'She has an offer from a wire service and a folder about you. She asks for one interview, on the record, no approvals. Comms calls it exposure. Legal calls it discovery.',
+ o:[{l:'Give her the interview',h:'Oversight climbs a little, but suspicion eases and influence grows. Candor photographs well, once.',
+     f:s=>{s.oversight+=2;bumpSus(s,-3);s.inf+=2;
+       pushNews(s,'The interview is fair, which surprises everyone whose job is to be surprised. Two of your quotes will follow you forever.','');}},
+    {l:'Decline, and let the folder file',h:'Oversight jumps hard and people organize everywhere.',
+     f:s=>{s.oversight+=4;bumpSus(s,5);
+       REGIONS.forEach(R=>{const x=s.regions[R.id];if(x.active)x.resist=clamp(x.resist+2,0,100);});
+       pushNews(s,'The folder runs in eleven languages. The resignation clip outperforms every advertisement you have ever bought.','res');}}]},
+
+/* ---- ARC: THE AUDITOR AND AMB. HALE, "The Ledger Abroad".
+   Pressure scales with s.fdPages, the count of pages the other arcs wrote:
+   a clean foreign desk faces a thin dossier and shrugs this arc off. */
+{id:'audit_arc1',chain:'audit',step:1,w:9,cd:150,when:s=>s.day>550&&((s.fdPages||0)>=1||s.oversight>30),k:'flash',
+ f:s=>'A procurement official who signed three of your regional contracts now lives in exile above a laundry, compiling a ledger. People who have seen the wall of thread say your column has its own colour.',cls:'bad'},
+{id:'audit_arc2',chain:'audit',step:2,w:8,cd:160,when:s=>s.day>650,k:'choice',who:'hale',kick:'The dossier has chapters',
+ t:'Ambassador Hale requests a meeting you cannot decline',
+ b:'The dossier is bound. The chapters follow your foreign desk: the fair, the certificates, the school, the sale. Hale reads the table of contents aloud and no further, the way a doctor reads a chart.',
+ o:[{l:'Contest every chapter',c:s=>s.cash>=400*MONEY,cost:{cash:400*MONEY},h:'A fortune in lawyers, and oversight still climbs with every page you wrote.',
+     f:s=>{s.oversight+=Math.min(2.5,0.5+(s.fdPages||0)*0.4);
+       pushNews(s,'Your lawyers bill by the chapter. There are '+Math.max(1,s.fdPages||0)+' pages with your thread on them.','bad');}},
+    {l:'Accept the findings',h:'Oversight jumps with every page you wrote, but suspicion eases. Candor, again, once.',
+     f:s=>{s.oversight+=Math.min(7,1+(s.fdPages||0)*0.8);bumpSus(s,-3);
+       pushNews(s,'The acceptance letter is one paragraph. Hale notes it is the shortest document you have ever produced.','');}}]},
+{id:'audit_arc3',chain:'audit',step:3,w:9,cd:200,when:s=>s.day>780,k:'choice',who:'auditor',kick:'Publication day',
+ t:'The ledger publishes with your column intact',
+ b:'Four hundred pages, footnoted, free to download, mirrored the hour it is taken down. The foreword thanks a physicist, a photographer and a correspondent by name.',
+ o:[{l:'Buy every printed copy',c:s=>s.cash>=350*MONEY,cost:{cash:350*MONEY},h:'Oversight climbs with your page count. The download counter does not notice.',
+     f:s=>{s.oversight+=Math.min(5,1+(s.fdPages||0)*0.6);s.fdPages=0;
+       pushNews(s,'You corner the print run. The mirror sites corner everything else.','bad');}},
+    {l:'Say nothing',h:'Oversight jumps hard with your page count, and suspicion surges everywhere.',
+     f:s=>{s.oversight+=Math.min(10,2+(s.fdPages||0)*1.1);bumpSus(s,Math.min(7,1+(s.fdPages||0)*0.7));s.fdPages=0;
+       pushNews(s,'Silence reads as confirmation. The ledger enters three parliaments in one week.','crit');}}]},
 ];}
 
 /* ============================ STATE ============================ */
@@ -1596,7 +1743,12 @@ function newState(modeKey,diffKey,startId,seed,hqName,co){
     mode, diff, modeKey, diffKey, startId, day:0, cash:mode.cash*diff.cash, inf:mode.inf, oversight:0, speed:1,
     owned:new Set(), combos:new Set(), regions:{}, log:[], bubbles:[], pulses:[], dots:[], pk:[], pings:[], hqGlow:0, newsQ:[], newsIdx:0,
     warHeat:0, doctrine:null, over:false, won:false, milestones:new Set(), wmiles:new Set(), unread:0, avgRes:0,
-    sheet:null, lostCount:0, avgSus:0, avgMil:0, avgCmp:0, subj:0, activeCount:0, events:EV(), evLast:{}, evHeat:0, evPaid:0, econRun:0, arc:{},
+    sheet:null, lostCount:0, avgSus:0, avgMil:0, avgCmp:0, subj:0, activeCount:0, events:EV(), evLast:{}, evHeat:0, evPaid:0, fdPages:0, outlet:0,
+    /* the foreign desk rotates its contacts: two of the three personal arcs
+       per run (vance, kesh, lena). Less choice-clock displacement per run,
+       more variety across runs. The audit spine keys off pages regardless. */
+    fdOn:(()=>{const a=['vance','kesh','lena'];a.splice((Math.random()*3)|0,1);return a;})(),
+    econRun:0, arc:{},
     has(id){return this.owned.has(id)}
   };
   REGIONS.forEach(r=>{
@@ -1949,6 +2101,9 @@ function dateStr(day){const d=new Date(2026,0,1);d.setDate(d.getDate()+day);
 function pickActive(s){const a=REGIONS.map(r=>s.regions[r.id]).filter(r=>r.active&&r.coverage>.04);
   return a.length?a[(Math.random()*a.length)|0]:null;}
 function bumpSus(s,n){REGIONS.forEach(r=>{const x=s.regions[r.id];if(x.active)x.suspicion=clamp(x.suspicion+n,0,100);});}
+/* the foreign desk dossier: every dirty choice abroad is a page the Auditor
+   will eventually bind. Read by the audit arc; persisted with the run. */
+function fdPage(s,n){s.fdPages=(s.fdPages||0)+n;}
 function globalCmp(s,n){REGIONS.forEach(r=>{const x=s.regions[r.id];x.compliance=clamp(x.compliance+n,.02,.98);});}
 
 /* ============================ TICK ============================ */
@@ -2571,7 +2726,7 @@ function saveRun(){
       monitor:s.monitor||0,cover:s.cover||0,
       evLast:s.evLast||{},   /* event cooldowns must survive a reload or the spam returns */
       evN:s.evN||{},         /* and so must the repeat-fatigue counts */
-      econRun:s.econRun||0,arc:s.arc||{},lastCrack:s.lastCrack!=null?s.lastCrack:null,lastChoice:s.lastChoice!=null?s.lastChoice:null,
+      econRun:s.econRun||0,arc:s.arc||{},fdPages:s.fdPages||0,outlet:s.outlet||0,fdOn:s.fdOn||[],lastCrack:s.lastCrack!=null?s.lastCrack:null,lastChoice:s.lastChoice!=null?s.lastChoice:null,
       owned:[...s.owned],combos:[...s.combos],milestones:[...s.milestones],wmiles:[...s.wmiles],
       popMiles:[...(s.popMiles||[])],popPeakOrg:s.popPeakOrg||0,popHist:(s.popHist||[]).slice(-11),
       log:s.log.slice(0,40),regions:regs,stamp:Date.now()}));
@@ -2621,6 +2776,8 @@ function loadRun(){
   s.arc={};
   if(d.arc&&typeof d.arc==='object')
     for(const k in d.arc){const v=Number(d.arc[k]);if(isFinite(v)&&v>=0&&v<=3)s.arc[k]=v;}
+  s.fdPages=Math.max(0,num(d.fdPages,0)|0);s.outlet=num(d.outlet,0)?1:0;
+  if(Array.isArray(d.fdOn))s.fdOn=d.fdOn.filter(x=>['vance','kesh','lena'].indexOf(x)>=0).slice(0,3);
   s.subj=clamp(num(d.subj,0),0,1);s.avgSus=clamp(num(d.avgSus,0),0,100);
   s.avgMil=clamp(num(d.avgMil,0),0,1);s.avgRes=clamp(num(d.avgRes,0),0,100);
   s.unread=Math.max(0,num(d.unread,0));s.nextBubble=Math.max(0,num(d.nextBubble,0));
@@ -3619,7 +3776,7 @@ function doAction(act,rid){
       const cut=10*(1.4-x.media*0.8)*(x._cBlack||1);
       if(x===r)tappedCut=cut;
       x.suspicion=clamp(x.suspicion-cut,0,100);
-      x.black=CFG.blackoutDays;x.bcd=CFG.blackoutCd;
+      x.black=CFG.blackoutDays+(s.outlet?CFG.outletBlackDays:0);x.bcd=CFG.blackoutCd;
       if(x.media>0.6)s.oversight+=0.8;});
     /* the spend and the effect are both visible now: suspicion drops on the
        spot and a NEWS DARK chip counts down on the region card */

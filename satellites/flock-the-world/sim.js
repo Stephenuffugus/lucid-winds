@@ -79,6 +79,7 @@ function run(mode,diff,start,strategy,maxDays){
     ovr:+S.oversight.toFixed(1),lost:S.lostCount,nodes:S.owned.size,trace,ov:c.OV};
 }
 const scenarios=[
+ ['CONTRACTOR','Startup','NA',{buy:1,expand:1,crack:1,doctrine:'glove'}],
  ['CONTRACTOR','Vendor','NA',{buy:1,expand:1,crack:1,doctrine:'glove',collectP:0.10}],
  ['CONTRACTOR','Vendor','NA',{buy:1,expand:1,crack:0,doctrine:'fist',trees:['dep','cap'],collectP:0.10}],
  ['CONTRACTOR','Vendor','SEA',{buy:1,expand:1,crack:1,doctrine:'fist'}],

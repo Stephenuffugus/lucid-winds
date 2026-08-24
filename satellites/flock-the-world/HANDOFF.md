@@ -58,6 +58,41 @@ Still owed: bed_tension, optional crowd states. Music is his, NOT CC0
 
 Still open from the notes: none. Still owed: bed_tension + optional crowds.
 
+## THE FOREIGN DESK (Aug 24 late — Stephen: "go ahead and build the foreign desk arcs")
+
+Five composite arcs under the Art 11 guardrails (composites of patterns,
+citations of nothing; the school is never shown, only its indemnification
+meeting; punch up only). 13 beats + 5 new cast (vance, kesh, lena, auditor,
+hale — portraits pending, whorow renders name only until art lands):
+- **The Arms Fair** (vance): both sides buy; provenance comes home.
+- **The Pretext Procurement** (kesh): verification of an incident scheduled
+  in advance; the committee asks how you were first on scene.
+- **The Regrettable Data Quality Event** (dataq, once per run): the school as
+  a legal memo. Every option manages liability; none lets you mourn. Gate
+  proves no free door.
+- **The Correspondent** (lena): kill it, buy the outlet (BLACKOUT +6d,
+  deeper), or let her file.
+- **The Ledger Abroad** (audit): fdPages — every dirty foreign choice writes
+  pages — comes due late (day 550/650/780), scaled, then spent.
+
+Balance was a WAR (the full story is in this section's commits): choice slots
+are a FIXED budget (choiceGap), so 13 new beats displaced the relief events
+and flipped the winning bots. Fixes, in order of what actually worked:
+1. **Rotation**: each run gets TWO of the three personal arcs (s.fdOn, saved),
+   audit is the spine — the decisive fix, and replay variety for free.
+2. Collaboration pays patriotism/growth NOW (booth, certificate, outlet,
+   ministry coverage), pages LATER — the corruption-feels-good design.
+3. audit beat 1 is a FLASH (no choice slot); reckoning lands late and
+   publication SPENDS the pages; choiceGap 34→30 (the 45s wall-clock guard
+   for humans is untouched).
+- **Canary rebuilt**: the balanced-bot win gate was flipping on raw dice at
+  the margin — now THREE fixed seeds, all three must win. 216 checks.
+- Seeded sims: **Startup (his difficulty) WINS at 37 patriotism** even on the
+  greediest path; Vendor greedy scripts remain photo-finish coin flips
+  (pre-existing tightness, still the standing open item).
+- OPEN for Stephen: event sway copy says "oversight" everywhere while the
+  meter is named Patriotism (pre-existing, all ~40 events, one sweep).
+
 ## Aug 24 pass (Stephen's FIRST WINNING RUN notes — Too Big To Ban, day 1536)
 
 Six commits, each checked and deployed separately (9c2235de..1eb46fe2). 197 checks.
