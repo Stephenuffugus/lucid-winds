@@ -195,7 +195,11 @@ if (C) {
   C.doctrineModal = () => {};
 
   const REGIONS = get('REGIONS'), NODES = get('NODES'), COMBOS = get('COMBOS');
-  ok('14 regions defined', REGIONS.length === 14, 'got ' + REGIONS.length);
+  ok('15 regions defined (Canada split from the US, 2026-08-24)', REGIONS.length === 15, 'got ' + REGIONS.length);
+  ok('every region neighbour and route endpoint is a real region',
+    REGIONS.every(r => r.nb.every(id => REGIONS.some(x => x.id === id)))
+    && get('ROUTES').every(r => REGIONS.some(x => x.id === r[0]) && REGIONS.some(x => x.id === r[1])),
+    'a dangling nb/route id');
   ok('45 skill nodes defined', NODES.length >= 40, 'got ' + NODES.length);
   ok('16 synergies defined (8 original + 8 of 2026-08-20)', COMBOS.length === 16, 'got ' + COMBOS.length);
   ok('every synergy need refers to real nodes', COMBOS.every(c => c.need.every(id => NODES.some(n => n.id === id))),
@@ -932,6 +936,18 @@ if (C) {
       ok('Greenland counts as Western Europe, not North America',
         vm.runInContext("COUNTRIES.find(c=>c.n==='Greenland').r", C)==='WE',
         vm.runInContext("COUNTRIES.find(c=>c.n==='Greenland').r", C));
+      /* Stephen, 2026-08-24: "Canada should be separate from the US. It's a
+         separate country and it's monitored and controlled separately." */
+      ok('Canada is its own region, not grouped under the United States',
+        vm.runInContext("COUNTRIES.find(c=>c.n==='Canada').r", C)==='CND'
+        &&vm.runInContext("R.CND&&R.CND.name", C)==='Canada'
+        &&vm.runInContext("R.NA.name", C)==='United States');
+      ok('the split conserves the population of the old bloc',
+        vm.runInContext("R.NA.pop+R.CND.pop", C)===380,
+        'NA+CND pop='+vm.runInContext("R.NA.pop+R.CND.pop", C));
+      ok('Canada is reachable: a neighbour of the US and on the route map',
+        vm.runInContext("R.NA.nb.indexOf('CND')>=0&&R.CND.nb.indexOf('NA')>=0", C)
+        &&vm.runInContext("ROUTES.some(r=>(r[0]==='CND'||r[1]==='CND'))", C));
       const cC=makeCtx();cC.doctrineModal=()=>{};cC.showEvent=()=>{};
       vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');",cC);
       const sC=vm.runInContext('S',cC);
