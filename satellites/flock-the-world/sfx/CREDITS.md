@@ -49,3 +49,19 @@ heavier feel — a pitch shift of the CC0 recording, not a synthesized sound.
 | doctrine.mp3 | Digital Audio | lowThreeTone.ogg | CC0 |
 | event_open.mp3 | RPG Audio | bookFlip2.ogg | CC0 |
 | synergy.mp3 | Digital Audio | powerUp3.ogg | CC0 |
+
+## Music — Stephen Furpahs / Sky Wolf Studio (NOT CC0, all rights reserved)
+
+Composed by Stephen with Suno, delivered 2026-08-24. Re-encoded stereo 128kbps
+mp3 for shipping (one-shots above stay mono 96k). Do not reuse outside Sky Wolf
+Studio projects.
+
+| file | track title | role |
+|---|---|---|
+| theme_menu.mp3 | Corporate Optimism | menu theme, loops (2:35) |
+| bed_hq.mp3 | Efficient Progress | in-game bed, loops (2:55) |
+| win.mp3 | Synergy Slaughter | win ending (0:22) |
+| loss_refusal.mp3 | The Weight Unspools | loss ending (0:33) |
+| loss_coalition.mp3 | The Weight Unspools | same file, second loss door |
+
+Still open: bed_tension (60s dread loop), optional crowd states.

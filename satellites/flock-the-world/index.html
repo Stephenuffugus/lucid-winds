@@ -2378,14 +2378,21 @@ const SFX_CD={ui_tap:60, bubble_cash:80, bubble_inf:80, spend:120, breaking:400,
    2026-08-24: the 22 one-shots landed, all CC0 from Kenney.nl packs, converted
    mono 96kbps (provenance in sfx/CREDITS.md). Stephen rejected synthesized
    effects ("I don't like the sound effects that you make up"), so every file
-   is a real designed recording. Still awaiting his music: theme_menu, bed_hq,
-   bed_tension, win, loss_refusal, loss_coalition, and the four crowd states
-   (murmur, peaceful, violent, uprising) if he wants them voiced. Any one-shot
-   can be replaced by dropping a new file over the same name. */
+   is a real designed recording.
+   2026-08-24 evening: Stephen's music landed (his Suno tracks, all rights
+   reserved, NOT CC0 — see CREDITS.md). His mapping: Corporate Optimism →
+   theme_menu, Efficient Progress → bed_hq, Synergy Slaughter → win,
+   The Weight Unspools → both loss cues (same file under both names — the
+   manifest promises one file per id, so no aliasing in code). Music is stereo
+   128k on purpose; only the one-shots are mono 96k. Still awaiting: bed_tension
+   and the four crowd states (murmur, peaceful, violent, uprising) if he wants
+   them voiced. Any file can be replaced by dropping a new one over the same
+   name. */
 const SFX_HAVE=['ui_tap','ui_open','ui_close','buy_small','buy_large','cant_afford',
   'bubble_cash','bubble_inf','spend','region_join','region_full','region_lost',
   'crackdown','crackdown_fail','blackout','agitate','concede','breaking',
-  'milestone','doctrine','event_open','synergy'];
+  'milestone','doctrine','event_open','synergy',
+  'theme_menu','bed_hq','win','loss_refusal','loss_coalition'];
 const SFX={unlocked:false,muted:false,log:[],last:{},el:{},missing:{},beds:{}};
 function sfxUnlock(){
   if(SFX.unlocked)return;
@@ -2417,6 +2424,8 @@ function sfx(id){
   if(SFX.muted)return;
   sfxPlay(id,false);
 }
+/* stop a possibly-still-playing one-shot (the end songs outlive the end screen) */
+function sfxCut(id){const a=SFX.el[id];if(a){try{a.pause();a.currentTime=0;}catch(e){}}}
 function sfxBed(id,on){
   if(!SFX_CUES[id])return;
   if(on){
@@ -3838,7 +3847,7 @@ function chosenCo(){
   const v=e&&e.value?e.value.trim().slice(0,24):'';
   return v||coPlaceholder;
 }
-function menuBeds(){sfxBed('bed_hq',false);sfxBed('bed_tension',false);sfxBed('theme_menu',true);}
+function menuBeds(){['win','loss_refusal','loss_coalition'].forEach(sfxCut);sfxBed('bed_hq',false);sfxBed('bed_tension',false);sfxBed('theme_menu',true);}
 function initMenu(){
   $('modes').innerHTML=Object.keys(MODES).map(k=>{const m=MODES[k];
     const art=CARD_ART[MODE_ART[k]]?`<img class="mcart" src="art/card/${MODE_ART[k]}.webp" alt="">`:'';
@@ -3925,6 +3934,7 @@ function bootGame(resumed){
       if(innerWidth>innerHeight)$('rotHint').classList.remove('on');});
   }
   /* start fully zoomed out: the whole map on screen (Stephen 2026-08-20) */
+  ['win','loss_refusal','loss_coalition'].forEach(sfxCut);
   sfxBed('theme_menu',false);sfxBed('bed_hq',true);
   gv.inited=false;gv.layout();
   drawWorld(gv,S,null);
