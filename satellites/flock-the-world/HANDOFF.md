@@ -1,5 +1,46 @@
 # FLOCK THE WORLD (FTW) — HANDOFF
 
+## Aug 24 EVENING — music landed + Stephen's second notes batch (OPEN, needs his greenlight)
+
+**Music is IN** (commit 1ee62087, live-verified): his four Suno tracks —
+Corporate Optimism → theme_menu, Efficient Progress → bed_hq, Synergy
+Slaughter → win, The Weight Unspools → both loss doors (same file, two names —
+the manifest promises one file per id). Stereo 128k on purpose; one-shots stay
+mono 96k. New `sfxCut()` stops a lingering end song on menu/new-run entry.
+Still owed: bed_tension, optional crowd states. Music is his, NOT CC0
+(sfx/CREDITS.md).
+
+**His playtest notes (both runs won on easiest difficulty), verified against code:**
+
+1. **Lobbying Blitz + Acquisition give no receipt.** Both apply instant state
+   changes with no news line and no visible delta. He buys them "regularly but
+   it doesn't really show you what that does." Fix shape: pushNews receipt +
+   meter flash on both. Small, safe.
+2. **Buy-the-whole-Story-tree is still the one strategy.** The inf tree
+   suppresses exactly the systems that push back, and the patriotism floor
+   (min(30, subj*35)) never bites on a LOW-subjugation run — his econ win at
+   12.7% subj kept the floor at ~4.4. Narrative stack + econ door compound.
+3. **Econ door has no identity.** "Too Big To Ban" = all 15 markets + GROSS
+   revenue + streak. No profitability, no coverage minimum. He won it at 12.7%
+   subj / 5.2% patriotism, playing the same as his fist run. (Gross-not-net
+   was already flagged in the five-features pass; this is the confirming run.)
+4. **Bubbles read as money-only.** Spawn split is actually 72% cash / ~18-28%
+   inf / rare leak. His direction: bubbles should be an ENGAGEMENT channel —
+   more of the influence economy through them, and on harder difficulties
+   catching (nearly) all of them should matter. Director call on the shape.
+5. **Modes feel identical.** Verified: DEEPSTATE/CRISIS are stat mods + one
+   tree unlock over the same sim. Nothing in PLAY expresses the fiction.
+6. **Briefings identical across modes.** Verified: one GUIDE const for all
+   three. Cheapest fix: swap 2-3 mode-specific beats into the guide + restate
+   the mode card's fiction at run start.
+7. **Paying the bribe always wins.** Price DOES already scale
+   (max(base×evScale, 5% treasury)) — the dominance is strategic: money is
+   the one cost that never hurts on easy. Fix shape: bribe heat (each bribe
+   raises evPct + suspicion, sellers talk — mirror acqHeat), or non-cash
+   costs on more options, or difficulty-scaled evPct.
+
+None of 2-7 implemented — design calls are Stephen's. Item 1 is mechanical.
+
 ## Aug 24 pass (Stephen's FIRST WINNING RUN notes — Too Big To Ban, day 1536)
 
 Six commits, each checked and deployed separately (9c2235de..1eb46fe2). 197 checks.
