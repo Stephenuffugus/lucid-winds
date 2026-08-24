@@ -318,17 +318,24 @@ h1 em{font-style:normal;color:var(--sodium)}
 .zb{width:48px;height:48px;border:1px solid var(--line);border-radius:10px;background:#0a1018cc;
   color:var(--ice);font-size:11px;letter-spacing:.08em;font-weight:700;
   display:flex;align-items:center;justify-content:center}
-#breaking{position:absolute;left:8px;right:64px;top:44px;padding:8px 11px;border-radius:10px;
+#breaking{position:absolute;left:8px;right:64px;top:44px;padding:8px 38px 8px 11px;border-radius:10px;
   background:#170b0eee;border:1px solid var(--blood);font-size:11px;line-height:1.4;color:#ffd9d5;
   transform:translateY(-8px);opacity:0;pointer-events:none;transition:.3s}
 #breaking.on{transform:none;opacity:1}
 #breaking b{color:var(--blood);letter-spacing:.14em;font-size:9px}
+#breakX{position:absolute;right:2px;top:2px;bottom:2px;width:34px;border-radius:8px;
+  color:#ffd9d5;opacity:.75;font-size:12px;background:transparent}
+#breaking.on #breakX{pointer-events:auto}
+#breaking.gold #breakX{color:#ffe9c9}
+#capStat{cursor:pointer}
+#capStat .slab{text-decoration:underline dotted;text-underline-offset:2px}
 
 #guide{position:absolute;left:8px;right:66px;top:8px;z-index:5;padding:9px 12px;border-radius:11px;
   background:#141003f2;border:1px solid var(--sodium);font-size:11.5px;line-height:1.45;color:#ffe9c9;display:none}
 #guide.on{display:block}
 #guide b{color:var(--sodium)}
 #guide .gskip{min-height:48px;margin-top:6px;padding:0 8px;border:1px solid var(--line);border-radius:8px;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);display:flex;align-items:center;justify-content:center}
+#guide .gskip.gnext{color:var(--sodium);border-color:#6b5527;margin-right:6px;display:inline-flex}
 /* region popover: Plague Inc plays by poking the map, not by opening a menu.
    Anchored to the tap, never pauses the sim, closes on a tap that misses. */
 #rpop{position:absolute;z-index:6;width:min(268px,72vw);padding:9px 10px;border-radius:11px;
@@ -594,6 +601,7 @@ h1 em{font-style:normal;color:var(--sodium)}
   padding:9px 11px;margin-bottom:10px;font-size:11.5px;line-height:1.55;color:#93a7b8}
 .legend b{color:var(--paper)}
 .legend .lg-up{color:var(--grn)}.legend .lg-dn{color:var(--blood)}
+.legend .lgm{display:none}
 
 /* ⛔⛔ Fable review, 2026-08-24: the late landscape block above committed the very
    trap its own header warns about. These .worldstat/.ws/.legend overrides lived
@@ -619,9 +627,17 @@ h1 em{font-style:normal;color:var(--sodium)}
   /* ⛔ Two lines left a sliver of a third showing under the clip, which reads as
      a render fault rather than a clamp. One line is unambiguous, gives the desk
      and the region actions more room, and still says what the panel is. Tap opens. */
-  .legend{padding:6px 9px;margin-bottom:6px;font-size:10.5px;line-height:1.4;cursor:pointer;
-    display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
-  .legend.open{-webkit-line-clamp:unset;display:block}
+  /* ⛔ the clamp lives on the inner .lgc, which has no padding: with the clamp
+     on .legend itself, the clipped next line showed through the box's bottom
+     padding as a sliver of severed words (Stephen's screenshot, Aug 24). The
+     .lgm pill says the card opens; before it, nothing did. */
+  .legend{padding:5px 9px 4px;margin-bottom:6px;font-size:10.5px;line-height:1.4;cursor:pointer}
+  .legend .lgc{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+  .legend.open .lgc{-webkit-line-clamp:unset;display:block}
+  .legend .lgm{display:inline-block;font-size:8px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--sodium);opacity:.85;margin-top:1px}
+  .legend .lgm::after{content:'more ▾'}
+  .legend.open .lgm::after{content:'less ▴'}
 }
 .rcard{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:11px 12px;margin-bottom:8px}
 .rcard.idle{opacity:.62}
@@ -770,7 +786,7 @@ h1 em{font-style:normal;color:var(--sodium)}
   <div id="hud">
     <div class="hudrow">
       <div class="stat"><div class="slab">Date</div><div class="sval mono" id="vDate"></div></div>
-      <div class="stat"><div class="slab">Capital</div><div class="sval money mono" id="vCash"></div></div>
+      <div class="stat" id="capStat" role="button" tabindex="0" aria-label="Open the World tab where money is spent"><div class="slab">Capital</div><div class="sval money mono" id="vCash"></div></div>
       <div class="stat"><div class="slab">Influence</div><div class="sval inf mono" id="vInf"></div></div>
     </div>
     <div id="ctlrow">
@@ -794,8 +810,8 @@ h1 em{font-style:normal;color:var(--sodium)}
     <div id="rpop"></div>
     <div id="pill"><span class="rec"></span><span class="mono" id="pillTxt">LIVE</span></div>
     <div class="zoomui"><button class="zb" data-z="in">IN</button><button class="zb" data-z="out">OUT</button><button class="zb" data-z="fit">FIT</button></div>
-    <div id="breaking"><b>BREAKING</b><span id="breakTxt"></span></div>
-    <div id="guide"><span id="guideTxt"></span><button type="button" class="gskip" id="guideSkip">Skip briefing</button></div>
+    <div id="breaking"><b>BREAKING</b><span id="breakTxt"></span><button id="breakX" aria-label="Dismiss">✕</button></div>
+    <div id="guide"><span id="guideTxt"></span><button type="button" class="gskip gnext" id="guideNext">Next</button><button type="button" class="gskip" id="guideSkip">Skip briefing</button></div>
     <div id="ctip"><div class="cn" id="ctipTxt"></div><button id="ctipBtn">Region</button></div>
     <div id="rotHint"><span id="rotTxt">Tip: turn your phone sideways. In landscape the whole map fits the screen.</span><button class="rx" id="rotX">✕</button></div>
     <div id="ticker"><span class="wlab">WIRE</span><div id="tickWrap"><div id="tickTrack">Awaiting first deployment.</div></div></div>
@@ -1652,8 +1668,23 @@ function showBannerNow(txt,gold){
   b.classList.toggle('gold',!!gold);
   $('breakTxt').textContent=' \u00b7 '+txt;
   b.classList.add('on');
+  /* \u26d4 2026-08-24, Stephen: "I paused the game so I can read it and it still
+     disappeared halfway through me reading it." The old hide was a wall-clock
+     setTimeout that ignored pause entirely. Now: longer on the clock, an \u2715 to
+     dismiss, and while the game is PAUSED the banner holds until unpause. */
+  armBannerHide(gold?9500:8200);
+}
+function armBannerHide(ms){
   clearTimeout(breakTO);
-  breakTO=setTimeout(()=>{b.classList.remove('on');NOTE.bannerUp=false;drainBanners();},gold?6500:5200);
+  breakTO=setTimeout(()=>{
+    if(S&&!S.over&&S.speed===0){armBannerHide(700);return;}  /* paused = reading */
+    hideBanner();
+  },ms);
+}
+function hideBanner(){
+  clearTimeout(breakTO);
+  const b=$('breaking');if(b)b.classList.remove('on');
+  NOTE.bannerUp=false;drainBanners();
 }
 function drainBanners(){
   if(NOTE.modalOpen||NOTE.bannerUp||!NOTE.banners.length)return;
@@ -2103,6 +2134,12 @@ function spawnBubble(s){
   if(!act.length)return;
   const r=act[(Math.random()*act.length)|0];
   const p=randPointIn(r.id);if(!p)return;
+  /* ⛔ 2026-08-24, Stephen: "bubbles popping up beneath the southern tip of
+     South America that are hard to pop." randPointIn picks a random COUNTRY
+     anchor in the region, and outlier islands (the Falklands, in South
+     America's list) put bubbles at the map's far edges under the wire and the
+     pill. Pull every spawn a third of the way toward the region's heart. */
+  {const[ax,ay]=anchorOf(r.id);p[0]+=(ax-p[0])*0.35;p[1]+=(ay-p[1])*0.35;}
   const roll=Math.random();
   let k='cash';
   if(roll>0.72)k='inf';
@@ -2730,6 +2767,25 @@ function drawWorld(v,st,highlight){
     ctx.strokeStyle='#ffa22926';
     for(const c of COUNTRIES){const r=st.regions[c.r];
       if(r.active&&r.coverage>0.1)ctx.stroke(countryPath(c));}
+    /* the storm you can see coming (Stephen, Aug 24: "the country color would
+       change so as they get closer to rioting you can see those changes
+       happening"): organizing tints a country violet, riots wash it red and
+       pulse its border. Triage reads at a glance without opening a card. */
+    for(const c of COUNTRIES){
+      const r=st.regions[c.r];
+      if(!r.active||r.lost)continue;
+      let w=null;
+      if(r.pstate==='violent')w=`rgba(255,107,107,${flick?0.26:0.16})`;
+      else if(r.pstate!=='uprising'){
+        const a=Math.min(0.30,Math.max((r.unrest-25)/100*0.35,(r.resist-35)/100*0.30));
+        if(a>0.02)w=`rgba(199,146,255,${a.toFixed(3)})`;
+      }
+      if(w){ctx.fillStyle=w;ctx.fill(countryPath(c));}
+      if(r.pstate==='violent'||r.pstate==='uprising'){
+        ctx.strokeStyle=r.pstate==='violent'?'rgba(255,107,107,.6)':'rgba(47,224,189,.6)';
+        ctx.stroke(countryPath(c));
+      }
+    }
     /* coverage glow */
     ctx.globalCompositeOperation='lighter';
     for(const r of REGIONS){
@@ -3033,8 +3089,15 @@ function closeSheet(){S&&(S.sheet=null);$('sheet').classList.remove('on');sfx('u
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('hot'));
   if(S&&S._pausePrev!=null){const p=S._pausePrev;S._pausePrev=null;if(!S.over)setSpeed(p);}
   paintHud();}
+/* ⛔ 2026-08-24, Stephen: buying a desk offer "shoots me up to the top and
+   condenses text box underneath me." Every purchase re-rendered the World tab
+   via innerHTML, which resets scrollTop to 0. A re-render of the SAME tab now
+   keeps the reader's place; only switching tabs starts at the top. */
+let _shTab=null;
 function renderSheet(tab){
   const body=$('shBody');
+  const keepScroll=(_shTab===tab)?body.scrollTop:0;
+  _shTab=tab;
   if(TREES[tab]){
     $('shTitle').textContent=TREES[tab].title;
     $('shCur').textContent='◈ '+Math.floor(S.inf)+' influence';
@@ -3065,6 +3128,7 @@ function renderSheet(tab){
       `<div class="entry ${e.c}"><span class="d mono">${e.d}</span>${e.t}</div>`).join('')
       :'<div class="entry">Nothing yet. Give it a quarter.</div>');
   }
+  body.scrollTop=keepScroll;
 }
 /* ⛔ An explicit manifest of which nodes have art on disk. Same reason as
    SFX_HAVE: probing for a file that is not there costs a 404 and a console
@@ -3177,17 +3241,21 @@ function worldHTML(){
   </div>`;
   /* plain words for what the bars mean and what every button does, in the
      tab where you use them (Stephen 2026-08-20: none of this was explained) */
-  h+=`<div class="legend"><b>How a region works.</b> Fill <b>Coverage</b> (cameras up) and <b>Control</b>
+  /* ⛔ the landscape clamp used to cut the RAW legend text, and the clipped next
+     line showed through the box's own bottom padding as a sliver of severed
+     words (Stephen's screenshot, Aug 24). The clamp now lives on an inner .lgc
+     with no padding of its own, and a MORE/LESS pill says the card opens. */
+  h+=`<div class="legend"><div class="lgc"><b>How a region works.</b> Fill <b>Coverage</b> (cameras up) and <b>Control</b>
     (what they reach): that pair is your subjugation. High <b>Compliance</b> makes everything grow faster.
     Keep <b>Unrest</b> and <b>Organized</b> low or marches become uprisings that can cost you the region.
     <b>Military</b> deepens control but feeds unrest.
-    <span class="lg-up">▲ fill it</span> · <span class="lg-dn">▼ keep it low</span></div>
-  <div class="legend"><b>Enter market</b> buys your way into a region so coverage can start there.
+    <span class="lg-up">▲ fill it</span> · <span class="lg-dn">▼ keep it low</span></div><span class="lgm"></span></div>
+  <div class="legend"><div class="lgc"><b>Enter market</b> buys your way into a region so coverage can start there.
     Big neighbours can also spread to it on their own, entering is just faster. Prices rise with every
     market you already hold. <b>Agitate</b> turns a peaceful march violent so force looks justified.
     <b>Crackdown</b> clears the streets and buys compliance, and the region never forgets it.
     <b>Blackout</b> buys the news cycle: suspicion drops now and stays quiet for two weeks. Weak where
-    the press is free. <b>Concede</b> is the free release valve: everything cools, control slips.</div>`;
+    the press is free. <b>Concede</b> is the free release valve: everything cools, control slips.</div><span class="lgm"></span></div>`;
   /* ⛔ THE ALWAYS OPEN SINK, at the top of the tab where money is spent.
      A mechanic only a bot can reach is not a mechanic, and everything else on
      this screen is gated by a cooldown or a precondition. This one is not. */
@@ -3213,6 +3281,10 @@ function worldHTML(){
        desk offer gets. */
     const bar=(v,goal,key)=>`<div class="vbar"><div class="vfill vf-${key}" style="width:${pct(v,goal)}%"></div></div>`;
     const rowP=(name,detail,v,goal,key,locked)=>`<div class="vrow${locked?' vlocked':''}"><div class="vname">${name}</div>${bar(v,goal,key)}<div class="vdet">${detail}</div></div>`;
+    /* ⛔ 2026-08-24, Stephen's screenshot: "Compliance 95 of 80. Numbers don't
+       add up, they're saying I got more than exists." A requirement already MET
+       must stop counting past its bar: it reads as a ✓, never as 95 of 80. */
+    const req=(label,val,goal)=>(+val>=+goal)?label+' ✓':label+' '+val+' of '+goal;
     let ph='<div class="deskhead">Paths to victory</div><div class="vpaths">';
     ph+=rowP('Total Coverage',`Subjugation ${(s.subj*100).toFixed(1)} of ${(CFG.winAt*100).toFixed(0)}`,s.subj,CFG.winAt,'classic',false);
     if(s.doctrine==='glove'||!s.doctrine){
@@ -3220,16 +3292,24 @@ function worldHTML(){
       const calm=s.day-(s.lastCrack!=null?s.lastCrack:-99999);
       const calmOk=calm>=CFG.gloveCalm;
       ph+=rowP('The Grateful World',
-        `Subjugation ${(s.subj*100).toFixed(0)} of ${(CFG.gloveSubj*100).toFixed(0)} · Compliance ${(c*100).toFixed(0)} of ${(CFG.gloveCmp*100).toFixed(0)} · Militarization ${(m*100).toFixed(0)} ${okM?'holds':'over'} ${(CFG.gloveMil*100).toFixed(0)} · ${calmOk?'at peace':'peace '+Math.min(calm,CFG.gloveCalm)+' of '+CFG.gloveCalm+' days'}${s.doctrine?'':' · needs the Velvet Glove'}`,
+        req('Subjugation',(s.subj*100).toFixed(0),(CFG.gloveSubj*100).toFixed(0))
+        +' · '+req('Compliance',(c*100).toFixed(0),(CFG.gloveCmp*100).toFixed(0))
+        +' · '+(okM?'Militarization ✓ under '+(CFG.gloveMil*100).toFixed(0):'Militarization '+(m*100).toFixed(0)+' over '+(CFG.gloveMil*100).toFixed(0))
+        +' · '+(calmOk?'at peace ✓':'peace '+Math.min(calm,CFG.gloveCalm)+' of '+CFG.gloveCalm+' days')
+        +(s.doctrine?'':' · needs the Velvet Glove'),
         Math.min(s.subj/CFG.gloveSubj,c/CFG.gloveCmp,okM?1:0.25,calmOk?1:Math.max(0.1,calm/CFG.gloveCalm)),1,'glove',!s.doctrine);
     }
     if(s.doctrine==='fist'||!s.doctrine){
       ph+=rowP('Nothing Moves',
-        `Subjugation ${(s.subj*100).toFixed(0)} of ${(CFG.fistSubj*100).toFixed(0)} · Militarization ${(s.avgMil*100).toFixed(0)} of ${(CFG.fistMil*100).toFixed(0)}${s.doctrine?'':' · needs the Iron Fist'}`,
+        req('Subjugation',(s.subj*100).toFixed(0),(CFG.fistSubj*100).toFixed(0))
+        +' · '+req('Militarization',(s.avgMil*100).toFixed(0),(CFG.fistMil*100).toFixed(0))
+        +(s.doctrine?'':' · needs the Iron Fist'),
         Math.min(s.subj/CFG.fistSubj,s.avgMil/CFG.fistMil),1,'fist',!s.doctrine);
     }
     ph+=rowP('Too Big To Ban',
-      `Markets ${s.activeCount} of ${REGIONS.length} · revenue ${fmtMoney(s.gross||0)} a day of ${fmtMoney(CFG.econGross)} · streak ${s.econRun||0} of ${CFG.econDays} days`,
+      req('Markets',s.activeCount,REGIONS.length)
+      +' · '+((s.gross||0)>=CFG.econGross?'revenue '+fmtMoney(s.gross||0)+' a day ✓':'revenue '+fmtMoney(s.gross||0)+' a day of '+fmtMoney(CFG.econGross))
+      +' · streak '+(s.econRun||0)+' of '+CFG.econDays+' days',
       Math.min(s.activeCount/REGIONS.length,(s.econRun||0)?0.5+0.5*(s.econRun/CFG.econDays):Math.min(1,(s.gross||0)/CFG.econGross)*0.5),1,'econ',false);
     ph+='</div>';
     h+=ph;
@@ -3259,7 +3339,7 @@ function worldHTML(){
     const chip=stateChip(x);
     const bchip=(x.black>0)?`<span class="chip fx">News dark ${x.black}d</span>`:'';
     const acts=regionActionsHTML(r.id);
-    return `<div class="rcard ${x.active?'':x.lost?'lost':'idle'}">
+    return `<div class="rcard ${x.active?'':x.lost?'lost':'idle'}" id="rc_${r.id}">
       <div class="rtop"><h3>${r.name}</h3>${x.active||x.lost?chip:''}${bchip}
         <span class="pop mono">${r.pop}M</span></div>
       <div class="mini">
@@ -3466,7 +3546,7 @@ function doctrineModal(){
 
 /* ============================ TUTORIAL ============================ */
 const TUT=[
- {t:'Welcome to the frame',b:'The goal: bring 97% of humanity under meaningful control before the PATRIOTISM bar reaches 100 and the world rises up and shuts you down. It is a race, and both bars only move one way if you do nothing about them.'},
+ {t:'Welcome to the frame',b:'The goal: bring 95% of humanity under meaningful control before the PATRIOTISM bar reaches 100 and the world rises up and shuts you down. It is a race, and both bars only move one way if you do nothing about them.'},
  {t:'The map is money',b:'Amber regions are yours; the brighter, the deeper. Tap $ , \u25C8 and ! bubbles when they appear: cash, influence, and leaks you can intercept. Drag to pan, pinch to zoom, or use the IN and OUT buttons.'},
  {t:'Four trees, four shapes',b:'DEPLOY grows coverage. WATCH deepens control, and visibility with it, so take care. STORY keeps the public compliant and the regulators toothless: you cannot win without it. CRISIS is the loud path: agitators, crackdowns, and wars.'},
  {t:'Protests are a pipeline',b:'Suspicion + low compliance breeds unrest: murmurs → marches → riots → uprising. Marches slow you and feed patriotism. You can wait them out, concede… or send Paid Agitators to turn a march violent and "restore order" with a Crackdown. On camera.'},
@@ -3494,7 +3574,16 @@ function showTutorial(done){
 }
 
 /* ============================ INPUT ============================ */
+/* 2026-08-24, Stephen: "we're losing bubbles when we go into menus." Sheets and
+   modals pause the sim, so bubbles freeze rather than die, but a bubble two
+   ticks from expiry still evaporated the moment play resumed. Any unpause now
+   tops every live bubble back up to a few ticks of tappable life. */
+function bubbleGrace(){
+  if(!S||!S.bubbles)return;
+  for(const b of S.bubbles)b.life=Math.max(b.life,8);
+}
 function setSpeed(n){
+  if(n>0&&S.speed===0)bubbleGrace();
   S.speed=n;
   document.querySelectorAll('.sp').forEach(b=>b.classList.toggle('on',+b.dataset.sp===n));
   clearInterval(tickTimer);tickTimer=null;
@@ -3516,7 +3605,7 @@ function buyNode(id){
 function flashCur(){const e=$('shCur');e.style.color='var(--blood)';setTimeout(()=>e.style.color='',280);}
 function collectAt(sx,sy){
   const[wx,wy]=gv.toWorld(sx,sy);
-  const hit=Math.max(14/gv.z,6);
+  const hit=Math.max(18/gv.z,8);   /* a thumb, not a crosshair (Stephen, Aug 24) */
   for(let i=0;i<S.bubbles.length;i++){
     const b=S.bubbles[i];
     if(Math.hypot(b.x-wx,b.y-wy)<hit){
@@ -3548,6 +3637,13 @@ function rpopHTML(rid,cn){
     <div><span class="k">Watched</span><span class="v">${fmtShort(w)} of ${fmtShort(x.pop*PEOPLE)}</span></div>
     <div><span class="k">Compliant</span><span class="v">${fmtShort(cm)}</span></div>
     <div><span class="k">Organized</span><span class="v" style="color:#c792ff">${fmtShort(og)}</span></div>
+  </div>`;
+  /* the working numbers, on the map poke itself (Stephen, Aug 24: "you should
+     be able to click on the countries and see the stats") */
+  if(x.active)h+=`<div class="rpN">
+    <div><span class="k">Unrest</span><span class="v"${x.unrest>=45?' style="color:var(--blood)"':''}>${x.unrest|0}</span></div>
+    <div><span class="k">Coverage</span><span class="v">${(x.coverage*100)|0}%</span></div>
+    <div><span class="k">Compliance</span><span class="v">${(x.compliance*100)|0}%</span></div>
   </div>`;
   const acts=regionActionsHTML(rid),ent=regionEnterHTML(rid);
   if(acts||ent)h+=acts+ent;
@@ -3631,6 +3727,10 @@ function updateGuide(){
   $('guideTxt').innerHTML=`<b>${G.step+1}/${GUIDE.length}</b> \u00b7 `+st.txt(S);
   $('guide').classList.add('on');
   document.querySelectorAll('.nb').forEach(b=>b.classList.toggle('tut',!!st.tab&&b.dataset.tab===st.tab));
+  /* 2026-08-24, Stephen: the 22-day "watch the money grow" beat "stayed up too
+     long and I needed to be able to just close that one without skipping the
+     whole thing." Every page gets a NEXT; SKIP still abandons the whole tour. */
+  $('guideNext').style.display=st.final?'none':'';
   if(st.final){$('guideSkip').textContent='Got it';}
   else $('guideSkip').textContent='Skip briefing';
 }
@@ -3771,6 +3871,16 @@ function bootGame(resumed){
   led.onclick=()=>openSheet('led');
   led.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openSheet('led');}};
   $('guideSkip').onclick=endGuide;
+  $('guideNext').onclick=()=>{if(G.on)advanceGuide();};
+  $('breakX').onclick=e=>{e.stopPropagation();hideBanner();};
+  /* the money desk, one tap from the map: the Capital readout opens the World
+     tab at the acquisition bar (Stephen, Aug 24: the sinks "should probably be
+     accessible on the home screen without cluttering it") */
+  const cap=$('capStat');
+  const goDesk=()=>{if(!S||S.over)return;openSheet('reg');
+    const el=$('shBody').querySelector('.acqbar');if(el)el.scrollIntoView({block:'start'});};
+  cap.onclick=goDesk;
+  cap.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();goDesk();}};
   hideCtip();
   paintHud();
   cancelAnimationFrame(raf);drawFx();
