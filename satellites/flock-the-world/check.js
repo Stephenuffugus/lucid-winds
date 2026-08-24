@@ -1064,6 +1064,21 @@ if (C) {
         ok('bribe heat survives a reload (a refresh is not a shower)',
           vm.runInContext('S.evHeat',cB)>0, 'evHeat='+vm.runInContext('S.evHeat',cB));
       }
+      /* MODE BRIEFING (Aug 24 evening): each game type must announce ITS OWN
+         rules at the door — three modes, three distinct lines, numbers derived
+         from the live mod values. */
+      {
+        const cM=makeCtx();cM.doctrineModal=()=>{};cM.showEvent=()=>{};
+        const brief=m=>vm.runInContext(`modeBriefing(newState('${m}','Vendor','NA'))`,cM);
+        const bc=brief('CONTRACTOR'), bd=brief('DEEPSTATE'), bx=brief('CRISIS');
+        ok('three modes brief three different doors', bc!==bd&&bd!==bx&&bc!==bx,
+          [bc,bd,bx].map(x=>x.slice(0,24)).join(' | '));
+        ok('the Deep Partnership briefing names its TWO ministries (never the start market) and the leak tax',
+          /installed your kit/.test(bd)&&/30% harder/.test(bd)&&!/United States/.test(bd)
+          &&(bd.split('.')[0].match(/ and /g)||[]).length===1, bd.slice(0,140));
+        ok('the Crisis Engine briefing quotes its own discount and coalition speed',
+          /30% off/.test(bx)&&/22% faster/.test(bx), bx.slice(0,120));
+      }
       const c=stage({cov:.97,ctl:.995,cmp:.95,mil:.02,doc:'glove'});
       ok('classic subjugation still outranks every other door', c.over&&c.won&&c.why==='win', JSON.stringify(c));
       const none=stage({cov:.5,ctl:.5,cmp:.5,mil:.2,doc:'glove'});
