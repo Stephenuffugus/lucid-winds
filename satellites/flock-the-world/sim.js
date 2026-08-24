@@ -1,14 +1,15 @@
 const vm=require('vm'),fs=require('fs');
 const src=fs.readFileSync(process.env.SRC||'game.js','utf8');
 function stubEl(){return{classList:{contains:()=>false,add(){},remove(){},toggle(){}},
-  style:{},innerHTML:'',textContent:'',querySelector:()=>null,querySelectorAll:()=>[],
-  appendChild(){},addEventListener(){},onclick:null,dataset:{}};}
+  style:{setProperty(){},removeProperty(){}},innerHTML:'',textContent:'',querySelector:()=>null,querySelectorAll:()=>[],
+  appendChild(){},addEventListener(){},removeEventListener(){},onclick:null,dataset:{},
+  getBoundingClientRect:()=>({x:0,y:0,width:100,height:100}),setAttribute(){},scrollIntoView(){}};}
 function makeCtx(){
   const ctx={console,Math,Date,JSON,performance,
     setInterval:()=>0,clearInterval:()=>{},setTimeout:()=>0,clearTimeout:()=>{},
     requestAnimationFrame:()=>0,cancelAnimationFrame:()=>{},
     devicePixelRatio:1,window:{addEventListener(){}},
-    document:{getElementById:()=>stubEl(),querySelectorAll:()=>[],querySelector:()=>stubEl(),createElement:()=>stubEl()}};
+    document:{getElementById:()=>stubEl(),querySelectorAll:()=>[],querySelector:()=>stubEl(),createElement:()=>stubEl(),addEventListener(){},body:stubEl(),head:stubEl()}};
   ctx.globalThis=ctx;
   vm.createContext(ctx);
   vm.runInContext(src,ctx);
@@ -16,6 +17,12 @@ function makeCtx(){
 }
 function run(mode,diff,start,strategy,maxDays){
   const c=makeCtx();
+  /* Seeded PRNG per scenario (2026-08-24): unseeded runs made identical
+     scenarios split WIN/LOSS, so a balance change could never be told from
+     noise. Seed derives from the scenario label; a CFG comparison now runs
+     the same dice on both sides. */
+  {let n=[...`${mode}${diff}${start}${JSON.stringify(strategy)}`].reduce((a,ch)=>((a*31+ch.charCodeAt(0))>>>0),7);
+   Math.random=()=>{n=(n*1664525+1013904223)>>>0;return n/4294967296;};} /* ctx shares this Math */
   const S=vm.runInContext(`S=newState('${mode}','${diff}','${start}');S`,c);
   c.showEvent=ev=>{ // auto-resolve: first affordable option
     for(const o of ev.o){ if(!o.c||o.c(S)){ if(o.cost){if(o.cost.cash)S.cash-=o.cost.cash;if(o.cost.inf)S.inf-=o.cost.inf;} o.f(S); return; } }

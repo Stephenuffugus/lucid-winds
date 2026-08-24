@@ -151,7 +151,7 @@ Plague Inc-style satire sim: you're the surveillance vendor subjugating Earth vi
 - **Onboarding**: first game per page load runs the interactive `GUIDE` while the sim runs — (1) buy Nuisance Ordinances (Story tab pulses, node glows), (2) buy Free Pilot Program, (3) 22-day "watch the money grow" beat, (4) synergy tease pointing at Plate Recognition. Advance is condition-driven (`guideTick`/`guideEvent`), skippable. The old 6-step modal tutorial remains behind menu "How to play".
 - **Narrative layer**: rotating WIRE ticker (4.3s) over last 8 headlines; crit headlines also fire a sliding BREAKING banner (5.2s); 15 ambient satire lines + `H{}` templated headlines for every transition; fictional composite cast (Vole/Brill/Prather/Klein/The Anchor) drives choice events. No real names — keep it that way (legal + evergreen).
 
-## Verified balance (sim results, this build)
+## Verified balance (sim results — ⛔ STALE, re-verify at end of Aug 24 evening pass: sim.js was broken by DOM drift until 2026-08-24 evening; fresh seeded runs on the current build differ from this table)
 
 | Scenario | Result |
 |---|---|

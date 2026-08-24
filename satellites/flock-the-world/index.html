@@ -996,6 +996,9 @@ const CFG = {
      empire (a full portfolio with no income nodes nets near zero: the quadratic
      upkeep sees to it). */
   econGross:240*MONEY, econDays:130,
+  econHeat:0.35,      /* ban-debate patriotism per qualifying day, fully ramped, at zero subjugation */
+  econHeatRamp:60,    /* days of unbroken streak before the debate reaches full heat */
+  econHeatSubj:0.5,   /* the debate cools as control rises; silent at/past this subj */
   /* ==== GOODWILL: concede as a strategy, not just a valve. Each concession in
      a region banks goodwill there (capped): compliance regrows a little every
      tick, and if you ever lose the region the listening tours cut the re-entry
@@ -2174,8 +2177,28 @@ function tick(){
      itself forbids passing: the econ bot held 14 of 14 with peak net over $10M
      and timed out at day 4000 twice running. Too Big To Ban is about SCALE.
      Gross is scale. */
-  if(s.activeCount>=REGIONS.length&&(s.gross||0)>=CFG.econGross)s.econRun=(s.econRun||0)+1;
-  else s.econRun=0;
+  if(s.activeCount>=REGIONS.length&&(s.gross||0)>=CFG.econGross){
+    s.econRun=(s.econRun||0)+1;
+    /* THE BAN DEBATE (Stephen, Aug 24: "nobody seems to be stopping me" — he
+       took this door at 12.7% subjugation and 5.2% patriotism, playing exactly
+       like his other runs). Qualifying is now itself the provocation: while
+       the streak holds, capitals debate banning a platform this size, and
+       patriotism climbs fastest for a giant with no political grip. An empire
+       with real subjugation already pays through the patriotism floor, so the
+       pressure fades to nothing by econHeatSubj. It also RAMPS over
+       econHeatRamp days of unbroken streak: every big empire passes through
+       "all markets + gross" on its way up (measured in the Aug 24 sims), and
+       without the ramp the debate taxed the climb as hard as the camp. */
+    s.oversight=clamp(s.oversight+CFG.econHeat*D.over
+      *Math.min(1,s.econRun/CFG.econHeatRamp)
+      *Math.max(0,1-s.subj/CFG.econHeatSubj),0,100);
+    if(!s.milestones.has('econ_debate')){s.milestones.add('econ_debate');
+      pushNews(s,'A ban bill is drafted in three capitals at once. Too Big To Ban is a bet, and the hearings open today: patriotism will climb for as long as you qualify.','crit');}
+  } else {
+    if((s.econRun||0)>=30&&!s.milestones.has('econ_broken')){s.milestones.add('econ_broken');
+      pushNews(s,'Field note: the portfolio streak broke, and the counter starts over. The door needs '+CFG.econDays+' unbroken days.','crit');}
+    s.econRun=0;
+  }
   if(s.subj>=CFG.winAt)finish(true,'win');
   else if(s.doctrine==='glove'&&s.subj>=CFG.gloveSubj&&(s.avgCmp||0)>=CFG.gloveCmp&&s.avgMil<=CFG.gloveMil&&(s.day-(s.lastCrack!=null?s.lastCrack:-99999))>=CFG.gloveCalm)finish(true,'win_glove');
   else if(s.doctrine==='fist'&&s.subj>=CFG.fistSubj&&s.avgMil>=CFG.fistMil)finish(true,'win_fist');
@@ -3401,7 +3424,8 @@ function worldHTML(){
     ph+=rowP('Too Big To Ban',
       req('Markets',s.activeCount,REGIONS.length)
       +' · '+((s.gross||0)>=CFG.econGross?'revenue '+fmtMoney(s.gross||0)+' a day ✓':'revenue '+fmtMoney(s.gross||0)+' a day of '+fmtMoney(CFG.econGross))
-      +' · streak '+(s.econRun||0)+' of '+CFG.econDays+' days',
+      +' · streak '+(s.econRun||0)+' of '+CFG.econDays+' days'
+      +((s.econRun||0)>0?' · hearings in session':''),
       Math.min(s.activeCount/REGIONS.length,(s.econRun||0)?0.5+0.5*(s.econRun/CFG.econDays):Math.min(1,(s.gross||0)/CFG.econGross)*0.5),1,'econ',false);
     ph+='</div>';
     h+=ph;

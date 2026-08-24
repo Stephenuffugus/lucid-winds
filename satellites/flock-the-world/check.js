@@ -1008,6 +1008,32 @@ if (C) {
       const MONEYc = vm.runInContext('MONEY', C);
       const e=stage({cov:.3,ctl:.4,cmp:.5,mil:.02,doc:'glove',net:300*MONEYc,econRun:149});
       ok('a full portfolio with held income wins Too Big To Ban', e.over&&e.won&&e.why==='win_econ', JSON.stringify(e));
+      /* THE BAN DEBATE (Aug 24 evening): a qualifying streak day must RAISE
+         patriotism for a low-subjugation giant, and must NOT for one whose
+         subjugation is already past econHeatSubj — same staged world, the only
+         difference is whether the gross bar is met, so the delta IS the debate. */
+      {
+        const twin=(gross,ctl)=>{
+          const cD=makeCtx();cD.doctrineModal=()=>{};cD.showEvent=()=>{};
+          vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');",cD);
+          const sD=vm.runInContext('S',cD);
+          Object.keys(sD.regions).forEach(k=>{const r=sD.regions[k];
+            r.active=true;r.coverage=.3;r.control=ctl;r.compliance=.5;r.milit=.02;r.unrest=5;r.resist=2;});
+          sD.doctrine='glove';sD.net=300*MONEYc;sD.gross=gross;sD.econRun=100; /* past the ramp */
+          let n=77;const f=()=>{n=(n*1664525+1013904223)>>>0;return n/4294967296;};
+          const real=Math.random;Math.random=f;
+          vm.runInContext('recompute(S);tick()',cD);
+          Math.random=real;
+          return {ovr:sD.oversight, debate:sD.milestones.has('econ_debate')};
+        };
+        const lowHot=twin(300*MONEYc,.1), lowCold=twin(0,.1);
+        ok('the ban debate heats a low-subjugation streak (and announces itself)',
+          lowHot.ovr>lowCold.ovr+0.15&&lowHot.debate&&!lowCold.debate,
+          'hot='+lowHot.ovr.toFixed(3)+' cold='+lowCold.ovr.toFixed(3));
+        const hiHot=twin(300*MONEYc,.8), hiCold=twin(0,.8);
+        ok('the debate is silent for an empire with real subjugation',
+          Math.abs(hiHot.ovr-hiCold.ovr)<1e-9, 'hot='+hiHot.ovr.toFixed(4)+' cold='+hiCold.ovr.toFixed(4));
+      }
       const c=stage({cov:.97,ctl:.995,cmp:.95,mil:.02,doc:'glove'});
       ok('classic subjugation still outranks every other door', c.over&&c.won&&c.why==='win', JSON.stringify(c));
       const none=stage({cov:.5,ctl:.5,cmp:.5,mil:.2,doc:'glove'});

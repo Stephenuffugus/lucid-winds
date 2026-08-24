@@ -314,3 +314,24 @@ Region actions are gated by 20 to 25 day cooldowns and preconditions, and a bot 
 Oversight fills from per-region drips (0.011 / 0.03 / 0.11 per tick times D.over) plus a suspicion-coupled gain, against a 100 point bar and a ~1030 day winning run: the balanced bot wins with room to spare, and the old acquisition scrutiny (1.5 sus / 0.6 ovr per buy) killed it at day 800 every single time, which is how we know the margin is thin. A drip is multiplied by every tick of a thousand-day campaign and by `D.over`; before touching one, compute `100 / (drip * D.over)` in days and compare it to the win day. If the answer is shorter than the campaign, you have not tuned a pressure, you have set an egg timer.
 
 ---
+
+## The ban debate (econ door identity, 2026-08-24 evening)
+
+Stephen took Too Big To Ban at 12.7% subjugation / 5.2% patriotism on easiest,
+playing identically to his fist run ("nobody seems to be stopping me"). The
+door's streak is now itself the provocation: while you qualify (all 15 markets
++ gross bar), patriotism climbs by `econHeat (0.35) × D.over × min(1,
+econRun/econHeatRamp (60)) × max(0, 1 − subj/econHeatSubj (0.5))` per day.
+
+* **Why the subj fade:** a real empire's streak forms late, at subj ≥ 0.85 in
+  every seeded sim — gap term is 0, so climbers pay nothing. Verified: seeded
+  HEAD vs changed sims byte-identical across all 8 scenarios; instrumented
+  qual-day counts show every bot streak runs at subj ≥ 0.85.
+* **Why the ramp:** without it, any mid-game transit through the qualifying
+  state gets taxed as hard as camping.
+* **Why not net:** documented above — the anti-surplus machinery compresses
+  net; a net bar deadlocked the econ bot twice at day 4000. Scale (gross)
+  stays the bar; identity comes from the debate.
+* **Counterplay is intended:** breaking the streak cools the hearings AND
+  resets the door counter — you can dodge the heat only by giving up the door.
+* Camper price on easiest: ~+19 patriotism across the 130 days; ~+26 on Vendor.
