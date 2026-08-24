@@ -54,7 +54,10 @@ for(const f of files){
     let br_=0,bg=0,bb=0;
     border.forEach(i=>{br_+=px[i];bg+=px[i+1];bb+=px[i+2];});
     br_/=border.length;bg/=border.length;bb/=border.length;
-    const isMagenta=br_>170&&bb>170&&bg<110;
+    /* "magenta" is a FAMILY: pure #FF00FF and every generator's crimson-pink
+       cousin (Stephen's sheets came back (209,12,124)). Red high, green near
+       zero, blue anywhere above 60 — key it loose. */
+    const isMagenta=br_>150&&bg<110&&bb>60&&(br_-bg)>90;
     const tol=isMagenta?120:38;   /* magenta keys loose; photo-ish bgs key tight */
     const bgMask=new Uint8Array(W*H);
     for(let i=0,j=0;i<px.length;i+=4,j++){
@@ -83,18 +86,24 @@ for(const f of files){
         ||(y>0&&px[(j-W)*4+3]===0)||(y<H-1&&px[(j+W)*4+3]===0);
       if(nearBg&&isMagenta){
         const i4=j*4;
-        if(px[i4]>140&&px[i4+2]>140&&px[i4+1]<130){const m=(px[i4]+px[i4+2])>>1;px[i4]=px[i4+1];px[i4+2]=px[i4+1];px[i4+1]=px[i4+1];px[i4]=m*0.3+px[i4]*0.7;}
+        if(px[i4]>140&&px[i4+2]>60&&px[i4+1]<130){const m=(px[i4]+px[i4+2])>>1;px[i4]=px[i4+1];px[i4+2]=px[i4+1];px[i4+1]=px[i4+1];px[i4]=m*0.3+px[i4]*0.7;}
       }
     }
     cx.putImageData(d,0,0);
-    /* connected components over the alpha = the poses on the sheet */
-    const seen=new Uint8Array(W*H), comps=[];
+    /* connected components over the alpha = the poses on the sheet.
+       lab[] remembers which component owns each pixel so a crop can later be
+       masked to ITS component — a rectangle crop otherwise smuggles in
+       whatever floats inside the bbox (a caption "16" above a tail). */
+    const seen=new Uint8Array(W*H), comps=[], lab=new Int32Array(W*H).fill(-1);
     for(let j=0;j<W*H;j++){
       if(seen[j]||px[j*4+3]===0)continue;
-      let minx=W,miny=H,maxx=0,maxy=0,n=0;
+      const id=comps.length;
+      let minx=W,miny=H,maxx=0,maxy=0,n=0,nWhite=0;
       const st=[j];seen[j]=1;
       while(st.length){
-        const i=st.pop(),x=i%W,y=(i/W)|0;n++;
+        const i=st.pop(),x=i%W,y=(i/W)|0;n++;lab[i]=id;
+        const i4=i*4,r=px[i4],g=px[i4+1],b=px[i4+2];
+        if(r>190&&g>190&&b>190&&Math.max(r,g,b)-Math.min(r,g,b)<42)nWhite++;
         if(x<minx)minx=x;if(x>maxx)maxx=x;if(y<miny)miny=y;if(y>maxy)maxy=y;
         const nb=[];
         if(x>0)nb.push(i-1);if(x<W-1)nb.push(i+1);
@@ -104,10 +113,20 @@ for(const f of files){
         if(x>0&&y<H-1)nb.push(i+W-1);if(x<W-1&&y<H-1)nb.push(i+W+1);
         for(const k of nb){ if(!seen[k]&&px[k*4+3]!==0){seen[k]=1;st.push(k);} }
       }
-      comps.push({minx,miny,maxx,maxy,n});
+      comps.push({id,minx,miny,maxx,maxy,n,nWhite});
     }
+    /* generation sheets carry baked-in white captions ("PUPPY DASH — SHEET 1
+       OF 4", row labels). A component that is mostly near-white pixels is
+       text, not art — the puppy is golden, the obstacles are saturated. The
+       cone's white band and the cream belly are fractions of their component
+       so they sail under the threshold. */
+    let textDropped=0;
+    const inked=comps.filter(c=>{
+      if(c.n>=200&&c.nWhite/c.n>0.70){textDropped++;return false;}
+      return true;
+    });
     /* keep real poses, drop crumbs; merge overlapping boxes (loose parts) */
-    const big=comps.filter(c=>c.n>W*H*0.002);
+    const big=inked.filter(c=>c.n>W*H*0.002);
     big.sort((a,b)=>a.n-b.n);
     const merged=[];
     for(const c of big){
@@ -118,21 +137,57 @@ for(const f of files){
         if(ox>0&&oy>0){hit=m;break;}
       }
       if(hit){hit.minx=Math.min(hit.minx,c.minx);hit.maxx=Math.max(hit.maxx,c.maxx);
-        hit.miny=Math.min(hit.miny,c.miny);hit.maxy=Math.max(hit.maxy,c.maxy);}
-      else merged.push({...c});
+        hit.miny=Math.min(hit.miny,c.miny);hit.maxy=Math.max(hit.maxy,c.maxy);
+        hit.ids.push(c.id);}
+      else merged.push({...c,ids:[c.id]});
     }
-    merged.sort((a,b)=>((a.miny/(H/3))|0)-((b.miny/(H/3))|0)||a.minx-b.minx);
+    /* rows by clustering, not a fixed band count: a sheet can have 3 rows or
+       4, and a tail poking above its row must not promote the pose a row up.
+       Cluster on centre-y with half the median component height as the gap. */
+    const hs=merged.map(c=>c.maxy-c.miny+1).sort((a,b)=>a-b);
+    const medH=hs[hs.length>>1]||1;
+    merged.forEach(c=>c.cy=(c.miny+c.maxy)/2);
+    merged.sort((a,b)=>a.cy-b.cy);
+    let row=0,lastCy=-1e9;
+    merged.forEach(c=>{ if(c.cy-lastCy>medH*0.55)row++; c.row=row; lastCy=c.cy; });
+    /* within a row, a small blob hugging a big one is baked-in FX (the slide's
+       dust puff) — absorb it. Real poses are comparable sizes and far apart. */
+    for(const r of new Set(merged.map(c=>c.row))){
+      const rc=merged.filter(c=>c.row===r).sort((a,b)=>a.minx-b.minx);
+      for(let i=rc.length-1;i>0;i--){
+        const a=rc[i-1],b=rc[i];
+        const gap=b.minx-a.maxx;
+        if(gap<W*0.03&&Math.min(a.n,b.n)<0.25*Math.max(a.n,b.n)){
+          a.minx=Math.min(a.minx,b.minx);a.maxx=Math.max(a.maxx,b.maxx);
+          a.miny=Math.min(a.miny,b.miny);a.maxy=Math.max(a.maxy,b.maxy);
+          a.n+=b.n;a.ids.push(...b.ids);b.dead=1;rc.splice(i,1);
+        }
+      }
+    }
+    const alive=merged.filter(c=>!c.dead);
+    alive.sort((a,b)=>a.row-b.row||a.minx-b.minx);
+    merged.length=0;alive.forEach(c=>merged.push(c));
     const out=[];
     for(const m of merged){
       const w=m.maxx-m.minx+1,h=m.maxy-m.miny+1;
       const c2=document.createElement('canvas');c2.width=w;c2.height=h;
-      c2.getContext('2d').drawImage(cv,m.minx,m.miny,w,h,0,0,w,h);
+      const g2=c2.getContext('2d',{willReadFrequently:true});
+      g2.drawImage(cv,m.minx,m.miny,w,h,0,0,w,h);
+      /* mask the rectangle to THIS pose's components: no stowaway captions,
+         no slice of the neighbouring pose poking into an overlapping bbox */
+      const mine=new Set(m.ids);
+      const cd=g2.getImageData(0,0,w,h),cp=cd.data;
+      for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+        const k=(y*w+x)*4;
+        if(cp[k+3]!==0&&!mine.has(lab[(m.miny+y)*W+(m.minx+x)]))cp[k+3]=0;
+      }
+      g2.putImageData(cd,0,0);
       out.push({png:c2.toDataURL('image/png'),w,h});
     }
-    return {poses:out,keyed:isMagenta?'magenta':'border',bgRGB:[br_|0,bg|0,bb|0]};
+    return {poses:out,keyed:isMagenta?'magenta':'border',bgRGB:[br_|0,bg|0,bb|0],textDropped};
   },`data:image/${ext};base64,${b64}`);
   if(got.err){console.log('  !! '+f+': '+got.err);continue;}
-  console.log('  '+f+': '+got.poses.length+' pose(s), key='+got.keyed);
+  console.log('  '+f+': '+got.poses.length+' pose(s), key='+got.keyed+(got.textDropped?', dropped '+got.textDropped+' text component(s)':''));
   got.poses.forEach(pose=>frames.push(pose));
 }
 if(!frames.length){console.log('nothing survived the cut');await br.close();process.exit(1);}
