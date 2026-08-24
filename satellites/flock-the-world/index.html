@@ -156,6 +156,7 @@ h1 em{font-style:normal;color:var(--sodium)}
 .sval{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sval.money{color:var(--grn)}.sval.inf{color:var(--sodium)}
 .sval.spent{color:var(--blood)}
+.sval.gainflash{color:var(--grn)}
 #ctlrow{display:flex;gap:5px;align-items:center;margin-top:4px}
 #speeds{display:flex;gap:5px;flex:1}
 .sp{flex:1;min-width:48px;height:48px;border:1px solid #22303fb0;border-radius:10px;font-size:12px;
@@ -297,8 +298,13 @@ h1 em{font-style:normal;color:var(--sodium)}
    pill, because the old #shToast lived inside the sheet body and a spend made
    from the map popover produced no visible confirmation at all (see
    portal-assets/review/ftw-popups-aug23/). Width is capped so it can never
-   reach the zoom column, and it sits above the pill and below the HUD. */
-#toasts{position:absolute;left:8px;bottom:58px;z-index:7;display:flex;flex-direction:column;
+   reach the zoom column, and it sits above the pill and below the HUD.
+   ⛔ z-index must beat the SHEET (40) too: at the old z:7 every desk/lobby/
+   acquire receipt rendered invisibly UNDER the sheet the player bought from —
+   the literal cause of "it doesn't really show you what that does"
+   (Stephen, Aug 24; probe: ftw-receipts-aug24). 45 stays under the modal (60)
+   so a toast never covers an event's choices. */
+#toasts{position:absolute;left:8px;bottom:58px;z-index:45;display:flex;flex-direction:column;
   gap:5px;max-width:min(58%,340px);pointer-events:none}
 .tst{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:10px;
   background:#141003f4;border:1px solid var(--sodium);color:#ffe9c9;font-size:11.5px;
@@ -1741,6 +1747,7 @@ function noteCloseModal(){
   drainBanners();
 }
 function flashCash(){const e=$('vCash');if(!e)return;e.classList.add('spent');setTimeout(()=>e.classList.remove('spent'),450);}
+function flashGain(id){const e=$(id);if(!e)return;e.classList.add('gainflash');setTimeout(()=>e.classList.remove('gainflash'),650);}
 /* region action prices scale with daily net income (min the old base), so a
    crackdown costs real money on day 400 the way it did on day 40 */
 /* ⛔ PERCENTAGE OF TREASURY PRICING, 2026-08-24, Stephen's call.
@@ -1880,19 +1887,22 @@ function acqPrice(s){
 }
 function doAcquire(){
   const s=S, p=acqPrice(s);
-  if(s.cash<p||p<=0)return false;
+  if(s.cash<p||p<=0)return null;
   s.cash-=p; flashCash();
   s.acqHeat=Math.min(CFG.acqHeatMax,(s.acqHeat||0)+CFG.acqHeatAdd);
   /* what the money buys: install base already in the ground, so coverage jumps
-     everywhere you already operate. It cannot open a market for you. */
-  let touched=0;
+     everywhere you already operate. It cannot open a market for you.
+     Returns the receipt (2026-08-24, Stephen: "it doesn't really show you what
+     that does") — the caller owes the player the numbers. */
+  let touched=0,gain=0;
   REGIONS.forEach(R=>{const r=s.regions[R.id];
     if(!r.active)return; touched++;
-    r.coverage=clamp(r.coverage+CFG.acqGain*(1-r.coverage),0,1);
+    const g=CFG.acqGain*(1-r.coverage);
+    r.coverage=clamp(r.coverage+g,0,1); gain+=g;
     r.suspicion=clamp(r.suspicion+CFG.acqSus,0,100);});
   s.oversight=clamp(s.oversight+CFG.acqOvr,0,100);
   sfx('spend');
-  return touched>0;
+  return touched>0?{touched:touched,avgGain:gain/touched}:null;
 }
 /* ⛔ Fable review, 2026-08-24: this divisor was designed for OLD money units and
    the rescale never touched it. With net now in dollars (day-1 net is tens of
@@ -4025,8 +4035,11 @@ function shBodyClick(e){
     else { shToast('The desk has moved on.'); openSheet('reg'); }
     return; }
   if(e.target.closest('#acqBtn')){
-    if(doAcquire()){
-      shToast(`<span class="neg">Acquired</span> · a rival's install base is yours. Coverage up everywhere you operate.`);
+    const rec=doAcquire();
+    if(rec){
+      const ovn=S.mode.mod.ovrName||'Patriotism';
+      shToast(`<span class="neg">Acquired</span> · coverage +${(rec.avgGain*100).toFixed(1)} pts across ${rec.touched} market${rec.touched===1?'':'s'} · ${ovn} +${CFG.acqOvr} · suspicion up where you operate`);
+      pushNews(S,`Acquisition closes. Coverage +${(rec.avgGain*100).toFixed(1)} pts in ${rec.touched} market${rec.touched===1?'':'s'}; the sellers talk, and the next one costs more.`,'good');
       openSheet('reg');   /* ⛔ 'reg' is the World tab. 'war' is Crisis, and
                              sending the player there after an acquisition was
                              a straight bug. */
@@ -4038,9 +4051,10 @@ function shBodyClick(e){
     const cost=Math.max(500*MONEY,Math.round(((S.net||0)*15)/25)*25);
     if(S.cash>=cost&&!(S.lbCd>0)){
       S.cash-=cost;S.inf+=8;S.lbCd=15;S.oversight=clamp(S.oversight+0.4,0,100);
-      shToast(`<span class="neg">Spent ${fmtMoney(cost)}</span> · 8 influence banked. A committee raises an eyebrow.`);
-      flashCash();
-      pushNews(S,'Lobbying blitz: retainers, receptions, one very grateful caucus. Influence secured.','good');
+      const ovn=S.mode.mod.ovrName||'Patriotism';
+      shToast(`<span class="neg">Spent ${fmtMoney(cost)}</span> · +8 influence · ${ovn} +0.4 · ready again in 15d`);
+      flashCash();flashGain('vInf');
+      pushNews(S,`Lobbying blitz: retainers, receptions, one very grateful caucus. +8 influence; ${ovn.toLowerCase()} +0.4.`,'good');
       renderSheet('reg');paintHud();
     }
     return;
