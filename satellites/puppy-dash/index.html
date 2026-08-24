@@ -201,6 +201,87 @@ const OB_VBOX = { jump:[0,0.70], slide:[1.00,1.75], dodge:[0,1.60] };
 const DOG_STAND=1.10, DOG_SLIDE=0.55, DOG_FOOT=0.58;  // feet sit DOG_FOOT*S below the sprite origin
 const RAINBOW=["#ff3b3b","#ff9e2c","#ffe23b","#3fd25f","#3aa0ff","#8a5cff","#e85cff"];
 
+/* ===================== SPRITE SKIN (Stephen's generated art) =====================
+   Frames cut by scripts/pd_cut.mjs onto the shared rig: 512 canvas, contact
+   point bottom-centre y=488, ONE scale per generation batch. refH is the
+   MEASURED content height of each batch's anchor frame and anchS is the
+   dog-size (S units) that anchor must render at, so the three batches land
+   within 1.5% of one scale and nothing pops between states. Every draw here
+   falls back to the procedural skin if a file has not loaded, so a missing
+   PNG can never break the game. */
+const ART_V="20260824a";
+const PUP_STATES={
+  run:   {n:8, i0:1,  refH:384, anchS:1.10},
+  jump:  {n:6, i0:9,  refH:384, anchS:1.10},
+  slide: {n:4, i0:15, refH:211, anchS:0.60},
+  bank:  {n:3, i0:19, refH:211, anchS:0.60},
+  caught:{n:3, i0:22, refH:211, anchS:0.60},
+  land:  {n:4, i0:1,  refH:389, anchS:1.10},
+  idle:  {n:3, i0:1,  refH:389, anchS:1.10},
+};
+const PUP_IMGS={}, PUP_READY={};
+(function(){
+  for(const st in PUP_STATES){
+    const d=PUP_STATES[st], arr=[]; let ok=0;
+    for(let k=0;k<d.n;k++){
+      const im=new Image();
+      im.onload=function(){ if(++ok===d.n){ PUP_READY[st]=true;
+        if(st==="idle"&&typeof buildSelect==="function") buildSelect(); } };
+      im.src="art/characters/puppy/"+st+"_"+String(d.i0+k).padStart(2,"0")+".png?v="+ART_V;
+      arr.push(im);
+    }
+    PUP_IMGS[st]=arr;
+  }
+})();
+function drawPupFrame(ctx,st,fi,x,footY,flip){
+  if(!PUP_READY[st]) return false;
+  const d=PUP_STATES[st], im=PUP_IMGS[st][Math.max(0,Math.min(d.n-1,fi|0))];
+  const k=(d.anchS*L.S)/d.refH;
+  ctx.save(); ctx.translate(x,footY); if(flip) ctx.scale(-1,1);
+  ctx.drawImage(im,-256*k,-488*k,512*k,512*k);
+  ctx.restore(); return true;
+}
+/* Obstacle sprites. h = render height in S units, matched to the PROCEDURAL
+   footprint so the hitboxes still tell the truth. trashcan is capped so its
+   width stays inside one lane. wall stays procedural: the generated wall came
+   back LOW AND WIDE, which reads as jumpable, and its verb is dodge — art
+   that argues with its verb does not ship. limbo keeps its procedural posts
+   and dashed duck-gap; only the fabric is the sprite. */
+const OB_SPR={
+  hydrant:{h:0.86, refH:389}, cone:{h:0.72, refH:386}, trashcan:{h:1.09, refH:383},
+  puddle:{w:1.30, vs:0.55}, limbo:{fab:true},
+};
+const OB_IMGS={}, OB_READY={};
+(function(){
+  for(const id in OB_SPR){
+    const im=new Image();
+    im.onload=function(){ OB_READY[id]=true; };
+    im.src="art/obstacles/"+id+".png?v="+ART_V;
+    OB_IMGS[id]=im;
+  }
+})();
+function drawObSprite(ctx,o,x,y,s){
+  const sp=OB_SPR[o.id];
+  if(!sp||!OB_READY[o.id]) return false;
+  const im=OB_IMGS[o.id];
+  ctx.save();
+  if(sp.fab){
+    ctx.translate(x,y);
+    ctx.fillStyle="#7a5230"; rr(ctx,-s*0.48,-s*1.7,s*0.07,s*0.95,s*0.03); rr(ctx,s*0.41,-s*1.7,s*0.07,s*0.95,s*0.03);
+    const k=(1.04*s)/512;
+    ctx.drawImage(im,-256*k,-1.75*s-296*k,512*k,512*k);
+    ctx.strokeStyle="rgba(255,255,255,.55)"; ctx.lineWidth=Math.max(1,s*0.03); ctx.setLineDash([s*0.09,s*0.07]);
+    ctx.beginPath(); ctx.moveTo(-s*0.34,-s*0.05); ctx.lineTo(-s*0.34,-s*0.95); ctx.lineTo(s*0.28,-s*0.95); ctx.lineTo(s*0.28,-s*0.05); ctx.stroke(); ctx.setLineDash([]);
+  } else if(sp.vs){
+    ctx.translate(x,y); ctx.scale(1,sp.vs);
+    const k=(sp.w*s)/512;
+    ctx.drawImage(im,-256*k,-488*k,512*k,512*k);
+  } else {
+    const k=(sp.h*s)/sp.refH;
+    ctx.drawImage(im,x-256*k,y-488*k,512*k,512*k);
+  }
+  ctx.restore(); return true;
+}
 /* ===================== [RESKIN] ANIMALS ===================== */
 const ANIMALS = [
   { id:"puppy",  name:"Puppy",  body:"#d9a05b", ear:"#b87a36", belly:"#f1d9ad" },
@@ -246,6 +327,7 @@ const OBSTACLES = [
 ];
 function pickObstacle(){ return OBSTACLES[(Math.random()*OBSTACLES.length)|0]; }
 function drawObstacle(ctx,o,x,y,s){
+  if(drawObSprite(ctx,o,x,y,s)) return;
   ctx.save(); ctx.translate(x,y);
   if(o.id==="hydrant"){
     ctx.fillStyle="#e0483a"; rr(ctx,-s*0.22,-s*0.66,s*0.44,s*0.68,s*0.10);
@@ -438,7 +520,7 @@ function setControls(show){
 }
 function gameOver(){
   if(state.mode!=="play") return;
-  state.mode="over"; state.shake=0.45; SFX.crash();
+  state.mode="over"; state.overT=0; state.shake=0.45; SFX.crash();
   const isBest = (state.dist|0) > state.best;
   const saved = pdWrite({ bestCandidate: state.dist|0, stashAdd: state.biscuits });
   state.best = saved.best; state.totalStash = saved.stash;
@@ -578,6 +660,7 @@ cv.addEventListener("mouseup",inEnd);
 /* ---- update ---- */
 function update(dt){
   if(state.shake>0) state.shake=Math.max(0,state.shake-dt);
+  if(state.mode==="over") state.overT=(state.overT||0)+dt;
   if(state.mode!=="play") return;
   state.t+=dt;
   const diff=Math.min(1, state.dist/(CFG.rampDist* (H*0.01) ) ); // dist is "m"; ramp scaled
@@ -771,11 +854,45 @@ function render(){
       ctx.beginPath(); ctx.ellipse(x,L.PY,s*0.95,s*0.34,0,0,7); ctx.stroke(); ctx.restore();
     }
     drawShadow(x,L.PY, s*0.5*(1-Math.min(0.7,lift/(L.S*2))), lift/(L.S*3));
-    const pose = jetActive ? "jump" : (state.sliding?"slide":(state.jump>0.5?"jump":"run"));
-    const squash = state.squashT>0 ? 1 - 0.35*(state.squashT/0.16) : 1;
     const py = L.PY - L.S*DOG_FOOT - lift;
+    const footY = L.PY - lift;
     if(jetActive) drawJetpack(x, py + s*0.48, s);
-    drawAnimal(ctx,state.animal,x,py,s,state.t,pose,squash);
+    /* sprite skin: pick the frame off the SAME state the physics runs on, so
+       art and hitbox can never disagree. Anything not loaded falls through to
+       the procedural dog below. */
+    let spr=false;
+    if(state.animal.id==="puppy"){
+      if(state.mode==="over"){
+        const oT=state.overT||0;
+        spr=drawPupFrame(ctx,"caught", oT<0.12?0:(oT<0.30?1:2), x, footY, false);
+      } else if(jetActive){
+        spr=drawPupFrame(ctx,"jump",2,x,footY,false);
+      } else if(state.jump>0.5){
+        const vv=state.jumpV/(CFG.jumpV*L.S);
+        const fi = vv>0.45?1 : vv>0.12?2 : vv>-0.12?3 : (state.jump>L.S*0.5?4:5);
+        spr=drawPupFrame(ctx,"jump",fi,x,footY,false);
+      } else if(state.sliding){
+        const sp=1-state.slideT/CFG.slideTime;
+        spr=drawPupFrame(ctx,"slide", sp<0.16?0:(sp<0.5?1:(sp<0.82?2:3)), x,footY,false);
+      } else if(state.squashT>0){
+        spr=drawPupFrame(ctx,"land",(1-state.squashT/0.16)*3.99, x,footY,false);
+      } else {
+        const dLane=state.targetLane-state.laneF;
+        if(Math.abs(dLane)>0.08){
+          const a2=Math.abs(dLane);
+          spr=drawPupFrame(ctx,"bank", a2>0.7?0:(a2>0.28?1:2), x,footY, dLane>0);
+        }
+        if(!spr){
+          const fps=10+6*(state.speed-CFG.spd0)/(CFG.spdMax-CFG.spd0);
+          spr=drawPupFrame(ctx,"run",(state.t*fps)%8, x,footY,false);
+        }
+      }
+    }
+    if(!spr){
+      const pose = jetActive ? "jump" : (state.sliding?"slide":(state.jump>0.5?"jump":"run"));
+      const squash = state.squashT>0 ? 1 - 0.35*(state.squashT/0.16) : 1;
+      drawAnimal(ctx,state.animal,x,py,s,state.t,pose,squash);
+    }
   }
   for(const pt of state.parts){ ctx.globalAlpha=Math.max(0,pt.life*(pt.fire?2.6:2));
     ctx.fillStyle = pt.fire ? (pt.col||"#ff8a2a") : css("--bone");
@@ -892,7 +1009,9 @@ function buildSelect(){
     const b=document.createElement("button"); b.className="pick"+(a.id===state.animal.id?" sel":"");
     const c=document.createElement("canvas"); c.width=176; c.height=176; b.appendChild(c);
     const nm=document.createElement("div"); nm.className="nm"; nm.textContent=a.name; b.appendChild(nm);
-    const cc=c.getContext("2d"); cc.scale(2,2); drawAnimal(cc,a,44,56,46,0.6,"run",1);
+    const cc=c.getContext("2d"); cc.scale(2,2);
+    if(a.id==="puppy"&&PUP_READY.idle){ const im=PUP_IMGS.idle[2], k=74/389; cc.drawImage(im,44-256*k,86-488*k,512*k,512*k); }
+    else drawAnimal(cc,a,44,56,46,0.6,"run",1);
     b.onclick=()=>{ state.animal=a; pdWrite({animal:a.id}); buildSelect(); }; grid.appendChild(b);
   });
 }
@@ -935,6 +1054,7 @@ if(/[?&]pd_test=1(&|$)/.test(location.search) || (function(){ try{ return localS
     spawnRow, spawnJet, spawnMagnet, activateJet, pickObstacle, spawnProp, PROPS,
     pdRead, pdWrite,
     obX, dogX, prog, dscale, lfac,
+    PUP_READY, OB_READY, PUP_STATES, OB_SPR,
     startRun, gameOver, buildSelect
   };
 }

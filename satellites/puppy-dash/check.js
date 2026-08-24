@@ -135,6 +135,10 @@ function makeCtx(opts) {
     console, Math, Date, JSON, Set, Map, Array, Object, String, Number, Boolean, isFinite, isNaN, parseInt, parseFloat, Error, Proxy,
     performance: { now: () => Date.now() },
     setTimeout: () => 0, clearTimeout: () => {},
+    /* the sprite skin constructs Images at parse time; the sandbox models a
+       browser where nothing ever finishes loading, so every sprite path stays
+       un-ready and the checks exercise the procedural fallback */
+    Image: class { constructor(){ this.onload=null; this.onerror=null; } set src(v){ this._src=v; } get src(){ return this._src; } },
     requestAnimationFrame: () => 1, cancelAnimationFrame: () => {},
     devicePixelRatio: 1, addEventListener() {}, removeEventListener() {},
     navigator: { share: null, clipboard: null },
