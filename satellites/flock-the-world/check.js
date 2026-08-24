@@ -1094,7 +1094,7 @@ if (C) {
           const nc=s2.bubbles.filter(b=>b.k!=='cash').length;
           return nc/s2.bubbles.length;
         };
-        const shC=share('Contractor'), shI=share('Incumbent');
+        const shC=share('Startup'), shI=share('Incumbent');
         ok('harder difficulty spawns a larger influence share of bubbles', shI>shC+0.08,
           'Contractor='+(shC*100).toFixed(1)+'% Incumbent='+(shI*100).toFixed(1)+'%');
         const missTwin=miss=>{
@@ -1110,6 +1110,20 @@ if (C) {
         const soft=missTwin(0.7), hard=missTwin(1.4);
         ok('a leak that expires uncaught costs more on a harder table', hard>soft+1.0,
           'soft='+soft.toFixed(2)+' hard='+hard.toFixed(2));
+      }
+      /* RENAME (Aug 24 evening): the easy difficulty collided with The
+         Contractor MODE on the same menu. It is Startup now, and a mid-run
+         save from before the rename must still load. */
+      {
+        const cR=makeCtx();cR.doctrineModal=()=>{};cR.showEvent=()=>{};
+        ok('the difficulty ladder is Startup / Vendor / Incumbent',
+          vm.runInContext("Object.keys(DIFFS).join('/')",cR)==='Startup/Vendor/Incumbent',
+          vm.runInContext("Object.keys(DIFFS).join('/')",cR));
+        vm.runInContext("S=newState('CONTRACTOR','Startup','NA');saveRun();"
+          +"lsSet(K_RUN,JSON.stringify(Object.assign(JSON.parse(lsGet(K_RUN)),{diffKey:'Contractor'})));",cR);
+        const pk=vm.runInContext("(peekRun()||{}).diffKey",cR);
+        ok('an old Contractor-difficulty save aliases to Startup and still loads',
+          pk==='Startup', 'peeked diffKey='+pk);
       }
       const c=stage({cov:.97,ctl:.995,cmp:.95,mil:.02,doc:'glove'});
       ok('classic subjugation still outranks every other door', c.over&&c.won&&c.why==='win', JSON.stringify(c));

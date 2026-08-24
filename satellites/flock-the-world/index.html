@@ -74,16 +74,22 @@ h1 em{font-style:normal;color:var(--sodium)}
    for screen readers and for anything that cannot load the image. */
 #wordmark{display:block;width:min(300px,78%);margin:2px auto 4px;height:auto}
 #wordmark+h1{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-.modecard{display:flex;gap:11px;align-items:center;width:100%;min-height:48px;text-align:left;border:1px solid var(--line);border-radius:13px;background:var(--panel);
-  padding:12px 13px;margin-bottom:8px}
+.modecard{display:flex;gap:12px;align-items:center;width:100%;min-height:48px;text-align:left;border:1px solid var(--line);border-radius:13px;background:var(--panel);
+  padding:7px;margin-bottom:8px}
 .modecard.sel{border-color:var(--sodium);background:#191203}
-/* ⛔ Aug 24, Stephen: "almost every single image is shrunken too much and should
-   fill whatever box they're in... there were large gaps around many of them."
-   Measured: every card image is 420x420 SQUARE and this slot was 60x80, so the
-   art was both tiny and cropped to a portrait letterbox. A square slot shows the
-   WHOLE image with object-fit:cover and no crop at all, and 96px is the largest
-   that still leaves the mode text its width on a 412px portrait phone. */
-.mcart{width:96px;height:96px;flex:none;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
+.modecard .mctx{padding:5px 7px 5px 0}
+/* ⛔ Aug 24 evening, Stephen: "all those images dont fit the boxes properly.
+   its like a box in a box with empty space". Root cause was in the FILES, not
+   the CSS: every 420x420 source was mostly transparent canvas with a portrait
+   card (~0.70 aspect) parked at its left edge, so any slot showed the card
+   PLUS a slab of its empty canvas. scripts/_ftw_trim_cards.mjs trimmed the
+   alpha margins off all eight (originals in git history). The art renders at
+   a fixed height with width following its own aspect — whole card, no crop,
+   no dead margins, no CSS frame on top of the painted one.
+   ⛔ Do NOT try align-self:stretch + height:auto here: the img's intrinsic
+   420px height then SETS the flex line instead of following it, and one card
+   swallows the menu (seen and reverted, Aug 24 evening). */
+.mcart{height:108px;width:auto;flex:none;object-fit:contain;border-radius:0;border:0}
 .mctx{flex:1 1 auto;min-width:0}
 /* ⛔ 52px tall across a full button width is about 5:1, so a 420x420 square was
    showing roughly the middle FIFTH of its own height. That is what reads as a
@@ -96,8 +102,8 @@ h1 em{font-style:normal;color:var(--sodium)}
    art, and selection is the picture waking up rather than a box appearing.
    ⚖ If this art is ever regenerated, the frame should come out of the picture:
    the house rule is that the frame never gets baked in. */
-.dfart{display:block;width:132px;max-width:100%;aspect-ratio:1/1;height:auto;
-  object-fit:cover;margin:0;opacity:.42;filter:saturate(.7);
+.dfart{display:block;width:auto;height:132px;max-width:100%;
+  object-fit:contain;margin:0;opacity:.42;filter:saturate(.7);
   transition:opacity .15s,filter .15s}
 .diffbtn.sel .dfart{opacity:1;filter:saturate(1.06) brightness(1.08)}
 .docart{display:block;width:100%;height:104px;object-fit:cover;object-position:center 42%;border-radius:9px;margin-bottom:8px}
@@ -520,10 +526,10 @@ h1 em{font-style:normal;color:var(--sodium)}
      does not: sticky at the column's bottom edge, always on screen, which is the
      actual complaint ("the start button's missing... off screen on the bottom").
      Cards also compact here so the scroll is short. */
-  #menu .mcart{width:64px;height:64px}
-  #menu .modecard{padding:8px 10px;margin-bottom:6px}
+  #menu .mcart{height:76px}
+  #menu .modecard{padding:5px;margin-bottom:6px}
   #menu .modecard p{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-  #menu .dfart{width:92px}
+  #menu .dfart{height:92px;width:auto}
   #menu .cta{position:sticky;bottom:0;z-index:2;margin-top:12px;
     box-shadow:0 -10px 20px #05070bd9}
 
@@ -1053,8 +1059,12 @@ const CFG = {
    (Stephen, Aug 24: "some of the bubbles might give you influence points and
    on the harder difficulties you legitimately have to get all of these or
    almost all of them — you have to be engaged.") */
+/* ⛔ the easy tier was named Contractor, colliding with The Contractor MODE on
+   the same menu (Stephen: "called the same thing so thats confusing"). It is
+   now Startup — same corporate ladder as Vendor and Incumbent. peekRun aliases
+   old saves. */
 const DIFFS = {
-  Contractor:{over:0.72,sus:0.85,cash:1.25,unrest:0.85,bubInf:0.68,bubMiss:0.7,label:'Regulators are on vacation. Protests fizzle.'},
+  Startup:{over:0.72,sus:0.85,cash:1.25,unrest:0.85,bubInf:0.68,bubMiss:0.7,label:'Regulators are on vacation. Protests fizzle.'},
   Vendor:{over:1.0,sus:1.0,cash:1.0,unrest:1.0,bubInf:0.62,bubMiss:1.0,label:'The intended experience.'},
   Incumbent:{over:1.42,sus:1.18,cash:0.85,unrest:1.2,bubInf:0.54,bubMiss:1.4,label:'Journalists have your org chart and a grudge.'}
 };
@@ -2573,6 +2583,9 @@ function peekRun(){
      v1 save carries a $200 treasury into a game where a crackdown costs $12M.
      That run is unrecoverable, not merely stale, so it must not load. A v1 save
      is dropped and the player starts fresh rather than being handed a corpse. */
+  /* the Contractor DIFFICULTY became Startup (it collided with The Contractor
+     MODE on the same menu — Stephen, Aug 24 evening); mid-run saves carry on */
+  if(d&&d.diffKey==='Contractor')d.diffKey='Startup';
   if(!d||d.v!==2||!MODES[d.modeKey]||!DIFFS[d.diffKey]||!d.startId||!R[d.startId])return null;
   if(!d.regions||typeof d.regions!=='object'||!isFinite(+d.day))return null;
   for(const r of REGIONS){if(!d.regions[r.id])return null;}   /* half written blob */
@@ -3273,7 +3286,7 @@ function renderSheet(tab){
 /* Same explicit-manifest rule as NODE_ART and SFX_HAVE: never probe for a file
    that may not be there. Cut from Stephen's sheets 5, 9 and 10. */
 const MODE_ART={CONTRACTOR:'mode_contractor',DEEPSTATE:'mode_partnership',CRISIS:'mode_crisis'};
-const DIFF_ART={Contractor:'diff_easy',Vendor:'diff_standard',Incumbent:'diff_hard'};
+const DIFF_ART={Startup:'diff_easy',Vendor:'diff_standard',Incumbent:'diff_hard'};
 const UI_ART={act_agitate:1,act_blackout:1,act_concede:1,act_crackdown:1,act_enter:1,act_lobby:1,bubble_cash:1,bubble_influence:1,hq_marker:1,ledger_compliant:1,ledger_free:1,ledger_organized:1,ledger_streets:1,ledger_watched:1,state_calm:1,state_expelled:1,state_murmur:1,state_peaceful:1,state_uprising:1,state_violent:1};
 /* ⛔ ONE source for a state chip. It is rendered in three places (World cards,
    the map popover, the Ledger rows) and before this each built its own string,
