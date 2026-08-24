@@ -987,10 +987,10 @@ if (C) {
       let n8=13;const f8=()=>{n8=(n8*1664525+1013904223)>>>0;return n8/4294967296;};
       const real8=Math.random;Math.random=f8;
       vm.runInContext('tick()',cN);
-      const once=sN.log.filter(x=>/oversight is half spent/i.test(x.t)).length;
+      const once=sN.log.filter(x=>/patriotism is half spent/i.test(x.t)).length;
       sN.oversight=60;vm.runInContext('tick()',cN);
       Math.random=real8;
-      const twice=sN.log.filter(x=>/oversight is half spent/i.test(x.t)).length;
+      const twice=sN.log.filter(x=>/patriotism is half spent/i.test(x.t)).length;
       ok('the oversight field note teaches once and only once', once===1&&twice===1,
         'first='+once+' second='+twice);
     }
@@ -1200,6 +1200,17 @@ if (C) {
         ok('the dossier and the outlet survive a reload',
           vm.runInContext('S.fdPages',cF2)===5&&vm.runInContext('S.outlet',cF2)===1,
           'pages='+vm.runInContext('S.fdPages',cF2)+' outlet='+vm.runInContext('S.outlet',cF2));
+      }
+      /* VOCAB (Aug 24 late): the meter is named Patriotism, so the copy says
+         patriotism — and Crisis mode reads Coalition via ovrTxt at render. */
+      {
+        ok('no event sway line says oversight (the meter is Patriotism)',
+          !/h:'[^']*[Oo]versight/.test(GAME), 'stale sway copy found');
+        const cV=makeCtx();cV.doctrineModal=()=>{};cV.showEvent=()=>{};
+        vm.runInContext("S=newState('CRISIS','Vendor','ME');pushNews(S,'Field test: patriotism climbs while you qualify.','');",cV);
+        const line=vm.runInContext('S.log[0].t',cV);
+        ok('Crisis mode reads Coalition where the copy says patriotism',
+          /coalition climbs/.test(line)&&!/patriotism/.test(line), line.slice(0,80));
       }
       /* RENAME (Aug 24 evening): the easy difficulty collided with The
          Contractor MODE on the same menu. It is Startup now, and a mid-run

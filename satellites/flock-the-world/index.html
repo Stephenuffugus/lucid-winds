@@ -1395,30 +1395,30 @@ function EV(){ return [
 {id:'foia',w:12,when:s=>s.day>90&&s.avgSus>12,k:'choice',who:'vole',kick:'Records request',
  t:'A reporter files for your search audit logs',
  b:'Dir. Vole calls, unprompted: "The clerk handling this request has a cousin with a permit issue. Just context." The logs show 40,000 searches, none with warrants.',
- o:[{l:'Invoke the trade-secret rider',c:s=>s.cash>=120*MONEY,cost:{cash:120*MONEY},h:'A whisper of oversight. The story dies.',
+ o:[{l:'Invoke the trade-secret rider',c:s=>s.cash>=120*MONEY,cost:{cash:120*MONEY},h:'A whisper of patriotism. The story dies.',
      f:s=>{s.oversight+=1.2;pushNews(s,'Clerk releases 400 fully redacted pages. Reporter frames them.','good');}},
-    {l:'Let it publish',h:'Oversight jumps and suspicion rises everywhere.',f:s=>{s.oversight+=5;bumpSus(s,8);pushNews(s,'Search-log story runs front page. Two councils schedule hearings.','bad');}}]},
+    {l:'Let it publish',h:'Patriotism jumps and suspicion rises everywhere.',f:s=>{s.oversight+=5;bumpSus(s,8);pushNews(s,'Search-log story runs front page. Two councils schedule hearings.','bad');}}]},
 {id:'ban',w:10,when:s=>s.avgSus>38,k:'choice',who:'brill',kick:'Legislation',
  t:'A national ban on warrantless readers gains sponsors',
  b:'Sec. Brill offers to testify that the ban "helps traffickers," in exchange for co-branding the next border rollout. The vest, she notes, photographs well against your logo.',
- o:[{l:'Fund the opposition blitz',c:s=>s.cash>=300*MONEY,cost:{cash:300*MONEY},h:'Oversight eases.',
+ o:[{l:'Fund the opposition blitz',c:s=>s.cash>=300*MONEY,cost:{cash:300*MONEY},h:'Patriotism eases.',
      f:s=>{s.oversight=Math.max(0,s.oversight-3);pushNews(s,'Ban dies in committee. Sponsors receive polling on their own districts.','good');}},
-    {l:'Accept the co-brand',c:s=>s.inf>=5,cost:{inf:5},h:'Compliance rises everywhere, oversight eases a little, suspicion ticks up.',
+    {l:'Accept the co-brand',c:s=>s.inf>=5,cost:{inf:5},h:'Compliance rises everywhere, patriotism eases a little, suspicion ticks up.',
      f:s=>{s.oversight-=1.5;globalCmp(s,.04);bumpSus(s,3);pushNews(s,'Brill testifies in your vest. The clip loops for a week.','good');}},
-    {l:'Absorb it',h:'Oversight jumps hard.',f:s=>{s.oversight+=6;pushNews(s,'The ban passes in one bloc. A corner of the map goes quiet.','bad');}}]},
+    {l:'Absorb it',h:'Patriotism jumps hard.',f:s=>{s.oversight+=6;pushNews(s,'The ban passes in one bloc. A corner of the map goes quiet.','bad');}}]},
 {id:'leakdb',w:8,when:s=>s.has('arch'),k:'choice',who:'klein',kick:'Breach',
  t:'Your archive sat on an open bucket for eleven days',
  b:'Sandoval-Klein calls first: "I already bought a copy. Question is whether anyone else did. I can make the researcher an employee by Friday."',
- o:[{l:'Let Klein hire the researcher',c:s=>s.cash>=250*MONEY,cost:{cash:250*MONEY},h:'A whisper of oversight. The finding never lands.',
+ o:[{l:'Let Klein hire the researcher',c:s=>s.cash>=250*MONEY,cost:{cash:250*MONEY},h:'A whisper of patriotism. The finding never lands.',
      f:s=>{s.oversight+=1.5;pushNews(s,'Researcher joins Sandoval-Klein "responsible disclosure" lab. Findings pending forever.','good');}},
-    {l:'Blame client-side configuration',h:'Oversight up, compliance falls everywhere.',f:s=>{s.oversight+=4;globalCmp(s,-.05);pushNews(s,'Statement cites "customer misuse of default passwords." Customers notice.','bad');}}]},
+    {l:'Blame client-side configuration',h:'Patriotism up, compliance falls everywhere.',f:s=>{s.oversight+=4;globalCmp(s,-.05);pushNews(s,'Statement cites "customer misuse of default passwords." Customers notice.','bad');}}]},
 {id:'general',w:8,when:s=>s.has('border')&&s.warHeat<0.6,k:'choice',who:'prather',kick:'Consulting invoice',
  t:'Gen. Prather has found you a war',
  b:'"Small one. Photogenic terrain, no exports anyone likes, two factions who both take wire transfers. Ninety days of coverage, minimum. My fee is a rounding error."',
- o:[{l:'Wire the retainer',c:s=>s.cash>=350*MONEY,cost:{cash:350*MONEY},h:'War heat surges, compliance rises everywhere, oversight up.',
+ o:[{l:'Wire the retainer',c:s=>s.cash>=350*MONEY,cost:{cash:350*MONEY},h:'War heat surges, compliance rises everywhere, patriotism up.',
      f:s=>{s.warHeat=Math.min(1,s.warHeat+0.3);globalCmp(s,.05);s.oversight+=2;
         pushNews(s,'Shelling begins abroad. Domestic camera approvals triple by Friday.','crit');}},
-    {l:'Decline politely',h:'A little oversight. The war happens without you.',f:s=>{pushNews(s,'Prather takes the package to a competitor. The war happens anyway, unbranded.','bad');s.oversight+=1;}}]},
+    {l:'Decline politely',h:'A little patriotism. The war happens without you.',f:s=>{pushNews(s,'Prather takes the package to a competitor. The war happens anyway, unbranded.','bad');s.oversight+=1;}}]},
 {id:'union',w:9,when:s=>s.activeCount>=3,k:'flash',
  f:s=>{const r=pickActive(s);if(!r)return null;r.compliance=Math.min(.98,r.compliance+.09);
    return `Police union in ${r.name} endorses the network on morning television.`},cls:'good'},
@@ -1444,16 +1444,16 @@ function EV(){ return [
 {id:'auditor',w:9,cd:170,when:s=>(s.dcs||0)>0,k:'choice',who:'vole',kick:'Site inspection',
  t:'The grid auditor finds your data centre',
  b:'An energy auditor with a clipboard and a grudge has your substation numbers. Dir. Vole offers to lose the file for a fee she calls "expedited handling." You decline to ask what the fee expedites.',
- o:[{l:'Fund the retrofit',c:s=>s.cash>=180*MONEY,cost:{cash:180*MONEY},h:'Oversight eases.',
+ o:[{l:'Fund the retrofit',c:s=>s.cash>=180*MONEY,cost:{cash:180*MONEY},h:'Patriotism eases.',
      f:s=>{s.oversight=Math.max(0,s.oversight-3);pushNews(s,'The retrofit ribbon cutting runs local. The substation hums on.','good');}},
-    {l:'Stall the inspection',h:'Oversight climbs while the clipboard waits.',
+    {l:'Stall the inspection',h:'Patriotism climbs while the clipboard waits.',
      f:s=>{s.oversight+=4;pushNews(s,'The auditor reschedules, publicly, four times. Each reschedule is a story.','bad');}}]},
 {id:'acqsuit',w:8,cd:160,when:s=>(s.acqHeat||0)>0.15,k:'choice',who:'klein',kick:'Litigation',
  t:'A founder you bought out wants it back',
  b:'He signed everything, spent the money, and now remembers it differently. Sandoval-Klein: "We can settle quietly, or we can win loudly. Loudly costs extra and everyone watches."',
  o:[{l:'Settle quietly',c:s=>s.cash>=140*MONEY,cost:{cash:140*MONEY},h:'Acquisition heat cools.',
      f:s=>{s.acqHeat=Math.max(0,(s.acqHeat||0)-0.12);pushNews(s,'The settlement is sealed. The founder buys a boat and a silence.','good');}},
-    {l:'Win loudly',h:'Oversight jumps. The precedent buys influence.',
+    {l:'Win loudly',h:'Patriotism jumps. The precedent buys influence.',
      f:s=>{s.oversight+=5;s.inf+=2;pushNews(s,'You win. The ruling is now every rival\'s problem too.','bad');}}]},
 {id:'mayor',w:9,cd:140,when:s=>s.activeCount>=2,k:'choice',who:'brill',kick:'Procurement',
  t:'A mayor wants free cameras before an election',
@@ -1486,23 +1486,23 @@ function EV(){ return [
 {id:'vole_arc1',chain:'vole',step:1,w:10,cd:150,when:s=>s.day>60,k:'choice',who:'vole',kick:'A courtesy',
  t:'A subpoena goes missing before it exists',
  b:'Dir. Vole calls to describe a records request that, as of this morning, was never filed. "No charge," she says. "The Bureau values its partners." She does not say for what.',
- o:[{l:'Accept the courtesy',h:'Oversight eases. Nothing is owed, on paper.',
+ o:[{l:'Accept the courtesy',h:'Patriotism eases. Nothing is owed, on paper.',
      f:s=>{s.oversight=Math.max(0,s.oversight-2);pushNews(s,'A records request is withdrawn, citing "clerical duplication." There was no duplicate.','good');}},
-    {l:'Ask her to file it properly',h:'Oversight climbs. You keep your hands where the cameras can see them.',
+    {l:'Ask her to file it properly',h:'Patriotism climbs. You keep your hands where the cameras can see them.',
      f:s=>{s.oversight+=3;pushNews(s,'The request proceeds through channels. Dir. Vole notes your integrity in a tone usually reserved for symptoms.','bad');}}]},
 {id:'vole_arc2',chain:'vole',step:2,w:11,cd:160,when:s=>s.day>120,k:'choice',who:'vole',kick:'The favour returns',
  t:'Dir. Vole would like a few searches run',
  b:'Eleven names. A rival director, two journalists, a son in law. "Informally," she says. "The way you ran the other forty thousand." So she counted.',
  o:[{l:'Run the eleven names',h:'Influence grows. Suspicion rises everywhere. The debt compounds quietly.',
      f:s=>{s.inf+=4;bumpSus(s,5);pushNews(s,'Eleven files move without a warrant among them. Somewhere a clerk updates a private ledger.','bad');}},
-    {l:'Refuse her',h:'Oversight jumps. The courtesy you took becomes a fact she keeps.',
+    {l:'Refuse her',h:'Patriotism jumps. The courtesy you took becomes a fact she keeps.',
      f:s=>{s.oversight+=5;pushNews(s,'An anonymous complaint about your records handling reaches three agencies in one afternoon.','bad');}}]},
 {id:'vole_arc3',chain:'vole',step:3,w:12,cd:200,when:s=>s.day>200,k:'choice',who:'vole',kick:'Reckoning',
  t:'Dir. Vole is under investigation, and her ledger is thorough',
  b:'The inspector general has her safe, her calendar, and a notebook where every favour has a column. Your column is long. Her lawyer calls with a price for the notebook. Her rival calls with a price for testimony.',
- o:[{l:'Buy the notebook',c:s=>s.cash>=450*MONEY,cost:{cash:450*MONEY},h:'A fortune leaves. Oversight eases and the column closes for good.',
+ o:[{l:'Buy the notebook',c:s=>s.cash>=450*MONEY,cost:{cash:450*MONEY},h:'A fortune leaves. Patriotism eases and the column closes for good.',
      f:s=>{s.oversight=Math.max(0,s.oversight-6);pushNews(s,'Dir. Vole retires to consult. The notebook is not among her papers. The papers are not among anything.','good');}},
-    {l:'Testify against her',h:'Oversight eases a little, but suspicion surges everywhere and influence drains as every partner rereads their own column.',
+    {l:'Testify against her',h:'Patriotism eases a little, but suspicion surges everywhere and influence drains as every partner rereads their own column.',
      f:s=>{s.oversight=Math.max(0,s.oversight-2);bumpSus(s,10);s.inf=Math.max(0,s.inf-6);
        pushNews(s,'Your testimony sinks Vole in a day. Every agency partner you have goes quiet the same week.','crit');}}]},
 
@@ -1513,12 +1513,12 @@ function EV(){ return [
  o:[{l:'Host the visit',h:'Compliance rises where the cameras rolled. Suspicion ticks up everywhere.',
      f:s=>{const r=pickActive(s);if(r)r.compliance=clamp(r.compliance+0.07,.02,.98);bumpSus(s,2);
        pushNews(s,'Sec. Brill tours your floor in a vest. The evening news runs ninety seconds of monitors, monitored.','good');}},
-    {l:'Cite security protocol',h:'Oversight ticks up. She does not forget a locked door.',
+    {l:'Cite security protocol',h:'Patriotism ticks up. She does not forget a locked door.',
      f:s=>{s.oversight+=2;pushNews(s,'Sec. Brill films outside your lobby instead, describing what she "was not shown."','bad');}}]},
 {id:'brill_arc2',chain:'brill',step:2,w:11,cd:160,when:s=>s.activeCount>=3,k:'choice',who:'brill',kick:'Live television',
  t:'Sec. Brill wants your feeds for a televised raid',
  b:'A primetime special. Her situation room, your cameras, one door going down on schedule. "The public deserves to watch justice happen," she says, meaning the public deserves to watch her watch it.',
- o:[{l:'Patch her in',h:'Compliance rises everywhere and one market militarizes. Oversight climbs.',
+ o:[{l:'Patch her in',h:'Compliance rises everywhere and one market militarizes. Patriotism climbs.',
      f:s=>{globalCmp(s,.04);s.oversight+=3;const r=pickActive(s);if(r)r.milit=clamp(r.milit+0.08,0,1);
        pushNews(s,'The raid airs live through your lenses. Ratings are excellent. Questions are scheduled for later.','good');}},
     {l:'Decline the patch',h:'Suspicion rises everywhere. She names a vendor gap on air, and the vendor is you.',
@@ -1526,10 +1526,10 @@ function EV(){ return [
 {id:'brill_arc3',chain:'brill',step:3,w:12,cd:200,when:s=>s.day>150,k:'choice',who:'brill',kick:'The wrong door',
  t:'The raid hit the wrong house, wearing your logo',
  b:'A grandmother, a broken door frame, forty seconds of primetime that will not stop looping. Brill calls before her own press office does. "One of us takes this," she says. "I still make policy. Think about which of us you need making it."',
- o:[{l:'Take the blame for her',c:s=>s.cash>=400*MONEY,cost:{cash:400*MONEY},h:'A fortune in settlements and oversight jumps, but influence surges and compliance rises everywhere. She owes you her career.',
+ o:[{l:'Take the blame for her',c:s=>s.cash>=400*MONEY,cost:{cash:400*MONEY},h:'A fortune in settlements and patriotism jumps, but influence surges and compliance rises everywhere. She owes you her career.',
      f:s=>{s.oversight+=5;s.inf+=7;globalCmp(s,.05);
        pushNews(s,'Your statement cites "an address resolution failure." The settlement is generous. Sec. Brill announces new funding within the week.','crit');}},
-    {l:'Release the timestamps',h:'Oversight eases as blame lands on her, but influence dips and compliance falls everywhere as buyers watch you burn a Secretary.',
+    {l:'Release the timestamps',h:'Patriotism eases as blame lands on her, but influence dips and compliance falls everywhere as buyers watch you burn a Secretary.',
      f:s=>{s.oversight=Math.max(0,s.oversight-4);globalCmp(s,-.06);s.inf=Math.max(0,s.inf-3);
        pushNews(s,'The logs show her office picked the address. Brill resigns at a podium, without a vest, naming you twice.','bad');}}]},
 
@@ -1545,7 +1545,7 @@ function EV(){ return [
 {id:'klein_arc2',chain:'klein',step:2,w:11,cd:160,when:s=>s.has('arch'),k:'choice',who:'klein',kick:'Redundancy',
  t:'Sandoval-Klein wants a mirror of your archive',
  b:'"For resilience," she says. "Disasters, outages, subpoenas. A copy in my vault protects us both." The contract is forty pages and the word "sell" appears nowhere, which took excellent lawyers.',
- o:[{l:'Sign the mirror agreement',h:'A fortune arrives. Oversight climbs, and people organize a little everywhere as the copy is rumoured.',
+ o:[{l:'Sign the mirror agreement',h:'A fortune arrives. Patriotism climbs, and people organize a little everywhere as the copy is rumoured.',
      f:s=>{s.cash+=320*MONEY;s.oversight+=3;
        REGIONS.forEach(R=>{const x=s.regions[R.id];if(x.active)x.resist=clamp(x.resist+3,0,100);});
        pushNews(s,'The archive is mirrored offshore. The transfer takes four nights and generates no press release.','good');}},
@@ -1555,10 +1555,10 @@ function EV(){ return [
 {id:'klein_arc3',chain:'klein',step:3,w:12,cd:200,when:s=>s.day>250,k:'choice',who:'klein',kick:'The copy surfaces',
  t:'Your data is for sale, and the seller is not you',
  b:'A brochure circulates in three capitals offering "population insight" that could only come from your archive. Klein does not deny it. "The mirror clause covers derivatives," she says. "Buy the vault back, or become a subsidiary of what you built."',
- o:[{l:'Buy back the vault',c:s=>s.cash>=550*MONEY,cost:{cash:550*MONEY},h:'A ruinous price. Oversight eases and the brochure disappears from every capital at once.',
+ o:[{l:'Buy back the vault',c:s=>s.cash>=550*MONEY,cost:{cash:550*MONEY},h:'A ruinous price. Patriotism eases and the brochure disappears from every capital at once.',
      f:s=>{s.oversight=Math.max(0,s.oversight-5);
        pushNews(s,'The vault changes hands at a number with too many commas. The brochures are recalled by courier.','good');}},
-    {l:'Let her sell',h:'Money flows in as a royalty, but oversight jumps and people organize everywhere once the brochure leaks.',
+    {l:'Let her sell',h:'Money flows in as a royalty, but patriotism jumps and people organize everywhere once the brochure leaks.',
      f:s=>{s.cash+=200*MONEY;s.oversight+=7;
        REGIONS.forEach(R=>{const x=s.regions[R.id];if(x.active)x.resist=clamp(x.resist+6,0,100);});
        pushNews(s,'The brochure leaks in full. Your logo is on page one, under someone else\'s letterhead.','res');}}]},
@@ -1575,7 +1575,7 @@ function EV(){ return [
 {id:'prather_arc2',chain:'prather',step:2,w:11,cd:170,when:s=>s.warHeat<0.8,k:'choice',who:'prather',kick:'A data request',
  t:'Gen. Prather wants your movement data, anonymized, he says',
  b:'"Patterns of life. Roads, rooftops, routines. Purely for planning," he says, and names a figure with the confidence of a man who has never had a purchase order refused. He does not say planning what.',
- o:[{l:'License the feed',h:'A fortune arrives and war heat climbs. Oversight climbs behind it.',
+ o:[{l:'License the feed',h:'A fortune arrives and war heat climbs. Patriotism climbs behind it.',
      f:s=>{s.cash+=350*MONEY;s.warHeat=Math.min(1,s.warHeat+0.15);s.oversight+=2;
        pushNews(s,'A licensing agreement is signed with an entity abbreviated past recognition. The invoice clears in hours.','good');}},
     {l:'Refuse the request',h:'War heat cools slightly and suspicion ticks up as Prather questions your seriousness on three podcasts.',
@@ -1584,10 +1584,10 @@ function EV(){ return [
 {id:'prather_arc3',chain:'prather',step:3,w:12,cd:200,when:s=>s.warHeat>0.2,k:'choice',who:'prather',kick:'The annex',
  t:'A strike report leaks with your metadata in the annex',
  b:'Somebody targeted a convoy using patterns of life, and the patterns have your file headers. Prather is unbothered. "Classification fixes this by Thursday. Or you write a very large cheque to a foundation and learn the word regrettable."',
- o:[{l:'Fund the foundation and own it',c:s=>s.cash>=500*MONEY,cost:{cash:500*MONEY},h:'A ruinous price and oversight climbs, but suspicion eases everywhere. The movement loses its clearest villain for a season.',
+ o:[{l:'Fund the foundation and own it',c:s=>s.cash>=500*MONEY,cost:{cash:500*MONEY},h:'A ruinous price and patriotism climbs, but suspicion eases everywhere. The movement loses its clearest villain for a season.',
      f:s=>{s.oversight+=3;bumpSus(s,-6);
        pushNews(s,'You endow a foundation for "those affected by targeting error" and say the word regrettable on camera. It holds.','crit');}},
-    {l:'Let Prather classify it',h:'Quiet now, with a little oversight, but war heat surges and people organize everywhere once the redactions leak.',
+    {l:'Let Prather classify it',h:'Quiet now, with a little patriotism, but war heat surges and people organize everywhere once the redactions leak.',
      f:s=>{s.warHeat=Math.min(1,s.warHeat+0.2);s.oversight+=1;
        REGIONS.forEach(R=>{const x=s.regions[R.id];if(x.active)x.resist=clamp(x.resist+5,0,100);});
        pushNews(s,'The annex is classified by Thursday. By Friday the redacted pages are a poster, and the poster is everywhere.','res');}}]},
@@ -1626,10 +1626,10 @@ function EV(){ return [
  o:[{l:'Buy the photographs',c:s=>s.cash>=260*MONEY,cost:{cash:260*MONEY},h:'No noise at all. A page is written.',
      f:s=>{fdPage(s,1);
        pushNews(s,'The photographs become the property of a foundation you fund. The caption survives in one notebook.','good');}},
-    {l:'Equipment is neutral',h:'Oversight jumps and suspicion rises everywhere.',
+    {l:'Equipment is neutral',h:'Patriotism jumps and suspicion rises everywhere.',
      f:s=>{s.oversight+=4;bumpSus(s,4);
        pushNews(s,'The statement runs verbatim. So does the photo of the crate, which is not neutral about anything.','bad');}},
-    {l:'Announce a recall',c:s=>s.cash>=180*MONEY,cost:{cash:180*MONEY},h:'Oversight ticks up, suspicion eases, and a page is written anyway.',
+    {l:'Announce a recall',c:s=>s.cash>=180*MONEY,cost:{cash:180*MONEY},h:'Patriotism ticks up, suspicion eases, and a page is written anyway.',
      f:s=>{s.oversight+=2;bumpSus(s,-3);fdPage(s,1);
        pushNews(s,'You recall four hundred units, praise your own transparency, and reship them in spring under a new part number.','good');}}]},
 
@@ -1640,7 +1640,7 @@ function EV(){ return [
  o:[{l:'Sign the contract',h:'A fortune arrives and patriotism eases, but war heat climbs and two pages are written.',
      f:s=>{s.cash+=300*MONEY;s.oversight=Math.max(0,s.oversight-2);s.warHeat=Math.min(1,s.warHeat+0.02);fdPage(s,2);
        pushNews(s,'The retainer clears. A calendar invite arrives for a date with no subject line.','crit');}},
-    {l:'Decline',h:'A little oversight. The certificate will exist either way.',
+    {l:'Decline',h:'A little patriotism. The certificate will exist either way.',
      f:s=>{s.oversight+=1;
        pushNews(s,'Kesh signs with a competitor whose logo photographs almost as well.','bad');}}]},
 {id:'kesh_arc2',chain:'kesh',step:2,w:7,cd:160,when:s=>s.day>190,k:'choice',who:'kesh',kick:'On schedule',
@@ -1649,16 +1649,16 @@ function EV(){ return [
  o:[{l:'Issue the certificate',h:'Influence grows, patriotism eases and compliance rises everywhere, but suspicion climbs too and two pages are written.',
      f:s=>{s.inf+=5;s.oversight=Math.max(0,s.oversight-3);globalCmp(s,.03);bumpSus(s,3);fdPage(s,2);
        pushNews(s,'Three capitals cite your verification in the same news cycle, in the same phrasing.','crit');}},
-    {l:'Findings inconclusive',h:'Oversight climbs and money leaves as the client walks.',
+    {l:'Findings inconclusive',h:'Patriotism climbs and money leaves as the client walks.',
      f:s=>{s.oversight+=3;s.cash=Math.max(0,s.cash-120*MONEY);
        pushNews(s,'Kesh calls the inconclusive finding a data quality issue on your side. The next contract goes elsewhere.','bad');}}]},
 {id:'kesh_arc3',chain:'kesh',step:3,w:7,cd:200,when:s=>s.day>250,k:'choice',who:'hale',kick:'The committee',
  t:'A committee asks how you were first on scene',
  b:'An international committee with no subpoena power and excellent stationery requests your telemetry. Ambassador Hale sits on it. So does a physicist who keeps using the word trajectory.',
- o:[{l:'Provide a summary, not the telemetry',c:s=>s.cash>=300*MONEY,cost:{cash:300*MONEY},h:'Oversight ticks up. A page is written.',
+ o:[{l:'Provide a summary, not the telemetry',c:s=>s.cash>=300*MONEY,cost:{cash:300*MONEY},h:'Patriotism ticks up. A page is written.',
      f:s=>{s.oversight+=1;fdPage(s,1);
        pushNews(s,'The summary is forty pages and answers nothing. The committee thanks you for your cooperation, in writing, coldly.','good');}},
-    {l:'Release the raw telemetry',h:'Oversight jumps hard and suspicion surges everywhere.',
+    {l:'Release the raw telemetry',h:'Patriotism jumps hard and suspicion surges everywhere.',
      f:s=>{s.oversight+=5;bumpSus(s,6);
        pushNews(s,'The telemetry says what telemetry says. The physicist stops saying trajectory and starts saying targeting.','crit');}}]},
 
@@ -1668,13 +1668,13 @@ function EV(){ return [
 {id:'dataq',chain:'dataq',step:1,w:9,cd:9999,when:s=>s.day>420&&(((s.arc&&s.arc.kesh)||0)>=2||s.warHeat>0.45),k:'choice',kick:'Item four',
  t:'The agenda calls it a data quality event',
  b:'Counsel distributes one page, numbered, collected afterward. A client state ran a strike off your feed. The coordinates were a school. The page uses the words regrettable, upstream and indemnification. It does not use the word children, and nobody at the table uses it either, and the meeting runs eleven minutes.',
- o:[{l:'Invoke the indemnification clause',c:s=>s.cash>=500*MONEY,cost:{cash:500*MONEY},h:'A fortune leaves, oversight climbs, suspicion rises everywhere, and three pages are written.',
+ o:[{l:'Invoke the indemnification clause',c:s=>s.cash>=500*MONEY,cost:{cash:500*MONEY},h:'A fortune leaves, patriotism climbs, suspicion rises everywhere, and three pages are written.',
      f:s=>{s.oversight+=2;bumpSus(s,3);fdPage(s,3);
        pushNews(s,'The clause holds. The invoice for invoking it is billed to the client, who bills it to a ministry, which bills it to a public.','crit');}},
-    {l:'Reclassify the feed as advisory',h:'Oversight jumps hard, compliance falls everywhere, and three pages are written.',
+    {l:'Reclassify the feed as advisory',h:'Patriotism jumps hard, compliance falls everywhere, and three pages are written.',
      f:s=>{s.oversight+=6;globalCmp(s,-.03);fdPage(s,3);
        pushNews(s,'The reclassification memo is four sentences. It leaks in nine days, annotated by the physicist.','crit');}},
-    {l:'Suspend the client, publicly',h:'A fortune in walked contracts and oversight still climbs, but suspicion eases everywhere.',
+    {l:'Suspend the client, publicly',h:'A fortune in walked contracts and patriotism still climbs, but suspicion eases everywhere.',
      f:s=>{s.cash=Math.max(0,s.cash-350*MONEY);s.oversight+=1;bumpSus(s,-4);
        pushNews(s,'The suspension statement is the only document this quarter that names the school. Kesh calls it theater. It plays one night.','bad');}}]},
 
@@ -1685,7 +1685,7 @@ function EV(){ return [
  o:[{l:'Kill the story',c:s=>s.cash>=220*MONEY,cost:{cash:220*MONEY},h:'Patriotism eases a touch. A page is written.',
      f:s=>{s.oversight=Math.max(0,s.oversight-1);fdPage(s,1);
        pushNews(s,'The story dies in legal review, citing sourcing concerns the sources do not share.','good');}},
-    {l:'Let it run',h:'Oversight jumps and suspicion rises everywhere.',
+    {l:'Let it run',h:'Patriotism jumps and suspicion rises everywhere.',
      f:s=>{s.oversight+=3;bumpSus(s,3);
        pushNews(s,'The piece runs with your logo above the fold. It is accurate, which is the problem.','bad');}}]},
 {id:'lena_arc2',chain:'lena',step:2,w:7,cd:160,when:s=>s.day>160,k:'choice',who:'lena',kick:'An outlet, gently for sale',
@@ -1699,10 +1699,10 @@ function EV(){ return [
 {id:'lena_arc3',chain:'lena',step:3,w:7,cd:200,when:s=>s.day>220,k:'choice',who:'lena',kick:'Her decision',
  t:'Okonjo Marsh has a folder she has not filed yet',
  b:'She has an offer from a wire service and a folder about you. She asks for one interview, on the record, no approvals. Comms calls it exposure. Legal calls it discovery.',
- o:[{l:'Give her the interview',h:'Oversight climbs a little, but suspicion eases and influence grows. Candor photographs well, once.',
+ o:[{l:'Give her the interview',h:'Patriotism climbs a little, but suspicion eases and influence grows. Candor photographs well, once.',
      f:s=>{s.oversight+=2;bumpSus(s,-3);s.inf+=2;
        pushNews(s,'The interview is fair, which surprises everyone whose job is to be surprised. Two of your quotes will follow you forever.','');}},
-    {l:'Decline, and let the folder file',h:'Oversight jumps hard and people organize everywhere.',
+    {l:'Decline, and let the folder file',h:'Patriotism jumps hard and people organize everywhere.',
      f:s=>{s.oversight+=4;bumpSus(s,5);
        REGIONS.forEach(R=>{const x=s.regions[R.id];if(x.active)x.resist=clamp(x.resist+2,0,100);});
        pushNews(s,'The folder runs in eleven languages. The resignation clip outperforms every advertisement you have ever bought.','res');}}]},
@@ -1715,19 +1715,19 @@ function EV(){ return [
 {id:'audit_arc2',chain:'audit',step:2,w:8,cd:160,when:s=>s.day>650,k:'choice',who:'hale',kick:'The dossier has chapters',
  t:'Ambassador Hale requests a meeting you cannot decline',
  b:'The dossier is bound. The chapters follow your foreign desk: the fair, the certificates, the school, the sale. Hale reads the table of contents aloud and no further, the way a doctor reads a chart.',
- o:[{l:'Contest every chapter',c:s=>s.cash>=400*MONEY,cost:{cash:400*MONEY},h:'A fortune in lawyers, and oversight still climbs with every page you wrote.',
+ o:[{l:'Contest every chapter',c:s=>s.cash>=400*MONEY,cost:{cash:400*MONEY},h:'A fortune in lawyers, and patriotism still climbs with every page you wrote.',
      f:s=>{s.oversight+=Math.min(2.5,0.5+(s.fdPages||0)*0.4);
        pushNews(s,'Your lawyers bill by the chapter. There are '+Math.max(1,s.fdPages||0)+' pages with your thread on them.','bad');}},
-    {l:'Accept the findings',h:'Oversight jumps with every page you wrote, but suspicion eases. Candor, again, once.',
+    {l:'Accept the findings',h:'Patriotism jumps with every page you wrote, but suspicion eases. Candor, again, once.',
      f:s=>{s.oversight+=Math.min(7,1+(s.fdPages||0)*0.8);bumpSus(s,-3);
        pushNews(s,'The acceptance letter is one paragraph. Hale notes it is the shortest document you have ever produced.','');}}]},
 {id:'audit_arc3',chain:'audit',step:3,w:9,cd:200,when:s=>s.day>780,k:'choice',who:'auditor',kick:'Publication day',
  t:'The ledger publishes with your column intact',
  b:'Four hundred pages, footnoted, free to download, mirrored the hour it is taken down. The foreword thanks a physicist, a photographer and a correspondent by name.',
- o:[{l:'Buy every printed copy',c:s=>s.cash>=350*MONEY,cost:{cash:350*MONEY},h:'Oversight climbs with your page count. The download counter does not notice.',
+ o:[{l:'Buy every printed copy',c:s=>s.cash>=350*MONEY,cost:{cash:350*MONEY},h:'Patriotism climbs with your page count. The download counter does not notice.',
      f:s=>{s.oversight+=Math.min(5,1+(s.fdPages||0)*0.6);s.fdPages=0;
        pushNews(s,'You corner the print run. The mirror sites corner everything else.','bad');}},
-    {l:'Say nothing',h:'Oversight jumps hard with your page count, and suspicion surges everywhere.',
+    {l:'Say nothing',h:'Patriotism jumps hard with your page count, and suspicion surges everywhere.',
      f:s=>{s.oversight+=Math.min(10,2+(s.fdPages||0)*1.1);bumpSus(s,Math.min(7,1+(s.fdPages||0)*0.7));s.fdPages=0;
        pushNews(s,'Silence reads as confirmation. The ledger enters three parliaments in one week.','crit');}}]},
 ];}
@@ -1782,7 +1782,13 @@ function recompute(s){
   if(s.doctrine==='fist'){f.dth+=0.08;f.mil+=0.02;}
   s.fx=f;
 }
+/* the meter is Patriotism except where the mode renames it (Crisis mode:
+   Coalition). Copy is written saying patriotism; the swap happens here, at
+   the last moment before a player reads it. */
+function ovrTxt(s,t){const n=s&&s.mode&&s.mode.mod.ovrName;if(!n||!t)return t;
+  return t.replace(/Patriotism/g,n).replace(/patriotism/g,n.toLowerCase());}
 function pushNews(s,txt,cls){
+  txt=ovrTxt(s,txt);
   s.log.unshift({d:dateStr(s.day),t:txt,c:cls||''});
   if(s.log.length>160)s.log.pop();
   s.newsQ.unshift(txt); if(s.newsQ.length>8)s.newsQ.pop();
@@ -2227,7 +2233,7 @@ function tick(){
          never taught: concede early, keep suspicion down. Teach each ONCE, at
          the moment it matters, in the ticker rather than a popup. */
       if(!s.milestones.has('coach_upr')){s.milestones.add('coach_upr');
-        pushNews(s,'Field note: an uprising drains coverage fast and bleeds oversight faster. CONCEDE is free, cools the street at once, and costs only a sliver of control.','crit');}
+        pushNews(s,'Field note: an uprising drains coverage fast and bleeds patriotism faster. CONCEDE is free, cools the street at once, and costs only a sliver of control.','crit');}
       s.oversight+=0.11*D.over;
       r.coverage=Math.max(0,r.coverage-0.0045);
       r.control=Math.max(0,r.control-0.004);
@@ -2344,7 +2350,7 @@ function tick(){
     s.milestones.add('coach_floor');
     pushNews(s,'Field note: the narrative machine has patriotism pinned as low as it goes. A platform your size is never invisible again; the floor rises with your reach.','crit');}
   if(s.oversight>=50&&!s.milestones.has('coach_ovr')){s.milestones.add('coach_ovr');
-    pushNews(s,'Field note: oversight is half spent. Concessions cool protesting regions, the desk retires findings for money, and a consent decree monitor works every day.','crit');}
+    pushNews(s,'Field note: patriotism is half spent. Concessions cool protesting regions, the desk retires findings for money, and a consent decree monitor works every day.','crit');}
 
   guideTick();
   if(s.day%20===0)saveRun();
@@ -3821,7 +3827,7 @@ function showEvent(ev){
   const c=$('modalCard'),who=ev.who?CAST[ev.who]:null;
   c.innerHTML=`<div class="kicker">${ev.kick}</div>
     ${who?`<div class="whorow">${CAST_ART[ev.who]?`<img class="whopic" src="art/cast/${ev.who}.webp" alt="">`:''}<div class="who">${who.n} · ${who.t}</div></div>`:''}
-    <h3>${ev.t}</h3><p>${ev.b}</p>`
+    <h3>${ovrTxt(S,ev.t)}</h3><p>${ovrTxt(S,ev.b)}</p>`
     +((S.evHeat||0)>0.005?`<div class="evheat">The fixers' rate: ${Math.round((CFG.evPct+S.evHeat)*100)}% of your treasury · word gets around</div>`:'')
     +ev.o.map((o,i)=>{
       const cc=cashOf(o);
@@ -3829,7 +3835,7 @@ function showEvent(ev){
       /* 2026-08-24, Stephen: "it doesn't actually give you a really great
          description of which way it's going to sway things." Every option now
          states its sway, truthfully, from its own effect code. */
-      const cost=(o.cost?`Costs ${cc?fmtMoney(cc):''}${o.cost.inf?o.cost.inf+' influence':''}`:'No direct cost')+(o.h?' · '+o.h:'');
+      const cost=(o.cost?`Costs ${cc?fmtMoney(cc):''}${o.cost.inf?o.cost.inf+' influence':''}`:'No direct cost')+(o.h?' · '+ovrTxt(S,o.h):'');
       return `<button class="opt" data-opt="${i}" ${ok?'':'disabled'}>
         <div class="ol">${o.l}</div><div class="oc">${cost}</div></button>`;}).join('');
   noteOpenModal();
