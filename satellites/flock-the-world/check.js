@@ -1079,6 +1079,38 @@ if (C) {
         ok('the Crisis Engine briefing quotes its own discount and coalition speed',
           /30% off/.test(bx)&&/22% faster/.test(bx), bx.slice(0,120));
       }
+      /* BUBBLE ENGAGEMENT (Aug 24 evening): harder difficulties push more of
+         the influence economy through the thumb, and a missed leak costs more. */
+      {
+        const realR=Math.random;
+        const share=diff=>{
+          const cS2=makeCtx();cS2.doctrineModal=()=>{};cS2.showEvent=()=>{};
+          vm.runInContext(`S=newState('CONTRACTOR','${diff}','NA');`,cS2);
+          const s2=vm.runInContext('S',cS2);
+          Object.keys(s2.regions).forEach(k=>{s2.regions[k].active=true;});
+          let n=99;Math.random=()=>{n=(n*1664525+1013904223)>>>0;return n/4294967296;};
+          for(let i=0;i<400;i++)vm.runInContext('spawnBubble(S)',cS2);
+          Math.random=realR;
+          const nc=s2.bubbles.filter(b=>b.k!=='cash').length;
+          return nc/s2.bubbles.length;
+        };
+        const shC=share('Contractor'), shI=share('Incumbent');
+        ok('harder difficulty spawns a larger influence share of bubbles', shI>shC+0.08,
+          'Contractor='+(shC*100).toFixed(1)+'% Incumbent='+(shI*100).toFixed(1)+'%');
+        const missTwin=miss=>{
+          const cS3=makeCtx();cS3.doctrineModal=()=>{};cS3.showEvent=()=>{};
+          vm.runInContext(`S=newState('CONTRACTOR','Vendor','NA');S.diff=Object.assign({},S.diff,{bubMiss:${miss}});`,cS3);
+          const s3=vm.runInContext('S',cS3);
+          s3.bubbles.push({k:'leak',x:0,y:0,life:1,born:0,v:0});
+          let n=7;Math.random=()=>{n=(n*1664525+1013904223)>>>0;return n/4294967296;};
+          vm.runInContext('tick()',cS3);
+          Math.random=realR;
+          return s3.oversight;
+        };
+        const soft=missTwin(0.7), hard=missTwin(1.4);
+        ok('a leak that expires uncaught costs more on a harder table', hard>soft+1.0,
+          'soft='+soft.toFixed(2)+' hard='+hard.toFixed(2));
+      }
       const c=stage({cov:.97,ctl:.995,cmp:.95,mil:.02,doc:'glove'});
       ok('classic subjugation still outranks every other door', c.over&&c.won&&c.why==='win', JSON.stringify(c));
       const none=stage({cov:.5,ctl:.5,cmp:.5,mil:.2,doc:'glove'});

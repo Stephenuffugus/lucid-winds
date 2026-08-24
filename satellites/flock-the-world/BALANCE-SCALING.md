@@ -335,3 +335,15 @@ econRun/econHeatRamp (60)) × max(0, 1 − subj/econHeatSubj (0.5))` per day.
 * **Counterplay is intended:** breaking the streak cools the hearings AND
   resets the door counter — you can dodge the heat only by giving up the door.
 * Camper price on easiest: ~+19 patriotism across the 130 days; ~+26 on Vendor.
+
+## Bribe heat + bubble engagement (2026-08-24 evening, items 3 and 5)
+
+* **Bribe heat:** `evPrice = max(base×evScale, treasury×(evPct 5% + evHeat))`,
+  evHeat +4pts per payoff (cap 30), −0.2pts/day cooling, +0.4 world suspicion
+  per payoff. Paying off every event now compounds against you three ways:
+  price, suspicion (which feeds leak bubbles), and the fixers' rate shown in
+  the modal. Single-sourced in evPrice/evPayCash.
+* **Bubbles by difficulty:** DIFFS.bubInf 0.68/0.62/0.54 (influence share of
+  spawns 32%/38%/46%) and DIFFS.bubMiss 0.7/1.0/1.4 on the uncaught-leak
+  penalty (base 1.6 patriotism + 3 suspicion). Suspicion above 10 is still the
+  leak-spawn gate, so bribe-heavy runs literally spring leaks.

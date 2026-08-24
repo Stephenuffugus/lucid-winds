@@ -39,7 +39,24 @@ Still owed: bed_tension, optional crowd states. Music is his, NOT CC0
    raises evPct + suspicion, sellers talk — mirror acqHeat), or non-cash
    costs on more options, or difficulty-scaled evPct.
 
-None of 2-7 implemented — design calls are Stephen's. Item 1 is mechanical.
+**ALL FIVE ITEMS BUILT + DEPLOYED (Stephen: "go in the order you proposed"), commits f53e2878..this:**
+1. **Receipts** — root cause was toasts at z:7 under the sheet (z:40); now z:45,
+   and both actions state their numbers + push a wire line (probe: ftw-receipts-aug24).
+2. **The ban debate** — econ streak now heats patriotism, ramped 60d, fading to
+   zero by subj 0.5. Seeded sims: zero collateral (bot streaks all form at
+   subj>=0.85). Breaking the streak cools it AND resets the door. See
+   BALANCE-SCALING.md.
+3. **Bribe heat** — each payoff raises the next one's treasury share (5%+4pts,
+   cap 35%), +0.4 suspicion, ~20d cooling; modal shows the fixers' rate;
+   persists across reloads. evPrice/evPayCash are the single source.
+4. **Mode identity** — run-start briefing banner from live mod values
+   (modeBriefing); LEAKS READ chips on free societies under Deep Partnership;
+   Crisis tree header states the day-one discount (probe: ftw-modes-aug24).
+5. **Bubble engagement** — DIFFS.bubInf widens the influence share by
+   difficulty (32%/38%/46%), DIFFS.bubMiss scales the price of an uncaught
+   leak (0.7/1.0/1.4).
+
+Still open from the notes: none. Still owed: bed_tension + optional crowds.
 
 ## Aug 24 pass (Stephen's FIRST WINNING RUN notes — Too Big To Ban, day 1536)
 
@@ -151,15 +168,28 @@ Plague Inc-style satire sim: you're the surveillance vendor subjugating Earth vi
 - **Onboarding**: first game per page load runs the interactive `GUIDE` while the sim runs — (1) buy Nuisance Ordinances (Story tab pulses, node glows), (2) buy Free Pilot Program, (3) 22-day "watch the money grow" beat, (4) synergy tease pointing at Plate Recognition. Advance is condition-driven (`guideTick`/`guideEvent`), skippable. The old 6-step modal tutorial remains behind menu "How to play".
 - **Narrative layer**: rotating WIRE ticker (4.3s) over last 8 headlines; crit headlines also fire a sliding BREAKING banner (5.2s); 15 ambient satire lines + `H{}` templated headlines for every transition; fictional composite cast (Vole/Brill/Prather/Klein/The Anchor) drives choice events. No real names — keep it that way (legal + evergreen).
 
-## Verified balance (sim results — ⛔ STALE, re-verify at end of Aug 24 evening pass: sim.js was broken by DOM drift until 2026-08-24 evening; fresh seeded runs on the current build differ from this table)
+## Verified balance (SEEDED sim results, 2026-08-24 evening, full notes-2 pass in)
+
+sim.js now seeds its PRNG per scenario (identical dice across CFG comparisons)
+and its DOM stubs were healed after the sound pass broke them. The old table
+was stale for both reasons.
 
 | Scenario | Result |
 |---|---|
-| Vendor, balanced bot (even at 10% bubble pickup) | WIN ~day 800-870, oversight 40-46% |
-| Vendor, dep/cap rush (ignores Narrative tree) | LOSS ~day 770-780 at 89% subj, often loses a region — resistance + protests punish it |
-| Incumbent (D.sus 1.18/over 1.42), balanced w/ concede usage | ~3/4 WIN at 47-63% oversight, occasional photo-finish loss — intended |
-| Crisis Engine | WIN, hottest oversight (~50-67) via warHeat |
-| Do nothing | LOSS ~day 3300, loses a region to uprising |
+| Vendor, balanced glove bot (10% bubble pickup) | WIN day 1063, patriotism 65 |
+| Vendor, dep/cap fist rush (ignores Story tree) | LOSS day 999 — regression guard holds |
+| Vendor, fist from SEA | WIN day 1156, patriotism 97 (photo finish) |
+| Vendor, glove #2 (full bubbles) | LOSS day 1305 at 68% subj |
+| Deep Partnership from EA | WIN day 941, patriotism 36 |
+| Crisis Engine from ME | LOSS day 1015 — pre-existing at HEAD, stale table claimed WIN |
+| Incumbent glove from WE | LOSS day 1340 — pre-existing at HEAD |
+| Do nothing | LOSS ~day 3623 — guard holds |
+
+⛔ Bots are greedy scripts, not players (Stephen wins comfortably on easy where
+they lose Vendor); the divergence from the pre-evening table is partly stale
+data, partly the Aug 24 daytime passes landing while sim.js was broken. If
+Vendor is meant to be bot-winnable across doctrines, that is a tuning session
+of its own — flagged, not folded into this pass.
 
 Tone: player is explicitly the parasite class; civilians are named as innocent and preyed-upon throughout (menu, ambient headlines on predatory fines/data brokers/false arrests, end screens). Loss screens celebrate the organizers by tactic; the win screen is an indictment. Keep it that way — it's the art.
 
