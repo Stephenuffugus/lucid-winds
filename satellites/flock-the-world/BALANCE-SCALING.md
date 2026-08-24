@@ -215,7 +215,8 @@ Oversight is a 0 to 100 stock with many small flows:
 * **Global gain** (1883): `(avgSus/100 * overK 0.55 + subj*0.022 + lostCount*0.02 + warHeat*0.05) * D.over * (M.over||1) - f.dec*0.042`. Note `subj*0.022`: **winning itself raises scrutiny**, so the endgame tightens even for a quiet player. `f.dec` (Narrative tree) is the only passive relief besides monitors.
 * **Spikes:** events (+1 to +6), missed leaks (+1.6), acquisitions (+0.2), region-full milestones (+1), crackdowns (+0.8, +3 on backfire).
 * **Relief valves:** desk ops (minus 4 to minus 22), consent decree monitors (0.012/tick each, cap 3), tapped leaks (minus 0.6), some event choices.
-* Clamped 0..100 **after** events run (1911), because event effects land after the earlier clamp and a run once finished above 100%.
+* **The floor (2026-08-24, from Stephen's winning run):** oversight cannot sit below `ovFloor = min(ovFloorMax 30, subj*ovFloorK 35)`, asserted at both clamps. The full Story tree's summed `dec` is ~5.4 (lobby .3, nda .4, capt 1.0, revo .9, legal 1.5, narr 1.3, plus combos), which is 0.23/day of relief against ~0.05/day of quiet-endgame gain: it did not neutralize the clock, it deleted it, and a run sat at a dead 0.0% patriotism through the whole endgame. The arms race stays: dec still smothers growth, but a giant hovers at its floor (21% at his 59% subjugation) where spikes and drips still land. Every winning bot ends at 40+, so the floor binds only the degenerate build. A one-time field note fires when the floor first binds.
+* Clamped `ovFloor..100` **after** events run (1911), because event effects land after the earlier clamp and a run once finished above 100%; the same clamp means a consent decree cannot buy a giant below its floor.
 
 ## 14. Doctrine, difficulty, mode
 
@@ -279,6 +280,7 @@ Safe ranges marked (swept) come from measured sweeps in the code comments; the r
 | `lostLimit` | 4 | How many refusals end the run. 3 makes uprisings terrifying; 5 makes them a fine. | 3 to 5 |
 | `dcUpkeep` / `dcMax` / `dcGrow` | 0.34 / 4 / 0.05 | The one permanent bill, its cap, and what it buys. ⛔ Uncapped, the bot bought 12 and went minus $2M/day. | up 0.25 to 0.45, max 3 to 5 |
 | `monitorRelief` | 0.012 | Per tick per monitor, cap 3. Three monitors ≈ 0.036/day, roughly one uprising drip's worth of forgiveness at 0.33x. | 0.008 to 0.02 |
+| `ovFloorK` / `ovFloorMax` | 35 / 30 | The patriotism floor: oversight never decays below min(max, subj*K). At 59% subjugation the floor reads 21%. Raise K and the narrative build spends its endgame closer to danger; every winning bot ends at 40+ so this binds only the full-dec degenerate. | K 25 to 45, max 25 to 35 |
 | `coverPayoutDays` | 45 | Insurance payout in days of net per lost market. Above ~90 losing regions becomes a strategy. | 30 to 60 |
 | `deskDays` | 24 | Desk turnover clock. Shorter = more variety and more temptation. | 15 to 35 |
 | `choiceGapMs` | 45000 | Real-time floor between choice modals in a live session (sim-day gaps compress with the speed dial). Bots and checks run unpaced and skip it. | 30000 to 60000 |

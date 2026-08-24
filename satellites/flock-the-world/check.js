@@ -901,6 +901,32 @@ if (C) {
         /evN:s\.evN\|\|\{\}/.test(GAME)&&/s\.evN=\{\};/.test(GAME));
     }
 
+    /* Stephen's winning run, 2026-08-24: full Story tree drove patriotism to a
+       dead 0.0% and held it there ("it seems like that's the trick to just
+       winning"). The floor: oversight cannot decay below min(30, subj*35), so
+       a giant is never invisible, while a young company still is. */
+    group('a giant is never invisible: the patriotism floor');
+    {
+      const cF=makeCtx();cF.doctrineModal=()=>{};cF.showEvent=()=>{};
+      vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');",cF);
+      const sF=vm.runInContext('S',cF);
+      for(const id in sF.regions){const r=sF.regions[id];
+        r.active=true;r.control=0.6;r.coverage=0.6;r.compliance=0.9;r.suspicion=0;}
+      sF.oversight=0;sF.doctrine='glove';
+      vm.runInContext('tick()',cF);
+      ok('holding 60% of Earth, patriotism cannot sit at zero', sF.oversight>=18,
+        'oversight='+sF.oversight.toFixed(1));
+      const cF2=makeCtx();cF2.doctrineModal=()=>{};cF2.showEvent=()=>{};
+      vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');",cF2);
+      const sF2=vm.runInContext('S',cF2);
+      sF2.oversight=0;
+      vm.runInContext('tick()',cF2);
+      ok('a young company is still invisible (the floor rises with reach)', sF2.oversight<2,
+        'oversight='+sF2.oversight.toFixed(1));
+      ok('events cannot buy a giant below the floor (the post-event clamp re-asserts it)',
+        /s\.oversight=clamp\(s\.oversight,ovFloor\(s\),100\);/.test(GAME));
+    }
+
     group('the small mercies: Greenland, the concede arm, the field notes');
     {
       ok('Greenland counts as Western Europe, not North America',

@@ -953,6 +953,17 @@ const CFG = {
   dcUpkeep:0.34,      /* a data centre costs this share of BASE upkeep, forever */
   dcMax:4,            /* and you may run this many. See the note on the dc entry. */
   monitorRelief:0.012, /* oversight retired per tick per consent-decree monitor (cap 3) */
+  /* ⛔ THE PATRIOTISM FLOOR, 2026-08-24, from Stephen's first winning run: "I
+     finished buying the entire story tree and the patriotism went to zero and
+     now I'm having no problems really. It seems like that's the trick to just
+     winning." The Story tree's summed dec is ~5.4, which is 0.23/day of relief
+     against ~0.05/day of quiet-endgame gain: not an arms race, a firehose.
+     The arms race stays (dec still neutralizes growth), but the world never
+     fully looks away from a giant: oversight cannot decay below
+     min(ovFloorMax, subj*ovFloorK). At his 59% subjugation that reads 21%,
+     alive and spikeable, instead of a dead 0.0%. Every bot ends at 40+ so the
+     floor binds only the degenerate build it exists for. */
+  ovFloorK:35, ovFloorMax:30,
   /* ==== PATHS TO VICTORY, 2026-08-24 (Stephen: "diversify reaching the win
      condition so people can try different playstyles"). Classic subjugation
      stays the ceiling; three more doors open below it, each demanding a
@@ -1882,6 +1893,9 @@ function doAcquire(){
    priced half of the event system was silently switched off. Dividing by MONEY
    restores the intended old-unit ratio. */
 function evScale(s){return clamp(((s&&s.net)||0)/(10*MONEY),1,25);}
+/* the patriotism floor: the world never fully looks away from a giant. See the
+   CFG note at ovFloorK for the winning run that made it necessary. */
+function ovFloor(s){return Math.min(CFG.ovFloorMax,(s.subj||0)*CFG.ovFloorK);}
 function dateStr(day){const d=new Date(2026,0,1);d.setDate(d.getDate()+day);
   return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
 function pickActive(s){const a=REGIONS.map(r=>s.regions[r.id]).filter(r=>r.active&&r.coverage>.04);
@@ -2094,7 +2108,7 @@ function tick(){
 
   const ovGain=(Math.pow(s.avgSus/100,1.0)*CFG.overK+s.subj*0.022+s.lostCount*0.02+s.warHeat*0.05)
     *D.over*(M.over||1)-f.dec*0.042;
-  s.oversight=clamp(s.oversight+ovGain,0,100);
+  s.oversight=clamp(s.oversight+ovGain,ovFloor(s),100);
 
   if(!s.nextBubble)s.nextBubble=s.day+6+(Math.random()*10|0);
   if(s.day>=s.nextBubble){spawnBubble(s);s.nextBubble=s.day+5+(Math.random()*11|0);}
@@ -2119,8 +2133,12 @@ function tick(){
     popTotals(s);}
   /* leak expiry and event effects add oversight AFTER the earlier clamp, and the
      end condition then read the unclamped number, so a run could finish above
-     100%. Found by the 2026-08-23 external audit. */
-  s.oversight=clamp(s.oversight,0,100);
+     100%. Found by the 2026-08-23 external audit. The same clamp re-asserts the
+     patriotism floor, so a consent decree cannot buy a giant below it either. */
+  s.oversight=clamp(s.oversight,ovFloor(s),100);
+  if(!s.milestones.has('coach_floor')&&ovFloor(s)>=8&&s.oversight<=ovFloor(s)+0.001&&ovGain<0){
+    s.milestones.add('coach_floor');
+    pushNews(s,'Field note: the narrative machine has patriotism pinned as low as it goes. A platform your size is never invisible again; the floor rises with your reach.','crit');}
   if(s.oversight>=50&&!s.milestones.has('coach_ovr')){s.milestones.add('coach_ovr');
     pushNews(s,'Field note: oversight is half spent. Concessions cool protesting regions, the desk retires findings for money, and a consent decree monitor works every day.','crit');}
 
