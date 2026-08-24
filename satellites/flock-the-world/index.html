@@ -1227,11 +1227,15 @@ function checkCombos(s){
     }
   }
 }
+/* 2026-08-24, Stephen: "there needs to be better descriptions in each skill
+   tree of what that tree is actually going to affect and how it's going to
+   affect your gameplay and what you might need to watch out for." Each desc
+   now names what it feeds, whose build it is, and the bill it runs up. */
 const TREES={
- dep:{title:'Deployment',desc:'Hardware everywhere. Broad pyramid: parallel contract channels converge on total physical coverage.'},
- cap:{title:'Watchlist',desc:'Twin spine: the WATCH column identifies, the ENFORCE column acts, the rungs fuse them. Depth of control rises; so does visibility.'},
- inf:{title:'Narrative',desc:'The web. Compliance up, suspicion managed, oversight defanged. This tree holds the lie together.'},
- war:{title:'Crisis',desc:'The ladder. Each rung manufactures the emergency that justifies the next. Gated by world conditions. High yield, loud consequences.'}
+ dep:{title:'Deployment',desc:'Hardware everywhere. Broad pyramid: parallel contract channels converge on total physical coverage. Feeds coverage growth and income, and coverage is half of subjugation. Watch out: cameras without a story. Coverage breeds suspicion, and suspicion becomes Patriotism unless the Story tree keeps the lie fed.'},
+ cap:{title:'Watchlist',desc:'Twin spine: the WATCH column identifies, the ENFORCE column acts, the rungs fuse them. Feeds control depth, the other half of subjugation and the number that actually wins the game. Watch out: visibility. Everything here makes people FEEL watched, which breeds suspicion and organizing. Pair it with Story suppression or the streets will answer.'},
+ inf:{title:'Narrative',desc:'The web. Compliance up, suspicion managed, Patriotism defanged, organizers pacified. This tree holds the lie together, and no build survives the endgame without some of it. Watch out: the price. It runs on influence, and every point spent here is a capability not bought. That trade is the whole game.'},
+ war:{title:'Crisis',desc:'The ladder. Each rung manufactures the emergency that justifies the next. This is the Iron Fist toolkit: fear converts riots into compliance, Agitate plus Crackdown farms obedience, and militarization opens the Nothing Moves door. Watch out: the bill. Militarization feeds unrest and upkeep, some rungs cost Patriotism the day you buy them, and a Velvet Glove run can skip this tree entirely.'}
 };
 
 /* ============================ NEWS ============================ */
@@ -1959,6 +1963,12 @@ function tick(){
       pushNews(s,H[ns](r.name),ns==='uprising'?'crit':ns==='violent'?'crit':ns==='peaceful'?'bad':'');
     if(ns!==prev&&ns!=='calm'){const[ppx,ppy]=anchorOf(id);
       s.pings.push({x:ppx,y:ppy,t:0,kind:ns==='uprising'?'u':ns==='violent'?'v':'p'});}
+    /* Stephen, Aug 24: "I don't know how to quell them once they get into an
+       uprising and there hasn't been a lot of stuff to teach you if it's even
+       possible." Teach the riot playbook ONCE, the first time it is needed. */
+    if(ns==='violent'&&prev!=='violent'&&prev!=='uprising'&&!s.milestones.has('coach_riot')){
+      s.milestones.add('coach_riot');
+      pushNews(s,'Field note: a riot can still be cooled. CONCEDE is free and eases everything for a slice of control. CRACKDOWN clears the square at a price the region never forgets. BLACKOUT slows the story. Doing nothing radicalizes them further.','crit');}
     /* the living map: harvested data streams home, routes hum with traffic */
     if(r.active&&r.coverage>0.02&&s.pk.length<90&&Math.random()<0.12+r.coverage*0.35){
       const[kx,ky]=anchorOf(id);
@@ -2001,6 +2011,8 @@ function tick(){
           pushNews(s,'The insurer pays out on '+r.name+'. '+fmtMoney(payout)+', and the premium letter is already in the post.','good');}
         {const[xx2,xy2]=anchorOf(id);s.pings.push({x:xx2,y:xy2,t:0,kind:'x'});}
         pushNews(s,H.lost(r.name),'crit');
+        if(!s.milestones.has('coach_lost')){s.milestones.add('coach_lost');
+          pushNews(s,'Field note: an expelled market is not gone for good. Re-enter it from the World tab at a surcharge; every concession you banked there before losing it cuts the price.','crit');}
       }
     }
 
@@ -3370,10 +3382,10 @@ function regionActionsHTML(rid){
   const cd=x.cd>0?` (${x.cd}d)`:'';
   let acts='<div class="acts">';
   if(s.has('agit'))acts+=`<button class="act warn" data-act="agitate" data-r="${rid}"
-        title="Send provocateurs into a march. Unrest jumps, a peaceful march turns violent."
+        title="Send provocateurs into a march. Unrest jumps, a peaceful march turns violent. Why: a violent march justifies a Crackdown, and a crackdown you survive pays compliance. The Iron Fist one-two."
         ${s.cash<pAg||x.pstate==='uprising'||x.cd>0?'disabled':''}>${uiIco('act_agitate')}Agitate ${fmtMoney(pAg)}${cd}</button>`;
   if(s.has('charter'))acts+=`<button class="act danger" data-act="crack" data-r="${rid}"
-        title="Armored response. Unrest falls, compliance and militarization rise. Can backfire, always remembered."
+        title="Armored response. Unrest falls, compliance and militarization rise. Can backfire, always remembered, and it ends any Grateful World peace streak."
         ${s.cash<pCr||x.unrest<30||x.cd>0?'disabled':''}>${uiIco('act_crackdown')}Crackdown ${fmtMoney(pCr)}${cd}</button>`;
   if(s.has('blackout'))acts+=`<button class="act" data-act="blackout" data-r="${rid}"
         title="Buy the news cycle. Suspicion drops and builds slower for two weeks. Weak where the press is free."
