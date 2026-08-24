@@ -1,5 +1,41 @@
 # FLOCK THE WORLD (FTW) — HANDOFF
 
+## Aug 24 pass (Stephen's FIRST WINNING RUN notes — Too Big To Ban, day 1536)
+
+Six commits, each checked and deployed separately (9c2235de..1eb46fe2). 197 checks.
+
+- **Sound is IN**: 22 one-shot cues live, all CC0 from Kenney.nl packs (provenance
+  per file in `sfx/CREDITS.md`), wired via `SFX_HAVE`; check.js enforces the
+  manifest both ways (listed-without-file and file-without-listing both red).
+  Stephen still owes the music: theme_menu, bed_hq, bed_tension, win,
+  loss_refusal, loss_coalition (see SFX-GUIDE.md), crowds optional.
+- **Canada split from the US**: 15 regions now. NA = United States (340M),
+  CND = Canada (40M, liberty .84, media .80). Old saves refused cleanly.
+- **The patriotism floor**: oversight never decays below min(30, subj*35).
+  Full-Story-tree runs used to pin patriotism at a dead 0.0% (dec ~5.4 =
+  0.23/day of relief vs 0.05/day of endgame gain). Bots unaffected (all end 40+).
+- **Event fatigue**: choice events retire after 3 firings/run (flashes 6), each
+  repeat waits cd*(1+n*0.5), counts saved. Choice modals also keep 45s of REAL
+  time apart in live play (day-gaps compress at 3x). Bribes cost
+  max(evScale, 5% of treasury) — Law 1 applied.
+- **Readability**: guide has NEXT (skip stays); BREAKING banner holds while
+  paused + ✕ + 8.2s; door progress shows ✓ instead of "Compliance 95 of 80";
+  landscape legends clamp on an inner element with a MORE pill (no more severed
+  words through the padding); World tab re-renders keep scroll position.
+- **Triage at a glance**: countries tint violet as unrest/organizing climbs, red
+  wash + red border when rioting; map poke (rpop) now shows unrest/coverage/
+  compliance; Capital readout in the HUD opens the World tab at the money desk.
+- **Bubbles**: spawn pulled 35% toward the region anchor (no more Falklands
+  bubbles under the wire), tap radius 18/z min 8, and any unpause tops live
+  bubbles back up to 8 ticks so menus stop eating them.
+- **Teaching**: tree descriptions state what each tree feeds and its bill;
+  agitate/crackdown tooltips explain the Iron Fist one-two; one-time field
+  notes at first riot, first expulsion (re-entry road), and when the
+  patriotism floor first binds.
+- Probes: `scripts/_ftw_notes_probe.mjs` (visual, deploys in Canada),
+  `scripts/_ftw_sfx_probe.mjs` (22 built / 0 missing / 0 404s). Shots in
+  `portal-assets/review/ftw-notes-aug24/` (untracked).
+
 ## Aug 20 pass (Stephen's playtest notes, ?v=20260820a)
 - **Title**: FLOCK amber / THE teal / WORLD red, initials enlarged + glowing so FTW reads.
 - **Map first**: HUD floats OVER the map (absolute, translucent; single row in landscape);
