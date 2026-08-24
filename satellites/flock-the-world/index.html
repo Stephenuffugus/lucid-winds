@@ -89,7 +89,7 @@ h1 em{font-style:normal;color:var(--sodium)}
    ⛔ Do NOT try align-self:stretch + height:auto here: the img's intrinsic
    420px height then SETS the flex line instead of following it, and one card
    swallows the menu (seen and reverted, Aug 24 evening). */
-.mcart{height:108px;width:auto;flex:none;object-fit:contain;border-radius:0;border:0}
+.mcart{height:108px;width:auto;flex:none;object-fit:contain;border-radius:9px;border:0}
 .mctx{flex:1 1 auto;min-width:0}
 /* ⛔ 52px tall across a full button width is about 5:1, so a 420x420 square was
    showing roughly the middle FIFTH of its own height. That is what reads as a
@@ -102,7 +102,7 @@ h1 em{font-style:normal;color:var(--sodium)}
    art, and selection is the picture waking up rather than a box appearing.
    ⚖ If this art is ever regenerated, the frame should come out of the picture:
    the house rule is that the frame never gets baked in. */
-.dfart{display:block;width:auto;height:132px;max-width:100%;
+.dfart{display:block;width:auto;height:132px;max-width:100%;border-radius:9px;
   object-fit:contain;margin:0;opacity:.42;filter:saturate(.7);
   transition:opacity .15s,filter .15s}
 .diffbtn.sel .dfart{opacity:1;filter:saturate(1.06) brightness(1.08)}
@@ -3700,9 +3700,9 @@ function doctrineModal(){
   const c=$('modalCard');
   c.innerHTML=`<div class="kicker">Board directive</div><h3>Choose your doctrine</h3>
     <p>Fourteen percent of humanity is under meaningful control. The board wants a philosophy on the slide. This choice is permanent.</p>
-    <button class="opt docopt" data-doc="glove">${CARD_ART.doctrine_glove?'<img class="docart" src="art/card/doctrine_glove.webp?v=trim1" alt="">':''}<div class="ol">The Velvet Glove</div>
+    <button class="opt docopt" data-doc="glove">${CARD_ART.doctrine_glove?'<img class="docart" src="art/card/doctrine_glove.webp?v=trim2" alt="">':''}<div class="ol">The Velvet Glove</div>
       <div class="oc">People consent to what feels like convenience. +Compliance everywhere, suspicion grows slower. Crackdowns stay risky.</div></button>
-    <button class="opt docopt" data-doc="fist">${CARD_ART.doctrine_fist?'<img class="docart" src="art/card/doctrine_fist.webp?v=trim1" alt="">':''}<div class="ol">The Iron Fist</div>
+    <button class="opt docopt" data-doc="fist">${CARD_ART.doctrine_fist?'<img class="docart" src="art/card/doctrine_fist.webp?v=trim2" alt="">':''}<div class="ol">The Iron Fist</div>
       <div class="oc">Fear is cheaper than marketing. +Control depth, +militarization, crackdowns rarely backfire. Unrest runs hotter.</div></button>`;
   noteOpenModal();
   c.querySelectorAll('[data-doc]').forEach(b=>b.onclick=()=>{
@@ -3932,13 +3932,13 @@ function chosenCo(){
 function menuBeds(){['win','loss_refusal','loss_coalition'].forEach(sfxCut);sfxBed('bed_hq',false);sfxBed('bed_tension',false);sfxBed('theme_menu',true);}
 function initMenu(){
   $('modes').innerHTML=Object.keys(MODES).map(k=>{const m=MODES[k];
-    const art=CARD_ART[MODE_ART[k]]?`<img class="mcart" src="art/card/${MODE_ART[k]}.webp?v=trim1" alt="">`:'';
+    const art=CARD_ART[MODE_ART[k]]?`<img class="mcart" src="art/card/${MODE_ART[k]}.webp?v=trim2" alt="">`:'';
     return `<button class="modecard ${k===chosenMode?'sel':''}" data-m="${k}">
       ${art}<div class="mctx"><h3>${m.n}<span>${m.tag}</span></h3><p>${m.d}</p></div></button>`;}).join('');
   document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{chosenMode=b.dataset.m;initMenu();});
   $('diffs').innerHTML=Object.keys(DIFFS).map(k=>
     `<button class="diffbtn ${k===chosenDiff?'sel':''}" data-d="${k}">${
-      CARD_ART[DIFF_ART[k]]?`<img class="dfart" src="art/card/${DIFF_ART[k]}.webp?v=trim1" alt="">`:''}<span>${k}</span></button>`).join('');
+      CARD_ART[DIFF_ART[k]]?`<img class="dfart" src="art/card/${DIFF_ART[k]}.webp?v=trim2" alt="">`:''}<span>${k}</span></button>`).join('');
   document.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{chosenDiff=b.dataset.d;initMenu();});
   $('diffDesc').textContent=DIFFS[chosenDiff].label;
 }
