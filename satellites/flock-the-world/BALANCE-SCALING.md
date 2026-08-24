@@ -132,7 +132,10 @@ aPrice(base,days) = max( base,
 
 * **Clock:** every 9th day, 50% odds, one event, weighted by `w` over the eligible pool.
 * **Cooldowns:** per event `cd`, defaulting to 150 days for choices and 75 for flashes. Without this the records request became a subscription (comment at 1962).
+* **Repeat fatigue (2026-08-24, from Stephen's winning run):** each firing counts in `s.evN` (saved). A non-chain event's effective cooldown is `cd * (1 + n*0.5)`, and it retires for the run at `evRepCap 3` firings (flashes at 6). Story-chain beats are exempt: the arc stamp already makes a taken beat unrepeatable. This is why the mayor can no longer ask for free cameras fifteen times.
+* **Wall-clock spacing:** `choiceGap 34` sim days compresses to under 6 real seconds at 3x speed, so `maybeEvent` also requires `choiceGapMs 45000` of real time between choice modals — but only when `tickTimer` is pacing a live session, so the headless bots and check.js loops run unthrottled.
 * **Price scaling:** choice cash costs are multiplied by `evScale = clamp(net/(10*MONEY), 1, 25)`, linear in smoothed net, clamped at 25x, so "$300 to kill the ban" is a real decision on day 400 the way it was on day 40. ⛔ The `10*MONEY` divisor is unit-bearing: when the money rescale missed it, the clamp pinned at 25x from tick one and the entire priced half of the event system was silently disabled (comment at 1677). If MONEY ever changes again, this line changes with it.
+* **Treasury term (2026-08-24, Law 1 applied):** a cash option now costs `max(base*evScale, cash*evPct)` with `evPct 0.05`. evScale alone is a flow price; Stephen finished a run paying the auditor $150M out of $3B "over and over because I don't care." Five percent of the pile bites a hoarder at any scale.
 * Events that move coverage are followed by a `popTotals` recompute (lines 1902 to 1907) so the people ledger never reads one tick stale.
 
 ## 8. Bubbles
@@ -278,6 +281,9 @@ Safe ranges marked (swept) come from measured sweeps in the code comments; the r
 | `monitorRelief` | 0.012 | Per tick per monitor, cap 3. Three monitors ≈ 0.036/day, roughly one uprising drip's worth of forgiveness at 0.33x. | 0.008 to 0.02 |
 | `coverPayoutDays` | 45 | Insurance payout in days of net per lost market. Above ~90 losing regions becomes a strategy. | 30 to 60 |
 | `deskDays` | 24 | Desk turnover clock. Shorter = more variety and more temptation. | 15 to 35 |
+| `choiceGapMs` | 45000 | Real-time floor between choice modals in a live session (sim-day gaps compress with the speed dial). Bots and checks run unpaced and skip it. | 30000 to 60000 |
+| `evRepCap` | 3 | Choice-event firings per run before it retires (flashes get double). Each repeat also waits `cd*(1+n*0.5)`. | 2 to 5 |
+| `evPct` | 0.05 | Event cash options also cost this share of treasury (Law 1). At 3B banked the auditor costs $150M whatever evScale says. | 0.03 to 0.08 |
 | `blackoutDays` / `blackoutCd` | 14 / 16 | Duration vs re-use gate. Cd must stay ≥ days or blackout becomes permanent in one region. | cd ≥ days, always |
 | `spreadK` / `routeK` | 0.00042 / 0.00085 | Free market openings. The pressure valve on entry pricing; raise these if you raise entryQuad. | ±50% |
 | `crackBackfire` | 0.12 | Base only; copwatch +0.15 and media·resist add on top, fist halves it. | 0.08 to 0.18 |

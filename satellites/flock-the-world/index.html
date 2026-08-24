@@ -990,6 +990,19 @@ const CFG = {
      and died of oversight around day 800. The scrutiny has to be felt, not fatal. */
   acqSus:0.55, acqOvr:0.2,
   choiceGap:34,       /* minimum days between PAUSE THE GAME choice modals */
+  /* ⛔ 2026-08-24, Stephen's winning run: the day gap compresses with the speed
+     dial (34 days is under 6 real seconds at 3x), so choice modals also keep a
+     WALL CLOCK distance. Only enforced while the interval timer is pacing a
+     live session; the headless bots in check.js run unpaced and unthrottled. */
+  choiceGapMs:45000,
+  /* "the last 10 or 15 messages is a mayor wants free cameras. I'm sick of
+     clicking on that." A choice event now retires for the run after this many
+     visits (flashes get double), and each repeat waits half again longer. */
+  evRepCap:3,
+  /* Law 1 (BALANCE-SCALING): a repeatable price must drain the STOCK. evScale
+     is a flow multiplier, so the auditor's fee was pocket change to a hoarder
+     with $3B banked. Event cash options also cost this share of treasury. */
+  evPct:0.05,
   nodeInflate:0.03,   /* each owned node raises later node prices 3% */
   entryScale:0.55,    /* each active market raises the next entry price 55% */
   entryGdp:0.42,      /* how hard the door price tracks the market's economy */
@@ -2181,11 +2194,17 @@ function maybeEvent(s){
      and the 31 event pool keeps the window full. Flashes are news lines and can
      keep the old cadence; a CHOICE modal demands a decision, so choice events
      get a dedicated clock: at least CFG.choiceGap days since the last one. */
-  const canChoice=s.day-(s.lastChoice!=null?s.lastChoice:-9999)>=CFG.choiceGap;
+  const canChoice=s.day-(s.lastChoice!=null?s.lastChoice:-9999)>=CFG.choiceGap
+    &&(tickTimer==null||Date.now()-(s._lastChoiceMs||0)>=CFG.choiceGapMs);
   const pool=s.events.filter(e=>{
     if(e.k!=='flash'&&!canChoice)return false;
+    const n=(s.evN&&s.evN[e.id])||0;
+    /* repeat fatigue: a shakedown retires after evRepCap visits, and every
+       repeat waits half again longer than the last. Story chains cap
+       themselves (a taken beat never refires), so they are exempt. */
+    if(!e.chain&&n>=(e.k==='flash'?CFG.evRepCap*2:CFG.evRepCap))return false;
     const last=s.evLast&&s.evLast[e.id];
-    if(last!=null&&s.day-last<(e.cd!=null?e.cd:(e.k==='flash'?75:150)))return false;
+    if(last!=null&&s.day-last<(e.cd!=null?e.cd:(e.k==='flash'?75:150))*(1+n*0.5))return false;
     /* story chains: beat N waits for beat N-1, and a finished arc stays finished */
     if(e.chain&&(((s.arc&&s.arc[e.chain])||0)!==(e.step-1)))return false;
     try{return e.when(s)}catch(_){return false}
@@ -2195,8 +2214,9 @@ function maybeEvent(s){
   let roll=Math.random()*tot,ev=pool[0];
   for(const e of pool){roll-=e.w;if(roll<=0){ev=e;break;}}
   (s.evLast||(s.evLast={}))[ev.id]=s.day;
+  (s.evN||(s.evN={}))[ev.id]=((s.evN&&s.evN[ev.id])||0)+1;
   if(ev.chain)(s.arc||(s.arc={}))[ev.chain]=ev.step;
-  if(ev.k!=='flash')s.lastChoice=s.day;
+  if(ev.k!=='flash'){s.lastChoice=s.day;s._lastChoiceMs=Date.now();}
   if(ev.k==='flash'){const t=ev.f(s);if(t)pushNews(s,t,ev.cls);}
   else showEvent(ev);
 }
@@ -2446,6 +2466,7 @@ function saveRun(){
       acqHeat:s.acqHeat||0,dcs:s.dcs||0,deskRoll:s.deskRoll||0,
       monitor:s.monitor||0,cover:s.cover||0,
       evLast:s.evLast||{},   /* event cooldowns must survive a reload or the spam returns */
+      evN:s.evN||{},         /* and so must the repeat-fatigue counts */
       econRun:s.econRun||0,arc:s.arc||{},lastCrack:s.lastCrack!=null?s.lastCrack:null,lastChoice:s.lastChoice!=null?s.lastChoice:null,
       owned:[...s.owned],combos:[...s.combos],milestones:[...s.milestones],wmiles:[...s.wmiles],
       popMiles:[...(s.popMiles||[])],popPeakOrg:s.popPeakOrg||0,popHist:(s.popHist||[]).slice(-11),
@@ -2483,6 +2504,9 @@ function loadRun(){
   s.evLast={};
   if(d.evLast&&typeof d.evLast==='object')
     for(const k in d.evLast){const v=Number(d.evLast[k]);if(isFinite(v))s.evLast[k]=v;}
+  s.evN={};
+  if(d.evN&&typeof d.evN==='object')
+    for(const k in d.evN){const v=Number(d.evN[k]);if(isFinite(v)&&v>=0)s.evN[k]=v|0;}
   s.econRun=Math.max(0,num(d.econRun,0)|0);
   s.lastCrack=(d.lastCrack==null)?null:Math.max(0,num(d.lastCrack,0)|0);
   s.lastChoice=(d.lastChoice==null)?null:Math.max(0,num(d.lastChoice,0)|0);
@@ -3517,7 +3541,12 @@ function showEvent(ev){
   /* event price tags scale with daily net income, so "$250 to Klein" is a
      real decision on day 400 the way it was on day 40 */
   const sc=evScale(S);
-  const cashOf=o=>o.cost&&o.cost.cash?Math.round(o.cost.cash*sc/5)*5:0;
+  /* Law 1: the treasury term. evScale alone is a FLOW price, and Stephen paid
+     the auditor $150M "over and over because I have billions and I don't
+     care." A bribe now also costs a share of what you are sitting on. */
+  const cashOf=o=>o.cost&&o.cost.cash
+    ?Math.max(Math.round(o.cost.cash*sc/5)*5,Math.round(S.cash*CFG.evPct/5)*5)
+    :0;
   const c=$('modalCard'),who=ev.who?CAST[ev.who]:null;
   c.innerHTML=`<div class="kicker">${ev.kick}</div>
     ${who?`<div class="whorow">${CAST_ART[ev.who]?`<img class="whopic" src="art/cast/${ev.who}.webp" alt="">`:''}<div class="who">${who.n} · ${who.t}</div></div>`:''}
@@ -3898,6 +3927,7 @@ function bootGame(resumed){
   cancelAnimationFrame(raf);drawFx();
   if(!resumed&&!tutSeen){tutSeen=true;startGuide();}
   else endGuide();
+  S._lastChoiceMs=Date.now();   /* no choice modal in the first breath of a session */
   setSpeed(1);
   if(resumed&&S.pendingEventId){const ev=S.events.find(e=>e.id===S.pendingEventId);if(ev)showEvent(ev);}
 }

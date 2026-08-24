@@ -871,6 +871,36 @@ if (C) {
       ok('and never two inside thirty days', minGap>=30, 'minGap='+minGap);
     }
 
+    /* Stephen's winning run, 2026-08-24: "the last 10 or 15 messages that
+       popped up is a mayor wants free cameras. I'm sick of clicking on that."
+       Repeat fatigue: a choice event retires for the run after three visits,
+       each repeat waits half again longer, and a bribe also costs a share of
+       the treasury so a hoarder cannot wave it through. */
+    group('a shakedown retires after three visits');
+    {
+      const cR=makeCtx();cR.doctrineModal=()=>{};
+      const firesR=[];cR.showEvent=()=>{firesR.push(vm.runInContext('S.day',cR));};
+      vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');",cR);
+      const sR=vm.runInContext('S',cR);
+      vm.runInContext("S.events=[{id:'shk',w:50,cd:40,when:()=>true,k:'choice',o:[{l:'x',f:()=>{}}]}];",cR);
+      const realR=Math.random;Math.random=()=>0.25;
+      for(let d=100;d<900;d++){sR.day=d;vm.runInContext('maybeEvent(S)',cR);}
+      Math.random=realR;
+      const gapsR=firesR.slice(1).map((v,i)=>v-firesR[i]);
+      ok('three visits, then the event retires for the run', firesR.length===3,
+        'fires='+firesR.length+' at '+firesR.join(','));
+      ok('and every repeat waits longer than the last', gapsR.length===2&&gapsR[1]>gapsR[0],
+        'gaps='+gapsR.join(','));
+      ok('a story-chain beat is exempt from the cap (it already fires once)',
+        /if\(!e\.chain&&n>=\(e\.k==='flash'\?CFG\.evRepCap\*2:CFG\.evRepCap\)\)return false/.test(GAME));
+      ok('a bribe scales with the treasury, not just the income (Law 1)',
+        /const cashOf=o=>o\.cost&&o\.cost\.cash[\s\S]{0,160}CFG\.evPct/.test(GAME));
+      ok('choice modals also keep a wall-clock distance in a live session',
+        /tickTimer==null\|\|Date\.now\(\)-\(s\._lastChoiceMs\|\|0\)>=CFG\.choiceGapMs/.test(GAME));
+      ok('the repeat-fatigue counts survive a reload',
+        /evN:s\.evN\|\|\{\}/.test(GAME)&&/s\.evN=\{\};/.test(GAME));
+    }
+
     group('the small mercies: Greenland, the concede arm, the field notes');
     {
       ok('Greenland counts as Western Europe, not North America',
