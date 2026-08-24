@@ -1114,12 +1114,24 @@ if (C) {
       never.length === 0, 'never fired: ' + JSON.stringify(never));
     ok('the catalog is the full cue sheet', catalog.length === 32, 'n=' + catalog.length);
 
-    /* the stub has to be SILENT: with no files shipped it must not fetch, or a
-       build with no audio prints a 404 per cue. Measured in a browser first. */
-    ok('with no files shipped the stub builds no audio and fetches nothing',
-      Object.keys(vm.runInContext('SFX.el', cS)).length === 0 &&
-      vm.runInContext('SFX_HAVE.length', cS) === 0,
-      'audio=' + Object.keys(vm.runInContext('SFX.el', cS)).length + ' have=' + vm.runInContext('SFX_HAVE.length', cS));
+    /* 2026-08-24: the 22 CC0 one-shots landed (sfx/CREDITS.md). The manifest
+       must never lie in either direction: an id in SFX_HAVE without a file is
+       a 404 per fire, and a file on disk missing from SFX_HAVE is a cue that
+       silently never plays. A cue absent from both stays a silent stub. */
+    {
+      const have = vm.runInContext('SFX_HAVE.slice()', cS);
+      let onDisk = [];
+      try { onDisk = fs.readdirSync(path.join(__dirname, 'sfx')).filter(f => f.endsWith('.mp3')).map(f => f.replace(/\.mp3$/, '')); } catch (e) {}
+      ok('every SFX_HAVE id is a cue the catalog knows',
+        have.every(id => catalog.indexOf(id) >= 0),
+        'unknown: ' + JSON.stringify(have.filter(id => catalog.indexOf(id) < 0)));
+      ok('every SFX_HAVE id has a real file on disk (a listed 404 is a broken promise)',
+        have.length > 0 && have.every(id => onDisk.indexOf(id) >= 0),
+        'missing files: ' + JSON.stringify(have.filter(id => onDisk.indexOf(id) < 0)));
+      ok('every shipped file is wired into SFX_HAVE (a file alone does nothing)',
+        onDisk.every(id => have.indexOf(id) >= 0),
+        'unwired files: ' + JSON.stringify(onDisk.filter(id => have.indexOf(id) < 0)));
+    }
 
     /* a burst of one cue is one sound */
     const cB = makeCtx();

@@ -2371,12 +2371,20 @@ const SFX_CUES={
 const SFX_GAIN={ui:0.5,world:0.7,bed:0.3};
 /* a burst of the same cue in one tick is one sound, not a machine gun */
 const SFX_CD={ui_tap:60, bubble_cash:80, bubble_inf:80, spend:120, breaking:400, milestone:600};
-/* ⛔ Which cues actually have a file on disk. Empty until Stephen delivers, and
-   that is the point: with auto probing, a game with no audio fires one 404 per
-   cue and prints a console error for each. Measured in a real browser: seven
-   cues, seven 404s, in a build that is meant to be silently stubbed. Add an id
-   here the moment `sfx/<id>.mp3` lands and that cue starts playing. */
-const SFX_HAVE=[];
+/* ⛔ Which cues actually have a file on disk. An id here promises `sfx/<id>.mp3`
+   exists (check.js verifies both directions), because with auto probing a
+   missing file is a 404 and a console error per cue.
+   2026-08-24: the 22 one-shots landed, all CC0 from Kenney.nl packs, converted
+   mono 96kbps (provenance in sfx/CREDITS.md). Stephen rejected synthesized
+   effects ("I don't like the sound effects that you make up"), so every file
+   is a real designed recording. Still awaiting his music: theme_menu, bed_hq,
+   bed_tension, win, loss_refusal, loss_coalition, and the four crowd states
+   (murmur, peaceful, violent, uprising) if he wants them voiced. Any one-shot
+   can be replaced by dropping a new file over the same name. */
+const SFX_HAVE=['ui_tap','ui_open','ui_close','buy_small','buy_large','cant_afford',
+  'bubble_cash','bubble_inf','spend','region_join','region_full','region_lost',
+  'crackdown','crackdown_fail','blackout','agitate','concede','breaking',
+  'milestone','doctrine','event_open','synergy'];
 const SFX={unlocked:false,muted:false,log:[],last:{},el:{},missing:{},beds:{}};
 function sfxUnlock(){
   if(SFX.unlocked)return;
@@ -3733,6 +3741,7 @@ function showRpop(rid,cn,sx,sy){
      the ocean in a real browser and watching it stay open. */
   if(rpopRid===rid&&e.classList.contains('on')){hideRpop();return;}
   rpopRid=rid;rpopCn=cn||'';
+  sfx('ui_tap');
   e.innerHTML=rpopHTML(rid,rpopCn);
   e.classList.add('on');
   /* anchor to the tap, then keep the whole card on screen: below the HUD,
@@ -3858,6 +3867,7 @@ function initPick(){
           :r.liberty<.3?'Cameras go up without a hearing. Margins are thin; loyalty is thick.'
           :'Balanced. A sensible place to grow reference customers.');
       const bb=$('beginBtn');bb.disabled=false;bb.style.opacity=1;bb.textContent='Deploy in '+c.n;
+      sfx('ui_tap');   /* picking a country is a gesture that should answer (Stephen, Aug 24) */
       drawWorld(pv,null,pickedCountry);
     });
     window._dbgPv=pv; /* probe/debug handle */
@@ -3874,6 +3884,7 @@ function initPick(){
 function startGame(){
   const hc=pickedCountry!=null?COUNTRIES[pickedCountry]:null;
   const co=chosenCo();
+  sfx('region_join');   /* the deploy is the first stamp on the first contract */
   lsSet(K_CO,co);
   S=newState(chosenMode,chosenDiff,pickedRegion,hc?hc.c.slice():null,hc?hc.n:null,co);
   bootGame(false);
@@ -4030,7 +4041,7 @@ function shBodyClick(e){
       S.cash-=cost;
       if(r.lost){r.lost=false;S.lostCount=Math.max(0,S.lostCount-1);r.unrest=45;}
       r.active=true;r.coverage=0.005;
-      S.activeCount++;sfx('region_join');
+      S.activeCount++;sfx('spend');sfx('region_join');
       setSpreadOrder(S,r.id,anchorOf(r.id));
       S.pulses.push({r:r.id,t:0});
       shToast(`<span class="neg">Spent ${fmtMoney(cost)}</span> · ${r.name} signed. Coverage starts growing there now.`);

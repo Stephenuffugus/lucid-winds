@@ -1,19 +1,38 @@
 # FTW SOUND — how we make these together
 
-Written for Stephen, 2026-08-23. You said you have not used Suno for sound
-effects and want a way for us to work together on it. Here it is.
+Written for Stephen, 2026-08-23. Updated 2026-08-24 after your playtest note
+("let's see what free sound effects we can use, and then I can actually make
+some music").
+
+## Where we stand (2026-08-24)
+
+**The 22 one-shots are DONE and live.** All sourced from Kenney.nl CC0 packs
+(commercially safe, provenance per file in `sfx/CREDITS.md`), converted to
+mono 96kbps mp3, wired into `SFX_HAVE`, and verified loading in a real
+browser. Nothing synthesized. If any of them lands wrong to your ear, drop a
+replacement file over the same name in `sfx/` and it just plays; no code
+change.
+
+**What's left is the music, and it's yours.** Six cues:
+
+- `theme_menu` (60 to 90s seamless loop)
+- `bed_hq` (60s loop, the calm in-game bed)
+- `bed_tension` (60s loop, the game crossfades to it as the world heats)
+- `win`, `loss_refusal`, `loss_coalition` (8s endings)
+
+Optional after that: the four crowd states (`murmur`, `peaceful`, `violent`,
+`uprising`), one crowd source at four intensities. There was no verifiably CC0
+crowd recording worth shipping, so those stay silent until you cut them.
+If you want the fuller five-loop arc we discussed (early calm, mid tension,
+late crisis, post-victory lap), make them and I will add crossfade tiers; the
+three-cue wiring above is the minimum that completes the game.
 
 ## The short version
 
-**Suno makes songs. It does not make clicks.** So we split the 32 cues:
+**Suno makes songs. It does not make clicks.** That is why the split:
 
-- **10 are music.** Suno is genuinely good at these. Themes, beds, stings.
-- **22 are one-shots**, half a second of a click, a thunk, a stamp. Suno is the
-  wrong tool. You already own the right one: your DAW. These are faster to make
-  than to prompt for.
-
-You do not have to do all 32. **Do the 10 music cues in Suno first.** They carry
-most of the feel, and the game is fully playable with the other 22 still silent.
+- **Music: yours.** Suno is genuinely good at these. Themes, beds, stings.
+- **One-shots: shipped** from CC0 packs as of Aug 24, replaceable any time.
 
 ## What I need back, exactly
 
