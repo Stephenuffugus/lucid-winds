@@ -898,7 +898,8 @@ if (C) {
       ok('a story-chain beat is exempt from the cap (it already fires once)',
         /if\(!e\.chain&&n>=\(e\.k==='flash'\?CFG\.evRepCap\*2:CFG\.evRepCap\)\)return false/.test(GAME));
       ok('a bribe scales with the treasury, not just the income (Law 1)',
-        /const cashOf=o=>o\.cost&&o\.cost\.cash[\s\S]{0,160}CFG\.evPct/.test(GAME));
+        /const cashOf=o=>evPrice\(S,o,sc\)/.test(GAME)
+        &&/s\.cash\*\(CFG\.evPct\+\(s\.evHeat\|\|0\)\)/.test(GAME));
       ok('choice modals also keep a wall-clock distance in a live session',
         /tickTimer==null\|\|Date\.now\(\)-\(s\._lastChoiceMs\|\|0\)>=CFG\.choiceGapMs/.test(GAME));
       ok('the repeat-fatigue counts survive a reload',
@@ -1033,6 +1034,35 @@ if (C) {
         const hiHot=twin(300*MONEYc,.8), hiCold=twin(0,.8);
         ok('the debate is silent for an empire with real subjugation',
           Math.abs(hiHot.ovr-hiCold.ovr)<1e-9, 'hot='+hiHot.ovr.toFixed(4)+' cold='+hiCold.ovr.toFixed(4));
+      }
+      /* BRIBE HEAT (Aug 24 evening): paying off an event must raise the NEXT
+         payoff's price, raise suspicion, and cool off over quiet days. */
+      {
+        const cB=makeCtx();cB.doctrineModal=()=>{};cB.showEvent=()=>{};
+        vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');",cB);
+        const sB=vm.runInContext('S',cB);
+        Object.keys(sB.regions).forEach(k=>{const r=sB.regions[k];r.active=true;r.coverage=.2;r.control=.2;});
+        /* treasury-dominated regime (the real one: billions banked, so the
+           5%-of-treasury term beats the flat base) */
+        sB.cash=10000*MONEYc;
+        cB.__o={cost:{cash:100*MONEYc},f:()=>{}};
+        const p1=vm.runInContext('evPrice(S,__o,1)',cB);
+        const susBefore=sB.regions.NA.suspicion;
+        vm.runInContext('evPayCash(S,__o,1)',cB);
+        sB.cash=10000*MONEYc;   /* same treasury, so any price rise is pure heat */
+        const p2=vm.runInContext('evPrice(S,__o,1)',cB);
+        ok('a payoff makes the next payoff dearer at the same treasury', p2>p1,
+          'p1='+p1+' p2='+p2+' heat='+sB.evHeat);
+        ok('the fixers talking is heard as suspicion', sB.regions.NA.suspicion>susBefore,
+          'before='+susBefore+' after='+sB.regions.NA.suspicion);
+        const heatNow=sB.evHeat;
+        vm.runInContext('tick()',cB);
+        ok('quiet days cool the fixers', sB.evHeat<heatNow&&sB.evHeat>0,
+          'was='+heatNow+' now='+sB.evHeat);
+        vm.runInContext('saveRun()',cB);
+        vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');loadRun();",cB);
+        ok('bribe heat survives a reload (a refresh is not a shower)',
+          vm.runInContext('S.evHeat',cB)>0, 'evHeat='+vm.runInContext('S.evHeat',cB));
       }
       const c=stage({cov:.97,ctl:.995,cmp:.95,mil:.02,doc:'glove'});
       ok('classic subjugation still outranks every other door', c.over&&c.won&&c.why==='win', JSON.stringify(c));

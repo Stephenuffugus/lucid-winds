@@ -157,6 +157,7 @@ h1 em{font-style:normal;color:var(--sodium)}
 .sval.money{color:var(--grn)}.sval.inf{color:var(--sodium)}
 .sval.spent{color:var(--blood)}
 .sval.gainflash{color:var(--grn)}
+.evheat{margin:6px 0 2px;font-size:11px;color:var(--sodium);opacity:.85}
 #ctlrow{display:flex;gap:5px;align-items:center;margin-top:4px}
 #speeds{display:flex;gap:5px;flex:1}
 .sp{flex:1;min-width:48px;height:48px;border:1px solid #22303fb0;border-radius:10px;font-size:12px;
@@ -1024,6 +1025,14 @@ const CFG = {
      is a flow multiplier, so the auditor's fee was pocket change to a hoarder
      with $3B banked. Event cash options also cost this share of treasury. */
   evPct:0.05,
+  /* BRIBE HEAT (Stephen, Aug 24: "if I just pick the one where I pay him off
+     every time it seems to win"). The price scaled but never escalated, so
+     paying was always correct. Now the fixers talk: each paid-off event raises
+     the treasury share of the next one, and suspicion follows the money. */
+  evHeatAdd:0.04,     /* each payoff raises the fixers' next take by 4 pts */
+  evHeatMax:0.30,     /* cap: 5% base + 30% heat = 35% of treasury */
+  evHeatDecay:0.002,  /* per day: ~20 quiet days to cool one payoff */
+  evHeatSus:0.4,      /* world suspicion per payoff */
   nodeInflate:0.03,   /* each owned node raises later node prices 3% */
   entryScale:0.55,    /* each active market raises the next entry price 55% */
   entryGdp:0.42,      /* how hard the door price tracks the market's economy */
@@ -1570,7 +1579,7 @@ function newState(modeKey,diffKey,startId,seed,hqName,co){
     mode, diff, modeKey, diffKey, startId, day:0, cash:mode.cash*diff.cash, inf:mode.inf, oversight:0, speed:1,
     owned:new Set(), combos:new Set(), regions:{}, log:[], bubbles:[], pulses:[], dots:[], pk:[], pings:[], hqGlow:0, newsQ:[], newsIdx:0,
     warHeat:0, doctrine:null, over:false, won:false, milestones:new Set(), wmiles:new Set(), unread:0, avgRes:0,
-    sheet:null, lostCount:0, avgSus:0, avgMil:0, avgCmp:0, subj:0, activeCount:0, events:EV(), evLast:{}, econRun:0, arc:{},
+    sheet:null, lostCount:0, avgSus:0, avgMil:0, avgCmp:0, subj:0, activeCount:0, events:EV(), evLast:{}, evHeat:0, evPaid:0, econRun:0, arc:{},
     has(id){return this.owned.has(id)}
   };
   REGIONS.forEach(r=>{
@@ -2104,6 +2113,7 @@ function tick(){
      hardware and with how militarized the whole thing has become.
      Without this, money stopped mattering minutes in (Stephen 2026-08-20). */
   if(s.acqHeat)s.acqHeat=Math.max(0,s.acqHeat-CFG.acqHeatDecay);
+  if(s.evHeat)s.evHeat=Math.max(0,s.evHeat-CFG.evHeatDecay);
   /* the consent-decree monitor earns their desk: their quarterly reports quietly
      retire findings. Steady oversight relief, capped at three monitors. Wired
      2026-08-24 (Fable review found the counter written, saved, and read by
@@ -2526,7 +2536,7 @@ function saveRun(){
         black:r.black||0,bcd:r.bcd||0,gw:r.gw||0,
         cOrder:r.cOrder||null,cN:r.cN||1};}
     lsSet(K_RUN,JSON.stringify({v:2,modeKey:s.modeKey,diffKey:s.diffKey,startId:s.startId,
-      day:s.day,cash:s.cash,inf:s.inf,oversight:s.oversight,warHeat:s.warHeat,doctrine:s.doctrine,net:s.net||0,gross:s.gross||0,lbCd:s.lbCd||0,
+      day:s.day,cash:s.cash,inf:s.inf,oversight:s.oversight,warHeat:s.warHeat,doctrine:s.doctrine,net:s.net||0,gross:s.gross||0,lbCd:s.lbCd||0,evHeat:s.evHeat||0,evPaid:s.evPaid||0,
       /* a reload used to wipe live bubbles, including a leak whose oversight
          penalty had not landed yet, and to forget a pending choice event, so
          reloading dodged the decision. It also dropped the HUD aggregates, so a
@@ -2571,6 +2581,7 @@ function loadRun(){
   s.doctrine=(d.doctrine==='glove'||d.doctrine==='fist')?d.doctrine:null;
   s.lostCount=Math.max(0,num(d.lostCount,0));s.wmileDth=num(d.wmileDth,0);
   s.net=Math.max(0,num(d.net,0));s.gross=Math.max(0,num(d.gross,0));s.lbCd=Math.max(0,num(d.lbCd,0));
+  s.evHeat=clamp(num(d.evHeat,0),0,CFG.evHeatMax);s.evPaid=Math.max(0,num(d.evPaid,0)|0);
   /* the desk and acquisition state, validated the way everything else is.
      A v2 save written before these fields existed loads them as 0. */
   s.acqHeat=clamp(num(d.acqHeat,0),0,CFG.acqHeatMax);
@@ -3624,13 +3635,12 @@ function showEvent(ev){
   /* Law 1: the treasury term. evScale alone is a FLOW price, and Stephen paid
      the auditor $150M "over and over because I have billions and I don't
      care." A bribe now also costs a share of what you are sitting on. */
-  const cashOf=o=>o.cost&&o.cost.cash
-    ?Math.max(Math.round(o.cost.cash*sc/5)*5,Math.round(S.cash*CFG.evPct/5)*5)
-    :0;
+  const cashOf=o=>evPrice(S,o,sc);
   const c=$('modalCard'),who=ev.who?CAST[ev.who]:null;
   c.innerHTML=`<div class="kicker">${ev.kick}</div>
     ${who?`<div class="whorow">${CAST_ART[ev.who]?`<img class="whopic" src="art/cast/${ev.who}.webp" alt="">`:''}<div class="who">${who.n} · ${who.t}</div></div>`:''}
     <h3>${ev.t}</h3><p>${ev.b}</p>`
+    +((S.evHeat||0)>0.005?`<div class="evheat">The fixers' rate: ${Math.round((CFG.evPct+S.evHeat)*100)}% of your treasury · word gets around</div>`:'')
     +ev.o.map((o,i)=>{
       const cc=cashOf(o);
       const ok=(!o.c||o.c(S))&&(!cc||S.cash>=cc)&&(!o.cost||!o.cost.inf||S.inf>=o.cost.inf);
@@ -3643,8 +3653,21 @@ function showEvent(ev){
   noteOpenModal();
   c.querySelectorAll('[data-opt]').forEach(b=>b.onclick=()=>{
     const o=ev.o[+b.dataset.opt];
-    if(o.cost){if(o.cost.cash){S.cash-=cashOf(o);flashCash();}if(o.cost.inf)S.inf-=o.cost.inf;}
+    if(o.cost){if(o.cost.cash){evPayCash(S,o,sc);flashCash();}if(o.cost.inf)S.inf-=o.cost.inf;}
     o.f(S);S.pendingEventId=null;noteCloseModal();setSpeed(prev||1);paintHud();});
+}
+/* the bribe economy, single-sourced so check.js can hold it to account */
+function evPrice(s,o,sc){
+  return o.cost&&o.cost.cash
+    ?Math.max(Math.round(o.cost.cash*sc/5)*5,Math.round(s.cash*(CFG.evPct+(s.evHeat||0))/5)*5)
+    :0;
+}
+function evPayCash(s,o,sc){
+  s.cash-=evPrice(s,o,sc);
+  s.evHeat=Math.min(CFG.evHeatMax,(s.evHeat||0)+CFG.evHeatAdd);
+  bumpSus(s,CFG.evHeatSus);
+  s.evPaid=(s.evPaid||0)+1;
+  if(s.evPaid===3)pushNews(s,'Field note: the fixers talk. Every payoff raises the next payoff’s share of your treasury (now '+Math.round((CFG.evPct+s.evHeat)*100)+'%), and suspicion follows the money. Quiet days cool the rate.','crit');
 }
 function doctrineModal(){
   if(!noteModal(()=>doctrineModal()))return;
