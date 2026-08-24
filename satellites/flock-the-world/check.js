@@ -1097,8 +1097,10 @@ if (C) {
       "for(const k of Object.keys(S.regions)){const r=S.regions[k];if(r.active)r.unrest=80;}tick();}" +
       "for(let i=0;i<400;i++){NOTE.bannerUp=false;NOTE.banners=[];" +
       "for(const k of Object.keys(S.regions)){const r=S.regions[k];if(r.active){r.unrest=99;r.resist=99;r.grudge=99;}}tick();}})();", cS);
-    /* the two endings this run did not take. finish() is the real function. */
-    vm.runInContext("S.over=false;finish(false,'refusal');S.over=false;finish(false,'coalition');", cS);
+    /* the endings this run did not take. finish() is the real function. The win
+       is forced too: the scenario bot usually wins, but not on every seed, and
+       a reachability gate must not depend on a die roll (flaked 2026-08-24). */
+    vm.runInContext("S.over=false;finish(true,'win');S.over=false;finish(false,'refusal');S.over=false;finish(false,'coalition');", cS);
     /* the in-game bed starts when the game screen boots */
     vm.runInContext("try{bootGame(false);}catch(e){sfxBed('bed_hq',true);}", cS);
     vm.runInContext("openSheet('reg');closeSheet();menuBeds();", cS);
