@@ -19,7 +19,7 @@ check.js 232→272, every visual change screenshot-reviewed. Highlights:
 - bubble_leak.mp3 (Kenney CC0). "Sit with X" formula broken up.
 - **Store**: Play TWA gates 10/10 green (manifest/sw/icons/privacy/inTWA);
   Steam rig scaffolded in store/ftw-steam/ (FTW-STEAM.md = Stephen's part).
-Open: 4 capstone art files (Stephen).
+Capstone icons DELIVERED + wired same day (art/tree/caps_*.webp).
 
 ## Aug 25 LATE — item 11: the one-strategy problem, tuned with the meter
 
