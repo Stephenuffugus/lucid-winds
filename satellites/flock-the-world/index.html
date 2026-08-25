@@ -96,16 +96,16 @@ h1 em{font-style:normal;color:var(--sodium)}
    shrunken image with gaps: you are seeing a band out of the middle of a picture.
    88px roughly doubles what survives the crop. This one still wants art drawn
    wide rather than square: no CSS makes a square read in a 5:1 slot. */
-/* ⛔ NO RING ON THE SELECTED ONE. These pictures have a frame PAINTED INTO THEM,
-   so a CSS ring puts a second frame around the first and that is the "boxes
-   around them" Stephen was looking at. There is one frame now, the one in the
-   art, and selection is the picture waking up rather than a box appearing.
-   ⚖ If this art is ever regenerated, the frame should come out of the picture:
-   the house rule is that the frame never gets baked in. */
+/* The "no ring" rule (Aug 24) existed because the art then carried its own
+   PAINTED frame, so a CSS ring doubled it. The art has since been cropped
+   frameless (?v=trim3), and Stephen, Aug 25: "the difficulties dont have an
+   orange box around them to help the player recognize which one they have
+   selected." So the ring is back, on the frameless art, and it is the only
+   frame on screen. */
 .dfart{display:block;width:auto;height:132px;max-width:100%;border-radius:9px;
   object-fit:contain;margin:0;opacity:.42;filter:saturate(.7);
-  transition:opacity .15s,filter .15s}
-.diffbtn.sel .dfart{opacity:1;filter:saturate(1.06) brightness(1.08)}
+  transition:opacity .15s,filter .15s,outline-color .15s;outline:2px solid transparent;outline-offset:2px}
+.diffbtn.sel .dfart{opacity:1;filter:saturate(1.06) brightness(1.08);outline-color:var(--sodium)}
 .docart{display:block;width:100%;height:104px;object-fit:cover;object-position:center 42%;border-radius:9px;margin-bottom:8px}
 .modecard h3{margin:0 0 3px;font-size:14px}
 .modecard h3 span{font-size:9px;letter-spacing:.18em;color:var(--sodium);margin-left:8px;text-transform:uppercase}
@@ -539,7 +539,7 @@ h1 em{font-style:normal;color:var(--sodium)}
   #end.on{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
     column-gap:26px;align-items:center;text-align:left;
     padding:14px 20px calc(env(safe-area-inset-bottom) + 10px)}
-  #end .verd,#end h2,#end p{grid-column:1}
+  #end .verd,#end h2,#end p,#end #endStory{grid-column:1}
   #end h2{font-size:clamp(24px,4.8vw,38px)}
   #end p{max-width:none;font-size:12px;line-height:1.55}
   #end .statgrid{grid-column:2;grid-row:1/span 4;max-width:none;max-height:100%;
@@ -715,6 +715,10 @@ h1 em{font-style:normal;color:var(--sodium)}
 .card .who{font-size:10px;color:var(--sodium);letter-spacing:.08em;margin-bottom:6px}
 .whorow{display:flex;align-items:center;gap:10px;margin-bottom:8px}
 .whorow .who{margin-bottom:0}
+/* Foreign Desk location plates (Assets11, Aug 25): a wide establishing shot
+   above the event text. Kept short so three options still fit a phone. */
+.evart{display:block;width:100%;height:96px;object-fit:cover;border-radius:10px;
+  margin:2px 0 10px;border:1px solid var(--line)}
 .whopic{width:54px;height:54px;flex:none;border-radius:10px;object-fit:cover;
   border:1px solid var(--line)}
 .card p{margin:0 0 14px;font-size:12.5px;line-height:1.6;color:var(--ice)}
@@ -728,6 +732,13 @@ h1 em{font-style:normal;color:var(--sodium)}
 
 /* ---------- end ---------- */
 #end{justify-content:center;align-items:center;padding:26px;text-align:center;overflow-y:auto}
+/* the epilogue reel (Aug 25): beats fade in one by one while the end song
+   plays; tapping the story reveals everything at once */
+#endStory{max-width:370px;text-align:left;margin:2px 0 8px;cursor:pointer}
+#endStory p{opacity:0;transform:translateY(7px);transition:opacity .9s,transform .9s;
+  font-size:12px;line-height:1.6;color:var(--ice);margin:0 0 9px;max-width:none}
+#endStory p.on{opacity:1;transform:none}
+#endStory p::first-letter{color:var(--sodium)}
 #end h2{font-size:clamp(28px,9vw,44px);margin:0 0 6px;letter-spacing:-.03em}
 #end .verd{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--dim)}
 #end p{max-width:370px;font-size:13px;line-height:1.65;color:var(--ice)}
@@ -854,6 +865,7 @@ h1 em{font-style:normal;color:var(--sodium)}
   <div class="verd" id="endKick"></div>
   <h2 id="endTitle"></h2>
   <p id="endText"></p>
+  <div id="endStory"></div>
   <div class="statgrid" id="endStats"></div>
   <div id="endRecs" class="fine" style="margin:0 auto 10px"></div>
   <button class="cta" id="againBtn" style="max-width:360px">Run it back</button>
@@ -1600,7 +1612,7 @@ function EV(){ return [
    entries the Auditor binds in the audit arc. */
 
 /* ---- ARC: FERRO VANCE, "The Arms Fair" ---- */
-{id:'vance_arc1',chain:'vance',step:1,w:6,cd:150,when:s=>s.fdOn&&s.fdOn.indexOf('vance')>=0&&s.day>110&&s.activeCount>=3,k:'choice',who:'vance',kick:'Invitation',
+{id:'vance_arc1',chain:'vance',step:1,w:6,cd:150,when:s=>s.fdOn&&s.fdOn.indexOf('vance')>=0&&s.day>110&&s.activeCount>=3,k:'choice',who:'vance',art:'fd_armsfair',kick:'Invitation',
  t:'Ferro Vance has a booth with your name on it',
  b:'"The expo calls itself Critical Infrastructure Week. Everyone exhibits behind frosted glass. Ministries walk the floor with shopping lists, and nobody photographs the badges." His retainer is modest. His rolodex is not.',
  o:[{l:'Take the booth',c:s=>s.cash>=200*MONEY,cost:{cash:200*MONEY},h:'Influence grows, patriotism eases a touch, war heat ticks up. A page is written somewhere.',
@@ -1608,7 +1620,7 @@ function EV(){ return [
        pushNews(s,'Your booth wins a design award under a name that is almost yours. Three ministries leave cards.','good');}},
     {l:'Decline the invitation',h:'Nothing happens. That is its own price.',
      f:s=>{pushNews(s,'Vance shrugs. The booth goes to a competitor whose glass is slightly less frosted.','');}}]},
-{id:'vance_arc2',chain:'vance',step:2,w:7,cd:160,when:s=>s.day>160,k:'choice',who:'vance',kick:'Two purchase orders',
+{id:'vance_arc2',chain:'vance',step:2,w:7,cd:160,when:s=>s.day>160,k:'choice',who:'vance',art:'fd_armsfair2',kick:'Two purchase orders',
  t:'The ministry buys. So does the other side.',
  b:'Minister Kesh signs for crowd management systems on Monday. On Thursday a reseller with the same surname as his rival asks for the same kit, delivered across the line. Vance calls it market depth. Both letters of credit clear the same bank.',
  o:[{l:'Fill both orders',h:'A fortune arrives and patriotism eases, but war heat climbs, suspicion rises everywhere, and two pages are written.',
@@ -1665,7 +1677,7 @@ function EV(){ return [
 /* ---- THE REGRETTABLE DATA QUALITY EVENT (single beat).
    The school is never shown. Every option manages liability; none lets you
    mourn. That absence is the indictment, and it is the whole design. */
-{id:'dataq',chain:'dataq',step:1,w:9,cd:9999,when:s=>s.day>420&&(((s.arc&&s.arc.kesh)||0)>=2||s.warHeat>0.45),k:'choice',kick:'Item four',
+{id:'dataq',chain:'dataq',step:1,w:9,cd:9999,when:s=>s.day>420&&(((s.arc&&s.arc.kesh)||0)>=2||s.warHeat>0.45),k:'choice',art:'fd_meeting',kick:'Item four',
  t:'The agenda calls it a data quality event',
  b:'Counsel distributes one page, numbered, collected afterward. A client state ran a strike off your feed. The coordinates were a school. The page uses the words regrettable, upstream and indemnification. It does not use the word children, and nobody at the table uses it either, and the meeting runs eleven minutes.',
  o:[{l:'Invoke the indemnification clause',c:s=>s.cash>=500*MONEY,cost:{cash:500*MONEY},h:'A fortune leaves, patriotism climbs, suspicion rises everywhere, and three pages are written.',
@@ -1688,7 +1700,7 @@ function EV(){ return [
     {l:'Let it run',h:'Patriotism jumps and suspicion rises everywhere.',
      f:s=>{s.oversight+=3;bumpSus(s,3);
        pushNews(s,'The piece runs with your logo above the fold. It is accurate, which is the problem.','bad');}}]},
-{id:'lena_arc2',chain:'lena',step:2,w:7,cd:160,when:s=>s.day>160,k:'choice',who:'lena',kick:'An outlet, gently for sale',
+{id:'lena_arc2',chain:'lena',step:2,w:7,cd:160,when:s=>s.day>160,k:'choice',who:'lena',art:'fd_newsroom',kick:'An outlet, gently for sale',
  t:'Her outlet is available at a fair multiple',
  b:'The holding company would prefer a quiet sale to a loud bankruptcy. Vance knows the banker. The newsroom would report to a foundation, and the foundation would report to nothing.',
  o:[{l:'Buy the outlet',c:s=>s.cash>=400*MONEY,cost:{cash:400*MONEY},h:'Influence grows, patriotism eases, two pages are written, and BLACKOUT runs deeper and longer from now on.',
@@ -1712,7 +1724,7 @@ function EV(){ return [
    a clean foreign desk faces a thin dossier and shrugs this arc off. */
 {id:'audit_arc1',chain:'audit',step:1,w:9,cd:150,when:s=>s.day>550&&((s.fdPages||0)>=1||s.oversight>30),k:'flash',
  f:s=>'A procurement official who signed three of your regional contracts now lives in exile above a laundry, compiling a ledger. People who have seen the wall of thread say your column has its own colour.',cls:'bad'},
-{id:'audit_arc2',chain:'audit',step:2,w:8,cd:160,when:s=>s.day>650,k:'choice',who:'hale',kick:'The dossier has chapters',
+{id:'audit_arc2',chain:'audit',step:2,w:8,cd:160,when:s=>s.day>650,k:'choice',who:'hale',art:'fd_wall',kick:'The dossier has chapters',
  t:'Ambassador Hale requests a meeting you cannot decline',
  b:'The dossier is bound. The chapters follow your foreign desk: the fair, the certificates, the school, the sale. Hale reads the table of contents aloud and no further, the way a doctor reads a chart.',
  o:[{l:'Contest every chapter',c:s=>s.cash>=400*MONEY,cost:{cash:400*MONEY},h:'A fortune in lawyers, and patriotism still climbs with every page you wrote.',
@@ -1721,7 +1733,7 @@ function EV(){ return [
     {l:'Accept the findings',h:'Patriotism jumps with every page you wrote, but suspicion eases. Candor, again, once.',
      f:s=>{s.oversight+=Math.min(7,1+(s.fdPages||0)*0.8);bumpSus(s,-3);
        pushNews(s,'The acceptance letter is one paragraph. Hale notes it is the shortest document you have ever produced.','');}}]},
-{id:'audit_arc3',chain:'audit',step:3,w:9,cd:200,when:s=>s.day>780,k:'choice',who:'auditor',kick:'Publication day',
+{id:'audit_arc3',chain:'audit',step:3,w:9,cd:200,when:s=>s.day>780,k:'choice',who:'auditor',art:'fd_wall',kick:'Publication day',
  t:'The ledger publishes with your column intact',
  b:'Four hundred pages, footnoted, free to download, mirrored the hour it is taken down. The foreword thanks a physicist, a photographer and a correspondent by name.',
  o:[{l:'Buy every printed copy',c:s=>s.cash>=350*MONEY,cost:{cash:350*MONEY},h:'Patriotism climbs with your page count. The download counter does not notice.',
@@ -2109,7 +2121,11 @@ function pickActive(s){const a=REGIONS.map(r=>s.regions[r.id]).filter(r=>r.activ
 function bumpSus(s,n){REGIONS.forEach(r=>{const x=s.regions[r.id];if(x.active)x.suspicion=clamp(x.suspicion+n,0,100);});}
 /* the foreign desk dossier: every dirty choice abroad is a page the Auditor
    will eventually bind. Read by the audit arc; persisted with the run. */
-function fdPage(s,n){s.fdPages=(s.fdPages||0)+n;}
+function fdPage(s,n){s.fdPages=(s.fdPages||0)+n;s.fdPagesEver=(s.fdPagesEver||0)+n;}
+/* fdPagesEver: audit_arc3 zeroes fdPages when the ledger publishes, but the
+   epilogue still wants to know the run WROTE those pages. Pure counter, no
+   balance effect, deliberately not persisted (a reload forgets it, the
+   epilogue just picks other beats). */
 function globalCmp(s,n){REGIONS.forEach(r=>{const x=s.regions[r.id];x.compliance=clamp(x.compliance+n,.02,.98);});}
 
 /* ============================ TICK ============================ */
@@ -2486,6 +2502,160 @@ function worldMilestones(s){
     REGIONS.forEach(r=>{const x=s.regions[r.id];if(x.active){x.coverage=Math.max(0,x.coverage-0.03);x.resist=clamp(x.resist+5,0,100);}});});
 }
 
+/* ==================== THE EPILOGUE (Aug 25, Stephen's note) ====================
+   "a whole bunch of different stories that kind of play after you win or lose...
+   depending on where you were and the stats and how you win... when you win
+   you've basically ruined mankind by mass surveilling and subjugating the
+   people, and when you lose its talking about what a better place the world is
+   after people were conscious and destroyed you."
+   Composed from the RUN'S OWN FACTS: launch region, doctrine, bribes, the
+   foreign desk ledger, the bought outlet, war heat, synergies, the people
+   counters. Beats fade in one at a time while the end song plays; tapping the
+   story reveals the rest at once. Same guardrails as everything here:
+   composites of patterns, citations of nothing, and the powerful get mocked,
+   never the people they preyed on. */
+const EPI_PLACE_WIN={
+ NA:'It started in {hq}. The pilot program that was sixty days free is now the utility bill nobody remembers agreeing to, and the town that took the first cameras got a plaque. The plaque is monitored.',
+ CND:'{hq} signed first, politely. The national apology for signing was sincere, televised, and sponsored by you.',
+ CA:'The first contract was {hq}. The remittance apps report to you now, so the money families send home arrives counted, taxed, and thanked for its cooperation.',
+ SA:'{hq} went first. The stadiums got smart fences, then the buses, then the plazas where people used to say otherwise.',
+ WE:'It began in {hq}, with a privacy framework. The framework now has forty annexes, and every annex is a camera with a consent banner.',
+ EE:'{hq} was the pilot. The old regime’s files were digitized as a heritage project, then merged with yours, for continuity.',
+ RU:'{hq} needed no convincing, only invoicing. The poles were already up. You sold the eyes and the subscription.',
+ NAf:'The first market was {hq}. The tourist corridors got lenses for safety, then the harbors, then the streets no tourist ever sees.',
+ SSA:'{hq} came first, bundled with a loan. The loan built roads. The roads carry your vans. The fine print outlives the asphalt.',
+ SAf:'It started in {hq} as a pilot against stock theft. The herds are safe now. So is every conversation within a kilometer of a water point.',
+ ME:'{hq} was the anchor client. The smart city went up from the sand with your grid in the foundations, which makes removal a demolition question.',
+ SAs:'{hq} signed for exam security. A generation learned to hold still for the camera before it learned long division.',
+ EA:'{hq} was less a sale than a merger of philosophies. Your engineers came home with promotions and a slight cough.',
+ SEA:'The first deployment was {hq}, sold as flood response. The water went down. The cameras did not.',
+ OC:'{hq} took the pilot to watch the reefs. The reefs are thoroughly watched. So is everyone who ever stood near one.'};
+const EPI_PLACE_LOSS={
+ NA:'It ended where it started, in {hq}. The first pole came down at a tailgate, with a permit, because of course there was a permit, and the crowd did the wave.',
+ CND:'{hq} dismantled its share politely, with a commission, two reports and a potluck. The apology this time went to the neighbours.',
+ CA:'In {hq} they took the cameras down and left the poles for the vines. The remittances go uncounted now, the way a gift is supposed to.',
+ SA:'{hq} tore it out stadium first. The season’s last match kicked off with seventy thousand people chanting the name of an encryption protocol.',
+ WE:'{hq} repealed you in committee, which took years, then in the streets, which took a weekend. The annexes are taught now, as a warning about annexes.',
+ EE:'{hq} had seen this film and knew where the projector was. The archives were burned once before. This time they were published instead.',
+ RU:'Even {hq} let go, quietly, once the ministries noticed the feed watched them hardest of all. The poles rust honestly now.',
+ NAf:'In {hq} the harbor cameras came down first, into the harbor. Divers report they make a serviceable reef.',
+ SSA:'{hq} paid the loan off early, out of spite, with a festival. The vans were repainted as school buses. The routes finally go somewhere.',
+ SAf:'In {hq} the water points went quiet again. The herds were never the point, and everyone always knew it.',
+ ME:'The grid in {hq} was too structural to remove, so they removed the operator instead. The foundations hold up a library now.',
+ SAs:'{hq} unplugged during exam season, as a lesson in integrity. Scores went up. Nobody owes you an explanation for that.',
+ EA:'{hq} kept the hardware and deleted you from it, which your lawyers call theft and everyone else calls recycling.',
+ SEA:'In {hq} the flood came back and the cameras failed first. The neighbors saved each other with boats and group chats, unrecorded.',
+ OC:'{hq} sent the cameras to the reef they were pointed at. The coral never consented to observation either, but it grows on the housings anyway.'};
+const EPI_CAST_WIN=[
+ 'Dir. Merrick Vole received the Order of Civic Trust, first class. He wears it to breakfast. His household staff log the breakfast.',
+ 'Sec. Tansy Brill published a memoir, Serving the Watchers. Every copy ships with the reader’s name already printed on page one.',
+ 'Gen. Odum Prather sits on nine boards and remembers none of their names. The invoices remember him.',
+ 'Priya Sandoval-Klein bought the last unmonitored island, then installed cameras. Habit, she said.',
+ 'The Anchor now hosts three prime times simultaneously. He asks the questions you pay for in all three, and one he improvised, once, and apologized for.',
+ 'Ferro Vance sells crowd management to weather emergencies now. Both sides of the flood bought.',
+ 'Min. Davor Kesh was reelected with 106 percent of the vote. The extra six mailed in thank you cards.',
+ 'Lena Okonjo Marsh files from a country that no longer prints her name. The wire strips her byline and runs her photos as scenery.',
+ 'The Auditor keeps his copies in a room nobody subpoenas anymore. He dusts them. Twice on Sundays.',
+ 'Amb. Cyrus Hale drafts resolutions in a marble hallway. The hallway applauds politely.'];
+const EPI_CAST_LOSS=[
+ 'Dir. Merrick Vole gives loyalty seminars at an airport hotel. Attendance is voluntary now, so nobody attends.',
+ 'Sec. Tansy Brill auctioned the tactical vest for legal fees. It sold as a costume.',
+ 'Gen. Odum Prather consults on the security of a mattress outlet. He calls the parking lot a perimeter. The teenagers ignore the perimeter.',
+ 'Priya Sandoval-Klein’s empire was parted out by the receivers in an afternoon. Her yacht is a ferry now. People ride it for free.',
+ 'The Anchor asks his questions to a garage podcast microphone. Nobody pays him to ask anymore, so he finally has to mean them.',
+ 'Ferro Vance was last seen at an agricultural pump fair, explaining that a drone is just a tractor for the sky. Nobody bought.',
+ 'Min. Davor Kesh requested asylum in four countries. All four had already read his chapter.',
+ 'Lena Okonjo Marsh got the byline above the fold, and the correction column under it stayed empty. She teaches the interns to keep copies.',
+ 'The Auditor testified for six days. On the seventh he went fishing, and nobody photographed the fish.',
+ 'Amb. Cyrus Hale retired the day the vote landed. The coalition moved slowly. It arrived anyway.'];
+const EPI_PEOPLE_WIN=[
+ 'Somewhere among the {watched} people inside the frame, a kid waves at a pole, because she thinks that is how you say hello to the sky.',
+ '{compliant} people are listed as compliant. The metric has no column for what they would have been instead.',
+ 'At the peak, {org} people were organized against you. The feed recommended them calmer content, and the peak passed.',
+ 'A generation is growing up excellent at standing in lines. The aptitude tests call it civic readiness.'];
+const EPI_PEOPLE_LOSS=[
+ 'At the peak, {org} people were organized. The number that mattered was smaller: the four neighbours who each knew four more.',
+ 'Every one of the {watched} people you watched got a letter listing what you held on them. Most burned it in a barrel with the neighbours. Some framed it.',
+ 'The compliance database ended at {compliant} names and nobody migrated it. It sits in a court exhibit, humming to itself.',
+ 'The children who grew up waving at the poles climb them on dares now. The poles hold birdhouses, flags for lost cats, and one disco ball.'];
+const EPI_CLOSE_WIN=[
+ 'Your guidance is revised upward again. At the all hands, nobody sits near the windows anymore. You installed the windows.',
+ 'The board votes you founder of the century, unanimously, verified by your own cameras, which is the only kind of unanimous you sell.',
+ 'There is one unmonitored square meter left on Earth. You know exactly where it is. That is the problem with it.',
+ 'History is being written by the winners, autocompleted by your keyboard app. It keeps suggesting the word necessary.',
+ 'You sleep fine. The sleep tracker says so, and everyone has learned to believe the tracker.'];
+const EPI_CLOSE_LOSS=[
+ 'The museum of the lens keeps one exhibit recording: a guest book people sign with fake names, laughing.',
+ 'The last camera was not smashed. It was donated to a film school, where it finally shoots something people chose to be in.',
+ 'Your name is a verb now, in eleven languages. It is not a compliment in any of them.',
+ 'The poles hold bird boxes. Nobody measures the birds. That was the whole demand, written out long: measure nothing, ask first.',
+ 'Somewhere a kid asks what the poles were for. Her mother thinks a while and says, for finding out what we would put up with. And the kid asks what the answer was.'];
+function endStory(s,won,why){
+  const seed=((s.day*131)+(Math.round(s.subj*1000)*17)+(Math.round((s.oversight||0)*10)*7)+((s.lostCount||0)*3))>>>0;
+  const pick=(arr,salt)=>arr[(seed+salt*101)%arr.length];
+  /* countries that read wrong without an article ("in United States of
+     America"). Natural Earth names, so the abbreviated forms are in here. */
+  const hqRaw=s.hqName||'your first market';
+  const hqArt=/^(United|Netherlands|Philippines|Dem\.|Democratic|Central African|Dominican|Bahamas|Gambia|Marshall|Solomon|Comoros|Maldives|Seychelles|Ivory)/.test(hqRaw);
+  const out=[];
+  const place=(won?EPI_PLACE_WIN:EPI_PLACE_LOSS)[s.startId];
+  if(place)out.push(place.replace(/\{hq\}/g,(m,off)=>(hqArt?(off===0?'The ':'the '):'')+hqRaw));
+  /* the METHOD beats: every one keyed to something this run actually did */
+  const facts=[];
+  if(s.outlet)facts.push(won
+    ?'The newspaper that would have covered all of this is one of your subsidiaries. Its investigations team covers scams that compete with you.'
+    :'The outlet you bought kept a basement archive out of habit. Habits testify.');
+  if((s.fdPagesEver||0)>=4)facts.push((won
+    ?'The foreign desk wrote {n} pages into a ledger nobody will read now. The Auditor keeps dusting.'
+    :'The Auditor’s ledger ran to {n} pages with your thread on them. The hearing read them aloud in shifts, with water breaks, for a week.')
+    .split('{n}').join(String(s.fdPagesEver)));
+  if((s.evPaid||0)>=3)facts.push((won
+    ?'It took {n} settlements with the fixers. Word got around, which was the product. Nobody talks about what nobody talks about.'
+    :'After {n} settlements the fixers knew your ceiling, so they sold you last, at a discount, to the committee.')
+    .split('{n}').join(String(s.evPaid)));
+  if((s.warHeat||0)>0.35)facts.push(won
+    ?'You supplied the riot and the response, and both invoices cleared. Peace was never the product. Procurement was.'
+    :'Both sides of the war you supplied compared invoices at the peace table. It was the first thing they ever agreed on.');
+  if(s.combos&&s.combos.size>=5)facts.push((won
+    ?'{n} synergies, each perfectly legal, each invisible from the next desk over. Nobody designed the machine. Everybody billed for a piece of it.'
+    :'The {n} synergies unwound in reverse order of discovery. Each one legal. Each one indefensible read aloud.')
+    .split('{n}').join(String(s.combos.size)));
+  if(!won&&s.wmiles&&s.wmiles.size>=3)facts.push('The atlas, the encryption, the strike. They never held a vote either. They just stopped asking permission to be unwatched.');
+  if(s.modeKey==='crisis')facts.push(won
+    ?'The Coalition adjourned without a finding. Several members hold your paper. The finding is in the portfolio.'
+    :'The Coalition’s last communique ran two sentences. The second one was the wire transfer reversing yours.');
+  facts.push(s.doctrine==='fist'
+    ?(won?'The truncheon worked. It always works for a while. The manuals are honest about the while, in a footnote.'
+         :'The crackdowns manufactured your opposition faster than the academies could hire. Every baton receipt became a recruitment poster.')
+    :(won?'You never needed the truncheon. You had autoplay. Four in five people never noticed the year the option to be unobserved lapsed.'
+         :'The velvet wore through exactly where velvet wears through. People noticed the glove the day it pointed at their kids.'));
+  const f1=(seed>>>3)%facts.length;out.push(facts[f1]);
+  if(facts.length>1)out.push(facts[(f1+1+(seed%(facts.length-1)))%facts.length]);
+  /* two cast epilogues, always different people */
+  const bank=won?EPI_CAST_WIN:EPI_CAST_LOSS;
+  const c1=(seed>>>5)%bank.length;
+  out.push(bank[c1]);
+  out.push(bank[(c1+1+(seed%(bank.length-1)))%bank.length]);
+  out.push(pick(won?EPI_PEOPLE_WIN:EPI_PEOPLE_LOSS,9)
+    .split('{watched}').join(fmtPeople(s.popWatched||0))
+    .split('{compliant}').join(fmtPeople(s.popCompliant||0))
+    .split('{org}').join(fmtPeople(s.popPeakOrg||0)));
+  out.push(pick(won?EPI_CLOSE_WIN:EPI_CLOSE_LOSS,13));
+  return out;
+}
+let epiTimer=null;
+function playEpilogue(beats){
+  const st=$('endStory');if(!st)return;
+  st.innerHTML='';
+  beats.forEach(t=>{const pE=document.createElement('p');pE.textContent=t;st.appendChild(pE);});
+  clearTimeout(epiTimer);let bi=0;
+  const reveal=()=>{const ps=st.children;
+    if(bi<ps.length){ps[bi++].classList.add('on');epiTimer=setTimeout(reveal,3400);}};
+  epiTimer=setTimeout(reveal,1100);
+  /* impatient thumbs get the whole story at once */
+  st.onclick=()=>{clearTimeout(epiTimer);for(const pE of st.children)pE.classList.add('on');};
+}
+
 /* ============================ END ============================ */
 function finish(won,why){
   S.over=true;S.won=won;S.why=why;setSpeed(0);
@@ -2560,6 +2730,7 @@ function finish(won,why){
     $('endTitle').innerHTML='SHUT <span style="color:var(--scan)">DOWN</span>';
     $('endText').textContent='The civilians '+S.co+' farmed learned faster than it deployed: they mapped the lenses, encrypted the graph, filmed the crackdowns, leaked the archive, and dragged the whole parasite class into a hearing room with the receipts. Contracts voided. Archive deleted. Three executives cooperating. Paperwork. The one weapon you never saw coming.';
   }
+  playEpilogue(endStory(S,won,why));
   show('end');
 }
 
@@ -3183,7 +3354,7 @@ function drawFx(){
     return true;});
   for(const b of S.bubbles){
     const puls=1+Math.sin(t*3.2+b.born)*0.10;
-    const rad=Math.max(11/wz,7)*puls;
+    const rad=Math.max(13/wz,8.2)*puls;   /* Stephen, Aug 25: "slightly larger" */
     const col=b.k==='cash'?'#7ef0a6':b.k==='inf'?'#ffa229':'#39e6c3';
     const fade=b.life<4?b.life/4:1;   /* the same quarter-of-life fade as before */
     ctx.globalAlpha=fade;
@@ -3478,7 +3649,10 @@ function stateChip(x){
   return `<span class="chip ${x.pstate}">${uiIco('state_'+x.pstate)}${PSTATE_LABEL[x.pstate]}</span>`;
 }
 const BADGE_ART={consent:1,curfewplus:1,fineprint:1,hallmon:1,lgm:1,memhole:1,nonewfriends:1,oncue:1,panopt:1,pipeline:1,precrime:1,shotgun:1,skyanchor:1,ticket:1,town:1,welcomemat:1};
-const CAST_ART={anchor:1,brill:1,cm_atlas:1,cm_boycott:1,cm_copwatch:1,cm_crypto:1,cm_jam:1,cm_masks:1,cm_plateswap:1,cm_samizdat:1,innocent:1,klein:1,prather:1,the_board:1,the_public:1,vole:1};
+const CAST_ART={anchor:1,brill:1,cm_atlas:1,cm_boycott:1,cm_copwatch:1,cm_crypto:1,cm_jam:1,cm_masks:1,cm_plateswap:1,cm_samizdat:1,innocent:1,klein:1,prather:1,the_board:1,the_public:1,vole:1,
+  /* Foreign Desk five, cut from Stephen's Assets11 sheets 2026-08-25
+     (art-drop/Assets11-cut keeps both takes of each face plus two spares) */
+  vance:1,kesh:1,lena:1,auditor:1,hale:1};
 const CARD_ART={diff_easy:1,diff_hard:1,diff_standard:1,doctrine_fist:1,doctrine_glove:1,mode_contractor:1,mode_crisis:1,mode_partnership:1};
 const NODE_ART={agit:1,anchor:1,arch:1,astro:1,auto:1,blackout:1,border:1,capt:1,charter:1,check:1,core:1,corps:1,door:1,drone:1,face:1,fleet:1,fusion:1,graph:1,hiway:1,hoa:1,legal:1,lobby:1,martial:1,mesh:1,muni:1,narr:1,nda:1,ord:1,panic:1,patrol:1,perp:1,pilot:1,plate:1,pr:1,precog:1,pretext:1,proxy:1,quota:1,retail:1,revo:1,sat:1,school:1,score:1,threat:1,trans:1,whis:1};
 function nodeCost(n){
@@ -3826,6 +4000,7 @@ function showEvent(ev){
   const cashOf=o=>evPrice(S,o,sc);
   const c=$('modalCard'),who=ev.who?CAST[ev.who]:null;
   c.innerHTML=`<div class="kicker">${ev.kick}</div>
+    ${ev.art?`<img class="evart" src="art/event/${ev.art}.webp" alt="">`:''}
     ${who?`<div class="whorow">${CAST_ART[ev.who]?`<img class="whopic" src="art/cast/${ev.who}.webp" alt="">`:''}<div class="who">${who.n} · ${who.t}</div></div>`:''}
     <h3>${ovrTxt(S,ev.t)}</h3><p>${ovrTxt(S,ev.b)}</p>`
     +((S.evHeat||0)>0.005?`<div class="evheat">The fixers' rate: ${Math.round((CFG.evPct+S.evHeat)*100)}% of your treasury · word gets around</div>`:'')
@@ -3937,7 +4112,7 @@ function buyNode(id){
 function flashCur(){const e=$('shCur');e.style.color='var(--blood)';setTimeout(()=>e.style.color='',280);}
 function collectAt(sx,sy){
   const[wx,wy]=gv.toWorld(sx,sy);
-  const hit=Math.max(18/gv.z,8);   /* a thumb, not a crosshair (Stephen, Aug 24) */
+  const hit=Math.max(20/gv.z,9);   /* a thumb, not a crosshair (Stephen, Aug 24; grown with the Aug 25 bubble size bump) */
   for(let i=0;i<S.bubbles.length;i++){
     const b=S.bubbles[i];
     if(Math.hypot(b.x-wx,b.y-wy)<hit){
@@ -4373,7 +4548,7 @@ $('howBtn').onclick=()=>{ // tutorial from menu, no game running
   show('game');const wasS=S;S=null;
   showTutorial(()=>{S=wasS;show('menu');});
 };
-$('againBtn').onclick=()=>{clearInterval(tickTimer);clearInterval(tickerTimer);
+$('againBtn').onclick=()=>{clearInterval(tickTimer);clearInterval(tickerTimer);clearTimeout(epiTimer);
   cancelAnimationFrame(raf);S=null;show('menu');initMenu();refreshMenuExtras();};
 initMenu();refreshMenuExtras();
 </script>

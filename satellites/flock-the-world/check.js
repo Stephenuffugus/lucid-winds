@@ -1547,6 +1547,45 @@ if (C) {
   }
 }
 
+/* ------------------------------------------------- epilogue reel (Aug 25) */
+/* Stephen: many different end stories, keyed to where you were, the stats and
+   how the run went. Provable claims: every region has a place beat for both
+   outcomes, templates are fully substituted, the two cast beats are two
+   different people, the copy obeys the dash law, and two different runs get
+   different stories. */
+group('epilogue reel');
+try {
+  const cE = makeCtx();
+  vm.runInContext("__epiTest=function(id,won,day,subj){var s=newState('CONTRACTOR','Vendor',id);" +
+    "s.day=day;s.subj=subj;s.oversight=won?44:100;s.lostCount=won?0:4;" +
+    "s.popWatched=5.1;s.popCompliant=3.3;s.popPeakOrg=0.6;s.outlet=1;s.fdPagesEver=7;" +
+    "s.evPaid=4;s.warHeat=0.5;s.combos=new Set(['a','b','c','d','e']);s.doctrine='glove';" +
+    "return endStory(s,won,won?'win_econ':'refusal');}", cE);
+  const ids = vm.runInContext('REGIONS.map(function(r){return r.id})', cE);
+  let wrongLen = 0, braces = 0, dashes = 0, sameCast = 0, empty = 0;
+  for (const id of ids) for (const won of [true, false]) {
+    const beats = vm.runInContext('__epiTest(' + JSON.stringify(id) + ',' + won + ',1100,' + (won ? 0.971 : 0.61) + ')', cE);
+    if (beats.length !== 7) wrongLen++;
+    beats.forEach(b => {
+      if (!b || b.length < 40) empty++;
+      if (/[{}]/.test(b)) braces++;
+      if (DASHES.test(b)) dashes++;
+    });
+    if (beats[3] === beats[4]) sameCast++;
+  }
+  ok('every region tells a 7 beat story for both outcomes', wrongLen === 0, wrongLen + ' region/outcome pairs off');
+  ok('every template slot is substituted', braces === 0, braces + ' beats with braces left in');
+  ok('epilogue copy obeys the dash law', dashes === 0, dashes + ' beats with dashes');
+  ok('the two cast beats are two different people', sameCast === 0, sameCast + ' stories repeated a cast member');
+  ok('no beat is empty or trivially short', empty === 0, empty + ' beats under 40 chars');
+  const a = vm.runInContext("__epiTest('NA',true,1100,0.971).join('|')", cE);
+  const b = vm.runInContext("__epiTest('NA',true,1487,0.984).join('|')", cE);
+  ok('two different runs get different stories', a !== b);
+  ok('#endStory exists in the end screen markup', /id="endStory"/.test(SRC));
+  ok('finish() plays the epilogue', /playEpilogue\(endStory\(S,won,why\)\)/.test(GAME));
+  ok('the reveal styling exists (beats fade in)', /#endStory p\.on\{opacity:1/.test(SRC));
+} catch (e) { ok('epilogue harness runs', false, e.message); }
+
 /* -------------------------------------------------------- self test mode */
 /* A probe that cannot fail is not evidence. FTW_SELFTEST=1 mutates the source
    in memory and re-runs the source-level checks, which must go red. */
