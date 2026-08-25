@@ -67,6 +67,8 @@ h1 em{font-style:normal;color:var(--sodium)}
 .fl{font-size:1.18em;text-shadow:0 0 18px currentColor}
 .tag{font-size:10px;letter-spacing:.32em;color:var(--dim);text-transform:uppercase;text-align:center}
 .sub{max-width:360px;margin:12px auto 14px;font-size:12.5px;line-height:1.6;color:var(--ice);text-align:center}
+.tipsrow{display:flex;align-items:center;gap:8px;min-height:48px;font-size:11px;color:var(--dim);cursor:pointer;user-select:none}
+.tipsrow input{width:18px;height:18px;accent-color:var(--sodium)}
 .howbtn{display:block;margin:0 auto 6px;padding:8px 18px;min-height:48px;border:1px solid var(--line);border-radius:20px;
   font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ice)}
 .seclab{font-size:9.5px;letter-spacing:.24em;color:var(--dim);text-transform:uppercase;margin:16px 0 8px}
@@ -789,6 +791,7 @@ h1 em{font-style:normal;color:var(--sodium)}
   <div class="seclab">Resistance level</div>
   <div class="difficulty" id="diffs"></div>
   <div class="diffdesc" id="diffDesc"></div>
+  <label class="tipsrow"><input type="checkbox" id="tipsChk" checked> Briefings and field notes</label>
   <button class="cta" id="resumeBtn" style="display:none;background:var(--panel2);color:var(--paper);border:1px solid var(--sodium);box-shadow:none">Resume your run</button>
   <button class="cta" id="startBtn">Open for business</button>
   <p class="fine" id="recLine" style="margin-top:14px"></p>
@@ -2240,9 +2243,8 @@ function tick(){
     /* Stephen, Aug 24: "I don't know how to quell them once they get into an
        uprising and there hasn't been a lot of stuff to teach you if it's even
        possible." Teach the riot playbook ONCE, the first time it is needed. */
-    if(ns==='violent'&&prev!=='violent'&&prev!=='uprising'&&!s.milestones.has('coach_riot')){
-      s.milestones.add('coach_riot');
-      pushNews(s,'Field note: a riot can still be cooled. CONCEDE is free and eases everything for a slice of control. CRACKDOWN clears the square at a price the region never forgets. BLACKOUT slows the story. Doing nothing radicalizes them further.','crit');}
+    if(ns==='violent'&&prev!=='violent'&&prev!=='uprising')
+      coach(s,'coach_riot','Field note: a riot can still be cooled. CONCEDE is free and eases everything for a slice of control. CRACKDOWN clears the square at a price the region never forgets. BLACKOUT slows the story. Doing nothing radicalizes them further.');
     /* the living map: harvested data streams home, routes hum with traffic */
     if(r.active&&r.coverage>0.02&&s.pk.length<90&&Math.random()<0.12+r.coverage*0.35){
       const[kx,ky]=anchorOf(id);
@@ -2270,8 +2272,7 @@ function tick(){
       /* the meter proves easy is winnable by exactly two disciplines the game
          never taught: concede early, keep suspicion down. Teach each ONCE, at
          the moment it matters, in the ticker rather than a popup. */
-      if(!s.milestones.has('coach_upr')){s.milestones.add('coach_upr');
-        pushNews(s,'Field note: an uprising drains coverage fast and bleeds patriotism faster. CONCEDE is free, cools the street at once, and costs only a sliver of control.','crit');}
+      coach(s,'coach_upr','Field note: an uprising drains coverage fast and bleeds patriotism faster. CONCEDE is free, cools the street at once, and costs only a sliver of control.');
       s.oversight+=0.11*D.over;
       r.coverage=Math.max(0,r.coverage-0.0045);
       r.control=Math.max(0,r.control-0.004);
@@ -2286,8 +2287,7 @@ function tick(){
           pushNews(s,'The insurer pays out on '+r.name+'. '+fmtMoney(payout)+', and the premium letter is already in the post.','good');}
         {const[xx2,xy2]=anchorOf(id);s.pings.push({x:xx2,y:xy2,t:0,kind:'x'});}
         pushNews(s,H.lost(r.name),'crit');
-        if(!s.milestones.has('coach_lost')){s.milestones.add('coach_lost');
-          pushNews(s,'Field note: an expelled market is not gone for good. Re-enter it from the World tab at a surcharge; every concession you banked there before losing it cuts the price.','crit');}
+        coach(s,'coach_lost','Field note: an expelled market is not gone for good. Re-enter it from the World tab at a surcharge; every concession you banked there before losing it cuts the price.');
       }
     }
 
@@ -2385,11 +2385,10 @@ function tick(){
      100%. Found by the 2026-08-23 external audit. The same clamp re-asserts the
      patriotism floor, so a consent decree cannot buy a giant below it either. */
   s.oversight=clamp(s.oversight,ovFloor(s),100);
-  if(!s.milestones.has('coach_floor')&&ovFloor(s)>=8&&s.oversight<=ovFloor(s)+0.001&&ovGain<0){
-    s.milestones.add('coach_floor');
-    pushNews(s,'Field note: the narrative machine has patriotism pinned as low as it goes. A platform your size is never invisible again; the floor rises with your reach.','crit');}
-  if(s.oversight>=50&&!s.milestones.has('coach_ovr')){s.milestones.add('coach_ovr');
-    pushNews(s,'Field note: patriotism is half spent. Concessions cool protesting regions, the desk retires findings for money, and a consent decree monitor works every day.','crit');}
+  if(ovFloor(s)>=8&&s.oversight<=ovFloor(s)+0.001&&ovGain<0)
+    coach(s,'coach_floor','Field note: the narrative machine has patriotism pinned as low as it goes. A platform your size is never invisible again; the floor rises with your reach.');
+  if(s.oversight>=50)
+    coach(s,'coach_ovr','Field note: patriotism is half spent. Concessions cool protesting regions, the desk retires findings for money, and a consent decree monitor works every day.');
 
   guideTick();
   if(s.day%20===0)saveRun();
@@ -2422,8 +2421,8 @@ function tick(){
     if(!s.milestones.has('econ_debate')){s.milestones.add('econ_debate');
       pushNews(s,'A ban bill is drafted in three capitals at once. Too Big To Ban is a bet, and the hearings open today: patriotism will climb for as long as you qualify.','crit');}
   } else {
-    if((s.econRun||0)>=30&&!s.milestones.has('econ_broken')){s.milestones.add('econ_broken');
-      pushNews(s,'Field note: the portfolio streak broke, and the counter starts over. The door needs '+CFG.econDays+' unbroken days.','crit');}
+    if((s.econRun||0)>=30)
+      coach(s,'econ_broken','Field note: the portfolio streak broke, and the counter starts over. The door needs '+CFG.econDays+' unbroken days.');
     s.econRun=0;
   }
   if(s.subj>=CFG.winAt)finish(true,'win');
@@ -2773,7 +2772,7 @@ function finish(won,why){
      ftw_recs  lifetime records. Counters ADD, bests MAX, synergies union.
    Every read is defensive: a corrupt or half written blob is refused and the
    player starts fresh instead of booting into a broken world. */
-const K_RUN='ftw_run', K_RECS='ftw_recs', K_CO='ftw_co', K_MUTE='ftw_mute';
+const K_RUN='ftw_run', K_RECS='ftw_recs', K_CO='ftw_co', K_MUTE='ftw_mute', K_SEEN='ftw_seen', K_TIPS='ftw_tips';
 /* ======================== SOUND ========================
    Stephen produces the audio (PLAN-AUG23 section 4 is the cue sheet); this is
    the wiring, and it is provable before a single file exists. Every cue records
@@ -2882,6 +2881,19 @@ function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
 function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
 function lsDel(k){try{localStorage.removeItem(k);}catch(e){}}
 function jGet(k){try{const v=JSON.parse(lsGet(k)||'null');return(v&&typeof v==='object'&&!Array.isArray(v))?v:null;}catch(e){return null;}}
+/* Aug 25: teaching that was already taught stays taught. Field notes used to
+   re-fire every RUN (per-run milestones only), and the tour re-ran every page
+   load. seen() is the cross-session memory; the menu toggle can mute the lot
+   ("There maybe needs to be a turn tips off option"). */
+function seen(k){const o=jGet(K_SEEN);return !!(o&&o[k]);}
+function markSeen(k){const o=jGet(K_SEEN)||{};o[k]=1;try{lsSet(K_SEEN,JSON.stringify(o));}catch(e){}}
+function tipsOff(){return lsGet(K_TIPS)==='0';}
+/* one door for every field note: once per run, once per account, mutable */
+function coach(s,key,txt){
+  if(s.milestones.has(key)||seen(key)||tipsOff())return;
+  s.milestones.add(key);markSeen(key);
+  pushNews(s,txt,'crit');
+}
 function num(v,d){const n=+v;return isFinite(n)?n:d;}
 
 function getRecs(){
@@ -3729,7 +3741,7 @@ function treeHTML(t){
       const st=nodeState(n),c=nodeCost(n);
       const aff=st==='avail'&&S.inf>=c;
       const cst=st==='own'?'ACTIVE':st==='gated'?((typeof n.gtxt==='function'?n.gtxt(S):n.gtxt)||'GATED'):st==='exlocked'?'PATH CLOSED':c+' INF';
-      const tut=(G.on&&GUIDE[G.step]&&GUIDE[G.step].node===n.id&&st==='avail')?'tut':'';
+      const tut=(G.on&&G.list[G.step]&&G.list[G.step].node===n.id&&st==='avail')?'tut':'';
       const ico=NODE_ART[n.id]?`<img class="nico" src="art/tree/${n.id}.webp" alt="" draggable="false">`:'';
       h+=`<div class="node ${st} ${aff?'afford':''} ${tut}" id="nd_${n.id}" data-node="${n.id}">
         <div class="nhead">${ico}<div class="nm">${n.n}</div></div>
@@ -4335,25 +4347,47 @@ const GUIDE=[
  {txt:()=>`One more thing: certain skills <b>combine</b>. Ordinances plus <b>Plate Recognition</b> (WATCH tree) would fine people automatically\u2026 There are more hidden synergies. Find them. Good luck. Smile for the cameras.`,
   done:()=>false,final:true}
 ];
-const G={on:false,step:0,day0:0};
-function startGuide(){G.on=true;G.step=0;G.day0=0;updateGuide();}
-function endGuide(){G.on=false;$('guide').classList.remove('on');
+/* Aug 25: beats 1-2 are mode-specific. The Contractor build advice was being
+   issued verbatim in modes whose whole point is a different opening (Stephen,
+   twice: "the same briefing pops up for each game type saying to build the
+   same way"). Beats 3-5 (money watch, organized warning, synergy tease) are
+   shared on purpose - they are true everywhere. */
+const GUIDE_DEEP=[
+ {txt:s=>`Two ministries installed your kit before day one. Open <b>WORLD</b> and read the marked cards: the closed societies are yours already, the free ones have read the leaks and resist harder. Paper first anyway: open <b>STORY</b> and activate <b>Nuisance Ordinances</b>.`,
+  tab:'inf',node:'ord',done:s=>s.has('ord')},
+ GUIDE[1],GUIDE[2],GUIDE[3],GUIDE[4]
+];
+const GUIDE_CRISIS=[
+ {txt:s=>`The Crisis tree is open and discounted from day one. Open <b>CRISIS</b> and activate <b>Threat Inflation</b>: fear is this operation's compliance engine, and the Coalition forms faster the louder you run.`,
+  tab:'war',node:'threat',done:s=>s.has('threat')},
+ {txt:()=>`Fear still needs hardware to monetize: open <b>DEPLOY</b> and activate the <b>Free Pilot Program</b>. Nobody removes a camera they never paid for.`,
+  tab:'dep',node:'pilot',done:s=>s.has('pilot')},
+ GUIDE[2],GUIDE[3],GUIDE[4]
+];
+const G={on:false,step:0,day0:0,list:GUIDE};
+function startGuide(){
+  G.list=(S&&S.modeKey==='CRISIS')?GUIDE_CRISIS:(S&&S.modeKey==='DEEPSTATE')?GUIDE_DEEP:GUIDE;
+  G.on=true;G.step=0;G.day0=0;updateGuide();}
+function endGuide(){
+  /* finishing OR skipping the tour counts as having had it, across sessions */
+  if(G.on){try{lsSet('ftw_guide_done','1');}catch(e){}}
+  G.on=false;$('guide').classList.remove('on');
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('tut'));}
 function guideEvent(kind,id){
   if(!G.on)return;
-  const st=GUIDE[G.step];
+  const st=G.list[G.step];
   if(st&&st.done&&st.done(S,G)){advanceGuide();}
 }
 function advanceGuide(){
   G.step++;
-  if(G.step>=GUIDE.length){endGuide();return;}
-  if(GUIDE[G.step].wait)G.day0=S.day;
+  if(G.step>=G.list.length){endGuide();return;}
+  if(G.list[G.step].wait)G.day0=S.day;
   updateGuide();
 }
 function updateGuide(){
   if(!G.on)return;
-  const st=GUIDE[G.step];
-  $('guideTxt').innerHTML=`<b>${G.step+1}/${GUIDE.length}</b> \u00b7 `+st.txt(S);
+  const st=G.list[G.step];
+  $('guideTxt').innerHTML=`<b>${G.step+1}/${G.list.length}</b> \u00b7 `+st.txt(S);
   $('guide').classList.add('on');
   document.querySelectorAll('.nb').forEach(b=>b.classList.toggle('tut',!!st.tab&&b.dataset.tab===st.tab));
   /* 2026-08-24, Stephen: the 22-day "watch the money grow" beat "stayed up too
@@ -4365,7 +4399,7 @@ function updateGuide(){
 }
 function guideTick(){
   if(!G.on)return;
-  const st=GUIDE[G.step];
+  const st=G.list[G.step];
   if(st.done&&st.done(S,G))advanceGuide();
 }
 
@@ -4400,6 +4434,9 @@ function initMenu(){
       CARD_ART[DIFF_ART[k]]?`<img class="dfart" src="art/card/${DIFF_ART[k]}.webp?v=trim3" alt="">`:''}<span>${k}</span></button>`).join('');
   document.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{chosenDiff=b.dataset.d;initMenu();});
   $('diffDesc').textContent=DIFFS[chosenDiff].label;
+  const tc=$('tipsChk');
+  if(tc&&!tc._wired){tc._wired=1;tc.checked=lsGet(K_TIPS)!=='0';
+    tc.onchange=()=>{try{lsSet(K_TIPS,tc.checked?'1':'0');}catch(e){}};}
 }
 function initPick(){
   show('pick');initCoInput();pickedRegion=null;pickedCountry=null;
@@ -4498,7 +4535,12 @@ function bootGame(resumed){
      from the live mod values so the copy cannot drift from the code. */
   if(!resumed&&!S.milestones.has('mode_brief')){
     S.milestones.add('mode_brief');
-    pushNews(S,modeBriefing(S),'crit');
+    /* rules at the door every run, but the BREAKING banner only the first
+       time this account ever opens this mode (Aug 25: "I'm sick of it
+       popping up") - after that it is a ticker line */
+    const bk='brief_'+S.modeKey;
+    pushNews(S,modeBriefing(S),seen(bk)?'':'crit');
+    markSeen(bk);
   }
   $('speeds').innerHTML=[0,1,2,3].map(n=>
     `<button class="sp ${n===1?'on':''}" data-sp="${n}">${n===0?'II':n+'\u00D7'}</button>`).join('');
@@ -4535,7 +4577,7 @@ function bootGame(resumed){
   hideCtip();
   paintHud();
   cancelAnimationFrame(raf);drawFx();
-  if(!resumed&&!tutSeen){tutSeen=true;startGuide();}
+  if(!resumed&&!tutSeen&&!lsGet('ftw_guide_done')&&!tipsOff()){tutSeen=true;startGuide();}
   else endGuide();
   S._lastChoiceMs=Date.now();   /* no choice modal in the first breath of a session */
   setSpeed(1);

@@ -985,9 +985,12 @@ if (C) {
       ok('the second tap concedes for real',
         rr.unrest<u0&&rr.control<c0&&rr.gw===1,
         'unrest '+u0+'->'+rr.unrest+' gw='+rr.gw);
-      /* the field notes fire once, in the ticker, never twice */
+      /* the field notes fire once, in the ticker, never twice.
+         2026-08-25: once per ACCOUNT now (K_SEEN persists across sessions),
+         so the fixture starts from fresh account memory - the shared store
+         means an earlier scenario bot may already have "learned" it. */
       const cN=makeCtx();cN.doctrineModal=()=>{};cN.showEvent=()=>{};
-      vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');",cN);
+      vm.runInContext("localStorage.removeItem(K_SEEN);S=newState('CONTRACTOR','Vendor','NA');",cN);
       const sN=vm.runInContext('S',cN);
       sN.oversight=55;
       let n8=13;const f8=()=>{n8=(n8*1664525+1013904223)>>>0;return n8/4294967296;};
@@ -995,10 +998,19 @@ if (C) {
       vm.runInContext('tick()',cN);
       const once=sN.log.filter(x=>/patriotism is half spent/i.test(x.t)).length;
       sN.oversight=60;vm.runInContext('tick()',cN);
-      Math.random=real8;
       const twice=sN.log.filter(x=>/patriotism is half spent/i.test(x.t)).length;
       ok('the oversight field note teaches once and only once', once===1&&twice===1,
         'first='+once+' second='+twice);
+      /* and a NEW session on the same account stays quiet: the seen-ledger
+         survives in localStorage where the per-run milestone could not */
+      const cN2=makeCtx();cN2.doctrineModal=()=>{};cN2.showEvent=()=>{};
+      vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');",cN2);
+      const sN2=vm.runInContext('S',cN2);
+      sN2.oversight=55;
+      vm.runInContext('tick()',cN2);
+      Math.random=real8;
+      const relearn=sN2.log.filter(x=>/patriotism is half spent/i.test(x.t)).length;
+      ok('a later session does not re-teach a note the account has seen', relearn===0, 'refired='+relearn);
     }
 
     /* 2026-08-24: four doors to the ending. Each door is driven through the
@@ -1629,6 +1641,23 @@ group('Aug 25 pass: tap safety, receipts, the refusal strip');
     ok('the old unreachable threshold is gone', !/gate:s=>s\.avgSus>18/.test(GAME));
     ok('the proxy gate text is a live meter naming the levers', /gtxt:s=>'World suspicion '/.test(GAME));
     ok('agitate feeds suspicion (the deliberate lever)', /r\.suspicion=clamp\(r\.suspicion\+5,0,100\);bumpSus\(s,2\);/.test(GAME));
+  }
+
+  /* the guide speaks the mode's language now, and teaching persists */
+  {
+    const cG2=makeCtx();cG2.doctrineModal=()=>{};cG2.showEvent=()=>{};
+    vm.runInContext("S=newState('CRISIS','Vendor','NA');startGuide();",cG2);
+    ok('the Crisis guide opens on the Crisis tree, not the Contractor script',
+      vm.runInContext("G.list[0].node",cG2)==='threat'&&vm.runInContext("G.list.length",cG2)===5);
+    vm.runInContext("S=newState('DEEPSTATE','Vendor','NA');startGuide();",cG2);
+    ok('the Deep Partnership guide names the preseeded ministries beat',
+      vm.runInContext("G.list[0].txt(S)",cG2).indexOf('ministries')>=0);
+    ok('finishing or skipping the tour persists across sessions',
+      /lsSet\('ftw_guide_done','1'\)/.test(GAME) && /!lsGet\('ftw_guide_done'\)&&!tipsOff\(\)/.test(GAME));
+    ok('field notes go through the coach door (once per account, mutable)',
+      /function coach\(s,key,txt\)/.test(GAME) && /seen\(key\)\|\|tipsOff\(\)/.test(GAME));
+    ok('the tips toggle exists in the menu', /id="tipsChk"/.test(SRC));
+    ok('the mode briefing banner downgrades after first sight', /seen\(bk\)\?'':'crit'/.test(GAME));
   }
 }
 

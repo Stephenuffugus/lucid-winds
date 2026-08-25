@@ -15,30 +15,38 @@ Checklist in the order the notes were given. `[x]` only with evidence
       she/her sites → he/him (matches portrait, the male name Merrick, and
       the win epilogue which already said He). Whole cast audited against
       portraits — all other nine consistent (Brill/Klein/Lena she, rest he).
-- [ ] 2. **Suspicion gate unreachable + invisible** — crisis tree "proxy
+- [x] 2. **Suspicion gate unreachable + invisible** — crisis tree "proxy
       flashpoint" wants suspicion > 18 but no suspicion stat exists anywhere
       in the UI; player pushed Coalition to 19% thinking that was it. Two full
-      runs never reached it. Needs: surface the stat, make the gate reachable
-      by deliberate play, fix the gate text. SERIOUS balancing.
+      runs never reached it. DONE: root cause was charter (required prereq)
+      suppressing the gated stat + late-game normalization. Gate now 10 with
+      a LIVE meter as its text; agitate feeds suspicion (+5 local +2 world);
+      suspicion bars on region cards + popover; World stat gold at 10+ with
+      'of 10 for Proxy' while locked. check.js proves a loud bot opens it.
 - [ ] 3. **Velvet Glove / Iron Fist images butchered** — far too zoomed.
       Show both whole images + their text on one screen, uncropped.
-- [ ] 4. **Choice popups eat bubble taps** — story messages appear while
-      popping bubbles at 3x and a stray tap picks an option. Need an arming
-      guard so a choice can never be made by accident.
-- [ ] 5. **Choices show no impact** — popups interrupt and never show what the
-      pick actually did. Show the real deltas after choosing.
+- [x] 4. **Choice popups eat bubble taps** — story messages appear while
+      popping bubbles at 3x and a stray tap picks an option. DONE: options
+      inert 450ms (CSS + hard timestamp guard) and map taps die under any
+      modal. (Shot in the visual pass.)
+- [x] 5. **Choices show no impact** — popups interrupt and never show what the
+      pick actually did. DONE: AFTERMATH phase shows the real deltas (money,
+      influence, meter, suspicion, organized, compliance, war heat, pages)
+      plus the wire line, behind CONTINUE.
 - [x] 6. **"!" bubbles are silent** — no sound on tap (cash + inf have cues).
       DONE: `sfx/bubble_leak.mp3` (Kenney Interface Sounds scratch_004, CC0
       verified in pack License.txt, house recipe mono 96k) wired into the
       leak branch of collectAt + catalog/cooldown/manifest; check.js extended
       (cue sheet 33, SRC assertion on the handler). ⚠ picked unheard — worth
       an ear on device.
-- [ ] 7. **Concede is free and spammable** — clicked repeatedly to crush
-      organization with zero consequence. Cooldowns / rate limits so you have
-      to balance.
-- [ ] 8. **Loss blindside** — five countries revolted, crackdown on all, lost
-      with no meter warning. Need a persistent danger readout before the
-      Great Refusal fires.
+- [x] 7. **Concede is free and spammable** — clicked repeatedly to crush
+      organization with zero consequence. DONE: a repeat inside 10 days is
+      theater - half relief, double control cost, no goodwill. Bots (12/17d
+      cadence) untouched; canaries green; spam checks watched red on mutant.
+- [x] 8. **Loss blindside** — five countries revolted, crackdown on all, lost
+      with no meter warning. DONE: red HUD strip 'THE REFUSAL · N/4 MARKETS
+      EXPELLED · N IN UPRISING', blinks at the brink, BREAKING banner at one
+      expulsion from loss.
 - [x] 9. **End-screen synergy count is lifetime, not per-run** — "9 of 16" was
       the account ledger. DONE: share text now "Synergies found N this run";
       records strip reads "synergies this run N · lifetime M of 16" above the
@@ -52,16 +60,21 @@ Checklist in the order the notes were given. `[x]` only with evidence
       build the same way; sick of it.
 - [ ] 13. **Tips-off option** — same mid-game tips fire every run; helpful
       only the first time. Persist "seen" + add a toggle.
-- [ ] 14. **Country tap blocks bubbles** — info popover opens over the map and
-      bubbles are missed behind it. Auto-pause on country tap.
+- [x] 14. **Country tap blocks bubbles** — info popover opens over the map and
+      bubbles are missed behind it. DONE: popover pauses like a sheet (Aug 20
+      no-pause call reversed), restores on close, sheets inherit the pause.
 - [ ] 15. **Dossier/chapter art cropped** — room image showed only its middle
       band. Audit EVERY art placement for bad cropping; all such crops are
       presumed mistakes.
 - [ ] 16. **Story copy stiff / obviously AI** — loosen the wording.
-- [ ] 17. **Country popover: stat bars** — show the bars, not just numbers.
-- [ ] 18. **Agitate/Crackdown/Concede legibility** — crackdown drops unrest
+- [x] 17. **Country popover: stat bars** — DONE: unrest/organized/suspicion/
+      coverage/compliance bars with numbers, same classes as the World tab.
+- [x] 18. **Agitate/Crackdown/Concede legibility** — crackdown drops unrest
       but feeds organization, concede the reverse; the depth is real but
-      opaque. Teach it at the point of use.
+      opaque. DONE: every action toasts its full bill (suspicion/organized/
+      grudge included); crackdown button carries a backfire BAND and warns
+      HIGH with an icon; agitate title explains the one-two AND the proxy
+      lever.
 - [x] 19. **Patriotism vs Coalition** — INVESTIGATED: nothing was reverted.
       The meter is deliberately named Coalition in Crisis Engine (Aug 20
       design) and Patriotism elsewhere; ovrTxt (8c3c4f9) renames event/news
