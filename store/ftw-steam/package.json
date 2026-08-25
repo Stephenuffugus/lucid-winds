@@ -1,0 +1,40 @@
+{
+  "name": "flock-the-world",
+  "version": "1.0.0",
+  "description": "Plague Inc for the surveillance state: you play the vendor, the civilians are innocent, and they fight back.",
+  "main": "main.js",
+  "author": "Sky Wolf Studio",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "vendor": "./vendor.sh",
+    "start": "npm run vendor && electron .",
+    "dist:win": "npm run vendor && electron-builder --win --x64",
+    "dist:mac": "npm run vendor && electron-builder --mac --universal"
+  },
+  "devDependencies": {
+    "electron": "^32.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "com.skywolfstudio.flocktheworld",
+    "productName": "Flock the World",
+    "files": [
+      "main.js",
+      "app/**/*"
+    ],
+    "win": {
+      "target": [
+        "dir"
+      ],
+      "signAndEditExecutable": false,
+      "icon": "capsules/out/ftw.ico"
+    },
+    "mac": {
+      "target": [
+        "dir"
+      ],
+      "category": "public.app-category.games"
+    }
+  }
+}

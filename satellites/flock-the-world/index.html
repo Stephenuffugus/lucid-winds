@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#05070b">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <script src="/dev-gate.js?v=2"></script>
 <title>FLOCK THE WORLD · Global Coverage Simulator</title>
 <style>
@@ -4857,18 +4860,32 @@ window._sbCapEarn=function(n,tag){
 /* ===== Sky Wolf Studios embed protocol ===== */
 (function(){
   var framed=false; try{ framed = window.parent!==window; }catch(e){ framed=true; }
+  /* ⛔ Play policy: inside a Trusted Web Activity the exit must never reach
+     the portal (it carries a Stripe checkout). Chrome sets document.referrer
+     to android-app://<package> in a TWA - disabled outright, not hidden,
+     because this is a policy boundary and not a CSS state. */
+  var inTWA=false;
+  try{ inTWA = document.referrer.indexOf('android-app://')===0
+       || (window.matchMedia && matchMedia('(display-mode: standalone)').matches
+           && /Android/i.test(navigator.userAgent)); }catch(e){}
   window.SWS_EXIT=function(){
+    if(inTWA) return;                       /* ⛔ never leave the app */
     if(framed){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; }
     if(document.referrer.indexOf('/portal')>=0&&history.length>1){ history.back(); }
     else{ location.replace('https://lucidwinds.com/portal/'); }
   };
+  /* offline shell: registered here so the whole game (art and sfx included)
+     works offline after one session. Bump ?v= with sw.js SHELL_VERSION. */
+  if('serviceWorker' in navigator){
+    try{ navigator.serviceWorker.register('sw.js?v=20260825a'); }catch(e){}
+  }
   if(framed){
     try{ parent.postMessage({sws:'ready'},'*'); }catch(e){}
     window.addEventListener('load',function(){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} });
   }
   /* findable exit on the main menu (Jessie rule from Skitterlings) */
   var menu=document.getElementById('menu');
-  if(menu){
+  if(menu&&!inTWA&&!window.__DESKTOP_BUILD){
     var b=document.createElement('button');
     b.textContent='← Back to Sky Wolf';
     b.style.cssText='display:block;margin:18px auto 26px;background:none;border:1px solid #39424e;color:#8a94a2;border-radius:999px;padding:11px 22px;font:600 13px system-ui,sans-serif;cursor:pointer;';

@@ -32,7 +32,9 @@ catch (e) { failed = true; console.log(" ⛔ OFFLINE NAVIGATION FAILED:", String
 await sleep(4000);
 const state = await cold.evaluate(() => ({
   title: document.title,
-  toys: (window.TOYS && window.TOYS.length) || document.querySelectorAll('[data-toy],.strip button').length,
+  /* interactive-surface census: bandits-box toys, or any satellite's
+     mode/start controls (FTW ships [data-m] mode cards + #startBtn) */
+  toys: (window.TOYS && window.TOYS.length) || document.querySelectorAll('[data-toy],.strip button,[data-m],#startBtn').length,
   bodyText: (document.body.innerText || "").slice(0, 90).replace(/\s+/g, " "),
   canvasOrSvg: document.querySelectorAll("svg,canvas").length
 })).catch(() => ({}));
