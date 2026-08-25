@@ -186,3 +186,39 @@ still taught "concede is free"; the proxy meter could read "10.0 of 10"
 while the gate stayed shut; a re-enabled music track could never rotate
 in; region cards clipped their actions at 320px; #ctip deleted (dead).
 Full inventory in commit "FTW kink-hunt pass".
+
+## Kink hunt round 2 (ultracode, "finish the kink hunt")
+
+Seven fresh lenses, none repeated. The fuzzer ran ~28,500 real ticks across
+all three modes, five seeds each, invariants asserted every tick: ZERO
+breaks, zero exceptions - the sim core is sound. The other lenses found 14
+real items, all fixed and gated (check.js 295→308, stable across 3 runs
+under true randomness):
+- ⛔ The popover click handler stacked once per RUN (fresh arrow each boot)
+  - proven live: from run 2 a SINGLE tap armed AND executed concede. Named
+  handler now (addEventListener dedupes references).
+- Abandoning the card/sheet disarms a pending concede (the paused-arm was
+  immortal); every speed change repaints the PAUSED/LIVE pill.
+- bootGame kills the previous run's sheet/popover DOM and banner queue (a
+  resumed run started with a STALE sheet over a running sim); Run-it-back
+  restores the menu music (menu went silent for the session).
+- Dead content revived: prather_arc3 gated >0.2 while its own arc grants
+  exactly 0.20 (>=0.15 now); ban/martyr/mapper/docu event gates stranded
+  2-4x above the measured suspicion ceiling, rebased 38/45/28/25 →
+  14/16/13/12; the audit dossier cited arcs the fdOn rotation deleted
+  (chapters + foreword now built from THIS run's arcs); H.concede claimed
+  a 4% unit removal no mechanic produces.
+- Landscape: the refusal strip blew the tuned HUD to 130px (own thin row
+  now, 96px, camera inset re-anchors); at 740x360 event modals showed the
+  bribe as the only visible option (short-landscape drops the plate art -
+  the choice is the point; both options fully visible, shot).
+- ⛔ LATE CSS BLOCK TRAP again: the max-height:430px query sat ABOVE the
+  .card/.evart base rules and silently lost; the block now lives at the
+  stylesheet END with a comment naming the law.
+- Suite honesty: native Math.random is now actually RESTORED after the
+  canary (the old "restore" reassigned the seeded LCG - every downstream
+  stochastic fixture secretly continued seed 2026); bubble cues proven
+  through the REAL tap handler (was harness-fired); arming DELAY pinned
+  >=300ms not just the guard; banner z asserted RELATIVE to the guide;
+  "of 10" copy pinned to the gate constant; start-fresh delete counted at
+  exactly 2 sites; stubEl learned remove().

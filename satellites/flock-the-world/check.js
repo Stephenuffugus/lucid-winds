@@ -14,6 +14,11 @@ const path = require('path');
 
 const FILE = process.env.FTW_FILE ? path.resolve(process.env.FTW_FILE) : path.join(__dirname, 'index.html');
 const SRC = fs.readFileSync(FILE, 'utf8');
+/* ⛔ round-2 gate audit: a previous "restore" read the CURRENTLY INSTALLED
+   seeded LCG and reassigned it, so native randomness never came back and
+   every later stochastic fixture secretly continued seed 2026's stream.
+   This is the one true native reference; restore THIS, always. */
+const REAL_RANDOM = Math.random;
 
 let pass = 0, fail = 0;
 const fails = [];
@@ -129,6 +134,7 @@ group('the sim actually runs');
 function stubEl() {
   const el = {
     classList: { _s: {}, contains(c) { return !!this._s[c]; }, add(c) { this._s[c] = 1; }, remove(c) { delete this._s[c]; }, toggle(c, v) { if (v === undefined) v = !this._s[c]; if (v) this._s[c] = 1; else delete this._s[c]; } },
+    remove() {},
     /* style is a real CSSStyleDeclaration in a browser, so the stub has to
        answer setProperty too, or code that sets a CSS variable throws here and
        passes in production. Added 2026-08-23 when the end-screen backdrops
@@ -291,7 +297,7 @@ if (C) {
     return s;
   }
   const canary = [11, 77, 2026].map(sd => botRun('CONTRACTOR', 'Vendor', 'NA', { buy: 1, expand: 1, doctrine: 'glove', collectP: 0.10, concede: 1 }, 4000, undefined, sd));
-  Math.random = (() => { const r = Math.random; return r; })();
+  Math.random = REAL_RANDOM;
   const win = canary[0];
   ok('a balanced bot reaches an ending', canary.every(w => w.over === true),
     canary.map(w => 'day=' + w.day + ' subj=' + (w.subj * 100).toFixed(1)).join(' | '));
@@ -1353,7 +1359,13 @@ if (C) {
     vm.runInContext("S.oversight=80;S.over=false;paintHud();", cS);
     vm.runInContext("(function(){var n=NODES.find(x=>!S.owned.has(x.id));if(n){S.inf=0;buyNode(n.id);}})();", cS);
     vm.runInContext("(function(){for(const k of Object.keys(S.regions)){const r=S.regions[k];if(r.active){r.unrest=90;r.cd=0;S.cash=1e6*MONEY;doAction('agitate',k);doAction('blackout',k);break;}}})();", cS);
-    vm.runInContext("sfx('ui_tap');sfx('bubble_leak');", cS);
+    vm.runInContext("sfx('ui_tap');", cS);
+    /* round-2 gate audit: the leak cue used to be fired by the harness itself,
+       which stays green even if collectAt loses its sfx call. Drive the REAL
+       tap handler: identity view + planted bubbles of every kind. */
+    vm.runInContext("(function(){var g=gv;gv={toWorld:function(x,y){return[x,y];},z:1};" +
+      "S.bubbles=[{k:'cash',x:5,y:5,life:30,born:S.day,v:10},{k:'inf',x:60,y:5,life:30,born:S.day,v:2},{k:'leak',x:120,y:5,life:30,born:S.day,v:0}];" +
+      "collectAt(5,5);collectAt(60,5);collectAt(120,5);gv=g;})();", cS);
     vm.runInContext("(function(){for(const k of Object.keys(S.regions)){const r=S.regions[k];r.unrest=90;}for(let i=0;i<4;i++)tick();})();", cS);
     const all = new Set(vm.runInContext('SFX.log', cS).map(x => x.replace(/^sfx:/, '')));
     const catalog = Object.keys(vm.runInContext('SFX_CUES', cS));
@@ -1639,6 +1651,9 @@ group('Aug 25 pass: tap safety, receipts, the refusal strip');
      tap dying while any modal is up. These assert the CONTRACT lines, not the
      config (the Aug-24 vacuous-guard lesson). */
   ok('choice options carry the hard arming guard', /if\(Date\.now\(\)<armAt\)return;/.test(GAME));
+  ok('the arming delay is a real beat, not a zero',
+    +((GAME.match(/armAt=Date\.now\(\)\+(\d+)/)||[])[1]||0)>=300
+    && +((GAME.match(/classList\.remove\('arming'\);\},(\d+)\)/)||[])[1]||0)>=300);
   ok('the arming CSS makes options inert while the modal lands', /#modalCard\.arming \.opt\{pointer-events:none/.test(SRC));
   ok('a map tap dies while a modal is up', /if\(NOTE\.modalOpen\)return; \/\* a tap that was aimed at a bubble/.test(GAME));
   ok('choosing shows an aftermath receipt before play resumes',
@@ -1671,6 +1686,13 @@ group('Aug 25 pass: tap safety, receipts, the refusal strip');
     ok('the proxy gate opens at the new bar', vm.runInContext("NODES.find(n=>n.id==='proxy').gate(S)", cX) === true);
     ok('the old unreachable threshold is gone', !/gate:s=>s\.avgSus>18/.test(GAME));
     ok('the proxy gate text is a live meter naming the levers', /gtxt:s=>'World suspicion '/.test(GAME));
+    {
+      const gate=+(((GAME.match(/gate:s=>s\.avgSus>=(\d+),/)||[])[1])||0);
+      const gtxtN=+(((GAME.match(/toFixed\(1\)\+' of (\d+)/)||[])[1])||0);
+      const hudN=+(((GAME.match(/of (\d+) for Proxy/)||[])[1])||0);
+      ok('every "of N" surface tracks the gate constant', gate>0&&gtxtN===gate&&hudN===gate,
+        'gate='+gate+' gtxt='+gtxtN+' hud='+hudN);
+    }
     ok('agitate feeds suspicion locally every time', /r\.suspicion=clamp\(r\.suspicion\+5,0,100\);/.test(GAME));
     ok('the world-suspicion bump is per-region with a 30d staleness window (spam guard)',
       /const wOpen=\(s\.day-\(r\.lastAgitSus!=null\?r\.lastAgitSus:-999\)\)>=30;/.test(GAME) &&
@@ -1738,7 +1760,11 @@ group('Aug 25 pass: tap safety, receipts, the refusal strip');
       /o\.f\(S\);[\s\S]{0,400}S\.pendingEventId=null;saveRun\(\);[\s\S]{0,1600}Aftermath/.test(GAME));
     ok('avgCmp survives a reload with the other HUD aggregates',
       /avgCmp:s\.avgCmp,/.test(GAME) && /s\.avgCmp=clamp\(num\(d\.avgCmp/.test(GAME));
-    ok('the BREAKING banner paints above the guide card', /#breaking\{[^}]*z-index:6/.test(SRC));
+    {
+      const zb=+(((SRC.match(/#breaking\{[^}]*z-index:(\d+)/)||[])[1])||0);
+      const zg=+(((SRC.match(/#guide\{[^}]*z-index:(\d+)/)||[])[1])||0);
+      ok('the BREAKING banner paints above the guide card (relative, not absolute)', zb>zg, 'breaking='+zb+' guide='+zg);
+    }
     ok('the proxy gate lights exactly when its meter reads full', /gate:s=>s\.avgSus>=10,/.test(GAME));
     ok('blackout-all respects every region\'s own cooldown', /filter\(x=>x\.active&&!\(x\.bcd>0\)\)/.test(GAME));
     ok('the arcade-leave option does not exist inside the Play TWA',
@@ -1748,7 +1774,8 @@ group('Aug 25 pass: tap safety, receipts, the refusal strip');
     ok('an armed concede survives the pause it created', /function concArmed\(s,rid\)\{return s\._concArm&&s\._concArm\.rid===rid&&\(s\.speed===0\|\|/.test(GAME));
     ok('only a banked concession stamps the repeat window', /if\(!again\)r\.lastConcede=s\.day;/.test(GAME));
     ok('start-fresh keeps the old save until a new run begins',
-      /function startGame\([^)]*\)\{\s*\n\s*lsDel\(K_RUN\);/.test(GAME) && /if\(b\.dataset\.nw==='1'\)\{initPick\(\);\}/.test(GAME));
+      /function startGame\([^)]*\)\{\s*\n\s*lsDel\(K_RUN\);/.test(GAME) && /if\(b\.dataset\.nw==='1'\)\{initPick\(\);\}/.test(GAME)
+      && (GAME.match(/lsDel\(K_RUN\)/g)||[]).length===2);
     ok('the pick screen has a way back', /id="pickBackBtn"/.test(SRC));
     ok('beds re-decide loop-vs-rotate on every start', /if\(loop\)a\.loop=!\(MUSIC_HAVE\[id\]&&musicEnabled\(id\)\.length>1\);/.test(GAME));
     ok('relief desk ops warn when the floor would erase them', /pinned at its floor: the relief would be erased overnight/.test(GAME));
@@ -1764,6 +1791,31 @@ group('Aug 25 pass: tap safety, receipts, the refusal strip');
       "return {afterAg,afterCr:r.unrest,cd:r.cd,cdC:r.cdC};})()", cIF);
     ok('agitate then crackdown lands in the same region (split cooldowns)',
       seq.afterCr < seq.afterAg && seq.cd > 0 && seq.cdC > 0, JSON.stringify(seq));
+  }
+
+  /* round-2 fixes: the listener that stacked, the arm that never died, the
+     UI that leaked between runs, the content the rotation orphaned */
+  {
+    ok('the popover click handler is a NAMED function (addEventListener dedupes refs; a fresh arrow stacked per run and one-tapped concede)',
+      /\$\('rpop'\)\.addEventListener\('click',rpopClick\);/.test(GAME) && /function rpopClick\(e\)\{/.test(GAME));
+    ok('abandoning the card or sheet disarms a pending concede',
+      /if\(S\)S\._concArm=null;\s+\/\* leaving the card/.test(GAME) && /S\.sheet=null,S\._concArm=null/.test(GAME));
+    ok('a previous run\'s sheet, popover, and banner queue die at bootGame\'s door',
+      /function bootGame\(resumed\)\{[\s\S]{0,700}hideBanner\(\);NOTE\.banners\.length=0;/.test(GAME));
+    ok('run-it-back restores the menu music', /cancelAnimationFrame\(raf\);S=null;show\('menu'\);menuBeds\(\);/.test(GAME));
+    ok('every speed change repaints the pill', /if\(S&&\$\('hud'\)\)paintHud\(\);/.test(GAME));
+    ok('the prather finale is reachable by its own arc', /prather_arc3[\s\S]{0,80}s\.warHeat>=0\.15/.test(GAME));
+    {
+      const gs=['ban','martyr','mapper','docu'].map(id=>{
+        const m=GAME.match(new RegExp("id:'"+id+"'[^}]*avgSus>(\\d+)"));return m?+m[1]:99;});
+      ok('no event gate is stranded above the reachable suspicion band (<=16)',
+        gs.every(g=>g<=16), JSON.stringify(gs));
+    }
+    ok('the refusal strip has its own landscape row', /#refusal\{flex:1 0 100%;order:5/.test(SRC));
+    ok('the audit dossier cites only the arcs this run ran',
+      /b:s=>\{const done=k=>\(\(s\.arc&&s\.arc\[k\]\)\|\|0\)>=1;/.test(GAME) && /typeof ev\.b==='function'\?ev\.b\(S\):ev\.b/.test(GAME));
+    ok('fresh regions initialize the crackdown cooldown', /cd:0, cdC:0,/.test(GAME));
+    ok('the HUD height change re-anchors the fitted map', /if\(gv&&gv\.layout\)\{gv\.inset=hh;gv\.layout\(\);\}/.test(GAME));
   }
 
   /* presentation: whole images, staged finish, readable capstones */

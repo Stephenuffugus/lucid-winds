@@ -124,13 +124,10 @@ h1 em{font-style:normal;color:var(--sodium)}
 .doctxt{flex:1;min-width:0}
 /* landscape: the two doctrines sit side by side (image atop text) so both
    whole images + the header share one screen with no scroll */
-@media (max-height:430px){
-  .docrow{display:flex;gap:8px;align-items:stretch}
-  .docrow .opt{flex:1;margin-bottom:0;min-height:48px}
-  .docopt{flex-direction:column;text-align:center;gap:6px}
-  .docart{width:69px;height:96px}
-  #modalCard h3{margin-bottom:2px}
-}
+/* (max-height:430px block moved to the END of the stylesheet: it
+   overrides .card/.evart base rules that appear later in source, and a
+   media query adds NO specificity - the late-CSS-block law) */
+
 .modecard h3{margin:0 0 3px;font-size:14px}
 .modecard h3 span{font-size:9px;letter-spacing:.18em;color:var(--sodium);margin-left:8px;text-transform:uppercase}
 .modecard p{margin:0;font-size:11px;color:var(--dim);line-height:1.5}
@@ -235,6 +232,9 @@ h1 em{font-style:normal;color:var(--sodium)}
 /* landscape: everything on one slim row so the map keeps nearly full height */
 @media (orientation:landscape) and (max-height:560px){
   #hud{display:flex;align-items:center;flex-wrap:wrap;gap:4px 12px;padding-bottom:4px}
+  /* the refusal strip joins the flex flow: without its own rule it rewrapped
+     the whole HUD to 130px (round-2 shot). One thin full-width row instead. */
+  #refusal{flex:1 0 100%;order:5;font-size:9px;padding:0}
   .hudrow{flex:0 1 auto;min-width:200px}
   .hudrow .stat{flex:0 0 auto}
   #ctlrow{margin-top:0;flex:0 0 auto}
@@ -803,6 +803,22 @@ h1 em{font-style:normal;color:var(--sodium)}
 @keyframes endIn{from{opacity:0}}
 #end.statwait #endStats,#end.statwait #endRecs,#end.statwait #againBtn,#end.statwait #shareBtn{opacity:0;pointer-events:none}
 #endStats,#endRecs,#againBtn,#shareBtn{transition:opacity 1.2s ease}
+@media (max-height:430px){
+  /* 360px of height is for the CHOICE: the plate art stays on every taller
+     screen, but here it pushed BOTH options below the fold with no scroll
+     affordance (round-2 shot: a bribe reading as the only option) */
+  .evart{display:none}
+  .whopic{width:38px;height:38px}
+  .card{padding:12px 16px}
+  .card .kicker{margin-bottom:2px}
+  .card h3{margin:2px 0 4px;font-size:15px}
+  .card p{font-size:12px;line-height:1.4;margin:4px 0 8px}
+  .docrow{display:flex;gap:8px;align-items:stretch}
+  .docrow .opt{flex:1;margin-bottom:0;min-height:48px}
+  .docopt{flex-direction:column;text-align:center;gap:6px}
+  .docart{width:69px;height:96px}
+  #modalCard h3{margin-bottom:2px}
+}
 </style>
 </head>
 <body>
@@ -1444,7 +1460,7 @@ const H={
  full:r=>`${r} declared "fully resilient." Every block instrumented, every face enrolled.`,
  agitate:r=>`Violence "erupts" in ${r} on schedule. Emergency procurement session Tuesday.`,
  blackout:r=>`${r} outlets drop the surveillance story simultaneously. Editors cite "news judgment."`,
- concede:r=>`${CO()} announces a "listening tour" in ${r}, removes 4% of units, films the removal.`
+ concede:r=>`${CO()} announces a "listening tour" in ${r}, walks back a slice of the rollout, films the walk-back.`
 };
 
 /* ============================ RESISTANCE ============================
@@ -1501,7 +1517,7 @@ function EV(){ return [
  o:[{l:'Invoke the trade-secret rider',c:s=>s.cash>=120*MONEY,cost:{cash:120*MONEY},h:'A whisper of patriotism. The story dies.',
      f:s=>{s.oversight+=1.2;pushNews(s,'Clerk releases 400 fully redacted pages. Reporter frames them.','good');}},
     {l:'Let it publish',h:'Patriotism jumps and suspicion rises everywhere.',f:s=>{s.oversight+=5;bumpSus(s,8);pushNews(s,'Search-log story runs front page. Two councils schedule hearings.','bad');}}]},
-{id:'ban',w:10,when:s=>s.avgSus>38,k:'choice',who:'brill',kick:'Legislation',
+{id:'ban',w:10,when:s=>s.avgSus>14,k:'choice',who:'brill',kick:'Legislation',
  t:'A national ban on warrantless readers gains sponsors',
  b:'Sec. Brill offers to testify that the ban "helps traffickers," in exchange for co-branding the next border rollout. The vest, she notes, photographs well against your logo.',
  o:[{l:'Fund the opposition blitz',c:s=>s.cash>=300*MONEY,cost:{cash:300*MONEY},h:'Patriotism eases.',
@@ -1527,12 +1543,12 @@ function EV(){ return [
    return `Police union in ${r.name} endorses the network on morning television.`},cls:'good'},
 {id:'grant',w:12,when:s=>s.day>60,k:'flash',
  f:s=>{s.cash+=180*MONEY;s.inf+=2;return 'Federal grant lands under "community resilience." Nobody defines resilience.';},cls:'good'},
-{id:'martyr',w:9,when:s=>s.avgSus>45,k:'flash',
+{id:'martyr',w:9,when:s=>s.avgSus>16,k:'flash',
  f:s=>{const r=pickActive(s);if(!r)return null;r.suspicion=Math.min(100,r.suspicion+9);r.unrest+=8;r.compliance-=.07;
    return `Wrongful arrest in ${r.name}: the match was 71% and treated as 100%.`},cls:'bad'},
 {id:'hearing',w:7,when:s=>s.oversight>55,k:'flash',
  f:s=>{s.oversight+=4;return 'International hearing scheduled. Your general counsel clears her calendar.'},cls:'crit'},
-{id:'mapper',w:6,when:s=>s.avgSus>28,k:'flash',
+{id:'mapper',w:6,when:s=>s.avgSus>13,k:'flash',
  f:s=>{const r=pickActive(s);if(!r)return null;r.coverage=Math.max(0,r.coverage-.02);r.suspicion+=4;
    return `Camera-mapping collective ships an app in ${r.name}. Units start vanishing.`},cls:'bad'},
 {id:'insure',w:7,when:s=>s.has('score'),k:'flash',
@@ -1567,7 +1583,7 @@ function EV(){ return [
     {l:'Send an invoice',h:'Suspicion rises where he governs.',
      f:s=>{const r=pickActive(s);if(r){r.suspicion=clamp(r.suspicion+6,0,100);
        pushNews(s,`The mayor calls your pricing "an insult to public safety." His speech mentions you seven times.`,'bad');}}}]},
-{id:'docu',w:8,cd:180,when:s=>s.avgSus>25,k:'choice',who:'klein',kick:'Distribution',
+{id:'docu',w:8,cd:180,when:s=>s.avgSus>12,k:'choice',who:'klein',kick:'Distribution',
  t:'A streaming documentary is in the edit bay',
  b:'Three episodes, your logo in the trailer, a drone shot of your headquarters at dusk. Klein has a cut: "We fund a competing series about how complicated it all is. Nuance is very cheap right now."',
  o:[{l:'Fund the nuance',c:s=>s.cash>=160*MONEY,cost:{cash:160*MONEY},h:'Suspicion eases everywhere.',
@@ -1684,7 +1700,7 @@ function EV(){ return [
     {l:'Refuse the request',h:'War heat cools slightly and suspicion ticks up as Prather questions your seriousness on three podcasts.',
      f:s=>{s.warHeat=Math.max(0,s.warHeat-0.05);bumpSus(s,2);
        pushNews(s,'Prather tells an interviewer some vendors "lack the stomach for the mission." He means you, twice.','bad');}}]},
-{id:'prather_arc3',chain:'prather',step:3,w:12,cd:200,when:s=>s.warHeat>0.2,k:'choice',who:'prather',kick:'The annex',
+{id:'prather_arc3',chain:'prather',step:3,w:12,cd:200,when:s=>s.warHeat>=0.15,k:'choice',who:'prather',kick:'The annex',
  t:'A strike report leaks with your metadata in the annex',
  b:'Somebody targeted a convoy using patterns of life, and the patterns have your file headers. Prather is unbothered. "Classification fixes this by Thursday. Or you write a very large cheque to a foundation and learn the word regrettable."',
  o:[{l:'Fund the foundation and own it',c:s=>s.cash>=500*MONEY,cost:{cash:500*MONEY},h:'A ruinous price and patriotism climbs, but suspicion eases everywhere. The movement loses its clearest villain for a season.',
@@ -1817,7 +1833,14 @@ function EV(){ return [
  f:s=>'A procurement official who signed three of your regional contracts now lives in exile above a laundry, compiling a ledger. People who have seen the wall of thread say your column has its own colour.',cls:'bad'},
 {id:'audit_arc2',chain:'audit',step:2,w:8,cd:160,when:s=>s.day>650,k:'choice',who:'hale',art:'fd_wall',kick:'The dossier has chapters',
  t:'Ambassador Hale requests a meeting you cannot decline',
- b:'The dossier is bound. The chapters follow your foreign desk: the fair, the certificates, the school, the sale. Hale reads the table of contents aloud and no further, the way a doctor reads a chart.',
+ /* the chapters are the arcs THIS run actually ran (fdOn rotation keeps 2
+    of 3, dataq is conditional): naming all four cited an arc the rotation
+    deleted (round-2 hunt) */
+ b:s=>{const done=k=>((s.arc&&s.arc[k])||0)>=1;
+   const ch=[];if(done('vance'))ch.push('the fair');if(done('kesh'))ch.push('the certificates');
+   if(done('dataq'))ch.push('the school');if(done('lena'))ch.push('the sale');
+   const list=ch.length?ch.join(', '):'one thin chapter, unmistakably yours';
+   return 'The dossier is bound. The chapters follow your foreign desk: '+list+'. Hale reads the table of contents aloud and no further, the way a doctor reads a chart.';},
  o:[{l:'Contest every chapter',c:s=>s.cash>=400*MONEY,cost:{cash:400*MONEY},h:'A fortune in lawyers, and patriotism still climbs with every page you wrote.',
      f:s=>{s.oversight+=Math.min(2.5,0.5+(s.fdPages||0)*0.4);
        pushNews(s,'Your lawyers bill by the chapter. There are '+Math.max(1,s.fdPages||0)+' pages with your thread on them.','bad');}},
@@ -1826,7 +1849,10 @@ function EV(){ return [
        pushNews(s,'The acceptance letter is one paragraph. Hale notes it is the shortest document you have ever produced.','');}}]},
 {id:'audit_arc3',chain:'audit',step:3,w:9,cd:200,when:s=>s.day>780,k:'choice',who:'auditor',art:'fd_wall',kick:'Publication day',
  t:'The ledger publishes with your column intact',
- b:'Four hundred pages, footnoted, free to download, mirrored the hour it is taken down. The foreword thanks a physicist, a photographer and a correspondent by name.',
+ b:s=>{const done=k=>((s.arc&&s.arc[k])||0)>=1;
+   const th=[];if(done('kesh'))th.push('a physicist');if(done('vance'))th.push('a photographer');if(done('lena'))th.push('a correspondent');
+   const thanks=th.length?('The foreword thanks '+(th.length>1?th.slice(0,-1).join(', ')+' and '+th[th.length-1]:th[0])+' by name.'):'The foreword thanks no one. It did not need help.';
+   return 'Four hundred pages, footnoted, free to download, mirrored the hour it is taken down. '+thanks;},
  o:[{l:'Buy every printed copy',c:s=>s.cash>=350*MONEY,cost:{cash:350*MONEY},h:'Patriotism climbs with your page count. The download counter does not notice.',
      f:s=>{s.oversight+=Math.min(5,1+(s.fdPages||0)*0.6);s.fdPages=0;
        pushNews(s,'You corner the print run. The mirror sites corner everything else.','bad');}},
@@ -1858,7 +1884,7 @@ function newState(modeKey,diffKey,startId,seed,hqName,co){
     s.regions[r.id]={id:r.id,name:r.name,pop:r.pop,wealth:r.wealth,urban:r.urban,
       liberty:r.liberty,media:r.media,nb:r.nb,
       active:false,lost:false,coverage:0,control:0,
-      compliance:0.40+(1-r.liberty)*0.20, suspicion:0, unrest:5+r.liberty*8, cd:0,
+      compliance:0.40+(1-r.liberty)*0.20, suspicion:0, unrest:5+r.liberty*8, cd:0, cdC:0,
       resist:2+r.liberty*6+r.media*4, grudge:0, gw:0, counters:new Set(),
       milit:(1-r.liberty)*0.10, pstate:'calm', war:0, black:0, bcd:0};
   });
@@ -3587,7 +3613,8 @@ function paintHud(){
   /* AFTER the strip toggles: the strip changes the HUD's height, and reading
      it first left every overlay anchored one paint stale (hunt, Aug 25) */
   const hh=$('hud')?$('hud').offsetHeight:0;
-  if(hh&&hh!==_hudH){_hudH=hh;syncOverlayTops();}
+  if(hh&&hh!==_hudH){_hudH=hh;syncOverlayTops();
+    if(gv&&gv.layout){gv.inset=hh;gv.layout();}}  /* the fitted map re-anchors under the new HUD */
   const covered=REGIONS.reduce((a,r)=>a+s.regions[r.id].pop*s.regions[r.id].coverage,0);
   $('pillTxt').textContent=`${s.speed===0?'PAUSED':'LIVE'} · ${(covered*1.4).toFixed(0)}M NODES · ${s.activeCount} MKT`
     +(s.warHeat>0.05?` · WAR ${(s.warHeat*100)|0}%`:'');
@@ -3757,7 +3784,7 @@ function openSheet(tab){
   $('shBody').scrollTop=0; /* fresh tab starts at its top, not the last tab's scroll */
   paintHud();
 }
-function closeSheet(){S&&(S.sheet=null);$('sheet').classList.remove('on');sfx('ui_close');
+function closeSheet(){S&&(S.sheet=null,S._concArm=null);$('sheet').classList.remove('on');sfx('ui_close');
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('hot'));
   if(S&&S._pausePrev!=null){const p=S._pausePrev;S._pausePrev=null;if(!S.over)setSpeed(p);}
   paintHud();}
@@ -4123,6 +4150,11 @@ function entryCost(x){
    pause made the confirm silently re-arm ("looks broken; takes a third
    tap" - hunt, Aug 25). Paused = armed stays armed. */
 function concArmed(s,rid){return s._concArm&&s._concArm.rid===rid&&(s.speed===0||Date.now()-s._concArm.at<5000);}
+function rpopClick(e){
+  if(e.target.closest('[data-rpclose]')){hideRpop();return;}
+  shBodyClick(e);
+  refreshRpop();paintHud();if(gv)drawWorld(gv,S,null);
+}
 function doAction(act,rid){
   const s=S,r=s.regions[rid];if(!r||!r.active)return;
   if(act==='agitate'&&r.cd>0)return;
@@ -4265,7 +4297,7 @@ function showEvent(ev){
   c.innerHTML=`<div class="kicker">${ev.kick}</div>
     ${ev.art?`<img class="evart" src="art/event/${ev.art}.webp" alt="">`:''}
     ${who?`<div class="whorow">${CAST_ART[ev.who]?`<img class="whopic" src="art/cast/${ev.who}.webp" alt="">`:''}<div class="who">${who.n} · ${who.t}</div></div>`:''}
-    <h3>${ovrTxt(S,ev.t)}</h3><p>${ovrTxt(S,ev.b)}</p>`
+    <h3>${ovrTxt(S,typeof ev.t==='function'?ev.t(S):ev.t)}</h3><p>${ovrTxt(S,typeof ev.b==='function'?ev.b(S):ev.b)}</p>`
     +((S.evHeat||0)>0.005?`<div class="evheat">The fixers' rate: ${Math.round((CFG.evPct+S.evHeat)*100)}% of your treasury · word gets around</div>`:'')
     +ev.o.map((o,i)=>{
       const cc=cashOf(o);
@@ -4397,6 +4429,7 @@ function setSpeed(n){
   document.querySelectorAll('.sp').forEach(b=>b.classList.toggle('on',+b.dataset.sp===n));
   clearInterval(tickTimer);tickTimer=null;
   if(n>0&&!S.over)tickTimer=setInterval(()=>{tick();if(gv){drawWorld(gv,S,null);}paintHud();},CFG.msPerTick[n]);
+  if(S&&$('hud'))paintHud();   /* the PAUSED/LIVE pill must never lag the truth */
 }
 function buyNode(id){
   const n=NBI[id];if(!n||S.owned.has(id))return;
@@ -4498,6 +4531,7 @@ function showRpop(rid,cn,sx,sy){
   e.style.left=x+'px';e.style.top=y+'px';
 }
 function hideRpop(keepPause){rpopRid=null;const e=$('rpop');if(e)e.classList.remove('on');
+  if(S)S._concArm=null;  /* leaving the card that armed a concede disarms it */
   /* restore the speed the popover stashed, unless a sheet is inheriting the
      pause (openSheet passes keepPause and owns the restore from then on) */
   if(!keepPause&&S&&S._pausePrev!=null&&!S.sheet){const p=S._pausePrev;S._pausePrev=null;if(!S.over)setSpeed(p);}}
@@ -4681,6 +4715,15 @@ function modeBriefing(s){
   return 'THE CONTRACTOR · one camera on a free trial. Nothing installed for you, nothing discounted, no one watching yet. The classic climb.';
 }
 function bootGame(resumed){
+  /* round-2 hunt: leaving to the menu never closed the sheet/popover DOM or
+     the banner queue, so a resumed run started with a STALE sheet over a
+     running sim and the old operation's BREAKING news replaying. Everything
+     from the previous run's surface dies at this door. */
+  $('sheet').classList.remove('on');
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('hot'));
+  if(S)S.sheet=null;
+  hideRpop(true);
+  hideBanner();NOTE.banners.length=0;NOTE.modalQ.length=0;NOTE.modalOpen=false;
   show('game');
   $('ovrName').textContent=S.mode.mod.ovrName||'Patriotism';
   const wrap=$('mapWrap');
@@ -4746,12 +4789,12 @@ function bootGame(resumed){
   $('sheet').onclick=e=>{if(e.target.id==='sheet')closeSheet();};
   $('shBody').addEventListener('click',shBodyClick);
   /* the same delegated handler, so an action costs and does the same thing from
-     the map as it does from the World tab. Then repaint what the action moved. */
-  $('rpop').addEventListener('click',e=>{
-    if(e.target.closest('[data-rpclose]')){hideRpop();return;}
-    shBodyClick(e);
-    refreshRpop();paintHud();if(gv)drawWorld(gv,S,null);
-  });
+     the map as it does from the World tab. Then repaint what the action moved.
+     ⛔ NAMED function on purpose: bootGame runs per run and addEventListener
+     only dedupes IDENTICAL references - a fresh arrow here stacked one handler
+     per run, and N handlers turned concede's two-tap arm into arm+execute on
+     a single tap from run 2 onward (round-2 hunt, proven live). */
+  $('rpop').addEventListener('click',rpopClick);
   initTicker();
   /* #ledline advertised role=button and an aria label saying it opens the
      ledger, and did nothing at all. */
@@ -4914,7 +4957,7 @@ $('howBtn').onclick=()=>{ // tutorial from menu, no game running
   showTutorial(()=>{S=wasS;show('menu');});
 };
 $('againBtn').onclick=()=>{clearInterval(tickTimer);clearInterval(tickerTimer);clearTimeout(epiTimer);
-  cancelAnimationFrame(raf);S=null;show('menu');initMenu();refreshMenuExtras();};
+  cancelAnimationFrame(raf);S=null;show('menu');menuBeds();initMenu();refreshMenuExtras();};
 initMenu();refreshMenuExtras();
 </script>
 <script>
