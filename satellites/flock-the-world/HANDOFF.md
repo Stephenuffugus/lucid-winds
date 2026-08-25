@@ -1,5 +1,27 @@
 # FLOCK THE WORLD (FTW) — HANDOFF
 
+## Aug 25 — Stephen's Crisis-Engine notes pass (ALL LANDED, live-verified)
+
+22-item ledger in NOTES-AUG25.md (his order, evidence per item). 8 commits,
+check.js 232→272, every visual change screenshot-reviewed. Highlights:
+- **Suspicion gate was a soft-lock** (charter suppresses the stat it gates;
+  he never saw the upper Crisis ladder in 2 campaigns): gate 18→10, agitate
+  feeds suspicion, live gate meter, suspicion surfaced everywhere.
+- Vole is he/him; ovrTxt now reaches tree desc/tutorial/tooltip (naming was
+  NOT reverted - Coalition is the Crisis meter by design).
+- Choice modals: 450ms arming + AFTERMATH delta receipt. Popover pauses +
+  bars. Concede spam priced (10d half-relief window; bots untouched).
+- Refusal HUD strip + brink banner. Per-run synergies on the end screen.
+- Doctrine/event art uncropped (contain layouts); staged end sequence
+  (fixed #end centered-overflow hiding the verdict); capstone clamp lifted.
+- Guide is mode-aware; teaching persists per account; tips toggle.
+- Music playlists: <slot>_2.mp3 + MUSIC_HAVE row = rotation + menu pips.
+- bubble_leak.mp3 (Kenney CC0). "Sit with X" formula broken up.
+- **Store**: Play TWA gates 10/10 green (manifest/sw/icons/privacy/inTWA);
+  Steam rig scaffolded in store/ftw-steam/ (FTW-STEAM.md = Stephen's part).
+Open: item 11 (win-door tuning session), 4 capstone art files (Stephen).
+
+
 ## Aug 24 EVENING — music landed + Stephen's second notes batch (OPEN, needs his greenlight)
 
 **Music is IN** (commit 1ee62087, live-verified): his four Suno tracks —

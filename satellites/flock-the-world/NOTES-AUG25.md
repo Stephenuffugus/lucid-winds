@@ -114,8 +114,15 @@ Checklist in the order the notes were given. `[x]` only with evidence
       end); SOUNDTRACK pips appear in the menu once a slot has 2+ tracks;
       excludes persist; silence unconfigurable. 4-step guide in
       SFX-GUIDE.md; check.js enforces the manifest both ways.
-- [ ] 22. **Store readiness** — game submittable to Steam and Google Play
-      (packaging checklist + whatever blocks it).
+- [x] 22. **Store readiness** — everything code can do is DONE:
+      Play: all 10 gates GREEN (`node scripts/twa_ready.mjs flock-the-world`
+      = "ready to list") - manifest, sw.js offline shell (cold launch
+      proven), icons from the lens-globe mark, privacy.html, inTWA policy
+      guard. Steam: store/ftw-steam/ Electron rig scaffolded + vendor.sh
+      PROVEN (11M app/). What remains is Stephen-only, listed in
+      store/ftw-steam/FTW-STEAM.md (appid + $100, price call, capsules,
+      rating survey) and CROSSCHECK-PLAY-AUG22.md §5 (Play account,
+      keystore, assetlinks, bubblewrap init, feature graphic 1024x500).
 
 ## Work order (smartest path through the list)
 
