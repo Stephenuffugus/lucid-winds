@@ -243,6 +243,39 @@ lostCount >= 4                                          → loss (the great refu
 * The glove door's `gloveMil 0.40` is the measured ceiling of the gentlest possible build (a bot that never cracks down still drifts to 0.32 to 0.40 from passive militarization); the ceiling alone did not hold the door, which is why `gloveCalm` exists: a crackdown bot crossed subj 0.80 under 0.40 milit and walked through 5 of 5 until the long-peace requirement landed. `lastCrack` is stamped by every crackdown (line 3181).
 * The econ streak counts every tick the condition holds and resets the tick it does not, so it needs 130 unbroken days of a full portfolio over the bar. Holding all fourteen TODAY is the bar: lose a market, pay the surcharge, re-enter, and you qualify again. At the old $10M/150d the econ rush bot lost a photo finish to classic on all five seeds.
 
+## 16. The Aug 25 counterweights (Stephen's Crisis-Engine notes pass)
+
+Three mechanisms landed 2026-08-25, all metered with sim.js (seeded) and the
+check.js canaries (3 seeds, 3 wins, green throughout):
+
+* **Agitate feeds suspicion** (`doAction` agitate branch): +5 local always;
+  +2 world (`bumpSus`) only if this region has not bumped the world in 30
+  days (`r.lastAgitSus`). The window is the spam guard: the riot-playbook
+  bots agitate hundreds of times and bled ~0.15 oversight per call without
+  it; a deliberate burst ACROSS regions (the Proxy Flashpoint play, gate
+  avgSus>10) keeps its full effect.
+* **`prebunk` countermeasure** (CM bank): the missing antibody. Every other
+  lane breeds counters; narrative capture bred nothing, and a full story
+  stack pins resist so low the ENTIRE CM loop (which hid behind resist>15)
+  never ran - measured: a dep+inf bot won day 1156 with zero CMs ever
+  firing. The loop now runs for all active regions (street CMs still gated
+  by their own th, all 18+); prebunk has th 0, triggers on machine depth
+  (`narrDepth(s)>=4` story nodes carrying sup/pac) where media>=0.70 (NA,
+  CND, WE, OC - 845M, the flagship free presses, which is exactly where
+  f.sup is strongest). fx {pac:0.65, sup:0.65} regional. Metered: media
+  0.55 or fx 0.5 broke a canary seed; at 0.70/0.65 the balanced Startup
+  bot ends BETTER than baseline (day 1124 / ovr 32 vs 1202 / 37) while
+  the pressure stays real.
+* **The streak floor** (`econFloorK 0.25`, in `ovFloor`): while the ban-
+  debate streak holds, the patriotism floor is max(subj floor, econRun*K,
+  both capped at ovFloorMax). Root cause: at 13% subj the story stack's
+  dec (~0.23/day) cancelled econHeat (~0.26/day) and the subj floor read
+  4.6, so the econ bet finished with oversight parked at 15-25. Now the
+  bet FINISHES at a floor the machine cannot decay away (story-stack door
+  runs end ~31-32 and take ~200 extra days), and it falls the day the
+  streak breaks. Balanced empires qualify at high subj where the debate is
+  already silent - unaffected.
+
 ---
 
 ## DIALS
@@ -280,6 +313,7 @@ Safe ranges marked (swept) come from measured sweeps in the code comments; the r
 | `lostLimit` | 4 | How many refusals end the run. 3 makes uprisings terrifying; 5 makes them a fine. | 3 to 5 |
 | `dcUpkeep` / `dcMax` / `dcGrow` | 0.34 / 4 / 0.05 | The one permanent bill, its cap, and what it buys. ⛔ Uncapped, the bot bought 12 and went minus $2M/day. | up 0.25 to 0.45, max 3 to 5 |
 | `monitorRelief` | 0.012 | Per tick per monitor, cap 3. Three monitors ≈ 0.036/day, roughly one uprising drip's worth of forgiveness at 0.33x. | 0.008 to 0.02 |
+| `econFloorK` | 0.25 | The ban-debate streak floor: min(ovFloorMax, econRun×this). Higher = the econ bet gets hot sooner; 0.25 pins the floor at cap by streak day 120 of 130. | 0.15 to 0.35 |
 | `ovFloorK` / `ovFloorMax` | 35 / 30 | The patriotism floor: oversight never decays below min(max, subj*K). At 59% subjugation the floor reads 21%. Raise K and the narrative build spends its endgame closer to danger; every winning bot ends at 40+ so this binds only the full-dec degenerate. | K 25 to 45, max 25 to 35 |
 | `coverPayoutDays` | 45 | Insurance payout in days of net per lost market. Above ~90 losing regions becomes a strategy. | 30 to 60 |
 | `deskDays` | 24 | Desk turnover clock. Shorter = more variety and more temptation. | 15 to 35 |

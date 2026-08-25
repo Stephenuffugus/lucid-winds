@@ -1671,7 +1671,44 @@ group('Aug 25 pass: tap safety, receipts, the refusal strip');
     ok('the proxy gate opens at the new bar', vm.runInContext("NODES.find(n=>n.id==='proxy').gate(S)", cX) === true);
     ok('the old unreachable threshold is gone', !/gate:s=>s\.avgSus>18/.test(GAME));
     ok('the proxy gate text is a live meter naming the levers', /gtxt:s=>'World suspicion '/.test(GAME));
-    ok('agitate feeds suspicion (the deliberate lever)', /r\.suspicion=clamp\(r\.suspicion\+5,0,100\);bumpSus\(s,2\);/.test(GAME));
+    ok('agitate feeds suspicion locally every time', /r\.suspicion=clamp\(r\.suspicion\+5,0,100\);/.test(GAME));
+    ok('the world-suspicion bump is per-region with a 30d staleness window (spam guard)',
+      /r\.lastAgitSus!=null\?r\.lastAgitSus:-999\)\)>=30\)\{bumpSus\(s,2\);r\.lastAgitSus=s\.day;\}/.test(GAME));
+  }
+
+  /* the missing antibody: narrative capture finally breeds a countermeasure */
+  {
+    const cP=makeCtx();cP.doctrineModal=()=>{};cP.showEvent=()=>{};
+    vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');" +
+      "['pr','lobby','blackout','nda','capt','whis','anchor'].forEach(n=>S.owned.add(n));recompute(S);", cP);
+    ok('a deep story stack registers as narrative depth',
+      vm.runInContext('narrDepth(S)', cP) >= 4, 'depth=' + vm.runInContext('narrDepth(S)', cP));
+    ok('prebunking is gated on the machine, the press, and only a LOW resist bar (the machine must not smother its own antibody)',
+      vm.runInContext("(function(){const c=CM.find(x=>x.id==='prebunk');return !!c.when&&c.media>=0.5&&c.th<=15;})()", cP) === true);
+    /* the counter must actually bite: same region, same stats, one tick -
+       with prebunking both resistance and suspicion end higher */
+    const bite = vm.runInContext("(function(){" +
+      "function setup(pb){const r=S.regions.WE;r.active=true;r.coverage=0.5;r.control=0.3;r.compliance=0.6;" +
+      "r.resist=20;r.suspicion=15;r.grudge=0;r.unrest=10;r.counters=new Set(pb?['prebunk']:[]);" +
+      "return r;}" +
+      "let n=42;const f=()=>{n=(n*1664525+1013904223)>>>0;return n/4294967296;};" +
+      "const mr=Math.random;Math.random=f;const a=setup(false);tick();const res0=a.resist,sus0=a.suspicion;" +
+      "S.day--;n=42;Math.random=f;const b=setup(true);tick();Math.random=mr;" +
+      "return {res0,sus0,res1:b.resist,sus1:b.suspicion};})()", cP);
+    ok('prebunking cuts pacification (resistance organizes harder)',
+      bite.res1 > bite.res0, JSON.stringify(bite));
+    ok('prebunking cuts suppression (suspicion builds harder)',
+      bite.sus1 > bite.sus0, JSON.stringify(bite));
+    /* the ban-debate streak carries its own floor: a low-subj story stack
+       used to finish the econ bet with oversight parked at 15-25 (dec relief
+       cancelled the heat). Qualifying is the provocation - the floor rides
+       the streak and falls when it breaks. */
+    const fl = vm.runInContext("(function(){S.subj=0.13;S.econRun=0;const a=ovFloor(S);" +
+      "S.econRun=130;const b=ovFloor(S);S.econRun=0;return {a,b};})()", cP);
+    ok('the ban-debate streak raises the patriotism floor to its cap',
+      fl.b >= 30 && fl.a < 6, JSON.stringify(fl));
+    ok('prebunking only grows where the press runs deep (media gate)',
+      vm.runInContext("CM.find(x=>x.id==='prebunk').media", cP) === 0.70);
   }
 
   /* the guide speaks the mode's language now, and teaching persists */

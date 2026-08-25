@@ -1057,6 +1057,15 @@ const CFG = {
      alive and spikeable, instead of a dead 0.0%. Every bot ends at 40+ so the
      floor binds only the degenerate build it exists for. */
   ovFloorK:35, ovFloorMax:30,
+  econFloorK:0.25,    /* Aug 25: while the ban-debate streak holds, the floor also rides the
+                         STREAK - min(ovFloorMax, econRun*this). Measured: a dep+inf story
+                         stack won the econ door at 13% subj with oversight parked at 25-31
+                         because dec relief (~0.23/day) cancelled econHeat (~0.26/day at that
+                         subj) and the subj floor read 4.6. Qualifying is the provocation:
+                         a platform too big to ban is definitionally never invisible, so the
+                         bet must be FINISHED at a floor the narrative machine cannot decay
+                         away. Transient - the floor falls when the streak breaks.
+                         Safe range 0.15 to 0.35. */
   /* ==== PATHS TO VICTORY, 2026-08-24 (Stephen: "diversify reaching the win
      condition so people can try different playstyles"). Classic subjugation
      stays the ceiling; three more doors open below it, each demanding a
@@ -1473,8 +1482,23 @@ const CM=[
   fx:{black:0.4}},
  {id:'jam', need:'drone', th:40,
   t:r=>`Lens-capping brigades in ${r}: paint, stickers, laser pointers, ladders. Your maintenance line item triples.`,
-  fx:{decay:0.0005}}
+  fx:{decay:0.0005}},
+ /* Aug 25, the missing antibody (Stephen: "buying the story tree is basically
+    the only decent way to win"). Every other lane breeds countermeasures -
+    face breeds masks, blackouts breed samizdat, crackdowns breed cop-watch -
+    but narrative capture bred NOTHING. Prebunking (inoculation theory, a real
+    tactic) arises where the press is still free (media gate - which is
+    exactly where f.sup works best, so the antibody grows in the machine's
+    best theater), triggered by the DEPTH of the machine itself rather than
+    street organization, because pac suppresses the very resist a normal
+    threshold would need: the machine must not smother its own antibody. */
+ {id:'prebunk', when:s=>narrDepth(s)>=4, th:0, media:0.70,
+  t:r=>`Librarians and teachers in ${r} run prebunking workshops: the astroturf tells, the anchor's tricks, the sponsored-nuance playbook. Your stories arrive pre-debunked.`,
+  fx:{pac:0.65,sup:0.65}}
 ];
+/* how deep the narrative machine goes: the story nodes that suppress or
+   pacify. The counter-public organizes against the MACHINE, not the brand. */
+function narrDepth(s){let n=0;for(const nd of NODES)if(nd.t==='inf'&&s.owned.has(nd.id)&&nd.fx&&(nd.fx.sup||nd.fx.pac))n++;return n;}
 
 /* ============================ EVENTS ============================ */
 function EV(){ return [
@@ -2187,7 +2211,9 @@ function doAcquire(){
 function evScale(s){return clamp(((s&&s.net)||0)/(10*MONEY),1,25);}
 /* the patriotism floor: the world never fully looks away from a giant. See the
    CFG note at ovFloorK for the winning run that made it necessary. */
-function ovFloor(s){return Math.min(CFG.ovFloorMax,(s.subj||0)*CFG.ovFloorK);}
+function ovFloor(s){return Math.max(
+  Math.min(CFG.ovFloorMax,(s.subj||0)*CFG.ovFloorK),
+  Math.min(CFG.ovFloorMax,(s.econRun||0)*CFG.econFloorK));}
 function dateStr(day){const d=new Date(2026,0,1);d.setDate(d.getDate()+day);
   return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
 function pickActive(s){const a=REGIONS.map(r=>s.regions[r.id]).filter(r=>r.active&&r.coverage>.04);
@@ -2220,11 +2246,12 @@ function tick(){
     else if(r.pstate==='uprising')pMul=0;
 
     /* organized civilian countermeasures neutralize what you built */
-    let cGrow=1,cDth=0,cInc=1,cBlack=1,cBack=0,cDecay=0;
+    let cGrow=1,cDth=0,cInc=1,cBlack=1,cBack=0,cDecay=0,cPac=1,cSup=1;
     r.counters.forEach(id=>{const cm=CM.find(x=>x.id===id);if(!cm)return;
       if(cm.fx.grow)cGrow*=cm.fx.grow; if(cm.fx.dth)cDth+=cm.fx.dth;
       if(cm.fx.inc)cInc*=cm.fx.inc; if(cm.fx.black)cBlack=cm.fx.black;
-      if(cm.fx.back)cBack+=cm.fx.back; if(cm.fx.decay)cDecay+=cm.fx.decay;});
+      if(cm.fx.back)cBack+=cm.fx.back; if(cm.fx.decay)cDecay+=cm.fx.decay;
+      if(cm.fx.pac)cPac*=cm.fx.pac; if(cm.fx.sup)cSup*=cm.fx.sup;});
     r._cBlack=cBlack; r._cBack=cBack;
 
     const modeRes=(r.liberty>0.65&&M.freeResist)?M.freeResist:1;
@@ -2241,22 +2268,30 @@ function tick(){
     /* organized regions keep the story alive: normalization stalls */
     const norm=r.control*r.compliance*0.045*(1-Math.min(0.6,r.resist/100*0.7));
     const susGain=CFG.susK*(0.35+f.vis)*(r.coverage*0.7+r.control*0.6)*(0.25+r.liberty*1.2)*D.sus
-      - f.sup*0.014*(0.4+r.media*0.8) - 0.004 - norm;
+      - f.sup*cSup*0.014*(0.4+r.media*0.8) - 0.004 - norm;
     /* a bought news cycle: while the blackout runs, the story cannot build */
     r.suspicion=clamp(r.suspicion+((susGain>0&&r.black>0)?susGain*0.45:susGain),0,100);
 
     /* resistance organizes: suspicion + liberty + press + memory of your violence */
-    const pac=Math.min(CFG.pacCap,f.pac);
+    const pac=Math.min(CFG.pacCap,f.pac*cPac);
     const fearNow=Math.min(0.35,f.fear+s.warHeat*0.10);
     const rGain=(r.suspicion*0.0060+r.liberty*0.022+r.media*0.013+r.grudge*0.0016)
       *(1-pac)*(1-fearNow*0.9) - 0.004 - Math.pow(r.control,2.2)*0.085;
     r.resist=clamp(r.resist+rGain,0,100);
 
-    /* countermeasures unlock against what you own */
-    if(r.active&&r.resist>15){
+    /* countermeasures unlock against what you own. ⛔ Aug 25: this whole
+       loop used to hide behind r.resist>15, and a full story stack pins
+       resist at a crawl - measured: a dep+inf bot won at day 1156 with NO
+       countermeasure of any kind ever firing. The street CMs still demand
+       organization through their own th (all 18+); prebunking (th 0) is a
+       press-and-libraries response and must not wait for marchers the
+       machine has already pacified. */
+    if(r.active){
       for(const cm of CM){
         if(r.counters.has(cm.id))continue;
         if(cm.need&&!s.has(cm.need))continue;
+        if(cm.when&&!cm.when(s))continue;
+        if(cm.media&&r.media<cm.media)continue;
         if(r.resist>=cm.th&&Math.random()<0.025){
           r.counters.add(cm.id);
           pushNews(s,cm.t(r.name),'res');
@@ -3030,7 +3065,7 @@ function saveRun(){
       regs[id]={active:r.active,lost:r.lost,coverage:r.coverage,control:r.control,
         compliance:r.compliance,suspicion:r.suspicion,unrest:r.unrest,cd:r.cd,resist:r.resist,
         grudge:r.grudge,counters:[...r.counters],milit:r.milit,pstate:r.pstate,war:r.war,
-        black:r.black||0,bcd:r.bcd||0,gw:r.gw||0,lc:r.lastConcede==null?-1:r.lastConcede,
+        black:r.black||0,bcd:r.bcd||0,gw:r.gw||0,lc:r.lastConcede==null?-1:r.lastConcede,las:r.lastAgitSus==null?-1:r.lastAgitSus,
         cOrder:r.cOrder||null,cN:r.cN||1};}
     lsSet(K_RUN,JSON.stringify({v:2,modeKey:s.modeKey,diffKey:s.diffKey,startId:s.startId,
       day:s.day,cash:s.cash,inf:s.inf,oversight:s.oversight,warHeat:s.warHeat,doctrine:s.doctrine,net:s.net||0,gross:s.gross||0,lbCd:s.lbCd||0,evHeat:s.evHeat||0,evPaid:s.evPaid||0,
@@ -3126,6 +3161,7 @@ function loadRun(){
     r.black=Math.max(0,num(o.black,0));r.bcd=Math.max(0,num(o.bcd,0));
     r.gw=Math.min(CFG.gwCap,Math.max(0,num(o.gw,0)|0));
     r.lastConcede=num(o.lc,-1)<0?null:num(o.lc,-1);
+    r.lastAgitSus=num(o.las,-1)<0?null:num(o.las,-1);
     r.pstate=PSTATE_LABEL[o.pstate]?o.pstate:'calm';
     r.counters=asSet(o.counters);
     if(o.cOrder&&typeof o.cOrder==='object'){r.cOrder=o.cOrder;r.cN=Math.max(1,num(o.cN,1));}
@@ -4002,7 +4038,7 @@ function worldHTML(){
         <div class="m"><div class="k">Suspicion <i class="dn">▼</i></div>${bar(x.suspicion/100,'var(--ice)')}</div>
       </div>
       ${x.counters&&x.counters.size?'<div>'+[...x.counters].map(id=>{const cm=CM.find(c=>c.id===id);
-        const NM={atlas:'camera atlas',masks:'mask culture',plateswap:'plate swaps',boycott:'doorbell boycott',
+        const NM={atlas:'camera atlas',masks:'mask culture',plateswap:'plate swaps',boycott:'doorbell boycott',prebunk:'prebunking',
           copwatch:'cop-watch',crypto:'encryption',samizdat:'free press',jam:'lens brigades'};
         return `<span class="cchip">${NM[id]||id}</span>`;}).join('')+'</div>':''}
       ${acts}
@@ -4081,8 +4117,15 @@ function doAction(act,rid){
     /* Aug 25: agitation finally raises suspicion (it always should have -
        provocateurs get photographed). This is also the deliberate lever that
        reaches the Proxy Flashpoint gate: run loud, on purpose, on a clock,
-       against the ~2 week normalization decay. */
-    r.suspicion=clamp(r.suspicion+5,0,100);bumpSus(s,2);
+       against the ~2 week normalization decay.
+       The WORLD bump is per-region with a 30d staleness window: the first
+       provocateur story out of a city shocks everyone, the fortieth is old
+       news. A deliberate burst ACROSS regions (the gate play) keeps its full
+       effect; same-region spam pays only the local price. Metered: without
+       the window the sim's riot-playbook bots bled ~0.15 oversight per
+       agitate and two Vendor scenarios flipped WIN to LOSS. */
+    r.suspicion=clamp(r.suspicion+5,0,100);
+    if((s.day-(r.lastAgitSus!=null?r.lastAgitSus:-999))>=30){bumpSus(s,2);r.lastAgitSus=s.day;}
     /* organized civilians film everything: provocateurs get unmasked */
     if(r.resist>40&&Math.random()<(r.resist-35)/130){
       s.oversight+=4;r.resist=clamp(r.resist+8,0,100);r.grudge+=10;
@@ -4451,7 +4494,7 @@ const GUIDE=[
   wait:{days:22},done:(s,g)=>s.day>=g.day0+22},
  {txt:()=>`A warning: the civilians you\u2019re farming will <b>organize</b>. Watch the violet ORGANIZED bar in the World tab. They map cameras, encrypt, cop-watch, and they never forget a crackdown.`,
   wait:{days:1},done:(s,g)=>s.day>=g.day0+14},
- {txt:()=>`One more thing: certain skills <b>combine</b>. Ordinances plus <b>Plate Recognition</b> (WATCH tree) would fine people automatically\u2026 There are more hidden synergies. Find them. Good luck. Smile for the cameras.`,
+ {txt:()=>`One more thing: certain skills <b>combine</b>. Ordinances plus <b>Plate Recognition</b> (WATCH tree) would fine people automatically\u2026 There are more hidden synergies. And when you wonder how to WIN: the <b>WORLD</b> tab lists all four doors out of this game, with live progress. Good luck. Smile for the cameras.`,
   done:()=>false,final:true}
 ];
 /* Aug 25: beats 1-2 are mode-specific. The Contractor build advice was being

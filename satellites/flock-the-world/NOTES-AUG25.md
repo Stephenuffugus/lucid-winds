@@ -58,15 +58,21 @@ Checklist in the order the notes were given. `[x]` only with evidence
       the coda (tap-through respected). Bonus fix: #end was a centered flex
       column with overflow, hiding the verdict off the top once content grew.
       Shot the whole sequence.
-- [ ] 11. **One-strategy problem** — OPEN, but attacked from three sides
-      this pass: concede spam is priced (7), the whole upper Crisis ladder is
-      actually reachable for the first time (2) so the loud win path exists
-      in practice, and each mode's guide/briefing now teaches its own
-      opening (12). The Aug 24 work (patriotism floor, ban debate, bribe
-      heat) already targets story-tree dominance. What remains is a
-      dedicated tuning session on the four win doors with Stephen's
-      playstyle notes (standing open call) - the three seeded canaries
-      guard today's balance meanwhile.
+- [x] 11. **One-strategy problem** — the tuning session ran (BALANCE-
+      SCALING.md §16, HANDOFF sim table). Found: a full story stack pinned
+      resist so low that NO countermeasure of any kind ever fired (the whole
+      CM loop hid behind resist>15), and at 13% subj the story tree's dec
+      relief cancelled the ban debate while the patriotism floor read 4.6 -
+      the degenerate lane was mathematically unopposed. DONE: prebunking
+      workshops (narrative capture finally breeds its antibody, in the four
+      flagship free presses, triggered by machine depth), the ban-debate
+      STREAK floor (the econ bet finishes at a floor the dec stack cannot
+      decay away - the low-subj story-econ walk costs ~200 extra days and
+      ends at ovr ~31 instead of parked at 15-25), the agitate spam window,
+      and the guide's last beat points at Paths to Victory. Metered: 3-seed
+      canaries green, balanced Startup bot BETTER than baseline, all
+      regression guards hold, checks 279. Deeper door-identity redesign
+      stays a director call for after he plays this build.
 - [ ] 12. **Same briefing every mode** — pops up for each game type saying to
       build the same way; sick of it.
 - [ ] 13. **Tips-off option** — same mid-game tips fire every run; helpful

@@ -19,7 +19,43 @@ check.js 232→272, every visual change screenshot-reviewed. Highlights:
 - bubble_leak.mp3 (Kenney CC0). "Sit with X" formula broken up.
 - **Store**: Play TWA gates 10/10 green (manifest/sw/icons/privacy/inTWA);
   Steam rig scaffolded in store/ftw-steam/ (FTW-STEAM.md = Stephen's part).
-Open: item 11 (win-door tuning session), 4 capstone art files (Stephen).
+Open: 4 capstone art files (Stephen).
+
+## Aug 25 LATE — item 11: the one-strategy problem, tuned with the meter
+
+Stephen: "buying the story tree is basically the only decent way to win."
+Three mechanisms (BALANCE-SCALING.md §16): **prebunk** (the missing
+antibody - narrative capture finally breeds a countermeasure, in the four
+flagship free presses, triggered by machine depth because the machine
+pins resist too low for any street threshold; found en route: a full
+story stack ran to victory with ZERO countermeasures of any kind ever
+firing), the **streak floor** (the econ bet finishes at a patriotism
+floor the dec stack cannot decay away - the 13%-subj story-econ walk now
+costs ~200 extra days and ends at ovr ~31 instead of parked at 15-25),
+and the **agitate spam window** (world-suspicion bump per region per 30d).
+Plus the guide's final beat now points at Paths to Victory.
+
+### Sim table (seeded, 2026-08-25 late, this build)
+| Scenario | Result |
+|---|---|
+| Story-stack (dep+inf) Vendor | WIN d1314, ovr 31.6 (floor binds; was d~1100 @25) |
+| Story-stack Startup | WIN d1250, ovr 30.9 |
+| Balanced glove Startup (his diff) | WIN d1124, ovr 32.1 |
+| Balanced glove Vendor 10% bubbles | LOSS d1179 @84% (pre-existing tightness) |
+| dep/cap fist rush (guard) | LOSS — holds |
+| Fist SEA Vendor | WIN d960 |
+| Glove #2 full bubbles Vendor | LOSS (pre-existing) |
+| Deep Partnership EA | WIN d1033 @87 (photo finish) |
+| Crisis ME Vendor | LOSS (pre-existing at HEAD) |
+| Incumbent WE | LOSS (pre-existing) |
+| Do nothing | LOSS — guard holds |
+
+⛔ The Aug 24 evening table's Vendor-glove and Deep-EA WINs had already
+flipped at the Aug 25 MORNING head (verified by extracting 8fd81ca6 and
+rerunning - byte-identical losses pre-notes-pass); bots are greedy
+scripts and Vendor stays photo-finish territory for them while Stephen
+wins it as a human. Startup (his difficulty) wins everything it should.
+Canaries 3/3 green throughout; checks now 279.
 
 
 ## Aug 24 EVENING — music landed + Stephen's second notes batch (OPEN, needs his greenlight)
