@@ -58,9 +58,15 @@ Checklist in the order the notes were given. `[x]` only with evidence
       the coda (tap-through respected). Bonus fix: #end was a centered flex
       column with overflow, hiding the verdict off the top once content grew.
       Shot the whole sequence.
-- [ ] 11. **One-strategy problem** — buying the Story tree down feels like the
-      only decent way to win in every mode; other modes' win paths unclear.
-      (Balance umbrella with 2 and 7.)
+- [ ] 11. **One-strategy problem** — OPEN, but attacked from three sides
+      this pass: concede spam is priced (7), the whole upper Crisis ladder is
+      actually reachable for the first time (2) so the loud win path exists
+      in practice, and each mode's guide/briefing now teaches its own
+      opening (12). The Aug 24 work (patriotism floor, ban debate, bribe
+      heat) already targets story-tree dominance. What remains is a
+      dedicated tuning session on the four win doors with Stephen's
+      playstyle notes (standing open call) - the three seeded canaries
+      guard today's balance meanwhile.
 - [ ] 12. **Same briefing every mode** — pops up for each game type saying to
       build the same way; sick of it.
 - [ ] 13. **Tips-off option** — same mid-game tips fire every run; helpful
@@ -73,7 +79,12 @@ Checklist in the order the notes were given. `[x]` only with evidence
       .mcart/.dfart (already contain), tree icons, and full-bleed backdrops
       are fine and untouched. .evart now contains, centered, capped 30vh on
       a dark mat. Committee-room plate shot whole.
-- [ ] 16. **Story copy stiff / obviously AI** — loosen the wording.
+- [x] 16. **Story copy stiff / obviously AI** — surgical pass: the corpus
+      read STRONG on review (event bodies, ambient wire, epilogue beats all
+      concrete and human), so no blanket churn. The one real formula - all
+      four win screens closing 'Sit with X' - rewritten as four distinct
+      closers. If specific popups still land stiff, name them and we hit
+      exactly those.
 - [x] 17. **Country popover: stat bars** — DONE: unrest/organized/suspicion/
       coverage/compliance bars with numbers, same classes as the World tab.
 - [x] 18. **Agitate/Crackdown/Concede legibility** — crackdown drops unrest
@@ -98,8 +109,11 @@ Checklist in the order the notes were given. `[x]` only with evidence
       Verified unclipped both orientations. ⚠ STILL OWED: 4 art files -
       caps_dep / caps_cap / caps_inf / caps_war webp (Stephen generates;
       NODE_ART gets the 4 keys when they land).
-- [ ] 21. **Music playlists** — support 4-5 songs per slot like Jimothy,
-      easy for Stephen to drop in from Suno, toggle in/out.
+- [x] 21. **Music playlists** — DONE: drop `<slot>_2.mp3` in sfx/ + one
+      line in MUSIC_HAVE and it rotates (no repeat, beds hand off at track
+      end); SOUNDTRACK pips appear in the menu once a slot has 2+ tracks;
+      excludes persist; silence unconfigurable. 4-step guide in
+      SFX-GUIDE.md; check.js enforces the manifest both ways.
 - [ ] 22. **Store readiness** — game submittable to Steam and Google Play
       (packaging checklist + whatever blocks it).
 
