@@ -527,10 +527,16 @@ if (C) {
     ok('a crackdown fired through the shared handler spends the money',
       vm.runInContext('S.cash', c8) < before, 'cash ' + before + ' -> ' + vm.runInContext('S.cash', c8));
 
-    /* the popover must not pause: openSheet() pauses on purpose, this must not */
+    /* 2026-08-25 REVERSAL (Stephen: bubbles kept dying behind the card at 3x):
+       the popover now pauses exactly like openSheet, restores on close, and a
+       sheet opened over it inherits the pause instead of blipping the speed. */
     const showSrc = /function showRpop\([\s\S]*?\n\}/.exec(GAME)[0];
-    ok('opening the popover never pauses the sim',
-      !/setSpeed|openSheet|_pausePrev/.test(showSrc));
+    ok('opening the popover pauses the sim like a sheet does',
+      /_pausePrev=S\.speed;setSpeed\(0\)/.test(showSrc));
+    ok('closing the popover restores the stashed speed',
+      /function hideRpop\(keepPause\)/.test(GAME) && /if\(!keepPause&&S&&S\._pausePrev!=null&&!S\.sheet\)/.test(GAME));
+    ok('a sheet opened over the popover inherits the pause',
+      /hideRpop\(true\)/.test(GAME));
     /* and a drag must not open it: makeView only dispatches onTap when the
        pointer stayed put */
     const tapDispatch = /if\(p&&!moved&&ptrs\.size===0&&onTap\)/.test(GAME);
@@ -1278,9 +1284,19 @@ if (C) {
       /* concede is two-tap now (arm, then confirm), so two CONCESSIONS are four
          taps. This fixture broke the day the confirm shipped, which is the
          guard doing its job: the contract changed and the test noticed. */
-      vm.runInContext("(function(){const r=S.regions.WE;r.active=true;r.coverage=.4;r.unrest=60;for(let i=0;i<4;i++)doAction('concede','WE');})()",cK);
+      vm.runInContext("(function(){const r=S.regions.WE;r.active=true;r.coverage=.4;r.unrest=60;for(let i=0;i<2;i++)doAction('concede','WE');S.day+=12;for(let i=0;i<2;i++)doAction('concede','WE');})()",cK);
       const gw=vm.runInContext("S.regions.WE.gw",cK);
-      ok('conceding banks goodwill', gw===2, 'gw='+gw);
+      ok('spaced concessions bank goodwill', gw===2, 'gw='+gw);
+      /* 2026-08-25: concede spam was a free organization eraser. A repeat
+         inside 10 days gives half the relief, costs double the control, and
+         banks no goodwill. Two-tap arm means each concession is two calls. */
+      const spam=vm.runInContext("(function(){const r=S.regions.NA;r.active=true;r.coverage=.5;r.unrest=90;r.resist=60;r.grudge=40;r.gw=0;r.lastConcede=null;r.control=0.5;"
+        +"doAction('concede','NA');doAction('concede','NA');const u1=r.unrest;const c1=r.control;"
+        +"doAction('concede','NA');doAction('concede','NA');"
+        +"return {gw:r.gw,d1:90-u1,d2:u1-r.unrest,cc:c1-r.control};})()",cK);
+      ok('a repeat concession within ten days gives half the calm', spam.d2>0&&spam.d2<spam.d1, JSON.stringify(spam));
+      ok('a repeat concession within ten days banks no goodwill and costs double control',
+        spam.gw===1&&Math.abs(spam.cc-0.10)<1e-9, JSON.stringify(spam));
       const gap=vm.runInContext("(function(){const r=S.regions.WE;r.active=false;r.lost=true;const a=entryCost(r);r.gw=4;const b=entryCost(r);r.gw=2;return a-b;})()",cK);
       ok('goodwill cuts the re-entry surcharge on a lost market', gap>0, 'discount='+gap);
       /* arc machinery: beat 2 waits for beat 1 */
@@ -1573,6 +1589,30 @@ group('event plates + ending backgrounds exist on disk');
    outcomes, templates are fully substituted, the two cast beats are two
    different people, the copy obeys the dash law, and two different runs get
    different stories. */
+group('Aug 25 pass: tap safety, receipts, the refusal strip');
+{
+  /* a choice modal that lands mid-tap-stream must not accept the tap that was
+     aimed at a bubble: CSS inert beat + a hard timestamp guard + the canvas
+     tap dying while any modal is up. These assert the CONTRACT lines, not the
+     config (the Aug-24 vacuous-guard lesson). */
+  ok('choice options carry the hard arming guard', /if\(Date\.now\(\)<armAt\)return;/.test(GAME));
+  ok('the arming CSS makes options inert while the modal lands', /#modalCard\.arming \.opt\{pointer-events:none/.test(SRC));
+  ok('a map tap dies while a modal is up', /if\(NOTE\.modalOpen\)return; \/\* a tap that was aimed at a bubble/.test(GAME));
+  ok('choosing shows an aftermath receipt before play resumes',
+    /class="evrcpt"/.test(GAME) && /id="evDone"/.test(GAME) && /Aftermath/.test(GAME));
+  ok('the refusal strip exists in the HUD and paintHud feeds it',
+    /id="refusal"/.test(SRC) && /MARKETS EXPELLED/.test(GAME));
+  ok('the brink banner fires at one-expulsion-from-loss',
+    /lostCount===CFG\.lostLimit-1\)showBannerNow/.test(GAME));
+  ok('the country popover shows stat bars, suspicion included',
+    /rpB/.test(GAME) && /brow\('Suspicion'/.test(GAME));
+  ok('the World tab region card shows the suspicion bar',
+    /Suspicion <i class="dn">▼<\/i><\/div>\$\{bar\(x\.suspicion\/100/.test(GAME));
+  ok('crackdown states its hidden tax on the receipt', /grudge ▲8\. They will remember\./.test(GAME));
+  ok('the crackdown button shows a backfire band, not the exact odds',
+    /Backfire risk here: \$\{bLbl\}/.test(GAME));
+}
+
 group('epilogue reel');
 try {
   const cE = makeCtx();

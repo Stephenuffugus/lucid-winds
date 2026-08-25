@@ -362,6 +362,12 @@ h1 em{font-style:normal;color:var(--sodium)}
 #rpop .rpN div{display:flex;justify-content:space-between;gap:8px}
 #rpop .rpN .k{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
 #rpop .rpN .v{font-variant-numeric:tabular-nums;font-weight:700}
+#rpop .rpB{display:flex;flex-direction:column;gap:5px;margin-bottom:8px}
+/* the Great Refusal countdown: the loss that used to arrive unannounced */
+#refusal{display:none;font-size:10px;letter-spacing:.08em;font-weight:700;color:var(--blood);padding:3px 0 0}
+#refusal.on{display:block}
+#refusal.blink{animation:refblink 1.1s steps(2) infinite}
+@keyframes refblink{50%{opacity:.35}}
 #rpop .hint{font-size:10px;color:var(--dim)}
 #rpop .acts{display:flex;flex-wrap:wrap;gap:5px}
 #rpop .rpX{position:absolute;top:2px;right:2px;width:48px;height:48px;border:0;background:none;
@@ -725,6 +731,13 @@ h1 em{font-style:normal;color:var(--sodium)}
 .opt{width:100%;min-height:48px;text-align:left;padding:12px;border:1px solid var(--line);border-radius:11px;margin-bottom:8px;background:var(--panel)}
 .opt .ol{font-size:12px;font-weight:700}
 .opt .oc{font-size:10px;color:var(--dim);margin-top:3px}
+/* a choice modal lands mid-tap-stream at 3x: options stay inert for the first
+   beat so the tap that was aimed at a bubble can never commit a choice */
+#modalCard.arming .opt{pointer-events:none;opacity:.55}
+.evrcpt{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 4px}
+.evrcpt span{font-size:11px;font-weight:700;padding:5px 9px;border:1px solid var(--line);border-radius:8px;background:var(--panel2)}
+.evrcpt .up{color:var(--grn)}.evrcpt .dn{color:var(--blood)}.evrcpt .nt{color:var(--dim)}
+.evnews{font-size:11px;color:var(--dim);font-style:italic;margin:4px 0 10px}
 .opt[disabled]{opacity:.4}
 .tutdots{display:flex;gap:5px;justify-content:center;margin:4px 0 12px}
 .tutdots i{width:6px;height:6px;border-radius:50%;background:var(--line)}
@@ -826,6 +839,7 @@ h1 em{font-style:normal;color:var(--sodium)}
       <div class="bwrap"><div class="blab"><span id="ovrName">Patriotism</span><span id="vOvr">0.0%</span></div>
         <div class="btrack"><div class="bfill" id="ovrFill"></div></div></div>
     </div>
+    <div id="refusal" class="mono"></div>
     <div id="ledline" role="button" tabindex="0" aria-label="Open the population ledger">
       <span class="lgl">Watched</span><span class="lgv mono" id="vWatch">0</span><span class="lgs" id="vWatchSub"></span>
     </div>
@@ -2255,6 +2269,7 @@ function tick(){
       r.control=Math.max(0,r.control-0.004);
       if(r.coverage<0.02){
         r.active=false;r.lost=true;r.pstate='calm';r.unrest=55;s.lostCount++;sfx('region_lost');
+        if(s.lostCount===CFG.lostLimit-1)showBannerNow('ONE MORE EXPULSION ENDS THE RUN');
         /* liability cover: you are insured against yourself, and losing a market
            is the covered event. One policy pays out and is consumed. */
         if(s.cover>0){s.cover--;
@@ -2890,7 +2905,7 @@ function saveRun(){
       regs[id]={active:r.active,lost:r.lost,coverage:r.coverage,control:r.control,
         compliance:r.compliance,suspicion:r.suspicion,unrest:r.unrest,cd:r.cd,resist:r.resist,
         grudge:r.grudge,counters:[...r.counters],milit:r.milit,pstate:r.pstate,war:r.war,
-        black:r.black||0,bcd:r.bcd||0,gw:r.gw||0,
+        black:r.black||0,bcd:r.bcd||0,gw:r.gw||0,lc:r.lastConcede==null?-1:r.lastConcede,
         cOrder:r.cOrder||null,cN:r.cN||1};}
     lsSet(K_RUN,JSON.stringify({v:2,modeKey:s.modeKey,diffKey:s.diffKey,startId:s.startId,
       day:s.day,cash:s.cash,inf:s.inf,oversight:s.oversight,warHeat:s.warHeat,doctrine:s.doctrine,net:s.net||0,gross:s.gross||0,lbCd:s.lbCd||0,evHeat:s.evHeat||0,evPaid:s.evPaid||0,
@@ -2985,6 +3000,7 @@ function loadRun(){
     r.cd=Math.max(0,num(o.cd,0));r.war=Math.max(0,num(o.war,0));
     r.black=Math.max(0,num(o.black,0));r.bcd=Math.max(0,num(o.bcd,0));
     r.gw=Math.min(CFG.gwCap,Math.max(0,num(o.gw,0)|0));
+    r.lastConcede=num(o.lc,-1)<0?null:num(o.lc,-1);
     r.pstate=PSTATE_LABEL[o.pstate]?o.pstate:'calm';
     r.counters=asSet(o.counters);
     if(o.cOrder&&typeof o.cOrder==='object'){r.cOrder=o.cOrder;r.cN=Math.max(1,num(o.cN,1));}
@@ -3404,6 +3420,18 @@ function paintHud(){
   sfxBed('bed_tension',s.oversight>70&&!s.over);
   const hh=$('hud')?$('hud').offsetHeight:0;
   if(hh&&hh!==_hudH){_hudH=hh;syncOverlayTops();}
+  /* the Great Refusal never warns before it fires (Stephen, Aug 25: "None of
+     my meters were telling me I was about to lose"): a red strip counts
+     expulsions and live uprisings, blinking at the brink */
+  const upN=REGIONS.filter(R=>{const x=s.regions[R.id];return x.active&&x.pstate==='uprising';}).length;
+  const rfEl=$('refusal');
+  if(rfEl){
+    if(s.lostCount>0||upN>0){
+      rfEl.textContent=`THE REFUSAL · ${s.lostCount}/${CFG.lostLimit} MARKETS EXPELLED`+(upN?` · ${upN} IN UPRISING`:'');
+      rfEl.classList.add('on');
+      rfEl.classList.toggle('blink',s.lostCount>=CFG.lostLimit-1||upN>=2);
+    }else rfEl.classList.remove('on','blink');
+  }
   const covered=REGIONS.reduce((a,r)=>a+s.regions[r.id].pop*s.regions[r.id].coverage,0);
   $('pillTxt').textContent=`${s.speed===0?'PAUSED':'LIVE'} · ${(covered*1.4).toFixed(0)}M NODES · ${s.activeCount} MKT`
     +(s.warHeat>0.05?` · WAR ${(s.warHeat*100)|0}%`:'');
@@ -3565,7 +3593,7 @@ function openSheet(tab){
   /* menus pause the sim (Stephen 2026-08-20): reading a tree should never
      cost you what is happening on the map. Speed restores on close. */
   if(S._pausePrev==null&&S.speed>0){S._pausePrev=S.speed;setSpeed(0);}
-  hideRpop();
+  hideRpop(true);
   S.sheet=tab;$('sheet').classList.add('on');sfx('ui_open');
   document.querySelectorAll('.nb').forEach(b=>b.classList.toggle('hot',b.dataset.tab===tab));
   if(tab==='log')S.unread=0;
@@ -3846,6 +3874,7 @@ function worldHTML(){
         <div class="m"><div class="k">Unrest <i class="dn">▼</i></div>${bar(x.unrest/100,'var(--scan)')}</div>
         <div class="m"><div class="k">Military</div>${bar(x.milit,'#c76')}</div>
         <div class="m"><div class="k">Organized <i class="dn">▼</i></div>${bar(x.resist/100,'#c792ff')}</div>
+        <div class="m"><div class="k">Suspicion <i class="dn">▼</i></div>${bar(x.suspicion/100,'var(--ice)')}</div>
       </div>
       ${x.counters&&x.counters.size?'<div>'+[...x.counters].map(id=>{const cm=CM.find(c=>c.id===id);
         const NM={atlas:'camera atlas',masks:'mask culture',plateswap:'plate swaps',boycott:'doorbell boycott',
@@ -3869,9 +3898,16 @@ function regionActionsHTML(rid){
   if(s.has('agit'))acts+=`<button class="act warn" data-act="agitate" data-r="${rid}"
         title="Send provocateurs into a march. Unrest jumps, a peaceful march turns violent. Why: a violent march justifies a Crackdown, and a crackdown you survive pays compliance. The Iron Fist one-two."
         ${s.cash<pAg||x.pstate==='uprising'||x.cd>0?'disabled':''}>${uiIco('act_agitate')}Agitate ${fmtMoney(pAg)}${cd}</button>`;
-  if(s.has('charter'))acts+=`<button class="act danger" data-act="crack" data-r="${rid}"
-        title="Armored response. Unrest falls, compliance and militarization rise. Can backfire, always remembered, and it ends any Grateful World peace streak."
-        ${s.cash<pCr||x.unrest<30||x.cd>0?'disabled':''}>${uiIco('act_crackdown')}Crackdown ${fmtMoney(pCr)}${cd}</button>`;
+  if(s.has('charter')){
+    /* the odds are shown as a band, not a number: the exact figure would leak
+       which countermeasures the civilians have built (mystery is the point) */
+    const bRisk=s.has('caps_war')?0
+      :(s.doctrine==='fist'?CFG.crackBackfire/2:CFG.crackBackfire)+(x._cBack||0)+x.media*x.resist/100*0.20;
+    const bLbl=bRisk<=0?'none':bRisk>0.3?'HIGH':bRisk>0.18?'elevated':'low';
+    acts+=`<button class="act danger" data-act="crack" data-r="${rid}"
+        title="Armored response. Unrest falls, compliance and militarization rise, but suspicion, grudge and organizing all climb too. Backfire risk here: ${bLbl}. Always remembered, and it ends any Grateful World peace streak."
+        ${s.cash<pCr||x.unrest<30||x.cd>0?'disabled':''}>${uiIco('act_crackdown')}Crackdown${bLbl==='HIGH'?' ⚠':''} ${fmtMoney(pCr)}${cd}</button>`;
+  }
   if(s.has('blackout'))acts+=`<button class="act" data-act="blackout" data-r="${rid}"
         title="Buy the news cycle. Suspicion drops and builds slower for two weeks. Weak where the press is free."
         ${s.cash<pBl||x.bcd>0?'disabled':''}>${uiIco('act_blackout')}Blackout ${fmtMoney(pBl)}${x.bcd>0?` (${x.bcd}d)`:''}</button>`;
@@ -3921,12 +3957,15 @@ function doAction(act,rid){
     if(r.resist>40&&Math.random()<(r.resist-35)/130){
       s.oversight+=4;r.resist=clamp(r.resist+8,0,100);r.grudge+=10;
       r.compliance=clamp(r.compliance-0.05,.02,.98);
+      shToast(`Unmasked in ${r.name}: ${s.mode.mod.ovrName||'Patriotism'} ▲4 · organized ▲8 · grudge ▲10`);
       pushNews(s,`Streamers in ${r.name} unmask your provocateurs mid march. Faces, pay stubs, the invoice itself. The march grows.`,'res');
     }else{
       r.unrest=clamp(r.unrest+16,0,100);
       if(r.pstate==='peaceful'){r.pstate='violent';r.unrest=Math.max(r.unrest,70);
+        shToast(`${r.name}: unrest ▲16 · the march turns violent. A crackdown is now justified.`);
         pushNews(s,H.agitate(r.name),'crit');}
-      else pushNews(s,`Provocateur budget approved for ${r.name}. Tension climbs.`,'bad');
+      else{shToast(`${r.name}: unrest ▲16`);
+        pushNews(s,`Provocateur budget approved for ${r.name}. Tension climbs.`,'bad');}
     }
   }
   else if(act==='crack'&&s.has('charter')&&s.cash>=pCr&&r.unrest>=30){
@@ -3942,6 +3981,7 @@ function doAction(act,rid){
     sfx('spend');sfx(backfire?'crackdown_fail':'crackdown');
     if(backfire){
       r.unrest=clamp(r.unrest+22,0,100);s.oversight+=3;
+      shToast(`Backfire in ${r.name}: unrest ▲22 · ${s.mode.mod.ovrName||'Patriotism'} ▲3`);
       pushNews(s,H.crackfail(r.name),'crit');
     }else{
       r.unrest=clamp(r.unrest-30,0,100);
@@ -3951,6 +3991,10 @@ function doAction(act,rid){
       s.oversight+=0.8;
       r.grudge+=8;r.resist=clamp(r.resist+3,0,100); /* violence radicalizes; they remember */
       if(r.pstate==='violent'||r.pstate==='uprising')r.pstate='murmur';
+      /* Aug 25: the hidden tax on the receipt. Stephen discovered "crackdown
+         caused unrest to go down but organization to go up" by accident; the
+         one-two has depth only if the bill is visible at the till. */
+      shToast(`${r.name}: unrest ▼30 · compliance ▲ · suspicion ▲6 · organized ▲3 · grudge ▲8. They will remember.`);
       pushNews(s,H.crackdown(r.name),'good');
     }
   }
@@ -3983,11 +4027,22 @@ function doAction(act,rid){
     }
     S._concArm=null;
     sfx('concede');
-    r.unrest=clamp(r.unrest-15,0,100);r.suspicion=clamp(r.suspicion-8,0,100);
-    r.resist=clamp(r.resist-6,0,100);r.grudge=Math.max(0,r.grudge-8);
-    r.control=Math.max(0,r.control-0.05);r.compliance=clamp(r.compliance-0.02,0,.98);
-    r.gw=Math.min(CFG.gwCap,(r.gw||0)+1);
-    shToast(`${r.name} cools: unrest, suspicion and organizing all ease. Control slips a little. The listening tour banks goodwill (${r.gw}).`);
+    /* Aug 25: concede spam was a free organization eraser (Stephen: "I just
+       go in and click concede over and over... there's not much consequences").
+       A repeat concession inside 10 days reads as an empty gesture: half the
+       relief, twice the ground given, and nobody banks goodwill for theater.
+       The 10 day window sits under the balanced bots' 12/17 day concede
+       cadence on purpose, so the canaries still play their intended game. */
+    const again=r.lastConcede!=null&&(s.day-r.lastConcede)<10;
+    const rf=again?0.5:1;
+    r.lastConcede=s.day;
+    r.unrest=clamp(r.unrest-15*rf,0,100);r.suspicion=clamp(r.suspicion-8*rf,0,100);
+    r.resist=clamp(r.resist-6*rf,0,100);r.grudge=Math.max(0,r.grudge-8*rf);
+    r.control=Math.max(0,r.control-(again?0.10:0.05));r.compliance=clamp(r.compliance-0.02,0,.98);
+    if(!again)r.gw=Math.min(CFG.gwCap,(r.gw||0)+1);
+    shToast(again
+      ?`A second listening tour within days convinces nobody in ${r.name}: half the calm, twice the ground given, no goodwill.`
+      :`${r.name} cools: unrest, suspicion and organizing all ease. Control slips a little. The listening tour banks goodwill (${r.gw}).`);
     pushNews(s,H.concede(r.name),'');
   }
   renderSheet('reg');paintHud();
@@ -4022,10 +4077,43 @@ function showEvent(ev){
       return `<button class="opt" data-opt="${i}" ${ok?'':'disabled'}>
         <div class="ol">${o.l}</div><div class="oc">${cost}</div></button>`;}).join('');
   noteOpenModal();
+  /* Aug 25: the modal appears mid-tap-stream, so options arm after 450ms
+     (CSS inert + a hard timestamp guard - the guard asserts the contract even
+     if the class is stripped), and choosing shows an AFTERMATH receipt of
+     what actually moved before play resumes. */
+  const armAt=Date.now()+450;
+  c.classList.add('arming');
+  setTimeout(()=>{c.classList.remove('arming');},450);
+  const rAgg=()=>{let sus=0,res=0,cmp=0,n=0;REGIONS.forEach(R=>{const x=S.regions[R.id];
+    if(x.active){sus+=x.suspicion;res+=x.resist;cmp+=x.compliance;n++;}});
+    return n?{sus:sus/n,res:res/n,cmp:cmp/n}:{sus:0,res:0,cmp:0};};
   c.querySelectorAll('[data-opt]').forEach(b=>b.onclick=()=>{
+    if(Date.now()<armAt)return;
     const o=ev.o[+b.dataset.opt];
+    const pre={cash:S.cash,inf:S.inf,ovr:S.oversight,war:S.warHeat||0,pg:S.fdPages||0,a:rAgg()},logN=S.log.length;
     if(o.cost){if(o.cost.cash){evPayCash(S,o,sc);flashCash();}if(o.cost.inf)S.inf-=o.cost.inf;}
-    o.f(S);S.pendingEventId=null;noteCloseModal();setSpeed(prev||1);paintHud();});
+    o.f(S);
+    const a2=rAgg(),ovn=S.mode.mod.ovrName||'Patriotism';
+    const d=[];
+    const num=v=>{const f=Math.abs(v);return f>=10?String(Math.round(f)):String(Math.round(f*10)/10);};
+    const row=(v,name,badUp)=>{if(Math.abs(v)<0.05)return;
+      d.push(`<span class="${(v>0)===badUp?'dn':'up'}">${v>0?'▲':'▼'}${num(v)} ${name}</span>`);};
+    if(pre.cash-S.cash>0.5)d.push(`<span class="nt">▼${fmtMoney(pre.cash-S.cash)}</span>`);
+    else if(S.cash-pre.cash>0.5)d.push(`<span class="up">▲${fmtMoney(S.cash-pre.cash)}</span>`);
+    row(S.inf-pre.inf,'influence',false);
+    row(S.oversight-pre.ovr,ovn.toLowerCase(),true);
+    row(a2.sus-pre.a.sus,'world suspicion',true);
+    row(a2.res-pre.a.res,'organized',true);
+    row((a2.cmp-pre.a.cmp)*100,'compliance',false);
+    row((S.warHeat||0)-pre.war,'war heat',true);
+    row((S.fdPages||0)-pre.pg,'ledger pages',true);
+    const wire=S.log.length>logN?S.log[0].t:'';
+    c.innerHTML=`<div class="kicker">Aftermath</div><h3>${o.l}</h3>
+      <div class="evrcpt">${d.join('')||'<span class="nt">No measurable shift. Yet.</span>'}</div>
+      ${wire?`<p class="evnews">“${wire}”</p>`:''}
+      <button class="opt" id="evDone"><div class="ol">CONTINUE</div></button>`;
+    $('evDone').onclick=()=>{S.pendingEventId=null;noteCloseModal();setSpeed(prev||1);paintHud();};
+    paintHud();});
 }
 /* the bribe economy, single-sourced so check.js can hold it to account */
 function evPrice(s,o,sc){
@@ -4138,8 +4226,10 @@ let ctipTO=null;
    Stephen/Penny brief: "this is how Plague Inc plays, you poke the map, not a
    menu". Absorbs what the old country tip said (country, HQ, rollout status,
    how an unsigned region signs) and adds the people numbers and the region's
-   own actions. It does NOT pause: openSheet() pauses on purpose, this must not,
-   because the point is watching the map keep moving while you act on it. */
+   own actions. 2026-08-25 REVERSAL: it now PAUSES like openSheet does.
+   Stephen kept missing bubbles behind the card at 3x ("It may need to pause
+   when you click on a country automatically"). Speed restores when the card
+   closes, unless a sheet inherits the pause (openSheet calls hideRpop(true)). */
 let rpopRid=null,rpopCn='';
 function rpopHTML(rid,cn){
   const s=S,x=s.regions[rid];if(!x)return '';
@@ -4153,13 +4243,19 @@ function rpopHTML(rid,cn){
     <div><span class="k">Compliant</span><span class="v">${fmtShort(cm)}</span></div>
     <div><span class="k">Organized</span><span class="v" style="color:#c792ff">${fmtShort(og)}</span></div>
   </div>`;
-  /* the working numbers, on the map poke itself (Stephen, Aug 24: "you should
-     be able to click on the countries and see the stats") */
-  if(x.active)h+=`<div class="rpN">
-    <div><span class="k">Unrest</span><span class="v"${x.unrest>=45?' style="color:var(--blood)"':''}>${x.unrest|0}</span></div>
-    <div><span class="k">Coverage</span><span class="v">${(x.coverage*100)|0}%</span></div>
-    <div><span class="k">Compliance</span><span class="v">${(x.compliance*100)|0}%</span></div>
-  </div>`;
+  /* the working numbers, on the map poke itself, as BARS (Stephen, Aug 25:
+     "I want to be able to see the bars of stats when I click on the
+     countries") - same .m/.t/.f classes the World tab bars use */
+  if(x.active){
+    const brow=(k,v,c,mark)=>`<div class="m"><div class="k">${k} · ${v|0}${mark?` <i class="${mark}">${mark==='dn'?'▼':'▲'}</i>`:''}</div><div class="t"><div class="f" style="width:${Math.max(0,Math.min(100,v)).toFixed(0)}%;background:${c}"></div></div></div>`;
+    h+=`<div class="rpB">
+      ${brow('Unrest',x.unrest,'var(--scan)','dn')}
+      ${brow('Organized',x.resist,'#c792ff','dn')}
+      ${brow('Suspicion',x.suspicion,'var(--ice)','dn')}
+      ${brow('Coverage',x.coverage*100,'var(--sodium)','up')}
+      ${brow('Compliance',x.compliance*100,'var(--grn)','up')}
+    </div>`;
+  }
   const acts=regionActionsHTML(rid),ent=regionEnterHTML(rid);
   if(acts||ent)h+=acts+ent;
   if(!x.active&&!x.lost)h+='<div class="hint">Enter it here, or grow a neighbour until it signs on its own.</div>';
@@ -4179,6 +4275,7 @@ function showRpop(rid,cn,sx,sy){
      the ocean in a real browser and watching it stay open. */
   if(rpopRid===rid&&e.classList.contains('on')){hideRpop();return;}
   rpopRid=rid;rpopCn=cn||'';
+  if(S&&S._pausePrev==null&&S.speed>0&&!S.over){S._pausePrev=S.speed;setSpeed(0);}
   sfx('ui_tap');
   e.innerHTML=rpopHTML(rid,rpopCn);
   e.classList.add('on');
@@ -4192,7 +4289,10 @@ function showRpop(rid,cn,sx,sy){
   y=Math.max(top,Math.min(y,Math.max(top,bot)));
   e.style.left=x+'px';e.style.top=y+'px';
 }
-function hideRpop(){rpopRid=null;const e=$('rpop');if(e)e.classList.remove('on');}
+function hideRpop(keepPause){rpopRid=null;const e=$('rpop');if(e)e.classList.remove('on');
+  /* restore the speed the popover stashed, unless a sheet is inheriting the
+     pause (openSheet passes keepPause and owns the restore from then on) */
+  if(!keepPause&&S&&S._pausePrev!=null&&!S.sheet){const p=S._pausePrev;S._pausePrev=null;if(!S.over)setSpeed(p);}}
 
 function showCtip(c){
   const r=S.regions[c.r];
@@ -4345,6 +4445,7 @@ function bootGame(resumed){
   const wrap=$('mapWrap');
   if(!gv){
     gv=makeView(wrap,$('map'),$('fx'),(sx,sy)=>{
+      if(NOTE.modalOpen)return; /* a tap that was aimed at a bubble dies when a modal is up */
       if(collectAt(sx,sy))return;
       const[wx,wy]=gv.toWorld(sx,sy);
       /* makeView only calls this when the pointer did not drag (7px threshold),
