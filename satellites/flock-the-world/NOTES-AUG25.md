@@ -112,9 +112,9 @@ Checklist in the order the notes were given. `[x]` only with evidence
       (added Aug 24 after the art batch) have no icon, so the 67px icon
       indent is now earned by having one, and the landscape 2-line clamp is
       lifted for capstones (their tap is BUY; the text must be readable).
-      Verified unclipped both orientations. ⚠ STILL OWED: 4 art files -
-      caps_dep / caps_cap / caps_inf / caps_war webp (Stephen generates;
-      NODE_ART gets the 4 keys when they land).
+      Verified unclipped both orientations. Art request doc with prompts +
+      style spec is in 012Assets ("FTW capstone icons — 4 images (Aug 25)");
+      wiring is 2 lines per icon once the images land.
 - [x] 21. **Music playlists** — DONE: drop `<slot>_2.mp3` in sfx/ + one
       line in MUSIC_HAVE and it rotates (no repeat, beds hand off at track
       end); SOUNDTRACK pips appear in the menu once a slot has 2+ tracks;
