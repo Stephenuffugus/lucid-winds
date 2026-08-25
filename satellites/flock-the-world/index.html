@@ -1228,7 +1228,15 @@ const NODES=[
  n:'Border Theatrics',d:'Staged incursions, drone photos of empty fields, a Secretary in a tactical vest.',fx:{fear:.04,mil:.03,spr:.8}},
 {id:'charter',t:'war',c:18,r:2,x:2,req:['agit'],
  n:'Counter-Riot Charter',d:'Unlocks CRACKDOWN: armored response to disorder you may have catered.',fx:{mil:.03,sup:.6}},
-{id:'proxy',t:'war',c:26,r:3,x:1,req:['border','charter'],gate:s=>s.avgSus>18,gtxt:'World suspicion must exceed 18',
+/* ⛔ Aug 25: the gate was avgSus>18 — mathematically unreachable in real play.
+   charter (a REQUIRED prereq) carries sup:.6 which pins suspicion gain
+   negative, normalization (control×compliance×0.045) crushes it late, and
+   nothing the player did raised it on purpose. Stephen ran two full Crisis
+   campaigns (day 1046, 2356) and never saw the top half of this tree.
+   Now: threshold 10, agitate feeds suspicion (below), and the gate text is a
+   live meter naming the levers. */
+{id:'proxy',t:'war',c:26,r:3,x:1,req:['border','charter'],gate:s=>s.avgSus>10,
+ gtxt:s=>'World suspicion '+(s.avgSus||0).toFixed(1)+' of 10 · agitation, crackdowns and acquisitions raise it; calm and blackouts bury it',
  n:'Proxy Flashpoint',d:'Sponsor a distant, televised conflict. Fear surges everywhere; so do defence line items.',fx:{fear:.08,mil:.04,inc:.3},
  buyFx:s=>{s.warHeat=Math.min(1,s.warHeat+0.35);pushNews(s,'Fighting erupts in a distant province. Analysts you fund call it "a wake-up call."','crit');}},
 {id:'pretext',t:'war',c:32,r:4,x:1,req:['proxy'],gate:s=>s.avgMil>0.12,gtxt:'Average militarization must exceed 12%',
@@ -3720,7 +3728,7 @@ function treeHTML(t){
       if(!n){h+='<div class="node empty"></div>';continue;}
       const st=nodeState(n),c=nodeCost(n);
       const aff=st==='avail'&&S.inf>=c;
-      const cst=st==='own'?'ACTIVE':st==='gated'?(n.gtxt||'GATED'):st==='exlocked'?'PATH CLOSED':c+' INF';
+      const cst=st==='own'?'ACTIVE':st==='gated'?((typeof n.gtxt==='function'?n.gtxt(S):n.gtxt)||'GATED'):st==='exlocked'?'PATH CLOSED':c+' INF';
       const tut=(G.on&&GUIDE[G.step]&&GUIDE[G.step].node===n.id&&st==='avail')?'tut':'';
       const ico=NODE_ART[n.id]?`<img class="nico" src="art/tree/${n.id}.webp" alt="" draggable="false">`:'';
       h+=`<div class="node ${st} ${aff?'afford':''} ${tut}" id="nd_${n.id}" data-node="${n.id}">
@@ -3755,7 +3763,7 @@ function worldHTML(){
     <div class="ws"><div class="k">World fear</div><div class="v mono">${((s.fx.fear+s.warHeat*0.1)*100).toFixed(0)}</div></div>
     <div class="ws"><div class="k">War heat</div><div class="v mono">${(s.warHeat*100).toFixed(0)}%</div></div>
     <div class="ws"><div class="k">Militarized</div><div class="v mono">${(s.avgMil*100).toFixed(0)}%</div></div>
-    <div class="ws"><div class="k">Suspicion</div><div class="v mono">${s.avgSus.toFixed(0)}</div></div>
+    <div class="ws"><div class="k">Suspicion</div><div class="v mono"${s.avgSus>=10?' style="color:var(--sodium)"':''}>${s.avgSus.toFixed(1)}${(s.has('threat')||s.mode.mod.warOpen)&&!s.has('proxy')?'<span style="color:var(--dim);font-size:9px"> of 10 for Proxy</span>':''}</div></div>
     <div class="ws"><div class="k">Organized</div><div class="v mono" style="color:#c792ff">${s.avgRes.toFixed(0)}</div></div>
     <div class="ws"><div class="k">Doctrine</div><div class="v" style="font-size:11px">${s.doctrine==='glove'?'Velvet Glove':s.doctrine==='fist'?'Iron Fist':'not chosen'}</div></div>
     <div class="ws"><div class="k">Lost</div><div class="v mono">${s.lostCount}/${CFG.lostLimit}</div></div>
@@ -3896,7 +3904,7 @@ function regionActionsHTML(rid){
   const cd=x.cd>0?` (${x.cd}d)`:'';
   let acts='<div class="acts">';
   if(s.has('agit'))acts+=`<button class="act warn" data-act="agitate" data-r="${rid}"
-        title="Send provocateurs into a march. Unrest jumps, a peaceful march turns violent. Why: a violent march justifies a Crackdown, and a crackdown you survive pays compliance. The Iron Fist one-two."
+        title="Send provocateurs into a march. Unrest jumps, a peaceful march turns violent, and world suspicion climbs: provocateurs get photographed. Why: a violent march justifies a Crackdown, a crackdown you survive pays compliance, and suspicion is what opens the Proxy Flashpoint. The Iron Fist one-two."
         ${s.cash<pAg||x.pstate==='uprising'||x.cd>0?'disabled':''}>${uiIco('act_agitate')}Agitate ${fmtMoney(pAg)}${cd}</button>`;
   if(s.has('charter')){
     /* the odds are shown as a band, not a number: the exact figure would leak
@@ -3953,6 +3961,11 @@ function doAction(act,rid){
     s.cash-=pAg;r.cd=20;sfx('spend');sfx('agitate');
     shToast(`<span class="neg">Spent ${fmtMoney(pAg)}</span> · provocateurs deployed to ${r.name}`);
     flashCash();
+    /* Aug 25: agitation finally raises suspicion (it always should have -
+       provocateurs get photographed). This is also the deliberate lever that
+       reaches the Proxy Flashpoint gate: run loud, on purpose, on a clock,
+       against the ~2 week normalization decay. */
+    r.suspicion=clamp(r.suspicion+5,0,100);bumpSus(s,2);
     /* organized civilians film everything: provocateurs get unmasked */
     if(r.resist>40&&Math.random()<(r.resist-35)/130){
       s.oversight+=4;r.resist=clamp(r.resist+8,0,100);r.grudge+=10;
@@ -3962,9 +3975,9 @@ function doAction(act,rid){
     }else{
       r.unrest=clamp(r.unrest+16,0,100);
       if(r.pstate==='peaceful'){r.pstate='violent';r.unrest=Math.max(r.unrest,70);
-        shToast(`${r.name}: unrest ▲16 · the march turns violent. A crackdown is now justified.`);
+        shToast(`${r.name}: unrest ▲16 · suspicion ▲7 · the march turns violent. A crackdown is now justified.`);
         pushNews(s,H.agitate(r.name),'crit');}
-      else{shToast(`${r.name}: unrest ▲16`);
+      else{shToast(`${r.name}: unrest ▲16 · suspicion ▲7`);
         pushNews(s,`Provocateur budget approved for ${r.name}. Tension climbs.`,'bad');}
     }
   }

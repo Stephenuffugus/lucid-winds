@@ -1611,6 +1611,25 @@ group('Aug 25 pass: tap safety, receipts, the refusal strip');
   ok('crackdown states its hidden tax on the receipt', /grudge ▲8\. They will remember\./.test(GAME));
   ok('the crackdown button shows a backfire band, not the exact odds',
     /Backfire risk here: \$\{bLbl\}/.test(GAME));
+
+  /* the suspicion gate must be reachable by deliberate loud play: two agitate
+     rounds across the big markets clear the bar. The old avgSus>18 was
+     mathematically unreachable (charter, a REQUIRED prereq, suppresses the
+     very stat the gate tests) - Stephen ran two full Crisis campaigns and
+     never saw the top half of the tree. */
+  {
+    const cX = makeCtx(); cX.doctrineModal = () => {}; cX.showEvent = () => {};
+    vm.runInContext("S=newState('CRISIS','Vendor','NA');S.owned.add('threat');S.owned.add('agit');recompute(S);" +
+      "var big=['SAs','EA','SSA','SEA','SA','WE'];big.forEach(function(k){var r=S.regions[k];r.active=true;r.coverage=0.4;});" +
+      "for(var i=0;i<2;i++){big.forEach(function(k){S.regions[k].cd=0;S.cash=1e6*MONEY;doAction('agitate',k);});}" +
+      "tick();", cX);
+    const av = vm.runInContext('S.avgSus', cX);
+    ok('deliberate loud play reaches the proxy gate (avgSus clears 10)', av > 10, 'avgSus=' + av.toFixed(1));
+    ok('the proxy gate opens at the new bar', vm.runInContext("NODES.find(n=>n.id==='proxy').gate(S)", cX) === true);
+    ok('the old unreachable threshold is gone', !/gate:s=>s\.avgSus>18/.test(GAME));
+    ok('the proxy gate text is a live meter naming the levers', /gtxt:s=>'World suspicion '/.test(GAME));
+    ok('agitate feeds suspicion (the deliberate lever)', /r\.suspicion=clamp\(r\.suspicion\+5,0,100\);bumpSus\(s,2\);/.test(GAME));
+  }
 }
 
 group('epilogue reel');
