@@ -332,6 +332,20 @@ const CH_META={
   kitten: {refH:389, states:{run:4,jump:3,slide:3,caught:4,bank:3}},
 };
 const CH_IMGS={}, CH_READY={};
+/* The select grid must show every runner's REAL face immediately. Full
+   sheets are 2.7 to 5.6 MB per animal, so only ONE run frame per animal
+   preloads at boot (~0.5 MB total); the full bag still loads on first tap
+   (and for the saved runner). Without this, four of five tiles sat on the
+   procedural blobs until tapped and read as missing art (Stephen, Aug 25:
+   "i dont see all 5 characters playable"). */
+const CH_PREVIEW={};
+function loadCharPreview(id){
+  if(!CH_META[id]||CH_PREVIEW[id])return;
+  const im=new Image(), slot=CH_PREVIEW[id]={im:im,ok:false};
+  im.onload=function(){ slot.ok=true;
+    if(typeof buildSelect==="function"&&state.mode==="select") buildSelect(); };
+  im.src="art/characters/"+id+"/run_01.png?v="+CH_ART_V;
+}
 function loadCharArt(id){
   const M=CH_META[id]; if(!M||CH_IMGS[id])return;
   const bags=CH_IMGS[id]={}, ready=CH_READY[id]={};
@@ -1226,6 +1240,10 @@ function buildSelect(){
       const im=CH_IMGS[a.id].run[0], k=74/CH_META[a.id].refH;
       cc.drawImage(im,44-256*k,86-488*k,512*k,512*k);
     }
+    else if(CH_PREVIEW[a.id]&&CH_PREVIEW[a.id].ok){
+      const im=CH_PREVIEW[a.id].im, k=74/CH_META[a.id].refH;
+      cc.drawImage(im,44-256*k,86-488*k,512*k,512*k);
+    }
     else drawAnimal(cc,a,44,56,46,0.6,"run",1);
     b.onclick=()=>{ state.animal=a; loadCharArt(a.id); pdWrite({animal:a.id}); buildSelect(); }; grid.appendChild(b);
   });
@@ -1256,8 +1274,10 @@ resize();
   const savedAnimal = ANIMALS.find(a=>a.id===saved.animal);
   if(savedAnimal) state.animal = savedAnimal;
   /* the saved runner's sheets start loading immediately; everyone else's
-     load on their first tap in the select grid */
+     load on their first tap in the select grid, but every tile shows its
+     real face from the one-frame previews */
   loadCharArt(state.animal.id);
+  for(const id in CH_META) loadCharPreview(id);
 })();
 
 /* A hook so a headless harness can drive a run without a browser. Mirrors the

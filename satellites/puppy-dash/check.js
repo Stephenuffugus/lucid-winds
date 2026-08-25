@@ -357,6 +357,15 @@ if (!H.boom) {
   }
 }
 
+/* Aug 25 late: the select grid must show every runner's real face at once.
+   One-frame previews preload at boot; the grid falls back preview-first.
+   (Stephen: "i dont see all 5 characters playable" - four of five tiles
+   sat on the procedural blobs until tapped and read as missing art.) */
+group('select grid shows real faces');
+ok('a one-frame preview loader exists', /function loadCharPreview\(id\)/.test(SRC));
+ok('boot preloads a preview for every CH_META animal', /for\(const id in CH_META\) loadCharPreview\(id\);/.test(SRC));
+ok('the grid draws the preview when the full bag is not ready', /CH_PREVIEW\[a\.id\]&&CH_PREVIEW\[a\.id\]\.ok/.test(SRC));
+
 /* --------------------------------------------------------------------
    touch targets: real headless Chrome at 375x667, RENDERED px, not the
    CSS declaration. This game has no stage scale transform (unlike the
