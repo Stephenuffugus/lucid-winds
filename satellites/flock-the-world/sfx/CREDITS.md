@@ -35,6 +35,7 @@ heavier feel — a pitch shift of the CC0 recording, not a synthesized sound.
 | cant_afford.mp3 | Interface Sounds | error_006.ogg | CC0 |
 | bubble_cash.mp3 | RPG Audio | handleCoins2.ogg | CC0 |
 | bubble_inf.mp3 | Interface Sounds | glass_002.ogg | CC0 |
+| bubble_leak.mp3 | Interface Sounds | scratch_004.ogg | CC0 |
 | spend.mp3 | Casino Audio | chips-handle-1.ogg | CC0 |
 | region_join.mp3 | RPG Audio | bookClose.ogg | CC0 |
 | region_full.mp3 | Impact Sounds | impactBell_heavy_000.ogg | CC0 |

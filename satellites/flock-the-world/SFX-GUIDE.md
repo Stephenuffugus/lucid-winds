@@ -91,6 +91,7 @@ These are all faster to build than to describe to a model. Rough recipes:
 | `cant_afford` | dull buzz | 120 Hz square, 90 ms, fast decay |
 | `bubble_cash` | coin ping | bright metallic ding, 250 ms |
 | `bubble_inf` | glass ping | struck glass, higher and cleaner than the coin |
+| `bubble_leak` | paper snatch | dry paper scratch, a document confiscated mid-print, 350 ms |
 | `spend` | paper and coin swish | paper rustle plus one coin, 300 ms |
 | `region_join` | rubber stamp | wood thud with a paper slap layered on |
 | `region_full` | low gong plus stamp | the stamp again over a soft low gong |

@@ -90,8 +90,11 @@ and flipped the winning bots. Fixes, in order of what actually worked:
 - Seeded sims: **Startup (his difficulty) WINS at 37 patriotism** even on the
   greediest path; Vendor greedy scripts remain photo-finish coin flips
   (pre-existing tightness, still the standing open item).
-- OPEN for Stephen: event sway copy says "oversight" everywhere while the
-  meter is named Patriotism (pre-existing, all ~40 events, one sweep).
+- ~~OPEN for Stephen: event sway copy says "oversight" everywhere~~ DONE —
+  this was already swept by 8c3c4f98 (ovrTxt pipes events/news per mode);
+  Aug 25 finished the stragglers that bypassed the pipe (tree descriptions,
+  tutorial incl. ALL-CAPS, lobbying tooltip). Every surface now speaks the
+  mode's meter name.
 
 ## Aug 24 pass (Stephen's FIRST WINNING RUN notes — Too Big To Ban, day 1536)
 

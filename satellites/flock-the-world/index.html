@@ -1455,7 +1455,7 @@ function EV(){ return [
    fund, a trophy shelf. */
 {id:'auditor',w:9,cd:170,when:s=>(s.dcs||0)>0,k:'choice',who:'vole',kick:'Site inspection',
  t:'The grid auditor finds your data centre',
- b:'An energy auditor with a clipboard and a grudge has your substation numbers. Dir. Vole offers to lose the file for a fee she calls "expedited handling." You decline to ask what the fee expedites.',
+ b:'An energy auditor with a clipboard and a grudge has your substation numbers. Dir. Vole offers to lose the file for a fee he calls "expedited handling." You decline to ask what the fee expedites.',
  o:[{l:'Fund the retrofit',c:s=>s.cash>=180*MONEY,cost:{cash:180*MONEY},h:'Patriotism eases.',
      f:s=>{s.oversight=Math.max(0,s.oversight-3);pushNews(s,'The retrofit ribbon cutting runs local. The substation hums on.','good');}},
     {l:'Stall the inspection',h:'Patriotism climbs while the clipboard waits.',
@@ -1497,24 +1497,24 @@ function EV(){ return [
 /* ---- ARC: DIR. VOLE — "The Ledger" ---- */
 {id:'vole_arc1',chain:'vole',step:1,w:10,cd:150,when:s=>s.day>60,k:'choice',who:'vole',kick:'A courtesy',
  t:'A subpoena goes missing before it exists',
- b:'Dir. Vole calls to describe a records request that, as of this morning, was never filed. "No charge," she says. "The Bureau values its partners." She does not say for what.',
+ b:'Dir. Vole calls to describe a records request that, as of this morning, was never filed. "No charge," he says. "The Bureau values its partners." He does not say for what.',
  o:[{l:'Accept the courtesy',h:'Patriotism eases. Nothing is owed, on paper.',
      f:s=>{s.oversight=Math.max(0,s.oversight-2);pushNews(s,'A records request is withdrawn, citing "clerical duplication." There was no duplicate.','good');}},
-    {l:'Ask her to file it properly',h:'Patriotism climbs. You keep your hands where the cameras can see them.',
+    {l:'Ask him to file it properly',h:'Patriotism climbs. You keep your hands where the cameras can see them.',
      f:s=>{s.oversight+=3;pushNews(s,'The request proceeds through channels. Dir. Vole notes your integrity in a tone usually reserved for symptoms.','bad');}}]},
 {id:'vole_arc2',chain:'vole',step:2,w:11,cd:160,when:s=>s.day>120,k:'choice',who:'vole',kick:'The favour returns',
  t:'Dir. Vole would like a few searches run',
- b:'Eleven names. A rival director, two journalists, a son in law. "Informally," she says. "The way you ran the other forty thousand." So she counted.',
+ b:'Eleven names. A rival director, two journalists, a son in law. "Informally," he says. "The way you ran the other forty thousand." So he counted.',
  o:[{l:'Run the eleven names',h:'Influence grows. Suspicion rises everywhere. The debt compounds quietly.',
      f:s=>{s.inf+=4;bumpSus(s,5);pushNews(s,'Eleven files move without a warrant among them. Somewhere a clerk updates a private ledger.','bad');}},
-    {l:'Refuse her',h:'Patriotism jumps. The courtesy you took becomes a fact she keeps.',
+    {l:'Refuse him',h:'Patriotism jumps. The courtesy you took becomes a fact he keeps.',
      f:s=>{s.oversight+=5;pushNews(s,'An anonymous complaint about your records handling reaches three agencies in one afternoon.','bad');}}]},
 {id:'vole_arc3',chain:'vole',step:3,w:12,cd:200,when:s=>s.day>200,k:'choice',who:'vole',kick:'Reckoning',
- t:'Dir. Vole is under investigation, and her ledger is thorough',
- b:'The inspector general has her safe, her calendar, and a notebook where every favour has a column. Your column is long. Her lawyer calls with a price for the notebook. Her rival calls with a price for testimony.',
+ t:'Dir. Vole is under investigation, and his ledger is thorough',
+ b:'The inspector general has his safe, his calendar, and a notebook where every favour has a column. Your column is long. His lawyer calls with a price for the notebook. His rival calls with a price for testimony.',
  o:[{l:'Buy the notebook',c:s=>s.cash>=450*MONEY,cost:{cash:450*MONEY},h:'A fortune leaves. Patriotism eases and the column closes for good.',
-     f:s=>{s.oversight=Math.max(0,s.oversight-6);pushNews(s,'Dir. Vole retires to consult. The notebook is not among her papers. The papers are not among anything.','good');}},
-    {l:'Testify against her',h:'Patriotism eases a little, but suspicion surges everywhere and influence drains as every partner rereads their own column.',
+     f:s=>{s.oversight=Math.max(0,s.oversight-6);pushNews(s,'Dir. Vole retires to consult. The notebook is not among his papers. The papers are not among anything.','good');}},
+    {l:'Testify against him',h:'Patriotism eases a little, but suspicion surges everywhere and influence drains as every partner rereads their own column.',
      f:s=>{s.oversight=Math.max(0,s.oversight-2);bumpSus(s,10);s.inf=Math.max(0,s.inf-6);
        pushNews(s,'Your testimony sinks Vole in a day. Every agency partner you have goes quiet the same week.','crit');}}]},
 
@@ -1798,7 +1798,7 @@ function recompute(s){
    Coalition). Copy is written saying patriotism; the swap happens here, at
    the last moment before a player reads it. */
 function ovrTxt(s,t){const n=s&&s.mode&&s.mode.mod.ovrName;if(!n||!t)return t;
-  return t.replace(/Patriotism/g,n).replace(/patriotism/g,n.toLowerCase());}
+  return t.replace(/PATRIOTISM/g,n.toUpperCase()).replace(/Patriotism/g,n).replace(/patriotism/g,n.toLowerCase());}
 function pushNews(s,txt,cls){
   txt=ovrTxt(s,txt);
   s.log.unshift({d:dateStr(s.day),t:txt,c:cls||''});
@@ -2676,11 +2676,11 @@ function finish(won,why){
       +' · '+S.mode.n+' · '+S.diffKey,
     'Subjugation '+(S.subj*100).toFixed(1)+'% · '+(S.mode.mod.ovrName||'Patriotism')+' '
       +S.oversight.toFixed(1)+'% · '+S.day+' days',
-    'Synergies found '+recs.combos.length+' of '+COMBOS.length,
+    'Synergies found '+S.combos.size+' this run',
     'lucidwinds.com/satellites/flock-the-world/'
   ].join('\n');
   $('endRecs').innerHTML='Runs '+recs.runs+' · wins '+recs.wins+' · best coverage '+recs.bestSubj.toFixed(1)+'%'
-    +' · synergies '+recs.combos.length+' of '+COMBOS.length
+    +' · synergies this run '+S.combos.size+' · lifetime '+recs.combos.length+' of '+COMBOS.length
     +(found.length?'<br>This run: '+found.join(', '):'');
   $('endStats').innerHTML=`
    <div class="sg"><div class="k">Subjugation</div><div class="v mono">${(S.subj*100).toFixed(1)}%</div></div>
@@ -2761,7 +2761,7 @@ const K_RUN='ftw_run', K_RECS='ftw_recs', K_CO='ftw_co', K_MUTE='ftw_mute';
    without one, and a game that tries anyway logs errors on every tick. */
 const SFX_CUES={
   ui_tap:'ui', ui_open:'ui', ui_close:'ui', buy_small:'ui', buy_large:'ui',
-  cant_afford:'ui', bubble_cash:'ui', bubble_inf:'ui', spend:'ui',
+  cant_afford:'ui', bubble_cash:'ui', bubble_inf:'ui', bubble_leak:'ui', spend:'ui',
   synergy:'world', region_join:'world', region_full:'world', region_lost:'world',
   murmur:'world', peaceful:'world', violent:'world', uprising:'world',
   crackdown:'world', crackdown_fail:'world', blackout:'world', agitate:'world',
@@ -2771,7 +2771,7 @@ const SFX_CUES={
 };
 const SFX_GAIN={ui:0.5,world:0.7,bed:0.3};
 /* a burst of the same cue in one tick is one sound, not a machine gun */
-const SFX_CD={ui_tap:60, bubble_cash:80, bubble_inf:80, spend:120, breaking:400, milestone:600};
+const SFX_CD={ui_tap:60, bubble_cash:80, bubble_inf:80, bubble_leak:80, spend:120, breaking:400, milestone:600};
 /* ⛔ Which cues actually have a file on disk. An id here promises `sfx/<id>.mp3`
    exists (check.js verifies both directions), because with auto probing a
    missing file is a 404 and a console error per cue.
@@ -2789,7 +2789,7 @@ const SFX_CD={ui_tap:60, bubble_cash:80, bubble_inf:80, spend:120, breaking:400,
    them voiced. Any file can be replaced by dropping a new one over the same
    name. */
 const SFX_HAVE=['ui_tap','ui_open','ui_close','buy_small','buy_large','cant_afford',
-  'bubble_cash','bubble_inf','spend','region_join','region_full','region_lost',
+  'bubble_cash','bubble_inf','bubble_leak','spend','region_join','region_full','region_lost',
   'crackdown','crackdown_fail','blackout','agitate','concede','breaking',
   'milestone','doctrine','event_open','synergy',
   'theme_menu','bed_hq','win','loss_refusal','loss_coalition'];
@@ -3589,7 +3589,7 @@ function renderSheet(tab){
   if(TREES[tab]){
     $('shTitle').textContent=TREES[tab].title;
     $('shCur').textContent='◈ '+Math.floor(S.inf)+' influence';
-    body.innerHTML=`<p class="treedesc">${TREES[tab].desc}</p>`
+    body.innerHTML=`<p class="treedesc">${ovrTxt(S,TREES[tab].desc)}</p>`
       +((tab==='war'&&S.mode.mod.warDiscount)?`<p class="treedesc" style="color:var(--sodium)">CRISIS ENGINE · this tree is open from day one at ${Math.round((1-S.mode.mod.warDiscount)*100)}% off. Your discount is already in the prices below.</p>`:'')
       +treeHTML(tab);
     requestAnimationFrame(wireTree);
@@ -3825,7 +3825,7 @@ function worldHTML(){
      at a price the watchdogs notice */
   const lbCost=Math.max(500*MONEY,Math.round(((s.net||0)*15)/25)*25);
   h+=`<button class="buy" data-lobby="1" style="margin:0 0 10px"
-     title="Convert money into influence. Patriotism ticks up a little every time."
+     title="Convert money into influence. ${s.mode.mod.ovrName||'Patriotism'} ticks up a little every time."
      ${s.cash<lbCost||s.lbCd>0?'disabled':''}>${uiIco('act_lobby')}Lobbying blitz · ${fmtMoney(lbCost)} buys 8 influence${s.lbCd>0?` (${s.lbCd}d)`:''}</button>`;
   h+=REGIONS.map(r=>{
     const x=s.regions[r.id];
@@ -4075,9 +4075,9 @@ function showTutorial(done){
   const step=()=>{
     const s=TUT[i];
     c.innerHTML=`<div class="kicker">Field manual ${i+1}/${TUT.length}</div>
-      <h3>${s.t}</h3>
+      <h3>${ovrTxt(S,s.t)}</h3>
       <div class="tutdots">${TUT.map((_,j)=>`<i class="${j===i?'on':''}"></i>`).join('')}</div>
-      <p>${s.b}</p>
+      <p>${ovrTxt(S,s.b)}</p>
       <button class="opt" id="tutNext"><div class="ol">${i<TUT.length-1?'Next':'Begin'}</div></button>
       ${i<TUT.length-1?'<button class="opt" id="tutSkip"><div class="ol" style="color:var(--dim)">Skip</div></button>':''}`;
     noteOpenModal();
@@ -4126,7 +4126,7 @@ function collectAt(sx,sy){
     if(Math.hypot(b.x-wx,b.y-wy)<hit){
       if(b.k==='cash'){S.cash+=b.v;sfx('bubble_cash');pushNews(S,`Contract signed. +${fmtMoney(b.v)}.`,'good');}
       else if(b.k==='inf'){S.inf+=b.v;sfx('bubble_inf');pushNews(S,`Board briefing lands. +${b.v} influence.`,'good');}
-      else{S.inf+=1;S.oversight=Math.max(0,S.oversight-0.6);
+      else{S.inf+=1;S.oversight=Math.max(0,S.oversight-0.6);sfx('bubble_leak');
         pushNews(S,'Leak intercepted before publication. +1 influence.','good');}
       S.bubbles.splice(i,1);paintHud();return true;
     }}

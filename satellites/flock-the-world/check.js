@@ -708,7 +708,7 @@ if (C) {
     const clS = (fn, ...a) => { cS.__a = a; return vm.runInContext(fn + '(...__a)', cS); };
     const NODES3 = vm.runInContext('NODES', cS);
     for (let d = 0; d < 2500 && !sS.over; d++) {
-      sS.bubbles = sS.bubbles.filter(b => { if (b.k === 'cash') sS.cash += b.v; else sS.inf += b.v; clS('sfx', b.k === 'cash' ? 'bubble_cash' : 'bubble_inf'); return false; });
+      sS.bubbles = sS.bubbles.filter(b => { if (b.k === 'cash') sS.cash += b.v; else sS.inf += b.v; clS('sfx', b.k === 'cash' ? 'bubble_cash' : b.k === 'leak' ? 'bubble_leak' : 'bubble_inf'); return false; });
       const av = NODES3.filter(n => !sS.owned.has(n.id) && clS('nodeState', n) === 'avail').sort((a, b) => clS('nodeCost', a) - clS('nodeCost', b));
       if (av.length && sS.inf >= clS('nodeCost', av[0])) clS('buyNode', av[0].id);
       if (d % 26 === 0) { const t = Object.keys(sS.regions).map(k => sS.regions[k]).filter(r => !r.active); if (t.length && sS.cash > clS('entryCost', t[0]) * 1.4) { const r = t[0]; sS.cash -= clS('entryCost', r); r.active = true; r.coverage = 0.005; sS.activeCount++; clS('sfx', 'region_join'); } }
@@ -1325,14 +1325,16 @@ if (C) {
     vm.runInContext("S.oversight=80;S.over=false;paintHud();", cS);
     vm.runInContext("(function(){var n=NODES.find(x=>!S.owned.has(x.id));if(n){S.inf=0;buyNode(n.id);}})();", cS);
     vm.runInContext("(function(){for(const k of Object.keys(S.regions)){const r=S.regions[k];if(r.active){r.unrest=90;r.cd=0;S.cash=1e6*MONEY;doAction('agitate',k);doAction('blackout',k);break;}}})();", cS);
-    vm.runInContext("sfx('ui_tap');", cS);
+    vm.runInContext("sfx('ui_tap');sfx('bubble_leak');", cS);
     vm.runInContext("(function(){for(const k of Object.keys(S.regions)){const r=S.regions[k];r.unrest=90;}for(let i=0;i<4;i++)tick();})();", cS);
     const all = new Set(vm.runInContext('SFX.log', cS).map(x => x.replace(/^sfx:/, '')));
     const catalog = Object.keys(vm.runInContext('SFX_CUES', cS));
     const never = catalog.filter(c => !all.has(c));
     ok('every cue in the catalog is reachable through real game code',
       never.length === 0, 'never fired: ' + JSON.stringify(never));
-    ok('the catalog is the full cue sheet', catalog.length === 32, 'n=' + catalog.length);
+    ok('the catalog is the full cue sheet', catalog.length === 33, 'n=' + catalog.length);
+    ok('the leak bubble tap fires its cue in the real handler (silent ! bubble, Stephen Aug 25)',
+      /sfx\('bubble_leak'\)/.test(SRC));
 
     /* 2026-08-24: the 22 CC0 one-shots landed (sfx/CREDITS.md). The manifest
        must never lie in either direction: an id in SFX_HAVE without a file is
