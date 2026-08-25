@@ -1547,6 +1547,24 @@ if (C) {
   }
 }
 
+/* --------------------------------------- event plates + end art (Aug 25) */
+/* every art:'...' an event declares must have a file, and every background
+   finish() names must exist — a missing webp fails silently in CSS/img. */
+group('event plates + ending backgrounds exist on disk');
+{
+  const artRefs = [...new Set([...GAME.matchAll(/art:'([a-z0-9_]+)'/g)].map(m => m[1]))];
+  ok('at least 8 events declare a plate', artRefs.length >= 8, artRefs.length + ': ' + artRefs.join(','));
+  const missingEv = artRefs.filter(a => !fs.existsSync(path.join(__dirname, 'art', 'event', a + '.webp')));
+  ok('every declared event plate file exists', missingEv.length === 0, missingEv.join(','));
+  const bgRefs = [...new Set([...GAME.matchAll(/url\(art\/bg\/([a-z0-9_]+\.webp)\)/g)].map(m => m[1]))];
+  const missingBg = bgRefs.filter(f => !fs.existsSync(path.join(__dirname, 'art', 'bg', f)));
+  ok('every ending background finish() names exists', missingBg.length === 0, missingBg.join(','));
+  ok('the three win doors carry their own backgrounds',
+    ['bg_end_win_glove.webp', 'bg_end_win_fist.webp', 'bg_end_win_econ.webp'].every(f => bgRefs.indexOf(f) >= 0), bgRefs.join(','));
+  ok('the bright glove win gets the daylight dimming like refusal does',
+    /daylight',\(!won&&why==='refusal'\)\|\|\(won&&why==='win_glove'\)/.test(GAME));
+}
+
 /* ------------------------------------------------- epilogue reel (Aug 25) */
 /* Stephen: many different end stories, keyed to where you were, the stats and
    how the run went. Provable claims: every region has a place beat for both

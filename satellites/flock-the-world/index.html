@@ -1646,7 +1646,7 @@ function EV(){ return [
        pushNews(s,'You recall four hundred units, praise your own transparency, and reship them in spring under a new part number.','good');}}]},
 
 /* ---- ARC: MIN. KESH, "The Pretext Procurement" ---- */
-{id:'kesh_arc1',chain:'kesh',step:1,w:6,cd:150,when:s=>s.fdOn&&s.fdOn.indexOf('kesh')>=0&&s.day>140,k:'choice',who:'kesh',kick:'Verification services',
+{id:'kesh_arc1',chain:'kesh',step:1,w:6,cd:150,when:s=>s.fdOn&&s.fdOn.indexOf('kesh')>=0&&s.day>140,k:'choice',who:'kesh',art:'fd_ministry',kick:'Verification services',
  t:'Min. Kesh would like an incident verified in advance',
  b:'The contract is for verification of an event scheduled for next quarter. The event is not described. The deliverable is a certificate with your logo, dated the morning after. "Your cameras are trusted," Kesh says. "That is the entire product."',
  o:[{l:'Sign the contract',h:'A fortune arrives and patriotism eases, but war heat climbs and two pages are written.',
@@ -1655,7 +1655,7 @@ function EV(){ return [
     {l:'Decline',h:'A little patriotism. The certificate will exist either way.',
      f:s=>{s.oversight+=1;
        pushNews(s,'Kesh signs with a competitor whose logo photographs almost as well.','bad');}}]},
-{id:'kesh_arc2',chain:'kesh',step:2,w:7,cd:160,when:s=>s.day>190,k:'choice',who:'kesh',kick:'On schedule',
+{id:'kesh_arc2',chain:'kesh',step:2,w:7,cd:160,when:s=>s.day>190,k:'choice',who:'kesh',art:'fd_certificates',kick:'On schedule',
  t:'The incident occurs exactly when purchased',
  b:'Your feed is first on scene because your feed was the scene. The certificate template is already filled in. Counsel notes that the word verified is doing heavy lifting and suggests the passive voice.',
  o:[{l:'Issue the certificate',h:'Influence grows, patriotism eases and compliance rises everywhere, but suspicion climbs too and two pages are written.',
@@ -1664,7 +1664,7 @@ function EV(){ return [
     {l:'Findings inconclusive',h:'Patriotism climbs and money leaves as the client walks.',
      f:s=>{s.oversight+=3;s.cash=Math.max(0,s.cash-120*MONEY);
        pushNews(s,'Kesh calls the inconclusive finding a data quality issue on your side. The next contract goes elsewhere.','bad');}}]},
-{id:'kesh_arc3',chain:'kesh',step:3,w:7,cd:200,when:s=>s.day>250,k:'choice',who:'hale',kick:'The committee',
+{id:'kesh_arc3',chain:'kesh',step:3,w:7,cd:200,when:s=>s.day>250,k:'choice',who:'hale',art:'fd_committee',kick:'The committee',
  t:'A committee asks how you were first on scene',
  b:'An international committee with no subpoena power and excellent stationery requests your telemetry. Ambassador Hale sits on it. So does a physicist who keeps using the word trajectory.',
  o:[{l:'Provide a summary, not the telemetry',c:s=>s.cash>=300*MONEY,cost:{cash:300*MONEY},h:'Patriotism ticks up. A page is written.',
@@ -1691,7 +1691,7 @@ function EV(){ return [
        pushNews(s,'The suspension statement is the only document this quarter that names the school. Kesh calls it theater. It plays one night.','bad');}}]},
 
 /* ---- ARC: LENA OKONJO MARSH, "The Correspondent" ---- */
-{id:'lena_arc1',chain:'lena',step:1,w:6,cd:150,when:s=>s.fdOn&&s.fdOn.indexOf('lena')>=0&&s.day>100&&s.avgSus>8,k:'choice',who:'lena',kick:'A preview, as a courtesy',
+{id:'lena_arc1',chain:'lena',step:1,w:6,cd:150,when:s=>s.fdOn&&s.fdOn.indexOf('lena')>=0&&s.day>100&&s.avgSus>8,k:'choice',who:'lena',art:'fd_vendor_desk',kick:'A preview, as a courtesy',
  t:'Lena Okonjo Marsh sends questions before she files',
  b:'Fourteen questions, each with a document number attached. Her editor owes your comms lead a favour from a previous life, which is why you are reading tomorrow today.',
  o:[{l:'Kill the story',c:s=>s.cash>=220*MONEY,cost:{cash:220*MONEY},h:'Patriotism eases a touch. A page is written.',
@@ -2699,12 +2699,20 @@ function finish(won,why){
      2026-08-23 after this ending sat deliberately bare rather than take a wrong
      picture. A street in the sun, ordinary people, and the camera pole grown
      over and turned into a bird box. */
+  /* each win door gets its own picture (Aug 25 drop): the grateful daylight
+     boulevard, the empty checkpoint street, the adjourned hearing room.
+     Generic total-coverage win keeps the original. */
   $('end').style.setProperty('--shot',
-    won?'url(art/bg/bg_end_win.webp)'
+    won?(why==='win_glove'?'url(art/bg/bg_end_win_glove.webp)'
+        :why==='win_fist'?'url(art/bg/bg_end_win_fist.webp)'
+        :why==='win_econ'?'url(art/bg/bg_end_win_econ.webp)'
+        :'url(art/bg/bg_end_win.webp)')
       :why==='refusal'?'url(art/bg/bg_end_refusal.webp)'
       :'url(art/bg/bg_end_coalition.webp)');
-  /* it is a bright image behind pale text, so it gets its own dimming */
-  $('end').classList.toggle('daylight',!won&&why==='refusal');
+  /* a bright image behind pale text gets its own dimming. The glove win is
+     deliberately the same weaponized sunshine as the refusal ending — the
+     horror of that door is that it photographs beautifully. */
+  $('end').classList.toggle('daylight',(!won&&why==='refusal')||(won&&why==='win_glove'));
   if(won&&why==='win_glove'){
     $('endKick').textContent='Contract fulfilled, gratefully';
     $('endTitle').innerHTML='THE GRATEFUL <span style="color:var(--sodium)">WORLD</span>';
