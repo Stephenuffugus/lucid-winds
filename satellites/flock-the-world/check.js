@@ -1659,6 +1659,25 @@ group('Aug 25 pass: tap safety, receipts, the refusal strip');
     ok('the tips toggle exists in the menu', /id="tipsChk"/.test(SRC));
     ok('the mode briefing banner downgrades after first sight', /seen\(bk\)\?'':'crit'/.test(GAME));
   }
+
+  /* presentation: whole images, staged finish, readable capstones */
+  {
+    ok('doctrine art is contained beside its text, never cover-cropped',
+      /\.docart\{display:block;width:88px;height:123px;flex:none;object-fit:contain/.test(SRC) && /class="doctxt"/.test(GAME));
+    ok('landscape doctrine is two-up so both whole cards fit one screen',
+      /\.docrow\{display:flex;gap:8px/.test(SRC));
+    ok('event plates letterbox instead of amputating',
+      /\.evart\{display:block;width:100%;height:auto;max-height:30vh;object-fit:contain/.test(SRC));
+    ok('the finish dims the game under the song before the end screen',
+      /\.screen\.fadeout\{opacity:0;transition/.test(SRC) && /gameEl\.classList\.add\('fadeout'\)/.test(GAME));
+    ok('the stats wait for the reel and arrive as the coda',
+      /statwait/.test(SRC) && /const statsIn=/.test(GAME));
+    ok('the end screen is top-aligned (centered overflow hid the verdict)',
+      /#end\{justify-content:flex-start/.test(SRC));
+    ok('capstone cards earn no icon indent and never clamp their text',
+      /\.node\.hasico \.cst,\.node\.hasico \.ds\{margin-left:67px\}/.test(SRC) &&
+      /\.node\.caps \.ds\{display:block;-webkit-line-clamp:unset/.test(SRC));
+  }
 }
 
 group('epilogue reel');

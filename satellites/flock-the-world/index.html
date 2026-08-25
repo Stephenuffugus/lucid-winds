@@ -108,7 +108,22 @@ h1 em{font-style:normal;color:var(--sodium)}
   object-fit:contain;margin:0;opacity:.42;filter:saturate(.7);
   transition:opacity .15s,filter .15s,outline-color .15s;outline:2px solid transparent;outline-offset:2px}
 .diffbtn.sel .dfart{opacity:1;filter:saturate(1.06) brightness(1.08);outline-color:var(--sodium)}
-.docart{display:block;width:100%;height:104px;object-fit:cover;object-position:center 42%;border-radius:9px;margin-bottom:8px}
+/* Aug 25, Stephen: "We got these great images. Don't crop them like that."
+   The cards are portrait 330x462; the old rule poured them into a 2.6:1 cover
+   strip and showed ~27% of the art. Now: whole image BESIDE its text, both
+   options + header on one 375x667 screen. */
+.docart{display:block;width:88px;height:123px;flex:none;object-fit:contain;border-radius:9px;margin:0;background:#04121e}
+.docopt{display:flex;align-items:center;gap:10px;text-align:left}
+.doctxt{flex:1;min-width:0}
+/* landscape: the two doctrines sit side by side (image atop text) so both
+   whole images + the header share one screen with no scroll */
+@media (max-height:430px){
+  .docrow{display:flex;gap:8px;align-items:stretch}
+  .docrow .opt{flex:1;margin-bottom:0;min-height:48px}
+  .docopt{flex-direction:column;text-align:center;gap:6px}
+  .docart{width:69px;height:96px}
+  #modalCard h3{margin-bottom:2px}
+}
 .modecard h3{margin:0 0 3px;font-size:14px}
 .modecard h3 span{font-size:9px;letter-spacing:.18em;color:var(--sodium);margin-left:8px;text-transform:uppercase}
 .modecard p{margin:0;font-size:11px;color:var(--dim);line-height:1.5}
@@ -582,7 +597,12 @@ h1 em{font-style:normal;color:var(--sodium)}
      description started back at the card's left edge, under the icon. It read as
      two disconnected columns. Indent them to the same line the name starts on:
      58px icon plus the 9px gap. */
-  .node .cst,.node .ds{margin-left:67px}
+  /* Aug 25: capstones have no icon (art pending), so the 67px indent applied
+     to them left a ghost column and the squeeze clipped their long text. The
+     indent is now earned by actually having an icon, and no card child may
+     shrink below its content. */
+  .node.hasico .cst,.node.hasico .ds{margin-left:67px}
+  .node>*{flex:0 0 auto}
 
   .acqbar{padding:7px 10px;margin-bottom:8px}
   .acqtxt{font-size:10.5px;line-height:1.35}
@@ -609,6 +629,9 @@ h1 em{font-style:normal;color:var(--sodium)}
   #guide .gskip{margin-top:0;min-height:48px;flex:none;order:2}
   .node .ds{font-size:10.5px;line-height:1.35;
     display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  /* Aug 25: a capstone's tap is BUY, so a clamped description is unreadable
+     forever. Capstones alone show their whole text; the row grows to fit. */
+  .node.caps .ds{display:block;-webkit-line-clamp:unset;overflow:visible}
 }
 #wires{position:absolute;inset:0;z-index:1;pointer-events:none}
 #wires line{stroke:#243444;stroke-width:1.5}
@@ -725,8 +748,12 @@ h1 em{font-style:normal;color:var(--sodium)}
 .whorow .who{margin-bottom:0}
 /* Foreign Desk location plates (Assets11, Aug 25): a wide establishing shot
    above the event text. Kept short so three options still fit a phone. */
-.evart{display:block;width:100%;height:96px;object-fit:cover;border-radius:10px;
-  margin:2px 0 10px;border:1px solid var(--line)}
+/* Aug 25: the 96px cover strip showed "just the middle of the image" on the
+   near-square Foreign Desk plates (fd_committee is 820x893). contain +
+   max-height letterboxes on a dark mat instead of amputating; the card
+   already scrolls, so tall plates cost scroll, not art. */
+.evart{display:block;width:100%;height:auto;max-height:30vh;object-fit:contain;object-position:center;
+  background:#04121e;border-radius:10px;margin:2px 0 10px;border:1px solid var(--line)}
 .whopic{width:54px;height:54px;flex:none;border-radius:10px;object-fit:cover;
   border:1px solid var(--line)}
 .card p{margin:0 0 14px;font-size:12.5px;line-height:1.6;color:var(--ice)}
@@ -746,7 +773,12 @@ h1 em{font-style:normal;color:var(--sodium)}
 .tutdots i.on{background:var(--sodium)}
 
 /* ---------- end ---------- */
-#end{justify-content:center;align-items:center;padding:26px;text-align:center;overflow-y:auto}
+/* ⛔ was justify-content:center: a centered flex column with overflow makes
+   the overflowed TOP unreachable, so the verdict and title vanished above the
+   screen the moment the reel + stats made the column tall (seen in the Aug 25
+   probe: the statwait stage rendered as a blank backdrop). Top-aligned, the
+   verdict leads and everything scrolls. */
+#end{justify-content:flex-start;align-items:center;padding:26px;text-align:center;overflow-y:auto}
 /* the epilogue reel (Aug 25): beats fade in one by one while the end song
    plays; tapping the story reveals everything at once */
 #endStory{max-width:370px;text-align:left;margin:2px 0 8px;cursor:pointer}
@@ -762,6 +794,15 @@ h1 em{font-style:normal;color:var(--sodium)}
 .sg .k{font-size:8.5px;letter-spacing:.16em;color:var(--dim);text-transform:uppercase}
 .sg .v{font-size:19px;font-weight:700;margin-top:3px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* the finish sequence (Stephen, Aug 25): the game dims under the ending song,
+   the verdict fades in, the reel plays, and the stats arrive as the coda.
+   Under reduced motion every step still ARRIVES (class flips), just without
+   the fades. */
+.screen.fadeout{opacity:0;transition:opacity 1.1s ease}
+#end.on{animation:endIn .9s ease both}
+@keyframes endIn{from{opacity:0}}
+#end.statwait #endStats,#end.statwait #endRecs,#end.statwait #againBtn,#end.statwait #shareBtn{opacity:0;pointer-events:none}
+#endStats,#endRecs,#againBtn,#shareBtn{transition:opacity 1.2s ease}
 </style>
 </head>
 <body>
@@ -2665,17 +2706,21 @@ function endStory(s,won,why){
   out.push(pick(won?EPI_CLOSE_WIN:EPI_CLOSE_LOSS,13));
   return out;
 }
-let epiTimer=null;
+let epiTimer=null,endShowTimer=null;
 function playEpilogue(beats){
   const st=$('endStory');if(!st)return;
+  /* stats wait for the reel: they fade up as the coda (or on tap-through) */
+  const endEl=$('end');if(endEl&&endEl.classList)endEl.classList.add('statwait');
+  const statsIn=()=>{if(endEl&&endEl.classList)endEl.classList.remove('statwait');};
   st.innerHTML='';
   beats.forEach(t=>{const pE=document.createElement('p');pE.textContent=t;st.appendChild(pE);});
   clearTimeout(epiTimer);let bi=0;
   const reveal=()=>{const ps=st.children;
-    if(bi<ps.length){ps[bi++].classList.add('on');epiTimer=setTimeout(reveal,3400);}};
+    if(bi<ps.length){ps[bi++].classList.add('on');epiTimer=setTimeout(reveal,3400);}
+    else statsIn();};
   epiTimer=setTimeout(reveal,1100);
-  /* impatient thumbs get the whole story at once */
-  st.onclick=()=>{clearTimeout(epiTimer);for(const pE of st.children)pE.classList.add('on');};
+  /* impatient thumbs get the whole story at once, stats included */
+  st.onclick=()=>{clearTimeout(epiTimer);for(const pE of st.children)pE.classList.add('on');statsIn();};
 }
 
 /* ============================ END ============================ */
@@ -2761,7 +2806,17 @@ function finish(won,why){
     $('endText').textContent='The civilians '+S.co+' farmed learned faster than it deployed: they mapped the lenses, encrypted the graph, filmed the crackdowns, leaked the archive, and dragged the whole parasite class into a hearing room with the receipts. Contracts voided. Archive deleted. Three executives cooperating. Paperwork. The one weapon you never saw coming.';
   }
   playEpilogue(endStory(S,won,why));
-  show('end');
+  /* Aug 25, Stephen: "fade to show the end screen while whatever ending song
+     is playing. Then have it fade to the stats so it feels like a proper game
+     finishing." The song is already playing (started above); the game screen
+     dims out under it for 1.1s, then the end screen fades in. A restart
+     during the dim is guarded by S.over. */
+  clearTimeout(endShowTimer);
+  const gameEl=$('game');
+  if(gameEl&&gameEl.classList&&gameEl.classList.contains('on')){
+    gameEl.classList.add('fadeout');
+    endShowTimer=setTimeout(()=>{gameEl.classList.remove('fadeout');if(S&&S.over)show('end');},1100);
+  }else show('end');
 }
 
 /* ============================ PERSISTENCE ============================
@@ -3743,7 +3798,7 @@ function treeHTML(t){
       const cst=st==='own'?'ACTIVE':st==='gated'?((typeof n.gtxt==='function'?n.gtxt(S):n.gtxt)||'GATED'):st==='exlocked'?'PATH CLOSED':c+' INF';
       const tut=(G.on&&G.list[G.step]&&G.list[G.step].node===n.id&&st==='avail')?'tut':'';
       const ico=NODE_ART[n.id]?`<img class="nico" src="art/tree/${n.id}.webp" alt="" draggable="false">`:'';
-      h+=`<div class="node ${st} ${aff?'afford':''} ${tut}" id="nd_${n.id}" data-node="${n.id}">
+      h+=`<div class="node ${st} ${aff?'afford':''} ${tut}${ico?' hasico':''}${n.id.indexOf('caps_')===0?' caps':''}" id="nd_${n.id}" data-node="${n.id}">
         <div class="nhead">${ico}<div class="nm">${n.n}</div></div>
         <div class="cst mono">${cst}</div><div class="ds">${n.d}</div></div>`;
     }
@@ -4159,10 +4214,12 @@ function doctrineModal(){
   const c=$('modalCard');
   c.innerHTML=`<div class="kicker">Board directive</div><h3>Choose your doctrine</h3>
     <p>Fourteen percent of humanity is under meaningful control. The board wants a philosophy on the slide. This choice is permanent.</p>
-    <button class="opt docopt" data-doc="glove">${CARD_ART.doctrine_glove?'<img class="docart" src="art/card/doctrine_glove.webp?v=trim3" alt="">':''}<div class="ol">The Velvet Glove</div>
-      <div class="oc">People consent to what feels like convenience. +Compliance everywhere, suspicion grows slower. Crackdowns stay risky.</div></button>
-    <button class="opt docopt" data-doc="fist">${CARD_ART.doctrine_fist?'<img class="docart" src="art/card/doctrine_fist.webp?v=trim3" alt="">':''}<div class="ol">The Iron Fist</div>
-      <div class="oc">Fear is cheaper than marketing. +Control depth, +militarization, crackdowns rarely backfire. Unrest runs hotter.</div></button>`;
+    <div class="docrow">
+    <button class="opt docopt" data-doc="glove">${CARD_ART.doctrine_glove?'<img class="docart" src="art/card/doctrine_glove.webp?v=trim3" alt="">':''}<div class="doctxt"><div class="ol">The Velvet Glove</div>
+      <div class="oc">People consent to what feels like convenience. +Compliance everywhere, suspicion grows slower. Crackdowns stay risky.</div></div></button>
+    <button class="opt docopt" data-doc="fist">${CARD_ART.doctrine_fist?'<img class="docart" src="art/card/doctrine_fist.webp?v=trim3" alt="">':''}<div class="doctxt"><div class="ol">The Iron Fist</div>
+      <div class="oc">Fear is cheaper than marketing. +Control depth, +militarization, crackdowns rarely backfire. Unrest runs hotter.</div></div></button>
+    </div>`;
   noteOpenModal();
   c.querySelectorAll('[data-doc]').forEach(b=>b.onclick=()=>{
     S.doctrine=b.dataset.doc;sfx('doctrine');recompute(S);
@@ -4262,7 +4319,7 @@ function rpopHTML(rid,cn){
   const chip=stateChip(x);
   const hq=(cn&&S.hqName===cn)?` \u00b7 HQ of ${CO()}`:'';
   let h=`<button class="rpX" data-rpclose="1" aria-label="Close">\u2715</button>`
-    +`<div class="rpH">${cn?cn+' \u00b7 ':''}${x.name}${hq}</div><div class="rpS">${chip}</div>`;
+    +`<div class="rpH">${cn&&cn!==x.name?cn+' \u00b7 ':''}${x.name}${hq}</div><div class="rpS">${chip}</div>`;
   h+=`<div class="rpN">
     <div><span class="k">Watched</span><span class="v">${fmtShort(w)} of ${fmtShort(x.pop*PEOPLE)}</span></div>
     <div><span class="k">Compliant</span><span class="v">${fmtShort(cm)}</span></div>
