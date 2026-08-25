@@ -23,8 +23,10 @@ Checklist in the order the notes were given. `[x]` only with evidence
       a LIVE meter as its text; agitate feeds suspicion (+5 local +2 world);
       suspicion bars on region cards + popover; World stat gold at 10+ with
       'of 10 for Proxy' while locked. check.js proves a loud bot opens it.
-- [ ] 3. **Velvet Glove / Iron Fist images butchered** — far too zoomed.
-      Show both whole images + their text on one screen, uncropped.
+- [x] 3. **Velvet Glove / Iron Fist images butchered** — DONE: whole image
+      beside its text in portrait (both + header on one screen), two-up in
+      landscape. Root cause: portrait cards in a 2.6:1 cover strip (~27%
+      shown). Shot in both orientations.
 - [x] 4. **Choice popups eat bubble taps** — story messages appear while
       popping bubbles at 3x and a stray tap picks an option. DONE: options
       inert 450ms (CSS + hard timestamp guard) and map taps die under any
@@ -51,8 +53,11 @@ Checklist in the order the notes were given. `[x]` only with evidence
       the account ledger. DONE: share text now "Synergies found N this run";
       records strip reads "synergies this run N · lifetime M of 16" above the
       per-run name list. Menu keeps lifetime; Feed tab was already per-run.
-- [ ] 10. **Proper finish sequence** — fade out to the end screen while the
-      ending song plays, then fade to the stats.
+- [x] 10. **Proper finish sequence** — DONE: 1.1s game dissolve under the
+      song, verdict + title lead, reel unspools, stats + buttons fade up as
+      the coda (tap-through respected). Bonus fix: #end was a centered flex
+      column with overflow, hiding the verdict off the top once content grew.
+      Shot the whole sequence.
 - [ ] 11. **One-strategy problem** — buying the Story tree down feels like the
       only decent way to win in every mode; other modes' win paths unclear.
       (Balance umbrella with 2 and 7.)
@@ -63,9 +68,11 @@ Checklist in the order the notes were given. `[x]` only with evidence
 - [x] 14. **Country tap blocks bubbles** — info popover opens over the map and
       bubbles are missed behind it. DONE: popover pauses like a sheet (Aug 20
       no-pause call reversed), restores on close, sheets inherit the pause.
-- [ ] 15. **Dossier/chapter art cropped** — room image showed only its middle
-      band. Audit EVERY art placement for bad cropping; all such crops are
-      presumed mistakes.
+- [x] 15. **Dossier/chapter art cropped** — AUDITED all placements: only
+      .docart (item 3) and .evart cropped badly; .whopic (square on square),
+      .mcart/.dfart (already contain), tree icons, and full-bleed backdrops
+      are fine and untouched. .evart now contains, centered, capped 30vh on
+      a dark mat. Committee-room plate shot whole.
 - [ ] 16. **Story copy stiff / obviously AI** — loosen the wording.
 - [x] 17. **Country popover: stat bars** — DONE: unrest/organized/suspicion/
       coverage/compliance bars with numbers, same classes as the World tab.
@@ -84,8 +91,13 @@ Checklist in the order the notes were given. `[x]` only with evidence
       Crisis player — tree descriptions, tutorial (incl. an ALL-CAPS line the
       helper missed), lobbying tooltip. DONE: all three piped; ovrTxt now
       handles PATRIOTISM caps.
-- [ ] 20. **Last tree nodes broken** — final node in each tree missing its
-      image, description clipped unreadable.
+- [x] 20. **Last tree nodes broken** — layout DONE: the four capstones
+      (added Aug 24 after the art batch) have no icon, so the 67px icon
+      indent is now earned by having one, and the landscape 2-line clamp is
+      lifted for capstones (their tap is BUY; the text must be readable).
+      Verified unclipped both orientations. ⚠ STILL OWED: 4 art files -
+      caps_dep / caps_cap / caps_inf / caps_war webp (Stephen generates;
+      NODE_ART gets the 4 keys when they land).
 - [ ] 21. **Music playlists** — support 4-5 songs per slot like Jimothy,
       easy for Stephen to drop in from Suno, toggle in/out.
 - [ ] 22. **Store readiness** — game submittable to Steam and Google Play

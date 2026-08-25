@@ -69,6 +69,10 @@ h1 em{font-style:normal;color:var(--sodium)}
 .sub{max-width:360px;margin:12px auto 14px;font-size:12.5px;line-height:1.6;color:var(--ice);text-align:center}
 .tipsrow{display:flex;align-items:center;gap:8px;min-height:48px;font-size:11px;color:var(--dim);cursor:pointer;user-select:none}
 .tipsrow input{width:18px;height:18px;accent-color:var(--sodium)}
+.musrow{display:flex;align-items:center;gap:6px;min-height:48px}
+.musrow .musk{font-size:11px;color:var(--dim);flex:1;text-align:left}
+.muspip{min-width:48px;min-height:48px;border:1px solid var(--line);border-radius:10px;color:var(--dim);font-size:13px}
+.muspip.on{color:var(--sodium);border-color:var(--sodium)}
 .howbtn{display:block;margin:0 auto 6px;padding:8px 18px;min-height:48px;border:1px solid var(--line);border-radius:20px;
   font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ice)}
 .seclab{font-size:9.5px;letter-spacing:.24em;color:var(--dim);text-transform:uppercase;margin:16px 0 8px}
@@ -833,6 +837,7 @@ h1 em{font-style:normal;color:var(--sodium)}
   <div class="difficulty" id="diffs"></div>
   <div class="diffdesc" id="diffDesc"></div>
   <label class="tipsrow"><input type="checkbox" id="tipsChk" checked> Briefings and field notes</label>
+  <div id="musicRows" style="display:none"></div>
   <button class="cta" id="resumeBtn" style="display:none;background:var(--panel2);color:var(--paper);border:1px solid var(--sodium);box-shadow:none">Resume your run</button>
   <button class="cta" id="startBtn">Open for business</button>
   <p class="fine" id="recLine" style="margin-top:14px"></p>
@@ -2870,7 +2875,37 @@ const SFX_HAVE=['ui_tap','ui_open','ui_close','buy_small','buy_large','cant_affo
   'crackdown','crackdown_fail','blackout','agitate','concede','breaking',
   'milestone','doctrine','event_open','synergy',
   'theme_menu','bed_hq','win','loss_refusal','loss_coalition'];
-const SFX={unlocked:false,muted:false,log:[],last:{},el:{},missing:{},beds:{}};
+const SFX={unlocked:false,muted:false,log:[],last:{},el:{},missing:{},beds:{},fileOf:{},lastTrack:{}};
+/* ---- music variants (Aug 25) ------------------------------------------
+   Stephen: "add some extra music ... four or five songs that you can take in
+   and out of your playlist", like Jimothy. A music SLOT can carry variant
+   tracks named <slot>_2.mp3, <slot>_3.mp3 ... dropped in sfx/ AND listed
+   here (same no-probing promise as SFX_HAVE; check.js enforces both
+   directions). The playlist key ftw_playlist EXCLUDES track ids (0 = out);
+   an all-excluded slot falls back to everything, so silence cannot be
+   configured. The playing element always lives under the SLOT id, so mute,
+   cut and bed bookkeeping never changed. */
+const MUSIC_HAVE={
+  theme_menu:['theme_menu'],
+  bed_hq:['bed_hq'],
+  win:['win'],
+  loss_refusal:['loss_refusal'],
+  loss_coalition:['loss_coalition']
+};
+function musicEnabled(slot){
+  const all=MUSIC_HAVE[slot]||[];
+  const pl=jGet('ftw_playlist')||{};
+  const on=all.filter(t=>pl[t]!==0);
+  return on.length?on:all;
+}
+function pickTrack(slot){
+  const on=musicEnabled(slot);
+  if(on.length<2)return on[0]||slot;
+  const pool=on.filter(t=>t!==SFX.lastTrack[slot]);
+  const t=pool[(Math.random()*pool.length)|0];
+  SFX.lastTrack[slot]=t;
+  return t;
+}
 function sfxUnlock(){
   if(SFX.unlocked)return;
   SFX.unlocked=true;
@@ -2883,7 +2918,10 @@ function sfxSetMuted(v){
      nothing left to resume. Invisible today with no audio files, would surface
      the moment they land. */
   if(SFX.muted){for(const id in SFX.beds){const a=SFX.el[id];if(a){try{a.pause();}catch(e){}}}}
-  else{for(const id in SFX.beds)sfxPlay(id,true);}
+  else{for(const id in SFX.beds){const a=SFX.el[id];
+    /* resume a paused bed mid-track rather than rolling a new one */
+    if(a&&a.paused&&!a.ended&&a.currentTime>0){const q=a.play();if(q&&q.catch)q.catch(function(){});}
+    else sfxPlay(id,true);}}
   syncMuteBtn();
 }
 function syncMuteBtn(){
@@ -2920,17 +2958,26 @@ function sfxBed(id,on){
    above is the only evidence the cue fired. That is deliberate. */
 function sfxPlay(id,loop){
   if(SFX_HAVE.indexOf(id)<0)return;   /* no file shipped for this cue yet: stay silent, the log is the evidence */
-  if(SFX.missing[id])return;
+  const file=MUSIC_HAVE[id]?pickTrack(id):id;
+  if(SFX.missing[file])return;
   let a=SFX.el[id];
+  if(a&&SFX.fileOf[id]&&SFX.fileOf[id]!==file){try{a.pause();}catch(e){}a=null;}
   if(!a){
-    try{a=new Audio('sfx/'+id+'.mp3');}catch(e){SFX.missing[id]=1;return;}
-    a.addEventListener('error',function(){SFX.missing[id]=1;});
+    try{a=new Audio('sfx/'+file+'.mp3');}catch(e){SFX.missing[file]=1;return;}
+    a.addEventListener('error',function(){SFX.missing[file]=1;});
     a.volume=SFX_GAIN[SFX_CUES[id]]||0.6;
-    if(loop)a.loop=true;
-    SFX.el[id]=a;
+    if(loop){
+      /* a bed with 2+ enabled tracks rotates on 'ended' instead of looping;
+         a single track self-loops exactly as before */
+      if(MUSIC_HAVE[id]&&musicEnabled(id).length>1){
+        a.loop=false;
+        a.addEventListener('ended',function(){if(SFX.beds[id]&&!SFX.muted)sfxPlay(id,true);});
+      }else a.loop=true;
+    }
+    SFX.el[id]=a;SFX.fileOf[id]=file;
   }
-  try{ if(!loop)a.currentTime=0; const q=a.play(); if(q&&q.catch)q.catch(function(){SFX.missing[id]=1;}); }
-  catch(e){ SFX.missing[id]=1; }
+  try{ if(!loop)a.currentTime=0; const q=a.play(); if(q&&q.catch)q.catch(function(){SFX.missing[file]=1;}); }
+  catch(e){ SFX.missing[file]=1; }
 }
 function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
 function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
@@ -4494,6 +4541,25 @@ function initMenu(){
   const tc=$('tipsChk');
   if(tc&&!tc._wired){tc._wired=1;tc.checked=lsGet(K_TIPS)!=='0';
     tc.onchange=()=>{try{lsSet(K_TIPS,tc.checked?'1':'0');}catch(e){}};}
+  /* soundtrack pips appear only once a slot actually has 2+ tracks */
+  const mrows=Object.keys(MUSIC_HAVE).filter(k=>MUSIC_HAVE[k].length>1);
+  const mus=$('musicRows');
+  if(mus){
+    if(!mrows.length)mus.style.display='none';
+    else{
+      mus.style.display='';
+      const pl=jGet('ftw_playlist')||{};
+      const MN={theme_menu:'Menu',bed_hq:'In game',bed_tension:'Tension',win:'Victory',loss_refusal:'The refusal',loss_coalition:'The coalition'};
+      mus.innerHTML='<div class="seclab">Soundtrack</div>'+mrows.map(k=>
+        `<div class="musrow"><span class="musk">${MN[k]||k}</span>${MUSIC_HAVE[k].map((t,i)=>
+          `<button class="muspip${pl[t]===0?'':' on'}" data-track="${t}" aria-label="Toggle track ${i+1}">♪${i+1}</button>`).join('')}</div>`).join('');
+      mus.querySelectorAll('[data-track]').forEach(b=>b.onclick=()=>{
+        const pl2=jGet('ftw_playlist')||{};
+        pl2[b.dataset.track]=pl2[b.dataset.track]===0?1:0;
+        try{lsSet('ftw_playlist',JSON.stringify(pl2));}catch(e){}
+        initMenu();});
+    }
+  }
 }
 function initPick(){
   show('pick');initCoInput();pickedRegion=null;pickedCountry=null;

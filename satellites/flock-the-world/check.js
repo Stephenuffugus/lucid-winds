@@ -1378,9 +1378,40 @@ if (C) {
       ok('every SFX_HAVE id has a real file on disk (a listed 404 is a broken promise)',
         have.length > 0 && have.every(id => onDisk.indexOf(id) >= 0),
         'missing files: ' + JSON.stringify(have.filter(id => onDisk.indexOf(id) < 0)));
-      ok('every shipped file is wired into SFX_HAVE (a file alone does nothing)',
-        onDisk.every(id => have.indexOf(id) >= 0),
-        'unwired files: ' + JSON.stringify(onDisk.filter(id => have.indexOf(id) < 0)));
+      /* 2026-08-25: music slots may carry variant tracks (<slot>_2.mp3 ...)
+         listed in MUSIC_HAVE - those are legitimate files outside SFX_HAVE */
+      const mh = vm.runInContext('MUSIC_HAVE', cS);
+      const variantOk = Object.values(mh).flat();
+      ok('every shipped file is wired into SFX_HAVE or a MUSIC_HAVE slot (a file alone does nothing)',
+        onDisk.every(id => have.indexOf(id) >= 0 || variantOk.indexOf(id) >= 0),
+        'unwired files: ' + JSON.stringify(onDisk.filter(id => have.indexOf(id) < 0 && variantOk.indexOf(id) < 0)));
+      ok('every MUSIC_HAVE slot is a real shipped cue',
+        Object.keys(mh).every(k => have.indexOf(k) >= 0),
+        'unknown slots: ' + JSON.stringify(Object.keys(mh).filter(k => have.indexOf(k) < 0)));
+      ok('every listed music track has a real file on disk',
+        variantOk.every(t => onDisk.indexOf(t) >= 0),
+        'missing tracks: ' + JSON.stringify(variantOk.filter(t => onDisk.indexOf(t) < 0)));
+      ok('every on-disk variant file is listed in its slot (no orphan drops)',
+        onDisk.filter(f => /_\d+$/.test(f) && mh[f.replace(/_\d+$/, '')])
+          .every(f => (mh[f.replace(/_\d+$/, '')] || []).indexOf(f) >= 0),
+        'orphans: ' + JSON.stringify(onDisk.filter(f => /_\d+$/.test(f) && mh[f.replace(/_\d+$/, '')] && (mh[f.replace(/_\d+$/, '')] || []).indexOf(f) < 0)));
+      /* rotation behavior: two enabled tracks alternate, an excluded track
+         never plays, and excluding everything falls back to everything */
+      {
+        const cMu2 = makeCtx();
+        vm.runInContext("MUSIC_HAVE.bed_hq=['bed_hq','bed_hq_2'];localStorage.removeItem('ftw_playlist');", cMu2);
+        const picks = vm.runInContext("(function(){var a=[];for(var i=0;i<12;i++)a.push(pickTrack('bed_hq'));return a;})()", cMu2);
+        ok('two enabled tracks strictly alternate (no repeat)',
+          picks.every((t, i) => i === 0 || t !== picks[i - 1]) && new Set(picks).size === 2,
+          JSON.stringify(picks.slice(0, 6)));
+        vm.runInContext("localStorage.setItem('ftw_playlist',JSON.stringify({bed_hq_2:0}));", cMu2);
+        const only = vm.runInContext("(function(){var a=[];for(var i=0;i<6;i++)a.push(pickTrack('bed_hq'));return a;})()", cMu2);
+        ok('an excluded track never plays', only.every(t => t === 'bed_hq'), JSON.stringify(only));
+        vm.runInContext("localStorage.setItem('ftw_playlist',JSON.stringify({bed_hq:0,bed_hq_2:0}));", cMu2);
+        ok('excluding every track falls back to everything (silence cannot be configured)',
+          vm.runInContext("musicEnabled('bed_hq').length", cMu2) === 2);
+        vm.runInContext("localStorage.removeItem('ftw_playlist');", cMu2);
+      }
     }
 
     /* a burst of one cue is one sound */

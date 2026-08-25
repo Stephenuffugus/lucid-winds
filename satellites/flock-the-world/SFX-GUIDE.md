@@ -20,6 +20,28 @@ change.
 - `bed_tension` (60s loop, the game crossfades to it as the world heats)
 - `win`, `loss_refusal`, `loss_coalition` (8s endings)
 
+## MORE SONGS PER SLOT (playlists, added 2026-08-25)
+
+You asked for the Jimothy setup: "four or five songs that you can take in
+and out of your playlist." It's live. To add a second (third, fourth...)
+track to any music slot:
+
+1. Drop the file in `sfx/` named `<slot>_2.mp3` (then `_3`, `_4`...), e.g.
+   `bed_hq_2.mp3`, `win_2.mp3`, `theme_menu_2.mp3`. Stereo 128k like your
+   others.
+2. Add its id to the slot's list in `MUSIC_HAVE` in index.html (search for
+   `const MUSIC_HAVE`), e.g. `bed_hq:['bed_hq','bed_hq_2']`.
+3. Add a provenance row to `sfx/CREDITS.md` (your Suno tracks are all
+   rights reserved, so every file gets a row).
+4. `node check.js` - it refuses an orphan drop (file without a listing) and
+   a listing without a file, both directions.
+
+What the player gets: slots with 2+ tracks rotate (never the same track
+twice in a row; beds hand off at the end of each track instead of
+self-looping), and a SOUNDTRACK section appears in the menu with ♪ pips to
+take tracks in and out. Excluding everything falls back to everything, so
+nobody can configure silence.
+
 Optional after that: the four crowd states (`murmur`, `peaceful`, `violent`,
 `uprising`), one crowd source at four intensities. There was no verifiably CC0
 crowd recording worth shipping, so those stay silent until you cut them.
