@@ -35,6 +35,9 @@
      was visible from the very first frame, before a run even starts. */
   .hidden{display:none!important;}
   .logo{font-size:clamp(42px,13vw,68px);font-weight:700;line-height:.95;color:var(--cream);text-shadow:0 6px 0 var(--accent-dk),0 10px 14px rgba(0,0,0,.3);letter-spacing:1px;}
+  /* the painted wordmark (Aug 25); the CSS .logo text is its fallback and is
+     hidden only once the image has actually loaded */
+  #wordmark{width:min(330px,84%);height:auto;display:block;filter:drop-shadow(0 8px 12px rgba(0,0,0,.28));}
   .logo span{color:var(--tan);}
   .sub{font-weight:600;color:#fff;opacity:.9;font-size:16px;margin-top:-6px;}
   .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;width:100%;max-width:320px;}
@@ -70,7 +73,9 @@
     <div class="pill"><span class="ic">📏</span><span id="dist">0m</span></div>
   </div>
   <div id="selectScreen" class="screen">
-    <div class="logo">PUPPY<br><span>DASH</span></div>
+    <img id="wordmark" alt="" src="art/ui/wordmark.webp?v=20260825b"
+      onload="document.getElementById('logoTxt').classList.add('hidden')" onerror="this.remove()">
+    <div class="logo" id="logoTxt">PUPPY<br><span>DASH</span></div>
     <div class="sub">pick your runner</div>
     <div class="grid" id="animalGrid"></div>
     <div class="legend">
@@ -230,7 +235,7 @@ const RAINBOW=["#ff3b3b","#ff9e2c","#ffe23b","#3fd25f","#3aa0ff","#8a5cff","#e85
    within 1.5% of one scale and nothing pops between states. Every draw here
    falls back to the procedural skin if a file has not loaded, so a missing
    PNG can never break the game. */
-const ART_V="20260824a";
+const ART_V="20260825b";   /* bumped: wall.png changed bytes under the same URL (caching law) */
 const PUP_STATES={
   run:   {n:8, i0:1,  refH:384, anchS:1.10},
   jump:  {n:6, i0:9,  refH:384, anchS:1.10},
@@ -264,12 +269,16 @@ function drawPupFrame(ctx,st,fi,x,footY,flip){
 }
 /* Obstacle sprites. h = render height in S units, matched to the PROCEDURAL
    footprint so the hitboxes still tell the truth. trashcan is capped so its
-   width stays inside one lane. wall stays procedural: the generated wall came
-   back LOW AND WIDE, which reads as jumpable, and its verb is dodge — art
-   that argues with its verb does not ship. limbo keeps its procedural posts
-   and dashed duck-gap; only the fabric is the sprite. */
+   width stays inside one lane. limbo keeps its procedural posts and dashed
+   duck-gap; only the fabric is the sprite.
+   wall: the FIRST generated wall came back LOW AND WIDE, read as jumpable,
+   and did not ship (art that argues with its verb does not ship). Stephen's
+   Aug 25 remake is masonry with pillars and flower vines, clearly solid and
+   taller than the dog — it ships at 1.22 S, width just over a lane like the
+   trashcan. Procedural wall stays as the fallback. */
 const OB_SPR={
   hydrant:{h:0.86, refH:389}, cone:{h:0.72, refH:386}, trashcan:{h:1.09, refH:383},
+  wall:{h:1.22, refH:464},
   puddle:{w:1.30, vs:0.55}, limbo:{fab:true},
 };
 const OB_IMGS={}, OB_READY={};
@@ -311,11 +320,16 @@ function drawObSprite(ctx,o,x,y,s){
    proportion. Frames lazy-load per animal; every draw falls back to the
    procedural skin, so a missing PNG can never break the game. */
 const CH_ART_V="20260825a";
+/* bank (the "New list" late drop) leans RIGHT natively, the OPPOSITE of the
+   puppy's bank art, so these flip for LEFT. Cut anchored to each animal's own
+   run height because that sheet was a different generation batch (the kitten
+   came back drawn near double size; the saved rig scale would have clipped
+   its head off the 512 canvas). */
 const CH_META={
-  fox:    {refH:348, states:{run:8,jump:6,slide:4,caught:3,land:3}},
-  bunny:  {refH:306, states:{run:8,jump:3,slide:4,caught:3,land:3}},
-  raccoon:{refH:389, states:{run:8,jump:7,slide:4,caught:3,land:3}},
-  kitten: {refH:389, states:{run:4,jump:3,slide:3,caught:4}},
+  fox:    {refH:348, states:{run:8,jump:6,slide:4,caught:3,land:3,bank:3}},
+  bunny:  {refH:306, states:{run:8,jump:3,slide:4,caught:3,land:3,bank:3}},
+  raccoon:{refH:389, states:{run:8,jump:7,slide:4,caught:3,land:3,bank:3}},
+  kitten: {refH:389, states:{run:4,jump:3,slide:3,caught:4,bank:3}},
 };
 const CH_IMGS={}, CH_READY={};
 function loadCharArt(id){
@@ -1043,8 +1057,16 @@ function render(){
       } else if(state.squashT>0&&M.states.land){
         spr=drawChFrame(ctx,id,"land",((1-state.squashT/0.16)*(M.states.land-0.01))|0,x,footY,false);
       } else {
-        const fps=10+6*(state.speed-CFG.spd0)/(CFG.spdMax-CFG.spd0);
-        spr=drawChFrame(ctx,id,"run",(state.t*fps)%M.states.run,x,footY,false);
+        const dLane=state.targetLane-state.laneF;
+        if(M.states.bank&&Math.abs(dLane)>0.08){
+          const a2=Math.abs(dLane);
+          /* this art leans RIGHT natively: flip for a LEFT change */
+          spr=drawChFrame(ctx,id,"bank", a2>0.7?0:(a2>0.28?1:2), x,footY, dLane<0);
+        }
+        if(!spr){
+          const fps=10+6*(state.speed-CFG.spd0)/(CFG.spdMax-CFG.spd0);
+          spr=drawChFrame(ctx,id,"run",(state.t*fps)%M.states.run,x,footY,false);
+        }
       }
     }
     else if(state.animal.id==="puppy"){
