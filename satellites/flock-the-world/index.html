@@ -3878,7 +3878,11 @@ function treeHTML(t){
       const aff=st==='avail'&&S.inf>=c;
       const cst=st==='own'?'ACTIVE':st==='gated'?((typeof n.gtxt==='function'?n.gtxt(S):n.gtxt)||'GATED'):st==='exlocked'?'PATH CLOSED':c+' INF';
       const tut=(G.on&&G.list[G.step]&&G.list[G.step].node===n.id&&st==='avail')?'tut':'';
-      const ico=NODE_ART[n.id]?`<img class="nico" src="art/tree/${n.id}.webp" alt="" draggable="false">`:'';
+      /* versioned: the host edge NEGATIVE-caches a 404 (a capstone icon was
+         probed before its deploy landed and the bare URL served 404 after) -
+         a stamp routes around any poisoned bare URL, and future icon swaps
+         get a lever. Bump with any tree art change. */
+      const ico=NODE_ART[n.id]?`<img class="nico" src="art/tree/${n.id}.webp?v=20260825b" alt="" draggable="false">`:'';
       h+=`<div class="node ${st} ${aff?'afford':''} ${tut}${ico?' hasico':''}${n.id.indexOf('caps_')===0?' caps':''}" id="nd_${n.id}" data-node="${n.id}">
         <div class="nhead">${ico}<div class="nm">${n.n}</div></div>
         <div class="cst mono">${cst}</div><div class="ds">${n.d}</div></div>`;
