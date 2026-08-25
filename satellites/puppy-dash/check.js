@@ -139,6 +139,10 @@ function makeCtx(opts) {
        browser where nothing ever finishes loading, so every sprite path stays
        un-ready and the checks exercise the procedural fallback */
     Image: class { constructor(){ this.onload=null; this.onerror=null; } set src(v){ this._src=v; } get src(){ return this._src; } },
+    /* same law for sound: an Audio that never becomes ready proves the synth
+       fallback path, exactly like the never-loading Image proves the
+       procedural skin */
+    Audio: class { constructor(){ this.oncanplaythrough=null; this.preload=''; this.volume=1; } set src(v){ this._src=v; } get src(){ return this._src; } cloneNode(){ return new this.constructor(); } play(){} },
     requestAnimationFrame: () => 1, cancelAnimationFrame: () => {},
     devicePixelRatio: 1, addEventListener() {}, removeEventListener() {},
     navigator: { share: null, clipboard: null },
@@ -282,6 +286,63 @@ if (!H.boom) {
     const after = W2.ctx.PD.pdWrite({ bestCandidate: 90, stashAdd: 3 });
     ok('another tab\'s higher best distance is never rolled back', after.best === 500, 'best=' + after.best);
     ok('another tab\'s stash is not clobbered; this tab ADDS its own delta on top', after.stash === 53, 'stash=' + after.stash);
+
+    /* ------------------- second character drop + world skin (Aug 25) --- */
+    group('second character drop: registry matches the files on disk');
+    const CH = PD.CH_META;
+    ok('CH_META exists with the four new animals', !!CH && ['fox','bunny','raccoon','kitten'].every(a => CH[a]), CH && Object.keys(CH).join(','));
+    if (CH) {
+      let missing = [], countOff = [];
+      for (const id of Object.keys(CH)) {
+        for (const st of Object.keys(CH[id].states)) {
+          const n = CH[id].states[st];
+          for (let k = 1; k <= n; k++) {
+            const f = path.join(__dirname, 'art', 'characters', id, st + '_' + String(k).padStart(2, '0') + '.png');
+            if (!fs.existsSync(f)) missing.push(id + '/' + st + '_' + k);
+          }
+          const extra = path.join(__dirname, 'art', 'characters', id, st + '_' + String(n + 1).padStart(2, '0') + '.png');
+          if (fs.existsSync(extra)) countOff.push(id + '/' + st + ' has more frames than the registry claims');
+        }
+        ok(id + ' has a positive refH for the shared scale', CH[id].refH > 100, CH[id].refH);
+      }
+      ok('every registered frame file exists on disk', missing.length === 0, missing.slice(0, 5).join(','));
+      ok('no state has MORE frames on disk than registered (the registry is the truth)', countOff.length === 0, countOff.join(','));
+      ok('every new animal has run and caught (the two states a run cannot fake)', Object.keys(CH).every(id => CH[id].states.run && CH[id].states.caught));
+    }
+    ok('the select grid offers five runners including the raccoon', PD.ANIMALS.length === 5 && PD.ANIMALS.some(a => a.id === 'raccoon'), PD.ANIMALS.map(a => a.id).join(','));
+    ok('zero art loaded: no CH state reports ready (the fallback path is the one under test)', Object.keys(PD.CH_READY).every(id => Object.keys(PD.CH_READY[id]).length === 0));
+
+    group('world skin: every referenced file exists, fallbacks intact');
+    const envFiles = ['environment/sky.jpg','environment/road.jpg','environment/treeline.webp','environment/fence.webp',
+      'environment/props/tree.webp','environment/props/bench.webp','environment/props/flowers.webp',
+      'pickups/bone.webp','pickups/bone_gold.webp','pickups/magnet.webp','pickups/jetpack.webp'];
+    const envMissing = envFiles.filter(f => !fs.existsSync(path.join(__dirname, 'art', f)));
+    ok('all 11 world/pickup art files exist on disk', envMissing.length === 0, envMissing.join(','));
+    ok('the gradient sky fallback survives in code', /createLinearGradient\(0,0,0,L\.PY\)/.test(GAME));
+    ok('the procedural tree fallback survives in code', /a tree is about three dogs tall/.test(GAME));
+    ok('the drawn biscuit fallback survives in code', /ctx\.arc\(-w\/2,-k\/2/.test(GAME));
+    /* a full render frame with a new-drop animal and zero art must not throw */
+    let renderBoom = null;
+    try {
+      PD.reset();
+      PD.state.animal = PD.ANIMALS.find(a => a.id === 'raccoon');
+      PD.update(0.016); PD.render();
+      PD.state.mode = 'over'; PD.state.overT = 0.2; PD.render();
+    } catch (e) { renderBoom = e.message; }
+    ok('a raccoon frame renders headless with zero art loaded (procedural fallback)', !renderBoom, renderBoom);
+
+    group('sound: cue files exist both ways, synth fallback intact');
+    const sndIds = (GAME.match(/\["jump","slide","coin","gold","magnet","jet","crash","land","ui","best","over"\]/) || [null])[0];
+    ok('the cue id list is present in code', !!sndIds);
+    const cueList = ['jump','slide','coin','gold','magnet','jet','crash','land','ui','best','over'];
+    const sndMissing = cueList.filter(id => !fs.existsSync(path.join(__dirname, 'sfx', id + '.mp3')));
+    ok('every cue id has a file in sfx/', sndMissing.length === 0, sndMissing.join(','));
+    const sndDir = fs.existsSync(path.join(__dirname, 'sfx')) ? fs.readdirSync(path.join(__dirname, 'sfx')).filter(f => f.endsWith('.mp3')) : [];
+    const orphans = sndDir.filter(f => cueList.indexOf(f.replace('.mp3', '')) < 0 && !/^music_/.test(f));
+    ok('no orphan mp3 sits unwired in sfx/ (music_ prefixes reserved for Stephen)', orphans.length === 0, orphans.join(','));
+    ok('every old cue kept its synth fallback', /if\(!snd\("jump"/.test(GAME) && /if\(!snd\("crash"/.test(GAME) && /if\(!snd\("coin"/.test(GAME));
+    ok('snd() respects mute', /muted\|\|!SND_OK\[id\]/.test(GAME));
+    ok('the CC0 provenance file exists', fs.existsSync(path.join(__dirname, 'sfx', 'CREDITS.md')));
 
     /* corrupt save must not brick boot or writes */
     let bad = null, W3 = null;

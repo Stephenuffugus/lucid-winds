@@ -123,14 +123,35 @@ function noise(dur,vol){
   const g=AC.createGain(); g.gain.setValueAtTime(vol||0.2,t); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
   n.connect(f).connect(g).connect(AC.destination); n.start(t); n.stop(t+dur);
 }
+/* CC0 one-shots (Kenney.nl packs, provenance in sfx/CREDITS.md, processed to
+   mono 96k). The synth stays as the fallback for every cue, so a missing or
+   still-loading file sounds like the old game instead of like silence.
+   ⚠ Cue choices are picked by name and waveform, not by ear in a room —
+   audition on a real phone and swap anything that grates (Stephen's call). */
+const SND={}, SND_OK={}, SND_V="20260825a";
+["jump","slide","coin","gold","magnet","jet","crash","land","ui","best","over"].forEach(id=>{
+  const a=new Audio(); a.preload="auto";
+  a.oncanplaythrough=function(){ SND_OK[id]=true; };
+  a.src="sfx/"+id+".mp3?v="+SND_V;
+  SND[id]=a;
+});
+function snd(id,vol){
+  if(muted||!SND_OK[id])return false;
+  try{ const a=SND[id].cloneNode(); a.volume=vol==null?0.5:vol; a.play(); return true; }
+  catch(e){ return false; }
+}
 const SFX={
-  jump:()=>beep(300,0.15,"square",0.16,640),
-  slide:()=>noise(0.16,0.14),
-  coin:c=>beep(660+Math.min(c,14)*38,0.08,"square",0.13),
-  gold:()=>[880,1180,1480].forEach((f,i)=>setTimeout(()=>beep(f,0.10,"square",0.16),i*55)),
-  magnet:()=>beep(520,0.14,"triangle",0.16,900),
-  jet:()=>[420,560,720,940].forEach((f,i)=>setTimeout(()=>beep(f,0.13,"sawtooth",0.15),i*70)),
-  crash:()=>{ beep(210,0.42,"sawtooth",0.2,55); noise(0.42,0.16); },
+  jump:()=>{ if(!snd("jump",0.40)) beep(300,0.15,"square",0.16,640); },
+  slide:()=>{ if(!snd("slide",0.35)) noise(0.16,0.14); },
+  coin:c=>{ if(!snd("coin",0.32)) beep(660+Math.min(c,14)*38,0.08,"square",0.13); },
+  gold:()=>{ if(!snd("gold",0.55)) [880,1180,1480].forEach((f,i)=>setTimeout(()=>beep(f,0.10,"square",0.16),i*55)); },
+  magnet:()=>{ if(!snd("magnet",0.5)) beep(520,0.14,"triangle",0.16,900); },
+  jet:()=>{ if(!snd("jet",0.55)) [420,560,720,940].forEach((f,i)=>setTimeout(()=>beep(f,0.13,"sawtooth",0.15),i*70)); },
+  crash:()=>{ if(!snd("crash",0.6)){ beep(210,0.42,"sawtooth",0.2,55); noise(0.42,0.16); } },
+  land:()=>{ snd("land",0.28); },              /* new cue: silent fallback, landing never beeped before */
+  ui:()=>{ snd("ui",0.4); },
+  best:()=>{ snd("best",0.6); },
+  over:()=>{ snd("over",0.55); },
 };
 /* ---- persistence: pd_* under one pd_save blob, read-modify-write ----
    Two tabs must not clobber each other: every save re-reads the CURRENT
@@ -282,12 +303,84 @@ function drawObSprite(ctx,o,x,y,s){
   }
   ctx.restore(); return true;
 }
+/* ============ SECOND CHARACTER DROP (Aug 25): fox/bunny/raccoon/kitten ============
+   Cut by scripts/pd_cut_sheets2.mjs onto the same rig (512 canvas, contact
+   y=488). Unlike the puppy's three-batch anchors, each of these animals got
+   ONE uniform scale across all its states, so a single refH per animal (its
+   run frame's content height) rendering at 1.10 S puts every state in true
+   proportion. Frames lazy-load per animal; every draw falls back to the
+   procedural skin, so a missing PNG can never break the game. */
+const CH_ART_V="20260825a";
+const CH_META={
+  fox:    {refH:348, states:{run:8,jump:6,slide:4,caught:3,land:3}},
+  bunny:  {refH:306, states:{run:8,jump:3,slide:4,caught:3,land:3}},
+  raccoon:{refH:389, states:{run:8,jump:7,slide:4,caught:3,land:3}},
+  kitten: {refH:389, states:{run:4,jump:3,slide:3,caught:4}},
+};
+const CH_IMGS={}, CH_READY={};
+function loadCharArt(id){
+  const M=CH_META[id]; if(!M||CH_IMGS[id])return;
+  const bags=CH_IMGS[id]={}, ready=CH_READY[id]={};
+  for(const st in M.states){
+    const n=M.states[st], arr=[]; let ok=0;
+    (function(st,n){
+      for(let k=0;k<n;k++){
+        const im=new Image();
+        im.onload=function(){ if(++ok===n){ ready[st]=true;
+          if(st==="run"&&typeof buildSelect==="function"&&state.mode==="select") buildSelect(); } };
+        im.src="art/characters/"+id+"/"+st+"_"+String(k+1).padStart(2,"0")+".png?v="+CH_ART_V;
+        arr.push(im);
+      }
+    })(st,n);
+    bags[st]=arr;
+  }
+}
+function drawChFrame(ctx,id,st,fi,x,footY,flip){
+  const M=CH_META[id]; if(!M)return false;
+  if((!M.states[st]||!CH_READY[id]||!CH_READY[id][st])&&st!=="run")
+    return drawChFrame(ctx,id,"run",0,x,footY,flip);   /* a missing state borrows run */
+  if(!CH_READY[id]||!CH_READY[id][st])return false;
+  const n=M.states[st], im=CH_IMGS[id][st][Math.max(0,Math.min(n-1,fi|0))];
+  const k=(1.10*L.S)/M.refH;
+  ctx.save(); ctx.translate(x,footY); if(flip) ctx.scale(-1,1);
+  ctx.drawImage(im,-256*k,-488*k,512*k,512*k);
+  ctx.restore(); return true;
+}
+/* ============ WORLD SKIN (Aug 25 drop): sky, treeline, fence, road,
+   verge props and pickup art. Same law as the sprites: every consumer keeps
+   its procedural fallback, so the game with zero art is still the game. */
+const ENV_IMGS={}, ENV_READY={};
+(function(){
+  const files={sky:"environment/sky.jpg", road:"environment/road.jpg",
+    treeline:"environment/treeline.webp", fence:"environment/fence.webp",
+    tree:"environment/props/tree.webp", bench:"environment/props/bench.webp",
+    flowers:"environment/props/flowers.webp",
+    bone:"pickups/bone.webp", bone_gold:"pickups/bone_gold.webp",
+    magnet:"pickups/magnet.webp", jetpack:"pickups/jetpack.webp"};
+  for(const id in files){
+    (function(id){
+      const im=new Image();
+      im.onload=function(){ ENV_READY[id]=true; if(id==="road") makeRoadPattern(); };
+      im.src="art/"+files[id]+"?v="+CH_ART_V;
+      ENV_IMGS[id]=im;
+    })(id);
+  }
+})();
+/* the road tile pre-scaled once so the speckle reads at road size; pattern
+   built lazily because ctx exists by the time any image can have loaded */
+let roadPat=null;
+function makeRoadPattern(){
+  const t=document.createElement("canvas"); t.width=220; t.height=220;
+  t.getContext("2d").drawImage(ENV_IMGS.road,0,0,220,220);
+  roadPat=ctx.createPattern(t,"repeat");
+}
 /* ===================== [RESKIN] ANIMALS ===================== */
 const ANIMALS = [
-  { id:"puppy",  name:"Puppy",  body:"#d9a05b", ear:"#b87a36", belly:"#f1d9ad" },
-  { id:"kitten", name:"Kitten", body:"#9aa3ad", ear:"#717b86", belly:"#e4e8ec" },
-  { id:"bunny",  name:"Bunny",  body:"#f2f2f2", ear:"#f7c9d4", belly:"#ffffff" },
-  { id:"fox",    name:"Fox",    body:"#ef7d3a", ear:"#c95a1e", belly:"#fbe5cf" },
+  { id:"puppy",   name:"Puppy",   body:"#d9a05b", ear:"#b87a36", belly:"#f1d9ad" },
+  { id:"kitten",  name:"Kitten",  body:"#9aa3ad", ear:"#717b86", belly:"#e4e8ec" },
+  { id:"bunny",   name:"Bunny",   body:"#f2f2f2", ear:"#f7c9d4", belly:"#ffffff" },
+  { id:"fox",     name:"Fox",     body:"#ef7d3a", ear:"#c95a1e", belly:"#fbe5cf" },
+  { id:"raccoon", name:"Raccoon", body:"#8a8f98", ear:"#5f646d", belly:"#d9d4c8" },
 ];
 function drawAnimal(ctx, a, x, y, s, t, pose, squash){
   pose=pose||"run"; squash=squash||1;
@@ -307,7 +400,7 @@ function drawAnimal(ctx, a, x, y, s, t, pose, squash){
   ctx.fillStyle=a.body; ctx.beginPath(); ctx.arc(s*0.06,-s*0.34,s*0.30,0,7); ctx.fill();
   ctx.fillStyle=a.ear;
   if(a.id==="bunny"){ rr(ctx,-s*0.12,-s*0.92,s*0.12,s*0.50,s*0.06); rr(ctx,s*0.16,-s*0.92,s*0.12,s*0.50,s*0.06); }
-  else if(a.id==="kitten"||a.id==="fox"){ tri(ctx,-s*0.18,-s*0.58,-s*0.06,-s*0.86,s*0.06,-s*0.56); tri(ctx,s*0.18,-s*0.58,s*0.30,-s*0.86,s*0.42,-s*0.56); }
+  else if(a.id==="kitten"||a.id==="fox"||a.id==="raccoon"){ tri(ctx,-s*0.18,-s*0.58,-s*0.06,-s*0.86,s*0.06,-s*0.56); tri(ctx,s*0.18,-s*0.58,s*0.30,-s*0.86,s*0.42,-s*0.56); }
   else { ctx.beginPath(); ctx.ellipse(-s*0.16,-s*0.40,s*0.12,s*0.22,0.3,0,7); ctx.fill(); ctx.beginPath(); ctx.ellipse(s*0.30,-s*0.40,s*0.12,s*0.22,-0.3,0,7); ctx.fill(); }
   ctx.fillStyle=a.belly; ctx.beginPath(); ctx.arc(s*0.14,-s*0.24,s*0.14,0,7); ctx.fill();
   ctx.fillStyle="#2a2018";
@@ -409,6 +502,17 @@ function drawRoadDecal(ctx,action,x,y,sc){
   ctx.restore();
 }
 function drawBiscuit(ctx,x,y,s,gold){
+  /* painted bones (gold carries its own baked sparkles) */
+  const bim=gold?(ENV_READY.bone_gold&&ENV_IMGS.bone_gold):(ENV_READY.bone&&ENV_IMGS.bone);
+  if(bim){
+    /* 1.05: at 1.5 the first staged shot showed bones nearly a lane wide,
+       reading like bread loaves. The painted bone matches the drawn one now. */
+    const ww=s*1.05, hh=ww*(bim.height/bim.width);
+    ctx.save(); ctx.translate(x,y);
+    if(gold){ ctx.shadowColor="rgba(255,210,60,.7)"; ctx.shadowBlur=s*0.35; }
+    ctx.drawImage(bim,-ww/2,-hh/2,ww,hh);
+    ctx.restore(); return;
+  }
   ctx.save(); ctx.translate(x,y);
   if(gold){
     ctx.shadowColor="rgba(255,210,60,.7)"; ctx.shadowBlur=s*0.35;
@@ -424,6 +528,14 @@ function drawBiscuit(ctx,x,y,s,gold){
 }
 function drawMagnetItem(ctx,x,y,s,t){
   const pulse=0.5+0.5*Math.sin(t*9);
+  if(ENV_READY.magnet){
+    const im=ENV_IMGS.magnet, hh=s*1.0, ww=hh*(im.width/im.height);
+    ctx.save(); ctx.translate(x,y-s*0.55);
+    ctx.globalAlpha=0.22+0.28*pulse; ctx.fillStyle="#ffd23b";
+    ctx.beginPath(); ctx.arc(0,-s*0.3,s*1.0,0,7); ctx.fill(); ctx.globalAlpha=1;
+    ctx.drawImage(im,-ww/2,-s*0.3-hh/2,ww,hh);
+    ctx.restore(); return;
+  }
   ctx.save(); ctx.translate(x,y-s*0.55);
   ctx.globalAlpha=0.22+0.28*pulse; ctx.fillStyle="#ffd23b";
   ctx.beginPath(); ctx.arc(0,-s*0.3,s*1.0,0,7); ctx.fill(); ctx.globalAlpha=1;
@@ -507,7 +619,7 @@ function reset(){
     magnet:0, magnetSpawnT:CFG.magnetCooldown*0.55, jetpacksUsed:0 });
 }
 function startRun(){
-  initAudio(); reset();
+  initAudio(); SFX.ui(); reset();
   document.getElementById("selectScreen").classList.add("hidden");
   document.getElementById("gameOverScreen").classList.add("hidden");
   document.getElementById("hud").classList.remove("hidden");
@@ -522,6 +634,7 @@ function gameOver(){
   if(state.mode!=="play") return;
   state.mode="over"; state.overT=0; state.shake=0.45; SFX.crash();
   const isBest = (state.dist|0) > state.best;
+  setTimeout(()=>{ if(isBest)SFX.best(); else SFX.over(); },420);
   const saved = pdWrite({ bestCandidate: state.dist|0, stashAdd: state.biscuits });
   state.best = saved.best; state.totalStash = saved.stash;
   state.bestBis=Math.max(state.bestBis,state.biscuits);
@@ -565,6 +678,19 @@ function drawProp(pr){
   const s=L.S*sc, y=pr.y;
   if(x<-s*3||x>W+s*3) return;
   ctx.save();
+  /* painted props (Aug 25 drop) with the procedural draws as fallback */
+  if(pr.kind==="tree"&&ENV_READY.tree){
+    const im=ENV_IMGS.tree, hh=s*3.3, ww=hh*(im.width/im.height);
+    ctx.drawImage(im,x-ww/2,y-hh,ww,hh); ctx.restore(); return;
+  }
+  if(pr.kind==="bench"&&ENV_READY.bench){
+    const im=ENV_IMGS.bench, hh=s*1.02, ww=hh*(im.width/im.height);
+    ctx.drawImage(im,x-ww/2,y-hh,ww,hh); ctx.restore(); return;
+  }
+  if(pr.kind==="tuft"&&ENV_READY.flowers){
+    const im=ENV_IMGS.flowers, hh=s*0.62, ww=hh*(im.width/im.height);
+    ctx.drawImage(im,x-ww/2,y-hh,ww,hh); ctx.restore(); return;
+  }
   if(pr.kind==="tree"){
     /* a tree is about three dogs tall. At one dog tall it read as a shrub and
        swept past without registering, which is the whole job of a tall marker. */
@@ -666,6 +792,9 @@ function update(dt){
   const diff=Math.min(1, state.dist/(CFG.rampDist* (H*0.01) ) ); // dist is "m"; ramp scaled
   state.speed = CFG.spd0 + (CFG.spdMax-CFG.spd0)*Math.min(1, state.dist/ (CFG.rampDist*10));
   state.dist += state.speed*CFG.mPerUnit*dt;   // road lengths -> the "m" on the HUD
+  /* road texture scroll, at roughly the mid-road screen speed (0.55 ~ the
+     average of the depth blend), so the dirt and the hazards agree on pace */
+  state.roadY=((state.roadY||0)+L.travel*state.speed*dt*0.55)%220;
 
   // lane tween (smooth, snappy)
   state.laneF += (state.targetLane-state.laneF)*Math.min(1, dt/CFG.laneSnap);
@@ -673,7 +802,7 @@ function update(dt){
   // jump arc (px)
   if(state.jumpV!==0 || state.jump>0){
     state.jump += state.jumpV*dt; state.jumpV -= CFG.jumpG*L.S*dt;
-    if(state.jump<=0){ state.jump=0; state.jumpV=0; if(state.wasAir){ state.squashT=0.16; } }
+    if(state.jump<=0){ state.jump=0; state.jumpV=0; if(state.wasAir){ state.squashT=0.16; SFX.land(); } }
   }
   state.wasAir = state.jump>0.5;
   if(state.squashT>0) state.squashT=Math.max(0,state.squashT-dt);
@@ -774,23 +903,55 @@ function render(){
   ctx.save();
   const jetActive=state.jet>0;
   if(state.shake>0){ const m=state.shake*14; ctx.translate((Math.random()-.5)*m,(Math.random()-.5)*m); }
-  // sky
-  const sky=ctx.createLinearGradient(0,0,0,L.PY);
-  sky.addColorStop(0,css("--sky-top")); sky.addColorStop(1,css("--sky-bot"));
-  ctx.fillStyle=sky; ctx.fillRect(-20,-20,W+40,H+40);
-  // far hills (parallax)
-  ctx.fillStyle="#8fd98a";
-  const hillShift=(state.dist*3)%(W*0.5);
-  for(let i=-1;i<3;i++){ const bx=i*W*0.5-hillShift; ctx.beginPath(); ctx.ellipse(bx+W*0.25,L.HY+H*0.02,W*0.32,H*0.10,0,0,7); ctx.fill(); }
-  drawClouds();
+  // sky: Stephen's painted morning (sun anchored to the bottom edge) with the
+  // gradient as the zero-art fallback. The painting carries its own clouds.
+  if(ENV_READY.sky){
+    const im=ENV_IMGS.sky, scl=Math.max(W/im.width,(L.HY+H*0.05)/im.height);
+    ctx.drawImage(im,(W-im.width*scl)/2, L.HY+H*0.05-im.height*scl, im.width*scl, im.height*scl);
+  } else {
+    const sky=ctx.createLinearGradient(0,0,0,L.PY);
+    sky.addColorStop(0,css("--sky-top")); sky.addColorStop(1,css("--sky-bot"));
+    ctx.fillStyle=sky; ctx.fillRect(-20,-20,W+40,H+40);
+    drawClouds();
+  }
+  // the horizon band: painted treeline when it exists, the old hills when not.
+  // Static on purpose: the run goes INTO the screen, so the horizon holds still
+  // while everything on the ground sweeps past.
+  if(ENV_READY.treeline){
+    const im=ENV_IMGS.treeline, th=H*0.085, tw=th*(im.width/im.height);
+    for(let bx=0;bx<W;bx+=tw) ctx.drawImage(im,bx,L.HY-th+2,tw,th);
+  } else {
+    ctx.fillStyle="#8fd98a";
+    const hillShift=(state.dist*3)%(W*0.5);
+    for(let i=-1;i<3;i++){ const bx=i*W*0.5-hillShift; ctx.beginPath(); ctx.ellipse(bx+W*0.25,L.HY+H*0.02,W*0.32,H*0.10,0,0,7); ctx.fill(); }
+  }
   // grass
   ctx.fillStyle=css("--grass"); ctx.fillRect(-20,L.HY,W+40,H);
+  // the park fence, a shallow band on the grass just past the horizon. The
+  // road draws AFTER it and cuts straight through, which reads as the gap the
+  // path passes through.
+  if(ENV_READY.fence){
+    const im=ENV_IMGS.fence, fh=H*0.052, fw=fh*(im.width/im.height);
+    for(let bx=-10;bx<W;bx+=fw) ctx.drawImage(im,bx,L.HY+H*0.012,fw,fh);
+  }
   // road (trapezoid from horizon to player line, widening)
   const pTop=lfac(0), pBot=lfac(1);
   ctx.fillStyle=css("--path");
   ctx.beginPath();
   ctx.moveTo(L.CX-1.6*L.LW*pTop, L.HY); ctx.lineTo(L.CX+1.6*L.LW*pTop, L.HY);
   ctx.lineTo(L.CX+1.6*L.LW*pBot, H);    ctx.lineTo(L.CX-1.6*L.LW*pBot, H); ctx.closePath(); ctx.fill();
+  // dirt texture scrolled INSIDE the trapezoid, over the flat fill. The tile
+  // is flat (no perspective) on purpose: it is low contrast speckle, the lane
+  // dashes and props carry the depth read, and a true perspective map costs
+  // more than a phone frame budget wants to pay.
+  if(roadPat){
+    ctx.save(); ctx.clip();
+    const off=(state.roadY||0);
+    ctx.translate(0,off);
+    ctx.fillStyle=roadPat;
+    ctx.fillRect(-20,L.HY-off-220,W+40,(H-L.HY)+off+260);
+    ctx.restore();
+  }
   // lane dashes (scrolling for speed)
   /* ⛔ These sat at +/- 1.0 lane widths, which is the ROAD EDGE, not a lane
      boundary, so the game had three lanes and nothing on screen said so. Lane
@@ -861,7 +1022,32 @@ function render(){
        art and hitbox can never disagree. Anything not loaded falls through to
        the procedural dog below. */
     let spr=false;
-    if(state.animal.id==="puppy"){
+    if(CH_META[state.animal.id]){
+      /* the Aug 25 animals: same physics-driven state machine as the puppy,
+         with each animal's own frame counts, and any state its sheet lacks
+         borrowing run inside drawChFrame. Bank frames only shipped for the
+         puppy, so lane changes stay in the run cycle here. */
+      const id=state.animal.id, M=CH_META[id];
+      if(state.mode==="over"){
+        const oT=state.overT||0, cn=M.states.caught;
+        spr=drawChFrame(ctx,id,"caught", oT<0.12?0:(oT<0.30?1:cn-1), x,footY,false);
+      } else if(jetActive){
+        spr=drawChFrame(ctx,id,"jump",Math.min(M.states.jump-1,2),x,footY,false);
+      } else if(state.jump>0.5){
+        const vv=state.jumpV/(CFG.jumpV*L.S);
+        const ph=vv>0.45?0.08:vv>0.12?0.3:vv>-0.12?0.5:(state.jump>L.S*0.5?0.75:0.97);
+        spr=drawChFrame(ctx,id,"jump",Math.round(ph*(M.states.jump-1)),x,footY,false);
+      } else if(state.sliding){
+        const sp=1-state.slideT/CFG.slideTime, sn=M.states.slide;
+        spr=drawChFrame(ctx,id,"slide",Math.min(sn-1,(sp*sn)|0),x,footY,false);
+      } else if(state.squashT>0&&M.states.land){
+        spr=drawChFrame(ctx,id,"land",((1-state.squashT/0.16)*(M.states.land-0.01))|0,x,footY,false);
+      } else {
+        const fps=10+6*(state.speed-CFG.spd0)/(CFG.spdMax-CFG.spd0);
+        spr=drawChFrame(ctx,id,"run",(state.t*fps)%M.states.run,x,footY,false);
+      }
+    }
+    else if(state.animal.id==="puppy"){
       if(state.mode==="over"){
         const oT=state.overT||0;
         spr=drawPupFrame(ctx,"caught", oT<0.12?0:(oT<0.30?1:2), x, footY, false);
@@ -989,7 +1175,10 @@ function drawJetItem(ctx,x,y,s,t){
   ctx.save(); ctx.translate(x,y-s*0.55);
   ctx.globalAlpha=0.22+0.28*pulse; ctx.fillStyle="#fff";
   ctx.beginPath(); ctx.arc(0,-s*0.3,s*1.05,0,7); ctx.fill(); ctx.globalAlpha=1;
-  drawPoopSwirl(0,0,s*0.6,true);
+  if(ENV_READY.jetpack){
+    const im=ENV_IMGS.jetpack, hh=s*1.25, ww=hh*(im.width/im.height);
+    ctx.drawImage(im,-ww/2,-s*0.3-hh/2,ww,hh);
+  } else drawPoopSwirl(0,0,s*0.6,true);
   ctx.restore();
 }
 let clouds=[];
@@ -1011,8 +1200,12 @@ function buildSelect(){
     const nm=document.createElement("div"); nm.className="nm"; nm.textContent=a.name; b.appendChild(nm);
     const cc=c.getContext("2d"); cc.scale(2,2);
     if(a.id==="puppy"&&PUP_READY.idle){ const im=PUP_IMGS.idle[2], k=74/389; cc.drawImage(im,44-256*k,86-488*k,512*k,512*k); }
+    else if(CH_META[a.id]&&CH_READY[a.id]&&CH_READY[a.id].run){
+      const im=CH_IMGS[a.id].run[0], k=74/CH_META[a.id].refH;
+      cc.drawImage(im,44-256*k,86-488*k,512*k,512*k);
+    }
     else drawAnimal(cc,a,44,56,46,0.6,"run",1);
-    b.onclick=()=>{ state.animal=a; pdWrite({animal:a.id}); buildSelect(); }; grid.appendChild(b);
+    b.onclick=()=>{ state.animal=a; loadCharArt(a.id); pdWrite({animal:a.id}); buildSelect(); }; grid.appendChild(b);
   });
 }
 document.getElementById("startBtn").onclick=startRun;
@@ -1040,6 +1233,9 @@ resize();
   muted = saved.mute; muteBtn.textContent = muted ? "🔇" : "🔊";
   const savedAnimal = ANIMALS.find(a=>a.id===saved.animal);
   if(savedAnimal) state.animal = savedAnimal;
+  /* the saved runner's sheets start loading immediately; everyone else's
+     load on their first tap in the select grid */
+  loadCharArt(state.animal.id);
 })();
 
 /* A hook so a headless harness can drive a run without a browser. Mirrors the
@@ -1055,6 +1251,7 @@ if(/[?&]pd_test=1(&|$)/.test(location.search) || (function(){ try{ return localS
     pdRead, pdWrite,
     obX, dogX, prog, dscale, lfac,
     PUP_READY, OB_READY, PUP_STATES, OB_SPR,
+    CH_META, CH_IMGS, CH_READY, ENV_IMGS, ENV_READY, loadCharArt, drawChFrame,
     startRun, gameOver, buildSelect
   };
 }
