@@ -167,3 +167,19 @@ gate). Offline shell list is non-trivial (index.html + art/ + sfx/). Also
 missing: feature graphic 1024x500 (no generator exists in the repo),
 assetlinks.json on the host, keystore, Data Safety form. Content-rating
 read recommended before either store (arms-fair/surveillance themes).
+
+## Kink hunt (Aug 25 late, "anything to make the game better? do it")
+
+Seven-lens adversarial pass over the day's seams; 20 confirmed kinks fixed,
+every one gated in check.js (now 295), sims unmoved, live-verified.
+Headliners: a reload during the Aftermath receipt DOUBLE-APPLIED the event
+(choice now commits+saves instantly); agitate and crackdown shared one
+cooldown so the taught Iron Fist one-two was impossible (split: cd/cdC);
+Overton-Dial blackout-all ignored other regions' cooldowns and neutralized
+prebunk; the BREAKING banner burned its 8.2s invisible behind the guide
+card; the TWA arcade-leave option half-killed the session; "Start fresh
+anyway" destroyed the save before anything replaced it; four surfaces
+still taught "concede is free"; the proxy meter could read "10.0 of 10"
+while the gate stayed shut; a re-enabled music track could never rotate
+in; region cards clipped their actions at 320px; #ctip deleted (dead).
+Full inventory in commit "FTW kink-hunt pass".
