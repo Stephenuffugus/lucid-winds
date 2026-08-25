@@ -314,7 +314,7 @@ h1 em{font-style:normal;color:var(--sodium)}
 #tickTrack b{color:var(--sodium);font-weight:600}
 @keyframes tickScroll{to{transform:translateX(-100%)}}
 /* rotate hint: portrait phones get nudged toward landscape once per run */
-#rotHint{position:absolute;left:50%;bottom:64px;transform:translateX(-50%);z-index:6;
+#rotHint{position:absolute;left:8px;right:8px;margin:0 auto;width:max-content;bottom:64px;z-index:6;
   display:none;align-items:center;gap:8px;max-width:88%;padding:9px 14px;border-radius:12px;
   background:#141003f2;border:1px solid var(--sodium);color:#ffe9c9;font-size:12px;line-height:1.4}
 #rotHint.on{display:flex}
@@ -356,7 +356,7 @@ h1 em{font-style:normal;color:var(--sodium)}
 .zb{width:48px;height:48px;border:1px solid var(--line);border-radius:10px;background:#0a1018cc;
   color:var(--ice);font-size:11px;letter-spacing:.08em;font-weight:700;
   display:flex;align-items:center;justify-content:center}
-#breaking{position:absolute;left:8px;right:64px;top:44px;padding:8px 38px 8px 11px;border-radius:10px;
+#breaking{position:absolute;left:8px;right:64px;top:44px;z-index:6;padding:8px 38px 8px 11px;border-radius:10px;
   background:#170b0eee;border:1px solid var(--blood);font-size:11px;line-height:1.4;color:#ffd9d5;
   transform:translateY(-8px);opacity:0;pointer-events:none;transition:.3s}
 #breaking.on{transform:none;opacity:1}
@@ -376,7 +376,7 @@ h1 em{font-style:normal;color:var(--sodium)}
 #guide .gskip.gnext{color:var(--sodium);border-color:#6b5527;margin-right:6px;display:inline-flex}
 /* region popover: Plague Inc plays by poking the map, not by opening a menu.
    Anchored to the tap, never pauses the sim, closes on a tap that misses. */
-#rpop{position:absolute;z-index:6;width:min(268px,72vw);padding:9px 10px;border-radius:11px;
+#rpop{position:absolute;z-index:6;width:min(268px,72vw);padding:9px 10px;border-radius:11px;overflow-y:auto;
   background:#0a1018f7;border:1px solid var(--sodium);box-shadow:0 8px 26px #000a;
   font-size:11.5px;line-height:1.4;color:var(--ice);display:none}
 #rpop.on{display:block}
@@ -403,14 +403,6 @@ h1 em{font-style:normal;color:var(--sodium)}
 #coInput{width:100%;min-height:48px;padding:0 12px;border-radius:10px;background:#101822;
   border:1px solid var(--line);color:var(--paper);font:inherit;font-size:14px}
 #coInput:focus{outline:none;border-color:var(--sodium)}
-#ctip{position:absolute;left:8px;right:8px;bottom:34px;z-index:5;padding:9px 12px;border-radius:11px;
-  background:#0a1018f0;border:1px solid var(--line);font-size:11.5px;line-height:1.45;color:var(--ice);
-  display:none;align-items:center;gap:10px}
-#ctip.on{display:flex}
-#ctip .cn{flex:1}
-#ctip b{color:var(--paper)}
-#ctip button{padding:7px 10px;border:1px solid var(--line);border-radius:8px;font-size:9.5px;
-  letter-spacing:.1em;text-transform:uppercase;color:var(--sodium)}
 #breaking.gold{border-color:var(--sodium);background:#171103ee;color:#ffe9c9}
 #breaking.gold b{color:var(--sodium)}
 .node.tut{animation:tutpulse 1.2s infinite;border-color:var(--sodium)}
@@ -717,6 +709,7 @@ h1 em{font-style:normal;color:var(--sodium)}
 .m .t{height:5px;border-radius:2px;background:#16202b;margin-top:3px;overflow:hidden}
 .m .f{height:100%;width:0}
 .acts{display:flex;gap:6px;margin-top:9px;flex-wrap:wrap}
+.act .why{display:block;font-size:9px;color:var(--dim);font-weight:400;letter-spacing:0;text-transform:none;margin-top:1px}
 .act{flex:1;min-width:74px;min-height:48px;padding:8px 4px;border-radius:8px;border:1px solid var(--line);
   font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--ice);background:var(--panel2)}
 .act.warn{border-color:var(--sodium);color:var(--sodium)}
@@ -869,6 +862,7 @@ h1 em{font-style:normal;color:var(--sodium)}
     <label id="coWrap"><span>Name your vendor</span>
       <input id="coInput" type="text" maxlength="24" autocomplete="off" spellcheck="false"></label>
     <button class="cta pickcta" id="beginBtn" style="opacity:.4" disabled>Deploy first unit</button>
+    <button class="howbtn" id="pickBackBtn" style="margin-top:6px">Back to the menu</button>
   </div>
 </section>
 
@@ -904,7 +898,6 @@ h1 em{font-style:normal;color:var(--sodium)}
     <div class="zoomui"><button class="zb" data-z="in">IN</button><button class="zb" data-z="out">OUT</button><button class="zb" data-z="fit">FIT</button></div>
     <div id="breaking"><b>BREAKING</b><span id="breakTxt"></span><button id="breakX" aria-label="Dismiss">✕</button></div>
     <div id="guide"><span id="guideTxt"></span><button type="button" class="gskip gnext" id="guideNext">Next</button><button type="button" class="gskip" id="guideSkip">Skip briefing</button></div>
-    <div id="ctip"><div class="cn" id="ctipTxt"></div><button id="ctipBtn">Region</button></div>
     <div id="rotHint"><span id="rotTxt">Tip: turn your phone sideways. In landscape the whole map fits the screen.</span><button class="rx" id="rotX">✕</button></div>
     <div id="ticker"><span class="wlab">WIRE</span><div id="tickWrap"><div id="tickTrack">Awaiting first deployment.</div></div></div>
   </div>
@@ -1162,7 +1155,7 @@ const MODES = {
     d:'Start with one camera and a free-trial business model. Spread by contract, capability and fear until nothing moves unrecorded.',
     mod:{}},
   DEEPSTATE:{n:'The Deep Partnership',tag:'Head start, hard ceiling',cash:110*MONEY,inf:14,
-    d:'Two authoritarian ministries pre-installed your kit. Closed societies are yours early, but free ones have read the leaks and resist twice as hard.',
+    d:'Two authoritarian ministries pre-installed your kit. Closed societies are yours early, but free ones have read the leaks and resist a third harder.',
     mod:{preseed:2, freeResist:1.3, over:0.85}},
   CRISIS:{n:'The Crisis Engine',tag:'Warmonger',cash:170*MONEY,inf:12,
     d:'Manufacture the emergency, sell the response. Crisis tree unlocked and discounted from day one, but the world coalition forms fast when it smells smoke.',
@@ -1296,7 +1289,7 @@ const NODES=[
    campaigns (day 1046, 2356) and never saw the top half of this tree.
    Now: threshold 10, agitate feeds suspicion (below), and the gate text is a
    live meter naming the levers. */
-{id:'proxy',t:'war',c:26,r:3,x:1,req:['border','charter'],gate:s=>s.avgSus>10,
+{id:'proxy',t:'war',c:26,r:3,x:1,req:['border','charter'],gate:s=>s.avgSus>=10,
  gtxt:s=>'World suspicion '+(s.avgSus||0).toFixed(1)+' of 10 · agitation, crackdowns and acquisitions raise it; calm and blackouts bury it',
  n:'Proxy Flashpoint',d:'Sponsor a distant, televised conflict. Fear surges everywhere; so do defence line items.',fx:{fear:.08,mil:.04,inc:.3},
  buyFx:s=>{s.warHeat=Math.min(1,s.warHeat+0.35);pushNews(s,'Fighting erupts in a distant province. Analysts you fund call it "a wake-up call."','crit');}},
@@ -1963,7 +1956,7 @@ let toastTO=null;
    scrim. Tiers: 0 wire (ambient, never interrupts), 1 toast, 2 breaking banner,
    3 modal. A lower tier never covers a higher one. */
 const NOTE={toasts:[],banners:[],modalOpen:false,modalQ:[]};
-const TOAST_MS=2400, TOAST_MAX=3;
+const TOAST_MS=2400, TOAST_MAX=4;
 
 function toastKey(html){return String(html).replace(/\s+/g,' ').trim();}
 function renderToasts(){
@@ -2079,20 +2072,20 @@ function aPrice(base,days){
    oversight, some buy influence, some move a region, and one of them costs you
    money forever. */
 const OPS=[
-  {id:'standards',n:'Standards Committee Seat',k:'Legal',band:1.5,
+  {id:'standards',n:'Standards Committee Seat',k:'Legal',band:1.5,relief:1,
    d:'Write the compliance standard your kit already meets. Everyone else has to catch up.',
    f:s=>{s.oversight=clamp(s.oversight-9,0,100);s.inf+=3;
      return 'The standard ships with your product name in the footnotes.';}},
-  {id:'retainer',n:'Retain the Firm',k:'Legal',band:1.0,
+  {id:'retainer',n:'Retain the Firm',k:'Legal',band:1.0,relief:1,
    d:'A litigation reserve, on the books before anyone files.',
    f:s=>{s.oversight=clamp(s.oversight-6,0,100);
      REGIONS.forEach(R=>{const r=s.regions[R.id];if(r.active)r.suspicion=clamp(r.suspicion-6,0,100);});
      return 'Nobody has sued you yet. The meter is running anyway.';}},
-  {id:'decree',n:'Sign the Consent Decree',k:'Legal',band:2.2,
+  {id:'decree',n:'Sign the Consent Decree',k:'Legal',band:2.2,relief:1,
    d:'Settle without admitting anything. A monitor moves in, and their quarterly reports quietly retire findings for good.',
    f:s=>{s.oversight=clamp(s.oversight-22,0,100);s.monitor=(s.monitor||0)+1;
      return 'No wrongdoing is admitted. A stranger now has a desk on your floor.';}},
-  {id:'door',n:'Revolving Door Hire',k:'Political',band:1.3,
+  {id:'door',n:'Revolving Door Hire',k:'Political',band:1.3,relief:1,
    d:'Hire the regulator who wrote your last audit. She knows where the questions come from.',
    f:s=>{s.oversight=clamp(s.oversight-11,0,100);s.inf+=2;
      return 'Her old colleagues are delighted for her.';}},
@@ -2328,7 +2321,7 @@ function tick(){
        uprising and there hasn't been a lot of stuff to teach you if it's even
        possible." Teach the riot playbook ONCE, the first time it is needed. */
     if(ns==='violent'&&prev!=='violent'&&prev!=='uprising')
-      coach(s,'coach_riot','Field note: a riot can still be cooled. CONCEDE is free and eases everything for a slice of control. CRACKDOWN clears the square at a price the region never forgets. BLACKOUT slows the story. Doing nothing radicalizes them further.');
+      coach(s,'coach_riot','Field note: a riot can still be cooled. CONCEDE eases everything for a slice of control, at full strength once per ten days per region. CRACKDOWN clears the square at a price the region never forgets. BLACKOUT slows the story. Doing nothing radicalizes them further.');
     /* the living map: harvested data streams home, routes hum with traffic */
     if(r.active&&r.coverage>0.02&&s.pk.length<90&&Math.random()<0.12+r.coverage*0.35){
       const[kx,ky]=anchorOf(id);
@@ -2356,7 +2349,7 @@ function tick(){
       /* the meter proves easy is winnable by exactly two disciplines the game
          never taught: concede early, keep suspicion down. Teach each ONCE, at
          the moment it matters, in the ticker rather than a popup. */
-      coach(s,'coach_upr','Field note: an uprising drains coverage fast and bleeds patriotism faster. CONCEDE is free, cools the street at once, and costs only a sliver of control.');
+      coach(s,'coach_upr','Field note: an uprising drains coverage fast and bleeds patriotism faster. CONCEDE cools the street at once for a sliver of control. A repeat inside ten days buys half the calm for twice the ground.');
       s.oversight+=0.11*D.over;
       r.coverage=Math.max(0,r.coverage-0.0045);
       r.control=Math.max(0,r.control-0.004);
@@ -2407,6 +2400,7 @@ function tick(){
     }
     if(r.war>0)r.war=Math.max(0,r.war-1/160);
     if(r.cd>0)r.cd--;
+    if(r.cdC>0)r.cdC--;
     if(r.bcd>0)r.bcd--;
     if(r.black>0)r.black--;
   }
@@ -2938,7 +2932,7 @@ function musicEnabled(slot){
 }
 function pickTrack(slot){
   const on=musicEnabled(slot);
-  if(on.length<2)return on[0]||slot;
+  if(on.length<2){SFX.lastTrack[slot]=on[0]||slot;return on[0]||slot;}
   const pool=on.filter(t=>t!==SFX.lastTrack[slot]);
   const t=pool[(Math.random()*pool.length)|0];
   SFX.lastTrack[slot]=t;
@@ -3004,16 +2998,15 @@ function sfxPlay(id,loop){
     try{a=new Audio('sfx/'+file+'.mp3');}catch(e){SFX.missing[file]=1;return;}
     a.addEventListener('error',function(){SFX.missing[file]=1;});
     a.volume=SFX_GAIN[SFX_CUES[id]]||0.6;
-    if(loop){
-      /* a bed with 2+ enabled tracks rotates on 'ended' instead of looping;
-         a single track self-loops exactly as before */
-      if(MUSIC_HAVE[id]&&musicEnabled(id).length>1){
-        a.loop=false;
-        a.addEventListener('ended',function(){if(SFX.beds[id]&&!SFX.muted)sfxPlay(id,true);});
-      }else a.loop=true;
+    if(loop&&MUSIC_HAVE[id]){
+      /* the rotation listener decides at FIRE time; loop itself is set per
+         START below - baking either in at creation meant a track re-enabled
+         mid-run could never rotate in (hunt, Aug 25) */
+      a.addEventListener('ended',function(){if(SFX.beds[id]&&!SFX.muted)sfxPlay(id,true);});
     }
     SFX.el[id]=a;SFX.fileOf[id]=file;
   }
+  if(loop)a.loop=!(MUSIC_HAVE[id]&&musicEnabled(id).length>1);
   try{ if(!loop)a.currentTime=0; const q=a.play(); if(q&&q.catch)q.catch(function(){SFX.missing[file]=1;}); }
   catch(e){ SFX.missing[file]=1; }
 }
@@ -3065,7 +3058,7 @@ function saveRun(){
       regs[id]={active:r.active,lost:r.lost,coverage:r.coverage,control:r.control,
         compliance:r.compliance,suspicion:r.suspicion,unrest:r.unrest,cd:r.cd,resist:r.resist,
         grudge:r.grudge,counters:[...r.counters],milit:r.milit,pstate:r.pstate,war:r.war,
-        black:r.black||0,bcd:r.bcd||0,gw:r.gw||0,lc:r.lastConcede==null?-1:r.lastConcede,las:r.lastAgitSus==null?-1:r.lastAgitSus,
+        black:r.black||0,bcd:r.bcd||0,gw:r.gw||0,cdc:r.cdC||0,lc:r.lastConcede==null?-1:r.lastConcede,las:r.lastAgitSus==null?-1:r.lastAgitSus,
         cOrder:r.cOrder||null,cN:r.cN||1};}
     lsSet(K_RUN,JSON.stringify({v:2,modeKey:s.modeKey,diffKey:s.diffKey,startId:s.startId,
       day:s.day,cash:s.cash,inf:s.inf,oversight:s.oversight,warHeat:s.warHeat,doctrine:s.doctrine,net:s.net||0,gross:s.gross||0,lbCd:s.lbCd||0,evHeat:s.evHeat||0,evPaid:s.evPaid||0,
@@ -3073,7 +3066,7 @@ function saveRun(){
          penalty had not landed yet, and to forget a pending choice event, so
          reloading dodged the decision. It also dropped the HUD aggregates, so a
          resumed screen showed new-game defaults until the next tick. */
-      subj:s.subj,avgSus:s.avgSus,avgMil:s.avgMil,avgRes:s.avgRes,unread:s.unread||0,nextBubble:s.nextBubble||0,
+      subj:s.subj,avgSus:s.avgSus,avgMil:s.avgMil,avgRes:s.avgRes,avgCmp:s.avgCmp,unread:s.unread||0,nextBubble:s.nextBubble||0,
       bubbles:(s.bubbles||[]).map(b=>({k:b.k,x:b.x,y:b.y,life:b.life,born:b.born,v:b.v})),
       pendingEventId:s.pendingEventId||null,
       lostCount:s.lostCount,wmileDth:s.wmileDth||0,hq:s.hq,hqName:s.hqName,co:s.co,
@@ -3138,7 +3131,7 @@ function loadRun(){
     for(const k in d.arc){const v=Number(d.arc[k]);if(isFinite(v)&&v>=0&&v<=3)s.arc[k]=v;}
   s.fdPages=Math.max(0,num(d.fdPages,0)|0);s.outlet=num(d.outlet,0)?1:0;
   if(Array.isArray(d.fdOn))s.fdOn=d.fdOn.filter(x=>['vance','kesh','lena'].indexOf(x)>=0).slice(0,3);
-  s.subj=clamp(num(d.subj,0),0,1);s.avgSus=clamp(num(d.avgSus,0),0,100);
+  s.subj=clamp(num(d.subj,0),0,1);s.avgSus=clamp(num(d.avgSus,0),0,100);s.avgCmp=clamp(num(d.avgCmp,0),0,1);
   s.avgMil=clamp(num(d.avgMil,0),0,1);s.avgRes=clamp(num(d.avgRes,0),0,100);
   s.unread=Math.max(0,num(d.unread,0));s.nextBubble=Math.max(0,num(d.nextBubble,0));
   s.bubbles=Array.isArray(d.bubbles)?d.bubbles.filter(b=>b&&['cash','inf','leak'].indexOf(b.k)>=0)
@@ -3157,7 +3150,7 @@ function loadRun(){
     r.compliance=clamp(num(o.compliance,.4),.02,.98);r.suspicion=clamp(num(o.suspicion,0),0,100);
     r.unrest=clamp(num(o.unrest,0),0,100);r.resist=clamp(num(o.resist,0),0,100);
     r.grudge=Math.max(0,num(o.grudge,0));r.milit=clamp(num(o.milit,0),0,1);
-    r.cd=Math.max(0,num(o.cd,0));r.war=Math.max(0,num(o.war,0));
+    r.cd=Math.max(0,num(o.cd,0));r.cdC=Math.max(0,num(o.cdc,0));r.war=Math.max(0,num(o.war,0));
     r.black=Math.max(0,num(o.black,0));r.bcd=Math.max(0,num(o.bcd,0));
     r.gw=Math.min(CFG.gwCap,Math.max(0,num(o.gw,0)|0));
     r.lastConcede=num(o.lc,-1)<0?null:num(o.lc,-1);
@@ -3579,8 +3572,6 @@ function paintHud(){
      real height change, not just on resize. */
   /* the tension bed rises with the enemy meter and drops back out again */
   sfxBed('bed_tension',s.oversight>70&&!s.over);
-  const hh=$('hud')?$('hud').offsetHeight:0;
-  if(hh&&hh!==_hudH){_hudH=hh;syncOverlayTops();}
   /* the Great Refusal never warns before it fires (Stephen, Aug 25: "None of
      my meters were telling me I was about to lose"): a red strip counts
      expulsions and live uprisings, blinking at the brink */
@@ -3593,6 +3584,10 @@ function paintHud(){
       rfEl.classList.toggle('blink',s.lostCount>=CFG.lostLimit-1||upN>=2);
     }else rfEl.classList.remove('on','blink');
   }
+  /* AFTER the strip toggles: the strip changes the HUD's height, and reading
+     it first left every overlay anchored one paint stale (hunt, Aug 25) */
+  const hh=$('hud')?$('hud').offsetHeight:0;
+  if(hh&&hh!==_hudH){_hudH=hh;syncOverlayTops();}
   const covered=REGIONS.reduce((a,r)=>a+s.regions[r.id].pop*s.regions[r.id].coverage,0);
   $('pillTxt').textContent=`${s.speed===0?'PAUSED':'LIVE'} · ${(covered*1.4).toFixed(0)}M NODES · ${s.activeCount} MKT`
     +(s.warHeat>0.05?` · WAR ${(s.warHeat*100)|0}%`:'');
@@ -3937,7 +3932,7 @@ function worldHTML(){
     market you already hold. <b>Agitate</b> turns a peaceful march violent so force looks justified.
     <b>Crackdown</b> clears the streets and buys compliance, and the region never forgets it.
     <b>Blackout</b> buys the news cycle: suspicion drops now and stays quiet for two weeks. Weak where
-    the press is free. <b>Concede</b> is the free release valve: everything cools, control slips.</div><span class="lgm"></span></div>`;
+    the press is free. <b>Concede</b> is the release valve: everything cools, control slips. Full strength once per ten days per region; repeats buy half the calm for twice the ground.</div><span class="lgm"></span></div>`;
   /* ⛔ THE ALWAYS OPEN SINK, at the top of the tab where money is spent.
      A mechanic only a bot can reach is not a mechanic, and everything else on
      this screen is gated by a cooldown or a precondition. This one is not. */
@@ -4004,10 +3999,13 @@ function worldHTML(){
     h+=`<div class="deskhead">The desk <span class="dim">three offers, and they turn over</span></div>
       <div class="desk">`+offs.map(o=>{
       const pr=opPrice(s,o), can=s.cash>=pr;
+      /* a pinned patriotism floor eats one-shot relief the tick after it
+         lands: say so BEFORE the purchase, not never (hunt, Aug 25) */
+      const pinned=o.relief&&s.oversight<=ovFloor(s)+1;
       return `<button class="op${can?'':' poor'}" data-op="${o.id}" ${can?'':'disabled'}>
         <div class="opk">${o.k}</div>
         <div class="opn">${o.n}</div>
-        <div class="opd">${o.d}</div>
+        <div class="opd">${o.d}${pinned?' <span style="color:var(--blood)">'+(s.mode.mod.ovrName||'Patriotism')+' is pinned at its floor: the relief would be erased overnight.</span>':''}</div>
         <div class="opc">${fmtMoney(pr)}</div></button>`;}).join('')+`</div>`;
   }
   /* the cash sink Stephen asked for: late game money converts to influence,
@@ -4054,27 +4052,37 @@ function regionActionsHTML(rid){
   const s=S,x=s.regions[rid];
   if(!x||!x.active)return '';
   const pAg=aPrice(80*MONEY,4),pCr=aPrice(120*MONEY,6),pBl=aPrice(100*MONEY,5);
-  const cd=x.cd>0?` (${x.cd}d)`:'';
+  const cd=x.cd>0?` (${x.cd}d)`:'', cdC=x.cdC>0?` (${x.cdC}d)`:'';
   let acts='<div class="acts">';
-  if(s.has('agit'))acts+=`<button class="act warn" data-act="agitate" data-r="${rid}"
+  if(s.has('agit')){
+    /* phones never see title tooltips: the reason a button is grey (and the
+       backfire band below) renders as a visible subtext line (hunt, Aug 25) */
+    const agWhy=x.pstate==='uprising'?'<span class="why">mid-uprising</span>'
+      :s.cash<pAg?'<span class="why">short on cash</span>':'';
+    acts+=`<button class="act warn" data-act="agitate" data-r="${rid}"
         title="Send provocateurs into a march. Unrest jumps, a peaceful march turns violent, and world suspicion climbs: provocateurs get photographed. Why: a violent march justifies a Crackdown, a crackdown you survive pays compliance, and suspicion is what opens the Proxy Flashpoint. The Iron Fist one-two."
-        ${s.cash<pAg||x.pstate==='uprising'||x.cd>0?'disabled':''}>${uiIco('act_agitate')}Agitate ${fmtMoney(pAg)}${cd}</button>`;
+        ${s.cash<pAg||x.pstate==='uprising'||x.cd>0?'disabled':''}>${uiIco('act_agitate')}Agitate ${fmtMoney(pAg)}${cd}${agWhy}</button>`;
+  }
   if(s.has('charter')){
     /* the odds are shown as a band, not a number: the exact figure would leak
        which countermeasures the civilians have built (mystery is the point) */
     const bRisk=s.has('caps_war')?0
       :(s.doctrine==='fist'?CFG.crackBackfire/2:CFG.crackBackfire)+(x._cBack||0)+x.media*x.resist/100*0.20;
     const bLbl=bRisk<=0?'none':bRisk>0.3?'HIGH':bRisk>0.18?'elevated':'low';
+    const crWhy=x.unrest<30?'<span class="why">needs unrest 30+</span>'
+      :s.cash<pCr?'<span class="why">short on cash</span>'
+      :bLbl!=='low'&&bLbl!=='none'?`<span class="why">backfire ${bLbl}</span>`:'';
     acts+=`<button class="act danger" data-act="crack" data-r="${rid}"
         title="Armored response. Unrest falls, compliance and militarization rise, but suspicion, grudge and organizing all climb too. Backfire risk here: ${bLbl}. Always remembered, and it ends any Grateful World peace streak."
-        ${s.cash<pCr||x.unrest<30||x.cd>0?'disabled':''}>${uiIco('act_crackdown')}Crackdown${bLbl==='HIGH'?' ⚠':''} ${fmtMoney(pCr)}${cd}</button>`;
+        ${s.cash<pCr||x.unrest<30||x.cdC>0?'disabled':''}>${uiIco('act_crackdown')}Crackdown${bLbl==='HIGH'?' ⚠':''} ${fmtMoney(pCr)}${cdC}${crWhy}</button>`;
   }
   if(s.has('blackout'))acts+=`<button class="act" data-act="blackout" data-r="${rid}"
         title="Buy the news cycle. Suspicion drops and builds slower for two weeks. Weak where the press is free."
         ${s.cash<pBl||x.bcd>0?'disabled':''}>${uiIco('act_blackout')}Blackout ${fmtMoney(pBl)}${x.bcd>0?` (${x.bcd}d)`:''}</button>`;
-  const cArm=S._concArm&&S._concArm.rid===rid&&Date.now()-S._concArm.at<5000;
+  const cArm=concArmed(S,rid);
+  const cAgain=x.lastConcede!=null&&(s.day-x.lastConcede)<10;
   acts+=`<button class="act${cArm?' warn':''}" data-act="concede" data-r="${rid}"
-        title="Free. Unrest, suspicion and organizing all ease. You give back some control.">${uiIco('act_concede')}${cArm?'Confirm concede':'Concede'}</button></div>`;
+        title="${cAgain?'A repeat inside ten days: HALF the calm, TWICE the control given, no goodwill.':'Free. Unrest, suspicion and organizing all ease. You give back some control and bank goodwill.'}">${uiIco('act_concede')}${cArm?'Confirm concede':'Concede'}${cAgain?'<span class="why">repeat: half calm, twice the ground</span>':''}</button></div>`;
   return acts;
 }
 function regionEnterHTML(rid){
@@ -4106,13 +4114,18 @@ function entryCost(x){
 }
 
 /* ============================ ACTIONS ============================ */
+/* the two-tap arm survives a pause: the popover/sheet PAUSES the sim on
+   purpose so the player can read, and a 5s wall clock expiring under that
+   pause made the confirm silently re-arm ("looks broken; takes a third
+   tap" - hunt, Aug 25). Paused = armed stays armed. */
+function concArmed(s,rid){return s._concArm&&s._concArm.rid===rid&&(s.speed===0||Date.now()-s._concArm.at<5000);}
 function doAction(act,rid){
   const s=S,r=s.regions[rid];if(!r||!r.active)return;
-  if((act==='agitate'||act==='crack')&&r.cd>0)return;
+  if(act==='agitate'&&r.cd>0)return;
+  if(act==='crack'&&r.cdC>0)return;
   const pAg=aPrice(80*MONEY,4),pCr=aPrice(120*MONEY,6),pBl=aPrice(100*MONEY,5);
   if(act==='agitate'&&s.has('agit')&&s.cash>=pAg){
     s.cash-=pAg;r.cd=20;sfx('spend');sfx('agitate');
-    shToast(`<span class="neg">Spent ${fmtMoney(pAg)}</span> · provocateurs deployed to ${r.name}`);
     flashCash();
     /* Aug 25: agitation finally raises suspicion (it always should have -
        provocateurs get photographed). This is also the deliberate lever that
@@ -4123,28 +4136,32 @@ function doAction(act,rid){
        news. A deliberate burst ACROSS regions (the gate play) keeps its full
        effect; same-region spam pays only the local price. Metered: without
        the window the sim's riot-playbook bots bled ~0.15 oversight per
-       agitate and two Vendor scenarios flipped WIN to LOSS. */
+       agitate and two Vendor scenarios flipped WIN to LOSS.
+       ONE toast per action (spend folded in - two toasts per action evicted
+       receipts at TOAST_MAX during the very bursts the gate encourages), and
+       the suspicion delta shown is the delta APPLIED (5 in-window, 7 out). */
+    const wOpen=(s.day-(r.lastAgitSus!=null?r.lastAgitSus:-999))>=30;
     r.suspicion=clamp(r.suspicion+5,0,100);
-    if((s.day-(r.lastAgitSus!=null?r.lastAgitSus:-999))>=30){bumpSus(s,2);r.lastAgitSus=s.day;}
+    if(wOpen){bumpSus(s,2);r.lastAgitSus=s.day;}
+    const dSus=wOpen?7:5;
     /* organized civilians film everything: provocateurs get unmasked */
     if(r.resist>40&&Math.random()<(r.resist-35)/130){
       s.oversight+=4;r.resist=clamp(r.resist+8,0,100);r.grudge+=10;
       r.compliance=clamp(r.compliance-0.05,.02,.98);
-      shToast(`Unmasked in ${r.name}: ${s.mode.mod.ovrName||'Patriotism'} ▲4 · organized ▲8 · grudge ▲10`);
+      shToast(`<span class="neg">Spent ${fmtMoney(pAg)}</span> · Unmasked in ${r.name}: ${s.mode.mod.ovrName||'Patriotism'} ▲4 · organized ▲8 · grudge ▲10 · suspicion ▲${dSus}`);
       pushNews(s,`Streamers in ${r.name} unmask your provocateurs mid march. Faces, pay stubs, the invoice itself. The march grows.`,'res');
     }else{
       r.unrest=clamp(r.unrest+16,0,100);
       if(r.pstate==='peaceful'){r.pstate='violent';r.unrest=Math.max(r.unrest,70);
-        shToast(`${r.name}: unrest ▲16 · suspicion ▲7 · the march turns violent. A crackdown is now justified.`);
+        shToast(`<span class="neg">Spent ${fmtMoney(pAg)}</span> · ${r.name}: unrest ▲16 · suspicion ▲${dSus} · the march turns violent. A crackdown is now justified.`);
         pushNews(s,H.agitate(r.name),'crit');}
-      else{shToast(`${r.name}: unrest ▲16 · suspicion ▲7`);
+      else{shToast(`<span class="neg">Spent ${fmtMoney(pAg)}</span> · ${r.name}: unrest ▲16 · suspicion ▲${dSus}`);
         pushNews(s,`Provocateur budget approved for ${r.name}. Tension climbs.`,'bad');}
     }
   }
   else if(act==='crack'&&s.has('charter')&&s.cash>=pCr&&r.unrest>=30){
     {const[kx2,ky2]=anchorOf(rid);s.pings.push({x:kx2,y:ky2,t:0,kind:'v'});}
-    s.cash-=pCr;r.cd=25;
-    shToast(`<span class="neg">Spent ${fmtMoney(pCr)}</span> · armored units move on ${r.name}`);
+    s.cash-=pCr;r.cdC=25;
     flashCash();
     s.lastCrack=s.day;   /* The Grateful World needs a long peace; this ends it */
     const backRisk=s.has('caps_war')?0
@@ -4154,7 +4171,7 @@ function doAction(act,rid){
     sfx('spend');sfx(backfire?'crackdown_fail':'crackdown');
     if(backfire){
       r.unrest=clamp(r.unrest+22,0,100);s.oversight+=3;
-      shToast(`Backfire in ${r.name}: unrest ▲22 · ${s.mode.mod.ovrName||'Patriotism'} ▲3`);
+      shToast(`<span class="neg">Spent ${fmtMoney(pCr)}</span> · Backfire in ${r.name}: unrest ▲22 · ${s.mode.mod.ovrName||'Patriotism'} ▲3`);
       pushNews(s,H.crackfail(r.name),'crit');
     }else{
       r.unrest=clamp(r.unrest-30,0,100);
@@ -4167,7 +4184,7 @@ function doAction(act,rid){
       /* Aug 25: the hidden tax on the receipt. Stephen discovered "crackdown
          caused unrest to go down but organization to go up" by accident; the
          one-two has depth only if the bill is visible at the till. */
-      shToast(`${r.name}: unrest ▼30 · compliance ▲ · suspicion ▲6 · organized ▲3 · grudge ▲8. They will remember.`);
+      shToast(`<span class="neg">Spent ${fmtMoney(pCr)}</span> · ${r.name}: unrest ▼30 · compliance ▲ · suspicion ▲6 · organized ▲3 · grudge ▲8. They will remember.`);
       pushNews(s,H.crackdown(r.name),'good');
     }
   }
@@ -4175,7 +4192,7 @@ function doAction(act,rid){
     sfx('spend');sfx('blackout');
     s.cash-=pBl;
     /* The Overton Dial: one purchase silences every market you hold */
-    const targets=s.has('caps_inf')?Object.keys(s.regions).map(k=>s.regions[k]).filter(x=>x.active):[r];
+    const targets=s.has('caps_inf')?Object.keys(s.regions).map(k=>s.regions[k]).filter(x=>x.active&&!(x.bcd>0)):[r];
     let tappedCut=0;
     targets.forEach(x=>{
       const cut=10*(1.4-x.media*0.8)*(x._cBlack||1);
@@ -4193,9 +4210,12 @@ function doAction(act,rid){
     /* Stephen mid test, 2026-08-24: "concede needs an are you sure." Not a
        modal (he has had enough popups today): the button arms on the first tap
        and executes on the second within five seconds. */
-    if(!(S._concArm&&S._concArm.rid===rid&&Date.now()-S._concArm.at<5000)){
+    if(!concArmed(S,rid)){
       S._concArm={rid:rid,at:Date.now()};
-      shToast('Control will slip in '+r.name+'. Tap CONFIRM CONCEDE to go through with it.');
+      const preAgain=r.lastConcede!=null&&(s.day-r.lastConcede)<10;
+      shToast(preAgain
+        ?'A repeat concession this soon buys HALF the calm for TWICE the ground. Tap CONFIRM CONCEDE anyway.'
+        :'Control will slip in '+r.name+'. Tap CONFIRM CONCEDE to go through with it.');
       renderSheet('reg');paintHud();return;
     }
     S._concArm=null;
@@ -4208,7 +4228,10 @@ function doAction(act,rid){
        cadence on purpose, so the canaries still play their intended game. */
     const again=r.lastConcede!=null&&(s.day-r.lastConcede)<10;
     const rf=again?0.5:1;
-    r.lastConcede=s.day;
+    /* only a BANKED concession stamps the window: stamping the empty ones
+       let a spammer roll the window forward forever and lock a region out
+       of goodwill without ever being told (hunt, Aug 25) */
+    if(!again)r.lastConcede=s.day;
     r.unrest=clamp(r.unrest-15*rf,0,100);r.suspicion=clamp(r.suspicion-8*rf,0,100);
     r.resist=clamp(r.resist-6*rf,0,100);r.grudge=Math.max(0,r.grudge-8*rf);
     r.control=Math.max(0,r.control-(again?0.10:0.05));r.compliance=clamp(r.compliance-0.02,0,.98);
@@ -4266,6 +4289,10 @@ function showEvent(ev){
     const pre={cash:S.cash,inf:S.inf,ovr:S.oversight,war:S.warHeat||0,pg:S.fdPages||0,a:rAgg()},logN=S.log.length;
     if(o.cost){if(o.cost.cash){evPayCash(S,o,sc);flashCash();}if(o.cost.inf)S.inf-=o.cost.inf;}
     o.f(S);
+    /* the choice is COMMITTED here: clear the pending flag and save NOW, so
+       a reload or tab-hide during the receipt cannot replay (and
+       double-apply) the event. CONTINUE below is purely cosmetic. */
+    S.pendingEventId=null;saveRun();
     const a2=rAgg(),ovn=S.mode.mod.ovrName||'Patriotism';
     const d=[];
     const num=v=>{const f=Math.abs(v);return f>=10?String(Math.round(f)):String(Math.round(f*10)/10);};
@@ -4396,7 +4423,6 @@ function collectAt(sx,sy){
   return false;
 }
 
-let ctipTO=null;
 /* ---- region popover ----------------------------------------------------
    Stephen/Penny brief: "this is how Plague Inc plays, you poke the map, not a
    menu". Absorbs what the old country tip said (country, HQ, rollout status,
@@ -4450,7 +4476,7 @@ function showRpop(rid,cn,sx,sy){
      the ocean in a real browser and watching it stay open. */
   if(rpopRid===rid&&e.classList.contains('on')){hideRpop();return;}
   rpopRid=rid;rpopCn=cn||'';
-  if(S&&S._pausePrev==null&&S.speed>0&&!S.over){S._pausePrev=S.speed;setSpeed(0);}
+  if(S&&S._pausePrev==null&&S.speed>0&&!S.over){S._pausePrev=S.speed;setSpeed(0);paintHud();}
   sfx('ui_tap');
   e.innerHTML=rpopHTML(rid,rpopCn);
   e.classList.add('on');
@@ -4458,6 +4484,9 @@ function showRpop(rid,cn,sx,sy){
      above the wire, inside both edges. */
   const wb=wrap.getBoundingClientRect(),cb=e.getBoundingClientRect();
   const top=(_hudH||0)+10, bot=wb.height-cb.height-8;
+  /* a fully-armed region card is taller than a 320x568 map area: cap it to
+     the space under the HUD and let it scroll (overflow-y in CSS) */
+  e.style.maxHeight=Math.max(120,wb.height-top-8)+'px';
   let x=sx+12,y=sy+12;
   if(x+cb.width>wb.width-8)x=sx-cb.width-12;
   x=Math.max(8,Math.min(x,Math.max(8,wb.width-cb.width-8)));
@@ -4469,20 +4498,8 @@ function hideRpop(keepPause){rpopRid=null;const e=$('rpop');if(e)e.classList.rem
      pause (openSheet passes keepPause and owns the restore from then on) */
   if(!keepPause&&S&&S._pausePrev!=null&&!S.sheet){const p=S._pausePrev;S._pausePrev=null;if(!S.over)setSpeed(p);}}
 
-function showCtip(c){
-  const r=S.regions[c.r];
-  const rank=(r.cOrder&&r.cOrder[c.idx]!==undefined)?r.cOrder[c.idx]:0;
-  const prog=r.active?Math.max(0,Math.min(1,r.coverage*r.cN-rank)):0;
-  const stt=r.lost?'EXPELLED':!r.active?'unsigned':prog>=1?'fully covered':prog>0?`installing ${(prog*100)|0}%`:'awaiting rollout';
-  const hq=(S.hqName===c.n)?' \u00b7 HQ':'';
-  const how=(!r.active&&!r.lost)?' \u00b7 enter it from the World tab, or grow a neighbour until it signs on its own':'';
-  $('ctipTxt').innerHTML=`<b>${c.n}</b>${hq} \u00b7 ${R[c.r].name}<br>`
-    +`<span style="color:var(--dim)">${stt}${r.active?` \u00b7 region coverage ${(r.coverage*100).toFixed(0)}% \u00b7 unrest ${r.unrest|0}`:how}</span>`;
-  const t=$('ctip');t.classList.add('on');
-  $('ctipBtn').onclick=()=>{hideCtip();openSheet('reg');};
-  clearTimeout(ctipTO);ctipTO=setTimeout(hideCtip,4500);
-}
-function hideCtip(){$('ctip').classList.remove('on');}
+/* #ctip and its popover went to the bin 2026-08-25: showRpop replaced it
+   (map taps route there since Aug 24) and showCtip had ZERO callers. */
 
 /* ============================ GUIDE (first-run interactive) ============================ */
 const GUIDE=[
@@ -4639,6 +4656,7 @@ function initPick(){
   loop();
 }
 function startGame(){
+  lsDel(K_RUN);   /* the point of no return is HERE, not at the confirm */
   const hc=pickedCountry!=null?COUNTRIES[pickedCountry]:null;
   const co=chosenCo();
   sfx('region_join');   /* the deploy is the first stamp on the first contract */
@@ -4713,7 +4731,11 @@ function bootGame(resumed){
   }
   $('speeds').innerHTML=[0,1,2,3].map(n=>
     `<button class="sp ${n===1?'on':''}" data-sp="${n}">${n===0?'II':n+'\u00D7'}</button>`).join('');
-  document.querySelectorAll('.sp').forEach(b=>b.onclick=()=>setSpeed(+b.dataset.sp));
+  document.querySelectorAll('.sp').forEach(b=>b.onclick=()=>{
+    /* a user-chosen speed outlives any card/sheet pause stash: without this,
+       closing the popover snapped a fresh 3x back to the stashed 1x */
+    if(S)S._pausePrev=null;
+    hideRpop();setSpeed(+b.dataset.sp);});
   document.querySelectorAll('.nb').forEach(b=>b.onclick=()=>{
     if(S.sheet===b.dataset.tab)closeSheet();else openSheet(b.dataset.tab);});
   $('shClose').onclick=closeSheet;
@@ -4743,7 +4765,6 @@ function bootGame(resumed){
     const el=$('shBody').querySelector('.acqbar');if(el)el.scrollIntoView({block:'start'});};
   cap.onclick=goDesk;
   cap.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();goDesk();}};
-  hideCtip();
   paintHud();
   cancelAnimationFrame(raf);drawFx();
   if(!resumed&&!tutSeen&&!lsGet('ftw_guide_done')&&!tipsOff()){tutSeen=true;startGuide();}
@@ -4765,14 +4786,17 @@ function leaveModal(){
     +'<p>Your run is saved as it stands. Pick it up from the menu whenever you like.</p>'
     +'<button class="opt" data-lv="back"><div class="ol">Back to the operation</div></button>'
     +'<button class="opt" data-lv="menu"><div class="ol">Save and go to the menu</div></button>'
-    +'<button class="opt" data-lv="exit"><div class="ol">Leave for the Sky Wolf arcade</div></button>';
+    /* inside the Play TWA the exit is policy-disabled (SWS_EXIT no-ops), and
+       tapping it used to clear the tick/fx timers first - a dead session with
+       invisible bubbles. The option simply does not exist there. */
+    +(window.SWS_IN_TWA?'':'<button class="opt" data-lv="exit"><div class="ol">Leave for the Sky Wolf arcade</div></button>');
   noteOpenModal();
   c.querySelectorAll('[data-lv]').forEach(b=>b.onclick=()=>{
     const k=b.dataset.lv;
     noteCloseModal();
     if(k==='back'){setSpeed(prev);return;}   /* prev||1 unpaused a paused game */
+    if(k==='exit'){if(window.SWS_EXIT)window.SWS_EXIT();return;}   /* navigation kills timers itself */
     clearInterval(tickTimer);tickTimer=null;clearInterval(tickerTimer);cancelAnimationFrame(raf);
-    if(k==='exit'){if(window.SWS_EXIT)window.SWS_EXIT();return;}
     S=null;show('menu');menuBeds();initMenu();refreshMenuExtras();
   });
 }
@@ -4854,7 +4878,10 @@ $('startBtn').onclick=()=>{
     noteOpenModal();
     c.querySelectorAll('[data-nw]').forEach(b=>b.onclick=()=>{
       noteCloseModal();
-      if(b.dataset.nw==='1'){lsDel(K_RUN);initPick();}
+      /* the old save survives until a NEW run actually begins (startGame
+         deletes it) - 'Start fresh anyway' used to burn a day-800 save the
+         moment it was tapped, on a pick screen with no way back */
+      if(b.dataset.nw==='1'){initPick();}
       else{show('menu');refreshMenuExtras();}
     });
     return;
@@ -4862,6 +4889,7 @@ $('startBtn').onclick=()=>{
   initPick();
 };
 $('resumeBtn').onclick=resumeRun;
+$('pickBackBtn').onclick=()=>{show('menu');refreshMenuExtras();};
 $('rotX').onclick=()=>$('rotHint').classList.remove('on');
 $('leaveBtn').onclick=leaveModal;
 $('shareBtn').onclick=()=>{
@@ -4911,6 +4939,7 @@ window._sbCapEarn=function(n,tag){
   try{ inTWA = document.referrer.indexOf('android-app://')===0
        || (window.matchMedia && matchMedia('(display-mode: standalone)').matches
            && /Android/i.test(navigator.userAgent)); }catch(e){}
+  window.SWS_IN_TWA=inTWA;
   window.SWS_EXIT=function(){
     if(inTWA) return;                       /* ⛔ never leave the app */
     if(framed){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; }

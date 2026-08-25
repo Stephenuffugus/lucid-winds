@@ -619,9 +619,9 @@ if (C) {
     ok('the coalesced toast renders the count as x4', /\u00d74/.test(toastEl.innerHTML),
       toastEl.innerHTML.slice(0, 120));
 
-    /* different toasts stack, but never more than three */
+    /* different toasts stack, but never more than TOAST_MAX */
     vm.runInContext("for(let i=0;i<6;i++)shToast('distinct message '+i);", cN);
-    ok('the toast stack never shows more than three', NOTE().toasts.length <= 3,
+    ok('the toast stack never shows more than TOAST_MAX', NOTE().toasts.length <= vm.runInContext('TOAST_MAX', cN),
       'entries=' + NOTE().toasts.length);
 
     /* tier 2 under tier 3: a banner raised while a modal is open WAITS */
@@ -1285,7 +1285,7 @@ if (C) {
       const fire=(withCap)=>{
         let nf=77;const ff=()=>{nf=(nf*1664525+1013904223)>>>0;return nf/4294967296;};
         const rf=Math.random;Math.random=ff;
-        const out=vm.runInContext("(function(){const r=S.regions.NA;r.active=true;r.coverage=.5;r.cd=0;r.media=1;r.resist=100;r.unrest=80;"
+        const out=vm.runInContext("(function(){const r=S.regions.NA;r.active=true;r.coverage=.5;r.cd=0;r.cdC=0;r.media=1;r.resist=100;r.unrest=80;"
           +(withCap?"S.owned.add('caps_war');":"S.owned.delete('caps_war');")
           +"recompute(S);const u0=r.unrest;doAction('crack','NA');return S.regions.NA.unrest-u0;})()",cK);
         Math.random=rf;return out;};
@@ -1329,7 +1329,7 @@ if (C) {
        bought: give it those and run the real doAction, not a stub */
     vm.runInContext("['agit','charter','blackout'].forEach(n=>S.owned.add(n));recompute(S);S.cash=5e6*MONEY;S.over=false;", cS);
     vm.runInContext("(function(){for(let i=0;i<40;i++){for(const k of Object.keys(S.regions)){const r=S.regions[k];" +
-      "r.active=true;r.cd=0;r.bcd=0;r.unrest=95;S.cash=5e6*MONEY;" +
+      "r.active=true;r.cd=0;r.cdC=0;r.bcd=0;r.unrest=95;S.cash=5e6*MONEY;" +
       "doAction('crack',k);doAction('agitate',k);doAction('blackout',k);}}})();", cS);
     /* A region in open revolt, walked through the states in order: unrest has to
        pass through the violent band before uprising or the 'violent' cue never
@@ -1673,7 +1673,10 @@ group('Aug 25 pass: tap safety, receipts, the refusal strip');
     ok('the proxy gate text is a live meter naming the levers', /gtxt:s=>'World suspicion '/.test(GAME));
     ok('agitate feeds suspicion locally every time', /r\.suspicion=clamp\(r\.suspicion\+5,0,100\);/.test(GAME));
     ok('the world-suspicion bump is per-region with a 30d staleness window (spam guard)',
-      /r\.lastAgitSus!=null\?r\.lastAgitSus:-999\)\)>=30\)\{bumpSus\(s,2\);r\.lastAgitSus=s\.day;\}/.test(GAME));
+      /const wOpen=\(s\.day-\(r\.lastAgitSus!=null\?r\.lastAgitSus:-999\)\)>=30;/.test(GAME) &&
+      /if\(wOpen\)\{bumpSus\(s,2\);r\.lastAgitSus=s\.day;\}/.test(GAME));
+    ok('the agitate toast shows the suspicion delta actually APPLIED, never a fixed number',
+      /suspicion ▲\$\{dSus\}/.test(GAME) && !/suspicion ▲7/.test(GAME));
   }
 
   /* the missing antibody: narrative capture finally breeds a countermeasure */
@@ -1726,6 +1729,41 @@ group('Aug 25 pass: tap safety, receipts, the refusal strip');
       /function coach\(s,key,txt\)/.test(GAME) && /seen\(key\)\|\|tipsOff\(\)/.test(GAME));
     ok('the tips toggle exists in the menu', /id="tipsChk"/.test(SRC));
     ok('the mode briefing banner downgrades after first sight', /seen\(bk\)\?'':'crit'/.test(GAME));
+  }
+
+  /* Aug 25 kink-hunt fixes: each of these was a confirmed player-visible
+     failure - the checks assert the repaired contract */
+  {
+    ok('a choice is COMMITTED before the receipt (reload cannot double-apply)',
+      /o\.f\(S\);[\s\S]{0,400}S\.pendingEventId=null;saveRun\(\);[\s\S]{0,1600}Aftermath/.test(GAME));
+    ok('avgCmp survives a reload with the other HUD aggregates',
+      /avgCmp:s\.avgCmp,/.test(GAME) && /s\.avgCmp=clamp\(num\(d\.avgCmp/.test(GAME));
+    ok('the BREAKING banner paints above the guide card', /#breaking\{[^}]*z-index:6/.test(SRC));
+    ok('the proxy gate lights exactly when its meter reads full', /gate:s=>s\.avgSus>=10,/.test(GAME));
+    ok('blackout-all respects every region\'s own cooldown', /filter\(x=>x\.active&&!\(x\.bcd>0\)\)/.test(GAME));
+    ok('the arcade-leave option does not exist inside the Play TWA',
+      /window\.SWS_IN_TWA\?'':'<button class="opt" data-lv="exit"/.test(GAME) && /window\.SWS_IN_TWA=inTWA;/.test(SRC));
+    ok('leaving for the arcade no longer kills the timers first',
+      /if\(k==='exit'\)\{if\(window\.SWS_EXIT\)window\.SWS_EXIT\(\);return;\}[\s\S]{0,80}clearInterval\(tickTimer\)/.test(GAME));
+    ok('an armed concede survives the pause it created', /function concArmed\(s,rid\)\{return s\._concArm&&s\._concArm\.rid===rid&&\(s\.speed===0\|\|/.test(GAME));
+    ok('only a banked concession stamps the repeat window', /if\(!again\)r\.lastConcede=s\.day;/.test(GAME));
+    ok('start-fresh keeps the old save until a new run begins',
+      /function startGame\([^)]*\)\{\s*\n\s*lsDel\(K_RUN\);/.test(GAME) && /if\(b\.dataset\.nw==='1'\)\{initPick\(\);\}/.test(GAME));
+    ok('the pick screen has a way back', /id="pickBackBtn"/.test(SRC));
+    ok('beds re-decide loop-vs-rotate on every start', /if\(loop\)a\.loop=!\(MUSIC_HAVE\[id\]&&musicEnabled\(id\)\.length>1\);/.test(GAME));
+    ok('relief desk ops warn when the floor would erase them', /pinned at its floor: the relief would be erased overnight/.test(GAME));
+    ok('a user speed press outlives any pause stash', /if\(S\)S\._pausePrev=null;/.test(GAME));
+    /* the taught Iron Fist one-two must actually be possible: agitate then
+       crackdown in the SAME region, back to back */
+    const cIF=makeCtx();cIF.doctrineModal=()=>{};cIF.showEvent=()=>{};
+    vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');S.owned.add('agit');S.owned.add('charter');recompute(S);"+
+      "const r=S.regions.NA;r.active=true;r.coverage=.5;r.unrest=40;r.pstate='peaceful';r.resist=10;S.cash=1e6*MONEY;", cIF);
+    const seq=vm.runInContext("(function(){const r=S.regions.NA;"+
+      "let n=5;const f=()=>{n=(n*1664525+1013904223)>>>0;return n/4294967296;};const mr=Math.random;Math.random=f;"+
+      "doAction('agitate','NA');const afterAg=r.unrest;doAction('crack','NA');Math.random=mr;"+
+      "return {afterAg,afterCr:r.unrest,cd:r.cd,cdC:r.cdC};})()", cIF);
+    ok('agitate then crackdown lands in the same region (split cooldowns)',
+      seq.afterCr < seq.afterAg && seq.cd > 0 && seq.cdC > 0, JSON.stringify(seq));
   }
 
   /* presentation: whole images, staged finish, readable capstones */
