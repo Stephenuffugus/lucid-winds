@@ -1,5 +1,26 @@
 # FLOCK THE WORLD (FTW) — HANDOFF
 
+## Aug 27 EVENING — greenlights executed (ledger: NOTES-AUG27.md D1/F)
+
+Stephen greenlit the wire engine + §17 option 2 in one message. Landed, checks
+347, sims byte-identical, live-probed:
+- **WIRE ENGINE v1**: wire-corpus.js (60-entry seed) + declarative wireWhen +
+  weighted pick/cooldowns/arcs + slot filling + persisted state + scripts/
+  wire_lint.js (node ids from the live game, dash law, name denylist).
+  ⛔ SEEDED-STREAM LAW: the wire branch consumes ZERO randomness without a
+  corpus and the legacy %23 ambient beat is untouched headless — the first
+  hook shape moved that cadence and "flipped" the 3-seed canary purely by
+  re-rolling dice. Corpus batches: HANDOFF-OPUS-WIRE.md (unblocked).
+- **Prebunk two-tier** (§17 opt 2): flagships unchanged at depth 4-6; media
+  >=0.5 regions breed the antibody at machine depth 7+; odds scale past 7.
+  Wide-at-depth-4 flipped the canary (subj 90.7 LOSS) — the tier is the
+  metered shape. Bot tables identical; the bite is human-lane.
+- **Synergy art pipeline**: SYN_ART registry + .synart slot in the discovery
+  modal; brief in 012Assets ("Sheet 12", 16 plates + 16 PROPOSED achievements
+  awaiting his call). Suno facts folded into HANDOFF-OPUS-PUBLISH (Pro tier,
+  composer-first workflow, per-form disclosure).
+- sw shell + registration bumped to 20260827b (shell now caches the corpus).
+
 ## Aug 27 — Stephen's Contractor/Incumbent notes pass (ledger: NOTES-AUG27.md)
 
 Hardest-diff run LOST at patriotism 100 while conceding everywhere; easy runs

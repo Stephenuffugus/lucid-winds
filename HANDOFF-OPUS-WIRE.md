@@ -1,4 +1,14 @@
-# OPUS HANDOFF — FTW wire corpus writing (BLOCKED on Stephen's greenlight of WIRE-ENGINE-SPEC.md)
+# OPUS HANDOFF — FTW wire corpus writing (UNBLOCKED Aug 27: Stephen greenlit, engine + lint are SHIPPED)
+
+STATUS: the engine is live (wirePick in index.html), the 60-entry seed corpus
+is `satellites/flock-the-world/wire-corpus.js` (study it — it is the voice and
+schema reference), and every batch you write is gated by
+`node scripts/wire_lint.js` (run it yourself before calling a batch done; it
+verifies node ids against the LIVE game, the dash law, the real-name denylist,
+condition keys, arc contiguity). Batches go in
+`satellites/flock-the-world/wire-batches/batch-<name>.js` as
+`window.WIRE_BATCH=[...]`. Do not merge into wire-corpus.js yourself — the
+Fable session integrates.
 
 You are writing NEWS DATA for Flock the World, a satire sim where the player
 is a surveillance vendor subjugating Earth and the civilians are the moral

@@ -1732,8 +1732,18 @@ group('Aug 25 pass: tap safety, receipts, the refusal strip');
       "S.econRun=130;const b=ovFloor(S);S.econRun=0;return {a,b};})()", cP);
     ok('the ban-debate streak raises the patriotism floor to its cap',
       fl.b >= 30 && fl.a < 6, JSON.stringify(fl));
-    ok('prebunking only grows where the press runs deep (media gate)',
-      vm.runInContext("CM.find(x=>x.id==='prebunk').media", cP) === 0.70);
+    /* Aug 27 (Stephen greenlit §17 opt 2): two tiers. Flagship presses
+       (>=0.7) behave exactly as shipped at depth 4-6 (flat 2.5%); half-free
+       presses (>=0.5) open ONLY to a deep machine (narrDepth 7+); odds
+       accelerate past depth 7. First cut without the depth tier flipped the
+       Startup canary; this contract is the metered shape. */
+    ok('prebunking media gate widened to the half-free press tier',
+      vm.runInContext("CM.find(x=>x.id==='prebunk').media", cP) === 0.5);
+    ok('half-free presses open only to a DEEP machine (depth 7 tier)',
+      vm.runInContext("(function(){var cm=CM.find(x=>x.id==='prebunk');var shallow={owned:new Set()};return cm.pr(shallow,{media:0.55})===false&&cm.pr(shallow,{media:0.75})===true;})()", cP) === true
+      && /narrDepth\(s\)>=7/.test(GAME));
+    ok('prebunk odds: baseline 2.5% below depth 7, accelerating after',
+      /d<7\?0\.025:Math\.min\(0\.05,0\.025\+0\.006\*\(d-6\)\)/.test(GAME));
   }
 
   /* the guide speaks the mode's language now, and teaching persists */
@@ -1932,6 +1942,66 @@ try {
     ok('a combo unlock under a paused sheet stays paused', nCombos >= 1 && sp === 0, 'combos=' + nCombos + ' speed=' + sp);
   }
 } catch (e) { ok('Aug 27 harness runs', false, e.message); }
+
+/* ------------------------------------------- wire engine (Aug 27, greenlit) */
+group('wire engine');
+try {
+  /* the shipped corpus must pass its own lint, and the lint must be the real
+     one (require it, never re-implement its rules here) */
+  const lint = require(path.join(__dirname, '..', '..', 'scripts', 'wire_lint.js'));
+  const lintErrs = lint.lintFiles([path.join(__dirname, 'wire-corpus.js')]);
+  ok('shipped corpus passes wire_lint', lintErrs.length === 0, lintErrs.slice(0, 3).join(' | '));
+  const corpus = lint.loadCorpus(path.join(__dirname, 'wire-corpus.js'));
+  ok('seed corpus is substantial (55+ entries)', corpus.length >= 55, 'got ' + corpus.length);
+  /* engine behavior, live in the vm */
+  const cW = makeCtx();
+  vm.runInContext("S=newState('CONTRACTOR','Vendor','NA')", cW);
+  cW.window.WIRE_CORPUS = [
+    { id: 't_gated', lane: 't', t: 'x'.repeat(60), when: { owned: ['ord'] }, wt: 5, cd: 100 },
+    { id: 't_arc1', lane: 't', t: 'y'.repeat(60), arc: { chain: 'tc', step: 1 }, wt: 5, cd: 100 },
+    { id: 't_arc2', lane: 't', t: 'z'.repeat(60), arc: { chain: 'tc', step: 2, gap: 40 }, wt: 5, cd: 100 },
+  ];
+  const pickId = () => vm.runInContext('(function(){var w=wirePick(S);return w?w.id:null;})()', cW);
+  vm.runInContext('S.wireCd={};S.wireOnce=[];S.wireArc={};S.day=100', cW);
+  /* only the arc opener is eligible: t_gated needs a node, t_arc2 needs step 1 */
+  ok('conditions gate: unowned node entry never fires', (() => {
+    for (let i = 0; i < 20; i++) if (pickId() !== 't_arc1') return false; return true; })());
+  vm.runInContext("S.owned.add('ord')", cW);
+  ok('granting the node opens its entry', (() => {
+    const seen = new Set(); for (let i = 0; i < 40; i++) seen.add(pickId());
+    return seen.has('t_gated') && seen.has('t_arc1') && !seen.has('t_arc2'); })());
+  vm.runInContext("wireFire(S,window.WIRE_CORPUS[1])", cW);
+  ok('a fired entry cools down and its arc advances', (() => {
+    for (let i = 0; i < 20; i++) if (pickId() === 't_arc1') return false;
+    return vm.runInContext("S.wireArc.tc.step", cW) === 1; })());
+  ok('the next arc step waits for its gap, then opens', (() => {
+    for (let i = 0; i < 20; i++) if (pickId() === 't_arc2') return false; /* day 100, gap 40 */
+    vm.runInContext('S.day=141', cW);
+    const seen = new Set(); for (let i = 0; i < 40; i++) seen.add(pickId());
+    return seen.has('t_arc2'); })());
+  ok('slot filling leaves no braces behind', (() => {
+    cW.window.WIRE_CORPUS.push({ id: 't_slots', lane: 't', t: 'In {country} of {region}, {hq} sends word to {rnd_country}.', wt: 5, cd: 100 });
+    return !/[{}]/.test(vm.runInContext("wireText(S,window.WIRE_CORPUS[3])", cW)); })());
+  ok('a missing corpus costs only variety (30 ticks, no throw, wire still speaks)', (() => {
+    const c0 = makeCtx();
+    vm.runInContext("S=newState('CONTRACTOR','Vendor','NA')", c0);
+    delete c0.window.WIRE_CORPUS;
+    try { vm.runInContext('for(var i=0;i<30;i++)tick()', c0); } catch (e) { return false; }
+    return vm.runInContext('wirePick(S)', c0) === null; })());
+  /* wiring: the page loads the corpus versioned, the shell caches it, the
+     state survives a reload */
+  ok('corpus script tag is versioned + deferred', /<script defer src="wire-corpus\.js\?v=\d{8}[a-z]"><\/script>/.test(SRC));
+  ok('sw shell caches the corpus', /"\.\/wire-corpus\.js"/.test(fs.readFileSync(path.join(__dirname, 'sw.js'), 'utf8')));
+  ok('wire state persists (save prunes, load validates)',
+    /wireCd:wirePrune\(s\)/.test(GAME) && /s\.wireOnce=Array\.isArray\(d\.wireOnce\)/.test(GAME) && /s\.wireArc=\{\}/.test(GAME));
+  /* the seeded-stream law: no corpus = zero randomness consumed by the wire
+     branch AND the legacy ambient cadence stays %23, so seeded canaries and
+     sim tables replay the exact pre-corpus dice */
+  ok('wire branch is corpus-gated (consumes no dice in headless runs)',
+    /if\(s\.day%13===0&&window\.WIRE_CORPUS&&window\.WIRE_CORPUS\.length\)/.test(GAME));
+  ok('legacy ambient beat keeps its untouched %23 cadence',
+    /if\(s\.day%23===0&&\(s\._wireLast==null\|\|s\.day-s\._wireLast>18\)\)/.test(GAME));
+} catch (e) { ok('wire engine harness runs', false, e.message); }
 
 /* -------------------------------------------------------- self test mode */
 /* A probe that cannot fail is not evidence. FTW_SELFTEST=1 mutates the source

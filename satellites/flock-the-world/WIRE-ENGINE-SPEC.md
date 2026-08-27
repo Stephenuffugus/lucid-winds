@@ -1,4 +1,10 @@
-# THE WIRE AS A SYSTEM — spec for Stephen's greenlight (Aug 27)
+# THE WIRE AS A SYSTEM — GREENLIT + v1 SHIPPED (Aug 27)
+
+STATUS: Stephen greenlit same day; engine + lint + 60-entry seed corpus are
+LIVE (see NOTES-AUG27.md F1 for the build record, including the seeded-stream
+law: the engine consumes zero randomness when no corpus is loaded, so the
+seeded sim tables and canaries stay byte-identical). F2 (war heat as a
+strategy) still awaits his shape call. Corpus batches: HANDOFF-OPUS-WIRE.md.
 
 His ask, from the notes: "thousands of different stories would be ideal…
 relevant to what's going on in the world right now and based on how you're

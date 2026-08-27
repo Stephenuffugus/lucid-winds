@@ -8,6 +8,9 @@
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <script src="/dev-gate.js?v=2"></script>
+<!-- the wire corpus: pure data, read lazily by wirePick, so a failed load
+     costs only variety. Bump ?v= whenever the corpus changes (host caching law). -->
+<script defer src="wire-corpus.js?v=20260827b"></script>
 <title>FLOCK THE WORLD · Global Coverage Simulator</title>
 <style>
 :root{
@@ -787,6 +790,8 @@ h1 em{font-style:normal;color:var(--sodium)}
 .evnews{font-size:11px;color:var(--dim);font-style:italic;margin:4px 0 10px}
 /* the machine's counter-note on a receipt: why the number you just saw will move */
 .evmach{font-size:10.5px;color:#7fb3d5;margin:2px 0 6px;border-left:2px solid #2a4a5e;padding-left:8px}
+/* synergy plate: whole image on a dark mat, never cover-cropped (the .evart lesson) */
+.synart{display:block;width:100%;max-height:28vh;object-fit:contain;margin:6px 0 4px;border-radius:10px;background:#0a0f14}
 .opt[disabled]{opacity:.4}
 .tutdots{display:flex;gap:5px;justify-content:center;margin:4px 0 12px}
 .tutdots i{width:6px;height:6px;border-radius:50%;background:var(--line)}
@@ -828,6 +833,7 @@ h1 em{font-style:normal;color:var(--sodium)}
      screen, but here it pushed BOTH options below the fold with no scroll
      affordance (round-2 shot: a bribe reading as the only option) */
   .evart{display:none}
+  .synart{display:none} /* same law as .evart: 360px of height is for the text + button */
   .whopic{width:38px;height:38px}
   .card{padding:12px 16px}
   .card .kicker{margin-bottom:2px}
@@ -1499,6 +1505,102 @@ const H={
  concede:r=>`${CO()} announces a "listening tour" in ${r}, walks back a slice of the rollout, films the walk-back.`
 };
 
+/* ============================ THE WIRE ENGINE ============================
+   Aug 27, Stephen greenlit WIRE-ENGINE-SPEC.md: a reactive news corpus in
+   wire-corpus.js (window.WIRE_CORPUS, pure data, loaded defer, read LAZILY so
+   a failed load costs nothing but variety). Entries carry DECLARATIVE
+   conditions - no functions in data - so scripts/wire_lint.mjs can hold every
+   batch to account before it ships. Writers' contract lives in the spec.
+
+   Condition keys (the whole legal set - lint enforces it):
+   owned/notOwned (node id arrays; owned with 2+ ids = combination stories),
+   tree {dep|cap|inf|war: minDepth}, doctrine, mode, diffMin, dayMin,
+   subj/ovr/sus/warHeat [lo,hi] bands, bloc (start region id), pstate,
+   econRun/fdPages/lostMin minimums, crackWithin (days since a crackdown).
+   Slots in text: {country} (hottest region's map-dominant face), {region},
+   {hq}, {rnd_country}. Everything pipes through ovrTxt for the meter name. */
+const WIRE_DIFF_ORDER=['Startup','Vendor','Incumbent'];
+function treeDepth(s,t){let n=0;for(const nd of NODES)if(nd.t===t&&s.owned.has(nd.id))n++;return n;}
+function wireBand(v,b){return !b||(v>=b[0]&&v<=b[1]);}
+function wireWhen(s,q){
+  if(!q)return true;
+  if(q.owned)for(const id of q.owned)if(!s.owned.has(id))return false;
+  if(q.notOwned)for(const id of q.notOwned)if(s.owned.has(id))return false;
+  if(q.tree)for(const t in q.tree)if(treeDepth(s,t)<q.tree[t])return false;
+  if(q.doctrine&&s.doctrine!==q.doctrine)return false;
+  if(q.mode&&s.modeKey!==q.mode)return false;
+  if(q.diffMin&&WIRE_DIFF_ORDER.indexOf(s.diffKey)<WIRE_DIFF_ORDER.indexOf(q.diffMin))return false;
+  if(q.dayMin&&s.day<q.dayMin)return false;
+  if(!wireBand(s.subj,q.subj))return false;
+  if(!wireBand(s.oversight,q.ovr))return false;
+  if(!wireBand(s.avgSus||0,q.sus))return false;
+  if(!wireBand(s.warHeat||0,q.warHeat))return false;
+  if(q.bloc&&s.startId!==q.bloc)return false;
+  if(q.pstate&&!REGIONS.some(R=>{const x=s.regions[R.id];return x.active&&x.pstate===q.pstate;}))return false;
+  if(q.econRun&&(s.econRun||0)<q.econRun)return false;
+  if(q.fdPages&&(s.fdPages||0)<q.fdPages)return false;
+  if(q.lostMin&&s.lostCount<q.lostMin)return false;
+  if(q.crackWithin!=null&&(s.lastCrack==null||s.day-s.lastCrack>q.crackWithin))return false;
+  return true;
+}
+function wireHotRegion(s){
+  let best=null,bs=-1;
+  REGIONS.forEach(R=>{const x=s.regions[R.id];if(!x.active)return;
+    const sc=x.unrest+x.resist+(x.pstate==='uprising'?120:x.pstate==='violent'?60:0);
+    if(sc>bs){bs=sc;best=R;}});
+  return best;
+}
+function wireText(s,w){
+  let t=w.t;
+  if(t.indexOf('{')>=0){
+    const face=rid=>(REGION_COUNTRIES[rid]&&REGION_COUNTRIES[rid][0])?REGION_COUNTRIES[rid][0].n:(R[rid]?R[rid].name:'the capital');
+    const hot=wireHotRegion(s);
+    const act=REGIONS.filter(Rg=>s.regions[Rg.id].active);
+    const rnd=act.length?act[(Math.random()*act.length)|0]:null;
+    t=t.replace(/\{country\}/g,hot?face(hot.id):'the capital')
+       .replace(/\{region\}/g,hot?hot.name:'the world')
+       .replace(/\{hq\}/g,s.hqName||'headquarters')
+       .replace(/\{rnd_country\}/g,rnd?face(rnd.id):'a border town');
+  }
+  return t;
+}
+function wirePick(s){
+  const C=window.WIRE_CORPUS;
+  if(!C||!C.length)return null;
+  s.wireCd=s.wireCd||{};s.wireOnce=s.wireOnce||[];s.wireArc=s.wireArc||{};
+  const elig=[];
+  for(const w of C){
+    if(!w||!w.id||!w.t)continue;
+    if(w.once&&s.wireOnce.indexOf(w.id)>=0)continue;
+    const at=s.wireCd[w.id];
+    if(at!=null&&s.day-at<(w.cd||90))continue;
+    if(w.arc){
+      const a=s.wireArc[w.arc.chain]||{step:0,day:-9999};
+      if(w.arc.step!==a.step+1)continue;
+      if(w.arc.step>1&&s.day-a.day<(w.arc.gap||40))continue; /* arcs breathe: serial at 1x, blur at 3x */
+    }
+    if(!wireWhen(s,w.when))continue;
+    elig.push(w);
+  }
+  if(!elig.length)return null;
+  let tot=0;for(const w of elig)tot+=(w.wt||5);
+  let roll=Math.random()*tot;
+  for(const w of elig){roll-=(w.wt||5);if(roll<=0)return w;}
+  return elig[elig.length-1];
+}
+function wireFire(s,w){
+  s.wireCd[w.id]=s.day;
+  if(w.once)s.wireOnce.push(w.id);
+  if(w.arc)s.wireArc[w.arc.chain]={step:w.arc.step,day:s.day};
+  pushNews(s,wireText(s,w),w.cls||'');
+}
+/* wireCd grows one key per fired entry; only recent stamps matter */
+function wirePrune(s){
+  const out={};
+  for(const id in (s.wireCd||{}))if(s.day-s.wireCd[id]<420)out[id]=s.wireCd[id];
+  return out;
+}
+
 /* ============================ RESISTANCE ============================
    Ordinary people organizing against the machine. Each countermeasure is
    a real-world tactic; unlocking one teaches it. They target whatever the
@@ -1537,7 +1639,18 @@ const CM=[
     best theater), triggered by the DEPTH of the machine itself rather than
     street organization, because pac suppresses the very resist a normal
     threshold would need: the machine must not smother its own antibody. */
- {id:'prebunk', when:s=>narrDepth(s)>=4, th:0, media:0.70,
+ /* Aug 27, Stephen greenlit §17 option 2: the antibody scales with the machine.
+    Two tiers, metered so the balanced lane is untouched:
+    - flagship presses (media>=0.7): exactly the shipped behavior at depth 4-6
+      (flat 2.5%), accelerating only once the machine runs DEEP (7+).
+    - half-free presses (media>=0.5): open only to a DEEP machine (depth 7+) -
+      a moderate story build never sees them, the full-stack lane always does.
+    First cut (flat depth-scaled odds everywhere >=0.5) flipped the Startup
+    canary to a LOSS at subj 90.7: the balanced glove bot's own moderate
+    story usage bred world antibodies. This shape restored it. */
+ {id:'prebunk', when:s=>narrDepth(s)>=4, th:0, media:0.5,
+  pr:(s,r)=>r.media>=0.7||narrDepth(s)>=7,
+  p:s=>{const d=narrDepth(s);return d<7?0.025:Math.min(0.05,0.025+0.006*(d-6));},
   t:r=>`Librarians and teachers in ${r} run prebunking workshops: the astroturf tells, the anchor's tricks, the sponsored-nuance playbook. Your stories arrive pre-debunked.`,
   fx:{pac:0.65,sup:0.65}}
 ];
@@ -1907,7 +2020,7 @@ function newState(modeKey,diffKey,startId,seed,hqName,co){
   const s={
     mode, diff, modeKey, diffKey, startId, day:0, cash:mode.cash*diff.cash, inf:mode.inf, oversight:0, speed:1,
     owned:new Set(), combos:new Set(), regions:{}, log:[], bubbles:[], pulses:[], dots:[], pk:[], pings:[], hqGlow:0, newsQ:[], newsIdx:0,
-    warHeat:0, concLog:[], doctrine:null, over:false, won:false, milestones:new Set(), wmiles:new Set(), unread:0, avgRes:0,
+    warHeat:0, concLog:[], wireCd:{}, wireOnce:[], wireArc:{}, doctrine:null, over:false, won:false, milestones:new Set(), wmiles:new Set(), unread:0, avgRes:0,
     sheet:null, lostCount:0, avgSus:0, avgMil:0, avgCmp:0, subj:0, activeCount:0, events:EV(), evLast:{}, evHeat:0, evPaid:0, fdPages:0, outlet:0,
     /* the foreign desk rotates its contacts: two of the three personal arcs
        per run (vance, kesh, lena). Less choice-clock displacement per run,
@@ -2358,7 +2471,8 @@ function tick(){
         if(cm.need&&!s.has(cm.need))continue;
         if(cm.when&&!cm.when(s))continue;
         if(cm.media&&r.media<cm.media)continue;
-        if(r.resist>=cm.th&&Math.random()<0.025){
+        if(cm.pr&&!cm.pr(s,r))continue;
+        if(r.resist>=cm.th&&Math.random()<(cm.p?cm.p(s):0.025)){
           r.counters.add(cm.id);
           pushNews(s,cm.t(r.name),'res');
           {const[cx2,cy2]=anchorOf(id);s.pings.push({x:cx2,y:cy2,t:0,kind:'cm'});}
@@ -2520,7 +2634,20 @@ function tick(){
       return false;
     }return true;});
 
-  if(s.day%23===0){const amb=AMBIENT[(Math.random()*AMBIENT.length)|0];
+  /* the wire: reactive corpus lines every 13 days when the corpus is loaded.
+     ⛔ SEEDED-STREAM LAW: when NO corpus is present (sim.js, check.js
+     canaries) this branch must consume ZERO randomness and the legacy
+     ambient beat below must fire on its untouched %23 cadence, or every
+     seeded regression table re-rolls and the 3-seed canary flips (it did:
+     first cut moved ambient to %26 and all three seeds "lost"). */
+  if(s.day%13===0&&window.WIRE_CORPUS&&window.WIRE_CORPUS.length){
+    const w=wirePick(s);
+    if(w){wireFire(s,w);s._wireLast=s.day;}
+  }
+  /* legacy ambient beat, cadence untouched; it only steps aside when a
+     corpus line landed recently (a check no headless run ever triggers) */
+  if(s.day%23===0&&(s._wireLast==null||s.day-s._wireLast>18)){
+    const amb=AMBIENT[(Math.random()*AMBIENT.length)|0];
     pushNews(s,typeof amb==='function'?amb():amb,'');}
 
   if(!s.doctrine&&s.subj>=0.14&&!$('modal').classList.contains('on'))doctrineModal();
@@ -3135,6 +3262,7 @@ function saveRun(){
         cOrder:r.cOrder||null,cN:r.cN||1};}
     lsSet(K_RUN,JSON.stringify({v:2,modeKey:s.modeKey,diffKey:s.diffKey,startId:s.startId,
       day:s.day,cash:s.cash,inf:s.inf,oversight:s.oversight,warHeat:s.warHeat,doctrine:s.doctrine,net:s.net||0,gross:s.gross||0,lbCd:s.lbCd||0,evHeat:s.evHeat||0,evPaid:s.evPaid||0,concLog:(s.concLog||[]).slice(-12),
+      wireCd:wirePrune(s),wireOnce:(s.wireOnce||[]).slice(-400),wireArc:s.wireArc||{},
       /* a reload used to wipe live bubbles, including a leak whose oversight
          penalty had not landed yet, and to forget a pending choice event, so
          reloading dodged the decision. It also dropped the HUD aggregates, so a
@@ -3185,6 +3313,12 @@ function loadRun(){
   s.evHeat=clamp(num(d.evHeat,0),0,CFG.evHeatMax);s.evPaid=Math.max(0,num(d.evPaid,0)|0);
   /* capitulation-fatigue window; a pre-Aug-27 save loads it empty */
   s.concLog=Array.isArray(d.concLog)?d.concLog.filter(x=>typeof x==='number'&&x>=0&&x<=s.day).slice(-12):[];
+  /* wire engine state: cooldown stamps, fired once-only ids, arc positions.
+     Older saves load them empty and the corpus simply starts fresh. */
+  s.wireCd={};if(d.wireCd&&typeof d.wireCd==='object')for(const k in d.wireCd){const v=d.wireCd[k];if(typeof k==='string'&&k.length<64&&typeof v==='number'&&v>=0&&v<=s.day)s.wireCd[k]=v;}
+  s.wireOnce=Array.isArray(d.wireOnce)?d.wireOnce.filter(x=>typeof x==='string'&&x.length<64).slice(-400):[];
+  s.wireArc={};if(d.wireArc&&typeof d.wireArc==='object')for(const k in d.wireArc){const a=d.wireArc[k];
+    if(typeof k==='string'&&k.length<64&&a&&typeof a.step==='number'&&a.step>=0&&a.step<50&&typeof a.day==='number')s.wireArc[k]={step:a.step,day:Math.min(a.day,s.day)};}
   /* the desk and acquisition state, validated the way everything else is.
      A v2 save written before these fields existed loads them as 0. */
   s.acqHeat=clamp(num(d.acqHeat,0),0,CFG.acqHeatMax);
@@ -4494,6 +4628,10 @@ function evPayCash(s,o,sc){
    event card. Speed: a synergy unlocks on a purchase, which happens under a
    paused sheet - if we were already paused, STAY paused and let the sheet's
    own close restore its stashed speed. */
+/* synergy plate art: flip a key to 1 when its file lands in art/synergy/
+   (<id>.webp). The artist brief lives in 012Assets ("FTW Synergy + Achievement
+   Art Brief"); until a plate exists the modal simply runs artless. */
+const SYN_ART={};
 function synergyModal(c){
   if(!noteModal(()=>synergyModal(c)))return;
   const prev=S?S.speed:0;if(S)setSpeed(0);
@@ -4501,6 +4639,7 @@ function synergyModal(c){
   const found=S&&S.combos?S.combos.size:1;
   const mc=$('modalCard');
   mc.innerHTML=`<div class="kicker" style="color:var(--sodium)">Synergy discovered · ${found} of ${COMBOS.length} this run</div>
+    ${SYN_ART[c.id]?`<img class="synart" src="art/synergy/${c.id}.webp" alt="">`:''}
     <h3 style="color:var(--sodium)">${c.n}</h3>
     <p style="color:var(--sodium);opacity:.85;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase">${parts}</p>
     <p>${c.d}</p>
@@ -5149,7 +5288,7 @@ window._sbCapEarn=function(n,tag){
   /* offline shell: registered here so the whole game (art and sfx included)
      works offline after one session. Bump ?v= with sw.js SHELL_VERSION. */
   if('serviceWorker' in navigator){
-    try{ navigator.serviceWorker.register('sw.js?v=20260827a'); }catch(e){}
+    try{ navigator.serviceWorker.register('sw.js?v=20260827b'); }catch(e){}
   }
   if(framed){
     try{ parent.postMessage({sws:'ready'},'*'); }catch(e){}

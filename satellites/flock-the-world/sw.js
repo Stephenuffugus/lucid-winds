@@ -12,7 +12,7 @@
    Bump SHELL_VERSION on every deploy, AND the ?v= on the registration in
    index.html in lockstep — this host edge-pins bare sw.js URLs for 7 days. */
 
-const SHELL_VERSION  = "ftw-shell-v20260827a";
+const SHELL_VERSION  = "ftw-shell-v20260827b";
 const ASSET_CACHE    = "ftw-assets-v1";
 const NAV_TIMEOUT_MS = 8000;
 
@@ -23,7 +23,8 @@ const SHELL_ASSETS = [
   "./icon-192.png",
   "./icon-512.png",
   "./icon-maskable-512.png",
-  "./art/bg/wordmark.webp"
+  "./art/bg/wordmark.webp",
+  "./wire-corpus.js"
 ];
 
 self.addEventListener("install", event => {
