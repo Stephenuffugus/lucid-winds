@@ -76,6 +76,52 @@ export const LW_WEB_PRICES = {
   full_bloom:            { base: 1000, completeCents: 500 },
 }
 
+/**
+ * Pi-rail prices, in PI (not cents). The web rail is USD; Pi is its own
+ * currency, so it needs its own table. This closes the hole where piApprove
+ * approved ANY amount for ANY product (a 0.001-Pi payment carrying
+ * {type:'full_bloom'} granted the bundle — see piApprove validation).
+ *
+ * ⛔ These are FLOORS that kill the exploit, not final prices. Stephen sets the
+ * real numbers before the Pi build ships. The three tiered maps are read from
+ * the live client's own Pi price display; the flats are conservative
+ * placeholders. `min` marks a variable-amount product (a tip): floor only,
+ * never an exact price.
+ *
+ * Validation uses the CHEAPEST price for a type as the hard floor, so a payment
+ * can never be approved for less than the least a product ever costs, even if
+ * the client omits the slot/tier hint. (Per-tier precision — charging the exact
+ * tier price — is a follow-up that needs server-side slot derivation.)
+ */
+export const PI_PRICES = {
+  slot:                  { flat: 1 },
+  item_pouch_slot:       { flat: 1 },
+  emergency_pouch:       { flat: 10 },
+  supporter_pack:        { flat: 30 },
+  half_bloom:            { flat: 50 },
+  full_bloom:            { flat: 100 },
+  early_open_hut:        { flat: 5 },
+  hut_early_open:        { flat: 5 },
+  nursery_slot:          { perSlot: { 4: 5,  5: 10, 6: 20 } },
+  nursery_clipping_slot: { perSlot: { 3: 3,  4: 5,  5: 8  } },
+  seed_pouch_slot:       { tiers:   { seed15: 10, seed20: 20 } },
+  tip:                   { min: 0.1 },
+}
+
+/**
+ * The hard floor (in Pi) below which a payment for `type` must be rejected.
+ * Returns null for an unknown type (caller rejects those outright).
+ */
+export function piFloor(type) {
+  const spec = PI_PRICES[type]
+  if (!spec) return null
+  if (spec.flat != null) return spec.flat
+  if (spec.min != null) return spec.min
+  if (spec.perSlot) return Math.min(...Object.values(spec.perSlot))
+  if (spec.tiers) return Math.min(...Object.values(spec.tiers))
+  return null
+}
+
 // Human labels for invoice descriptions / order records.
 export const LW_WEB_LABELS = {
   slot: 'Greenhouse Slots',

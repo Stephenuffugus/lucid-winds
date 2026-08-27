@@ -28,6 +28,7 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import { logger } from 'firebase-functions/v2'
 import { getFirestore, FieldValue } from 'firebase-admin/firestore'
 import { piGet, piPost, getPiServerKey } from './piClient.js'
+import { piFloor } from './fulfill.js'
 
 export const piApprove = onCall(
   { region: 'us-central1', secrets: ['PI_SERVER_KEY'] },
@@ -55,6 +56,24 @@ export const piApprove = onCall(
     } catch (err) {
       logger.error('[piApprove] Pi GET failed', err)
       throw new HttpsError('not-found', `Pi payment ${paymentId} not found.`)
+    }
+
+    // 3b. PRICE CHECK — the hole was here: a payment's amount and metadata are
+    //     chosen by the client, and this handler used to approve ANY amount for
+    //     ANY product. Reject an unknown product, and reject a payment below the
+    //     product's hard floor, BEFORE approving (an unapproved payment never
+    //     moves a single Pi, so the player is never charged for a rejection).
+    const md = piPayment.metadata || {}
+    const floor = piFloor(md.type)
+    if (floor == null) {
+      logger.warn('[piApprove] unknown product uid=%s type=%s', uid, md.type)
+      throw new HttpsError('invalid-argument', `Unknown product: ${md.type}`)
+    }
+    const paid = Number(piPayment.amount)
+    // 1e-9 float slop — Pi amounts are decimals (Pi's own docs use 3.1415).
+    if (!(paid + 1e-9 >= floor)) {
+      logger.warn('[piApprove] underpay uid=%s type=%s paid=%s floor=%s', uid, md.type, paid, floor)
+      throw new HttpsError('failed-precondition', 'Payment amount is below the product price.')
     }
 
     // 4. Write the approval record BEFORE calling Pi approve. If approve fails we still
