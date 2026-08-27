@@ -1003,6 +1003,7 @@ h1 em{font-style:normal;color:var(--sodium)}
   <div id="endRecs" class="fine" style="margin:0 auto 10px"></div>
   <button class="cta" id="againBtn" style="max-width:360px">Run it back</button>
   <button class="howbtn" id="shareBtn" style="margin-top:12px">Copy this result</button>
+  <button class="howbtn" id="flightBtn" style="margin-top:8px;display:none">Copy run log for the coach</button>
 </section>
 
 </div>
@@ -1458,6 +1459,7 @@ function checkCombos(s){
       recompute(s);
       /* first discovery ever, across every session, pays the fleet sunbeam */
       if(noteCombo(c.id)&&window._sbCapEarn)window._sbCapEarn(3,'flock-the-world:synergy');
+      flightLog('combo',{id:c.id});
       sfx('synergy');
       pushNews(s,`SYNERGY UNLOCKED \u00b7 ${c.n}. ${c.d}`,'good');
       /* Aug 27, Stephen: "I was not totally aware when synergies were found.
@@ -2069,6 +2071,7 @@ function newState(modeKey,diffKey,startId,seed,hqName,co){
   }
   recompute(s);
   pushNews(s,`${escH(s.co)} installs its first unit in ${s.hqName}. It is pointed at a parking lot.`,'good');
+  flightStart(s);
   return s;
 }
 function recompute(s){
@@ -2360,6 +2363,7 @@ function doOp(id){
   const p=opPrice(s,o); if(s.cash<p)return false;
   s.cash-=p; flashCash();
   const line=o.f(s);
+  flightLog('desk',{op:id,c:p});
   s.deskRoll=(s.deskRoll||0)+1;                        /* buying refreshes the desk */
   recompute(s); sfx('spend');
   pushNews(s,line,'good');
@@ -2385,6 +2389,7 @@ function doAcquire(){
     r.coverage=clamp(r.coverage+g,0,1); gain+=g;
     r.suspicion=clamp(r.suspicion+CFG.acqSus,0,100);});
   s.oversight=clamp(s.oversight+CFG.acqOvr,0,100);
+  flightLog('acq',{c:p});
   sfx('spend');
   return touched>0?{touched:touched,avgGain:gain/touched}:null;
 }
@@ -2522,6 +2527,7 @@ function tick(){
     if(ns!==prev&&H[ns]&&(ns!=='calm'||prev==='peaceful'||prev==='violent'))
       pushNews(s,H[ns](r.name),ns==='uprising'?'crit':ns==='violent'?'crit':ns==='peaceful'?'bad':'');
     if(ns!==prev&&ns!=='calm'){const[ppx,ppy]=anchorOf(id);
+      flightLog('unrest',{r:id,s:ns});
       s.pings.push({x:ppx,y:ppy,t:0,kind:ns==='uprising'?'u':ns==='violent'?'v':'p'});}
     /* Stephen, Aug 24: "I don't know how to quell them once they get into an
        uprising and there hasn't been a lot of stuff to teach you if it's even
@@ -2659,6 +2665,8 @@ function tick(){
      ambient beat below must fire on its untouched %23 cadence, or every
      seeded regression table re-rolls and the 3-seed canary flips (it did:
      first cut moved ambient to %26 and all three seeds "lost"). */
+  /* the coach tape: a state snapshot every 30 days (zero randomness) */
+  if(s.day%30===0)flightSnap(s);
   if(s.day%13===0&&window.WIRE_CORPUS&&window.WIRE_CORPUS.length){
     const w=wirePick(s);
     if(w){wireFire(s,w);s._wireLast=s.day;}
@@ -3086,6 +3094,9 @@ function finish(won,why){
     $('endText').textContent='The civilians '+S.co+' farmed learned faster than it deployed: they mapped the lenses, encrypted the graph, filmed the crackdowns, leaked the archive, and dragged the whole parasite class into a hearing room with the receipts. Contracts voided. Archive deleted. Three executives cooperating. Paperwork. The one weapon you never saw coming.';
   }
   playEpilogue(endStory(S,won,why));
+  flightLog('end',{won:won?1:0,why:why});flightSave();
+  /* the coach tape export: his eyes only (fleet dev flag) */
+  {const fb=$('flightBtn');if(fb)fb.style.display=lsGet('sws_dev_ok')==='1'?'':'none';}
   /* Aug 25, Stephen: "fade to show the end screen while whatever ending song
      is playing. Then have it fade to the stats so it feels like a proper game
      finishing." The song is already playing (started above); the game screen
@@ -3255,6 +3266,59 @@ function sfxPlay(id,loop){
 }
 function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
 function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+
+/* ==================== THE FLIGHT RECORDER (the coach tape) ====================
+   Stephen, Aug 27: "tell you move by move what I did, and when you assess my
+   gameplay you could say what I should have done, or realize it was not
+   winnable, or that something was not displayed properly."
+   Every decision and a 30-day state snapshot, kept locally with the run.
+   The export button appears only with the fleet dev flag (sws_dev_ok), so
+   regular players never see it. ⛔ SEEDED-STREAM LAW: this module consumes
+   ZERO randomness and never throws - it runs inside tick(). */
+const K_FLIGHT='ftw_flight';
+const FLIGHT={h:null,list:[],max:4000,trunc:false};
+function flightStart(s){
+  FLIGHT.h={v:1,mode:s.modeKey,diff:s.diffKey,start:s.startId,co:s.co||''};
+  FLIGHT.list=[];FLIGHT.trunc=false;
+}
+function flightLog(k,d){
+  try{
+    if(!FLIGHT.h)return;
+    if(FLIGHT.list.length>=FLIGHT.max){
+      if(!FLIGHT.trunc){FLIGHT.trunc=true;FLIGHT.list.push({d:S?S.day:0,k:'truncated'});}
+      return;
+    }
+    FLIGHT.list.push(Object.assign({d:S?S.day:0,k:k},d||{}));
+  }catch(e){}
+}
+function flightSnap(s){
+  flightLog('snap',{subj:+(s.subj*100).toFixed(1),ovr:+s.oversight.toFixed(1),
+    sus:+(s.avgSus||0).toFixed(1),res:+(s.avgRes||0).toFixed(0),
+    cash:Math.round(s.cash),inf:Math.round(s.inf),mkt:s.activeCount,
+    war:+((s.warHeat||0)*100).toFixed(0),lost:s.lostCount,
+    floor:+ovFloor(s).toFixed(0),bub:s._bubN||0});
+  flightSave();
+}
+function flightSave(){try{lsSet(K_FLIGHT,JSON.stringify({h:FLIGHT.h,list:FLIGHT.list}));}catch(e){}}
+function flightRestore(s){
+  try{
+    const d=JSON.parse(lsGet(K_FLIGHT)||'null');
+    if(d&&d.h&&d.h.mode===s.modeKey&&d.h.diff===s.diffKey&&d.h.start===s.startId
+      &&Array.isArray(d.list)&&(!d.list.length||d.list[d.list.length-1].d<=s.day+1)){
+      FLIGHT.h=d.h;FLIGHT.list=d.list.slice(0,FLIGHT.max);FLIGHT.trunc=false;return;
+    }
+  }catch(e){}
+  flightStart(s);
+}
+function flightExport(){
+  return JSON.stringify({coach:'FTW run log · hand this to the coach',
+    h:FLIGHT.h,at:S?{day:S.day,won:!!S.won,over:!!S.over}:null,log:FLIGHT.list});
+}
+window.FTW_FLIGHT={dump:flightExport,
+  copy:function(){const t=flightExport();
+    if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+    return Promise.reject(new Error('no clipboard'));}};
+/* ==================== end flight recorder ==================== */
 function lsDel(k){try{localStorage.removeItem(k);}catch(e){}}
 function jGet(k){try{const v=JSON.parse(lsGet(k)||'null');return(v&&typeof v==='object'&&!Array.isArray(v))?v:null;}catch(e){return null;}}
 /* Aug 25: teaching that was already taught stays taught. Field notes used to
@@ -3362,6 +3426,8 @@ function loadRun(){
   s.wireOnce=Array.isArray(d.wireOnce)?d.wireOnce.filter(x=>typeof x==='string'&&x.length<64).slice(-400):[];
   s.wireArc={};if(d.wireArc&&typeof d.wireArc==='object')for(const k in d.wireArc){const a=d.wireArc[k];
     if(typeof k==='string'&&k.length<64&&a&&typeof a.step==='number'&&a.step>=0&&a.step<50&&typeof a.day==='number')s.wireArc[k]={step:a.step,day:Math.min(a.day,s.day)};}
+  /* a resumed run keeps its coach tape (same mode/diff/start, day monotonic) */
+  flightRestore(s);
   /* the desk and acquisition state, validated the way everything else is.
      A v2 save written before these fields existed loads them as 0. */
   s.acqHeat=clamp(num(d.acqHeat,0),0,CFG.acqHeatMax);
@@ -4434,6 +4500,7 @@ function doAction(act,rid){
   const pAg=aPrice(80*MONEY,4),pCr=aPrice(120*MONEY,6),pBl=aPrice(100*MONEY,5);
   if(act==='agitate'&&s.has('agit')&&s.cash>=pAg){
     s.cash-=pAg;r.cd=20;sfx('spend');sfx('agitate');
+    flightLog('act',{a:'agitate',r:rid});
     flashCash();
     /* Aug 25: agitation finally raises suspicion (it always should have -
        provocateurs get photographed). This is also the deliberate lever that
@@ -4470,6 +4537,7 @@ function doAction(act,rid){
   else if(act==='crack'&&s.has('charter')&&s.cash>=pCr&&r.unrest>=30){
     {const[kx2,ky2]=anchorOf(rid);s.pings.push({x:kx2,y:ky2,t:0,kind:'v'});}
     s.cash-=pCr;r.cdC=25;
+    flightLog('act',{a:'crack',r:rid});
     flashCash();
     s.lastCrack=s.day;   /* The Grateful World needs a long peace; this ends it */
     const backRisk=s.has('caps_war')?0
@@ -4499,6 +4567,7 @@ function doAction(act,rid){
   else if(act==='blackout'&&s.has('blackout')&&s.cash>=pBl&&!(r.bcd>0)){
     sfx('spend');sfx('blackout');
     s.cash-=pBl;
+    flightLog('act',{a:'blackout',r:rid});
     /* The Overton Dial: one purchase silences every market you hold */
     const targets=s.has('caps_inf')?Object.keys(s.regions).map(k=>s.regions[k]).filter(x=>x.active&&!(x.bcd>0)):[r];
     let tappedCut=0;
@@ -4552,6 +4621,7 @@ function doAction(act,rid){
     s.concLog=(s.concLog||[]).filter(d=>s.day-d<45);
     const fatigued=!again&&s.concLog.length>=3;
     if(!again)s.concLog.push(s.day);
+    flightLog('act',{a:'concede',r:rid,again:again?1:0,fat:fatigued?1:0});
     r.unrest=clamp(r.unrest-15*rf,0,100);r.suspicion=clamp(r.suspicion-8*rf,0,100);
     r.resist=clamp(r.resist-6*rf,0,100);r.grudge=Math.max(0,r.grudge-8*rf);
     r.control=Math.max(0,r.control-(again?0.10:0.05));r.compliance=clamp(r.compliance-0.02,0,.98);
@@ -4615,6 +4685,7 @@ function showEvent(ev){
     const pre={cash:S.cash,inf:S.inf,ovr:S.oversight,war:S.warHeat||0,pg:S.fdPages||0,a:rAgg()},logN=S.log.length;
     if(o.cost){if(o.cost.cash){evPayCash(S,o,sc);flashCash();}if(o.cost.inf)S.inf-=o.cost.inf;}
     o.f(S);
+    flightLog('ev',{id:ev.id,o:+b.dataset.opt});
     /* the choice is COMMITTED here: clear the pending flag and save NOW, so
        a reload or tab-hide during the receipt cannot replay (and
        double-apply) the event. CONTINUE below is purely cosmetic. */
@@ -4706,6 +4777,7 @@ function doctrineModal(){
   noteOpenModal();
   c.querySelectorAll('[data-doc]').forEach(b=>b.onclick=()=>{
     S.doctrine=b.dataset.doc;sfx('doctrine');recompute(S);
+    flightLog('doc',{doc:S.doctrine});
     pushNews(S,S.doctrine==='glove'
       ?'Doctrine adopted: The Velvet Glove. New tagline tests well: "Always There For You."'
       :'Doctrine adopted: The Iron Fist. New tagline tests adequately: "Always There."','good');
@@ -4764,6 +4836,7 @@ function buyNode(id){
   const c=nodeCost(n);
   if(S.inf<c){flashCur();sfx('cant_afford');return;}
   S.inf-=c;S.owned.add(id);recompute(S);
+  flightLog('node',{id:id,c:c});
   sfx(c>=20?'buy_large':'buy_small');
   pushNews(S,`${n.n} activated across the network.`,'good');
   if(n.buyFx)n.buyFx(S);
@@ -4782,6 +4855,7 @@ function collectAt(sx,sy){
       else if(b.k==='inf'){S.inf+=b.v;sfx('bubble_inf');pushNews(S,`Board briefing lands. +${b.v} influence.`,'good');}
       else{S.inf+=1;S.oversight=Math.max(0,S.oversight-0.6);sfx('bubble_leak');
         pushNews(S,'Leak intercepted before publication. +1 influence.','good');}
+      S._bubN=(S._bubN||0)+1;  /* coach tape: bubbles caught, cumulative in each snap */
       S.bubbles.splice(i,1);paintHud();return true;
     }}
   return false;
@@ -5218,6 +5292,7 @@ function shBodyClick(e){
     const cost=Math.max(500*MONEY,Math.round(((S.net||0)*15)/25)*25);
     if(S.cash>=cost&&!(S.lbCd>0)){
       S.cash-=cost;S.inf+=8;S.lbCd=15;S.oversight=clamp(S.oversight+0.4,0,100);
+      flightLog('lobby',{c:cost});
       const ovn=S.mode.mod.ovrName||'Patriotism';
       shToast(`<span class="neg">Spent ${fmtMoney(cost)}</span> · +8 influence · ${ovn} +0.4 · ready again in 15d`);
       flashCash();flashGain('vInf');
@@ -5234,6 +5309,7 @@ function shBodyClick(e){
       if(r.lost){r.lost=false;S.lostCount=Math.max(0,S.lostCount-1);r.unrest=45;}
       r.active=true;r.coverage=0.005;
       S.activeCount++;sfx('spend');sfx('region_join');
+      flightLog('enter',{r:en.dataset.enter,c:cost});
       setSpreadOrder(S,r.id,anchorOf(r.id));
       S.pulses.push({r:r.id,t:0});
       shToast(`<span class="neg">Spent ${fmtMoney(cost)}</span> · ${r.name} signed. Coverage starts growing there now.`);
@@ -5279,6 +5355,13 @@ $('shareBtn').onclick=()=>{
   if(navigator.share){navigator.share({text:lastResult}).then(done).catch(()=>{});return;}
   if(navigator.clipboard&&navigator.clipboard.writeText){
     navigator.clipboard.writeText(lastResult).then(done).catch(()=>{btn.textContent='Copy blocked here';});
+    return;}
+  btn.textContent='Copy blocked here';
+};
+$('flightBtn').onclick=()=>{
+  const btn=$('flightBtn'),done=()=>{btn.textContent='Copied · paste it to the coach';setTimeout(()=>btn.textContent='Copy run log for the coach',2400);};
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(flightExport()).then(done).catch(()=>{btn.textContent='Copy blocked here';});
     return;}
   btn.textContent='Copy blocked here';
 };
@@ -5332,7 +5415,7 @@ window._sbCapEarn=function(n,tag){
   /* offline shell: registered here so the whole game (art and sfx included)
      works offline after one session. Bump ?v= with sw.js SHELL_VERSION. */
   if('serviceWorker' in navigator){
-    try{ navigator.serviceWorker.register('sw.js?v=20260827c'); }catch(e){}
+    try{ navigator.serviceWorker.register('sw.js?v=20260827d'); }catch(e){}
   }
   if(framed){
     try{ parent.postMessage({sws:'ready'},'*'); }catch(e){}

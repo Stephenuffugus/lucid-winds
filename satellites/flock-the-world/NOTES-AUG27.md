@@ -208,3 +208,32 @@ Patriotism 100.0% · 1296 days · 5 synergies." Second straight patriotism loss
       (Incumbent then Vendor) playing varied strategies, zero uprisings. The
       loss meter may now be the dominant pressure for human play above easy.
       Logged for the director tuning sitting; not tuned solo.
+
+## I. Evening 3 — the flight recorder (his coach-tape ask)
+
+- [x] I1. **FLIGHT RECORDER BUILT + LIVE.** Every run records itself: nodes,
+      region actions (with concede quality), event choices, doctrine, desk/
+      acquisition/lobbying, market entries, synergies, street escalations,
+      and a 30-day state snapshot (subj/patriotism/suspicion/organized/cash/
+      influence/markets/war/floor/bubbles caught). End screen grows a COPY
+      RUN LOG FOR THE COACH button, visible ONLY with the fleet dev flag
+      (sws_dev_ok) so players never see it; mid-run export via
+      FTW_FLIGHT.copy() in the console. Local only, capped 4000 entries with
+      a truncation marker, survives reloads with its run, resets on a new
+      run. ⛔ zero randomness + never throws (it runs inside tick) — module
+      span check-pinned against Math.random; full sim table byte-identical.
+      scripts/ftw_coach.mjs turns a pasted log into the evidence sheet
+      (trajectory, build order, cadence, red flags: idle treasury under a
+      climbing loss meter, unanswered suspicion spikes, the 70→100 runway,
+      influence hoarding); verdict = me + counterfactual sims. Workflow doc:
+      FLIGHT-RECORDER.md. End-to-end probe: played real moves headless,
+      exported, coach script read it clean; button proven hidden without
+      the flag (⛔ probe lesson: localStorage is origin-shared across pages,
+      and a flagless page cannot even boot headless past dev-gate — the
+      gate test lives in-page). Checks 350→358.
+- [ ] I2. **His songs**: more main-theme variations incoming — the playlist
+      system takes them as drop-ins (theme_menu_2.mp3, theme_menu_3.mp3 +
+      one MUSIC_HAVE line each, per SFX-GUIDE.md; same for any bed). Still
+      owed from Aug 24: bed_tension.
+- [ ] I3. **His assets**: Sheet 12 synergy plates in progress — each lands as
+      art/synergy/<id>.webp + one SYN_ART registry flip.

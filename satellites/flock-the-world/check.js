@@ -2016,6 +2016,41 @@ try {
     /if\(s\.day%23===0&&\(s\._wireLast==null\|\|s\.day-s\._wireLast>18\)\)/.test(GAME));
 } catch (e) { ok('wire engine harness runs', false, e.message); }
 
+/* ------------------------------------- flight recorder (the coach tape) */
+group('flight recorder');
+try {
+  /* zero-random law: the module runs inside tick(), where the seeded suites
+     live. Its whole span must not touch Math.random. */
+  const span = GAME.slice(GAME.indexOf('THE FLIGHT RECORDER'), GAME.indexOf('end flight recorder'));
+  ok('recorder module exists and consumes zero randomness',
+    span.length > 500 && !/Math\.random/.test(span));
+  /* every decision surface writes the tape */
+  ok('purchases, actions, and choices are all on the tape',
+    /flightLog\('node',\{id:id,c:c\}\)/.test(GAME)
+    && /flightLog\('ev',\{id:ev\.id,o:\+b\.dataset\.opt\}\)/.test(GAME)
+    && /flightLog\('act',\{a:'agitate'/.test(GAME) && /flightLog\('act',\{a:'crack'/.test(GAME)
+    && /flightLog\('act',\{a:'blackout'/.test(GAME) && /flightLog\('act',\{a:'concede'/.test(GAME)
+    && /flightLog\('enter'/.test(GAME) && /flightLog\('desk'/.test(GAME)
+    && /flightLog\('acq'/.test(GAME) && /flightLog\('lobby'/.test(GAME)
+    && /flightLog\('combo'/.test(GAME) && /flightLog\('doc'/.test(GAME)
+    && /flightLog\('unrest'/.test(GAME) && /flightLog\('end'/.test(GAME));
+  ok('a state snapshot lands every 30 days', /if\(s\.day%30===0\)flightSnap\(s\)/.test(GAME));
+  ok('the export button is his eyes only (dev flag gated)',
+    /flightBtn[\s\S]{0,80}display:none/.test(SRC) && /fb\.style\.display=lsGet\('sws_dev_ok'\)==='1'\?'':'none'/.test(GAME));
+  /* runtime: the tape records, caps, and exports */
+  const cF = makeCtx();
+  vm.runInContext("S=newState('CONTRACTOR','Vendor','NA')", cF);
+  ok('a new run starts a fresh tape with its header',
+    vm.runInContext("FLIGHT.h&&FLIGHT.h.mode==='CONTRACTOR'&&FLIGHT.h.diff==='Vendor'&&FLIGHT.list.length===0", cF) === true);
+  vm.runInContext("S.inf=500;buyNode('ord')", cF);
+  ok('buying a node writes the tape',
+    vm.runInContext("FLIGHT.list.some(e=>e.k==='node'&&e.id==='ord')", cF) === true);
+  ok('the tape caps and marks truncation instead of growing forever',
+    vm.runInContext("(function(){FLIGHT.max=FLIGHT.list.length+1;flightLog('x',{});flightLog('x',{});flightLog('x',{});var l=FLIGHT.list;return l.length<=FLIGHT.max+1&&l[l.length-1].k==='truncated';})()", cF) === true);
+  ok('the export parses and carries the header + log',
+    vm.runInContext("(function(){var d=JSON.parse(flightExport());return d.h.mode==='CONTRACTOR'&&Array.isArray(d.log)&&d.log.length>0;})()", cF) === true);
+} catch (e) { ok('flight recorder harness runs', false, e.message); }
+
 /* -------------------------------------------------------- self test mode */
 /* A probe that cannot fail is not evidence. FTW_SELFTEST=1 mutates the source
    in memory and re-runs the source-level checks, which must go red. */
