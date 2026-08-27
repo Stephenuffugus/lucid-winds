@@ -43,20 +43,39 @@ FTW's themes (surveillance satire) against Pi's content guidelines, honestly.
 
 ## Task 3 — soundtrack distribution (deliverable: PUB-MUSIC-DISTRO.md)
 
-His music is Suno-generated, curated by him (he is a producer). BEFORE any
-recommendation, resolve honestly and cite sources:
-- Suno commercial + distribution rights BY PLAN TIER in 2026 (free tier does
-  NOT grant commercial use; confirm what his tier grants and what he'd need).
-- Distributor policies on AI-generated music: DistroKid, TuneCore, CD Baby,
-  LANDR current stance + disclosure requirements; DSP-side policies (Spotify,
-  Apple, YouTube Music) and the practical takedown risk.
-- Options ranked: (a) full DSP distribution with AI disclosure where required;
+FACTS FROM STEPHEN (Aug 27, supersede earlier assumptions): he has the $10/mo
+Suno PRO subscription, so commercial rights to his generations are his under
+Suno's Pro terms. His workflow is composer-first: he writes the melodies and
+harmonies, records them himself, uploads his own recordings into Suno, and
+uses it to arrange/remix/produce ("amplify"). Jimothy's soundtrack was made
+exactly this way; FTW's four tracks are his too. He is a producer
+(user context). So this is AI-ASSISTED PRODUCTION OF ORIGINAL COMPOSITIONS,
+not prompt-only generation, and the docs should treat him as the songwriter.
+
+Resolve honestly and cite sources:
+- Confirm what Suno Pro's 2026 terms grant for DSP distribution specifically
+  (commercial use vs distribution rights, and any terms attached to the
+  upload-your-own-audio feature he relies on — the uploads are his own
+  recordings, which is what that feature requires).
+- Distributor disclosure taxonomies: DistroKid, TuneCore, CD Baby, LANDR each
+  ask WHICH parts were AI (composition / vocals / instrumentation / mastering).
+  Map his actual workflow onto each honestly: composition human, production
+  and instrumentation AI-assisted. Do not invent a blanket phrase; per-form
+  accuracy is the protection. DSP-side policies (Spotify, Apple, YouTube
+  Music) + practical takedown risk for AI-assisted (not fully-generated) work.
+- Options ranked: (a) full DSP distribution with accurate per-form disclosure;
   (b) Bandcamp + itch.io soundtrack editions (fewer gates, direct revenue,
-  pairs with games); (c) YouTube topic uploads + Content ID caveats.
-- What metadata/branding to use (SKY WOLF STUDIO singular; per-game album
-  naming) and cover art needs.
-- NEVER recommend claiming human performance. The house law is we never
-  misrepresent generated work.
+  pairs with the games); (c) YouTube topic uploads + Content ID caveats for
+  AI-assisted material. Recommend an order of operations (he wants to double
+  dip: game + soundtrack from the same production work).
+- Metadata/branding: SKY WOLF STUDIO singular, per-game album naming, cover
+  art needs, songwriter credit = Stephen (his legal name only where forms
+  require it; note his real name is globally unique, so flag anywhere it
+  would become publicly searchable so he can decide).
+- The line we never cross: describe the process accurately on every form.
+  His framing "AI aided in production, mixing, mastering of songs I composed"
+  is legitimate FOR THE TRACKS THAT STARTED FROM HIS RECORDINGS; the doc
+  should tell him to apply it track by track, not catalog-wide by default.
 
 ## Task 4 — SEO audit (deliverable: PUB-SEO-AUDIT.md)
 
