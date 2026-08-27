@@ -3,7 +3,7 @@
 Stephen delivered `assets/Badges and combos-...zip`: two sets of 16, color-key
 cut and looked at, one by one.
 
-## Synergy plates (the discovery-modal art) — 12 of 16 LIVE
+## Synergy plates (the discovery-modal art) — ALL 16 LIVE
 
 The artist made gorgeous work but not a strict 1-to-1 with the 16 combos in the
 Sheet-12 order. I matched each image by CONTENT, not position. Live now
@@ -24,18 +24,14 @@ Sheet-12 order. I matched each image by CONTENT, not position. Live now
 | OUTRAGE ON RETAINER (oncue) | combo #15 | exact (angry-mask studio audience) |
 | NO NEW FRIENDS (nonewfriends) | combo #7 | close (orbital node network + central eye) |
 
-## ⛔ Still owed a bespoke plate — 4 combos have NO art
+## ✅ All four remaining plates delivered (last4.png, Aug 27)
 
-The zip contained no image that depicts these, so they still render the
-artless modal (which is fine — the hook degrades gracefully):
+- **HALL MONITOR NATION** (hallmon) — kid with a sash + clipboard rating a bus-stop queue
+- **THE ALGORITHM RIDES SHOTGUN** (shotgun) — dashboard nav routed through a red PREDICTED zone, dashcam on
+- **FINE PRINT** (fineprint) — night traffic stop, the citation unrolling to the pavement
+- **THE WELCOME MAT** (welcomemat) — porch, visitor with flowers, doorbell scan-brackets on his face
 
-- **HALL MONITOR NATION** (hallmon) — a kid with a sash rating a queue of adults
-- **THE ALGORITHM RIDES SHOTGUN** (shotgun) — rideshare dashboard routed through a red PREDICTED zone
-- **FINE PRINT** (fineprint) — a night traffic stop, the citation unrolling to the pavement
-- **THE WELCOME MAT** (welcomemat) — a sweet porch, the doorbell scan-brackets on a visitor with flowers
-
-(Paint directions are in the 012Assets "Sheet 12" doc. Drop each as
-`art/synergy/<id>.webp` + flip its SYN_ART key.)
+Cut + wired + probed (shot 23). SYN_ART now carries all 16; check.js enforces it.
 
 ## 4 spare atmosphere plates — staged, not wired
 

@@ -12,7 +12,7 @@
    Bump SHELL_VERSION on every deploy, AND the ?v= on the registration in
    index.html in lockstep — this host edge-pins bare sw.js URLs for 7 days. */
 
-const SHELL_VERSION  = "ftw-shell-v20260827g";
+const SHELL_VERSION  = "ftw-shell-v20260827h";
 const ASSET_CACHE    = "ftw-assets-v1";
 const NAV_TIMEOUT_MS = 8000;
 

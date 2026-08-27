@@ -1952,7 +1952,7 @@ try {
   {
     const flips = (GAME.match(/const SYN_ART=\{([^}]*)\}/s) || [,''])[1]
       .match(/([a-z0-9_]+):1/g)?.map(s => s.replace(':1', '')) || [];
-    ok('SYN_ART carries the 12 delivered plates', flips.length === 12, 'got ' + flips.length);
+    ok('SYN_ART carries all 16 plates', flips.length === 16, 'got ' + flips.length);
     const comboIds = new Set(vm.runInContext('COMBOS.map(c=>c.id)', makeCtx()));
     ok('every wired plate is a real combo id', flips.every(id => comboIds.has(id)), flips.filter(id => !comboIds.has(id)).join(','));
     const fs2 = require('fs');
