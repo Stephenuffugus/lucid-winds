@@ -1757,7 +1757,7 @@ group('Aug 25 pass: tap safety, receipts, the refusal strip');
      failure - the checks assert the repaired contract */
   {
     ok('a choice is COMMITTED before the receipt (reload cannot double-apply)',
-      /o\.f\(S\);[\s\S]{0,400}S\.pendingEventId=null;saveRun\(\);[\s\S]{0,1600}Aftermath/.test(GAME));
+      /o\.f\(S\);[\s\S]{0,400}S\.pendingEventId=null;saveRun\(\);[\s\S]{0,2800}Aftermath/.test(GAME));
     ok('avgCmp survives a reload with the other HUD aggregates',
       /avgCmp:s\.avgCmp,/.test(GAME) && /s\.avgCmp=clamp\(num\(d\.avgCmp/.test(GAME));
     {
@@ -1815,7 +1815,9 @@ group('Aug 25 pass: tap safety, receipts, the refusal strip');
     ok('the audit dossier cites only the arcs this run ran',
       /b:s=>\{const done=k=>\(\(s\.arc&&s\.arc\[k\]\)\|\|0\)>=1;/.test(GAME) && /typeof ev\.b==='function'\?ev\.b\(S\):ev\.b/.test(GAME));
     ok('fresh regions initialize the crackdown cooldown', /cd:0, cdC:0,/.test(GAME));
-    ok('the HUD height change re-anchors the fitted map', /if\(gv&&gv\.layout\)\{gv\.inset=hh;gv\.layout\(\);\}/.test(GAME));
+    /* Aug 27 flicker law: the re-anchor must repaint in the same frame, because
+       layout() may clear the canvas and the next tick can be 800ms away */
+    ok('the HUD height change re-anchors the fitted map AND repaints it', /if\(gv&&gv\.layout\)\{gv\.inset=hh;gv\.layout\(\);drawWorld\(gv,S,null\);\}/.test(GAME));
   }
 
   /* presentation: whole images, staged finish, readable capstones */
@@ -1870,6 +1872,66 @@ try {
   ok('finish() plays the epilogue', /playEpilogue\(endStory\(S,won,why\)\)/.test(GAME));
   ok('the reveal styling exists (beats fade in)', /#endStory p\.on\{opacity:1/.test(SRC));
 } catch (e) { ok('epilogue harness runs', false, e.message); }
+
+/* ------------------------------------------- Aug 27 notes pass (Stephen) */
+group('Aug 27 notes');
+try {
+  /* B1 flicker law: setting canvas.width clears the canvas, so layout() may
+     only touch the backing store when the size actually changed */
+  ok('layout() guards the canvas backing store (no clear on same-size relayout)',
+    /if\(c\.width!==bw\|\|c\.height!==bh\)\{c\.width=bw;c\.height=bh;/.test(GAME));
+  /* E2: the wire reads at 55px/s now */
+  ok('the wire scrolls at 55px/s', /Math\.max\(12,w\/55\)/.test(GAME) && !/Math\.max\(12,w\/75\)/.test(GAME));
+  /* C1: suspicion lives in the HUD and paintHud feeds it */
+  ok('the HUD carries a Suspicion stat', /id="susStat"/.test(SRC) && /id="vSusHud"/.test(SRC));
+  ok('paintHud paints the suspicion stat with its colour grades',
+    /\$\('vSusHud'\)/.test(GAME) && /avgSus>=16\?'var\(--blood\)':s\.avgSus>=10\?'var\(--sodium\)'/.test(GAME));
+  ok('the suspicion stat opens the World tab', /susStat[\s\S]{0,200}openSheet\('reg'\)/.test(GAME));
+  /* B2: the map speaks countries, the World tab now translates */
+  ok('region cards name their map-dominant countries', /class="rgeo">\$\{regionFaces\(/.test(GAME));
+  ok('the trouble ribbon renders riot/uprising regions as jump chips',
+    /class="tchip \$\{x\.pstate\}" data-goto="rc_\$\{R\.id\}"/.test(GAME));
+  ok('the sheet handles data-goto jumps', /closest\('\[data-goto\]'\)/.test(GAME) && /scrollIntoView/.test(GAME));
+  const cB2 = makeCtx();
+  const gl = vm.runInContext("(function(){var g=COUNTRIES.find(function(c){return c.n==='Greenland';});return g?regionFaces(g.r,4):'NO GREENLAND';})()", cB2);
+  ok('Greenland leads its region faces (bbox dominance, the shape he watched flash)',
+    typeof gl === 'string' && gl.indexOf('Greenland') === 0, 'got: ' + gl);
+  /* B3: an affordable Enter market reads LIT, a short one says why */
+  ok('.buy enabled state carries the glow the disabled state never gets',
+    /\.buy\{[^}]*box-shadow:0 0 10px/.test(SRC) && /\.buy\[disabled\]\{[^}]*box-shadow:none/.test(SRC));
+  ok('a short Enter market says how short', /short on cash · need \$\{fmtMoney\(cost-s\.cash\)\} more/.test(GAME));
+  /* C2: the receipt names the mitigation, and the helper cannot drift from
+     tick's suppression term because both must spell it identically */
+  ok('susBleed mirrors the tick suppression term (drift tripwire)',
+    (GAME.match(/0\.014\*\(0\.4\+r\.media\*0\.8\)/g) || []).length >= 2);
+  ok('the aftermath names the narrative machine when it will eat a spike',
+    /evmach">Your narrative machine grinds/.test(GAME) && /susBleed\(S\)/.test(GAME));
+  ok('the aftermath names the floor when relief lands under it',
+    /pinned at its floor/.test(GAME) && /ovFloor\(S\)/.test(GAME));
+  /* C3: war heat says what it is doing */
+  ok('the war heat stat explains its live effects', /class="kfx">fear \+/.test(GAME));
+  /* D2: capitulation fatigue */
+  ok('concede fatigue: rolling 45 day window is pruned and stamped',
+    /s\.concLog=\(s\.concLog\|\|\[\]\)\.filter\(d=>s\.day-d<45\)/.test(GAME) && /if\(!again\)s\.concLog\.push\(s\.day\)/.test(GAME));
+  ok('concede fatigue: the fourth banked retreat emboldens organizers everywhere',
+    /const fatigued=!again&&s\.concLog\.length>=3/.test(GAME) && /x\.resist=clamp\(x\.resist\+1\.5,0,100\)/.test(GAME));
+  ok('concede fatigue: no goodwill while fatigued', /if\(!again&&!fatigued\)r\.gw=/.test(GAME));
+  ok('concede fatigue: warned at arm time, before the spend', /a fourth concession inside 45 days banks NO goodwill/i.test(GAME));
+  ok('concede fatigue: survives a reload', /concLog:\(s\.concLog\|\|\[\]\)\.slice\(-12\)/.test(GAME) && /s\.concLog=Array\.isArray\(d\.concLog\)/.test(GAME));
+  /* E1: synergy discovery is a paused MOMENT that survives modal collisions */
+  ok('synergyModal exists and checkCombos fires it', /function synergyModal\(/.test(GAME) && /synergyModal\(c\);/.test(GAME));
+  ok('synergyModal queues like every other modal', /noteModal\(\(\)=>synergyModal\(c\)\)/.test(GAME));
+  ok('synergyModal never unpauses a paused sheet', /if\(prev>0\)setSpeed\(prev\)/.test(GAME));
+  {
+    /* runtime: unlocking a combo under a paused sheet opens the modal and
+       leaves the speed at 0 for the sheet to restore */
+    const c2 = makeCtx();
+    vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');S.speed=0;S.owned.add('ord');S.owned.add('plate');recompute(S);checkCombos(S)", c2);
+    const sp = vm.runInContext('S.speed', c2);
+    const nCombos = vm.runInContext('S.combos.size', c2);
+    ok('a combo unlock under a paused sheet stays paused', nCombos >= 1 && sp === 0, 'combos=' + nCombos + ' speed=' + sp);
+  }
+} catch (e) { ok('Aug 27 harness runs', false, e.message); }
 
 /* -------------------------------------------------------- self test mode */
 /* A probe that cannot fail is not evidence. FTW_SELFTEST=1 mutates the source

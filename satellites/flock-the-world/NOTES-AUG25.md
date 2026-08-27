@@ -73,10 +73,17 @@ Checklist in the order the notes were given. `[x]` only with evidence
       canaries green, balanced Startup bot BETTER than baseline, all
       regression guards hold, checks 279. Deeper door-identity redesign
       stays a director call for after he plays this build.
-- [ ] 12. **Same briefing every mode** — pops up for each game type saying to
-      build the same way; sick of it.
-- [ ] 13. **Tips-off option** — same mid-game tips fire every run; helpful
-      only the first time. Persist "seen" + add a toggle.
+- [x] 12. **Same briefing every mode** — pops up for each game type saying to
+      build the same way; sick of it. DONE (verified + crossed off 2026-08-27,
+      a session late — it landed during the Aug 25 kink hunts but this box
+      never flipped): GUIDE_CRISIS and GUIDE_DEEP open with their own mode
+      fiction and first buys, startGuide picks per mode, and ftw_guide_done
+      persists across sessions on finish OR skip, so the tour runs once per
+      account ever.
+- [x] 13. **Tips-off option** — same mid-game tips fire every run; helpful
+      only the first time. Persist "seen" + add a toggle. DONE (same story:
+      landed Aug 25, crossed off Aug 27): menu checkbox wired to K_TIPS,
+      tipsOff() gates field notes AND the guide, seen() persists per account.
 - [x] 14. **Country tap blocks bubbles** — info popover opens over the map and
       bubbles are missed behind it. DONE: popover pauses like a sheet (Aug 20
       no-pause call reversed), restores on close, sheets inherit the pause.

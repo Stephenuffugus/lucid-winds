@@ -1,6 +1,31 @@
 # FLOCK THE WORLD (FTW) — HANDOFF
 
-## Aug 25 — Stephen's Crisis-Engine notes pass (ALL LANDED, live-verified)
+## Aug 27 — Stephen's Contractor/Incumbent notes pass (ledger: NOTES-AUG27.md)
+
+Hardest-diff run LOST at patriotism 100 while conceding everywhere; easy runs
+still read auto-win via story tree. 12 items landed, checks 308→332, sims
+byte-identical on the Startup canary, probe shots ftw-aug27/ all looked at.
+- **The late-game map flicker was real**: HUD-height relayout (the refusal
+  strip churning) reset canvas.width, clearing the map with no repaint until
+  the next tick. layout() now guards the backing store + repaints in-frame.
+- **Suspicion in the HUD** (4th stat, colour-graded, taps to World) — and
+  aftermath receipts now NAME the mitigation ("your narrative machine grinds
+  ~X off every day") instead of letting the number read like a lie.
+- **Greenland findable**: region cards list map-dominant member countries
+  (per-polygon bbox, so Greenland leads WE), TROUBLE ribbon jumps to rioting
+  regions. Enter market glows when affordable, says how short when not.
+- **Capitulation fatigue**: >3 banked concessions per rolling 45d = no
+  goodwill + organizers everywhere take heart (+1.5), warned at arm time,
+  persisted. Bots' cadence sits under it; canaries green.
+- **Synergy discovery is a paused gold modal** (name, recipe, effect, N of 16).
+  Wire slowed 75→55px/s. War heat's live effects shown on its World stat.
+- **NOT touched**: story-tree suppression cap (would break the documented
+  arms-race equilibrium) — options for the director in BALANCE-SCALING.md §17.
+- Ledger debt owned: Aug-25 items 12/13 were built in the kink hunts but never
+  crossed off or reported — flipped with evidence today.
+- sw shell + registration bumped to 20260827a in lockstep.
+
+## Aug 25 — Stephen's Crisis-Engine notes pass (22-item ledger in NOTES-AUG25.md; 20 landed Aug 25, items 12/13 landed same day but verified+flipped Aug 27)
 
 22-item ledger in NOTES-AUG25.md (his order, evidence per item). 8 commits,
 check.js 232→272, every visual change screenshot-reviewed. Highlights:

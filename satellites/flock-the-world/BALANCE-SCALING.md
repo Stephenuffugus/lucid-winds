@@ -396,3 +396,42 @@ econRun/econHeatRamp (60)) × max(0, 1 − subj/econHeatSubj (0.5))` per day.
   growth immediately — the deferred-bill design is the theme.
 * The canary is now seeded ×3 (11, 77, 2026); a flipping gate is a bug in the
   gate.
+
+## §17 — The story-tree question (Aug 27, OPEN — director call)
+
+Stephen, third time now: "you can just buy the story skill tree the whole time
+and then you win… halfway through the tree and it's completely mitigated
+suspicion, so there's no skill." Same session he LOST Incumbent at patriotism
+100 playing well — so the top difficulty has teeth and the bottom is the
+degenerate lane.
+
+What Aug 27 already changed without touching the tune: the mitigation is now
+VISIBLE (HUD suspicion + receipts that name the machine's daily bleed), and
+concede spam is priced globally (capitulation fatigue). What was deliberately
+NOT done: I started a suppression cap and stopped, because "full Narrative
+tree ≈ neutralizes baseline endgame growth" is documented intentional design
+(the arms race), and a cap breaks the equilibrium every current number sits on.
+
+Three shapes he can pick from (one change at a time, each sim-tabled before
+landing):
+
+1. **Suppression cap** — the story bleed can slow the story, never fully bury
+   it: suppression capped at K% of the live gain term (K≈80). Spikes always
+   land something; heavily-covered free societies simmer forever unless
+   CONTROL buries them. Biggest feel change, biggest risk: every current
+   equilibrium moves; Vendor photo-finish bots likely flip; needs a full
+   retune session, not a patch.
+2. **Prebunk everywhere** — the existing antibody (narrative capture breeds
+   countermeasures) currently fires only in the four flagship free presses.
+   Let its unlock odds scale with machine depth in EVERY region with
+   media>0.5. Story stack stays strong early, breeds proportional resistance
+   late. Smallest mechanical delta, uses a shipped system, easiest to meter.
+3. **Story upkeep** — the machine costs influence per day to keep running
+   (say 2% of total story-node spend). The tree becomes a commitment instead
+   of a purchase; influence income becomes the real constraint. Clean
+   strategy texture, but touches the influence economy every bot leans on.
+
+My read: option 2 first (it is the antibody design already greenlit on Aug 25,
+widened), option 3 if the tree still reads like a solved problem, option 1
+only as part of a dedicated retune with him at the table. All of it wants his
+playstyle notes on the four doors (standing OPEN CALL) first.

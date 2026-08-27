@@ -367,6 +367,8 @@ h1 em{font-style:normal;color:var(--sodium)}
 #breaking.gold #breakX{color:#ffe9c9}
 #capStat{cursor:pointer}
 #capStat .slab{text-decoration:underline dotted;text-underline-offset:2px}
+#susStat{cursor:pointer}
+#susStat .slab{text-decoration:underline dotted;text-underline-offset:2px}
 
 #guide{position:absolute;left:8px;right:66px;top:8px;z-index:5;padding:9px 12px;border-radius:11px;
   background:#141003f2;border:1px solid var(--sodium);font-size:11.5px;line-height:1.45;color:#ffe9c9;display:none}
@@ -641,6 +643,7 @@ h1 em{font-style:normal;color:var(--sodium)}
 .ws{border:1px solid var(--line);border-radius:10px;padding:8px;background:var(--panel)}
 .ws .k{font-size:9.5px;letter-spacing:.1em;color:var(--dim);text-transform:uppercase}
 .ws .v{font-size:14px;font-weight:700;margin-top:2px}
+.ws .kfx{font-size:8.5px;color:#586a79;margin-top:2px;line-height:1.35}
 .legend{border:1px solid var(--line);border-radius:10px;background:var(--panel);
   padding:9px 11px;margin-bottom:10px;font-size:11.5px;line-height:1.55;color:#93a7b8}
 .legend b{color:var(--paper)}
@@ -684,6 +687,15 @@ h1 em{font-style:normal;color:var(--sodium)}
   .legend.open .lgm::after{content:'less ▴'}
 }
 .rcard{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:11px 12px;margin-bottom:8px}
+.rcard.located{border-color:var(--sodium);box-shadow:0 0 0 1px var(--sodium),0 0 14px rgba(230,168,23,.35)}
+/* the map's biggest shapes for this region, so what flashed is findable here */
+.rgeo{font-size:9.5px;color:#586a79;letter-spacing:.04em;margin:2px 0 4px}
+/* trouble ribbon: every region currently rioting or in uprising, tappable */
+.trouble{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.tchip{border-radius:8px;border:1px solid var(--blood);background:#1c0b0e;color:#ff9a8a;
+  font-size:10px;letter-spacing:.06em;padding:8px 10px;min-height:36px}
+.tchip.uprising{background:#2a0d12;color:#ff7a6a;animation:tchipblink 1.1s steps(2) infinite}
+@keyframes tchipblink{50%{border-color:#ff7a6a}}
 .rcard.idle{opacity:.62}
 .rcard.lost{border-color:#3d1d1d;background:#150a0a;opacity:.9}
 .rtop{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -715,9 +727,15 @@ h1 em{font-style:normal;color:var(--sodium)}
 .act.warn{border-color:var(--sodium);color:var(--sodium)}
 .act.danger{border-color:var(--blood);color:var(--blood)}
 .act[disabled]{opacity:.35}
+/* ⛔ Aug 27, Stephen: an AFFORDABLE Enter market "looks like you're not supposed
+   to be able to click on it". The enabled state must read LIT, not politely dim:
+   bright text, warm fill, a glow the disabled state can never have. */
 .buy{margin-top:9px;width:100%;min-height:48px;padding:9px;border-radius:9px;border:1px solid var(--sodium);
-  color:var(--sodium);font-size:12px;letter-spacing:.08em;text-transform:uppercase;background:#1a1408}
-.buy[disabled]{border-color:var(--line);color:#3f4f5e;background:none}
+  color:#ffd76a;font-size:12px;letter-spacing:.08em;text-transform:uppercase;
+  background:linear-gradient(180deg,#2b2008,#1a1408);
+  box-shadow:0 0 10px rgba(230,168,23,.22),inset 0 1px 0 rgba(255,215,106,.18)}
+.buy[disabled]{border-color:var(--line);color:#3f4f5e;background:none;box-shadow:none}
+.buy .why{display:block;font-size:9px;letter-spacing:.06em;color:#5a6b7a;text-transform:none;margin-top:2px}
 
 /* ---------- feed ---------- */
 .entry{border-left:2px solid var(--line);padding:2px 0 10px 10px;margin-bottom:2px;font-size:12.5px;line-height:1.5;color:var(--ice)}
@@ -767,6 +785,8 @@ h1 em{font-style:normal;color:var(--sodium)}
 .evrcpt span{font-size:11px;font-weight:700;padding:5px 9px;border:1px solid var(--line);border-radius:8px;background:var(--panel2)}
 .evrcpt .up{color:var(--grn)}.evrcpt .dn{color:var(--blood)}.evrcpt .nt{color:var(--dim)}
 .evnews{font-size:11px;color:var(--dim);font-style:italic;margin:4px 0 10px}
+/* the machine's counter-note on a receipt: why the number you just saw will move */
+.evmach{font-size:10.5px;color:#7fb3d5;margin:2px 0 6px;border-left:2px solid #2a4a5e;padding-left:8px}
 .opt[disabled]{opacity:.4}
 .tutdots{display:flex;gap:5px;justify-content:center;margin:4px 0 12px}
 .tutdots i{width:6px;height:6px;border-radius:50%;background:var(--line)}
@@ -818,6 +838,16 @@ h1 em{font-style:normal;color:var(--sodium)}
   .docopt{flex-direction:column;text-align:center;gap:6px}
   .docart{width:69px;height:96px}
   #modalCard h3{margin-bottom:2px}
+}
+/* ⛔ LATE CSS BLOCK LAW: media overrides live at the stylesheet END or they
+   silently lose to base rules below them. */
+@media (max-width:430px){
+  /* Aug 27: the fourth HUD stat (Suspicion) squeezed the Date to "Jul 21, 20…"
+     in portrait (probe shot 08). .sval ellipsizes on ANY flex shrink, so the
+     stats may not shrink at all; the width is paid for in label tracking. */
+  .hudrow{gap:7px}
+  .hudrow .stat{flex:0 0 auto}
+  .hudrow .stat .slab{font-size:8px;letter-spacing:.09em}
 }
 </style>
 </head>
@@ -889,6 +919,9 @@ h1 em{font-style:normal;color:var(--sodium)}
       <div class="stat"><div class="slab">Date</div><div class="sval mono" id="vDate"></div></div>
       <div class="stat" id="capStat" role="button" tabindex="0" aria-label="Open the World tab where money is spent"><div class="slab">Capital</div><div class="sval money mono" id="vCash"></div></div>
       <div class="stat"><div class="slab">Influence</div><div class="sval inf mono" id="vInf"></div></div>
+      <!-- Aug 27, Stephen: "there's no suspicion bar or anywhere to see where you
+           stand" - the number that drives Patriotism, on screen at all times -->
+      <div class="stat" id="susStat" role="button" tabindex="0" aria-label="World suspicion. Tap for the World tab."><div class="slab">Suspicion</div><div class="sval mono" id="vSusHud">0.0</div></div>
     </div>
     <div id="ctlrow">
       <button class="hudbtn" id="leaveBtn" aria-label="Pause and leave">&#9776;</button>
@@ -1402,7 +1435,10 @@ function checkCombos(s){
       if(noteCombo(c.id)&&window._sbCapEarn)window._sbCapEarn(3,'flock-the-world:synergy');
       sfx('synergy');
       pushNews(s,`SYNERGY UNLOCKED \u00b7 ${c.n}. ${c.d}`,'good');
-      goldBanner(`${c.n}. ${c.d}`);
+      /* Aug 27, Stephen: "I was not totally aware when synergies were found.
+         There should be a whole thing - maybe it pauses and shows you." The
+         gold banner slid by unread; discovery is now a paused MOMENT. */
+      synergyModal(c);
       if(s.hq)s.pings.push({x:s.hq[0],y:s.hq[1],t:0,kind:'syn'});
     }
   }
@@ -1871,7 +1907,7 @@ function newState(modeKey,diffKey,startId,seed,hqName,co){
   const s={
     mode, diff, modeKey, diffKey, startId, day:0, cash:mode.cash*diff.cash, inf:mode.inf, oversight:0, speed:1,
     owned:new Set(), combos:new Set(), regions:{}, log:[], bubbles:[], pulses:[], dots:[], pk:[], pings:[], hqGlow:0, newsQ:[], newsIdx:0,
-    warHeat:0, doctrine:null, over:false, won:false, milestones:new Set(), wmiles:new Set(), unread:0, avgRes:0,
+    warHeat:0, concLog:[], doctrine:null, over:false, won:false, milestones:new Set(), wmiles:new Set(), unread:0, avgRes:0,
     sheet:null, lostCount:0, avgSus:0, avgMil:0, avgCmp:0, subj:0, activeCount:0, events:EV(), evLast:{}, evHeat:0, evPaid:0, fdPages:0, outlet:0,
     /* the foreign desk rotates its contacts: two of the three personal arcs
        per run (vance, kesh, lena). Less choice-clock displacement per run,
@@ -1939,7 +1975,7 @@ function refreshTicker(){
     ? S.newsQ.slice(0,6).map(t=>`<b>+++</b> ${t}`).join('&nbsp; &nbsp;')
     : 'Awaiting first deployment.';
   const w=tr.scrollWidth||600;
-  tr.style.animationDuration=Math.max(12,w/75)+'s'; /* constant ~75px/s read speed */
+  tr.style.animationDuration=Math.max(12,w/55)+'s'; /* constant ~55px/s read speed (was 75; Stephen Aug 27: "trying to keep up with reading it") */
   tickerDirty=false;
 }
 function initTicker(){
@@ -2238,6 +2274,17 @@ function dateStr(day){const d=new Date(2026,0,1);d.setDate(d.getDate()+day);
 function pickActive(s){const a=REGIONS.map(r=>s.regions[r.id]).filter(r=>r.active&&r.coverage>.04);
   return a.length?a[(Math.random()*a.length)|0]:null;}
 function bumpSus(s,n){REGIONS.forEach(r=>{const x=s.regions[r.id];if(x.active)x.suspicion=clamp(x.suspicion+n,0,100);});}
+/* Aug 27, Stephen: "it said it raised suspicion by 10 but my total is 1.9 —
+   something is mitigating it." Something was: the story machine's daily bleed.
+   This mirrors the suppression term in tick's susGain (keep them in step) so
+   the aftermath receipt can SAY what the machine will do to a spike. */
+function susBleed(s){
+  let t=0,n=0;
+  REGIONS.forEach(R=>{const r=s.regions[R.id];if(!r.active)return;
+    let cSup=1;r.counters.forEach(id=>{const cm=CM.find(x=>x.id===id);if(cm&&cm.fx.sup)cSup*=cm.fx.sup;});
+    t+=(s.fx.sup||0)*cSup*0.014*(0.4+r.media*0.8);n++;});
+  return n?t/n:0;
+}
 /* the foreign desk dossier: every dirty choice abroad is a page the Auditor
    will eventually bind. Read by the audit arc; persisted with the run. */
 function fdPage(s,n){s.fdPages=(s.fdPages||0)+n;s.fdPagesEver=(s.fdPagesEver||0)+n;}
@@ -3087,7 +3134,7 @@ function saveRun(){
         black:r.black||0,bcd:r.bcd||0,gw:r.gw||0,cdc:r.cdC||0,lc:r.lastConcede==null?-1:r.lastConcede,las:r.lastAgitSus==null?-1:r.lastAgitSus,
         cOrder:r.cOrder||null,cN:r.cN||1};}
     lsSet(K_RUN,JSON.stringify({v:2,modeKey:s.modeKey,diffKey:s.diffKey,startId:s.startId,
-      day:s.day,cash:s.cash,inf:s.inf,oversight:s.oversight,warHeat:s.warHeat,doctrine:s.doctrine,net:s.net||0,gross:s.gross||0,lbCd:s.lbCd||0,evHeat:s.evHeat||0,evPaid:s.evPaid||0,
+      day:s.day,cash:s.cash,inf:s.inf,oversight:s.oversight,warHeat:s.warHeat,doctrine:s.doctrine,net:s.net||0,gross:s.gross||0,lbCd:s.lbCd||0,evHeat:s.evHeat||0,evPaid:s.evPaid||0,concLog:(s.concLog||[]).slice(-12),
       /* a reload used to wipe live bubbles, including a leak whose oversight
          penalty had not landed yet, and to forget a pending choice event, so
          reloading dodged the decision. It also dropped the HUD aggregates, so a
@@ -3136,6 +3183,8 @@ function loadRun(){
   s.lostCount=Math.max(0,num(d.lostCount,0));s.wmileDth=num(d.wmileDth,0);
   s.net=Math.max(0,num(d.net,0));s.gross=Math.max(0,num(d.gross,0));s.lbCd=Math.max(0,num(d.lbCd,0));
   s.evHeat=clamp(num(d.evHeat,0),0,CFG.evHeatMax);s.evPaid=Math.max(0,num(d.evPaid,0)|0);
+  /* capitulation-fatigue window; a pre-Aug-27 save loads it empty */
+  s.concLog=Array.isArray(d.concLog)?d.concLog.filter(x=>typeof x==='number'&&x>=0&&x<=s.day).slice(-12):[];
   /* the desk and acquisition state, validated the way everything else is.
      A v2 save written before these fields existed loads them as 0. */
   s.acqHeat=clamp(num(d.acqHeat,0),0,CFG.acqHeatMax);
@@ -3239,6 +3288,28 @@ const COUNTRIES=GEO.map(c=>{
     bb:[minx,miny,maxx,maxy],tint:((h>>>0)%9)-4,path:null};
 });
 COUNTRIES.forEach((c,i)=>c.idx=i);
+/* ⛔ Aug 27, Stephen: "I'm having uprisings in Greenland... but Greenland's not
+   in the world menu." The map speaks in COUNTRIES, the World tab in REGIONS,
+   and nothing translated. Per region: member countries sorted by how big they
+   LOOK on the map (bbox area), so the list leads with exactly the shape the
+   player watched flash — Greenland heads Western Europe here on purpose. */
+const REGION_COUNTRIES={};
+/* prominence = sum of PER POLYGON bbox areas, not the whole-country bbox:
+   France's box spans the Atlantic to French Guiana and out-boxed Greenland,
+   which is exactly the wrong answer for "what does the map look like" */
+COUNTRIES.forEach(c=>{
+  c.vis=c.polys.reduce((a,rg)=>{let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+    rg.forEach(([x,y])=>{if(x<x0)x0=x;if(y<y0)y0=y;if(x>x1)x1=x;if(y>y1)y1=y;});
+    return a+(x1-x0)*(y1-y0);},0);
+  (REGION_COUNTRIES[c.r]=REGION_COUNTRIES[c.r]||[]).push(c);
+});
+for(const k in REGION_COUNTRIES)
+  REGION_COUNTRIES[k].sort((a,b)=>b.vis-a.vis);
+function regionFaces(rid,n){
+  const cs=REGION_COUNTRIES[rid]||[];
+  const top=cs.slice(0,n||4).map(c=>c.n);
+  return top.join(' · ')+(cs.length>(n||4)?' +'+(cs.length-(n||4)):'');
+}
 /* ⛔ PER REGION ECONOMIC WEIGHT, 2026-08-24. Stephen: "the different markets need
    to have their respective influence on the world economy."
    Income was already pop*wealth weighted, so markets DID differ; adding the urban
@@ -3309,8 +3380,14 @@ function makeView(wrap,canvas,fxCanvas,onTap){
     ctx:canvas.getContext('2d'),fctx:fxCanvas?fxCanvas.getContext('2d'):null};
   v.layout=()=>{
     const w=wrap.clientWidth,h=wrap.clientHeight;
+    /* ⛔ FLICKER LAW (Stephen, Aug 27: "the whole map disappears and comes
+       back", every time the refusal strip churned): setting canvas.width
+       CLEARS the canvas, and layout() is also called when only the HUD
+       height changed. Only touch the backing store when the size actually
+       moved, or the map goes black until the next tick repaint (800ms at 1x). */
+    const bw=Math.round(w*v.dpr),bh=Math.round(h*v.dpr);
     [canvas,fxCanvas].forEach(c=>{if(!c)return;
-      c.width=w*v.dpr;c.height=h*v.dpr;c.style.width=w+'px';c.style.height=h+'px';});
+      if(c.width!==bw||c.height!==bh){c.width=bw;c.height=bh;c.style.width=w+'px';c.style.height=h+'px';}});
     v.w=w;v.h=h;
     /* v.insetEl (the floating HUD) reserves top pixels so "whole map" means
        the part of the screen the player can actually see */
@@ -3587,6 +3664,8 @@ function paintHud(){
   $('vInf').textContent=Math.floor(s.inf);
   $('vSub').textContent=(s.subj*100).toFixed(1)+'%';
   $('vOvr').textContent=s.oversight.toFixed(1)+'%';
+  {const e=$('vSusHud');if(e){e.textContent=(s.avgSus||0).toFixed(1);
+    e.style.color=s.avgSus>=16?'var(--blood)':s.avgSus>=10?'var(--sodium)':'';}}
   $('subFill').style.width=(s.subj*100)+'%';
   $('ovrFill').style.width=s.oversight+'%';
   if(s.popWatched==null)popTotals(s);
@@ -3614,7 +3693,9 @@ function paintHud(){
      it first left every overlay anchored one paint stale (hunt, Aug 25) */
   const hh=$('hud')?$('hud').offsetHeight:0;
   if(hh&&hh!==_hudH){_hudH=hh;syncOverlayTops();
-    if(gv&&gv.layout){gv.inset=hh;gv.layout();}}  /* the fitted map re-anchors under the new HUD */
+    /* re-anchor AND repaint in the same frame: layout used to clear the canvas
+       here and leave it black until the next tick (the late-game flicker) */
+    if(gv&&gv.layout){gv.inset=hh;gv.layout();drawWorld(gv,S,null);}}
   const covered=REGIONS.reduce((a,r)=>a+s.regions[r.id].pop*s.regions[r.id].coverage,0);
   $('pillTxt').textContent=`${s.speed===0?'PAUSED':'LIVE'} · ${(covered*1.4).toFixed(0)}M NODES · ${s.activeCount} MKT`
     +(s.warHeat>0.05?` · WAR ${(s.warHeat*100)|0}%`:'');
@@ -3938,9 +4019,20 @@ function wireTree(){
 const PSTATE_LABEL={calm:'Calm',murmur:'Murmurs',peaceful:'Marches',violent:'Riots',uprising:'UPRISING'};
 function worldHTML(){
   const s=S;
-  let h=`<div class="worldstat">
+  let h='';
+  /* ⛔ TROUBLE RIBBON, Aug 27: he opens this tab TO FIND the uprising he just
+     watched on the map, named by the country that flashed. Name it his way. */
+  {
+    const hot=REGIONS.filter(R=>{const x=s.regions[R.id];
+      return x.active&&(x.pstate==='uprising'||x.pstate==='violent');});
+    if(hot.length)h+=`<div class="trouble">`+hot.map(R=>{const x=s.regions[R.id];
+      const face=(REGION_COUNTRIES[R.id]&&REGION_COUNTRIES[R.id][0])?REGION_COUNTRIES[R.id][0].n:'';
+      return `<button class="tchip ${x.pstate}" data-goto="rc_${R.id}">⚠ ${R.name}${face&&face!==R.name?` (${face})`:''} · ${x.pstate==='uprising'?'UPRISING':'RIOTS'}</button>`;
+    }).join('')+`</div>`;
+  }
+  h+=`<div class="worldstat">
     <div class="ws"><div class="k">World fear</div><div class="v mono">${((s.fx.fear+s.warHeat*0.1)*100).toFixed(0)}</div></div>
-    <div class="ws"><div class="k">War heat</div><div class="v mono">${(s.warHeat*100).toFixed(0)}%</div></div>
+    <div class="ws" title="War heat feeds world fear (compliance rises), stirs unrest everywhere, and drips ${s.mode.mod.ovrName||'Patriotism'} daily. Fear is the distraction; the streets are the price."><div class="k">War heat</div><div class="v mono">${(s.warHeat*100).toFixed(0)}%</div>${s.warHeat>0.02?`<div class="kfx">fear +${(s.warHeat*10).toFixed(0)} · unrest +${(s.warHeat*12).toFixed(0)} · ${(s.mode.mod.ovrName||'Patriotism').toLowerCase()} +${(s.warHeat*0.05).toFixed(2)}/d</div>`:''}</div>
     <div class="ws"><div class="k">Militarized</div><div class="v mono">${(s.avgMil*100).toFixed(0)}%</div></div>
     <div class="ws"><div class="k">Suspicion</div><div class="v mono"${s.avgSus>=10?' style="color:var(--sodium)"':''}>${s.avgSus.toFixed(1)}${(s.has('threat')||s.mode.mod.warOpen)&&!s.has('proxy')?'<span style="color:var(--dim);font-size:9px"> of 10 for Proxy</span>':''}</div></div>
     <div class="ws"><div class="k">Organized</div><div class="v mono" style="color:#c792ff">${s.avgRes.toFixed(0)}</div></div>
@@ -3963,7 +4055,7 @@ function worldHTML(){
     market you already hold. <b>Agitate</b> turns a peaceful march violent so force looks justified.
     <b>Crackdown</b> clears the streets and buys compliance, and the region never forgets it.
     <b>Blackout</b> buys the news cycle: suspicion drops now and stays quiet for two weeks. Weak where
-    the press is free. <b>Concede</b> is the release valve: everything cools, control slips. Full strength once per ten days per region; repeats buy half the calm for twice the ground.</div><span class="lgm"></span></div>`;
+    the press is free. <b>Concede</b> is the release valve: everything cools, control slips. Full strength once per ten days per region; repeats buy half the calm for twice the ground. And the world counts your retreats: more than three concessions in 45 days emboldens organizers everywhere.</div><span class="lgm"></span></div>`;
   /* ⛔ THE ALWAYS OPEN SINK, at the top of the tab where money is spent.
      A mechanic only a bot can reach is not a mechanic, and everything else on
      this screen is gated by a cooldown or a precondition. This one is not. */
@@ -4057,6 +4149,7 @@ function worldHTML(){
     return `<div class="rcard ${x.active?'':x.lost?'lost':'idle'}" id="rc_${r.id}">
       <div class="rtop"><h3>${r.name}</h3>${x.active||x.lost?chip:''}${bchip}${lchip}
         <span class="pop mono">${r.pop}M</span></div>
+      <div class="rgeo">${regionFaces(r.id,4)}</div>
       <div class="mini">
         <div class="m"><div class="k">Coverage <i class="up">▲</i></div>${bar(x.coverage,'var(--sodium)')}</div>
         <div class="m"><div class="k">Control <i class="up">▲</i></div>${bar(x.control,'var(--blood)')}</div>
@@ -4120,8 +4213,10 @@ function regionEnterHTML(rid){
   const s=S,x=s.regions[rid];
   if(!x||x.active)return '';
   const cost=entryCost(x);
-  return `<button class="buy" data-enter="${rid}" ${s.cash<cost?'disabled':''}>
-        ${uiIco('act_enter')}${x.lost?'Re-enter':'Enter'} market · ${fmtMoney(cost)}</button>`;
+  const short=s.cash<cost;
+  /* phones never see tooltips: say WHY it is grey, right on the button */
+  return `<button class="buy" data-enter="${rid}" ${short?'disabled':''}>
+        ${uiIco('act_enter')}${x.lost?'Re-enter':'Enter'} market · ${fmtMoney(cost)}${short?`<span class="why">short on cash · need ${fmtMoney(cost-s.cash)} more</span>`:''}</button>`;
 }
 function entryCost(x){
   /* ⛔ ENTRY PRICE TRACKS WHAT THE MARKET IS WORTH, 2026-08-24. Stephen: "spending
@@ -4249,8 +4344,11 @@ function doAction(act,rid){
     if(!concArmed(S,rid)){
       S._concArm={rid:rid,at:Date.now()};
       const preAgain=r.lastConcede!=null&&(s.day-r.lastConcede)<10;
+      const preFat=!preAgain&&(s.concLog||[]).filter(d=>s.day-d<45).length>=3;
       shToast(preAgain
         ?'A repeat concession this soon buys HALF the calm for TWICE the ground. Tap CONFIRM CONCEDE anyway.'
+        :preFat
+        ?'The world is counting your retreats: a fourth concession inside 45 days banks NO goodwill and emboldens organizers everywhere. Tap CONFIRM CONCEDE anyway.'
         :'Control will slip in '+r.name+'. Tap CONFIRM CONCEDE to go through with it.');
       renderSheet('reg');paintHud();return;
     }
@@ -4268,12 +4366,27 @@ function doAction(act,rid){
        let a spammer roll the window forward forever and lock a region out
        of goodwill without ever being told (hunt, Aug 25) */
     if(!again)r.lastConcede=s.day;
+    /* ⛔ Aug 27, Stephen (second time he has flagged it): the 10-day repeat
+       price is PER REGION, and he conceded EVERYWHERE forever. Capitulation
+       fatigue: more than three banked concessions in any rolling 45 days and
+       the movement smells weakness - every further one banks no goodwill and
+       organizers EVERYWHERE take heart. The balanced bots' single-region
+       12/17-day cadence stays under the threshold (canary-gated). */
+    s.concLog=(s.concLog||[]).filter(d=>s.day-d<45);
+    const fatigued=!again&&s.concLog.length>=3;
+    if(!again)s.concLog.push(s.day);
     r.unrest=clamp(r.unrest-15*rf,0,100);r.suspicion=clamp(r.suspicion-8*rf,0,100);
     r.resist=clamp(r.resist-6*rf,0,100);r.grudge=Math.max(0,r.grudge-8*rf);
     r.control=Math.max(0,r.control-(again?0.10:0.05));r.compliance=clamp(r.compliance-0.02,0,.98);
-    if(!again)r.gw=Math.min(CFG.gwCap,(r.gw||0)+1);
+    if(fatigued){
+      REGIONS.forEach(R=>{const x=s.regions[R.id];if(x.active&&R.id!==rid)x.resist=clamp(x.resist+1.5,0,100);});
+      pushNews(s,'Movements compare notes across borders: concessions are working. Organizers everywhere take heart.','res');
+    }
+    if(!again&&!fatigued)r.gw=Math.min(CFG.gwCap,(r.gw||0)+1);
     shToast(again
       ?`A second listening tour within days convinces nobody in ${r.name}: half the calm, twice the ground given, no goodwill.`
+      :fatigued
+      ?`${r.name} cools, but the world is counting your retreats: no goodwill banked, and organizers everywhere take heart (+1.5 Organized).`
       :`${r.name} cools: unrest, suspicion and organizing all ease. Control slips a little. The listening tour banks goodwill (${r.gw}).`);
     pushNews(s,H.concede(r.name),'');
   }
@@ -4344,8 +4457,20 @@ function showEvent(ev){
     row((S.warHeat||0)-pre.war,'war heat',true);
     row((S.fdPages||0)-pre.pg,'ledger pages',true);
     const wire=S.log.length>logN?S.log[0].t:'';
+    /* Aug 27: the receipt was truthful and still read as a lie, because the
+       story machine erases spikes off-screen. Name the mitigation. */
+    let mach='';
+    {const susD=a2.sus-pre.a.sus, bleed=susBleed(S);
+     if(susD>1.5&&bleed>=0.05)
+       mach+=`<p class="evmach">Your narrative machine grinds ~${bleed.toFixed(1)} suspicion off every day. This spike is already fading: watch the HUD number fall.</p>`;
+     const ovD=S.oversight-pre.ovr, decBleed=(S.fx.dec||0)*0.042;
+     if(ovD>2&&decBleed>=0.1)
+       mach+=`<p class="evmach">Your lobbying machine bleeds ~${decBleed.toFixed(1)} ${ovn.toLowerCase()} a day and will grind this back toward the floor (${ovFloor(S).toFixed(0)}).</p>`;
+     if(ovD<-1&&S.oversight<=ovFloor(S)+1)
+       mach+=`<p class="evmach">${ovn} is pinned at its floor (${ovFloor(S).toFixed(0)}): this relief is erased overnight.</p>`;}
     c.innerHTML=`<div class="kicker">Aftermath</div><h3>${o.l}</h3>
       <div class="evrcpt">${d.join('')||'<span class="nt">No measurable shift. Yet.</span>'}</div>
+      ${mach}
       ${wire?`<p class="evnews">“${wire}”</p>`:''}
       <button class="opt" id="evDone"><div class="ol">CONTINUE</div></button>`;
     $('evDone').onclick=()=>{S.pendingEventId=null;noteCloseModal();setSpeed(prev||1);paintHud();};
@@ -4363,6 +4488,26 @@ function evPayCash(s,o,sc){
   bumpSus(s,CFG.evHeatSus);
   s.evPaid=(s.evPaid||0)+1;
   if(s.evPaid===3)pushNews(s,'Field note: the fixers talk. Every payoff raises the next payoff’s share of your treasury (now '+Math.round((CFG.evPct+s.evHeat)*100)+'%), and suspicion follows the money. Quiet days cool the rate.','crit');
+}
+/* SYNERGY DISCOVERED: pauses, names the combo, the two nodes that made it, and
+   what it does. Queued like every other modal so it never collides with an
+   event card. Speed: a synergy unlocks on a purchase, which happens under a
+   paused sheet - if we were already paused, STAY paused and let the sheet's
+   own close restore its stashed speed. */
+function synergyModal(c){
+  if(!noteModal(()=>synergyModal(c)))return;
+  const prev=S?S.speed:0;if(S)setSpeed(0);
+  const parts=c.need.map(id=>(typeof NBI!=='undefined'&&NBI[id]&&NBI[id].n)||id).join('  +  ');
+  const found=S&&S.combos?S.combos.size:1;
+  const mc=$('modalCard');
+  mc.innerHTML=`<div class="kicker" style="color:var(--sodium)">Synergy discovered · ${found} of ${COMBOS.length} this run</div>
+    <h3 style="color:var(--sodium)">${c.n}</h3>
+    <p style="color:var(--sodium);opacity:.85;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase">${parts}</p>
+    <p>${c.d}</p>
+    <p class="evnews">The Feed tab keeps the ledger: found synergies by name, sealed ones by hint.</p>
+    <button class="opt" id="synDone"><div class="ol">CONTINUE</div></button>`;
+  noteOpenModal();
+  $('synDone').onclick=()=>{noteCloseModal();if(prev>0)setSpeed(prev);paintHud();};
 }
 function doctrineModal(){
   if(!noteModal(()=>doctrineModal()))return;
@@ -4812,6 +4957,10 @@ function bootGame(resumed){
     const el=$('shBody').querySelector('.acqbar');if(el)el.scrollIntoView({block:'start'});};
   cap.onclick=goDesk;
   cap.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();goDesk();}};
+  const sus=$('susStat');
+  if(sus){const goWorld=()=>{if(!S||S.over)return;openSheet('reg');};
+    sus.onclick=goWorld;
+    sus.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();goWorld();}};}
   paintHud();
   cancelAnimationFrame(raf);drawFx();
   if(!resumed&&!tutSeen&&!lsGet('ftw_guide_done')&&!tipsOff()){tutSeen=true;startGuide();}
@@ -4857,6 +5006,10 @@ function refreshMenuExtras(){
     +' · synergies found '+r.combos.length+' of '+COMBOS.length+(r.fastWin?' · fastest win '+r.fastWin+' days':'')):'';
 }
 function shBodyClick(e){
+  const g=e.target.closest('[data-goto]');
+  if(g){const t=document.getElementById(g.dataset.goto);
+    if(t){t.scrollIntoView({behavior:'smooth',block:'start'});
+      t.classList.add('located');setTimeout(()=>t.classList.remove('located'),1600);}return;}
   const n=e.target.closest('[data-node]');if(n){buyNode(n.dataset.node);return;}
   const a=e.target.closest('[data-act]');if(a){doAction(a.dataset.act,a.dataset.r);return;}
   const lg=e.target.closest('.legend');
@@ -4996,7 +5149,7 @@ window._sbCapEarn=function(n,tag){
   /* offline shell: registered here so the whole game (art and sfx included)
      works offline after one session. Bump ?v= with sw.js SHELL_VERSION. */
   if('serviceWorker' in navigator){
-    try{ navigator.serviceWorker.register('sw.js?v=20260825a'); }catch(e){}
+    try{ navigator.serviceWorker.register('sw.js?v=20260827a'); }catch(e){}
   }
   if(framed){
     try{ parent.postMessage({sws:'ready'},'*'); }catch(e){}
