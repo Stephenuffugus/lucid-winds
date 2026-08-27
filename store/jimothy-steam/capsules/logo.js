@@ -27,17 +27,14 @@ function page(withRoon){
  .l2{font-size:196px;font-weight:800;color:#93d167;letter-spacing:2px;margin-top:6px;line-height:1.06;padding-bottom:10px;
      -webkit-text-stroke:14px #0d1408;paint-order:stroke fill;
      text-shadow:0 12px 0 #0d1408, 0 0 44px rgba(122,179,86,.45), 0 0 90px rgba(0,0,0,.8)}
- .l3{margin-top:34px;font-family:'Nunito',system-ui,sans-serif;font-weight:800;font-size:44px;
-     letter-spacing:5px;color:#e8dcc8;text-transform:uppercase;
-     -webkit-text-stroke:6px #0d1408;paint-order:stroke fill;
-     text-shadow:0 5px 0 #0d1408, 0 0 30px rgba(0,0,0,.9)}
+ /* Steam review 2026-08-26: Library Logo must be TITLE ONLY — the
+    "The Little Nugget" tagline line was rejected. Do not add text back. */
  img.roon{height:430px;filter:drop-shadow(0 10px 26px rgba(0,0,0,.85)) drop-shadow(0 0 3px #0d1408)}
  </style></head><body><div class="wrap">
    ${withRoon?`<img class="roon" src="${roon}">`:''}
    <div class="type">
      <div class="l1">Jumping</div>
      <div class="l2">Jimothy</div>
-     <div class="l3">The Little Nugget</div>
    </div>
  </div></body></html>`;
 }
