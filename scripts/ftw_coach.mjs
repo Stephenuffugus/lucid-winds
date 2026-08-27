@@ -8,9 +8,30 @@ import fs from "fs";
 
 const f = process.argv[2];
 if (!f) { console.error("usage: node scripts/ftw_coach.mjs <runlog.json>"); process.exit(2); }
-const d = JSON.parse(fs.readFileSync(f, "utf8"));
-if (!d || !d.h || !Array.isArray(d.log)) { console.error("not a flight-recorder log"); process.exit(1); }
+const raw = JSON.parse(fs.readFileSync(f, "utf8"));
 
+/* accept both shapes: the BATCH export {runs:[{h,log,at},...]} (many runs, one
+   paste) and a single legacy run {h,log}. */
+const runs = Array.isArray(raw.runs) ? raw.runs
+  : (raw && raw.h && Array.isArray(raw.log)) ? [raw]
+  : null;
+if (!runs || !runs.length) { console.error("not a flight-recorder log"); process.exit(1); }
+
+const money = v => v >= 1e9 ? (v / 1e9).toFixed(2) + "B" : v >= 1e6 ? (v / 1e6).toFixed(1) + "M" : String(v);
+
+/* portfolio header when there is more than one run */
+if (runs.length > 1) {
+  const w = runs.filter(r => (r.log.find(e => e.k === "end") || {}).won).length;
+  console.log(`\n######## ${runs.length} RUNS · ${w} win${w === 1 ? "" : "s"}, ${runs.length - w} loss${runs.length - w === 1 ? "" : "es"} ########`);
+  runs.forEach((r, i) => {
+    const e = r.log.find(x => x.k === "end");
+    console.log(`  ${String(i + 1).padStart(2)}. ${r.h.mode}/${r.h.diff} from ${r.h.start} — ${e ? (e.won ? "WIN " : "LOSS") + " (" + e.why + ") d" + e.d : "unfinished"}`);
+  });
+}
+
+for (let ri = 0; ri < runs.length; ri++) analyzeRun(runs[ri], runs.length > 1 ? ri + 1 : null);
+
+function analyzeRun(d, idx) {
 const log = d.log;
 const snaps = log.filter(e => e.k === "snap");
 const acts = log.filter(e => e.k === "act");
@@ -18,9 +39,8 @@ const nodes = log.filter(e => e.k === "node");
 const evs = log.filter(e => e.k === "ev");
 const unrest = log.filter(e => e.k === "unrest");
 const end = log.find(e => e.k === "end");
-const money = v => v >= 1e9 ? (v / 1e9).toFixed(2) + "B" : v >= 1e6 ? (v / 1e6).toFixed(1) + "M" : String(v);
 
-console.log(`\n=== FTW RUN · ${d.h.mode}/${d.h.diff} from ${d.h.start}${d.h.co ? " · " + d.h.co : ""} ===`);
+console.log(`\n=== FTW RUN${idx ? " #" + idx : ""} · ${d.h.mode}/${d.h.diff} from ${d.h.start}${d.h.co ? " · " + d.h.co : ""} ===`);
 console.log(end ? `outcome: ${end.won ? "WIN" : "LOSS"} (${end.why}) day ${end.d}` : `no ending on tape (last day ${log.length ? log[log.length - 1].d : "?"})`);
 console.log(`tape: ${log.length} entries · ${snaps.length} snapshots · ${nodes.length} nodes · ${acts.length} region actions · ${evs.length} event choices`);
 if (log.some(e => e.k === "truncated")) console.log("⚠ tape TRUNCATED at the cap - late game is missing");
@@ -79,4 +99,6 @@ if (end && !end.won && end.why !== "refusal") {
 const hiInf = snaps.filter(s => s.inf > 120).length;
 if (hiInf > snaps.length / 3) flags.push(`influence sat above 120 in ${hiInf}/${snaps.length} snapshots - the tree wanted feeding`);
 console.log(flags.length ? flags.map(x => "  - " + x).join("\n") : "  (none tripped)");
-console.log("\nNext step for the coach: judge these against a counterfactual sim from the same mode/diff/start.\n");
+}
+
+console.log("\nNext step for the coach: judge these against counterfactual sims from the same mode/diff/start.\n");

@@ -1028,7 +1028,7 @@ h1 em{font-style:normal;color:var(--sodium)}
   <div id="endRecs" class="fine" style="margin:0 auto 10px"></div>
   <button class="cta" id="againBtn" style="max-width:360px">Run it back</button>
   <button class="howbtn" id="shareBtn" style="margin-top:12px">Copy this result</button>
-  <button class="howbtn" id="flightBtn" style="margin-top:8px;display:none">Copy run log for the coach</button>
+  <button class="howbtn" id="flightBtn" style="margin-top:8px;display:none">Copy runs for the coach</button>
 </section>
 
 </div>
@@ -3125,8 +3125,10 @@ function finish(won,why){
   }
   playEpilogue(endStory(S,won,why));
   flightLog('end',{won:won?1:0,why:why});flightSave();
+  flightArchive();   /* this run joins the batch the coach button copies */
   /* the coach tape export: his eyes only (fleet dev flag) */
-  {const fb=$('flightBtn');if(fb)fb.style.display=lsGet('sws_dev_ok')==='1'?'':'none';}
+  {const fb=$('flightBtn');if(fb){fb.style.display=lsGet('sws_dev_ok')==='1'?'':'none';
+    const n=flightHist().length;fb.textContent='Copy '+n+' run'+(n===1?'':'s')+' for the coach';}}
   /* Aug 25, Stephen: "fade to show the end screen while whatever ending song
      is playing. Then have it fade to the stats so it feels like a proper game
      finishing." The song is already playing (started above); the game screen
@@ -3306,6 +3308,11 @@ function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
    regular players never see it. ⛔ SEEDED-STREAM LAW: this module consumes
    ZERO randomness and never throws - it runs inside tick(). */
 const K_FLIGHT='ftw_flight';
+/* the coach wants a BATCH: play a stack of runs, copy once. Each finished run
+   is archived here (newest first) so a grind session is one paste, not twenty.
+   Capped by run count AND total size so the clipboard/localStorage stay sane. */
+const K_FLIGHT_HIST='ftw_flight_log';
+const FLIGHT_MAX_RUNS=20, FLIGHT_MAX_BYTES=480000;
 const FLIGHT={h:null,list:[],max:4000,trunc:false};
 function flightStart(s){
   FLIGHT.h={v:1,mode:s.modeKey,diff:s.diffKey,start:s.startId,co:s.co||''};
@@ -3340,11 +3347,29 @@ function flightRestore(s){
   }catch(e){}
   flightStart(s);
 }
-function flightExport(){
-  return JSON.stringify({coach:'FTW run log · hand this to the coach',
-    h:FLIGHT.h,at:S?{day:S.day,won:!!S.won,over:!!S.over}:null,log:FLIGHT.list});
+function flightHist(){try{const a=JSON.parse(lsGet(K_FLIGHT_HIST)||'[]');return Array.isArray(a)?a:[];}catch(e){return[];}}
+/* archive the just-finished run to the front of the history, trim to the caps */
+function flightArchive(){
+  try{
+    if(!FLIGHT.h||!FLIGHT.list.length)return;
+    const run={h:FLIGHT.h,at:S?{day:S.day,won:!!S.won,over:!!S.over,why:S.why||null}:null,log:FLIGHT.list};
+    let hist=flightHist();hist.unshift(run);
+    if(hist.length>FLIGHT_MAX_RUNS)hist=hist.slice(0,FLIGHT_MAX_RUNS);
+    /* drop the oldest until the whole batch fits the byte cap */
+    while(hist.length>1&&JSON.stringify(hist).length>FLIGHT_MAX_BYTES)hist.pop();
+    lsSet(K_FLIGHT_HIST,JSON.stringify(hist));
+  }catch(e){}
 }
-window.FTW_FLIGHT={dump:flightExport,
+/* the export is the WHOLE stack: every archived run, plus the live one if a
+   run is in progress (console/mid-run use). */
+function flightExport(){
+  const runs=flightHist().slice();
+  if(FLIGHT.h&&FLIGHT.list.length&&(!S||!S.over))
+    runs.unshift({h:FLIGHT.h,at:S?{day:S.day,won:!!S.won,over:!!S.over,why:S.why||null}:null,log:FLIGHT.list,live:true});
+  return JSON.stringify({coach:'FTW run log · hand this to the coach',runs:runs});
+}
+window.FTW_FLIGHT={dump:flightExport,count:function(){return flightHist().length;},
+  clear:function(){lsSet(K_FLIGHT_HIST,'[]');return 'cleared';},
   copy:function(){const t=flightExport();
     if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
     return Promise.reject(new Error('no clipboard'));}};
@@ -5489,7 +5514,9 @@ $('shareBtn').onclick=()=>{
   btn.textContent='Copy blocked here';
 };
 $('flightBtn').onclick=()=>{
-  const btn=$('flightBtn'),done=()=>{btn.textContent='Copied · paste it to the coach';setTimeout(()=>btn.textContent='Copy run log for the coach',2400);};
+  const btn=$('flightBtn'),n=flightHist().length,
+    reset=()=>{btn.textContent='Copy '+n+' run'+(n===1?'':'s')+' for the coach';},
+    done=()=>{btn.textContent='Copied '+n+' run'+(n===1?'':'s')+' · paste it to the coach';setTimeout(reset,2600);};
   if(navigator.clipboard&&navigator.clipboard.writeText){
     navigator.clipboard.writeText(flightExport()).then(done).catch(()=>{btn.textContent='Copy blocked here';});
     return;}
@@ -5545,7 +5572,7 @@ window._sbCapEarn=function(n,tag){
   /* offline shell: registered here so the whole game (art and sfx included)
      works offline after one session. Bump ?v= with sw.js SHELL_VERSION. */
   if('serviceWorker' in navigator){
-    try{ navigator.serviceWorker.register('sw.js?v=20260827h'); }catch(e){}
+    try{ navigator.serviceWorker.register('sw.js?v=20260827i'); }catch(e){}
   }
   if(framed){
     try{ parent.postMessage({sws:'ready'},'*'); }catch(e){}

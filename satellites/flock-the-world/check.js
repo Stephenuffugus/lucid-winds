@@ -2050,7 +2050,8 @@ try {
     && /flightLog\('unrest'/.test(GAME) && /flightLog\('end'/.test(GAME));
   ok('a state snapshot lands every 30 days', /if\(s\.day%30===0\)flightSnap\(s\)/.test(GAME));
   ok('the export button is his eyes only (dev flag gated)',
-    /flightBtn[\s\S]{0,80}display:none/.test(SRC) && /fb\.style\.display=lsGet\('sws_dev_ok'\)==='1'\?'':'none'/.test(GAME));
+    /flightBtn[\s\S]{0,120}display:none/.test(SRC) && /fb\.style\.display=lsGet\('sws_dev_ok'\)==='1'\?'':'none'/.test(GAME));
+  ok('a finished run is archived to the batch history', /flightArchive\(\);\s+\/\* this run joins the batch/.test(GAME) && /function flightArchive\(\)/.test(GAME));
   /* runtime: the tape records, caps, and exports */
   const cF = makeCtx();
   vm.runInContext("S=newState('CONTRACTOR','Vendor','NA')", cF);
@@ -2061,8 +2062,19 @@ try {
     vm.runInContext("FLIGHT.list.some(e=>e.k==='node'&&e.id==='ord')", cF) === true);
   ok('the tape caps and marks truncation instead of growing forever',
     vm.runInContext("(function(){FLIGHT.max=FLIGHT.list.length+1;flightLog('x',{});flightLog('x',{});flightLog('x',{});var l=FLIGHT.list;return l.length<=FLIGHT.max+1&&l[l.length-1].k==='truncated';})()", cF) === true);
-  ok('the export parses and carries the header + log',
-    vm.runInContext("(function(){var d=JSON.parse(flightExport());return d.h.mode==='CONTRACTOR'&&Array.isArray(d.log)&&d.log.length>0;})()", cF) === true);
+  ok('the live export is a batch carrying the in-progress run',
+    vm.runInContext("(function(){var d=JSON.parse(flightExport());return Array.isArray(d.runs)&&d.runs.length>=1&&d.runs[0].h.mode==='CONTRACTOR'&&Array.isArray(d.runs[0].log)&&d.runs[0].log.length>0;})()", cF) === true);
+  /* archive two runs, then the batch export must carry BOTH */
+  {
+    const cB = makeCtx();
+    vm.runInContext("window.__st={};localStorage.getItem=function(k){return window.__st[k]||null};localStorage.setItem=function(k,v){window.__st[k]=v};", cB);
+    vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');S.inf=500;buyNode('ord');S.day=900;S.over=true;S.won=true;S.why='win_econ';flightArchive();", cB);
+    vm.runInContext("S=newState('CRISIS','Startup','ME');S.inf=500;buyNode('threat');S.day=1100;S.over=true;S.won=false;S.why='coalition';flightArchive();", cB);
+    const batch = vm.runInContext("JSON.parse(flightExport())", cB);
+    ok('the batch export carries every archived run', batch.runs.length === 2, 'got ' + batch.runs.length);
+    ok('the newest archived run is first', batch.runs[0].h.mode === 'CRISIS' && batch.runs[1].h.mode === 'CONTRACTOR');
+    ok('FTW_FLIGHT.count reports the batch size', vm.runInContext("FTW_FLIGHT.count()", cB) === 2);
+  }
 } catch (e) { ok('flight recorder harness runs', false, e.message); }
 
 /* ------------------------------------------- achievements (Aug 27, greenlit) */
