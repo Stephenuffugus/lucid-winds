@@ -1634,8 +1634,21 @@ group('event plates + ending backgrounds exist on disk');
   ok('every ending background finish() names exists', missingBg.length === 0, missingBg.join(','));
   ok('the three win doors carry their own backgrounds',
     ['bg_end_win_glove.webp', 'bg_end_win_fist.webp', 'bg_end_win_econ.webp'].every(f => bgRefs.indexOf(f) >= 0), bgRefs.join(','));
-  ok('the bright glove win gets the daylight dimming like refusal does',
-    /daylight',\(!won&&why==='refusal'\)\|\|\(won&&why==='win_glove'\)/.test(GAME));
+  /* Aug 27: losses no longer use --shot (the coalition loss showed the
+     VENDOR'S OWN LOBBY on the ending where the world wins). Both losses play
+     the better-world slideshow instead; the glove win keeps its daylight dim. */
+  ok('the bright glove win keeps the daylight dimming; losses carry their own scrim',
+    /daylight',won&&why==='win_glove'/.test(GAME));
+  ok('loss endings play the better-world slideshow, fixed to the viewport',
+    /id="endShots"/.test(SRC)
+    && /#endShots\{position:fixed;inset:0/.test(SRC)
+    && /bg_end_refusal\.webp','art\/bg\/bg_end_win_glove\.webp'/.test(GAME)
+    && /\$\('end'\)\.style\.removeProperty\('--shot'\)/.test(GAME));
+  ok('the slideshow cross-fades on a timer and is torn down on Run it back',
+    /endShotTimer=setInterval\(/.test(GAME)
+    && /clearInterval\(endShotTimer\);endShotTimer=null;\s*cancelAnimationFrame/.test(GAME)
+    && /if\(endShotTimer\)\{clearInterval\(endShotTimer\);endShotTimer=null;\}/.test(GAME));
+  ok('the vendor lobby image is gone from the loss path', !/bg_end_coalition/.test(GAME));
 }
 
 /* ------------------------------------------------- epilogue reel (Aug 25) */

@@ -175,3 +175,36 @@ truncation assert).
   and the registration ?v= bumped in lockstep to 20260827a.
 - Fable budget is the constraint this week: Fable does surgery, Opus handoffs
   take corpus/research grunt work.
+
+## H. Evening 2 — his Vendor run + the loss screen (Aug 27 late)
+
+Run report: "Platform dismantled · Contractor · Vendor · Subj 56.4% ·
+Patriotism 100.0% · 1296 days · 5 synergies." Second straight patriotism loss
+(Incumbent, then Vendor), this time with ZERO uprisings.
+
+- [x] H1. **Loss screen: the better world, not the vendor's lobby.** The
+      "Platform dismantled" ending showed bg_end_coalition (the company's own
+      glory lobby, Capitol out the window) and the image scrolled away with
+      the text. Root causes: wrong picture for the ending where the WORLD
+      wins, and the --shot backdrop is absolute inside the scrolling section.
+      BUILT: both loss endings now play a cross-fading slideshow of his two
+      happy-people pictures (the refusal bird-box street, then the daylight
+      boulevard families) FIXED to the viewport, slow drift, diagonal scrim
+      (text column dark, world bright), while the epilogue writes itself out
+      over it. Wins keep their single doors; vendor lobby image retired from
+      the loss path (check-pinned). Probe caught two real bugs before ship:
+      the z-order (removing --shot dropped the child lift; verdict rendered
+      UNDER the scrim) and a dusk-dark first scrim. Shots 13-16 (landscape
+      A/B, scrolled, portrait), timer torn down on Run it back, checks 350.
+      ⚠ NOTE FOR HIM: only TWO happy-people images exist (refusal street +
+      the glove-win boulevard — the boulevard has drones and camera poles in
+      frame since it was painted as the Grateful World's weaponized
+      sunshine). If he wants a third, clean "free world" image, one more
+      plate from his artist drops straight in (imgs array, one line).
+- [ ] H2. **Flicker fix still unverified on device** — his run had no
+      uprisings, so the refusal-strip churn that caused it never fired. Needs
+      a run that riots, or the dev panel.
+- [ ] H3. **Balance data point for D3**: two straight patriotism losses
+      (Incumbent then Vendor) playing varied strategies, zero uprisings. The
+      loss meter may now be the dominant pressure for human play above easy.
+      Logged for the director tuning sitting; not tuned solo.

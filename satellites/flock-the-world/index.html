@@ -52,6 +52,24 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
    present and darken the IMAGE instead, so the sky stays blue and the trees stay
    green at a value pale text can sit on. */
 #end.daylight::before{opacity:.62;filter:brightness(.42) saturate(1.05)}
+/* the loss endings: a better world, cross-fading behind the verdict while the
+   epilogue writes itself out. FIXED to the viewport, so scrolling the text
+   never pushes the world off the screen (Stephen, Aug 27: the old single
+   image scrolled away, and it was the vendor's own lobby besides). */
+#endShots{position:fixed;inset:0;z-index:0;display:none;pointer-events:none;overflow:hidden}
+#end.on #endShots{display:block}
+/* the --shot pattern lifted #end's children above its backdrop; the losses no
+   longer set --shot, so the lift must not depend on it (probe 13: the whole
+   verdict rendered UNDER the slideshow scrim) */
+#end>*:not(#endShots){position:relative;z-index:1}
+#endShots .eshot{position:absolute;inset:0;background-size:cover;background-position:center;
+  opacity:0;transition:opacity 2.4s ease;transform:scale(1.02)}
+#endShots .eshot.on{opacity:.78;animation:eshotDrift 9.5s ease-in-out both}
+@keyframes eshotDrift{from{transform:scale(1.02)}to{transform:scale(1.09)}}
+/* the text column carries the dark; the right of frame stays daylight so the
+   better world actually reads as one (probe 13 at .60/.86 read as dusk) */
+#endShots::after{content:'';position:absolute;inset:0;
+  background:linear-gradient(100deg,rgba(4,7,11,.78) 0%,rgba(4,7,11,.55) 46%,rgba(4,7,11,.28) 100%)}
 #end.daylight::after{background:radial-gradient(120% 90% at 50% 38%,#05070b4d 0%,#05070bc4 55%,#05070bee 100%)}
 .screen.on{display:flex}
 .mcol{display:contents}
@@ -976,6 +994,7 @@ h1 em{font-style:normal;color:var(--sodium)}
 
 <!-- END -->
 <section class="screen" id="end">
+  <div id="endShots" aria-hidden="true"></div>
   <div class="verd" id="endKick"></div>
   <h2 id="endTitle"></h2>
   <p id="endText"></p>
@@ -2943,7 +2962,7 @@ function endStory(s,won,why){
   out.push(pick(won?EPI_CLOSE_WIN:EPI_CLOSE_LOSS,13));
   return out;
 }
-let epiTimer=null,endShowTimer=null;
+let epiTimer=null,endShowTimer=null,endShotTimer=null;
 function playEpilogue(beats){
   const st=$('endStory');if(!st)return;
   /* stats wait for the reel: they fade up as the coda (or on tap-through) */
@@ -3006,17 +3025,41 @@ function finish(won,why){
   /* each win door gets its own picture (Aug 25 drop): the grateful daylight
      boulevard, the empty checkpoint street, the adjourned hearing room.
      Generic total-coverage win keeps the original. */
-  $('end').style.setProperty('--shot',
-    won?(why==='win_glove'?'url(art/bg/bg_end_win_glove.webp)'
-        :why==='win_fist'?'url(art/bg/bg_end_win_fist.webp)'
-        :why==='win_econ'?'url(art/bg/bg_end_win_econ.webp)'
-        :'url(art/bg/bg_end_win.webp)')
-      :why==='refusal'?'url(art/bg/bg_end_refusal.webp)'
-      :'url(art/bg/bg_end_coalition.webp)');
+  /* Aug 27, Stephen: the coalition loss showed the vendor's own lobby (wrong
+     image, and it scrolled away with the text). BOTH losses now play the
+     better world instead: his two happy-people pictures cross-fade, fixed
+     behind the verdict, while the epilogue writes itself out. Wins keep
+     their single doors. */
+  if(endShotTimer){clearInterval(endShotTimer);endShotTimer=null;}
+  const shots=$('endShots');
+  if(shots)shots.innerHTML='';
+  if(won){
+    $('end').style.setProperty('--shot',
+      why==='win_glove'?'url(art/bg/bg_end_win_glove.webp)'
+      :why==='win_fist'?'url(art/bg/bg_end_win_fist.webp)'
+      :why==='win_econ'?'url(art/bg/bg_end_win_econ.webp)'
+      :'url(art/bg/bg_end_win.webp)');
+  }else{
+    $('end').style.removeProperty('--shot');
+    if(shots){
+      const imgs=['art/bg/bg_end_refusal.webp','art/bg/bg_end_win_glove.webp'];
+      shots.innerHTML=imgs.map((u,i)=>`<div class="eshot${i===0?' on':''}" style="background-image:url(${u})"></div>`).join('');
+      let cur=0;
+      endShotTimer=setInterval(()=>{
+        const els=shots.querySelectorAll('.eshot');if(els.length<2)return;
+        els[cur].classList.remove('on');
+        cur=(cur+1)%els.length;
+        /* restart the slow drift so every pass breathes */
+        els[cur].style.animation='none';void els[cur].offsetWidth;els[cur].style.animation='';
+        els[cur].classList.add('on');
+      },9500);
+    }
+  }
   /* a bright image behind pale text gets its own dimming. The glove win is
      deliberately the same weaponized sunshine as the refusal ending — the
-     horror of that door is that it photographs beautifully. */
-  $('end').classList.toggle('daylight',(!won&&why==='refusal')||(won&&why==='win_glove'));
+     horror of that door is that it photographs beautifully. The losses'
+     slideshow carries its own scrim (#endShots::after). */
+  $('end').classList.toggle('daylight',won&&why==='win_glove');
   if(won&&why==='win_glove'){
     $('endKick').textContent='Contract fulfilled, gratefully';
     $('endTitle').innerHTML='THE GRATEFUL <span style="color:var(--sodium)">WORLD</span>';
@@ -5249,6 +5292,7 @@ $('howBtn').onclick=()=>{ // tutorial from menu, no game running
   showTutorial(()=>{S=wasS;show('menu');});
 };
 $('againBtn').onclick=()=>{clearInterval(tickTimer);clearInterval(tickerTimer);clearTimeout(epiTimer);
+  clearInterval(endShotTimer);endShotTimer=null;
   cancelAnimationFrame(raf);S=null;show('menu');menuBeds();initMenu();refreshMenuExtras();};
 initMenu();refreshMenuExtras();
 </script>
@@ -5288,7 +5332,7 @@ window._sbCapEarn=function(n,tag){
   /* offline shell: registered here so the whole game (art and sfx included)
      works offline after one session. Bump ?v= with sw.js SHELL_VERSION. */
   if('serviceWorker' in navigator){
-    try{ navigator.serviceWorker.register('sw.js?v=20260827b'); }catch(e){}
+    try{ navigator.serviceWorker.register('sw.js?v=20260827c'); }catch(e){}
   }
   if(framed){
     try{ parent.postMessage({sws:'ready'},'*'); }catch(e){}
