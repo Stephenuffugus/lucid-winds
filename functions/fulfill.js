@@ -80,45 +80,61 @@ export const LW_WEB_PRICES = {
  * Pi-rail prices, in PI (not cents). The web rail is USD; Pi is its own
  * currency, so it needs its own table. This closes the hole where piApprove
  * approved ANY amount for ANY product (a 0.001-Pi payment carrying
- * {type:'full_bloom'} granted the bundle — see piApprove validation).
+ * {type:'full_bloom'} granted the bundle).
  *
- * ⛔ These are FLOORS that kill the exploit, not final prices. Stephen sets the
- * real numbers before the Pi build ships. The three tiered maps are read from
- * the live client's own Pi price display; the flats are conservative
- * placeholders. `min` marks a variable-amount product (a tip): floor only,
- * never an exact price.
+ * ⛔ These are the REAL prices, read straight from what the client's
+ * createPayment() actually charges (index.html LW_Pi.*):
+ *   slot 1 · item_pouch_slot 1 · emergency_pouch 10 · hut_early_open 5 ·
+ *   nursery_slot 5/10/20 by slot · nursery_clipping_slot 3/5/8 by slot ·
+ *   seed_pouch_slot 10/20 by tier · tip variable (min 0.1).
  *
- * Validation uses the CHEAPEST price for a type as the hard floor, so a payment
- * can never be approved for less than the least a product ever costs, even if
- * the client omits the slot/tier hint. (Per-tier precision — charging the exact
- * tier price — is a follow-up that needs server-side slot derivation.)
+ * ONLY products the Pi client can actually send are listed. Blooms and the
+ * supporter pack are web-only / not Pi-priced yet (buyBloom guards on
+ * LW_WebPay), so they are absent on purpose — a Pi payment claiming one is
+ * rejected as an unknown product until Stephen rules a Pi price for it.
+ *
+ * The escalating tiers (nursery_slot, nursery_clipping_slot) price by the
+ * SERVER-DERIVED next slot, exactly the way applyFulfillment grants them
+ * (from the vault count, never a client-claimed slot). seed_pouch_slot prices
+ * by the claimed tier, which is consistent because the grant also unlocks the
+ * claimed tier. `min` marks a variable-amount product (a tip): floor only.
  */
 export const PI_PRICES = {
   slot:                  { flat: 1 },
   item_pouch_slot:       { flat: 1 },
   emergency_pouch:       { flat: 10 },
-  supporter_pack:        { flat: 30 },
-  half_bloom:            { flat: 50 },
-  full_bloom:            { flat: 100 },
-  early_open_hut:        { flat: 5 },
   hut_early_open:        { flat: 5 },
-  nursery_slot:          { perSlot: { 4: 5,  5: 10, 6: 20 } },
-  nursery_clipping_slot: { perSlot: { 3: 3,  4: 5,  5: 8  } },
+  nursery_slot:          { perSlot: { 4: 5,  5: 10, 6: 20 }, countField: 'lw_nursery_slots', base: 3 },
+  nursery_clipping_slot: { perSlot: { 3: 3,  4: 5,  5: 8  }, countField: 'lw_nur_clipping_slots', base: 2 },
   seed_pouch_slot:       { tiers:   { seed15: 10, seed20: 20 } },
   tip:                   { min: 0.1 },
 }
 
 /**
- * The hard floor (in Pi) below which a payment for `type` must be rejected.
- * Returns null for an unknown type (caller rejects those outright).
+ * The expected Pi price for a payment, SERVER-SIDE. Escalating tiers derive the
+ * next slot from the vault (never the client), so paying the cheap-tier price
+ * for an expensive slot is rejected.
+ *
+ * @param {string} type       product type from metadata
+ * @param {object} metadata   the Pi payment metadata (for seed tier)
+ * @param {object} vaultData  the vaults/{uid} doc data (for slot counts), or {}
+ * @returns {number|null}  the exact expected Pi amount, or null if the product
+ *                         is unknown / not Pi-sellable / already maxed.
  */
-export function piFloor(type) {
+export function piExpectedPrice(type, metadata, vaultData) {
   const spec = PI_PRICES[type]
   if (!spec) return null
   if (spec.flat != null) return spec.flat
-  if (spec.min != null) return spec.min
-  if (spec.perSlot) return Math.min(...Object.values(spec.perSlot))
-  if (spec.tiers) return Math.min(...Object.values(spec.tiers))
+  if (spec.min != null) return spec.min                 // variable (tip): floor
+  if (spec.perSlot) {
+    const cur = Number((vaultData && vaultData[spec.countField]) || spec.base)
+    const next = cur + 1
+    return (next in spec.perSlot) ? spec.perSlot[next] : null   // null = maxed
+  }
+  if (spec.tiers) {
+    const t = metadata && metadata.tier ? String(metadata.tier) : ''
+    return (t in spec.tiers) ? spec.tiers[t] : null
+  }
   return null
 }
 

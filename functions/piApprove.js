@@ -28,7 +28,7 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import { logger } from 'firebase-functions/v2'
 import { getFirestore, FieldValue } from 'firebase-admin/firestore'
 import { piGet, piPost, getPiServerKey } from './piClient.js'
-import { piFloor } from './fulfill.js'
+import { piExpectedPrice } from './fulfill.js'
 
 export const piApprove = onCall(
   { region: 'us-central1', secrets: ['PI_SERVER_KEY'] },
@@ -61,25 +61,34 @@ export const piApprove = onCall(
     // 3b. PRICE CHECK — the hole was here: a payment's amount and metadata are
     //     chosen by the client, and this handler used to approve ANY amount for
     //     ANY product. Reject an unknown product, and reject a payment below the
-    //     product's hard floor, BEFORE approving (an unapproved payment never
+    //     SERVER-DERIVED price, BEFORE approving (an unapproved payment never
     //     moves a single Pi, so the player is never charged for a rejection).
+    //     Escalating slot tiers price off the vault, never the client's claim,
+    //     so paying a cheap tier's price for an expensive slot is rejected too.
+    const db = getFirestore()
     const md = piPayment.metadata || {}
-    const floor = piFloor(md.type)
-    if (floor == null) {
-      logger.warn('[piApprove] unknown product uid=%s type=%s', uid, md.type)
-      throw new HttpsError('invalid-argument', `Unknown product: ${md.type}`)
+    let vaultData = {}
+    if (md.type === 'nursery_slot' || md.type === 'nursery_clipping_slot') {
+      try {
+        const vdoc = await db.collection('vaults').doc(uid).get()
+        if (vdoc.exists) vaultData = vdoc.data() || {}
+      } catch (e) { /* fall back to base counts (cheapest tier) on a read miss */ }
+    }
+    const expected = piExpectedPrice(md.type, md, vaultData)
+    if (expected == null) {
+      logger.warn('[piApprove] unknown/unsellable/maxed uid=%s type=%s tier=%s', uid, md.type, md.tier)
+      throw new HttpsError('invalid-argument', `Product not available on Pi: ${md.type}`)
     }
     const paid = Number(piPayment.amount)
     // 1e-9 float slop — Pi amounts are decimals (Pi's own docs use 3.1415).
-    if (!(paid + 1e-9 >= floor)) {
-      logger.warn('[piApprove] underpay uid=%s type=%s paid=%s floor=%s', uid, md.type, paid, floor)
+    if (!(paid + 1e-9 >= expected)) {
+      logger.warn('[piApprove] underpay uid=%s type=%s paid=%s expected=%s', uid, md.type, paid, expected)
       throw new HttpsError('failed-precondition', 'Payment amount is below the product price.')
     }
 
     // 4. Write the approval record BEFORE calling Pi approve. If approve fails we still
     //    have a record we can reconcile against; if Firestore fails we never approved
     //    spuriously. (idempotent — set with merge so re-runs are safe.)
-    const db = getFirestore()
     await db.collection('piTransactions').doc(paymentId).set(
       {
         uid,
