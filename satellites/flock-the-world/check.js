@@ -108,7 +108,9 @@ ok('SWS_EXIT falls back to referrer history', /document\.referrer/.test(PROTOCOL
 ok('SWS_EXIT has a portal fallback', /location\.replace\('https:\/\/lucidwinds\.com\/portal\//.test(PROTOCOL));
 ok('an exit affordance is built on the menu', /SWS_EXIT\(\)/.test(PROTOCOL) && /getElementById\('menu'\)/.test(PROTOCOL));
 ok('an exit affordance exists inside a running game', /SWS_EXIT/.test(GAME), 'the game screen must offer a way out too');
-ok('in development gate is loaded (card is beta:true)', /dev-gate\.js/.test(SRC));
+/* Aug 27: workbench gate REMOVED (Stephen made FTW public). The game must no
+   longer pull dev-gate.js, and the removal must be a real one (marker left). */
+ok('the workbench gate is gone (game is public)', !/<script src="\/dev-gate\.js/.test(SRC) && /workbench gate REMOVED/.test(SRC));
 
 /* --------------------------------------------------- 4. touch targets */
 group('touch targets (source level, 48px floor)');
@@ -1945,6 +1947,18 @@ try {
   ok('synergyModal exists and checkCombos fires it', /function synergyModal\(/.test(GAME) && /synergyModal\(c\);/.test(GAME));
   ok('synergyModal queues like every other modal', /noteModal\(\(\)=>synergyModal\(c\)\)/.test(GAME));
   ok('synergyModal never unpauses a paused sheet', /if\(prev>0\)setSpeed\(prev\)/.test(GAME));
+  /* Aug 27: 12 combo plates delivered. Every SYN_ART flip must have its file,
+     and every file must be a real combo id (no plate wired to a dead id). */
+  {
+    const flips = (GAME.match(/const SYN_ART=\{([^}]*)\}/s) || [,''])[1]
+      .match(/([a-z0-9_]+):1/g)?.map(s => s.replace(':1', '')) || [];
+    ok('SYN_ART carries the 12 delivered plates', flips.length === 12, 'got ' + flips.length);
+    const comboIds = new Set(vm.runInContext('COMBOS.map(c=>c.id)', makeCtx()));
+    ok('every wired plate is a real combo id', flips.every(id => comboIds.has(id)), flips.filter(id => !comboIds.has(id)).join(','));
+    const fs2 = require('fs');
+    const missing = flips.filter(id => !fs2.existsSync(path.join(__dirname, 'art', 'synergy', id + '.webp')));
+    ok('every wired plate has its art file on disk', missing.length === 0, 'missing: ' + missing.join(','));
+  }
   {
     /* runtime: unlocking a combo under a paused sheet opens the modal and
        leaves the speed at 0 for the sheet to restore */

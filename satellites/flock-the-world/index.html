@@ -7,7 +7,8 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<script src="/dev-gate.js?v=2"></script>
+<!-- workbench gate REMOVED 2026-08-27 (Stephen: "remove the password protection
+     from FTW so i can start sharing it") - the game is public. -->
 <!-- the wire corpus: pure data, read lazily by wirePick, so a failed load
      costs only variety. Bump ?v= whenever the corpus changes (host caching law). -->
 <script defer src="wire-corpus.js?v=20260827b"></script>
@@ -4745,7 +4746,11 @@ function evPayCash(s,o,sc){
 /* synergy plate art: flip a key to 1 when its file lands in art/synergy/
    (<id>.webp). The artist brief lives in 012Assets ("FTW Synergy + Achievement
    Art Brief"); until a plate exists the modal simply runs artless. */
-const SYN_ART={};
+/* Aug 27: 12 of Stephen's Sheet-12 combo plates delivered + cut (color-keyed).
+   Each flip means art/synergy/<id>.webp exists. Still owed a bespoke plate:
+   hallmon, shotgun, fineprint, welcomemat (see FLIGHT... no — SYNERGY-ART.md). */
+const SYN_ART={ticket:1,pipeline:1,consent:1,panopt:1,memhole:1,town:1,
+  precrime:1,lgm:1,skyanchor:1,curfewplus:1,oncue:1,nonewfriends:1};
 function synergyModal(c){
   if(!noteModal(()=>synergyModal(c)))return;
   const prev=S?S.speed:0;if(S)setSpeed(0);
@@ -5415,7 +5420,7 @@ window._sbCapEarn=function(n,tag){
   /* offline shell: registered here so the whole game (art and sfx included)
      works offline after one session. Bump ?v= with sw.js SHELL_VERSION. */
   if('serviceWorker' in navigator){
-    try{ navigator.serviceWorker.register('sw.js?v=20260827d'); }catch(e){}
+    try{ navigator.serviceWorker.register('sw.js?v=20260827e'); }catch(e){}
   }
   if(framed){
     try{ parent.postMessage({sws:'ready'},'*'); }catch(e){}
