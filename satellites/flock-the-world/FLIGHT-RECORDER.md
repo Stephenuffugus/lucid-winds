@@ -12,19 +12,29 @@ or that something was not articulated or displayed properly."
    every street escalation, and a full state snapshot every 30 days
    (subjugation, patriotism, suspicion, organized, cash, influence, markets,
    war heat, the patriotism floor, bubbles caught).
-2. When the run ends, the end screen shows **COPY RUN LOG FOR THE COACH** —
+2. Every finished run ARCHIVES to a rolling history (`ftw_flight_log`, newest
+   first, capped at 20 runs / 480KB). So a grind session accumulates.
+3. When the run ends, the end screen shows **COPY N RUNS FOR THE COACH** —
    on his devices only (it appears when the fleet dev flag `sws_dev_ok` is
-   set, the same flag the probes use; regular players never see it).
-3. He pastes the log to the coach (me). Mid-run export from the console:
-   `FTW_FLIGHT.copy()` — or `FTW_FLIGHT.dump()` to see it.
+   set, the same flag the probes use; regular players never see it). It copies
+   the WHOLE batch, so he plays a stack of games and pastes ONCE, not per run.
+4. He pastes the batch to the coach (me). Console helpers: `FTW_FLIGHT.copy()`
+   (copy the batch), `FTW_FLIGHT.count()` (how many archived), `FTW_FLIGHT.dump()`
+   (see it), `FTW_FLIGHT.clear()` (reset the history after I've analysed it).
+
+⛔ FTW makes ZERO server calls — it is account-free and offline by design, so
+the logs live ONLY in his browser's localStorage. Nothing syncs anywhere the
+coach can read; the copy-paste is the only channel, which is why the batch
+export exists.
 
 ## What the coach does with a tape
 
-1. `node scripts/ftw_coach.mjs <runlog.json>` lays out the evidence:
+1. `node scripts/ftw_coach.mjs <batch.json>` reads the batch: a portfolio
+   summary (N runs, W wins/losses, one line each) then a per-run breakdown —
    trajectory table, build order, action cadence, event choices, street
    history, and red flags (idle treasury under a climbing loss meter,
    unanswered suspicion spikes, the runway between patriotism 70 and 100,
-   influence hoarding).
+   influence hoarding). Still accepts a single legacy run.
 2. Counterfactual sims from the SAME mode/diff/start (sim.js bots + hand
    scenarios) answer "was this winnable."
 3. The verdict comes back in three parts: what to do differently / it was
