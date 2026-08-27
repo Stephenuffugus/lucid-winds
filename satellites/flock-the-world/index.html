@@ -811,6 +811,27 @@ h1 em{font-style:normal;color:var(--sodium)}
 .evmach{font-size:10.5px;color:#7fb3d5;margin:2px 0 6px;border-left:2px solid #2a4a5e;padding-left:8px}
 /* synergy plate: whole image on a dark mat, never cover-cropped (the .evart lesson) */
 .synart{display:block;width:100%;max-height:28vh;object-fit:contain;margin:6px 0 4px;border-radius:10px;background:#0a0f14}
+/* the achievement moment: a gold badge slides in from the top, names itself,
+   and leaves. Non-blocking (never pauses), over the map. */
+#achpop{position:absolute;top:-120px;left:50%;transform:translateX(-50%);z-index:60;
+  display:flex;align-items:center;gap:12px;max-width:min(92%,420px);
+  background:linear-gradient(180deg,#241c06,#12100a);border:1px solid var(--sodium);
+  border-radius:14px;padding:10px 14px;box-shadow:0 8px 30px rgba(0,0,0,.55),0 0 18px rgba(230,168,23,.3);
+  opacity:0;transition:top .5s cubic-bezier(.2,.9,.3,1.3),opacity .4s;pointer-events:none}
+#achpop.on{top:12px;opacity:1}
+#achpop img{width:56px;height:56px;object-fit:contain;flex:none;filter:drop-shadow(0 2px 6px rgba(0,0,0,.6))}
+#achpop .ak{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--sodium)}
+#achpop .an{font-size:15px;font-weight:800;color:#ffd76a;margin:1px 0 2px}
+#achpop .ad{font-size:10.5px;color:#c9d3dc;line-height:1.35}
+/* the Feed-tab achievement ledger */
+.achgrid{display:flex;flex-direction:column;gap:6px;margin:6px 0 12px}
+.achrow{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;padding:7px 9px;background:var(--panel);opacity:.5}
+.achrow.got{opacity:1;border-color:var(--sodium)}
+.achrow img{width:40px;height:40px;object-fit:contain;flex:none}
+.achrow .achlock{width:40px;height:40px;flex:none;display:flex;align-items:center;justify-content:center;color:#2b3540;font-size:20px}
+.achrow .atx b{font-size:12.5px;color:#ffd76a}
+.achrow:not(.got) .atx b{color:var(--dim)}
+.achrow .cd{font-size:10px;color:#8a97a4;line-height:1.3}
 .opt[disabled]{opacity:.4}
 .tutdots{display:flex;gap:5px;justify-content:center;margin:4px 0 12px}
 .tutdots i{width:6px;height:6px;border-radius:50%;background:var(--line)}
@@ -976,6 +997,7 @@ h1 em{font-style:normal;color:var(--sodium)}
     <div id="guide"><span id="guideTxt"></span><button type="button" class="gskip gnext" id="guideNext">Next</button><button type="button" class="gskip" id="guideSkip">Skip briefing</button></div>
     <div id="rotHint"><span id="rotTxt">Tip: turn your phone sideways. In landscape the whole map fits the screen.</span><button class="rx" id="rotX">✕</button></div>
     <div id="ticker"><span class="wlab">WIRE</span><div id="tickWrap"><div id="tickTrack">Awaiting first deployment.</div></div></div>
+    <div id="achpop" aria-hidden="true"></div>
   </div>
   <nav id="nav">
     <button class="nb" data-tab="led"><svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><path d="M2 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M17 10h5M17 14h5M17 18h5"/></svg><span>Ledger</span></button>
@@ -2044,7 +2066,7 @@ function newState(modeKey,diffKey,startId,seed,hqName,co){
   const s={
     mode, diff, modeKey, diffKey, startId, day:0, cash:mode.cash*diff.cash, inf:mode.inf, oversight:0, speed:1,
     owned:new Set(), combos:new Set(), regions:{}, log:[], bubbles:[], pulses:[], dots:[], pk:[], pings:[], hqGlow:0, newsQ:[], newsIdx:0,
-    warHeat:0, concLog:[], wireCd:{}, wireOnce:[], wireArc:{}, doctrine:null, over:false, won:false, milestones:new Set(), wmiles:new Set(), unread:0, avgRes:0,
+    warHeat:0, concLog:[], wireCd:{}, wireOnce:[], wireArc:{}, everCracked:false, concCount:0, warHi:0, fdPagesPeak:0, doctrine:null, over:false, won:false, milestones:new Set(), wmiles:new Set(), unread:0, avgRes:0,
     sheet:null, lostCount:0, avgSus:0, avgMil:0, avgCmp:0, subj:0, activeCount:0, events:EV(), evLast:{}, evHeat:0, evPaid:0, fdPages:0, outlet:0,
     /* the foreign desk rotates its contacts: two of the three personal arcs
        per run (vance, kesh, lena). Less choice-clock displacement per run,
@@ -2668,6 +2690,10 @@ function tick(){
      ambient beat below must fire on its untouched %23 cadence, or every
      seeded regression table re-rolls and the 3-seed canary flips (it did:
      first cut moved ambient to %26 and all three seeds "lost"). */
+  /* achievement counters (zero randomness): war-heat endurance + peak pages */
+  if((s.warHeat||0)>0.70)s.warHi=(s.warHi||0)+1;
+  if((s.fdPages||0)>(s.fdPagesPeak||0))s.fdPagesPeak=s.fdPages||0;
+  achCheck(s,false);
   /* the coach tape: a state snapshot every 30 days (zero randomness) */
   if(s.day%30===0)flightSnap(s);
   if(s.day%13===0&&window.WIRE_CORPUS&&window.WIRE_CORPUS.length){
@@ -2993,6 +3019,7 @@ function playEpilogue(beats){
 /* ============================ END ============================ */
 function finish(won,why){
   S.over=true;S.won=won;S.why=why;setSpeed(0);
+  achCheck(S,true);   /* the win/loss achievements gate on end=true */
   cancelAnimationFrame(raf);raf=null;   /* drawFx reschedules itself forever otherwise */
   sfxBed('bed_hq',false);sfxBed('bed_tension',false);
   sfx(won?'win':why==='refusal'?'loss_refusal':'loss_coalition');
@@ -3322,6 +3349,85 @@ window.FTW_FLIGHT={dump:flightExport,
     if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
     return Promise.reject(new Error('no clipboard'));}};
 /* ==================== end flight recorder ==================== */
+
+/* ======================= ACHIEVEMENTS (Aug 27) =======================
+   Stephen's 16, with art (art/badge-ach/ach_NN.webp) delivered. Lifetime,
+   like synergies: unlocked ids persist in the records. Each fires a gold
+   moment the first time ever, and the Feed tab keeps the ledger.
+   ⛔ Zero randomness (evaluated from state), never throws (runs in tick). */
+const ACHIEVEMENTS=[
+ {id:'a_first',  b:1, n:'First Contract',   d:'Enter your second market.'},
+ {id:'a_total',  b:2, n:'Total Coverage',   d:'Win the classic subjugation door.'},
+ {id:'a_glove',  b:3, n:'The Grateful World',d:'Win the Velvet Glove door.'},
+ {id:'a_fist',   b:4, n:'Nothing Moves',    d:'Win the Iron Fist door.'},
+ {id:'a_econ',   b:5, n:'Too Big To Ban',   d:'Win the economic door.'},
+ {id:'a_refuse', b:6, n:'The Great Refusal',d:'Lose four markets in one run. Even the loss is content.'},
+ {id:'a_sixteen',b:7, n:'The Full Sixteen', d:'Find every synergy (lifetime).'},
+ {id:'a_quiet',  b:8, n:'Quiet Streets',    d:'Win without a single crackdown.'},
+ {id:'a_listen', b:9, n:'The Listening Tour',d:'Win after ten or more concessions.'},
+ {id:'a_war',    b:10,n:'War Profiteer',    d:'Hold war heat above 70% for 200 days and survive.'},
+ {id:'a_debunk', b:11,n:'Pre-Debunked',     d:'Five regions carry prebunking against you at once.'},
+ {id:'a_clean',  b:12,n:'Clean Hands',      d:'Win holding a capstone node.'},
+ {id:'a_photo',  b:13,n:'Photo Finish',     d:'Win with Patriotism at 95 or higher.'},
+ {id:'a_early',  b:14,n:'The Early Exit',   d:'Win before day 900.'},
+ {id:'a_pen',    b:15,n:'Pen Pals',         d:'Survive with eight or more foreign-desk ledger pages.'},
+ {id:'a_arms',   b:16,n:'The Arms Fair',    d:'Complete the arms fair arc.'},
+];
+const ACH_BY={};ACHIEVEMENTS.forEach(a=>ACH_BY[a.id]=a);
+function achEarned(){const r=getRecs();return r.ach||[];}
+function noteAch(id){                       /* true only the first time ever */
+  const r=getRecs();r.ach=r.ach||[];
+  if(r.ach.indexOf(id)>=0)return false;
+  r.ach.push(id);lsSet(K_RECS,JSON.stringify(r));return true;
+}
+/* evaluate every condition against the live state; award + celebrate the new
+   ones. `end` is true during finish() (the win/loss achievements gate on it). */
+function achCheck(s,end){
+  try{
+    if(!s)return;
+    const won=!!s.won, earned=achEarned();
+    const capstone=s.owned.has('caps_dep')||s.owned.has('caps_cap')||s.owned.has('caps_inf')||s.owned.has('caps_war');
+    const prebunks=REGIONS.reduce((n,R)=>{const x=s.regions[R.id];return n+(x.active&&x.counters&&x.counters.has('prebunk')?1:0);},0);
+    const lifeCombos=(getRecs().combos||[]).length;
+    const cond={
+      a_first:  s.activeCount>=2,
+      a_total:  end&&won&&s.why==='win',
+      a_glove:  end&&won&&s.why==='win_glove',
+      a_fist:   end&&won&&s.why==='win_fist',
+      a_econ:   end&&won&&s.why==='win_econ',
+      a_refuse: s.lostCount>=CFG.lostLimit,
+      a_sixteen:lifeCombos>=COMBOS.length,
+      a_quiet:  end&&won&&!s.everCracked,
+      a_listen: end&&won&&(s.concCount||0)>=10,
+      a_war:    end&&won&&(s.warHi||0)>=200,
+      a_debunk: prebunks>=5,
+      a_clean:  end&&won&&capstone,
+      a_photo:  end&&won&&s.oversight>=95,
+      a_early:  end&&won&&s.day<900,
+      a_pen:    end&&won&&(s.fdPagesPeak||0)>=8,
+      a_arms:   (s.arc&&s.arc.vance)>=3,
+    };
+    for(const a of ACHIEVEMENTS){
+      if(earned.indexOf(a.id)>=0)continue;
+      if(cond[a.id]&&noteAch(a.id)){achPop(a);flightLog('ach',{id:a.id});}
+    }
+  }catch(e){}
+}
+/* the moment: a gold badge slides in, names itself, and leaves. Queued so a
+   run that clears three at the finish shows all three in turn. Never pauses. */
+const ACH_Q=[];let _achShowing=false;
+function achPop(a){ACH_Q.push(a);if(!_achShowing)achDrain();}
+function achDrain(){
+  const el=$('achpop');if(!el){_achShowing=false;return;}
+  const a=ACH_Q.shift();
+  if(!a){_achShowing=false;el.classList.remove('on');return;}
+  _achShowing=true;
+  el.innerHTML=`<img src="art/badge-ach/ach_${String(a.b).padStart(2,'0')}.webp" alt="">`
+    +`<div class="atx"><div class="ak">Achievement unlocked</div><div class="an">${a.n}</div><div class="ad">${a.d}</div></div>`;
+  el.classList.add('on');sfx('synergy');
+  setTimeout(()=>{el.classList.remove('on');setTimeout(achDrain,400);},4200);
+}
+/* ==================== end achievements ==================== */
 function lsDel(k){try{localStorage.removeItem(k);}catch(e){}}
 function jGet(k){try{const v=JSON.parse(lsGet(k)||'null');return(v&&typeof v==='object'&&!Array.isArray(v))?v:null;}catch(e){return null;}}
 /* Aug 25: teaching that was already taught stays taught. Field notes used to
@@ -3340,9 +3446,10 @@ function coach(s,key,txt){
 function num(v,d){const n=+v;return isFinite(n)?n:d;}
 
 function getRecs(){
-  const r=jGet(K_RECS)||{},b={runs:0,wins:0,lost:0,bestSubj:0,fastWin:0,longest:0,combos:[]};
+  const r=jGet(K_RECS)||{},b={runs:0,wins:0,lost:0,bestSubj:0,fastWin:0,longest:0,combos:[],ach:[]};
   ['runs','wins','lost','bestSubj','fastWin','longest'].forEach(k=>{const n=num(r[k],0);b[k]=n>0?n:0;});
   b.combos=Array.isArray(r.combos)?r.combos.filter(x=>typeof x==='string'):[];
+  b.ach=Array.isArray(r.ach)?r.ach.filter(x=>typeof x==='string'):[];
   return b;
 }
 function recordRun(s){
@@ -3373,6 +3480,7 @@ function saveRun(){
     lsSet(K_RUN,JSON.stringify({v:2,modeKey:s.modeKey,diffKey:s.diffKey,startId:s.startId,
       day:s.day,cash:s.cash,inf:s.inf,oversight:s.oversight,warHeat:s.warHeat,doctrine:s.doctrine,net:s.net||0,gross:s.gross||0,lbCd:s.lbCd||0,evHeat:s.evHeat||0,evPaid:s.evPaid||0,concLog:(s.concLog||[]).slice(-12),
       wireCd:wirePrune(s),wireOnce:(s.wireOnce||[]).slice(-400),wireArc:s.wireArc||{},
+      everCracked:!!s.everCracked,concCount:s.concCount||0,warHi:s.warHi||0,fdPagesPeak:s.fdPagesPeak||0,
       /* a reload used to wipe live bubbles, including a leak whose oversight
          penalty had not landed yet, and to forget a pending choice event, so
          reloading dodged the decision. It also dropped the HUD aggregates, so a
@@ -3429,6 +3537,9 @@ function loadRun(){
   s.wireOnce=Array.isArray(d.wireOnce)?d.wireOnce.filter(x=>typeof x==='string'&&x.length<64).slice(-400):[];
   s.wireArc={};if(d.wireArc&&typeof d.wireArc==='object')for(const k in d.wireArc){const a=d.wireArc[k];
     if(typeof k==='string'&&k.length<64&&a&&typeof a.step==='number'&&a.step>=0&&a.step<50&&typeof a.day==='number')s.wireArc[k]={step:a.step,day:Math.min(a.day,s.day)};}
+  /* achievement counters (lifetime unlocks live in the records, not the run) */
+  s.everCracked=!!d.everCracked;s.concCount=Math.max(0,num(d.concCount,0)|0);
+  s.warHi=Math.max(0,num(d.warHi,0)|0);s.fdPagesPeak=Math.max(0,num(d.fdPagesPeak,0)|0);
   /* a resumed run keeps its coach tape (same mode/diff/start, day monotonic) */
   flightRestore(s);
   /* the desk and acquisition state, validated the way everything else is.
@@ -4152,6 +4263,17 @@ function renderSheet(tab){
     }).join('');
     const dark=COMBOS.filter(c=>!S.combos.has(c.id)&&!c.hint).length;
     if(dark)chd+=`<div class="combo mystery"><b>SEALED</b><div class="cd">${dark} more with no paper trail at all. Experiment.</div></div>`;
+    /* the achievement ledger: earned badges lit + named, the rest dark. */
+    {
+      const got=achEarned();
+      chd+=`<p class="treedesc" style="color:var(--sodium);margin-top:14px">Achievements · ${got.length} of ${ACHIEVEMENTS.length} earned.</p>`;
+      chd+='<div class="achgrid">'+ACHIEVEMENTS.map(a=>{
+        const on=got.indexOf(a.id)>=0;
+        return `<div class="achrow${on?' got':''}">`
+          +(on?`<img src="art/badge-ach/ach_${String(a.b).padStart(2,'0')}.webp" alt="">`:'<div class="achlock">⬛</div>')
+          +`<div class="atx"><b>${on?a.n:'Locked'}</b><div class="cd">${on?a.d:'Not yet earned.'}</div></div></div>`;
+      }).join('')+'</div>';
+    }
     body.innerHTML=chd+(S.log.length?S.log.map(e=>
       `<div class="entry ${e.c}"><span class="d mono">${e.d}</span>${e.t}</div>`).join('')
       :'<div class="entry">Nothing yet. Give it a quarter.</div>');
@@ -4539,7 +4661,7 @@ function doAction(act,rid){
   }
   else if(act==='crack'&&s.has('charter')&&s.cash>=pCr&&r.unrest>=30){
     {const[kx2,ky2]=anchorOf(rid);s.pings.push({x:kx2,y:ky2,t:0,kind:'v'});}
-    s.cash-=pCr;r.cdC=25;
+    s.cash-=pCr;r.cdC=25;s.everCracked=true;
     flightLog('act',{a:'crack',r:rid});
     flashCash();
     s.lastCrack=s.day;   /* The Grateful World needs a long peace; this ends it */
@@ -4624,6 +4746,7 @@ function doAction(act,rid){
     s.concLog=(s.concLog||[]).filter(d=>s.day-d<45);
     const fatigued=!again&&s.concLog.length>=3;
     if(!again)s.concLog.push(s.day);
+    if(!again)s.concCount=(s.concCount||0)+1;
     flightLog('act',{a:'concede',r:rid,again:again?1:0,fat:fatigued?1:0});
     r.unrest=clamp(r.unrest-15*rf,0,100);r.suspicion=clamp(r.suspicion-8*rf,0,100);
     r.resist=clamp(r.resist-6*rf,0,100);r.grudge=Math.max(0,r.grudge-8*rf);
@@ -5422,7 +5545,7 @@ window._sbCapEarn=function(n,tag){
   /* offline shell: registered here so the whole game (art and sfx included)
      works offline after one session. Bump ?v= with sw.js SHELL_VERSION. */
   if('serviceWorker' in navigator){
-    try{ navigator.serviceWorker.register('sw.js?v=20260827f'); }catch(e){}
+    try{ navigator.serviceWorker.register('sw.js?v=20260827g'); }catch(e){}
   }
   if(framed){
     try{ parent.postMessage({sws:'ready'},'*'); }catch(e){}

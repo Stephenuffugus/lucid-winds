@@ -2065,6 +2065,43 @@ try {
     vm.runInContext("(function(){var d=JSON.parse(flightExport());return d.h.mode==='CONTRACTOR'&&Array.isArray(d.log)&&d.log.length>0;})()", cF) === true);
 } catch (e) { ok('flight recorder harness runs', false, e.message); }
 
+/* ------------------------------------------- achievements (Aug 27, greenlit) */
+group('achievements');
+try {
+  const span = GAME.slice(GAME.indexOf('ACHIEVEMENTS (Aug 27'), GAME.indexOf('end achievements'));
+  ok('the achievement engine consumes zero randomness', span.length > 800 && !/Math\.random/.test(span));
+  ok('all 16 achievements are defined', (GAME.match(/\{id:'a_[a-z]+',\s*b:\d+/g) || []).length === 16);
+  ok('every badge has its art file on disk', (() => {
+    const fs2 = require('fs');
+    for (let i = 1; i <= 16; i++) if (!fs2.existsSync(path.join(__dirname, 'art', 'badge-ach', 'ach_' + String(i).padStart(2, '0') + '.webp'))) return false;
+    return true;
+  })());
+  ok('achCheck runs in tick (mid-run) and finish (end=true)',
+    /achCheck\(s,false\)/.test(GAME) && /achCheck\(S,true\)/.test(GAME));
+  ok('unlocks persist lifetime in the records (noteAch, like noteCombo)',
+    /function noteAch\(id\)/.test(GAME) && /b\.ach=Array\.isArray\(r\.ach\)/.test(GAME));
+  ok('the win-door achievements gate on end AND the win reason',
+    /a_glove:\s*end&&won&&s\.why==='win_glove'/.test(GAME) && /a_econ:\s*end&&won&&s\.why==='win_econ'/.test(GAME));
+  ok('the run counters are tracked (crack, concede, war endurance, page peak)',
+    /s\.everCracked=true/.test(GAME) && /s\.concCount=\(s\.concCount\|\|0\)\+1/.test(GAME)
+    && /s\.warHi=\(s\.warHi\|\|0\)\+1/.test(GAME) && /s\.fdPagesPeak=s\.fdPages/.test(GAME));
+  ok('the counters survive a reload', /everCracked:!!s\.everCracked,concCount:/.test(GAME) && /s\.everCracked=!!d\.everCracked/.test(GAME));
+  ok('the Feed tab carries the achievement ledger', /class="achgrid"/.test(GAME) && /Achievements · \$\{got\.length\}/.test(GAME));
+  ok('the moment element and its animation exist', /id="achpop"/.test(SRC) && /#achpop\.on\{top:12px/.test(SRC));
+  /* runtime: a win with a capstone + high patriotism awards the right badges */
+  {
+    const cA = makeCtx();
+    // stub the records store so awards can persist in-vm
+    vm.runInContext("(function(){var S_={};window.__store={};localStorage.getItem=function(k){return window.__store[k]||null};localStorage.setItem=function(k,v){window.__store[k]=v};})()", cA);
+    vm.runInContext("S=newState('CONTRACTOR','Vendor','NA');S.owned.add('caps_war');S.oversight=97;S.day=800;S.won=true;S.why='win_econ';achCheck(S,true);", cA);
+    const got = vm.runInContext("(getRecs().ach||[])", cA);
+    ok('a capstone econ win at patriotism 97 before day 900 unlocks econ + clean + photo + early',
+      ['a_econ', 'a_clean', 'a_photo', 'a_early'].every(id => got.includes(id)), 'got: ' + got.join(','));
+    ok('it did NOT unlock a glove/fist/total win it never earned',
+      !got.includes('a_glove') && !got.includes('a_fist') && !got.includes('a_total'));
+  }
+} catch (e) { ok('achievement harness runs', false, e.message); }
+
 /* -------------------------------------------------------- self test mode */
 /* A probe that cannot fail is not evidence. FTW_SELFTEST=1 mutates the source
    in memory and re-runs the source-level checks, which must go red. */

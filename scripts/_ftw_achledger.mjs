@@ -1,0 +1,24 @@
+import puppeteer from "puppeteer";
+const OUT="/workspaces/lucid-winds/portal-assets/review/ftw-aug27";
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const br=await puppeteer.launch({headless:"new",args:["--no-sandbox","--disable-setuid-sandbox"]});
+const p=await br.newPage();
+await p.setViewport({width:412,height:915,deviceScaleFactor:2,isMobile:true,hasTouch:true});
+await p.goto("http://127.0.0.1:8777/satellites/flock-the-world/?probe="+Math.random(),{waitUntil:"domcontentloaded"});
+await sleep(2400);
+await p.evaluate(()=>{['a_first','a_total','a_glove','a_photo','a_early'].forEach(id=>{const r=JSON.parse(localStorage.getItem('ftw_recs')||'{}');r.ach=r.ach||[];if(r.ach.indexOf(id)<0)r.ach.push(id);localStorage.setItem('ftw_recs',JSON.stringify(r));});});
+await p.evaluate(()=>document.getElementById("startBtn").click()); await sleep(1200);
+const tap=await p.evaluate(()=>{const c=document.getElementById("pickMap");const r=c.getBoundingClientRect();
+  for(let fy=0.05;fy<0.95;fy+=0.02)for(let fx=0.05;fx<0.95;fx+=0.02){const sx=r.width*fx,sy=r.height*fy;
+    const[wx,wy]=window._dbgPv.toWorld(sx,sy);const h=countryAtPoint(wx,wy);
+    if(h&&h.n==="United States of America")return{x:r.x+sx,y:r.y+sy};}return null;});
+if(tap){await p.touchscreen.tap(tap.x,tap.y);await sleep(600);}
+await p.evaluate(()=>{const b=document.getElementById("beginBtn");if(b&&!b.disabled)b.click();});
+await sleep(2200);
+await p.evaluate(()=>{setSpeed(0);openSheet('log');});
+await sleep(600);
+await p.evaluate(()=>{const g=document.querySelector('.achgrid');if(g)g.scrollIntoView({block:'start'});});
+await sleep(500);
+await p.screenshot({path:`${OUT}/22-ach-ledger-scrolled.png`});
+console.log("shot 22");
+await br.close();

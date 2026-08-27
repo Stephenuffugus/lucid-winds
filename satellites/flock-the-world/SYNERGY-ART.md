@@ -48,11 +48,17 @@ art) rather than mis-assigned to the wrong synergy:
 - `_spare_emptystreet` (combo #8) — an empty rainy avenue watched by two cameras
 - `_spare_armsfair` (combo #16) — plane, tanks and a glowing dome (reads as the Arms Fair arc)
 
-## Achievement badges — 16 cut + STAGED, system NOT built
+## Achievement badges — 16 LIVE, system BUILT (Aug 27)
 
-The 16 medallions (circular + shield, on magenta) are cut into
-`art/badge-ach/ach_01.webp` … `ach_16.webp`. They are NOT wired to anything,
-because **FTW has no achievement system** — that is a real feature (16 triggers
-+ a UI panel + persistence), and it is Stephen's call whether to build it. The
-proposed 16 achievements (names + triggers) are in the 012Assets Sheet-12 doc.
-When greenlit, the art is ready and the badge ids match the achievement order.
+BUILT + LIVE. The 16 medallions are cut (magenta keyed to transparent, so the
+circles/shields sit clean on any background) into `art/badge-ach/ach_01.webp`
+… `ach_16.webp`, wired to the achievement engine. Each unlocks the first time
+ever (lifetime, in the records), fires a gold slide-in moment (#achpop, never
+pauses), and the Feed tab keeps the ledger (earned lit, locked dim). Triggers:
+1 First Contract (2nd market), 2-5 the four win doors, 6 Great Refusal (lose 4),
+7 Full Sixteen (all synergies lifetime), 8 Quiet Streets (win, no crackdown),
+9 Listening Tour (win, 10+ concessions), 10 War Profiteer (200 days >70% war,
+survive), 11 Pre-Debunked (5 regions prebunking), 12 Clean Hands (win w/
+capstone), 13 Photo Finish (win, patriotism 95+), 14 Early Exit (win < day 900),
+15 Pen Pals (win, 8+ ledger pages), 16 Arms Fair (complete the vance arc).
+Zero randomness (sim table byte-identical); check.js covers it.
