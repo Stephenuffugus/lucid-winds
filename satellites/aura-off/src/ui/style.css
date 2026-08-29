@@ -1,0 +1,1664 @@
+/* ==========================================================================
+   AURA OFF — src/ui/style.css
+   The only stylesheet. Owns every pixel of index.html.
+
+   ART DIRECTION (CONTRACT §13, AURA-BIBLE §"Direction")
+   ----------------------------------------------------
+   A public square at dusk under sodium streetlights, lit by phone flashes.
+   Daylight fading over concrete — NOT neon-cyberpunk, which is the lazy
+   default and is wrong for this. Two glowing silhouettes on a flat colour
+   field, standing inside a ring of people who came outside.
+
+   The crowd is not a meter. Aldama's whole reading is that the gathering IS
+   the point, so the ring is built twice: #crowd is the far side of it (heads
+   above the fighters, some with phones up) and #arena::after is the near side
+   (dark heads in front of you, backs turned). You are standing IN the ring,
+   not looking at a stage.
+
+   PALETTE IS LOCKED. Six colours, no others. Everything below is either one of
+   the six, an alpha of one of the six, or plain black/white alpha used as
+   shade. No seventh hue is introduced anywhere in this file.
+
+   PERFORMANCE
+   -----------
+   Every animation is transform/opacity only. Nothing animates a filter, a
+   gradient stop, a box-shadow or a layout property. The paving perspective and
+   the crowd glyphs are STATIC gradients — they cost one rasterisation each and
+   never repaint. There are no per-element SVG filters: the fighter glow is a
+   fat translucent <use> stroke baked into rig.js, because per-element SVG
+   filters have broken iOS in this repo before.
+
+   CONTRACT WITH THE JS (src/ui/*.js owns these children; this file only
+   dresses them). Everything degrades to something correct if the JS supplies
+   none of it:
+
+     #grid > *        one move card per playable move. Optional hooks:
+                        data-cat="FLEX|FLOW|BAIT"   (or class .flex/.flow/.bait)
+                          -> colours the card edge and the category pip
+                        data-uses="0|1|2|3"          (or .u0/.u1/.u2/.u3,
+                          data-used, data-stale)
+                          -> puts out the freshness pips and wears the card
+                             down. THIS IS THE MOST IMPORTANT HOOK IN THE FILE:
+                             repeating yourself is the losing strategy, so the
+                             player has to SEE staleness before they tap.
+                        .on / [aria-pressed="true"] / [data-sel]  -> selected
+                        [disabled]                                -> unplayable
+                      First child renders as the move name, later children as
+                      the sub-line. Bare text works too.
+     #crowd > *       one element per person. No attributes required.
+     #fitGrid > *     one per fit. .on / [aria-pressed="true"] -> chosen.
+     #actList > *     one per act. .locked / [data-locked] / [disabled] -> dim.
+     .fighter > svg   rig.js mountFigure() inserts svg.rigsvg as first child.
+
+   TOUCH TARGETS are 48 RENDERED px minimum at 375x667. Nothing in this file
+   scales a container, so CSS px are rendered px. Measured values:
+     .btn 48 · #grid > * 58 · #fitGrid > * 58 · #actList > * 56 · #holdpad 92
+   ========================================================================== */
+
+
+/* --------------------------------------------------------------------------
+   1. TOKENS
+   -------------------------------------------------------------------------- */
+
+:root{
+  /* LOCKED PALETTE — CONTRACT §13. Do not add a seventh colour. */
+  --ground:#1A0B2E;
+  --deep:#2B1450;
+  --you:#FF2E88;
+  --them:#00E5D4;
+  --lamp:#FFB627;
+  --bone:#FDF6EC;
+
+  /* Alphas of the locked six. Named so intent survives a refactor. */
+  --bone-90:rgba(253,246,236,.90);
+  --bone-64:rgba(253,246,236,.64);
+  --bone-44:rgba(253,246,236,.44);
+  --bone-26:rgba(253,246,236,.26);
+  --bone-14:rgba(253,246,236,.14);
+  --bone-07:rgba(253,246,236,.07);
+  --lamp-40:rgba(255,182,39,.40);
+  --lamp-20:rgba(255,182,39,.20);
+  --lamp-10:rgba(255,182,39,.10);
+  --you-40:rgba(255,46,136,.40);
+  --them-40:rgba(0,229,212,.40);
+
+  /* Shade. Black is not a hue — it is the dusk taking the light out. */
+  --shadow:rgba(6,2,12,.55);
+  --silhouette:rgba(8,3,16,.94);
+  --panel:rgba(26,11,46,.90);
+  --panel-soft:rgba(43,20,80,.72);
+
+  /* The FLEX/FLOW/BAIT triangle. Three categories, three of the locked hues.
+     FLEX = lamp: the streetlight, steady, composed, restraint.
+     FLOW = them: water, the river, the thing that started upriver.
+     BAIT = you : hot, loud, self-directed clowning.
+     The rival is never confusable with a FLOW card — the rival lives on the
+     right of the arena behind a name label, and the deck only ever holds YOUR
+     moves. Category is also carried by a distinct SHAPE (square / bar /
+     diamond) so the read survives colour-blindness and a dim screen. */
+  --cat-flex:var(--lamp);
+  --cat-flow:var(--them);
+  --cat-bait:var(--you);
+  --cat:var(--bone-44);          /* fallback when the JS sets no category */
+
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+
+  --r:10px;
+  --r-lg:14px;
+  --pad:12px;
+
+  --sat:env(safe-area-inset-top,0px);
+  --sab:env(safe-area-inset-bottom,0px);
+  --sal:env(safe-area-inset-left,0px);
+  --sar:env(safe-area-inset-right,0px);
+}
+
+
+/* --------------------------------------------------------------------------
+   2. RESET + BACKDROP
+   -------------------------------------------------------------------------- */
+
+*,*::before,*::after{box-sizing:border-box}
+
+html,body{
+  margin:0;
+  padding:0;
+  height:100%;
+  overflow:hidden;
+  overscroll-behavior:none;
+}
+
+body{
+  font-family:var(--sans);
+  font-size:16px;
+  line-height:1.4;
+  color:var(--bone);
+  background-color:var(--ground);
+  /* Dusk over a square: the last warm daylight sitting on the horizon, the
+     sodium wash above the lamps, night arriving from the ground up. */
+  background-image:
+    radial-gradient(150% 46% at 50% 30%, var(--lamp-10), transparent 64%),
+    linear-gradient(180deg, var(--deep) 0%, var(--deep) 16%, var(--ground) 62%, var(--ground) 100%),
+    linear-gradient(180deg, transparent 60%, rgba(0,0,0,.34) 100%);
+  background-attachment:fixed;
+  -webkit-font-smoothing:antialiased;
+  -webkit-text-size-adjust:100%;
+  -webkit-tap-highlight-color:transparent;
+}
+
+img,svg{display:block;max-width:100%}
+
+button{font:inherit;color:inherit;margin:0}
+
+::selection{background:var(--you);color:var(--ground)}
+
+:focus-visible{
+  outline:2px solid var(--bone);
+  outline-offset:2px;
+}
+
+
+/* --------------------------------------------------------------------------
+   3. STAGE — three rows, no page scroll, ever
+   -------------------------------------------------------------------------- */
+
+.stage{
+  position:relative;
+  display:grid;
+  grid-template-rows:auto minmax(148px,1fr) auto;
+  /* MUST be explicit. The implicit column is `auto`, which sizes to the
+     max-content of its widest child — and with a full 27-move deck that is
+     the sum of the longest move names, which blew the stage out to 523px
+     inside a 375px screen. minmax(0,1fr) makes the row children shrinkable.
+     This only shows up once the deck fills, so it survives every early test. */
+  grid-template-columns:minmax(0,1fr);
+  width:100%;
+  max-width:560px;
+  margin:0 auto;
+  height:100vh;             /* floor for anything without dvh */
+  height:100dvh;
+  padding:var(--sat) var(--sar) 0 var(--sal);
+  overflow:hidden;
+}
+
+/* Never assume innerHeight is the visual viewport. If the JS measures
+   visualViewport.height and writes --app-h, we use it; otherwise dvh. */
+@supports (height:100dvh){
+  .stage{height:var(--app-h,100dvh)}
+}
+
+
+/* --------------------------------------------------------------------------
+   4. #top — the far side of the ring, the meter, the MC
+   -------------------------------------------------------------------------- */
+
+#top{
+  position:relative;
+  min-width:0;
+  z-index:2;
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+  padding:6px var(--pad) 8px;
+}
+
+/* ---- the crowd -------------------------------------------------------- */
+/* Twenty to forty people standing on the far side of the ring. They wrap
+   backwards so an overflow row lands ABOVE the first one — a second rank
+   further away, which is what a real gathering does. Each person is two
+   radial gradients: a head and a pair of shoulders. Nothing here is a bar,
+   a track, or a percentage. It fills up because more people showed up. */
+
+#crowd{
+  position:relative;
+  display:flex;
+  flex-wrap:wrap-reverse;
+  align-items:flex-end;
+  justify-content:center;
+  gap:0 1px;
+  height:48px;
+  min-height:48px;
+  overflow:hidden;
+  color:var(--bone-26);
+  /* the lamp they are all standing under */
+  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 58%,#000 100%);
+  mask-image:linear-gradient(180deg,transparent 0,#000 58%,#000 100%);
+}
+
+#crowd::before{
+  content:'';
+  position:absolute;
+  left:50%;
+  bottom:-30px;
+  width:118%;
+  height:78px;
+  transform:translateX(-50%);
+  background:radial-gradient(60% 100% at 50% 100%, var(--lamp-20), transparent 72%);
+  pointer-events:none;
+}
+
+#crowd > *{
+  position:relative;
+  flex:0 0 auto;
+  width:12px;
+  height:22px;
+  margin-top:-4px;
+  color:inherit;
+  font-size:0;               /* a stray text node must not push the glyph */
+  background:
+    radial-gradient(circle 3.5px at 50% 4px, currentColor 96%, transparent 97%) no-repeat,
+    radial-gradient(ellipse 6px 10px at 50% 21px, currentColor 96%, transparent 97%) no-repeat;
+}
+
+/* Depth and irregularity. A crowd is never evenly spaced or evenly tall —
+   the "sloppy" note in CLAUDE.md cuts both ways, and a perfect comb of
+   identical dots reads as a progress bar, which is the exact thing this
+   must not read as. Three co-prime cycles give a crowd that never tiles. */
+#crowd > *:nth-child(3n+1){height:24px;color:var(--bone-44)}
+#crowd > *:nth-child(3n+2){height:20px;color:rgba(253,246,236,.20)}
+#crowd > *:nth-child(5n)  {height:23px;margin-left:2px}
+#crowd > *:nth-child(7n+3){height:19px;color:rgba(253,246,236,.17)}
+#crowd > *:nth-child(11n+5){margin-right:3px}
+#crowd > *:nth-child(4n)  {transform:translateY(1px)}
+#crowd > *:nth-child(9n+2){transform:translateY(-1px)}
+
+/* Phones up. Every seventh person is filming, because the documented
+   mechanism is that the street feeds the networks and the networks fill the
+   street. Opacity only — cheap enough to leave running. */
+#crowd > *:nth-child(7n+2)::after,
+#crowd > *:nth-child(13n+6)::after{
+  content:'';
+  position:absolute;
+  top:-2px;
+  left:50%;
+  width:4px;
+  height:4px;
+  margin-left:-2px;
+  border-radius:50%;
+  background:var(--lamp);
+  box-shadow:0 0 7px 2px var(--lamp-40);
+  opacity:0;
+  animation:aoFlash 7.5s linear infinite;
+}
+#crowd > *:nth-child(13n+6)::after{animation-duration:9.5s;animation-delay:-3.1s;background:var(--bone)}
+#crowd > *:nth-child(14n+2)::after{animation-delay:-1.7s}
+#crowd > *:nth-child(21n+9)::after{animation-delay:-5.3s}
+
+@keyframes aoFlash{
+  0%,86%{opacity:0}
+  88%{opacity:1}
+  92%{opacity:.25}
+  94%{opacity:.9}
+  100%{opacity:0}
+}
+
+/* ---- the meter -------------------------------------------------------- */
+/* Tug of war, not a health bar. The track is the rival's colour; the fill is
+   yours and grows from the left. Centre tick is where you started. */
+
+.meter{
+  position:relative;
+  height:9px;
+  border-radius:99px;
+  background:linear-gradient(180deg, var(--them-40), rgba(0,229,212,.22));
+  box-shadow:inset 0 0 0 1px var(--bone-14), 0 1px 0 rgba(0,0,0,.3);
+  overflow:hidden;
+}
+
+.meter > b,
+#meterFill{
+  display:block;
+  width:50%;
+  height:100%;
+  border-radius:99px 0 0 99px;
+  background:linear-gradient(180deg, var(--you), rgba(255,46,136,.72));
+  box-shadow:0 0 12px rgba(255,46,136,.55);
+  transition:width .45s cubic-bezier(.2,.8,.2,1);
+}
+
+.meter::after{
+  content:'';
+  position:absolute;
+  left:50%;
+  top:0;
+  bottom:0;
+  width:1px;
+  background:var(--bone-44);
+}
+
+/* ---- the MC ----------------------------------------------------------- */
+/* Somebody with a bluetooth speaker and no authority whatsoever, standing on
+   a bench, who knows everyone's name. */
+
+.mcbar{
+  min-height:19px;
+  font-family:var(--mono);
+  font-size:.76rem;
+  line-height:19px;
+  letter-spacing:.01em;
+  color:var(--lamp);
+  text-align:center;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  text-shadow:0 0 14px rgba(255,182,39,.35);
+}
+
+.mcbar:not(:empty){animation:aoSay .5s cubic-bezier(.2,.9,.2,1)}
+
+@keyframes aoSay{
+  from{opacity:0;transform:translateY(-3px)}
+  to{opacity:1;transform:none}
+}
+
+/* ---- the name tags ---------------------------------------------------- */
+
+.tags{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+
+.tags .mono{
+  font-size:.72rem;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.tags .mono:first-child{flex:0 1 auto;text-align:left}
+.tags .mono:last-child{flex:0 1 auto;text-align:right}
+
+#roundLabel{
+  flex:0 0 auto;
+  color:var(--bone-64);
+  padding:2px 9px;
+  border:1px solid var(--bone-14);
+  border-radius:99px;
+  background:rgba(0,0,0,.22);
+}
+
+/* the shared monospace voice */
+.mono{
+  font-family:var(--mono);
+  font-size:.78rem;
+  letter-spacing:.02em;
+  color:var(--bone-64);
+}
+
+
+/* --------------------------------------------------------------------------
+   5. #arena — the square itself
+   -------------------------------------------------------------------------- */
+
+#arena{
+  position:relative;
+  min-width:0;
+  z-index:5;                 /* above #top and #deck. The arena BOX never
+                                overlaps either (separate grid rows), so the
+                                only things that paint outside it are the near
+                                crowd bleeding a little over the deck and, on
+                                a very short arena, the tail of a callout. */
+  min-height:0;
+  overflow:visible;          /* callouts are allowed to fly above the arena */
+  isolation:isolate;
+}
+
+/* Sodium light. Two lamps, off-centre, plus the night pooling at the feet. */
+#arena::before{
+  content:'';
+  position:absolute;
+  inset:-10px 0 0;
+  z-index:0;
+  pointer-events:none;
+  background:
+    radial-gradient(54% 44% at 15% 2%, rgba(255,182,39,.21), transparent 70%),
+    radial-gradient(50% 40% at 87% -4%, rgba(255,182,39,.13), transparent 72%),
+    radial-gradient(84% 46% at 50% 128%, rgba(43,20,80,.5), transparent 74%),
+    /* the last of the daylight, so a tall arena on a tablet still falls from
+       sky to ground instead of sitting as one flat purple field */
+    linear-gradient(180deg, rgba(43,20,80,.55) 0, rgba(43,20,80,0) 46%);
+  opacity:.86;
+  transition:opacity .35s ease;
+}
+
+/* The near side of the ring: the backs of the heads in front of you. Four
+   tiled gradient layers at co-prime widths, so the row never visibly repeats
+   across a phone. This sits IN FRONT of the fighters' feet on purpose — you
+   are in the crowd, not in the audience. */
+#arena::after{
+  content:'';
+  position:absolute;
+  left:-6%;
+  right:-6%;
+  bottom:-12px;              /* bleeds over the top of the deck panel, so the
+                                row of heads is cut off by the FRAME, not by a
+                                seam between two boxes */
+  height:45px;
+  z-index:3;
+  pointer-events:none;
+  background:
+    radial-gradient(circle 6.5px at 12px 11px, var(--silhouette) 97%, transparent 98%) 0 0/29px 45px repeat-x,
+    radial-gradient(ellipse 12px 18px at 12px 36px, var(--silhouette) 97%, transparent 98%) 0 0/29px 45px repeat-x,
+    radial-gradient(circle 7.5px at 9px 15px, var(--silhouette) 97%, transparent 98%) 7px 0/41px 45px repeat-x,
+    radial-gradient(ellipse 14px 19px at 9px 41px, var(--silhouette) 97%, transparent 98%) 7px 0/41px 45px repeat-x,
+    linear-gradient(to top, rgba(255,182,39,.09), transparent 54%);
+}
+
+/* ---- the floor -------------------------------------------------------- */
+
+.floor{
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  height:54%;
+  z-index:1;
+  overflow:hidden;
+  pointer-events:none;
+  background:linear-gradient(to bottom,
+    rgba(43,20,80,0) 0,
+    rgba(43,20,80,.16) 30%,
+    rgba(26,11,46,.72) 78%,
+    rgba(26,11,46,.9) 100%);
+}
+
+/* Concrete. A real receding pavement grid, laid flat by one static
+   perspective transform and masked out toward the horizon. */
+.floor::before{
+  content:'';
+  position:absolute;
+  inset:-14% -40%;
+  background:
+    repeating-linear-gradient(90deg, rgba(253,246,236,.17) 0 1.5px, transparent 1.5px 46px),
+    repeating-linear-gradient(180deg, rgba(253,246,236,.13) 0 1.5px, transparent 1.5px 30px),
+    repeating-linear-gradient(180deg, rgba(0,0,0,.16) 0 1px, transparent 1px 30px) 0 2px;
+  transform:perspective(210px) rotateX(64deg);
+  transform-origin:50% 100%;
+  /* Peaks in the band between the near crowd's heads and the fighters'
+     knees — that is the only strip of pavement the player can actually see,
+     so that is where the paving has to be legible. */
+  -webkit-mask-image:linear-gradient(to top,rgba(0,0,0,.3) 0,#000 24%,rgba(0,0,0,.55) 60%,transparent 92%);
+  mask-image:linear-gradient(to top,rgba(0,0,0,.3) 0,#000 24%,rgba(0,0,0,.55) 60%,transparent 92%);
+}
+
+/* The horizon: warm spill where the light dies into the paving. */
+.floor::after{
+  content:'';
+  position:absolute;
+  left:0;
+  right:0;
+  top:0;
+  height:44px;
+  background:radial-gradient(96% 100% at 50% 0, rgba(255,182,39,.09), transparent 76%);
+}
+
+/* ---- the fighters ----------------------------------------------------- */
+/* rig.js draws an svg.rigsvg with viewBox 0 0 120 220, preserveAspectRatio
+   xMidYMax, floor line at y=200 — so the feet land 9.1% of the box height
+   above its bottom edge. bottom:26px therefore stands them at roughly the
+   40px line, just behind the near crowd. Colour is currentColor all the way
+   down the rig, so ONE declaration paints a fighter. */
+
+.fighter{
+  position:absolute;
+  /* Stands them BEHIND the near crowd with a strip of pavement showing
+     between their feet and the heads — otherwise the concrete never appears
+     on screen at all and the plaza reads as a flat purple field. */
+  bottom:38px;
+  z-index:2;
+  width:min(42%,158px);
+  /* Sized so the three-row label stack above the head still clears the top of
+     the arena on the WORST case — a 27-move deck at its max height on a 667px
+     screen, which leaves the arena only ~220px. Measured, not guessed. */
+  height:min(56%,180px);
+}
+
+#you{
+  left:4%;
+  color:var(--you);
+}
+
+#them{
+  right:4%;
+  color:var(--them);
+}
+
+/* Anything the JS mounts that is not one of the four labelled children is the
+   figure, and it fills the box. Written as a subtraction so a wrapper div, a
+   canvas or a second svg all land correctly. */
+.fighter > svg,
+.fighter > .rigsvg,
+.fighter > *:not(.aura):not(.callout):not(.movename):not(.statusrow){
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  overflow:visible;          /* a fat glow stroke must not clip at the arms */
+  pointer-events:none;
+}
+
+/* The light the fighter is standing in. rig.js already carries its own soft
+   under-stroke, so this is the room's response to them, not an outline. */
+.aura{
+  position:absolute;
+  z-index:-1;
+  left:50%;
+  bottom:-4%;
+  width:126%;
+  height:76%;
+  transform:translateX(-50%);
+  border-radius:50%;
+  background:radial-gradient(closest-side,
+    currentColor 0,
+    rgba(0,0,0,0) 66%);
+  opacity:.17;
+  pointer-events:none;
+  animation:aoBreathe 4.6s ease-in-out infinite;
+  /* No mix-blend-mode. .fighter carries a z-index, so it is its own stacking
+     context and a blend would have no backdrop to work against — it would
+     cost a compositor layer and change nothing. Over a near-black square an
+     additive glow and a plain translucent one are indistinguishable. */
+}
+
+@keyframes aoBreathe{
+  0%,100%{transform:translateX(-50%) scale(1)}
+  50%{transform:translateX(-50%) scale(1.07)}
+}
+
+/* The pool of light at the feet, so nobody floats. */
+.fighter::before{
+  content:'';
+  position:absolute;
+  left:50%;
+  bottom:5%;
+  width:78%;
+  height:16px;
+  transform:translateX(-50%);
+  border-radius:50%;
+  background:radial-gradient(closest-side, currentColor 0, rgba(0,0,0,0) 76%);
+  opacity:.30;
+  pointer-events:none;
+}
+
+/* ---- the label stack above each fighter -------------------------------- */
+/* Bottom-up: status chips, move name, score callout. All centred on the
+   fighter, all clear of the figure so nothing ever covers the pose. */
+
+.statusrow,
+.movename,
+.callout{
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  white-space:nowrap;
+  pointer-events:none;
+  z-index:4;
+}
+
+.statusrow{
+  bottom:calc(100% + 1px);
+  display:flex;
+  gap:4px;
+  align-items:center;
+  justify-content:center;
+  min-height:15px;
+  /* Three chips are wider than a fighter box on a 320px phone and ran off
+     the screen. Two is the honest cap: the row is centred on the fighter, so
+     anything past two cannot fit beside the other fighter's row either. */
+  max-width:46vw;
+}
+
+.statusrow > *:nth-child(n+3){display:none}
+
+.statusrow > *{
+  display:inline-block;
+  padding:1px 6px;
+  max-width:11ch;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  border:1px solid currentColor;
+  border-radius:99px;
+  font-family:var(--mono);
+  font-size:.7rem;
+  line-height:1.45;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+  opacity:.85;
+  background:rgba(0,0,0,.32);
+}
+
+.movename{
+  bottom:calc(100% + 18px);
+  max-width:15ch;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  font-family:var(--mono);
+  font-size:.74rem;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  color:var(--bone-90);
+  text-shadow:0 1px 4px rgba(0,0,0,.7);
+}
+.movename:not(:empty){animation:aoSay .35s cubic-bezier(.2,.9,.2,1)}
+
+/* The callout speaks the culture's own language — +1000 AURA, AURA 100%,
+   PERDIÓ AURA, AURA INFINITA. Never an invented unit (CONTRACT §12). */
+.callout{
+  bottom:calc(100% + 38px);
+  z-index:6;
+  padding:0 8px;
+  border-radius:99px;
+  /* a breath of dusk behind the type, so the callout survives whatever it
+     happens to fly over on a short screen */
+  background:radial-gradient(closest-side, rgba(10,4,20,.72), rgba(10,4,20,0) 100%);
+  font-family:var(--mono);
+  font-size:1.02rem;
+  font-weight:700;
+  letter-spacing:.02em;
+  color:var(--bone);
+  text-shadow:0 0 16px currentColor, 0 2px 6px rgba(0,0,0,.8);
+  opacity:0;
+}
+
+.callout:not(:empty),
+.callout.pop{
+  animation:aoCallout 1.25s cubic-bezier(.2,.9,.2,1) forwards;
+}
+
+@keyframes aoCallout{
+  0%  {opacity:0;transform:translate(-50%,12px) scale(.82)}
+  16% {opacity:1;transform:translate(-50%,0)    scale(1.12)}
+  28% {opacity:1;transform:translate(-50%,-2px) scale(1)}
+  74% {opacity:1;transform:translate(-50%,-12px) scale(1)}
+  100%{opacity:0;transform:translate(-50%,-26px) scale(.98)}
+}
+
+/* Tone variants. Harmless if the JS never sets them. */
+.callout.big,
+.callout[data-tone="big"]   {font-size:1.5rem;color:var(--lamp)}
+.callout.clean,
+.callout[data-tone="clean"] {color:var(--bone)}
+.callout.miss,
+.callout.whiff,
+.callout[data-tone="miss"]  {font-size:.92rem;color:var(--bone-44);text-shadow:0 2px 6px rgba(0,0,0,.8)}
+#you .callout.big,
+#you .callout[data-tone="big"]  {color:var(--you)}
+#them .callout.big,
+#them .callout[data-tone="big"] {color:var(--them)}
+
+
+/* --------------------------------------------------------------------------
+   6. #deck — the screen players stare at longest
+   -------------------------------------------------------------------------- */
+
+#deck{
+  position:relative;
+  min-width:0;
+  z-index:4;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  min-height:0;
+  max-height:356px;
+  max-height:min(48dvh,356px);
+  padding:17px var(--pad) calc(10px + var(--sab));
+  background:linear-gradient(180deg, rgba(26,11,46,0) 0, rgba(26,11,46,.9) 20%, var(--ground) 100%);
+  transition:opacity .25s ease;
+}
+
+.prompt{
+  flex:0 0 auto;
+  font-size:.74rem;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--bone-44);
+  text-align:center;
+  min-height:16px;
+}
+
+/* ---- the move grid ---------------------------------------------------- */
+
+.grid{
+  flex:1 1 auto;
+  min-height:0;
+  min-width:0;
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  padding:1px;               /* so a focus ring is not clipped by the scroller */
+  /* A half-visible card at the fold reads as a rendering fault. Dissolve the
+     last few pixels instead, which reads as "keep going". */
+  -webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 16px),transparent 100%);
+  mask-image:linear-gradient(to bottom,#000 calc(100% - 16px),transparent 100%);
+  scrollbar-width:thin;
+  scrollbar-color:var(--bone-14) transparent;
+}
+.grid::-webkit-scrollbar{width:4px}
+.grid::-webkit-scrollbar-thumb{background:var(--bone-14);border-radius:99px}
+
+/* A move card.
+   Reads at a glance, in this order:
+     1. the category  — coloured left edge + a shaped pip, top right
+     2. the name      — first child, bone, large
+     3. the sub-line  — every later child, mono, dim
+     4. the freshness — three pips, bottom right; they go OUT as you repeat,
+                        and the whole card wears down with them. */
+#grid > *{
+  --stale:0;
+  --pip1:var(--lamp);
+  --pip2:var(--lamp);
+  --pip3:var(--lamp);
+  --pip-off:var(--bone-14);
+  --hatch:none;
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:2px;
+  min-height:58px;
+  min-width:0;
+  padding:9px 28px 16px 12px;
+  margin:0;
+  text-align:left;
+  font-family:var(--sans);
+  color:var(--bone);
+  border:1px solid var(--bone-14);
+  border-radius:var(--r);
+  background-image:var(--hatch),
+    linear-gradient(180deg, rgba(43,20,80,.94), rgba(26,11,46,.94));
+  background-color:transparent;
+  box-shadow:inset 3px 0 0 var(--cat), 0 1px 0 rgba(0,0,0,.35);
+  -webkit-appearance:none;
+  appearance:none;
+  cursor:pointer;
+  touch-action:manipulation;
+  user-select:none;
+  -webkit-user-select:none;
+  /* NOT overflow:hidden. "Swirl & Swing" wraps to two lines on a 320px
+     phone; clipping made the second line sit on top of the sub-line. Grid
+     rows equalise, so letting the card grow costs nothing and keeps the
+     whole name readable, which matters — the name IS the move. */
+  transition:transform .12s ease, opacity .2s ease, border-color .2s ease;
+}
+
+#grid > * > :first-child{
+  font-size:.86rem;
+  font-weight:700;
+  letter-spacing:.005em;
+  line-height:1.15;
+  overflow-wrap:break-word;   /* break INSIDE a word only when the word alone
+                                 cannot fit — "Unimpress / ed" was the result
+                                 of `anywhere` in a four-column grid */
+}
+
+#grid > * > :nth-child(n+2){
+  font-family:var(--mono);
+  font-size:.7rem;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  color:var(--bone-44);
+  line-height:1.25;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+/* category pip — shape as well as colour */
+#grid > *::before{
+  content:'';
+  position:absolute;
+  top:10px;
+  right:11px;
+  width:9px;
+  height:9px;
+  border-radius:2px;
+  background:var(--cat);
+  box-shadow:0 0 8px var(--cat);
+  opacity:.95;
+}
+
+/* freshness pips — three lit dots that go out, one per repeat */
+#grid > *::after{
+  content:'';
+  position:absolute;
+  right:10px;
+  bottom:8px;
+  width:26px;
+  height:6px;
+  background:
+    radial-gradient(circle 3px at 3px 3px, var(--pip1) 96%, transparent 97%) 0px 0/10px 6px no-repeat,
+    radial-gradient(circle 3px at 3px 3px, var(--pip2) 96%, transparent 97%) 8px 0/10px 6px no-repeat,
+    radial-gradient(circle 3px at 3px 3px, var(--pip3) 96%, transparent 97%) 16px 0/10px 6px no-repeat;
+}
+
+/* --- category. data-cat is the contract's own casing; the class forms are
+       there so a JS author who reached for classList still lands right. --- */
+#grid > *[data-cat="FLEX" i],#grid > *.flex,#grid > *.cat-flex{--cat:var(--cat-flex)}
+#grid > *[data-cat="FLOW" i],#grid > *.flow,#grid > *.cat-flow{--cat:var(--cat-flow);}
+#grid > *[data-cat="BAIT" i],#grid > *.bait,#grid > *.cat-bait{--cat:var(--cat-bait)}
+
+/* FLOW is a bar — it glides. BAIT is a diamond — it falls over. */
+#grid > *[data-cat="FLOW" i]::before,#grid > *.flow::before,#grid > *.cat-flow::before{
+  width:15px;height:5px;border-radius:99px;top:12px;right:8px;
+}
+#grid > *[data-cat="BAIT" i]::before,#grid > *.bait::before,#grid > *.cat-bait::before{
+  border-radius:1px;transform:rotate(45deg);
+}
+
+/* --- staleness. Repeating yourself is the losing strategy (freshness
+       [1.0, 0.68, 0.42, 0.25]) so it has to be visible BEFORE the tap. --- */
+#grid > *[data-uses="1"],#grid > *[data-used="1"],#grid > *[data-stale="1"],#grid > *.u1{
+  --pip3:var(--pip-off); --stale:.34; opacity:.88;
+}
+#grid > *[data-uses="2"],#grid > *[data-used="2"],#grid > *[data-stale="2"],#grid > *.u2{
+  --pip3:var(--pip-off); --pip2:var(--pip-off); --stale:.67; opacity:.74;
+}
+#grid > *[data-uses="3"],#grid > *[data-used="3"],#grid > *[data-stale="3"],#grid > *.u3,
+#grid > *[data-uses="4"],#grid > *[data-uses="5"],#grid > *[data-uses="6"],
+#grid > *[data-uses="7"],#grid > *[data-uses="8"],#grid > *[data-uses="9"],
+#grid > *.stale{
+  --pip3:var(--pip-off); --pip2:var(--pip-off); --pip1:var(--pip-off);
+  --stale:1;
+  opacity:.58;
+  --hatch:repeating-linear-gradient(135deg,
+    rgba(253,246,236,.055) 0 5px, rgba(0,0,0,0) 5px 11px);
+}
+/* worn cards lose the lamp on their category edge too */
+#grid > *[data-uses="3"],#grid > *[data-uses="4"],#grid > *[data-uses="5"],
+#grid > *[data-uses="6"],#grid > *[data-uses="7"],#grid > *[data-uses="8"],
+#grid > *[data-uses="9"],#grid > *.u3,#grid > *.stale{
+  box-shadow:inset 3px 0 0 var(--bone-26), 0 1px 0 rgba(0,0,0,.35);
+}
+#grid > *[data-uses="3"]::before,#grid > *.u3::before,#grid > *.stale::before{
+  opacity:.4;box-shadow:none;
+}
+
+/* --- interaction --- */
+#grid > *:hover{border-color:var(--bone-26)}
+
+#grid > *:active{transform:scale(.975)}
+
+#grid > *.on,
+#grid > *.sel,
+#grid > *[data-sel],
+#grid > *[aria-pressed="true"]{
+  border-color:var(--bone-90);
+  background-image:linear-gradient(180deg, rgba(43,20,80,1), rgba(43,20,80,.86));
+  box-shadow:inset 3px 0 0 var(--cat), 0 0 0 1px var(--bone-26), 0 0 18px rgba(255,182,39,.20);
+}
+
+#grid > *[disabled],
+#grid > *[aria-disabled="true"],
+#grid > *.locked{
+  opacity:.32;
+  pointer-events:none;
+  filter:grayscale(1);
+}
+
+/* ---- hype + blend ------------------------------------------------------ */
+
+.hypebar{
+  flex:0 0 auto;
+  position:relative;
+  height:6px;
+  border-radius:99px;
+  background:rgba(0,0,0,.36);
+  box-shadow:inset 0 0 0 1px var(--bone-14);
+  overflow:hidden;
+}
+
+.hypebar > b,
+#hypeFill{
+  display:block;
+  width:0%;
+  height:100%;
+  border-radius:99px;
+  background:linear-gradient(90deg, rgba(255,182,39,.55), var(--lamp));
+  box-shadow:0 0 10px rgba(255,182,39,.5);
+  transition:width .4s cubic-bezier(.2,.8,.2,1);
+}
+
+.rowbtns{
+  flex:0 0 auto;
+  display:flex;
+  gap:8px;
+}
+.rowbtns .btn{flex:1 1 auto}
+
+
+/* --------------------------------------------------------------------------
+   7. BUTTONS
+   -------------------------------------------------------------------------- */
+
+.btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  min-height:48px;
+  padding:12px 20px;
+  border:1px solid var(--bone-26);
+  border-radius:var(--r);
+  background:linear-gradient(180deg, rgba(253,246,236,.10), rgba(253,246,236,.03));
+  color:var(--bone);
+  font-family:var(--mono);
+  font-size:.82rem;
+  font-weight:600;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  cursor:pointer;
+  touch-action:manipulation;
+  user-select:none;
+  -webkit-user-select:none;
+  -webkit-appearance:none;
+  appearance:none;
+  transition:transform .12s ease, opacity .2s ease, border-color .2s ease;
+}
+
+.btn:hover{border-color:var(--bone-44)}
+.btn:active{transform:scale(.975)}
+
+.btn.ghost{
+  background:transparent;
+  border-color:var(--bone-14);
+  color:var(--bone-64);
+  font-weight:500;
+}
+.btn.ghost:hover{color:var(--bone);border-color:var(--bone-26)}
+
+.btn:disabled,
+.btn[disabled]{
+  opacity:.34;
+  cursor:default;
+  pointer-events:none;
+}
+
+/* The primary call to action reads as the lamp — the thing lit in the square. */
+#startBtn,
+#fitGo,
+#againBtn{
+  border-color:var(--lamp);
+  background:linear-gradient(180deg, rgba(255,182,39,.28), rgba(255,182,39,.04));
+  color:var(--lamp);
+  text-shadow:0 0 18px rgba(255,182,39,.55);
+  box-shadow:0 0 26px rgba(255,182,39,.18), inset 0 1px 0 rgba(255,182,39,.35);
+}
+#startBtn:hover,#fitGo:hover,#againBtn:hover{color:var(--bone)}
+
+
+/* --------------------------------------------------------------------------
+   8. #timing — exists only during body[data-state="timing"]
+   -------------------------------------------------------------------------- */
+
+#timing{
+  position:fixed;
+  left:0;
+  right:0;
+  bottom:0;
+  z-index:40;
+  display:none;
+  flex-direction:column;
+  gap:10px;
+  width:100%;
+  max-width:560px;
+  margin:0 auto;
+  padding:14px calc(var(--pad) + var(--sal)) calc(12px + var(--sab)) calc(var(--pad) + var(--sar));
+  background:linear-gradient(180deg, rgba(26,11,46,0) 0, rgba(26,11,46,.96) 13%, var(--ground) 38%);
+  border-top:1px solid var(--bone-14);
+  box-shadow:0 -18px 44px rgba(6,2,12,.6);
+}
+
+body[data-state="timing"] #timing,
+#timing.on{
+  display:flex;
+  animation:aoRise .22s cubic-bezier(.2,.9,.2,1);
+}
+
+@keyframes aoRise{
+  from{opacity:0;transform:translateY(14px)}
+  to{opacity:1;transform:none}
+}
+
+#timingTitle{
+  margin:0;
+  text-align:center;
+  font-size:1.05rem;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  color:var(--bone);
+}
+
+/* ---- the needle track -------------------------------------------------- */
+
+.track{
+  position:relative;
+  height:46px;
+  border-radius:var(--r);
+  background:linear-gradient(180deg, rgba(0,0,0,.42), rgba(0,0,0,.24));
+  box-shadow:inset 0 0 0 1px var(--bone-14);
+  overflow:hidden;
+}
+
+.zone{
+  position:absolute;
+  top:0;
+  bottom:0;
+  left:26%;
+  width:48%;
+  background:linear-gradient(180deg, rgba(255,182,39,.34), rgba(255,182,39,.12));
+  box-shadow:inset 0 0 0 1px rgba(255,182,39,.55), inset 0 0 16px rgba(255,182,39,.22);
+}
+
+.zone.core{
+  left:44%;
+  width:12%;
+  background:linear-gradient(180deg, rgba(253,246,236,.52), rgba(253,246,236,.30));
+  /* the outer glow would be clipped by .track's overflow, so throw it inward */
+  box-shadow:inset 0 0 0 1px var(--bone-90), inset 0 0 18px rgba(253,246,236,.5);
+}
+
+.needle{
+  position:absolute;
+  top:-2px;
+  bottom:-2px;
+  left:50%;
+  width:3px;
+  margin-left:-1.5px;
+  border-radius:2px;
+  /* Bone core with a hot halo. A plain white needle vanished into the white
+     core zone at exactly the moment the player needs to see it — the halo
+     keeps it readable against both the lamp-lit outer zone and the core. */
+  background:var(--bone);
+  box-shadow:0 0 0 1.5px rgba(255,46,136,.95), 0 0 14px var(--you), 0 0 4px var(--bone);
+  will-change:transform,left;
+}
+
+/* ---- the amplitude bar -------------------------------------------------- */
+
+.ampwrap{margin-top:-2px}
+
+.ampbar{
+  position:relative;
+  height:14px;
+  border-radius:99px;
+  background:linear-gradient(180deg, rgba(0,0,0,.42), rgba(0,0,0,.22));
+  box-shadow:inset 0 0 0 1px var(--bone-14);
+  overflow:hidden;
+}
+
+.ampbar > b,
+#ampFill{
+  display:block;
+  width:0%;
+  height:100%;
+  border-radius:99px 0 0 99px;
+  background:linear-gradient(90deg, rgba(255,46,136,.55), var(--you));
+  box-shadow:0 0 12px rgba(255,46,136,.45);
+}
+
+/* "white mark is right" — bigger is NOT better, the composure curve falls off
+   on both sides of it. This mark is the whole lesson of the game. */
+.ampideal{
+  position:absolute;
+  top:-2px;
+  bottom:-2px;
+  left:60%;
+  width:3px;
+  margin-left:-1.5px;
+  background:var(--bone);
+  box-shadow:0 0 10px var(--bone);
+}
+/* .ampbar clips its children, so the arrow points DOWN from inside the top
+   edge rather than sitting above the bar where it would be cut off. */
+.ampideal::after{
+  content:'';
+  position:absolute;
+  top:2px;
+  left:50%;
+  width:0;
+  height:0;
+  transform:translateX(-50%);
+  border-left:4.5px solid transparent;
+  border-right:4.5px solid transparent;
+  border-top:6px solid var(--bone);
+}
+
+.ampwrap .mono{
+  font-size:.7rem;
+  letter-spacing:.05em;
+  color:var(--bone-44);
+}
+
+#timingHint{
+  min-height:17px;
+  font-family:var(--mono);
+  font-size:.72rem;
+  letter-spacing:.04em;
+  text-align:center;
+  color:var(--lamp);
+}
+
+/* ---- the hold pad ------------------------------------------------------ */
+
+#holdpad{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:92px;
+  padding:14px;
+  border:1px dashed var(--bone-26);
+  border-radius:var(--r-lg);
+  background:linear-gradient(180deg, rgba(253,246,236,.07), rgba(253,246,236,.02));
+  font-family:var(--mono);
+  font-size:.8rem;
+  letter-spacing:.09em;
+  text-transform:uppercase;
+  color:var(--bone-64);
+  text-align:center;
+  cursor:pointer;
+  touch-action:none;
+  user-select:none;
+  -webkit-user-select:none;
+  transition:border-color .15s ease, color .15s ease, transform .12s ease;
+}
+
+#holdpad:active,
+#holdpad.held,
+#holdpad.on{
+  border-style:solid;
+  border-color:var(--you);
+  color:var(--bone);
+  transform:scale(.99);
+}
+
+
+/* --------------------------------------------------------------------------
+   9. .screen — title / fit / result / map
+   -------------------------------------------------------------------------- */
+
+.screen{
+  position:fixed;
+  inset:0;
+  z-index:60;
+  display:none;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:14px;
+  padding:calc(24px + var(--sat)) calc(20px + var(--sar)) calc(24px + var(--sab)) calc(20px + var(--sal));
+  text-align:center;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  background-color:var(--ground);
+  background-image:
+    radial-gradient(120% 50% at 50% 8%, rgba(255,182,39,.16), transparent 62%),
+    radial-gradient(90% 60% at 50% 108%, rgba(43,20,80,.9), transparent 70%),
+    linear-gradient(180deg, var(--deep) 0%, var(--ground) 58%, var(--ground) 100%);
+}
+
+.screen.on{
+  display:flex;
+  animation:aoFade .28s ease;
+}
+
+@keyframes aoFade{from{opacity:0}to{opacity:1}}
+
+/* the near crowd is at every location, because every location is a square */
+.screen::after{
+  content:'';
+  position:absolute;
+  left:-6%;
+  right:-6%;
+  bottom:0;
+  height:34px;
+  pointer-events:none;
+  background:
+    radial-gradient(circle 6.5px at 12px 13px, var(--silhouette) 97%, transparent 98%) 0 0/29px 34px repeat-x,
+    radial-gradient(ellipse 12px 16px at 12px 34px, var(--silhouette) 97%, transparent 98%) 0 0/29px 34px repeat-x,
+    radial-gradient(circle 7.5px at 9px 16px, var(--silhouette) 97%, transparent 98%) 7px 0/41px 34px repeat-x,
+    radial-gradient(ellipse 14px 17px at 9px 38px, var(--silhouette) 97%, transparent 98%) 7px 0/41px 34px repeat-x;
+  opacity:.85;
+}
+
+.screen > *{position:relative;z-index:1;flex:0 0 auto;max-width:100%}
+
+.screen p{
+  margin:0;
+  max-width:32ch;
+  font-size:.92rem;
+  line-height:1.6;
+  color:var(--bone-64);
+}
+
+.shout{
+  margin:0;
+  font-weight:900;
+  letter-spacing:-.005em;
+  line-height:1.02;
+  color:var(--bone);
+}
+
+.screen h2.shout{
+  font-size:1.7rem;
+  letter-spacing:.02em;
+  text-transform:uppercase;
+}
+
+/* ---- title ------------------------------------------------------------- */
+
+#title h1.shout{
+  font-size:clamp(3.1rem,19vw,4.6rem);
+  line-height:.86;
+  letter-spacing:-.03em;
+  text-transform:uppercase;
+  margin-bottom:2px;
+}
+
+#title .a,
+#title .b{display:block}
+
+#title .a{
+  color:var(--bone);
+  text-shadow:0 0 34px rgba(253,246,236,.22);
+}
+
+#title .b{
+  color:var(--you);
+  margin-left:.28em;
+  text-shadow:0 0 34px rgba(255,46,136,.5);
+}
+
+#title .btn{min-width:220px}
+
+/* ---- fit check --------------------------------------------------------- */
+
+.fitgrid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:9px;
+  width:100%;
+  max-width:400px;
+  margin:2px 0;
+}
+
+#fitGrid > *{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:center;
+  gap:3px;
+  min-height:58px;
+  padding:10px 12px;
+  text-align:left;
+  font-family:var(--sans);
+  color:var(--bone);
+  border:1px solid var(--bone-14);
+  border-radius:var(--r);
+  background:linear-gradient(180deg, rgba(43,20,80,.9), rgba(26,11,46,.9));
+  -webkit-appearance:none;
+  appearance:none;
+  cursor:pointer;
+  touch-action:manipulation;
+  transition:transform .12s ease, border-color .2s ease;
+}
+
+#fitGrid > * > :first-child{
+  font-size:.84rem;
+  font-weight:700;
+  line-height:1.15;
+}
+
+#fitGrid > * > :nth-child(n+2){
+  font-family:var(--mono);
+  font-size:.7rem;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+  color:var(--bone-44);
+}
+
+#fitGrid > *:active{transform:scale(.975)}
+
+#fitGrid > *.on,
+#fitGrid > *.sel,
+#fitGrid > *[data-sel],
+#fitGrid > *[aria-pressed="true"]{
+  border-color:var(--lamp);
+  background:linear-gradient(180deg, rgba(255,182,39,.20), rgba(43,20,80,.9));
+  box-shadow:0 0 20px rgba(255,182,39,.20);
+}
+#fitGrid > *.on > :nth-child(n+2),
+#fitGrid > *[aria-pressed="true"] > :nth-child(n+2){color:var(--lamp)}
+
+/* an odd count centres its last row rather than hanging left */
+#fitGrid > *:last-child:nth-child(odd){grid-column:1 / -1}
+
+/* ---- result ------------------------------------------------------------ */
+
+#resultTitle{color:var(--bone)}
+
+.unlock{
+  width:100%;
+  max-width:400px;
+  padding:12px 14px;
+  border:1px solid var(--lamp-40);
+  border-radius:var(--r);
+  background:linear-gradient(180deg, rgba(255,182,39,.14), rgba(255,182,39,.03));
+  font-family:var(--mono);
+  font-size:.82rem;
+  letter-spacing:.06em;
+  color:var(--lamp);
+  box-shadow:0 0 26px rgba(255,182,39,.14);
+}
+.unlock:empty{display:none}
+
+.log{
+  width:100%;
+  max-width:400px;
+  max-height:34vh;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  padding:10px 12px;
+  border:1px solid var(--bone-14);
+  border-radius:var(--r);
+  background:rgba(0,0,0,.30);
+  font-family:var(--mono);
+  font-size:.74rem;
+  line-height:1.7;
+  letter-spacing:.02em;
+  color:var(--bone-64);
+  text-align:left;
+  scrollbar-width:thin;
+  scrollbar-color:var(--bone-14) transparent;
+}
+.log::-webkit-scrollbar{width:4px}
+.log::-webkit-scrollbar-thumb{background:var(--bone-14);border-radius:99px}
+.log:empty{display:none}
+
+.log > *{
+  display:block;
+  padding:3px 0;
+  border-bottom:1px solid var(--bone-07);
+}
+.log > *:last-child{border-bottom:0}
+
+/* ---- the circuit map --------------------------------------------------- */
+
+#mapSub{
+  max-width:34ch;
+  color:var(--bone-44);
+  font-size:.78rem;
+}
+
+#actList{
+  display:flex;
+  flex-direction:column;
+  gap:9px;
+  width:100%;
+  max-width:400px;
+  max-height:52vh;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  padding:1px;
+  scrollbar-width:thin;
+  scrollbar-color:var(--bone-14) transparent;
+}
+#actList::-webkit-scrollbar{width:4px}
+#actList::-webkit-scrollbar-thumb{background:var(--bone-14);border-radius:99px}
+
+#actList > *{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:center;
+  gap:3px;
+  min-height:56px;
+  padding:11px 14px;
+  width:100%;
+  text-align:left;
+  font-family:var(--sans);
+  color:var(--bone);
+  border:1px solid var(--bone-14);
+  border-radius:var(--r);
+  background:linear-gradient(180deg, rgba(43,20,80,.9), rgba(26,11,46,.9));
+  box-shadow:inset 3px 0 0 var(--lamp-40);
+  -webkit-appearance:none;
+  appearance:none;
+  cursor:pointer;
+  touch-action:manipulation;
+  transition:transform .12s ease, border-color .2s ease;
+}
+
+#actList > * > :first-child{
+  font-size:.9rem;
+  font-weight:700;
+  line-height:1.2;
+}
+
+#actList > * > :nth-child(n+2){
+  font-family:var(--mono);
+  font-size:.7rem;
+  letter-spacing:.05em;
+  color:var(--bone-44);
+  line-height:1.4;
+}
+
+#actList > *:active{transform:scale(.985)}
+
+#actList > *.on,
+#actList > *[aria-current],
+#actList > *[data-sel]{
+  border-color:var(--lamp);
+  box-shadow:inset 3px 0 0 var(--lamp), 0 0 20px rgba(255,182,39,.16);
+}
+
+#actList > *.locked,
+#actList > *[data-locked],
+#actList > *[disabled],
+#actList > *[aria-disabled="true"]{
+  opacity:.36;
+  pointer-events:none;
+  box-shadow:inset 3px 0 0 var(--bone-14);
+}
+
+#actList > *.done,
+#actList > *[data-done]{box-shadow:inset 3px 0 0 var(--you)}
+
+
+/* --------------------------------------------------------------------------
+   10. body[data-state] — ready | timing | resolving | over
+   -------------------------------------------------------------------------- */
+
+/* READY: the deck is live, the square is calm, it is your turn. */
+body[data-state="ready"] #deck{opacity:1}
+body[data-state="ready"] .prompt{color:var(--bone-64)}
+
+/* TIMING: the deck is out of the way, #timing is over it, nothing behind is
+   tappable. The arena stays visible — you are watching yourself, not a menu. */
+body[data-state="timing"] #deck{
+  opacity:.05;               /* the timing panel sits over the deck; anything
+                                readable behind it looks like a paint bug */
+  pointer-events:none;
+}
+body[data-state="timing"] #arena::before{opacity:1}
+
+/* RESOLVING: the deck goes quiet. The exchange is happening; hands off. */
+body[data-state="resolving"] #deck{
+  opacity:.32;
+  pointer-events:none;
+  filter:saturate(.45);
+}
+body[data-state="resolving"] .prompt{color:var(--bone-26)}
+body[data-state="resolving"] #arena::before{opacity:1}
+body[data-state="resolving"] .aura{opacity:.24}
+body[data-state="resolving"] #crowd{color:var(--bone-44)}
+
+/* OVER: the battle is finished, the deck is a record, not a control. */
+body[data-state="over"] #deck{
+  opacity:.24;
+  pointer-events:none;
+  filter:saturate(.3);
+}
+body[data-state="over"] .aura{animation-duration:7s}
+
+/* #timing never exists outside its own state, whatever else is on screen. */
+body:not([data-state="timing"]) #timing:not(.on){display:none}
+
+
+/* --------------------------------------------------------------------------
+   11. RESPONSIVE
+   -------------------------------------------------------------------------- */
+
+/* Short phones (iPhone SE at 667 and anything shorter). Give the arena back
+   the room by trimming the chrome, never by shrinking a touch target. */
+@media (max-height:680px){
+  #crowd{height:44px;min-height:44px}
+  .fighter{height:min(53%,164px);bottom:36px}
+  #deck{max-height:292px;max-height:min(43dvh,292px)}
+  .track{height:42px}
+  #holdpad{min-height:80px}
+}
+
+@media (max-height:600px){
+  #crowd{height:34px;min-height:34px}
+  #crowd > *{height:19px;width:11px}
+  .mcbar{font-size:.72rem}
+  #deck{max-height:300px;max-height:min(50dvh,300px)}
+  /* The arena is under 200px here, so the three-row label stack no longer
+     clears the tags. Shrink the figure and tighten the stack instead of
+     letting a callout land on top of the HUD. */
+  .fighter{height:min(48%,150px);bottom:30px}
+  .statusrow{bottom:100%}
+  .movename{bottom:calc(100% + 14px);font-size:.7rem}
+  .callout{bottom:calc(100% + 30px);font-size:.92rem}
+  .callout.big,.callout[data-tone="big"]{font-size:1.15rem}
+  #title h1.shout{font-size:clamp(2.4rem,13vw,3.2rem)}
+}
+
+/* Roomier phones and small tablets: a third column, bigger figures. */
+@media (min-width:430px){
+  .grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  #grid > *{min-height:60px}
+}
+
+@media (min-width:520px){
+  :root{--pad:16px}
+  .stage{
+    box-shadow:0 0 0 1px var(--bone-07), 0 0 90px rgba(6,2,12,.7);
+  }
+  #crowd{height:50px;min-height:50px}
+  /* The px cap has to rise with the arena or a tablet gets a tall empty
+     field above two small figures. Percentage leads; the cap is a backstop. */
+  .fighter{width:min(36%,210px);height:min(58%,360px);bottom:52px}
+  .callout{font-size:1.2rem}
+  .fitgrid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  #fitGrid > *:last-child:nth-child(odd){grid-column:auto}
+}
+
+/* No four-column rule. The stage is capped at 560px, so a fourth column only
+   makes each card too narrow for a move name — and the name IS the move. */
+
+/* Pointer-hover only. Touch devices must not keep a stuck hover state. */
+@media (hover:none){
+  #grid > *:hover{border-color:var(--bone-14)}
+  .btn:hover{border-color:var(--bone-26)}
+}
+
+
+/* --------------------------------------------------------------------------
+   12. REDUCED MOTION
+   The crowd stops flashing, the callout appears instead of flying, the aura
+   holds still. Nothing disappears — every state stays readable.
+   -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.001ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.001ms !important;
+    scroll-behavior:auto !important;
+  }
+  .aura{transform:translateX(-50%);opacity:.17}
+  #crowd > *::after{opacity:.55}
+  .callout:not(:empty),
+  .callout.pop{animation:none;opacity:1;transform:translateX(-50%)}
+}
+
+
+/* --------------------------------------------------------------------------
+   13. HIGH CONTRAST / FORCED COLOURS
+   -------------------------------------------------------------------------- */
+
+@media (forced-colors:active){
+  #grid > *,
+  #fitGrid > *,
+  #actList > *,
+  .btn,
+  #holdpad{border:1px solid ButtonBorder}
+  .zone.core,
+  .needle,
+  .ampideal{forced-color-adjust:none}
+}
+
+
+/* --------------------------------------------------------------------------
+   14. LANDSCAPE ON A PHONE — a degraded mode, but never an unplayable one
+   The portrait stack needs ~470px of height. In landscape there are 375, so
+   the arena's minmax floor pushed the deck past the bottom of the screen and
+   the move grid collapsed to zero rows: the player could not pick a move at
+   all. Everything below buys that height back without shrinking a single
+   touch target below 48px.
+   -------------------------------------------------------------------------- */
+
+@media (orientation:landscape) and (max-height:520px){
+  .stage{grid-template-rows:auto minmax(84px,1fr) auto}
+
+  #top{gap:4px;padding:4px var(--pad) 5px}
+  #crowd{height:24px;min-height:24px}
+  #crowd > *{height:16px;width:10px;margin-top:-2px}
+  #crowd::before{display:none}
+  .meter{height:7px}
+  .mcbar{min-height:16px;line-height:16px;font-size:.72rem}
+  .tags .mono{font-size:.7rem}
+
+  /* 375px of height cannot hold the HUD, an arena, three label rows, two
+     rows of 48px cards and a 48px button. Something has to give, and the
+     honest thing to drop is the label stack: the move name is already on the
+     card the player just tapped, and the status chips are secondary. The
+     score callout stays, because that is the feedback the turn exists for. */
+  .fighter{height:min(56%,124px);bottom:20px}
+  .movename,.statusrow{display:none}
+  .callout{bottom:calc(100% - 2px);font-size:.84rem}
+  .callout.big,.callout[data-tone="big"]{font-size:1rem}
+  #arena::after{height:34px;bottom:-6px}
+
+  #deck{
+    max-height:230px;
+    max-height:min(62dvh,230px);
+    gap:6px;
+    padding:15px var(--pad) calc(7px + var(--sab));
+  }
+  .prompt{min-height:14px;font-size:.7rem}
+  .grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+  #grid > *{min-height:52px;padding:7px 26px 15px 11px}
+  #grid > * > :first-child{font-size:.8rem}
+
+  #timing{gap:7px;padding-top:9px}
+  #timingTitle{font-size:.92rem}
+  .track{height:38px}
+  #holdpad{min-height:56px}
+  #timingHint{min-height:15px}
+
+  .screen{gap:9px;padding-top:calc(12px + var(--sat));padding-bottom:calc(12px + var(--sab))}
+  .screen h2.shout{font-size:1.3rem}
+  .screen p{font-size:.84rem}
+  #title h1.shout{font-size:clamp(2rem,9vw,2.8rem)}
+  #actList{max-height:44vh}
+  .log{max-height:30vh}
+}

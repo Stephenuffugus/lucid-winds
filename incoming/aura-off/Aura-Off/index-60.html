@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#1A0B2E">
+<title>AURA OFF</title>
+<link rel="stylesheet" href="src/ui/style.css">
+</head>
+<body>
+<div class="stage">
+
+  <div id="top">
+    <div class="crowd" id="crowd"></div>
+    <div class="meter"><b id="meterFill"></b></div>
+    <div class="mcbar" id="mcbar"></div>
+    <div class="tags">
+      <span class="mono" style="color:var(--you)">You</span>
+      <span class="mono" id="roundLabel">Round 1</span>
+      <span class="mono" id="foeLabel" style="color:var(--them)">Rival</span>
+    </div>
+  </div>
+
+  <div id="arena">
+    <div class="floor"></div>
+    <div class="fighter" id="you">
+      <div class="aura"></div><div class="callout" id="calloutYou"></div>
+      <div class="movename" id="nameYou"></div><div class="statusrow" id="statusYou"></div>
+    </div>
+    <div class="fighter" id="them">
+      <div class="aura"></div><div class="callout" id="calloutThem"></div>
+      <div class="movename" id="nameThem"></div><div class="statusrow" id="statusThem"></div>
+    </div>
+  </div>
+
+  <div id="deck">
+    <div class="prompt mono" id="prompt">Pick your opener</div>
+    <div class="grid" id="grid"></div>
+    <div class="hypebar"><b id="hypeFill"></b></div>
+    <div class="rowbtns"><button class="btn" id="blendBtn" disabled>Blend · 100 hype</button></div>
+  </div>
+
+  <div id="timing">
+    <h3 class="shout" id="timingTitle">Move</h3>
+    <div class="track" id="track">
+      <div class="zone" id="zoneOuter"></div><div class="zone core" id="zoneCore"></div>
+      <div class="needle" id="needle"></div>
+    </div>
+    <div class="ampwrap">
+      <div class="ampbar"><b id="ampFill"></b><div class="ampideal" id="ampIdeal"></div></div>
+      <div class="mono" style="margin-top:5px;text-align:center">Hold to size it · white mark is right</div>
+    </div>
+    <div id="timingHint"></div>
+    <div id="holdpad">Hold — release on the light</div>
+  </div>
+
+  <div class="screen" id="fit">
+    <h2 class="shout">Fit check</h2>
+    <div class="mono" style="max-width:34ch;line-height:1.7">A judge called the winner before he moved, on his shoes alone. Your fit sets the crowd before round one.</div>
+    <div class="fitgrid" id="fitGrid"></div>
+    <button class="btn" id="fitGo">Step up</button>
+  </div>
+
+  <div class="screen" id="result">
+    <h2 class="shout" id="resultTitle">Win</h2>
+    <div class="unlock" id="resultUnlock"></div>
+    <div class="log" id="resultLog"></div>
+    <button class="btn" id="againBtn">Continue</button>
+  </div>
+
+  <div class="screen" id="map">
+    <h2 class="shout">The circuit</h2>
+    <div class="mono" id="mapSub">Beat someone, learn their move</div>
+    <div id="actList"></div>
+  </div>
+
+  <div class="screen on" id="title">
+    <h1 class="shout"><span class="a">Aura</span><span class="b">Off</span></h1>
+    <p>No words, no contact. Two people and a crowd. Reference everything, repeat nothing, and never look like you're trying.</p>
+    <button class="btn" id="startBtn">Step up</button>
+    <button class="btn ghost" id="howBtn">How it scores</button>
+  </div>
+</div>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>
