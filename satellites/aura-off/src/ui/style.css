@@ -332,16 +332,24 @@ button{font:inherit;color:inherit;margin:0}
    a bench, who knows everyone's name. */
 
 .mcbar{
-  min-height:19px;
+  /* Two lines, not one with an ellipsis. The MC's lines are written to be read
+     — cutting "Tuesday. Nothing else on anywhere. The square …" mid-sentence
+     throws away the one voice in the game that speaks to the player. Height is
+     reserved for both lines so the arena below never jumps between rounds. */
+  min-height:38px;
   font-family:var(--mono);
   font-size:.76rem;
   line-height:19px;
   letter-spacing:.01em;
   color:var(--lamp);
   text-align:center;
-  white-space:nowrap;
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:2;
+  line-clamp:2;
   overflow:hidden;
-  text-overflow:ellipsis;
+  text-wrap:balance;
+  padding:0 6px;
   text-shadow:0 0 14px rgba(255,182,39,.35);
 }
 
@@ -1419,6 +1427,14 @@ body[data-state="timing"] #timing,
   justify-content:center;
   gap:3px;
   min-height:56px;
+  /* flex-shrink:0 is load-bearing. #actList is a flex column with max-height,
+     so without this the cards shrink to their 56px floor once the list is
+     taller than the box — and justify-content:center then clips the overflow
+     symmetrically, taking the act's NAME off the top and the last word of the
+     teaching line off the bottom. Only the current act has three long lines, so
+     it was the only card that lost its title. Found at 320px; let the list
+     scroll (it already has overflow-y:auto) instead of squashing the cards. */
+  flex-shrink:0;
   padding:11px 14px;
   width:100%;
   text-align:left;
