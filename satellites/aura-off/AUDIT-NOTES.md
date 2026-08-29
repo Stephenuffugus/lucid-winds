@@ -128,21 +128,89 @@ mid-sentence by a nowrap ellipsis.
 Drive the real game, screenshot it, open the images, and name what is wrong before
 Stephen does. A green test is not a look.
 
-## Still open
+## Deploy procedure — do not skip this
 
-- **Nothing is device-tested.** The thumb feel of hold-and-release is the whole
-  game and it can only be measured here, not felt.
-- Two-stage battles (qualify, then head-to-head) — handoff next-task #2. Structure
-  borrowed from ballroom, which the press themselves compare these battles to.
-  **Take the architecture, never the vocabulary** — see `AURA-CULTURE.md` §A7.
-- Regional move packs across Mexico, Brazil, Argentina, Bolivia, Costa Rica, Peru,
-  Ecuador and Spain — handoff next-task #3, and the obvious monetization.
+```bash
+node tools/stamp.js --bump    # roll BUILD to today + next letter
+node tools/stamp.js           # stamp every fetched URL
+node tools/stamp.js --check    # fails if anything is unstamped
+npm run check                  # validate -> sim -> integration
+```
+
+⛔ **`.htaccess` deploys on this host but Cache-Control is OVERRIDDEN** — js and
+css are forced to `max-age=14400` no matter what it says. A versioned URL is the
+only lever that makes a deploy land. Two traps this closes, both found live on
+2026-08-29 when a fix verified on the build stamp still did not reach the phone:
+
+- **ES module imports are separate URLs.** A `?v=` on the entry point does NOT
+  propagate to `import './game.js'` — every relative specifier carries its own
+  stamp, which is why `stamp.js` rewrites source instead of wrapping a build step.
+- **A bare `sw.js` registration is edge-pinned for seven days.** Ours was bare.
+
+Then verify on the real domain, never localhost, and **grep the live HTML for the
+new build marker** — a 200 is not evidence.
+
+## Where it stands, 2026-08-29
+
+Playable end to end and live behind the workbench gate, `beta:true` in the portal.
+Title → fit check → **el farmeo** (solo qualifying stage) → nine-round duel →
+beat them, learn their move → the circuit. 27 base moves, 25 opponents, 5 acts,
+5 fits, 2 regional packs, PWA shell with real persistence.
+
+Measured balance, base 27, no pack owned — reproduce with `node test/balance-sim.js`:
+
+| Act | masher | varied | composed | expert |
+|---|---|---|---|---|
+| The Plaza | 4.2% | 70.5% | 82.8% | 98.9% |
+| The Park Bracket | 1.2% | 41.7% | 63.4% | 95.8% |
+| The Banned Town | 0.0% | 29.7% | 58.8% | 96.5% |
+| The Capital | 0.1% | 25.5% | 46.7% | 87.6% |
+| Upriver | 0.0% | 11.4% | 24.5% | 78.2% |
+
+## Device testing, round 1 — his verdict: "coming together, still a long way to go"
+
+One bug, and it was the main control. **The hold broke when the phone highlighted
+a word.** A long-press selection fires `pointercancel`, which `timing.js` bound
+straight to `release`, so the turn committed early at whatever amplitude the bar
+had reached. Fixed three ways: global `user-select` + `-webkit-touch-callout:none`
+on `*`; `setPointerCapture` so the pad owns the gesture; and a cancel no longer
+scores. See the comments in `src/ui/timing.js`.
+
+**Nothing else has been device-tested.** The thumb feel of hold-and-release is
+still the whole game and it can only be measured here, never felt.
+
+## Still open — the two that are Director calls
+
+1. **Pack deck size is worth up to +7.8pp** in the Plaza. Ten extra cards against
+   a three-card starting deck is a freshness engine, and freshness is the biggest
+   multiplier in the game. **The advantage is COUNT, not power, so no multiplier
+   fixes it** — anything that weakens pack moves weakens the base moves beside
+   them. The shape of the fix is a **deck cap**: bring N moves to a fight, so a
+   pack changes *which* N rather than *how many*. That is a real design change to
+   the base game. Nothing ships broken today — packs are inert, no store writes
+   ownership, no opponent drops one — but this is the blocker before a pack goes
+   on sale. The half that IS fixed: a pack move may borrow a **body** the base
+   game already has, never a **role**; four duplicated specials were stripped and
+   pay-to-win went +2.5pp → +0.0pp overall.
+2. **Banned Town expert sits at 96.5% against an 88% target**, and the curve runs
+   backwards from the Bracket into it. Its opponents are LOWER skill (avg 0.90)
+   than the Capital's (0.98) yet carry the same target, so the inherited §14 table
+   contradicts the roster. Fixing it means raising his opponent skills.
+
+## Still open — build work
+
+- Satellite vs standalone. Built as a satellite, self-contained so it can lift out
+  to a store path like FTW and Jimothy if it earns one.
+- Two moves are SHADOWED, not dominated — `shades` and `freeze` have healthy value
+  and the expert never picks them. Deck-diversity problem, not a dead move.
 - 3D and VR are **parked, not dead** — `docs/AURA-3D-VR.md`. Headline finding:
   Google Photorealistic 3D Tiles cannot ship (no caching or offline use, forced
   visible attribution, no derived geometry, and promotional videos capped at 30
   seconds, which makes a store listing video impossible). **OpenStreetMap via
   `blender-osm` is the license-clean path** — a rendered level is a Produced Work,
   so the game does not become ODbL.
+- Regional packs beyond Brazil and Argentina: Mexico, Bolivia, Costa Rica, Peru,
+  Ecuador, Spain. The system is built; these are content.
 
 ## The thesis, which should survive every rewrite
 
