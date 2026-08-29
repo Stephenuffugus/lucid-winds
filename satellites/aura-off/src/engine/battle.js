@@ -32,7 +32,7 @@
  */
 
 import {
-  counterCategory, matchupOf, matchupMult, freshnessMult,
+  BEATS, counterCategory, matchupOf, matchupMult, freshnessMult,
   blendMult, blendMove, findPattern, scoreBoth, actScore,
   fitOffset, callout, formatAura, factorLabel,
   AMP_RANGE, TIMING, TIMING_LABEL, MATCHUP_LABEL
@@ -48,9 +48,29 @@ export const TUNING = Object.freeze({
 
   blendCost: 100,
   hypeMax: 200,
-  maxComboLinks: 6,
+  /**
+   * A chain extends on any landed exchange, so `combo` is in effect a SECOND
+   * timing multiplier: an expert who never misses held six links and carried
+   * x1.44 while an act boss at 0.96 skill carried x1.14 — a bigger gap than the
+   * timing band itself, stacked straight on top of it. Capping at three keeps a
+   * clean run worth chasing (x1.42) without letting consistency get paid twice.
+   */
+  maxComboLinks: 3,
 
-  /** `finisher` is legal inside this many meter points of dead even. */
+  /**
+   * `finisher` is legal inside this many meter points of dead even.
+   *
+   * NOTE FOR THE DIRECTOR, not acted on here: a battle OPENS dead even, so this
+   * rule as CONTRACT §6 writes it makes The Grimace — biggest base in the game,
+   * biggest special — legal on round one, and the expert policy opens with it
+   * in most battles. A move the roster calls "a final, decisive grimace that
+   * ends the battle" arriving as the opening statement is a flavour break. It
+   * was tried as `round >= 6 && meter close` and it reads better, but the
+   * opponents who carry a finisher lose it too and the measured Upriver expert
+   * rate went 77.5% -> 83.0%, away from target. Adding a second condition to a
+   * §6 rule is a contract change, so it is left here as a question rather than
+   * taken unilaterally.
+   */
   finisherWindow: 15,
 
   /** Meter is a 0…100 tug of war. 50 is level. */
@@ -63,13 +83,53 @@ export const TUNING = Object.freeze({
   debuffMult: 0.72,
   highRiskUp: 1.6,
   highRiskDown: 0.35,
-  finisherMult: 2.1,
-  finisherMeterPush: 4,
+  /**
+   * CONTRACT §6 asks a finisher for "a large swing" and does not price it. At
+   * 2.1x on top of the biggest base in the game (The Grimace, 78) plus a free
+   * +4 on the meter, it was simply the best move on the board every round the
+   * window was open, and a player who could hold the meter level could open
+   * with it and never stop. 1.85 and +3 is still the largest single special in
+   * the game and still ends battles; it no longer wins them on its own.
+   */
+  finisherMult: 1.85,
+  finisherMeterPush: 3,
   counterCap: 0.85,
   counterSoft: 1400,
-  hypeSpecialScore: 0.25,
-  hypeSpecialGain: 3,
   persistCarry: 0.45,
+
+  /* -- `hype` — Crowd Turn. THE ROOM IS YOURS ---------------------------- *
+   *
+   * The move where you stop performing AT the other person, turn your back on
+   * them, and play to the gathering. CONTRACT §15: "the crowd is not set
+   * dressing — the gathering IS the point." So turning to it has to buy
+   * something the rest of the sheet cannot.
+   *
+   * It used to buy hype and nothing else, and passive hype already funded
+   * every blend anyone wanted, so the value-maximising policy never picked it
+   * once in 310,000 battles. The special was redundant, not the body weak.
+   *
+   * What it buys now is the ROOM, for one exchange:
+   *   - your next move is read by a crowd that is already facing you
+   *   - their next move is performed to the back of that crowd
+   *
+   * Both effects land on the CROWD component only. In a panel act — Act 3's
+   * empty lot with no crowd at all, Act 5's judges on the water — Crowd Turn
+   * does nothing but bank hype, and it should not: there is no room to turn.
+   * Act 4 counts both, so it pays half. That makes it the one move on the
+   * sheet whose worth is decided by which act you are standing in, which is a
+   * role rather than a number.
+   *
+   * The price is x0.40 of a turn rather than x0.25 because the arithmetic has
+   * to close: Crowd Turn's body is base 30, the weakest in FLOW, so at x0.25 it
+   * gave up about 650 aura to buy back roughly 800 in a crowd act — a margin
+   * too thin for anyone to ever choose it, which is how it ended up strictly
+   * dominated in the first place. It still reads as giving a turn away, because
+   * it is.
+   */
+  hypeSpecialScore: 0.40,
+  hypeSpecialGain: 4,
+  roomSelf: 1.55,
+  roomThem: 0.72,
 
   /** `punisher` quirk: extra decay per prior use, on the player only. */
   punisherStep: 0.76,
@@ -87,14 +147,95 @@ export const TUNING = Object.freeze({
    * is the actual job of the Togak Luan, so on the prow it has to be the thing
    * that decides the fight rather than a garnish. Aiming a shade UNDER ideal is
    * the counter-play, because the composure curve is more forgiving below.
+   *
+   * CORRECTED 2026-08-29: the note above used to end "the opponent's own
+   * amplitude noise already models a rower who lives on that boat", and it did
+   * not. At skill 1.50 `rollAmp` gave the rower a standard deviation of 0.039 —
+   * a machine bolted to the deck — while the player alone fought the swell. So
+   * the act whose entire thesis is "the only real skill is composure on
+   * unstable ground" was the one act where only one side stood on it, and the
+   * player policy built out of amplitude discipline was the one it punished
+   * hardest. `foeAmpSigma` puts the opponent on the same moving deck, scaled
+   * down by skill: the rower is better at standing on it, not exempt from it.
+   *
+   * `needleSpeedMult` went 1.45 -> 1.75 in the same pass. It is the one dial in
+   * the game that reaches ONLY a player who is actually reading the needle, so
+   * it separates a needle-perfect run from a random-timing one without touching
+   * anything a mid-skill player relies on — and Act 5 is the act that has to be
+   * able to beat an expert. At 1.75 the perfect window is 57% of its width on
+   * still ground, which costs a modelled expert about 36 points of perfect rate
+   * and is most of why Upriver finally reads 75% rather than 98%.
    */
-  unstable: { ampJitter: 0.26, needleSpeedMult: 1.45 },
+  unstable: { ampJitter: 0.26, needleSpeedMult: 1.75, foeAmpSigma: 0.17 },
 
   /** Hype earned per exchange, before the `hype` special multiplies it. */
-  hypeBase: 6,
-  hypeByBand: { perfect: 15, clean: 10, shaky: 4, whiff: 0 },
-  hypeFromScoreDiv: 95,
-  hypeFromScoreCap: 20
+  /* -- HYPE, AND WHY IT GOT CHEAPER TO EARN AND SLOWER TO ACCRUE --------- *
+   *
+   * Passive hype used to run about 41 a turn, so a blend — the single largest
+   * multiplier either side can reach — arrived free every two and a half
+   * rounds whether you did anything to deserve it or not. That is what made
+   * Crowd Turn pointless: the only thing its hype bought was already on the
+   * house.
+   *
+   * At roughly 22 a turn a blend is an event you have to get to, and Crowd
+   * Turn's x4 pays most of one in a single exchange. Turn the room, then blend
+   * into it: that is a two-turn play with a real cost and a real shape, and it
+   * is the reason the move exists.
+   */
+  hypeBase: 4,
+  hypeByBand: { perfect: 8, clean: 5, shaky: 2, whiff: 0 },
+  hypeFromScoreDiv: 160,
+  hypeFromScoreCap: 10,
+
+  /* -- WHAT AN OPPONENT KNOWS, BY SKILL ---------------------------------- *
+   *
+   * `skill` used to drive three things — timing, amplitude and how hard they
+   * thought about the triangle. All three are STAT dials, and a player who has
+   * mastered the needle out-multiplies all of them: against Togak Luan at
+   * skill 1.50 an expert carried timing x1.14 but combo x1.18, blend x1.20 and
+   * specials x1.22 on top, because those three were things only the player was
+   * allowed to do. The campaign had no difficulty curve at the top because the
+   * opponents were never playing the same game.
+   *
+   * So skill now also buys BEHAVIOUR. A 0.30 rival in the plaza throws one
+   * move at a time and hopes. Somewhere around the Banned Town they start
+   * using a special for its role instead of its number, then chasing a named
+   * chain, and by the river they are splitting their body the same way you
+   * are. Chispa is a kid having a go. Togak Luan does this for a living.
+   */
+  foeRoleFrom: 0.45,     // below this, a special is just a move
+  foeRoleFull: 0.95,     // at this, they read roles as well as you do
+  foePatternFrom: 0.74,  // they start chasing named chains here
+
+  /**
+   * DO NOT TELEGRAPH. A player who has learned the triangle counters whatever
+   * you threw last, so a rival who keeps answering in the same corner is
+   * feeding them 1.5x every other round — the expert policy was banking a x1.20
+   * mean matchup while act bosses ate x0.97. Above `foeRoleFrom` an opponent
+   * starts leaning off their own last category and towards the one that stays a
+   * step ahead of the obvious read. Weighted, not absolute: they become hard to
+   * read rather than mechanically counter-readable, which would just move the
+   * exploit one step along.
+   *
+   * Skipped entirely for `mirror`, whose whole documented quirk is that they
+   * DO answer your last category. That is the trade the quirk makes.
+   */
+  foeNoTelegraph: 0.55,
+  foeStepAhead: 0.75,
+  foeBlendFrom: 0.70,    // they start splitting upper from lower here
+  foeBlendRate: 1.00,    // blend appetite per point of skill above that
+  foeBlendMax: 0.60,
+
+  /**
+   * How decisively they play the value they see. The softmax temperature was a
+   * flat-ish `90 / (0.5 + 1.5 * skill)`, which left even a 1.12 rival picking
+   * close to randomly among moves 40 points apart — so they burned their own
+   * small pool on repeats and handed the player a 1.15x freshness edge that had
+   * nothing to do with skill. A better player is a more decisive one.
+   */
+  foePickTempBase: 60,
+  foePickTempSkill: 1.9,
+  foePickTempFloor: 0.35
 });
 
 export const ROUNDS = TUNING.rounds;
@@ -115,7 +256,7 @@ export const SPECIALS = Object.freeze({
   counter: { key: 'counter', label: 'COUNTER', blurb: 'Bonus scaled by how big their last move was.' },
   finisher: { key: 'finisher', label: 'FINISHER', blurb: 'Only with the meter close. Large swing.' },
   evade: { key: 'evade', label: 'EVADE', blurb: 'Negates their debuff and their counter this turn.' },
-  hype: { key: 'hype', label: 'HYPE', blurb: 'Trades score for hype.' },
+  hype: { key: 'hype', label: 'HYPE', blurb: 'Turn your back and work the room. Cheap turn, big hype, and the crowd faces you next — where there is a crowd.' },
   read: { key: 'read', label: 'READ', blurb: 'Reveals their next category before you commit.' },
   persist: { key: 'persist', label: 'PERSIST', blurb: 'Scores again, smaller, on the next turn.' }
 });
@@ -255,6 +396,36 @@ function buildPool(idx, opponent) {
   return picked;
 }
 
+/**
+ * The best genuine upper/lower split available inside an opponent's own pool.
+ * Memoised on the pool array, because `prepareTurn` asks once per round and the
+ * simulator runs three thousand battles a second.
+ *
+ * @returns {{a:string, b:string, split:number}|null}
+ */
+const _foeBlendCache = typeof WeakMap === 'function' ? new WeakMap() : null;
+
+function foeBlendPair(match) {
+  const pool = match.foe.pool;
+  if (_foeBlendCache && _foeBlendCache.has(pool)) return _foeBlendCache.get(pool);
+  let best = null, bestV = 0;
+  for (let i = 0; i < pool.length; i++) {
+    const a = getMove(match, pool[i]);
+    if (!a) continue;
+    for (let j = 0; j < pool.length; j++) {
+      if (i === j) continue;
+      const b = getMove(match, pool[j]);
+      if (!b) continue;
+      const split = a.up * b.lo;
+      if (split < 0.5) continue;              // a stack is not worth 100 hype
+      const v = blendMult(a, b) * (a.base + b.base) / 2;
+      if (v > bestV) { bestV = v; best = { a: a.id, b: b.id, split: split }; }
+    }
+  }
+  if (_foeBlendCache) _foeBlendCache.set(pool, best);
+  return best;
+}
+
 /* -------------------------------------------------------------------------- */
 /* MATCH STATE                                                                 */
 /* -------------------------------------------------------------------------- */
@@ -275,6 +446,8 @@ function newSide(label) {
     lastScore: 0,
     debuffIn: 1,        // multiplier owed to us this turn, set by them last turn
     persistIn: 0,       // aura carried in from our own `persist` last turn
+    roomWithIn: 1,      // crowd multiplier owed to us — we turned the room last turn
+    roomAwayIn: 1,      // crowd multiplier owed to us — THEY turned it, we play to backs
     everWhiffed: false,
     pool: null          // opponent side only
   };
@@ -469,10 +642,24 @@ export function effectiveSkill(match) {
  * dial that sets it.
  */
 function rollBand(rng, s) {
-  const wP = 0.02 + 1.55 * Math.pow(Math.max(0, s), 1.35);
+  /*
+   * The four weights below 0.70 skill are exactly as they were — a 0.30 rival
+   * in the plaza still lands a perfect about one turn in seven and whiffs
+   * nearly one in three, because that is a kid having a go and the early acts
+   * are calibrated on it.
+   *
+   * Above 0.55 an extra term steepens all three. This file already claimed "a
+   * 1.50-skill rower on the boat is almost never off" and the curve did not
+   * deliver it: at 1.50 the old weights gave 58% perfect and a 1.5% whiff rate,
+   * which is not a professional, and at 1.04 an act boss whiffed 8.5% of nine
+   * rounds. Those slips were most of what a needle-perfect player was actually
+   * beating in Acts 3 and 4.
+   */
+  const hi = Math.max(0, s - 0.55);
+  const wP = 0.02 + 1.55 * Math.pow(Math.max(0, s), 1.35) + 1.30 * Math.pow(hi, 1.7);
   const wC = 0.30 + 0.85 * s;
-  const wS = Math.max(0.05, 0.85 - 0.36 * s);
-  const wW = Math.max(0.02, 0.85 - 0.52 * s);
+  const wS = Math.max(0.04, 0.85 - 0.36 * s - 0.60 * Math.pow(hi, 1.5));
+  const wW = Math.max(0.01, 0.85 - 0.52 * s - 0.80 * Math.pow(hi, 1.5));
   let r = rng() * (wP + wC + wS + wW);
   if ((r -= wP) < 0) return 'perfect';
   if ((r -= wC) < 0) return 'clean';
@@ -480,16 +667,59 @@ function rollBand(rng, s) {
   return 'whiff';
 }
 
-/** Amplitude accuracy for a given effective skill: sloppy early, surgical late. */
-function rollAmp(rng, move, s) {
-  const sigma = 0.30 * Math.max(0.10, 1 - 0.58 * s);
+/**
+ * Amplitude accuracy for a given effective skill: sloppy early, surgical late —
+ * and on the water, everybody wobbles. See TUNING.unstable.
+ */
+function rollAmp(rng, move, s, unstable) {
+  let sigma = 0.30 * Math.max(0.10, 1 - 0.58 * s);
+  if (unstable) sigma += TUNING.unstable.foeAmpSigma * clamp(1 - 0.42 * s, 0.22, 1);
   return clamp(move.idealAmp + gauss(rng) * sigma, AMP_RANGE.min, AMP_RANGE.max);
 }
 
 /**
+ * What one special is worth to an opponent who understands roles, in the board
+ * state they are actually standing in. Deliberately the same shape of judgement
+ * the expert policy makes at the bottom of this file — a `guard` is worth
+ * having when the last thing that landed was enormous, and worth nothing when
+ * it was not. Scaled down to nothing for a low-skill rival by the caller.
+ *
+ * @param {number} lead  meter distance; positive means the OPPONENT is behind
+ */
+function foeRoleValue(match, special, lead) {
+  const foe = match.foe;
+  const you = match.you;
+  switch (special) {
+    case 'finisher': return meterCloseFor(match, 'them') ? 1.80 : 0.20;
+    case 'interrupt': return 1 + 0.60 * Math.min(1, you.links / 3);
+    case 'guard': return 1 + 0.70 * Math.min(1, you.lastScore / 1400);
+    case 'counter': return 1 + 0.75 * Math.min(1, you.lastScore / 1400);
+    case 'refresh': {
+      let worn = 0;
+      for (const id in foe.uses) if (foe.uses[id] > worn) worn = foe.uses[id];
+      return worn >= 2 ? 1.65 : 0.80;
+    }
+    case 'evade': return foe.debuffIn < 1 ? 1.70 : 0.85;
+    case 'feint': return foe.links >= 1 ? 1.45 : 1.15;
+    case 'persist': return 1.25;
+    case 'highRisk': return 0.70 + 0.90 * Math.min(1, match.opponent.skill || 0);
+    case 'debuff': return lead > 10 ? 1.25 : 1.12;
+    case 'read': return 1.0;   // they already know what they are throwing
+    case 'hype': {
+      // the same reading the player should make: is there a room to turn?
+      const room = match.scoring === 'judges' ? 0 : match.scoring === 'both' ? 0.5 : 1;
+      if (match.round >= match.rounds) return 0.15;
+      return 0.45 + 1.70 * room + (foe.hype < TUNING.blendCost ? 0.45 : 0.10);
+    }
+    default: return 1;
+  }
+}
+
+/**
  * Choose the opponent's move. Difficulty is one number — `skill` — and it drives
- * three separate things: how often they hit their timing, how close they hold
- * their amplitude, and how hard they think about the triangle.
+ * four separate things: how often they hit their timing, how close they hold
+ * their amplitude, how hard they think about the triangle, and how much of the
+ * rest of the sheet they can use at all (`foeRoleValue`, patterns, blends).
  */
 function chooseFoeMove(match) {
   const rng = match.rng;
@@ -510,19 +740,43 @@ function chooseFoeMove(match) {
   }
 
   const lead = match.meter - TUNING.meterStart;   // positive = the opponent is behind
+  const foe = match.foe;
+
+  /*
+   * How much of the game they can actually see. Zero in the plaza, total by the
+   * river. This is the difference between a rival who throws their biggest move
+   * and one who throws the RIGHT move, and it is what makes the campaign get
+   * harder rather than just louder.
+   */
+  const role = clamp((s - TUNING.foeRoleFrom) / (TUNING.foeRoleFull - TUNING.foeRoleFrom), 0, 1);
+
   const vals = new Array(cands.length);
   let best = -Infinity, bestI = 0;
   for (let i = 0; i < cands.length; i++) {
     const m = getMove(match, cands[i]);
-    let v = m.base * freshnessMult(match.foe.uses[m.id] || 0);
+    let v = m.base * freshnessMult(foe.uses[m.id] || 0);
     if (yourLastCat) {
       v *= 1 + (matchupMult(m.cat, yourLastCat) - 1) * Math.min(1, s);
     }
-    if (s > 0.7 && m.special) {
-      if (lead > 10 && (m.special === 'counter' || m.special === 'highRisk' ||
-        m.special === 'finisher' || m.special === 'debuff')) v *= 1.18;
-      if (lead < -10 && (m.special === 'guard' || m.special === 'evade')) v *= 1.15;
+
+    // do not telegraph: lean off your own last corner, lean into the next one
+    if (role > 0 && foe.lastCat && match.opponent.quirk !== 'mirror') {
+      if (m.cat === foe.lastCat) v *= 1 - TUNING.foeNoTelegraph * role;
+      else if (m.cat === BEATS[foe.lastCat]) v *= 1 + TUNING.foeStepAhead * role;
     }
+
+    // a role is worth something, scaled by whether they understand it
+    if (role > 0 && m.special) {
+      v *= 1 + (foeRoleValue(match, m.special, lead) - 1) * role;
+    }
+
+    // chasing a named chain — the same 1.5x the player is chasing
+    if (s >= TUNING.foePatternFrom && foe.chain.length >= 2) {
+      const chain = foe.chain.concat([m.id]).slice(-3);
+      const three = [getMove(match, chain[0]), getMove(match, chain[1]), getMove(match, chain[2])];
+      if (three[0] && three[1] && three[2] && findPattern(three)) v *= 1 + 0.45 * role;
+    }
+
     vals[i] = v;
     if (v > best) { best = v; bestI = i; }
   }
@@ -530,7 +784,7 @@ function chooseFoeMove(match) {
   const pRandom = clamp(0.55 - 0.42 * s, 0.03, 0.55);
   if (rng() < pRandom) return cands[(rng() * cands.length) | 0];
 
-  const T = 90 / (0.5 + 1.5 * s);
+  const T = TUNING.foePickTempBase / (TUNING.foePickTempFloor + TUNING.foePickTempSkill * s);
   let total = 0;
   for (let i = 0; i < vals.length; i++) { vals[i] = Math.exp((vals[i] - best) / T); total += vals[i]; }
   let r = rng() * total;
@@ -545,12 +799,28 @@ function chooseFoeMove(match) {
  */
 function prepareTurn(match) {
   const s = effectiveSkill(match);
-  const id = chooseFoeMove(match);
-  const move = getMove(match, id);
+
+  /*
+   * Will they split their body this round? Only from `foeBlendFrom` up, only
+   * with the hype banked to pay for it — the same 100 the player pays — and
+   * only on a pairing inside their own pool that is a real split rather than a
+   * stack. On the prow that is most rounds they can afford. In the plaza it
+   * never happens, because nobody in the plaza has thought of it yet.
+   */
+  let blend = null;
+  if (s >= TUNING.foeBlendFrom && match.foe.hype >= TUNING.blendCost) {
+    const appetite = Math.min(TUNING.foeBlendMax, (s - TUNING.foeBlendFrom) * TUNING.foeBlendRate);
+    if (appetite > 0 && match.rng() < appetite) blend = foeBlendPair(match);
+  }
+
+  const id = blend ? blend.a : chooseFoeMove(match);
+  const move = blend ? blendMove(getMove(match, blend.a), getMove(match, blend.b)) : getMove(match, id);
+
   match.pending = {
     moveId: id,
+    blend: blend ? { a: blend.a, b: blend.b } : null,
     band: rollBand(match.rng, s),
-    amp: rollAmp(match.rng, move, s)
+    amp: rollAmp(match.rng, move, s, match.unstable)
   };
   match.reveal = match.pendingRead ? { category: move.cat } : null;
   match.pendingRead = false;
@@ -584,12 +854,14 @@ function planFor(match, side, raw, isPlayer) {
     const mb = getMove(match, a.blend.b);
     if (!ma || !mb) {
       blendRefused = 'unknown move';
-    } else if (isPlayer && side.hype < TUNING.blendCost) {
+    } else if (side.hype < TUNING.blendCost) {
+      // both sides pay the same hundred. An opponent who blends for free is a
+      // different game to the one the player is being asked to learn.
       blendRefused = 'not enough hype';
     } else {
       blend = { a: ma, b: mb };
       move = blendMove(ma, mb);
-      hypeSpent = isPlayer ? TUNING.blendCost : 0;
+      hypeSpent = TUNING.blendCost;
     }
   }
 
@@ -630,6 +902,7 @@ function planFor(match, side, raw, isPlayer) {
     extra: 1, freshExtra: 1, hypeMult: 1,
     interrupted: false, guarded: false, finisherFired: false,
     specialFired: false, specialDetail: null,
+    roomWith: false, roomAway: false, roomTurned: false,
     carry: 0
   };
 }
@@ -665,6 +938,7 @@ export function resolveExchange(match, action) {
   const F = planFor(match, foe, match.pending, false);
 
   if (P.hypeSpent) you.hype = Math.max(0, you.hype - P.hypeSpent);
+  if (F.hypeSpent) foe.hype = Math.max(0, foe.hype - F.hypeSpent);
 
   P.uses = usesFor(you, P);
   F.uses = usesFor(foe, F);
@@ -725,9 +999,12 @@ export function resolveExchange(match, action) {
   applyFinisher(match, P);
   applyFinisher(match, F);
 
-  // hype special — trades score for hype
-  if (P.special === 'hype') { P.extra *= TUNING.hypeSpecialScore; P.hypeMult = TUNING.hypeSpecialGain; P.specialFired = true; P.specialDetail = 'played to the room'; }
-  if (F.special === 'hype') { F.extra *= TUNING.hypeSpecialScore; F.hypeMult = TUNING.hypeSpecialGain; F.specialFired = true; F.specialDetail = 'played to the room'; }
+  // hype special — you stop performing at them and play to the gathering.
+  // This is only the price; the room it buys is handed over in step 8, with the
+  // other effects that land on the FOLLOWING turn. Setting it here would apply
+  // it to the Crowd Turn itself and clear it before the payoff ever arrived.
+  applyHype(match, P);
+  applyHype(match, F);
 
   // debuff owed from last turn — evade wipes it
   if (you.debuffIn !== 1) {
@@ -762,6 +1039,20 @@ export function resolveExchange(match, action) {
 
   let pCrowd = pOut.crowd, pJudge = pOut.judges;
   let fCrowd = fOut.crowd, fJudge = fOut.judges;
+
+  /*
+   * THE ROOM, turned last exchange by somebody's Crowd Turn.
+   *
+   * CROWD COMPONENT ONLY, and that is the whole design: `actScore` throws the
+   * crowd number away in a panel act, so turning the room in Act 3's empty lot
+   * or on Act 5's water changes nothing at all. There is no room there to turn.
+   */
+  if (you.roomWithIn !== 1) { pCrowd *= you.roomWithIn; P.roomWith = true; }
+  if (you.roomAwayIn !== 1) { pCrowd *= you.roomAwayIn; P.roomAway = true; }
+  if (foe.roomWithIn !== 1) { fCrowd *= foe.roomWithIn; F.roomWith = true; }
+  if (foe.roomAwayIn !== 1) { fCrowd *= foe.roomAwayIn; F.roomAway = true; }
+  you.roomWithIn = 1; you.roomAwayIn = 1;
+  foe.roomWithIn = 1; foe.roomAwayIn = 1;
 
   // guard — halves what lands on them, after every multiplier of theirs
   if (P.special === 'guard') {
@@ -802,6 +1093,10 @@ export function resolveExchange(match, action) {
   // debuff set for NEXT turn
   if (P.special === 'debuff') { foe.debuffIn = TUNING.debuffMult; P.specialFired = true; P.specialDetail = 'they pay next turn'; }
   if (F.special === 'debuff') { you.debuffIn = TUNING.debuffMult; F.specialFired = true; F.specialDetail = 'you pay next turn'; }
+
+  // the room, handed to the next turn — same slot as debuff, feint and persist
+  grantRoom(P, foe);
+  grantRoom(F, you);
 
   // feint — a cheap set-up for the next one
   if (P.special === 'feint') { you.bonusLinks += 1; P.specialFired = true; P.specialDetail = '+1 link next turn'; }
@@ -864,6 +1159,32 @@ export function resolveExchange(match, action) {
 /* -------------------------------------------------------------------------- */
 /* TURN HELPERS                                                                */
 /* -------------------------------------------------------------------------- */
+
+/**
+ * `hype` — Crowd Turn. Costs you this exchange, banks triple hype, and hands
+ * you the room for the next one while they perform to the back of it.
+ *
+ * `roomBlind` is not a failure — it is the move telling the truth about where
+ * it is standing. A panel does not turn.
+ */
+function applyHype(match, plan) {
+  if (plan.special !== 'hype') return;
+  plan.extra *= TUNING.hypeSpecialScore;
+  plan.hypeMult = TUNING.hypeSpecialGain;
+  plan.specialFired = true;
+  plan.roomTurned = match.round < match.rounds;
+  plan.specialDetail = match.scoring === 'judges'
+    ? 'no room to turn — a panel does not clap'
+    : plan.roomTurned ? 'the room turns with you'
+      : 'played to the room, with nothing left to spend it on';
+}
+
+/** Hand over the room. Step 8 only — see the note at the call site. */
+function grantRoom(plan, other) {
+  if (!plan.roomTurned) return;
+  plan.side.roomWithIn *= TUNING.roomSelf;
+  other.roomAwayIn *= TUNING.roomThem;
+}
 
 function applyHighRisk(plan) {
   if (plan.special !== 'highRisk') return;
@@ -970,6 +1291,8 @@ function turnReport(match, plan, ctx, out, score, crowd, judges, hype, side, lab
   if (plan.interrupted) status.push({ key: 'interrupted', label: 'CUT OFF' });
   if (plan.punished) status.push({ key: 'punished', label: 'REPEAT' });
   if (plan.carry > 0) status.push({ key: 'carry', label: 'STILL GOING' });
+  if (plan.roomWith) status.push({ key: 'roomWith', label: 'THE ROOM' });
+  if (plan.roomAway) status.push({ key: 'roomAway', label: 'BACKS TURNED' });
   if (plan.specialFired && plan.special) status.push({ key: plan.special, label: SPECIALS[plan.special].label });
 
   const report = {
@@ -1244,7 +1567,7 @@ export function policyAction(policy, match) {
     const pair = bestBlendPair(match);
     if (pair && pair.split > 0.55) {
       const a = getMove(match, pair.a);
-      return { blend: { a: pair.a, b: pair.b }, band: expertBand(rng), amp: clamp(((a.idealAmp + getMove(match, pair.b).idealAmp) / 2) + (rng() - 0.5) * 0.05, AMP_RANGE.min, AMP_RANGE.max) };
+      return { blend: { a: pair.a, b: pair.b }, band: expertBand(rng, match), amp: clamp(((a.idealAmp + getMove(match, pair.b).idealAmp) / 2) + (rng() - 0.5) * 0.05, AMP_RANGE.min, AMP_RANGE.max) };
     }
   }
 
@@ -1273,7 +1596,17 @@ export function policyAction(policy, match) {
       case 'feint': v *= you.links >= 1 ? 1.45 : 1.15; break;
       case 'persist': v *= 1.25; break;
       case 'highRisk': v *= 1.30; break;   // an expert hits their timing
-      case 'hype': v *= canBlend(match) ? 0.5 : 1.10; break;
+      case 'hype': {
+        /*
+         * Crowd Turn. An expert asks two questions: is there a room here, and
+         * have I got something worth spending it on next turn. A panel act
+         * answers the first one no, and the last round answers the second.
+         */
+        const room = match.scoring === 'judges' ? 0 : match.scoring === 'both' ? 0.5 : 1;
+        const wantsHype = you.hype < TUNING.blendCost ? 0.45 : 0.10;
+        v *= match.round >= match.rounds ? 0.15 : (0.45 + 1.70 * room + wantsHype);
+        break;
+      }
       case 'debuff': v *= 1.15; break;
       default: break;
     }
@@ -1288,12 +1621,25 @@ export function policyAction(policy, match) {
     if (v > bestV) { bestV = v; pick = m; }
   }
   if (!pick) pick = deck[0];
-  return { moveId: pick.id, band: expertBand(rng), amp: clamp(pick.idealAmp + (rng() - 0.5) * 0.06, AMP_RANGE.min, AMP_RANGE.max) };
+  return { moveId: pick.id, band: expertBand(rng, match), amp: clamp(pick.idealAmp + (rng() - 0.5) * 0.06, AMP_RANGE.min, AMP_RANGE.max) };
 }
 
-function expertBand(rng) {
+/**
+ * An expert hits the needle 85% of the time and never whiffs — on a still deck.
+ *
+ * Act 5 declares `needleSpeedMult: 1.75`, which is a real mechanic the UI
+ * honours: the needle crosses the perfect zone 45% faster, so the window is
+ * 45% narrower in time. Modelling the expert as equally perfect on the prow of
+ * a racing boat was the simulator quietly refusing to measure a rule the engine
+ * already publishes, and it flattered the top of the campaign by several points
+ * an act. Most of the perfects it costs land as cleans; the rest go shaky.
+ */
+function expertBand(rng, match) {
+  const speed = match && match.unstable ? TUNING.unstable.needleSpeedMult : 1;
+  const p = 0.85 / speed;
+  const c = p + 0.13 + (0.85 - p) * 0.72;
   const r = rng();
-  return r < 0.85 ? 'perfect' : r < 0.98 ? 'clean' : 'shaky';
+  return r < p ? 'perfect' : r < c ? 'clean' : 'shaky';
 }
 
 /**

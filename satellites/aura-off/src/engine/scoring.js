@@ -37,15 +37,37 @@ export function counterCategory(cat) {
 /* THE FACTOR TABLE — CONTRACT.md §5                                           */
 /* -------------------------------------------------------------------------- */
 
-export const TIMING = Object.freeze({ perfect: 2.0, clean: 1.35, shaky: 0.7, whiff: 0.3 });
+/**
+ * RECONCILED 2026-08-29. `AURA-BIBLE.md` §6 wrote this band BEFORE the second
+ * research pass; the composure curve came out of the Addendum AFTER it, from
+ * Aldama at Parque México finding the winner was the calmest performer rather
+ * than the loudest. The two numbers were never put in the same room.
+ *
+ * The old band was 2.0 / 1.35 / 0.7 / 0.3 — a 6.7x spread against composure's
+ * 2.5x. Timing therefore decided every exchange and the Addendum's "best
+ * mechanic in the game" could not move a result: an 85%-perfect player carried
+ * a mean timing multiplier of 1.90 against 1.09 for a random-timing one, a
+ * 1.75x edge nothing else in the system could answer.
+ *
+ * 1.5 / 1.2 / 0.8 / 0.4 is a 3.75x spread. Same shape, same ordering, same
+ * "a whiff really costs you" — half the authority. Director-approved.
+ */
+export const TIMING = Object.freeze({ perfect: 1.5, clean: 1.2, shaky: 0.8, whiff: 0.4 });
 export const TIMING_BANDS = ['perfect', 'clean', 'shaky', 'whiff'];
 export const TIMING_LABEL = Object.freeze({
   perfect: 'PERFECT', clean: 'CLEAN', shaky: 'SHAKY', whiff: 'WHIFF'
 });
 
 export const MATCHUP = Object.freeze({ advantage: 1.5, neutral: 1.0, disadvantage: 0.7 });
+/* The chips above a fighter's head get about 7 characters: the row is centred
+   on one fighter and has to clear the other's row. "ADVANTAGE" and
+   "DISADVANTAGE" were rendering as "ADVANTA…" and "DISADVA…", which is worse
+   than showing no chip at all. Chips and the multiplier breakdown line read the
+   same label, so shortening it here fixes both and keeps one source of truth.
+   COUNTER is the right word rather than a shortening — the real CDMX winner
+   said he studied his opponents' moves in order to counterattack. */
 export const MATCHUP_LABEL = Object.freeze({
-  advantage: 'ADVANTAGE', neutral: 'EVEN', disadvantage: 'DISADVANTAGE'
+  advantage: 'COUNTER', neutral: 'EVEN', disadvantage: 'CAUGHT'
 });
 
 /** Freshness by times already used this battle. Clamps at the last entry. */
@@ -149,8 +171,16 @@ export function idealAmp(move) {
 /* BLEND — REWARD THE SPLIT, PUNISH THE STACK                                  */
 /* -------------------------------------------------------------------------- */
 
-export const BLEND_FLOOR = 0.6;
-export const BLEND_GAIN = 1.4;
+/**
+ * CONTRACT §5 suggests `0.6 + 1.4 × split` and says in terms: "tune in the sim,
+ * but the sign of the effect is not negotiable." Tuned. A perfect split used to
+ * pay 1.72x, which made Blend the largest single multiplier in the game and the
+ * one the opponent had no access to at all — worth more than the whole timing
+ * band. 0.70 + 0.85 keeps a real split (1.44x) firmly above a stack (0.70x)
+ * while leaving room for everything else on the sheet to matter.
+ */
+export const BLEND_FLOOR = 0.7;
+export const BLEND_GAIN = 0.85;
 
 /** How much of a genuine split this pairing is: A's upper share × B's lower share. */
 export function splitQuality(a, b) {
@@ -160,10 +190,10 @@ export function splitQuality(a, b) {
 }
 
 /**
- * `0.6 + 1.4 × (A.up × B.lo)`.
+ * `0.70 + 0.85 × (A.up × B.lo)`.
  *
- * Six-Seven upper (up 1.0) over Aura Walk lower (lo 0.8) → 1.72×.
- * Six-Seven upper over Jawline lower (lo 0.0)            → 0.60×.
+ * Six-Seven upper (up 1.0) over Aura Walk lower (lo 0.8) → 1.38×.
+ * Six-Seven upper over Jawline lower (lo 0.0)            → 0.70×.
  *
  * The magnitudes are tunable in the sim. The sign of the effect is not.
  */
@@ -351,22 +381,60 @@ export function rawScore(ctx) {
 export const CROWD_CAT_WEIGHT = Object.freeze({ FLEX: 0.92, FLOW: 1.03, BAIT: 1.22 });
 export const JUDGE_CAT_WEIGHT = Object.freeze({ FLEX: 1.12, FLOW: 1.02, BAIT: 0.88 });
 
-/** How much each audience bends the shared factors. */
+/**
+ * How much each audience bends the shared factors.
+ *
+ * The composure exponents were raised on 2026-08-29 in the same pass that cut
+ * the timing band. Halving timing's spread hands the fight back to composure
+ * only if composure is actually being read, and at 0.55 the crowd was barely
+ * reading it: a player holding ±0.06 of ideal scored 3% better with the crowd
+ * than one wobbling ±0.30, which is not a mechanic, it is a rounding error.
+ *
+ * The relationship CONTRACT §5 asks for is preserved and widened — the panel
+ * still weights precision far above the crowd (2.85 against 1.35). The crowd
+ * now notices control; the panel is built out of it.
+ *
+ * `composure()` itself is untouched. Authority came from the weighting, which
+ * is where §5 says to go looking for it.
+ */
 export const CROWD_SHAPE = Object.freeze({
   timing: 0.85,        // forgives a wobble
-  composure: 0.55,     // cares much less about precision
+  composure: 2.20,     // notices control; still far below the panel
   freshness: 0.75,     // forgives a repeat, a bit
-  spectacle: 0.26,     // per unit of amplitude above 1.0
-  spectacleCap: 0.24,  // ceiling on the spectacle bonus
+  spectacle: 0.34,     // per unit of DELIVERED size above 1.0 — see below
+  spectacleCap: 0.22,  // ceiling on the spectacle bonus
   surprise: 1.12,      // switching category since your last move
   blend: 0.7           // sees the trick, half-credits it
 });
 
+/**
+ * `freshness` was 1.45 here, and at that exponent the panel was not scoring
+ * repertoire, it was scoring DECK SIZE. A rival whose whole authored character
+ * is three moves — The Rower, The Current, La Farola — plays them three times
+ * each across nine rounds and cannot do otherwise, landing on a raw 0.67 that
+ * the panel then compounded to 0.56, against 0.98 for a player carrying twenty
+ * cards. That single exponent was a flat 1.75x handicap on the two panel acts,
+ * applied for something the opponent had no way to change.
+ *
+ * At 1.15 the panel still punishes a repeat harder than the crowd does (0.75),
+ * which is all CONTRACT §5 asks of it, and the masher still cannot win a
+ * judged act — repeating is still the losing strategy, it is no longer a
+ * sentence passed on anyone with a small repertoire.
+ */
 export const JUDGE_SHAPE = Object.freeze({
-  timing: 1.10,        // full weight, and then some
-  composure: 1.60,     // technique is the whole job
-  freshness: 1.45,     // punishes repeats hard
-  blend: 1.35          // rewards a real split, because it is harder
+  /*
+   * 1.10 became 0.65 in the 2026-08-29 pass. CONTRACT §5 says what the panel
+   * rewards — "technique and freshness ... weight composure and freshness up,
+   * punish repeats harder, ignore spectacle" — and never once says timing.
+   * 1.10 was inherited, not sourced, and it meant the panel scored the needle
+   * MORE than the room did, which is backwards: the crowd reacts to the hit
+   * landing, the panel marks the body that produced it. Composure and repertoire
+   * are what a panel is for.
+   */
+  timing: 0.65,        // the panel is watching the body, not the needle
+  composure: 3.40,     // technique is the whole job
+  freshness: 1.15,     // punishes repeats harder than the crowd does
+  blend: 1.15          // rewards a real split, because it is harder
 });
 
 /**
@@ -412,7 +480,22 @@ export function scoreBoth(ctx) {
   const cTiming = 1 + (f.timing - 1) * CROWD_SHAPE.timing;
   const cComp = Math.pow(f.composure, CROWD_SHAPE.composure);
   const cFresh = Math.pow(f.freshness, CROWD_SHAPE.freshness);
-  const over = ctx.amp > 1 ? ctx.amp - 1 : 0;
+  /*
+   * SPECTACLE — the crowd pays for SIZE, composure pays for CONTROL.
+   *
+   * This used to read `ctx.amp - 1`, which paid the player a crowd bonus for
+   * overplaying — the exact thing composure exists to punish. The two
+   * mechanics were cancelling each other inside one function, and spectacle
+   * was winning up to +24% of it back.
+   *
+   * It now reads the size the move ASKS for, capped by the size you actually
+   * delivered. Giant Clog (ideal 1.50) committed to at 1.50 is a spectacle.
+   * The same clog thrown at 0.9 is not, and Still Water (ideal 0.90) is never
+   * one however hard you swing it — overplaying past ideal buys nothing here
+   * and still costs you the composure curve.
+   */
+  const delivered = Math.min(ctx.amp, idealAmp(m));
+  const over = delivered > 1 ? delivered - 1 : 0;
   const cSpec = 1 + Math.min(CROWD_SHAPE.spectacleCap, CROWD_SHAPE.spectacle * over);
   const cSurp = (ctx.prevCat && ctx.prevCat !== m.cat) ? CROWD_SHAPE.surprise : 1;
   const cBlend = ctx.blend ? 1 + (f.blend - 1) * CROWD_SHAPE.blend : 1;

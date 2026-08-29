@@ -9,11 +9,24 @@
    default and is wrong for this. Two glowing silhouettes on a flat colour
    field, standing inside a ring of people who came outside.
 
-   The crowd is not a meter. Aldama's whole reading is that the gathering IS
-   the point, so the ring is built twice: #crowd is the far side of it (heads
-   above the fighters, some with phones up) and #arena::after is the near side
-   (dark heads in front of you, backs turned). You are standing IN the ring,
-   not looking at a stage.
+   THE CROWD IS ONE SYSTEM AT TWO DISTANCES. Aldama's whole reading is that
+   the gathering IS the point, so the ring is drawn all the way round you:
+   #crowd is the FAR side (lit heads standing on the far kerb, level with the
+   fighters' heads, phones up) and #arena::after is the NEAR side (the backs of
+   the heads immediately in front of you). Both are built from the same glyph —
+   a head over a shoulder dome, head radius 0.58 of the shoulder half-width,
+   with the same raised arm and the same phone screen — so they read as one
+   gathering seen from inside it, not as two decorations. The far side is
+   translucent bone; the near side is near-black; the streetlight is the same
+   streetlight. You are standing IN the ring, not looking at a stage.
+
+   The far crowd is positioned OUT OF #top's flow and dropped into the arena
+   (#top is its containing block, `top: calc(100% + …)` puts it just under the
+   HUD). That is deliberate: as a band above the meter it was a strip of grey
+   capsules that read as a loading placeholder, and it left the middle of the
+   arena as a dead purple field with the fighters small and low beneath it.
+   The people belong in the square with the fighters, at the horizon, which is
+   where the eye goes.
 
    PALETTE IS LOCKED. Six colours, no others. Everything below is either one of
    the six, an alpha of one of the six, or plain black/white alpha used as
@@ -45,7 +58,11 @@
                         [disabled]                                -> unplayable
                       First child renders as the move name, later children as
                       the sub-line. Bare text works too.
-     #crowd > *       one element per person. No attributes required.
+     #crowd > *       one element per person. Renders as a person with NO
+                      attributes at all; hud.js additionally writes a per-index
+                      profile as inline custom properties (--w --h --hr --hy
+                      --sw --sh --hx --o --up --pre --px --parm) and the classes
+                      .film (filming) / .warm (backlit) / .lit-you / .lit-them.
      #fitGrid > *     one per fit. .on / [aria-pressed="true"] -> chosen.
      #actList > *     one per act. .locked / [data-locked] / [disabled] -> dim.
      .fighter > svg   rig.js mountFigure() inserts svg.rigsvg as first child.
@@ -107,6 +124,16 @@
   --r:10px;
   --r-lg:14px;
   --pad:12px;
+
+  /* THE SQUARE, in three numbers. The far crowd stands on the horizon; the
+     fighters' heads land on the same line, because they are the same height as
+     everyone else and that is what a horizon is. */
+  --crowd-drop:18px;   /* far crowd's top, measured down from the bottom of #top */
+  --crowd-h:152px;     /* how deep it is — the FRONT row stands at drop+h, and
+                          everything above that is headroom for the ranks
+                          behind. Short headroom clips them at the neck. */
+  --foot:44px;         /* the fighters' feet, above the bottom of the arena */
+  --near-h:46px;       /* the near side of the ring */
 
   --sat:env(safe-area-inset-top,0px);
   --sab:env(safe-area-inset-bottom,0px);
@@ -203,94 +230,170 @@ button{font:inherit;color:inherit;margin:0}
   padding:6px var(--pad) 8px;
 }
 
-/* ---- the crowd -------------------------------------------------------- */
-/* Twenty to forty people standing on the far side of the ring. They wrap
-   backwards so an overflow row lands ABOVE the first one — a second rank
-   further away, which is what a real gathering does. Each person is two
-   radial gradients: a head and a pair of shoulders. Nothing here is a bar,
-   a track, or a percentage. It fills up because more people showed up. */
+/* ---- the far crowd ---------------------------------------------------- */
+/* People who came outside on a Tuesday. Not a texture, not a bar: one node
+   per person, and hud.js gives every one of them its own width, height, head
+   size, head TURN, depth and gap so the row never tiles and never reads as a
+   progress bar. They stand in clumps — tight shoulder-to-shoulder groups with
+   real space between the groups — because that is what people do and an even
+   comb is the single thing this must never look like.
+
+   It lives in the arena, behind the fighters, at their head height. #top is
+   the containing block, so `top: calc(100% + drop)` measures down from the
+   bottom of the HUD, which is the top of the arena. #top has z-index 2 and
+   #arena has 5, so the far crowd is behind the floor, the fighters and the
+   near crowd — the correct depth order, for free. */
 
 #crowd{
-  position:relative;
+  position:absolute;
+  left:0;
+  right:0;
+  top:calc(100% + var(--crowd-drop));
+  height:var(--crowd-h);
   display:flex;
+  /* WRAP BACKWARDS: the first people fill the front row and everyone after
+     them starts a rank further back, which is both correct perspective and the
+     truth about who turned up when.
+
+     `wrap-reverse` INVERTS the cross axis, so `flex-start` here means the
+     BOTTOM of the line and `align-content:flex-start` packs the ranks from the
+     bottom up. That inversion is not a detail: with the obvious
+     `align-items:flex-end` every person hung DOWNWARD from a shared ceiling —
+     the tall ones grew towards the camera instead of standing on the ground,
+     and the back rank's heads were pushed out of the top of the band and
+     clipped off, which is where the row of headless shoulder-lumps came from.
+     Everyone stands on their rank's ground line. */
   flex-wrap:wrap-reverse;
-  align-items:flex-end;
+  align-items:flex-start;
+  align-content:flex-start;
   justify-content:center;
-  gap:0 1px;
-  height:48px;
-  min-height:48px;
+  gap:0;
+  /* THE RING IS AN ARC, NOT A WALL. Squeezing the content box well inside the
+     screen forces the row to wrap into two or three ranks, centred, so the
+     crowd is widest at the front and narrows going back — and, just as
+     importantly, stops the wrap from stranding ONE person alone on a line
+     above everybody else, which is what a full-width row did and it read as a
+     rendering fault rather than as a person. */
+  padding:0 11%;
+  /* One knob for how big everyone is. hud.js writes each person's own numbers
+     as inline custom properties — which beat any stylesheet rule — so a
+     breakpoint cannot resize them by re-declaring --w and --h. It scales them. */
+  --cscale:1;
   overflow:hidden;
-  color:var(--bone-26);
-  /* the lamp they are all standing under */
-  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 58%,#000 100%);
-  mask-image:linear-gradient(180deg,transparent 0,#000 58%,#000 100%);
+  pointer-events:none;
+  /* Distance, and the kerb they stand on. The top of the band DIMS rather than
+     cuts: a hard fade there sliced the heads off the back rank and left a row
+     of shoulder-lumps, which is the exact "loading placeholder" read this was
+     built to get rid of. Fade the far rank, never decapitate it. */
+  -webkit-mask-image:linear-gradient(180deg,transparent 0,rgba(0,0,0,.42) 13%,#000 32%,#000 78%,transparent 100%);
+  mask-image:linear-gradient(180deg,transparent 0,rgba(0,0,0,.42) 13%,#000 32%,#000 78%,transparent 100%);
+  transition:opacity .35s ease;
 }
 
+/* the streetlight they are all standing under, pooling on the far kerb */
 #crowd::before{
   content:'';
   position:absolute;
   left:50%;
-  bottom:-30px;
-  width:118%;
-  height:78px;
+  bottom:-14px;
+  width:124%;
+  height:74px;
   transform:translateX(-50%);
-  background:radial-gradient(60% 100% at 50% 100%, var(--lamp-20), transparent 72%);
+  background:radial-gradient(58% 100% at 50% 100%, var(--lamp-20), transparent 74%);
   pointer-events:none;
 }
 
+/* ONE PERSON.
+   Every var here is written by hud.js from a deterministic per-index profile,
+   and every one of them has a working default so a bare <i> still renders a
+   person if the JS supplies nothing at all.
+     --w/--h   footprint            --hr/--hy   head radius, head centre
+     --sw/--sh shoulder dome        --hx        head offset = which way they face
+     --o       how far away they are (opacity)  --up  how far back they stand
+     --pre     the gap before them = where the clumps break */
 #crowd > *{
+  --w:17px; --h:34px;
+  --hr:5.4px; --hy:6px;
+  --sw:8.5px; --sh:19px;
+  --hx:50%;
+  --o:.34; --up:0px; --pre:0px;
   position:relative;
   flex:0 0 auto;
-  width:12px;
-  height:22px;
-  margin-top:-4px;
-  color:inherit;
-  font-size:0;               /* a stray text node must not push the glyph */
+  width:calc(var(--w) * var(--cscale));
+  height:calc(var(--h) * var(--cscale));
+  /* The negative top margin is what makes the ranks OVERLAP. Without it each
+     wrapped line sits in its own clear band with air between, which reads as
+     shelves; with it the rank behind is half-hidden by the shoulders in front,
+     which is what standing behind somebody looks like. */
+  margin:calc(-16px * var(--cscale)) 0 calc(var(--up) * var(--cscale)) calc(var(--pre) * var(--cscale));
+  font-size:0;                 /* a stray text node must not push the glyph */
+  color:rgba(253,246,236,var(--o));
   background:
-    radial-gradient(circle 3.5px at 50% 4px, currentColor 96%, transparent 97%) no-repeat,
-    radial-gradient(ellipse 6px 10px at 50% 21px, currentColor 96%, transparent 97%) no-repeat;
+    radial-gradient(circle calc(var(--hr) * var(--cscale))
+      at calc(var(--hx) * var(--cscale)) calc(var(--hy) * var(--cscale)),
+      currentColor 96%, transparent 97%) no-repeat,
+    radial-gradient(ellipse calc(var(--sw) * var(--cscale)) calc(var(--sh) * var(--cscale))
+      at 50% 100%, currentColor 96%, transparent 97%) no-repeat;
 }
 
-/* Depth and irregularity. A crowd is never evenly spaced or evenly tall —
-   the "sloppy" note in CLAUDE.md cuts both ways, and a perfect comb of
-   identical dots reads as a progress bar, which is the exact thing this
-   must not read as. Three co-prime cycles give a crowd that never tiles. */
-#crowd > *:nth-child(3n+1){height:24px;color:var(--bone-44)}
-#crowd > *:nth-child(3n+2){height:20px;color:rgba(253,246,236,.20)}
-#crowd > *:nth-child(5n)  {height:23px;margin-left:2px}
-#crowd > *:nth-child(7n+3){height:19px;color:rgba(253,246,236,.17)}
-#crowd > *:nth-child(11n+5){margin-right:3px}
-#crowd > *:nth-child(4n)  {transform:translateY(1px)}
-#crowd > *:nth-child(9n+2){transform:translateY(-1px)}
+/* Backlit. One in about seven is standing between you and a streetlight. */
+#crowd > .warm{color:rgba(255,182,39,var(--o))}
 
-/* Phones up. Every seventh person is filming, because the documented
-   mechanism is that the street feeds the networks and the networks fill the
-   street. Opacity only — cheap enough to leave running. */
-#crowd > *:nth-child(7n+2)::after,
-#crowd > *:nth-child(13n+6)::after{
+/* Whoever just did that catches the light of it. Set as a class, never as an
+   inline colour, so it cannot clobber the person's own tone on the way out. */
+#crowd > .lit-you {color:var(--you)}
+#crowd > .lit-them{color:var(--them)}
+
+/* FILMING. Everyone films — that is the documented mechanism by which the
+   street feeds the networks and the networks fill the street. So it is drawn
+   as an arm and a lit screen, not as a dot hovering above a head. */
+#crowd > .film::after{        /* the arm */
   content:'';
   position:absolute;
-  top:-2px;
-  left:50%;
-  width:4px;
-  height:4px;
-  margin-left:-2px;
-  border-radius:50%;
+  left:calc(var(--px,11px) * var(--cscale));
+  bottom:calc(var(--h) * var(--cscale) * .34);
+  width:2px;
+  height:calc(var(--h) * var(--cscale) * .40);
+  margin-left:-1px;
+  border-radius:1px;
+  background:currentColor;
+  transform-origin:50% 100%;
+  transform:rotate(var(--parm,-9deg));
+}
+#crowd > .film::before{       /* the screen */
+  content:'';
+  position:absolute;
+  left:calc(var(--px,11px) * var(--cscale));
+  bottom:calc(var(--h) * var(--cscale) * .70);
+  width:4.5px;
+  height:6.5px;
+  margin-left:-2.2px;
+  border-radius:1.2px;
   background:var(--lamp);
-  box-shadow:0 0 7px 2px var(--lamp-40);
-  opacity:0;
+  box-shadow:0 0 9px 2px var(--lamp-40);
+  opacity:.5;
   animation:aoFlash 7.5s linear infinite;
 }
-#crowd > *:nth-child(13n+6)::after{animation-duration:9.5s;animation-delay:-3.1s;background:var(--bone)}
-#crowd > *:nth-child(14n+2)::after{animation-delay:-1.7s}
-#crowd > *:nth-child(21n+9)::after{animation-delay:-5.3s}
+#crowd > .film:nth-child(3n)::before  {animation-duration:9.5s;animation-delay:-3.1s;background:var(--bone)}
+#crowd > .film:nth-child(4n+1)::before{animation-delay:-1.7s}
+#crowd > .film:nth-child(5n+2)::before{animation-delay:-5.3s}
+
+/* A roar puts every phone up at once. */
+#crowd.roar > .film::before{animation:aoBurst .9s ease-out}
 
 @keyframes aoFlash{
-  0%,86%{opacity:0}
-  88%{opacity:1}
-  92%{opacity:.25}
-  94%{opacity:.9}
-  100%{opacity:0}
+  0%,84%{opacity:.42}
+  86%{opacity:1}
+  90%{opacity:.5}
+  93%{opacity:1}
+  100%{opacity:.42}
+}
+
+@keyframes aoBurst{
+  0%{opacity:.42}
+  12%{opacity:1}
+  60%{opacity:.9}
+  100%{opacity:.42}
 }
 
 /* ---- the meter -------------------------------------------------------- */
@@ -336,17 +439,23 @@ button{font:inherit;color:inherit;margin:0}
      — cutting "Tuesday. Nothing else on anywhere. The square …" mid-sentence
      throws away the one voice in the game that speaks to the player. Height is
      reserved for both lines so the arena below never jumps between rounds. */
-  min-height:38px;
+  /* Three lines, not two. Eleven of the MC's lines run past 88 characters and
+     were clipping — including the one that carries the whole premise of Act 5,
+     "forty metres of carved wood, sixty rowers behind you, and a river with no
+     intention of holding still." The longest is 128 chars; at .72rem mono that
+     is three lines with room to spare. The writing is good, so the container
+     serves the copy rather than the other way round. */
+  min-height:54px;
   font-family:var(--mono);
-  font-size:.76rem;
-  line-height:19px;
-  letter-spacing:.01em;
+  font-size:.72rem;
+  line-height:18px;
+  letter-spacing:0;
   color:var(--lamp);
   text-align:center;
   display:-webkit-box;
   -webkit-box-orient:vertical;
-  -webkit-line-clamp:2;
-  line-clamp:2;
+  -webkit-line-clamp:3;
+  line-clamp:3;
   overflow:hidden;
   text-wrap:balance;
   padding:0 6px;
@@ -423,74 +532,125 @@ button{font:inherit;color:inherit;margin:0}
   z-index:0;
   pointer-events:none;
   background:
-    radial-gradient(54% 44% at 15% 2%, rgba(255,182,39,.21), transparent 70%),
-    radial-gradient(50% 40% at 87% -4%, rgba(255,182,39,.13), transparent 72%),
+    /* two sodium lamps, off-centre, hanging over the far side of the square */
+    radial-gradient(54% 40% at 15% 0%, rgba(255,182,39,.22), transparent 70%),
+    radial-gradient(50% 36% at 87% -6%, rgba(255,182,39,.14), transparent 72%),
+    /* the far edge of the square: a low dark mass behind the crowd, so the
+       horizon has a KERB and the people are standing in front of something */
+    linear-gradient(180deg,
+      rgba(20,8,36,0) calc(var(--crowd-drop) + var(--crowd-h) - 54px),
+      rgba(20,8,36,.24) calc(var(--crowd-drop) + var(--crowd-h) - 6px),
+      rgba(20,8,36,.10) calc(var(--crowd-drop) + var(--crowd-h) + 34px),
+      rgba(20,8,36,0) calc(var(--crowd-drop) + var(--crowd-h) + 80px)),
     radial-gradient(84% 46% at 50% 128%, rgba(43,20,80,.5), transparent 74%),
-    /* the last of the daylight, so a tall arena on a tablet still falls from
-       sky to ground instead of sitting as one flat purple field */
-    linear-gradient(180deg, rgba(43,20,80,.55) 0, rgba(43,20,80,0) 46%);
-  opacity:.86;
+    /* the last of the daylight. Light, and short: at .55 down to 46% it was a
+       purple veil sitting exactly where the crowd stands and it drained them. */
+    linear-gradient(180deg, rgba(43,20,80,.34) 0, rgba(43,20,80,0) 26%);
+  opacity:.9;
   transition:opacity .35s ease;
 }
 
-/* The near side of the ring: the backs of the heads in front of you. Four
-   tiled gradient layers at co-prime widths, so the row never visibly repeats
-   across a phone. This sits IN FRONT of the fighters' feet on purpose — you
-   are in the crowd, not in the audience. */
+/* THE NEAR SIDE OF THE RING — the same person, two metres away.
+   Same glyph as #crowd: a head over a shoulder dome at the same 0.58 ratio,
+   the same raised arm, the same lit phone screen. Only the distance changed,
+   so it is near-black instead of translucent bone and about 2.4x the size.
+   Four tiles at co-prime widths (29 / 37 / 53) and a fifth, very wide one
+   carrying the phones, so nothing visibly repeats across a phone screen.
+
+   It sits IN FRONT of the fighters' feet on purpose — you are in the crowd,
+   not in the audience. */
 #arena::after{
   content:'';
   position:absolute;
   left:-6%;
   right:-6%;
-  bottom:-12px;              /* bleeds over the top of the deck panel, so the
+  bottom:-14px;              /* bleeds over the top of the deck panel, so the
                                 row of heads is cut off by the FRAME, not by a
                                 seam between two boxes */
-  height:45px;
+  height:var(--near-h);
   z-index:3;
   pointer-events:none;
-  background:
-    radial-gradient(circle 6.5px at 12px 11px, var(--silhouette) 97%, transparent 98%) 0 0/29px 45px repeat-x,
-    radial-gradient(ellipse 12px 18px at 12px 36px, var(--silhouette) 97%, transparent 98%) 0 0/29px 45px repeat-x,
-    radial-gradient(circle 7.5px at 9px 15px, var(--silhouette) 97%, transparent 98%) 7px 0/41px 45px repeat-x,
-    radial-gradient(ellipse 14px 19px at 9px 41px, var(--silhouette) 97%, transparent 98%) 7px 0/41px 45px repeat-x,
-    linear-gradient(to top, rgba(255,182,39,.09), transparent 54%);
+  background:var(--near-crowd);
+}
+
+/* The glyph itself, shared verbatim with .screen::after so the square is the
+   same square on every screen in the game. The px coordinates below are laid
+   out for a 54px band, which is what --near-h is; the shorter breakpoints
+   scale the band down and the tiles simply crop from the top, which is the
+   correct thing for a row of heads. */
+:root{
+  --near-crowd:
+    /* THE PHONES. An arm rising out of the shoulder mass with a hand on the
+       end of it and a lit screen above that — the screen alone read as an
+       orange pill hovering over the crowd with nothing holding it up. Tiles of
+       167 and 211 px, co-prime with the heads, so two or three people in the
+       near ring are filming and the rest are just watching. */
+    radial-gradient(ellipse 3.2px 5.4px at 48px 6px, rgba(255,182,39,.9) 94%, transparent 95%) 0 0/167px 54px repeat-x,
+    radial-gradient(circle 3.8px at 48px 13px, var(--silhouette) 96%, transparent 97%) 0 0/167px 54px repeat-x,
+    radial-gradient(ellipse 4.2px 15px at 48px 28px, var(--silhouette) 96%, transparent 97%) 0 0/167px 54px repeat-x,
+    radial-gradient(ellipse 3.2px 5.4px at 122px 9px, rgba(253,246,236,.75) 94%, transparent 95%) 0 0/211px 54px repeat-x,
+    radial-gradient(circle 3.6px at 122px 16px, var(--silhouette) 96%, transparent 97%) 0 0/211px 54px repeat-x,
+    radial-gradient(ellipse 4px 14px at 122px 31px, var(--silhouette) 96%, transparent 97%) 0 0/211px 54px repeat-x,
+    /* front row, closest and biggest — one head per 71px, so a phone screen is
+       roughly a head wide and the row reads as PEOPLE rather than as a hedge */
+    radial-gradient(circle 14px at 34px 17px, var(--silhouette) 97%, transparent 98%) 0 0/71px 54px repeat-x,
+    radial-gradient(ellipse 25px 34px at 34px 55px, var(--silhouette) 97%, transparent 98%) 0 0/71px 54px repeat-x,
+    /* the row behind it */
+    radial-gradient(circle 11px at 22px 24px, var(--silhouette) 97%, transparent 98%) 16px 0/59px 54px repeat-x,
+    radial-gradient(ellipse 19.5px 29px at 22px 55px, var(--silhouette) 97%, transparent 98%) 16px 0/59px 54px repeat-x,
+    /* and one more, further back and smaller, filling the gaps */
+    radial-gradient(circle 8.5px at 12px 30px, var(--silhouette) 97%, transparent 98%) 7px 0/41px 54px repeat-x,
+    radial-gradient(ellipse 14px 23px at 12px 55px, var(--silhouette) 97%, transparent 98%) 7px 0/41px 54px repeat-x,
+    /* the streetlight catching the tops of their shoulders */
+    linear-gradient(to top, rgba(255,182,39,.10), transparent 60%);
 }
 
 /* ---- the floor -------------------------------------------------------- */
+/* Concrete, and the thing the fighters are standing ON. Before this it was a
+   gradient nobody could see and two figures floating over it. */
 
 .floor{
   position:absolute;
   left:0;
   right:0;
   bottom:0;
-  height:54%;
+  height:58%;
   z-index:1;
   overflow:hidden;
   pointer-events:none;
-  background:linear-gradient(to bottom,
-    rgba(43,20,80,0) 0,
-    rgba(43,20,80,.16) 30%,
-    rgba(26,11,46,.72) 78%,
-    rgba(26,11,46,.9) 100%);
+  background:
+    /* The two lamps, landing on the two people they are lit for. */
+    radial-gradient(32% 26% at 22% 74%, rgba(255,182,39,.15), transparent 74%),
+    radial-gradient(32% 26% at 78% 74%, rgba(255,182,39,.15), transparent 74%),
+    /* THE CIRCLE. Twenty feet of pavement that belongs to two teenagers for
+       twenty minutes. It is the oldest shape in this culture, it was not on
+       screen at all, and it is also the reason a contact shadow can be SEEN:
+       there is no such thing as a shadow on an unlit floor. */
+    radial-gradient(74% 44% at 50% 68%, rgba(255,182,39,.15), rgba(255,182,39,.05) 60%, transparent 82%),
+    linear-gradient(to bottom,
+      rgba(43,20,80,0) 0,
+      rgba(43,20,80,.14) 26%,
+      rgba(26,11,46,.44) 74%,
+      rgba(26,11,46,.68) 100%);
 }
 
-/* Concrete. A real receding pavement grid, laid flat by one static
-   perspective transform and masked out toward the horizon. */
+/* A real receding pavement grid, laid flat by one static perspective
+   transform and masked out toward the horizon. */
 .floor::before{
   content:'';
   position:absolute;
   inset:-14% -40%;
   background:
-    repeating-linear-gradient(90deg, rgba(253,246,236,.17) 0 1.5px, transparent 1.5px 46px),
-    repeating-linear-gradient(180deg, rgba(253,246,236,.13) 0 1.5px, transparent 1.5px 30px),
-    repeating-linear-gradient(180deg, rgba(0,0,0,.16) 0 1px, transparent 1px 30px) 0 2px;
+    repeating-linear-gradient(90deg, rgba(253,246,236,.30) 0 1.5px, transparent 1.5px 46px),
+    repeating-linear-gradient(180deg, rgba(253,246,236,.24) 0 1.5px, transparent 1.5px 30px),
+    repeating-linear-gradient(180deg, rgba(0,0,0,.26) 0 1px, transparent 1px 30px) 0 2px;
   transform:perspective(210px) rotateX(64deg);
   transform-origin:50% 100%;
-  /* Peaks in the band between the near crowd's heads and the fighters'
-     knees — that is the only strip of pavement the player can actually see,
-     so that is where the paving has to be legible. */
-  -webkit-mask-image:linear-gradient(to top,rgba(0,0,0,.3) 0,#000 24%,rgba(0,0,0,.55) 60%,transparent 92%);
-  mask-image:linear-gradient(to top,rgba(0,0,0,.3) 0,#000 24%,rgba(0,0,0,.55) 60%,transparent 92%);
+  /* Peaks in the band the fighters actually stand in — between the near
+     crowd's heads and their own knees. That strip is the only pavement the
+     player can see, so that is where the paving has to be legible. */
+  -webkit-mask-image:linear-gradient(to top,rgba(0,0,0,.35) 0,#000 22%,#000 58%,rgba(0,0,0,.45) 78%,transparent 96%);
+  mask-image:linear-gradient(to top,rgba(0,0,0,.35) 0,#000 22%,#000 58%,rgba(0,0,0,.45) 78%,transparent 96%);
 }
 
 /* The horizon: warm spill where the light dies into the paving. */
@@ -501,37 +661,35 @@ button{font:inherit;color:inherit;margin:0}
   right:0;
   top:0;
   height:44px;
-  background:radial-gradient(96% 100% at 50% 0, rgba(255,182,39,.09), transparent 76%);
+  background:radial-gradient(96% 100% at 50% 0, rgba(255,182,39,.10), transparent 76%);
 }
 
 /* ---- the fighters ----------------------------------------------------- */
-/* rig.js draws an svg.rigsvg with viewBox 0 0 120 220, preserveAspectRatio
-   xMidYMax, floor line at y=200 — so the feet land 9.1% of the box height
-   above its bottom edge. bottom:26px therefore stands them at roughly the
-   40px line, just behind the near crowd. Colour is currentColor all the way
-   down the rig, so ONE declaration paints a fighter. */
+/* rig.js draws an svg.rigsvg with viewBox 0 20 120 200 and
+   preserveAspectRatio xMidYMax, so the FLOOR LINE (y=200) always lands exactly
+   10% of the rendered height above the bottom of the box, whatever body the
+   build gave this fighter. That constant is what lets the contact shadow below
+   sit on the ground without measuring anything.
+
+   They are the subject of this screen, so they are sized off the arena and
+   they own most of it. Colour is currentColor all the way down the rig, so ONE
+   declaration paints a fighter. */
 
 .fighter{
   position:absolute;
-  /* Stands them BEHIND the near crowd with a strip of pavement showing
-     between their feet and the heads — otherwise the concrete never appears
-     on screen at all and the plaza reads as a flat purple field. */
-  bottom:38px;
+  bottom:var(--foot);
   z-index:2;
-  width:min(42%,158px);
-  /* Sized so the three-row label stack above the head still clears the top of
-     the arena on the WORST case — a 27-move deck at its max height on a 667px
-     screen, which leaves the arena only ~220px. Measured, not guessed. */
-  height:min(56%,180px);
+  width:min(44%,168px);
+  height:min(67%,220px);
 }
 
 #you{
-  left:4%;
+  left:3%;
   color:var(--you);
 }
 
 #them{
-  right:4%;
+  right:3%;
   color:var(--them);
 }
 
@@ -545,6 +703,7 @@ button{font:inherit;color:inherit;margin:0}
   inset:0;
   width:100%;
   height:100%;
+  z-index:3;                 /* over the light pool and the contact shadow */
   overflow:visible;          /* a fat glow stroke must not clip at the arms */
   pointer-events:none;
 }
@@ -553,11 +712,11 @@ button{font:inherit;color:inherit;margin:0}
    under-stroke, so this is the room's response to them, not an outline. */
 .aura{
   position:absolute;
-  z-index:-1;
+  z-index:0;
   left:50%;
-  bottom:-4%;
-  width:126%;
-  height:76%;
+  bottom:2%;
+  width:120%;
+  height:70%;
   transform:translateX(-50%);
   border-radius:50%;
   background:radial-gradient(closest-side,
@@ -577,18 +736,40 @@ button{font:inherit;color:inherit;margin:0}
   50%{transform:translateX(-50%) scale(1.07)}
 }
 
-/* The pool of light at the feet, so nobody floats. */
+/* Their colour spilling onto the wet concrete. Wide and soft. */
 .fighter::before{
   content:'';
   position:absolute;
+  z-index:1;
   left:50%;
-  bottom:5%;
-  width:78%;
+  bottom:3%;
+  width:96%;
+  height:30px;
+  transform:translateX(-50%);
+  border-radius:50%;
+  background:radial-gradient(closest-side, currentColor 0, rgba(0,0,0,0) 74%);
+  opacity:.22;
+  pointer-events:none;
+}
+
+/* CONTACT. Not a glow — the dark a body puts on the ground directly under
+   itself. Tight, dark, and parked on the floor line (10% of the box height,
+   see the viewBox note above), which is the difference between a person
+   standing on concrete and a sticker floating over it. */
+.fighter::after{
+  content:'';
+  position:absolute;
+  z-index:2;
+  left:50%;
+  bottom:8%;
+  width:58%;
   height:16px;
   transform:translateX(-50%);
   border-radius:50%;
-  background:radial-gradient(closest-side, currentColor 0, rgba(0,0,0,0) 76%);
-  opacity:.30;
+  background:radial-gradient(closest-side,
+    rgba(4,1,9,.92) 0,
+    rgba(4,1,9,.62) 46%,
+    rgba(4,1,9,0) 100%);
   pointer-events:none;
 }
 
@@ -608,7 +789,7 @@ button{font:inherit;color:inherit;margin:0}
 }
 
 .statusrow{
-  bottom:calc(100% + 1px);
+  bottom:calc(100% - 6px);
   display:flex;
   gap:4px;
   align-items:center;
@@ -640,7 +821,7 @@ button{font:inherit;color:inherit;margin:0}
 }
 
 .movename{
-  bottom:calc(100% + 18px);
+  bottom:calc(100% + 11px);
   max-width:15ch;
   overflow:hidden;
   text-overflow:ellipsis;
@@ -656,7 +837,7 @@ button{font:inherit;color:inherit;margin:0}
 /* The callout speaks the culture's own language — +1000 AURA, AURA 100%,
    PERDIÓ AURA, AURA INFINITA. Never an invented unit (CONTRACT §12). */
 .callout{
-  bottom:calc(100% + 38px);
+  bottom:calc(100% + 31px);
   z-index:6;
   padding:0 8px;
   border-radius:99px;
@@ -1218,21 +1399,18 @@ body[data-state="timing"] #timing,
 
 @keyframes aoFade{from{opacity:0}to{opacity:1}}
 
-/* the near crowd is at every location, because every location is a square */
+/* the near crowd is at every location, because every location is a square —
+   and it is the SAME near crowd, off the same variable as the arena's */
 .screen::after{
   content:'';
   position:absolute;
   left:-6%;
   right:-6%;
-  bottom:0;
-  height:34px;
+  bottom:-6px;
+  height:var(--near-h);
   pointer-events:none;
-  background:
-    radial-gradient(circle 6.5px at 12px 13px, var(--silhouette) 97%, transparent 98%) 0 0/29px 34px repeat-x,
-    radial-gradient(ellipse 12px 16px at 12px 34px, var(--silhouette) 97%, transparent 98%) 0 0/29px 34px repeat-x,
-    radial-gradient(circle 7.5px at 9px 16px, var(--silhouette) 97%, transparent 98%) 7px 0/41px 34px repeat-x,
-    radial-gradient(ellipse 14px 17px at 9px 38px, var(--silhouette) 97%, transparent 98%) 7px 0/41px 34px repeat-x;
-  opacity:.85;
+  background:var(--near-crowd);
+  opacity:.9;
 }
 
 .screen > *{position:relative;z-index:1;flex:0 0 auto;max-width:100%}
@@ -1513,7 +1691,10 @@ body[data-state="resolving"] #deck{
 body[data-state="resolving"] .prompt{color:var(--bone-26)}
 body[data-state="resolving"] #arena::before{opacity:1}
 body[data-state="resolving"] .aura{opacity:.24}
-body[data-state="resolving"] #crowd{color:var(--bone-44)}
+/* the square leans in, it does not light up — the colour of a person is
+   their own and hud.js is the only thing allowed to change it */
+body[data-state="resolving"] #crowd{opacity:1}
+body[data-state="ready"] #crowd{opacity:.92}
 
 /* OVER: the battle is finished, the deck is a record, not a control. */
 body[data-state="over"] #deck{
@@ -1534,25 +1715,26 @@ body:not([data-state="timing"]) #timing:not(.on){display:none}
 /* Short phones (iPhone SE at 667 and anything shorter). Give the arena back
    the room by trimming the chrome, never by shrinking a touch target. */
 @media (max-height:680px){
-  #crowd{height:44px;min-height:44px}
-  .fighter{height:min(53%,164px);bottom:36px}
+  :root{--crowd-drop:12px;--crowd-h:142px;--foot:38px;--near-h:50px}
+  #crowd{--cscale:.95}
+  .fighter{height:min(64%,196px)}
   #deck{max-height:292px;max-height:min(43dvh,292px)}
   .track{height:42px}
   #holdpad{min-height:80px}
 }
 
 @media (max-height:600px){
-  #crowd{height:34px;min-height:34px}
-  #crowd > *{height:19px;width:11px}
+  :root{--crowd-drop:0px;--crowd-h:80px;--foot:30px;--near-h:40px}
+  #crowd{--cscale:.72;padding:0 8%}
   .mcbar{font-size:.72rem}
   #deck{max-height:300px;max-height:min(50dvh,300px)}
   /* The arena is under 200px here, so the three-row label stack no longer
      clears the tags. Shrink the figure and tighten the stack instead of
      letting a callout land on top of the HUD. */
-  .fighter{height:min(48%,150px);bottom:30px}
-  .statusrow{bottom:100%}
-  .movename{bottom:calc(100% + 14px);font-size:.7rem}
-  .callout{bottom:calc(100% + 30px);font-size:.92rem}
+  .fighter{height:min(58%,168px)}
+  .statusrow{bottom:calc(100% - 8px)}
+  .movename{bottom:calc(100% + 6px);font-size:.7rem}
+  .callout{bottom:calc(100% + 25px);font-size:.92rem}
   .callout.big,.callout[data-tone="big"]{font-size:1.15rem}
   #title h1.shout{font-size:clamp(2.4rem,13vw,3.2rem)}
 }
@@ -1568,10 +1750,11 @@ body:not([data-state="timing"]) #timing:not(.on){display:none}
   .stage{
     box-shadow:0 0 0 1px var(--bone-07), 0 0 90px rgba(6,2,12,.7);
   }
-  #crowd{height:50px;min-height:50px}
+  :root{--crowd-drop:30px;--crowd-h:180px;--foot:56px;--near-h:64px}
+  #crowd{--cscale:1.24}
   /* The px cap has to rise with the arena or a tablet gets a tall empty
      field above two small figures. Percentage leads; the cap is a backstop. */
-  .fighter{width:min(36%,210px);height:min(58%,360px);bottom:52px}
+  .fighter{width:min(38%,232px);height:min(70%,400px)}
   .callout{font-size:1.2rem}
   .fitgrid{grid-template-columns:repeat(3,minmax(0,1fr))}
   #fitGrid > *:last-child:nth-child(odd){grid-column:auto}
@@ -1601,7 +1784,8 @@ body:not([data-state="timing"]) #timing:not(.on){display:none}
     scroll-behavior:auto !important;
   }
   .aura{transform:translateX(-50%);opacity:.17}
-  #crowd > *::after{opacity:.55}
+  /* the phones stay lit rather than flashing — the crowd is still filming */
+  #crowd > .film::before{animation:none;opacity:.8}
   .callout:not(:empty),
   .callout.pop{animation:none;opacity:1;transform:translateX(-50%)}
 }
@@ -1636,8 +1820,8 @@ body:not([data-state="timing"]) #timing:not(.on){display:none}
   .stage{grid-template-rows:auto minmax(84px,1fr) auto}
 
   #top{gap:4px;padding:4px var(--pad) 5px}
-  #crowd{height:24px;min-height:24px}
-  #crowd > *{height:16px;width:10px;margin-top:-2px}
+  :root{--crowd-drop:0px;--crowd-h:66px;--foot:20px;--near-h:38px}
+  #crowd{--cscale:.6;padding:0 6%}
   #crowd::before{display:none}
   .meter{height:7px}
   .mcbar{min-height:16px;line-height:16px;font-size:.72rem}
@@ -1648,11 +1832,11 @@ body:not([data-state="timing"]) #timing:not(.on){display:none}
      honest thing to drop is the label stack: the move name is already on the
      card the player just tapped, and the status chips are secondary. The
      score callout stays, because that is the feedback the turn exists for. */
-  .fighter{height:min(56%,124px);bottom:20px}
+  .fighter{height:min(84%,152px)}
   .movename,.statusrow{display:none}
-  .callout{bottom:calc(100% - 2px);font-size:.84rem}
+  .callout{bottom:calc(100% - 8px);font-size:.84rem}
   .callout.big,.callout[data-tone="big"]{font-size:1rem}
-  #arena::after{height:34px;bottom:-6px}
+  #arena::after{bottom:-8px}
 
   #deck{
     max-height:230px;

@@ -4,7 +4,23 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#1A0B2E">
+<meta name="description" content="A turn-based gesture duel. Two people, a crowd, no words and no contact.">
+
+<!-- BUILD STAMP. Bump this AND the matching BUILD in sw.js on every deploy.
+     A deployed page can then be proved new by grepping the live HTML for the
+     stamp, rather than by trusting a 200. -->
+<meta name="build" content="20260829a">
+
 <title>AURA OFF</title>
+
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Aura Off">
+
 <link rel="stylesheet" href="src/ui/style.css">
 </head>
 <body>
@@ -82,5 +98,37 @@
   </div>
 </div>
 <script type="module" src="src/main.js"></script>
+
+<!-- ==========================================================================
+     SERVICE WORKER REGISTRATION - DEFENSIVE ON PURPOSE
+     ==========================================================================
+     Offline is a bonus. The game must boot and play if every line below fails.
+     So this runs AFTER the module tag, never blocks it, and swallows
+     everything: no `serviceWorker` (old browser, or any browser on file://),
+     a throw on the property read itself (some embedded webviews), a rejected
+     registration (no HTTPS, blocked by policy, a 404 on sw.js). None of it is
+     allowed to reach the page.
+     ========================================================================== -->
+<script>
+(function () {
+  try {
+    if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
+    // A worker needs a secure context. file:// and plain http on a remote host
+    // both reject, and the rejection is noisy for no benefit.
+    var secure = (location.protocol === 'https:') ||
+                 location.hostname === 'localhost' ||
+                 location.hostname === '127.0.0.1' ||
+                 location.hostname === '[::1]';
+    if (!secure) return;
+    window.addEventListener('load', function () {
+      try {
+        navigator.serviceWorker.register('sw.js', { scope: './' })
+          .then(function (reg) { try { reg.update(); } catch (e) {} })
+          .catch(function () { /* offline support unavailable; the game is fine */ });
+      } catch (e) { /* ignore */ }
+    });
+  } catch (e) { /* ignore */ }
+})();
+</script>
 </body>
 </html>

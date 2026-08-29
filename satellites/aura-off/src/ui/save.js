@@ -203,15 +203,70 @@ function sanitise(raw) {
  *
  * @returns {Object}
  */
+/**
+ * Fold the in-memory mirror forward onto what is currently on disk.
+ *
+ * ONLY used once a write has actually failed (`_degraded`). Until then disk is
+ * authoritative and this is never called.
+ *
+ * Why it has to exist: a quota-exceeded write throws MID-SESSION. The mirror
+ * then holds the live run and the disk still holds the state from before the
+ * failure. Without this fold, the very next `read()` would hand the game that
+ * older disk record and the player would watch the last few rounds of progress
+ * quietly roll back. Losing a save is a disappointment; losing the run in
+ * progress is a bug.
+ *
+ * Counters take a MAX here, not a sum. The mirror already contains every
+ * increment this tab has made, including the ones that DID reach disk before
+ * the failure, so adding would double-count our own writes. Max never loses
+ * this tab's run and never inflates a number.
+ *
+ * @param {Object} disk   sanitised state read from storage
+ * @param {Object} mirror sanitised last-known-good in-memory state
+ * @returns {Object}
+ */
+function mergeForward(disk, mirror) {
+  const out = sanitise(disk);
+  const m = sanitise(mirror);
+  const maxOf = function (a, b) { return a > b ? a : b; };
+
+  // unions — an unlock must never disappear
+  for (let i = 0; i < m.deck.length; i++) {
+    if (out.deck.indexOf(m.deck[i]) === -1 && out.deck.length < MAX_IDS) out.deck.push(m.deck[i]);
+  }
+  for (let j = 0; j < m.beaten.length; j++) {
+    if (out.beaten.indexOf(m.beaten[j]) === -1 && out.beaten.length < MAX_IDS) out.beaten.push(m.beaten[j]);
+  }
+
+  out.battles = maxOf(out.battles, m.battles);
+  out.wins = maxOf(out.wins, m.wins);
+  out.losses = maxOf(out.losses, m.losses);
+  out.flawless = maxOf(out.flawless, m.flawless);
+  out.bestAura = maxOf(out.bestAura, m.bestAura);
+  out.bestMeter = maxOf(out.bestMeter, m.bestMeter);
+
+  // one-shots are sticky in both directions
+  out.seenHow = out.seenHow || m.seenHow;
+  out.seenUpriver = out.seenUpriver || m.seenUpriver;
+
+  // the fit is a live choice, so this session's pick wins
+  out.fit = m.fit;
+  return out;
+}
+
 export function read() {
   const s = store();
-  if (!s) return _mirror ? sanitise(_mirror) : (_mirror = defaultState(), sanitise(_mirror));
+  if (!s) {
+    if (!_mirror) _mirror = defaultState();
+    return sanitise(_mirror);
+  }
   let raw = null;
   try {
     raw = s.getItem(SAVE_KEY);
   } catch (e) {
     _degraded = true;
-    return _mirror ? sanitise(_mirror) : defaultState();
+    if (!_mirror) _mirror = defaultState();
+    return sanitise(_mirror);
   }
   if (raw == null || raw === '') {
     _mirror = _mirror || defaultState();
@@ -226,7 +281,10 @@ export function read() {
     // not trust it today.
     parsed = null;
   }
-  const clean = sanitise(parsed);
+  let clean = sanitise(parsed);
+  // Disk is authoritative right up until the moment a write fails. After that
+  // the disk record is behind this session and has to be folded forward.
+  if (_degraded && _mirror) clean = mergeForward(clean, _mirror);
   _mirror = clean;
   return clean;
 }

@@ -9,29 +9,44 @@
  * the fix is in `battle.js`, not here (CONTRACT §0).
  *
  * ---------------------------------------------------------------------------
- * THE CROWD IS NOT A METER
+ * THE CROWD IS ONE SYSTEM, AND IT IS THE POINT
  * ---------------------------------------------------------------------------
  * Aldama's whole reading of this phenomenon, and CONTRACT §15, is that the
  * GATHERING is the point. The winner of the real Bellas Artes battle was a
  * sixteen-year-old who said he does it to have a good time and take his mind
- * off things at home. So `#crowd` is built as people, not as a percentage:
+ * off things at home. So `#crowd` is built as PEOPLE, not as a percentage:
  *
  *   - one DOM node per person, and the number of nodes is the number of people
  *     who actually came out. It grows because your reputation grew and because
  *     of WHERE you are — the banned town is four cars and three judges; the
  *     capital esplanade is several hundred phones.
- *   - the stylesheet already gives them uneven heights, uneven spacing and
- *     phone flashes on three co-prime cycles, so the row never tiles and never
- *     reads as a progress bar.
- *   - they REACT. A big turn bounces a share of them, staggered, and flashes a
- *     handful in the colour of whoever just did it. A whiff makes the whole
- *     ring sink an inch and go quiet. That is a public square responding to a
- *     person, which is the only feedback loop this game actually has.
+ *   - every person gets a DETERMINISTIC profile from their index: own width,
+ *     height, head size, head TURN, depth, and the gap before them. Person 7 is
+ *     the same person every time, and no two neighbours are the same size. A
+ *     crowd built out of one repeated glyph reads as a texture — or worse, as a
+ *     loading placeholder — and that is what this replaced.
+ *   - they stand in CLUMPS. Tight shoulder-to-shoulder groups of three to five
+ *     with real space between the groups, because that is what people who came
+ *     with their friends do. Nobody stands on an even grid.
+ *   - some face the fight and some face each other (`--hx` moves the head off
+ *     centre, which is a turn), and about one in five is FILMING: a raised arm
+ *     and a lit screen, not a dot. Everyone films. That is the documented
+ *     mechanism by which the street feeds the networks and the networks fill
+ *     the street, so it is the mechanism by which this crowd grows.
+ *   - they REACT, and to different things differently. A big turn bounces a
+ *     share of them and flashes a handful in the colour of whoever did it. A
+ *     roar puts every phone up. A whiff makes the whole ring sink an inch and
+ *     go quiet. A repeat gets almost nothing — a shuffle, a look away — which
+ *     is the game teaching freshness without a tutorial.
+ *
+ * The near side of the same ring is `#arena::after` in the stylesheet, built
+ * from the same glyph at the same proportions, near-black because it is two
+ * metres away. Far side and near side are one crowd seen from inside it.
  *
  * Every reaction is a `transform`/`opacity` Web Animation with a stagger, so
  * fifty people cost one compositor pass and never touch layout. Under
  * `prefers-reduced-motion` the reactions simply do not run — the crowd is
- * still there, still the right size, still lit.
+ * still there, still the right size, still filming.
  */
 
 import { mcLine, roundLine, SPECIAL_LINES } from '../data/mc.js';
@@ -55,6 +70,95 @@ const ACT_TURNOUT = Object.freeze({
 });
 
 function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+
+/* -------------------------------------------------------------------------- */
+/* ONE PERSON                                                                 */
+/* -------------------------------------------------------------------------- */
+
+/** mulberry32, seeded off the index. Person 7 is person 7 forever. */
+function personRng(i) {
+  let a = (Math.imul(i + 1, 2654435761) ^ 0x5F3A7B21) >>> 0;
+  return function () {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), 1 | t);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const _profiles = [];
+
+/**
+ * The person standing in slot `i`: how big they are, how far back, which way
+ * they are facing, whether they are filming, and where the clump they came
+ * with breaks.
+ *
+ * Deterministic, cached, and computed once — `setCrowd` only ever appends, so
+ * growing the crowd never re-rolls anybody who is already standing there.
+ *
+ * @param {number} i
+ * @returns {{css: string, film: boolean, warm: boolean}}
+ */
+function personProfile(i) {
+  if (_profiles[i]) return _profiles[i];
+  const r = personRng(i);
+
+  /* DEPTH IS CONTINUOUS, not two ranks. `far` is how deep into the crowd this
+     person is standing, and it drives size, brightness and how far up the kerb
+     they are all at once — which is the whole of what "further away" means on
+     a flat screen. Two discrete ranks gave a comb of two heights; a field
+     gives a crowd. On top of that, people are just different sizes: a plaza on
+     a Tuesday has nine-year-olds and grandmothers in it. */
+  /* Depth RAMPS WITH INDEX, and that is load-bearing. `#crowd` wraps backwards
+     (`flex-wrap:wrap-reverse`), so once the bottom line is full the next people
+     start a rank BEHIND it — and a person at the back who is bigger and
+     brighter than the front row is not a person at the back, it is a bug you
+     can see from across the room. Tying depth to arrival order fixes the
+     perspective and tells the truth at the same time: whoever turns up later
+     stands further back. */
+  const far = clamp(i / 21 * 0.55 + r() * 0.45, 0, 1);
+  const size = (1.14 - far * 0.44) * (0.72 + r() * 0.54);
+  const h = Math.round(37 * size);
+  const w = Math.round(20 * size);
+  const hr = Math.round(5.9 * size * 10) / 10;
+  /* shoulders wider than the head by a lot — that ratio is what reads as a
+     person rather than a pawn, and it is the ratio the near crowd uses too */
+  const sw = Math.round((w * 0.5 - 0.3) * 10) / 10;
+  const sh = Math.max(8, Math.round(h - hr * 2 - 2));
+  const o = Math.round(Math.max(0.09, 0.50 - far * 0.36 + (r() - 0.5) * 0.09) * 100) / 100;
+  const up = Math.round(far * 24 + r() * 4);
+
+  /* Clumps. Most people are shoulder to shoulder with whoever they came with —
+     overlapping, because a crowd is not a row of bottles — and every fourth-ish
+     person starts a new group. The gap in front of them is the only thing
+     separating one group of friends from the next, and it is the single cue
+     that stops this reading as an even comb. */
+  const opens = r() < 0.26;
+  const pre = opens ? 7 + Math.round(r() * 13) : Math.round(-5 + r() * 4);
+
+  /* Which way they are facing. Most watch the fight; a fifth are mid-
+     conversation with the person they came with. The head can only move as far
+     as its own radius or the background clips it against the box edge. */
+  const t = r();
+  const turn = t < 0.62 ? 0 : t < 0.81 ? -1 : 1;
+  const hx = Math.round(clamp(w / 2 + turn * (w / 2 - hr - 0.4), hr, w - hr) * 10) / 10;
+
+  const film = r() < 0.21;
+  const warm = r() < 0.13;
+  const parm = Math.round((-16 + r() * 14) * 10) / 10;
+
+  const p = {
+    film: film,
+    warm: warm,
+    css: '--w:' + w + 'px;--h:' + h + 'px;--hr:' + hr + 'px;--hy:' + (hr + 1.2).toFixed(1) +
+      'px;--sw:' + sw + 'px;--sh:' + sh + 'px;--hx:' + hx + 'px;--o:' + o +
+      ';--up:' + up + 'px;--pre:' + pre + 'px;--px:' + Math.round(w * 0.74) +
+      'px;--parm:' + parm + 'deg'
+  };
+  _profiles[i] = p;
+  return p;
+}
 
 /**
  * Build the HUD over the shipped DOM.
@@ -103,6 +207,10 @@ export function createHud(opts) {
   let people = [];
   /** Colour flashes waiting to be cleared. */
   let flashTimer = 0;
+  /** The people currently wearing somebody else's colour. */
+  const lit = [];
+  /** The roar class waiting to come off `#crowd`. */
+  let roarTimer = 0;
 
   /* ---------------------------------------------------------------------- */
   /* THE CROWD                                                              */
@@ -126,8 +234,10 @@ export function createHud(opts) {
   }
 
   /**
-   * Put `n` people in the ring, adding or removing only the difference so the
-   * stylesheet's nth-child rhythm survives and nothing re-rasterises.
+   * Put `n` people in the ring, adding or removing only the difference. Person
+   * `i` always gets `personProfile(i)`, so growing the crowd never reshuffles
+   * anybody who was already standing there — new people simply arrive at the
+   * back and everyone else stays exactly where they were.
    * @param {number} n
    */
   function setCrowd(n) {
@@ -140,7 +250,12 @@ export function createHud(opts) {
     if (people.length < want) {
       const frag = doc.createDocumentFragment();
       while (people.length < want) {
+        const i = people.length;
+        const prof = personProfile(i);
         const p = doc.createElement('i');
+        p.style.cssText = prof.css;
+        if (prof.film) p.className = prof.warm ? 'film warm' : 'film';
+        else if (prof.warm) p.className = 'warm';
         people.push(p);
         frag.appendChild(p);
       }
@@ -162,25 +277,38 @@ export function createHud(opts) {
     setCrowd(people.length + add);
     if (!canAnimate) return;
     for (let i = people.length - add; i < people.length; i++) {
-      try {
-        people[i].animate(
-          [{ opacity: 0, transform: 'translateY(7px)' }, { opacity: 1, transform: 'none' }],
-          { duration: 420, easing: 'cubic-bezier(.2,.9,.2,1)', fill: 'none' }
-        );
-      } catch (e) { /* an unanimatable node is still a person */ }
+      anim(people[i],
+        [{ opacity: 0, transform: 'translateY(7px)' }, { opacity: 1, transform: 'none' }],
+        { duration: 420, easing: 'cubic-bezier(.2,.9,.2,1)', fill: 'none' });
     }
   }
 
+  /**
+   * Take the borrowed colour back off everyone. Flashes are CLASSES, never an
+   * inline `color`: every person already carries their own tone inline, and an
+   * inline flash would overwrite it and never come back.
+   */
   function clearFlashes() {
     if (flashTimer) { clearTimeout(flashTimer); flashTimer = 0; }
-    for (let i = 0; i < people.length; i++) people[i].style.color = '';
+    for (let i = 0; i < lit.length; i++) {
+      lit[i].classList.remove('lit-you');
+      lit[i].classList.remove('lit-them');
+    }
+    lit.length = 0;
   }
 
   /**
-   * The square responds.
+   * The square responds. Five different things it can do, because a crowd that
+   * does the same bounce at everything is a light, not a gathering.
+   *
+   *   cheer  somebody did something good — a share of them react
+   *   roar   the whole square, and every phone goes up
+   *   laugh  self-directed clowning landed — they fold, they do not jump
+   *   gasp   a whiff. Everybody sinks an inch and nobody laughs
+   *   flat   a repeat. A shuffle, a look away, and that is all you get
    *
    * @param {Object}  r
-   * @param {'cheer'|'roar'|'gasp'|'quiet'} r.kind
+   * @param {'cheer'|'roar'|'laugh'|'gasp'|'flat'|'quiet'} r.kind
    * @param {number}  [r.strength=0.5]   0…1
    * @param {'you'|'them'|null} [r.side] whose colour a few of them flash
    */
@@ -188,22 +316,67 @@ export function createHud(opts) {
     const c = r || {};
     const kind = c.kind || 'cheer';
     const strength = clamp(typeof c.strength === 'number' ? c.strength : 0.5, 0, 1);
-    if (!canAnimate || !people.length) return;
 
-    if (kind === 'quiet') return;
+    /* The colour flash is not an animation, so it still happens for a player
+       who asked for reduced motion — they should still be able to see who the
+       square is looking at. */
+    if (c.side === 'you' || c.side === 'them') {
+      clearFlashes();
+      const cls = c.side === 'you' ? 'lit-you' : 'lit-them';
+      const want = Math.min(people.length, 2 + Math.round(strength * 5));
+      for (let i = 0; i < want; i++) {
+        const p = people[(Math.random() * people.length) | 0];
+        if (p && lit.indexOf(p) < 0) { p.classList.add(cls); lit.push(p); }
+      }
+      flashTimer = setTimeout(clearFlashes, 620);
+    }
+
+    if (!canAnimate || !people.length || kind === 'quiet') return;
 
     if (kind === 'gasp') {
       // Everybody sinks an inch. Nobody laughs. It is the most human thing
       // the crowd does and it costs one animation per person.
       for (let i = 0; i < people.length; i++) {
-        try {
-          people[i].animate(
-            [{ transform: 'translateY(0)', opacity: 1 },
-             { transform: 'translateY(2.5px)', opacity: 0.55, offset: 0.35 },
-             { transform: 'translateY(0)', opacity: 1 }],
-            { duration: 620, delay: (i % 7) * 14, easing: 'ease-out', fill: 'none' }
-          );
-        } catch (e) { /* skip */ }
+        anim(people[i],
+          [{ transform: 'translateY(0)', opacity: 1 },
+           { transform: 'translateY(2.5px)', opacity: 0.55, offset: 0.35 },
+           { transform: 'translateY(0)', opacity: 1 }],
+          { duration: 620, delay: (i % 7) * 14, easing: 'ease-out', fill: 'none' });
+      }
+      return;
+    }
+
+    if (kind === 'flat') {
+      // A repeat. Almost nothing happens, and the almost-nothing is the point:
+      // a quarter of them shift their weight, one or two turn to their friend,
+      // and the square gets very slightly quieter. Freshness, taught by the
+      // room rather than by a tooltip.
+      for (let i = 0; i < people.length; i++) {
+        if (Math.random() > 0.28) continue;
+        const dx = (Math.random() < 0.5 ? -1 : 1) * (1 + Math.random() * 1.6);
+        anim(people[i],
+          [{ transform: 'translateX(0)', opacity: 1 },
+           { transform: 'translateX(' + dx.toFixed(1) + 'px)', opacity: 0.82, offset: 0.5 },
+           { transform: 'translateX(0)', opacity: 1 }],
+          { duration: 900 + Math.random() * 400, delay: Math.random() * 300, easing: 'ease-in-out', fill: 'none' });
+      }
+      return;
+    }
+
+    if (kind === 'laugh') {
+      // Laughing is not jumping. They fold forward and come back up, out of
+      // time with each other, which is what a laugh looks like from across a
+      // square.
+      for (let i = 0; i < people.length; i++) {
+        if (Math.random() > 0.35 + 0.5 * strength) continue;
+        const d = (2 + Math.random() * 3.5).toFixed(1);
+        anim(people[i],
+          [{ transform: 'translateY(0) scaleY(1)' },
+           { transform: 'translateY(' + d + 'px) scaleY(.93)', offset: 0.3 },
+           { transform: 'translateY(-1px) scaleY(1.02)', offset: 0.62 },
+           { transform: 'translateY(0) scaleY(1)' }],
+          { duration: 520 + Math.random() * 320, delay: Math.random() * 260,
+            easing: 'cubic-bezier(.3,.9,.4,1)', fill: 'none' });
       }
       return;
     }
@@ -212,34 +385,36 @@ export function createHud(opts) {
     const share = all ? 1 : 0.22 + 0.55 * strength;
     const lift = (all ? 9 : 4) + 7 * strength;
 
-    for (let i = 0; i < people.length; i++) {
-      if (!all && Math.random() > share) continue;
-      try {
-        people[i].animate(
-          [{ transform: 'translateY(0)' },
-           { transform: 'translateY(-' + (lift * (0.6 + Math.random() * 0.6)).toFixed(1) + 'px)', offset: 0.38 },
-           { transform: 'translateY(0)' }],
-          {
-            duration: 460 + Math.random() * 260,
-            delay: Math.random() * (all ? 150 : 220),
-            easing: 'cubic-bezier(.3,.9,.4,1)',
-            fill: 'none'
-          }
-        );
-      } catch (e) { /* skip */ }
+    if (all && el.crowd) {
+      // Every phone in the square goes up at once. One class, one CSS
+      // animation on a pseudo-element — no per-person work at all.
+      el.crowd.classList.add('roar');
+      if (roarTimer) clearTimeout(roarTimer);
+      roarTimer = setTimeout(function () {
+        if (el.crowd) el.crowd.classList.remove('roar');
+        roarTimer = 0;
+      }, 900);
     }
 
-    // A handful catch the light of whoever just did that. Locked palette only.
-    if (c.side === 'you' || c.side === 'them') {
-      clearFlashes();
-      const tint = c.side === 'you' ? 'var(--you)' : 'var(--them)';
-      const lit = Math.min(people.length, 2 + Math.round(strength * 5));
-      for (let i = 0; i < lit; i++) {
-        const p = people[(Math.random() * people.length) | 0];
-        if (p) p.style.color = tint;
-      }
-      flashTimer = setTimeout(clearFlashes, 620);
+    for (let i = 0; i < people.length; i++) {
+      if (!all && Math.random() > share) continue;
+      anim(people[i],
+        [{ transform: 'translateY(0)' },
+         { transform: 'translateY(-' + (lift * (0.6 + Math.random() * 0.6)).toFixed(1) + 'px)', offset: 0.38 },
+         { transform: 'translateY(0)' }],
+        {
+          duration: 460 + Math.random() * 260,
+          delay: Math.random() * (all ? 150 : 220),
+          easing: 'cubic-bezier(.3,.9,.4,1)',
+          fill: 'none'
+        });
     }
+  }
+
+  /** `Element.animate` where it exists, and a shrug where it does not. */
+  function anim(node, frames, opts) {
+    try { node.animate(frames, opts); }
+    catch (e) { /* an unanimatable node is still a person */ }
   }
 
   /* ---------------------------------------------------------------------- */
@@ -449,17 +624,31 @@ export function createHud(opts) {
     setStatus('you', chipsFor(you));
     setStatus('them', chipsFor(them));
 
-    // Who the square is reacting to, and how hard.
+    // Who the square is reacting to, and how. The order below is the order of
+    // what a crowd actually notices: a whiff, then a chain, then a joke that
+    // landed, then a repeat, then everything else.
     const lead = you.score - them.score;
     const strength = clamp(Math.max(you.score, them.score) / 2600, 0.15, 1);
+    const loud = lead >= 0 ? you : them;
+    const side = lead > 0 ? 'you' : lead < 0 ? 'them' : null;
+    const landed = loud.band === 'perfect' || loud.band === 'clean';
+    const fresh = loud.factors ? loud.factors.freshness : 1;
 
-    if (you.band === 'whiff' && them.band !== 'whiff') react({ kind: 'gasp' });
-    else if (result.mcCue === 'pattern' || result.mcCue === 'finisher' || result.mcCue === 'flawless') {
+    if (you.band === 'whiff' && them.band !== 'whiff') {
+      react({ kind: 'gasp' });
+    } else if (result.mcCue === 'pattern' || result.mcCue === 'finisher' || result.mcCue === 'flawless') {
       react({ kind: 'roar', strength: 1, side: lead >= 0 ? 'you' : 'them' });
+    } else if (loud.cat === 'BAIT' && landed) {
+      // BAIT is self-directed clowning (CONTRACT §7). The square does not
+      // cheer that, it laughs at it, and those are different bodies.
+      react({ kind: 'laugh', strength: strength, side: side });
+    } else if (fresh < 0.9 && strength < 0.75) {
+      // Somebody is repeating themselves. Nobody claps for that.
+      react({ kind: 'flat' });
     } else if (Math.abs(lead) < 120) {
       react({ kind: 'cheer', strength: strength * 0.7, side: null });
     } else {
-      react({ kind: 'cheer', strength: strength, side: lead > 0 ? 'you' : 'them' });
+      react({ kind: 'cheer', strength: strength, side: side });
     }
 
     // Word travels. A loud turn brings people over from the bus stop.
@@ -581,6 +770,8 @@ export function createHud(opts) {
 
   function destroy() {
     clearFlashes();
+    if (roarTimer) { clearTimeout(roarTimer); roarTimer = 0; }
+    if (el.crowd) el.crowd.classList.remove('roar');
   }
 
   return {
