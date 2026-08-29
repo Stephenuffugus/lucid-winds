@@ -61,6 +61,30 @@ let _mirror = null;
 /** True once a read or a write has actually thrown. */
 let _degraded = false;
 
+/* --------------------------------------------------------------------------
+ * THE REACH LEDGER — what the last recorded battle did to your reputation
+ * --------------------------------------------------------------------------
+ * `reputation()` is a level. This is the STEP: how many names the last call to
+ * `recordBattle()` actually added to `beaten`, measured across that one write.
+ *
+ * It exists because the clip loop has to be honest. `hud.clipOut()` shows the
+ * square filling up, and the only way it can refuse to fake that is to be told
+ * the true before-and-after rather than to infer one. If a battle added nobody
+ * — a rematch against somebody already beaten, a loss, a second tab that got
+ * there first — `gain` is 0 and the beat does not play.
+ *
+ * It carries a SEQUENCE NUMBER, not a timestamp. There is no clock in this
+ * file, the integration suite runs on a virtual one, and "has this already been
+ * spent?" is a question about ordering rather than about time.
+ *
+ * It is deliberately NOT part of the saved state. A reputation step is worth
+ * exactly one moment on screen, in the session that earned it; a step that
+ * survived a reload would replay the beat for a fight the player finished
+ * yesterday.
+ */
+let _reachSeq = 0;
+let _reach = null;
+
 /** Cached storage handle; `undefined` means "not probed yet". */
 let _store;
 
@@ -346,6 +370,9 @@ export function reset() {
     try { s.removeItem(SAVE_KEY); } catch (e) { _degraded = true; }
   }
   _mirror = defaultState();
+  // A wiped save has no history, so an unspent reputation step from the run
+  // that was just thrown away must not survive to play a beat over the new one.
+  _reach = null;
   return sanitise(_mirror);
 }
 
@@ -383,7 +410,12 @@ export function recordBattle(r) {
   const o = r || {};
   const foe = cleanId(o.opponentId);
   const drop = cleanId(o.drop);
-  return update(function (s) {
+  /* Read the reputation BEFORE the write, so the step recorded below is the
+     one this battle actually caused rather than a difference against a stale
+     copy. `update()` re-reads storage itself, so this costs one extra parse
+     once per battle and buys the clip loop a number it is allowed to show. */
+  const repBefore = read().beaten.length;
+  const after = update(function (s) {
     s.battles += 1;
     if (o.won) {
       s.wins += 1;
@@ -398,6 +430,48 @@ export function recordBattle(r) {
     const meter = clampInt(o.meter, 0, 100);
     if (meter > s.bestMeter) s.bestMeter = meter;
   });
+
+  const repAfter = after.beaten.length;
+  _reachSeq += 1;
+  _reach = {
+    seq: _reachSeq,
+    from: repBefore,
+    to: repAfter,
+    gain: repAfter > repBefore ? repAfter - repBefore : 0,
+    foe: foe,
+    won: !!o.won
+  };
+  return after;
+}
+
+/**
+ * Look at the last reputation step without spending it.
+ *
+ * @returns {{seq: number, from: number, to: number, gain: number,
+ *            foe: string|null, won: boolean}|null}
+ */
+export function lastReach() {
+  if (!_reach) return null;
+  return {
+    seq: _reach.seq, from: _reach.from, to: _reach.to,
+    gain: _reach.gain, foe: _reach.foe, won: _reach.won
+  };
+}
+
+/**
+ * Take the last reputation step and spend it. The next call returns `null`
+ * until another battle is recorded.
+ *
+ * The clip loop is a ONE-SHOT: the square fills up once per fight that earned
+ * it. Consuming here rather than time-boxing in the HUD means a re-render, a
+ * second screen, or a stray second call cannot play the same arrival twice.
+ *
+ * @returns {Object|null} the step, or null if there is nothing unspent
+ */
+export function takeReach() {
+  const r = lastReach();
+  _reach = null;
+  return r;
 }
 
 /**
@@ -445,5 +519,7 @@ export default {
   setFit: setFit,
   markSeen: markSeen,
   reputation: reputation,
+  lastReach: lastReach,
+  takeReach: takeReach,
   storageOk: storageOk
 };

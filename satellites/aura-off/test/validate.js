@@ -26,11 +26,61 @@
 //
 // Failures always name the offending id and say WHY, not just THAT.
 
-import { MOVES, MOVES_BY_ID } from '../src/data/moves.js';
+import {
+  MOVES, MOVES_BY_ID, moveById,
+  BASE_MOVES, CATALOG,
+  PACKS, PACK_MOVES,
+  ownedPacks, setOwnedPacks
+} from '../src/data/moves.js';
 import { ACTS, OPPONENTS, FITS, STARTING_KIT } from '../src/data/campaign.js';
 import { JOINTS, UPPER, LOWER, JOINT_RANGE } from '../src/engine/rig.js';
 import * as MC_MODULE from '../src/data/mc.js';
 import * as CAMPAIGN_MODULE from '../src/data/campaign.js';
+import * as PACKS_MODULE from '../src/data/packs.js';
+
+/* --------------------------------------------------------------------------
+ * BASE vs CATALOGUE vs LIBRARY — three different lists, on purpose.
+ *
+ *   BASE_MOVES  the twenty-seven. CONTRACT §9 is checked against THIS, never
+ *               against MOVES, so no amount of pack ownership at import time
+ *               can talk the contract check out of its own table.
+ *   CATALOG     base + every pack move, ownership ignored. Schema, keyframes,
+ *               rig joints, content safety and evidence run over this — content
+ *               nobody has bought yet is still content that ships.
+ *   MOVES       what a player actually holds right now. Used only to prove the
+ *               two things ownership is allowed to affect: that owning nothing
+ *               leaves the base game untouched, and that owning everything
+ *               leaves the base ORDER untouched.
+ * ------------------------------------------------------------------------ */
+
+/** Everything that exists, base first. */
+const ALL_MOVES = CATALOG;
+
+/** id → base move. The contract's own index. */
+const BASE_BY_ID = BASE_MOVES.reduce(function (map, m) {
+  if (m && m.id) map[m.id] = m;
+  return map;
+}, Object.create(null));
+
+/** id → pack move, ownership ignored. */
+const PACK_BY_ID = PACK_MOVES.reduce(function (map, m) {
+  if (m && m.id) map[m.id] = m;
+  return map;
+}, Object.create(null));
+
+/**
+ * The extra clause a campaign failure gets when the missing id turns out to be
+ * pack content. Without it "no move has that id" is technically true and
+ * completely misleading.
+ */
+function packClause(id) {
+  const m = PACK_BY_ID[id];
+  if (!m) return '';
+  return ' It IS a move — "' + id + '" is in the "' + m.pack + '" pack. Packs ' +
+    'never unlock through the campaign: beating an opponent is the base game\'s ' +
+    'channel and all twenty-four drops are spoken for. Give it an unlock inside ' +
+    'its own pack instead (CONTRACT-level rule, see src/data/packs.js).';
+}
 
 /* ========================================================================== */
 /* FAILURE COLLECTION                                                         */
@@ -169,13 +219,13 @@ const READS_TARGET = Object.freeze({ f: 9, m: 6, neutral: 10 });
 
 const seenIds = new Map();
 
-for (let i = 0; i < MOVES.length; i++) {
-  const m = MOVES[i];
+for (let i = 0; i < ALL_MOVES.length; i++) {
+  const m = ALL_MOVES[i];
   const label = (m && m.id) ? m.id : ('MOVES[' + i + ']');
   ran();
 
   if (!m || typeof m !== 'object') {
-    fail('move-ids', label, 'is not an object. MOVES must be a flat list of move records.');
+    fail('move-ids', label, 'is not an object. Every move list must be a flat list of move records.');
     continue;
   }
   if (typeof m.id !== 'string' || m.id.length === 0) {
@@ -199,9 +249,11 @@ for (let i = 0; i < MOVES.length; i++) {
 }
 
 ran();
-if (MOVES.length !== MOVE_TABLE.length) {
-  fail('move-count', 'MOVES',
-    'has ' + MOVES.length + ' moves; CONTRACT §9 lists ' + MOVE_TABLE.length + '.');
+if (BASE_MOVES.length !== MOVE_TABLE.length) {
+  fail('move-count', 'BASE_MOVES',
+    'has ' + BASE_MOVES.length + ' moves; CONTRACT §9 lists ' + MOVE_TABLE.length + '. ' +
+    'Pack moves do not count toward this and never will — the base library is ' +
+    'fixed at twenty-seven and a pack is a layer on top of it.');
 }
 
 /* ========================================================================== */
@@ -211,7 +263,7 @@ if (MOVES.length !== MOVE_TABLE.length) {
 for (let i = 0; i < MOVE_TABLE.length; i++) {
   const row = MOVE_TABLE[i];
   const [id, name, cat, tier, base, up, lo, idealAmp, special] = row;
-  const m = MOVES_BY_ID[id];
+  const m = BASE_BY_ID[id];
   ran();
 
   if (!m) {
@@ -220,8 +272,8 @@ for (let i = 0; i < MOVE_TABLE.length; i++) {
       'or its id was typo\'d — every opponent that drops it now unlocks nothing.');
     continue;
   }
-  if (MOVES[i] !== m) {
-    const at = MOVES.indexOf(m);
+  if (BASE_MOVES[i] !== m) {
+    const at = BASE_MOVES.indexOf(m);
     fail('contract-§9', id,
       'is at MOVES index ' + at + ' but CONTRACT §9 puts it at index ' + i + '. ' +
       'Library order is the contract: the deck grid, the roster generator and the ' +
@@ -245,8 +297,10 @@ for (let i = 0; i < MOVE_TABLE.length; i++) {
 /* ========================================================================== */
 /* 3. MOVE SCHEMA — types, weights, duration, lag                             */
 /* ========================================================================== */
+/* Runs over the CATALOGUE. A pack move is a move: same schema, same limits,   */
+/* same lag rule. There is no relaxed tier for content somebody paid for.      */
 
-for (const m of MOVES) {
+for (const m of ALL_MOVES) {
   if (!m || typeof m.id !== 'string') continue;
   const id = m.id;
   ran(6);
@@ -321,11 +375,11 @@ for (const m of MOVES) {
 // Every special in §6 must actually be carried by some move — an unused special
 // is a mechanic that exists only in the documentation.
 {
-  const carried = new Set(MOVES.map((m) => m.special).filter(Boolean));
+  const carried = new Set(BASE_MOVES.map((m) => m.special).filter(Boolean));
   for (const s of SPECIAL_NAMES) {
     ran();
     if (!carried.has(s)) {
-      fail('specials', s, 'is declared in CONTRACT §6 but no move carries it. Either give it to a move or delete the mechanic — it cannot stay half-built.');
+      fail('specials', s, 'is declared in CONTRACT §6 but no BASE move carries it. A pack cannot cover for it — the base twenty-seven have to be a complete game on their own. Either give it to a move or delete the mechanic — it cannot stay half-built.');
     }
   }
 }
@@ -360,7 +414,7 @@ const JOINT_SET = new Set(JOINTS);
   }
 }
 
-for (const m of MOVES) {
+for (const m of ALL_MOVES) {
   if (!m || typeof m.id !== 'string') continue;
   const id = m.id;
   ran();
@@ -601,7 +655,7 @@ function applyRules(section, id, surface, text, rules, why) {
   return false;
 }
 
-for (const m of MOVES) {
+for (const m of ALL_MOVES) {
   if (!m || typeof m.id !== 'string') continue;
   const id = m.id;
   const name = typeof m.name === 'string' ? m.name : '';
@@ -662,7 +716,7 @@ function walkStrings(obj, path, out, seen) {
   return out;
 }
 
-for (const [modName, mod] of [['mc.js', MC_MODULE], ['campaign.js', CAMPAIGN_MODULE]]) {
+for (const [modName, mod] of [['mc.js', MC_MODULE], ['campaign.js', CAMPAIGN_MODULE], ['packs.js', PACKS_MODULE]]) {
   const strings = [];
   const seen = new WeakSet();
   for (const k of Object.keys(mod)) {
@@ -703,7 +757,8 @@ function checkKeys(obj, label, seen) {
 }
 {
   const seen = new WeakSet();
-  for (const m of MOVES) checkKeys(m, 'move ' + m.id, seen);
+  for (const m of ALL_MOVES) checkKeys(m, 'move ' + m.id, seen);
+  for (const p of PACKS) checkKeys(p, 'pack ' + p.id, seen);
   for (const o of OPPONENTS) checkKeys(o, 'opponent ' + o.id, seen);
   for (const a of ACTS) checkKeys(a, 'act ' + a.id, seen);
   for (const f of FITS) checkKeys(f, 'fit ' + f.id, seen);
@@ -713,7 +768,7 @@ function checkKeys(obj, label, seen) {
 /* 6. EVIDENCE TIER — V1 means somebody filmed it                             */
 /* ========================================================================== */
 
-for (const m of MOVES) {
+for (const m of ALL_MOVES) {
   if (!m || typeof m.id !== 'string') continue;
   ran();
   if (m.tier === 'V1' && !V1_SET.has(m.id)) {
@@ -727,7 +782,7 @@ for (const m of MOVES) {
 }
 for (const id of V1_IDS) {
   ran();
-  const m = MOVES_BY_ID[id];
+  const m = BASE_BY_ID[id];
   if (!m) {
     fail('evidence', id, 'is on the CONTRACT §8 evidence list but no move has that id.');
   } else if (m.tier !== 'V1') {
@@ -829,10 +884,11 @@ for (let i = 0; i < ROSTER_TABLE.length; i++) {
     const inPool = new Set();
     for (const p of o.pool) {
       ran();
-      if (!MOVES_BY_ID[p]) {
+      if (!BASE_BY_ID[p]) {
         fail('pools', label,
-          'has "' + p + '" in its pool, and no move has that id. The AI would try to ' +
-          'throw a move that does not exist. Check for a typo against MOVE_IDS.');
+          'has "' + p + '" in its pool, and no BASE move has that id. The AI would try ' +
+          'to throw a move that does not exist. Check for a typo against MOVE_IDS.' +
+          packClause(p));
       }
       if (inPool.has(p)) {
         fail('pools', label, 'lists "' + p + '" twice in its pool, which quietly doubles how often it comes up.');
@@ -846,7 +902,7 @@ for (let i = 0; i < ROSTER_TABLE.length; i++) {
         'it — studying your opponents is documented as part of the real sport.');
     }
     if (gotQuirk === 'mirror') {
-      const cats = new Set(o.pool.map((p) => MOVES_BY_ID[p] && MOVES_BY_ID[p].cat).filter(Boolean));
+      const cats = new Set(o.pool.map((p) => BASE_BY_ID[p] && BASE_BY_ID[p].cat).filter(Boolean));
       ran();
       if (cats.size < 3) {
         fail('pools', label,
@@ -931,7 +987,11 @@ if (STARTING_KIT.length !== EXPECTED_KIT.length || EXPECTED_KIT.some((id, i) => 
 }
 for (const id of STARTING_KIT) {
   ran();
-  if (!MOVES_BY_ID[id]) fail('unlocks', id, 'is in the starting kit but no move has that id — the player would boot with an empty slot.');
+  if (!BASE_BY_ID[id]) {
+    fail('unlocks', id,
+      'is in the starting kit but no BASE move has that id — the player would boot ' +
+      'with an empty slot.' + packClause(id));
+  }
 }
 
 const droppedBy = new Map();
@@ -939,8 +999,10 @@ for (const o of OPPONENTS) {
   const d = o && o.drop;
   if (!d) continue;
   ran();
-  if (!MOVES_BY_ID[d]) {
-    fail('unlocks', o.id, 'drops "' + d + '", and no move has that id. Beating them would unlock nothing.');
+  if (!BASE_BY_ID[d]) {
+    fail('unlocks', o.id,
+      'drops "' + d + '", and no BASE move has that id. Beating them would unlock ' +
+      'nothing.' + packClause(d));
     continue;
   }
   if (STARTING_KIT.indexOf(d) !== -1) {
@@ -954,7 +1016,7 @@ for (const o of OPPONENTS) {
 }
 
 const unreachable = [];
-for (const m of MOVES) {
+for (const m of BASE_MOVES) {
   if (!m || typeof m.id !== 'string') continue;
   ran();
   if (STARTING_KIT.indexOf(m.id) === -1 && !droppedBy.has(m.id)) unreachable.push(m.id);
@@ -975,7 +1037,7 @@ for (const id of unreachable) {
     if (!Array.isArray(o.pool)) continue;
     for (const p of o.pool) {
       ran();
-      if (p === o.drop || !MOVES_BY_ID[p]) continue;
+      if (p === o.drop || !BASE_BY_ID[p]) continue;
       if (!known.has(p)) {
         fail('pools', o.id,
           'carries "' + p + '" but that move has not been dropped by anyone earlier ' +
@@ -984,12 +1046,441 @@ for (const id of unreachable) {
           'already be reachable at that point in the run.');
       }
     }
-    if (o.drop && MOVES_BY_ID[o.drop]) known.add(o.drop);
+    if (o.drop && BASE_BY_ID[o.drop]) known.add(o.drop);
   }
 }
 
 /* ========================================================================== */
-/* 9. THE ENGINE'S OWN VOCABULARY MUST MATCH THE CONTRACT                     */
+/* 9. PACKS — a pack adds range, never power, and never uses the campaign     */
+/* ========================================================================== */
+//
+// A pack is a named, ownable set of moves layered on the base twenty-seven.
+// Everything above has already held pack moves to the ordinary move standard,
+// because they went through the CATALOGUE. What is left is the four rules that
+// only exist because packs exist, and every one of them is a rule that would
+// otherwise be a paragraph in a comment:
+//
+//   1. Base-only play is still a complete, winnable game.
+//   2. A pack adds RANGE, never POWER.
+//   3. A pack unlocks INSIDE ITSELF. It is never a campaign drop.
+//   4. Nothing in a pack may claim V1 evidence.
+//
+// The last one is not a formality. A pack is the most commercially motivated
+// content in the project and therefore the place most likely to want to call
+// an invention documented.
+
+/** The one legal unlock route today. A second one has to be designed, not appear. */
+const PACK_ROUTES = new Set(['pack']);
+
+/** The three conditions a pack move may unlock on. */
+const UNLOCK_KINDS = new Set(['pack', 'perform', 'crowd']);
+
+/** The crowd's real range — 21 to 41 people (AUDIT-NOTES, "the crowd as a real system"). */
+const CROWD_MIN = 21;
+const CROWD_MAX = 41;
+
+/** Best base score in each category, and per special. The anti-creep ceilings. */
+const BEST_BASE_BY_CAT = Object.create(null);
+const BEST_BASE_BY_SPECIAL = Object.create(null);
+for (const m of BASE_MOVES) {
+  if (!m || typeof m.base !== 'number') continue;
+  if (!(m.cat in BEST_BASE_BY_CAT) || m.base > BEST_BASE_BY_CAT[m.cat]) BEST_BASE_BY_CAT[m.cat] = m.base;
+  if (m.special) {
+    if (!(m.special in BEST_BASE_BY_SPECIAL) || m.base > BEST_BASE_BY_SPECIAL[m.special]) {
+      BEST_BASE_BY_SPECIAL[m.special] = m.base;
+    }
+  }
+}
+/** Which base move holds each ceiling, so a failure can name it. */
+function holderOfCat(cat) {
+  let best = null;
+  for (const m of BASE_MOVES) if (m.cat === cat && (!best || m.base > best.base)) best = m;
+  return best;
+}
+function holderOfSpecial(sp) {
+  let best = null;
+  for (const m of BASE_MOVES) if (m.special === sp && (!best || m.base > best.base)) best = m;
+  return best;
+}
+
+/* ---- 9a. pack records ---------------------------------------------------- */
+
+ran();
+if (!Array.isArray(PACKS)) {
+  fail('packs', 'PACKS', 'is not an array. src/data/packs.js must export a flat list of pack records.');
+}
+
+const seenPackIds = new Set();
+const packOfMoveId = Object.create(null);
+
+for (const pk of (Array.isArray(PACKS) ? PACKS : [])) {
+  const label = (pk && pk.id) ? pk.id : 'PACKS[?]';
+  ran(6);
+
+  if (!pk || typeof pk !== 'object') {
+    fail('packs', label, 'is not an object.');
+    continue;
+  }
+  if (typeof pk.id !== 'string' || !/^[a-z0-9]+$/.test(pk.id)) {
+    fail('packs', label,
+      'has a malformed pack id ' + JSON.stringify(pk.id) + '. Lowercase a-z0-9 only — ' +
+      'a pack id is a key in save data and in whatever a store writes, and it outlives ' +
+      'every rename of the display name.');
+  }
+  if (seenPackIds.has(pk.id)) {
+    fail('packs', pk.id, 'is a duplicate pack id. Owning one would silently own the other.');
+  }
+  seenPackIds.add(pk.id);
+
+  if (typeof pk.name !== 'string' || !pk.name.trim()) fail('packs', label, 'has no display name.');
+  if (typeof pk.region !== 'string' || !pk.region.trim()) {
+    fail('packs', label,
+      'has no region. A regional pack that cannot say which scene it came from is a ' +
+      'bundle of moves with a nice name on it.');
+  }
+  if (typeof pk.blurb !== 'string' || pk.blurb.trim().length < 40) {
+    fail('packs', label,
+      'has no real blurb (got ' + JSON.stringify(pk.blurb) + '). The blurb is the only ' +
+      'place the pack speaks in its own register, and it is what a store card shows.');
+  }
+  if (typeof pk.routeNote !== 'string' || !pk.routeNote.trim()) {
+    fail('packs', label, 'has no routeNote — the plain sentence telling a player how the pack opens up.');
+  }
+
+  ran();
+  if (!PACK_ROUTES.has(pk.unlockRoute)) {
+    fail('packs', label,
+      'declares unlockRoute ' + JSON.stringify(pk.unlockRoute) + '. The only route that ' +
+      'exists is "pack": a pack unlocks inside itself. Beating an opponent is the base ' +
+      'game\'s channel and all twenty-four drops are spoken for. If a second route is ' +
+      'ever designed it gets added here deliberately, not by a typo.');
+  }
+
+  ran();
+  if (!Array.isArray(pk.moves) || pk.moves.length < 4 || pk.moves.length > 6) {
+    fail('packs', label,
+      'holds ' + (Array.isArray(pk.moves) ? pk.moves.length : 'no') + ' moves. A pack is ' +
+      '4 to 6: fewer is not worth owning, more and it stops being a reference set and ' +
+      'starts being a second game.');
+    continue;
+  }
+
+  /* ---- 9b. the moves in it ---------------------------------------------- */
+
+  const inThisPack = new Set(pk.moves.map((m) => m && m.id).filter(Boolean));
+
+  for (const m of pk.moves) {
+    if (!m || typeof m.id !== 'string') continue;
+    const id = m.id;
+    ran(5);
+
+    if (m.pack !== pk.id) {
+      fail('packs', id,
+        'sits inside pack "' + pk.id + '" but carries pack:"' + m.pack + '". That ' +
+        'back-reference is stamped by sealPack() and is not authored, so a mismatch ' +
+        'means something is rebuilding pack records by hand.');
+    }
+    if (packOfMoveId[id]) {
+      fail('packs', id, 'appears in both "' + packOfMoveId[id] + '" and "' + pk.id + '". One move, one pack.');
+    }
+    packOfMoveId[id] = pk.id;
+
+    if (BASE_BY_ID[id]) {
+      fail('packs', id,
+        'has the same id as a BASE move. Owning the pack would shadow "' + id + '" in ' +
+        'MOVES_BY_ID and quietly replace a move the campaign teaches — the deck would ' +
+        'still look right and the fight would be different.');
+    }
+
+    if (m.tier !== 'V3') {
+      fail('packs', id,
+        'is tier:"' + m.tier + '". EVERY pack move is V3. CONTRACT §8 closes the V1 ' +
+        'list at thirteen documented ids and no pack move is on it. A pack is the most ' +
+        'commercially motivated content in this project and therefore the place most ' +
+        'likely to want to call an invention documented. It is our original work; label ' +
+        'it honestly and it is still safe to ship.');
+    }
+
+    // --- anti-creep: category ceiling ---
+    const catCeil = BEST_BASE_BY_CAT[m.cat];
+    if (typeof catCeil === 'number' && typeof m.base === 'number' && m.base > catCeil) {
+      const h = holderOfCat(m.cat);
+      fail('packs', id,
+        'has base ' + m.base + ', above the best BASE ' + m.cat + ' move (' +
+        (h ? h.name + ' at ' + h.base : catCeil) + '). A PACK ADDS RANGE, NEVER POWER. ' +
+        'The moment a bought move out-scores everything a player earned, the base ' +
+        'twenty-seven stop being a complete game and start being a demo. Give it a ' +
+        'different SHAPE instead — a body split, an ideal amplitude, a blend partner ' +
+        'nothing in the base library offers.');
+    }
+
+    // --- anti-creep: per-special ceiling ---
+    if (m.special) {
+      ran();
+      const spCeil = BEST_BASE_BY_SPECIAL[m.special];
+      if (typeof spCeil !== 'number') {
+        fail('packs', id,
+          'carries special "' + m.special + '", which no base move carries. A pack may ' +
+          'not introduce a mechanic — new mechanics go in the contract and into the base ' +
+          'library first, where the balance sim can see them.');
+      } else if (typeof m.base === 'number' && m.base > spCeil) {
+        const h = holderOfSpecial(m.special);
+        fail('packs', id,
+          'has base ' + m.base + ' while carrying "' + m.special + '", above the best ' +
+          'BASE move carrying it (' + (h ? h.name + ' at ' + h.base : spCeil) + '). Same ' +
+          'rule, one level finer: a bought move may share a mechanical role with an ' +
+          'earned one, and must not be a better version of it.');
+      }
+    }
+
+    /* ---- 9c. the unlock, and whether anybody can get there --------------- */
+
+    const u = m.unlock;
+    ran(3);
+    if (!u || typeof u !== 'object') {
+      fail('packs', id,
+        'has no `unlock`. Every pack move needs a route or nobody can reach it, and ' +
+        '"it comes with the pack" is a route that has to be written down.');
+      continue;
+    }
+    if (!UNLOCK_KINDS.has(u.on)) {
+      fail('packs', id,
+        'unlocks on ' + JSON.stringify(u.on) + '. The three conditions are "pack" ' +
+        '(arrives with it), "perform" (use another move in the same pack N times) and ' +
+        '"crowd" (draw a room of N people). Anything else is a promise the game never keeps.');
+      continue;
+    }
+    if (typeof u.how !== 'string' || !u.how.trim()) {
+      fail('packs', id, 'has no `unlock.how` — the sentence a player is actually shown. A condition nobody can read is a locked door with no sign on it.');
+    }
+
+    if (u.on === 'pack') {
+      ran();
+      if (u.after !== undefined || u.times !== undefined || u.people !== undefined) {
+        fail('packs', id,
+          'unlocks on "pack" but also carries ' +
+          ['after', 'times', 'people'].filter((k) => u[k] !== undefined).join('/') +
+          '. A move that arrives with the pack has no condition; the extra field would ' +
+          'read as a gate that nothing enforces.');
+      }
+    }
+
+    if (u.on === 'perform') {
+      ran(2);
+      if (!Number.isInteger(u.times) || u.times < 1 || u.times > 20) {
+        fail('packs', id, 'unlocks on "perform" with times=' + JSON.stringify(u.times) + '. Must be a whole number 1-20 — past twenty it is not a route, it is a wall.');
+      }
+      if (typeof u.after !== 'string') {
+        fail('packs', id, 'unlocks on "perform" but names no `after` move to perform.');
+      }
+    }
+
+    if (u.on === 'crowd') {
+      ran();
+      if (!Number.isInteger(u.people) || u.people < CROWD_MIN || u.people > CROWD_MAX) {
+        fail('packs', id,
+          'unlocks on "crowd" with people=' + JSON.stringify(u.people) + ', outside the ' +
+          'crowd\'s real range of ' + CROWD_MIN + '-' + CROWD_MAX + '. A number the crowd ' +
+          'system can never reach is an unreachable move wearing a condition.');
+      }
+    }
+
+    if (u.after !== undefined) {
+      ran(2);
+      if (u.after === id) {
+        fail('packs', id, 'unlocks after itself.');
+      } else if (!inThisPack.has(u.after)) {
+        const where = BASE_BY_ID[u.after] ? 'a BASE move'
+          : (packOfMoveId[u.after] ? 'in pack "' + packOfMoveId[u.after] + '"'
+            : (PACK_BY_ID[u.after] ? 'in another pack' : 'nothing at all'));
+        fail('packs', id,
+          'unlocks after "' + u.after + '", which is ' + where + '. A pack ladder must be ' +
+          'self-contained: somebody who buys this pack on a fresh save has to be able to ' +
+          'open all of it without owning anything else and without reaching a particular ' +
+          'point in the campaign.');
+      }
+    }
+  }
+
+  /* ---- 9d. walk the ladder ---------------------------------------------- */
+
+  ran();
+  const seeds = pk.moves.filter((m) => m && m.unlock && m.unlock.on === 'pack');
+  if (!seeds.length) {
+    fail('packs', pk.id,
+      'has no move that arrives with the pack — every move in it is gated on another ' +
+      'move in it. Buying this pack gets you a locked box.');
+  }
+
+  const reached = new Set(seeds.map((m) => m.id));
+  let grew = true;
+  while (grew) {
+    grew = false;
+    for (const m of pk.moves) {
+      if (!m || reached.has(m.id) || !m.unlock) continue;
+      const after = m.unlock.after;
+      if (after === undefined || reached.has(after)) { reached.add(m.id); grew = true; }
+    }
+  }
+  for (const m of pk.moves) {
+    if (!m || typeof m.id !== 'string') continue;
+    ran();
+    if (!reached.has(m.id)) {
+      fail('packs', m.id,
+        'is UNREACHABLE inside "' + pk.id + '": walking the ladder from the moves that ' +
+        'arrive with the pack never gets to it. That is a cycle (two moves each waiting ' +
+        'on the other) or a chain hanging off something the walk could not reach. Owning ' +
+        'the pack would leave this move permanently locked.');
+    }
+  }
+
+  /* ---- 9e. pack prose is held to the move standard ---------------------- */
+
+  const prose = [['blurb', pk.blurb], ['routeNote', pk.routeNote]];
+  for (const m of pk.moves) {
+    if (m && m.unlock && typeof m.unlock.how === 'string') prose.push([m.id + '.unlock.how', m.unlock.how]);
+  }
+  for (const [surface, text] of prose) {
+    if (typeof text !== 'string' || !text) continue;
+    applyRules('content-safety', pk.id, surface, text, MOCKERY_RULES, WHY_SAFETY);
+    applyRules('content-safety', pk.id, surface, text, TARGET_RULES, WHY_SAFETY);
+    applyRules('content-safety', pk.id, surface, text, PERSON_RULES,
+      'No real person\'s name or likeness appears in this game, and a regional pack is ' +
+      'exactly where one would try to get in — the documented figures in this scene are ' +
+      'mostly teenagers and several are children (CONTRACT §7).');
+    applyRules('content-safety', pk.id, surface, text, BRAND_RULES,
+      'No branded garment or existing character (CONTRACT §7).');
+    applyRules('content-safety', pk.id, surface, text, ATTRACT_RULES, WHY_ATTRACT);
+    applyRules('voice', pk.id, surface, text, BALLROOM_RULES, WHY_BALLROOM);
+  }
+}
+
+/* ---- 9f. THE CAMPAIGN IS NOT A PACK CHANNEL ------------------------------ */
+
+for (const o of OPPONENTS) {
+  ran();
+  if (o && o.drop && PACK_BY_ID[o.drop]) {
+    fail('packs', o.id,
+      'drops "' + o.drop + '", which is a move in the "' + PACK_BY_ID[o.drop].pack + '" ' +
+      'pack. Campaign opponents drop BASE moves only. Beating somebody is how the base ' +
+      'game teaches you things and all twenty-four of those slots are spoken for; if a ' +
+      'pack could also drop there, owning the pack would either duplicate an unlock or ' +
+      'hand a non-owner content they never bought.');
+  }
+  if (o && Array.isArray(o.pool)) {
+    for (const pid of o.pool) {
+      ran();
+      if (PACK_BY_ID[pid]) {
+        fail('packs', o.id,
+          'carries "' + pid + '" in its pool, which is a move in the "' +
+          PACK_BY_ID[pid].pack + '" pack. An opponent may only throw moves that exist in ' +
+          'a base-only game, or a player who owns nothing gets hit by something the deck ' +
+          'cannot even name.');
+      }
+    }
+  }
+}
+for (const id of STARTING_KIT) {
+  ran();
+  if (PACK_BY_ID[id]) {
+    fail('packs', id, 'is in the STARTING_KIT and is pack content. Nobody starts holding something they have not got.');
+  }
+}
+
+/* ---- 9g. BASE-ONLY PLAY IS STILL A COMPLETE GAME ------------------------- */
+//
+// The load-bearing check. Everything else in this section polices what a pack
+// may contain; this one polices what owning nothing must still be.
+
+{
+  const ownedAtImport = ownedPacks();
+  ran(4);
+
+  if (ownedAtImport.length !== 0) {
+    fail('packs', 'ownedPacks()',
+      'is ' + JSON.stringify(Array.from(ownedAtImport)) + ' at import. A fresh module ' +
+      'owns NOTHING. Ownership is written by a store or by save data at boot; a default ' +
+      'that is not empty means the base game can never be tested as the base game.');
+  }
+
+  if (MOVES.length !== BASE_MOVES.length || BASE_MOVES.some((m, i) => MOVES[i] !== m)) {
+    fail('packs', 'MOVES',
+      'is not the base library with no pack owned (' + MOVES.length + ' moves against ' +
+      BASE_MOVES.length + '). Own nothing and the game must be exactly the twenty-seven, ' +
+      'in exactly CONTRACT §9 order — same deck, same unlock chain, same balance numbers ' +
+      'in README.');
+  }
+
+  let missing = 0;
+  for (const m of BASE_MOVES) if (moveById(m.id) !== m) missing++;
+  if (missing) {
+    fail('packs', 'moveById',
+      'cannot resolve ' + missing + ' base move(s) with no pack owned.');
+  }
+
+  let leaked = null;
+  for (const m of PACK_MOVES) if (moveById(m.id)) { leaked = m.id; break; }
+  if (leaked) {
+    fail('packs', leaked,
+      'resolves through moveById() with no pack owned. Unowned pack content must be ' +
+      'invisible to the library — the store lists it through the catalogue, the game ' +
+      'never sees it.');
+  }
+}
+
+/* ---- 9h. OWNING EVERYTHING MUST NOT DISTURB THE BASE --------------------- */
+//
+// This one mutates module state deliberately and puts it back. It is the only
+// way to prove the thing that actually breaks a save file: that pack moves are
+// APPENDED, so base indices 0..26 keep meaning what they meant.
+
+{
+  const before = Array.from(ownedPacks());
+  setOwnedPacks(PACKS.map((pk) => pk.id));
+  ran(4);
+
+  if (BASE_MOVES.some((m, i) => MOVES[i] !== m)) {
+    fail('packs', 'MOVES order',
+      'changes when every pack is owned. Pack moves must be APPENDED after the ' +
+      'twenty-seven, never interleaved: the deck grid, the roster generator and the ' +
+      'default deck all read MOVES front to back, and a save file that stored an index ' +
+      'would start pointing at a different move the day a player bought something.');
+  }
+  if (MOVES.length !== BASE_MOVES.length + PACK_MOVES.length) {
+    fail('packs', 'MOVES length',
+      'is ' + MOVES.length + ' with every pack owned; expected ' +
+      (BASE_MOVES.length + PACK_MOVES.length) + '.');
+  }
+
+  const dupes = [];
+  const seenAll = new Set();
+  for (const m of MOVES) {
+    if (seenAll.has(m.id)) dupes.push(m.id);
+    seenAll.add(m.id);
+  }
+  if (dupes.length) {
+    fail('packs', dupes.join(', '),
+      'appear twice in MOVES with every pack owned. MOVES_BY_ID keeps only the last, so ' +
+      'one of each pair is unreachable in every consumer.');
+  }
+
+  let unresolved = null;
+  for (const m of PACK_MOVES) if (moveById(m.id) !== m) { unresolved = m.id; break; }
+  if (unresolved) {
+    fail('packs', unresolved, 'does not resolve through moveById() even when its pack is owned.');
+  }
+
+  setOwnedPacks(before);
+  ran();
+  if (MOVES.length !== BASE_MOVES.length) {
+    fail('packs', 'setOwnedPacks',
+      'did not restore the library when ownership was cleared. Disowning has to be as ' +
+      'complete as owning or a refund leaves the moves behind.');
+  }
+}
+
+/* ========================================================================== */
+/* 10. THE ENGINE'S OWN VOCABULARY MUST MATCH THE CONTRACT                    */
 /* ========================================================================== */
 
 try {
@@ -1037,18 +1528,23 @@ try {
 /* ========================================================================== */
 
 const counts = {
-  moves: MOVES.length,
+  moves: BASE_MOVES.length,
   opponents: OPPONENTS.length,
   acts: ACTS.length,
-  fits: FITS.length
+  fits: FITS.length,
+  packs: PACKS.length,
+  packMoves: PACK_MOVES.length,
+  catalog: ALL_MOVES.length
 };
 
 if (failures.length === 0) {
   console.log('AURA OFF — validate');
-  console.log('  ' + counts.moves + ' moves · ' + counts.opponents + ' opponents · ' +
+  console.log('  ' + counts.moves + ' base moves · ' + counts.opponents + ' opponents · ' +
     counts.acts + ' acts · ' + counts.fits + ' fits');
+  console.log('  ' + counts.packs + ' packs · ' + counts.packMoves + ' pack moves · ' +
+    counts.catalog + ' moves in the catalogue, base-only play unaffected');
   console.log('  ' + V1_IDS.length + ' moves carry V1 evidence, ' +
-    (MOVES.length - V1_IDS.length) + ' are labelled V3');
+    (counts.catalog - V1_IDS.length) + ' are labelled V3');
   console.log('  ' + checks + ' checks — data integrity, content safety, evidence tier: PASS');
   process.exit(0);
 }

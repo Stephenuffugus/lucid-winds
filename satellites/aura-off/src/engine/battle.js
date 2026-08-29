@@ -235,7 +235,69 @@ export const TUNING = Object.freeze({
    */
   foePickTempBase: 60,
   foePickTempSkill: 1.9,
-  foePickTempFloor: 0.35
+  foePickTempFloor: 0.35,
+
+  /* -- EL FARMEO — the solo stage that comes before the duel -------------- *
+   *
+   * AURA-CULTURE §8.2 documents the format: competitors register in advance,
+   * there are elimination rounds, and each competitor performs for only a few
+   * seconds at a time. So the fight is two stages, not one — you farm alone to
+   * get into the queue, then you battle.
+   *
+   * `farmeo` is the culture's own word doing its own job. AURA-CULTURE §1.1
+   * separates *farmear aura* — cultivating charisma through repeated actions,
+   * which is a thing you do ALONE — from *batalla de aura*, which is the
+   * face-to-face. The two stages already had two names before we got here.
+   *
+   * Mechanically the point is that the solo turn has NO opponent category, so
+   * `matchupOf` returns neutral and the triangle simply is not on the board.
+   * What is left is timing and `composure`, which is the pair the culture
+   * actually rewards and the pair a new player has nothing else to learn from
+   * while a rival is throwing things at them.
+   *
+   * `skillFloor`/`skillGain` scale the bar by who you are queueing to face:
+   * the same three moves that walk you past Chispa's Tuesday do not get you
+   * onto the prow. At skill 0.30 the multiplier is 0.87; at 1.50 it is 1.41.
+   *
+   * `bands` is the cost of missing, and it is deliberately NOT elimination.
+   * Nobody gets turned away from a public square, and a qualifier you can fail
+   * into a menu is a qualifier that makes the player replay the menu. What the
+   * farmeo buys is the meter you open the duel on, plus a few more or a few
+   * fewer people watching. Read top-down, first match wins.
+   *
+   * The spread is 40…56, sixteen points, which is deliberately the same size as
+   * the widest thing the fit system can already do (the frog suit at +10 crowd
+   * against all-black at +6 panel, weighted 1.6 in the capital). A performance
+   * should be worth about what an outfit is worth and no more — measured at
+   * mid-campaign, one band step moves a duel by roughly ten points of win rate,
+   * which is a nudge you can feel and can also play through.
+   *
+   * `at` is a fraction of the bar, so `in` starts at exactly 1.00: the label the
+   * player reads and the bar they were shown can never disagree.
+   */
+  qualify: {
+    skillFloor: 0.75,
+    skillGain: 0.44,
+    /* RETUNED 2026-08-29 after the first two-stage measurement. The bands were
+       1.30/1.00/0.70/0 paying 56/50/45/40, and balance-sim showed the farmeo was
+       a net gain for exactly one policy — the expert, who needed it least: it
+       cleared the bar by 2.00x and took the top band 96% of the time, opening
+       nearly every duel at 56, against 1.03x and 16% for a composed player.
+       Upriver expert went 77.3% -> 84.4% off the head start alone.
+
+       A band the strongest policy cannot fail is not a skill check, it is a
+       bonus. So the top band now sits ABOVE where a needle-perfect player lands
+       rather than below it, and the spread is 12 points instead of 16. The
+       middle band widened downward so a composed farmeo reliably lands on 50
+       instead of dipping under it — the player who holds the mark should not be
+       punished for lacking the needle, which is the whole thesis of the game. */
+    bands: [
+      { key: 'straight', at: 1.95, meterStart: 54, crowd: 3 },
+      { key: 'in', at: 0.92, meterStart: 50, crowd: 1 },
+      { key: 'late', at: 0.62, meterStart: 46, crowd: 0 },
+      { key: 'bottom', at: 0, meterStart: 42, crowd: -3 }
+    ]
+  }
 });
 
 export const ROUNDS = TUNING.rounds;
@@ -319,6 +381,36 @@ function moveIndex(moves) {
   if (_indexCache) _indexCache.set(moves, idx);
   return idx;
 }
+
+/* -------------------------------------------------------------------------- */
+/* NOBODY — the absent opponent                                                */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The other half of an exchange when there is no other half.
+ *
+ * EL FARMEO needs a turn to resolve with nobody standing opposite, and there is
+ * exactly one place a turn outcome is decided (CONTRACT §0). So rather than a
+ * second scoring path, the empty space gets a shape: a move with `base: 0` and
+ * `cat: null`. Every existing rule then produces the right answer on its own
+ * and none of them had to be taught about solitude —
+ *
+ *   `scoreBoth` multiplies the whole product by base, so nobody scores nothing.
+ *   `matchupOf(cat, null)` already returns 'neutral', so the triangle is off
+ *   the board rather than being suppressed by a flag. That is the design: with
+ *   no category to answer, the qualifier is pure composure and freshness.
+ *   `special: null` means every cross-effect in step 4 skips itself.
+ *
+ * It is deliberately NOT in the move index, so `getMove` cannot return it, no
+ * deck can hold it, and `patternFor` never resolves a chain through it.
+ */
+const NOBODY = Object.freeze({
+  id: '__nobody', name: 'Nobody', cat: null, tier: 'V3',
+  base: 0, up: 1, lo: 0, idealAmp: 1, dur: 0, hint: '', frames: null
+});
+
+/** The pre-rolled "action" of an absent opponent. `planFor` recognises it. */
+const NO_ACTION = Object.freeze({ absent: true });
 
 /* -------------------------------------------------------------------------- */
 /* OPPONENT MOVE POOL                                                          */
@@ -468,6 +560,8 @@ function newSide(label) {
  * @param {boolean}  [cfg.verbose=true] build the `multipliers` list and log line
  * @param {boolean}  [cfg.suddenEnd=false] end early if the meter pins at 0 or 100
  * @param {number}   [cfg.meterStart] override the opening meter (reputation head start)
+ * @param {boolean}  [cfg.solo=false] EL FARMEO — nobody stands opposite
+ * @param {number}   [cfg.target]     solo only: the aura bar to clear
  * @returns {Object} the match
  */
 export function createMatch(cfg) {
@@ -489,6 +583,18 @@ export function createMatch(cfg) {
   const fitWeight = typeof act.fitWeight === 'number' ? act.fitWeight : (act.id === 'capital' ? 1.6 : 1);
   const fitMeter = fitOffset(cfg.fit, scoring, fitWeight);
 
+  /*
+   * EL FARMEO. The fit is an opening statement and CONTRACT §5 is explicit that
+   * it sets the meter before round one and then shuts up — so it does not move
+   * a solo bar. The solo meter is not a tug of war either; it is progress
+   * towards `target`, which is the only reading of that bar that is true when
+   * there is nobody on the other end of it.
+   */
+  const solo = !!cfg.solo;
+  const target = solo
+    ? Math.max(1, typeof cfg.target === 'number' && isFinite(cfg.target) ? cfg.target : 1000)
+    : 0;
+
   const match = {
     idx: idx,
     moves: cfg.moves,
@@ -498,11 +604,15 @@ export function createMatch(cfg) {
     fit: cfg.fit || null,
     fitMeter: fitMeter,
     scoring: scoring,
+    solo: solo,
+    target: target,
+    passed: false,
     unstable: !!act.unstable,
     repeatsPunished: !!act.repeatsPunished,
     rounds: cfg.rounds > 0 ? cfg.rounds : TUNING.rounds,
     round: 1,
-    meter: clamp((typeof cfg.meterStart === 'number' ? cfg.meterStart : TUNING.meterStart) + fitMeter, 2, 98),
+    meter: solo ? 0
+      : clamp((typeof cfg.meterStart === 'number' ? cfg.meterStart : TUNING.meterStart) + fitMeter, 2, 98),
     you: newSide('you'),
     foe: newSide('them'),
     rng: typeof cfg.rng === 'function' ? cfg.rng
@@ -519,7 +629,7 @@ export function createMatch(cfg) {
     _bestBlend: undefined
   };
 
-  match.foe.pool = buildPool(idx, opponent);
+  match.foe.pool = solo ? [] : buildPool(idx, opponent);
   prepareTurn(match);
   return match;
 }
@@ -536,13 +646,23 @@ export function getMove(match, id) {
 function meterCloseFor(match, side) {
   // The window is symmetric, so it does not matter whose turn it is; the
   // argument is kept because a future asymmetric rule would need it.
+  //
+  // In EL FARMEO the meter is progress towards a bar, not a tug of war, so
+  // there is no such thing as being close on it. That closes the finisher for
+  // the whole solo stage, which is also the right answer in flavour: The
+  // Grimace is documented as the thing that ENDS a battle, and a battle that
+  // has not started cannot be ended.
+  if (match.solo) return false;
   return Math.abs(match.meter - TUNING.meterStart) <= TUNING.finisherWindow;
 }
 
 function isLegal(match, side, move) {
   if (!move) return { legal: false, reason: 'unknown move' };
   if (move.special === 'finisher' && !meterCloseFor(match, side)) {
-    return { legal: false, reason: 'Only with the meter close' };
+    return {
+      legal: false,
+      reason: match.solo ? 'No battle to end yet' : 'Only with the meter close'
+    };
   }
   return { legal: true, reason: null };
 }
@@ -798,6 +918,15 @@ function chooseFoeMove(match) {
  * than a coin flip resolved after the fact.
  */
 function prepareTurn(match) {
+  // EL FARMEO: nobody is pre-rolled because nobody is there. `read` has nothing
+  // to reveal, which the special is told about in step 8 rather than silently.
+  if (match.solo) {
+    match.pending = NO_ACTION;
+    match.reveal = null;
+    match.pendingRead = false;
+    return;
+  }
+
   const s = effectiveSkill(match);
 
   /*
@@ -844,6 +973,12 @@ function usesFor(side, plan) {
  */
 function planFor(match, side, raw, isPlayer) {
   const a = raw || {};
+
+  // Nobody is standing there. `NOBODY` scores zero through the ordinary
+  // scorer and carries no special, so every rule below and every cross-effect
+  // in step 4 correctly does nothing without being told about the solo stage.
+  if (a.absent) return blankPlan(match, side);
+
   let move = null;
   let blend = null;
   let hypeSpent = 0;
@@ -904,6 +1039,34 @@ function planFor(match, side, raw, isPlayer) {
     specialFired: false, specialDetail: null,
     roomWith: false, roomAway: false, roomTurned: false,
     carry: 0
+  };
+}
+
+/**
+ * The plan of an absent opponent. Identical in shape to a real one so that not
+ * one line of `resolveExchange` has to ask whether anybody is there.
+ */
+function blankPlan(match, side) {
+  return {
+    side: side,
+    move: NOBODY,
+    blend: null,
+    blendRefused: null,
+    band: 'clean',
+    amp: NOBODY.idealAmp,
+    ampRequested: NOBODY.idealAmp,
+    ampJitter: 0,
+    hypeSpent: 0,
+    special: null,
+    legal: true,
+    illegalReason: null,
+    uses: 0, links: 0, pattern: null, chain: null,
+    extra: 1, freshExtra: 1, hypeMult: 1,
+    interrupted: false, guarded: false, finisherFired: false,
+    specialFired: false, specialDetail: null,
+    roomWith: false, roomAway: false, roomTurned: false,
+    carry: 0,
+    absent: true
   };
 }
 
@@ -1074,21 +1237,32 @@ export function resolveExchange(match, action) {
   const fScore = actScore(match.scoring, fCrowd, fJudge);
 
   /* -- 6. meter ---------------------------------------------------------- */
-  let shift = TUNING.meterMaxShift * Math.tanh((pScore - fScore) / TUNING.meterSoft);
-  if (P.finisherFired) shift += TUNING.finisherMeterPush;
-  if (F.finisherFired) shift -= TUNING.finisherMeterPush;
-  const meterAfter = clamp(match.meter + shift, 0, 100);
+  /*
+   * Two different bars share one number. In a duel it is the tug of war §11
+   * paints across the top. In EL FARMEO there is nobody to tug against, so the
+   * same 0…100 reads as progress towards `target` — which is what the room is
+   * actually deciding while you are up there alone.
+   */
+  let meterAfter;
+  if (match.solo) {
+    meterAfter = clamp(100 * (you.aura + pScore) / match.target, 0, 100);
+  } else {
+    let shift = TUNING.meterMaxShift * Math.tanh((pScore - fScore) / TUNING.meterSoft);
+    if (P.finisherFired) shift += TUNING.finisherMeterPush;
+    if (F.finisherFired) shift -= TUNING.finisherMeterPush;
+    meterAfter = clamp(match.meter + shift, 0, 100);
+  }
   match.meter = meterAfter;
 
   /* -- 7. hype ----------------------------------------------------------- */
   const pHype = hypeGain(P, pScore);
-  const fHype = hypeGain(F, fScore);
+  const fHype = F.absent ? 0 : hypeGain(F, fScore);
   you.hype = clamp(you.hype + pHype, 0, TUNING.hypeMax);
   foe.hype = clamp(foe.hype + fHype, 0, TUNING.hypeMax);
 
   /* -- 8. ledgers -------------------------------------------------------- */
   commitSide(match, you, P, pScore, pCrowd, pJudge);
-  commitSide(match, foe, F, fScore, fCrowd, fJudge);
+  if (!F.absent) commitSide(match, foe, F, fScore, fCrowd, fJudge);
 
   // debuff set for NEXT turn
   if (P.special === 'debuff') { foe.debuffIn = TUNING.debuffMult; P.specialFired = true; P.specialDetail = 'they pay next turn'; }
@@ -1111,19 +1285,38 @@ export function resolveExchange(match, action) {
   if (F.special === 'refresh') applyRefresh(foe, F);
 
   // read — the reveal is set when the next opponent move is rolled
-  if (P.special === 'read') { match.pendingRead = true; P.specialFired = true; P.specialDetail = 'you see their next category'; }
+  if (P.special === 'read') {
+    if (match.solo) {
+      // Not a failure, and not silence either: the move is telling the truth
+      // about where it is standing, the same way Crowd Turn does in a panel act.
+      P.specialFired = false;
+      P.specialDetail = 'nobody up there to read';
+    } else {
+      match.pendingRead = true;
+      P.specialFired = true;
+      P.specialDetail = 'you see their next category';
+    }
+  }
 
   /* -- 9. advance -------------------------------------------------------- */
   match.round += 1;
-  const pinned = match.suddenEnd && (meterAfter >= 100 || meterAfter <= 0);
+  const pinned = !match.solo && match.suddenEnd && (meterAfter >= 100 || meterAfter <= 0);
   if (match.round > match.rounds || pinned) {
     match.over = true;
     match.pending = null;
     match.reveal = null;
-    if (meterAfter > TUNING.meterStart) match.winner = 'you';
-    else if (meterAfter < TUNING.meterStart) match.winner = 'them';
-    else match.winner = you.aura > foe.aura ? 'you' : foe.aura > you.aura ? 'them' : 'draw';
-    match.flawless = match.winner === 'you' && meterAfter >= TUNING.flawlessMeter && !you.everWhiffed;
+    if (match.solo) {
+      // There is no winner of a farmeo. There is only whether the room let you
+      // in, and `winner` is kept honest rather than borrowed: nobody lost.
+      match.passed = you.aura >= match.target;
+      match.winner = null;
+      match.flawless = false;
+    } else {
+      if (meterAfter > TUNING.meterStart) match.winner = 'you';
+      else if (meterAfter < TUNING.meterStart) match.winner = 'them';
+      else match.winner = you.aura > foe.aura ? 'you' : foe.aura > you.aura ? 'them' : 'draw';
+      match.flawless = match.winner === 'you' && meterAfter >= TUNING.flawlessMeter && !you.everWhiffed;
+    }
   } else {
     prepareTurn(match);
   }
@@ -1138,9 +1331,16 @@ export function resolveExchange(match, action) {
     act: match.act.id,
     scoring: match.scoring,
     unstable: match.unstable,
+    /* EL FARMEO. `them` is null rather than a zero-scoring ghost, so a consumer
+     * that forgets the solo stage exists fails loudly instead of painting a
+     * callout over an empty patch of concrete. */
+    solo: match.solo,
+    target: match.solo ? match.target : 0,
+    auraSoFar: match.solo ? Math.round(you.aura) : 0,
+    passed: match.solo && match.over ? match.passed : false,
     revealUsed: revealShown ? { category: revealShown.category } : null,
     you: youTurn,
-    them: themTurn,
+    them: match.solo ? null : themTurn,
     meterBefore: meterBefore,
     meterAfter: meterAfter,
     meterDelta: meterAfter - meterBefore,
@@ -1149,7 +1349,7 @@ export function resolveExchange(match, action) {
     flawless: match.over ? match.flawless : false,
     nextReveal: match.reveal ? { category: match.reveal.category } : null,
     mcCue: mcCue(match, P, F, youTurn, themTurn, roundNo, meterBefore, meterAfter),
-    logLine: match.verbose ? logLine(roundNo, youTurn, themTurn) : null
+    logLine: match.verbose ? logLine(roundNo, youTurn, match.solo ? null : themTurn) : null
   };
 
   match.log.push(result);
@@ -1387,6 +1587,7 @@ function whyList(plan, ctx, f) {
 }
 
 function logLine(round, you, them) {
+  if (!them) return 'R' + round + ' · ' + you.moveName + ' ' + you.callout;
   return 'R' + round + ' · ' + you.moveName + ' ' + you.callout +
     ' · ' + them.moveName + ' ' + them.callout;
 }
@@ -1396,6 +1597,20 @@ function logLine(round, you, them) {
  * lines themselves live in `src/data/mc.js`, which owns the voice.
  */
 function mcCue(match, P, F, you, them, round, before, after) {
+  /*
+   * EL FARMEO gets a deliberately narrow set of cues, and the narrowness is the
+   * point. Most of `src/data/mc.js` is written about two people — `beat` says
+   * "nobody has flinched", `open` says "whatever they open with" — and an
+   * announcer describing a rival who is not there is worse than an announcer
+   * saying nothing. `null` is a legitimate thing for the bar to carry.
+   */
+  if (match.solo) {
+    if (P.band === 'whiff') return 'whiff';
+    if (P.uses > 0) return 'repeat';
+    if (P.band === 'perfect') return 'perfect';
+    if (you.callout === '+10.000') return 'big';
+    return null;
+  }
   if (match.over) return match.flawless ? 'flawless' : 'final';
   if (P.finisherFired) return 'finisher';
   if (P.pattern) return 'pattern';
@@ -1426,6 +1641,15 @@ export function matchSnapshot(match) {
     actName: match.act.name || match.act.id,
     scoring: match.scoring,
     unstable: match.unstable,
+    /* EL FARMEO. `meter` is progress towards `target` in a solo, not a tug. */
+    solo: match.solo,
+    target: match.target,
+    auraSoFar: Math.round(match.you.aura),
+    auraText: formatAura(match.you.aura),
+    targetText: formatAura(match.target),
+    remaining: Math.max(0, Math.round(match.target - match.you.aura)),
+    remainingText: formatAura(Math.max(0, match.target - match.you.aura)),
+    overBar: match.solo && match.you.aura >= match.target,
     opponent: match.opponent.name,
     opponentSkill: match.opponent.skill,
     quirk: match.opponent.quirk || null,
@@ -1469,6 +1693,161 @@ export function matchSummary(match) {
     drop: match.winner === 'you' ? (match.opponent.drop || null) : null,
     lines: match.log.map(function (t) { return t.logLine; }).filter(Boolean),
     distinctMoves: Object.keys(you.uses).length,
+    bestTurn: match.log.reduce(function (best, t) {
+      return !best || t.you.score > best.you.score ? t : best;
+    }, null)
+  };
+}
+
+/* -------------------------------------------------------------------------- */
+/* EL FARMEO — the solo stage, and the price of falling short                   */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * What each landing on the ladder is called and what it means. Kept next to
+ * `matchSummary`'s titles, which is where the rest of the engine's few authored
+ * strings already live.
+ *
+ * Note what is NOT here: a way to be sent home. Nobody is turned away from a
+ * public square, and a stage the player can fail into a menu is a stage that
+ * makes them replay the menu. Falling short costs ground, not the fight.
+ */
+export const QUALIFY_BANDS = Object.freeze({
+  straight: Object.freeze({
+    label: 'STRAIGHT IN',
+    note: 'The square turned round before you finished. You start the battle ahead.'
+  }),
+  in: Object.freeze({
+    label: 'YOU ARE IN',
+    note: 'Cleared the bar. You start level.'
+  }),
+  late: Object.freeze({
+    label: 'BOTTOM OF THE SHEET',
+    note: 'Short of the bar. They take your name anyway and you start a step behind.'
+  }),
+  bottom: Object.freeze({
+    label: 'THEY CALL YOU ANYWAY',
+    note: 'Well short. Nobody gets sent home from a Tuesday, but the square saw it. You start behind.'
+  })
+});
+
+/** Where a ratio of the bar lands on the ladder. Top-down, first match wins. */
+function qualifyBandFor(ratio) {
+  const bands = TUNING.qualify.bands;
+  for (let i = 0; i < bands.length; i++) {
+    if (ratio >= bands[i].at) return bands[i];
+  }
+  return bands[bands.length - 1];
+}
+
+function dressBand(b, target) {
+  const copy = QUALIFY_BANDS[b.key] || { label: b.key.toUpperCase(), note: '' };
+  const need = Math.round(target * b.at);
+  return {
+    key: b.key,
+    at: b.at,
+    need: need,
+    needText: formatAura(need),
+    meterStart: b.meterStart,
+    crowd: b.crowd,
+    label: copy.label,
+    note: copy.note
+  };
+}
+
+/**
+ * The farmeo the player is about to walk into, or `null` when this fight does
+ * not have one.
+ *
+ * The bar scales with the ACT (`act.qualify.bar`, aura per turn, which is the
+ * room's standard) and with the SKILL of the person you are queueing to face —
+ * the same three moves that get you past a Tuesday in the plaza are not going
+ * to get you onto the prow. The whole ladder is returned dressed, so the UI can
+ * say what each landing is worth before the player commits to anything, which
+ * is the one thing a qualifier has to do to be fair.
+ *
+ * @param {Object} act
+ * @param {Object} [opponent] the rival you are queueing to battle
+ * @returns {{turns:number, target:number, targetText:string, perTurn:number,
+ *            bar:number, name:string, line:string, bands:Array}|null}
+ */
+export function qualifyFor(act, opponent) {
+  if (!act || !act.qualify) return null;
+  if (opponent && opponent.qualify === false) return null;
+
+  const q = act.qualify;
+  const turns = clamp(q.turns | 0, 1, 4) || 2;
+  const bar = q.bar > 0 ? q.bar : 900;
+  const skill = opponent && typeof opponent.skill === 'number' ? opponent.skill : 0.5;
+  const mult = TUNING.qualify.skillFloor + TUNING.qualify.skillGain * skill;
+  const target = Math.max(50, Math.round(bar * turns * mult / 50) * 50);
+
+  const bands = [];
+  for (let i = 0; i < TUNING.qualify.bands.length; i++) {
+    bands.push(dressBand(TUNING.qualify.bands[i], target));
+  }
+
+  return {
+    turns: turns,
+    target: target,
+    targetText: formatAura(target),
+    perTurn: Math.round(target / turns),
+    bar: bar,
+    name: q.name || 'El farmeo',
+    line: q.line || '',
+    bands: bands
+  };
+}
+
+/**
+ * Start a farmeo. Same engine, same deck, same needle, same `resolveExchange` —
+ * the only difference is that nobody is standing opposite.
+ *
+ * @param {Object} cfg   as `createMatch`, plus:
+ * @param {Object} cfg.plan  the object `qualifyFor()` returned
+ * @returns {Object} the match
+ */
+export function createQualifier(cfg) {
+  const c = cfg || {};
+  const plan = c.plan || {};
+  return createMatch(Object.assign({}, c, {
+    solo: true,
+    target: plan.target,
+    rounds: plan.turns,
+    fit: null,          // §5: a fit is the DUEL's opening statement, not a buff
+    suddenEnd: false
+  }));
+}
+
+/**
+ * What the room decided, and what it costs. `meterStart` is handed straight to
+ * `createMatch` for the duel that follows; `crowd` is the change in turnout.
+ *
+ * @param {Object} match a finished solo match
+ */
+export function qualifySummary(match) {
+  const you = match.you;
+  const target = match.target > 0 ? match.target : 1;
+  const ratio = you.aura / target;
+  const band = dressBand(qualifyBandFor(ratio), target);
+
+  return {
+    solo: true,
+    passed: !!match.passed,
+    aura: Math.round(you.aura),
+    auraText: formatAura(you.aura),
+    target: match.target,
+    targetText: formatAura(match.target),
+    ratio: Math.round(ratio * 100) / 100,
+    pct: Math.round(clamp(ratio, 0, 2) * 100),
+    band: band,
+    title: band.label,
+    note: band.note,
+    meterStart: band.meterStart,
+    crowd: band.crowd,
+    rounds: match.log.length,
+    distinctMoves: Object.keys(you.uses).length,
+    lines: match.log.map(function (t) { return t.logLine; }).filter(Boolean),
     bestTurn: match.log.reduce(function (best, t) {
       return !best || t.you.score > best.you.score ? t : best;
     }, null)

@@ -50,6 +50,10 @@
  */
 
 import { mcLine, roundLine, SPECIAL_LINES } from '../data/mc.js';
+/* The clip loop needs the TRUE reputation step the last battle caused, and
+   `src/ui/save.js` is the only file allowed to know it (CONTRACT §1). This is
+   a read of a number, not a second store. */
+import { takeReach } from './save.js';
 
 /** The most people the ring can hold before the stylesheet clips a third rank. */
 const CROWD_MAX = 54;
@@ -417,6 +421,336 @@ export function createHud(opts) {
     catch (e) { /* an unanimatable node is still a person */ }
   }
 
+
+  /* ---------------------------------------------------------------------- */
+  /* THE CLIP LOOP                                                          */
+  /* ---------------------------------------------------------------------- */
+  /*
+   * Yahoo's account of this phenomenon is the sharpest structural thing in the
+   * whole research corpus, and AURA-CULTURE §4 records it: THE STREET FEEDS
+   * THE NETWORKS AND THE NETWORKS FILL THE STREET. Every battle makes fresh
+   * video, and that video recruits the crowd for the next one.
+   *
+   * The mechanism was already wired — `save.reputation()` → `turnoutFor()` →
+   * `setCrowd()` — and completely invisible. The square was simply bigger next
+   * time and nobody noticed it happen. This is the beat where the player
+   * WATCHES it: a phone in the front row flares, the clip lifts off it, the
+   * clip breaks apart into people, and those people walk into the ring while
+   * the head count goes up.
+   *
+   * THREE RULES IT IS BUILT UNDER.
+   *
+   * 1. IT IS THE SAME CROWD, NOT A CUTSCENE. The figures that arrive are
+   *    `personProfile(i)` for the exact indices that will be standing in
+   *    `#crowd` next fight, drawn by the same stylesheet rules off the same
+   *    custom properties. And `setCrowd(after)` is applied to the real ring
+   *    SYNCHRONOUSLY, before a single frame plays — so the beat is a report of
+   *    something that already happened, and no timer of ours can ever land on
+   *    the next battle's crowd and stamp on it.
+   *
+   * 2. IF REPUTATION DID NOT GROW, NOTHING PLAYS. A rematch with somebody
+   *    already beaten, a loss, a second tab that recorded the win first: gain
+   *    is zero and `clipOut` returns false without touching the screen. There
+   *    is no consolation version of this.
+   *
+   * 3. SECONDS, NOT A CEREMONY. Euronews notes organisers deliberately keep
+   *    these battles fast-paced to echo the short video that spreads them
+   *    (AURA-CULTURE §4), and a slow victory animation is the fastest way to
+   *    make a good game annoying. The whole beat is about two seconds, it
+   *    scales DOWN when only one person turned up, and a tap anywhere kills it
+   *    instantly.
+   */
+
+  /**
+   * The line under the number. Warm, deadpan, Argentine register per
+   * `src/data/mc.js` — and it never explains the mechanism, it just says what
+   * happened. Lives here rather than in `mc.js` only because `mc.js` is not
+   * this file's to write; moving it there is a one-line change and the right
+   * end state.
+   *
+   * SHORT, because the window is short: the line lands about 1.2 seconds into
+   * a beat that is over at about 2.4, and eight words do not get read in that
+   * time. They get half-read, which is worse than four.
+   */
+  const CLIP_NOTES = [
+    'Somebody’s cousin saw it.',
+    'The phone went to the street.',
+    'Nobody organised that.',
+    'That is how a square fills.'
+  ];
+
+  const CLIP = {
+    root: null, ring: null, count: null, delta: null, note: null, sr: null,
+    timers: [], people: [], open: false, done: null
+  };
+
+  function clipTimer(fn, ms) {
+    const id = setTimeout(function () { fn(); }, ms);
+    CLIP.timers.push(id);
+    return id;
+  }
+
+  function clipClearTimers() {
+    for (let i = 0; i < CLIP.timers.length; i++) clearTimeout(CLIP.timers[i]);
+    CLIP.timers.length = 0;
+  }
+
+  function mk(tag, cls, parent) {
+    const n = doc.createElement(tag);
+    if (cls) n.className = cls;
+    if (parent) parent.appendChild(n);
+    return n;
+  }
+
+  /** Build the overlay once, lazily. Classes only — no new ids (CONTRACT §11). */
+  function clipBuild() {
+    if (CLIP.root) return CLIP.root;
+    if (!doc.body) return null;
+
+    const root = mk('div', 'aoclip');
+    const inner = mk('div', 'aoclip-in', root);
+    inner.setAttribute('aria-hidden', 'true');
+
+    const stack = mk('div', 'aoclip-stack', inner);
+    mk('div', 'aoclip-kicker', stack).textContent = 'Somebody filmed it';
+
+    /* The clip and the head count share one box. The clip breaks apart and the
+       number is standing where it was, so the eye never travels to follow the
+       thing turning into the other thing. */
+    const slot = mk('div', 'aoclip-slot', stack);
+    const card = mk('div', 'aoclip-card', slot);
+    mk('i', 'aoclip-fig you', card);
+    mk('i', 'aoclip-fig them', card);
+
+    const num = mk('div', 'aoclip-num', slot);
+    CLIP.count = mk('div', 'aoclip-count', num);
+    CLIP.delta = mk('div', 'aoclip-delta', num);
+    CLIP.note = mk('div', 'aoclip-note', stack);
+
+    /* The ring the new people walk into. Same flex box, same glyph rules, same
+       per-person custom properties as `#crowd` — see the grouped selectors in
+       the stylesheet. */
+    CLIP.ring = mk('div', 'aoclip-ring', inner);
+
+    /* The person who shot it, standing in the front row of THIS crowd. Their
+       screen is what flares, and the clip lifts off it. No caption explains
+       that, and none should. */
+    mk('i', 'aoclip-filmer', inner);
+    mk('div', 'aoclip-near', inner);
+
+    /* One sentence, once, for a screen reader. The visuals above are hidden
+       from the tree; this is the only thing that speaks. */
+    CLIP.sr = mk('p', 'aoclip-sr', root);
+    CLIP.sr.setAttribute('role', 'status');
+
+    root.addEventListener('click', function () { clipEnd(); });
+    doc.body.appendChild(root);
+    CLIP.root = root;
+    return root;
+  }
+
+  /** Empty the clip's own ring. Never touches `#crowd`. */
+  function clipRingClear() {
+    if (CLIP.ring) CLIP.ring.textContent = '';
+    CLIP.people.length = 0;
+  }
+
+  /** Put person `i` in the clip's ring, using the one shared profile. */
+  function clipPerson(i) {
+    const prof = personProfile(i);
+    const p = doc.createElement('i');
+    p.style.cssText = prof.css;
+    if (prof.film) p.className = prof.warm ? 'film warm' : 'film';
+    else if (prof.warm) p.className = 'warm';
+    CLIP.people.push(p);
+    return p;
+  }
+
+  /**
+   * Close the beat. Idempotent, and safe to call from a tap, from a timer,
+   * from `reset()` or from the watchdog.
+   * @param {boolean} [immediate] skip the fade
+   */
+  function clipEnd(immediate) {
+    clipClearTimers();
+    if (!CLIP.open) return;
+    CLIP.open = false;
+    const root = CLIP.root;
+    const done = CLIP.done;
+    CLIP.done = null;
+    const shut = function () {
+      if (!root) return;
+      root.classList.remove('on');
+      root.classList.remove('flare');
+      root.classList.remove('out');
+      root.classList.remove('static');
+      root.classList.remove('breaking');
+      clipRingClear();
+    };
+    if (immediate || !canAnimate) shut();
+    else {
+      if (root) root.classList.add('out');
+      setTimeout(shut, 240);      // deliberately NOT on CLIP.timers: this one
+                                  // must survive a second clipEnd() call
+    }
+    if (typeof done === 'function') { try { done(); } catch (e) { /* the beat is over either way */ } }
+  }
+
+  /**
+   * THE BEAT. Call it after a win, before the next fight.
+   *
+   * @param {Object} o
+   * @param {string} [o.actId]      which square, for `turnoutFor`
+   * @param {number} [o.repBefore]  reputation before the win
+   * @param {number} [o.repAfter]   reputation after it
+   * @param {string} [o.note]       override the line under the number
+   * @param {Function} [o.onDone]   called when the beat is finished or skipped
+   * @returns {boolean} true if a beat actually played
+   */
+  function clipOut(o) {
+    const opts = o || {};
+    const actId = opts.actId || 'plaza';
+
+    /* Spend the reputation step whether or not it is used, so a second call
+       for the same fight can never replay the arrival. */
+    const step = takeReach();
+
+    let repBefore = opts.repBefore;
+    let repAfter = opts.repAfter;
+    if (typeof repBefore !== 'number' || typeof repAfter !== 'number') {
+      if (!step || !step.won || step.gain <= 0) return false;
+      repBefore = step.from;
+      repAfter = step.to;
+    }
+
+    const before = turnoutFor(repBefore, actId);
+    const after = turnoutFor(repAfter, actId);
+    const gain = after - before;
+
+    /* Rule 2. Nothing grew, so nothing is shown.
+       This is ALSO the ceiling. `turnoutFor` clamps at `CROWD_MAX`, because
+       past 54 the stylesheet starts a third rank it cannot hold — so once a
+       square is full, another name on the sheet stops adding a body and this
+       beat correctly stops firing. On the current numbers that is roughly
+       reputation 9 in the capital, 17 upriver and 18 in the bracket: the back
+       half of the campaign has no clip loop left to show. Whether that reads
+       as "the square is full" or as the feature quietly dying is a Director
+       call about `turnoutFor` and `CROWD_MAX`, not something to paper over
+       here with a number nobody can see on screen. */
+    if (gain <= 0) return false;
+
+    /* Rule 1. The real ring is grown NOW, synchronously, before any frame of
+       this plays. Everything below is a report. */
+    setCrowd(after);
+
+    const root = clipBuild();
+    if (!root) return false;
+    if (CLIP.open) clipEnd(true);
+
+    CLIP.open = true;
+    CLIP.done = typeof opts.onDone === 'function' ? opts.onDone : null;
+
+    /* The people who were already here. */
+    clipRingClear();
+    const seated = doc.createDocumentFragment();
+    for (let i = 0; i < before; i++) seated.appendChild(clipPerson(i));
+    CLIP.ring.appendChild(seated);
+
+    const note = opts.note || CLIP_NOTES[after % CLIP_NOTES.length];
+    CLIP.count.textContent = String(before);
+    CLIP.delta.textContent = '+' + gain;
+    CLIP.note.textContent = note;
+    if (CLIP.sr) {
+      CLIP.sr.textContent = 'Somebody filmed it. ' +
+        (gain === 1 ? 'One more person' : gain + ' more people') +
+        ' will be in the square next time. ' + after + ' in all.';
+    }
+
+    root.classList.remove('out');
+    root.classList.add('on');
+
+    /* ---- the static version ------------------------------------------- */
+    /* No Web Animations, or the player asked for reduced motion. Everyone is
+       already standing there, the number is already the new number, and the
+       beat is a held frame rather than a sequence. Nothing is lost except the
+       motion. */
+    if (!canAnimate) {
+      root.classList.add('static');
+      const rest = doc.createDocumentFragment();
+      for (let i = before; i < after; i++) {
+        const q = clipPerson(i);
+        // Still lit. The newcomer is the entire point of the frame, and an
+        // unlit one in a crowd of twenty cannot be found without the motion.
+        q.className = (q.className ? q.className + ' ' : '') + 'arriving';
+        rest.appendChild(q);
+      }
+      CLIP.ring.appendChild(rest);
+      CLIP.count.textContent = String(after);
+      /* Longer than the animated version, not shorter: there is no sequence
+         to watch, so the whole of it has to be READ, and the reduced-motion
+         rule strips the durations but leaves every animation-DELAY in place —
+         which is how the first cut of this shipped a note that appeared with
+         three hundred milliseconds left to live. `.static` zeroes them. */
+      clipTimer(function () { clipEnd(true); }, 2200);
+      return true;
+    }
+
+    /* ---- the sequence ------------------------------------------------- */
+    /* Budget, in ms from the tap that ended the battle:
+         0    CUT to the square, over the result screen
+         90   the phone in the front row flares
+         300  the clip lifts off that phone and opens
+         880  the clip breaks apart
+         880+ the people it brought walk in, and the count follows them
+       A single arrival is the common case (a win is worth one name, and one
+       name is worth about one person), so the stagger is CLAMPED WIDE at the
+       bottom: one person arriving still gets a beat of their own rather than
+       a flicker. */
+    const stagger = clamp(560 / gain, 55, 150);
+    const T_FLARE = 90;
+    const T_BREAK = 880;
+    const land = T_BREAK + 140 + gain * stagger;
+
+    clipTimer(function () { root.classList.add('flare'); }, T_FLARE);
+
+    clipTimer(function () {
+      if (!CLIP.open) return;
+      root.classList.add('breaking');
+      for (let k = 0; k < gain; k++) {
+        (function (k) {
+          clipTimer(function () {
+            if (!CLIP.open) return;
+            const p = clipPerson(before + k);
+            p.className = (p.className ? p.className + ' ' : '') + 'arriving';
+            CLIP.ring.appendChild(p);
+            /* They come TOWARDS the square, not straight up out of the
+               ground: a short walk-in from slightly near and slightly low,
+               settling at the exact size their profile says they are. */
+            anim(p,
+              [{ opacity: 0, transform: 'translateY(11px) scale(1.45)' },
+               { opacity: 1, transform: 'none' }],
+              { duration: 520, easing: 'cubic-bezier(.2,.9,.2,1)', fill: 'none' });
+            CLIP.count.textContent = String(before + k + 1);
+            anim(CLIP.count,
+              [{ transform: 'scale(1)' }, { transform: 'scale(1.13)', offset: 0.3 }, { transform: 'scale(1)' }],
+              { duration: 320, easing: 'ease-out', fill: 'none' });
+            /* The lamp stays on them for the rest of the beat. Taking it off
+               early hides the one thing the beat is about, and the ring is
+               emptied on close anyway. */
+          }, 140 + k * stagger);
+        }(k));
+      }
+    }, T_BREAK);
+
+    /* Hold on the finished square. Long enough to find one new person in a
+       crowd of twenty, short enough that nobody taps through it. */
+    clipTimer(function () { clipEnd(); }, land + 1200);
+    /* Watchdog. If any of the above throws, the player must not be sealed out
+       of the result screen behind an overlay that never closes. */
+    clipTimer(function () { clipEnd(true); }, land + 2600);
+    return true;
+  }
+
   /* ---------------------------------------------------------------------- */
   /* THE METER — a tug of war, not a health bar                             */
   /* ---------------------------------------------------------------------- */
@@ -462,6 +796,18 @@ export function createHud(opts) {
    */
   function sayCue(cue, ctx) {
     say(mcLine(cue, ctx));
+    /* THE ONE HOOK THAT ALREADY EXISTED AFTER A WIN.
+       `game.js` closes a battle with `sayCue(won ? 'win' : 'loss', ctx)`, and
+       `mcCue()` in `engine/battle.js` never returns 'win' — the cue reaches
+       this function from exactly one place in the codebase, `finishBattle()`,
+       and only when the player took the fight. So the clip loop rides it
+       rather than waiting on a wire that has not been run yet.
+       `clipOut()` is a no-op unless the win actually added a name, so a
+       rematch, a loss or a double call shows nothing.
+       When `game.js` calls `clipOut()` explicitly, this fires first, spends
+       the step, and the explicit call quietly returns false. Either way the
+       square fills up exactly once. */
+    if (cue === 'win') clipOut({ actId: ctx && ctx.act });
   }
 
   /** The line for the top of a round, before anyone has moved. */
@@ -761,6 +1107,10 @@ export function createHud(opts) {
   /* ---------------------------------------------------------------------- */
 
   function reset() {
+    /* A new fight is starting. Whatever the last one earned has been shown,
+       skipped, or is no longer wanted — and a clip beat still holding the
+       screen while round one opens behind it is a bug, not a flourish. */
+    clipEnd(true);
     clearArena();
     clearFlashes();
     setMeter(50);
@@ -770,6 +1120,14 @@ export function createHud(opts) {
 
   function destroy() {
     clearFlashes();
+    clipEnd(true);
+    if (CLIP.root && CLIP.root.parentNode) CLIP.root.parentNode.removeChild(CLIP.root);
+    CLIP.root = null;
+    CLIP.ring = null;
+    CLIP.count = null;
+    CLIP.delta = null;
+    CLIP.note = null;
+    CLIP.sr = null;
     if (roarTimer) { clearTimeout(roarTimer); roarTimer = 0; }
     if (el.crowd) el.crowd.classList.remove('roar');
   }
@@ -781,6 +1139,8 @@ export function createHud(opts) {
     turnoutFor: turnoutFor,
     drawIn: drawIn,
     react: react,
+    clipOut: clipOut,
+    clipEnd: clipEnd,
     // hud
     setMeter: setMeter,
     setRound: setRound,

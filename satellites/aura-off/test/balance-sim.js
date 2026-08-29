@@ -21,13 +21,46 @@
  * WHAT IT REPORTS
  * ---------------------------------------------------------------------------
  *   1. Win rate by act by policy, against the CONTRACT.md §14 targets.
- *   2. How each policy actually played — bands, blends, patterns, spread.
- *   3. Win rate by individual opponent, in campaign order.
- *   4. Move census: opening value per move, and who actually picks it.
- *   5. Design findings: dominated moves, unused moves, a backwards difficulty
- *      curve, policies pinned at the ceiling or the floor, and whether the
- *      masher genuinely loses.
- *   6. Fit sensitivity — a controlled run where only the outfit changes.
+ *   2. EL FARMEO — where each policy lands on the qualifying ladder, and what
+ *      the whole two-stage format costs it against the same duel played cold.
+ *   3. How each policy actually played — bands, blends, patterns, spread.
+ *   4. Win rate by individual opponent, in campaign order.
+ *   5. Move census: opening value per move, and who actually picks it.
+ *   6. PACKS — the same table with no pack owned, with both packs bought, and
+ *      with every pack move earned. A pack must add range and not power, so
+ *      this section exists to catch it adding power.
+ *   7. Design findings: dominated moves, unused moves, a backwards difficulty
+ *      curve, policies pinned at the ceiling or the floor, whether the masher
+ *      genuinely loses, and whether owning a pack buys win rate.
+ *   8. Fit sensitivity — a controlled run where only the outfit changes.
+ *
+ * ---------------------------------------------------------------------------
+ * A FIGHT IS TWO STAGES, SO A SIMULATED FIGHT IS TWO STAGES
+ * ---------------------------------------------------------------------------
+ * `src/ui/game.js` plays EL FARMEO — a solo qualifying stage, two or three
+ * turns with nobody standing opposite — and hands what the room made of it to
+ * the duel as an opening meter. Every act declares one; one opponent (Chispa,
+ * the first fight of a run) declares it off.
+ *
+ * A simulator that skipped that stage would be reporting a game nobody plays.
+ * Worse, it would be silently flattering whichever policy is best at clearing
+ * a solo bar, which turns out to be the strongest one in the game. So every
+ * cell in the main table is a farmeo played by the same policy, followed by the
+ * duel it bought. Falling short is not elimination — it is a worse opening
+ * meter — and that cost is inside the win rate, which is the only place it can
+ * honestly live.
+ *
+ * ---------------------------------------------------------------------------
+ * OWNERSHIP IS A DIMENSION OF THE TABLE, NOT A FOOTNOTE
+ * ---------------------------------------------------------------------------
+ * `src/data/packs.js` rule 2 is that a pack adds RANGE, never POWER, and rule 1
+ * is that the base twenty-seven stay a complete winnable game. Neither is
+ * checkable by reading a move sheet: both are win-rate claims. §6 runs the
+ * campaign three times — nothing owned, both packs bought, every pack move
+ * earned — off paired seeds, and prints the difference.
+ *
+ * The main table is ALWAYS the base twenty-seven. That is the game as it ships
+ * and the table that belongs in README.
  *
  * CONTRACT.md §14 is explicit that its table "described code we no longer
  * have. It is a target, not a measurement." So this suite REPORTS. It does not
@@ -55,21 +88,36 @@
  *   node test/balance-sim.js --workers=1      single threaded
  *   node test/balance-sim.js --json           machine-readable, no tables
  *   node test/balance-sim.js --no-color
+ *   node test/balance-sim.js --no-packs       skip §6, the slowest section
+ *   node test/balance-sim.js --no-farmeo      duels only — the pre-farmeo game
+ *   node test/balance-sim.js --pack-battles=1200
  *
  * A matchup is one (policy x opponent) pair: 25 opponents x 4 policies x 3000
- * is 300,000 battles and about 2.7 million exchanges. That is a few seconds on
- * a normal machine and about twenty on a two-core container, which is what
- * `--quick` is for.
+ * is 300,000 fights, each one a farmeo and then a duel, and about 3.4 million
+ * exchanges. Add the paired duel-only arm §2 needs and the three ownership arms
+ * §6 needs and a full run is around a minute on a two-core container, which is
+ * what `--quick` is for.
  */
 
 import { isMainThread, Worker, workerData, parentPort } from 'node:worker_threads';
 import { fileURLToPath } from 'node:url';
 import { availableParallelism } from 'node:os';
 
-import { MOVES, MOVES_BY_ID } from '../src/data/moves.js';
+/*
+ * `MOVES` and `MOVES_BY_ID` are LIVE BINDINGS (see the header of
+ * `src/data/moves.js`). `setOwnedPacks()` rebuilds them in place, so anything
+ * that reads them must read them AFTER ownership is set for the job it is
+ * running — never capture them into a config object first. §6 is the only
+ * section that moves ownership, and it sets it at the top of every job so no
+ * job can inherit another one's library whatever order the scheduler picks.
+ */
+import {
+  MOVES, MOVES_BY_ID, PACKS, PACK_MOVES, setOwnedPacks
+} from '../src/data/moves.js';
 import { ACTS, OPPONENTS, FITS, actById, deckAfter } from '../src/data/campaign.js';
 import {
-  simulateBattle, createMatch, resolveExchange, PLAYER_POLICIES
+  simulateBattle, createMatch, resolveExchange, PLAYER_POLICIES,
+  policyAction, qualifyFor, createQualifier, qualifySummary, QUALIFY_BANDS
 } from '../src/engine/battle.js';
 
 /* ========================================================================== */
@@ -90,6 +138,55 @@ const TARGETS = Object.freeze({
 
 const POLICIES = PLAYER_POLICIES.slice();
 
+/* ========================================================================== */
+/* OWNERSHIP — the three states a player can be in, derived from the packs     */
+/* ========================================================================== */
+
+/**
+ * Built from `PACKS` rather than written down, so a third pack lands in this
+ * table the day it lands in the data file and nobody has to remember.
+ *
+ *   none    the base twenty-seven. What ships. The main table is always this.
+ *   bought  every pack owned, but only the moves that arrive WITH a pack —
+ *           the honest "I paid five minutes ago" state.
+ *   maxed   every pack owned and every move inside it earned. Not a realistic
+ *           save, deliberately: it is the ceiling of what money can buy, and if
+ *           the ceiling does not raise win rate then nothing below it can.
+ *
+ * `deck` is appended to the campaign deck, because ownership gets you the pack
+ * and the campaign still has to give you the base moves you have won.
+ */
+const ALL_PACK_IDS = PACKS.map(function (p) { return p.id; });
+const PACK_OPENING_IDS = PACK_MOVES
+  .filter(function (m) { return m.unlock && m.unlock.on === 'pack'; })
+  .map(function (m) { return m.id; });
+const PACK_ALL_MOVE_IDS = PACK_MOVES.map(function (m) { return m.id; });
+
+const OWNERSHIP = Object.freeze([
+  Object.freeze({ key: 'none', label: 'no pack', packs: Object.freeze([]), deck: Object.freeze([]) }),
+  Object.freeze({
+    key: 'bought', label: 'both packs, opening moves',
+    packs: Object.freeze(ALL_PACK_IDS.slice()), deck: Object.freeze(PACK_OPENING_IDS.slice())
+  }),
+  Object.freeze({
+    key: 'maxed', label: 'both packs, every move',
+    packs: Object.freeze(ALL_PACK_IDS.slice()), deck: Object.freeze(PACK_ALL_MOVE_IDS.slice())
+  })
+]);
+
+const OWNERSHIP_BY_KEY = OWNERSHIP.reduce(function (m, s) { m[s.key] = s; return m; }, Object.create(null));
+
+/**
+ * Point the shared move library at one ownership state and hand back what that
+ * state adds to a deck. Called at the top of EVERY job, including the base
+ * ones, so module state can never leak from one job into the next.
+ */
+function applyOwnership(key) {
+  const st = OWNERSHIP_BY_KEY[key] || OWNERSHIP[0];
+  setOwnedPacks(st.packs);
+  return st;
+}
+
 /**
  * Thresholds for the findings section. Every one of these is a REPORTING
  * threshold, never a pass/fail gate. They are named constants so a reader can
@@ -101,12 +198,20 @@ const FLAG = Object.freeze({
   /** A policy below this has no path at all. */
   floor: 0.02,
   /**
-   * Win rate rising between consecutive acts by more than this reads as a
-   * backwards difficulty curve rather than sampling noise. At n = 15,000 per
-   * act cell the standard error is about 0.4pp, so 1.5pp is roughly four
-   * sigma.
+   * Win rate rising between consecutive acts reads as a backwards difficulty
+   * curve rather than sampling noise once it clears BOTH of these.
+   *
+   * A flat pp threshold on its own is the wrong test and it hid a real
+   * inversion: near the ceiling a rate carries far less variance than it does
+   * in the middle (at 96% and n = 15,000 the standard error is 0.16pp, not the
+   * 0.4pp a 50% rate would give), so the expert going UP by 1.1pp from The Park
+   * Bracket to The Banned Town was seven sigma and got called monotonic. The
+   * curve now has to clear three standard errors of the DIFFERENCE as well as
+   * the pp floor, and the floor is there only to stop a tiny `--quick` sample
+   * flagging on noise.
    */
-  backwardsPP: 1.5,
+  backwardsPP: 0.5,
+  backwardsSigma: 3,
   /**
    * Expert pick rate below this, with the move genuinely available, means the
    * one value-maximising policy in the sim never wants it.
@@ -128,7 +233,24 @@ const FLAG = Object.freeze({
    * A masher above this in any act would mean repetition is not being
    * punished, which contradicts the verified win condition.
    */
-  masherAlarm: 0.25
+  masherAlarm: 0.25,
+  /**
+   * PAY TO WIN. How many points of win rate a pack may add before the claim
+   * "a pack adds range, never power" (`packs.js` rule 2) stops being true.
+   *
+   * 2.0pp is roughly three standard errors on the default §6 sample (500
+   * fights per opponent x policy, five opponents an act, so n = 2,500 a cell
+   * and SE about 1.0pp on a rate near 50%), and it is also about the smallest
+   * edge a player could actually feel. Under it, a difference is noise or a
+   * rounding of one; over it, somebody bought a better game.
+   */
+  packEdgePP: 2.0,
+  /**
+   * A qualifying bar the strongest policy clears into the top band this often
+   * is not a bar, it is a formality with a reward attached — and one that pays
+   * out to the policy that needed it least.
+   */
+  farmeoTopBand: 0.9
 });
 
 /* ========================================================================== */
@@ -159,22 +281,81 @@ function mergeCounts(dst, src) {
   for (const k in src) dst[k] = (dst[k] || 0) + src[k];
 }
 
+/* -------------------------------------------------------------------------- */
+/* EL FARMEO — the solo stage, played by the same policy, before the duel      */
+/* -------------------------------------------------------------------------- */
+
+/** The ladder's landings, in the order the engine tests them. */
+const QUALIFY_KEYS = Object.freeze(['straight', 'in', 'late', 'bottom']);
+
+function emptyBands() {
+  return { straight: 0, in: 0, late: 0, bottom: 0, none: 0 };
+}
+
+/**
+ * Play one farmeo and hand back what the room decided.
+ *
+ * Every rule here belongs to the engine: `createQualifier` builds the solo
+ * match, `policyAction` picks the moves, `resolveExchange` scores them and
+ * `qualifySummary` reads the ladder. This function owns the loop and nothing
+ * else, which is the same contract the duel arm has lived under since the
+ * first version of this file.
+ *
+ * @returns {{band:string, meterStart:number|undefined, ratio:number,
+ *            aura:number, passed:boolean, turns:number}}
+ */
+function runFarmeo(plan, opp, act, deck, seed, policy) {
+  const match = createQualifier({
+    moves: MOVES, opponent: opp, act: act, plan: plan, deck: deck,
+    seed: seed, verbose: false
+  });
+  let guard = 0;
+  while (!match.over && guard++ < 40) resolveExchange(match, policyAction(policy, match));
+  const s = qualifySummary(match);
+  return {
+    band: s.band.key,
+    meterStart: s.meterStart,
+    ratio: s.ratio,
+    aura: s.aura,
+    passed: !!s.passed,
+    turns: match.log.length
+  };
+}
+
 /**
  * Run one matchup and harvest everything the report needs out of the real
  * battles. Nothing in here decides an outcome; it reads the match log that
  * `resolveExchange` wrote.
  *
- * @param {{oppIndex:number, policy:string, n:number, master:number}} job
+ * A cell is one full FIGHT per battle index: the farmeo, then the duel it
+ * bought. `job.farmeo === false` runs the duel cold, which is what §2's paired
+ * arm and `--no-farmeo` want.
+ *
+ * @param {{oppIndex:number, policy:string, n:number, master:number,
+ *          farmeo?:boolean, own?:string}} job
  * @returns {Object} a structured-clone-safe cell
  */
 function runMatchup(job) {
+  const own = applyOwnership(job.own || 'none');
   const opp = OPPONENTS[job.oppIndex];
   const act = actById(opp.act);
-  const deck = deckAfter(job.oppIndex);
+  const deck = deckAfter(job.oppIndex).concat(own.deck);
+  /*
+   * The duel seed does NOT carry the ownership key or the farmeo flag, so the
+   * three §6 arms and the two §2 arms are paired: battle 400 of every arm opens
+   * on the same dice and differs only by the one variable under test. (The
+   * streams still diverge inside a battle once the decks differ — a paired seed
+   * removes the "different world" half of the variance, not all of it.)
+   */
   const base = seedFor(job.master, 'cell', act.id, opp.id, job.policy);
+  const qBase = seedFor(job.master, 'farmeo', act.id, opp.id, job.policy);
+  const wantFarmeo = job.farmeo !== false;
+  const plan = wantFarmeo ? qualifyFor(act, opp) : null;
 
   const cell = {
-    kind: 'cell',
+    kind: job.kind || 'cell',
+    own: own.key,
+    farmeo: wantFarmeo,
     oppIndex: job.oppIndex,
     oppId: opp.id,
     actId: opp.act,
@@ -187,6 +368,9 @@ function runMatchup(job) {
     bands: { perfect: 0, clean: 0, shaky: 0, whiff: 0 },
     blendTurns: 0, blendSplitSum: 0, patternTurns: 0,
     finisherFired: 0, finisherEarly: 0,
+    /* the farmeo's own numbers */
+    qRuns: 0, qBands: emptyBands(), qRatioSum: 0, qAuraSum: 0,
+    qPassed: 0, qTurns: 0, meterStartSum: 0,
     plays: emptyCounts(),
     playScore: emptyCounts(),
     winPlays: emptyCounts()
@@ -202,6 +386,21 @@ function runMatchup(job) {
   };
 
   for (let i = 0; i < job.n; i++) {
+    if (plan) {
+      const q = runFarmeo(plan, opp, act, deck, (qBase + i * 2654435761) >>> 0, job.policy);
+      cell.qRuns++;
+      cell.qBands[q.band]++;
+      cell.qRatioSum += q.ratio;
+      cell.qAuraSum += q.aura;
+      cell.qTurns += q.turns;
+      if (q.passed) cell.qPassed++;
+      cell.meterStartSum += q.meterStart;
+      cfg.meterStart = q.meterStart;
+    } else {
+      cell.qBands.none++;
+      cfg.meterStart = undefined;
+    }
+
     // Same stride `simulateSeries` uses, so a single battle from this table can
     // be replayed by hand with the same arithmetic.
     cfg.seed = (base + i * 2654435761) >>> 0;
@@ -261,6 +460,7 @@ function runMatchup(job) {
  * @param {{actIndex:number, fitIndex:number, n:number, master:number}} job
  */
 function runFit(job) {
+  applyOwnership('none');
   const act = ACTS[job.actIndex];
   const fit = FITS[job.fitIndex];
 
@@ -408,19 +608,34 @@ function parseArgs(argv) {
     workers: Math.max(1, availableParallelism ? availableParallelism() : 2),
     json: false,
     color: process.stdout.isTTY === true,
-    fitBattles: 400
+    fitBattles: 400,
+    /* the paired duel-only arm §2 subtracts the farmeo against */
+    coldBattles: 600,
+    /* the three ownership arms in §6 */
+    packBattles: 500,
+    farmeo: true,
+    packs: true
   };
+  let quick = false;
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
-    if (a === '--quick') o.battles = 600;
+    if (a === '--quick') { o.battles = 600; quick = true; }
     else if (a === '--json') { o.json = true; o.color = false; }
     else if (a === '--no-color') o.color = false;
     else if (a === '--color') o.color = true;
+    else if (a === '--no-farmeo') o.farmeo = false;
+    else if (a === '--no-packs') o.packs = false;
     else if (a.indexOf('--battles=') === 0) o.battles = Math.max(1, parseInt(a.slice(10), 10) || 3000);
     else if (a.indexOf('--seed=') === 0) o.seed = (parseInt(a.slice(7), 10) || 0) >>> 0;
     else if (a.indexOf('--workers=') === 0) o.workers = Math.max(1, parseInt(a.slice(10), 10) || 1);
     else if (a.indexOf('--fit-battles=') === 0) o.fitBattles = Math.max(0, parseInt(a.slice(14), 10) || 0);
+    else if (a.indexOf('--cold-battles=') === 0) o.coldBattles = Math.max(0, parseInt(a.slice(15), 10) || 0);
+    else if (a.indexOf('--pack-battles=') === 0) o.packBattles = Math.max(0, parseInt(a.slice(15), 10) || 0);
   }
+  // --quick scales the side sections too, or they end up costing more than the
+  // main table they are meant to annotate.
+  if (quick) { o.coldBattles = Math.min(o.coldBattles, 200); o.packBattles = Math.min(o.packBattles, 150); }
+  if (!o.farmeo) o.coldBattles = 0;   // nothing to subtract; both arms would be the same run
   o.workers = Math.min(o.workers, 16);
   return o;
 }
@@ -507,7 +722,34 @@ async function main() {
   const jobs = [];
   for (let p = 0; p < POLICIES.length; p++) {
     for (let i = 0; i < OPPONENTS.length; i++) {
-      jobs.push({ kind: 'cell', oppIndex: i, policy: POLICIES[p], n: opt.battles, master: opt.seed });
+      jobs.push({
+        kind: 'cell', oppIndex: i, policy: POLICIES[p],
+        n: opt.battles, master: opt.seed, farmeo: opt.farmeo, own: 'none'
+      });
+    }
+  }
+  /* §2's other arm: the same duels, cold, off the same seeds. */
+  if (opt.coldBattles > 0) {
+    for (let p = 0; p < POLICIES.length; p++) {
+      for (let i = 0; i < OPPONENTS.length; i++) {
+        jobs.push({
+          kind: 'cold', oppIndex: i, policy: POLICIES[p],
+          n: opt.coldBattles, master: opt.seed, farmeo: false, own: 'none'
+        });
+      }
+    }
+  }
+  /* §6: the whole campaign again, once per ownership state. */
+  if (opt.packs && opt.packBattles > 0 && PACK_MOVES.length) {
+    for (let s = 0; s < OWNERSHIP.length; s++) {
+      for (let p = 0; p < POLICIES.length; p++) {
+        for (let i = 0; i < OPPONENTS.length; i++) {
+          jobs.push({
+            kind: 'pack', oppIndex: i, policy: POLICIES[p], own: OWNERSHIP[s].key,
+            n: opt.packBattles, master: opt.seed, farmeo: opt.farmeo
+          });
+        }
+      }
     }
   }
   if (opt.fitBattles > 0) {
@@ -519,14 +761,29 @@ async function main() {
   }
 
   /* ---- 2. the probe (main thread, deterministic, near free) ------------ */
+  // Base library only: the census describes the game as it ships. Ownership is
+  // §6's subject and it is not allowed to leak into any other table.
+  applyOwnership('none');
   const opening = Object.create(null);
   for (let i = 0; i < MOVES.length; i++) opening[MOVES[i].id] = openingValue(MOVES[i].id, opt.seed);
+  const baseMoves = MOVES.slice();
 
   /* ---- 3. the battles -------------------------------------------------- */
   const raw = await runAll(jobs, opt.workers);
   const elapsed = Date.now() - t0;
 
+  /* Every fight that was actually played, main table and side arms alike. The
+     header used to count only the main table and the fits, which understated a
+     full run by about 40%. */
+  opt.totalFights = raw.reduce(function (t, r) { return t + (r.n || 0); }, 0);
+
+  // Single-threaded runs execute the jobs right here, so the library could be
+  // sitting on `maxed` by now. Everything below reports the base game.
+  applyOwnership('none');
+
   const cells = raw.filter(function (r) { return r.kind === 'cell'; });
+  const coldCells = raw.filter(function (r) { return r.kind === 'cold'; });
+  const packCells = raw.filter(function (r) { return r.kind === 'pack'; });
   const fitRuns = raw.filter(function (r) { return r.kind === 'fit'; });
 
   /* ---- 4. aggregate ---------------------------------------------------- */
@@ -537,6 +794,8 @@ async function main() {
       bands: { perfect: 0, clean: 0, shaky: 0, whiff: 0 },
       blendTurns: 0, blendSplitSum: 0, patternTurns: 0,
       finisherFired: 0, finisherEarly: 0,
+      qRuns: 0, qBands: emptyBands(), qRatioSum: 0, qAuraSum: 0,
+      qPassed: 0, qTurns: 0, meterStartSum: 0,
       plays: emptyCounts(), playScore: emptyCounts(), winPlays: emptyCounts(),
       availBattles: emptyCounts(), availTurns: emptyCounts()
     };
@@ -555,6 +814,9 @@ async function main() {
     agg.blendTurns += cell.blendTurns; agg.blendSplitSum += cell.blendSplitSum;
     agg.patternTurns += cell.patternTurns;
     agg.finisherFired += cell.finisherFired; agg.finisherEarly += cell.finisherEarly;
+    agg.qRuns += cell.qRuns; agg.qRatioSum += cell.qRatioSum; agg.qAuraSum += cell.qAuraSum;
+    agg.qPassed += cell.qPassed; agg.qTurns += cell.qTurns; agg.meterStartSum += cell.meterStartSum;
+    for (const k in cell.qBands) agg.qBands[k] += cell.qBands[k];
     mergeCounts(agg.plays, cell.plays);
     mergeCounts(agg.playScore, cell.playScore);
     mergeCounts(agg.winPlays, cell.winPlays);
@@ -582,6 +844,28 @@ async function main() {
   }
 
   const rate = function (a) { return a && a.n ? a.wins / a.n : 0; };
+
+  /* ---- 4b. the cold arm: the same duels with no farmeo in front of them - */
+  const coldByActPolicy = Object.create(null);
+  const coldByPolicy = Object.create(null);
+  for (let i = 0; i < coldCells.length; i++) {
+    const c = coldCells[i];
+    absorb(slot(coldByActPolicy, c.actId, c.policy), c);
+    if (!coldByPolicy[c.policy]) coldByPolicy[c.policy] = blankAgg();
+    absorb(coldByPolicy[c.policy], c);
+  }
+
+  /* ---- 4c. the ownership arms ------------------------------------------ */
+  /* own -> actId -> policy, and own -> policy. The second one carries the play
+     counts §6 reads to say WHICH pack move the expert reached for. */
+  const packByOwnActPolicy = Object.create(null);
+  const packByOwnPolicy = Object.create(null);
+  for (let i = 0; i < packCells.length; i++) {
+    const c = packCells[i];
+    if (!packByOwnActPolicy[c.own]) packByOwnActPolicy[c.own] = Object.create(null);
+    absorb(slot(packByOwnActPolicy[c.own], c.actId, c.policy), c);
+    absorb(slot(packByOwnPolicy, c.own, c.policy), c);
+  }
 
   /* ---- 5. the per-move census, built once and used by both outputs ----- */
   /**
@@ -639,14 +923,32 @@ async function main() {
     }
   }
 
-  const findings = buildFindings(actRates, byPolicy, byQuirkPolicy, census);
+  /* ---- 6. the two structural sections, bundled ------------------------- */
+  const farmeo = {
+    on: opt.farmeo,
+    byActPolicy: byActPolicy,          // the qBands counters ride along in here
+    byPolicy: byPolicy,
+    coldByActPolicy: coldByActPolicy,
+    coldByPolicy: coldByPolicy,
+    coldN: opt.coldBattles
+  };
+  const packs = {
+    on: packCells.length > 0,
+    states: OWNERSHIP,
+    byOwnActPolicy: packByOwnActPolicy,
+    byOwnPolicy: packByOwnPolicy,
+    n: opt.packBattles,
+    moveIds: PACK_ALL_MOVE_IDS
+  };
+
+  const findings = buildFindings(actRates, byActPolicy, byPolicy, byQuirkPolicy, census, farmeo, packs);
 
   if (opt.json) {
-    printJson(opt, elapsed, byActPolicy, byOppPolicy, byPolicy, census, fitRuns, findings, rate);
+    printJson(opt, elapsed, byActPolicy, byOppPolicy, byPolicy, census, fitRuns, findings, rate, farmeo, packs);
     return;
   }
 
-  printReport(opt, elapsed, cells, fitRuns, actRates, byOppPolicy, byPolicy, census, findings, rate);
+  printReport(opt, elapsed, cells, fitRuns, actRates, byOppPolicy, byPolicy, census, findings, rate, farmeo, packs);
 }
 
 /* ========================================================================== */
@@ -658,10 +960,64 @@ async function main() {
  * changes the exit code. A finding is written so a designer can disagree with
  * it on the evidence rather than on the verdict.
  */
-function buildFindings(actRates, byPolicy, byQuirkPolicy, census) {
+function buildFindings(actRates, byActPolicy, byPolicy, byQuirkPolicy, census, farmeo, packs) {
   const out = [];
   const add = function (severity, key, text) { out.push({ severity: severity, key: key, text: text }); };
   const rate = function (a) { return a && a.n ? a.wins / a.n : 0; };
+
+  /* -- EL FARMEO. Who does the qualifying stage actually pay? ------------ */
+  if (farmeo && farmeo.on) {
+    const ladder = [];
+    let topHeavy = null;
+    for (let p = 0; p < POLICIES.length; p++) {
+      const pol = POLICIES[p];
+      const a = farmeo.byPolicy[pol];
+      if (!a || !a.qRuns) continue;
+      const top = a.qBands.straight / a.qRuns;
+      ladder.push({ pol: pol, top: top, meter: a.meterStartSum / a.qRuns, ratio: a.qRatioSum / a.qRuns });
+      if (pol === 'expert' && top >= FLAG.farmeoTopBand) topHeavy = top;
+    }
+    add('note', 'farmeo-ladder',
+      'EL FARMEO — mean opening meter bought, and how often the top band landed:\n     ' +
+      ladder.map(function (r) {
+        return padR(r.pol, 10) + 'meter ' + r.meter.toFixed(1) + '   top band ' + padL(pct(r.top, 0), 5) +
+          '   mean ' + r.ratio.toFixed(2) + 'x the bar';
+      }).join('\n     ') +
+      '\n     A duel opens at 50. Everything above that line was bought alone, before anybody stood opposite.');
+
+    if (topHeavy != null) {
+      add('high', 'farmeo-bar',
+        'THE QUALIFYING BAR IS NOT A BAR FOR AN EXPERT — it clears the top band ' + pct(topHeavy, 0) +
+        ' of the time, so the best policy in the game is handed the best opening meter almost every fight,\n     ' +
+        'while the policies that could use the help land under it. A stage that pays out in proportion to how\n     ' +
+        'little you needed it widens the skill ladder instead of teaching it. The bar lives in\n     ' +
+        '`battle.js` TUNING.qualify (skillFloor/skillGain and the band `at` fractions), not in scoring.js.');
+    }
+
+    /* What the whole stage COST each policy, measured against the same duels. */
+    if (farmeo.coldN > 0) {
+      const rows = [];
+      for (let p = 0; p < POLICIES.length; p++) {
+        const pol = POLICIES[p];
+        const hot = rate(farmeo.byPolicy[pol]);
+        const cold = rate(farmeo.coldByPolicy[pol]);
+        rows.push({ pol: pol, hot: hot, cold: cold, d: (hot - cold) * 100 });
+      }
+      const gainers = rows.filter(function (r) { return r.d > 0; }).map(function (r) { return r.pol; });
+      add(rows.length && rows[rows.length - 1].d > 0 && rows[0].d < 0 ? 'high' : 'note', 'farmeo-cost',
+        'WHAT THE TWO-STAGE FORMAT DID to each policy, against the same duels played cold:\n     ' +
+        rows.map(function (r) {
+          return padR(r.pol, 10) + 'duel only ' + padL(pct(r.cold), 6) + '   two-stage ' + padL(pct(r.hot), 6) +
+            '   ' + padL((r.d >= 0 ? '+' : '') + r.d.toFixed(1) + 'pp', 8);
+        }).join('\n     ') +
+        (gainers.length ? '\n     The farmeo is a net gain only for: ' + gainers.join(', ') + '.' : '') +
+        '\n     Cold arm is a paired run — same duel seeds, the farmeo is the only thing added.');
+    }
+  } else if (farmeo) {
+    add('note', 'farmeo-off',
+      'EL FARMEO IS SWITCHED OFF for this run (--no-farmeo), so the table above is the duel-only game and it is\n     ' +
+      'not the game anybody plays. Use it for A/B work, never for README.');
+  }
 
   /* -- moves nobody ever plays ------------------------------------------ */
   const neverChosen = census.filter(function (r) {
@@ -719,16 +1075,28 @@ function buildFindings(actRates, byPolicy, byQuirkPolicy, census) {
   }
 
   /* -- difficulty curve running backwards -------------------------------- */
+  /* Standard error of one rate, and of the difference between two independent
+     ones. Written out rather than inlined because the whole point of this test
+     is that the threshold has to move with the rate. */
+  const seOf = function (agg) {
+    if (!agg || !agg.n) return 0;
+    const r = agg.wins / agg.n;
+    return Math.sqrt(Math.max(r * (1 - r), 1e-9) / agg.n);
+  };
   const backwards = [];
   for (let p = 0; p < POLICIES.length; p++) {
     const pol = POLICIES[p];
     for (let a = 1; a < ACTS.length; a++) {
+      const prevAgg = byActPolicy[ACTS[a - 1].id][pol];
+      const curAgg = byActPolicy[ACTS[a].id][pol];
       const prev = actRates[ACTS[a - 1].id][pol];
       const cur = actRates[ACTS[a].id][pol];
       const gain = (cur - prev) * 100;
-      if (gain > FLAG.backwardsPP) {
+      const sigma = Math.sqrt(Math.pow(seOf(prevAgg), 2) + Math.pow(seOf(curAgg), 2)) * 100;
+      if (gain > FLAG.backwardsPP && gain > FLAG.backwardsSigma * sigma) {
         backwards.push(padR(pol, 10) + padR(ACTS[a - 1].name, 18) + padL(pct(prev), 7) +
-          '  ->  ' + padR(ACTS[a].name, 18) + padL(pct(cur), 7) + '   (+' + gain.toFixed(1) + 'pp easier)');
+          '  ->  ' + padR(ACTS[a].name, 18) + padL(pct(cur), 7) + '   (+' + gain.toFixed(1) +
+          'pp easier, ' + (sigma > 0 ? (gain / sigma).toFixed(1) : '∞') + ' sigma)');
       }
     }
   }
@@ -890,6 +1258,85 @@ function buildFindings(actRates, byPolicy, byQuirkPolicy, census) {
       ' of those were inside the meter window.\n     A low pick rate on `grimace` is legality, not weakness — which is why it is excluded from the dominance test above.');
   }
 
+  /* -- PACKS. Range, or power? ------------------------------------------- */
+  if (packs && packs.on) {
+    const worst = [];
+    const overall = [];
+    for (let s = 1; s < packs.states.length; s++) {
+      const key = packs.states[s].key;
+      for (let p = 0; p < POLICIES.length; p++) {
+        const pol = POLICIES[p];
+        const d = (rate(packs.byOwnPolicy[key][pol]) - rate(packs.byOwnPolicy.none[pol])) * 100;
+        overall.push({ own: key, pol: pol, d: d });
+        for (let a = 0; a < ACTS.length; a++) {
+          const id = ACTS[a].id;
+          const da = (rate(packs.byOwnActPolicy[key][id][pol]) - rate(packs.byOwnActPolicy.none[id][pol])) * 100;
+          if (da >= FLAG.packEdgePP) worst.push({ own: key, pol: pol, act: ACTS[a].name, d: da });
+        }
+      }
+    }
+    worst.sort(function (x, y) { return y.d - x.d; });
+
+    if (worst.length) {
+      /* Which pack moves the value-maximising policy actually reached for.
+         A pack that only added range would show its moves being SUBSTITUTED
+         in at roughly the rate the base moves they replaced were played. */
+      const a = packs.byOwnPolicy.maxed && packs.byOwnPolicy.maxed.expert;
+      let picks = '';
+      if (a && a.turns) {
+        const rows = packs.moveIds.map(function (id) {
+          return { id: id, share: (a.plays[id] || 0) / a.turns };
+        }).filter(function (r) { return r.share > 0.01; })
+          .sort(function (x, y) { return y.share - x.share; }).slice(0, 6);
+        if (rows.length) {
+          picks = '\n     The expert spent its turns on: ' +
+            rows.map(function (r) { return r.id + ' ' + pct(r.share, 1); }).join(' · ') +
+            '\n     Compare that against the base move it displaced. A pack move at the top of this list is not range.';
+        }
+      }
+      add('high', 'pay-to-win',
+        'PAY TO WIN — owning a pack measurably RAISES win rate, which `src/data/packs.js` rule 2 forbids in terms\n     ' +
+        '("a pack adds range, never power"). Every cell over the ' + FLAG.packEdgePP.toFixed(1) +
+        'pp line, worst first:\n     ' +
+        worst.slice(0, 12).map(function (r) {
+          return padR(r.own, 8) + padR(r.pol, 10) + padR(r.act, 18) + padL('+' + r.d.toFixed(1) + 'pp', 8);
+        }).join('\n     ') +
+        (worst.length > 12 ? '\n     … and ' + (worst.length - 12) + ' more.' : '') +
+        picks +
+        '\n     This is not fixable in scoring.js: a multiplier that pulled these moves down would pull the base\n     ' +
+        'moves that share their category and special down with them. It is a `packs.js` data question —\n     ' +
+        'a pack move that duplicates a base move\'s ROLE (a second finisher, a second persist) hands the\n     ' +
+        'value-maximiser a strictly better answer to a board state the base game had exactly one answer to.');
+    } else {
+      add('ok', 'pay-to-win',
+        'PACKS ADD RANGE, NOT POWER. No ownership state raises win rate by more than ' +
+        FLAG.packEdgePP.toFixed(1) + 'pp in any act for any policy.\n     ' +
+        'Biggest edge measured: ' +
+        overall.sort(function (x, y) { return y.d - x.d; }).slice(0, 1).map(function (r) {
+          return r.own + '/' + r.pol + ' ' + (r.d >= 0 ? '+' : '') + r.d.toFixed(1) + 'pp overall';
+        }).join('') + '.');
+    }
+  }
+
+  /* -- `packs.js` rule 1: the base game has to stand on its own ----------- */
+  /* Outside the pack block on purpose — this is a claim about the base twenty-
+     seven, so it has to be checked on runs that never load a pack at all. */
+  {
+    const unwinnable = [];
+    for (let a = 0; a < ACTS.length; a++) {
+      const id = ACTS[a].id;
+      if (actRates[id].composed <= 0.02) unwinnable.push(ACTS[a].name);
+    }
+    if (unwinnable.length) {
+      add('high', 'base-complete',
+        'THE BASE GAME IS NOT COMPLETE — with no pack owned, a composed player is under 2% in: ' +
+        unwinnable.join(', ') + '. `packs.js` rule 1 says the base twenty-seven stay a winnable game on their own.');
+    } else {
+      add('ok', 'base-complete',
+        'The base twenty-seven remain a complete, winnable game: every act is beatable with nothing owned.');
+    }
+  }
+
   /* -- blend health ------------------------------------------------------- */
   {
     const a = byPolicy.expert;
@@ -911,21 +1358,28 @@ function buildFindings(actRates, byPolicy, byQuirkPolicy, census) {
 /* THE REPORT                                                                 */
 /* ========================================================================== */
 
-function printReport(opt, elapsed, cells, fitRuns, actRates, byOppPolicy, byPolicy, census, findings, rate) {
-  const totalBattles = cells.reduce(function (s, c) { return s + c.n; }, 0) +
-    fitRuns.reduce(function (s, c) { return s + c.n; }, 0);
+function printReport(opt, elapsed, cells, fitRuns, actRates, byOppPolicy, byPolicy, census, findings, rate, farmeo, packs) {
+  const totalBattles = opt.totalFights ||
+    (cells.reduce(function (s, c) { return s + c.n; }, 0) +
+      fitRuns.reduce(function (s, c) { return s + c.n; }, 0));
 
   console.log('');
   console.log(bold('AURA OFF — BALANCE SIMULATION'));
   console.log(rule(78));
   console.log('Engine     ' + dim('resolveExchange() via simulateBattle() — no turn rule is re-implemented here'));
-  console.log('Battles    ' + totalBattles.toLocaleString('en-US') + '   (' +
-    opt.battles.toLocaleString('en-US') + ' per policy x opponent matchup, 25 opponents, 4 policies)');
+  console.log('Fights     ' + totalBattles.toLocaleString('en-US') + '   (' +
+    opt.battles.toLocaleString('en-US') + ' per policy x opponent matchup in the main table, ' +
+    '25 opponents, 4 policies;\n           ' +
+    dim('the rest is the paired cold arm in §2, the three ownership arms in §6 and the fit run in §8') + ')');
   console.log('Seed       ' + opt.seed + dim('   deterministic — same seed, same table, any thread count'));
   console.log('Threads    ' + opt.workers);
   console.log('Elapsed    ' + (elapsed / 1000).toFixed(1) + 's');
   console.log('Deck       ' + dim('campaign-realistic — you carry only what you have already won'));
-  console.log('Fit        ' + dim('none in the main table; fits get their own controlled run in §6'));
+  console.log('Stages     ' + (farmeo && farmeo.on
+    ? dim('EL FARMEO then the duel — the qualifying stage and its cost are inside every rate below')
+    : col('DUELS ONLY — --no-farmeo, so this is not the shipping format', C.yellow)));
+  console.log('Owned      ' + dim('nothing. The main table is always the base twenty-seven; ownership is §6'));
+  console.log('Fit        ' + dim('none in the main table; fits get their own controlled run in §8'));
 
   /* -- 1 ---------------------------------------------------------------- */
   head('1. WIN RATE BY ACT BY POLICY      actual  ' + dim('/ §14 target'));
@@ -951,7 +1405,48 @@ function printReport(opt, elapsed, cells, fitRuns, actRates, byOppPolicy, byPoli
   console.log(dim('  §14 is a target, not a gate. The real numbers are the real numbers.'));
 
   /* -- 2 ---------------------------------------------------------------- */
-  head('2. HOW EACH POLICY ACTUALLY PLAYED');
+  if (farmeo && farmeo.on) {
+    head('2. EL FARMEO — the solo stage, and what it costs');
+    console.log(padR('Policy', 11) + padR('Act', 20) +
+      QUALIFY_KEYS.map(function (k) { return padL(k, 10); }).join('') +
+      padL('meter', 8) + padL('x bar', 8) + padL('cold', 8) + padL('two-stage', 11) + padL('delta', 8));
+    console.log(rule(11 + 20 + 10 * QUALIFY_KEYS.length + 43));
+    for (let p = 0; p < POLICIES.length; p++) {
+      const pol = POLICIES[p];
+      for (let a = 0; a < ACTS.length; a++) {
+        const act = ACTS[a];
+        const agg = farmeo.byActPolicy[act.id][pol];
+        const cold = farmeo.coldByActPolicy[act.id] && farmeo.coldByActPolicy[act.id][pol];
+        const q = agg.qRuns || 1;
+        let line = padR(a === 0 ? pol : '', 11) + padR(act.name, 20);
+        for (let k = 0; k < QUALIFY_KEYS.length; k++) line += padL(pct(agg.qBands[QUALIFY_KEYS[k]] / q, 0), 10);
+        line += padL((agg.meterStartSum / q).toFixed(1), 8) + padL((agg.qRatioSum / q).toFixed(2), 8);
+        if (cold && cold.n) {
+          const d = (rate(agg) - rate(cold)) * 100;
+          line += padL(pct(rate(cold)), 8) + padL(pct(rate(agg)), 11) +
+            padL((d >= 0 ? '+' : '') + d.toFixed(1) + 'pp', 8);
+        } else {
+          line += padL('-', 8) + padL(pct(rate(agg)), 11) + padL('-', 8);
+        }
+        console.log(line);
+      }
+      if (p < POLICIES.length - 1) console.log(rule(11 + 20 + 10 * QUALIFY_KEYS.length + 43));
+    }
+    console.log(dim('  ' + QUALIFY_KEYS.map(function (k) {
+      return k + ' = ' + (QUALIFY_BANDS[k] ? QUALIFY_BANDS[k].label.toLowerCase() : k);
+    }).join(' · ')));
+    console.log(dim('  The four band columns are where the solo stage landed. `meter` is the opening meter it bought;'));
+    console.log(dim('  a duel with no farmeo in front of it opens at 50.0, so anything above that is a head start.'));
+    console.log(dim('  `cold` is the SAME duels off the SAME seeds with the stage removed — the delta is what the'));
+    console.log(dim('  two-stage format did to that policy, and nothing else changed to produce it.'));
+    if (OPPONENTS.some(function (o) { return o.qualify === false; })) {
+      console.log(dim('  Chispa declares `qualify: false`, so the first fight of a run has no farmeo. Her battles sit in'));
+      console.log(dim('  the Plaza row with no band, which is why the Plaza band columns do not sum to 100%.'));
+    }
+  }
+
+  /* -- 3 ---------------------------------------------------------------- */
+  head('3. HOW EACH POLICY ACTUALLY PLAYED');
   console.log(padR('Policy', 11) + padL('win', 7) + padL('draw', 7) + padL('meter', 8) +
     padL('your aura', 12) + padL('their aura', 12) + padL('distinct', 10) +
     padL('perfect', 9) + padL('whiff', 8) + padL('blend', 8) + padL('pattern', 9));
@@ -976,8 +1471,8 @@ function printReport(opt, elapsed, cells, fitRuns, actRates, byOppPolicy, byPoli
   console.log(dim('  meter is the closing tug-of-war position; 50 is level and above 50 is a win.'));
   console.log(dim('  distinct = different moves used per battle, out of nine rounds.'));
 
-  /* -- 3 ---------------------------------------------------------------- */
-  head('3. WIN RATE BY OPPONENT, IN CAMPAIGN ORDER');
+  /* -- 4 ---------------------------------------------------------------- */
+  head('4. WIN RATE BY OPPONENT, IN CAMPAIGN ORDER');
   console.log(padR('#', 4) + padR('Act', 10) + padR('Opponent', 16) + padL('skill', 6) +
     padR('  quirk', 14) + padL('deck', 5) + POLICIES.map(function (p) { return padL(p, 10); }).join(''));
   console.log(rule(55 + 10 * POLICIES.length));
@@ -994,8 +1489,8 @@ function printReport(opt, elapsed, cells, fitRuns, actRates, byOppPolicy, byPoli
   }
   console.log(dim('  * act boss.  deck = how many moves the player owns walking into that fight.'));
 
-  /* -- 4 ---------------------------------------------------------------- */
-  head('4. MOVE CENSUS — what a move is worth, and who actually picks it');
+  /* -- 5 ---------------------------------------------------------------- */
+  head('5. MOVE CENSUS — what a move is worth, and who actually picks it');
   console.log(padR('id', 12) + padR('name', 16) + padR('cat', 6) + padL('base', 5) +
     padL('ideal', 7) + padL('open', 7) + padL('core', 7) + padL('vs cat', 8) +
     padL('mash', 7) + padL('vary', 7) + padL('comp', 7) + padL('exp', 7) + '   note');
@@ -1035,8 +1530,66 @@ function printReport(opt, elapsed, cells, fitRuns, actRates, byOppPolicy, byPoli
   console.log(dim('          was only ever owned for the last third of the campaign. "-" means never owned.'));
   console.log(dim('          Red marks a move the value-maximising policy owns and still refuses.'));
 
-  /* -- 5 ---------------------------------------------------------------- */
-  head('5. DESIGN FINDINGS');
+  /* -- 6 ---------------------------------------------------------------- */
+  if (packs && packs.on) {
+    head('6. PACKS — does owning one buy win rate?');
+    console.log('Arms       ' + packs.states.map(function (s) {
+      return s.key + ' (' + s.label + (s.deck.length ? ', +' + s.deck.length + ' moves' : '') + ')';
+    }).join('  ·  '));
+    console.log('Battles    ' + packs.n.toLocaleString('en-US') +
+      dim(' per arm x opponent x policy, paired seeds — the deck is the only variable'));
+    console.log('');
+    console.log(padR('Act', 20) + padR('Policy', 10) +
+      packs.states.map(function (s) { return padL(s.key, 10); }).join('') +
+      padL('bought Δ', 11) + padL('maxed Δ', 10));
+    console.log(rule(30 + 10 * packs.states.length + 21));
+    for (let a = 0; a < ACTS.length; a++) {
+      const id = ACTS[a].id;
+      for (let p = 0; p < POLICIES.length; p++) {
+        const pol = POLICIES[p];
+        const r0 = rate(packs.byOwnActPolicy.none[id][pol]);
+        let line = padR(p === 0 ? ACTS[a].name : '', 20) + padR(pol, 10);
+        const deltas = [];
+        for (let s = 0; s < packs.states.length; s++) {
+          const key = packs.states[s].key;
+          const r = rate(packs.byOwnActPolicy[key][id][pol]);
+          line += padL(pct(r), 10);
+          if (s > 0) deltas.push((r - r0) * 100);
+        }
+        for (let d = 0; d < deltas.length; d++) {
+          const txt = padL((deltas[d] >= 0 ? '+' : '') + deltas[d].toFixed(1) + 'pp', d === 0 ? 11 : 10);
+          line += deltas[d] >= FLAG.packEdgePP ? col(txt, C.red) : dim(txt);
+        }
+        console.log(line);
+      }
+      console.log(rule(30 + 10 * packs.states.length + 21));
+    }
+    let allLine = padR('ALL 25 OPPONENTS', 20) + padR('', 10);
+    const overall = [];
+    for (let s = 0; s < packs.states.length; s++) {
+      const key = packs.states[s].key;
+      let w = 0, n = 0;
+      for (let p = 0; p < POLICIES.length; p++) {
+        w += packs.byOwnPolicy[key][POLICIES[p]].wins;
+        n += packs.byOwnPolicy[key][POLICIES[p]].n;
+      }
+      overall.push(n ? w / n : 0);
+      allLine += padL(pct(n ? w / n : 0), 10);
+    }
+    for (let s = 1; s < overall.length; s++) {
+      const d = (overall[s] - overall[0]) * 100;
+      allLine += padL((d >= 0 ? '+' : '') + d.toFixed(1) + 'pp', s === 1 ? 11 : 10);
+    }
+    console.log(allLine);
+    console.log(dim('  `packs.js` rule 1: with nothing owned the campaign is untouched — the `none` column has to'));
+    console.log(dim('  match §1 inside sampling error, and it is a different, smaller sample, so it will not match exactly.'));
+    console.log(dim('  `packs.js` rule 2: a pack adds RANGE, never POWER. Every delta should sit around zero. A red'));
+    console.log(dim('  delta is a cell where money bought win rate, and red on the `expert` row is the loudest kind:'));
+    console.log(dim('  it is the value-maximising policy finding a better answer than the base game had.'));
+  }
+
+  /* -- 7 ---------------------------------------------------------------- */
+  head('7. DESIGN FINDINGS');
   for (let i = 0; i < findings.length; i++) {
     const f = findings[i];
     const tag = f.severity === 'high' ? col(' [!] ', C.red)
@@ -1045,9 +1598,9 @@ function printReport(opt, elapsed, cells, fitRuns, actRates, byOppPolicy, byPoli
     console.log(tag + ' ' + f.text);
   }
 
-  /* -- 6 ---------------------------------------------------------------- */
+  /* -- 8 ---------------------------------------------------------------- */
   if (fitRuns.length) {
-    head('6. FIT SENSITIVITY — act boss, composed policy, only the outfit changes');
+    head('8. FIT SENSITIVITY — act boss, composed policy, only the outfit changes');
     console.log(padR('Fit', 20) + padL('crowd', 7) + padL('judges', 8) + '  ' +
       ACTS.map(function (a) { return padL(a.name.replace(/^The /, ''), 13); }).join(''));
     console.log(rule(37 + 13 * ACTS.length));
@@ -1087,14 +1640,23 @@ function rateColorWrap(cellText, r, tgt) {
 /* JSON OUT — for tools/gen-docs.js, and for pasting real numbers into README  */
 /* ========================================================================== */
 
-function printJson(opt, elapsed, byActPolicy, byOppPolicy, byPolicy, census, fitRuns, findings, rate) {
+function printJson(opt, elapsed, byActPolicy, byOppPolicy, byPolicy, census, fitRuns, findings, rate, farmeo, packs) {
   const out = {
     generator: 'test/balance-sim.js',
     seed: opt.seed,
     battlesPerMatchup: opt.battles,
+    /* The shape of the run, so a table can never be read out of context. */
+    format: {
+      stages: farmeo && farmeo.on ? ['farmeo', 'duel'] : ['duel'],
+      owned: [],
+      packBattlesPerMatchup: packs && packs.on ? packs.n : 0,
+      coldBattlesPerMatchup: farmeo ? farmeo.coldN : 0
+    },
     elapsedMs: elapsed,
     thresholds: FLAG,
     targets: TARGETS,
+    farmeo: {},
+    packs: {},
     byAct: {},
     byOpponent: {},
     byPolicy: {},
@@ -1153,6 +1715,79 @@ function printJson(opt, elapsed, byActPolicy, byOppPolicy, byPolicy, census, fit
     const f = fitRuns[i];
     if (!out.fits[f.fitId]) out.fits[f.fitId] = {};
     out.fits[f.fitId][f.actId] = { n: f.n, wins: f.wins, rate: f.wins / f.n, opponent: f.oppId };
+  }
+
+  /* EL FARMEO — the ladder, and the paired cold arm it is measured against. */
+  if (farmeo && farmeo.on) {
+    for (let p = 0; p < POLICIES.length; p++) {
+      const pol = POLICIES[p];
+      const a = farmeo.byPolicy[pol];
+      const cold = farmeo.coldByPolicy[pol];
+      const q = a.qRuns || 1;
+      const row = {
+        qualifiers: a.qRuns,
+        bands: {},
+        meanOpeningMeter: a.meterStartSum / q,
+        meanRatioOfBar: a.qRatioSum / q,
+        clearedBar: a.qPassed / q,
+        twoStageRate: rate(a),
+        duelOnlyRate: cold && cold.n ? rate(cold) : null,
+        deltaPP: cold && cold.n ? (rate(a) - rate(cold)) * 100 : null,
+        byAct: {}
+      };
+      for (let k = 0; k < QUALIFY_KEYS.length; k++) row.bands[QUALIFY_KEYS[k]] = a.qBands[QUALIFY_KEYS[k]] / q;
+      row.bands.none = a.qBands.none / (a.n || 1);
+      for (let x = 0; x < ACTS.length; x++) {
+        const id = ACTS[x].id;
+        const aa = farmeo.byActPolicy[id][pol];
+        const cc = farmeo.coldByActPolicy[id] && farmeo.coldByActPolicy[id][pol];
+        row.byAct[id] = {
+          meanOpeningMeter: aa.qRuns ? aa.meterStartSum / aa.qRuns : null,
+          twoStageRate: rate(aa),
+          duelOnlyRate: cc && cc.n ? rate(cc) : null
+        };
+      }
+      out.farmeo[pol] = row;
+    }
+  }
+
+  /* PACKS — every arm, so the pay-to-win claim can be re-derived by anyone. */
+  if (packs && packs.on) {
+    /* `arms` is a map so a consumer can iterate ownership states without having
+       to know which sibling keys are not one. */
+    out.packs.arms = {};
+    for (let s = 0; s < packs.states.length; s++) {
+      const st = packs.states[s];
+      out.format.owned.push(st.key);
+      const arm = { label: st.label, packs: st.packs.slice(), extraMoves: st.deck.slice(), byPolicy: {}, byAct: {} };
+      for (let p = 0; p < POLICIES.length; p++) {
+        const pol = POLICIES[p];
+        arm.byPolicy[pol] = {
+          rate: rate(packs.byOwnPolicy[st.key][pol]),
+          deltaPP: (rate(packs.byOwnPolicy[st.key][pol]) - rate(packs.byOwnPolicy.none[pol])) * 100
+        };
+      }
+      for (let x = 0; x < ACTS.length; x++) {
+        const id = ACTS[x].id;
+        arm.byAct[id] = {};
+        for (let p = 0; p < POLICIES.length; p++) {
+          const pol = POLICIES[p];
+          arm.byAct[id][pol] = {
+            rate: rate(packs.byOwnActPolicy[st.key][id][pol]),
+            deltaPP: (rate(packs.byOwnActPolicy[st.key][id][pol]) - rate(packs.byOwnActPolicy.none[id][pol])) * 100
+          };
+        }
+      }
+      out.packs.arms[st.key] = arm;
+    }
+    /* Which pack move the value-maximiser actually reached for, if any. */
+    const a = packs.byOwnPolicy.maxed && packs.byOwnPolicy.maxed.expert;
+    if (a && a.turns) {
+      out.packs.expertPickShare = {};
+      for (let i = 0; i < packs.moveIds.length; i++) {
+        out.packs.expertPickShare[packs.moveIds[i]] = (a.plays[packs.moveIds[i]] || 0) / a.turns;
+      }
+    }
   }
 
   console.log(JSON.stringify(out, null, 2));

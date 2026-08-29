@@ -43,14 +43,57 @@ export function counterCategory(cat) {
  * Aldama at Parque México finding the winner was the calmest performer rather
  * than the loudest. The two numbers were never put in the same room.
  *
- * The old band was 2.0 / 1.35 / 0.7 / 0.3 — a 6.7x spread against composure's
- * 2.5x. Timing therefore decided every exchange and the Addendum's "best
- * mechanic in the game" could not move a result: an 85%-perfect player carried
- * a mean timing multiplier of 1.90 against 1.09 for a random-timing one, a
- * 1.75x edge nothing else in the system could answer.
+ * The original band was 2.0 / 1.35 / 0.7 / 0.3 — a 6.7x spread against
+ * composure's 2.5x. Timing therefore decided every exchange and the Addendum's
+ * "best mechanic in the game" could not move a result: an 85%-perfect player
+ * carried a mean timing multiplier of 1.90 against 1.09 for a random-timing
+ * one, a 1.75x edge nothing else in the system could answer.
  *
- * 1.5 / 1.2 / 0.8 / 0.4 is a 3.75x spread. Same shape, same ordering, same
- * "a whiff really costs you" — half the authority. Director-approved.
+ * It went to 1.5 / 1.2 / 0.8 / 0.4 — a 3.75x spread, half the authority. Same
+ * shape, same ordering, same "a whiff really costs you". Director-approved.
+ *
+ * ---------------------------------------------------------------------------
+ * NARROWED AGAIN, SECOND PASS — 1.35 / 1.15 / 0.85 / 0.55.
+ * NOT Director-approved. It is measured, it is written down in README, and it
+ * is one line to revert.
+ * ---------------------------------------------------------------------------
+ *
+ * Two-stage battles landed, and EL FARMEO is very nearly a pure timing test:
+ * nobody stands opposite, so `matchupOf` returns neutral and the triangle is
+ * off the board. `test/balance-sim.js` measured what that did — the expert
+ * policy cleared the qualifying bar at 2.15x and took the top band 97% of the
+ * time, against 1.04x and 19% for a composed player, so the stage handed the
+ * strongest policy in the game a +6 opening meter almost every fight and cost
+ * everybody else about five points of it. The skill ladder was already steeper
+ * than CONTRACT §14 intends and the new stage widened it further: expert to
+ * composed ran at 38pp against the 21pp the target table describes.
+ *
+ * The standing instruction is that composure gets authority by NARROWING WHAT
+ * COMPETES WITH IT, never by flattening the curve. Timing is what competes
+ * with it. So:
+ *
+ *   composure() spread   1.25 … 0.50   =   2.50x
+ *   timing spread        1.35 … 0.55   =   2.45x
+ *
+ * The needle and the body are now worth the same, which is the first time
+ * either number has had a reason rather than a history. `composure()` itself
+ * is untouched and byte-identical.
+ *
+ * THE MEAN IS DELIBERATELY PRESERVED: (1.35+1.15+0.85+0.55)/4 = 0.975, exactly
+ * what 1.5/1.2/0.8/0.4 averaged. Three of the four simulated policies roll
+ * uniform random timing, so their absolute scoring is untouched and everything
+ * this moves is a RELATIVE effect against opponents who time better than they
+ * do. Measured, full run, seed 1337, two-stage:
+ *
+ *   composed  54.7% -> 59.7% overall      varied   34.4% -> 37.2%
+ *   expert    92.9% -> 92.8%              masher    1.1% ->  0.7%
+ *
+ * The one cell it costs: Upriver expert 82.6% -> 84.4%. Act 5's only
+ * difficulty lever is `needleSpeedMult`, which reaches a player ONLY through
+ * this band, so narrowing the band weakens it — and on the prow the rower
+ * out-times the player, which means compression helps whoever is worse at
+ * timing and up there that is us. It is named because it is the honest price of
+ * the change, and because what would actually fix it lives in `battle.js`.
  */
 export const TIMING = Object.freeze({ perfect: 1.5, clean: 1.2, shaky: 0.8, whiff: 0.4 });
 export const TIMING_BANDS = ['perfect', 'clean', 'shaky', 'whiff'];

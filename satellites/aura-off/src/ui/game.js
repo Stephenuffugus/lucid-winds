@@ -25,6 +25,23 @@
  * actually scores it. It computes no score and its result is never summed.
  *
  * ---------------------------------------------------------------------------
+ * TWO STAGES, ONE STATE MACHINE
+ * ---------------------------------------------------------------------------
+ * A fight is EL FARMEO and then LA BATALLA. The farmeo is a `createQualifier()`
+ * match — same engine, same deck, same needle, same `resolveExchange()`, with
+ * nobody standing opposite — so `S.match` simply points at whichever one is
+ * running and every function below works on both without asking which. The only
+ * places that branch are the ones where there is literally a second body to
+ * paint: `playExchange`, `showSolo`, and the end of a stage.
+ *
+ * The reason there is a stage at all: AURA-CULTURE §8.2 documents competitors
+ * registering in advance and elimination rounds, and the farmeo is where that
+ * lands. With no opponent there is no category to answer, so the matchup
+ * triangle is off the board and what is left is the needle and the mark — the
+ * exact pair the culture rewards, and the exact pair a new player has no room
+ * to notice while somebody is throwing things at them.
+ *
+ * ---------------------------------------------------------------------------
  * THE SHAPE OF A TURN
  * ---------------------------------------------------------------------------
  *   ready      the deck is live. Cards carry category, freshness and legality.
@@ -41,7 +58,8 @@
 
 import {
   createMatch, resolveExchange, matchSnapshot, matchSummary,
-  legalMoves, previewMove, canBlend, getMove, TUNING
+  legalMoves, previewMove, canBlend, getMove, TUNING,
+  qualifyFor, createQualifier, qualifySummary
 } from '../engine/battle.js';
 import { blendMove } from '../engine/scoring.js';
 import { sampleInto, blend as blendPose, lerpPose, settleWeight } from '../engine/anim.js';
@@ -95,7 +113,8 @@ const HOW = Object.freeze([
   'SAY SOMETHING NEW — The second time you throw a move it is worth about two thirds. The third, under half. Repeating yourself is how you lose.',
   'ARMS AND LEGS ARE SEPARATE JOBS — Blend takes the arms of one move and the legs of another. A real split scores. Two of a kind does not.',
   'THE ROOM — A crowd rewards laughing and surprise. A panel rewards composure and something they have not seen. Some nights you have both, and they want opposite things.',
-  'NINE ROUNDS — The bar at the top is a tug of war, not a health bar. Whoever it is leaning towards at the end took it.'
+  'NINE ROUNDS — The bar at the top is a tug of war, not a health bar. Whoever it is leaning towards at the end took it.',
+  'EL FARMEO — Almost every fight starts with you going up on your own. No rival means no triangle, so it is only the light and the mark. Clear the bar and you start the battle level or better; fall short and you start behind. You always get in.'
 ]);
 
 /* -------------------------------------------------------------------------- */
@@ -133,6 +152,7 @@ export function createGame(cfg) {
     blendBtn: doc.getElementById('blendBtn'),
     fitGrid: doc.getElementById('fitGrid'),
     fitGo: doc.getElementById('fitGo'),
+    queueLine: doc.getElementById('queueLine'),
     actList: doc.getElementById('actList'),
     mapSub: doc.getElementById('mapSub'),
     resultTitle: doc.getElementById('resultTitle'),
@@ -159,10 +179,16 @@ export function createGame(cfg) {
   const S = {
     progress: save.read(),
     screen: 'title',
-    resultMode: 'battle',   // 'battle' | 'how'
+    resultMode: 'battle',   // 'battle' | 'how' | 'qualify'
+    /** Which stage of the fight is running: EL FARMEO, or LA BATALLA. */
+    stage: 'battle',        // 'qualify' | 'battle'
     match: null,
     opponent: null,
     act: null,
+    /** `qualifyFor()` for the fight being set up, or null when it has no farmeo. */
+    plan: null,
+    /** What the farmeo bought: `{ meterStart, crowd }`. Consumed by startBattle. */
+    opening: null,
     fitId: null,
     pendingFit: null,
     cards: Object.create(null),
@@ -224,6 +250,29 @@ export function createGame(cfg) {
       ariaLabel: (opponent && opponent.name) || 'Rival'
     });
     figThem.apply(REST);
+  }
+
+  /**
+   * Nobody is standing opposite during EL FARMEO, so nobody is drawn there.
+   *
+   * `visibility` rather than `display`: the fighter keeps its box, so the floor
+   * and the arena do not reflow between the two stages of one fight, and
+   * `#calloutThem` / `#nameThem` / `#statusThem` stay in the document exactly
+   * where CONTRACT §11 requires them. This is an inline style because the
+   * stylesheet is not this file's to write.
+   *
+   * @param {boolean} on
+   */
+  function showRival(on) {
+    if (!el.them) return;
+    el.them.style.visibility = on ? '' : 'hidden';
+    /* The stage is also a LAYOUT fact, not just a visibility one. With the rival
+       hidden, the performer was still standing in their duel position with the
+       empty rival slot beside them, so half the arena read as dead space —
+       exactly the void this arena was rebuilt to remove. A separate attribute
+       from `data-state` (ready|timing|resolving|over), which it does not clash
+       with; the stylesheet centres the performer off it. */
+    try { doc.body.dataset.stage = on ? 'duel' : 'farmeo'; } catch (e) { /* ignore */ }
   }
 
   /* ------------------------------------------------------------------ */
@@ -314,11 +363,14 @@ export function createGame(cfg) {
 
     if (!turn.shown && t >= turn.peakAt) {
       turn.shown = true;
-      hud.showExchange(turn.result, {
+      const ctx = {
         act: S.act && S.act.id,
         round: turn.result.round,
-        seed: (S.opponent ? S.opponent.id : '') + ':' + turn.result.round
-      });
+        seed: (S.opponent ? S.opponent.id : '') +
+          (turn.result.solo ? ':farmeo:' : ':') + turn.result.round
+      };
+      if (turn.result.solo) showSolo(turn.result, ctx);
+      else hud.showExchange(turn.result, ctx);
       S.lastWhy = hud.whyLine(turn.result.you);
       hud.setPrompt(S.lastWhy);
       buzz(turn.result.you.band === 'whiff' ? 0 : turn.result.you.band === 'perfect' ? [0, 12, 40, 22] : 12);
@@ -337,6 +389,51 @@ export function createGame(cfg) {
 
   function stopLoop() {
     if (raf) { cancelAnimationFrame(raf); raf = 0; }
+  }
+
+  /**
+   * EL FARMEO's version of `hud.showExchange` — the same HUD calls in the same
+   * order, minus everything about a second person.
+   *
+   * `hud.showExchange` cannot be reused: it paints `result.them`, and in a solo
+   * `result.them` is null on purpose so that a consumer which forgot the stage
+   * exists fails loudly instead of quietly writing a score over an empty patch
+   * of concrete. Nothing here is computed — the meter reading, the callout, the
+   * chips and the cue all came off the engine's result.
+   *
+   * The room still reacts, because the room is the entire opposition. A whiff
+   * with nobody to blame is the loudest silence in the game.
+   *
+   * @param {Object} result a solo TurnResult
+   * @param {Object} ctx    `{ act, round, seed }` for the MC
+   */
+  function showSolo(result, ctx) {
+    const you = result.you;
+
+    hud.setMeter(result.meterAfter);          // progress towards the bar
+    hud.callout('you', you.callout, hud.toneFor(you));
+    hud.setStatus('you', hud.chipsFor(you));
+    hud.callout('them', '');
+    hud.setStatus('them', null);
+
+    const landed = you.band === 'perfect' || you.band === 'clean';
+    const strength = clamp(you.score / 2600, 0.15, 1);
+    const fresh = you.factors ? you.factors.freshness : 1;
+
+    if (you.band === 'whiff') hud.react({ kind: 'gasp' });
+    else if (you.cat === 'BAIT' && landed) hud.react({ kind: 'laugh', strength: strength, side: 'you' });
+    else if (fresh < 0.9) hud.react({ kind: 'flat' });
+    else hud.react({ kind: 'cheer', strength: strength, side: 'you' });
+
+    // Word travels, exactly as it does in a battle. It is the documented
+    // mechanism and it does not wait for a fight to start.
+    if (you.score >= 1800) hud.drawIn(1);
+
+    // `null` is a legitimate thing for an announcer to say, and in a solo it is
+    // most of what the engine hands over — the MC's duel lines are about two
+    // people. Leaving the standing line up is better than describing a rival
+    // who is not there.
+    if (result.mcCue) hud.sayCue(result.mcCue, ctx);
   }
 
   /* ------------------------------------------------------------------ */
@@ -455,11 +552,86 @@ export function createGame(cfg) {
     el.fitGrid.appendChild(frag);
   }
 
+  /** One band off the ladder `qualifyFor()` handed over. */
+  function bandOf(plan, key) {
+    for (let i = 0; i < plan.bands.length; i++) {
+      if (plan.bands[i].key === key) return plan.bands[i];
+    }
+    return plan.bands[plan.bands.length - 1];
+  }
+
+  /** One rung of the queue ladder: the number, and what it buys. */
+  function queueRow(value, label, lit) {
+    const row = doc.createElement('div');
+    row.style.display = 'flex';
+    row.style.justifyContent = 'space-between';
+    row.style.gap = '12px';
+    row.style.lineHeight = '1.6';
+    if (!lit) row.style.opacity = '0.62';
+    const v = doc.createElement('span');
+    v.textContent = value;
+    const l = doc.createElement('span');
+    l.textContent = label;
+    row.appendChild(v);
+    row.appendChild(l);
+    return row;
+  }
+
+  /**
+   * What the farmeo is going to ask for, said BEFORE the player commits.
+   *
+   * A qualifier whose price you find out afterwards is a trap, so the whole
+   * ladder is on this screen — and it is a LADDER, not a paragraph. The first
+   * draft was twelve lines of prose with three numbers buried in it, and at
+   * 375×667 it pushed the heading off the top of the screen and the button off
+   * the bottom. Three rows in the same shape as the fit tiles underneath fit,
+   * and let the numbers be compared at a glance instead of parsed.
+   *
+   * Every rung says "in". That is the message: you always get in, and the only
+   * question is what you walk in on. There is no dead end here to be afraid of.
+   *
+   * The act's own account of what the queue looks like is deliberately NOT
+   * here — it would say the same thing twice. It lands on the MC bar a second
+   * later, at the top of the farmeo itself, which is where it belongs.
+   */
+  function renderQueueLine() {
+    if (!el.queueLine) return;
+    el.queueLine.textContent = '';
+
+    // The one fight with no farmeo gets no block, and no stray rule above the
+    // fit tiles where a block used to be.
+    if (!S.plan) {
+      el.queueLine.style.display = 'none';
+      if (el.fitGo) el.fitGo.textContent = 'Step up';
+      return;
+    }
+    el.queueLine.style.display = '';
+
+    const p = S.plan;
+    const frag = doc.createDocumentFragment();
+
+    const head = doc.createElement('div');
+    head.style.marginBottom = '6px';
+    head.textContent = 'EL FARMEO · ' + p.turns + ' moves, on your own';
+    frag.appendChild(head);
+
+    frag.appendChild(queueRow(bandOf(p, 'straight').needText, 'straight in, ahead', false));
+    frag.appendChild(queueRow(p.targetText, 'in, level', true));
+    frag.appendChild(queueRow(bandOf(p, 'late').needText, 'in, from behind', false));
+
+    el.queueLine.appendChild(frag);
+
+    if (el.fitGo) el.fitGo.textContent = 'Take your turn';
+  }
+
   function goFit() {
     S.opponent = nextOpponent();
     S.act = actFor(S.opponent.act);
+    S.plan = qualifyFor(S.act, S.opponent);
+    S.opening = null;
     S.pendingFit = S.fitId;
     renderFit();
+    renderQueueLine();
     hud.say(S.act.blurb || '');
     showScreen('fit');
   }
@@ -564,7 +736,10 @@ export function createGame(cfg) {
     const snap = snapshot();
     hud.setMeter(snap.meter);
     hud.setRound(snap.round, snap.rounds);
-    hud.setFoe(snap.opponent);
+    // In EL FARMEO the thing opposite you is the bar, so the slot that names
+    // the rival names the bar instead. It is the honest use of that label:
+    // it is what you are up against, and on a Tuesday it is a number.
+    hud.setFoe(snap.solo ? snap.targetText + ' de aura' : snap.opponent);
     hud.setHype(snap.hype, snap.blendCost, snap.canBlend, S.blendStep > 0);
   }
 
@@ -578,12 +753,26 @@ export function createGame(cfg) {
     syncHud();
 
     const snap = snapshot();
-    if (snap.round === 1) {
-      hud.setPrompt(promptOpener());
-    } else {
-      hud.setPrompt(S.lastWhy || promptOpener());
-    }
+    let line;
+    if (snap.round === 1) line = promptOpener();
+    else line = S.lastWhy || promptOpener();
+    // A farmeo is two or three moves long, so the running tally has to ride
+    // along with the breakdown rather than take turns with it — there is no
+    // later round to read it on.
+    if (snap.solo && snap.round > 1 && S.lastWhy) line = line + ' · ' + soloTail(snap);
+    hud.setPrompt(line);
     setState('ready');
+  }
+
+  /** How far off the bar you are, in the register the callouts already use. */
+  function soloTail(snap) {
+    if (snap.overBar) return 'over the bar with ' + turnsLeft(snap) + ' to go';
+    return snap.remainingText + ' short, ' + turnsLeft(snap) + ' to go';
+  }
+
+  function turnsLeft(snap) {
+    const n = Math.max(0, snap.rounds - snap.round + 1);
+    return n === 1 ? 'one move' : n + ' moves';
   }
 
   /**
@@ -597,6 +786,16 @@ export function createGame(cfg) {
    */
   function promptOpener() {
     const snap = snapshot();
+    // EL FARMEO. There is no triangle to read and no chain worth building over
+    // two or three moves, so the opener names the only two dials that are left,
+    // which is the whole reason the stage is worth playing.
+    if (snap.solo) {
+      if (snap.round === 1) {
+        return 'Nobody opposite. Hold the mark, land the light, and say ' +
+          snap.rounds + ' different things.';
+      }
+      return soloTail(snap);
+    }
     if (snap.reveal) return 'They are going ' + snap.reveal.category + ' — answer it';
     // Not on round one. The meter is close because nobody has moved yet, so
     // announcing a finisher there is urgency about nothing.
@@ -710,9 +909,9 @@ export function createGame(cfg) {
       result = resolveExchange(S.match, action);
     } catch (e) {
       // The engine only throws on an already-finished match, which means the
-      // battle ended under us. Fall through to the result screen rather than
-      // stranding the player in `timing`.
-      finishBattle();
+      // stage ended under us. Fall through to whichever result screen this
+      // stage owns rather than stranding the player in `timing`.
+      endStage();
       return;
     }
     S.blendStep = 0;
@@ -730,7 +929,7 @@ export function createGame(cfg) {
     const longest = Math.max(clipYou ? clipYou.dur : 0, clipThem ? clipThem.dur : 0, 800);
 
     hud.setMove('you', labelFor(result.you));
-    hud.setMove('them', labelFor(result.them));
+    hud.setMove('them', result.them ? labelFor(result.them) : '');
 
     S.turn = {
       result: result,
@@ -754,22 +953,85 @@ export function createGame(cfg) {
     S.turn = null;
     if (result.over) {
       setState('over');
-      setTimeout(finishBattle, PACE.toResult);
+      setTimeout(endStage, PACE.toResult);
       return;
     }
     beginRound();
+  }
+
+  /** Whichever stage just finished gets to write its own result screen. */
+  function endStage() {
+    if (S.stage === 'qualify') finishQualifier();
+    else finishBattle();
   }
 
   /* ------------------------------------------------------------------ */
   /* THE BATTLE                                                         */
   /* ------------------------------------------------------------------ */
 
+  /** The deck the player actually owns, never empty. */
+  function ownedDeck() {
+    const deck = S.progress.deck.filter(function (id) { return !!byId[id]; });
+    return deck.length ? deck : CAMP.startingKit.slice();
+  }
+
+  /**
+   * EL FARMEO. You go up alone, the room decides, and what it decides is the
+   * meter you open the battle on.
+   *
+   * Everything below is `startBattle` with the rival taken out: the same deck,
+   * the same needle, the same crowd, the same `S.match` that every function in
+   * this file already knows how to drive.
+   */
+  function startQualifier() {
+    const opponent = S.opponent || nextOpponent();
+    const act = S.act || actFor(opponent.act);
+    const plan = S.plan || qualifyFor(act, opponent);
+
+    S.stage = 'qualify';
+    S.opponent = opponent;
+    S.act = act;
+    S.plan = plan;
+    S.opening = null;
+    S.lastWhy = '';
+    S.turn = null;
+    S.blendStep = 0;
+    S.blendA = null;
+
+    S.match = createQualifier({
+      moves: MOVES,
+      opponent: opponent,
+      act: act,
+      plan: plan,
+      deck: ownedDeck()
+    });
+
+    mountYou(S.fitId);
+    showRival(false);
+
+    hud.reset();
+    hud.setCrowd(hud.turnoutFor(save.reputation(S.progress), act.id));
+    buildDeck();
+    syncHud();
+    showScreen(null);
+    setState('ready');
+    hud.setPrompt(promptOpener());
+    // The act's own account of what the queue looks like here. The MC's cue
+    // banks are written about two people, so the farmeo gets this instead.
+    hud.say(plan.line);
+  }
+
   function startBattle() {
     const opponent = S.opponent || nextOpponent();
     const act = S.act || actFor(opponent.act);
     const fit = fitFor(S.fitId);
-    const deck = S.progress.deck.filter(function (id) { return !!byId[id]; });
 
+    // Whatever the farmeo bought, spent once and then gone. A fight with no
+    // farmeo opens level, exactly as it always did.
+    const opening = S.opening;
+    S.opening = null;
+
+    S.stage = 'battle';
     S.opponent = opponent;
     S.act = act;
     S.lastWhy = '';
@@ -781,22 +1043,39 @@ export function createGame(cfg) {
       moves: MOVES,
       opponent: opponent,
       act: act,
-      deck: deck.length ? deck : CAMP.startingKit.slice(),
+      deck: ownedDeck(),
       fit: fit,
-      rounds: CAMP.rounds || TUNING.rounds
+      rounds: CAMP.rounds || TUNING.rounds,
+      meterStart: opening ? opening.meterStart : undefined
     });
 
     mountYou(S.fitId);
     mountThem(opponent);
+    showRival(true);
 
     hud.reset();
-    hud.setCrowd(hud.turnoutFor(save.reputation(S.progress), act.id));
+    hud.setCrowd(hud.turnoutFor(save.reputation(S.progress), act.id) +
+      (opening ? opening.crowd : 0));
     buildDeck();
     syncHud();
     showScreen(null);
     setState('ready');
     hud.setPrompt(promptOpener());
     hud.sayCue('start', { act: act.id, round: 1, seed: opponent.id + ':start' });
+  }
+
+  /**
+   * The end of a farmeo. Nothing is saved — the verdict is spent on the battle
+   * that starts the moment the player taps through, and a qualifier that
+   * outlived its own fight would be a second, invisible progression system.
+   */
+  function finishQualifier() {
+    if (!S.match) { showScreen('map'); return; }
+    const summary = qualifySummary(S.match);
+    S.opening = { meterStart: summary.meterStart, crowd: summary.crowd };
+    renderQualifyResult(summary);
+    showScreen('result');
+    hud.say(summary.note);
   }
 
   function finishBattle() {
@@ -865,6 +1144,41 @@ export function createGame(cfg) {
     if (el.againBtn) el.againBtn.textContent = won ? 'The circuit' : 'Go again';
   }
 
+  /**
+   * The farmeo's verdict, on the screen the battle result already uses.
+   *
+   * The bar and the number you actually farmed go on the same line so the
+   * distance between them is the first thing read, and the band's note says in
+   * words what that distance just cost. There is no failure state to render,
+   * because there is no failure state.
+   */
+  function renderQualifyResult(s) {
+    S.resultMode = 'qualify';
+    if (el.resultTitle) el.resultTitle.textContent = s.title;
+    if (el.resultUnlock) el.resultUnlock.textContent = s.note;
+
+    if (el.resultLog) {
+      el.resultLog.textContent = '';
+      const frag = doc.createDocumentFragment();
+
+      frag.appendChild(logRow('You farmed ' + s.auraText + ' de aura. The bar was ' +
+        s.targetText + '.'));
+      frag.appendChild(logRow('Different things said: ' + s.distinctMoves +
+        ' of ' + s.rounds));
+
+      if (s.bestTurn) {
+        frag.appendChild(logRow('Best of it: ' + s.bestTurn.you.moveName +
+          ' · ' + s.bestTurn.you.callout));
+      }
+
+      for (let i = 0; i < s.lines.length; i++) frag.appendChild(logRow(s.lines[i]));
+      el.resultLog.appendChild(frag);
+      el.resultLog.scrollTop = 0;
+    }
+
+    if (el.againBtn) el.againBtn.textContent = 'Into the circle';
+  }
+
   function renderHow() {
     S.resultMode = 'how';
     if (el.resultTitle) el.resultTitle.textContent = 'How it scores';
@@ -884,6 +1198,12 @@ export function createGame(cfg) {
   function onAgain() {
     if (S.resultMode === 'how') {
       showScreen('title');
+      return;
+    }
+    // The farmeo does not end anything. Whatever the room made of it, the
+    // next tap is the battle — that is the promise the fit screen made.
+    if (S.resultMode === 'qualify') {
+      startBattle();
       return;
     }
     const won = S.match && S.match.winner === 'you';
@@ -980,7 +1300,8 @@ export function createGame(cfg) {
   function onFitGo() {
     S.fitId = S.pendingFit || S.fitId;
     S.progress = save.setFit(S.fitId);
-    startBattle();
+    if (S.plan) startQualifier();
+    else startBattle();
   }
 
   function onStart() {
@@ -1008,6 +1329,7 @@ export function createGame(cfg) {
     wire();
     mountYou(S.fitId);
     mountThem(nextOpponent());
+    showRival(true);
     hud.setCrowd(hud.turnoutFor(save.reputation(S.progress), 'plaza'));
     hud.setMeter(50);
     hud.setRound(1, CAMP.rounds || TUNING.rounds);

@@ -311,7 +311,8 @@ button{font:inherit;color:inherit;margin:0}
      --sw/--sh shoulder dome        --hx        head offset = which way they face
      --o       how far away they are (opacity)  --up  how far back they stand
      --pre     the gap before them = where the clumps break */
-#crowd > *{
+#crowd > *,
+.aoclip-ring > *{
   --w:17px; --h:34px;
   --hr:5.4px; --hy:6px;
   --sw:8.5px; --sh:19px;
@@ -337,7 +338,8 @@ button{font:inherit;color:inherit;margin:0}
 }
 
 /* Backlit. One in about seven is standing between you and a streetlight. */
-#crowd > .warm{color:rgba(255,182,39,var(--o))}
+#crowd > .warm,
+.aoclip-ring > .warm{color:rgba(255,182,39,var(--o))}
 
 /* Whoever just did that catches the light of it. Set as a class, never as an
    inline colour, so it cannot clobber the person's own tone on the way out. */
@@ -347,7 +349,8 @@ button{font:inherit;color:inherit;margin:0}
 /* FILMING. Everyone films — that is the documented mechanism by which the
    street feeds the networks and the networks fill the street. So it is drawn
    as an arm and a lit screen, not as a dot hovering above a head. */
-#crowd > .film::after{        /* the arm */
+#crowd > .film::after,
+.aoclip-ring > .film::after{  /* the arm */
   content:'';
   position:absolute;
   left:calc(var(--px,11px) * var(--cscale));
@@ -360,7 +363,8 @@ button{font:inherit;color:inherit;margin:0}
   transform-origin:50% 100%;
   transform:rotate(var(--parm,-9deg));
 }
-#crowd > .film::before{       /* the screen */
+#crowd > .film::before,
+.aoclip-ring > .film::before{ /* the screen */
   content:'';
   position:absolute;
   left:calc(var(--px,11px) * var(--cscale));
@@ -374,9 +378,12 @@ button{font:inherit;color:inherit;margin:0}
   opacity:.5;
   animation:aoFlash 7.5s linear infinite;
 }
-#crowd > .film:nth-child(3n)::before  {animation-duration:9.5s;animation-delay:-3.1s;background:var(--bone)}
-#crowd > .film:nth-child(4n+1)::before{animation-delay:-1.7s}
-#crowd > .film:nth-child(5n+2)::before{animation-delay:-5.3s}
+#crowd > .film:nth-child(3n)::before,
+.aoclip-ring > .film:nth-child(3n)::before  {animation-duration:9.5s;animation-delay:-3.1s;background:var(--bone)}
+#crowd > .film:nth-child(4n+1)::before,
+.aoclip-ring > .film:nth-child(4n+1)::before{animation-delay:-1.7s}
+#crowd > .film:nth-child(5n+2)::before,
+.aoclip-ring > .film:nth-child(5n+2)::before{animation-delay:-5.3s}
 
 /* A roar puts every phone up at once. */
 #crowd.roar > .film::before{animation:aoBurst .9s ease-out}
@@ -691,6 +698,23 @@ button{font:inherit;color:inherit;margin:0}
 #them{
   right:3%;
   color:var(--them);
+}
+
+/* EL FARMEO: nobody is standing opposite, so the performer takes the middle of
+   the circle rather than their duel corner. Leaving them on the left with the
+   empty rival slot beside them put half the arena back to dead space, and the
+   whole point of going up alone is that the square is looking at you. Transition
+   so the walk to the centre is seen — between the farmeo and the duel the same
+   figure is on screen the entire time. */
+body[data-stage="farmeo"] #you{
+  left:50%;
+  margin-left:calc(min(44%, 168px) / -2);
+}
+
+#you{ transition:left .45s cubic-bezier(.2,.8,.2,1), margin-left .45s cubic-bezier(.2,.8,.2,1) }
+
+@media (prefers-reduced-motion: reduce){
+  #you{ transition:none }
 }
 
 /* Anything the JS mounts that is not one of the four labelled children is the
@@ -1574,6 +1598,411 @@ body[data-state="timing"] #timing,
 }
 .log > *:last-child{border-bottom:0}
 
+/* --------------------------------------------------------------------------
+   9b. THE CLIP LOOP — the street feeds the networks, the networks fill
+       the street  (AURA-CULTURE §4)
+   --------------------------------------------------------------------------
+   A two-second beat over the result screen. A phone in the front row flares,
+   the clip lifts off it, the clip breaks apart into people, and those people
+   walk into the ring while the head count goes up.
+
+   IT IS THE SAME CROWD. `.aoclip-ring` shares the person glyph rules with
+   `#crowd` (grouped selectors up in §4) and gets the same per-index custom
+   properties out of `hud.js`, so the figures arriving here are literally the
+   people who will be standing in the square next fight. The front row is the
+   same `--near-crowd` used by the arena and by every `.screen`.
+
+   It sits at z-index 90, above `.screen`'s 60, because it plays OVER the
+   result. `.screen` is opaque and would otherwise hide the very thing this
+   exists to show.
+   -------------------------------------------------------------------------- */
+
+.aoclip{
+  position:fixed;
+  inset:0;
+  z-index:90;
+  display:none;
+  /* Dusk over the square. FULLY OPAQUE, on purpose: at 98.4% the result
+     screen behind it still put a 9/255 ghost of "AURA INFINITA" and of the
+     whole score log straight through the middle of the beat — measured, not
+     guessed. Three per cent of a 48px headline is still a headline. This is
+     not a modal over the result; it is a cut back to the square, so nothing
+     shows through. Dark at the top where the type sits, deep purple at the
+     bottom so a silhouette has something to be a silhouette AGAINST. */
+  background:
+    radial-gradient(122% 44% at 50% 16%, rgba(255,182,39,.13), transparent 62%),
+    linear-gradient(180deg,
+      #0D0618 0%,
+      #1A0B2E 44%,
+      #2B1450 100%);
+}
+
+/* CUT, DO NOT FADE. `.screen.on` is already fading in over 280ms underneath,
+   and a 160ms fade on top of that put the arena, the result screen and the
+   beat on screen simultaneously as three legible layers. An edit cuts. */
+.aoclip.on{display:block}
+.aoclip.out{animation:aoClipOut .24s ease forwards}
+
+@keyframes aoClipOut{to{opacity:0}}
+
+.aoclip-in{
+  position:relative;
+  width:100%;
+  max-width:560px;
+  height:100%;
+  margin:0 auto;
+  overflow:hidden;
+}
+
+/* ---- the words and the number ----------------------------------------- */
+
+/* The type block owns the whole of the square ABOVE the crowd and centres in
+   it. Pinned to the top instead, it left a two-hundred-pixel hole between the
+   last line and the first person, which read as two unrelated pictures rather
+   than as one square with people at the far side of it. */
+.aoclip-stack{
+  position:absolute;
+  left:0;
+  right:0;
+  top:var(--sat);
+  bottom:calc(var(--near-h) + 168px);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  /* PACKED DOWN ONTO THE CROWD, not centred in the space above it. Centred,
+     the type left a flat purple band between the last line and the first
+     person and the frame read as two unrelated pictures. Stacked against the
+     crowd it reads the way the photograph does: dusk, then the words, then
+     the people, then the front row. The air belongs at the top, where the
+     streetlight is. */
+  justify-content:flex-end;
+  gap:12px;
+  padding:0 20px 22px;
+  text-align:center;
+  z-index:4;
+}
+
+.aoclip-kicker{
+  font-family:var(--mono);
+  font-size:.7rem;
+  letter-spacing:.20em;
+  text-transform:uppercase;
+  color:var(--lamp);
+  opacity:0;
+}
+.aoclip.on .aoclip-kicker{animation:aoClipIn .34s ease .18s forwards}
+
+/* ONE SLOT, TWO THINGS. The clip and the head count occupy the same box, so
+   when the clip breaks apart the number arrives exactly where it was standing
+   instead of below a 146px hole. The clip BECOMES the number becomes the
+   people, and the eye never has to travel to follow that. */
+.aoclip-slot{
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:100%;
+  height:146px;
+}
+
+/* The count and the +N are ONE reading, so they travel together in the middle
+   of the slot rather than the delta being pushed a slot-height away from the
+   number it belongs to. */
+.aoclip-num{
+  position:absolute;
+  z-index:1;               /* BEHIND the clip: the number is revealed by the
+                              clip coming apart, not stamped over the top of it */
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:8px;
+}
+
+.aoclip-count{
+  font-weight:900;
+  font-size:clamp(2.6rem,15vw,3.5rem);
+  line-height:1;
+  letter-spacing:-.02em;
+  color:var(--bone);
+  text-shadow:0 0 30px rgba(255,182,39,.28);
+  opacity:0;
+}
+.aoclip.on .aoclip-count{animation:aoClipIn .34s ease 1.04s forwards}
+
+.aoclip-delta{
+  padding:3px 11px;
+  border:1px solid var(--lamp-40);
+  border-radius:99px;
+  background:var(--lamp-10);
+  font-family:var(--mono);
+  font-size:.76rem;
+  letter-spacing:.08em;
+  color:var(--lamp);
+  opacity:0;
+}
+.aoclip.on .aoclip-delta{animation:aoClipIn .3s ease 1.14s forwards}
+
+.aoclip-note{
+  max-width:28ch;
+  font-family:var(--mono);
+  font-size:.74rem;
+  line-height:1.6;
+  color:var(--bone-44);
+  opacity:0;
+}
+.aoclip.on .aoclip-note{animation:aoClipIn .4s ease 1.20s forwards}
+
+@keyframes aoClipIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+/* the screen-reader line, and the only thing in here that speaks */
+.aoclip-sr{
+  position:absolute;
+  width:1px;height:1px;
+  margin:-1px;padding:0;border:0;
+  overflow:hidden;
+  clip:rect(0 0 0 0);
+  clip-path:inset(50%);
+  white-space:nowrap;
+}
+
+/* ---- the clip itself --------------------------------------------------- */
+/* A phone-shaped frame with two people in it and a scrub line filling along
+   the bottom. Nothing says "this is a video" — the shape and the scrubber do,
+   in one beat, which is the whole brief. */
+
+.aoclip-card{
+  position:absolute;
+  z-index:2;
+  width:88px;
+  height:146px;
+  border:1px solid var(--bone-26);
+  border-radius:11px;
+  background:
+    radial-gradient(78% 40% at 50% 96%, rgba(255,182,39,.16), transparent 72%),
+    linear-gradient(180deg, rgba(43,20,80,.92), rgba(13,6,24,.96));
+  box-shadow:0 0 34px rgba(255,182,39,.18), inset 0 0 22px rgba(0,0,0,.5);
+  overflow:hidden;
+  opacity:0;
+}
+
+/* lifts off the phone in the front row, opens, then breaks apart */
+.aoclip.on .aoclip-card{animation:aoClipRise .58s cubic-bezier(.2,.85,.25,1) .30s forwards}
+.aoclip.breaking .aoclip-card{animation:aoClipBreak .42s ease-in forwards}
+
+@keyframes aoClipRise{
+  from{opacity:0;transform:translate(-28vw,33vh) scale(.09) rotate(-9deg)}
+  60% {opacity:1}
+  to  {opacity:1;transform:none}
+}
+@keyframes aoClipBreak{
+  from{opacity:1;transform:none}
+  to  {opacity:0;transform:scale(1.5) translateY(12px)}
+}
+
+/* the scrub line: track, then fill */
+.aoclip-card::before{
+  content:'';
+  position:absolute;
+  left:9px;right:9px;bottom:8px;
+  height:2px;
+  border-radius:2px;
+  background:var(--bone-14);
+}
+.aoclip-card::after{
+  content:'';
+  position:absolute;
+  left:9px;bottom:8px;
+  width:0;
+  height:2px;
+  border-radius:2px;
+  background:var(--lamp);
+  box-shadow:0 0 8px var(--lamp-40);
+}
+.aoclip.on .aoclip-card::after{animation:aoClipScrub .58s linear .30s forwards}
+@keyframes aoClipScrub{to{width:calc(100% - 18px)}}
+
+/* the two people inside the clip. Same head-over-shoulder glyph as everybody
+   else in this game, in the two fighter colours, bobbing out of phase so the
+   frame reads as moving footage rather than as a photograph. */
+/* SIZED IN PER CENT OF THE FRAME, not in pixels. Two breakpoints shrink the
+   clip (74px on a short screen, 52px in landscape) and at fixed widths the two
+   of them grew into each other until the pink head was sitting on the cyan
+   one — two people in a no-contact game, touching. Percentages keep the pair
+   apart at every card size, and keep the head round because the box keeps its
+   aspect. */
+.aoclip-fig{
+  position:absolute;
+  bottom:29%;
+  width:22%;
+  height:29%;
+  background:
+    radial-gradient(ellipse 33% 15% at 50% 15%, currentColor 96%, transparent 97%) no-repeat,
+    radial-gradient(ellipse 50% 55% at 50% 100%, currentColor 96%, transparent 97%) no-repeat;
+}
+.aoclip-fig.you{left:21%;color:var(--you)}
+.aoclip-fig.them{right:21%;color:var(--them)}
+.aoclip.on .aoclip-fig.you{animation:aoClipBob .62s ease-in-out .32s 2 alternate}
+.aoclip.on .aoclip-fig.them{animation:aoClipBob .74s ease-in-out .40s 2 alternate-reverse}
+@keyframes aoClipBob{from{transform:translateY(0)}to{transform:translateY(-4px)}}
+
+/* ---- the square it lands in -------------------------------------------- */
+
+.aoclip-ring{
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:calc(var(--near-h) + 2px);
+  height:172px;
+  display:flex;
+  flex-wrap:wrap-reverse;
+  align-items:flex-start;
+  align-content:flex-start;
+  justify-content:center;
+  padding:0 8%;
+  /* Bigger than the arena's ring. In the game the far crowd is across a square
+     with two fighters in front of it; here there is nothing in front of it, and
+     at the arena's scale twenty people read as a decorative strip along the
+     bottom of an empty screen. Nearer is also truer to the beat: this is the
+     square you are standing in, not the one you are watching. */
+  --cscale:1.3;
+  overflow:hidden;
+  pointer-events:none;
+  /* Softer than `#crowd`'s. The people this beat exists to show up arrive at
+     the BACK of the ring — that is what arriving late means — and the arena's
+     mask would hand them straight to a 42% band. Fade the top edge, do not
+     bury the rank. */
+  -webkit-mask-image:linear-gradient(180deg,transparent 0,rgba(0,0,0,.72) 9%,#000 26%,#000 100%);
+  mask-image:linear-gradient(180deg,transparent 0,rgba(0,0,0,.72) 9%,#000 26%,#000 100%);
+}
+
+/* SOMEBODY WHO HAS JUST THIS SECOND WALKED IN.
+   A win is worth one name and one name is worth about one more person, so the
+   whole visible event is frequently a single figure joining nineteen — and at
+   their true depth, in their true tone, that figure is genuinely impossible to
+   find. Measured on the first pass: the arrival changed about 3% of the pixels
+   in the ring and read as nothing at all.
+   So the newcomer is lit. They keep their own profile, their own size and
+   their own place in the rank order — nothing about who they are is faked —
+   but for the length of the beat they are standing under the streetlight with
+   a warm rim on them, which is both findable and true. */
+.aoclip-ring > .arriving{
+  color:rgba(255,182,39,.95);
+  filter:drop-shadow(0 0 6px rgba(255,182,39,.8)) drop-shadow(0 0 14px rgba(255,182,39,.35));
+}
+
+/* the front row, two metres away. The same near crowd as the arena and every
+   .screen, because it is the same square. */
+.aoclip-near{
+  position:absolute;
+  left:-6%;
+  right:-6%;
+  bottom:-4px;
+  height:var(--near-h);
+  z-index:2;
+  pointer-events:none;
+  background:var(--near-crowd);
+}
+/* the streetlight they are standing under */
+.aoclip-near::before{
+  content:'';
+  position:absolute;
+  left:50%;
+  bottom:0;
+  width:132%;
+  height:230px;
+  transform:translateX(-50%);
+  /* Tall on purpose. It is the streetlight, and it is also the only thing
+     standing between the last line of type and the first person; without it
+     the middle of the frame is a flat purple hole. */
+  background:radial-gradient(52% 100% at 50% 100%, rgba(255,182,39,.15), transparent 74%);
+}
+
+/* THE PERSON WHO SHOT IT. Standing in the front row of this crowd, head and
+   raised phone clearing the near band. Their screen is what flares, and the
+   clip lifts off that flare. No caption explains it and none should. */
+.aoclip-filmer{
+  position:absolute;
+  left:4%;
+  /* Down in the front row with them. Only the head and the raised phone clear
+     the near band, which is what you actually see of the person standing in
+     front of you, and it keeps the lit screen against dark sky rather than
+     against somebody else's lit screen. */
+  bottom:calc(var(--near-h) - 46px);
+  width:68px;
+  height:76px;
+  z-index:3;
+  pointer-events:none;
+  color:var(--silhouette);
+  /* SCALE THIS FIGURE, NEVER RESIZE ITS BOX. The head, the shoulders, the arm
+     and the screen are four absolute pixel coordinates inside one 68x76 box.
+     A breakpoint that shrank width/height left all four where they were, so a
+     short screen shipped a head with a detached arm floating beside it. The
+     transform origin is the ground the person is standing on. */
+  transform-origin:0 100%;
+  /* A near-black silhouette in front of a near-black front row is a smudge.
+     The rim is the streetlight they are standing under, and it follows the
+     glyph's own alpha rather than its box. */
+  filter:drop-shadow(0 0 9px rgba(255,182,39,.42));
+  background:
+    radial-gradient(circle 16px at 33px 24px, currentColor 96%, transparent 97%) no-repeat,
+    /* 80, not 88: at 88 the shoulder dome's crown landed six pixels UNDER the
+       chin and the beat shipped a head floating over a hill. Every glyph in
+       this game overlaps its own head onto its own shoulders. */
+    radial-gradient(ellipse 31px 42px at 33px 80px, currentColor 96%, transparent 97%) no-repeat;
+}
+.aoclip-filmer::after{        /* the arm */
+  content:'';
+  position:absolute;
+  left:56px;
+  bottom:22px;
+  width:5.5px;
+  height:56px;
+  margin-left:-2.2px;
+  border-radius:2px;
+  background:currentColor;
+  transform-origin:50% 100%;
+  transform:rotate(-15deg);
+}
+.aoclip-filmer::before{       /* the screen */
+  content:'';
+  position:absolute;
+  left:64px;
+  bottom:76px;
+  width:12px;
+  height:17px;
+  margin-left:-5.5px;
+  border-radius:2px;
+  /* WHITE, where every other phone in the square is warm. A crowd screen at
+     rest is lamp-coloured; this one is live, and being the only cold light in
+     the frame is what stops it reading as one more orange smudge among the
+     backlit people standing behind it. */
+  background:var(--bone);
+  box-shadow:0 0 14px 4px rgba(255,182,39,.45);
+  opacity:.92;
+}
+.aoclip.flare .aoclip-filmer::before{animation:aoClipFlare .7s ease-out}
+
+/* NO MOTION, ONE HELD FRAME.
+   Taken when `Element.animate` is missing or the player asked for reduced
+   motion. Everything that carries information is on screen at once and stays
+   there: the line, the number, the +N, the note, and a crowd that already has
+   the newcomer standing in it under the lamp.
+   The clip itself is the one thing dropped — it shares a box with the number,
+   and without the break there is nothing to hand that box over. "Somebody
+   filmed it" says the same thing in four words. */
+.aoclip.static .aoclip-card{display:none}
+.aoclip.static .aoclip-kicker,
+.aoclip.static .aoclip-count,
+.aoclip.static .aoclip-delta,
+.aoclip.static .aoclip-note{animation:none;opacity:1;transform:none}
+
+@keyframes aoClipFlare{
+  0%  {opacity:.92;box-shadow:0 0 14px 4px rgba(255,182,39,.45)}
+  16% {opacity:1;box-shadow:0 0 44px 16px rgba(253,246,236,.62)}
+  100%{opacity:.92;box-shadow:0 0 14px 4px rgba(255,182,39,.45)}
+}
+
+
 /* ---- the circuit map --------------------------------------------------- */
 
 #mapSub{
@@ -1725,6 +2154,11 @@ body:not([data-state="timing"]) #timing:not(.on){display:none}
 
 @media (max-height:600px){
   :root{--crowd-drop:0px;--crowd-h:80px;--foot:30px;--near-h:40px}
+  .aoclip-stack{bottom:calc(var(--near-h) + 128px);gap:8px}
+  .aoclip-card{width:74px;height:120px}
+  .aoclip-slot{height:120px}
+  .aoclip-ring{height:132px;--cscale:1.05}
+  .aoclip-filmer{transform:scale(.84);bottom:calc(var(--near-h) - 38px)}
   #crowd{--cscale:.72;padding:0 8%}
   .mcbar{font-size:.72rem}
   #deck{max-height:300px;max-height:min(50dvh,300px)}
@@ -1785,7 +2219,8 @@ body:not([data-state="timing"]) #timing:not(.on){display:none}
   }
   .aura{transform:translateX(-50%);opacity:.17}
   /* the phones stay lit rather than flashing — the crowd is still filming */
-  #crowd > .film::before{animation:none;opacity:.8}
+  #crowd > .film::before,
+  .aoclip-ring > .film::before{animation:none;opacity:.8}
   .callout:not(:empty),
   .callout.pop{animation:none;opacity:1;transform:translateX(-50%)}
 }
@@ -1861,4 +2296,16 @@ body:not([data-state="timing"]) #timing:not(.on){display:none}
   #title h1.shout{font-size:clamp(2rem,9vw,2.8rem)}
   #actList{max-height:44vh}
   .log{max-height:30vh}
+
+  /* The clip beat still has to fit, and 375px of height will not take a
+     146px phone plus four lines of type. Everything shrinks; nothing is
+     dropped, because every element in the beat is carrying information. */
+  .aoclip-stack{top:var(--sat);bottom:calc(var(--near-h) + 62px);gap:5px}
+  .aoclip-card{width:52px;height:86px}
+  .aoclip-slot{height:86px}
+  .aoclip-kicker{font-size:.62rem}
+  .aoclip-count{font-size:1.9rem}
+  .aoclip-note{font-size:.66rem;max-width:36ch}
+  .aoclip-ring{height:64px;bottom:calc(var(--near-h) + 2px);--cscale:.7}
+  .aoclip-filmer{transform:scale(.62);bottom:calc(var(--near-h) - 30px)}
 }

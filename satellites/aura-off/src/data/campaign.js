@@ -42,9 +42,30 @@
 //      is a mirror with nothing to say.
 // The pool is an explicit array, which `battle.js` honours as authored.
 //
+// EL FARMEO — THE QUALIFYING STAGE
+// --------------------------------
+// AURA-CULTURE §8.2 documents the format: competitors register in advance,
+// there are elimination rounds, and each competitor performs for only a few
+// seconds at a time. So a fight here is two stages. First you go up alone and
+// farm — the culture's own word for the solo act, *farmear aura*, as against
+// *batalla de aura* for the face-to-face — and what the room makes of that
+// decides the meter you open the battle on.
+//
+// `act.qualify` is `{ turns, bar, line }`.
+//   `turns` is how long they give you. Two or three. Seconds, not a routine.
+//   `bar`   is aura PER TURN at a mid-skill name in that act. It is lower in
+//           the two-turn acts because the combo chain has one fewer turn to
+//           grow in, so a two-turn average is genuinely worth less than a
+//           three-turn one — not because those acts are softer.
+//   `line`  is what the queue looks like in that place.
+// `battle.js` `qualifyFor()` turns that into an actual bar, scaled by the skill
+// of the name you are queueing to face. Falling short never sends anybody home;
+// it costs meter and a few people. Nobody gets turned away from a Tuesday.
+//
 // Shapes consumed by the engine:
-//   act       { id, name, scoring, unstable?, repeatsPunished?, fitWeight? }
-//   opponent  { id, name, skill, quirk, pool[], drop }
+//   act       { id, name, scoring, unstable?, repeatsPunished?, fitWeight?,
+//               qualify?: { turns, bar, line } }
+//   opponent  { id, name, skill, quirk, pool[], drop, qualify?: false }
 //   fit       { id, name, crowd, judges }
 
 /* -------------------------------------------------------------------------- */
@@ -98,7 +119,12 @@ export const ACTS = Object.freeze([
     fitWeight: 1,
     teaches: 'Learn the triangle. Learn that arms and legs are separate jobs.',
     blurb: 'Nothing else is on. Twenty minutes where the square belongs to whoever showed up.',
-    scoringNote: 'Decided on noise. Cheering, applause, laughing — all of it counts.'
+    scoringNote: 'Decided on noise. Cheering, applause, laughing — all of it counts.',
+    qualify: Object.freeze({
+      turns: 3,
+      bar: 940,
+      line: 'Somebody has to go first and it is you. Nobody opposite — three moves, and the square decides.'
+    })
   }),
   Object.freeze({
     id: 'bracket',
@@ -111,7 +137,12 @@ export const ACTS = Object.freeze([
     fitWeight: 1,
     teaches: 'A real elimination ladder. Say something new every single turn.',
     blurb: 'Two hundred names on a sheet taped to the slide. Single elimination, and the queue keeps growing.',
-    scoringNote: 'Crowd only, and this one has a memory. Repeat yourself and it costs you.'
+    scoringNote: 'Crowd only, and this one has a memory. Repeat yourself and it costs you.',
+    qualify: Object.freeze({
+      turns: 2,
+      bar: 780,
+      line: 'Two hundred names on the sheet and about four seconds each. You get two moves. Everybody gets two.'
+    })
   }),
   Object.freeze({
     id: 'banned',
@@ -124,7 +155,12 @@ export const ACTS = Object.freeze([
     fitWeight: 1,
     teaches: 'The mayor banned it. No crowd to play to. Technique is all that is left.',
     blurb: 'Moved out of the plaza and into a lot on the edge of town. Four cars, headlights on, three people judging.',
-    scoringNote: 'A panel, and nobody to shout them down. Composure over noise.'
+    scoringNote: 'A panel, and nobody to shout them down. Composure over noise.',
+    qualify: Object.freeze({
+      turns: 3,
+      bar: 940,
+      line: 'Headlights on, three people at a folding table. They want to watch you move before anything starts.'
+    })
   }),
   Object.freeze({
     id: 'capital',
@@ -137,7 +173,12 @@ export const ACTS = Object.freeze([
     fitWeight: 1.6,
     teaches: 'Two audiences that want opposite things. Fit matters most here.',
     blurb: 'Stone esplanade in front of the palace. Registration by message, a panel on one side, several hundred phones on the other.',
-    scoringNote: 'Crowd and panel, averaged. What one of them loves the other one shrugs at.'
+    scoringNote: 'Crowd and panel, averaged. What one of them loves the other one shrugs at.',
+    qualify: Object.freeze({
+      turns: 3,
+      bar: 960,
+      line: 'Registration was by message and anyone can send a message. This is where they check you meant it.'
+    })
   }),
   Object.freeze({
     id: 'upriver',
@@ -150,7 +191,12 @@ export const ACTS = Object.freeze([
     fitWeight: 1,
     teaches: 'Where all of it started. Forty metres of carved wood, sixty rowers, and no still ground.',
     blurb: 'Not a plaza at all. A four hundred year old boat race, a child at the prow, and a job that existed long before any of this had a name.',
-    scoringNote: 'Judged, on a deck that will not hold still. The only real skill here is composure.'
+    scoringNote: 'Judged, on a deck that will not hold still. The only real skill here is composure.',
+    qualify: Object.freeze({
+      turns: 2,
+      bar: 730,
+      line: 'They wave you onto the prow while the crew is still tying off. Two passes. The boat is already moving.'
+    })
   })
 ]);
 
@@ -183,6 +229,15 @@ export const OPPONENTS = Object.freeze([
     // demonstration that the triangle exists at all.
     pool: Object.freeze(['headnod', 'aurawalk']),
     drop: 'headnod',
+    // THE ONE FIGHT WITH NO FARMEO. Every other act and every other name on the
+    // circuit makes you go up alone first (see `qualify` on the acts), because
+    // AURA-CULTURE §8.2 documents registration and elimination rounds as part
+    // of the format. There is no queue at the start of the evening, though —
+    // her own line is that she is first into the circle every Tuesday, and you
+    // are the other person who turned up. The first fight of a run is also the
+    // one place a solo bar the player can fall short of teaches them nothing,
+    // because they have not yet held the pad once.
+    qualify: false,
     line: 'Twelve, here every Tuesday, first into the circle every time. Has exactly two moves and is not embarrassed about it.'
   }),
 
