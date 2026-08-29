@@ -49,11 +49,11 @@
  * still there, still the right size, still filming.
  */
 
-import { mcLine, roundLine, SPECIAL_LINES } from '../data/mc.js';
+import { mcLine, roundLine, SPECIAL_LINES } from '../data/mc.js?v=20260829b';
 /* The clip loop needs the TRUE reputation step the last battle caused, and
    `src/ui/save.js` is the only file allowed to know it (CONTRACT §1). This is
    a read of a number, not a second store. */
-import { takeReach } from './save.js';
+import { takeReach } from './save.js?v=20260829b';
 
 /** The most people the ring can hold before the stylesheet clips a third rank. */
 const CROWD_MAX = 54;

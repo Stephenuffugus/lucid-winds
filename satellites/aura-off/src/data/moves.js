@@ -48,9 +48,9 @@
 // Ownership is DATA. Nothing in this file or in `packs.js` knows about money,
 // and neither should ever learn: `setOwnedPacks()` is the whole store surface.
 
-import { FLEX_MOVES } from './moves.flex.js';
-import { FLOW_MOVES } from './moves.flow.js';
-import { BAIT_MOVES } from './moves.bait.js';
+import { FLEX_MOVES } from './moves.flex.js?v=20260829b';
+import { FLOW_MOVES } from './moves.flow.js?v=20260829b';
+import { BAIT_MOVES } from './moves.bait.js?v=20260829b';
 import {
   PACKS,
   PACK_IDS,
@@ -60,7 +60,7 @@ import {
   packById,
   movesInPack,
   packOfMove
-} from './packs.js';
+} from './packs.js?v=20260829b';
 
 export { FLEX_MOVES, FLOW_MOVES, BAIT_MOVES };
 export { PACKS, PACK_IDS, PACKS_BY_ID, PACK_MOVES, PACK_MOVES_BY_ID, packById, movesInPack };

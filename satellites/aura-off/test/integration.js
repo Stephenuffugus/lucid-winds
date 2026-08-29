@@ -62,6 +62,9 @@ import { SAVE_KEY } from '../src/ui/save.js';
 /* ========================================================================== */
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
+/** A fetched URL minus its cache-busting query. See tools/stamp.js. */
+function unversion(u) { return String(u || '').split('?')[0]; }
+
 const ROOT = path.resolve(HERE, '..');
 const INDEX_PATH = path.join(ROOT, 'index.html');
 const MAIN_PATH = path.join(ROOT, 'src', 'main.js');
@@ -289,7 +292,11 @@ async function boot(opts) {
   const link = doc.querySelector('link[rel="stylesheet"]');
   if (!link) throw new Broke('index.html has no <link rel="stylesheet"> — the UI ships unstyled');
   const cssHref = link.getAttribute('href');
-  const cssPath = path.join(ROOT, cssHref);
+  /* Strip the cache-busting query before touching the filesystem. `tools/stamp.js`
+     stamps every fetched URL with the BUILD because the host overrides
+     Cache-Control on js and css, so a versioned URL is the only lever that makes
+     a deploy land — but `?v=` is part of the URL, never part of the path. */
+  const cssPath = path.join(ROOT, unversion(cssHref));
   if (!fs.existsSync(cssPath)) {
     throw new Broke('index.html links "' + cssHref + '" but ' + cssPath + ' does not exist');
   }
@@ -692,7 +699,7 @@ function auditShell(world) {
   const script = doc.querySelector('script[type="module"]');
   must(script, 'index.html no longer loads a <script type="module"> — nothing boots in a browser');
   const src = script.getAttribute('src');
-  must(path.resolve(ROOT, src) === MAIN_PATH,
+  must(path.resolve(ROOT, unversion(src)) === MAIN_PATH,
     'index.html boots "' + src + '" but this suite exercises src/main.js — the page and the tests have drifted apart');
 
   must(STATES.indexOf(state(world)) !== -1,

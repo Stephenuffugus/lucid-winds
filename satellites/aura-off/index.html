@@ -26,7 +26,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Aura Off">
 
-<link rel="stylesheet" href="src/ui/style.css">
+<link rel="stylesheet" href="src/ui/style.css?v=20260829b">
 </head>
 <body>
 <div class="stage">
@@ -106,7 +106,7 @@
     <button class="btn ghost" id="howBtn">How it scores</button>
   </div>
 </div>
-<script type="module" src="src/main.js"></script>
+<script type="module" src="src/main.js?v=20260829b"></script>
 
 <!-- ==========================================================================
      SERVICE WORKER REGISTRATION - DEFENSIVE ON PURPOSE
@@ -131,7 +131,7 @@
     if (!secure) return;
     window.addEventListener('load', function () {
       try {
-        navigator.serviceWorker.register('sw.js', { scope: './' })
+        navigator.serviceWorker.register('sw.js?v=20260829b', { scope: './' })
           .then(function (reg) { try { reg.update(); } catch (e) {} })
           .catch(function () { /* offline support unavailable; the game is fine */ });
       } catch (e) { /* ignore */ }

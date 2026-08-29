@@ -31,7 +31,7 @@
  *      AnimationMixer, which is why the joint names are frozen.
  */
 
-import { JOINTS, UPPER, LOWER, restPose } from './rig.js';
+import { JOINTS, UPPER, LOWER, restPose } from './rig.js?v=20260829b';
 
 /* -------------------------------------------------------------------------- */
 /* EASING                                                                      */

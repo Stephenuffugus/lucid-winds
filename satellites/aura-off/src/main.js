@@ -10,9 +10,9 @@
  * sweep content variants the shipped game never sees.
  */
 
-import { MOVES } from './data/moves.js';
-import { CAMPAIGN } from './data/campaign.js';
-import { createGame } from './ui/game.js';
+import { MOVES } from './data/moves.js?v=20260829b';
+import { CAMPAIGN } from './data/campaign.js?v=20260829b';
+import { createGame } from './ui/game.js?v=20260829b';
 
 /**
  * The stage is `height: var(--app-h, 100dvh)`. Never measure `innerHeight` for

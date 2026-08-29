@@ -39,7 +39,7 @@
  * Losing a save is a disappointment. Losing the run in progress is a bug.
  */
 
-import { STARTING_KIT } from '../data/campaign.js';
+import { STARTING_KIT } from '../data/campaign.js?v=20260829b';
 
 /** Storage key. Namespaced against the other games on this origin. */
 export const SAVE_KEY = 'skywolf:auraoff:v1';

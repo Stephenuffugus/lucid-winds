@@ -60,14 +60,14 @@ import {
   createMatch, resolveExchange, matchSnapshot, matchSummary,
   legalMoves, previewMove, canBlend, getMove, TUNING,
   qualifyFor, createQualifier, qualifySummary
-} from '../engine/battle.js';
-import { blendMove } from '../engine/scoring.js';
-import { sampleInto, blend as blendPose, lerpPose, settleWeight } from '../engine/anim.js';
-import { restPose, mountFigure } from '../engine/rig.js';
+} from '../engine/battle.js?v=20260829b';
+import { blendMove } from '../engine/scoring.js?v=20260829b';
+import { sampleInto, blend as blendPose, lerpPose, settleWeight } from '../engine/anim.js?v=20260829b';
+import { restPose, mountFigure } from '../engine/rig.js?v=20260829b';
 
-import { createHud } from './hud.js';
-import { createTiming } from './timing.js';
-import * as save from './save.js';
+import { createHud } from './hud.js?v=20260829b';
+import { createTiming } from './timing.js?v=20260829b';
+import * as save from './save.js?v=20260829b';
 
 /* -------------------------------------------------------------------------- */
 /* PACING — the only numbers in this file, and none of them touch a score      */

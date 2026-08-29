@@ -36,7 +36,7 @@ import {
   blendMult, blendMove, findPattern, scoreBoth, actScore,
   fitOffset, callout, formatAura, factorLabel,
   AMP_RANGE, TIMING, TIMING_LABEL, MATCHUP_LABEL
-} from './scoring.js';
+} from './scoring.js?v=20260829b';
 
 /* -------------------------------------------------------------------------- */
 /* TUNING — every number the rest of the game reads out of the engine          */
