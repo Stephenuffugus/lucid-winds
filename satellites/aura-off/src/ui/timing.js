@@ -304,6 +304,15 @@ export function createTiming(opts) {
   function press(e) {
     if (!run || run.done || run.holdingAt != null) return;
     if (e && e.cancelable) e.preventDefault();
+    /* OWN THE GESTURE. Without capture, a thumb that drifts a pixel off the pad
+       hands the pointer stream to whatever is underneath, and the hold dies
+       mid-flight. With capture every move and up for this pointer is retargeted
+       here until we let go, so the only thing that can end a hold is the player
+       lifting their thumb. Found on a real phone: the hold was breaking on its
+       own. (Feature-detected — jsdom has no pointer capture.) */
+    if (e && e.pointerId != null && el.panel && el.panel.setPointerCapture) {
+      try { el.panel.setPointerCapture(e.pointerId); run.captured = e.pointerId; } catch (err) { /* ignore */ }
+    }
     run.holdingAt = (typeof performance !== 'undefined' ? performance.now() : Date.now());
     run.amp = AMP_RANGE.min;
     held(true);
@@ -316,8 +325,37 @@ export function createTiming(opts) {
   function release(e) {
     if (!run || run.done || run.holdingAt == null) return;
     if (e && e.cancelable) e.preventDefault();
+    if (run.captured != null && el.panel && el.panel.releasePointerCapture) {
+      try { el.panel.releasePointerCapture(run.captured); } catch (err) { /* ignore */ }
+      run.captured = null;
+    }
     commit(run.amp, bandAt(run.pos));
   }
+
+  /**
+   * A cancel is NOT a release. The browser fires `pointercancel` when it decides
+   * the touch belongs to a gesture of its own — a scroll, a long-press
+   * selection, a system swipe. Scoring it as a deliberate release is how a
+   * highlighted word turned into a committed move at whatever amplitude the bar
+   * happened to be at.
+   *
+   * Capture plus the global `user-select:none` should mean this never fires. If
+   * it does, the honest reading is that the player never let go, so keep the
+   * hold alive and let the sweep run: they can still release for a real band, or
+   * time out into a whiff on their own terms. Either way the game does not
+   * decide for them.
+   */
+  function cancelled() {
+    if (!run || run.done || run.holdingAt == null) return;
+    if (run.captured != null && el.panel && el.panel.releasePointerCapture) {
+      try { el.panel.releasePointerCapture(run.captured); } catch (err) { /* ignore */ }
+      run.captured = null;
+    }
+  }
+
+  /* The long-press menu and the selection gesture, refused at the source. The
+     stylesheet makes nothing selectable; these stop the browser trying. */
+  function swallow(e) { if (e && e.cancelable) e.preventDefault(); return false; }
 
   /* ---- keyboard: the same gesture, for a thumb that is a spacebar ------ */
 
@@ -381,10 +419,20 @@ export function createTiming(opts) {
     const view = doc.defaultView || (typeof window !== 'undefined' ? window : null);
     // The WHOLE panel is the pad. A generous hit area is not a nicety here —
     // the track, the amp bar and the pad are one control.
-    if (el.panel) el.panel.addEventListener('pointerdown', press);
+    if (el.panel) {
+      el.panel.addEventListener('pointerdown', press);
+      /* `touchstart` non-passive is the belt to pointerdown's braces. Chrome
+         drives its long-press selection off the touch sequence, and a
+         `preventDefault` on `pointerdown` does not always reach it — worse, a
+         touch-derived pointerdown can arrive non-cancelable, in which case the
+         guard above silently skips. This one is always cancelable. */
+      el.panel.addEventListener('touchstart', swallow, { passive: false });
+      el.panel.addEventListener('contextmenu', swallow);
+      el.panel.addEventListener('selectstart', swallow);
+    }
     if (view) {
       view.addEventListener('pointerup', release);
-      view.addEventListener('pointercancel', release);
+      view.addEventListener('pointercancel', cancelled);
       view.addEventListener('keydown', keyDown);
       view.addEventListener('keyup', keyUp);
       view.addEventListener('resize', measure);
@@ -393,10 +441,15 @@ export function createTiming(opts) {
 
   function detach() {
     const view = doc.defaultView || (typeof window !== 'undefined' ? window : null);
-    if (el.panel) el.panel.removeEventListener('pointerdown', press);
+    if (el.panel) {
+      el.panel.removeEventListener('pointerdown', press);
+      el.panel.removeEventListener('touchstart', swallow, { passive: false });
+      el.panel.removeEventListener('contextmenu', swallow);
+      el.panel.removeEventListener('selectstart', swallow);
+    }
     if (view) {
       view.removeEventListener('pointerup', release);
-      view.removeEventListener('pointercancel', release);
+      view.removeEventListener('pointercancel', cancelled);
       view.removeEventListener('keydown', keyDown);
       view.removeEventListener('keyup', keyUp);
       view.removeEventListener('resize', measure);

@@ -40,7 +40,7 @@
 'use strict';
 
 /** Bump on every deploy. Must match the `build` meta tag in index.html. */
-var BUILD = '20260829a';
+var BUILD = '20260829b';
 
 /** Every cache this worker may ever touch starts with this. NOTHING else. */
 var CACHE_PREFIX = 'skywolf:auraoff:';

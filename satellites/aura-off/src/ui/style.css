@@ -148,6 +148,25 @@
 
 *,*::before,*::after{box-sizing:border-box}
 
+/* ⛔ NOTHING IN THIS GAME IS SELECTABLE. Found on a real phone, 2026-08-29:
+   holding the pad to size a move made Android long-press and highlight a word,
+   which fires `pointercancel`, which `timing.js` treats as a release — so the
+   hold committed early at whatever amplitude it had reached. The single most
+   important control in the game, broken by a text-selection gesture.
+
+   `#holdpad` already carried `user-select:none` and it was not enough: a press
+   that drifts one pixel off the pad lands on text that is still selectable, and
+   `user-select` alone does not stop iOS's callout or Android's long-press menu.
+   This is a game, not a document — the guard belongs at the top, on everything,
+   not sprinkled on the three elements somebody remembered. */
+*,*::before,*::after{
+  -webkit-touch-callout:none;
+  -webkit-user-select:none;
+  -moz-user-select:none;
+  -ms-user-select:none;
+  user-select:none;
+}
+
 html,body{
   margin:0;
   padding:0;
