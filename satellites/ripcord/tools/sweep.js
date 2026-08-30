@@ -53,22 +53,30 @@ function measure(label) {
 console.log('sweeping ' + slot + ':' + id + ', ' + PANEL.length * MPG * 2 + ' matches per chassis\n');
 console.log('variant'.padEnd(22) + PANEL.map(c => c.padStart(9)).join(''));
 
-// the slot's other parts, for context: a variant has to earn its place among these
+/* The slot's other parts, for context: a variant has to earn its place among
+ * these.
+ * ⛔ THIS LEAKED, and a reviewer found it rather than I did. It used to copy
+ * every key of the comparison part onto the part under test and then restore
+ * only the keys the ORIGINAL had, so any key the original did not carry survived
+ * the restore. Once the loop reached a Tier 3 entry, every later measurement,
+ * including CURRENT and every variant, was silently wearing that Relic's
+ * drawback: one part measured 32.5 percent while quietly carrying One Shot.
+ * Delete every key and rebuild from a snapshot instead of patching over. */
+function swapIn(target, source) {
+  for (const k in target) delete target[k];
+  for (const k in source) target[k] = source[k];
+}
+const ORIG = Object.assign({}, orig);
 for (const p of list) {
   if (p.id === id) continue;
-  const save = {};
-  for (const k in orig) save[k] = orig[k];
-  for (const k in p) if (k !== 'id' && k !== 'name' && k !== 'role') orig[k] = p[k];
+  swapIn(orig, Object.assign({}, p, { id: ORIG.id, name: ORIG.name, role: ORIG.role }));
   measure('  as ' + p.id);
-  for (const k in save) orig[k] = save[k];
+  swapIn(orig, ORIG);
 }
 console.log('');
 measure('CURRENT');
 for (let i = 0; i < variants.length; i++) {
-  const save = {};
-  for (const k in orig) save[k] = orig[k];
-  Object.assign(orig, variants[i]);
+  swapIn(orig, Object.assign({}, ORIG, variants[i]));
   measure('variant ' + (i + 1) + ' ' + JSON.stringify(variants[i]).slice(0, 60));
-  for (const k in orig) delete orig[k];
-  Object.assign(orig, save);
+  swapIn(orig, ORIG);
 }

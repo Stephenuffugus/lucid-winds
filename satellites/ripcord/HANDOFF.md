@@ -149,11 +149,13 @@ crossover is at two.
 
 ---
 
-## 5. The open balance question, and it is a Director call
+## 5. The open balance questions, and they are Director calls
 
-**`radAdd`, the assist slot's reach stat, has never once been worth its price.**
+Three stats in this catalogue are priced as though the simulation consumes them
+and it does not. All three were found by measuring one stat at a time with
+everything else held still, which is what `tools/sweep.js` is for.
 
-Holding everything else still on one part and moving only `radAdd`:
+### 5.1 `radAdd`, the assist slot's reach, is a straight cost
 
 | radAdd | best chassis |
 |---|---|
@@ -161,30 +163,72 @@ Holding everything else still on one part and moving only `radAdd`:
 | 0.0010 | 47.5% |
 | 0.0014 | 45.0% |
 
-Twelve points, one stat, pointing the wrong way. And it is not one part's
-problem. Ranked by mean across the reference chassis, every Tier 1 assist with
-`radAdd` at or under 0.0008 sits between 47 and 49 percent; every one at or over
-0.0010 sits between 40 and 46.
+Twelve points, one stat, pointing the wrong way, and it is not one part's
+problem: every Stock assist with `radAdd` at or under 0.0008 sits between 47 and
+49 percent across the reference chassis, and every one at or over 0.0010 sits
+between 40 and 46.
 
-The mechanism is real and it is not a bug: `radAdd` raises the moment of inertia,
-which protects spin, and it raises the CONTACT radius, so the two tops meet
-sooner and more often. Extra contacts pay only if you win them, so reach is worth
-having on an aggressive build and is a straight cost on a passive one.
+The mechanism is real. `radAdd` raises the moment of inertia, which protects
+spin, and it raises the CONTACT radius, so the two tops meet sooner and more
+often. Extra contacts pay only if you win them, so reach is worth having on an
+aggressive build and is a pure cost on a passive one.
 
-Three ways out, and the choice is yours:
+### 5.2 Rim grip does almost nothing, and what it does is negative
 
-1. **Leave it.** Reach is an attack stat and the catalogue quietly reflects that.
-   Cheapest, and it means several parts are shaped around a stat nobody wants.
-2. **Reprice it.** Cut every `radAdd` by about half and give those parts the
-   budget back somewhere the simulation pays for. Re-verify everything.
-3. **Make reach pay.** Give the wider top an advantage in the collision it
-   causes, most naturally by breaking the aggressor tie toward the larger
-   radius. This is a physics change and would need the whole harness re-run.
+Sweeping `gearMul` across a sixtyfold range with everything else held still:
 
-Nothing here is blocked on it. It is written down because it will otherwise be
-rediscovered from scratch.
+| gearMul | 0.05 | 0.38 | 1.00 | 1.80 | 3.00 |
+|---|---|---|---|---|---|
+| mean | 48.4% | 48.6% | 48.1% | 46.6% | 46.5% |
 
----
+Two points across the whole range, and the low end wins. `jt` is clamped to
+`muMax * |jn| * jtCap`, which is 1.86 times the normal impulse, and on any real
+contact the unclamped value is far past that, so `mu` has no consumer. It is the
+same wall that made Spin Thief measure 0.0 points until it was given a `jtCap`
+lever in `rigs.js`.
+
+Raising the ceiling does not fix it. Measured:
+
+| jtCap | grip 0.20 | grip 1.00 | grip 2.35 |
+|---|---|---|---|
+| 3 (shipped) | 47.8% | 48.1% | 46.6% |
+| 8 | 51.8% | 49.5% | 49.1% |
+| 14 | 52.1% | 50.1% | 47.2% |
+
+Low grip still wins at every setting. Friction is symmetric here: gripping the
+other top also scrubs your own rim. Grip only pays when you are the SLOWER top,
+and a stat that pays only when you are losing is not a stat anybody buys. Twelve
+parts in the catalogue currently spend budget on it.
+
+### 5.3 `taken` dominates everything
+
+The recoil a blade absorbs is by a distance the strongest number in the game.
+Holding a blade's other stats still and moving only `taken`, a wide stamina blade
+goes from 33 percent mean at 0.66 to **66 percent mean and an 85 percent best**
+at 0.46. Halo, the strongest Stock blade, sits at 0.60 and it is no coincidence.
+
+That is roughly a point of win rate for every 0.007 of `taken`, which is an order
+of magnitude more leverage than any other blade stat carries.
+
+### What to do about it
+
+The catalogue is balanced as it stands, empirically, and passes. These are not
+bugs; they are a stat economy where three of the numbers on the card do not mean
+what the card implies. Options, and the choice is yours:
+
+1. **Leave it and stop pricing them.** Cheapest. It means several parts are
+   shaped around stats nobody wants, and the workshop is quietly lying about what
+   matters.
+2. **Reprice.** Cut `radAdd` and `gear` ranges hard, widen `taken` ranges so the
+   numbers on the card match their leverage, re-verify everything.
+3. **Make them mean something.** Break the aggressor tie toward the larger
+   radius so reach earns its contacts; make rim friction asymmetric so gripping
+   costs the faster top more than the slower one. Both are physics changes and
+   both need the whole harness re-run.
+
+Nothing is blocked on this. It is written down because it will otherwise be
+rediscovered from scratch, and because two of the three were found by a reviewer
+reading the formulas rather than by any gate.
 
 ## 6. Other things worth knowing
 
@@ -203,6 +247,13 @@ can be disagreed with.
 
 **Round p10 is still 1.3 seconds.** Your brief flagged it and it is unchanged. A
 small tail of rounds ends almost instantly, probably spawn overlap.
+
+**A part can pass every balance gate and still be another part with a new name.**
+One Forged blade shipped as a Stock blade renamed, every stat within three
+percent, and it passed everything because it WAS a balanced part. There is now a
+near duplicate check in the auditor: two parts in a slot that differ by less than
+six percent of the slot's own range on every stat, with the same drawback and the
+same ability, fail. A reviewer caught the original by reading the table.
 
 **Nothing has been on a real phone.** Everything here was measured in headless
 Chrome at 375x667 and 320x568. The portal card is marked `beta` for that reason.

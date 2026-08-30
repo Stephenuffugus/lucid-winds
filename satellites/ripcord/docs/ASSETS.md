@@ -87,7 +87,7 @@ comfortable on a mid-range phone at 60fps and leaves room for the trail effects.
 | chisel | Chisel | 1.30 | 18.8 | Aggressive: few deep teeth, hard shadow line. |
 | millstone | Millstone | 0.48 | 18.8 | Mixed: shallow scallops. |
 | ploughshare | Ploughshare | 0.14 | 22.8 | Round: continuous rim, no catch points. |
-| cartwheel | Cartwheel | 0.12 | 26.2 | Round: continuous rim, no catch points. |
+| cartwheel | Cartwheel | 0.14 | 26.4 | Round: continuous rim, no catch points. |
 | roundel | Roundel | 0.10 | 21.0 | Round: continuous rim, no catch points. |
 | rasp | Rasp | 0.90 | 22.0 | Aggressive: few deep teeth, hard shadow line. |
 | hailstone | Hailstone | 0.70 | 23.0 | Mixed: shallow scallops. |

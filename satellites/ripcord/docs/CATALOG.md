@@ -64,7 +64,7 @@ higher tier lifts the average of whatever it is bolted to.
 | chisel | Chisel | Forged | attack | 0.0146 | 0.0188 | 1.30 | 0.90 | 1.10 | 1.24 |  |
 | millstone | Millstone | Forged | defense | 0.0224 | 0.0188 | 0.48 | 0.30 | 0.44 | 0.96 |  |
 | ploughshare | Ploughshare | Forged | defense | 0.0242 | 0.0228 | 0.14 | 0.28 | 0.38 | 0.86 |  |
-| cartwheel | Cartwheel | Forged | stamina | 0.0154 | 0.0262 | 0.12 | 0.24 | 0.22 | 0.60 |  |
+| cartwheel | Cartwheel | Forged | stamina | 0.0158 | 0.0264 | 0.14 | 0.22 | 0.24 | 0.66 |  |
 | roundel | Roundel | Forged | stamina | 0.0130 | 0.0210 | 0.10 | 0.18 | 0.26 | 0.62 |  |
 | rasp | Rasp | Forged | attack | 0.0161 | 0.0220 | 0.90 | 0.16 | 1.82 | 1.26 |  |
 | hailstone | Hailstone | Forged | balance | 0.0164 | 0.0230 | 0.70 | 1.20 | 0.14 | 1.06 |  |

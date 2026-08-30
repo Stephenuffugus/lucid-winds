@@ -314,8 +314,44 @@ for (const [slot, list] of SLOTS) {
 const CEIL_FLOOR = 0.45;
 const CEIL_SPREAD_MAX = 32;
 
+/* NEAR DUPLICATES. A part that is another part with a different name is not a
+ * choice, and it is the easiest defect in the world to ship: it passes every
+ * balance gate perfectly, because it IS a balanced part. It was caught here by a
+ * reviewer reading the numbers by eye, so now it is a check.
+ * Stats are compared on the slot's own range, so "within four percent" means
+ * four percent of the spread between the extreme parts in that slot rather than
+ * four percent of an arbitrary number. */
+{
+  const dupes = [];
+  for (const [slot, list] of SLOTS) {
+    const keys = Object.keys(list[0]).filter(k => typeof list[0][k] === 'number' && k !== 'tier');
+    const range = {};
+    for (const k of keys) {
+      const v = list.map(p => p[k]).filter(x => typeof x === 'number');
+      range[k] = Math.max(...v) - Math.min(...v) || 1;
+    }
+    for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) {
+      const a = list[i], b = list[j];
+      // A drawback and an ability are real differences even when every number
+      // matches. Two cores can carry identical mass and charge and still be
+      // completely different parts, because a core's identity is the move it
+      // carries; that is the whole reason the slot only has two numbers.
+      if (a.drawback !== b.drawback) continue;
+      if (a.ability !== b.ability) continue;
+      let worst = 0;
+      for (const k of keys) worst = Math.max(worst, Math.abs((a[k] || 0) - (b[k] || 0)) / range[k]);
+      if (worst < 0.06)
+        dupes.push(slot + ': ' + a.id + ' and ' + b.id + ' differ by at most ' +
+                   (worst * 100).toFixed(1) + ' percent of the slot range on every stat');
+    }
+  }
+  if (dupes.length) console.log('\nNEAR DUPLICATES\n   ' + dupes.join('\n   '));
+  var DUPES = dupes;
+}
+
 const fails = [];
 const weak = [];
+for (const d of DUPES) fails.push('near duplicate, ' + d);
 for (const slot of Object.keys(results))
   for (const r of results[slot])
     if (r.ceil < CEIL_FLOOR) weak.push(slot + ':' + r.id + ' ' + pc(r.ceil) + '%');
