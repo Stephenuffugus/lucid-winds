@@ -118,11 +118,28 @@ measured through the weight-hole hints, and two angle-gap tooth counts
 that lied in both directions before the count became structural
 (connected shells in the tooth band).
 
-## Not built yet
+## Stadiums and launchers (arena.py + floors.py)
 
-- 6 launcher meshes/skins (400 tris each; only ever seen on the wind screen)
-- 4 stadium dishes (Chalk Ring, The Posts, Taya Circle, Long Range) — the
-  floor TEXTURES are on the ChatGPT support-art list; the dish geometry,
-  rail trim, pocket lips, dust card and shadow catcher are forge work
-- decal masks / trail ramps: already live in-game as drawn cosmetics;
-  painted 256px masks are on the ChatGPT list
+`tools/forge3d/arena.py` builds the four stadiums and six launchers;
+`floors.py` writes the floor textures and the six 64x4 trail ramps
+(colours from the game's own TRAIL_HEX). The dish is the SIM's dish:
+radius = K.arenaR x 1000 (150 standard, 340 long range), ridge crest at
+K.ridgeAt = 0.72R, rail band beyond it as machined `lw_rail`, and Chalk
+Ring's K.pockets = 3 low points in the lip, countable in the mesh and
+counted by the validator. The Posts gets its two posts, one per top;
+Taya's pin circle and Long Range's five distance bands are drawn on the
+floor — marks live INSIDE ridgeAt, because past it the surface is rail
+material and never samples the floor texture (the fifth band vanished
+before that rule). Each stadium ships with a shadow catcher and a dust
+card; every launcher shares one mount statement, a bayonet chuck ring
+dia 22 with the chuck face at origin, and stays within 400 triangles.
+Floor textures are honest placeholders in the game's palette — painted
+ones from the ChatGPT list replace them at the same path and win.
+
+## Still open
+
+- decal masks: live in-game as drawn cosmetics; painted 256px masks are
+  on the ChatGPT support-art list
+- `meshy_api.py` endpoints are written to Meshy's documented API but
+  untested until a key exists; the constants at the top are the fix if
+  they have drifted

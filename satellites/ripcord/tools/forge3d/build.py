@@ -389,6 +389,9 @@ def setup_render():
     softbox('sb_rim',  (85, 70, 30),    (math.radians(-70), 0, math.radians(40)), 55, (0.75, 0.85, 1.0), 9)
     softbox('sb_fill', (50, -80, 10),   (math.radians(-80), 0, math.radians(150)), 70, (0.9, 0.9, 0.95), 5)
     cam = bpy.data.cameras.new('cam'); cam.lens = 85
+    cam.clip_end = 100000   # a 340mm dish frames from ~2700 units out,
+                            # past the default 1000 clip - the first
+                            # stadium renders were empty frames
     co = bpy.data.objects.new('cam', cam)
     bpy.context.collection.objects.link(co); sc.camera = co
     return co
@@ -495,4 +498,5 @@ def build_stack(cam):
     bpy.ops.export_scene.gltf(filepath=os.path.join(d, 'stack-proof.glb'),
         use_selection=True, export_format='GLB', export_apply=True)
 
-main()
+if __name__ == '__main__':   # arena.py imports the builders
+    main()
