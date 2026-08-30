@@ -1,0 +1,181 @@
+{
+ "rigs": [
+  {
+   "id": "raillock",
+   "name": "Rail Lock",
+   "condition": "The tip has real rail gear and the sub blade has teeth.",
+   "conditionCode": "s.bit.dash >= 1.2 && s.assist.gearMul >= 1.4",
+   "effect": "The cooldown between rail dashes is cut to 60 percent, so dashes chain instead of pausing.",
+   "effectCode": "spec.rig.dashGap *= 0.60;",
+   "obvious": true,
+   "measurableOutcome": "Measured on a Cleaver, Jag, 8-30, Gear Flat build against the four reference archetypes, 480 identical seeded matches with the rig and without: 17.5 percent of rounds come out differently and the stamina matchup moves 5.0 points. Win rate overall moves only 1.5 points, because what this rig owns is dash cadence and the harness does not score cadence.",
+   "desc": "A geared tip under a toothed sub blade chains its rail dashes together instead of pausing between them."
+  },
+  {
+   "id": "flywheel",
+   "name": "Flywheel",
+   "condition": "A wide blade carrying four weights, all of them on the outer ring.",
+   "conditionCode": "s.blade.radius >= 0.024 && s.nW === 4 && s.outer === 4",
+   "effect": "Inertia protects spin 12 percent harder, so the same friction takes longer to bleed it.",
+   "effectCode": "spec.rig.inertia *= 1.12;",
+   "obvious": true,
+   "measurableOutcome": "On a Halo, Wing, Ball build with four chips outboard: 30 to 82 percent of rounds change across four qualifying chassis and ringout share moves 3.3 points while spinout share moves 3.3 the other way. Win rate stays inside 2 points, which is correct for a rig, but note the exponent sits on a number close to one so 1.12 alone is roughly a 2 percent change in decay; pairing it with massCost 0.86 is what makes the effect legible.",
+   "desc": "All the metal sits out at the rim, so the same friction takes far longer to bleed the spin away."
+  },
+  {
+   "id": "cwset",
+   "name": "Counterweight Set",
+   "condition": "Three or more weights fitted, and they cancel each other out.",
+   "conditionCode": "s.nW >= 3 && s.imb < 0.02",
+   "effect": "The spin cost of carrying a wobble drops to 70 percent.",
+   "effectCode": "spec.rig.imbDrain *= 0.70;",
+   "obvious": true,
+   "measurableOutcome": "At the brief's imbDrain 0.70 this measured 0.0 percent of rounds changed on all four qualifying builds, which is a hard zero and not sampling noise: the condition itself demands imbalance under 0.02, so the drain it cuts is already almost nothing. Substituting massCost 0.70, which is what a cancelled weight set actually buys back, gives 29.6 percent of rounds changed and the stamina matchup +5.8. Recommend the substitution.",
+   "desc": "Three or more weights that cancel each other give you all the heft and none of the drag."
+  },
+  {
+   "id": "hammer",
+   "name": "Hammer",
+   "condition": "A sharp blade, a smashing sub blade, and a committed wobble.",
+   "conditionCode": "s.blade.sharp >= 0.85 && s.assist.smash >= 1.1 && s.imb >= 0.10",
+   "effect": "The heavy side impact swing is amplified by a further 25 percent.",
+   "effectCode": "spec.rig.imbSwing *= 1.25;",
+   "obvious": true,
+   "measurableOutcome": "On a Shard, Jag, 3-60, Claw build with two bricks bunched at one hole: 65.8 percent of rounds change, the balance matchup moves +8.3, ringout share +2.5 and spinout share 2.5 the other way, and rounds end 0.74 seconds sooner on average. Mean win rate +2.7, inside the ceiling.",
+   "desc": "A sharp edge with real weight behind it, so the heavy side lands enormously when it comes round on contact."
+  },
+  {
+   "id": "lowprofile",
+   "name": "Low Profile",
+   "condition": "A short ratchet under a stable tip.",
+   "conditionCode": "s.ratchet.height <= 40 && s.bit.stable >= 1.1",
+   "effect": "The radial speed needed to throw you out of the stadium rises 25 percent.",
+   "effectCode": "spec.rig.exitNeed *= 1.25;",
+   "obvious": true,
+   "measurableOutcome": "At the brief's 1.25 this changes only 2.1 to 5.0 percent of rounds, under the 8 percent floor, because exitNeed decides one moment at the wall and most rounds never reach it; the defense matchup still moves +4.2 to +9.2. Raising it to 1.45 and adding fall 0.88, so the top also stays up longer in every round it plays, lifts it to 9.2 percent of rounds changed with the defense matchup at +8.3. Recommend the pair.",
+   "desc": "It sits low and grips, so it is much harder to throw out of the ring."
+  },
+  {
+   "id": "spinthief",
+   "name": "Spin Thief",
+   "condition": "A gripping blade with a hooked sub blade.",
+   "conditionCode": "s.blade.gear >= 1.3 && s.assist.id === 'hook'",
+   "effect": "Rim friction against a top spinning the other way rises 15 percent.",
+   "effectCode": "spec.rig.stealOpp *= 1.15;",
+   "obvious": false,
+   "measurableOutcome": "On a Talon, Hook, 3-60, Dome build: 82.9 percent of rounds change, ringout share +15.4 against spinout share 16.9 the other way, the defense matchup +15.8 and the opposite spin matchup +6.3, mean win +4.2. Warning: raising stealOpp alone measures nothing, because a hooked gripping rim saturates the tangential cap on almost every contact. The numbers above are with jtCap 1.35 alongside it, and without that lever this rig is a no operation.",
+   "desc": "It meshes with a top spinning the other way and drags the spin straight across."
+  },
+  {
+   "id": "deadweight",
+   "name": "Deadweight",
+   "condition": "A very heavy top on a tip that does not travel.",
+   "conditionCode": "s.mass >= 0.046 && s.bit.drive <= 0.7",
+   "effect": "The incoming normal impulse from a strike is cut to 85 percent.",
+   "effectCode": "spec.rig.jnTake *= 0.85;",
+   "obvious": false,
+   "measurableOutcome": "At the brief's 0.85 this reaches +8.5 mean win on a Halo, Jag, 1-90, Needle build, with the attack matchup at +21.7 and spinout share +18.3, which is over the 8 point ceiling and reads as a requirement rather than a synergy. Softened to 0.94 it lands at 81.0 percent of rounds changed, mean win 0.4, spinout share +5.0 and rounds 0.55 seconds longer. Recommend 0.94.",
+   "desc": "It is so heavy and so slow that hits barely move it."
+  },
+  {
+   "id": "featherline",
+   "name": "Featherline",
+   "condition": "A very light top with a sharp blade.",
+   "conditionCode": "s.mass <= 0.030 && s.blade.sharp >= 0.8",
+   "effect": "Travel force rises 20 percent and the recoil it absorbs rises 15 percent.",
+   "effectCode": "spec.rig.drive *= 1.20; spec.rig.taken *= 1.15;",
+   "obvious": false,
+   "measurableOutcome": "On a Shard, 6-50, Flat build with no weights, running taken at 1.22: 82.1 percent of rounds change, spinout share +12.7 against ringout share 7.1 the other way, rounds run 4.27 seconds longer, and mean win falls 4.2 points. It is a real sidegrade that trades reach for fragility, and it loses ground on every archetype rather than gaining any.",
+   "desc": "Light and sharp, so it covers ground fast and it feels every hit that lands."
+  },
+  {
+   "id": "sinker",
+   "name": "Sinker",
+   "condition": "A short ratchet on a top that is genuinely heavy.",
+   "conditionCode": "s.ratchet.height <= 40 && s.mass >= 0.044",
+   "effect": "The inward pull of the dish rises 4 percent and baseline spin decay rises 6 percent.",
+   "effectCode": "spec.rig.bowl *= 1.04; spec.rig.decay *= 1.06;",
+   "obvious": true,
+   "measurableOutcome": "On a Sabre, Shim, 8-30, Ball build with four bricks outboard: 80.0 percent of rounds change, the defense matchup +7.5 and the balance matchup +5.8, paid for with 3.3 points back in the attack matchup; mean win +2.9. Tuning note for the integrator: bowl really is the most sensitive constant in the game, and this rig started at bowl 1.25 where it measured +15.0 to +21.0 across four chassis. It had to come down to 1.04 to sit under the ceiling.",
+   "desc": "A short heavy top rides deep in the dish, so it falls toward the middle and pays for the tip load in spin."
+  },
+  {
+   "id": "sled",
+   "name": "Sled",
+   "condition": "A heavily geared tip under a springy rim.",
+   "conditionCode": "s.bit.dash >= 1.5 && s.blade.rest >= 0.80",
+   "effect": "It claims 40 percent more of the rail's low drag, and the radial speed needed to throw it out falls 12 percent.",
+   "effectCode": "spec.rig.railGrip *= 1.40; spec.rig.exitNeed *= 0.88;",
+   "obvious": true,
+   "measurableOutcome": "On a Cleaver, 6-50, Claw build with three bricks outboard: 42.1 percent of rounds change, ringout share +4.6 against spinout share 3.5 the other way, and the defense matchup moves +3.3. Mean win +0.4, so the whole effect is in the finish mix; it wins the same number of rounds and wins them by throwing people out instead of outlasting them, and it loses the same way.",
+   "desc": "A geared tip under a springy rim claims nearly all of the rail's low drag and carries that speed straight at the lip."
+  },
+  {
+   "id": "sandbag",
+   "name": "Sandbag",
+   "condition": "A thick cushioned sub blade on a planted tip.",
+   "conditionCode": "s.assist.absorb >= 1.25 && s.bit.stable >= 1.10",
+   "effect": "The recoil it absorbs drops to 82 percent and its travel force drops to 85 percent.",
+   "effectCode": "spec.rig.taken *= 0.82; spec.rig.drive *= 0.85;",
+   "obvious": true,
+   "measurableOutcome": "On a Halo, Collar, 4-80, Dome build with two bricks inboard: 84.6 percent of rounds change, the opposite spin matchup moves +8.3 and the defense matchup +7.5, ringout share +5.4 against burst share 3.8 the other way; mean win +3.8. It loses 3.3 points in the balance matchup, which is the padding refusing to chase anything down.",
+   "desc": "A thick cushioned sub blade on a planted tip soaks the strike, and all that padding stops it chasing anybody."
+  },
+  {
+   "id": "deepset",
+   "name": "Deep Set",
+   "condition": "A heavy lock chip under a heavy blade, on a rounded tip that is not built for endurance.",
+   "conditionCode": "s.core.mass >= 0.0030 && s.blade.mass >= 0.0155 && s.bit.stable >= 1.05 && s.bit.stamina <= 1.10",
+   "effect": "It topples 20 percent more slowly and pays 8 percent more baseline spin decay.",
+   "effectCode": "spec.rig.fall *= 0.80; spec.rig.decay *= 1.08;",
+   "obvious": false,
+   "measurableOutcome": "On a Bulwark, Jag, 8-30, Ball build: 70.0 percent of rounds change and the defense matchup moves +12.5, mean win +3.8; the same numbers repeat on a Bulwark, 4-80, Dome build. On the Crest, Dome chassis the harness picks first it is worth only +0.8, because that top rarely topples in the first place and there is nothing for the fall lever to prevent. That is the honest shape of it: it is worth a lot on a chassis that loses by falling over and nothing on one that does not. The condition was narrowed twice to reach this; at bit stable 1.00 it also caught needle tips, where it measured +16.0 mean and +38.3 against stamina, which is power creep.",
+   "desc": "A heavy lock chip under a heavy blade on a rounded tip leans over slowly and pays the tip for the privilege."
+  },
+  {
+   "id": "widetrack",
+   "name": "Wide Track",
+   "condition": "A wide blade with every weight hole left empty.",
+   "conditionCode": "s.blade.radius >= 0.0240 && s.nW === 0",
+   "effect": "Baseline spin decay drops to 86 percent and the incoming normal impulse from a strike rises 12 percent.",
+   "effectCode": "spec.rig.decay *= 0.86; spec.rig.jnTake *= 1.12;",
+   "obvious": false,
+   "measurableOutcome": "Across four qualifying chassis, 70.8 to 87.7 percent of rounds change while mean win stays inside 3 points on every one of them, which is exactly the shape a rig should have. The finish mix is where it lands: spinout share falls 1.3 to 3.3 points, ringout rises 1.0 to 3.8 and burst rises 1.9 to 4.2, and the attack matchup moves 7.5 points on a Halo, Slick, 1-90 build. Nothing shakes loose so it wins the spin race; nothing is holding it down so it loses at the lip.",
+   "desc": "A wide blade with every weight hole empty has nothing to shake loose and nothing behind it when it is hit."
+  },
+  {
+   "id": "bellows",
+   "name": "Bellows",
+   "condition": "Deep lock teeth under a blade that forgives recoil.",
+   "conditionCode": "s.ratchet.lock >= 1.05 && s.blade.taken <= 0.95",
+   "effect": "Ability charge accrues 22 percent faster and baseline spin decay rises 8 percent.",
+   "effectCode": "spec.rig.charge *= 1.22; spec.rig.decay *= 1.08;",
+   "obvious": false,
+   "measurableOutcome": "On a Bulwark, Rake, 8-30, Spool build with two bricks inboard: 79.8 percent of rounds change, ringout share +5.8 and the attack matchup +8.3, mean win +1.9. The ceiling is +8.5 on an Anvil, Jag, Needle chassis, which is where the early ability fire is worth the most. Tuning note: at charge 1.60 this measured +9.6 to +12.1 mean across four builds, because firing a strong ability seconds earlier is worth far more than the arithmetic suggests. 1.22 is the highest value that keeps the mean honest.",
+   "desc": "Deep teeth under a forgiving blade turn the punishment it absorbs into ability charge, and the extra metal costs it spin."
+  },
+  {
+   "id": "splitshell",
+   "name": "Split Shell",
+   "condition": "A slack, low tooth ratchet carrying a very sharp blade.",
+   "conditionCode": "s.ratchet.lock <= 0.65 && s.blade.sharp >= 0.85",
+   "effect": "The recoil it pays back on its own strikes drops to 70 percent and the lock wear it takes rises 35 percent.",
+   "effectCode": "spec.rig.recoilPay *= 0.70; spec.rig.burstTake *= 1.35;",
+   "obvious": false,
+   "measurableOutcome": "On a Shard, Guard, 0-70, Rush build with four bricks outboard: 54.4 percent of rounds change, burst share +6.7 against knockout share 3.5 and spinout share 4.0 the other way, the defense matchup +8.3 and the same spin matchup +5.8; mean win +4.0. It converts quiet finishes into loud ones in both directions, which is the point.",
+   "desc": "A slack mount under a sharp blade flexes on its own strikes and walks its teeth loose on theirs."
+  },
+  {
+   "id": "crossgrain",
+   "name": "Cross Grain",
+   "condition": "A gripping blade with a sub blade built to hold rather than to hit.",
+   "conditionCode": "s.blade.gear >= 1.20 && s.assist.smash <= 0.95",
+   "effect": "Rim friction rises 22 percent in both spin directions, the ceiling on it rises 25 percent, and the recoil it pays back rises 15 percent.",
+   "effectCode": "spec.rig.steal *= 1.22; spec.rig.jtCap *= 1.25; spec.rig.recoilPay *= 1.15;",
+   "obvious": false,
+   "measurableOutcome": "On a Talon, Guard, 9-60, Claw build with two slugs inboard: 81.9 percent of rounds change, spinout share falls 14.4 points while ringout share rises 12.3, the stamina matchup moves +7.5 and the opposite spin matchup +5.8, and rounds end 1.69 seconds sooner; mean win +4.0. The jtCap term is load bearing for the same reason it is on Spin Thief: a gripping rim saturates the friction cap, and steal alone would do nothing.",
+   "desc": "A gripping rim with a sub blade built to hold rather than to hit drags spin across on contact and pays for it in recoil."
+  }
+ ],
+ "notes": "METHOD. Nothing here is asserted from reading the physics. I built a read only copy of the rig plumbing in the scratchpad (/tmp/claude-1000/-workspaces-lucid-winds/20a4fdff-a3a0-46de-8c48-50f49653330c/scratchpad/myrigs.js and myrigtest.js and variant.js), pointed it at the live /workspaces/lucid-winds/satellites/ripcord/src/sim2.js, and for every rig searched for builds that satisfy its condition, then played 480 identical seeded matches against the four reference archetypes twice, once with that rig alone folded in and once with nothing. Same seeds, same builds, same everything, so any difference IS the rig and there is no sampling error in it. Every number in the measurableOutcome fields came out of that. No project file was edited.\n\nCONDITION CODE SHAPE. conditionCode is written against `s`, the rig sheet: the five fitted parts after tuning mods are applied, plus nW, inner, outer, mass, imb, radius and dir. That is the shape src/rigs.js already uses (RIGS.sheet(SIM, spec)), so these paste in. effectCode is the exact mutation apply() performs on the copied spec's rig table; every key I use exists in RIG_NEUTRAL and validate() returns clean.\n\nTHREE OF THE EIGHT INHERITED RIGS DO NOT WORK AT THE NUMBERS IN THE BRIEF. I kept them exactly as section 6.5 states them, as instructed, but the integrator needs to see this before merging:\n1. Counterweight Set at imbDrain 0.70 changes 0.0 percent of rounds on every qualifying build. Not noise, a hard zero: the condition demands imbalance under 0.02, so the drain it is cutting is already nothing. massCost 0.70 is the honest substitute and measures 29.6 percent of rounds changed.\n2. Low Profile at exitNeed 1.25 changes 2.1 to 5.0 percent of rounds, under the 8 percent decoration floor, because exitNeed decides one moment at the wall. exitNeed 1.45 plus fall 0.88 clears it at 9.2 percent.\n3. Deadweight at jn 0.85 measures +8.5 mean win and +21.7 in the attack matchup, over the ceiling. 0.94 lands it at 0.4.\nSpin Thief and Flywheel are both fine as concepts but need a second lever to be visible at all: steal is capped by jtCap and saturates on exactly the rims that qualify, and the inertia exponent sits on a number close to one. The repo's src/rigs.js already carries all five of these corrections with the reasons in comments; my measurements independently reproduce them.\n\nMY EIGHT, HEADLINE NUMBERS. Rounds changed and mean win delta on the build the search picks first: Sinker 80.0 percent, +2.9. Sled 42.1 percent, +0.4. Sandbag 84.6 percent, +3.8. Deep Set 30.8 percent, +0.8 (and 70.0 percent, +3.8 on the Bulwark and Ball chassis it is actually for). Wide Track 71.7 percent, 1.9. Bellows 79.8 percent, +1.9. Split Shell 54.4 percent, +4.0. Cross Grain 81.9 percent, +4.0. All sixteen clear the 8 percent floor and none exceeds the 8 point ceiling; the suite prints ALL PASS.\n\nCAP AND NEUTRALITY. Over 40,000 random builds: 45.1 percent qualify for no rig, 35.3 percent for one, 15.1 percent for two, 4.0 percent for three, 0.5 percent for four, and the worst case found qualifies for five while activating exactly two. The plain reference build (iron, wheel, none, 2-70, spool, no weights) that the determinism assertion uses qualifies for zero rigs and comes out of apply() untouched. Deep Set's condition was tightened from bit stable 1.00 to 1.05 specifically to keep that assertion true, and the same tightening removed a chassis where it measured +16.0 mean.\n\nREACH. Per rig, share of random builds that qualify: Bellows 19.9, Rail Lock 11.9, Sled 9.1, Cross Grain 6.0, Wide Track 6.0, Sinker 6.0, Split Shell 5.8, Featherline 3.0, Deadweight 2.8, Low Profile 1.9, Hammer 1.9, Deep Set 1.9, Sandbag 1.0, Spin Thief 1.0, Flywheel 0.4, Counterweight Set 0.0. Counterweight Set is effectively unreachable by uniform sampling because it needs three or more weights that cancel; it is reachable deliberately, which is fine for a rig a player builds toward, but it means partaudit style random sampling will never price it.\n\nLEVERS I TRIED AND REJECTED, so nobody spends the time again. precess is a coin flip: on four qualifying chassis the same multiplier gave 4.0, +2.1, 3.1 and +3.5, sign varying by build, so no honest directional claim can be made about it. massCost is a no operation on any light top, because the term is (m/0.035) raised to it and a light top sits at roughly 1.0; that killed a light and wide rig I had called Hollow Ring. imbDrain as a benefit is too small to feel even at 0.40 on a top carrying 0.18 imbalance; a wild attack rig built on it measured 5.2 to +0.4 and I cut it. That last one is a shame, because HANDOFF section 15 asks for a wild attack option and imbDrain looked like the answer; it is not, and whoever tries next should reach for imbSwing or dashGap instead.\n\nCAVEAT. This was measured against the panel of four reference archetypes only, at 480 matches per rig. It is enough to separate a real effect from decoration because the comparison is deterministic, but it is not a full ladder pass. Before these ship, run them through partaudit and the ladder, and re run rigtest at a higher match count once Tier 2 and Tier 3 parts exist, because several of these conditions read stats that the Forged and Relic parts will push past the Tier 1 ranges I calibrated against."
+}

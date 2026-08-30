@@ -1,0 +1,1881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#1A1210">
+<meta name="description" content="Build a spinning top, wind it by hand, then watch it fight with no input at all.">
+<title>Ripcord</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+/* Packed earth and chalk. Gasing rings are drawn on dirt, so that is what the
+   game is drawn on: nothing here is neon and nothing glows for its own sake. */
+:root{
+  --dirt:#241C17; --hi:#33281F; --lo:#160F0C; --deep:#0E0908;
+  --chalk:#EDE6D8; --dim:#9C9286; --line:rgba(237,230,216,.14);
+  --rope:#C9A227; --ember:#C4442B; --steel:#8E9BA2; --good:#7FA650;
+  --pad:15px;
+  /* Every control is at least this tall. The stage is NOT transform scaled, so
+     a CSS pixel here is a rendered pixel on the phone and 48 means 48. */
+  --tap:48px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;
+  -webkit-user-select:none;user-select:none}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--lo);color:var(--chalk);
+  font:15px/1.45 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  overscroll-behavior:none;-webkit-text-size-adjust:100%}
+button{font:inherit;color:inherit}
+
+/* ---------- the play field owns the screen, always ---------- */
+#field{position:fixed;inset:0;touch-action:none}
+#field canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+
+/* ---------- overlays, all of which get out of the way ---------- */
+.chrome{position:fixed;z-index:3;transition:opacity .28s ease, transform .28s ease}
+.chrome.hide{opacity:0;pointer-events:none;transform:translateY(-6px)}
+
+#top{top:calc(env(safe-area-inset-top) + 10px);left:var(--pad);right:var(--pad);
+  display:flex;align-items:flex-start;justify-content:space-between;gap:10px;pointer-events:none}
+#score{font:700 22px/1 ui-sans-serif,system-ui;font-variant-numeric:tabular-nums;letter-spacing:.06em}
+#score small{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);
+  display:block;margin-top:4px;font-weight:600}
+#vs{font-size:12px;letter-spacing:.1em;color:var(--dim);text-align:right;line-height:1.5}
+#vs b{color:var(--chalk);font-weight:600;letter-spacing:.06em}
+
+#hint{position:fixed;z-index:3;left:var(--pad);right:var(--pad);
+  bottom:calc(env(safe-area-inset-bottom) + 112px);
+  text-align:center;font-size:14px;color:var(--dim);pointer-events:none;transition:opacity .28s}
+
+#dock{bottom:calc(env(safe-area-inset-bottom) + 16px);left:var(--pad);right:var(--pad);
+  display:flex;gap:10px;align-items:center;justify-content:center}
+.btn{border:1px solid var(--line);background:rgba(51,40,31,.94);color:var(--chalk);
+  border-radius:14px;padding:0 18px;min-height:var(--tap);font-size:15px;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  backdrop-filter:blur(8px);cursor:pointer}
+.btn:active{background:rgba(70,56,43,.96)}
+.btn.go{flex:1;max-width:280px;background:var(--ember);border-color:var(--ember);
+  color:#fff;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+.btn.icon{width:var(--tap);min-width:var(--tap);padding:0;font-size:19px}
+.btn.ghost{background:none}
+.btn[disabled]{opacity:.38;pointer-events:none}
+
+/* ---------- grade card ---------- */
+#card{position:fixed;z-index:4;left:var(--pad);right:var(--pad);
+  bottom:calc(env(safe-area-inset-bottom) + 80px);
+  background:rgba(51,40,31,.96);border:1px solid var(--line);border-radius:16px;
+  padding:13px 15px;backdrop-filter:blur(10px);
+  transform:translateY(190%);transition:transform .32s cubic-bezier(.2,.9,.3,1)}
+#card.up{transform:none}
+#card .row{display:flex;align-items:center;gap:14px}
+#gl{font:800 40px/1 ui-sans-serif,system-ui;min-width:50px;text-align:center}
+#note{font-size:15px}
+#sub{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-top:3px}
+
+/* ---------- full screen sheets ---------- */
+.sheet{position:fixed;z-index:6;inset:0;background:var(--dirt);
+  display:flex;flex-direction:column;
+  transform:translateY(100%);transition:transform .34s cubic-bezier(.2,.9,.3,1);
+  visibility:hidden}
+.sheet.up{transform:none;visibility:visible}
+.sheetTop{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:calc(env(safe-area-inset-top) + 12px) var(--pad) 10px}
+.sheetTop h2{margin:0;font-size:13px;letter-spacing:.24em;text-transform:uppercase;font-weight:700}
+.sheetBody{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:0 var(--pad) 16px}
+.sheetFoot{flex:0 0 auto;border-top:1px solid var(--line);
+  padding:10px var(--pad) calc(env(safe-area-inset-bottom) + 12px);
+  display:flex;gap:10px;align-items:center}
+#benchOut{flex:1;font-size:13px;color:var(--dim);font-variant-numeric:tabular-nums;min-width:0}
+#benchOut b{color:var(--chalk);font-size:17px}
+
+/* ---------- menu ---------- */
+/* The scrim has to let the live round behind it show. The first version went to
+   88 percent opacity by 62 percent of the radius and the demo match was
+   invisible, which threw away the only moving thing on the screen. */
+#menu{position:fixed;z-index:5;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:11px;padding:var(--pad) var(--pad) 34px;
+  background:radial-gradient(ellipse at 50% 44%,rgba(14,9,8,.18) 0%,rgba(14,9,8,.62) 48%,rgba(14,9,8,.93) 100%);
+  transition:opacity .3s;visibility:hidden;opacity:0}
+#menu.up{visibility:visible;opacity:1}
+#wordmark{font:800 46px/1 ui-sans-serif,system-ui;letter-spacing:.20em;margin:0 0 2px;
+  text-shadow:0 2px 18px rgba(14,9,8,.95),0 0 34px rgba(14,9,8,.8)}
+#tagline{font-size:14px;color:var(--chalk);opacity:.78;margin:0 0 22px;text-align:center;
+  max-width:19em;text-shadow:0 1px 12px rgba(14,9,8,.95)}
+#menu .btn{width:min(300px,100%);flex:0 0 auto}
+/* ⛔ .btn.go carries flex:1 for the horizontal dock. #menu is a COLUMN, so that
+   same rule grew the Play button to 182px tall over a painted arena. Reset the
+   flex, not just the width. */
+#menu .btn.go{flex:0 0 auto;max-width:none;min-height:56px;
+  background:rgba(196,68,43,.90);border-color:rgba(255,150,130,.45)}
+#buildstamp{position:fixed;bottom:3px;left:0;right:0;text-align:center;font-size:11px;color:rgba(156,146,134,.5);
+  letter-spacing:.06em;z-index:2;pointer-events:none}
+
+/* ---------- workshop innards ---------- */
+#tune{display:flex;gap:14px;align-items:flex-start;margin-bottom:8px;flex-wrap:wrap}
+#dial{width:min(158px,42vw);height:min(158px,42vw);flex:0 0 auto;touch-action:manipulation}
+#stats{flex:1;min-width:150px}
+.stat{display:grid;grid-template-columns:56px 1fr 34px;gap:4px 9px;align-items:center;
+  font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--dim);margin-bottom:6px}
+.bar{height:6px;background:rgba(237,230,216,.10);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:3px;background:var(--rope);transition:width .18s}
+.bar.warn i{background:var(--ember)}
+.bar.up i{background:var(--good)}
+.v{font-variant-numeric:tabular-nums;text-align:right;color:var(--chalk)}
+.v em{font-style:normal;color:var(--good)}
+
+.slot{margin:12px 0}
+.slot label{display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dim);margin-bottom:7px}
+.slot label em{font-style:normal;color:var(--rope);text-transform:none;letter-spacing:.02em}
+.rail{display:flex;gap:7px;overflow-x:auto;padding-bottom:4px;
+  scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.rail::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;font-size:14px;padding:0 14px;min-height:var(--tap);border-radius:11px;
+  border:1px solid var(--line);background:var(--hi);color:var(--dim);white-space:nowrap;
+  display:inline-flex;align-items:center;gap:7px;cursor:pointer}
+.chip.on{border-color:var(--rope);color:var(--chalk);background:rgba(201,162,39,.16)}
+.chip.lock{opacity:.40;border-style:dashed}
+.chip.lock::after{content:'locked';font-size:11px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--dim)}
+.chip .t{font-size:11px;letter-spacing:.1em;color:var(--rope);font-weight:700}
+.chip .t.t3{color:var(--ember)}
+.cosmetic label em{color:var(--steel)}
+
+.acc{border-top:1px solid var(--line)}
+.acc:last-of-type{border-bottom:1px solid var(--line)}
+.acc>summary{list-style:none;cursor:pointer;min-height:var(--tap);display:flex;
+  align-items:center;justify-content:space-between;gap:12px;padding:8px 2px;
+  font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--chalk);font-weight:600}
+.acc>summary::-webkit-details-marker{display:none}
+.acc>summary span{color:var(--dim);letter-spacing:.02em;text-transform:none;font-weight:400;
+  font-size:13px;text-align:right}
+.acc[open]>summary{color:var(--rope)}
+.accBody{padding-bottom:12px}
+
+#sideSwitch{display:flex}
+#roles{display:flex;gap:7px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}
+#roles::-webkit-scrollbar{display:none}
+.rf{flex:0 0 auto;font-size:13px;letter-spacing:.08em;text-transform:uppercase;
+  padding:0 13px;min-height:var(--tap);border-radius:10px;border:1px solid var(--line);
+  background:var(--hi);color:var(--dim);display:inline-flex;align-items:center;gap:7px;cursor:pointer}
+.rf.on{color:var(--chalk);border-color:currentColor}
+.rf[data-r=attack].on{color:var(--ember)} .rf[data-r=stamina].on{color:var(--good)}
+.rf[data-r=defense].on{color:var(--steel)} .rf[data-r=balance].on{color:var(--rope)}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;flex:0 0 auto}
+
+/* rigs */
+.rig{display:flex;gap:11px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--line)}
+.rig:last-child{border-bottom:none}
+.rig .mark{width:26px;flex:0 0 auto;text-align:center;font-size:16px;padding-top:1px}
+.rig h4{margin:0 0 3px;font-size:14px;font-weight:700;letter-spacing:.04em}
+.rig p{margin:0;font-size:13px;color:var(--dim);line-height:1.45}
+.rig.off{opacity:.42}
+.rig.off h4{font-weight:600}
+.rig .pick{margin-left:auto;flex:0 0 auto;min-height:var(--tap);min-width:var(--tap);
+  border-radius:11px;border:1px solid var(--line);background:var(--hi);color:var(--dim);
+  padding:0 13px;font-size:13px;cursor:pointer}
+.rig .pick.on{border-color:var(--good);color:var(--good)}
+
+/* tuning */
+.tuneRow{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+.tuneRow:last-child{border-bottom:none}
+.tuneRow .who{flex:1;min-width:0}
+.tuneRow h4{margin:0 0 2px;font-size:14px;font-weight:700}
+.tuneRow p{margin:0;font-size:12.5px;color:var(--dim);line-height:1.4}
+.tuneRow .n{font-variant-numeric:tabular-nums;font-size:13px;color:var(--rope);min-width:34px;text-align:center}
+.tbtn{min-height:var(--tap);min-width:var(--tap);border-radius:11px;border:1px solid var(--line);
+  background:var(--hi);color:var(--chalk);font-size:20px;line-height:1;cursor:pointer}
+
+/* ladder */
+.league{margin:18px 0 8px;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--rope)}
+.league:first-child{margin-top:6px}
+.rung{display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+  min-height:var(--tap);padding:10px 12px;margin-bottom:7px;border-radius:12px;
+  border:1px solid var(--line);background:var(--hi);cursor:pointer}
+.rung.locked{opacity:.4;pointer-events:none}
+.rung.done{border-color:rgba(127,166,80,.5)}
+.rung.boss{border-color:rgba(196,68,43,.6);background:rgba(196,68,43,.09)}
+.rung .num{font-variant-numeric:tabular-nums;font-size:13px;color:var(--dim);min-width:24px}
+.rung .nm{flex:1;min-width:0;font-size:15px;font-weight:600}
+.rung .nm small{display:block;font-size:12px;font-weight:400;color:var(--dim);
+  letter-spacing:.02em;margin-top:2px}
+.rung .st{font-size:12px;color:var(--dim);letter-spacing:.06em;text-align:right}
+
+/* how to play */
+.howto h3{font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--rope);
+  margin:22px 0 8px}
+.howto h3:first-child{margin-top:6px}
+.howto p{margin:0 0 11px;font-size:15px;line-height:1.55}
+.howto ol,.howto ul{margin:0 0 11px;padding-left:20px}
+.howto li{margin-bottom:7px;font-size:15px;line-height:1.5}
+.howto b{color:var(--rope);font-weight:600}
+.howto .key{display:inline-block;border:1px solid var(--line);border-radius:6px;
+  padding:1px 7px;font-size:13px;color:var(--chalk);background:var(--hi)}
+
+/* settings */
+.setRow{display:flex;align-items:center;justify-content:space-between;gap:14px;
+  min-height:var(--tap);padding:10px 0;border-bottom:1px solid var(--line)}
+.setRow .lab{flex:1;min-width:0}
+.setRow h4{margin:0 0 2px;font-size:15px;font-weight:600}
+.setRow p{margin:0;font-size:12.5px;color:var(--dim);line-height:1.4}
+.tog{width:76px;min-height:var(--tap);height:var(--tap);border-radius:24px;
+  border:1px solid var(--line);background:var(--hi);position:relative;flex:0 0 auto;
+  cursor:pointer;padding:0;min-width:var(--tap)}
+.tog i{position:absolute;top:6px;left:6px;width:34px;height:34px;border-radius:50%;
+  background:var(--dim);transition:left .18s,background .18s}
+.tog.on{border-color:var(--good)}
+.tog.on i{left:34px;background:var(--good)}
+
+/* unlock toast */
+#unlock{position:fixed;z-index:8;left:50%;top:32%;transform:translate(-50%,-50%) scale(.92);
+  background:var(--hi);border:1px solid var(--rope);border-radius:15px;padding:15px 22px;
+  text-align:center;opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;
+  max-width:calc(100vw - 40px)}
+#unlock.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+#unlock b{display:block;font-size:18px;color:var(--rope);margin-top:4px}
+#unlock small{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+
+/* wind counter */
+#laps{position:fixed;z-index:3;left:0;right:0;top:50%;transform:translateY(-50%);
+  text-align:center;pointer-events:none;transition:opacity .2s}
+#lapNum{font:800 48px/1 ui-sans-serif,system-ui;font-variant-numeric:tabular-nums;
+  color:var(--chalk);opacity:.92}
+#lapNum.ready{color:var(--good)} #lapNum.over{color:var(--ember)}
+#lapMsg{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin-top:7px}
+
+@media (prefers-reduced-motion: reduce){
+  .sheet,#card,#menu,#unlock,.bar i,.tog i{transition:none}
+}
+</style>
+</head>
+<body>
+
+<div id="field"><canvas id="cv"></canvas></div>
+
+<div class="chrome hide" id="top">
+  <div id="score">0 &nbsp;0<small>first to four</small></div>
+  <div id="vs">&nbsp;</div>
+</div>
+
+<div id="laps" style="opacity:0"><div id="lapNum">0.0</div><div id="lapMsg">of three winds</div></div>
+<div id="hint" style="opacity:0">Trace the ring, three times around</div>
+
+<div class="chrome hide" id="dock">
+  <button class="btn icon" id="openWs" aria-label="Workshop">&#9881;</button>
+  <button class="btn go" id="go">Launch</button>
+  <button class="btn icon" id="quitPlay" aria-label="Back to the menu">&#10005;</button>
+</div>
+
+<div id="unlock"><small>Part won</small><b id="unlockName">&nbsp;</b></div>
+
+<div id="card">
+  <div class="row"><div id="gl">&nbsp;</div><div><div id="note">&nbsp;</div><div id="sub">&nbsp;</div></div></div>
+  <div id="bars"></div>
+</div>
+
+<!-- ============================ MENU ============================ -->
+<div id="menu">
+  <h1 id="wordmark">RIPCORD</h1>
+  <p id="tagline">Build a top, wind it by hand, then keep your hands off it.</p>
+  <button class="btn go" id="mPlay">Play</button>
+  <button class="btn" id="mHow">How to play</button>
+  <button class="btn" id="mShop">Workshop</button>
+  <button class="btn" id="mModes">Modes</button>
+  <button class="btn" id="mSet">Settings</button>
+  <button class="btn ghost" id="mExit">&#9668; Sky Wolf Studio Arcade</button>
+</div>
+<div id="buildstamp">build __BUILD__</div>
+
+<!-- ============================ HOW TO PLAY ============================ -->
+<div class="sheet" id="howto">
+  <div class="sheetTop"><h2>How to play</h2><button class="btn" data-close="howto">Done</button></div>
+  <div class="sheetBody howto">
+    <h3>The idea</h3>
+    <p>Two tops go into a dish. You build yours, you program one move, you wind it by
+       drawing circles with your finger, and then you do not touch the screen again.
+       A round takes about six seconds. First to four points wins the match.</p>
+
+    <h3>Winding</h3>
+    <p>Put a finger on the white dot and draw circles around the top. Three laps is a
+       full wind, and the counter in the middle turns green when you are there.</p>
+    <ul>
+      <li><b>Which way you draw is which way it spins.</b> That is the one tactical
+          choice you make before the launch, and it decides whether the two tops mesh
+          or scrub when they meet.</li>
+      <li><b>A messy wind is not a weak wind, it is a wild one.</b> Sloppy circles put
+          the metal in the wrong place, so the top travels further, hits harder on one
+          side and runs out sooner. Fast scribbling wins plenty of rounds.</li>
+      <li><b>Stop at three.</b> Past about four laps the string binds on itself and you
+          lose power instead of gaining it.</li>
+    </ul>
+
+    <h3>Points</h3>
+    <ul>
+      <li><b>Spinout</b>, one point. The other top simply ran out.</li>
+      <li><b>Ringout</b>, two points. You put them over the lip.</li>
+      <li><b>Knockout</b>, two points. You toppled them with a strike.</li>
+      <li><b>Burst</b>, two points. One huge connected hit popped them apart.</li>
+    </ul>
+
+    <h3>Why an unbalanced top is dangerous</h3>
+    <p>Weights bolted to one side make the top wobble. A wobbling top hits enormously
+       when its heavy side comes round at the moment of contact and feebly when it
+       does not, and you can see the wobble before the hit lands. It also travels
+       further, bites the rail harder, and burns through its spin. That trade is the
+       whole game.</p>
+
+    <h3>The workshop</h3>
+    <ul>
+      <li><b>Five slots.</b> Core sets your spin direction and your one move. Blade is
+          the weapon. Assist shapes the rim. Ratchet sets height and how hard you are
+          to pop apart. Bit is the tip, and it decides what kind of top you are.</li>
+      <li><b>Weights.</b> Up to four, in twelve holes. Spread them and they cancel out;
+          bunch them and you get a monster.</li>
+      <li><b>Tuning.</b> File, wax, drill and shim your parts. Every operation is a
+          trade, all of it is free, and all of it undoes.</li>
+      <li><b>Rigs.</b> Certain combinations of parts have a name. The workshop tells you
+          the moment you have made one. Two can be active at once.</li>
+      <li><b>Bench.</b> Runs two hundred rounds against your current opponent instantly,
+          so you can prove a change worked instead of hoping.</li>
+    </ul>
+
+    <h3>Your one move</h3>
+    <p>Your core carries a move and you choose when it fires: when it is charged, when
+       the spin drops, on the third hit, on the rail, and so on. Charge comes only from
+       the round itself, from landing hits, taking them, and riding the rail.</p>
+
+    <h3>Where parts come from</h3>
+    <p>Winning. Every rung of the ladder drops one and there is no shop, no currency
+       and nothing to buy. Beating a league boss is the only way to get a Relic.</p>
+  </div>
+</div>
+
+<!-- ============================ LADDER ============================ -->
+<div class="sheet" id="ladder">
+  <div class="sheetTop"><h2>The ladder</h2><button class="btn" data-close="ladder">Done</button></div>
+  <div class="sheetBody" id="ladderBody"></div>
+</div>
+
+<!-- ============================ MODES ============================ -->
+<div class="sheet" id="modes">
+  <div class="sheetTop"><h2>Modes</h2><button class="btn" data-close="modes">Done</button></div>
+  <div class="sheetBody" id="modesBody"></div>
+</div>
+
+<!-- ============================ WORKSHOP ============================ -->
+<div class="sheet" id="sheet">
+  <div class="sheetTop"><h2 id="wsTitle">Workshop</h2><button class="btn" data-close="sheet">Done</button></div>
+  <div class="sheetBody">
+    <div id="sideSwitch" style="display:none;gap:8px;padding:4px 0 10px">
+      <button class="rf on" id="sideP1" style="flex:1;justify-content:center">Player one</button>
+      <button class="rf" id="sideP2" style="flex:1;justify-content:center">Player two</button>
+    </div>
+    <details class="acc" id="accBuild" open>
+      <summary>Build <span id="buildSum">&nbsp;</span></summary>
+      <div class="accBody">
+        <div id="roles"></div>
+        <div id="slots"></div>
+      </div>
+    </details>
+    <details class="acc" id="accTune">
+      <summary>Weights and move <span id="tuneSum">&nbsp;</span></summary>
+      <div class="accBody">
+        <div id="tune"><canvas id="dial" width="320" height="320"></canvas><div id="stats"></div></div>
+        <div id="trig"></div>
+      </div>
+    </details>
+    <details class="acc" id="accMods">
+      <summary>Tuning <span id="modSum">&nbsp;</span></summary>
+      <div class="accBody"><div id="mods"></div></div>
+    </details>
+    <details class="acc" id="accRigs">
+      <summary>Rigs <span id="rigSum">&nbsp;</span></summary>
+      <div class="accBody"><div id="rigs"></div></div>
+    </details>
+    <details class="acc" id="accLooks">
+      <summary>Looks <span id="lookSum">&nbsp;</span></summary>
+      <div class="accBody"><div id="looks"></div></div>
+    </details>
+  </div>
+  <div class="sheetFoot">
+    <button class="btn" id="run">Bench</button>
+    <div id="benchOut">Tap a hole to add metal.</div>
+  </div>
+</div>
+
+<!-- ============================ SETTINGS ============================ -->
+<div class="sheet" id="settings">
+  <div class="sheetTop"><h2>Settings</h2><button class="btn" data-close="settings">Done</button></div>
+  <div class="sheetBody">
+    <div class="setRow"><div class="lab"><h4>Sound</h4>
+      <p>Every sound is generated from the physics; nothing is a recording.</p></div>
+      <button class="tog" id="tSound"><i></i></button></div>
+    <div class="setRow"><div class="lab"><h4>Vibration</h4>
+      <p>A short pulse on a heavy hit, where the device supports it.</p></div>
+      <button class="tog" id="tHaptic"><i></i></button></div>
+    <div class="setRow"><div class="lab"><h4>Reduced motion</h4>
+      <p>Turns off the spin blur, the trails and the sparks.</p></div>
+      <button class="tog" id="tMotion"><i></i></button></div>
+    <div class="setRow"><div class="lab"><h4>Progress</h4>
+      <p id="storeState">&nbsp;</p></div>
+      <button class="btn" id="wipe">Erase</button></div>
+    <div class="setRow"><div class="lab"><h4>About</h4>
+      <p>Ripcord, by Sky Wolf Studio. Works offline; nothing you do here leaves the
+         device. Build __BUILD__.</p></div></div>
+  </div>
+</div>
+
+<script>var LADDER=/*__LADDER__*/;</script>
+<script>/*__SIM__*/</script>
+<script>/*__WIND__*/</script>
+<script>/*__RIGS__*/</script>
+<script>/*__STORE__*/</script>
+<script>/*__AUDIO__*/</script>
+<script>
+(function(){
+'use strict';
+var $=function(id){return document.getElementById(id);};
+var save=STORE.load();
+
+/* ------------------------------------------------------------------ helpers */
+function clamp(v,lo,hi){return v<lo?lo:v>hi?hi:v;}
+function haptic(ms){
+  if(!save.settings.haptics||!navigator.vibrate)return;
+  try{navigator.vibrate(ms);}catch(e){}
+}
+function persist(){STORE.save();}
+
+/* ------------------------------------------------------------ build state */
+/* Parts come from winning. No currency, no shop, no wallet, ever. */
+var STARTER=['iron','moth','wheel','crest','none','wing','3-60','4-80','point','spool'];
+var unlocked={};
+(function(){
+  var i;
+  for(i=0;i<STARTER.length;i++)unlocked[STARTER[i]]=1;
+  for(i=0;i<save.unlocked.length;i++)unlocked[save.unlocked[i]]=1;
+})();
+function isUnlocked(id){return !!unlocked[id];}
+function unlock(id){
+  if(unlocked[id])return false;
+  unlocked[id]=1;
+  save.unlocked=Object.keys(unlocked);
+  persist();
+  return true;
+}
+
+var cfg=save.build||{core:'iron',blade:'wheel',assist:'wing',ratchet:'3-60',bit:'point'};
+var holes=save.build&&save.build.holes?save.build.holes:[[0,0,0,0,0,0],[0,0,0,0,0,0]];
+var trigger=(save.build&&save.build.trigger)||'charged';
+var chosenRigs=(save.build&&save.build.rigs)||[];
+var mods=save.mods||{};
+var cosm=save.cosmetics||{finish:'anod',decal:'stripe',trail:'rope',launcher:'ripcord'};
+var roleFilter='all';
+var rigAnnounceArmed=false;   // see buildRigs: no announcements during boot
+var rung=save.rung|0, facing=save.facing|0;
+var mode='pangkah';
+
+/* PASS THE PHONE. Two players, two builds, one device, and no accounts, no
+   lobby and no network. This is where the drama the whole game was designed for
+   actually happens: a nine year old scribbling three fast ovals against an adult
+   drawing careful circles, both watching the same six seconds. It ships before
+   anything networked is even discussed. */
+var P2_DEFAULT={core:'moth',blade:'crest',assist:'none',ratchet:'4-80',bit:'spool',
+                holes:[[0,0,0,0,0,0],[0,0,0,0,0,0]],trigger:'charged',rigs:[]};
+var p2=save.p2||JSON.parse(JSON.stringify(P2_DEFAULT));
+if(!p2.holes)p2.holes=[[0,0,0,0,0,0],[0,0,0,0,0,0]];
+if(!p2.rigs)p2.rigs=[];
+var side=0;                 // 0 is player one, 1 is player two; workshop follows it
+var windSide=0;             // whose turn it is to wind
+var pending=[null,null];    // each player's graded wind, held until both are in
+
+function storeBuild(){
+  save.build={core:cfg.core,blade:cfg.blade,assist:cfg.assist,ratchet:cfg.ratchet,
+              bit:cfg.bit,holes:holes,trigger:trigger,rigs:chosenRigs};
+  save.mods=mods; save.cosmetics=cosm; save.facing=facing; save.rung=rung;
+  save.p2=p2;
+  persist();
+}
+
+var ROLE_HEX={attack:'#C4442B',stamina:'#7FA650',defense:'#8E9BA2',balance:'#C9A227',utility:'#9A6FB0'};
+var TRAIL_HEX={none:'#C9A227',ember:'#C4442B',frost:'#9FC7D6',rope:'#C9A227',
+               ink:'#8C86A8',jade:'#7FA650',violet:'#9A6FB0'};
+var FINISH_HEX={raw:'#B9BFC4',anod:'#C9A227',matte:'#5A5450',brass:'#C9A227',
+                enamel:'#D9CDBA',weather:'#8E7A5E',chrome:'#DCE4E8',clay:'#B4744C'};
+
+/* One accessor for "the build the workshop is editing", so pass the phone did
+   not need a second copy of every function in the workshop. */
+function active(){
+  return side===1
+    ? {cfg:p2,holes:p2.holes,trigger:p2.trigger,rigs:p2.rigs}
+    : {cfg:cfg,holes:holes,trigger:trigger,rigs:chosenRigs};
+}
+function setActiveTrigger(t){ if(side===1)p2.trigger=t; else trigger=t; }
+function setActiveRigs(r){ if(side===1)p2.rigs=r; else chosenRigs=r; }
+
+function weightCount(){
+  var H=active().holes,n=0,r,i;
+  for(r=0;r<H.length;r++)for(i=0;i<H[r].length;i++)if(H[r][i]>0)n++;
+  return n;
+}
+function cfgFor(which){
+  var c=which===1?p2:cfg, H=which===1?p2.holes:holes;
+  var weights=[],r,i;
+  for(r=0;r<H.length;r++)for(i=0;i<H[r].length;i++)
+    if(H[r][i]>0)weights.push({id:SIM.WEIGHTS[H[r][i]].id,hole:i,ring:r});
+  return {core:c.core,blade:c.blade,assist:c.assist,ratchet:c.ratchet,bit:c.bit,
+          weights:weights.slice(0,SIM.MAX_WEIGHTS),mods:mods};
+}
+function specFor(which){
+  return RIGS.apply(SIM,SIM.build(cfgFor(which)),which===1?p2.rigs:chosenRigs);
+}
+function currentCfg(){return cfgFor(side);}
+function currentSpec(){return specFor(side);}
+
+/* ------------------------------------------------------------------ screens */
+var SHEETS=['howto','ladder','modes','sheet','settings'];
+function closeSheets(){
+  for(var i=0;i<SHEETS.length;i++)$(SHEETS[i]).classList.remove('up');
+}
+function openSheet(id){closeSheets();$(id).classList.add('up');}
+(function(){
+  var b=document.querySelectorAll('[data-close]');
+  for(var i=0;i<b.length;i++)b[i].addEventListener('click',function(){
+    $(this.getAttribute('data-close')).classList.remove('up');
+  });
+})();
+
+function showMenu(on){
+  $('menu').classList.toggle('up',on);
+  chrome(!on&&phase!=='play');
+  if(on){demoIdle();}
+}
+
+/* ------------------------------------------------------------- SLOT PICKERS */
+var SLOTS=[['core','Core',SIM.CORES],['blade','Blade',SIM.BLADES],['assist','Assist',SIM.ASSISTS],
+           ['ratchet','Ratchet',SIM.RATCHETS],['bit','Bit',SIM.BITS]];
+var PART_LISTS={core:SIM.CORES,blade:SIM.BLADES,assist:SIM.ASSISTS,ratchet:SIM.RATCHETS,bit:SIM.BITS};
+
+function tierTag(p){
+  if(!p.tier||p.tier===1)return '';
+  return '<span class="t'+(p.tier===3?' t3':'')+'">'+(p.tier===3?'RELIC':'FORGED')+'</span>';
+}
+function railRow(label,items,isOn,onPick,klass,lockable){
+  var d=document.createElement('div');
+  d.className='slot'+(klass?' '+klass:'');
+  d.innerHTML='<label>'+label+'</label>';
+  var r=document.createElement('div');r.className='rail';
+  for(var i=0;i<items.length;i++)(function(it){
+    var b=document.createElement('button');
+    var locked=lockable&&!isUnlocked(it.id);
+    b.className='chip'+(isOn(it)?' on':'')+(locked?' lock':'');
+    b.innerHTML=(it.role?'<span class="dot" style="background:'+ROLE_HEX[it.role]+'"></span>':'')+
+                (it.name||it.id)+tierTag(it);
+    b.addEventListener('click',function(){
+      if(locked){$('benchOut').textContent='Locked. Win it off a ladder opponent.';return;}
+      onPick(it);buildSlots();refresh();storeBuild();
+    });
+    r.appendChild(b);
+  })(items[i]);
+  d.appendChild(r);return d;
+}
+function buildRoles(){
+  var host=$('roles');host.innerHTML='';
+  var list=['all'].concat(SIM.ROLES);
+  for(var i=0;i<list.length;i++)(function(r){
+    var b=document.createElement('button');
+    b.className='rf'+(roleFilter===r?' on':'');b.setAttribute('data-r',r);
+    b.innerHTML=(r==='all'?'':'<span class="dot" style="background:'+ROLE_HEX[r]+'"></span>')+r;
+    b.addEventListener('click',function(){roleFilter=r;buildSlots();});
+    host.appendChild(b);
+  })(list[i]);
+}
+function buildSlots(){
+  buildRoles();
+  var host=$('slots');host.innerHTML='';
+  var act=active().cfg;
+  for(var i=0;i<SLOTS.length;i++){
+    var key=SLOTS[i][0],label=SLOTS[i][1],list=SLOTS[i][2];
+    // The fitted part always stays visible even when the filter excludes it, so
+    // filtering can never hide what you are actually running.
+    var shown=[],j;
+    for(j=0;j<list.length;j++)
+      if(roleFilter==='all'||list[j].role===roleFilter||list[j].id===act[key])shown.push(list[j]);
+    host.appendChild(railRow(label+' <em>'+shown.length+'</em>',shown,
+      (function(k){return function(p){return active().cfg[k]===p.id;};})(key),
+      (function(k){return function(p){active().cfg[k]=p.id;};})(key),null,true));
+  }
+  var core=null;
+  for(i=0;i<SIM.CORES.length;i++)if(SIM.CORES[i].id===act.core)core=SIM.CORES[i];
+  var ab=core?core.ability:'surge';
+  var trigs=[];
+  for(i=0;i<SIM.TRIGGERS.length;i++)
+    trigs.push({id:SIM.TRIGGERS[i],name:SIM.TRIGGER_LABEL[SIM.TRIGGERS[i]]||SIM.TRIGGERS[i]});
+  $('trig').innerHTML='';
+  $('trig').appendChild(railRow('Fire <em>'+ab+'</em> when',trigs,
+    function(t){return active().trigger===t.id;},function(t){setActiveTrigger(t.id);}));
+
+  var looks=$('looks');looks.innerHTML='';
+  function plain(a){var o=[],k;for(k=0;k<a.length;k++)o.push({id:a[k],name:a[k]});return o;}
+  looks.appendChild(railRow('Finish',SIM.FINISHES,function(f){return cosm.finish===f.id;},
+    function(f){cosm.finish=f.id;},'cosmetic'));
+  looks.appendChild(railRow('Decal',plain(SIM.DECALS),function(d){return cosm.decal===d.id;},
+    function(d){cosm.decal=d.id;},'cosmetic'));
+  looks.appendChild(railRow('Trail',plain(SIM.TRAILS),function(t){return cosm.trail===t.id;},
+    function(t){cosm.trail=t.id;},'cosmetic'));
+  looks.appendChild(railRow('Launcher',plain(SIM.LAUNCHERS),function(l){return cosm.launcher===l.id;},
+    function(l){cosm.launcher=l.id;},'cosmetic'));
+  buildMods();buildRigs();summaries();
+}
+
+/* -------------------------------------------------------------- TUNING (mods) */
+function buildMods(){
+  var host=$('mods');host.innerHTML='';
+  var any=false;
+  for(var i=0;i<SLOTS.length;i++)(function(slot,label,list){
+    var partId=active().cfg[slot],part=null,j;
+    for(j=0;j<list.length;j++)if(list[j].id===partId)part=list[j];
+    var opts=SIM.tuningOptions(slot,partId,mods);
+    if(!opts.length)return;
+    var head=document.createElement('div');
+    head.className='slot';
+    head.innerHTML='<label>'+label+' <em>'+(part?part.name:partId)+'</em></label>';
+    host.appendChild(head);
+    for(j=0;j<opts.length;j++)(function(o){
+      any=true;
+      var row=document.createElement('div');row.className='tuneRow';
+      var who=document.createElement('div');who.className='who';
+      who.innerHTML='<h4>'+o.op.name+'</h4><p>'+o.op.desc+
+        (o.why?' <b style="color:var(--dim)">'+o.why+'</b>':'')+'</p>';
+      var minus=document.createElement('button');
+      minus.className='tbtn';minus.textContent='−';
+      minus.setAttribute('aria-label','Undo '+o.op.name);
+      var n=document.createElement('div');n.className='n';n.textContent=o.used+'/'+o.op.max;
+      var plus=document.createElement('button');
+      plus.className='tbtn';plus.textContent='+';
+      plus.setAttribute('aria-label','Apply '+o.op.name);
+      if(!o.canAdd)plus.setAttribute('disabled','');
+      if(!o.used)minus.setAttribute('disabled','');
+      minus.addEventListener('click',function(){
+        var l=mods[partId]||[],k=l.lastIndexOf(o.op.id);
+        if(k>=0){l.splice(k,1);mods[partId]=l;if(!l.length)delete mods[partId];}
+        buildMods();refresh();storeBuild();
+      });
+      plus.addEventListener('click',function(){
+        var l=mods[partId]||[];
+        l.push(o.op.id);mods[partId]=l;
+        buildMods();refresh();storeBuild();haptic(8);
+      });
+      row.appendChild(who);row.appendChild(minus);row.appendChild(n);row.appendChild(plus);
+      host.appendChild(row);
+    })(opts[j]);
+  })(SLOTS[i][0],SLOTS[i][1],SLOTS[i][2]);
+  if(!any)host.innerHTML='<p style="color:var(--dim);font-size:14px">Nothing fitted can be worked on.</p>';
+}
+
+/* ------------------------------------------------------------------- RIGS UI */
+function buildRigs(){
+  var host=$('rigs');host.innerHTML='';
+  var spec=SIM.build(currentCfg());
+  var live=RIGS.qualify(SIM,spec);
+  var liveIds={},i;
+  for(i=0;i<live.length;i++)liveIds[live[i].id]=1;
+  var on=RIGS.apply(SIM,spec,active().rigs).rigs||[];
+  var activeIds={};
+  for(i=0;i<on.length;i++)activeIds[on[i]]=1;
+
+  if(!live.length){
+    host.innerHTML='<p style="color:var(--dim);font-size:14px">This build has no rig. '+
+      'Rigs are combinations of parts that earn a name; keep changing things and one will turn up.</p>';
+    return;
+  }
+  var head=document.createElement('p');
+  head.style.cssText='color:var(--dim);font-size:13px;margin:0 0 6px';
+  head.textContent=live.length+' found, '+Math.min(live.length,RIGS.MAX_ACTIVE)+' active. '+
+    (live.length>RIGS.MAX_ACTIVE?'Choose which two run.':'');
+  host.appendChild(head);
+
+  for(i=0;i<RIGS.LIST.length;i++)(function(r){
+    if(!liveIds[r.id])return;
+    var on=!!activeIds[r.id];
+    var d=document.createElement('div');
+    d.className='rig'+(on?'':' off');
+    d.innerHTML='<div class="mark">'+(on?'●':'○')+'</div>'+
+      '<div style="flex:1;min-width:0"><h4>'+r.name+'</h4><p>'+r.desc+'</p></div>';
+    if(live.length>RIGS.MAX_ACTIVE){
+      var b=document.createElement('button');
+      b.className='pick'+(on?' on':'');
+      b.textContent=on?'On':'Off';
+      b.addEventListener('click',function(){
+        var list=active().rigs, k=list.indexOf(r.id);
+        if(k>=0)list.splice(k,1);
+        else{list.push(r.id);if(list.length>RIGS.MAX_ACTIVE)list.shift();}
+        setActiveRigs(list);buildRigs();refresh();storeBuild();
+      });
+      d.appendChild(b);
+    }
+    host.appendChild(d);
+  })(RIGS.LIST[i]);
+
+  // A rig the player has never seen before is worth calling out once. That
+  // announcement IS the discovery loop.
+  // ⛔ It must not fire on boot. The first version announced the starter build's
+  // rig over the top of the rules screen, which is the first thing a new player
+  // ever sees, so the very first thing the game said was a spoiler covering the
+  // instructions. It only speaks once the player has opened the workshop.
+  if(!rigAnnounceArmed)return;
+  for(i=0;i<live.length;i++){
+    if(!save.seen['rig.'+live[i].id]){
+      save.seen['rig.'+live[i].id]=1;persist();
+      showUnlock(live[i].name,'Rig found');
+      break;
+    }
+  }
+}
+
+function summaries(){
+  var s=currentSpec();
+  var bl=null,bt=null,i;
+  var act=active().cfg;
+  for(i=0;i<SIM.BLADES.length;i++)if(SIM.BLADES[i].id===act.blade)bl=SIM.BLADES[i];
+  for(i=0;i<SIM.BITS.length;i++)if(SIM.BITS[i].id===act.bit)bt=SIM.BITS[i];
+  $('buildSum').textContent=(bl?bl.name:act.blade)+', '+(bt?bt.name:act.bit);
+  $('tuneSum').textContent=weightCount()+' weights, '+Math.round(s.imb*100)+' percent wobble';
+  var nm=0;for(var k in mods)nm+=mods[k].length;
+  $('modSum').textContent=nm?nm+' changes made':'nothing worked on';
+  var q=RIGS.qualify(SIM,SIM.build(currentCfg()));
+  $('rigSum').textContent=q.length?(q.length===1?q[0].name:q.length+' found'):'none';
+  $('lookSum').textContent=cosm.finish+', '+cosm.decal;
+}
+
+/* --------------------------------------------------------------- WEIGHT DIAL */
+var dial=$('dial'), dc=dial.getContext('2d'), DS=320;
+dial.addEventListener('click',function(e){
+  var r=dial.getBoundingClientRect();
+  var x=(e.clientX-r.left)/r.width*DS-DS/2, y=(e.clientY-r.top)/r.height*DS-DS/2;
+  var d=Math.hypot(x,y);
+  if(d<28||d>142)return;
+  var ring=d<78?0:1;
+  var a=Math.atan2(y,x); if(a<0)a+=Math.PI*2;
+  var i=Math.round(a/(Math.PI*2/SIM.HOLES))%SIM.HOLES;
+  var H=active().holes;
+  var next=(H[ring][i]+1)%SIM.WEIGHTS.length;
+  if(next>0&&H[ring][i]===0&&weightCount()>=SIM.MAX_WEIGHTS){
+    $('benchOut').textContent='Only '+SIM.MAX_WEIGHTS+' weights fit. Clear one first.';return;}
+  H[ring][i]=next;haptic(6);refresh();storeBuild();
+});
+
+function drawDial(){
+  var s=currentSpec(), c=DS/2, R=DS*0.395, H=active().holes;
+  dc.clearRect(0,0,DS,DS);
+  var g=dc.createRadialGradient(c,c,20,c,c,R);
+  g.addColorStop(0,'#3E3126');g.addColorStop(1,'#241C17');
+  dc.fillStyle=g;dc.beginPath();dc.arc(c,c,R,0,7);dc.fill();
+  dc.strokeStyle='rgba(237,230,216,.28)';dc.lineWidth=2;
+  dc.beginPath();dc.arc(c,c,R,0,7);dc.stroke();
+  var bl=null,i;
+  for(i=0;i<SIM.BLADES.length;i++)if(SIM.BLADES[i].id===active().cfg.blade)bl=SIM.BLADES[i];
+  var teeth=Math.round(3+(bl?bl.sharp:0.5)*7);
+  dc.strokeStyle=FINISH_HEX[cosm.finish]||'#8E9BA2';dc.lineWidth=3;
+  for(i=0;i<teeth;i++){
+    var a=i*Math.PI*2/teeth;
+    dc.beginPath();
+    dc.moveTo(c+Math.cos(a)*(R-14),c+Math.sin(a)*(R-14));
+    dc.lineTo(c+Math.cos(a)*(R+5),c+Math.sin(a)*(R+5));dc.stroke();
+  }
+  var RR=[DS*0.17,DS*0.32], HR=[15,18];
+  for(var ri=0;ri<SIM.RINGS.length;ri++){
+    dc.strokeStyle='rgba(237,230,216,.07)';dc.lineWidth=1;
+    dc.beginPath();dc.arc(c,c,RR[ri],0,7);dc.stroke();
+    for(i=0;i<SIM.HOLES;i++){
+      var ang=i*Math.PI*2/SIM.HOLES, hx=c+Math.cos(ang)*RR[ri], hy=c+Math.sin(ang)*RR[ri];
+      var v=H[ri][i];
+      dc.beginPath();dc.arc(hx,hy,HR[ri],0,7);
+      if(v===0){
+        dc.strokeStyle='rgba(237,230,216,.26)';dc.lineWidth=1.5;
+        dc.setLineDash([3,3]);dc.stroke();dc.setLineDash([]);
+      }else{
+        dc.fillStyle='#C9A227';dc.globalAlpha=.34+.22*v;dc.fill();dc.globalAlpha=1;
+        dc.fillStyle='#241C17';dc.font='700 12px ui-sans-serif,system-ui';
+        dc.textAlign='center';dc.textBaseline='middle';
+        dc.fillText(String(Math.round(SIM.WEIGHTS[v].mass*10000)/10),hx,hy);
+      }
+    }
+  }
+  if(s.imb>0.004){
+    var L=28+s.imb*270;
+    dc.strokeStyle='#C4442B';dc.lineWidth=4;dc.lineCap='round';
+    dc.beginPath();dc.moveTo(c,c);
+    dc.lineTo(c+Math.cos(s.imbAng)*L,c+Math.sin(s.imbAng)*L);dc.stroke();
+    dc.fillStyle='#C4442B';dc.beginPath();
+    dc.arc(c+Math.cos(s.imbAng)*L,c+Math.sin(s.imbAng)*L,7,0,7);dc.fill();
+    dc.lineCap='butt';
+  }
+  dc.fillStyle='rgba(237,230,216,.9)';dc.beginPath();dc.arc(c,c,8,0,7);dc.fill();
+}
+
+function drawStats(){
+  // Show the RIGGED numbers next to the plain ones, so a rig is a thing you can
+  // see arrive rather than a claim in a list.
+  var plain=SIM.build(currentCfg()), s=currentSpec();
+  var g=s.rig||SIM.RIG_NEUTRAL;
+  var rows=[
+    ['spin',   plain.stamina/1.6,  plain.stamina.toFixed(2), g.decay<1||g.massCost<1||g.inertia>1],
+    ['travel', plain.drive/2.4,    plain.drive.toFixed(2),   g.drive>1],
+    ['smash',  plain.smash/1.6,    plain.smash.toFixed(2),   g.imbSwing>1],
+    ['guard',  plain.absorb/2.0,   plain.absorb.toFixed(2),  g.jnTake<1||g.taken<1],
+    ['lock',   plain.burstResist/1.6, plain.burstResist.toFixed(2), g.burstTake<1],
+    ['rail',   plain.dash/1.9,     plain.dash.toFixed(2),    g.dashGap<1||g.railGrip>1],
+    ['inertia',plain.I/2.4e-5,     (plain.I*1e6).toFixed(1), false],
+    ['wobble', plain.imb/0.30,     Math.round(plain.imb*100), 'warn']
+  ];
+  var out='',i;
+  for(i=0;i<rows.length;i++){
+    var k=rows[i][0],v=rows[i][1],t=rows[i][2],flag=rows[i][3];
+    var cls=flag==='warn'?' warn':(flag?' up':'');
+    out+='<div class="stat"><span>'+k+'</span><span class="bar'+cls+'"><i style="width:'+
+      Math.max(2,Math.min(100,v*100))+'%"></i></span><span class="v">'+
+      (flag&&flag!=='warn'?'<em>'+t+'</em>':t)+'</span></div>';
+  }
+  $('stats').innerHTML=out;
+}
+function refresh(){
+  drawDial();drawStats();buildRigs();summaries();
+  $('benchOut').textContent=weightCount()+' of '+SIM.MAX_WEIGHTS+' weights fitted.';
+}
+
+/* -------------------------------------------------------------- THE OPPONENT */
+function opp(){return LADDER[clamp(facing,0,LADDER.length-1)];}
+function bossOf(o){return o&&o.boss?o.boss:null;}
+function updateVs(){
+  var o=opp();
+  $('vs').innerHTML='<b>'+o.name+'</b><br>rung '+o.rung+' of '+LADDER.length+', '+o.role;
+}
+function oppSpec(){
+  var o=opp();
+  var b=SIM.build(Object.assign({},o.build,{dir:Math.random()<0.5?1:-1}));
+  return RIGS.apply(SIM,b,null);
+}
+
+/* ------------------------------------------------------------------- LADDER UI */
+var LEAGUE_NAMES=['Chalk Ring','The Market','Riverside','The Barrel','Kelantan'];
+function buildLadder(){
+  var host=$('ladderBody');host.innerHTML='';
+  var lastLeague=-1;
+  for(var i=0;i<LADDER.length;i++)(function(o,idx){
+    var lg=o.league!==undefined?o.league:Math.min(4,Math.floor(idx/5));
+    if(lg!==lastLeague){
+      lastLeague=lg;
+      var h=document.createElement('div');h.className='league';
+      h.textContent='League '+(lg+1)+', '+(LEAGUE_NAMES[lg]||'');
+      host.appendChild(h);
+    }
+    var locked=idx>rung;
+    var b=document.createElement('button');
+    b.className='rung'+(locked?' locked':'')+(idx<rung?' done':'')+(o.boss?' boss':'');
+    b.innerHTML='<span class="num">'+o.rung+'</span>'+
+      '<span class="nm">'+o.name+'<small>'+
+        (o.boss?o.boss.teaches:(o.role+', drops a '+o.drop.slot))+'</small></span>'+
+      '<span class="st">'+(locked?'locked':idx<rung?'beaten':idx===facing?'facing':'open')+'</span>';
+    b.addEventListener('click',function(){
+      facing=idx;updateVs();buildLadder();storeBuild();
+      $('ladder').classList.remove('up');
+      startPlay();
+    });
+    host.appendChild(b);
+  })(LADDER[i],i);
+}
+
+/* -------------------------------------------------------------------- MODES UI */
+var MODES=[
+  {id:'pangkah',name:'Pangkah',need:0,
+   desc:'The striking match; two tops in one dish, first to four points.'},
+  {id:'pass',name:'Pass the phone',need:0,
+   desc:'Two players on one device; you both build, you both wind, nobody watches alone.'},
+  {id:'uri',name:'Uri',need:5,
+   desc:'Endurance with no contact; both tops go up alone and the longer spin wins.'},
+  {id:'taya',name:'Taya',need:10,
+   desc:'The loser is pinned in the circle and the winner takes one free strike at it.'},
+  {id:'tujlub',name:'Target range',need:15,
+   desc:'Solo; knock over a row of standing tops, and the far ones are worth more.'}
+];
+function buildModes(){
+  var host=$('modesBody');host.innerHTML='';
+  for(var i=0;i<MODES.length;i++)(function(m){
+    var locked=rung<m.need;
+    var b=document.createElement('button');
+    b.className='rung'+(locked?' locked':'')+(mode===m.id?' done':'');
+    b.innerHTML='<span class="nm">'+m.name+'<small>'+m.desc+'</small></span>'+
+      '<span class="st">'+(locked?'rung '+(m.need+1):mode===m.id?'playing':'open')+'</span>';
+    b.addEventListener('click',function(){
+      mode=m.id;buildModes();$('modes').classList.remove('up');startPlay();
+    });
+    host.appendChild(b);
+  })(MODES[i]);
+}
+
+/* ------------------------------------------------------------------- UNLOCKS */
+function awardDrop(){
+  var o=opp();
+  if(!o.drop)return null;
+  if(!unlock(o.drop.id))return null;
+  var list=PART_LISTS[o.drop.slot],part=null;
+  for(var i=0;i<list.length;i++)if(list[i].id===o.drop.id)part=list[i];
+  return (part?part.name:o.drop.id)+', '+o.drop.slot;
+}
+var unlockTimer=0;
+function showUnlock(txt,label){
+  $('unlockName').textContent=txt;
+  $('unlock').firstChild.textContent=label||'Part won';
+  var u=$('unlock');u.classList.add('show');
+  clearTimeout(unlockTimer);
+  unlockTimer=setTimeout(function(){u.classList.remove('show');},2400);
+}
+
+/* --------------------------------------------------------------------- BENCH */
+$('run').addEventListener('click',function(){
+  $('benchOut').textContent='running…';
+  setTimeout(function(){
+    var me=currentCfg(), o=opp();
+    var w=0,n=0,c={},dur=0,i;
+    for(i=0;i<220;i++){
+      var rnd=SIM.mulberry(i*7919+3);
+      var A=RIGS.apply(SIM,SIM.build(Object.assign({},me,{dir:1})),active().rigs);
+      var B=RIGS.apply(SIM,SIM.build(Object.assign({},o.build,{dir:i%2?-1:1})),null);
+      var r=SIM.resolveMatch(A,B,{rnd:rnd,
+        a:{angle:rnd()*6.283,power:.96+rnd()*.08,lean:.03+rnd()*.04,phase:rnd()*6.283,trigger:trigger},
+        b:{angle:rnd()*6.283,power:.96+rnd()*.08,lean:.03+rnd()*.04,phase:rnd()*6.283,
+           trigger:o.build.trigger||'charged'}});
+      if(r.winner==='a'){w++;c[r.cause]=(c[r.cause]||0)+1;}
+      n++;dur+=r.duration;
+    }
+    var top=null,k;
+    for(k in c)if(!top||c[k]>c[top])top=k;
+    $('benchOut').innerHTML='<b>'+Math.round(100*w/n)+'%</b> against '+o.name+', '+
+      (dur/n).toFixed(1)+'s a round'+(top?', mostly by '+top:'');
+  },16);
+});
+
+/* ============================================================== THE ARENA ==== */
+var cv=$('cv'), ctx=cv.getContext('2d');
+var W=0,H=0,DPR=1;
+function resize(){
+  DPR=Math.min(window.devicePixelRatio||1,2);
+  W=cv.clientWidth;H=cv.clientHeight;
+  cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+}
+window.addEventListener('resize',resize);
+function CX(){return W/2;} function CY(){return H/2;}
+var arenaR=SIM.K.arenaR;
+function RAD(){return Math.min(W,H)*0.44;}
+function scale(){return RAD()/arenaR;}
+
+var phase='menu';           // menu | wind | play | done | over | taya
+var stroke=[],graded=null,lastGrade=null;
+var A=null,B=null,acc=0,last=0,pa=0,pb=0,flash=0,flashTxt='',flashCol='#EDE6D8';
+var liveTurn=0,lastAng=0,winding=false;
+var WANT=3, OVER=WANT*1.45;
+var sparks=[],trailA=[],trailB=[];
+var demoTimer=0;
+var tuj=null;               // target range state
+
+function chrome(on){
+  $('top').classList.toggle('hide',!on);
+  $('dock').classList.toggle('hide',!on);
+  $('hint').style.opacity=on?1:0;
+}
+function setLaps(n){
+  var el=$('lapNum'), msg=$('lapMsg');
+  el.textContent=n.toFixed(1);
+  el.classList.toggle('ready',n>=WANT*0.9&&n<=OVER);
+  el.classList.toggle('over',n>OVER);
+  msg.textContent = n>OVER ? 'over wound, the string is bunching'
+                  : n>=WANT*0.9 ? 'let go'
+                  : n<0.2 ? 'of three winds'
+                  : 'keep going';
+}
+
+function resetRound(){
+  phase='wind';stroke=[];graded=null;A=B=null;
+  liveTurn=0;winding=false;setLaps(0);
+  sparks=[];trailA=[];trailB=[];
+  $('card').classList.remove('up');
+  $('laps').style.opacity=1;
+  chrome(true);
+  $('hint').textContent=mode==='tujlub'
+    ? 'Draw a circle; where it bulges is where the top goes.'
+    : mode==='pass'
+      ? 'Player '+(windSide?'two':'one')+', trace the ring three times around.'
+      : 'Trace the ring, three times around';
+  $('hint').style.opacity=1;
+}
+
+function startPlay(){
+  showMenu(false);
+  windSide=0;side=0;pending=[null,null];
+  $('sideSwitch').style.display=mode==='pass'?'flex':'none';
+  arenaR=SIM.K.arenaR;
+  var o=opp(), bs=bossOf(o);
+  if(bs&&bs.arenaR)arenaR=bs.arenaR;
+  pa=pb=0;
+  $('score').innerHTML='0 &nbsp;0<small>'+(mode==='uri'?'longest spin'
+      :mode==='tujlub'?'points':'first to four')+'</small>';
+  if(mode==='pass')$('vs').innerHTML='<b>Player two</b><br>pass the phone';
+  else updateVs();
+  if(mode==='tujlub')setupTargets();
+  tayaWear={a:0,b:0};
+  resetRound();
+  AUDIO.unlock();
+}
+
+/* -------------------------------------------------------------- the winding */
+function pt(e){
+  var r=cv.getBoundingClientRect();
+  return {x:e.clientX-r.left-CX(),y:e.clientY-r.top-CY(),t:performance.now()};
+}
+cv.addEventListener('pointerdown',function(e){
+  if(phase!=='wind')return;
+  try{cv.setPointerCapture(e.pointerId);}catch(err){}
+  var p=pt(e);stroke=[p];
+  liveTurn=0;lastAng=Math.atan2(p.y,p.x);winding=true;setLaps(0);
+  $('card').classList.remove('up');$('hint').style.opacity=0;
+  AUDIO.unlock();
+});
+cv.addEventListener('pointermove',function(e){
+  if(phase!=='wind'||!stroke.length||!winding)return;
+  var p=pt(e);stroke.push(p);
+  var a=Math.atan2(p.y,p.x), d=a-lastAng;
+  while(d>Math.PI)d-=Math.PI*2;
+  while(d<-Math.PI)d+=Math.PI*2;
+  var before=Math.floor(Math.abs(liveTurn)/(Math.PI*2)*4);
+  liveTurn+=d;lastAng=a;
+  var after=Math.floor(Math.abs(liveTurn)/(Math.PI*2)*4);
+  if(after!==before){AUDIO.tick();haptic(4);}
+  setLaps(Math.abs(liveTurn)/(Math.PI*2));
+});
+function endWind(){
+  winding=false;
+  if(phase!=='wind'||stroke.length<10){setLaps(0);return;}
+  graded=WIND.grade(stroke);lastGrade=graded;showCard(graded);
+  $('laps').style.opacity=0;$('hint').style.opacity=0;
+}
+cv.addEventListener('pointerup',endWind);
+// ⛔ A long press can raise a selection or a context menu, and the browser then
+// fires pointercancel instead of pointerup. Treating that as "nothing happened"
+// throws away a completed wind, so cancel finishes the gesture exactly as a
+// release does.
+cv.addEventListener('pointercancel',endWind);
+
+function showCard(g){
+  $('gl').textContent=g.grade;
+  $('gl').style.color=g.quality>0.75?'var(--good)':g.quality>0.45?'var(--rope)':'var(--ember)';
+  $('note').textContent=g.note;
+  $('sub').textContent=g.ok
+    ? g.laps.toFixed(1)+' laps, '+(g.dir>0?'right':'left')+' spin, '+
+      Math.round(g.launch.power*100)+' percent power'
+    : 'try again';
+  var rows=[['round',g.roundness],['even',g.even],['stacked',g.concentric],
+            ['speed',g.speed],['wobble',Math.min(1,g.launch.windImb/WIND.W.imbMax)]];
+  var out='',i;
+  for(i=0;i<rows.length;i++){
+    var v=rows[i][1]||0;
+    out+='<div class="stat"><span>'+rows[i][0]+'</span><span class="bar'+
+      (rows[i][0]==='wobble'?' warn':'')+'"><i style="width:'+Math.round(v*100)+
+      '%"></i></span><span class="v">'+Math.round(v*100)+'</span></div>';
+  }
+  $('bars').innerHTML=out;
+  $('card').classList.add('up');
+}
+
+/* ---------------------------------------------------------------- launching */
+$('go').addEventListener('click',function(){
+  if(phase==='play')return;
+  if(phase==='over'){startPlay();return;}
+  if(!graded){
+    $('hint').textContent='Wind it first; draw three circles.';
+    $('hint').style.opacity=1;return;
+  }
+  if(mode==='pass'){
+    pending[windSide]=graded;
+    if(windSide===0){
+      // Hand it over. The wind is already banked, so player two cannot see how
+      // well player one did until both tops are in the dish, which is the whole
+      // reason the handover screen exists.
+      windSide=1;side=1;
+      resetRound();
+      $('hint').textContent='Pass the phone. Player two, wind up.';
+      $('hint').style.opacity=1;
+      $('go').textContent='Launch';
+      buildSlots();refresh();
+      return;
+    }
+    launchPass();
+    return;
+  }
+  launch();
+});
+$('quitPlay').addEventListener('click',function(){
+  phase='menu';A=B=null;AUDIO.stopLoops();showMenu(true);
+});
+
+function launch(){
+  var L=graded.launch;
+  var mine=WIND.applyWind(SIM,currentSpec(),L);
+  AUDIO.startLoops();AUDIO.launch(L.power);haptic(18);
+
+  if(mode==='tujlub'){launchTuj(L);return;}
+
+  var o=opp(), bs=bossOf(o);
+  var fw={power:1.02,dir:Math.random()<0.5?1:-1,lean:.034,windImb:.01,windImbAng:0,
+          phase:Math.random()*6.283};
+  var foe=WIND.applyWind(SIM,oppSpec(),fw);
+  if(bs&&bs.massMul)foe=Object.assign({},foe,{m:foe.m*bs.massMul,I:foe.I*bs.massMul});
+  var ang=Math.random()*6.283;
+
+  A=SIM.spawn(mine,{angle:ang,power:L.power,lean:L.lean,phase:L.phase,trigger:trigger,arenaR:arenaR});
+  if(mode==='uri'){
+    // Endurance, and the tops must never touch. The honest way to express that
+    // is not a flag inside the collision solver, it is to stop calling it: each
+    // top goes up alone on its own post and the longer spin wins. Stamina parts
+    // that lose every striking match are the ones that win here, which is the
+    // entire point of keeping the mode.
+    A.x=-arenaR*0.42;A.z=0;A.vx=A.vz=0;
+    B=SIM.spawn(foe,{angle:ang,power:fw.power,lean:fw.lean,phase:fw.phase,
+                     trigger:o.build.trigger||'charged',arenaR:arenaR});
+    B.x=arenaR*0.42;B.z=0;B.vx=B.vz=0;
+  }else{
+    B=SIM.spawn(foe,{angle:ang+Math.PI,power:fw.power,lean:fw.lean,phase:fw.phase,
+                     trigger:o.build.trigger||'charged',arenaR:arenaR});
+    // Katis: having won the previous round it opens this one with a free run at
+    // you, already moving. You can still answer it, but you launch into a punch.
+    if(bs&&bs.freeStrike&&pb>pa){
+      var dx=A.x-B.x, dz=A.z-B.z, d=Math.hypot(dx,dz)||1;
+      B.vx+=dx/d*bs.freeStrike; B.vz+=dz/d*bs.freeStrike;
+      flash=1.6;flashTxt='FREE STRIKE';flashCol='#C4442B';
+    }
+  }
+  phase='play';acc=0;$('card').classList.remove('up');chrome(false);
+  $('laps').style.opacity=0;
+}
+
+/* Both winds are in. Two human builds, two human gestures, one round, and no
+   opponent generator anywhere in it. */
+function launchPass(){
+  var LA=pending[0].launch, LB=pending[1].launch;
+  var mine=WIND.applyWind(SIM,specFor(0),LA);
+  var theirs=WIND.applyWind(SIM,specFor(1),LB);
+  var ang=Math.random()*6.283;
+  A=SIM.spawn(mine,{angle:ang,power:LA.power,lean:LA.lean,phase:LA.phase,
+                    trigger:trigger,arenaR:arenaR});
+  B=SIM.spawn(theirs,{angle:ang+Math.PI,power:LB.power,lean:LB.lean,phase:LB.phase,
+                      trigger:p2.trigger,arenaR:arenaR});
+  AUDIO.startLoops();AUDIO.launch(LA.power);haptic(18);
+  phase='play';acc=0;$('card').classList.remove('up');chrome(false);
+  $('laps').style.opacity=0;
+}
+
+/* ------------------------------------------------------- the target range */
+function setupTargets(){
+  // The layout, the arena and the topple threshold all come out of SIM.MODES.
+  // The renderer draws the rules; it does not keep a second copy of them, or the
+  // test would be measuring a different game from the one being played.
+  var M=SIM.MODES.range;
+  arenaR=M.arenaR;
+  tuj={targets:[],score:0,shots:0,maxShots:M.shots};
+  var layout=SIM.rangeTargets();
+  var proto=SIM.build({core:'iron',blade:'anvil',assist:'collar',ratchet:'8-30',
+                       bit:'dome',weights:[]});
+  for(var i=0;i<layout.length;i++){
+    var t=SIM.spawn(proto,{angle:0,offset:0,pinned:true,arenaR:arenaR});
+    t.x=layout[i].x; t.z=layout[i].z; t.points=layout[i].points;
+    tuj.targets.push(t);
+  }
+}
+function launchTuj(L){
+  var mine=WIND.applyWind(SIM,currentSpec(),L);
+  // Aiming with the only input the game has: the bulge in your circle is where
+  // the heavy side sits, and the heavy side is where the top goes.
+  A=SIM.spawn(mine,{angle:L.windImbAng,offset:arenaR*0.86,power:L.power,lean:L.lean,
+                    phase:L.phase,trigger:trigger,arenaR:arenaR});
+  var ix=-Math.cos(L.windImbAng), iz=-Math.sin(L.windImbAng);
+  A.vx=ix*(0.9+1.5*L.power); A.vz=iz*(0.9+1.5*L.power);
+  B=null;
+  tuj.shots++;
+  phase='play';acc=0;$('card').classList.remove('up');chrome(false);
+  $('laps').style.opacity=0;
+}
+
+/* ------------------------------------------------------------ round endings */
+var CAUSE_WORD={spinout:'SPINOUT',ringout:'RINGOUT',knockout:'KNOCKOUT',
+                burst:'BURST',timeout:'TIME',double:'DOUBLE OUT'};
+function endRound(){
+  var win=null,cause='timeout';
+  if(mode==='uri'){
+    // Both tops ran their own race against the clock. If one fell, the other
+    // takes it; if the bell finds them both still turning, it goes to whoever
+    // has more spin left, which is the same rule SIM.resolveUri applies.
+    if(A.alive&&B.alive)win=Math.abs(A.w)>Math.abs(B.w)?'a':'b';
+    else win=A.alive?'a':B.alive?'b':(A.t>B.t?'a':'b');
+    cause='spinout';
+  }else if(A.alive&&!B.alive){win='a';cause=B.cause;}
+  else if(B.alive&&!A.alive){win='b';cause=A.cause;}
+  else if(!A.alive&&!B.alive){cause='double';}
+  else win=Math.abs(A.w)>Math.abs(B.w)?'a':'b';
+
+  var pts={spinout:1,ringout:2,knockout:2,burst:2,timeout:1,double:0}[cause]||1;
+  if(win==='a')pa+=pts;else if(win==='b')pb+=pts;
+  $('score').innerHTML=pa+' &nbsp;'+pb+'<small>'+(mode==='uri'?'longest spin':'first to four')+'</small>';
+
+  flash=1.8;
+  var who=mode==='pass'?(win==='a'?'ONE ':'TWO '):(win==='a'?'YOU ':'THEY ');
+  flashTxt=cause==='double'?'DOUBLE OUT':who+(CAUSE_WORD[cause]||cause)+' +'+pts;
+  flashCol=win==='a'?'#7FA650':'#C4442B';
+  if(cause==='burst')AUDIO.burst();
+  else if(cause==='ringout')AUDIO.ringout();
+  else if(cause==='knockout')AUDIO.knockout();
+  else AUDIO.spinout();
+  haptic(cause==='spinout'?20:60);
+  bump('rounds');bump('end.'+cause);
+
+  phase='done';
+  setTimeout(function(){
+    // Taya: the loser's top is placed in the circle and the winner gets one free
+    // punishing strike at it. It is the answer to "should losing cost you
+    // something": it costs lock wear that carries into the next round, publicly,
+    // with a wind up you can watch coming.
+    if(mode==='taya'&&win&&pa<4&&pb<4){startTaya(win);return;}
+    finishOrContinue();
+  },1500);
+}
+
+function finishOrContinue(){
+  if(mode==='pass'){
+    if(pa>=4||pb>=4){
+      AUDIO.stopLoops();chrome(true);$('laps').style.opacity=0;
+      AUDIO.win();
+      $('hint').textContent='Player '+(pa>pb?'one':'two')+' takes the match, '+pa+' to '+pb+'.';
+      $('hint').style.opacity=1;phase='over';
+    }else{
+      windSide=0;side=0;pending=[null,null];
+      buildSlots();resetRound();
+    }
+    return;
+  }
+  if(pa>=4||pb>=4||mode==='uri'){
+    AUDIO.stopLoops();
+    chrome(true);
+    $('laps').style.opacity=0;
+    if(pa>pb){
+      AUDIO.win();bump('wins');
+      var won=awardDrop();
+      var beat=opp().name;
+      if(facing===rung&&rung<LADDER.length-1){rung++;facing=rung;}
+      updateVs();buildSlots();buildLadder();buildModes();storeBuild();
+      $('hint').textContent='You beat '+beat+'. Next up is '+opp().name+'.';
+      if(won)showUnlock(won);
+    }else{
+      AUDIO.lose();
+      $('hint').textContent='They take the match. Launch to try again.';
+    }
+    $('hint').style.opacity=1;
+    phase='over';
+  }else{
+    resetRound();
+    if(lastGrade)showCard(lastGrade);
+  }
+}
+
+/* Carried lock wear. Losing a round in Taya costs you durability that follows
+   you into the next one, publicly, which is the whole answer to "should losing
+   cost you something". It is not a part you lose, it is a top that is closer to
+   coming apart every time you get pinned. */
+var tayaWear={a:0,b:0}, tayaStrike=0, tayaBest=0;
+function startTaya(win){
+  var M=SIM.MODES.taya;
+  var striker=win==='a'?A:B, loser=win==='a'?B:A;
+  var side=win==='a'?'b':'a';
+  A=SIM.spawn(striker.spec,{angle:0,offset:arenaR*M.strikeOffset,power:1.0,lean:0.05,arenaR:arenaR});
+  B=SIM.spawn(loser.spec,{angle:0,offset:0,pinned:true,arenaR:arenaR});
+  A.vx=-M.strikeSpeed;A.vz=0;
+  tayaStrike=win==='a'?1:-1;tayaBest=0;
+  flash=1.8;flashTxt=win==='a'?'YOUR FREE STRIKE':'THEIR FREE STRIKE';
+  flashCol='#C9A227';
+  phase='taya';acc=0;
+  setTimeout(function(){
+    var ratio=tayaBest/SIM.K.impRef;
+    var stake=Math.max(0.10,Math.min(0.62,0.12+0.30*Math.sqrt(Math.max(0,ratio))));
+    tayaWear[side]+=stake;
+    if(tayaWear[side]>=SIM.K.burstWear){
+      tayaWear[side]=0;
+      if(tayaStrike>0)pa+=1;else pb+=1;
+      $('score').innerHTML=pa+' &nbsp;'+pb+'<small>first to four</small>';
+      flash=1.8;flashTxt='THE LOCK GAVE';flashCol='#C4442B';AUDIO.burst();haptic(70);
+    }else{
+      flash=1.6;
+      flashTxt=(side==='a'?'YOUR':'THEIR')+' LOCK IS '+Math.round(tayaWear[side]*100)+' PERCENT GONE';
+      flashCol='#C9A227';
+    }
+    A=B=null;
+    setTimeout(finishOrContinue,1000);
+  },2400);
+}
+
+function bump(k){save.records[k]=(save.records[k]||0)+1;persist();}
+
+/* ------------------------------------------------------------------ the loop */
+function step(dt){
+  if(phase==='play'||phase==='taya'){
+    acc+=dt;
+    var n=0;
+    while(acc>SIM.K.dt&&n<8){
+      SIM.stepTop(A,SIM.K.dt);
+      if(B)SIM.stepTop(B,SIM.K.dt);
+      if(B&&mode!=='uri'){
+        var c=SIM.collide(A,B,Math.random);
+        if(c){onHit(c);if(phase==='taya'&&c.impulse>tayaBest)tayaBest=c.impulse;}
+        if(phase==='play'){
+          if(A.abilityUsed===0&&SIM.triggerReady(A,B)){SIM.fire(A,B);AUDIO.ability();}
+          if(B.abilityUsed===0&&SIM.triggerReady(B,A)){SIM.fire(B,A);AUDIO.ability();}
+        }
+      }
+      if(tuj&&phase==='play')stepTargets();
+      acc-=SIM.K.dt;n++;
+      var uriOver=mode==='uri'&&((!A.alive&&!B.alive)||A.t>=SIM.MODES.uri.limit);
+      if(phase==='play'&&((mode==='uri'?uriOver:(!A.alive||(B&&!B.alive)))
+          ||(mode==='tujlub'&&!A.alive))){
+        if(mode==='tujlub')endTujShot();else endRound();
+        break;
+      }
+      if(phase==='taya'&&B){
+        // remember the hardest connection, which is what the stake is priced on
+        if(A.lastHit>0&&B.lastHit>0){}
+      }
+    }
+    if(A){
+      var railed=0;
+      if(A.alive&&Math.hypot(A.x,A.z)>SIM.K.ridgeAt*arenaR)railed=1;
+      if(B&&B.alive&&Math.hypot(B.x,B.z)>SIM.K.ridgeAt*arenaR)railed=1;
+      AUDIO.drive(A.alive?Math.abs(A.w)/SIM.K.launchSpin:0,
+                  B&&B.alive?Math.abs(B.w)/SIM.K.launchSpin:0, railed);
+      if(A.fx==='dash'){AUDIO.dash(A.spec.dash/1.9);A.fx=null;}
+      if(B&&B.fx==='dash'){AUDIO.dash(B.spec.dash/1.9);B.fx=null;}
+    }
+    pushTrail();
+  }
+  if(demoTimer>0){demoTimer-=dt;if(demoTimer<=0)demoIdle();}
+  var i;
+  for(i=sparks.length-1;i>=0;i--){
+    var s=sparks[i];
+    s.x+=s.vx*dt;s.y+=s.vy*dt;s.vy+=260*dt;s.life-=dt;
+    if(s.life<=0)sparks.splice(i,1);
+  }
+  if(flash>0)flash-=dt;
+}
+
+function onHit(c){
+  AUDIO.hit(c.impulse,c.swing);
+  haptic(c.impulse>0.03?34:10);
+  if(save.settings.reduceMotion)return;
+  var s=scale(), n=Math.min(16,3+Math.round(c.impulse*420));
+  for(var i=0;i<n;i++){
+    var a=Math.random()*Math.PI*2, v=40+Math.random()*260*Math.min(2,c.swing);
+    sparks.push({x:CX()+c.x*s,y:CY()+c.z*s,vx:Math.cos(a)*v,vy:Math.sin(a)*v,
+                 life:0.22+Math.random()*0.34,hot:c.swing>1.4});
+  }
+}
+function pushTrail(){
+  if(save.settings.reduceMotion)return;
+  if(A&&A.alive){trailA.push({x:A.x,z:A.z});if(trailA.length>26)trailA.shift();}
+  if(B&&B.alive){trailB.push({x:B.x,z:B.z});if(trailB.length>26)trailB.shift();}
+}
+
+/* ------------------------------------------------------- target range logic */
+function stepTargets(){
+  for(var i=0;i<tuj.targets.length;i++){
+    var t=tuj.targets[i];
+    if(!t.alive)continue;
+    SIM.stepTop(t,SIM.K.dt);
+    var c=SIM.collide(A,t,Math.random);
+    if(c){
+      onHit(c);
+      // A standing target goes over when it is hit hard enough. Nothing new in
+      // the physics: the impulse that would topple a spinning top topples this
+      // one too, it just has no spin to right itself with.
+      if(c.impulse>SIM.MODES.range.topple){
+        t.alive=false;t.cause='knockout';
+        tuj.score+=t.points;
+        flash=1.1;flashTxt='+'+t.points;flashCol='#C9A227';
+        AUDIO.knockout();haptic(30);
+      }
+    }
+  }
+}
+function endTujShot(){
+  var left=0;
+  for(var i=0;i<tuj.targets.length;i++)if(tuj.targets[i].alive)left++;
+  $('score').innerHTML=tuj.score+'<small>points, shot '+tuj.shots+' of '+tuj.maxShots+'</small>';
+  phase='done';
+  setTimeout(function(){
+    if(tuj.shots>=tuj.maxShots||!left){
+      AUDIO.stopLoops();chrome(true);phase='over';
+      if(!save.records.bestTuj||tuj.score>save.records.bestTuj){
+        save.records.bestTuj=tuj.score;persist();
+      }
+      $('hint').textContent='Range over with '+tuj.score+' points. Your best is '+
+        save.records.bestTuj+'.';
+      $('hint').style.opacity=1;
+    }else{A=null;resetRound();}
+  },1200);
+}
+
+/* ================================================================ RENDERING == */
+function frame(now){
+  requestAnimationFrame(frame);
+  if(!last)last=now;
+  var dt=Math.min(0.05,(now-last)/1000);last=now;
+  if(!W)resize();
+  step(dt);
+
+  ctx.clearRect(0,0,W,H);
+  drawArena();
+  if(phase==='wind'){drawWindTrack();drawStroke();}
+  if(tuj)for(var i=0;i<tuj.targets.length;i++)drawTop(tuj.targets[i],'#8E9BA2',false);
+  if(B)drawTop(B,'#8E9BA2',false,trailB);
+  if(A)drawTop(A,TRAIL_HEX[cosm.trail]||'#C9A227',true,trailA);
+  drawSparks();
+  if(mode==='uri'&&phase==='play'&&A&&B){
+    // Two spin bars and a clock. Uri has nothing to watch except the gap, so the
+    // gap is what gets drawn.
+    var left=Math.max(0,SIM.MODES.uri.limit-A.t);
+    ctx.fillStyle='rgba(237,230,216,.75)';ctx.textAlign='center';
+    ctx.font='700 15px ui-sans-serif,system-ui';
+    ctx.fillText(left.toFixed(1)+'s',CX(),CY()-RAD()-18);
+    var bw=RAD()*0.62;
+    drawSpinBar(CX()-RAD()*0.42,CY()+RAD()*0.72,bw*0.5,
+                Math.abs(A.w)/SIM.K.launchSpin,TRAIL_HEX[cosm.trail]||'#C9A227');
+    drawSpinBar(CX()+RAD()*0.42,CY()+RAD()*0.72,bw*0.5,
+                Math.abs(B.w)/SIM.K.launchSpin,'#8E9BA2');
+  }
+  if(flash>0){
+    ctx.globalAlpha=Math.min(1,flash);
+    ctx.fillStyle=flashCol;ctx.textAlign='center';
+    ctx.font='700 20px ui-sans-serif,system-ui';
+    ctx.fillText(flashTxt,CX(),CY()-RAD()-18);
+    ctx.globalAlpha=1;
+  }
+}
+
+function drawArena(){
+  var r=RAD(),cx=CX(),cy=CY();
+  var g=ctx.createRadialGradient(cx,cy-r*0.14,r*0.06,cx,cy,r);
+  g.addColorStop(0,'#3A2D23');g.addColorStop(0.80,'#241C17');g.addColorStop(1,'#191210');
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,r,0,7);ctx.fill();
+
+  // The rail: a machined band, visibly not dish floor.
+  // ⛔ At 17 percent alpha across a band 28 percent of the radius wide, this was
+  // the brightest object in the frame and the two tops read as specks inside a
+  // brown donut. The band stays, because a player has to be able to see where
+  // the dash zone begins, but it is now a faint field with one bright EDGE, and
+  // the tops are the brightest thing again.
+  ctx.fillStyle='rgba(201,162,39,.055)';
+  ctx.beginPath();ctx.arc(cx,cy,r,0,7);
+  ctx.arc(cx,cy,r*SIM.K.ridgeAt,0,7,true);ctx.fill();
+  ctx.strokeStyle='rgba(201,162,39,.34)';ctx.lineWidth=1.4;
+  ctx.beginPath();ctx.arc(cx,cy,r*SIM.K.ridgeAt,0,7);ctx.stroke();
+
+  // the pockets: the three low points in the lip where a top actually leaves
+  ctx.strokeStyle='rgba(196,68,43,.62)';ctx.lineWidth=7;
+  for(var i=0;i<SIM.K.pockets;i++){
+    var a=i*Math.PI*2/SIM.K.pockets;
+    ctx.beginPath();ctx.arc(cx,cy,r*0.995,a-0.25,a+0.25);ctx.stroke();
+  }
+  // the chalk line, drawn as chalk: broken, uneven, made by a hand
+  ctx.strokeStyle='rgba(237,230,216,.22)';ctx.lineWidth=2;
+  for(i=0;i<40;i++){
+    var a0=i*Math.PI*2/40;
+    ctx.beginPath();ctx.arc(cx,cy,r,a0,a0+Math.PI*2/40*0.72);ctx.stroke();
+  }
+}
+
+function drawWindTrack(){
+  // Three concentric lanes, one per lap, so "how far round am I" is answered by
+  // a picture instead of by a number you have to read.
+  var cx=CX(),cy=CY(),base=RAD()*0.46,gap=RAD()*0.056;
+  var laps=Math.abs(liveTurn)/(Math.PI*2);
+  var dir=liveTurn<0?-1:1;
+  for(var lane=0;lane<WANT;lane++){
+    var r=base+lane*gap;
+    ctx.strokeStyle='rgba(237,230,216,.10)';ctx.lineWidth=gap*0.55;
+    ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();
+    var fill=clamp(laps-lane,0,1);
+    if(fill>0){
+      ctx.strokeStyle=laps>OVER?'rgba(196,68,43,.86)'
+        :laps>=WANT*0.9?'rgba(127,166,80,.92)':'rgba(201,162,39,.92)';
+      ctx.lineWidth=gap*0.55;ctx.lineCap='round';
+      ctx.beginPath();
+      ctx.arc(cx,cy,r,-Math.PI/2,-Math.PI/2+dir*fill*Math.PI*2,dir<0);
+      ctx.stroke();ctx.lineCap='butt';
+    }
+  }
+  if(!winding){
+    var sy=cy-base;
+    ctx.fillStyle='rgba(237,230,216,.9)';
+    ctx.beginPath();ctx.arc(cx,sy,8,0,7);ctx.fill();
+    ctx.fillStyle='rgba(237,230,216,.6)';
+    ctx.font='11px ui-sans-serif,system-ui';ctx.textAlign='center';
+    ctx.fillText('START',cx,sy-16);
+  }
+  ctx.fillStyle='rgba(201,162,39,.92)';ctx.beginPath();ctx.arc(cx,cy,16,0,7);ctx.fill();
+  ctx.fillStyle='rgba(25,18,16,.9)';ctx.beginPath();ctx.arc(cx,cy,6,0,7);ctx.fill();
+}
+
+function drawStroke(){
+  if(stroke.length<2)return;
+  var cx=CX(),cy=CY(),i;
+  ctx.lineJoin=ctx.lineCap='round';
+  ctx.strokeStyle=graded?'rgba(237,230,216,.42)':'rgba(237,230,216,.88)';
+  ctx.lineWidth=graded?2:3.6;
+  ctx.beginPath();ctx.moveTo(cx+stroke[0].x,cy+stroke[0].y);
+  for(i=1;i<stroke.length;i++)ctx.lineTo(cx+stroke[i].x,cy+stroke[i].y);
+  ctx.stroke();
+  if(!graded||!graded.fit)return;
+  var f=graded.fit;
+  ctx.setLineDash([3,6]);ctx.strokeStyle='rgba(127,166,80,.8)';ctx.lineWidth=1.6;
+  ctx.beginPath();ctx.arc(cx+f.cx,cy+f.cy,f.r,0,7);ctx.stroke();ctx.setLineDash([]);
+  var a=graded.launch.windImbAng;
+  ctx.strokeStyle='#C4442B';ctx.lineWidth=3.6;
+  ctx.beginPath();ctx.arc(cx+f.cx,cy+f.cy,f.r,a-0.22,a+0.22);ctx.stroke();
+}
+
+/* The top, drawn as an object rather than as a ring.
+ *
+ * Everything visible here is read straight off the simulation state and nothing
+ * is animated on a timer: the blur is how fast it is turning, the squash is how
+ * far it is leaning, the red dot is where the heavy side actually is this
+ * instant, and the tick marks are the blade's real tooth count. If two tops look
+ * different it is because their numbers are different. */
+function drawTop(o,color,isPlayer,trail){
+  var s=scale(), cx=CX()+o.x*s, cy=CY()+o.z*s, rr=Math.max(6,o.spec.R*s);
+  var th=Math.hypot(o.lx,o.lz);
+  var ux=th>1e-9?o.lx/th:1, uz=th>1e-9?o.lz/th:0;
+  var tilt=clamp(th/SIM.K.thetaMax,0,1);
+  var lean=Math.atan2(uz,ux);
+  var ox=ux*rr*tilt*1.5, oy=uz*rr*tilt*1.5;
+  var life=o.pinned?0:clamp(Math.abs(o.w)/SIM.K.launchSpin,0,1);
+  var reduced=save.settings.reduceMotion;
+
+  if(trail&&trail.length>1&&!reduced){
+    ctx.lineCap='round';
+    for(var t=1;t<trail.length;t++){
+      var al=(t/trail.length)*0.28*life;
+      ctx.strokeStyle=color;ctx.globalAlpha=al;
+      ctx.lineWidth=rr*0.30*(t/trail.length);
+      ctx.beginPath();
+      ctx.moveTo(CX()+trail[t-1].x*s,CY()+trail[t-1].z*s);
+      ctx.lineTo(CX()+trail[t].x*s,CY()+trail[t].z*s);
+      ctx.stroke();
+    }
+    ctx.globalAlpha=1;ctx.lineCap='butt';
+  }
+
+  // contact shadow, offset the way it is leaning
+  ctx.fillStyle='rgba(0,0,0,.42)';
+  ctx.beginPath();
+  ctx.ellipse(cx+ox*0.4,cy+oy*0.4+rr*0.16,rr*0.72,rr*0.44,0,0,7);
+  ctx.fill();
+
+  if(!o.alive){
+    // fallen: on its side, still, showing which way it went over
+    // A fallen top has to be legible as a fallen top and not as a smudge; it is
+    // the picture of the moment somebody just lost a round.
+    ctx.strokeStyle='rgba(237,230,216,.44)';ctx.lineWidth=2.6;
+    ctx.beginPath();
+    ctx.ellipse(cx+ox*2.1,cy+oy*2.1,rr,rr*0.30,lean,0,7);
+    ctx.stroke();
+    ctx.fillStyle='rgba(237,230,216,.10)';ctx.fill();
+    ctx.strokeStyle='rgba(142,155,162,.6)';ctx.lineWidth=Math.max(1.4,rr*0.13);
+    ctx.beginPath();
+    ctx.moveTo(cx+ox*2.1,cy+oy*2.1);
+    ctx.lineTo(cx+ox*2.1-Math.cos(lean)*rr*1.5,cy+oy*2.1-Math.sin(lean)*rr*1.5);
+    ctx.stroke();
+    return;
+  }
+
+  var bx=cx+ox, by=cy+oy;
+  var squash=1-0.34*tilt;
+
+  // The shaft, so the thing reads as a top standing on a point rather than as a
+  // disc lying on the floor. It runs from the body down to the contact point,
+  // which is where the simulation says the tip actually is.
+  // ⛔ Capped. Drawn to full length it reached two top diameters at high lean and
+  // read as a stray line across the dish rather than as part of the object.
+  var shaftLen=Math.min(rr*0.95,Math.hypot(ox,oy)+rr*0.30);
+  var sdx=ox||0.001, sdy=oy+rr*0.30, sn=Math.hypot(sdx,sdy)||1;
+  ctx.strokeStyle='rgba(160,172,180,.9)';
+  ctx.lineWidth=Math.max(2,rr*0.19);
+  ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(bx,by);
+  ctx.lineTo(bx-sdx/sn*shaftLen,by-sdy/sn*shaftLen);ctx.stroke();
+  ctx.lineCap='butt';
+
+  // the blade body
+  ctx.save();
+  ctx.translate(bx,by);ctx.rotate(lean);
+  var bodyG=ctx.createLinearGradient(-rr,0,rr,0);
+  bodyG.addColorStop(0,'rgba(24,17,14,.95)');
+  bodyG.addColorStop(0.5,'rgba(58,45,35,.95)');
+  bodyG.addColorStop(1,'rgba(24,17,14,.95)');
+  ctx.fillStyle=bodyG;
+  ctx.beginPath();ctx.ellipse(0,0,rr,rr*squash,0,0,7);ctx.fill();
+
+  // spin blur: concentric arcs whose reach and alpha are the spin rate. A dying
+  // top loses its blur before it loses its shape, which is the tell that says
+  // "this one is nearly done" without a health bar.
+  if(!reduced&&life>0.02){
+    var rings=3;
+    for(var k=0;k<rings;k++){
+      ctx.strokeStyle=color;
+      ctx.globalAlpha=(0.16+0.34*life)*(1-k/rings);
+      ctx.lineWidth=Math.max(1,rr*0.16*life);
+      ctx.beginPath();
+      ctx.ellipse(0,0,rr*(1+0.04*k),rr*squash*(1+0.04*k),0,0,7);
+      ctx.stroke();
+    }
+    ctx.globalAlpha=1;
+  }
+  // the rim
+  ctx.strokeStyle=color;ctx.globalAlpha=0.62+0.38*life;
+  ctx.lineWidth=Math.max(2.2,rr*0.17);
+  ctx.beginPath();ctx.ellipse(0,0,rr,rr*squash,0,0,7);ctx.stroke();
+  ctx.globalAlpha=1;
+
+  // teeth. The count is the blade's sharpness, so a Cleaver and a Halo are
+  // different objects on screen and not the same ring in two colours.
+  var teeth=Math.round(3+(o.spec.sharp||0.4)*8);
+  var spinAng=o.phase*0.12;
+  ctx.strokeStyle=FINISH_HEX[isPlayer?cosm.finish:'raw']||'#8E9BA2';
+  ctx.globalAlpha=0.35+0.45*life;
+  ctx.lineWidth=Math.max(1,rr*0.10);
+  for(var i=0;i<teeth;i++){
+    var a=spinAng+i*Math.PI*2/teeth;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a)*rr*0.84,Math.sin(a)*rr*squash*0.84);
+    ctx.lineTo(Math.cos(a)*rr*1.10,Math.sin(a)*rr*squash*1.10);
+    ctx.stroke();
+  }
+  ctx.globalAlpha=1;
+  ctx.restore();
+
+  // the heavy side, in the world and not in the body frame, because WHERE it is
+  // at the instant of contact is the entire drama of the game
+  if(o.spec.imb>0.02){
+    var ha=o.phase*0.5+o.spec.imbAng;
+    var hx=bx+Math.cos(ha)*rr*0.95, hy=by+Math.sin(ha)*rr*0.95*squash;
+    ctx.fillStyle='#C4442B';
+    ctx.beginPath();ctx.arc(hx,hy,Math.max(2.5,rr*0.24),0,7);ctx.fill();
+    ctx.strokeStyle='rgba(255,190,170,.55)';ctx.lineWidth=1.4;
+    ctx.beginPath();ctx.arc(hx,hy,Math.max(2.5,rr*0.24),0,7);ctx.stroke();
+  }
+  // the core
+  // One hot point per top, so at 25 pixels across each one still has a centre
+  // your eye can lock onto and follow.
+  ctx.fillStyle='rgba(237,230,216,.98)';
+  ctx.beginPath();ctx.arc(bx,by,Math.max(2.6,rr*0.22),0,7);ctx.fill();
+  ctx.fillStyle=isPlayer?'rgba(201,162,39,.9)':'rgba(142,155,162,.9)';
+  ctx.beginPath();ctx.arc(bx,by,Math.max(1.2,rr*0.10),0,7);ctx.fill();
+
+  // wear: the lock loosening, drawn as a widening gap in a ring around the core
+  if(o.wear>0.12){
+    ctx.strokeStyle='rgba(196,68,43,'+(0.35+0.6*o.wear)+')';
+    ctx.lineWidth=Math.max(1.4,rr*0.09);
+    ctx.beginPath();
+    ctx.arc(bx,by,rr*0.42,0,Math.PI*2*Math.min(1,o.wear));
+    ctx.stroke();
+  }
+  // charge: a quiet ring that fills, so "my move is about to go" is visible
+  if(o.charge>0.05&&o.abilityUsed===0){
+    ctx.strokeStyle='rgba(127,166,80,'+(0.25+0.5*Math.min(1,o.charge))+')';
+    ctx.lineWidth=Math.max(1,rr*0.07);
+    ctx.beginPath();
+    ctx.arc(bx,by,rr*1.24,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,o.charge));
+    ctx.stroke();
+  }
+}
+
+function drawSpinBar(x,y,w,v,col){
+  ctx.fillStyle='rgba(237,230,216,.12)';
+  ctx.fillRect(x-w/2,y,w,7);
+  ctx.fillStyle=col;
+  ctx.fillRect(x-w/2,y,w*Math.max(0,Math.min(1,v)),7);
+}
+function drawSparks(){
+  for(var i=0;i<sparks.length;i++){
+    var s=sparks[i];
+    ctx.globalAlpha=clamp(s.life*2.6,0,1);
+    ctx.fillStyle=s.hot?'#F0C070':'#EDE6D8';
+    ctx.fillRect(s.x,s.y,2.4,2.4);
+  }
+  ctx.globalAlpha=1;
+}
+
+/* ------------------------------------------------- the menu's living backdrop */
+/* The menu sits on top of a real round, played by the simulation, with nobody
+   watching the score. It costs nothing, it is never the same twice, and it is a
+   better advert for the game than a still picture of it. */
+function demoIdle(){
+  if(phase!=='menu')return;
+  var names=Object.keys(SIM.ARCHETYPES);
+  var pickA=names[Math.floor(Math.random()*names.length)];
+  var pickB=names[Math.floor(Math.random()*names.length)];
+  arenaR=SIM.K.arenaR;
+  A=SIM.spawn(SIM.build(Object.assign({},SIM.ARCHETYPES[pickA],{dir:1})),
+              {angle:Math.random()*6.283,power:1,lean:0.05,phase:Math.random()*6.283,arenaR:arenaR});
+  B=SIM.spawn(SIM.build(Object.assign({},SIM.ARCHETYPES[pickB],{dir:Math.random()<0.5?1:-1})),
+              {angle:Math.random()*6.283,power:1,lean:0.05,phase:Math.random()*6.283,arenaR:arenaR});
+  trailA=[];trailB=[];
+  demoTimer=0;
+  phase='menu';
+}
+function stepDemo(dt){
+  if(phase!=='menu'||!A||!B)return;
+  acc+=dt;var n=0;
+  while(acc>SIM.K.dt&&n<8){
+    SIM.stepTop(A,SIM.K.dt);SIM.stepTop(B,SIM.K.dt);
+    var c=SIM.collide(A,B,Math.random);
+    if(c&&!save.settings.reduceMotion)onHitQuiet(c);
+    acc-=SIM.K.dt;n++;
+    if(!A.alive||!B.alive){demoTimer=1.6;break;}
+  }
+  pushTrail();
+}
+function onHitQuiet(c){
+  var s=scale(), n=Math.min(10,2+Math.round(c.impulse*260));
+  for(var i=0;i<n;i++){
+    var a=Math.random()*Math.PI*2, v=30+Math.random()*180;
+    sparks.push({x:CX()+c.x*s,y:CY()+c.z*s,vx:Math.cos(a)*v,vy:Math.sin(a)*v,
+                 life:0.2+Math.random()*0.3,hot:c.swing>1.4});
+  }
+}
+var _step=step;
+step=function(dt){ _step(dt); stepDemo(dt); };
+
+/* ------------------------------------------------------------------ SETTINGS */
+function syncToggles(){
+  $('tSound').classList.toggle('on',!!save.settings.sound);
+  $('tHaptic').classList.toggle('on',!!save.settings.haptics);
+  $('tMotion').classList.toggle('on',!!save.settings.reduceMotion);
+  var kind=STORE.kind();
+  $('storeState').textContent = kind==='memory'
+    ? 'This browser is not letting the game save, so progress will be lost when you leave.'
+    : 'Saved on this device. Nothing is uploaded anywhere.';
+}
+$('tSound').addEventListener('click',function(){
+  save.settings.sound=!save.settings.sound;AUDIO.setEnabled(save.settings.sound);
+  persist();syncToggles();if(save.settings.sound)AUDIO.tick();
+});
+$('tHaptic').addEventListener('click',function(){
+  save.settings.haptics=!save.settings.haptics;persist();syncToggles();haptic(12);
+});
+$('tMotion').addEventListener('click',function(){
+  save.settings.reduceMotion=!save.settings.reduceMotion;persist();syncToggles();
+});
+$('wipe').addEventListener('click',function(){
+  if(this.getAttribute('data-armed')){
+    save=STORE.reset();
+    unlocked={};for(var i=0;i<STARTER.length;i++)unlocked[STARTER[i]]=1;
+    cfg={core:'iron',blade:'wheel',assist:'wing',ratchet:'3-60',bit:'point'};
+    holes=[[0,0,0,0,0,0],[0,0,0,0,0,0]];mods={};chosenRigs=[];rung=0;facing=0;
+    buildSlots();refresh();buildLadder();buildModes();updateVs();syncToggles();
+    this.removeAttribute('data-armed');this.textContent='Erase';
+    return;
+  }
+  this.setAttribute('data-armed','1');this.textContent='Really erase';
+  var b=this;setTimeout(function(){b.removeAttribute('data-armed');b.textContent='Erase';},4000);
+});
+
+$('sideP1').addEventListener('click',function(){
+  side=0;this.classList.add('on');$('sideP2').classList.remove('on');
+  $('wsTitle').textContent='Workshop, player one';buildSlots();refresh();
+});
+$('sideP2').addEventListener('click',function(){
+  side=1;this.classList.add('on');$('sideP1').classList.remove('on');
+  $('wsTitle').textContent='Workshop, player two';buildSlots();refresh();
+});
+
+/* --------------------------------------------------------------- MENU WIRING */
+$('mPlay').addEventListener('click',function(){mode='pangkah';startPlay();});
+$('mHow').addEventListener('click',function(){openSheet('howto');});
+$('mShop').addEventListener('click',function(){rigAnnounceArmed=true;openSheet('sheet');refresh();});
+$('mModes').addEventListener('click',function(){buildModes();openSheet('modes');});
+$('mSet').addEventListener('click',function(){syncToggles();openSheet('settings');});
+$('openWs').addEventListener('click',function(){rigAnnounceArmed=true;openSheet('sheet');refresh();});
+
+// one accordion open at a time, so the workshop never becomes a wall
+(function(){
+  var ids=['accBuild','accTune','accMods','accRigs','accLooks'];
+  for(var i=0;i<ids.length;i++)(function(id){
+    $(id).addEventListener('toggle',function(){
+      if(this.open)for(var j=0;j<ids.length;j++)if(ids[j]!==id)$(ids[j]).open=false;
+      if(this.open&&(id==='accTune'||id==='accRigs'||id==='accMods'))refresh();
+    });
+  })(ids[i]);
+})();
+
+/* ------------------------------------------------------------------- KEYBOARD */
+window.addEventListener('keydown',function(e){
+  if(e.key==='Escape'){
+    var open=false,i;
+    for(i=0;i<SHEETS.length;i++)if($(SHEETS[i]).classList.contains('up')){open=true;break;}
+    if(open){closeSheets();return;}
+    if(phase!=='menu'){phase='menu';A=B=null;AUDIO.stopLoops();showMenu(true);}
+    return;
+  }
+  if(e.key===' '&&(phase==='wind'||phase==='over')){e.preventDefault();$('go').click();}
+});
+
+/* -------------------------------------------------------------------- BOOT */
+AUDIO.setEnabled(!!save.settings.sound);
+if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches&&
+   save.seen.motionAsked!==1){
+  save.settings.reduceMotion=true;save.seen.motionAsked=1;persist();
+}
+buildSlots();refresh();buildLadder();buildModes();updateVs();syncToggles();resize();
+showMenu(true);
+// A first time player gets the rules before the game starts, not after it.
+if(!save.seen.howto){save.seen.howto=1;persist();openSheet('howto');}
+requestAnimationFrame(frame);
+})();
+</script>
+<script>
+/* ===== Sky Wolf Studio embed protocol =====
+   The portal frames games with ?embed=1 and listens for {sws:'ready'} and
+   {sws:'close'}. Rules when embedded:
+     - NEVER history.back() or navigate; an iframe with no history entry goes
+       blank, which is the black screen bug.
+     - Every in game back or close is an INTERNAL screen switch.
+     - Only the menu's explicit exit calls SWS_EXIT(). */
+(function(){
+  var framed=false; try{ framed = window.parent!==window; }catch(e){ framed=true; }
+  window.SWS_EMBED=framed;
+  window.SWS_EXIT=function(){
+    if(framed){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; }
+    location.href='https://lucidwinds.com/portal/';
+  };
+  if(framed){
+    try{ parent.postMessage({sws:'ready'},'*'); }catch(e){}
+    window.addEventListener('load',function(){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} });
+  }
+  var ex=document.getElementById('mExit');
+  if(ex) ex.addEventListener('click',function(){ window.SWS_EXIT(); });
+  /* Offline shell. Never registered inside the portal frame: the root service
+     worker owns caching there, and a second one racing it is how this fleet
+     wiped itself once already. Bump the ?v= with sw.js SHELL_VERSION. */
+  if(!framed && 'serviceWorker' in navigator){
+    try{ navigator.serviceWorker.register('sw.js?v=__BUILD__'); }catch(e){}
+  }
+})();
+</script>
+</body>
+</html>

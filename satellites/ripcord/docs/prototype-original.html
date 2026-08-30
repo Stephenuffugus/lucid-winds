@@ -1,0 +1,2083 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#1A1210">
+<title>RIPCORD</title>
+<style>
+:root{
+  --dirt:#241C17; --hi:#33281F; --lo:#160F0C;
+  --chalk:#EDE6D8; --dim:#948A80; --line:rgba(237,230,216,.13);
+  --rope:#C9A227; --ember:#C4442B; --steel:#7E8B92; --good:#7FA650;
+  --pad:14px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;
+  -webkit-user-select:none;user-select:none}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--lo);color:var(--chalk);
+  font:15px/1.4 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  overscroll-behavior:none}
+
+/* ---------- the play field owns the screen ---------- */
+#field{position:fixed;inset:0;touch-action:none}
+#field canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+
+/* ---------- overlays, all of which get out of the way ---------- */
+.chrome{position:fixed;z-index:2;transition:opacity .28s ease, transform .28s ease}
+.chrome.hide{opacity:0;pointer-events:none;transform:translateY(-6px)}
+
+#top{top:calc(env(safe-area-inset-top) + 10px);left:var(--pad);right:var(--pad);
+  display:flex;align-items:center;justify-content:space-between;pointer-events:none}
+#score{font:700 20px/1 ui-sans-serif,system-ui;font-variant-numeric:tabular-nums;letter-spacing:.06em}
+#score small{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);
+  display:block;margin-top:3px;font-weight:600}
+#vs{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);text-align:right}
+
+#hint{position:fixed;z-index:2;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 104px);
+  text-align:center;font-size:13px;color:var(--dim);pointer-events:none;transition:opacity .28s}
+
+#dock{bottom:calc(env(safe-area-inset-bottom) + 16px);left:var(--pad);right:var(--pad);
+  display:flex;gap:10px;align-items:center;justify-content:center}
+.btn{font:inherit;border:1px solid var(--line);background:rgba(51,40,31,.92);color:var(--chalk);
+  border-radius:14px;padding:14px 18px;font-size:14px;backdrop-filter:blur(8px)}
+.btn.go{flex:1;max-width:260px;background:var(--ember);border-color:var(--ember);
+  color:#fff;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.btn.icon{width:52px;padding:14px 0;text-align:center;font-size:18px}
+
+/* ---------- grade card ---------- */
+#card{position:fixed;z-index:3;left:var(--pad);right:var(--pad);
+  bottom:calc(env(safe-area-inset-bottom) + 84px);
+  background:rgba(51,40,31,.96);border:1px solid var(--line);border-radius:16px;
+  padding:13px 15px;backdrop-filter:blur(10px);
+  transform:translateY(160%);transition:transform .32s cubic-bezier(.2,.9,.3,1)}
+#card.up{transform:none}
+#card .row{display:flex;align-items:center;gap:13px}
+#gl{font:800 38px/1 ui-sans-serif,system-ui;min-width:46px;text-align:center}
+#note{font-size:14px}
+#sub{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-top:2px}
+
+/* ---------- workshop sheet ---------- */
+#sheet{position:fixed;z-index:4;inset:0;background:var(--dirt);
+  display:flex;flex-direction:column;
+  transform:translateY(100%);transition:transform .34s cubic-bezier(.2,.9,.3,1)}
+#sheet.up{transform:none}
+#sheetTop{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;
+  padding:calc(env(safe-area-inset-top) + 12px) var(--pad) 8px}
+#sheetTop h2{margin:0;font-size:12px;letter-spacing:.24em;text-transform:uppercase;font-weight:700}
+#sheetBody{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 var(--pad) 8px}
+#sheetFoot{flex:0 0 auto;border-top:1px solid var(--line);
+  padding:10px var(--pad) calc(env(safe-area-inset-bottom) + 12px);display:flex;gap:9px;align-items:center}
+#benchOut{flex:1;font-size:12px;color:var(--dim);font-variant-numeric:tabular-nums;min-width:0}
+#benchOut b{color:var(--chalk);font-size:16px}
+
+#tune{display:flex;gap:12px;align-items:center;margin-bottom:6px}
+#dial{width:142px;height:142px;flex:0 0 auto}
+#stats{flex:1;min-width:0}
+.stat{display:grid;grid-template-columns:50px 1fr 30px;gap:3px 8px;align-items:center;
+  font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:4px}
+.bar{height:5px;background:rgba(237,230,216,.10);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:3px;background:var(--rope);transition:width .18s}
+.bar.warn i{background:var(--ember)}
+.v{font-variant-numeric:tabular-nums;text-align:right;color:var(--chalk)}
+
+.slot{margin:9px 0}
+.slot label{display:block;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--dim);margin-bottom:5px}
+.slot label em{font-style:normal;color:var(--rope);text-transform:none;letter-spacing:0}
+.rail{display:flex;gap:6px;overflow-x:auto;padding-bottom:3px;
+  scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.rail::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;font:inherit;font-size:12.5px;padding:8px 12px;border-radius:10px;
+  border:1px solid var(--line);background:var(--hi);color:var(--dim);white-space:nowrap}
+.chip.on{border-color:var(--rope);color:var(--chalk);background:rgba(201,162,39,.15)}
+.cosmetic label em{color:var(--steel)}
+
+/* accordion */
+.acc{border-top:1px solid var(--line)}
+.acc:last-of-type{border-bottom:1px solid var(--line)}
+.acc>summary{list-style:none;cursor:pointer;padding:13px 2px;display:flex;
+  align-items:center;justify-content:space-between;
+  font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--chalk);font-weight:600}
+.acc>summary::-webkit-details-marker{display:none}
+.acc>summary span{color:var(--dim);letter-spacing:.04em;text-transform:none;font-weight:400;font-size:12px}
+.acc[open]>summary{color:var(--rope)}
+.accBody{padding-bottom:10px}
+
+/* role filter */
+#roles{display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px;scrollbar-width:none}
+#roles::-webkit-scrollbar{display:none}
+.rf{flex:0 0 auto;font:inherit;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;
+  padding:7px 11px;border-radius:9px;border:1px solid var(--line);background:var(--hi);color:var(--dim)}
+.rf.on{color:var(--chalk);border-color:currentColor}
+.rf[data-r=attack].on{color:var(--ember)} .rf[data-r=stamina].on{color:var(--good)}
+.rf[data-r=defense].on{color:var(--steel)} .rf[data-r=balance].on{color:var(--rope)}
+.chip.lock{opacity:.34}
+.chip.lock::after{content:' 🔒';font-size:10px}
+#unlock{position:fixed;z-index:5;left:50%;top:34%;transform:translate(-50%,-50%) scale(.9);
+  background:var(--hi);border:1px solid var(--rope);border-radius:14px;padding:14px 20px;
+  text-align:center;opacity:0;pointer-events:none;transition:opacity .3s,transform .3s}
+#unlock.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+#unlock b{display:block;font-size:17px;color:var(--rope);margin-top:3px}
+#unlock small{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+.dot{display:inline-block;width:5px;height:5px;border-radius:50%;margin-right:5px;vertical-align:middle}
+
+/* wind counter */
+#laps{position:fixed;z-index:2;left:0;right:0;top:50%;transform:translateY(-50%);
+  text-align:center;pointer-events:none;transition:opacity .2s}
+#lapNum{font:800 46px/1 ui-sans-serif,system-ui;font-variant-numeric:tabular-nums;
+  color:var(--chalk);opacity:.9}
+#lapNum.ready{color:var(--good)} #lapNum.over{color:var(--ember)}
+#lapMsg{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);margin-top:6px}
+</style>
+</head>
+<body>
+
+<div id="field"><canvas id="cv"></canvas></div>
+
+<div class="chrome" id="top">
+  <div id="score">0 — 0<small>first to 4</small></div>
+  <div id="vs">—</div>
+</div>
+
+<div id="laps"><div id="lapNum">0.0</div><div id="lapMsg">of 3 winds</div></div>
+<div id="hint">Trace the ring — three times around</div>
+
+<div class="chrome" id="dock">
+  <button class="btn icon" id="openWs">⚙</button>
+  <button class="btn go" id="go">Launch</button>
+  <button class="btn icon" id="cycleFoe">⇄</button>
+</div>
+
+<div id="unlock"><small>Part unlocked</small><b id="unlockName">—</b></div>
+
+<div id="card">
+  <div class="row"><div id="gl">—</div><div><div id="note">—</div><div id="sub">—</div></div></div>
+  <div id="bars"></div>
+</div>
+
+<div id="sheet">
+  <div id="sheetTop"><h2>Workshop</h2><button class="btn" id="closeWs">Done</button></div>
+  <div id="sheetBody">
+    <details class="acc" id="accBuild" open>
+      <summary>Build <span id="buildSum">—</span></summary>
+      <div class="accBody">
+        <div id="roles"></div>
+        <div id="slots"></div>
+      </div>
+    </details>
+    <details class="acc" id="accTune">
+      <summary>Weights &amp; trigger <span id="tuneSum">—</span></summary>
+      <div class="accBody">
+        <div id="tune"><canvas id="dial" width="300" height="300"></canvas><div id="stats"></div></div>
+        <div id="trig"></div>
+      </div>
+    </details>
+    <details class="acc" id="accLooks">
+      <summary>Looks <span id="lookSum">—</span></summary>
+      <div class="accBody"><div id="looks"></div></div>
+    </details>
+  </div>
+  <div id="sheetFoot">
+    <button class="btn" id="run">Bench</button>
+    <div id="benchOut">Tap holes to add metal.</div>
+  </div>
+</div>
+
+<script>const LADDER=[
+ {
+  "rung": 1,
+  "name": "Chalkline",
+  "role": "balance",
+  "target": 0.3,
+  "measured": 0.313,
+  "build": {
+   "core": "lodest",
+   "blade": "wheel",
+   "assist": "none",
+   "ratchet": "0-70",
+   "bit": "spool",
+   "weights": [],
+   "trigger": "charged",
+   "finish": "raw",
+   "decal": "none",
+   "trail": "jade"
+  },
+  "drop": {
+   "slot": "blade",
+   "id": "cleaver"
+  }
+ },
+ {
+  "rung": 2,
+  "name": "Bat Handler",
+  "role": "stamina",
+  "target": 0.327,
+  "measured": 0.313,
+  "build": {
+   "core": "ember",
+   "blade": "halo",
+   "assist": "slick",
+   "ratchet": "6-50",
+   "bit": "point",
+   "weights": [],
+   "trigger": "charged",
+   "finish": "brass",
+   "decal": "sunburst",
+   "trail": "jade"
+  },
+  "drop": {
+   "slot": "bit",
+   "id": "flat"
+  }
+ },
+ {
+  "rung": 3,
+  "name": "Post Keeper",
+  "role": "attack",
+  "target": 0.35,
+  "measured": 0.375,
+  "build": {
+   "core": "gale",
+   "blade": "talon",
+   "assist": "rake",
+   "ratchet": "4-80",
+   "bit": "rush",
+   "weights": [],
+   "trigger": "charged",
+   "finish": "raw",
+   "decal": "none",
+   "trail": "ember"
+  },
+  "drop": {
+   "slot": "ratchet",
+   "id": "0-70"
+  }
+ },
+ {
+  "rung": 4,
+  "name": "Knot",
+  "role": "defense",
+  "target": 0.373,
+  "measured": 0.375,
+  "build": {
+   "core": "burr",
+   "blade": "bulwark",
+   "assist": "guard",
+   "ratchet": "9-60",
+   "bit": "dome",
+   "weights": [],
+   "trigger": "charged",
+   "finish": "enamel",
+   "decal": "wave",
+   "trail": "violet"
+  },
+  "drop": {
+   "slot": "assist",
+   "id": "none"
+  }
+ },
+ {
+  "rung": 5,
+  "name": "Riverstone",
+  "role": "balance",
+  "target": 0.395,
+  "measured": 0.375,
+  "build": {
+   "core": "lash",
+   "blade": "wheel",
+   "assist": "wing",
+   "ratchet": "2-70",
+   "bit": "spool",
+   "weights": [
+    {
+     "id": "slug",
+     "hole": 3,
+     "ring": 1
+    }
+   ],
+   "trigger": "charged",
+   "finish": "brass",
+   "decal": "tiger",
+   "trail": "ink"
+  },
+  "drop": {
+   "slot": "core",
+   "id": "ember"
+  }
+ },
+ {
+  "rung": 6,
+  "name": "Tin Whistle",
+  "role": "stamina",
+  "target": 0.417,
+  "measured": 0.438,
+  "build": {
+   "core": "ember",
+   "blade": "orbit",
+   "assist": "slick",
+   "ratchet": "6-50",
+   "bit": "point",
+   "weights": [
+    {
+     "id": "brick",
+     "hole": 3,
+     "ring": 1
+    }
+   ],
+   "trigger": "charged",
+   "finish": "enamel",
+   "decal": "chalk",
+   "trail": "none"
+  },
+  "drop": {
+   "slot": "blade",
+   "id": "sabre"
+  }
+ },
+ {
+  "rung": 7,
+  "name": "Marketside",
+  "role": "attack",
+  "target": 0.439,
+  "measured": 0.438,
+  "build": {
+   "core": "lodest",
+   "blade": "talon",
+   "assist": "rake",
+   "ratchet": "1-90",
+   "bit": "rush",
+   "weights": [
+    {
+     "id": "slug",
+     "hole": 4,
+     "ring": 1
+    }
+   ],
+   "trigger": "charged",
+   "finish": "weather",
+   "decal": "none",
+   "trail": "ink"
+  },
+  "drop": {
+   "slot": "bit",
+   "id": "rush"
+  }
+ },
+ {
+  "rung": 8,
+  "name": "The Cousin",
+  "role": "defense",
+  "target": 0.46,
+  "measured": 0.438,
+  "build": {
+   "core": "burr",
+   "blade": "bulwark",
+   "assist": "guard",
+   "ratchet": "8-30",
+   "bit": "ball",
+   "weights": [
+    {
+     "id": "brick",
+     "hole": 1,
+     "ring": 0
+    },
+    {
+     "id": "chip",
+     "hole": 0,
+     "ring": 1
+    }
+   ],
+   "trigger": "behind",
+   "finish": "brass",
+   "decal": "moth",
+   "trail": "violet"
+  },
+  "drop": {
+   "slot": "ratchet",
+   "id": "3-60"
+  }
+ },
+ {
+  "rung": 9,
+  "name": "Nine Teeth",
+  "role": "balance",
+  "target": 0.48,
+  "measured": 0.5,
+  "build": {
+   "core": "quench",
+   "blade": "crest",
+   "assist": "vane",
+   "ratchet": "3-60",
+   "bit": "spool",
+   "weights": [],
+   "trigger": "lowSpin",
+   "finish": "anod",
+   "decal": "flame",
+   "trail": "none"
+  },
+  "drop": {
+   "slot": "assist",
+   "id": "jag"
+  }
+ },
+ {
+  "rung": 10,
+  "name": "Long Tuesday",
+  "role": "stamina",
+  "target": 0.501,
+  "measured": 0.5,
+  "build": {
+   "core": "ember",
+   "blade": "orbit",
+   "assist": "slick",
+   "ratchet": "6-50",
+   "bit": "point",
+   "weights": [
+    {
+     "id": "brick",
+     "hole": 1,
+     "ring": 1
+    },
+    {
+     "id": "brick",
+     "hole": 0,
+     "ring": 1
+    }
+   ],
+   "trigger": "onRidge",
+   "finish": "weather",
+   "decal": "wave",
+   "trail": "frost"
+  },
+  "drop": {
+   "slot": "core",
+   "id": "frost"
+  }
+ },
+ {
+  "rung": 11,
+  "name": "Barrel Boy",
+  "role": "attack",
+  "target": 0.522,
+  "measured": 0.5,
+  "build": {
+   "core": "gale",
+   "blade": "talon",
+   "assist": "rake",
+   "ratchet": "4-80",
+   "bit": "rush",
+   "weights": [
+    {
+     "id": "brick",
+     "hole": 1,
+     "ring": 0
+    },
+    {
+     "id": "brick",
+     "hole": 1,
+     "ring": 1
+    }
+   ],
+   "trigger": "lowSpin",
+   "finish": "chrome",
+   "decal": "koi",
+   "trail": "none"
+  },
+  "drop": {
+   "slot": "blade",
+   "id": "orbit"
+  }
+ },
+ {
+  "rung": 12,
+  "name": "Quiet Hands",
+  "role": "defense",
+  "target": 0.542,
+  "measured": 0.563,
+  "build": {
+   "core": "iron",
+   "blade": "bulwark",
+   "assist": "guard",
+   "ratchet": "9-60",
+   "bit": "dome",
+   "weights": [
+    {
+     "id": "brick",
+     "hole": 0,
+     "ring": 1
+    }
+   ],
+   "trigger": "lowSpin",
+   "finish": "brass",
+   "decal": "stripe",
+   "trail": "ink"
+  },
+  "drop": {
+   "slot": "bit",
+   "id": "needle"
+  }
+ },
+ {
+  "rung": 13,
+  "name": "Gasing",
+  "role": "balance",
+  "target": 0.562,
+  "measured": 0.563,
+  "build": {
+   "core": "iron",
+   "blade": "wheel",
+   "assist": "wing",
+   "ratchet": "0-70",
+   "bit": "spool",
+   "weights": [
+    {
+     "id": "chip",
+     "hole": 2,
+     "ring": 0
+    },
+    {
+     "id": "brick",
+     "hole": 5,
+     "ring": 0
+    }
+   ],
+   "trigger": "lowSpin",
+   "finish": "enamel",
+   "decal": "moth",
+   "trail": "ink"
+  },
+  "drop": {
+   "slot": "ratchet",
+   "id": "5-60"
+  }
+ },
+ {
+  "rung": 14,
+  "name": "Ash Wednesday",
+  "role": "stamina",
+  "target": 0.582,
+  "measured": 0.563,
+  "build": {
+   "core": "ember",
+   "blade": "halo",
+   "assist": "slick",
+   "ratchet": "5-60",
+   "bit": "needle",
+   "weights": [
+    {
+     "id": "brick",
+     "hole": 1,
+     "ring": 0
+    },
+    {
+     "id": "brick",
+     "hole": 0,
+     "ring": 0
+    }
+   ],
+   "trigger": "thirdHit",
+   "finish": "enamel",
+   "decal": "flame",
+   "trail": "ember"
+  },
+  "drop": {
+   "slot": "assist",
+   "id": "guard"
+  }
+ },
+ {
+  "rung": 15,
+  "name": "The Uncle",
+  "role": "attack",
+  "target": 0.602,
+  "measured": 0.625,
+  "build": {
+   "core": "lash",
+   "blade": "sabre",
+   "assist": "rake",
+   "ratchet": "1-90",
+   "bit": "gearf",
+   "weights": [
+    {
+     "id": "brick",
+     "hole": 4,
+     "ring": 0
+    }
+   ],
+   "trigger": "thirdHit",
+   "finish": "chrome",
+   "decal": "stripe",
+   "trail": "jade"
+  },
+  "drop": {
+   "slot": "core",
+   "id": "gale"
+  }
+ },
+ {
+  "rung": 16,
+  "name": "Half Crown",
+  "role": "defense",
+  "target": 0.622,
+  "measured": 0.625,
+  "build": {
+   "core": "burr",
+   "blade": "anvil",
+   "assist": "collar",
+   "ratchet": "7-40",
+   "bit": "dome",
+   "weights": [],
+   "trigger": "thirdHit",
+   "finish": "anod",
+   "decal": "knot",
+   "trail": "ink"
+  },
+  "drop": {
+   "slot": "blade",
+   "id": "bulwark"
+  }
+ },
+ {
+  "rung": 17,
+  "name": "Ironmonger",
+  "role": "balance",
+  "target": 0.642,
+  "measured": 0.688,
+  "build": {
+   "core": "moth",
+   "blade": "wheel",
+   "assist": "vane",
+   "ratchet": "0-70",
+   "bit": "spool",
+   "weights": [
+    {
+     "id": "chip",
+     "hole": 0,
+     "ring": 1
+    }
+   ],
+   "trigger": "behind",
+   "finish": "matte",
+   "decal": "circuit",
+   "trail": "jade"
+  },
+  "drop": {
+   "slot": "bit",
+   "id": "ball"
+  }
+ },
+ {
+  "rung": 18,
+  "name": "Old Cord",
+  "role": "stamina",
+  "target": 0.661,
+  "measured": 0.688,
+  "build": {
+   "core": "ember",
+   "blade": "halo",
+   "assist": "slick",
+   "ratchet": "6-50",
+   "bit": "needle",
+   "weights": [
+    {
+     "id": "slug",
+     "hole": 2,
+     "ring": 1
+    },
+    {
+     "id": "chip",
+     "hole": 0,
+     "ring": 0
+    },
+    {
+     "id": "slug",
+     "hole": 2,
+     "ring": 1
+    }
+   ],
+   "trigger": "lowSpin",
+   "finish": "enamel",
+   "decal": "flame",
+   "trail": "none"
+  },
+  "drop": {
+   "slot": "ratchet",
+   "id": "9-60"
+  }
+ },
+ {
+  "rung": 19,
+  "name": "Windlass",
+  "role": "attack",
+  "target": 0.681,
+  "measured": 0.625,
+  "build": {
+   "core": "lash",
+   "blade": "cleaver",
+   "assist": "jag",
+   "ratchet": "1-90",
+   "bit": "gearf",
+   "weights": [
+    {
+     "id": "slug",
+     "hole": 0,
+     "ring": 0
+    }
+   ],
+   "trigger": "thirdHit",
+   "finish": "anod",
+   "decal": "wave",
+   "trail": "frost"
+  },
+  "drop": {
+   "slot": "assist",
+   "id": "slick"
+  }
+ },
+ {
+  "rung": 20,
+  "name": "The Kelantan",
+  "role": "defense",
+  "target": 0.7,
+  "measured": 0.688,
+  "build": {
+   "core": "frost",
+   "blade": "anvil",
+   "assist": "guard",
+   "ratchet": "7-40",
+   "bit": "dome",
+   "weights": [
+    {
+     "id": "brick",
+     "hole": 5,
+     "ring": 1
+    },
+    {
+     "id": "brick",
+     "hole": 0,
+     "ring": 1
+    },
+    {
+     "id": "chip",
+     "hole": 4,
+     "ring": 1
+    }
+   ],
+   "trigger": "charged",
+   "finish": "chrome",
+   "decal": "crane",
+   "trail": "ink"
+  },
+  "drop": {
+   "slot": "core",
+   "id": "iron"
+  }
+ }
+];</script>
+<script>/* RIPCORD SIM v2 — headless. No DOM, no renderer, no globals but the export.
+ *
+ * Reduced heavy-symmetric-top model with five customisation slots, a
+ * counterweight system, part burst, a rail dash and pre-programmed abilities.
+ * Nothing in here knows what a pixel is. The 3D build reuses this file whole.
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.SIM = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  const K = {
+    dt: 1 / 120,
+    g: 9.81,
+    arenaR: 0.150,
+    bowl: 12.0,
+    ridgeAt: 0.72,          // where the dish flattens into the ridge
+    ridgeFall: 0.62,        // how hard the slope reverses on the ridge
+    pockets: 3,             // low points in the lip
+    pocketMu: 0.42,
+    railDrag: 0.35,         // the rail is smooth: less floor friction up there
+    floorMu: 0.5726,
+    spinBase: 2.6,
+    spinLean: 2.386,
+    spinSlip: 0.1000,
+    stamPow: 0.5324,
+    massCost: 0.55,
+    iRef: 1.40e-5,          // reference moment of inertia
+    inertiaPow: 0.62,       // how strongly inertia protects spin         // how hard mass is punished in spin decay
+    driveK: 5.8537,
+    fallK: 4.7087,
+    riseK: 3.5236,
+    leanEq: 0.0203,
+    wStable: 340,
+    precMax: 46.0,
+    precScale: 0.55,
+    tiltHit: 0.2355,
+    thetaMax: 0.46,
+    theta0: 0.055,
+    spinDead: 15.0,
+    wallE: 0.4565,
+    muMax: 0.62,
+    jtCap: 3.0,             // how far rim friction may exceed the normal impulse
+    tanLin: 0.85,
+    hitDrain: 28.0,
+    recoil: 0.35,           // share of a smash the striker pays back
+    hitGap: 0.10,
+    hitFloor: 0.0016,
+    ringOut: 1.008,
+    exitNeed: 0.55,         // radial speed needed to actually leave the stadium
+    launchSpin: 980.0,
+    // --- v2 ---
+    imbDrive: 1.30,         // counterweight -> extra travel
+    imbDrain: 0.85,         // counterweight -> extra spin cost
+    imbSwing: 7.00,         // counterweight -> heavy-side impact swing
+    dashSpeed: 0.40,        // min rim speed to engage the rail
+    dashGain: 17.0,          // rail acceleration
+    dashCost: 9.0,          // spin paid per dash
+    dashGap: 0.30,
+    imbDash: 3.20,          // wobble bites the rail harder          // seconds between dashes
+    burstWear: 1.00,        // wear needed to burst
+    burstK: 0.155,
+    impRef: 0.020,          // a reference strike; wear is measured against it
+    burstPow: 3.00,         // wear scales super-linearly with impact
+    burstBack: 0.14,        // share of wear the striker takes back            // wear per unit impulse
+    chargeHit: 0.20,        // ability charge per strike landed
+    chargeTaken: 0.09,      // charge per strike absorbed
+    chargeRidge: 0.34       // charge per second riding the ridge
+  };
+
+  // ======================================================================
+  // PARTS — five slots. Every slot trades something for something.
+  // ======================================================================
+
+  // 1. CORE (lock chip): spin direction, ability, a little centre mass.
+  const CORES = [
+    { id: 'ember',  name: 'Ember',  mass: 0.0022, dir:  1, ability: 'surge',     charge: 1.00, role: 'stamina' },
+    { id: 'frost',  name: 'Frost',  mass: 0.0026, dir:  1, ability: 'anchor',    charge: 0.85, role: 'defense' },
+    { id: 'gale',   name: 'Gale',   mass: 0.0018, dir: -1, ability: 'overdrive', charge: 1.10, role: 'attack' },
+    { id: 'iron',   name: 'Iron',   mass: 0.0034, dir:  1, ability: 'rebound',   charge: 0.95, role: 'defense' },
+    { id: 'hollow', name: 'Hollow', mass: 0.0020, dir: -1, ability: 'reversal',  charge: 1.35, role: 'utility' },
+    { id: 'moth',   name: 'Moth',   mass: 0.0016, dir: -1, ability: 'shed',      charge: 0.75, role: 'utility' },
+    { id: 'burr',   name: 'Burr',   mass: 0.0030, dir:  1, ability: 'burrow',    charge: 0.90, role: 'defense' },
+    { id: 'lash',   name: 'Lash',   mass: 0.0024, dir: -1, ability: 'lash',      charge: 1.05, role: 'attack' },
+    { id: 'lodest', name: 'Lodestone', mass: 0.0028, dir: 1, ability: 'lunge',   charge: 1.20, role: 'attack' },
+    { id: 'quench', name: 'Quench', mass: 0.0021, dir: -1, ability: 'brake',     charge: 0.80, role: 'utility' }
+  ];
+
+  // 2. BLADE (main weapon): the thing that hits. Sharp = smash, round = deflect.
+  //    The budget: sharpness and restitution buy smash, and are paid for in
+  //    recoil taken. Wide round blades buy survivability and pay in reach.
+  const BLADES = [
+    { id: 'cleaver', name: 'Cleaver', mass: 0.0176, radius: 0.0208, sharp: 1.00, rest: 0.90, gear: 0.95, taken: 1.22, role: 'attack' },
+    { id: 'sabre',   name: 'Sabre',   mass: 0.0150, radius: 0.0222, sharp: 0.78, rest: 0.74, gear: 1.05, taken: 1.08, role: 'attack' },
+    { id: 'orbit',   name: 'Orbit',   mass: 0.0144, radius: 0.0242, sharp: 0.22, rest: 0.40, gear: 0.28, taken: 0.64, role: 'stamina' },
+    { id: 'bulwark', name: 'Bulwark', mass: 0.0166, radius: 0.0246, sharp: 0.34, rest: 0.30, gear: 0.34, taken: 0.90, role: 'defense' },
+    { id: 'talon',   name: 'Talon',   mass: 0.0130, radius: 0.0216, sharp: 0.88, rest: 0.82, gear: 1.40, taken: 1.30, role: 'attack' },
+    { id: 'wheel',   name: 'Wheel',   mass: 0.0158, radius: 0.0238, sharp: 0.45, rest: 0.52, gear: 0.62, taken: 0.92, role: 'balance' },
+    { id: 'shard',   name: 'Shard',   mass: 0.0118, radius: 0.0204, sharp: 0.96, rest: 0.95, gear: 1.25, taken: 1.35, role: 'attack' },
+    { id: 'anvil',   name: 'Anvil',   mass: 0.0184, radius: 0.0226, sharp: 0.52, rest: 0.34, gear: 0.40, taken: 0.88, role: 'defense' },
+    { id: 'halo',    name: 'Halo',    mass: 0.0152, radius: 0.0258, sharp: 0.18, rest: 0.26, gear: 0.25, taken: 0.60, role: 'stamina' },
+    { id: 'crest',   name: 'Crest',   mass: 0.0162, radius: 0.0232, sharp: 0.64, rest: 0.60, gear: 0.80, taken: 1.00, role: 'balance' }
+  ];
+
+  // 3. ASSIST (sub-blade): bolts under the main blade. Shapes the rim.
+  const ASSISTS = [
+    { id: 'none',   name: 'None',   mass: 0.0000, gearMul: 1.00, absorb: 1.00, radAdd: 0.0000, smash: 1.00, role: 'balance' },
+    { id: 'jag',    name: 'Jag',    mass: 0.0040, gearMul: 1.45, absorb: 0.92, radAdd: 0.0008, smash: 1.14, role: 'attack' },
+    { id: 'guard',  name: 'Guard',  mass: 0.0052, gearMul: 0.70, absorb: 1.16, radAdd: 0.0012, smash: 0.88, role: 'defense' },
+    { id: 'slick',  name: 'Slick',  mass: 0.0030, gearMul: 0.38, absorb: 1.10, radAdd: 0.0004, smash: 0.92, role: 'stamina' },
+    { id: 'hook',   name: 'Hook',   mass: 0.0044, gearMul: 1.80, absorb: 1.02, radAdd: 0.0010, smash: 0.96, role: 'utility' },
+    { id: 'wing',   name: 'Wing',   mass: 0.0036, gearMul: 1.00, absorb: 1.18, radAdd: 0.0016, smash: 1.02, role: 'balance' },
+    { id: 'rake',   name: 'Rake',   mass: 0.0048, gearMul: 1.60, absorb: 0.86, radAdd: 0.0014, smash: 1.20, role: 'attack' },
+    { id: 'collar', name: 'Collar', mass: 0.0058, gearMul: 0.52, absorb: 1.30, radAdd: 0.0002, smash: 0.84, role: 'defense' },
+    { id: 'vane',   name: 'Vane',   mass: 0.0026, gearMul: 1.15, absorb: 1.06, radAdd: 0.0020, smash: 0.98, role: 'balance' },
+    { id: 'shim',   name: 'Shim',   mass: 0.0018, gearMul: 0.90, absorb: 1.04, radAdd: 0.0000, smash: 1.06, role: 'balance' }
+  ];
+
+  // 4. RATCHET: height and lock teeth. Height moves the centre of gravity and
+  //    the strike plane; teeth resist bursting. Named like the real hobby:
+  //    <teeth>-<height>.
+  const RATCHETS = [
+    { id: '0-70', name: '0-70', mass: 0.0060, height: 70, lock: 0.55, strikeHigh: 1.00, role: 'balance' },
+    { id: '3-60', name: '3-60', mass: 0.0064, height: 60, lock: 0.80, strikeHigh: 0.84, role: 'balance' },
+    { id: '5-60', name: '5-60', mass: 0.0070, height: 60, lock: 1.00, strikeHigh: 0.84, role: 'stamina' },
+    { id: '9-60', name: '9-60', mass: 0.0078, height: 60, lock: 1.28, strikeHigh: 0.82, role: 'defense' },
+    { id: '4-80', name: '4-80', mass: 0.0066, height: 80, lock: 0.88, strikeHigh: 1.22, role: 'attack' },
+    { id: '7-40', name: '7-40', mass: 0.0074, height: 40, lock: 1.12, strikeHigh: 0.58, role: 'defense' },
+    { id: '1-90', name: '1-90', mass: 0.0058, height: 90, lock: 0.62, strikeHigh: 1.40, role: 'attack' },
+    { id: '6-50', name: '6-50', mass: 0.0072, height: 50, lock: 1.06, strikeHigh: 0.70, role: 'stamina' },
+    { id: '2-70', name: '2-70', mass: 0.0062, height: 70, lock: 0.72, strikeHigh: 1.00, role: 'balance' },
+    { id: '8-30', name: '8-30', mass: 0.0082, height: 30, lock: 1.20, strikeHigh: 0.46, role: 'defense' }
+  ];
+
+  // 5. BIT (tip): what touches the floor. Also carries the rail gear.
+  const BITS = [
+    { id: 'flat',   name: 'Flat',   mass: 0.0042, stamina: 0.92, drive: 1.76, stable: 0.88, dash: 1.45, shaft: 0.86, role: 'attack' },
+    { id: 'rush',   name: 'Rush',   mass: 0.0044, stamina: 0.88, drive: 1.52, stable: 0.92, dash: 1.55, shaft: 0.92, role: 'attack' },
+    { id: 'needle', name: 'Needle', mass: 0.0035, stamina: 1.34, drive: 0.50, stable: 1.05, dash: 0.35, shaft: 1.10, role: 'stamina' },
+    { id: 'ball',   name: 'Ball',   mass: 0.0040, stamina: 0.96, drive: 0.78, stable: 1.05, dash: 0.55, shaft: 1.18, role: 'defense' },
+    { id: 'point',  name: 'Point',  mass: 0.0033, stamina: 1.26, drive: 0.62, stable: 0.98, dash: 0.45, shaft: 1.02, role: 'stamina' },
+    { id: 'gearf',  name: 'Gear Flat', mass: 0.0048, stamina: 0.78, drive: 1.40, stable: 0.90, dash: 1.85, shaft: 0.80, role: 'attack' },
+    { id: 'taper',  name: 'Taper',  mass: 0.0037, stamina: 1.34, drive: 0.72, stable: 0.94, dash: 0.40, shaft: 1.06, role: 'stamina' },
+    { id: 'dome',   name: 'Dome',   mass: 0.0046, stamina: 1.02, drive: 0.90, stable: 1.24, dash: 0.62, shaft: 1.14, role: 'defense' },
+    { id: 'claw',   name: 'Claw',   mass: 0.0050, stamina: 0.86, drive: 1.88, stable: 0.82, dash: 1.62, shaft: 0.78, role: 'attack' },
+    { id: 'spool',  name: 'Spool',  mass: 0.0043, stamina: 1.10, drive: 1.06, stable: 1.00, dash: 0.95, shaft: 0.98, role: 'balance' }
+  ];
+
+  // 6. WEIGHTS — up to four, each dropped into a hole on one of two rings.
+  //    The inner ring is mass with little wobble; the outer ring is reach,
+  //    inertia and a far bigger heavy-side swing for the same gram.
+  const WEIGHTS = [
+    { id: 'none',  name: 'Empty',  mass: 0.0000, role: 'balance' },
+    { id: 'chip',  name: 'Chip',   mass: 0.0016 },
+    { id: 'slug',  name: 'Slug',   mass: 0.0034 },
+    { id: 'brick', name: 'Brick',  mass: 0.0058 }
+  ];
+  const HOLES = 6;          // six mounting holes, 60 degrees apart
+  const RINGS = [0.42, 0.80];  // radius fractions of the two weight rings
+  const MAX_WEIGHTS = 4;
+
+  // 7. COSMETIC — finish, decal and trail. These NEVER touch the simulation.
+  //    Kept in the same data model so the asset pipeline and the save format
+  //    only have one shape to learn, and flagged so no future balance pass can
+  //    quietly give a paint job a stat. Launcher skins were the single most
+  //    requested missing feature in the competition's reviews.
+  const FINISHES = [
+    { id: 'raw',     name: 'Raw Steel',   metal: 0.95, rough: 0.35 },
+    { id: 'anod',    name: 'Anodised',    metal: 0.90, rough: 0.22 },
+    { id: 'matte',   name: 'Matte Black', metal: 0.20, rough: 0.85 },
+    { id: 'brass',   name: 'Brass',       metal: 1.00, rough: 0.30 },
+    { id: 'enamel',  name: 'Enamel',      metal: 0.05, rough: 0.18 },
+    { id: 'weather', name: 'Weathered',   metal: 0.70, rough: 0.72 },
+    { id: 'chrome',  name: 'Chrome',      metal: 1.00, rough: 0.05 },
+    { id: 'clay',    name: 'Fired Clay',  metal: 0.00, rough: 0.90 }
+  ];
+  const DECALS = ['none','stripe','sunburst','koi','tiger','wave','circuit','moth',
+                  'flame','crane','chalk','knot'];
+  const TRAILS  = ['none','ember','frost','rope','ink','jade','violet'];
+  const LAUNCHERS = ['cord','ripcord','winder','bat','whip','spool'];
+  const COSMETIC_SLOTS = { finish: FINISHES, decal: DECALS, trail: TRAILS, launcher: LAUNCHERS };
+
+  // Roles are a browsing aid, not a rule. Nothing in the simulation reads them
+  // — they exist so a player facing fifty parts can narrow to the ten that suit
+  // the top they are trying to build.
+  const ROLES = ['attack', 'stamina', 'defense', 'balance', 'utility'];
+
+  const pick = (arr, id) => arr.find(p => p.id === id) || arr[0];
+
+  /* build(config) -> spec
+   * config = { core, blade, assist, ratchet, bit, weights:[{id,hole}], dir }
+   * Every derived number a match needs is computed once, here.
+   */
+  function build(cfg) {
+    const core = pick(CORES, cfg.core);
+    const blade = pick(BLADES, cfg.blade);
+    const assist = pick(ASSISTS, cfg.assist);
+    const rat = pick(RATCHETS, cfg.ratchet);
+    const bit = pick(BITS, cfg.bit);
+
+    const R = blade.radius + assist.radAdd;
+    let m = core.mass + blade.mass + assist.mass + rat.mass + bit.mass;
+
+    // counterweights: mass, and the vector sum of their positions
+    let ix = 0, iz = 0, wMass = 0, wInertia = 0;
+    const slots = (cfg.weights || []).slice(0, MAX_WEIGHTS);
+    for (const w of slots) {
+      const p = pick(WEIGHTS, w.id);
+      if (!p.mass) continue;
+      const ang = (w.hole % HOLES) * (Math.PI * 2 / HOLES);
+      const r = R * RINGS[(w.ring | 0) % RINGS.length];
+      ix += p.mass * r * Math.cos(ang);
+      iz += p.mass * r * Math.sin(ang);
+      wMass += p.mass;
+      wInertia += p.mass * r * r;
+    }
+    m += wMass;
+
+    // Static imbalance, normalised. Three weights spread evenly cancel out and
+    // give a heavy, perfectly balanced top. Bunched on one side, you get a
+    // wild, hard-hitting, short-lived one.
+    const imb = Math.min(0.42, Math.hypot(ix, iz) / (m * R));
+    const imbAng = Math.atan2(iz, ix);
+
+    const I = 0.55 * m * R * R + wInertia;
+    const cogH = rat.height / 60;
+
+    return {
+      cfg: { core: core.id, blade: blade.id, assist: assist.id,
+             ratchet: rat.id, bit: bit.id, weights: slots },
+      m, R, I, imb, imbAng, cogH,
+      dir: cfg.dir !== undefined ? cfg.dir : core.dir,
+      // combat
+      sharp: blade.sharp,
+      smash: blade.sharp * assist.smash,
+      rest: blade.rest,
+      gear: blade.gear * assist.gearMul,
+      absorb: assist.absorb / Math.pow(cogH, 0.30),
+      taken: blade.taken,
+      strikeHigh: rat.strikeHigh,
+      burstResist: rat.lock * bit.shaft,
+      // motion
+      stamina: bit.stamina * (1 - 0.42 * imb),
+      drive: bit.drive * (1 + K.imbDrive * imb),
+      stable: bit.stable / Math.pow(cogH, 0.25),
+      dash: bit.dash,
+      // ability
+      ability: core.ability,
+      chargeRate: core.charge
+    };
+  }
+
+  // ======================================================================
+  // ABILITIES — pre-programmed. The player picks a trigger before launch and
+  // then never touches the screen again. All of them are physics edits, not
+  // cutscenes; every one is visible in the motion of the top.
+  // ======================================================================
+  const TRIGGERS = ['charged', 'lowSpin', 'thirdHit', 'onRidge', 'behind'];
+
+  function triggerReady(a, b) {
+    switch (a.trigger) {
+      case 'charged':  return a.charge >= 1;
+      case 'lowSpin':  return a.charge >= 1 && Math.abs(a.w) < 0.45 * K.launchSpin;
+      case 'thirdHit': return a.charge >= 1 && a.hits >= 3;
+      case 'onRidge':  return a.charge >= 1 && Math.hypot(a.x, a.z) > K.ridgeAt * K.arenaR;
+      case 'behind':   return a.charge >= 1 && Math.abs(a.w) < Math.abs(b.w) * 0.85;
+      default:         return a.charge >= 1;
+    }
+  }
+
+  function fire(a, b) {
+    a.charge = 0; a.abilityUsed++; a.fx = a.spec.ability;
+    switch (a.spec.ability) {
+      case 'surge':                                   // steal spin back
+        a.w += Math.sign(a.w) * 190; break;
+      case 'anchor':                                  // stand up, dig in
+        setLean(a, K.leanEq * 0.5); a.anchor = a.t + 2.4; break;
+      case 'overdrive':                               // travel doubles
+        a.boost = a.t + 2.6; break;
+      case 'rebound':                                 // next hit is returned
+        a.rebound = a.t + 3.0; break;
+      case 'reversal':                                // flip spin direction
+        a.w = -a.w * 0.72; a.spec = Object.assign({}, a.spec, { dir: -a.spec.dir }); break;
+      case 'burrow':                                  // dig in and stop moving
+        a.burrow = a.t + 2.8; break;
+      case 'lash':                                    // next three hits bite
+        a.lash = 3; break;
+      case 'lunge':                                   // one hard jump at them
+        {
+          const dx = b.x - a.x, dz = b.z - a.z, d = Math.hypot(dx, dz) || 1;
+          a.vx += dx / d * 1.55; a.vz += dz / d * 1.55;
+        }
+        break;
+      case 'brake':                                   // trade travel for spin
+        a.w += Math.sign(a.w) * Math.hypot(a.vx, a.vz) * 240;
+        a.vx *= 0.15; a.vz *= 0.15; break;
+      case 'shed':                                    // drop the counterweights
+        a.spec = Object.assign({}, a.spec, {
+          imb: 0, drive: a.spec.drive / (1 + K.imbDrive * a.spec.imb),
+          stamina: a.spec.stamina / (1 - 0.42 * a.spec.imb),
+          m: a.spec.m * 0.94
+        });
+        break;
+    }
+  }
+
+  // ======================================================================
+  // STATE
+  // ======================================================================
+  function spawn(spec, opts) {
+    const o = opts || {};
+    const ang = o.angle !== undefined ? o.angle : 0;
+    const off = o.offset !== undefined ? o.offset : 0.085;
+    const power = o.power !== undefined ? o.power : 1.0;
+    const lean = o.lean !== undefined ? o.lean : K.theta0;
+    return {
+      spec,
+      x: Math.cos(ang) * off, z: Math.sin(ang) * off,
+      vx: o.vx || 0, vz: o.vz || 0,
+      w: spec.dir * K.launchSpin * power,
+      lx: Math.cos(ang + Math.PI) * lean, lz: Math.sin(ang + Math.PI) * lean,
+      phase: o.phase !== undefined ? o.phase : 0,   // heavy-side rotation phase
+      wear: 0, charge: 0, abilityUsed: 0, fx: null,
+      trigger: o.trigger || 'charged',
+      boost: 0, anchor: 0, rebound: 0, burrow: 0, lash: 0, dashAt: -9,
+      alive: true, cause: null, t: 0, lastHit: -9, hits: 0, taken: 0
+    };
+  }
+
+  function setLean(a, th) {
+    const c = Math.hypot(a.lx, a.lz) || 1e-6;
+    a.lx *= th / c; a.lz *= th / c;
+  }
+  function bumpLean(a, amount) {
+    const th = Math.hypot(a.lx, a.lz) || 1e-6;
+    const k = (th + amount) / th;
+    a.lx *= k; a.lz *= k;
+  }
+  function kill(a, cause) { a.alive = false; a.cause = cause; a.w = 0; }
+  const clamp = (v, lo, hi) => v < lo ? lo : v > hi ? hi : v;
+
+  // ======================================================================
+  // STEP
+  // ======================================================================
+  function stepTop(a, dt) {
+    if (!a.alive) return;
+    const s = a.spec;
+    const aw = Math.abs(a.w);
+    let th = Math.hypot(a.lx, a.lz);
+    if (th < 1e-6) { a.lx = 1e-6; th = 1e-6; }
+    const ux = a.lx / th, uz = a.lz / th;
+
+    a.phase += a.w * dt;                       // heavy side goes round
+
+    // 1. PRECESSION. Faster with a higher centre of gravity.
+    const wp = clamp(Math.sign(a.w) * K.precScale * s.m * K.g * s.R * s.cogH /
+                     (s.I * Math.max(aw, 40)), -K.precMax, K.precMax);
+    const ca = Math.cos(wp * dt), sa = Math.sin(wp * dt);
+    const nlx = a.lx * ca - a.lz * sa, nlz = a.lx * sa + a.lz * ca;
+    a.lx = nlx; a.lz = nlz;
+
+    // 2. RISE / FALL. Friction rights a fast top and fells a slow one.
+    const burrowing = a.t < a.burrow;
+    const wStable = K.wStable / (0.55 + 0.45 * s.stable * (burrowing ? 2.2 : 1));
+    const ratio = aw / wStable;
+    const thEq = K.leanEq * (0.55 + 0.75 * s.drive);
+    let dth;
+    if (a.t < a.anchor) dth = -K.riseK * (th - K.leanEq * 0.5) * 2.0;
+    else if (ratio > 1)  dth = -K.riseK * (th - thEq) * Math.min(ratio - 1, 1.6);
+    else                 dth =  K.fallK * (th + 0.012) * (1 - ratio);
+    th = Math.max(0.004, th + dth * dt);
+    setLean(a, th);
+
+    // 3. DRIVE. The offset contact point pushes perpendicular to the lean.
+    const dsign = Math.sign(a.w) || 1;
+    const px = -a.lz / th, pz = a.lx / th;
+    const boost = (a.t < a.boost ? 2.0 : 1.0) * (burrowing ? 0.30 : 1.0);
+    const drive = K.driveK * s.drive * th * Math.min(aw / 300, 1.4) * boost;
+    a.vx += (px * dsign * drive + ux * drive * 0.22) * dt;
+    a.vz += (pz * dsign * drive + uz * drive * 0.22) * dt;
+
+    // 4. BOWL + RIDGE. Flat dish inside, reversing slope on the outer ring.
+    const rad = Math.hypot(a.x, a.z);
+    a._rad = rad;
+    if (rad > 1e-5) {
+      const u = rad / K.arenaR;
+      const over = Math.max(0, u - K.ridgeAt) / (1 - K.ridgeAt);
+      const pull = K.bowl * rad * (1 - K.ridgeFall * over * over);
+      a.vx -= (a.x / rad) * pull * dt;
+      a.vz -= (a.z / rad) * pull * dt;
+
+      // 4b. RAIL DASH. A geared bit that reaches the ridge with enough speed
+      //     grabs it and slingshots inward. This is the attack type's kill
+      //     route and the loudest moment in a match.
+      const sp = Math.hypot(a.vx, a.vz);
+      if (over > 0.35 && sp > K.dashSpeed / Math.max(s.dash, 0.2) &&
+          a.t - a.dashAt > K.dashGap && s.dash > 0.5) {
+        const tx = -a.z / rad, tz = a.x / rad;
+        // An unbalanced top slams its gear into the rail — more bite, and it
+        // is the one real reward a brawler gets for carrying a wobble.
+        const gain = K.dashGain * s.dash * (1 + K.imbDash * s.imb);
+        a.vx += (tx * dsign * 0.72 - (a.x / rad) * 0.68) * gain * dt * 60 * K.dt;
+        a.vz += (tz * dsign * 0.72 - (a.z / rad) * 0.68) * gain * dt * 60 * K.dt;
+        a.w -= dsign * K.dashCost * s.dash;
+        a.dashAt = a.t; a.fx = 'dash';
+      }
+      if (over > 0.35) a.charge += K.chargeRidge * s.chargeRate * dt;
+    }
+
+    // 5. DRAG. The ridge is a machined rail, not dish floor — it holds speed,
+    //    which is what lets a fast top ride it instead of glancing off it.
+    // Only a geared bit engages the rail. A needle tip just scrapes along it.
+    const onRail = a._rad > K.ridgeAt * K.arenaR;
+    const grip = onRail ? 1 - (1 - K.railDrag) * clamp((s.dash - 0.5) / 1.35, 0, 1) : 1;
+    const drag = Math.max(0, 1 - K.floorMu * grip * dt);
+    a.vx *= drag; a.vz *= drag;
+
+    // 6. SPIN DECAY. Lean, travel and imbalance all cost spin.
+    const stam = 1 + K.stamPow * (s.stamina - 1);
+    // Mass loads the tip: a heavy top pays for its momentum in friction. But
+    // mass carried at the RIM buys rotational inertia, which the same friction
+    // torque takes longer to bleed. Where the metal sits matters, not just how
+    // much of it there is — this is what gives wide blades and the outer weight
+    // ring their identity.
+    const load = Math.pow(s.m / 0.035, K.massCost) *
+                 Math.pow(K.iRef / s.I, K.inertiaPow);
+    const decay = load * (K.spinBase + K.spinLean * th * 40 + K.spinSlip * drive * 60 +
+                          K.imbDrain * s.imb * 40) / stam;
+    a.w -= dsign * decay * dt;
+    if (Math.sign(a.w) !== dsign) a.w = 0;
+
+    // 7. INTEGRATE
+    a.x += a.vx * dt; a.z += a.vz * dt; a.t += dt;
+
+    // 8. WALL
+    const nr = Math.hypot(a.x, a.z);
+    if (nr > K.arenaR) {
+      const nx = a.x / nr, nz = a.z / nr;
+      const vn = a.vx * nx + a.vz * nz;
+      const sector = Math.cos(Math.atan2(a.z, a.x) * K.pockets);
+      const need = K.exitNeed * (sector > 0.62 ? K.pocketMu : 1) * (a.t < a.anchor ? 6 : 1);
+      if (nr > K.arenaR * K.ringOut && vn > need) { kill(a, 'ringout'); return; }
+      if (vn > 0) {
+        a.vx -= (1 + K.wallE) * vn * nx;
+        a.vz -= (1 + K.wallE) * vn * nz;
+        a.w *= 0.945;
+        bumpLean(a, vn * 0.10 * K.tiltHit);
+      }
+      a.x = nx * K.arenaR * 0.999; a.z = nz * K.arenaR * 0.999;
+    }
+
+    // 9. DEATH
+    if (a.wear >= K.burstWear) kill(a, 'burst');
+    else if (Math.abs(a.w) <= K.spinDead) kill(a, 'spinout');
+    else if (Math.hypot(a.lx, a.lz) >= K.thetaMax)
+      kill(a, (a.t - a.lastHit) < 0.60 ? 'knockout' : 'spinout');
+  }
+
+  // ======================================================================
+  // COLLISION
+  // ======================================================================
+  function collide(a, b, rnd) {
+    if (!a.alive || !b.alive) return null;
+    const dx = b.x - a.x, dz = b.z - a.z;
+    const d = Math.hypot(dx, dz);
+    const sum = a.spec.R + b.spec.R;
+    if (d >= sum || d < 1e-9) return null;
+
+    const nx = dx / d, nz = dz / d;
+    const pen = (sum - d) * 0.5 + 1e-5;
+    a.x -= nx * pen; a.z -= nz * pen;
+    b.x += nx * pen; b.z += nz * pen;
+
+    const jit = (rnd() - 0.5) * 0.16;
+    const cj = Math.cos(jit), sj = Math.sin(jit);
+    const nX = nx * cj - nz * sj, nZ = nx * sj + nz * cj;
+    const tX = -nZ, tZ = nX;
+
+    const ma = a.spec.m, mb = b.spec.m;
+    const inv = 1 / ma + 1 / mb;
+
+    const rvn = (b.vx - a.vx) * nX + (b.vz - a.vz) * nZ;
+    if (rvn > 0) return null;
+
+    // who is the aggressor: whoever is driving into the contact
+    const aInto = (a.vx * nX + a.vz * nZ), bInto = -(b.vx * nX + b.vz * nZ);
+    const aggIsA = aInto >= bInto;
+    const agg = aggIsA ? a : b, def = aggIsA ? b : a;
+
+    // heavy-side timing: a counterweighted top hits much harder when the
+    // weight is coming round at the moment of contact, and softer when it
+    // isn't. This is the drama generator.
+    // The heavy side has to actually be coming round. Clamped so a swing can
+    // soften a hit to almost nothing or nearly double it, but never invert it.
+    const swing = clamp(1 + K.imbSwing * agg.spec.imb *
+                        Math.sin(agg.phase * 0.5 + agg.spec.imbAng), 0.18, 2.10);
+
+    const e = 0.5 * (a.spec.rest + b.spec.rest);
+    const lash = agg.lash > 0 ? 1.60 : 1;
+    let jn = -(1 + e) * rvn / inv * (0.72 + 0.62 * agg.spec.smash) * swing * lash;
+
+    if (def.t < def.rebound) { jn *= 1.55; def.rebound = 0; def.fx = 'rebound'; }
+
+    a.vx -= jn * nX / ma; a.vz -= jn * nZ / ma;
+    b.vx += jn * nX / mb; b.vz += jn * nZ / mb;
+
+    // tangential: rim friction. Opposite spin meshes and shares spin;
+    // same spin scrubs and drains both.
+    const rimA = a.w * a.spec.R, rimB = -b.w * b.spec.R;
+    const rvt = ((b.vx - a.vx) * tX + (b.vz - a.vz) * tZ) + (rimB - rimA);
+    const mu = Math.sqrt(a.spec.gear * b.spec.gear);
+    const jtCap = K.muMax * Math.abs(jn) * K.jtCap;
+    let jt = clamp(-rvt * mu / inv, -jtCap, jtCap);
+
+    a.vx -= K.tanLin * jt * tX / ma; a.vz -= K.tanLin * jt * tZ / ma;
+    b.vx += K.tanLin * jt * tX / mb; b.vz += K.tanLin * jt * tZ / mb;
+    a.w += -jt * a.spec.R / a.spec.I;
+    b.w += -jt * b.spec.R / b.spec.I;
+
+    // shock drain. The top on the receiving end eats the full smash, scaled by
+    // the striker's blade; the striker only takes recoil. Attacking has to be
+    // profitable or the aggressive archetype has no reason to exist.
+    const imp = Math.abs(jn) + Math.abs(jt) * 0.45;
+    const dmg = K.hitDrain * Math.abs(jn) * (0.35 + 0.90 * agg.spec.smash) *
+                def.spec.taken / (def.spec.m * def.spec.R);
+    const kick = K.hitDrain * K.recoil * Math.abs(jn) * agg.spec.taken /
+                 (agg.spec.m * agg.spec.R);
+    def.w -= Math.sign(def.w) * Math.min(dmg, Math.abs(def.w));
+    agg.w -= Math.sign(agg.w) * Math.min(kick, Math.abs(agg.w));
+
+    // strike accounting: destabilisation, burst wear, ability charge
+    const fresh = (a.t - a.lastHit) > K.hitGap;
+    if (fresh && imp > K.hitFloor) {
+      const tipA = K.tiltHit * imp * 0.0016 * b.spec.strikeHigh /
+                   (a.spec.I * Math.max(Math.abs(a.w), 60) + 1e-6) / a.spec.absorb;
+      const tipB = K.tiltHit * imp * 0.0016 * a.spec.strikeHigh /
+                   (b.spec.I * Math.max(Math.abs(b.w), 60) + 1e-6) / b.spec.absorb;
+      bumpLean(a, tipA); bumpLean(b, tipB);
+
+      // Lock wear. A ratchet loosens when it is STRUCK, not when it strikes,
+      // and it is the big connected hit that does it — not accumulation. The
+      // exponent is what makes a heavy-side swing capable of popping a top
+      // apart in one blow instead of grinding it loose over twenty.
+      const wear = K.burstK * Math.pow(imp / K.impRef, K.burstPow);
+      def.wear += wear * agg.spec.strikeHigh / def.spec.burstResist;
+      agg.wear += wear * K.burstBack / agg.spec.burstResist;
+
+      agg.charge += K.chargeHit * agg.spec.chargeRate;
+      def.charge += K.chargeTaken * def.spec.chargeRate;
+      agg.hits++; def.taken++;
+      if (agg.lash > 0) agg.lash--;
+      a.lastHit = a.t; b.lastHit = b.t;
+    }
+
+    return { impulse: imp, opposite: Math.sign(a.w) !== Math.sign(b.w),
+             x: a.x + nX * a.spec.R, z: a.z + nZ * a.spec.R, swing,
+             aggressor: aggIsA ? 'a' : 'b' };
+  }
+
+  // ======================================================================
+  // MATCH
+  // ======================================================================
+  function resolveMatch(specA, specB, opts) {
+    const o = opts || {};
+    const rnd = o.rnd || Math.random;
+    const a = spawn(specA, Object.assign({ angle: 0 }, o.a));
+    const b = spawn(specB, Object.assign({ angle: Math.PI }, o.b));
+    const limit = o.limit || 60;
+    let t = 0;
+    while (t < limit && a.alive && b.alive) {
+      stepTop(a, K.dt); stepTop(b, K.dt);
+      const c = collide(a, b, rnd);
+      if (c && o.onHit) o.onHit(c);
+      if (a.abilityUsed === 0 && triggerReady(a, b)) fire(a, b);
+      if (b.abilityUsed === 0 && triggerReady(b, a)) fire(b, a);
+      t += K.dt;
+    }
+    let winner = null, cause = 'timeout';
+    if (a.alive && !b.alive) { winner = 'a'; cause = b.cause; }
+    else if (b.alive && !a.alive) { winner = 'b'; cause = a.cause; }
+    else if (!a.alive && !b.alive) { cause = 'double'; }
+    else { winner = Math.abs(a.w) > Math.abs(b.w) ? 'a' : 'b'; }
+    // scoring, Beyblade-style: not all finishes are worth the same
+    const points = { spinout: 1, ringout: 2, knockout: 2, burst: 2, timeout: 1, double: 0 }[cause] || 1;
+    return { winner, cause, points, duration: t, hits: a.hits + b.hits, a, b };
+  }
+
+  function mulberry(seed) {
+    let s = seed >>> 0;
+    return function () {
+      s |= 0; s = (s + 0x6D2B79F5) | 0;
+      let t = Math.imul(s ^ (s >>> 15), 1 | s);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  // Reference builds, one per archetype, used by the harness and the ladder.
+  const ARCHETYPES = {
+    attack:  { core: 'ember',  blade: 'cleaver', assist: 'jag',   ratchet: '3-60', bit: 'flat',
+               weights: [{ id: 'slug', hole: 0, ring: 0 }] },
+    stamina: { core: 'moth',   blade: 'orbit',   assist: 'slick', ratchet: '5-60', bit: 'needle',
+               weights: [{ id: 'chip', hole: 0, ring: 1 }, { id: 'chip', hole: 2, ring: 1 }, { id: 'chip', hole: 4, ring: 1 }] },
+    defense: { core: 'frost',  blade: 'bulwark', assist: 'guard', ratchet: '7-40', bit: 'ball',
+               weights: [{ id: 'slug', hole: 0, ring: 1 }, { id: 'slug', hole: 3, ring: 1 }] },
+    balance: { core: 'iron',   blade: 'wheel',   assist: 'wing',  ratchet: '3-60', bit: 'point',
+               weights: [{ id: 'slug', hole: 0, ring: 1 }, { id: 'chip', hole: 3, ring: 0 }] }
+  };
+
+  return { K, CORES, BLADES, ASSISTS, RATCHETS, BITS, WEIGHTS, HOLES, RINGS, MAX_WEIGHTS,
+           FINISHES, DECALS, TRAILS, LAUNCHERS, COSMETIC_SLOTS, ROLES,
+           ARCHETYPES, TRIGGERS,
+           build, spawn, stepTop, collide, resolveMatch, mulberry, fire, triggerReady };
+});
+</script>
+<script>/* RIPCORD WIND — grades a hand-drawn winding gesture.
+ *
+ * The player draws laps around their top. How round, how even, how fast and
+ * which way they draw becomes the launch. Nothing here touches the DOM; it
+ * takes an array of {x, y, t} samples and returns launch parameters.
+ *
+ * Design rule: a bad wind is not simply weaker, it is WILDER. Sloppy laps put
+ * metal in the wrong place, which means less spin but more travel and a bigger
+ * heavy-side swing. A nine-year-old scribbling three fast ovals gets a wobbling
+ * monster that sometimes deletes a perfect build. That is the whole brief.
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.WIND = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  const W = {
+    laps: 3,               // laps the player is asked for
+    lapTol: 0.55,          // laps of slack before it hurts
+    roundBand: 0.20,       // rms radial error / R at which roundness scores 0
+    driftBand: 0.34,       // centre drift / R at which concentricity scores 0
+    evenBand: 0.55,        // angular speed CV at which evenness scores 0
+    fastAt: 9.5,           // rad/s of drawing that reads as a hard, fast wind
+    slowAt: 2.2,           // below this the wind is too loose to matter
+    minPts: 24,
+    // how the grade maps onto the launch
+    powLo: 0.95, powHi: 1.05,
+    imbMax: 0.17,          // worst wind adds this much static imbalance
+    leanLo: 0.030, leanHi: 0.078
+  };
+
+  // ---- least-squares circle fit (Kasa). Returns {cx, cy, r}.
+  function fitCircle(pts) {
+    let n = pts.length, sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0, sz = 0, sxz = 0, syz = 0;
+    for (const p of pts) {
+      const z = p.x * p.x + p.y * p.y;
+      sx += p.x; sy += p.y; sxx += p.x * p.x; syy += p.y * p.y; sxy += p.x * p.y;
+      sz += z; sxz += p.x * z; syz += p.y * z;
+    }
+    // solve [ sxx sxy sx ; sxy syy sy ; sx sy n ] [A B C]^T = [sxz syz sz]^T
+    const m = [[sxx, sxy, sx], [sxy, syy, sy], [sx, sy, n]];
+    const v = [sxz, syz, sz];
+    const sol = solve3(m, v);
+    if (!sol) {
+      let cx = sx / n, cy = sy / n, r = 0;
+      for (const p of pts) r += Math.hypot(p.x - cx, p.y - cy);
+      return { cx, cy, r: r / n };
+    }
+    const cx = sol[0] / 2, cy = sol[1] / 2;
+    const r = Math.sqrt(Math.max(1e-9, sol[2] + cx * cx + cy * cy));
+    return { cx, cy, r };
+  }
+
+  function solve3(m, v) {
+    const a = m.map((row, i) => row.concat([v[i]]));
+    for (let i = 0; i < 3; i++) {
+      let p = i;
+      for (let k = i + 1; k < 3; k++) if (Math.abs(a[k][i]) > Math.abs(a[p][i])) p = k;
+      if (Math.abs(a[p][i]) < 1e-12) return null;
+      const tmp = a[i]; a[i] = a[p]; a[p] = tmp;
+      for (let k = i + 1; k < 3; k++) {
+        const f = a[k][i] / a[i][i];
+        for (let j = i; j < 4; j++) a[k][j] -= f * a[i][j];
+      }
+    }
+    const out = [0, 0, 0];
+    for (let i = 2; i >= 0; i--) {
+      let s = a[i][3];
+      for (let j = i + 1; j < 3; j++) s -= a[i][j] * out[j];
+      out[i] = s / a[i][i];
+    }
+    return out;
+  }
+
+  const clamp = (v, lo, hi) => v < lo ? lo : v > hi ? hi : v;
+  const band = (err, width) => clamp(1 - err / width, 0, 1);
+
+  /* grade(points, opts) -> report
+   * points: [{x, y, t}] in any consistent units, t in ms.
+   */
+  function grade(points, opts) {
+    const o = opts || {};
+    const want = o.laps || W.laps;
+    const pts = dedupe(points);
+    if (pts.length < W.minPts) return fail('too short');
+
+    const fit = fitCircle(pts);
+    if (!(fit.r > 1e-6)) return fail('no circle');
+
+    // --- unwrap the angle so we can count laps and find direction
+    let prev = Math.atan2(pts[0].y - fit.cy, pts[0].x - fit.cx);
+    let total = 0;
+    const ang = [prev];
+    for (let i = 1; i < pts.length; i++) {
+      let a = Math.atan2(pts[i].y - fit.cy, pts[i].x - fit.cx);
+      let d = a - prev;
+      while (d > Math.PI) d -= Math.PI * 2;
+      while (d < -Math.PI) d += Math.PI * 2;
+      total += d; prev = a; ang.push(ang[i - 1] + d);
+    }
+    const laps = Math.abs(total) / (Math.PI * 2);
+    if (laps < 0.4) return fail('not a loop');
+    const dir = total >= 0 ? 1 : -1;      // drawing direction IS spin direction
+
+    // --- radii and roundness
+    const rad = pts.map(p => Math.hypot(p.x - fit.cx, p.y - fit.cy));
+    const rMean = rad.reduce((a, b) => a + b, 0) / rad.length;
+    let ss = 0;
+    for (const r of rad) ss += (r - rMean) * (r - rMean);
+    const rErr = Math.sqrt(ss / rad.length) / rMean;
+    const roundness = band(rErr, W.roundBand);
+
+    // --- concentricity: do the laps stack on each other, or spiral away?
+    //     Compare the mean radius of the first third and the last third.
+    const third = Math.floor(rad.length / 3);
+    const rFirst = mean(rad.slice(0, third)), rLast = mean(rad.slice(-third));
+    const drift = Math.abs(rLast - rFirst) / rMean;
+    const concentric = band(drift, W.driftBand);
+
+    // --- lap count: short-changing the wind costs you
+    const lapErr = Math.abs(laps - want) / want;
+    const lapScore = band(Math.max(0, lapErr - W.lapTol / want), 0.55);
+
+    // --- evenness and speed of the pull
+    const dt = [], av = [];
+    for (let i = 1; i < pts.length; i++) {
+      const ms = Math.max(1, pts[i].t - pts[i - 1].t);
+      dt.push(ms);
+      av.push(Math.abs(ang[i] - ang[i - 1]) / (ms / 1000));
+    }
+    const avMean = mean(av);
+    const avCv = std(av) / Math.max(avMean, 1e-6);
+    const even = band(avCv, W.evenBand);
+    const speed = clamp((avMean - W.slowAt) / (W.fastAt - W.slowAt), 0, 1);
+
+    // --- WHERE the circle went wrong. The largest outward bulge marks the
+    //     heavy side of the wind, and that becomes the top's imbalance phase.
+    let worst = 0, worstAng = 0;
+    for (let i = 0; i < pts.length; i++) {
+      const dev = rad[i] - rMean;
+      if (Math.abs(dev) > Math.abs(worst)) {
+        worst = dev;
+        worstAng = Math.atan2(pts[i].y - fit.cy, pts[i].x - fit.cx);
+      }
+    }
+
+    // --- composite
+    // Quality is craft: how round, how steady, how well the laps stack.
+    const quality = clamp(
+      0.52 * roundness + 0.24 * even + 0.24 * concentric, 0, 1);
+
+    // Lap count is not craft, it is charge. Half a wind is half a wind, and
+    // no amount of neatness fixes it.
+    const lapRatio = clamp(laps / want, 0, 1.15);
+    const charge = 0.72 + 0.28 * lapRatio;
+
+    // Over-winding. Past 1.2x the ask the string starts binding on itself: no
+    // extra spin, a growing lump of it on one side, and eventually less power
+    // than a clean three laps would have given. There has to be a reason to
+    // stop, or "wind forever" is the dominant strategy.
+    const over = Math.max(0, laps / want - 1.20);
+    const overImb = Math.min(0.16, over * 0.55);
+    const overPow = 1 - Math.min(0.28, over * 0.62);
+
+    // Power blends craft and effort, then scales by how much you actually wound.
+    const power = (W.powLo + (W.powHi - W.powLo) *
+                   clamp(0.62 * quality + 0.38 * speed, 0, 1)) * charge * overPow;
+    const imb = Math.min(W.imbMax + 0.16,
+                         W.imbMax * Math.pow(1 - quality, 1.35) + overImb);
+    const lean = W.leanLo + (W.leanHi - W.leanLo) * (1 - quality);
+
+    return {
+      ok: true,
+      grade: letter(clamp(quality * (0.50 + 0.50 * lapRatio) * overPow, 0, 1)),
+      quality, roundness, even, concentric, lapScore, speed, charge, over,
+      laps, dir, rErr, drift, avCv,
+      fit,
+      launch: {
+        power,                       // multiplier on launch spin
+        dir,                         // spin direction from drawing direction
+        lean,                        // starting lean: sloppy wind starts tilted
+        windImb: imb,                // static imbalance added by the wind
+        windImbAng: worstAng,        // where the heavy side sits
+        phase: worstAng              // rotational phase at launch
+      },
+      note: coach(roundness, even, concentric, clamp(lapRatio, 0, 1), speed, over)
+    };
+  }
+
+  function fail(why) {
+    return {
+      ok: false, grade: '—', quality: 0, note: why,
+      launch: { power: W.powLo, dir: 1, lean: W.leanHi, windImb: W.imbMax,
+                windImbAng: 0, phase: 0 }
+    };
+  }
+
+  function letter(q) {
+    return q > 0.90 ? 'S' : q > 0.78 ? 'A' : q > 0.62 ? 'B'
+         : q > 0.44 ? 'C' : q > 0.26 ? 'D' : 'E';
+  }
+
+  // One line, naming the biggest single problem. Never a list.
+  function coach(round, even, conc, lap, speed, over) {
+    if (over > 0.05) return 'Over-wound. Stop at three.';
+    if (lap < 0.55) return 'Short wind. Finish the laps.';
+    const worst = [['rounder laps', round], ['a steadier pull', even],
+                   ['laps stacked on each other', conc]]
+      .sort((a, b) => a[1] - b[1])[0];
+    if (worst[1] > 0.85) return speed < 0.35 ? 'Clean wind. Pull faster.' : 'Clean, fast wind.';
+    return 'Try ' + worst[0] + '.';
+  }
+
+  const mean = a => a.reduce((x, y) => x + y, 0) / Math.max(a.length, 1);
+  function std(a) { const m = mean(a); return Math.sqrt(mean(a.map(v => (v - m) * (v - m)))); }
+
+  function dedupe(points) {
+    const out = [];
+    for (const p of points) {
+      const q = out[out.length - 1];
+      if (!q || Math.hypot(p.x - q.x, p.y - q.y) > 0.5) out.push(p);
+    }
+    return out;
+  }
+
+  /* applyWind(spec, launch) -> spec
+   * Folds the wind into a built top. The wind's imbalance stacks on top of the
+   * imbalance the player built with counterweights, so a wild build wound badly
+   * is genuinely feral.
+   */
+  function applyWind(SIM, spec, launch) {
+    const imb = Math.min(0.42, spec.imb + launch.windImb);
+    const base = { drive: spec.drive / (1 + SIM.K.imbDrive * spec.imb),
+                   stamina: spec.stamina / (1 - 0.42 * spec.imb) };
+    return Object.assign({}, spec, {
+      imb,
+      imbAng: launch.windImb > spec.imb ? launch.windImbAng : spec.imbAng,
+      drive: base.drive * (1 + SIM.K.imbDrive * imb),
+      stamina: base.stamina * (1 - 0.42 * imb),
+      dir: launch.dir
+    });
+  }
+
+  return { W, grade, fitCircle, applyWind };
+});
+</script>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const NAMES=Object.keys(SIM.ARCHETYPES);
+
+// ---------------------------------------------------------------- build state
+const cfg=Object.assign({},SIM.ARCHETYPES.balance);
+delete cfg.weights;
+let holes=SIM.RINGS.map(()=>new Array(SIM.HOLES).fill(0));
+let trigger='charged';
+let cosm={finish:'anod',decal:'stripe',trail:'rope',launcher:'ripcord'};
+let roleFilter='all';
+let rung=0;                     // index into LADDER — how far up you have got
+let facing=0;                   // which rung you are currently fighting
+// Parts come from winning. No currency, no shop, no wallet — ever.
+const STARTER=['iron','moth','wheel','crest','none','wing','3-60','4-80','point','spool',
+               'chip','slug','brick'];
+const unlocked=new Set(STARTER);
+
+const ROLE_HEX={attack:'#C4442B',stamina:'#7FA650',defense:'#7E8B92',balance:'#C9A227',utility:'#9A6FB0'};
+const TRAIL_HEX={none:'#C9A227',ember:'#C4442B',frost:'#9FC7D6',rope:'#C9A227',
+                 ink:'#8C86A8',jade:'#7FA650',violet:'#9A6FB0'};
+const weightCount=()=>holes.reduce((n,r)=>n+r.filter(v=>v>0).length,0);
+function currentCfg(){
+  const weights=[];
+  holes.forEach((ring,ri)=>ring.forEach((v,i)=>{
+    if(v>0)weights.push({id:SIM.WEIGHTS[v].id,hole:i,ring:ri});}));
+  return Object.assign({},cfg,{weights:weights.slice(0,SIM.MAX_WEIGHTS)});
+}
+const currentSpec=()=>SIM.build(currentCfg());
+
+// ---------------------------------------------------------------- workshop
+const SLOTS=[['core','Core',SIM.CORES],['blade','Blade',SIM.BLADES],['assist','Assist',SIM.ASSISTS],
+             ['ratchet','Ratchet',SIM.RATCHETS],['bit','Bit',SIM.BITS]];
+const TRIG_LABEL={charged:'charged',lowSpin:'low spin',thirdHit:'3rd hit',onRidge:'on rail',behind:'behind'};
+
+const isLocked=it=>it&&it.id&&!unlocked.has(it.id)&&
+  [SIM.CORES,SIM.BLADES,SIM.ASSISTS,SIM.RATCHETS,SIM.BITS].some(l=>l.some(p=>p.id===it.id));
+function railRow(label,items,isOn,onPick,klass){
+  const d=document.createElement('div');d.className='slot'+(klass?' '+klass:'');
+  d.innerHTML='<label>'+label+'</label>';
+  const r=document.createElement('div');r.className='rail';
+  for(const it of items){
+    const b=document.createElement('button');
+    const locked=isLocked(it);
+    b.className='chip'+(isOn(it)?' on':'')+(locked?' lock':'');
+    b.innerHTML=(it.role?'<span class="dot" style="background:'+ROLE_HEX[it.role]+'"></span>':'')+(it.name||it);
+    if(locked) b.addEventListener('click',()=>{
+      $('benchOut').textContent='Locked — win it off a ladder opponent.';});
+    else b.addEventListener('click',()=>{onPick(it);buildSlots();refresh();});
+    r.appendChild(b);
+  }
+  d.appendChild(r);return d;
+}
+function buildRoles(){
+  const host=$('roles');host.innerHTML='';
+  for(const r of ['all'].concat(SIM.ROLES)){
+    const b=document.createElement('button');
+    b.className='rf'+(roleFilter===r?' on':'');b.dataset.r=r;
+    b.innerHTML=(r==='all'?'':'<span class="dot" style="background:'+ROLE_HEX[r]+'"></span>')+r;
+    b.addEventListener('click',()=>{roleFilter=r;buildSlots();});
+    host.appendChild(b);
+  }
+}
+function buildSlots(){
+  buildRoles();
+  const host=$('slots');host.innerHTML='';
+  for(const [key,label,list] of SLOTS){
+    // The fitted part always stays visible, even when the filter excludes it,
+    // so filtering can never hide what you are actually running.
+    const shown=list.filter(p=>roleFilter==='all'||p.role===roleFilter||p.id===cfg[key]);
+    host.appendChild(railRow(label+' <em>'+shown.length+'</em>',shown,
+      p=>cfg[key]===p.id,p=>{cfg[key]=p.id;}));
+  }
+  const ab=SIM.CORES.find(c=>c.id===cfg.core).ability;
+  $('trig').innerHTML='';
+  $('trig').appendChild(railRow('Fire <em>'+ab+'</em> when',
+    SIM.TRIGGERS.map(t=>({id:t,name:TRIG_LABEL[t]})),
+    t=>trigger===t.id,t=>{trigger=t.id;}));
+  const looks=$('looks');looks.innerHTML='';
+  looks.appendChild(railRow('Finish',SIM.FINISHES,f=>cosm.finish===f.id,f=>{cosm.finish=f.id;},'cosmetic'));
+  looks.appendChild(railRow('Decal',SIM.DECALS.map(d=>({id:d,name:d})),d=>cosm.decal===d.id,d=>{cosm.decal=d.id;},'cosmetic'));
+  looks.appendChild(railRow('Trail',SIM.TRAILS.map(t=>({id:t,name:t})),t=>cosm.trail===t.id,t=>{cosm.trail=t.id;},'cosmetic'));
+  looks.appendChild(railRow('Launcher',SIM.LAUNCHERS.map(l=>({id:l,name:l})),l=>cosm.launcher===l.id,l=>{cosm.launcher=l.id;},'cosmetic'));
+  summaries();
+}
+function summaries(){
+  const s=currentSpec();
+  $('buildSum').textContent=[cfg.blade,cfg.bit].join(' · ');
+  $('tuneSum').textContent=weightCount()+' weights · '+(s.imb*100).toFixed(0)+'% wobble';
+  $('lookSum').textContent=cosm.finish+' · '+cosm.decal;
+}
+
+const dial=$('dial'), dc=dial.getContext('2d');
+dial.addEventListener('click',e=>{
+  const r=dial.getBoundingClientRect();
+  const x=(e.clientX-r.left)/r.width*300-150, y=(e.clientY-r.top)/r.height*300-150;
+  const d=Math.hypot(x,y); if(d<26||d>132)return;
+  const ring=d<72?0:1;
+  let a=Math.atan2(y,x); if(a<0)a+=Math.PI*2;
+  const i=Math.round(a/(Math.PI*2/SIM.HOLES))%SIM.HOLES;
+  const next=(holes[ring][i]+1)%SIM.WEIGHTS.length;
+  if(next>0&&holes[ring][i]===0&&weightCount()>=SIM.MAX_WEIGHTS){
+    $('benchOut').textContent='Only '+SIM.MAX_WEIGHTS+' weights fit. Clear one first.';return;}
+  holes[ring][i]=next;refresh();
+});
+
+function drawDial(){
+  const s=currentSpec(), c=150, R=118;
+  dc.clearRect(0,0,300,300);
+  const g=dc.createRadialGradient(c,c,18,c,c,R);
+  g.addColorStop(0,'#3C2F25');g.addColorStop(1,'#241C17');
+  dc.fillStyle=g;dc.beginPath();dc.arc(c,c,R,0,7);dc.fill();
+  dc.strokeStyle='rgba(237,230,216,.28)';dc.lineWidth=2;
+  dc.beginPath();dc.arc(c,c,R,0,7);dc.stroke();
+  const bl=SIM.BLADES.find(b=>b.id===cfg.blade);
+  const teeth=Math.round(3+bl.sharp*7);
+  dc.strokeStyle='#7E8B92';dc.lineWidth=3;
+  for(let i=0;i<teeth;i++){const a=i*Math.PI*2/teeth;
+    dc.beginPath();dc.moveTo(c+Math.cos(a)*(R-13),c+Math.sin(a)*(R-13));
+    dc.lineTo(c+Math.cos(a)*(R+5),c+Math.sin(a)*(R+5));dc.stroke();}
+  const RR=[50,96], HR=[13,16];
+  for(let ri=0;ri<SIM.RINGS.length;ri++){
+    dc.strokeStyle='rgba(237,230,216,.07)';dc.lineWidth=1;
+    dc.beginPath();dc.arc(c,c,RR[ri],0,7);dc.stroke();
+    for(let i=0;i<SIM.HOLES;i++){
+      const a=i*Math.PI*2/SIM.HOLES, hx=c+Math.cos(a)*RR[ri], hy=c+Math.sin(a)*RR[ri];
+      const v=holes[ri][i];
+      dc.beginPath();dc.arc(hx,hy,HR[ri],0,7);
+      if(v===0){dc.strokeStyle='rgba(237,230,216,.24)';dc.lineWidth=1.5;
+        dc.setLineDash([3,3]);dc.stroke();dc.setLineDash([]);}
+      else{dc.fillStyle='#C9A227';dc.globalAlpha=.32+.22*v;dc.fill();dc.globalAlpha=1;
+        dc.fillStyle='#241C17';dc.font='700 '+(ri?11:10)+'px ui-sans-serif,system-ui';
+        dc.textAlign='center';dc.textBaseline='middle';
+        dc.fillText(String(Math.round(SIM.WEIGHTS[v].mass*10000)/10),hx,hy);}
+    }
+  }
+  if(s.imb>0.004){
+    const L=26+s.imb*250;
+    dc.strokeStyle='#C4442B';dc.lineWidth=4;dc.lineCap='round';
+    dc.beginPath();dc.moveTo(c,c);dc.lineTo(c+Math.cos(s.imbAng)*L,c+Math.sin(s.imbAng)*L);dc.stroke();
+    dc.fillStyle='#C4442B';dc.beginPath();
+    dc.arc(c+Math.cos(s.imbAng)*L,c+Math.sin(s.imbAng)*L,6,0,7);dc.fill();
+  }
+  dc.fillStyle='rgba(237,230,216,.9)';dc.beginPath();dc.arc(c,c,7,0,7);dc.fill();
+}
+function drawStats(){
+  const s=currentSpec();
+  const rows=[['spin',s.stamina/1.6,s.stamina.toFixed(2)],
+              ['travel',s.drive/2.4,s.drive.toFixed(2)],
+              ['smash',s.smash/1.6,s.smash.toFixed(2)],
+              ['guard',s.absorb/2.0,s.absorb.toFixed(2)],
+              ['lock',s.burstResist/1.6,s.burstResist.toFixed(2)],
+              ['rail',s.dash/1.9,s.dash.toFixed(2)],
+              ['inertia',s.I/2.4e-5,(s.I*1e6).toFixed(1)],
+              ['wobble',s.imb/0.30,(s.imb*100).toFixed(0),1]];
+  $('stats').innerHTML=rows.map(([k,v,t,w])=>
+    `<div class="stat"><span>${k}</span><span class="bar${w?' warn':''}"><i style="width:${Math.max(2,Math.min(100,v*100))}%"></i></span><span class="v">${t}</span></div>`).join('');
+}
+function refresh(){drawDial();drawStats();summaries();
+  $('benchOut').textContent=weightCount()+'/'+SIM.MAX_WEIGHTS+' weights fitted.';}
+
+$('openWs').addEventListener('click',()=>{$('sheet').classList.add('up');refresh();});
+$('closeWs').addEventListener('click',()=>$('sheet').classList.remove('up'));
+// Step back down the ladder to practise against anyone already beaten.
+$('cycleFoe').addEventListener('click',()=>{
+  facing=(facing+1)%(rung+1);updateVs();});
+function opp(){return LADDER[Math.min(facing,LADDER.length-1)];}
+function updateVs(){
+  const o=opp();
+  $('vs').innerHTML='vs '+o.name+'<br>rung '+o.rung+' / '+LADDER.length+' · '+o.role;
+}
+function oppSpec(){
+  const o=opp();
+  return SIM.build(Object.assign({},o.build,{dir:Math.random()<.5?1:-1}));
+}
+function awardDrop(){
+  const o=opp();
+  if(unlocked.has(o.drop.id)){return null;}
+  unlocked.add(o.drop.id);
+  const list={core:SIM.CORES,blade:SIM.BLADES,assist:SIM.ASSISTS,ratchet:SIM.RATCHETS,bit:SIM.BITS}[o.drop.slot];
+  const part=list.find(p=>p.id===o.drop.id);
+  return (part?part.name:o.drop.id)+' · '+o.drop.slot;
+}
+function showUnlock(txt){
+  $('unlockName').textContent=txt;
+  const u=$('unlock');u.classList.add('show');
+  setTimeout(()=>u.classList.remove('show'),2200);
+}
+
+$('run').addEventListener('click',()=>{
+  $('benchOut').textContent='running…';
+  setTimeout(()=>{
+    const me=currentCfg(), o=opp();
+    let w=0,n=0,c={},dur=0;
+    for(let i=0;i<220;i++){
+      const rnd=SIM.mulberry(i*7919+3);
+      const A=SIM.build(Object.assign({},me,{dir:1}));
+      const B=SIM.build(Object.assign({},o.build,{dir:i%2?-1:1}));
+      const r=SIM.resolveMatch(A,B,{rnd,
+        a:{angle:rnd()*6.283,power:.96+rnd()*.08,lean:.03+rnd()*.04,phase:rnd()*6.283,trigger},
+        b:{angle:rnd()*6.283,power:.96+rnd()*.08,lean:.03+rnd()*.04,phase:rnd()*6.283}});
+      if(r.winner==='a'){w++;c[r.cause]=(c[r.cause]||0)+1;}
+      n++;dur+=r.duration;
+    }
+    const top=Object.entries(c).sort((a,b)=>b[1]-a[1])[0];
+    $('benchOut').innerHTML=`<b>${(100*w/n).toFixed(0)}%</b> vs ${o.name} · ${(dur/n).toFixed(1)}s`+
+      (top?` · mostly ${top[0]}`:'');
+  },16);
+});
+
+// ---------------------------------------------------------------- arena
+const cv=$('cv'), ctx=cv.getContext('2d');
+let W=0,H=0;
+function resize(){const d=Math.min(devicePixelRatio||1,2);
+  W=cv.clientWidth;H=cv.clientHeight;cv.width=W*d;cv.height=H*d;ctx.setTransform(d,0,0,d,0,0);}
+addEventListener('resize',resize);
+const CX=()=>W/2, CY=()=>H/2, RAD=()=>Math.min(W,H)*0.44;
+
+let phase='wind',stroke=[],graded=null,lastGrade=null;
+let A=null,B=null,acc=0,last=performance.now(),pa=0,pb=0,flash=0,flashTxt='';
+// live winding state, so the player can see how far round they are
+let liveTurn=0,lastAng=0,winding=false;
+const WANT=3, OVER=WANT*1.45;
+
+function chrome(on){
+  $('top').classList.toggle('hide',!on);
+  $('dock').classList.toggle('hide',!on);
+  $('hint').style.opacity=on?1:0;
+  $('laps').style.opacity=on?1:0;
+}
+function setLaps(n){
+  const el=$('lapNum'), msg=$('lapMsg');
+  el.textContent=n.toFixed(1);
+  el.classList.toggle('ready',n>=WANT*0.9&&n<=OVER);
+  el.classList.toggle('over',n>OVER);
+  msg.textContent = n>OVER ? 'over-wound — string bunching'
+                  : n>=WANT*0.9 ? 'release'
+                  : n<0.2 ? 'of 3 winds'
+                  : 'keep going';
+}
+function resetRound(){phase='wind';stroke=[];graded=null;A=B=null;
+  liveTurn=0;winding=false;setLaps(0);
+  $('card').classList.remove('up');chrome(true);
+  $('hint').textContent='Trace the ring — three times around';}
+
+function pt(e){const r=cv.getBoundingClientRect();
+  return {x:e.clientX-r.left-CX(),y:e.clientY-r.top-CY(),t:performance.now()};}
+cv.addEventListener('pointerdown',e=>{if(phase!=='wind')return;
+  cv.setPointerCapture(e.pointerId);
+  const p=pt(e);stroke=[p];
+  liveTurn=0;lastAng=Math.atan2(p.y,p.x);winding=true;setLaps(0);
+  $('card').classList.remove('up');$('hint').style.opacity=0;});
+cv.addEventListener('pointermove',e=>{
+  if(phase!=='wind'||!stroke.length)return;
+  const p=pt(e);stroke.push(p);
+  const a=Math.atan2(p.y,p.x);
+  let d=a-lastAng;
+  while(d>Math.PI)d-=Math.PI*2;
+  while(d<-Math.PI)d+=Math.PI*2;
+  liveTurn+=d;lastAng=a;
+  setLaps(Math.abs(liveTurn)/(Math.PI*2));
+});
+cv.addEventListener('pointerup',()=>{
+  winding=false;
+  if(phase!=='wind'||stroke.length<10){setLaps(0);return;}
+  graded=WIND.grade(stroke);lastGrade=graded;showCard(graded);
+  $('laps').style.opacity=0;$('hint').style.opacity=0;});
+cv.addEventListener('pointercancel',()=>{stroke=[];winding=false;setLaps(0);});
+
+function showCard(g){
+  $('gl').textContent=g.grade;
+  $('gl').style.color=g.quality>.75?'var(--good)':g.quality>.45?'var(--rope)':'var(--ember)';
+  $('note').textContent=g.note;
+  $('sub').textContent=g.ok?`${g.laps.toFixed(1)} laps · ${g.dir>0?'right':'left'} spin · ${(g.launch.power*100).toFixed(0)}% power`:'—';
+  const rows=[['round',g.roundness],['even',g.even],['stacked',g.concentric],
+              ['speed',g.speed],['wobble',Math.min(1,g.launch.windImb/WIND.W.imbMax)]];
+  $('bars').innerHTML=rows.map(([k,v])=>
+    `<div class="stat"><span>${k}</span><span class="bar${k==='wobble'?' warn':''}"><i style="width:${Math.round((v||0)*100)}%"></i></span><span class="v">${Math.round((v||0)*100)}</span></div>`).join('');
+  $('card').classList.add('up');
+}
+
+$('go').addEventListener('click',()=>{
+  if(phase==='play')return;
+  if(phase==='over'){pa=pb=0;$('score').innerHTML='0 — 0<small>first to 4</small>';resetRound();return;}
+  if(!graded){$('hint').textContent='Wind it first — draw 3 circles.';$('hint').style.opacity=1;return;}
+  const L=graded.launch;
+  const mine=WIND.applyWind(SIM,currentSpec(),L);
+  const fw={power:1.02,dir:Math.random()<.5?1:-1,lean:.034,windImb:.01,windImbAng:0,phase:Math.random()*6.283};
+  const foe=WIND.applyWind(SIM,oppSpec(),fw);
+  const ang=Math.random()*6.283;
+  A=SIM.spawn(mine,{angle:ang,power:L.power,lean:L.lean,phase:L.phase,trigger});
+  B=SIM.spawn(foe,{angle:ang+Math.PI,power:fw.power,lean:fw.lean,phase:fw.phase,
+                   trigger:opp().build.trigger||'charged'});
+  phase='play';acc=0;$('card').classList.remove('up');chrome(false);
+});
+
+function endRound(){
+  let win=null,cause='timeout';
+  if(A.alive&&!B.alive){win='a';cause=B.cause;}
+  else if(B.alive&&!A.alive){win='b';cause=A.cause;}
+  else if(!A.alive&&!B.alive){cause='double';}
+  else win=Math.abs(A.w)>Math.abs(B.w)?'a':'b';
+  const pts={spinout:1,ringout:2,knockout:2,burst:2,timeout:1,double:0}[cause]||1;
+  if(win==='a')pa+=pts;else if(win==='b')pb+=pts;
+  $('score').innerHTML=pa+' — '+pb+'<small>first to 4</small>';
+  flash=1.7;flashTxt=cause==='double'?'DOUBLE OUT':(win==='a'?'YOU ':'THEY ')+cause.toUpperCase()+' +'+pts;
+  phase='done';
+  setTimeout(()=>{
+    if(pa>=4||pb>=4){
+      chrome(true);
+      if(pa>=4){
+        const won=awardDrop();
+        if(facing===rung&&rung<LADDER.length-1){rung++;facing=rung;}
+        updateVs();buildSlots();
+        $('hint').textContent=won?'Beat '+LADDER[Math.max(0,facing-1)].name+' — next up '+opp().name
+                                 :'Match won — next up '+opp().name;
+        if(won)showUnlock(won);
+      } else {
+        $('hint').textContent='They take the match — Launch to try again';
+      }
+      phase='over';}
+    else {resetRound(); if(lastGrade)showCard(lastGrade);}
+  },1500);
+}
+
+function frame(now){
+  requestAnimationFrame(frame);
+  const dt=Math.min(.05,(now-last)/1000);last=now;
+  if(!W)resize();
+  if(phase==='play'){
+    acc+=dt;let n=0;
+    while(acc>SIM.K.dt&&n<8){
+      SIM.stepTop(A,SIM.K.dt);SIM.stepTop(B,SIM.K.dt);SIM.collide(A,B,Math.random);
+      if(A.abilityUsed===0&&SIM.triggerReady(A,B))SIM.fire(A,B);
+      if(B.abilityUsed===0&&SIM.triggerReady(B,A))SIM.fire(B,A);
+      acc-=SIM.K.dt;n++;
+      if(!A.alive||!B.alive){endRound();break;}
+    }
+  }
+  if(flash>0)flash-=dt;
+  ctx.clearRect(0,0,W,H);
+  drawArena();
+  if(phase!=='play'){drawTarget();drawStroke();}
+  if(A)drawTop(A,TRAIL_HEX[cosm.trail]||'#C9A227');
+  if(B)drawTop(B,'#7E8B92');
+  if(flash>0){ctx.globalAlpha=Math.min(1,flash);ctx.fillStyle='#EDE6D8';ctx.textAlign='center';
+    ctx.font='700 18px ui-sans-serif,system-ui';
+    ctx.fillText(flashTxt,CX(),CY()-RAD()-14);ctx.globalAlpha=1;}
+}
+
+function drawArena(){
+  const r=RAD(),cx=CX(),cy=CY();
+  const g=ctx.createRadialGradient(cx,cy,r*.08,cx,cy,r);
+  g.addColorStop(0,'#31261E');g.addColorStop(.82,'#241C17');g.addColorStop(1,'#191210');
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,r,0,7);ctx.fill();
+  // the rail: a machined band, visibly not dish floor
+  ctx.strokeStyle='rgba(201,162,39,.20)';ctx.lineWidth=r*(1-SIM.K.ridgeAt);
+  ctx.beginPath();ctx.arc(cx,cy,r*(1+SIM.K.ridgeAt)/2,0,7);ctx.stroke();
+  ctx.strokeStyle='rgba(196,68,43,.55)';ctx.lineWidth=5;
+  for(let i=0;i<SIM.K.pockets;i++){const a=i*Math.PI*2/SIM.K.pockets;
+    ctx.beginPath();ctx.arc(cx,cy,r*.995,a-.25,a+.25);ctx.stroke();}
+  ctx.strokeStyle='rgba(237,230,216,.26)';ctx.lineWidth=2;
+  ctx.beginPath();ctx.arc(cx,cy,r,0,7);ctx.stroke();
+}
+function drawTarget(){
+  // The winding track. Three concentric lanes, one per lap, so "how far round
+  // am I" is answered by the picture instead of by a number you have to read.
+  const cx=CX(),cy=CY(),base=RAD()*.46,gap=RAD()*.055;
+  const laps=Math.abs(liveTurn)/(Math.PI*2);
+  const dir=liveTurn<0?-1:1;
+  for(let lane=0;lane<WANT;lane++){
+    const r=base+lane*gap;
+    ctx.strokeStyle='rgba(237,230,216,.10)';ctx.lineWidth=gap*.55;
+    ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();
+    const fill=Math.max(0,Math.min(1,laps-lane));
+    if(fill>0){
+      ctx.strokeStyle=laps>OVER?'rgba(196,68,43,.85)'
+                     :laps>=WANT*0.9?'rgba(127,166,80,.9)':'rgba(201,162,39,.9)';
+      ctx.lineWidth=gap*.55;ctx.lineCap='round';
+      ctx.beginPath();
+      ctx.arc(cx,cy,r,-Math.PI/2,-Math.PI/2+dir*fill*Math.PI*2,dir<0);
+      ctx.stroke();ctx.lineCap='butt';
+    }
+  }
+  // start marker, so there is an obvious place to put your finger down
+  if(!winding){
+    const sy=cy-base;
+    ctx.fillStyle='rgba(237,230,216,.85)';
+    ctx.beginPath();ctx.arc(cx,sy,7,0,7);ctx.fill();
+    ctx.fillStyle='rgba(237,230,216,.55)';
+    ctx.font='9px ui-sans-serif,system-ui';ctx.textAlign='center';
+    ctx.fillText('START',cx,sy-14);
+  }
+  // the top you are winding
+  ctx.fillStyle='rgba(201,162,39,.9)';ctx.beginPath();ctx.arc(cx,cy,14,0,7);ctx.fill();
+  ctx.fillStyle='rgba(25,18,16,.9)';ctx.beginPath();ctx.arc(cx,cy,5,0,7);ctx.fill();
+}
+function drawStroke(){
+  if(stroke.length<2)return;
+  const cx=CX(),cy=CY();ctx.lineJoin=ctx.lineCap='round';
+  ctx.strokeStyle=graded?'rgba(237,230,216,.45)':'rgba(237,230,216,.88)';
+  ctx.lineWidth=graded?2:3.5;
+  ctx.beginPath();ctx.moveTo(cx+stroke[0].x,cy+stroke[0].y);
+  for(let i=1;i<stroke.length;i++)ctx.lineTo(cx+stroke[i].x,cy+stroke[i].y);
+  ctx.stroke();
+  if(!graded||!graded.fit)return;
+  const f=graded.fit;
+  ctx.setLineDash([3,6]);ctx.strokeStyle='rgba(127,166,80,.8)';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.arc(cx+f.cx,cy+f.cy,f.r,0,7);ctx.stroke();ctx.setLineDash([]);
+  const a=graded.launch.windImbAng;
+  ctx.strokeStyle='#C4442B';ctx.lineWidth=3.5;
+  ctx.beginPath();ctx.arc(cx+f.cx,cy+f.cy,f.r,a-.22,a+.22);ctx.stroke();
+}
+function drawTop(o,color){
+  const s=RAD()/SIM.K.arenaR, cx=CX()+o.x*s, cy=CY()+o.z*s, rr=o.spec.R*s;
+  const th=Math.hypot(o.lx,o.lz), ux=th>1e-9?o.lx/th:0, uz=th>1e-9?o.lz/th:0;
+  const tilt=th/SIM.K.thetaMax, ox=ux*rr*tilt*1.6, oy=uz*rr*tilt*1.6;
+  ctx.fillStyle='rgba(0,0,0,.45)';
+  ctx.beginPath();ctx.ellipse(cx,cy,rr*.7,rr*.5,0,0,7);ctx.fill();
+  if(!o.alive){ctx.strokeStyle='rgba(237,230,216,.22)';ctx.lineWidth=2;
+    ctx.beginPath();ctx.ellipse(cx+ox*2,cy+oy*2,rr,rr*.35,Math.atan2(uz,ux),0,7);ctx.stroke();return;}
+  const life=Math.min(1,Math.abs(o.w)/SIM.K.launchSpin);
+  ctx.strokeStyle=color;ctx.globalAlpha=.35+.55*life;ctx.lineWidth=Math.max(2,rr*.55*life);
+  ctx.beginPath();ctx.ellipse(cx+ox,cy+oy,rr,rr*(1-.35*tilt),Math.atan2(uz,ux),0,7);ctx.stroke();
+  ctx.globalAlpha=1;
+  if(o.spec.imb>.02){const a=o.phase*.5+o.spec.imbAng;
+    ctx.fillStyle='#C4442B';ctx.beginPath();
+    ctx.arc(cx+ox+Math.cos(a)*rr,cy+oy+Math.sin(a)*rr,Math.max(2,rr*.22),0,7);ctx.fill();}
+  ctx.fillStyle='rgba(237,230,216,.9)';
+  ctx.beginPath();ctx.arc(cx+ox,cy+oy,Math.max(1.5,rr*.18),0,7);ctx.fill();
+}
+
+for(const id of ['accBuild','accTune','accLooks'])
+  $(id).addEventListener('toggle',function(){
+    if(this.open)['accBuild','accTune','accLooks'].forEach(o=>{if(o!==id)$(o).open=false;});
+    if(id==='accTune'&&this.open)refresh();
+  });
+buildSlots();refresh();updateVs();resetRound();resize();requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
