@@ -61,7 +61,7 @@ def mats_for(tier):
     steel = mat('lw_steel', (0.52, 0.54, 0.58), 1.0, 0.32)
     accent = { 'stock':  mat('lw_accent_stock',  (0.22, 0.36, 0.55), 0.6, 0.40),
                'forged': mat('lw_accent_forged', (0.62, 0.45, 0.18), 1.0, 0.35),
-               'relic':  mat('lw_accent_relic',  (0.30, 0.20, 0.14), 0.8, 0.55),
+               'relic':  mat('lw_accent_relic',  (0.15, 0.11, 0.08), 0.9, 0.45),
              }.get(tier, mat('lw_accent_stock', (0.22, 0.36, 0.55), 0.6, 0.40))
     dark = mat('lw_dark', (0.09, 0.09, 0.10), 0.4, 0.7)
     return steel, accent, dark
@@ -132,7 +132,7 @@ def build_blade(p):
        so the pairing still reads)."""
     R, teeth, fam = p['radiusMm'], p['teeth'], p['family']
     t = 2.5 + (p['mass'] / 0.028) * 3.0            # thickness from mass
-    segs = max(48, min(96, 6 * teeth))
+    segs = max(44, min(80, 5 * teeth))
     prof = []
     for i in range(segs):
         u = (i / segs) * teeth * 2 * math.pi
@@ -143,16 +143,18 @@ def build_blade(p):
             prof.append(R * (1.0 - 0.09 * (0.5 + 0.5*math.sin(u))))
         else:
             prof.append(R)
+    prof = [x * (R / max(prof)) for x in prof]         # a sampled trough is
+    # phase luck; the rim must touch the catalogue radius exactly
     ob = new_obj('blade_' + p['id'])
     bm = bmesh.new()
     washer(bm, prof, 8.0, 0.0, t)                          # body; bore dia 16
-    washer(bm, [M['bossDia']/2] * 24, 8.6, -2.0, 0.0)      # boss: a real annulus
-    washer(bm, [10.6] * 24, 8.6, t, t + 0.7)               # raised hub ring on the face
+    washer(bm, [M['bossDia']/2] * 16, 8.6, -2.0, 0.0)      # boss: a real annulus
+    washer(bm, [10.6] * 16, 8.6, t, t + 0.7)               # raised hub ring on the face
     for ring in M['holeRings']:                            # weight hole hints
         for k in range(M['holesPerRing']):
             a = 2*math.pi*k/M['holesPerRing']
             hr, hx, hy = M['weightHoleDia']/2, math.cos(a)*R*ring, math.sin(a)*R*ring
-            tube(bm, hr, -0.25, 0.0, n=8, cap0=True, cap1=False, cx=hx, cy=hy)
+            tube(bm, hr, -0.25, 0.0, n=6, cap0=True, cap1=False, cx=hx, cy=hy)
     commit(bm, ob)
     steel, accent, dark = mats_for(p['tier'])
     tris = finish(ob, p['id'], steel, accent, lambda po: abs(po.center.z - t) < .01 and (po.center.length < R*0.62),
@@ -211,7 +213,7 @@ def build_assist(p):
     washer(bm, prof, 11.0, -h, 0.0)
     commit(bm, ob)
     steel, accent, dark = mats_for(p['tier'])
-    tris = finish(ob, p['id'], steel if fam != 'smooth' else mat('lw_polish', (0.75, 0.76, 0.78), 1.0, 0.08), accent)
+    tris = finish(ob, p['id'], steel if fam != 'smooth' else mat('lw_polish', (0.80, 0.81, 0.84), 0.85, 0.20), accent)
     return ob, tris, {'r_out': r_out, 'h': h}
 
 def build_ratchet(p):
@@ -230,7 +232,7 @@ def build_ratchet(p):
         # centred so they bite INTO the body: the first pass floated them
         # 0.2mm clear of the wall, three studs orbiting a pillbox
         tx, ty = math.cos(a)*6.4, math.sin(a)*6.4
-        tube(bm, 0.85, -0.2, -min(h*0.75, 2.8), n=6, cap0=True, cap1=True, cx=tx, cy=ty)
+        tube(bm, 0.85, -0.2, -min(h*0.75, 2.8), n=5, cap0=True, cap1=True, cx=tx, cy=ty)
     commit(bm, ob)
     steel, accent, dark = mats_for(p['tier'])
     tris = finish(ob, p['id'], steel, accent, lambda po: (po.center.xy.length > M['ratchetRingDia']/2 - 1.2) and po.center.z > -2.6)
@@ -256,10 +258,10 @@ def build_bit(p):
     else:  # cogs
         tube(bm, 4.2, z_col, -L + 1.2, n=24, cap0=False, cap1=False)
         tube(bm, 4.2, -L + 1.2, -L, n=24, cap0=False, cap1=True, r1=2.2)
-        for k in range(10):                                                     # the rail cogs
-            a = 2*math.pi*k/10
+        for k in range(8):                                                      # the rail cogs
+            a = 2*math.pi*k/8
             cx, cy = math.cos(a)*4.8, math.sin(a)*4.8
-            tube(bm, 0.7, -L + 3.4, -L + 0.8, n=6, cap0=True, cap1=True, cx=cx, cy=cy)
+            tube(bm, 0.7, -L + 3.4, -L + 0.8, n=5, cap0=True, cap1=True, cx=cx, cy=cy)
     commit(bm, ob)
     steel, accent, dark = mats_for(p['tier'])
     tipmat = {'sharp': mat('lw_hardened', (0.35, 0.36, 0.40), 0.9, 0.25),
@@ -318,16 +320,26 @@ def validate(slot, p, ob):
     elif slot == 'ratchet':
         c['body height = name/10'] = (abs(-lo_z - p['bodyMm']) < 0.06, '%.2f vs %.1f' % (-lo_z, p['bodyMm']))
         crown = max(1.4, p['bodyMm'] * 0.22)
-        band = [math.atan2(v.co.y, v.co.x) for v in vs
-                if math.hypot(v.co.x, v.co.y) > 6.45 and -2.9 < v.co.z < -(crown + 0.12)]
+        # count teeth STRUCTURALLY: each tooth is its own shell, so teeth =
+        # connected components among the verts in the tooth band. Two
+        # angle-gap thresholds were tried first and both lied (0.45x merged
+        # a 14-tooth ring's 10.7-degree gaps; 0.30x split single teeth).
+        band = set(v.index for v in vs
+                   if math.hypot(v.co.x, v.co.y) > 6.45 and -2.9 < v.co.z < -(crown + 0.12))
         if p['teeth'] == 0:
             c['toothless, as named'] = (len(band) == 0, '%d stray verts' % len(band))
         else:
-            angs = sorted(band)
-            gaps = sum(1 for i in range(len(angs))
-                       if (angs[(i + 1) % len(angs)] - angs[i]) % (2 * math.pi)
-                          > (2 * math.pi / p['teeth']) * 0.45) if angs else 0
-            c['teeth counted = name'] = (gaps == p['teeth'], '%d vs %d' % (gaps, p['teeth']))
+            parent = {i: i for i in band}
+            def find(i):
+                while parent[i] != i:
+                    parent[i] = parent[parent[i]]; i = parent[i]
+                return i
+            for e in ob.data.edges:
+                a, b = e.vertices
+                if a in band and b in band:
+                    parent[find(a)] = find(b)
+            islands = len(set(find(i) for i in band))
+            c['teeth counted = name'] = (islands == p['teeth'], '%d vs %d' % (islands, p['teeth']))
     elif slot == 'bit':
         c['length 12mm, tip on floor'] = (abs(-lo_z - 12.0) < 0.06, '%.2f' % -lo_z)
         shaft_r = max(math.hypot(v.co.x, v.co.y) for v in vs if v.co.z > -5.9)

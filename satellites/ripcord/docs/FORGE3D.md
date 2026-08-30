@@ -88,6 +88,20 @@ budget and re-run the validator on the result; a Meshy mesh that misses
 the mount is a bug like any other. Don't batch-spend credits on stock
 parts a procedural mesh already covers.
 
+## Validation, as of 2026-08-30
+
+`report.json`, measured off the finished meshes: **112 parts, 0 over
+budget, 286/286 mount checks pass.** 46,540 triangles across the whole
+catalogue (cores 5.2k, blades 18.6k, assists 9.6k, ratchets 6.3k, bits
+6.7k, weights 132) — a fully dressed top runs ~1.5-2k, well under the
+brief's 3.5k. Checks that failed along the way and were real: a scallop
+rim 0.14mm short of the catalogue radius (a sampled trough is phase
+luck — profiles are normalised now), and 13 parts over budget before
+the segment trims. Checks that failed and were the CHECK's fault: bore
+measured through the weight-hole hints, and two angle-gap tooth counts
+that lied in both directions before the count became structural
+(connected shells in the tooth band).
+
 ## Not built yet
 
 - 6 launcher meshes/skins (400 tris each; only ever seen on the wind screen)
