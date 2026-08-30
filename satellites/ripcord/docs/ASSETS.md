@@ -56,10 +56,10 @@ comfortable on a mid-range phone at 60fps and leaves room for the trail effects.
 | lash | Lash | lash | left | Ability tell must be legible at 40px while spinning. |
 | lodest | Lodestone | lunge | right | Ability tell must be legible at 40px while spinning. |
 | quench | Quench | brake | left | Ability tell must be legible at 40px while spinning. |
-| ballast | Ballast | scatter | right | Ability tell must be legible at 40px while spinning. |
+| ballast | Trim | scatter | right | Ability tell must be legible at 40px while spinning. |
 | granite | Granite | stoneskin | right | Ability tell must be legible at 40px while spinning. |
 | windlas | Windlass | windup | left | Ability tell must be legible at 40px while spinning. |
-| vise | Vise | bite | left | Ability tell must be legible at 40px while spinning. |
+| vise | Pincer | bite | left | Ability tell must be legible at 40px while spinning. |
 | kite | Kite | tether | left | Ability tell must be legible at 40px while spinning. |
 | reel | Reel | backspin | left | Ability tell must be legible at 40px while spinning. |
 | tinder | Tinder | surge | right | Ability tell must be legible at 40px while spinning. |
@@ -67,7 +67,7 @@ comfortable on a mid-range phone at 60fps and leaves room for the trail effects.
 | bell | Bell | rebound | right | Ability tell must be legible at 40px while spinning. |
 | magpie | Magpie | echo | left | Ability tell must be legible at 40px while spinning. |
 | flint | Flint | overdrive | left | Ability tell must be legible at 40px while spinning. |
-| millst | Millstone | pitch | right | Ability tell must be legible at 40px while spinning. |
+| millst | Cairn | pitch | right | Ability tell must be legible at 40px while spinning. |
 
 ### Blades — 22
 

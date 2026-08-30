@@ -248,6 +248,17 @@ can be disagreed with.
 **Round p10 is still 1.3 seconds.** Your brief flagged it and it is unchanged. A
 small tail of rounds ends almost instantly, probably spawn overlap.
 
+**Two things a player can see must not share a word.** The catalogue shipped
+with three things called Ballast (a core, a ratchet and a rig), three called
+Millstone, two called Ingot, and an assist and a tuning operation both called
+Shim. Every one appears in the workshop. Most of it had a single cause: all ten
+stock ratchets are named by their CODE, because your brief says the name encodes
+the geometry, and the ten new ones arrived with prose names instead. Restoring
+the convention fixed three of the four on its own. There is now a gate. One
+deviation from your brief: the tuning operation "Shim" is called **Pack**,
+because Shim is also one of your assists and the operation's own description
+already says "packs the thread"; say the word and I will put it back.
+
 **A part can pass every balance gate and still be another part with a new name.**
 One Forged blade shipped as a Stock blade renamed, every stat within three
 percent, and it passed everything because it WAS a balanced part. There is now a

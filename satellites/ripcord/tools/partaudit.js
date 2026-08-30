@@ -349,8 +349,35 @@ const CEIL_SPREAD_MAX = 32;
   var DUPES = dupes;
 }
 
+/* NAME COLLISIONS. Two different things a player can see, called the same word.
+ * ⛔ THIS WAS A REAL DEFECT AND IT WAS FOUND BY A REVIEWER, NOT BY A GATE. The
+ * catalogue shipped with THREE things called Ballast, a core, a ratchet and a
+ * rig; three called Millstone; two called Ingot; and an assist and a tuning
+ * operation both called Shim. Every one of them appears in the workshop, and a
+ * player reading "Ballast" in the rig panel and "Ballast" on a part chip has no
+ * way to tell which is which.
+ * Most of it had one cause: all ten stock ratchets are named by their code,
+ * because the brief says the name encodes the geometry, and the ten new ones
+ * arrived with prose names instead. Restoring the convention fixed three of the
+ * four on its own. */
+{
+  const seen = {}, clash = [];
+  const put = (name, what) => {
+    const k = String(name).toLowerCase();
+    (seen[k] = seen[k] || []).push(what);
+  };
+  for (const [slot, list] of SLOTS) for (const p of list) put(p.name, slot + ' ' + p.id);
+  for (const d of SIM.DRAWBACKS) put(d.name, 'drawback ' + d.id);
+  for (const t of SIM.TUNING) put(t.name, 'tuning ' + t.id);
+  try { for (const r of require('../src/rigs.js').LIST) put(r.name, 'rig ' + r.id); } catch (e) {}
+  for (const k in seen) if (seen[k].length > 1) clash.push(seen[k].join(' and '));
+  if (clash.length) console.log('\nNAME COLLISIONS\n   ' + clash.join('\n   '));
+  var CLASH = clash;
+}
+
 const fails = [];
 const weak = [];
+for (const c of CLASH) fails.push('two things share a name: ' + c);
 for (const d of DUPES) fails.push('near duplicate, ' + d);
 for (const slot of Object.keys(results))
   for (const r of results[slot])

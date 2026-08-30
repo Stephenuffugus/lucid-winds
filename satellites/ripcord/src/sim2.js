@@ -89,13 +89,13 @@
     // ---- TIER 2, FORGED. One stat pushed about a quarter past the Tier 1
     //      range, and another pulled back further to pay for it. Not stronger,
     //      more extreme; that is what a tier is in this game.
-    { id: 'ballast', name: 'Ballast', mass: 0.00372, dir: 1, ability: 'scatter', charge: 0.58, role: 'defense', tier: 2,
+    { id: 'ballast', name: 'Trim', mass: 0.00372, dir: 1, ability: 'scatter', charge: 0.58, role: 'defense', tier: 2,
       desc: "A dense trim chip that shuffles your counterweights back into true without giving up a single gram of the mass you paid for." },
     { id: 'granite', name: 'Granite', mass: 0.00392, dir: 1, ability: 'stoneskin', charge: 0.54, role: 'defense', tier: 2,
       desc: "Solid mineral stock that sits heavy on the axis and hardens you against three seconds of punishment, if it ever fills." },
     { id: 'windlas', name: 'Windlass', mass: 0.00404, dir: -1, ability: 'windup', charge: 0.51, role: 'attack', tier: 2,
       desc: "A geared winding chip that stalls you at half travel for a second and a half, then throws you forward at nearly double." },
-    { id: 'vise', name: 'Vise', mass: 0.00496, dir: -1, ability: 'bite', charge: 0.52, role: 'attack', tier: 2,
+    { id: 'vise', name: 'Pincer', mass: 0.00496, dir: -1, ability: 'bite', charge: 0.52, role: 'attack', tier: 2,
       desc: "Heavy jaws at the centre that clamp both rims together for two seconds and strip spin off whatever you are touching." },
     { id: 'kite', name: 'Kite', mass: 0.00104, dir: -1, ability: 'tether', charge: 1.46, role: 'utility', tier: 2,
       desc: "A hollowed chip that weighs almost nothing and fills early enough to hold you out on the rail while the bowl tries to pull you home." },
@@ -114,7 +114,7 @@
       desc: "A hoarding chip that fills faster than anything ever built and throws the last ability used on you straight back, but it will never grind out a win on spin alone." },
     { id: 'flint', name: 'Flint', mass: 0.00070, dir: -1, ability: 'overdrive', charge: 1.28, role: 'attack', tier: 3, drawback: 'coldstart',
       desc: "Barely there at the axis and sullen off the launch, it runs hot for the rest of the round and doubles your travel when it fires." },
-    { id: 'millst', name: 'Millstone', mass: 0.00500, dir: 1, ability: 'pitch', charge: 0.70, role: 'attack', tier: 3, drawback: 'hungry',
+    { id: 'millst', name: 'Cairn', mass: 0.00500, dir: 1, ability: 'pitch', charge: 0.70, role: 'attack', tier: 3, drawback: 'hungry',
       desc: "The heaviest chip in the game grinds spin off everything it touches and can spend a quarter of its own to hurl itself outward." }
   ];
 
@@ -250,28 +250,28 @@
     // ---- TIER 2, FORGED. One stat pushed about a quarter past the Tier 1
     //      range, and another pulled back further to pay for it. Not stronger,
     //      more extreme; that is what a tier is in this game.
-    { id: '0-90', name: 'Spire', mass: 0.00580, height: 90, lock: 0.38, strikeHigh: 1.70, role: 'attack', tier: 2,
+    { id: '0-90', name: '0-90', mass: 0.00580, height: 90, lock: 0.38, strikeHigh: 1.70, role: 'attack', tier: 2,
       desc: "A smooth toothless collar with the strike ring flared out at the crown, so it lands higher than anything else in the box and starts coming apart the moment somebody lands one back." },
-    { id: '11-80', name: 'Belfry', mass: 0.00500, height: 80, lock: 1.46, strikeHigh: 1.20, role: 'attack', tier: 2,
+    { id: '11-80', name: '11-80', mass: 0.00500, height: 80, lock: 1.46, strikeHigh: 1.20, role: 'attack', tier: 2,
       desc: "Eleven teeth on a tall skeleton body, so it hits high and nothing will burst it, but there is almost no metal left in it to soak up a hit." },
-    { id: '11-30', name: 'Deadbolt', mass: 0.00464, height: 30, lock: 1.40, strikeHigh: 0.16, role: 'defense', tier: 2,
+    { id: '11-30', name: '11-30', mass: 0.00464, height: 30, lock: 1.40, strikeHigh: 0.16, role: 'defense', tier: 2,
       desc: "Eleven teeth in a short heavy collar that simply will not come apart, fitted with a strike face buried so far under the blade that it can barely bother anybody." },
-    { id: '0-40', name: 'Ballast', mass: 0.00880, height: 40, lock: 0.29, strikeHigh: 0.58, role: 'defense', tier: 2,
+    { id: '0-40', name: '0-40', mass: 0.00880, height: 40, lock: 0.29, strikeHigh: 0.58, role: 'defense', tier: 2,
       desc: "A solid slug of a collar that shrugs off shoves and sits low, held on a plain thread with no detents in it at all." },
-    { id: '6-30', name: 'Millstone', mass: 0.00880, height: 30, lock: 1.04, strikeHigh: 0.14, role: 'stamina', tier: 2,
+    { id: '6-30', name: '6-30', mass: 0.00880, height: 30, lock: 1.04, strikeHigh: 0.14, role: 'stamina', tier: 2,
       desc: "The heaviest short collar in the workshop, lovely to grind behind and completely unable to reach over anybody." },
-    { id: '11-60', name: 'Latchwork', mass: 0.00510, height: 60, lock: 1.46, strikeHigh: 0.82, role: 'utility', tier: 2,
+    { id: '11-60', name: '11-60', mass: 0.00510, height: 60, lock: 1.46, strikeHigh: 0.82, role: 'utility', tier: 2,
       desc: "A fine eleven tooth ring cut into a drilled out body, unburstable and so light that every hit moves it." },
-    { id: '0-60', name: 'Foundry Sleeve', mass: 0.00880, height: 60, lock: 0.30, strikeHigh: 0.86, role: 'balance', tier: 2,
+    { id: '0-60', name: '0-60', mass: 0.00880, height: 60, lock: 0.30, strikeHigh: 0.86, role: 'balance', tier: 2,
       desc: "A thick cast sleeve at normal height that takes a shove like a wall and comes apart on one clean strike." },
 
     // ---- TIER 3, RELIC. One stat at an extreme, plus a named drawback the
     //      simulation actually enforces. Bosses are the only source.
-    { id: '14-30', name: 'Portcullis', mass: 0.00820, height: 30, lock: 1.70, strikeHigh: 0.14, role: 'defense', tier: 3, drawback: 'looselock',
+    { id: '14-30', name: '14-30', mass: 0.00820, height: 30, lock: 1.70, strikeHigh: 0.14, role: 'defense', tier: 3, drawback: 'looselock',
       desc: "Fourteen coarse teeth in a collar that never seats fully, so it rides very low and very steady while the play in the thread lets it pop." },
-    { id: '2-90', name: 'Weathervane', mass: 0.00602, height: 90, lock: 1.38, strikeHigh: 1.68, role: 'attack', tier: 3, drawback: 'shear',
+    { id: '2-90', name: '2-90', mass: 0.00602, height: 90, lock: 1.38, strikeHigh: 1.68, role: 'attack', tier: 3, drawback: 'shear',
       desc: "A flared crown that strikes above its own height and rings every one of those blows straight back through its own teeth." },
-    { id: '0-50', name: 'Ingot', mass: 0.00960, height: 50, lock: 0.20, strikeHigh: 0.70, role: 'utility', tier: 3, drawback: 'oneshot',
+    { id: '0-50', name: '0-50', mass: 0.00960, height: 50, lock: 0.20, strikeHigh: 0.70, role: 'utility', tier: 3, drawback: 'oneshot',
       desc: "A dead weight of a collar on a thread worn smooth, putting everything it has into the first strike it lands and almost nothing into the rest." }
   ];
 
@@ -461,7 +461,7 @@
     { id: 'knurl',  name: 'Knurl',  slots: ['bit'],    max: 2,
       d: { dash: +0.10, stamina: -0.05 },
       desc: 'Cuts grip into the tip so it bites the rail; the extra friction costs spin.' },
-    { id: 'shim',   name: 'Shim',   slots: ['ratchet'], max: 2,
+    { id: 'shim',   name: 'Pack',   slots: ['ratchet'], max: 2,
       d: { lock: +0.08, height: +2 },
       desc: 'Packs the thread so the teeth sit tight; it also raises the top.' },
     { id: 'drill',  name: 'Drill',  slots: ['blade'],  max: 3,

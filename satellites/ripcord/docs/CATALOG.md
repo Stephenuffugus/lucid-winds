@@ -33,10 +33,10 @@ higher tier lifts the average of whatever it is bolted to.
 | lash | Lash | Stock | attack | 0.0024 | left | lash | 1.05 |  |
 | lodest | Lodestone | Stock | attack | 0.0028 | right | lunge | 1.20 |  |
 | quench | Quench | Stock | utility | 0.0021 | left | brake | 0.80 |  |
-| ballast | Ballast | Forged | defense | 0.0037 | right | scatter | 0.58 |  |
+| ballast | Trim | Forged | defense | 0.0037 | right | scatter | 0.58 |  |
 | granite | Granite | Forged | defense | 0.0039 | right | stoneskin | 0.54 |  |
 | windlas | Windlass | Forged | attack | 0.0040 | left | windup | 0.51 |  |
-| vise | Vise | Forged | attack | 0.0050 | left | bite | 0.52 |  |
+| vise | Pincer | Forged | attack | 0.0050 | left | bite | 0.52 |  |
 | kite | Kite | Forged | utility | 0.0010 | left | tether | 1.46 |  |
 | reel | Reel | Forged | utility | 0.0009 | left | backspin | 1.53 |  |
 | tinder | Tinder | Forged | stamina | 0.0011 | right | surge | 1.42 |  |
@@ -44,7 +44,7 @@ higher tier lifts the average of whatever it is bolted to.
 | bell | Bell | Relic | defense | 0.0045 | right | rebound | 0.72 | looselock |
 | magpie | Magpie | Relic | utility | 0.0008 | left | echo | 1.95 | greedy |
 | flint | Flint | Relic | attack | 0.0007 | left | overdrive | 1.28 | coldstart |
-| millst | Millstone | Relic | attack | 0.0050 | right | pitch | 0.70 | hungry |
+| millst | Cairn | Relic | attack | 0.0050 | right | pitch | 0.70 | hungry |
 
 ## Blades — 22 parts
 
@@ -182,7 +182,7 @@ There is no currency in this game and there is never going to be one.
 | Polish | blade, assist | gear -0.15, rest +0.03, gearMul -0.15, absorb +0.03 | 2 |
 | Wax | bit | stamina +0.06, drive -0.08 | 3 |
 | Knurl | bit | dash +0.1, stamina -0.05 | 2 |
-| Shim | ratchet | lock +0.08, height +2 | 2 |
+| Pack | ratchet | lock +0.08, height +2 | 2 |
 | Drill | blade | mass -0.0008, taken +0.04 | 3 |
 | Bevel | assist | smash +0.05, absorb -0.08 | 2 |
 
