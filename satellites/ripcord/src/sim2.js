@@ -75,16 +75,26 @@
 
   // 1. CORE (lock chip): spin direction, ability, a little centre mass.
   const CORES = [
-    { id: 'ember',  name: 'Ember',  mass: 0.0022, dir:  1, ability: 'surge',     charge: 1.00, role: 'stamina' },
-    { id: 'frost',  name: 'Frost',  mass: 0.0026, dir:  1, ability: 'anchor',    charge: 0.85, role: 'defense' },
-    { id: 'gale',   name: 'Gale',   mass: 0.0018, dir: -1, ability: 'overdrive', charge: 1.10, role: 'attack' },
-    { id: 'iron',   name: 'Iron',   mass: 0.0034, dir:  1, ability: 'rebound',   charge: 0.95, role: 'defense' },
-    { id: 'hollow', name: 'Hollow', mass: 0.00200, dir: -1, ability: 'reversal',  charge: 1.35, role: 'utility' },
-    { id: 'moth',   name: 'Moth',   mass: 0.0016, dir: -1, ability: 'shed',      charge: 0.75, role: 'utility' },
-    { id: 'burr',   name: 'Burr',   mass: 0.0030, dir:  1, ability: 'burrow',    charge: 0.90, role: 'defense' },
-    { id: 'lash',   name: 'Lash',   mass: 0.0024, dir: -1, ability: 'lash',      charge: 1.05, role: 'attack' },
-    { id: 'lodest', name: 'Lodestone', mass: 0.0028, dir: 1, ability: 'lunge',   charge: 1.20, role: 'attack' },
-    { id: 'quench', name: 'Quench', mass: 0.0021, dir: -1, ability: 'brake',     charge: 0.80, role: 'utility' },
+    { id: 'ember',  name: 'Ember',  mass: 0.0022, dir:  1, ability: 'surge',     charge: 1.00, role: 'stamina' ,
+      desc: "A warm brass chip that fills at an ordinary pace and hands you back a hard shove of spin when it goes." },
+    { id: 'frost',  name: 'Frost',  mass: 0.0026, dir:  1, ability: 'anchor',    charge: 0.85, role: 'defense' ,
+      desc: "Heavy enough to feel at the centre and slow to fill, and when it does it stands you up and roots you where you are." },
+    { id: 'gale',   name: 'Gale',   mass: 0.0018, dir: -1, ability: 'overdrive', charge: 1.10, role: 'attack' ,
+      desc: "Almost nothing at the axis and quick to fill, and it doubles how far you travel for two and a half seconds." },
+    { id: 'iron',   name: 'Iron',   mass: 0.0034, dir:  1, ability: 'rebound',   charge: 0.95, role: 'defense' ,
+      desc: "The heaviest stock chip in the case, which loads the tip, and it hands the next strike back half again as hard." },
+    { id: 'hollow', name: 'Hollow', mass: 0.00200, dir: -1, ability: 'reversal',  charge: 1.35, role: 'utility' ,
+      desc: "A cored out chip that fills faster than anything else stock and flips your spin direction outright." },
+    { id: 'moth',   name: 'Moth',   mass: 0.0016, dir: -1, ability: 'shed',      charge: 0.75, role: 'utility' ,
+      desc: "The lightest chip made and slow to fill, and it drops every counterweight you fitted the moment it goes." },
+    { id: 'burr',   name: 'Burr',   mass: 0.0030, dir:  1, ability: 'burrow',    charge: 0.90, role: 'defense' ,
+      desc: "Heavy at the centre and unhurried; it digs the tip in and stops you travelling for nearly three seconds." },
+    { id: 'lash',   name: 'Lash',   mass: 0.0024, dir: -1, ability: 'lash',      charge: 1.05, role: 'attack' ,
+      desc: "A middling chip that turns your next three strikes into biters." },
+    { id: 'lodest', name: 'Lodestone', mass: 0.0028, dir: 1, ability: 'lunge',   charge: 1.20, role: 'attack' ,
+      desc: "Weighted and quick to fill, and it throws you straight at them once." },
+    { id: 'quench', name: 'Quench', mass: 0.0021, dir: -1, ability: 'brake',     charge: 0.80, role: 'utility' ,
+      desc: "Light and slow to fill, and it trades everything left of your travel for spin." },
 
     // ---- TIER 2, FORGED. One stat pushed about a quarter past the Tier 1
     //      range, and another pulled back further to pay for it. Not stronger,
@@ -122,16 +132,26 @@
   //    The budget: sharpness and restitution buy smash, and are paid for in
   //    recoil taken. Wide round blades buy survivability and pay in reach.
   const BLADES = [
-    { id: 'cleaver', name: 'Cleaver', mass: 0.0176, radius: 0.0208, sharp: 1.00, rest: 0.90, gear: 0.95, taken: 1.22, role: 'attack' },
-    { id: 'sabre',   name: 'Sabre',   mass: 0.0150, radius: 0.0222, sharp: 0.78, rest: 0.74, gear: 1.05, taken: 1.08, role: 'attack' },
-    { id: 'orbit',   name: 'Orbit',   mass: 0.0144, radius: 0.0242, sharp: 0.22, rest: 0.40, gear: 0.28, taken: 0.64, role: 'stamina' },
-    { id: 'bulwark', name: 'Bulwark', mass: 0.0166, radius: 0.0246, sharp: 0.34, rest: 0.30, gear: 0.34, taken: 0.90, role: 'defense' },
-    { id: 'talon',   name: 'Talon',   mass: 0.0132, radius: 0.0224, sharp: 0.88, rest: 0.82, gear: 1.40, taken: 1.16, role: 'attack' },
-    { id: 'wheel',   name: 'Wheel',   mass: 0.0158, radius: 0.0238, sharp: 0.45, rest: 0.52, gear: 0.62, taken: 0.92, role: 'balance' },
-    { id: 'shard',   name: 'Shard',   mass: 0.0118, radius: 0.0204, sharp: 0.96, rest: 0.95, gear: 1.25, taken: 1.35, role: 'attack' },
-    { id: 'anvil',   name: 'Anvil',   mass: 0.0184, radius: 0.0226, sharp: 0.52, rest: 0.34, gear: 0.40, taken: 0.88, role: 'defense' },
-    { id: 'halo',    name: 'Halo',    mass: 0.0152, radius: 0.0258, sharp: 0.18, rest: 0.26, gear: 0.25, taken: 0.60, role: 'stamina' },
-    { id: 'crest',   name: 'Crest',   mass: 0.0162, radius: 0.0232, sharp: 0.64, rest: 0.60, gear: 0.80, taken: 1.00, role: 'balance' },
+    { id: 'cleaver', name: 'Cleaver', mass: 0.0176, radius: 0.0208, sharp: 1.00, rest: 0.90, gear: 0.95, taken: 1.22, role: 'attack' ,
+      desc: "The sharpest stock edge on a narrow heavy disc; it cuts, and it feels every hit it takes." },
+    { id: 'sabre',   name: 'Sabre',   mass: 0.0150, radius: 0.0222, sharp: 0.78, rest: 0.74, gear: 1.05, taken: 1.08, role: 'attack' ,
+      desc: "A long curved edge with real reach, sharp enough to matter and light enough to move." },
+    { id: 'orbit',   name: 'Orbit',   mass: 0.0144, radius: 0.0242, sharp: 0.22, rest: 0.40, gear: 0.28, taken: 0.64, role: 'stamina' ,
+      desc: "A wide smooth ring with nothing to catch on, built to turn for a very long time." },
+    { id: 'bulwark', name: 'Bulwark', mass: 0.0166, radius: 0.0246, sharp: 0.34, rest: 0.30, gear: 0.34, taken: 0.90, role: 'defense' ,
+      desc: "Wide, heavy and blunt; it shrugs off far more than it deals out." },
+    { id: 'talon',   name: 'Talon',   mass: 0.0132, radius: 0.0224, sharp: 0.88, rest: 0.82, gear: 1.40, taken: 1.16, role: 'attack' ,
+      desc: "A light hooked edge with the most rim grip in the case, made to catch a rim and drag its spin across." },
+    { id: 'wheel',   name: 'Wheel',   mass: 0.0158, radius: 0.0238, sharp: 0.45, rest: 0.52, gear: 0.62, taken: 0.92, role: 'balance' ,
+      desc: "An honest disc with a modest edge that does nothing badly and nothing brilliantly." },
+    { id: 'shard',   name: 'Shard',   mass: 0.0118, radius: 0.0204, sharp: 0.96, rest: 0.95, gear: 1.25, taken: 1.35, role: 'attack' ,
+      desc: "The lightest and nearly the sharpest blade there is, and it takes recoil worse than anything else in the case." },
+    { id: 'anvil',   name: 'Anvil',   mass: 0.0184, radius: 0.0226, sharp: 0.52, rest: 0.34, gear: 0.40, taken: 0.88, role: 'defense' ,
+      desc: "The heaviest stock blade, dull and dead, made to absorb rather than answer." },
+    { id: 'halo',    name: 'Halo',    mass: 0.0152, radius: 0.0258, sharp: 0.18, rest: 0.26, gear: 0.25, taken: 0.60, role: 'stamina' ,
+      desc: "The widest stock ring, smooth the whole way round, and it takes less from a hit than anything else made." },
+    { id: 'crest',   name: 'Crest',   mass: 0.0162, radius: 0.0232, sharp: 0.64, rest: 0.60, gear: 0.80, taken: 1.00, role: 'balance' ,
+      desc: "A ridged disc with a usable edge and no particular weakness." },
 
     // ---- TIER 2, FORGED. One stat pushed about a quarter past the Tier 1
     //      range, and another pulled back further to pay for it. Not stronger,
@@ -167,14 +187,22 @@
 
   // 3. ASSIST (sub-blade): bolts under the main blade. Shapes the rim.
   const ASSISTS = [
-    { id: 'none',   name: 'None',   mass: 0.0000, gearMul: 1.00, absorb: 1.00, radAdd: 0.0000, smash: 1.00, role: 'balance' },
-    { id: 'jag',    name: 'Jag',    mass: 0.0040, gearMul: 1.45, absorb: 0.92, radAdd: 0.0008, smash: 1.14, role: 'attack' },
-    { id: 'guard',  name: 'Guard',  mass: 0.0052, gearMul: 0.70, absorb: 1.16, radAdd: 0.0012, smash: 0.88, role: 'defense' },
-    { id: 'slick',  name: 'Slick',  mass: 0.0030, gearMul: 0.38, absorb: 1.10, radAdd: 0.0004, smash: 0.92, role: 'stamina' },
-    { id: 'hook',   name: 'Hook',   mass: 0.00418, gearMul: 1.69, absorb: 1.02, radAdd: 0.0010, smash: 0.96, role: 'utility' },
-    { id: 'wing',   name: 'Wing',   mass: 0.0036, gearMul: 1.00, absorb: 1.18, radAdd: 0.0016, smash: 1.02, role: 'balance' },
-    { id: 'rake',   name: 'Rake',   mass: 0.0048, gearMul: 1.60, absorb: 0.86, radAdd: 0.0014, smash: 1.20, role: 'attack' },
-    { id: 'collar', name: 'Collar', mass: 0.0058, gearMul: 0.52, absorb: 1.30, radAdd: 0.0002, smash: 0.84, role: 'defense' },
+    { id: 'none',   name: 'None',   mass: 0.0000, gearMul: 1.00, absorb: 1.00, radAdd: 0.0000, smash: 1.00, role: 'balance' ,
+      desc: "No sub blade at all, which costs nothing and adds nothing." },
+    { id: 'jag',    name: 'Jag',    mass: 0.0040, gearMul: 1.45, absorb: 0.92, radAdd: 0.0008, smash: 1.14, role: 'attack' ,
+      desc: "Teeth under the rim that grip and hit harder, bought with the cushion you give up." },
+    { id: 'guard',  name: 'Guard',  mass: 0.0052, gearMul: 0.70, absorb: 1.16, radAdd: 0.0012, smash: 0.88, role: 'defense' ,
+      desc: "A smooth heavy skirt that soaks up a hit and blunts yours in the same breath." },
+    { id: 'slick',  name: 'Slick',  mass: 0.0030, gearMul: 0.38, absorb: 1.10, radAdd: 0.0004, smash: 0.92, role: 'stamina' ,
+      desc: "Polished until almost nothing catches on it, so contacts glance instead of grabbing." },
+    { id: 'hook',   name: 'Hook',   mass: 0.00418, gearMul: 1.69, absorb: 1.02, radAdd: 0.0010, smash: 0.96, role: 'utility' ,
+      desc: "The grippiest sub blade there is, made to mesh with a rim turning the other way." },
+    { id: 'wing',   name: 'Wing',   mass: 0.0036, gearMul: 1.00, absorb: 1.18, radAdd: 0.0016, smash: 1.02, role: 'balance' ,
+      desc: "A flared skirt that reaches out and cushions what it catches." },
+    { id: 'rake',   name: 'Rake',   mass: 0.0048, gearMul: 1.60, absorb: 0.86, radAdd: 0.0014, smash: 1.20, role: 'attack' ,
+      desc: "Coarse teeth that add reach and real smash, and almost no cushion at all." },
+    { id: 'collar', name: 'Collar', mass: 0.0058, gearMul: 0.52, absorb: 1.30, radAdd: 0.0002, smash: 0.84, role: 'defense' ,
+      desc: "The heaviest sub blade made, smooth and deep, and it swallows more than anything else stock." },
     // Vane is the REACH assist and nothing else. It measured a 37 percent ceiling
     // against 53 for fitting no assist at all, which meant its grip and its mass
     // cost more than its radius bought. Grip removed, reach raised.
@@ -194,8 +222,10 @@
        Reach is a stat that has never once been worth its price. See the open
        question in HANDOFF section 15, because the real repair is repricing it
        across the catalogue and that is a Director call, not a tuning pass. */
-    { id: 'vane',   name: 'Vane',   mass: 0.0020, gearMul: 0.94, absorb: 1.14, radAdd: 0.0006, smash: 1.00, role: 'balance' },
-    { id: 'shim',   name: 'Shim',   mass: 0.0018, gearMul: 0.90, absorb: 1.04, radAdd: 0.0000, smash: 1.06, role: 'balance' },
+    { id: 'vane',   name: 'Vane',   mass: 0.0020, gearMul: 0.94, absorb: 1.14, radAdd: 0.0006, smash: 1.00, role: 'balance' ,
+      desc: "Barely there at all, and what little it adds is cushion." },
+    { id: 'shim',   name: 'Shim',   mass: 0.0018, gearMul: 0.90, absorb: 1.04, radAdd: 0.0000, smash: 1.06, role: 'balance' ,
+      desc: "A thin packing plate that firms the rim up without changing its shape." },
 
     // ---- TIER 2, FORGED. One stat pushed about a quarter past the Tier 1
     //      range, and another pulled back further to pay for it. Not stronger,
@@ -236,16 +266,26 @@
     // The lightest ratchet in the game by a clear margin, which matters because
     // mass loads the tip and costs spin. It hits high, and it has no teeth worth
     // the name, so it will come apart if you let it get hit.
-    { id: '0-70', name: '0-70', mass: 0.0046, height: 70, lock: 0.50, strikeHigh: 1.22, role: 'balance' },
-    { id: '3-60', name: '3-60', mass: 0.0064, height: 60, lock: 0.80, strikeHigh: 0.84, role: 'balance' },
-    { id: '5-60', name: '5-60', mass: 0.0070, height: 60, lock: 1.00, strikeHigh: 0.84, role: 'stamina' },
-    { id: '9-60', name: '9-60', mass: 0.0078, height: 60, lock: 1.28, strikeHigh: 0.82, role: 'defense' },
-    { id: '4-80', name: '4-80', mass: 0.0066, height: 80, lock: 0.88, strikeHigh: 1.22, role: 'attack' },
-    { id: '7-40', name: '7-40', mass: 0.0074, height: 40, lock: 1.12, strikeHigh: 0.58, role: 'defense' },
-    { id: '1-90', name: '1-90', mass: 0.0058, height: 90, lock: 0.62, strikeHigh: 1.40, role: 'attack' },
-    { id: '6-50', name: '6-50', mass: 0.0072, height: 50, lock: 1.06, strikeHigh: 0.70, role: 'stamina' },
-    { id: '2-70', name: '2-70', mass: 0.0062, height: 70, lock: 0.72, strikeHigh: 1.00, role: 'balance' },
-    { id: '8-30', name: '8-30', mass: 0.0082, height: 30, lock: 1.20, strikeHigh: 0.46, role: 'defense' },
+    { id: '0-70', name: '0-70', mass: 0.0046, height: 70, lock: 0.50, strikeHigh: 1.22, role: 'balance' ,
+      desc: "No teeth worth the name at seventy millimetres, and the lightest ratchet made; it strikes high and it will come apart if you let it get hit." },
+    { id: '3-60', name: '3-60', mass: 0.0064, height: 60, lock: 0.80, strikeHigh: 0.84, role: 'balance' ,
+      desc: "Three teeth at sixty millimetres, the plain middle of the case." },
+    { id: '5-60', name: '5-60', mass: 0.0070, height: 60, lock: 1.00, strikeHigh: 0.84, role: 'stamina' ,
+      desc: "Five teeth at sixty millimetres, the same height with more holding it together." },
+    { id: '9-60', name: '9-60', mass: 0.0078, height: 60, lock: 1.28, strikeHigh: 0.82, role: 'defense' ,
+      desc: "Nine teeth at sixty millimetres, most of the lock available at an ordinary height." },
+    { id: '4-80', name: '4-80', mass: 0.0066, height: 80, lock: 0.88, strikeHigh: 1.22, role: 'attack' ,
+      desc: "Four teeth at eighty millimetres; it strikes well above the other top's rim and precesses fast for it." },
+    { id: '7-40', name: '7-40', mass: 0.0074, height: 40, lock: 1.12, strikeHigh: 0.58, role: 'defense' ,
+      desc: "Seven teeth at forty millimetres, low and tight and hard to reach over a wide blade." },
+    { id: '1-90', name: '1-90', mass: 0.0058, height: 90, lock: 0.62, strikeHigh: 1.40, role: 'attack' ,
+      desc: "One tooth at ninety millimetres, the tallest strike plane in the stock case and the easiest thing here to pop apart." },
+    { id: '6-50', name: '6-50', mass: 0.0072, height: 50, lock: 1.06, strikeHigh: 0.70, role: 'stamina' ,
+      desc: "Six teeth at fifty millimetres, a low steady seat with plenty of lock." },
+    { id: '2-70', name: '2-70', mass: 0.0062, height: 70, lock: 0.72, strikeHigh: 1.00, role: 'balance' ,
+      desc: "Two teeth at seventy millimetres, tall and only lightly held." },
+    { id: '8-30', name: '8-30', mass: 0.0082, height: 30, lock: 1.20, strikeHigh: 0.46, role: 'defense' ,
+      desc: "Eight teeth at thirty millimetres, the heaviest and lowest ratchet made, so nothing tips it and nothing it hits is high." },
 
     // ---- TIER 2, FORGED. One stat pushed about a quarter past the Tier 1
     //      range, and another pulled back further to pay for it. Not stronger,
@@ -277,19 +317,29 @@
 
   // 5. BIT (tip): what touches the floor. Also carries the rail gear.
   const BITS = [
-    { id: 'flat',   name: 'Flat',   mass: 0.0042, stamina: 0.92, drive: 1.76, stable: 0.88, dash: 1.45, shaft: 0.86, role: 'attack' },
-    { id: 'rush',   name: 'Rush',   mass: 0.0044, stamina: 0.88, drive: 1.52, stable: 0.92, dash: 1.55, shaft: 0.92, role: 'attack' },
-    { id: 'needle', name: 'Needle', mass: 0.0035, stamina: 1.34, drive: 0.50, stable: 1.05, dash: 0.35, shaft: 1.10, role: 'stamina' },
-    { id: 'ball',   name: 'Ball',   mass: 0.0040, stamina: 0.96, drive: 0.78, stable: 1.05, dash: 0.55, shaft: 1.18, role: 'defense' },
-    { id: 'point',  name: 'Point',  mass: 0.0033, stamina: 1.26, drive: 0.62, stable: 0.98, dash: 0.45, shaft: 1.02, role: 'stamina' },
-    { id: 'gearf',  name: 'Gear Flat', mass: 0.00464, stamina: 0.78, drive: 1.40, stable: 0.90, dash: 1.85, shaft: 0.80, role: 'attack' },
-    { id: 'taper',  name: 'Taper',  mass: 0.0037, stamina: 1.28, drive: 0.98, stable: 1.02, dash: 0.58, shaft: 1.06, role: 'stamina' },
-    { id: 'dome',   name: 'Dome',   mass: 0.0046, stamina: 1.02, drive: 0.90, stable: 1.24, dash: 0.62, shaft: 1.14, role: 'defense' },
-    { id: 'claw',   name: 'Claw',   mass: 0.0050, stamina: 0.86, drive: 1.88, stable: 0.82, dash: 1.62, shaft: 0.78, role: 'attack' },
+    { id: 'flat',   name: 'Flat',   mass: 0.0042, stamina: 0.92, drive: 1.76, stable: 0.88, dash: 1.45, shaft: 0.86, role: 'attack' ,
+      desc: "A broad flat face that travels hard and takes the rail, and burns its spin doing it." },
+    { id: 'rush',   name: 'Rush',   mass: 0.0044, stamina: 0.88, drive: 1.52, stable: 0.92, dash: 1.55, shaft: 0.92, role: 'attack' ,
+      desc: "Cut for the rail more than the floor, quick to reach it and quick to run out." },
+    { id: 'needle', name: 'Needle', mass: 0.0035, stamina: 1.34, drive: 0.50, stable: 1.05, dash: 0.35, shaft: 1.10, role: 'stamina' ,
+      desc: "A fine point that barely touches anything, so it turns for a very long time and goes nowhere." },
+    { id: 'ball',   name: 'Ball',   mass: 0.0040, stamina: 0.96, drive: 0.78, stable: 1.05, dash: 0.55, shaft: 1.18, role: 'defense' ,
+      desc: "A rolling ball that keeps its feet under a hit and never chases anybody." },
+    { id: 'point',  name: 'Point',  mass: 0.0033, stamina: 1.26, drive: 0.62, stable: 0.98, dash: 0.45, shaft: 1.02, role: 'stamina' ,
+      desc: "A plain sharp tip, long spinning and slow moving, and the lightest thing you can stand a top on." },
+    { id: 'gearf',  name: 'Gear Flat', mass: 0.00464, stamina: 0.78, drive: 1.40, stable: 0.90, dash: 1.85, shaft: 0.80, role: 'attack' ,
+      desc: "A geared flat with the most rail bite in the stock case, and the shortest spin to show for it." },
+    { id: 'taper',  name: 'Taper',  mass: 0.0037, stamina: 1.28, drive: 0.98, stable: 1.02, dash: 0.58, shaft: 1.06, role: 'stamina' ,
+      desc: "A tapered tip that turns nearly as long as a needle and can still cross the dish." },
+    { id: 'dome',   name: 'Dome',   mass: 0.0046, stamina: 1.02, drive: 0.90, stable: 1.24, dash: 0.62, shaft: 1.14, role: 'defense' ,
+      desc: "A wide dome, the hardest stock tip to knock off its feet." },
+    { id: 'claw',   name: 'Claw',   mass: 0.0050, stamina: 0.86, drive: 1.88, stable: 0.82, dash: 1.62, shaft: 0.78, role: 'attack' ,
+      desc: "Toothed and hungry, the fastest travelling tip made and the least stable." },
     // Spool is the tip that can do a bit of everything INCLUDING the rail; its
     // dash clears the engage threshold of 0.5 and stops short of Rail Lock's 1.2,
     // so it is the middle profile a mixed build reaches for.
-    { id: 'spool',  name: 'Spool',  mass: 0.00410, stamina: 1.22, drive: 1.06, stable: 1.08, dash: 1.02, shaft: 1.06, role: 'balance' },
+    { id: 'spool',  name: 'Spool',  mass: 0.00410, stamina: 1.22, drive: 1.06, stable: 1.08, dash: 1.02, shaft: 1.06, role: 'balance' ,
+      desc: "A knurled drum that does a little of everything, the rail included." },
 
     // ---- TIER 2, FORGED. One stat pushed about a quarter past the Tier 1
     //      range, and another pulled back further to pay for it. Not stronger,
@@ -1434,6 +1484,90 @@
              bossSpin: b.alive ? Math.abs(b.w) / K.launchSpin : 0 };
   }
 
+  // ======================================================================
+  // OPPONENT SAMPLING — used by the ladder generator and by Field mode.
+  //
+  // It lives here rather than in tools/ladder.js because the ladder builds its
+  // twenty five rungs ahead of time in node, and Field mode builds an opponent
+  // on the player's phone the moment they ask for one. Two copies of this would
+  // be two different games wearing the same name, which is the mistake this
+  // project has now made three times in other places.
+  //
+  // `sophistication` runs 0 to 1 and is the whole character of the thing: a
+  // beginner's top is under built on purpose, with fewer weights, metal scattered
+  // at random and no trigger programmed, because that is what a beginner's top
+  // actually looks like. A late opponent commits its weights to one side or
+  // deliberately cancels them, and programs its move.
+  // ======================================================================
+  function sampleOpponent(rnd, role, sophistication) {
+    const pickR = a => a[Math.floor(rnd() * a.length)];
+    const inRole = list => {
+      const m = list.filter(p => p.role === role);
+      return m.length ? pickR(m) : pickR(list);
+    };
+    const soph = Math.max(0, Math.min(1, sophistication));
+    const nW = Math.min(MAX_WEIGHTS, Math.floor(rnd() * (1 + soph * MAX_WEIGHTS)));
+    const weights = [];
+    const bias = Math.floor(rnd() * HOLES);
+    for (let i = 0; i < nW; i++) {
+      const hole = soph > 0.55 && rnd() < 0.7
+        ? (bias + (rnd() < 0.5 ? 0 : 1)) % HOLES
+        : Math.floor(rnd() * HOLES);
+      weights.push({ id: pickR(WEIGHTS.slice(1)).id, hole, ring: Math.floor(rnd() * RINGS.length) });
+    }
+    return {
+      core: inRole(CORES).id, blade: inRole(BLADES).id, assist: inRole(ASSISTS).id,
+      ratchet: inRole(RATCHETS).id, bit: inRole(BITS).id, weights,
+      trigger: soph < 0.3 ? 'charged' : pickR(TRIGGERS),
+      finish: pickR(FINISHES).id, decal: pickR(DECALS), trail: pickR(TRAILS)
+    };
+  }
+
+  /* How strong a build is, measured rather than asserted: play it against the
+   * reference panel and count. Field mode uses this to find out what the player
+   * actually brought, and then to build somebody who can give them a game. */
+  function strengthOf(cfg, seed, reps, trigger) {
+    let w = 0, n = 0;
+    const names = Object.keys(ARCHETYPES);
+    for (const g of names) for (let i = 0; i < reps; i++) for (const d of [1, -1]) {
+      const rnd = mulberry(seed + i * 97 + g.length * 13 + (d > 0 ? 0 : 5));
+      const me = build(Object.assign({}, cfg, { dir: 1 }));
+      const foe = build(Object.assign({}, ARCHETYPES[g], { dir: d }));
+      const r = resolveMatch(me, foe, { rnd,
+        a: { power: 0.96 + rnd() * 0.08, lean: 0.03 + rnd() * 0.04, phase: rnd() * 6.283, trigger },
+        b: { power: 0.96 + rnd() * 0.08, lean: 0.03 + rnd() * 0.04, phase: rnd() * 6.283 } });
+      if (r.winner === 'a') w++;
+      n++;
+    }
+    return w / n;
+  }
+
+  /* FIELD MODE. After the ladder is cleared there is nothing left to author, so
+   * it stops being authored: sample candidates, measure each one, and keep
+   * whichever lands closest to a target the player's own results move. Infinite
+   * content, zero authoring, and it tracks the player rather than a difficulty
+   * slider they would have to guess at. */
+  function fieldOpponent(rnd, target, seed, candidates) {
+    const roles = ROLES;
+    const n = candidates || 14;
+    let best = null;
+    for (let i = 0; i < n; i++) {
+      const role = roles[Math.floor(rnd() * roles.length)];
+      const cfg = sampleOpponent(rnd, role, 0.55 + rnd() * 0.45);
+      // ⛔ THE TARGET IS THE PLAYER'S OWN PANEL STRENGTH, NOT ITS MIRROR, and the
+      // first version had it inverted. Both numbers are "how often does this
+      // build beat the reference panel", so an even match is an opponent with
+      // the SAME number, and the mirror hands a player who wins six percent of
+      // the time an opponent who wins eighty eight. The mode test caught it by
+      // asking whether a weak player and a strong one meet different people; the
+      // answer was yes, and backwards.
+      const s = strengthOf(cfg, seed + i * 1013, 1);
+      const err = Math.abs(s - target);
+      if (!best || err < best.err) best = { cfg, strength: s, err, role };
+    }
+    return best;
+  }
+
   function mulberry(seed) {
     let s = seed >>> 0;
     return function () {
@@ -1461,6 +1595,7 @@
            ARCHETYPES, TRIGGERS, TRIGGER_LABEL, TUNING, MODS_PER_PART,
            MODES, rangeTargets, resolveUri, resolveTaya, resolveRangeShot,
            applyBoss, bossArena, resolveBossMatch, LAUNCH, launchAngles,
+           sampleOpponent, strengthOf, fieldOpponent,
            DRAWBACKS, drawbackOf, RIG_NEUTRAL,
            build, spawn, stepTop, collide, resolveMatch, mulberry, fire, triggerReady,
            applyMods, tuningOptions, tuningOp };

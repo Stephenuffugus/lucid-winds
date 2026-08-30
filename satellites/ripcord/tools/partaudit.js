@@ -439,8 +439,26 @@ const CEIL_SPREAD_MAX = 32;
   var FIGHTING = bad;
 }
 
+/* COPY. The workshop is the product, so a part without a line of description is
+ * a part that has not shipped. The studio rules are one sentence, no dashes, and
+ * that applies to a hundred and ten part cards the same as it applies to a
+ * tutorial. */
+{
+  const copy = [];
+  for (const [slot, list] of SLOTS) for (const p of list) {
+    const id = slot + ':' + p.id;
+    if (!p.desc) { copy.push(id + ' has no description'); continue; }
+    if (/[\u2014\u2013]/.test(p.desc)) copy.push(id + ' has a dash in its description');
+    if (/[a-z]-[a-z]{2,}/.test(p.desc)) copy.push(id + ' has a hyphen in its description');
+    if ((p.desc.match(/\. /g) || []).length > 0) copy.push(id + ' is more than one sentence');
+  }
+  if (copy.length) console.log('\nCOPY\n   ' + copy.join('\n   '));
+  var COPY = copy;
+}
+
 const fails = [];
 const weak = [];
+for (const c of COPY) fails.push('copy, ' + c);
 for (const f of FIGHTING) fails.push(f);
 for (const c of CLASH) fails.push('two things share a name: ' + c);
 for (const d of DUPES) fails.push('near duplicate, ' + d);

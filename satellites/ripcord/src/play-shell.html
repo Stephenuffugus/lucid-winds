@@ -584,7 +584,8 @@ function railRow(label,items,isOn,onPick,klass,lockable){
           : 'Locked. Beat a league boss to win a Relic.';
         return;
       }
-      rigAnnounceArmed=true;onPick(it);buildSlots();refresh();storeBuild();
+      rigAnnounceArmed=true;if(field)field.target=null;
+      onPick(it);buildSlots();refresh();storeBuild();
     });
     r.appendChild(b);
   })(items[i]);
@@ -629,11 +630,9 @@ function buildSlots(){
       note.className='fitted';
       var txt=fitted.desc||'';
       var dw=fitted.drawback?SIM.drawbackOf(fitted.drawback):null;
-      // ⛔ Only the sixty Forged and Relic parts carry a description; the fifty
-      // Stock ones came from the original catalogue without one, and an empty
-      // paragraph is a gap in the layout that says nothing. Until they are
-      // written, a Stock part says what it is instead of saying nothing.
-      if(!txt&&!dw)txt=(fitted.role||'balance')+' part, stock';
+      // All hundred and ten parts carry a description now, and partaudit fails if
+      // one does not, so this is a belt on top of braces rather than a fallback.
+      if(!txt&&!dw)txt=(fitted.role||'balance')+' part';
       note.innerHTML=(txt?'<span>'+txt+'</span>':'')+
         (dw?'<b>'+dw.name+'.</b> '+dw.desc:'');
       row.appendChild(note);
@@ -892,7 +891,10 @@ var DROP_FROM={};
     for(j=0;j<(r.relics||[]).length;j++)DROP_FROM[r.relics[j]]=r;
   }
 })();
-function opp(){return LADDER[clamp(facing,0,LADDER.length-1)];}
+function opp(){
+  if(mode==='field'&&field&&field.rung)return field.rung;
+  return LADDER[clamp(facing,0,LADDER.length-1)];
+}
 function bossOf(o){return o&&o.boss?o.boss:null;}
 function updateVs(){
   var o=opp();
@@ -950,8 +952,28 @@ var MODES=[
   {id:'taya',name:'Taya',need:10,
    desc:'The loser is pinned in the circle and the winner takes one free strike at it.'},
   {id:'tujlub',name:'Target range',need:15,
-   desc:'Solo; knock over a row of standing tops, and the far ones are worth more.'}
+   desc:'Solo; knock over a row of standing tops, and the far ones are worth more.'},
+  {id:'field',name:'The Field',need:24,
+   desc:'Endless; it builds a new opponent for whatever top you turned up with.'}
 ];
+
+/* THE FIELD.
+   Once the ladder is cleared there is nothing left to author, so it stops being
+   authored. The game measures what the player actually brought by playing it
+   against the reference panel, then samples opponents and keeps whichever lands
+   closest to a target their own results move. Infinite content, zero authoring,
+   and it tracks the player instead of a difficulty slider they would have to
+   guess at. */
+var FIELD_FIRST=['Chalk','Tin','Barrel','River','Salt','Rope','Ash','Nine','Long','Half',
+                 'Old','Quiet','Iron','Cold','Wet','Bright','Slow','Far','Low','Hard'];
+var FIELD_LAST =['Hand','Wednesday','Cousin','Keeper','Whistle','Crown','Monger','Walk',
+                 'Handler','Teeth','Tuesday','Stone','Cord','Market','Uncle','Sister',
+                 'Chisel','Seller','Post','Knot'];
+var field=null;          // {foe, name, target, streak, best}
+function fieldName(rnd){
+  return FIELD_FIRST[Math.floor(rnd()*FIELD_FIRST.length)]+' '+
+         FIELD_LAST[Math.floor(rnd()*FIELD_LAST.length)];
+}
 function buildModes(){
   var host=$('modesBody');host.innerHTML='';
   for(var i=0;i<MODES.length;i++)(function(m){
@@ -1085,6 +1107,7 @@ function resetRound(){
 function startPlay(){
   showMenu(false);
   windSide=0;side=0;pending=[null,null];
+  if(mode==='field'){nextFieldOpponent();return;}
   $('sideSwitch').style.display=mode==='pass'?'flex':'none';
   arenaR=SIM.K.arenaR;
   var o=opp(), bs=bossOf(o);
@@ -1093,7 +1116,7 @@ function startPlay(){
   $('score').innerHTML='0 &nbsp;0<small>'+(mode==='uri'?'longest spin'
       :mode==='tujlub'?'points':'first to four')+'</small>';
   if(mode==='pass')$('vs').innerHTML='<b>Player two</b><br>pass the phone';
-  else updateVs();
+  else if(mode!=='field')updateVs();
   if(mode==='tujlub')setupTargets();
   tayaWear={a:0,b:0};
   resetRound();
@@ -1162,7 +1185,11 @@ function showCard(g){
 /* ---------------------------------------------------------------- launching */
 $('go').addEventListener('click',function(){
   if(phase==='play')return;
-  if(phase==='over'){startPlay();return;}
+  if(phase==='over'){
+    // In the Field, "again" means a NEW opponent rather than the same one.
+    if(mode==='field'&&field){nextFieldOpponent();return;}
+    startPlay();return;
+  }
   if(!graded){
     $('hint').textContent='Wind it first; draw three circles.';
     $('hint').style.opacity=1;return;
@@ -1264,6 +1291,39 @@ function launchPass(){
   $('laps').style.opacity=0;
 }
 
+/* Build the next Field opponent. It costs about a third of a second of real
+   simulation, so it happens behind a line of text rather than a frozen screen. */
+function nextFieldOpponent(){
+  chrome(true);
+  $('laps').style.opacity=0;
+  $('card').classList.remove('up');
+  $('hint').textContent='Finding somebody to play.';
+  $('hint').style.opacity=1;
+  $('vs').innerHTML='<b>The Field</b><br>looking';
+  phase='over';
+  setTimeout(function(){
+    var seed=Math.floor(Math.random()*1e9);
+    var rnd=SIM.mulberry(seed);
+    if(!field)field={streak:0,best:save.records.bestField||0,target:null};
+    if(field.target===null){
+      // What did they actually turn up with? Measured, not guessed.
+      // Both numbers are "how often does this build beat the reference panel",
+      // so an even match is an opponent sitting at the SAME number.
+      var mine=SIM.strengthOf(currentCfg(),4242,2,active().trigger);
+      field.target=clamp(mine,0.15,0.90);
+    }
+    var pick=SIM.fieldOpponent(rnd,field.target,seed,12);
+    field.rung={rung:'F',name:fieldName(rnd),role:pick.role,build:pick.cfg,
+                drops:[],measured:pick.strength};
+    field.strength=pick.strength;
+    $('vs').innerHTML='<b>'+field.rung.name+'</b><br>the field, '+pick.role+
+      ', streak '+field.streak;
+    $('score').innerHTML='0 &nbsp;0<small>first to four</small>';
+    pa=pb=0;
+    resetRound();
+  },30);
+}
+
 /* ------------------------------------------------------- the target range */
 function setupTargets(){
   // The layout, the arena and the topple threshold all come out of SIM.MODES.
@@ -1346,6 +1406,33 @@ function endRound(){
 }
 
 function finishOrContinue(){
+  if(mode==='field'){
+    if(pa>=4||pb>=4){
+      AUDIO.stopLoops();chrome(true);$('laps').style.opacity=0;
+      if(pa>pb){
+        field.streak++;
+        // They handled that one, so the next is harder. The step is small
+        // because a ladder that jumps is a ladder nobody stays on.
+        field.target=clamp(field.target+0.035,0.15,0.90);
+        if(field.streak>field.best){
+          field.best=field.streak;save.records.bestField=field.best;persist();
+        }
+        AUDIO.win();
+        $('hint').textContent='Beat '+field.rung.name+'. Streak '+field.streak+
+          ', best '+field.best+'. Launch for the next one.';
+      }else{
+        field.streak=0;
+        field.target=clamp(field.target-0.05,0.15,0.90);
+        AUDIO.lose();
+        $('hint').textContent=field.rung.name+' takes it. Streak back to zero. '+
+          'Launch to meet somebody easier.';
+      }
+      $('hint').style.opacity=1;
+      phase='over';
+      bump('fieldMatches');
+    }else{ resetRound(); if(lastGrade)showCard(lastGrade); }
+    return;
+  }
   if(mode==='pass'){
     if(pa>=4||pb>=4){
       AUDIO.stopLoops();chrome(true);$('laps').style.opacity=0;

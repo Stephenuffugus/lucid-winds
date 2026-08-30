@@ -210,6 +210,50 @@ if (gotPass) {
   }
 }
 
+console.log('\nTHE FIELD, ONCE THE LADDER IS CLEARED');
+{
+  // Field mode is gated on clearing the last rung, so clear it the way the save
+  // format does rather than by reaching into the running game.
+  await page.evaluate(() => {
+    const s = JSON.parse(localStorage.getItem('ripcord.save.v1') || '{}');
+    s.rung = 24; s.facing = 24;
+    localStorage.setItem('ripcord.save.v1', JSON.stringify(s));
+  });
+  await page.reload({ waitUntil: 'load' });
+  await wait(700);
+  await tap('#mModes', 'Modes');
+  await wait(400);
+  const gotField = await page.evaluate(() => {
+    const b = [...document.querySelectorAll('#modesBody .rung')].find(x => /The Field/.test(x.textContent));
+    if (!b) return { err: 'no Field row' };
+    if (b.classList.contains('locked')) return { err: 'still locked after clearing the ladder' };
+    const r = b.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  });
+  ok(!!gotField && !gotField.err, 'the Field unlocks once the ladder is cleared' +
+     (gotField && gotField.err ? ': ' + gotField.err : ''));
+  if (gotField && !gotField.err) {
+    await page.mouse.click(gotField.x, gotField.y);
+    // it plays out a real match to pick somebody, so give it room
+    let named = '';
+    for (let i = 0; i < 30 && !/the field/i.test(named); i++) {
+      await wait(400);
+      named = await page.evaluate(() => document.getElementById('vs').textContent);
+    }
+    ok(/the field/i.test(named) && !/looking/i.test(named),
+       'it builds an opponent to play (' + named.replace(/\s+/g, ' ').trim() + ')');
+    await windIt(3.0);
+    await tap('#go', 'Launch');
+    await wait(500);
+    ok(await page.evaluate(() => document.getElementById('dock').classList.contains('hide')),
+       'and a round against them runs');
+    for (let i = 0; i < 60; i++) {
+      await wait(500);
+      if (await page.evaluate(() => !document.getElementById('dock').classList.contains('hide'))) break;
+    }
+  }
+}
+
 console.log('\nSAVE SURVIVES A RELOAD');
 const beforeReload = await page.evaluate(() => {
   const s = JSON.parse(localStorage.getItem('ripcord.save.v1') || '{}');

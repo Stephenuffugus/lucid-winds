@@ -136,31 +136,11 @@ function strength(cfg, seed, reps) {
   return w / n;
 }
 
-// Early rungs are deliberately under-built: fewer weights, no trigger
-// programming. A beginner opponent should look like a beginner's top.
+/* The sampler moved into sim2.js so that Field mode, which builds an opponent on
+ * the player's phone, and this generator, which builds twenty five ahead of
+ * time, cannot drift into being two different games. */
 function sample(role, rung) {
-  const inRole = list => {
-    const m = list.filter(p => p.role === role);
-    return m.length ? pickR(m) : pickR(list);
-  };
-  const sophistication = rung / 19;
-  const nW = Math.min(SIM.MAX_WEIGHTS, Math.floor(rnd0() * (1 + sophistication * SIM.MAX_WEIGHTS)));
-  const weights = [];
-  // Low rungs scatter metal at random; high rungs commit to one side or
-  // deliberately cancel it out. Bad players do not tune.
-  const bias = Math.floor(rnd0() * SIM.HOLES);
-  for (let i = 0; i < nW; i++) {
-    const hole = sophistication > 0.55 && rnd0() < 0.7
-      ? (bias + (rnd0() < 0.5 ? 0 : 1)) % SIM.HOLES
-      : Math.floor(rnd0() * SIM.HOLES);
-    weights.push({ id: pickR(SIM.WEIGHTS.slice(1)).id, hole, ring: Math.floor(rnd0() * SIM.RINGS.length) });
-  }
-  return {
-    core: inRole(SIM.CORES).id, blade: inRole(SIM.BLADES).id, assist: inRole(SIM.ASSISTS).id,
-    ratchet: inRole(SIM.RATCHETS).id, bit: inRole(SIM.BITS).id, weights,
-    trigger: sophistication < 0.3 ? 'charged' : pickR(SIM.TRIGGERS),
-    finish: pickR(SIM.FINISHES).id, decal: pickR(SIM.DECALS), trail: pickR(SIM.TRAILS)
-  };
+  return SIM.sampleOpponent(rnd0, role, rung / 19);
 }
 
 /* Drops. The arithmetic has to come out exactly, because a part nobody can win

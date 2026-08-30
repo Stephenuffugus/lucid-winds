@@ -125,5 +125,46 @@ if (moved < 2) fails.push('uri ranks the archetypes the same way pangkah does, s
   if (hitRate < 0.40) fails.push('only ' + pct(hitRate) + ' percent of range shots hit anything, which is frustrating');
 }
 
+/* ------------------------------------------------------------------ FIELD */
+/* The Field's whole claim is that it tracks the player. "It generates an
+ * opponent" is not that claim; the test has to show that a different player gets
+ * a different opponent, and that the one it picks is near the target it was
+ * asked for. */
+{
+  console.log('\nthe Field');
+  const targets = [0.30, 0.45, 0.60, 0.75];
+  let worst = 0;
+  const hit = [];
+  for (const t of targets) {
+    const errs = [];
+    for (let i = 0; i < 6; i++) {
+      const rnd = SIM.mulberry(i * 4441 + Math.round(t * 1000));
+      const p = SIM.fieldOpponent(rnd, t, i * 7919, 12);
+      errs.push(Math.abs(p.strength - t));
+    }
+    const mean = errs.reduce((a, b) => a + b, 0) / errs.length;
+    worst = Math.max(worst, mean);
+    hit.push({ t, mean });
+    console.log('  asked for ' + pct(t) + '%   missed by ' + (mean * 100).toFixed(1) + ' pts on average');
+  }
+  if (worst > 0.10) fails.push('the Field misses its target by ' + (worst * 100).toFixed(1) +
+    ' points, so it is not building to the player it was told about');
+
+  /* And it has to MOVE. A weak player and a strong one must not meet the same
+   * opponents, or the mode is a random generator with a target parameter it
+   * ignores. */
+  const weakCfg = { core: 'moth', blade: 'halo', assist: 'none', ratchet: '0-70', bit: 'taper', weights: [] };
+  const strongCfg = SIM.ARCHETYPES.stamina;
+  const weak = SIM.strengthOf(weakCfg, 4242, 2);
+  const strong = SIM.strengthOf(strongCfg, 4242, 2);
+  const forWeak = SIM.fieldOpponent(SIM.mulberry(11), weak, 5501, 12).strength;
+  const forStrong = SIM.fieldOpponent(SIM.mulberry(11), strong, 5501, 12).strength;
+  console.log('  a ' + pct(weak) + '% player is offered a ' + pct(forWeak) + '% opponent');
+  console.log('  a ' + pct(strong) + '% player is offered a ' + pct(forStrong) + '% opponent');
+  if (!(forStrong > forWeak + 0.05))
+    fails.push('the Field offers the same opponent to a weak player and a strong one, ' +
+      'so it is not tracking anybody');
+}
+
 console.log(fails.length ? '\nMODETEST FAILED\n  ' + fails.join('\n  ') : '\nMODETEST OK');
 process.exit(fails.length ? 1 : 0);
