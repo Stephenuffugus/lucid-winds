@@ -77,16 +77,32 @@ would replace Stephen's art on the next --force cut). If Stephen later
 paints one of the 68, his art wins: drop it in `_raw/` and cut that id
 with `--force`.
 
-## The Meshy lane (optional, costs credits)
+## The Meshy lane (ready — Stephen drives Meshy, the forge does the rest)
 
-Procedural covers all 112, so nothing is blocked on Meshy. If a hero part
-deserves sculpted detail: Meshy image-to-3D takes the cut singles from
-`assets/parts/_raw/` (one part, transparent ground, three-quarter light —
-exactly what it wants). Best candidates are the Relic cores (bell, magpie,
-flint, millst) whose painted emblems are real objects. Retopo to the tri
-budget and re-run the validator on the result; a Meshy mesh that misses
-the mount is a bug like any other. Don't batch-spend credits on stock
-parts a procedural mesh already covers.
+Procedural covers all 112, so nothing is blocked on Meshy — but the 22
+cores and 22 blades are the identity parts, and sculpts of the painted
+art beat clean discs. The whole loop:
+
+1. **Upload package**: `tools/forge3d/meshy-in.zip` — the 44 singles at
+   1024px, one part per image, named `core-<id>.png` / `blade-<id>.png`,
+   with the runbook inside as README.txt. Pilot 4 first (bell, moth,
+   cleaver, orbit), then the other 40.
+2. Stephen: Meshy → Image to 3D → default settings → **name the
+   generation exactly like the file** → export GLB → zip them back.
+3. `blender -b --factory-startup -P tools/forge3d/meshyfit.py -- --in
+   <dir>` lays each sculpt flat (thinnest bounding axis is the
+   thickness), scales it to the catalogue radius, puts the origin on the
+   mount face, **machines the mount in** (16mm bore + boss annulus for a
+   blade, bayonet lugs for a core), decimates, caps textures at 512, and
+   validates dimensions. `--flip <ids>` for any that land face-down.
+
+**Hero lane, deliberately:** a Meshy core decimated to the 300-triangle
+budget is mush, so fitted sculpts land in `assets/3d/hero/<slot>/<id>.glb`
+at a 5,000-triangle ceiling for cards and closeups. The in-budget
+procedural set in `assets/3d/<slot>/` stays the game LOD. Same ids, same
+origins, same dimensions — a renderer swaps them freely. The hardware
+slots stay procedural on purpose: a ratchet's teeth must be countable,
+which a generator cannot promise.
 
 ## Validation, as of 2026-08-30
 
