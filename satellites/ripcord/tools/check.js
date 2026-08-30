@@ -25,16 +25,30 @@ const GATES = [
   { name: 'modes',         cmd: ['test/modetest.js', FAST ? '12' : '30'], need: 'MODETEST OK' },
   { name: 'parts',         cmd: ['tools/partaudit.js', FAST ? '3' : '8', '2', FAST ? '14' : '40'],
     need: 'PART AUDIT OK' },
-  { name: 'ladder',        cmd: ['tools/ladder.js'],   need: 'LADDER OK' }
+  { name: 'ladder',        cmd: ['tools/ladder.js'],   need: 'LADDER OK' },
+  { name: 'bosses',        cmd: ['test/bosstest.js', FAST ? '60' : '140'], need: 'BOSSTEST OK' }
 ];
 
+/* The playthrough drives the real built game in a real browser and needs
+   puppeteer on NODE_PATH, so it is listed separately and skipped rather than
+   failed when the browser is not there. A gate that fails for want of a
+   dependency teaches you to ignore gates. */
+const BROWSER_GATE = { name: 'playthrough', cmd: ['test/playthrough.mjs'], need: 'PLAYTHROUGH OK' };
+
 const results = [];
+try {
+  require.resolve('puppeteer', { paths: ['/workspaces/lucid-winds/node_modules'] });
+  GATES.push(BROWSER_GATE);
+} catch (e) {
+  console.log('note: puppeteer not found, skipping the browser playthrough\n');
+}
 for (const g of GATES) {
   process.stdout.write(g.name.padEnd(14));
   const t0 = Date.now();
   let out = '', code = 0;
   try {
-    out = execFileSync('node', g.cmd, { cwd: ROOT, encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
+    out = execFileSync('node', g.cmd, { cwd: ROOT, encoding: 'utf8', maxBuffer: 32 * 1024 * 1024,
+      env: Object.assign({}, process.env, { NODE_PATH: '/workspaces/lucid-winds/node_modules' }) });
   } catch (e) {
     out = (e.stdout || '') + (e.stderr || '');
     code = e.status === undefined ? 1 : e.status;

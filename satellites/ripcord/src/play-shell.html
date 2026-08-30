@@ -142,6 +142,9 @@ button{font:inherit;color:inherit}
 .chip .t{font-size:11px;letter-spacing:.1em;color:var(--rope);font-weight:700}
 .chip .t.t3{color:var(--ember)}
 .cosmetic label em{color:var(--steel)}
+.fitted{margin:8px 0 0;font-size:13px;line-height:1.45;color:var(--dim)}
+.fitted b{color:var(--ember);font-weight:700}
+.fitted span{display:block;margin-bottom:3px}
 
 .acc{border-top:1px solid var(--line)}
 .acc:last-of-type{border-bottom:1px solid var(--line)}
@@ -163,6 +166,7 @@ button{font:inherit;color:inherit}
 .rf.on{color:var(--chalk);border-color:currentColor}
 .rf[data-r=attack].on{color:var(--ember)} .rf[data-r=stamina].on{color:var(--good)}
 .rf[data-r=defense].on{color:var(--steel)} .rf[data-r=balance].on{color:var(--rope)}
+.rf[data-r=mine].on{color:var(--good)}
 .dot{display:inline-block;width:7px;height:7px;border-radius:50%;flex:0 0 auto}
 
 /* rigs */
@@ -471,7 +475,7 @@ var trigger=(save.build&&save.build.trigger)||'charged';
 var chosenRigs=(save.build&&save.build.rigs)||[];
 var mods=save.mods||{};
 var cosm=save.cosmetics||{finish:'anod',decal:'stripe',trail:'rope',launcher:'ripcord'};
-var roleFilter='all';
+var roleFilter='mine';
 var rigAnnounceArmed=false;   // see buildRigs: no announcements during boot
 var rung=save.rung|0, facing=save.facing|0;
 var mode='pangkah';
@@ -573,8 +577,14 @@ function railRow(label,items,isOn,onPick,klass,lockable){
     b.innerHTML=(it.role?'<span class="dot" style="background:'+ROLE_HEX[it.role]+'"></span>':'')+
                 (it.name||it.id)+tierTag(it);
     b.addEventListener('click',function(){
-      if(locked){$('benchOut').textContent='Locked. Win it off a ladder opponent.';return;}
-      onPick(it);buildSlots();refresh();storeBuild();
+      if(locked){
+        var from=DROP_FROM[it.id];
+        $('benchOut').textContent=from
+          ? 'Locked. Win it from '+from.name+' on rung '+from.rung+'.'
+          : 'Locked. Beat a league boss to win a Relic.';
+        return;
+      }
+      rigAnnounceArmed=true;onPick(it);buildSlots();refresh();storeBuild();
     });
     r.appendChild(b);
   })(items[i]);
@@ -582,11 +592,13 @@ function railRow(label,items,isOn,onPick,klass,lockable){
 }
 function buildRoles(){
   var host=$('roles');host.innerHTML='';
-  var list=['all'].concat(SIM.ROLES);
+  // "mine" first, because with a hundred and ten parts and ten unlocked the
+  // rails are otherwise mostly things you cannot use yet.
+  var list=['mine','all'].concat(SIM.ROLES);
   for(var i=0;i<list.length;i++)(function(r){
     var b=document.createElement('button');
     b.className='rf'+(roleFilter===r?' on':'');b.setAttribute('data-r',r);
-    b.innerHTML=(r==='all'?'':'<span class="dot" style="background:'+ROLE_HEX[r]+'"></span>')+r;
+    b.innerHTML=(r==='all'||r==='mine'?'':'<span class="dot" style="background:'+ROLE_HEX[r]+'"></span>')+r;
     b.addEventListener('click',function(){roleFilter=r;buildSlots();});
     host.appendChild(b);
   })(list[i]);
@@ -601,10 +613,32 @@ function buildSlots(){
     // filtering can never hide what you are actually running.
     var shown=[],j;
     for(j=0;j<list.length;j++)
-      if(roleFilter==='all'||list[j].role===roleFilter||list[j].id===act[key])shown.push(list[j]);
-    host.appendChild(railRow(label+' <em>'+shown.length+'</em>',shown,
+      if(roleFilter==='all'||
+         (roleFilter==='mine'&&isUnlocked(list[j].id))||
+         list[j].role===roleFilter||list[j].id===act[key])shown.push(list[j]);
+    var row=railRow(label+' <em>'+shown.length+'</em>',shown,
       (function(k){return function(p){return active().cfg[k]===p.id;};})(key),
-      (function(k){return function(p){active().cfg[k]=p.id;};})(key),null,true));
+      (function(k){return function(p){active().cfg[k]=p.id;};})(key),null,true);
+    // What is actually fitted, in words. With a hundred and ten parts a rail of
+    // names is a list; the line underneath is what makes it a choice. A Relic's
+    // drawback goes here in full, because a drawback you cannot read is a trap.
+    var fitted=null;
+    for(j=0;j<list.length;j++)if(list[j].id===act[key])fitted=list[j];
+    if(fitted){
+      var note=document.createElement('p');
+      note.className='fitted';
+      var txt=fitted.desc||'';
+      var dw=fitted.drawback?SIM.drawbackOf(fitted.drawback):null;
+      // ⛔ Only the sixty Forged and Relic parts carry a description; the fifty
+      // Stock ones came from the original catalogue without one, and an empty
+      // paragraph is a gap in the layout that says nothing. Until they are
+      // written, a Stock part says what it is instead of saying nothing.
+      if(!txt&&!dw)txt=(fitted.role||'balance')+' part, stock';
+      note.innerHTML=(txt?'<span>'+txt+'</span>':'')+
+        (dw?'<b>'+dw.name+'.</b> '+dw.desc:'');
+      row.appendChild(note);
+    }
+    host.appendChild(row);
   }
   var core=null;
   for(i=0;i<SIM.CORES.length;i++)if(SIM.CORES[i].id===act.core)core=SIM.CORES[i];
@@ -665,7 +699,7 @@ function buildMods(){
       plus.addEventListener('click',function(){
         var l=mods[partId]||[];
         l.push(o.op.id);mods[partId]=l;
-        buildMods();refresh();storeBuild();haptic(8);
+        rigAnnounceArmed=true;buildMods();refresh();storeBuild();haptic(8);
       });
       row.appendChild(who);row.appendChild(minus);row.appendChild(n);row.appendChild(plus);
       host.appendChild(row);
@@ -720,10 +754,12 @@ function buildRigs(){
 
   // A rig the player has never seen before is worth calling out once. That
   // announcement IS the discovery loop.
-  // ⛔ It must not fire on boot. The first version announced the starter build's
-  // rig over the top of the rules screen, which is the first thing a new player
-  // ever sees, so the very first thing the game said was a spoiler covering the
-  // instructions. It only speaks once the player has opened the workshop.
+  // ⛔ It follows a CHANGE, never the act of arriving. Two versions of this got
+  // it wrong: the first announced the starter build's rig over the top of the
+  // rules screen, which is the first thing a new player ever sees, and the second
+  // announced it the moment the workshop opened, covering the part rails you had
+  // opened the workshop to look at. A rig announcement is a reaction to something
+  // you just did, so it is armed by the controls that do things.
   if(!rigAnnounceArmed)return;
   for(i=0;i<live.length;i++){
     if(!save.seen['rig.'+live[i].id]){
@@ -763,7 +799,7 @@ dial.addEventListener('click',function(e){
   var next=(H[ring][i]+1)%SIM.WEIGHTS.length;
   if(next>0&&H[ring][i]===0&&weightCount()>=SIM.MAX_WEIGHTS){
     $('benchOut').textContent='Only '+SIM.MAX_WEIGHTS+' weights fit. Clear one first.';return;}
-  H[ring][i]=next;haptic(6);refresh();storeBuild();
+  rigAnnounceArmed=true;H[ring][i]=next;haptic(6);refresh();storeBuild();
 });
 
 function drawDial(){
@@ -846,6 +882,16 @@ function refresh(){
 }
 
 /* -------------------------------------------------------------- THE OPPONENT */
+/* Which rung drops which part. A locked chip that only says "locked" is a wall;
+   one that says where to win it is a plan. */
+var DROP_FROM={};
+(function(){
+  for(var i=0;i<LADDER.length;i++){
+    var r=LADDER[i],j;
+    for(j=0;j<(r.drops||[]).length;j++)DROP_FROM[r.drops[j].id]=r;
+    for(j=0;j<(r.relics||[]).length;j++)DROP_FROM[r.relics[j]]=r;
+  }
+})();
 function opp(){return LADDER[clamp(facing,0,LADDER.length-1)];}
 function bossOf(o){return o&&o.boss?o.boss:null;}
 function updateVs(){
@@ -874,9 +920,15 @@ function buildLadder(){
     var locked=idx>rung;
     var b=document.createElement('button');
     b.className='rung'+(locked?' locked':'')+(idx<rung?' done':'')+(o.boss?' boss':'');
+    // ⛔ o.drop was a single part; it is o.drops, four of them, and a boss has
+    // relics instead. Reading the old shape threw during boot, which killed the
+    // whole frame loop, and the only symptom was a black canvas: no test caught
+    // it, a screenshot did.
+    var sub = o.boss
+      ? (o.teaches || 'boss') + ', drops a ' + o.relicSlot + ' Relic'
+      : o.role + ', drops ' + (o.drops || []).length + ' parts';
     b.innerHTML='<span class="num">'+o.rung+'</span>'+
-      '<span class="nm">'+o.name+'<small>'+
-        (o.boss?o.boss.teaches:(o.role+', drops a '+o.drop.slot))+'</small></span>'+
+      '<span class="nm">'+o.name+'<small>'+sub+'</small></span>'+
       '<span class="st">'+(locked?'locked':idx<rung?'beaten':idx===facing?'facing':'open')+'</span>';
     b.addEventListener('click',function(){
       facing=idx;updateVs();buildLadder();storeBuild();
@@ -916,13 +968,30 @@ function buildModes(){
 }
 
 /* ------------------------------------------------------------------- UNLOCKS */
+/* Beating an ordinary rung hands over its four parts. Beating a BOSS hands over
+   one Relic from its own slot, and beating it again hands over the next one, so
+   finishing a Relic set means going back for it. Bosses are the only source of a
+   Relic and that is the whole reason to fight one twice. */
 function awardDrop(){
-  var o=opp();
-  if(!o.drop)return null;
-  if(!unlock(o.drop.id))return null;
-  var list=PART_LISTS[o.drop.slot],part=null;
-  for(var i=0;i<list.length;i++)if(list[i].id===o.drop.id)part=list[i];
-  return (part?part.name:o.drop.id)+', '+o.drop.slot;
+  var o=opp(),won=[],i;
+  if(o.boss&&o.relics){
+    for(i=0;i<o.relics.length;i++){
+      if(!isUnlocked(o.relics[i])){
+        unlock(o.relics[i]);
+        won.push(nameOf(o.relicSlot,o.relics[i]));
+        break;                      // one per win, never the whole set at once
+      }
+    }
+  }else{
+    for(i=0;i<(o.drops||[]).length;i++)
+      if(unlock(o.drops[i].id))won.push(nameOf(o.drops[i].slot,o.drops[i].id));
+  }
+  return won;
+}
+function nameOf(slot,id){
+  var list=PART_LISTS[slot];
+  for(var i=0;i<list.length;i++)if(list[i].id===id)return list[i].name||id;
+  return id;
 }
 var unlockTimer=0;
 function showUnlock(txt,label){
@@ -980,6 +1049,7 @@ var WANT=3, OVER=WANT*1.45;
 var sparks=[],trailA=[],trailB=[];
 var demoTimer=0;
 var tuj=null;               // target range state
+var roundLimit=60;          // seconds; a boss may shorten it
 
 function chrome(on){
   $('top').classList.toggle('hide',!on);
@@ -1131,10 +1201,23 @@ function launch(){
   var fw={power:1.02,dir:Math.random()<0.5?1:-1,lean:.034,windImb:.01,windImbAng:0,
           phase:Math.random()*6.283};
   var foe=WIND.applyWind(SIM,oppSpec(),fw);
-  if(bs&&bs.massMul)foe=Object.assign({},foe,{m:foe.m*bs.massMul,I:foe.I*bs.massMul});
-  var ang=Math.random()*6.283;
 
-  A=SIM.spawn(mine,{angle:ang,power:L.power,lean:L.lean,phase:L.phase,trigger:trigger,arenaR:arenaR});
+  /* THE BOSS FLAG LAYER.
+     Every boss in this game is a block of flags on its ladder entry, read here
+     and nowhere else. Not one of them reaches into stepTop or collide, and that
+     is the test of whether a gimmick is the right gimmick: if it needs a special
+     case in the physics, it is the wrong idea and there is a better one. */
+  // ⛔ The flags are applied by SIM.applyBoss, not here, so that the boss test
+  // and the game are provably fighting the same opponent. A renderer that keeps
+  // its own copy of a rule is a renderer that will one day disagree with the
+  // test that says the rule is fine.
+  foe=SIM.applyBoss(foe,bs);
+  var ang=Math.random()*6.283;
+  var bowlMul=SIM.bossArena(bs).bowlMul;
+  roundLimit=bs&&bs.limit?bs.limit:60;
+
+  A=SIM.spawn(mine,{angle:ang,power:L.power,lean:L.lean,phase:L.phase,trigger:trigger,
+                    arenaR:arenaR,bowlMul:bowlMul});
   if(mode==='uri'){
     // Endurance, and the tops must never touch. The honest way to express that
     // is not a flag inside the collision solver, it is to stop calling it: each
@@ -1147,14 +1230,15 @@ function launch(){
     B.x=arenaR*0.42;B.z=0;B.vx=B.vz=0;
   }else{
     B=SIM.spawn(foe,{angle:ang+Math.PI,power:fw.power,lean:fw.lean,phase:fw.phase,
-                     trigger:o.build.trigger||'charged',arenaR:arenaR});
-    // Katis: having won the previous round it opens this one with a free run at
-    // you, already moving. You can still answer it, but you launch into a punch.
-    if(bs&&bs.freeStrike&&pb>pa){
-      var dx=A.x-B.x, dz=A.z-B.z, d=Math.hypot(dx,dz)||1;
-      B.vx+=dx/d*bs.freeStrike; B.vz+=dz/d*bs.freeStrike;
-      flash=1.6;flashTxt='FREE STRIKE';flashCol='#C4442B';
-    }
+                     trigger:o.build.trigger||'charged',arenaR:arenaR,bowlMul:bowlMul});
+    // The Pemangkin plants itself and never gets up. Everything the gimmick
+    // promises falls straight out of the anchor branch stepTop already has: its
+    // lean pins far below the topple threshold, and its ringout requirement goes
+    // to six times normal, which is several times what the best legal hit can
+    // deliver. It cannot be toppled and it cannot be thrown out, so the only
+    // thing left to attack is the teeth holding it together.
+    if(bs&&bs.anchor)B.anchor=Infinity;
+    if(bs&&bs.abilityEvery){B._fired=0;B._every=bs.abilityEvery;}
   }
   phase='play';acc=0;$('card').classList.remove('up');chrome(false);
   $('laps').style.opacity=0;
@@ -1241,6 +1325,13 @@ function endRound(){
 
   phase='done';
   setTimeout(function(){
+    // Katis walks over and hits your top while it is standing in the circle. It
+    // runs through the Taya ceremony because that is exactly what it is, and
+    // because spawning it as a launch collision was measured at a guaranteed
+    // round loss: at t=0 you have no velocity, so Katis is always the aggressor
+    // and one heavy side swing does more than twice a full lock of wear.
+    var bs2=bossOf(opp());
+    if(bs2&&bs2.katis&&win==='b'&&pa<4&&pb<4){startTaya('b');return;}
     // Taya: the loser's top is placed in the circle and the winner gets one free
     // punishing strike at it. It is the answer to "should losing cost you
     // something": it costs lock wear that carries into the next round, publicly,
@@ -1274,7 +1365,7 @@ function finishOrContinue(){
       if(facing===rung&&rung<LADDER.length-1){rung++;facing=rung;}
       updateVs();buildSlots();buildLadder();buildModes();storeBuild();
       $('hint').textContent='You beat '+beat+'. Next up is '+opp().name+'.';
-      if(won)showUnlock(won);
+      if(won&&won.length)showUnlock(won.join(', '),won.length>1?'Parts won':'Part won');
     }else{
       AUDIO.lose();
       $('hint').textContent='They take the match. Launch to try again.';
@@ -1337,11 +1428,22 @@ function step(dt){
         if(c){onHit(c);if(phase==='taya'&&c.impulse>tayaBest)tayaBest=c.impulse;}
         if(phase==='play'){
           if(A.abilityUsed===0&&SIM.triggerReady(A,B)){SIM.fire(A,B);AUDIO.ability();}
-          if(B.abilityUsed===0&&SIM.triggerReady(B,A)){SIM.fire(B,A);AUDIO.ability();}
+          // Two Direction flips its own spin on a repeating timer for the whole
+          // round, so the matchup you built for is only ever half of it. It pays
+          // fourteen percent of its spin every flip, which is its own clock and
+          // your way through.
+          if(B._every&&B.alive&&B.t-B._fired>=B._every){
+            B.charge=1;B.abilityUsed=0;B._fired=B.t;
+            SIM.fire(B,A);AUDIO.ability();
+            flash=0.8;flashTxt='REVERSAL';flashCol='#9A6FB0';
+          }else if(B.abilityUsed===0&&SIM.triggerReady(B,A)){SIM.fire(B,A);AUDIO.ability();}
         }
       }
       if(tuj&&phase==='play')stepTargets();
       acc-=SIM.K.dt;n++;
+      // A boss can shorten the round. The Giant's whole gimmick is that the
+      // clock beats it long before you do.
+      if(phase==='play'&&A.t>=roundLimit&&mode!=='uri'){endRound();break;}
       var uriOver=mode==='uri'&&((!A.alive&&!B.alive)||A.t>=SIM.MODES.uri.limit);
       if(phase==='play'&&((mode==='uri'?uriOver:(!A.alive||(B&&!B.alive)))
           ||(mode==='tujlub'&&!A.alive))){
@@ -1479,11 +1581,16 @@ function drawArena(){
   // brown donut. The band stays, because a player has to be able to see where
   // the dash zone begins, but it is now a faint field with one bright EDGE, and
   // the tops are the brightest thing again.
-  ctx.fillStyle='rgba(201,162,39,.055)';
-  ctx.beginPath();ctx.arc(cx,cy,r,0,7);
-  ctx.arc(cx,cy,r*SIM.K.ridgeAt,0,7,true);ctx.fill();
+  // ⛔ An annulus is NOT two arcs in one path. The second arc starts wherever
+  // the first ended, so the path draws a straight line across to it and the fill
+  // came out with a dark wedge running from the centre to the rim at three
+  // o'clock. Stroking a single circle with a thick line is the same shape with
+  // none of the geometry.
+  var railW=r*(1-SIM.K.ridgeAt);
+  ctx.strokeStyle='rgba(201,162,39,.055)';ctx.lineWidth=railW;
+  ctx.beginPath();ctx.arc(cx,cy,r-railW/2,0,Math.PI*2);ctx.stroke();
   ctx.strokeStyle='rgba(201,162,39,.34)';ctx.lineWidth=1.4;
-  ctx.beginPath();ctx.arc(cx,cy,r*SIM.K.ridgeAt,0,7);ctx.stroke();
+  ctx.beginPath();ctx.arc(cx,cy,r*SIM.K.ridgeAt,0,Math.PI*2);ctx.stroke();
 
   // the pockets: the three low points in the lip where a top actually leaves
   ctx.strokeStyle='rgba(196,68,43,.62)';ctx.lineWidth=7;
@@ -1567,11 +1674,16 @@ function drawTop(o,color,isPlayer,trail){
   var reduced=save.settings.reduceMotion;
 
   if(trail&&trail.length>1&&!reduced){
+    // ⛔ Thin. At a third of the top's radius this read as a tail growing out of
+    // the top rather than as the ground it had covered; in a still frame the
+    // whole thing looked like a tadpole. A trail is a hint of where something
+    // has been, and the moment it is thick enough to have a silhouette it stops
+    // being a hint and starts being part of the object.
     ctx.lineCap='round';
     for(var t=1;t<trail.length;t++){
-      var al=(t/trail.length)*0.28*life;
-      ctx.strokeStyle=color;ctx.globalAlpha=al;
-      ctx.lineWidth=rr*0.30*(t/trail.length);
+      var f=t/trail.length;
+      ctx.strokeStyle=color;ctx.globalAlpha=f*f*0.16*life;
+      ctx.lineWidth=Math.max(1,rr*0.11*f);
       ctx.beginPath();
       ctx.moveTo(CX()+trail[t-1].x*s,CY()+trail[t-1].z*s);
       ctx.lineTo(CX()+trail[t].x*s,CY()+trail[t].z*s);
@@ -1611,13 +1723,17 @@ function drawTop(o,color,isPlayer,trail){
   // which is where the simulation says the tip actually is.
   // ⛔ Capped. Drawn to full length it reached two top diameters at high lean and
   // read as a stray line across the dish rather than as part of the object.
-  var shaftLen=Math.min(rr*0.95,Math.hypot(ox,oy)+rr*0.30);
-  var sdx=ox||0.001, sdy=oy+rr*0.30, sn=Math.hypot(sdx,sdy)||1;
-  ctx.strokeStyle='rgba(160,172,180,.9)';
-  ctx.lineWidth=Math.max(2,rr*0.19);
+  // ⛔ THE SIGN WAS INVERTED and it is worth naming because the symptom was
+  // silence: the shaft pointed UP from the body, straight behind the disc that
+  // was about to be drawn over it, so it was simply never visible and the tops
+  // read as rings lying on the floor rather than as tops standing on a point.
+  // The body sits at the contact point plus the lean offset, so the tip is at
+  // MINUS that offset, and a little further down so it clears the silhouette.
+  var tipx=cx-ox*0.30, tipy=cy-oy*0.30+rr*0.62;
+  ctx.strokeStyle='rgba(170,182,190,.92)';
+  ctx.lineWidth=Math.max(2,rr*0.20);
   ctx.lineCap='round';
-  ctx.beginPath();ctx.moveTo(bx,by);
-  ctx.lineTo(bx-sdx/sn*shaftLen,by-sdy/sn*shaftLen);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(tipx,tipy);ctx.stroke();
   ctx.lineCap='butt';
 
   // the blade body
@@ -1720,6 +1836,15 @@ function drawSparks(){
   ctx.globalAlpha=1;
 }
 
+/* One window hook, and it exists for the thumbnail grabber rather than for the
+   game: it needs to wait for a frame with an actual contact in it, because a
+   picture of two tops sitting apart is a picture of nothing. */
+window.__sparkCount=function(){return sparks.length;};
+window.__gap=function(){
+  if(!A||!B||!A.alive||!B.alive)return 99;
+  return Math.hypot(A.x-B.x,A.z-B.z)/(A.spec.R+B.spec.R);
+};
+
 /* ------------------------------------------------- the menu's living backdrop */
 /* The menu sits on top of a real round, played by the simulation, with nobody
    watching the score. It costs nothing, it is never the same twice, and it is a
@@ -1807,10 +1932,10 @@ $('sideP2').addEventListener('click',function(){
 /* --------------------------------------------------------------- MENU WIRING */
 $('mPlay').addEventListener('click',function(){mode='pangkah';startPlay();});
 $('mHow').addEventListener('click',function(){openSheet('howto');});
-$('mShop').addEventListener('click',function(){rigAnnounceArmed=true;openSheet('sheet');refresh();});
+$('mShop').addEventListener('click',function(){openSheet('sheet');refresh();});
 $('mModes').addEventListener('click',function(){buildModes();openSheet('modes');});
 $('mSet').addEventListener('click',function(){syncToggles();openSheet('settings');});
-$('openWs').addEventListener('click',function(){rigAnnounceArmed=true;openSheet('sheet');refresh();});
+$('openWs').addEventListener('click',function(){openSheet('sheet');refresh();});
 
 // one accordion open at a time, so the workshop never becomes a wall
 (function(){

@@ -29,20 +29,20 @@ a mis-placed origin shows up as a floating blade.
 
 | Slot | Count | Tri budget each | Notes |
 |---|---|---|---|
-| Core (lock chip) | 10 | 300 | Sits on top; carries the ability tell. Readable from directly above. |
-| Blade (weapon) | 10 | 1200 | The silhouette. Tooth count must read as sharpness at a glance. |
-| Assist (sub-blade) | 10 | 600 | Seen edge-on under the blade. Nine models plus one empty. |
-| Ratchet | 10 | 500 | Seven heights; teeth count visible on the ring. |
-| Bit (tip) | 10 | 400 | Small but always in contact — the wear point. |
+| Core (lock chip) | 22 | 300 | Sits on top; carries the ability tell. Readable from directly above. |
+| Blade (weapon) | 22 | 1200 | The silhouette. Tooth count must read as sharpness at a glance. |
+| Assist (sub-blade) | 22 | 600 | Seen edge-on under the blade. Nine models plus one empty. |
+| Ratchet | 20 | 500 | Seven heights; teeth count visible on the ring. |
+| Bit (tip) | 24 | 400 | Small but always in contact — the wear point. |
 | Weight | 3 | 120 | Three masses, one mesh each, scaled to fit both rings. |
 
-**53 part meshes total.** A fully dressed top is about 3480 triangles
+**113 part meshes total.** A fully dressed top is about 3480 triangles
 with four weights fitted; two tops and a stadium should sit near 9k, which is
 comfortable on a mid-range phone at 60fps and leaves room for the trail effects.
 
 ## 3. Individual parts
 
-### Cores — 10
+### Cores — 22
 
 | id | name | ability | spin | design note |
 |---|---|---|---|---|
@@ -56,8 +56,20 @@ comfortable on a mid-range phone at 60fps and leaves room for the trail effects.
 | lash | Lash | lash | left | Ability tell must be legible at 40px while spinning. |
 | lodest | Lodestone | lunge | right | Ability tell must be legible at 40px while spinning. |
 | quench | Quench | brake | left | Ability tell must be legible at 40px while spinning. |
+| ballast | Ballast | scatter | right | Ability tell must be legible at 40px while spinning. |
+| granite | Granite | stoneskin | right | Ability tell must be legible at 40px while spinning. |
+| windlas | Windlass | windup | left | Ability tell must be legible at 40px while spinning. |
+| vise | Vise | bite | left | Ability tell must be legible at 40px while spinning. |
+| kite | Kite | tether | left | Ability tell must be legible at 40px while spinning. |
+| reel | Reel | backspin | left | Ability tell must be legible at 40px while spinning. |
+| tinder | Tinder | surge | right | Ability tell must be legible at 40px while spinning. |
+| wren | Wren | burrow | right | Ability tell must be legible at 40px while spinning. |
+| bell | Bell | rebound | right | Ability tell must be legible at 40px while spinning. |
+| magpie | Magpie | echo | left | Ability tell must be legible at 40px while spinning. |
+| flint | Flint | overdrive | left | Ability tell must be legible at 40px while spinning. |
+| millst | Millstone | pitch | right | Ability tell must be legible at 40px while spinning. |
 
-### Blades — 10
+### Blades — 22
 
 | id | name | sharp | radius mm | design note |
 |---|---|---|---|---|
@@ -65,14 +77,26 @@ comfortable on a mid-range phone at 60fps and leaves room for the trail effects.
 | sabre | Sabre | 0.78 | 22.2 | Aggressive: few deep teeth, hard shadow line. |
 | orbit | Orbit | 0.22 | 24.2 | Round: continuous rim, no catch points. |
 | bulwark | Bulwark | 0.34 | 24.6 | Mixed: shallow scallops. |
-| talon | Talon | 0.88 | 21.6 | Aggressive: few deep teeth, hard shadow line. |
+| talon | Talon | 0.88 | 22.4 | Aggressive: few deep teeth, hard shadow line. |
 | wheel | Wheel | 0.45 | 23.8 | Mixed: shallow scallops. |
 | shard | Shard | 0.96 | 20.4 | Aggressive: few deep teeth, hard shadow line. |
 | anvil | Anvil | 0.52 | 22.6 | Mixed: shallow scallops. |
 | halo | Halo | 0.18 | 25.8 | Round: continuous rim, no catch points. |
 | crest | Crest | 0.64 | 23.2 | Mixed: shallow scallops. |
+| broadaxe | Broadaxe | 1.26 | 20.8 | Aggressive: few deep teeth, hard shadow line. |
+| chisel | Chisel | 1.30 | 18.8 | Aggressive: few deep teeth, hard shadow line. |
+| millstone | Millstone | 0.48 | 18.8 | Mixed: shallow scallops. |
+| ploughshare | Ploughshare | 0.14 | 22.8 | Round: continuous rim, no catch points. |
+| cartwheel | Cartwheel | 0.12 | 26.2 | Round: continuous rim, no catch points. |
+| roundel | Roundel | 0.10 | 21.0 | Round: continuous rim, no catch points. |
+| rasp | Rasp | 0.90 | 22.0 | Aggressive: few deep teeth, hard shadow line. |
+| hailstone | Hailstone | 0.70 | 23.0 | Mixed: shallow scallops. |
+| shrike | Shrike | 1.62 | 20.2 | Aggressive: few deep teeth, hard shadow line. |
+| sledge | Sledge | 1.10 | 21.4 | Aggressive: few deep teeth, hard shadow line. |
+| ingot | Ingot | 0.46 | 20.6 | Mixed: shallow scallops. |
+| hookbill | Hookbill | 0.70 | 23.0 | Mixed: shallow scallops. |
 
-### Assists — 10
+### Assists — 22
 
 | id | name | rim friction | design note |
 |---|---|---|---|
@@ -84,14 +108,26 @@ comfortable on a mid-range phone at 60fps and leaves room for the trail effects.
 | wing | Wing | 1.00 | Neutral profile. |
 | rake | Rake | 1.60 | Toothed, bites — visible knurl. |
 | collar | Collar | 0.52 | Smooth, sheds contact — polished band. |
-| vane | Vane | 1.15 | Neutral profile. |
+| vane | Vane | 0.94 | Neutral profile. |
 | shim | Shim | 0.90 | Neutral profile. |
+| cornice | Cornice | 0.62 | Smooth, sheds contact — polished band. |
+| longspur | Longspur | 1.38 | Toothed, bites — visible knurl. |
+| teasel | Teasel | 2.15 | Toothed, bites — visible knurl. |
+| sprocket | Sprocket | 2.15 | Toothed, bites — visible knurl. |
+| lacquer | Lacquer | 0.28 | Smooth, sheds contact — polished band. |
+| bolster | Bolster | 0.66 | Smooth, sheds contact — polished band. |
+| gutta | Gutta | 2.35 | Toothed, bites — visible knurl. |
+| barb | Barb | 0.34 | Smooth, sheds contact — polished band. |
+| eaves | Eaves | 0.72 | Neutral profile. |
+| nettle | Nettle | 3.00 | Toothed, bites — visible knurl. |
+| bushing | Bushing | 0.58 | Smooth, sheds contact — polished band. |
+| chert | Chert | 0.22 | Smooth, sheds contact — polished band. |
 
-### Ratchets — 10
+### Ratchets — 20
 
 | id | height mm | lock teeth | design note |
 |---|---|---|---|
-| 0-70 | 70 | 0.55 | Teeth count on the ring must match the name. |
+| 0-70 | 70 | 0.50 | Teeth count on the ring must match the name. |
 | 3-60 | 60 | 0.80 | Teeth count on the ring must match the name. |
 | 5-60 | 60 | 1.00 | Teeth count on the ring must match the name. |
 | 9-60 | 60 | 1.28 | Teeth count on the ring must match the name. |
@@ -101,8 +137,18 @@ comfortable on a mid-range phone at 60fps and leaves room for the trail effects.
 | 6-50 | 50 | 1.06 | Teeth count on the ring must match the name. |
 | 2-70 | 70 | 0.72 | Teeth count on the ring must match the name. |
 | 8-30 | 30 | 1.20 | Teeth count on the ring must match the name. |
+| 0-90 | 90 | 0.38 | Teeth count on the ring must match the name. |
+| 11-80 | 80 | 1.46 | Teeth count on the ring must match the name. |
+| 11-30 | 30 | 1.40 | Teeth count on the ring must match the name. |
+| 0-40 | 40 | 0.29 | Teeth count on the ring must match the name. |
+| 6-30 | 30 | 1.04 | Teeth count on the ring must match the name. |
+| 11-60 | 60 | 1.46 | Teeth count on the ring must match the name. |
+| 0-60 | 60 | 0.30 | Teeth count on the ring must match the name. |
+| 14-30 | 30 | 1.70 | Teeth count on the ring must match the name. |
+| 2-90 | 90 | 1.38 | Teeth count on the ring must match the name. |
+| 0-50 | 50 | 0.20 | Teeth count on the ring must match the name. |
 
-### Bits — 10
+### Bits — 24
 
 | id | name | rail gear | design note |
 |---|---|---|---|
@@ -112,10 +158,24 @@ comfortable on a mid-range phone at 60fps and leaves room for the trail effects.
 | ball | Ball | 0.55 | Rounded. |
 | point | Point | 0.45 | Sharp or narrow: no rail engagement. |
 | gearf | Gear Flat | 1.85 | Geared: visible cogs that catch the rail. |
-| taper | Taper | 0.40 | Sharp or narrow: no rail engagement. |
+| taper | Taper | 0.58 | Rounded. |
 | dome | Dome | 0.62 | Rounded. |
 | claw | Claw | 1.62 | Geared: visible cogs that catch the rail. |
-| spool | Spool | 0.95 | Rounded. |
+| spool | Spool | 1.10 | Rounded. |
+| bradawl | Bradawl | 0.35 | Sharp or narrow: no rail engagement. |
+| stillpin | Still Pin | 0.35 | Sharp or narrow: no rail engagement. |
+| spur | Spur | 1.55 | Geared: visible cogs that catch the rail. |
+| rowel | Rowel | 2.32 | Geared: visible cogs that catch the rail. |
+| sabot | Sabot | 0.60 | Rounded. |
+| ferrule | Ferrule | 0.72 | Rounded. |
+| cleat | Cleat | 2.20 | Geared: visible cogs that catch the rail. |
+| plumb | Plumb | 0.35 | Sharp or narrow: no rail engagement. |
+| agate | Agate | 0.35 | Sharp or narrow: no rail engagement. |
+| corundum | Corundum | 0.35 | Sharp or narrow: no rail engagement. |
+| caltrop | Caltrop | 2.75 | Geared: visible cogs that catch the rail. |
+| cobble | Cobble | 0.35 | Sharp or narrow: no rail engagement. |
+| pintle | Pintle | 0.35 | Sharp or narrow: no rail engagement. |
+| jasper | Jasper | 0.35 | Sharp or narrow: no rail engagement. |
 
 ## 4. Cosmetics
 
@@ -167,7 +227,7 @@ is driven by a live simulation value, never a triggered animation.
 | Scrape dust | tip speed on floor | continuous, not triggered |
 | Ability tell | ability id | 10 distinct, each under 0.4s, never blocks view |
 
-Ability tells needed: surge, anchor, overdrive, rebound, reversal, shed, burrow, lash, lunge, brake.
+Ability tells needed: surge, anchor, overdrive, rebound, reversal, shed, burrow, lash, lunge, brake, scatter, stoneskin, windup, bite, tether, backspin, surge, burrow, rebound, echo, overdrive, pitch.
 
 ## 7. Audio
 
@@ -190,20 +250,20 @@ edge to edge and nothing overlays it but the score.
 
 | Item | Count | Notes |
 |---|---|---|
-| Part icons | 53 | 96px silhouettes, generated from the meshes at build time |
+| Part icons | 113 | 96px silhouettes, generated from the meshes at build time |
 | Slot glyphs | 6 | core, blade, assist, ratchet, bit, weight |
-| Trigger glyphs | 5 | charged, lowSpin, thirdHit, onRidge, behind |
+| Trigger glyphs | 9 | charged, lowSpin, thirdHit, onRidge, behind, firstBlood, cornered, mirror, late |
 | Finish result cards | 5 | spinout, ringout, knockout, burst, double |
 | Grade letters | 6 | S A B C D E, one typeface weight |
 
 
 ## 9. Totals
 
-- **53 part meshes** + 6 launchers + 4 stadiums
+- **113 part meshes** + 6 launchers + 4 stadiums
 - **11 decal masks**, 6 trail ramps, 8 material presets
-- **10 ability tells**, 7 physics-driven effects, 22 audio cues
+- **22 ability tells**, 7 physics-driven effects, 22 audio cues
 
-That set of 53 meshes yields **100,000 chassis**, **46,666 weight configurations**, and **4,666,600,000 functionally distinct tops** before a single cosmetic is applied.
+That set of 113 meshes yields **5,111,040 chassis**, **46,666 weight configurations**, and **238,511,792,640 functionally distinct tops** before a single cosmetic is applied.
 
-Which is the argument for building the workshop first. If 53 meshes cannot be made to feel like billions of choices, the problem is not
+Which is the argument for building the workshop first. If 113 meshes cannot be made to feel like billions of choices, the problem is not
 the art budget.

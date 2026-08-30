@@ -122,14 +122,22 @@
       desc: 'Light and sharp; it covers ground fast and it feels every hit.',
       cond: 'A very light top with a sharp blade.',
       test: function (s) { return s.mass <= 0.030 && s.blade.sharp >= 0.8; },
-      mod: { drive: 1.20, taken: 1.22 } },
+      // ⛔ taken was 1.22 and measured MINUS eight win points once the Forged and
+      // Relic blades existed, because the search found a build far lighter and
+      // sharper than anything Tier 1 could make. A rig that costs you eight
+      // points is a trap, which is the same failure as one that wins you eight.
+      mod: { drive: 1.20, taken: 1.06 } },
 
     // ---------------- eight more, same shape ----------------
     { id: 'ballast', name: 'Ballast', obvious: true,
       desc: 'The weight is packed near the axis; it leans slowly and stands back up.',
       cond: 'Four weights on the inner ring, on a heavy top.',
       test: function (s) { return s.nW === 4 && s.inner === 4 && s.mass >= 0.044; },
-      mod: { fall: 0.68, rise: 1.12 } },
+      // ⛔ 0.68 measured at plus twelve win points once the Forged and Relic parts
+      // existed, because the search found a far heavier inner loaded top than
+      // anything Tier 1 could build. Slowing a topple is a strong lever and it
+      // needed less of it.
+      mod: { fall: 0.80, rise: 1.08 } },
 
     { id: 'whetstone', name: 'Whetstone', obvious: false,
       desc: 'An edge thin enough to cut instead of bounce, so it keeps its own spin.',
@@ -176,7 +184,9 @@
       desc: 'Mass held near the middle lets it drift wide and live on the rail.',
       cond: 'Exactly two weights, both on the inner ring, under a wide blade.',
       test: function (s) { return s.nW === 2 && s.inner === 2 && s.blade.radius >= 0.0235; },
-      mod: { bowl: 0.88, charge: 1.15 } }
+      // Same correction as Featherline: minus fourteen points against the wider
+      // catalogue, because drifting wide is a ringout as often as it is rail time.
+      mod: { bowl: 0.97, charge: 1.35 } }
   ];
 
   var byId = {};

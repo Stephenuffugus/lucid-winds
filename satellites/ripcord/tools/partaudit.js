@@ -47,12 +47,18 @@
 const SIM = require('../src/sim2.js');
 
 const MPG    = parseInt(process.argv[3] || '2', 10);   // matches per foe when measuring pull
-/* ⛔ 128 matches per candidate, not 64. At 64 the standard error of one ceiling
+/* ⛔ Keep this EQUAL to CEIL_MPG in tools/balance.js. A ceiling is a maximum
+   over ten candidates and the max of ten noisy estimates is biased upward by an
+   amount that grows with the noise, so two tools reading the same parts at
+   different sample sizes report different ceilings and disagree about which
+   parts pass. They did, for a while.
+
+   ⛔ 128 matches per candidate, not 64. At 64 the standard error of one ceiling
    is about 4 points, so a stat change worth 2 points is invisible and you end up
    tuning noise: two parts were "buffed", both measured WORSE, and both moves
    were inside the error bar. If you make this number smaller to save time, stop
    trusting differences under about 8 points. */
-const CEIL_MPG  = parseInt(process.argv[2] || '24', 10); // matches per foe when measuring a ceiling
+const CEIL_MPG  = parseInt(process.argv[2] || '12', 10); // matches per foe when measuring a ceiling
 const MEAN_N = parseInt(process.argv[4] || '40', 10);  // coherent builds per part for the mean
 
 const GAUNTLET = Object.keys(SIM.ARCHETYPES);
@@ -62,7 +68,22 @@ const SLOTS = [
 ];
 const SLOT_KEYS = SLOTS.map(s => s[0]);
 
-const rnd0 = SIM.mulberry(20260830);
+/* ⛔ COMMON RANDOM NUMBERS. The sampler is reseeded before EVERY part's pull, so
+ * all hundred and ten parts are measured over the identical forty builds.
+ *
+ * It used to run one shared stream through the whole catalogue, which meant each
+ * part met a different forty and its pull carried the variance of that draw as
+ * well as the variance of the matches. Two things went wrong with that. The
+ * numbers moved run to run on unchanged code, and worse, tools/balance.js
+ * reseeds and therefore measured a DIFFERENT population: parts came out of the
+ * balancer in band and straight into this audit as ten points of power creep,
+ * with both tools correct and neither comparable.
+ *
+ * Pairing the draws is the standard fix and it is nearly free. The absolute
+ * numbers move slightly; every comparison between them gets much sharper, and
+ * comparisons are the only thing this file is for. */
+let rnd0 = SIM.mulberry(20260830);
+const reseed = () => { rnd0 = SIM.mulberry(20260830); };
 const pickR = a => a[Math.floor(rnd0() * a.length)];
 
 /* The menu of weight layouts a real player would try. Named, because "three
@@ -152,6 +173,7 @@ function coherentBuild(role, purity) {
  * builds a player might plausibly assemble. This is the one the tier gate reads,
  * because power creep is a part that lifts everything it touches. */
 function meanFor(slot, id, n) {
+  reseed();
   let sum = 0;
   for (let i = 0; i < n; i++) {
     const cfg = coherentBuild(SIM.ROLES[i % SIM.ROLES.length], 0.55 + 0.40 * (i % 2));
@@ -193,18 +215,29 @@ for (const [slot, list] of SLOTS) {
                 'ceiling ' + pc(r.ceil) + '%   pull ' + pc(r.mean) + '%   best ' + r.best +
                 (r.ceil < 0.45 ? '   ← cannot be made good' : ''));
 
-  /* The tier gate. A Relic may have a higher CEILING than its Tier 1 sibling;
-   * that is the entire point of a Relic. It may not have a higher PULL, because
-   * a higher pull is power creep wearing a costume. The sibling is the Tier 1
-   * part in the same slot and role with the nearest ceiling. */
+  /* The tier gate. A Relic may have a higher CEILING than a Stock part; that is
+   * the entire point of a Relic. It may not have a higher PULL, because a higher
+   * pull is power creep wearing a costume.
+   *
+   * ⛔ IT COMPARES AGAINST THE MEDIAN OF THE SAME ROLE STOCK PARTS, NOT AGAINST A
+   * SINGLE SIBLING. The first rule picked the Stock part with the nearest
+   * ceiling, which sounds precise and is a coin flip whenever two Stock parts sit
+   * within a point of each other: the same unchanged Forged ratchet was measured
+   * against 0-70 by this file and against 2-70 by tools/balance.js, the two caps
+   * were four points apart, and one tool failed it while the other passed it.
+   * A median over the role is stable, it is the same number both tools compute,
+   * and it is a better question anyway: the thing that matters is whether a
+   * higher tier lifts builds above what a TYPICAL stock part of its role does.
+   */
   const t1 = rows.filter(r => r.tier === 1);
+  const median = a => { const b = a.slice().sort((x, y) => x - y); return b.length ? b[Math.floor(b.length / 2)] : 0; };
   for (const r of rows.filter(x => x.tier >= 2)) {
-    const sibs = t1.filter(x => x.role === r.role);
-    const pool = sibs.length ? sibs : t1;
+    let pool = t1.filter(x => x.role === r.role);
+    if (pool.length < 2) pool = t1;
     if (!pool.length) continue;
-    const sib = pool.reduce((bst, x) => Math.abs(x.ceil - r.ceil) < Math.abs(bst.ceil - r.ceil) ? x : bst, pool[0]);
-    const d = (r.mean - sib.mean) * 100;
-    if (d > 4) creep.push(`${slot}:${r.id} (T${r.tier}) pull +${d.toFixed(1)} over ${sib.id}`);
+    const base = median(pool.map(x => x.mean));
+    const d = (r.mean - base) * 100;
+    if (d > 4) creep.push(`${slot}:${r.id} (T${r.tier}) pull +${d.toFixed(1)} over the ${r.role} stock median`);
   }
   console.log('');
 }

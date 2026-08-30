@@ -142,6 +142,9 @@ button{font:inherit;color:inherit}
 .chip .t{font-size:11px;letter-spacing:.1em;color:var(--rope);font-weight:700}
 .chip .t.t3{color:var(--ember)}
 .cosmetic label em{color:var(--steel)}
+.fitted{margin:8px 0 0;font-size:13px;line-height:1.45;color:var(--dim)}
+.fitted b{color:var(--ember);font-weight:700}
+.fitted span{display:block;margin-bottom:3px}
 
 .acc{border-top:1px solid var(--line)}
 .acc:last-of-type{border-bottom:1px solid var(--line)}
@@ -163,6 +166,7 @@ button{font:inherit;color:inherit}
 .rf.on{color:var(--chalk);border-color:currentColor}
 .rf[data-r=attack].on{color:var(--ember)} .rf[data-r=stamina].on{color:var(--good)}
 .rf[data-r=defense].on{color:var(--steel)} .rf[data-r=balance].on{color:var(--rope)}
+.rf[data-r=mine].on{color:var(--good)}
 .dot{display:inline-block;width:7px;height:7px;border-radius:50%;flex:0 0 auto}
 
 /* rigs */
@@ -430,430 +434,822 @@ button{font:inherit;color:inherit}
 <script>var LADDER=[
  {
   "rung": 1,
+  "league": 0,
   "name": "Chalkline",
   "role": "balance",
   "target": 0.3,
   "measured": 0.313,
   "build": {
-   "core": "lodest",
-   "blade": "crest",
-   "assist": "vane",
-   "ratchet": "2-70",
+   "core": "windlas",
+   "blade": "hailstone",
+   "assist": "shim",
+   "ratchet": "3-60",
    "bit": "spool",
    "weights": [],
    "trigger": "charged",
-   "finish": "anod",
-   "decal": "crane",
-   "trail": "ink"
+   "finish": "chrome",
+   "decal": "wave",
+   "trail": "frost"
   },
-  "drop": {
-   "slot": "blade",
-   "id": "cleaver"
-  }
+  "drops": [
+   {
+    "slot": "blade",
+    "id": "cleaver"
+   },
+   {
+    "slot": "bit",
+    "id": "flat"
+   },
+   {
+    "slot": "ratchet",
+    "id": "0-70"
+   },
+   {
+    "slot": "assist",
+    "id": "jag"
+   }
+  ]
  },
  {
   "rung": 2,
+  "league": 0,
   "name": "Bat Handler",
   "role": "stamina",
   "target": 0.327,
   "measured": 0.313,
   "build": {
-   "core": "ember",
-   "blade": "halo",
+   "core": "tinder",
+   "blade": "cartwheel",
    "assist": "slick",
    "ratchet": "6-50",
-   "bit": "point",
-   "weights": [],
+   "bit": "jasper",
+   "weights": [
+    {
+     "id": "chip",
+     "hole": 0,
+     "ring": 0
+    }
+   ],
    "trigger": "charged",
-   "finish": "brass",
-   "decal": "sunburst",
-   "trail": "jade"
+   "finish": "chrome",
+   "decal": "none",
+   "trail": "ember"
   },
-  "drop": {
-   "slot": "bit",
-   "id": "flat"
-  }
+  "drops": [
+   {
+    "slot": "core",
+    "id": "ember"
+   },
+   {
+    "slot": "blade",
+    "id": "sabre"
+   },
+   {
+    "slot": "bit",
+    "id": "rush"
+   },
+   {
+    "slot": "ratchet",
+    "id": "5-60"
+   }
+  ]
  },
  {
   "rung": 3,
+  "league": 0,
   "name": "Post Keeper",
   "role": "attack",
   "target": 0.35,
   "measured": 0.375,
   "build": {
    "core": "gale",
-   "blade": "talon",
-   "assist": "rake",
-   "ratchet": "4-80",
-   "bit": "rush",
+   "blade": "shard",
+   "assist": "longspur",
+   "ratchet": "0-90",
+   "bit": "gearf",
    "weights": [],
    "trigger": "charged",
-   "finish": "raw",
-   "decal": "none",
-   "trail": "ember"
+   "finish": "clay",
+   "decal": "crane",
+   "trail": "violet"
   },
-  "drop": {
-   "slot": "ratchet",
-   "id": "0-70"
-  }
+  "drops": [
+   {
+    "slot": "assist",
+    "id": "guard"
+   },
+   {
+    "slot": "core",
+    "id": "frost"
+   },
+   {
+    "slot": "blade",
+    "id": "orbit"
+   },
+   {
+    "slot": "bit",
+    "id": "needle"
+   }
+  ]
  },
  {
   "rung": 4,
+  "league": 0,
   "name": "Knot",
   "role": "defense",
   "target": 0.373,
   "measured": 0.375,
   "build": {
-   "core": "burr",
-   "blade": "bulwark",
-   "assist": "guard",
-   "ratchet": "9-60",
-   "bit": "dome",
+   "core": "granite",
+   "blade": "ingot",
+   "assist": "collar",
+   "ratchet": "8-30",
+   "bit": "plumb",
    "weights": [],
    "trigger": "charged",
-   "finish": "enamel",
-   "decal": "wave",
-   "trail": "violet"
+   "finish": "anod",
+   "decal": "stripe",
+   "trail": "frost"
   },
-  "drop": {
-   "slot": "assist",
-   "id": "none"
-  }
+  "drops": [
+   {
+    "slot": "ratchet",
+    "id": "9-60"
+   },
+   {
+    "slot": "assist",
+    "id": "slick"
+   },
+   {
+    "slot": "core",
+    "id": "gale"
+   },
+   {
+    "slot": "blade",
+    "id": "bulwark"
+   }
+  ]
  },
  {
   "rung": 5,
+  "league": 0,
+  "name": "The Post",
+  "role": "stamina",
+  "target": 0.5,
+  "measured": 0.375,
+  "build": {
+   "core": "ember",
+   "blade": "halo",
+   "assist": "slick",
+   "ratchet": "5-60",
+   "bit": "needle",
+   "weights": [
+    {
+     "id": "chip",
+     "hole": 0,
+     "ring": 1
+    },
+    {
+     "id": "chip",
+     "hole": 2,
+     "ring": 1
+    },
+    {
+     "id": "chip",
+     "hole": 4,
+     "ring": 1
+    }
+   ],
+   "trigger": "lowSpin"
+  },
+  "boss": {
+   "limit": 40,
+   "rig": {
+    "decay": 0.4,
+    "drive": 0.16,
+    "taken": 0.28,
+    "exitNeed": 0.85
+   }
+  },
+  "teaches": "Attack has a job; nothing here wins on spin alone.",
+  "relicSlot": "bit",
+  "relics": [
+   "corundum",
+   "caltrop",
+   "cobble",
+   "pintle",
+   "jasper"
+  ]
+ },
+ {
+  "rung": 6,
+  "league": 1,
   "name": "Riverstone",
   "role": "balance",
   "target": 0.395,
   "measured": 0.375,
   "build": {
-   "core": "lash",
-   "blade": "wheel",
+   "core": "tinder",
+   "blade": "crest",
    "assist": "wing",
-   "ratchet": "3-60",
+   "ratchet": "0-60",
    "bit": "spool",
    "weights": [
-    {
-     "id": "chip",
-     "hole": 1,
-     "ring": 0
-    }
-   ],
-   "trigger": "charged",
-   "finish": "chrome",
-   "decal": "knot",
-   "trail": "ink"
-  },
-  "drop": {
-   "slot": "core",
-   "id": "ember"
-  }
- },
- {
-  "rung": 6,
-  "name": "Tin Whistle",
-  "role": "stamina",
-  "target": 0.417,
-  "measured": 0.438,
-  "build": {
-   "core": "ember",
-   "blade": "orbit",
-   "assist": "slick",
-   "ratchet": "6-50",
-   "bit": "point",
-   "weights": [
-    {
-     "id": "brick",
-     "hole": 3,
-     "ring": 1
-    }
-   ],
-   "trigger": "charged",
-   "finish": "enamel",
-   "decal": "chalk",
-   "trail": "none"
-  },
-  "drop": {
-   "slot": "blade",
-   "id": "sabre"
-  }
- },
- {
-  "rung": 7,
-  "name": "Marketside",
-  "role": "attack",
-  "target": 0.439,
-  "measured": 0.438,
-  "build": {
-   "core": "gale",
-   "blade": "talon",
-   "assist": "rake",
-   "ratchet": "1-90",
-   "bit": "rush",
-   "weights": [],
-   "trigger": "cornered",
-   "finish": "chrome",
-   "decal": "wave",
-   "trail": "frost"
-  },
-  "drop": {
-   "slot": "bit",
-   "id": "rush"
-  }
- },
- {
-  "rung": 8,
-  "name": "The Cousin",
-  "role": "defense",
-  "target": 0.46,
-  "measured": 0.438,
-  "build": {
-   "core": "iron",
-   "blade": "bulwark",
-   "assist": "guard",
-   "ratchet": "9-60",
-   "bit": "dome",
-   "weights": [
-    {
-     "id": "chip",
-     "hole": 2,
-     "ring": 0
-    }
-   ],
-   "trigger": "late",
-   "finish": "enamel",
-   "decal": "knot",
-   "trail": "none"
-  },
-  "drop": {
-   "slot": "ratchet",
-   "id": "3-60"
-  }
- },
- {
-  "rung": 9,
-  "name": "Nine Teeth",
-  "role": "balance",
-  "target": 0.48,
-  "measured": 0.5,
-  "build": {
-   "core": "quench",
-   "blade": "crest",
-   "assist": "none",
-   "ratchet": "2-70",
-   "bit": "spool",
-   "weights": [],
-   "trigger": "onRidge",
-   "finish": "weather",
-   "decal": "koi",
-   "trail": "rope"
-  },
-  "drop": {
-   "slot": "assist",
-   "id": "jag"
-  }
- },
- {
-  "rung": 10,
-  "name": "Long Tuesday",
-  "role": "stamina",
-  "target": 0.501,
-  "measured": 0.5,
-  "build": {
-   "core": "ember",
-   "blade": "halo",
-   "assist": "slick",
-   "ratchet": "6-50",
-   "bit": "taper",
-   "weights": [
-    {
-     "id": "chip",
-     "hole": 4,
-     "ring": 1
-    }
-   ],
-   "trigger": "thirdHit",
-   "finish": "chrome",
-   "decal": "crane",
-   "trail": "frost"
-  },
-  "drop": {
-   "slot": "core",
-   "id": "frost"
-  }
- },
- {
-  "rung": 11,
-  "name": "Barrel Boy",
-  "role": "attack",
-  "target": 0.522,
-  "measured": 0.5,
-  "build": {
-   "core": "lodest",
-   "blade": "talon",
-   "assist": "rake",
-   "ratchet": "1-90",
-   "bit": "claw",
-   "weights": [
-    {
-     "id": "brick",
-     "hole": 0,
-     "ring": 1
-    },
-    {
-     "id": "chip",
-     "hole": 4,
-     "ring": 1
-    }
-   ],
-   "trigger": "thirdHit",
-   "finish": "chrome",
-   "decal": "stripe",
-   "trail": "none"
-  },
-  "drop": {
-   "slot": "blade",
-   "id": "orbit"
-  }
- },
- {
-  "rung": 12,
-  "name": "Quiet Hands",
-  "role": "defense",
-  "target": 0.542,
-  "measured": 0.563,
-  "build": {
-   "core": "iron",
-   "blade": "bulwark",
-   "assist": "guard",
-   "ratchet": "9-60",
-   "bit": "dome",
-   "weights": [
-    {
-     "id": "brick",
-     "hole": 0,
-     "ring": 1
-    }
-   ],
-   "trigger": "onRidge",
-   "finish": "brass",
-   "decal": "stripe",
-   "trail": "ink"
-  },
-  "drop": {
-   "slot": "bit",
-   "id": "needle"
-  }
- },
- {
-  "rung": 13,
-  "name": "Gasing",
-  "role": "balance",
-  "target": 0.562,
-  "measured": 0.563,
-  "build": {
-   "core": "burr",
-   "blade": "crest",
-   "assist": "shim",
-   "ratchet": "3-60",
-   "bit": "spool",
-   "weights": [
-    {
-     "id": "brick",
-     "hole": 1,
-     "ring": 1
-    }
-   ],
-   "trigger": "charged",
-   "finish": "chrome",
-   "decal": "sunburst",
-   "trail": "violet"
-  },
-  "drop": {
-   "slot": "ratchet",
-   "id": "5-60"
-  }
- },
- {
-  "rung": 14,
-  "name": "Ash Wednesday",
-  "role": "stamina",
-  "target": 0.582,
-  "measured": 0.563,
-  "build": {
-   "core": "ember",
-   "blade": "halo",
-   "assist": "slick",
-   "ratchet": "6-50",
-   "bit": "point",
-   "weights": [
-    {
-     "id": "chip",
-     "hole": 4,
-     "ring": 1
-    },
-    {
-     "id": "chip",
-     "hole": 3,
-     "ring": 1
-    },
     {
      "id": "slug",
      "hole": 3,
      "ring": 1
     }
    ],
-   "trigger": "firstBlood",
-   "finish": "clay",
-   "decal": "koi",
-   "trail": "frost"
+   "trigger": "charged",
+   "finish": "brass",
+   "decal": "tiger",
+   "trail": "ink"
   },
-  "drop": {
-   "slot": "assist",
-   "id": "guard"
-  }
+  "drops": [
+   {
+    "slot": "bit",
+    "id": "ball"
+   },
+   {
+    "slot": "ratchet",
+    "id": "7-40"
+   },
+   {
+    "slot": "assist",
+    "id": "hook"
+   },
+   {
+    "slot": "core",
+    "id": "hollow"
+   }
+  ]
  },
  {
-  "rung": 15,
-  "name": "The Uncle",
-  "role": "attack",
-  "target": 0.602,
-  "measured": 0.625,
+  "rung": 7,
+  "league": 1,
+  "name": "Tin Whistle",
+  "role": "stamina",
+  "target": 0.417,
+  "measured": 0.438,
   "build": {
-   "core": "lash",
-   "blade": "sabre",
-   "assist": "rake",
-   "ratchet": "1-90",
-   "bit": "gearf",
+   "core": "tinder",
+   "blade": "halo",
+   "assist": "lacquer",
+   "ratchet": "5-60",
+   "bit": "stillpin",
+   "weights": [],
+   "trigger": "charged",
+   "finish": "weather",
+   "decal": "sunburst",
+   "trail": "violet"
+  },
+  "drops": [
+   {
+    "slot": "blade",
+    "id": "talon"
+   },
+   {
+    "slot": "bit",
+    "id": "gearf"
+   },
+   {
+    "slot": "ratchet",
+    "id": "1-90"
+   },
+   {
+    "slot": "assist",
+    "id": "rake"
+   }
+  ]
+ },
+ {
+  "rung": 8,
+  "league": 1,
+  "name": "Marketside",
+  "role": "attack",
+  "target": 0.439,
+  "measured": 0.438,
+  "build": {
+   "core": "gale",
+   "blade": "shard",
+   "assist": "chert",
+   "ratchet": "4-80",
+   "bit": "rush",
+   "weights": [],
+   "trigger": "late",
+   "finish": "brass",
+   "decal": "none",
+   "trail": "rope"
+  },
+  "drops": [
+   {
+    "slot": "core",
+    "id": "burr"
+   },
+   {
+    "slot": "blade",
+    "id": "shard"
+   },
+   {
+    "slot": "bit",
+    "id": "taper"
+   },
+   {
+    "slot": "ratchet",
+    "id": "6-50"
+   }
+  ]
+ },
+ {
+  "rung": 9,
+  "league": 1,
+  "name": "The Cousin",
+  "role": "defense",
+  "target": 0.46,
+  "measured": 0.438,
+  "build": {
+   "core": "ballast",
+   "blade": "millstone",
+   "assist": "guard",
+   "ratchet": "11-30",
+   "bit": "cobble",
    "weights": [
     {
      "id": "brick",
+     "hole": 1,
+     "ring": 1
+    }
+   ],
+   "trigger": "late",
+   "finish": "weather",
+   "decal": "stripe",
+   "trail": "ink"
+  },
+  "drops": [
+   {
+    "slot": "assist",
+    "id": "collar"
+   },
+   {
+    "slot": "core",
+    "id": "lash"
+   },
+   {
+    "slot": "blade",
+    "id": "anvil"
+   },
+   {
+    "slot": "bit",
+    "id": "dome"
+   }
+  ]
+ },
+ {
+  "rung": 10,
+  "league": 1,
+  "name": "Katis",
+  "role": "attack",
+  "target": 0.5,
+  "measured": 0.625,
+  "build": {
+   "core": "lash",
+   "blade": "cleaver",
+   "assist": "rake",
+   "ratchet": "4-80",
+   "bit": "rush",
+   "weights": [
+    {
+     "id": "brick",
+     "hole": 0,
+     "ring": 1
+    },
+    {
+     "id": "brick",
+     "hole": 1,
+     "ring": 1
+    }
+   ],
+   "trigger": "firstBlood"
+  },
+  "boss": {
+   "limit": 40,
+   "katis": {
+    "powerCoef": 0.4
+   }
+  },
+  "teaches": "Momentum, and what losing a round costs you. Win the first one.",
+  "relicSlot": "blade",
+  "relics": [
+   "shrike",
+   "sledge",
+   "ingot",
+   "hookbill"
+  ]
+ },
+ {
+  "rung": 11,
+  "league": 2,
+  "name": "Nine Teeth",
+  "role": "balance",
+  "target": 0.48,
+  "measured": 0.5,
+  "build": {
+   "core": "burr",
+   "blade": "crest",
+   "assist": "none",
+   "ratchet": "0-70",
+   "bit": "cleat",
+   "weights": [
+    {
+     "id": "chip",
+     "hole": 0,
+     "ring": 1
+    },
+    {
+     "id": "slug",
+     "hole": 0,
+     "ring": 0
+    }
+   ],
+   "trigger": "onRidge",
+   "finish": "matte",
+   "decal": "stripe",
+   "trail": "ember"
+  },
+  "drops": [
+   {
+    "slot": "ratchet",
+    "id": "2-70"
+   },
+   {
+    "slot": "assist",
+    "id": "vane"
+   },
+   {
+    "slot": "core",
+    "id": "lodest"
+   },
+   {
+    "slot": "blade",
+    "id": "halo"
+   }
+  ]
+ },
+ {
+  "rung": 12,
+  "league": 2,
+  "name": "Long Tuesday",
+  "role": "stamina",
+  "target": 0.501,
+  "measured": 0.5,
+  "build": {
+   "core": "ember",
+   "blade": "roundel",
+   "assist": "gutta",
+   "ratchet": "6-50",
+   "bit": "needle",
+   "weights": [
+    {
+     "id": "chip",
+     "hole": 1,
+     "ring": 1
+    }
+   ],
+   "trigger": "charged",
+   "finish": "matte",
+   "decal": "chalk",
+   "trail": "violet"
+  },
+  "drops": [
+   {
+    "slot": "bit",
+    "id": "claw"
+   },
+   {
+    "slot": "ratchet",
+    "id": "8-30"
+   },
+   {
+    "slot": "assist",
+    "id": "shim"
+   },
+   {
+    "slot": "core",
+    "id": "quench"
+   }
+  ]
+ },
+ {
+  "rung": 13,
+  "league": 2,
+  "name": "Barrel Boy",
+  "role": "attack",
+  "target": 0.522,
+  "measured": 0.5,
+  "build": {
+   "core": "flint",
+   "blade": "cleaver",
+   "assist": "barb",
+   "ratchet": "4-80",
+   "bit": "flat",
+   "weights": [
+    {
+     "id": "slug",
+     "hole": 4,
+     "ring": 1
+    },
+    {
+     "id": "chip",
      "hole": 4,
      "ring": 0
     }
    ],
-   "trigger": "behind",
-   "finish": "chrome",
+   "trigger": "cornered",
+   "finish": "enamel",
    "decal": "stripe",
-   "trail": "jade"
+   "trail": "ember"
   },
-  "drop": {
-   "slot": "core",
-   "id": "gale"
-  }
+  "drops": [
+   {
+    "slot": "blade",
+    "id": "broadaxe"
+   },
+   {
+    "slot": "bit",
+    "id": "bradawl"
+   },
+   {
+    "slot": "ratchet",
+    "id": "0-90"
+   },
+   {
+    "slot": "assist",
+    "id": "cornice"
+   }
+  ]
+ },
+ {
+  "rung": 14,
+  "league": 2,
+  "name": "Quiet Hands",
+  "role": "defense",
+  "target": 0.542,
+  "measured": 0.563,
+  "build": {
+   "core": "wren",
+   "blade": "anvil",
+   "assist": "bolster",
+   "ratchet": "8-30",
+   "bit": "cobble",
+   "weights": [
+    {
+     "id": "chip",
+     "hole": 3,
+     "ring": 0
+    }
+   ],
+   "trigger": "thirdHit",
+   "finish": "weather",
+   "decal": "circuit",
+   "trail": "rope"
+  },
+  "drops": [
+   {
+    "slot": "core",
+    "id": "ballast"
+   },
+   {
+    "slot": "blade",
+    "id": "chisel"
+   },
+   {
+    "slot": "bit",
+    "id": "stillpin"
+   },
+   {
+    "slot": "ratchet",
+    "id": "11-80"
+   }
+  ]
+ },
+ {
+  "rung": 15,
+  "league": 2,
+  "name": "The Pemangkin",
+  "role": "defense",
+  "target": 0.5,
+  "measured": 0.875,
+  "build": {
+   "core": "iron",
+   "blade": "anvil",
+   "assist": "collar",
+   "ratchet": "9-60",
+   "bit": "dome",
+   "weights": [
+    {
+     "id": "brick",
+     "hole": 0,
+     "ring": 1
+    },
+    {
+     "id": "brick",
+     "hole": 1,
+     "ring": 1
+    },
+    {
+     "id": "brick",
+     "hole": 3,
+     "ring": 1
+    },
+    {
+     "id": "brick",
+     "hole": 4,
+     "ring": 1
+    }
+   ],
+   "trigger": "thirdHit"
+  },
+  "boss": {
+   "limit": 40,
+   "anchor": true,
+   "specMul": {
+    "m": 2.2,
+    "I": 2.2
+   },
+   "rig": {
+    "burstTake": 2
+   }
+  },
+  "teaches": "Burst exists, and it is the answer to the immovable.",
+  "relicSlot": "assist",
+  "relics": [
+   "eaves",
+   "nettle",
+   "bushing",
+   "chert"
+  ]
  },
  {
   "rung": 16,
+  "league": 3,
+  "name": "Gasing",
+  "role": "balance",
+  "target": 0.562,
+  "measured": 0.563,
+  "build": {
+   "core": "tinder",
+   "blade": "hailstone",
+   "assist": "vane",
+   "ratchet": "0-70",
+   "bit": "spool",
+   "weights": [
+    {
+     "id": "slug",
+     "hole": 0,
+     "ring": 1
+    }
+   ],
+   "trigger": "charged",
+   "finish": "chrome",
+   "decal": "stripe",
+   "trail": "frost"
+  },
+  "drops": [
+   {
+    "slot": "assist",
+    "id": "longspur"
+   },
+   {
+    "slot": "core",
+    "id": "granite"
+   },
+   {
+    "slot": "blade",
+    "id": "millstone"
+   },
+   {
+    "slot": "bit",
+    "id": "spur"
+   }
+  ]
+ },
+ {
+  "rung": 17,
+  "league": 3,
+  "name": "Ash Wednesday",
+  "role": "stamina",
+  "target": 0.582,
+  "measured": 0.563,
+  "build": {
+   "core": "ember",
+   "blade": "roundel",
+   "assist": "slick",
+   "ratchet": "6-50",
+   "bit": "bradawl",
+   "weights": [
+    {
+     "id": "chip",
+     "hole": 1,
+     "ring": 1
+    },
+    {
+     "id": "slug",
+     "hole": 5,
+     "ring": 0
+    },
+    {
+     "id": "chip",
+     "hole": 5,
+     "ring": 1
+    }
+   ],
+   "trigger": "behind",
+   "finish": "enamel",
+   "decal": "flame",
+   "trail": "frost"
+  },
+  "drops": [
+   {
+    "slot": "ratchet",
+    "id": "11-30"
+   },
+   {
+    "slot": "assist",
+    "id": "teasel"
+   },
+   {
+    "slot": "core",
+    "id": "windlas"
+   },
+   {
+    "slot": "blade",
+    "id": "ploughshare"
+   }
+  ]
+ },
+ {
+  "rung": 18,
+  "league": 3,
+  "name": "The Uncle",
+  "role": "attack",
+  "target": 0.602,
+  "measured": 0.563,
+  "build": {
+   "core": "millst",
+   "blade": "sledge",
+   "assist": "rake",
+   "ratchet": "11-80",
+   "bit": "gearf",
+   "weights": [
+    {
+     "id": "chip",
+     "hole": 3,
+     "ring": 0
+    },
+    {
+     "id": "brick",
+     "hole": 3,
+     "ring": 0
+    }
+   ],
+   "trigger": "firstBlood",
+   "finish": "weather",
+   "decal": "none",
+   "trail": "ink"
+  },
+  "drops": [
+   {
+    "slot": "bit",
+    "id": "rowel"
+   },
+   {
+    "slot": "ratchet",
+    "id": "0-40"
+   },
+   {
+    "slot": "assist",
+    "id": "sprocket"
+   },
+   {
+    "slot": "core",
+    "id": "vise"
+   }
+  ]
+ },
+ {
+  "rung": 19,
+  "league": 3,
   "name": "Half Crown",
   "role": "defense",
   "target": 0.622,
   "measured": 0.625,
   "build": {
-   "core": "frost",
+   "core": "iron",
    "blade": "bulwark",
    "assist": "guard",
-   "ratchet": "8-30",
-   "bit": "dome",
+   "ratchet": "14-30",
+   "bit": "pintle",
    "weights": [
     {
      "id": "brick",
@@ -866,24 +1262,309 @@ button{font:inherit;color:inherit}
    "decal": "crane",
    "trail": "rope"
   },
-  "drop": {
-   "slot": "blade",
-   "id": "bulwark"
-  }
+  "drops": [
+   {
+    "slot": "blade",
+    "id": "cartwheel"
+   },
+   {
+    "slot": "bit",
+    "id": "sabot"
+   },
+   {
+    "slot": "ratchet",
+    "id": "6-30"
+   },
+   {
+    "slot": "assist",
+    "id": "lacquer"
+   }
+  ]
  },
  {
-  "rung": 17,
+  "rung": 20,
+  "league": 3,
+  "name": "Two Direction",
+  "role": "utility",
+  "target": 0.5,
+  "measured": 0.5,
+  "build": {
+   "core": "hollow",
+   "blade": "talon",
+   "assist": "hook",
+   "ratchet": "5-60",
+   "bit": "spool",
+   "weights": [
+    {
+     "id": "slug",
+     "hole": 0,
+     "ring": 1
+    },
+    {
+     "id": "slug",
+     "hole": 3,
+     "ring": 1
+    }
+   ],
+   "trigger": "charged"
+  },
+  "boss": {
+   "limit": 40,
+   "abilityEvery": 3,
+   "rig": {
+    "jtCap": 1.25,
+    "taken": 0.7
+   }
+  },
+  "teaches": "Same spin against opposite spin is a matchup, not flavour.",
+  "relicSlot": "core",
+  "relics": [
+   "bell",
+   "magpie",
+   "flint",
+   "millst"
+  ]
+ },
+ {
+  "rung": 21,
+  "league": 4,
   "name": "Ironmonger",
   "role": "balance",
   "target": 0.642,
   "measured": 0.625,
   "build": {
-   "core": "quench",
+   "core": "reel",
    "blade": "crest",
-   "assist": "none",
-   "ratchet": "2-70",
+   "assist": "shim",
+   "ratchet": "0-70",
    "bit": "spool",
    "weights": [
+    {
+     "id": "chip",
+     "hole": 1,
+     "ring": 1
+    },
+    {
+     "id": "slug",
+     "hole": 0,
+     "ring": 0
+    },
+    {
+     "id": "slug",
+     "hole": 1,
+     "ring": 1
+    },
+    {
+     "id": "chip",
+     "hole": 0,
+     "ring": 1
+    }
+   ],
+   "trigger": "mirror",
+   "finish": "enamel",
+   "decal": "none",
+   "trail": "jade"
+  },
+  "drops": [
+   {
+    "slot": "core",
+    "id": "kite"
+   },
+   {
+    "slot": "blade",
+    "id": "roundel"
+   },
+   {
+    "slot": "bit",
+    "id": "ferrule"
+   },
+   {
+    "slot": "ratchet",
+    "id": "11-60"
+   }
+  ]
+ },
+ {
+  "rung": 22,
+  "league": 4,
+  "name": "Old Cord",
+  "role": "stamina",
+  "target": 0.661,
+  "measured": 0.625,
+  "build": {
+   "core": "ember",
+   "blade": "roundel",
+   "assist": "eaves",
+   "ratchet": "6-30",
+   "bit": "needle",
+   "weights": [
+    {
+     "id": "slug",
+     "hole": 2,
+     "ring": 1
+    },
+    {
+     "id": "chip",
+     "hole": 0,
+     "ring": 0
+    },
+    {
+     "id": "slug",
+     "hole": 2,
+     "ring": 1
+    }
+   ],
+   "trigger": "onRidge",
+   "finish": "enamel",
+   "decal": "flame",
+   "trail": "none"
+  },
+  "drops": [
+   {
+    "slot": "assist",
+    "id": "bolster"
+   },
+   {
+    "slot": "core",
+    "id": "reel"
+   },
+   {
+    "slot": "blade",
+    "id": "rasp"
+   },
+   {
+    "slot": "bit",
+    "id": "cleat"
+   }
+  ]
+ },
+ {
+  "rung": 23,
+  "league": 4,
+  "name": "Saltseller",
+  "role": "attack",
+  "target": 0.681,
+  "measured": 0.688,
+  "build": {
+   "core": "lodest",
+   "blade": "cleaver",
+   "assist": "chert",
+   "ratchet": "4-80",
+   "bit": "rowel",
+   "weights": [
+    {
+     "id": "slug",
+     "hole": 1,
+     "ring": 0
+    },
+    {
+     "id": "chip",
+     "hole": 3,
+     "ring": 1
+    }
+   ],
+   "trigger": "late",
+   "finish": "chrome",
+   "decal": "wave",
+   "trail": "rope"
+  },
+  "drops": [
+   {
+    "slot": "ratchet",
+    "id": "0-60"
+   },
+   {
+    "slot": "assist",
+    "id": "gutta"
+   },
+   {
+    "slot": "core",
+    "id": "tinder"
+   },
+   {
+    "slot": "blade",
+    "id": "hailstone"
+   }
+  ]
+ },
+ {
+  "rung": 24,
+  "league": 4,
+  "name": "Rope Walk",
+  "role": "defense",
+  "target": 0.7,
+  "measured": 0.688,
+  "build": {
+   "core": "bell",
+   "blade": "bulwark",
+   "assist": "collar",
+   "ratchet": "9-60",
+   "bit": "pintle",
+   "weights": [
+    {
+     "id": "brick",
+     "hole": 4,
+     "ring": 0
+    },
+    {
+     "id": "slug",
+     "hole": 4,
+     "ring": 0
+    },
+    {
+     "id": "slug",
+     "hole": 3,
+     "ring": 0
+    },
+    {
+     "id": "slug",
+     "hole": 4,
+     "ring": 1
+    }
+   ],
+   "trigger": "onRidge",
+   "finish": "clay",
+   "decal": "koi",
+   "trail": "frost"
+  },
+  "drops": [
+   {
+    "slot": "bit",
+    "id": "plumb"
+   },
+   {
+    "slot": "assist",
+    "id": "barb"
+   },
+   {
+    "slot": "core",
+    "id": "wren"
+   },
+   {
+    "slot": "bit",
+    "id": "agate"
+   }
+  ]
+ },
+ {
+  "rung": 25,
+  "league": 4,
+  "name": "The Giant",
+  "role": "defense",
+  "target": 0.5,
+  "measured": 0.75,
+  "build": {
+   "core": "lodest",
+   "blade": "bulwark",
+   "assist": "wing",
+   "ratchet": "8-30",
+   "bit": "dome",
+   "weights": [
+    {
+     "id": "brick",
+     "hole": 0,
+     "ring": 1
+    },
     {
      "id": "brick",
      "hole": 1,
@@ -891,126 +1572,41 @@ button{font:inherit;color:inherit}
     },
     {
      "id": "brick",
-     "hole": 2,
-     "ring": 0
-    }
-   ],
-   "trigger": "onRidge",
-   "finish": "anod",
-   "decal": "chalk",
-   "trail": "violet"
-  },
-  "drop": {
-   "slot": "bit",
-   "id": "ball"
-  }
- },
- {
-  "rung": 18,
-  "name": "Old Cord",
-  "role": "stamina",
-  "target": 0.661,
-  "measured": 0.688,
-  "build": {
-   "core": "ember",
-   "blade": "orbit",
-   "assist": "slick",
-   "ratchet": "6-50",
-   "bit": "needle",
-   "weights": [
-    {
-     "id": "brick",
      "hole": 3,
-     "ring": 0
-    },
-    {
-     "id": "chip",
-     "hole": 3,
-     "ring": 0
-    },
-    {
-     "id": "slug",
-     "hole": 3,
-     "ring": 0
-    }
-   ],
-   "trigger": "firstBlood",
-   "finish": "brass",
-   "decal": "tiger",
-   "trail": "jade"
-  },
-  "drop": {
-   "slot": "ratchet",
-   "id": "9-60"
-  }
- },
- {
-  "rung": 19,
-  "name": "Windlass",
-  "role": "attack",
-  "target": 0.681,
-  "measured": 0.625,
-  "build": {
-   "core": "lash",
-   "blade": "talon",
-   "assist": "rake",
-   "ratchet": "4-80",
-   "bit": "gearf",
-   "weights": [
-    {
-     "id": "chip",
-     "hole": 5,
-     "ring": 0
+     "ring": 1
     },
     {
      "id": "brick",
-     "hole": 5,
-     "ring": 0
-    },
-    {
-     "id": "slug",
      "hole": 4,
-     "ring": 0
-    }
-   ],
-   "trigger": "thirdHit",
-   "finish": "anod",
-   "decal": "koi",
-   "trail": "frost"
-  },
-  "drop": {
-   "slot": "assist",
-   "id": "slick"
-  }
- },
- {
-  "rung": 20,
-  "name": "The Kelantan",
-  "role": "defense",
-  "target": 0.7,
-  "measured": 0.688,
-  "build": {
-   "core": "iron",
-   "blade": "anvil",
-   "assist": "collar",
-   "ratchet": "9-60",
-   "bit": "dome",
-   "weights": [
-    {
-     "id": "brick",
-     "hole": 2,
      "ring": 1
     }
    ],
-   "trigger": "behind",
-   "finish": "clay",
-   "decal": "koi",
-   "trail": "frost"
+   "trigger": "late"
   },
-  "drop": {
-   "slot": "core",
-   "id": "iron"
-  }
+  "boss": {
+   "arenaR": 0.23,
+   "bowlMul": 0.652,
+   "limit": 12,
+   "spinTarget": 0.9,
+   "specMul": {
+    "m": 2.2,
+    "I": 2.2
+   },
+   "rig": {
+    "taken": 0.35,
+    "burstTake": 0.7,
+    "decay": 0.45,
+    "drive": 1.8,
+    "exitNeed": 0.5
+   }
+  },
+  "teaches": "You do not out muscle a giant; you take its spin off it.",
+  "relicSlot": "ratchet",
+  "relics": [
+   "14-30",
+   "2-90",
+   "0-50"
+  ]
  }
 ];</script>
 <script>/* RIPCORD SIM v2 — headless. No DOM, no renderer, no globals but the export.
@@ -1099,7 +1695,38 @@ button{font:inherit;color:inherit}
     { id: 'burr',   name: 'Burr',   mass: 0.0030, dir:  1, ability: 'burrow',    charge: 0.90, role: 'defense' },
     { id: 'lash',   name: 'Lash',   mass: 0.0024, dir: -1, ability: 'lash',      charge: 1.05, role: 'attack' },
     { id: 'lodest', name: 'Lodestone', mass: 0.0028, dir: 1, ability: 'lunge',   charge: 1.20, role: 'attack' },
-    { id: 'quench', name: 'Quench', mass: 0.0021, dir: -1, ability: 'brake',     charge: 0.80, role: 'utility' }
+    { id: 'quench', name: 'Quench', mass: 0.0021, dir: -1, ability: 'brake',     charge: 0.80, role: 'utility' },
+
+    // ---- TIER 2, FORGED. One stat pushed about a quarter past the Tier 1
+    //      range, and another pulled back further to pay for it. Not stronger,
+    //      more extreme; that is what a tier is in this game.
+    { id: 'ballast', name: 'Ballast', mass: 0.00372, dir: 1, ability: 'scatter', charge: 0.58, role: 'defense', tier: 2,
+      desc: "A dense trim chip that shuffles your counterweights back into true without giving up a single gram of the mass you paid for." },
+    { id: 'granite', name: 'Granite', mass: 0.00392, dir: 1, ability: 'stoneskin', charge: 0.54, role: 'defense', tier: 2,
+      desc: "Solid mineral stock that sits heavy on the axis and hardens you against three seconds of punishment, if it ever fills." },
+    { id: 'windlas', name: 'Windlass', mass: 0.00404, dir: -1, ability: 'windup', charge: 0.51, role: 'attack', tier: 2,
+      desc: "A geared winding chip that stalls you at half travel for a second and a half, then throws you forward at nearly double." },
+    { id: 'vise', name: 'Vise', mass: 0.00496, dir: -1, ability: 'bite', charge: 0.52, role: 'attack', tier: 2,
+      desc: "Heavy jaws at the centre that clamp both rims together for two seconds and strip spin off whatever you are touching." },
+    { id: 'kite', name: 'Kite', mass: 0.00104, dir: -1, ability: 'tether', charge: 1.46, role: 'utility', tier: 2,
+      desc: "A hollowed chip that weighs almost nothing and fills early enough to hold you out on the rail while the bowl tries to pull you home." },
+    { id: 'reel', name: 'Reel', mass: 0.00092, dir: -1, ability: 'backspin', charge: 1.53, role: 'utility', tier: 2,
+      desc: "A light spooled chip that fills early and flips your rim friction for two and a half seconds without turning your travel around." },
+    { id: 'tinder', name: 'Tinder', mass: 0.00112, dir: 1, ability: 'surge', charge: 1.42, role: 'stamina', tier: 2,
+      desc: "Almost no metal at the centre, so it catches long before a heavier chip would have filled and hands your spin straight back." },
+    { id: 'wren', name: 'Wren', mass: 0.00086, dir: 1, ability: 'burrow', charge: 1.57, role: 'defense', tier: 2,
+      desc: "The lightest stock chip in the case, quick to fill and quick to dig in, though the whole top rides light and shoves easily." },
+
+    // ---- TIER 3, RELIC. One stat at an extreme, plus a named drawback the
+    //      simulation actually enforces. Bosses are the only source.
+    { id: 'bell', name: 'Bell', mass: 0.00450, dir: 1, ability: 'rebound', charge: 0.72, role: 'defense', tier: 3, drawback: 'looselock',
+      desc: "A thick resonant chip that returns the next strike with half again the force, cut onto teeth so shallow that one solid blow can pop the top apart." },
+    { id: 'magpie', name: 'Magpie', mass: 0.00085, dir: -1, ability: 'echo', charge: 1.95, role: 'utility', tier: 3, drawback: 'greedy',
+      desc: "A hoarding chip that fills faster than anything ever built and throws the last ability used on you straight back, but it will never grind out a win on spin alone." },
+    { id: 'flint', name: 'Flint', mass: 0.00070, dir: -1, ability: 'overdrive', charge: 1.28, role: 'attack', tier: 3, drawback: 'coldstart',
+      desc: "Barely there at the axis and sullen off the launch, it runs hot for the rest of the round and doubles your travel when it fires." },
+    { id: 'millst', name: 'Millstone', mass: 0.00500, dir: 1, ability: 'pitch', charge: 0.70, role: 'attack', tier: 3, drawback: 'hungry',
+      desc: "The heaviest chip in the game grinds spin off everything it touches and can spend a quarter of its own to hurl itself outward." }
   ];
 
   // 2. BLADE (main weapon): the thing that hits. Sharp = smash, round = deflect.
@@ -1115,7 +1742,38 @@ button{font:inherit;color:inherit}
     { id: 'shard',   name: 'Shard',   mass: 0.0118, radius: 0.0204, sharp: 0.96, rest: 0.95, gear: 1.25, taken: 1.35, role: 'attack' },
     { id: 'anvil',   name: 'Anvil',   mass: 0.0184, radius: 0.0226, sharp: 0.52, rest: 0.34, gear: 0.40, taken: 0.88, role: 'defense' },
     { id: 'halo',    name: 'Halo',    mass: 0.0152, radius: 0.0258, sharp: 0.18, rest: 0.26, gear: 0.25, taken: 0.60, role: 'stamina' },
-    { id: 'crest',   name: 'Crest',   mass: 0.0162, radius: 0.0232, sharp: 0.64, rest: 0.60, gear: 0.80, taken: 1.00, role: 'balance' }
+    { id: 'crest',   name: 'Crest',   mass: 0.0162, radius: 0.0232, sharp: 0.64, rest: 0.60, gear: 0.80, taken: 1.00, role: 'balance' },
+
+    // ---- TIER 2, FORGED. One stat pushed about a quarter past the Tier 1
+    //      range, and another pulled back further to pay for it. Not stronger,
+    //      more extreme; that is what a tier is in this game.
+    { id: 'broadaxe', name: 'Broadaxe', mass: 0.01760, radius: 0.0208, sharp: 1.26, rest: 0.88, gear: 0.92, taken: 1.46, role: 'attack', tier: 2,
+      desc: "A single deep edge that cuts further into a rim than any stock blade and hands most of the shock straight back up the shaft." },
+    { id: 'chisel', name: 'Chisel', mass: 0.01460, radius: 0.0188, sharp: 1.30, rest: 0.90, gear: 1.10, taken: 1.24, role: 'attack', tier: 2,
+      desc: "Every gram is gathered into one narrow point, so it cuts deeper than anything in the stock box and has almost no rim left to carry it." },
+    { id: 'millstone', name: 'Millstone', mass: 0.02240, radius: 0.0188, sharp: 0.48, rest: 0.30, gear: 0.44, taken: 0.96, role: 'defense', tier: 2,
+      desc: "A short heavy stone of a wheel that shoulders other tops aside and gives up its reach to do it." },
+    { id: 'ploughshare', name: 'Ploughshare', mass: 0.02420, radius: 0.0228, sharp: 0.14, rest: 0.28, gear: 0.38, taken: 0.86, role: 'defense', tier: 2,
+      desc: "The heaviest plate the mount will carry, ground smooth so it shoves tops off their line instead of cutting them." },
+    { id: 'cartwheel', name: 'Cartwheel', mass: 0.01540, radius: 0.0262, sharp: 0.12, rest: 0.24, gear: 0.22, taken: 0.60, role: 'stamina', tier: 2,
+      desc: "The widest ring the mount will hold, rolled thin and left blunt, so it carries spin for a very long time and can barely mark anything." },
+    { id: 'roundel', name: 'Roundel', mass: 0.01300, radius: 0.0210, sharp: 0.10, rest: 0.18, gear: 0.26, taken: 0.62, role: 'stamina', tier: 2,
+      desc: "A packed rim that swallows a hit instead of returning it, with no edge left to answer one." },
+    { id: 'rasp', name: 'Rasp', mass: 0.01609, radius: 0.0220, sharp: 0.90, rest: 0.16, gear: 1.82, taken: 1.26, role: 'attack', tier: 2,
+      desc: "A file rather than a knife, it grips a passing rim and drags the spin off it instead of throwing it clear." },
+    { id: 'hailstone', name: 'Hailstone', mass: 0.01640, radius: 0.0230, sharp: 0.70, rest: 1.20, gear: 0.14, taken: 1.06, role: 'balance', tier: 2,
+      desc: "Hard and polished, it kicks away from every contact it makes and never grips long enough to trade spin." },
+
+    // ---- TIER 3, RELIC. One stat at an extreme, plus a named drawback the
+    //      simulation actually enforces. Bosses are the only source.
+    { id: 'shrike', name: 'Shrike', mass: 0.01220, radius: 0.0202, sharp: 1.62, rest: 0.98, gear: 1.30, taken: 1.52, role: 'attack', tier: 3, drawback: 'glass',
+      desc: "The deepest edge ever fitted to a mount, hung on a blade so light and thin that it begins to give once the spin is gone." },
+    { id: 'sledge', name: 'Sledge', mass: 0.01820, radius: 0.0214, sharp: 1.10, rest: 1.42, gear: 0.66, taken: 1.52, role: 'attack', tier: 3, drawback: 'oneshot',
+      desc: "A hardened face that turns one clean contact into a single enormous blow and never lands another like it." },
+    { id: 'ingot', name: 'Ingot', mass: 0.02500, radius: 0.0206, sharp: 0.46, rest: 0.32, gear: 0.46, taken: 1.06, role: 'defense', tier: 3, drawback: 'coldstart',
+      desc: "A dense billet with barely any rim to it, slow to get moving and then very hard to move." },
+    { id: 'hookbill', name: 'Hookbill', mass: 0.01380, radius: 0.0230, sharp: 0.70, rest: 0.44, gear: 2.10, taken: 1.08, role: 'stamina', tier: 3, drawback: 'hungry',
+      desc: "A rim cut into meshing teeth that tears spin off whatever it touches and burns through its own doing it." }
   ];
 
   // 3. ASSIST (sub-blade): bolts under the main blade. Shapes the rim.
@@ -1148,7 +1806,38 @@ button{font:inherit;color:inherit}
        question in HANDOFF section 15, because the real repair is repricing it
        across the catalogue and that is a Director call, not a tuning pass. */
     { id: 'vane',   name: 'Vane',   mass: 0.0020, gearMul: 0.94, absorb: 1.14, radAdd: 0.0006, smash: 1.00, role: 'balance' },
-    { id: 'shim',   name: 'Shim',   mass: 0.0018, gearMul: 0.90, absorb: 1.04, radAdd: 0.0000, smash: 1.06, role: 'balance' }
+    { id: 'shim',   name: 'Shim',   mass: 0.0018, gearMul: 0.90, absorb: 1.04, radAdd: 0.0000, smash: 1.06, role: 'balance' },
+
+    // ---- TIER 2, FORGED. One stat pushed about a quarter past the Tier 1
+    //      range, and another pulled back further to pay for it. Not stronger,
+    //      more extreme; that is what a tier is in this game.
+    { id: 'cornice', name: 'Cornice', mass: 0.00600, gearMul: 0.62, absorb: 1.46, radAdd: 0.0008, smash: 0.72, role: 'balance', tier: 2,
+      desc: "A broad steel ledge that reaches further than any other assist, with no edge on it at all." },
+    { id: 'longspur', name: 'Longspur', mass: 0.00420, gearMul: 1.38, absorb: 0.68, radAdd: 0.0025, smash: 1.10, role: 'attack', tier: 2,
+      desc: "All the reach of a wide rim on a light frame, with nothing left over to cushion what comes back." },
+    { id: 'teasel', name: 'Teasel', mass: 0.00460, gearMul: 2.15, absorb: 0.66, radAdd: 0.0008, smash: 0.94, role: 'utility', tier: 2,
+      desc: "A ring of fine hooked teeth that mesh with whatever they touch and pass every jolt straight to the tip." },
+    { id: 'sprocket', name: 'Sprocket', mass: 0.00580, gearMul: 2.15, absorb: 0.98, radAdd: 0.0006, smash: 0.70, role: 'defense', tier: 2,
+      desc: "A deep toothed collar that grinds spin off a rival but has no edge left to finish anyone." },
+    { id: 'lacquer', name: 'Lacquer', mass: 0.00260, gearMul: 0.28, absorb: 0.68, radAdd: 0.0010, smash: 0.90, role: 'stamina', tier: 2,
+      desc: "A mirror rim that gives a rival nothing to grip and gives you nothing to hide behind." },
+    { id: 'bolster', name: 'Bolster', mass: 0.00560, gearMul: 0.66, absorb: 1.42, radAdd: 0.0002, smash: 0.70, role: 'defense', tier: 2,
+      desc: "A thick fibre pad that swallows a blow whole, and swallows yours as well." },
+    { id: 'gutta', name: 'Gutta', mass: 0.00340, gearMul: 2.35, absorb: 1.42, radAdd: 0.0006, smash: 0.86, role: 'stamina', tier: 2,
+      desc: "A soft damping ring that shrugs off impacts and grips everything it meets, so every touch trades spin." },
+    { id: 'barb', name: 'Barb', mass: 0.00556, gearMul: 0.34, absorb: 0.74, radAdd: 0.0005, smash: 1.30, role: 'attack', tier: 2,
+      desc: "A heavy blunt wedge that hits like a hammer and drags the heavy side of the top flat." },
+
+    // ---- TIER 3, RELIC. One stat at an extreme, plus a named drawback the
+    //      simulation actually enforces. Bosses are the only source.
+    { id: 'eaves', name: 'Eaves', mass: 0.00411, gearMul: 0.72, absorb: 0.62, radAdd: 0.0031, smash: 0.88, role: 'stamina', tier: 3, drawback: 'glass',
+      desc: "The widest rim in the game, cut from sheet so thin that it folds once the spin is gone." },
+    { id: 'nettle', name: 'Nettle', mass: 0.00500, gearMul: 3.00, absorb: 0.70, radAdd: 0.0008, smash: 0.92, role: 'utility', tier: 3, drawback: 'hungry',
+      desc: "Teeth like a coarse file that tear spin off anything they touch and burn through your own." },
+    { id: 'bushing', name: 'Bushing', mass: 0.00580, gearMul: 0.58, absorb: 1.70, radAdd: 0.0002, smash: 0.72, role: 'defense', tier: 3, drawback: 'looselock',
+      desc: "A soft sleeve that damps every blow and never lets the threads seat tight." },
+    { id: 'chert', name: 'Chert', mass: 0.00440, gearMul: 0.22, absorb: 0.68, radAdd: 0.0004, smash: 1.38, role: 'attack', tier: 3, drawback: 'oneshot',
+      desc: "A knapped stone edge that lands one devastating blow and is blunt for the rest of the round." }
   ];
 
   // 4. RATCHET: height and lock teeth. Height moves the centre of gravity and
@@ -1167,7 +1856,34 @@ button{font:inherit;color:inherit}
     { id: '1-90', name: '1-90', mass: 0.0058, height: 90, lock: 0.62, strikeHigh: 1.40, role: 'attack' },
     { id: '6-50', name: '6-50', mass: 0.0072, height: 50, lock: 1.06, strikeHigh: 0.70, role: 'stamina' },
     { id: '2-70', name: '2-70', mass: 0.0062, height: 70, lock: 0.72, strikeHigh: 1.00, role: 'balance' },
-    { id: '8-30', name: '8-30', mass: 0.0082, height: 30, lock: 1.20, strikeHigh: 0.46, role: 'defense' }
+    { id: '8-30', name: '8-30', mass: 0.0082, height: 30, lock: 1.20, strikeHigh: 0.46, role: 'defense' },
+
+    // ---- TIER 2, FORGED. One stat pushed about a quarter past the Tier 1
+    //      range, and another pulled back further to pay for it. Not stronger,
+    //      more extreme; that is what a tier is in this game.
+    { id: '0-90', name: 'Spire', mass: 0.00580, height: 90, lock: 0.38, strikeHigh: 1.70, role: 'attack', tier: 2,
+      desc: "A smooth toothless collar with the strike ring flared out at the crown, so it lands higher than anything else in the box and starts coming apart the moment somebody lands one back." },
+    { id: '11-80', name: 'Belfry', mass: 0.00500, height: 80, lock: 1.46, strikeHigh: 1.20, role: 'attack', tier: 2,
+      desc: "Eleven teeth on a tall skeleton body, so it hits high and nothing will burst it, but there is almost no metal left in it to soak up a hit." },
+    { id: '11-30', name: 'Deadbolt', mass: 0.00464, height: 30, lock: 1.40, strikeHigh: 0.16, role: 'defense', tier: 2,
+      desc: "Eleven teeth in a short heavy collar that simply will not come apart, fitted with a strike face buried so far under the blade that it can barely bother anybody." },
+    { id: '0-40', name: 'Ballast', mass: 0.00880, height: 40, lock: 0.29, strikeHigh: 0.58, role: 'defense', tier: 2,
+      desc: "A solid slug of a collar that shrugs off shoves and sits low, held on a plain thread with no detents in it at all." },
+    { id: '6-30', name: 'Millstone', mass: 0.00880, height: 30, lock: 1.04, strikeHigh: 0.14, role: 'stamina', tier: 2,
+      desc: "The heaviest short collar in the workshop, lovely to grind behind and completely unable to reach over anybody." },
+    { id: '11-60', name: 'Latchwork', mass: 0.00510, height: 60, lock: 1.46, strikeHigh: 0.82, role: 'utility', tier: 2,
+      desc: "A fine eleven tooth ring cut into a drilled out body, unburstable and so light that every hit moves it." },
+    { id: '0-60', name: 'Foundry Sleeve', mass: 0.00880, height: 60, lock: 0.30, strikeHigh: 0.86, role: 'balance', tier: 2,
+      desc: "A thick cast sleeve at normal height that takes a shove like a wall and comes apart on one clean strike." },
+
+    // ---- TIER 3, RELIC. One stat at an extreme, plus a named drawback the
+    //      simulation actually enforces. Bosses are the only source.
+    { id: '14-30', name: 'Portcullis', mass: 0.00820, height: 30, lock: 1.70, strikeHigh: 0.14, role: 'defense', tier: 3, drawback: 'looselock',
+      desc: "Fourteen coarse teeth in a collar that never seats fully, so it rides very low and very steady while the play in the thread lets it pop." },
+    { id: '2-90', name: 'Weathervane', mass: 0.00602, height: 90, lock: 1.38, strikeHigh: 1.68, role: 'attack', tier: 3, drawback: 'shear',
+      desc: "A flared crown that strikes above its own height and rings every one of those blows straight back through its own teeth." },
+    { id: '0-50', name: 'Ingot', mass: 0.00960, height: 50, lock: 0.20, strikeHigh: 0.70, role: 'utility', tier: 3, drawback: 'oneshot',
+      desc: "A dead weight of a collar on a thread worn smooth, putting everything it has into the first strike it lands and almost nothing into the rest." }
   ];
 
   // 5. BIT (tip): what touches the floor. Also carries the rail gear.
@@ -1184,7 +1900,42 @@ button{font:inherit;color:inherit}
     // Spool is the tip that can do a bit of everything INCLUDING the rail; its
     // dash clears the engage threshold of 0.5 and stops short of Rail Lock's 1.2,
     // so it is the middle profile a mixed build reaches for.
-    { id: 'spool',  name: 'Spool',  mass: 0.0041, stamina: 1.14, drive: 1.10, stable: 1.02, dash: 1.10, shaft: 1.02, role: 'balance' }
+    { id: 'spool',  name: 'Spool',  mass: 0.0041, stamina: 1.14, drive: 1.10, stable: 1.02, dash: 1.10, shaft: 1.02, role: 'balance' },
+
+    // ---- TIER 2, FORGED. One stat pushed about a quarter past the Tier 1
+    //      range, and another pulled back further to pay for it. Not stronger,
+    //      more extreme; that is what a tier is in this game.
+    { id: 'bradawl', name: 'Bradawl', mass: 0.00340, stamina: 1.66, drive: 0.32, stable: 0.92, dash: 0.35, shaft: 1.02, role: 'stamina', tier: 2,
+      desc: "A hardened point no wider than a pin, ground for the longest spin in the game and almost no travel at all." },
+    { id: 'stillpin', name: 'Still Pin', mass: 0.00320, stamina: 1.52, drive: 0.34, stable: 0.74, dash: 0.35, shaft: 0.94, role: 'stamina', tier: 2,
+      desc: "It parks where you launch it and stays there; the smallest solid hit puts it on its side." },
+    { id: 'spur', name: 'Spur', mass: 0.00500, stamina: 0.86, drive: 2.15, stable: 0.82, dash: 1.55, shaft: 0.56, role: 'attack', tier: 2,
+      desc: "The foot is ground on a slant so friction turns into travel, and every jolt it earns goes straight up the thin shank into the teeth." },
+    { id: 'rowel', name: 'Rowel', mass: 0.00480, stamina: 0.78, drive: 1.26, stable: 0.48, dash: 2.32, shaft: 0.78, role: 'attack', tier: 2,
+      desc: "A toothed wheel of a tip that hooks the rail harder than anything stock, on a contact ring too small to right itself." },
+    { id: 'sabot', name: 'Sabot', mass: 0.00460, stamina: 1.00, drive: 0.88, stable: 1.55, dash: 0.60, shaft: 0.55, role: 'defense', tier: 2,
+      desc: "A broad wooden shoe of a foot that nothing tips over, seated in a soft collar that hands every shock to the lock teeth." },
+    { id: 'ferrule', name: 'Ferrule', mass: 0.00430, stamina: 1.06, drive: 1.00, stable: 0.60, dash: 0.72, shaft: 1.48, role: 'balance', tier: 2,
+      desc: "A long steel collar driven deep into the shaft so no impact reaches the teeth, standing on a foot too narrow to hold you up." },
+    { id: 'cleat', name: 'Cleat', mass: 0.00476, stamina: 1.00, drive: 1.06, stable: 1.11, dash: 2.20, shaft: 0.62, role: 'balance', tier: 2,
+      desc: "A knurled stud that takes the rail on an ordinary top, bought with a shank that pops apart under one solid blow." },
+    { id: 'plumb', name: 'Plumb', mass: 0.00640, stamina: 0.54, drive: 0.77, stable: 1.04, dash: 0.35, shaft: 1.06, role: 'defense', tier: 2,
+      desc: "All the metal is in the foot, so shoves barely move it and the loaded tip grinds its spin into the floor." },
+    { id: 'agate', name: 'Agate', mass: 0.00340, stamina: 1.62, drive: 0.58, stable: 0.78, dash: 0.35, shaft: 1.04, role: 'stamina', tier: 2,
+      desc: "A polished stone pivot with almost no friction at all, so it turns for a very long time and gets nowhere." },
+
+    // ---- TIER 3, RELIC. One stat at an extreme, plus a named drawback the
+    //      simulation actually enforces. Bosses are the only source.
+    { id: 'corundum', name: 'Corundum', mass: 0.00330, stamina: 1.95, drive: 0.30, stable: 0.86, dash: 0.35, shaft: 0.94, role: 'stamina', tier: 3, drawback: 'greedy',
+      desc: "A jewelled pivot that runs longer than anything else and charges in a hurry, and it will never coast to a win." },
+    { id: 'caltrop', name: 'Caltrop', mass: 0.00480, stamina: 0.78, drive: 1.30, stable: 0.46, dash: 2.75, shaft: 0.78, role: 'attack', tier: 3, drawback: 'skittish',
+      desc: "Coarse cut teeth that bite the rail like nothing in the catalogue, on a top that slides out of the dish at speeds anything else survives." },
+    { id: 'cobble', name: 'Cobble', mass: 0.00460, stamina: 0.94, drive: 0.74, stable: 1.72, dash: 0.35, shaft: 0.54, role: 'defense', tier: 3, drawback: 'looselock',
+      desc: "A wide flat stone of a foot that will not be tipped over, sitting so loose in the seat that one connected blow pops it apart." },
+    { id: 'pintle', name: 'Pintle', mass: 0.00500, stamina: 0.94, drive: 0.30, stable: 0.94, dash: 0.35, shaft: 1.72, role: 'defense', tier: 3, drawback: 'skittish',
+      desc: "The shank goes the full depth of the shaft so nothing bursts it, ending in a polished dome with nothing to keep it inside the lip." },
+    { id: 'jasper', name: 'Jasper', mass: 0.00439, stamina: 1.29, drive: 0.26, stable: 1.07, dash: 0.35, shaft: 0.67, role: 'stamina', tier: 3, drawback: 'glass',
+      desc: "So slick it barely travels at all, and brittle enough that once it is tired every hit lands twice as hard." }
   ];
 
   // 6. WEIGHTS — up to four, each dropped into a hole on one of two rings.
@@ -1284,7 +2035,14 @@ button{font:inherit;color:inherit}
     { id: 'hungry',    name: 'Hungry',
       desc: 'Tears spin off whatever it touches and burns through its own.' },
     { id: 'oneshot',   name: 'One Shot',
-      desc: 'The first hit it lands can end a round; everything after it barely counts.' }
+      desc: 'The first hit it lands can end a round; everything after it barely counts.' },
+    // Two more, proposed and measured during the tier expansion. Both are a
+    // change to a quantity the simulation already computes, which is the bar a
+    // drawback has to clear; neither is a special case.
+    { id: 'skittish',  name: 'Skittish',
+      desc: 'It will slide out of the dish at a speed anything else would ride out.' },
+    { id: 'shear',     name: 'Shear',
+      desc: 'Every blow it lands rings back through its own teeth at full force.' }
   ];
   const drawbackOf = id => DRAWBACKS.find(d => d.id === id) || null;
 
@@ -1596,6 +2354,14 @@ button{font:inherit;color:inherit}
       // a wider one and the target range is wider again; everything else in the
       // simulation reads this rather than the constant.
       arenaR: o.arenaR !== undefined ? o.arenaR : K.arenaR,
+      // ⛔ A WIDER DISH NEEDS THIS AND IT IS NOT COSMETIC. K.bowl is an
+      // ACCELERATION of bowl times r, so widening the arena scales the rim pull
+      // linearly and the rail walks out of reach: at 0.230 the ridge starts
+      // where the pull is 1.99 m/s^2 against 1.30 at the standard ridge, and
+      // nothing ever gets near the lip again. Setting bowlMul to 0.150/0.230
+      // holds bowl times arenaR constant, so a bigger dish keeps its SHAPE
+      // rather than turning into a different game.
+      bowlMul: o.bowlMul !== undefined ? o.bowlMul : 1,
       pinned: !!o.pinned,          // a Taya target: present, struck, and inert
       x: Math.cos(ang) * off, z: Math.sin(ang) * off,
       vx: o.vx || 0, vz: o.vz || 0,
@@ -1712,7 +2478,7 @@ button{font:inherit;color:inherit}
       const u = rad / a.arenaR;
       const over = Math.max(0, u - K.ridgeAt) / (1 - K.ridgeAt);
       const tether = a.t < a.tether ? 0.5 : 1;   // Tether: hold the rail
-      const pull = K.bowl * g.bowl * tether * rad * (1 - K.ridgeFall * over * over);
+      const pull = K.bowl * a.bowlMul * g.bowl * tether * rad * (1 - K.ridgeFall * over * over);
       a.vx -= (a.x / rad) * pull * dt;
       a.vz -= (a.z / rad) * pull * dt;
 
@@ -1768,7 +2534,9 @@ button{font:inherit;color:inherit}
       const nx = a.x / nr, nz = a.z / nr;
       const vn = a.vx * nx + a.vz * nz;
       const sector = Math.cos(Math.atan2(a.z, a.x) * K.pockets);
-      const need = K.exitNeed * g.exitNeed * (sector > 0.62 ? K.pocketMu : 1) * (a.t < a.anchor ? 6 : 1);
+      // Skittish: it leaves the dish at a speed anything else would ride out.
+      const need = K.exitNeed * g.exitNeed * (s.dw && s.dw.skittish ? 0.55 : 1) *
+                   (sector > 0.62 ? K.pocketMu : 1) * (a.t < a.anchor ? 6 : 1);
       if (nr > a.arenaR * K.ringOut && vn > need) { kill(a, 'ringout'); return; }
       if (vn > 0) {
         a.vx -= (1 + K.wallE) * vn * nx;
@@ -1899,7 +2667,18 @@ button{font:inherit;color:inherit}
       // One Shot: the first strike this Relic lands does triple wear and every
       // strike after it does forty percent. It is a top you get exactly one good
       // moment with, and the moment is worth the whole round.
-      const oneShot = (agg.spec.dw && agg.spec.dw.oneshot) ? (agg.landed === 0 ? 3.0 : 0.40) : 1;
+      // ⛔ ONE SHOT WAS A BUFF WEARING A DRAWBACK'S NAME, and the arithmetic is
+      // three lines long. At triple for the first strike and forty percent after,
+      // a round with three connections averages (3 + 0.4 + 0.4) / 3 = 1.27 times
+      // normal wear, and rounds here have a median of about six seconds and a
+      // handful of connections. The numbers only ever read as a cost if you
+      // assume a long grinding round, and this game does not have one. The Relic
+      // carrying it measured five points of power creep and the balancer could
+      // not tune it out, because the problem was never in the part's stats.
+      // Repriced so the crossover sits at two connections: one hit is still a
+      // round ender, two is break even, and anything past that is worse than a
+      // stock ratchet. You get one moment, which is what the name promised.
+      const oneShot = (agg.spec.dw && agg.spec.dw.oneshot) ? (agg.landed === 0 ? 2.20 : 0.25) : 1;
       const wear = K.burstK * Math.pow(imp / K.impRef, K.burstPow) * oneShot;
       // ⛔ A PINNED top takes almost no lock wear, and this is physics and not a
       // difficulty knob: the ratchet loosens because the teeth are being sheared
@@ -1909,7 +2688,16 @@ button{font:inherit;color:inherit}
       // the winner of one round automatically won the next as well.
       def.wear += wear * agg.spec.strikeHigh * defG.burstTake *
                   (def.pinned ? 0.02 : 1) / def.spec.burstResist;
-      agg.wear += wear * K.burstBack / agg.spec.burstResist;
+      // Shear: the striker normally takes 14 percent of the wear back. This one
+      // takes all of it, so every blow it lands loosens its own teeth as much as
+      // the other top's.
+      // Shear: the striker normally takes 14 percent of the wear back. This one
+      // takes a great deal more, so every blow it lands loosens its own teeth.
+      // ⛔ It was 100 percent, seven times normal, and the Relic carrying it burst
+      // itself before it could win anything: a 42 percent ceiling against a floor
+      // of 50, with no stat change able to reach it. Three times normal is still
+      // plainly a drawback and leaves the part a round to work in.
+      agg.wear += wear * ((agg.spec.dw && agg.spec.dw.shear) ? 0.42 : K.burstBack) / agg.spec.burstResist;
 
       agg.charge += K.chargeHit * agg.spec.chargeRate * aggG.charge;
       def.charge += K.chargeTaken * def.spec.chargeRate * defG.charge;
@@ -2099,6 +2887,87 @@ button{font:inherit;color:inherit}
     return { score, hit, duration: t, targets };
   }
 
+  // ======================================================================
+  // BOSSES — a block of flags on a ladder entry and nothing more.
+  //
+  // Not one boss reaches into stepTop or collide, and that is the test of
+  // whether a gimmick is the right gimmick: a boss that needs a special case in
+  // the physics is the wrong idea, and there has always been a better one that
+  // does not. The Pemangkin is unkillable because the ANCHOR branch already
+  // existed for an ability; The Giant needs a wider dish, which the arena radius
+  // already supports; Two Direction just fires an ability that already exists,
+  // on a timer.
+  //
+  // This lives in the simulation rather than in the renderer so that the boss
+  // test and the game are provably fighting the same opponent.
+  // ======================================================================
+  function applyBoss(spec, boss) {
+    if (!boss) return spec;
+    let out = spec;
+    if (boss.specMul) {
+      const m = {};
+      for (const k in boss.specMul) m[k] = out[k] * boss.specMul[k];
+      out = Object.assign({}, out, m);
+    }
+    if (boss.rig) out = Object.assign({}, out, {
+      rig: Object.assign({}, out.rig || RIG_NEUTRAL, boss.rig)
+    });
+    return out;
+  }
+  const bossArena = boss => ({
+    arenaR: (boss && boss.arenaR) || K.arenaR,
+    bowlMul: (boss && boss.bowlMul) || 1
+  });
+
+  /* A round against a boss. Same loop as resolveMatch with three flags folded
+   * in, kept separate so the ordinary path stays exactly as tuned. */
+  function resolveBossMatch(playerSpec, bossSpec, boss, opts) {
+    const o = opts || {};
+    const rnd = o.rnd || Math.random;
+    const arena = bossArena(boss);
+    const a = spawn(playerSpec, Object.assign({ angle: 0 }, arena, o.a));
+    const b = spawn(applyBoss(bossSpec, boss), Object.assign({ angle: Math.PI }, arena, o.b));
+    if (boss && boss.anchor) b.anchor = Infinity;
+    const every = boss && boss.abilityEvery ? boss.abilityEvery : 0;
+    let fired = 0;
+    const limit = (boss && boss.limit) || o.limit || 60;
+    let t = 0;
+    while (t < limit && a.alive && b.alive) {
+      stepTop(a, K.dt); stepTop(b, K.dt);
+      const c = collide(a, b, rnd);
+      if (c && o.onHit) o.onHit(c);
+      if (a.abilityUsed === 0 && triggerReady(a, b)) fire(a, b);
+      if (every) {
+        if (b.alive && b.t - fired >= every) { b.charge = 1; b.abilityUsed = 0; fired = b.t; fire(b, a); }
+      } else if (b.abilityUsed === 0 && triggerReady(b, a)) fire(b, a);
+      t += K.dt;
+    }
+    let winner = null, cause = 'timeout';
+    if (a.alive && !b.alive) { winner = 'a'; cause = b.cause; }
+    else if (b.alive && !a.alive) { winner = 'b'; cause = a.cause; }
+    else if (!a.alive && !b.alive) { cause = 'double'; }
+    else if (boss && boss.spinTarget && Math.abs(b.w) <= boss.spinTarget * K.launchSpin) {
+      /* THE GIANT'S DOOR, and the reason it needed one.
+       * A four kilogram top in a wide dish cannot be rung out, cannot be
+       * toppled, and will still be turning long after the round is over, so the
+       * only route left was to break its teeth. That is a real answer, but it is
+       * The Pemangkin's answer, and two bosses teaching the same lesson is one
+       * boss too many.
+       * The tradition has a better one: nobody outlasts a giant, so you measure
+       * it. Wear its spin below a threshold before the bell and you have taken
+       * it. Measured, the split is exactly the lesson: a spin stealing build
+       * gets it down to 0.71 of its launch by the bell and a pure force build
+       * only to 0.94, so this door opens for the player who took its spin off it
+       * at the rim and stays shut for the one who tried to out muscle it. */
+      winner = 'a'; cause = 'worn';
+    }
+    else { winner = Math.abs(a.w) > Math.abs(b.w) ? 'a' : 'b'; }
+    const points = { spinout: 1, ringout: 2, knockout: 2, burst: 2, timeout: 1,
+                     worn: 2, double: 0 }[cause] || 1;
+    return { winner, cause, points, duration: t, a, b,
+             bossSpin: b.alive ? Math.abs(b.w) / K.launchSpin : 0 };
+  }
+
   function mulberry(seed) {
     let s = seed >>> 0;
     return function () {
@@ -2125,6 +2994,7 @@ button{font:inherit;color:inherit}
            FINISHES, DECALS, TRAILS, LAUNCHERS, COSMETIC_SLOTS, ROLES,
            ARCHETYPES, TRIGGERS, TRIGGER_LABEL, TUNING, MODS_PER_PART,
            MODES, rangeTargets, resolveUri, resolveTaya, resolveRangeShot,
+           applyBoss, bossArena, resolveBossMatch,
            DRAWBACKS, drawbackOf, RIG_NEUTRAL,
            build, spawn, stepTop, collide, resolveMatch, mulberry, fire, triggerReady,
            applyMods, tuningOptions, tuningOp };
@@ -2501,14 +3371,22 @@ button{font:inherit;color:inherit}
       desc: 'Light and sharp; it covers ground fast and it feels every hit.',
       cond: 'A very light top with a sharp blade.',
       test: function (s) { return s.mass <= 0.030 && s.blade.sharp >= 0.8; },
-      mod: { drive: 1.20, taken: 1.22 } },
+      // ⛔ taken was 1.22 and measured MINUS eight win points once the Forged and
+      // Relic blades existed, because the search found a build far lighter and
+      // sharper than anything Tier 1 could make. A rig that costs you eight
+      // points is a trap, which is the same failure as one that wins you eight.
+      mod: { drive: 1.20, taken: 1.06 } },
 
     // ---------------- eight more, same shape ----------------
     { id: 'ballast', name: 'Ballast', obvious: true,
       desc: 'The weight is packed near the axis; it leans slowly and stands back up.',
       cond: 'Four weights on the inner ring, on a heavy top.',
       test: function (s) { return s.nW === 4 && s.inner === 4 && s.mass >= 0.044; },
-      mod: { fall: 0.68, rise: 1.12 } },
+      // ⛔ 0.68 measured at plus twelve win points once the Forged and Relic parts
+      // existed, because the search found a far heavier inner loaded top than
+      // anything Tier 1 could build. Slowing a topple is a strong lever and it
+      // needed less of it.
+      mod: { fall: 0.80, rise: 1.08 } },
 
     { id: 'whetstone', name: 'Whetstone', obvious: false,
       desc: 'An edge thin enough to cut instead of bounce, so it keeps its own spin.',
@@ -2555,7 +3433,9 @@ button{font:inherit;color:inherit}
       desc: 'Mass held near the middle lets it drift wide and live on the rail.',
       cond: 'Exactly two weights, both on the inner ring, under a wide blade.',
       test: function (s) { return s.nW === 2 && s.inner === 2 && s.blade.radius >= 0.0235; },
-      mod: { bowl: 0.88, charge: 1.15 } }
+      // Same correction as Featherline: minus fourteen points against the wider
+      // catalogue, because drifting wide is a ringout as often as it is rail time.
+      mod: { bowl: 0.97, charge: 1.35 } }
   ];
 
   var byId = {};
@@ -2997,7 +3877,7 @@ var trigger=(save.build&&save.build.trigger)||'charged';
 var chosenRigs=(save.build&&save.build.rigs)||[];
 var mods=save.mods||{};
 var cosm=save.cosmetics||{finish:'anod',decal:'stripe',trail:'rope',launcher:'ripcord'};
-var roleFilter='all';
+var roleFilter='mine';
 var rigAnnounceArmed=false;   // see buildRigs: no announcements during boot
 var rung=save.rung|0, facing=save.facing|0;
 var mode='pangkah';
@@ -3099,8 +3979,14 @@ function railRow(label,items,isOn,onPick,klass,lockable){
     b.innerHTML=(it.role?'<span class="dot" style="background:'+ROLE_HEX[it.role]+'"></span>':'')+
                 (it.name||it.id)+tierTag(it);
     b.addEventListener('click',function(){
-      if(locked){$('benchOut').textContent='Locked. Win it off a ladder opponent.';return;}
-      onPick(it);buildSlots();refresh();storeBuild();
+      if(locked){
+        var from=DROP_FROM[it.id];
+        $('benchOut').textContent=from
+          ? 'Locked. Win it from '+from.name+' on rung '+from.rung+'.'
+          : 'Locked. Beat a league boss to win a Relic.';
+        return;
+      }
+      rigAnnounceArmed=true;onPick(it);buildSlots();refresh();storeBuild();
     });
     r.appendChild(b);
   })(items[i]);
@@ -3108,11 +3994,13 @@ function railRow(label,items,isOn,onPick,klass,lockable){
 }
 function buildRoles(){
   var host=$('roles');host.innerHTML='';
-  var list=['all'].concat(SIM.ROLES);
+  // "mine" first, because with a hundred and ten parts and ten unlocked the
+  // rails are otherwise mostly things you cannot use yet.
+  var list=['mine','all'].concat(SIM.ROLES);
   for(var i=0;i<list.length;i++)(function(r){
     var b=document.createElement('button');
     b.className='rf'+(roleFilter===r?' on':'');b.setAttribute('data-r',r);
-    b.innerHTML=(r==='all'?'':'<span class="dot" style="background:'+ROLE_HEX[r]+'"></span>')+r;
+    b.innerHTML=(r==='all'||r==='mine'?'':'<span class="dot" style="background:'+ROLE_HEX[r]+'"></span>')+r;
     b.addEventListener('click',function(){roleFilter=r;buildSlots();});
     host.appendChild(b);
   })(list[i]);
@@ -3127,10 +4015,32 @@ function buildSlots(){
     // filtering can never hide what you are actually running.
     var shown=[],j;
     for(j=0;j<list.length;j++)
-      if(roleFilter==='all'||list[j].role===roleFilter||list[j].id===act[key])shown.push(list[j]);
-    host.appendChild(railRow(label+' <em>'+shown.length+'</em>',shown,
+      if(roleFilter==='all'||
+         (roleFilter==='mine'&&isUnlocked(list[j].id))||
+         list[j].role===roleFilter||list[j].id===act[key])shown.push(list[j]);
+    var row=railRow(label+' <em>'+shown.length+'</em>',shown,
       (function(k){return function(p){return active().cfg[k]===p.id;};})(key),
-      (function(k){return function(p){active().cfg[k]=p.id;};})(key),null,true));
+      (function(k){return function(p){active().cfg[k]=p.id;};})(key),null,true);
+    // What is actually fitted, in words. With a hundred and ten parts a rail of
+    // names is a list; the line underneath is what makes it a choice. A Relic's
+    // drawback goes here in full, because a drawback you cannot read is a trap.
+    var fitted=null;
+    for(j=0;j<list.length;j++)if(list[j].id===act[key])fitted=list[j];
+    if(fitted){
+      var note=document.createElement('p');
+      note.className='fitted';
+      var txt=fitted.desc||'';
+      var dw=fitted.drawback?SIM.drawbackOf(fitted.drawback):null;
+      // ⛔ Only the sixty Forged and Relic parts carry a description; the fifty
+      // Stock ones came from the original catalogue without one, and an empty
+      // paragraph is a gap in the layout that says nothing. Until they are
+      // written, a Stock part says what it is instead of saying nothing.
+      if(!txt&&!dw)txt=(fitted.role||'balance')+' part, stock';
+      note.innerHTML=(txt?'<span>'+txt+'</span>':'')+
+        (dw?'<b>'+dw.name+'.</b> '+dw.desc:'');
+      row.appendChild(note);
+    }
+    host.appendChild(row);
   }
   var core=null;
   for(i=0;i<SIM.CORES.length;i++)if(SIM.CORES[i].id===act.core)core=SIM.CORES[i];
@@ -3191,7 +4101,7 @@ function buildMods(){
       plus.addEventListener('click',function(){
         var l=mods[partId]||[];
         l.push(o.op.id);mods[partId]=l;
-        buildMods();refresh();storeBuild();haptic(8);
+        rigAnnounceArmed=true;buildMods();refresh();storeBuild();haptic(8);
       });
       row.appendChild(who);row.appendChild(minus);row.appendChild(n);row.appendChild(plus);
       host.appendChild(row);
@@ -3246,10 +4156,12 @@ function buildRigs(){
 
   // A rig the player has never seen before is worth calling out once. That
   // announcement IS the discovery loop.
-  // ⛔ It must not fire on boot. The first version announced the starter build's
-  // rig over the top of the rules screen, which is the first thing a new player
-  // ever sees, so the very first thing the game said was a spoiler covering the
-  // instructions. It only speaks once the player has opened the workshop.
+  // ⛔ It follows a CHANGE, never the act of arriving. Two versions of this got
+  // it wrong: the first announced the starter build's rig over the top of the
+  // rules screen, which is the first thing a new player ever sees, and the second
+  // announced it the moment the workshop opened, covering the part rails you had
+  // opened the workshop to look at. A rig announcement is a reaction to something
+  // you just did, so it is armed by the controls that do things.
   if(!rigAnnounceArmed)return;
   for(i=0;i<live.length;i++){
     if(!save.seen['rig.'+live[i].id]){
@@ -3289,7 +4201,7 @@ dial.addEventListener('click',function(e){
   var next=(H[ring][i]+1)%SIM.WEIGHTS.length;
   if(next>0&&H[ring][i]===0&&weightCount()>=SIM.MAX_WEIGHTS){
     $('benchOut').textContent='Only '+SIM.MAX_WEIGHTS+' weights fit. Clear one first.';return;}
-  H[ring][i]=next;haptic(6);refresh();storeBuild();
+  rigAnnounceArmed=true;H[ring][i]=next;haptic(6);refresh();storeBuild();
 });
 
 function drawDial(){
@@ -3372,6 +4284,16 @@ function refresh(){
 }
 
 /* -------------------------------------------------------------- THE OPPONENT */
+/* Which rung drops which part. A locked chip that only says "locked" is a wall;
+   one that says where to win it is a plan. */
+var DROP_FROM={};
+(function(){
+  for(var i=0;i<LADDER.length;i++){
+    var r=LADDER[i],j;
+    for(j=0;j<(r.drops||[]).length;j++)DROP_FROM[r.drops[j].id]=r;
+    for(j=0;j<(r.relics||[]).length;j++)DROP_FROM[r.relics[j]]=r;
+  }
+})();
 function opp(){return LADDER[clamp(facing,0,LADDER.length-1)];}
 function bossOf(o){return o&&o.boss?o.boss:null;}
 function updateVs(){
@@ -3400,9 +4322,15 @@ function buildLadder(){
     var locked=idx>rung;
     var b=document.createElement('button');
     b.className='rung'+(locked?' locked':'')+(idx<rung?' done':'')+(o.boss?' boss':'');
+    // ⛔ o.drop was a single part; it is o.drops, four of them, and a boss has
+    // relics instead. Reading the old shape threw during boot, which killed the
+    // whole frame loop, and the only symptom was a black canvas: no test caught
+    // it, a screenshot did.
+    var sub = o.boss
+      ? (o.teaches || 'boss') + ', drops a ' + o.relicSlot + ' Relic'
+      : o.role + ', drops ' + (o.drops || []).length + ' parts';
     b.innerHTML='<span class="num">'+o.rung+'</span>'+
-      '<span class="nm">'+o.name+'<small>'+
-        (o.boss?o.boss.teaches:(o.role+', drops a '+o.drop.slot))+'</small></span>'+
+      '<span class="nm">'+o.name+'<small>'+sub+'</small></span>'+
       '<span class="st">'+(locked?'locked':idx<rung?'beaten':idx===facing?'facing':'open')+'</span>';
     b.addEventListener('click',function(){
       facing=idx;updateVs();buildLadder();storeBuild();
@@ -3442,13 +4370,30 @@ function buildModes(){
 }
 
 /* ------------------------------------------------------------------- UNLOCKS */
+/* Beating an ordinary rung hands over its four parts. Beating a BOSS hands over
+   one Relic from its own slot, and beating it again hands over the next one, so
+   finishing a Relic set means going back for it. Bosses are the only source of a
+   Relic and that is the whole reason to fight one twice. */
 function awardDrop(){
-  var o=opp();
-  if(!o.drop)return null;
-  if(!unlock(o.drop.id))return null;
-  var list=PART_LISTS[o.drop.slot],part=null;
-  for(var i=0;i<list.length;i++)if(list[i].id===o.drop.id)part=list[i];
-  return (part?part.name:o.drop.id)+', '+o.drop.slot;
+  var o=opp(),won=[],i;
+  if(o.boss&&o.relics){
+    for(i=0;i<o.relics.length;i++){
+      if(!isUnlocked(o.relics[i])){
+        unlock(o.relics[i]);
+        won.push(nameOf(o.relicSlot,o.relics[i]));
+        break;                      // one per win, never the whole set at once
+      }
+    }
+  }else{
+    for(i=0;i<(o.drops||[]).length;i++)
+      if(unlock(o.drops[i].id))won.push(nameOf(o.drops[i].slot,o.drops[i].id));
+  }
+  return won;
+}
+function nameOf(slot,id){
+  var list=PART_LISTS[slot];
+  for(var i=0;i<list.length;i++)if(list[i].id===id)return list[i].name||id;
+  return id;
 }
 var unlockTimer=0;
 function showUnlock(txt,label){
@@ -3506,6 +4451,7 @@ var WANT=3, OVER=WANT*1.45;
 var sparks=[],trailA=[],trailB=[];
 var demoTimer=0;
 var tuj=null;               // target range state
+var roundLimit=60;          // seconds; a boss may shorten it
 
 function chrome(on){
   $('top').classList.toggle('hide',!on);
@@ -3657,10 +4603,23 @@ function launch(){
   var fw={power:1.02,dir:Math.random()<0.5?1:-1,lean:.034,windImb:.01,windImbAng:0,
           phase:Math.random()*6.283};
   var foe=WIND.applyWind(SIM,oppSpec(),fw);
-  if(bs&&bs.massMul)foe=Object.assign({},foe,{m:foe.m*bs.massMul,I:foe.I*bs.massMul});
-  var ang=Math.random()*6.283;
 
-  A=SIM.spawn(mine,{angle:ang,power:L.power,lean:L.lean,phase:L.phase,trigger:trigger,arenaR:arenaR});
+  /* THE BOSS FLAG LAYER.
+     Every boss in this game is a block of flags on its ladder entry, read here
+     and nowhere else. Not one of them reaches into stepTop or collide, and that
+     is the test of whether a gimmick is the right gimmick: if it needs a special
+     case in the physics, it is the wrong idea and there is a better one. */
+  // ⛔ The flags are applied by SIM.applyBoss, not here, so that the boss test
+  // and the game are provably fighting the same opponent. A renderer that keeps
+  // its own copy of a rule is a renderer that will one day disagree with the
+  // test that says the rule is fine.
+  foe=SIM.applyBoss(foe,bs);
+  var ang=Math.random()*6.283;
+  var bowlMul=SIM.bossArena(bs).bowlMul;
+  roundLimit=bs&&bs.limit?bs.limit:60;
+
+  A=SIM.spawn(mine,{angle:ang,power:L.power,lean:L.lean,phase:L.phase,trigger:trigger,
+                    arenaR:arenaR,bowlMul:bowlMul});
   if(mode==='uri'){
     // Endurance, and the tops must never touch. The honest way to express that
     // is not a flag inside the collision solver, it is to stop calling it: each
@@ -3673,14 +4632,15 @@ function launch(){
     B.x=arenaR*0.42;B.z=0;B.vx=B.vz=0;
   }else{
     B=SIM.spawn(foe,{angle:ang+Math.PI,power:fw.power,lean:fw.lean,phase:fw.phase,
-                     trigger:o.build.trigger||'charged',arenaR:arenaR});
-    // Katis: having won the previous round it opens this one with a free run at
-    // you, already moving. You can still answer it, but you launch into a punch.
-    if(bs&&bs.freeStrike&&pb>pa){
-      var dx=A.x-B.x, dz=A.z-B.z, d=Math.hypot(dx,dz)||1;
-      B.vx+=dx/d*bs.freeStrike; B.vz+=dz/d*bs.freeStrike;
-      flash=1.6;flashTxt='FREE STRIKE';flashCol='#C4442B';
-    }
+                     trigger:o.build.trigger||'charged',arenaR:arenaR,bowlMul:bowlMul});
+    // The Pemangkin plants itself and never gets up. Everything the gimmick
+    // promises falls straight out of the anchor branch stepTop already has: its
+    // lean pins far below the topple threshold, and its ringout requirement goes
+    // to six times normal, which is several times what the best legal hit can
+    // deliver. It cannot be toppled and it cannot be thrown out, so the only
+    // thing left to attack is the teeth holding it together.
+    if(bs&&bs.anchor)B.anchor=Infinity;
+    if(bs&&bs.abilityEvery){B._fired=0;B._every=bs.abilityEvery;}
   }
   phase='play';acc=0;$('card').classList.remove('up');chrome(false);
   $('laps').style.opacity=0;
@@ -3767,6 +4727,13 @@ function endRound(){
 
   phase='done';
   setTimeout(function(){
+    // Katis walks over and hits your top while it is standing in the circle. It
+    // runs through the Taya ceremony because that is exactly what it is, and
+    // because spawning it as a launch collision was measured at a guaranteed
+    // round loss: at t=0 you have no velocity, so Katis is always the aggressor
+    // and one heavy side swing does more than twice a full lock of wear.
+    var bs2=bossOf(opp());
+    if(bs2&&bs2.katis&&win==='b'&&pa<4&&pb<4){startTaya('b');return;}
     // Taya: the loser's top is placed in the circle and the winner gets one free
     // punishing strike at it. It is the answer to "should losing cost you
     // something": it costs lock wear that carries into the next round, publicly,
@@ -3800,7 +4767,7 @@ function finishOrContinue(){
       if(facing===rung&&rung<LADDER.length-1){rung++;facing=rung;}
       updateVs();buildSlots();buildLadder();buildModes();storeBuild();
       $('hint').textContent='You beat '+beat+'. Next up is '+opp().name+'.';
-      if(won)showUnlock(won);
+      if(won&&won.length)showUnlock(won.join(', '),won.length>1?'Parts won':'Part won');
     }else{
       AUDIO.lose();
       $('hint').textContent='They take the match. Launch to try again.';
@@ -3863,11 +4830,22 @@ function step(dt){
         if(c){onHit(c);if(phase==='taya'&&c.impulse>tayaBest)tayaBest=c.impulse;}
         if(phase==='play'){
           if(A.abilityUsed===0&&SIM.triggerReady(A,B)){SIM.fire(A,B);AUDIO.ability();}
-          if(B.abilityUsed===0&&SIM.triggerReady(B,A)){SIM.fire(B,A);AUDIO.ability();}
+          // Two Direction flips its own spin on a repeating timer for the whole
+          // round, so the matchup you built for is only ever half of it. It pays
+          // fourteen percent of its spin every flip, which is its own clock and
+          // your way through.
+          if(B._every&&B.alive&&B.t-B._fired>=B._every){
+            B.charge=1;B.abilityUsed=0;B._fired=B.t;
+            SIM.fire(B,A);AUDIO.ability();
+            flash=0.8;flashTxt='REVERSAL';flashCol='#9A6FB0';
+          }else if(B.abilityUsed===0&&SIM.triggerReady(B,A)){SIM.fire(B,A);AUDIO.ability();}
         }
       }
       if(tuj&&phase==='play')stepTargets();
       acc-=SIM.K.dt;n++;
+      // A boss can shorten the round. The Giant's whole gimmick is that the
+      // clock beats it long before you do.
+      if(phase==='play'&&A.t>=roundLimit&&mode!=='uri'){endRound();break;}
       var uriOver=mode==='uri'&&((!A.alive&&!B.alive)||A.t>=SIM.MODES.uri.limit);
       if(phase==='play'&&((mode==='uri'?uriOver:(!A.alive||(B&&!B.alive)))
           ||(mode==='tujlub'&&!A.alive))){
@@ -4005,11 +4983,16 @@ function drawArena(){
   // brown donut. The band stays, because a player has to be able to see where
   // the dash zone begins, but it is now a faint field with one bright EDGE, and
   // the tops are the brightest thing again.
-  ctx.fillStyle='rgba(201,162,39,.055)';
-  ctx.beginPath();ctx.arc(cx,cy,r,0,7);
-  ctx.arc(cx,cy,r*SIM.K.ridgeAt,0,7,true);ctx.fill();
+  // ⛔ An annulus is NOT two arcs in one path. The second arc starts wherever
+  // the first ended, so the path draws a straight line across to it and the fill
+  // came out with a dark wedge running from the centre to the rim at three
+  // o'clock. Stroking a single circle with a thick line is the same shape with
+  // none of the geometry.
+  var railW=r*(1-SIM.K.ridgeAt);
+  ctx.strokeStyle='rgba(201,162,39,.055)';ctx.lineWidth=railW;
+  ctx.beginPath();ctx.arc(cx,cy,r-railW/2,0,Math.PI*2);ctx.stroke();
   ctx.strokeStyle='rgba(201,162,39,.34)';ctx.lineWidth=1.4;
-  ctx.beginPath();ctx.arc(cx,cy,r*SIM.K.ridgeAt,0,7);ctx.stroke();
+  ctx.beginPath();ctx.arc(cx,cy,r*SIM.K.ridgeAt,0,Math.PI*2);ctx.stroke();
 
   // the pockets: the three low points in the lip where a top actually leaves
   ctx.strokeStyle='rgba(196,68,43,.62)';ctx.lineWidth=7;
@@ -4093,11 +5076,16 @@ function drawTop(o,color,isPlayer,trail){
   var reduced=save.settings.reduceMotion;
 
   if(trail&&trail.length>1&&!reduced){
+    // ⛔ Thin. At a third of the top's radius this read as a tail growing out of
+    // the top rather than as the ground it had covered; in a still frame the
+    // whole thing looked like a tadpole. A trail is a hint of where something
+    // has been, and the moment it is thick enough to have a silhouette it stops
+    // being a hint and starts being part of the object.
     ctx.lineCap='round';
     for(var t=1;t<trail.length;t++){
-      var al=(t/trail.length)*0.28*life;
-      ctx.strokeStyle=color;ctx.globalAlpha=al;
-      ctx.lineWidth=rr*0.30*(t/trail.length);
+      var f=t/trail.length;
+      ctx.strokeStyle=color;ctx.globalAlpha=f*f*0.16*life;
+      ctx.lineWidth=Math.max(1,rr*0.11*f);
       ctx.beginPath();
       ctx.moveTo(CX()+trail[t-1].x*s,CY()+trail[t-1].z*s);
       ctx.lineTo(CX()+trail[t].x*s,CY()+trail[t].z*s);
@@ -4137,13 +5125,17 @@ function drawTop(o,color,isPlayer,trail){
   // which is where the simulation says the tip actually is.
   // ⛔ Capped. Drawn to full length it reached two top diameters at high lean and
   // read as a stray line across the dish rather than as part of the object.
-  var shaftLen=Math.min(rr*0.95,Math.hypot(ox,oy)+rr*0.30);
-  var sdx=ox||0.001, sdy=oy+rr*0.30, sn=Math.hypot(sdx,sdy)||1;
-  ctx.strokeStyle='rgba(160,172,180,.9)';
-  ctx.lineWidth=Math.max(2,rr*0.19);
+  // ⛔ THE SIGN WAS INVERTED and it is worth naming because the symptom was
+  // silence: the shaft pointed UP from the body, straight behind the disc that
+  // was about to be drawn over it, so it was simply never visible and the tops
+  // read as rings lying on the floor rather than as tops standing on a point.
+  // The body sits at the contact point plus the lean offset, so the tip is at
+  // MINUS that offset, and a little further down so it clears the silhouette.
+  var tipx=cx-ox*0.30, tipy=cy-oy*0.30+rr*0.62;
+  ctx.strokeStyle='rgba(170,182,190,.92)';
+  ctx.lineWidth=Math.max(2,rr*0.20);
   ctx.lineCap='round';
-  ctx.beginPath();ctx.moveTo(bx,by);
-  ctx.lineTo(bx-sdx/sn*shaftLen,by-sdy/sn*shaftLen);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(tipx,tipy);ctx.stroke();
   ctx.lineCap='butt';
 
   // the blade body
@@ -4246,6 +5238,15 @@ function drawSparks(){
   ctx.globalAlpha=1;
 }
 
+/* One window hook, and it exists for the thumbnail grabber rather than for the
+   game: it needs to wait for a frame with an actual contact in it, because a
+   picture of two tops sitting apart is a picture of nothing. */
+window.__sparkCount=function(){return sparks.length;};
+window.__gap=function(){
+  if(!A||!B||!A.alive||!B.alive)return 99;
+  return Math.hypot(A.x-B.x,A.z-B.z)/(A.spec.R+B.spec.R);
+};
+
 /* ------------------------------------------------- the menu's living backdrop */
 /* The menu sits on top of a real round, played by the simulation, with nobody
    watching the score. It costs nothing, it is never the same twice, and it is a
@@ -4333,10 +5334,10 @@ $('sideP2').addEventListener('click',function(){
 /* --------------------------------------------------------------- MENU WIRING */
 $('mPlay').addEventListener('click',function(){mode='pangkah';startPlay();});
 $('mHow').addEventListener('click',function(){openSheet('howto');});
-$('mShop').addEventListener('click',function(){rigAnnounceArmed=true;openSheet('sheet');refresh();});
+$('mShop').addEventListener('click',function(){openSheet('sheet');refresh();});
 $('mModes').addEventListener('click',function(){buildModes();openSheet('modes');});
 $('mSet').addEventListener('click',function(){syncToggles();openSheet('settings');});
-$('openWs').addEventListener('click',function(){rigAnnounceArmed=true;openSheet('sheet');refresh();});
+$('openWs').addEventListener('click',function(){openSheet('sheet');refresh();});
 
 // one accordion open at a time, so the workshop never becomes a wall
 (function(){

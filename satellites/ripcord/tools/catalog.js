@@ -5,8 +5,30 @@ const L=[],o=s=>L.push(s);
 const f=(v,d=2)=>typeof v==='number'?v.toFixed(d):String(v);
 o('# RIPCORD — Part Catalogue');o('');
 o('Generated from `sim2.js`. Every number the simulation reads is here.');o('');
-o('Tier 1 is what exists today. Tiers 2 and 3 are specified but NOT built —');
-o('see "Tier expansion" at the bottom and HANDOFF.md section 6.');o('');
+o('All three tiers are built. Tier is not power: every tier spends the same');
+o('budget and higher tiers spend it more extremely. A Relic also carries a named');
+o('drawback the simulation enforces, listed at the bottom.');o('');
+o('The gate is empirical, not editorial: `node tools/partaudit.js` must print');
+o('PART AUDIT OK, which means every part has a build where it works and no');
+o('higher tier lifts the average of whatever it is bolted to.');o('');
+{
+  const all=[].concat(SIM.CORES,SIM.BLADES,SIM.ASSISTS,SIM.RATCHETS,SIM.BITS);
+  const t=[0,0,0,0]; all.forEach(p=>t[p.tier||1]++);
+  const chassis=SIM.CORES.length*SIM.BLADES.length*SIM.ASSISTS.length*SIM.RATCHETS.length*SIM.BITS.length;
+  o('| | count |');o('|---|---|');
+  o('| Tier 1, Stock | '+t[1]+' |');
+  o('| Tier 2, Forged | '+t[2]+' |');
+  o('| Tier 3, Relic | '+t[3]+' |');
+  o('| **total parts** | **'+all.length+'** |');
+  o('| chassis, before counterweights | '+chassis.toLocaleString('en-US')+' |');
+  o('| weight configurations | '+(function(){
+      // choose up to MAX_WEIGHTS holes from RINGS*HOLES, each of 3 masses
+      const slots=SIM.RINGS.length*SIM.HOLES; let n=0;
+      const comb=(a,b)=>{let r=1;for(let i=0;i<b;i++)r=r*(a-i)/(i+1);return Math.round(r);};
+      for(let k=0;k<=SIM.MAX_WEIGHTS;k++) n+=comb(slots,k)*Math.pow(SIM.WEIGHTS.length-1,k);
+      return n.toLocaleString('en-US');})()+' |');
+  o('');
+}
 
 function tbl(title,list,cols,keys){
   o('## '+title+' — '+list.length+' parts');o('');
@@ -14,16 +36,50 @@ function tbl(title,list,cols,keys){
   for(const p of list) o('| '+keys.map(k=>typeof k==='function'?k(p):f(p[k],k==='mass'?4:2)).join(' | ')+' |');
   o('');
 }
-tbl('Cores',SIM.CORES,['id','name','role','mass kg','spin','ability','charge rate'],
-  ['id','name','role','mass',p=>p.dir>0?'right':'left','ability','charge']);
-tbl('Blades',SIM.BLADES,['id','name','role','mass kg','radius m','sharp','rest','gear','taken'],
-  ['id','name','role','mass',p=>f(p.radius,4),'sharp','rest','gear','taken']);
-tbl('Assists',SIM.ASSISTS,['id','name','role','mass kg','gearMul','absorb','radAdd','smash'],
-  ['id','name','role','mass','gearMul','absorb',p=>f(p.radAdd,4),'smash']);
-tbl('Ratchets',SIM.RATCHETS,['id','role','mass kg','height mm','lock','strikeHigh'],
-  ['id','role','mass',p=>String(p.height),'lock','strikeHigh']);
-tbl('Bits',SIM.BITS,['id','name','role','mass kg','stamina','drive','stable','dash','shaft'],
-  ['id','name','role','mass','stamina','drive','stable','dash','shaft']);
+const T=p=>['','Stock','Forged','Relic'][p.tier||1];
+const D=p=>p.drawback||'';
+tbl('Cores',SIM.CORES,['id','name','tier','role','mass kg','spin','ability','charge','drawback'],
+  ['id','name',T,'role','mass',p=>p.dir>0?'right':'left','ability','charge',D]);
+tbl('Blades',SIM.BLADES,['id','name','tier','role','mass kg','radius m','sharp','rest','gear','taken','drawback'],
+  ['id','name',T,'role','mass',p=>f(p.radius,4),'sharp','rest','gear','taken',D]);
+tbl('Assists',SIM.ASSISTS,['id','name','tier','role','mass kg','gearMul','absorb','radAdd','smash','drawback'],
+  ['id','name',T,'role','mass','gearMul','absorb',p=>f(p.radAdd,4),'smash',D]);
+tbl('Ratchets',SIM.RATCHETS,['id','tier','role','mass kg','height mm','lock','strikeHigh','drawback'],
+  ['id',T,'role','mass',p=>String(p.height),'lock','strikeHigh',D]);
+tbl('Bits',SIM.BITS,['id','name','tier','role','mass kg','stamina','drive','stable','dash','shaft','drawback'],
+  ['id','name',T,'role','mass','stamina','drive','stable','dash','shaft',D]);
+
+// ---- the things a stat table cannot say
+o('## Relic drawbacks');o('');
+o('A Relic takes one stat to an extreme and pays for it with a named behaviour');
+o('the simulation actually enforces. A drawback that never fires is power creep');
+o('in a costume, so each of these is measured and each of them bites.');o('');
+o('| id | name | what it does |');o('|---|---|---|');
+for(const d of SIM.DRAWBACKS) o('| '+d.id+' | '+d.name+' | '+d.desc+' |');
+o('');
+
+o('## Tuning operations');o('');
+o('Free, reversible, and capped at '+SIM.MODS_PER_PART+' changes to any one part.');
+o('There is no currency in this game and there is never going to be one.');o('');
+o('| operation | slots | effect | max |');o('|---|---|---|---|');
+for(const t of SIM.TUNING)
+  o('| '+t.name+' | '+t.slots.join(', ')+' | '+
+    Object.keys(t.d).map(k=>k+' '+(t.d[k]>0?'+':'')+t.d[k]).join(', ')+' | '+t.max+' |');
+o('');
+
+o('## Abilities and triggers');o('');
+o('Programmed BEFORE launch and fired once. The player never touches the screen');
+o('during a round, so the whole tactical decision is which two lines to write.');o('');
+o('Abilities, one per core: '+[...new Set(SIM.CORES.map(c=>c.ability))].sort().join(', ')+'.');o('');
+o('| trigger | fires when |');o('|---|---|');
+for(const t of SIM.TRIGGERS) o('| '+t+' | '+(SIM.TRIGGER_LABEL[t]||'')+' |');
+o('');
+
+o('## Modes');o('');
+o('| mode | arena | rules |');o('|---|---|---|');
+for(const k of Object.keys(SIM.MODES)){const m=SIM.MODES[k];
+  o('| '+m.name+' | '+(m.arenaR*1000).toFixed(0)+'mm | '+m.desc+' |');}
+o('');
 tbl('Weights',SIM.WEIGHTS.slice(1),['id','name','mass kg'],['id','name','mass']);
 o('Weight rings: '+SIM.RINGS.map(r=>(r*100)+'% of blade radius').join(', ')+
   '; '+SIM.HOLES+' holes per ring; max '+SIM.MAX_WEIGHTS+' fitted.');o('');

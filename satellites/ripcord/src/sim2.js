@@ -95,7 +95,7 @@
       desc: "Solid mineral stock that sits heavy on the axis and hardens you against three seconds of punishment, if it ever fills." },
     { id: 'windlas', name: 'Windlass', mass: 0.00404, dir: -1, ability: 'windup', charge: 0.51, role: 'attack', tier: 2,
       desc: "A geared winding chip that stalls you at half travel for a second and a half, then throws you forward at nearly double." },
-    { id: 'vise', name: 'Vise', mass: 0.00386, dir: -1, ability: 'bite', charge: 0.56, role: 'attack', tier: 2,
+    { id: 'vise', name: 'Vise', mass: 0.00496, dir: -1, ability: 'bite', charge: 0.52, role: 'attack', tier: 2,
       desc: "Heavy jaws at the centre that clamp both rims together for two seconds and strip spin off whatever you are touching." },
     { id: 'kite', name: 'Kite', mass: 0.00104, dir: -1, ability: 'tether', charge: 1.46, role: 'utility', tier: 2,
       desc: "A hollowed chip that weighs almost nothing and fills early enough to hold you out on the rail while the bowl tries to pull you home." },
@@ -148,7 +148,7 @@
       desc: "The widest ring the mount will hold, rolled thin and left blunt, so it carries spin for a very long time and can barely mark anything." },
     { id: 'roundel', name: 'Roundel', mass: 0.01300, radius: 0.0210, sharp: 0.10, rest: 0.18, gear: 0.26, taken: 0.62, role: 'stamina', tier: 2,
       desc: "A packed rim that swallows a hit instead of returning it, with no edge left to answer one." },
-    { id: 'rasp', name: 'Rasp', mass: 0.01520, radius: 0.0220, sharp: 0.90, rest: 0.16, gear: 1.82, taken: 1.26, role: 'attack', tier: 2,
+    { id: 'rasp', name: 'Rasp', mass: 0.01609, radius: 0.0220, sharp: 0.90, rest: 0.16, gear: 1.82, taken: 1.26, role: 'attack', tier: 2,
       desc: "A file rather than a knife, it grips a passing rim and drags the spin off it instead of throwing it clear." },
     { id: 'hailstone', name: 'Hailstone', mass: 0.01640, radius: 0.0230, sharp: 0.70, rest: 1.20, gear: 0.14, taken: 1.06, role: 'balance', tier: 2,
       desc: "Hard and polished, it kicks away from every contact it makes and never grips long enough to trade spin." },
@@ -157,7 +157,7 @@
     //      simulation actually enforces. Bosses are the only source.
     { id: 'shrike', name: 'Shrike', mass: 0.01220, radius: 0.0202, sharp: 1.62, rest: 0.98, gear: 1.30, taken: 1.52, role: 'attack', tier: 3, drawback: 'glass',
       desc: "The deepest edge ever fitted to a mount, hung on a blade so light and thin that it begins to give once the spin is gone." },
-    { id: 'sledge', name: 'Sledge', mass: 0.01820, radius: 0.0214, sharp: 1.16, rest: 1.42, gear: 0.66, taken: 1.52, role: 'attack', tier: 3, drawback: 'oneshot',
+    { id: 'sledge', name: 'Sledge', mass: 0.01820, radius: 0.0214, sharp: 1.10, rest: 1.42, gear: 0.66, taken: 1.52, role: 'attack', tier: 3, drawback: 'oneshot',
       desc: "A hardened face that turns one clean contact into a single enormous blow and never lands another like it." },
     { id: 'ingot', name: 'Ingot', mass: 0.02500, radius: 0.0206, sharp: 0.46, rest: 0.32, gear: 0.46, taken: 1.06, role: 'defense', tier: 3, drawback: 'coldstart',
       desc: "A dense billet with barely any rim to it, slow to get moving and then very hard to move." },
@@ -200,7 +200,7 @@
     // ---- TIER 2, FORGED. One stat pushed about a quarter past the Tier 1
     //      range, and another pulled back further to pay for it. Not stronger,
     //      more extreme; that is what a tier is in this game.
-    { id: 'cornice', name: 'Cornice', mass: 0.00580, gearMul: 0.90, absorb: 1.04, radAdd: 0.0025, smash: 0.70, role: 'balance', tier: 2,
+    { id: 'cornice', name: 'Cornice', mass: 0.00600, gearMul: 0.62, absorb: 1.46, radAdd: 0.0008, smash: 0.72, role: 'balance', tier: 2,
       desc: "A broad steel ledge that reaches further than any other assist, with no edge on it at all." },
     { id: 'longspur', name: 'Longspur', mass: 0.00420, gearMul: 1.38, absorb: 0.68, radAdd: 0.0025, smash: 1.10, role: 'attack', tier: 2,
       desc: "All the reach of a wide rim on a light frame, with nothing left over to cushion what comes back." },
@@ -214,18 +214,18 @@
       desc: "A thick fibre pad that swallows a blow whole, and swallows yours as well." },
     { id: 'gutta', name: 'Gutta', mass: 0.00340, gearMul: 2.35, absorb: 1.42, radAdd: 0.0006, smash: 0.86, role: 'stamina', tier: 2,
       desc: "A soft damping ring that shrugs off impacts and grips everything it meets, so every touch trades spin." },
-    { id: 'barb', name: 'Barb', mass: 0.00800, gearMul: 1.10, absorb: 0.86, radAdd: 0.0004, smash: 1.30, role: 'attack', tier: 2,
+    { id: 'barb', name: 'Barb', mass: 0.00556, gearMul: 0.34, absorb: 0.74, radAdd: 0.0005, smash: 1.30, role: 'attack', tier: 2,
       desc: "A heavy blunt wedge that hits like a hammer and drags the heavy side of the top flat." },
 
     // ---- TIER 3, RELIC. One stat at an extreme, plus a named drawback the
     //      simulation actually enforces. Bosses are the only source.
-    { id: 'eaves', name: 'Eaves', mass: 0.00500, gearMul: 0.72, absorb: 0.66, radAdd: 0.0030, smash: 0.88, role: 'stamina', tier: 3, drawback: 'glass',
+    { id: 'eaves', name: 'Eaves', mass: 0.00411, gearMul: 0.72, absorb: 0.62, radAdd: 0.0031, smash: 0.88, role: 'stamina', tier: 3, drawback: 'glass',
       desc: "The widest rim in the game, cut from sheet so thin that it folds once the spin is gone." },
     { id: 'nettle', name: 'Nettle', mass: 0.00500, gearMul: 3.00, absorb: 0.70, radAdd: 0.0008, smash: 0.92, role: 'utility', tier: 3, drawback: 'hungry',
       desc: "Teeth like a coarse file that tear spin off anything they touch and burn through your own." },
     { id: 'bushing', name: 'Bushing', mass: 0.00580, gearMul: 0.58, absorb: 1.70, radAdd: 0.0002, smash: 0.72, role: 'defense', tier: 3, drawback: 'looselock',
       desc: "A soft sleeve that damps every blow and never lets the threads seat tight." },
-    { id: 'chert', name: 'Chert', mass: 0.00360, gearMul: 0.20, absorb: 0.84, radAdd: 0.0010, smash: 1.55, role: 'attack', tier: 3, drawback: 'oneshot',
+    { id: 'chert', name: 'Chert', mass: 0.00440, gearMul: 0.22, absorb: 0.68, radAdd: 0.0004, smash: 1.38, role: 'attack', tier: 3, drawback: 'oneshot',
       desc: "A knapped stone edge that lands one devastating blow and is blunt for the rest of the round." }
   ];
 
@@ -250,11 +250,11 @@
     // ---- TIER 2, FORGED. One stat pushed about a quarter past the Tier 1
     //      range, and another pulled back further to pay for it. Not stronger,
     //      more extreme; that is what a tier is in this game.
-    { id: '0-90', name: 'Spire', mass: 0.00580, height: 90, lock: 0.26, strikeHigh: 1.64, role: 'attack', tier: 2,
+    { id: '0-90', name: 'Spire', mass: 0.00580, height: 90, lock: 0.38, strikeHigh: 1.70, role: 'attack', tier: 2,
       desc: "A smooth toothless collar with the strike ring flared out at the crown, so it lands higher than anything else in the box and starts coming apart the moment somebody lands one back." },
     { id: '11-80', name: 'Belfry', mass: 0.00500, height: 80, lock: 1.46, strikeHigh: 1.20, role: 'attack', tier: 2,
       desc: "Eleven teeth on a tall skeleton body, so it hits high and nothing will burst it, but there is almost no metal left in it to soak up a hit." },
-    { id: '11-30', name: 'Deadbolt', mass: 0.00820, height: 30, lock: 1.46, strikeHigh: 0.16, role: 'defense', tier: 2,
+    { id: '11-30', name: 'Deadbolt', mass: 0.00464, height: 30, lock: 1.40, strikeHigh: 0.16, role: 'defense', tier: 2,
       desc: "Eleven teeth in a short heavy collar that simply will not come apart, fitted with a strike face buried so far under the blade that it can barely bother anybody." },
     { id: '0-40', name: 'Ballast', mass: 0.00880, height: 40, lock: 0.29, strikeHigh: 0.58, role: 'defense', tier: 2,
       desc: "A solid slug of a collar that shrugs off shoves and sits low, held on a plain thread with no detents in it at all." },
@@ -269,7 +269,7 @@
     //      simulation actually enforces. Bosses are the only source.
     { id: '14-30', name: 'Portcullis', mass: 0.00820, height: 30, lock: 1.70, strikeHigh: 0.14, role: 'defense', tier: 3, drawback: 'looselock',
       desc: "Fourteen coarse teeth in a collar that never seats fully, so it rides very low and very steady while the play in the thread lets it pop." },
-    { id: '2-90', name: 'Weathervane', mass: 0.00480, height: 90, lock: 0.71, strikeHigh: 1.80, role: 'attack', tier: 3, drawback: 'shear',
+    { id: '2-90', name: 'Weathervane', mass: 0.00602, height: 90, lock: 1.38, strikeHigh: 1.68, role: 'attack', tier: 3, drawback: 'shear',
       desc: "A flared crown that strikes above its own height and rings every one of those blows straight back through its own teeth." },
     { id: '0-50', name: 'Ingot', mass: 0.00960, height: 50, lock: 0.20, strikeHigh: 0.70, role: 'utility', tier: 3, drawback: 'oneshot',
       desc: "A dead weight of a collar on a thread worn smooth, putting everything it has into the first strike it lands and almost nothing into the rest." }
@@ -296,7 +296,7 @@
     //      more extreme; that is what a tier is in this game.
     { id: 'bradawl', name: 'Bradawl', mass: 0.00340, stamina: 1.66, drive: 0.32, stable: 0.92, dash: 0.35, shaft: 1.02, role: 'stamina', tier: 2,
       desc: "A hardened point no wider than a pin, ground for the longest spin in the game and almost no travel at all." },
-    { id: 'stillpin', name: 'Still Pin', mass: 0.00330, stamina: 1.24, drive: 0.36, stable: 0.56, dash: 0.35, shaft: 1.00, role: 'stamina', tier: 2,
+    { id: 'stillpin', name: 'Still Pin', mass: 0.00320, stamina: 1.52, drive: 0.34, stable: 0.74, dash: 0.35, shaft: 0.94, role: 'stamina', tier: 2,
       desc: "It parks where you launch it and stays there; the smallest solid hit puts it on its side." },
     { id: 'spur', name: 'Spur', mass: 0.00500, stamina: 0.86, drive: 2.15, stable: 0.82, dash: 1.55, shaft: 0.56, role: 'attack', tier: 2,
       desc: "The foot is ground on a slant so friction turns into travel, and every jolt it earns goes straight up the thin shank into the teeth." },
@@ -306,12 +306,12 @@
       desc: "A broad wooden shoe of a foot that nothing tips over, seated in a soft collar that hands every shock to the lock teeth." },
     { id: 'ferrule', name: 'Ferrule', mass: 0.00430, stamina: 1.06, drive: 1.00, stable: 0.60, dash: 0.72, shaft: 1.48, role: 'balance', tier: 2,
       desc: "A long steel collar driven deep into the shaft so no impact reaches the teeth, standing on a foot too narrow to hold you up." },
-    { id: 'cleat', name: 'Cleat', mass: 0.00440, stamina: 1.02, drive: 1.02, stable: 0.90, dash: 2.26, shaft: 0.54, role: 'balance', tier: 2,
+    { id: 'cleat', name: 'Cleat', mass: 0.00476, stamina: 1.00, drive: 1.06, stable: 1.11, dash: 2.20, shaft: 0.62, role: 'balance', tier: 2,
       desc: "A knurled stud that takes the rail on an ordinary top, bought with a shank that pops apart under one solid blow." },
-    { id: 'plumb', name: 'Plumb', mass: 0.00640, stamina: 0.54, drive: 0.68, stable: 1.04, dash: 0.35, shaft: 1.06, role: 'defense', tier: 2,
+    { id: 'plumb', name: 'Plumb', mass: 0.00640, stamina: 0.54, drive: 0.77, stable: 1.04, dash: 0.35, shaft: 1.06, role: 'defense', tier: 2,
       desc: "All the metal is in the foot, so shoves barely move it and the loaded tip grinds its spin into the floor." },
-    { id: 'agate', name: 'Agate', mass: 0.00340, stamina: 1.72, drive: 0.58, stable: 0.54, dash: 0.35, shaft: 1.04, role: 'stamina', tier: 2,
-      desc: "A polished stone pivot with almost no friction at all, which also means almost nothing to stand it back up." },
+    { id: 'agate', name: 'Agate', mass: 0.00340, stamina: 1.62, drive: 0.58, stable: 0.78, dash: 0.35, shaft: 1.04, role: 'stamina', tier: 2,
+      desc: "A polished stone pivot with almost no friction at all, so it turns for a very long time and gets nowhere." },
 
     // ---- TIER 3, RELIC. One stat at an extreme, plus a named drawback the
     //      simulation actually enforces. Bosses are the only source.
@@ -323,7 +323,7 @@
       desc: "A wide flat stone of a foot that will not be tipped over, sitting so loose in the seat that one connected blow pops it apart." },
     { id: 'pintle', name: 'Pintle', mass: 0.00500, stamina: 0.94, drive: 0.30, stable: 0.94, dash: 0.35, shaft: 1.72, role: 'defense', tier: 3, drawback: 'skittish',
       desc: "The shank goes the full depth of the shaft so nothing bursts it, ending in a polished dome with nothing to keep it inside the lip." },
-    { id: 'jasper', name: 'Jasper', mass: 0.00350, stamina: 1.34, drive: 0.26, stable: 1.02, dash: 0.35, shaft: 0.62, role: 'stamina', tier: 3, drawback: 'glass',
+    { id: 'jasper', name: 'Jasper', mass: 0.00439, stamina: 1.29, drive: 0.26, stable: 1.07, dash: 0.35, shaft: 0.67, role: 'stamina', tier: 3, drawback: 'glass',
       desc: "So slick it barely travels at all, and brittle enough that once it is tired every hit lands twice as hard." }
   ];
 
@@ -743,6 +743,14 @@
       // a wider one and the target range is wider again; everything else in the
       // simulation reads this rather than the constant.
       arenaR: o.arenaR !== undefined ? o.arenaR : K.arenaR,
+      // ⛔ A WIDER DISH NEEDS THIS AND IT IS NOT COSMETIC. K.bowl is an
+      // ACCELERATION of bowl times r, so widening the arena scales the rim pull
+      // linearly and the rail walks out of reach: at 0.230 the ridge starts
+      // where the pull is 1.99 m/s^2 against 1.30 at the standard ridge, and
+      // nothing ever gets near the lip again. Setting bowlMul to 0.150/0.230
+      // holds bowl times arenaR constant, so a bigger dish keeps its SHAPE
+      // rather than turning into a different game.
+      bowlMul: o.bowlMul !== undefined ? o.bowlMul : 1,
       pinned: !!o.pinned,          // a Taya target: present, struck, and inert
       x: Math.cos(ang) * off, z: Math.sin(ang) * off,
       vx: o.vx || 0, vz: o.vz || 0,
@@ -859,7 +867,7 @@
       const u = rad / a.arenaR;
       const over = Math.max(0, u - K.ridgeAt) / (1 - K.ridgeAt);
       const tether = a.t < a.tether ? 0.5 : 1;   // Tether: hold the rail
-      const pull = K.bowl * g.bowl * tether * rad * (1 - K.ridgeFall * over * over);
+      const pull = K.bowl * a.bowlMul * g.bowl * tether * rad * (1 - K.ridgeFall * over * over);
       a.vx -= (a.x / rad) * pull * dt;
       a.vz -= (a.z / rad) * pull * dt;
 
@@ -1048,7 +1056,18 @@
       // One Shot: the first strike this Relic lands does triple wear and every
       // strike after it does forty percent. It is a top you get exactly one good
       // moment with, and the moment is worth the whole round.
-      const oneShot = (agg.spec.dw && agg.spec.dw.oneshot) ? (agg.landed === 0 ? 3.0 : 0.40) : 1;
+      // ⛔ ONE SHOT WAS A BUFF WEARING A DRAWBACK'S NAME, and the arithmetic is
+      // three lines long. At triple for the first strike and forty percent after,
+      // a round with three connections averages (3 + 0.4 + 0.4) / 3 = 1.27 times
+      // normal wear, and rounds here have a median of about six seconds and a
+      // handful of connections. The numbers only ever read as a cost if you
+      // assume a long grinding round, and this game does not have one. The Relic
+      // carrying it measured five points of power creep and the balancer could
+      // not tune it out, because the problem was never in the part's stats.
+      // Repriced so the crossover sits at two connections: one hit is still a
+      // round ender, two is break even, and anything past that is worse than a
+      // stock ratchet. You get one moment, which is what the name promised.
+      const oneShot = (agg.spec.dw && agg.spec.dw.oneshot) ? (agg.landed === 0 ? 2.20 : 0.25) : 1;
       const wear = K.burstK * Math.pow(imp / K.impRef, K.burstPow) * oneShot;
       // ⛔ A PINNED top takes almost no lock wear, and this is physics and not a
       // difficulty knob: the ratchet loosens because the teeth are being sheared
@@ -1061,7 +1080,13 @@
       // Shear: the striker normally takes 14 percent of the wear back. This one
       // takes all of it, so every blow it lands loosens its own teeth as much as
       // the other top's.
-      agg.wear += wear * ((agg.spec.dw && agg.spec.dw.shear) ? 1 : K.burstBack) / agg.spec.burstResist;
+      // Shear: the striker normally takes 14 percent of the wear back. This one
+      // takes a great deal more, so every blow it lands loosens its own teeth.
+      // ⛔ It was 100 percent, seven times normal, and the Relic carrying it burst
+      // itself before it could win anything: a 42 percent ceiling against a floor
+      // of 50, with no stat change able to reach it. Three times normal is still
+      // plainly a drawback and leaves the part a round to work in.
+      agg.wear += wear * ((agg.spec.dw && agg.spec.dw.shear) ? 0.42 : K.burstBack) / agg.spec.burstResist;
 
       agg.charge += K.chargeHit * agg.spec.chargeRate * aggG.charge;
       def.charge += K.chargeTaken * def.spec.chargeRate * defG.charge;
@@ -1251,6 +1276,87 @@
     return { score, hit, duration: t, targets };
   }
 
+  // ======================================================================
+  // BOSSES — a block of flags on a ladder entry and nothing more.
+  //
+  // Not one boss reaches into stepTop or collide, and that is the test of
+  // whether a gimmick is the right gimmick: a boss that needs a special case in
+  // the physics is the wrong idea, and there has always been a better one that
+  // does not. The Pemangkin is unkillable because the ANCHOR branch already
+  // existed for an ability; The Giant needs a wider dish, which the arena radius
+  // already supports; Two Direction just fires an ability that already exists,
+  // on a timer.
+  //
+  // This lives in the simulation rather than in the renderer so that the boss
+  // test and the game are provably fighting the same opponent.
+  // ======================================================================
+  function applyBoss(spec, boss) {
+    if (!boss) return spec;
+    let out = spec;
+    if (boss.specMul) {
+      const m = {};
+      for (const k in boss.specMul) m[k] = out[k] * boss.specMul[k];
+      out = Object.assign({}, out, m);
+    }
+    if (boss.rig) out = Object.assign({}, out, {
+      rig: Object.assign({}, out.rig || RIG_NEUTRAL, boss.rig)
+    });
+    return out;
+  }
+  const bossArena = boss => ({
+    arenaR: (boss && boss.arenaR) || K.arenaR,
+    bowlMul: (boss && boss.bowlMul) || 1
+  });
+
+  /* A round against a boss. Same loop as resolveMatch with three flags folded
+   * in, kept separate so the ordinary path stays exactly as tuned. */
+  function resolveBossMatch(playerSpec, bossSpec, boss, opts) {
+    const o = opts || {};
+    const rnd = o.rnd || Math.random;
+    const arena = bossArena(boss);
+    const a = spawn(playerSpec, Object.assign({ angle: 0 }, arena, o.a));
+    const b = spawn(applyBoss(bossSpec, boss), Object.assign({ angle: Math.PI }, arena, o.b));
+    if (boss && boss.anchor) b.anchor = Infinity;
+    const every = boss && boss.abilityEvery ? boss.abilityEvery : 0;
+    let fired = 0;
+    const limit = (boss && boss.limit) || o.limit || 60;
+    let t = 0;
+    while (t < limit && a.alive && b.alive) {
+      stepTop(a, K.dt); stepTop(b, K.dt);
+      const c = collide(a, b, rnd);
+      if (c && o.onHit) o.onHit(c);
+      if (a.abilityUsed === 0 && triggerReady(a, b)) fire(a, b);
+      if (every) {
+        if (b.alive && b.t - fired >= every) { b.charge = 1; b.abilityUsed = 0; fired = b.t; fire(b, a); }
+      } else if (b.abilityUsed === 0 && triggerReady(b, a)) fire(b, a);
+      t += K.dt;
+    }
+    let winner = null, cause = 'timeout';
+    if (a.alive && !b.alive) { winner = 'a'; cause = b.cause; }
+    else if (b.alive && !a.alive) { winner = 'b'; cause = a.cause; }
+    else if (!a.alive && !b.alive) { cause = 'double'; }
+    else if (boss && boss.spinTarget && Math.abs(b.w) <= boss.spinTarget * K.launchSpin) {
+      /* THE GIANT'S DOOR, and the reason it needed one.
+       * A four kilogram top in a wide dish cannot be rung out, cannot be
+       * toppled, and will still be turning long after the round is over, so the
+       * only route left was to break its teeth. That is a real answer, but it is
+       * The Pemangkin's answer, and two bosses teaching the same lesson is one
+       * boss too many.
+       * The tradition has a better one: nobody outlasts a giant, so you measure
+       * it. Wear its spin below a threshold before the bell and you have taken
+       * it. Measured, the split is exactly the lesson: a spin stealing build
+       * gets it down to 0.71 of its launch by the bell and a pure force build
+       * only to 0.94, so this door opens for the player who took its spin off it
+       * at the rim and stays shut for the one who tried to out muscle it. */
+      winner = 'a'; cause = 'worn';
+    }
+    else { winner = Math.abs(a.w) > Math.abs(b.w) ? 'a' : 'b'; }
+    const points = { spinout: 1, ringout: 2, knockout: 2, burst: 2, timeout: 1,
+                     worn: 2, double: 0 }[cause] || 1;
+    return { winner, cause, points, duration: t, a, b,
+             bossSpin: b.alive ? Math.abs(b.w) / K.launchSpin : 0 };
+  }
+
   function mulberry(seed) {
     let s = seed >>> 0;
     return function () {
@@ -1277,6 +1383,7 @@
            FINISHES, DECALS, TRAILS, LAUNCHERS, COSMETIC_SLOTS, ROLES,
            ARCHETYPES, TRIGGERS, TRIGGER_LABEL, TUNING, MODS_PER_PART,
            MODES, rangeTargets, resolveUri, resolveTaya, resolveRangeShot,
+           applyBoss, bossArena, resolveBossMatch,
            DRAWBACKS, drawbackOf, RIG_NEUTRAL,
            build, spawn, stepTop, collide, resolveMatch, mulberry, fire, triggerReady,
            applyMods, tuningOptions, tuningOp };
