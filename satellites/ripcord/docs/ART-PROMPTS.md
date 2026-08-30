@@ -10,10 +10,15 @@ If a part is renamed or added, regenerate this rather than editing it.
    what the cutting step keys out.
 2. Save it into `assets/parts/_raw/` named after the part, any size, any format:
    `cleaver.png`, `cleaver.jpg`, `cleaver.webp` all work.
-3. Run `node tools/artcut.js`. It keys the background, trims to the object,
-   squares it up, sizes it and writes the game ready file into
-   `assets/parts/blade/cleaver.png`.
+3. Run `python3 tools/artcut.py`. It keys the background, trims to the
+   object, squares it up, sizes it and writes the game ready file into
+   `assets/parts/blade/cleaver.webp`.
 4. Reload the game. It is there. Nothing else to wire.
+
+A part that already has a picture is left alone, so to REPLACE one (say,
+your painting over a placeholder render) add `--force`:
+`python3 tools/artcut.py cleaver --force`. Multi-part SHEETS on a magenta
+ground are cut by `python3 tools/artsheet.py` first; see its header.
 
 Missing art is the normal state. Every part without a file is drawn in code
 exactly as it is today, so you can do these in any order and stop any time.
@@ -40,7 +45,7 @@ constraint, and it means:
 
 ## Core — 22
 
-Saved as `assets/parts/core/<id>.png`. Shot from slightly above and in front, lying flat, the face toward camera.
+Saved as `assets/parts/core/<id>.webp`. Shot from slightly above and in front, lying flat, the face toward camera.
 
 ### Ember  `ember.png`
 *stamina, move: surge*
@@ -200,7 +205,7 @@ A single core for a spinning battle top: the lock chip that sits on top of the d
 
 ## Blade — 22
 
-Saved as `assets/parts/blade/<id>.png`. Shot from slightly above at a three quarter angle so the rim and the edge both read.
+Saved as `assets/parts/blade/<id>.webp`. Shot from slightly above at a three quarter angle so the rim and the edge both read.
 
 ### Cleaver  `cleaver.png`
 *attack*
@@ -360,7 +365,7 @@ A single blade for a spinning battle top: the striking disc, the whole silhouett
 
 ## Assist — 21
 
-Saved as `assets/parts/assist/<id>.png`. Shot nearly edge on, tilted just enough to show the ring is a ring.
+Saved as `assets/parts/assist/<id>.webp`. Shot nearly edge on, tilted just enough to show the ring is a ring.
 
 ### Jag  `jag.png`
 *attack*
@@ -513,7 +518,7 @@ A single assist for a spinning battle top: a shaped ring that clips under the bl
 
 ## Ratchet — 20
 
-Saved as `assets/parts/ratchet/<id>.png`. Shot from the side and a little above, so the teeth on the ring are countable.
+Saved as `assets/parts/ratchet/<id>.webp`. Shot from the side and a little above, so the teeth on the ring are countable.
 
 ### 0-70  `0-70.png`
 *balance*
@@ -659,7 +664,7 @@ A single ratchet for a spinning battle top: the toothed collar between blade and
 
 ## Bit — 24
 
-Saved as `assets/parts/bit/<id>.png`. Shot from the side, point downward, standing as it would in the dish.
+Saved as `assets/parts/bit/<id>.webp`. Shot from the side, point downward, standing as it would in the dish.
 
 ### Flat  `flat.png`
 *attack*
@@ -833,7 +838,7 @@ A single bit for a spinning battle top: the tip the top stands and spins on. So 
 
 ## Weights — 3
 
-Saved as `assets/parts/weight/<id>.png`. Small metal blanks that bolt into the
+Saved as `assets/parts/weight/<id>.webp`. Small metal blanks that bolt into the
 holes under a blade. Shot from slightly above, lying flat.
 
 ### Chip  `chip.png`

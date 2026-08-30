@@ -9,7 +9,7 @@
  *
  * ⛔ The prompts ask for a FLAT BLACK background on purpose. Image generators do
  * not give clean transparency, and flat black is what the studio's cutting
- * workflow already keys out. tools/artcut.js does the keying, so the raw output
+ * workflow already keys out. tools/artcut.py does the keying, so the raw output
  * of a generator is a valid input to this pipeline.
  *
  *   node tools/artkit.js            # write the prompt doc and the folders
@@ -148,10 +148,15 @@ If a part is renamed or added, regenerate this rather than editing it.
    what the cutting step keys out.
 2. Save it into \`assets/parts/_raw/\` named after the part, any size, any format:
    \`cleaver.png\`, \`cleaver.jpg\`, \`cleaver.webp\` all work.
-3. Run \`node tools/artcut.js\`. It keys the background, trims to the object,
-   squares it up, sizes it and writes the game ready file into
-   \`assets/parts/blade/cleaver.png\`.
+3. Run \`python3 tools/artcut.py\`. It keys the background, trims to the
+   object, squares it up, sizes it and writes the game ready file into
+   \`assets/parts/blade/cleaver.webp\`.
 4. Reload the game. It is there. Nothing else to wire.
+
+A part that already has a picture is left alone, so to REPLACE one (say,
+your painting over a placeholder render) add \`--force\`:
+\`python3 tools/artcut.py cleaver --force\`. Multi-part SHEETS on a magenta
+ground are cut by \`python3 tools/artsheet.py\` first; see its header.
 
 Missing art is the normal state. Every part without a file is drawn in code
 exactly as it is today, so you can do these in any order and stop any time.
