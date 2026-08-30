@@ -102,6 +102,8 @@ tools/ladder.js       generates the 25 rungs and verifies the curve
 tools/catalog.js      -> docs/CATALOG.md
 tools/assets.js       -> docs/ASSETS.md
 tools/shots.mjs       screenshots at a real phone size, and measures the controls
+tools/cershots.mjs    plays to the end of a match and photographs every ceremony
+                      beat. RC_W and RC_H set the viewport. -> docs/shots-ceremony/
 tools/make_icons.py   the three app icons
 tools/make_thumb.mjs  the portal card image, from a real frame of play
 
@@ -109,7 +111,8 @@ test/determinism.js   same seed, same round, a thousand times. Includes a mutati
 test/rigtest.js       every rig must change at least 8 percent of rounds
 test/modetest.js      Uri, Taya and the range each have their own pacing targets
 test/bosstest.js      each boss must refute one strategy and be beatable by another
-test/playthrough.mjs  drives the real game in a real browser, through every mode
+test/playthrough.mjs  drives the real game in a real browser, through every mode,
+                      plays a WHOLE MATCH and walks the ceremony at three sizes
 ```
 
 ---
@@ -236,6 +239,82 @@ crossover is at two.
 
 ---
 
+## 4c. The ceremony layer, and the dead end hiding in it
+
+Stephen played the Aug 30 build and the verdict was that the round feels good
+and everything around the round does not:
+
+> "after each match we need to walk people through stuff so it feels like
+> they're playing through a game instead of just like instant transitions ...
+> there was no celebration, there was no checking out the new gear."
+
+He is describing the difference between a game and a state machine. Winning a
+match swapped two strings and moved on. What is built now:
+
+- **A launch beat.** Pressing Launch drops the two tops onto their marks, cords
+  paying out, the player's a beat behind the opponent's. It is presentation
+  only: both tops are spawned with their real state before a frame of it is
+  drawn, and the physics clock does not start until it is over. Tap to land it
+  early. His instruction was explicit that it "shouldn't really change how it
+  starts other than just animating more".
+- **A ceremony runner** (`ceremony(steps, done, delay)`), a queue of beats that
+  fade in, hold long enough to be read, and fade out before the next arrives.
+  One thing at a time, always in the order: what happened, what you won, what it
+  does, who is next.
+- **Reveal cards, one part at a time**, each with what the part is for, what its
+  move does, what its drawback costs, and a comparison against what is fitted,
+  with a **Fit it** button.
+- **An introduction to the next opponent**, with their top drawn from their
+  actual build: their finish, their decal, the tooth count their blade really
+  has.
+- **A loss beat that teaches**, naming what the other top is built to do and one
+  thing that answers it. At the measured first rung win rate (see 5.4) players
+  will read this screen a lot, so it had better be worth reading.
+- **Stats that arrive rather than appear**: rows fade in on a stagger, bars grow
+  from nothing, numbers count up.
+- Field and Pass the Phone get their own beats, because "one thing at a time"
+  has to be true everywhere or it reads as a bug in the places it is not.
+
+### ⛔ Three things that only a screenshot found
+
+**A dead end in the middle of the reward.** `AUDIO` has `tick()`, not `click()`.
+The Fit it handler called `AUDIO.click()`, which threw before the advance ran, so
+the ceremony sat on the first part card forever: a button that did nothing, no
+way past it, and the controls never came back. Nine gates were green. What found
+it was opening the screenshots and seeing the same part ten times in a row. The
+button now advances in a `finally`-shaped try/catch so no future typo can trap
+anybody, and `test/playthrough.mjs` fails if a beat ever repeats its headline.
+
+**The comparison was unreadable.** It printed percent change, so swapping a blunt
+blade for a sharp one came out as `TEETH +355%`, which is true off a small base
+and tells a player nothing. Every stat is now placed on **its own slot's range**
+across all 110 parts, with a tick showing where the part you are wearing sits.
+And every stat carries an honest direction: `mass`, `drive`, `dash`, `gear`,
+`height` and `radius` are genuine trades, so those rows say *more* and *less*,
+never *better*. The first version marked all twenty stats "higher is better" and
+told the player a heavier bit was an upgrade.
+
+**A queued card captures the past.** Winning four parts queues four reveals at
+once. The first version resolved "what you are wearing" when the queue was
+built, so fitting a blade and then being shown a second blade compared it
+against the blade you had just taken off. Each card is now built in its
+`onEnter`, at the moment it is shown.
+
+**A marker can be in the DOM, measurable, and invisible.** The "what you are
+wearing" tick measured 2 by 13 pixels at the right offset and could not be seen
+in the render: two cream pixels inside a clipped bar on top of a saturated fill.
+It needed to overhang the bar and carry its own dark edge. `getBoundingClientRect`
+is not eyesight.
+
+### ⛔ The save writes counterweights as `holes`, not `weights`
+
+`storeBuild` persists the weight grid as `build.holes`, a 2 ring by 6 hole array
+of weight indices (0 none, 1 chip, 2 slug, 3 brick). `cfgFor` expands that into
+the `weights` array the simulation takes. A tool that injects `build.weights`
+into the save parses fine, saves fine, and is silently dropped on load. That cost
+a debugging round: a stamina build with an 81 percent round rate lost three
+matches in a row and looked like bad luck.
+
 ## 5. The open balance questions, and they are Director calls
 
 Three stats in this catalogue are priced as though the simulation consumes them
@@ -316,6 +395,55 @@ what the card implies. Options, and the choice is yours:
 Nothing is blocked on this. It is written down because it will otherwise be
 rediscovered from scratch, and because two of the three were found by a reviewer
 reading the formulas rather than by any gate.
+
+### 5.4 The first rung is measured against a top the player does not own yet
+
+**Stephen, after playing:** *"I finally just beat the first level which is cool.
+It took me two tries."* That is exactly what the numbers say should happen, and
+it is worth deciding whether it is what you want.
+
+Measured over 400 full matches each, first to four, real launch angles:
+
+| rung | opponent | stock build wins the match |
+|---|---|---|
+| 1 | Chalkline | **40.8%** |
+| 2 | Bat Handler | 42.0% |
+| 3 | Post Keeper | 44.5% |
+| 4 | Knot | 28.5% |
+| 5 | The Post (boss) | 10.8% |
+
+The cause is not a broken rung, it is **what the ladder was calibrated against**.
+`tools/ladder.js` tunes each rung with `strengthOf`, which scores an opponent
+against the four reference archetypes: tuned builds carrying counterweights. The
+player at rung one has `iron / wheel / wing / 3-60 / point` and no weights, which
+is weaker than every member of that panel. So rung one is correctly tuned for a
+player who is already kitted out, and it is the first thing a player with nothing
+walks into.
+
+Two other numbers make the shape clear. Against Chalkline the panel spreads from
+37.8% of rounds (balance) to 81.5% (stamina), so the matchup is real and readable
+once you have parts. And it is a **points** game, not a rounds game: a ringout or
+a burst is worth two and a spinout is worth one, so a top that wins fewer rounds
+loudly beats one that wins more rounds quietly. The ladder is tuned on rounds and
+the player experiences points.
+
+**This is your call and I have not touched it.** The options:
+
+1. **Leave it.** A first opponent that takes two or three goes is a real fight,
+   and it made your win mean something. The loss ceremony now names what beat you
+   and what answers it, so the losses teach instead of just costing time.
+2. **Soften rungs one to four only**, retuned against the *stock* build rather
+   than the reference panel, converging into the existing curve by rung five.
+   Roughly 65 / 60 / 55 / 50 percent. One run of `tools/ladder.js` with a second
+   target function for the first league; nothing else in the catalogue moves.
+3. **Give the player the reference panel's weights at the start.** Cheapest of
+   all, one line, and it closes most of the gap. It also spends the tutorial
+   moment where counterweights are discovered, which is a real cost.
+
+My recommendation is 2. Option 1 is defensible and you liked it; the risk is a
+player with no investment yet losing three or four matches before their first
+win, which is a different experience from yours because you already knew what the
+top was doing.
 
 ## 6. Other things worth knowing
 
@@ -410,7 +538,9 @@ evidence.
 
 1. **Play it on a phone.** Nothing else on this list matters as much. The portal
    card stays `beta` until you have.
-2. **Decide the `radAdd` question** in section 5.
-3. **Phase J, the 3D viewer.** `docs/ASSETS.md` is generated from the live
+2. **Decide the first rung question** in 5.4. It is the one with a player facing
+   consequence and it needs no code from you, only a number.
+3. **Decide the `radAdd` question** in section 5.
+4. **Phase J, the 3D viewer.** `docs/ASSETS.md` is generated from the live
    catalogue and carries the common mount spec. Do not model anything until the
    mount is fixed.

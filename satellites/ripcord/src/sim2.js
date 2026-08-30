@@ -679,6 +679,32 @@
     cornered: 'it is cornered', mirror: 'they spin the same way', late: 'eight seconds have passed'
   };
 
+  /* What each move actually does, in the words a player would use. The engine
+     only ever needs the id; this table exists because Stephen played it and
+     said "I don't understand all the balancing". A move named `surge` with no
+     sentence beside it is a stat nobody can reason about. */
+  const ABILITY_TEXT = {
+    surge:     'Snaps a chunk of spin back onto your top.',
+    anchor:    'Stands upright and digs in for two and a half seconds.',
+    overdrive: 'Doubles how hard it drives itself around the dish.',
+    rebound:   'The next hit you take is handed straight back.',
+    reversal:  'Flips your spin direction, keeping most of the speed.',
+    burrow:    'Plants itself and stops travelling for nearly three seconds.',
+    lash:      'Your next three hits bite far deeper.',
+    lunge:     'One hard jump straight at them.',
+    brake:     'Trades all your travel for spin, on the spot.',
+    shed:      'Throws off your counterweights and runs clean.',
+    tether:    'Stops you sliding into the middle for three seconds.',
+    scatter:   'Cancels your wobble and keeps every gram of it.',
+    bite:      'Opens a two second window where contact steals their spin.',
+    stoneskin: 'Plants and takes whatever lands for three seconds.',
+    backspin:  'Grips the wrong way round for two and a half seconds.',
+    pitch:     'Spends a quarter of your spin to shove them at the lip.',
+    echo:      'Fires back whatever move was last used on you.',
+    windup:    'Winds up for a second and a half, then lets go.',
+    kindle:    'Stops you slowing down at all for four seconds.'
+  };
+
   function triggerReady(a, b) {
     if (a.charge < 1) return false;
     switch (a.trigger) {
@@ -1592,7 +1618,7 @@
 
   return { K, CORES, BLADES, ASSISTS, RATCHETS, BITS, WEIGHTS, HOLES, RINGS, MAX_WEIGHTS,
            FINISHES, DECALS, TRAILS, LAUNCHERS, COSMETIC_SLOTS, ROLES,
-           ARCHETYPES, TRIGGERS, TRIGGER_LABEL, TUNING, MODS_PER_PART,
+           ARCHETYPES, TRIGGERS, TRIGGER_LABEL, ABILITY_TEXT, TUNING, MODS_PER_PART,
            MODES, rangeTargets, resolveUri, resolveTaya, resolveRangeShot,
            applyBoss, bossArena, resolveBossMatch, LAUNCH, launchAngles,
            sampleOpponent, strengthOf, fieldOpponent,

@@ -66,8 +66,9 @@ button{font:inherit;color:inherit}
   bottom:calc(env(safe-area-inset-bottom) + 80px);
   background:rgba(51,40,31,.96);border:1px solid var(--line);border-radius:16px;
   padding:13px 15px;backdrop-filter:blur(10px);
-  transform:translateY(190%);transition:transform .32s cubic-bezier(.2,.9,.3,1)}
-#card.up{transform:none}
+  transform:translateY(190%);opacity:0;
+  transition:transform .46s cubic-bezier(.2,.9,.3,1),opacity .40s ease}
+#card.up{transform:none;opacity:1}
 #card .row{display:flex;align-items:center;gap:14px}
 #gl{font:800 40px/1 ui-sans-serif,system-ui;min-width:50px;text-align:center}
 #note{font-size:15px}
@@ -120,7 +121,7 @@ button{font:inherit;color:inherit}
 #menu .btn.go{flex:0 0 auto;max-width:none;min-height:56px;
   background:rgba(196,68,43,.90);border-color:rgba(255,150,130,.45)}
 #buildstamp{position:fixed;bottom:3px;left:0;right:0;text-align:center;font-size:11px;color:rgba(156,146,134,.5);
-  letter-spacing:.06em;z-index:2;pointer-events:none}
+  letter-spacing:.06em;z-index:2;pointer-events:none;transition:opacity .4s ease}
 
 /* ---------- workshop innards ---------- */
 #tune{display:flex;gap:14px;align-items:flex-start;margin-bottom:8px;flex-wrap:wrap}
@@ -131,7 +132,14 @@ button{font:inherit;color:inherit}
 .stat{display:grid;grid-template-columns:56px 1fr 34px;gap:4px 9px;align-items:center;
   font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--dim);margin-bottom:6px}
 .bar{height:6px;background:rgba(237,230,216,.10);border-radius:3px;overflow:hidden}
-.bar i{display:block;height:100%;border-radius:3px;background:var(--rope);transition:width .18s}
+.bar i{display:block;height:100%;border-radius:3px;background:var(--rope);
+  transition:width .62s cubic-bezier(.2,.9,.3,1)}
+/* Stats arrive, they do not appear. Each row fades up a beat after the one
+   above it and its bar fills from nothing, so the eye is walked down the card
+   instead of being handed five finished numbers at once. */
+.stat{opacity:0;transform:translateY(5px);
+  transition:opacity .40s ease,transform .40s ease}
+.stat.in{opacity:1;transform:none}
 .bar.warn i{background:var(--ember)}
 .bar.up i{background:var(--good)}
 .v{font-variant-numeric:tabular-nums;text-align:right;color:var(--chalk)}
@@ -244,6 +252,111 @@ button{font:inherit;color:inherit}
 .tog.on{border-color:var(--good)}
 .tog.on i{left:34px;background:var(--good)}
 
+/* ---------- ceremony ----------
+   One thing at a time, and nothing appears or vanishes instantly. Every step
+   fades in, holds long enough to be read, and fades out before the next one
+   arrives. That pacing IS the difference between a game and a state machine
+   with a canvas attached. */
+/* ⛔ THE SAME TRAP THAT ATE THE MENU IN LANDSCAPE. A centred flex column taller
+   than the viewport pushes its overflow ABOVE the scroll origin, so the top of
+   the card is unreachable and the buttons under it are off the bottom. A reveal
+   card carrying five stat rows and two buttons is exactly that shape on a short
+   phone. The column scrolls and the box centres with auto margins instead,
+   which centres when it fits and scrolls when it does not. */
+#cer{position:fixed;z-index:9;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:flex-start;
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:var(--pad) var(--pad) calc(env(safe-area-inset-bottom) + 52px);
+  /* ⛔ At 86 percent over a 3px blur this erased the dish completely and the
+     win screen read as text on a black rectangle. The arena has to stay legible
+     behind it: you just did something in there. */
+  background:radial-gradient(ellipse at 50% 46%,rgba(14,9,8,.55) 0%,
+                             rgba(14,9,8,.86) 62%,rgba(14,9,8,.96) 100%);
+  backdrop-filter:blur(0.6px);
+  opacity:0;visibility:hidden;transition:opacity .42s ease,visibility .42s}
+/* The first beat after a win is lighter still, so the burst is visible through
+   it rather than behind it. */
+#cer.cheer{background:radial-gradient(ellipse at 50% 56%,rgba(14,9,8,.18) 0%,
+                             rgba(14,9,8,.62) 56%,rgba(14,9,8,.90) 100%)}
+/* On the win beat the arena is the picture and the words are the caption, so
+   the words go up top and leave your top standing in the middle of the frame. */
+#cer.cheer #cerBox{margin-top:11vh;margin-bottom:auto}
+@media (max-height:600px){
+  #cerBig{font-size:clamp(22px,6.2vw,30px)}
+  #cerBody{margin-bottom:12px}
+  #cer.cheer #cerBox{margin-top:6vh}
+  .cerPart{padding:12px}
+  .cerPart p{font-size:13px}
+}
+/* Nothing else is allowed to show through a ceremony. The build stamp bled
+   through the backdrop as a grey smear across the bottom of every beat. */
+#cer.up ~ #buildstamp{opacity:0}
+#cer.up{opacity:1;visibility:visible}
+#cerBox{width:100%;max-width:400px;text-align:center;margin:auto;
+  transform:translateY(14px) scale(.98);transition:transform .48s cubic-bezier(.2,.9,.3,1)}
+#cer.up #cerBox{transform:none}
+#cerKick{font:700 11.5px/1 Archivo,ui-sans-serif,system-ui;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--dim);margin-bottom:12px;min-height:12px}
+#cerBig{font:800 clamp(26px,7.4vw,40px)/1.06 ui-sans-serif,system-ui;letter-spacing:-.01em;
+  margin-bottom:10px;text-wrap:balance}
+#cerSub{font-size:15px;line-height:1.5;color:var(--dim);margin-bottom:16px;text-wrap:balance}
+#cerBody{margin-bottom:18px}
+#cerBtns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+#cerBtns .btn{min-width:132px}
+#cerTap{position:fixed;bottom:calc(env(safe-area-inset-bottom) + 22px);left:0;right:0;
+  text-align:center;font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--dim);opacity:0;transition:opacity .5s;pointer-events:none}
+#cer.tap #cerTap{opacity:.7}
+
+/* the part reveal: what you won, where it goes, what it changes */
+.cerPart{background:var(--surface,var(--hi));border:1px solid var(--line);
+  border-radius:14px;padding:16px;text-align:left}
+.cerPart .slot{font:700 10.5px/1 Archivo,sans-serif;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--dim);margin-bottom:5px}
+.cerPart .job{font-size:13px;line-height:1.45;color:var(--dim);opacity:.72;margin-bottom:9px}
+.cerPart .tier{display:inline-block;font:700 10px/1 Archivo,sans-serif;letter-spacing:.14em;
+  padding:4px 8px;border-radius:4px;margin-bottom:8px}
+.cerPart .tier.t2{background:rgba(201,162,39,.16);color:var(--rope)}
+.cerPart .tier.t3{background:rgba(196,68,43,.16);color:var(--ember)}
+.cerPart p{margin:6px 0 0;font-size:14px;line-height:1.5;color:var(--dim)}
+.cerPart p b{color:var(--ember);font-weight:700}
+
+/* ⛔ THE COMPARISON USED TO BE PERCENTAGES AND THEY WERE UNREADABLE. Swapping a
+   blunt blade for a sharp one printed "TEETH +355%", which is arithmetically
+   true off a small base and tells a player nothing. Every stat is now placed on
+   its OWN SLOT'S RANGE, so a bar is "where this sits among every blade in the
+   game" and the ghost behind it is where the one you are wearing sits. That is
+   a scale somebody can learn. */
+.cmp{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);
+  display:flex;flex-direction:column;gap:8px}
+.cmpRow{display:grid;grid-template-columns:82px 1fr auto;gap:10px;align-items:center}
+.cmpRow .k{color:var(--dim);text-transform:uppercase;font:700 10px/1.3 Archivo,sans-serif;
+  letter-spacing:.09em}
+.cmpBar{position:relative;height:7px;border-radius:4px;background:rgba(237,230,216,.09)}
+/* ⛔ The mark for what you are CURRENTLY wearing was a fill behind the new
+   value, so on every improvement the new bar covered it completely and the
+   thing you were comparing against was invisible. It is a tick now, and it
+   reads in both directions. */
+/* ⛔ Two cream pixels inside a clipped bar, sitting on top of a saturated fill:
+   present in the DOM, measurable at 2 by 13, and invisible in the screenshot.
+   A marker has to overhang the thing it marks and carry its own dark edge, or
+   it only exists in the developer's head. */
+.cmpBar u{position:absolute;top:-5px;bottom:-5px;width:3px;margin-left:-1.5px;
+  background:var(--cream);text-decoration:none;border-radius:2px;
+  box-shadow:0 0 0 1.5px rgba(14,9,8,.9)}
+.cmpBar i{position:absolute;inset:0 auto 0 0;border-radius:4px;
+  transition:width .55s cubic-bezier(.2,.9,.3,1)}
+.cmpBar i.up{background:var(--good)} .cmpBar i.dn{background:var(--ember)}
+.cmpBar i.nu{background:var(--rope)}
+.cmpRow .d{font:700 11px/1 Archivo,sans-serif;letter-spacing:.04em;min-width:34px;
+  text-align:right}
+.cmpRow .d.up{color:var(--good)} .cmpRow .d.dn{color:var(--ember)}
+.cmpRow .d.nu{color:var(--dim)}
+.cmpKey{margin-top:9px;font-size:11px;color:var(--dim);opacity:.7;display:flex;
+  align-items:center;gap:6px}
+.cmpKey b{display:inline-block;width:3px;height:13px;background:var(--cream);
+  border-radius:2px;box-shadow:0 0 0 1.5px rgba(14,9,8,.9);margin:0 2px}
+
 /* unlock toast */
 #unlock{position:fixed;z-index:8;left:50%;top:32%;transform:translate(-50%,-50%) scale(.92);
   background:var(--hi);border:1px solid var(--rope);border-radius:15px;padding:15px 22px;
@@ -304,6 +417,18 @@ button{font:inherit;color:inherit}
 </div>
 
 <div id="unlock"><small>Part won</small><b id="unlockName">&nbsp;</b></div>
+
+<!-- ============ CEREMONY: the beats between the doing ============ -->
+<div id="cer">
+  <div id="cerBox">
+    <div id="cerKick"></div>
+    <div id="cerBig"></div>
+    <div id="cerSub"></div>
+    <div id="cerBody"></div>
+    <div id="cerBtns"></div>
+  </div>
+  <div id="cerTap">tap to continue</div>
+</div>
 
 <div id="card">
   <div class="row"><div id="gl">&nbsp;</div><div><div id="note">&nbsp;</div><div id="sub">&nbsp;</div></div></div>
@@ -706,7 +831,7 @@ function openSheet(id){closeSheets();$(id).classList.add('up');}
 
 function showMenu(on){
   $('menu').classList.toggle('up',on);
-  chrome(!on&&phase!=='play');
+  chrome(!on&&phase!=='play'&&phase!=='drop');
   if(on){demoIdle();}
 }
 
@@ -806,6 +931,15 @@ function buildSlots(){
   $('trig').innerHTML='';
   $('trig').appendChild(railRow('Fire <em>'+ab+'</em> when',trigs,
     function(t){return active().trigger===t.id;},function(t){setActiveTrigger(t.id);}));
+  /* The move gets a sentence here too, not only on a reveal card. A core IS its
+     move, and the workshop was naming it and stopping, which is precisely the
+     thing Stephen meant by not understanding the balancing. */
+  if(SIM.ABILITY_TEXT[ab]){
+    var an=document.createElement('p');
+    an.className='fitted';
+    an.innerHTML='<span>'+SIM.ABILITY_TEXT[ab]+'</span>';
+    $('trig').appendChild(an);
+  }
 
   var looks=$('looks');looks.innerHTML='';
   function plain(a){var o=[],k;for(k=0;k<a.length;k++)o.push({id:a[k],name:a[k]});return o;}
@@ -1216,28 +1350,291 @@ function buildModes(){
    finishing a Relic set means going back for it. Bosses are the only source of a
    Relic and that is the whole reason to fight one twice. */
 function awardDrop(){
+  /* Hands back the PARTS, not their names. The reveal card has to read their
+     stats against what is fitted, and a string cannot do that. */
   var o=opp(),won=[],i;
   if(o.boss&&o.relics){
     for(i=0;i<o.relics.length;i++){
       if(!isUnlocked(o.relics[i])){
         unlock(o.relics[i]);
-        won.push(nameOf(o.relicSlot,o.relics[i]));
+        won.push({slot:o.relicSlot,part:partOf(o.relicSlot,o.relics[i])});
         break;                      // one per win, never the whole set at once
       }
     }
   }else{
     for(i=0;i<(o.drops||[]).length;i++)
-      if(unlock(o.drops[i].id))won.push(nameOf(o.drops[i].slot,o.drops[i].id));
+      if(unlock(o.drops[i].id))
+        won.push({slot:o.drops[i].slot,part:partOf(o.drops[i].slot,o.drops[i].id)});
   }
-  return won;
+  return won.filter(function(w){return !!w.part;});
 }
-function nameOf(slot,id){
+function partOf(slot,id){
   var list=PART_LISTS[slot];
-  for(var i=0;i<list.length;i++)if(list[i].id===id)return list[i].name||id;
-  return id;
+  for(var i=0;i<list.length;i++)if(list[i].id===id)return list[i];
+  return null;
 }
+function nameOf(slot,id){var p=partOf(slot,id);return p?(p.name||id):id;}
+/* =============================================================== CEREMONY ====
+   Stephen, after the first real play session:
+
+     "after each match we need to walk people through stuff so it feels like
+      they're playing through a game instead of just like instant transitions
+      ... there was no celebration, there was no checking out the new gear"
+
+   He is describing the gap between a state machine and a game. The physics was
+   already good enough that he beat a rung and enjoyed it; what was missing was
+   everything AROUND the doing. You won, and the game answered by swapping two
+   strings and moving on.
+
+   So: nothing appears or disappears instantly any more. Every beat fades in,
+   holds long enough to be read at a glance, and fades out before the next one
+   arrives. One thing at a time, always in the same order:
+
+       what just happened  ->  what you won  ->  what it does  ->  who is next
+
+   The runner is a queue of steps. A step either holds for a set time or waits
+   for a button; either way a tap anywhere skips ahead, because the second time
+   you see a ceremony you want it to get out of the way. */
+var cerQ=[],cerBusy=false,cerHold=0,cerNext=null;
+
+function cerHide(cb){
+  var el=$('cer');
+  el.classList.remove('up','tap');
+  setTimeout(cb||function(){},440);          // must match the CSS fade
+}
+function cerStep(step){
+  var el=$('cer');
+  $('cerKick').textContent=step.kick||'';
+  $('cerBig').innerHTML=step.big||'';
+  $('cerSub').innerHTML=step.sub||'';
+  $('cerBody').innerHTML=step.body||'';
+  $('cerBtns').innerHTML='';
+  $('cerBig').style.color=step.col||'';
+  $('cer').classList.toggle('cheer',!!step.cheer);
+
+  var advanced=false;
+  function go(){
+    if(advanced)return; advanced=true;
+    clearTimeout(cerHold); cerNext=null;
+    if(step.onLeave)step.onLeave();
+    cerHide(cerPump);
+  }
+  cerNext=go;
+
+  if(step.btns&&step.btns.length){
+    for(var i=0;i<step.btns.length;i++)(function(b){
+      var el2=document.createElement('button');
+      el2.className='btn'+(b.primary?' go':'');
+      el2.textContent=b.label;
+      el2.addEventListener('click',function(ev){
+        ev.stopPropagation();
+        /* ⛔ THE BUTTON MUST ADVANCE EVEN IF THE ACTION FAILS. The first version
+           called b.act() bare, and one wrong method name (AUDIO.click, which
+           does not exist; it is tick) threw before go() ran. The reveal card sat
+           there with a Fit it button that did nothing, no way past it, and the
+           controls never came back: a dead end in the middle of the reward for
+           winning. Nine gates were green on it. What found it was opening the
+           screenshots and seeing the same part ten times in a row. */
+        try{ if(b.act)b.act(); }
+        catch(err){ if(window.console&&console.error)console.error(err); }
+        go();
+      });
+      $('cerBtns').appendChild(el2);
+    })(step.btns[i]);
+  }
+
+  requestAnimationFrame(function(){
+    el.classList.add('up');
+    if(step.onEnter)step.onEnter();
+    if(!step.btns||!step.btns.length){
+      // a held beat: let it be read, then move, and say that a tap is allowed
+      setTimeout(function(){ if(cerNext===go)el.classList.add('tap'); },700);
+      cerHold=setTimeout(go,step.hold||1800);
+    }
+  });
+}
+function cerPump(){
+  if(!cerQ.length){ cerBusy=false; var d=cerDone; cerDone=null; if(d)d(); return; }
+  cerStep(cerQ.shift());
+}
+var cerDone=null;
+/* Drop everything queued and run the finish callback anyway, because that
+   callback is what hands the controls back. Skipping a ceremony must never mean
+   skipping the thing it was going to give you. */
+function cerAbort(){
+  cerQ.length=0; clearTimeout(cerHold); cerNext=null;
+  var d=cerDone; cerDone=null; cerBusy=false;
+  cerHide(function(){ if(d)d(); });
+}
+function ceremony(steps,done,delay){
+  cerQ=cerQ.concat(steps.filter(Boolean));
+  cerDone=done||null;
+  if(!cerBusy){ cerBusy=true; setTimeout(cerPump,delay||0); }
+}
+/* Tapping the backdrop skips the current beat, but never a beat that is asking
+   a question. A step with buttons wants an answer, not a dismissal. */
+$('cer').addEventListener('click',function(){
+  if(cerNext&&!$('cerBtns').firstChild)cerNext();
+});
+
+/* ---- reading a part out loud -------------------------------------------
+   The reveal card has to answer "what does equipping it do", and the honest
+   answer is a comparison against what is already fitted. Raw stat names are
+   engine words, so each one gets a player word and a direction: for most of
+   them more is better, and for `taken` (how hard a hit lands on YOU) less is.
+   Anything that is not a number, like a move or a spin direction, is quoted
+   straight. */
+/* [player word, direction]. Direction 1 means more is better, -1 means less is
+   better, and 0 means it is a genuine TRADE and the card must not pretend
+   otherwise. ⛔ The first version marked every stat 1, so a heavier bit came up
+   as "WEIGHT better" when weight buys impact and costs spin up. A comparison
+   that lies in the player's favour is worse than no comparison. */
+var STAT_WORDS={
+  mass:['Weight',0],       radius:['Reach',0],     sharp:['Teeth',1],
+  rest:['Bounce',0],       gear:['Grip',0],        taken:['Hits hurt you',-1],
+  stamina:['Spin time',1], drive:['Drive',0],      stable:['Steadiness',1],
+  dash:['Rail dash',0],    shaft:['Holds together',1], height:['Height',0],
+  lock:['Lock',1],         strikeHigh:['High strike',0],
+  absorb:['Absorb',1],     radAdd:['Reach',0],     smash:['Smash',1],
+  gearMul:['Grip',0],      charge:['Wind gain',1], imbCap:['Weight room',1]
+};
+/* Where a stat sits across every part in its own slot. Cached, because the
+   ranges never change and a reveal card should not walk a hundred parts. */
+var STAT_RANGE={};
+function statRange(slot,key){
+  var ck=slot+'.'+key;
+  if(STAT_RANGE[ck])return STAT_RANGE[ck];
+  var list=PART_LISTS[slot],lo=Infinity,hi=-Infinity;
+  for(var i=0;i<list.length;i++){
+    var v=list[i][key];
+    if(typeof v!=='number'||!isFinite(v))continue;
+    if(v<lo)lo=v; if(v>hi)hi=v;
+  }
+  if(!isFinite(lo)||hi<=lo)return (STAT_RANGE[ck]={lo:0,hi:1});
+  return (STAT_RANGE[ck]={lo:lo,hi:hi});
+}
+function partCompare(slot,now,won){
+  /* ⛔ THIS USED TO PRINT PERCENT CHANGE and it was noise: Orbit to Cleaver
+     came out as "TEETH +355%", which is true and useless. A stat only means
+     something against the other parts that could go in the same hole, so each
+     row is that part's position across its whole slot, with a ghost bar showing
+     where the one you are wearing sits. Five rows, biggest move first, because
+     nobody reads more on a card they are about to dismiss. */
+  var rows=[],k;
+  for(k in STAT_WORDS){
+    var hasA=now&&typeof now[k]==='number', hasB=typeof won[k]==='number';
+    if(!hasA&&!hasB)continue;
+    var rg=statRange(slot,k), span=rg.hi-rg.lo;
+    var a=hasA?(now[k]-rg.lo)/span:0, b=hasB?(won[k]-rg.lo)/span:0;
+    a=clamp(a,0,1); b=clamp(b,0,1);
+    if(Math.abs(b-a)<0.03)continue;
+    rows.push({w:STAT_WORDS[k][0],dir:STAT_WORDS[k][1],a:a,b:b,move:b-a});
+  }
+  rows.sort(function(x,y){return Math.abs(y.move)-Math.abs(x.move);});
+  rows=rows.slice(0,5);
+  var out='',i;
+  for(i=0;i<rows.length;i++){
+    var r=rows[i], up=r.move>0;
+    var cls=r.dir===0?'nu':((up?1:-1)===r.dir?'up':'dn');
+    var word=r.dir===0?(up?'more':'less'):(cls==='up'?'better':'worse');
+    out+='<div class="cmpRow"><div class="k">'+r.w+'</div>'+
+         '<div class="cmpBar"><i class="'+cls+'" style="width:'+Math.round(r.b*100)+'%"></i>'+
+         '<u style="left:'+Math.round(r.a*100)+'%"></u></div>'+
+         '<div class="d '+cls+'">'+word+'</div></div>';
+  }
+  if(won.ability&&(!now||won.ability!==now.ability))
+    out+='<div class="cmpRow"><div class="k">Move</div>'+
+         '<div class="job" style="margin:0;grid-column:2/4">'+won.ability+' &middot; '+
+         (SIM.ABILITY_TEXT[won.ability]||'')+'</div></div>';
+  if(won.dir&&now&&won.dir!==now.dir)
+    out+='<div class="cmpRow"><div class="k">Spins</div>'+
+         '<div class="job" style="margin:0;grid-column:2/4">the other way round, which flips '+
+         'every matchup you have learned</div></div>';
+  return out?'<div class="cmp">'+out+
+    '<div class="cmpKey"><b></b> where the one you are wearing sits</div></div>':'';
+}
+function drawbackOfId(id){
+  for(var i=0;i<SIM.DRAWBACKS.length;i++)if(SIM.DRAWBACKS[i].id===id)return SIM.DRAWBACKS[i];
+  return null;
+}
+function drawbackName(id){var d=drawbackOfId(id);return d?d.name:id;}
+function drawbackDesc(id){var d=drawbackOfId(id);return d?d.desc:'';}
+var SLOT_WORDS={core:'Core',blade:'Blade',assist:'Assist',ratchet:'Ratchet',bit:'Bit'};
+var SLOT_JOB={
+  core:'The chip in the middle. It sets which way you turn, and what your move is.',
+  blade:'The striking edge. It decides what your hits do, and what they do to you.',
+  assist:'The rim around the blade. It shapes what happens on contact.',
+  ratchet:'The height, and the teeth holding the lock together.',
+  bit:'The tip you stand on. It sets how long you turn and how far you wander.'
+};
+/* ⛔ RESOLVED WHEN THE CARD IS SHOWN, NOT WHEN THE QUEUE IS BUILT. Winning four
+   parts queues four cards at once; if each one captured what was fitted at
+   queue time, then fitting the first blade and immediately being shown a second
+   blade would compare it against the blade you are no longer wearing. */
+function partStep(slot,part,isNew){
+  return {
+    kick:isNew?'New part':'Part won',
+    big:part.name,
+    onEnter:function(){
+      var st=partCard(slot,part);
+      $('cerSub').innerHTML=st.sub;
+      $('cerBody').innerHTML=st.body;
+      $('cerBtns').innerHTML='';
+      for(var i=0;i<st.btns.length;i++)(function(b){
+        var el=document.createElement('button');
+        el.className='btn'+(b.primary?' go':'');
+        el.textContent=b.label;
+        el.addEventListener('click',function(ev){
+          ev.stopPropagation();
+          try{ if(b.act)b.act(); }
+          catch(err){ if(window.console&&console.error)console.error(err); }
+          if(cerNext)cerNext();
+        });
+        $('cerBtns').appendChild(el);
+      })(st.btns[i]);
+    },
+    /* A placeholder button so cerStep treats this as a question rather than a
+       held beat; onEnter replaces it with the real ones a frame later. */
+    btns:[{label:'\u2026'}]
+  };
+}
+function partCard(slot,part){
+  var fitted=null,list=PART_LISTS[slot],i;
+  for(i=0;i<list.length;i++)if(list[i].id===cfg[slot])fitted=list[i];
+  /* ⛔ The card printed the part's name a second time under the headline, and
+     ran the slot's job as three lines of letterspaced capitals, which is the
+     least readable text in the whole game. The name is said once, up top; the
+     job is a sentence. */
+  var tier=part.tier===3?'<div class="tier t3">RELIC</div>':
+           part.tier===2?'<div class="tier t2">FORGED</div>':'';
+  var body='<div class="cerPart">'+
+    '<div class="slot">'+SLOT_WORDS[slot]+'</div>'+
+    '<div class="job">'+SLOT_JOB[slot]+'</div>'+
+    tier+
+    '<p>'+(part.desc||'')+'</p>'+
+    (part.ability?'<p><b>'+part.ability+'.</b> '+(SIM.ABILITY_TEXT[part.ability]||'')+'</p>':'')+
+    (part.drawback?'<p><b>Costs you: '+drawbackName(part.drawback)+'.</b> '+drawbackDesc(part.drawback)+'</p>':'')+
+    (fitted&&fitted.id!==part.id?partCompare(slot,fitted,part):'')+
+    '</div>';
+  return {
+    sub:fitted&&fitted.id!==part.id?'Against your '+fitted.name+':':'It goes in your '+SLOT_WORDS[slot].toLowerCase()+'.',
+    body:body,
+    btns:fitted&&fitted.id===part.id?[{label:'Good',primary:true}]:[
+      {label:'Fit it',primary:true,act:function(){
+        cfg[slot]=part.id; storeBuild(); buildSlots(); updateVs(); AUDIO.tick();
+        showUnlock(part.name+' fitted','Now wearing');
+      }},
+      {label:'Keep mine'}
+    ]
+  };
+}
+
 var unlockTimer=0;
 function showUnlock(txt,label){
+  // ⛔ Fitting a part from a reveal card fired this behind the card, where it
+  // showed through the backdrop as a grey smudge saying something the card had
+  // already said. A ceremony speaks for itself.
+  if(cerBusy)return;
   $('unlockName').textContent=txt;
   $('unlock').firstChild.textContent=label||'Part won';
   var u=$('unlock');u.classList.add('show');
@@ -1284,7 +1681,18 @@ var arenaR=SIM.K.arenaR;
 function RAD(){return Math.min(W,H)*0.44;}
 function scale(){return RAD()/arenaR;}
 
-var phase='menu';           // menu | wind | play | done | over | taya
+var phase='menu';           // menu | wind | drop | play | done | over | taya
+/* THE LAUNCH BEAT.
+   Stephen: "when you click launch it goes to launch and then you can like either
+   flick yours out there or something but it shouldn't really change how it
+   starts other than just animating more."
+
+   So this is presentation and nothing else. The tops are already spawned with
+   their real state before a single frame of it is drawn; the beat only decides
+   WHERE ON SCREEN they are drawn while it plays, and the physics clock does not
+   start until it is over (step() ignores every phase but play and taya). A tap
+   skips it, because the second time you see an animation you want it gone. */
+var dropT=0, DROP_DUR=0.80;
 var stroke=[],graded=null,lastGrade=null;
 var A=null,B=null,acc=0,last=0,pa=0,pb=0,flash=0,flashTxt='',flashCol='#EDE6D8';
 var liveTurn=0,lastAng=0,winding=false;
@@ -1401,11 +1809,53 @@ function showCard(g){
   }
   $('bars').innerHTML=out;
   $('card').classList.add('up');
+  revealStats($('bars'));
 }
+
+/* Walk a set of stat rows in one at a time. The widths and the numbers are
+   already correct in the markup; this holds them at zero for one frame so the
+   CSS transition has something to travel, then releases them on a stagger. */
+function revealStats(host){
+  var rows=host.querySelectorAll('.stat'),i;
+  if(save.settings.reduceMotion){
+    for(i=0;i<rows.length;i++)rows[i].classList.add('in');
+    return;
+  }
+  var targets=[];
+  for(i=0;i<rows.length;i++){
+    var bar=rows[i].querySelector('.bar i'), num=rows[i].querySelector('.v');
+    targets.push({w:bar?bar.style.width:null,n:num?+num.textContent:null,bar:bar,num:num});
+    if(bar)bar.style.width='0%';
+    if(num)num.textContent='0';
+  }
+  requestAnimationFrame(function(){
+    for(var j=0;j<rows.length;j++)(function(row,t,k){
+      setTimeout(function(){
+        row.classList.add('in');
+        if(t.bar&&t.w!==null)t.bar.style.width=t.w;
+        if(t.num&&t.n!==null)countTo(t.num,t.n,620);
+      },k*95);
+    })(rows[j],targets[j],j);
+  });
+}
+function countTo(el,to,ms){
+  var t0=0;
+  function tick(now){
+    if(!t0)t0=now;
+    var k=Math.min(1,(now-t0)/ms);
+    el.textContent=Math.round(to*(1-Math.pow(1-k,3)));
+    if(k<1)requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+/* Impatience is a legitimate input. Touching anything while the tops are coming
+   down lands them immediately; nothing about the round changes, it just starts. */
+cv.addEventListener('pointerdown',function(){ if(phase==='drop')dropT=DROP_DUR; });
 
 /* ---------------------------------------------------------------- launching */
 $('go').addEventListener('click',function(){
-  if(phase==='play')return;
+  if(phase==='play'||phase==='drop')return;
   if(phase==='over'){
     // In the Field, "again" means a NEW opponent rather than the same one.
     if(mode==='field'&&field){nextFieldOpponent();return;}
@@ -1492,7 +1942,7 @@ function launch(){
     if(bs&&bs.anchor)B.anchor=Infinity;
     if(bs&&bs.abilityEvery){B._fired=0;B._every=bs.abilityEvery;}
   }
-  phase='play';acc=0;$('card').classList.remove('up');chrome(false);
+  phase='drop';dropT=0;acc=0;$('card').classList.remove('up');chrome(false);
   $('laps').style.opacity=0;
 }
 
@@ -1508,7 +1958,7 @@ function launchPass(){
   B=SIM.spawn(theirs,{angle:la[1],power:LB.power,lean:LB.lean,phase:LB.phase,
                       trigger:p2.trigger,arenaR:arenaR});
   AUDIO.startLoops();AUDIO.launch(LA.power);haptic(18);
-  phase='play';acc=0;$('card').classList.remove('up');chrome(false);
+  phase='drop';dropT=0;acc=0;$('card').classList.remove('up');chrome(false);
   $('laps').style.opacity=0;
 }
 
@@ -1572,7 +2022,7 @@ function launchTuj(L){
   A.vx=ix*(0.9+1.5*L.power); A.vz=iz*(0.9+1.5*L.power);
   B=null;
   tuj.shots++;
-  phase='play';acc=0;$('card').classList.remove('up');chrome(false);
+  phase='drop';dropT=0;acc=0;$('card').classList.remove('up');chrome(false);
   $('laps').style.opacity=0;
 }
 
@@ -1629,39 +2079,56 @@ function endRound(){
 function finishOrContinue(){
   if(mode==='field'){
     if(pa>=4||pb>=4){
-      AUDIO.stopLoops();chrome(true);$('laps').style.opacity=0;
+      AUDIO.stopLoops();$('laps').style.opacity=0;
+      phase='over';bump('fieldMatches');
+      var fname=field.rung.name, steps;
       if(pa>pb){
         field.streak++;
         save.records.fieldWins=(save.records.fieldWins|0)+1;persist();
         // They handled that one, so the next is harder. The step is small
         // because a ladder that jumps is a ladder nobody stays on.
         field.target=clamp(field.target+0.035,0.15,0.90);
-        if(field.streak>field.best){
-          field.best=field.streak;save.records.bestField=field.best;persist();
-        }
-        AUDIO.win();
-        buildSlots();
-        $('hint').textContent='Beat '+field.rung.name+'. Streak '+field.streak+
-          ', best '+field.best+'. Launch for the next one.';
+        var record=field.streak>field.best;
+        if(record){field.best=field.streak;save.records.bestField=field.best;persist();}
+        AUDIO.win();buildSlots();cheer(4);
+        steps=[{kick:'The Field',big:'You beat '+fname+'.',
+                sub:pa+' to '+pb,col:'#7FA650',hold:1800,cheer:true},
+               {kick:record?'New best streak':'Streak',
+                big:String(field.streak),
+                sub:record?'Nobody has taken you this far before.'
+                          :'Best is '+field.best+'.',hold:1700}];
       }else{
         field.streak=0;
         field.target=clamp(field.target-0.05,0.15,0.90);
         AUDIO.lose();
-        $('hint').textContent=field.rung.name+' takes it. Streak back to zero. '+
-          'Launch to meet somebody easier.';
+        steps=[{kick:'The Field',big:fname+' takes it.',sub:pb+' to '+pa,
+                col:'#C4442B',hold:1800},
+               {kick:'Streak',big:'0',
+                sub:'It will find you somebody easier.',hold:1600}];
       }
-      $('hint').style.opacity=1;
-      phase='over';
-      bump('fieldMatches');
+      ceremony(steps,function(){
+        chrome(true);
+        $('hint').textContent=pa>pb?'Streak '+field.streak+', best '+field.best+
+          '. Launch for the next one.':'Launch to meet somebody easier.';
+        $('hint').style.opacity=1;
+      },pa>pb?600:0);
     }else{ resetRound(); if(lastGrade)showCard(lastGrade); }
     return;
   }
   if(mode==='pass'){
     if(pa>=4||pb>=4){
-      AUDIO.stopLoops();chrome(true);$('laps').style.opacity=0;
-      AUDIO.win();
-      $('hint').textContent='Player '+(pa>pb?'one':'two')+' takes the match, '+pa+' to '+pb+'.';
-      $('hint').style.opacity=1;phase='over';
+      AUDIO.stopLoops();$('laps').style.opacity=0;
+      AUDIO.win();phase='over';cheer(5);
+      var who=pa>pb?'one':'two';
+      ceremony([{kick:'Pass the phone',big:'Player '+who+' takes it.',
+                 sub:Math.max(pa,pb)+' to '+Math.min(pa,pb),col:'#7FA650',hold:2200,cheer:true},
+                {kick:'Again?',big:'Hand it back.',
+                 sub:'Both of you build again from the workshop, or launch to run it back.',
+                 hold:2000}],function(){
+        chrome(true);
+        $('hint').textContent='Player '+who+' takes the match, '+pa+' to '+pb+'.';
+        $('hint').style.opacity=1;
+      });
     }else{
       windSide=0;side=0;pending=[null,null];
       buildSlots();resetRound();
@@ -1670,25 +2137,210 @@ function finishOrContinue(){
   }
   if(pa>=4||pb>=4||mode==='uri'){
     AUDIO.stopLoops();
-    chrome(true);
     $('laps').style.opacity=0;
-    if(pa>pb){
-      AUDIO.win();bump('wins');
-      var won=awardDrop();
-      var beat=opp().name;
-      if(facing===rung&&rung<LADDER.length-1){rung++;facing=rung;}
-      updateVs();buildSlots();buildLadder();buildModes();storeBuild();
-      $('hint').textContent='You beat '+beat+'. Next up is '+opp().name+'.';
-      if(won&&won.length)showUnlock(won.join(', '),won.length>1?'Parts won':'Part won');
-    }else{
-      AUDIO.lose();
-      $('hint').textContent='They take the match. Launch to try again.';
-    }
-    $('hint').style.opacity=1;
     phase='over';
+    // ⛔ chrome(true) used to fire here, which put the dock back UNDERNEATH the
+    // ceremony: buttons visibly returning that nothing could press. The controls
+    // come back when the ceremony hands them back and not a frame sooner.
+    if(pa>pb)matchWon();else matchLost();
   }else{
     resetRound();
     if(lastGrade)showCard(lastGrade);
+  }
+}
+
+/* ------------------------------------------------------------ WINNING WELL --
+   Four things happen when you take a match, and they happen one at a time:
+   the win is announced, each part you won is put in front of you with what it
+   would change, and then you are introduced to whoever is next. None of it is
+   a toast in the corner. */
+function matchWon(){
+  AUDIO.win();bump('wins');
+  var won=awardDrop();
+  var beat=opp(), wasBoss=!!beat.boss;
+  var advanced=facing===rung&&rung<LADDER.length-1;
+  if(advanced){rung++;facing=rung;}
+  updateVs();buildSlots();buildLadder();buildModes();storeBuild();
+
+  var steps=[{
+    kick:wasBoss?'League cleared':'Match won',
+    big:wasBoss?'You put down '+beat.name+'.':'You beat '+beat.name+'.',
+    sub:pa+' to '+pb+(wasBoss&&beat.teaches?'<br><span style="opacity:.75">'+beat.teaches+'</span>':''),
+    col:'#7FA650', hold:wasBoss?2600:2000, cheer:true
+  }];
+  /* ⛔ The burst used to fire and then be buried: the overlay came up in the
+     same breath at eighty six percent over a blur, and the win screen was black
+     with green text on it. The sparks now get the arena to themselves for most
+     of a second, and the beat they fade into is the lightest backdrop in the
+     game, so you watch it happen instead of being told it did. */
+  cheer(5);
+  if(won.length){
+    steps.push({kick:won.length>1?won.length+' parts won':'Part won',
+                big:won.length>1?'They left their kit behind.':'They left something behind.',
+                sub:'Have a look at it before you go on.',hold:1600});
+    for(var i=0;i<won.length;i++)steps.push(partStep(won[i].slot,won[i].part,true));
+  }
+  if(advanced)steps.push(nextUpStep());
+  ceremony(steps,function(){
+    chrome(true);
+    $('hint').textContent=advanced?'Next up is '+opp().name+'. Wind it up.'
+                                  :'That is the top of the ladder. Try the Field.';
+    $('hint').style.opacity=1;
+    buildSlots();
+  },700);
+}
+function matchLost(){
+  AUDIO.lose();
+  var o=opp();
+  ceremony([{
+    kick:'Match lost', big:o.name+' takes it.', sub:pb+' to '+pa,
+    col:'#C4442B', hold:1900
+  },{
+    kick:'What beat you', big:beatenBy(o), sub:lossAdvice(o), hold:2600
+  }],function(){
+    chrome(true);
+    $('hint').textContent='Launch to go again, or open the workshop.';
+    $('hint').style.opacity=1;
+  });
+}
+/* A loss is the game's best teaching moment and it was spending it on the words
+   "They take the match". Naming what the other top is built to do, and the one
+   thing that answers it, costs nothing and is the only coaching in here. */
+var ROLE_LINE={
+  attack:  ['It hits harder than you.',   'Something with more teeth, or a bit that keeps you off the rail.'],
+  stamina: ['It outlasts you.',           'Grip and a heavy edge; you have to take its spin off it.'],
+  defense: ['It absorbs what you throw.', 'Weight on one side, and a move that fires when you fall behind.'],
+  balance: ['It has no weak side.',       'Pick one thing to be better at than it, and lean the whole build that way.']
+};
+function beatenBy(o){return (ROLE_LINE[o.role]||ROLE_LINE.balance)[0];}
+function lossAdvice(o){
+  return (o.boss&&o.teaches?o.teaches+'<br>':'')+
+         '<span style="opacity:.8">Try: '+(ROLE_LINE[o.role]||ROLE_LINE.balance)[1]+'</span>';
+}
+/* Meeting the next opponent, rather than finding their name in a label.
+   ⛔ The first version listed five part names and nothing else, which in a game
+   about TOPS is the one thing it should not have been. You are shown their
+   actual top, in their finish, with their decal and the tooth count their blade
+   really has. */
+var ROLE_WORD={attack:'a striker',stamina:'a stayer',defense:'a wall',balance:'an all rounder'};
+function nextUpStep(){
+  var o=opp(),i,parts=[];
+  for(i=0;i<SLOTS.length;i++){
+    var pp=partOf(SLOTS[i][0],o.build[SLOTS[i][0]]);
+    if(pp)parts.push(pp.name);
+  }
+  return {
+    kick:'Rung '+(o.rung||facing+1)+(o.boss?' &middot; the last of the league':''),
+    big:o.name,
+    sub:o.boss?(o.teaches||''):'They bring '+(ROLE_WORD[o.role]||'a top')+'.',
+    body:'<canvas id="cerTop" width="600" height="330" '+
+         'style="width:100%;max-width:280px;height:auto;display:block;margin:-6px auto 6px"></canvas>'+
+         '<div class="cerPart"><div class="slot">What they turn up with</div>'+
+         '<p>'+parts.join(' &middot; ')+'</p>'+
+         (o.boss?'<p><b>Shorter round.</b> The bell comes early against this one.</p>':'')+
+         '</div>',
+    onEnter:function(){ portrait($('cerTop'),o.build); },
+    btns:[{label:'Ready',primary:true}]
+  };
+}
+
+/* One top, drawn still, from a build. Same shapes the arena and the workshop
+   preview use: the finish decides the metal, the decal turns with the disc, and
+   the tooth count comes off the blade's own sharpness rather than a guess. */
+function portrait(cvs,build){
+  if(!cvs)return;
+  /* ⛔ This was drawn onto a filled gradient panel and read as a hard edged
+     rectangle pasted into the card, which is what a placeholder looks like. The
+     top is drawn on TRANSPARENT so it sits in the ceremony's own space as an
+     object rather than a thumbnail of one. */
+  var g=cvs.getContext('2d'), W=cvs.width, H=cvs.height;
+  var cx=W/2, cy=H*0.44, rr=W*0.175, squash=0.80;
+  g.clearRect(0,0,W,H);
+  var glow=g.createRadialGradient(cx,cy,rr*0.3,cx,cy,rr*2.6);
+  glow.addColorStop(0,'rgba(201,162,39,.10)');glow.addColorStop(1,'rgba(201,162,39,0)');
+  g.fillStyle=glow;g.fillRect(0,0,W,H);
+
+  var col=FINISH_HEX[build.finish]||'#8E9BA2';
+  var fin=finishOf(build.finish||'raw');
+  var trail=TRAIL_HEX[build.trail]||'#8E9BA2';
+  var spin=0.55;
+
+  g.fillStyle='rgba(0,0,0,.42)';
+  g.beginPath();g.ellipse(cx,cy+rr*0.22,rr*0.74,rr*0.44,0,0,7);g.fill();
+
+  g.save();g.translate(cx,cy);
+  /* ⛔ The disc used the workshop preview's body gradient, which is a shade off
+     the LIT PANEL it is drawn on there. On the ceremony's dark backdrop that
+     made the whole face invisible and the top read as a purple ring with a
+     decal inside it. The face is lit from above left here, so it reads as metal
+     against nothing. */
+  var body=g.createLinearGradient(-rr*0.8,-rr*0.8,rr*0.8,rr*0.8);
+  body.addColorStop(0,'rgba(96,80,64,.98)');
+  body.addColorStop(0.45,'rgba(62,50,39,.98)');
+  body.addColorStop(1,'rgba(30,22,18,.98)');
+  g.fillStyle=body;
+  g.beginPath();g.ellipse(0,0,rr,rr*squash,0,0,7);g.fill();
+  // the highlight along the upper edge, which is what says "turned metal"
+  g.strokeStyle='rgba(237,230,216,.20)';g.lineWidth=rr*0.05;
+  g.beginPath();g.ellipse(0,0,rr*0.97,rr*squash*0.97,0,Math.PI*1.08,Math.PI*1.92);g.stroke();
+
+  // ⛔ At 0.60 the decal was louder than the rim and read as the top itself.
+  g.save();g.rotate(spin);g.globalAlpha=0.34;
+  drawDecal(g,build.decal||'none',rr,squash,col);
+  g.globalAlpha=1;g.restore();
+
+  g.strokeStyle=trail;g.globalAlpha=0.70;g.lineWidth=rr*0.16;
+  g.beginPath();g.ellipse(0,0,rr,rr*squash,0,0,7);g.stroke();
+  g.globalAlpha=1;
+
+  var bl=partOf('blade',build.blade);
+  var teeth=Math.round(3+(bl?bl.sharp:0.5)*8);
+  g.strokeStyle=col;
+  g.globalAlpha=(0.24+0.54*fin.metal)*(1-0.35*fin.rough)+0.18;
+  g.lineWidth=rr*0.10;
+  for(var i=0;i<teeth;i++){
+    var a=spin+i*Math.PI*2/teeth;
+    g.beginPath();
+    g.moveTo(Math.cos(a)*rr*0.86,Math.sin(a)*rr*squash*0.86);
+    g.lineTo(Math.cos(a)*rr*1.10,Math.sin(a)*rr*squash*1.10);
+    g.stroke();
+  }
+  g.globalAlpha=1;g.restore();
+
+  var rt=partOf('ratchet',build.ratchet);
+  var tipLen=rr*(0.86+((rt?rt.height:60)-50)/50*0.52);
+  g.strokeStyle='rgba(170,182,190,.92)';g.lineWidth=rr*0.17;g.lineCap='round';
+  g.beginPath();g.moveTo(cx,cy+rr*0.2);g.lineTo(cx,cy+tipLen);g.stroke();
+  // the point itself, which is the part the player is choosing
+  g.strokeStyle='rgba(237,230,216,.85)';g.lineWidth=rr*0.06;
+  g.beginPath();g.moveTo(cx,cy+tipLen);g.lineTo(cx,cy+tipLen+rr*0.16);g.stroke();
+  g.lineCap='butt';
+  g.fillStyle='rgba(237,230,216,.96)';
+  g.beginPath();g.arc(cx,cy,rr*0.17,0,7);g.fill();
+}
+/* Chalk dust off the rim, not paper confetti. It reuses the same particle
+   system the hits already throw, so it costs nothing and it looks like it
+   belongs to this game rather than to a birthday.
+   ⛔ Sparks are in SCREEN coordinates with x/y/vx/vy and a `hot` flag; the first
+   version of this pushed x/z/col and threw a shower out of the top left corner
+   of the canvas in the wrong colour. */
+/* n bursts, a beat apart, so it reads as celebration rather than one puff. The
+   first lands while the dish is still uncovered. */
+function cheer(n){
+  /* Spaced so bursts are still landing after the card has faded up: the win
+     beat opens at 700ms and these arrive every 260, so you see two of them
+     through it rather than reading a still card over settled dust. */
+  confetti();
+  for(var i=1;i<n;i++)setTimeout(confetti,i*260);
+}
+function confetti(){
+  if(save.settings.reduceMotion)return;
+  var cx=A?CX()+A.x*scale():CX(), cy=A?CY()+A.z*scale():CY();
+  for(var i=0;i<46;i++){
+    var a=-Math.PI/2+(Math.random()-0.5)*2.4, v=150+Math.random()*430;
+    sparks.push({x:cx+(Math.random()-0.5)*26,y:cy,
+                 vx:Math.cos(a)*v,vy:Math.sin(a)*v,
+                 life:0.75+Math.random()*0.65,hot:Math.random()<0.55});
   }
 }
 
@@ -1855,14 +2507,18 @@ function frame(now){
   if(!last)last=now;
   var dt=Math.min(0.05,(now-last)/1000);last=now;
   if(!W)resize();
+  if(phase==='drop'){
+    dropT+=dt;
+    if(dropT>=DROP_DUR){phase='play';acc=0;dropT=0;}
+  }
   step(dt);
 
   ctx.clearRect(0,0,W,H);
   drawArena();
   if(phase==='wind'){drawWindTrack();drawStroke();}
   if(tuj)for(var i=0;i<tuj.targets.length;i++)drawTop(tuj.targets[i],'#8E9BA2',false);
-  if(B)drawTop(B,'#8E9BA2',false,trailB);
-  if(A)drawTop(A,TRAIL_HEX[cosm.trail]||'#C9A227',true,trailA);
+  if(B)withDrop(B,0.14,function(){drawTop(B,'#8E9BA2',false,trailB);});
+  if(A)withDrop(A,0,function(){drawTop(A,TRAIL_HEX[cosm.trail]||'#C9A227',true,trailA);});
   drawSparks();
   if(mode==='uri'&&phase==='play'&&A&&B){
     // Two spin bars and a clock. Uri has nothing to watch except the gap, so the
@@ -1889,6 +2545,44 @@ function frame(now){
 function drawArena(){
   var r=RAD(),cx=CX(),cy=CY();
   drawStadium(cx,cy,r);
+}
+
+/* The drop. Each top comes down onto its own spawn mark, the player's a beat
+   after the opponent's so you read them as two separate acts rather than one
+   event. It is a transform around the top's real screen position, so nothing
+   inside drawTop knows this is happening and nothing can drift out of sync with
+   the state the physics is about to start from. */
+function withDrop(o,delay,draw){
+  if(phase!=='drop'){draw();return;}
+  var s=scale(), px=CX()+o.x*s, py=CY()+o.z*s;
+  var e=clamp((dropT-delay)/(DROP_DUR-0.14),0,1);
+  if(e<=0)return;                                // has not been let go of yet
+  /* ⛔ This eased OUT, which is backwards for a falling object: a cubic ease out
+     covers ninety two percent of the distance in the first sixty percent of the
+     time, so by 380ms the beat was over and the screenshots showed two tops
+     sitting still. A thing dropping into a dish ACCELERATES, so the fall eases
+     in and only the last sliver settles. */
+  var k=e<0.88?(e/0.88)*(e/0.88)*0.94
+              :0.94+0.06*(1-Math.pow(1-(e-0.88)/0.12,2));
+  var fall=(1-k)*RAD()*1.05;
+  var sc=0.66+0.34*k;
+  // the cord, still attached, paying out behind it
+  if(k<0.96){
+    ctx.save();
+    ctx.globalAlpha=(1-k)*0.62;
+    ctx.strokeStyle=FINISH_HEX[cosm.finish]||'#C9A227';
+    ctx.lineWidth=2.4;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(px,py-fall);
+    ctx.lineTo(px+RAD()*0.10*(1-k),py-fall-RAD()*0.72*(1-k)-16);
+    ctx.stroke();ctx.lineCap='butt';
+    ctx.restore();
+  }
+  ctx.save();
+  ctx.globalAlpha=Math.min(1,e*3.2);
+  ctx.translate(px,py-fall);ctx.scale(sc,sc);ctx.translate(-px,-py);
+  draw();
+  ctx.restore();
+  ctx.globalAlpha=1;
 }
 
 /* One stadium per mode, which is dressing rather than geometry: the dish is the
@@ -2259,6 +2953,16 @@ function drawSparks(){
    game: it needs to wait for a frame with an actual contact in it, because a
    picture of two tops sitting apart is a picture of nothing. */
 window.__sparkCount=function(){return sparks.length;};
+/* What the game is ACTUALLY riding, for the tools. A screenshot run that
+   injects a build into the save and then quietly loses three times in a row is
+   either unlucky or not using the build, and there was no way to tell which. */
+window.__fitted=function(){return JSON.parse(JSON.stringify(currentCfg()));};
+/* One reveal card's comparison, built through the game's own code path, so the
+   viewport gate can measure the real thing rather than a hand written mock of
+   it that would stop matching the day the markup changed. */
+window.__cmpHTML=function(slot,fromId,toId){
+  return partCompare(slot,partOf(slot,fromId),partOf(slot,toId));
+};
 window.__gap=function(){
   if(!A||!B||!A.alive||!B.alive)return 99;
   return Math.hypot(A.x-B.x,A.z-B.z)/(A.spec.R+B.spec.R);
@@ -2371,6 +3075,10 @@ $('openWs').addEventListener('click',function(){openSheet('sheet');refresh();});
 /* ------------------------------------------------------------------- KEYBOARD */
 window.addEventListener('keydown',function(e){
   if(e.key==='Escape'){
+    // A ceremony sits above every sheet, so it is what Escape means while one
+    // is up. Without this, escaping to the menu left the menu underneath an
+    // overlay that was still talking.
+    if(cerBusy){cerAbort();return;}
     var open=false,i;
     for(i=0;i<SHEETS.length;i++)if($(SHEETS[i]).classList.contains('up')){open=true;break;}
     if(open){closeSheets();return;}

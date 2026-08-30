@@ -276,6 +276,202 @@ console.log('\nTHE FIELD, ONCE THE LADDER IS CLEARED');
   }
 }
 
+/* ------------------------------------------------------------------------
+ * A WHOLE MATCH, AND THE CEREMONY AT THE END OF IT
+ *
+ * Stephen played the build and said the round felt good and everything AROUND
+ * the round did not: "there was no celebration, there was no checking out the
+ * new gear ... it should have a stop, show you the next guy going into it".
+ *
+ * The ceremony that answers that is the biggest untested surface in the game,
+ * because every gate above plays exactly ONE round and a match is four points.
+ * So this plays real rounds until a match actually ends, then walks the beats
+ * the way a thumb would: read what it says, press the button it offers, and
+ * check the game hands the controls back at the end instead of stranding you
+ * behind an overlay.
+ *
+ * ⛔ It asserts the CONTROLS COME BACK. The first version of the ceremony called
+ * chrome(true) before the overlay opened, so the dock was live underneath a
+ * backdrop nothing could press, and every existing gate went green on it,
+ * because they all watch the dock and the dock was back.
+ * ------------------------------------------------------------------------ */
+console.log('\nA WHOLE MATCH, AND WHAT HAPPENS AFTER IT');
+/* Back to the first rung and a bare build, because the beat this section exists
+ * to check is WINNING one: the part reveal, the comparison against what is
+ * fitted, and the introduction to whoever is next. The Field section above left
+ * the save on rung 24 against a boss, where the likely outcome is a loss and the
+ * whole reveal path goes unexercised. */
+await page.evaluate(() => {
+  const s = JSON.parse(localStorage.getItem('ripcord.save.v1') || '{}');
+  s.rung = 0; s.facing = 0;
+  // and the stock build, because the workshop section above deliberately fitted
+  // a worse one and a first rung is meant to be beatable with what you start on
+  delete s.mods; delete s.rigs;
+  /* And a build that reliably WINS rung one, because the win is the path this
+     section exists to walk: the reveal cards, the comparison against what is
+     fitted, and the introduction to whoever is next. The stock build takes rung
+     one about four times in ten (see HANDOFF section 5), so leaving it to chance
+     leaves the whole reward path untested most runs. */
+  s.unlocked = (s.unlocked || []).concat(['moth','orbit','slick','5-60','needle','chip']);
+  /* ⛔ Counterweights persist as `holes` (a 2 ring by 6 hole grid of weight
+     indices: 0 none, 1 chip, 2 slug, 3 brick), NOT as the `weights` array the
+     simulation takes. Writing `weights` here parsed fine, saved fine, and was
+     silently dropped on load, so the run rode a stamina build with no weights
+     on it and lost three times in a row looking like bad luck. */
+  s.build = { core:'moth', blade:'orbit', assist:'slick', ratchet:'5-60', bit:'needle',
+              holes: [[0,0,0,0,0,0],[1,0,1,0,1,0]], trigger:'charged', rigs:[] };
+  localStorage.setItem('ripcord.save.v1', JSON.stringify(s));
+});
+await page.reload({ waitUntil: 'load' });
+await wait(700);
+await tap('#mPlay', 'Play');
+await wait(500);
+
+const cerUp = () => page.evaluate(() => document.getElementById('cer').classList.contains('up'));
+const dockBack = () => page.evaluate(() => !document.getElementById('dock').classList.contains('hide'));
+
+let matchEnded = false, roundsPlayed = 0;
+for (let r = 0; r < 12 && !matchEnded; r++) {
+  const ready = await page.evaluate(() => document.getElementById('cv') &&
+    !document.getElementById('dock').classList.contains('hide'));
+  if (!ready) { await wait(500); continue; }
+  await windIt(3.0);
+  if (!await tap('#go', 'Launch')) break;
+  roundsPlayed++;
+  for (let i = 0; i < 60; i++) {
+    await wait(400);
+    if (await cerUp()) { matchEnded = true; break; }
+    if (await dockBack()) break;                 // round over, match still running
+  }
+}
+ok(matchEnded, 'playing rounds actually reaches the end of a match (' + roundsPlayed + ' rounds)');
+
+if (matchEnded) {
+  ok(!await dockBack(),
+     'the controls stay away while the ceremony is talking, not live under the backdrop');
+
+  /* Walk every beat. A beat with buttons wants an answer; a beat without one
+   * gets tapped to move it along, which is what an impatient thumb does. */
+  const seen = [];
+  let sawPart = false, sawCompare = false, sawNext = false;
+  for (let i = 0; i < 14; i++) {
+    if (!await cerUp()) break;
+    const beat = await page.evaluate(() => ({
+      kick: document.getElementById('cerKick').textContent.trim(),
+      big:  document.getElementById('cerBig').textContent.trim(),
+      sub:  document.getElementById('cerSub').textContent.trim(),
+      part: !!document.querySelector('#cerBody .cerPart .slot'),
+      cmp:  !!document.querySelector('#cerBody .cmp .cmpRow .cmpBar'),
+      btns: [...document.querySelectorAll('#cerBtns .btn')].map(b => b.textContent.trim())
+    }));
+    /* ⛔ THE BEAT MUST CHANGE. A "Fit it" button whose action threw left the
+     * player stuck on the same reveal card forever, with no way out and the
+     * controls never returned, and every other assertion in here stayed green
+     * on it. Repeating a headline is the signature of that dead end. */
+    if (beat.big && seen.length && seen[seen.length - 1] === beat.kick + ': ' + beat.big) {
+      fails.push('the ceremony repeated the same beat ("' + beat.big + '"), so a button did not advance it');
+      console.log('  FAIL  the ceremony repeated "' + beat.big + '" - a button did not advance it');
+      break;
+    }
+    if (beat.big) seen.push(beat.kick + ': ' + beat.big);
+    if (beat.part) sawPart = true;
+    if (beat.cmp) sawCompare = true;
+    if (/^Rung /.test(beat.kick)) sawNext = true;
+    // every beat has to actually SAY something; a blank card is a bug that
+    // reads as a hang
+    if (!beat.big) { fails.push('a ceremony beat came up with no headline');
+                     console.log('  FAIL  a ceremony beat came up with no headline'); break; }
+    if (beat.btns.length) {
+      const idx = beat.btns.findIndex(t => /Fit it|Ready|Good/.test(t));
+      const hit = await page.evaluate(n => {
+        const b = document.querySelectorAll('#cerBtns .btn')[n];
+        const r = b.getBoundingClientRect();
+        const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+        const top = document.elementFromPoint(cx, cy);
+        return { x: cx, y: cy, covered: top !== b && !b.contains(top),
+                 h: Math.round(r.height) };
+      }, idx < 0 ? 0 : idx);
+      if (hit.covered) { fails.push('a ceremony button is covered and cannot be pressed');
+                         console.log('  FAIL  a ceremony button is covered'); break; }
+      if (hit.h < 44) { fails.push('a ceremony button is only ' + hit.h + 'px tall');
+                        console.log('  FAIL  ceremony button ' + hit.h + 'px tall'); }
+      await page.mouse.click(hit.x, hit.y);
+    } else {
+      await page.mouse.click(187, 200);           // tap the backdrop to skip ahead
+    }
+    await wait(650);
+  }
+  console.log('        beats: ' + seen.join('  |  '));
+  ok(seen.length >= 2, 'the end of a match is more than one screen (' + seen.length + ' beats)');
+  ok(/won|beat|takes it|put down/i.test(seen.join(' ')),
+     'it says who won before anything else');
+  const won = /won|beat|put down/i.test(seen[0] || '');
+  if (won) {
+    ok(sawPart, 'winning puts the parts you won in front of you, one card at a time');
+    ok(sawCompare, 'and each card says what it would change about the top you are riding');
+    ok(sawNext, 'and it introduces whoever is next before handing you back');
+  } else {
+    ok(/what beat you/i.test(seen.join(' ')), 'losing says what beat you instead of just the score');
+  }
+
+  let gaveBack = false;
+  for (let i = 0; i < 20 && !gaveBack; i++) { await wait(300); gaveBack = await dockBack(); }
+  ok(gaveBack, 'the ceremony hands the controls back when it is done');
+  ok(!await cerUp(), 'and the overlay is gone, not left sitting on top of the game');
+  const hint = await page.evaluate(() => document.getElementById('hint').textContent.trim());
+  ok(hint.length > 0, 'it leaves you knowing what to do next (' + hint + ')');
+
+  /* ⛔ AND IT HAS TO FIT ON A SHORT PHONE. A reveal card carrying five stat rows
+   * and two buttons is taller than a 320 by 568 screen, and a centred flex
+   * column that overflows pushes its top above the scroll origin: the headline
+   * clips off and the buttons go off the bottom with no way to reach either.
+   * That exact shape has now cost this studio the menu twice. */
+  for (const vp of [{ w: 320, h: 568, n: 'narrow' }, { w: 667, h: 375, n: 'landscape' }]) {
+    await page.setViewport({ width: vp.w, height: vp.h, deviceScaleFactor: 1,
+                             isMobile: true, hasTouch: true });
+    await wait(320);
+    const fit = await page.evaluate(() => {
+      const cer = document.getElementById('cer');
+      cer.classList.add('up');
+      document.getElementById('cerKick').textContent = 'New part';
+      document.getElementById('cerBig').textContent = 'Cleaver';
+      document.getElementById('cerSub').textContent = 'Against your Wheel:';
+      document.getElementById('cerBody').innerHTML =
+        window.__cmpHTML ? '<div class="cerPart"><div class="slot">Blade</div>' +
+          '<div class="job">The striking edge. It decides what your hits do, and ' +
+          'what they do to you.</div><p>The sharpest stock edge on a narrow heavy ' +
+          'disc; it cuts, and it feels every hit it takes.</p>' +
+          window.__cmpHTML('blade', 'wheel', 'cleaver') + '</div>' : '';
+      document.getElementById('cerBtns').innerHTML =
+        '<button class="btn go">Fit it</button><button class="btn">Keep mine</button>';
+      const out = [];
+      for (const el of [document.getElementById('cerBig'),
+                        ...document.querySelectorAll('#cerBtns .btn')]) {
+        const r = el.getBoundingClientRect();
+        out.push({ t: (el.textContent || '').trim().slice(0, 12),
+                   top: Math.round(r.top), bot: Math.round(r.bottom),
+                   h: Math.round(r.height) });
+      }
+      return { out, scroll: cer.scrollHeight > cer.clientHeight,
+               vh: window.innerHeight };
+    });
+    // everything is reachable if it is either on screen already or scrollable to
+    const stranded = fit.out.filter(o => (o.top < 0 || o.bot > fit.vh) && !fit.scroll);
+    ok(stranded.length === 0,
+       'at ' + vp.w + 'x' + vp.h + ' (' + vp.n + ') the whole reveal card is reachable' +
+       (stranded.length ? ' - stranded: ' + stranded.map(o => o.t).join(', ') : ''));
+    const short = fit.out.filter(o => /Fit it|Keep mine/.test(o.t) && o.h < 44);
+    ok(short.length === 0,
+       'and its buttons stay 44px or taller at ' + vp.w + 'x' + vp.h +
+       (short.length ? ' - ' + short.map(o => o.t + ' ' + o.h + 'px').join(', ') : ''));
+    await page.evaluate(() => document.getElementById('cer').classList.remove('up'));
+  }
+  await page.setViewport({ width: 375, height: 667, deviceScaleFactor: 1,
+                           isMobile: true, hasTouch: true });
+  await wait(300);
+
+}
+
 console.log('\nSAVE SURVIVES A RELOAD');
 const beforeReload = await page.evaluate(() => {
   const s = JSON.parse(localStorage.getItem('ripcord.save.v1') || '{}');
