@@ -92,15 +92,37 @@ await wait(500);
 ok(await page.evaluate(() => document.getElementById('menu').classList.contains('up')),
    'the menu is up after the rules');
 
-console.log('\nMENU CONTROLS ARE REACHABLE');
-for (const id of ['#mPlay', '#mHow', '#mShop', '#mModes', '#mSet', '#mExit']) {
-  const reach = await page.evaluate(s => {
-    const el = document.querySelector(s), r = el.getBoundingClientRect();
-    const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-    return !!top && (top === el || el.contains(top));
-  }, id);
-  ok(reach, id + ' is the topmost element at its own centre');
+/* ⛔ EVERY MENU CONTROL, AT EVERY SHAPE A PHONE ACTUALLY TAKES.
+ * Checking one viewport was not enough. The menu is a centred flex column, and
+ * in landscape at 667 by 375 it grew taller than the screen: the wordmark went
+ * off the top, the exit button off the bottom, and justify-content:center pushes
+ * the overflow past the scroll origin so neither could be reached at all. It was
+ * completely invisible in portrait. Rotating a phone is not an edge case. */
+console.log('\nMENU CONTROLS ARE REACHABLE AT EVERY PHONE SHAPE');
+for (const [w, h, label] of [[375, 667, 'portrait'], [667, 375, 'landscape'],
+                             [320, 568, 'narrow'], [844, 390, 'wide landscape']]) {
+  await page.setViewport({ width: w, height: h });
+  await wait(350);
+  const bad = await page.evaluate(async () => {
+    const out = [];
+    for (const id of ['mPlay', 'mHow', 'mShop', 'mModes', 'mSet', 'mExit']) {
+      const el = document.getElementById(id);
+      el.scrollIntoView({ block: 'center' });
+      await new Promise(r => setTimeout(r, 110));
+      const b = el.getBoundingClientRect();
+      const cx = b.left + b.width / 2, cy = b.top + b.height / 2;
+      const top = document.elementFromPoint(cx, cy);
+      const reachable = cx >= 0 && cy >= 0 && cx <= innerWidth && cy <= innerHeight &&
+                        top && (top === el || el.contains(top));
+      if (!reachable) out.push(id);
+    }
+    return out;
+  });
+  ok(bad.length === 0, 'at ' + w + 'x' + h + ' (' + label + ') every menu control can be reached' +
+     (bad.length ? ', but ' + bad.join(', ') + ' cannot' : ''));
 }
+await page.setViewport({ width: 375, height: 667 });
+await wait(300);
 
 console.log('\nWORKSHOP');
 await tap('#mShop', 'Workshop');

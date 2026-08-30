@@ -94,8 +94,16 @@ button{font:inherit;color:inherit}
 /* The scrim has to let the live round behind it show. The first version went to
    88 percent opacity by 62 percent of the radius and the demo match was
    invisible, which threw away the only moving thing on the screen. */
+/* ⛔ A CENTRED FLEX COLUMN TALLER THAN THE VIEWPORT CLIPS AT BOTH ENDS AND
+   CANNOT BE SCROLLED TO. In landscape on a phone, 667 by 375, the wordmark went
+   off the top and the exit button off the bottom, and justify-content:center
+   pushes overflow past the scroll origin so neither could be reached. The fix is
+   margin:auto on an inner wrapper with overflow-y:auto on the container: it
+   centres when it fits and scrolls when it does not. Found by rotating the
+   phone; portrait hides it completely. */
 #menu{position:fixed;z-index:5;inset:0;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:11px;padding:var(--pad) var(--pad) 34px;
+  align-items:center;justify-content:flex-start;overflow-y:auto;
+  -webkit-overflow-scrolling:touch;gap:0;padding:var(--pad) var(--pad) 34px;
   background:radial-gradient(ellipse at 50% 44%,rgba(14,9,8,.18) 0%,rgba(14,9,8,.62) 48%,rgba(14,9,8,.93) 100%);
   transition:opacity .3s;visibility:hidden;opacity:0}
 #menu.up{visibility:visible;opacity:1}
@@ -103,6 +111,8 @@ button{font:inherit;color:inherit}
   text-shadow:0 2px 18px rgba(14,9,8,.95),0 0 34px rgba(14,9,8,.8)}
 #tagline{font-size:14px;color:var(--chalk);opacity:.78;margin:0 0 22px;text-align:center;
   max-width:19em;text-shadow:0 1px 12px rgba(14,9,8,.95)}
+#menuInner{margin:auto;display:flex;flex-direction:column;align-items:center;
+  gap:11px;width:100%;max-width:340px;padding:10px 0}
 #menu .btn{width:min(300px,100%);flex:0 0 auto}
 /* ⛔ .btn.go carries flex:1 for the horizontal dock. #menu is a COLUMN, so that
    same rule grew the Play button to 182px tall over a painted arena. Reset the
@@ -256,6 +266,11 @@ button{font:inherit;color:inherit}
    cannot see the ring you just drew. The five bars are detail; the letter and
    the one line of coaching are the point, so on a short screen the detail goes
    and the arena stays visible. Found at 320, invisible at 375. */
+@media (max-height:460px){
+  #wordmark{font-size:34px;margin-bottom:0}
+  #tagline{margin-bottom:12px;font-size:13px}
+  #menuInner{gap:8px}
+}
 @media (max-height:640px){
   #card{bottom:calc(env(safe-area-inset-bottom) + 74px);padding:10px 13px}
   #card #bars{display:none}
@@ -296,7 +311,7 @@ button{font:inherit;color:inherit}
 </div>
 
 <!-- ============================ MENU ============================ -->
-<div id="menu">
+<div id="menu"><div id="menuInner">
   <h1 id="wordmark">RIPCORD</h1>
   <p id="tagline">Build a top, wind it by hand, then keep your hands off it.</p>
   <button class="btn go" id="mPlay">Play</button>
@@ -305,7 +320,7 @@ button{font:inherit;color:inherit}
   <button class="btn" id="mModes">Modes</button>
   <button class="btn" id="mSet">Settings</button>
   <button class="btn ghost" id="mExit">&#9668; Sky Wolf Studio Arcade</button>
-</div>
+</div></div>
 <div id="buildstamp">build 20260830a</div>
 
 <!-- ============================ HOW TO PLAY ============================ -->
