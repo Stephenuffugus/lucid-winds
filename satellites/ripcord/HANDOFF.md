@@ -59,9 +59,17 @@ sliders rather than a lookup, decals are drawn in the top's own rotating frame s
 the paint turns with the top, and the launcher dresses the winding screen, which
 your brief names as the single most requested missing feature in the category.
 The Looks panel draws your actual top, turning, because picking a decal off a
-list of twelve words is picking blind. `tools/cosmetics.mjs` renders a contact
-sheet of all of them from the real game; a decal either reads at twenty five
-pixels across or it does not, and only a picture says which.
+list of twelve words is picking blind. They arrive one to a rung as you climb,
+and the Field supplies the rest, because six come in the starter kit and twenty
+seven remain against twenty five rungs.
+
+Each mode has its own stadium: posts and no pockets for Uri, since nothing can be
+rung out of a mode with no contact; the target mark for Taya; distance bands for
+the range. It is dressing, and the physics never reads any of it.
+
+`tools/cosmetics.mjs` and `tools/stadiums.mjs` render contact sheets from the
+real game. A decal either reads at twenty five pixels across or it does not, and
+only a picture says which.
 
 ---
 

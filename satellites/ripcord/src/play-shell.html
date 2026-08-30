@@ -251,6 +251,20 @@ button{font:inherit;color:inherit}
 #lapNum.ready{color:var(--good)} #lapNum.over{color:var(--ember)}
 #lapMsg{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin-top:7px}
 
+/* ⛔ SHORT SCREENS. At 320 by 568 the grade card is tall enough to swallow the
+   winding track and the lap counter, so the moment after you finish a wind you
+   cannot see the ring you just drew. The five bars are detail; the letter and
+   the one line of coaching are the point, so on a short screen the detail goes
+   and the arena stays visible. Found at 320, invisible at 375. */
+@media (max-height:640px){
+  #card{bottom:calc(env(safe-area-inset-bottom) + 74px);padding:10px 13px}
+  #card #bars{display:none}
+  #gl{font-size:32px;min-width:40px}
+  #note{font-size:14px}
+  #sub{font-size:10.5px}
+  #laps{top:38%}
+  #hint{bottom:calc(env(safe-area-inset-bottom) + 100px)}
+}
 @media (prefers-reduced-motion: reduce){
   .sheet,#card,#menu,#unlock,.bar i,.tog i{transition:none}
 }
@@ -459,6 +473,30 @@ function persist(){STORE.save();}
 /* ------------------------------------------------------------ build state */
 /* Parts come from winning. No currency, no shop, no wallet, ever. */
 var STARTER=['iron','moth','wheel','crest','none','wing','3-60','4-80','point','spool'];
+
+/* Cosmetics are unlockables too, one per rung, cycling the four kinds so a
+   player collects a bit of everything rather than eight finishes and no decals.
+   They are purely visual and the audit fails if one ever carries a stat, so
+   handing them out on a schedule cannot touch balance. */
+function cosmeticsFor(rung){
+  var out={finish:['anod'],decal:['none','stripe'],trail:['none','rope'],launcher:['cord']};
+  var kinds=['finish','decal','trail','launcher'];
+  var pools={finish:SIM.FINISHES.map(function(f){return f.id;}),
+             decal:SIM.DECALS,trail:SIM.TRAILS,launcher:SIM.LAUNCHERS};
+  for(var i=0;i<rung;i++){
+    var k=kinds[i%4], pool=pools[k];
+    for(var j=0;j<pool.length;j++)
+      if(out[k].indexOf(pool[j])<0){out[k].push(pool[j]);break;}
+  }
+  return out;
+}
+/* ⛔ The ladder alone cannot hand them all out: six come in the starter kit and
+   twenty seven remain, against twenty five rungs. The Field supplies the rest,
+   which also gives the endless mode something to give you. */
+function cosmeticProgress(){ return rung + (save.records.fieldWins|0); }
+function cosmeticUnlocked(kind,id){
+  return cosmeticsFor(cosmeticProgress())[kind].indexOf(id)>=0;
+}
 var unlocked={};
 (function(){
   var i;
@@ -668,22 +706,25 @@ function tierTag(p){
 }
 function railRow(label,items,isOn,onPick,klass,lockable){
   var cosmetic = klass === 'cosmetic';
+  var cosKind = cosmetic ? lockable : null;   // for a cosmetic rail, which kind
   var d=document.createElement('div');
   d.className='slot'+(klass?' '+klass:'');
   d.innerHTML='<label>'+label+'</label>';
   var r=document.createElement('div');r.className='rail';
   for(var i=0;i<items.length;i++)(function(it){
     var b=document.createElement('button');
-    var locked=lockable&&!isUnlocked(it.id);
+    var locked=cosKind ? !cosmeticUnlocked(cosKind,it.id)
+                       : (lockable&&!isUnlocked(it.id));
     b.className='chip'+(isOn(it)?' on':'')+(locked?' lock':'');
     b.innerHTML=(it.role?'<span class="dot" style="background:'+ROLE_HEX[it.role]+'"></span>':'')+
                 (it.name||it.id)+tierTag(it);
     b.addEventListener('click',function(){
       if(locked){
-        var from=DROP_FROM[it.id];
-        $('benchOut').textContent=from
-          ? 'Locked. Win it from '+from.name+' on rung '+from.rung+'.'
-          : 'Locked. Beat a league boss to win a Relic.';
+        $('benchOut').textContent=cosKind
+          ? 'Locked. Looks come one to a rung as you climb.'
+          : (DROP_FROM[it.id]
+             ? 'Locked. Win it from '+DROP_FROM[it.id].name+' on rung '+DROP_FROM[it.id].rung+'.'
+             : 'Locked. Beat a league boss to win a Relic.');
         return;
       }
       if(!cosmetic){rigAnnounceArmed=true;if(field)field.target=null;}
@@ -754,13 +795,13 @@ function buildSlots(){
   var looks=$('looks');looks.innerHTML='';
   function plain(a){var o=[],k;for(k=0;k<a.length;k++)o.push({id:a[k],name:a[k]});return o;}
   looks.appendChild(railRow('Finish',SIM.FINISHES,function(f){return cosm.finish===f.id;},
-    function(f){cosm.finish=f.id;},'cosmetic'));
+    function(f){cosm.finish=f.id;},'cosmetic','finish'));
   looks.appendChild(railRow('Decal',plain(SIM.DECALS),function(d){return cosm.decal===d.id;},
-    function(d){cosm.decal=d.id;},'cosmetic'));
+    function(d){cosm.decal=d.id;},'cosmetic','decal'));
   looks.appendChild(railRow('Trail',plain(SIM.TRAILS),function(t){return cosm.trail===t.id;},
-    function(t){cosm.trail=t.id;},'cosmetic'));
+    function(t){cosm.trail=t.id;},'cosmetic','trail'));
   looks.appendChild(railRow('Launcher',plain(SIM.LAUNCHERS),function(l){return cosm.launcher===l.id;},
-    function(l){cosm.launcher=l.id;},'cosmetic'));
+    function(l){cosm.launcher=l.id;},'cosmetic','launcher'));
   drawLookPreview();
   buildMods();buildRigs();summaries();
 }
@@ -1576,6 +1617,7 @@ function finishOrContinue(){
       AUDIO.stopLoops();chrome(true);$('laps').style.opacity=0;
       if(pa>pb){
         field.streak++;
+        save.records.fieldWins=(save.records.fieldWins|0)+1;persist();
         // They handled that one, so the next is harder. The step is small
         // because a ladder that jumps is a ladder nobody stays on.
         field.target=clamp(field.target+0.035,0.15,0.90);
@@ -1583,6 +1625,7 @@ function finishOrContinue(){
           field.best=field.streak;save.records.bestField=field.best;persist();
         }
         AUDIO.win();
+        buildSlots();
         $('hint').textContent='Beat '+field.rung.name+'. Streak '+field.streak+
           ', best '+field.best+'. Launch for the next one.';
       }else{
@@ -1830,6 +1873,14 @@ function frame(now){
 
 function drawArena(){
   var r=RAD(),cx=CX(),cy=CY();
+  drawStadium(cx,cy,r);
+}
+
+/* One stadium per mode, which is dressing rather than geometry: the dish is the
+   dish and the physics never reads any of this. What changes is what the ring
+   is FOR, and a player should be able to tell at a glance which game they are
+   about to play. */
+function drawStadium(cx,cy,r){
   var g=ctx.createRadialGradient(cx,cy-r*0.14,r*0.06,cx,cy,r);
   g.addColorStop(0,'#3A2D23');g.addColorStop(0.80,'#241C17');g.addColorStop(1,'#191210');
   ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,r,0,7);ctx.fill();
@@ -1851,11 +1902,39 @@ function drawArena(){
   ctx.strokeStyle='rgba(201,162,39,.34)';ctx.lineWidth=1.4;
   ctx.beginPath();ctx.arc(cx,cy,r*SIM.K.ridgeAt,0,Math.PI*2);ctx.stroke();
 
-  // the pockets: the three low points in the lip where a top actually leaves
-  ctx.strokeStyle='rgba(196,68,43,.62)';ctx.lineWidth=7;
-  for(var i=0;i<SIM.K.pockets;i++){
-    var a=i*Math.PI*2/SIM.K.pockets;
-    ctx.beginPath();ctx.arc(cx,cy,r*0.995,a-0.25,a+0.25);ctx.stroke();
+  var i,a;
+  // The pockets are where a top actually leaves, so they are only drawn in the
+  // modes where leaving is possible. Uri has no contact and the range has no lip
+  // worth marking, and a red mark that means nothing is worse than no mark.
+  if(mode!=='uri'&&mode!=='tujlub'){
+    ctx.strokeStyle='rgba(196,68,43,.62)';ctx.lineWidth=7;
+    for(i=0;i<SIM.K.pockets;i++){
+      a=i*Math.PI*2/SIM.K.pockets;
+      ctx.beginPath();ctx.arc(cx,cy,r*0.995,a-0.25,a+0.25);ctx.stroke();
+    }
+  }
+  if(mode==='uri'){
+    // two raised posts, which is what a uri top is transferred onto
+    ctx.strokeStyle='rgba(142,155,162,.42)';ctx.lineWidth=3;
+    for(i=0;i<2;i++){
+      var px=cx+(i?1:-1)*r*0.42;
+      ctx.beginPath();ctx.arc(px,cy,r*0.15,0,Math.PI*2);ctx.stroke();
+      ctx.beginPath();ctx.arc(px,cy,r*0.07,0,Math.PI*2);ctx.stroke();
+    }
+  }else if(mode==='taya'){
+    // the mark the loser's top is stood on for the punishing strike
+    ctx.strokeStyle='rgba(196,68,43,.36)';ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(cx,cy,r*0.13,0,Math.PI*2);ctx.stroke();
+    for(i=0;i<4;i++){a=i*Math.PI/2+Math.PI/4;
+      ctx.beginPath();
+      ctx.moveTo(cx+Math.cos(a)*r*0.06,cy+Math.sin(a)*r*0.06);
+      ctx.lineTo(cx+Math.cos(a)*r*0.20,cy+Math.sin(a)*r*0.20);ctx.stroke();}
+  }else if(mode==='tujlub'){
+    // a range, so the ground is marked in distance bands rather than a lip
+    ctx.strokeStyle='rgba(237,230,216,.13)';ctx.lineWidth=1.5;
+    for(i=1;i<=5;i++){
+      ctx.beginPath();ctx.arc(cx,cy,r*(0.16+i*0.155),0,Math.PI*2);ctx.stroke();
+    }
   }
   // the chalk line, drawn as chalk: broken, uneven, made by a hand
   ctx.strokeStyle='rgba(237,230,216,.22)';ctx.lineWidth=2;
