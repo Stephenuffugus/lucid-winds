@@ -89,8 +89,8 @@ for (const rung of LADDER.filter(r => r.boss)) {
     for (let i = 0; i < N; i++) {
       const rnd = SIM.mulberry(i * 7919 + name.length * 31 + rung.rung * 17);
       const r = SIM.resolveBossMatch(me, bossSpec, rung.boss, { rnd,
-        a: { angle: rnd() * 6.283, power: .96 + rnd() * .08, lean: .03 + rnd() * .04, phase: rnd() * 6.283 },
-        b: { angle: rnd() * 6.283, power: .96 + rnd() * .08, lean: .03 + rnd() * .04, phase: rnd() * 6.283 } });
+        a: { power: .96 + rnd() * .08, lean: .03 + rnd() * .04, phase: rnd() * 6.283 },
+        b: { power: .96 + rnd() * .08, lean: .03 + rnd() * .04, phase: rnd() * 6.283 } });
       if (r.winner === 'a') { w++; c[r.cause] = (c[r.cause] || 0) + 1; }
     }
     rates[name] = { win: w / N, c, n: w };

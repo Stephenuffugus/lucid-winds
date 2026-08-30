@@ -29,8 +29,8 @@ function score(cfg, seed) {
     const me = SIM.build(Object.assign({}, cfg, { dir: 1 }));
     const foe = SIM.build(Object.assign({}, SIM.ARCHETYPES[g], { dir: d }));
     const r = SIM.resolveMatch(me, foe, { rnd,
-      a: { angle: rnd() * 6.283, power: .96 + rnd() * .08, lean: .03 + rnd() * .04, phase: rnd() * 6.283 },
-      b: { angle: rnd() * 6.283, power: .96 + rnd() * .08, lean: .03 + rnd() * .04, phase: rnd() * 6.283 } });
+      a: { power: .96 + rnd() * .08, lean: .03 + rnd() * .04, phase: rnd() * 6.283 },
+      b: { power: .96 + rnd() * .08, lean: .03 + rnd() * .04, phase: rnd() * 6.283 } });
     if (r.winner === 'a') w++;
     n++;
   }

@@ -108,7 +108,13 @@
       // steal without jtCap is a no-op on exactly the builds that qualify for
       // this, because a hooked gripping rim saturates the friction cap on almost
       // every contact.
-      mod: { stealOpp: 1.15, jtCap: 1.35 } },
+      // ⛔ Retuned after the launch fix, and the reason is the grip finding in
+      // HANDOFF section 5: rim friction is symmetric, so letting MORE of it
+      // through scrubs your own rim as hard as theirs. At jtCap 1.35 this rig
+      // measured MINUS 8.8 win points, which is a trap of exactly the size the
+      // gate forbids in the other direction. It now leans on the steal and
+      // barely touches the ceiling.
+      mod: { stealOpp: 1.18, jtCap: 1.06 } },
 
     { id: 'deadweight', name: 'Deadweight', obvious: false,
       desc: 'So heavy and so slow that hits barely move it.',

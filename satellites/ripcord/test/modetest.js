@@ -26,8 +26,8 @@ for (const A of NAMES) {
   for (const B of NAMES) for (let i = 0; i < REPS; i++) {
     const rnd = SIM.mulberry(i * 7919 + A.length * 31 + B.length * 17);
     const r = SIM.resolveMatch(spec(A), spec(B), { rnd,
-      a: { angle: rnd() * 6.283, power: .96 + rnd() * .08, lean: .03 + rnd() * .04, phase: rnd() * 6.283 },
-      b: { angle: rnd() * 6.283, power: .96 + rnd() * .08, lean: .03 + rnd() * .04, phase: rnd() * 6.283 } });
+      a: { power: .96 + rnd() * .08, lean: .03 + rnd() * .04, phase: rnd() * 6.283 },
+      b: { power: .96 + rnd() * .08, lean: .03 + rnd() * .04, phase: rnd() * 6.283 } });
     if (r.winner === 'a') w++;
     n++;
   }

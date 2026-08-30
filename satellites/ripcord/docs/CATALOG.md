@@ -39,12 +39,12 @@ higher tier lifts the average of whatever it is bolted to.
 | vise | Pincer | Forged | attack | 0.0050 | left | bite | 0.52 |  |
 | kite | Kite | Forged | utility | 0.0010 | left | tether | 1.46 |  |
 | reel | Reel | Forged | utility | 0.0009 | left | backspin | 1.53 |  |
-| tinder | Tinder | Forged | stamina | 0.0011 | right | surge | 1.42 |  |
-| wren | Wren | Forged | defense | 0.0009 | right | burrow | 1.57 |  |
-| bell | Bell | Relic | defense | 0.0045 | right | rebound | 0.72 | looselock |
+| tinder | Tinder | Forged | stamina | 0.0012 | left | kindle | 1.48 |  |
+| wren | Wren | Forged | defense | 0.0009 | left | burrow | 1.57 |  |
+| bell | Bell | Relic | defense | 0.0045 | left | rebound | 0.72 | looselock |
 | magpie | Magpie | Relic | utility | 0.0008 | left | echo | 1.95 | greedy |
-| flint | Flint | Relic | attack | 0.0007 | left | overdrive | 1.28 | coldstart |
-| millst | Cairn | Relic | attack | 0.0050 | right | pitch | 0.70 | hungry |
+| flint | Flint | Relic | attack | 0.0007 | right | overdrive | 1.28 | coldstart |
+| millst | Cairn | Relic | attack | 0.0052 | right | pitch | 0.70 | hungry |
 
 ## Blades — 22 parts
 
@@ -61,7 +61,7 @@ higher tier lifts the average of whatever it is bolted to.
 | halo | Halo | Stock | stamina | 0.0152 | 0.0258 | 0.18 | 0.26 | 0.25 | 0.60 |  |
 | crest | Crest | Stock | balance | 0.0162 | 0.0232 | 0.64 | 0.60 | 0.80 | 1.00 |  |
 | broadaxe | Broadaxe | Forged | attack | 0.0176 | 0.0208 | 1.26 | 0.88 | 0.92 | 1.46 |  |
-| chisel | Chisel | Forged | attack | 0.0146 | 0.0188 | 1.30 | 0.90 | 1.10 | 1.24 |  |
+| chisel | Chisel | Forged | attack | 0.0157 | 0.0188 | 1.30 | 0.90 | 1.10 | 1.28 |  |
 | millstone | Millstone | Forged | defense | 0.0224 | 0.0188 | 0.48 | 0.30 | 0.44 | 0.96 |  |
 | ploughshare | Ploughshare | Forged | defense | 0.0242 | 0.0228 | 0.14 | 0.28 | 0.38 | 0.86 |  |
 | cartwheel | Cartwheel | Forged | stamina | 0.0158 | 0.0264 | 0.14 | 0.22 | 0.24 | 0.66 |  |
@@ -81,7 +81,7 @@ higher tier lifts the average of whatever it is bolted to.
 | jag | Jag | Stock | attack | 0.0040 | 1.45 | 0.92 | 0.0008 | 1.14 |  |
 | guard | Guard | Stock | defense | 0.0052 | 0.70 | 1.16 | 0.0012 | 0.88 |  |
 | slick | Slick | Stock | stamina | 0.0030 | 0.38 | 1.10 | 0.0004 | 0.92 |  |
-| hook | Hook | Stock | utility | 0.0044 | 1.80 | 1.02 | 0.0010 | 0.96 |  |
+| hook | Hook | Stock | utility | 0.0042 | 1.69 | 1.02 | 0.0010 | 0.96 |  |
 | wing | Wing | Stock | balance | 0.0036 | 1.00 | 1.18 | 0.0016 | 1.02 |  |
 | rake | Rake | Stock | attack | 0.0048 | 1.60 | 0.86 | 0.0014 | 1.20 |  |
 | collar | Collar | Stock | defense | 0.0058 | 0.52 | 1.30 | 0.0002 | 0.84 |  |
@@ -94,11 +94,11 @@ higher tier lifts the average of whatever it is bolted to.
 | lacquer | Lacquer | Forged | stamina | 0.0026 | 0.28 | 0.68 | 0.0010 | 0.90 |  |
 | bolster | Bolster | Forged | defense | 0.0056 | 0.66 | 1.42 | 0.0002 | 0.70 |  |
 | gutta | Gutta | Forged | stamina | 0.0034 | 2.35 | 1.42 | 0.0006 | 0.86 |  |
-| barb | Barb | Forged | attack | 0.0056 | 0.34 | 0.74 | 0.0005 | 1.30 |  |
-| eaves | Eaves | Relic | stamina | 0.0041 | 0.72 | 0.62 | 0.0031 | 0.88 | glass |
+| barb | Barb | Forged | attack | 0.0060 | 0.34 | 0.74 | 0.0005 | 1.30 |  |
+| eaves | Eaves | Relic | stamina | 0.0043 | 0.64 | 1.52 | 0.0002 | 0.80 | looselock |
 | nettle | Nettle | Relic | utility | 0.0050 | 3.00 | 0.70 | 0.0008 | 0.92 | hungry |
 | bushing | Bushing | Relic | defense | 0.0058 | 0.58 | 1.70 | 0.0002 | 0.72 | looselock |
-| chert | Chert | Relic | attack | 0.0044 | 0.22 | 0.68 | 0.0004 | 1.38 | oneshot |
+| chert | Chert | Relic | attack | 0.0046 | 0.22 | 0.68 | 0.0004 | 1.38 | oneshot |
 
 ## Ratchets — 20 parts
 
@@ -121,7 +121,7 @@ higher tier lifts the average of whatever it is bolted to.
 | 6-30 | Forged | stamina | 0.0088 | 30 | 1.04 | 0.14 |  |
 | 11-60 | Forged | utility | 0.0051 | 60 | 1.46 | 0.82 |  |
 | 0-60 | Forged | balance | 0.0088 | 60 | 0.30 | 0.86 |  |
-| 14-30 | Relic | defense | 0.0082 | 30 | 1.70 | 0.14 | looselock |
+| 14-30 | Relic | defense | 0.0078 | 30 | 1.70 | 0.14 | looselock |
 | 2-90 | Relic | attack | 0.0060 | 90 | 1.38 | 1.68 | shear |
 | 0-50 | Relic | utility | 0.0096 | 50 | 0.20 | 0.70 | oneshot |
 
@@ -134,25 +134,25 @@ higher tier lifts the average of whatever it is bolted to.
 | needle | Needle | Stock | stamina | 0.0035 | 1.34 | 0.50 | 1.05 | 0.35 | 1.10 |  |
 | ball | Ball | Stock | defense | 0.0040 | 0.96 | 0.78 | 1.05 | 0.55 | 1.18 |  |
 | point | Point | Stock | stamina | 0.0033 | 1.26 | 0.62 | 0.98 | 0.45 | 1.02 |  |
-| gearf | Gear Flat | Stock | attack | 0.0048 | 0.78 | 1.40 | 0.90 | 1.85 | 0.80 |  |
+| gearf | Gear Flat | Stock | attack | 0.0046 | 0.78 | 1.40 | 0.90 | 1.85 | 0.80 |  |
 | taper | Taper | Stock | stamina | 0.0037 | 1.28 | 0.98 | 1.02 | 0.58 | 1.06 |  |
 | dome | Dome | Stock | defense | 0.0046 | 1.02 | 0.90 | 1.24 | 0.62 | 1.14 |  |
 | claw | Claw | Stock | attack | 0.0050 | 0.86 | 1.88 | 0.82 | 1.62 | 0.78 |  |
-| spool | Spool | Stock | balance | 0.0041 | 1.14 | 1.10 | 1.02 | 1.10 | 1.02 |  |
+| spool | Spool | Stock | balance | 0.0041 | 1.22 | 1.06 | 1.08 | 1.02 | 1.06 |  |
 | bradawl | Bradawl | Forged | stamina | 0.0034 | 1.66 | 0.32 | 0.92 | 0.35 | 1.02 |  |
-| stillpin | Still Pin | Forged | stamina | 0.0032 | 1.52 | 0.34 | 0.74 | 0.35 | 0.94 |  |
-| spur | Spur | Forged | attack | 0.0050 | 0.86 | 2.15 | 0.82 | 1.55 | 0.56 |  |
-| rowel | Rowel | Forged | attack | 0.0048 | 0.78 | 1.26 | 0.48 | 2.32 | 0.78 |  |
+| stillpin | Still Pin | Forged | stamina | 0.0030 | 1.56 | 0.40 | 0.92 | 0.35 | 1.06 |  |
+| spur | Spur | Forged | attack | 0.0052 | 0.86 | 2.06 | 0.82 | 1.55 | 0.56 |  |
+| rowel | Rowel | Forged | attack | 0.0046 | 0.83 | 1.35 | 0.48 | 2.32 | 0.78 |  |
 | sabot | Sabot | Forged | defense | 0.0046 | 1.00 | 0.88 | 1.55 | 0.60 | 0.55 |  |
 | ferrule | Ferrule | Forged | balance | 0.0043 | 1.06 | 1.00 | 0.60 | 0.72 | 1.48 |  |
 | cleat | Cleat | Forged | balance | 0.0048 | 1.00 | 1.06 | 1.11 | 2.20 | 0.62 |  |
 | plumb | Plumb | Forged | defense | 0.0064 | 0.54 | 0.77 | 1.04 | 0.35 | 1.06 |  |
 | agate | Agate | Forged | stamina | 0.0034 | 1.62 | 0.58 | 0.78 | 0.35 | 1.04 |  |
-| corundum | Corundum | Relic | stamina | 0.0033 | 1.95 | 0.30 | 0.86 | 0.35 | 0.94 | greedy |
-| caltrop | Caltrop | Relic | attack | 0.0048 | 0.78 | 1.30 | 0.46 | 2.75 | 0.78 | skittish |
+| corundum | Corundum | Relic | stamina | 0.0033 | 1.95 | 0.30 | 0.86 | 0.35 | 0.94 | looselock |
+| caltrop | Caltrop | Relic | attack | 0.0050 | 0.78 | 1.39 | 0.46 | 2.75 | 0.78 | skittish |
 | cobble | Cobble | Relic | defense | 0.0046 | 0.94 | 0.74 | 1.72 | 0.35 | 0.54 | looselock |
-| pintle | Pintle | Relic | defense | 0.0050 | 0.94 | 0.30 | 0.94 | 0.35 | 1.72 | skittish |
-| jasper | Jasper | Relic | stamina | 0.0044 | 1.29 | 0.26 | 1.07 | 0.35 | 0.67 | glass |
+| pintle | Pintle | Relic | defense | 0.0052 | 0.99 | 0.30 | 0.94 | 0.35 | 1.72 | greedy |
+| jasper | Jasper | Relic | stamina | 0.0044 | 1.29 | 0.26 | 1.07 | 0.35 | 0.67 | coldstart |
 
 ## Relic drawbacks
 
@@ -191,7 +191,7 @@ There is no currency in this game and there is never going to be one.
 Programmed BEFORE launch and fired once. The player never touches the screen
 during a round, so the whole tactical decision is which two lines to write.
 
-Abilities, one per core: anchor, backspin, bite, brake, burrow, echo, lash, lunge, overdrive, pitch, rebound, reversal, scatter, shed, stoneskin, surge, tether, windup.
+Abilities, one per core: anchor, backspin, bite, brake, burrow, echo, kindle, lash, lunge, overdrive, pitch, rebound, reversal, scatter, shed, stoneskin, surge, tether, windup.
 
 | trigger | fires when |
 |---|---|

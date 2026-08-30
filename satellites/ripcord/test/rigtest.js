@@ -79,8 +79,8 @@ function runList(cfg, rigIds) {
     me = rigIds === null ? me : RIGS.apply(SIM, me, rigIds, true);
     const foe = SIM.build(Object.assign({}, SIM.ARCHETYPES[g], { dir: d }));
     const r = SIM.resolveMatch(me, foe, { rnd,
-      a: { angle: rnd() * 6.283, power: .96 + rnd() * .08, lean: .03 + rnd() * .04, phase: rnd() * 6.283 },
-      b: { angle: rnd() * 6.283, power: .96 + rnd() * .08, lean: .03 + rnd() * .04, phase: rnd() * 6.283 } });
+      a: { power: .96 + rnd() * .08, lean: .03 + rnd() * .04, phase: rnd() * 6.283 },
+      b: { power: .96 + rnd() * .08, lean: .03 + rnd() * .04, phase: rnd() * 6.283 } });
     out.push({ win: r.winner === 'a', cause: r.cause, dur: r.duration });
   }
   return out;

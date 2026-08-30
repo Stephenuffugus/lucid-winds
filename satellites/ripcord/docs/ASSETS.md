@@ -62,11 +62,11 @@ comfortable on a mid-range phone at 60fps and leaves room for the trail effects.
 | vise | Pincer | bite | left | Ability tell must be legible at 40px while spinning. |
 | kite | Kite | tether | left | Ability tell must be legible at 40px while spinning. |
 | reel | Reel | backspin | left | Ability tell must be legible at 40px while spinning. |
-| tinder | Tinder | surge | right | Ability tell must be legible at 40px while spinning. |
-| wren | Wren | burrow | right | Ability tell must be legible at 40px while spinning. |
-| bell | Bell | rebound | right | Ability tell must be legible at 40px while spinning. |
+| tinder | Tinder | kindle | left | Ability tell must be legible at 40px while spinning. |
+| wren | Wren | burrow | left | Ability tell must be legible at 40px while spinning. |
+| bell | Bell | rebound | left | Ability tell must be legible at 40px while spinning. |
 | magpie | Magpie | echo | left | Ability tell must be legible at 40px while spinning. |
-| flint | Flint | overdrive | left | Ability tell must be legible at 40px while spinning. |
+| flint | Flint | overdrive | right | Ability tell must be legible at 40px while spinning. |
 | millst | Cairn | pitch | right | Ability tell must be legible at 40px while spinning. |
 
 ### Blades — 22
@@ -104,7 +104,7 @@ comfortable on a mid-range phone at 60fps and leaves room for the trail effects.
 | jag | Jag | 1.45 | Toothed, bites — visible knurl. |
 | guard | Guard | 0.70 | Neutral profile. |
 | slick | Slick | 0.38 | Smooth, sheds contact — polished band. |
-| hook | Hook | 1.80 | Toothed, bites — visible knurl. |
+| hook | Hook | 1.69 | Toothed, bites — visible knurl. |
 | wing | Wing | 1.00 | Neutral profile. |
 | rake | Rake | 1.60 | Toothed, bites — visible knurl. |
 | collar | Collar | 0.52 | Smooth, sheds contact — polished band. |
@@ -118,7 +118,7 @@ comfortable on a mid-range phone at 60fps and leaves room for the trail effects.
 | bolster | Bolster | 0.66 | Smooth, sheds contact — polished band. |
 | gutta | Gutta | 2.35 | Toothed, bites — visible knurl. |
 | barb | Barb | 0.34 | Smooth, sheds contact — polished band. |
-| eaves | Eaves | 0.72 | Neutral profile. |
+| eaves | Eaves | 0.64 | Smooth, sheds contact — polished band. |
 | nettle | Nettle | 3.00 | Toothed, bites — visible knurl. |
 | bushing | Bushing | 0.58 | Smooth, sheds contact — polished band. |
 | chert | Chert | 0.22 | Smooth, sheds contact — polished band. |
@@ -161,7 +161,7 @@ comfortable on a mid-range phone at 60fps and leaves room for the trail effects.
 | taper | Taper | 0.58 | Rounded. |
 | dome | Dome | 0.62 | Rounded. |
 | claw | Claw | 1.62 | Geared: visible cogs that catch the rail. |
-| spool | Spool | 1.10 | Rounded. |
+| spool | Spool | 1.02 | Rounded. |
 | bradawl | Bradawl | 0.35 | Sharp or narrow: no rail engagement. |
 | stillpin | Still Pin | 0.35 | Sharp or narrow: no rail engagement. |
 | spur | Spur | 1.55 | Geared: visible cogs that catch the rail. |
@@ -227,7 +227,7 @@ is driven by a live simulation value, never a triggered animation.
 | Scrape dust | tip speed on floor | continuous, not triggered |
 | Ability tell | ability id | 10 distinct, each under 0.4s, never blocks view |
 
-Ability tells needed: surge, anchor, overdrive, rebound, reversal, shed, burrow, lash, lunge, brake, scatter, stoneskin, windup, bite, tether, backspin, surge, burrow, rebound, echo, overdrive, pitch.
+Ability tells needed: surge, anchor, overdrive, rebound, reversal, shed, burrow, lash, lunge, brake, scatter, stoneskin, windup, bite, tether, backspin, kindle, burrow, rebound, echo, overdrive, pitch.
 
 ## 7. Audio
 

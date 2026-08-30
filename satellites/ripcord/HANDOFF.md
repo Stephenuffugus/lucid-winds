@@ -105,7 +105,54 @@ test/playthrough.mjs  drives the real game in a real browser, through every mode
 
 ---
 
-## 4. Things this session got wrong, and what they cost
+## 4. The launch was being measured wrong, and it invalidated everything
+
+This is the biggest thing found in this session and it is worth reading before
+anything else in the file.
+
+Two tops land on a circle of radius `offset`, so they are
+`2 * offset * sin(separation / 2)` apart. Below a certain angular separation they
+spawn INSIDE one another, which is not a launch; it is an impossible state that
+the collision solver then resolves as a violent shove.
+
+**Every measurement tool in this project drew two independent random angles.**
+Seventeen percent of every measured round therefore began with the two tops
+interpenetrating. The balance matrix, the finish mix, the pacing targets, the
+part audit, the ladder curve and every gate that reads them were all verified
+against a launch the game never produces.
+
+The game, meanwhile, spawned exactly opposite, which is a third distribution
+again. Measured honestly, it was **not a balanced game**: four of the sixteen
+matrix cells outside the 30 to 70 band, the round median under the floor, and
+knockouts plus bursts over the cap.
+
+The fix is one rule, `SIM.launchAngles`, called by the game and by every tool, so
+they cannot diverge again. The separation is DERIVED from the actual radii of the
+two tops being launched, because radii run from 0.019 to 0.030 with an assist
+fitted and any fixed number is wrong for most pairs. Verified at zero overlap
+across twenty thousand launches of the widest legal pair.
+
+The spawn offset came down from 0.085 to 0.066 in the same pass. Something had to
+move: with the overlap gone the round median fell to 5.83 against a floor of 6.0.
+The offset is a spawn parameter rather than one of the tuned physics constants,
+so it was the least invasive thing to move, and it fixed the OTHER complaint in
+your section 15 at the same time. **Round p10 was 1.3 seconds and you flagged that
+tail as a problem; it is now 1.67, and the median sits at 6.4.**
+
+Everything downstream was re-measured and re-balanced afterwards. Twenty three
+parts moved. Two consequences worth knowing:
+
+- The imbalance bands flattened. Feral used to outperform balanced 45.8 to 32.9;
+  it is now balanced 36.1, slight 37.0, wobbly 41.4, feral 35.9. Wobble is still
+  a real choice, which is your section 6.2 requirement, but the extreme end is no
+  longer the best band. With the tops no longer starting on top of each other
+  there are fewer instant contacts for the heavy side swing to land in.
+- The weight count curve is now nearly flat, spread 1.1 points across one to
+  four, where it used to be around ten.
+
+---
+
+## 4b. Things this session got wrong, and what they cost
 
 These are here because every one of them looked right at the time.
 
@@ -141,6 +188,22 @@ first frame. The playthrough now installs a throwing getter on purpose.
 **`buildLadder` still read the old single drop shape** after drops became four a
 rung. It threw during boot, which killed the frame loop, and the only symptom was
 a black canvas. No test caught it. A screenshot did.
+
+**A drawback can fight the part carrying it.** Glass doubles recoil below forty
+percent spin, and a stamina part is BUILT to still be turning down there, so it
+spends most of a long round inside the danger band: not a drawback with a
+trigger, a permanent doubling wearing a story. Swapping it out with no other
+change moved that part's ceiling from 43.8 to 67.7. Three more had the same
+shape. There is a gate now.
+
+**A core is its ability, and the tier system does not apply to it.** Sweeping a
+core's mass from 0.0012 to 0.0042 moves its mean UP three points and sweeping its
+charge from 1.50 to 0.88 moves it down two, while the abilities span 33.6 percent
+for reversal to 46.1 for lunge. The slot has no stat budget, so "one stat a
+quarter past the range" is a rule about something it does not have. Every core
+now carries a move no stock core has, which needed a nineteenth ability, and a
+higher tier core is judged against the strongest stock core rather than a median
+of moves.
 
 **One Shot was a buff wearing a drawback's name.** Triple wear on the first
 strike and forty percent after averages 1.27 times normal over three

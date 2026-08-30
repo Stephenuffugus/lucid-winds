@@ -23,7 +23,16 @@ const GATES = [
   { name: 'determinism',   cmd: ['test/determinism.js'], need: 'DETERMINISM OK' },
   { name: 'rigs',          cmd: ['test/rigtest.js', FAST ? '20' : '40'], need: 'RIGTEST OK' },
   { name: 'modes',         cmd: ['test/modetest.js', FAST ? '12' : '30'], need: 'MODETEST OK' },
-  { name: 'parts',         cmd: ['tools/partaudit.js', FAST ? '3' : '8', '2', FAST ? '14' : '40'],
+  /* ⛔ NO SAMPLE SIZE ARGUMENTS. This used to pass 8 for the ceiling sample where
+     the auditor's own default is 12, and a ceiling is a maximum over ten
+     candidates, so a smaller sample biases it UPWARD and reports a wider spread.
+     The runner therefore failed the audit at 32.8 while running the audit by
+     hand passed it at 30.2, on the same unchanged catalogue. That is the third
+     time in this project two tools disagreed because they were measuring at
+     different sample sizes, and it is the last: the gate runs the tool exactly
+     as the tool runs itself. Fast mode saves its time elsewhere. */
+  { name: 'parts',         cmd: FAST ? ['tools/partaudit.js', '6', '1', '16']
+                                     : ['tools/partaudit.js'],
     need: 'PART AUDIT OK' },
   { name: 'ladder',        cmd: ['tools/ladder.js'],   need: 'LADDER OK' },
   { name: 'bosses',        cmd: ['test/bosstest.js', FAST ? '60' : '140'], need: 'BOSSTEST OK' }

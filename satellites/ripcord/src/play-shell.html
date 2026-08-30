@@ -1212,11 +1212,15 @@ function launch(){
   // its own copy of a rule is a renderer that will one day disagree with the
   // test that says the rule is fine.
   foe=SIM.applyBoss(foe,bs);
-  var ang=Math.random()*6.283;
+  // ⛔ The launch rule lives in SIM.launchAngles and nowhere else. This used to
+  // spawn the two tops exactly opposite, which is a different distribution from
+  // the one every balance number was verified against, and measured as an
+  // unbalanced game: four of sixteen matrix cells outside the band.
+  var la=SIM.launchAngles(Math.random,mine,foe);
   var bowlMul=SIM.bossArena(bs).bowlMul;
   roundLimit=bs&&bs.limit?bs.limit:60;
 
-  A=SIM.spawn(mine,{angle:ang,power:L.power,lean:L.lean,phase:L.phase,trigger:trigger,
+  A=SIM.spawn(mine,{angle:la[0],power:L.power,lean:L.lean,phase:L.phase,trigger:trigger,
                     arenaR:arenaR,bowlMul:bowlMul});
   if(mode==='uri'){
     // Endurance, and the tops must never touch. The honest way to express that
@@ -1225,11 +1229,11 @@ function launch(){
     // that lose every striking match are the ones that win here, which is the
     // entire point of keeping the mode.
     A.x=-arenaR*0.42;A.z=0;A.vx=A.vz=0;
-    B=SIM.spawn(foe,{angle:ang,power:fw.power,lean:fw.lean,phase:fw.phase,
+    B=SIM.spawn(foe,{angle:la[1],power:fw.power,lean:fw.lean,phase:fw.phase,
                      trigger:o.build.trigger||'charged',arenaR:arenaR});
     B.x=arenaR*0.42;B.z=0;B.vx=B.vz=0;
   }else{
-    B=SIM.spawn(foe,{angle:ang+Math.PI,power:fw.power,lean:fw.lean,phase:fw.phase,
+    B=SIM.spawn(foe,{angle:la[1],power:fw.power,lean:fw.lean,phase:fw.phase,
                      trigger:o.build.trigger||'charged',arenaR:arenaR,bowlMul:bowlMul});
     // The Pemangkin plants itself and never gets up. Everything the gimmick
     // promises falls straight out of the anchor branch stepTop already has: its
@@ -1250,10 +1254,10 @@ function launchPass(){
   var LA=pending[0].launch, LB=pending[1].launch;
   var mine=WIND.applyWind(SIM,specFor(0),LA);
   var theirs=WIND.applyWind(SIM,specFor(1),LB);
-  var ang=Math.random()*6.283;
-  A=SIM.spawn(mine,{angle:ang,power:LA.power,lean:LA.lean,phase:LA.phase,
+  var la=SIM.launchAngles(Math.random,mine,theirs);
+  A=SIM.spawn(mine,{angle:la[0],power:LA.power,lean:LA.lean,phase:LA.phase,
                     trigger:trigger,arenaR:arenaR});
-  B=SIM.spawn(theirs,{angle:ang+Math.PI,power:LB.power,lean:LB.lean,phase:LB.phase,
+  B=SIM.spawn(theirs,{angle:la[1],power:LB.power,lean:LB.lean,phase:LB.phase,
                       trigger:p2.trigger,arenaR:arenaR});
   AUDIO.startLoops();AUDIO.launch(LA.power);haptic(18);
   phase='play';acc=0;$('card').classList.remove('up');chrome(false);
@@ -1855,10 +1859,11 @@ function demoIdle(){
   var pickA=names[Math.floor(Math.random()*names.length)];
   var pickB=names[Math.floor(Math.random()*names.length)];
   arenaR=SIM.K.arenaR;
-  A=SIM.spawn(SIM.build(Object.assign({},SIM.ARCHETYPES[pickA],{dir:1})),
-              {angle:Math.random()*6.283,power:1,lean:0.05,phase:Math.random()*6.283,arenaR:arenaR});
-  B=SIM.spawn(SIM.build(Object.assign({},SIM.ARCHETYPES[pickB],{dir:Math.random()<0.5?1:-1})),
-              {angle:Math.random()*6.283,power:1,lean:0.05,phase:Math.random()*6.283,arenaR:arenaR});
+  var dA=SIM.build(Object.assign({},SIM.ARCHETYPES[pickA],{dir:1}));
+  var dB=SIM.build(Object.assign({},SIM.ARCHETYPES[pickB],{dir:Math.random()<0.5?1:-1}));
+  var dl=SIM.launchAngles(Math.random,dA,dB);
+  A=SIM.spawn(dA,{angle:dl[0],power:1,lean:0.05,phase:Math.random()*6.283,arenaR:arenaR});
+  B=SIM.spawn(dB,{angle:dl[1],power:1,lean:0.05,phase:Math.random()*6.283,arenaR:arenaR});
   trailA=[];trailB=[];
   demoTimer=0;
   phase='menu';

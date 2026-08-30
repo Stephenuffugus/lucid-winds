@@ -79,7 +79,7 @@
     { id: 'frost',  name: 'Frost',  mass: 0.0026, dir:  1, ability: 'anchor',    charge: 0.85, role: 'defense' },
     { id: 'gale',   name: 'Gale',   mass: 0.0018, dir: -1, ability: 'overdrive', charge: 1.10, role: 'attack' },
     { id: 'iron',   name: 'Iron',   mass: 0.0034, dir:  1, ability: 'rebound',   charge: 0.95, role: 'defense' },
-    { id: 'hollow', name: 'Hollow', mass: 0.0020, dir: -1, ability: 'reversal',  charge: 1.35, role: 'utility' },
+    { id: 'hollow', name: 'Hollow', mass: 0.00200, dir: -1, ability: 'reversal',  charge: 1.35, role: 'utility' },
     { id: 'moth',   name: 'Moth',   mass: 0.0016, dir: -1, ability: 'shed',      charge: 0.75, role: 'utility' },
     { id: 'burr',   name: 'Burr',   mass: 0.0030, dir:  1, ability: 'burrow',    charge: 0.90, role: 'defense' },
     { id: 'lash',   name: 'Lash',   mass: 0.0024, dir: -1, ability: 'lash',      charge: 1.05, role: 'attack' },
@@ -101,20 +101,20 @@
       desc: "A hollowed chip that weighs almost nothing and fills early enough to hold you out on the rail while the bowl tries to pull you home." },
     { id: 'reel', name: 'Reel', mass: 0.00092, dir: -1, ability: 'backspin', charge: 1.53, role: 'utility', tier: 2,
       desc: "A light spooled chip that fills early and flips your rim friction for two and a half seconds without turning your travel around." },
-    { id: 'tinder', name: 'Tinder', mass: 0.00112, dir: 1, ability: 'surge', charge: 1.42, role: 'stamina', tier: 2,
-      desc: "Almost no metal at the centre, so it catches long before a heavier chip would have filled and hands your spin straight back." },
-    { id: 'wren', name: 'Wren', mass: 0.00086, dir: 1, ability: 'burrow', charge: 1.57, role: 'defense', tier: 2,
+    { id: 'tinder', name: 'Tinder', mass: 0.00118, dir: -1, ability: 'kindle', charge: 1.48, role: 'stamina', tier: 2,
+      desc: "Almost no metal at the centre, so it catches long before a heavier chip would have, and then simply refuses to slow down for four seconds." },
+    { id: 'wren', name: 'Wren', mass: 0.00086, dir: -1, ability: 'burrow', charge: 1.57, role: 'defense', tier: 2,
       desc: "The lightest stock chip in the case, quick to fill and quick to dig in, though the whole top rides light and shoves easily." },
 
     // ---- TIER 3, RELIC. One stat at an extreme, plus a named drawback the
     //      simulation actually enforces. Bosses are the only source.
-    { id: 'bell', name: 'Bell', mass: 0.00450, dir: 1, ability: 'rebound', charge: 0.72, role: 'defense', tier: 3, drawback: 'looselock',
+    { id: 'bell', name: 'Bell', mass: 0.00450, dir: -1, ability: 'rebound', charge: 0.72, role: 'defense', tier: 3, drawback: 'looselock',
       desc: "A thick resonant chip that returns the next strike with half again the force, cut onto teeth so shallow that one solid blow can pop the top apart." },
     { id: 'magpie', name: 'Magpie', mass: 0.00085, dir: -1, ability: 'echo', charge: 1.95, role: 'utility', tier: 3, drawback: 'greedy',
       desc: "A hoarding chip that fills faster than anything ever built and throws the last ability used on you straight back, but it will never grind out a win on spin alone." },
-    { id: 'flint', name: 'Flint', mass: 0.00070, dir: -1, ability: 'overdrive', charge: 1.28, role: 'attack', tier: 3, drawback: 'coldstart',
+    { id: 'flint', name: 'Flint', mass: 0.00070, dir: 1, ability: 'overdrive', charge: 1.28, role: 'attack', tier: 3, drawback: 'coldstart',
       desc: "Barely there at the axis and sullen off the launch, it runs hot for the rest of the round and doubles your travel when it fires." },
-    { id: 'millst', name: 'Cairn', mass: 0.00500, dir: 1, ability: 'pitch', charge: 0.70, role: 'attack', tier: 3, drawback: 'hungry',
+    { id: 'millst', name: 'Cairn', mass: 0.00517, dir: 1, ability: 'pitch', charge: 0.70, role: 'attack', tier: 3, drawback: 'hungry',
       desc: "The heaviest chip in the game grinds spin off everything it touches and can spend a quarter of its own to hurl itself outward." }
   ];
 
@@ -138,7 +138,7 @@
     //      more extreme; that is what a tier is in this game.
     { id: 'broadaxe', name: 'Broadaxe', mass: 0.01760, radius: 0.0208, sharp: 1.26, rest: 0.88, gear: 0.92, taken: 1.46, role: 'attack', tier: 2,
       desc: "A single deep edge that cuts further into a rim than any stock blade and hands most of the shock straight back up the shaft." },
-    { id: 'chisel', name: 'Chisel', mass: 0.01460, radius: 0.0188, sharp: 1.30, rest: 0.90, gear: 1.10, taken: 1.24, role: 'attack', tier: 2,
+    { id: 'chisel', name: 'Chisel', mass: 0.01572, radius: 0.0188, sharp: 1.30, rest: 0.90, gear: 1.10, taken: 1.28, role: 'attack', tier: 2,
       desc: "Every gram is gathered into one narrow point, so it cuts deeper than anything in the stock box and has almost no rim left to carry it." },
     { id: 'millstone', name: 'Millstone', mass: 0.02240, radius: 0.0188, sharp: 0.48, rest: 0.30, gear: 0.44, taken: 0.96, role: 'defense', tier: 2,
       desc: "A short heavy stone of a wheel that shoulders other tops aside and gives up its reach to do it." },
@@ -171,7 +171,7 @@
     { id: 'jag',    name: 'Jag',    mass: 0.0040, gearMul: 1.45, absorb: 0.92, radAdd: 0.0008, smash: 1.14, role: 'attack' },
     { id: 'guard',  name: 'Guard',  mass: 0.0052, gearMul: 0.70, absorb: 1.16, radAdd: 0.0012, smash: 0.88, role: 'defense' },
     { id: 'slick',  name: 'Slick',  mass: 0.0030, gearMul: 0.38, absorb: 1.10, radAdd: 0.0004, smash: 0.92, role: 'stamina' },
-    { id: 'hook',   name: 'Hook',   mass: 0.0044, gearMul: 1.80, absorb: 1.02, radAdd: 0.0010, smash: 0.96, role: 'utility' },
+    { id: 'hook',   name: 'Hook',   mass: 0.00418, gearMul: 1.69, absorb: 1.02, radAdd: 0.0010, smash: 0.96, role: 'utility' },
     { id: 'wing',   name: 'Wing',   mass: 0.0036, gearMul: 1.00, absorb: 1.18, radAdd: 0.0016, smash: 1.02, role: 'balance' },
     { id: 'rake',   name: 'Rake',   mass: 0.0048, gearMul: 1.60, absorb: 0.86, radAdd: 0.0014, smash: 1.20, role: 'attack' },
     { id: 'collar', name: 'Collar', mass: 0.0058, gearMul: 0.52, absorb: 1.30, radAdd: 0.0002, smash: 0.84, role: 'defense' },
@@ -214,18 +214,18 @@
       desc: "A thick fibre pad that swallows a blow whole, and swallows yours as well." },
     { id: 'gutta', name: 'Gutta', mass: 0.00340, gearMul: 2.35, absorb: 1.42, radAdd: 0.0006, smash: 0.86, role: 'stamina', tier: 2,
       desc: "A soft damping ring that shrugs off impacts and grips everything it meets, so every touch trades spin." },
-    { id: 'barb', name: 'Barb', mass: 0.00556, gearMul: 0.34, absorb: 0.74, radAdd: 0.0005, smash: 1.30, role: 'attack', tier: 2,
+    { id: 'barb', name: 'Barb', mass: 0.00600, gearMul: 0.34, absorb: 0.74, radAdd: 0.0005, smash: 1.30, role: 'attack', tier: 2,
       desc: "A heavy blunt wedge that hits like a hammer and drags the heavy side of the top flat." },
 
     // ---- TIER 3, RELIC. One stat at an extreme, plus a named drawback the
     //      simulation actually enforces. Bosses are the only source.
-    { id: 'eaves', name: 'Eaves', mass: 0.00411, gearMul: 0.72, absorb: 0.62, radAdd: 0.0031, smash: 0.88, role: 'stamina', tier: 3, drawback: 'glass',
-      desc: "The widest rim in the game, cut from sheet so thin that it folds once the spin is gone." },
+    { id: 'eaves', name: 'Eaves', mass: 0.00430, gearMul: 0.64, absorb: 1.52, radAdd: 0.0002, smash: 0.80, role: 'stamina', tier: 3, drawback: 'looselock',
+      desc: "A deep skirt that swallows almost everything thrown at it, bolted on so loosely that one clean blow opens the whole top." },
     { id: 'nettle', name: 'Nettle', mass: 0.00500, gearMul: 3.00, absorb: 0.70, radAdd: 0.0008, smash: 0.92, role: 'utility', tier: 3, drawback: 'hungry',
       desc: "Teeth like a coarse file that tear spin off anything they touch and burn through your own." },
     { id: 'bushing', name: 'Bushing', mass: 0.00580, gearMul: 0.58, absorb: 1.70, radAdd: 0.0002, smash: 0.72, role: 'defense', tier: 3, drawback: 'looselock',
       desc: "A soft sleeve that damps every blow and never lets the threads seat tight." },
-    { id: 'chert', name: 'Chert', mass: 0.00440, gearMul: 0.22, absorb: 0.68, radAdd: 0.0004, smash: 1.38, role: 'attack', tier: 3, drawback: 'oneshot',
+    { id: 'chert', name: 'Chert', mass: 0.00462, gearMul: 0.22, absorb: 0.68, radAdd: 0.0004, smash: 1.38, role: 'attack', tier: 3, drawback: 'oneshot',
       desc: "A knapped stone edge that lands one devastating blow and is blunt for the rest of the round." }
   ];
 
@@ -267,7 +267,7 @@
 
     // ---- TIER 3, RELIC. One stat at an extreme, plus a named drawback the
     //      simulation actually enforces. Bosses are the only source.
-    { id: '14-30', name: '14-30', mass: 0.00820, height: 30, lock: 1.70, strikeHigh: 0.14, role: 'defense', tier: 3, drawback: 'looselock',
+    { id: '14-30', name: '14-30', mass: 0.00778, height: 30, lock: 1.70, strikeHigh: 0.14, role: 'defense', tier: 3, drawback: 'looselock',
       desc: "Fourteen coarse teeth in a collar that never seats fully, so it rides very low and very steady while the play in the thread lets it pop." },
     { id: '2-90', name: '2-90', mass: 0.00602, height: 90, lock: 1.38, strikeHigh: 1.68, role: 'attack', tier: 3, drawback: 'shear',
       desc: "A flared crown that strikes above its own height and rings every one of those blows straight back through its own teeth." },
@@ -282,25 +282,25 @@
     { id: 'needle', name: 'Needle', mass: 0.0035, stamina: 1.34, drive: 0.50, stable: 1.05, dash: 0.35, shaft: 1.10, role: 'stamina' },
     { id: 'ball',   name: 'Ball',   mass: 0.0040, stamina: 0.96, drive: 0.78, stable: 1.05, dash: 0.55, shaft: 1.18, role: 'defense' },
     { id: 'point',  name: 'Point',  mass: 0.0033, stamina: 1.26, drive: 0.62, stable: 0.98, dash: 0.45, shaft: 1.02, role: 'stamina' },
-    { id: 'gearf',  name: 'Gear Flat', mass: 0.0048, stamina: 0.78, drive: 1.40, stable: 0.90, dash: 1.85, shaft: 0.80, role: 'attack' },
+    { id: 'gearf',  name: 'Gear Flat', mass: 0.00464, stamina: 0.78, drive: 1.40, stable: 0.90, dash: 1.85, shaft: 0.80, role: 'attack' },
     { id: 'taper',  name: 'Taper',  mass: 0.0037, stamina: 1.28, drive: 0.98, stable: 1.02, dash: 0.58, shaft: 1.06, role: 'stamina' },
     { id: 'dome',   name: 'Dome',   mass: 0.0046, stamina: 1.02, drive: 0.90, stable: 1.24, dash: 0.62, shaft: 1.14, role: 'defense' },
     { id: 'claw',   name: 'Claw',   mass: 0.0050, stamina: 0.86, drive: 1.88, stable: 0.82, dash: 1.62, shaft: 0.78, role: 'attack' },
     // Spool is the tip that can do a bit of everything INCLUDING the rail; its
     // dash clears the engage threshold of 0.5 and stops short of Rail Lock's 1.2,
     // so it is the middle profile a mixed build reaches for.
-    { id: 'spool',  name: 'Spool',  mass: 0.0041, stamina: 1.14, drive: 1.10, stable: 1.02, dash: 1.10, shaft: 1.02, role: 'balance' },
+    { id: 'spool',  name: 'Spool',  mass: 0.00410, stamina: 1.22, drive: 1.06, stable: 1.08, dash: 1.02, shaft: 1.06, role: 'balance' },
 
     // ---- TIER 2, FORGED. One stat pushed about a quarter past the Tier 1
     //      range, and another pulled back further to pay for it. Not stronger,
     //      more extreme; that is what a tier is in this game.
     { id: 'bradawl', name: 'Bradawl', mass: 0.00340, stamina: 1.66, drive: 0.32, stable: 0.92, dash: 0.35, shaft: 1.02, role: 'stamina', tier: 2,
       desc: "A hardened point no wider than a pin, ground for the longest spin in the game and almost no travel at all." },
-    { id: 'stillpin', name: 'Still Pin', mass: 0.00320, stamina: 1.52, drive: 0.34, stable: 0.74, dash: 0.35, shaft: 0.94, role: 'stamina', tier: 2,
-      desc: "It parks where you launch it and stays there; the smallest solid hit puts it on its side." },
-    { id: 'spur', name: 'Spur', mass: 0.00500, stamina: 0.86, drive: 2.15, stable: 0.82, dash: 1.55, shaft: 0.56, role: 'attack', tier: 2,
+    { id: 'stillpin', name: 'Still Pin', mass: 0.00300, stamina: 1.56, drive: 0.40, stable: 0.92, dash: 0.35, shaft: 1.06, role: 'stamina', tier: 2,
+      desc: "It parks where you launch it and turns for a very long time; it will not chase anybody and it cannot reach the rail." },
+    { id: 'spur', name: 'Spur', mass: 0.00516, stamina: 0.86, drive: 2.06, stable: 0.82, dash: 1.55, shaft: 0.56, role: 'attack', tier: 2,
       desc: "The foot is ground on a slant so friction turns into travel, and every jolt it earns goes straight up the thin shank into the teeth." },
-    { id: 'rowel', name: 'Rowel', mass: 0.00480, stamina: 0.78, drive: 1.26, stable: 0.48, dash: 2.32, shaft: 0.78, role: 'attack', tier: 2,
+    { id: 'rowel', name: 'Rowel', mass: 0.00464, stamina: 0.83, drive: 1.35, stable: 0.48, dash: 2.32, shaft: 0.78, role: 'attack', tier: 2,
       desc: "A toothed wheel of a tip that hooks the rail harder than anything stock, on a contact ring too small to right itself." },
     { id: 'sabot', name: 'Sabot', mass: 0.00460, stamina: 1.00, drive: 0.88, stable: 1.55, dash: 0.60, shaft: 0.55, role: 'defense', tier: 2,
       desc: "A broad wooden shoe of a foot that nothing tips over, seated in a soft collar that hands every shock to the lock teeth." },
@@ -315,16 +315,16 @@
 
     // ---- TIER 3, RELIC. One stat at an extreme, plus a named drawback the
     //      simulation actually enforces. Bosses are the only source.
-    { id: 'corundum', name: 'Corundum', mass: 0.00330, stamina: 1.95, drive: 0.30, stable: 0.86, dash: 0.35, shaft: 0.94, role: 'stamina', tier: 3, drawback: 'greedy',
-      desc: "A jewelled pivot that runs longer than anything else and charges in a hurry, and it will never coast to a win." },
-    { id: 'caltrop', name: 'Caltrop', mass: 0.00480, stamina: 0.78, drive: 1.30, stable: 0.46, dash: 2.75, shaft: 0.78, role: 'attack', tier: 3, drawback: 'skittish',
+    { id: 'corundum', name: 'Corundum', mass: 0.00330, stamina: 1.95, drive: 0.30, stable: 0.86, dash: 0.35, shaft: 0.94, role: 'stamina', tier: 3, drawback: 'looselock',
+      desc: "A jewelled pivot that runs longer than anything else, seated so loosely that one clean blow takes the whole top apart." },
+    { id: 'caltrop', name: 'Caltrop', mass: 0.00496, stamina: 0.78, drive: 1.39, stable: 0.46, dash: 2.75, shaft: 0.78, role: 'attack', tier: 3, drawback: 'skittish',
       desc: "Coarse cut teeth that bite the rail like nothing in the catalogue, on a top that slides out of the dish at speeds anything else survives." },
     { id: 'cobble', name: 'Cobble', mass: 0.00460, stamina: 0.94, drive: 0.74, stable: 1.72, dash: 0.35, shaft: 0.54, role: 'defense', tier: 3, drawback: 'looselock',
       desc: "A wide flat stone of a foot that will not be tipped over, sitting so loose in the seat that one connected blow pops it apart." },
-    { id: 'pintle', name: 'Pintle', mass: 0.00500, stamina: 0.94, drive: 0.30, stable: 0.94, dash: 0.35, shaft: 1.72, role: 'defense', tier: 3, drawback: 'skittish',
-      desc: "The shank goes the full depth of the shaft so nothing bursts it, ending in a polished dome with nothing to keep it inside the lip." },
-    { id: 'jasper', name: 'Jasper', mass: 0.00439, stamina: 1.29, drive: 0.26, stable: 1.07, dash: 0.35, shaft: 0.67, role: 'stamina', tier: 3, drawback: 'glass',
-      desc: "So slick it barely travels at all, and brittle enough that once it is tired every hit lands twice as hard." }
+    { id: 'pintle', name: 'Pintle', mass: 0.00516, stamina: 0.99, drive: 0.30, stable: 0.94, dash: 0.35, shaft: 1.72, role: 'defense', tier: 3, drawback: 'greedy',
+      desc: "The shank goes the full depth of the shaft so nothing bursts it, and it fills so fast that it will fall over rather than outlast you." },
+    { id: 'jasper', name: 'Jasper', mass: 0.00439, stamina: 1.29, drive: 0.26, stable: 1.07, dash: 0.35, shaft: 0.67, role: 'stamina', tier: 3, drawback: 'coldstart',
+      desc: "So slick it barely travels at all, and cold enough off the launcher that the first two seconds are wasted." }
   ];
 
   // 6. WEIGHTS — up to four, each dropped into a hole on one of two rings.
@@ -413,6 +413,12 @@
    * thing that happens in a round, not a number pretending to be a cost; a
    * drawback that never fires is power creep in a costume. */
   const DRAWBACKS = [
+    // ⛔ GLASS DOES NOT BELONG ON A STAMINA PART, and it took a part that could
+    // not be balanced to notice. It doubles recoil below forty percent spin, and
+    // a stamina part is BUILT to still be turning down there, so it spends most
+    // of a long round inside the danger band. That is not a drawback with a
+    // trigger, it is a permanent doubling with a story attached. It belongs on
+    // something that means to finish the round early.
     { id: 'glass',     name: 'Glass',
       desc: 'Below a third of its spin the metal gives; it takes double recoil once it is tired.' },
     { id: 'greedy',    name: 'Greedy',
@@ -655,11 +661,13 @@
       case 'rebound':                                 // next hit is returned
         a.rebound = a.t + 3.0; break;
       case 'reversal':                                // flip spin direction
-        // ⛔ 0.72 was too expensive to ever be worth firing. Hollow, the core
-        // that carries this, measured a 42 percent ceiling against 73 for the
-        // best core in the slot: there was no build where reversing was right.
-        // At 0.86 the flip from meshing to scrubbing is worth the spin it costs.
-        a.w = -a.w * 0.86; a.spec = Object.assign({}, a.spec, { dir: -a.spec.dir }); break;
+        // ⛔ 0.72 was too expensive to ever be worth firing, and 0.86 still was.
+        // Hollow, the stock core that carries this, is the ONLY Tier 1 part in
+        // the game with no build where it is competitive, and the cause is not
+        // the chip, it is the move: reversal measures 33.6 percent against 46.1
+        // for lunge, the weakest of all eighteen. At 0.93 the flip from meshing
+        // to scrubbing finally costs less than it buys.
+        a.w = -a.w * 0.93; a.spec = Object.assign({}, a.spec, { dir: -a.spec.dir }); break;
       case 'burrow':                                  // dig in and stop moving
         a.burrow = a.t + 2.8; break;
       case 'lash':                                    // next three hits bite
@@ -725,7 +733,67 @@
         break;
       case 'windup':                                  // wind up, then let go
         a.windUp = a.t + 1.5; break;
+      case 'kindle':                                  // stop slowing down
+        // ⛔ A NINETEENTH ABILITY, and it exists because of a measurement rather
+        // than a wish. A core reaches the simulation through exactly three
+        // things: mass, charge and its move. Sweeping mass from 0.0012 to 0.0042
+        // moves a core's mean UP three points and sweeping charge from 1.50 to
+        // 0.88 moves it down two, while the abilities themselves span 33.6
+        // percent for reversal to 46.1 for lunge. The numbers are inert; the move
+        // is the whole part. So two cores carrying the same move are the same
+        // core, and Tinder was Ember with a spare tenth of a gram.
+        a.kindle = a.t + 4.0; break;
     }
+  }
+
+  // ======================================================================
+  // THE LAUNCH
+  //
+  // ⛔⛔ THIS IS THE MOST IMPORTANT COMMENT IN THE FILE, because getting it wrong
+  // invalidated every number in the project once already.
+  //
+  // Two tops land on a circle of radius `offset`, so they are
+  // 2 * offset * sin(separation / 2) apart, and they clear each other only when
+  // that exceeds the sum of their radii. Below that they spawn INSIDE one
+  // another, which is not a launch, it is an impossible state that the collision
+  // solver then resolves as a violent shove.
+  //
+  // Every measurement tool in this project used to draw two INDEPENDENT random
+  // angles. Seventeen percent of every measured round therefore began with the
+  // two tops interpenetrating. The balance matrix, the finish mix, the pacing
+  // targets, the part audit, the ladder curve and every gate that reads them
+  // were all verified against a launch the game never produces. The game itself
+  // spawned exactly opposite, which is a different distribution again, and
+  // measured as genuinely unbalanced: four of the sixteen matrix cells outside
+  // the 30 to 70 band once anybody looked.
+  //
+  // So the rule lives HERE, once, and the game and the tools both call it. The
+  // separation is DERIVED from the actual radii of the two tops being launched,
+  // because radii run from 0.019 to 0.030 with an assist fitted and any fixed
+  // number is wrong for most pairs.
+  //
+  // The offset came down from 0.085 to 0.066 in the same pass. Something had to
+  // move: with the overlap removed the round median fell to 5.83 against an
+  // acceptance floor of 6.0. The offset is a spawn parameter rather than one of
+  // the tuned physics constants, so it is the least invasive thing to move, and
+  // it happens to fix the OTHER complaint in the brief at the same time. Round
+  // p10 was 1.3 seconds and section 15 flagged that tail as a problem; it is now
+  // 1.67, and the median sits at 6.58, comfortably inside the band.
+  // ======================================================================
+  const LAUNCH = {
+    offset: 0.066,   // how far from the centre a top lands, in metres
+    margin: 0.08     // clearance beyond just touching, as a fraction of the radii
+  };
+
+  function launchAngles(rnd, specA, specB, offset) {
+    const off = offset || LAUNCH.offset;
+    const need = (specA.R + specB.R) * (1 + LAUNCH.margin);
+    const ratio = need / (2 * off);
+    const minSep = ratio >= 1 ? Math.PI : 2 * Math.asin(ratio);
+    const a = rnd() * Math.PI * 2;
+    // uniform over the whole circle MINUS the forbidden window either side of a
+    const b = a + minSep + rnd() * (Math.PI * 2 - 2 * minSep);
+    return [a, b];
   }
 
   // ======================================================================
@@ -734,7 +802,7 @@
   function spawn(spec, opts) {
     const o = opts || {};
     const ang = o.angle !== undefined ? o.angle : 0;
-    const off = o.offset !== undefined ? o.offset : 0.085;
+    const off = o.offset !== undefined ? o.offset : LAUNCH.offset;
     const power = o.power !== undefined ? o.power : 1.0;
     const lean = o.lean !== undefined ? o.lean : K.theta0;
     return {
@@ -766,6 +834,7 @@
       stone: 0,         // Stoneskin: recoil taken cut, travel gone
       backspin: 0,      // Backspin: rim friction sign flipped, travel unchanged
       windUp: 0,        // Wind Up: charge until this time, then release
+      kindle: 0,        // Kindle: spin decay halved until this time
       lastHitBy: null,  // Echo: which ability last landed on you
       ridgeT: 0,        // how long you have been outside the ridge, for cornered
       landed: 0,        // strikes you have landed, for One Shot and firstBlood
@@ -908,7 +977,9 @@
     const load = Math.pow(s.m / 0.035, K.massCost * g.massCost) *
                  Math.pow(K.iRef / s.I, K.inertiaPow * g.inertia);
     // Hungry: it tears spin off whatever it touches and burns through its own.
-    const greed = (s.dw && s.dw.hungry ? 1.25 : 1) * g.decay;
+    // Kindle: for four seconds it simply stops slowing down, which is visible
+    // because its blur holds while the other top's keeps fading.
+    const greed = (s.dw && s.dw.hungry ? 1.25 : 1) * g.decay * (a.t < a.kindle ? 0.50 : 1);
     const decay = load * greed * (K.spinBase + K.spinLean * th * 40 + K.spinSlip * drive * 60 +
                           K.imbDrain * g.imbDrain * s.imb * 40) / stam;
     a.w -= dsign * decay * dt;
@@ -1110,8 +1181,12 @@
   function resolveMatch(specA, specB, opts) {
     const o = opts || {};
     const rnd = o.rnd || Math.random;
-    const a = spawn(specA, Object.assign({ angle: 0 }, o.a));
-    const b = spawn(specB, Object.assign({ angle: Math.PI }, o.b));
+    // The launch rule is applied HERE so a caller cannot get it wrong by
+    // forgetting to. A caller may still override an angle explicitly, which the
+    // Taya ceremony and the target range both do on purpose.
+    const [angA, angB] = launchAngles(rnd, specA, specB, (o.a && o.a.offset) || undefined);
+    const a = spawn(specA, Object.assign({ angle: angA }, o.a));
+    const b = spawn(specB, Object.assign({ angle: angB }, o.b));
     const limit = o.limit || 60;
     let t = 0;
     while (t < limit && a.alive && b.alive) {
@@ -1314,8 +1389,10 @@
     const o = opts || {};
     const rnd = o.rnd || Math.random;
     const arena = bossArena(boss);
-    const a = spawn(playerSpec, Object.assign({ angle: 0 }, arena, o.a));
-    const b = spawn(applyBoss(bossSpec, boss), Object.assign({ angle: Math.PI }, arena, o.b));
+    const bs = applyBoss(bossSpec, boss);
+    const [angA, angB] = launchAngles(rnd, playerSpec, bs, (o.a && o.a.offset) || undefined);
+    const a = spawn(playerSpec, Object.assign({ angle: angA }, arena, o.a));
+    const b = spawn(bs, Object.assign({ angle: angB }, arena, o.b));
     if (boss && boss.anchor) b.anchor = Infinity;
     const every = boss && boss.abilityEvery ? boss.abilityEvery : 0;
     let fired = 0;
@@ -1383,7 +1460,7 @@
            FINISHES, DECALS, TRAILS, LAUNCHERS, COSMETIC_SLOTS, ROLES,
            ARCHETYPES, TRIGGERS, TRIGGER_LABEL, TUNING, MODS_PER_PART,
            MODES, rangeTargets, resolveUri, resolveTaya, resolveRangeShot,
-           applyBoss, bossArena, resolveBossMatch,
+           applyBoss, bossArena, resolveBossMatch, LAUNCH, launchAngles,
            DRAWBACKS, drawbackOf, RIG_NEUTRAL,
            build, spawn, stepTop, collide, resolveMatch, mulberry, fire, triggerReady,
            applyMods, tuningOptions, tuningOp };

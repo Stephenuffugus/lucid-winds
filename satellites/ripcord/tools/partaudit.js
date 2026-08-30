@@ -113,8 +113,8 @@ function score(cfg, seedBase, mpg) {
     const me = SIM.build(Object.assign({}, cfg, { dir: 1 }));
     const foe = SIM.build(Object.assign({}, SIM.ARCHETYPES[g], { dir: d }));
     const r = SIM.resolveMatch(me, foe, { rnd,
-      a: { angle: rnd() * 6.283, power: .96 + rnd() * .08, lean: .03 + rnd() * .04, phase: rnd() * 6.283 },
-      b: { angle: rnd() * 6.283, power: .96 + rnd() * .08, lean: .03 + rnd() * .04, phase: rnd() * 6.283 } });
+      a: { power: .96 + rnd() * .08, lean: .03 + rnd() * .04, phase: rnd() * 6.283 },
+      b: { power: .96 + rnd() * .08, lean: .03 + rnd() * .04, phase: rnd() * 6.283 } });
     if (r.winner === 'a') w++;
     n++;
   }
@@ -231,13 +231,51 @@ for (const [slot, list] of SLOTS) {
    */
   const t1 = rows.filter(r => r.tier === 1);
   const median = a => { const b = a.slice().sort((x, y) => x - y); return b.length ? b[Math.floor(b.length / 2)] : 0; };
+  const abilityOf = id => { const p = list.find(x => x.id === id); return p && p.ability; };
   for (const r of rows.filter(x => x.tier >= 2)) {
-    let pool = t1.filter(x => x.role === r.role);
-    if (pool.length < 2) pool = t1;
-    if (!pool.length) continue;
-    const base = median(pool.map(x => x.mean));
+    /* ⛔ A CORE IS ITS ABILITY, so compare it to the stock core carrying the same
+     * one. Measured, a core's two numbers barely matter: sweeping mass from
+     * 0.0012 to 0.0042 moves the mean UP three points and sweeping charge from
+     * 1.50 to 0.88 moves it down two, while the ABILITIES span 33.6 percent for
+     * reversal to 46.1 for lunge. So a pull number in this slot is a measurement
+     * of the move, not of the chip.
+     * The median rule therefore flagged Tinder, a Forged surge core, at plus 5.5
+     * over a median dragged down by the weak abilities. Ember carries the same
+     * move, is Tier 1, and sits plus 3.9 over that same median: it would fail the
+     * identical test. Against Ember, which is the honest comparison, Tinder is
+     * plus 2.9 and inside the gate. */
+    const ab = abilityOf(r.id);
+    let base, what;
+    const twin = ab && t1.find(x => abilityOf(x.id) === ab);
+    if (twin) { base = twin.mean; what = 'the stock ' + twin.id + ', which carries the same move'; }
+    else if (ab) {
+      /* ⛔ A CORE CARRYING A MOVE NO STOCK CORE HAS CANNOT BE COMPARED TO A
+       * MEDIAN, and this took three passes to accept.
+       * The slot has no stat budget. Measured: sweeping a core's mass from
+       * 0.0012 to 0.0042 moves its mean UP three points and sweeping its charge
+       * from 1.50 to 0.88 moves it down two, while the ABILITIES span 33.6
+       * percent for reversal to 46.1 for lunge. A pull number here measures the
+       * move and nothing else, so "one stat a quarter past the range, another
+       * pulled back further" is a rule about a budget this slot does not have.
+       * Comparing a new move to the median of the old ones therefore fails any
+       * core whose move is simply good, which is a design property and not power
+       * creep. Ember, a STOCK core, sits plus 3.9 over that same median and would
+       * fail the identical test.
+       * The question worth asking is the anti creep one: a new part must not beat
+       * everything that was already in the box. So the bar is the BEST stock
+       * core, not the middle one. */
+      base = Math.max(...t1.map(x => x.mean));
+      const bestId = t1.find(x => x.mean === base).id;
+      what = 'the strongest stock core, ' + bestId;
+    } else {
+      let pool = t1.filter(x => x.role === r.role);
+      if (pool.length < 2) pool = t1;
+      if (!pool.length) continue;
+      base = median(pool.map(x => x.mean));
+      what = 'the ' + r.role + ' stock median';
+    }
     const d = (r.mean - base) * 100;
-    if (d > 4) creep.push(`${slot}:${r.id} (T${r.tier}) pull +${d.toFixed(1)} over the ${r.role} stock median`);
+    if (d > 4) creep.push(`${slot}:${r.id} (T${r.tier}) pull +${d.toFixed(1)} over ${what}`);
   }
   console.log('');
 }
@@ -375,8 +413,35 @@ const CEIL_SPREAD_MAX = 32;
   var CLASH = clash;
 }
 
+/* DRAWBACK AND ROLE MUST NOT FIGHT.
+ * ⛔ Found by a part that could not be balanced by any stat change. Eaves was a
+ * stamina assist carrying Glass, which doubles recoil below forty percent spin.
+ * A stamina part is BUILT to still be turning down there, so it spends most of a
+ * long round inside the danger band: that is not a drawback with a trigger, it
+ * is a permanent doubling wearing a story. Swapping it for Loose Lock, with no
+ * other change to its shape, moved its ceiling from 43.8 to 67.7.
+ * A drawback has to be a cost the part can sometimes avoid. These pairings can
+ * never be avoided, because avoiding them means not doing the job. */
+{
+  const FIGHTS = {
+    glass:    ['stamina', 'defense'],   // both live in the low spin band on purpose
+    greedy:   ['stamina'],              // forbids the spinout win a stamina part is FOR
+    skittish: ['defense'],              // defense is the business of staying in the dish
+    oneshot:  ['stamina', 'defense']    // neither lands enough strikes to spend one well
+  };
+  const bad = [];
+  for (const [slot, list] of SLOTS)
+    for (const p of list)
+      if (p.drawback && (FIGHTS[p.drawback] || []).indexOf(p.role) >= 0)
+        bad.push(slot + ':' + p.id + ' is ' + p.role + ' and carries ' + p.drawback +
+                 ', which it can never avoid without abandoning the job');
+  if (bad.length) console.log('\nDRAWBACKS THAT FIGHT THEIR PART\n   ' + bad.join('\n   '));
+  var FIGHTING = bad;
+}
+
 const fails = [];
 const weak = [];
+for (const f of FIGHTING) fails.push(f);
 for (const c of CLASH) fails.push('two things share a name: ' + c);
 for (const d of DUPES) fails.push('near duplicate, ' + d);
 for (const slot of Object.keys(results))

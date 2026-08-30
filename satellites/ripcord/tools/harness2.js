@@ -8,13 +8,13 @@ function run(){
  for(const A of NAMES){mat[A]={};for(const B of NAMES){let w=0;
   for(let i=0;i<N;i++){const rnd=SIM.mulberry(i*7919+A.length*31+B.length*17);
    const r=SIM.resolveMatch(spec(A,1),spec(B,(i%2?-1:1)),{rnd,
-    a:{angle:rnd()*6.283,power:.94+rnd()*.12,lean:.03+rnd()*.05,phase:rnd()*6.283},
-    b:{angle:rnd()*6.283,power:.94+rnd()*.12,lean:.03+rnd()*.05,phase:rnd()*6.283}});
+    a:{power:.94+rnd()*.12,lean:.03+rnd()*.05,phase:rnd()*6.283},
+    b:{power:.94+rnd()*.12,lean:.03+rnd()*.05,phase:rnd()*6.283}});
    if(r.winner==='a')w++;durs.push(r.duration);c[r.cause]=(c[r.cause]||0)+1;
    // run the same pairing with the roles swapped so seat order cannot bias
    const r2=SIM.resolveMatch(spec(B,(i%2?-1:1)),spec(A,1),{rnd:SIM.mulberry(i*104729+A.length*7+B.length*3),
-    a:{angle:rnd()*6.283,power:.94+rnd()*.12,lean:.03+rnd()*.05,phase:rnd()*6.283},
-    b:{angle:rnd()*6.283,power:.94+rnd()*.12,lean:.03+rnd()*.05,phase:rnd()*6.283}});
+    a:{power:.94+rnd()*.12,lean:.03+rnd()*.05,phase:rnd()*6.283},
+    b:{power:.94+rnd()*.12,lean:.03+rnd()*.05,phase:rnd()*6.283}});
    if(r2.winner==='b')w++;durs.push(r2.duration);c[r2.cause]=(c[r2.cause]||0)+1;}
   mat[A][B]=w/(N*2);}}
  durs.sort((x,y)=>x-y);const q=f=>durs[Math.floor(f*(durs.length-1))];
@@ -44,8 +44,8 @@ const res=run();
  for(let i=0;i<600;i++){const rnd=SIM.mulberry(i*31337);
   const A=names[i%4],B=names[(i*3+1)%4];let pa=0,pb=0,t=0,rc=0;
   while(pa<4&&pb<4&&rc<12){const r=SIM.resolveMatch(spec(A,1),spec(B,(rc%2?-1:1)),{rnd,
-   a:{angle:rnd()*6.283,power:.94+rnd()*.12,lean:.03+rnd()*.05,phase:rnd()*6.283},
-   b:{angle:rnd()*6.283,power:.94+rnd()*.12,lean:.03+rnd()*.05,phase:rnd()*6.283}});
+   a:{power:.94+rnd()*.12,lean:.03+rnd()*.05,phase:rnd()*6.283},
+   b:{power:.94+rnd()*.12,lean:.03+rnd()*.05,phase:rnd()*6.283}});
    if(r.winner==='a')pa+=r.points;else if(r.winner==='b')pb+=r.points;
    t+=r.duration+4.5;rc++;}
   lens.push(t);rounds.push(rc);}
