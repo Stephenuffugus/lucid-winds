@@ -45,13 +45,23 @@ This session ported it into the fleet and built the rest of the work plan.
 | G | Uri, Taya and the target range | `test/modetest.js` |
 | H | Eighteen abilities, nine triggers | covered by the harness |
 | I | Pass the phone, two players on one device | `test/playthrough.mjs` |
+| — | The Field, endless opponents at your measured strength | `test/modetest.js` |
+| — | Every part described, cosmetics that actually render | `tools/partaudit.js` |
 | — | The whole game shell, menu to battle | `tools/shots.mjs` |
 | — | Sky Wolf embed protocol, manifest, offline worker, icons | — |
 
-**Not built:** Phase J, the 3D viewer. The brief puts it last on purpose and
-gates it on the workshop already being fun. Field mode, the endless generator
-from brief section 9.5, is also not built; the ladder now covers every part
-without it, so it is content rather than plumbing.
+**Not built:** Phase J, the 3D viewer, and only that. The brief puts it last on
+purpose and gates it on the workshop already being fun.
+
+**Cosmetics are real now.** Eight finishes, twelve decals, seven trails and six
+launcher skins, which is 4,032 looks. Finishes derive from their two material
+sliders rather than a lookup, decals are drawn in the top's own rotating frame so
+the paint turns with the top, and the launcher dresses the winding screen, which
+your brief names as the single most requested missing feature in the category.
+The Looks panel draws your actual top, turning, because picking a decal off a
+list of twelve words is picking blind. `tools/cosmetics.mjs` renders a contact
+sheet of all of them from the real game; a decal either reads at twenty five
+pixels across or it does not, and only a picture says which.
 
 ---
 
@@ -308,9 +318,6 @@ therefore measures counts one to four, where the spread is about nine points wit
 no monotone winner. The reasoning is written at the check in `partaudit.js` so it
 can be disagreed with.
 
-**Round p10 is still 1.3 seconds.** Your brief flagged it and it is unchanged. A
-small tail of rounds ends almost instantly, probably spawn overlap.
-
 **Two things a player can see must not share a word.** The catalogue shipped
 with three things called Ballast (a core, a ratchet and a rig), three called
 Millstone, two called Ingot, and an assist and a tuning operation both called
@@ -390,10 +397,6 @@ evidence.
 1. **Play it on a phone.** Nothing else on this list matters as much. The portal
    card stays `beta` until you have.
 2. **Decide the `radAdd` question** in section 5.
-3. **Field mode**, brief section 9.5: generate opponents on demand at the
-   player's measured strength using the `ladder.js` sampler. Infinite content,
-   zero authoring.
-4. **Look at the p10 round tail**, brief section 15.
-5. **Phase J, the 3D viewer.** `docs/ASSETS.md` is generated from the live
+3. **Phase J, the 3D viewer.** `docs/ASSETS.md` is generated from the live
    catalogue and carries the common mount spec. Do not model anything until the
    mount is fixed.

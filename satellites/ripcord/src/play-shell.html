@@ -115,6 +115,8 @@ button{font:inherit;color:inherit}
 /* ---------- workshop innards ---------- */
 #tune{display:flex;gap:14px;align-items:flex-start;margin-bottom:8px;flex-wrap:wrap}
 #dial{width:min(158px,42vw);height:min(158px,42vw);flex:0 0 auto;touch-action:manipulation}
+#lookPrev{width:100%;max-width:320px;height:auto;display:block;margin:0 auto 12px;
+  border:1px solid var(--line);border-radius:12px;background:#1B1411}
 #stats{flex:1;min-width:150px}
 .stat{display:grid;grid-template-columns:56px 1fr 34px;gap:4px 9px;align-items:center;
   font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--dim);margin-bottom:6px}
@@ -400,7 +402,10 @@ button{font:inherit;color:inherit}
     </details>
     <details class="acc" id="accLooks">
       <summary>Looks <span id="lookSum">&nbsp;</span></summary>
-      <div class="accBody"><div id="looks"></div></div>
+      <div class="accBody">
+        <canvas id="lookPrev" width="320" height="200" aria-label="Your top, as it will look"></canvas>
+        <div id="looks"></div>
+      </div>
     </details>
   </div>
   <div class="sheetFoot">
@@ -507,6 +512,102 @@ var TRAIL_HEX={none:'#C9A227',ember:'#C4442B',frost:'#9FC7D6',rope:'#C9A227',
                ink:'#8C86A8',jade:'#7FA650',violet:'#9A6FB0'};
 var FINISH_HEX={raw:'#B9BFC4',anod:'#C9A227',matte:'#5A5450',brass:'#C9A227',
                 enamel:'#D9CDBA',weather:'#8E7A5E',chrome:'#DCE4E8',clay:'#B4744C'};
+/* A finish ships as two material sliders and no texture, exactly as the asset
+   manifest says, so the renderer derives everything from them: metal decides how
+   much the rim glints and rough decides how far that glint is spread. Nothing in
+   here may ever read a simulation value; partaudit has a gate for that. */
+function finishOf(id){
+  var f=null,i;
+  for(i=0;i<SIM.FINISHES.length;i++)if(SIM.FINISHES[i].id===id)f=SIM.FINISHES[i];
+  return f||SIM.FINISHES[0];
+}
+
+/* DECALS. Twelve marks, drawn in the top's own rotating frame so they turn with
+   it, which is the only way a paint job reads on something spinning. Each is a
+   handful of strokes, because at twenty five pixels across anything more is mud. */
+function drawDecal(g,id,rr,squash,col){
+  if(!id||id==='none')return;
+  var i,a,TAU=Math.PI*2;
+  g.save();g.scale(1,squash);
+  g.strokeStyle=col;g.fillStyle=col;
+  g.lineWidth=Math.max(1,rr*0.10);g.lineCap='round';
+  var R=rr*0.74;
+  if(id==='stripe'){
+    for(i=0;i<2;i++){a=i*Math.PI;
+      g.beginPath();g.moveTo(Math.cos(a)*rr*0.24,Math.sin(a)*rr*0.24);
+      g.lineTo(Math.cos(a)*R,Math.sin(a)*R);g.stroke();}
+  }else if(id==='sunburst'){
+    g.lineWidth=Math.max(0.8,rr*0.06);
+    for(i=0;i<12;i++){a=i*TAU/12;
+      g.beginPath();g.moveTo(Math.cos(a)*rr*0.40,Math.sin(a)*rr*0.40);
+      g.lineTo(Math.cos(a)*R,Math.sin(a)*R);g.stroke();}
+  }else if(id==='koi'){
+    g.lineWidth=Math.max(1.6,rr*0.17);
+    for(i=0;i<2;i++){g.save();g.rotate(i*Math.PI);
+      g.beginPath();g.arc(0,0,rr*0.52,Math.PI*0.10,Math.PI*0.92);g.stroke();
+      g.beginPath();g.arc(rr*0.50,rr*0.16,Math.max(2,rr*0.15),0,TAU);g.fill();
+      g.restore();}
+  }else if(id==='tiger'){
+    g.lineWidth=Math.max(1,rr*0.13);
+    for(i=0;i<5;i++){a=i*TAU/5+0.3;
+      g.beginPath();
+      g.moveTo(Math.cos(a)*rr*0.42,Math.sin(a)*rr*0.42);
+      g.lineTo(Math.cos(a+0.30)*R,Math.sin(a+0.30)*R);g.stroke();}
+  }else if(id==='wave'){
+    g.lineWidth=Math.max(0.9,rr*0.08);g.beginPath();
+    for(i=0;i<=40;i++){a=i*TAU/40;var w=R*(1+0.16*Math.sin(a*5));
+      var x=Math.cos(a)*w,y=Math.sin(a)*w;
+      if(i)g.lineTo(x,y);else g.moveTo(x,y);}
+    g.stroke();
+  }else if(id==='circuit'){
+    g.lineWidth=Math.max(0.8,rr*0.07);
+    for(i=0;i<4;i++){a=i*TAU/4+0.4;
+      g.beginPath();
+      g.moveTo(Math.cos(a)*rr*0.26,Math.sin(a)*rr*0.26);
+      g.lineTo(Math.cos(a)*rr*0.60,Math.sin(a)*rr*0.60);
+      g.lineTo(Math.cos(a+0.42)*rr*0.72,Math.sin(a+0.42)*rr*0.72);
+      g.stroke();
+      g.beginPath();g.arc(Math.cos(a+0.42)*rr*0.72,Math.sin(a+0.42)*rr*0.72,Math.max(1,rr*0.07),0,TAU);g.fill();}
+  }else if(id==='moth'){
+    // filled rather than outlined; two thin ellipses at this size read as a
+    // tangle of loops indistinguishable from the knot
+    g.globalAlpha=g.globalAlpha*0.72;
+    for(i=0;i<2;i++){g.save();g.scale(i?-1:1,1);
+      g.beginPath();g.ellipse(rr*0.34,-rr*0.20,rr*0.34,rr*0.22,-0.55,0,TAU);g.fill();
+      g.beginPath();g.ellipse(rr*0.26,rr*0.26,rr*0.22,rr*0.15,0.45,0,TAU);g.fill();
+      g.restore();}
+    g.globalAlpha=g.globalAlpha/0.72;
+  }else if(id==='flame'){
+    for(i=0;i<3;i++){a=i*TAU/3;g.save();g.rotate(a);
+      g.beginPath();g.moveTo(0,-rr*0.18);
+      g.quadraticCurveTo(rr*0.46,-rr*0.50,0,-rr*0.94);
+      g.quadraticCurveTo(-rr*0.46,-rr*0.50,0,-rr*0.18);
+      g.fill();g.restore();}
+  }else if(id==='crane'){
+    // ⛔ Two concentric chevrons merged into a bar at this size. Three SMALL
+    // ones scattered read as a flight of birds and stay separate marks, which is
+    // the whole job: a decal has to survive being twenty five pixels across.
+    g.lineWidth=Math.max(1.6,rr*0.11);
+    var CR=[[0,-0.44,0.34],[-0.46,0.20,0.26],[0.44,0.24,0.22]];
+    for(i=0;i<CR.length;i++){
+      var bx2=CR[i][0]*rr, by2=CR[i][1]*rr, k=CR[i][2]*rr;
+      g.beginPath();
+      g.moveTo(bx2-k,by2+k*0.42);
+      g.quadraticCurveTo(bx2-k*0.36,by2-k*0.42,bx2,by2);
+      g.quadraticCurveTo(bx2+k*0.36,by2-k*0.42,bx2+k,by2+k*0.42);
+      g.stroke();}
+  }else if(id==='chalk'){
+    g.lineWidth=Math.max(1,rr*0.09);
+    for(i=0;i<16;i++){a=i*TAU/16;
+      g.beginPath();g.arc(0,0,R,a,a+TAU/32);g.stroke();}
+  }else if(id==='knot'){
+    g.lineWidth=Math.max(1.6,rr*0.14);
+    for(i=0;i<3;i++){a=i*TAU/3;
+      g.beginPath();
+      g.arc(Math.cos(a)*rr*0.34,Math.sin(a)*rr*0.34,rr*0.42,0,TAU);g.stroke();}
+  }
+  g.restore();
+}
 
 /* One accessor for "the build the workshop is editing", so pass the phone did
    not need a second copy of every function in the workshop. */
@@ -566,6 +667,7 @@ function tierTag(p){
   return '<span class="t'+(p.tier===3?' t3':'')+'">'+(p.tier===3?'RELIC':'FORGED')+'</span>';
 }
 function railRow(label,items,isOn,onPick,klass,lockable){
+  var cosmetic = klass === 'cosmetic';
   var d=document.createElement('div');
   d.className='slot'+(klass?' '+klass:'');
   d.innerHTML='<label>'+label+'</label>';
@@ -584,7 +686,7 @@ function railRow(label,items,isOn,onPick,klass,lockable){
           : 'Locked. Beat a league boss to win a Relic.';
         return;
       }
-      rigAnnounceArmed=true;if(field)field.target=null;
+      if(!cosmetic){rigAnnounceArmed=true;if(field)field.target=null;}
       onPick(it);buildSlots();refresh();storeBuild();
     });
     r.appendChild(b);
@@ -659,6 +761,7 @@ function buildSlots(){
     function(t){cosm.trail=t.id;},'cosmetic'));
   looks.appendChild(railRow('Launcher',plain(SIM.LAUNCHERS),function(l){return cosm.launcher===l.id;},
     function(l){cosm.launcher=l.id;},'cosmetic'));
+  drawLookPreview();
   buildMods();buildRigs();summaries();
 }
 
@@ -767,6 +870,68 @@ function buildRigs(){
       break;
     }
   }
+}
+
+/* The Looks panel draws your actual top, turning, with the paint on it. Picking
+   a decal off a list of twelve words is picking blind, and the arena is the only
+   other place it appears, by which time you have stopped choosing. */
+var lookPrev=null, lookCtx=null, lookPhase=0;
+function drawLookPreview(){
+  if(!lookPrev){lookPrev=$('lookPrev'); if(!lookPrev)return; lookCtx=lookPrev.getContext('2d');}
+  var g=lookCtx, W=320, H=200, cx=W/2, cy=H/2+14, rr=54, squash=0.80;
+  g.clearRect(0,0,W,H);
+  var grd=g.createRadialGradient(cx,cy-24,8,cx,cy,W*0.52);
+  grd.addColorStop(0,'#3A2D23');grd.addColorStop(1,'#1B1411');
+  g.fillStyle=grd;g.fillRect(0,0,W,H);
+
+  var col=FINISH_HEX[cosm.finish]||'#C9A227';
+  var fin=finishOf(cosm.finish);
+  var trail=TRAIL_HEX[cosm.trail]||'#C9A227';
+
+  // the ground shadow and the tip, same shapes the arena draws
+  g.fillStyle='rgba(0,0,0,.42)';
+  g.beginPath();g.ellipse(cx,cy+rr*0.20,rr*0.72,rr*0.44,0,0,7);g.fill();
+
+  g.save();g.translate(cx,cy);
+  var body=g.createLinearGradient(-rr,0,rr,0);
+  body.addColorStop(0,'rgba(24,17,14,.95)');
+  body.addColorStop(0.5,'rgba(58,45,35,.95)');
+  body.addColorStop(1,'rgba(24,17,14,.95)');
+  g.fillStyle=body;
+  g.beginPath();g.ellipse(0,0,rr,rr*squash,0,0,7);g.fill();
+
+  g.save();g.rotate(lookPhase);
+  g.globalAlpha=0.62;
+  drawDecal(g,cosm.decal,rr,squash,col);
+  g.globalAlpha=1;g.restore();
+
+  g.strokeStyle=trail;g.globalAlpha=0.72;g.lineWidth=rr*0.16;
+  g.beginPath();g.ellipse(0,0,rr,rr*squash,0,0,7);g.stroke();
+  g.globalAlpha=1;
+
+  var bl=null,i;
+  for(i=0;i<SIM.BLADES.length;i++)if(SIM.BLADES[i].id===active().cfg.blade)bl=SIM.BLADES[i];
+  var teeth=Math.round(3+(bl?bl.sharp:0.5)*8);
+  g.strokeStyle=col;
+  g.globalAlpha=(0.24+0.54*fin.metal)*(1-0.35*fin.rough)+0.16;
+  g.lineWidth=rr*0.10;
+  for(i=0;i<teeth;i++){
+    var a=lookPhase+i*Math.PI*2/teeth;
+    g.beginPath();
+    g.moveTo(Math.cos(a)*rr*0.86,Math.sin(a)*rr*squash*0.86);
+    g.lineTo(Math.cos(a)*rr*1.10,Math.sin(a)*rr*squash*1.10);
+    g.stroke();
+  }
+  g.globalAlpha=1;g.restore();
+
+  g.strokeStyle='rgba(170,182,190,.92)';g.lineWidth=rr*0.20;g.lineCap='round';
+  g.beginPath();g.moveTo(cx,cy);g.lineTo(cx,cy+rr*0.62);g.stroke();g.lineCap='butt';
+  g.fillStyle='rgba(237,230,216,.98)';
+  g.beginPath();g.arc(cx,cy,rr*0.20,0,7);g.fill();
+
+  g.fillStyle='rgba(156,146,134,.9)';
+  g.font='11px ui-sans-serif,system-ui';g.textAlign='center';
+  g.fillText(cosm.finish+', '+cosm.decal+', '+cosm.trail+' trail, '+cosm.launcher+' launcher',cx,H-9);
 }
 
 function summaries(){
@@ -1558,6 +1723,9 @@ function step(dt){
     pushTrail();
   }
   if(demoTimer>0){demoTimer-=dt;if(demoTimer<=0)demoIdle();}
+  if($('accLooks').open&&$('sheet').classList.contains('up')&&!save.settings.reduceMotion){
+    lookPhase+=dt*1.6;drawLookPreview();
+  }
   var i;
   for(i=sparks.length-1;i>=0;i--){
     var s=sparks[i];
@@ -1717,16 +1885,72 @@ function drawWindTrack(){
       ctx.stroke();ctx.lineCap='butt';
     }
   }
+  /* THE LAUNCHER. Six skins, and they dress the winding track rather than
+     changing it: the three lanes ARE the mechanic and a paint job may never
+     touch a mechanic. Competitor reviews named launcher skins as the single
+     most requested missing feature in the category, which is a low bar and
+     still worth clearing properly. */
+  drawLauncher(cx,cy,base,gap,laps);
   if(!winding){
     var sy=cy-base;
-    ctx.fillStyle='rgba(237,230,216,.9)';
-    ctx.beginPath();ctx.arc(cx,sy,8,0,7);ctx.fill();
     ctx.fillStyle='rgba(237,230,216,.6)';
     ctx.font='11px ui-sans-serif,system-ui';ctx.textAlign='center';
-    ctx.fillText('START',cx,sy-16);
+    ctx.fillText('START',cx,sy-18);
   }
   ctx.fillStyle='rgba(201,162,39,.92)';ctx.beginPath();ctx.arc(cx,cy,16,0,7);ctx.fill();
   ctx.fillStyle='rgba(25,18,16,.9)';ctx.beginPath();ctx.arc(cx,cy,6,0,7);ctx.fill();
+}
+
+function drawLauncher(cx,cy,base,gap,laps){
+  var L=cosm.launcher||'cord', sy=cy-base, i, a, r;
+  var lit='rgba(237,230,216,.9)', dim='rgba(237,230,216,.34)';
+  ctx.strokeStyle=dim;ctx.fillStyle=lit;ctx.lineCap='round';
+  if(L==='ripcord'){
+    // a toothed pull cord: ticks cut across every lane
+    ctx.lineWidth=2;
+    for(i=0;i<28;i++){a=i*Math.PI*2/28;
+      ctx.beginPath();
+      ctx.moveTo(cx+Math.cos(a)*(base-gap*0.4),cy+Math.sin(a)*(base-gap*0.4));
+      ctx.lineTo(cx+Math.cos(a)*(base+gap*(WANT-0.6)),cy+Math.sin(a)*(base+gap*(WANT-0.6)));
+      ctx.stroke();}
+    ctx.beginPath();ctx.arc(cx,sy,8,0,7);ctx.fill();
+  }else if(L==='winder'){
+    // a crank handle standing off the start
+    ctx.lineWidth=4;ctx.strokeStyle=lit;
+    ctx.beginPath();ctx.moveTo(cx,sy);ctx.lineTo(cx+gap*1.5,sy-gap*0.9);ctx.stroke();
+    ctx.beginPath();ctx.arc(cx+gap*1.5,sy-gap*0.9,6,0,7);ctx.fill();
+    ctx.beginPath();ctx.arc(cx,sy,7,0,7);ctx.fill();
+  }else if(L==='bat'){
+    // the flat paddle a gasing top is scooped up on
+    ctx.fillStyle=lit;
+    ctx.beginPath();
+    ctx.ellipse(cx,sy,gap*1.5,gap*0.55,0,0,7);ctx.fill();
+    ctx.strokeStyle=lit;ctx.lineWidth=3;
+    ctx.beginPath();ctx.moveTo(cx+gap*1.5,sy);ctx.lineTo(cx+gap*2.6,sy);ctx.stroke();
+  }else if(L==='whip'){
+    // a tapering lead in, thick at the hand and fine at the top
+    ctx.strokeStyle=lit;
+    for(i=0;i<18;i++){
+      var t=i/18, a0=-Math.PI/2-t*1.5;
+      ctx.globalAlpha=1-t;ctx.lineWidth=5*(1-t)+1;
+      ctx.beginPath();
+      ctx.moveTo(cx+Math.cos(a0)*base,cy+Math.sin(a0)*base);
+      a=-Math.PI/2-(t+1/18)*1.5;
+      ctx.lineTo(cx+Math.cos(a)*base,cy+Math.sin(a)*base);
+      ctx.stroke();}
+    ctx.globalAlpha=1;
+    ctx.beginPath();ctx.arc(cx,sy,7,0,7);ctx.fill();
+  }else if(L==='spool'){
+    // concentric turns wound onto a drum
+    ctx.lineWidth=1;
+    for(i=1;i<=4;i++){r=base*(0.30+i*0.11);
+      ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();}
+    ctx.beginPath();ctx.arc(cx,sy,8,0,7);ctx.fill();
+  }else{
+    // cord: nothing but the dot, which is the honest default
+    ctx.beginPath();ctx.arc(cx,sy,8,0,7);ctx.fill();
+  }
+  ctx.lineCap='butt';
 }
 
 function drawStroke(){
@@ -1837,6 +2061,14 @@ function drawTop(o,color,isPlayer,trail){
   ctx.fillStyle=bodyG;
   ctx.beginPath();ctx.ellipse(0,0,rr,rr*squash,0,0,7);ctx.fill();
 
+  // the paint, in the top's own frame so it turns with the top
+  if(isPlayer&&!reduced){
+    ctx.save();ctx.rotate(o.phase*0.12);
+    ctx.globalAlpha=0.30+0.34*life;
+    drawDecal(ctx,cosm.decal,rr,squash,FINISH_HEX[cosm.finish]||'#C9A227');
+    ctx.globalAlpha=1;ctx.restore();
+  }
+
   // spin blur: concentric arcs whose reach and alpha are the spin rate. A dying
   // top loses its blur before it loses its shape, which is the tell that says
   // "this one is nearly done" without a health bar.
@@ -1862,8 +2094,10 @@ function drawTop(o,color,isPlayer,trail){
   // different objects on screen and not the same ring in two colours.
   var teeth=Math.round(3+(o.spec.sharp||0.4)*8);
   var spinAng=o.phase*0.12;
+  // metal decides how much the teeth glint, rough decides how dull they read
+  var fin=finishOf(isPlayer?cosm.finish:'raw');
   ctx.strokeStyle=FINISH_HEX[isPlayer?cosm.finish:'raw']||'#8E9BA2';
-  ctx.globalAlpha=0.35+0.45*life;
+  ctx.globalAlpha=(0.22+0.52*fin.metal)*(1-0.35*fin.rough)*(0.5+0.5*life)+0.12;
   ctx.lineWidth=Math.max(1,rr*0.10);
   for(var i=0;i<teeth;i++){
     var a=spinAng+i*Math.PI*2/teeth;

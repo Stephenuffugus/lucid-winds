@@ -456,8 +456,24 @@ const CEIL_SPREAD_MAX = 32;
   var COPY = copy;
 }
 
+/* COSMETICS CARRY NO STATS. The brief flags this in the data model on purpose:
+ * no future balance pass may quietly give a paint job a number. The check is
+ * mechanical rather than a promise, because a promise is what gets forgotten. */
+{
+  const SIM_KEYS = ['mass','radius','sharp','rest','gear','taken','gearMul','absorb',
+                    'radAdd','smash','height','lock','strikeHigh','stamina','drive',
+                    'stable','dash','shaft','charge','dir','ability','drawback','tier'];
+  const bad = [];
+  for (const f of SIM.FINISHES)
+    for (const k of SIM_KEYS)
+      if (f[k] !== undefined) bad.push('finish ' + f.id + ' carries ' + k);
+  if (bad.length) console.log('\nCOSMETICS WITH STATS\n   ' + bad.join('\n   '));
+  var COSMETIC = bad;
+}
+
 const fails = [];
 const weak = [];
+for (const c of COSMETIC) fails.push('a cosmetic carries a simulation value: ' + c);
 for (const c of COPY) fails.push('copy, ' + c);
 for (const f of FIGHTING) fails.push(f);
 for (const c of CLASH) fails.push('two things share a name: ' + c);
