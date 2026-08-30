@@ -159,6 +159,54 @@ button{font:inherit;color:inherit}
 .chip.lock{opacity:.40;border-style:dashed}
 .chip.lock::after{content:'locked';font-size:11px;letter-spacing:.1em;
   text-transform:uppercase;color:var(--dim)}
+
+/* ---------- the picture chip ----------
+   A rail of 22 parts is a browsing problem before it is a decoration problem.
+   Prepending art to the existing horizontal chip was measured: it costs 41px of
+   width each and drops what fits on screen from 2.3 chips to 1.8, so adding
+   pictures would make the workshop HARDER to move around. Stacking the picture
+   over the name instead takes a chip from a 187px median down to about 76 and
+   fits four and a half on the rail, which is better than the text chips it
+   replaces. */
+.rail.pics{gap:8px}
+.chip.art{flex-direction:column;gap:5px;padding:6px 6px 7px;min-width:76px;
+  justify-content:center;white-space:normal}
+/* ⛔ At 5 percent the plate was invisible against the chip and the art looked
+   like it was floating in the dark. It has to read as a plate the part sits on,
+   or a painted part and an unpainted one are indistinguishable at a glance. */
+.chip.art .frame{position:relative;width:46px;height:46px;border-radius:9px;
+  background:rgba(0,0,0,.30);border:1px solid rgba(237,230,216,.10);
+  box-shadow:inset 0 1px 0 rgba(237,230,216,.06);
+  display:flex;align-items:center;justify-content:center}
+/* tier reads as the edge of the plate, which is one less thing competing with
+   the picture than the FORGED and RELIC word tags the text chips carry */
+.chip.art .frame.t2{border-color:rgba(201,162,39,.55)}
+.chip.art .frame.t3{border-color:rgba(196,68,43,.62)}
+.chip.art .pic{width:100%;height:100%;object-fit:contain;display:block}
+/* the plate for a part nobody has painted yet: its role colour, quietly */
+.chip.art .frame.none{background:
+  radial-gradient(circle at 50% 42%,rgba(237,230,216,.13),rgba(237,230,216,.03) 68%)}
+.chip.art .pip{position:absolute;right:-2px;bottom:-2px;width:8px;height:8px;
+  border-radius:50%;border:2px solid var(--hi)}
+.chip.art .nm{font-size:11px;line-height:1.15;max-width:74px;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap;display:block}
+.chip.art.on .frame{background:rgba(201,162,39,.14)}
+/* ⛔ .chip.lock{opacity:.40} applies to the whole subtree, so it dims painted
+   art to 40 percent along with the text. On the `all` filter a hundred of the
+   hundred and ten parts are locked, which is most of what any art would ever be
+   seen through, so that one rule would have made the art you commissioned the
+   least visible thing in the game.
+   ⛔ AND THE FIRST FIX WAS TOO FAR THE OTHER WAY: art at .55 with a grayscale
+   filter, names at .45, made a locked rail unreadable. A locked part still has
+   to be legible; you are browsing it to decide whether to go and win it. Locked
+   is now said by the dashed plate and a slightly cooler picture, not by hiding
+   it. */
+.chip.art.lock{opacity:1}
+.chip.art.lock .frame{border-style:dashed;border-color:rgba(237,230,216,.20);
+  background:rgba(0,0,0,.42)}
+.chip.art.lock .pic{opacity:.82;filter:grayscale(.30)}
+.chip.art.lock .nm{opacity:.72}
+.chip.art.lock::after{display:none}
 .chip .t{font-size:11px;letter-spacing:.1em;color:var(--rope);font-weight:700}
 .chip .t.t3{color:var(--ember)}
 .cosmetic label em{color:var(--steel)}
@@ -295,7 +343,7 @@ button{font:inherit;color:inherit}
 #cerBox{width:100%;max-width:400px;text-align:center;margin:auto;
   transform:translateY(14px) scale(.98);transition:transform .48s cubic-bezier(.2,.9,.3,1)}
 #cer.up #cerBox{transform:none}
-#cerKick{font:700 11.5px/1 Archivo,ui-sans-serif,system-ui;letter-spacing:.22em;
+#cerKick{font:700 11.5px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:.22em;
   text-transform:uppercase;color:var(--dim);margin-bottom:12px;min-height:12px}
 #cerBig{font:800 clamp(26px,7.4vw,40px)/1.06 ui-sans-serif,system-ui;letter-spacing:-.01em;
   margin-bottom:10px;text-wrap:balance}
@@ -308,14 +356,19 @@ button{font:inherit;color:inherit}
   color:var(--dim);opacity:0;transition:opacity .5s;pointer-events:none}
 #cer.tap #cerTap{opacity:.7}
 
+/* the won part itself, when it has been painted */
+.cerShot{display:block;width:150px;height:150px;object-fit:contain;margin:0 auto 12px;
+  filter:drop-shadow(0 10px 18px rgba(0,0,0,.5))}
+@media (max-height:600px){ .cerShot{width:104px;height:104px;margin-bottom:8px} }
+
 /* the part reveal: what you won, where it goes, what it changes */
 .cerPart{background:var(--surface,var(--hi));border:1px solid var(--line);
   border-radius:14px;padding:16px;text-align:left}
-.cerPart .slot{font:700 10.5px/1 Archivo,sans-serif;letter-spacing:.18em;
+.cerPart .slot{font:700 11px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:.16em;
   text-transform:uppercase;color:var(--dim);margin-bottom:5px}
 .cerPart .job{font-size:13px;line-height:1.45;color:var(--dim);opacity:.72;margin-bottom:9px}
-.cerPart .tier{display:inline-block;font:700 10px/1 Archivo,sans-serif;letter-spacing:.14em;
-  padding:4px 8px;border-radius:4px;margin-bottom:8px}
+.cerPart .tier{display:inline-block;font:700 11px/1 ui-sans-serif,system-ui,sans-serif;
+  letter-spacing:.12em;padding:4px 8px;border-radius:4px;margin-bottom:8px}
 .cerPart .tier.t2{background:rgba(201,162,39,.16);color:var(--rope)}
 .cerPart .tier.t3{background:rgba(196,68,43,.16);color:var(--ember)}
 .cerPart p{margin:6px 0 0;font-size:14px;line-height:1.5;color:var(--dim)}
@@ -330,8 +383,8 @@ button{font:inherit;color:inherit}
 .cmp{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);
   display:flex;flex-direction:column;gap:8px}
 .cmpRow{display:grid;grid-template-columns:82px 1fr auto;gap:10px;align-items:center}
-.cmpRow .k{color:var(--dim);text-transform:uppercase;font:700 10px/1.3 Archivo,sans-serif;
-  letter-spacing:.09em}
+.cmpRow .k{color:var(--dim);text-transform:uppercase;
+  font:700 11px/1.3 ui-sans-serif,system-ui,sans-serif;letter-spacing:.07em}
 .cmpBar{position:relative;height:7px;border-radius:4px;background:rgba(237,230,216,.09)}
 /* ⛔ The mark for what you are CURRENTLY wearing was a fill behind the new
    value, so on every improvement the new bar covered it completely and the
@@ -348,8 +401,8 @@ button{font:inherit;color:inherit}
   transition:width .55s cubic-bezier(.2,.9,.3,1)}
 .cmpBar i.up{background:var(--good)} .cmpBar i.dn{background:var(--ember)}
 .cmpBar i.nu{background:var(--rope)}
-.cmpRow .d{font:700 11px/1 Archivo,sans-serif;letter-spacing:.04em;min-width:34px;
-  text-align:right}
+.cmpRow .d{font:700 11px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:.04em;
+  min-width:34px;text-align:right}
 .cmpRow .d.up{color:var(--good)} .cmpRow .d.dn{color:var(--ember)}
 .cmpRow .d.nu{color:var(--dim)}
 .cmpKey{margin-top:9px;font-size:11px;color:var(--dim);opacity:.7;display:flex;
@@ -4441,24 +4494,98 @@ var SLOTS=[['core','Core',SIM.CORES],['blade','Blade',SIM.BLADES],['assist','Ass
            ['ratchet','Ratchet',SIM.RATCHETS],['bit','Bit',SIM.BITS]];
 var PART_LISTS={core:SIM.CORES,blade:SIM.BLADES,assist:SIM.ASSISTS,ratchet:SIM.RATCHETS,bit:SIM.BITS};
 
+/* ============================================================ PART ART ======
+   Optional painted art for the 110 parts. The game ships with none and works
+   perfectly with none; this is a slot, not a dependency.
+
+   Stephen makes the pictures, drops them in assets/parts/_raw/ and runs
+   tools/artcut.py, which keys the background, trims, sizes and writes
+   assets/parts/<slot>/<id>.webp along with the manifest below.
+
+   ⛔ IT READS A MANIFEST RATHER THAN JUST TRYING THE URLS. With 110 parts, an
+   <img> per part with an onerror fallback means up to 110 failed requests every
+   time the workshop opens, a console full of 404s, and a layout that reflows
+   once each picture resolves. One small JSON says exactly what exists before
+   anything is laid out.
+
+   ⛔ AND IT IS VERSIONED. The host edge-caches aggressively and has burned this
+   studio repeatedly, so both the manifest and every picture carry the build
+   stamp. */
+var LW_BUILD='20260830b';
+var ART = { ready:false, has:{}, count:0 };
+/* ⛔ THE VERSION COMES FROM THE FILE, NOT THE BUILD. The service worker caches
+   every picture it fetches and never revalidates, so a re-cut part at the same
+   URL is stale on that phone forever. Each entry carries a hash of its own
+   bytes, so re-cutting one part changes exactly one URL. */
+function artUrl(slot,id){
+  var e=ART.has[slot]&&ART.has[slot][id];
+  if(!e)return '';
+  return 'assets/parts/'+slot+'/'+id+'.'+(e.x||'webp')+'?v='+e.v;
+}
+function artHas(slot,id){ return !!(ART.has[slot]&&ART.has[slot][id]); }
+function artInSlot(slot){ return !!(ART.has[slot]&&ART.count); }
+function loadArt(done){
+  if(ART.ready){ if(done)done(); return; }
+  var x=new XMLHttpRequest();
+  x.open('GET','assets/parts/manifest.json?v='+LW_BUILD,true);
+  x.onreadystatechange=function(){
+    if(x.readyState!==4)return;
+    ART.ready=true;
+    try{
+      if(x.status>=200&&x.status<300){
+        var m=JSON.parse(x.responseText),k,id;
+        for(k in m.parts){
+          ART.has[k]={};
+          for(id in m.parts[k]){ ART.has[k][id]=m.parts[k][id]; ART.count++; }
+        }
+      }
+    }catch(e){ ART.has={}; ART.count=0; }   // any trouble at all: no art, as today
+    if(done)done();
+  };
+  // ⛔ Not fetch().catch(): a 404 is a resolved response, not a rejection. The
+  // status is checked above, which is the only thing that actually tells you.
+  try{ x.send(); }catch(e){ ART.ready=true; if(done)done(); }
+}
+
 function tierTag(p){
   if(!p.tier||p.tier===1)return '';
   return '<span class="t'+(p.tier===3?' t3':'')+'">'+(p.tier===3?'RELIC':'FORGED')+'</span>';
 }
-function railRow(label,items,isOn,onPick,klass,lockable){
+function railRow(label,items,isOn,onPick,klass,lockable,slotKey){
   var cosmetic = klass === 'cosmetic';
   var cosKind = cosmetic ? lockable : null;   // for a cosmetic rail, which kind
   var d=document.createElement('div');
   d.className='slot'+(klass?' '+klass:'');
   d.innerHTML='<label>'+label+'</label>';
   var r=document.createElement('div');r.className='rail';
+  /* A rail goes to the picture layout only once SOMETHING in it is painted, and
+     then the whole rail goes together: a row of half text chips and half
+     picture chips reads as a bug rather than as work in progress. Parts with no
+     picture yet get a plain plate in their role colour, so the case visibly
+     fills in as the art arrives.
+     ⛔ slotKey is PASSED IN. The first version dug it back out of the label with
+     a regex, which is the studio's standing rule about never re-parsing a
+     structure you already had. */
+  var pics=!cosmetic&&slotKey&&artInSlot(slotKey);
+  if(pics)r.className='rail pics';
   for(var i=0;i<items.length;i++)(function(it){
     var b=document.createElement('button');
     var locked=cosKind ? !cosmeticUnlocked(cosKind,it.id)
                        : (lockable&&!isUnlocked(it.id));
-    b.className='chip'+(isOn(it)?' on':'')+(locked?' lock':'');
-    b.innerHTML=(it.role?'<span class="dot" style="background:'+ROLE_HEX[it.role]+'"></span>':'')+
+    b.className='chip'+(isOn(it)?' on':'')+(locked?' lock':'')+(pics?' art':'');
+    if(pics){
+      var t=it.tier===3?' t3':it.tier===2?' t2':'';
+      var pic=artHas(slotKey,it.id)
+        ? '<img class="pic" src="'+artUrl(slotKey,it.id)+'" alt="" loading="lazy" '+
+          'onerror="this.parentNode.className+=\' none\';this.remove();">'
+        : '';
+      b.innerHTML='<span class="frame'+t+(pic?'':' none')+'">'+pic+
+        (it.role?'<i class="pip" style="background:'+ROLE_HEX[it.role]+'"></i>':'')+
+        '</span><span class="nm">'+(it.name||it.id)+'</span>';
+    }else{
+      b.innerHTML=(it.role?'<span class="dot" style="background:'+ROLE_HEX[it.role]+'"></span>':'')+
                 (it.name||it.id)+tierTag(it);
+    }
     b.addEventListener('click',function(){
       if(locked){
         $('benchOut').textContent=cosKind
@@ -4489,6 +4616,11 @@ function buildRoles(){
   })(list[i]);
 }
 function buildSlots(){
+  /* First time through, find out what is painted before laying anything out. A
+     rail built before the manifest lands would be text chips that then jump to
+     picture chips, and a workshop that rearranges itself under your thumb is
+     worse than one with no pictures in it. */
+  if(!ART.ready){ loadArt(function(){ buildSlots(); }); return; }
   buildRoles();
   var host=$('slots');host.innerHTML='';
   var act=active().cfg;
@@ -4503,7 +4635,7 @@ function buildSlots(){
          list[j].role===roleFilter||list[j].id===act[key])shown.push(list[j]);
     var row=railRow(label+' <em>'+shown.length+'</em>',shown,
       (function(k){return function(p){return active().cfg[k]===p.id;};})(key),
-      (function(k){return function(p){active().cfg[k]=p.id;};})(key),null,true);
+      (function(k){return function(p){active().cfg[k]=p.id;};})(key),null,true,key);
     // What is actually fitted, in words. With a hundred and ten parts a rail of
     // names is a list; the line underneath is what makes it a choice. A Relic's
     // drawback goes here in full, because a drawback you cannot read is a trap.
@@ -4974,7 +5106,7 @@ function partOf(slot,id){
   for(var i=0;i<list.length;i++)if(list[i].id===id)return list[i];
   return null;
 }
-function nameOf(slot,id){var p=partOf(slot,id);return p?(p.name||id):id;}
+
 /* =============================================================== CEREMONY ====
    Stephen, after the first real play session:
 
@@ -5200,15 +5332,25 @@ function partStep(slot,part,isNew){
   };
 }
 function partCard(slot,part){
-  var fitted=null,list=PART_LISTS[slot],i;
-  for(i=0;i<list.length;i++)if(list[i].id===cfg[slot])fitted=list[i];
+  /* ⛔ This read `cfg[slot]` directly, which is player ONE's build. In Pass the
+     Phone player two's reveal card compared the part against a top they are not
+     riding. active().cfg is the config of whoever is actually playing. */
+  var fitted=null,list=PART_LISTS[slot],i,mine=active().cfg;
+  for(i=0;i<list.length;i++)if(list[i].id===mine[slot])fitted=list[i];
   /* ⛔ The card printed the part's name a second time under the headline, and
      ran the slot's job as three lines of letterspaced capitals, which is the
      least readable text in the whole game. The name is said once, up top; the
      job is a sentence. */
   var tier=part.tier===3?'<div class="tier t3">RELIC</div>':
            part.tier===2?'<div class="tier t2">FORGED</div>':'';
-  var body='<div class="cerPart">'+
+  /* The part you just won, shown before it is described. The card is the one
+     place in the game a part gets the whole screen, so if there is a picture of
+     it this is where it earns its keep. No picture, no gap: the card is exactly
+     what it was. */
+  var shot=artHas(slot,part.id)
+    ? '<img class="cerShot" src="'+artUrl(slot,part.id)+'" alt="" '+
+      'onerror="this.remove();">' : '';
+  var body=shot+'<div class="cerPart">'+
     '<div class="slot">'+SLOT_WORDS[slot]+'</div>'+
     '<div class="job">'+SLOT_JOB[slot]+'</div>'+
     tier+
@@ -5221,8 +5363,13 @@ function partCard(slot,part){
     sub:fitted&&fitted.id!==part.id?'Against your '+fitted.name+':':'It goes in your '+SLOT_WORDS[slot].toLowerCase()+'.',
     body:body,
     btns:fitted&&fitted.id===part.id?[{label:'Good',primary:true}]:[
+      /* ⛔ Same trap as partCard above: the workshop rails fit a part with
+         `active().cfg[key]=id`, and this wrote to `cfg` directly, so in Pass the
+         Phone player two fitting a part they had just won changed player ONE's
+         top. Go through active() like every other fitting path. */
       {label:'Fit it',primary:true,act:function(){
-        cfg[slot]=part.id; storeBuild(); buildSlots(); updateVs(); AUDIO.tick();
+        active().cfg[slot]=part.id;
+        storeBuild(); buildSlots(); updateVs(); AUDIO.tick();
         showUnlock(part.name+' fitted','Now wearing');
       }},
       {label:'Keep mine'}
@@ -5629,7 +5776,7 @@ function launchTuj(L){
 
 /* ------------------------------------------------------------ round endings */
 var CAUSE_WORD={spinout:'SPINOUT',ringout:'RINGOUT',knockout:'KNOCKOUT',
-                burst:'BURST',timeout:'TIME',double:'DOUBLE OUT'};
+                burst:'BURST',timeout:'TIME',double:'DOUBLE OUT',worn:'WORN DOWN'};
 function endRound(){
   var win=null,cause='timeout';
   if(mode==='uri'){
@@ -5642,9 +5789,31 @@ function endRound(){
   }else if(A.alive&&!B.alive){win='a';cause=B.cause;}
   else if(B.alive&&!A.alive){win='b';cause=A.cause;}
   else if(!A.alive&&!B.alive){cause='double';}
-  else win=Math.abs(A.w)>Math.abs(B.w)?'a':'b';
+  /* ⛔⛔ THE GIANT'S DOOR WAS NEVER BUILT INTO THE GAME.
+     `spinTarget` is the whole point of that boss: nobody outlasts a giant, so
+     you measure it, and wearing its spin below the threshold before the bell
+     takes it. SIM.resolveBossMatch implements that and test/bosstest.js asserts
+     forty percent of wins come through it. But resolveBossMatch is the HEADLESS
+     path. The live game reached into the boss block for `limit`, `anchor`,
+     `abilityEvery`, `arenaR` and the rig, and never for `spinTarget`, so the
+     door did not exist where anybody was standing.
+     Measured over 300 matches a side: with the door, the reference panel takes
+     The Giant 12 to 27 percent of the time, a hard boss. Without it, 0 to 6.3
+     percent, and the DEFENSE build cannot win at all, ever. Nine gates were
+     green on that, because the gate called a function the product does not.
+     Same shape as the launch angle bug: if the test and the product disagree
+     about which code runs, every number either of them produces is fiction. */
+  else{
+    var bsW=bossOf(opp());
+    if(bsW&&bsW.spinTarget&&mode!=='uri'&&mode!=='pass'&&mode!=='tujlub'&&
+       B&&B.alive&&Math.abs(B.w)<=bsW.spinTarget*SIM.K.launchSpin){
+      win='a';cause='worn';
+    }else win=Math.abs(A.w)>Math.abs(B.w)?'a':'b';
+  }
 
-  var pts={spinout:1,ringout:2,knockout:2,burst:2,timeout:1,double:0}[cause]||1;
+  // ⛔ `worn` was missing here too, so the one round anybody did win that way
+  // would have scored 1 instead of the 2 the simulation and the test both give it.
+  var pts={spinout:1,ringout:2,knockout:2,burst:2,timeout:1,worn:2,double:0}[cause]||1;
   if(win==='a')pa+=pts;else if(win==='b')pb+=pts;
   $('score').innerHTML=pa+' &nbsp;'+pb+'<small>'+(mode==='uri'?'longest spin':'first to four')+'</small>';
 

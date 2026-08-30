@@ -82,6 +82,26 @@ self.addEventListener("fetch", event => {
     return;
   }
 
+  /* ⛔ THE ART MANIFEST IS NEVER SERVED FROM THE CACHE FIRST. Everything below
+     is cache-first with runtime caching and no revalidation, which is right for
+     a shell that only changes when the build stamp does. The manifest is the one
+     file that changes WITHOUT a rebuild: cutting a new part rewrites it. Served
+     cache-first, a phone that had loaded it once would never see a part painted
+     after that. Network first here, cache only as the offline fallback. */
+  if (url.pathname.indexOf("/assets/parts/manifest.json") >= 0) {
+    event.respondWith((async () => {
+      const net = await timedFetch(req, NAV_TIMEOUT_MS);
+      if (net && net.ok) {
+        try { (await caches.open(SHELL_VERSION)).put(req, net.clone()); } catch (e) {}
+        return net;
+      }
+      const hit = await caches.match(req);
+      return hit || new Response('{"parts":{}}',
+        { headers: { "Content-Type": "application/json" }, status: 200 });
+    })());
+    return;
+  }
+
   // Everything else: cache first, then network, then a real 504 rather than a
   // rejected promise.
   event.respondWith((async () => {

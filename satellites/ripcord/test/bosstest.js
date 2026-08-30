@@ -20,6 +20,74 @@ const LADDER = require('../src/ladder.json');
 
 const N = parseInt(process.argv[2] || '160', 10);
 
+/* ⛔⛔ THE STRUCTURAL GATE, and the reason it exists.
+ *
+ * Every boss in this game is a block of flags on its ladder entry. The tests
+ * below fight bosses through SIM.resolveBossMatch. The PLAYER fights them
+ * through play-shell's own round loop. Those are two different pieces of code
+ * reading the same block, and nothing made them agree.
+ *
+ * They did not agree. `spinTarget` is The Giant's entire win condition: wear its
+ * spin below a threshold before the bell and you have taken it. resolveBossMatch
+ * implemented it, this file asserted forty percent of wins came through it, and
+ * it passed — while the live game never read the flag at all. Measured over 300
+ * matches a side, the panel takes The Giant 12 to 27 percent of the time with
+ * the door and 0 to 6.3 percent without it, and the defense build could not win
+ * a single round. The last boss of a league was a wall, behind nine green gates.
+ *
+ * So: every flag any boss carries must be read by the game, either directly or
+ * through SIM.applyBoss / SIM.bossArena, which the game calls. A flag nothing
+ * reads is a promise to the player that no code keeps.
+ */
+function bossFlagsAreWired() {
+  const fs = require('fs');
+  const path = require('path');
+  const shell = fs.readFileSync(path.join(__dirname, '..', 'src', 'play-shell.html'), 'utf8');
+
+  /* ⛔ THE FIRST VERSION OF THIS PARSED sim2.js FOR `boss.x` INSIDE applyBoss
+     AND bossArena, AND IT WAS WRONG TWICE IN ONE FUNCTION: bossArena is an
+     arrow (`const bossArena = boss => ...`) so `indexOf('function bossArena')`
+     returned -1 and every flag it consumes came back unread, and the body slice
+     for applyBoss could run past its own closing brace into the next function.
+     A gate built on guessing where a function ends is a gate that reports
+     whatever the formatting happens to be that week.
+     So it does not guess. It RUNS the two helpers the game calls, over a proxy
+     that records which keys they actually touch. That is not an approximation
+     of the answer, it is the answer. */
+  const touched = new Set();
+  const spy = obj => new Proxy(obj, {
+    get(t, k) { if (typeof k === 'string') touched.add(k); return t[k]; },
+    has(t, k) { if (typeof k === 'string') touched.add(k); return k in t; },
+    ownKeys(t) { for (const k of Object.keys(t)) touched.add(k); return Reflect.ownKeys(t); }
+  });
+  for (const r of LADDER) {
+    if (!r.boss) continue;
+    const base = SIM.build(r.build);
+    try { SIM.applyBoss(base, spy(r.boss)); } catch (e) {}
+    try { SIM.bossArena(spy(r.boss)); } catch (e) {}
+  }
+
+  // and what the shell reads for itself, off whatever it names the block
+  const readByGame = new Set();
+  for (const m of shell.matchAll(/\b(?:bs|bs2|bsW|boss)\.([a-zA-Z]+)/g)) readByGame.add(m[1]);
+
+  const missing = [];
+  for (const r of LADDER) {
+    if (!r.boss) continue;
+    for (const k of Object.keys(r.boss)) {
+      if (touched.has(k) || readByGame.has(k)) continue;
+      missing.push(r.name + ' carries `' + k + '` and nothing in the live game reads it, ' +
+        'so whatever it promises does not happen where the player is standing');
+    }
+  }
+  return missing;
+}
+
+const wiring = bossFlagsAreWired();
+console.log('BOSS FLAG WIRING');
+if (wiring.length) wiring.forEach(m => console.log('  FAIL  ' + m));
+else console.log('  ok    every flag every boss carries is read by the live game');
+
 /* A wider panel than the four references, because a boss has to hold up against
  * what a player will actually bring, and by league five that is a tuned top. */
 const PANEL = {
@@ -73,7 +141,7 @@ const RULES = {
 };
 
 const pct = x => (x * 100).toFixed(1).padStart(5);
-const fails = [];
+const fails = [].concat(wiring);
 
 for (const rung of LADDER.filter(r => r.boss)) {
   const rule = RULES[rung.name] || { refutes: [] };
