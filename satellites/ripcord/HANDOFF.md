@@ -10,11 +10,17 @@ which is generated; edit `src/` and run `node tools/bundle.js`.
 **One command tells you whether it is shippable:**
 
 ```bash
-node tools/check.js          # every gate, at gate sample sizes
-node tools/check.js --fast   # smaller samples for iterating
+node tools/check.js          # every gate. About five minutes.
+node tools/check.js --fast   # skips the three sample sensitive ones and says so
 ```
 
 It must print **ALL GATES PASSED**. Nothing merges otherwise.
+
+⛔ Fast mode SKIPS the balance harness, the rig test and the part audit rather
+than running them on smaller samples. All three compare a number against a
+threshold near the noise floor and all three reported FAIL on passing code when
+they were shrunk. A gate that fails on passing code is worse than no gate, so
+fast mode runs what it can run honestly and names what it did not.
 
 ---
 

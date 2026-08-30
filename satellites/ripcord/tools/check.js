@@ -12,16 +12,26 @@ const path = require('path');
 const ROOT = path.join(__dirname, '..');
 const FAST = process.argv.includes('--fast');
 
+/* ⛔ FAST MODE SKIPS THE SAMPLE SENSITIVE GATES; IT DOES NOT SHRINK THEM.
+ *
+ * Three of these compare a measured number against a threshold near the noise
+ * floor, and all three were being run at reduced samples in fast mode. All three
+ * reported FAIL on code that passes: the balance harness on the mirror band, the
+ * rig test on its round for round diff, and the part audit on a ceiling, which
+ * is a maximum over ten candidates and is biased upward when the sample shrinks.
+ *
+ * A gate that reports a failure on passing code is worse than no gate, because
+ * it teaches you to ignore the output. So fast mode now runs everything it can
+ * run honestly and SAYS what it skipped, instead of guessing at three answers
+ * and getting them wrong. The full run is about five minutes and is the only
+ * thing that may be called a pass.
+ */
 const GATES = [
   { name: 'bundle',        cmd: ['tools/bundle.js'],   need: 'index.html' },
-  /* ⛔ The balance harness is NOT sampled down in fast mode. At N=80 the mirror
-     check compares a win rate against a 44 to 56 band, which is inside the noise
-     at that sample size, and the gate failed and passed on the same unchanged
-     code. A gate that flickers teaches you to ignore it. */
   { name: 'balance',       cmd: ['tools/harness2.js', '300'],
-    need: 'ALL ACCEPTANCE TARGETS MET' },
+    need: 'ALL ACCEPTANCE TARGETS MET', slow: true },
   { name: 'determinism',   cmd: ['test/determinism.js'], need: 'DETERMINISM OK' },
-  { name: 'rigs',          cmd: ['test/rigtest.js', FAST ? '20' : '40'], need: 'RIGTEST OK' },
+  { name: 'rigs',          cmd: ['test/rigtest.js', '40'], need: 'RIGTEST OK', slow: true },
   { name: 'modes',         cmd: ['test/modetest.js', FAST ? '12' : '30'], need: 'MODETEST OK' },
   /* ⛔ NO SAMPLE SIZE ARGUMENTS. This used to pass 8 for the ceiling sample where
      the auditor's own default is 12, and a ceiling is a maximum over ten
@@ -31,9 +41,7 @@ const GATES = [
      time in this project two tools disagreed because they were measuring at
      different sample sizes, and it is the last: the gate runs the tool exactly
      as the tool runs itself. Fast mode saves its time elsewhere. */
-  { name: 'parts',         cmd: FAST ? ['tools/partaudit.js', '6', '1', '16']
-                                     : ['tools/partaudit.js'],
-    need: 'PART AUDIT OK' },
+  { name: 'parts',         cmd: ['tools/partaudit.js'], need: 'PART AUDIT OK', slow: true },
   { name: 'ladder',        cmd: ['tools/ladder.js'],   need: 'LADDER OK' },
   { name: 'bosses',        cmd: ['test/bosstest.js', FAST ? '60' : '140'], need: 'BOSSTEST OK' }
 ];
@@ -51,7 +59,9 @@ try {
 } catch (e) {
   console.log('note: puppeteer not found, skipping the browser playthrough\n');
 }
+const skipped = [];
 for (const g of GATES) {
+  if (FAST && g.slow) { skipped.push(g.name); continue; }
   process.stdout.write(g.name.padEnd(14));
   const t0 = Date.now();
   let out = '', code = 0;
@@ -76,6 +86,10 @@ if (bad.length) {
     console.log(r.out.split('\n').slice(-26).join('\n'));
   }
 }
+if (skipped.length)
+  console.log('\nSKIPPED in fast mode, because a shrunken sample makes these lie: ' +
+              skipped.join(', ') + '.\nRun `node tools/check.js` with no flag before calling anything a pass.');
 console.log('\n' + (bad.length ? bad.length + ' GATE' + (bad.length > 1 ? 'S' : '') + ' FAILED'
-                                : 'ALL GATES PASSED'));
+                    : skipped.length ? 'THE GATES THAT CAN RUN FAST PASSED'
+                                     : 'ALL GATES PASSED'));
 process.exit(bad.length ? 1 : 0);
