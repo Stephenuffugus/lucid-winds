@@ -538,7 +538,7 @@ button{font:inherit;color:inherit}
   <button class="btn" id="mSet">Settings</button>
   <button class="btn ghost" id="mExit">&#9668; Sky Wolf Studio Arcade</button>
 </div></div>
-<div id="buildstamp">build 20260831p</div>
+<div id="buildstamp">build 20260831q</div>
 
 <!-- ============================ HOW TO PLAY ============================ -->
 <div class="sheet" id="howto">
@@ -678,7 +678,7 @@ button{font:inherit;color:inherit}
       <button class="btn" id="wipe">Erase</button></div>
     <div class="setRow"><div class="lab"><h4>About</h4>
       <p>Ripcord, by Sky Wolf Studio. Works offline; nothing you do here leaves the
-         device. Build 20260831p.</p></div></div>
+         device. Build 20260831q.</p></div></div>
   </div>
 </div>
 
@@ -4672,7 +4672,7 @@ var PART_LISTS={core:SIM.CORES,blade:SIM.BLADES,assist:SIM.ASSISTS,ratchet:SIM.R
    ⛔ AND IT IS VERSIONED. The host edge-caches aggressively and has burned this
    studio repeatedly, so both the manifest and every picture carry the build
    stamp. */
-var LW_BUILD='20260831p';
+var LW_BUILD='20260831q';
 var ART = { ready:false, has:{}, count:0 };
 /* ⛔ THE VERSION COMES FROM THE FILE, NOT THE BUILD. The service worker caches
    every picture it fetches and never revalidates, so a re-cut part at the same
@@ -5282,7 +5282,42 @@ function drawLookPreview(){
     ', '+cosm.trail+' trail, '+cosm.launcher+' launcher',cx,H-9);
 }
 
+/* ── the workshop fills in as you climb ─────────────────────────────────
+   Stephen's phone verdict on the first session: the game "doesn't teach...
+   it leaves them scrambled". Five open systems on rung one is a wall, so
+   the bench now hands them over one at a time: Build and Weights are the
+   game; Looks arrives after the first win, Tuning at rung three, Rigs at
+   rung four (one rung before the first boss asks for everything). Each
+   arrival is announced ONCE, in the bench's own voice. A veteran save
+   (rung 4+) never sees any of this. */
+var BENCH_DRIP=[
+  ['looks',2,'Looks open at rung 2. Win a match and make it yours.',
+             'New on the bench: Looks.'],
+  ['mods',3,'Tuning opens at rung 3. The stock metal is enough for now.',
+            'New on the bench: Tuning. Work metal, pay for it somewhere else.'],
+  ['rigs',4,'Rigs open at rung 4. Climb with what the case holds first.',
+            'New on the bench: Rigs. Fit the frame your build has earned.']
+];
+function dripBench(){
+  for(var i=0;i<BENCH_DRIP.length;i++){
+    var body=BENCH_DRIP[i][0],at=BENCH_DRIP[i][1],
+        promise=BENCH_DRIP[i][2],arrive=BENCH_DRIP[i][3];
+    var el=$(body);
+    if(!el)continue;
+    if(rung<at){
+      el.innerHTML='<p class="fitted"><span>'+promise+'</span></p>';
+      continue;
+    }
+    var key='seen.'+body;
+    if(!save.records[key]){
+      save.records[key]=1;persist();
+      // only speak when the bench is actually open in front of them
+      if($('sheet').classList.contains('up'))$('benchOut').textContent=arrive;
+    }
+  }
+}
 function summaries(){
+  dripBench();
   var s=currentSpec();
   var bl=null,bt=null,i;
   var act=active().cfg;
@@ -7557,7 +7592,7 @@ requestAnimationFrame(frame);
      worker owns caching there, and a second one racing it is how this fleet
      wiped itself once already. Bump the ?v= with sw.js SHELL_VERSION. */
   if(!framed && 'serviceWorker' in navigator){
-    try{ navigator.serviceWorker.register('sw.js?v=20260831p'); }catch(e){}
+    try{ navigator.serviceWorker.register('sw.js?v=20260831q'); }catch(e){}
   }
 })();
 </script>

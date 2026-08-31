@@ -156,6 +156,30 @@ ok(!!changed && !changed.err, 'an unlocked part chip is present and hittable' +
    (changed && changed.err ? ': ' + changed.err : ''));
 ok(before !== after, 'tapping a part changes the fitted build (' + before + ' to ' + after + ')');
 
+// the bench drip: on a fresh save, Tuning and Rigs are promises, not
+// panels - the workshop hands systems over as the player climbs
+await page.evaluate(() => { document.getElementById('accMods').open = true; });
+await wait(300);
+const dripped = await page.evaluate(() =>
+  /rung 3/.test(document.getElementById('mods').textContent) &&
+  /rung 4/.test(document.getElementById('rigs').textContent));
+ok(dripped, 'on a fresh save, Tuning and Rigs show as promises with their rungs');
+
+// advance the save to rung 4 through its own storage and reload, so the
+// tuning test below runs against a bench that has opened up
+await page.evaluate(() => {
+  const k = 'ripcord.save.v1';
+  const sv = JSON.parse(localStorage.getItem(k));
+  sv.rung = 4; sv.facing = 4;
+  localStorage.setItem(k, JSON.stringify(sv));
+});
+await page.reload({ waitUntil: 'load' });
+await wait(900);
+await page.evaluate(() => { const b = document.querySelector('#howto [data-close]'); if (b) b.click(); });
+await wait(300);
+await tap('#mShop', 'Workshop, back at rung 4');
+await wait(500);
+
 // tuning applies and reverses
 await page.evaluate(() => { document.getElementById('accMods').open = true; });
 await wait(300);
