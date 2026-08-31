@@ -357,9 +357,18 @@ button{font:inherit;color:inherit}
 #cer.tap #cerTap{opacity:.7}
 
 /* the won part itself, when it has been painted */
-.cerShot{display:block;width:150px;height:150px;object-fit:contain;margin:0 auto 12px;
+/* ⛔ 150px OVERFLOWED THE CEREMONY AT 375x667 once the art began loading at
+   boot: reveal card + image + comparison + buttons ran past the viewport and
+   the button centre landed off screen, which the playthrough reads as a
+   covered button. 118px keeps the whole card inside a 667 phone with the
+   comparison open. */
+.cerShot{display:block;width:118px;height:118px;object-fit:contain;margin:0 auto 10px;
   filter:drop-shadow(0 10px 18px rgba(0,0,0,.5))}
-@media (max-height:600px){ .cerShot{width:104px;height:104px;margin-bottom:8px} }
+@media (max-height:600px){ .cerShot{width:92px;height:92px;margin-bottom:6px} }
+/* ⛔ NO overflow belt on #cerBox: the OVERLAY (#cer) is the thing that
+   scrolls by design, and the playthrough measures reachability there. A
+   scrolling inner box contains the overflow, so #cer stops registering as
+   scrollable and every off-screen button reads as stranded. */
 
 /* the part reveal: what you won, where it goes, what it changes */
 .cerPart{background:var(--surface,var(--hi));border:1px solid var(--line);
@@ -499,7 +508,7 @@ button{font:inherit;color:inherit}
   <button class="btn" id="mSet">Settings</button>
   <button class="btn ghost" id="mExit">&#9668; Sky Wolf Studio Arcade</button>
 </div></div>
-<div id="buildstamp">build 20260830c</div>
+<div id="buildstamp">build 20260831a</div>
 
 <!-- ============================ HOW TO PLAY ============================ -->
 <div class="sheet" id="howto">
@@ -639,7 +648,7 @@ button{font:inherit;color:inherit}
       <button class="btn" id="wipe">Erase</button></div>
     <div class="setRow"><div class="lab"><h4>About</h4>
       <p>Ripcord, by Sky Wolf Studio. Works offline; nothing you do here leaves the
-         device. Build 20260830c.</p></div></div>
+         device. Build 20260831a.</p></div></div>
   </div>
 </div>
 
@@ -4511,7 +4520,7 @@ var PART_LISTS={core:SIM.CORES,blade:SIM.BLADES,assist:SIM.ASSISTS,ratchet:SIM.R
    ⛔ AND IT IS VERSIONED. The host edge-caches aggressively and has burned this
    studio repeatedly, so both the manifest and every picture carry the build
    stamp. */
-var LW_BUILD='20260830c';
+var LW_BUILD='20260831a';
 var ART = { ready:false, has:{}, count:0 };
 /* ⛔ THE VERSION COMES FROM THE FILE, NOT THE BUILD. The service worker caches
    every picture it fetches and never revalidates, so a re-cut part at the same
@@ -4523,6 +4532,42 @@ function artUrl(slot,id){
   return 'assets/parts/'+slot+'/'+id+'.'+(e.x||'webp')+'?v='+e.v;
 }
 function artHas(slot,id){ return !!(ART.has[slot]&&ART.has[slot][id]); }
+
+/* ── the top's own portrait, composited from its real part art ──────────
+   The dish used to draw every top from its stats alone. The parts are
+   painted now, so a top spinning in the arena is its actual blade with its
+   actual core riding the centre: composited once per (blade, core) pair
+   onto an offscreen canvas and stamped rotated every frame. The procedural
+   drawing stays as the FALLBACK, same law as everywhere else: no picture,
+   no difference. The blade art fills 92% of its frame (artcut's FILL), so
+   the blade's radius is 0.46 of the sprite and the core rides the centre
+   at its real proportion, a 10mm chip on this blade's millimetre radius. */
+var TOPART={};
+function topSprite(bladeId,coreId){
+  var key=bladeId+'|'+coreId, e=TOPART[key];
+  if(e)return e.ok?e.c:null;
+  e=TOPART[key]={ok:false,c:null};
+  var bu=artUrl('blade',bladeId), cu=artUrl('core',coreId);
+  if(!bu||!cu)return null;
+  var need=2, bi=new Image(), ci=new Image();
+  function done(){
+    if(--need)return;
+    var S=320, c=document.createElement('canvas');
+    c.width=S; c.height=S;
+    var g=c.getContext('2d');
+    g.drawImage(bi,0,0,S,S);
+    var bl=null,i;
+    for(i=0;i<SIM.BLADES.length;i++)if(SIM.BLADES[i].id===bladeId)bl=SIM.BLADES[i];
+    var frac=bl?(10/(bl.radius*1000)):0.45;
+    var ch=S*frac*0.5;                  // core half-width so radii match reality
+    g.drawImage(ci,S/2-ch,S/2-ch,ch*2,ch*2);
+    e.c=c; e.ok=true;
+  }
+  bi.onload=done; ci.onload=done;
+  bi.onerror=ci.onerror=function(){};   // the fallback is permanent, not an error
+  bi.src=bu; ci.src=cu;
+  return null;
+}
 function artInSlot(slot){ return !!(ART.has[slot]&&ART.count); }
 function loadArt(done){
   if(ART.ready){ if(done)done(); return; }
@@ -4795,6 +4840,10 @@ function buildRigs(){
   }
 }
 
+loadArt();  /* start fetching at boot: the ARENA composites tops from the
+   part art now, and a player who goes straight to a match must not spend
+   the round on the fallback because the workshop was never opened */
+
 /* The Looks panel draws your actual top, turning, with the paint on it. Picking
    a decal off a list of twelve words is picking blind, and the arena is the only
    other place it appears, by which time you have stopped choosing. */
@@ -4816,12 +4865,20 @@ function drawLookPreview(){
   g.beginPath();g.ellipse(cx,cy+rr*0.20,rr*0.72,rr*0.44,0,0,7);g.fill();
 
   g.save();g.translate(cx,cy);
-  var body=g.createLinearGradient(-rr,0,rr,0);
-  body.addColorStop(0,'rgba(24,17,14,.95)');
-  body.addColorStop(0.5,'rgba(58,45,35,.95)');
-  body.addColorStop(1,'rgba(24,17,14,.95)');
-  g.fillStyle=body;
-  g.beginPath();g.ellipse(0,0,rr,rr*squash,0,0,7);g.fill();
+  var lookSpr=topSprite(active().cfg.blade,active().cfg.core);
+  if(lookSpr){
+    g.save();g.scale(1,squash);g.rotate(lookPhase);
+    var lw2=rr*2.174;
+    g.drawImage(lookSpr,-lw2/2,-lw2/2,lw2,lw2);
+    g.restore();
+  }else{
+    var body=g.createLinearGradient(-rr,0,rr,0);
+    body.addColorStop(0,'rgba(24,17,14,.95)');
+    body.addColorStop(0.5,'rgba(58,45,35,.95)');
+    body.addColorStop(1,'rgba(24,17,14,.95)');
+    g.fillStyle=body;
+    g.beginPath();g.ellipse(0,0,rr,rr*squash,0,0,7);g.fill();
+  }
 
   g.save();g.rotate(lookPhase);
   g.globalAlpha=0.62;
@@ -4834,7 +4891,7 @@ function drawLookPreview(){
 
   var bl=null,i;
   for(i=0;i<SIM.BLADES.length;i++)if(SIM.BLADES[i].id===active().cfg.blade)bl=SIM.BLADES[i];
-  var teeth=Math.round(3+(bl?bl.sharp:0.5)*8);
+  var teeth=lookSpr?0:Math.round(3+(bl?bl.sharp:0.5)*8);
   g.strokeStyle=col;
   g.globalAlpha=(0.24+0.54*fin.metal)*(1-0.35*fin.rough)+0.16;
   g.lineWidth=rr*0.10;
@@ -6039,6 +6096,13 @@ function portrait(cvs,build){
   g.beginPath();g.ellipse(cx,cy+rr*0.22,rr*0.74,rr*0.44,0,0,7);g.fill();
 
   g.save();g.translate(cx,cy);
+  var pSpr=topSprite(build.blade,build.core);
+  if(pSpr){
+    g.save();g.scale(1,squash);g.rotate(0.55);
+    var pw=rr*2.174;
+    g.drawImage(pSpr,-pw/2,-pw/2,pw,pw);
+    g.restore();
+  }else{
   /* ⛔ The disc used the workshop preview's body gradient, which is a shade off
      the LIT PANEL it is drawn on there. On the ceremony's dark backdrop that
      made the whole face invisible and the top read as a purple ring with a
@@ -6050,6 +6114,7 @@ function portrait(cvs,build){
   body.addColorStop(1,'rgba(30,22,18,.98)');
   g.fillStyle=body;
   g.beginPath();g.ellipse(0,0,rr,rr*squash,0,0,7);g.fill();
+  }
   // the highlight along the upper edge, which is what says "turned metal"
   g.strokeStyle='rgba(237,230,216,.20)';g.lineWidth=rr*0.05;
   g.beginPath();g.ellipse(0,0,rr*0.97,rr*squash*0.97,0,Math.PI*1.08,Math.PI*1.92);g.stroke();
@@ -6064,7 +6129,7 @@ function portrait(cvs,build){
   g.globalAlpha=1;
 
   var bl=partOf('blade',build.blade);
-  var teeth=Math.round(3+(bl?bl.sharp:0.5)*8);
+  var teeth=pSpr?0:Math.round(3+(bl?bl.sharp:0.5)*8);
   g.strokeStyle=col;
   g.globalAlpha=(0.24+0.54*fin.metal)*(1-0.35*fin.rough)+0.18;
   g.lineWidth=rr*0.10;
@@ -6609,15 +6674,28 @@ function drawTop(o,color,isPlayer,trail){
   ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(tipx,tipy);ctx.stroke();
   ctx.lineCap='butt';
 
-  // the blade body
+  // the blade body: the painted top when the art exists, the stats-drawn
+  // disc when it does not
+  var spr=o.spec.cfg?topSprite(o.spec.cfg.blade,o.spec.cfg.core):null;
   ctx.save();
   ctx.translate(bx,by);ctx.rotate(lean);
-  var bodyG=ctx.createLinearGradient(-rr,0,rr,0);
-  bodyG.addColorStop(0,'rgba(24,17,14,.95)');
-  bodyG.addColorStop(0.5,'rgba(58,45,35,.95)');
-  bodyG.addColorStop(1,'rgba(24,17,14,.95)');
-  ctx.fillStyle=bodyG;
-  ctx.beginPath();ctx.ellipse(0,0,rr,rr*squash,0,0,7);ctx.fill();
+  if(spr){
+    // squash is the lean foreshortening, applied in the lean frame; the
+    // spin turns the picture inside it
+    ctx.save();
+    ctx.scale(1,squash);
+    ctx.rotate(o.phase*0.12-lean);
+    var dw=rr*2.174;                    // blade radius is 0.46 of the sprite
+    ctx.drawImage(spr,-dw/2,-dw/2,dw,dw);
+    ctx.restore();
+  }else{
+    var bodyG=ctx.createLinearGradient(-rr,0,rr,0);
+    bodyG.addColorStop(0,'rgba(24,17,14,.95)');
+    bodyG.addColorStop(0.5,'rgba(58,45,35,.95)');
+    bodyG.addColorStop(1,'rgba(24,17,14,.95)');
+    ctx.fillStyle=bodyG;
+    ctx.beginPath();ctx.ellipse(0,0,rr,rr*squash,0,0,7);ctx.fill();
+  }
 
   // the paint, in the top's own frame so it turns with the top
   if(isPlayer&&!reduced){
@@ -6642,15 +6720,19 @@ function drawTop(o,color,isPlayer,trail){
     }
     ctx.globalAlpha=1;
   }
-  // the rim
-  ctx.strokeStyle=color;ctx.globalAlpha=0.62+0.38*life;
-  ctx.lineWidth=Math.max(2.2,rr*0.17);
+  // the rim: the life tell. Sized for the dark procedural disc, it swallowed
+  // the painted blade's edge as a solid donut, so over art it thins and quiets
+  // while still fading with the spin.
+  ctx.strokeStyle=color;
+  ctx.globalAlpha=spr?(0.30+0.30*life):(0.62+0.38*life);
+  ctx.lineWidth=spr?Math.max(1.6,rr*0.10):Math.max(2.2,rr*0.17);
   ctx.beginPath();ctx.ellipse(0,0,rr,rr*squash,0,0,7);ctx.stroke();
   ctx.globalAlpha=1;
 
   // teeth. The count is the blade's sharpness, so a Cleaver and a Halo are
-  // different objects on screen and not the same ring in two colours.
-  var teeth=Math.round(3+(o.spec.sharp||0.4)*8);
+  // different objects on screen and not the same ring in two colours. The
+  // painted blade carries its own teeth, so these draw only on the fallback.
+  var teeth=spr?0:Math.round(3+(o.spec.sharp||0.4)*8);
   var spinAng=o.phase*0.12;
   // metal decides how much the teeth glint, rough decides how dull they read
   var fin=finishOf(isPlayer?cosm.finish:'raw');
@@ -6896,7 +6978,7 @@ requestAnimationFrame(frame);
      worker owns caching there, and a second one racing it is how this fleet
      wiped itself once already. Bump the ?v= with sw.js SHELL_VERSION. */
   if(!framed && 'serviceWorker' in navigator){
-    try{ navigator.serviceWorker.register('sw.js?v=20260830c'); }catch(e){}
+    try{ navigator.serviceWorker.register('sw.js?v=20260831a'); }catch(e){}
   }
 })();
 </script>

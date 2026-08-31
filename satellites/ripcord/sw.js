@@ -12,7 +12,7 @@
    ⛔ Bump SHELL_VERSION and the ?v= on the registration in index.html together.
       A bare sw.js URL is edge pinned for seven days on this host. */
 
-const SHELL_VERSION  = "rc-shell-v20260830c";
+const SHELL_VERSION  = "rc-shell-v20260831a";
 const NAV_TIMEOUT_MS = 8000;
 
 const SHELL_ASSETS = [
