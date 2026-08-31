@@ -384,7 +384,7 @@ button{font:inherit;color:inherit}
 #v3dStage canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 #v3dHint{padding:10px 16px calc(14px + var(--sb,0px));text-align:center;font-size:12px;
   letter-spacing:.06em;color:var(--dim)}
-.v3dGo{display:inline-block;margin-top:8px;min-height:44px;padding:10px 14px;
+.v3dGo{display:inline-block;margin-top:8px;min-height:48px;padding:12px 14px;
   font-size:12px;letter-spacing:.12em}
 /* ⛔ NO overflow belt on #cerBox: the OVERLAY (#cer) is the thing that
    scrolls by design, and the playthrough measures reachability there. A
@@ -537,7 +537,7 @@ button{font:inherit;color:inherit}
   <button class="btn" id="mSet">Settings</button>
   <button class="btn ghost" id="mExit">&#9668; Sky Wolf Studio Arcade</button>
 </div></div>
-<div id="buildstamp">build 20260831m</div>
+<div id="buildstamp">build 20260831n</div>
 
 <!-- ============================ HOW TO PLAY ============================ -->
 <div class="sheet" id="howto">
@@ -677,7 +677,7 @@ button{font:inherit;color:inherit}
       <button class="btn" id="wipe">Erase</button></div>
     <div class="setRow"><div class="lab"><h4>About</h4>
       <p>Ripcord, by Sky Wolf Studio. Works offline; nothing you do here leaves the
-         device. Build 20260831m.</p></div></div>
+         device. Build 20260831n.</p></div></div>
   </div>
 </div>
 
@@ -4396,6 +4396,9 @@ var chosenRigs=(save.build&&save.build.rigs)||[];
 var mods=save.mods||{};
 var cosm=save.cosmetics||{finish:'anod',decal:'stripe',trail:'rope',launcher:'ripcord'};
 if(!cosm.face)cosm.face='none';
+// warm the saved face's twelve frames off the boot path, so the first
+// battle on a slow connection is not the loop popping in frame by frame
+if(cosm.face!=='none')setTimeout(function(){zoeFrame(cosm.face,0,true);},900);
 var roleFilter='mine';
 var rigAnnounceArmed=false;   // see buildRigs: no announcements during boot
 var rung=save.rung|0, facing=save.facing|0;
@@ -4674,7 +4677,7 @@ var PART_LISTS={core:SIM.CORES,blade:SIM.BLADES,assist:SIM.ASSISTS,ratchet:SIM.R
    ⛔ AND IT IS VERSIONED. The host edge-caches aggressively and has burned this
    studio repeatedly, so both the manifest and every picture carry the build
    stamp. */
-var LW_BUILD='20260831m';
+var LW_BUILD='20260831n';
 var ART = { ready:false, has:{}, count:0 };
 /* ⛔ THE VERSION COMES FROM THE FILE, NOT THE BUILD. The service worker caches
    every picture it fetches and never revalidates, so a re-cut part at the same
@@ -5389,6 +5392,13 @@ function drawStats(){
       (flag&&flag!=='warn'?'<em>'+t+'</em>':t)+'</span></div>';
   }
   $('stats').innerHTML=out;
+  // ⛔ .stat rows are born at opacity 0 for the reveal-card stagger, and
+  // only revealStats releases them - so this whole panel, the rigged
+  // numbers beside the plain ones, was INVISIBLE from the day that CSS
+  // landed, leaving a silent void beside the dial. The workshop redraws
+  // on every dial drag, so it gets instant rows, not a restagger.
+  var srows=$('stats').querySelectorAll('.stat');
+  for(i=0;i<srows.length;i++)srows[i].classList.add('in');
 }
 function refresh(){
   drawDial();drawStats();buildRigs();summaries();
@@ -7555,7 +7565,7 @@ requestAnimationFrame(frame);
      worker owns caching there, and a second one racing it is how this fleet
      wiped itself once already. Bump the ?v= with sw.js SHELL_VERSION. */
   if(!framed && 'serviceWorker' in navigator){
-    try{ navigator.serviceWorker.register('sw.js?v=20260831m'); }catch(e){}
+    try{ navigator.serviceWorker.register('sw.js?v=20260831n'); }catch(e){}
   }
 })();
 </script>

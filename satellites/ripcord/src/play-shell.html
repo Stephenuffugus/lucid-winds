@@ -384,7 +384,7 @@ button{font:inherit;color:inherit}
 #v3dStage canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 #v3dHint{padding:10px 16px calc(14px + var(--sb,0px));text-align:center;font-size:12px;
   letter-spacing:.06em;color:var(--dim)}
-.v3dGo{display:inline-block;margin-top:8px;min-height:44px;padding:10px 14px;
+.v3dGo{display:inline-block;margin-top:8px;min-height:48px;padding:12px 14px;
   font-size:12px;letter-spacing:.12em}
 /* ⛔ NO overflow belt on #cerBox: the OVERLAY (#cer) is the thing that
    scrolls by design, and the playthrough measures reachability there. A
@@ -757,6 +757,9 @@ var chosenRigs=(save.build&&save.build.rigs)||[];
 var mods=save.mods||{};
 var cosm=save.cosmetics||{finish:'anod',decal:'stripe',trail:'rope',launcher:'ripcord'};
 if(!cosm.face)cosm.face='none';
+// warm the saved face's twelve frames off the boot path, so the first
+// battle on a slow connection is not the loop popping in frame by frame
+if(cosm.face!=='none')setTimeout(function(){zoeFrame(cosm.face,0,true);},900);
 var roleFilter='mine';
 var rigAnnounceArmed=false;   // see buildRigs: no announcements during boot
 var rung=save.rung|0, facing=save.facing|0;
@@ -1750,6 +1753,13 @@ function drawStats(){
       (flag&&flag!=='warn'?'<em>'+t+'</em>':t)+'</span></div>';
   }
   $('stats').innerHTML=out;
+  // ⛔ .stat rows are born at opacity 0 for the reveal-card stagger, and
+  // only revealStats releases them - so this whole panel, the rigged
+  // numbers beside the plain ones, was INVISIBLE from the day that CSS
+  // landed, leaving a silent void beside the dial. The workshop redraws
+  // on every dial drag, so it gets instant rows, not a restagger.
+  var srows=$('stats').querySelectorAll('.stat');
+  for(i=0;i<srows.length;i++)srows[i].classList.add('in');
 }
 function refresh(){
   drawDial();drawStats();buildRigs();summaries();
