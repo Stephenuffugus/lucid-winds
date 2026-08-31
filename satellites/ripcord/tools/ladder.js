@@ -122,6 +122,44 @@ const ROLE_ORDER = ['balance', 'stamina', 'attack', 'defense'];
 // of the ladder should beat one more often than not.
 const target = i => 0.30 + (0.70 - 0.30) * Math.pow(i / 19, 0.92);
 
+/* ⚖️ THE FIRST FOUR RUNGS ARE TUNED AGAINST THE STOCK BUILD, not the panel.
+   The panel archetypes carry counterweights and tuned parts; the rung one
+   player has iron/wheel/wing/3-60/point and nothing else, so a rung tuned
+   to 30 percent against the panel measured 59 percent against the player
+   actually standing there - Stephen felt it on his phone as lost right
+   away, three times in a row. These targets are the OPPONENT'S win rate
+   against stock: the player should take rung one about two matches in
+   three and be at even money by rung four, converging with the panel
+   curve as their case fills with parts. */
+const STOCK_BUILD = { core: 'iron', blade: 'wheel', assist: 'wing',
+                      ratchet: '3-60', bit: 'point', weights: [] };
+const STOCK_TARGETS = [0.35, 0.40, 0.45, 0.50];
+/* ⛔ Tuned on MATCHES, not rounds. The first stock-relative pass tuned on
+   rounds and the felt rates came out 42/46/24/33 instead of 65/60/55/50:
+   the stock build's wins are spinouts worth ONE point while a tuned
+   opponent's wins are ringouts and bursts worth TWO, so a player winning
+   62 percent of rounds was still losing the match. The player experiences
+   first-to-four points; that is the statistic, so that is what is tuned. */
+const PTS = { spinout: 1, ringout: 2, knockout: 2, burst: 2, timeout: 1, worn: 2, double: 0 };
+function matchVsStock(cfg, seed, matches) {
+  let w = 0;
+  for (let m = 0; m < matches; m++) {
+    const rnd = SIM.mulberry(seed + m * 131);
+    let po = 0, ps = 0;
+    while (po < 4 && ps < 4) {
+      const me = SIM.build(Object.assign({}, cfg, { dir: 1 }));
+      const foe = SIM.build(Object.assign({}, STOCK_BUILD, { dir: rnd() < 0.5 ? 1 : -1 }));
+      const r = SIM.resolveMatch(me, foe, { rnd,
+        a: { power: .96 + rnd() * .08, lean: .03 + rnd() * .04, phase: rnd() * 6.283, trigger: cfg.trigger },
+        b: { power: .96 + rnd() * .08, lean: .03 + rnd() * .04, phase: rnd() * 6.283 } });
+      const p = PTS[r.cause] || 1;
+      if (r.winner === 'a') po += p; else if (r.winner === 'b') ps += p;
+    }
+    if (po > ps) w++;
+  }
+  return w / matches;
+}
+
 const PANEL = Object.keys(SIM.ARCHETYPES);
 const rnd0 = SIM.mulberry(4242);
 const pickR = a => a[Math.floor(rnd0() * a.length)];
@@ -194,16 +232,18 @@ const { drops, total } = dropTable();
 
 for (let i = 0; i < 20; i++) {
   const role = ROLE_ORDER[i % ROLE_ORDER.length];
-  const want = target(i);
+  const vsStock = i < STOCK_TARGETS.length;
+  const want = vsStock ? STOCK_TARGETS[i] : target(i);
   let best = null;
   for (let c = 0; c < CANDIDATES; c++) {
     const cfg = sample(role, i);
-    const s = strength(cfg, i * 1013 + c * 17, REPS);
+    const s = vsStock ? matchVsStock(cfg, i * 1013 + c * 17, 24)
+                      : strength(cfg, i * 1013 + c * 17, REPS);
     const err = Math.abs(s - want);
     if (!best || err < best.err) best = { cfg, s, err };
   }
   ordinary.push({
-    name: NAMES[i], role,
+    name: NAMES[i], role, basis: vsStock ? 'stock' : 'panel',
     target: +want.toFixed(3), measured: +best.s.toFixed(3),
     build: best.cfg, drops: drops[i]
   });
@@ -236,7 +276,11 @@ for (let lg = 0; lg < 5; lg++) {
 let inversions = 0, worst = 0;
 const curve = ladder.filter(r => !r.boss);
 for (let i = 1; i < curve.length; i++) {
-  if (curve[i].measured < curve[i - 1].measured) inversions++;
+  // the first four rungs measure against the stock build, the rest against
+  // the panel - two statistics, so the seam between them is not a step on
+  // one curve and is never compared (the same-statistic law, inside one tool)
+  if (curve[i].basis === curve[i - 1].basis &&
+      curve[i].measured < curve[i - 1].measured) inversions++;
   worst = Math.max(worst, Math.abs(curve[i].measured - curve[i].target));
 }
 

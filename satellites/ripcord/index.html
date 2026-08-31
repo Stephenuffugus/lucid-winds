@@ -538,7 +538,7 @@ button{font:inherit;color:inherit}
   <button class="btn" id="mSet">Settings</button>
   <button class="btn ghost" id="mExit">&#9668; Sky Wolf Studio Arcade</button>
 </div></div>
-<div id="buildstamp">build 20260831o</div>
+<div id="buildstamp">build 20260831p</div>
 
 <!-- ============================ HOW TO PLAY ============================ -->
 <div class="sheet" id="howto">
@@ -678,7 +678,7 @@ button{font:inherit;color:inherit}
       <button class="btn" id="wipe">Erase</button></div>
     <div class="setRow"><div class="lab"><h4>About</h4>
       <p>Ripcord, by Sky Wolf Studio. Works offline; nothing you do here leaves the
-         device. Build 20260831o.</p></div></div>
+         device. Build 20260831p.</p></div></div>
   </div>
 </div>
 
@@ -691,19 +691,19 @@ button{font:inherit;color:inherit}
   "league": 0,
   "name": "Chalkline",
   "role": "balance",
-  "target": 0.3,
-  "measured": 0.313,
+  "target": 0.35,
+  "measured": 0.333,
   "build": {
-   "core": "vise",
-   "blade": "hailstone",
-   "assist": "wing",
-   "ratchet": "0-60",
+   "core": "quench",
+   "blade": "wheel",
+   "assist": "cornice",
+   "ratchet": "3-60",
    "bit": "cleat",
    "weights": [],
    "trigger": "charged",
-   "finish": "anod",
-   "decal": "moth",
-   "trail": "none"
+   "finish": "weather",
+   "decal": "knot",
+   "trail": "rope"
   },
   "drops": [
    {
@@ -729,19 +729,19 @@ button{font:inherit;color:inherit}
   "league": 0,
   "name": "Bat Handler",
   "role": "stamina",
-  "target": 0.327,
-  "measured": 0.313,
+  "target": 0.4,
+  "measured": 0.417,
   "build": {
    "core": "tinder",
    "blade": "hookbill",
-   "assist": "eaves",
+   "assist": "slick",
    "ratchet": "5-60",
-   "bit": "taper",
+   "bit": "agate",
    "weights": [],
    "trigger": "charged",
-   "finish": "matte",
-   "decal": "sunburst",
-   "trail": "none"
+   "finish": "chrome",
+   "decal": "koi",
+   "trail": "ink"
   },
   "drops": [
    {
@@ -767,25 +767,19 @@ button{font:inherit;color:inherit}
   "league": 0,
   "name": "Post Keeper",
   "role": "attack",
-  "target": 0.35,
-  "measured": 0.375,
+  "target": 0.45,
+  "measured": 0.458,
   "build": {
-   "core": "flint",
-   "blade": "broadaxe",
-   "assist": "barb",
-   "ratchet": "2-90",
-   "bit": "rowel",
-   "weights": [
-    {
-     "id": "slug",
-     "hole": 2,
-     "ring": 0
-    }
-   ],
+   "core": "millst",
+   "blade": "cleaver",
+   "assist": "longspur",
+   "ratchet": "4-80",
+   "bit": "caltrop",
+   "weights": [],
    "trigger": "charged",
-   "finish": "chrome",
-   "decal": "circuit",
-   "trail": "violet"
+   "finish": "anod",
+   "decal": "chalk",
+   "trail": "none"
   },
   "drops": [
    {
@@ -811,19 +805,19 @@ button{font:inherit;color:inherit}
   "league": 0,
   "name": "Knot",
   "role": "defense",
-  "target": 0.373,
-  "measured": 0.375,
+  "target": 0.5,
+  "measured": 0.5,
   "build": {
-   "core": "burr",
-   "blade": "anvil",
+   "core": "iron",
+   "blade": "bulwark",
    "assist": "bushing",
-   "ratchet": "0-40",
+   "ratchet": "8-30",
    "bit": "ball",
    "weights": [],
    "trigger": "charged",
-   "finish": "anod",
-   "decal": "wave",
-   "trail": "violet"
+   "finish": "enamel",
+   "decal": "none",
+   "trail": "ember"
   },
   "drops": [
    {
@@ -4678,7 +4672,7 @@ var PART_LISTS={core:SIM.CORES,blade:SIM.BLADES,assist:SIM.ASSISTS,ratchet:SIM.R
    ⛔ AND IT IS VERSIONED. The host edge-caches aggressively and has burned this
    studio repeatedly, so both the manifest and every picture carry the build
    stamp. */
-var LW_BUILD='20260831o';
+var LW_BUILD='20260831p';
 var ART = { ready:false, has:{}, count:0 };
 /* ⛔ THE VERSION COMES FROM THE FILE, NOT THE BUILD. The service worker caches
    every picture it fetches and never revalidates, so a re-cut part at the same
@@ -7283,22 +7277,12 @@ function drawTop(o,color,isPlayer,trail){
     ctx.globalAlpha=1;ctx.restore();
   }
 
-  // the zoetrope face: the top of the top, upright while the disc turns
-  // under it. The physics is the playback: frame index follows the visual
-  // rotation, so a hard wind runs the loop hot and a dying top slows its
-  // own film until it freezes.
-  if(isPlayer&&cosm.face&&cosm.face!=='none'){
-    var zf=zoeFrame(cosm.face,o.phase*0.12,reduced);
-    if(zf){
-      // 1.5 radii: the frame carries its own margin (the cut is the union
-      // box of all twelve), so this reads as the face covering the core
-      // and inner blade, not as a sticker over the whole top
-      var zw=rr*1.5;
-      ctx.save();ctx.scale(1,squash);ctx.rotate(-lean);
-      ctx.drawImage(zf,-zw/2,-zw/2,zw,zw);
-      ctx.restore();
-    }
-  }
+  /* ⛔ The zoetrope face is NOT drawn in the dish. On a real phone the top
+     is ~40px and Stephen's verdict was direct: too small to read, the
+     unregistered frames skip, and mid-fight you cannot look at it anyway.
+     The faces live where they are big enough to be art - the Looks
+     preview - and their real stage is the VR build, where a top is the
+     size of your hand. zoeFrame and the cut stay; this draw call went. */
 
   // spin blur: concentric arcs whose reach and alpha are the spin rate. A dying
   // top loses its blur before it loses its shape, which is the tell that says
@@ -7573,7 +7557,7 @@ requestAnimationFrame(frame);
      worker owns caching there, and a second one racing it is how this fleet
      wiped itself once already. Bump the ?v= with sw.js SHELL_VERSION. */
   if(!framed && 'serviceWorker' in navigator){
-    try{ navigator.serviceWorker.register('sw.js?v=20260831o'); }catch(e){}
+    try{ navigator.serviceWorker.register('sw.js?v=20260831p'); }catch(e){}
   }
 })();
 </script>

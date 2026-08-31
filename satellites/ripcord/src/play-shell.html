@@ -3644,22 +3644,12 @@ function drawTop(o,color,isPlayer,trail){
     ctx.globalAlpha=1;ctx.restore();
   }
 
-  // the zoetrope face: the top of the top, upright while the disc turns
-  // under it. The physics is the playback: frame index follows the visual
-  // rotation, so a hard wind runs the loop hot and a dying top slows its
-  // own film until it freezes.
-  if(isPlayer&&cosm.face&&cosm.face!=='none'){
-    var zf=zoeFrame(cosm.face,o.phase*0.12,reduced);
-    if(zf){
-      // 1.5 radii: the frame carries its own margin (the cut is the union
-      // box of all twelve), so this reads as the face covering the core
-      // and inner blade, not as a sticker over the whole top
-      var zw=rr*1.5;
-      ctx.save();ctx.scale(1,squash);ctx.rotate(-lean);
-      ctx.drawImage(zf,-zw/2,-zw/2,zw,zw);
-      ctx.restore();
-    }
-  }
+  /* ⛔ The zoetrope face is NOT drawn in the dish. On a real phone the top
+     is ~40px and Stephen's verdict was direct: too small to read, the
+     unregistered frames skip, and mid-fight you cannot look at it anyway.
+     The faces live where they are big enough to be art - the Looks
+     preview - and their real stage is the VR build, where a top is the
+     size of your hand. zoeFrame and the cut stay; this draw call went. */
 
   // spin blur: concentric arcs whose reach and alpha are the spin rate. A dying
   // top loses its blur before it loses its shape, which is the tell that says
