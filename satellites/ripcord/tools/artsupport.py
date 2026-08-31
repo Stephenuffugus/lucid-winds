@@ -57,6 +57,16 @@ SHEETS = {
                                       ('emblem','tower'),('emblem','owl2'),('emblem','sunface')]),
     'file_00000000cd9c81f5': ('cut', [('emblem','moth2'),('emblem','flame2'),('emblem','crane2'),
                                       ('emblem','chalkstick'),('emblem','knot2')]),
+    # Decal Sheet A's missing four, from the Aug 31 "More assets" drop: the
+    # claw scratch IS stripe (a tiger-stripe rake), per the recovery handoff's
+    # own ledger ("stripe, koi, tiger, and circuit were later generated
+    # together on magenta"). Row-major: stripe, koi / tiger, circuit.
+    # 'quad' not 'cut': the claw is FOUR disconnected rake marks, so the
+    # connected-component finder shatters it (7 parts found for 4 assets).
+    # The sheet is a clean 2x2 grid, so each quadrant's own alpha bbox is
+    # the honest cut.
+    'file_00000000fd5081f5': ('quad', [('decal','stripe'),('decal','koi'),
+                                       ('decal','tiger'),('decal','circuit')]),
 }
 SIZES = {'decal': 256, 'emblem': 320}
 DEST = {'decal': DECALS_D, 'emblem': EMBLEMS_D}
@@ -86,7 +96,24 @@ def main(indir):
             continue
         keyed, _ = artsheet.key_and_defringe(Image.open(src))
         import numpy as np
-        boxes = artsheet.find_parts(np.asarray(keyed)[:, :, 3])
+        if kind == 'quad':
+            # 2x2 grid: each quadrant's alpha bbox, no component finding.
+            a = np.asarray(keyed)[:, :, 3]
+            H2, W2 = a.shape[0] // 2, a.shape[1] // 2
+            boxes = []
+            for qy in (0, 1):
+                for qx in (0, 1):
+                    cell = a[qy*H2:(qy+1)*H2, qx*W2:(qx+1)*W2]
+                    ys, xs = np.nonzero(cell > 8)
+                    if not len(ys):
+                        print('ERROR %s: empty quadrant %d,%d' % (prefix, qx, qy))
+                        failed = True; boxes = None; break
+                    boxes.append((qx*W2+xs.min(), qy*H2+ys.min(),
+                                  qx*W2+xs.max()+1, qy*H2+ys.max()+1, 0, 0))
+                if boxes is None: break
+            if boxes is None: continue
+        else:
+            boxes = artsheet.find_parts(np.asarray(keyed)[:, :, 3])
         if len(boxes) != len(spec):
             print('ERROR %s: %d parts found, %d named - nothing written'
                   % (prefix, len(boxes), len(spec)))
