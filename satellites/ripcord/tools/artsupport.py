@@ -76,6 +76,23 @@ SHEETS = {
                                               ('glyph','trig-cornered'),('glyph','trig-mirror'),('glyph','trig-late')]]),
     'file_000000002cec81f5': ('grid', [(4,2),[('fx','spinring'),('fx','wobble'),('fx','spark-low'),('fx','spark-med'),
                                               ('fx','spark-high'),('fx','railstreak'),('fx','burst'),('fx','dust')]]),
+    # The Aug 31 EVENING drop: the five remaining sheets, all correct at
+    # last. Sheet 13 finish symbols + all 19 ability tells (sheets 15-18).
+    # Rows layouts differ (3+2, 2+2, 3+3), debris is disconnected, so the
+    # row-cluster cutter does the honest split.
+    'file_00000000b3b481f5': ('rows', [[3,3],[('fx','finish-spinout'),('fx','finish-ringout'),('fx','finish-knockout'),
+                                              ('fx','finish-burst'),('fx','finish-double'),('fx','finish-worn')]]),
+    'file_00000000b20481f5': ('rows', [[3,2],[('fx','tell-surge'),('fx','tell-anchor'),('fx','tell-overdrive'),
+                                              ('fx','tell-rebound'),('fx','tell-reversal')]]),
+    'file_000000004df481f5': ('rows', [[3,2],[('fx','tell-shed'),('fx','tell-burrow'),('fx','tell-lash'),
+                                              ('fx','tell-lunge'),('fx','tell-brake')]]),
+    'file_00000000d65c81f5': ('rows', [[3,2],[('fx','tell-scatter'),('fx','tell-stoneskin'),('fx','tell-windup'),
+                                              ('fx','tell-bite'),('fx','tell-tether')]]),
+    # sheet 18 is a true 2x2 but its rows TOUCH in y-projection (the kindle
+    # flame is tall, the echo rings sprawl), so the row-band finder saw one
+    # band; fixed-cell grid is the honest cut here.
+    'file_0000000002c081f5': ('grid', [(2,2),[('fx','tell-backspin'),('fx','tell-kindle'),
+                                              ('fx','tell-echo'),('fx','tell-pitch')]]),
     # Decal Sheet A's missing four ("stripe, koi, tiger, and circuit were
     # later generated together on magenta" per the recovery handoff; the claw
     # scratch IS stripe, a tiger-stripe rake). 'quad' not 'cut': the claw is
@@ -114,7 +131,54 @@ def main(indir):
             continue
         keyed, _ = artsheet.key_and_defringe(Image.open(src))
         import numpy as np
-        if kind == 'quad' or kind == 'grid':
+        if kind == 'rows':
+            # Row-cluster cut for sheets whose rows hold DIFFERENT counts
+            # (3 over 2) of disconnected-debris motifs: find row bands from
+            # the alpha's y-projection, then split each band at its x-
+            # projection gaps. spec = [[counts per row], [names row-major]].
+            counts, spec = spec[0], spec[1]
+            a = np.asarray(keyed)[:, :, 3]
+            ys = (a > 8).any(axis=1)
+            # row bands: runs of occupied rows separated by >=30 empty rows
+            bands, start, gap = [], None, 0
+            for y in range(len(ys)):
+                if ys[y]:
+                    if start is None: start = y
+                    gap = 0
+                elif start is not None:
+                    gap += 1
+                    if gap >= 30:
+                        bands.append((start, y - gap + 1)); start = None
+            if start is not None: bands.append((start, len(ys)))
+            if len(bands) != len(counts):
+                print('ERROR %s: %d row bands found, %d expected'
+                      % (prefix, len(bands), len(counts)))
+                failed = True; continue
+            boxes = []
+            ok = True
+            for (y0, y1), want in zip(bands, counts):
+                xs = (a[y0:y1] > 8).any(axis=0)
+                items, sx, g = [], None, 0
+                for x in range(len(xs)):
+                    if xs[x]:
+                        if sx is None: sx = x
+                        g = 0
+                    elif sx is not None:
+                        g += 1
+                        if g >= 40:
+                            items.append((sx, x - g + 1)); sx = None
+                if sx is not None: items.append((sx, len(xs)))
+                if len(items) != want:
+                    print('ERROR %s: row %d-%d has %d items, %d expected'
+                          % (prefix, y0, y1, len(items), want))
+                    ok = False; break
+                for x0, x1 in items:
+                    sub = a[y0:y1, x0:x1]
+                    yy2, xx2 = np.nonzero(sub > 8)
+                    boxes.append((x0 + xx2.min(), y0 + yy2.min(),
+                                  x0 + xx2.max() + 1, y0 + yy2.max() + 1, 0, 0))
+            if not ok: failed = True; continue
+        elif kind == 'quad' or kind == 'grid':
             # Grid cut: each cell's own alpha bbox, no component finding — for
             # sheets whose assets are made of DISCONNECTED pieces (a claw's
             # rake marks, a broken chain, scattered debris) that shatter the
@@ -147,6 +211,17 @@ def main(indir):
         for (dkind, name), (x0, y0, x1, y1, _, _) in zip(spec, boxes):
             crop = keyed.crop((max(0,x0-6), max(0,y0-6),
                                min(keyed.width,x1+6), min(keyed.height,y1+6)))
+            if dkind == 'fx':
+                # A soft glow blended with the magenta ground survives the
+                # key as an OPAQUE magenta cast no defringe band reaches
+                # (a 40% blend pixel sits far from the key colour). The
+                # cast is min(R,B) rising above G with R and B BOTH high;
+                # genuine blues keep B>>R so their excess stays small.
+                fa = np.asarray(crop).astype(np.float32)
+                m = np.maximum(0, np.minimum(fa[...,0], fa[...,2]) - fa[...,1]) * 0.85
+                fa[...,0] = np.clip(fa[...,0]-m, 0, 255)
+                fa[...,2] = np.clip(fa[...,2]-m, 0, 255)
+                crop = Image.fromarray(fa.astype(np.uint8))
             out = square(crop, SIZES[dkind])
             out.save(os.path.join(DEST[dkind], name + '.webp'), 'WEBP', quality=82, method=6)
             done += 1

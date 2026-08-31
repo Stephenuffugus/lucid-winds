@@ -535,7 +535,7 @@ button{font:inherit;color:inherit}
   <button class="btn" id="mSet">Settings</button>
   <button class="btn ghost" id="mExit">&#9668; Sky Wolf Studio Arcade</button>
 </div></div>
-<div id="buildstamp">build 20260831f</div>
+<div id="buildstamp">build 20260831g</div>
 
 <!-- ============================ HOW TO PLAY ============================ -->
 <div class="sheet" id="howto">
@@ -675,7 +675,7 @@ button{font:inherit;color:inherit}
       <button class="btn" id="wipe">Erase</button></div>
     <div class="setRow"><div class="lab"><h4>About</h4>
       <p>Ripcord, by Sky Wolf Studio. Works offline; nothing you do here leaves the
-         device. Build 20260831f.</p></div></div>
+         device. Build 20260831g.</p></div></div>
   </div>
 </div>
 
@@ -4587,7 +4587,7 @@ var PART_LISTS={core:SIM.CORES,blade:SIM.BLADES,assist:SIM.ASSISTS,ratchet:SIM.R
    ⛔ AND IT IS VERSIONED. The host edge-caches aggressively and has burned this
    studio repeatedly, so both the manifest and every picture carry the build
    stamp. */
-var LW_BUILD='20260831f';
+var LW_BUILD='20260831g';
 var ART = { ready:false, has:{}, count:0 };
 /* ⛔ THE VERSION COMES FROM THE FILE, NOT THE BUILD. The service worker caches
    every picture it fetches and never revalidates, so a re-cut part at the same
@@ -5755,7 +5755,7 @@ var phase='menu';           // menu | wind | drop | play | done | over | taya
    skips it, because the second time you see an animation you want it gone. */
 var dropT=0, DROP_DUR=0.80;
 var stroke=[],graded=null,lastGrade=null;
-var A=null,B=null,acc=0,last=0,pa=0,pb=0,flash=0,flashTxt='',flashCol='#EDE6D8';
+var A=null,B=null,acc=0,last=0,pa=0,pb=0,flash=0,flashTxt='',flashCol='#EDE6D8',flashSym='';
 var liveTurn=0,lastAng=0,winding=false;
 var WANT=3, OVER=WANT*1.45;
 var sparks=[],trailA=[],trailB=[];
@@ -6090,6 +6090,20 @@ function launchTuj(L){
 /* ------------------------------------------------------------ round endings */
 var CAUSE_WORD={spinout:'SPINOUT',ringout:'RINGOUT',knockout:'KNOCKOUT',
                 burst:'BURST',timeout:'TIME',double:'DOUBLE OUT',worn:'WORN DOWN'};
+/* the painted finish symbols (Sheet 13, Aug 31). No picture, no
+   difference: a missing file leaves the text banner exactly as it was. */
+var FINISH_SYMS={spinout:1,ringout:1,knockout:1,burst:1,double:1,worn:1};
+var FINISH_IMG={};
+function finishSym(id){
+  var img=FINISH_IMG[id];
+  if(img===undefined){
+    img=FINISH_IMG[id]=new Image();
+    img.onerror=function(){FINISH_IMG[id]=null;};
+    img.src='assets/fx/finish-'+id+'.webp?v='+LW_BUILD;
+    return null;
+  }
+  return (img&&img.complete&&img.naturalWidth)?img:null;
+}
 function endRound(){
   var win=null,cause='timeout';
   if(mode==='uri'){
@@ -6133,6 +6147,7 @@ function endRound(){
   flash=1.8;
   var who=mode==='pass'?(win==='a'?'ONE ':'TWO '):(win==='a'?'YOU ':'THEY ');
   flashTxt=cause==='double'?'DOUBLE OUT':who+(CAUSE_WORD[cause]||cause)+' +'+pts;
+  flashSym=FINISH_SYMS[cause]?cause:'';
   flashCol=win==='a'?'#7FA650':'#C4442B';
   if(cause==='burst')AUDIO.burst();
   else if(cause==='ringout')AUDIO.ringout();
@@ -6448,7 +6463,7 @@ function startTaya(win){
   B=SIM.spawn(loser.spec,{angle:0,offset:0,pinned:true,arenaR:arenaR});
   A.vx=-M.strikeSpeed;A.vz=0;
   tayaStrike=win==='a'?1:-1;tayaBest=0;
-  flash=1.8;flashTxt=win==='a'?'YOUR FREE STRIKE':'THEIR FREE STRIKE';
+  flash=1.8;flashSym='';flashTxt=win==='a'?'YOUR FREE STRIKE':'THEIR FREE STRIKE';
   flashCol='#C9A227';
   phase='taya';acc=0;
   setTimeout(function(){
@@ -6459,10 +6474,10 @@ function startTaya(win){
       tayaWear[side]=0;
       if(tayaStrike>0)pa+=1;else pb+=1;
       $('score').innerHTML=pa+' &nbsp;'+pb+'<small>first to four</small>';
-      flash=1.8;flashTxt='THE LOCK GAVE';flashCol='#C4442B';AUDIO.burst();haptic(70);
+      flash=1.8;flashSym='';flashTxt='THE LOCK GAVE';flashCol='#C4442B';AUDIO.burst();haptic(70);
     }else{
       flash=1.6;
-      flashTxt=(side==='a'?'YOUR':'THEIR')+' LOCK IS '+Math.round(tayaWear[side]*100)+' PERCENT GONE';
+      flashSym='';flashTxt=(side==='a'?'YOUR':'THEIR')+' LOCK IS '+Math.round(tayaWear[side]*100)+' PERCENT GONE';
       flashCol='#C9A227';
     }
     A=B=null;
@@ -6492,7 +6507,7 @@ function step(dt){
           if(B._every&&B.alive&&B.t-B._fired>=B._every){
             B.charge=1;B.abilityUsed=0;B._fired=B.t;
             SIM.fire(B,A);AUDIO.ability();
-            flash=0.8;flashTxt='REVERSAL';flashCol='#9A6FB0';
+            flash=0.8;flashSym='';flashTxt='REVERSAL';flashCol='#9A6FB0';
           }else if(B.abilityUsed===0&&SIM.triggerReady(B,A)){SIM.fire(B,A);AUDIO.ability();}
         }
       }
@@ -6568,7 +6583,7 @@ function stepTargets(){
       if(c.impulse>SIM.MODES.range.topple){
         t.alive=false;t.cause='knockout';
         tuj.score+=t.points;
-        flash=1.1;flashTxt='+'+t.points;flashCol='#C9A227';
+        flash=1.1;flashSym='';flashTxt='+'+t.points;flashCol='#C9A227';
         AUDIO.knockout();haptic(30);
       }
     }
@@ -6626,9 +6641,19 @@ function frame(now){
   }
   if(flash>0){
     ctx.globalAlpha=Math.min(1,flash);
+    var fsy=CY()-RAD()-18;
+    if(flashSym){
+      var fim=finishSym(flashSym);
+      if(fim){
+        // the painted outcome above its word: sized to read, faded with the
+        // same clock as the text so they leave together
+        var fw=Math.min(64,RAD()*0.34), fh=fw*fim.naturalHeight/fim.naturalWidth;
+        ctx.drawImage(fim,CX()-fw/2,fsy-16-fh,fw,fh);
+      }
+    }
     ctx.fillStyle=flashCol;ctx.textAlign='center';
     ctx.font='700 20px ui-sans-serif,system-ui';
-    ctx.fillText(flashTxt,CX(),CY()-RAD()-18);
+    ctx.fillText(flashTxt,CX(),fsy);
     ctx.globalAlpha=1;
   }
 }
@@ -7266,7 +7291,7 @@ requestAnimationFrame(frame);
      worker owns caching there, and a second one racing it is how this fleet
      wiped itself once already. Bump the ?v= with sw.js SHELL_VERSION. */
   if(!framed && 'serviceWorker' in navigator){
-    try{ navigator.serviceWorker.register('sw.js?v=20260831f'); }catch(e){}
+    try{ navigator.serviceWorker.register('sw.js?v=20260831g'); }catch(e){}
   }
 })();
 </script>
