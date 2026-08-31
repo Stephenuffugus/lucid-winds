@@ -365,6 +365,25 @@ button{font:inherit;color:inherit}
 .cerShot{display:block;width:118px;height:118px;object-fit:contain;margin:0 auto 10px;
   filter:drop-shadow(0 10px 18px rgba(0,0,0,.5))}
 @media (max-height:600px){ .cerShot{width:92px;height:92px;margin-bottom:6px} }
+.cerShot.v3dable{cursor:pointer}
+
+/* ---------- the 3D inspect viewer ----------
+   The sculpted hero under your finger. Loads three.js on first open and
+   never before, so a player who never taps it pays nothing. */
+#v3d{position:fixed;inset:0;z-index:70;display:none;flex-direction:column;
+  background:#0C0908}
+#v3d.on{display:flex}
+#v3dHead{display:flex;align-items:center;gap:10px;padding:12px 14px 6px}
+#v3dName{flex:1;min-width:0;font-weight:800;font-size:19px;letter-spacing:.01em}
+#v3dName small{display:block;font-size:11px;letter-spacing:.14em;font-weight:700;
+  color:var(--dim);text-transform:uppercase;margin-top:2px}
+#v3dClose{min-height:48px;min-width:76px}
+#v3dStage{flex:1;position:relative;min-height:0}
+#v3dStage canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
+#v3dHint{padding:10px 16px calc(14px + var(--sb,0px));text-align:center;font-size:12px;
+  letter-spacing:.06em;color:var(--dim)}
+.v3dGo{display:inline-block;margin-top:8px;min-height:44px;padding:10px 14px;
+  font-size:12px;letter-spacing:.12em}
 /* ⛔ NO overflow belt on #cerBox: the OVERLAY (#cer) is the thing that
    scrolls by design, and the playthrough measures reachability there. A
    scrolling inner box contains the overflow, so #cer stops registering as
@@ -481,6 +500,14 @@ button{font:inherit;color:inherit}
 <div id="unlock"><small>Part won</small><b id="unlockName">&nbsp;</b></div>
 
 <!-- ============ CEREMONY: the beats between the doing ============ -->
+<div id="v3d" aria-hidden="true">
+  <div id="v3dHead">
+    <div id="v3dName"></div>
+    <button class="btn" id="v3dClose" onclick="closeV3D()">Done</button>
+  </div>
+  <div id="v3dStage"></div>
+  <div id="v3dHint">drag to turn it</div>
+</div>
 <div id="cer">
   <div id="cerBox">
     <div id="cerKick"></div>
@@ -652,6 +679,9 @@ button{font:inherit;color:inherit}
   </div>
 </div>
 
+<script type="importmap">
+{ "imports": { "three": "./assets/3d/lib/three.module.min.js" } }
+</script>
 <script>var LADDER=/*__LADDER__*/;</script>
 <script>/*__SIM__*/</script>
 <script>/*__WIND__*/</script>
@@ -932,6 +962,148 @@ function artUrl(slot,id){
 }
 function artHas(slot,id){ return !!(ART.has[slot]&&ART.has[slot][id]); }
 
+/* ── the 3D inspect viewer ──────────────────────────────────────────────
+   Every part has a real mesh now: the Meshy hero sculpts for cores and
+   blades, the forge's procedural meshes for the hardware. This shows the
+   one you ask about, spinning under your finger. three.js is VENDORED
+   (assets/3d/lib, pinned 0.161.0, immutable so it needs no cache buster)
+   and loaded with a dynamic import on FIRST OPEN only — a player who
+   never taps 3D never downloads a byte of it. */
+var V3D={lib:null,renderer:null,scene:null,cam:null,group:null,raf:0,
+         open:false,seq:0,rx:0.55,ry:0,vy:0.4,drag:null};
+function v3dGlb(slot,id){
+  var hero=(slot==='core'||slot==='blade');
+  return 'assets/3d/'+(hero?'hero/'+slot:slot)+'/'+id+'.glb?v='+LW_BUILD;
+}
+function openV3D(slot,id,name){
+  if(id==='none')return;
+  var v=$('v3d');
+  $('v3dName').innerHTML=name+'<small>'+slot+' — the real part</small>';
+  $('v3dHint').textContent='loading the model…';
+  v.classList.add('on');v.setAttribute('aria-hidden','false');
+  V3D.open=true;
+  var seq=++V3D.seq;
+  var boot=V3D.lib?Promise.resolve(V3D.lib)
+    :Promise.all([import('./assets/3d/lib/three.module.min.js'),
+                  import('./assets/3d/lib/loaders/GLTFLoader.js'),
+                  import('./assets/3d/lib/environments/RoomEnvironment.js')])
+       .then(function(m){V3D.lib={T:m[0],GLTFLoader:m[1].GLTFLoader,
+                                  RoomEnvironment:m[2].RoomEnvironment};return V3D.lib;});
+  boot.then(function(lib){
+    if(seq!==V3D.seq)return;
+    var T=lib.T;
+    if(!V3D.renderer){
+      var stage=$('v3dStage');
+      var r=new T.WebGLRenderer({antialias:true,alpha:true});
+      r.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+      stage.appendChild(r.domElement);
+      V3D.renderer=r;
+      V3D.scene=new T.Scene();
+      V3D.cam=new T.PerspectiveCamera(34,1,0.01,50);
+      V3D.cam.position.set(0,0.9,2.7);
+      V3D.cam.lookAt(0,0.05,0);
+      V3D.scene.add(new T.HemisphereLight(0xfff3e2,0x241c15,1.15));
+      var key=new T.DirectionalLight(0xffffff,2.1);key.position.set(-2,3,2);
+      V3D.scene.add(key);
+      var rim=new T.DirectionalLight(0xcfe0ff,0.8);rim.position.set(2,1,-2);
+      V3D.scene.add(rim);
+      /* bare metal with nothing to reflect renders as black soap - the
+         forge's softboxes, relearned in WebGL. A generated room does it. */
+      var pm=new T.PMREMGenerator(r);
+      V3D.scene.environment=pm.fromScene(new lib.RoomEnvironment(),0.04).texture;
+      V3D.scene.environmentIntensity=0.55;
+      v3dWirePointer(r.domElement);
+    }
+    v3dClear();
+    new lib.GLTFLoader().load(v3dGlb(slot,id),function(g){
+      if(seq!==V3D.seq)return;
+      var T2=V3D.lib.T;
+      var box=new T2.Box3().setFromObject(g.scene);
+      var size=new T2.Vector3();box.getSize(size);
+      var ctr=new T2.Vector3();box.getCenter(ctr);
+      var sc=1.02/Math.max(size.x,size.y,size.z,1e-6); // fits a 375 frame with the spurs on
+      var grp=new T2.Group();
+      g.scene.position.set(-ctr.x,-ctr.y,-ctr.z);
+      grp.add(g.scene);grp.scale.setScalar(sc);
+      V3D.group=grp;V3D.ry=0;V3D.vy=0.4;
+      // the sculpted discs read best from three-quarters; the hardware is
+      // DESIGNED edge-on (a ratchet's whole face is a blank cap from above,
+      // and it rendered as a large dark table before this)
+      V3D.rx=(slot==='core'||slot==='blade')?0.55:0.05;
+      V3D.scene.add(grp);
+      $('v3dHint').textContent='drag to turn it';
+      v3dLoop();
+    },undefined,function(){
+      if(seq!==V3D.seq)return;
+      $('v3dHint').textContent='the model could not be loaded here';
+    });
+  },function(){
+    if(seq!==V3D.seq)return;
+    $('v3dHint').textContent='3D needs a connection the first time';
+  });
+}
+function v3dClear(){
+  if(V3D.group){
+    V3D.scene.remove(V3D.group);
+    V3D.group.traverse(function(o){
+      if(o.geometry)o.geometry.dispose();
+      if(o.material){
+        var ms=[].concat(o.material);
+        for(var i=0;i<ms.length;i++){
+          for(var k in ms[i])if(ms[i][k]&&ms[i][k].isTexture)ms[i][k].dispose();
+          ms[i].dispose();
+        }
+      }
+    });
+    V3D.group=null;
+  }
+}
+function v3dLoop(){
+  if(!V3D.open)return;
+  var stage=$('v3dStage'), r=V3D.renderer;
+  var w=stage.clientWidth,h=stage.clientHeight;
+  if(w&&h&&(r.domElement.width!==w*r.getPixelRatio()||r.domElement.height!==h*r.getPixelRatio())){
+    r.setSize(w,h,false);
+    V3D.cam.aspect=w/h;V3D.cam.updateProjectionMatrix();
+  }
+  if(V3D.group){
+    if(!V3D.drag){
+      V3D.ry+=V3D.vy*0.016;
+      // settle toward a lazy display turn after a flick
+      V3D.vy+=(0.4-V3D.vy)*0.02;
+    }
+    V3D.group.rotation.set(V3D.rx,V3D.ry,0);
+    r.render(V3D.scene,V3D.cam);
+  }
+  V3D.raf=requestAnimationFrame(v3dLoop);
+}
+function v3dWirePointer(el){
+  el.addEventListener('pointerdown',function(e){
+    V3D.drag={x:e.clientX,y:e.clientY};
+    try{el.setPointerCapture(e.pointerId);}catch(err){}
+  });
+  el.addEventListener('pointermove',function(e){
+    if(!V3D.drag)return;
+    var dx=e.clientX-V3D.drag.x, dy=e.clientY-V3D.drag.y;
+    V3D.ry+=dx*0.012;V3D.vy=dx*0.75;
+    V3D.rx=Math.min(1.25,Math.max(0.08,V3D.rx+dy*0.008));
+    V3D.drag={x:e.clientX,y:e.clientY};
+  });
+  function up(){V3D.drag=null;}
+  el.addEventListener('pointerup',up);
+  el.addEventListener('pointercancel',up);
+}
+function closeV3D(){
+  V3D.seq++;V3D.open=false;
+  if(V3D.raf){cancelAnimationFrame(V3D.raf);V3D.raf=0;}
+  v3dClear();
+  var v=$('v3d');v.classList.remove('on');v.setAttribute('aria-hidden','true');
+}
+/* the entry buttons are inline onclick, and this code lives in an IIFE:
+   anything an inline handler calls has to be on window, the same law the
+   main game learned the hard way */
+window.openV3D=openV3D; window.closeV3D=closeV3D;
+
 /* ── the top's own portrait, composited from its real part art ──────────
    The dish used to draw every top from its stats alone. The parts are
    painted now, so a top spinning in the arena is its actual blade with its
@@ -1094,7 +1266,10 @@ function buildSlots(){
       // one does not, so this is a belt on top of braces rather than a fallback.
       if(!txt&&!dw)txt=(fitted.role||'balance')+' part';
       note.innerHTML=(txt?'<span>'+txt+'</span>':'')+
-        (dw?'<b>'+dw.name+'.</b> '+dw.desc:'');
+        (dw?'<b>'+dw.name+'.</b> '+dw.desc:'')+
+        (fitted.id!=='none'
+          ?'<br><button class="btn v3dGo" onclick="openV3D(\''+key+'\',\''+fitted.id+
+            '\',\''+fitted.name.replace(/'/g,'')+'\')">SEE IT IN 3D</button>':'');
       row.appendChild(note);
     }
     host.appendChild(row);
@@ -1804,8 +1979,9 @@ function partCard(slot,part){
      it this is where it earns its keep. No picture, no gap: the card is exactly
      what it was. */
   var shot=artHas(slot,part.id)
-    ? '<img class="cerShot" src="'+artUrl(slot,part.id)+'" alt="" '+
-      'onerror="this.remove();">' : '';
+    ? '<img class="cerShot v3dable" src="'+artUrl(slot,part.id)+'" alt="" '+
+      'onclick="openV3D(\''+slot+'\',\''+part.id+'\',\''+
+      part.name.replace(/'/g,'')+'\')" onerror="this.remove();">' : '';
   var body=shot+'<div class="cerPart">'+
     '<div class="slot">'+SLOT_WORDS[slot]+'</div>'+
     '<div class="job">'+SLOT_JOB[slot]+'</div>'+
