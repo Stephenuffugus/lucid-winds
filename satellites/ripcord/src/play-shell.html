@@ -1189,18 +1189,25 @@ var TOPART={};
 function topSprite(bladeId,coreId){
   var key=bladeId+'|'+coreId, e=TOPART[key];
   if(e)return e.ok?e.c:null;
-  var bu=artUrl('blade',bladeId), cu=artUrl('core',coreId);
-  if(!bu||!cu){
-    // ⛔ Do NOT cache this miss before the manifest has answered. The menu's
-    // demo battle and the Looks preview both ask for the PLAYER'S pair at
-    // boot, before loadArt's XHR returns; a cached miss here was permanent,
-    // so the player's own top fought every battle as the stats-drawn disc
-    // while every opponent, first requested mid-match, wore its paint.
-    if(ART.ready)TOPART[key]={ok:false,c:null};
-    return null;
-  }
+  // ⛔ Do not START before the manifest has answered: the painted fallback
+  // needs it, and beginning early is how the player once fought every
+  // battle unpainted. No cache entry is made here, so this retries.
+  if(!ART.ready)return null;
   e=TOPART[key]={ok:false,c:null};
   var need=2, bi=new Image(), ci=new Image();
+  // Each part prefers the straight-down LIT RENDER of its real sculpt
+  // (assets/topdown, cut to the same FILL=0.92 as the paint so the radius
+  // math holds), falls back to the painted card, and if neither loads the
+  // composite never completes and the stats-drawn disc stands - the same
+  // fallback law as everywhere else.
+  function start(img,slot,id){
+    var painted=artUrl(slot,id), tried=false;
+    img.onload=done;
+    img.onerror=function(){
+      if(!tried&&painted){tried=true;img.src=painted;return;}
+    };
+    img.src='assets/topdown/'+slot+'/'+id+'.webp?v='+LW_BUILD;
+  }
   function done(){
     if(--need)return;
     var S=320, c=document.createElement('canvas');
@@ -1214,9 +1221,7 @@ function topSprite(bladeId,coreId){
     g.drawImage(ci,S/2-ch,S/2-ch,ch*2,ch*2);
     e.c=c; e.ok=true;
   }
-  bi.onload=done; ci.onload=done;
-  bi.onerror=ci.onerror=function(){};   // the fallback is permanent, not an error
-  bi.src=bu; ci.src=cu;
+  start(bi,'blade',bladeId); start(ci,'core',coreId);
   return null;
 }
 function artInSlot(slot){ return !!(ART.has[slot]&&ART.count); }
