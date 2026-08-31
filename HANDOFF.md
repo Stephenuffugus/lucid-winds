@@ -1,5 +1,9 @@
 # HANDOFF — 2026-08-18
 
+> **ACTIVE OPUS TASK (2026-08-31):** the Ripcord 3D battle view.
+> Read `satellites/ripcord/HANDOFF-3D.md` and follow it exactly -
+> its contract overrides default behavior. Branch pushes only, never :main.
+
 Written for whoever picks this up with no context. Everything here was verified
 today, and the commands that re-derive each claim are inline. **Run the command,
 do not re-invent the measurement.**
