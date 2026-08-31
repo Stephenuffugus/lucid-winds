@@ -1180,9 +1180,17 @@ var TOPART={};
 function topSprite(bladeId,coreId){
   var key=bladeId+'|'+coreId, e=TOPART[key];
   if(e)return e.ok?e.c:null;
-  e=TOPART[key]={ok:false,c:null};
   var bu=artUrl('blade',bladeId), cu=artUrl('core',coreId);
-  if(!bu||!cu)return null;
+  if(!bu||!cu){
+    // ⛔ Do NOT cache this miss before the manifest has answered. The menu's
+    // demo battle and the Looks preview both ask for the PLAYER'S pair at
+    // boot, before loadArt's XHR returns; a cached miss here was permanent,
+    // so the player's own top fought every battle as the stats-drawn disc
+    // while every opponent, first requested mid-match, wore its paint.
+    if(ART.ready)TOPART[key]={ok:false,c:null};
+    return null;
+  }
+  e=TOPART[key]={ok:false,c:null};
   var need=2, bi=new Image(), ci=new Image();
   function done(){
     if(--need)return;
@@ -3312,6 +3320,16 @@ function drawTop(o,color,isPlayer,trail){
 
   var bx=cx+ox, by=cy+oy;
   var squash=1-0.34*tilt;
+
+  // The ground shadow: the one depth cue this camera allows, and the Looks
+  // preview always had it while the arena never did, which is why painted
+  // tops read as stickers lying on a photographed floor. The dish already
+  // implies a slight 3/4 view (the shaft points south), so the shadow pools
+  // just south of the contact point and the leaning body walks off it.
+  ctx.fillStyle='rgba(0,0,0,.30)';
+  ctx.beginPath();
+  ctx.ellipse(cx,cy+rr*0.34,rr*0.94,rr*0.48,0,0,7);
+  ctx.fill();
 
   // The shaft, so the thing reads as a top standing on a point rather than as a
   // disc lying on the floor. It runs from the body down to the contact point,
