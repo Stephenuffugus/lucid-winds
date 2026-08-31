@@ -192,7 +192,11 @@
       test: function (s) { return s.nW === 2 && s.inner === 2 && s.blade.radius >= 0.0235; },
       // Same correction as Featherline: minus fourteen points against the wider
       // catalogue, because drifting wide is a ringout as often as it is rail time.
-      mod: { bowl: 0.97, charge: 1.35 } }
+      // charge 1.35 -> 1.12 in the x3 retune: inert when it shipped (the
+      // gate was unreachable), alive it swung the win rate -8.8 points --
+      // firing at first chance is a COST for the wide drifting builds this
+      // rig serves, so the rail-time story keeps a taste of it, not a meal.
+      mod: { bowl: 0.97, charge: 1.12 } }
   ];
 
   var byId = {};

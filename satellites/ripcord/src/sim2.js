@@ -64,9 +64,16 @@
     impRef: 0.020,          // a reference strike; wear is measured against it
     burstPow: 3.00,         // wear scales super-linearly with impact
     burstBack: 0.14,        // share of wear the striker takes back            // wear per unit impulse
-    chargeHit: 0.20,        // ability charge per strike landed
-    chargeTaken: 0.09,      // charge per strike absorbed
-    chargeRidge: 0.34       // charge per second riding the ridge
+    // ⚖️ RETUNED x3 2026-08-31 (Stephen's call). At 0.20/0.09/0.34 the gate
+    // of 1.0 was unreachable in real rounds: 200 resolveMatch rounds with
+    // the balance tool's own options produced ZERO ability fires (rounds
+    // average ~1.4 connections; the best charge ever observed was 0.63),
+    // and only a badly wobbled wind ever fired at all, so winding WELL
+    // locked the player out of the 19-move core system entirely. x3 puts
+    // an ability in most contested rounds without owning the round.
+    chargeHit: 0.60,        // ability charge per strike landed
+    chargeTaken: 0.27,      // charge per strike absorbed
+    chargeRidge: 1.02       // charge per second riding the ridge
   };
 
   // ======================================================================
@@ -124,7 +131,11 @@
       desc: "A hoarding chip that fills faster than anything ever built and throws the last ability used on you straight back, but it will never grind out a win on spin alone." },
     { id: 'flint', name: 'Flint', mass: 0.00070, dir: 1, ability: 'overdrive', charge: 1.28, role: 'attack', tier: 3, drawback: 'coldstart',
       desc: "Barely there at the axis and sullen off the launch, it runs hot for the rest of the round and doubles your travel when it fires." },
-    { id: 'millst', name: 'Cairn', mass: 0.00517, dir: 1, ability: 'pitch', charge: 0.70, role: 'attack', tier: 3, drawback: 'hungry',
+    { id: 'millst', name: 'Cairn', mass: 0.00517, dir: 1, ability: 'pitch', charge: 0.24, role: 'attack', tier: 3, drawback: 'hungry',
+      // charge 0.70 -> 0.24 in the x3 retune: the heaviest chip hurling
+      // opponents at the lip was priced when abilities never fired; alive,
+      // it audited +17.8 pull over the strongest stock core. A Cairn is
+      // patient: the move stays devastating and becomes RARE.
       desc: "The heaviest chip in the game grinds spin off everything it touches and can spend a quarter of its own to hurl itself outward." }
   ];
 
@@ -158,7 +169,10 @@
     //      more extreme; that is what a tier is in this game.
     { id: 'broadaxe', name: 'Broadaxe', mass: 0.01760, radius: 0.0208, sharp: 1.26, rest: 0.88, gear: 0.92, taken: 1.46, role: 'attack', tier: 2,
       desc: "A single deep edge that cuts further into a rim than any stock blade and hands most of the shock straight back up the shaft." },
-    { id: 'chisel', name: 'Chisel', mass: 0.01572, radius: 0.0188, sharp: 1.30, rest: 0.90, gear: 1.10, taken: 1.28, role: 'attack', tier: 2,
+    { id: 'chisel', name: 'Chisel', mass: 0.01572, radius: 0.0188, sharp: 1.30, rest: 0.90, gear: 1.10, taken: 1.36, role: 'attack', tier: 2,
+      // taken 1.28 -> 1.36 in the x3 retune: crept +4.4 over the attack
+      // stock median once abilities went live. A blade that is all point
+      // and no rim should be easy to shove around; now it is a touch more.
       desc: "Every gram is gathered into one narrow point, so it cuts deeper than anything in the stock box and has almost no rim left to carry it." },
     { id: 'millstone', name: 'Millstone', mass: 0.02240, radius: 0.0188, sharp: 0.48, rest: 0.30, gear: 0.44, taken: 0.96, role: 'defense', tier: 2,
       desc: "A short heavy stone of a wheel that shoulders other tops aside and gives up its reach to do it." },
@@ -244,7 +258,10 @@
       desc: "A thick fibre pad that swallows a blow whole, and swallows yours as well." },
     { id: 'gutta', name: 'Gutta', mass: 0.00340, gearMul: 2.35, absorb: 1.42, radAdd: 0.0006, smash: 0.86, role: 'stamina', tier: 2,
       desc: "A soft damping ring that shrugs off impacts and grips everything it meets, so every touch trades spin." },
-    { id: 'barb', name: 'Barb', mass: 0.00600, gearMul: 0.34, absorb: 0.74, radAdd: 0.0005, smash: 1.30, role: 'attack', tier: 2,
+    { id: 'barb', name: 'Barb', mass: 0.00600, gearMul: 0.34, absorb: 0.74, radAdd: 0.0005, smash: 1.26, role: 'attack', tier: 2,
+      // smash 1.30 -> 1.26 in the x3 retune: crept +4.5 over the attack
+      // stock median once rounds carried live abilities (this part's third
+      // shave; it lives on the creep line).
       desc: "A heavy blunt wedge that hits like a hammer and drags the heavy side of the top flat." },
 
     // ---- TIER 3, RELIC. One stat at an extreme, plus a named drawback the
@@ -298,7 +315,11 @@
       desc: "Eleven teeth in a short heavy collar that simply will not come apart, fitted with a strike face buried so far under the blade that it can barely bother anybody." },
     { id: '0-40', name: '0-40', mass: 0.00880, height: 40, lock: 0.29, strikeHigh: 0.58, role: 'defense', tier: 2,
       desc: "A solid slug of a collar that shrugs off shoves and sits low, held on a plain thread with no detents in it at all." },
-    { id: '6-30', name: '6-30', mass: 0.00880, height: 30, lock: 1.04, strikeHigh: 0.14, role: 'stamina', tier: 2,
+    { id: '6-30', name: '6-30', mass: 0.00810, height: 30, lock: 1.04, strikeHigh: 0.14, role: 'stamina', tier: 2,
+      // mass 0.00880 -> 0.00810 in the x3 charge retune: every spin-adding
+      // move buffs the stamina shells, and this collar topped the slot at an
+      // 84.4 ceiling (spread 38.5 over the 32 gate). Still the heaviest
+      // short collar, by less.
       desc: "The heaviest short collar in the workshop, lovely to grind behind and completely unable to reach over anybody." },
     { id: '11-60', name: '11-60', mass: 0.00510, height: 60, lock: 1.46, strikeHigh: 0.82, role: 'utility', tier: 2,
       desc: "A fine eleven tooth ring cut into a drilled out body, unburstable and so light that every hit moves it." },
@@ -311,7 +332,12 @@
       desc: "Fourteen coarse teeth in a collar that never seats fully, so it rides very low and very steady while the play in the thread lets it pop." },
     { id: '2-90', name: '2-90', mass: 0.00602, height: 90, lock: 1.38, strikeHigh: 1.68, role: 'attack', tier: 3, drawback: 'shear',
       desc: "A flared crown that strikes above its own height and rings every one of those blows straight back through its own teeth." },
-    { id: '0-50', name: '0-50', mass: 0.00960, height: 50, lock: 0.20, strikeHigh: 0.70, role: 'utility', tier: 3, drawback: 'oneshot',
+    { id: '0-50', name: '0-50', mass: 0.01020, height: 50, lock: 0.20, strikeHigh: 0.76, role: 'utility', tier: 3, drawback: 'oneshot',
+      // mass 0.00960 -> 0.01020, strikeHigh 0.70 -> 0.76 in the x3 retune:
+      // the slot's only tier 3 utility collar sat at the very BOTTOM of the
+      // ratchet ceilings (45.8) and held the spread over the gate from
+      // below. More dead weight and a harder first strike are both its own
+      // story.
       desc: "A dead weight of a collar on a thread worn smooth, putting everything it has into the first strike it lands and almost nothing into the rest." }
   ];
 

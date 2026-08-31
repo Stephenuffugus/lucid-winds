@@ -102,8 +102,13 @@ const BOSSES = [
     // against 37 percent burst, and the panel spreads 32 points with defense at
     // 37, grinder at 29 and stamina at 24 against brawler 11 and breaker 4.
     // Attrition walks through; force does not. That is the lesson, in numbers.
+    // ⛔ chargeRate 0, added in the x3 charge retune: with charge alive the
+    // Giant reached its 'late' trigger from the strikes it absorbs and
+    // LUNGED at t=8 — a 2.2x mass wrecking ball that un-taught its own
+    // lesson (worn share fell 61 -> 36 and the best panel answer hit 15
+    // percent, a wall). A giant does not need a move; it is the move.
     boss: { arenaR: 0.230, bowlMul: 0.652, limit: 12, spinTarget: 0.90,
-            specMul: { m: 2.2, I: 2.2 },
+            specMul: { m: 2.2, I: 2.2, chargeRate: 0 },
             rig: { taken: 0.35, burstTake: 0.70, decay: 0.45, drive: 1.80, exitNeed: 0.50 } },
     teaches: 'You do not out muscle a giant; you take its spin off it.',
     relicSlot: 'ratchet' }
