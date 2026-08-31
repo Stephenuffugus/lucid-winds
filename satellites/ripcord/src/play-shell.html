@@ -2350,7 +2350,7 @@ $('go').addEventListener('click',function(){
   launch();
 });
 $('quitPlay').addEventListener('click',function(){
-  phase='menu';A=B=null;AUDIO.stopLoops();showMenu(true);
+  phase='menu';A=B=null;CAM.ev=null;AUDIO.stopLoops();showMenu(true);
 });
 
 function launch(){
@@ -2407,7 +2407,7 @@ function launch(){
     if(bs&&bs.anchor)B.anchor=Infinity;
     if(bs&&bs.abilityEvery){B._fired=0;B._every=bs.abilityEvery;}
   }
-  phase='drop';dropT=0;acc=0;$('card').classList.remove('up');chrome(false);
+  camDrop();phase='drop';dropT=0;acc=0;$('card').classList.remove('up');chrome(false);
   $('laps').style.opacity=0;
 }
 
@@ -2423,7 +2423,7 @@ function launchPass(){
   B=SIM.spawn(theirs,{angle:la[1],power:LB.power,lean:LB.lean,phase:LB.phase,
                       trigger:p2.trigger,arenaR:arenaR});
   AUDIO.startLoops();AUDIO.launch(LA.power);haptic(18);
-  phase='drop';dropT=0;acc=0;$('card').classList.remove('up');chrome(false);
+  camDrop();phase='drop';dropT=0;acc=0;$('card').classList.remove('up');chrome(false);
   $('laps').style.opacity=0;
 }
 
@@ -2487,7 +2487,7 @@ function launchTuj(L){
   A.vx=ix*(0.9+1.5*L.power); A.vz=iz*(0.9+1.5*L.power);
   B=null;
   tuj.shots++;
-  phase='drop';dropT=0;acc=0;$('card').classList.remove('up');chrome(false);
+  camDrop();phase='drop';dropT=0;acc=0;$('card').classList.remove('up');chrome(false);
   $('laps').style.opacity=0;
 }
 
@@ -2578,6 +2578,8 @@ function endRound(){
   var who=mode==='pass'?(win==='a'?'ONE ':'TWO '):(win==='a'?'YOU ':'THEY ');
   flashTxt=cause==='double'?'DOUBLE OUT':who+(CAUSE_WORD[cause]||cause)+' +'+pts;
   flashSym=FINISH_SYMS[cause]?cause:'';
+  camPunch(cause==='double'?null:(win==='a'?B:A),
+           {spinout:1.22,ringout:1.30,knockout:1.40,burst:1.44,worn:1.20,timeout:1.12}[cause]||1.18);
   flashCol=win==='a'?'#7FA650':'#C4442B';
   if(cause==='burst')AUDIO.burst();
   else if(cause==='ringout')AUDIO.ringout();
@@ -2904,10 +2906,10 @@ function startTaya(win){
       tayaWear[side]=0;
       if(tayaStrike>0)pa+=1;else pb+=1;
       $('score').innerHTML=pa+' &nbsp;'+pb+'<small>first to four</small>';
-      flash=1.8;flashSym='';flashTxt='THE LOCK GAVE';flashCol='#C4442B';AUDIO.burst();haptic(70);
+      flash=1.8;flashSym='';flashTxt='THE LOCK GAVE';flashCol='#C4442B';AUDIO.burst();haptic(70);camPunch(B,1.40);
     }else{
       flash=1.6;
-      flashSym='';flashTxt=(side==='a'?'YOUR':'THEIR')+' LOCK IS '+Math.round(tayaWear[side]*100)+' PERCENT GONE';
+      flashSym='';flashTxt=(side==='a'?'YOUR':'THEIR')+' LOCK IS '+Math.round(tayaWear[side]*100)+' PERCENT GONE';camPunch(B,1.20);
       flashCol='#C9A227';
     }
     A=B=null;
@@ -3062,6 +3064,46 @@ function endTujShot(){
   },1200);
 }
 
+/* ── the camera ─────────────────────────────────────────────────────────
+   One camera, two moves, both restrained: the launch SETTLES in from
+   slightly tight while the tops land, and a finish PUNCHES toward the
+   top that got finished, scaled by how violent the finish was.
+   Everything on the dish rides it; the banner, the bars and the clock
+   are HUD and hold still. Information first: play is always at 1.0,
+   because the rail is gameplay and the whole dish must stay visible.
+   Reduced motion turns the camera off entirely - it is drama, not
+   information. */
+var CAM={ev:null,z:1,fx:0,fy:0};
+function camEvent(x,y,peak,rise,hold,fall){
+  if(save.settings.reduceMotion)return;
+  CAM.ev={x:x,y:y,peak:peak,rise:rise,hold:hold,fall:fall,t:0};
+}
+function camDrop(){ camEvent(CX(),CY(),1.12,0,0.25,1.0); }
+function camPunch(top,peak){
+  // focus on the finished top, clamped near the dish so a ringout that
+  // flew off the rail does not drag the camera into the void
+  var x=CX(),y=CY();
+  if(top){
+    var s=scale(),r=RAD()*0.60;
+    x=CX()+Math.max(-r,Math.min(r,top.x*s));
+    y=CY()+Math.max(-r,Math.min(r,top.z*s));
+  }
+  camEvent(x,y,peak,0.14,0.55,0.75);
+}
+function camUpdate(dt){
+  var e=CAM.ev,k=0;
+  if(e){
+    e.t+=dt;
+    if(e.t<e.rise)k=1-Math.pow(1-e.t/e.rise,3);
+    else if(e.t<e.rise+e.hold)k=1;
+    else if(e.t<e.rise+e.hold+e.fall){
+      var u=(e.t-e.rise-e.hold)/e.fall;k=1-u*u*(3-2*u);
+    }else{CAM.ev=null;e=null;}
+  }
+  CAM.z=1+((e?e.peak:1)-1)*k;
+  CAM.fx=e?e.x:0;CAM.fy=e?e.y:0;
+}
+
 /* ================================================================ RENDERING == */
 function frame(now){
   requestAnimationFrame(frame);
@@ -3073,8 +3115,13 @@ function frame(now){
     if(dropT>=DROP_DUR){phase='play';acc=0;dropT=0;}
   }
   step(dt);
+  camUpdate(dt);
 
   ctx.clearRect(0,0,W,H);
+  if(CAM.z!==1){
+    ctx.save();
+    ctx.translate(CAM.fx,CAM.fy);ctx.scale(CAM.z,CAM.z);ctx.translate(-CAM.fx,-CAM.fy);
+  }
   drawArena();
   if(phase==='wind'){drawWindTrack();drawStroke();}
   if(tuj)for(var i=0;i<tuj.targets.length;i++)drawTop(tuj.targets[i],'#8E9BA2',false);
@@ -3082,6 +3129,7 @@ function frame(now){
   if(A)withDrop(A,0,function(){drawTop(A,TRAIL_HEX[cosm.trail]||'#C9A227',true,trailA);});
   drawSparks();
   drawTells();
+  if(CAM.z!==1)ctx.restore();
   if(mode==='uri'&&phase==='play'&&A&&B){
     // Two spin bars and a clock. Uri has nothing to watch except the gap, so the
     // gap is what gets drawn.
@@ -3097,6 +3145,9 @@ function frame(now){
   }
   if(flash>0){
     ctx.globalAlpha=Math.min(1,flash);
+    // the camera can put the zoomed pale rail behind this banner, so it
+    // carries its own dark ground with it
+    ctx.shadowColor='rgba(18,12,9,.85)';ctx.shadowBlur=7;
     var fsy=CY()-RAD()-18;
     if(flashSym){
       var fim=finishSym(flashSym);
@@ -3110,6 +3161,7 @@ function frame(now){
     ctx.fillStyle=flashCol;ctx.textAlign='center';
     ctx.font='700 20px ui-sans-serif,system-ui';
     ctx.fillText(flashTxt,CX(),fsy);
+    ctx.shadowColor='transparent';ctx.shadowBlur=0;
     ctx.globalAlpha=1;
   }
 }
