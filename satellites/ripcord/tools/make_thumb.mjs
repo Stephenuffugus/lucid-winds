@@ -15,7 +15,10 @@ import http from 'http';
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json',
-                '.webmanifest': 'application/manifest+json', '.png': 'image/png' };
+                '.webmanifest': 'application/manifest+json', '.png': 'image/png',
+                // without webp the thumb run showed the FALLBACK game: stats-drawn
+                // discs on the gradient dish, with all the painted art 404ing
+                '.webp': 'image/webp' };
 const server = http.createServer((req, res) => {
   const rel = decodeURIComponent(req.url.split('?')[0]).replace(/^\/+/, '') || 'index.html';
   const f = path.join(ROOT, rel);

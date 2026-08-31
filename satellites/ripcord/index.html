@@ -211,6 +211,8 @@ button{font:inherit;color:inherit}
 .chip .t.t3{color:var(--ember)}
 .cosmetic label em{color:var(--steel)}
 .fitted{margin:8px 0 0;font-size:13px;line-height:1.45;color:var(--dim)}
+.slotGlyph{width:20px;height:20px;vertical-align:-5px;margin-right:7px;opacity:.85}
+.cico{width:24px;height:24px;vertical-align:-7px;margin-right:6px}
 .fitted b{color:var(--ember);font-weight:700}
 .fitted span{display:block;margin-bottom:3px}
 
@@ -535,7 +537,7 @@ button{font:inherit;color:inherit}
   <button class="btn" id="mSet">Settings</button>
   <button class="btn ghost" id="mExit">&#9668; Sky Wolf Studio Arcade</button>
 </div></div>
-<div id="buildstamp">build 20260831l</div>
+<div id="buildstamp">build 20260831m</div>
 
 <!-- ============================ HOW TO PLAY ============================ -->
 <div class="sheet" id="howto">
@@ -675,7 +677,7 @@ button{font:inherit;color:inherit}
       <button class="btn" id="wipe">Erase</button></div>
     <div class="setRow"><div class="lab"><h4>About</h4>
       <p>Ripcord, by Sky Wolf Studio. Works offline; nothing you do here leaves the
-         device. Build 20260831l.</p></div></div>
+         device. Build 20260831m.</p></div></div>
   </div>
 </div>
 
@@ -4672,7 +4674,7 @@ var PART_LISTS={core:SIM.CORES,blade:SIM.BLADES,assist:SIM.ASSISTS,ratchet:SIM.R
    ⛔ AND IT IS VERSIONED. The host edge-caches aggressively and has burned this
    studio repeatedly, so both the manifest and every picture carry the build
    stamp. */
-var LW_BUILD='20260831l';
+var LW_BUILD='20260831m';
 var ART = { ready:false, has:{}, count:0 };
 /* ⛔ THE VERSION COMES FROM THE FILE, NOT THE BUILD. The service worker caches
    every picture it fetches and never revalidates, so a re-cut part at the same
@@ -4970,7 +4972,9 @@ function railRow(label,items,isOn,onPick,klass,lockable,slotKey){
         (it.role?'<i class="pip" style="background:'+ROLE_HEX[it.role]+'"></i>':'')+
         '</span><span class="nm">'+(it.name||it.id)+'</span>';
     }else{
-      b.innerHTML=(it.role?'<span class="dot" style="background:'+ROLE_HEX[it.role]+'"></span>':'')+
+      b.innerHTML=(it.icon?'<img class="cico" src="'+it.icon+'" alt="" '+
+                  'onerror="this.remove();">':'')+
+                (it.role?'<span class="dot" style="background:'+ROLE_HEX[it.role]+'"></span>':'')+
                 (it.name||it.id)+tierTag(it);
     }
     b.addEventListener('click',function(){
@@ -5020,7 +5024,9 @@ function buildSlots(){
       if(roleFilter==='all'||
          (roleFilter==='mine'&&isUnlocked(list[j].id))||
          list[j].role===roleFilter||list[j].id===act[key])shown.push(list[j]);
-    var row=railRow(label+' <em>'+shown.length+'</em>',shown,
+    var row=railRow('<img class="slotGlyph" src="assets/glyphs/slot-'+key+
+      '.webp?v='+LW_BUILD+'" alt="" onerror="this.remove();">'+
+      label+' <em>'+shown.length+'</em>',shown,
       (function(k){return function(p){return active().cfg[k]===p.id;};})(key),
       (function(k){return function(p){active().cfg[k]=p.id;};})(key),null,true,key);
     // What is actually fitted, in words. With a hundred and ten parts a rail of
@@ -5050,7 +5056,9 @@ function buildSlots(){
   var ab=core?core.ability:'surge';
   var trigs=[];
   for(i=0;i<SIM.TRIGGERS.length;i++)
-    trigs.push({id:SIM.TRIGGERS[i],name:SIM.TRIGGER_LABEL[SIM.TRIGGERS[i]]||SIM.TRIGGERS[i]});
+    trigs.push({id:SIM.TRIGGERS[i],
+                name:SIM.TRIGGER_LABEL[SIM.TRIGGERS[i]]||SIM.TRIGGERS[i],
+                icon:'assets/glyphs/trig-'+SIM.TRIGGERS[i].toLowerCase()+'.webp?v='+LW_BUILD});
   $('trig').innerHTML='';
   $('trig').appendChild(railRow('Fire <em>'+ab+'</em> when',trigs,
     function(t){return active().trigger===t.id;},function(t){setActiveTrigger(t.id);}));
@@ -6704,6 +6712,33 @@ function onHit(c){
                  life:0.22+Math.random()*0.34,hot:c.swing>1.4});
   }
 }
+/* the armed marker: your move is CHARGED but its trigger is not met, so
+   the carved glyph of the door it is waiting on floats by your top. This
+   is information, not decoration - the answer to "why has my ability not
+   fired" - so reduced motion keeps it and loses only the breathing. The
+   default charged trigger fires the instant it arms, so this only ever
+   appears for the conditional triggers, where it earns its place. */
+var TRIG_IMG={};
+function trigGlyph(id){
+  var im=TRIG_IMG[id];
+  if(im===undefined){
+    im=TRIG_IMG[id]=new Image();
+    im.onerror=function(){TRIG_IMG[id]=null;};
+    im.src='assets/glyphs/trig-'+id.toLowerCase()+'.webp?v='+LW_BUILD;
+  }
+  return (im&&im.complete&&im.naturalWidth)?im:null;
+}
+function drawArmed(){
+  if(phase!=='play'||!A||!A.alive||A.abilityUsed!==0||A.charge<1)return;
+  var im=trigGlyph(A.trigger);
+  if(!im)return;
+  var s=scale(),rr=Math.max(6,A.spec.R*s);
+  var x=CX()+A.x*s+rr*1.35, y=CY()+A.z*s-rr*1.35;
+  ctx.globalAlpha=save.settings.reduceMotion?0.66:0.5+0.22*Math.sin(A.t*5);
+  ctx.drawImage(im,x-13,y-13,26,26);
+  ctx.globalAlpha=1;
+}
+
 function drawTells(){
   if(!tells.length)return;
   var s=scale(),reduced=save.settings.reduceMotion;
@@ -6832,6 +6867,7 @@ function frame(now){
   if(A)withDrop(A,0,function(){drawTop(A,TRAIL_HEX[cosm.trail]||'#C9A227',true,trailA);});
   drawSparks();
   drawTells();
+  drawArmed();
   if(CAM.z!==1)ctx.restore();
   if(mode==='uri'&&phase==='play'&&A&&B){
     // Two spin bars and a clock. Uri has nothing to watch except the gap, so the
@@ -7519,7 +7555,7 @@ requestAnimationFrame(frame);
      worker owns caching there, and a second one racing it is how this fleet
      wiped itself once already. Bump the ?v= with sw.js SHELL_VERSION. */
   if(!framed && 'serviceWorker' in navigator){
-    try{ navigator.serviceWorker.register('sw.js?v=20260831l'); }catch(e){}
+    try{ navigator.serviceWorker.register('sw.js?v=20260831m'); }catch(e){}
   }
 })();
 </script>
