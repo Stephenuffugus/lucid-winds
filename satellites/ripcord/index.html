@@ -213,6 +213,7 @@ button{font:inherit;color:inherit}
 .fitted{margin:8px 0 0;font-size:13px;line-height:1.45;color:var(--dim)}
 .slotGlyph{width:20px;height:20px;vertical-align:-5px;margin-right:7px;opacity:.85}
 .cico{width:24px;height:24px;vertical-align:-7px;margin-right:6px}
+.cerFin{width:86px;height:86px;display:block;margin:0 auto 8px;object-fit:contain}
 .fitted b{color:var(--ember);font-weight:700}
 .fitted span{display:block;margin-bottom:3px}
 
@@ -537,7 +538,7 @@ button{font:inherit;color:inherit}
   <button class="btn" id="mSet">Settings</button>
   <button class="btn ghost" id="mExit">&#9668; Sky Wolf Studio Arcade</button>
 </div></div>
-<div id="buildstamp">build 20260831n</div>
+<div id="buildstamp">build 20260831o</div>
 
 <!-- ============================ HOW TO PLAY ============================ -->
 <div class="sheet" id="howto">
@@ -677,7 +678,7 @@ button{font:inherit;color:inherit}
       <button class="btn" id="wipe">Erase</button></div>
     <div class="setRow"><div class="lab"><h4>About</h4>
       <p>Ripcord, by Sky Wolf Studio. Works offline; nothing you do here leaves the
-         device. Build 20260831n.</p></div></div>
+         device. Build 20260831o.</p></div></div>
   </div>
 </div>
 
@@ -4677,7 +4678,7 @@ var PART_LISTS={core:SIM.CORES,blade:SIM.BLADES,assist:SIM.ASSISTS,ratchet:SIM.R
    ⛔ AND IT IS VERSIONED. The host edge-caches aggressively and has burned this
    studio repeatedly, so both the manifest and every picture carry the build
    stamp. */
-var LW_BUILD='20260831n';
+var LW_BUILD='20260831o';
 var ART = { ready:false, has:{}, count:0 };
 /* ⛔ THE VERSION COMES FROM THE FILE, NOT THE BUILD. The service worker caches
    every picture it fetches and never revalidates, so a re-cut part at the same
@@ -6405,6 +6406,13 @@ function finishOrContinue(){
    the win is announced, each part you won is put in front of you with what it
    would change, and then you are introduced to whoever is next. None of it is
    a toast in the corner. */
+/* the closing round's painted outcome, carried into the ceremony's first
+   beat. flashSym still holds it when the match ends; a missing file
+   removes itself and the words stand alone. */
+function cerFinishArt(){
+  return flashSym?'<img class="cerFin" src="assets/fx/finish-'+flashSym+
+    '.webp?v='+LW_BUILD+'" alt="" onerror="this.remove();">':'';
+}
 function matchWon(){
   AUDIO.win();bump('wins');
   var won=awardDrop();
@@ -6415,7 +6423,7 @@ function matchWon(){
 
   var steps=[{
     kick:wasBoss?'League cleared':'Match won',
-    big:wasBoss?'You put down '+beat.name+'.':'You beat '+beat.name+'.',
+    big:cerFinishArt()+(wasBoss?'You put down '+beat.name+'.':'You beat '+beat.name+'.'),
     sub:pa+' to '+pb+(wasBoss&&beat.teaches?'<br><span style="opacity:.75">'+beat.teaches+'</span>':''),
     col:'#7FA650', hold:wasBoss?2600:2000, cheer:true
   }];
@@ -6444,7 +6452,7 @@ function matchLost(){
   AUDIO.lose();
   var o=opp();
   ceremony([{
-    kick:'Match lost', big:o.name+' takes it.', sub:pb+' to '+pa,
+    kick:'Match lost', big:cerFinishArt()+o.name+' takes it.', sub:pb+' to '+pa,
     col:'#C4442B', hold:1900
   },{
     kick:'What beat you', big:beatenBy(o), sub:lossAdvice(o), hold:2600
@@ -7565,7 +7573,7 @@ requestAnimationFrame(frame);
      worker owns caching there, and a second one racing it is how this fleet
      wiped itself once already. Bump the ?v= with sw.js SHELL_VERSION. */
   if(!framed && 'serviceWorker' in navigator){
-    try{ navigator.serviceWorker.register('sw.js?v=20260831n'); }catch(e){}
+    try{ navigator.serviceWorker.register('sw.js?v=20260831o'); }catch(e){}
   }
 })();
 </script>
