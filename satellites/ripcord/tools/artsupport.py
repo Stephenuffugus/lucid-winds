@@ -76,6 +76,20 @@ SHEETS = {
                                               ('glyph','trig-cornered'),('glyph','trig-mirror'),('glyph','trig-late')]]),
     'file_000000002cec81f5': ('grid', [(4,2),[('fx','spinring'),('fx','wobble'),('fx','spark-low'),('fx','spark-med'),
                                               ('fx','spark-high'),('fx','railstreak'),('fx','burst'),('fx','dust')]]),
+    # The zoetrope faces, Aug 31 night: 12-frame 4x3 loops on magenta,
+    # Stephen's generation run against the Drive doc queue. Ids are the
+    # face ids the game's Looks rail lists; frames land in assets/zoe/.
+    'RIPCORD_ZOETROPE_13': ('zoe', 'flower'),
+    'RIPCORD_ZOETROPE_15': ('zoe', 'beholder'),
+    'file_000000000f0481f5': ('zoe', 'steelwolf'),
+    'file_00000000163481f5': ('zoe', 'birdcage'),
+    'file_00000000377881f5': ('zoe', 'koilap'),
+    'file_00000000585881f5': ('zoe', 'gallop'),
+    'file_00000000826881f5': ('zoe', 'craneflight'),
+    'file_000000009a7081f5': ('zoe', 'prowler'),
+    'file_00000000b5dc81f5': ('zoe', 'vigil'),
+    'file_00000000c47481f5': ('zoe', 'smithy'),
+    'file_00000000c8bc81f5': ('zoe', 'howl'),
     # The Aug 31 EVENING drop: the five remaining sheets, all correct at
     # last. Sheet 13 finish symbols + all 19 ability tells (sheets 15-18).
     # Rows layouts differ (3+2, 2+2, 3+3), debris is disconnected, so the
@@ -101,6 +115,7 @@ SHEETS = {
     'file_00000000fd5081f5': ('quad', [('decal','stripe'),('decal','koi'),
                                        ('decal','tiger'),('decal','circuit')]),
 }
+ZOE_D = os.path.join(ROOT, 'assets', 'zoe')
 GLYPHS_D = os.path.join(ROOT, 'assets', 'glyphs')
 FX_D = os.path.join(ROOT, 'assets', 'fx')
 SIZES = {'decal': 256, 'emblem': 320, 'glyph': 256, 'fx': 320}
@@ -114,7 +129,7 @@ def square(im, side):
     return c
 
 def main(indir):
-    for d in (DECALS_D, EMBLEMS_D, ARENAS_D, GLYPHS_D, FX_D):
+    for d in (DECALS_D, EMBLEMS_D, ARENAS_D, GLYPHS_D, FX_D, ZOE_D):
         os.makedirs(d, exist_ok=True)
     files = {f: os.path.join(indir, f) for f in os.listdir(indir) if f.endswith('.png')}
     done, failed = 0, False
@@ -131,6 +146,43 @@ def main(indir):
             continue
         keyed, _ = artsheet.key_and_defringe(Image.open(src))
         import numpy as np
+        if kind == 'zoe':
+            # A zoetrope sheet: 12 animation frames in a 4x3 grid. Cut with
+            # ONE union bbox in cell-relative coords - a per-frame bbox
+            # would rescale each frame to its own content and the subject
+            # would pump between frames instead of moving.
+            keyed, _ = artsheet.key_and_defringe(Image.open(src))
+            import numpy as np
+            a = np.asarray(keyed)[:, :, 3]
+            H, W = a.shape
+            CH, CW = H // 3, W // 4
+            x0 = y0 = 10 ** 9; x1 = y1 = -1
+            for r in range(3):
+                for c in range(4):
+                    cell = a[r * CH:(r + 1) * CH, c * CW:(c + 1) * CW]
+                    ys, xs = np.nonzero(cell > 8)
+                    if len(ys):
+                        x0 = min(x0, int(xs.min())); x1 = max(x1, int(xs.max()) + 1)
+                        y0 = min(y0, int(ys.min())); y1 = max(y1, int(ys.max()) + 1)
+            if x1 < 0:
+                print('ERROR %s: empty zoe sheet' % prefix); failed = True; continue
+            side = max(x1 - x0, y1 - y0)
+            cx2, cy2 = (x0 + x1) / 2.0, (y0 + y1) / 2.0
+            X0 = int(max(0, min(CW - side, cx2 - side / 2.0)))
+            Y0 = int(max(0, min(CH - side, cy2 - side / 2.0)))
+            side = min(side, CW - X0, CH - Y0)
+            n = 0
+            for r in range(3):
+                for c in range(4):
+                    crop = keyed.crop((c * CW + X0, r * CH + Y0,
+                                       c * CW + X0 + side, r * CH + Y0 + side))
+                    crop = crop.resize((256, 256), Image.LANCZOS)
+                    n += 1
+                    crop.save(os.path.join(ZOE_D, '%s-%02d.webp' % (spec, n)),
+                              'WEBP', quality=85, method=6)
+            print('zoe %-10s <- %s (12 frames, box %d)' % (spec, os.path.basename(src)[:24], side))
+            done += 12
+            continue
         if kind == 'rows':
             # Row-cluster cut for sheets whose rows hold DIFFERENT counts
             # (3 over 2) of disconnected-debris motifs: find row bands from

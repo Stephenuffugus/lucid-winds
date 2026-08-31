@@ -712,6 +712,10 @@ var STARTER=['iron','moth','wheel','crest','none','wing','3-60','4-80','point','
    handing them out on a schedule cannot touch balance. */
 function cosmeticsFor(rung){
   var out={finish:['anod'],decal:['none','stripe'],trail:['none','rope'],launcher:['cord']};
+  // faces are all open for the beta: the unlock ladder for them is a
+  // Director call once they have been seen spinning
+  out.face=[];
+  for(var zi=0;zi<ZOE_FACES.length;zi++)out.face.push(ZOE_FACES[zi].id);
   var kinds=['finish','decal','trail','launcher'];
   var pools={finish:SIM.FINISHES.map(function(f){return f.id;}),
              decal:SIM.DECALS,trail:SIM.TRAILS,launcher:SIM.LAUNCHERS};
@@ -750,6 +754,7 @@ var trigger=(save.build&&save.build.trigger)||'charged';
 var chosenRigs=(save.build&&save.build.rigs)||[];
 var mods=save.mods||{};
 var cosm=save.cosmetics||{finish:'anod',decal:'stripe',trail:'rope',launcher:'ripcord'};
+if(!cosm.face)cosm.face='none';
 var roleFilter='mine';
 var rigAnnounceArmed=false;   // see buildRigs: no announcements during boot
 var rung=save.rung|0, facing=save.facing|0;
@@ -800,6 +805,48 @@ function finishOf(id){
    Tinting is a multiply, so the carving's own relief survives the colour. */
 var PAINTED_DECALS={sunburst:1,wave:1,moth:1,flame:1,crane:1,chalk:1,knot:1,
                     stripe:1,koi:1,tiger:1,circuit:1};
+
+/* ZOETROPE FACES. Twelve frames painted for the top of the top, and the spin
+   itself is the projector: the frame index is the top's visual rotation, so
+   the harder you wound, the faster the loop runs, and a top that stops
+   freezes mid-motion. Drawn UPRIGHT (never rotated with the disc), which is
+   the whole illusion. Names share no word with any decal, part or rig - the
+   catalogue law. */
+var ZOE_FACES=[
+  {id:'none',name:'none'},
+  {id:'gallop',name:'Full Gallop'},
+  {id:'birdcage',name:'The Gilded Cage'},
+  {id:'howl',name:'The Long Howl'},
+  {id:'steelwolf',name:'The Chase'},
+  {id:'koilap',name:'The Slow Lap'},
+  {id:'vigil',name:'The Vigil'},
+  {id:'craneflight',name:'First Flight'},
+  {id:'prowler',name:'The Prowler'},
+  {id:'smithy',name:'The Smithy'},
+  {id:'flower',name:'The Bloom'},
+  {id:'beholder',name:'The Unblinking'}
+];
+var ZOE_IMG={};
+function zoeFrame(id,visAngle,reduced){
+  var fr=ZOE_IMG[id];
+  if(!fr){
+    fr=ZOE_IMG[id]=[];
+    for(var i=1;i<=12;i++){
+      var im=new Image();
+      im.src='assets/zoe/'+id+'-'+(i<10?'0':'')+i+'.webp?v='+LW_BUILD;
+      fr.push(im);
+    }
+  }
+  var k=0;
+  if(!reduced){
+    var TAU=Math.PI*2, ph=((visAngle%TAU)+TAU)%TAU;
+    k=Math.floor(ph/(TAU/12))%12;
+  }
+  var im=fr[k];
+  if(im&&im.complete&&im.naturalWidth)return im;
+  im=fr[0];   // no picture, no difference: fall to frame 1, then to nothing
+  return (im&&im.complete&&im.naturalWidth)?im:null;
+}
 var DECAL_IMG={},DECAL_TINT={};
 function decalTinted(id,col){
   var img=DECAL_IMG[id];
@@ -1384,6 +1431,8 @@ function buildSlots(){
     function(f){cosm.finish=f.id;},'cosmetic','finish'));
   looks.appendChild(railRow('Decal',plain(SIM.DECALS),function(d){return cosm.decal===d.id;},
     function(d){cosm.decal=d.id;},'cosmetic','decal'));
+  looks.appendChild(railRow('Face',ZOE_FACES,function(z){return cosm.face===z.id;},
+    function(z){cosm.face=z.id;},'cosmetic','face'));
   looks.appendChild(railRow('Trail',plain(SIM.TRAILS),function(t){return cosm.trail===t.id;},
     function(t){cosm.trail=t.id;},'cosmetic','trail'));
   looks.appendChild(railRow('Launcher',plain(SIM.LAUNCHERS),function(l){return cosm.launcher===l.id;},
@@ -1544,6 +1593,7 @@ function drawLookPreview(){
   drawDecal(g,cosm.decal,rr,squash,col);
   g.globalAlpha=1;g.restore();
 
+
   g.strokeStyle=trail;g.globalAlpha=0.72;g.lineWidth=rr*0.16;
   g.beginPath();g.ellipse(0,0,rr,rr*squash,0,0,7);g.stroke();
   g.globalAlpha=1;
@@ -1568,9 +1618,23 @@ function drawLookPreview(){
   g.fillStyle='rgba(237,230,216,.98)';
   g.beginPath();g.arc(cx,cy,rr*0.20,0,7);g.fill();
 
+  // the face is the TOP of the top, so it covers even the hub - drawn
+  // last, animated by the same wheel the preview spins
+  if(cosm.face&&cosm.face!=='none'){
+    var lz=zoeFrame(cosm.face,lookPhase,false);
+    if(lz){
+      var lw3=rr*1.5;
+      g.save();g.translate(cx,cy);g.scale(1,squash);
+      g.drawImage(lz,-lw3/2,-lw3/2,lw3,lw3);
+      g.restore();
+    }
+  }
+
   g.fillStyle='rgba(156,146,134,.9)';
   g.font='11px ui-sans-serif,system-ui';g.textAlign='center';
-  g.fillText(cosm.finish+', '+cosm.decal+', '+cosm.trail+' trail, '+cosm.launcher+' launcher',cx,H-9);
+  g.fillText(cosm.finish+', '+cosm.decal+
+    (cosm.face&&cosm.face!=='none'?', '+cosm.face+' face':'')+
+    ', '+cosm.trail+' trail, '+cosm.launcher+' launcher',cx,H-9);
 }
 
 function summaries(){
@@ -3524,6 +3588,23 @@ function drawTop(o,color,isPlayer,trail){
     ctx.globalAlpha=0.30+0.34*life;
     drawDecal(ctx,cosm.decal,rr,squash,FINISH_HEX[cosm.finish]||'#C9A227');
     ctx.globalAlpha=1;ctx.restore();
+  }
+
+  // the zoetrope face: the top of the top, upright while the disc turns
+  // under it. The physics is the playback: frame index follows the visual
+  // rotation, so a hard wind runs the loop hot and a dying top slows its
+  // own film until it freezes.
+  if(isPlayer&&cosm.face&&cosm.face!=='none'){
+    var zf=zoeFrame(cosm.face,o.phase*0.12,reduced);
+    if(zf){
+      // 1.5 radii: the frame carries its own margin (the cut is the union
+      // box of all twelve), so this reads as the face covering the core
+      // and inner blade, not as a sticker over the whole top
+      var zw=rr*1.5;
+      ctx.save();ctx.scale(1,squash);ctx.rotate(-lean);
+      ctx.drawImage(zf,-zw/2,-zw/2,zw,zw);
+      ctx.restore();
+    }
   }
 
   // spin blur: concentric arcs whose reach and alpha are the spin rate. A dying
