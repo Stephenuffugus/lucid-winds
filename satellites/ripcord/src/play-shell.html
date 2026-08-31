@@ -795,8 +795,44 @@ function finishOf(id){
 /* DECALS. Twelve marks, drawn in the top's own rotating frame so they turn with
    it, which is the only way a paint job reads on something spinning. Each is a
    handful of strokes, because at twenty five pixels across anything more is mud. */
+/* the seven decals that exist as painted carved-stone masks; the other
+   four (stripe, koi, tiger, circuit) stay drawn until their sheet lands.
+   Tinting is a multiply, so the carving's own relief survives the colour. */
+var PAINTED_DECALS={sunburst:1,wave:1,moth:1,flame:1,crane:1,chalk:1,knot:1};
+var DECAL_IMG={},DECAL_TINT={};
+function decalTinted(id,col){
+  var img=DECAL_IMG[id];
+  if(img===undefined){
+    img=DECAL_IMG[id]=new Image();
+    img.onerror=function(){DECAL_IMG[id]=null;};
+    img.src='assets/decals/'+id+'.webp?v='+LW_BUILD;
+    return null;
+  }
+  if(!img||!img.complete||!img.naturalWidth)return null;
+  var key=id+'|'+col, t=DECAL_TINT[key];
+  if(t)return t;
+  var c=document.createElement('canvas');
+  c.width=c.height=img.naturalWidth;
+  var x=c.getContext('2d');
+  x.drawImage(img,0,0);
+  x.globalCompositeOperation='multiply';
+  x.fillStyle=col;x.fillRect(0,0,c.width,c.height);
+  x.globalCompositeOperation='destination-in';
+  x.drawImage(img,0,0);
+  return (DECAL_TINT[key]=c);
+}
 function drawDecal(g,id,rr,squash,col){
   if(!id||id==='none')return;
+  if(PAINTED_DECALS[id]){
+    var t=decalTinted(id,col);
+    if(t){
+      var d=rr*1.30;
+      g.save();g.scale(1,squash);
+      g.drawImage(t,-d/2,-d/2,d,d);
+      g.restore();
+      return;
+    }
+  }
   var i,a,TAU=Math.PI*2;
   g.save();g.scale(1,squash);
   g.strokeStyle=col;g.fillStyle=col;
@@ -961,6 +997,33 @@ function artUrl(slot,id){
   return 'assets/parts/'+slot+'/'+id+'.'+(e.x||'webp')+'?v='+e.v;
 }
 function artHas(slot,id){ return !!(ART.has[slot]&&ART.has[slot][id]); }
+
+/* ── the painted arena floors ───────────────────────────────────────────
+   Stephen's four top-down dishes, drawn UNDER the code's information
+   marks: the rail band, ridge ring, pockets and targets stay drawn by
+   code because they are the SIM's truth, and the paint is the ground
+   they sit on. rim = the painted rail centreline as a fraction of image
+   width, so the paint's dish lands exactly on the sim's dish; rot turns
+   the painted pockets onto the sim's pocket angles (0/120/240 from +X).
+   No file, no difference: the gradient dish below is the fallback. */
+var ARENA_ART={
+  pangkah:{f:'pangkah',rim:0.435,rot:Math.PI/2},
+  uri:    {f:'uri',    rim:0.478,rot:0},
+  taya:   {f:'taya',   rim:0.450,rot:Math.PI/2},
+  tujlub: {f:'range',  rim:0.474,rot:0}
+};
+var ARENA_IMG={};
+function arenaArt(m){
+  var c=ARENA_ART[m];
+  if(!c)return null;
+  var e=ARENA_IMG[c.f];
+  if(e===undefined){
+    e=ARENA_IMG[c.f]=new Image();
+    e.onerror=function(){ARENA_IMG[c.f]=null;};
+    e.src='assets/arenas/'+c.f+'.webp?v='+LW_BUILD;
+  }
+  return (e&&e.complete&&e.naturalWidth)?e:null;
+}
 
 /* ── the 3D inspect viewer ──────────────────────────────────────────────
    Every part has a real mesh now: the Meshy hero sculpts for cores and
@@ -3000,9 +3063,26 @@ function withDrop(o,delay,draw){
    is FOR, and a player should be able to tell at a glance which game they are
    about to play. */
 function drawStadium(cx,cy,r){
-  var g=ctx.createRadialGradient(cx,cy-r*0.14,r*0.06,cx,cy,r);
-  g.addColorStop(0,'#3A2D23');g.addColorStop(0.80,'#241C17');g.addColorStop(1,'#191210');
-  ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,r,0,7);ctx.fill();
+  var img=arenaArt(mode), cfg=ARENA_ART[mode];
+  if(img){
+    // the painted dish, its rail centreline scaled onto the sim's r, its
+    // pockets rotated onto the sim's, and the dirt apron faded into the
+    // page so the HUD stays on dark ground
+    var iw=img.naturalWidth, ih=img.naturalHeight;
+    var sc=r/(iw*cfg.rim);
+    ctx.save();
+    ctx.beginPath();ctx.arc(cx,cy,r*1.30,0,7);ctx.clip();
+    ctx.translate(cx,cy);ctx.rotate(cfg.rot||0);
+    ctx.drawImage(img,-iw*sc/2,-ih*sc/2,iw*sc,ih*sc);
+    ctx.restore();
+    var vg=ctx.createRadialGradient(cx,cy,r*1.02,cx,cy,r*1.30);
+    vg.addColorStop(0,'rgba(12,9,8,0)');vg.addColorStop(1,'rgba(12,9,8,1)');
+    ctx.fillStyle=vg;ctx.beginPath();ctx.arc(cx,cy,r*1.32,0,7);ctx.fill();
+  }else{
+    var g=ctx.createRadialGradient(cx,cy-r*0.14,r*0.06,cx,cy,r);
+    g.addColorStop(0,'#3A2D23');g.addColorStop(0.80,'#241C17');g.addColorStop(1,'#191210');
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,r,0,7);ctx.fill();
+  }
 
   // The rail: a machined band, visibly not dish floor.
   // ⛔ At 17 percent alpha across a band 28 percent of the radius wide, this was
@@ -3032,8 +3112,10 @@ function drawStadium(cx,cy,r){
       ctx.beginPath();ctx.arc(cx,cy,r*0.995,a-0.25,a+0.25);ctx.stroke();
     }
   }
-  if(mode==='uri'){
-    // two raised posts, which is what a uri top is transferred onto
+  if(mode==='uri'&&!img){
+    // two raised posts, which is what a uri top is transferred onto -
+    // the painted floor carries its own start markers, so drawing these
+    // on top of it would put two mismatched pairs of rings on one dish
     ctx.strokeStyle='rgba(142,155,162,.42)';ctx.lineWidth=3;
     for(i=0;i<2;i++){
       var px=cx+(i?1:-1)*r*0.42;
