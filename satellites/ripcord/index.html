@@ -4611,8 +4611,16 @@ function artHas(slot,id){ return !!(ART.has[slot]&&ART.has[slot][id]); }
 var ARENA_ART={
   pangkah:{f:'pangkah',rim:0.435,rot:Math.PI/2},
   uri:    {f:'uri',    rim:0.478,rot:0},
-  taya:   {f:'taya',   rim:0.450,rot:Math.PI/2},
-  tujlub: {f:'range',  rim:0.474,rot:0}
+  // Aug 31 corrected floor: the old paint showed three pockets Taya's sim
+  // does not have. The new dish is pocket-free (rot moot), rim calibrated
+  // by compositing candidate circles in PIL and LOOKING, then verified in
+  // the game's own stadium shot: 0.455 = the painted rail's centreline.
+  taya:   {f:'taya',   rim:0.455,rot:0},
+  // Aug 31 corrected floor: the old take had four rail gates and no bands;
+  // this one is five flush distance bands, no gates, baked "50m" ruler text
+  // polar-cloned out (the sim's marks draw over it). rim recalibrated for
+  // the new paint's greek-key rail band.
+  tujlub: {f:'range',  rim:0.445,rot:0}
 };
 var ARENA_IMG={};
 function arenaArt(m){
@@ -6740,8 +6748,11 @@ function drawStadium(cx,cy,r){
       ctx.beginPath();
       ctx.moveTo(cx+Math.cos(a)*r*0.06,cy+Math.sin(a)*r*0.06);
       ctx.lineTo(cx+Math.cos(a)*r*0.20,cy+Math.sin(a)*r*0.20);ctx.stroke();}
-  }else if(mode==='tujlub'){
-    // a range, so the ground is marked in distance bands rather than a lip
+  }else if(mode==='tujlub'&&!img){
+    // a range, so the ground is marked in distance bands rather than a lip.
+    // The painted floor carries five bands of its own; scoring is the pinned
+    // targets, not the bands, so the paint's bands may be the visual and
+    // doubling them with these (the uri post-ring law) reads as a mistake.
     ctx.strokeStyle='rgba(237,230,216,.13)';ctx.lineWidth=1.5;
     for(i=1;i<=5;i++){
       ctx.beginPath();ctx.arc(cx,cy,r*(0.16+i*0.155),0,Math.PI*2);ctx.stroke();

@@ -35,8 +35,15 @@ SHEETS = {
     # the four gameplay floors
     'file_00000000131081f5': ('arena', 'pangkah'),
     'file_0000000045b081f5': ('arena', 'uri'),
-    'file_00000000e33c81f5': ('arena', 'taya'),      # richer of the two takes
-    'file_000000009e3c81f5': ('arena', 'range'),
+    # taya remapped Aug 31: the old take (e33c) painted three pockets the
+    # sim does not have; the corrected pocket-free dish rides the same
+    # dirt-and-rail family. rim recalibrated 0.450 -> 0.455 in play-shell.
+    'file_00000000ca7c81f5': ('arena', 'taya'),
+    # range REMOVED from the auto-cut Aug 31: the old take (9e3c) painted
+    # four rail gates and no bands. assets/arenas/range.webp is now HAND
+    # DERIVED (tools/detext_range.py polar-clones the baked ruler text out
+    # of the corrected five-band take, then keys its magenta ground to
+    # alpha) — re-adding a mapping here would silently regress it.
     # decal sheet B, exactly as specified
     'file_00000000a46c81f5': ('cut', [('decal','moth'),('decal','flame'),('decal','crane'),
                                       ('decal','chalk'),('decal','knot')]),
@@ -57,19 +64,30 @@ SHEETS = {
                                       ('emblem','tower'),('emblem','owl2'),('emblem','sunface')]),
     'file_00000000cd9c81f5': ('cut', [('emblem','moth2'),('emblem','flame2'),('emblem','crane2'),
                                       ('emblem','chalkstick'),('emblem','knot2')]),
-    # Decal Sheet A's missing four, from the Aug 31 "More assets" drop: the
-    # claw scratch IS stripe (a tiger-stripe rake), per the recovery handoff's
-    # own ledger ("stripe, koi, tiger, and circuit were later generated
-    # together on magenta"). Row-major: stripe, koi / tiger, circuit.
-    # 'quad' not 'cut': the claw is FOUR disconnected rake marks, so the
-    # connected-component finder shatters it (7 parts found for 4 assets).
-    # The sheet is a clean 2x2 grid, so each quadrant's own alpha bbox is
-    # the honest cut.
+    # The real UI sheets from the Aug 31 drop, ALL on clean magenta with no
+    # text: Sheet 11 slot glyphs (mechanical, gunmetal), Sheet 12 trigger
+    # glyphs (carved stone + gold, one per trigger name, row-major per the
+    # recovery handoff), Sheet 14 physics FX ingredients. Banked as singles
+    # ready to wire; nothing consumes them yet.
+    'file_00000000234081fd': ('grid', [(3,2),[('glyph','slot-core'),('glyph','slot-blade'),('glyph','slot-assist'),
+                                              ('glyph','slot-ratchet'),('glyph','slot-bit'),('glyph','slot-weight')]]),
+    'file_00000000d1c881f5': ('grid', [(3,3),[('glyph','trig-charged'),('glyph','trig-lowspin'),('glyph','trig-thirdhit'),
+                                              ('glyph','trig-onridge'),('glyph','trig-behind'),('glyph','trig-firstblood'),
+                                              ('glyph','trig-cornered'),('glyph','trig-mirror'),('glyph','trig-late')]]),
+    'file_000000002cec81f5': ('grid', [(4,2),[('fx','spinring'),('fx','wobble'),('fx','spark-low'),('fx','spark-med'),
+                                              ('fx','spark-high'),('fx','railstreak'),('fx','burst'),('fx','dust')]]),
+    # Decal Sheet A's missing four ("stripe, koi, tiger, and circuit were
+    # later generated together on magenta" per the recovery handoff; the claw
+    # scratch IS stripe, a tiger-stripe rake). 'quad' not 'cut': the claw is
+    # FOUR disconnected rake marks, so the component finder shatters it
+    # (7 parts found for 4 assets); a 2x2 grid cuts honestly by quadrant.
     'file_00000000fd5081f5': ('quad', [('decal','stripe'),('decal','koi'),
                                        ('decal','tiger'),('decal','circuit')]),
 }
-SIZES = {'decal': 256, 'emblem': 320}
-DEST = {'decal': DECALS_D, 'emblem': EMBLEMS_D}
+GLYPHS_D = os.path.join(ROOT, 'assets', 'glyphs')
+FX_D = os.path.join(ROOT, 'assets', 'fx')
+SIZES = {'decal': 256, 'emblem': 320, 'glyph': 256, 'fx': 320}
+DEST = {'decal': DECALS_D, 'emblem': EMBLEMS_D, 'glyph': GLYPHS_D, 'fx': FX_D}
 
 def square(im, side):
     im = im.copy()
@@ -79,7 +97,7 @@ def square(im, side):
     return c
 
 def main(indir):
-    for d in (DECALS_D, EMBLEMS_D, ARENAS_D):
+    for d in (DECALS_D, EMBLEMS_D, ARENAS_D, GLYPHS_D, FX_D):
         os.makedirs(d, exist_ok=True)
     files = {f: os.path.join(indir, f) for f in os.listdir(indir) if f.endswith('.png')}
     done, failed = 0, False
@@ -96,20 +114,28 @@ def main(indir):
             continue
         keyed, _ = artsheet.key_and_defringe(Image.open(src))
         import numpy as np
-        if kind == 'quad':
-            # 2x2 grid: each quadrant's alpha bbox, no component finding.
+        if kind == 'quad' or kind == 'grid':
+            # Grid cut: each cell's own alpha bbox, no component finding — for
+            # sheets whose assets are made of DISCONNECTED pieces (a claw's
+            # rake marks, a broken chain, scattered debris) that shatter the
+            # component finder. 'quad' is the 2x2 case; 'grid' carries its own
+            # (cols, rows) ahead of the names.
+            if kind == 'grid':
+                cols, rows = spec[0]; spec = spec[1]
+            else:
+                cols, rows = 2, 2
             a = np.asarray(keyed)[:, :, 3]
-            H2, W2 = a.shape[0] // 2, a.shape[1] // 2
+            CH, CW = a.shape[0] // rows, a.shape[1] // cols
             boxes = []
-            for qy in (0, 1):
-                for qx in (0, 1):
-                    cell = a[qy*H2:(qy+1)*H2, qx*W2:(qx+1)*W2]
+            for qy in range(rows):
+                for qx in range(cols):
+                    cell = a[qy*CH:(qy+1)*CH, qx*CW:(qx+1)*CW]
                     ys, xs = np.nonzero(cell > 8)
                     if not len(ys):
-                        print('ERROR %s: empty quadrant %d,%d' % (prefix, qx, qy))
+                        print('ERROR %s: empty cell %d,%d' % (prefix, qx, qy))
                         failed = True; boxes = None; break
-                    boxes.append((qx*W2+xs.min(), qy*H2+ys.min(),
-                                  qx*W2+xs.max()+1, qy*H2+ys.max()+1, 0, 0))
+                    boxes.append((qx*CW+xs.min(), qy*CH+ys.min(),
+                                  qx*CW+xs.max()+1, qy*CH+ys.max()+1, 0, 0))
                 if boxes is None: break
             if boxes is None: continue
         else:
