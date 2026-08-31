@@ -96,13 +96,25 @@ art beat clean discs. The whole loop:
    blade, bayonet lugs for a core), decimates, caps textures at 512, and
    validates dimensions. `--flip <ids>` for any that land face-down.
 
-**Hero lane, deliberately:** a Meshy core decimated to the 300-triangle
-budget is mush, so fitted sculpts land in `assets/3d/hero/<slot>/<id>.glb`
-at a 5,000-triangle ceiling for cards and closeups. The in-budget
-procedural set in `assets/3d/<slot>/` stays the game LOD. Same ids, same
-origins, same dimensions — a renderer swaps them freely. The hardware
-slots stay procedural on purpose: a ratchet's teeth must be countable,
-which a generator cannot promise.
+**Hero lane, deliberately:** fitted sculpts land in
+`assets/3d/hero/<slot>/<id>.glb` (~30k tris from Meshy's own retopo,
+512px textures, ~2MB each). The in-budget procedural set in
+`assets/3d/<slot>/` stays the game LOD. Same ids, same origins, same
+dimensions — a renderer swaps them freely. The hardware slots stay
+procedural on purpose: a ratchet's teeth must be countable, which a
+generator cannot promise.
+
+**Status 2026-08-31: ALL 44 GENERATED AND FITTED.** ~1,410 credits
+(2,710 remain). 43/44 dimensional checks clean; chisel's mount-depth
+check is a false alarm (the exported accessor bounds show the boss at
+-2.0 exactly — the flaky check, not the asset). Contact sheet at
+`docs/shots-art/heroes-contact.png`; weakest four, re-roll candidates
+at ~15 credits each if ever wanted: magpie, wren, shard, chisel.
+THE REPO CARRIES ONLY THE FOUR PILOT HEROES — the full 88MB fitted set
+and the 600MB raw sculpts (they cost real credits; a codespace rebuild
+must not orphan them) live as release `meshy-20260831` on
+`lucid-winds-vault`. Refit any time: `meshyfit.py --in meshy-out`
+(`--axis`/`--flip` for the odd part that lies about its thickness).
 
 ## Validation, as of 2026-08-30
 

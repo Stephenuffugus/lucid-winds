@@ -38,6 +38,9 @@ def args():
     p.add_argument('--in', dest='indir', required=True)
     p.add_argument('--only', default='')
     p.add_argument('--flip', default='', help='ids whose face came out downward')
+    # one blade in 44 (chisel) fooled the thinnest-bbox-axis heuristic:
+    # its long spurs made the true thickness axis NOT the smallest extent
+    p.add_argument('--axis', default='', help='force the thickness axis (x|y|z) for this run')
     argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
     return p.parse_args(argv)
 
@@ -69,7 +72,7 @@ def import_and_join(path):
     bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
     return ob
 
-def lay_flat(ob, flip):
+def lay_flat(ob, flip, axis=''):
     """A part is a disc: its thinnest bounding axis is its thickness, and
        that axis belongs on Z. Meshy has no reason to agree, so measure -
        and rotate the VERTICES directly: the operator version left the
@@ -78,7 +81,7 @@ def lay_flat(ob, flip):
        toward -Y after import, so mapping y->z lands the face UP."""
     vs = ob.data.vertices
     ext = [max(v.co[i] for v in vs) - min(v.co[i] for v in vs) for i in range(3)]
-    thin = ext.index(min(ext))
+    thin = {'x': 0, 'y': 1, 'z': 2}.get(axis, ext.index(min(ext)))
     for v in vs:
         x, y, z = v.co
         if thin == 0:   v.co = (z, y, -x)
@@ -203,7 +206,7 @@ def main():
         ob = import_and_join(os.path.join(a.indir, f))
         if not ob:
             report.append({'id': pid, 'ok': False, 'why': 'no mesh in file'}); continue
-        lay_flat(ob, pid in flips)
+        lay_flat(ob, pid in flips, a.axis)
         fit(ob, slot, pid)
         machine_mount(ob, slot, pid)
         tris = slim(ob)
