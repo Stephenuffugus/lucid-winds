@@ -74,6 +74,11 @@ def run(names):
             'enable_pbr': True,
             'should_remesh': True,
             'should_texture': True,
+            # retopo at the SOURCE: the first pilot came back ~300k tris,
+            # my 98% decimate shredded the ring and the boolean crashed
+            # blender. Meshy's own retopo keeps shape and UVs.
+            'topology': 'triangle',
+            'target_polycount': 30000,
         })
         tid = task.get('result') or task.get('id')
         if not tid:

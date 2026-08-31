@@ -19,13 +19,15 @@
 # File naming in: 'blade-cleaver.glb', 'core-bell.glb' (the meshy-in
 # package names), tolerant of Meshy suffixes like ' (1)'. Unknown names
 # are listed, never guessed.
-import bpy, bmesh, json, math, os, re, sys, argparse
+import bpy, bmesh, json, math, os, re, sys, argparse, importlib.util
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+_sm = importlib.util.spec_from_file_location('forgebuild', os.path.join(HERE, 'build.py'))
+FB = importlib.util.module_from_spec(_sm); _sm.loader.exec_module(FB)
 ROOT = os.path.abspath(os.path.join(HERE, '..', '..'))
 SPEC = json.load(open(os.path.join(HERE, 'spec.json')))
 M = SPEC['mount']
-HERO_TRIS = 5000
+HERO_TRIS = 40000   # Meshy retopos to ~30k; decimate is a backstop, not a wood chipper
 TEX_MAX = 512
 
 CORES = {p['id']: p for p in SPEC['cores']}
@@ -69,24 +71,35 @@ def import_and_join(path):
 
 def lay_flat(ob, flip):
     """A part is a disc: its thinnest bounding axis is its thickness, and
-       that axis belongs on Z. Meshy has no reason to agree, so measure."""
+       that axis belongs on Z. Meshy has no reason to agree, so measure -
+       and rotate the VERTICES directly: the operator version left the
+       rotation unapplied and every later stage machined a STANDING disc
+       (the bore tunnelled sideways through it). Meshy faces the sculpt
+       toward -Y after import, so mapping y->z lands the face UP."""
     vs = ob.data.vertices
     ext = [max(v.co[i] for v in vs) - min(v.co[i] for v in vs) for i in range(3)]
     thin = ext.index(min(ext))
-    if thin == 0: ob.rotation_euler = (0, math.pi/2, 0)
-    elif thin == 1: ob.rotation_euler = (math.pi/2, 0, 0)
-    if flip: ob.rotation_euler.rotate_axis('X', math.pi)
-    bpy.ops.object.select_all(action='DESELECT'); ob.select_set(True)
-    bpy.context.view_layer.objects.active = ob
-    bpy.ops.object.transform_apply(rotation=True)
+    for v in vs:
+        x, y, z = v.co
+        if thin == 0:   v.co = (z, y, -x)
+        elif thin == 1: v.co = (x, z, -y)
+    if flip:
+        for v in vs:
+            x, y, z = v.co
+            v.co = (x, -y, -z)
 
 def fit(ob, slot, pid):
-    """Scale to catalogue size, origin on the mount face."""
+    """Scale to catalogue size, origin on the mount face. Centre is the
+       BBOX centre, not the vertex mean - sculpt density piles up on the
+       detailed bits and drags a mean centroid toward them. (The first
+       version also recomputed that mean INSIDE the per-vertex loop:
+       O(n^2), half an hour per part, and the run's timeout killed
+       blender silently - which looked exactly like a crash.)"""
     vs = ob.data.vertices
     target_r = BLADES[pid]['radiusMm'] if slot == 'blade' else 10.0
-    rmax = max(math.hypot(v.co.x - sum(w.co.x for w in vs)/len(vs),
-                          v.co.y - sum(w.co.y for w in vs)/len(vs)) for v in vs)
-    cx = sum(v.co.x for v in vs)/len(vs); cy = sum(v.co.y for v in vs)/len(vs)
+    xs = [v.co.x for v in vs]; ys = [v.co.y for v in vs]
+    cx = (max(xs) + min(xs)) / 2; cy = (max(ys) + min(ys)) / 2
+    rmax = max(math.hypot(x - cx, y - cy) for x, y in zip(xs, ys))
     s = target_r / max(1e-6, rmax)
     for v in vs:
         v.co.x = (v.co.x - cx) * s; v.co.y = (v.co.y - cy) * s; v.co.z *= s
@@ -117,7 +130,7 @@ def machine_mount(ob, slot, pid):
         bmesh.ops.recalc_face_normals(b2, faces=b2.faces)
         b2.to_mesh(cut); b2.free()
         mod = ob.modifiers.new('bore', 'BOOLEAN')
-        mod.operation, mod.object, mod.solver = 'DIFFERENCE', co, 'EXACT'
+        mod.operation, mod.object, mod.solver = 'DIFFERENCE', co, 'FAST'
         bpy.context.view_layer.objects.active = ob
         bpy.ops.object.modifier_apply(modifier='bore')
         bpy.data.objects.remove(co, do_unlink=True)
@@ -146,6 +159,16 @@ def machine_mount(ob, slot, pid):
         add = bpy.data.meshes.new('mount'); ao = bpy.data.objects.new('mount', add)
         bpy.context.collection.objects.link(ao)
         bm.to_mesh(add)
+        # the machined interface is steel, not whatever material slot the
+        # sculpt happens to put first (it rendered as a black rubber ring)
+        steel = bpy.data.materials.get('lw_steel')
+        if not steel:
+            steel = bpy.data.materials.new('lw_steel'); steel.use_nodes = True
+            b = steel.node_tree.nodes['Principled BSDF']
+            b.inputs['Base Color'].default_value = (0.52, 0.54, 0.58, 1)
+            b.inputs['Metallic'].default_value = 1.0
+            b.inputs['Roughness'].default_value = 0.32
+        add.materials.append(steel)
         bpy.ops.object.select_all(action='DESELECT')
         ao.select_set(True); ob.select_set(True)
         bpy.context.view_layer.objects.active = ob
@@ -198,6 +221,8 @@ def main():
         bpy.ops.object.select_all(action='DESELECT'); ob.select_set(True)
         bpy.ops.export_scene.gltf(filepath=os.path.join(d, pid + '.glb'),
             use_selection=True, export_format='GLB', export_apply=True)
+        cam = FB.setup_render()
+        FB.render_part(ob, slot, cam, os.path.join(HERE, 'renders', 'hero-' + pid + '.png'))
         report.append({'id': pid, 'slot': slot, 'ok': all(checks.values()),
                        'tris': tris, 'checks': checks})
     json.dump(report, open(os.path.join(HERE, 'meshy-report.json'), 'w'), indent=1)
