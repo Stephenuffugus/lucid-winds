@@ -49,7 +49,43 @@ console.log("\n[4] inversion and immutability");
     if(T.inversions > 0) inverted = true;
   }
   ok("an inversion occurs somewhere on Inside out", inverted);
-  ok("LEVELS data never mutated across all runs", JSON.stringify(T.LEVELS) === snapshot);
+
+  // The old immutability check was `JSON.stringify(LEVELS) === snapshot` and it
+  // was VACUOUS: `sys = lv.bodies` by reference passed it, because Lior sits
+  // exactly on the Maw's horizon (d = 118.0, R = 118) and a body on the horizon
+  // is a fixed point of a circle inversion — d -> R^2/d leaves it where it is.
+  // The review suggested Two minds instead; Vex is on Cess's horizon too
+  // (d = 110.0, R = 110). "Open deck" is the only system with bodies genuinely
+  // off a hole's horizon: Ridd by 117.8, Tarn by 194.7, Sol by 350.4.
+  //
+  // So this now asserts IDENTITY, which cannot be satisfied by a fixed point,
+  // and then exercises the one system where a shared reference would show.
+  for(let i = 0; i < T.LEVELS.length; i++){
+    T.loadLevel(i); T.startSpin();
+    const authored = T.lv.bodies;
+    let sameArr = T.sys === authored, sameBody = -1, sameOther = -1;
+    for(let k = 0; k < authored.length; k++){
+      if(T.sys[k] === authored[k]) sameBody = k;
+      if(authored[k].other && T.sys[k].other === authored[k].other) sameOther = k;
+    }
+    ok(`${T.LEVELS[i].name}: the runtime system is its own array`, !sameArr);
+    ok(`${T.LEVELS[i].name}: and its own bodies`, sameBody < 0,
+       sameBody >= 0 ? authored[sameBody].n + " shared by reference" : "");
+    if(authored.some(b => b.other))
+      ok(`${T.LEVELS[i].name}: and its own far side blocks`, sameOther < 0,
+         sameOther >= 0 ? authored[sameOther].n + ".other shared by reference" : "");
+  }
+
+  // and the behavioural half, on the only system where an inversion moves a
+  // body far enough for a shared reference to be visible in the level data
+  const before = JSON.stringify(T.LEVELS);
+  let flipped = false;
+  for(let k = 1; k <= 60 && !flipped; k++){
+    trial(T, 7, k * 0.2);
+    if(T.inversions > 0) flipped = true;
+  }
+  ok("Open deck can be flipped, which is what makes the next check mean anything", flipped);
+  ok("LEVELS data never mutated across all runs", JSON.stringify(T.LEVELS) === before);
 }
 
 console.log("\n[5] unreleased run times out, not hangs");
