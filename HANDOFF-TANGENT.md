@@ -168,7 +168,14 @@ Settings sheet (audio, haptics, reduced motion, reset saves). `manifest.json` + 
 
 - [ ] **⚖️ FOR STEPHEN, a small one found by playing: the first part you place always fails balance.** Imbalance is the centre of mass over `DECK_R`, so a single bumper near the rim reads 0.93 against a tolerance of 0.35 and the button changes to "Spin up anyway" immediately. Correct physics, and it may be the intent (think in balanced sets), but it means a new player's first experiment always shows red. Worth a verdict when you play it.
 
-- [ ] T6: final counts: ___ · recording: ______
+- [x] **T6 partial: settings, installable, and the frame budget (2026-09-01).**
+  - **Installable**: a manifest with `display: standalone`, so a home screen launch gives the game the whole window rather than browser chrome, which is also the configuration where the safe area handling earns its keep. The icon is a data URI **inside** `manifest.json`, so the shipped file count is still one HTML file plus the manifest. The favicon is inline too, which also removes the automatic request the browser had been 404ing.
+  - **The manifest immediately found something the probe could never have seen:** a manifest cannot load over `file://` at all, CORS refuses it. So `test/ui.js` now serves the game over http from a throwaway server, which is how it actually ships, and the manifest link is attached at runtime only when the protocol is http, because the docs say this file is meant to open from `file://` too. Opening from `file://` had been hiding protocol dependent behaviour all session.
+  - ⚠️ **And that fix broke the headless suites, which caught it before commit.** The runtime link assumed `location` exists; it does in a browser and does not in the vm the headless suites run in, so `init` threw and smoke, sweep, parts and solve all stopped loading while the browser probe stayed green. Guarded.
+  - **Frame budget, re-measured**: **60fps unthrottled in both phases** (spin p95 18.1ms), and 28fps spin at 4x throttle, against 13fps at the start of the session with far less on screen. `test/perf.js` still reports rather than asserts, and still should not be quoted from a busy box.
+  - Results card lists only rows that say something: three "none" rows in a row was a card reporting on things that never happened.
+
+- [ ] T6 remaining: a 30 second recording worth showing someone · any final polish after Stephen plays
 
 ## 5. DECISION RIGHTS
 **Stephen decides (ask via this file, do not assume):** final title (TANGENT is working), difficulty verdicts after touch play, far-side lore/names, theme ever moving off ferrofluid/space, monetisation, catalogue placement.
@@ -189,22 +196,39 @@ Settings sheet (audio, haptics, reduced motion, reset saves). `manifest.json` + 
 
 ## SESSION STATE (builder updates this at the end of every session)
 
-**2026-09-01 (Fable, pre-build):** vendored v6 as index.html; reconstructed harness/smoke(38)/sweep(all green, matches doc §16.2); found D12 camera documented-but-absent (deck ~16% on spin, no camZ, no chevrons); 9 dead port symbols confirmed; baseline shots in docs/shots/. Next action: T1.
+**2026-09-01 (Fable, pre-build):** vendored v6 as index.html; reconstructed harness/smoke(38)/sweep; found the D12 camera documented but absent; 9 dead port symbols; baseline shots in docs/shots/.
 
-**2026-09-01 (builder, T1 complete).** State: T1 shipped and pushed on `add-sproing-jumper`, one commit, no interference with the Conduit builder sharing this tree (committed fenced paths only, fetched and confirmed fast forward rather than rebasing over their unstaged work).
+---
 
-What is in the build now: the camera frames the deck while building and aiming and pulls out to the system on release, fitted to the band between the HUD strips; edge chevrons carry off screen bodies with live distances and mark where the predicted shot leaves frame; a backed readout panel that cannot collide with the criteria chips; the dead port system is gone; a flight phase `Rebuild deck` control; a visibility pause; `visualViewport` sizing; a wrapping tool palette; 48px controls; no dashes in player copy; a brand line.
+## 2026-09-01, builder session complete. Everything is pushed on `add-sproing-jumper`, tree clean, nothing half finished.
 
-Half done, nothing. Known and deliberately deferred: the 320px build deck is small because the palette takes two rows (see the T1 ledger note).
+### How to check it
+```
+cd satellites/tangent
+node test/smoke.js     83 checks, the simulation, headless
+node test/ui.js        58 checks, a real browser served over http
+node test/parts.js      8 checks, does the build layer bind
+node test/solve.js      is every system still solvable, and how
+node test/sweep.js      solvability table, MUST stay byte identical
+node test/perf.js       frame budget, reports rather than asserts
+```
+`test/harness.js` and `test/ui.js` both read `TANGENT_HTML`, pointing at a mutated scratch copy. **Every gate added this session was proven able to fail that way**, and it was worth it: two of my own checks were vacuous and passed against builds with the feature removed.
 
-**2026-09-01 (builder, T2 complete).** Coaching, systems list and the merging save are in and pushed. See the T2 ledger entry: the load bearing discovery is that the obvious rule (let go on the first "lands") strands a new player on system 2, so the tutorial teaches the gate. **Next action: T3, the ferro feel pass.** Known targets going in, all found by looking rather than by testing: the ball is the least ferrofluid looking thing on screen at gameplay scale, the deck is a flat wireframe rather than machined metal, and the inversion collapse has never been shot at all. Also worth a look in T3: the throttle fill reads as a seam rather than a gauge.
+Shots are in `docs/shots/`. `final-*` is the current state, `t1-*` through `t9-*` are the passes, `play-*` is a scripted playthrough, `baseline-*` is what it looked like before any of this.
 
-**2026-09-01 (builder, T3 partial).** Shipped and pushed: the inversion fix, the machined deck, the cached deck face, chevron box collisions. See the T3 ledger entry. **Nothing is half finished in the tree** — every commit is green on all three suites.
+### What changed, shortest useful version
+The camera frames the deck for aiming and pulls out on release. The readout says whether a shot **clears**, not merely lands. Coaching teaches the strategy that actually works, including the gate. There is a systems list, a settings sheet with a two tap Start over, working audio, haptics and reduced motion. The deck is machined, the inversion is fixed and framed on the horizon ring, and the build phase draws both throttle tracks so you can see what you are changing. A new part, the vane, makes the build layer bind on one system. It is installable.
 
-**Next action: T4, but read the gates finding first, because it changes what T4 is.** T3 is complete (the ball stretches along its travel and squashes against the wall; deck, inversion and far side done).
+### ⚖️ Waiting on you, in the order I would want answered
+1. **The fun question.** Nothing here answers it. Everything above is legibility, correctness and tooling.
+2. **Is system 4 in the right slot?** It is the one system that needs the deck, and its solution needs two vanes and a coast. Moving it later is a one line change (`needsParts` plus the gate position). I built the coaching and the dual tracks to teach it in place, but you may want it further along regardless.
+3. **`VANE_PUSH = 340`.** The new part's strength. Untuned by anyone who has played.
+4. **Inversion scoring is farmable**: up to 17 recaptures measured, 900 points each, uncapped. Cap it, taper it, or leave it as a stunt.
+5. **`TH_FLOOR = 0.30`.** The documented resting orbit at r=37 does not exist; the deck decays to omega 0.750 and the ball falls to r=15.6. A real park needs 0.46. This changes the feel of every system.
+6. **The first part you place always fails balance** (a single rim part reads 0.93 against a 0.35 tolerance). Correct physics, possibly correct design, definitely a surprise.
 
-**Superseded note:** (D2 and four other audit bugs were repaired out of phase order; see their ledger entries.) Final state: **smoke 83, ui 55, parts 8, solve 8/8, sweep byte identical to the day's baseline through every commit**, working tree clean, nothing half finished. Suites are now `smoke` (sim), `sweep` (solvability, must stay byte identical unless a change is meant to move physics), `ui` (real browser), `parts` (does the build layer bind), `solve` (is a system solvable at all) and `perf` (frame budget, reporting only). The remaining T3 work is the ball and the far side, both listed in the ledger entry. Two things to carry in:
-1. **Re-measure the frame budget on a quiet box before touching rendering again.** The numbers here were taken while another agent drove browsers on the same two cores, and A/B profiling came out backwards.
-2. **T4 will break the T2 acceptance test on purpose.** It requires a bot following only the tutorial to reach system 3, and T4 moves gates off the natural sweep so parts become mandatory. When it goes red, that is the test doing its job: the tutorial then has to teach placing a part, and a fourth beat is the likely answer.
+### What I would do next, if it were mine
+Not more levels. Nothing here has been played by a person yet, and eight more unplayed systems multiplies unvalidated content. I would take your verdict on the six above first, then author the campaign with `solve.js` proving each one, which is now safe in a way it was not this morning.
 
-**Older note, still true.** Before starting a phase: the three suites are `smoke` (headless sim), `sweep` (solvability, must stay byte identical unless a change is meant to move physics) and `ui` (real browser, sizes, reachability, copy). `test/ui.js` and `test/harness.js` both read `TANGENT_HTML`, an env var pointing at a mutated scratch copy, which is how every new gate here was proven able to fail (`sed 's/thing/broken/' index.html > /tmp/m.html && TANGENT_HTML=/tmp/m.html node test/ui.js`). Keep doing that: one gate in this phase passed against a build with the feature removed before it was rewritten.
+### The one thing I would not lose
+`test/solve.js`. It caught an impossible level before it was committed, then caught its own false negative twice, and it is the only reason a gate can be moved without guessing.
