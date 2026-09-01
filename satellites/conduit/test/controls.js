@@ -51,7 +51,10 @@ const settle = ms => new Promise(r => setTimeout(r, ms));
 
   // ── geometry: is each control actually reachable where it is drawn ──────────
   const btns = await page.evaluate(() => CONDUIT.btns.map(b => ({ ...b })));
-  ok("all four controls are laid out", btns.length === 4, "got " + btns.length);
+  ok("every control is laid out", btns.length === 5, "got " + btns.length);
+  ok("the thumb block and the menu are the five", 
+     ["act","flow","pulse","reclaim","menu"].every(id => btns.some(b => b.id === id)),
+     btns.map(b => b.id).join(","));
 
   for (const b of btns) {
     const cx = b.x + b.w / 2, cy = b.y + b.h / 2;
@@ -266,6 +269,52 @@ const settle = ms => new Promise(r => setTimeout(r, ms));
     await settle(150);
     ok("RECLAIM starts the retraction from a real touch",
        (await state()).reclaiming || (await state()).conduits === 0);
+  }
+
+  // ── the settings drawer, and handedness actually moving the controls ───────
+  {
+    const before = await page.evaluate(() => CONDUIT.btns.find(b => b.id === "flow").x);
+    const m = btns.find(b => b.id === "menu");
+    const overlay = await page.evaluate(([x, y]) => {
+      const el = document.elementFromPoint(x, y);
+      return el ? el.tagName + (el.id ? "#" + el.id : "") : "none";
+    }, [m.x + m.w / 2, m.y + m.h / 2]);
+    ok("the menu control hits the canvas, nothing over it", overlay === "CANVAS#c", overlay);
+    await page.touchscreen.tap(m.x + m.w / 2, m.y + m.h / 2);
+    await settle(250);
+    ok("tapping it opens the settings drawer",
+       await page.evaluate(() => !document.getElementById("settings").classList.contains("hide")));
+    const rows = await page.evaluate(() =>
+      [...document.querySelectorAll("#settings [data-set]")].map(b => ({
+        k: b.getAttribute("data-set"), label: b.textContent,
+        h: Math.round(b.getBoundingClientRect().height) })));
+    ok("it has sound, haptics and handedness", rows.length === 3, JSON.stringify(rows.map(r=>r.k)));
+    ok("every switch meets the touch minimum", rows.every(r => r.h >= MIN_TOUCH),
+       JSON.stringify(rows.map(r => r.h)));
+    const hand = await page.evaluate(() => {
+      const b = [...document.querySelectorAll("#settings [data-set]")]
+        .find(x => x.getAttribute("data-set") === "hand");
+      const r = b.getBoundingClientRect();
+      return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+    });
+    await page.mouse.click(hand.x, hand.y);
+    await settle(250);
+    ok("switching to left handed actually moves the controls",
+       (await page.evaluate(() => CONDUIT.btns.find(b => b.id === "flow").x)) < before,
+       "flow x stayed at " + before);
+    ok("and the choice is written down",
+       await page.evaluate(() => {
+         try { return (JSON.parse(localStorage.getItem("conduit.settings")) || {}).hand === "left"; }
+         catch (e) { return false; } }));
+    await page.mouse.click(hand.x, hand.y);          // put it back
+    await settle(200);
+    const close = await page.evaluate(() => {
+      const r = document.getElementById("setclose").getBoundingClientRect();
+      return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; });
+    await page.mouse.click(close.x, close.y);
+    await settle(250);
+    ok("closing it returns you to the site",
+       await page.evaluate(() => document.getElementById("settings").classList.contains("hide")));
   }
 
   ok("no page errors during the whole probe", errs.length === 0, errs.slice(0, 2).join(" | "));

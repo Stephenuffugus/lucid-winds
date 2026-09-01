@@ -554,5 +554,189 @@ console.log("\n[12] mechanics that had no real assertion");
   ok("finding a wire raises the alert", S.site.alert>=1);
 }
 
+// ── 13. the lockdown loop, which did not exist ───────────────────────────────
+// C2. Two independent bugs made the whole fifth alert state dead. Nothing in the
+// game ever bumped past 3, so alert 4 was unreachable; and resolvePower skipped
+// every conduit while lockdown was true, so the breaker could never come on, and
+// alertDecaySec[4] is Infinity. It could not be entered and could not be left.
+console.log("\n[13] lockdown, and the way out of it");
+
+{ // getting there: repeated sightings climb the ladder
+  const S = G.newGame(), b = G.blobRef(), e = S.enemies[0];
+  const spot = () => {                              // stand in front of him until seen
+    e.seen = false; e.spot = 0;
+    b.x = e.x + 2; b.y = e.y;
+    for(let i=0;i<400 && e.spot<1;i++){ e.x=7.5; e.y=11.5; e.face=0; b.x=9.5; b.y=11.5;
+      G.step(0.016,{ax:0,ay:0}); }
+  };
+  spot(); ok("a first sighting takes the site to Search", S.site.alert===2, "alert="+S.site.alert);
+  spot(); ok("a second sighting takes it to Alarm",       S.site.alert===3, "alert="+S.site.alert);
+  spot(); ok("a third sighting takes it to Lockdown",     S.site.alert===4, "alert="+S.site.alert);
+  ok("Lockdown cuts the power", S.site.lockdown===true);
+  ok("and it does not decay on its own", CFG.alertDecaySec[4] === Infinity);
+}
+
+{ // one sighting must not walk the whole ladder on its own
+  const S = G.newGame(), b = G.blobRef(), e = S.enemies[0];
+  for(let i=0;i<400 && S.site.alert<2;i++){ e.x=7.5; e.y=11.5; e.face=0; b.x=9.5; b.y=11.5;
+    G.step(0.016,{ax:0,ay:0}); }
+  const at = S.site.alert;
+  for(let i=0;i<400;i++){ e.x=7.5; e.y=11.5; e.face=0; b.x=9.5; b.y=11.5;
+    G.step(0.016,{ax:0,ay:0}); }
+  ok("standing in his cone does not escalate every frame", S.site.alert===at,
+     `${at} then ${S.site.alert}`);
+}
+
+{ // getting out: the breaker is the one thing you can still power
+  const S = G.newGame();
+  G.beginDraft(9,16); for(let y=15;y>=5;y--) G.draftStep(9,y);
+  for(let x=10;x<=16;x++) G.draftStep(x,5); G.commitDraft();
+  const spr = S.devices.find(d=>d.kind==="sprinkler");
+  ok("the sprinkler is live before the lockdown", spr.on);
+  G.bump(4,"test");
+  ok("lockdown kills the ordinary device", !spr.on);
+
+  // socket to breaker, laid in the dark. This is the routing puzzle the design
+  // calls the lockdown loop.
+  G.beginDraft(9,16);
+  for(let x=10;x<=39;x++) G.draftStep(x,16);
+  for(let y=17;y<=20;y++) G.draftStep(39,y);
+  for(let x=40;x<=44;x++) G.draftStep(x,20);
+  G.draftStep(44,21);
+  const reached = S.draft.path[S.draft.path.length-1];
+  ok("a route reaches the breaker in the dark",
+     reached[0]===44 && reached[1]===21, reached.join(","));
+  G.commitDraft();
+  const brk = S.devices.find(d=>d.kind==="breaker");
+  ok("the breaker can be energised during a lockdown", brk.on);
+  ok("but nothing else can be", !spr.on);
+  G.step(0.016,{ax:0,ay:0});
+  ok("powering the breaker ends the lockdown", S.site.lockdown===false);
+  ok("and drops the site to Search, not to Calm", S.site.alert===2, "alert="+S.site.alert);
+  ok("the ordinary device comes back with the power", spr.on);
+  ok("invariant survives the whole lockdown loop", G.checkLedger());
+  ok("the peak is remembered for the Ghost medal", S.site.peak===4);
+}
+
+// ── 14. route assist ─────────────────────────────────────────────────────────
+// C2. Tap a source, tap a machine, take the cheapest legal path, then drag to
+// edit. The assist proposes; draftStep still lays, so the legality rules and the
+// price cannot drift apart between the two ways of drawing a route.
+console.log("\n[14] route assist");
+
+{
+  const S = G.newGame();
+  const src = S.sources.find(s=>s.id==="sock-1"), spr = S.devices.find(d=>d.kind==="sprinkler");
+  const path = G.cheapestPath(src.x, src.y, spr.x, spr.y);
+  ok("the assist finds a route", !!path && path.length > 1);
+  ok("it starts at the source and ends at the machine",
+     path[0][0]===src.x && path[0][1]===src.y &&
+     path[path.length-1][0]===spr.x && path[path.length-1][1]===spr.y);
+  ok("it never passes through a wall",
+     path.every(p=>G.TTat(p[0],p[1])!==G.tiles.WALL));
+  ok("it never passes through a door",
+     path.every(p=>G.TTat(p[0],p[1])!==G.tiles.DOOR));
+  ok("every step is orthogonal and exactly one tile",
+     path.every((p,i)=>i===0 || Math.abs(p[0]-path[i-1][0])+Math.abs(p[1]-path[i-1][1])===1));
+  ok("it never crosses itself",
+     new Set(path.map(p=>p.join(","))).size === path.length);
+}
+
+{ // the price must be the same whichever way the route was drawn
+  const S = G.newGame();
+  const spr = S.devices.find(d=>d.kind==="sprinkler");
+  const path = G.cheapestPath(9, 16, spr.x, spr.y);
+  G.beginDraft(9,16);
+  for(let i=1;i<path.length;i++) G.draftStep(path[i][0], path[i][1]);
+  G.commitDraft();
+  const byHand = S.conduits[0].cost, tilesByHand = S.conduits[0].path.length;
+
+  const S2 = G.newGame();
+  const before = G.blobRef().mass;
+  const laid = G.autoRoute(9, 16, spr.x, spr.y);
+  ok("the assist lays the whole route", laid === path.length, `laid ${laid} of ${path.length}`);
+  ok("the assist lays the same tiles as the hand", S2.conduits[0].path.length === tilesByHand);
+  ok("and costs exactly what that path costs by hand",
+     near(S2.conduits[0].cost, byHand), `${S2.conduits[0].cost} vs ${byHand}`);
+  ok("and charges the body exactly that",
+     near(before - G.blobRef().mass, byHand));
+  ok("it powers the machine it was aimed at",
+     S2.devices.find(d=>d.kind==="sprinkler").on);
+  ok("invariant survives the assist", G.checkLedger());
+}
+
+{ // cheapest, not merely legal
+  const S = G.newGame();
+  const spr = S.devices.find(d=>d.kind==="sprinkler");
+  const auto = G.cheapestPath(9, 16, spr.x, spr.y);
+  const autoCost = auto.slice(1).reduce((a,p)=>a+G.tileCost(p[0],p[1]), 0);
+  const hand = [[9,16]];
+  for(let y=15;y>=5;y--) hand.push([9,y]);
+  for(let x=10;x<=16;x++) hand.push([x,5]);
+  const handCost = hand.slice(1).reduce((a,p)=>a+G.tileCost(p[0],p[1]), 0);
+  console.log(`       assist ${autoCost.toFixed(1)} vs the designed hand route ${handCost.toFixed(1)}`
+            + `  (concealed ground costs ${CFG.concealedMult}x, so the cheap way is the exposed way)`);
+  ok("the assist is never worse than the route a person would draw",
+     autoCost <= handCost + 1e-9, `${autoCost} vs ${handCost}`);
+  ok("and it buys that with exposure, which is the whole trade",
+     auto.filter(p=>G.CONCat(p[0],p[1])===1).length <
+     hand.filter(p=>G.CONCat(p[0],p[1])===1).length);
+}
+
+{ // a route you cannot afford is refused whole, never laid in part
+  const S = G.newGame(), b = G.blobRef();
+  setMass(S, b, 10);
+  const n = S.conduits.length, m = b.mass;
+  const laid = G.autoRoute(9, 16, 16, 5);
+  ok("an unaffordable route is refused, not half laid",
+     laid === null && S.conduits.length === n, `laid=${laid} conduits=${S.conduits.length}`);
+  ok("and it costs nothing to be told no", near(G.blobRef().mass, m));
+  ok("invariant survives a refusal", G.checkLedger());
+}
+
+{ // "cheapest" needs an oracle that is not the same algorithm checking itself.
+  // Relax every edge until nothing changes: slow, obviously correct, and it uses
+  // only the game's own tileCost and conduitable, so it cannot inherit a bug
+  // from the search under test.
+  const S = G.newGame(), GW = CFG.grid.w, GH = CFG.grid.h;
+  const trueCheapest = (sx,sy,tx,ty) => {
+    const dist = new Float64Array(GW*GH).fill(Infinity);
+    dist[sy*GW+sx] = 0;
+    for(let it=0; it<GW*GH; it++){
+      let changed = false;
+      for(let y=0;y<GH;y++) for(let x=0;x<GW;x++){
+        const i=y*GW+x; if(!isFinite(dist[i])) continue;
+        for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
+          const nx=x+dx, ny=y+dy;
+          if(nx<0||ny<0||nx>=GW||ny>=GH) continue;
+          if(!G.conduitable(nx,ny)) continue;
+          const ni=ny*GW+nx, nd=dist[i]+G.tileCost(nx,ny);
+          if(nd < dist[ni]-1e-12){ dist[ni]=nd; changed=true; }
+        }
+      }
+      if(!changed) break;
+    }
+    return dist[ty*GW+tx];
+  };
+  for(const [sx,sy,tx,ty,name] of [
+        [9,16, 16,5,  "the sprinkler"],
+        [22,21, 12,8, "the plate"],
+        [9,16, 14,11, "the speaker"],
+        [9,16, 44,21, "the breaker"]]){
+    const path = G.cheapestPath(sx,sy,tx,ty);
+    const got  = path ? path.slice(1).reduce((a,q)=>a+G.tileCost(q[0],q[1]), 0) : Infinity;
+    const best = trueCheapest(sx,sy,tx,ty);
+    ok("the assist route to "+name+" is the true cheapest, not merely short",
+       near(got, best, 1e-9), `${got.toFixed(2)} vs an optimum of ${best.toFixed(2)}`);
+  }
+}
+
+{ // no route at all, rather than a wrong one
+  const S = G.newGame();
+  ok("there is no route into a sealed chamber", G.cheapestPath(9,16, 44,28) === null ||
+     G.cheapestPath(9,16,44,28).every(p=>G.TTat(p[0],p[1])!==G.tiles.WALL));
+  ok("and none from inside solid rock", G.cheapestPath(0,0, 16,5) === null);
+}
+
 console.log(`\n${pass} passed, ${fail} failed\n`);
 process.exit(fail ? 1 : 0);

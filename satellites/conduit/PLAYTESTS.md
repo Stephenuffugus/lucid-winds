@@ -90,6 +90,74 @@ fun".** The fun question is the M1 gate and it is Stephen's alone.
 
 ---
 
+## C2 runs, 2026-09-01, runner: Opus (scripted), CFG diffs: none
+
+### The lockdown drill, three rounds, 844x390, seed 1337
+`node test/lockdown.js`. The whole fifth alert state was dead in two independent
+places and had never been played: nothing in the game bumped past alert 3, so
+Lockdown was unreachable, and `resolvePower` skipped every conduit while lockdown
+was true, so the breaker could never come on and could never clear it. Both fixed.
+
+- The recovery now plays: route from the socket along the corridor and down into
+  room C in the dark, 41 tiles, the breaker takes power, the site comes back at
+  Search. Three rounds, no mass leaked in any of them.
+- Round 1 was a success I nearly misread: the breaker fired, cleared the
+  lockdown, **and then the rescue wire shocked a guard standing on it and burned
+  three tiles off itself back off the breaker.** Powering the site with your own
+  body across a patrolled corridor costs you. That is the mechanic being good.
+- **FINDING, Director call.** Measured, stepping out into the patrolled corridor
+  and back into cover eight times, the alert went:
+  **`2, 3, 3, 3, 3, 2, 1, 0`.** It reaches Alarm on the second sighting and then
+  **plateaus there and decays**, because a retreat long enough to break line of
+  sight costs more ground than the next sighting gains: Suspicion decays in 8s and
+  Search in 15s. So real play tops out at Alarm. Lockdown is reachable, the smoke
+  suite climbs it, but only under pressure you cannot escape. Is Lockdown meant to
+  be that hard to trip, or should being seen at Alarm trip it outright?
+- In the first attempt the drone killed me outright while I was farming
+  sightings. Death is real and quick once you are hunted at low mass.
+
+### Route assist, 844x390
+Tap a source, tap a machine. It lays the cheapest legal path through the same
+`draftStep` a finger uses, so the two ways of drawing cannot drift apart.
+
+- **The assist costs 19.8 to the sprinkler. The designed hand route costs 24.6.**
+  It saves 4.8 mass and buys every gram of that with exposure, because concealed
+  ground costs 1.6x. So the assist does not solve the puzzle for you: it hands you
+  the cheap dangerous answer and you drag it into cover if you would rather hide.
+  That is the game's central trade made into a one tap default, and I think it is
+  the right default. Stephen may disagree; the alternative is to bias it toward
+  concealment, which would make it the safe boring answer instead.
+
+### Corridor drone
+Shortened from the whole corridor (x 5 to 44) to its east half (x 26 to 42), per
+the designer note: patrol length, never spot rates. Two things came out of it:
+
+- The west corridor holds the socket and the only link into the trap room, so
+  sweeping all of it made every early crossing contested. The early game breathes
+  now.
+- My first attempt started the patrol at x 15 and **broke the solvability gate**:
+  the drone reached the designed route's corridor crossing sooner, zapped the
+  wire, burned three tiles off it, and the plate never powered. The designed
+  generator route crosses the corridor at x 18 to 22 and that is the only legal
+  crossing, so parking a patrol on it decides the level before the player does.
+  The patrol is now kept clear of it. **This is the second time the same level
+  authoring issue has bitten: the intended solution runs through the patrol lane.**
+
+### Performance, 844x390, dev overlay
+`update 0.07ms, draw 1.32ms` against a budget of 5 and 8. Large headroom before
+the ferro pass spends any of it.
+
+### Honest note on `?seed=`
+It is wired and it works: `?seed=4242` sets `CFG.seed`. But **the seed currently
+changes nothing**, because `S.rng` is created and never consumed and there are
+zero `Math.random` calls in the game. Nothing in the sim is random yet. The
+plumbing is right and it satisfies the architecture law for when something is,
+but do not read "seed 1337" in a log as meaning a run can be replayed. In the
+browser it cannot be anyway: real frame timing varies, which is why the same
+script has produced +1.2 and -22.9 net mass on the same level.
+
+---
+
 ## Builder's read after C1, labelled as such
 
 Not the ship gate. Things I can say from driving it that Stephen may want to weigh:

@@ -58,6 +58,20 @@
   button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
   #brand{margin-top:1.5rem;font-size:.68rem;letter-spacing:.26em;color:#5C6580}
 
+  #settings{position:fixed;inset:0;z-index:2;display:flex;background:rgba(5,6,10,.94);
+    padding:calc(20px + var(--safe-t)) calc(20px + var(--safe-r))
+            calc(20px + var(--safe-b)) calc(20px + var(--safe-l));overflow-y:auto}
+  #settings.hide{display:none}
+  #setpanel{width:100%;max-width:24rem;margin:auto}
+  .seth{font:600 1.3rem ui-sans-serif,system-ui;letter-spacing:.1em;margin-bottom:1rem;
+    color:var(--ink)}
+  .setrow{display:flex;align-items:center;justify-content:space-between;gap:1rem;
+    padding:.5rem 0;border-bottom:1px solid rgba(120,134,164,.16)}
+  .setrow span{color:var(--muted);font-size:.95rem}
+  .setrow button{margin:0;min-width:7rem;min-height:48px;padding:.6rem 1rem;font-size:.9rem}
+  .setnote{font-size:.82rem;margin-top:1rem}
+  #setclose{width:100%}
+
   @media (max-height:640px){
     #overlay{padding-top:calc(18px + var(--safe-t));padding-bottom:calc(18px + var(--safe-b))}
     #rule{margin:.6rem 0 .8rem}
@@ -90,6 +104,15 @@
   </ul>
   <button id="go">Enter the site</button>
   <div id="brand">SKY WOLF STUDIO</div>
+</div></div>
+<div id="settings" class="hide"><div id="setpanel">
+  <div class="seth">Settings</div>
+  <div class="setrow"><span>Sound</span><button data-set="sound"></button></div>
+  <div class="setrow"><span>Haptics</span><button data-set="haptics"></button></div>
+  <div class="setrow"><span>Controls</span><button data-set="hand"></button></div>
+  <p class="setnote">Sound and haptics are not wired yet. The switches are here so the
+  setting survives, and so nothing turns itself on when they are.</p>
+  <button id="setclose">Back to the site</button>
 </div></div>
 <script>
 "use strict";
@@ -135,6 +158,7 @@ const CFG = {
   pulseCost:4, pulseRange:8, pulseCooldownSec:6, pulseShowSec:3,
 
   // flags — the resolved open questions, each testable
+  spotEscalates:true, spotForgetAt:0.5, guardRewalks:false, guardRewalkSec:20,
   guardFollowsToPlayer:false, flowPaused:false, allowSelfCross:false,
   blockCrossOther:false, instantReclaim:false, zapEnabled:true,
   ferroRender:false, debugLedger:true,
@@ -156,6 +180,20 @@ const CFG = {
 
   grid:{ w:48, h:32 }, seed:1337,
 };
+
+// ── settings ─────────────────────────────────────────────────────────────────
+// Stored read modify write: two tabs that each write the whole object clobber
+// each other, which is a studio scar, so merge onto whatever is already there.
+const SET_KEY="conduit.settings";
+let SET={ sound:true, haptics:true, hand:"right" };
+function loadSettings(){
+  try{ const raw=localStorage.getItem(SET_KEY);
+       if(raw) SET=Object.assign(SET, JSON.parse(raw)||{}); }catch(e){}
+}
+function saveSettings(){
+  try{ let cur={}; try{ cur=JSON.parse(localStorage.getItem(SET_KEY)||"{}")||{}; }catch(e){}
+       localStorage.setItem(SET_KEY, JSON.stringify(Object.assign(cur, SET))); }catch(e){}
+}
 
 // ── tiles ────────────────────────────────────────────────────────────────────
 const WALL=0, FLOOR=1, SHADOW=2, VENT=3, DOOR=4;
@@ -226,8 +264,16 @@ function newGame(){
       { id:"sentry-1", kind:"sentry", x:7.5, y:11.5, hp:CFG.enemyHp.sentry, face:0,
         route:[[7,11],[12,8],[18,5],[19,11]], leg:0, state:"patrol", spot:0,
         target:null, path:null, pi:0, repathT:0, waitT:0, zapCd:0 },
-      { id:"drone-1", kind:"drone", x:5.5, y:16.5, hp:CFG.enemyHp.drone, face:0,
-        route:[[5,16],[44,16]], leg:0, state:"patrol", spot:0,
+      // Patrol shortened from the whole corridor (5 to 44) to its east half, per
+      // the designer note: length, never spot rates. The west corridor holds the
+      // socket and the only link into the trap room, so sweeping all of it made
+      // every early crossing contested. Kept clear of x 18 to 22, which is where
+      // the designed generator route crosses the corridor: parking a patrol on
+      // the one legal crossing decided the level before the player did. The
+      // breaker route still runs the full corridor, so the lockdown puzzle stays
+      // contested, which is the point of it.
+      { id:"drone-1", kind:"drone", x:26.5, y:16.5, hp:CFG.enemyHp.drone, face:0,
+        route:[[26,16],[42,16]], leg:0, state:"patrol", spot:0,
         target:null, path:null, pi:0, repathT:0, waitT:0, zapCd:0 },
     ],
     lights:[ {x:12,y:5},{x:18,y:9},{x:24,y:16},{x:12,y:16},{x:36,y:16},
@@ -240,7 +286,7 @@ function newGame(){
       [[18,16],[18,15],[18,14],[18,13],[18,12]],
       [[36,16],[37,16],[38,16],[39,16],[39,17],[39,18],[39,19],[39,20],[40,20],[41,20],[42,20],[43,20],[44,20],[44,21]],
     ],
-    act:{ verb:null, target:null, t:0 }, inspect:null,
+    act:{ verb:null, target:null, t:0 }, inspect:null, autoFrom:null,
     bodies:[], conduits:[], draft:null, selected:null,
     targets:["sentry-1"], exfil:{x:44,y:28},
     site:{ alert:0, peak:0, sinceEscalate:0, lockdown:false },
@@ -405,6 +451,60 @@ function draftTo(tx,ty){
     if(!moved) return;
   }
 }
+// ── route assist ─────────────────────────────────────────────────────────────
+// Drag only routing was the top predicted phone friction item. Tap a source,
+// tap a machine, and take the cheapest legal path; then drag to edit it, or
+// ignore the assist and draw the whole thing by hand.
+//
+// The proposed path is laid through draftStep like any other, so the assist can
+// never lay something a finger could not: the legality rules and the price are
+// the same code. Uniform cost search over tileCost, orthogonal, and a shortest
+// path never revisits a tile so it cannot cross itself.
+function cheapestPath(sx, sy, tx, ty){
+  if(!conduitable(sx,sy) || !conduitable(tx,ty)) return null;
+  const N=W*H, dist=new Float64Array(N).fill(Infinity), prev=new Int32Array(N).fill(-1);
+  const done=new Uint8Array(N), heap=[], start=idx(sx,sy), goal=idx(tx,ty);
+  const push=(i,d)=>{ heap.push([d,i]); let c=heap.length-1;
+    while(c>0){ const p=(c-1)>>1; if(heap[p][0]<=heap[c][0]) break;
+      const t=heap[p]; heap[p]=heap[c]; heap[c]=t; c=p; } };
+  const pop=()=>{ const top=heap[0], last=heap.pop();
+    if(heap.length){ heap[0]=last; let c=0;
+      for(;;){ const l=2*c+1, r=l+1; let m=c;
+        if(l<heap.length&&heap[l][0]<heap[m][0]) m=l;
+        if(r<heap.length&&heap[r][0]<heap[m][0]) m=r;
+        if(m===c) break; const t=heap[m]; heap[m]=heap[c]; heap[c]=t; c=m; } }
+    return top; };
+  dist[start]=0; push(start,0);
+  while(heap.length){
+    const [d,cur]=pop();
+    if(done[cur]) continue; done[cur]=1;
+    if(cur===goal) break;
+    const cx=cur%W, cy=(cur/W)|0;
+    for(let k=0;k<4;k++){
+      const nx=cx+[1,-1,0,0][k], ny=cy+[0,0,1,-1][k];
+      if(!conduitable(nx,ny)) continue;
+      const ni=idx(nx,ny); if(done[ni]) continue;
+      if(CFG.blockCrossOther && ni!==goal && anyConduitAt(nx,ny)) continue;
+      const nd=d+tileCost(nx,ny);
+      if(nd<dist[ni]){ dist[ni]=nd; prev[ni]=cur; push(ni,nd); } } }
+  if(!isFinite(dist[goal])) return null;
+  const out=[]; let c=goal;
+  while(c!==-1){ out.push([c%W, (c/W)|0]); if(c===start) break; c=prev[c]; }
+  return out.reverse();
+}
+// Lay a proposed route with the same hands the player uses.
+function autoRoute(sx, sy, tx, ty){
+  const path=cheapestPath(sx,sy,tx,ty);
+  if(!path||path.length<2){ toast("No route from there."); return null; }
+  const price=path.slice(1).reduce((a,p)=>a+tileCost(p[0],p[1]),0);
+  if(blob().mass-price<CFG.minBlobMass){
+    toast("That route costs "+price.toFixed(0)+". You cannot spare it."); return null; }
+  if(!beginDraft(sx,sy)){ toast("Start at a source or a wire end."); return null; }
+  for(let i=1;i<path.length;i++) draftStep(path[i][0], path[i][1]);
+  const laid=S.draft.path.length;
+  commitDraft();
+  return laid;
+}
 function commitDraft(){
   const d=S.draft; S.draft=null; if(!d||d.path.length<2) return;
   let cd=d.extend;
@@ -421,9 +521,14 @@ function resolvePower(){
   S.devices.forEach(dv=>dv.on=false);
   const used={}; S.sources.forEach(s=>used[s.id]=0);
   for(const cd of S.conduits){
-    cd.live=false; if(S.site.lockdown||cd.path.length<2) continue;
+    cd.live=false; if(cd.path.length<2) continue;
     const src=S.sources.find(s=>s.id===cd.sourceId); if(!src) continue;
     const e=cd.path[cd.path.length-1], dv=deviceAt(e[0],e[1]); if(!dv) continue;
+    // Lockdown cuts the site's power, not yours. The breaker is the one thing
+    // you can still energise, because energising it IS the way out. Skipping
+    // every conduit here meant the breaker could never come on, so lockdown
+    // could never be cleared, and alertDecaySec[4] is Infinity.
+    if(S.site.lockdown && dv.kind!=="breaker") continue;
     if(used[src.id]+dv.needs<=src.capacity){
       used[src.id]+=dv.needs; cd.live=true; dv.on=true;
       const spliced = S.player.traits.splice && cd.path.some(p=>onSiteWire(p[0],p[1]));
@@ -502,8 +607,22 @@ function updateEnemy(e, dt){
     e.spot += dt/secs * (1-0.5*(d/R));
   } else e.spot=Math.max(0, e.spot-CFG.spotDecay*dt);
 
-  if(e.spot>=1){ e.spot=1; bump(Math.max(2,S.site.alert), "spotted");
+  // Escalation, edge triggered. Nothing in the game ever bumped past 3, so
+  // alert 4 and the whole lockdown loop were unreachable: bump(Math.max(2,alert))
+  // can never exceed the level it reads. A fresh spot now takes Calm or
+  // Suspicion straight to Search, and each further sighting climbs one step to
+  // Lockdown. Edge triggered on e.seen, because spot sits pinned at 1 while he
+  // can see you and a per frame bump would run to Lockdown instantly.
+  if(e.spot>=1){
+    e.spot=1;
+    if(!e.seen){
+      e.seen=true;
+      const to = !CFG.spotEscalates ? Math.max(2,S.site.alert)
+               : S.site.alert<2 ? 2 : Math.min(4, S.site.alert+1);
+      bump(to, "spotted");
+    }
     setGoal(e, b.x, b.y, "hunt"); }
+  if(e.spot<CFG.spotForgetAt) e.seen=false;
 
   // hearing: a live speaker is the loudest thing on the site
   const spk=S.devices.find(dv=>dv.kind==="speaker"&&dv.on);
@@ -520,9 +639,10 @@ function updateEnemy(e, dt){
   // discovered conduit: walk the wire
   if(e.state==="patrol"||e.state==="investigate"){
     for(const cd of S.conduits){
-      if(cd.discovered && !cd.walked){
+      const stale = CFG.guardRewalks && S.t-(cd.walkedT||0) > CFG.guardRewalkSec;
+      if(cd.discovered && (!cd.walked || stale)){
         const end = CFG.guardFollowsToPlayer ? cd.path[0] : cd.path[cd.path.length-1];
-        cd.walked=true; setGoal(e, end[0], end[1], "wire"); break; } } }
+        cd.walked=true; cd.walkedT=S.t; setGoal(e, end[0], end[1], "wire"); break; } } }
 
   // act
   if(e.state==="hunt"){
@@ -827,15 +947,24 @@ function layout(){
   const availW=VW-SAFE.l-SAFE.r;
   const bw=Math.max(u.btnMinW, Math.min(u.btnMaxW, availW*0.27));
   const bh=VH<u.shortViewportH ? u.minTouchPx : Math.max(u.minTouchPx, u.btnH);
-  const c2=VW-SAFE.r-u.pad-bw, c1=c2-bw-u.btnGap;
+  // The outer column is the one under the thumb, so it holds FLOW and RECLAIM.
+  const lefty = SET.hand==="left";
+  const outer = lefty ? SAFE.l+u.pad : VW-SAFE.r-u.pad-bw;
+  const inner = lefty ? outer+bw+u.btnGap : outer-bw-u.btnGap;
   const r2=VH-SAFE.b-u.pad-bh, r1=r2-bh-u.btnGap;
   btns=[
-    {id:"act",    label:"ACT",     x:c1, y:r2, w:bw, h:bh},
-    {id:"flow",   label:"FLOW",    x:c2, y:r2, w:bw, h:bh},
-    {id:"pulse",  label:"PULSE",   x:c1, y:r1, w:bw, h:bh},
-    {id:"reclaim",label:"RECLAIM", x:c2, y:r1, w:bw, h:bh},
+    {id:"act",    label:"ACT",     x:inner, y:r2, w:bw, h:bh},
+    {id:"flow",   label:"FLOW",    x:outer, y:r2, w:bw, h:bh},
+    {id:"pulse",  label:"PULSE",   x:inner, y:r1, w:bw, h:bh},
+    {id:"reclaim",label:"RECLAIM", x:outer, y:r1, w:bw, h:bh},
+    // Lives inside the HUD band on purpose: a control sitting over the map is a
+    // patch of map that cannot be routed on.
+    {id:"menu",   label:"\u2699",    x:VW-SAFE.r-u.pad-u.minTouchPx, y:SAFE.t+u.pad,
+                                  w:u.minTouchPx, h:u.minTouchPx},
   ];
 }
+// Only the thumb block counts as "the bottom", not the menu up in the HUD band.
+function bottomBtns(){ return btns.filter(b=>b.y > VH*0.5); }
 const w2s=(x,y)=>[ (x-cam.x)*cam.s + VW/2, (y-cam.y)*cam.s + VH/2 ];
 const s2w=(px,py)=>[ (px-VW/2)/cam.s + cam.x, (py-VH/2)/cam.s + cam.y ];
 
@@ -843,11 +972,13 @@ const s2w=(px,py)=>[ (px-VW/2)/cam.s + cam.x, (py-VH/2)/cam.s + cam.y ];
 // to touch: hitBtn runs before the map does, so any map under a control cannot
 // be routed on at all. In Flow the whole site has to be reachable, so fit it to
 // the largest rectangle the controls leave free, and centre it there.
-function hudBandH(){ return SAFE.t + CFG.ui.barH + CFG.ui.fontHud*2 + CFG.ui.hudBandPad; }
+function hudBandH(){ return SAFE.t + Math.max(CFG.ui.barH + CFG.ui.fontHud*2 + CFG.ui.hudBandPad,
+                                              CFG.ui.pad*2 + CFG.ui.minTouchPx); }
 function flowFit(){
   const u=CFG.ui, top=hudBandH();
-  const bx = btns.length ? Math.min(...btns.map(b=>b.x)) : VW;
-  const by = btns.length ? Math.min(...btns.map(b=>b.y)) : VH;
+  const bb = bottomBtns();
+  const bx = bb.length ? Math.min(...bb.map(b=>b.x)) : VW;
+  const by = bb.length ? Math.min(...bb.map(b=>b.y)) : VH;
   const above={ x:0, y:top, w:VW, h:Math.max(u.minFitPx, by-top-u.pad) };
   const left ={ x:0, y:top, w:Math.max(u.minFitPx, bx-u.pad),
                 h:Math.max(u.minFitPx, VH-SAFE.b-top-u.pad*3) };
@@ -1157,14 +1288,15 @@ function drawScrim(y, h, dir){
 function drawHUD(){
   const u=CFG.ui, pad=u.pad, b=blob();
   const left=SAFE.l+pad, top=SAFE.t+pad, right=VW-SAFE.r-pad, bottom=VH-SAFE.b-pad;
-  const botBand=VH-(btns.length?Math.min(...btns.map(x=>x.y)):VH)+u.pad;
+  const bb=bottomBtns();
+  const botBand=VH-(bb.length?Math.min(...bb.map(x=>x.y)):VH)+u.pad;
   drawScrim(0, hudBandH(), 1);
   drawScrim(VH-botBand, botBand, -1);
 
   const alertW=5*13+4*4;
-  const barW=Math.max(120, Math.min(u.barW, right-left-alertW-28));
+  const barW=Math.max(110, Math.min(u.barW, right-left-alertW-u.minTouchPx-26));
   drawMassRibbon(left, top, barW);
-  drawAlertReadout(right, top);
+  drawAlertReadout(right-u.minTouchPx-10, top);
 
   if(S.site.lockdown)
     txt("Power is cut. Find the breaker.", right, top+u.barH+u.fontHud*2+16,
@@ -1177,12 +1309,15 @@ function drawHUD(){
     const on = bt.id==="flow"    ? (S.mode==="flow"||canFlow())
              : bt.id==="pulse"   ? S.player.pulseCd<=0
              : bt.id==="act"     ? (!!et||!!nl||S.player.tapCd<=0)
+             : bt.id==="menu"    ? true
              : !!S.selected;
     drawButton(bt, on);
   }
-  if(S.mode==="prowl" && !canFlow())
-    txt("FLOW needs you still and unseen", btns[1].x+btns[1].w, btns[2].y-9,
-        u.fontHud, 400, "#5F687C", "right");
+  if(S.mode==="prowl" && !canFlow()){
+    const f=btns[1], lefty=SET.hand==="left";
+    txt("FLOW needs you still and unseen", lefty?f.x:f.x+f.w, btns[2].y-9,
+        u.fontHud, 400, "#5F687C", lefty?"left":"right");
+  }
 
   if(S.act.verb==="envelop"){
     const w=Math.min(280,VW-48), x=(VW-w)/2, y=VH*0.34;
@@ -1230,7 +1365,32 @@ function drawHUD(){
         u.fontHud, 600, "#E0483C");
   }
 
+  if(DEV) drawDev();
   if(S.result) drawResult();
+}
+// Dev overlay. localStorage.setItem("sws_dev_ok","1") to see it, the same gate
+// the rest of the studio uses. Seed first, because a run you cannot replay is
+// an anecdote.
+function drawDev(){
+  const u=CFG.ui, x=SAFE.l+u.pad, lines=[
+    "seed "+CFG.seed+"   t "+S.stats.time.toFixed(1)+"s",
+    "alert "+S.site.alert+" ("+ALERT_WORDS[S.site.alert]+")  peak "+S.site.peak
+      +(S.site.lockdown?"  LOCKDOWN":"")+"  since "+S.site.sinceEscalate.toFixed(1)+"s",
+    "spot "+S.enemies.map(e=>e.id.split("-")[0]+" "+(e.spot||0).toFixed(2)
+      +(e.seen?"*":"")+" "+e.state).join("   "),
+    "owned "+S.ledger.owned.toFixed(2)+"  body "+blob().mass.toFixed(2)
+      +"  wire "+S.conduits.reduce((a,c)=>a+c.cost,0).toFixed(2)
+      +"  residue "+S.player.residue.toFixed(1),
+    "tax "+S.ledger.debits.reclaimTax.toFixed(1)+"  dmg "+S.ledger.debits.damage.toFixed(1)
+      +"  zap "+S.ledger.debits.zapBurn.toFixed(1)+"  lost "+S.ledger.debits.destroyed.toFixed(1)
+      +"  harvest "+S.ledger.credits.harvest.toFixed(1),
+    "frame "+perf.frame.toFixed(1)+"ms  update "+perf.update.toFixed(2)
+      +"ms  draw "+perf.draw.toFixed(2)+"ms",
+  ];
+  const h=lines.length*15+10, y=VH-SAFE.b-u.pad-h-(u.btnH*2+u.btnGap+u.pad);
+  ctx.fillStyle="rgba(4,5,9,.86)"; ctx.fillRect(x-6, y-4, Math.min(VW-x-6, 420), h);
+  lines.forEach((l,i)=>txt(l, x, y+13+i*15, 11, 400,
+    i===5 && perf.draw>8 ? "#E0483C" : "#7FE3B0"));
 }
 
 function drawResult(){
@@ -1262,6 +1422,7 @@ function onDown(px,py){
   if(bt){
     if(bt.id==="flow"){ if(S.mode==="flow"){ S.mode="prowl"; }
       else if(canFlow()) S.mode="flow"; else toast("Find a quiet corner first."); }
+    if(bt.id==="menu"){ openSettings(); return; }
     if(bt.id==="pulse") pulse();
     if(bt.id==="reclaim" && S.selected){ startReclaim(S.selected); S.selected=null; }
     if(bt.id==="act"){
@@ -1273,6 +1434,13 @@ function onDown(px,py){
     const [wx,wy]=s2w(px,py); const tx=wx|0, ty=wy|0;
     const dv=deviceAt(tx,ty), src=sourceAt(tx,ty);
     if(dv||src){ S.inspect = dv||src; }                 // tap a box, learn what it is
+    if(dv && S.autoFrom){                               // second half of tap to tap
+      const f=S.autoFrom; S.autoFrom=null;
+      if(autoRoute(f.x, f.y, dv.x, dv.y)!==null)
+        toast("Cheapest way there. Drag it into cover if you would rather hide it.");
+      lastTouchTile=null; return; }
+    if(src){ S.autoFrom=src; toast("Now tap a machine, or drag the route yourself."); }
+    else if(!dv) S.autoFrom=null;
     if(!beginDraft(tx,ty)){ const cd=anyConduitAt(tx,ty);
       S.selected = cd || null;
       if(cd) toast("Wire selected. RECLAIM pulls it back at 75%."); }
@@ -1311,15 +1479,68 @@ function bindInput(){
   window.addEventListener("resize", resize);
 }
 
+// ── settings drawer ──────────────────────────────────────────────────────────
+// A stub on purpose: sound and haptics are C6's, so the switches only record the
+// choice. Handedness is live, because where the controls sit is the one setting
+// that changes the game you are holding.
+function settingsLabel(k){
+  return k==="hand" ? (SET.hand==="left" ? "Left handed" : "Right handed")
+                    : (SET[k] ? "On" : "Off");
+}
+function paintSettings(){
+  if(typeof document==="undefined") return;
+  document.querySelectorAll("#settings [data-set]").forEach(b=>{
+    b.textContent = settingsLabel(b.getAttribute("data-set")); });
+}
+function openSettings(){
+  if(typeof document==="undefined") return;
+  paintSettings();
+  document.getElementById("settings").classList.remove("hide");
+}
+function closeSettings(){
+  if(typeof document==="undefined") return;
+  document.getElementById("settings").classList.add("hide");
+}
+function bindSettings(){
+  document.querySelectorAll("#settings [data-set]").forEach(b=>{
+    b.addEventListener("click",()=>{
+      const k=b.getAttribute("data-set");
+      if(k==="hand") SET.hand = SET.hand==="left" ? "right" : "left";
+      else SET[k] = !SET[k];
+      saveSettings(); paintSettings(); layout(); if(S) draw();
+    });
+  });
+  document.getElementById("setclose").addEventListener("click", closeSettings);
+}
+
 // ── boot ─────────────────────────────────────────────────────────────────────
-let last=0;
+let last=0, perf={ update:0, draw:0, frame:0 };
 function frame(ts){
   const dt=Math.min(0.05,(ts-last)/1000||0); last=ts;
-  step(dt,input); updateCamera(dt); draw();
+  const t0=(typeof performance!=="undefined")?performance.now():0;
+  step(dt,input); updateCamera(dt);
+  const t1=(typeof performance!=="undefined")?performance.now():0;
+  draw();
+  const t2=(typeof performance!=="undefined")?performance.now():0;
+  // smoothed, because a single frame tells you nothing
+  perf.update += (t1-t0-perf.update)*0.1;
+  perf.draw   += (t2-t1-perf.draw)*0.1;
+  perf.frame  += (dt*1000-perf.frame)*0.1;
   requestAnimationFrame(frame);
 }
+// A playtest is only worth logging if it can be replayed. ?seed=1234 picks the
+// run; the seed is shown in the dev overlay, which is gated the way the rest of
+// the studio gates dev tools.
+let DEV=false;
+function readBootFlags(){
+  if(typeof location!=="undefined" && location.search){
+    const m=location.search.match(/[?&]seed=(\d+)/);
+    if(m) CFG.seed=parseInt(m[1],10)|0;
+  }
+  try{ DEV = localStorage.getItem("sws_dev_ok")==="1"; }catch(e){ DEV=false; }
+}
 if(typeof document!=="undefined" && CAN){
-  newGame(); resize(); bindInput();
+  readBootFlags(); loadSettings(); newGame(); resize(); bindInput(); bindSettings();
   document.getElementById("go").addEventListener("click",()=>{
     document.getElementById("overlay").classList.add("hide");
     last=performance.now(); requestAnimationFrame(frame); });
@@ -1327,7 +1548,7 @@ if(typeof document!=="undefined" && CAN){
 // headless test surface. It never shrinks; new systems get exported onto it.
 if(typeof globalThis!=="undefined") globalThis.CONDUIT={
   CFG, newGame, step, get S(){return S;}, totalMass, checkLedger, bfs, los,
-  beginDraft, draftStep, draftTo, commitDraft, startReclaim, resolvePower, TTat:(x,y)=>TT[idx(x,y)],
+  beginDraft, draftStep, draftTo, commitDraft, startReclaim, cheapestPath, autoRoute, resolvePower, TTat:(x,y)=>TT[idx(x,y)],
   startEnvelop, tapNoise, douseLight, envelopTarget, nearestLight, releaseGrab,
   onSiteWire, tileCost,
   idx, blobRef:()=>blob(), ledgerGain, ledgerDamage,
@@ -1340,6 +1561,7 @@ if(typeof globalThis!=="undefined") globalThis.CONDUIT={
   // rather than by calling its handler. Empty headless, where there is no layout.
   get btns(){ return btns; }, hitBtn,
   get safe(){ return SAFE; }, get view(){ return {w:VW,h:VH}; },
+  get settings(){ return SET; }, openSettings, closeSettings, loadSettings, saveSettings,
   get cam(){ return cam; }, w2s, s2w,
 };
 </script>

@@ -184,8 +184,11 @@ Build in the addendum's priority order:
     driven with a real touch at that coordinate, never by calling a handler. Includes
     48px rendered minimums, no overlap, nothing inside a safe area inset, and the
     route drag surviving skipped events and a blocked step.
-  - **4-viewport screenshots read** (`docs/shots/c1-*.png`, before/after in
-    `before-*` and `c1a/c1b/c1c-*`). Faults found by looking and fixed: title screen
+  - **4-viewport screenshots read** at 320x568, 375x667, 844x390 and 1280x800.
+    `docs/shots` keeps one representative frame per state rather than every
+    iteration, since `node test/shots.js <tag>` regenerates the lot in a minute:
+    `before-*` is the inherited build, `c1-*` and `c2-*` are after each phase.
+    Faults found by looking and fixed: title screen
     clipped at both ends unscrollably in landscape (wordmark at y -22); the site
     floating in void (camera now clamped, grain + hairline + corner ticks + vignette);
     corner ticks drawn when their corner was off screen, reading as stray lines;
@@ -212,7 +215,54 @@ Build in the addendum's priority order:
     the documented intended route crosses the patrol it is meant to trap, so the
     designed solve partly self destructs on contact (feature or level authoring, his
     call); and the same script swings +1.2 to -22.9 net mass on timing alone.
-- [ ] C2 gate: auto-route assertions added (count: ___) · breaker bugs found: ______ · 5 playtests logged
+- [x] **C2 gate** (2026-09-01)
+  - **auto-route assertions added: 20** (smoke section 14). Legality: starts at the
+    source and ends at the machine, never through a wall, never through a door,
+    every step orthogonal and one tile, never crosses itself. Parity: the assist
+    lays the same tiles and costs **exactly** what that path costs laid by hand,
+    and charges the body exactly that, because the assist only proposes and
+    `draftStep` still lays. Refusal: an unaffordable route is refused whole, never
+    laid in part, and costs nothing to be told no. Optimality: checked against an
+    **independent relaxation oracle**, not against itself, after the
+    `assist-not-cheapest` mutant survived a suite that only proved the route was
+    legal and short.
+  - **breaker bugs found: two, and they were independent.** (1) Nothing in the game
+    ever bumped past alert 3, so **alert 4 was unreachable**: `bump(Math.max(2,
+    S.site.alert))` cannot exceed the level it reads. (2) `resolvePower` skipped
+    every conduit while lockdown was true, so **the breaker could never come on**,
+    so it could never clear the lockdown, and `alertDecaySec[4]` is Infinity. The
+    fifth alert state could be neither entered nor left. Sightings now climb the
+    ladder (edge triggered on `e.seen`, or a per frame bump reaches Lockdown
+    instantly), and lockdown cuts the site's power but not yours, so the breaker
+    is the one thing you can still energise. **Played three times in a browser**
+    (`node test/lockdown.js`): 41 tiles routed to the breaker in the dark, the
+    site comes back at Search, no mass leaked in any round. In one round the
+    rescue wire shocked a guard standing on it and burned three tiles off itself
+    back off the breaker, after doing its job. 16 assertions, 4 mutants.
+  - **A third bug, found by my own change:** shortening the drone patrol to start
+    at x 15 **broke the solvability gate**, because it reached the designed
+    route's corridor crossing sooner and burned the wire off the plate. The patrol
+    is now the east half only, kept clear of x 18 to 22, the only legal crossing.
+  - **suite: 162 assertions, 36 mutants, 36 killed, 0 survivors.**
+    controls 51/51 at all four viewports. fullrun clean. lockdown clean.
+  - **5 playtests logged** in `PLAYTESTS.md` with the C2 findings, plus the five
+    C1 entries. Stephen's verdict column is untouched.
+  - Also shipped: `?seed=`, a dev overlay behind `localStorage.sws_dev_ok` (seed,
+    alert and decay timer, per enemy spot and state, full ledger tail, frame
+    times), `CFG.guardRewalks` + `guardRewalkSec`, and a settings drawer where
+    sound and haptics record the choice for C6 and handedness actually moves the
+    thumb block, stored read modify write.
+  - **Two open Director calls, in `satellites/conduit/HANDOFF.md`:** Lockdown
+    cannot be reached by shuttling in and out of cover. Measured over eight steps
+    out into the patrol and back, the alert went **2, 3, 3, 3, 3, 2, 1, 0**: it
+    reaches Alarm on the second sighting and plateaus, because a retreat long
+    enough to break line of sight costs more than the next sighting gains
+    (Suspicion decays in 8s, Search in 15s). Real play tops out at Alarm. And **`?seed=`
+    currently changes nothing**: `S.rng` is created and never consumed and there
+    are zero `Math.random` calls, so nothing in the sim is random yet. The
+    plumbing is right; do not read a seed in a log as a replay.
+  - **Perf before the ferro pass: update 0.07ms, draw 1.32ms** against a budget of
+    5 and 8 (dev overlay, 844x390).
 - [ ] C3 gate: 3 shots in docs/shots/ read, faults: ______ · fps @4x throttle: ___ · sim-identity assertion green
 - [ ] C4 gate: smoke count: ___ · verb suicide-table written in HANDOFF.md
 - [ ] C5 gate: 6/6 solvability checks · two-path logs · splice-differs assertion green

@@ -5,8 +5,8 @@
 
 ## Where we are
 
-**C1 is complete. C2 is next.** M1, the ship gate, is still unanswered and is
-still Stephen's alone.
+**C1 and C2 are complete. C3, the ferro pass, is next and it is the heart of the
+build.** M1, the ship gate, is still unanswered and is still Stephen's alone.
 
 `index.html` is a complete, playable prototype in one file, no build step,
 canvas 2D, touch first. It runs from `file://`, GitHub Pages, or anywhere.
@@ -14,12 +14,18 @@ canvas 2D, touch first. It runs from `file://`, GitHub Pages, or anywhere.
 ## How to check it, in order
 
 ```
-node test/smoke.js                 123 assertions, headless, no deps
-node test/mutants.js               30 mutants, all must be killed
-node test/controls.js [w] [h]      40 assertions, real touches in real Chrome
+node test/smoke.js                 162 assertions, headless, no deps
+node test/mutants.js               36 mutants, all must be killed
+node test/controls.js [w] [h]      51 assertions, real touches in real Chrome
 node test/shots.js <tag>           screenshots at 320, 375, 844, 1280
 node test/fullrun.js [w] [h]       plays the whole level with real touch input
+node test/lockdown.js [w] [h]      plays the lockdown loop three times
+test/drive.js                      the shared browser hands, not a test itself
 ```
+
+`?seed=1234` picks the seed. `localStorage.setItem("sws_dev_ok","1")` turns on the
+dev overlay: seed, alert state and decay timer, per enemy spot progress and state,
+the full ledger tail, and frame/update/draw times.
 
 `test/mutants.js` is the one to understand. HANDOFF-CONDUIT rule 3 says a gate
 you have not watched fail is decoration. This breaks one mechanic at a time in
@@ -85,14 +91,64 @@ killed, 0 survivors.**
 - Sizing uses `visualViewport`, never `innerHeight`.
 - All numbers live in `CFG.ui`. Nothing numeric is loose in render code.
 
-## Open, and deliberately not fixed in C1
+## What C2 changed
 
-- **The breaker cannot end a lockdown. The designed recovery loop is dead code.**
-  `resolvePower` skips every conduit while `S.site.lockdown` is true, so the
-  breaker can never turn on, so it can never clear the lockdown, and
-  `alertDecaySec[4]` is `Infinity`. This is C2's "play the breaker loop by hand
-  and fix what is broken" item, and it is exactly the bug that item predicted.
-  Found statically; the fix and its assertion belong in C2.
+### The whole fifth alert state was dead, in two independent places
+Nothing in the game ever bumped past 3, so **alert 4 was unreachable**
+(`bump(Math.max(2, S.site.alert))` cannot exceed the level it reads). And
+`resolvePower` skipped every conduit while lockdown was true, so **the breaker
+could never come on**, so it could never clear the lockdown, and
+`alertDecaySec[4]` is Infinity. The lockdown loop the design calls a routing
+puzzle could be neither entered nor left.
+
+- Sightings now climb the ladder: a fresh spot takes Calm or Suspicion to Search,
+  and each further sighting climbs one step to Lockdown. Edge triggered on
+  `e.seen`, because spot sits pinned at 1 while he can see you and a per frame
+  bump would reach Lockdown instantly. `CFG.spotEscalates` turns it off.
+- Lockdown cuts the site's power, not yours: the breaker is the one device you
+  can still energise, because energising it is the way out.
+- Played three times in a browser (`node test/lockdown.js`), plus 16 assertions
+  and four mutants covering both halves.
+
+### Route assist
+Tap a source, tap a machine, take the cheapest legal path, then drag to edit it,
+or ignore it and draw the whole thing by hand. The assist proposes and
+`draftStep` still lays, so the legality rules and the price cannot drift apart
+between the two ways of drawing a route. Uniform cost search over `tileCost`.
+
+**It costs 19.8 to the sprinkler where the designed hand route costs 24.6, and it
+buys that entirely with exposure** (concealed ground is 1.6x). So it does not
+solve the puzzle for you: it hands you the cheap dangerous answer and you drag it
+into cover if you would rather hide. Gated on legality, on charging exactly what
+the same path costs by hand, on refusing an unaffordable route whole rather than
+laying half of it, and on being the true optimum, checked against an independent
+relaxation oracle rather than against itself.
+
+### The corridor drone
+Shortened from the whole corridor to its east half, per the designer note:
+length, never spot rates. My first attempt started it at x 15 and **broke the
+solvability gate**, because the drone reached the designed route's corridor
+crossing sooner, zapped the wire and burned it off the plate. The patrol is now
+kept clear of x 18 to 22, the only legal crossing. See the open item below.
+
+### Also
+`CFG.guardRewalks` plus `guardRewalkSec` for testing the recurring investigation.
+`?seed=`. A dev overlay behind `localStorage.sws_dev_ok`. A settings drawer:
+sound and haptics record the choice for C6, handedness is live and actually moves
+the thumb block, all stored read modify write so a second tab cannot clobber it.
+
+## Open, and deliberately not fixed
+
+- **Lockdown cannot be reached by ordinary play, only by sustained pressure.**
+  Suspicion decays in 8s and Search in 15s, and a retreat long enough to break
+  line of sight costs more ground than the next sighting gains. The ladder is
+  climbable and the suite climbs it, but shuttling in and out of cover never gets
+  there. **Director call: is Lockdown meant to be that hard to trip?**
+- **`?seed=` currently changes nothing.** `S.rng` is created and never consumed,
+  and there are zero `Math.random` calls: nothing in the sim is random yet. The
+  plumbing satisfies the architecture law for when something is, but do not read
+  a seed in a log as meaning a run can be replayed. In a browser it cannot be
+  anyway, because real frame timing varies.
 - **The intended solution route crosses the patrol it is meant to trap.** Wire A
   goes live under the sentry, he steps on it, takes 15, and the run burns 3
   tiles of itself off the sprinkler at zero refund. Q5 working as written, and
@@ -139,9 +195,20 @@ devices, level loader, save/load, 3D. Do not add these before their phase.
 
 ## Next action
 
-C2, in the plan's order. Start with the breaker: play the lockdown loop by hand,
-fix the dead recovery, and gate it with an assertion and a mutant. Then route
-draw assist (tap source, tap device, auto route cheapest, then let the player
-drag to edit), the drone patrol shortening, `?seed=` and the dev overlay, and
-the settings drawer stub. Five logged runs answering the M1 questions as the
-builder's read, with Stephen's verdict column left empty for him.
+**C3, the ferro pass.** Section 3 of HANDOFF-CONDUIT is the spec and Appendix A of
+DESIGN.md is the verified maths; copy it faithfully rather than reinventing it.
+Flip `CFG.ferroRender` and make the creature and the conduit look and move like
+living ferrofluid: spikes that carry information about where power flows, a
+spring damped render radius so harvests swell you and hits ripple, the squeeze
+capsule, the conduit as a ribbon that stands up when live and flows home on
+reclaim, Flow as the creature spreading its awareness.
+
+Two things in hand before starting. The frame budget has room: the dev overlay
+reads **update 0.07ms, draw 1.32ms** against a budget of 5 and 8. And the sim must
+not move: assert `step()` output is identical for a fixed seed with the flag off
+and on, because rendering may not touch the simulation.
+
+The tickets from C1 are the shot list: the player is the least visible thing on
+screen in both modes, vision cones read as flat light pools rather than
+attention, light pools read as fog, and the site's own wiring, which the player
+is supposed to walk past and wonder about, is invisible at Flow zoom.

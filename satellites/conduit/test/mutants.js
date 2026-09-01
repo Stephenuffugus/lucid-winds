@@ -78,11 +78,6 @@ const MUTANTS = [
     to:   "    if(true){",
     expect: "budget" },
 
-  { id: "power-lockdown-noop", why: "lockdown no longer cuts power",
-    from: "    cd.live=false; if(S.site.lockdown||cd.path.length<2) continue;",
-    to:   "    cd.live=false; if(cd.path.length<2) continue;",
-    expect: "lockdown" },
-
   { id: "squeeze-vent-open", why: "a full body can enter a squeeze only vent",
     from: "  if(t===VENT) return mass < CFG.squeezeAt;",
     to:   "  if(t===VENT) return true;",
@@ -152,6 +147,41 @@ const MUTANTS = [
     from: "  if(!pressing) S.player.forceT=0;",
     to:   "  if(!pressing || !vx) S.player.forceT=0;",
     expect: "grew while pressed" },
+
+  { id: "no-lockdown-reachable", why: "escalation can never exceed the level it reads (the C2 bug, restored)",
+    from: "               : S.site.alert<2 ? 2 : Math.min(4, S.site.alert+1);",
+    to:   "               : Math.max(2, S.site.alert);",
+    expect: "Lockdown" },
+
+  { id: "spot-every-frame", why: "the sighting bump is not edge triggered",
+    from: "    if(!e.seen){\n      e.seen=true;",
+    to:   "    if(true){\n      e.seen=true;",
+    expect: "every frame" },
+
+  { id: "breaker-cannot-power", why: "lockdown skips every conduit, so the way out is dead (the C2 bug, restored)",
+    from: "    if(S.site.lockdown && dv.kind!==\"breaker\") continue;",
+    to:   "    if(S.site.lockdown) continue;",
+    expect: "breaker can be energised" },
+
+  { id: "lockdown-powers-everything", why: "a lockdown that cuts nothing",
+    from: "    if(S.site.lockdown && dv.kind!==\"breaker\") continue;",
+    to:   "    if(false) continue;",
+    expect: "lockdown" },
+
+  { id: "assist-through-walls", why: "the route assist ignores geometry",
+    from: "      if(!conduitable(nx,ny)) continue;",
+    to:   "      if(false) continue;",
+    expect: "wall" },
+
+  { id: "assist-not-cheapest", why: "the assist takes the shortest route, not the cheapest",
+    from: "      const nd=d+tileCost(nx,ny);",
+    to:   "      const nd=d+1;",
+    expect: "true cheapest" },
+
+  { id: "assist-lays-what-you-cannot-afford", why: "an unaffordable route is laid in part",
+    from: "  if(blob().mass-price<CFG.minBlobMass){",
+    to:   "  if(false){",
+    expect: "refused" },
 
   { id: "spot-decay-none", why: "spot progress never decays once you break line of sight",
     from: "  } else e.spot=Math.max(0, e.spot-CFG.spotDecay*dt);",
