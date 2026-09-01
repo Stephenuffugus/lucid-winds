@@ -681,7 +681,7 @@ function onDown(e){
   if(tool==="erase"){ eraseAt(lx,ly); return; }
   if(parts.length>=lv.budget){ flashHint("Deck is full. Erase something first."); return; }
   if(tool==="rail") drag={type:"rail",x:lx,y:ly,x2:lx,y2:ly};
-  else { parts.push({type:tool,x:lx,y:ly}); ghost=null; coachDone("build"); refreshHUD(); }
+  else { parts.push({type:tool,x:lx,y:ly}); ghost=null; ghostIdle=null; coachDone("build"); refreshHUD(); }
 }
 function onMove(e){
   if(!drag) return;
@@ -697,7 +697,7 @@ function onUp(){
     const a=Math.atan2(drag.y,drag.x);
     drag.x2=drag.x+Math.cos(a+Math.PI/2)*22; drag.y2=drag.y+Math.sin(a+Math.PI/2)*22;
   }
-  parts.push(drag); drag=null; ghost=null; coachDone("build"); refreshHUD();
+  parts.push(drag); drag=null; ghost=null; ghostIdle=null; coachDone("build"); refreshHUD();
 }
 function eraseAt(lx,ly){
   let best=-1,bd=16;
@@ -707,7 +707,7 @@ function eraseAt(lx,ly){
     else d=len(lx-p.x,ly-p.y);
     if(d<bd){bd=d;best=i;}
   });
-  if(best>=0){ parts.splice(best,1); ghost=null; refreshHUD(); }
+  if(best>=0){ parts.splice(best,1); ghost=null; ghostIdle=null; refreshHUD(); }
 }
 function distToSeg(px,py,x1,y1,x2,y2){
   const dx=x2-x1,dy=y2-y1,L2=dx*dx+dy*dy;
@@ -867,18 +867,24 @@ function cachedPredict(){
    state, so it reads the parts you have placed and redraws as you place them:
    the one view that shows a part doing something. `quiet` keeps it from
    shaking the screen or making noise on the way through. */
-let ghost=null;
-function buildGhost(){
+let ghost=null, ghostIdle=null;
+function trackFor(th){
   const r0=eqRadius(OM_IDLE);
-  const s={x:r0,y:0,vx:0,vy:OM_IDLE*r0,theta:0,omega:OM_IDLE,throttle:1,quiet:true};
+  const s={x:r0,y:0,vx:0,vy:OM_IDLE*r0,theta:0,omega:OM_IDLE,throttle:th,quiet:true};
   const pts=[];
   for(let i=0;i<8*120;i++){
-    advanceDeck(s,1);
+    advanceDeck(s,th);
     if(i%4===0){ const p=rot(s.x,s.y,-s.theta); pts.push([p[0],p[1]]); }
     if(!isFinite(s.x)||!isFinite(s.y)) break;
   }
-  ghost=pts;
+  return pts;
 }
+/* Two tracks, because the throttle is not one choice. Holding walks the ball
+   out to the rim; leaving it alone lets the dish pull it in, and the two paths
+   cover completely different ground. The game never said so anywhere, and the
+   system that needs a vane cannot be solved while holding, so a player shown
+   only the held path is being shown the half that does not work. */
+function buildGhost(){ ghost=trackFor(1); ghostIdle=trackFor(TH_FLOOR); }
 
 /* ---------------- coaching ----------------
    Four beats, each triggered by the state the player is actually in rather
@@ -1012,7 +1018,7 @@ function openLevels(){
   modal("levels");
 }
 function loadLevel(i){
-  lvIndex=Math.max(0,Math.min(LEVELS.length-1,i)); lv=LEVELS[lvIndex]; parts=[]; ghost=null;
+  lvIndex=Math.max(0,Math.min(LEVELS.length-1,i)); lv=LEVELS[lvIndex]; parts=[]; ghost=null; ghostIdle=null;
   resetSystem();
   $("lvnum").textContent=String(lvIndex+1).padStart(2,"0");
   $("lvname").textContent=lv.name;
@@ -1490,11 +1496,26 @@ function drawDeck(){
 
   if(phase==="build"){
     if(!ghost) buildGhost();
-    if(ghost&&ghost.length>1){
+    const iz=1/Math.max(1e-3,camScale());
+    const tag=(t,txt,col)=>{                    // name each track at its own end
+      if(!t||t.length<3) return;
+      const e=t[t.length-1];
+      ctx.font=worldFont(10.5); ctx.fillStyle=col; ctx.textAlign="center";
+      ctx.fillText(txt,e[0],e[1]-7*iz); ctx.textAlign="left";
+    };
+    if(ghostIdle&&ghostIdle.length>1){          // if you leave the throttle alone
+      ctx.beginPath(); ctx.moveTo(ghostIdle[0][0],ghostIdle[0][1]);
+      for(const q of ghostIdle) ctx.lineTo(q[0],q[1]);
+      ctx.strokeStyle="rgba(121,208,230,.55)"; ctx.lineWidth=1.5;
+      ctx.setLineDash([3,4]); ctx.stroke(); ctx.setLineDash([]);
+      tag(ghostIdle,"let it ride","rgba(121,208,230,.85)");
+    }
+    if(ghost&&ghost.length>1){                  // if you hold it down
       ctx.beginPath(); ctx.moveTo(ghost[0][0],ghost[0][1]);
       for(const q of ghost) ctx.lineTo(q[0],q[1]);
-      ctx.strokeStyle="rgba(242,169,59,.34)"; ctx.lineWidth=1.4;
+      ctx.strokeStyle="rgba(242,169,59,.42)"; ctx.lineWidth=1.5;
       ctx.setLineDash([4,5]); ctx.stroke(); ctx.setLineDash([]);
+      tag(ghost,"hold","rgba(242,169,59,.9)");
       ctx.beginPath(); ctx.arc(ghost[0][0],ghost[0][1],4.2,0,7);
       ctx.fillStyle="rgba(242,169,59,.85)"; ctx.fill();
     }
@@ -1940,7 +1961,7 @@ function init(){
     }));
   $("release").addEventListener("pointerdown",e=>{e.preventDefault();doRelease("player");});
   $("spinbtn").onclick=()=>{ sfx.boot(); startSpin(); };
-  $("clearbtn").onclick=()=>{parts=[];ghost=null;refreshHUD();sfx.click(false);};
+  $("clearbtn").onclick=()=>{parts=[];ghost=null;ghostIdle=null;refreshHUD();sfx.click(false);};
   $("retrybtn").onclick=backToBuild;
   $("abortbtn").onclick=backToBuild;
   $("lvpick").onclick=openLevels;
