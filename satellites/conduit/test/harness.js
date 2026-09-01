@@ -7,7 +7,10 @@ const vm = require("vm");
 const path = require("path");
 
 function load(){
-  const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+  // CONDUIT_HTML lets test/mutants.js point the suite at a mutated scratch copy
+  // without ever writing to the real game file.
+  const src = process.env.CONDUIT_HTML || path.join(__dirname, "..", "index.html");
+  const html = fs.readFileSync(src, "utf8");
   const m = html.match(/<script>([\s\S]*)<\/script>/);
   if(!m) throw new Error("no script block found in index.html");
   const ctx = { console, Math, performance: { now: () => Date.now() } };

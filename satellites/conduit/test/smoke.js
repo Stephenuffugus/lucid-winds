@@ -9,6 +9,9 @@ const ok = (name, cond, extra="") => {
   else { fail++; console.log("  FAIL " + name + (extra?"  → "+extra:"")); }
 };
 const near = (a,b,eps=1e-6) => Math.abs(a-b)<=eps;
+// Set a blob's mass inside a test without inventing or destroying mass: the
+// ledger moves with it, so the invariant stays meaningful afterwards.
+const setMass = (S,b,m) => { S.ledger.owned += m - b.mass; b.mass = m; };
 
 // ── 1. the invariant, under a long random workout ────────────────────────────
 console.log("\n[1] mass invariant under random play");
@@ -301,6 +304,197 @@ console.log("\n[11] metroid layer: same level, different meaning");
   G.commitDraft();
   ok("but powering over the site's run trips its panel", S.site.alert >= 1);
   ok("invariant holds with zero-cost tiles in the path", G.checkLedger());
+}
+
+// ── 12. the gates that were decoration ───────────────────────────────────────
+// Added 2026-09-01 (C1). `node test/mutants.js` broke eight core mechanics one
+// at a time and the 57-assertion suite stayed green for all eight: the damage
+// path of the ledger, routing through walls, the shared source budget, lockdown
+// cutting power, the squeeze threshold, the force threshold, smother's
+// unaware-only rule, and concealed conduit never being spotted. The old checks
+// for those compared constants to each other instead of running the code.
+// Each block below names the mutant it must kill.
+console.log("\n[12] mechanics that had no real assertion");
+
+{ // kills: ledger-damage
+  const S = G.newGame();
+  const owned0 = S.ledger.owned, mass0 = G.blobRef().mass;
+  G.ledgerDamage(10);
+  ok("damage debits the authoritative total, not just the body",
+     near(S.ledger.owned, owned0-10), "owned="+S.ledger.owned);
+  ok("damage comes off the body too", near(G.blobRef().mass, mass0-10));
+  ok("damage is booked as a debit", near(S.ledger.debits.damage, 10));
+  ok("invariant survives damage", G.checkLedger());
+}
+{ // kills: ledger-damage, through the real contact path rather than the API
+  const S = G.newGame();
+  const b = G.blobRef(), e = S.enemies[0];
+  const owned0 = S.ledger.owned;
+  e.state = "hunt"; e.path = null;
+  for(let i=0;i<40;i++){ e.x=b.x; e.y=b.y; G.step(0.016,{ax:0,ay:0}); }
+  ok("a guard in contact actually takes mass off you", S.ledger.owned < owned0,
+     "owned="+S.ledger.owned.toFixed(2));
+  ok("invariant survives taking a hit", G.checkLedger());
+}
+
+{ // kills: route-through-walls
+  const S = G.newGame();
+  G.beginDraft(9,16);
+  const n0 = S.draft.path.length;
+  G.draftStep(9,17);                                  // corridor floor, legal
+  ok("a legal neighbour extends the route", S.draft.path.length===n0+1);
+  G.draftStep(9,18);                                  // solid wall below the corridor
+  ok("conduit cannot be laid through a wall", S.draft.path.length===n0+1,
+     "len="+S.draft.path.length);
+  ok("the wall really is solid", G.TTat(9,18)===G.tiles.WALL);
+}
+
+{ // kills: power-budget-ignored — the capacity lesson, actually run
+  const S = G.newGame();
+  G.beginDraft(9,16);
+  for(let y=15;y>=9;y--) G.draftStep(9,y);
+  for(let x=10;x<=12;x++) G.draftStep(x,9);
+  G.draftStep(12,8);
+  G.commitDraft();
+  const plate = S.devices.find(d=>d.kind==="plate");
+  const sock  = S.sources.find(s=>s.id==="sock-1");
+  ok("a wire physically reaches the plate",
+     S.conduits.length===1 && S.conduits[0].path.length>1);
+  ok("the socket cannot fund it, so the plate stays dark", !plate.on);
+  ok("and its wire never goes live", !S.conduits[0].live);
+  ok("a source never spends past its capacity",
+     ((S.powerUsed&&S.powerUsed[sock.id])||0) <= sock.capacity,
+     "used="+((S.powerUsed&&S.powerUsed[sock.id])||0));
+}
+
+{ // kills: power-lockdown-noop
+  const S = G.newGame();
+  G.beginDraft(9,16); for(let y=15;y>=5;y--) G.draftStep(9,y);
+  for(let x=10;x<=16;x++) G.draftStep(x,5); G.commitDraft();
+  const spr = S.devices.find(d=>d.kind==="sprinkler"), cd = S.conduits[0];
+  ok("the sprinkler is live before the lockdown", spr.on && cd.live);
+  const committed = cd.cost;
+  G.bump(4, "test");
+  ok("alert 4 is a lockdown", S.site.lockdown===true);
+  ok("lockdown kills every live wire", !cd.live);
+  ok("lockdown turns the devices off", !spr.on);
+  ok("lockdown disarms you, it does not confiscate you", near(cd.cost, committed));
+  ok("invariant survives a lockdown", G.checkLedger());
+}
+
+{ // kills: squeeze-vent-open — the size inversion, run rather than asserted
+  const S = G.newGame(), b = G.blobRef();
+  ok("a full body is refused by the vent", !G.passableBlob(18,14,CFG.capacity));
+  ok("a thin body is admitted", G.passableBlob(18,14,CFG.squeezeAt-1));
+  ok("the threshold is exact, not approximate", !G.passableBlob(18,14,CFG.squeezeAt));
+  b.x=18.5; b.y=15.6; setMass(S,b,CFG.capacity);
+  for(let i=0;i<120;i++) G.step(0.016,{ax:0,ay:-1});
+  ok("a full body cannot walk into the vent", b.y>14.9, "y="+b.y.toFixed(2));
+  setMass(S,b,CFG.squeezeAt-10);
+  for(let i=0;i<180;i++) G.step(0.016,{ax:0,ay:-1});
+  ok("a thin body flows through it", b.y<14, "y="+b.y.toFixed(2));
+  ok("invariant survives the squeeze", G.checkLedger());
+}
+
+{ // kills: force-door-open — the other half of the inversion
+  const S = G.newGame(), b = G.blobRef(), DOOR = G.tiles.DOOR;
+  ok("a door is impassable at any mass",
+     !G.passableBlob(35,14,CFG.capacity) && !G.passableBlob(35,14,10));
+  b.x=35.5; b.y=16.2; setMass(S,b,CFG.forceAt-10);
+  for(let i=0;i<240;i++) G.step(0.016,{ax:0,ay:-1});
+  ok("a body under the force threshold cannot open the door", G.TTat(35,14)===DOOR);
+  ok("and it does not get through", b.y>14.9, "y="+b.y.toFixed(2));
+}
+{ // a clean approach at full mass opens it
+  const S = G.newGame(), b = G.blobRef(), DOOR = G.tiles.DOOR;
+  b.x=35.5; b.y=16.2;
+  for(let i=0;i<240;i++) G.step(0.016,{ax:0,ay:-1});
+  ok("a full body forces the door open", G.TTat(35,14)!==DOOR);
+  ok("forcing a door is heard", S.site.alert>=1, "alert="+S.site.alert);
+  ok("invariant survives forcing", G.checkLedger());
+}
+{ // regression, C1: growing while already pressed on the door must still force.
+  // The per-axis force reset made this permanently impossible; harvest a body
+  // beside a door and the door became unopenable.
+  const S = G.newGame(), b = G.blobRef(), DOOR = G.tiles.DOOR;
+  b.x=35.5; b.y=16.2; setMass(S,b,CFG.forceAt-10);
+  for(let i=0;i<60;i++) G.step(0.016,{ax:0,ay:-1});     // settle, too thin to force
+  ok("a thin body settles against the door without opening it", G.TTat(35,14)===DOOR);
+  setMass(S,b,CFG.capacity);                            // a harvest lands, you swell
+  for(let i=0;i<240;i++) G.step(0.016,{ax:0,ay:-1});
+  ok("a body that grew while pressed can still force the door",
+     G.TTat(35,14)!==DOOR, "forceT="+S.player.forceT.toFixed(3));
+  ok("invariant survives forcing after a swell", G.checkLedger());
+}
+
+{ // kills: envelop-aware-target — the rule that keeps direct verbs honest
+  const S = G.newGame(), b = G.blobRef(), e = S.enemies[0];
+  b.x = e.x + 0.4; b.y = e.y;
+  e.state = "hunt";
+  G.startEnvelop();
+  ok("you cannot smother a guard that is hunting you", S.act.verb===null);
+  e.state = "patrol"; e.spot = 0.9;
+  G.startEnvelop();
+  ok("nor one that has half noticed you", S.act.verb===null);
+  e.spot = 0;
+  G.startEnvelop();
+  ok("but an unaware one at the same range is fair game", S.act.verb==="envelop");
+}
+
+{ // kills: conduit-conceal-spotted and conceal-tier-downgrade
+  const S = G.newGame(), dr = S.enemies[1];
+  G.beginDraft(9,16); for(let x=10;x<=16;x++) G.draftStep(x,16); G.commitDraft();
+  const cd = S.conduits[0];
+  ok("that run is entirely on concealed ground",
+     cd.path.every(p=>G.CONCat(p[0],p[1])===1));
+  for(let i=0;i<600;i++){ dr.x=13.5; dr.y=16.5; dr.face=0; dr.state="patrol";
+    G.step(0.016,{ax:0,ay:0}); }
+  ok("concealed conduit is never discovered, however long he stands over it",
+     !cd.discovered);
+  // a NaN spot value would also never reach 1, and would look exactly like this
+  ok("and it accrues no spot progress at all, NaN included",
+     !(cd.spot > 0) && !Number.isNaN(cd.spot), "spot="+cd.spot);
+}
+{ // kills: harvest-free — the credit side of the economy
+  const S = G.newGame(), b = G.blobRef();
+  setMass(S,b,50);                                     // room to receive it
+  S.bodies.push({ x:b.x, y:b.y, mass:CFG.harvest.sentry, decay:CFG.bodyDecaySec });
+  const m0 = b.mass;
+  for(let i=0;i<60;i++) G.step(0.016,{ax:0,ay:0});
+  ok("standing on a body harvests it", b.mass > m0 + 1, "gained "+(b.mass-m0).toFixed(2));
+  ok("a whole sentry is worth exactly its harvest value",
+     near(b.mass - m0, CFG.harvest.sentry, 1e-6), "gained "+(b.mass-m0).toFixed(4));
+  ok("the gain is credited, not conjured",
+     near(S.ledger.credits.harvest, CFG.harvest.sentry, 1e-6));
+  ok("the body is consumed", S.bodies.length === 0);
+  ok("invariant survives a harvest", G.checkLedger());
+}
+
+{ // kills: spot-decay-none — being seen has to be reversible
+  const S = G.newGame(), b = G.blobRef(), e = S.enemies[0];
+  const pin = () => { e.x=7.5; e.y=11.5; e.face=0; };
+  b.x = 9.5; b.y = 11.5;                               // two tiles in front of him, lit
+  for(let i=0;i<120 && e.spot<0.4;i++){ pin(); G.step(0.016,{ax:0,ay:0}); }
+  const peak = e.spot;
+  ok("standing in a cone accrues spot progress", peak > 0.05, "spot="+peak.toFixed(3));
+  ok("and it stops short of a spot in that time", peak < 1);
+  b.x = 40; b.y = 27;                                  // gone, out of range and sight
+  for(let i=0;i<90;i++){ pin(); G.step(0.016,{ax:0,ay:0}); }
+  ok("spot progress decays once you break the sightline", e.spot === 0,
+     peak.toFixed(3)+" then "+e.spot.toFixed(3));
+}
+
+{ // the positive control: the same guard, an exposed run, does find it
+  const S = G.newGame(), dr = S.enemies[1];
+  G.beginDraft(9,16); G.draftStep(9,15);
+  for(let x=10;x<=16;x++) G.draftStep(x,15); G.commitDraft();
+  const cd = S.conduits[0];
+  ok("that run is not concealed", cd.path.some(p=>G.CONCat(p[0],p[1])!==1));
+  let found = false;
+  for(let i=0;i<900 && !found;i++){ dr.x=13.5; dr.y=16.5; dr.face=-Math.PI/2;
+    dr.state="patrol"; G.step(0.016,{ax:0,ay:0}); found = cd.discovered; }
+  ok("an exposed run under a patrol is found", found, "spot="+cd.spot);
+  ok("finding a wire raises the alert", S.site.alert>=1);
 }
 
 console.log(`\n${pass} passed, ${fail} failed\n`);

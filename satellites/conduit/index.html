@@ -491,17 +491,27 @@ function movePlayer(dt, ax, ay){
     for(const [ox,oy] of [[-r,-r],[r,-r],[-r,r],[r,r],[0,0]])
       if(!passableBlob((nx+ox)|0,(ny+oy)|0,b.mass)) return false;
     return true; };
-  if(free(b.x+vx,b.y)) b.x+=vx; else tryForce(b, b.x+Math.sign(vx)*(r+0.1), b.y, dt, mag);
-  if(free(b.x,b.y+vy)) b.y+=vy; else tryForce(b, b.x, b.y+Math.sign(vy)*(r+0.1), dt, mag);
+  // One force hold per frame, not one per axis. An axis with no input must not
+  // clear the hold the other axis is building: with vx of 0, Math.sign gives 0,
+  // which aimed tryForce at the blob's own tile and zeroed forceT every frame
+  // the body was overlapping anything illegal. Grow while pressed on a door
+  // (harvest a body beside it) and the door became unforceable. Fixed C1.
+  let pressing=false;
+  if(free(b.x+vx,b.y)) b.x+=vx;
+  else if(vx) pressing = tryForce(b, b.x+Math.sign(vx)*(r+0.1), b.y, dt, mag);
+  if(free(b.x,b.y+vy)) b.y+=vy;
+  else if(vy) pressing = tryForce(b, b.x, b.y+Math.sign(vy)*(r+0.1), dt, mag) || pressing;
+  if(!pressing) S.player.forceT=0;
 }
 function tryForce(b, tx, ty, dt, mag){
-  if(mag<=0.08) { S.player.forceT=0; return; }
+  if(mag<=0.08) return false;
   const i=inB(tx|0,ty|0)?idx(tx|0,ty|0):-1;
-  if(i<0||TT[i]!==DOOR){ S.player.forceT=0; return; }
-  if(b.mass<=CFG.forceAt){ toast("Too thin to force this. You need over "+CFG.forceAt+"."); S.player.forceT=0; return; }
+  if(i<0||TT[i]!==DOOR) return false;
+  if(b.mass<=CFG.forceAt){ toast("Too thin to force this. You need over "+CFG.forceAt+"."); return false; }
   S.player.forceT+=dt;
   if(S.player.forceT>=CFG.forceHoldSec){ TT[i]=FLOOR; S.player.forceT=0;
     toast("Forced."); bump(1,"door"); }
+  return true;
 }
 function pulse(){
   const b=blob();
@@ -983,13 +993,18 @@ if(typeof document!=="undefined" && CAN){
     document.getElementById("overlay").classList.add("hide");
     last=performance.now(); requestAnimationFrame(frame); });
 }
-// headless test surface
+// headless test surface. It never shrinks; new systems get exported onto it.
 if(typeof globalThis!=="undefined") globalThis.CONDUIT={
   CFG, newGame, step, get S(){return S;}, totalMass, checkLedger, bfs, los,
   beginDraft, draftStep, commitDraft, startReclaim, resolvePower, TTat:(x,y)=>TT[idx(x,y)],
   startEnvelop, tapNoise, douseLight, envelopTarget, nearestLight, releaseGrab,
   onSiteWire, tileCost,
   idx, blobRef:()=>blob(), ledgerGain, ledgerDamage,
+  // added 2026-09-01 (C1) so the mutation sweep has real gates to fail against
+  bump, passableBlob, passableEnemy, conduitable, expConduit, expBlob,
+  scanConduits, canFlow, pulse, movePlayer, killEnemy,
+  CONCat:(x,y)=>CONC[idx(x,y)], WETat:(x,y)=>WET[idx(x,y)],
+  tiles:{WALL,FLOOR,SHADOW,VENT,DOOR},
 };
 </script>
 </body>
