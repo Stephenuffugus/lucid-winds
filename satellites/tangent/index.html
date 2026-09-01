@@ -187,6 +187,9 @@
     <button class="act ghost" id="setreset">Start over</button>
     <button class="act go" id="setclose" style="flex:1">Done</button>
   </div>
+  <div class="btns" style="margin-top:8px">
+    <button class="act ghost" id="mExit" style="flex:1">Sky Wolf Studio Arcade</button>
+  </div>
 </div>
 
 <div class="card hide" id="levels">
@@ -251,12 +254,15 @@ const PARTS={
   bumper: {label:"Bumper", blurb:"throws in", mass:2, kind:"circle", r:8.5, rest:1.12},
   brake:  {label:"Brake",  blurb:"slows",     mass:1, kind:"zone", r:15},
   booster:{label:"Booster",blurb:"speeds",    mass:1, kind:"zone", r:12},
-  /* The ball always LAGS the deck: surface drag pulls it toward deck speed
-     from below and never past it, so in the deck's own frame it can only ever
-     walk backwards. Everything the player can reach follows from that. A vane
-     drives it AHEAD of the deck inside its zone, which is the only way to walk
-     the other way, and the only proposed part that could open ground the bare
-     deck cannot reach. */
+  /* Surface drag relaxes the ball toward deck speed from whichever side it is
+     on, so which way it walks in the deck's own frame is a question about the
+     THROTTLE, not a law: while the deck is spinning up the ball lags and walks
+     one way, and while the deck is coasting down the ball leads and walks the
+     other. An earlier note here called the lag absolute and a level was built
+     on it; a bare deck cleared that level ninety six ways. A vane is a
+     spatially placed version of the same thing: it drives the ball past deck
+     speed inside its own zone, wherever the player puts it, whatever the
+     throttle is doing. */
   vane:   {label:"Vane",   blurb:"leads",      mass:1, kind:"zone", r:13},
 };
 const VANE_PUSH=340;
@@ -279,12 +285,8 @@ const LEVELS=[
            {n:"Orin",x:210,y:-580,r:28,m:6.8e6,target:true}],
    note:"Ash is closer but it is not your target. Hitting it ends the run." },
 
- { name:"Around the heavy", budget:9, tol:0.26, needsParts:true,
-   // Inside the ring the bare deck cannot enter. Surface drag only ever
-   // pulls the ball toward deck speed from below, so in the deck frame it
-   // walks one way; at this bearing it never comes inside r=94. A vane
-   // drives it past deck speed and brings it in to r=16.
-   gates:[{r:45,a:1.571,w:28}],
+ { name:"Around the heavy", budget:9, tol:0.26,
+   gates:[{r:70,a:-1.15,w:28}],
    bodies:[{n:"Bell",x:-250,y:-210,r:34,m:3.4e6},
            {n:"Wren",x:-580,y:170,r:28,m:5.7e6,target:true}],
    note:"Bell is too heavy to cross. Let it bend you around toward Wren." },
@@ -666,10 +668,19 @@ function finishInversion(){
 function partMass(p){ return p.type==="rail"
   ? PARTS.rail.mass*(0.4+len(p.x2-p.x,p.y2-p.y)/60) : PARTS[p.type].mass; }
 function partCentre(p){ return p.type==="rail" ? [(p.x+p.x2)/2,(p.y+p.y2)/2] : [p.x,p.y]; }
+/* The dish itself has mass. Without it the centre of mass was taken over the
+   PARTS ALONE, so the first part a player ever places sat at 100% of its own
+   centre of mass and a single bumper near the rim read 0.93 against a
+   tolerance of 0.35: the very first experiment always showed red. Including
+   the deck at the origin is the same arithmetic a real rotor uses, and a lone
+   rim part now reads about a quarter of the way to the limit instead of nearly
+   all of it. Opposite pairs still cancel exactly. M_DECK is the dial. */
+const M_DECK=6;
 function imbalance(){
   let mx=0,my=0,m=0;
   for(const p of parts){ const c=partCentre(p),mm=partMass(p); mx+=c[0]*mm; my+=c[1]*mm; m+=mm; }
-  return m<=0?0:len(mx/m,my/m)/DECK_R;
+  const M=M_DECK+m;
+  return M<=0?0:len(mx,my)/M/DECK_R;
 }
 function canvasToWorld(cx,cy){ const s=camScale(),o=camOrigin(); return [(cx-o[0])/s,(cy-o[1])/s]; }
 
@@ -768,9 +779,10 @@ function rimWall(s){
   s.x=nx*(DECK_R-0.01); s.y=ny*(DECK_R-0.01);
   const dot=s.vx*nx+s.vy*ny;
   if(dot>0){ s.vx-=(1+WALL_REST)*dot*nx; s.vy-=(1+WALL_REST)*dot*ny; }
-  // Wall friction is what gives rim riding its feel: rubbing holds the ball
-  // below deck speed, so in the deck's own frame it walks steadily backwards
-  // around the rim. The throttle sets how fast it walks.
+  // Wall friction is what gives rim riding its feel: rubbing pulls the ball
+  // toward deck speed, so in the deck's own frame it walks steadily around the
+  // rim. The throttle sets how fast it walks AND which way: holding leaves the
+  // ball behind the surface, coasting leaves it ahead.
   if(!s.quiet){ shakeT=Math.max(shakeT,0.05); sfx.wall(Math.abs(dot)); }
 }
 function collideOn(s){
@@ -871,7 +883,12 @@ function cachedPredict(){
 let ghost=null, ghostIdle=null;
 function trackFor(th){
   const r0=eqRadius(OM_IDLE);
-  const s={x:r0,y:0,vx:0,vy:OM_IDLE*r0,theta:0,omega:OM_IDLE,throttle:th,quiet:true};
+  // throttle starts at TH_FLOOR, not at th: a live run starts there and relaxes
+  // toward the target over about 0.7 s, and seeding the scratch state at the
+  // target instead put the drawn held track up to 15.7 units off the run it was
+  // promising. The gap does not wash out — the live ball never gets that phase
+  // back — so the build phase was routing a ball that does not exist.
+  const s={x:r0,y:0,vx:0,vy:OM_IDLE*r0,theta:0,omega:OM_IDLE,throttle:TH_FLOOR,quiet:true};
   const pts=[];
   for(let i=0;i<8*120;i++){
     advanceDeck(s,th);
@@ -899,7 +916,7 @@ function buildGhost(){ ghost=trackFor(1); ghostIdle=trackFor(TH_FLOOR); }
    letting go at the first "lands" lands the ball but leaves the gate uncrossed
    on level two, which reads to a new player as the game refusing to advance. */
 const COACH={
-  build:"The ball only ever drifts one way. A Vane pushes it ahead of the deck, which is how it reaches this gate. Tap Vane, then tap the deck.",
+  build:"Hold and the ball walks one way round the deck. Let it ride and it walks the other. A Vane pushes it ahead of the deck where you place it.",
   hold: "Hold the throttle. The deck spins up and the ball rides outward.",
   line: "The dashed line is where the ball goes if you let go right now.",
   gate: "Keep holding. The ball has to cross the gate before you let go.",
@@ -955,6 +972,10 @@ function showUI(which){
 }
 function startSpin(){
   phase="spin";
+  /* A new run has no result yet. Without this a run that never releases
+     inherits the PREVIOUS run's outcome, so a bot, a test or the results card
+     can read "land" off a run that did nothing at all. */
+  lastOutcome=null;
   deck.theta=0; deck.omega=OM_IDLE; deck.wobble=0;
   throttle=TH_FLOOR; holding=false; runT=0; flightT=0;
   const r0=eqRadius(OM_IDLE);
@@ -1052,6 +1073,13 @@ function step(){
     advanceDeck(s, holding?1:TH_FLOOR);
     ball.x=s.x;ball.y=s.y;ball.vx=s.vx;ball.vy=s.vy;
     deck.theta=s.theta;deck.omega=s.omega;throttle=s.throttle;
+    /* The two beats that retire on a SIM event live here and not in frame().
+       They were in the render loop, which the headless suites stub out, so
+       every check of "the tutorial shows once and never again" was invisible:
+       coachDone as a no-op, init not loading tutor from the profile, and
+       deleting these two lines all passed the whole suite. Same behaviour in
+       the browser, because frame() drives step(). */
+    if(holding){ everHeld=true; coachDone("hold"); }
 
     const imb=imbalance();
     deck.wobble += (imb*(deck.omega/OMEGA_MAX)-deck.wobble)*Math.min(1,DT*4);
@@ -1059,6 +1087,7 @@ function step(){
       failRun("The deck shook itself apart. Spread the mass more evenly."); return;
     }
     checkGates();
+    if(lv.gates.length && gatesHit.every(Boolean)) coachDone("gate");
     _predDirty=true;          // the sim moved, so the drawn line is stale
     if(trail.length>260) trail.shift();
     trail.push([ball.x,ball.y]);
@@ -1604,6 +1633,35 @@ function drawPrediction(){
   const e=pr.path[pr.path.length-1];
   ctx.beginPath(); ctx.arc(e[0],e[1],good?6:4,0,7);
   ctx.strokeStyle=line; ctx.lineWidth=1.8; ctx.stroke();
+  if(pr.outcome==="invert") drawEntryBearing(e);
+}
+/* The far side is not predicted, and it must not be (D2): the line stops at
+   the hole and what happens through it is the mystery. But D8 fixes one thing
+   about it exactly — the ball comes back out ON the horizon ring, at the
+   bearing it went in, heading straight outward (finishInversion). Drawing that
+   point turns an unpredictable outcome into a bearing you can aim, without
+   predicting a single step of the far side. */
+function entryBearing(e){
+  let h=null,bd=Infinity;
+  for(const b of live()){ if(!b.hole) continue;
+    const d=len(b.x-e[0],b.y-e[1]); if(d<bd){bd=d;h=b;} }
+  if(!h) return null;
+  const R=h.R||h.r*3.2;
+  const a=Math.atan2(e[1]-h.y,e[0]-h.x);
+  return {hole:h, R:R, a:a, x:h.x+Math.cos(a)*R, y:h.y+Math.sin(a)*R};
+}
+function drawEntryBearing(e){
+  const E=entryBearing(e); if(!E) return;
+  const a=E.a, mx=E.x, my=E.y;
+  // screen-space floor, or the mark vanishes once the camera pulls out
+  const sc=Math.max(1e-3,camScale()), rad=Math.max(4,5/sc), tick=Math.max(10,14/sc);
+  ctx.save();
+  ctx.strokeStyle="#B48CFF"; ctx.lineWidth=Math.max(1.2,2/sc);
+  ctx.beginPath(); ctx.arc(mx,my,rad,0,7); ctx.stroke();
+  ctx.globalAlpha=0.45;
+  ctx.beginPath(); ctx.moveTo(mx+Math.cos(a)*rad,my+Math.sin(a)*rad);
+  ctx.lineTo(mx+Math.cos(a)*(rad+tick),my+Math.sin(a)*(rad+tick)); ctx.stroke();
+  ctx.restore();
 }
 function drawFlight(){
   if(flightTrail.length<2) return;
@@ -1722,7 +1780,7 @@ function drawChevrons(){
     const px=o[0]+sh[0]*s, py=o[1]+sh[1]*s;
     if(inView(px,py,b.r*sh[2]*s)) continue;              // already on screen
     marks.push({px,py,label:b.n,dist:len(b.x-from[0],b.y-from[1]),
-                col:chevronColour(b),faint:!active(b),edge:null});
+                col:chevronColour(b),faint:!active(b),edge:null,yields:false});
   }
   if(phase==="spin"){
     const pr=cachedPredict();
@@ -1735,11 +1793,26 @@ function drawChevrons(){
         if(!inView(px,py,0)){ edge=[px,py]; break; }
       }
       const e=pr.path[pr.path.length-1];
-      const px=o[0]+e[0]*s, py=o[1]+e[1]*s;
+      const v=verdict(pr);
+      /* On a shot that falls in, the edge carries the useful half. The panel
+         already says "falls in", so repeating it here spends the one marker
+         the player gets on something they have been told; the bearing the ball
+         RE-EMERGES at is the thing they can aim and cannot otherwise see,
+         because while you are aiming the camera is on the deck and the horizon
+         ring is off the top of the frame. */
+      const E = v.key==="invert" ? entryBearing(e) : null;
+      const wx = E ? E.x : e[0], wy = E ? E.y : e[1];
+      const px=o[0]+wx*s, py=o[1]+wy*s;
       if(!inView(px,py,0)){
-        const v=verdict(pr);
-        marks.push({px,py,dist:null,faint:false,edge,
-          label: v.key==="miss"||v.key==="none" ? "shot" : v.text,
+        /* `yields` is why this marker exists at all. The ordinary shot marker
+           steps aside when its label collides, because the panel already says
+           "falls in" in words. The entry bearing is not in the panel and is
+           not anywhere else, so it must not yield: on Inside out the Maw and
+           Lior markers take the same edge and the shot marker was dropped on
+           EVERY frame, which is how a mark can be drawn correctly and still
+           never once be seen. */
+        marks.push({px,py,dist:null,faint:false,edge:E?null:edge,yields:!E,
+          label: E ? "comes back out" : (v.key==="miss"||v.key==="none" ? "shot" : v.text),
           col:   v.key==="miss"||v.key==="none" ? "rgba(121,208,230,.75)" : v.col});
       }
     }
@@ -1786,7 +1859,7 @@ function drawChevrons(){
     const hits=(r)=>placed.some(p=>!(r[0]+r[2]<p[0]||p[0]+p[2]<r[0]||r[1]+r[3]<p[1]||p[1]+p[3]<r[1]));
     let box=boxOf(lx,ly), tries=0;
     while(hits(box) && tries<3){
-      if(mk.dist==null){ box=null; break; }        // the shot marker gives way
+      if(mk.yields){ box=null; break; }            // the plain shot marker gives way
       ey+=18; ly+=18; box=boxOf(lx,ly); tries++;
     }
     if(!box || hits(box)) continue;
@@ -1895,8 +1968,6 @@ function frame(ts){
     $("relsub").textContent = v.key==="none"||v.key==="miss" ? "or just let go" : v.text;
     const g=gatesHit.filter(Boolean).length;
     if(g!==frame._g){ frame._g=g; refreshHUD(); }
-    if(holding){ everHeld=true; coachDone("hold"); }
-    if(lv.gates.length && gatesHit.every(Boolean)) coachDone("gate");
     coachTick(dt,pr);
     const say=coachAt?COACH[coachAt]:"Hold to push the ball outward. Let go and it flies.";
     const sh=$("spinhint");
@@ -2003,6 +2074,32 @@ function init(){
   requestAnimationFrame(frame);
 }
 init();
+</script>
+<script>
+/* ===== Sky Wolf Studio embed protocol =====
+   The portal frames games with ?embed=1 and listens for {sws:'ready'} and
+   {sws:'close'}. Rules when embedded:
+     - NEVER history.back() or navigate; an iframe with no history entry goes
+       blank, which is the black screen bug.
+     - Every in game back or close is an INTERNAL screen switch.
+     - Only the menu's explicit exit calls SWS_EXIT().
+   Copied from satellites/ripcord WITHOUT its service worker branch: this game
+   ships no sw.js, and a satellite registering one under lucidwinds.com is how
+   the fleet wiped itself once already. */
+(function(){
+  var framed=false; try{ framed = window.parent!==window; }catch(e){ framed=true; }
+  window.SWS_EMBED=framed;
+  window.SWS_EXIT=function(){
+    if(framed){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; }
+    location.href='https://lucidwinds.com/portal/';
+  };
+  if(framed){
+    try{ parent.postMessage({sws:'ready'},'*'); }catch(e){}
+    window.addEventListener('load',function(){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} });
+  }
+  var ex=document.getElementById('mExit');
+  if(ex) ex.addEventListener('click',function(){ window.SWS_EXIT(); });
+})();
 </script>
 </body>
 </html>

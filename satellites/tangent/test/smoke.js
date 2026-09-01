@@ -24,12 +24,26 @@ const snapshot = JSON.stringify(T.LEVELS);
 for(let i = 0; i < T.LEVELS.length; i++){
   const r = trial(T, i, 1.0);
   ok(`${T.LEVELS[i].name}: run reaches done`, T.phase === "done", "phase=" + T.phase);
+  // The list is what settle() and failRun() actually write. It used to carry
+  // "miss" and "timeout", which nothing sets, and then a `|| r.outcome != null`
+  // clause that made the whole assertion true for any non-null string at all.
   ok(`${T.LEVELS[i].name}: outcome is a known class`,
-     ["land", "crash", "lost", "miss", "timeout"].includes(r.outcome) || r.outcome != null,
+     ["land", "crash", "lost", "failed"].indexOf(r.outcome) >= 0,
      "outcome=" + r.outcome);
-  const b = T.ball;
+  // and NaN is checked on something that is always there. `!b || ...` skipped
+  // the whole check whenever the ball was null, which is the state a run that
+  // never got a ball leaves behind, so the check was strongest exactly where
+  // there was nothing to check and absent where there might have been.
+  const b = T.ball, tr = T.flightTrail;
+  const last = tr && tr.length ? tr[tr.length - 1] : null;
+  ok(`${T.LEVELS[i].name}: the run left a flight path behind it`,
+     !!last, "flightTrail=" + (tr ? tr.length : "null") + " points");
+  ok(`${T.LEVELS[i].name}: no NaN in the last point it reached`,
+     !!last && isFinite(last[0]) && isFinite(last[1]),
+     last ? last.join(",") : "no path");
   ok(`${T.LEVELS[i].name}: no NaN in final ball state`,
-     !b || (isFinite(b.x) && isFinite(b.y) && isFinite(b.vx) && isFinite(b.vy)));
+     !!b && isFinite(b.x) && isFinite(b.y) && isFinite(b.vx) && isFinite(b.vy),
+     b ? [b.x, b.y, b.vx, b.vy].join(",") : "ball=null");
 }
 
 console.log("\n[3] release is unconditional (D4)");
@@ -49,7 +63,43 @@ console.log("\n[4] inversion and immutability");
     if(T.inversions > 0) inverted = true;
   }
   ok("an inversion occurs somewhere on Inside out", inverted);
-  ok("LEVELS data never mutated across all runs", JSON.stringify(T.LEVELS) === snapshot);
+
+  // The old immutability check was `JSON.stringify(LEVELS) === snapshot` and it
+  // was VACUOUS: `sys = lv.bodies` by reference passed it, because Lior sits
+  // exactly on the Maw's horizon (d = 118.0, R = 118) and a body on the horizon
+  // is a fixed point of a circle inversion — d -> R^2/d leaves it where it is.
+  // The review suggested Two minds instead; Vex is on Cess's horizon too
+  // (d = 110.0, R = 110). "Open deck" is the only system with bodies genuinely
+  // off a hole's horizon: Ridd by 117.8, Tarn by 194.7, Sol by 350.4.
+  //
+  // So this now asserts IDENTITY, which cannot be satisfied by a fixed point,
+  // and then exercises the one system where a shared reference would show.
+  for(let i = 0; i < T.LEVELS.length; i++){
+    T.loadLevel(i); T.startSpin();
+    const authored = T.lv.bodies;
+    let sameArr = T.sys === authored, sameBody = -1, sameOther = -1;
+    for(let k = 0; k < authored.length; k++){
+      if(T.sys[k] === authored[k]) sameBody = k;
+      if(authored[k].other && T.sys[k].other === authored[k].other) sameOther = k;
+    }
+    ok(`${T.LEVELS[i].name}: the runtime system is its own array`, !sameArr);
+    ok(`${T.LEVELS[i].name}: and its own bodies`, sameBody < 0,
+       sameBody >= 0 ? authored[sameBody].n + " shared by reference" : "");
+    if(authored.some(b => b.other))
+      ok(`${T.LEVELS[i].name}: and its own far side blocks`, sameOther < 0,
+         sameOther >= 0 ? authored[sameOther].n + ".other shared by reference" : "");
+  }
+
+  // and the behavioural half, on the only system where an inversion moves a
+  // body far enough for a shared reference to be visible in the level data
+  const before = JSON.stringify(T.LEVELS);
+  let flipped = false;
+  for(let k = 1; k <= 60 && !flipped; k++){
+    trial(T, 7, k * 0.2);
+    if(T.inversions > 0) flipped = true;
+  }
+  ok("Open deck can be flipped, which is what makes the next check mean anything", flipped);
+  ok("LEVELS data never mutated across all runs", JSON.stringify(T.LEVELS) === before);
 }
 
 console.log("\n[5] unreleased run times out, not hangs");
@@ -106,20 +156,87 @@ console.log("\n[6] camera: the deck is framed for aiming, then pulls out (D12)")
 
 console.log("\n[7] saving survives a second tab (T2)");
 {
+  // The old version had the other tab write BEFORE writeSave's first read, so
+  // the foreign data was simply what readSave returned and no merge was ever
+  // exercised: removing the max, removing the re-read, or dropping the medal OR
+  // each passed on its own, and only the pair failed. A real second tab writes
+  // while we are mid-write, so the write is injected BETWEEN writeSave's first
+  // read and its re-read, which is the only window where the merge matters.
+  const SAVE = "tangent.save.v4";
+  const realGet = T.store.getItem;
+  const duringWrite = (payload, fn) => {
+    let armed = true;
+    T.store.getItem = function(k){
+      const v = realGet.call(T.store, k);
+      if(armed && String(k) === SAVE){
+        armed = false;
+        if(payload === null) T.store.removeItem(SAVE);   // the other tab pressed Start over
+        else T.store.setItem(SAVE, payload);
+      }
+      return v;
+    };
+    try { fn(); } finally { T.store.getItem = realGet; }
+    return armed;                       // false means the injection really landed
+  };
+  const other = o => JSON.stringify({ v: 4, lv: { 0: Object.assign(
+    { best: 0, cleared: 0, gates: 0, thrift: 0 }, o) }, tutor: {}, opt: {} });
+
   T.store.clear();
   T.recordResult(0, { score: 1000, cleared: true, gatesOK: true, thrift: false });
   ok("a result is recorded", T.lvState(0).best === 1000, "best=" + T.lvState(0).best);
-  // another tab banks a better run and a medal we do not have
-  const other = JSON.stringify({ v: 4, lv: { 0: { best: 5000, cleared: 1, gates: 1, thrift: 1 } }, tutor: {} });
-  T.store.setItem("tangent.save.v4", other);
-  T.recordResult(0, { score: 20, cleared: false, gatesOK: false, thrift: false });
-  const st = T.lvState(0);
-  ok("a worse later run does not lower the best", st.best === 5000, "best=" + st.best);
-  ok("a medal earned in the other tab is not erased", st.thrift === 1, "thrift=" + st.thrift);
-  // and scores from the old v3 key are carried across rather than dropped
+
+  // 1. the other tab banks a better run and a medal we do not have, mid-write
+  const landed = duringWrite(other({ best: 5000, cleared: 1, gates: 1, thrift: 1 }), () => {
+    T.recordResult(0, { score: 20, cleared: false, gatesOK: false, thrift: false });
+  });
+  ok("the second tab really did write inside our write", landed === false);
+  let st = T.lvState(0);
+  ok("a worse run written over a better one from another tab does not lower the best",
+     st.best === 5000, "best=" + st.best);
+  ok("and does not erase the medal that tab earned", st.thrift === 1, "thrift=" + st.thrift);
+
+  // 2. the same again but OUR run is the better one: the max has to work in
+  // both directions, or a second tab silently caps everyone's score
+  T.store.clear();
+  T.recordResult(0, { score: 100, cleared: true, gatesOK: true, thrift: true });
+  duringWrite(other({ best: 200, cleared: 1, gates: 0, thrift: 0 }), () => {
+    T.recordResult(0, { score: 9000, cleared: true, gatesOK: true, thrift: false });
+  });
+  st = T.lvState(0);
+  ok("our better run survives a weaker write from the other tab", st.best === 9000,
+     "best=" + st.best);
+  ok("and OUR medal survives a tab that never earned it", st.thrift === 1,
+     "thrift=" + st.thrift);
+  ok("while the other tab's medal is picked up too", st.gates === 1, "gates=" + st.gates);
+
+  // 3. two runs in a row from this tab alone: the best is a maximum, not the
+  // last thing written
+  T.store.clear();
+  T.recordResult(0, { score: 4000, cleared: true, gatesOK: true, thrift: true });
+  T.recordResult(0, { score: 7, cleared: false, gatesOK: false, thrift: false });
+  st = T.lvState(0);
+  ok("a worse later run from this tab does not lower the best", st.best === 4000,
+     "best=" + st.best);
+  ok("nor drop a medal it did not earn this time", st.thrift === 1, "thrift=" + st.thrift);
+
+  // 4. the other tab presses Start over WHILE we are writing. recordResult's own
+  // max is otherwise dead code, because writeSave re-reads and merges against
+  // the pre-write state which always rescues it; the one case it does not is a
+  // foreign wipe, and Start over is a button in the settings sheet.
+  T.store.clear();
+  T.recordResult(0, { score: 4000, cleared: true, gatesOK: true, thrift: true });
+  duringWrite(null, () => {
+    T.recordResult(0, { score: 7, cleared: false, gatesOK: false, thrift: false });
+  });
+  st = T.lvState(0);
+  ok("a run in progress keeps its own best when the other tab wipes the save",
+     st.best === 4000, "best=" + st.best);
+
+  // 5. scores from the old v3 key are carried across rather than dropped
   T.store.clear();
   T.store.setItem("tangent.best.v3", JSON.stringify({ 2: 777 }));
-  ok("old v3 scores are carried into the new save", T.lvState(2).best === 777, "best=" + T.lvState(2).best);
+  ok("old v3 scores are carried into the new save", T.lvState(2).best === 777,
+     "best=" + T.lvState(2).best);
 }
 
 console.log("\n[8] progression opens one system at a time (T2)");
@@ -163,26 +280,46 @@ console.log("\n[9] the tutorial teaches, once, in the order the player needs it 
 
 console.log("\n[10] the taught strategy is enough to get in (T2 acceptance)");
 {
-  // Exactly what the beats say: hold, wait for the gate, let go on "lands".
+  // Exactly what the beats say: hold, wait for every gate, let go on "lands".
   // If this fails, the tutorial is teaching something that does not work.
+  //
+  // It used to report reached=4 while system 4 FAILED inside it, because
+  // startSpin never reset lastOutcome, so a system the bot never released on
+  // inherited the previous system's "land" and counted as cleared. startSpin
+  // clears it now, and this reports which system stopped the bot rather than
+  // only how far it got.
   T.store.clear();
   T.W = 390; T.H = 780;
-  let reached = 1;
-  for(let i = 0; i < 5; i++){
+  let reached = 1, stoppedBy = null;
+  for(let i = 0; i < 6; i++){
     T.loadLevel(i); T.startSpin(); T.holding = true;
-    let t = 0;
+    ok(`system ${i + 1} starts with no result carried over from the last run`,
+       T.lastOutcome === null, "lastOutcome=" + T.lastOutcome);
+    let t = 0, released = false;
     while(T.phase === "spin" && t < 34 * 120){
       T.step(); t++;
       const pr = T.cachedPredict();
-      if(pr && pr.outcome === "land" && T.gatesHit.every(Boolean) && t > 20){ T.doRelease("bot"); break; }
+      if(pr && pr.outcome === "land" && T.gatesHit.every(Boolean) && t > 20){
+        T.doRelease("bot"); released = true; break;
+      }
     }
     let g = 0;
     while((T.phase === "flight" || T.phase === "invert") && g++ < 30000) T.step();
-    if(!(T.lastOutcome === "land" && T.gatesHit.every(Boolean))) break;
+    const gatesOK = T.gatesHit.every(Boolean);
+    if(!(released && T.lastOutcome === "land" && gatesOK)){
+      stoppedBy = `system ${i + 1} ${T.LEVELS[i].name}: released=${released} ` +
+                  `outcome=${T.lastOutcome} gates=${T.gatesHit.filter(Boolean).length}/${T.gatesHit.length}`;
+      break;
+    }
     reached = i + 2;
   }
-  ok("a player following only the tutorial reaches system 3 or better",
-     reached >= 3, "reached system " + reached);
+  // The gate is "clears system 4", not "reaches system 4". Reaching it only
+  // means systems 1 to 3 were cleared, which a broken system 4 still satisfies:
+  // measured against a mutant that gives system 4 an extra gate at r20 the
+  // taught strategy cannot reach, `reached >= 4` stayed GREEN. System 4 being
+  // clearable with an empty deck is the whole result of R2, so this asserts it.
+  ok(`the taught strategy clears system 4, which is the R2 result (reached ${reached})`,
+     reached >= 5, stoppedBy || "reached system " + reached);
 }
 
 console.log("\n[11] the drawn line is the run (D2, the law this project cannot bend)");
@@ -338,51 +475,356 @@ console.log("\n[15] the build phase shows the track it is asking you to change")
      T.phase === "build", "phase=" + T.phase);
 }
 
-console.log("\n[16] the vane makes the ball lead the deck, which nothing else does");
+console.log("\n[16] which way the ball walks is a question about the throttle");
 {
-  // Surface drag only ever pulls the ball TOWARD deck speed from below, so it
-  // always lags and in the deck frame it only ever walks one way. That is why
-  // no other part opens ground: they deflect the ball without changing which
-  // way it drifts. The vane drives it past deck speed.
-  const lead = parts => {
+  // This block used to assert a law: "surface drag pulls the ball toward deck
+  // speed FROM BELOW and never past it, so in the deck frame it only ever walks
+  // one way, and only a vane can change that." A level was built on it and a
+  // bare deck cleared that level ninety six ways. The law is real only while
+  // the deck is ACCELERATING. Coasting, the deck slows under the ball and the
+  // ball leads. The old check never saw it because it held the throttle for the
+  // whole run, and its bumper case placed bumpers at (30,0) where the ball
+  // starts INSIDE one (start r 36.6, bumper collision radius 11.9, distance
+  // 6.6), so the bumper never struck and "a bumper does not lead" passed for a
+  // reason that had nothing to do with bumpers.
+  const rot = (x, y, a) => { const c = Math.cos(a), sn = Math.sin(a); return [x * c - y * sn, x * sn + y * c]; };
+  // lead = the ball's tangential speed minus the deck surface speed under it
+  const run = (parts, prog, secs) => {
     T.loadLevel(3);
-    for(const p of parts) T.parts.push(p);
-    T.startSpin(); T.holding = true;
-    let most = -1e9;
-    for(let s = 0; s < 12 * 120 && T.phase === "spin"; s++){
-      T.step();
+    for(const p of parts) T.parts.push(Object.assign({}, p));
+    T.startSpin();
+    const lead = [], inZone = [], track = [];
+    for(let s = 0; s < secs * 120 && T.phase === "spin"; s++){
+      T.holding = prog(s); T.step();
+      if(T.phase !== "spin") break;
       const b = T.ball, r = Math.hypot(b.x, b.y) || 1;
-      // tangential speed of the ball, minus the deck surface speed at that radius
-      const tan = (-b.y / r) * b.vx + (b.x / r) * b.vy;
-      most = Math.max(most, tan - T.deck.omega * r);
+      lead.push((-b.y / r) * b.vx + (b.x / r) * b.vy - T.deck.omega * r);
+      const L = rot(b.x, b.y, -T.deck.theta);
+      inZone.push(parts.some(p => p.type !== "rail" && Math.hypot(L[0] - p.x, L[1] - p.y) < 13));
+      track.push(L);
     }
-    return most;
+    return { lead: lead, inZone: inZone, track: track, peak: Math.max.apply(null, lead) };
   };
-  const bare = lead([]);
-  ok("a bare deck never gets the ball ahead of the surface", bare < 1, "lead=" + bare.toFixed(1));
-  const vaned = lead([{ type: "vane", x: 30, y: 0 }, { type: "vane", x: -30, y: 0 }]);
-  ok("a vane does", vaned > 8, "lead=" + vaned.toFixed(1));
-  const bumped = lead([{ type: "bumper", x: 30, y: 0 }, { type: "bumper", x: -30, y: 0 }]);
-  ok("a bumper does not, which is why it cannot open ground",
-     bumped < vaned / 2, `bumper=${bumped.toFixed(1)} vane=${vaned.toFixed(1)}`);
+  const HOLD = () => true, HOLD4 = s => s < 4 * 120;
+
+  // (a) the half of the old law that is true
+  const bare = run([], HOLD, 30);
+  ok("a bare deck under hold never gets the ball ahead of the surface",
+     bare.peak < 1, `peak lead=${bare.peak.toFixed(2)} over ${bare.lead.length} steps`);
+
+  // (b) the half that is not, and it needs no parts at all
+  const coasted = run([], HOLD4, 12);
+  const aheadSteps = coasted.lead.filter(v => v > 1).length;
+  ok("a bare deck coasting from a held spin does, which is what the level was built on being impossible",
+     coasted.peak > 8 && aheadSteps > 200,
+     `peak lead=${coasted.peak.toFixed(2)}, ${aheadSteps}/${coasted.lead.length} steps ahead`);
+
+  // (c) the vane's mechanism: a push applied on every step inside its own zone,
+  // not a peak. Balanced pair so the deck does not tear instead.
+  const vaned = run([{ type: "vane", x: 30, y: 0 }, { type: "vane", x: -30, y: 0 }], HOLD, 12);
+  let inZ = 0, leadingInZ = 0;
+  for(let i = 0; i < vaned.lead.length; i++)
+    if(vaned.inZone[i]){ inZ++; if(vaned.lead[i] > 1) leadingInZ++; }
+  ok("a vane leads the ball on every step it spends inside the vane",
+     inZ >= 10 && leadingInZ === inZ, `${leadingInZ}/${inZ} in-zone steps ahead`);
+
+  // (d) and the correction that must not quietly revert: peak lead never told
+  // the parts apart. A bumper placed where the held track actually reaches it
+  // throws the ball further ahead than the vane does.
+  const pt = bare.track[320];                       // 2.67 s into a bare held run
+  const bumped = run([{ type: "bumper", x: pt[0], y: pt[1] },
+                      { type: "bumper", x: -pt[0], y: -pt[1] }], HOLD, 12);
+  ok("a bumper on the held track leads it MORE than the vane, so peak lead proves nothing",
+     bumped.peak > vaned.peak,
+     `bumper=${bumped.peak.toFixed(1)} at r${Math.hypot(pt[0], pt[1]).toFixed(0)} vane=${vaned.peak.toFixed(1)}`);
 }
 
-console.log("\n[17] a system that needs the deck says so before you spin it up");
+console.log("\n[17] the build beat is wired, and today it correctly fires nowhere");
 {
-  // Around the heavy cannot be cleared with an empty deck. Without a word in
-  // the build phase that reads as the game refusing to advance, which is the
-  // exact failure the gate beat was written to prevent one system earlier.
+  // A system that genuinely cannot be cleared without parts has to say so in
+  // the build phase or it reads as the game refusing to advance. "Around the
+  // heavy" was marked that way on a measurement that was wrong (see [16] and
+  // test/parts.js): a bare deck clears it. Nothing is marked now, so the beat
+  // must be silent everywhere — and it must still WORK, or the flag becomes a
+  // no-op that the next authored system would trust.
   T.store.clear(); T.coachSeen = {};
-  T.loadLevel(0);
-  ok("an opening system says nothing about parts", T.coachBeat(null) === null,
-     T.coachBeat(null));
-  const needs = T.LEVELS.findIndex(l => l.needsParts);
-  ok("some system is marked as needing the deck", needs >= 0, "none marked");
-  T.loadLevel(needs);
-  ok("the system that needs the deck asks for a part", T.coachBeat(null) === "build",
-     T.coachBeat(null));
+  const marked = T.LEVELS.filter(l => l.needsParts).length;
+  ok("no system claims to need the deck on a measurement nobody has made", marked === 0,
+     marked + " still marked");
+  let spoke = null;
+  for(let i = 0; i < T.LEVELS.length; i++){
+    T.store.clear(); T.coachSeen = {};
+    T.loadLevel(i);
+    if(T.coachBeat(null) !== null) spoke = T.LEVELS[i].name + " -> " + T.coachBeat(null);
+  }
+  ok("so the build phase says nothing about parts on any system", spoke === null, spoke);
+
+  // the wiring itself, proven by marking one and putting it straight back
+  const before = JSON.stringify(T.LEVELS);
+  T.store.clear(); T.coachSeen = {};
+  T.loadLevel(3);
+  T.lv.needsParts = true;
+  ok("a system marked as needing the deck asks for a part", T.coachBeat(null) === "build",
+     String(T.coachBeat(null)));
   T.parts.push({ type: "vane", x: 30, y: 0 });
-  ok("placing one retires the lesson", T.coachBeat(null) === null, T.coachBeat(null));
+  ok("placing one retires the lesson", T.coachBeat(null) === null, String(T.coachBeat(null)));
+  delete T.lv.needsParts;
+  ok("and the level is put back exactly as authored", JSON.stringify(T.LEVELS) === before);
+}
+
+console.log("\n[18] the search that proves the levels is itself the game");
+{
+  // Every claim about what a system needs comes out of test/search.js, and it
+  // buys its speed by running a spin ONCE and replaying a release from a
+  // snapshot rather than re-running the spin per release time. If that replay
+  // is not the same arithmetic as playing it through, every solver verdict is
+  // a story. So it is checked against the honest re-run rather than assumed.
+  const S = require("./search");
+  const R = S.makeRunner(T);
+  const PR = S.programs();
+  ok("the program space covers hold, coast, hold-then-coast and hold-coast-hold",
+     PR.length === 173 && PR.some(p => /then coast$/.test(p[0])) && PR.some(p => /coast .*s, hold$/.test(p[0])),
+     "programs=" + PR.length);
+  // Both halves of the verdict, because they break independently: the OUTCOME
+  // comes from the replayed ball state, the CLEARED flag from the gate record
+  // carried out of the spin. A first version of this check compared outcomes
+  // only and passed against a replay with the throttle restore deleted — true,
+  // but only because flight does not read the throttle, so it proved nothing
+  // about the half that can actually go wrong.
+  const picks = [PR[0], PR[1], PR[20], PR[60], PR[120]];
+  let n = 0, agreeOut = 0, agreeClear = 0;
+  const bad = [], badC = [];
+  for(const lvl of [0, 1, 3, 5, 6]){
+    for(const [pn, prog] of picks){
+      const snaps = R.spin(lvl, [], prog, 8);
+      for(const idx of [20, 60, 100, 140]){
+        const sn = snaps[idx];
+        if(!sn) continue;
+        const replay = R.fly(sn);
+        const cleared = sn.all && replay === "land";
+        const rerun = R.fullRun(lvl, [], prog, sn.t);
+        n++;
+        if(replay === rerun.outcome) agreeOut++;
+        else bad.push(`${T.LEVELS[lvl].name} "${pn}" @${sn.t.toFixed(2)}s replay=${replay} rerun=${rerun.outcome}`);
+        if(cleared === rerun.cleared) agreeClear++;
+        else badC.push(`${T.LEVELS[lvl].name} "${pn}" @${sn.t.toFixed(2)}s replay=${cleared} rerun=${rerun.cleared}`);
+      }
+    }
+  }
+  ok(`a replayed release lands where the run it replaces lands (${agreeOut}/${n})`,
+     n > 60 && agreeOut === n, bad.slice(0, 3).join(" | "));
+  ok(`and it clears what the run it replaces clears (${agreeClear}/${n})`,
+     n > 60 && agreeClear === n, badC.slice(0, 3).join(" | "));
+}
+
+console.log("\n[19] the ghost on the build deck is the run it promises");
+{
+  // The build phase draws two tracks, held and coasting, so you can see what
+  // the parts you are placing will do. The held one was not the held run:
+  // trackFor seeded the scratch state with throttle = th (1 for the held
+  // track) while a live run starts at TH_FLOOR and relaxes toward it over
+  // about 0.7 s, and that head start never washes out — it buys the live ball
+  // a permanent phase deficit in its walk around the rim.
+  //
+  // The level index is deliberately NOT varied: advanceDeck reads only the
+  // global `parts`, so bodies and gates cannot enter this number and a loop
+  // over levels would be decoration. Parts ARE varied, because they do move it.
+  const rot = (x, y, a) => { const c = Math.cos(a), sn = Math.sin(a); return [x * c - y * sn, x * sn + y * c]; };
+  // trackFor samples every 4th step of 8*120, in the deck's own frame
+  const liveTrack = (parts, hold) => {
+    T.loadLevel(1);
+    for(const p of parts) T.parts.push(Object.assign({}, p));
+    T.startSpin();
+    const pts = [];
+    for(let i = 0; i < 8 * 120 && T.phase === "spin"; i++){
+      T.holding = hold; T.step();
+      if(T.phase !== "spin") break;
+      if(i % 4 === 0) pts.push(rot(T.ball.x, T.ball.y, -T.deck.theta));
+    }
+    return pts;
+  };
+  const worst = (ghost, live) => {
+    let m = 0, at = -1;
+    const n = Math.min(ghost.length, live.length);
+    for(let i = 0; i < n; i++){
+      const d = Math.hypot(ghost[i][0] - live[i][0], ghost[i][1] - live[i][1]);
+      if(d > m){ m = d; at = i; }
+    }
+    return { d: m, t: (at * 4 + 1) / 120, n: n };
+  };
+  for(const set of [{ n: "bare", p: [] },
+                    { n: "two bumpers", p: [{ type: "bumper", x: 44, y: 0 }, { type: "bumper", x: -44, y: 0 }] }]){
+    T.loadLevel(1);
+    for(const p of set.p) T.parts.push(Object.assign({}, p));
+    T.ghost = null; T.ghostIdle = null; T.buildGhost();
+    const gHeld = T.ghost, gIdle = T.ghostIdle;
+    const held = worst(gHeld, liveTrack(set.p, true));
+    const idle = worst(gIdle, liveTrack(set.p, false));
+    ok(`the held ghost is the held run (${set.n})`, held.n > 200 && held.d < 0.5,
+       `worst ${held.d.toFixed(2)} units at t=${held.t.toFixed(2)}s over ${held.n} points`);
+    ok(`the coasting ghost is the coasting run (${set.n})`, idle.n > 200 && idle.d < 0.5,
+       `worst ${idle.d.toFixed(2)} units at t=${idle.t.toFixed(2)}s over ${idle.n} points`);
+  }
+}
+
+console.log("\n[20] the tutorial shows once per profile and then never again");
+{
+  // NOTHING guarded this. coachDone as a no-op: 83/83. init not loading tutor
+  // from the profile: 83/83. Deleting the two lines that mark hold and gate
+  // done: 83/83. All three because those lines lived in frame(), and the
+  // headless suites stub the animation frame, so the render loop never ran and
+  // the beats were never marked. They are in step() now, at the sim events
+  // themselves, and these checks drive step().
+  // Drives the loop the way frame() does: step() at 1/120, and coachTick once
+  // per rendered frame at 1/60, because the purely informational "line" beat is
+  // the one beat with no sim event to retire it and time is its fallback.
+  const play = (i, secs) => {
+    T.loadLevel(i); T.startSpin(); T.holding = true;
+    for(let k = 0; k < secs * 120 && T.phase === "spin"; k++){
+      T.step();
+      if(k % 2 === 1) T.coachTick(1 / 60, T.cachedPredict());
+    }
+  };
+  // a fresh profile: holding retires "hold", crossing the gate retires "gate"
+  T.store.clear(); T.coachSeen = {};
+  play(1, 0.2);
+  ok("holding the throttle retires the hold beat", T.coachSeen.hold === 1,
+     "coachSeen=" + JSON.stringify(T.coachSeen));
+  ok("and it is written to the profile, not only to memory",
+     (T.readSave().tutor || {}).hold === 1, JSON.stringify(T.readSave().tutor));
+  play(1, 12);
+  ok("crossing every gate retires the gate beat", T.coachSeen.gate === 1,
+     "gatesHit=" + JSON.stringify(T.gatesHit) + " coachSeen=" + JSON.stringify(T.coachSeen));
+  ok("and that is written too", (T.readSave().tutor || {}).gate === 1,
+     JSON.stringify(T.readSave().tutor));
+  // letting go retires the last one
+  T.loadLevel(1); T.startSpin(); T.holding = true;
+  for(let k = 0; k < 240 && T.phase === "spin"; k++){
+    T.step();
+    if(k % 2 === 1) T.coachTick(1 / 60, T.cachedPredict());
+  }
+  if(T.phase === "spin") T.doRelease("coach");
+  ok("letting go retires the letgo beat", T.coachSeen.letgo === 1,
+     JSON.stringify(T.coachSeen));
+
+  // the once-per-profile half: a saved profile must silence the beats on the
+  // NEXT boot, which is the half that init has to read back
+  const saved = T.readSave().tutor;
+  ok("the profile now carries every beat the player has been shown",
+     saved.hold === 1 && saved.line === 1 && saved.gate === 1 && saved.letgo === 1,
+     JSON.stringify(saved));
+  T.coachSeen = Object.assign({}, saved);       // what init does on the next boot
+  T.loadLevel(1); T.startSpin(); T.everHeld = false;
+  ok("a returning profile is not asked to hold the throttle again",
+     T.coachBeat(null) !== "hold", String(T.coachBeat(null)));
+  T.everHeld = true;
+  T.coachSeen = Object.assign({}, saved);
+  ok("nor told about the line, the gate or letting go again",
+     T.coachBeat(null) !== "line" && T.coachBeat(null) !== "gate" && T.coachBeat(null) !== "letgo",
+     String(T.coachBeat(null)));
+  // and a wiped profile gets the whole lesson back, which is what Start over is
+  T.store.clear(); T.coachSeen = {};
+  T.loadLevel(1); T.startSpin(); T.everHeld = false;
+  ok("a wiped profile is taught from the beginning again", T.coachBeat(null) === "hold",
+     String(T.coachBeat(null)));
+
+  // The half above still cannot see init: setting coachSeen by hand is the test
+  // testing itself. So boot a SECOND copy of the game with the profile already
+  // in localStorage and ask it what it knows before anything touches it.
+  const { load: loadFresh } = require("./harness");
+  const prior = JSON.stringify({ v: 4, lv: {}, opt: {},
+                                 tutor: { hold: 1, line: 1, gate: 1, letgo: 1 } });
+  const boot = loadFresh({ "tangent.save.v4": prior });
+  ok("a fresh boot reads the beats it has already shown out of the profile",
+     boot.coachSeen && boot.coachSeen.hold === 1 && boot.coachSeen.line === 1
+       && boot.coachSeen.gate === 1 && boot.coachSeen.letgo === 1,
+     "coachSeen at boot=" + JSON.stringify(boot.coachSeen));
+  boot.loadLevel(1); boot.startSpin(); boot.everHeld = false;
+  ok("so it says nothing on the first spin of a returning player",
+     boot.coachBeat(null) === null, String(boot.coachBeat(null)));
+  const virgin = loadFresh();
+  virgin.loadLevel(1); virgin.startSpin(); virgin.everHeld = false;
+  ok("while a boot with no profile does teach", virgin.coachBeat(null) === "hold",
+     String(virgin.coachBeat(null)));
+}
+
+console.log("\n[21] the dish has mass, so the first part you place is not a red light");
+{
+  // Imbalance was the centre of mass of the PARTS ALONE, so one part sat at
+  // 100% of its own centre of mass wherever it was: a single bumper near the
+  // rim read 0.93 against a tolerance of 0.35 and the button changed to "Spin
+  // up anyway" on the player's first ever experiment. Including the deck at
+  // the origin is what a real rotor does. M_DECK is the dial and it is
+  // Stephen's to turn.
+  const imb = parts => {
+    T.loadLevel(3);                                  // tol 0.26
+    for(const p of parts) T.parts.push(p);
+    return T.imbalance();
+  };
+  const tol = T.LEVELS[3].tol;
+  const rim = imb([{ type: "bumper", x: 93, y: 0 }]);
+  ok(`one bumper at the rim is within tolerance (${rim.toFixed(3)} of ${tol})`, rim < tol,
+     "imbalance=" + rim.toFixed(3));
+  // ...and it is still FELT: a rule that reads zero for a lone rim part would
+  // pass this just as well, and would be a different bug. Red against M_DECK=0
+  // (the old arithmetic, which reads 0.930) and against a rule that ignores
+  // where the part is.
+  ok("and it is still felt, not ignored", rim > 0.15 && rim < tol,
+     "imbalance=" + rim.toFixed(3));
+  ok("a hub part is barely felt at all", imb([{ type: "booster", x: 10, y: 0 }]) < 0.03,
+     imb([{ type: "booster", x: 10, y: 0 }]).toFixed(3));
+  ok("opposite pairs still cancel exactly",
+     imb([{ type: "bumper", x: 93, y: 0 }, { type: "bumper", x: -93, y: 0 }]) === 0);
+  const longRail = imb([{ type: "rail", x: 82, y: -30, x2: 82, y2: 30 }]);
+  ok(`a long rail at the rim still fails, which keeps the rule real (${longRail.toFixed(3)})`,
+     longRail > tol, "imbalance=" + longRail.toFixed(3));
+  ok("an empty deck is perfectly balanced", imb([]) === 0);
+  // the failure it exists to cause must still happen
+  T.loadLevel(0);
+  for(let k = 0; k < 4; k++) T.parts.push({ type: "rail", x: 55, y: -20 + k * 12, x2: 88, y2: -20 + k * 12 });
+  ok(`a deck loaded all down one side is still over tolerance (${T.imbalance().toFixed(3)} of ${T.LEVELS[0].tol})`,
+     T.imbalance() > T.LEVELS[0].tol, T.imbalance().toFixed(3));
+}
+
+console.log("\n[22] the far side is unpredicted, but the door is not");
+{
+  // D2 says the drawn line stops at the hole and the far side stays a mystery,
+  // and that is kept. D8 fixes one thing about it exactly: the ball comes back
+  // out ON the horizon ring, at the bearing it went in, heading straight
+  // outward. Drawing that point costs no prediction and turns "falls in" from
+  // a shrug into a bearing you can aim. This asserts the mark is where the ball
+  // really comes out, using the game's own entryBearing rather than a copy of
+  // its arithmetic in the test.
+  if(!T.entryBearing){ ok("the game exposes the entry bearing", false, "entryBearing not defined"); }
+  else {
+    let n = 0, close = 0, outward = 0, worst = 0, seen = null;
+    for(let t = 0.2; t <= 12.0001; t += 0.1){
+      T.loadLevel(5); T.startSpin(); T.holding = true;
+      for(let k = 0; k < t * 120 && T.phase === "spin"; k++) T.step();
+      if(T.phase !== "spin") break;
+      const pr = T.cachedPredict();
+      if(!pr || pr.outcome !== "invert") continue;
+      const E = T.entryBearing(pr.path[pr.path.length - 1]);
+      if(!E) continue;
+      T.doRelease("d8");
+      const before = T.inversions;
+      let g = 0;
+      while((T.phase === "flight" || T.phase === "invert") && g++ < 40000){
+        T.step(); if(T.inversions > before) break;
+      }
+      if(T.inversions === before) continue;      // predicted a fall that did not happen
+      n++;
+      const d = Math.hypot(T.ball.x - E.x, T.ball.y - E.y);
+      worst = Math.max(worst, d);
+      if(d < 3) close++; else if(!seen) seen = `t=${t.toFixed(1)}s gap ${d.toFixed(1)}u`;
+      if(T.ball.vx * Math.cos(E.a) + T.ball.vy * Math.sin(E.a) > 0) outward++;
+    }
+    ok(`the readout says "falls in" on shots that do (${n} of them)`, n >= 20, "n=" + n);
+    ok(`the mark is where the ball comes back out (worst ${worst.toFixed(2)} units, ${close}/${n})`,
+       n > 0 && close === n, seen);
+    ok(`and it comes out heading outward, which is what makes it aimable (${outward}/${n})`,
+       n > 0 && outward === n);
+  }
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

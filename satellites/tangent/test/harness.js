@@ -8,7 +8,11 @@ const fs = require("fs");
 const vm = require("vm");
 const path = require("path");
 
-function load(){
+// `seed` primes localStorage BEFORE the game's init() runs, which is the only
+// way to exercise the one-boot-per-profile half of the tutorial: init reads the
+// saved beats back with `coachSeen=readSave().tutor`, and a test that sets
+// coachSeen by hand is testing itself, not that line.
+function load(seed){
   // TANGENT_HTML points the suite at a mutated scratch copy, so a check can be
   // proven able to fail without ever writing to the real game file.
   const src = process.env.TANGENT_HTML || path.join(__dirname, "..", "index.html");
@@ -55,6 +59,7 @@ function load(){
     // tests would pass without exercising anything.
     localStorage: (() => {
       const m = new Map();
+      for(const k in (seed || {})) m.set(String(k), String(seed[k]));
       return {
         getItem: k => (m.has(String(k)) ? m.get(String(k)) : null),
         setItem: (k, v) => { m.set(String(k), String(v)); },
@@ -83,6 +88,12 @@ function load(){
       get LEVELS(){ return LEVELS; },
       set holding(v){ holding = v; },
       get holding(){ return holding; },
+      // The throttle is part of the spin state. test/search.js snapshots a spin
+      // once and replays a release from every sampled step rather than
+      // re-running the spin per release time, and without this the replayed
+      // state is missing the one value advanceDeck relaxes toward its target.
+      set throttle(v){ throttle = v; },
+      get throttle(){ return throttle; },
       set W(v){ W = v; }, set H(v){ H = v; },
       get W(){ return W; }, get H(){ return H; },
       loadLevel, startSpin, step, doRelease,
@@ -90,13 +101,18 @@ function load(){
       get invAmt(){ return invAmt; },
       get deckPos(){ return deckPos; },
       get gatesHit(){ return gatesHit; },
+      get flightTrail(){ return flightTrail; },
       get lvIndex(){ return lvIndex; },
       get parts(){ return parts; },
+      imbalance: (typeof imbalance === "function" ? imbalance : null),
       get ghost(){ return typeof ghost!=="undefined"?ghost:null; },
       set ghost(v){ ghost=v; },
+      get ghostIdle(){ return typeof ghostIdle!=="undefined"?ghostIdle:null; },
+      set ghostIdle(v){ ghostIdle=v; },
       buildGhost: (typeof buildGhost === "function" ? buildGhost : null),
       cachedPredict: (typeof cachedPredict === "function" ? cachedPredict : null),
       verdict:       (typeof verdict       === "function" ? verdict       : null),
+      entryBearing:  (typeof entryBearing  === "function" ? entryBearing  : null),
       // save + coaching surface (T2)
       readSave:        (typeof readSave        === "function" ? readSave        : null),
       writeSave:       (typeof writeSave       === "function" ? writeSave       : null),
