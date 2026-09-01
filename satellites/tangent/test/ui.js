@@ -96,6 +96,32 @@ const ok = (n, c, extra) => c ? (pass++, console.log("  ok   " + n))
     await page.close();
   }
 
+  // Installable when served. The link is attached at runtime rather than in
+  // the markup, because a manifest cannot load over file:// and this game is
+  // meant to open that way too, so this asserts the served case explicitly.
+  {
+    console.log("\n[manifest]");
+    const page = await browser.newPage();
+    await page.setViewport({ width: 390, height: 780, isMobile: true, hasTouch: true });
+    await page.goto(URL);
+    await new Promise(r => setTimeout(r, 500));
+    const href = await page.evaluate(() => {
+      const l = document.querySelector("link[rel=manifest]");
+      return l ? l.getAttribute("href") : null;
+    });
+    ok("a manifest is attached when the game is served", href === "manifest.json", "href=" + href);
+    const m = await page.evaluate(async h => {
+      try { const r = await fetch(h); if(!r.ok) return { err: "status " + r.status };
+            return await r.json(); }
+      catch(e){ return { err: String(e) }; }
+    }, href || "manifest.json");
+    ok("it parses and is standalone", m.display === "standalone", m.err || ("display=" + m.display));
+    ok("it carries its own icon, so there is no extra file to lose",
+       !!(m.icons && m.icons[0] && m.icons[0].src.startsWith("data:image/png")),
+       JSON.stringify((m.icons || [])[0] || {}).slice(0, 60));
+    await page.close();
+  }
+
   // Controls must be reachable, not merely present. A control can be the right
   // size and still be covered by an overlay, so ask the document what is
   // actually on top at the control's own centre. Never el.click().
