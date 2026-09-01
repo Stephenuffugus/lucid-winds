@@ -187,6 +187,9 @@
     <button class="act ghost" id="setreset">Start over</button>
     <button class="act go" id="setclose" style="flex:1">Done</button>
   </div>
+  <div class="btns" style="margin-top:8px">
+    <button class="act ghost" id="mExit" style="flex:1">Sky Wolf Studio Arcade</button>
+  </div>
 </div>
 
 <div class="card hide" id="levels">
@@ -2071,6 +2074,32 @@ function init(){
   requestAnimationFrame(frame);
 }
 init();
+</script>
+<script>
+/* ===== Sky Wolf Studio embed protocol =====
+   The portal frames games with ?embed=1 and listens for {sws:'ready'} and
+   {sws:'close'}. Rules when embedded:
+     - NEVER history.back() or navigate; an iframe with no history entry goes
+       blank, which is the black screen bug.
+     - Every in game back or close is an INTERNAL screen switch.
+     - Only the menu's explicit exit calls SWS_EXIT().
+   Copied from satellites/ripcord WITHOUT its service worker branch: this game
+   ships no sw.js, and a satellite registering one under lucidwinds.com is how
+   the fleet wiped itself once already. */
+(function(){
+  var framed=false; try{ framed = window.parent!==window; }catch(e){ framed=true; }
+  window.SWS_EMBED=framed;
+  window.SWS_EXIT=function(){
+    if(framed){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; }
+    location.href='https://lucidwinds.com/portal/';
+  };
+  if(framed){
+    try{ parent.postMessage({sws:'ready'},'*'); }catch(e){}
+    window.addEventListener('load',function(){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} });
+  }
+  var ex=document.getElementById('mExit');
+  if(ex) ex.addEventListener('click',function(){ window.SWS_EXIT(); });
+})();
 </script>
 </body>
 </html>

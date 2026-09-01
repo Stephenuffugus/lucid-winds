@@ -384,6 +384,63 @@ const ok = (n, c, extra) => c ? (pass++, console.log("  ok   " + n))
     await page.close();
   }
 
+  console.log("\n[embed]");
+  {
+    // The portal frames a satellite and waits for {sws:'ready'}. A game that
+    // never posts it sits behind the portal's recovery watchdog; a game that
+    // calls history.back() to exit goes blank, because an iframe with no
+    // history entry has nowhere to go. Both are shipped bugs elsewhere in this
+    // fleet, so both are checked here rather than assumed.
+    const page = await browser.newPage();
+    await page.setViewport({ width: 390, height: 780, isMobile: true, hasTouch: true });
+    // the iframe has to be created from a page of the same origin, or the
+    // parent cannot see into it at all
+    await page.goto(URL, { waitUntil: "load" });
+    let got = null, blew = null;
+    // Raced in NODE, not in the page: a game whose exit navigates takes the
+    // parent with it, and an in-page timer dies with it, so the evaluate never
+    // settles and the suite HANGS instead of failing. Measured against the
+    // history.back() mutant: it hung.
+    const deadline = new Promise((_, rej) =>
+      setTimeout(() => rej(new Error("the framed page never answered; the exit navigated it away")), 9000));
+    try {
+      got = await Promise.race([deadline, page.evaluate(u => new Promise(res => {
+      const seen = [];
+      window.addEventListener("message", e => { if(e.data && e.data.sws) seen.push(e.data.sws); });
+      const f = document.createElement("iframe");
+      f.style.cssText = "position:fixed;left:0;top:0;width:390px;height:780px;border:0";
+      f.src = u + "?embed=1";
+      f.onload = () => setTimeout(() => {
+        const w = f.contentWindow;
+        const out = { seen: seen.slice(), embed: w.SWS_EMBED, hasExit: typeof w.SWS_EXIT,
+                      exitBtn: !!w.document.getElementById("mExit"),
+                      search: w.location.search };
+        try { w.SWS_EXIT(); } catch(e){ out.exitThrew = String(e); }
+        setTimeout(() => { out.afterExit = seen.slice(); res(out); }, 250);
+      }, 1200);
+        document.body.appendChild(f);
+      }), URL)]);
+    } catch(e){ blew = String(e).split("\n")[0]; }
+    // A game whose exit navigates instead of posting takes the PARENT with it,
+    // because an iframe with no history entry sends the back up the joint
+    // session history. That is the black screen bug, and it kills this
+    // evaluate rather than failing an assertion, so it is caught and named.
+    ok("exiting the game does not navigate the page that framed it", !blew,
+       blew || "");
+    if(!got) got = { seen: [], afterExit: [], embed: null, hasExit: null, exitBtn: null, search: null };
+    ok("a framed game announces itself as ready", got.seen.indexOf("ready") >= 0,
+       JSON.stringify(got));
+    ok("it knows it is embedded", got.embed === true, "SWS_EMBED=" + got.embed);
+    ok("it exposes SWS_EXIT on window, where a classic script's const would not be",
+       got.hasExit === "function", "typeof=" + got.hasExit);
+    ok("there is a control that calls it", got.exitBtn, "no #mExit in the settings sheet");
+    ok("and the only thing the exit does is post close, never navigate",
+       got.afterExit.indexOf("close") >= 0 && !got.exitThrew,
+       JSON.stringify(got.afterExit) + " " + (got.exitThrew || ""));
+    ok("the query string survives the frame", got.search === "?embed=1", got.search);
+    await page.close();
+  }
+
   await browser.close();
   server.close();
   console.log(`\n${pass} passed, ${fail} failed  (touch floor ${MIN}px)`);
