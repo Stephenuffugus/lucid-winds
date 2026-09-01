@@ -5,9 +5,8 @@
 
 ## Where we are
 
-**C1, C2 and C3 are complete. C4 is complete for the verbs and partial for the
-devices**, see the gap named below. M1, the ship gate, is still unanswered and is
-still Stephen's alone.
+**C1 through C4 are complete.** M1, the ship gate, is still unanswered and is
+still Stephen's alone. C5, content and progression, is next.
 
 `index.html` is a complete, playable prototype in one file, no build step,
 canvas 2D, touch first. It runs from `file://`, GitHub Pages, or anywhere.
@@ -15,8 +14,8 @@ canvas 2D, touch first. It runs from `file://`, GitHub Pages, or anywhere.
 ## How to check it, in order
 
 ```
-node test/smoke.js                 270 assertions, headless, no deps
-node test/mutants.js               57 mutants, all must be killed
+node test/smoke.js                 311 assertions, headless, no deps
+node test/mutants.js               67 mutants, all must be killed
 node test/verbs.js [w] [h]         every prowl verb, by real touch
 node test/controls.js [w] [h]      51 assertions, real touches in real Chrome
 node test/shots.js <tag>           screenshots at 320, 375, 844, 1280
@@ -273,22 +272,39 @@ A run is only live while its first tile is still standing on its source, which
 had never been checked. Without it a battery cart could be wheeled across the map
 and keep feeding a device from anywhere.
 
-### Not built in C4, and it is a real gap
-The remaining devices: **floodlight, fan, crane, door lock, camera**, and the
-**vehicle battery** one-shot source. C4 item 6 asks for all of them, each with a
-designed interaction with another device or verb. Five devices exist (sprinkler,
-plate, speaker, breaker, coolant) and the mandatory coolant combo is done. The
-rest are the first thing to pick up.
+### The device orchestra, all of it
+Ten devices and five sources now, every one explaining itself when tapped,
+printing what it needs when unpowered, and carrying a designed partner rather
+than being a switch that does a thing on its own:
+
+| Device | What it does | Its partner |
+|---|---|---|
+| **Sprinkler** | wets its area | the floor plate: wet plus electrified is the kill |
+| **Floor plate** | electrifies its tile, harmless dry | the sprinkler, and the speaker that walks someone onto it |
+| **Speaker** | pulls patrols to it | the plate and the crane, both of which need something standing somewhere |
+| **Breaker** | ends a lockdown | the lockdown itself, and it is the only thing you can power in the dark |
+| **Coolant vent** | freezes what walks through it | **a frozen guard is a source**, worth 2.5x his mass, until he thaws |
+| **Floodlight** | lights its area | drink a light, which it undoes, and the concealed spines, which it **beats**: a lit run is exposed however good its cover was |
+| **Fan** | shoves bodies along and hums | drag a body, because it can move one you cannot reach, and the crane, because it can shove something under it |
+| **Crane** | crushes what stands on its drop tile | the speaker and the fan, which are how anything gets there |
+| **Door lock** | opens its door with power | the force threshold, which it is the alternative to. Cut the power and it shuts, which is how you trap a patrol |
+| **Camera** | shows what it can see, free | peek and pulse, which cost mass and which it replaces only for the ground it covers |
+| **Vehicle battery** | 120 capacity, enough for anything on the site | itself: it drains from the moment it feeds anything and then it is scrap |
+
+Three bugs came out of building them, each now gated:
+
+- **The door lock un-forced doors.** It rewrote its tile every frame, so a door
+  the player had forced open snapped shut again. It now tells its own opening
+  from a forced one, and it will not shut on anybody standing in it, because
+  that is a softlock rather than a trap.
+- **The vehicle battery was placed inside the sealed exfil chamber**, behind the
+  carve-out, where no wire could ever leave it.
+- A floodlight had to be able to beat concealed ground or it was decoration; it
+  does, and that makes the one truly safe route on the map contestable.
 
 ## Next action
 
-**Finish C4's device orchestra**, which is the one part of C4 left: floodlight,
-fan, crane, door lock, camera and the vehicle battery, each with at least one
-designed interaction with another device or verb, each obeying the tap to explain
-rule and printing its needs when unpowered. The pattern is established by the
-coolant vent; copy its shape.
-
-Then **C5, content and progression**: the level loader, the six level curriculum,
+**C5, content and progression**: the level loader, the six level curriculum,
 save and load with read modify write, the residue spend screen and the first
 trait set, and Splice shipping for real. Note that C5's anti grind and save rules
 are the ones most likely to hide the kind of bug this session kept finding, so

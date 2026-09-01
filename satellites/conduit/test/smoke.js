@@ -1204,5 +1204,191 @@ console.log("\n[17] moving a source, and freezing a guard into one");
   ok("and it left a body to harvest", S.bodies.length===1);
 }
 
+// ── 18. the device orchestra ─────────────────────────────────────────────────
+// C4 item 6. Every device must explain itself when tapped, print what it needs
+// when unpowered, and have at least one designed interaction with another device
+// or verb. Each block tests the PARTNER, not just that the switch flips.
+console.log("\n[18] the device orchestra");
+
+const power = (S, from, tiles) => {          // helper: run a wire and commit it
+  G.beginDraft(from[0], from[1]);
+  for(const t of tiles) G.draftStep(t[0], t[1]);
+  G.commitDraft();
+};
+
+{ // every device explains itself, or it does not ship
+  const S = G.newGame();
+  const kinds = new Set(S.devices.map(d=>d.kind));
+  ok("the site has the device list C4 asks for",
+     ["sprinkler","plate","speaker","breaker","coolant","floodlight","fan","crane",
+      "doorlock","camera"].every(k=>kinds.has(k)),
+     [...kinds].join(","));
+  ok("every device declares what it needs", S.devices.every(d=>d.needs>0));
+  ok("and starts off", S.devices.every(d=>d.on===false));
+  ok("every source declares a capacity", S.sources.every(s=>s.capacity>0));
+}
+
+{ // FLOODLIGHT partners with drink-a-light and with concealed ground: it exposes
+  // the very cover a route was relying on
+  const S = G.newGame();
+  const fld = S.devices.find(d=>d.kind==="floodlight");
+  const inside = [34, 8];
+  ok("that ground is not lit to begin with", G.LITat(inside[0],inside[1])===0);
+  const before = G.expConduit(G.idx(inside[0],inside[1]));
+  S.player.traits.splice = false;
+  fld.on = true; G.tickDevices(0.016);
+  ok("a live floodlight lights its area", G.LITat(inside[0],inside[1])===1);
+  ok("and lit ground is exposed, whatever cover it had",
+     G.expConduit(G.idx(inside[0],inside[1]))===0);
+  fld.on = false; G.tickDevices(0.016);
+  ok("switching it off gives the cover back",
+     G.expConduit(G.idx(inside[0],inside[1]))===before);
+}
+{ // and it beats a concealed spine, which is the interesting case
+  const S = G.newGame();
+  const fld = S.devices.find(d=>d.kind==="floodlight");
+  fld.area = [8,14,10,16];                      // over the concealed x=9 spine
+  ok("that spine is concealed", G.CONCat(9,15)===1);
+  ok("and unlit it is never spotted", G.expConduit(G.idx(9,15))===2);
+  fld.on = true; G.tickDevices(0.016);
+  ok("a floodlight exposes even a concealed run", G.expConduit(G.idx(9,15))===0);
+}
+
+{ // FAN partners with drag: it moves a body you are not holding
+  const S = G.newGame();
+  const fan = S.devices.find(d=>d.kind==="fan");
+  S.bodies.push({ x:fan.x+2, y:fan.y, mass:12, decay:30, found:true });
+  const bd = S.bodies[0], x0 = bd.x;
+  fan.on = true;
+  for(let i=0;i<200;i++) G.step(0.016,{ax:0,ay:0});
+  ok("a live fan shoves a body along", bd.x < x0, `${x0} to ${bd.x}`);
+  ok("and a body it moved is no longer a body someone found", bd.found===false);
+}
+{ // and it stops at the wall. The fan only reaches four tiles, so a body has to
+  // start inside that reach AND have a wall inside it, or nothing is ever pushed
+  // and the check cannot fail. Pointed south from (38,11) the room ends at y 14.
+  const S = G.newGame();
+  const fan = S.devices.find(d=>d.kind==="fan");
+  fan.dir = [0, 1]; fan.on = true;
+  S.bodies.push({ x:fan.x, y:fan.y+1, mass:12, decay:30 });
+  const bd = S.bodies[0];
+  ok("the room ends two tiles that way", G.TTat(fan.x, fan.y+3)===G.tiles.WALL);
+  ok("and the body starts inside the fan's reach", Math.abs(bd.y-fan.y)<=4);
+  let through = null;
+  for(let i=0;i<500 && !through;i++){
+    G.step(0.016,{ax:0,ay:0});
+    if(G.TTat(bd.x|0, bd.y|0)===G.tiles.WALL) through = `${bd.x|0},${bd.y|0}`;
+  }
+  ok("it never shoves one into a wall, sampled every frame", !through, through);
+  ok("and the body stops at the last legal tile", bd.y <= fan.y+2, "y="+bd.y);
+}
+{ // and it partners with the speaker as a second lure, with a shorter reach
+  const S = G.newGame();
+  const fan = S.devices.find(d=>d.kind==="fan");
+  const e = S.enemies[1];
+  e.x = fan.x + 3; e.y = fan.y; e.state = "patrol";
+  fan.on = true;
+  let came = false;
+  for(let i=0;i<200 && !came;i++){ G.step(0.016,{ax:0,ay:0});
+    if(e.state==="investigate") came = true; }
+  ok("a live fan is loud enough to investigate", came, "state="+e.state);
+}
+
+{ // CRANE partners with anything that puts something under it
+  const S = G.newGame();
+  const crn = S.devices.find(d=>d.kind==="crane");
+  const e = S.enemies[1];
+  e.x = crn.drop[0] + 0.5; e.y = crn.drop[1] + 0.5;
+  crn.on = true;
+  G.step(0.016,{ax:0,ay:0});
+  ok("a live crane crushes what is under it", e.state==="dead");
+  ok("and leaves a body", S.bodies.length===1);
+  ok("invariant survives a crushing", G.checkLedger());
+}
+{ // it is harmless to anything not standing there, which is what makes the lure
+  // the interesting half of it
+  const S = G.newGame();
+  const crn = S.devices.find(d=>d.kind==="crane");
+  const e = S.enemies[1];
+  e.x = crn.drop[0] + 3.5; e.y = crn.drop[1] + 0.5;
+  crn.on = true;
+  for(let i=0;i<60;i++){ e.x = crn.drop[0]+3.5; e.y = crn.drop[1]+0.5;
+    G.step(0.016,{ax:0,ay:0}); }
+  ok("but it cannot reach anything standing beside it", e.state!=="dead");
+}
+
+{ // DOOR LOCK partners with the force threshold: power instead of mass
+  const S = G.newGame(), b = G.blobRef();
+  const lck = S.devices.find(d=>d.kind==="doorlock");
+  ok("the door starts shut", G.TTat(lck.door[0], lck.door[1])===G.tiles.DOOR);
+  setMass(S, b, CFG.forceAt-20);
+  ok("and you are far too thin to force it", b.mass < CFG.forceAt);
+  lck.on = true; G.tickDevices(0.016);
+  ok("power opens it without any mass at all",
+     G.TTat(lck.door[0], lck.door[1])!==G.tiles.DOOR);
+  lck.on = false; G.tickDevices(0.016);
+  ok("and cutting the power shuts it again, which is how you trap a patrol",
+     G.TTat(lck.door[0], lck.door[1])===G.tiles.DOOR);
+}
+{ // but a door a body forced stays forced, whatever the lock does afterwards
+  const S = G.newGame(), b = G.blobRef();
+  const lck = S.devices.find(d=>d.kind==="doorlock");
+  b.x = lck.door[0]+0.5; b.y = lck.door[1]+2.2;
+  for(let i=0;i<240;i++) G.step(0.016,{ax:0,ay:-1});
+  ok("a full body forces it", G.TTat(lck.door[0], lck.door[1])!==G.tiles.DOOR);
+  for(let i=0;i<120;i++) G.step(0.016,{ax:0,ay:0});
+  ok("and the lock leaves it alone",
+     G.TTat(lck.door[0], lck.door[1])!==G.tiles.DOOR);
+  // the case that actually needs the memory: power the lock, then cut it. Without
+  // remembering that a body opened this door, cutting the power shuts it on you.
+  b.x = 20.5; b.y = 21.5;                          // out of the doorway
+  lck.on = true;  G.tickDevices(0.016);
+  lck.on = false; G.tickDevices(0.016);
+  ok("and the lock never shuts a door a body forced, even after being cycled",
+     G.TTat(lck.door[0], lck.door[1])!==G.tiles.DOOR);
+}
+
+{ // CAMERA partners with peek and pulse: the same recon, without the mass
+  const S = G.newGame(), b = G.blobRef();
+  const cam = S.devices.find(d=>d.kind==="camera");
+  const e = S.enemies[1];
+  e.x = cam.x + 2; e.y = cam.y;
+  const m0 = b.mass;
+  cam.on = true;
+  G.step(0.016,{ax:0,ay:0});
+  ok("a live camera shows you what it can see", !!S.seen && S.seen.includes(e.id),
+     JSON.stringify(S.seen));
+  ok("and it costs nothing to watch", G.blobRef().mass === m0);
+  e.x = cam.x + CFG.camera.range + 4;
+  G.step(0.016,{ax:0,ay:0});
+  ok("it only shows what is in range", !S.seen.includes(e.id));
+  cam.on = false;
+  G.step(0.016,{ax:0,ay:0});
+  ok("and off, it shows nothing", !S.seen);
+}
+
+{ // VEHICLE BATTERY: one shot, and the shot is the point
+  const S = G.newGame();
+  const veh = S.sources.find(s=>s.id==="veh-1");
+  ok("the site has a one shot source", !!veh && veh.burst===true);
+  ok("it can run the heaviest thing on the site",
+     veh.capacity >= Math.max(...S.devices.map(d=>d.needs)));
+  const brk = S.devices.find(d=>d.kind==="breaker");
+  power(S, [veh.x, veh.y], (()=>{ const t=[];
+    for(let y=veh.y-1;y>=brk.y;y--) t.push([veh.x,y]);
+    for(let x=veh.x+1;x<=brk.x;x++) t.push([x,brk.y]);
+    return t; })());
+  const cd = S.conduits[0];
+  const end = cd.path[cd.path.length-1];
+  ok("a wire from it reaches the breaker", end[0]===brk.x && end[1]===brk.y,
+     end.join(","));
+  ok("and it goes live", cd.live===true);
+  for(let i=0;i<Math.ceil(CFG.vehicle.burstSec/0.016)+30;i++) G.step(0.016,{ax:0,ay:0});
+  ok("it runs out", veh.capacity===0, "capacity "+veh.capacity);
+  ok("and the run it was feeding dies with it", !cd.live);
+  ok("but the mass is still yours to reclaim", cd.cost>0);
+  ok("invariant survives a battery going flat", G.checkLedger());
+}
+
 console.log(`\n${pass} passed, ${fail} failed\n`);
 process.exit(fail ? 1 : 0);

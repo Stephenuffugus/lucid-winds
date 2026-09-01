@@ -311,7 +311,7 @@ Build in the addendum's priority order:
     layer wrote to game state the signatures would diverge.
   - **suite: 178 assertions, 40 mutants, 40 killed, 0 survivors.**
     controls 51/51 at every viewport. fullrun clean.
-- [~] **C4 gate** (2026-09-01) — **verbs complete, devices partial. Read the gap.**
+- [x] **C4 gate** (2026-09-01) — verbs and devices both complete.
   - **smoke count: 270** (was 178), **57 mutants, 57 killed, 0 survivors.**
   - **Four of my own new C4 gates were decorative until the sweep caught them**,
     which is the harness earning its keep on the same day it was written:
@@ -354,11 +354,35 @@ Build in the addendum's priority order:
     usually strictly better than moving a body, and drag's niche is narrow.
   - Also fixed: a run was live even when its source had been wheeled away from
     it, which had never been checked because nothing could move a source before.
-  - **⚠️ THE GAP, stated plainly: C4 item 6 is not finished.** Five devices exist
-    (sprinkler, plate, speaker, breaker, coolant) and the mandatory coolant combo
-    is done, but **floodlight, fan, crane, door lock, camera and the vehicle
-    battery are not built.** The pattern is established; this is the first thing
-    to pick up.
+  - **Item 6, the device orchestra, is now done too: 10 devices and 5 sources**,
+    every one explaining itself when tapped and carrying a designed partner
+    rather than being a switch. The table is in `satellites/conduit/HANDOFF.md`.
+    The floodlight **beats concealed ground**, so the one truly safe route on the
+    map becomes contestable; the fan shoves bodies you cannot reach and hums;
+    the crane needs the speaker or the fan to put something under it; the door
+    lock is the alternative to the force threshold, and cutting its power shuts
+    the door, which is how you trap a patrol; the camera is peek and pulse
+    without the mass, for the ground it covers; the vehicle battery runs anything
+    on the site once and is then scrap.
+  - **Three more bugs came out of building them**, each gated: **the door lock
+    un-forced doors**, rewriting its tile every frame so a door the player forced
+    snapped shut again (it now tells its own opening from a forced one, and will
+    not shut on anybody standing in it, because that is a softlock not a trap);
+    **the vehicle battery was placed inside the sealed exfil chamber** where no
+    wire could ever leave it; and the fan could shove a body through geometry.
+  - **Final: 311 assertions, 67 mutants, 67 killed, 0 survivors.** Six of my own
+    new gates in this phase were caught as decorative by the sweep before they
+    shipped: they were satisfied by the wrong reason, or tested a case the code
+    could not reach (a wire that was never live, a body the grace window was
+    protecting, a cart driven at ground it could reach anyway, a frozen guard the
+    vent kept re-freezing, a door the lock had opened itself, and a fan whose
+    four tile reach meant it never touched a wall).
+  - **A note on the planning view.** Ten devices at nine pixels a tile made the
+    map a wall of overlapping labels. The code shows always; the **requirement
+    now shows at the moment it matters**, when you have tapped a source, and
+    every machine that source can afford turns green. Tapping still tells you
+    everything, which is the rule the addendum actually sets. That is a small
+    deviation from "prints its requirement when unpowered" and it is deliberate.
 - [ ] C5 gate: 6/6 solvability checks · two-path logs · splice-differs assertion green
 - [ ] C6 gate: audio demo · reduced-motion pair · NO service worker confirmed
 

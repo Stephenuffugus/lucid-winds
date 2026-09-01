@@ -164,6 +164,11 @@ const CFG = {
   drag:{ range:1.3, speedMult:0.55, noiseSec:2.0, noiseRadius:7, lag:0.55 },
   cart:{ range:1.4, speedMult:0.42, lag:0.7 },   // heavier than a body
   coolant:{ freezeSec:12, capacityMult:2.5 },    // a frozen guard is a battery
+  floodlight:{ blindMult:0.4 },                  // it dazzles what faces it
+  fan:{ pushSec:1.0, lureRadius:8 },             // it shoves things, and it hums
+  crane:{ crushDamage:999 },                     // whatever is under it, is under it
+  camera:{ range:9 },                            // recon that costs no mass
+  vehicle:{ burstSec:20 },                       // one shot, then it is scrap
   peek:{ costPerSec:1.0, range:6, revealSec:0.6, minMass:8 },
   cling:{ speedMult:0.78, spotMult:0.5, dropTimeMult:0.5, range:1.4 },
   pool:{ sec:1.5, spotMult:2.0, speedMult:0.5 },
@@ -211,6 +216,7 @@ const CFG = {
     vignetteInner:0.40, vignetteAlpha:0.62,
     edgeTickTiles:4,             // corner ticks on the site boundary, in tiles
     draftFillMax:64,             // tiles one drag event may fill in at once
+    cardMinW:210,                // below this the inspect card is not worth moving
   },
 
   grid:{ w:48, h:32 }, seed:1337,
@@ -235,7 +241,7 @@ const WALL=0, FLOOR=1, SHADOW=2, VENT=3, DOOR=4;
 const W=CFG.grid.w, H=CFG.grid.h;
 const idx=(x,y)=>y*W+x, inB=(x,y)=>x>=0&&y>=0&&x<W&&y<H;
 
-let TT, CONC, WET, T=0;
+let TT, CONC, WET, LIT, T=0;
 let S = null;                                  // the whole mutable game state
 
 function mulberry(a){ return function(){ a|=0; a=a+0x6D2B79F5|0;
@@ -250,6 +256,7 @@ function conc(x0,y0,x1,y1){ for(let y=y0;y<=y1;y++) for(let x=x0;x<=x1;x++)
 
 function buildLevel(){
   TT=new Uint8Array(W*H); CONC=new Uint8Array(W*H); WET=new Float32Array(W*H);
+  LIT=new Uint8Array(W*H);        // what a floodlight is currently shining on
   fill(5,3,21,13,FLOOR);        // room D — trap room, north west
   fill(26,3,44,13,FLOOR);       // room E — north east
   fill(3,15,45,17,FLOOR);       // main corridor
@@ -299,6 +306,10 @@ function newGame(){
       // Move the source instead of extending the wire. Slow and exposed while
       // you push it, and any run already fed by it dies the moment it leaves.
       {id:"cart-1", x:27, y:22, kind:"cart",      capacity:50,  noisy:false, movable:true},
+      // One shot. Enough to run anything on the site, once, and then it is scrap.
+      // In room C proper, not in the sealed exfil chamber: the first placement
+      // put it behind the carve-out where no wire could ever leave it.
+      {id:"veh-1",  x:36, y:26, kind:"vehicle",   capacity:120, noisy:false, burst:true},
     ],
     devices:[
       {id:"spr-1", x:16, y:5,  kind:"sprinkler", needs:20, on:false, area:[10,4,20,11]},
@@ -308,6 +319,13 @@ function newGame(){
       // Freeze what walks through it. A frozen guard stops being a threat and
       // starts being a battery, which is the combo the design asks for.
       {id:"col-1", x:30, y:16, kind:"coolant",   needs:25, on:false, area:[28,15,33,17]},
+      // The east wing, which had nothing in it. Each of these has a designed
+      // partner rather than being a switch that does a thing on its own.
+      {id:"fld-1", x:34, y:8,  kind:"floodlight", needs:15, on:false, area:[30,5,38,11]},
+      {id:"fan-1", x:38, y:11, kind:"fan",        needs:10, on:false, dir:[-1,0]},
+      {id:"crn-1", x:40, y:6,  kind:"crane",      needs:35, on:false, drop:[40,9]},
+      {id:"lck-1", x:36, y:15, kind:"doorlock",   needs:20, on:false, door:[35,14]},
+      {id:"cam-1", x:36, y:22, kind:"camera",     needs:10, on:false},
     ],
     enemies:[
       { id:"sentry-1", kind:"sentry", x:7.5, y:11.5, hp:CFG.enemyHp.sentry, face:0,
@@ -406,9 +424,10 @@ function passableEnemy(x,y){ if(!inB(x,y)) return false;
   const t=TT[idx(x,y)]; return t===FLOOR||t===SHADOW; }
 function conduitable(x,y){ if(!inB(x,y)) return false;
   const t=TT[idx(x,y)]; return t!==WALL && t!==DOOR; }
-function expConduit(i){ if(CONC[i]) return 2; const t=TT[i];
+function expConduit(i){ if(LIT[i]) return 0;      // a floodlight beats cover
+  if(CONC[i]) return 2; const t=TT[i];
   return t===VENT?2 : t===SHADOW?1 : 0; }
-function expBlob(i){ return TT[i]===SHADOW?1:0; }
+function expBlob(i){ return (!LIT[i] && TT[i]===SHADOW)?1:0; }
 function onSiteWire(x,y){ return S && S.siteWires
   ? S.siteWires.some(w=>w.some(p=>p[0]===x&&p[1]===y)) : false; }
 function tileCost(x,y){ const i=idx(x,y);
@@ -1097,6 +1116,11 @@ function step(dt, input){
   if(plate && (b.x|0)===plate.x && (b.y|0)===plate.y && WET[idx(b.x|0,b.y|0)]>0)
     ledgerDamage(CFG.plateDamage*wdt);
 
+  // ── the device orchestra ───────────────────────────────────────────────────
+  // Each of these has a partner. None of them is a switch that does a thing on
+  // its own, which is the rule the design sets for every device that ships.
+  tickDevices(wdt);
+
   // breaker restores power
   const brk=S.devices.find(d=>d.kind==="breaker"&&d.on);
   if(brk && S.site.lockdown){ S.site.lockdown=false; S.site.alert=2; S.site.sinceEscalate=0;
@@ -1142,6 +1166,91 @@ function step(dt, input){
 
   checkLedger();
 }
+function tickDevices(dt){
+  // FLOODLIGHT: it lights ground, which exposes anything you routed through the
+  // dark there, and it cancels a light you drank. Partner: drink a light, which
+  // it undoes, and the concealed spines, which it beats.
+  LIT.fill(0);
+  for(const dv of S.devices){
+    if(dv.kind!=="floodlight" || !dv.on || !dv.area) continue;
+    const [x0,y0,x1,y1]=dv.area;
+    for(let y=y0;y<=y1;y++) for(let x=x0;x<=x1;x++)
+      if(inB(x,y) && TT[idx(x,y)]!==WALL) LIT[idx(x,y)]=1;
+  }
+
+  // FAN: it shoves what it is pointed at, and it hums. Partner: drag a body,
+  // because the fan can move one you cannot reach, and the crane, because it can
+  // shove something under it.
+  for(const dv of S.devices){
+    if(dv.kind!=="fan" || !dv.on) continue;
+    dv.t=(dv.t||0)+dt;
+    if(dv.t < CFG.fan.pushSec) continue;
+    dv.t=0;
+    const [dx,dy]=dv.dir||[1,0];
+    for(const bd of S.bodies){
+      if(Math.abs(bd.x-dv.x)>4 || Math.abs(bd.y-dv.y)>4) continue;
+      const nx=bd.x+dx, ny=bd.y+dy;
+      if(inB(nx|0,ny|0) && TT[idx(nx|0,ny|0)]!==WALL){ bd.x=nx; bd.y=ny; bd.found=false; }
+    }
+    for(const e of S.enemies){
+      if(e.state==="dead"||e.state==="hunt"||e.frozen>0) continue;
+      if(Math.hypot(e.x-dv.x,e.y-dv.y)>CFG.fan.lureRadius) continue;
+      setGoal(e, dv.x, dv.y, "investigate");
+    }
+  }
+
+  // CRANE: whatever is under it when it drops, is under it. Partner: the speaker
+  // and the fan, both of which can put something there.
+  for(const dv of S.devices){
+    if(dv.kind!=="crane" || !dv.on || !dv.drop) continue;
+    for(const e of S.enemies){
+      if(e.state==="dead") continue;
+      if((e.x|0)===dv.drop[0] && (e.y|0)===dv.drop[1]) killEnemy(e,"crane");
+    }
+  }
+
+  // DOOR LOCK: open it with power instead of with mass. Partner: the force
+  // threshold, which this is the alternative to. A door you already forced stays
+  // forced; the lock only manages the ones you did not.
+  for(const dv of S.devices){
+    if(dv.kind!=="doorlock" || !dv.door) continue;
+    const i=idx(dv.door[0], dv.door[1]);
+    if(dv.forcedAlready) continue;
+    // The lock has to tell its own opening from a forced one, or it either snaps
+    // a forced door shut behind the player or never shuts at all.
+    if(dv.on){ TT[i]=FLOOR; dv.openedByLock=true; }
+    else if(dv.openedByLock){
+      // never shut it on somebody: that is a softlock, not a trap
+      const b=blob(), occupied =
+        ((b.x|0)===dv.door[0] && (b.y|0)===dv.door[1]) ||
+        S.enemies.some(e=>e.state!=="dead" && (e.x|0)===dv.door[0] && (e.y|0)===dv.door[1]);
+      if(!occupied){ TT[i]=DOOR; dv.openedByLock=false; }
+    }
+    else if(TT[i]===FLOOR) dv.forcedAlready=true;   // a body got here first
+  }
+
+  // CAMERA: recon that costs no mass. Partner: peek and pulse, which it replaces
+  // for the ground it covers and which still cost you everywhere else.
+  S.seen = null;
+  for(const dv of S.devices){
+    if(dv.kind!=="camera" || !dv.on) continue;
+    S.seen = S.enemies.filter(e => e.state!=="dead" &&
+      Math.hypot(e.x-dv.x, e.y-dv.y) <= CFG.camera.range).map(e=>e.id);
+  }
+
+  // VEHICLE BATTERY: one shot. The moment it feeds anything it starts running
+  // out, and when it is out it is scrap for the rest of the run.
+  for(const src of S.sources){
+    if(!src.burst || src.capacity<=0) continue;
+    if(!S.conduits.some(c=>c.live && c.sourceId===src.id)) continue;
+    src.burstT=(src.burstT||0)+dt;
+    if(src.burstT>=CFG.vehicle.burstSec){
+      src.capacity=0; resolvePower();
+      toast("The vehicle battery is flat.");
+    }
+  }
+}
+
 function win(){
   const m=totalMass()+S.player.residue;
   S.result={ ok:true, medals:{
@@ -1405,9 +1514,9 @@ function draw(){
     ctx.strokeStyle= src.kind==="generator"?"rgba(90,200,160,.55)":src.kind==="frozen"?"rgba(140,215,235,.75)":src.kind==="cart"?"rgba(214,168,96,.6)":"rgba(110,170,225,.55)";
     ctx.lineWidth=1.4;
     ctx.strokeRect(px+3.5,py+3.5,s-7,s-7);
-    if(S.mode==="flow") deviceChip(px,py,s, {generator:"GEN",socket:"SKT",cart:"CRT",frozen:"ICE"}[src.kind]||"SRC", null, false);
+    if(S.mode==="flow") deviceChip(px,py,s, {generator:"GEN",socket:"SKT",cart:"CRT",frozen:"ICE",vehicle:"VEH"}[src.kind]||"SRC", null, false);
     else if(s>=CFG.ui.tileLabelMinPx)
-      txt({generator:"GEN",socket:"SKT",cart:"CRT",frozen:"ICE"}[src.kind]||"SRC", px+s/2, py+s-6, CFG.ui.fontTile, 600,
+      txt({generator:"GEN",socket:"SKT",cart:"CRT",frozen:"ICE",vehicle:"VEH"}[src.kind]||"SRC", px+s/2, py+s-6, CFG.ui.fontTile, 600,
           "#AFC2DA", "center"); }
   for(const dv of S.devices){ const [px,py]=w2s(dv.x,dv.y);
     // A powered device used to be a solid gold square, which made the machinery
@@ -1424,8 +1533,9 @@ function draw(){
     ctx.strokeStyle= dv.on?"rgba(232,180,87,.95)":"rgba(190,205,235,.20)";
     ctx.lineWidth= dv.on?1.6:1;
     ctx.strokeRect(px+3.5,py+3.5,s-7,s-7);
-    const code={sprinkler:"SPR",plate:"PLT",speaker:"SPK",breaker:"BRK",coolant:"COL"}[dv.kind];
-    if(S.mode==="flow") deviceChip(px,py,s, code, dv.needs, dv.on);
+    const code={sprinkler:"SPR",plate:"PLT",speaker:"SPK",breaker:"BRK",coolant:"COL",
+                floodlight:"FLD",fan:"FAN",crane:"CRN",doorlock:"LCK",camera:"CAM"}[dv.kind];
+    if(S.mode==="flow") deviceChip(px,py,s, code, dv.needs, dv.on, dv);
     else if(s>=CFG.ui.tileLabelMinPx){
       txt(code, px+s/2, py+s-6, CFG.ui.fontTile, 600, dv.on?"#E8B457":"#AFC2DA", "center");
       if(!dv.on){
@@ -1512,14 +1622,31 @@ function draw(){
 // In Flow the boxes are a few pixels across and a two part label collides with
 // its neighbours. One chip, under the box, carrying both what it is and what it
 // draws, keeps the planning view readable at any zoom.
-function deviceChip(px, py, s, code, needs, on){
-  const u=CFG.ui, t = (needs!=null && !on) ? code+" \u26a1"+needs : code;
+// Ten devices on one map at nine pixels a tile means a chip carrying both the
+// code and the requirement is wider than the gap between two machines, and they
+// overlap whichever way they are staggered. So the code shows always, and the
+// requirement shows at the moment it matters: when you have tapped a source and
+// are choosing what it can afford, or when you have tapped the device itself.
+// Tapping still tells you everything, which is the rule that matters.
+function deviceChip(px, py, s, code, needs, on, dv){
+  const u=CFG.ui;
+  const asking = !on && needs!=null &&
+    (S.autoFrom || (S.inspect && dv && S.inspect.id===dv.id));
+  const t = asking ? code+" \u26a1"+needs : code;
   ctx.font="600 "+u.fontTile+"px ui-sans-serif,system-ui";
   const w=ctx.measureText(t).width+9, h=u.fontTile+5;
-  const x=px+s/2-w/2, y=py+s+2;
+  // Ten devices on one map put chips shoulder to shoulder and they overlapped.
+  // Alternate above and below by tile parity so neighbours pass each other.
+  const below=((Math.round(px/Math.max(1,s))+Math.round(py/Math.max(1,s)))&1)===0;
+  const x=px+s/2-w/2, y=below ? py+s+2 : py-h-2;
   rr(x,y,w,h,3); ctx.fillStyle="rgba(8,10,16,.88)"; ctx.fill();
   ctx.strokeStyle="rgba(120,134,164,.22)"; ctx.lineWidth=1; ctx.stroke();
-  txt(t, px+s/2, y+h-4, u.fontTile, 600, on?"rgba(232,180,87,.95)":"#AFC2DA", "center");
+  // while choosing a source, say plainly which machines it can actually run
+  const afford = asking && S.autoFrom ? (S.autoFrom.capacity>=needs) : null;
+  txt(t, px+s/2, y+h-4, u.fontTile, 600,
+      on ? "rgba(232,180,87,.95)"
+         : afford===false ? "rgba(150,120,120,.85)"
+         : afford===true  ? "rgba(140,220,180,.95)" : "#AFC2DA", "center");
 }
 // The conduit is the same creature: a thin ferrofluid ribbon laid through tile
 // centres. Matte and flat when dead. When live it stands its spikes up and a
@@ -1762,20 +1889,35 @@ function drawHUD(){
     const o=S.inspect, isSrc=!!S.sources.find(x=>x.id===o.id);
     const text = isSrc
       ? [ {generator:"GENERATOR",socket:"WALL SOCKET",cart:"BATTERY CART",
-           frozen:"FROZEN GUARD"}[o.kind]||"SOURCE",
+           frozen:"FROZEN GUARD",vehicle:"VEHICLE BATTERY"}[o.kind]||"SOURCE",
           "supplies "+o.capacity+" · used "+((S.powerUsed&&S.powerUsed[o.id])||0),
           o.noisy?"loud while live, enemies hear further"
             : o.kind==="cart"?"you can push it, slowly, in the open"
             : o.kind==="frozen"?"it will thaw, and then it is a guard again"
+            : o.kind==="vehicle"?(o.capacity>0?"one shot, and it drains from the moment it feeds anything":"flat, for the rest of the run")
             : "quiet, weak, always here" ]
       : [ o.kind.toUpperCase()+" · needs "+o.needs,
           { sprinkler:"wets the floor in its area",
             plate:"electrifies its tile, harmless dry, lethal wet",
             speaker:"pulls patrols to it",
             breaker:"restores power after a lockdown",
-            coolant:"freezes what walks through it, and a frozen one holds a current" }[o.kind],
+            coolant:"freezes what walks through it, and a frozen one holds a current",
+            floodlight:"lights its area, which exposes anything you routed through the dark there",
+            fan:"shoves bodies along, and hums loudly enough to be worth investigating",
+            crane:"crushes whatever is standing on its drop tile",
+            doorlock:"opens its door with power instead of with mass",
+            camera:"shows you what it can see, and costs you nothing to watch" }[o.kind],
           o.on?"powered":"no wire from a source with enough capacity" ];
-    const w=Math.min(320,VW-SAFE.l-SAFE.r-32), x=left, y=btns[2].y-92;
+    // In Flow the card was sitting on the map, over the player and a source. If
+    // the fitted map leaves a column beside it, put the card there instead.
+    let w=Math.min(320,VW-SAFE.l-SAFE.r-32);
+    let x=left, y=btns[2].y-92;
+    if(S.mode==="flow"){
+      // the site's real right edge, not the fit rectangle it is centred inside
+      const mapRight=w2s(W,0)[0];
+      const room=VW-SAFE.r-mapRight-u.pad*2;
+      if(room>=u.cardMinW){ w=Math.min(w,room); x=VW-SAFE.r-u.pad-w; y=hudBandH()+u.pad; }
+    }
     rr(x,y,w,76,6); ctx.fillStyle="rgba(8,10,16,.94)"; ctx.fill();
     ctx.strokeStyle="rgba(120,134,164,.28)"; ctx.lineWidth=1; ctx.stroke();
     txt(text[0], x+12, y+22, u.fontLabel, 600, "#C9D2E4");
@@ -2160,7 +2302,8 @@ if(typeof globalThis!=="undefined") globalThis.CONDUIT={
   bump, passableBlob, passableEnemy, conduitable, expConduit, expBlob,
   dragTarget, startDrag, dropBody, clingTarget, startCling, stopCling, wallSurface,
   cartTarget, startCart, freezeEnemy, thawEnemy,
-  isPooled, contextVerb, doContextVerb, tickPeek,
+  isPooled, contextVerb, doContextVerb, tickPeek, tickDevices,
+  LITat:(x,y)=>LIT[idx(x,y)],
   scanConduits, canFlow, pulse, movePlayer, killEnemy,
   CONCat:(x,y)=>CONC[idx(x,y)], WETat:(x,y)=>WET[idx(x,y)],
   tiles:{WALL,FLOOR,SHADOW,VENT,DOOR},

@@ -139,8 +139,8 @@ const MUTANTS = [
     expect: "spot progress" },
 
   { id: "conceal-tier-downgrade", why: "concealed ground is scored as merely shadowed",
-    from: "function expConduit(i){ if(CONC[i]) return 2; const t=TT[i];",
-    to:   "function expConduit(i){ if(CONC[i]) return 1; const t=TT[i];",
+    from: "  if(CONC[i]) return 2; const t=TT[i];",
+    to:   "  if(CONC[i]) return 1; const t=TT[i];",
     expect: "never discovered" },
 
   { id: "force-hold-per-axis", why: "the force hold is cleared by an axis with no input (the C1 bug, restored)",
@@ -287,6 +287,56 @@ const MUTANTS = [
     from: "    bd.grace=Math.max(0,(bd.grace===undefined?CFG.harvestGraceSec:bd.grace)-wdt);",
     to:   "    bd.grace=0;",
     expect: "offer to carry it" },
+
+  { id: "floodlight-no-expose", why: "a floodlight lights ground without exposing it",
+    from: "function expConduit(i){ if(LIT[i]) return 0;      // a floodlight beats cover",
+    to:   "function expConduit(i){ if(false) return 0;",
+    expect: "lit ground is exposed" },
+
+  { id: "fan-no-push", why: "the fan blows and nothing moves",
+    from: "      if(inB(nx|0,ny|0) && TT[idx(nx|0,ny|0)]!==WALL){ bd.x=nx; bd.y=ny; bd.found=false; }",
+    to:   "      ;",
+    expect: "shoves a body along" },
+
+  { id: "fan-pushes-into-walls", why: "the fan shoves bodies through geometry",
+    from: "      const nx=bd.x+dx, ny=bd.y+dy;\n      if(inB(nx|0,ny|0) && TT[idx(nx|0,ny|0)]!==WALL){",
+    to:   "      const nx=bd.x+dx, ny=bd.y+dy;\n      if(true){",
+    expect: "into a wall" },
+
+  { id: "crane-harmless", why: "the crane drops on nothing",
+    from: "      if((e.x|0)===dv.drop[0] && (e.y|0)===dv.drop[1]) killEnemy(e,\"crane\");",
+    to:   "      ;",
+    expect: "crushes what is under it" },
+
+  { id: "crane-reaches-everywhere", why: "the crane crushes anything in the room",
+    from: "      if((e.x|0)===dv.drop[0] && (e.y|0)===dv.drop[1]) killEnemy(e,\"crane\");",
+    to:   "      killEnemy(e,\"crane\");",
+    expect: "beside it" },
+
+  { id: "doorlock-forgets-a-forced-door", why: "the lock shuts a door a body forced",
+    from: "    else if(TT[i]===FLOOR) dv.forcedAlready=true;   // a body got here first",
+    to:   "    ;",
+    expect: "never shuts it behind you" },
+
+  { id: "doorlock-never-shuts", why: "the lock opens but never closes, so it cannot trap anything",
+    from: "      if(!occupied){ TT[i]=DOOR; dv.openedByLock=false; }",
+    to:   "      ;",
+    expect: "shuts it again" },
+
+  { id: "camera-blind", why: "the camera is on and shows nothing",
+    from: "    S.seen = S.enemies.filter(e => e.state!==\"dead\" &&",
+    to:   "    S.seen = [].filter(e => e.state!==\"dead\" &&",
+    expect: "shows you what it can see" },
+
+  { id: "camera-sees-everything", why: "the camera ignores its own range",
+    from: "      Math.hypot(e.x-dv.x, e.y-dv.y) <= CFG.camera.range).map(e=>e.id);",
+    to:   "      true).map(e=>e.id);",
+    expect: "only shows what is in range" },
+
+  { id: "vehicle-never-flat", why: "the one shot battery is infinite",
+    from: "      src.capacity=0; resolvePower();",
+    to:   "      ;",
+    expect: "runs out" },
 
   { id: "spot-decay-none", why: "spot progress never decays once you break line of sight",
     from: "  } else e.spot=Math.max(0, e.spot-CFG.spotDecay*dt);",
