@@ -11,12 +11,32 @@
 //   - nothing the player must read is clipped by its own box
 const puppeteer = require("/workspaces/lucid-winds/node_modules/puppeteer");
 const path = require("path");
+const http = require("http");
+const fs = require("fs");
 
 const argSize = process.argv.indexOf("--size");
 const MIN = argSize > 0 ? Number(process.argv[argSize + 1]) : 48;
 // TANGENT_HTML points the probe at a mutated scratch copy, so these checks can
 // be proven able to fail without ever writing to the real game file.
-const URL = "file://" + (process.env.TANGENT_HTML || path.join(__dirname, "..", "index.html"));
+const FILE = process.env.TANGENT_HTML || path.join(__dirname, "..", "index.html");
+const ROOT = path.join(__dirname, "..");
+// Served over http rather than opened from file://. The game ships on a web
+// host, and file:// hides protocol dependent behaviour: a manifest cannot even
+// load there, so a probe on file:// could not have tested one.
+const server = http.createServer((req, res) => {
+  const p = req.url.split("?")[0];
+  if(p === "/" || p === "/index.html"){
+    res.writeHead(200, { "Content-Type": "text/html" });
+    return res.end(fs.readFileSync(FILE));
+  }
+  const f = path.join(ROOT, p.replace(/^\//, ""));
+  if(f.startsWith(ROOT) && fs.existsSync(f) && fs.statSync(f).isFile()){
+    res.writeHead(200, { "Content-Type": f.endsWith(".json") ? "application/manifest+json" : "application/octet-stream" });
+    return res.end(fs.readFileSync(f));
+  }
+  res.writeHead(404); res.end();
+});
+let URL = "";
 const VIEWPORTS = [{ w: 375, h: 667 }, { w: 320, h: 568 }];
 
 let pass = 0, fail = 0;
@@ -24,6 +44,8 @@ const ok = (n, c, extra) => c ? (pass++, console.log("  ok   " + n))
   : (fail++, console.log("  FAIL " + n + (extra ? "  -> " + extra : "")));
 
 (async () => {
+  await new Promise(r => server.listen(0, "127.0.0.1", r));
+  URL = `http://127.0.0.1:${server.address().port}/index.html`;
   const browser = await puppeteer.launch({ args: ["--no-sandbox"] });
   for(const vp of VIEWPORTS){
     console.log(`\n[${vp.w}x${vp.h}]`);
@@ -227,6 +249,7 @@ const ok = (n, c, extra) => c ? (pass++, console.log("  ok   " + n))
     await page.close();
   }
   await browser.close();
+  server.close();
   console.log(`\n${pass} passed, ${fail} failed  (touch floor ${MIN}px)`);
   process.exit(fail ? 1 : 0);
 })();
