@@ -14,7 +14,9 @@ const path = require("path");
 
 const argSize = process.argv.indexOf("--size");
 const MIN = argSize > 0 ? Number(process.argv[argSize + 1]) : 48;
-const URL = "file://" + path.join(__dirname, "..", "index.html");
+// TANGENT_HTML points the probe at a mutated scratch copy, so these checks can
+// be proven able to fail without ever writing to the real game file.
+const URL = "file://" + (process.env.TANGENT_HTML || path.join(__dirname, "..", "index.html"));
 const VIEWPORTS = [{ w: 375, h: 667 }, { w: 320, h: 568 }];
 
 let pass = 0, fail = 0;
@@ -69,6 +71,82 @@ const ok = (n, c, extra) => c ? (pass++, console.log("  ok   " + n))
          dashes.length ? JSON.stringify(found.copy.slice(0, 200)) : "");
     }
     ok("no page errors", errors.length === 0, errors.join(" | "));
+    await page.close();
+  }
+
+  // Controls must be reachable, not merely present. A control can be the right
+  // size and still be covered by an overlay, so ask the document what is
+  // actually on top at the control's own centre. Never el.click().
+  {
+    console.log("\n[reachability at 375x667]");
+    const page = await browser.newPage();
+    await page.setViewport({ width: 375, height: 667, isMobile: true, hasTouch: true });
+    await page.goto(URL);
+    await new Promise(r => setTimeout(r, 700));
+    const topAt = id => page.evaluate(i => {
+      const el = document.getElementById(i);
+      if(!el) return "missing";
+      const r = el.getBoundingClientRect();
+      if(r.width < 1 || r.height < 1) return "zero size";
+      const t = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      if(!t) return "nothing";
+      return (t === el || el.contains(t) || t.contains(el)) ? "ok"
+           : "covered by " + (t.id || t.className || t.tagName);
+    }, id);
+    for(const id of ["spinbtn", "clearbtn"]){
+      const r = await topAt(id); ok(`build control ${id} is on top at its centre`, r === "ok", r);
+    }
+    await page.evaluate(() => startSpin());
+    await new Promise(r => setTimeout(r, 300));
+    for(const id of ["throttle", "release"]){
+      const r = await topAt(id); ok(`spin control ${id} is on top at its centre`, r === "ok", r);
+    }
+    await page.evaluate(() => doRelease("probe"));
+    await new Promise(r => setTimeout(r, 300));
+    {
+      const r = await topAt("abortbtn");
+      ok("flight control abortbtn is on top at its centre", r === "ok", r);
+    }
+
+    // Two separate things, and only one of them is ours.
+    // 1. Does hiding the tab set the flag? That is the listener, and a real tab
+    //    switch is the only honest way to ask.
+    await page.evaluate(() => { loadLevel(0); startSpin(); holding = true; });
+    await new Promise(r => setTimeout(r, 300));
+    const other = await browser.newPage();
+    await other.bringToFront();
+    await new Promise(r => setTimeout(r, 500));
+    const flag = await page.evaluate(() => paused);
+    ok("hiding the tab sets the paused flag", flag === true, "paused=" + flag);
+    await other.close();
+    await page.bringToFront();
+    await new Promise(r => setTimeout(r, 300));
+    ok("showing the tab clears the paused flag",
+       (await page.evaluate(() => paused)) === false);
+
+    // 2. Does the flag actually stop the simulation? Measuring this by hiding
+    //    the tab proves nothing, because a hidden tab stops getting animation
+    //    frames anyway: the check passed even against a build with the guard
+    //    removed. So drive the loop by hand with the tab visible, which tests
+    //    our guard rather than the browser's frame policy.
+    const g = await page.evaluate(() => {
+      loadLevel(0); startSpin(); holding = true;
+      const base = performance.now();
+      paused = false; last = 0;
+      for(let i = 0; i < 30; i++) frame(base + i * 16);
+      const ran = runT;
+      paused = true;
+      for(let i = 0; i < 30; i++) frame(base + 500 + i * 16);
+      const held = runT;
+      paused = false; last = 0;
+      for(let i = 0; i < 30; i++) frame(base + 1500 + i * 16);
+      return { ran: ran, held: held, resumed: runT };
+    });
+    ok("the loop advances the run clock when not paused", g.ran > 0.1, `ran=${g.ran.toFixed(3)}`);
+    ok("the paused guard freezes the simulation", g.held === g.ran,
+       `ran=${g.ran.toFixed(3)} held=${g.held.toFixed(3)}`);
+    ok("clearing the guard resumes the simulation", g.resumed > g.held + 0.1,
+       `held=${g.held.toFixed(3)} resumed=${g.resumed.toFixed(3)}`);
     await page.close();
   }
   await browser.close();

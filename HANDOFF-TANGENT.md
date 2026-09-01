@@ -90,7 +90,15 @@ Settings sheet (audio, haptics, reduced motion, reset saves). `manifest.json` + 
 
 ## 4. EVIDENCE LEDGER (fill with evidence, not the word "done")
 
-- [ ] T1: smoke ___ / sweep table logged · camera check red-then-green · dead symbols 0 · shots read: ______
+- [x] **T1 (2026-09-01).**
+  - **Suites.** smoke 38 → **42/42**; sweep **byte identical to the baseline table** (`diff` clean, so nothing in this phase touched physics); new `test/ui.js` browser probe **42/42**. Run all three: `node test/smoke.js`, `node test/sweep.js`, `node test/ui.js`.
+  - **Camera check watched failing first**, exact red: `deck=68px of 390px`, `spin=0.340 flight=0.340 ratio=1.00`, `camUpdate not defined`. Green after: deck 265px of 390px, ratio 3.90, pull-out animated and settling inside 2 s.
+  - **Every new gate mutation proven falsifiable**, not merely green. Touch floor raised to 60px turns 12 checks red. An injected full screen overlay turns all 5 reachability checks red, naming the blocker. A build with the pause guard removed turns the freeze check red (`ran=0.467 held=0.967`). ⚠️ The first version of the pause check was **vacuous** and passed against that same mutant, because a hidden tab stops getting animation frames anyway, so it was measuring Chrome and not our code. Rewritten to drive the loop by hand.
+  - **Dead symbols 0**: `grep -c "PORT_W\|DECK_STEPS\|portBudget"` = 0, and `armed`, `isPort`, `ports()`, `built()`, `deckPath` all gone.
+  - **Deviation, flagged for Fable.** T1 said to rename the `armed` flag to `released`. Traced first: with the port system dead the flag can never be true, so `rimWall`'s exit branch and `doRelease("port")` were unreachable, and `pr.deckPath` was always empty which made its drawing block and its only consumer dead too. Renaming would have preserved dead code, so all of it is **deleted** instead. The gate asks for no dead symbols; a renamed flag that is never set is one. Say if you want the flag back as a hook.
+  - **Shots read** at 390x780 and 320x568, `docs/shots/t1-*`, build, spin, mid pull-out and flight. Faults found and fixed in the loop: chevron labels overprinting into mush ("Vespelans395"); labels running under the readout panel; the prediction marker not sitting where the line leaves frame; tool labels ellipsizing ("Bump…", "speeds…"); Erase stranded alone in a row of empty cells at 320.
+  - **Two real bugs the handoff did not know about, both found by looking, not by testing.** Body names were sized inside the scaled transform, so they rendered near 4px once the camera pulled out; and the ball itself came out around 2px in the system framing, leaving the player watching a trail with nothing on the end of it. Both now have a screen space floor. Rendering only, which the identical sweep proves.
+  - **Still open from T1, deliberately not fixed here.** At 320px the build deck is about 135px across, because the palette needs two rows; the deck is fully visible, which was the actual bug, but placing a 15 unit brake zone on it is fiddly. Candidate fix in T2: one row of label only tiles with the blurb moved to a hint line.
 - [ ] T2: tutorial once-only proof · fresh-profile run: ______
 - [ ] T3: shot pairs: ______ · fps @4x: ___ · fixed-seed identity check green
 - [ ] T4: sweep table (all levels): ______ · no-parts bot fails gates on: ______
@@ -117,3 +125,11 @@ Settings sheet (audio, haptics, reduced motion, reset saves). `manifest.json` + 
 ## SESSION STATE (builder updates this at the end of every session)
 
 **2026-09-01 (Fable, pre-build):** vendored v6 as index.html; reconstructed harness/smoke(38)/sweep(all green, matches doc §16.2); found D12 camera documented-but-absent (deck ~16% on spin, no camZ, no chevrons); 9 dead port symbols confirmed; baseline shots in docs/shots/. Next action: T1.
+
+**2026-09-01 (builder, T1 complete).** State: T1 shipped and pushed on `add-sproing-jumper`, one commit, no interference with the Conduit builder sharing this tree (committed fenced paths only, fetched and confirmed fast forward rather than rebasing over their unstaged work).
+
+What is in the build now: the camera frames the deck while building and aiming and pulls out to the system on release, fitted to the band between the HUD strips; edge chevrons carry off screen bodies with live distances and mark where the predicted shot leaves frame; a backed readout panel that cannot collide with the criteria chips; the dead port system is gone; a flight phase `Rebuild deck` control; a visibility pause; `visualViewport` sizing; a wrapping tool palette; 48px controls; no dashes in player copy; a brand line.
+
+Half done, nothing. Known and deliberately deferred: the 320px build deck is small because the palette takes two rows (see the T1 ledger note).
+
+**Next action: T2**, the first time experience. Note before starting it: the three suites are `smoke` (headless sim), `sweep` (solvability, must stay byte identical unless a change is meant to move physics) and `ui` (real browser, sizes, reachability, copy). `test/ui.js` and `test/harness.js` both read `TANGENT_HTML`, an env var pointing at a mutated scratch copy, which is how every new gate here was proven able to fail (`sed 's/thing/broken/' index.html > /tmp/m.html && TANGENT_HTML=/tmp/m.html node test/ui.js`). Keep doing that: one gate in this phase passed against a build with the feature removed before it was rewritten.

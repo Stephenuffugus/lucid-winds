@@ -9,7 +9,10 @@ const vm = require("vm");
 const path = require("path");
 
 function load(){
-  const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+  // TANGENT_HTML points the suite at a mutated scratch copy, so a check can be
+  // proven able to fail without ever writing to the real game file.
+  const src = process.env.TANGENT_HTML || path.join(__dirname, "..", "index.html");
+  const html = fs.readFileSync(src, "utf8");
   const m = html.match(/<script>([\s\S]*?)<\/script>/);
   if(!m) throw new Error("no script block in index.html");
   const js = m[1].replace(/^"use strict";/, "");
