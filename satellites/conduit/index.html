@@ -3,43 +3,93 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>CONDUIT — Phase 0</title>
+<title>CONDUIT · Sky Wolf Studio</title>
 <style>
   :root{
     --void:#05060A; --iron:#12141C; --steel:#232733; --lit:#2E3444;
     --violet:#8A5CF6; --gold:#E0A73C; --alarm:#E0483C; --ink:#C9D2E4;
+    --muted:#8C97AE;
+    --safe-t:env(safe-area-inset-top,0px);  --safe-r:env(safe-area-inset-right,0px);
+    --safe-b:env(safe-area-inset-bottom,0px); --safe-l:env(safe-area-inset-left,0px);
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{height:100%;background:var(--void);overflow:hidden;
-    font:400 15px/1.35 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--ink)}
+    font:400 15px/1.45 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    color:var(--ink);-webkit-text-size-adjust:100%}
   #c{display:block;touch-action:none}
-  #overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
-    background:rgba(5,6,10,.9);padding:24px;text-align:left}
+
+  /* title screen. Scrolls rather than clips on a short screen; 320 wide is the
+     size that finds the bugs 375 hides. */
+  #overlay{position:fixed;inset:0;overflow-y:auto;overscroll-behavior:contain;
+    background:
+      radial-gradient(120% 80% at 50% 12%, rgba(138,92,246,.10), transparent 62%),
+      radial-gradient(90% 70% at 50% 108%, rgba(224,167,60,.07), transparent 60%),
+      var(--void);
+    display:flex;
+    padding:calc(28px + var(--safe-t)) calc(22px + var(--safe-r))
+            calc(28px + var(--safe-b)) calc(22px + var(--safe-l));}
   #overlay.hide{display:none}
-  #panel{max-width:34rem}
-  h1{font:600 26px/1.1 ui-sans-serif,system-ui;letter-spacing:.02em;margin-bottom:.4rem}
-  h1 span{color:var(--violet)}
-  p{margin:.55rem 0;max-width:60ch;color:#96A0B6}
-  b{color:var(--ink);font-weight:600}
-  button{margin-top:1.1rem;padding:.8rem 1.4rem;border:1px solid var(--steel);border-radius:2px;
-    background:var(--iron);color:var(--ink);font:600 15px ui-sans-serif,system-ui;cursor:pointer}
+  /* margin auto, not align-items center: a centred flex item taller than its
+     container clips at BOTH ends and cannot be scrolled to. At 844x390 the
+     wordmark sat at y -22, off the top of the screen, unreachable. */
+  #panel{width:100%;max-width:33rem;margin:auto}
+
+  #mark{font:600 clamp(2.1rem,11vw,3.4rem)/1 ui-sans-serif,system-ui;
+    letter-spacing:.16em;margin-right:-.16em;
+    background:linear-gradient(96deg,#B79BFF 6%,#8A5CF6 34%,#C58F4A 74%,#E9C173 98%);
+    -webkit-background-clip:text;background-clip:text;color:#B9A7E8;
+    -webkit-text-fill-color:transparent}
+  @supports not ((-webkit-background-clip:text) or (background-clip:text)){
+    #mark{color:#B9A7E8;-webkit-text-fill-color:currentColor}}
+  #rule{height:1px;margin:.85rem 0 1.1rem;
+    background:linear-gradient(90deg,rgba(138,92,246,.85),rgba(224,167,60,.6),transparent 88%)}
+  .lede{color:var(--ink);font-size:1.02rem;font-weight:500}
+  p{margin:.55rem 0;color:var(--muted)}
+  b{color:var(--ink);font-weight:600;letter-spacing:.04em}
+  ul{margin:1rem 0 0;list-style:none}
+  li{margin:.5rem 0;color:var(--muted);padding-left:1rem;position:relative;font-size:.94rem}
+  li::before{content:"";position:absolute;left:0;top:.62em;width:5px;height:5px;
+    border-radius:50%;background:rgba(138,92,246,.75)}
+  button{margin-top:1.6rem;padding:.95rem 1.6rem;border:1px solid rgba(138,92,246,.55);
+    border-radius:3px;background:linear-gradient(180deg,rgba(30,25,48,.9),rgba(16,14,26,.9));
+    color:var(--ink);font:600 .95rem ui-sans-serif,system-ui;letter-spacing:.06em;
+    cursor:pointer;min-height:48px;min-width:11rem}
+  button:hover{border-color:rgba(224,167,60,.6)}
   button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
-  ul{margin:.5rem 0 0 1.1rem;color:#96A0B6}
-  li{margin:.2rem 0}
+  #brand{margin-top:1.5rem;font-size:.68rem;letter-spacing:.26em;color:#5C6580}
+
+  @media (max-height:640px){
+    #overlay{padding-top:calc(18px + var(--safe-t));padding-bottom:calc(18px + var(--safe-b))}
+    #rule{margin:.6rem 0 .8rem}
+    p{margin:.4rem 0}
+    ul{margin-top:.7rem} li{margin:.34rem 0}
+    button{margin-top:1.1rem} #brand{margin-top:1rem}
+  }
+  @media (max-height:470px){
+    #mark{font-size:clamp(1.6rem,5.2vw,2.2rem)}
+    #overlay{padding-top:calc(12px + var(--safe-t));padding-bottom:calc(12px + var(--safe-b))}
+    #rule{margin:.45rem 0 .55rem}
+    .lede{font-size:.95rem} p{margin:.3rem 0;font-size:.9rem}
+    ul{margin-top:.5rem} li{margin:.24rem 0;font-size:.88rem}
+    button{margin-top:.8rem;padding:.7rem 1.4rem} #brand{margin-top:.7rem}
+  }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 <div id="overlay"><div id="panel">
-  <h1>CONDUIT <span>— phase 0</span></h1>
-  <p>You are a fluid. Your mass is your health, your ammo, your reach and your body size, all at once. Spending it makes you weak. Keeping it makes you conspicuous.</p>
+  <div id="mark">CONDUIT</div>
+  <div id="rule"></div>
+  <p class="lede">You are a fluid that runs on its own body.</p>
+  <p>Mass is your health, your reach, your size and your ammunition, all one number. Spend it and you are weak. Keep it and you are easy to see.</p>
   <ul>
-    <li>Drag the left of the screen to flow.</li>
-    <li><b>FLOW</b> lifts the camera so you can route power — only while still and unseen.</li>
-    <li>In flow, drag from a power source to a device. Every tile costs mass. Pulling it back returns 75%.</li>
-    <li>Wet the floor, then electrify it. Harvest what drops. Reclaim your wire. Reach the exit.</li>
+    <li>Drag anywhere to move.</li>
+    <li>Tap <b>FLOW</b> to lift the camera, only while you are still and unseen.</li>
+    <li>In FLOW, drag from a power source to a machine. Every tile of wire is a tile of you; pull it back and 75% comes home.</li>
+    <li>Wet the floor, electrify it, take what drops, and leave.</li>
   </ul>
   <button id="go">Enter the site</button>
+  <div id="brand">SKY WOLF STUDIO</div>
 </div></div>
 <script>
 "use strict";
@@ -88,6 +138,21 @@ const CFG = {
   guardFollowsToPlayer:false, flowPaused:false, allowSelfCross:false,
   blockCrossOther:false, instantReclaim:false, zapEnabled:true,
   ferroRender:false, debugLedger:true,
+
+  // presentation. The sim never reads any of this; it is the frame, not the game.
+  // It lives here because CFG is the only home for numbers, tunables included.
+  ui:{
+    pad:12, barW:340, barH:14, barRadius:7,
+    fontHud:12, fontLabel:13, fontTitle:22, fontTile:11,
+    btnMinW:96, btnMaxW:132, btnH:54, btnGap:9, minTouchPx:48, shortViewportH:460,
+    tileLabelMinPx:19,           // below this tile size, box labels are noise
+    camMarginTiles:1.6,          // how far past the site edge the camera may look
+    camLerp:7, prowlTilesOnScreen:16, hudBandPad:34, minFitPx:80,
+    grainTile:128, grainAlpha:9,
+    vignetteInner:0.40, vignetteAlpha:0.62,
+    edgeTickTiles:4,             // corner ticks on the site boundary, in tiles
+    draftFillMax:64,             // tiles one drag event may fill in at once
+  },
 
   grid:{ w:48, h:32 }, seed:1337,
 };
@@ -216,8 +281,9 @@ function ledgerReclaim(cost, cd){
   cd.cost -= cost; blob().mass += back;
   S.ledger.owned -= tax; S.ledger.debits.reclaimTax += tax;
 }
-function ledgerDestroy(cost, cd){
-  cd.cost -= cost; S.ledger.owned -= cost; S.ledger.debits.destroyed += cost;
+function ledgerDestroy(cost, cd, why){
+  cd.cost -= cost; S.ledger.owned -= cost;
+  S.ledger.debits[why||"destroyed"] += cost;
 }
 function ledgerDamage(d){
   const b = blob(); const applied = Math.min(b.mass, d);
@@ -314,6 +380,31 @@ function draftStep(x,y){
   if(blob().mass - (d.cost + c) < CFG.minBlobMass){ toast("Not enough of you left."); return; }
   d.path.push([x,y]); d.costs.push(c); d.cost+=c;
 }
+// Extend the draft toward a tile, one legal step at a time, always starting
+// from the route's real end rather than from where the finger was last seen.
+//
+// The old interpolation walked a phantom cursor from lastTouchTile. One
+// rejected step (a wall on the x first route) or one dropped touchmove desynced
+// that cursor from the path, and every later step was then refused as non
+// adjacent: the rest of the stroke died silently and the player got a route
+// three tiles short with no way to tell why. Starting from the path end also
+// means a dropped event costs nothing, because the gap gets filled next event.
+// Trying the other axis when one is blocked is what makes corners forgiving.
+function draftTo(tx,ty){
+  const d=S.draft; if(!d) return;
+  let guard=0;
+  while(guard++<CFG.ui.draftFillMax){
+    const e=d.path[d.path.length-1];
+    if(e[0]===tx && e[1]===ty) return;
+    const dx=Math.sign(tx-e[0]), dy=Math.sign(ty-e[1]);
+    let moved=false, n;
+    if(dx){ draftStep(e[0]+dx, e[1]); n=d.path[d.path.length-1];
+            moved = n[0]===e[0]+dx && n[1]===e[1]; }
+    if(!moved && dy){ draftStep(e[0], e[1]+dy); n=d.path[d.path.length-1];
+            moved = n[0]===e[0] && n[1]===e[1]+dy; }
+    if(!moved) return;
+  }
+}
 function commitDraft(){
   const d=S.draft; S.draft=null; if(!d||d.path.length<2) return;
   let cd=d.extend;
@@ -355,15 +446,18 @@ function popReclaimTile(cd){
 function finishConduit(cd){ const i=S.conduits.indexOf(cd);
   if(i>=0 && cd.path.length<=1) S.conduits.splice(i,1); resolvePower(); }
 function burnConduitFrom(cd, k){                        // zap destroys tiles, no refund
+  // Booked to zapBurn, not to destroyed. `debits.zapBurn += 0` left the category
+  // permanently zero while the mass went to the catch all, so an audit of a leak
+  // would have been reading a lie about where mass went.
   const n=Math.min(CFG.zapBurnTiles, cd.path.length-k);
-  for(let i=0;i<n;i++){ const c=cd.costs.pop(); cd.path.pop(); ledgerDestroy(c,cd); }
-  S.ledger.debits.zapBurn+=0; finishConduit(cd);
+  for(let i=0;i<n;i++){ const c=cd.costs.pop(); cd.path.pop(); ledgerDestroy(c,cd,"zapBurn"); }
+  finishConduit(cd);
 }
 
 // ── alert ────────────────────────────────────────────────────────────────────
 function bump(level, why){
   if(level>S.site.alert){ S.site.alert=level; S.site.peak=Math.max(S.site.peak,level);
-    S.site.sinceEscalate=0; toast(["","Suspicion","Search","Alarm","LOCKDOWN — power cut"][level]+(why?" · "+why:""));
+    S.site.sinceEscalate=0; toast(["","Suspicion","Search","Alarm","Lockdown, power is cut"][level]+(why?" · "+why:""));
     if(level>=4){ S.site.lockdown=true; resolvePower(); } }
   else S.site.sinceEscalate=0;
 }
@@ -672,17 +766,69 @@ let VW=0, VH=0, cam={x:24,y:16,s:26};
 const input={ ax:0, ay:0 };
 let stick=null, btns=[], lastTouchTile=null;
 
+// The notch, the home indicator and the browser chrome all eat screen. Read the
+// real insets out of CSS rather than guessing them.
+let SAFE={t:0,r:0,b:0,l:0};
+function readSafeInsets(){
+  if(typeof document==="undefined") return;
+  const probe=document.createElement("div");
+  probe.style.cssText="position:fixed;top:0;left:0;width:0;height:0;visibility:hidden;"
+    +"padding:env(safe-area-inset-top) env(safe-area-inset-right) "
+    +"env(safe-area-inset-bottom) env(safe-area-inset-left)";
+  document.body.appendChild(probe);
+  const cs=getComputedStyle(probe);
+  SAFE={ t:parseFloat(cs.paddingTop)||0,   r:parseFloat(cs.paddingRight)||0,
+         b:parseFloat(cs.paddingBottom)||0, l:parseFloat(cs.paddingLeft)||0 };
+  probe.remove();
+}
+// visualViewport is the only measure that tells the truth once a mobile browser
+// starts hiding and showing its own chrome. innerHeight lies during that.
+function viewSize(){
+  const vv=(typeof window!=="undefined") && window.visualViewport;
+  return vv ? { w:Math.round(vv.width), h:Math.round(vv.height) }
+            : { w:window.innerWidth, h:window.innerHeight };
+}
+
+let grainPat=null, vignette=null;
+function buildGrain(){
+  // One tile of low amplitude noise, built once. It is what stops the darkness
+  // outside the site from reading as nothing at all.
+  const n=CFG.ui.grainTile, g=document.createElement("canvas"); g.width=g.height=n;
+  const gx=g.getContext("2d"), im=gx.createImageData(n,n), rnd=mulberry(0xC0FFEE);
+  for(let i=0;i<n*n;i++){ const v=(rnd()*255)|0;
+    im.data[i*4]=v; im.data[i*4+1]=v; im.data[i*4+2]=v+8; im.data[i*4+3]=CFG.ui.grainAlpha; }
+  gx.putImageData(im,0,0);
+  grainPat=ctx.createPattern(g,"repeat");
+}
+function buildVignette(){
+  const r=Math.hypot(VW,VH)*0.62;
+  vignette=ctx.createRadialGradient(VW/2,VH/2,r*CFG.ui.vignetteInner, VW/2,VH/2,r);
+  vignette.addColorStop(0,"rgba(0,0,0,0)");
+  vignette.addColorStop(0.7,"rgba(2,3,6,"+(CFG.ui.vignetteAlpha*0.42).toFixed(3)+")");
+  vignette.addColorStop(1,"rgba(2,3,6,"+CFG.ui.vignetteAlpha+")");
+}
+
 function resize(){ if(!CAN) return;
   const dpr=Math.min(2, window.devicePixelRatio||1);
-  VW=window.innerWidth; VH=window.innerHeight;
+  const v=viewSize(); VW=v.w; VH=v.h;
+  readSafeInsets();
+  // canvas.width assignment CLEARS the canvas. The frame loop repaints
+  // immediately, but repaint here too so a resize before the loop starts, or
+  // between frames, never shows a blank screen.
   CAN.width=VW*dpr; CAN.height=VH*dpr; CAN.style.width=VW+"px"; CAN.style.height=VH+"px";
   ctx.setTransform(dpr,0,0,dpr,0,0);
+  if(!grainPat) buildGrain();
+  buildVignette();
   layout();
+  if(S) draw();
 }
 function layout(){
-  const bw=Math.max(80, Math.min(108, VW*0.26)), bh=50, pad=12, g=8;
-  const c2=VW-bw-pad, c1=VW-bw*2-pad-g;
-  const r2=VH-bh-pad-8, r1=VH-bh*2-pad-g-8;
+  const u=CFG.ui;
+  const availW=VW-SAFE.l-SAFE.r;
+  const bw=Math.max(u.btnMinW, Math.min(u.btnMaxW, availW*0.27));
+  const bh=VH<u.shortViewportH ? u.minTouchPx : Math.max(u.minTouchPx, u.btnH);
+  const c2=VW-SAFE.r-u.pad-bw, c1=c2-bw-u.btnGap;
+  const r2=VH-SAFE.b-u.pad-bh, r1=r2-bh-u.btnGap;
   btns=[
     {id:"act",    label:"ACT",     x:c1, y:r2, w:bw, h:bh},
     {id:"flow",   label:"FLOW",    x:c2, y:r2, w:bw, h:bh},
@@ -693,13 +839,64 @@ function layout(){
 const w2s=(x,y)=>[ (x-cam.x)*cam.s + VW/2, (y-cam.y)*cam.s + VH/2 ];
 const s2w=(px,py)=>[ (px-VW/2)/cam.s + cam.x, (py-VH/2)/cam.s + cam.y ];
 
+// The HUD band at the top and the control block at the bottom right are opaque
+// to touch: hitBtn runs before the map does, so any map under a control cannot
+// be routed on at all. In Flow the whole site has to be reachable, so fit it to
+// the largest rectangle the controls leave free, and centre it there.
+function hudBandH(){ return SAFE.t + CFG.ui.barH + CFG.ui.fontHud*2 + CFG.ui.hudBandPad; }
+function flowFit(){
+  const u=CFG.ui, top=hudBandH();
+  const bx = btns.length ? Math.min(...btns.map(b=>b.x)) : VW;
+  const by = btns.length ? Math.min(...btns.map(b=>b.y)) : VH;
+  const above={ x:0, y:top, w:VW, h:Math.max(u.minFitPx, by-top-u.pad) };
+  const left ={ x:0, y:top, w:Math.max(u.minFitPx, bx-u.pad),
+                h:Math.max(u.minFitPx, VH-SAFE.b-top-u.pad*3) };
+  const sa=Math.min(above.w/(W+2), above.h/(H+2));
+  const sl=Math.min(left.w/(W+2),  left.h/(H+2));
+  return sa>=sl ? {s:sa, r:above} : {s:sl, r:left};
+}
 function updateCamera(dt){
-  const b=blob();
-  const fit=Math.min(VW/(W+2), (VH-150)/(H+2));
-  const ts = S.mode==="flow" ? fit : Math.min(VW,VH)/16;
-  const tx = S.mode==="flow" ? W/2 : b.x, ty = S.mode==="flow" ? H/2 : b.y;
-  const k=Math.min(1, dt*7);
-  cam.s += (ts-cam.s)*k; cam.x += (tx-cam.x)*k; cam.y += (ty-cam.y)*k;
+  const b=blob(), u=CFG.ui;
+  const k=Math.min(1, dt*u.camLerp);
+  if(S.mode==="flow"){
+    const f=flowFit(), cx=f.r.x+f.r.w/2, cy=f.r.y+f.r.h/2;
+    cam.s += (f.s-cam.s)*k;
+    cam.x += ((W/2 + (VW/2-cx)/f.s) - cam.x)*k;
+    cam.y += ((H/2 + (VH/2-cy)/f.s) - cam.y)*k;
+    return;                       // the fit already guarantees the site is on screen
+  }
+  const ts=Math.min(VW,VH)/u.prowlTilesOnScreen;
+  cam.s += (ts-cam.s)*k; cam.x += (b.x-cam.x)*k; cam.y += (b.y-cam.y)*k;
+  clampCam();
+}
+// The site is a place with edges. Letting the camera wander past them put the
+// player in a sea of nothing whenever they stood near a map edge, which is
+// exactly where the game starts them.
+function clampCam(){
+  const m=CFG.ui.camMarginTiles;
+  const halfW=VW/(2*cam.s), halfH=VH/(2*cam.s);
+  cam.x = (W+2*m<=2*halfW) ? W/2 : Math.max(halfW-m, Math.min(W-halfW+m, cam.x));
+  cam.y = (H+2*m<=2*halfH) ? H/2 : Math.max(halfH-m, Math.min(H-halfH+m, cam.y));
+}
+
+// The darkness outside the site has to read as place, not as absence. Grain
+// gives it a material, the hairline says it was cropped on purpose, and the
+// vignette makes the frame intentional at every aspect ratio.
+function drawSiteEdge(){
+  const [ax,ay]=w2s(0,0), [bx,by]=w2s(W,H);
+  ctx.save();
+  ctx.strokeStyle="rgba(118,132,162,.20)"; ctx.lineWidth=1;
+  ctx.strokeRect(ax-0.5, ay-0.5, (bx-ax)+1, (by-ay)+1);
+  const t=Math.min(CFG.ui.edgeTickTiles*cam.s, (bx-ax)*0.14, (by-ay)*0.2);
+  ctx.strokeStyle="rgba(188,203,233,.40)"; ctx.lineWidth=2; ctx.lineCap="butt";
+  for(const [x,y,sx,sy] of [[ax,ay,1,1],[bx,ay,-1,1],[ax,by,1,-1],[bx,by,-1,-1]]){
+    if(x<0||x>VW||y<0||y>VH) continue;
+    ctx.beginPath(); ctx.moveTo(x+sx*t,y); ctx.lineTo(x,y); ctx.lineTo(x,y+sy*t); ctx.stroke(); }
+  ctx.restore();
+}
+function drawFrame(){
+  if(grainPat){ ctx.fillStyle=grainPat; ctx.fillRect(0,0,VW,VH); }
+  if(vignette){ ctx.fillStyle=vignette; ctx.fillRect(0,0,VW,VH); }
 }
 
 function draw(){
@@ -760,15 +957,28 @@ function draw(){
   for(const src of S.sources){ const [px,py]=w2s(src.x,src.y);
     ctx.fillStyle= src.kind==="generator"?"#2C6E5A":"#2A4A6E";
     ctx.fillRect(px+3,py+3,s-6,s-6);
-    ctx.fillStyle="#9FB4CE"; ctx.font="9px ui-sans-serif";
-    ctx.fillText(src.kind==="generator"?"GEN":"SKT", px+4, py+s-6); }
+    ctx.strokeStyle="rgba(190,205,235,.22)"; ctx.lineWidth=1;
+    ctx.strokeRect(px+3.5,py+3.5,s-7,s-7);
+    if(S.mode==="flow") deviceChip(px,py,s, src.kind==="generator"?"GEN":"SKT", null, false);
+    else if(s>=CFG.ui.tileLabelMinPx)
+      txt(src.kind==="generator"?"GEN":"SKT", px+s/2, py+s-6, CFG.ui.fontTile, 600,
+          "#AFC2DA", "center"); }
   for(const dv of S.devices){ const [px,py]=w2s(dv.x,dv.y);
     ctx.fillStyle= dv.on ? "#E0A73C" : "#3A4152";
     ctx.fillRect(px+3,py+3,s-6,s-6);
-    ctx.fillStyle= dv.on?"#1A140A":"#9FB4CE"; ctx.font="9px ui-sans-serif";
-    ctx.fillText({sprinkler:"SPR",plate:"PLT",speaker:"SPK",breaker:"BRK"}[dv.kind], px+4, py+s-6);
-    if(!dv.on && s>18){ ctx.fillStyle="rgba(224,167,60,.75)"; ctx.font="9px ui-sans-serif";
-      ctx.fillText("⚡"+dv.needs, px+4, py+11); }
+    ctx.strokeStyle= dv.on?"rgba(255,225,170,.55)":"rgba(190,205,235,.20)"; ctx.lineWidth=1;
+    ctx.strokeRect(px+3.5,py+3.5,s-7,s-7);
+    const code={sprinkler:"SPR",plate:"PLT",speaker:"SPK",breaker:"BRK"}[dv.kind];
+    if(S.mode==="flow") deviceChip(px,py,s, code, dv.needs, dv.on);
+    else if(s>=CFG.ui.tileLabelMinPx){
+      txt(code, px+s/2, py+s-6, CFG.ui.fontTile, 600, dv.on?"#1A140A":"#AFC2DA", "center");
+      if(!dv.on){
+        const lab="\u26a1"+dv.needs;
+        ctx.font="600 "+CFG.ui.fontTile+"px ui-sans-serif,system-ui";
+        const bw2=ctx.measureText(lab).width+8;
+        rr(px+s/2-bw2/2, py-CFG.ui.fontTile-6, bw2, CFG.ui.fontTile+5, 3);
+        ctx.fillStyle="rgba(8,10,16,.85)"; ctx.fill();
+        txt(lab, px+s/2, py-6, CFG.ui.fontTile, 600, "rgba(232,180,87,.95)", "center"); } }
     if(dv.kind==="sprinkler"&&S.mode==="flow"){ const [a,b2,c2,d2]=dv.area; const [qx,qy]=w2s(a,b2);
       ctx.strokeStyle="rgba(64,140,220,.35)"; ctx.strokeRect(qx,qy,(c2-a+1)*s,(d2-b2+1)*s); } }
 
@@ -818,7 +1028,21 @@ function draw(){
       const [qx,qy]=w2s(o.x,o.y); ctx.fillStyle="rgba(138,92,246,.8)";
       ctx.fillRect(qx+s/2-2,qy+s/2-2,4,4); } }
 
+  drawSiteEdge();
+  drawFrame();
   drawHUD();
+}
+// In Flow the boxes are a few pixels across and a two part label collides with
+// its neighbours. One chip, under the box, carrying both what it is and what it
+// draws, keeps the planning view readable at any zoom.
+function deviceChip(px, py, s, code, needs, on){
+  const u=CFG.ui, t = (needs!=null && !on) ? code+" \u26a1"+needs : code;
+  ctx.font="600 "+u.fontTile+"px ui-sans-serif,system-ui";
+  const w=ctx.measureText(t).width+9, h=u.fontTile+5;
+  const x=px+s/2-w/2, y=py+s+2;
+  rr(x,y,w,h,3); ctx.fillStyle="rgba(8,10,16,.88)"; ctx.fill();
+  ctx.strokeStyle="rgba(120,134,164,.22)"; ctx.lineWidth=1; ctx.stroke();
+  txt(t, px+s/2, y+h-4, u.fontTile, 600, on?"rgba(232,180,87,.95)":"#AFC2DA", "center");
 }
 function drawConduit(cd, isDraft){
   if(cd.path.length<1) return;
@@ -832,97 +1056,202 @@ function drawConduit(cd, isDraft){
   ctx.stroke();
   if(cd.live){ ctx.strokeStyle="rgba(224,167,60,.5)"; ctx.lineWidth=Math.max(1,s*0.07); ctx.stroke(); }
 }
-function drawHUD(){
-  const b=blob(), pad=12, barW=Math.min(VW-24, 360), barH=16;
-  // mass: committed vs body, with the two thresholds marked
+// ── HUD ──────────────────────────────────────────────────────────────────────
+function rr(x,y,w,h,r){
+  r=Math.min(r, w/2, h/2);
+  ctx.beginPath(); ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y, x+w,y+h, r); ctx.arcTo(x+w,y+h, x,y+h, r);
+  ctx.arcTo(x,y+h, x,y, r);     ctx.arcTo(x,y, x+w,y, r);
+  ctx.closePath();
+}
+function txt(str, x, y, size, weight, col, align){
+  ctx.font=(weight||400)+" "+(size||CFG.ui.fontHud)+"px ui-sans-serif,system-ui";
+  ctx.fillStyle=col||"#C9D2E4"; ctx.textAlign=align||"left";
+  ctx.fillText(str,x,y); ctx.textAlign="left";
+}
+const ALERT_WORDS=["Calm","Suspicion","Search","Alarm","Lockdown"];
+
+// The one number the whole game is made of, drawn as what it is: a body of
+// fluid in a channel. Matte, with the iridescent edge, thinning as you spend.
+function drawMassRibbon(x, y, w){
+  const u=CFG.ui, b=blob(), h=u.barH;
   const committed=S.conduits.reduce((a,c)=>a+c.cost,0);
-  ctx.fillStyle="rgba(10,12,18,.85)"; ctx.fillRect(pad-4,pad-4,barW+8,barH+34);
-  ctx.fillStyle="#1B1F2B"; ctx.fillRect(pad,pad,barW,barH);
-  const u=barW/S.player.capacity;
-  ctx.fillStyle="#8A5CF6"; ctx.fillRect(pad,pad,b.mass*u,barH);
-  ctx.fillStyle="#3F4A66"; ctx.fillRect(pad+b.mass*u,pad,committed*u,barH);
-  for(const [v,c] of [[CFG.squeezeAt,"#5AA0E0"],[CFG.forceAt,"#E0A73C"]]){
-    ctx.fillStyle=c; ctx.fillRect(pad+v*u-1,pad-3,2,barH+6); }
-  ctx.fillStyle="#C9D2E4"; ctx.font="12px ui-sans-serif";
-  ctx.fillText(Math.round(b.mass)+" body · "+Math.round(committed)+" in wire"
-    + (S.player.residue>0?" · "+S.player.residue.toFixed(0)+" residue":""), pad, pad+barH+15);
-  ctx.fillText(b.mass<CFG.squeezeAt?"thin — fits vents, one hit from death"
-    : b.mass>CFG.forceAt?"full — can force doors, easy to see":"mid — neither", pad, pad+barH+29);
+  const unit=w/S.player.capacity;
+  const bodyW=Math.max(0, b.mass*unit), wireW=Math.max(0, committed*unit);
 
-  // alert pips
-  for(let i=0;i<5;i++){ const x=VW-pad-(5-i)*14;
-    ctx.fillStyle = i<=S.site.alert ? (i>=3?"#E0483C":"#E0A73C") : "#232733";
-    ctx.fillRect(x,pad,10,10); }
-  if(S.site.lockdown){ ctx.fillStyle="#E0483C"; ctx.font="600 13px ui-sans-serif";
-    ctx.fillText("LOCKDOWN — power cut. Find the breaker.", VW-pad-250, pad+26); }
+  rr(x,y,w,h,u.barRadius);
+  ctx.fillStyle="#0C0E16"; ctx.fill();
+  ctx.strokeStyle="rgba(118,132,162,.22)"; ctx.lineWidth=1; ctx.stroke();
 
-  // buttons — the action button says what it will actually do right now
+  ctx.save(); rr(x,y,w,h,u.barRadius); ctx.clip();
+  if(bodyW>0.5){
+    const g=ctx.createLinearGradient(x,y,x,y+h);
+    g.addColorStop(0,"#2E2447"); g.addColorStop(0.55,"#1B1530"); g.addColorStop(1,"#0F0B1B");
+    ctx.fillStyle=g; ctx.fillRect(x,y,bodyW,h);
+    const rim=ctx.createLinearGradient(x,y,x+bodyW,y);
+    rim.addColorStop(0,"hsla(268,90%,68%,.90)"); rim.addColorStop(0.55,"hsla(300,60%,56%,.45)");
+    rim.addColorStop(1,"hsla(44,95%,66%,.92)");
+    ctx.fillStyle=rim; ctx.fillRect(x,y,bodyW,1.5);
+    ctx.fillStyle="hsla(44,95%,72%,.95)"; ctx.fillRect(x+bodyW-1.5,y,1.5,h);
+  }
+  if(wireW>0.5){                                   // committed: dimmer, and hatched
+    ctx.fillStyle="#222A3C"; ctx.fillRect(x+bodyW,y,wireW,h);
+    ctx.strokeStyle="rgba(150,164,196,.30)"; ctx.lineWidth=1;
+    for(let k=x+bodyW-h;k<x+bodyW+wireW;k+=5){
+      ctx.beginPath(); ctx.moveTo(k,y+h); ctx.lineTo(k+h,y); ctx.stroke(); }
+  }
+  ctx.restore();
+
+  for(const [v,col] of [[CFG.squeezeAt,"#6FB0EE"],[CFG.forceAt,"#E8B457"]]){
+    const nx=x+v*unit;
+    ctx.fillStyle="rgba(6,8,14,.85)"; ctx.fillRect(nx-1,y,2,h);
+    ctx.fillStyle=col; ctx.fillRect(nx-1,y-4,2,4); ctx.fillRect(nx-1,y+h,2,4);
+  }
+
+  const ty=y+h+u.fontHud+5;
+  let line=Math.round(b.mass)+" body";
+  if(committed>0.05) line+="  ·  "+Math.round(committed)+" in wire";
+  if(S.player.residue>0.05) line+="  ·  "+Math.round(S.player.residue)+" residue";
+  txt(line, x, ty, u.fontHud, 600, "#C9D2E4");
+  const state = b.mass<CFG.squeezeAt ? "thin, fits vents, one hit from gone"
+              : b.mass>CFG.forceAt   ? "full, forces doors, easy to see"
+              : "mid, neither";
+  txt(state, x, ty+u.fontHud+4, u.fontHud, 400, "#8C97AE");
+}
+
+function drawAlertReadout(rightX, y){
+  const u=CFG.ui, n=5, pw=13, ph=7, gap=4;
+  const total=n*pw+(n-1)*gap, x0=rightX-total;
+  for(let i=0;i<n;i++){
+    const px=x0+i*(pw+gap), on=i<=S.site.alert;
+    rr(px,y,pw,ph,2);
+    ctx.fillStyle = on ? (i>=3?"#E0483C":"#E0A73C") : "#161A26"; ctx.fill();
+    if(!on){ ctx.strokeStyle="rgba(140,155,185,.34)"; ctx.lineWidth=1; ctx.stroke(); }
+    if(on&&i>=3){ ctx.strokeStyle="rgba(224,72,60,.9)"; ctx.lineWidth=1;
+      rr(px-2,y-2,pw+4,ph+4,3); ctx.stroke(); }
+  }
+  txt(ALERT_WORDS[S.site.alert], rightX, y+ph+u.fontHud+4, u.fontHud, 600,
+      S.site.alert>=3?"#E0483C":S.site.alert>0?"#E0A73C":"#7C879C", "right");
+}
+
+function drawButton(bt, on){
+  const u=CFG.ui;
+  rr(bt.x,bt.y,bt.w,bt.h,7);
+  const g=ctx.createLinearGradient(0,bt.y,0,bt.y+bt.h);
+  if(on){ g.addColorStop(0,"rgba(32,38,56,.95)"); g.addColorStop(1,"rgba(17,20,31,.95)"); }
+  else  { g.addColorStop(0,"rgba(14,17,25,.80)"); g.addColorStop(1,"rgba(10,12,19,.80)"); }
+  ctx.fillStyle=g; ctx.fill();
+  ctx.strokeStyle= on?"rgba(138,92,246,.50)":"rgba(38,44,60,.9)"; ctx.lineWidth=1; ctx.stroke();
+  if(on){ ctx.strokeStyle="rgba(224,167,60,.22)"; ctx.lineWidth=1;
+    rr(bt.x+2,bt.y+2,bt.w-4,bt.h-4,5); ctx.stroke(); }
+  txt(bt.label, bt.x+bt.w/2, bt.y+bt.h/2+u.fontLabel*0.36, u.fontLabel, 600,
+      on?"#D6DEEE":"#4E566A", "center");
+}
+
+function drawScrim(y, h, dir){
+  const g=ctx.createLinearGradient(0, dir>0?y:y+h, 0, dir>0?y+h:y);
+  g.addColorStop(0,"rgba(5,6,10,.78)"); g.addColorStop(0.65,"rgba(5,6,10,.34)");
+  g.addColorStop(1,"rgba(5,6,10,0)");
+  ctx.fillStyle=g; ctx.fillRect(0,y,VW,h);
+}
+function drawHUD(){
+  const u=CFG.ui, pad=u.pad, b=blob();
+  const left=SAFE.l+pad, top=SAFE.t+pad, right=VW-SAFE.r-pad, bottom=VH-SAFE.b-pad;
+  const botBand=VH-(btns.length?Math.min(...btns.map(x=>x.y)):VH)+u.pad;
+  drawScrim(0, hudBandH(), 1);
+  drawScrim(VH-botBand, botBand, -1);
+
+  const alertW=5*13+4*4;
+  const barW=Math.max(120, Math.min(u.barW, right-left-alertW-28));
+  drawMassRibbon(left, top, barW);
+  drawAlertReadout(right, top);
+
+  if(S.site.lockdown)
+    txt("Power is cut. Find the breaker.", right, top+u.barH+u.fontHud*2+16,
+        u.fontHud, 600, "#E0483C", "right");
+
   const et=envelopTarget(), nl=!et&&nearestLight();
   for(const bt of btns){
     if(bt.id==="act") bt.label = S.act.verb ? "RELEASE" : et ? "SMOTHER"
                                 : nl ? "DRINK LIGHT" : "TAP";
-    const on = bt.id==="flow" ? (S.mode==="flow"||canFlow())
-             : bt.id==="pulse" ? S.player.pulseCd<=0
-             : bt.id==="act" ? (!!et||!!nl||S.player.tapCd<=0) : !!S.selected;
-    ctx.fillStyle= on?"#1B2030":"#101320"; ctx.fillRect(bt.x,bt.y,bt.w,bt.h);
-    ctx.strokeStyle= on?"#3A4152":"#1A1E2A"; ctx.strokeRect(bt.x+.5,bt.y+.5,bt.w-1,bt.h-1);
-    ctx.fillStyle= on?"#C9D2E4":"#4A5164"; ctx.font="600 12px ui-sans-serif";
-    ctx.fillText(bt.label, bt.x+10, bt.y+bt.h/2+4); }
-  if(S.mode==="prowl" && !canFlow()){
-    ctx.fillStyle="#5A6274"; ctx.font="11px ui-sans-serif";
-    ctx.fillText("flow needs you still and unseen", btns[0].x-4, btns[0].y-8); }
+    const on = bt.id==="flow"    ? (S.mode==="flow"||canFlow())
+             : bt.id==="pulse"   ? S.player.pulseCd<=0
+             : bt.id==="act"     ? (!!et||!!nl||S.player.tapCd<=0)
+             : !!S.selected;
+    drawButton(bt, on);
+  }
+  if(S.mode==="prowl" && !canFlow())
+    txt("FLOW needs you still and unseen", btns[1].x+btns[1].w, btns[2].y-9,
+        u.fontHud, 400, "#5F687C", "right");
 
-  // envelop progress — you are committed and stationary while this runs
   if(S.act.verb==="envelop"){
-    const w=Math.min(260,VW-48), x=(VW-w)/2, y=VH*0.34;
-    ctx.fillStyle="rgba(10,12,18,.9)"; ctx.fillRect(x-6,y-24,w+12,44);
-    ctx.fillStyle="#C9D2E4"; ctx.font="600 13px ui-sans-serif";
-    ctx.fillText("smothering — hold still", x, y-8);
-    ctx.fillStyle="#1B1F2B"; ctx.fillRect(x,y,w,10);
-    ctx.fillStyle="#8A5CF6"; ctx.fillRect(x,y,w*(S.act.t/CFG.envelop.timeSec),10); }
+    const w=Math.min(280,VW-48), x=(VW-w)/2, y=VH*0.34;
+    rr(x-10,y-30,w+20,54,6); ctx.fillStyle="rgba(8,10,16,.92)"; ctx.fill();
+    ctx.strokeStyle="rgba(138,92,246,.35)"; ctx.lineWidth=1; ctx.stroke();
+    txt("smothering, hold still", x, y-12, u.fontLabel, 600, "#C9D2E4");
+    rr(x,y,w,8,4); ctx.fillStyle="#171B26"; ctx.fill();
+    ctx.save(); rr(x,y,w,8,4); ctx.clip();
+    ctx.fillStyle="#8A5CF6"; ctx.fillRect(x,y,w*(S.act.t/CFG.envelop.timeSec),8);
+    ctx.restore();
+  }
 
-  // inspect card — tapping a box in flow tells you what it needs and what it does
   if(S.inspect && S.mode==="flow"){
-    const o=S.inspect, isSrc=!!o.kind&&(o.kind==="socket"||o.kind==="generator");
+    const o=S.inspect, isSrc=(o.kind==="socket"||o.kind==="generator");
     const text = isSrc
       ? [ o.kind==="generator"?"GENERATOR":"WALL SOCKET",
           "supplies "+o.capacity+" · used "+((S.powerUsed&&S.powerUsed[o.id])||0),
-          o.noisy?"loud while live — enemies hear further":"quiet, weak, always here" ]
+          o.noisy?"loud while live, enemies hear further":"quiet, weak, always here" ]
       : [ o.kind.toUpperCase()+" · needs "+o.needs,
           { sprinkler:"wets the floor in its area",
-            plate:"electrifies its tile — harmless dry, lethal wet",
+            plate:"electrifies its tile, harmless dry, lethal wet",
             speaker:"pulls patrols to it",
             breaker:"restores power after a lockdown" }[o.kind],
           o.on?"powered":"no wire from a source with enough capacity" ];
-    const w=Math.min(300,VW-32), x=16, y=VH-150;
-    ctx.fillStyle="rgba(10,12,18,.92)"; ctx.fillRect(x,y,w,66);
-    ctx.strokeStyle="#232733"; ctx.strokeRect(x+.5,y+.5,w-1,65);
-    ctx.fillStyle="#C9D2E4"; ctx.font="600 13px ui-sans-serif"; ctx.fillText(text[0],x+10,y+20);
-    ctx.fillStyle="#96A0B6"; ctx.font="12px ui-sans-serif";
-    ctx.fillText(text[1],x+10,y+38); ctx.fillText(text[2],x+10,y+55); }
+    const w=Math.min(320,VW-SAFE.l-SAFE.r-32), x=left, y=btns[2].y-92;
+    rr(x,y,w,76,6); ctx.fillStyle="rgba(8,10,16,.94)"; ctx.fill();
+    ctx.strokeStyle="rgba(120,134,164,.28)"; ctx.lineWidth=1; ctx.stroke();
+    txt(text[0], x+12, y+22, u.fontLabel, 600, "#C9D2E4");
+    txt(text[1], x+12, y+42, u.fontHud, 400, "#8C97AE");
+    txt(text[2], x+12, y+60, u.fontHud, 400, o.on?"#E0A73C":"#8C97AE");
+  }
 
-  // draft cost preview
-  if(S.draft){ ctx.fillStyle="#C9D2E4"; ctx.font="600 13px ui-sans-serif";
-    ctx.fillText("route "+(S.draft.path.length-1)+" tiles · costs "+S.draft.cost.toFixed(1)
-      +" · leaves "+(blob().mass-S.draft.cost).toFixed(0), pad, VH-pad-6); }
+  if(S.draft)
+    txt("route "+(S.draft.path.length-1)+" tiles  ·  costs "+S.draft.cost.toFixed(1)
+      +"  ·  leaves "+(blob().mass-S.draft.cost).toFixed(0),
+      left, bottom-4, u.fontLabel, 600, "#C9D2E4");
 
-  if(S.toastT>0){ ctx.fillStyle="rgba(201,210,228,"+Math.min(1,S.toastT)+")";
-    ctx.font="600 14px ui-sans-serif"; ctx.fillText(S.toast, pad, VH-pad-28); }
+  if(S.toastT>0)
+    txt(S.toast, left, bottom-26, u.fontLabel, 600,
+        "rgba(201,210,228,"+Math.min(1,S.toastT).toFixed(2)+")");
 
   if(CFG.debugLedger && S.ledger.leak>1e-6){
     ctx.fillStyle="#E0483C"; ctx.fillRect(0,0,VW,4);
-    ctx.fillText("MASS LEAK "+S.ledger.leak.toFixed(4), pad, pad+barH+44); }
+    txt("MASS LEAK "+S.ledger.leak.toFixed(4), left, top+u.barH+u.fontHud*3+22,
+        u.fontHud, 600, "#E0483C");
+  }
 
-  if(S.result){
-    ctx.fillStyle="rgba(5,6,10,.88)"; ctx.fillRect(0,0,VW,VH);
-    ctx.fillStyle="#C9D2E4"; ctx.font="600 24px ui-sans-serif";
-    ctx.fillText(S.result.ok?"Extracted":"Lost", pad+8, VH/2-56);
-    ctx.font="14px ui-sans-serif";
-    if(S.result.ok){ const m=S.result.medals; let i=0;
-      for(const [k,v] of Object.entries({Ghost:m.ghost,Efficiency:m.efficiency,Economy:m.economy,Speed:m.speed}))
-        ctx.fillText(k+" — "+v, pad+8, VH/2-24+(i++)*22); }
-    else ctx.fillText(S.result.msg, pad+8, VH/2-24);
-    ctx.fillText("tap to run it again", pad+8, VH/2+80); }
+  if(S.result) drawResult();
+}
+
+function drawResult(){
+  const u=CFG.ui;
+  ctx.fillStyle="rgba(5,6,10,.90)"; ctx.fillRect(0,0,VW,VH);
+  const w=Math.min(360, VW-SAFE.l-SAFE.r-48), x=(VW-w)/2;
+  let y=VH/2-90;
+  txt(S.result.ok?"Extracted":"Lost", x, y, u.fontTitle, 600,
+      S.result.ok?"#C9D2E4":"#E0483C");
+  ctx.fillStyle="rgba(138,92,246,.5)"; ctx.fillRect(x,y+12,w,1);
+  y+=44;
+  if(S.result.ok){
+    const m=S.result.medals;
+    for(const [k,v] of Object.entries({Ghost:m.ghost, Efficiency:m.efficiency,
+                                       Economy:m.economy, Speed:m.speed})){
+      txt(k, x, y, u.fontLabel, 400, "#8C97AE");
+      txt(v, x+w, y, u.fontLabel, 600, "#C9D2E4", "right");
+      y+=26;
+    }
+  } else { txt(S.result.msg, x, y, u.fontLabel, 400, "#8C97AE"); y+=26; }
+  txt("tap to run it again", x, y+22, u.fontHud, 400, "#5F687C");
 }
 
 // ── input ────────────────────────────────────────────────────────────────────
@@ -953,12 +1282,14 @@ function onDown(px,py){
 function onMove(px,py){
   if(S.mode==="flow"){ if(!S.draft) return;
     const [wx,wy]=s2w(px,py); const tx=wx|0, ty=wy|0;
-    if(lastTouchTile && lastTouchTile[0]===tx && lastTouchTile[1]===ty) return;
-    // interpolate so a fast drag never skips tiles
-    if(lastTouchTile){ let [cx,cy]=lastTouchTile, guard=0;
-      while((cx!==tx||cy!==ty)&&guard++<64){
-        if(cx!==tx) cx+=Math.sign(tx-cx); else cy+=Math.sign(ty-cy);
-        draftStep(cx,cy); } }
+    // Compare the finger against the ROUTE'S end, not against where the finger
+    // was last seen. Comparing to lastTouchTile meant that once the route fell
+    // behind (a dropped event, a blocked step) it could never catch up, because
+    // every further event over the same tile returned early. Now the route
+    // chases the finger on every event and a lost event costs nothing.
+    const end=S.draft.path[S.draft.path.length-1];
+    if(end[0]===tx && end[1]===ty){ lastTouchTile=[tx,ty]; return; }
+    draftTo(tx,ty);
     lastTouchTile=[tx,ty]; return; }
   if(!stick) return;
   const dx=px-stick.ox, dy=py-stick.oy, m=Math.hypot(dx,dy), R=54;
@@ -996,7 +1327,7 @@ if(typeof document!=="undefined" && CAN){
 // headless test surface. It never shrinks; new systems get exported onto it.
 if(typeof globalThis!=="undefined") globalThis.CONDUIT={
   CFG, newGame, step, get S(){return S;}, totalMass, checkLedger, bfs, los,
-  beginDraft, draftStep, commitDraft, startReclaim, resolvePower, TTat:(x,y)=>TT[idx(x,y)],
+  beginDraft, draftStep, draftTo, commitDraft, startReclaim, resolvePower, TTat:(x,y)=>TT[idx(x,y)],
   startEnvelop, tapNoise, douseLight, envelopTarget, nearestLight, releaseGrab,
   onSiteWire, tileCost,
   idx, blobRef:()=>blob(), ledgerGain, ledgerDamage,
@@ -1005,6 +1336,11 @@ if(typeof globalThis!=="undefined") globalThis.CONDUIT={
   scanConduits, canFlow, pulse, movePlayer, killEnemy,
   CONCat:(x,y)=>CONC[idx(x,y)], WETat:(x,y)=>WET[idx(x,y)],
   tiles:{WALL,FLOOR,SHADOW,VENT,DOOR},
+  // HUD geometry, so a control can be probed where it actually is on screen
+  // rather than by calling its handler. Empty headless, where there is no layout.
+  get btns(){ return btns; }, hitBtn,
+  get safe(){ return SAFE; }, get view(){ return {w:VW,h:VH}; },
+  get cam(){ return cam; }, w2s, s2w,
 };
 </script>
 </body>

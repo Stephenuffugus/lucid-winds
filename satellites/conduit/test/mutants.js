@@ -27,6 +27,11 @@ const TMP = fs.mkdtempSync(path.join(os.tmpdir(), "conduit-mutants-"));
 
 // Each mutant: a unique anchor in index.html, what it becomes, and the mechanic
 // it destroys. `expect` is a substring of the assertion name that MUST go red.
+//
+// Not here on purpose: the drag's finger-versus-route-end desync. lastTouchTile
+// only exists on the DOM input path, so a node level mutant of it can never be
+// reached by this suite. That property is proved in test/controls.js instead,
+// with real touch events. A mutant the suite cannot reach is noise, not a gate.
 const MUTANTS = [
   { id: "ledger-reclaim-tax", why: "reclaim credits the blob but never debits owned",
     from: "  S.ledger.owned -= tax; S.ledger.debits.reclaimTax += tax;",
@@ -152,6 +157,26 @@ const MUTANTS = [
     from: "  } else e.spot=Math.max(0, e.spot-CFG.spotDecay*dt);",
     to:   "  } else { }",
     expect: "decays" },
+
+  { id: "draft-no-fill", why: "a drag that skips tiles no longer fills the gap",
+    from: "  while(guard++<CFG.ui.draftFillMax){",
+    to:   "  while(guard++<1){",
+    expect: "fills in the ones between" },
+
+  { id: "draft-no-corner", why: "a drag cannot turn a corner when the first axis is walled",
+    from: "    if(!moved && dy){ draftStep(e[0], e[1]+dy); n=d.path[d.path.length-1];",
+    to:   "    if(false && dy){ draftStep(e[0], e[1]+dy); n=d.path[d.path.length-1];",
+    expect: "turns the corner" },
+
+  { id: "zap-no-burn", why: "a zap costs the enemy but not the wire",
+    from: "  const n=Math.min(CFG.zapBurnTiles, cd.path.length-k);",
+    to:   "  const n=0;",
+    expect: "burns exactly" },
+
+  { id: "zap-books-elsewhere", why: "burned mass is filed under the wrong cause",
+    from: "ledgerDestroy(c,cd,\"zapBurn\"); }",
+    to:   "ledgerDestroy(c,cd); }",
+    expect: "booked to zapBurn" },
 
   { id: "harvest-free", why: "harvesting a body credits nothing",
     from: "      bd.mass-=take; ledgerGain(take,\"harvest\"); }",

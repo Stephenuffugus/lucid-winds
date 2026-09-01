@@ -455,6 +455,63 @@ console.log("\n[12] mechanics that had no real assertion");
   ok("and it accrues no spot progress at all, NaN included",
      !(cd.spot > 0) && !Number.isNaN(cd.spot), "spot="+cd.spot);
 }
+{ // C1 route drawing. A drag that skips tiles, or is blocked for a moment,
+  // must not kill the rest of the stroke.
+  const S = G.newGame();
+  G.beginDraft(9,16);
+  G.draftTo(9,12);                                    // a four tile jump
+  ok("a drag that skips tiles fills in the ones between",
+     S.draft.path.length===5, "len="+S.draft.path.length);
+  ok("and the filled tiles are the straight line",
+     S.draft.path.every(p=>p[0]===9) &&
+     S.draft.path.map(p=>p[1]).join()==="16,15,14,13,12", S.draft.path.join(" "));
+  G.draftTo(12,12);
+  ok("the stroke keeps going after a fill", S.draft.path.length===8,
+     "len="+S.draft.path.length);
+}
+{ // a blocked step costs one tile, not the rest of the stroke
+  const S = G.newGame();
+  G.beginDraft(9,16);
+  G.draftTo(9,19);                                    // (9,18) is solid wall
+  ok("a blocked drag stops at the obstacle", S.draft.path.length===2,
+     S.draft.path.join(" "));
+  G.draftTo(12,17);                                   // the finger moves somewhere legal
+  ok("and the stroke is still alive afterwards", S.draft.path.length===5,
+     S.draft.path.join(" "));
+}
+{ // when one axis is walled, try the other, or corners become impossible
+  const S = G.newGame();
+  G.beginDraft(9,16);
+  G.draftTo(9,14);
+  ok("reached the room D link tile", S.draft.path.length===3, S.draft.path.join(" "));
+  ok("east of it really is wall", G.TTat(10,14)===G.tiles.WALL);
+  G.draftTo(10,13);                                   // east is wall, north is open
+  ok("a drag turns the corner when the first axis is blocked",
+     S.draft.path.length===5, S.draft.path.join(" "));
+}
+
+{ // C1: the wire is a weapon that eats itself, and the burn has its own cause
+  const S = G.newGame();
+  G.beginDraft(9,16); for(let y=15;y>=5;y--) G.draftStep(9,y);
+  for(let x=10;x<=16;x++) G.draftStep(x,5); G.commitDraft();
+  const cd = S.conduits[0], e = S.enemies[0];
+  ok("the wire is live before the guard steps on it", cd.live);
+  const before = cd.path.length, hp0 = e.hp, owned0 = S.ledger.owned;
+  e.x = 12.5; e.y = 5.5;                              // standing on the run
+  G.step(0.016, {ax:0,ay:0});
+  ok("a guard standing on a live wire takes the zap",
+     e.hp === hp0 - CFG.liveConduitZap, `hp ${hp0} to ${e.hp}`);
+  ok("and it burns exactly zapBurnTiles of the run",
+     cd.path.length === before - CFG.zapBurnTiles, `${before} to ${cd.path.length}`);
+  ok("the burn is booked to zapBurn, not to a catch all",
+     S.ledger.debits.zapBurn > 0 && S.ledger.debits.destroyed === 0,
+     `zapBurn=${S.ledger.debits.zapBurn} destroyed=${S.ledger.debits.destroyed}`);
+  ok("burned mass is gone, not refunded", S.ledger.owned < owned0);
+  ok("invariant survives a zap burn", G.checkLedger());
+  ok("a burnt run no longer reaches its device",
+     !S.devices.find(d=>d.kind==="sprinkler").on);
+}
+
 { // kills: harvest-free — the credit side of the economy
   const S = G.newGame(), b = G.blobRef();
   setMass(S,b,50);                                     // room to receive it

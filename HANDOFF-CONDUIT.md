@@ -172,7 +172,46 @@ Build in the addendum's priority order:
 
 ## 6. EVIDENCE LEDGER (fill in place, with evidence, most recent last)
 
-- [ ] C1 gate: smoke 57/57 · 4-viewport screenshots read · full run seed: ______
+- [x] **C1 gate** (2026-09-01)
+  - **smoke: 123/123** (was 57; `node test/smoke.js`). The inherited 57 were partly
+    decoration: `node test/mutants.js` is new and breaks one mechanic at a time in a
+    scratch copy, and **ten** load bearing rules stayed green while broken (ledger
+    damage, conduit through walls, source budget, lockdown cutting power, squeeze,
+    force, smother's unaware rule, concealed conduit, harvest credit, spot decay).
+    All ten now drive real code. **Mutation sweep: 30 mutants, 30 killed, 0 survivors.**
+  - **controls: 40/40 at 320x568, 375x667, 844x390 and 1280x800** (`node test/controls.js`).
+    Every control located by `document.elementFromPoint` at its drawn centre, then
+    driven with a real touch at that coordinate, never by calling a handler. Includes
+    48px rendered minimums, no overlap, nothing inside a safe area inset, and the
+    route drag surviving skipped events and a blocked step.
+  - **4-viewport screenshots read** (`docs/shots/c1-*.png`, before/after in
+    `before-*` and `c1a/c1b/c1c-*`). Faults found by looking and fixed: title screen
+    clipped at both ends unscrollably in landscape (wordmark at y -22); the site
+    floating in void (camera now clamped, grain + hairline + corner ticks + vignette);
+    corner ticks drawn when their corner was off screen, reading as stray lines;
+    device power badge sitting on top of the device label at small tile sizes;
+    unlit alert pips invisible so "1 of 5" read as one floating square; HUD text with
+    no guaranteed contrast over world content; **and the one that mattered most, the
+    control block is opaque to touch and sat over the map's bottom right in Flow, so
+    the breaker and the exfil corner could not be routed on at all.**
+  - **full run seed: 1337**, driven by real touch events in real Chrome
+    (`node test/fullrun.js`, enter to exfil: route two wires by dragging, trap, harvest,
+    reclaim both, force the exfil door, extract). Clean at all four viewports.
+    844x390: peak alert 1, +1.2 mass, residue 13.2, 41 tiles, 49s.
+    1280x800: peak alert 1, +1.3 mass, residue 13.3, 54s, harvest credited 18.0 exactly.
+    No mass leak and no page errors on any run. Five runs logged in `PLAYTESTS.md`.
+  - **Three real bugs fixed**, each with a regression test and a mutant that kills it:
+    the force hold cleared by an axis with no input (harvest beside a door and it could
+    never be forced again); a drag that skipped or was briefly blocked silently killing
+    the rest of the stroke, with no way for a route that fell behind to catch up; zap
+    burn booked to `destroyed` while `debits.zapBurn` stayed permanently zero.
+  - **Open for the Director / C2**, written up in `satellites/conduit/HANDOFF.md`:
+    the breaker cannot end a lockdown (`resolvePower` skips every conduit while
+    lockdown is true, so the breaker can never come on, and `alertDecaySec[4]` is
+    Infinity) — the designed recovery loop is dead code, and it is C2's item;
+    the documented intended route crosses the patrol it is meant to trap, so the
+    designed solve partly self destructs on contact (feature or level authoring, his
+    call); and the same script swings +1.2 to -22.9 net mass on timing alone.
 - [ ] C2 gate: auto-route assertions added (count: ___) · breaker bugs found: ______ · 5 playtests logged
 - [ ] C3 gate: 3 shots in docs/shots/ read, faults: ______ · fps @4x throttle: ___ · sim-identity assertion green
 - [ ] C4 gate: smoke count: ___ · verb suicide-table written in HANDOFF.md
