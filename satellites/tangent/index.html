@@ -251,12 +251,15 @@ const PARTS={
   bumper: {label:"Bumper", blurb:"throws in", mass:2, kind:"circle", r:8.5, rest:1.12},
   brake:  {label:"Brake",  blurb:"slows",     mass:1, kind:"zone", r:15},
   booster:{label:"Booster",blurb:"speeds",    mass:1, kind:"zone", r:12},
-  /* The ball always LAGS the deck: surface drag pulls it toward deck speed
-     from below and never past it, so in the deck's own frame it can only ever
-     walk backwards. Everything the player can reach follows from that. A vane
-     drives it AHEAD of the deck inside its zone, which is the only way to walk
-     the other way, and the only proposed part that could open ground the bare
-     deck cannot reach. */
+  /* Surface drag relaxes the ball toward deck speed from whichever side it is
+     on, so which way it walks in the deck's own frame is a question about the
+     THROTTLE, not a law: while the deck is spinning up the ball lags and walks
+     one way, and while the deck is coasting down the ball leads and walks the
+     other. An earlier note here called the lag absolute and a level was built
+     on it; a bare deck cleared that level ninety six ways. A vane is a
+     spatially placed version of the same thing: it drives the ball past deck
+     speed inside its own zone, wherever the player puts it, whatever the
+     throttle is doing. */
   vane:   {label:"Vane",   blurb:"leads",      mass:1, kind:"zone", r:13},
 };
 const VANE_PUSH=340;
@@ -279,12 +282,8 @@ const LEVELS=[
            {n:"Orin",x:210,y:-580,r:28,m:6.8e6,target:true}],
    note:"Ash is closer but it is not your target. Hitting it ends the run." },
 
- { name:"Around the heavy", budget:9, tol:0.26, needsParts:true,
-   // Inside the ring the bare deck cannot enter. Surface drag only ever
-   // pulls the ball toward deck speed from below, so in the deck frame it
-   // walks one way; at this bearing it never comes inside r=94. A vane
-   // drives it past deck speed and brings it in to r=16.
-   gates:[{r:45,a:1.571,w:28}],
+ { name:"Around the heavy", budget:9, tol:0.26,
+   gates:[{r:70,a:-1.15,w:28}],
    bodies:[{n:"Bell",x:-250,y:-210,r:34,m:3.4e6},
            {n:"Wren",x:-580,y:170,r:28,m:5.7e6,target:true}],
    note:"Bell is too heavy to cross. Let it bend you around toward Wren." },
@@ -768,9 +767,10 @@ function rimWall(s){
   s.x=nx*(DECK_R-0.01); s.y=ny*(DECK_R-0.01);
   const dot=s.vx*nx+s.vy*ny;
   if(dot>0){ s.vx-=(1+WALL_REST)*dot*nx; s.vy-=(1+WALL_REST)*dot*ny; }
-  // Wall friction is what gives rim riding its feel: rubbing holds the ball
-  // below deck speed, so in the deck's own frame it walks steadily backwards
-  // around the rim. The throttle sets how fast it walks.
+  // Wall friction is what gives rim riding its feel: rubbing pulls the ball
+  // toward deck speed, so in the deck's own frame it walks steadily around the
+  // rim. The throttle sets how fast it walks AND which way: holding leaves the
+  // ball behind the surface, coasting leaves it ahead.
   if(!s.quiet){ shakeT=Math.max(shakeT,0.05); sfx.wall(Math.abs(dot)); }
 }
 function collideOn(s){
@@ -899,7 +899,7 @@ function buildGhost(){ ghost=trackFor(1); ghostIdle=trackFor(TH_FLOOR); }
    letting go at the first "lands" lands the ball but leaves the gate uncrossed
    on level two, which reads to a new player as the game refusing to advance. */
 const COACH={
-  build:"The ball only ever drifts one way. A Vane pushes it ahead of the deck, which is how it reaches this gate. Tap Vane, then tap the deck.",
+  build:"Hold and the ball walks one way round the deck. Let it ride and it walks the other. A Vane pushes it ahead of the deck where you place it.",
   hold: "Hold the throttle. The deck spins up and the ball rides outward.",
   line: "The dashed line is where the ball goes if you let go right now.",
   gate: "Keep holding. The ball has to cross the gate before you let go.",

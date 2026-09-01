@@ -338,51 +338,101 @@ console.log("\n[15] the build phase shows the track it is asking you to change")
      T.phase === "build", "phase=" + T.phase);
 }
 
-console.log("\n[16] the vane makes the ball lead the deck, which nothing else does");
+console.log("\n[16] which way the ball walks is a question about the throttle");
 {
-  // Surface drag only ever pulls the ball TOWARD deck speed from below, so it
-  // always lags and in the deck frame it only ever walks one way. That is why
-  // no other part opens ground: they deflect the ball without changing which
-  // way it drifts. The vane drives it past deck speed.
-  const lead = parts => {
+  // This block used to assert a law: "surface drag pulls the ball toward deck
+  // speed FROM BELOW and never past it, so in the deck frame it only ever walks
+  // one way, and only a vane can change that." A level was built on it and a
+  // bare deck cleared that level ninety six ways. The law is real only while
+  // the deck is ACCELERATING. Coasting, the deck slows under the ball and the
+  // ball leads. The old check never saw it because it held the throttle for the
+  // whole run, and its bumper case placed bumpers at (30,0) where the ball
+  // starts INSIDE one (start r 36.6, bumper collision radius 11.9, distance
+  // 6.6), so the bumper never struck and "a bumper does not lead" passed for a
+  // reason that had nothing to do with bumpers.
+  const rot = (x, y, a) => { const c = Math.cos(a), sn = Math.sin(a); return [x * c - y * sn, x * sn + y * c]; };
+  // lead = the ball's tangential speed minus the deck surface speed under it
+  const run = (parts, prog, secs) => {
     T.loadLevel(3);
-    for(const p of parts) T.parts.push(p);
-    T.startSpin(); T.holding = true;
-    let most = -1e9;
-    for(let s = 0; s < 12 * 120 && T.phase === "spin"; s++){
-      T.step();
+    for(const p of parts) T.parts.push(Object.assign({}, p));
+    T.startSpin();
+    const lead = [], inZone = [], track = [];
+    for(let s = 0; s < secs * 120 && T.phase === "spin"; s++){
+      T.holding = prog(s); T.step();
+      if(T.phase !== "spin") break;
       const b = T.ball, r = Math.hypot(b.x, b.y) || 1;
-      // tangential speed of the ball, minus the deck surface speed at that radius
-      const tan = (-b.y / r) * b.vx + (b.x / r) * b.vy;
-      most = Math.max(most, tan - T.deck.omega * r);
+      lead.push((-b.y / r) * b.vx + (b.x / r) * b.vy - T.deck.omega * r);
+      const L = rot(b.x, b.y, -T.deck.theta);
+      inZone.push(parts.some(p => p.type !== "rail" && Math.hypot(L[0] - p.x, L[1] - p.y) < 13));
+      track.push(L);
     }
-    return most;
+    return { lead: lead, inZone: inZone, track: track, peak: Math.max.apply(null, lead) };
   };
-  const bare = lead([]);
-  ok("a bare deck never gets the ball ahead of the surface", bare < 1, "lead=" + bare.toFixed(1));
-  const vaned = lead([{ type: "vane", x: 30, y: 0 }, { type: "vane", x: -30, y: 0 }]);
-  ok("a vane does", vaned > 8, "lead=" + vaned.toFixed(1));
-  const bumped = lead([{ type: "bumper", x: 30, y: 0 }, { type: "bumper", x: -30, y: 0 }]);
-  ok("a bumper does not, which is why it cannot open ground",
-     bumped < vaned / 2, `bumper=${bumped.toFixed(1)} vane=${vaned.toFixed(1)}`);
+  const HOLD = () => true, HOLD4 = s => s < 4 * 120;
+
+  // (a) the half of the old law that is true
+  const bare = run([], HOLD, 30);
+  ok("a bare deck under hold never gets the ball ahead of the surface",
+     bare.peak < 1, `peak lead=${bare.peak.toFixed(2)} over ${bare.lead.length} steps`);
+
+  // (b) the half that is not, and it needs no parts at all
+  const coasted = run([], HOLD4, 12);
+  const aheadSteps = coasted.lead.filter(v => v > 1).length;
+  ok("a bare deck coasting from a held spin does, which is what the level was built on being impossible",
+     coasted.peak > 8 && aheadSteps > 200,
+     `peak lead=${coasted.peak.toFixed(2)}, ${aheadSteps}/${coasted.lead.length} steps ahead`);
+
+  // (c) the vane's mechanism: a push applied on every step inside its own zone,
+  // not a peak. Balanced pair so the deck does not tear instead.
+  const vaned = run([{ type: "vane", x: 30, y: 0 }, { type: "vane", x: -30, y: 0 }], HOLD, 12);
+  let inZ = 0, leadingInZ = 0;
+  for(let i = 0; i < vaned.lead.length; i++)
+    if(vaned.inZone[i]){ inZ++; if(vaned.lead[i] > 1) leadingInZ++; }
+  ok("a vane leads the ball on every step it spends inside the vane",
+     inZ >= 10 && leadingInZ === inZ, `${leadingInZ}/${inZ} in-zone steps ahead`);
+
+  // (d) and the correction that must not quietly revert: peak lead never told
+  // the parts apart. A bumper placed where the held track actually reaches it
+  // throws the ball further ahead than the vane does.
+  const pt = bare.track[320];                       // 2.67 s into a bare held run
+  const bumped = run([{ type: "bumper", x: pt[0], y: pt[1] },
+                      { type: "bumper", x: -pt[0], y: -pt[1] }], HOLD, 12);
+  ok("a bumper on the held track leads it MORE than the vane, so peak lead proves nothing",
+     bumped.peak > vaned.peak,
+     `bumper=${bumped.peak.toFixed(1)} at r${Math.hypot(pt[0], pt[1]).toFixed(0)} vane=${vaned.peak.toFixed(1)}`);
 }
 
-console.log("\n[17] a system that needs the deck says so before you spin it up");
+console.log("\n[17] the build beat is wired, and today it correctly fires nowhere");
 {
-  // Around the heavy cannot be cleared with an empty deck. Without a word in
-  // the build phase that reads as the game refusing to advance, which is the
-  // exact failure the gate beat was written to prevent one system earlier.
+  // A system that genuinely cannot be cleared without parts has to say so in
+  // the build phase or it reads as the game refusing to advance. "Around the
+  // heavy" was marked that way on a measurement that was wrong (see [16] and
+  // test/parts.js): a bare deck clears it. Nothing is marked now, so the beat
+  // must be silent everywhere — and it must still WORK, or the flag becomes a
+  // no-op that the next authored system would trust.
   T.store.clear(); T.coachSeen = {};
-  T.loadLevel(0);
-  ok("an opening system says nothing about parts", T.coachBeat(null) === null,
-     T.coachBeat(null));
-  const needs = T.LEVELS.findIndex(l => l.needsParts);
-  ok("some system is marked as needing the deck", needs >= 0, "none marked");
-  T.loadLevel(needs);
-  ok("the system that needs the deck asks for a part", T.coachBeat(null) === "build",
-     T.coachBeat(null));
+  const marked = T.LEVELS.filter(l => l.needsParts).length;
+  ok("no system claims to need the deck on a measurement nobody has made", marked === 0,
+     marked + " still marked");
+  let spoke = null;
+  for(let i = 0; i < T.LEVELS.length; i++){
+    T.store.clear(); T.coachSeen = {};
+    T.loadLevel(i);
+    if(T.coachBeat(null) !== null) spoke = T.LEVELS[i].name + " -> " + T.coachBeat(null);
+  }
+  ok("so the build phase says nothing about parts on any system", spoke === null, spoke);
+
+  // the wiring itself, proven by marking one and putting it straight back
+  const before = JSON.stringify(T.LEVELS);
+  T.store.clear(); T.coachSeen = {};
+  T.loadLevel(3);
+  T.lv.needsParts = true;
+  ok("a system marked as needing the deck asks for a part", T.coachBeat(null) === "build",
+     String(T.coachBeat(null)));
   T.parts.push({ type: "vane", x: 30, y: 0 });
-  ok("placing one retires the lesson", T.coachBeat(null) === null, T.coachBeat(null));
+  ok("placing one retires the lesson", T.coachBeat(null) === null, String(T.coachBeat(null)));
+  delete T.lv.needsParts;
+  ok("and the level is put back exactly as authored", JSON.stringify(T.LEVELS) === before);
 }
 
 console.log("\n[18] the search that proves the levels is itself the game");
