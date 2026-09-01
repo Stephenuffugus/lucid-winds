@@ -669,7 +669,7 @@ function onDown(e){
   if(tool==="erase"){ eraseAt(lx,ly); return; }
   if(parts.length>=lv.budget){ flashHint("Deck is full. Erase something first."); return; }
   if(tool==="rail") drag={type:"rail",x:lx,y:ly,x2:lx,y2:ly};
-  else { parts.push({type:tool,x:lx,y:ly}); refreshHUD(); }
+  else { parts.push({type:tool,x:lx,y:ly}); ghost=null; refreshHUD(); }
 }
 function onMove(e){
   if(!drag) return;
@@ -685,7 +685,7 @@ function onUp(){
     const a=Math.atan2(drag.y,drag.x);
     drag.x2=drag.x+Math.cos(a+Math.PI/2)*22; drag.y2=drag.y+Math.sin(a+Math.PI/2)*22;
   }
-  parts.push(drag); drag=null; refreshHUD();
+  parts.push(drag); drag=null; ghost=null; refreshHUD();
 }
 function eraseAt(lx,ly){
   let best=-1,bd=16;
@@ -695,7 +695,7 @@ function eraseAt(lx,ly){
     else d=len(lx-p.x,ly-p.y);
     if(d<bd){bd=d;best=i;}
   });
-  if(best>=0){ parts.splice(best,1); refreshHUD(); }
+  if(best>=0){ parts.splice(best,1); ghost=null; refreshHUD(); }
 }
 function distToSeg(px,py,x1,y1,x2,y2){
   const dx=x2-x1,dy=y2-y1,L2=dx*dx+dy*dy;
@@ -845,6 +845,25 @@ function cachedPredict(){
   return _pred;
 }
 
+/* The track the ball will actually take, drawn on the deck while you build.
+   You were being asked to place parts to route a ball whose starting point and
+   path were both invisible. It runs the real deck integrator on a scratch
+   state, so it reads the parts you have placed and redraws as you place them:
+   the one view that shows a part doing something. `quiet` keeps it from
+   shaking the screen or making noise on the way through. */
+let ghost=null;
+function buildGhost(){
+  const r0=eqRadius(OM_IDLE);
+  const s={x:r0,y:0,vx:0,vy:OM_IDLE*r0,theta:0,omega:OM_IDLE,throttle:1,quiet:true};
+  const pts=[];
+  for(let i=0;i<8*120;i++){
+    advanceDeck(s,1);
+    if(i%4===0){ const p=rot(s.x,s.y,-s.theta); pts.push([p[0],p[1]]); }
+    if(!isFinite(s.x)||!isFinite(s.y)) break;
+  }
+  ghost=pts;
+}
+
 /* ---------------- coaching ----------------
    Four beats, each triggered by the state the player is actually in rather
    than by a step counter, and each retired for good once it has been read.
@@ -875,6 +894,16 @@ function coachBeat(pr){
   if(!coachSeen.gate  && lands && gatesLeft)  return "gate";
   if(!coachSeen.letgo && lands && !gatesLeft) return "letgo";
   return null;
+}
+/* A beat is done when the player has DONE the thing, not only when it has sat
+   on screen long enough. Time alone meant a quick player never retired one and
+   saw the same chips on every run, while a slow one retired them without ever
+   acting on them. Time stays as the fallback for the purely informational
+   beat. */
+function coachDone(k){
+  if(coachSeen[k]) return;
+  coachSeen[k]=1; writeSave(s=>{ s.tutor[k]=1; });
+  if(coachAt===k){ coachAt=null; coachT=0; }
 }
 function coachTick(dt,pr){
   const b=coachBeat(pr);
@@ -962,7 +991,7 @@ function openLevels(){
   modal("levels");
 }
 function loadLevel(i){
-  lvIndex=Math.max(0,Math.min(LEVELS.length-1,i)); lv=LEVELS[lvIndex]; parts=[];
+  lvIndex=Math.max(0,Math.min(LEVELS.length-1,i)); lv=LEVELS[lvIndex]; parts=[]; ghost=null;
   resetSystem();
   $("lvnum").textContent=String(lvIndex+1).padStart(2,"0");
   $("lvname").textContent=lv.name;
@@ -979,7 +1008,7 @@ function doRelease(reason){
   sfx.release();
   launchInfo={speed:len(ball.vx,ball.vy), radius:len(ball.x,ball.y),
               rpm:deck.omega*9.549, reason};
-  buzz(18);
+  buzz(18); coachDone("letgo");
   phase="flight"; flightTrail.push([ball.x,ball.y]);
   showUI("fly");
 }
@@ -1438,6 +1467,17 @@ function drawDeck(){
       ctx.setLineDash([1,6]); ctx.stroke(); ctx.setLineDash([]); }
   }
 
+  if(phase==="build"){
+    if(!ghost) buildGhost();
+    if(ghost&&ghost.length>1){
+      ctx.beginPath(); ctx.moveTo(ghost[0][0],ghost[0][1]);
+      for(const q of ghost) ctx.lineTo(q[0],q[1]);
+      ctx.strokeStyle="rgba(242,169,59,.20)"; ctx.lineWidth=1.2;
+      ctx.setLineDash([4,5]); ctx.stroke(); ctx.setLineDash([]);
+      ctx.beginPath(); ctx.arc(ghost[0][0],ghost[0][1],3.4,0,7);
+      ctx.fillStyle="rgba(242,169,59,.85)"; ctx.fill();
+    }
+  }
   lv.gates.forEach((g2,i)=>{
     const gx=Math.cos(g2.a)*g2.r, gy=Math.sin(g2.a)*g2.r;
     ctx.beginPath(); ctx.arc(gx,gy,g2.w/2,0,7);
@@ -1795,7 +1835,8 @@ function frame(ts){
     $("relsub").textContent = v.key==="none"||v.key==="miss" ? "or just let go" : v.text;
     const g=gatesHit.filter(Boolean).length;
     if(g!==frame._g){ frame._g=g; refreshHUD(); }
-    if(holding) everHeld=true;
+    if(holding){ everHeld=true; coachDone("hold"); }
+    if(lv.gates.length && gatesHit.every(Boolean)) coachDone("gate");
     coachTick(dt,pr);
     const say=coachAt?COACH[coachAt]:"Hold to push the ball outward. Let go and it flies.";
     const sh=$("spinhint");
@@ -1860,7 +1901,7 @@ function init(){
     }));
   $("release").addEventListener("pointerdown",e=>{e.preventDefault();doRelease("player");});
   $("spinbtn").onclick=()=>{ sfx.boot(); startSpin(); };
-  $("clearbtn").onclick=()=>{parts=[];refreshHUD();sfx.click(false);};
+  $("clearbtn").onclick=()=>{parts=[];ghost=null;refreshHUD();sfx.click(false);};
   $("retrybtn").onclick=backToBuild;
   $("abortbtn").onclick=backToBuild;
   $("lvpick").onclick=openLevels;

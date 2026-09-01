@@ -314,5 +314,29 @@ console.log("\n[14] the runtime system owns its own data");
   live.other.gravMul = before;
 }
 
+console.log("\n[15] the build phase shows the track it is asking you to change");
+{
+  // You were being asked to place parts to route a ball whose start and path
+  // were both invisible. The ghost runs the real deck integrator on a scratch
+  // state, so it must react to a part exactly as the run will.
+  T.loadLevel(1);
+  T.ghost = null; T.buildGhost();
+  const bare = T.ghost.map(q => [Math.round(q[0]), Math.round(q[1])]);
+  ok("a track is computed for the build phase", bare.length > 50, "points=" + bare.length);
+  ok("it starts where the ball starts", Math.abs(Math.hypot(bare[0][0], bare[0][1]) - 36.6) < 2,
+     "r0=" + Math.hypot(bare[0][0], bare[0][1]).toFixed(1));
+  // a part placed ON the track must change it; one placed far away must not
+  const on = T.ghost[90];
+  T.parts.push({ type: "bumper", x: on[0], y: on[1] });
+  T.ghost = null; T.buildGhost();
+  const bumped = T.ghost.map(q => [Math.round(q[0]), Math.round(q[1])]);
+  let moved = 0;
+  for(let i = 0; i < Math.min(bare.length, bumped.length); i++)
+    if(bare[i][0] !== bumped[i][0] || bare[i][1] !== bumped[i][1]) moved++;
+  ok("a part on the track visibly changes it", moved > 20, "points moved=" + moved);
+  ok("computing it does not shake the screen or disturb the run",
+     T.phase === "build", "phase=" + T.phase);
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

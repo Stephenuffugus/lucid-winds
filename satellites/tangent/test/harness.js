@@ -92,6 +92,9 @@ function load(){
       get gatesHit(){ return gatesHit; },
       get lvIndex(){ return lvIndex; },
       get parts(){ return parts; },
+      get ghost(){ return typeof ghost!=="undefined"?ghost:null; },
+      set ghost(v){ ghost=v; },
+      buildGhost: (typeof buildGhost === "function" ? buildGhost : null),
       cachedPredict: (typeof cachedPredict === "function" ? cachedPredict : null),
       verdict:       (typeof verdict       === "function" ? verdict       : null),
       // save + coaching surface (T2)
