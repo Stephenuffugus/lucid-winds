@@ -114,6 +114,19 @@ Settings sheet (audio, haptics, reduced motion, reset saves). `manifest.json` + 
   - **Not done in T3, for the next session:** the ball is still the least ferrofluid looking thing on screen at gameplay scale (it has a screen size floor and spikes, but no velocity stretch or wall squash), bodies keep their existing rims, and the far side is still flatter than the "seared / drowned / verdant" the design describes.
 
 - [ ] **⚖️ FOR STEPHEN, found in T3: falling into a hole is farmable.** The ball emerges beside a very massive hole and can be recaptured. Over 60 release times on Inside out: 10 runs landed after 1 inversion, 3 after 3, 2 after 5, and one run racked up **8 inversions** before being lost. Each inversion pays **900**, uncapped, so a run through the hole five times banks 4,500 in bonus alone. There is no softlock (the 22 second flight timeout ends it), so this is an economy question rather than a bug: cap the bonus, make it diminish, or leave it as a stunt worth doing. Scoring is your call, so nothing has been changed.
+- [x] **D2 REPAIRED (2026-09-01), out of phase order because it is the law.** smoke **58/58**.
+  - A read only audit fan out flagged it and reading the code confirmed it: **`predictRelease` integrated at `FLY_H` (1/60) while the live flight integrated at `DT` (1/120)**. Same function, different step size, so Euler walked two different trajectories and the dashed line was a near miss of the run rather than the run. It also looked 25 s ahead while the live run gives up at 22, so it could promise a landing the game abandons before reaching. Both fixed.
+  - **The predictor cache did not cache.** It counted CALLS, and four separate places ask every rendered frame (the loop, the path, the readout, the chevrons), so a full 1500 step N body solve ran at least once per frame and sometimes twice while appearing to run every third. The simulation now marks the memo stale; the first asker in a frame pays, once. This was also the answer to the frame budget I could not profile.
+  - **New gate [11] measures the law**: 48 samples across all eight systems compare what the readout promised against what the run then did. **100% now; 93.8% against a mutant restoring the old step size**, where it catches the old build saying "crashes" and "falls in" on shots that did neither.
+  - Frame cost across the whole session, spin p50 at 4x throttle: **75ms at the start → 135ms after the ferro and deck art → 55ms after caching the deck face → 38.8ms after fixing the predictor cache.** Roughly half the original, with considerably more on screen.
+
+- [ ] **AUDIT BACKLOG for the next session.** A six lens read only audit ran over the build and its two spec docs, each lens adversarially verified. 31 findings survived verification; the two high severity ones (D2, and the build layer not binding) are handled or already known. Worth picking up, roughly in order:
+  - **`sys` is documented as a deep copy but is a one level spread**, so every hole's `other` block is shared by reference with `LEVELS`. Nothing mutates it today, which is why the immutability check stays green, but it is one assignment away from a level editing itself.
+  - **No `AudioContext.resume()` anywhere**: a context that starts suspended is permanently silent, which is the common case on iOS. Also two synthesised voices and two documented one shots have no call site at all.
+  - **`OMEGA_MAX` never binds**: terminal spin is `SPIN_GAIN/SPIN_DRAG` = 2.5, below the 3.05 ceiling, so raising it in v6 changed no spin speed and only loosened the tear apart gate (which triggers at `0.72 * OMEGA_MAX`).
+  - **The ball's purple glow is a no op**: the shadow state is restored before anything is painted with it.
+  - Doc drift worth correcting in `docs/`: the 26/60/112 scoring bands do not exist (landing is flat rate capture), the shipped solvability table is stale, `flyStep`'s own contract comment is wrong, `DESIGN.md` still promises a rim auto release that `rimWall` no longer has, and three body masses sit outside D7's stated calibration bands.
+
 - [ ] T4: sweep table (all levels): ______ · no-parts bot fails gates on: ______
 - [ ] T5: elements shipped: ______ · predictor honesty: ___%
 - [ ] T6: final counts: ___ · recording: ______
@@ -149,7 +162,7 @@ Half done, nothing. Known and deliberately deferred: the 320px build deck is sma
 
 **2026-09-01 (builder, T3 partial).** Shipped and pushed: the inversion fix, the machined deck, the cached deck face, chevron box collisions. See the T3 ledger entry. **Nothing is half finished in the tree** — every commit is green on all three suites.
 
-**Next action: finish T3, then T4.** The remaining T3 work is the ball and the far side, both listed in the ledger entry. Two things to carry in:
+**Next action: finish T3, then T4.** (D2 was repaired out of order after the audit; see its ledger entry.) The remaining T3 work is the ball and the far side, both listed in the ledger entry. Two things to carry in:
 1. **Re-measure the frame budget on a quiet box before touching rendering again.** The numbers here were taken while another agent drove browsers on the same two cores, and A/B profiling came out backwards.
 2. **T4 will break the T2 acceptance test on purpose.** It requires a bot following only the tutorial to reach system 3, and T4 moves gates off the natural sweep so parts become mandatory. When it goes red, that is the test doing its job: the tutorial then has to teach placing a part, and a fourth beat is the likely answer.
 
