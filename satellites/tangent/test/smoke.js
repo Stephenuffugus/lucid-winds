@@ -480,5 +480,55 @@ console.log("\n[18] the search that proves the levels is itself the game");
      n > 60 && agreeClear === n, badC.slice(0, 3).join(" | "));
 }
 
+console.log("\n[19] the ghost on the build deck is the run it promises");
+{
+  // The build phase draws two tracks, held and coasting, so you can see what
+  // the parts you are placing will do. The held one was not the held run:
+  // trackFor seeded the scratch state with throttle = th (1 for the held
+  // track) while a live run starts at TH_FLOOR and relaxes toward it over
+  // about 0.7 s, and that head start never washes out — it buys the live ball
+  // a permanent phase deficit in its walk around the rim.
+  //
+  // The level index is deliberately NOT varied: advanceDeck reads only the
+  // global `parts`, so bodies and gates cannot enter this number and a loop
+  // over levels would be decoration. Parts ARE varied, because they do move it.
+  const rot = (x, y, a) => { const c = Math.cos(a), sn = Math.sin(a); return [x * c - y * sn, x * sn + y * c]; };
+  // trackFor samples every 4th step of 8*120, in the deck's own frame
+  const liveTrack = (parts, hold) => {
+    T.loadLevel(1);
+    for(const p of parts) T.parts.push(Object.assign({}, p));
+    T.startSpin();
+    const pts = [];
+    for(let i = 0; i < 8 * 120 && T.phase === "spin"; i++){
+      T.holding = hold; T.step();
+      if(T.phase !== "spin") break;
+      if(i % 4 === 0) pts.push(rot(T.ball.x, T.ball.y, -T.deck.theta));
+    }
+    return pts;
+  };
+  const worst = (ghost, live) => {
+    let m = 0, at = -1;
+    const n = Math.min(ghost.length, live.length);
+    for(let i = 0; i < n; i++){
+      const d = Math.hypot(ghost[i][0] - live[i][0], ghost[i][1] - live[i][1]);
+      if(d > m){ m = d; at = i; }
+    }
+    return { d: m, t: (at * 4 + 1) / 120, n: n };
+  };
+  for(const set of [{ n: "bare", p: [] },
+                    { n: "two bumpers", p: [{ type: "bumper", x: 44, y: 0 }, { type: "bumper", x: -44, y: 0 }] }]){
+    T.loadLevel(1);
+    for(const p of set.p) T.parts.push(Object.assign({}, p));
+    T.ghost = null; T.ghostIdle = null; T.buildGhost();
+    const gHeld = T.ghost, gIdle = T.ghostIdle;
+    const held = worst(gHeld, liveTrack(set.p, true));
+    const idle = worst(gIdle, liveTrack(set.p, false));
+    ok(`the held ghost is the held run (${set.n})`, held.n > 200 && held.d < 0.5,
+       `worst ${held.d.toFixed(2)} units at t=${held.t.toFixed(2)}s over ${held.n} points`);
+    ok(`the coasting ghost is the coasting run (${set.n})`, idle.n > 200 && idle.d < 0.5,
+       `worst ${idle.d.toFixed(2)} units at t=${idle.t.toFixed(2)}s over ${idle.n} points`);
+  }
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

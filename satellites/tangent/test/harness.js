@@ -100,6 +100,8 @@ function load(){
       get parts(){ return parts; },
       get ghost(){ return typeof ghost!=="undefined"?ghost:null; },
       set ghost(v){ ghost=v; },
+      get ghostIdle(){ return typeof ghostIdle!=="undefined"?ghostIdle:null; },
+      set ghostIdle(v){ ghostIdle=v; },
       buildGhost: (typeof buildGhost === "function" ? buildGhost : null),
       cachedPredict: (typeof cachedPredict === "function" ? cachedPredict : null),
       verdict:       (typeof verdict       === "function" ? verdict       : null),

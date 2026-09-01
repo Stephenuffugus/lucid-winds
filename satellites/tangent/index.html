@@ -871,7 +871,12 @@ function cachedPredict(){
 let ghost=null, ghostIdle=null;
 function trackFor(th){
   const r0=eqRadius(OM_IDLE);
-  const s={x:r0,y:0,vx:0,vy:OM_IDLE*r0,theta:0,omega:OM_IDLE,throttle:th,quiet:true};
+  // throttle starts at TH_FLOOR, not at th: a live run starts there and relaxes
+  // toward the target over about 0.7 s, and seeding the scratch state at the
+  // target instead put the drawn held track up to 15.7 units off the run it was
+  // promising. The gap does not wash out — the live ball never gets that phase
+  // back — so the build phase was routing a ball that does not exist.
+  const s={x:r0,y:0,vx:0,vy:OM_IDLE*r0,theta:0,omega:OM_IDLE,throttle:TH_FLOOR,quiet:true};
   const pts=[];
   for(let i=0;i<8*120;i++){
     advanceDeck(s,th);
