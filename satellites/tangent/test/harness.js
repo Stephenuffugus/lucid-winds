@@ -104,6 +104,7 @@ function load(seed){
       get flightTrail(){ return flightTrail; },
       get lvIndex(){ return lvIndex; },
       get parts(){ return parts; },
+      imbalance: (typeof imbalance === "function" ? imbalance : null),
       get ghost(){ return typeof ghost!=="undefined"?ghost:null; },
       set ghost(v){ ghost=v; },
       get ghostIdle(){ return typeof ghostIdle!=="undefined"?ghostIdle:null; },

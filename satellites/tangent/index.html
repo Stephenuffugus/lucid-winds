@@ -665,10 +665,19 @@ function finishInversion(){
 function partMass(p){ return p.type==="rail"
   ? PARTS.rail.mass*(0.4+len(p.x2-p.x,p.y2-p.y)/60) : PARTS[p.type].mass; }
 function partCentre(p){ return p.type==="rail" ? [(p.x+p.x2)/2,(p.y+p.y2)/2] : [p.x,p.y]; }
+/* The dish itself has mass. Without it the centre of mass was taken over the
+   PARTS ALONE, so the first part a player ever places sat at 100% of its own
+   centre of mass and a single bumper near the rim read 0.93 against a
+   tolerance of 0.35: the very first experiment always showed red. Including
+   the deck at the origin is the same arithmetic a real rotor uses, and a lone
+   rim part now reads about a quarter of the way to the limit instead of nearly
+   all of it. Opposite pairs still cancel exactly. M_DECK is the dial. */
+const M_DECK=6;
 function imbalance(){
   let mx=0,my=0,m=0;
   for(const p of parts){ const c=partCentre(p),mm=partMass(p); mx+=c[0]*mm; my+=c[1]*mm; m+=mm; }
-  return m<=0?0:len(mx/m,my/m)/DECK_R;
+  const M=M_DECK+m;
+  return M<=0?0:len(mx,my)/M/DECK_R;
 }
 function canvasToWorld(cx,cy){ const s=camScale(),o=camOrigin(); return [(cx-o[0])/s,(cy-o[1])/s]; }
 

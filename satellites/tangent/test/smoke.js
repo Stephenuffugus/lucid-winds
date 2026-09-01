@@ -748,5 +748,43 @@ console.log("\n[20] the tutorial shows once per profile and then never again");
      String(virgin.coachBeat(null)));
 }
 
+console.log("\n[21] the dish has mass, so the first part you place is not a red light");
+{
+  // Imbalance was the centre of mass of the PARTS ALONE, so one part sat at
+  // 100% of its own centre of mass wherever it was: a single bumper near the
+  // rim read 0.93 against a tolerance of 0.35 and the button changed to "Spin
+  // up anyway" on the player's first ever experiment. Including the deck at
+  // the origin is what a real rotor does. M_DECK is the dial and it is
+  // Stephen's to turn.
+  const imb = parts => {
+    T.loadLevel(3);                                  // tol 0.26
+    for(const p of parts) T.parts.push(p);
+    return T.imbalance();
+  };
+  const tol = T.LEVELS[3].tol;
+  const rim = imb([{ type: "bumper", x: 93, y: 0 }]);
+  ok(`one bumper at the rim is within tolerance (${rim.toFixed(3)} of ${tol})`, rim < tol,
+     "imbalance=" + rim.toFixed(3));
+  // ...and it is still FELT: a rule that reads zero for a lone rim part would
+  // pass this just as well, and would be a different bug. Red against M_DECK=0
+  // (the old arithmetic, which reads 0.930) and against a rule that ignores
+  // where the part is.
+  ok("and it is still felt, not ignored", rim > 0.15 && rim < tol,
+     "imbalance=" + rim.toFixed(3));
+  ok("a hub part is barely felt at all", imb([{ type: "booster", x: 10, y: 0 }]) < 0.03,
+     imb([{ type: "booster", x: 10, y: 0 }]).toFixed(3));
+  ok("opposite pairs still cancel exactly",
+     imb([{ type: "bumper", x: 93, y: 0 }, { type: "bumper", x: -93, y: 0 }]) === 0);
+  const longRail = imb([{ type: "rail", x: 82, y: -30, x2: 82, y2: 30 }]);
+  ok(`a long rail at the rim still fails, which keeps the rule real (${longRail.toFixed(3)})`,
+     longRail > tol, "imbalance=" + longRail.toFixed(3));
+  ok("an empty deck is perfectly balanced", imb([]) === 0);
+  // the failure it exists to cause must still happen
+  T.loadLevel(0);
+  for(let k = 0; k < 4; k++) T.parts.push({ type: "rail", x: 55, y: -20 + k * 12, x2: 88, y2: -20 + k * 12 });
+  ok(`a deck loaded all down one side is still over tolerance (${T.imbalance().toFixed(3)} of ${T.LEVELS[0].tol})`,
+     T.imbalance() > T.LEVELS[0].tol, T.imbalance().toFixed(3));
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
