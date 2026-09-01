@@ -57,6 +57,20 @@ const PATIENCE = parseFloat(process.argv[5] || '100');
    that lasts forty seconds takes thirteen minutes to watch. Against rung 23 the
    stock build is taken apart in a few seconds of it. */
 const RUNG = parseInt(process.argv[6] || '0', 10);
+/* Which mode to play. Pangkah goes straight through Play; anything else is
+   picked off the Modes sheet, which needs the rungs that open it. */
+const MODE = (process.argv[7] || 'pangkah').toLowerCase();
+const MODE_ROW = { pangkah:null, pass:'Pass the phone', uri:'Uri', taya:'Taya',
+                   tujlub:'Target range', field:'The Field' };
+const MODE_NEED = { pangkah:0, pass:0, uri:5, taya:10, tujlub:15, field:24 };
+if (!(MODE in MODE_ROW)) { console.error('unknown mode: ' + MODE); process.exit(2); }
+
+/* ⛔ THE FALLBACK RUN. `--nogl` makes every WebGL context request throw before a
+   line of the page has run, which is a device with no WebGL, and then asserts
+   that the 2D game boots, plays and draws with ZERO page errors and that the
+   setting says one calm sentence about it. No picture, no difference, and never
+   an error screen. */
+const NOGL = process.argv.includes('--nogl');
 const TAG = W + 'x' + H + (DPR === 2 ? '' : '@' + DPR);
 const wait = ms => new Promise(r => setTimeout(r, ms));
 
@@ -99,6 +113,17 @@ await page.setViewport({ width: W, height: H, deviceScaleFactor: DPR, isMobile: 
 const errors = [];
 page.on('pageerror', e => errors.push('pageerror: ' + e.message));
 page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
+
+if (NOGL) {
+  /* before a line of the page runs, and it survives the reload */
+  await page.evaluateOnNewDocument(() => {
+    const real = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function (type) {
+      if (/webgl/i.test(String(type))) throw new Error('WebGL is disabled on this device');
+      return real.apply(this, arguments);
+    };
+  });
+}
 
 /* The picture reader. A second, blank page decodes the screenshot bytes and
    hands back small numbers instead of a megabyte of pixels: the share of the
@@ -168,12 +193,14 @@ const dishRect = () => page.evaluate(() => {
    tab, and a backgrounded renderer stops producing frames, so the first
    captureScreenshot after using it never returns and the run dies on a protocol
    timeout three minutes later. That looked exactly like a hung game. */
-async function dishShot(name) {
+async function dishShot(name, keep2D) {
   const clip = await dishRect();
   await page.bringToFront();
-  await page.evaluate(() => { const c = document.getElementById('cv'); if (c) c.style.visibility = 'hidden'; });
+  if (!keep2D)
+    await page.evaluate(() => { const c = document.getElementById('cv'); if (c) c.style.visibility = 'hidden'; });
   const buf = await page.screenshot({ clip, captureBeyondViewport: false });
-  await page.evaluate(() => { const c = document.getElementById('cv'); if (c) c.style.visibility = ''; });
+  if (!keep2D)
+    await page.evaluate(() => { const c = document.getElementById('cv'); if (c) c.style.visibility = ''; });
   if (name) fs.writeFileSync(path.join(OUT, name), buf);
   return buf;
 }
@@ -194,7 +221,7 @@ await wait(900);
    the state a player would reach by tapping it, reached without depending on a
    control that does not exist yet. Read, set the one field, write it back, so
    nothing else in the save is lost. */
-await page.evaluate((rung) => {
+await page.evaluate((rung, need) => {
   const k = 'ripcord.save.v1';
   let s = {};
   try { s = JSON.parse(localStorage.getItem(k) || '{}') || {}; } catch (e) { s = {}; }
@@ -202,8 +229,9 @@ await page.evaluate((rung) => {
                              s.settings || {}, { battle3d: true, sound: false });
   s.seen = Object.assign({}, s.seen || {}, { motionAsked: 1 });
   if (rung > 0) { s.rung = rung; s.facing = rung; }
+  if (need > 0) s.rung = Math.max(s.rung | 0, need);
   localStorage.setItem(k, JSON.stringify(s));
-}, RUNG);
+}, RUNG, MODE_NEED[MODE]);
 await page.reload({ waitUntil: 'load' });
 await wait(900);
 
@@ -217,7 +245,21 @@ await page.evaluate(() => { const b = document.querySelector('#howto [data-close
 await wait(600);
 
 /* ------------------------------------------------------------- A BATTLE ---- */
-await page.evaluate(() => document.getElementById('mPlay').click());
+if (MODE_ROW[MODE]) {
+  await page.evaluate(() => document.getElementById('mModes').click());
+  await wait(500);
+  const picked = await page.evaluate((label) => {
+    const b = [...document.querySelectorAll('#modesBody .rung')]
+      .find(x => x.textContent.indexOf(label) === 0 || x.textContent.trim().indexOf(label) === 0);
+    if (!b) return 'no row named ' + label;
+    if (b.classList.contains('locked')) return label + ' is still locked';
+    b.click();
+    return '';
+  }, MODE_ROW[MODE]);
+  ok(picked === '', 'the ' + MODE + ' mode opens' + (picked ? ': ' + picked : ''));
+} else {
+  await page.evaluate(() => document.getElementById('mPlay').click());
+}
 await wait(700);
 
 const cx = W / 2, cy = H / 2, R = Math.min(W, H) * 0.20;
@@ -238,6 +280,58 @@ await page.evaluate(() => document.getElementById('go').click());
 const gap = () => page.evaluate(() => (window.__gap ? window.__gap() : null));
 const fighting = await page.evaluate(() => document.getElementById('dock').classList.contains('hide'));
 ok(fighting, 'the round is running');
+
+/* ------------------------------------------------- THE FALLBACK RUN --------
+   No WebGL on this device. Nothing here asks whether the 3D worked; it asks
+   whether the GAME did. */
+if (NOGL) {
+  await shot('probe-nogl-' + TAG + '-battle.png');
+  const bad = await page.evaluate(() => ({
+    failed: !!(window.B3D && window.B3D.failed && window.B3D.failed()),
+    ready:  !!(window.B3D && window.B3D.ready && window.B3D.ready()),
+    canvas: (function () {
+      const c = document.getElementById('b3d');
+      if (!c) return 'absent';
+      const r = c.getBoundingClientRect();
+      return Math.round(r.width) + 'x' + Math.round(r.height);
+    })()
+  }));
+  ok(bad.failed && !bad.ready, 'the 3D view reports that it could not start here');
+  ok(bad.canvas === 'absent', 'and it left nothing behind on the page (#b3d is ' + bad.canvas + ')');
+
+  /* the 2D game, still playing, still drawing, with its own canvas untouched */
+  const p1 = await stat(await dishShot('probe-nogl-' + TAG + '-dish-1.png', true));
+  await wait(600);
+  const p2 = await stat(await dishShot('probe-nogl-' + TAG + '-dish-2.png', true));
+  await page.bringToFront();
+  ok(p1.dom <= 0.90, 'the 2D game is drawing the dish (' + (p1.dom * 100).toFixed(1) +
+     '% is the commonest colour, ' + p1.colours + ' distinct colours)');
+  const dd = diff(p1, p2);
+  ok(dd.changedFrac >= 0.01, 'and it is playing (' + (dd.changedFrac * 100).toFixed(1) +
+     '% of cells moved over 600ms)');
+
+  /* one calm line in the setting, and only when it is true */
+  await page.keyboard.press('Escape');
+  await wait(700);
+  await page.evaluate(() => document.getElementById('mSet').click());
+  await wait(500);
+  const note = await page.evaluate(() =>
+    (document.getElementById('b3dNote') || {}).textContent || '');
+  ok(note === '3D could not start on this device.',
+     'the setting says one line about it' + (note ? ' ("' + note + '")' : ', but it says nothing'));
+  await shot('probe-nogl-' + TAG + '-settings.png');
+
+  ok(errors.length === 0, 'and there were no page errors at all' + (errors.length ? ':' : ''));
+  errors.forEach(e => console.log('        ' + e));
+
+  if (eye) await eye.close();
+  await browser.close();
+  server.close();
+  console.log('\nshots in docs/shots-3d/');
+  console.log(fails.length ? '\n' + fails.length + ' CHECK' + (fails.length > 1 ? 'S' : '') + ' FAILED'
+                           : '\nBATTLE3D FALLBACK OK');
+  process.exit(fails.length ? 1 : 0);
+}
 
 /* The view loads its meshes on first use, so give it a bounded chance to finish
    before anything is timed against it. This is a WAIT, not a guarantee: if it
@@ -303,6 +397,38 @@ if (canvas.there)
 const bufA = await dishShot('probe-' + TAG + '-dish-1.png');
 await wait(600);
 const bufB = await dishShot('probe-' + TAG + '-dish-2.png');
+/* ---------------------------------------------- THE INFORMATION LAYER ------
+   The tells and the armed marker are anchored through B3D.project when the 3D
+   owns the dish. Two ways of showing it, because a picture alone would not tell
+   you WHICH camera answered:
+
+   the geometry - a tilted camera foreshortens the dish along the view's vertical
+   and not across its width, so the same two radii must project to a shorter span
+   up the screen than across it. A flat camera answers with a circle and the two
+   spans are equal, so this fails if the wrong camera is being asked;
+
+   and the picture - a real tell, fired through the game's own hook, photographed
+   where it lands. */
+const proj = await page.evaluate(() => {
+  if (!window.B3D || !B3D.project) return null;
+  const r = 0.10;
+  const e = B3D.project(r, 0), w = B3D.project(-r, 0);
+  const n = B3D.project(0, r), f = B3D.project(0, -r), c = B3D.project(0, 0);
+  if (!e || !w || !n || !f || !c) return null;
+  return { across: Math.abs(e.x - w.x), along: Math.abs(n.y - f.y),
+           cx: c.x, cy: c.y, vw: innerWidth, vh: innerHeight };
+});
+ok(proj && proj.along > 4 && proj.along < proj.across * 0.85,
+   'B3D.project answers with the tilted camera, not the flat one' +
+   (proj ? ' (' + Math.round(proj.across) + 'px across the dish, ' +
+           Math.round(proj.along) + 'px up it)' : ' (it answered nothing)'));
+ok(proj && Math.abs(proj.cx - proj.vw / 2) < 2 && Math.abs(proj.cy - proj.vh / 2) < 40,
+   'and the middle of the dish lands in the middle of the screen');
+
+await page.evaluate(() => { if (window.__tellProbe) window.__tellProbe('lunge'); });
+await wait(120);
+await shot('probe-' + TAG + '-tell.png');
+
 const a = await stat(bufA), b = await stat(bufB);
 /* ⛔ AND BACK TO THE FRONT. Reading the pictures happens on a second tab, and a
    backgrounded page has its animation frames throttled to a crawl: the finish

@@ -3167,12 +3167,27 @@ function trigGlyph(id){
   }
   return (im&&im.complete&&im.naturalWidth)?im:null;
 }
+/* WHERE A PLACE ON THE DISH IS, IN SCREEN PIXELS.
+   The flat camera answers this with CX, CY and the scale. When the 3D view owns
+   the dish, the 3D camera has to answer it instead, or a tell and the armed
+   marker sit where the flat camera WOULD have put the top rather than where the
+   top is - which, on a tilted world, is a different place. Same fallback law as
+   everything else: if the 3D cannot answer, the flat answer stands. */
+function dishPt(x,z){
+  if(b3dOn&&window.B3D){
+    var p=B3D.project(x,z);
+    if(p)return p;
+  }
+  var s=scale();
+  return {x:CX()+x*s,y:CY()+z*s};
+}
 function drawArmed(){
   if(phase!=='play'||!A||!A.alive||A.abilityUsed!==0||A.charge<1)return;
   var im=trigGlyph(A.trigger);
   if(!im)return;
   var s=scale(),rr=Math.max(6,A.spec.R*s);
-  var x=CX()+A.x*s+rr*1.35, y=CY()+A.z*s-rr*1.35;
+  var ap=dishPt(A.x,A.z);
+  var x=ap.x+rr*1.35, y=ap.y-rr*1.35;
   ctx.globalAlpha=save.settings.reduceMotion?0.66:0.5+0.22*Math.sin(A.t*5);
   ctx.drawImage(im,x-13,y-13,26,26);
   ctx.globalAlpha=1;
@@ -3185,7 +3200,8 @@ function drawTells(){
     var t=tells[i],img=tellImg(t.id);
     if(!img)continue;
     var o=t.top,rr=Math.max(6,o.spec.R*s);
-    var x=CX()+o.x*s,y=CY()+o.z*s-rr*1.6;   // riding just above the disc
+    var tp=dishPt(o.x,o.z);
+    var x=tp.x,y=tp.y-rr*1.6;                // riding just above the disc
     var k=1-t.life/t.dur;
     // in fast, hold, out slow: readable inside four tenths of a second
     var al=Math.min(1,k*10)*(k<0.55?1:1-(k-0.55)/0.45);

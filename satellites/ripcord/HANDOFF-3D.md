@@ -614,6 +614,113 @@ reader is a second tab and a backgrounded renderer stops producing frames, and
 then the same tab problem again in a worse disguise, where the finish watch spent
 eight minutes reporting "still fighting" about a page whose animation frames were
 being throttled because it was in the background.
-- [ ] Phase 3: information survives, fallback proven. Evidence:
+- [x] Phase 3: information survives, fallback proven. Evidence:
+
+```
+$ node test/battle3d.mjs 375 667 2 500 23
+battle3d gate, viewport 375x667, device pixel ratio 2, rung 24
+  ok    the 3D battle setting survives a reload in the save file
+  ok    the wind graded, so there is a launch to make
+  ok    the round is running
+  ok    the 3D view reports itself ready
+  ok    the simulation is stepping, so the drop beat is over and this is a fight
+  ok    (a) a #b3d canvas exists with a size (375x667 css, 750x1334 backing)
+  ok         and it sits BEFORE #cv, so the 2D layer draws over it
+  ok    B3D.project answers with the tilted camera, not the flat one (222px across the dish, 136px up it)
+  ok    and the middle of the dish lands in the middle of the screen
+  ok    (b) the dish is not one flat colour (41.2% is the commonest colour, 804 distinct colours in 660x660)
+  ok    (c) the dish changes over 600ms (5.5% of cells moved, mean difference 1.30/255)
+  ok    (d) no page errors
+BATTLE3D OK
+
+$ node test/battle3d.mjs 375 667 2 200 5 uri
+  ok    the uri mode opens
+  ...same twelve, all ok...
+BATTLE3D OK
+
+$ node tools/check.js
+bundle pass 0s  balance pass 15s  determinism pass 1s  rigs pass 11s
+modes pass 7s   parts pass 221s   ladder pass 22s      bosses pass 6s
+playthrough pass 153s
+
+ALL GATES PASSED
+```
+
+**222 pixels across the dish, 136 up it.** 136/222 = 0.613, and sin(38 degrees)
+= 0.6157. That ratio IS the camera: a flat camera answers with a circle and the
+two spans come back equal, so this check fails if the wrong one is being asked.
+It is the falsifiable half of "the tells are anchored"; the other half is the
+picture.
+
+**THE FALLBACK, PROVEN:**
+
+```
+$ node test/battle3d.mjs 375 667 2 100 0 pangkah --nogl
+  ok    the 3D battle setting survives a reload in the save file
+  ok    the wind graded, so there is a launch to make
+  ok    the round is running
+  ok    the 3D view reports that it could not start here
+  ok    and it left nothing behind on the page (#b3d is absent)
+  ok    the 2D game is drawing the dish (7.3% is the commonest colour, 1466 distinct colours)
+  ok    and it is playing (57.7% of cells moved over 600ms)
+  ok    the setting says one line about it ("3D could not start on this device.")
+  ok    and there were no page errors at all
+
+BATTLE3D FALLBACK OK
+```
+
+`--nogl` makes every WebGL context request throw before a line of the page has
+run. The game boots, winds, launches and plays; the dish is drawn by the 2D
+renderer and moving; the page is silent. Two things had to change to earn that
+last line, and the first run failed on it:
+
+- **`console: THREE.WebGLRenderer: WebGL is disabled on this device`.** three's
+  renderer WRITES to the console and then throws. A red line in a player's
+  console is a difference. There is now a cached `hasWebGL()` that asks once,
+  hands the throwaway context straight back, and refuses before three is ever
+  constructed.
+- **A stray canvas.** `#b3d` was being inserted into the page and only then
+  handed to a renderer that threw, so a failed 3D view left an element behind in
+  a game that is meant to be exactly the game it was. The context is built first
+  now and the canvas goes into the DOM only when there is something to draw into
+  it. `#b3d is absent` is that check.
+
+WHAT I LOOKED AT:
+
+- **`probe-375x667-tell.png`** - two ability tells firing at once, one on each
+  top, and both land ON their top. That is `B3D.project` doing the anchoring; the
+  flat camera would have put them 40 to 90 pixels away, up and out.
+- **`probe-375x667-uri-bars.png`** - uri, so the Posts stadium, the round clock
+  reading `29.8s` above the dish and BOTH spin bars, gold and steel, below it,
+  all drawn on `#cv` over the 3D world. Together with Phase 2's finish shot
+  (`YOU BURST +2` and the painted burst symbol over a 3D dish) that is banner,
+  symbol, clock and bars all confirmed by picture rather than by assumption.
+- **`probe-nogl-375x667-settings.png`** - the settings row on a device with no
+  WebGL: "3D battle (beta)", its description, and one further line, "3D could not
+  start on this device." The toggle stays ON, because the player asked for it and
+  turning it off for them would hide what happened.
+
+Three things wrong, from those images:
+
+1. **THE TELLS ARE THE WRONG SIZE FOR THIS VIEW.** They are drawn at
+   `min(96, rr*2.9)` where `rr` is the FLAT camera's radius for the top, and at
+   a tilted camera the top is visually smaller and further away, so a tell now
+   swamps the top that fired it: in the picture the fiery one is about three
+   times the width of its own disc and covers the thing it is describing. The
+   anchor is right and the SIZE is not; it wants the projected radius, which is
+   two more `B3D.project` calls, and the document asked for the anchor.
+2. **IN URI THE TOPS STAND BESIDE THEIR POSTS, NOT ON THEM.** The Posts stadium
+   has two raised posts and uri is the mode where each top goes up alone on one;
+   the simulation spawns them at plus and minus 0.42 of the dish on the x axis
+   and the mesh's posts are not at those two places, so both tops stand next to
+   their peg. My floor sampler takes the LOWEST hit per radius on purpose, so
+   that a post never lifts a top that merely passes its radius, which is right
+   everywhere except here, where it is exactly wrong.
+3. **THE SPIN BARS SIT ON THE RAIL.** They are placed at `CY() + RAD()*0.72` in
+   screen space, which is just under the dish in 2D and half way up the near rim
+   of the tilted one, so the gold bar reads against a chrome highlight.
+
+And the rail is still a chrome mirror, which is now three phases old and named in
+each of them.
 - [ ] Phase 4: hostile eye done, ALL GATES PASSED, pushed. Evidence:
 - Three things I would fix next (honest, from the images):

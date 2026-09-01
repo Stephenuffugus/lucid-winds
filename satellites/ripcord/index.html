@@ -4449,22 +4449,33 @@ function dress(root){
   return root;
 }
 
+/* ⛔ ASK BEFORE BUILDING. three's renderer writes `THREE.WebGLRenderer: <the
+   error>` to the console and THEN throws, and a red line in a player's console is
+   a difference. The law here is that a device without WebGL gets the 2D game and
+   no evidence that anything was ever attempted. Asked once, cached, only on a
+   device where the setting is on, and the throwaway context is handed straight
+   back. */
+var _hasGL = null;
+function hasWebGL(){
+  if (_hasGL !== null) return _hasGL;
+  try {
+    var c = document.createElement('canvas');
+    var g = c.getContext('webgl2') || c.getContext('webgl');
+    _hasGL = !!g;
+    if (g){ var ext = g.getExtension('WEBGL_lose_context'); if (ext) ext.loseContext(); }
+  } catch (e) { _hasGL = false; }
+  return _hasGL;
+}
+
 /* ── the renderer, made once ─────────────────────────────────────────────── */
 function makeRenderer(){
   if (S.renderer) return;
+  if (!hasWebGL()) throw new Error('no WebGL on this device');
   var T = S.lib.T;
-  var cv = document.getElementById('cv');
-  var host = (cv && cv.parentNode) || document.body;
   var c = document.createElement('canvas');
   c.id = 'b3d';
   c.setAttribute('aria-hidden','true');
   c.style.display = 'none';
-  /* BEFORE #cv. The 2D canvas clears to transparent every frame and, while this
-     view is on, draws no arena and no tops, so it becomes the HUD layer sitting
-     over the 3D one. The stylesheet's `#field canvas` rule already gives this
-     one the same absolute, full bleed box. */
-  host.insertBefore(c, cv);
-  S.canvas = c;
 
   /* alpha true, and no scene background: outside the stadium the page's own
      packed earth shows through, the way the painted dish's vignette does. */
@@ -4473,8 +4484,21 @@ function makeRenderer(){
      fragment work for a difference nobody can see at that density. It stays on
      for the one density that needs it. */
   var dpr = Math.min(2, window.devicePixelRatio || 1);
+  /* ⛔ THE CONTEXT BEFORE THE DOM. On a device with no WebGL this line throws,
+     and if the canvas had already been put in the page a failed view would leave
+     an element behind in a game that is supposed to be exactly the game it was.
+     It goes in only once there is something to draw into it. */
   var r = new T.WebGLRenderer({ canvas:c, antialias:dpr < 1.5, alpha:true });
   r.setPixelRatio(dpr);
+
+  var cv = document.getElementById('cv');
+  var host = (cv && cv.parentNode) || document.body;
+  /* BEFORE #cv. The 2D canvas clears to transparent every frame and, while this
+     view is on, draws no arena and no tops, so it becomes the HUD layer sitting
+     over the 3D one. The stylesheet's `#field canvas` rule already gives this
+     one the same absolute, full bleed box. */
+  host.insertBefore(c, cv);
+  S.canvas = c;
   /* EXPOSURE, and it is the whole difference between a stadium and a bathtub.
      This game is packed earth and chalk on a #160F0C page; a physically based
      scene lit by a bright generated room and rendered with no tone curve blows
@@ -7325,12 +7349,27 @@ function trigGlyph(id){
   }
   return (im&&im.complete&&im.naturalWidth)?im:null;
 }
+/* WHERE A PLACE ON THE DISH IS, IN SCREEN PIXELS.
+   The flat camera answers this with CX, CY and the scale. When the 3D view owns
+   the dish, the 3D camera has to answer it instead, or a tell and the armed
+   marker sit where the flat camera WOULD have put the top rather than where the
+   top is - which, on a tilted world, is a different place. Same fallback law as
+   everything else: if the 3D cannot answer, the flat answer stands. */
+function dishPt(x,z){
+  if(b3dOn&&window.B3D){
+    var p=B3D.project(x,z);
+    if(p)return p;
+  }
+  var s=scale();
+  return {x:CX()+x*s,y:CY()+z*s};
+}
 function drawArmed(){
   if(phase!=='play'||!A||!A.alive||A.abilityUsed!==0||A.charge<1)return;
   var im=trigGlyph(A.trigger);
   if(!im)return;
   var s=scale(),rr=Math.max(6,A.spec.R*s);
-  var x=CX()+A.x*s+rr*1.35, y=CY()+A.z*s-rr*1.35;
+  var ap=dishPt(A.x,A.z);
+  var x=ap.x+rr*1.35, y=ap.y-rr*1.35;
   ctx.globalAlpha=save.settings.reduceMotion?0.66:0.5+0.22*Math.sin(A.t*5);
   ctx.drawImage(im,x-13,y-13,26,26);
   ctx.globalAlpha=1;
@@ -7343,7 +7382,8 @@ function drawTells(){
     var t=tells[i],img=tellImg(t.id);
     if(!img)continue;
     var o=t.top,rr=Math.max(6,o.spec.R*s);
-    var x=CX()+o.x*s,y=CY()+o.z*s-rr*1.6;   // riding just above the disc
+    var tp=dishPt(o.x,o.z);
+    var x=tp.x,y=tp.y-rr*1.6;                // riding just above the disc
     var k=1-t.life/t.dur;
     // in fast, hold, out slow: readable inside four tenths of a second
     var al=Math.min(1,k*10)*(k<0.55?1:1-(k-0.55)/0.45);

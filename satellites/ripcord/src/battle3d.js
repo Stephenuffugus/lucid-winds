@@ -119,22 +119,33 @@ function dress(root){
   return root;
 }
 
+/* ⛔ ASK BEFORE BUILDING. three's renderer writes `THREE.WebGLRenderer: <the
+   error>` to the console and THEN throws, and a red line in a player's console is
+   a difference. The law here is that a device without WebGL gets the 2D game and
+   no evidence that anything was ever attempted. Asked once, cached, only on a
+   device where the setting is on, and the throwaway context is handed straight
+   back. */
+var _hasGL = null;
+function hasWebGL(){
+  if (_hasGL !== null) return _hasGL;
+  try {
+    var c = document.createElement('canvas');
+    var g = c.getContext('webgl2') || c.getContext('webgl');
+    _hasGL = !!g;
+    if (g){ var ext = g.getExtension('WEBGL_lose_context'); if (ext) ext.loseContext(); }
+  } catch (e) { _hasGL = false; }
+  return _hasGL;
+}
+
 /* ── the renderer, made once ─────────────────────────────────────────────── */
 function makeRenderer(){
   if (S.renderer) return;
+  if (!hasWebGL()) throw new Error('no WebGL on this device');
   var T = S.lib.T;
-  var cv = document.getElementById('cv');
-  var host = (cv && cv.parentNode) || document.body;
   var c = document.createElement('canvas');
   c.id = 'b3d';
   c.setAttribute('aria-hidden','true');
   c.style.display = 'none';
-  /* BEFORE #cv. The 2D canvas clears to transparent every frame and, while this
-     view is on, draws no arena and no tops, so it becomes the HUD layer sitting
-     over the 3D one. The stylesheet's `#field canvas` rule already gives this
-     one the same absolute, full bleed box. */
-  host.insertBefore(c, cv);
-  S.canvas = c;
 
   /* alpha true, and no scene background: outside the stadium the page's own
      packed earth shows through, the way the painted dish's vignette does. */
@@ -143,8 +154,21 @@ function makeRenderer(){
      fragment work for a difference nobody can see at that density. It stays on
      for the one density that needs it. */
   var dpr = Math.min(2, window.devicePixelRatio || 1);
+  /* ⛔ THE CONTEXT BEFORE THE DOM. On a device with no WebGL this line throws,
+     and if the canvas had already been put in the page a failed view would leave
+     an element behind in a game that is supposed to be exactly the game it was.
+     It goes in only once there is something to draw into it. */
   var r = new T.WebGLRenderer({ canvas:c, antialias:dpr < 1.5, alpha:true });
   r.setPixelRatio(dpr);
+
+  var cv = document.getElementById('cv');
+  var host = (cv && cv.parentNode) || document.body;
+  /* BEFORE #cv. The 2D canvas clears to transparent every frame and, while this
+     view is on, draws no arena and no tops, so it becomes the HUD layer sitting
+     over the 3D one. The stylesheet's `#field canvas` rule already gives this
+     one the same absolute, full bleed box. */
+  host.insertBefore(c, cv);
+  S.canvas = c;
   /* EXPOSURE, and it is the whole difference between a stadium and a bathtub.
      This game is packed earth and chalk on a #160F0C page; a physically based
      scene lit by a bright generated room and rendered with no tone curve blows
