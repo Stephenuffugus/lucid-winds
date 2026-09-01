@@ -1630,6 +1630,35 @@ function drawPrediction(){
   const e=pr.path[pr.path.length-1];
   ctx.beginPath(); ctx.arc(e[0],e[1],good?6:4,0,7);
   ctx.strokeStyle=line; ctx.lineWidth=1.8; ctx.stroke();
+  if(pr.outcome==="invert") drawEntryBearing(e);
+}
+/* The far side is not predicted, and it must not be (D2): the line stops at
+   the hole and what happens through it is the mystery. But D8 fixes one thing
+   about it exactly — the ball comes back out ON the horizon ring, at the
+   bearing it went in, heading straight outward (finishInversion). Drawing that
+   point turns an unpredictable outcome into a bearing you can aim, without
+   predicting a single step of the far side. */
+function entryBearing(e){
+  let h=null,bd=Infinity;
+  for(const b of live()){ if(!b.hole) continue;
+    const d=len(b.x-e[0],b.y-e[1]); if(d<bd){bd=d;h=b;} }
+  if(!h) return null;
+  const R=h.R||h.r*3.2;
+  const a=Math.atan2(e[1]-h.y,e[0]-h.x);
+  return {hole:h, R:R, a:a, x:h.x+Math.cos(a)*R, y:h.y+Math.sin(a)*R};
+}
+function drawEntryBearing(e){
+  const E=entryBearing(e); if(!E) return;
+  const a=E.a, mx=E.x, my=E.y;
+  // screen-space floor, or the mark vanishes once the camera pulls out
+  const sc=Math.max(1e-3,camScale()), rad=Math.max(4,5/sc), tick=Math.max(10,14/sc);
+  ctx.save();
+  ctx.strokeStyle="#B48CFF"; ctx.lineWidth=Math.max(1.2,2/sc);
+  ctx.beginPath(); ctx.arc(mx,my,rad,0,7); ctx.stroke();
+  ctx.globalAlpha=0.45;
+  ctx.beginPath(); ctx.moveTo(mx+Math.cos(a)*rad,my+Math.sin(a)*rad);
+  ctx.lineTo(mx+Math.cos(a)*(rad+tick),my+Math.sin(a)*(rad+tick)); ctx.stroke();
+  ctx.restore();
 }
 function drawFlight(){
   if(flightTrail.length<2) return;
@@ -1748,7 +1777,7 @@ function drawChevrons(){
     const px=o[0]+sh[0]*s, py=o[1]+sh[1]*s;
     if(inView(px,py,b.r*sh[2]*s)) continue;              // already on screen
     marks.push({px,py,label:b.n,dist:len(b.x-from[0],b.y-from[1]),
-                col:chevronColour(b),faint:!active(b),edge:null});
+                col:chevronColour(b),faint:!active(b),edge:null,yields:false});
   }
   if(phase==="spin"){
     const pr=cachedPredict();
@@ -1761,11 +1790,26 @@ function drawChevrons(){
         if(!inView(px,py,0)){ edge=[px,py]; break; }
       }
       const e=pr.path[pr.path.length-1];
-      const px=o[0]+e[0]*s, py=o[1]+e[1]*s;
+      const v=verdict(pr);
+      /* On a shot that falls in, the edge carries the useful half. The panel
+         already says "falls in", so repeating it here spends the one marker
+         the player gets on something they have been told; the bearing the ball
+         RE-EMERGES at is the thing they can aim and cannot otherwise see,
+         because while you are aiming the camera is on the deck and the horizon
+         ring is off the top of the frame. */
+      const E = v.key==="invert" ? entryBearing(e) : null;
+      const wx = E ? E.x : e[0], wy = E ? E.y : e[1];
+      const px=o[0]+wx*s, py=o[1]+wy*s;
       if(!inView(px,py,0)){
-        const v=verdict(pr);
-        marks.push({px,py,dist:null,faint:false,edge,
-          label: v.key==="miss"||v.key==="none" ? "shot" : v.text,
+        /* `yields` is why this marker exists at all. The ordinary shot marker
+           steps aside when its label collides, because the panel already says
+           "falls in" in words. The entry bearing is not in the panel and is
+           not anywhere else, so it must not yield: on Inside out the Maw and
+           Lior markers take the same edge and the shot marker was dropped on
+           EVERY frame, which is how a mark can be drawn correctly and still
+           never once be seen. */
+        marks.push({px,py,dist:null,faint:false,edge:E?null:edge,yields:!E,
+          label: E ? "comes back out" : (v.key==="miss"||v.key==="none" ? "shot" : v.text),
           col:   v.key==="miss"||v.key==="none" ? "rgba(121,208,230,.75)" : v.col});
       }
     }
@@ -1812,7 +1856,7 @@ function drawChevrons(){
     const hits=(r)=>placed.some(p=>!(r[0]+r[2]<p[0]||p[0]+p[2]<r[0]||r[1]+r[3]<p[1]||p[1]+p[3]<r[1]));
     let box=boxOf(lx,ly), tries=0;
     while(hits(box) && tries<3){
-      if(mk.dist==null){ box=null; break; }        // the shot marker gives way
+      if(mk.yields){ box=null; break; }            // the plain shot marker gives way
       ey+=18; ly+=18; box=boxOf(lx,ly); tries++;
     }
     if(!box || hits(box)) continue;

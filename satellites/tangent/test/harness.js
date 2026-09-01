@@ -112,6 +112,7 @@ function load(seed){
       buildGhost: (typeof buildGhost === "function" ? buildGhost : null),
       cachedPredict: (typeof cachedPredict === "function" ? cachedPredict : null),
       verdict:       (typeof verdict       === "function" ? verdict       : null),
+      entryBearing:  (typeof entryBearing  === "function" ? entryBearing  : null),
       // save + coaching surface (T2)
       readSave:        (typeof readSave        === "function" ? readSave        : null),
       writeSave:       (typeof writeSave       === "function" ? writeSave       : null),

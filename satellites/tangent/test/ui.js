@@ -274,6 +274,116 @@ const ok = (n, c, extra) => c ? (pass++, console.log("  ok   " + n))
        `osc ${beforeNear} -> ${await page.evaluate(() => window.__osc)}`);
     await page.close();
   }
+  console.log("\n[entry bearing]");
+  {
+    // The far side is never predicted (D2) and must not be. D8 fixes the one
+    // thing that IS knowable about it: the ball comes back out on the horizon
+    // ring, at the bearing it went in, heading outward. That point is marked on
+    // the ring, and because the aiming camera is on the deck it is also what
+    // the edge marker anchors to.
+    //
+    // This reads what the frame actually paints, and it is here because the
+    // first version of the marker was correct and invisible: the shot marker
+    // is coded to step aside when its label collides with another, and on
+    // Inside out the Maw and Lior markers take the same edge, so it was
+    // dropped on every single frame.
+    const page = await browser.newPage();
+    await page.setViewport({ width: 390, height: 780, isMobile: true, hasTouch: true });
+    await page.goto(URL, { waitUntil: "load" });
+    await new Promise(r => setTimeout(r, 700));
+    const r = await page.evaluate(() => new Promise(res => {
+      loadLevel(5); startSpin(); holding = true;
+      let n = 0, base = performance.now();
+      const w = () => {
+        n++; frame(base + n * 16);
+        const pr = cachedPredict();
+        if(pr && pr.outcome === "invert" && n > 60){
+          const el = document.getElementById("cv"), c = el.getContext("2d");
+          // capture what is written on the frame, and how much of it is lit
+          const seen = [];
+          const realFT = c.fillText.bind(c);
+          c.fillText = function(t, x, y){ seen.push([String(t), Math.round(x), Math.round(y)]); return realFT(t, x, y); };
+          const lit = (x, y) => {                       // bright pixels in a box
+            const R = 20, X = Math.round(x) - R, Y = Math.round(y) - R;
+            if(X < 0 || Y < 0 || X + 2 * R > el.width || Y + 2 * R > el.height) return -1;
+            const d = c.getImageData(X, Y, 2 * R, 2 * R).data;
+            let k = 0;
+            for(let i = 0; i < d.length; i += 4)
+              if(d[i + 2] > 200 && d[i] > 120 && d[i + 2] > d[i] && d[i] > d[i + 1]) k++;
+            return k;
+          };
+          const real = entryBearing;
+          draw();
+          const onLabels = seen.splice(0);
+          const mark = onLabels.filter(l => l[0] === "comes back out")[0] || null;
+          const onLit = mark ? lit(mark[1], mark[2]) : -1;
+          entryBearing = () => null;                    // the bearing switched off
+          draw();
+          const offLabels = seen.splice(0);
+          const offLit = mark ? lit(mark[1], mark[2]) : -1;
+          entryBearing = real;
+          c.fillText = realFT;
+          const E = real(pr.path[pr.path.length - 1]);
+          const sc = camScale(), o = camOrigin();
+          return res({ found: true, mark: mark, onLit: onLit, offLit: offLit,
+                       offHas: offLabels.some(l => l[0] === "comes back out"),
+                       onLabels: onLabels.map(l => l[0]),
+                       ring: [Math.round(o[0] + E.x * sc), Math.round(o[1] + E.y * sc)],
+                       W: innerWidth, H: innerHeight });
+        }
+        if(n > 900) return res({ found: false, n: n });
+        requestAnimationFrame(w);
+      };
+      requestAnimationFrame(w);
+    }));
+    ok("holding on Inside out reaches a shot the readout calls a fall", r.found,
+       JSON.stringify(r));
+    if(r.found){
+      ok("the frame tells the player where the ball comes back out",
+         !!r.mark, "labels drawn: " + JSON.stringify(r.onLabels));
+      ok("switching the bearing off takes that marker away, so it is really the thing being drawn",
+         !!r.mark && r.offHas === false);
+      ok(`the marker is painted, not merely requested (${r.onLit} lit, ${r.offLit} without it)`,
+         r.onLit > 10 && r.onLit > r.offLit, `on=${r.onLit} off=${r.offLit}`);
+      ok("the horizon point itself is off the aiming frame, which is why the edge has to carry it",
+         r.ring[1] < 0 || r.ring[1] > r.H || r.ring[0] < 0 || r.ring[0] > r.W,
+         `${r.ring[0]},${r.ring[1]} in ${r.W}x${r.H}`);
+    }
+    // The edge marker only fires while the point is OFF the frame; the mark on
+    // the ring itself covers the other half, and on the shipped systems the
+    // aiming camera never has a horizon in shot, so it would otherwise be
+    // painted and never seen. Pull the camera out by hand and look at it.
+    {
+      const wide = await page.evaluate(() => {
+        const el = document.getElementById("cv"), c = el.getContext("2d");
+        const lit = (x, y) => {
+          const R = 14, X = Math.round(x) - R, Y = Math.round(y) - R;
+          if(X < 0 || Y < 0 || X + 2 * R > el.width || Y + 2 * R > el.height) return -1;
+          const d = c.getImageData(X, Y, 2 * R, 2 * R).data;
+          let k = 0;
+          for(let i = 0; i < d.length; i += 4)
+            if(d[i + 2] > 200 && d[i] > 120 && d[i + 2] > d[i] && d[i] > d[i + 1]) k++;
+          return k;
+        };
+        camS = 0.5; camC = [0, -280]; camReady = true;      // frame the hole
+        const pr = cachedPredict();
+        const E = entryBearing(pr.path[pr.path.length - 1]);
+        const sc = camScale(), o = camOrigin();
+        const x = o[0] + E.x * sc, y = o[1] + E.y * sc;
+        const real = entryBearing;
+        draw(); const on = lit(x, y);
+        entryBearing = () => null;
+        draw(); const off = lit(x, y);
+        entryBearing = real;
+        return { x: Math.round(x), y: Math.round(y), on: on, off: off, W: innerWidth, H: innerHeight };
+      });
+      ok("with the horizon in shot the mark is on the ring itself",
+         wide.on > 6 && wide.on > wide.off + 4,
+         `at ${wide.x},${wide.y} lit ${wide.on} with, ${wide.off} without`);
+    }
+    await page.close();
+  }
+
   await browser.close();
   server.close();
   console.log(`\n${pass} passed, ${fail} failed  (touch floor ${MIN}px)`);

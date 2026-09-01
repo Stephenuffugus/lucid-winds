@@ -786,5 +786,46 @@ console.log("\n[21] the dish has mass, so the first part you place is not a red 
      T.imbalance() > T.LEVELS[0].tol, T.imbalance().toFixed(3));
 }
 
+console.log("\n[22] the far side is unpredicted, but the door is not");
+{
+  // D2 says the drawn line stops at the hole and the far side stays a mystery,
+  // and that is kept. D8 fixes one thing about it exactly: the ball comes back
+  // out ON the horizon ring, at the bearing it went in, heading straight
+  // outward. Drawing that point costs no prediction and turns "falls in" from
+  // a shrug into a bearing you can aim. This asserts the mark is where the ball
+  // really comes out, using the game's own entryBearing rather than a copy of
+  // its arithmetic in the test.
+  if(!T.entryBearing){ ok("the game exposes the entry bearing", false, "entryBearing not defined"); }
+  else {
+    let n = 0, close = 0, outward = 0, worst = 0, seen = null;
+    for(let t = 0.2; t <= 12.0001; t += 0.1){
+      T.loadLevel(5); T.startSpin(); T.holding = true;
+      for(let k = 0; k < t * 120 && T.phase === "spin"; k++) T.step();
+      if(T.phase !== "spin") break;
+      const pr = T.cachedPredict();
+      if(!pr || pr.outcome !== "invert") continue;
+      const E = T.entryBearing(pr.path[pr.path.length - 1]);
+      if(!E) continue;
+      T.doRelease("d8");
+      const before = T.inversions;
+      let g = 0;
+      while((T.phase === "flight" || T.phase === "invert") && g++ < 40000){
+        T.step(); if(T.inversions > before) break;
+      }
+      if(T.inversions === before) continue;      // predicted a fall that did not happen
+      n++;
+      const d = Math.hypot(T.ball.x - E.x, T.ball.y - E.y);
+      worst = Math.max(worst, d);
+      if(d < 3) close++; else if(!seen) seen = `t=${t.toFixed(1)}s gap ${d.toFixed(1)}u`;
+      if(T.ball.vx * Math.cos(E.a) + T.ball.vy * Math.sin(E.a) > 0) outward++;
+    }
+    ok(`the readout says "falls in" on shots that do (${n} of them)`, n >= 20, "n=" + n);
+    ok(`the mark is where the ball comes back out (worst ${worst.toFixed(2)} units, ${close}/${n})`,
+       n > 0 && close === n, seen);
+    ok(`and it comes out heading outward, which is what makes it aimable (${outward}/${n})`,
+       n > 0 && outward === n);
+  }
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
