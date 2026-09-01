@@ -159,6 +159,12 @@ Settings sheet (audio, haptics, reduced motion, reset saves). `manifest.json` + 
 
 - [ ] T5 remaining: elements shipped: ______ · predictor honesty: ___%
   - **Suggested first: the counter rotating inner ring.** The phone doc calls it the strongest candidate, and it connects directly to the gates finding above: parts currently cannot open new territory on the deck, and a ring that reverses the ball's angular drift is the one proposed part that plausibly could. If it does, gates become a viable way to make the build layer bind after all. It is deck physics, so it goes in `advanceDeck` where the predictor already shares it (D2). Worth measuring with `/tmp` style reach probes before committing to it, the way the gate move was.
+- [x] **Playthrough pass (2026-09-01).** A full scripted play of systems 1 to 3 at 390x780, screenshotting every transition, found two things no unit check would have.
+  - **No coaching beat was ever retired.** They only retired after 2.6 s on screen, so a player who acts quickly saw the same chips on every run, while a slow one retired them without ever acting. A beat is now done when the player has DONE the thing: held the throttle, crossed the gate, let go. The playthrough went from `tutor: []` to `tutor: [hold, letgo, gate]`.
+  - **The build phase asked you to route a ball you could not see.** Neither the start position nor the path were drawn. There is now a ghost of the track on the deck, running the real deck integrator on a scratch state so it reads placed parts and redraws as you place them. Measured: a bumper on the track moves 156 of 240 points. Given that parts cannot open new territory, this is the one view where a part visibly does something. Check [15], mutation proven.
+
+- [ ] **⚖️ FOR STEPHEN, a small one found by playing: the first part you place always fails balance.** Imbalance is the centre of mass over `DECK_R`, so a single bumper near the rim reads 0.93 against a tolerance of 0.35 and the button changes to "Spin up anyway" immediately. Correct physics, and it may be the intent (think in balanced sets), but it means a new player's first experiment always shows red. Worth a verdict when you play it.
+
 - [ ] T6: final counts: ___ · recording: ______
 
 ## 5. DECISION RIGHTS
@@ -194,7 +200,7 @@ Half done, nothing. Known and deliberately deferred: the 320px build deck is sma
 
 **Next action: T4, but read the gates finding first, because it changes what T4 is.** T3 is complete (the ball stretches along its travel and squashes against the wall; deck, inversion and far side done).
 
-**Superseded note:** (D2 and four other audit bugs were repaired out of phase order; see their ledger entries.) Final state: **smoke 72, ui 53, parts 8, sweep byte identical to the day's baseline through every commit**, working tree clean, nothing half finished. Suites are now `smoke` (sim), `sweep` (solvability, must stay byte identical unless a change is meant to move physics), `ui` (real browser), `parts` (does the build layer bind), `solve` (is a system solvable at all) and `perf` (frame budget, reporting only). The remaining T3 work is the ball and the far side, both listed in the ledger entry. Two things to carry in:
+**Superseded note:** (D2 and four other audit bugs were repaired out of phase order; see their ledger entries.) Final state: **smoke 76, ui 53, parts 8, sweep byte identical to the day's baseline through every commit**, working tree clean, nothing half finished. Suites are now `smoke` (sim), `sweep` (solvability, must stay byte identical unless a change is meant to move physics), `ui` (real browser), `parts` (does the build layer bind), `solve` (is a system solvable at all) and `perf` (frame budget, reporting only). The remaining T3 work is the ball and the far side, both listed in the ledger entry. Two things to carry in:
 1. **Re-measure the frame budget on a quiet box before touching rendering again.** The numbers here were taken while another agent drove browsers on the same two cores, and A/B profiling came out backwards.
 2. **T4 will break the T2 acceptance test on purpose.** It requires a bot following only the tutorial to reach system 3, and T4 moves gates off the natural sweep so parts become mandatory. When it goes red, that is the test doing its job: the tutorial then has to teach placing a part, and a fourth beat is the likely answer.
 
