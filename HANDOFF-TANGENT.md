@@ -287,3 +287,86 @@ Default: put the gate back at r70 a-1.15, drop `needsParts`. Reasons: (1) with t
 Shape it around the inversion, with the deck as the instrument that sets the entry bearing. The prior art says deck AND inversion are the moat; this session showed the deck cannot be made mandatory by gate geometry without inventing physics, while the far side has three built and untouched mechanics (parity, role flips, per hole gravity) and a working double inversion path. Act 1 deck and flight (systems 1 to 5 as they are), Act 2 the horizon (bearing puzzle, role flips, per hole gravity), Act 3 parity (double inversion, two holes in one system). Nothing authored until you have played 1 to 8 and answered the six calls.
 
 Probe scripts (session local, /tmp, will vanish): scratchpad/fable/{drift,bare4,bare4land,reach,window4}.js, scratchpad/vane-physics/*, scratchpad/lens-level4/*, scratchpad/mutation-sweep-1to9/{run,mutants}.js + table.txt. Re-derive with the fixed solver rather than hunting for them; that is the point of R1.
+
+---
+
+## 2026-09-01, session 2 (Opus). R1 to R7 all shipped, carded, and deployed.
+
+**Live:** https://lucidwinds.com/satellites/tangent/?v=20260901a
+**Card:** in the arcade as **IN DEVELOPMENT** (`beta:true`) until Stephen says playable. Test Lab door now reads 23.
+**Deploy commit on main:** `b5abc47c`, built in a throwaway worktree off `origin/main` taking ONLY the fenced paths off the branch, because the branch head also carries the Conduit builder's unreviewed work.
+**Marker grepped on the live file:** `Hold and the ball walks one way round the deck` returns 1. Also `Sky Wolf Studio Arcade` 1, `M_DECK` 3, `thumbs/tangent.png` on the portal 1, and the thumb itself 200 / 52,018 bytes / image/png.
+**Live shots, read:** `docs/shots/live-390-build.png`, `live-390-portal-card.png`, `live-390-testlab.png`.
+
+### Suites
+```
+node test/smoke.js     163   (was 83)
+node test/ui.js         71   (was 58)
+node test/parts.js       8   green in 0.6s (was 5m16s while a system was marked)
+node test/solve.js      green in 0.6s (was 68s)
+node test/sweep.js     BYTE IDENTICAL to the baseline table, all session
+```
+
+### What shipped, with the red line for each
+
+**R1, `b962cde8` — the provers were one prover.** `parts.js` swept release times holding the throttle for the whole run; `solve.js` searched hold, coast and four duty cycles. Neither tried hold, then coast, then hold. New `test/search.js` owns the space (173 programs) and both call it. It runs a spin ONCE per (parts, program) and replays a release from a snapshot; solve went 68s to 2.8s. Red line against the UNCHANGED game:
+```
+FAIL Around the heavy: a bare deck is a needle, not a route (window < 0.30s)
+  -> bare window 16.70s, first clear @14.55s "hold 10s, coast 3.5s, hold"
+     bare total clear window 16.70s over 96 window(s)
+     best parts total window 3.50s with two vanes r30 -180deg  [48/240 sets clear]
+```
+An empty deck cleared it **96 ways**, with **nearly five times** the release window of the best parts assisted set. The `needsParts` contract is now "bare window < 0.30s AND best parts window > 1.00s", both printed. `solve.js` also stopped calling the first-found set "cheapest".
+New smoke [18] gates the prover itself. Its first version compared outcomes only and passed against a replay with the throttle restore deleted, which proved nothing because flight never reads the throttle; recorded rather than quietly repaired.
+
+**R2, `9f604b12` — system 4 restored, the vane kept, the law corrected.** Gate back to `{r:70,a:-1.15,w:28}`, `needsParts` dropped. The false law was written in three places (the level comment, `PARTS.vane`, `rimWall`) and all three are corrected. `COACH.build` is now 138 chars, no dashes. Smoke [16] rewritten from a law into four measured statements, each watched red:
+```
+(a) bare + hold never leads          peak 0.53 over 30s
+    red: SPIN_GAIN 7.5->1.0  peak lead=13.69   |  OM_IDLE 1.15->4.00  peak lead=1431.96
+(b) bare + coast DOES lead           peak 48.87, 916/1440 steps ahead
+    red: TH_FLOOR 0.30->1.00 peak lead=-1.21, 0/1440 ahead
+(c) a vane leads on EVERY in-zone step   33/33
+    red: VANE_PUSH 340->0    0/91 in-zone steps ahead
+(d) a bumper on the held track leads MORE than the vane   58.1 at r81 vs 48.4
+    red: bumper rest 1.12->0  bumper=7.3 vane=48.4
+```
+(d) is the correction encoded so it cannot revert: the old check's bumpers sat at (30,0) where the ball STARTS inside one (start r 36.6, collision radius 11.9, distance 6.6), so it never struck.
+Smoke [17] rewritten: nothing is marked now, so the build beat must be silent on all eight, and the wiring is proven by marking one at runtime and putting the level back exactly as authored.
+Note: **the sweep table does not move when a gate moves**, because `sweep.js` counts LANDS not CLEARS (already in the audit backlog). "Around the heavy 5 lands, 8 crashes" before and after.
+
+**R3, `93ebde1a` — the held ghost is the held run.** One token: `trackFor` seeded `throttle:th` while a live run starts at `TH_FLOOR`. Not a transient: live throttle is 1.000000 by t=3.5s and the tracks are still 15.15 units apart at t=7.97s, and it is not a pure time shift either (the nearest live sample to the ghost's worst point is still 0.95 off).
+```
+red: FAIL the held ghost is the held run (bare)        -> worst 15.66 units at t=3.54s
+     FAIL the held ghost is the held run (two bumpers) -> worst 15.87 units at t=3.74s
+green: 0.00 on all four, bitwise
+```
+The check varies PARTS and not the level index on purpose: `advanceDeck` reads only `parts`, so a loop over levels is decoration.
+
+**R4, `d987aa1e` — the once only tutorial gets a guard.** The hold and gate hooks moved from `frame()` into `step()`. All four mutants red: `coachDone` no-op (7 red), hold hook deleted (4), gate hook deleted (3), and init not reading `tutor` (2, `coachSeen at boot={}`) — that last needed `load(seed)` on the harness, because the first version set `coachSeen` by hand and was testing itself.
+
+**R5a `656c1f16` / R5b `328ab4b4` / R5c `466fc6e2` / R5d `efaf6d36`.**
+- **[4]** was vacuous: `sys = lv.bodies` passed it because Lior sits EXACTLY on the Maw's horizon (d 118.0, R 118) and a horizon body is a fixed point of the inversion. **The review's suggested replacement is also wrong: Vex is on Cess's horizon too (d 110.0, R 110).** Open deck is the only system with off-horizon bodies (Ridd 117.8, Tarn 194.7, Sol 350.4). Now asserts identity; 23 red against the mutant, and the vacuity reproduced: 60 runs on Inside out leave LEVELS unchanged, 60 on Open deck do not.
+- **[2]** `|| r.outcome != null` deleted, list corrected to land/crash/lost/failed (red on `lastOutcome="banana"`, 11), and the NaN check no longer skips when the ball is null (red on a dropped ball, 9; red on a NaN in the flight path, 8).
+- **[7]** the foreign write is injected BETWEEN `writeSave`'s read and re-read. Each of the four mutants red alone. `recordResult`'s own max survived every scenario until the **wipe** case was added, and the reason is worth keeping: it is otherwise dead, because `writeSave` re-reads and merges against the pre-write state, which rescues it every time except when the other tab clears the save mid-write. Start over is a button, so that sequence is real.
+- **[10]** `startSpin` now clears `lastOutcome` (red six ways). The gate is "clears system 4", not "reaches" it: against a mutant giving system 4 an unreachable second gate, `reached >= 4` stayed GREEN.
+
+**R6, `8fb751b4` — the dish has mass.** `M_DECK=6`, `len(mx,my)/(M_DECK+m)/DECK_R`. One rim bumper 0.930 -> **0.233**; hub parts 0.014 to 0.075; a long rim rail 0.338, still over every tolerance but the sandbox; opposite pairs still exactly 0; four rails one side 0.469, still tears. Red BOTH directions (`M_DECK 0` and `M_DECK 600`). The first version of one check computed 93/100 in the test and compared it to the tolerance, which is arithmetic and cannot fail; replaced. Nothing became unsolvable: the system 4 part census moved 235 -> 240 of 240, so M_DECK loosened five sets and the jump from 48 was the gate restoration. **M_DECK is the dial and it is yours.**
+
+**R7, `35c6c92e` — the far side gets a bearing.** D2 untouched, the line still stops at the hole. `entryBearing(e)` is factored out so the test calls the game's arithmetic, not a copy. On Inside out, all 33 release times whose readout says "falls in": the mark is within **2.36 units** of where the ball actually re-emerged, 33/33, heading outward 33/33. (2.36 is exactly R*0.02.)
+**Two things the pixels found that the geometry did not.** The ring mark is off the aiming frame, because while you aim the camera is on the deck; so the EDGE marker now anchors to the entry bearing and reads "comes back out". That still painted nothing, because **the shot marker is coded to step aside when its label collides** ("the panel already states the shot in words") and on Inside out the Maw and Lior markers take the same edge, so it was dropped on every frame. Marks carry a `yields` flag now and the entry marker does not yield.
+
+**Carding + embed, `408ec5fc`.** One FEATURED row next to Ripcord, `beta:true`. `catalog.mjs`: satellite cards 118 -> 119, dev gated 24 -> 25, **A VISITOR CAN OPEN 161, unchanged**. All 7 advertised counts true. Thumb 512x512, 50,511 bytes, procedural out of the game's own canvas with `fillText` stubbed for the render, quantised with pngquant (raw PNG was 383KB). Embed block copied from Ripcord minus the service worker branch; framing detected by `window.parent !== window`, not `?embed=1` (the param form is a shipped bug in four games). ui.js 64 -> 71.
+
+### ⚠️ Honest gaps, not hidden
+- **One embed mutant does not fail cleanly.** Replacing the exit with `history.back()` HANGS the suite instead of failing it: the back goes up the joint session history and takes the framing page with it, so the evaluate never settles. That is the black screen bug demonstrating itself. The check is raced against a 9s deadline in Node and names it, but browser teardown still hangs, so its red line is a hang and not a FAIL. What protects the game is the code: grep finds no `history.back` and no `serviceWorker` registration in the file.
+- **The thumb has no gravity body in it.** The brief asked for one. The spin framing puts every body outside the frame and the wider flight framing left the deck too small to read at card size. The card therefore shows the deck and nothing to aim at.
+- **Faults seen in the live shots** (`live-390-build.png`): "let it ride" prints across the hub and over the ball's start; "hold" prints over the rim; the Balance row spends a full row saying "centred" when no part is placed. And on the card: the square thumb is cropped to a landscape box so the deck's rim is clipped top and bottom, and the description truncates at "and land in a small…", losing the black hole.
+- `test/ui.js` is **intermittently red** on an inherited audio check (`osc > beforeNear + 2`, the proximity voice) which depends on how many voices a given flight happens to trigger. It failed once in ~10 runs today. Not mine, but budget for it.
+
+### ⚖️ Still yours, unchanged by this session
+1. **The fun question.** Nobody has played it.
+2. `VANE_PUSH = 340`. Untuned.
+3. **Inversion scoring is farmable**, 900 each, uncapped, up to 17 measured. And thrift pays 120 per unused part, so a bare clear of Open deck banks 1,920 from never building, which makes "never build" the dominant score strategy on every system that does not need parts.
+4. `TH_FLOOR = 0.30`. Raising it removes the inward coast spiral the bare system 4 clear rides.
+5. `M_DECK = 6`. The new dial.
+6. **Whether any system should be part gated at all**, now that the honest contract is "the deck widens the window" and not "the deck is required".
