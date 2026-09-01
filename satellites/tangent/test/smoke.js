@@ -184,5 +184,38 @@ console.log("\n[10] the taught strategy is enough to get in (T2 acceptance)");
      reached >= 3, "reached system " + reached);
 }
 
+console.log("\n[11] the drawn line is the run (D2, the law this project cannot bend)");
+{
+  // The predictor and the live flight must be the same arithmetic. They were
+  // not: prediction stepped at 1/60 while flight stepped at 1/120, so Euler
+  // walked two different trajectories and the dashed line was a near miss of
+  // the run rather than the run itself.
+  let checked = 0, agreed = 0;
+  const misses = [];
+  for(let i = 0; i < T.LEVELS.length; i++){
+    for(let k = 3; k <= 33; k += 6){
+      T.loadLevel(i); T.startSpin(); T.holding = true;
+      for(let s = 0; s < k * 20 && T.phase === "spin"; s++) T.step();
+      if(T.phase !== "spin") continue;
+      // the predictor returns null when it reaches the horizon with no verdict,
+      // which is the same event as the live run giving up at its own timeout
+      const norm = o => (o == null ? "lost" : o);
+      const said = norm((T.cachedPredict() || {}).outcome);
+      T.doRelease("d2");
+      let g = 0;
+      while((T.phase === "flight" || T.phase === "invert") && g++ < 40000) T.step();
+      const got = norm(T.lastOutcome);
+      checked++;
+      // "invert" predicted means it falls in; the run then continues past the
+      // hole, so anything after an inversion counts as agreement on the fall.
+      const same = said === got || (said === "invert" && T.inversions > 0);
+      if(same) agreed++; else misses.push(`${T.LEVELS[i].name}@${(k * 20 / 120).toFixed(1)}s said ${said} got ${got}`);
+    }
+  }
+  const pct = checked ? (agreed / checked) * 100 : 0;
+  ok(`the prediction matches the run it produces (${agreed}/${checked}, ${pct.toFixed(1)}%)`,
+     pct >= 95, misses.slice(0, 4).join(" | "));
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

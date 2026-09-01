@@ -291,7 +291,7 @@ let trail=[], flightTrail=[], gatesHit=[];
 let throttle=0, holding=false, runT=0, flightT=0;
 let closestTo={}, crashedInto=null, assists=new Set(), launchInfo=null;
 let shakeT=0, drag=null, acc=0, last=0;
-let _pred=null,_predAge=99;
+let _pred=null;
 
 
 /* ---------------- audio ----------------
@@ -753,21 +753,39 @@ function flyStep(s,h,acc){
    exactly what happens (decision D2). Any new force added to flight has to go
    into flyStep, which both this and the live run call, or the line starts
    lying.                                                                  */
+/* Same step size as the live run, and the same horizon.
+   It used to integrate at FLY_H (1/60) while the flight ran at DT (1/120).
+   Same function, different h, so Euler walked two different trajectories and
+   the dashed line was a near miss of the run rather than the run: a straight
+   breach of D2, the one law this project cannot bend. It also looked 25
+   seconds ahead while the live run gives up at 22, so it could promise a
+   landing the game would abandon before reaching. */
+const PREVIEW_STEPS=Math.ceil(22/DT);
 function predictRelease(){
   const s={x:ball.x,y:ball.y,vx:ball.vx,vy:ball.vy};
   const acc={closest:{},assists:new Set()};
   const path=[[s.x,s.y]];
   let outcome=null;
-  for(let i=0;i<FLY_STEPS;i++){
-    outcome=flyStep(s,FLY_H,acc);
-    if(i%4===0) path.push([s.x,s.y]);
+  for(let i=0;i<PREVIEW_STEPS;i++){
+    outcome=flyStep(s,DT,acc);
+    if(i%8===0) path.push([s.x,s.y]);
     if(outcome) break;
   }
   path.push([s.x,s.y]);
   const tb=targetBody();
   return {path, outcome, closest:acc.closest[tb.n] ?? Infinity, assists:acc.assists};
 }
-function cachedPredict(){ if(_predAge++>=2){ _pred=predictRelease(); _predAge=0; } return _pred; }
+/* The memo is invalidated by the simulation, not by being asked. Counting
+   calls meant a full N body solve ran on the first, fourth and seventh ASK,
+   and four separate places ask every rendered frame (the loop, the path, the
+   readout, the chevrons), so the cache was recomputing at least once a frame
+   and sometimes twice while appearing to run every third. Now the sim marks
+   it stale and the first asker in a frame pays, once. */
+let _predDirty=true;
+function cachedPredict(){
+  if(_predDirty || !_pred){ _pred=predictRelease(); _predDirty=false; }
+  return _pred;
+}
 
 /* ---------------- coaching ----------------
    Four beats, each triggered by the state the player is actually in rather
@@ -828,7 +846,7 @@ function startSpin(){
   ball={x:r0,y:0,vx:0,vy:OM_IDLE*r0};
   trail.length=0; flightTrail.length=0;
   gatesHit=lv.gates.map(()=>false);
-  closestTo={}; crashedInto=null; assists=new Set(); launchInfo=null; _predAge=99;
+  closestTo={}; crashedInto=null; assists=new Set(); launchInfo=null; _predDirty=true;
   everHeld=false; coachAt=null; coachT=0;
   resetSystem();
   showUI("spin");
@@ -905,6 +923,7 @@ function step(){
       failRun("The deck shook itself apart. Spread the mass more evenly."); return;
     }
     checkGates();
+    _predDirty=true;          // the sim moved, so the drawn line is stale
     if(trail.length>260) trail.shift();
     trail.push([ball.x,ball.y]);
   }
