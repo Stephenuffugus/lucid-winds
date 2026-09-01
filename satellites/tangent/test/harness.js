@@ -50,7 +50,19 @@ function load(){
     navigator: { vibrate: noop },
     requestAnimationFrame: noop, cancelAnimationFrame: noop,
     setTimeout: noop, clearTimeout: noop, setInterval: noop, clearInterval: noop,
-    localStorage: null,
+    // A real (in memory) store, so saving, unlocking and the tutorial can be
+    // tested. A null store would make every save path silently no-op and the
+    // tests would pass without exercising anything.
+    localStorage: (() => {
+      const m = new Map();
+      return {
+        getItem: k => (m.has(String(k)) ? m.get(String(k)) : null),
+        setItem: (k, v) => { m.set(String(k), String(v)); },
+        removeItem: k => { m.delete(String(k)); },
+        clear: () => m.clear(),
+        get length(){ return m.size; },
+      };
+    })(),
     AudioContext: undefined, webkitAudioContext: undefined,
     addEventListener: noop,
   };
@@ -74,6 +86,23 @@ function load(){
       set W(v){ W = v; }, set H(v){ H = v; },
       get W(){ return W; }, get H(){ return H; },
       loadLevel, startSpin, step, doRelease,
+      get gatesHit(){ return gatesHit; },
+      get lvIndex(){ return lvIndex; },
+      get parts(){ return parts; },
+      cachedPredict: (typeof cachedPredict === "function" ? cachedPredict : null),
+      // save + coaching surface (T2)
+      readSave:        (typeof readSave        === "function" ? readSave        : null),
+      writeSave:       (typeof writeSave       === "function" ? writeSave       : null),
+      lvState:         (typeof lvState         === "function" ? lvState         : null),
+      unlockedThrough: (typeof unlockedThrough === "function" ? unlockedThrough : null),
+      recordResult:    (typeof recordResult    === "function" ? recordResult    : null),
+      coachBeat:       (typeof coachBeat       === "function" ? coachBeat       : null),
+      coachTick:       (typeof coachTick       === "function" ? coachTick       : null),
+      get coachSeen(){ return typeof coachSeen!=="undefined"?coachSeen:null; },
+      set coachSeen(v){ coachSeen=v; },
+      set everHeld(v){ everHeld=v; },
+      get everHeld(){ return typeof everHeld!=="undefined"?everHeld:null; },
+      get store(){ return localStorage; },
       // Camera surface. Exposed defensively with typeof so this harness still
       // loads against a build where the camera has not been written yet — a
       // missing camera must fail ONE check, not blow up the whole suite.

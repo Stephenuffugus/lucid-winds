@@ -21,7 +21,11 @@
 
   #top{top:0;padding:calc(env(safe-area-inset-top) + 10px) 12px 10px;
     background:linear-gradient(180deg,rgba(14,20,28,.94),rgba(14,20,28,0))}
-  .lvline{display:flex;align-items:baseline;gap:8px;letter-spacing:-.01em}
+  .lvline{display:flex;align-items:center;gap:8px;letter-spacing:-.01em;
+    width:100%;min-height:48px;background:transparent;border:0;padding:0;
+    color:inherit;font-family:inherit;text-align:left;cursor:pointer}
+  .lvcaret{margin-left:auto;font-size:11.5px;color:var(--tele);
+    border:1px solid rgba(121,208,230,.35);padding:4px 9px;border-radius:2px}
   .lvnum{font-size:12px;color:var(--ink-dim)}
   .lvname{font-size:17px;font-weight:600}
   .crit{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
@@ -97,6 +101,24 @@
     gap:5px;font-size:12.5px}
   .brk div{display:flex;justify-content:space-between}
   .brk span:first-child{color:var(--ink-dim)}
+  .scrim{position:fixed;inset:0;background:rgba(6,10,16,.74);z-index:15}
+  /* the inset shadow is the scroll cue: a row cut off by the container edge
+     otherwise reads as a rendering fault rather than as "there is more" */
+  .lvlist{margin-top:12px;display:flex;flex-direction:column;gap:6px;max-height:48vh;overflow-y:auto;
+    box-shadow:inset 0 -16px 14px -14px #060A10}
+  .lvrow{display:flex;align-items:center;gap:9px;padding:8px 10px;min-height:48px;
+    border:1px solid var(--etch);border-radius:3px;background:#161E29;color:var(--ink);
+    font-family:inherit;font-size:13px;text-align:left;cursor:pointer}
+  .lvrow:disabled{opacity:.4;cursor:default}
+  .lvrow.now{border-color:var(--tele);background:#1A2634}
+  .lvrow.now .nm{color:var(--tele)}
+  .lvrow .n{color:var(--ink-dim);font-size:11.5px;min-width:20px}
+  .lvrow .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .lvrow .md{display:flex;gap:4px}
+  .lvrow .m{width:7px;height:7px;border-radius:50%;background:#2C3849;display:block}
+  .lvrow .m.on{background:var(--ok)}
+  .lvrow .sc{color:var(--ink-dim);font-size:11.5px;min-width:42px;text-align:right}
+  .coach{color:var(--tele)}
   .hide{display:none!important}
   .hint{font-size:11.5px;color:var(--ink-dim);margin-top:9px;line-height:1.45}
   .brand{margin-top:6px;opacity:.6;font-size:11px}
@@ -106,7 +128,7 @@
 <canvas id="cv"></canvas>
 
 <div class="hud" id="top">
-  <div class="lvline"><span class="lvnum" id="lvnum">01</span><span class="lvname" id="lvname"></span></div>
+  <button class="lvline" id="lvpick"><span class="lvnum" id="lvnum">01</span><span class="lvname" id="lvname"></span><span class="lvcaret">Systems</span></button>
   <div class="crit" id="crit"></div>
 </div>
 
@@ -141,6 +163,16 @@
     <div class="row"><button class="act ghost" id="abortbtn" style="flex:1">Rebuild deck</button></div>
     <div class="hint">Tracking the shot.</div>
   </div>
+</div>
+
+<div class="scrim hide" id="scrim"></div>
+
+<div class="card hide" id="levels">
+  <h2>Systems</h2>
+  <p>Pick a system to fly. A system opens when you clear the one before it.</p>
+  <div class="lvlist" id="lvlist"></div>
+  <p class="hint" style="margin-top:10px">Dots: landed · every gate crossed · built under half the budget.</p>
+  <div class="btns"><button class="act ghost" id="lvclose" style="flex:1">Close</button></div>
 </div>
 
 <div class="card hide" id="card">
@@ -434,11 +466,62 @@ function makeStars(){
 }
 
 const $=id=>document.getElementById(id);
-const SAVE="tangent.best.v3";
-function loadBests(){ try{ return JSON.parse(localStorage.getItem(SAVE))||{}; }catch(e){ return {}; } }
-function bestFor(i){ return loadBests()[i]||0; }
-function recordBest(i,score){
-  try{ const b=loadBests(); if(score>(b[i]||0)){ b[i]=score; localStorage.setItem(SAVE,JSON.stringify(b)); } }catch(e){}
+/* ---------------- save ----------------
+   One object per profile, and every write MERGES rather than overwrites. Two
+   tabs open on the same game both read the whole object and both write it
+   back, so a plain write silently discards whatever the other one did. Every
+   write therefore re-reads first and keeps the better of the two: maximum on
+   scores, logical or on flags.                                            */
+const SAVE="tangent.save.v4", SAVE_OLD="tangent.best.v3";
+function blankLv(){ return {best:0,cleared:0,gates:0,thrift:0}; }
+function readSave(){
+  try{
+    const raw=JSON.parse(localStorage.getItem(SAVE));
+    if(raw&&raw.lv) return {v:4, lv:raw.lv, tutor:raw.tutor||{}};
+  }catch(e){}
+  const s={v:4,lv:{},tutor:{}};
+  try{                                     // carry scores over from the old key
+    const old=JSON.parse(localStorage.getItem(SAVE_OLD));
+    if(old) for(const k in old){ s.lv[k]=blankLv(); s.lv[k].best=old[k]|0; }
+  }catch(e){}
+  return s;
+}
+function mergeSave(a,b){
+  const out={v:4,lv:{},tutor:Object.assign({},a.tutor||{},b.tutor||{})};
+  const keys=Object.keys(a.lv||{}).concat(Object.keys(b.lv||{}));
+  for(const k of keys){
+    if(out.lv[k]) continue;
+    const x=(a.lv||{})[k]||{}, y=(b.lv||{})[k]||{};
+    out.lv[k]={best:Math.max(x.best||0,y.best||0),
+               cleared:(x.cleared||y.cleared)?1:0,
+               gates:(x.gates||y.gates)?1:0,
+               thrift:(x.thrift||y.thrift)?1:0};
+  }
+  return out;
+}
+function writeSave(mutate){
+  const mine=readSave(); mutate(mine);
+  const out=mergeSave(readSave(),mine);    // re-read: another tab may have written
+  try{ localStorage.setItem(SAVE,JSON.stringify(out)); }catch(e){}
+  return out;
+}
+function lvState(i){ return readSave().lv[i]||blankLv(); }
+function bestFor(i){ return lvState(i).best; }
+/* The highest level index the player may open: the first one they have not
+   cleared, so the campaign opens one door at a time and never traps them. */
+function unlockedThrough(){
+  const s=readSave(); let n=0;
+  while(n<LEVELS.length-1 && (s.lv[n]||{}).cleared) n++;
+  return n;
+}
+function recordResult(i,o){
+  writeSave(s=>{
+    const e=s.lv[i]||(s.lv[i]=blankLv());
+    e.best=Math.max(e.best||0,o.score||0);
+    if(o.cleared) e.cleared=1;
+    if(o.gatesOK) e.gates=1;
+    if(o.thrift)  e.thrift=1;
+  });
 }
 const rot=(x,y,t)=>{const c=Math.cos(t),s=Math.sin(t);return [x*c-y*s,x*s+y*c];};
 const len=(x,y)=>Math.hypot(x,y);
@@ -686,6 +769,48 @@ function predictRelease(){
 }
 function cachedPredict(){ if(_predAge++>=2){ _pred=predictRelease(); _predAge=0; } return _pred; }
 
+/* ---------------- coaching ----------------
+   Four beats, each triggered by the state the player is actually in rather
+   than by a step counter, and each retired for good once it has been read.
+   No modals and no separate tutorial level: the line under the throttle is
+   where the player is already looking, so that is where the game speaks.
+
+   The beats teach the whole opening strategy, and that strategy is tested:
+   hold, read the line, wait for the gate, let go on "lands" clears levels one
+   through five with no parts placed at all. The gate beat matters most, since
+   letting go at the first "lands" lands the ball but leaves the gate uncrossed
+   on level two, which reads to a new player as the game refusing to advance. */
+const COACH={
+  hold: "Hold the throttle. The deck spins up and the ball rides outward.",
+  line: "The dashed line is where the ball goes if you let go right now.",
+  gate: "Keep holding. The ball has to cross the gate before you let go.",
+  letgo:"That is the shot. Let go.",
+};
+const COACH_READ=2.6;                 // seconds on screen before a beat retires
+let coachSeen={}, coachAt=null, coachT=0, everHeld=false;
+/* The prediction is passed in rather than read from the render cache. Reading
+   it from there made the coach silently depend on something else having drawn
+   a frame first, which is true in the game and false anywhere else. */
+function coachBeat(pr){
+  if(phase!=="spin") return null;
+  if(!coachSeen.hold && !everHeld) return "hold";
+  if(!coachSeen.line && everHeld)  return "line";
+  const lands=pr&&pr.outcome==="land", gatesLeft=gatesHit.some(g=>!g);
+  if(!coachSeen.gate  && lands && gatesLeft)  return "gate";
+  if(!coachSeen.letgo && lands && !gatesLeft) return "letgo";
+  return null;
+}
+function coachTick(dt,pr){
+  const b=coachBeat(pr);
+  if(b!==coachAt){ coachAt=b; coachT=0; return; }
+  if(!b) return;
+  coachT+=dt;
+  if(coachT>=COACH_READ){
+    coachSeen[b]=1; writeSave(s=>{ s.tutor[b]=1; });
+    coachAt=null; coachT=0;
+  }
+}
+
 /* ---------------- run control ---------------- */
 /* One place decides which strip of controls is showing, so the camera can
    remeasure the band every time that changes. */
@@ -704,6 +829,7 @@ function startSpin(){
   trail.length=0; flightTrail.length=0;
   gatesHit=lv.gates.map(()=>false);
   closestTo={}; crashedInto=null; assists=new Set(); launchInfo=null; _predAge=99;
+  everHeld=false; coachAt=null; coachT=0;
   resetSystem();
   showUI("spin");
   refreshHUD();
@@ -711,7 +837,33 @@ function startSpin(){
 function backToBuild(){
   phase="build"; ball=null; trail.length=0; flightTrail.length=0;
   deck.theta=0; deck.omega=0; deck.wobble=0;
-  $("card").classList.add("hide"); showUI("build"); refreshHUD();
+  modal(null); showUI("build"); refreshHUD();
+}
+/* Systems list. Progress is one door at a time, and every cleared system stays
+   open so a better run on an old deck is always available. */
+/* One place opens and closes the overlays, so the dimmer behind them can never
+   drift out of step with whichever card is showing. */
+function modal(which){
+  $("scrim" ).classList.toggle("hide",!which);
+  $("card"  ).classList.toggle("hide",which!=="card");
+  $("levels").classList.toggle("hide",which!=="levels");
+}
+function openLevels(){
+  const max=unlockedThrough();
+  $("lvlist").innerHTML=LEVELS.map((L,i)=>{
+    const st=lvState(i), lock=i>max;
+    return `<button class="lvrow${i===lvIndex?" now":""}" data-i="${i}"${lock?" disabled":""}>`
+      +`<span class="n">${String(i+1).padStart(2,"0")}</span>`
+      +`<span class="nm">${lock?"Locked":L.name}</span>`
+      +`<span class="md"><i class="m${st.cleared?" on":""}"></i>`
+      +`<i class="m${st.gates?" on":""}"></i><i class="m${st.thrift?" on":""}"></i></span>`
+      +`<span class="sc">${st.best?st.best.toLocaleString():""}</span></button>`;
+  }).join("");
+  [...document.querySelectorAll(".lvrow")].forEach(b=>{
+    if(b.disabled) return;
+    b.onclick=()=>{ modal(null); loadLevel(+b.dataset.i); };
+  });
+  modal("levels");
 }
 function loadLevel(i){
   lvIndex=Math.max(0,Math.min(LEVELS.length-1,i)); lv=LEVELS[lvIndex]; parts=[];
@@ -831,18 +983,20 @@ function settle(how){
         ["Release speed", launchInfo?Math.round(launchInfo.speed):"none"],
         ["Slingshots", assists.size||"none"],
         ["Inversions", inversions||"none"]];
-  showCard({title,score,body,rows,cleared: how==="land"&&gatesOK});
+  const cleared = how==="land"&&gatesOK;
+  showCard({title,score,body,rows,cleared,gatesOK,
+            thrift: cleared && parts.length*2<=lv.budget});
 }
 function showCard(o){
   showUI("none");
-  if(o.score) recordBest(lvIndex,o.score);
+  recordResult(lvIndex,o);
   $("cardtitle").textContent=o.title;
   $("cardscore").textContent=(o.score||0).toLocaleString();
   $("cardbody").textContent=o.body;
   $("cardbrk").innerHTML=(o.rows||[]).map(r=>`<div><span>${r[0]}</span><span>${r[1]}</span></div>`).join("");
   $("nextbtn").textContent=o.cleared?"Next system":"Try again";
   $("nextbtn").onclick=()=>o.cleared?loadLevel(lvIndex+1):backToBuild();
-  $("card").classList.remove("hide");
+  modal("card");
 }
 
 /* ---------------- camera ----------------
@@ -1068,9 +1222,12 @@ function drawDeck(){
   }
   if(phase==="spin"){
     const re=eqRadius(deck.omega);
+    // Fine dots, and dim. This ring and a gate ring were both dashed cyan,
+    // which made the orbit the ball settles into look like something to fly
+    // through. The gate is the bright one now.
     if(re<DECK_R*1.3){ ctx.beginPath(); ctx.arc(0,0,Math.min(re,DECK_R+12),0,7);
-      ctx.strokeStyle="rgba(121,208,230,.34)"; ctx.lineWidth=1.2;
-      ctx.setLineDash([2,7]); ctx.stroke(); ctx.setLineDash([]); }
+      ctx.strokeStyle="rgba(121,208,230,.20)"; ctx.lineWidth=1;
+      ctx.setLineDash([1,6]); ctx.stroke(); ctx.setLineDash([]); }
   }
   ctx.beginPath(); ctx.arc(0,0,7,0,7); ctx.fillStyle="#27333F"; ctx.fill();
   ctx.strokeStyle="#4A5D71"; ctx.lineWidth=1; ctx.stroke();
@@ -1079,9 +1236,13 @@ function drawDeck(){
     const gx=Math.cos(g2.a)*g2.r, gy=Math.sin(g2.a)*g2.r;
     ctx.beginPath(); ctx.arc(gx,gy,g2.w/2,0,7);
     ctx.strokeStyle=gatesHit[i]?"#6FCF97":"#79D0E6";
-    ctx.globalAlpha=gatesHit[i]?0.85:0.45;
-    ctx.setLineDash([4,4]); ctx.lineWidth=1.6; ctx.stroke();
-    ctx.setLineDash([]); ctx.globalAlpha=1;
+    ctx.globalAlpha=gatesHit[i]?0.9:0.8;
+    ctx.setLineDash([5,4]); ctx.lineWidth=2.2; ctx.stroke();
+    ctx.setLineDash([]);
+    // a pip in the middle, so a gate never reads as just another faint circle
+    ctx.beginPath(); ctx.arc(gx,gy,2.2,0,7);
+    ctx.fillStyle=gatesHit[i]?"#6FCF97":"#79D0E6"; ctx.fill();
+    ctx.globalAlpha=1;
   });
   for(const p of parts) drawPart(p,1);
   if(drag) drawPart(drag,0.55);
@@ -1390,6 +1551,11 @@ function frame(ts){
       : pr&&pr.outcome==="invert" ? "falls in" : "or just let go";
     const g=gatesHit.filter(Boolean).length;
     if(g!==frame._g){ frame._g=g; refreshHUD(); }
+    if(holding) everHeld=true;
+    coachTick(dt,pr);
+    const say=coachAt?COACH[coachAt]:"Hold to push the ball outward. Let go and it flies.";
+    const sh=$("spinhint");
+    if(sh._say!==say){ sh._say=say; sh.textContent=say; sh.classList.toggle("coach",!!coachAt); }
   }
   camUpdate(dt);
   draw();
@@ -1448,6 +1614,9 @@ function init(){
   $("clearbtn").onclick=()=>{parts=[];refreshHUD();};
   $("retrybtn").onclick=backToBuild;
   $("abortbtn").onclick=backToBuild;
+  $("lvpick").onclick=openLevels;
+  $("lvclose").onclick=()=>modal(null);
+  coachSeen=readSave().tutor||{};
   loadLevel(0);
   requestAnimationFrame(frame);
 }

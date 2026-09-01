@@ -103,5 +103,86 @@ console.log("\n[6] camera: the deck is framed for aiming, then pulls out (D12)")
   }
 }
 
+console.log("\n[7] saving survives a second tab (T2)");
+{
+  T.store.clear();
+  T.recordResult(0, { score: 1000, cleared: true, gatesOK: true, thrift: false });
+  ok("a result is recorded", T.lvState(0).best === 1000, "best=" + T.lvState(0).best);
+  // another tab banks a better run and a medal we do not have
+  const other = JSON.stringify({ v: 4, lv: { 0: { best: 5000, cleared: 1, gates: 1, thrift: 1 } }, tutor: {} });
+  T.store.setItem("tangent.save.v4", other);
+  T.recordResult(0, { score: 20, cleared: false, gatesOK: false, thrift: false });
+  const st = T.lvState(0);
+  ok("a worse later run does not lower the best", st.best === 5000, "best=" + st.best);
+  ok("a medal earned in the other tab is not erased", st.thrift === 1, "thrift=" + st.thrift);
+  // and scores from the old v3 key are carried across rather than dropped
+  T.store.clear();
+  T.store.setItem("tangent.best.v3", JSON.stringify({ 2: 777 }));
+  ok("old v3 scores are carried into the new save", T.lvState(2).best === 777, "best=" + T.lvState(2).best);
+}
+
+console.log("\n[8] progression opens one system at a time (T2)");
+{
+  T.store.clear();
+  ok("a fresh profile can only open the first system", T.unlockedThrough() === 0, "unlocked=" + T.unlockedThrough());
+  T.recordResult(0, { score: 100, cleared: true, gatesOK: true });
+  ok("clearing the first system opens the second", T.unlockedThrough() === 1, "unlocked=" + T.unlockedThrough());
+  T.recordResult(1, { score: 100, cleared: false, gatesOK: false });
+  ok("landing without clearing does not open the next", T.unlockedThrough() === 1, "unlocked=" + T.unlockedThrough());
+}
+
+console.log("\n[9] the tutorial teaches, once, in the order the player needs it (T2)");
+{
+  T.store.clear(); T.coachSeen = {};
+  T.loadLevel(1); T.startSpin();                 // level 2, the one with a gate
+  T.everHeld = false;
+  ok("first beat asks for the throttle", T.coachBeat(null) === "hold", T.coachBeat(null));
+  T.everHeld = true;
+  ok("second beat points at the predicted line", T.coachBeat(null) === "line", T.coachBeat(null));
+  T.coachSeen = { hold: 1, line: 1 };
+  T.holding = true;
+  let sawGate = false, sawLetgo = false, guard = 0;
+  while(T.phase === "spin" && guard++ < 34 * 120){
+    T.step();
+    const b = T.coachBeat(T.cachedPredict());
+    // the gate beat must arrive BEFORE the let-go beat, or the player is told
+    // to release on a shot that cannot clear the level
+    if(b === "gate"){ sawGate = true; T.coachSeen = { hold: 1, line: 1, gate: 1 }; }
+    if(b === "letgo"){ sawLetgo = true; break; }
+  }
+  ok("it warns about the uncrossed gate before saying let go", sawGate);
+  ok("it says let go once the gate is crossed and the shot lands", sawLetgo);
+  ok("gate really was crossed by then", T.gatesHit.every(Boolean));
+  // and every beat retires once read
+  T.coachSeen = {}; T.everHeld = false;
+  for(let k = 0; k < 200; k++) T.coachTick(1 / 60, null);   // 3.3 s, past COACH_READ
+  ok("a beat retires after it has been on screen long enough", T.coachSeen.hold === 1);
+  ok("a retired beat is written to the profile", (T.readSave().tutor || {}).hold === 1);
+}
+
+console.log("\n[10] the taught strategy is enough to get in (T2 acceptance)");
+{
+  // Exactly what the beats say: hold, wait for the gate, let go on "lands".
+  // If this fails, the tutorial is teaching something that does not work.
+  T.store.clear();
+  T.W = 390; T.H = 780;
+  let reached = 1;
+  for(let i = 0; i < 5; i++){
+    T.loadLevel(i); T.startSpin(); T.holding = true;
+    let t = 0;
+    while(T.phase === "spin" && t < 34 * 120){
+      T.step(); t++;
+      const pr = T.cachedPredict();
+      if(pr && pr.outcome === "land" && T.gatesHit.every(Boolean) && t > 20){ T.doRelease("bot"); break; }
+    }
+    let g = 0;
+    while((T.phase === "flight" || T.phase === "invert") && g++ < 30000) T.step();
+    if(!(T.lastOutcome === "land" && T.gatesHit.every(Boolean))) break;
+    reached = i + 2;
+  }
+  ok("a player following only the tutorial reaches system 3 or better",
+     reached >= 3, "reached system " + reached);
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
