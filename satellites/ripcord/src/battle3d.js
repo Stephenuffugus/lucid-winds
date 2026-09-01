@@ -138,22 +138,39 @@ function makeRenderer(){
 
   /* alpha true, and no scene background: outside the stadium the page's own
      packed earth shows through, the way the painted dish's vignette does. */
-  var r = new T.WebGLRenderer({ canvas:c, antialias:true, alpha:true });
-  r.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+  /* ⛔ NO MSAA AT dpr 2. A retina phone is already supersampling this canvas, and
+     multisampling a full screen 750 by 1334 buffer on top of that multiplies the
+     fragment work for a difference nobody can see at that density. It stays on
+     for the one density that needs it. */
+  var dpr = Math.min(2, window.devicePixelRatio || 1);
+  var r = new T.WebGLRenderer({ canvas:c, antialias:dpr < 1.5, alpha:true });
+  r.setPixelRatio(dpr);
+  /* EXPOSURE, and it is the whole difference between a stadium and a bathtub.
+     This game is packed earth and chalk on a #160F0C page; a physically based
+     scene lit by a bright generated room and rendered with no tone curve blows
+     every metal surface to white, and the chalk ring came back as a porcelain
+     bowl. A film curve at two thirds of a stop under puts the rail back at the
+     brightness the painted 2D dish has, and rolls the specular off instead of
+     clipping it. Nothing in the assets is touched. */
+  r.toneMapping = T.ACESFilmicToneMapping;
+  r.toneMappingExposure = 0.70;
   /* ONE contact shadow, which is the same call the 2D renderer makes and for the
      same reason: without it a top is a sticker lying on a photograph of a floor.
      It is the one depth cue this view cannot do without, it costs a depth pass
      over two tops, and the first picture of this scene without it showed exactly
      the sticker. */
   r.shadowMap.enabled = true;
-  r.shadowMap.type = T.PCFSoftShadowMap;
+  /* PCF, not PCF SOFT, and a 512 map. Over a 300mm dish that is 0.6mm a texel,
+     which is far finer than a contact shadow needs, and the soft variant's extra
+     lookups are paid once per fragment of the whole screen. */
+  r.shadowMap.type = T.PCFShadowMap;
   S.renderer = r;
 
   var sc = new T.Scene();
   sc.add(new T.HemisphereLight(0xfff3e2, 0x241c15, 1.15));
   var key = new T.DirectionalLight(0xffffff, 2.1); key.position.set(-600, 900, 600);
   key.castShadow = true;
-  key.shadow.mapSize.width = key.shadow.mapSize.height = 1024;
+  key.shadow.mapSize.width = key.shadow.mapSize.height = 512;
   key.shadow.bias = -0.0006;
   sc.add(key); sc.add(key.target);
   S.key = key;
@@ -474,9 +491,14 @@ function project(x, z){
 function exit(full){
   S.seq++;
   setActive(false);
-  S.ready = false;
   show(false);
+  /* ⛔ A hide does NOT un-build the scene. The stadium and both tops are still
+     standing and still correct, so coming back for the next round of the same
+     match is one flag, not a rebuild; only the trip to the menu takes the scene
+     down. Clearing `ready` here made the next round draw its first frames in 2D
+     while a scene that was already right waited on a promise. */
   if (!full) return;
+  S.ready = false;
   dropTop(0); dropTop(1);
   if (S.stadium){ S.scene.remove(S.stadium); S.stadium = null; S.stadiumName = ''; }
   var urls = Object.keys(S.mesh);

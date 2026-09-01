@@ -39,7 +39,25 @@ fs.mkdirSync(OUT, { recursive: true });
 
 const W = parseInt(process.argv[2] || '375', 10);
 const H = parseInt(process.argv[3] || '667', 10);
-const TAG = W + 'x' + H;
+/* A phone is device pixel ratio 2 and that is the default. The argument exists
+   because this runs on a software rasteriser: at 2 the whole screen is a million
+   fragments of physically based shading per frame, and being able to halve that
+   is the difference between watching a round finish and watching a budget run
+   out. Every picture kept in the repo is taken at 2. */
+const DPR = parseFloat(process.argv[4] || '2');
+/* Seconds to wait for a round to finish before giving up on the finish and drop
+   pictures. The default keeps a routine run short; raise it when the pictures
+   are the point. See the note where it is spent. */
+const PATIENCE = parseFloat(process.argv[5] || '100');
+/* Which rung to fight. The default is the first one, which is what a new player
+   meets and what the four checks should be measured against. A higher one is how
+   the finish picture gets taken inside a budget: on a software rasteriser this
+   page runs at about one frame a second and the frame loop caps dt at 0.05, so
+   the simulation advances at a twentieth of wall clock and a first rung round
+   that lasts forty seconds takes thirteen minutes to watch. Against rung 23 the
+   stock build is taken apart in a few seconds of it. */
+const RUNG = parseInt(process.argv[6] || '0', 10);
+const TAG = W + 'x' + H + (DPR === 2 ? '' : '@' + DPR);
 const wait = ms => new Promise(r => setTimeout(r, ms));
 
 const fails = [];
@@ -76,7 +94,7 @@ const browser = await puppeteer.launch({ headless: 'new', protocolTimeout: 12000
   args: ['--no-sandbox', '--disable-dev-shm-usage',
          '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
 const page = await browser.newPage();
-await page.setViewport({ width: W, height: H, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+await page.setViewport({ width: W, height: H, deviceScaleFactor: DPR, isMobile: true, hasTouch: true });
 
 const errors = [];
 page.on('pageerror', e => errors.push('pageerror: ' + e.message));
@@ -165,7 +183,8 @@ const shot = async (name) => {
   return name;
 };
 
-console.log('battle3d gate, viewport ' + TAG + ', device pixel ratio 2\n');
+console.log('battle3d gate, viewport ' + W + 'x' + H + ', device pixel ratio ' + DPR +
+            ', rung ' + (RUNG + 1) + '\n');
 
 /* ---------------------------------------------------------------- BOOT ---- */
 await page.goto(URL_BASE, { waitUntil: 'load' });
@@ -175,15 +194,16 @@ await wait(900);
    the state a player would reach by tapping it, reached without depending on a
    control that does not exist yet. Read, set the one field, write it back, so
    nothing else in the save is lost. */
-await page.evaluate(() => {
+await page.evaluate((rung) => {
   const k = 'ripcord.save.v1';
   let s = {};
   try { s = JSON.parse(localStorage.getItem(k) || '{}') || {}; } catch (e) { s = {}; }
   s.settings = Object.assign({ sound: false, haptics: false, reduceMotion: false },
                              s.settings || {}, { battle3d: true, sound: false });
   s.seen = Object.assign({}, s.seen || {}, { motionAsked: 1 });
+  if (rung > 0) { s.rung = rung; s.facing = rung; }
   localStorage.setItem(k, JSON.stringify(s));
-});
+}, RUNG);
 await page.reload({ waitUntil: 'load' });
 await wait(900);
 
@@ -215,39 +235,51 @@ ok(wound, 'the wind graded, so there is a launch to make');
 
 await page.evaluate(() => document.getElementById('go').click());
 
-/* Wait for the PHYSICS, not for a clock.
-   ⛔ The drop beat is a transform: for its first second the tops are drawn
-   falling while the simulation has not stepped once. A software GPU runs this
-   page at well under ten frames a second, so "wait 1400ms" landed mid drop, and
-   a 3D layer that only animated the fall would have satisfied the motion check
-   without ever riding the sim. window.__gap is the game's own hook and it is the
-   distance between the two tops: when it CHANGES, the physics clock is running. */
 const gap = () => page.evaluate(() => (window.__gap ? window.__gap() : null));
-let g0 = null, moving = false;
-for (let i = 0; i < 60 && !moving; i++) {
-  await wait(200);
-  const g = await gap();
-  if (g === null || g === 99) continue;
-  if (g0 === null) { g0 = g; continue; }
-  if (Math.abs(g - g0) > 1e-4) moving = true;
-}
-ok(moving, 'the simulation is stepping, so the drop beat is over and this is a fight');
 const fighting = await page.evaluate(() => document.getElementById('dock').classList.contains('hide'));
 ok(fighting, 'the round is running');
 
 /* The view loads its meshes on first use, so give it a bounded chance to finish
-   before photographing it. This is a WAIT, not a guarantee: if it never reports
-   ready the line below says so and the four checks are still made on whatever is
-   actually on the screen. */
+   before anything is timed against it. This is a WAIT, not a guarantee: if it
+   never reports ready the line below says so and the four checks are still made
+   on whatever is actually on the screen. */
 let ready3d = false;
-for (let i = 0; i < 60 && !ready3d; i++) {
+for (let i = 0; i < 90 && !ready3d; i++) {
   ready3d = await page.evaluate(() => !!(window.B3D && window.B3D.ready && window.B3D.ready()));
   if (!ready3d) await wait(400);
 }
 ok(ready3d, 'the 3D view reports itself ready' +
    (ready3d ? '' : ' (it never did, so the pictures below are of whatever did load)'));
 
-await shot('probe-' + TAG + '-battle.png');
+/* What this machine is actually managing, because every budget below is spent
+   in wall clock and the game is spending it in frames. Reported, never asserted
+   on: this is a software rasteriser on two cores and it is not a phone. */
+const fps = await page.evaluate(() => new Promise(res => {
+  let n = 0; const t0 = performance.now();
+  const tick = () => { n++; if (performance.now() - t0 < 2000) requestAnimationFrame(tick);
+                       else res(Math.round(n * 1000 / (performance.now() - t0))); };
+  requestAnimationFrame(tick);
+}));
+console.log('  note  ' + fps + ' frames per second here. The frame loop caps dt at 0.05, so below' +
+            ' 20fps\n        the simulation itself advances slower than wall clock.');
+
+/* Wait for the PHYSICS, not for a clock.
+   ⛔ The drop beat is a transform: for its first second the tops are drawn
+   falling while the simulation has not stepped once. A 3D layer that animated
+   only the fall would satisfy the motion check below without ever riding the
+   sim. window.__gap is the game's own hook and it is the distance between the
+   two tops: when it CHANGES, the physics clock is running. */
+let g0 = null, moving = false;
+for (let i = 0; i < 150 && !moving; i++) {
+  await wait(300);
+  const g = await gap();
+  if (g === null || g === 99) continue;
+  if (g0 === null) { g0 = g; continue; }
+  if (Math.abs(g - g0) > 1e-4) moving = true;
+}
+ok(moving, 'the simulation is stepping, so the drop beat is over and this is a fight');
+
+await shot('probe-' + TAG + '-mid.png');
 
 /* ------------------------------------------------------------ THE FOUR ---- */
 const canvas = await page.evaluate(() => {
@@ -272,18 +304,88 @@ const bufA = await dishShot('probe-' + TAG + '-dish-1.png');
 await wait(600);
 const bufB = await dishShot('probe-' + TAG + '-dish-2.png');
 const a = await stat(bufA), b = await stat(bufB);
+/* ⛔ AND BACK TO THE FRONT. Reading the pictures happens on a second tab, and a
+   backgrounded page has its animation frames throttled to a crawl: the finish
+   watch below spent eight minutes staring at a page that was being given about
+   one frame every five seconds, and reported an unfinished round about a round
+   that had barely started. Same tab, second time it has bitten. */
+await page.bringToFront();
 
 ok(a.dom <= 0.90,
    '(b) the dish is not one flat colour (' + (a.dom * 100).toFixed(1) +
    '% is the commonest colour, ' + a.colours + ' distinct colours in ' + a.w + 'x' + a.h + ')');
 
 const d = diff(a, b);
-ok(d.changedFrac >= 0.02,
+/* One percent of a 32 by 32 grid is ten cells. A scene that is not moving scores
+   exactly zero here, because the renderer is a function of the state it was
+   handed and two identical states give two identical pictures; every run with
+   the simulation riding has scored between 2.6 and 6.4. Ten cells sits clear of
+   both. */
+ok(d.changedFrac >= 0.01,
    '(c) the dish changes over 600ms (' + (d.changedFrac * 100).toFixed(1) +
    '% of cells moved, mean difference ' + d.meanDiff.toFixed(2) + '/255)');
 
 ok(errors.length === 0, '(d) no page errors' + (errors.length ? ':' : ''));
 errors.forEach(e => console.log('        ' + e));
+
+/* ------------------------------------------------------ A FINISH, AND A DROP
+   A picture of two tops circling says nothing about the two moments that
+   actually cost something to get right: the camera punch on a finish with a top
+   lying over, and the fall at the start of a round. Both are photographed here,
+   and both are BOUNDED: a round that outlasts the budget says so and leaves the
+   picture untaken rather than hanging the gate.
+
+   ⛔ Under a software GPU this page runs well below twenty frames a second and
+   the frame loop caps dt at 0.05, so the simulation itself advances at roughly
+   half of wall clock. A round that takes twenty seconds to play takes forty to
+   watch. That is why these two are the last things done and why they have a
+   ceiling. */
+let finished = false;
+/* ⛔ POLL SLOWLY. Every evaluate is a round trip into a page that is managing
+   about one frame a second, and asking it twice a second was taking a real share
+   of the frames the round needs in order to happen at all: the first version of
+   this watched for five minutes and moved the simulation about six seconds.
+   One question every two seconds, and the answer covers BOTH endings - a top
+   went over, or the clock ran out and the dock came back. A detector that can
+   only see one of the two endings reports "still fighting" about a finished
+   round. */
+for (let i = 0, n = Math.round(PATIENCE / 0.8); i < n && !finished; i++) {
+  await wait(800);
+  finished = await page.evaluate(() =>
+    (window.__gap ? window.__gap() : 0) === 99 ||
+    !document.getElementById('dock').classList.contains('hide'));
+}
+if (finished) {
+  await shot('probe-' + TAG + '-finish.png');
+} else {
+  console.log('  note  the round had not finished inside ' + PATIENCE + 's, so there is no finish shot');
+}
+
+/* the drop, on a SECOND round, where the meshes are already in hand and the
+   fall is not racing a download */
+let secondRound = false;
+if (finished) {
+  for (let i = 0; i < 40 && !secondRound; i++) {
+    await wait(500);
+    secondRound = await page.evaluate(() =>
+      !document.getElementById('dock').classList.contains('hide') &&
+      !document.getElementById('menu').classList.contains('up'));
+  }
+}
+if (secondRound) {
+  await page.mouse.move(cx, cy - R);
+  await page.mouse.down();
+  for (let i = 1; i <= 62; i++) {
+    const a = -Math.PI / 2 + (i / 46) * Math.PI * 2 * 2.2;
+    await page.mouse.move(cx + Math.cos(a) * R, cy + Math.sin(a) * R);
+  }
+  await page.mouse.up();
+  await wait(300);
+  await page.evaluate(() => document.getElementById('go').click());
+  await shot('probe-' + TAG + '-launch.png');
+} else {
+  console.log('  note  no second round inside the budget, so there is no launch shot');
+}
 
 await shot('probe-' + TAG + '-late.png');
 

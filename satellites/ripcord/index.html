@@ -4468,22 +4468,39 @@ function makeRenderer(){
 
   /* alpha true, and no scene background: outside the stadium the page's own
      packed earth shows through, the way the painted dish's vignette does. */
-  var r = new T.WebGLRenderer({ canvas:c, antialias:true, alpha:true });
-  r.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+  /* ⛔ NO MSAA AT dpr 2. A retina phone is already supersampling this canvas, and
+     multisampling a full screen 750 by 1334 buffer on top of that multiplies the
+     fragment work for a difference nobody can see at that density. It stays on
+     for the one density that needs it. */
+  var dpr = Math.min(2, window.devicePixelRatio || 1);
+  var r = new T.WebGLRenderer({ canvas:c, antialias:dpr < 1.5, alpha:true });
+  r.setPixelRatio(dpr);
+  /* EXPOSURE, and it is the whole difference between a stadium and a bathtub.
+     This game is packed earth and chalk on a #160F0C page; a physically based
+     scene lit by a bright generated room and rendered with no tone curve blows
+     every metal surface to white, and the chalk ring came back as a porcelain
+     bowl. A film curve at two thirds of a stop under puts the rail back at the
+     brightness the painted 2D dish has, and rolls the specular off instead of
+     clipping it. Nothing in the assets is touched. */
+  r.toneMapping = T.ACESFilmicToneMapping;
+  r.toneMappingExposure = 0.70;
   /* ONE contact shadow, which is the same call the 2D renderer makes and for the
      same reason: without it a top is a sticker lying on a photograph of a floor.
      It is the one depth cue this view cannot do without, it costs a depth pass
      over two tops, and the first picture of this scene without it showed exactly
      the sticker. */
   r.shadowMap.enabled = true;
-  r.shadowMap.type = T.PCFSoftShadowMap;
+  /* PCF, not PCF SOFT, and a 512 map. Over a 300mm dish that is 0.6mm a texel,
+     which is far finer than a contact shadow needs, and the soft variant's extra
+     lookups are paid once per fragment of the whole screen. */
+  r.shadowMap.type = T.PCFShadowMap;
   S.renderer = r;
 
   var sc = new T.Scene();
   sc.add(new T.HemisphereLight(0xfff3e2, 0x241c15, 1.15));
   var key = new T.DirectionalLight(0xffffff, 2.1); key.position.set(-600, 900, 600);
   key.castShadow = true;
-  key.shadow.mapSize.width = key.shadow.mapSize.height = 1024;
+  key.shadow.mapSize.width = key.shadow.mapSize.height = 512;
   key.shadow.bias = -0.0006;
   sc.add(key); sc.add(key.target);
   S.key = key;
@@ -4804,9 +4821,14 @@ function project(x, z){
 function exit(full){
   S.seq++;
   setActive(false);
-  S.ready = false;
   show(false);
+  /* ⛔ A hide does NOT un-build the scene. The stadium and both tops are still
+     standing and still correct, so coming back for the next round of the same
+     match is one flag, not a rebuild; only the trip to the menu takes the scene
+     down. Clearing `ready` here made the next round draw its first frames in 2D
+     while a scene that was already right waited on a promise. */
   if (!full) return;
+  S.ready = false;
   dropTop(0); dropTop(1);
   if (S.stadium){ S.scene.remove(S.stadium); S.stadium = null; S.stadiumName = ''; }
   var urls = Object.keys(S.mesh);
@@ -6448,6 +6470,12 @@ function setLaps(n){
 }
 
 function resetRound(){
+  /* ⛔ THE WIND SCREEN IS NOT THE BATTLE. It draws a dial, three lap lanes and a
+     grade card over the painted dish, all of it sized off RAD, and the first
+     picture of a round ending with the 3D view on had that whole instrument
+     hanging over a tilted stadium it did not fit. The dish goes back to 2D
+     between rounds and the 3D comes back at the next launch. */
+  if(window.B3D)B3D.exit();
   phase='wind';stroke=[];graded=null;A=B=null;
   liveTurn=0;winding=false;setLaps(0);
   sparks=[];trailA=[];trailB=[];
@@ -7411,7 +7439,23 @@ function camUpdate(dt){
   CAM.fx=e?e.x:0;CAM.fy=e?e.y:0;
 }
 
-/* ================================================================ RENDERING == */
+/* ================================================================ RENDERING ==
+   ONE GUARD. When the 3D battle view is up it owns the dish - the stadium, the
+   tops, the camera move - and this canvas becomes the layer above it: the
+   banner, the finish symbol, the spin bars, the tells and the armed marker,
+   all of which are information and none of which belongs in the world. The
+   guard is read here once a frame and by nothing that has not been told about
+   it. With the setting off it is false and not one line below behaves
+   differently from the day before this existed. */
+var b3dOn=false;
+/* The plain copy of a round object that the 3D view rides. It gets a snapshot,
+   never the live object, so there is no chance of a renderer writing into the
+   simulation's state. */
+function t3(o){
+  if(!o)return null;
+  return {x:o.x,z:o.z,w:o.w,phase:o.phase,lx:o.lx,lz:o.lz,
+          alive:o.alive,R:o.spec.R,cfg:o.spec.cfg};
+}
 function frame(now){
   requestAnimationFrame(frame);
   if(!last)last=now;
@@ -7424,20 +7468,28 @@ function frame(now){
   step(dt);
   camUpdate(dt);
 
+  b3dOn=!!(window.B3D&&B3D.active&&B3D.ready()&&B3D.wanted());
+  if(b3dOn)B3D.sync({A:t3(A),B:t3(B),phase:phase,
+                     dropProgress:phase==='drop'?dropT/DROP_DUR:1,camz:CAM.z});
+
   ctx.clearRect(0,0,W,H);
-  if(CAM.z!==1){
+  /* the 3D camera does its own dolly off the same CAM.z, so applying this one
+     as well would punch the finish twice */
+  if(CAM.z!==1&&!b3dOn){
     ctx.save();
     ctx.translate(CAM.fx,CAM.fy);ctx.scale(CAM.z,CAM.z);ctx.translate(-CAM.fx,-CAM.fy);
   }
-  drawArena();
-  if(phase==='wind'){drawWindTrack();drawStroke();}
-  if(tuj)for(var i=0;i<tuj.targets.length;i++)drawTop(tuj.targets[i],'#8E9BA2',false);
-  if(B)withDrop(B,0.14,function(){drawTop(B,'#8E9BA2',false,trailB);});
-  if(A)withDrop(A,0,function(){drawTop(A,TRAIL_HEX[cosm.trail]||'#C9A227',true,trailA);});
+  if(!b3dOn){
+    drawArena();
+    if(phase==='wind'){drawWindTrack();drawStroke();}
+    if(tuj)for(var i=0;i<tuj.targets.length;i++)drawTop(tuj.targets[i],'#8E9BA2',false);
+    if(B)withDrop(B,0.14,function(){drawTop(B,'#8E9BA2',false,trailB);});
+    if(A)withDrop(A,0,function(){drawTop(A,TRAIL_HEX[cosm.trail]||'#C9A227',true,trailA);});
+  }else if(phase==='wind'){drawWindTrack();drawStroke();}
   drawSparks();
   drawTells();
   drawArmed();
-  if(CAM.z!==1)ctx.restore();
+  if(CAM.z!==1&&!b3dOn)ctx.restore();
   if(mode==='uri'&&phase==='play'&&A&&B){
     // Two spin bars and a clock. Uri has nothing to watch except the gap, so the
     // gap is what gets drawn.
@@ -7928,6 +7980,11 @@ function drawSpinBar(x,y,w,v,col){
   ctx.fillRect(x-w/2,y,w*Math.max(0,Math.min(1,v)),7);
 }
 function drawSparks(){
+  /* ⛔ Off in 3D. Sparks are drawn in SCREEN space at the 2D camera's idea of
+     where a contact was, and over a tilted world they would sit in the wrong
+     place, at the wrong size, on the wrong plane. A wrong picture is worse than
+     no picture; they come back when they are struck in the world. */
+  if(b3dOn)return;
   for(var i=0;i<sparks.length;i++){
     var s=sparks[i];
     ctx.globalAlpha=clamp(s.life*2.6,0,1);

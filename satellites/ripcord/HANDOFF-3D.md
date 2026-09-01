@@ -472,7 +472,148 @@ WHAT I HAD TO DECIDE, all of it flagged rather than buried:
   falls out of the geometry rather than out of a table. The group's origin is the
   CONTACT POINT, so a lean rotates the top about its tip and the simulation's
   (x, z) needs no correction.
-- [ ] Phase 2: sim rides, probe fully green. Evidence:
+- [x] Phase 2: sim rides, probe fully green. Evidence:
+
+```
+$ node tools/bundle.js && node test/battle3d.mjs 375 667 2 500 23
+index.html 366133 bytes  build 20260831q
+battle3d gate, viewport 375x667, device pixel ratio 2, rung 24
+
+  ok    the 3D battle setting survives a reload in the save file
+  ok    the wind graded, so there is a launch to make
+  ok    the round is running
+  ok    the 3D view reports itself ready
+  note  1 frames per second here. The frame loop caps dt at 0.05, so below 20fps
+        the simulation itself advances slower than wall clock.
+  ok    the simulation is stepping, so the drop beat is over and this is a fight
+  ok    (a) a #b3d canvas exists with a size (375x667 css, 750x1334 backing)
+  ok         and it sits BEFORE #cv, so the 2D layer draws over it
+  ok    (b) the dish is not one flat colour (41.1% is the commonest colour, 817 distinct colours in 660x660)
+  ok    (c) the dish changes over 600ms (6.3% of cells moved, mean difference 1.36/255)
+  ok    (d) no page errors
+
+BATTLE3D OK
+```
+
+All four, including the motion the last phase could not produce. The default run
+(`node test/battle3d.mjs`, rung 1) passes the same four; the arguments above ask
+for a harder opponent and more patience so the round FINISHES inside the run and
+the finish and drop pictures get taken. Both are reported honestly when they do
+not happen rather than skipped silently.
+
+```
+$ node tools/check.js
+bundle pass 0s   balance pass 15s   determinism pass 1s   rigs pass 11s
+modes pass 7s    parts pass 226s    ladder pass 22s       bosses pass 6s
+playthrough pass 90s
+
+ALL GATES PASSED
+
+$ node tools/shots.mjs                     (the 2D game, toggle off)
+CONTROLS UNDER 48 RENDERED PIXELS: none
+TEXT UNDER 11px: none
+DASHES IN PLAYER COPY: none
+PAGE ERRORS: none
+01-first-run IDENTICAL     02-rules-scrolled IDENTICAL
+04-workshop-build IDENTICAL 05-workshop-weights IDENTICAL
+06-workshop-tuning IDENTICAL 07-workshop-rigs IDENTICAL
+08-modes IDENTICAL          09-wind-empty IDENTICAL
+11-wind-graded DIFFERS
+```
+
+`11-wind-graded` differs, and it is not mine: it grades a mouse gesture measured
+in real time, so it differs between two runs of the SAME code. Checked rather
+than assumed:
+
+```
+$ cp tools/shots/11-wind-graded.png A.png && node tools/shots.mjs && cmp A.png tools/shots/11-wind-graded.png
+11 DIFFERS across two runs of THIS code (so it is not deterministic)
+```
+
+WHAT I LOOKED AT: `probe-375x667-launch.png`, `-mid.png`, `-finish.png`.
+
+**The finish is the picture that says this works.** "YOU BURST +2" with the
+painted burst symbol above it, drawn on the 2D layer over a 3D world; the loser
+lying over on the dish with its shaft out to the side, resting on the floor
+rather than sunk through it; the winner still standing beside it; and the dish
+visibly LARGER than in the mid shot, which is CAM.z arriving as a dolly.
+
+**The lean is wired and it is small.** In the mid shot both tops are tilted a few
+degrees, the near one enough to show its top face and a sliver of its bit, and
+neither is bolt upright or wobbling. That is the 0.03 to 0.46 radian band the
+document describes, applied straight as an Euler angle about the axis
+perpendicular to the lean, with the group's origin at the contact point so it
+pivots about its tip.
+
+**The spin is wired too**, which a still frame cannot show, so it was checked on
+its own: three synthetic syncs at phase 0, a quarter turn and a half turn render
+three visibly different blade rotations. The mean pixel difference is small only
+because a blade is a near symmetric disc of similar spurs.
+
+Three things wrong, from the images:
+
+1. **THE RAIL IS STILL A CHROME MIRROR**, and with the camera punched in on a
+   finish it is most of the frame. Unchanged and still not mine to repaint; see
+   Phase 1 for the reason and the fix.
+2. **THE TOPS FALL FROM TOO HIGH AND WITHOUT THEIR CORD.** 220mm is the document's
+   number and it is what I used, but at a 38 degree camera a height maps almost
+   one to one onto the screen while the dish's depth is foreshortened, so 220mm
+   reads as one and a half dish widths and the launch shot is two tops in an
+   empty sky above a stadium. The 2D falls about one dish RADIUS, in screen
+   space, and pays out a cord behind each top so the fall reads as a throw. In
+   3D there is no cord and nothing joins them to the arena.
+3. **NEITHER TOP SAYS WHOSE IT IS.** Both are steel sculptures; the 2D answers
+   this instantly with a gold ring on the player's top and a steel one on the
+   opponent's, and the 3D answers it not at all. In the finish shot the only
+   thing that tells you who burst is the banner.
+
+And a fourth, because it is the composition: **the dish uses about a third of the
+height of a portrait phone** and the rest is empty ground. That is the honest cost
+of a 38 degree camera on a 9 by 16 screen, and the framing is already matched to
+the 2D across the WIDTH (the play circle covers 88 percent of it in both views,
+and the rail bleeds off the sides in both). It is where a HUD would go.
+
+WHAT THE PICTURES CAUGHT THAT THE CHECKS DID NOT:
+
+- **The wind screen was being drawn over a stale 3D stadium.** The first finish
+  shot came back showing the next round's wind dial, its three lap lanes and its
+  grade card hanging over a tilted dish left standing from the round before, at
+  the previous round's arena size. The wind screen is an instrument sized off
+  RAD, not a view of the world. `resetRound` now calls `B3D.exit()`, the dish
+  goes back to 2D between rounds, and the 3D returns at the next launch. A hide
+  no longer un-builds the scene, so coming back is a flag rather than a rebuild.
+
+WHAT I HAD TO DECIDE:
+
+- **`dropProgress` is one number for both tops, so both fall together.** The
+  document's state shape carries a single scalar and I did not widen it. The 2D
+  drops the player's top a beat after the opponent's, deliberately, "so you read
+  them as two separate acts rather than one event", and that beat is lost here.
+- **In `tujlub` the standing targets are not drawn.** The skip guard turns off
+  `drawTop`, which is what draws them, and the sync state the document defines
+  carries `A` and `B` and nothing else. The range in 3D is the player's top alone
+  on an empty long range. This is the largest hole in the build and it is named
+  again at the bottom.
+- **Sparks are off in 3D**, one guard inside `drawSparks`, as instructed: they are
+  screen space particles at the 2D camera's idea of a contact and would sit in
+  the wrong place on a tilted world.
+- **The 2D camera transform is skipped when the 3D is on**, because CAM.z is
+  already being spent as a dolly and applying it twice would punch the finish
+  twice.
+
+ABOUT THAT `1 frames per second`, since it is in every run above and it is not
+the feature: the 3D render itself costs **5.4ms a frame**, measured by timing
+`B3D.sync` directly in the page. The 2D game alone runs at 4 to 6fps in this
+codespace. The rest is a headless software rasteriser compositing a second full
+screen WebGL layer on two shared cores. Things checked and ruled out along the
+way: the shadow pass (3.7ms of the 5.4; turning it off did not move the page
+rate), multisampling, and the canvas resolution (device pixel ratio 1 measured
+the same). Two probe bugs came out of chasing it, both now commented in the file:
+a `page.screenshot` that hung for the full protocol timeout because the picture
+reader is a second tab and a backgrounded renderer stops producing frames, and
+then the same tab problem again in a worse disguise, where the finish watch spent
+eight minutes reporting "still fighting" about a page whose animation frames were
+being throttled because it was in the background.
 - [ ] Phase 3: information survives, fallback proven. Evidence:
 - [ ] Phase 4: hostile eye done, ALL GATES PASSED, pushed. Evidence:
 - Three things I would fix next (honest, from the images):

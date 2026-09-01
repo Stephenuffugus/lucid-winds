@@ -2312,6 +2312,12 @@ function setLaps(n){
 }
 
 function resetRound(){
+  /* ⛔ THE WIND SCREEN IS NOT THE BATTLE. It draws a dial, three lap lanes and a
+     grade card over the painted dish, all of it sized off RAD, and the first
+     picture of a round ending with the 3D view on had that whole instrument
+     hanging over a tilted stadium it did not fit. The dish goes back to 2D
+     between rounds and the 3D comes back at the next launch. */
+  if(window.B3D)B3D.exit();
   phase='wind';stroke=[];graded=null;A=B=null;
   liveTurn=0;winding=false;setLaps(0);
   sparks=[];trailA=[];trailB=[];
@@ -3275,7 +3281,23 @@ function camUpdate(dt){
   CAM.fx=e?e.x:0;CAM.fy=e?e.y:0;
 }
 
-/* ================================================================ RENDERING == */
+/* ================================================================ RENDERING ==
+   ONE GUARD. When the 3D battle view is up it owns the dish - the stadium, the
+   tops, the camera move - and this canvas becomes the layer above it: the
+   banner, the finish symbol, the spin bars, the tells and the armed marker,
+   all of which are information and none of which belongs in the world. The
+   guard is read here once a frame and by nothing that has not been told about
+   it. With the setting off it is false and not one line below behaves
+   differently from the day before this existed. */
+var b3dOn=false;
+/* The plain copy of a round object that the 3D view rides. It gets a snapshot,
+   never the live object, so there is no chance of a renderer writing into the
+   simulation's state. */
+function t3(o){
+  if(!o)return null;
+  return {x:o.x,z:o.z,w:o.w,phase:o.phase,lx:o.lx,lz:o.lz,
+          alive:o.alive,R:o.spec.R,cfg:o.spec.cfg};
+}
 function frame(now){
   requestAnimationFrame(frame);
   if(!last)last=now;
@@ -3288,20 +3310,28 @@ function frame(now){
   step(dt);
   camUpdate(dt);
 
+  b3dOn=!!(window.B3D&&B3D.active&&B3D.ready()&&B3D.wanted());
+  if(b3dOn)B3D.sync({A:t3(A),B:t3(B),phase:phase,
+                     dropProgress:phase==='drop'?dropT/DROP_DUR:1,camz:CAM.z});
+
   ctx.clearRect(0,0,W,H);
-  if(CAM.z!==1){
+  /* the 3D camera does its own dolly off the same CAM.z, so applying this one
+     as well would punch the finish twice */
+  if(CAM.z!==1&&!b3dOn){
     ctx.save();
     ctx.translate(CAM.fx,CAM.fy);ctx.scale(CAM.z,CAM.z);ctx.translate(-CAM.fx,-CAM.fy);
   }
-  drawArena();
-  if(phase==='wind'){drawWindTrack();drawStroke();}
-  if(tuj)for(var i=0;i<tuj.targets.length;i++)drawTop(tuj.targets[i],'#8E9BA2',false);
-  if(B)withDrop(B,0.14,function(){drawTop(B,'#8E9BA2',false,trailB);});
-  if(A)withDrop(A,0,function(){drawTop(A,TRAIL_HEX[cosm.trail]||'#C9A227',true,trailA);});
+  if(!b3dOn){
+    drawArena();
+    if(phase==='wind'){drawWindTrack();drawStroke();}
+    if(tuj)for(var i=0;i<tuj.targets.length;i++)drawTop(tuj.targets[i],'#8E9BA2',false);
+    if(B)withDrop(B,0.14,function(){drawTop(B,'#8E9BA2',false,trailB);});
+    if(A)withDrop(A,0,function(){drawTop(A,TRAIL_HEX[cosm.trail]||'#C9A227',true,trailA);});
+  }else if(phase==='wind'){drawWindTrack();drawStroke();}
   drawSparks();
   drawTells();
   drawArmed();
-  if(CAM.z!==1)ctx.restore();
+  if(CAM.z!==1&&!b3dOn)ctx.restore();
   if(mode==='uri'&&phase==='play'&&A&&B){
     // Two spin bars and a clock. Uri has nothing to watch except the gap, so the
     // gap is what gets drawn.
@@ -3792,6 +3822,11 @@ function drawSpinBar(x,y,w,v,col){
   ctx.fillRect(x-w/2,y,w*Math.max(0,Math.min(1,v)),7);
 }
 function drawSparks(){
+  /* ⛔ Off in 3D. Sparks are drawn in SCREEN space at the 2D camera's idea of
+     where a contact was, and over a tilted world they would sit in the wrong
+     place, at the wrong size, on the wrong plane. A wrong picture is worse than
+     no picture; they come back when they are struck in the world. */
+  if(b3dOn)return;
   for(var i=0;i<sparks.length;i++){
     var s=sparks[i];
     ctx.globalAlpha=clamp(s.life*2.6,0,1);
