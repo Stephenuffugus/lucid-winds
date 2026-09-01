@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#0E141C">
+<title>Tangent</title>
+<style>
+  :root{
+    --ground:#0E141C; --deck:#1B2431; --etch:#3A4A5C;
+    --ball:#F2A93B; --tele:#79D0E6; --warn:#E0517B;
+    --ink:#D8E2EC; --ink-dim:#7C8B9B; --ok:#6FCF97;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;overflow:hidden;background:var(--ground);
+    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    color:var(--ink);font-variant-numeric:tabular-nums;-webkit-user-select:none;user-select:none;touch-action:none}
+  canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
+  .hud{position:fixed;left:0;right:0;pointer-events:none;z-index:5}
+  .hud > *{pointer-events:auto}
+
+  #top{top:0;padding:calc(env(safe-area-inset-top) + 10px) 12px 10px;
+    background:linear-gradient(180deg,rgba(14,20,28,.94),rgba(14,20,28,0))}
+  .lvline{display:flex;align-items:baseline;gap:8px;letter-spacing:-.01em}
+  .lvnum{font-size:12px;color:var(--ink-dim)}
+  .lvname{font-size:17px;font-weight:600}
+  .crit{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+  .chip{font-size:11.5px;padding:3px 8px;border-radius:2px;border:1px solid var(--etch);
+    color:var(--ink-dim);background:rgba(27,36,49,.7);display:flex;align-items:center;gap:5px;line-height:1.35}
+  .chip .dot{width:5px;height:5px;border-radius:50%;background:var(--ink-dim)}
+  .chip.met{color:var(--ok);border-color:rgba(111,207,151,.4)}
+  .chip.met .dot{background:var(--ok)}
+  .chip.bad{color:var(--warn);border-color:rgba(224,81,123,.45)}
+  .chip.bad .dot{background:var(--warn)}
+
+  #bottom{bottom:0;padding:14px 12px calc(env(safe-area-inset-bottom) + 12px);
+    background:linear-gradient(0deg,rgba(14,20,28,.96) 55%,rgba(14,20,28,0))}
+  .palette{display:flex;gap:7px;margin-bottom:11px;overflow-x:auto;scrollbar-width:none}
+  .palette::-webkit-scrollbar{display:none}
+  .tool{flex:0 0 auto;min-width:66px;padding:8px 9px;border-radius:3px;background:var(--deck);
+    border:1px solid var(--etch);color:var(--ink-dim);font-size:11.5px;text-align:left;line-height:1.3;
+    cursor:pointer;font-family:inherit}
+  .tool b{display:block;font-size:12.5px;font-weight:600;color:var(--ink);margin-bottom:2px}
+  .tool.on{border-color:var(--tele);background:#22323E;color:var(--tele)}
+  .tool.on b{color:var(--tele)}
+
+  .row{display:flex;align-items:center;gap:10px}
+  .gauge{flex:1;height:34px;position:relative;background:var(--deck);border:1px solid var(--etch);
+    border-radius:3px;overflow:hidden}
+  .gauge .lab{position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--ink-dim);z-index:2}
+  .gauge .val{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:12px;z-index:2}
+  .bubble{position:absolute;top:0;bottom:0;width:3px;background:var(--tele);left:50%;transform:translateX(-50%)}
+  .tickmid{position:absolute;top:6px;bottom:6px;left:50%;width:1px;background:var(--etch)}
+  .tol{position:absolute;top:0;bottom:0;background:rgba(121,208,230,.09);
+    border-left:1px dashed var(--etch);border-right:1px dashed var(--etch)}
+
+  button.act{padding:0 18px;height:44px;border-radius:3px;border:1px solid transparent;
+    font-size:14.5px;font-weight:600;cursor:pointer;font-family:inherit}
+  .go{background:var(--ball);color:#20160A}
+  .ghost{background:transparent;border-color:var(--etch);color:var(--ink-dim)}
+
+  .spinrow{display:flex;gap:9px;align-items:stretch}
+  #throttle{flex:1;height:88px;border-radius:4px;border:1px solid var(--etch);background:var(--deck);
+    color:var(--ink);font-size:15px;font-weight:600;font-family:inherit;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:3px;position:relative;overflow:hidden;cursor:pointer}
+  #throttle .fill{position:absolute;left:0;bottom:0;width:100%;background:rgba(242,169,59,.16);height:0}
+  #throttle span{position:relative;z-index:2}
+  #throttle .sub{font-size:11.5px;font-weight:400;color:var(--ink-dim)}
+  #throttle.hot{border-color:var(--ball)}
+  #release{width:118px;height:88px;border-radius:4px;border:1px solid var(--etch);background:#22323E;
+    color:var(--tele);font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+  #release .sub{font-size:11px;font-weight:400;color:var(--ink-dim)}
+  #release.armed{border-color:var(--ok);background:#1E3A2C;color:var(--ok)}
+  #release.armed .sub{color:rgba(111,207,151,.8)}
+
+  .card{position:fixed;left:14px;right:14px;top:50%;transform:translateY(-50%);background:var(--deck);
+    border:1px solid var(--etch);border-radius:4px;padding:20px 18px;z-index:20;max-width:400px;margin:0 auto}
+  .card h2{margin:0 0 4px;font-size:22px;font-weight:600;letter-spacing:-.02em}
+  .card .sc{font-size:44px;font-weight:600;color:var(--ball);letter-spacing:-.03em;line-height:1.05;margin:10px 0 2px}
+  .card p{margin:6px 0 0;font-size:13.5px;color:var(--ink-dim);line-height:1.5}
+  .card .btns{display:flex;gap:8px;margin-top:18px}
+  .card .btns button{flex:1}
+  .brk{margin-top:14px;border-top:1px solid var(--etch);padding-top:12px;display:flex;flex-direction:column;
+    gap:5px;font-size:12.5px}
+  .brk div{display:flex;justify-content:space-between}
+  .brk span:first-child{color:var(--ink-dim)}
+  .hide{display:none!important}
+  .hint{font-size:11.5px;color:var(--ink-dim);margin-top:9px;line-height:1.45}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+
+<div class="hud" id="top">
+  <div class="lvline"><span class="lvnum" id="lvnum">01</span><span class="lvname" id="lvname"></span></div>
+  <div class="crit" id="crit"></div>
+</div>
+
+<div class="hud" id="bottom">
+  <div id="buildui">
+    <div class="palette" id="palette"></div>
+    <div class="row" style="margin-bottom:9px">
+      <div class="gauge" id="balgauge">
+        <div class="tol" id="toltol"></div><div class="tickmid"></div><div class="bubble" id="bubble"></div>
+        <div class="lab">Balance</div><div class="val" id="balval">centred</div>
+      </div>
+    </div>
+    <div class="row">
+      <button class="act ghost" id="clearbtn">Clear deck</button>
+      <button class="act go" id="spinbtn" style="flex:1">Spin up</button>
+    </div>
+    <div class="hint" id="buildhint"></div>
+    <div class="hint" id="best" style="margin-top:4px"></div>
+  </div>
+
+  <div id="spinui" class="hide">
+    <div class="spinrow">
+      <button id="throttle"><div class="fill" id="thfill"></div>
+        <span id="thlab">Hold — let go to launch</span><span class="sub" id="rpm">0 rpm</span></button>
+      <button id="release"><span>Launch</span><span class="sub" id="relsub">or just let go</span></button>
+    </div>
+    <div class="hint" id="spinhint"></div>
+  </div>
+</div>
+
+<div class="card hide" id="card">
+  <h2 id="cardtitle"></h2>
+  <div class="sc" id="cardscore">0</div>
+  <p id="cardbody"></p>
+  <div class="brk" id="cardbrk"></div>
+  <div class="btns">
+    <button class="act ghost" id="retrybtn">Rebuild</button>
+    <button class="act go" id="nextbtn">Next</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* =====================================================================
+   TANGENT — centrifugal launch into a gravity system
+
+   The deck is a dish. Every spin rate has one stable orbit radius,
+   r = omega^2 / BOWL, so the throttle is a radius dial. You hold to
+   widen the orbit and press Release to let the ball go on whatever
+   tangent it happens to be travelling.
+
+   Release is the launch. Not the rim, not a timer — the button.
+   That makes the predicted path honest: it is drawn from the state
+   you are actually in, and releasing now produces exactly it.
+
+   Once off the deck the ball is in an N-body field. Every body pulls.
+   The target is not always the nearest one, and slower launches bend
+   more, so release radius is a real trade: fast and straight, or slow
+   and steered by gravity.
+   ===================================================================== */
+
+const DECK_R=100, BALL_R=3.4;
+const MU=2.2, SPIN_GAIN=7.5, SPIN_DRAG=3.0;
+const OM_RIM=1.9, BOWL=OM_RIM*OM_RIM/DECK_R, OMEGA_MAX=3.05, OM_IDLE=1.15;
+const TH_FLOOR=0.30, DT=1/120, RUN_LIMIT=34;
+const FLY_H=1/60, FLY_STEPS=1500, FLY_BOUND=2200;
+const HOLE_ANIM=1.5, HOLE_HOLD=0.18;
+const PORT_W=0.34, WALL_REST=0.05, DECK_STEPS=2200, WALL_DRAG=2.0, CONTACT=1.6;
+const eqRadius = om => om*om/BOWL;
+
+const PARTS={
+  rail:   {label:"Rail",   blurb:"deflects",  mass:3, kind:"segment"},
+  bumper: {label:"Bumper", blurb:"throws in", mass:2, kind:"circle", r:8.5, rest:1.12},
+  brake:  {label:"Brake",  blurb:"slows",     mass:1, kind:"zone", r:15},
+  booster:{label:"Booster",blurb:"speeds up", mass:1, kind:"zone", r:12},
+  port:   {label:"Port",   blurb:"way out",    mass:0, kind:"port"},
+};
+const TOOLS=["rail","bumper","brake","booster","erase"];
+
+/* Bodies: m is the gravitational parameter directly (accel = m / d^2).
+   ~2.6e6 captures a slow pass. ~1.1e6 bends without swallowing.       */
+const LEVELS=[
+ { name:"First tangent", budget:6, portBudget:3, tol:0.40, gates:[],
+   bodies:[{n:"Vesper",x:0,y:-430,r:28,m:6.8e6,target:true}],
+   note:"Hold to widen the orbit. Release when the line reaches Vesper." },
+
+ { name:"Behind you", budget:7, portBudget:3, tol:0.35, gates:[{r:66,a:-1.35,w:30}],
+   bodies:[{n:"Kell",x:-340,y:300,r:28,m:6.8e6,target:true}],
+   note:"Kell is behind the deck. Hold the ball back most of a turn." },
+
+ { name:"Not the nearest", budget:8, portBudget:2, tol:0.30,
+   gates:[{r:50,a:-0.55,w:28}],
+   bodies:[{n:"Ash",x:60,y:-250,r:27,m:1.1e6},
+           {n:"Orin",x:210,y:-580,r:28,m:6.8e6,target:true}],
+   note:"Ash is closer but it is not your target. Hitting it ends the run." },
+
+ { name:"Around the heavy", budget:9, portBudget:2, tol:0.26,
+   gates:[{r:70,a:-1.15,w:28}],
+   bodies:[{n:"Bell",x:-250,y:-210,r:34,m:3.4e6},
+           {n:"Wren",x:-580,y:170,r:28,m:5.7e6,target:true}],
+   note:"Bell is too heavy to cross. Let it bend you around toward Wren." },
+
+ { name:"Threading", budget:10, portBudget:2, tol:0.24,
+   gates:[{r:44,a:-0.20,w:26},{r:92,a:-2.45,w:26}],
+   bodies:[{n:"Cair",x:-290,y:-300,r:22,m:0.42e6},
+           {n:"Dov", x:300,y:-300,r:22,m:0.42e6},
+           {n:"Halo",x:150,y:-470,r:28,m:6.8e6,target:true}],
+   note:"Two wells flank the corridor. Their pull is the only steering you get." },
+
+ { name:"Inside out", budget:9, portBudget:2, tol:0.26,
+   gates:[{r:60,a:-0.9,w:28}],
+   bodies:[{n:"Maw", x:0,y:-430,r:34,m:1.25e7,hole:true,R:118,
+            other:{inv:1, tint:"#7A2E12", tintAmt:0.5, mode:"multiply", bloom:0.18, bloomColor:"#2A0A18", gravMul:1.35, hueA:22, hueB:340}},
+           {n:"Lior",x:0,y:-312,r:44,m:1.4e7,target:true,side:1}],
+   note:"Lior is on the other side. Go through the Maw and it comes to you." },
+
+ { name:"Two minds", budget:9, portBudget:2, tol:0.24,
+   gates:[{r:52,a:-0.7,w:28}],
+   bodies:[{n:"Vex", x:0,y:-296,r:30,m:6.0e6,targetSide:1},
+           {n:"Cess",x:0,y:-406,r:32,m:1.1e7,hole:true,R:110,
+            other:{inv:0.86, tint:"#123A22", tintAmt:0.5, mode:"multiply",
+                   bloom:0.20, bloomColor:"#04160C", gravMul:1.5, hueA:96, hueB:160}}],
+   note:"Vex will kill you from this side. Get past it, through Cess, and it becomes the target." },
+
+ { name:"Open deck", budget:16, portBudget:5, tol:0.6, gates:[], sandbox:true,
+   bodies:[{n:"Ridd",x:-300,y:-260,r:26,m:1.6e6},
+           {n:"Sol", x:340,y:-180,r:22,m:2.0e6},
+           {n:"Tarn",x:40,y:-560,r:28,m:6.2e6,target:true},
+           {n:"Nix",x:-90,y:-300,r:22,m:5.0e6,hole:true,R:96,
+            other:{inv:0.72, tint:"#0E3A46", tintAmt:0.55, mode:"multiply", bloom:0.22, bloomColor:"#00131A", gravMul:0.65, hueA:168, hueB:210}}],
+   note:"No constraints. Play with the field." },
+];
+
+let cv,ctx,W=0,H=0,DPR=1;
+let phase="build", lvIndex=0, lv=LEVELS[0];
+let parts=[], tool="rail";
+let deck={theta:0,omega:0,wobble:0}, ball=null;
+let trail=[], flightTrail=[], gatesHit=[];
+let throttle=0, holding=false, runT=0, flightT=0, armed=false;
+let closestTo={}, crashedInto=null, assists=new Set(), launchInfo=null;
+let shakeT=0, drag=null, acc=0, last=0;
+let _pred=null,_predAge=99;
+
+
+/* ---------------- audio ----------------
+   Everything is synthesised. No files, no assets. The two continuous
+   voices are tied to physical quantities: the deck hum tracks omega, the
+   roll noise tracks ball speed. Spin games live on that coupling.      */
+const sfx = (()=>{
+  let A=null, deckOsc,deckGain,deckFilt, rollSrc,rollGain,rollFilt, master, on=false;
+  function noiseBuffer(){
+    const n=A.sampleRate*2, b=A.createBuffer(1,n,A.sampleRate), d=b.getChannelData(0);
+    for(let i=0;i<n;i++) d[i]=Math.random()*2-1;
+    return b;
+  }
+  function boot(){
+    if(A) return;
+    try{
+      A=new (window.AudioContext||window.webkitAudioContext)();
+      master=A.createGain(); master.gain.value=0.5; master.connect(A.destination);
+      deckOsc=A.createOscillator(); deckOsc.type="sawtooth"; deckOsc.frequency.value=40;
+      deckFilt=A.createBiquadFilter(); deckFilt.type="lowpass"; deckFilt.frequency.value=260;
+      deckGain=A.createGain(); deckGain.gain.value=0;
+      deckOsc.connect(deckFilt); deckFilt.connect(deckGain); deckGain.connect(master); deckOsc.start();
+      rollSrc=A.createBufferSource(); rollSrc.buffer=noiseBuffer(); rollSrc.loop=true;
+      rollFilt=A.createBiquadFilter(); rollFilt.type="bandpass"; rollFilt.Q.value=1.4; rollFilt.frequency.value=400;
+      rollGain=A.createGain(); rollGain.gain.value=0;
+      rollSrc.connect(rollFilt); rollFilt.connect(rollGain); rollGain.connect(master); rollSrc.start();
+      on=true;
+    }catch(e){ on=false; }
+  }
+  function ping(freq,dur,type,vol,slideTo){
+    if(!on) return;
+    const o=A.createOscillator(), g=A.createGain();
+    o.type=type||"sine"; o.frequency.setValueAtTime(freq,A.currentTime);
+    if(slideTo) o.frequency.exponentialRampToValueAtTime(Math.max(20,slideTo),A.currentTime+dur);
+    g.gain.setValueAtTime(0.0001,A.currentTime);
+    g.gain.exponentialRampToValueAtTime(vol||0.2,A.currentTime+0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001,A.currentTime+dur);
+    o.connect(g); g.connect(master); o.start(); o.stop(A.currentTime+dur+0.02);
+  }
+  function thud(vol,freq){
+    if(!on) return;
+    const s=A.createBufferSource(); s.buffer=noiseBuffer();
+    const f=A.createBiquadFilter(); f.type="lowpass"; f.frequency.value=freq||600;
+    const g=A.createGain();
+    g.gain.setValueAtTime(Math.min(0.4,vol),A.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001,A.currentTime+0.14);
+    s.connect(f); f.connect(g); g.connect(master); s.start(); s.stop(A.currentTime+0.16);
+  }
+  return {
+    boot,
+    get live(){ return on; },
+    // continuous voices, called every frame
+    deck(omega,speed,spinning){
+      if(!on) return;
+      const t=A.currentTime;
+      deckOsc.frequency.setTargetAtTime(38+omega*26, t, 0.05);
+      deckFilt.frequency.setTargetAtTime(180+omega*220, t, 0.05);
+      deckGain.gain.setTargetAtTime(spinning?Math.min(0.14,omega*0.05):0, t, 0.12);
+      rollFilt.frequency.setTargetAtTime(220+speed*4.2, t, 0.04);
+      rollGain.gain.setTargetAtTime(spinning?Math.min(0.10,speed*0.0008):0, t, 0.08);
+    },
+    tick(v){ thud(Math.min(0.22,0.04+v*0.0012), 1800); },
+    wall(v){ thud(Math.min(0.28,0.05+v*0.0016), 420); },
+    click(up){ ping(up?660:440,0.07,"square",0.14); },
+    release(){ ping(880,0.42,"triangle",0.22,180); },
+    gate(){ ping(1320,0.14,"sine",0.16); },
+    near(d){ ping(300+2000/Math.max(20,d),0.05,"sine",0.05); },
+    land(){ [523,659,784,1047].forEach((f,i)=>setTimeout(()=>ping(f,0.3,"triangle",0.18),i*90)); },
+    crash(){ thud(0.4,220); setTimeout(()=>thud(0.25,140),70); },
+    fail(){ ping(200,0.5,"sawtooth",0.16,70); },
+    invert(){
+      if(!on) return;
+      // pitch collapses to a point, then blooms back out the other way
+      ping(90,0.75,"sine",0.20,1800);
+      setTimeout(()=>ping(2400,0.55,"sine",0.16,140),720);
+      setTimeout(()=>[262,330,392].forEach((f,i)=>setTimeout(()=>ping(f,0.5,"triangle",0.12),i*70)),900);
+    },
+  };
+})();
+
+
+/* ---------------- ferrofluid ----------------
+   Rosensweig instability: a magnetic fluid spikes along the field lines
+   running through it, elongating into cones at both poles. We already have
+   a field — the gravity vector from every body — so the spikes are not
+   decoration, they are a readout. The ball visibly reaches toward whatever
+   is pulling hardest on it.                                            */
+let ferroT=0;
+
+function fieldAt(x,y,skip){
+  let fx=0, fy=0;
+  for(const b of live()){
+    if(b===skip) continue;
+    const dx=b.x-x, dy=b.y-y;
+    const d2=Math.max(b.r*b.r, dx*dx+dy*dy), d=Math.sqrt(d2);
+    const g=b.m/d2*sideGrav();
+    fx+=(dx/d)*g; fy+=(dy/d)*g;
+  }
+  return [fx,fy,Math.hypot(fx,fy)];
+}
+
+function ferroBlob(cx,cy,r,fa,s,seed,detail){
+  const N=detail||96, nS=7;
+  s=Math.max(0,Math.min(1,s));
+  const pts=[];
+  for(let i=0;i<N;i++){
+    const th=i/N*Math.PI*2;
+    const al=Math.cos(th-fa);
+    const pole=Math.pow(Math.abs(al),4);
+    const cones=Math.pow(Math.max(0,Math.cos((th-fa)*nS)),10);
+    const wob=0.055*Math.sin(th*5+ferroT*1.1+seed)
+             +0.035*Math.sin(th*9-ferroT*0.7+seed*2.3);
+    const k=1 + 0.30*s*pole + 0.55*s*pole*cones + wob*(0.5+0.5*s);
+    pts.push([cx+Math.cos(th)*r*k, cy+Math.sin(th)*r*k]);
+  }
+  return pts;
+}
+function tracePts(pts){
+  ctx.beginPath();
+  ctx.moveTo((pts[pts.length-1][0]+pts[0][0])/2,(pts[pts.length-1][1]+pts[0][1])/2);
+  for(let i=0;i<pts.length;i++){
+    const a=pts[i], b=pts[(i+1)%pts.length];
+    ctx.quadraticCurveTo(a[0],a[1],(a[0]+b[0])/2,(a[1]+b[1])/2);
+  }
+  ctx.closePath();
+}
+/* Near-black body, iridescent rim. Ferrofluid is not shiny all over — it is
+   matte black with a thin oil-slick edge and one hard specular. */
+function paintFerro(cx,cy,r,fa,s,hueA,hueB){
+  const g=ctx.createRadialGradient(cx-r*0.34,cy-r*0.4,r*0.06,cx,cy,r*1.5);
+  g.addColorStop(0,"#232733"); g.addColorStop(0.35,"#12141C");
+  g.addColorStop(1,"#05060A");
+  ctx.fillStyle=g; ctx.fill();
+  const lx=Math.cos(fa), ly=Math.sin(fa);
+  const rim=ctx.createLinearGradient(cx-lx*r,cy-ly*r,cx+lx*r,cy+ly*r);
+  rim.addColorStop(0,   `hsla(${hueA},90%,64%,.85)`);
+  rim.addColorStop(0.42,`hsla(${(hueA+hueB)/2},80%,52%,.30)`);
+  rim.addColorStop(0.72,`hsla(${hueB},92%,60%,.60)`);
+  rim.addColorStop(1,   `hsla(${hueB+26},95%,72%,.9)`);
+  ctx.strokeStyle=rim; ctx.lineWidth=1.5+r*0.045; ctx.stroke();
+  ctx.save(); ctx.clip();
+  ctx.beginPath();
+  ctx.ellipse(cx-r*0.33,cy-r*0.42,r*0.30,r*0.17,fa+0.6,0,7);
+  ctx.fillStyle="rgba(226,236,255,.30)"; ctx.fill();
+  ctx.restore();
+}
+
+/* starfield, generated once per resize into an offscreen canvas */
+let starCv=null;
+function makeStars(){
+  starCv=document.createElement("canvas");
+  starCv.width=Math.max(1,Math.round(W*DPR)); starCv.height=Math.max(1,Math.round(H*DPR));
+  const c=starCv.getContext("2d");
+  c.fillStyle="#04050A"; c.fillRect(0,0,starCv.width,starCv.height);
+  let seed=20260901;
+  const rnd=()=>((seed=(seed*1664525+1013904223)>>>0)/4294967296);
+  for(let i=0;i<34;i++){
+    const x=rnd()*starCv.width, y=rnd()*starCv.height, rr=(60+rnd()*190)*DPR;
+    const h=200+rnd()*110;
+    const g=c.createRadialGradient(x,y,0,x,y,rr);
+    g.addColorStop(0,`hsla(${h},70%,50%,.14)`); g.addColorStop(1,"hsla(0,0%,0%,0)");
+    c.fillStyle=g; c.beginPath(); c.arc(x,y,rr,0,7); c.fill();
+  }
+  for(let i=0;i<380;i++){
+    const x=rnd()*starCv.width, y=rnd()*starCv.height;
+    const a=0.15+rnd()*0.75, rr=(rnd()*1.25+0.25)*DPR;
+    c.fillStyle=`hsla(${190+rnd()*90},${30+rnd()*40}%,${80+rnd()*20}%,${a})`;
+    c.beginPath(); c.arc(x,y,rr,0,7); c.fill();
+  }
+}
+
+const $=id=>document.getElementById(id);
+const SAVE="tangent.best.v3";
+function loadBests(){ try{ return JSON.parse(localStorage.getItem(SAVE))||{}; }catch(e){ return {}; } }
+function bestFor(i){ return loadBests()[i]||0; }
+function recordBest(i,score){
+  try{ const b=loadBests(); if(score>(b[i]||0)){ b[i]=score; localStorage.setItem(SAVE,JSON.stringify(b)); } }catch(e){}
+}
+const rot=(x,y,t)=>{const c=Math.cos(t),s=Math.sin(t);return [x*c-y*s,x*s+y*c];};
+const len=(x,y)=>Math.hypot(x,y);
+let sys=[], deckPos=[0,0], invAmt=0, inverting=null, inversions=0, holdExtent=0, lastOutcome=null;
+/* The far side is not just a negative. Each hole defines its own treatment, so
+   crossing a different threshold lands you somewhere that looks different.
+   inv   how much of a straight negative to apply
+   tint  a wash laid over the inverted frame, which is what stops the fluid
+         reading as white-on-white
+   mode  the composite used for that wash                                  */
+const SIDE_DEFAULT={inv:1, tint:"#3A1C5C", tintAmt:0.42, mode:"multiply", gravMul:1, hueA:188, hueB:266};
+let sideStyle=SIDE_DEFAULT;
+const bodies=()=>sys;
+/* A body may be tied to one side of the mirror. Off-side bodies have no
+   gravity and no collision — they are drawn as outlines so you can see what
+   is waiting for you through the hole. */
+const active=b=> b.side===undefined || b.side===(inversions%2);
+/* A body can be a hazard on one side and your goal on the other. Crossing the
+   threshold does not just recolour the world, it changes what things are. */
+const isTarget=b=> b.targetSide!==undefined ? (inversions%2)===b.targetSide : !!b.target;
+const sideGrav=()=> (invAmt>0.5 ? (sideStyle.gravMul??1) : 1);
+const live=()=>sys.filter(active);
+const targetBody=()=>sys.find(b=>isTarget(b)&&active(b))||sys.find(b=>b.target||b.targetSide!==undefined);
+function resetSystem(){
+  sys = lv.bodies.map(b=>({...b}));
+  deckPos=[0,0]; invAmt=0; inverting=null; inversions=0; holdExtent=0; sideStyle=SIDE_DEFAULT;
+}
+
+/* Circle inversion about the hole's horizon: d -> R^2/d, angle preserved.
+   Inside and outside trade places, the horizon itself stays put. Animated in
+   log space, d(t) = R^(2t) * d0^(1-2t), so at t=0.5 every object in the
+   system sits exactly on the horizon ring at once, then blooms back through
+   inside out. That midpoint collapse is the whole effect.                */
+function invMap(x,y,hole,R,t){
+  const dx=x-hole[0], dy=y-hole[1];
+  const d=Math.max(1e-3,Math.hypot(dx,dy));
+  const nd=Math.pow(R,2*t)*Math.pow(d,1-2*t);
+  return [hole[0]+dx/d*nd, hole[1]+dy/d*nd, nd/d];
+}
+function beginInversion(hole){
+  const R=hole.R||hole.r*3.2;
+  const hc=[hole.x,hole.y];
+  let camE=Math.max(systemExtent(), len(hc[0],hc[1])+R*1.6);
+  for(const b of sys){ if(b===hole) continue;
+    const p=invMap(b.x,b.y,hc,R,1); camE=Math.max(camE, len(p[0],p[1])+b.r+70); }
+  const dp=invMap(deckPos[0],deckPos[1],hc,R,1); camE=Math.max(camE, len(dp[0],dp[1])+DECK_R+40);
+  holdExtent=camE;
+  const movers=[];
+  for(const b of sys){ if(b===hole) continue;
+    movers.push({b, x0:b.x, y0:b.y}); }
+  sideStyle = hole.other || SIDE_DEFAULT;
+  inverting={t:0, hole, hc, R, movers, from:invAmt, to:1-invAmt,
+             deck0:[deckPos[0],deckPos[1]],
+             ballAngle:Math.atan2(ball.y-hc[1], ball.x-hc[0]),
+             speed:Math.max(55,Math.min(120,len(ball.vx,ball.vy)*0.45))};
+  phase="invert";
+  sfx.invert();
+}
+function finishInversion(){
+  const I=inverting, R=I.R, hc=I.hc;
+  for(const m of I.movers){ const p=invMap(m.x0,m.y0,hc,R,1); m.b.x=p[0]; m.b.y=p[1]; }
+  const dp=invMap(I.deck0[0],I.deck0[1],hc,R,1); deckPos=[dp[0],dp[1]];
+  // the ball comes back out on the horizon, at the angle it went in, outbound
+  const a=I.ballAngle;
+  ball.x=hc[0]+Math.cos(a)*R*1.02; ball.y=hc[1]+Math.sin(a)*R*1.02;
+  ball.vx=Math.cos(a)*I.speed; ball.vy=Math.sin(a)*I.speed;
+  invAmt=I.to; inverting=null; inversions++; phase="flight";
+}
+
+/* ---------------- build ---------------- */
+function partMass(p){ return p.type==="rail"
+  ? PARTS.rail.mass*(0.4+len(p.x2-p.x,p.y2-p.y)/60) : PARTS[p.type].mass; }
+const isPort = p => p.type==="port";
+const ports  = () => parts.filter(isPort);
+const built  = () => parts.filter(p=>!isPort(p));
+function partCentre(p){ return p.type==="rail" ? [(p.x+p.x2)/2,(p.y+p.y2)/2] : [p.x,p.y]; }
+function imbalance(){
+  let mx=0,my=0,m=0;
+  for(const p of built()){ const c=partCentre(p),mm=partMass(p); mx+=c[0]*mm; my+=c[1]*mm; m+=mm; }
+  return m<=0?0:len(mx/m,my/m)/DECK_R;
+}
+function canvasToWorld(cx,cy){ const s=camScale(),o=camOrigin(); return [(cx-o[0])/s,(cy-o[1])/s]; }
+
+function onDown(e){
+  if(phase!=="build") return;
+  const r=cv.getBoundingClientRect();
+  const [wx,wy]=canvasToWorld(e.clientX-r.left,e.clientY-r.top);
+  const [lx,ly]=rot(wx,wy,-deck.theta);
+  if(len(lx,ly)>DECK_R-4) return;
+  if(tool==="erase"){ eraseAt(lx,ly); return; }
+  if(built().length>=lv.budget){ flashHint("Deck is full. Erase something first."); return; }
+  if(tool==="rail") drag={type:"rail",x:lx,y:ly,x2:lx,y2:ly};
+  else { parts.push({type:tool,x:lx,y:ly}); refreshHUD(); }
+}
+function onMove(e){
+  if(!drag) return;
+  const r=cv.getBoundingClientRect();
+  const [wx,wy]=canvasToWorld(e.clientX-r.left,e.clientY-r.top);
+  let [lx,ly]=rot(wx,wy,-deck.theta); const d=len(lx,ly);
+  if(d>DECK_R-4){ lx=lx/d*(DECK_R-4); ly=ly/d*(DECK_R-4); }
+  drag.x2=lx; drag.y2=ly;
+}
+function onUp(){
+  if(!drag) return;
+  if(len(drag.x2-drag.x,drag.y2-drag.y)<7){
+    const a=Math.atan2(drag.y,drag.x);
+    drag.x2=drag.x+Math.cos(a+Math.PI/2)*22; drag.y2=drag.y+Math.sin(a+Math.PI/2)*22;
+  }
+  parts.push(drag); drag=null; refreshHUD();
+}
+function eraseAt(lx,ly){
+  let best=-1,bd=16;
+  parts.forEach((p,i)=>{
+    let d;
+    if(p.type==="rail") d=distToSeg(lx,ly,p.x,p.y,p.x2,p.y2);
+    else if(isPort(p)) d=len(lx-Math.cos(p.a)*DECK_R, ly-Math.sin(p.a)*DECK_R);
+    else d=len(lx-p.x,ly-p.y);
+    if(d<bd){bd=d;best=i;}
+  });
+  if(best>=0){ parts.splice(best,1); refreshHUD(); }
+}
+function distToSeg(px,py,x1,y1,x2,y2){
+  const dx=x2-x1,dy=y2-y1,L2=dx*dx+dy*dy;
+  let t=L2?((px-x1)*dx+(py-y1)*dy)/L2:0; t=Math.max(0,Math.min(1,t));
+  return len(px-(x1+dx*t),py-(y1+dy*t));
+}
+function flashHint(msg){
+  const el=$("buildhint"); el.textContent=msg; el.style.color="var(--warn)";
+  setTimeout(()=>{ el.style.color=""; el.textContent=lv.note; },1700);
+}
+
+/* ---------------- shared deck integrator ---------------- */
+function advanceDeck(s,throttleTarget){
+  s.throttle += (throttleTarget-s.throttle)*Math.min(1,DT*7);
+  s.omega += (s.throttle*SPIN_GAIN - SPIN_DRAG*s.omega)*DT;
+  s.omega = Math.min(s.omega,OMEGA_MAX);
+  s.theta += s.omega*DT;
+  const vsx=-s.omega*s.y, vsy=s.omega*s.x;
+  let mu=MU, boost=0;
+  const c=Math.cos(-s.theta), sn=Math.sin(-s.theta);
+  const lx0=s.x*c-s.y*sn, ly0=s.x*sn+s.y*c;
+  for(const p of parts){
+    if(p.type==="brake"   && len(lx0-p.x,ly0-p.y)<PARTS.brake.r)   mu*=3.4;
+    if(p.type==="booster" && len(lx0-p.x,ly0-p.y)<PARTS.booster.r) boost+=200;
+  }
+  s.vx+=(vsx-s.vx)*mu*DT; s.vy+=(vsy-s.vy)*mu*DT;
+  const rr=len(s.x,s.y)||1;
+  if(boost){ s.vx+=s.x/rr*boost*DT; s.vy+=s.y/rr*boost*DT; }
+  const pull=BOWL*rr*rr;
+  s.vx-=(s.x/rr)*pull*DT; s.vy-=(s.y/rr)*pull*DT;
+  s.x+=s.vx*DT; s.y+=s.vy*DT;
+  collideOn(s);
+  rimWall(s);
+}
+
+/* The deck has a retaining wall. The only way off is through a Port you
+   placed, and only once the latch is armed. This is what makes the build
+   phase decide the launch instead of the player's thumb. */
+function rimWall(s){
+  const r=len(s.x,s.y);
+  if(r < DECK_R-CONTACT) return;
+  const nx0=s.x/r, ny0=s.y/r;
+  // rubbing contact: applies across a band, not just on penetration, so the
+  // ball actually rides the wall instead of chattering off it
+  const tx0=-ny0, ty0=nx0, vt0=s.vx*tx0+s.vy*ty0;
+  const k0=vt0*(1-Math.exp(-WALL_DRAG*DT));
+  s.vx-=k0*tx0; s.vy-=k0*ty0;
+  if(r < DECK_R) return;
+  if(s.armed){ s.exited=true; return; }        // released: go, from wherever you are
+  // bounce off the wall, losing some energy
+  const nx=s.x/r, ny=s.y/r;
+  s.x=nx*(DECK_R-0.01); s.y=ny*(DECK_R-0.01);
+  const dot=s.vx*nx+s.vy*ny;
+  if(dot>0){ s.vx-=(1+WALL_REST)*dot*nx; s.vy-=(1+WALL_REST)*dot*ny; }
+  // Wall friction. This is what lets the ball hunt for a port: rubbing the
+  // wall holds it below deck speed, so in the deck's own frame it walks
+  // steadily backwards past every port in turn. Throttle sets how fast.
+  if(!s.quiet){ shakeT=Math.max(shakeT,0.05); sfx.wall(Math.abs(dot)); }
+}
+function collideOn(s){
+  let [lx,ly]=rot(s.x,s.y,-s.theta);
+  let [ax,ay]=rot(s.vx,s.vy,-s.theta);
+  let rvx=ax+s.omega*ly, rvy=ay-s.omega*lx;
+  let hit=false;
+  for(const p of parts){
+    let cx,cy,R;
+    if(p.type==="rail"){
+      const dx=p.x2-p.x,dy=p.y2-p.y,L2=dx*dx+dy*dy||1;
+      let t=((lx-p.x)*dx+(ly-p.y)*dy)/L2; t=Math.max(0,Math.min(1,t));
+      cx=p.x+dx*t; cy=p.y+dy*t; R=BALL_R+2.6;
+    } else if(p.type==="bumper"){ cx=p.x;cy=p.y;R=BALL_R+PARTS.bumper.r; }
+    else continue;
+    let nx=lx-cx,ny=ly-cy,d=len(nx,ny);
+    if(d>=R) continue;
+    if(d<0.001){nx=1;ny=0;d=1;}
+    nx/=d;ny/=d; lx=cx+nx*R; ly=cy+ny*R;
+    const rest = p.type==="bumper"?PARTS.bumper.rest:0.72;
+    const dot=rvx*nx+rvy*ny;
+    if(dot<0){ rvx-=(1+rest)*dot*nx; rvy-=(1+rest)*dot*ny; }
+    hit=true;
+  }
+  if(!hit) return;
+  const wv=rot(rvx-s.omega*ly, rvy+s.omega*lx, s.theta);
+  const wp=rot(lx,ly,s.theta);
+  s.vx=wv[0];s.vy=wv[1];s.x=wp[0];s.y=wp[1];
+  if(!s.quiet){ shakeT=0.09; sfx.tick(len(s.vx,s.vy)); }
+}
+
+/* ---------------- N-body flight ---------------- */
+/* One flight step. Returns "crash", "land", or null. Used live and by the
+   predictor, so the dashed line is the same arithmetic as the real run.  */
+function flyStep(s,h,acc){
+  for(const b of live()){
+    const dx=b.x-s.x, dy=b.y-s.y;
+    const d2=Math.max(b.r*b.r, dx*dx+dy*dy), d=Math.sqrt(d2);
+    const gm=b.m*sideGrav();
+    s.vx += (dx/d)*(gm/d2)*h;
+    s.vy += (dy/d)*(gm/d2)*h;
+    if(acc){
+      if(d < (acc.closest[b.n] ?? Infinity)) acc.closest[b.n]=d;
+      if(!isTarget(b) && !b.hole && d < b.r*3.0) acc.assists.add(b.n);
+    }
+    if(d < b.r + BALL_R) return b.hole ? "invert" : (isTarget(b) ? "land" : "crash");
+  }
+  s.x+=s.vx*h; s.y+=s.vy*h;
+  if(len(s.x,s.y)>FLY_BOUND) return "lost";
+  return null;
+}
+
+/* Where does the ball go if you release right now? Because release is a
+   button and not a rim crossing, this starts from the live state and is
+   therefore exactly what happens.                                        */
+/* With a rim wall, exit is decided by geometry, not by the instant you
+   press the button. So the prediction has to run the deck forward to the
+   next port crossing first, then fly from there. */
+function predictRelease(){
+  const deckPath=[];
+  const s={x:ball.x,y:ball.y,vx:ball.vx,vy:ball.vy};
+  const acc={closest:{},assists:new Set()};
+  const path=[[s.x,s.y]];
+  let outcome=null;
+  for(let i=0;i<FLY_STEPS;i++){
+    outcome=flyStep(s,FLY_H,acc);
+    if(i%4===0) path.push([s.x,s.y]);
+    if(outcome) break;
+  }
+  path.push([s.x,s.y]);
+  const tb=targetBody();
+  return {path, deckPath, outcome, closest:acc.closest[tb.n] ?? Infinity, assists:acc.assists};
+}
+function cachedPredict(){ if(_predAge++>=2){ _pred=predictRelease(); _predAge=0; } return _pred; }
+
+/* ---------------- run control ---------------- */
+function startSpin(){
+  phase="spin";
+  deck.theta=0; deck.omega=OM_IDLE; deck.wobble=0;
+  throttle=TH_FLOOR; holding=false; runT=0; flightT=0;
+  const r0=eqRadius(OM_IDLE);
+  ball={x:r0,y:0,vx:0,vy:OM_IDLE*r0};
+  trail.length=0; flightTrail.length=0;
+  gatesHit=lv.gates.map(()=>false);
+  closestTo={}; crashedInto=null; assists=new Set(); launchInfo=null; _predAge=99; armed=false;
+  resetSystem();
+  $("buildui").classList.add("hide"); $("spinui").classList.remove("hide");
+  refreshHUD();
+}
+function backToBuild(){
+  phase="build"; ball=null; trail.length=0; flightTrail.length=0;
+  deck.theta=0; deck.omega=0; deck.wobble=0;
+  $("card").classList.add("hide"); $("spinui").classList.add("hide");
+  $("buildui").classList.remove("hide"); refreshHUD();
+}
+function loadLevel(i){
+  lvIndex=Math.max(0,Math.min(LEVELS.length-1,i)); lv=LEVELS[lvIndex]; parts=[];
+  resetSystem();
+  $("lvnum").textContent=String(lvIndex+1).padStart(2,"0");
+  $("lvname").textContent=lv.name;
+  $("buildhint").textContent=lv.note;
+  const b=bestFor(lvIndex);
+  $("best").textContent = b ? `Best on this deck: ${b.toLocaleString()}` : "";
+  $("spinhint").textContent="Hold to push the ball outward. Let go and it flies.";
+  backToBuild();
+}
+
+function doRelease(reason){
+  if(phase!=="spin") return;
+  sfx.release();
+  launchInfo={speed:len(ball.vx,ball.vy), radius:len(ball.x,ball.y),
+              rpm:deck.omega*9.549, reason};
+  phase="flight"; flightTrail.push([ball.x,ball.y]);
+  $("spinui").classList.add("hide");
+}
+function failRun(msg){ phase="done"; shakeT=0.5; sfx.fail(); showCard({title:"Run failed",score:0,body:msg,rows:[]}); }
+
+/* ---------------- step ---------------- */
+function step(){
+  if(phase==="spin"){
+    runT+=DT;
+    if(runT>RUN_LIMIT){ failRun("Run called off. You have to release it eventually."); return; }
+    const s={x:ball.x,y:ball.y,vx:ball.vx,vy:ball.vy,
+             theta:deck.theta,omega:deck.omega,throttle:throttle,armed:armed,exited:false};
+    advanceDeck(s, holding?1:TH_FLOOR);
+    ball.x=s.x;ball.y=s.y;ball.vx=s.vx;ball.vy=s.vy;
+    deck.theta=s.theta;deck.omega=s.omega;throttle=s.throttle;
+    if(s.exited){ doRelease("port"); return; }
+
+    const imb=imbalance();
+    deck.wobble += (imb*(deck.omega/OMEGA_MAX)-deck.wobble)*Math.min(1,DT*4);
+    if(!lv.sandbox && imb>lv.tol && deck.omega>OMEGA_MAX*0.72){
+      failRun("The deck shook itself apart. Spread the mass more evenly."); return;
+    }
+    checkGates();
+    if(trail.length>260) trail.shift();
+    trail.push([ball.x,ball.y]);
+  }
+  else if(phase==="invert"){
+    inverting.t += DT/HOLE_ANIM;
+    const e=Math.min(1,inverting.t);
+    invAmt = inverting.from + (inverting.to-inverting.from)*e;
+    if(inverting.t>=1+HOLE_HOLD) finishInversion();
+  }
+  else if(phase==="flight"){
+    flightT+=DT;
+    const acc={closest:closestTo,assists};
+    const out=flyStep(ball,DT,acc);
+    if(flightTrail.length>2400) flightTrail.shift();
+    flightTrail.push([ball.x,ball.y]);
+    if(out==="invert"){ beginInversion(nearestHole()); return; }
+    if(out==="crash"){ crashedInto=nearestBodyName(); sfx.crash(); settle("crash"); }
+    else if(out==="land"){ sfx.land(); settle("land"); }
+    else if(out==="lost" || flightT>22) settle("lost");
+  }
+}
+function nearestHole(){
+  let best=null,bd=Infinity;
+  for(const b of live()){ if(!b.hole) continue;
+    const d=len(b.x-ball.x,b.y-ball.y); if(d<bd){bd=d;best=b;} }
+  return best;
+}
+function nearestBodyName(){
+  let best=null,bd=Infinity;
+  for(const b of live()){ const d=len(b.x-ball.x,b.y-ball.y); if(d<bd){bd=d;best=b.n;} }
+  return best;
+}
+function checkGates(){
+  const [lx,ly]=rot(ball.x,ball.y,-deck.theta);
+  lv.gates.forEach((g,i)=>{
+    if(gatesHit[i]) return;
+    if(len(lx-Math.cos(g.a)*g.r, ly-Math.sin(g.a)*g.r) < g.w/2+BALL_R){ gatesHit[i]=true; sfx.gate(); }
+  });
+}
+
+function settle(how){
+  phase="done"; lastOutcome=how;
+  const tb=targetBody();
+  const m=closestTo[tb.n] ?? Infinity;
+  const gatesOK=gatesHit.every(Boolean);
+  let title,body,score=0,rows;
+
+  if(how==="crash"){
+    title="Crashed into "+crashedInto;
+    body="That body was not your target. Release earlier or later so its pull carries you past instead of into it.";
+  } else if(how==="land" && gatesOK){
+    title="Landed on "+tb.n;
+    const thrift=Math.max(0,lv.budget-parts.length)*120;
+    const bal=Math.round((1-Math.min(1,imbalance()/Math.max(0.05,lv.tol)))*250);
+    const assistBonus=assists.size*400 + inversions*900;
+    const speedBonus=Math.max(0,Math.round((14-flightT)*60));
+    score=2000+gatesHit.filter(Boolean).length*300+thrift+bal+assistBonus+speedBonus;
+    body=assists.size
+      ? `Slung past ${[...assists].join(" and ")} on the way in. That is the efficient route.`
+      : `Clean approach at ${Math.round(launchInfo.speed)} units per second.`;
+  } else if(how==="land"){
+    title="Landed, but short";
+    score=gatesHit.filter(Boolean).length*300;
+    body="You reached "+tb.n+" without passing every checkpoint. Route the ball through the gates before releasing.";
+  } else {
+    title = m<80 ? "Grazed "+tb.n : "Lost to open space";
+    score = m<80 ? 500 : 0;
+    body = isFinite(m)
+      ? `Closest approach to ${tb.n} was ${Math.round(m)} units. Releasing at a smaller radius gives a slower ball, and a slower ball bends more.`
+      : "The ball never came near the target.";
+  }
+  rows=[["Outcome",how==="land"?"landed":how==="crash"?"crashed":"missed"],
+        ["Closest to "+tb.n, isFinite(m)?Math.round(m)+" units":"—"],
+        ["Gates",`${gatesHit.filter(Boolean).length} / ${lv.gates.length}`],
+        ["Release radius", launchInfo?Math.round(launchInfo.radius):"—"],
+        ["Release speed", launchInfo?Math.round(launchInfo.speed):"—"],
+        ["Slingshots", assists.size||"none"],
+        ["Inversions", inversions||"none"]];
+  showCard({title,score,body,rows,cleared: how==="land"&&gatesOK});
+}
+function showCard(o){
+  if(o.score) recordBest(lvIndex,o.score);
+  $("cardtitle").textContent=o.title;
+  $("cardscore").textContent=(o.score||0).toLocaleString();
+  $("cardbody").textContent=o.body;
+  $("cardbrk").innerHTML=(o.rows||[]).map(r=>`<div><span>${r[0]}</span><span>${r[1]}</span></div>`).join("");
+  $("nextbtn").textContent=o.cleared?"Next system":"Try again";
+  $("nextbtn").onclick=()=>o.cleared?loadLevel(lvIndex+1):backToBuild();
+  $("card").classList.remove("hide");
+}
+
+/* ---------------- camera ---------------- */
+function systemExtent(){
+  let e=Math.max(DECK_R+40, holdExtent);
+  for(const b of bodies()) e=Math.max(e,len(b.x,b.y)+(b.hole?(b.R||b.r*3.2):b.r)+70);
+  if(ball&&(phase==="flight"||phase==="done")) e=Math.max(e,len(ball.x,ball.y)+60);
+  return e;
+}
+function systemCentre(){
+  let sx=0,sy=0,n=1;
+  for(const b of bodies()){ sx+=b.x; sy+=b.y; n++; }
+  return [sx/n,sy/n];
+}
+function camScale(){
+  const fit=Math.min(W,H);
+  if(phase==="build") return fit/(DECK_R*2)*0.80;
+  if(phase==="invert") return fit/(systemExtent()*2)*0.92;
+  return fit/(systemExtent()*2)*0.92;
+}
+function camOrigin(){
+  if(phase==="build") return [W/2,H/2];
+  if(phase==="invert"){ const s=camScale(); return [W/2, H/2]; }
+  const c=systemCentre(), s=camScale();
+  return [W/2-c[0]*s, H/2-c[1]*s];
+}
+
+/* ---------------- render ---------------- */
+function draw(){
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  ferroT+=1/60;
+  if(starCv) ctx.drawImage(starCv,0,0,W,H); else { ctx.fillStyle="#04050A"; ctx.fillRect(0,0,W,H); }
+  const s=camScale(),o=camOrigin();
+  ctx.save();
+  let sx=0,sy=0;
+  if(shakeT>0){ sx=(Math.random()-.5)*70*shakeT; sy=(Math.random()-.5)*70*shakeT; }
+  const wob=deck.wobble*5;
+  if(phase==="spin"&&wob>0.3){ sx+=Math.sin(deck.theta*6)*wob; sy+=Math.cos(deck.theta*6.3)*wob; }
+  ctx.translate(o[0]+sx,o[1]+sy); ctx.scale(s,s);
+
+  if(phase!=="build") drawBodies();
+  drawDeck();
+  if(phase==="spin") drawPrediction();
+  if(phase==="flight"||phase==="done") drawFlight();
+  drawBall();
+  if(inverting) drawHorizonFlash();
+  ctx.restore();
+
+  // colour inversion of the whole frame. One composite op, no palette rewrite.
+  if(invAmt>0.001){
+    const S=sideStyle;
+    if(S.inv>0){
+      ctx.save(); ctx.setTransform(DPR,0,0,DPR,0,0);
+      ctx.globalCompositeOperation="difference";
+      ctx.globalAlpha=invAmt*S.inv; ctx.fillStyle="#fff";
+      ctx.fillRect(0,0,W,H); ctx.restore();
+    }
+    if(S.tintAmt>0){
+      ctx.save(); ctx.setTransform(DPR,0,0,DPR,0,0);
+      ctx.globalCompositeOperation=S.mode||"multiply";
+      ctx.globalAlpha=invAmt*S.tintAmt; ctx.fillStyle=S.tint;
+      ctx.fillRect(0,0,W,H); ctx.restore();
+    }
+    if(S.bloom){
+      ctx.save(); ctx.setTransform(DPR,0,0,DPR,0,0);
+      ctx.globalCompositeOperation="screen";
+      ctx.globalAlpha=invAmt*S.bloom; ctx.fillStyle=S.bloomColor||"#120A22";
+      ctx.fillRect(0,0,W,H); ctx.restore();
+    }
+  }
+  drawOverlay();
+}
+
+// during the collapse every body is drawn at its in-flight inverted position
+function shown(b){
+  if(!inverting) return [b.x,b.y,1];
+  const e=Math.min(1,inverting.t);
+  const p=invMap(b.x,b.y,inverting.hc,inverting.R,e);
+  return [p[0],p[1],Math.max(0.35,Math.min(2.6,p[2]))];
+}
+function drawHole(b,x,y,s){
+  const R=b.R||b.r*3.2;
+  // horizon ring: the one circle inversion leaves untouched
+  ctx.beginPath(); ctx.arc(x,y,R,0,7);
+  ctx.strokeStyle="rgba(190,150,255,.30)"; ctx.lineWidth=1.4;
+  ctx.setLineDash([3,7]); ctx.stroke(); ctx.setLineDash([]);
+  for(let i=4;i>=1;i--){
+    const rr=b.r*(1+i*0.55);
+    ctx.beginPath(); ctx.arc(x,y,rr*s,0,7);
+    ctx.strokeStyle=`rgba(${150+i*14},${90+i*10},255,${0.16-i*0.028})`;
+    ctx.lineWidth=2.4; ctx.stroke();
+  }
+  const g=ctx.createRadialGradient(x,y,b.r*s*0.2,x,y,b.r*s*2.1);
+  g.addColorStop(0,"#000"); g.addColorStop(0.58,"#0B0714");
+  g.addColorStop(0.84,"rgba(150,90,255,.45)"); g.addColorStop(1,"rgba(150,90,255,0)");
+  ctx.beginPath(); ctx.arc(x,y,b.r*s*2.1,0,7); ctx.fillStyle=g; ctx.fill();
+  // crown of spikes, sheared by the vortex
+  for(let i=0;i<3;i++){
+    const rr=b.r*s*(1.42-i*0.16);
+    tracePts(ferroBlob(x,y,rr,ferroT*(0.5+i*0.25)+i*1.1,0.85,i*2.7,72));
+    ctx.strokeStyle=`hsla(${272+i*16},92%,${44+i*9}%,${0.34-i*0.07})`;
+    ctx.lineWidth=1.4; ctx.stroke();
+  }
+  tracePts(ferroBlob(x,y,b.r*s,ferroT*0.7,0.5,1.3,72));
+  ctx.fillStyle="#000"; ctx.fill();
+  ctx.strokeStyle="#9B5CFF"; ctx.lineWidth=1.6; ctx.stroke();
+}
+function drawBodies(){
+  for(const b of bodies()){
+    const sh=shown(b);
+    if(!active(b)){
+      ctx.globalAlpha=0.30; ctx.setLineDash([3,5]);
+      ctx.beginPath(); ctx.arc(sh[0],sh[1],b.r*sh[2],0,7);
+      ctx.strokeStyle=isTarget(b)?"#79D0E6":b.hole?"#9B5CFF":"#E0517B";
+      ctx.lineWidth=1.3; ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.font="500 11px ui-sans-serif, system-ui, sans-serif";
+      ctx.fillStyle="rgba(216,226,236,.5)"; ctx.textAlign="center";
+      ctx.fillText(b.n+" · other side", sh[0], sh[1]+b.r*sh[2]+14);
+      ctx.textAlign="left"; ctx.globalAlpha=1;
+      continue;
+    }
+    if(b.hole){ drawHole(b,sh[0],sh[1],sh[2]);
+      ctx.font="500 13px ui-sans-serif, system-ui, sans-serif";
+      ctx.fillStyle="rgba(190,150,255,.8)"; ctx.textAlign="center";
+      ctx.fillText(b.n, sh[0], sh[1]+b.r*sh[2]+16); ctx.textAlign="left";
+      continue; }
+    // influence halo, sized by how far its pull reaches
+    const bx=sh[0], by=sh[1], br=b.r*sh[2];
+    const reach=Math.sqrt(b.m/40)*sh[2];
+    const g=ctx.createRadialGradient(bx,by,br,bx,by,reach);
+    g.addColorStop(0, isTarget(b)?"rgba(121,208,230,.13)":"rgba(224,81,123,.10)");
+    g.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.beginPath(); ctx.arc(bx,by,reach,0,7); ctx.fillStyle=g; ctx.fill();
+
+    // ferrofluid body: spikes align with the net field from everything else
+    const f=fieldAt(b.x,b.y,b);
+    const fa=Math.atan2(f[1],f[0]);
+    const s=Math.min(1,Math.sqrt(f[2])/34);
+    tracePts(ferroBlob(bx,by,br,fa,s,(b.n.charCodeAt(0)%9)*1.7));
+    const hA=isTarget(b)?(sideStyle.hueA??188):322, hB=isTarget(b)?(sideStyle.hueB??266):32;
+    paintFerro(bx,by,br,fa,s,hA,hB);
+
+    ctx.font="500 13px ui-sans-serif, system-ui, sans-serif";
+    ctx.fillStyle=isTarget(b)?"rgba(121,208,230,.85)":"rgba(224,81,123,.7)";
+    ctx.textAlign="center"; ctx.fillText(b.n, bx, by+br+16); ctx.textAlign="left";
+  }
+}
+
+function drawDeck(){
+  ctx.save();
+  let dp=deckPos, ds=1;
+  if(inverting){ const p=invMap(deckPos[0],deckPos[1],inverting.hc,inverting.R,Math.min(1,inverting.t));
+                 dp=[p[0],p[1]]; ds=Math.max(0.25,Math.min(2.2,p[2])); }
+  ctx.translate(dp[0],dp[1]); ctx.scale(ds,ds);
+  ctx.rotate(deck.theta);
+  const g=ctx.createRadialGradient(0,0,2,0,0,DECK_R);
+  g.addColorStop(0,"#0B0F16"); g.addColorStop(0.55,"#141A24"); g.addColorStop(1,"#1E2734");
+  ctx.beginPath(); ctx.arc(0,0,DECK_R,0,7); ctx.fillStyle=g; ctx.fill();
+
+  // retaining wall, drawn as arcs between the ports
+  ctx.lineWidth=5; ctx.lineCap="butt";
+  ctx.beginPath(); ctx.arc(0,0,DECK_R,0,7); ctx.strokeStyle="#46586C"; ctx.stroke();
+  ctx.lineWidth=1; ctx.strokeStyle="#3A4A5C";
+  ctx.beginPath(); ctx.arc(0,0,DECK_R+2.6,0,7); ctx.stroke();
+
+  ctx.strokeStyle="rgba(58,74,92,.55)"; ctx.lineWidth=0.7;
+  for(let r=20;r<DECK_R;r+=20){ ctx.beginPath(); ctx.arc(0,0,r,0,7); ctx.stroke(); }
+  // spokes stay visible while spinning — a bare disc reads as motionless
+  for(let i=0;i<12;i++){ const a=i*Math.PI/6;
+    ctx.beginPath(); ctx.moveTo(Math.cos(a)*16,Math.sin(a)*16);
+    ctx.lineTo(Math.cos(a)*DECK_R,Math.sin(a)*DECK_R); ctx.stroke(); }
+  if(phase!=="build"){
+    // one bright index mark, so a revolution is countable at a glance
+    ctx.beginPath();
+    ctx.moveTo(DECK_R*0.30,0); ctx.lineTo(DECK_R*0.96,0);
+    ctx.strokeStyle="rgba(242,169,59,.75)"; ctx.lineWidth=2.6; ctx.stroke();
+    ctx.beginPath(); ctx.arc(DECK_R*0.96,0,3.4,0,7);
+    ctx.fillStyle="#F2A93B"; ctx.fill();
+    ctx.strokeStyle="rgba(58,74,92,.55)"; ctx.lineWidth=0.7;
+  }
+  if(phase==="spin"){
+    const re=eqRadius(deck.omega);
+    if(re<DECK_R*1.3){ ctx.beginPath(); ctx.arc(0,0,Math.min(re,DECK_R+12),0,7);
+      ctx.strokeStyle="rgba(121,208,230,.34)"; ctx.lineWidth=1.2;
+      ctx.setLineDash([2,7]); ctx.stroke(); ctx.setLineDash([]); }
+  }
+  ctx.beginPath(); ctx.arc(0,0,7,0,7); ctx.fillStyle="#27333F"; ctx.fill();
+  ctx.strokeStyle="#4A5D71"; ctx.lineWidth=1; ctx.stroke();
+
+  lv.gates.forEach((g2,i)=>{
+    const gx=Math.cos(g2.a)*g2.r, gy=Math.sin(g2.a)*g2.r;
+    ctx.beginPath(); ctx.arc(gx,gy,g2.w/2,0,7);
+    ctx.strokeStyle=gatesHit[i]?"#6FCF97":"#79D0E6";
+    ctx.globalAlpha=gatesHit[i]?0.85:0.45;
+    ctx.setLineDash([4,4]); ctx.lineWidth=1.6; ctx.stroke();
+    ctx.setLineDash([]); ctx.globalAlpha=1;
+  });
+  for(const p of parts) drawPart(p,1);
+  if(drag) drawPart(drag,0.55);
+  if(phase==="build"&&parts.length){
+    let mx=0,my=0,m=0;
+    for(const p of parts){const c=partCentre(p),mm=partMass(p);mx+=c[0]*mm;my+=c[1]*mm;m+=mm;}
+    mx/=m;my/=m;
+    const bad=imbalance()>lv.tol&&!lv.sandbox;
+    ctx.strokeStyle=bad?"#E0517B":"#79D0E6"; ctx.lineWidth=1.4;
+    ctx.beginPath(); ctx.arc(mx,my,4,0,7); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(mx-7,my); ctx.lineTo(mx+7,my);
+    ctx.moveTo(mx,my-7); ctx.lineTo(mx,my+7); ctx.globalAlpha=.6; ctx.stroke(); ctx.globalAlpha=1;
+  }
+  ctx.restore();
+}
+function drawPart(p,alpha){
+  ctx.globalAlpha=alpha;
+  if(p.type==="rail"){
+    ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(p.x2,p.y2);
+    ctx.lineCap="round"; ctx.lineWidth=5; ctx.strokeStyle="#8FA3BF"; ctx.stroke();
+    ctx.lineWidth=1.6; ctx.strokeStyle="#C3D2E2"; ctx.stroke();
+  } else if(p.type==="bumper"){
+    ctx.beginPath(); ctx.arc(p.x,p.y,PARTS.bumper.r,0,7);
+    ctx.fillStyle="#3A2430"; ctx.fill(); ctx.strokeStyle="#E0517B"; ctx.lineWidth=1.8; ctx.stroke();
+  } else if(p.type==="brake"){
+    ctx.beginPath(); ctx.arc(p.x,p.y,PARTS.brake.r,0,7);
+    ctx.fillStyle="rgba(78,110,142,.22)"; ctx.fill();
+    ctx.strokeStyle="#4E6E8E"; ctx.lineWidth=1.2; ctx.setLineDash([3,3]); ctx.stroke(); ctx.setLineDash([]);
+  } else if(p.type==="booster"){
+    ctx.beginPath(); ctx.arc(p.x,p.y,PARTS.booster.r,0,7);
+    ctx.fillStyle="rgba(242,169,59,.14)"; ctx.fill();
+    ctx.strokeStyle="#F2A93B"; ctx.lineWidth=1.4; ctx.stroke();
+    const a=Math.atan2(p.y,p.x);
+    ctx.beginPath(); ctx.moveTo(p.x+Math.cos(a)*-5,p.y+Math.sin(a)*-5);
+    ctx.lineTo(p.x+Math.cos(a)*6,p.y+Math.sin(a)*6); ctx.lineWidth=2; ctx.stroke();
+  }
+  ctx.globalAlpha=1;
+}
+function drawPrediction(){
+  const pr=cachedPredict(); if(!pr) return;
+  if(pr.deckPath&&pr.deckPath.length>1){
+    ctx.beginPath(); ctx.moveTo(pr.deckPath[0][0],pr.deckPath[0][1]);
+    for(const p of pr.deckPath) ctx.lineTo(p[0],p[1]);
+    ctx.strokeStyle=armed?"rgba(216,226,236,.34)":"rgba(216,226,236,.16)";
+    ctx.lineWidth=1; ctx.setLineDash([2,5]); ctx.stroke(); ctx.setLineDash([]);
+  }
+  if(pr.path.length<2) return;
+  const good=pr.outcome==="land", crash=pr.outcome==="crash";
+  ctx.beginPath(); ctx.moveTo(pr.path[0][0],pr.path[0][1]);
+  for(const p of pr.path) ctx.lineTo(p[0],p[1]);
+  ctx.strokeStyle = good?"rgba(111,207,151,.85)" : crash?"rgba(224,81,123,.6)"
+                  : pr.outcome==="invert"?"rgba(180,140,255,.75)"
+                  : pr.closest<120?"rgba(121,208,230,.5)":"rgba(121,208,230,.22)";
+  ctx.lineWidth = good?2:1.2; ctx.setLineDash([5,6]); ctx.stroke(); ctx.setLineDash([]);
+  const e=pr.path[pr.path.length-1];
+  ctx.beginPath(); ctx.arc(e[0],e[1],good?6:4,0,7);
+  ctx.strokeStyle = good?"#6FCF97":crash?"#E0517B":
+                    pr.outcome==="invert"?"#B48CFF":"rgba(121,208,230,.6)";
+  ctx.lineWidth=1.8; ctx.stroke();
+}
+function drawFlight(){
+  if(flightTrail.length<2) return;
+  ctx.beginPath(); ctx.moveTo(flightTrail[0][0],flightTrail[0][1]);
+  for(const t of flightTrail) ctx.lineTo(t[0],t[1]);
+  ctx.strokeStyle="rgba(242,169,59,.6)"; ctx.lineWidth=1.6; ctx.stroke();
+}
+function drawBall(){
+  if(!ball) return;
+  if(inverting){
+    const e=Math.min(1,inverting.t);
+    const p=invMap(ball.x,ball.y,inverting.hc,inverting.R,e);
+    const pull=1-Math.abs(e-0.5)*2;                    // pinches to nothing at the ring
+    const rr=BALL_R*2.05*(1-pull*0.8);
+    const fa2=Math.atan2(p[1]-inverting.hc[1],p[0]-inverting.hc[0]);
+    tracePts(ferroBlob(p[0],p[1],Math.max(0.6,rr),fa2,1,3.1,48));
+    paintFerro(p[0],p[1],Math.max(0.6,rr),fa2,1,268,44);
+    ctx.beginPath(); ctx.arc(p[0],p[1],BALL_R+22*pull,0,7);
+    ctx.strokeStyle=`rgba(180,140,255,${0.55*(1-pull)})`; ctx.lineWidth=2; ctx.stroke();
+    return;
+  }
+  if(phase==="spin"&&trail.length>1){
+    ctx.beginPath(); ctx.moveTo(trail[0][0],trail[0][1]);
+    for(const t of trail) ctx.lineTo(t[0],t[1]);
+    ctx.strokeStyle="rgba(242,169,59,.30)"; ctx.lineWidth=1.4; ctx.stroke();
+  }
+  drawDroplet(ball.x,ball.y);
+}
+function drawDroplet(x,y){
+  let fa=0, s=0;
+  if(phase==="build"||phase==="spin"){
+    fa=Math.atan2(y,x)+Math.PI;               // on the deck the dish is the field
+    s=0.42+0.4*Math.min(1,len(x,y)/DECK_R);
+  } else {
+    const f=fieldAt(x,y,null);
+    fa=Math.atan2(f[1],f[0]);
+    s=Math.min(1,Math.sqrt(f[2])/22);          // spikes lengthen as a body grabs it
+  }
+  const R=BALL_R*2.05;
+  ctx.save();
+  ctx.shadowColor="rgba(150,120,255,.55)"; ctx.shadowBlur=10;
+  tracePts(ferroBlob(x,y,R,fa,s,3.1,64));
+  ctx.restore();
+  const g=ctx.createRadialGradient(x-R*0.3,y-R*0.35,R*0.05,x,y,R*1.4);
+  g.addColorStop(0,"#2A2E3C"); g.addColorStop(0.4,"#101219"); g.addColorStop(1,"#04050A");
+  ctx.fillStyle=g; ctx.fill();
+  const rim=ctx.createLinearGradient(x-Math.cos(fa)*R,y-Math.sin(fa)*R,x+Math.cos(fa)*R,y+Math.sin(fa)*R);
+  rim.addColorStop(0,"hsla(268,95%,72%,.95)");
+  rim.addColorStop(0.5,"hsla(196,90%,60%,.45)");
+  rim.addColorStop(1,"hsla(44,98%,68%,.95)");
+  ctx.strokeStyle=rim; ctx.lineWidth=1.5; ctx.stroke();
+  ctx.beginPath(); ctx.arc(x-R*0.28,y-R*0.32,R*0.20,0,7);
+  ctx.fillStyle="rgba(232,240,255,.5)"; ctx.fill();
+}
+/* At t=0.5 the entire system is sitting on the horizon. Light it up. */
+function drawHorizonFlash(){
+  const e=Math.min(1,inverting.t);
+  const peak=1-Math.abs(e-0.5)*2;
+  if(peak<=0.02) return;
+  const [hx,hy]=inverting.hc, R=inverting.R;
+  ctx.beginPath(); ctx.arc(hx,hy,R,0,7);
+  ctx.strokeStyle=`rgba(255,255,255,${0.85*peak*peak})`;
+  ctx.lineWidth=1.5+16*peak*peak; ctx.stroke();
+  ctx.beginPath(); ctx.arc(hx,hy,R,0,7);
+  ctx.strokeStyle=`rgba(190,150,255,${0.5*peak})`;
+  ctx.lineWidth=2+44*peak*peak; ctx.stroke();
+  for(let i=0;i<3;i++){
+    ctx.beginPath(); ctx.arc(hx,hy,R*(1+(i+1)*0.10*peak),0,7);
+    ctx.strokeStyle=`rgba(255,255,255,${0.16*peak})`; ctx.lineWidth=1; ctx.stroke();
+  }
+}
+function drawOverlay(){
+  if(phase!=="spin"||!ball) return;
+  ctx.font="500 11px ui-sans-serif, system-ui, sans-serif";
+  ctx.fillStyle="#7C8B9B"; ctx.textAlign="right";
+  const y=H*0.20;
+  ctx.fillText(`radius ${Math.round(len(ball.x,ball.y))} / ${DECK_R}`,W-14,y);
+  ctx.fillText(`speed ${Math.round(len(ball.vx,ball.vy))}`,W-14,y+15);
+  ctx.fillText(`${(RUN_LIMIT-runT).toFixed(1)}s`,W-14,y+30);
+  const pr=cachedPredict();
+  if(pr){
+    ctx.font="600 13px ui-sans-serif, system-ui, sans-serif";
+    if(pr.outcome==="land"){ ctx.fillStyle="#6FCF97"; ctx.fillText("release now: lands",W-14,y+52); }
+    else if(pr.outcome==="crash"){ ctx.fillStyle="#E0517B"; ctx.fillText("release now: crashes",W-14,y+52); }
+    else if(pr.outcome==="invert"){ ctx.fillStyle="#B48CFF"; ctx.fillText("release now: falls in",W-14,y+52); }
+    else { ctx.fillStyle="#7C8B9B";
+      ctx.fillText(`release now: ${isFinite(pr.closest)?Math.round(pr.closest)+" off":"misses"}`,W-14,y+52); }
+  }
+  ctx.textAlign="left";
+}
+
+/* ---------------- HUD ---------------- */
+function refreshHUD(){
+  const imb=imbalance(), bad=imb>lv.tol&&!lv.sandbox;
+  $("bubble").style.left=(50+Math.min(1,imb/0.7)*46)+"%";
+  $("bubble").style.background=bad?"#E0517B":"#79D0E6";
+  $("balval").textContent=imb<0.02?"centred":imb.toFixed(2);
+  $("balval").style.color=bad?"#E0517B":"#D8E2EC";
+  $("toltol").style.left="50%"; $("toltol").style.width=Math.min(1,lv.tol/0.7)*46+"%";
+  const chips=[{t:`${built().length} / ${lv.budget} parts`,ok:built().length<=lv.budget,bad:built().length>lv.budget}];
+  if(!lv.sandbox) chips.push({t:`balance under ${lv.tol.toFixed(2)}`,ok:!bad,bad});
+  lv.gates.forEach((g,i)=>chips.push({t:`gate ${i+1}`,ok:gatesHit[i],bad:false}));
+  const tb=targetBody();
+  chips.push({t:`land on ${tb.n}`,ok:false,bad:false});
+  $("crit").innerHTML=chips.map(c=>`<div class="chip ${c.bad?'bad':c.ok?'met':''}"><i class="dot"></i>${c.t}</div>`).join("");
+  $("spinbtn").textContent=(!lv.sandbox&&bad)?"Spin up anyway":"Spin up";
+}
+
+/* ---------------- loop ---------------- */
+function frame(ts){
+  if(!last) last=ts;
+  const dtms=Math.min(64,ts-last); last=ts;
+  acc+=dtms/1000;
+  let guard=0;
+  while(acc>=DT&&guard++<400){ step(); acc-=DT; }
+  if(shakeT>0) shakeT=Math.max(0,shakeT-dtms/1000);
+  sfx.deck(deck.omega, ball?len(ball.vx,ball.vy):0, phase==="spin");
+  if(phase==="spin"){
+    $("thfill").style.height=(throttle*100)+"%";
+    $("rpm").textContent=Math.round(deck.omega*9.549)+" rpm";
+    $("throttle").classList.toggle("hot",throttle>0.05);
+    const pr=cachedPredict();
+    const lands=pr&&pr.outcome==="land";
+    $("release").classList.toggle("armed",!!lands);
+    $("thlab").textContent="Let go to launch";
+    $("relsub").textContent = lands ? "lands"
+      : pr&&pr.outcome==="crash" ? "crashes"
+      : pr&&pr.outcome==="invert" ? "falls in" : "or just let go";
+    const g=gatesHit.filter(Boolean).length;
+    if(g!==frame._g){ frame._g=g; refreshHUD(); }
+  }
+  draw();
+  requestAnimationFrame(frame);
+}
+
+/* ---------------- boot ---------------- */
+function resize(){
+  DPR=Math.min(2,window.devicePixelRatio||1);
+  W=cv.clientWidth; H=cv.clientHeight;
+  cv.width=Math.round(W*DPR); cv.height=Math.round(H*DPR);
+  makeStars();
+}
+function buildPalette(){
+  $("palette").innerHTML=TOOLS.map(t=>t==="erase"
+    ? `<button class="tool" data-t="erase"><b>Erase</b><span>tap a part</span></button>`
+    : `<button class="tool" data-t="${t}"><b>${PARTS[t].label}</b><span>${PARTS[t].blurb}</span></button>`).join("");
+  [...document.querySelectorAll(".tool")].forEach(b=>{ b.onclick=()=>{tool=b.dataset.t;syncTools();}; });
+  syncTools();
+}
+function syncTools(){ [...document.querySelectorAll(".tool")].forEach(b=>b.classList.toggle("on",b.dataset.t===tool)); }
+
+function init(){
+  cv=$("cv"); ctx=cv.getContext("2d");
+  resize(); window.addEventListener("resize",resize);
+  buildPalette();
+  cv.addEventListener("pointerdown",e=>{cv.setPointerCapture(e.pointerId);onDown(e);});
+  cv.addEventListener("pointermove",onMove);
+  cv.addEventListener("pointerup",onUp);
+  cv.addEventListener("pointercancel",onUp);
+  const th=$("throttle");
+  th.addEventListener("pointerdown",e=>{e.preventDefault();holding=true;});
+  ["pointerup","pointerleave","pointercancel"].forEach(ev=>
+    th.addEventListener(ev,e=>{
+      e.preventDefault();
+      if(holding && phase==="spin"){ holding=false; doRelease("player"); }
+      else holding=false;
+    }));
+  $("release").addEventListener("pointerdown",e=>{e.preventDefault();doRelease("player");});
+  $("spinbtn").onclick=()=>{ sfx.boot(); startSpin(); };
+  $("clearbtn").onclick=()=>{parts=[];refreshHUD();};
+  $("retrybtn").onclick=backToBuild;
+  loadLevel(0);
+  requestAnimationFrame(frame);
+}
+init();
+</script>
+</body>
+</html>

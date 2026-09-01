@@ -1,0 +1,93 @@
+// TANGENT headless harness — reconstructed 2026-09-01 by Fable.
+// The phone zip referenced a 50-check suite and a sweep harness that were NOT
+// in the zip; this rebuilds the runner from BUILD-HANDOFF.md Appendix C.
+// Extracts the <script> from ../index.html, runs it in a vm context with a
+// stubbed DOM/canvas, and returns the context so tests can drive
+// loadLevel / startSpin / step / doRelease and read phase / lastOutcome.
+const fs = require("fs");
+const vm = require("vm");
+const path = require("path");
+
+function load(){
+  const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+  const m = html.match(/<script>([\s\S]*?)<\/script>/);
+  if(!m) throw new Error("no script block in index.html");
+  const js = m[1].replace(/^"use strict";/, "");
+  const noop = () => {};
+  // Gradient stub matters: paintFerro calls addColorStop on the result.
+  const ctxStub = new Proxy({}, {
+    get: (t, k) => /Gradient$/.test(k)
+      ? () => ({ addColorStop: noop })
+      : (k === "measureText" ? () => ({ width: 10 }) : noop),
+    set: () => true,
+  });
+  const fakeEl = () => new Proxy({
+    style: {}, dataset: {},
+    classList: { add: noop, remove: noop, toggle: noop, contains: () => false },
+    addEventListener: noop, setPointerCapture: noop, releasePointerCapture: noop,
+    getBoundingClientRect: () => ({ left: 0, top: 0, width: 390, height: 780 }),
+    textContent: "", innerHTML: "", disabled: false,
+    clientWidth: 390, clientHeight: 780, width: 390, height: 780,
+    getContext: () => ctxStub,
+  }, {
+    get(t, k){ return k in t ? t[k] : noop; },
+    set(t, k, v){ t[k] = v; return true; },
+  });
+  const ctx = {
+    console, Math, JSON, Date, isFinite, isNaN, String, Number, Array, Object,
+    Set, Map, Infinity, NaN, parseInt, parseFloat,
+    performance: { now: () => Date.now() },
+    document: {
+      getElementById: fakeEl, querySelectorAll: () => [],
+      querySelector: fakeEl, createElement: fakeEl,
+      addEventListener: noop, hidden: false,
+      body: fakeEl(), documentElement: fakeEl(),
+    },
+    window: { devicePixelRatio: 2, addEventListener: noop, innerWidth: 390, innerHeight: 780 },
+    navigator: { vibrate: noop },
+    requestAnimationFrame: noop, cancelAnimationFrame: noop,
+    setTimeout: noop, clearTimeout: noop, setInterval: noop, clearInterval: noop,
+    localStorage: null,
+    AudioContext: undefined, webkitAudioContext: undefined,
+    addEventListener: noop,
+  };
+  ctx.window.visualViewport = { width: 390, height: 780, addEventListener: noop };
+  ctx.globalThis = ctx;
+  vm.createContext(ctx);
+  // `probe` hands the test direct access to the game's top-level bindings,
+  // which live in the script scope, not on the context object.
+  const expose = `
+    ;globalThis.__T = {
+      get phase(){ return phase; }, set phase(v){ phase = v; },
+      get lastOutcome(){ return lastOutcome; },
+      get inversions(){ return inversions; },
+      get ball(){ return ball; },
+      get deck(){ return deck; },
+      get sys(){ return sys; },
+      get lv(){ return lv; },
+      get LEVELS(){ return LEVELS; },
+      set holding(v){ holding = v; },
+      get holding(){ return holding; },
+      set W(v){ W = v; }, set H(v){ H = v; },
+      loadLevel, startSpin, step, doRelease,
+    };`;
+  vm.runInContext(js + expose, ctx, { filename: "index.html" });
+  if(!ctx.__T) throw new Error("test surface failed to attach");
+  return ctx.__T;
+}
+
+// Run one release-time trial on level i: spin with throttle held, release at
+// tRelease seconds, then fly to completion. Returns { outcome, t }.
+function trial(T, i, tRelease){
+  T.loadLevel(i);
+  T.startSpin();
+  T.holding = true;
+  const steps = Math.round(tRelease * 120);
+  for(let k = 0; k < steps && T.phase === "spin"; k++) T.step();
+  if(T.phase === "spin") T.doRelease("test");
+  let guard = 0;
+  while((T.phase === "flight" || T.phase === "invert") && guard++ < 20000) T.step();
+  return { outcome: T.lastOutcome, phase: T.phase };
+}
+
+module.exports = { load, trial };
