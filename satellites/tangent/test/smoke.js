@@ -190,31 +190,85 @@ console.log("\n[11] the drawn line is the run (D2, the law this project cannot b
   // not: prediction stepped at 1/60 while flight stepped at 1/120, so Euler
   // walked two different trajectories and the dashed line was a near miss of
   // the run rather than the run itself.
-  let checked = 0, agreed = 0;
+  //
+  // Scored PER LEVEL as well as overall. An aggregate hides a single bad
+  // system: measured independently, one build sat at 97.8% overall while one
+  // level was at 85%, and a 95% aggregate gate would have called that fine.
+  const norm = o => (o == null ? "lost" : o);
+  let checked = 0, agreed = 0, worst = null;
   const misses = [];
   for(let i = 0; i < T.LEVELS.length; i++){
-    for(let k = 3; k <= 33; k += 6){
+    let n = 0, ok_ = 0;
+    for(let k = 3; k <= 39; k += 4){
       T.loadLevel(i); T.startSpin(); T.holding = true;
       for(let s = 0; s < k * 20 && T.phase === "spin"; s++) T.step();
       if(T.phase !== "spin") continue;
-      // the predictor returns null when it reaches the horizon with no verdict,
-      // which is the same event as the live run giving up at its own timeout
-      const norm = o => (o == null ? "lost" : o);
       const said = norm((T.cachedPredict() || {}).outcome);
       T.doRelease("d2");
       let g = 0;
       while((T.phase === "flight" || T.phase === "invert") && g++ < 40000) T.step();
       const got = norm(T.lastOutcome);
-      checked++;
-      // "invert" predicted means it falls in; the run then continues past the
-      // hole, so anything after an inversion counts as agreement on the fall.
-      const same = said === got || (said === "invert" && T.inversions > 0);
-      if(same) agreed++; else misses.push(`${T.LEVELS[i].name}@${(k * 20 / 120).toFixed(1)}s said ${said} got ${got}`);
+      n++;
+      // a predicted "invert" means it falls in; the run continues past the
+      // hole, so anything after an inversion agrees about the fall
+      if(said === got || (said === "invert" && T.inversions > 0)) ok_++;
+      else misses.push(`${T.LEVELS[i].name}@${(k * 20 / 120).toFixed(1)}s said ${said} got ${got}`);
     }
+    checked += n; agreed += ok_;
+    const pc = n ? ok_ / n : 1;
+    if(worst === null || pc < worst.pc) worst = { pc: pc, name: T.LEVELS[i].name, n: n, ok: ok_ };
   }
   const pct = checked ? (agreed / checked) * 100 : 0;
   ok(`the prediction matches the run it produces (${agreed}/${checked}, ${pct.toFixed(1)}%)`,
      pct >= 95, misses.slice(0, 4).join(" | "));
+  ok(`no single system is dishonest (worst: ${worst.name} ${worst.ok}/${worst.n})`,
+     worst.pc >= 0.9, misses.filter(m => m.indexOf(worst.name) === 0).slice(0, 3).join(" | "));
+}
+
+console.log("\n[12] the build layer is wired, and a flip does not poison the next build");
+{
+  // Nothing in this suite had ever placed a part, so rails, bumpers, brakes,
+  // boosters, part mass and the imbalance failure were all unexecuted code.
+  const runTo = (i, t) => {
+    T.startSpin(); T.holding = true;
+    for(let s = 0; s < t * 120 && T.phase === "spin"; s++) T.step();
+    if(T.phase === "spin") T.doRelease("parts");
+    let g = 0;
+    while((T.phase === "flight" || T.phase === "invert") && g++ < 30000) T.step();
+    return T.ball ? { x: T.ball.x, y: T.ball.y, out: T.lastOutcome } : null;
+  };
+  T.loadLevel(0);
+  const bare = runTo(0, 2.0);
+  T.loadLevel(0);
+  T.parts.push({ type: "bumper", x: 44, y: 0 });
+  T.parts.push({ type: "bumper", x: -44, y: 0 });          // balanced, so it is the
+  const withParts = runTo(0, 2.0);                          // physics under test, not the tear-apart
+  ok("a part on the deck changes where the ball ends up",
+     !!bare && !!withParts && (Math.abs(bare.x - withParts.x) + Math.abs(bare.y - withParts.y)) > 1,
+     `bare ${bare && bare.x.toFixed(1)},${bare && bare.y.toFixed(1)} vs ${withParts && withParts.x.toFixed(1)},${withParts && withParts.y.toFixed(1)}`);
+
+  T.loadLevel(0);
+  for(let k = 0; k < 4; k++) T.parts.push({ type: "rail", x: 55, y: -20 + k * 12, x2: 88, y2: -20 + k * 12 });
+  T.startSpin(); T.holding = true;
+  let g = 0, tore = false;
+  while(T.phase === "spin" && g++ < 34 * 120){ T.step(); if(T.phase !== "spin"){ tore = true; break; } }
+  ok("a deck loaded all down one side tears itself apart", tore && T.phase === "done", "phase=" + T.phase);
+  ok("a run that fails reports its own outcome, not the last one",
+     T.lastOutcome === "failed", "lastOutcome=" + T.lastOutcome);
+
+  // and coming back from a run that went through a hole
+  T.loadLevel(5);
+  let inverted = false;
+  for(let k = 1; k <= 40 && !inverted; k++){
+    trial(T, 5, k * 0.3);
+    if(T.inversions > 0) inverted = true;
+  }
+  ok("reached an inverted state to test the return", inverted);
+  T.backToBuild();
+  ok("rebuilding after a flip puts the world back the near way up", T.invAmt === 0, "invAmt=" + T.invAmt);
+  ok("rebuilding after a flip puts the deck back at the origin",
+     T.deckPos[0] === 0 && T.deckPos[1] === 0, "deckPos=" + T.deckPos);
+  ok("rebuilding clears the gates lit by the last run", T.gatesHit.every(g2 => !g2));
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

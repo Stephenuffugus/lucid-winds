@@ -589,6 +589,8 @@ function finishInversion(){
   ball.x=hc[0]+Math.cos(a)*R*1.02; ball.y=hc[1]+Math.sin(a)*R*1.02;
   ball.vx=Math.cos(a)*I.speed; ball.vy=Math.sin(a)*I.speed;
   invAmt=I.to; inverting=null; inversions++; phase="flight";
+  // back through an even number of thresholds is the near side again
+  if(inversions%2===0) sideStyle=SIDE_DEFAULT;
 }
 
 /* ---------------- build ---------------- */
@@ -855,6 +857,12 @@ function startSpin(){
 function backToBuild(){
   phase="build"; ball=null; trail.length=0; flightTrail.length=0;
   deck.theta=0; deck.omega=0; deck.wobble=0;
+  /* A run that went through a hole leaves the palette inverted, the far side
+     hues on the target and the deck sitting wherever the inversion moved it,
+     while taps still map to the origin, so no part could be placed at all.
+     Returning to the build screen puts the system back as authored. */
+  gatesHit=lv.gates.map(()=>false);
+  resetSystem();
   modal(null); showUI("build"); refreshHUD();
 }
 /* Systems list. Progress is one door at a time, and every cleared system stays
@@ -904,7 +912,7 @@ function doRelease(reason){
   phase="flight"; flightTrail.push([ball.x,ball.y]);
   showUI("fly");
 }
-function failRun(msg){ phase="done"; shakeT=0.5; sfx.fail(); showCard({title:"Run failed",score:0,body:msg,rows:[]}); }
+function failRun(msg){ phase="done"; lastOutcome="failed"; shakeT=0.5; sfx.fail(); showCard({title:"Run failed",score:0,body:msg,rows:[]}); }
 
 /* ---------------- step ---------------- */
 function step(){
@@ -1039,7 +1047,10 @@ function measureHUD(){
   if(bh>0) hudBot=bh;
 }
 function viewBand(){
-  const h=Math.max(120,H-hudTop-hudBot);
+  // floor low: clamping this to 120 on a screen with only 80px free put the
+  // deck straight back behind the palette, which is the fault it exists to
+  // prevent. A small deck that is entirely visible beats a big hidden one.
+  const h=Math.max(40,H-hudTop-hudBot);
   return {w:W, h:h, cx:W/2, cy:hudTop+h/2};
 }
 function systemExtent(){
