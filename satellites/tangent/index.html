@@ -960,6 +960,10 @@ function showUI(which){
 }
 function startSpin(){
   phase="spin";
+  /* A new run has no result yet. Without this a run that never releases
+     inherits the PREVIOUS run's outcome, so a bot, a test or the results card
+     can read "land" off a run that did nothing at all. */
+  lastOutcome=null;
   deck.theta=0; deck.omega=OM_IDLE; deck.wobble=0;
   throttle=TH_FLOOR; holding=false; runT=0; flightT=0;
   const r0=eqRadius(OM_IDLE);

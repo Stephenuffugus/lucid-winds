@@ -280,26 +280,46 @@ console.log("\n[9] the tutorial teaches, once, in the order the player needs it 
 
 console.log("\n[10] the taught strategy is enough to get in (T2 acceptance)");
 {
-  // Exactly what the beats say: hold, wait for the gate, let go on "lands".
+  // Exactly what the beats say: hold, wait for every gate, let go on "lands".
   // If this fails, the tutorial is teaching something that does not work.
+  //
+  // It used to report reached=4 while system 4 FAILED inside it, because
+  // startSpin never reset lastOutcome, so a system the bot never released on
+  // inherited the previous system's "land" and counted as cleared. startSpin
+  // clears it now, and this reports which system stopped the bot rather than
+  // only how far it got.
   T.store.clear();
   T.W = 390; T.H = 780;
-  let reached = 1;
-  for(let i = 0; i < 5; i++){
+  let reached = 1, stoppedBy = null;
+  for(let i = 0; i < 6; i++){
     T.loadLevel(i); T.startSpin(); T.holding = true;
-    let t = 0;
+    ok(`system ${i + 1} starts with no result carried over from the last run`,
+       T.lastOutcome === null, "lastOutcome=" + T.lastOutcome);
+    let t = 0, released = false;
     while(T.phase === "spin" && t < 34 * 120){
       T.step(); t++;
       const pr = T.cachedPredict();
-      if(pr && pr.outcome === "land" && T.gatesHit.every(Boolean) && t > 20){ T.doRelease("bot"); break; }
+      if(pr && pr.outcome === "land" && T.gatesHit.every(Boolean) && t > 20){
+        T.doRelease("bot"); released = true; break;
+      }
     }
     let g = 0;
     while((T.phase === "flight" || T.phase === "invert") && g++ < 30000) T.step();
-    if(!(T.lastOutcome === "land" && T.gatesHit.every(Boolean))) break;
+    const gatesOK = T.gatesHit.every(Boolean);
+    if(!(released && T.lastOutcome === "land" && gatesOK)){
+      stoppedBy = `system ${i + 1} ${T.LEVELS[i].name}: released=${released} ` +
+                  `outcome=${T.lastOutcome} gates=${T.gatesHit.filter(Boolean).length}/${T.gatesHit.length}`;
+      break;
+    }
     reached = i + 2;
   }
-  ok("a player following only the tutorial reaches system 3 or better",
-     reached >= 3, "reached system " + reached);
+  // The gate is "clears system 4", not "reaches system 4". Reaching it only
+  // means systems 1 to 3 were cleared, which a broken system 4 still satisfies:
+  // measured against a mutant that gives system 4 an extra gate at r20 the
+  // taught strategy cannot reach, `reached >= 4` stayed GREEN. System 4 being
+  // clearable with an empty deck is the whole result of R2, so this asserts it.
+  ok(`the taught strategy clears system 4, which is the R2 result (reached ${reached})`,
+     reached >= 5, stoppedBy || "reached system " + reached);
 }
 
 console.log("\n[11] the drawn line is the run (D2, the law this project cannot bend)");
