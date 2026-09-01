@@ -367,5 +367,23 @@ console.log("\n[16] the vane makes the ball lead the deck, which nothing else do
      bumped < vaned / 2, `bumper=${bumped.toFixed(1)} vane=${vaned.toFixed(1)}`);
 }
 
+console.log("\n[17] a system that needs the deck says so before you spin it up");
+{
+  // Around the heavy cannot be cleared with an empty deck. Without a word in
+  // the build phase that reads as the game refusing to advance, which is the
+  // exact failure the gate beat was written to prevent one system earlier.
+  T.store.clear(); T.coachSeen = {};
+  T.loadLevel(0);
+  ok("an opening system says nothing about parts", T.coachBeat(null) === null,
+     T.coachBeat(null));
+  const needs = T.LEVELS.findIndex(l => l.needsParts);
+  ok("some system is marked as needing the deck", needs >= 0, "none marked");
+  T.loadLevel(needs);
+  ok("the system that needs the deck asks for a part", T.coachBeat(null) === "build",
+     T.coachBeat(null));
+  T.parts.push({ type: "vane", x: 30, y: 0 });
+  ok("placing one retires the lesson", T.coachBeat(null) === null, T.coachBeat(null));
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

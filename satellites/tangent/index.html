@@ -44,11 +44,11 @@
      most was the one tool they could not see. */
   .palette{display:grid;grid-template-columns:repeat(auto-fit,minmax(58px,1fr));
     gap:6px;margin-bottom:11px}
-  /* Below 360px auto-fit lands on four columns, which strands Erase alone in a
-     row of empty cells. Three by two reads as deliberate and widens the tiles.
-     This rule wins on source order, not specificity, so it must stay after the
-     one above. */
-  @media (max-width:360px){ .palette{grid-template-columns:repeat(3,1fr)} }
+  /* On a phone auto-fit strands the last tool alone in a row of empty cells:
+     four columns then Erase at 320, five then Erase at 390. Three by two is
+     deliberate, and with six tools it fills exactly. This rule wins on source
+     order, not specificity, so it must stay after the one above. */
+  @media (max-width:440px){ .palette{grid-template-columns:repeat(3,1fr)} }
   .tool{min-width:0;min-height:52px;padding:7px 5px;border-radius:3px;background:var(--deck);
     border:1px solid var(--etch);color:var(--ink-dim);font-size:11px;text-align:left;line-height:1.25;
     cursor:pointer;font-family:inherit;overflow:hidden}
@@ -681,7 +681,7 @@ function onDown(e){
   if(tool==="erase"){ eraseAt(lx,ly); return; }
   if(parts.length>=lv.budget){ flashHint("Deck is full. Erase something first."); return; }
   if(tool==="rail") drag={type:"rail",x:lx,y:ly,x2:lx,y2:ly};
-  else { parts.push({type:tool,x:lx,y:ly}); ghost=null; refreshHUD(); }
+  else { parts.push({type:tool,x:lx,y:ly}); ghost=null; coachDone("build"); refreshHUD(); }
 }
 function onMove(e){
   if(!drag) return;
@@ -697,7 +697,7 @@ function onUp(){
     const a=Math.atan2(drag.y,drag.x);
     drag.x2=drag.x+Math.cos(a+Math.PI/2)*22; drag.y2=drag.y+Math.sin(a+Math.PI/2)*22;
   }
-  parts.push(drag); drag=null; ghost=null; refreshHUD();
+  parts.push(drag); drag=null; ghost=null; coachDone("build"); refreshHUD();
 }
 function eraseAt(lx,ly){
   let best=-1,bd=16;
@@ -892,6 +892,7 @@ function buildGhost(){
    letting go at the first "lands" lands the ball but leaves the gate uncrossed
    on level two, which reads to a new player as the game refusing to advance. */
 const COACH={
+  build:"The ball only ever drifts one way. A Vane pushes it ahead of the deck, which is how it reaches this gate. Tap Vane, then tap the deck.",
   hold: "Hold the throttle. The deck spins up and the ball rides outward.",
   line: "The dashed line is where the ball goes if you let go right now.",
   gate: "Keep holding. The ball has to cross the gate before you let go.",
@@ -903,6 +904,10 @@ let coachSeen={}, coachAt=null, coachT=0, everHeld=false;
    it from there made the coach silently depend on something else having drawn
    a frame first, which is true in the game and false anywhere else. */
 function coachBeat(pr){
+  // the one beat that belongs in the build phase: a system that cannot be
+  // cleared with an empty deck has to say so, or it reads as broken
+  if(phase==="build")
+    return (!coachSeen.build && lv.needsParts && !parts.length) ? "build" : null;
   if(phase!=="spin") return null;
   if(!coachSeen.hold && !everHeld) return "hold";
   if(!coachSeen.line && everHeld)  return "line";
@@ -1869,6 +1874,12 @@ function frame(ts){
     const say=coachAt?COACH[coachAt]:"Hold to push the ball outward. Let go and it flies.";
     const sh=$("spinhint");
     if(sh._say!==say){ sh._say=say; sh.textContent=say; sh.classList.toggle("coach",!!coachAt); }
+  }
+  if(phase==="build"){
+    coachTick(dt,null);
+    const say=coachAt?COACH[coachAt]:lv.note;
+    const bh=$("buildhint");
+    if(bh._say!==say){ bh._say=say; bh.textContent=say; bh.classList.toggle("coach",!!coachAt); }
   }
   camUpdate(dt);
   draw();
