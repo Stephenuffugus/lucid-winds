@@ -8,7 +8,11 @@ const fs = require("fs");
 const vm = require("vm");
 const path = require("path");
 
-function load(){
+// `seed` primes localStorage BEFORE the game's init() runs, which is the only
+// way to exercise the one-boot-per-profile half of the tutorial: init reads the
+// saved beats back with `coachSeen=readSave().tutor`, and a test that sets
+// coachSeen by hand is testing itself, not that line.
+function load(seed){
   // TANGENT_HTML points the suite at a mutated scratch copy, so a check can be
   // proven able to fail without ever writing to the real game file.
   const src = process.env.TANGENT_HTML || path.join(__dirname, "..", "index.html");
@@ -55,6 +59,7 @@ function load(){
     // tests would pass without exercising anything.
     localStorage: (() => {
       const m = new Map();
+      for(const k in (seed || {})) m.set(String(k), String(seed[k]));
       return {
         getItem: k => (m.has(String(k)) ? m.get(String(k)) : null),
         setItem: (k, v) => { m.set(String(k), String(v)); },

@@ -530,5 +530,86 @@ console.log("\n[19] the ghost on the build deck is the run it promises");
   }
 }
 
+console.log("\n[20] the tutorial shows once per profile and then never again");
+{
+  // NOTHING guarded this. coachDone as a no-op: 83/83. init not loading tutor
+  // from the profile: 83/83. Deleting the two lines that mark hold and gate
+  // done: 83/83. All three because those lines lived in frame(), and the
+  // headless suites stub the animation frame, so the render loop never ran and
+  // the beats were never marked. They are in step() now, at the sim events
+  // themselves, and these checks drive step().
+  // Drives the loop the way frame() does: step() at 1/120, and coachTick once
+  // per rendered frame at 1/60, because the purely informational "line" beat is
+  // the one beat with no sim event to retire it and time is its fallback.
+  const play = (i, secs) => {
+    T.loadLevel(i); T.startSpin(); T.holding = true;
+    for(let k = 0; k < secs * 120 && T.phase === "spin"; k++){
+      T.step();
+      if(k % 2 === 1) T.coachTick(1 / 60, T.cachedPredict());
+    }
+  };
+  // a fresh profile: holding retires "hold", crossing the gate retires "gate"
+  T.store.clear(); T.coachSeen = {};
+  play(1, 0.2);
+  ok("holding the throttle retires the hold beat", T.coachSeen.hold === 1,
+     "coachSeen=" + JSON.stringify(T.coachSeen));
+  ok("and it is written to the profile, not only to memory",
+     (T.readSave().tutor || {}).hold === 1, JSON.stringify(T.readSave().tutor));
+  play(1, 12);
+  ok("crossing every gate retires the gate beat", T.coachSeen.gate === 1,
+     "gatesHit=" + JSON.stringify(T.gatesHit) + " coachSeen=" + JSON.stringify(T.coachSeen));
+  ok("and that is written too", (T.readSave().tutor || {}).gate === 1,
+     JSON.stringify(T.readSave().tutor));
+  // letting go retires the last one
+  T.loadLevel(1); T.startSpin(); T.holding = true;
+  for(let k = 0; k < 240 && T.phase === "spin"; k++){
+    T.step();
+    if(k % 2 === 1) T.coachTick(1 / 60, T.cachedPredict());
+  }
+  if(T.phase === "spin") T.doRelease("coach");
+  ok("letting go retires the letgo beat", T.coachSeen.letgo === 1,
+     JSON.stringify(T.coachSeen));
+
+  // the once-per-profile half: a saved profile must silence the beats on the
+  // NEXT boot, which is the half that init has to read back
+  const saved = T.readSave().tutor;
+  ok("the profile now carries every beat the player has been shown",
+     saved.hold === 1 && saved.line === 1 && saved.gate === 1 && saved.letgo === 1,
+     JSON.stringify(saved));
+  T.coachSeen = Object.assign({}, saved);       // what init does on the next boot
+  T.loadLevel(1); T.startSpin(); T.everHeld = false;
+  ok("a returning profile is not asked to hold the throttle again",
+     T.coachBeat(null) !== "hold", String(T.coachBeat(null)));
+  T.everHeld = true;
+  T.coachSeen = Object.assign({}, saved);
+  ok("nor told about the line, the gate or letting go again",
+     T.coachBeat(null) !== "line" && T.coachBeat(null) !== "gate" && T.coachBeat(null) !== "letgo",
+     String(T.coachBeat(null)));
+  // and a wiped profile gets the whole lesson back, which is what Start over is
+  T.store.clear(); T.coachSeen = {};
+  T.loadLevel(1); T.startSpin(); T.everHeld = false;
+  ok("a wiped profile is taught from the beginning again", T.coachBeat(null) === "hold",
+     String(T.coachBeat(null)));
+
+  // The half above still cannot see init: setting coachSeen by hand is the test
+  // testing itself. So boot a SECOND copy of the game with the profile already
+  // in localStorage and ask it what it knows before anything touches it.
+  const { load: loadFresh } = require("./harness");
+  const prior = JSON.stringify({ v: 4, lv: {}, opt: {},
+                                 tutor: { hold: 1, line: 1, gate: 1, letgo: 1 } });
+  const boot = loadFresh({ "tangent.save.v4": prior });
+  ok("a fresh boot reads the beats it has already shown out of the profile",
+     boot.coachSeen && boot.coachSeen.hold === 1 && boot.coachSeen.line === 1
+       && boot.coachSeen.gate === 1 && boot.coachSeen.letgo === 1,
+     "coachSeen at boot=" + JSON.stringify(boot.coachSeen));
+  boot.loadLevel(1); boot.startSpin(); boot.everHeld = false;
+  ok("so it says nothing on the first spin of a returning player",
+     boot.coachBeat(null) === null, String(boot.coachBeat(null)));
+  const virgin = loadFresh();
+  virgin.loadLevel(1); virgin.startSpin(); virgin.everHeld = false;
+  ok("while a boot with no profile does teach", virgin.coachBeat(null) === "hold",
+     String(virgin.coachBeat(null)));
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

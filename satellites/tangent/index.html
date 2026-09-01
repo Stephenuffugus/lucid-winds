@@ -1057,6 +1057,13 @@ function step(){
     advanceDeck(s, holding?1:TH_FLOOR);
     ball.x=s.x;ball.y=s.y;ball.vx=s.vx;ball.vy=s.vy;
     deck.theta=s.theta;deck.omega=s.omega;throttle=s.throttle;
+    /* The two beats that retire on a SIM event live here and not in frame().
+       They were in the render loop, which the headless suites stub out, so
+       every check of "the tutorial shows once and never again" was invisible:
+       coachDone as a no-op, init not loading tutor from the profile, and
+       deleting these two lines all passed the whole suite. Same behaviour in
+       the browser, because frame() drives step(). */
+    if(holding){ everHeld=true; coachDone("hold"); }
 
     const imb=imbalance();
     deck.wobble += (imb*(deck.omega/OMEGA_MAX)-deck.wobble)*Math.min(1,DT*4);
@@ -1064,6 +1071,7 @@ function step(){
       failRun("The deck shook itself apart. Spread the mass more evenly."); return;
     }
     checkGates();
+    if(lv.gates.length && gatesHit.every(Boolean)) coachDone("gate");
     _predDirty=true;          // the sim moved, so the drawn line is stale
     if(trail.length>260) trail.shift();
     trail.push([ball.x,ball.y]);
@@ -1900,8 +1908,6 @@ function frame(ts){
     $("relsub").textContent = v.key==="none"||v.key==="miss" ? "or just let go" : v.text;
     const g=gatesHit.filter(Boolean).length;
     if(g!==frame._g){ frame._g=g; refreshHUD(); }
-    if(holding){ everHeld=true; coachDone("hold"); }
-    if(lv.gates.length && gatesHit.every(Boolean)) coachDone("gate");
     coachTick(dt,pr);
     const say=coachAt?COACH[coachAt]:"Hold to push the ball outward. Let go and it flies.";
     const sh=$("spinhint");
