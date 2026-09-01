@@ -10,6 +10,7 @@
 const fs = require("fs");
 const path = require("path");
 const puppeteer = require(path.join("/workspaces/lucid-winds", "node_modules", "puppeteer"));
+const { enterSite } = require("./drive");
 
 const VW = Number(process.argv[2]) || 844;
 const VH = Number(process.argv[3]) || 390;
@@ -163,13 +164,10 @@ WIRE_B.push([12, 8]);
   const seed = await page.evaluate(() => CONDUIT.CFG.seed);
   console.log(`\nCONDUIT full run at ${VW}x${VH}, seed ${seed}\n`);
 
-  const go = await page.evaluate(() => {
-    const r = document.getElementById("go").getBoundingClientRect();
-    return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
-  });
-  await page.mouse.click(go.x, go.y);
-  await settle(600);
+  await enterSite(page, "site-02");
   must("entered the site", (await read()).mode === "prowl");
+  must("on the map this run was written for",
+       (await page.evaluate(() => CONDUIT.S.level)) === "site-02");
 
   // ── route both wires ───────────────────────────────────────────────────────
   must("flow is available from a standing start", await enterFlow(6000));

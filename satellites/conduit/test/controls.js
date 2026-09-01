@@ -10,6 +10,7 @@
 //   node test/controls.js 320 568
 const path = require("path");
 const puppeteer = require(path.join("/workspaces/lucid-winds", "node_modules", "puppeteer"));
+const { enterSite } = require("./drive");
 
 const VW = Number(process.argv[2]) || 375;
 const VH = Number(process.argv[3]) || 667;
@@ -37,17 +38,18 @@ const settle = ms => new Promise(r => setTimeout(r, ms));
 
   console.log(`\nCONDUIT control probe at ${VW}x${VH}\n`);
 
-  // enter through the real button, at its real centre
+  // enter the way a player does: title, then the site list, then a site
   const go = await page.evaluate(() => {
     const r = document.getElementById("go").getBoundingClientRect();
-    return { x: r.x + r.width / 2, y: r.y + r.height / 2, h: r.height, w: r.width };
+    return { h: r.height, w: r.width };
   });
   ok("the start button meets the touch minimum",
      go.h >= MIN_TOUCH, `${Math.round(go.w)}x${Math.round(go.h)} rendered px`);
-  await page.mouse.click(go.x, go.y);
-  await settle(500);
-  ok("entering the site dismisses the title",
-     await page.evaluate(() => document.getElementById("overlay").classList.contains("hide")));
+  await enterSite(page, "site-02");
+  ok("entering a site dismisses the title and the site list",
+     await page.evaluate(() =>
+       document.getElementById("overlay").classList.contains("hide") &&
+       document.getElementById("sites").classList.contains("hide")));
 
   // ── geometry: is each control actually reachable where it is drawn ──────────
   const btns = await page.evaluate(() => CONDUIT.btns.map(b => ({ ...b })));

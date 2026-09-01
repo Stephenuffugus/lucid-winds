@@ -72,6 +72,33 @@
   .setnote{font-size:.82rem;margin-top:1rem}
   #setclose{width:100%}
 
+  #sites{position:fixed;inset:0;z-index:2;overflow-y:auto;display:flex;
+    background:radial-gradient(120% 80% at 50% 0%, rgba(138,92,246,.08), transparent 60%), var(--void);
+    padding:calc(20px + var(--safe-t)) calc(20px + var(--safe-r))
+            calc(20px + var(--safe-b)) calc(20px + var(--safe-l))}
+  #sites.hide{display:none}
+  #sitepanel{width:100%;max-width:30rem;margin:auto}
+  .site{border:1px solid rgba(120,134,164,.22);border-radius:4px;padding:.8rem .9rem;
+    margin:.6rem 0;background:linear-gradient(180deg,rgba(20,23,34,.8),rgba(12,14,22,.8))}
+  .site h3{font:600 1rem ui-sans-serif,system-ui;color:var(--ink);letter-spacing:.04em}
+  .site .teach{color:var(--muted);font-size:.85rem;margin:.25rem 0 .5rem}
+  .site .medals{display:flex;flex-wrap:wrap;gap:.5rem;font-size:.78rem;color:#8FA0BD;margin-bottom:.6rem}
+  .site .medals b{color:var(--ink);font-weight:600}
+  .site .locked{color:#C58F4A;font-size:.8rem;margin-bottom:.6rem}
+  .site button{margin:0;width:100%;min-height:48px}
+  /* the text column must be allowed to shrink, or the price button is pushed off
+     the right edge at 375 wide */
+  .trait{display:flex;align-items:center;justify-content:space-between;gap:.7rem;
+    padding:.55rem 0;border-bottom:1px solid rgba(120,134,164,.14)}
+  .trait>div:first-child{flex:1 1 auto;min-width:0}
+  .trait .tn{color:var(--ink);font-size:.92rem;font-weight:600}
+  .trait .td{color:var(--muted);font-size:.78rem}
+  .trait button{margin:0;flex:0 0 auto;min-width:5.4rem;min-height:48px;
+    padding:.5rem .6rem;font-size:.8rem;white-space:nowrap}
+  .trait button[disabled]{opacity:.4;cursor:default}
+  #residueline{margin-bottom:.4rem}
+  #sitesclose{width:100%;margin-top:1.4rem}
+
   @media (max-height:640px){
     #overlay{padding-top:calc(18px + var(--safe-t));padding-bottom:calc(18px + var(--safe-b))}
     #rule{margin:.6rem 0 .8rem}
@@ -104,6 +131,14 @@
   </ul>
   <button id="go">Enter the site</button>
   <div id="brand">SKY WOLF STUDIO</div>
+</div></div>
+<div id="sites" class="hide"><div id="sitepanel">
+  <div class="seth">Sites</div>
+  <div id="sitelist"></div>
+  <div class="seth" style="margin-top:1.4rem">Residue</div>
+  <p class="setnote" id="residueline"></p>
+  <div id="traitlist"></div>
+  <button id="sitesclose">Back</button>
 </div></div>
 <div id="settings" class="hide"><div id="setpanel">
   <div class="seth">Settings</div>
@@ -219,7 +254,7 @@ const CFG = {
     cardMinW:210,                // below this the inspect card is not worth moving
   },
 
-  grid:{ w:48, h:32 }, seed:1337,
+  grid:{ w:48, h:32 }, seed:1337, startLevel:"site-01",
 };
 
 // ── settings ─────────────────────────────────────────────────────────────────
@@ -234,6 +269,107 @@ function loadSettings(){
 function saveSettings(){
   try{ let cur={}; try{ cur=JSON.parse(localStorage.getItem(SET_KEY)||"{}")||{}; }catch(e){}
        localStorage.setItem(SET_KEY, JSON.stringify(Object.assign(cur, SET))); }catch(e){}
+}
+
+// ── persistence ──────────────────────────────────────────────────────────────
+// Read modify write, always. Two tabs that each write the whole object clobber
+// each other, so counters are ADDED and bests are MAXED against whatever is
+// already on disk rather than against whatever this tab last saw.
+//
+// Headless there is no localStorage, so the store falls back to memory, which is
+// what lets the smoke suite exercise saving for real instead of stubbing it.
+const STORE = (typeof localStorage!=="undefined") ? localStorage : {
+  _d:{}, getItem(k){ return (k in this._d)?this._d[k]:null; },
+  setItem(k,v){ this._d[k]=String(v); }, removeItem(k){ delete this._d[k]; } };
+const SAVE_KEY="conduit.save";
+const BLANK_SAVE = () => ({ v:1, residue:0, traits:{}, sites:{}, run:null });
+
+function readSave(){
+  try{ const raw=STORE.getItem(SAVE_KEY);
+       if(!raw) return BLANK_SAVE();
+       const o=JSON.parse(raw)||{};
+       return Object.assign(BLANK_SAVE(), o,
+         { traits:Object.assign({}, o.traits), sites:Object.assign({}, o.sites) });
+  }catch(e){ return BLANK_SAVE(); }
+}
+// Lower is better for ghost, tiles and seconds; higher is better for mass.
+const MEDAL_BETTER = { ghost:-1, tiles:-1, economy:1, speed:-1 };
+function mergeSite(disk, mine){
+  const out=Object.assign({}, disk, mine);
+  for(const k of Object.keys(MEDAL_BETTER)){
+    if(mine[k]===undefined){ out[k]=disk[k]; continue; }
+    if(disk[k]===undefined){ out[k]=mine[k]; continue; }
+    out[k] = MEDAL_BETTER[k]>0 ? Math.max(disk[k],mine[k]) : Math.min(disk[k],mine[k]);
+  }
+  out.bestResidue = Math.max(disk.bestResidue||0, mine.bestResidue||0);
+  out.runs = (disk.runs||0) + (mine.runs||0);
+  return out;
+}
+function writeSave(patch){
+  const disk=readSave();
+  const out=Object.assign({}, disk);
+  if(patch.residueDelta) out.residue = (disk.residue||0) + patch.residueDelta;
+  if(patch.traits) out.traits = Object.assign({}, disk.traits, patch.traits);
+  if(patch.site){
+    out.sites = Object.assign({}, disk.sites);
+    out.sites[patch.site.id] = mergeSite(disk.sites[patch.site.id]||{}, patch.site);
+  }
+  if(patch.run!==undefined) out.run = patch.run;
+  try{ STORE.setItem(SAVE_KEY, JSON.stringify(out)); }catch(e){}
+  return out;
+}
+
+// ── traits ───────────────────────────────────────────────────────────────────
+// Never sell the reclaim RATE. Moving 75% toward 100% sells the player the
+// removal of the game's central tension; reclaim SPEED is the same feeling of
+// mastery with none of the damage. Pitfall list, and it is the tempting one.
+const TRAITS = [
+  { id:"splice",    name:"Splice",        cost:40, max:1,
+    desc:"route along the facility's own wiring for nothing, and trip its panel doing it" },
+  { id:"insulation",name:"Insulation",    cost:25, max:3,
+    desc:"conduit takes 1.5x longer to spot, per rank" },
+  { id:"capacity",  name:"Capacity",      cost:30, max:4,
+    desc:"+20 mass. Louder, slower, and squeezing costs far more" },
+  { id:"reclaimSpeed", name:"Reclaim speed", cost:20, max:3,
+    desc:"pull a wire home 2 tiles a second faster. The refund never moves" },
+  { id:"pulseRange",name:"Pulse reach",   cost:15, max:3,
+    desc:"+2 tiles of sonar" },
+  { id:"peekCost",  name:"Fine tendril",  cost:15, max:2,
+    desc:"peek costs a quarter less to hold" },
+  { id:"dragSpeed", name:"Strong grip",   cost:20, max:2,
+    desc:"carry a body faster. It is just as loud" },
+  { id:"clingGrip", name:"Wall grip",     cost:20, max:1,
+    desc:"move at full speed while clinging" },
+];
+const traitRank = (sv,id) => (sv.traits && sv.traits[id]) || 0;
+function traitCost(sv,id){
+  const t=TRAITS.find(x=>x.id===id); if(!t) return Infinity;
+  return t.cost * (traitRank(sv,id)+1);          // each rank costs more
+}
+function buyTrait(id){
+  const t=TRAITS.find(x=>x.id===id); if(!t) return false;
+  const sv=readSave();
+  if(traitRank(sv,id) >= t.max) return false;
+  const price=traitCost(sv,id);
+  if((sv.residue||0) < price) return false;
+  writeSave({ residueDelta:-price, traits:{ [id]: traitRank(sv,id)+1 } });
+  applyTraits();
+  return true;
+}
+// Traits are read out of the save and folded into the run. Thresholds are NOT
+// among them: squeeze and force stay absolute while capacity grows, which is
+// what stops progression from flattening the game.
+function applyTraits(){
+  if(!S) return;
+  const sv=readSave(), t=S.player.traits;
+  t.splice     = traitRank(sv,"splice")>0;
+  t.insulation = traitRank(sv,"insulation");
+  t.pulseRange = CFG.pulseRange + 2*traitRank(sv,"pulseRange");
+  t.reclaimSpeed = CFG.reclaimSpeed + 2*traitRank(sv,"reclaimSpeed");
+  t.peekMult   = Math.pow(0.75, traitRank(sv,"peekCost"));
+  t.dragMult   = 1 + 0.25*traitRank(sv,"dragSpeed");
+  t.clingMult  = traitRank(sv,"clingGrip")>0 ? 1 : CFG.cling.speedMult;
+  S.player.capacity = CFG.capacity + 20*traitRank(sv,"capacity");
 }
 
 // ── tiles ────────────────────────────────────────────────────────────────────
@@ -254,9 +390,12 @@ function fill(x0,y0,x1,y1,t){ for(let y=y0;y<=y1;y++) for(let x=x0;x<=x1;x++)
 function conc(x0,y0,x1,y1){ for(let y=y0;y<=y1;y++) for(let x=x0;x<=x1;x++)
   if(inB(x,y)) CONC[idx(x,y)]=1; }
 
-function buildLevel(){
-  TT=new Uint8Array(W*H); CONC=new Uint8Array(W*H); WET=new Float32Array(W*H);
-  LIT=new Uint8Array(W*H);        // what a floodlight is currently shining on
+// ── levels ───────────────────────────────────────────────────────────────────
+// A level is data plus a builder for its tiles. The builder writes TT and CONC;
+// everything else the loader copies into S. The template is never mutated: a run
+// gets a deep copy, or a device that moved in one game would have moved in the
+// next one too.
+function buildCoolantFloor(){
   fill(5,3,21,13,FLOOR);        // room D — trap room, north west
   fill(26,3,44,13,FLOOR);       // room E — north east
   fill(3,15,45,17,FLOOR);       // main corridor
@@ -275,7 +414,26 @@ function buildLevel(){
   // concealed routing spines (1.6× cost, never spotted)
   conc(4,16,45,16); conc(9,4,9,15); conc(18,15,18,16);
   CONC[idx(18,14)]=1; conc(22,19,22,24);
-  // unlit tiles: any floor touching a wall. Cover comes from geometry, free.
+  shadowByGeometry();
+}
+
+// Level one. One source, one machine it can afford, one patrol, and the machine
+// only fires on the tile the patrol has to cross. Two ways through it: wire the
+// crane, or walk up and smother him. Two affordances it cannot use: the speaker
+// needs more than the socket has, and the site's own wiring is inert until
+// Splice. The player should walk past both and wonder.
+function buildIntakeBay(){
+  fill(4,23,12,29,FLOOR);       // entry
+  fill(4,19,36,21,FLOOR);       // the long corridor
+  fill(7,22,8,22,FLOOR);        // entry → corridor
+  fill(16,23,30,29,FLOOR);      // the intake floor, where the patrol works
+  fill(22,22,23,22,FLOOR);      // corridor → intake, the only way between them
+  conc(4,20,36,20);             // the corridor's cable channel, concealed
+  shadowByGeometry();
+}
+
+// Any floor tile touching a wall is unlit. Cover comes from geometry, free.
+function shadowByGeometry(){
   const base=TT.slice();
   for(let y=0;y<H;y++) for(let x=0;x<W;x++){ const i=idx(x,y);
     if(base[i]!==FLOOR) continue;
@@ -283,68 +441,68 @@ function buildLevel(){
        base[idx(x,y-1)]===WALL||base[idx(x,y+1)]===WALL) TT[i]=SHADOW; }
 }
 
-function newGame(){
-  // Module state that lives outside S has to be reset here too, or a restart is
-  // not a fresh game. cscanT is the conduit scan phase: left running, the second
-  // game in a page inherits the first one's timing, discovery fires at a
-  // different moment and the guard who walks the wire arrives somewhere else.
-  // Found by the ferro sim identity assertion, which is not what it was looking
-  // for. T is the render clock and resets with it.
-  T=0; cscanT=0;
-  buildLevel();
-  S={
-    t:0, rng:mulberry(CFG.seed), mode:"prowl", flowT:0,
-    player:{ blobs:[{id:"core",x:5.5,y:27.5,mass:CFG.capacity,active:true}],
-             capacity:CFG.capacity, traits:{insulation:0,pulseRange:CFG.pulseRange,maxSplits:1,splice:false},
-             residue:0, vx:0, vy:0, forceT:0, pulseCd:0, pulseT:0, stillT:0,
-             face:0, clinging:false, peeking:false, peekR:0, peekT:0 },
-    ledger:{ owned:CFG.capacity, debits:{reclaimTax:0,damage:0,zapBurn:0,destroyed:0},
-             credits:{harvest:0,drain:0,trickle:0}, toResidue:0, leak:0 },
+const LEVELS = {
+  "site-01":{
+    id:"site-01", name:"Intake Bay", teaches:"route, trigger, harvest, reclaim",
+    build:buildIntakeBay, start:[6.5,27.5], exfil:{x:35,y:20},
+    sources:[ {id:"sock-1", x:10, y:20, kind:"socket", capacity:30, noisy:false} ],
+    devices:[
+      {id:"crn-1", x:23, y:19, kind:"crane",   needs:25, drop:[23,22]},
+      // visible, and out of budget. The affordance you walk past and wonder about.
+      {id:"spk-1", x:28, y:26, kind:"speaker", needs:40},
+    ],
+    enemies:[ {id:"sentry-1", kind:"sentry", x:20.5, y:26.5,
+               route:[[20,26],[23,22],[27,26]]} ],
+    lights:[ {x:8,y:20},{x:20,y:20},{x:32,y:20},{x:24,y:26} ],
+    // The facility's own run, drawn dim from the first minute, straight down the
+    // corridor's cable channel and up to the crane. Inert until Splice, and then
+    // this whole level wires for nothing, at the price of tripping its panel.
+    // That is the re-read: the map did not change, you did.
+    siteWires:[ (()=>{ const w=[]; for(let x=4;x<=23;x++) w.push([x,20]);
+                       w.push([23,19]); return w; })() ],
+    targets:["sentry-1"],
+  },
+  "site-02":{
+    id:"site-02", name:"Coolant Floor", teaches:"devices are inputs to each other",
+    build:buildCoolantFloor, start:[5.5,27.5], exfil:{x:44,y:28},
     sources:[
       {id:"sock-1", x:9,  y:16, kind:"socket",    capacity:30,  noisy:false},
       {id:"gen-1",  x:22, y:21, kind:"generator", capacity:100, noisy:true},
       // Move the source instead of extending the wire. Slow and exposed while
       // you push it, and any run already fed by it dies the moment it leaves.
       {id:"cart-1", x:27, y:22, kind:"cart",      capacity:50,  noisy:false, movable:true},
-      // One shot. Enough to run anything on the site, once, and then it is scrap.
       // In room C proper, not in the sealed exfil chamber: the first placement
       // put it behind the carve-out where no wire could ever leave it.
       {id:"veh-1",  x:36, y:26, kind:"vehicle",   capacity:120, noisy:false, burst:true},
     ],
     devices:[
-      {id:"spr-1", x:16, y:5,  kind:"sprinkler", needs:20, on:false, area:[10,4,20,11]},
-      {id:"plt-1", x:12, y:8,  kind:"plate",     needs:40, on:false},
-      {id:"spk-1", x:14, y:11, kind:"speaker",   needs:10, on:false},
-      {id:"brk-1", x:44, y:21, kind:"breaker",   needs:30, on:false},
+      {id:"spr-1", x:16, y:5,  kind:"sprinkler", needs:20, area:[10,4,20,11]},
+      {id:"plt-1", x:12, y:8,  kind:"plate",     needs:40},
+      {id:"spk-1", x:14, y:11, kind:"speaker",   needs:10},
+      {id:"brk-1", x:44, y:21, kind:"breaker",   needs:30},
       // Freeze what walks through it. A frozen guard stops being a threat and
       // starts being a battery, which is the combo the design asks for.
-      {id:"col-1", x:30, y:16, kind:"coolant",   needs:25, on:false, area:[28,15,33,17]},
+      {id:"col-1", x:30, y:16, kind:"coolant",   needs:25, area:[28,15,33,17]},
       // The east wing, which had nothing in it. Each of these has a designed
       // partner rather than being a switch that does a thing on its own.
-      {id:"fld-1", x:34, y:8,  kind:"floodlight", needs:15, on:false, area:[30,5,38,11]},
-      {id:"fan-1", x:38, y:11, kind:"fan",        needs:10, on:false, dir:[-1,0]},
-      {id:"crn-1", x:40, y:6,  kind:"crane",      needs:35, on:false, drop:[40,9]},
-      {id:"lck-1", x:36, y:15, kind:"doorlock",   needs:20, on:false, door:[35,14]},
-      {id:"cam-1", x:36, y:22, kind:"camera",     needs:10, on:false},
+      {id:"fld-1", x:34, y:8,  kind:"floodlight", needs:15, area:[30,5,38,11]},
+      {id:"fan-1", x:38, y:11, kind:"fan",        needs:10, dir:[-1,0]},
+      {id:"crn-1", x:40, y:6,  kind:"crane",      needs:35, drop:[40,9]},
+      {id:"lck-1", x:36, y:15, kind:"doorlock",   needs:20, door:[35,14]},
+      {id:"cam-1", x:36, y:22, kind:"camera",     needs:10},
     ],
     enemies:[
-      { id:"sentry-1", kind:"sentry", x:7.5, y:11.5, hp:CFG.enemyHp.sentry, face:0,
-        route:[[7,11],[12,8],[18,5],[19,11]], leg:0, state:"patrol", spot:0,
-        target:null, path:null, pi:0, repathT:0, waitT:0, zapCd:0 },
+      { id:"sentry-1", kind:"sentry", x:7.5, y:11.5, route:[[7,11],[12,8],[18,5],[19,11]] },
       // Patrol shortened from the whole corridor (5 to 44) to its east half, per
       // the designer note: length, never spot rates. The west corridor holds the
       // socket and the only link into the trap room, so sweeping all of it made
       // every early crossing contested. Kept clear of x 18 to 22, which is where
       // the designed generator route crosses the corridor: parking a patrol on
-      // the one legal crossing decided the level before the player did. The
-      // breaker route still runs the full corridor, so the lockdown puzzle stays
-      // contested, which is the point of it.
-      { id:"drone-1", kind:"drone", x:26.5, y:16.5, hp:CFG.enemyHp.drone, face:0,
-        route:[[26,16],[42,16]], leg:0, state:"patrol", spot:0,
-        target:null, path:null, pi:0, repathT:0, waitT:0, zapCd:0 },
+      // the one legal crossing decided the level before the player did.
+      { id:"drone-1", kind:"drone", x:26.5, y:16.5, route:[[26,16],[42,16]] },
     ],
     lights:[ {x:12,y:5},{x:18,y:9},{x:24,y:16},{x:12,y:16},{x:36,y:16},
-             {x:20,y:22},{x:27,y:26},{x:37,y:22},{x:43,y:27} ].map(l=>({...l,out:false})),
+             {x:20,y:22},{x:27,y:26},{x:37,y:22},{x:43,y:27} ],
     // The facility's own wiring. Drawn from the first level, inert until the
     // SPLICE trait is unlocked — then every old level re-reads at once.
     siteWires:[
@@ -353,14 +511,51 @@ function newGame(){
       [[18,16],[18,15],[18,14],[18,13],[18,12]],
       [[36,16],[37,16],[38,16],[39,16],[39,17],[39,18],[39,19],[39,20],[40,20],[41,20],[42,20],[43,20],[44,20],[44,21]],
     ],
+    targets:["sentry-1"],
+  },
+};
+const LEVEL_ORDER = ["site-01","site-02"];
+const clone = o => JSON.parse(JSON.stringify(o));
+
+function newGame(levelId){
+  // Module state that lives outside S has to be reset here too, or a restart is
+  // not a fresh game. cscanT is the conduit scan phase: left running, the second
+  // game in a page inherits the first one's timing, discovery fires at a
+  // different moment and the guard who walks the wire arrives somewhere else.
+  // Found by the ferro sim identity assertion, which is not what it was looking
+  // for. T is the render clock and resets with it.
+  T=0; cscanT=0;
+  const L = LEVELS[levelId] || LEVELS[CFG.startLevel];
+  TT=new Uint8Array(W*H); CONC=new Uint8Array(W*H); WET=new Float32Array(W*H);
+  LIT=new Uint8Array(W*H);
+  L.build();
+  S={
+    level:L.id, levelName:L.name,
+    t:0, rng:mulberry(CFG.seed), mode:"prowl", flowT:0,
+    player:{ blobs:[{id:"core",x:L.start[0],y:L.start[1],mass:CFG.capacity,active:true}],
+             capacity:CFG.capacity, traits:{insulation:0,pulseRange:CFG.pulseRange,maxSplits:1,splice:false},
+             residue:0, vx:0, vy:0, forceT:0, pulseCd:0, pulseT:0, stillT:0,
+             face:0, clinging:false, peeking:false, peekR:0, peekT:0 },
+    ledger:{ owned:CFG.capacity, debits:{reclaimTax:0,damage:0,zapBurn:0,destroyed:0},
+             credits:{harvest:0,drain:0,trickle:0}, toResidue:0, leak:0 },
+    // Copied, not referenced: a run must never edit the level it came from.
+    sources: clone(L.sources),
+    devices: clone(L.devices).map(d=>({ ...d, on:false })),
+    enemies: clone(L.enemies).map(e=>({
+      hp:CFG.enemyHp[e.kind], face:0, leg:0, state:"patrol", spot:0, frozen:0,
+      target:null, path:null, pi:0, repathT:0, waitT:0, zapCd:0, ...e })),
+    lights: clone(L.lights).map(l=>({ ...l, out:false })),
+    siteWires: clone(L.siteWires),
     act:{ verb:null, target:null, t:0 }, inspect:null, autoFrom:null,
     bodies:[], conduits:[], draft:null, selected:null,
-    targets:["sentry-1"], exfil:{x:44,y:28},
+    targets:[...L.targets], exfil:{...L.exfil},
     site:{ alert:0, peak:0, sinceEscalate:0, lockdown:false },
     stats:{ tilesLaid:0, startMass:CFG.capacity, time:0 },
     result:null, toast:"", toastT:0, nextId:1,
   };
   applyLights();
+  applyTraits();
+  resolvePower();
   return S;
 }
 // A light burns a pool of exposed floor into an otherwise shadowed room.
@@ -805,9 +1000,9 @@ function scanConduits(dt){
 function movePlayer(dt, ax, ay){
   const b=blob(), r=CFG.radius(b.mass);
   let sp=CFG.speedBase*CFG.speedCurve(b.mass);
-  if(S.act.verb==="drag")   sp*=CFG.drag.speedMult;     // hands full, and heavy
+  if(S.act.verb==="drag")   sp*=CFG.drag.speedMult*(S.player.traits.dragMult||1);
   if(S.act.verb==="cart")   sp*=CFG.cart.speedMult;     // heavier still
-  if(S.player.clinging)     sp*=CFG.cling.speedMult;
+  if(S.player.clinging)     sp*=(S.player.traits.clingMult!==undefined?S.player.traits.clingMult:CFG.cling.speedMult);
   if(isPooled())            sp*=CFG.pool.speedMult;     // flat things ooze
   if(S.player.face===undefined) S.player.face=0;
   if(Math.hypot(ax,ay)>0.08) S.player.face=Math.atan2(ay,ax);
@@ -986,9 +1181,9 @@ function tickPeek(dt){
   const b=blob();
   if(!S.player.peeking) return;
   if(S.mode!=="prowl" || S.act.verb){ S.player.peeking=false; return; }
-  if(b.mass-CFG.peek.costPerSec*dt < CFG.peek.minMass){
+  if(b.mass-CFG.peek.costPerSec*dt*(S.player.traits.peekMult||1) < CFG.peek.minMass){
     S.player.peeking=false; toast("Not enough of you to reach."); return; }
-  const cost=CFG.peek.costPerSec*dt;
+  const cost=CFG.peek.costPerSec*dt*(S.player.traits.peekMult||1);
   b.mass-=cost; S.ledger.owned-=cost; S.ledger.debits.damage+=cost;
   // the tendril stops at the first wall, so it looks round corners, not through
   const a=peekDir(); let r=0;
@@ -1138,7 +1333,7 @@ function step(dt, input){
   // reclaim retraction
   for(const cd of [...S.conduits]){
     if(!cd.reclaiming) continue;
-    cd.rAcc=(cd.rAcc||0)+wdt*CFG.reclaimSpeed;
+    cd.rAcc=(cd.rAcc||0)+wdt*(S.player.traits.reclaimSpeed||CFG.reclaimSpeed);
     while(cd.rAcc>=1 && cd.path.length>1){ cd.rAcc-=1; popReclaimTile(cd); }
     if(cd.path.length<=1){ finishConduit(cd); }
   }
@@ -1253,11 +1448,52 @@ function tickDevices(dt){
 
 function win(){
   const m=totalMass()+S.player.residue;
-  S.result={ ok:true, medals:{
+  const econ=+(m-S.stats.startMass).toFixed(1);
+  const raw={ ghost:S.site.peak, tiles:S.stats.tilesLaid, economy:econ,
+              speed:+S.stats.time.toFixed(1) };
+  // Anti grind: a replay banks only the IMPROVEMENT on your previous best, so
+  // farming an easy site pays nothing and solving it better pays properly.
+  const disk=readSave(), prev=(disk.sites&&disk.sites[S.level])||{};
+  const banked=Math.max(0, S.player.residue-(prev.bestResidue||0));
+  writeSave({ residueDelta:banked, run:null,
+    site:{ id:S.level, runs:1, done:true, bestResidue:Math.max(prev.bestResidue||0, S.player.residue),
+           ghost:raw.ghost, tiles:raw.tiles, economy:raw.economy, speed:raw.speed } });
+  S.result={ ok:true, raw, banked, medals:{
     ghost:["Unseen","Noticed","Hunted","Alarmed","Blacked out"][S.site.peak],
     efficiency:S.stats.tilesLaid+" tiles",
-    economy:(m-S.stats.startMass>=0?"+":"")+(m-S.stats.startMass).toFixed(1)+" mass",
-    speed:S.stats.time.toFixed(0)+"s" } };
+    economy:(econ>=0?"+":"")+econ.toFixed(1)+" mass",
+    speed:S.stats.time.toFixed(0)+"s",
+    banked:banked>0 ? "+"+banked.toFixed(0)+" residue" : "no gain on your best" } };
+}
+// Mid heist suspend and resume. The whole run is plain data already, which is
+// what makes this small; the level is rebuilt and the mutable parts restored.
+function suspendRun(){
+  if(!S || S.result) return false;
+  writeSave({ run:{ level:S.level, t:S.stats.time,
+    player:JSON.parse(JSON.stringify(S.player)),
+    ledger:JSON.parse(JSON.stringify(S.ledger)),
+    conduits:JSON.parse(JSON.stringify(S.conduits)),
+    bodies:JSON.parse(JSON.stringify(S.bodies)),
+    enemies:S.enemies.map(e=>({ id:e.id, x:e.x, y:e.y, hp:e.hp, state:e.state,
+      spot:e.spot, frozen:e.frozen||0, leg:e.leg })),
+    sources:S.sources.map(s2=>({ id:s2.id, x:s2.x, y:s2.y, capacity:s2.capacity })),
+    lights:S.lights.map(l=>l.out), site:{ ...S.site }, stats:{ ...S.stats },
+    tiles:Array.from(TT) } });
+  return true;
+}
+function resumeRun(){
+  const sv=readSave(); if(!sv.run) return false;
+  const r=sv.run;
+  newGame(r.level);
+  S.player=r.player; S.ledger=r.ledger;
+  S.conduits=r.conduits; S.bodies=r.bodies;
+  S.site={ ...r.site }; S.stats={ ...r.stats };
+  for(const e of r.enemies){ const t=S.enemies.find(x=>x.id===e.id); if(t) Object.assign(t,e,{path:null}); }
+  for(const o of r.sources){ const t=S.sources.find(x=>x.id===o.id); if(t) Object.assign(t,o); }
+  r.lights.forEach((out,i)=>{ if(S.lights[i]) S.lights[i].out=out; });
+  if(r.tiles) TT.set(r.tiles);              // forced doors and drunk lights persist
+  resolvePower();
+  return true;
 }
 function lose(msg){ S.result={ ok:false, msg }; }
 
@@ -1608,10 +1844,10 @@ function draw(){
   if(S.player.pulseT>0){ const b=blob(), [px,py]=w2s(b.x,b.y);
     const k=1-(S.player.pulseT/CFG.pulseShowSec);
     ctx.strokeStyle="rgba(138,92,246,"+(0.5*(1-k))+")"; ctx.lineWidth=2;
-    ctx.beginPath(); ctx.arc(px,py,CFG.pulseRange*s*k,0,7); ctx.stroke();
+    ctx.beginPath(); ctx.arc(px,py,(S.player.traits.pulseRange||CFG.pulseRange)*s*k,0,7); ctx.stroke();
     for(const o of [...S.sources,...S.devices,...S.enemies]){
       if(o.state==="dead") continue;
-      if(Math.hypot(o.x-b.x,o.y-b.y)>CFG.pulseRange) continue;
+      if(Math.hypot(o.x-b.x,o.y-b.y)>(S.player.traits.pulseRange||CFG.pulseRange)) continue;
       const [qx,qy]=w2s(o.x,o.y); ctx.fillStyle="rgba(138,92,246,.8)";
       ctx.fillRect(qx+s/2-2,qy+s/2-2,4,4); } }
 
@@ -1989,7 +2225,7 @@ function drawResult(){
       y+=26;
     }
   } else { txt(S.result.msg, x, y, u.fontLabel, 400, "#8C97AE"); y+=26; }
-  txt("tap to run it again", x, y+22, u.fontHud, 400, "#5F687C");
+  txt("tap for the site list", x, y+22, u.fontHud, 400, "#5F687C");
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2160,7 +2396,7 @@ function drawBlob(){
 // ── input ────────────────────────────────────────────────────────────────────
 function hitBtn(px,py){ return btns.find(b=>px>=b.x&&px<=b.x+b.w&&py>=b.y&&py<=b.y+b.h); }
 function onDown(px,py){
-  if(S.result){ newGame(); return; }
+  if(S.result){ openSites(); return; }
   const bt=hitBtn(px,py);
   if(bt){
     if(bt.id==="flow"){ if(S.mode==="flow"){ S.mode="prowl"; }
@@ -2259,8 +2495,90 @@ function bindSettings(){
   document.getElementById("setclose").addEventListener("click", closeSettings);
 }
 
+// ── site select and the residue spend ────────────────────────────────────────
+// The return incentive is the medals, not loot: every site keeps its state and
+// says which unfinished business is still on it, so a player can see exactly
+// which tool would finish it.
+const LOCKED_HINT = {
+  "site-01":"Splice would route the corridor for nothing, and the speaker is out of the socket's budget",
+  "site-02":"Splice frees the generator run, and Insulation makes the cheap exposed route survivable",
+};
+function medalLine(st){
+  if(!st || !st.done) return "not yet run";
+  const words=["Unseen","Noticed","Hunted","Alarmed","Blacked out"];
+  return `Ghost <b>${words[st.ghost]||st.ghost}</b> \u00b7 Efficiency <b>${st.tiles} tiles</b>`
+       + ` \u00b7 Economy <b>${st.economy>=0?"+":""}${st.economy} mass</b>`
+       + ` \u00b7 Speed <b>${Math.round(st.speed)}s</b>`;
+}
+function renderSites(){
+  if(typeof document==="undefined") return;
+  const sv=readSave();
+  const list=document.getElementById("sitelist");
+  list.innerHTML="";
+  for(const id of LEVEL_ORDER){
+    const L=LEVELS[id], st=sv.sites[id];
+    const el=document.createElement("div");
+    el.className="site";
+    el.innerHTML=`<h3>${L.name}</h3><div class="teach">${L.teaches}</div>`
+      + `<div class="medals">${medalLine(st)}</div>`
+      + `<div class="locked">Still on it: ${LOCKED_HINT[id]||"nothing named yet"}</div>`;
+    const go=document.createElement("button");
+    go.textContent = st&&st.done ? "Run it again" : "Enter";
+    go.addEventListener("click",()=>startLevel(id));
+    el.appendChild(go);
+    list.appendChild(el);
+  }
+  if(sv.run){
+    const el=document.createElement("div");
+    el.className="site";
+    el.innerHTML=`<h3>Unfinished run</h3><div class="teach">`
+      + `${(LEVELS[sv.run.level]||{}).name||sv.run.level}, ${Math.round(sv.run.t)}s in</div>`;
+    const go=document.createElement("button");
+    go.textContent="Pick it back up";
+    go.addEventListener("click",()=>{ if(resumeRun()){ resize(); enterPlay(); } });
+    el.appendChild(go);
+    list.insertBefore(el, list.firstChild);
+  }
+  document.getElementById("residueline").textContent =
+    `${Math.round(sv.residue||0)} banked. A replay pays only what it beats, so solving a site better is worth something and running it again is not.`;
+  const tl=document.getElementById("traitlist");
+  tl.innerHTML="";
+  for(const t of TRAITS){
+    const rank=traitRank(sv,t.id), price=traitCost(sv,t.id), maxed=rank>=t.max;
+    const row=document.createElement("div");
+    row.className="trait";
+    row.innerHTML=`<div><div class="tn">${t.name}${rank?" "+"I".repeat(Math.min(rank,3)):""}</div>`
+      + `<div class="td">${t.desc}</div></div>`;
+    const buy=document.createElement("button");
+    buy.textContent = maxed ? "Full" : `${price} residue`;
+    buy.disabled = maxed || (sv.residue||0) < price;
+    buy.addEventListener("click",()=>{ if(buyTrait(t.id)) renderSites(); });
+    row.appendChild(buy);
+    tl.appendChild(row);
+  }
+}
+function openSites(){
+  if(typeof document==="undefined") return;
+  renderSites();
+  document.getElementById("overlay").classList.add("hide");
+  document.getElementById("sites").classList.remove("hide");
+}
+function enterPlay(){
+  if(typeof document==="undefined") return;
+  document.getElementById("sites").classList.add("hide");
+  document.getElementById("overlay").classList.add("hide");
+  startLoop();
+}
+function startLevel(id){ newGame(id); resize(); enterPlay(); }
+
 // ── boot ─────────────────────────────────────────────────────────────────────
-let last=0, perf={ update:0, draw:0, frame:0 };
+let last=0, looping=false, perf={ update:0, draw:0, frame:0 };
+function startLoop(){
+  if(looping) return;
+  looping=true;
+  last=(typeof performance!=="undefined")?performance.now():0;
+  requestAnimationFrame(frame);
+}
 function frame(ts){
   const dt=Math.min(0.05,(ts-last)/1000||0); last=ts;
   const t0=(typeof performance!=="undefined")?performance.now():0;
@@ -2287,9 +2605,10 @@ function readBootFlags(){
 }
 if(typeof document!=="undefined" && CAN){
   readBootFlags(); loadSettings(); newGame(); resize(); bindInput(); bindSettings();
-  document.getElementById("go").addEventListener("click",()=>{
-    document.getElementById("overlay").classList.add("hide");
-    last=performance.now(); requestAnimationFrame(frame); });
+  document.getElementById("go").addEventListener("click", openSites);
+  document.getElementById("sitesclose").addEventListener("click",()=>{
+    document.getElementById("sites").classList.add("hide");
+    if(!looping) document.getElementById("overlay").classList.remove("hide"); });
 }
 // headless test surface. It never shrinks; new systems get exported onto it.
 if(typeof globalThis!=="undefined") globalThis.CONDUIT={
@@ -2300,6 +2619,8 @@ if(typeof globalThis!=="undefined") globalThis.CONDUIT={
   idx, blobRef:()=>blob(), ledgerGain, ledgerDamage,
   // added 2026-09-01 (C1) so the mutation sweep has real gates to fail against
   bump, passableBlob, passableEnemy, conduitable, expConduit, expBlob,
+  LEVELS, LEVEL_ORDER, TRAITS, readSave, writeSave, buyTrait, traitCost, traitRank,
+  applyTraits, suspendRun, resumeRun, medalLine, renderSites, openSites, startLevel, clearSave:()=>{ try{ STORE.removeItem(SAVE_KEY); }catch(e){} },
   dragTarget, startDrag, dropBody, clingTarget, startCling, stopCling, wallSurface,
   cartTarget, startCart, freezeEnemy, thawEnemy,
   isPooled, contextVerb, doContextVerb, tickPeek, tickDevices,

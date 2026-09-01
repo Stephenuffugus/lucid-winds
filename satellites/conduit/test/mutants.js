@@ -209,7 +209,7 @@ const MUTANTS = [
     expect: "comes with you" },
 
   { id: "drag-not-slow", why: "carrying a body costs you no speed",
-    from: "  if(S.act.verb===\"drag\")   sp*=CFG.drag.speedMult;     // hands full, and heavy",
+    from: "  if(S.act.verb===\"drag\")   sp*=CFG.drag.speedMult*(S.player.traits.dragMult||1);",
     to:   "  if(false) sp*=CFG.drag.speedMult;",
     expect: "slower than walking" },
 
@@ -337,6 +337,61 @@ const MUTANTS = [
     from: "      src.capacity=0; resolvePower();",
     to:   "      ;",
     expect: "runs out" },
+
+  { id: "save-clobbers", why: "a write overwrites the whole save instead of merging",
+    from: "  const disk=readSave();\n  const out=Object.assign({}, disk);",
+    to:   "  const disk=readSave();\n  const out=BLANK_SAVE();",
+    expect: "does not wipe another" },
+
+  { id: "save-counters-set", why: "residue is set rather than added",
+    from: "  if(patch.residueDelta) out.residue = (disk.residue||0) + patch.residueDelta;",
+    to:   "  if(patch.residueDelta) out.residue = patch.residueDelta;",
+    expect: "add rather than overwrite" },
+
+  { id: "save-best-wrong-way", why: "a worse result overwrites a better one",
+    from: "    out[k] = MEDAL_BETTER[k]>0 ? Math.max(disk[k],mine[k]) : Math.min(disk[k],mine[k]);",
+    to:   "    out[k] = mine[k];",
+    expect: "better one kept" },
+
+  { id: "grind-pays-every-time", why: "a replay banks the full yield again",
+    from: "  const banked=Math.max(0, S.player.residue-(prev.bestResidue||0));",
+    to:   "  const banked=S.player.residue;",
+    expect: "banks nothing" },
+
+  { id: "trait-free", why: "traits cost nothing",
+    from: "  if((sv.residue||0) < price) return false;",
+    to:   "  if(false) return false;",
+    expect: "" },
+
+  { id: "trait-no-cap", why: "a trait can be bought past its cap",
+    from: "  if(traitRank(sv,id) >= t.max) return false;",
+    to:   "  if(false) return false;",
+    expect: "caps where the table says" },
+
+  { id: "traits-never-reach-the-run", why: "what you bought does not apply to a run",
+    from: "  applyLights();\n  applyTraits();",
+    to:   "  applyLights();",
+    expect: "splice is on in the run" },
+
+  { id: "capacity-moves-the-thresholds", why: "growing capacity scales the squeeze threshold",
+    from: "  capacity:100, costPerTile:1, concealedMult:1.6, reclaimRate:0.75,",
+    to:   "  capacity:100, costPerTile:1, concealedMult:1.6, reclaimRate:1.0,",
+    expect: "refund itself is untouched" },
+
+  { id: "resume-loses-the-wire", why: "a resumed run comes back without its conduits",
+    from: "  S.conduits=r.conduits; S.bodies=r.bodies;",
+    to:   "  S.bodies=r.bodies;",
+    expect: "wire is still laid" },
+
+  { id: "resume-restarts-the-clock", why: "a resumed run forgets how long it has taken",
+    from: "  S.site={ ...r.site }; S.stats={ ...r.stats };",
+    to:   "  S.site={ ...r.site };",
+    expect: "clock did not restart" },
+
+  { id: "level-template-shared", why: "a run edits the level it came from",
+    from: "    sources: clone(L.sources),",
+    to:   "    sources: L.sources,",
+    expect: "clean copy of its level" },
 
   { id: "spot-decay-none", why: "spot progress never decays once you break line of sight",
     from: "  } else e.spot=Math.max(0, e.spot-CFG.spotDecay*dt);",

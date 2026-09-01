@@ -383,7 +383,58 @@ Build in the addendum's priority order:
     every machine that source can afford turns green. Tapping still tells you
     everything, which is the rule the addendum actually sets. That is a small
     deviation from "prints its requirement when unpowered" and it is deliberate.
-- [ ] C5 gate: 6/6 solvability checks · two-path logs · splice-differs assertion green
+- [~] **C5 gate** (2026-09-01) — **systems complete, 2 of 6 levels authored.
+  Read the gap; it is the honest state, not a rounding.**
+  - **Level loader shipped.** Levels are data plus a tile builder, in a registry,
+    and a run gets a **deep copy** so it can never edit the level it came from
+    (gated, with a mutant). `newGame(id)`. The whole inherited map became
+    `site-02` and the suite pins it explicitly, so adding or reordering levels
+    cannot silently re-point a hundred assertions at a different map.
+  - **2/6 solvability checks, both green, both two ways.** `site-01` Intake Bay
+    is newly authored to the plan's shape: one source, one machine it can afford,
+    one patrol, and the machine only fires on the tile the patrol has to cross.
+    Logged both paths: **by wire, net +14.5 mass, 14 tiles, peak alert 1; by
+    hand (smother, no wire at all), net +10.0, 0 tiles, peak alert 1.** `site-02`
+    also proved beatable both ways. Two unusable affordances on level one, as the
+    addendum demands: a speaker whose needs exceed the socket's budget, and the
+    facility's own wiring, inert until Splice.
+  - **The splice re-read, on level one, and it is a big one.** Its cable channel
+    runs the length of the corridor, drawn dim from the first minute. Locked, the
+    route to the crane costs **21.8**. Spliced it costs **0.0**, at the price of
+    tripping the site panel. The map did not change; you did. (`site-02`'s
+    designed route still measures 28.4 locked and 21.6 spliced, unchanged.)
+  - **Save and load, proved across a real page reload**, not just headless:
+    `node test/persist.js` suspends a live run, **throws the whole page away**,
+    reloads, and brings it back with the body where it stood, the mass it had,
+    the wire laid tile for tile, the ledger intact and the clock not restarted.
+    Residue and traits survive too.
+  - **Read modify write, proved with two tabs sharing one store.** Over `file://`
+    Chrome gives each document an opaque origin so two tabs cannot share storage
+    at all and the interesting case cannot happen; the test serves the same file
+    over http, where they do. Counters add, and neither tab loses what the other
+    bought.
+  - **Anti grind is real:** a first clear banks what it earned, a replay for the
+    same yield banks **nothing**, a better run banks **only the improvement**,
+    and a worse run banks nothing. Bests are kept per axis in the right direction
+    (lower alert, fewer tiles, more mass, less time).
+  - **Eight traits, and the forbidden one is absent by assertion.** Splice,
+    Insulation I to III, Capacity, Reclaim **speed**, Pulse reach, Fine tendril,
+    Strong grip, Wall grip. The suite asserts there is **no trait selling the
+    reclaim rate**, that reclaim speed is on the table instead, and that
+    `CFG.reclaimRate` is still 0.75. Capacity grows while **squeeze and force do
+    not move**, also asserted, because that is what stops progression from
+    flattening the game.
+  - **Site select and residue spend screen** shipped: per site medal state, a
+    named "still on it" line saying which tool would finish the unfinished
+    business, the trait shop, and a resume card when a run is suspended. Every
+    control at least 48px and inside the viewport at 320 and 375, checked.
+  - **suite: 393 assertions, 78 mutants, 78 killed, 0 survivors.**
+  - **⚠️ THE GAP: four of the six curriculum levels are not authored.** Vent
+    stack, generator hall, substation and hive spine (BUILD-PLAN section 5) do
+    not exist. The loader, the two-path rule, the solvability check pattern, the
+    unusable-affordance rule and the splice re-read are all established on
+    `site-01`; authoring the rest is content work against a working frame, not
+    architecture. Splitting (M5) is untouched, as instructed.
 - [ ] C6 gate: audio demo · reduced-motion pair · NO service worker confirmed
 
 ---

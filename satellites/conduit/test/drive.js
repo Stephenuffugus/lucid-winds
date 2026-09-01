@@ -25,6 +25,35 @@ async function open(vw, vh, extraQuery) {
   return { browser, page, errs };
 }
 
+// The real path a player takes into a site: the title's button opens the site
+// list, and a site's own button starts it. Shared, because a test that rolls its
+// own entry stops entering the moment the entry changes.
+async function enterSite(page, levelId) {
+  const go = await page.evaluate(() => {
+    const b = document.getElementById("go"); if (!b) return null;
+    const r = b.getBoundingClientRect();
+    return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+  });
+  if (go) { await page.mouse.click(go.x, go.y); await settle(400); }
+  const onSites = await page.evaluate(() =>
+    !document.getElementById("sites").classList.contains("hide"));
+  if (onSites) {
+    const idx = await page.evaluate(w => CONDUIT.LEVEL_ORDER.indexOf(w), levelId || "site-02");
+    const btn = await page.evaluate(i => {
+      const cards = document.querySelectorAll("#sitelist .site");
+      // a resume card is inserted first when one exists, so count from the end
+      const off = cards.length - CONDUIT.LEVEL_ORDER.length;
+      const b = cards[i + off].querySelector("button");
+      b.scrollIntoView({ block: "center" });
+      const r = b.getBoundingClientRect();
+      return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+    }, idx);
+    await settle(200);
+    await page.mouse.click(btn.x, btn.y);
+  }
+  await settle(700);
+}
+
 function driver(page, vw, vh) {
   const ORIGIN = [Math.round(vw * 0.17), Math.round(vh * 0.52)];
 
@@ -56,17 +85,8 @@ function driver(page, vw, vh) {
     return b.label;
   }
 
-  async function start() {
-    const go = await page.evaluate(() => {
-      const r = document.getElementById("go").getBoundingClientRect();
-      return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
-    });
-    await page.mouse.click(go.x, go.y);
-    await settle(600);
-  }
+  const start = (levelId) => enterSite(page, levelId);
 
-  // Steer with a held drag, the way the game asks: press, then push the finger
-  // away from where it landed. Waypoints come from the game's own BFS.
   async function walkTo(tx, ty, budgetMs) {
     const t0 = Date.now();
     const route = (await page.evaluate(([x, y]) => {
@@ -178,4 +198,4 @@ function driver(page, vw, vh) {
            drawWire, tapTile, settle, ORIGIN };
 }
 
-module.exports = { open, driver, settle, URL };
+module.exports = { open, driver, enterSite, settle, URL };

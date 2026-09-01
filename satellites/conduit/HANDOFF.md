@@ -5,8 +5,9 @@
 
 ## Where we are
 
-**C1 through C4 are complete.** M1, the ship gate, is still unanswered and is
-still Stephen's alone. C5, content and progression, is next.
+**C1 through C4 are complete. C5's systems are complete and 2 of its 6 levels
+are authored**, see the gap named below. M1, the ship gate, is still unanswered
+and is still Stephen's alone.
 
 `index.html` is a complete, playable prototype in one file, no build step,
 canvas 2D, touch first. It runs from `file://`, GitHub Pages, or anywhere.
@@ -14,8 +15,9 @@ canvas 2D, touch first. It runs from `file://`, GitHub Pages, or anywhere.
 ## How to check it, in order
 
 ```
-node test/smoke.js                 311 assertions, headless, no deps
-node test/mutants.js               67 mutants, all must be killed
+node test/smoke.js                 393 assertions, headless, no deps
+node test/mutants.js               78 mutants, all must be killed
+node test/persist.js               save across a real page reload, and two tabs
 node test/verbs.js [w] [h]         every prowl verb, by real touch
 node test/controls.js [w] [h]      51 assertions, real touches in real Chrome
 node test/shots.js <tag>           screenshots at 320, 375, 844, 1280
@@ -302,9 +304,54 @@ Three bugs came out of building them, each now gated:
 - A floodlight had to be able to beat concealed ground or it was decoration; it
   does, and that makes the one truly safe route on the map contestable.
 
+## What C5 changed
+
+**A level loader.** Levels are data plus a tile builder, in a registry, and a run
+gets a deep copy so it can never edit the level it came from. The inherited map
+is `site-02`; the suite pins it explicitly so adding levels cannot silently
+re-point a hundred assertions.
+
+**Level one, newly authored.** Intake Bay: one source, one machine it can afford,
+one patrol, and the machine only fires on the tile the patrol has to cross. It
+falls two ways, both logged: by wire (net +14.5 mass, 14 tiles, alert 1) and by
+hand with no wire at all (net +10.0, 0 tiles, alert 1). Two affordances it cannot
+use: a speaker out of the socket's budget, and the facility's own wiring.
+
+**The splice re-read is real on level one.** Its cable channel runs the corridor,
+drawn dim from the first minute. Locked, the route to the crane costs **21.8**.
+Spliced, **0.0**, at the price of tripping the panel. The map did not change.
+
+**Save and load, proved across a real page reload**, not merely headless: a live
+run suspended, the whole page thrown away, and brought back with the body where
+it stood, the wire laid tile for tile, the ledger intact and the clock running on.
+Read modify write is proved with **two tabs sharing one store over http**,
+because over `file://` Chrome gives each document an opaque origin and the
+interesting case cannot even happen.
+
+**Anti grind:** a replay for the same yield banks nothing, a better run banks only
+the improvement. **Eight traits**, and the suite asserts there is no trait selling
+the reclaim rate, that reclaim speed is there instead, and that capacity grows
+while squeeze and force do not move.
+
+**Site select and residue spend:** medal state per site, a named line saying which
+tool would finish the business still on it, the trait shop, and a resume card.
+
+### The gap in C5, stated plainly
+**Four of the six curriculum levels are not authored**: vent stack, generator
+hall, substation, hive spine. The loader, the two-path rule, the solvability
+pattern, the unusable-affordance rule and the splice re-read are all established
+on site-01. What remains is content work against a working frame.
+
 ## Next action
 
-**C5, content and progression**: the level loader, the six level curriculum,
+**Author the four remaining curriculum levels** (BUILD-PLAN section 5): vent
+stack teaches the size inversion, generator hall teaches that concealed routing
+is worth 1.6x, substation teaches lockdown and the breaker, hive spine teaches
+liquidity. Copy the shape of `site-01`: one idea, re-test the last two, no
+tutorial text, at least two affordances the level's own tools cannot use, a
+scripted solve in the suite, and a second way through that is not the first.
+
+Then the rest of what C5 asked for: the level loader, the six level curriculum,
 save and load with read modify write, the residue spend screen and the first
 trait set, and Splice shipping for real. Note that C5's anti grind and save rules
 are the ones most likely to hide the kind of bug this session kept finding, so

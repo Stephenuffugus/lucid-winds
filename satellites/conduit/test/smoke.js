@@ -8,6 +8,13 @@ const ok = (name, cond, extra="") => {
   if(cond){ pass++; console.log("  ok   " + name); }
   else { fail++; console.log("  FAIL " + name + (extra?"  → "+extra:"")); }
 };
+// Everything below section 1 was written against the coolant floor, which is
+// the map the prototype shipped with. Pin it explicitly now that there is a
+// level loader, so adding or reordering levels cannot silently re-point a
+// hundred assertions at a different map.
+const LVL = "site-02";
+const TRAITSOF = id => G.TRAITS.find(t=>t.id===id);
+
 const near = (a,b,eps=1e-6) => Math.abs(a-b)<=eps;
 // Set a blob's mass inside a test without inventing or destroying mass: the
 // ledger moves with it, so the invariant stays meaningful afterwards.
@@ -16,7 +23,7 @@ const setMass = (S,b,m) => { S.ledger.owned += m - b.mass; b.mass = m; };
 // ── 1. the invariant, under a long random workout ────────────────────────────
 console.log("\n[1] mass invariant under random play");
 {
-  const S = G.newGame();
+  const S = G.newGame(LVL);
   const rng = (()=>{ let a=99; return ()=>{ a=(a*1664525+1013904223)>>>0; return a/4294967296; }; })();
   let broke = null, nan = false;
   for(let i=0;i<20000;i++){
@@ -47,7 +54,7 @@ console.log("\n[1] mass invariant under random play");
 // ── 2. routing rules ─────────────────────────────────────────────────────────
 console.log("\n[2] routing rules");
 {
-  const S = G.newGame();
+  const S = G.newGame(LVL);
   const src = S.sources.find(s=>s.id==="sock-1");
   G.beginDraft(src.x, src.y);
   G.draftStep(src.x+1, src.y);
@@ -68,7 +75,7 @@ console.log("\n[2] routing rules");
 // ── 3. concealed tiles cost 1.6× ─────────────────────────────────────────────
 console.log("\n[3] concealed cost multiplier");
 {
-  const S = G.newGame();
+  const S = G.newGame(LVL);
   const src = S.sources.find(s=>s.id==="sock-1");   // sits on the concealed spine
   G.beginDraft(src.x, src.y);
   G.draftStep(src.x+1, src.y);                      // (10,16) — concealed row
@@ -82,7 +89,7 @@ console.log("\n[3] concealed cost multiplier");
 // ── 4. reclaim returns exactly 75%, tax is booked ────────────────────────────
 console.log("\n[4] reclaim math");
 {
-  const S = G.newGame();
+  const S = G.newGame(LVL);
   const src = S.sources.find(s=>s.id==="gen-1");
   G.beginDraft(src.x, src.y);
   let cy = src.y;
@@ -104,7 +111,7 @@ console.log("\n[4] reclaim math");
 // ── 5. harvest overflow goes to residue, never evaporates ────────────────────
 console.log("\n[5] capacity overflow");
 {
-  const S = G.newGame();
+  const S = G.newGame(LVL);
   const before = G.totalMass() + S.player.residue;
   G.ledgerGain(30, "harvest");                        // already at capacity
   ok("total mass is clamped to capacity", near(G.totalMass(), S.player.capacity));
@@ -117,7 +124,7 @@ console.log("\n[5] capacity overflow");
 console.log("\n[6] the size inversion");
 {
   ok("squeeze and force cannot both be true", CFG.squeezeAt < CFG.forceAt);
-  const S = G.newGame();
+  const S = G.newGame(LVL);
   const b = G.blobRef();
   b.mass = 100;
   ok("full body cannot enter a vent", CFG.squeezeAt <= b.mass);
@@ -128,7 +135,7 @@ console.log("\n[6] the size inversion");
 // ── 7. pathfinding and level integrity ───────────────────────────────────────
 console.log("\n[7] level integrity");
 {
-  const S = G.newGame();
+  const S = G.newGame(LVL);
   const p1 = G.bfs(5,27, 22,21);                      // entry → generator
   ok("entry reaches the generator on foot", !!p1);
   const p2 = G.bfs(5,27, 12,8);                       // entry → trap room
@@ -143,7 +150,7 @@ console.log("\n[7] level integrity");
 // ── 8. scripted solve: is the intended solution actually affordable? ─────────
 console.log("\n[8] solvability — the designed route");
 {
-  const S = G.newGame();
+  const S = G.newGame(LVL);
   // wire A: socket (9,16) → sprinkler (16,5), up the concealed x=9 spine
   G.beginDraft(9,16);
   for(let y=15;y>=5;y--) G.draftStep(9,y);
@@ -196,7 +203,7 @@ console.log("\n[8] solvability — the designed route");
 // ── 9. the prowl verbs ───────────────────────────────────────────────────────
 console.log("\n[9] direct interaction layer");
 {
-  const S = G.newGame();
+  const S = G.newGame(LVL);
   const b = G.blobRef();
   const e = S.enemies[0];
   b.x = e.x + 0.4; b.y = e.y;                       // right on top of an unaware guard
@@ -212,7 +219,7 @@ console.log("\n[9] direct interaction layer");
   ok("invariant survives a smother", G.checkLedger());
 }
 {
-  const S = G.newGame();
+  const S = G.newGame(LVL);
   const b = G.blobRef();
   b.mass = CFG.envelop.minMass - 1;
   b.x = S.enemies[0].x + 0.4; b.y = S.enemies[0].y;
@@ -220,7 +227,7 @@ console.log("\n[9] direct interaction layer");
   ok("a thin body cannot smother anything", S.act.verb === null);
 }
 {
-  const S = G.newGame();
+  const S = G.newGame(LVL);
   const e = S.enemies[1];                            // the corridor drone
   const b = G.blobRef();
   b.x = e.x + 3; b.y = e.y;
@@ -233,7 +240,7 @@ console.log("\n[9] direct interaction layer");
   }
 }
 {
-  const S = G.newGame();
+  const S = G.newGame(LVL);
   const L = S.lights.find(l => l.x === 12 && l.y === 16);
   const litBefore = G.TTat(12,16);
   const b = G.blobRef(); b.x = L.x + 0.5; b.y = L.y + 0.5;
@@ -244,7 +251,7 @@ console.log("\n[9] direct interaction layer");
   ok("invariant survives dousing", G.checkLedger());
 }
 {
-  const S = G.newGame();
+  const S = G.newGame(LVL);
   S.bodies.push({ x: S.enemies[1].x + 1, y: S.enemies[1].y, mass: 12, decay: 30 });
   for(let i=0;i<40;i++) G.step(0.016,{ax:0,ay:0});
   ok("a guard who finds a body escalates the site", S.site.alert >= 3, "alert="+S.site.alert);
@@ -253,7 +260,7 @@ console.log("\n[9] direct interaction layer");
 // ── 10. shared source budget ─────────────────────────────────────────────────
 console.log("\n[10] source capacity is a shared budget");
 {
-  const S = G.newGame();
+  const S = G.newGame(LVL);
   G.beginDraft(9,16); for(let y=15;y>=5;y--) G.draftStep(9,y);
   for(let x=10;x<=16;x++) G.draftStep(x,5); G.commitDraft();      // socket → sprinkler (20)
   ok("sprinkler runs off the socket", S.devices.find(d=>d.kind==="sprinkler").on);
@@ -268,7 +275,7 @@ console.log("\n[10] source capacity is a shared budget");
 // ── 11. the progression layer re-reads old levels ────────────────────────────
 console.log("\n[11] metroid layer: same level, different meaning");
 {
-  const S = G.newGame();
+  const S = G.newGame(LVL);
   ok("the site's own wiring exists from level one", S.siteWires.length > 0);
   ok("it is inert without the unlock", S.player.traits.splice === false);
 
@@ -317,7 +324,7 @@ console.log("\n[11] metroid layer: same level, different meaning");
 console.log("\n[12] mechanics that had no real assertion");
 
 { // kills: ledger-damage
-  const S = G.newGame();
+  const S = G.newGame(LVL);
   const owned0 = S.ledger.owned, mass0 = G.blobRef().mass;
   G.ledgerDamage(10);
   ok("damage debits the authoritative total, not just the body",
@@ -327,7 +334,7 @@ console.log("\n[12] mechanics that had no real assertion");
   ok("invariant survives damage", G.checkLedger());
 }
 { // kills: ledger-damage, through the real contact path rather than the API
-  const S = G.newGame();
+  const S = G.newGame(LVL);
   const b = G.blobRef(), e = S.enemies[0];
   const owned0 = S.ledger.owned;
   e.state = "hunt"; e.path = null;
@@ -338,7 +345,7 @@ console.log("\n[12] mechanics that had no real assertion");
 }
 
 { // kills: route-through-walls
-  const S = G.newGame();
+  const S = G.newGame(LVL);
   G.beginDraft(9,16);
   const n0 = S.draft.path.length;
   G.draftStep(9,17);                                  // corridor floor, legal
@@ -350,7 +357,7 @@ console.log("\n[12] mechanics that had no real assertion");
 }
 
 { // kills: power-budget-ignored — the capacity lesson, actually run
-  const S = G.newGame();
+  const S = G.newGame(LVL);
   G.beginDraft(9,16);
   for(let y=15;y>=9;y--) G.draftStep(9,y);
   for(let x=10;x<=12;x++) G.draftStep(x,9);
@@ -368,7 +375,7 @@ console.log("\n[12] mechanics that had no real assertion");
 }
 
 { // kills: power-lockdown-noop
-  const S = G.newGame();
+  const S = G.newGame(LVL);
   G.beginDraft(9,16); for(let y=15;y>=5;y--) G.draftStep(9,y);
   for(let x=10;x<=16;x++) G.draftStep(x,5); G.commitDraft();
   const spr = S.devices.find(d=>d.kind==="sprinkler"), cd = S.conduits[0];
@@ -383,7 +390,7 @@ console.log("\n[12] mechanics that had no real assertion");
 }
 
 { // kills: squeeze-vent-open — the size inversion, run rather than asserted
-  const S = G.newGame(), b = G.blobRef();
+  const S = G.newGame(LVL), b = G.blobRef();
   ok("a full body is refused by the vent", !G.passableBlob(18,14,CFG.capacity));
   ok("a thin body is admitted", G.passableBlob(18,14,CFG.squeezeAt-1));
   ok("the threshold is exact, not approximate", !G.passableBlob(18,14,CFG.squeezeAt));
@@ -397,7 +404,7 @@ console.log("\n[12] mechanics that had no real assertion");
 }
 
 { // kills: force-door-open — the other half of the inversion
-  const S = G.newGame(), b = G.blobRef(), DOOR = G.tiles.DOOR;
+  const S = G.newGame(LVL), b = G.blobRef(), DOOR = G.tiles.DOOR;
   ok("a door is impassable at any mass",
      !G.passableBlob(35,14,CFG.capacity) && !G.passableBlob(35,14,10));
   b.x=35.5; b.y=16.2; setMass(S,b,CFG.forceAt-10);
@@ -406,7 +413,7 @@ console.log("\n[12] mechanics that had no real assertion");
   ok("and it does not get through", b.y>14.9, "y="+b.y.toFixed(2));
 }
 { // a clean approach at full mass opens it
-  const S = G.newGame(), b = G.blobRef(), DOOR = G.tiles.DOOR;
+  const S = G.newGame(LVL), b = G.blobRef(), DOOR = G.tiles.DOOR;
   b.x=35.5; b.y=16.2;
   for(let i=0;i<240;i++) G.step(0.016,{ax:0,ay:-1});
   ok("a full body forces the door open", G.TTat(35,14)!==DOOR);
@@ -416,7 +423,7 @@ console.log("\n[12] mechanics that had no real assertion");
 { // regression, C1: growing while already pressed on the door must still force.
   // The per-axis force reset made this permanently impossible; harvest a body
   // beside a door and the door became unopenable.
-  const S = G.newGame(), b = G.blobRef(), DOOR = G.tiles.DOOR;
+  const S = G.newGame(LVL), b = G.blobRef(), DOOR = G.tiles.DOOR;
   b.x=35.5; b.y=16.2; setMass(S,b,CFG.forceAt-10);
   for(let i=0;i<60;i++) G.step(0.016,{ax:0,ay:-1});     // settle, too thin to force
   ok("a thin body settles against the door without opening it", G.TTat(35,14)===DOOR);
@@ -428,7 +435,7 @@ console.log("\n[12] mechanics that had no real assertion");
 }
 
 { // kills: envelop-aware-target — the rule that keeps direct verbs honest
-  const S = G.newGame(), b = G.blobRef(), e = S.enemies[0];
+  const S = G.newGame(LVL), b = G.blobRef(), e = S.enemies[0];
   b.x = e.x + 0.4; b.y = e.y;
   e.state = "hunt";
   G.startEnvelop();
@@ -442,7 +449,7 @@ console.log("\n[12] mechanics that had no real assertion");
 }
 
 { // kills: conduit-conceal-spotted and conceal-tier-downgrade
-  const S = G.newGame(), dr = S.enemies[1];
+  const S = G.newGame(LVL), dr = S.enemies[1];
   G.beginDraft(9,16); for(let x=10;x<=16;x++) G.draftStep(x,16); G.commitDraft();
   const cd = S.conduits[0];
   ok("that run is entirely on concealed ground",
@@ -457,7 +464,7 @@ console.log("\n[12] mechanics that had no real assertion");
 }
 { // C1 route drawing. A drag that skips tiles, or is blocked for a moment,
   // must not kill the rest of the stroke.
-  const S = G.newGame();
+  const S = G.newGame(LVL);
   G.beginDraft(9,16);
   G.draftTo(9,12);                                    // a four tile jump
   ok("a drag that skips tiles fills in the ones between",
@@ -470,7 +477,7 @@ console.log("\n[12] mechanics that had no real assertion");
      "len="+S.draft.path.length);
 }
 { // a blocked step costs one tile, not the rest of the stroke
-  const S = G.newGame();
+  const S = G.newGame(LVL);
   G.beginDraft(9,16);
   G.draftTo(9,19);                                    // (9,18) is solid wall
   ok("a blocked drag stops at the obstacle", S.draft.path.length===2,
@@ -480,7 +487,7 @@ console.log("\n[12] mechanics that had no real assertion");
      S.draft.path.join(" "));
 }
 { // when one axis is walled, try the other, or corners become impossible
-  const S = G.newGame();
+  const S = G.newGame(LVL);
   G.beginDraft(9,16);
   G.draftTo(9,14);
   ok("reached the room D link tile", S.draft.path.length===3, S.draft.path.join(" "));
@@ -491,7 +498,7 @@ console.log("\n[12] mechanics that had no real assertion");
 }
 
 { // C1: the wire is a weapon that eats itself, and the burn has its own cause
-  const S = G.newGame();
+  const S = G.newGame(LVL);
   G.beginDraft(9,16); for(let y=15;y>=5;y--) G.draftStep(9,y);
   for(let x=10;x<=16;x++) G.draftStep(x,5); G.commitDraft();
   const cd = S.conduits[0], e = S.enemies[0];
@@ -513,7 +520,7 @@ console.log("\n[12] mechanics that had no real assertion");
 }
 
 { // kills: harvest-free — the credit side of the economy
-  const S = G.newGame(), b = G.blobRef();
+  const S = G.newGame(LVL), b = G.blobRef();
   setMass(S,b,50);                                     // room to receive it
   S.bodies.push({ x:b.x, y:b.y, mass:CFG.harvest.sentry, decay:CFG.bodyDecaySec });
   const m0 = b.mass;
@@ -529,7 +536,7 @@ console.log("\n[12] mechanics that had no real assertion");
 }
 
 { // kills: spot-decay-none — being seen has to be reversible
-  const S = G.newGame(), b = G.blobRef(), e = S.enemies[0];
+  const S = G.newGame(LVL), b = G.blobRef(), e = S.enemies[0];
   const pin = () => { e.x=7.5; e.y=11.5; e.face=0; };
   b.x = 9.5; b.y = 11.5;                               // two tiles in front of him, lit
   for(let i=0;i<120 && e.spot<0.4;i++){ pin(); G.step(0.016,{ax:0,ay:0}); }
@@ -543,7 +550,7 @@ console.log("\n[12] mechanics that had no real assertion");
 }
 
 { // the positive control: the same guard, an exposed run, does find it
-  const S = G.newGame(), dr = S.enemies[1];
+  const S = G.newGame(LVL), dr = S.enemies[1];
   G.beginDraft(9,16); G.draftStep(9,15);
   for(let x=10;x<=16;x++) G.draftStep(x,15); G.commitDraft();
   const cd = S.conduits[0];
@@ -563,7 +570,7 @@ console.log("\n[12] mechanics that had no real assertion");
 console.log("\n[13] lockdown, and the way out of it");
 
 { // getting there: repeated sightings climb the ladder
-  const S = G.newGame(), b = G.blobRef(), e = S.enemies[0];
+  const S = G.newGame(LVL), b = G.blobRef(), e = S.enemies[0];
   const spot = () => {                              // stand in front of him until seen
     e.seen = false; e.spot = 0;
     b.x = e.x + 2; b.y = e.y;
@@ -578,7 +585,7 @@ console.log("\n[13] lockdown, and the way out of it");
 }
 
 { // one sighting must not walk the whole ladder on its own
-  const S = G.newGame(), b = G.blobRef(), e = S.enemies[0];
+  const S = G.newGame(LVL), b = G.blobRef(), e = S.enemies[0];
   for(let i=0;i<400 && S.site.alert<2;i++){ e.x=7.5; e.y=11.5; e.face=0; b.x=9.5; b.y=11.5;
     G.step(0.016,{ax:0,ay:0}); }
   const at = S.site.alert;
@@ -589,7 +596,7 @@ console.log("\n[13] lockdown, and the way out of it");
 }
 
 { // getting out: the breaker is the one thing you can still power
-  const S = G.newGame();
+  const S = G.newGame(LVL);
   G.beginDraft(9,16); for(let y=15;y>=5;y--) G.draftStep(9,y);
   for(let x=10;x<=16;x++) G.draftStep(x,5); G.commitDraft();
   const spr = S.devices.find(d=>d.kind==="sprinkler");
@@ -626,7 +633,7 @@ console.log("\n[13] lockdown, and the way out of it");
 console.log("\n[14] route assist");
 
 {
-  const S = G.newGame();
+  const S = G.newGame(LVL);
   const src = S.sources.find(s=>s.id==="sock-1"), spr = S.devices.find(d=>d.kind==="sprinkler");
   const path = G.cheapestPath(src.x, src.y, spr.x, spr.y);
   ok("the assist finds a route", !!path && path.length > 1);
@@ -644,7 +651,7 @@ console.log("\n[14] route assist");
 }
 
 { // the price must be the same whichever way the route was drawn
-  const S = G.newGame();
+  const S = G.newGame(LVL);
   const spr = S.devices.find(d=>d.kind==="sprinkler");
   const path = G.cheapestPath(9, 16, spr.x, spr.y);
   G.beginDraft(9,16);
@@ -652,7 +659,7 @@ console.log("\n[14] route assist");
   G.commitDraft();
   const byHand = S.conduits[0].cost, tilesByHand = S.conduits[0].path.length;
 
-  const S2 = G.newGame();
+  const S2 = G.newGame(LVL);
   const before = G.blobRef().mass;
   const laid = G.autoRoute(9, 16, spr.x, spr.y);
   ok("the assist lays the whole route", laid === path.length, `laid ${laid} of ${path.length}`);
@@ -667,7 +674,7 @@ console.log("\n[14] route assist");
 }
 
 { // cheapest, not merely legal
-  const S = G.newGame();
+  const S = G.newGame(LVL);
   const spr = S.devices.find(d=>d.kind==="sprinkler");
   const auto = G.cheapestPath(9, 16, spr.x, spr.y);
   const autoCost = auto.slice(1).reduce((a,p)=>a+G.tileCost(p[0],p[1]), 0);
@@ -685,7 +692,7 @@ console.log("\n[14] route assist");
 }
 
 { // a route you cannot afford is refused whole, never laid in part
-  const S = G.newGame(), b = G.blobRef();
+  const S = G.newGame(LVL), b = G.blobRef();
   setMass(S, b, 10);
   const n = S.conduits.length, m = b.mass;
   const laid = G.autoRoute(9, 16, 16, 5);
@@ -699,7 +706,7 @@ console.log("\n[14] route assist");
   // Relax every edge until nothing changes: slow, obviously correct, and it uses
   // only the game's own tileCost and conduitable, so it cannot inherit a bug
   // from the search under test.
-  const S = G.newGame(), GW = CFG.grid.w, GH = CFG.grid.h;
+  const S = G.newGame(LVL), GW = CFG.grid.w, GH = CFG.grid.h;
   const trueCheapest = (sx,sy,tx,ty) => {
     const dist = new Float64Array(GW*GH).fill(Infinity);
     dist[sy*GW+sx] = 0;
@@ -733,7 +740,7 @@ console.log("\n[14] route assist");
 }
 
 { // no route at all, rather than a wrong one
-  const S = G.newGame();
+  const S = G.newGame(LVL);
   ok("there is no route into a sealed chamber", G.cheapestPath(9,16, 44,28) === null ||
      G.cheapestPath(9,16,44,28).every(p=>G.TTat(p[0],p[1])!==G.tiles.WALL));
   ok("and none from inside solid rock", G.cheapestPath(0,0, 16,5) === null);
@@ -760,7 +767,7 @@ console.log("\n[15] the ferro layer is a renderer, not a rule");
   });
   const run = (ferro) => {
     CFG.ferroRender = ferro;
-    const S = G.newGame();
+    const S = G.newGame(LVL);
     G.beginDraft(9,16); for(let y=15;y>=5;y--) G.draftStep(9,y);
     for(let x=10;x<=16;x++) G.draftStep(x,5); G.commitDraft();
     const marks = [];
@@ -788,7 +795,7 @@ console.log("\n[15] the ferro layer is a renderer, not a rule");
   // outside S and newGame did not reset it, so the second game in a page
   // inherited the first one's timing and diverged.
   const play = () => {
-    const S = G.newGame();
+    const S = G.newGame(LVL);
     G.beginDraft(9,16); for(let y=15;y>=5;y--) G.draftStep(9,y);
     for(let x=10;x<=16;x++) G.draftStep(x,5); G.commitDraft();
     for(let i=0;i<2500;i++) G.step(0.016, { ax:Math.sin(i*0.017), ay:Math.cos(i*0.011) });
@@ -805,7 +812,7 @@ console.log("\n[15] the ferro layer is a renderer, not a rule");
 
 { // the feel layer must be stable, not merely non interfering
   CFG.ferroRender = true;
-  const S = G.newGame(), b = G.blobRef();
+  const S = G.newGame(LVL), b = G.blobRef();
   for(let i=0;i<600;i++){ G.step(0.016,{ax:0,ay:0}); G.updateFX(0.016); }
   const fx = G.fx;
   ok("the render radius settles on the true radius",
@@ -821,7 +828,7 @@ console.log("\n[15] the ferro layer is a renderer, not a rule");
 }
 { // the outline has to be geometry, not noise
   CFG.ferroRender = true;
-  G.newGame();
+  G.newGame(LVL);
   const pts = G.ferroBlob(0, 0, 20, 0, 1, 0.7, 96);
   ok("the outline has the detail it was asked for", pts.length === 96);
   ok("every point is finite", pts.every(p=>isFinite(p[0])&&isFinite(p[1])));
@@ -854,7 +861,7 @@ console.log("\n[15] the ferro layer is a renderer, not a rule");
 console.log("\n[16] the prowl verbs");
 
 { // drag a body: slow, loud, hands full
-  const S = G.newGame(), b = G.blobRef();
+  const S = G.newGame(LVL), b = G.blobRef();
   S.bodies.push({ x:b.x+0.6, y:b.y, mass:CFG.harvest.sentry, decay:CFG.bodyDecaySec });
   ok("a body in reach can be picked up", !!G.dragTarget());
   ok("drag starts", G.startDrag() && S.act.verb==="drag");
@@ -884,7 +891,7 @@ console.log("\n[16] the prowl verbs");
 }
 { // dragging is SLOW, which is the cost that makes it suicide when watched
   const walk = (dragging) => {
-    const S=G.newGame(), b=G.blobRef();
+    const S=G.newGame(LVL), b=G.blobRef();
     if(dragging){ S.bodies.push({x:b.x+0.6,y:b.y,mass:12,decay:30}); G.startDrag(); }
     const x0=b.x;
     for(let i=0;i<120;i++) G.step(0.016,{ax:1,ay:0});
@@ -896,7 +903,7 @@ console.log("\n[16] the prowl verbs");
 }
 { // and LOUD: it pulls anyone near enough to hear it, with no sightline at all,
   // so what brought him is the noise and nothing else
-  const S = G.newGame(), b = G.blobRef(), e = S.enemies[1];
+  const S = G.newGame(LVL), b = G.blobRef(), e = S.enemies[1];
   e.x = 26.5; e.y = 16.5;                     // corridor
   b.x = 26.5; b.y = 21.5;                     // generator hall, wall between them
   ok("he cannot see you from there", !G.los(e.x,e.y,b.x,b.y));
@@ -916,7 +923,7 @@ console.log("\n[16] the prowl verbs");
 }
 { // C4: a body you just made has to be carryable, or the verb is unreachable.
   // A smother leaves you standing on it and absorbing one takes under a second.
-  const S = G.newGame(), b = G.blobRef(), e = S.enemies[0];
+  const S = G.newGame(LVL), b = G.blobRef(), e = S.enemies[0];
   b.x = e.x + 0.4; b.y = e.y;
   G.startEnvelop(false);
   for(let i=0;i<200 && S.act.verb;i++){ b.x=e.x+0.4; b.y=e.y; G.step(0.016,{ax:0,ay:0}); }
@@ -934,7 +941,7 @@ console.log("\n[16] the prowl verbs");
 }
 
 { // and it is disposal: a body you moved is no longer a body someone found
-  const S = G.newGame(), b = G.blobRef();
+  const S = G.newGame(LVL), b = G.blobRef();
   S.bodies.push({ x:b.x+0.5, y:b.y, mass:12, decay:30, found:true });
   G.startDrag();
   for(let i=0;i<40;i++) G.step(0.016,{ax:1,ay:0});
@@ -942,7 +949,7 @@ console.log("\n[16] the prowl verbs");
 }
 
 { // peek: recon that costs you for as long as you hold it
-  const S = G.newGame(), b = G.blobRef();
+  const S = G.newGame(LVL), b = G.blobRef();
   b.x = 8.5; b.y = 20.5; S.player.face = 0;
   const m0 = b.mass;
   S.player.peeking = true;
@@ -956,7 +963,7 @@ console.log("\n[16] the prowl verbs");
   S.player.peeking = false;
 }
 { // the tendril looks ROUND a corner, never through the wall
-  const S = G.newGame(), b = G.blobRef();
+  const S = G.newGame(LVL), b = G.blobRef();
   b.x = 4.5; b.y = 20.5; S.player.face = Math.PI;      // west, into the room wall
   S.player.peeking = true;
   for(let i=0;i<30;i++) G.step(0.016,{ax:0,ay:0});
@@ -966,7 +973,7 @@ console.log("\n[16] the prowl verbs");
   S.player.peeking = false;
 }
 { // it refuses rather than killing you
-  const S = G.newGame(), b = G.blobRef();
+  const S = G.newGame(LVL), b = G.blobRef();
   setMass(S,b,CFG.peek.minMass+0.2);
   S.player.peeking = true;
   for(let i=0;i<200;i++) G.step(0.016,{ax:0,ay:0});
@@ -976,7 +983,7 @@ console.log("\n[16] the prowl verbs");
 }
 
 { // cling: onto a wall FACE, never into solid rock
-  const S = G.newGame(), b = G.blobRef();
+  const S = G.newGame(LVL), b = G.blobRef();
   b.x = 3.5; b.y = 20.5;                                // beside the room A wall
   ok("there is a wall to climb here", !!G.clingTarget());
   ok("cling starts", G.startCling() && S.player.clinging===true);
@@ -991,7 +998,7 @@ console.log("\n[16] the prowl verbs");
 }
 { // clinging halves your profile, which is the whole point of it
   const seen = (cling) => {
-    const S=G.newGame(), b=G.blobRef(), e=S.enemies[0];
+    const S=G.newGame(LVL), b=G.blobRef(), e=S.enemies[0];
     S.player.clinging=cling;
     b.x=9.5; b.y=11.5;
     let n=0;
@@ -1004,7 +1011,7 @@ console.log("\n[16] the prowl verbs");
 }
 
 { // pool: hold still and flatten
-  const S = G.newGame(), b = G.blobRef();
+  const S = G.newGame(LVL), b = G.blobRef();
   ok("you are not pooled the moment you stop", G.isPooled()===false);
   for(let i=0;i<Math.ceil(CFG.pool.sec/0.016)+10;i++) G.step(0.016,{ax:0,ay:0});
   ok("holding still flattens you", G.isPooled()===true, "stillT="+S.player.stillT.toFixed(2));
@@ -1015,7 +1022,7 @@ console.log("\n[16] the prowl verbs");
   // only difference is whether the body is flat, forced by holding stillT down
   // rather than by moving, so proximity and exposure cannot creep in.
   const measure = (pool) => {
-    const S = G.newGame(), b = G.blobRef(), e = S.enemies[0];
+    const S = G.newGame(LVL), b = G.blobRef(), e = S.enemies[0];
     b.x = 9.5; b.y = 11.5;
     for(let i=0;i<Math.ceil(CFG.pool.sec/0.016)+20;i++){
       if(!pool) S.player.stillT = 0;
@@ -1043,7 +1050,7 @@ console.log("\n[16] the prowl verbs");
 
 { // the action button and the thing it does come from one function, so the label
   // a player reads can never drift from what happens
-  const S = G.newGame(), b = G.blobRef();
+  const S = G.newGame(LVL), b = G.blobRef();
   ok("with nothing in reach it offers a tap", G.contextVerb().id==="tap");
   S.bodies.push({ x:b.x+0.5, y:b.y, mass:12, decay:30 });
   ok("a body in reach offers to carry it", G.contextVerb().id==="drag");
@@ -1067,7 +1074,7 @@ console.log("\n[16] the prowl verbs");
 console.log("\n[17] moving a source, and freezing a guard into one");
 
 { // the cart rolls, slowly, and only on floor
-  const S = G.newGame(), b = G.blobRef();
+  const S = G.newGame(LVL), b = G.blobRef();
   const cart = S.sources.find(s=>s.id==="cart-1");
   ok("the level has a cart you can push", !!cart && cart.movable===true);
   b.x = cart.x + 1.2; b.y = cart.y + 0.5;
@@ -1082,7 +1089,7 @@ console.log("\n[17] moving a source, and freezing a guard into one");
 { // The cart follows where you stand, so it can only be driven at illegal ground
   // by standing somewhere it cannot follow you. Thin, in the vent, is exactly
   // that: the blob fits and the cart must not.
-  const S = G.newGame(), b = G.blobRef();
+  const S = G.newGame(LVL), b = G.blobRef();
   const cart = S.sources.find(s=>s.id==="cart-1");
   cart.x = 18; cart.y = 16; cart.fx = undefined;
   setMass(S, b, CFG.squeezeAt-10);
@@ -1105,7 +1112,7 @@ console.log("\n[17] moving a source, and freezing a guard into one");
   // all three from the same spot, in the same direction, with room to move: the
   // first attempt walked the free case into a wall and measured the wall
   const go = (setup) => {
-    const S=G.newGame(), b=G.blobRef();
+    const S=G.newGame(LVL), b=G.blobRef();
     b.x=20.5; b.y=21.5;                       // generator hall, nine tiles of room east
     setup(S,b);
     const x0=b.x; for(let i=0;i<120;i++) G.step(0.016,{ax:1,ay:0}); return b.x-x0; };
@@ -1121,7 +1128,7 @@ console.log("\n[17] moving a source, and freezing a guard into one");
 { // a run dies when its source is wheeled out from under it. The run has to be
   // genuinely LIVE first, or the assertion is satisfied by a wire that was never
   // powered: the first version of this ended on a tile with no device on it.
-  const S = G.newGame();
+  const S = G.newGame(LVL);
   const cart = S.sources.find(s=>s.id==="cart-1");
   const col = S.devices.find(d=>d.kind==="coolant");
   cart.x = 23; cart.y = 22;                       // in the generator hall
@@ -1143,7 +1150,7 @@ console.log("\n[17] moving a source, and freezing a guard into one");
 }
 
 { // the coolant combo, which the plan makes mandatory
-  const S = G.newGame();
+  const S = G.newGame(LVL);
   const col = S.devices.find(d=>d.kind==="coolant");
   ok("the level has a coolant vent", !!col);
   const sock = S.sources.find(s=>s.id==="sock-1");
@@ -1196,7 +1203,7 @@ console.log("\n[17] moving a source, and freezing a guard into one");
   ok("invariant survives the thaw", G.checkLedger());
 }
 { // killing a frozen guard must not leave a battery behind
-  const S = G.newGame(), e = S.enemies[0];
+  const S = G.newGame(LVL), e = S.enemies[0];
   G.freezeEnemy(e);
   ok("frozen, there is a battery", !!S.sources.find(s=>s.id==="froz-"+e.id));
   G.killEnemy(e, "test");
@@ -1217,7 +1224,7 @@ const power = (S, from, tiles) => {          // helper: run a wire and commit it
 };
 
 { // every device explains itself, or it does not ship
-  const S = G.newGame();
+  const S = G.newGame(LVL);
   const kinds = new Set(S.devices.map(d=>d.kind));
   ok("the site has the device list C4 asks for",
      ["sprinkler","plate","speaker","breaker","coolant","floodlight","fan","crane",
@@ -1230,7 +1237,7 @@ const power = (S, from, tiles) => {          // helper: run a wire and commit it
 
 { // FLOODLIGHT partners with drink-a-light and with concealed ground: it exposes
   // the very cover a route was relying on
-  const S = G.newGame();
+  const S = G.newGame(LVL);
   const fld = S.devices.find(d=>d.kind==="floodlight");
   const inside = [34, 8];
   ok("that ground is not lit to begin with", G.LITat(inside[0],inside[1])===0);
@@ -1245,7 +1252,7 @@ const power = (S, from, tiles) => {          // helper: run a wire and commit it
      G.expConduit(G.idx(inside[0],inside[1]))===before);
 }
 { // and it beats a concealed spine, which is the interesting case
-  const S = G.newGame();
+  const S = G.newGame(LVL);
   const fld = S.devices.find(d=>d.kind==="floodlight");
   fld.area = [8,14,10,16];                      // over the concealed x=9 spine
   ok("that spine is concealed", G.CONCat(9,15)===1);
@@ -1255,7 +1262,7 @@ const power = (S, from, tiles) => {          // helper: run a wire and commit it
 }
 
 { // FAN partners with drag: it moves a body you are not holding
-  const S = G.newGame();
+  const S = G.newGame(LVL);
   const fan = S.devices.find(d=>d.kind==="fan");
   S.bodies.push({ x:fan.x+2, y:fan.y, mass:12, decay:30, found:true });
   const bd = S.bodies[0], x0 = bd.x;
@@ -1267,7 +1274,7 @@ const power = (S, from, tiles) => {          // helper: run a wire and commit it
 { // and it stops at the wall. The fan only reaches four tiles, so a body has to
   // start inside that reach AND have a wall inside it, or nothing is ever pushed
   // and the check cannot fail. Pointed south from (38,11) the room ends at y 14.
-  const S = G.newGame();
+  const S = G.newGame(LVL);
   const fan = S.devices.find(d=>d.kind==="fan");
   fan.dir = [0, 1]; fan.on = true;
   S.bodies.push({ x:fan.x, y:fan.y+1, mass:12, decay:30 });
@@ -1283,7 +1290,7 @@ const power = (S, from, tiles) => {          // helper: run a wire and commit it
   ok("and the body stops at the last legal tile", bd.y <= fan.y+2, "y="+bd.y);
 }
 { // and it partners with the speaker as a second lure, with a shorter reach
-  const S = G.newGame();
+  const S = G.newGame(LVL);
   const fan = S.devices.find(d=>d.kind==="fan");
   const e = S.enemies[1];
   e.x = fan.x + 3; e.y = fan.y; e.state = "patrol";
@@ -1295,7 +1302,7 @@ const power = (S, from, tiles) => {          // helper: run a wire and commit it
 }
 
 { // CRANE partners with anything that puts something under it
-  const S = G.newGame();
+  const S = G.newGame(LVL);
   const crn = S.devices.find(d=>d.kind==="crane");
   const e = S.enemies[1];
   e.x = crn.drop[0] + 0.5; e.y = crn.drop[1] + 0.5;
@@ -1307,7 +1314,7 @@ const power = (S, from, tiles) => {          // helper: run a wire and commit it
 }
 { // it is harmless to anything not standing there, which is what makes the lure
   // the interesting half of it
-  const S = G.newGame();
+  const S = G.newGame(LVL);
   const crn = S.devices.find(d=>d.kind==="crane");
   const e = S.enemies[1];
   e.x = crn.drop[0] + 3.5; e.y = crn.drop[1] + 0.5;
@@ -1318,7 +1325,7 @@ const power = (S, from, tiles) => {          // helper: run a wire and commit it
 }
 
 { // DOOR LOCK partners with the force threshold: power instead of mass
-  const S = G.newGame(), b = G.blobRef();
+  const S = G.newGame(LVL), b = G.blobRef();
   const lck = S.devices.find(d=>d.kind==="doorlock");
   ok("the door starts shut", G.TTat(lck.door[0], lck.door[1])===G.tiles.DOOR);
   setMass(S, b, CFG.forceAt-20);
@@ -1331,7 +1338,7 @@ const power = (S, from, tiles) => {          // helper: run a wire and commit it
      G.TTat(lck.door[0], lck.door[1])===G.tiles.DOOR);
 }
 { // but a door a body forced stays forced, whatever the lock does afterwards
-  const S = G.newGame(), b = G.blobRef();
+  const S = G.newGame(LVL), b = G.blobRef();
   const lck = S.devices.find(d=>d.kind==="doorlock");
   b.x = lck.door[0]+0.5; b.y = lck.door[1]+2.2;
   for(let i=0;i<240;i++) G.step(0.016,{ax:0,ay:-1});
@@ -1349,7 +1356,7 @@ const power = (S, from, tiles) => {          // helper: run a wire and commit it
 }
 
 { // CAMERA partners with peek and pulse: the same recon, without the mass
-  const S = G.newGame(), b = G.blobRef();
+  const S = G.newGame(LVL), b = G.blobRef();
   const cam = S.devices.find(d=>d.kind==="camera");
   const e = S.enemies[1];
   e.x = cam.x + 2; e.y = cam.y;
@@ -1368,7 +1375,7 @@ const power = (S, from, tiles) => {          // helper: run a wire and commit it
 }
 
 { // VEHICLE BATTERY: one shot, and the shot is the point
-  const S = G.newGame();
+  const S = G.newGame(LVL);
   const veh = S.sources.find(s=>s.id==="veh-1");
   ok("the site has a one shot source", !!veh && veh.burst===true);
   ok("it can run the heaviest thing on the site",
@@ -1388,6 +1395,321 @@ const power = (S, from, tiles) => {          // helper: run a wire and commit it
   ok("and the run it was feeding dies with it", !cd.live);
   ok("but the mass is still yours to reclaim", cd.cost>0);
   ok("invariant survives a battery going flat", G.checkLedger());
+}
+
+// ── 19. the curriculum ───────────────────────────────────────────────────────
+// C5. Every level ships with a scripted solve that must survive any CFG change,
+// and every level has to be beatable two ways, or it is a lock rather than a
+// puzzle. Level one: one source, one machine it can afford, one patrol, and the
+// machine only fires on the tile the patrol has to cross.
+console.log("\n[19] the curriculum");
+
+{ // level one is shaped the way the plan says level one is shaped
+  const S = G.newGame("site-01");
+  ok("level one loads", S.level==="site-01", S.level);
+  ok("it has exactly one source", S.sources.length===1);
+  const cap = S.sources[0].capacity;
+  ok("one machine that source can afford",
+     S.devices.filter(d=>d.needs<=cap).length===1);
+  ok("and one it cannot, which is an affordance to walk past and wonder about",
+     S.devices.filter(d=>d.needs> cap).length===1);
+  ok("one patrol", S.enemies.length===1);
+  ok("the site's own wiring is drawn, and inert",
+     S.siteWires.length>0 && S.player.traits.splice===false);
+  const b = G.blobRef();
+  ok("the exfil is reachable on foot", !!G.bfs(b.x, b.y, S.exfil.x, S.exfil.y));
+  ok("and the patrol's route is walkable",
+     S.enemies[0].route.every(([x,y])=>!!G.bfs(b.x,b.y,x,y)));
+}
+
+{ // path one: wire the crane and let the patrol walk under it
+  const S = G.newGame("site-01");
+  const src = S.sources[0], crn = S.devices.find(d=>d.kind==="crane");
+  G.beginDraft(src.x, src.y);
+  G.draftStep(src.x, src.y-1);
+  for(let x=src.x+1; x<=crn.x; x++) G.draftStep(x, crn.y);
+  G.commitDraft();
+  const cost = S.conduits[0].cost, left = G.blobRef().mass;
+  console.log(`       level one, the wire: ${cost.toFixed(1)} laid, ${left.toFixed(1)} left`);
+  ok("the socket can afford the crane", crn.on===true, "needs "+crn.needs+" of "+src.capacity);
+  ok("and laying it does not beggar you", left > CFG.squeezeAt, "left="+left.toFixed(1));
+  let killed=false;
+  for(let i=0;i<60*90 && !killed;i++){ G.step(0.016,{ax:0,ay:0});
+    killed = S.enemies[0].state==="dead"; }
+  ok("the crane takes the patrol on the tile it has to cross", killed);
+  const body = S.bodies[0];
+  ok("and leaves a body", !!body);
+  if(body){
+    const b=G.blobRef(); b.x=body.x; b.y=body.y;
+    for(let i=0;i<300;i++) G.step(0.016,{ax:0,ay:0});
+    ok("which harvests", S.ledger.credits.harvest > 0);
+  }
+  S.conduits.slice().forEach(c=>G.startReclaim(c));
+  for(let i=0;i<60*20;i++) G.step(0.016,{ax:0,ay:0});
+  ok("the wire comes home", S.conduits.length===0);
+  const b=G.blobRef(); b.x=S.exfil.x+0.5; b.y=S.exfil.y+0.5;
+  G.step(0.016,{ax:0,ay:0});
+  ok("and the level is won", !!S.result && S.result.ok===true,
+     S.result?JSON.stringify(S.result.medals):"no result");
+  const net = G.totalMass()+S.player.residue-S.stats.startMass;
+  console.log(`       level one by wire: net ${net>=0?"+":""}${net.toFixed(1)} mass,`
+            + ` ${S.stats.tilesLaid} tiles, peak alert ${S.site.peak}`);
+  ok("invariant holds through the whole level", G.checkLedger());
+}
+
+{ // path two: walk up and smother him, no wire at all
+  const S = G.newGame("site-01");
+  const b = G.blobRef(), e = S.enemies[0];
+  b.x = e.x + 0.4; b.y = e.y;
+  G.startEnvelop(false);
+  for(let i=0;i<300 && S.act.verb;i++){ b.x=e.x+0.4; b.y=e.y; G.step(0.016,{ax:0,ay:0}); }
+  ok("the same level falls to a smother, with no wire at all", e.state==="dead");
+  ok("and nothing was laid", S.stats.tilesLaid===0);
+  for(let i=0;i<300;i++) G.step(0.016,{ax:0,ay:0});
+  b.x=S.exfil.x+0.5; b.y=S.exfil.y+0.5;
+  G.step(0.016,{ax:0,ay:0});
+  ok("and it is won that way too", !!S.result && S.result.ok===true);
+  const net = G.totalMass()+S.player.residue-S.stats.startMass;
+  console.log(`       level one by hand: net ${net>=0?"+":""}${net.toFixed(1)} mass,`
+            + ` ${S.stats.tilesLaid} tiles, peak alert ${S.site.peak}`);
+  ok("invariant holds that way too", G.checkLedger());
+}
+
+{ // the metroid re-read, on level one: the same map, a different game
+  G.clearSave();
+  const route = (S) => {
+    const src=S.sources[0], crn=S.devices.find(d=>d.kind==="crane");
+    G.beginDraft(src.x, src.y);
+    for(let x=src.x+1; x<=crn.x; x++) G.draftStep(x, 20);
+    G.draftStep(crn.x, crn.y);
+    return S.draft.cost;
+  };
+  const locked = route(G.newGame("site-01"));
+  G.writeSave({ residueDelta:900 }); G.buyTrait("splice");
+  const S2 = G.newGame("site-01");
+  ok("splice is live", S2.player.traits.splice===true);
+  const spliced = route(S2);
+  console.log(`       level one down its own cable channel: ${locked.toFixed(1)} locked, `
+            + `${spliced.toFixed(1)} spliced`);
+  ok("the same route on the same map costs visibly less",
+     spliced < locked*0.35, `${locked} then ${spliced}`);
+  ok("in fact it costs nothing at all, which is the whole unlock", spliced===0);
+  G.commitDraft();
+  ok("but riding the facility's own run trips its panel", S2.site.alert>=1,
+     "alert="+S2.site.alert);
+  ok("and the machine still comes on", S2.devices.find(d=>d.kind==="crane").on===true);
+  ok("invariant holds with a route that cost nothing", G.checkLedger());
+  G.clearSave();
+}
+
+{ // level two also falls two ways, which is the rule for every level
+  const A = G.newGame(LVL);
+  const eA = A.enemies[0], bA = G.blobRef();
+  bA.x = eA.x + 0.4; bA.y = eA.y;
+  G.startEnvelop(false);
+  for(let i=0;i<300 && A.act.verb;i++){ bA.x=eA.x+0.4; bA.y=eA.y; G.step(0.016,{ax:0,ay:0}); }
+  ok("level two falls to a smother, with no wire", eA.state==="dead" && A.stats.tilesLaid===0);
+  const B = G.newGame(LVL);
+  G.beginDraft(9,16); for(let y=15;y>=5;y--) G.draftStep(9,y);
+  for(let x=10;x<=16;x++) G.draftStep(x,5); G.commitDraft();
+  G.beginDraft(22,21);
+  for(let y=20;y>=16;y--) G.draftStep(22,y);
+  for(let x=21;x>=18;x--) G.draftStep(x,16);
+  for(let y=15;y>=9;y--) G.draftStep(18,y);
+  for(let x=17;x>=12;x--) G.draftStep(x,9);
+  G.draftStep(12,8); G.commitDraft();
+  let killed=false;
+  for(let i=0;i<60*90 && !killed;i++){ G.step(0.016,{ax:0,ay:0});
+    killed = B.enemies[0].state==="dead"; }
+  ok("and it falls to the wire", killed && B.stats.tilesLaid>0);
+}
+
+{ // a level must never edit the level it came from
+  const A = G.newGame("site-01");
+  A.devices[0].on = true; A.devices[0].needs = 999;
+  A.sources[0].x = 41; A.enemies[0].route[0][0] = 41;
+  A.lights[0].out = true; A.siteWires[0][0][0] = 41;
+  const B = G.newGame("site-01");
+  ok("a second game gets a clean copy of its level",
+     B.devices[0].on===false && B.devices[0].needs!==999 && B.sources[0].x!==41 &&
+     B.enemies[0].route[0][0]!==41 && B.lights[0].out===false &&
+     B.siteWires[0][0][0]!==41,
+     JSON.stringify({on:B.devices[0].on, needs:B.devices[0].needs, sx:B.sources[0].x}));
+}
+
+// ── 20. persistence, traits and the anti grind rule ──────────────────────────
+// C5. Headless there is no localStorage, so the store falls back to memory and
+// this exercises the real save path rather than a stub. Kept last, and it clears
+// the save on the way in, because a trait bought here would follow every game.
+console.log("\n[20] what survives the run");
+
+{ // read modify write, which is the whole point: two tabs each writing the whole
+  // object clobber each other, so counters ADD and bests take the better value
+  G.clearSave();
+  ok("a fresh save is blank",
+     G.readSave().residue===0 && Object.keys(G.readSave().traits).length===0);
+  G.writeSave({ residueDelta:10 });
+  G.writeSave({ traits:{ splice:1 } });          // as if another tab did it
+  G.writeSave({ residueDelta:5 });
+  const sv=G.readSave();
+  ok("counters add rather than overwrite", sv.residue===15, "residue="+sv.residue);
+  ok("and a write to one field does not wipe another", sv.traits.splice===1);
+  G.writeSave({ site:{ id:"t", ghost:3, tiles:40, economy:5, speed:90, runs:1 } });
+  G.writeSave({ site:{ id:"t", ghost:1, tiles:55, economy:2, speed:70, runs:1 } });
+  const st=G.readSave().sites.t;
+  ok("a lower peak alert is the better one kept", st.ghost===1, "ghost="+st.ghost);
+  ok("fewer tiles is the better one kept", st.tiles===40, "tiles="+st.tiles);
+  ok("more mass is the better one kept", st.economy===5, "economy="+st.economy);
+  ok("less time is the better one kept", st.speed===70, "speed="+st.speed);
+  ok("and the run count adds", st.runs===2, "runs="+st.runs);
+}
+
+{ // the anti grind rule: a replay banks only the improvement
+  G.clearSave();
+  const bank = (residue) => {
+    const S=G.newGame("site-01");
+    S.player.residue = residue;
+    S.enemies.forEach(e=>{ e.state="dead"; });
+    const b=G.blobRef(); b.x=S.exfil.x+0.5; b.y=S.exfil.y+0.5;
+    G.step(0.016,{ax:0,ay:0});
+    return S.result ? S.result.banked : null;
+  };
+  const first = bank(20);
+  ok("a first clear banks what it earned", first===20, "banked "+first);
+  ok("and the save holds it", G.readSave().residue===20, G.readSave().residue);
+  const same = bank(20);
+  ok("replaying it for the same yield banks nothing", same===0, "banked "+same);
+  ok("so farming an easy site pays nothing", G.readSave().residue===20);
+  const better = bank(31);
+  ok("a better run banks only the improvement", better===11, "banked "+better);
+  ok("which is what lands in the save", G.readSave().residue===31, G.readSave().residue);
+  const worse = bank(5);
+  ok("and a worse run banks nothing", worse===0, "banked "+worse);
+}
+
+{ // traits: they cost, they cap, and the price climbs
+  G.clearSave();
+  G.writeSave({ residueDelta:500 });
+  const ins = TRAITSOF("insulation");
+  ok("insulation starts at rank zero", G.traitRank(G.readSave(),"insulation")===0);
+  const p1=G.traitCost(G.readSave(),"insulation");
+  ok("buying it costs residue", G.buyTrait("insulation")===true);
+  ok("and takes the price", G.readSave().residue===500-p1, G.readSave().residue);
+  ok("the rank went up", G.traitRank(G.readSave(),"insulation")===1);
+  ok("and the next rank costs more",
+     G.traitCost(G.readSave(),"insulation") > p1,
+     `${p1} then ${G.traitCost(G.readSave(),"insulation")}`);
+  while(G.buyTrait("insulation"));
+  ok("it caps where the table says it caps",
+     G.traitRank(G.readSave(),"insulation")===ins.max, G.traitRank(G.readSave(),"insulation"));
+  ok("and buying past the cap fails rather than charging you",
+     G.buyTrait("insulation")===false);
+}
+{ // and you cannot buy what you cannot afford
+  G.clearSave();
+  G.writeSave({ residueDelta:5 });
+  const before=G.readSave().residue;
+  ok("a trait you cannot afford is refused", G.buyTrait("splice")===false);
+  ok("and being refused costs nothing", G.readSave().residue===before, G.readSave().residue);
+  ok("and you did not quietly get it anyway", G.traitRank(G.readSave(),"splice")===0);
+}
+
+{ // and the one that must never exist
+  ok("there is no trait that sells the reclaim RATE",
+     !G.TRAITS.some(t=>/reclaim ?rate/i.test(t.id+" "+t.name+" "+t.desc)),
+     G.TRAITS.map(t=>t.id).join(","));
+  ok("but reclaim SPEED is on the table, which is the honest version of it",
+     G.TRAITS.some(t=>t.id==="reclaimSpeed"));
+  ok("and the refund itself is untouched by any of them",
+     CFG.reclaimRate===0.75);
+}
+
+{ // traits have to reach the run, not just the save
+  G.clearSave();
+  G.writeSave({ residueDelta:900 });
+  const before = G.newGame("site-01");
+  ok("with nothing bought, splice is off", before.player.traits.splice===false);
+  ok("and pulse reaches its base range",
+     before.player.traits.pulseRange===CFG.pulseRange);
+  ok("and reclaim runs at its base speed",
+     before.player.traits.reclaimSpeed===CFG.reclaimSpeed);
+  ok("and capacity is the base capacity", before.player.capacity===CFG.capacity);
+  G.buyTrait("splice"); G.buyTrait("pulseRange"); G.buyTrait("reclaimSpeed");
+  G.buyTrait("capacity");
+  const after = G.newGame("site-01");
+  ok("bought, splice is on in the run", after.player.traits.splice===true);
+  ok("pulse reaches further", after.player.traits.pulseRange===CFG.pulseRange+2);
+  ok("reclaim pulls home faster", after.player.traits.reclaimSpeed===CFG.reclaimSpeed+2);
+  ok("and capacity grew", after.player.capacity===CFG.capacity+20);
+  ok("but the thresholds did NOT move with it, which is the whole tension",
+     CFG.squeezeAt===30 && CFG.forceAt===70);
+}
+
+{ // splice re-prices an old level, which is the point of the metroid layer
+  G.clearSave();
+  const locked = G.newGame(LVL);
+  G.beginDraft(22,21);
+  for(let y=20;y>=16;y--) G.draftStep(22,y);
+  for(let x=21;x>=18;x--) G.draftStep(x,16);
+  for(let y=15;y>=9;y--) G.draftStep(18,y);
+  for(let x=17;x>=12;x--) G.draftStep(x,9);
+  G.draftStep(12,8);
+  const before = locked.draft.cost;
+  G.writeSave({ residueDelta:900 });
+  G.buyTrait("splice");
+  const spliced = G.newGame(LVL);
+  ok("splice is live from the save", spliced.player.traits.splice===true);
+  G.beginDraft(22,21);
+  for(let y=20;y>=16;y--) G.draftStep(22,y);
+  for(let x=21;x>=18;x--) G.draftStep(x,16);
+  for(let y=15;y>=9;y--) G.draftStep(18,y);
+  for(let x=17;x>=12;x--) G.draftStep(x,9);
+  G.draftStep(12,8);
+  const after = spliced.draft.cost;
+  console.log(`       the same route: ${before.toFixed(1)} locked, ${after.toFixed(1)} spliced`
+            + `, ${(before-after).toFixed(1)} mass freed`);
+  ok("the same route on the same map costs visibly less", after < before-5,
+     `${before} then ${after}`);
+  G.commitDraft();
+  ok("and riding the site's own run trips its panel", spliced.site.alert>=1);
+  G.clearSave();
+}
+
+{ // suspend and resume mid heist
+  G.clearSave();
+  const S = G.newGame(LVL);
+  G.beginDraft(9,16); for(let y=15;y>=5;y--) G.draftStep(9,y);
+  for(let x=10;x<=16;x++) G.draftStep(x,5); G.commitDraft();
+  const b=G.blobRef(); b.x=12.5; b.y=9.5;
+  for(let i=0;i<200;i++) G.step(0.016,{ax:0,ay:0});
+  const snap = { mass:b.mass, x:b.x, y:b.y, owned:S.ledger.owned,
+                 cost:S.conduits[0].cost, tiles:S.conduits[0].path.length,
+                 live:S.conduits[0].live, devices:S.devices.filter(d=>d.on).map(d=>d.id).join(","),
+                 alert:S.site.alert, time:S.stats.time, laid:S.stats.tilesLaid };
+  ok("suspending a live run works", G.suspendRun()===true);
+  ok("and it is on disk", !!G.readSave().run);
+  G.newGame("site-01");                      // wander off and start something else
+  ok("resuming brings the run back", G.resumeRun()===true);
+  const R=G.S, rb=G.blobRef();
+  ok("the same level", R.level===LVL, R.level);
+  ok("the body is where it was",
+     Math.abs(rb.x-snap.x)<1e-9 && Math.abs(rb.y-snap.y)<1e-9, `${rb.x},${rb.y}`);
+  ok("with the mass it had", Math.abs(rb.mass-snap.mass)<1e-9);
+  ok("the ledger is intact", Math.abs(R.ledger.owned-snap.owned)<1e-9);
+  ok("the wire is still laid", R.conduits.length===1 &&
+     R.conduits[0].path.length===snap.tiles && Math.abs(R.conduits[0].cost-snap.cost)<1e-9);
+  // Not "it is live": whether it still was depends on whether a guard stepped on
+  // it in those two hundred frames. What has to survive is that it comes back the
+  // way it went in.
+  ok("and its power state came back the way it went in",
+     R.conduits[0].live===snap.live, `${snap.live} then ${R.conduits[0].live}`);
+  ok("and so did whatever it was running",
+     R.devices.filter(d=>d.on).map(d=>d.id).join(",")===snap.devices,
+     `${snap.devices} then ${R.devices.filter(d=>d.on).map(d=>d.id).join(",")}`);
+  ok("the alert is where it was", R.site.alert===snap.alert);
+  ok("the clock did not restart", Math.abs(R.stats.time-snap.time)<1e-9);
+  ok("invariant survives a suspend and resume", G.checkLedger());
+  G.clearSave();
 }
 
 console.log(`\n${pass} passed, ${fail} failed\n`);
