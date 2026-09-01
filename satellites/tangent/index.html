@@ -598,7 +598,11 @@ const sideGrav=()=> (invAmt>0.5 ? (sideStyle.gravMul??1) : 1);
 const live=()=>sys.filter(active);
 const targetBody=()=>sys.find(b=>isTarget(b)&&active(b))||sys.find(b=>b.target||b.targetSide!==undefined);
 function resetSystem(){
-  sys = lv.bodies.map(b=>({...b}));
+  /* Deep enough to own everything a run touches. A one level spread shared
+     each hole's `other` block with LEVELS by reference, and sideStyle points
+     straight at it, so the first line that tuned a far side at runtime would
+     have edited the level itself. */
+  sys = lv.bodies.map(b=>{ const c={...b}; if(b.other) c.other={...b.other}; return c; });
   deckPos=[0,0]; invAmt=0; inverting=null; inversions=0; holdExtent=0; sideStyle=SIDE_DEFAULT;
 }
 
@@ -1553,13 +1557,16 @@ function drawDroplet(x,y){
   ctx.save();
   ctx.translate(x,y); ctx.rotate(va); ctx.scale(1+k,1/(1+k));
   ctx.rotate(-va); ctx.translate(-x,-y);
-  ctx.save();
-  ctx.shadowColor="rgba(150,120,255,.55)"; ctx.shadowBlur=10;
   tracePts(ferroBlob(x,y,R,fa,s,3.1,64));
-  ctx.restore();
   const g=ctx.createRadialGradient(x-R*0.3,y-R*0.35,R*0.05,x,y,R*1.4);
   g.addColorStop(0,"#2A2E3C"); g.addColorStop(0.4,"#101219"); g.addColorStop(1,"#04050A");
+  /* The glow used to be set, then restored before anything was painted with
+     it: tracePts only builds a path. It goes on the body fill and comes off
+     again so the rim and the specular stay crisp. */
+  ctx.save();
+  ctx.shadowColor="rgba(150,120,255,.5)"; ctx.shadowBlur=9;
   ctx.fillStyle=g; ctx.fill();
+  ctx.restore();
   const rim=ctx.createLinearGradient(x-Math.cos(fa)*R,y-Math.sin(fa)*R,x+Math.cos(fa)*R,y+Math.sin(fa)*R);
   rim.addColorStop(0,"hsla(268,95%,72%,.95)");
   rim.addColorStop(0.5,"hsla(196,90%,60%,.45)");

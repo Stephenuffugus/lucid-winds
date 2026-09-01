@@ -1,5 +1,25 @@
 # TANGENT — master build handoff
 
+> ## ⚠️ VERIFIED CORRECTIONS, added 2026-09-01 after a six lens audit
+> This document is the design record and is kept as written. These specific
+> claims in it are **false against the shipped code**, each checked by running
+> the game rather than reading it. Trust this block over the body text.
+>
+> | Claim in this doc | What the code actually does |
+> |---|---|
+> | §5 / §12 "live sim and predictor share one integrator" | They called the same function at **different step sizes** (1/60 predicting, 1/120 running), so the drawn line was a near miss of the run. **Fixed 2026-09-01**; check [11] in `test/smoke.js` now measures it per system. |
+> | §4 "Scoring bands on closest approach: 26 / 60 / 112" | Those numbers appear nowhere. Landing is flat rate capture, with one graze band at 80. |
+> | §7 "The runtime system is a deep copy" | It was a one level spread sharing each hole's `other` block with LEVELS by reference. **Fixed 2026-09-01**, check [14]. |
+> | §15.7 "predictor cache interval, currently every 2 frames" | It counted CALLS and four places asked per frame, so it recomputed about 1.4 times per frame. **Fixed 2026-09-01.** |
+> | §3 / D1 "OM_IDLE 1.15, ball starts settled at r ≈ 37" | `OM_IDLE` holds for about half a second. The deck decays to **ω=0.750** (TH_FLOOR times SPIN_GAIN over SPIN_DRAG) and the ball spirals inward toward **r=15.6**, still falling at r=20 after six seconds. There is no resting orbit at 37. A true park needs `TH_FLOOR` 0.46, which is a Director call. |
+> | §4 "OMEGA_MAX ... only matters transiently" | It never binds at all: terminal spin is SPIN_GAIN over SPIN_DRAG = 2.5, under the 3.05 ceiling. Raising it in v6 changed no spin speed and only loosened the tear apart gate, which triggers at 0.72 times OMEGA_MAX. |
+> | §16 "release ... the rim still auto releases if you ride into it" | `rimWall` has no exit path. The wall always retains; only the player launches. |
+> | §8 solvability table | Stale. Run `node test/sweep.js` for the live numbers. |
+> | §12.1 the deck as the moat | True as an ambition, **not true in the build**: every gated system clears with an empty deck, and measured per bearing the deepest the ball reaches bare versus with one part differs by at most 10 units against a 17.4 gate capture radius. Parts deflect, they do not open territory. See the T4 entry in HANDOFF-TANGENT.md. |
+>
+> Also note: `sfx.near` and `sfx.click` were defined and never called (wired 2026-09-01), and there was no `AudioContext.resume()` anywhere, which on a phone is permanent silence with every voice correct.
+
+
 **Builder:** Claude Opus 5, in a GitHub Codespace.
 **Reviewer:** Claude Fable 5 checks the finished work against section 15.
 **Owner:** solo indie dev, publishes under Sky Walk Studio / Lucid Winds.

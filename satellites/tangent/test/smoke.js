@@ -296,5 +296,23 @@ console.log("\n[13] the verdict tells the truth about clearing, not just landing
   }
 }
 
+console.log("\n[14] the runtime system owns its own data");
+{
+  // LEVELS is the authored record and a run must never be able to edit it.
+  // `sys` was a one level spread, so each hole's far side block was shared by
+  // reference and sideStyle pointed straight at the level.
+  const hole = T.LEVELS[5].bodies.find(x => x.hole);
+  const before = hole.other.gravMul;
+  T.loadLevel(5); T.startSpin();
+  const live = T.sys.find(x => x.hole);
+  ok("the runtime hole is not the authored hole", live !== hole);
+  ok("its far side block is not the authored one", live.other !== hole.other,
+     "shared by reference");
+  live.other.gravMul = 99;                       // what a runtime tweak would do
+  ok("editing the runtime copy does not edit the level",
+     hole.other.gravMul === before, `level now ${hole.other.gravMul}`);
+  live.other.gravMul = before;
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
