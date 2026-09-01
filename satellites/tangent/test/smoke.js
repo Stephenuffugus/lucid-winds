@@ -24,12 +24,26 @@ const snapshot = JSON.stringify(T.LEVELS);
 for(let i = 0; i < T.LEVELS.length; i++){
   const r = trial(T, i, 1.0);
   ok(`${T.LEVELS[i].name}: run reaches done`, T.phase === "done", "phase=" + T.phase);
+  // The list is what settle() and failRun() actually write. It used to carry
+  // "miss" and "timeout", which nothing sets, and then a `|| r.outcome != null`
+  // clause that made the whole assertion true for any non-null string at all.
   ok(`${T.LEVELS[i].name}: outcome is a known class`,
-     ["land", "crash", "lost", "miss", "timeout"].includes(r.outcome) || r.outcome != null,
+     ["land", "crash", "lost", "failed"].indexOf(r.outcome) >= 0,
      "outcome=" + r.outcome);
-  const b = T.ball;
+  // and NaN is checked on something that is always there. `!b || ...` skipped
+  // the whole check whenever the ball was null, which is the state a run that
+  // never got a ball leaves behind, so the check was strongest exactly where
+  // there was nothing to check and absent where there might have been.
+  const b = T.ball, tr = T.flightTrail;
+  const last = tr && tr.length ? tr[tr.length - 1] : null;
+  ok(`${T.LEVELS[i].name}: the run left a flight path behind it`,
+     !!last, "flightTrail=" + (tr ? tr.length : "null") + " points");
+  ok(`${T.LEVELS[i].name}: no NaN in the last point it reached`,
+     !!last && isFinite(last[0]) && isFinite(last[1]),
+     last ? last.join(",") : "no path");
   ok(`${T.LEVELS[i].name}: no NaN in final ball state`,
-     !b || (isFinite(b.x) && isFinite(b.y) && isFinite(b.vx) && isFinite(b.vy)));
+     !!b && isFinite(b.x) && isFinite(b.y) && isFinite(b.vx) && isFinite(b.vy),
+     b ? [b.x, b.y, b.vx, b.vy].join(",") : "ball=null");
 }
 
 console.log("\n[3] release is unconditional (D4)");

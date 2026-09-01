@@ -101,6 +101,7 @@ function load(seed){
       get invAmt(){ return invAmt; },
       get deckPos(){ return deckPos; },
       get gatesHit(){ return gatesHit; },
+      get flightTrail(){ return flightTrail; },
       get lvIndex(){ return lvIndex; },
       get parts(){ return parts; },
       get ghost(){ return typeof ghost!=="undefined"?ghost:null; },
