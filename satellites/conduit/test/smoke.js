@@ -1629,6 +1629,280 @@ const spendIntoWire = (S, stopAt) => {
   ok("invariant holds", G.checkLedger());
 }
 
+// ── level four: cover costs 1.6x, and the cheap way runs under the lights ─────
+const wire = (S, from, tiles) => {
+  G.beginDraft(from[0], from[1]);
+  for(const t of tiles) G.draftStep(t[0], t[1]);
+  G.commitDraft();
+  return S.conduits[S.conduits.length-1];
+};
+const SAFE4_PLATE = (() => { const p=[[20,25],[20,24]];
+  for(let x=19;x>=12;x--) p.push([x,24]);
+  for(let y=23;y>=10;y--) p.push([12,y]); return p; })();
+const SAFE4_SPR = (() => { const p=[[20,25],[20,24]];
+  for(let x=19;x>=12;x--) p.push([x,24]);
+  for(let y=23;y>=8;y--) p.push([12,y]);
+  for(let x=13;x<=16;x++) p.push([x,8]); return p; })();
+
+{
+  const S = G.newGame("site-04");
+  const gen=S.sources[0], fld=S.devices.find(d=>d.kind==="floodlight");
+  ok("level four loads", S.level==="site-04");
+  ok("one generator big enough for the trap", gen.capacity>=60);
+  ok("and a floodlight it can never run while the trap is running",
+     gen.capacity-60 < fld.needs, `${gen.capacity-60} spare against ${fld.needs}`);
+  ok("the site wiring is the other thing you cannot use yet",
+     S.siteWires.length>0 && S.player.traits.splice===false);
+  const cost=p=>p.slice(1).reduce((a,q)=>a+G.tileCost(q[0],q[1]),0);
+  const spot=p=>p.slice(1).filter(q=>G.expConduit(G.idx(q[0],q[1]))<2).length;
+  const cheapP=G.cheapestPath(20,26,12,10), cheapS=G.cheapestPath(20,26,16,8);
+  const safeP=[[20,26],...SAFE4_PLATE], safeS=[[20,26],...SAFE4_SPR];
+  console.log(`       cheap ${(cost(cheapP)+cost(cheapS)).toFixed(1)} mass and `
+            + `${spot(cheapP)+spot(cheapS)} tiles that can be found; `
+            + `covered ${(cost(safeP)+cost(safeS)).toFixed(1)} and `
+            + `${spot(safeP)+spot(safeS)}`);
+  ok("the covered way costs meaningfully more",
+     cost(safeP)+cost(safeS) > (cost(cheapP)+cost(cheapS))*1.25);
+  ok("and it is the one that cannot be found",
+     spot(safeP)+spot(safeS) < (spot(cheapP)+spot(cheapS))*0.25);
+  // The assist prices mass, not safety. For the sprinkler that means straight up
+  // the open lit mouth; for the plate it means using the vent for one tile and
+  // then hugging cheap ground beside the channel rather than paying for it.
+  ok("the assist takes the sprinkler up the open lit mouth",
+     cheapS.some(q=>q[0]===24&&q[1]===16));
+  ok("and for the plate it uses the vent but refuses to pay for the cover",
+     cheapP.some(q=>q[0]===12&&q[1]===16) &&
+     cheapP.filter(q=>G.CONCat(q[0],q[1])===1).length <
+     safeP.filter(q=>G.CONCat(q[0],q[1])===1).length);
+}
+
+{ // the cheap way works, and it can be found
+  const S = G.newGame("site-04");
+  const p=G.cheapestPath(20,26,12,10), q=G.cheapestPath(20,26,16,8);
+  wire(S,[20,26],p.slice(1)); const cheapRun=S.conduits[0];
+  wire(S,[20,26],q.slice(1));
+  ok("both machines come on off the one generator",
+     S.devices.find(d=>d.kind==="plate").on && S.devices.find(d=>d.kind==="sprinkler").on);
+  ok("and it leaves you with something in hand", G.blobRef().mass > CFG.squeezeAt,
+     "mass="+G.blobRef().mass.toFixed(1));
+  // a patrol standing over the cheap run's gallery stretch finds it
+  const e=S.enemies[0], cheapSpr=S.conduits[1];
+  let found=false;
+  for(let i=0;i<60*60 && !found;i++){
+    e.x=24.5; e.y=14.5; e.face=Math.PI/2; e.state="patrol";
+    G.step(0.016,{ax:0,ay:0});
+    found = cheapRun.discovered || cheapSpr.discovered; }
+  ok("a guard watching the lit mouth finds the cheap run", found,
+     `plate ${cheapRun.spot} sprinkler ${cheapSpr.spot}`);
+}
+
+{ // the covered way works, and it cannot
+  const S = G.newGame("site-04");
+  wire(S,[20,26],SAFE4_PLATE); const safeRun=S.conduits[0];
+  wire(S,[20,26],SAFE4_SPR);
+  ok("both machines still come on the long way round",
+     S.devices.find(d=>d.kind==="plate").on && S.devices.find(d=>d.kind==="sprinkler").on);
+  const left=G.blobRef().mass;
+  ok("but cover leaves you thin", left < CFG.squeezeAt, "mass="+left.toFixed(1));
+  ok("too thin to take anyone by hand, which is what you paid", left < CFG.envelop.minMass);
+  const e=S.enemies[0];
+  for(let i=0;i<60*40;i++){
+    e.x=12.5; e.y=13.5; e.face=-Math.PI/2; e.state="patrol";
+    G.step(0.016,{ax:0,ay:0}); }
+  ok("and a guard stood on the channel never finds it", !safeRun.discovered);
+  ok("nor accrues any progress toward it",
+     !(safeRun.spot > 0) && !Number.isNaN(safeRun.spot), "spot="+safeRun.spot);
+}
+
+{ // and either way, the trap takes him and you leave
+  const S = G.newGame("site-04");
+  wire(S,[20,26],SAFE4_PLATE);
+  wire(S,[20,26],SAFE4_SPR);
+  let killed=false;
+  for(let i=0;i<60*120 && !killed;i++){ G.step(0.016,{ax:0,ay:0});
+    killed=S.enemies[0].state==="dead"; }
+  ok("wet floor and a live plate take the target", killed);
+  const b=G.blobRef();
+  if(S.bodies[0]){ b.x=S.bodies[0].x; b.y=S.bodies[0].y;
+    for(let i=0;i<400;i++) G.step(0.016,{ax:0,ay:0}); }
+  b.x=S.exfil.x+0.5; b.y=S.exfil.y+0.5;
+  G.step(0.016,{ax:0,ay:0});
+  ok("and the level is won", !!S.result && S.result.ok===true);
+  const net=G.totalMass()+S.player.residue-S.stats.startMass;
+  console.log(`       level four covered: net ${net>=0?"+":""}${net.toFixed(1)} mass, `
+            + `${S.stats.tilesLaid} tiles, peak alert ${S.site.peak}`);
+  ok("invariant holds", G.checkLedger());
+}
+
+// ── level five: the site is already alarmed, and the breaker is the level ─────
+{
+  const S = G.newGame("site-05");
+  ok("level five loads", S.level==="site-05");
+  ok("and it is already at Alarm when you arrive", S.site.alert===3, "alert="+S.site.alert);
+  ok("so its peak starts there too, which the Ghost medal will remember",
+     S.site.peak===3);
+  const gen=S.sources[0], fld=S.devices.find(d=>d.kind==="floodlight");
+  ok("the generator cannot also carry the floodlight once the crane is live",
+     gen.capacity-35 < fld.needs, `${gen.capacity-35} spare against ${fld.needs}`);
+  ok("and the site wiring is inert", S.siteWires.length>0 && !S.player.traits.splice);
+}
+
+{ // path one: never be seen, and the trap runs at Alarm
+  const S = G.newGame("site-05");
+  const crn = S.devices.find(d=>d.kind==="crane");
+  const p = G.cheapestPath(6,18,crn.x,crn.y);
+  G.beginDraft(6,18);
+  for(let i=1;i<p.length;i++) G.draftStep(p[i][0], p[i][1]);
+  G.commitDraft();
+  ok("the crane comes on at Alarm", crn.on===true);
+  ok("and it is not a lockdown", S.site.lockdown===false);
+  let killed=false;
+  for(let i=0;i<60*120 && !killed;i++){ G.step(0.016,{ax:0,ay:0});
+    killed=S.enemies[0].state==="dead"; }
+  ok("and takes the target", killed);
+  const b=G.blobRef(); b.x=S.exfil.x+0.5; b.y=S.exfil.y+0.5;
+  G.step(0.016,{ax:0,ay:0});
+  ok("and you leave", !!S.result && S.result.ok===true);
+  console.log(`       level five unseen: peak alert ${S.site.peak}, ${S.stats.tilesLaid} tiles`);
+  ok("invariant holds", G.checkLedger());
+}
+
+{ // path two: be seen once, and the breaker becomes the level
+  const S = G.newGame("site-05");
+  const crn=S.devices.find(d=>d.kind==="crane"), brk=S.devices.find(d=>d.kind==="breaker");
+  const p=G.cheapestPath(6,18,crn.x,crn.y);
+  G.beginDraft(6,18);
+  for(let i=1;i<p.length;i++) G.draftStep(p[i][0], p[i][1]);
+  G.commitDraft();
+  ok("the crane is running before anyone sees you", crn.on===true);
+  // now stand in front of him. At Alarm, one sighting is a lockdown.
+  const b=G.blobRef(), e=S.enemies[0];
+  for(let i=0;i<600 && !S.site.lockdown;i++){
+    e.x=22.5; e.y=9.5; e.face=0; b.x=24.5; b.y=9.5;
+    G.step(0.016,{ax:0,ay:0}); }
+  ok("one sighting at Alarm puts the site into Lockdown", S.site.lockdown===true,
+     "alert="+S.site.alert);
+  ok("and the crane goes dark with everything else", crn.on===false);
+  ok("but the mass is still committed, it is still your wire",
+     S.conduits[0].cost>0);
+  // the only thing you can energise in the dark
+  const q=G.cheapestPath(6,18,brk.x,brk.y);
+  G.beginDraft(6,18);
+  for(let i=1;i<q.length;i++) G.draftStep(q[i][0], q[i][1]);
+  G.commitDraft();
+  ok("the breaker takes power in the dark", brk.on===true);
+  ok("and nothing else does", crn.on===false);
+  G.step(0.016,{ax:0,ay:0});
+  ok("powering it ends the lockdown", S.site.lockdown===false);
+  ok("and the site comes back at Search", S.site.alert===2, "alert="+S.site.alert);
+  ok("which brings the crane back with it", crn.on===true);
+  // stop pinning him: he has to be able to walk back onto the drop tile
+  b.x=8.5; b.y=18.5;
+  let killed=false;
+  for(let i=0;i<60*150 && !killed;i++){ G.step(0.016,{ax:0,ay:0});
+    killed=S.enemies[0].state==="dead"; }
+  ok("and then the trap runs", killed);
+  console.log(`       level five through a lockdown: peak alert ${S.site.peak}, `
+            + `${S.stats.tilesLaid} tiles, body ${G.blobRef().mass.toFixed(1)}`);
+  ok("invariant holds through a lockdown and back", G.checkLedger());
+}
+
+// ── level six: rich is not the same as liquid ────────────────────────────────
+{
+  const S = G.newGame("site-06");
+  ok("level six loads", S.level==="site-06");
+  ok("it has two targets", S.targets.length===2);
+  const g=S.sources[0];
+  const cost=p=>p.slice(1).reduce((a,q)=>a+G.tileCost(q[0],q[1]),0);
+  const near=cost(G.cheapestPath(g.x,g.y,17,7)), far=cost(G.cheapestPath(g.x,g.y,29,7));
+  console.log(`       level six: near trap ${near.toFixed(1)}, far trap ${far.toFixed(1)},`
+            + ` together ${(near+far).toFixed(1)} of ${CFG.capacity-CFG.minBlobMass} spendable`);
+  ok("you cannot fund both at once", near+far > CFG.capacity-CFG.minBlobMass,
+     `${(near+far).toFixed(1)} against ${CFG.capacity-CFG.minBlobMass}`);
+  ok("and it is your mass that stops you, not the generator",
+     g.capacity >= 70, "capacity "+g.capacity);
+  const spk=S.devices.find(d=>d.kind==="speaker");
+  ok("the speaker is the thing you can see and never afford alongside either",
+     spk.needs > g.capacity-35, `${spk.needs} against ${g.capacity-35} spare`);
+}
+
+{ // path one: fund one, take it back, fund the other, and pay the tax twice
+  const S = G.newGame("site-06");
+  const g=S.sources[0];
+  // The assist prices mass and would run the near wire straight under the patrol,
+  // where it gets stepped on and burnt off the crane. A player picks the west
+  // edge and the top instead: dearer by a little, and it survives.
+  const WEST=(()=>{ const p=[[4,23],[5,23]];
+    for(let y=22;y>=7;y--) p.push([5,y]);
+    for(let x=6;x<=17;x++) p.push([x,7]); return p; })();
+  const run=(tiles)=>{ G.beginDraft(g.x,g.y);
+    for(const t of tiles) G.draftStep(t[0], t[1]);
+    G.commitDraft(); return S.conduits[S.conduits.length-1]; };
+  const far=(tx,ty)=>{ const p=G.cheapestPath(g.x,g.y,tx,ty); return p.slice(1); };
+  const a=run(WEST);
+  ok("the near trap is affordable on its own", a.live===true,
+     "body "+G.blobRef().mass.toFixed(1));
+  let one=false;
+  for(let i=0;i<60*120 && !one;i++){ G.step(0.016,{ax:0,ay:0});
+    one=S.enemies[0].state==="dead"; }
+  ok("and it takes the first target", one);
+  const beforeReclaim=G.blobRef().mass;
+  G.startReclaim(a);
+  for(let i=0;i<60*40 && S.conduits.length;i++) G.step(0.016,{ax:0,ay:0});
+  ok("taking it back is what funds the second", G.blobRef().mass > beforeReclaim,
+     `${beforeReclaim.toFixed(1)} to ${G.blobRef().mass.toFixed(1)}`);
+  ok("at the usual price", S.ledger.debits.reclaimTax > 0);
+  const b2=run(far(29,7));
+  ok("which pays for the far trap", b2.live===true,
+     "body "+G.blobRef().mass.toFixed(1));
+  let two=false;
+  for(let i=0;i<60*260 && !two;i++){ G.step(0.016,{ax:0,ay:0});
+    two=S.enemies[1].state==="dead"; }
+  ok("and it takes the second", two);
+  const b=G.blobRef(); b.x=S.exfil.x+0.5; b.y=S.exfil.y+0.5;
+  G.step(0.016,{ax:0,ay:0});
+  ok("and the level is won, one trap at a time", !!S.result && S.result.ok===true);
+  console.log(`       level six sequentially: tax paid ${S.ledger.debits.reclaimTax.toFixed(1)},`
+            + ` ${S.stats.tilesLaid} tiles, peak alert ${S.site.peak}`);
+  ok("invariant holds", G.checkLedger());
+}
+
+{ // path two: walk to the far one and take it by hand, wire only the near one.
+  //
+  // Which way round matters, and finding that out is the level teaching itself.
+  // The far run is sixty eight exposed tiles across a patrolled spine: it gets
+  // found, the guard walks it, he is zapped, and the burn cuts his own crane off
+  // before he ever reaches the drop. So the wire goes on the SHORT trap and the
+  // long walk is the one you make yourself.
+  const S = G.newGame("site-06");
+  const b=G.blobRef(), far=S.enemies[1];
+  b.x=far.x+0.4; b.y=far.y;
+  G.startEnvelop(false);
+  for(let i=0;i<400 && S.act.verb;i++){ b.x=far.x+0.4; b.y=far.y; G.step(0.016,{ax:0,ay:0}); }
+  ok("the far target falls to a hand, for eight mass", far.state==="dead");
+  ok("which is the only way to reach it without funding sixty eight tiles",
+     G.blobRef().mass > CFG.capacity-20, "body "+G.blobRef().mass.toFixed(1));
+  const g=S.sources[0];
+  const WEST=(()=>{ const p=[[4,23],[5,23]];
+    for(let y=22;y>=7;y--) p.push([5,y]);
+    for(let x=6;x<=17;x++) p.push([x,7]); return p; })();
+  G.beginDraft(g.x,g.y);
+  for(const t of WEST) G.draftStep(t[0], t[1]);
+  G.commitDraft();
+  ok("and the near trap is cheap enough to wire outright",
+     S.conduits[0].live===true, "body "+G.blobRef().mass.toFixed(1));
+  let near=false;
+  for(let i=0;i<60*200 && !near;i++){ G.step(0.016,{ax:0,ay:0});
+    near=S.enemies[0].state==="dead"; }
+  ok("and it takes the near one", near);
+  b.x=S.exfil.x+0.5; b.y=S.exfil.y+0.5;
+  G.step(0.016,{ax:0,ay:0});
+  ok("and the level is won that way too", !!S.result && S.result.ok===true);
+  console.log(`       level six by hand and wire: ${S.stats.tilesLaid} tiles, `
+            + `tax ${S.ledger.debits.reclaimTax.toFixed(1)}, peak alert ${S.site.peak}`);
+  ok("invariant holds", G.checkLedger());
+}
+
 { // a level must never edit the level it came from
   const A = G.newGame("site-01");
   A.devices[0].on = true; A.devices[0].needs = 999;
@@ -1815,6 +2089,60 @@ console.log("\n[20] what survives the run");
   ok("the clock did not restart", Math.abs(R.stats.time-snap.time)<1e-9);
   ok("invariant survives a suspend and resume", G.checkLedger());
   G.clearSave();
+}
+
+// ── 21. every level, checked the same way ────────────────────────────────────
+// C5. Authoring is where the same mistake keeps coming back, so the rules that
+// caught it are checked across ALL levels rather than remembered per level.
+console.log("\n[21] every level, checked the same way");
+{
+  ok("there are six sites", G.LEVEL_ORDER.length===6, G.LEVEL_ORDER.join(","));
+  for(const id of G.LEVEL_ORDER){
+    const S = G.newGame(id), b = G.blobRef(), n = id.slice(-2);
+    ok(`${n}: it loads and names itself`, S.level===id && !!S.levelName);
+    ok(`${n}: you start on ground you can stand on`,
+       G.TTat(b.x|0, b.y|0)!==G.tiles.WALL);
+    ok(`${n}: its exit is not inside a wall`,
+       G.TTat(S.exfil.x, S.exfil.y)!==G.tiles.WALL);
+    ok(`${n}: every target is a real enemy`,
+       S.targets.every(t=>S.enemies.some(e=>e.id===t)) && S.targets.length>0);
+    ok(`${n}: no machine is buried in a wall`,
+       S.devices.every(d=>G.TTat(d.x,d.y)!==G.tiles.WALL));
+    ok(`${n}: no source is buried in a wall`,
+       S.sources.every(o=>G.TTat(o.x,o.y)!==G.tiles.WALL));
+    ok(`${n}: no two machines share a tile`,
+       new Set(S.devices.map(d=>d.x+","+d.y)).size===S.devices.length);
+    ok(`${n}: every machine declares what it needs and starts off`,
+       S.devices.every(d=>d.needs>0 && d.on===false));
+    ok(`${n}: every patrol can walk its own route`,
+       S.enemies.every(e=>e.route.every(([x,y])=>!!G.bfs(e.x,e.y,x,y))));
+    ok(`${n}: the facility's own wiring is drawn, and inert`,
+       S.siteWires.length>0 && S.player.traits.splice===false);
+    ok(`${n}: it holds more machines than the job strictly needs`,
+       S.devices.length>1, S.devices.length+" devices");
+    // The one that keeps biting: a crane whose drop tile is on its own wire
+    // zaps the patrol instead of crushing it, and the burn cuts the crane off,
+    // so the level cannot be solved that way at all.
+    for(const d of S.devices){
+      if(d.kind!=="crane" || !d.drop) continue;
+      let onWire=null;
+      for(const o of S.sources){
+        const path=G.cheapestPath(o.x,o.y,d.x,d.y);
+        if(path && path.some(q=>q[0]===d.drop[0] && q[1]===d.drop[1]))
+          onWire=`${o.id} route to ${d.id}`;
+      }
+      ok(`${n}: ${d.id}'s drop tile is not on its own wire`, !onWire, onWire);
+      ok(`${n}: ${d.id} drops on ground a patrol can stand on`,
+         G.TTat(d.drop[0], d.drop[1])!==G.tiles.WALL);
+      // Either a patrol already walks over it, or the level gives you something
+      // that can put one there. A crane with neither is a switch that does
+      // nothing, which is what the design forbids.
+      const walked = S.enemies.some(e=>e.route.some(([x,y])=>x===d.drop[0] && y===d.drop[1]));
+      const lure = S.devices.some(o=>o.kind==="speaker"||o.kind==="fan");
+      ok(`${n}: something can be got under it, by patrol or by lure`,
+         walked || lure, d.drop.join(",")+(lure?" (lure)":" (no lure either)"));
+    }
+  }
 }
 
 console.log(`\n${pass} passed, ${fail} failed\n`);

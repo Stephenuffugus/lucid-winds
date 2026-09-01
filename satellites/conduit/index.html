@@ -250,6 +250,7 @@ const CFG = {
     grainTile:128, grainAlpha:9,
     vignetteInner:0.40, vignetteAlpha:0.62,
     edgeTickTiles:4,             // corner ticks on the site boundary, in tiles
+    glowPx:96,                   // the baked glow sprite, blitted not rebuilt
     draftFillMax:64,             // tiles one drag event may fill in at once
     cardMinW:210,                // below this the inspect card is not worth moving
   },
@@ -457,6 +458,57 @@ function buildVentStack(){
   TT[idx(16,16)]=VENT;          // keep it a vent after the shadow pass
 }
 
+// Level four. Concealed ground costs 1.6x and is never spotted; open ground costs
+// one and can be. The hall gives you both to the same place, and the cheap way
+// runs under the lights. Re-tests level two (a device is an input to another
+// device) and level three (a vent carries wire).
+function buildGeneratorHall(){
+  fill(4,18,30,28,FLOOR);       // the hall
+  fill(8,6,26,15,FLOOR);        // the gallery above it, where the work is
+  // Row 17 is the floor of the gallery, so both ways up need a mouth through it.
+  TT[idx(12,17)]=FLOOR; TT[idx(12,16)]=VENT;   // the concealed way, wire or a thin body
+  TT[idx(24,17)]=FLOOR; TT[idx(24,16)]=FLOOR;  // and the open way, cheap and lit
+  TT[idx(22,17)]=DOOR; TT[idx(22,16)]=FLOOR;   // a door a wire can never use
+  // One cable channel, the long way round: west along the hall and up the far
+  // column. The short way up is the open mouth at 24, cheap and lit.
+  conc(6,24,26,24); conc(12,10,12,24);
+  shadowByGeometry();
+  TT[idx(12,16)]=VENT;
+  CONC[idx(12,16)]=1;
+}
+
+// Level five. The site is already at Alarm when you arrive, so one sighting puts
+// it into Lockdown, and in a lockdown the breaker is the ONLY thing you can
+// still energise. Either you are never seen and the trap runs at Alarm, or you
+// are, and re-energising the site is the level.
+function buildSubstation(){
+  fill(3,22,12,28,FLOOR);       // the way in
+  fill(3,14,40,20,FLOOR);       // the switch room
+  fill(6,21,7,21,FLOOR);
+  fill(16,4,36,12,FLOOR);       // the bays above
+  fill(20,13,21,13,FLOOR);      // the only stair between them
+  conc(3,16,40,16);             // the switch room's cable channel
+  conc(20,13,21,13);
+  shadowByGeometry();
+}
+
+// Level six. Liquidity. Two targets, two machines, and the wire for both at once
+// costs more than you are. So you fund one, take it back, and fund the other,
+// paying the tax twice; or you take one by hand and wire only the other. Being
+// rich is not the same as being liquid, which is what the economy is built on.
+function buildHiveSpine(){
+  fill(3,20,44,26,FLOOR);       // the spine
+  fill(5,6,18,17,FLOOR);        // west chamber
+  fill(28,6,42,17,FLOOR);       // east chamber
+  // The stairs are at the OUTER ends and the machines at the inner ends, so
+  // every route is a full traverse. The near trap is cheap and the far one is
+  // not, and the two together cost more than you are.
+  fill(5,18,6,19,FLOOR);        // stairs west, at the far west
+  fill(41,18,42,19,FLOOR);      // stairs east, at the far east
+  conc(3,23,44,23);             // the spine's channel
+  shadowByGeometry();
+}
+
 // Any floor tile touching a wall is unlit. Cover comes from geometry, free.
 function shadowByGeometry(){
   const base=TT.slice();
@@ -559,8 +611,66 @@ const LEVELS = {
     siteWires:[ (()=>{ const w=[]; for(let x=5;x<=16;x++) w.push([x,19]); return w; })() ],
     targets:["sentry-1"],
   },
+  "site-04":{
+    id:"site-04", name:"Generator Hall", teaches:"cover costs 1.6x, and it is worth it",
+    build:buildGeneratorHall, start:[6.5,26.5], exfil:{x:29,y:27},
+    sources:[ {id:"gen-1", x:20, y:26, kind:"generator", capacity:100, noisy:true} ],
+    devices:[
+      {id:"spr-1", x:16, y:8,  kind:"sprinkler", needs:20, area:[10,7,20,12]},
+      // the plate sits ON the cable channel, so the safe route ends at it
+      {id:"plt-1", x:12, y:10, kind:"plate",     needs:40},
+      // 45 more than the generator has left once the trap is running: you can
+      // route to it all day and it will not come on while the trap does.
+      {id:"fld-1", x:24, y:8,  kind:"floodlight", needs:45, area:[20,6,26,12]},
+    ],
+    enemies:[ {id:"sentry-1", kind:"sentry", x:16.5, y:13.5,
+               route:[[18,13],[12,10],[22,8],[24,13]]} ],
+    // the open way up is lit at both ends, which is what makes it cheap and bad
+    lights:[ {x:24,y:18},{x:24,y:14},{x:20,y:20},{x:9,y:21} ],
+    siteWires:[ (()=>{ const w=[]; for(let y=23;y>=11;y--) w.push([12,y]); return w; })() ],
+    targets:["sentry-1"],
+  },
+  "site-05":{
+    id:"site-05", name:"Substation", teaches:"lockdown, and the breaker that ends it",
+    build:buildSubstation, start:[5.5,26.5], exfil:{x:39,y:19}, startAlert:3,
+    sources:[ {id:"gen-1", x:6, y:18, kind:"generator", capacity:100, noisy:true} ],
+    devices:[
+      // The crane sits by the stair and drops four tiles away, because a drop
+      // tile ON its own wire means the patrol is zapped instead of crushed and
+      // the burn cuts the crane off. Its arm reaches; its cable does not.
+      {id:"crn-1", x:20, y:6,  kind:"crane",   needs:35, drop:[26,10]},
+      {id:"brk-1", x:38, y:17, kind:"breaker", needs:30},
+      // a second machine the generator cannot also carry once the crane is live
+      {id:"fld-1", x:32, y:8,  kind:"floodlight", needs:70, area:[28,6,36,12]},
+    ],
+    enemies:[ {id:"sentry-1", kind:"sentry", x:27.5, y:11.5,
+               route:[[26,10],[34,7],[34,11],[25,12]]} ],
+    lights:[ {x:10,y:18},{x:24,y:18},{x:26,y:6},{x:34,y:11} ],
+    siteWires:[ (()=>{ const w=[]; for(let x=6;x<=38;x++) w.push([x,16]); return w; })() ],
+    targets:["sentry-1"],
+  },
+  "site-06":{
+    id:"site-06", name:"Hive Spine", teaches:"rich is not the same as liquid",
+    build:buildHiveSpine, start:[5.5,24.5], exfil:{x:43,y:24},
+    sources:[ {id:"gen-1", x:3, y:23, kind:"generator", capacity:100, noisy:true} ],
+    devices:[
+      {id:"crn-1", x:17, y:7,  kind:"crane", needs:35, drop:[17,10]},
+      {id:"crn-2", x:29, y:7,  kind:"crane", needs:35, drop:[33,11]},
+      // and one you can see from the spine and never afford alongside either
+      {id:"spk-1", x:22, y:20, kind:"speaker", needs:75},
+    ],
+    enemies:[
+      // kept to the low east of its chamber, so the west and top edges are a
+      // route a player can choose that the patrol does not walk on
+      {id:"sentry-1", kind:"sentry", x:15.5, y:12.5, route:[[17,10],[14,12],[17,14],[13,11]]},
+      {id:"sentry-2", kind:"sentry", x:35.5, y:13.5, route:[[38,8],[33,11],[41,15],[36,14]]},
+    ],
+    lights:[ {x:12,y:23},{x:32,y:23},{x:9,y:8},{x:38,y:8} ],
+    siteWires:[ (()=>{ const w=[]; for(let x=8;x<=40;x++) w.push([x,23]); return w; })() ],
+    targets:["sentry-1","sentry-2"],
+  },
 };
-const LEVEL_ORDER = ["site-01","site-02","site-03"];
+const LEVEL_ORDER = ["site-01","site-02","site-03","site-04","site-05","site-06"];
 const clone = o => JSON.parse(JSON.stringify(o));
 
 function newGame(levelId){
@@ -575,7 +685,15 @@ function newGame(levelId){
   TT=new Uint8Array(W*H); CONC=new Uint8Array(W*H); WET=new Float32Array(W*H);
   LIT=new Uint8Array(W*H);
   L.build();
+  // A level is usually smaller than the grid, and fitting the grid put the site
+  // in a third of the frame with dead space beside it. Measure what the builder
+  // actually laid down and frame THAT.
+  let bx0=W, by0=H, bx1=0, by1=0;
+  for(let y=0;y<H;y++) for(let x=0;x<W;x++)
+    if(TT[idx(x,y)]!==WALL){ if(x<bx0)bx0=x; if(x>bx1)bx1=x; if(y<by0)by0=y; if(y>by1)by1=y; }
+  if(bx1<bx0){ bx0=0; by0=0; bx1=W-1; by1=H-1; }
   S={
+    bounds:{ x0:bx0-1, y0:by0-1, x1:bx1+2, y1:by1+2 },
     level:L.id, levelName:L.name,
     t:0, rng:mulberry(CFG.seed), mode:"prowl", flowT:0,
     player:{ blobs:[{id:"core",x:L.start[0],y:L.start[1],mass:CFG.capacity,active:true}],
@@ -595,7 +713,7 @@ function newGame(levelId){
     act:{ verb:null, target:null, t:0 }, inspect:null, autoFrom:null,
     bodies:[], conduits:[], draft:null, selected:null,
     targets:[...L.targets], exfil:{...L.exfil},
-    site:{ alert:0, peak:0, sinceEscalate:0, lockdown:false },
+    site:{ alert:L.startAlert||0, peak:L.startAlert||0, sinceEscalate:0, lockdown:false },
     stats:{ tilesLaid:0, startMass:CFG.capacity, time:0 },
     result:null, toast:"", toastT:0, nextId:1,
   };
@@ -1575,7 +1693,25 @@ function viewSize(){
             : { w:window.innerWidth, h:window.innerHeight };
 }
 
-let grainPat=null, vignette=null;
+let grainPat=null, vignette=null, alarmGrad=null, glowWarm=null, glowGold=null;
+// A soft radial glow rebuilt with createRadialGradient every frame, for every
+// light and every powered machine, is the most expensive thing on the screen
+// once there are ten of each. Bake each one into a sprite at boot and blit it.
+function makeGlow(r,g,b){
+  const n=CFG.ui.glowPx, c=document.createElement("canvas"); c.width=c.height=n;
+  const x=c.getContext("2d");
+  const gr=x.createRadialGradient(n/2,n/2,1,n/2,n/2,n/2);
+  gr.addColorStop(0,`rgba(${r},${g},${b},1)`);
+  gr.addColorStop(0.45,`rgba(${r},${g},${b},0.28)`);
+  gr.addColorStop(1,`rgba(${r},${g},${b},0)`);
+  x.fillStyle=gr; x.fillRect(0,0,n,n);
+  return c;
+}
+function blitGlow(sprite, cx, cy, radius, alpha){
+  ctx.globalAlpha=alpha;
+  ctx.drawImage(sprite, cx-radius, cy-radius, radius*2, radius*2);
+  ctx.globalAlpha=1;
+}
 function buildGrain(){
   // One tile of low amplitude noise, built once. It is what stops the darkness
   // outside the site from reading as nothing at all.
@@ -1585,6 +1721,12 @@ function buildGrain(){
     im.data[i*4]=v; im.data[i*4+1]=v; im.data[i*4+2]=v+8; im.data[i*4+3]=CFG.ui.grainAlpha; }
   gx.putImageData(im,0,0);
   grainPat=ctx.createPattern(g,"repeat");
+}
+function buildAlarmGradient(){
+  alarmGrad=ctx.createRadialGradient(VW/2,VH/2,Math.min(VW,VH)*0.30,
+                                     VW/2,VH/2,Math.hypot(VW,VH)*0.60);
+  alarmGrad.addColorStop(0,"rgba(224,72,60,0)");
+  alarmGrad.addColorStop(1,"rgba(224,72,60,1)");
 }
 function buildVignette(){
   const r=Math.hypot(VW,VH)*0.62;
@@ -1604,7 +1746,9 @@ function resize(){ if(!CAN) return;
   CAN.width=VW*dpr; CAN.height=VH*dpr; CAN.style.width=VW+"px"; CAN.style.height=VH+"px";
   ctx.setTransform(dpr,0,0,dpr,0,0);
   if(!grainPat) buildGrain();
+  if(!glowWarm){ glowWarm=makeGlow(224,200,150); glowGold=makeGlow(224,167,60); }
   buildVignette();
+  buildAlarmGradient();
   layout();
   if(S) draw();
 }
@@ -1640,26 +1784,28 @@ const s2w=(px,py)=>[ (px-VW/2)/cam.s + cam.x, (py-VH/2)/cam.s + cam.y ];
 // the largest rectangle the controls leave free, and centre it there.
 function hudBandH(){ return SAFE.t + Math.max(CFG.ui.barH + CFG.ui.fontHud*2 + CFG.ui.hudBandPad,
                                               CFG.ui.pad*2 + CFG.ui.minTouchPx); }
+const siteBox = () => (S && S.bounds) ? S.bounds : {x0:0,y0:0,x1:W,y1:H};
 function flowFit(){
-  const u=CFG.ui, top=hudBandH();
+  const u=CFG.ui, top=hudBandH(), B=siteBox();
+  const bw=B.x1-B.x0, bh=B.y1-B.y0;
   const bb = bottomBtns();
   const bx = bb.length ? Math.min(...bb.map(b=>b.x)) : VW;
   const by = bb.length ? Math.min(...bb.map(b=>b.y)) : VH;
   const above={ x:0, y:top, w:VW, h:Math.max(u.minFitPx, by-top-u.pad) };
   const left ={ x:0, y:top, w:Math.max(u.minFitPx, bx-u.pad),
                 h:Math.max(u.minFitPx, VH-SAFE.b-top-u.pad*3) };
-  const sa=Math.min(above.w/(W+2), above.h/(H+2));
-  const sl=Math.min(left.w/(W+2),  left.h/(H+2));
+  const sa=Math.min(above.w/bw, above.h/bh);
+  const sl=Math.min(left.w/bw,  left.h/bh);
   return sa>=sl ? {s:sa, r:above} : {s:sl, r:left};
 }
 function updateCamera(dt){
   const b=blob(), u=CFG.ui;
   const k=Math.min(1, dt*u.camLerp);
   if(S.mode==="flow"){
-    const f=flowFit(), cx=f.r.x+f.r.w/2, cy=f.r.y+f.r.h/2;
+    const f=flowFit(), cx=f.r.x+f.r.w/2, cy=f.r.y+f.r.h/2, B=siteBox();
     cam.s += (f.s-cam.s)*k;
-    cam.x += ((W/2 + (VW/2-cx)/f.s) - cam.x)*k;
-    cam.y += ((H/2 + (VH/2-cy)/f.s) - cam.y)*k;
+    cam.x += (((B.x0+B.x1)/2 + (VW/2-cx)/f.s) - cam.x)*k;
+    cam.y += (((B.y0+B.y1)/2 + (VH/2-cy)/f.s) - cam.y)*k;
     return;                       // the fit already guarantees the site is on screen
   }
   const ts=Math.min(VW,VH)/u.prowlTilesOnScreen;
@@ -1670,17 +1816,21 @@ function updateCamera(dt){
 // player in a sea of nothing whenever they stood near a map edge, which is
 // exactly where the game starts them.
 function clampCam(){
-  const m=CFG.ui.camMarginTiles;
+  const m=CFG.ui.camMarginTiles, B=siteBox();
+  const bw=B.x1-B.x0, bh=B.y1-B.y0;
   const halfW=VW/(2*cam.s), halfH=VH/(2*cam.s);
-  cam.x = (W+2*m<=2*halfW) ? W/2 : Math.max(halfW-m, Math.min(W-halfW+m, cam.x));
-  cam.y = (H+2*m<=2*halfH) ? H/2 : Math.max(halfH-m, Math.min(H-halfH+m, cam.y));
+  cam.x = (bw+2*m<=2*halfW) ? (B.x0+B.x1)/2
+        : Math.max(B.x0+halfW-m, Math.min(B.x1-halfW+m, cam.x));
+  cam.y = (bh+2*m<=2*halfH) ? (B.y0+B.y1)/2
+        : Math.max(B.y0+halfH-m, Math.min(B.y1-halfH+m, cam.y));
 }
 
 // The darkness outside the site has to read as place, not as absence. Grain
 // gives it a material, the hairline says it was cropped on purpose, and the
 // vignette makes the frame intentional at every aspect ratio.
 function drawSiteEdge(){
-  const [ax,ay]=w2s(0,0), [bx,by]=w2s(W,H);
+  const B=siteBox();
+  const [ax,ay]=w2s(B.x0,B.y0), [bx,by]=w2s(B.x1,B.y1);
   ctx.save();
   ctx.strokeStyle="rgba(118,132,162,.20)"; ctx.lineWidth=1;
   ctx.strokeRect(ax-0.5, ay-0.5, (bx-ax)+1, (by-ay)+1);
@@ -1696,14 +1846,11 @@ function drawFrame(){
   if(vignette){ ctx.fillStyle=vignette; ctx.fillRect(0,0,VW,VH); }
   // Alarm and Lockdown press in at the edges. Never the only signal: the pips,
   // the word and the cone colour all carry it too.
-  if(S.site.alert>=3){
+  if(S.site.alert>=3 && alarmGrad){
     const f=CFG.ferro;
     const amp=(S.site.lockdown?f.lockEdge:f.alarmEdge)*(0.62+0.38*Math.sin(T*2.3));
-    const g=ctx.createRadialGradient(VW/2,VH/2,Math.min(VW,VH)*0.30,
-                                     VW/2,VH/2,Math.hypot(VW,VH)*0.60);
-    g.addColorStop(0,"rgba(224,72,60,0)");
-    g.addColorStop(1,"rgba(224,72,60,"+amp.toFixed(3)+")");
-    ctx.fillStyle=g; ctx.fillRect(0,0,VW,VH);
+    ctx.globalAlpha=amp; ctx.fillStyle=alarmGrad; ctx.fillRect(0,0,VW,VH);
+    ctx.globalAlpha=1;
   }
   // Entering Flow is the creature spreading its awareness over the site.
   if(S.mode==="flow" && FX.modeT<1){
@@ -1805,11 +1952,7 @@ function draw(){
     // the loudest thing in the frame and left the creature the dimmest. The
     // world owns no colour; the creature owns all of it. So a live device is a
     // dark box with a lit edge and a glow, not a slab of gold.
-    if(dv.on){
-      const g=ctx.createRadialGradient(px+s/2,py+s/2,s*0.2,px+s/2,py+s/2,s*1.6);
-      g.addColorStop(0,"rgba(224,167,60,.30)"); g.addColorStop(1,"rgba(224,167,60,0)");
-      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(px+s/2,py+s/2,s*1.6,0,7); ctx.fill();
-    }
+    if(dv.on && glowGold) blitGlow(glowGold, px+s/2, py+s/2, s*1.6, 0.30);
     ctx.fillStyle= dv.on ? "#241B0C" : "#2B3040";
     ctx.fillRect(px+3,py+3,s-6,s-6);
     ctx.strokeStyle= dv.on?"rgba(232,180,87,.95)":"rgba(190,205,235,.20)";
@@ -1834,9 +1977,7 @@ function draw(){
   for(const L of S.lights){ const [px,py]=w2s(L.x,L.y);
     if(L.out){ ctx.strokeStyle="rgba(90,100,120,.5)"; ctx.lineWidth=1;
       ctx.strokeRect(px+s*0.3,py+s*0.3,s*0.4,s*0.4); continue; }
-    const g=ctx.createRadialGradient(px+s/2,py+s/2,1,px+s/2,py+s/2,s*2.4);
-    g.addColorStop(0,"rgba(224,200,150,.16)"); g.addColorStop(1,"rgba(224,200,150,0)");
-    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(px+s/2,py+s/2,s*2.4,0,7); ctx.fill();
+    if(glowWarm) blitGlow(glowWarm, px+s/2, py+s/2, s*2.4, 0.16);
     ctx.fillStyle="#E0C896"; ctx.fillRect(px+s*0.36,py+s*0.36,s*0.28,s*0.28); }
 
   // bodies
@@ -2196,7 +2337,7 @@ function drawHUD(){
     let x=left, y=btns[2].y-92;
     if(S.mode==="flow"){
       // the site's real right edge, not the fit rectangle it is centred inside
-      const mapRight=w2s(W,0)[0];
+      const mapRight=w2s(siteBox().x1,0)[0];
       const room=VW-SAFE.r-mapRight-u.pad*2;
       if(room>=u.cardMinW){ w=Math.min(w,room); x=VW-SAFE.r-u.pad-w; y=hudBandH()+u.pad; }
     }
@@ -2549,6 +2690,9 @@ const LOCKED_HINT = {
   "site-01":"Splice would route the corridor for nothing, and the speaker is out of the socket's budget",
   "site-02":"Splice frees the generator run, and Insulation makes the cheap exposed route survivable",
   "site-03":"the speaker in the gallery needs sixty and the socket has forty, so a bigger source would light it",
+  "site-04":"the floodlight needs forty five and the generator has forty spare while the trap runs, and Insulation would make the cheap lit route survivable",
+  "site-05":"the floodlight needs seventy, which nothing here can spare while the crane runs",
+  "site-06":"the speaker needs seventy five, and Capacity would let you fund both spines at once instead of one at a time",
 };
 function medalLine(st){
   if(!st || !st.done) return "not yet run";

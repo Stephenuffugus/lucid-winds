@@ -383,8 +383,7 @@ Build in the addendum's priority order:
     every machine that source can afford turns green. Tapping still tells you
     everything, which is the rule the addendum actually sets. That is a small
     deviation from "prints its requirement when unpowered" and it is deliberate.
-- [~] **C5 gate** (2026-09-01) — **systems complete, 3 of 6 levels authored.
-  Read the gap; it is the honest state, not a rounding.**
+- [x] **C5 gate** (2026-09-01) — **six levels, every one beatable two ways.**
   - **Level loader shipped.** Levels are data plus a tile builder, in a registry,
     and a run gets a **deep copy** so it can never edit the level it came from
     (gated, with a mutant). `newGame(id)`. The whole inherited map became
@@ -401,7 +400,32 @@ Build in the addendum's priority order:
     reason you fit, and taking it back is what lets you fight. Two affordances
     it cannot use: a speaker that needs sixty out of a socket that has forty, and
     the site wiring.
-  - **3/6 solvability checks, all green, all two ways.** `site-01` Intake Bay
+  - **6/6 solvability checks, all green, all two ways, both paths logged per
+    level.** The curriculum, each teaching one idea and re-testing the last two:
+    | # | Site | Teaches | Path one | Path two |
+    |---|---|---|---|---|
+    | 1 | Intake Bay | route, trigger, harvest, reclaim | wire the crane: +14.5 mass, 14 tiles | smother: +10.0, 0 tiles |
+    | 2 | Coolant Floor | devices are inputs to each other | sprinkler and plate | smother |
+    | 3 | Vent Stack | **your wire goes where your body cannot** | 20.6 through the vent, taken from outside | 76.6 committed to get thin, reclaim to 80.9 inside, by hand |
+    | 4 | Generator Hall | cover costs 1.6x and is worth it | cheap 60.2 with 49 findable tiles | covered 81.6 with 8, and it leaves you thin |
+    | 5 | Substation | lockdown, and the breaker that ends it | never seen, trap runs at Alarm | seen once at Alarm, lockdown, wire the breaker, restore, then the trap |
+    | 6 | Hive Spine | **rich is not the same as liquid** | near 30.0, kill, reclaim, far 68.0, tax paid twice | far one by hand, near one by wire |
+  - **Level six's numbers are the lesson:** near trap 30.0, far trap 68.0,
+    **98.0 together against 95 spendable**, and the generator could power both,
+    so it is your own mass that stops you and nothing else.
+  - **A third finding of the same shape, now guarded forever.** Writing level
+    five and six's solves surfaced the level-authoring mistake that had already
+    bitten twice: **a crane whose drop tile lies on its own wire zaps the patrol
+    instead of crushing it, and the burn cuts the crane off**, so the level
+    cannot be solved that way at all. Two of my own new levels had it. Section 21
+    of the suite now checks **every rule across every level**: drop tiles off
+    their own wires, something able to get under every crane, no machine or
+    source buried in a wall, no two machines sharing a tile, every patrol able to
+    walk its own route, every exit out of a wall, and the facility's wiring drawn
+    and inert everywhere.
+  - Level six also taught its own lesson back: **sixty eight exposed tiles across
+    a patrolled spine gets found, walked and burned off its own crane.** The far
+    trap wants cover or a hand; the wire goes on the short one. `site-01` Intake Bay
     is newly authored to the plan's shape: one source, one machine it can afford,
     one patrol, and the machine only fires on the tile the patrol has to cross.
     Logged both paths: **by wire, net +14.5 mass, 14 tiles, peak alert 1; by
@@ -440,12 +464,18 @@ Build in the addendum's priority order:
     business, the trait shop, and a resume card when a run is suspended. Every
     control at least 48px and inside the viewport at 320 and 375, checked.
   - **suite: 393 assertions, 78 mutants, 78 killed, 0 survivors.**
-  - **⚠️ THE GAP: four of the six curriculum levels are not authored.** Vent
-    stack, generator hall, substation and hive spine (BUILD-PLAN section 5) do
-    not exist. The loader, the two-path rule, the solvability check pattern, the
-    unusable-affordance rule and the splice re-read are all established on
-    `site-01`; authoring the rest is content work against a working frame, not
-    architecture. Splitting (M5) is untouched, as instructed.
+  - **Each level is now framed to its own bounds**, not the grid's: every site
+    except the second is smaller than 48x32, and fitting the grid put the level
+    in a third of the frame with dead space beside it.
+  - **A real performance regression, found by the gate and fixed.** Draw had gone
+    from 3.73ms to **16 to 27ms** at the 4x proxy. The cause was C4's device
+    glows: a fresh `createRadialGradient` every frame for every powered machine,
+    on top of one for every light. Both are now **baked into a sprite once and
+    blitted**, and the alarm edge gradient is cached on resize instead of rebuilt
+    per frame. **Draw 16.16ms to 2.55ms at 4x; 60.2fps and 1.02ms unthrottled.**
+    Worth knowing for later: soft radial gradients are the expensive thing on a
+    canvas, and headless software rasterisation makes that unmissable.
+  - **suite: 563 assertions.** Splitting (M5) is untouched, as instructed.
 - [ ] C6 gate: audio demo · reduced-motion pair · NO service worker confirmed
 
 ---

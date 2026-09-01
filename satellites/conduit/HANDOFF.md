@@ -5,9 +5,9 @@
 
 ## Where we are
 
-**C1 through C4 are complete. C5's systems are complete and 3 of its 6 levels
-are authored**, see the gap named below. M1, the ship gate, is still unanswered
-and is still Stephen's alone.
+**C1 through C5 are complete. All six curriculum levels are authored and every
+one is beatable two ways.** M1, the ship gate, is still unanswered and is still
+Stephen's alone. C6 (sound, haptics, accessibility) is next.
 
 `index.html` is a complete, playable prototype in one file, no build step,
 canvas 2D, touch first. It runs from `file://`, GitHub Pages, or anywhere.
@@ -15,8 +15,8 @@ canvas 2D, touch first. It runs from `file://`, GitHub Pages, or anywhere.
 ## How to check it, in order
 
 ```
-node test/smoke.js                 419 assertions, headless, no deps
-node test/mutants.js               78 mutants, all must be killed
+node test/smoke.js                 563 assertions, headless, no deps
+node test/mutants.js               79 mutants, all must be killed
 node test/persist.js               save across a real page reload, and two tabs
 node test/verbs.js [w] [h]         every prowl verb, by real touch
 node test/controls.js [w] [h]      51 assertions, real touches in real Chrome
@@ -336,34 +336,46 @@ while squeeze and force do not move.
 **Site select and residue spend:** medal state per site, a named line saying which
 tool would finish the business still on it, the trait shop, and a resume card.
 
-**Level three, Vent Stack**, teaches the idea the design turns on: your wire
-goes where your body cannot. The target is in a gallery reachable only through a
-vent; fat you will not fit, thin you cannot smother. Conduit fits at any size.
-By wire, 20.6 laid through the vent takes him while you are still outside. By
-hand, 76.6 committed makes you thin enough to squeeze in, and pulling it home
-afterwards is what lets you fight. Both logged.
+### The curriculum, all six, each beatable two ways
 
-### The gap in C5, stated plainly
-**Three of the six curriculum levels are not authored**: generator hall
-(concealed routing is worth 1.6x), substation (lockdown and the breaker), hive
-spine (liquidity, two traps you cannot fund at once). The loader, the two-path rule, the solvability
-pattern, the unusable-affordance rule and the splice re-read are all established
-on site-01. What remains is content work against a working frame.
+| # | Site | Teaches | Path one | Path two |
+|---|---|---|---|---|
+| 1 | Intake Bay | route, trigger, harvest, reclaim | wire the crane, +14.5 mass, 14 tiles | smother, +10.0, 0 tiles |
+| 2 | Coolant Floor | devices are inputs to each other | sprinkler and plate | smother |
+| 3 | Vent Stack | **your wire goes where your body cannot** | 20.6 through the vent, taken from outside | 76.6 committed to get thin, reclaim to 80.9 inside, by hand |
+| 4 | Generator Hall | cover costs 1.6x and is worth it | cheap 60.2 with 49 findable tiles | covered 81.6 with 8, and it leaves you thin |
+| 5 | Substation | lockdown, and the breaker that ends it | never seen, the trap runs at Alarm | seen once at Alarm, lockdown, wire the breaker, restore, then the trap |
+| 6 | Hive Spine | **rich is not the same as liquid** | near 30.0, kill, reclaim, far 68.0, tax twice | far one by hand, near one by wire |
+
+Level five arrives **already at Alarm**, so one sighting is a lockdown and the
+breaker becomes the level. Level six's near trap costs 30.0 and its far one
+68.0: **98.0 together against 95 spendable**, and the generator could power
+both, so it is your own mass that stops you and nothing else.
+
+### The authoring mistake that kept coming back, now guarded
+**A crane whose drop tile lies on its own wire zaps the patrol instead of
+crushing it, and the burn cuts the crane off**, so the level cannot be solved
+that way at all. Two of my own new levels had it. Section 21 of the suite now
+checks every rule across every level: drop tiles off their own wires, something
+able to get under every crane, nothing buried in a wall, no two machines sharing
+a tile, every patrol able to walk its own route, every exit out of a wall, and
+the facility's wiring drawn and inert everywhere.
+
+Level six taught its own lesson back while I was writing its solve: **sixty
+eight exposed tiles across a patrolled spine gets found, walked and burned off
+its own crane.** The far trap wants cover or a hand; the wire goes on the short
+one.
 
 ## Next action
 
-**Author the three remaining curriculum levels** (BUILD-PLAN section 5):
-generator hall teaches that concealed routing is worth 1.6x, substation teaches
-lockdown and the breaker, hive spine teaches liquidity. Copy the shape of
-`site-01` and `site-03`: one idea, re-test the last two, no
-tutorial text, at least two affordances the level's own tools cannot use, a
-scripted solve in the suite, and a second way through that is not the first.
-
-Then the rest of what C5 asked for: the level loader, the six level curriculum,
-save and load with read modify write, the residue spend screen and the first
-trait set, and Splice shipping for real. Note that C5's anti grind and save rules
-are the ones most likely to hide the kind of bug this session kept finding, so
-budget for gates rather than features.
+**C6, sound and identity**, which is the last phase in the plan: a procedural
+WebAudio bed that rises with the alert state, a conduit-live tone, harvest slurp,
+smother hold, and the lockdown's silence then breaker thump; haptics on
+discovery, damage, harvest and lockdown, respecting the toggle that already
+exists in settings; a `music/` slot that is silent when the files are absent;
+reduced motion (spikes damp, pulses become fades); and a colourblind check on the
+exposure tiers, which are already hatched rather than coloured. **No service
+worker unless Fable signs it off, and do not card the game in the portal.**
 
 Two things owed regardless. The four tickets in `docs/C3-FAULTS.md` are small and
 real, and the frame budget has room for them. And **nothing here has ever been on

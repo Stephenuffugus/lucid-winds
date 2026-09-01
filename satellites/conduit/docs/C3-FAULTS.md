@@ -140,3 +140,25 @@ the assertions use. A real phone check is still owed and is Stephen's to make.
 Adaptive detail behaves: it holds 96 while the draw budget is met and drops to
 48 only at 16x, where draw genuinely exceeds 6.5ms. Resolution goes, identity
 does not.
+
+## Update, after C4 and C5 (2026-09-01)
+
+The budget went red and the gate caught it. Draw had climbed from 3.73ms to
+**16 to 27ms** at the 4x proxy. The cause was C4's device glows: a fresh
+`createRadialGradient` every frame for every powered machine, on top of the one
+already being rebuilt for every light. Ten devices and nine lights on one map is
+nineteen soft gradients a frame.
+
+Both are now **baked into a sprite once at boot and blitted**, and the alarm edge
+gradient is cached on resize rather than rebuilt.
+
+```
+                      before          after
+no throttle           2.30ms draw     1.02ms draw, 60.2 fps
+4x CPU throttle      16.16ms draw     2.55ms draw
+```
+
+**The lesson worth keeping: soft radial gradients are the expensive thing on a
+canvas, and rebuilding one per object per frame does not scale past a handful.**
+Headless software rasterisation makes that visible far earlier than a phone's
+GPU would, which is the one way this harness flatters nothing.
