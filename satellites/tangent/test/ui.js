@@ -149,6 +149,83 @@ const ok = (n, c, extra) => c ? (pass++, console.log("  ok   " + n))
        `held=${g.held.toFixed(3)} resumed=${g.resumed.toFixed(3)}`);
     await page.close();
   }
+  // Audio has never been heard by anyone, and no test had ever constructed the
+  // graph. A context can be created and still be suspended, which is silence
+  // with every voice wired correctly, so the state is checked after a real
+  // touch and each voice is counted by instrumenting the API before load.
+  {
+    console.log("\n[audio]");
+    const page = await browser.newPage();
+    await page.evaluateOnNewDocument(() => {
+      window.__osc = 0; window.__buf = 0;
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if(!AC) return;
+      const co = AC.prototype.createOscillator, cb = AC.prototype.createBufferSource;
+      AC.prototype.createOscillator = function(){ window.__osc++; return co.apply(this, arguments); };
+      AC.prototype.createBufferSource = function(){ window.__buf++; return cb.apply(this, arguments); };
+      // keep the instance so the test can put it into the state a phone puts
+      // it into, which this browser will not do on its own
+      window.__ctxs = [];
+      const Wrapped = function(...a){ const c = new AC(...a); window.__ctxs.push(c); return c; };
+      Wrapped.prototype = AC.prototype;
+      window.AudioContext = Wrapped;
+    });
+    await page.setViewport({ width: 390, height: 780, isMobile: true, hasTouch: true });
+    await page.goto(URL);
+    await new Promise(r => setTimeout(r, 600));
+    ok("no audio context before the player touches anything",
+       (await page.evaluate(() => sfx.state)) === "none");
+
+    await page.tap("#spinbtn");                       // a real gesture
+    await new Promise(r => setTimeout(r, 500));
+    const st = await page.evaluate(() => sfx.state);
+    ok("a real touch leaves the audio context running, not suspended",
+       st === "running", "state=" + st);
+
+    // The failure this guards is a phone one: a context that exists but is
+    // suspended is silence with every voice wired correctly, and this browser
+    // will not suspend on its own, so put it in that state deliberately. With
+    // no resume anywhere, it stays suspended and the game is silent for good.
+    const susp = await page.evaluate(async () => {
+      if(!window.__ctxs || !window.__ctxs.length) return "no context captured";
+      await window.__ctxs[0].suspend();
+      return sfx.state;
+    });
+    ok("a suspended context is a state this test can actually reach",
+       susp === "suspended", "state=" + susp);
+    await page.tap("#cv");                             // any later gesture
+    await new Promise(r => setTimeout(r, 400));
+    const back = await page.evaluate(() => sfx.state);
+    ok("a later touch recovers a context the browser suspended",
+       back === "running", "state=" + back);
+    const built = await page.evaluate(() => ({ o: window.__osc, b: window.__buf }));
+    ok("the continuous voices are actually built", built.o >= 1 && built.b >= 1,
+       JSON.stringify(built));
+
+    // the two voices that existed and had never once been triggered
+    const before = await page.evaluate(() => window.__osc);
+    await page.evaluate(() => { backToBuild(); });
+    await new Promise(r => setTimeout(r, 200));
+    await page.tap(".tool:nth-child(2)");
+    await new Promise(r => setTimeout(r, 200));
+    ok("selecting a tool makes a sound (the click voice was dead)",
+       (await page.evaluate(() => window.__osc)) > before);
+
+    const beforeNear = await page.evaluate(() => window.__osc);
+    await page.evaluate(() => new Promise(res => {
+      loadLevel(0); startSpin(); holding = true;
+      let n = 0;
+      const w = () => { n++;
+        if(phase === "spin" && n > 90) doRelease("audio");
+        if(phase === "done" || n > 1200) return res();
+        requestAnimationFrame(w); };
+      requestAnimationFrame(w);
+    }));
+    ok("closing on the target makes a sound (the proximity voice was dead)",
+       (await page.evaluate(() => window.__osc)) > beforeNear + 2,
+       `osc ${beforeNear} -> ${await page.evaluate(() => window.__osc)}`);
+    await page.close();
+  }
   await browser.close();
   console.log(`\n${pass} passed, ${fail} failed  (touch floor ${MIN}px)`);
   process.exit(fail ? 1 : 0);

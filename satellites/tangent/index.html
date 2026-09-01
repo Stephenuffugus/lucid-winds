@@ -291,7 +291,7 @@ let deck={theta:0,omega:0,wobble:0}, ball=null;
 let trail=[], flightTrail=[], gatesHit=[];
 let throttle=0, holding=false, runT=0, flightT=0;
 let closestTo={}, crashedInto=null, assists=new Set(), launchInfo=null;
-let shakeT=0, drag=null, acc=0, last=0;
+let shakeT=0, drag=null, acc=0, last=0, nearT=0;
 let _pred=null;
 
 
@@ -320,7 +320,15 @@ const sfx = (()=>{
       rollGain=A.createGain(); rollGain.gain.value=0;
       rollSrc.connect(rollFilt); rollFilt.connect(rollGain); rollGain.connect(master); rollSrc.start();
       on=true;
+      nudge();
     }catch(e){ on=false; }
+  }
+  /* A context can be created and still be suspended, and nothing here ever
+     asked it to start, so on a phone the game could be permanently silent
+     with every voice wired correctly. Resuming is idempotent and cheap, so
+     any user gesture asks again. */
+  function nudge(){
+    try{ if(A && A.state !== "running" && A.resume) A.resume().catch(()=>{}); }catch(e){}
   }
   function ping(freq,dur,type,vol,slideTo){
     if(!on) return;
@@ -342,8 +350,9 @@ const sfx = (()=>{
     s.connect(f); f.connect(g); g.connect(master); s.start(); s.stop(A.currentTime+0.16);
   }
   return {
-    boot,
+    boot, nudge,
     get live(){ return on; },
+    get state(){ return A ? A.state : "none"; },
     // silence without tearing the graph down, for when the tab goes away
     hush(v){ if(on) try{ master.gain.value = v?0:0.5; }catch(e){} },
     // continuous voices, called every frame
@@ -849,7 +858,7 @@ function startSpin(){
   ball={x:r0,y:0,vx:0,vy:OM_IDLE*r0};
   trail.length=0; flightTrail.length=0;
   gatesHit=lv.gates.map(()=>false);
-  closestTo={}; crashedInto=null; assists=new Set(); launchInfo=null; _predDirty=true;
+  closestTo={}; crashedInto=null; assists=new Set(); launchInfo=null; _predDirty=true; nearT=0;
   everHeld=false; coachAt=null; coachT=0;
   resetSystem();
   showUI("spin");
@@ -888,7 +897,7 @@ function openLevels(){
   }).join("");
   [...document.querySelectorAll(".lvrow")].forEach(b=>{
     if(b.disabled) return;
-    b.onclick=()=>{ modal(null); loadLevel(+b.dataset.i); };
+    b.onclick=()=>{ sfx.click(true); modal(null); loadLevel(+b.dataset.i); };
   });
   modal("levels");
 }
@@ -952,6 +961,16 @@ function step(){
     if(out==="crash"){ crashedInto=nearestBodyName(); sfx.crash(); settle("crash"); }
     else if(out==="land"){ sfx.land(); settle("land"); }
     else if(out==="lost" || flightT>22) settle("lost");
+    else {
+      // a rising tick as the ball closes on its target, which is the one piece
+      // of information the player cannot read off a wide framing
+      const tb=targetBody();
+      if(tb){
+        const d=len(tb.x-ball.x,tb.y-ball.y);
+        nearT-=DT;
+        if(d<260 && nearT<=0){ sfx.near(d); nearT=0.05+Math.min(0.5,d/700); }
+      }
+    }
   }
 }
 function nearestHole(){
@@ -1739,7 +1758,7 @@ function buildPalette(){
   $("palette").innerHTML=TOOLS.map(t=>t==="erase"
     ? `<button class="tool" data-t="erase"><b>Erase</b><span>tap part</span></button>`
     : `<button class="tool" data-t="${t}"><b>${PARTS[t].label}</b><span>${PARTS[t].blurb}</span></button>`).join("");
-  [...document.querySelectorAll(".tool")].forEach(b=>{ b.onclick=()=>{tool=b.dataset.t;syncTools();}; });
+  [...document.querySelectorAll(".tool")].forEach(b=>{ b.onclick=()=>{tool=b.dataset.t;syncTools();sfx.click(true);}; });
   syncTools();
 }
 function syncTools(){ [...document.querySelectorAll(".tool")].forEach(b=>b.classList.toggle("on",b.dataset.t===tool)); }
@@ -1753,8 +1772,12 @@ function init(){
   }
   document.addEventListener("visibilitychange",()=>{
     paused=!!document.hidden;
-    if(paused) sfx.hush(true); else { last=0; sfx.hush(false); }
+    if(paused) sfx.hush(true); else { last=0; sfx.hush(false); sfx.nudge(); }
   });
+  // the first touch anywhere is the gesture the audio needs, not the Spin up
+  // button specifically, and a later touch is a free chance to recover a
+  // context the browser suspended behind our back
+  document.addEventListener("pointerdown",()=>{ sfx.boot(); sfx.nudge(); },{passive:true});
   buildPalette();
   cv.addEventListener("pointerdown",e=>{cv.setPointerCapture(e.pointerId);onDown(e);});
   cv.addEventListener("pointermove",onMove);
@@ -1770,7 +1793,7 @@ function init(){
     }));
   $("release").addEventListener("pointerdown",e=>{e.preventDefault();doRelease("player");});
   $("spinbtn").onclick=()=>{ sfx.boot(); startSpin(); };
-  $("clearbtn").onclick=()=>{parts=[];refreshHUD();};
+  $("clearbtn").onclick=()=>{parts=[];refreshHUD();sfx.click(false);};
   $("retrybtn").onclick=backToBuild;
   $("abortbtn").onclick=backToBuild;
   $("lvpick").onclick=openLevels;
