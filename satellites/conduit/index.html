@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>CONDUIT — Phase 0</title>
+<style>
+  :root{
+    --void:#05060A; --iron:#12141C; --steel:#232733; --lit:#2E3444;
+    --violet:#8A5CF6; --gold:#E0A73C; --alarm:#E0483C; --ink:#C9D2E4;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;background:var(--void);overflow:hidden;
+    font:400 15px/1.35 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--ink)}
+  #c{display:block;touch-action:none}
+  #overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    background:rgba(5,6,10,.9);padding:24px;text-align:left}
+  #overlay.hide{display:none}
+  #panel{max-width:34rem}
+  h1{font:600 26px/1.1 ui-sans-serif,system-ui;letter-spacing:.02em;margin-bottom:.4rem}
+  h1 span{color:var(--violet)}
+  p{margin:.55rem 0;max-width:60ch;color:#96A0B6}
+  b{color:var(--ink);font-weight:600}
+  button{margin-top:1.1rem;padding:.8rem 1.4rem;border:1px solid var(--steel);border-radius:2px;
+    background:var(--iron);color:var(--ink);font:600 15px ui-sans-serif,system-ui;cursor:pointer}
+  button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  ul{margin:.5rem 0 0 1.1rem;color:#96A0B6}
+  li{margin:.2rem 0}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="overlay"><div id="panel">
+  <h1>CONDUIT <span>— phase 0</span></h1>
+  <p>You are a fluid. Your mass is your health, your ammo, your reach and your body size, all at once. Spending it makes you weak. Keeping it makes you conspicuous.</p>
+  <ul>
+    <li>Drag the left of the screen to flow.</li>
+    <li><b>FLOW</b> lifts the camera so you can route power — only while still and unseen.</li>
+    <li>In flow, drag from a power source to a device. Every tile costs mass. Pulling it back returns 75%.</li>
+    <li>Wet the floor, then electrify it. Harvest what drops. Reclaim your wire. Reach the exit.</li>
+  </ul>
+  <button id="go">Enter the site</button>
+</div></div>
+<script>
+"use strict";
+// ─────────────────────────────────────────────────────────────────────────────
+// CONDUIT — Phase 0 prototype. Single file, no build step, canvas 2D.
+// Every tunable number lives in CFG. A magic number anywhere else is a bug.
+// ─────────────────────────────────────────────────────────────────────────────
+const CFG = {
+  // mass economy
+  capacity:100, costPerTile:1, concealedMult:1.6, reclaimRate:0.75,
+  reclaimSpeed:6, minBlobMass:5, socketTrickle:0.5, squeezeAt:30, forceAt:70,
+  harvest:{ drone:12, sentry:18, brute:30 }, bodyDecaySec:30, drainSpentSource:5,
+  harvestRate:22,                      // mass/sec while touching a body
+
+  // movement
+  speedBase:5.0, speedCurve:m => 1.25 - 0.005*m,
+  radius:m => 0.16 + 0.26*Math.sqrt(m/100),
+  forceHoldSec:0.6,
+
+  // combat
+  enemyDamage:{ drone:8, sentry:12, brute:20 },
+  enemyHp:{ drone:12, sentry:18, brute:30 },
+  liveConduitZap:15, zapBurnTiles:3, zapCooldown:1.0,
+  plateDamage:20, touchRange:1.15,
+
+  // detection
+  spotSecondsBlob:{ 0:0.8, 1:2.5 }, spotSecondsConduit:{ 0:1.5, 1:4.0 },
+  sizeSpotFactor:m => 0.4 + 0.6*(m/100),
+  spotDecay:0.5, hearingNoisy:1.5,
+  alertDecaySec:[0, 8, 15, 30, Infinity],
+  coneWidenAtSearch:20, searchSpeedBoost:1.25,
+
+  // prowl verbs — the direct-interaction layer
+  envelop:{ minMass:40, cost:8, timeSec:2.0, range:1.1, immuneKinds:["brute"] },
+  tap:{ cost:2, radius:7, cooldownSec:3 },     // a noise at your own position
+  douse:{ cost:3 },                            // drink a light: exposed → shadowed
+  splice:{ alertOnPowerUp:1 },                 // riding the site's own wiring trips its panel
+  speakerRadius:12,                            // how far a live speaker pulls
+  bodyFoundRange:1.6,                          // a guard finding a corpse escalates
+
+  // modes
+  flowTimeScale:0.10, flowRequires:"stationaryAndUnseen",
+  pulseCost:4, pulseRange:8, pulseCooldownSec:6, pulseShowSec:3,
+
+  // flags — the resolved open questions, each testable
+  guardFollowsToPlayer:false, flowPaused:false, allowSelfCross:false,
+  blockCrossOther:false, instantReclaim:false, zapEnabled:true,
+  ferroRender:false, debugLedger:true,
+
+  grid:{ w:48, h:32 }, seed:1337,
+};
+
+// ── tiles ────────────────────────────────────────────────────────────────────
+const WALL=0, FLOOR=1, SHADOW=2, VENT=3, DOOR=4;
+const W=CFG.grid.w, H=CFG.grid.h;
+const idx=(x,y)=>y*W+x, inB=(x,y)=>x>=0&&y>=0&&x<W&&y<H;
+
+let TT, CONC, WET, T=0;
+let S = null;                                  // the whole mutable game state
+
+function mulberry(a){ return function(){ a|=0; a=a+0x6D2B79F5|0;
+  let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t;
+  return ((t^t>>>14)>>>0)/4294967296; }; }
+
+// ── level ────────────────────────────────────────────────────────────────────
+function fill(x0,y0,x1,y1,t){ for(let y=y0;y<=y1;y++) for(let x=x0;x<=x1;x++)
+  if(inB(x,y)) TT[idx(x,y)]=t; }
+function conc(x0,y0,x1,y1){ for(let y=y0;y<=y1;y++) for(let x=x0;x<=x1;x++)
+  if(inB(x,y)) CONC[idx(x,y)]=1; }
+
+function buildLevel(){
+  TT=new Uint8Array(W*H); CONC=new Uint8Array(W*H); WET=new Float32Array(W*H);
+  fill(5,3,21,13,FLOOR);        // room D — trap room, north west
+  fill(26,3,44,13,FLOOR);       // room E — north east
+  fill(3,15,45,17,FLOOR);       // main corridor
+  fill(3,19,12,29,FLOOR);       // room A — entry
+  fill(15,19,30,29,FLOOR);      // room B — generator hall
+  fill(33,19,45,29,FLOOR);      // room C — east
+  fill(6,18,7,18,FLOOR); fill(22,18,23,18,FLOOR); fill(39,18,40,18,FLOOR);
+  fill(8,14,9,14,FLOOR);        // corridor → room D
+  TT[idx(18,14)]=VENT;          // corridor → room D, squeeze only (and a conduit channel)
+  TT[idx(35,14)]=DOOR;          // corridor → room E, force only
+  // exfil chamber, carved out of room C
+  for(let y=25;y<=29;y++) TT[idx(40,y)]=WALL;
+  for(let x=41;x<=45;x++) TT[idx(x,24)]=WALL;
+  TT[idx(40,27)]=DOOR;          // force in…
+  TT[idx(43,24)]=VENT;          // …or squeeze in
+  // concealed routing spines (1.6× cost, never spotted)
+  conc(4,16,45,16); conc(9,4,9,15); conc(18,15,18,16);
+  CONC[idx(18,14)]=1; conc(22,19,22,24);
+  // unlit tiles: any floor touching a wall. Cover comes from geometry, free.
+  const base=TT.slice();
+  for(let y=0;y<H;y++) for(let x=0;x<W;x++){ const i=idx(x,y);
+    if(base[i]!==FLOOR) continue;
+    if(base[idx(x-1,y)]===WALL||base[idx(x+1,y)]===WALL||
+       base[idx(x,y-1)]===WALL||base[idx(x,y+1)]===WALL) TT[i]=SHADOW; }
+}
+
+function newGame(){
+  buildLevel();
+  S={
+    t:0, rng:mulberry(CFG.seed), mode:"prowl", flowT:0,
+    player:{ blobs:[{id:"core",x:5.5,y:27.5,mass:CFG.capacity,active:true}],
+             capacity:CFG.capacity, traits:{insulation:0,pulseRange:CFG.pulseRange,maxSplits:1,splice:false},
+             residue:0, vx:0, vy:0, forceT:0, pulseCd:0, pulseT:0, stillT:0 },
+    ledger:{ owned:CFG.capacity, debits:{reclaimTax:0,damage:0,zapBurn:0,destroyed:0},
+             credits:{harvest:0,drain:0,trickle:0}, toResidue:0, leak:0 },
+    sources:[
+      {id:"sock-1", x:9,  y:16, kind:"socket",    capacity:30,  noisy:false},
+      {id:"gen-1",  x:22, y:21, kind:"generator", capacity:100, noisy:true},
+    ],
+    devices:[
+      {id:"spr-1", x:16, y:5,  kind:"sprinkler", needs:20, on:false, area:[10,4,20,11]},
+      {id:"plt-1", x:12, y:8,  kind:"plate",     needs:40, on:false},
+      {id:"spk-1", x:14, y:11, kind:"speaker",   needs:10, on:false},
+      {id:"brk-1", x:44, y:21, kind:"breaker",   needs:30, on:false},
+    ],
+    enemies:[
+      { id:"sentry-1", kind:"sentry", x:7.5, y:11.5, hp:CFG.enemyHp.sentry, face:0,
+        route:[[7,11],[12,8],[18,5],[19,11]], leg:0, state:"patrol", spot:0,
+        target:null, path:null, pi:0, repathT:0, waitT:0, zapCd:0 },
+      { id:"drone-1", kind:"drone", x:5.5, y:16.5, hp:CFG.enemyHp.drone, face:0,
+        route:[[5,16],[44,16]], leg:0, state:"patrol", spot:0,
+        target:null, path:null, pi:0, repathT:0, waitT:0, zapCd:0 },
+    ],
+    lights:[ {x:12,y:5},{x:18,y:9},{x:24,y:16},{x:12,y:16},{x:36,y:16},
+             {x:20,y:22},{x:27,y:26},{x:37,y:22},{x:43,y:27} ].map(l=>({...l,out:false})),
+    // The facility's own wiring. Drawn from the first level, inert until the
+    // SPLICE trait is unlocked — then every old level re-reads at once.
+    siteWires:[
+      [[22,24],[22,23],[22,22],[22,21]],
+      [[4,16],[5,16],[6,16],[7,16],[8,16],[9,16]],
+      [[18,16],[18,15],[18,14],[18,13],[18,12]],
+      [[36,16],[37,16],[38,16],[39,16],[39,17],[39,18],[39,19],[39,20],[40,20],[41,20],[42,20],[43,20],[44,20],[44,21]],
+    ],
+    act:{ verb:null, target:null, t:0 }, inspect:null,
+    bodies:[], conduits:[], draft:null, selected:null,
+    targets:["sentry-1"], exfil:{x:44,y:28},
+    site:{ alert:0, peak:0, sinceEscalate:0, lockdown:false },
+    stats:{ tilesLaid:0, startMass:CFG.capacity, time:0 },
+    result:null, toast:"", toastT:0, nextId:1,
+  };
+  applyLights();
+  return S;
+}
+// A light burns a pool of exposed floor into an otherwise shadowed room.
+// Drinking it hands that ground back to you. This is the fluid's version of
+// shooting out a bulb.
+function applyLights(){
+  for(const L of S.lights){ if(L.out) continue;
+    for(let y=L.y-2;y<=L.y+2;y++) for(let x=L.x-2;x<=L.x+2;x++){
+      if(!inB(x,y)||Math.hypot(x-L.x,y-L.y)>2.4) continue;
+      if(TT[idx(x,y)]===SHADOW) TT[idx(x,y)]=FLOOR; } }
+}
+function douseLight(L){
+  const b=blob();
+  if(b.mass-CFG.douse.cost<CFG.minBlobMass){ toast("Not enough of you to drink that."); return; }
+  b.mass-=CFG.douse.cost; S.ledger.owned-=CFG.douse.cost;
+  S.ledger.debits.damage+=CFG.douse.cost; L.out=true;
+  for(let y=L.y-2;y<=L.y+2;y++) for(let x=L.x-2;x<=L.x+2;x++){
+    if(!inB(x,y)||Math.hypot(x-L.x,y-L.y)>2.4) continue;
+    if(TT[idx(x,y)]===FLOOR) TT[idx(x,y)]=SHADOW; }
+  toast("Dark now."); bump(1,"light out");
+}
+
+// ── mass ledger — every gram accounted for ───────────────────────────────────
+const blob   = () => S.player.blobs[0];
+const totalMass = () => S.player.blobs.reduce((a,b)=>a+b.mass,0)
+                      + S.conduits.reduce((a,c)=>a+c.cost,0);
+
+function ledgerSpendToConduit(cost, cd){ blob().mass -= cost; cd.cost += cost; }
+function ledgerReclaim(cost, cd){
+  const back = cost*CFG.reclaimRate, tax = cost-back;
+  cd.cost -= cost; blob().mass += back;
+  S.ledger.owned -= tax; S.ledger.debits.reclaimTax += tax;
+}
+function ledgerDestroy(cost, cd){
+  cd.cost -= cost; S.ledger.owned -= cost; S.ledger.debits.destroyed += cost;
+}
+function ledgerDamage(d){
+  const b = blob(); const applied = Math.min(b.mass, d);
+  b.mass -= applied; S.ledger.owned -= applied; S.ledger.debits.damage += applied;
+  if(b.mass<=0.001) lose("Dissipated.");
+}
+function ledgerGain(g, kind){
+  blob().mass += g; S.ledger.owned += g; S.ledger.credits[kind] += g;
+  const over = S.ledger.owned - S.player.capacity;      // overflow → residue, never lost
+  if(over>0){ blob().mass -= over; S.ledger.owned -= over;
+    S.player.residue += over; S.ledger.toResidue += over; }
+}
+function checkLedger(){ const d = Math.abs(totalMass() - S.ledger.owned);
+  if(d>1e-6) S.ledger.leak = d; return d<=1e-6; }
+
+// ── geometry helpers ─────────────────────────────────────────────────────────
+const tileAt=(x,y)=> inB(x|0,y|0)?TT[idx(x|0,y|0)]:WALL;
+function passableBlob(x,y,mass){ if(!inB(x,y)) return false; const t=TT[idx(x,y)];
+  if(t===WALL||t===DOOR) return false;
+  if(t===VENT) return mass < CFG.squeezeAt;
+  return true; }
+function passableEnemy(x,y){ if(!inB(x,y)) return false;
+  const t=TT[idx(x,y)]; return t===FLOOR||t===SHADOW; }
+function conduitable(x,y){ if(!inB(x,y)) return false;
+  const t=TT[idx(x,y)]; return t!==WALL && t!==DOOR; }
+function expConduit(i){ if(CONC[i]) return 2; const t=TT[i];
+  return t===VENT?2 : t===SHADOW?1 : 0; }
+function expBlob(i){ return TT[i]===SHADOW?1:0; }
+function onSiteWire(x,y){ return S && S.siteWires
+  ? S.siteWires.some(w=>w.some(p=>p[0]===x&&p[1]===y)) : false; }
+function tileCost(x,y){ const i=idx(x,y);
+  // Spliced into the site's own run: no mass of yours is committed here.
+  if(S.player.traits.splice && onSiteWire(x,y)) return 0;
+  return CFG.costPerTile * (expConduit(i)===2 && CONC[i] ? CFG.concealedMult
+        : TT[i]===VENT ? CFG.concealedMult : 1); }
+
+function los(x0,y0,x1,y1){                       // integer Bresenham, walls block
+  let x=x0|0,y=y0|0; const tx=x1|0,ty=y1|0;
+  const dx=Math.abs(tx-x), dy=Math.abs(ty-y), sx=x<tx?1:-1, sy=y<ty?1:-1;
+  let err=dx-dy, guard=0;
+  while((x!==tx||y!==ty) && guard++<300){
+    const e2=2*err;
+    if(e2>-dy){ err-=dy; x+=sx; } if(e2<dx){ err+=dx; y+=sy; }
+    if(x===tx&&y===ty) break;
+    if(!inB(x,y)||TT[idx(x,y)]===WALL||TT[idx(x,y)]===DOOR) return false;
+  }
+  return true;
+}
+const angDiff=(a,b)=>{ let d=(a-b)%(Math.PI*2);
+  if(d>Math.PI) d-=Math.PI*2; if(d<-Math.PI) d+=Math.PI*2; return d; };
+
+function bfs(sx,sy,tx,ty){                        // enemy pathing, flat arrays
+  sx|=0; sy|=0; tx|=0; ty|=0;
+  if(!passableEnemy(sx,sy)||!passableEnemy(tx,ty)) return null;
+  const prev=new Int32Array(W*H).fill(-1), seen=new Uint8Array(W*H);
+  const q=new Int32Array(W*H); let qh=0, qt=0;
+  q[qt++]=idx(sx,sy); seen[idx(sx,sy)]=1;
+  const goal=idx(tx,ty);
+  while(qh<qt){ const cur=q[qh++]; if(cur===goal) break;
+    const cx=cur%W, cy=(cur/W)|0;
+    for(let k=0;k<4;k++){
+      const nx=cx+[1,-1,0,0][k], ny=cy+[0,0,1,-1][k];
+      if(!passableEnemy(nx,ny)) continue;
+      const ni=idx(nx,ny); if(seen[ni]) continue;
+      seen[ni]=1; prev[ni]=cur; q[qt++]=ni; } }
+  if(!seen[goal]) return null;
+  const out=[]; let c=goal;
+  while(c!==-1 && c!==idx(sx,sy)){ out.push([c%W, ((c/W)|0)]); c=prev[c]; }
+  return out.reverse();
+}
+
+// ── conduit ──────────────────────────────────────────────────────────────────
+function conduitTileOccupied(cd, x, y){ return cd.path.some(p=>p[0]===x&&p[1]===y); }
+function anyConduitAt(x,y){ return S.conduits.find(c=>conduitTileOccupied(c,x,y)); }
+function deviceAt(x,y){ return S.devices.find(d=>d.x===x&&d.y===y); }
+function sourceAt(x,y){ return S.sources.find(s=>s.x===x&&s.y===y); }
+
+function beginDraft(x,y){
+  const src=sourceAt(x,y);
+  if(src){ S.draft={ sourceId:src.id, path:[[x,y]], costs:[0], cost:0, extend:null }; return true; }
+  const cd=S.conduits.find(c=>{ const e=c.path[c.path.length-1]; return e[0]===x&&e[1]===y; });
+  if(cd && !cd.reclaiming){ S.draft={ sourceId:cd.sourceId, path:[[x,y]], costs:[0], cost:0, extend:cd }; return true; }
+  return false;
+}
+function draftStep(x,y){
+  const d=S.draft; if(!d) return; const last=d.path[d.path.length-1];
+  if(last[0]===x&&last[1]===y) return;
+  if(Math.abs(last[0]-x)+Math.abs(last[1]-y)!==1) return;     // orthogonal, one tile
+  if(!conduitable(x,y)) return;
+  if(!CFG.allowSelfCross && d.path.some(p=>p[0]===x&&p[1]===y)) return;
+  if(d.extend && conduitTileOccupied(d.extend,x,y)) return;
+  if(CFG.blockCrossOther && anyConduitAt(x,y)) return;
+  const c=tileCost(x,y);
+  if(blob().mass - (d.cost + c) < CFG.minBlobMass){ toast("Not enough of you left."); return; }
+  d.path.push([x,y]); d.costs.push(c); d.cost+=c;
+}
+function commitDraft(){
+  const d=S.draft; S.draft=null; if(!d||d.path.length<2) return;
+  let cd=d.extend;
+  if(!cd){ cd={ id:"cd-"+(S.nextId++), sourceId:d.sourceId, path:[d.path[0]], costs:[0],
+                cost:0, live:false, discovered:false, reclaiming:false }; S.conduits.push(cd); }
+  for(let i=1;i<d.path.length;i++){
+    ledgerSpendToConduit(d.costs[i], cd);
+    cd.path.push(d.path[i]); cd.costs.push(d.costs[i]); S.stats.tilesLaid++; }
+  resolvePower();
+}
+function resolvePower(){
+  // A source's capacity is a budget shared by everything it feeds, oldest wire
+  // first. Two devices on one weak socket is a real decision, not free.
+  S.devices.forEach(dv=>dv.on=false);
+  const used={}; S.sources.forEach(s=>used[s.id]=0);
+  for(const cd of S.conduits){
+    cd.live=false; if(S.site.lockdown||cd.path.length<2) continue;
+    const src=S.sources.find(s=>s.id===cd.sourceId); if(!src) continue;
+    const e=cd.path[cd.path.length-1], dv=deviceAt(e[0],e[1]); if(!dv) continue;
+    if(used[src.id]+dv.needs<=src.capacity){
+      used[src.id]+=dv.needs; cd.live=true; dv.on=true;
+      const spliced = S.player.traits.splice && cd.path.some(p=>onSiteWire(p[0],p[1]));
+      if(spliced && !cd.trippedPanel){ cd.trippedPanel=true;
+        bump(CFG.splice.alertOnPowerUp,"panel reading"); } }
+    else cd.trippedPanel=false;
+  }
+  S.powerUsed=used;
+}
+function startReclaim(cd){ if(!cd) return;
+  if(CFG.instantReclaim){ while(cd.path.length>1) popReclaimTile(cd); finishConduit(cd); }
+  else cd.reclaiming=true; }
+function popReclaimTile(cd){
+  const c=cd.costs.pop(); cd.path.pop(); ledgerReclaim(c,cd);
+  if(S.ledger.owned > S.player.capacity){                       // reclaim can overflow too
+    const over=S.ledger.owned-S.player.capacity;
+    blob().mass-=over; S.ledger.owned-=over;
+    S.player.residue+=over; S.ledger.toResidue+=over; }
+}
+function finishConduit(cd){ const i=S.conduits.indexOf(cd);
+  if(i>=0 && cd.path.length<=1) S.conduits.splice(i,1); resolvePower(); }
+function burnConduitFrom(cd, k){                        // zap destroys tiles, no refund
+  const n=Math.min(CFG.zapBurnTiles, cd.path.length-k);
+  for(let i=0;i<n;i++){ const c=cd.costs.pop(); cd.path.pop(); ledgerDestroy(c,cd); }
+  S.ledger.debits.zapBurn+=0; finishConduit(cd);
+}
+
+// ── alert ────────────────────────────────────────────────────────────────────
+function bump(level, why){
+  if(level>S.site.alert){ S.site.alert=level; S.site.peak=Math.max(S.site.peak,level);
+    S.site.sinceEscalate=0; toast(["","Suspicion","Search","Alarm","LOCKDOWN — power cut"][level]+(why?" · "+why:""));
+    if(level>=4){ S.site.lockdown=true; resolvePower(); } }
+  else S.site.sinceEscalate=0;
+}
+function toast(m){ S.toast=m; S.toastT=2.6; }
+
+// ── enemies ──────────────────────────────────────────────────────────────────
+function enemySpeed(e){ const base={drone:3.5,sentry:2.5,brute:1.8}[e.kind];
+  return base * (S.site.alert>=2?CFG.searchSpeedBoost:1); }
+function enemyCone(e){ const base={drone:60,sentry:70,brute:80}[e.kind];
+  return (base + (S.site.alert>=2?CFG.coneWidenAtSearch:0)) * Math.PI/180; }
+function enemyRange(e){ return {drone:7,sentry:9,brute:8}[e.kind]; }
+function enemyHearing(e){ const h={drone:4,sentry:6,brute:8}[e.kind];
+  const noisy=S.sources.some(s=>s.noisy && S.conduits.some(c=>c.live&&c.sourceId===s.id));
+  return h * (noisy?CFG.hearingNoisy:1); }
+
+function setGoal(e, x, y, state){ e.state=state; e.target=[x|0,y|0];
+  e.path=bfs(e.x,e.y,x,y); e.pi=0; e.repathT=0.6; }
+
+function updateEnemy(e, dt){
+  if(e.state==="dead"||e.state==="grabbed") return;   // held: no senses, no legs
+  e.zapCd=Math.max(0,e.zapCd-dt);
+  const b=blob();
+
+  // hazards first: a wet electrified plate kills outright
+  const ti=idx(e.x|0,e.y|0);
+  const plate=S.devices.find(d=>d.kind==="plate"&&d.on);
+  if(plate && (e.x|0)===plate.x && (e.y|0)===plate.y && WET[ti]>0){ killEnemy(e,"plate"); return; }
+  if(CFG.zapEnabled && e.zapCd<=0){
+    for(const cd of S.conduits){ if(!cd.live) continue;
+      const k=cd.path.findIndex(p=>p[0]===(e.x|0)&&p[1]===(e.y|0));
+      if(k>0){ e.hp-=CFG.liveConduitZap; e.zapCd=CFG.zapCooldown; burnConduitFrom(cd,k);
+        bump(1,"shock"); if(e.hp<=0){ killEnemy(e,"zap"); return; } break; } } }
+
+  // sight
+  const d=Math.hypot(b.x-e.x, b.y-e.y), R=enemyRange(e);
+  let sees=false;
+  if(d<=R && Math.abs(angDiff(Math.atan2(b.y-e.y,b.x-e.x), e.face))<=enemyCone(e)/2
+     && los(e.x,e.y,b.x,b.y)){
+    sees=true;
+    const tier=expBlob(idx(b.x|0,b.y|0));
+    const secs=CFG.spotSecondsBlob[tier]*(1/CFG.sizeSpotFactor(b.mass));
+    e.spot += dt/secs * (1-0.5*(d/R));
+  } else e.spot=Math.max(0, e.spot-CFG.spotDecay*dt);
+
+  if(e.spot>=1){ e.spot=1; bump(Math.max(2,S.site.alert), "spotted");
+    setGoal(e, b.x, b.y, "hunt"); }
+
+  // hearing: a live speaker is the loudest thing on the site
+  const spk=S.devices.find(dv=>dv.kind==="speaker"&&dv.on);
+  if(spk && e.state!=="hunt" && Math.hypot(spk.x-e.x,spk.y-e.y)<CFG.speakerRadius
+     && !(e.target && e.target[0]===spk.x && e.target[1]===spk.y))
+    setGoal(e, spk.x, spk.y, "investigate");
+
+  // a body on the floor is evidence. Leaving one out is a mistake with a price.
+  for(const bd of S.bodies){
+    if(bd.found) continue;
+    if(Math.hypot(bd.x-e.x, bd.y-e.y)<CFG.bodyFoundRange && los(e.x,e.y,bd.x,bd.y)){
+      bd.found=true; bump(3,"body found"); setGoal(e, bd.x, bd.y, "investigate"); } }
+
+  // discovered conduit: walk the wire
+  if(e.state==="patrol"||e.state==="investigate"){
+    for(const cd of S.conduits){
+      if(cd.discovered && !cd.walked){
+        const end = CFG.guardFollowsToPlayer ? cd.path[0] : cd.path[cd.path.length-1];
+        cd.walked=true; setGoal(e, end[0], end[1], "wire"); break; } } }
+
+  // act
+  if(e.state==="hunt"){
+    if(sees) setGoal(e, b.x, b.y, "hunt");
+    if(d<CFG.touchRange && los(e.x,e.y,b.x,b.y)) ledgerDamage(CFG.enemyDamage[e.kind]*dt);
+  }
+  if(e.state==="patrol" && (!e.path || e.pi>=e.path.length)){
+    const wp=e.route[e.leg%e.route.length]; e.leg++;
+    setGoal(e, wp[0], wp[1], "patrol"); }
+  if((e.state==="investigate"||e.state==="wire"||e.state==="hunt")
+     && (!e.path || e.pi>=e.path.length)){
+    e.waitT+=dt; if(e.waitT>2.2){ e.waitT=0; e.state="patrol"; e.path=null;
+      if(S.site.alert===1) S.site.sinceEscalate=CFG.alertDecaySec[1]; } }
+
+  // move
+  e.repathT-=dt;
+  if(e.path && e.pi<e.path.length){
+    const [tx,ty]=e.path[e.pi], cx=tx+0.5, cy=ty+0.5;
+    const dx=cx-e.x, dy=cy-e.y, dist=Math.hypot(dx,dy);
+    if(dist<0.12){ e.pi++; }
+    else { const sp=enemySpeed(e)*dt;
+      e.x+=dx/dist*Math.min(sp,dist); e.y+=dy/dist*Math.min(sp,dist);
+      e.face += angDiff(Math.atan2(dy,dx), e.face)*Math.min(1, 8*dt); } }
+}
+function killEnemy(e, how){
+  e.state="dead";
+  S.bodies.push({ x:e.x, y:e.y, mass:CFG.harvest[e.kind], decay:CFG.bodyDecaySec });
+  toast(how==="plate"?"Grounded through the floor.":"Down.");
+  bump(1,"noise");
+}
+
+// ── detection of conduit ─────────────────────────────────────────────────────
+let cscanT=0;
+function scanConduits(dt){
+  cscanT-=dt; if(cscanT>0) return; cscanT=0.2;
+  for(const e of S.enemies){ if(e.state==="dead") continue;
+    const R=enemyRange(e), c=enemyCone(e)/2;
+    for(const cd of S.conduits){ if(cd.discovered) continue;
+      for(const p of cd.path){
+        const i=idx(p[0],p[1]); if(expConduit(i)===2) continue;   // concealed: never
+        const dx=p[0]+0.5-e.x, dy=p[1]+0.5-e.y, d=Math.hypot(dx,dy);
+        if(d>R) continue;
+        if(Math.abs(angDiff(Math.atan2(dy,dx), e.face))>c) continue;
+        if(!los(e.x,e.y,p[0]+0.5,p[1]+0.5)) continue;
+        const secs=CFG.spotSecondsConduit[expConduit(i)] * (1+0.5*S.player.traits.insulation);
+        cd.spot=(cd.spot||0) + 0.2/secs*(1-0.5*(d/R));
+        if(cd.spot>=1){ cd.discovered=true; bump(1,"wire found"); }
+        break; } } }
+}
+
+// ── player ───────────────────────────────────────────────────────────────────
+function movePlayer(dt, ax, ay){
+  const b=blob(), r=CFG.radius(b.mass);
+  const sp=CFG.speedBase*CFG.speedCurve(b.mass);
+  const mag=Math.hypot(ax,ay);
+  if(mag>0.08){ S.player.stillT=0; } else { S.player.stillT+=dt; }
+  const vx=(mag>0.08? ax/mag:0)*sp*Math.min(1,mag)*dt;
+  const vy=(mag>0.08? ay/mag:0)*sp*Math.min(1,mag)*dt;
+  const free=(nx,ny)=>{
+    for(const [ox,oy] of [[-r,-r],[r,-r],[-r,r],[r,r],[0,0]])
+      if(!passableBlob((nx+ox)|0,(ny+oy)|0,b.mass)) return false;
+    return true; };
+  if(free(b.x+vx,b.y)) b.x+=vx; else tryForce(b, b.x+Math.sign(vx)*(r+0.1), b.y, dt, mag);
+  if(free(b.x,b.y+vy)) b.y+=vy; else tryForce(b, b.x, b.y+Math.sign(vy)*(r+0.1), dt, mag);
+}
+function tryForce(b, tx, ty, dt, mag){
+  if(mag<=0.08) { S.player.forceT=0; return; }
+  const i=inB(tx|0,ty|0)?idx(tx|0,ty|0):-1;
+  if(i<0||TT[i]!==DOOR){ S.player.forceT=0; return; }
+  if(b.mass<=CFG.forceAt){ toast("Too thin to force this. You need over "+CFG.forceAt+"."); S.player.forceT=0; return; }
+  S.player.forceT+=dt;
+  if(S.player.forceT>=CFG.forceHoldSec){ TT[i]=FLOOR; S.player.forceT=0;
+    toast("Forced."); bump(1,"door"); }
+}
+function pulse(){
+  const b=blob();
+  if(S.player.pulseCd>0) return;
+  if(b.mass-CFG.pulseCost<CFG.minBlobMass){ toast("Not enough mass to pulse."); return; }
+  b.mass-=CFG.pulseCost; S.ledger.owned-=CFG.pulseCost; S.ledger.debits.damage+=CFG.pulseCost;
+  S.player.pulseCd=CFG.pulseCooldownSec; S.player.pulseT=CFG.pulseShowSec;
+}
+// ── the prowl layer: what you can do with your hands, not your wire ──────────
+const isUnaware = e => e.state!=="hunt" && e.spot<0.5;
+function envelopTarget(){
+  const b=blob();
+  if(b.mass < CFG.envelop.minMass) return null;
+  let best=null, bd=CFG.envelop.range;
+  for(const e of S.enemies){
+    if(e.state==="dead" || CFG.envelop.immuneKinds.includes(e.kind)) continue;
+    if(!isUnaware(e)) continue;
+    const d=Math.hypot(e.x-b.x, e.y-b.y);
+    if(d<bd){ bd=d; best=e; } }
+  return best;
+}
+function nearestLight(){
+  const b=blob(); let best=null, bd=1.6;
+  for(const L of S.lights){ if(L.out) continue;
+    const d=Math.hypot(L.x+0.5-b.x, L.y+0.5-b.y); if(d<bd){ bd=d; best=L; } }
+  return best;
+}
+function startEnvelop(){
+  const t=envelopTarget();
+  if(!t){ const b=blob();
+    toast(b.mass<CFG.envelop.minMass
+      ? "Too little of you to smother anything. You need "+CFG.envelop.minMass+"."
+      : "Nothing close enough, or it already knows you're here.");
+    return; }
+  // once you have hold of it, it does not get to notice you. Its own senses stop;
+  // the risk is the two seconds you spend immobile in front of everyone else.
+  t.grabbed=true; t.prevState=t.state; t.state="grabbed"; t.spot=0;
+  S.act={ verb:"envelop", target:t, t:0 };
+}
+function tickEnvelop(dt){
+  const a=S.act; if(a.verb!=="envelop") return;
+  const e=a.target, b=blob();
+  if(e.state==="dead" || Math.hypot(e.x-b.x,e.y-b.y)>CFG.envelop.range*1.8){
+    releaseGrab(e); S.act={verb:null,target:null,t:0}; toast("It slipped you."); return; }
+  a.t+=dt;
+  if(a.t>=CFG.envelop.timeSec){
+    b.mass-=CFG.envelop.cost; S.ledger.owned-=CFG.envelop.cost;
+    S.ledger.debits.damage+=CFG.envelop.cost;
+    S.act={verb:null,target:null,t:0};
+    killEnemy(e,"envelop");
+  }
+}
+function releaseGrab(e){ if(!e||!e.grabbed) return;
+  e.grabbed=false; e.state=e.prevState||"patrol"; e.path=null; e.spot=0.6; }
+function tapNoise(){
+  const b=blob();
+  if(S.player.tapCd>0) return;
+  if(b.mass-CFG.tap.cost<CFG.minBlobMass){ toast("Not enough mass to make a sound."); return; }
+  b.mass-=CFG.tap.cost; S.ledger.owned-=CFG.tap.cost; S.ledger.debits.damage+=CFG.tap.cost;
+  S.player.tapCd=CFG.tap.cooldownSec; S.player.tapT=1.0;
+  let pulled=0;
+  for(const e of S.enemies){ if(e.state==="dead"||e.state==="hunt") continue;
+    if(Math.hypot(e.x-b.x,e.y-b.y)>CFG.tap.radius) continue;
+    setGoal(e, b.x, b.y, "investigate"); pulled++; }
+  toast(pulled?"Something is coming.":"Nothing heard that.");
+}
+function canFlow(){
+  if(S.player.stillT<0.25) return false;
+  return !S.enemies.some(e=>e.state!=="dead" && e.spot>0.15);
+}
+
+// ── world tick ───────────────────────────────────────────────────────────────
+function step(dt, input){
+  if(S.result) return;
+  T+=dt; S.t+=dt; S.stats.time+=dt;
+  const scale = S.mode==="flow" ? (CFG.flowPaused?0:CFG.flowTimeScale) : 1;
+  const wdt = dt*scale;
+  S.toastT=Math.max(0,S.toastT-dt);
+  S.player.pulseCd=Math.max(0,S.player.pulseCd-dt);
+  S.player.pulseT=Math.max(0,S.player.pulseT-dt);
+
+  S.player.tapCd=Math.max(0,(S.player.tapCd||0)-dt);
+  S.player.tapT=Math.max(0,(S.player.tapT||0)-dt);
+  if(S.act.verb) tickEnvelop(wdt);                 // you cannot move mid-smother
+  if(S.mode==="prowl" && !S.act.verb) movePlayer(wdt, input.ax||0, input.ay||0);
+  else S.player.stillT+=dt;
+
+  const b=blob();
+
+  // wet decay, sprinkler soak
+  const spr=S.devices.find(d=>d.kind==="sprinkler"&&d.on);
+  for(let i=0;i<WET.length;i++) if(WET[i]>0) WET[i]=Math.max(0,WET[i]-wdt);
+  if(spr){ const [x0,y0,x1,y1]=spr.area;
+    for(let y=y0;y<=y1;y++) for(let x=x0;x<=x1;x++){ const i=idx(x,y);
+      if(TT[i]!==WALL) WET[i]=8; } }
+
+  // plate hurts you too, if you are standing in your own trap
+  const plate=S.devices.find(d=>d.kind==="plate"&&d.on);
+  if(plate && (b.x|0)===plate.x && (b.y|0)===plate.y && WET[idx(b.x|0,b.y|0)]>0)
+    ledgerDamage(CFG.plateDamage*wdt);
+
+  // breaker restores power
+  const brk=S.devices.find(d=>d.kind==="breaker"&&d.on);
+  if(brk && S.site.lockdown){ S.site.lockdown=false; S.site.alert=2; S.site.sinceEscalate=0;
+    toast("Power restored."); resolvePower(); }
+
+  // enemies + conduit discovery
+  S.enemies.forEach(e=>updateEnemy(e,wdt));
+  scanConduits(wdt);
+
+  // alert decay
+  S.site.sinceEscalate+=wdt;
+  if(S.site.alert>0 && S.site.sinceEscalate>CFG.alertDecaySec[S.site.alert]){
+    S.site.alert--; S.site.sinceEscalate=0; if(S.site.alert<4) S.site.lockdown=false; resolvePower(); }
+
+  // reclaim retraction
+  for(const cd of [...S.conduits]){
+    if(!cd.reclaiming) continue;
+    cd.rAcc=(cd.rAcc||0)+wdt*CFG.reclaimSpeed;
+    while(cd.rAcc>=1 && cd.path.length>1){ cd.rAcc-=1; popReclaimTile(cd); }
+    if(cd.path.length<=1){ finishConduit(cd); }
+  }
+
+  // bodies: harvest and decay
+  for(const bd of [...S.bodies]){
+    bd.decay-=wdt;
+    if(Math.hypot(bd.x-b.x, bd.y-b.y)<0.9){
+      const take=Math.min(bd.mass, CFG.harvestRate*wdt);
+      bd.mass-=take; ledgerGain(take,"harvest"); }
+    if(bd.decay<=0||bd.mass<=0.01) S.bodies.splice(S.bodies.indexOf(bd),1); }
+
+  // socket trickle — the floor that makes a dry run recoverable
+  for(const s of S.sources){ if(s.kind!=="socket") continue;
+    if(Math.hypot(s.x+0.5-b.x, s.y+0.5-b.y)<1.0) ledgerGain(CFG.socketTrickle*wdt,"trickle"); }
+
+  // win
+  const done=S.targets.every(id=>S.enemies.find(e=>e.id===id).state==="dead");
+  if(done && Math.hypot(S.exfil.x+0.5-b.x, S.exfil.y+0.5-b.y)<1.0) win();
+
+  checkLedger();
+}
+function win(){
+  const m=totalMass()+S.player.residue;
+  S.result={ ok:true, medals:{
+    ghost:["Unseen","Noticed","Hunted","Alarmed","Blacked out"][S.site.peak],
+    efficiency:S.stats.tilesLaid+" tiles",
+    economy:(m-S.stats.startMass>=0?"+":"")+(m-S.stats.startMass).toFixed(1)+" mass",
+    speed:S.stats.time.toFixed(0)+"s" } };
+}
+function lose(msg){ S.result={ ok:false, msg }; }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RENDER + INPUT  (skipped entirely when headless)
+// ─────────────────────────────────────────────────────────────────────────────
+const CAN = (typeof document!=="undefined") ? document.getElementById("c") : null;
+const ctx = CAN ? CAN.getContext("2d") : null;
+let VW=0, VH=0, cam={x:24,y:16,s:26};
+const input={ ax:0, ay:0 };
+let stick=null, btns=[], lastTouchTile=null;
+
+function resize(){ if(!CAN) return;
+  const dpr=Math.min(2, window.devicePixelRatio||1);
+  VW=window.innerWidth; VH=window.innerHeight;
+  CAN.width=VW*dpr; CAN.height=VH*dpr; CAN.style.width=VW+"px"; CAN.style.height=VH+"px";
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  layout();
+}
+function layout(){
+  const bw=Math.max(80, Math.min(108, VW*0.26)), bh=50, pad=12, g=8;
+  const c2=VW-bw-pad, c1=VW-bw*2-pad-g;
+  const r2=VH-bh-pad-8, r1=VH-bh*2-pad-g-8;
+  btns=[
+    {id:"act",    label:"ACT",     x:c1, y:r2, w:bw, h:bh},
+    {id:"flow",   label:"FLOW",    x:c2, y:r2, w:bw, h:bh},
+    {id:"pulse",  label:"PULSE",   x:c1, y:r1, w:bw, h:bh},
+    {id:"reclaim",label:"RECLAIM", x:c2, y:r1, w:bw, h:bh},
+  ];
+}
+const w2s=(x,y)=>[ (x-cam.x)*cam.s + VW/2, (y-cam.y)*cam.s + VH/2 ];
+const s2w=(px,py)=>[ (px-VW/2)/cam.s + cam.x, (py-VH/2)/cam.s + cam.y ];
+
+function updateCamera(dt){
+  const b=blob();
+  const fit=Math.min(VW/(W+2), (VH-150)/(H+2));
+  const ts = S.mode==="flow" ? fit : Math.min(VW,VH)/16;
+  const tx = S.mode==="flow" ? W/2 : b.x, ty = S.mode==="flow" ? H/2 : b.y;
+  const k=Math.min(1, dt*7);
+  cam.s += (ts-cam.s)*k; cam.x += (tx-cam.x)*k; cam.y += (ty-cam.y)*k;
+}
+
+function draw(){
+  if(!ctx) return;
+  ctx.fillStyle="#05060A"; ctx.fillRect(0,0,VW,VH);
+  const s=cam.s;
+  const [ox,oy]=s2w(0,0), [mx,my]=s2w(VW,VH);
+  const x0=Math.max(0,ox|0), y0=Math.max(0,oy|0), x1=Math.min(W-1,(mx|0)+1), y1=Math.min(H-1,(my|0)+1);
+
+  // tiles
+  for(let y=y0;y<=y1;y++) for(let x=x0;x<=x1;x++){
+    const i=idx(x,y), t=TT[i]; const [px,py]=w2s(x,y);
+    let col = t===WALL?"#0A0C12" : t===SHADOW?"#151823" : t===VENT?"#191D2A"
+            : t===DOOR?"#3A2E22" : "#1E2331";
+    ctx.fillStyle=col; ctx.fillRect(px,py,s+1,s+1);
+    if(t!==WALL && WET[i]>0){ ctx.fillStyle="rgba(64,140,220,"+(0.10+0.16*Math.min(1,WET[i]/8))+")";
+      ctx.fillRect(px,py,s+1,s+1); }
+    if(CONC[i] && t!==WALL){                          // hatched: never colour-only
+      ctx.strokeStyle="rgba(140,150,180,.20)"; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(px,py+s); ctx.lineTo(px+s,py); ctx.stroke(); }
+    if(t===VENT){ ctx.strokeStyle="rgba(190,200,225,.35)"; ctx.lineWidth=1;
+      for(let k=1;k<4;k++){ ctx.beginPath(); ctx.moveTo(px+2,py+k*s/4); ctx.lineTo(px+s-2,py+k*s/4); ctx.stroke(); } }
+    if(t===DOOR){ ctx.strokeStyle="rgba(224,167,60,.6)"; ctx.strokeRect(px+1.5,py+1.5,s-3,s-3); }
+  }
+
+  // exfil
+  { const [px,py]=w2s(S.exfil.x,S.exfil.y);
+    const done=S.targets.every(id=>S.enemies.find(e=>e.id===id).state==="dead");
+    ctx.strokeStyle=done?"#E0A73C":"rgba(224,167,60,.3)"; ctx.lineWidth=2;
+    ctx.strokeRect(px+2,py+2,s-4,s-4); }
+
+  // vision cones
+  for(const e of S.enemies){ if(e.state==="dead") continue;
+    const R=enemyRange(e), half=enemyCone(e)/2, [ex,ey]=w2s(e.x,e.y);
+    ctx.beginPath(); ctx.moveTo(ex,ey);
+    for(let a=-half;a<=half;a+=0.06){
+      let d=R; const ang=e.face+a;
+      for(let step=0.4;step<=R;step+=0.4){
+        const tx=e.x+Math.cos(ang)*step, ty=e.y+Math.sin(ang)*step;
+        if(!inB(tx|0,ty|0)||TT[idx(tx|0,ty|0)]===WALL){ d=step-0.4; break; } }
+      const [px,py]=w2s(e.x+Math.cos(ang)*d, e.y+Math.sin(ang)*d); ctx.lineTo(px,py); }
+    ctx.closePath();
+    const hot=S.site.alert>=2||e.state==="hunt";
+    ctx.fillStyle=hot?"rgba(224,72,60,.13)":"rgba(224,167,60,.09)"; ctx.fill(); }
+
+  // the site's own wiring — dim and inert, or a free route once spliced
+  ctx.lineWidth=Math.max(1, s*0.10); ctx.lineCap="round";
+  ctx.strokeStyle = S.player.traits.splice ? "rgba(90,200,160,.55)" : "rgba(70,78,95,.35)";
+  for(const w of S.siteWires){ ctx.beginPath();
+    w.forEach((p,i)=>{ const [px,py]=w2s(p[0]+0.5,p[1]+0.5); i?ctx.lineTo(px,py):ctx.moveTo(px,py); });
+    ctx.stroke(); }
+
+  // conduits
+  for(const cd of S.conduits) drawConduit(cd, false);
+  if(S.draft) drawConduit(S.draft, true);
+
+  // sources + devices
+  for(const src of S.sources){ const [px,py]=w2s(src.x,src.y);
+    ctx.fillStyle= src.kind==="generator"?"#2C6E5A":"#2A4A6E";
+    ctx.fillRect(px+3,py+3,s-6,s-6);
+    ctx.fillStyle="#9FB4CE"; ctx.font="9px ui-sans-serif";
+    ctx.fillText(src.kind==="generator"?"GEN":"SKT", px+4, py+s-6); }
+  for(const dv of S.devices){ const [px,py]=w2s(dv.x,dv.y);
+    ctx.fillStyle= dv.on ? "#E0A73C" : "#3A4152";
+    ctx.fillRect(px+3,py+3,s-6,s-6);
+    ctx.fillStyle= dv.on?"#1A140A":"#9FB4CE"; ctx.font="9px ui-sans-serif";
+    ctx.fillText({sprinkler:"SPR",plate:"PLT",speaker:"SPK",breaker:"BRK"}[dv.kind], px+4, py+s-6);
+    if(!dv.on && s>18){ ctx.fillStyle="rgba(224,167,60,.75)"; ctx.font="9px ui-sans-serif";
+      ctx.fillText("⚡"+dv.needs, px+4, py+11); }
+    if(dv.kind==="sprinkler"&&S.mode==="flow"){ const [a,b2,c2,d2]=dv.area; const [qx,qy]=w2s(a,b2);
+      ctx.strokeStyle="rgba(64,140,220,.35)"; ctx.strokeRect(qx,qy,(c2-a+1)*s,(d2-b2+1)*s); } }
+
+  // lights
+  for(const L of S.lights){ const [px,py]=w2s(L.x,L.y);
+    if(L.out){ ctx.strokeStyle="rgba(90,100,120,.5)"; ctx.lineWidth=1;
+      ctx.strokeRect(px+s*0.3,py+s*0.3,s*0.4,s*0.4); continue; }
+    const g=ctx.createRadialGradient(px+s/2,py+s/2,1,px+s/2,py+s/2,s*2.4);
+    g.addColorStop(0,"rgba(224,200,150,.16)"); g.addColorStop(1,"rgba(224,200,150,0)");
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(px+s/2,py+s/2,s*2.4,0,7); ctx.fill();
+    ctx.fillStyle="#E0C896"; ctx.fillRect(px+s*0.36,py+s*0.36,s*0.28,s*0.28); }
+
+  // bodies
+  for(const bd of S.bodies){ const [px,py]=w2s(bd.x,bd.y);
+    ctx.fillStyle="rgba(200,120,90,"+(0.35+0.5*(bd.decay/CFG.bodyDecaySec))+")";
+    ctx.beginPath(); ctx.arc(px,py,s*0.3,0,7); ctx.fill(); }
+
+  // enemies
+  for(const e of S.enemies){ const [px,py]=w2s(e.x,e.y);
+    if(e.state==="dead") continue;
+    ctx.fillStyle= e.state==="hunt"?"#E0483C" : S.site.alert>=2?"#D08050":"#8894AE";
+    ctx.beginPath(); ctx.arc(px,py,s*0.30,0,7); ctx.fill();
+    ctx.strokeStyle="#05060A"; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(px,py);
+    ctx.lineTo(px+Math.cos(e.face)*s*0.42, py+Math.sin(e.face)*s*0.42); ctx.stroke();
+    if(e.spot>0.02){                                  // legibility before tuning
+      ctx.strokeStyle="#E0A73C"; ctx.lineWidth=3; ctx.beginPath();
+      ctx.arc(px,py,s*0.44,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,e.spot)); ctx.stroke(); } }
+
+  // player
+  { const b=blob(), [px,py]=w2s(b.x,b.y), r=CFG.radius(b.mass)*s;
+    const g=ctx.createRadialGradient(px-r*0.34,py-r*0.4,r*0.06,px,py,r*1.5);
+    g.addColorStop(0,"#232733"); g.addColorStop(0.35,"#12141C"); g.addColorStop(1,"#05060A");
+    ctx.beginPath(); ctx.arc(px,py,r,0,7); ctx.fillStyle=g; ctx.fill();
+    const fa=Math.atan2(input.ay||0.001,input.ax||0.001);
+    const rim=ctx.createLinearGradient(px-Math.cos(fa)*r,py-Math.sin(fa)*r,px+Math.cos(fa)*r,py+Math.sin(fa)*r);
+    rim.addColorStop(0,"hsla(268,90%,64%,.85)"); rim.addColorStop(1,"hsla(44,95%,72%,.9)");
+    ctx.strokeStyle=rim; ctx.lineWidth=1.5+r*0.045; ctx.stroke(); }
+
+  // pulse reveal
+  if(S.player.pulseT>0){ const b=blob(), [px,py]=w2s(b.x,b.y);
+    const k=1-(S.player.pulseT/CFG.pulseShowSec);
+    ctx.strokeStyle="rgba(138,92,246,"+(0.5*(1-k))+")"; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(px,py,CFG.pulseRange*s*k,0,7); ctx.stroke();
+    for(const o of [...S.sources,...S.devices,...S.enemies]){
+      if(o.state==="dead") continue;
+      if(Math.hypot(o.x-b.x,o.y-b.y)>CFG.pulseRange) continue;
+      const [qx,qy]=w2s(o.x,o.y); ctx.fillStyle="rgba(138,92,246,.8)";
+      ctx.fillRect(qx+s/2-2,qy+s/2-2,4,4); } }
+
+  drawHUD();
+}
+function drawConduit(cd, isDraft){
+  if(cd.path.length<1) return;
+  const s=cam.s;
+  ctx.lineWidth=Math.max(2, s*0.22); ctx.lineJoin="round"; ctx.lineCap="round";
+  ctx.strokeStyle = isDraft ? "rgba(138,92,246,.55)"
+    : cd.discovered ? "#E0483C" : cd.live ? "#8A5CF6" : "#4A4E62";
+  ctx.beginPath();
+  cd.path.forEach((p,i)=>{ const [px,py]=w2s(p[0]+0.5,p[1]+0.5);
+    i?ctx.lineTo(px,py):ctx.moveTo(px,py); });
+  ctx.stroke();
+  if(cd.live){ ctx.strokeStyle="rgba(224,167,60,.5)"; ctx.lineWidth=Math.max(1,s*0.07); ctx.stroke(); }
+}
+function drawHUD(){
+  const b=blob(), pad=12, barW=Math.min(VW-24, 360), barH=16;
+  // mass: committed vs body, with the two thresholds marked
+  const committed=S.conduits.reduce((a,c)=>a+c.cost,0);
+  ctx.fillStyle="rgba(10,12,18,.85)"; ctx.fillRect(pad-4,pad-4,barW+8,barH+34);
+  ctx.fillStyle="#1B1F2B"; ctx.fillRect(pad,pad,barW,barH);
+  const u=barW/S.player.capacity;
+  ctx.fillStyle="#8A5CF6"; ctx.fillRect(pad,pad,b.mass*u,barH);
+  ctx.fillStyle="#3F4A66"; ctx.fillRect(pad+b.mass*u,pad,committed*u,barH);
+  for(const [v,c] of [[CFG.squeezeAt,"#5AA0E0"],[CFG.forceAt,"#E0A73C"]]){
+    ctx.fillStyle=c; ctx.fillRect(pad+v*u-1,pad-3,2,barH+6); }
+  ctx.fillStyle="#C9D2E4"; ctx.font="12px ui-sans-serif";
+  ctx.fillText(Math.round(b.mass)+" body · "+Math.round(committed)+" in wire"
+    + (S.player.residue>0?" · "+S.player.residue.toFixed(0)+" residue":""), pad, pad+barH+15);
+  ctx.fillText(b.mass<CFG.squeezeAt?"thin — fits vents, one hit from death"
+    : b.mass>CFG.forceAt?"full — can force doors, easy to see":"mid — neither", pad, pad+barH+29);
+
+  // alert pips
+  for(let i=0;i<5;i++){ const x=VW-pad-(5-i)*14;
+    ctx.fillStyle = i<=S.site.alert ? (i>=3?"#E0483C":"#E0A73C") : "#232733";
+    ctx.fillRect(x,pad,10,10); }
+  if(S.site.lockdown){ ctx.fillStyle="#E0483C"; ctx.font="600 13px ui-sans-serif";
+    ctx.fillText("LOCKDOWN — power cut. Find the breaker.", VW-pad-250, pad+26); }
+
+  // buttons — the action button says what it will actually do right now
+  const et=envelopTarget(), nl=!et&&nearestLight();
+  for(const bt of btns){
+    if(bt.id==="act") bt.label = S.act.verb ? "RELEASE" : et ? "SMOTHER"
+                                : nl ? "DRINK LIGHT" : "TAP";
+    const on = bt.id==="flow" ? (S.mode==="flow"||canFlow())
+             : bt.id==="pulse" ? S.player.pulseCd<=0
+             : bt.id==="act" ? (!!et||!!nl||S.player.tapCd<=0) : !!S.selected;
+    ctx.fillStyle= on?"#1B2030":"#101320"; ctx.fillRect(bt.x,bt.y,bt.w,bt.h);
+    ctx.strokeStyle= on?"#3A4152":"#1A1E2A"; ctx.strokeRect(bt.x+.5,bt.y+.5,bt.w-1,bt.h-1);
+    ctx.fillStyle= on?"#C9D2E4":"#4A5164"; ctx.font="600 12px ui-sans-serif";
+    ctx.fillText(bt.label, bt.x+10, bt.y+bt.h/2+4); }
+  if(S.mode==="prowl" && !canFlow()){
+    ctx.fillStyle="#5A6274"; ctx.font="11px ui-sans-serif";
+    ctx.fillText("flow needs you still and unseen", btns[0].x-4, btns[0].y-8); }
+
+  // envelop progress — you are committed and stationary while this runs
+  if(S.act.verb==="envelop"){
+    const w=Math.min(260,VW-48), x=(VW-w)/2, y=VH*0.34;
+    ctx.fillStyle="rgba(10,12,18,.9)"; ctx.fillRect(x-6,y-24,w+12,44);
+    ctx.fillStyle="#C9D2E4"; ctx.font="600 13px ui-sans-serif";
+    ctx.fillText("smothering — hold still", x, y-8);
+    ctx.fillStyle="#1B1F2B"; ctx.fillRect(x,y,w,10);
+    ctx.fillStyle="#8A5CF6"; ctx.fillRect(x,y,w*(S.act.t/CFG.envelop.timeSec),10); }
+
+  // inspect card — tapping a box in flow tells you what it needs and what it does
+  if(S.inspect && S.mode==="flow"){
+    const o=S.inspect, isSrc=!!o.kind&&(o.kind==="socket"||o.kind==="generator");
+    const text = isSrc
+      ? [ o.kind==="generator"?"GENERATOR":"WALL SOCKET",
+          "supplies "+o.capacity+" · used "+((S.powerUsed&&S.powerUsed[o.id])||0),
+          o.noisy?"loud while live — enemies hear further":"quiet, weak, always here" ]
+      : [ o.kind.toUpperCase()+" · needs "+o.needs,
+          { sprinkler:"wets the floor in its area",
+            plate:"electrifies its tile — harmless dry, lethal wet",
+            speaker:"pulls patrols to it",
+            breaker:"restores power after a lockdown" }[o.kind],
+          o.on?"powered":"no wire from a source with enough capacity" ];
+    const w=Math.min(300,VW-32), x=16, y=VH-150;
+    ctx.fillStyle="rgba(10,12,18,.92)"; ctx.fillRect(x,y,w,66);
+    ctx.strokeStyle="#232733"; ctx.strokeRect(x+.5,y+.5,w-1,65);
+    ctx.fillStyle="#C9D2E4"; ctx.font="600 13px ui-sans-serif"; ctx.fillText(text[0],x+10,y+20);
+    ctx.fillStyle="#96A0B6"; ctx.font="12px ui-sans-serif";
+    ctx.fillText(text[1],x+10,y+38); ctx.fillText(text[2],x+10,y+55); }
+
+  // draft cost preview
+  if(S.draft){ ctx.fillStyle="#C9D2E4"; ctx.font="600 13px ui-sans-serif";
+    ctx.fillText("route "+(S.draft.path.length-1)+" tiles · costs "+S.draft.cost.toFixed(1)
+      +" · leaves "+(blob().mass-S.draft.cost).toFixed(0), pad, VH-pad-6); }
+
+  if(S.toastT>0){ ctx.fillStyle="rgba(201,210,228,"+Math.min(1,S.toastT)+")";
+    ctx.font="600 14px ui-sans-serif"; ctx.fillText(S.toast, pad, VH-pad-28); }
+
+  if(CFG.debugLedger && S.ledger.leak>1e-6){
+    ctx.fillStyle="#E0483C"; ctx.fillRect(0,0,VW,4);
+    ctx.fillText("MASS LEAK "+S.ledger.leak.toFixed(4), pad, pad+barH+44); }
+
+  if(S.result){
+    ctx.fillStyle="rgba(5,6,10,.88)"; ctx.fillRect(0,0,VW,VH);
+    ctx.fillStyle="#C9D2E4"; ctx.font="600 24px ui-sans-serif";
+    ctx.fillText(S.result.ok?"Extracted":"Lost", pad+8, VH/2-56);
+    ctx.font="14px ui-sans-serif";
+    if(S.result.ok){ const m=S.result.medals; let i=0;
+      for(const [k,v] of Object.entries({Ghost:m.ghost,Efficiency:m.efficiency,Economy:m.economy,Speed:m.speed}))
+        ctx.fillText(k+" — "+v, pad+8, VH/2-24+(i++)*22); }
+    else ctx.fillText(S.result.msg, pad+8, VH/2-24);
+    ctx.fillText("tap to run it again", pad+8, VH/2+80); }
+}
+
+// ── input ────────────────────────────────────────────────────────────────────
+function hitBtn(px,py){ return btns.find(b=>px>=b.x&&px<=b.x+b.w&&py>=b.y&&py<=b.y+b.h); }
+function onDown(px,py){
+  if(S.result){ newGame(); return; }
+  const bt=hitBtn(px,py);
+  if(bt){
+    if(bt.id==="flow"){ if(S.mode==="flow"){ S.mode="prowl"; }
+      else if(canFlow()) S.mode="flow"; else toast("Find a quiet corner first."); }
+    if(bt.id==="pulse") pulse();
+    if(bt.id==="reclaim" && S.selected){ startReclaim(S.selected); S.selected=null; }
+    if(bt.id==="act"){
+      if(S.act.verb){ releaseGrab(S.act.target); S.act={verb:null,target:null,t:0}; toast("Let go."); }
+      else if(envelopTarget()) startEnvelop();
+      else { const L=nearestLight(); if(L) douseLight(L); else tapNoise(); } }
+    return; }
+  if(S.mode==="flow"){
+    const [wx,wy]=s2w(px,py); const tx=wx|0, ty=wy|0;
+    const dv=deviceAt(tx,ty), src=sourceAt(tx,ty);
+    if(dv||src){ S.inspect = dv||src; }                 // tap a box, learn what it is
+    if(!beginDraft(tx,ty)){ const cd=anyConduitAt(tx,ty);
+      S.selected = cd || null;
+      if(cd) toast("Wire selected. RECLAIM pulls it back at 75%."); }
+    lastTouchTile=[tx,ty]; return; }
+  stick={ ox:px, oy:py };
+}
+function onMove(px,py){
+  if(S.mode==="flow"){ if(!S.draft) return;
+    const [wx,wy]=s2w(px,py); const tx=wx|0, ty=wy|0;
+    if(lastTouchTile && lastTouchTile[0]===tx && lastTouchTile[1]===ty) return;
+    // interpolate so a fast drag never skips tiles
+    if(lastTouchTile){ let [cx,cy]=lastTouchTile, guard=0;
+      while((cx!==tx||cy!==ty)&&guard++<64){
+        if(cx!==tx) cx+=Math.sign(tx-cx); else cy+=Math.sign(ty-cy);
+        draftStep(cx,cy); } }
+    lastTouchTile=[tx,ty]; return; }
+  if(!stick) return;
+  const dx=px-stick.ox, dy=py-stick.oy, m=Math.hypot(dx,dy), R=54;
+  input.ax=dx/R; input.ay=dy/R;
+  if(m>R){ input.ax=dx/m; input.ay=dy/m; }
+}
+function onUp(){
+  if(S.mode==="flow"){ if(S.draft) commitDraft(); lastTouchTile=null; return; }
+  stick=null; input.ax=0; input.ay=0;
+}
+function bindInput(){
+  const p=e=>{ const t=e.touches?e.touches[0]:e; return [t.clientX,t.clientY]; };
+  CAN.addEventListener("touchstart",e=>{e.preventDefault();onDown(...p(e));},{passive:false});
+  CAN.addEventListener("touchmove", e=>{e.preventDefault();onMove(...p(e));},{passive:false});
+  CAN.addEventListener("touchend",  e=>{e.preventDefault();onUp();},{passive:false});
+  CAN.addEventListener("mousedown", e=>onDown(e.clientX,e.clientY));
+  CAN.addEventListener("mousemove", e=>{ if(stick||S.draft) onMove(e.clientX,e.clientY); });
+  CAN.addEventListener("mouseup",   onUp);
+  window.addEventListener("resize", resize);
+}
+
+// ── boot ─────────────────────────────────────────────────────────────────────
+let last=0;
+function frame(ts){
+  const dt=Math.min(0.05,(ts-last)/1000||0); last=ts;
+  step(dt,input); updateCamera(dt); draw();
+  requestAnimationFrame(frame);
+}
+if(typeof document!=="undefined" && CAN){
+  newGame(); resize(); bindInput();
+  document.getElementById("go").addEventListener("click",()=>{
+    document.getElementById("overlay").classList.add("hide");
+    last=performance.now(); requestAnimationFrame(frame); });
+}
+// headless test surface
+if(typeof globalThis!=="undefined") globalThis.CONDUIT={
+  CFG, newGame, step, get S(){return S;}, totalMass, checkLedger, bfs, los,
+  beginDraft, draftStep, commitDraft, startReclaim, resolvePower, TTat:(x,y)=>TT[idx(x,y)],
+  startEnvelop, tapNoise, douseLight, envelopTarget, nearestLight, releaseGrab,
+  onSiteWire, tileCost,
+  idx, blobRef:()=>blob(), ledgerGain, ledgerDamage,
+};
+</script>
+</body>
+</html>
