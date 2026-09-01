@@ -74,6 +74,7 @@
   /* not fully transparent: over a bright patch of starfield a transparent
      ghost button reads as loose text and stops looking pressable */
   .ghost{background:rgba(27,36,49,.88);border-color:var(--etch);color:var(--ink)}
+  .danger{border-color:var(--warn);color:var(--warn)}
 
   .spinrow{display:flex;gap:9px;align-items:stretch}
   #throttle{flex:1;height:88px;border-radius:4px;border:1px solid var(--etch);background:var(--deck);
@@ -119,6 +120,15 @@
   .lvrow .m{width:7px;height:7px;border-radius:50%;background:#2C3849;display:block}
   .lvrow .m.on{background:var(--ok)}
   .lvrow .sc{color:var(--ink-dim);font-size:11.5px;min-width:42px;text-align:right}
+  .lvrow .sub2{color:var(--ink-dim);font-size:11px;font-weight:400}
+  /* the systems list truncates long names on purpose; a setting's explanation
+     is the point of the row, so it wraps instead */
+  #setlist .nm{white-space:normal;overflow:visible;line-height:1.35}
+  #setlist .lvrow{align-items:flex-start;padding:10px}
+  #setlist .tog{margin-top:2px}
+  .tog{margin-left:auto;font-size:12px;color:var(--ink-dim);border:1px solid var(--etch);
+    border-radius:2px;padding:5px 11px;min-width:52px;text-align:center}
+  .tog.on{color:var(--ok);border-color:rgba(111,207,151,.45);background:rgba(111,207,151,.08)}
   .coach{color:var(--tele)}
   .hide{display:none!important}
   .hint{font-size:11.5px;color:var(--ink-dim);margin-top:9px;line-height:1.45}
@@ -168,12 +178,25 @@
 
 <div class="scrim hide" id="scrim"></div>
 
+<div class="card hide" id="settings">
+  <h2>Settings</h2>
+  <div class="lvlist" id="setlist"></div>
+  <p class="hint" style="margin-top:10px">Starting over clears your scores, your medals and the coaching, so the opening plays as it would for someone new.</p>
+  <div class="btns">
+    <button class="act ghost" id="setreset">Start over</button>
+    <button class="act go" id="setclose" style="flex:1">Done</button>
+  </div>
+</div>
+
 <div class="card hide" id="levels">
   <h2>Systems</h2>
   <p>Pick a system to fly. A system opens when you clear the one before it.</p>
   <div class="lvlist" id="lvlist"></div>
   <p class="hint" style="margin-top:10px">Dots: landed · every gate crossed · built under half the budget.</p>
-  <div class="btns"><button class="act ghost" id="lvclose" style="flex:1">Close</button></div>
+  <div class="btns">
+    <button class="act ghost" id="setopen">Settings</button>
+    <button class="act go" id="lvclose" style="flex:1">Close</button>
+  </div>
 </div>
 
 <div class="card hide" id="card">
@@ -487,9 +510,9 @@ function blankLv(){ return {best:0,cleared:0,gates:0,thrift:0}; }
 function readSave(){
   try{
     const raw=JSON.parse(localStorage.getItem(SAVE));
-    if(raw&&raw.lv) return {v:4, lv:raw.lv, tutor:raw.tutor||{}};
+    if(raw&&raw.lv) return {v:4, lv:raw.lv, tutor:raw.tutor||{}, opt:raw.opt||{}};
   }catch(e){}
-  const s={v:4,lv:{},tutor:{}};
+  const s={v:4,lv:{},tutor:{},opt:{}};
   try{                                     // carry scores over from the old key
     const old=JSON.parse(localStorage.getItem(SAVE_OLD));
     if(old) for(const k in old){ s.lv[k]=blankLv(); s.lv[k].best=old[k]|0; }
@@ -497,7 +520,8 @@ function readSave(){
   return s;
 }
 function mergeSave(a,b){
-  const out={v:4,lv:{},tutor:Object.assign({},a.tutor||{},b.tutor||{})};
+  const out={v:4,lv:{},tutor:Object.assign({},a.tutor||{},b.tutor||{}),
+             opt:Object.assign({},a.opt||{},b.opt||{})};
   const keys=Object.keys(a.lv||{}).concat(Object.keys(b.lv||{}));
   for(const k of keys){
     if(out.lv[k]) continue;
@@ -532,6 +556,24 @@ function recordResult(i,o){
     if(o.gatesOK) e.gates=1;
     if(o.thrift)  e.thrift=1;
   });
+}
+/* Player options. Reduced motion defaults to whatever the system asks for,
+   because a player who has told their phone to calm down should not have to
+   tell this game separately. */
+const OPT_DEF={audio:1,haptics:1,motion:1};
+let opt=Object.assign({},OPT_DEF);
+function loadOpt(){
+  const saved=readSave().opt||{};
+  opt=Object.assign({},OPT_DEF,saved);
+  try{ if(saved.motion===undefined && window.matchMedia
+        && matchMedia("(prefers-reduced-motion: reduce)").matches) opt.motion=0; }catch(e){}
+  applyOpt();
+}
+function setOpt(k,v){ opt[k]=v?1:0; writeSave(s=>{ s.opt=Object.assign({},s.opt||{},opt); }); applyOpt(); }
+function applyOpt(){ sfx.hush(!opt.audio); }
+function buzz(ms){
+  if(!opt.haptics) return;
+  try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(e){}
 }
 const rot=(x,y,t)=>{const c=Math.cos(t),s=Math.sin(t);return [x*c-y*s,x*s+y*c];};
 const len=(x,y)=>Math.hypot(x,y);
@@ -588,7 +630,7 @@ function beginInversion(hole){
              ballAngle:Math.atan2(ball.y-hc[1], ball.x-hc[0]),
              speed:Math.max(55,Math.min(120,len(ball.vx,ball.vy)*0.45))};
   phase="invert";
-  sfx.invert();
+  sfx.invert(); buzz([10,30,10,30,10,30,60]);
 }
 function finishInversion(){
   const I=inverting, R=I.R, hc=I.hc;
@@ -881,8 +923,22 @@ function backToBuild(){
    drift out of step with whichever card is showing. */
 function modal(which){
   $("scrim" ).classList.toggle("hide",!which);
-  $("card"  ).classList.toggle("hide",which!=="card");
-  $("levels").classList.toggle("hide",which!=="levels");
+  $("card"    ).classList.toggle("hide",which!=="card");
+  $("levels"  ).classList.toggle("hide",which!=="levels");
+  $("settings").classList.toggle("hide",which!=="settings");
+}
+const OPTS=[["audio","Sound","the deck, the ball and every impact"],
+             ["haptics","Vibration","a short buzz on launch and on landing"],
+             ["motion","Camera shake","screen shake and the flash at a collapse"]];
+function openSettings(){
+  $("setlist").innerHTML=OPTS.map(o=>
+    `<button class="lvrow" data-k="${o[0]}"><span class="nm">${o[1]}`
+    +`<br><span class="sub2">${o[2]}</span></span>`
+    +`<span class="tog${opt[o[0]]?" on":""}">${opt[o[0]]?"On":"Off"}</span></button>`).join("");
+  [...document.querySelectorAll("#setlist .lvrow")].forEach(b=>{
+    b.onclick=()=>{ setOpt(b.dataset.k,!opt[b.dataset.k]); sfx.click(!!opt[b.dataset.k]); openSettings(); };
+  });
+  modal("settings");
 }
 function openLevels(){
   const max=unlockedThrough();
@@ -919,6 +975,7 @@ function doRelease(reason){
   sfx.release();
   launchInfo={speed:len(ball.vx,ball.vy), radius:len(ball.x,ball.y),
               rpm:deck.omega*9.549, reason};
+  buzz(18);
   phase="flight"; flightTrail.push([ball.x,ball.y]);
   showUI("fly");
 }
@@ -958,8 +1015,8 @@ function step(){
     if(flightTrail.length>2400) flightTrail.shift();
     flightTrail.push([ball.x,ball.y]);
     if(out==="invert"){ beginInversion(nearestHole()); return; }
-    if(out==="crash"){ crashedInto=nearestBodyName(); sfx.crash(); settle("crash"); }
-    else if(out==="land"){ sfx.land(); settle("land"); }
+    if(out==="crash"){ crashedInto=nearestBodyName(); sfx.crash(); buzz([28,40,28]); settle("crash"); }
+    else if(out==="land"){ sfx.land(); buzz([14,60,14,60,30]); settle("land"); }
     else if(out==="lost" || flightT>22) settle("lost");
     else {
       // a rising tick as the ball closes on its target, which is the one piece
@@ -1128,9 +1185,11 @@ function draw(){
   const s=camScale(),o=camOrigin();
   ctx.save();
   let sx=0,sy=0;
-  if(shakeT>0){ sx=(Math.random()-.5)*70*shakeT; sy=(Math.random()-.5)*70*shakeT; }
-  const wob=deck.wobble*5;
-  if(phase==="spin"&&wob>0.3){ sx+=Math.sin(deck.theta*6)*wob; sy+=Math.cos(deck.theta*6.3)*wob; }
+  if(opt.motion){
+    if(shakeT>0){ sx=(Math.random()-.5)*70*shakeT; sy=(Math.random()-.5)*70*shakeT; }
+    const wob=deck.wobble*5;
+    if(phase==="spin"&&wob>0.3){ sx+=Math.sin(deck.theta*6)*wob; sy+=Math.cos(deck.theta*6.3)*wob; }
+  }
   ctx.translate(o[0]+sx,o[1]+sy); ctx.scale(s,s);
 
   /* The frame wide colour inversion is a single composite over the finished
@@ -1513,7 +1572,8 @@ function drawDroplet(x,y){
 /* At t=0.5 the entire system is sitting on the horizon. Light it up. */
 function drawHorizonFlash(){
   const e=Math.min(1,inverting.t);
-  const peak=1-Math.abs(e-0.5)*2;
+  let peak=1-Math.abs(e-0.5)*2;
+  if(!opt.motion) peak*=0.35;          // the collapse still reads, it stops flashing
   if(peak<=0.02) return;
   const [hx,hy]=inverting.hc, R=inverting.R;
   ctx.beginPath(); ctx.arc(hx,hy,R,0,7);
@@ -1798,6 +1858,24 @@ function init(){
   $("abortbtn").onclick=backToBuild;
   $("lvpick").onclick=openLevels;
   $("lvclose").onclick=()=>modal(null);
+  $("setopen").onclick=openSettings;
+  $("setclose").onclick=()=>modal(null);
+  /* Two taps. One tap between a player and every score they have is not a
+     button, it is a trap, and this one sits next to Done. */
+  let armWipe=0;
+  $("setreset").onclick=()=>{
+    const b=$("setreset");
+    if(!armWipe){
+      armWipe=1; b.textContent="Tap again to erase"; b.classList.add("danger");
+      sfx.click(false);
+      setTimeout(()=>{ if(armWipe){ armWipe=0; b.textContent="Start over"; b.classList.remove("danger"); } },4000);
+      return;
+    }
+    armWipe=0; b.textContent="Start over"; b.classList.remove("danger");
+    try{ localStorage.removeItem(SAVE); localStorage.removeItem(SAVE_OLD); }catch(e){}
+    coachSeen={}; loadOpt(); modal(null); loadLevel(0);
+  };
+  loadOpt();
   coachSeen=readSave().tutor||{};
   loadLevel(0);
   requestAnimationFrame(frame);
