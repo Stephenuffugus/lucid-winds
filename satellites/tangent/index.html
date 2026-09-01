@@ -92,6 +92,7 @@
 
   .card{position:fixed;left:14px;right:14px;top:50%;transform:translateY(-50%);background:var(--deck);
     border:1px solid var(--etch);border-radius:4px;padding:20px 18px;z-index:20;max-width:400px;margin:0 auto}
+  .card{overflow-y:auto;-webkit-overflow-scrolling:touch}
   .card h2{margin:0 0 4px;font-size:22px;font-weight:600;letter-spacing:-.02em}
   .card .sc{font-size:44px;font-weight:600;color:var(--ball);letter-spacing:-.03em;line-height:1.05;margin:10px 0 2px}
   .card p{margin:6px 0 0;font-size:13.5px;color:var(--ink-dim);line-height:1.5}
@@ -1016,6 +1017,8 @@ function settle(how){
 }
 function showCard(o){
   showUI("none");
+  // never taller than the screen it is shown on, whatever the body text says
+  $("card").style.maxHeight=Math.max(160,H-24)+"px";
   recordResult(lvIndex,o);
   $("cardtitle").textContent=o.title;
   $("cardscore").textContent=(o.score||0).toLocaleString();
@@ -1405,18 +1408,20 @@ function drawPart(p,alpha){
 function drawPrediction(){
   const pr=cachedPredict(); if(!pr) return;
   if(pr.path.length<2) return;
-  const good=pr.outcome==="land", crash=pr.outcome==="crash";
+  // the line is painted by the same verdict as the readout and the button: it
+  // used to stay green on a shot that lands without clearing, so the one
+  // element the player watches most disagreed with everything else
+  const v=verdict(pr), good=v.key==="clears";
+  const line = v.key==="miss"||v.key==="none"
+    ? (pr.closest<120?"rgba(121,208,230,.5)":"rgba(121,208,230,.22)") : v.col;
   ctx.beginPath(); ctx.moveTo(pr.path[0][0],pr.path[0][1]);
   for(const p of pr.path) ctx.lineTo(p[0],p[1]);
-  ctx.strokeStyle = good?"rgba(111,207,151,.85)" : crash?"rgba(224,81,123,.6)"
-                  : pr.outcome==="invert"?"rgba(180,140,255,.75)"
-                  : pr.closest<120?"rgba(121,208,230,.5)":"rgba(121,208,230,.22)";
-  ctx.lineWidth = good?2:1.2; ctx.setLineDash([5,6]); ctx.stroke(); ctx.setLineDash([]);
+  ctx.strokeStyle=line; ctx.globalAlpha=good?0.9:0.75;
+  ctx.lineWidth = good?2:1.4; ctx.setLineDash([5,6]); ctx.stroke();
+  ctx.setLineDash([]); ctx.globalAlpha=1;
   const e=pr.path[pr.path.length-1];
   ctx.beginPath(); ctx.arc(e[0],e[1],good?6:4,0,7);
-  ctx.strokeStyle = good?"#6FCF97":crash?"#E0517B":
-                    pr.outcome==="invert"?"#B48CFF":"rgba(121,208,230,.6)";
-  ctx.lineWidth=1.8; ctx.stroke();
+  ctx.strokeStyle=line; ctx.lineWidth=1.8; ctx.stroke();
 }
 function drawFlight(){
   if(flightTrail.length<2) return;
@@ -1459,6 +1464,17 @@ function drawDroplet(x,y){
   // radius comes out around two pixels, so the player was watching a trail
   // with nothing on the end of it. Rendering only: BALL_R still does collision.
   const R=Math.max(BALL_R*2.05, 7/Math.max(1e-3,camScale()));
+  /* A drop of liquid moving fast is not a circle. Stretch along the direction
+     of travel and thin across it, conserving area, harder while it is pressed
+     against the retaining wall: riding the rim is the one moment the player
+     can see the ball being squeezed by something. Rendering only. */
+  const vx=ball?ball.vx:0, vy=ball?ball.vy:0, sp=len(vx,vy);
+  let k=Math.min(0.30,sp/1100);
+  if(phase==="spin"&&len(x,y)>DECK_R-CONTACT) k=Math.min(0.44,k+0.15);
+  const va=sp>1?Math.atan2(vy,vx):fa;
+  ctx.save();
+  ctx.translate(x,y); ctx.rotate(va); ctx.scale(1+k,1/(1+k));
+  ctx.rotate(-va); ctx.translate(-x,-y);
   ctx.save();
   ctx.shadowColor="rgba(150,120,255,.55)"; ctx.shadowBlur=10;
   tracePts(ferroBlob(x,y,R,fa,s,3.1,64));
@@ -1473,6 +1489,7 @@ function drawDroplet(x,y){
   ctx.strokeStyle=rim; ctx.lineWidth=1.5; ctx.stroke();
   ctx.beginPath(); ctx.arc(x-R*0.28,y-R*0.32,R*0.20,0,7);
   ctx.fillStyle="rgba(232,240,255,.5)"; ctx.fill();
+  ctx.restore();
 }
 /* At t=0.5 the entire system is sitting on the horizon. Light it up. */
 function drawHorizonFlash(){
@@ -1533,12 +1550,12 @@ function drawChevrons(){
       }
       const e=pr.path[pr.path.length-1];
       const px=o[0]+e[0]*s, py=o[1]+e[1]*s;
-      if(!inView(px,py,0))
+      if(!inView(px,py,0)){
+        const v=verdict(pr);
         marks.push({px,py,dist:null,faint:false,edge,
-          label: pr.outcome==="land"?"lands":pr.outcome==="crash"?"crashes"
-                :pr.outcome==="invert"?"falls in":"shot",
-          col:   pr.outcome==="land"?"#6FCF97":pr.outcome==="crash"?"#E0517B"
-                :pr.outcome==="invert"?"#B48CFF":"rgba(121,208,230,.75)"});
+          label: v.key==="miss"||v.key==="none" ? "shot" : v.text,
+          col:   v.key==="miss"||v.key==="none" ? "rgba(121,208,230,.75)" : v.col});
+      }
     }
   }
   if(!marks.length) return;
@@ -1602,6 +1619,24 @@ function drawChevrons(){
   }
   ctx.textAlign="left"; ctx.textBaseline="alphabetic";
 }
+/* What this shot actually does, in the player's terms. Landing is not the
+   same as clearing: the readout said "lands" and the Launch button went green
+   on shots that settle as "Landed, but short", because the prediction knows
+   about bodies and nothing about gates. A shot that cannot clear the level
+   should not be painted like the good outcome. */
+function verdict(pr){
+  if(!pr) return {key:"none", text:"", col:"#7C8B9B"};
+  if(pr.outcome==="crash")  return {key:"crash", text:"crashes",  col:"#E0517B"};
+  if(pr.outcome==="invert") return {key:"invert",text:"falls in", col:"#B48CFF"};
+  if(pr.outcome==="land"){
+    const left=gatesHit.filter(g=>!g).length;
+    if(!left) return {key:"clears", text:"clears", col:"#6FCF97"};
+    return {key:"short", col:"#F2A93B",
+            text: left===1 ? "lands, gate left" : `lands, ${left} gates left`};
+  }
+  return {key:"miss", col:"#7C8B9B",
+          text: isFinite(pr.closest)?Math.round(pr.closest)+" off":"misses"};
+}
 function drawOverlay(){
   drawChevrons();
   if(phase!=="spin"||!ball) return;
@@ -1623,13 +1658,10 @@ function drawOverlay(){
     // the long form does not fit a narrow panel, and the shot verdict is the
     // one line that must never be clipped
     const pre=R.narrow?"now: ":"release now: ";
+    const v=verdict(pr);
     ctx.font=`600 ${R.narrow?12:13}px ui-sans-serif, system-ui, sans-serif`;
-    const vy=R.narrow?py+R.h-8:py+67;
-    if(pr.outcome==="land"){ ctx.fillStyle="#6FCF97"; ctx.fillText(pre+"lands",px-9,vy); }
-    else if(pr.outcome==="crash"){ ctx.fillStyle="#E0517B"; ctx.fillText(pre+"crashes",px-9,vy); }
-    else if(pr.outcome==="invert"){ ctx.fillStyle="#B48CFF"; ctx.fillText(pre+"falls in",px-9,vy); }
-    else { ctx.fillStyle="#7C8B9B";
-      ctx.fillText(pre+(isFinite(pr.closest)?Math.round(pr.closest)+" off":"misses"),px-9,vy); }
+    ctx.fillStyle=v.col;
+    ctx.fillText(pre+v.text,px-9,R.narrow?py+R.h-8:py+67);
   }
   ctx.textAlign="left";
 }
@@ -1671,12 +1703,10 @@ function frame(ts){
     $("rpm").textContent=Math.round(deck.omega*9.549)+" rpm";
     $("throttle").classList.toggle("hot",throttle>0.05);
     const pr=cachedPredict();
-    const lands=pr&&pr.outcome==="land";
-    $("release").classList.toggle("lands",!!lands);
+    const v=verdict(pr);
+    $("release").classList.toggle("lands",v.key==="clears");
     $("thlab").textContent="Let go to launch";
-    $("relsub").textContent = lands ? "lands"
-      : pr&&pr.outcome==="crash" ? "crashes"
-      : pr&&pr.outcome==="invert" ? "falls in" : "or just let go";
+    $("relsub").textContent = v.key==="none"||v.key==="miss" ? "or just let go" : v.text;
     const g=gatesHit.filter(Boolean).length;
     if(g!==frame._g){ frame._g=g; refreshHUD(); }
     if(holding) everHeld=true;

@@ -8,6 +8,7 @@ const ok = (n, c, extra) => c ? (pass++, console.log("  ok   " + n))
   : (fail++, console.log("  FAIL " + n + (extra ? "  -> " + extra : "")));
 
 const T = load();
+let ok_short = null;
 
 console.log("\n[1] boot and levels");
 ok("8 levels present", T.LEVELS.length === 8);
@@ -269,6 +270,30 @@ console.log("\n[12] the build layer is wired, and a flip does not poison the nex
   ok("rebuilding after a flip puts the deck back at the origin",
      T.deckPos[0] === 0 && T.deckPos[1] === 0, "deckPos=" + T.deckPos);
   ok("rebuilding clears the gates lit by the last run", T.gatesHit.every(g2 => !g2));
+}
+
+console.log("\n[13] the verdict tells the truth about clearing, not just landing");
+{
+  // The readout, the Launch button, the shot marker and the drawn line all
+  // said "lands" in green on a shot that settles as "Landed, but short",
+  // because the prediction knows about bodies and nothing about gates.
+  if(!T.verdict){ ok("the game exposes one verdict for every surface", false, "verdict not defined"); }
+  else {
+    T.loadLevel(1); T.startSpin(); T.holding = true;   // system 2, one gate
+    let sawShort = false, sawClears = false, g = 0;
+    while(T.phase === "spin" && g++ < 34 * 120){
+      T.step();
+      const v = T.verdict(T.cachedPredict());
+      const left = T.gatesHit.some(x => !x);
+      if(v.key === "clears" && left) break;             // would be the old lie
+      if(v.key === "short"){ sawShort = true; ok_short = v; }
+      if(v.key === "clears" && !left){ sawClears = true; break; }
+    }
+    ok("a landing shot with the gate still open reads as short, not clear", sawShort);
+    ok("it reads as clearing once the gate is crossed", sawClears);
+    ok("short and clear are not the same colour",
+       !ok_short || ok_short.col !== "#6FCF97", ok_short && ok_short.col);
+  }
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

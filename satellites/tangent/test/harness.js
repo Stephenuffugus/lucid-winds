@@ -93,6 +93,7 @@ function load(){
       get lvIndex(){ return lvIndex; },
       get parts(){ return parts; },
       cachedPredict: (typeof cachedPredict === "function" ? cachedPredict : null),
+      verdict:       (typeof verdict       === "function" ? verdict       : null),
       // save + coaching surface (T2)
       readSave:        (typeof readSave        === "function" ? readSave        : null),
       writeSave:       (typeof writeSave       === "function" ? writeSave       : null),
