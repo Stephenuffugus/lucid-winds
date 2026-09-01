@@ -432,6 +432,31 @@ function buildIntakeBay(){
   shadowByGeometry();
 }
 
+// Level three. The size inversion, and the thing it teaches is not "go thin": it
+// is that YOUR WIRE GOES WHERE YOUR BODY CANNOT. The target sits in a sealed
+// gallery reachable only through a vent. Fat, you cannot fit. Thin, you cannot
+// smother, because that needs forty. But conduit fits through a vent at any
+// size, so the answer is to route through it and take him from outside.
+//
+// The second way is the opposite of the first: commit enough of yourself to
+// wire that you drop under thirty, squeeze in, and do it by hand. That costs the
+// refund on everything you left behind, which is the reclaim tax charging you
+// for the shape you chose.
+function buildVentStack(){
+  fill(3,22,14,29,FLOOR);       // entry floor
+  fill(3,17,30,20,FLOOR);       // the low hall
+  fill(6,21,7,21,FLOOR);        // entry to hall
+  fill(10,8,28,15,FLOOR);       // the gallery, sealed
+  TT[idx(16,16)]=VENT;          // the only way in for a body, and for a wire
+  fill(16,16,16,16,VENT);
+  fill(24,16,25,16,FLOOR);      // a second mouth, walled off below: see it, not use it
+  for(let x=24;x<=25;x++) TT[idx(x,17)]=WALL;
+  conc(3,19,30,19);             // the hall's cable channel
+  CONC[idx(16,16)]=1;           // the vent is a conduit channel too
+  shadowByGeometry();
+  TT[idx(16,16)]=VENT;          // keep it a vent after the shadow pass
+}
+
 // Any floor tile touching a wall is unlit. Cover comes from geometry, free.
 function shadowByGeometry(){
   const base=TT.slice();
@@ -513,8 +538,29 @@ const LEVELS = {
     ],
     targets:["sentry-1"],
   },
+  "site-03":{
+    id:"site-03", name:"Vent Stack", teaches:"your wire goes where your body cannot",
+    // The exit is INSIDE the gallery, so every way through ends with you thin and
+    // in there. What differs is how the target dies: the machine takes him while
+    // you are still outside, or you take yourself back out of the wire once you
+    // are through and do it by hand.
+    build:buildVentStack, start:[5.5,26.5], exfil:{x:26,y:10},
+    sources:[ {id:"sock-1", x:5, y:19, kind:"socket", capacity:40, noisy:false} ],
+    devices:[
+      // inside the gallery, at the far end of the vent
+      {id:"crn-1", x:20, y:14, kind:"crane", needs:35, drop:[20,12]},
+      // reachable by wire and unfundable: sixty out of a socket that has forty.
+      // You can route all the way to it and still not turn it on.
+      {id:"spk-1", x:26, y:12, kind:"speaker", needs:60},
+    ],
+    enemies:[ {id:"sentry-1", kind:"sentry", x:14.5, y:12.5,
+               route:[[13,10],[20,12],[26,14],[13,13]]} ],
+    lights:[ {x:8,y:19},{x:20,y:19},{x:14,y:11},{x:24,y:13} ],
+    siteWires:[ (()=>{ const w=[]; for(let x=5;x<=16;x++) w.push([x,19]); return w; })() ],
+    targets:["sentry-1"],
+  },
 };
-const LEVEL_ORDER = ["site-01","site-02"];
+const LEVEL_ORDER = ["site-01","site-02","site-03"];
 const clone = o => JSON.parse(JSON.stringify(o));
 
 function newGame(levelId){
@@ -2502,6 +2548,7 @@ function bindSettings(){
 const LOCKED_HINT = {
   "site-01":"Splice would route the corridor for nothing, and the speaker is out of the socket's budget",
   "site-02":"Splice frees the generator run, and Insulation makes the cheap exposed route survivable",
+  "site-03":"the speaker in the gallery needs sixty and the socket has forty, so a bigger source would light it",
 };
 function medalLine(st){
   if(!st || !st.done) return "not yet run";

@@ -5,7 +5,7 @@
 
 ## Where we are
 
-**C1 through C4 are complete. C5's systems are complete and 2 of its 6 levels
+**C1 through C4 are complete. C5's systems are complete and 3 of its 6 levels
 are authored**, see the gap named below. M1, the ship gate, is still unanswered
 and is still Stephen's alone.
 
@@ -15,7 +15,7 @@ canvas 2D, touch first. It runs from `file://`, GitHub Pages, or anywhere.
 ## How to check it, in order
 
 ```
-node test/smoke.js                 393 assertions, headless, no deps
+node test/smoke.js                 419 assertions, headless, no deps
 node test/mutants.js               78 mutants, all must be killed
 node test/persist.js               save across a real page reload, and two tabs
 node test/verbs.js [w] [h]         every prowl verb, by real touch
@@ -336,18 +336,26 @@ while squeeze and force do not move.
 **Site select and residue spend:** medal state per site, a named line saying which
 tool would finish the business still on it, the trait shop, and a resume card.
 
+**Level three, Vent Stack**, teaches the idea the design turns on: your wire
+goes where your body cannot. The target is in a gallery reachable only through a
+vent; fat you will not fit, thin you cannot smother. Conduit fits at any size.
+By wire, 20.6 laid through the vent takes him while you are still outside. By
+hand, 76.6 committed makes you thin enough to squeeze in, and pulling it home
+afterwards is what lets you fight. Both logged.
+
 ### The gap in C5, stated plainly
-**Four of the six curriculum levels are not authored**: vent stack, generator
-hall, substation, hive spine. The loader, the two-path rule, the solvability
+**Three of the six curriculum levels are not authored**: generator hall
+(concealed routing is worth 1.6x), substation (lockdown and the breaker), hive
+spine (liquidity, two traps you cannot fund at once). The loader, the two-path rule, the solvability
 pattern, the unusable-affordance rule and the splice re-read are all established
 on site-01. What remains is content work against a working frame.
 
 ## Next action
 
-**Author the four remaining curriculum levels** (BUILD-PLAN section 5): vent
-stack teaches the size inversion, generator hall teaches that concealed routing
-is worth 1.6x, substation teaches lockdown and the breaker, hive spine teaches
-liquidity. Copy the shape of `site-01`: one idea, re-test the last two, no
+**Author the three remaining curriculum levels** (BUILD-PLAN section 5):
+generator hall teaches that concealed routing is worth 1.6x, substation teaches
+lockdown and the breaker, hive spine teaches liquidity. Copy the shape of
+`site-01` and `site-03`: one idea, re-test the last two, no
 tutorial text, at least two affordances the level's own tools cannot use, a
 scripted solve in the suite, and a second way through that is not the first.
 

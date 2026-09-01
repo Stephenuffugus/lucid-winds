@@ -393,6 +393,11 @@ const MUTANTS = [
     to:   "    sources: L.sources,",
     expect: "clean copy of its level" },
 
+  { id: "vent-blocks-wire", why: "a vent stops conduit as well as bodies, which kills level three",
+    from: "  const t=TT[idx(x,y)]; return t!==WALL && t!==DOOR; }",
+    to:   "  const t=TT[idx(x,y)]; return t!==WALL && t!==DOOR && t!==VENT; }",
+    expect: "goes through the vent" },
+
   { id: "spot-decay-none", why: "spot progress never decays once you break line of sight",
     from: "  } else e.spot=Math.max(0, e.spot-CFG.spotDecay*dt);",
     to:   "  } else { }",

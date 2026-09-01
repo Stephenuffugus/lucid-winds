@@ -1524,6 +1524,111 @@ console.log("\n[19] the curriculum");
   ok("and it falls to the wire", killed && B.stats.tilesLaid>0);
 }
 
+// Spend yourself into wire until you fit a vent: a long deliberate loop through
+// the hall, which is exactly the play DESIGN section 3.1.3 asks the level to
+// teach. Stops as soon as the projected body is thin enough.
+const spendIntoWire = (S, stopAt) => {
+  // Row 17 carries the walled-off second vent mouth at x 24 and 25, so the loop
+  // runs row 20, then row 18, then row 17 only as far as the wall.
+  const pts=[[5,20]];
+  for(let x=6;x<=30;x++) pts.push([x,20]);
+  pts.push([30,19]); pts.push([30,18]);
+  for(let x=29;x>=3;x--) pts.push([x,18]);
+  pts.push([3,17]);
+  for(let x=4;x<=23;x++) pts.push([x,17]);
+  G.beginDraft(5,19);
+  for(const [x,y] of pts){
+    if(G.blobRef().mass - S.draft.cost <= stopAt) break;
+    G.draftStep(x,y);
+  }
+  G.commitDraft();
+};
+
+// ── level three: the size inversion, and what the wire can do that you cannot ─
+{
+  const S = G.newGame("site-03");
+  const b = G.blobRef();
+  ok("level three loads", S.level==="site-03");
+  ok("the gallery cannot be walked into", !G.bfs(b.x, b.y, 20, 12));
+  ok("its exit is inside the gallery", !G.bfs(b.x, b.y, S.exfil.x, S.exfil.y));
+  ok("a full body will not fit the vent", !G.passableBlob(16,16,CFG.capacity));
+  ok("a thin one will", G.passableBlob(16,16,CFG.squeezeAt-1));
+  ok("but a wire fits it at any size", G.conduitable(16,16));
+  ok("and a route through it reaches the machine inside",
+     !!G.cheapestPath(5,19, 20,14));
+  const sock=S.sources[0], spk=S.devices.find(d=>d.kind==="speaker");
+  ok("the speaker can be reached and never funded",
+     !!G.cheapestPath(5,19, spk.x,spk.y) && spk.needs > sock.capacity,
+     `needs ${spk.needs} of ${sock.capacity}`);
+  ok("and the facility's own wiring is the other thing you cannot use yet",
+     S.siteWires.length>0 && S.player.traits.splice===false);
+  ok("going thin means giving up the takedown, which is the whole inversion",
+     CFG.squeezeAt < CFG.envelop.minMass, `${CFG.squeezeAt} against ${CFG.envelop.minMass}`);
+}
+
+{ // path one: take him from outside, through a vent your body cannot use
+  const S = G.newGame("site-03");
+  const crn = S.devices.find(d=>d.kind==="crane");
+  const path = G.cheapestPath(5,19, crn.x,crn.y);
+  G.beginDraft(5,19);
+  for(let i=1;i<path.length;i++) G.draftStep(path[i][0], path[i][1]);
+  G.commitDraft();
+  ok("the route goes through the vent", S.conduits[0].path.some(p=>p[0]===16&&p[1]===16));
+  ok("and the crane comes on", crn.on===true);
+  let killed=false;
+  for(let i=0;i<60*120 && !killed;i++){ G.step(0.016,{ax:0,ay:0});
+    killed = S.enemies[0].state==="dead"; }
+  ok("it takes the target while you are still outside", killed);
+  const b=G.blobRef();
+  console.log(`       level three by wire: ${S.conduits[0].cost.toFixed(1)} laid,`
+            + ` body ${b.mass.toFixed(1)}, and he never saw you`);
+  ok("but you are still too fat to follow it in", b.mass >= CFG.squeezeAt);
+  // so you keep spending until you fit. The wire you leave is why you fit.
+  spendIntoWire(S, CFG.squeezeAt-6);
+  const left=G.blobRef().mass;
+  console.log(`       then spent down to ${left.toFixed(1)} to fit the vent`);
+  ok("spending yourself into wire is what makes you thin enough",
+     left < CFG.squeezeAt, "mass="+left.toFixed(1));
+  b.x=16.5; b.y=16.9;
+  for(let i=0;i<240;i++) G.step(0.016,{ax:0,ay:-1});
+  ok("and then you fit through it", b.y < 15.5, "y="+b.y.toFixed(2));
+  b.x=S.exfil.x+0.5; b.y=S.exfil.y+0.5;
+  G.step(0.016,{ax:0,ay:0});
+  ok("and out", !!S.result && S.result.ok===true);
+  ok("invariant holds", G.checkLedger());
+}
+
+{ // path two: spend yourself thin, get in, then take yourself back and do it by hand
+  const S = G.newGame("site-03");
+  const b = G.blobRef();
+  spendIntoWire(S, CFG.squeezeAt-6);
+  const committed=S.conduits[0].cost;
+  ok("laying a long loop makes you thin", G.blobRef().mass < CFG.squeezeAt,
+     "mass="+G.blobRef().mass.toFixed(1));
+  ok("and too thin to smother anything", G.blobRef().mass < CFG.envelop.minMass);
+  b.x=16.5; b.y=16.9;
+  for(let i=0;i<240;i++) G.step(0.016,{ax:0,ay:-1});
+  ok("thin, you fit through the vent", b.y < 15.5, "y="+b.y.toFixed(2));
+  // and now take yourself back out of the wire, at the usual price
+  G.startReclaim(S.conduits[0]);
+  for(let i=0;i<60*60 && S.conduits.length; i++) G.step(0.016,{ax:0,ay:0});
+  console.log(`       level three by hand: committed ${committed.toFixed(1)},`
+            + ` back to ${G.blobRef().mass.toFixed(1)} after the tax`);
+  ok("pulling it home makes you heavy again, inside",
+     G.blobRef().mass >= CFG.envelop.minMass, "mass="+G.blobRef().mass.toFixed(1));
+  ok("and the tax was charged for the shape you chose",
+     S.ledger.debits.reclaimTax > committed*0.2);
+  const e=S.enemies[0];
+  b.x=e.x+0.4; b.y=e.y;
+  G.startEnvelop(false);
+  for(let i=0;i<400 && S.act.verb;i++){ b.x=e.x+0.4; b.y=e.y; G.step(0.016,{ax:0,ay:0}); }
+  ok("which is what lets you take him by hand", e.state==="dead");
+  b.x=S.exfil.x+0.5; b.y=S.exfil.y+0.5;
+  G.step(0.016,{ax:0,ay:0});
+  ok("and out that way too", !!S.result && S.result.ok===true);
+  ok("invariant holds", G.checkLedger());
+}
+
 { // a level must never edit the level it came from
   const A = G.newGame("site-01");
   A.devices[0].on = true; A.devices[0].needs = 999;

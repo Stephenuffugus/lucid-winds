@@ -383,14 +383,25 @@ Build in the addendum's priority order:
     every machine that source can afford turns green. Tapping still tells you
     everything, which is the rule the addendum actually sets. That is a small
     deviation from "prints its requirement when unpowered" and it is deliberate.
-- [~] **C5 gate** (2026-09-01) — **systems complete, 2 of 6 levels authored.
+- [~] **C5 gate** (2026-09-01) — **systems complete, 3 of 6 levels authored.
   Read the gap; it is the honest state, not a rounding.**
   - **Level loader shipped.** Levels are data plus a tile builder, in a registry,
     and a run gets a **deep copy** so it can never edit the level it came from
     (gated, with a mutant). `newGame(id)`. The whole inherited map became
     `site-02` and the suite pins it explicitly, so adding or reordering levels
     cannot silently re-point a hundred assertions at a different map.
-  - **2/6 solvability checks, both green, both two ways.** `site-01` Intake Bay
+  - **Level three, Vent Stack, teaches the idea the whole design turns on: your
+    wire goes where your body cannot.** The target sits in a gallery reachable
+    only through a vent. Fat you will not fit; thin you cannot smother, because
+    that needs forty and the vent needs under thirty. But conduit fits a vent at
+    any size. **By wire: 20.6 laid through it, the crane takes him while you are
+    still outside, then you spend down to 23.8 to follow it in. By hand: 76.6
+    committed to get thin enough, squeeze through, then pull it all home to 80.9
+    after the tax and take him yourself.** The wire you leave behind is the
+    reason you fit, and taking it back is what lets you fight. Two affordances
+    it cannot use: a speaker that needs sixty out of a socket that has forty, and
+    the site wiring.
+  - **3/6 solvability checks, all green, all two ways.** `site-01` Intake Bay
     is newly authored to the plan's shape: one source, one machine it can afford,
     one patrol, and the machine only fires on the tile the patrol has to cross.
     Logged both paths: **by wire, net +14.5 mass, 14 tiles, peak alert 1; by
