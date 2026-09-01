@@ -35,12 +35,22 @@
 
   #bottom{bottom:0;padding:14px 12px calc(env(safe-area-inset-bottom) + 12px);
     background:linear-gradient(0deg,rgba(14,20,28,.96) 55%,rgba(14,20,28,0))}
-  .palette{display:flex;gap:7px;margin-bottom:11px;overflow-x:auto;scrollbar-width:none}
-  .palette::-webkit-scrollbar{display:none}
-  .tool{flex:0 0 auto;min-width:66px;padding:8px 9px;border-radius:3px;background:var(--deck);
-    border:1px solid var(--etch);color:var(--ink-dim);font-size:11.5px;text-align:left;line-height:1.3;
-    cursor:pointer;font-family:inherit}
-  .tool b{display:block;font-size:12.5px;font-weight:600;color:var(--ink);margin-bottom:2px}
+  /* A grid that wraps, never a strip that scrolls. On a 320px screen the old
+     flex row put Erase entirely off the edge, so the tool a beginner needs
+     most was the one tool they could not see. */
+  .palette{display:grid;grid-template-columns:repeat(auto-fit,minmax(58px,1fr));
+    gap:6px;margin-bottom:11px}
+  /* Below 360px auto-fit lands on four columns, which strands Erase alone in a
+     row of empty cells. Three by two reads as deliberate and widens the tiles.
+     This rule wins on source order, not specificity, so it must stay after the
+     one above. */
+  @media (max-width:360px){ .palette{grid-template-columns:repeat(3,1fr)} }
+  .tool{min-width:0;min-height:52px;padding:7px 5px;border-radius:3px;background:var(--deck);
+    border:1px solid var(--etch);color:var(--ink-dim);font-size:11px;text-align:left;line-height:1.25;
+    cursor:pointer;font-family:inherit;overflow:hidden}
+  .tool b{display:block;font-size:11.5px;font-weight:600;color:var(--ink);margin-bottom:1px}
+  /* one line each, so wrapped rows stay the same height as each other */
+  .tool b,.tool span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
   .tool.on{border-color:var(--tele);background:#22323E;color:var(--tele)}
   .tool.on b{color:var(--tele)}
 
@@ -54,10 +64,12 @@
   .tol{position:absolute;top:0;bottom:0;background:rgba(121,208,230,.09);
     border-left:1px dashed var(--etch);border-right:1px dashed var(--etch)}
 
-  button.act{padding:0 18px;height:44px;border-radius:3px;border:1px solid transparent;
+  button.act{padding:0 18px;height:48px;border-radius:3px;border:1px solid transparent;
     font-size:14.5px;font-weight:600;cursor:pointer;font-family:inherit}
   .go{background:var(--ball);color:#20160A}
-  .ghost{background:transparent;border-color:var(--etch);color:var(--ink-dim)}
+  /* not fully transparent: over a bright patch of starfield a transparent
+     ghost button reads as loose text and stops looking pressable */
+  .ghost{background:rgba(27,36,49,.88);border-color:var(--etch);color:var(--ink)}
 
   .spinrow{display:flex;gap:9px;align-items:stretch}
   #throttle{flex:1;height:88px;border-radius:4px;border:1px solid var(--etch);background:var(--deck);
@@ -71,8 +83,8 @@
     color:var(--tele);font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
   #release .sub{font-size:11px;font-weight:400;color:var(--ink-dim)}
-  #release.armed{border-color:var(--ok);background:#1E3A2C;color:var(--ok)}
-  #release.armed .sub{color:rgba(111,207,151,.8)}
+  #release.lands{border-color:var(--ok);background:#1E3A2C;color:var(--ok)}
+  #release.lands .sub{color:rgba(111,207,151,.8)}
 
   .card{position:fixed;left:14px;right:14px;top:50%;transform:translateY(-50%);background:var(--deck);
     border:1px solid var(--etch);border-radius:4px;padding:20px 18px;z-index:20;max-width:400px;margin:0 auto}
@@ -87,6 +99,7 @@
   .brk span:first-child{color:var(--ink-dim)}
   .hide{display:none!important}
   .hint{font-size:11.5px;color:var(--ink-dim);margin-top:9px;line-height:1.45}
+  .brand{margin-top:6px;opacity:.6;font-size:11px}
 </style>
 </head>
 <body>
@@ -112,15 +125,21 @@
     </div>
     <div class="hint" id="buildhint"></div>
     <div class="hint" id="best" style="margin-top:4px"></div>
+    <div class="hint brand">Tangent · Sky Wolf Studio</div>
   </div>
 
   <div id="spinui" class="hide">
     <div class="spinrow">
       <button id="throttle"><div class="fill" id="thfill"></div>
-        <span id="thlab">Hold — let go to launch</span><span class="sub" id="rpm">0 rpm</span></button>
+        <span id="thlab">Hold to spin up</span><span class="sub" id="rpm">0 rpm</span></button>
       <button id="release"><span>Launch</span><span class="sub" id="relsub">or just let go</span></button>
     </div>
     <div class="hint" id="spinhint"></div>
+  </div>
+
+  <div id="flyui" class="hide">
+    <div class="row"><button class="act ghost" id="abortbtn" style="flex:1">Rebuild deck</button></div>
+    <div class="hint">Tracking the shot.</div>
   </div>
 </div>
 
@@ -161,56 +180,61 @@ const OM_RIM=1.9, BOWL=OM_RIM*OM_RIM/DECK_R, OMEGA_MAX=3.05, OM_IDLE=1.15;
 const TH_FLOOR=0.30, DT=1/120, RUN_LIMIT=34;
 const FLY_H=1/60, FLY_STEPS=1500, FLY_BOUND=2200;
 const HOLE_ANIM=1.5, HOLE_HOLD=0.18;
-const PORT_W=0.34, WALL_REST=0.05, DECK_STEPS=2200, WALL_DRAG=2.0, CONTACT=1.6;
+const WALL_REST=0.05, WALL_DRAG=2.0, CONTACT=1.6;
+/* Camera fill factors. The deck has to be big enough to aim on, so while you
+   are spinning it fills NEAR_FILL of the band left between the two HUD strips
+   rather than of the raw viewport: on a short screen, filling the viewport
+   just hides the dish behind the part palette. On release the framing opens
+   out to the whole system at CAM_LERP per second. */
+const BUILD_FILL=0.80, NEAR_FILL=0.68, WIDE_FILL=0.92, CAM_LERP=3.2;
 const eqRadius = om => om*om/BOWL;
 
 const PARTS={
   rail:   {label:"Rail",   blurb:"deflects",  mass:3, kind:"segment"},
   bumper: {label:"Bumper", blurb:"throws in", mass:2, kind:"circle", r:8.5, rest:1.12},
   brake:  {label:"Brake",  blurb:"slows",     mass:1, kind:"zone", r:15},
-  booster:{label:"Booster",blurb:"speeds up", mass:1, kind:"zone", r:12},
-  port:   {label:"Port",   blurb:"way out",    mass:0, kind:"port"},
+  booster:{label:"Booster",blurb:"speeds",    mass:1, kind:"zone", r:12},
 };
 const TOOLS=["rail","bumper","brake","booster","erase"];
 
 /* Bodies: m is the gravitational parameter directly (accel = m / d^2).
    ~2.6e6 captures a slow pass. ~1.1e6 bends without swallowing.       */
 const LEVELS=[
- { name:"First tangent", budget:6, portBudget:3, tol:0.40, gates:[],
+ { name:"First tangent", budget:6, tol:0.40, gates:[],
    bodies:[{n:"Vesper",x:0,y:-430,r:28,m:6.8e6,target:true}],
    note:"Hold to widen the orbit. Release when the line reaches Vesper." },
 
- { name:"Behind you", budget:7, portBudget:3, tol:0.35, gates:[{r:66,a:-1.35,w:30}],
+ { name:"Behind you", budget:7, tol:0.35, gates:[{r:66,a:-1.35,w:30}],
    bodies:[{n:"Kell",x:-340,y:300,r:28,m:6.8e6,target:true}],
    note:"Kell is behind the deck. Hold the ball back most of a turn." },
 
- { name:"Not the nearest", budget:8, portBudget:2, tol:0.30,
+ { name:"Not the nearest", budget:8, tol:0.30,
    gates:[{r:50,a:-0.55,w:28}],
    bodies:[{n:"Ash",x:60,y:-250,r:27,m:1.1e6},
            {n:"Orin",x:210,y:-580,r:28,m:6.8e6,target:true}],
    note:"Ash is closer but it is not your target. Hitting it ends the run." },
 
- { name:"Around the heavy", budget:9, portBudget:2, tol:0.26,
+ { name:"Around the heavy", budget:9, tol:0.26,
    gates:[{r:70,a:-1.15,w:28}],
    bodies:[{n:"Bell",x:-250,y:-210,r:34,m:3.4e6},
            {n:"Wren",x:-580,y:170,r:28,m:5.7e6,target:true}],
    note:"Bell is too heavy to cross. Let it bend you around toward Wren." },
 
- { name:"Threading", budget:10, portBudget:2, tol:0.24,
+ { name:"Threading", budget:10, tol:0.24,
    gates:[{r:44,a:-0.20,w:26},{r:92,a:-2.45,w:26}],
    bodies:[{n:"Cair",x:-290,y:-300,r:22,m:0.42e6},
            {n:"Dov", x:300,y:-300,r:22,m:0.42e6},
            {n:"Halo",x:150,y:-470,r:28,m:6.8e6,target:true}],
    note:"Two wells flank the corridor. Their pull is the only steering you get." },
 
- { name:"Inside out", budget:9, portBudget:2, tol:0.26,
+ { name:"Inside out", budget:9, tol:0.26,
    gates:[{r:60,a:-0.9,w:28}],
    bodies:[{n:"Maw", x:0,y:-430,r:34,m:1.25e7,hole:true,R:118,
             other:{inv:1, tint:"#7A2E12", tintAmt:0.5, mode:"multiply", bloom:0.18, bloomColor:"#2A0A18", gravMul:1.35, hueA:22, hueB:340}},
            {n:"Lior",x:0,y:-312,r:44,m:1.4e7,target:true,side:1}],
    note:"Lior is on the other side. Go through the Maw and it comes to you." },
 
- { name:"Two minds", budget:9, portBudget:2, tol:0.24,
+ { name:"Two minds", budget:9, tol:0.24,
    gates:[{r:52,a:-0.7,w:28}],
    bodies:[{n:"Vex", x:0,y:-296,r:30,m:6.0e6,targetSide:1},
            {n:"Cess",x:0,y:-406,r:32,m:1.1e7,hole:true,R:110,
@@ -218,7 +242,7 @@ const LEVELS=[
                    bloom:0.20, bloomColor:"#04160C", gravMul:1.5, hueA:96, hueB:160}}],
    note:"Vex will kill you from this side. Get past it, through Cess, and it becomes the target." },
 
- { name:"Open deck", budget:16, portBudget:5, tol:0.6, gates:[], sandbox:true,
+ { name:"Open deck", budget:16, tol:0.6, gates:[], sandbox:true,
    bodies:[{n:"Ridd",x:-300,y:-260,r:26,m:1.6e6},
            {n:"Sol", x:340,y:-180,r:22,m:2.0e6},
            {n:"Tarn",x:40,y:-560,r:28,m:6.2e6,target:true},
@@ -232,7 +256,7 @@ let phase="build", lvIndex=0, lv=LEVELS[0];
 let parts=[], tool="rail";
 let deck={theta:0,omega:0,wobble:0}, ball=null;
 let trail=[], flightTrail=[], gatesHit=[];
-let throttle=0, holding=false, runT=0, flightT=0, armed=false;
+let throttle=0, holding=false, runT=0, flightT=0;
 let closestTo={}, crashedInto=null, assists=new Set(), launchInfo=null;
 let shakeT=0, drag=null, acc=0, last=0;
 let _pred=null,_predAge=99;
@@ -287,6 +311,8 @@ const sfx = (()=>{
   return {
     boot,
     get live(){ return on; },
+    // silence without tearing the graph down, for when the tab goes away
+    hush(v){ if(on) try{ master.gain.value = v?0:0.5; }catch(e){} },
     // continuous voices, called every frame
     deck(omega,speed,spinning){
       if(!on) return;
@@ -485,13 +511,10 @@ function finishInversion(){
 /* ---------------- build ---------------- */
 function partMass(p){ return p.type==="rail"
   ? PARTS.rail.mass*(0.4+len(p.x2-p.x,p.y2-p.y)/60) : PARTS[p.type].mass; }
-const isPort = p => p.type==="port";
-const ports  = () => parts.filter(isPort);
-const built  = () => parts.filter(p=>!isPort(p));
 function partCentre(p){ return p.type==="rail" ? [(p.x+p.x2)/2,(p.y+p.y2)/2] : [p.x,p.y]; }
 function imbalance(){
   let mx=0,my=0,m=0;
-  for(const p of built()){ const c=partCentre(p),mm=partMass(p); mx+=c[0]*mm; my+=c[1]*mm; m+=mm; }
+  for(const p of parts){ const c=partCentre(p),mm=partMass(p); mx+=c[0]*mm; my+=c[1]*mm; m+=mm; }
   return m<=0?0:len(mx/m,my/m)/DECK_R;
 }
 function canvasToWorld(cx,cy){ const s=camScale(),o=camOrigin(); return [(cx-o[0])/s,(cy-o[1])/s]; }
@@ -503,7 +526,7 @@ function onDown(e){
   const [lx,ly]=rot(wx,wy,-deck.theta);
   if(len(lx,ly)>DECK_R-4) return;
   if(tool==="erase"){ eraseAt(lx,ly); return; }
-  if(built().length>=lv.budget){ flashHint("Deck is full. Erase something first."); return; }
+  if(parts.length>=lv.budget){ flashHint("Deck is full. Erase something first."); return; }
   if(tool==="rail") drag={type:"rail",x:lx,y:ly,x2:lx,y2:ly};
   else { parts.push({type:tool,x:lx,y:ly}); refreshHUD(); }
 }
@@ -528,7 +551,6 @@ function eraseAt(lx,ly){
   parts.forEach((p,i)=>{
     let d;
     if(p.type==="rail") d=distToSeg(lx,ly,p.x,p.y,p.x2,p.y2);
-    else if(isPort(p)) d=len(lx-Math.cos(p.a)*DECK_R, ly-Math.sin(p.a)*DECK_R);
     else d=len(lx-p.x,ly-p.y);
     if(d<bd){bd=d;best=i;}
   });
@@ -568,9 +590,11 @@ function advanceDeck(s,throttleTarget){
   rimWall(s);
 }
 
-/* The deck has a retaining wall. The only way off is through a Port you
-   placed, and only once the latch is armed. This is what makes the build
-   phase decide the launch instead of the player's thumb. */
+/* The deck has a retaining wall. It retains, it never imprisons (decision D4):
+   the ball cannot roll off the edge by accident, but the only thing that ever
+   launches it is the player letting go. An earlier version gated the exit on
+   placed Ports and an arming step; it failed first contact with a real player,
+   who could not launch at all, and it is gone for good. */
 function rimWall(s){
   const r=len(s.x,s.y);
   if(r < DECK_R-CONTACT) return;
@@ -581,15 +605,14 @@ function rimWall(s){
   const k0=vt0*(1-Math.exp(-WALL_DRAG*DT));
   s.vx-=k0*tx0; s.vy-=k0*ty0;
   if(r < DECK_R) return;
-  if(s.armed){ s.exited=true; return; }        // released: go, from wherever you are
   // bounce off the wall, losing some energy
   const nx=s.x/r, ny=s.y/r;
   s.x=nx*(DECK_R-0.01); s.y=ny*(DECK_R-0.01);
   const dot=s.vx*nx+s.vy*ny;
   if(dot>0){ s.vx-=(1+WALL_REST)*dot*nx; s.vy-=(1+WALL_REST)*dot*ny; }
-  // Wall friction. This is what lets the ball hunt for a port: rubbing the
-  // wall holds it below deck speed, so in the deck's own frame it walks
-  // steadily backwards past every port in turn. Throttle sets how fast.
+  // Wall friction is what gives rim riding its feel: rubbing holds the ball
+  // below deck speed, so in the deck's own frame it walks steadily backwards
+  // around the rim. The throttle sets how fast it walks.
   if(!s.quiet){ shakeT=Math.max(shakeT,0.05); sfx.wall(Math.abs(dot)); }
 }
 function collideOn(s){
@@ -642,14 +665,12 @@ function flyStep(s,h,acc){
   return null;
 }
 
-/* Where does the ball go if you release right now? Because release is a
-   button and not a rim crossing, this starts from the live state and is
-   therefore exactly what happens.                                        */
-/* With a rim wall, exit is decided by geometry, not by the instant you
-   press the button. So the prediction has to run the deck forward to the
-   next port crossing first, then fly from there. */
+/* Where does the ball go if you release right now? Because release is a button
+   and not a rim crossing, this starts from the live state, so what is drawn is
+   exactly what happens (decision D2). Any new force added to flight has to go
+   into flyStep, which both this and the live run call, or the line starts
+   lying.                                                                  */
 function predictRelease(){
-  const deckPath=[];
   const s={x:ball.x,y:ball.y,vx:ball.vx,vy:ball.vy};
   const acc={closest:{},assists:new Set()};
   const path=[[s.x,s.y]];
@@ -661,11 +682,19 @@ function predictRelease(){
   }
   path.push([s.x,s.y]);
   const tb=targetBody();
-  return {path, deckPath, outcome, closest:acc.closest[tb.n] ?? Infinity, assists:acc.assists};
+  return {path, outcome, closest:acc.closest[tb.n] ?? Infinity, assists:acc.assists};
 }
 function cachedPredict(){ if(_predAge++>=2){ _pred=predictRelease(); _predAge=0; } return _pred; }
 
 /* ---------------- run control ---------------- */
+/* One place decides which strip of controls is showing, so the camera can
+   remeasure the band every time that changes. */
+function showUI(which){
+  $("buildui").classList.toggle("hide", which!=="build");
+  $("spinui" ).classList.toggle("hide", which!=="spin");
+  $("flyui"  ).classList.toggle("hide", which!=="fly");
+  measureHUD();
+}
 function startSpin(){
   phase="spin";
   deck.theta=0; deck.omega=OM_IDLE; deck.wobble=0;
@@ -674,16 +703,15 @@ function startSpin(){
   ball={x:r0,y:0,vx:0,vy:OM_IDLE*r0};
   trail.length=0; flightTrail.length=0;
   gatesHit=lv.gates.map(()=>false);
-  closestTo={}; crashedInto=null; assists=new Set(); launchInfo=null; _predAge=99; armed=false;
+  closestTo={}; crashedInto=null; assists=new Set(); launchInfo=null; _predAge=99;
   resetSystem();
-  $("buildui").classList.add("hide"); $("spinui").classList.remove("hide");
+  showUI("spin");
   refreshHUD();
 }
 function backToBuild(){
   phase="build"; ball=null; trail.length=0; flightTrail.length=0;
   deck.theta=0; deck.omega=0; deck.wobble=0;
-  $("card").classList.add("hide"); $("spinui").classList.add("hide");
-  $("buildui").classList.remove("hide"); refreshHUD();
+  $("card").classList.add("hide"); showUI("build"); refreshHUD();
 }
 function loadLevel(i){
   lvIndex=Math.max(0,Math.min(LEVELS.length-1,i)); lv=LEVELS[lvIndex]; parts=[];
@@ -693,6 +721,7 @@ function loadLevel(i){
   $("buildhint").textContent=lv.note;
   const b=bestFor(lvIndex);
   $("best").textContent = b ? `Best on this deck: ${b.toLocaleString()}` : "";
+  $("best").style.display = b ? "" : "none";   // no empty line eating the deck
   $("spinhint").textContent="Hold to push the ball outward. Let go and it flies.";
   backToBuild();
 }
@@ -703,7 +732,7 @@ function doRelease(reason){
   launchInfo={speed:len(ball.vx,ball.vy), radius:len(ball.x,ball.y),
               rpm:deck.omega*9.549, reason};
   phase="flight"; flightTrail.push([ball.x,ball.y]);
-  $("spinui").classList.add("hide");
+  showUI("fly");
 }
 function failRun(msg){ phase="done"; shakeT=0.5; sfx.fail(); showCard({title:"Run failed",score:0,body:msg,rows:[]}); }
 
@@ -713,11 +742,10 @@ function step(){
     runT+=DT;
     if(runT>RUN_LIMIT){ failRun("Run called off. You have to release it eventually."); return; }
     const s={x:ball.x,y:ball.y,vx:ball.vx,vy:ball.vy,
-             theta:deck.theta,omega:deck.omega,throttle:throttle,armed:armed,exited:false};
+             theta:deck.theta,omega:deck.omega,throttle:throttle};
     advanceDeck(s, holding?1:TH_FLOOR);
     ball.x=s.x;ball.y=s.y;ball.vx=s.vx;ball.vy=s.vy;
     deck.theta=s.theta;deck.omega=s.omega;throttle=s.throttle;
-    if(s.exited){ doRelease("port"); return; }
 
     const imb=imbalance();
     deck.wobble += (imb*(deck.omega/OMEGA_MAX)-deck.wobble)*Math.min(1,DT*4);
@@ -797,15 +825,16 @@ function settle(how){
       : "The ball never came near the target.";
   }
   rows=[["Outcome",how==="land"?"landed":how==="crash"?"crashed":"missed"],
-        ["Closest to "+tb.n, isFinite(m)?Math.round(m)+" units":"—"],
+        ["Closest to "+tb.n, isFinite(m)?Math.round(m)+" units":"none"],
         ["Gates",`${gatesHit.filter(Boolean).length} / ${lv.gates.length}`],
-        ["Release radius", launchInfo?Math.round(launchInfo.radius):"—"],
-        ["Release speed", launchInfo?Math.round(launchInfo.speed):"—"],
+        ["Release radius", launchInfo?Math.round(launchInfo.radius):"none"],
+        ["Release speed", launchInfo?Math.round(launchInfo.speed):"none"],
         ["Slingshots", assists.size||"none"],
         ["Inversions", inversions||"none"]];
   showCard({title,score,body,rows,cleared: how==="land"&&gatesOK});
 }
 function showCard(o){
+  showUI("none");
   if(o.score) recordBest(lvIndex,o.score);
   $("cardtitle").textContent=o.title;
   $("cardscore").textContent=(o.score||0).toLocaleString();
@@ -816,7 +845,30 @@ function showCard(o){
   $("card").classList.remove("hide");
 }
 
-/* ---------------- camera ---------------- */
+/* ---------------- camera ----------------
+   Two framings, one animated value between them. While you are building or
+   aiming the camera holds the DECK, because the deck is what you are reading;
+   the moment you let go it opens out to the whole SYSTEM.
+
+   Both fit into the band left between the two HUD strips rather than into the
+   raw viewport. Filling the viewport is what buried the dish behind the part
+   palette on a short screen: the deck was nominally large and actually half
+   hidden. Measuring the band means the deck is as big as it can be while
+   still being entirely visible.                                            */
+let hudTop=96, hudBot=150;
+function measureHUD(){
+  const t=$("top"), b=$("bottom");
+  // guarded: under the headless harness these are stubs with no real layout,
+  // and the fallbacks above keep the framing deterministic there
+  const th=t&&typeof t.offsetHeight==="number"?t.offsetHeight:0;
+  const bh=b&&typeof b.offsetHeight==="number"?b.offsetHeight:0;
+  if(th>0) hudTop=th;
+  if(bh>0) hudBot=bh;
+}
+function viewBand(){
+  const h=Math.max(120,H-hudTop-hudBot);
+  return {w:W, h:h, cx:W/2, cy:hudTop+h/2};
+}
 function systemExtent(){
   let e=Math.max(DECK_R+40, holdExtent);
   for(const b of bodies()) e=Math.max(e,len(b.x,b.y)+(b.hole?(b.R||b.r*3.2):b.r)+70);
@@ -828,17 +880,30 @@ function systemCentre(){
   for(const b of bodies()){ sx+=b.x; sy+=b.y; n++; }
   return [sx/n,sy/n];
 }
-function camScale(){
-  const fit=Math.min(W,H);
-  if(phase==="build") return fit/(DECK_R*2)*0.80;
-  if(phase==="invert") return fit/(systemExtent()*2)*0.92;
-  return fit/(systemExtent()*2)*0.92;
+function camTarget(){
+  const B=viewBand(), fit=Math.min(B.w,B.h);
+  if(phase==="build")  return {s:fit*BUILD_FILL/(DECK_R*2), c:[deckPos[0],deckPos[1]]};
+  if(phase==="spin")   return {s:fit*NEAR_FILL /(DECK_R*2), c:[deckPos[0],deckPos[1]]};
+  // the collapse is framed on the origin, because holdExtent was sized to
+  // cover both arrangements at once and the deck itself travels during it
+  if(phase==="invert") return {s:fit/(systemExtent()*2)*WIDE_FILL, c:[0,0]};
+  return {s:fit/(systemExtent()*2)*WIDE_FILL, c:systemCentre()};
 }
+let camS=0, camC=[0,0], camReady=false;
+function camSnap(){ const t=camTarget(); camS=t.s; camC=[t.c[0],t.c[1]]; camReady=true; }
+function camUpdate(dt){
+  const t=camTarget();
+  if(!camReady || !(camS>0)){ camSnap(); return; }
+  const k=Math.min(1,dt*CAM_LERP);
+  // geometric on scale, so a zoom of 4x reads at the same rate as a zoom of 2x
+  camS*=Math.pow(t.s/camS,k);
+  camC[0]+=(t.c[0]-camC[0])*k; camC[1]+=(t.c[1]-camC[1])*k;
+}
+function camScale(){ return camReady?camS:camTarget().s; }
 function camOrigin(){
-  if(phase==="build") return [W/2,H/2];
-  if(phase==="invert"){ const s=camScale(); return [W/2, H/2]; }
-  const c=systemCentre(), s=camScale();
-  return [W/2-c[0]*s, H/2-c[1]*s];
+  const s=camScale(), B=viewBand();
+  const c=camReady?camC:camTarget().c;
+  return [B.cx-c[0]*s, B.cy-c[1]*s];
 }
 
 /* ---------------- render ---------------- */
@@ -921,7 +986,13 @@ function drawHole(b,x,y,s){
   ctx.fillStyle="#000"; ctx.fill();
   ctx.strokeStyle="#9B5CFF"; ctx.lineWidth=1.6; ctx.stroke();
 }
+/* Body names live in world space so they follow the body, but the camera zooms
+   by a factor of four between framings. Sizing the font in world units made
+   them billboard-sized while aiming and about four pixels tall once the camera
+   pulled out, so the size is divided back out by the current scale. */
+function worldFont(px){ return `500 ${(px/Math.max(1e-3,camScale())).toFixed(2)}px ui-sans-serif, system-ui, sans-serif`; }
 function drawBodies(){
+  const iz=1/Math.max(1e-3,camScale());     // world units per screen pixel
   for(const b of bodies()){
     const sh=shown(b);
     if(!active(b)){
@@ -930,16 +1001,16 @@ function drawBodies(){
       ctx.strokeStyle=isTarget(b)?"#79D0E6":b.hole?"#9B5CFF":"#E0517B";
       ctx.lineWidth=1.3; ctx.stroke();
       ctx.setLineDash([]);
-      ctx.font="500 11px ui-sans-serif, system-ui, sans-serif";
+      ctx.font=worldFont(11);
       ctx.fillStyle="rgba(216,226,236,.5)"; ctx.textAlign="center";
-      ctx.fillText(b.n+" · other side", sh[0], sh[1]+b.r*sh[2]+14);
+      ctx.fillText(b.n+" · other side", sh[0], sh[1]+b.r*sh[2]+14*iz);
       ctx.textAlign="left"; ctx.globalAlpha=1;
       continue;
     }
     if(b.hole){ drawHole(b,sh[0],sh[1],sh[2]);
-      ctx.font="500 13px ui-sans-serif, system-ui, sans-serif";
+      ctx.font=worldFont(13);
       ctx.fillStyle="rgba(190,150,255,.8)"; ctx.textAlign="center";
-      ctx.fillText(b.n, sh[0], sh[1]+b.r*sh[2]+16); ctx.textAlign="left";
+      ctx.fillText(b.n, sh[0], sh[1]+b.r*sh[2]+16*iz); ctx.textAlign="left";
       continue; }
     // influence halo, sized by how far its pull reaches
     const bx=sh[0], by=sh[1], br=b.r*sh[2];
@@ -957,9 +1028,9 @@ function drawBodies(){
     const hA=isTarget(b)?(sideStyle.hueA??188):322, hB=isTarget(b)?(sideStyle.hueB??266):32;
     paintFerro(bx,by,br,fa,s,hA,hB);
 
-    ctx.font="500 13px ui-sans-serif, system-ui, sans-serif";
+    ctx.font=worldFont(13);
     ctx.fillStyle=isTarget(b)?"rgba(121,208,230,.85)":"rgba(224,81,123,.7)";
-    ctx.textAlign="center"; ctx.fillText(b.n, bx, by+br+16); ctx.textAlign="left";
+    ctx.textAlign="center"; ctx.fillText(b.n, bx, by+br+16*iz); ctx.textAlign="left";
   }
 }
 
@@ -1051,12 +1122,6 @@ function drawPart(p,alpha){
 }
 function drawPrediction(){
   const pr=cachedPredict(); if(!pr) return;
-  if(pr.deckPath&&pr.deckPath.length>1){
-    ctx.beginPath(); ctx.moveTo(pr.deckPath[0][0],pr.deckPath[0][1]);
-    for(const p of pr.deckPath) ctx.lineTo(p[0],p[1]);
-    ctx.strokeStyle=armed?"rgba(216,226,236,.34)":"rgba(216,226,236,.16)";
-    ctx.lineWidth=1; ctx.setLineDash([2,5]); ctx.stroke(); ctx.setLineDash([]);
-  }
   if(pr.path.length<2) return;
   const good=pr.outcome==="land", crash=pr.outcome==="crash";
   ctx.beginPath(); ctx.moveTo(pr.path[0][0],pr.path[0][1]);
@@ -1108,7 +1173,10 @@ function drawDroplet(x,y){
     fa=Math.atan2(f[1],f[0]);
     s=Math.min(1,Math.sqrt(f[2])/22);          // spikes lengthen as a body grabs it
   }
-  const R=BALL_R*2.05;
+  // Never smaller than a few screen pixels. In the system framing the true
+  // radius comes out around two pixels, so the player was watching a trail
+  // with nothing on the end of it. Rendering only: BALL_R still does collision.
+  const R=Math.max(BALL_R*2.05, 5.5/Math.max(1e-3,camScale()));
   ctx.save();
   ctx.shadowColor="rgba(150,120,255,.55)"; ctx.shadowBlur=10;
   tracePts(ferroBlob(x,y,R,fa,s,3.1,64));
@@ -1141,22 +1209,138 @@ function drawHorizonFlash(){
     ctx.strokeStyle=`rgba(255,255,255,${0.16*peak})`; ctx.lineWidth=1; ctx.stroke();
   }
 }
+/* Everything worth knowing that is currently off the edge of the frame.
+   Holding the deck close enough to aim on means most of the system is out of
+   shot, so the edge has to carry it: which way each body lies, how far away it
+   is, and where the predicted shot leaves the screen.                      */
+function chevronColour(b){
+  if(!active(b)) return "rgba(150,162,178,.85)";
+  return b.hole?"#9B5CFF":isTarget(b)?"#79D0E6":"#E0517B";
+}
+/* Where the readout panel sits, so nothing else is drawn under it. */
+function panelRect(){
+  if(phase!=="spin"||!ball) return null;
+  // narrower on a small screen, where a fixed 162px panel is half the width
+  const narrow=W<360, pw=narrow?132:162, ph=narrow?66:74;
+  return {x:W-10-pw, y:hudTop+6, w:pw, h:ph, narrow:narrow};
+}
+function drawChevrons(){
+  if(phase==="build"||!sys.length) return;
+  const s=camScale(), o=camOrigin();
+  const m=20, x0=m, x1=W-m, y0=hudTop+m, y1=Math.max(y0+40,H-hudBot-m);
+  const cx=(x0+x1)/2, cy=(y0+y1)/2;
+  const from=ball?[ball.x,ball.y]:[deckPos[0],deckPos[1]];
+  const inView=(px,py,pad)=> px>x0-pad&&px<x1+pad&&py>y0-pad&&py<y1+pad;
+  const marks=[];
+  for(const b of bodies()){
+    const sh=shown(b);
+    const px=o[0]+sh[0]*s, py=o[1]+sh[1]*s;
+    if(inView(px,py,b.r*sh[2]*s)) continue;              // already on screen
+    marks.push({px,py,label:b.n,dist:len(b.x-from[0],b.y-from[1]),
+                col:chevronColour(b),faint:!active(b),edge:null});
+  }
+  if(phase==="spin"){
+    const pr=cachedPredict();
+    if(pr&&pr.path.length>1){
+      // Anchor this one where the drawn line actually leaves the frame, so the
+      // marker reads as the same shot continuing rather than a separate thing.
+      let edge=null;
+      for(let i=1;i<pr.path.length;i++){
+        const px=o[0]+pr.path[i][0]*s, py=o[1]+pr.path[i][1]*s;
+        if(!inView(px,py,0)){ edge=[px,py]; break; }
+      }
+      const e=pr.path[pr.path.length-1];
+      const px=o[0]+e[0]*s, py=o[1]+e[1]*s;
+      if(!inView(px,py,0))
+        marks.push({px,py,dist:null,faint:false,edge,
+          label: pr.outcome==="land"?"lands":pr.outcome==="crash"?"crashes"
+                :pr.outcome==="invert"?"falls in":"shot",
+          col:   pr.outcome==="land"?"#6FCF97":pr.outcome==="crash"?"#E0517B"
+                :pr.outcome==="invert"?"#B48CFF":"rgba(121,208,230,.75)"});
+    }
+  }
+  if(!marks.length) return;
+  ctx.font="600 11px ui-sans-serif, system-ui, sans-serif";
+  const panel=panelRect(), placed=[];
+  for(const mk of marks){
+    let dx=mk.px-cx, dy=mk.py-cy;
+    const L=Math.hypot(dx,dy)||1; dx/=L; dy/=L;
+    let ex,ey;
+    if(mk.edge){ ex=Math.max(x0,Math.min(x1,mk.edge[0])); ey=Math.max(y0,Math.min(y1,mk.edge[1])); }
+    else {
+      const tx = dx>0 ? (x1-cx)/dx : dx<0 ? (x0-cx)/dx : Infinity;
+      const ty = dy>0 ? (y1-cy)/dy : dy<0 ? (y0-cy)/dy : Infinity;
+      const t=Math.min(tx,ty); ex=cx+dx*t; ey=cy+dy*t;
+    }
+    const text=mk.dist!=null?`${mk.label} ${Math.round(mk.dist)}`:mk.label;
+    const tw=ctx.measureText(text).width;
+    const align = dx> 0.4?"right": dx<-0.4?"left":"center";
+    let lx=ex-dx*15, ly=ey-dy*15;
+    // Keep clear of the readout panel. Slide sideways first, because a marker
+    // that stays on the edge still reads as a direction; only drop below the
+    // panel if there is no room, and move the arrow with its label so the two
+    // never come apart.
+    if(panel){
+      const boxL=()=> align==="right"?lx-tw:align==="left"?lx:lx-tw/2;
+      const hits=()=> boxL()<panel.x+panel.w+6 && boxL()+tw>panel.x-6
+                   && ly<panel.y+panel.h+12 && ly>panel.y-16;
+      if(hits()){
+        const shift=boxL()+tw-(panel.x-8);
+        if(boxL()-shift>=x0){ ex-=shift; lx-=shift; }
+        else { const d2=panel.y+panel.h+20-ey; ex+=0; ey+=d2; ly+=d2; }
+      }
+    }
+    // two markers in nearly the same direction print on top of each other and
+    // become unreadable. The panel already states the shot, so it yields.
+    let clash=false;
+    for(const p of placed) if(Math.hypot(ex-p[0],ey-p[1])<30) clash=true;
+    if(clash){ if(mk.dist==null) continue; ey+=20; ly+=20; }
+    placed.push([ex,ey]);
+    ctx.save();
+    ctx.globalAlpha=mk.faint?0.55:1;
+    ctx.translate(ex,ey); ctx.rotate(Math.atan2(dy,dx));
+    ctx.beginPath(); ctx.moveTo(7,0); ctx.lineTo(-5,5.5); ctx.lineTo(-5,-5.5); ctx.closePath();
+    ctx.fillStyle=mk.col; ctx.fill();
+    ctx.restore();
+    ctx.textAlign=align;
+    ctx.textBaseline= dy>0.5?"bottom": dy<-0.5?"top":"middle";
+    const bx = align==="right"?lx-tw:align==="left"?lx:lx-tw/2;
+    const by = ctx.textBaseline==="bottom"?ly-13: ctx.textBaseline==="top"?ly-1: ly-7;
+    ctx.fillStyle="rgba(10,15,22,.72)"; ctx.fillRect(bx-4,by,tw+8,15);
+    ctx.globalAlpha=mk.faint?0.7:1; ctx.fillStyle=mk.col;
+    ctx.fillText(text,lx,ly);
+    ctx.globalAlpha=1;
+  }
+  ctx.textAlign="left"; ctx.textBaseline="alphabetic";
+}
 function drawOverlay(){
+  drawChevrons();
   if(phase!=="spin"||!ball) return;
-  ctx.font="500 11px ui-sans-serif, system-ui, sans-serif";
+  // Anchored under the top strip rather than at a fraction of screen height,
+  // so it cannot slide into the criteria chips on a short screen, and backed
+  // so it stays readable over the starfield at any framing.
+  const R=panelRect(), px=R.x+R.w, py=R.y;
+  ctx.fillStyle="rgba(10,15,22,.66)"; ctx.fillRect(R.x,R.y,R.w,R.h);
+  ctx.strokeStyle="rgba(58,74,92,.55)"; ctx.lineWidth=1;
+  ctx.strokeRect(R.x+0.5,R.y+0.5,R.w-1,R.h-1);
+  const gap=R.narrow?14:15, y1=py+(R.narrow?17:19);
+  ctx.font=`500 ${R.narrow?10.5:11}px ui-sans-serif, system-ui, sans-serif`;
   ctx.fillStyle="#7C8B9B"; ctx.textAlign="right";
-  const y=H*0.20;
-  ctx.fillText(`radius ${Math.round(len(ball.x,ball.y))} / ${DECK_R}`,W-14,y);
-  ctx.fillText(`speed ${Math.round(len(ball.vx,ball.vy))}`,W-14,y+15);
-  ctx.fillText(`${(RUN_LIMIT-runT).toFixed(1)}s`,W-14,y+30);
+  ctx.fillText(`radius ${Math.round(len(ball.x,ball.y))} / ${DECK_R}`,px-9,y1);
+  ctx.fillText(`speed ${Math.round(len(ball.vx,ball.vy))}`,px-9,y1+gap);
+  ctx.fillText(`${(RUN_LIMIT-runT).toFixed(1)}s`,px-9,y1+gap*2);
   const pr=cachedPredict();
   if(pr){
-    ctx.font="600 13px ui-sans-serif, system-ui, sans-serif";
-    if(pr.outcome==="land"){ ctx.fillStyle="#6FCF97"; ctx.fillText("release now: lands",W-14,y+52); }
-    else if(pr.outcome==="crash"){ ctx.fillStyle="#E0517B"; ctx.fillText("release now: crashes",W-14,y+52); }
-    else if(pr.outcome==="invert"){ ctx.fillStyle="#B48CFF"; ctx.fillText("release now: falls in",W-14,y+52); }
+    // the long form does not fit a narrow panel, and the shot verdict is the
+    // one line that must never be clipped
+    const pre=R.narrow?"now: ":"release now: ";
+    ctx.font=`600 ${R.narrow?12:13}px ui-sans-serif, system-ui, sans-serif`;
+    const vy=R.narrow?py+R.h-8:py+67;
+    if(pr.outcome==="land"){ ctx.fillStyle="#6FCF97"; ctx.fillText(pre+"lands",px-9,vy); }
+    else if(pr.outcome==="crash"){ ctx.fillStyle="#E0517B"; ctx.fillText(pre+"crashes",px-9,vy); }
+    else if(pr.outcome==="invert"){ ctx.fillStyle="#B48CFF"; ctx.fillText(pre+"falls in",px-9,vy); }
     else { ctx.fillStyle="#7C8B9B";
-      ctx.fillText(`release now: ${isFinite(pr.closest)?Math.round(pr.closest)+" off":"misses"}`,W-14,y+52); }
+      ctx.fillText(pre+(isFinite(pr.closest)?Math.round(pr.closest)+" off":"misses"),px-9,vy); }
   }
   ctx.textAlign="left";
 }
@@ -1169,7 +1353,7 @@ function refreshHUD(){
   $("balval").textContent=imb<0.02?"centred":imb.toFixed(2);
   $("balval").style.color=bad?"#E0517B":"#D8E2EC";
   $("toltol").style.left="50%"; $("toltol").style.width=Math.min(1,lv.tol/0.7)*46+"%";
-  const chips=[{t:`${built().length} / ${lv.budget} parts`,ok:built().length<=lv.budget,bad:built().length>lv.budget}];
+  const chips=[{t:`${parts.length} / ${lv.budget} parts`,ok:parts.length<=lv.budget,bad:parts.length>lv.budget}];
   if(!lv.sandbox) chips.push({t:`balance under ${lv.tol.toFixed(2)}`,ok:!bad,bad});
   lv.gates.forEach((g,i)=>chips.push({t:`gate ${i+1}`,ok:gatesHit[i],bad:false}));
   const tb=targetBody();
@@ -1179,13 +1363,19 @@ function refreshHUD(){
 }
 
 /* ---------------- loop ---------------- */
+let paused=false;
 function frame(ts){
+  requestAnimationFrame(frame);
+  // tabbed away: hold everything still and forget the clock, so coming back
+  // does not hand the simulation a lump of elapsed time to chew through
+  if(paused){ last=0; return; }
   if(!last) last=ts;
   const dtms=Math.min(64,ts-last); last=ts;
-  acc+=dtms/1000;
+  const dt=dtms/1000;
+  acc+=dt;
   let guard=0;
   while(acc>=DT&&guard++<400){ step(); acc-=DT; }
-  if(shakeT>0) shakeT=Math.max(0,shakeT-dtms/1000);
+  if(shakeT>0) shakeT=Math.max(0,shakeT-dt);
   sfx.deck(deck.omega, ball?len(ball.vx,ball.vy):0, phase==="spin");
   if(phase==="spin"){
     $("thfill").style.height=(throttle*100)+"%";
@@ -1193,7 +1383,7 @@ function frame(ts){
     $("throttle").classList.toggle("hot",throttle>0.05);
     const pr=cachedPredict();
     const lands=pr&&pr.outcome==="land";
-    $("release").classList.toggle("armed",!!lands);
+    $("release").classList.toggle("lands",!!lands);
     $("thlab").textContent="Let go to launch";
     $("relsub").textContent = lands ? "lands"
       : pr&&pr.outcome==="crash" ? "crashes"
@@ -1201,20 +1391,28 @@ function frame(ts){
     const g=gatesHit.filter(Boolean).length;
     if(g!==frame._g){ frame._g=g; refreshHUD(); }
   }
+  camUpdate(dt);
   draw();
-  requestAnimationFrame(frame);
 }
 
 /* ---------------- boot ---------------- */
 function resize(){
   DPR=Math.min(2,window.devicePixelRatio||1);
-  W=cv.clientWidth; H=cv.clientHeight;
+  // Measure the VISUAL viewport. The layout viewport does not shrink when the
+  // browser chrome is showing, and that difference is exactly the strip the
+  // bottom controls sit in.
+  const vv=window.visualViewport;
+  W=Math.round(vv&&vv.width ?vv.width :cv.clientWidth);
+  H=Math.round(vv&&vv.height?vv.height:cv.clientHeight);
+  cv.style.width=W+"px"; cv.style.height=H+"px";
   cv.width=Math.round(W*DPR); cv.height=Math.round(H*DPR);
+  measureHUD();
+  camReady=false;              // reframe cleanly rather than lerping from a stale size
   makeStars();
 }
 function buildPalette(){
   $("palette").innerHTML=TOOLS.map(t=>t==="erase"
-    ? `<button class="tool" data-t="erase"><b>Erase</b><span>tap a part</span></button>`
+    ? `<button class="tool" data-t="erase"><b>Erase</b><span>tap part</span></button>`
     : `<button class="tool" data-t="${t}"><b>${PARTS[t].label}</b><span>${PARTS[t].blurb}</span></button>`).join("");
   [...document.querySelectorAll(".tool")].forEach(b=>{ b.onclick=()=>{tool=b.dataset.t;syncTools();}; });
   syncTools();
@@ -1224,6 +1422,14 @@ function syncTools(){ [...document.querySelectorAll(".tool")].forEach(b=>b.class
 function init(){
   cv=$("cv"); ctx=cv.getContext("2d");
   resize(); window.addEventListener("resize",resize);
+  if(window.visualViewport){
+    window.visualViewport.addEventListener("resize",resize);
+    window.visualViewport.addEventListener("scroll",resize);
+  }
+  document.addEventListener("visibilitychange",()=>{
+    paused=!!document.hidden;
+    if(paused) sfx.hush(true); else { last=0; sfx.hush(false); }
+  });
   buildPalette();
   cv.addEventListener("pointerdown",e=>{cv.setPointerCapture(e.pointerId);onDown(e);});
   cv.addEventListener("pointermove",onMove);
@@ -1241,6 +1447,7 @@ function init(){
   $("spinbtn").onclick=()=>{ sfx.boot(); startSpin(); };
   $("clearbtn").onclick=()=>{parts=[];refreshHUD();};
   $("retrybtn").onclick=backToBuild;
+  $("abortbtn").onclick=backToBuild;
   loadLevel(0);
   requestAnimationFrame(frame);
 }

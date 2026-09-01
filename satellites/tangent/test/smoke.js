@@ -59,5 +59,49 @@ console.log("\n[5] unreleased run times out, not hangs");
   ok("idle spin ends by RUN_LIMIT", T.phase !== "spin", "phase=" + T.phase);
 }
 
+console.log("\n[6] camera: the deck is framed for aiming, then pulls out (D12)");
+{
+  // The owner's standing complaint was that the deck is unreadably small while
+  // aiming. These checks encode the fix: spin frames the DECK, flight frames the
+  // SYSTEM, and the change between them is animated rather than instant.
+  T.W = 390; T.H = 780;
+  T.loadLevel(0); T.startSpin(); T.holding = true;
+  for(let k = 0; k < 120; k++) T.step();          // 1 s of spin-up
+  const sSpin = T.camScale ? T.camScale() : 0;
+  const deckPx = 2 * 100 * sSpin;                  // DECK_R = 100 world units
+  ok("spin frames the deck at 60% or more of the short screen dimension",
+     deckPx >= 0.60 * Math.min(T.W, T.H),
+     `deck=${deckPx.toFixed(0)}px of ${Math.min(T.W, T.H)}px`);
+
+  T.doRelease("test");
+  const sFlight = T.camScale ? T.camScale() : 0;
+  ok("flight frames the whole system, far wider than the aiming view",
+     sSpin >= 3 * sFlight,
+     `spin=${sSpin.toFixed(3)} flight=${sFlight.toFixed(3)} ratio=${(sFlight ? sSpin / sFlight : 0).toFixed(2)}`);
+
+  // The pull-out is a lerp, not a cut: partway through it must be strictly
+  // between the two framings, and it must actually arrive.
+  if(!T.camUpdate){
+    ok("camera exposes an animated update (camUpdate)", false, "camUpdate not defined");
+  } else {
+    T.loadLevel(0); T.startSpin(); T.holding = true;
+    for(let k = 0; k < 120; k++) T.step();
+    for(let k = 0; k < 60; k++) T.camUpdate(1 / 60);   // settle on the near framing
+    const near = T.camScale();
+    T.doRelease("test");
+    const wide = sFlight;                              // the system framing it must reach
+    T.camUpdate(1 / 60);
+    const first = T.camScale();
+    ok("pull-out is animated, not an instant cut",
+       first < near && first > wide,
+       `near=${near.toFixed(3)} afterOneFrame=${first.toFixed(3)} wide=${wide.toFixed(3)}`);
+    for(let k = 0; k < 120; k++) T.camUpdate(1 / 60); // 2 s
+    const settled = T.camScale();
+    ok("pull-out arrives at the system framing within 2 s",
+       Math.abs(settled - wide) / wide < 0.03,
+       `settled=${settled.toFixed(4)} wide=${wide.toFixed(4)}`);
+  }
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

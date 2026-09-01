@@ -69,7 +69,16 @@ function load(){
       set holding(v){ holding = v; },
       get holding(){ return holding; },
       set W(v){ W = v; }, set H(v){ H = v; },
+      get W(){ return W; }, get H(){ return H; },
       loadLevel, startSpin, step, doRelease,
+      // Camera surface. Exposed defensively with typeof so this harness still
+      // loads against a build where the camera has not been written yet — a
+      // missing camera must fail ONE check, not blow up the whole suite.
+      camScale: (typeof camScale === "function" ? camScale : null),
+      camOrigin: (typeof camOrigin === "function" ? camOrigin : null),
+      camUpdate: (typeof camUpdate === "function" ? camUpdate : null),
+      camSnap:   (typeof camSnap   === "function" ? camSnap   : null),
+      systemExtent: (typeof systemExtent === "function" ? systemExtent : null),
     };`;
   vm.runInContext(js + expose, ctx, { filename: "index.html" });
   if(!ctx.__T) throw new Error("test surface failed to attach");
