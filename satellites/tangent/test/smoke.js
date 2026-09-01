@@ -156,20 +156,87 @@ console.log("\n[6] camera: the deck is framed for aiming, then pulls out (D12)")
 
 console.log("\n[7] saving survives a second tab (T2)");
 {
+  // The old version had the other tab write BEFORE writeSave's first read, so
+  // the foreign data was simply what readSave returned and no merge was ever
+  // exercised: removing the max, removing the re-read, or dropping the medal OR
+  // each passed on its own, and only the pair failed. A real second tab writes
+  // while we are mid-write, so the write is injected BETWEEN writeSave's first
+  // read and its re-read, which is the only window where the merge matters.
+  const SAVE = "tangent.save.v4";
+  const realGet = T.store.getItem;
+  const duringWrite = (payload, fn) => {
+    let armed = true;
+    T.store.getItem = function(k){
+      const v = realGet.call(T.store, k);
+      if(armed && String(k) === SAVE){
+        armed = false;
+        if(payload === null) T.store.removeItem(SAVE);   // the other tab pressed Start over
+        else T.store.setItem(SAVE, payload);
+      }
+      return v;
+    };
+    try { fn(); } finally { T.store.getItem = realGet; }
+    return armed;                       // false means the injection really landed
+  };
+  const other = o => JSON.stringify({ v: 4, lv: { 0: Object.assign(
+    { best: 0, cleared: 0, gates: 0, thrift: 0 }, o) }, tutor: {}, opt: {} });
+
   T.store.clear();
   T.recordResult(0, { score: 1000, cleared: true, gatesOK: true, thrift: false });
   ok("a result is recorded", T.lvState(0).best === 1000, "best=" + T.lvState(0).best);
-  // another tab banks a better run and a medal we do not have
-  const other = JSON.stringify({ v: 4, lv: { 0: { best: 5000, cleared: 1, gates: 1, thrift: 1 } }, tutor: {} });
-  T.store.setItem("tangent.save.v4", other);
-  T.recordResult(0, { score: 20, cleared: false, gatesOK: false, thrift: false });
-  const st = T.lvState(0);
-  ok("a worse later run does not lower the best", st.best === 5000, "best=" + st.best);
-  ok("a medal earned in the other tab is not erased", st.thrift === 1, "thrift=" + st.thrift);
-  // and scores from the old v3 key are carried across rather than dropped
+
+  // 1. the other tab banks a better run and a medal we do not have, mid-write
+  const landed = duringWrite(other({ best: 5000, cleared: 1, gates: 1, thrift: 1 }), () => {
+    T.recordResult(0, { score: 20, cleared: false, gatesOK: false, thrift: false });
+  });
+  ok("the second tab really did write inside our write", landed === false);
+  let st = T.lvState(0);
+  ok("a worse run written over a better one from another tab does not lower the best",
+     st.best === 5000, "best=" + st.best);
+  ok("and does not erase the medal that tab earned", st.thrift === 1, "thrift=" + st.thrift);
+
+  // 2. the same again but OUR run is the better one: the max has to work in
+  // both directions, or a second tab silently caps everyone's score
+  T.store.clear();
+  T.recordResult(0, { score: 100, cleared: true, gatesOK: true, thrift: true });
+  duringWrite(other({ best: 200, cleared: 1, gates: 0, thrift: 0 }), () => {
+    T.recordResult(0, { score: 9000, cleared: true, gatesOK: true, thrift: false });
+  });
+  st = T.lvState(0);
+  ok("our better run survives a weaker write from the other tab", st.best === 9000,
+     "best=" + st.best);
+  ok("and OUR medal survives a tab that never earned it", st.thrift === 1,
+     "thrift=" + st.thrift);
+  ok("while the other tab's medal is picked up too", st.gates === 1, "gates=" + st.gates);
+
+  // 3. two runs in a row from this tab alone: the best is a maximum, not the
+  // last thing written
+  T.store.clear();
+  T.recordResult(0, { score: 4000, cleared: true, gatesOK: true, thrift: true });
+  T.recordResult(0, { score: 7, cleared: false, gatesOK: false, thrift: false });
+  st = T.lvState(0);
+  ok("a worse later run from this tab does not lower the best", st.best === 4000,
+     "best=" + st.best);
+  ok("nor drop a medal it did not earn this time", st.thrift === 1, "thrift=" + st.thrift);
+
+  // 4. the other tab presses Start over WHILE we are writing. recordResult's own
+  // max is otherwise dead code, because writeSave re-reads and merges against
+  // the pre-write state which always rescues it; the one case it does not is a
+  // foreign wipe, and Start over is a button in the settings sheet.
+  T.store.clear();
+  T.recordResult(0, { score: 4000, cleared: true, gatesOK: true, thrift: true });
+  duringWrite(null, () => {
+    T.recordResult(0, { score: 7, cleared: false, gatesOK: false, thrift: false });
+  });
+  st = T.lvState(0);
+  ok("a run in progress keeps its own best when the other tab wipes the save",
+     st.best === 4000, "best=" + st.best);
+
+  // 5. scores from the old v3 key are carried across rather than dropped
   T.store.clear();
   T.store.setItem("tangent.best.v3", JSON.stringify({ 2: 777 }));
-  ok("old v3 scores are carried into the new save", T.lvState(2).best === 777, "best=" + T.lvState(2).best);
+  ok("old v3 scores are carried into the new save", T.lvState(2).best === 777,
+     "best=" + T.lvState(2).best);
 }
 
 console.log("\n[8] progression opens one system at a time (T2)");
