@@ -83,6 +83,12 @@ function load(){
       get LEVELS(){ return LEVELS; },
       set holding(v){ holding = v; },
       get holding(){ return holding; },
+      // The throttle is part of the spin state. test/search.js snapshots a spin
+      // once and replays a release from every sampled step rather than
+      // re-running the spin per release time, and without this the replayed
+      // state is missing the one value advanceDeck relaxes toward its target.
+      set throttle(v){ throttle = v; },
+      get throttle(){ return throttle; },
       set W(v){ W = v; }, set H(v){ H = v; },
       get W(){ return W; }, get H(){ return H; },
       loadLevel, startSpin, step, doRelease,

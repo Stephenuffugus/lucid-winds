@@ -385,5 +385,50 @@ console.log("\n[17] a system that needs the deck says so before you spin it up")
   ok("placing one retires the lesson", T.coachBeat(null) === null, T.coachBeat(null));
 }
 
+console.log("\n[18] the search that proves the levels is itself the game");
+{
+  // Every claim about what a system needs comes out of test/search.js, and it
+  // buys its speed by running a spin ONCE and replaying a release from a
+  // snapshot rather than re-running the spin per release time. If that replay
+  // is not the same arithmetic as playing it through, every solver verdict is
+  // a story. So it is checked against the honest re-run rather than assumed.
+  const S = require("./search");
+  const R = S.makeRunner(T);
+  const PR = S.programs();
+  ok("the program space covers hold, coast, hold-then-coast and hold-coast-hold",
+     PR.length === 173 && PR.some(p => /then coast$/.test(p[0])) && PR.some(p => /coast .*s, hold$/.test(p[0])),
+     "programs=" + PR.length);
+  // Both halves of the verdict, because they break independently: the OUTCOME
+  // comes from the replayed ball state, the CLEARED flag from the gate record
+  // carried out of the spin. A first version of this check compared outcomes
+  // only and passed against a replay with the throttle restore deleted — true,
+  // but only because flight does not read the throttle, so it proved nothing
+  // about the half that can actually go wrong.
+  const picks = [PR[0], PR[1], PR[20], PR[60], PR[120]];
+  let n = 0, agreeOut = 0, agreeClear = 0;
+  const bad = [], badC = [];
+  for(const lvl of [0, 1, 3, 5, 6]){
+    for(const [pn, prog] of picks){
+      const snaps = R.spin(lvl, [], prog, 8);
+      for(const idx of [20, 60, 100, 140]){
+        const sn = snaps[idx];
+        if(!sn) continue;
+        const replay = R.fly(sn);
+        const cleared = sn.all && replay === "land";
+        const rerun = R.fullRun(lvl, [], prog, sn.t);
+        n++;
+        if(replay === rerun.outcome) agreeOut++;
+        else bad.push(`${T.LEVELS[lvl].name} "${pn}" @${sn.t.toFixed(2)}s replay=${replay} rerun=${rerun.outcome}`);
+        if(cleared === rerun.cleared) agreeClear++;
+        else badC.push(`${T.LEVELS[lvl].name} "${pn}" @${sn.t.toFixed(2)}s replay=${cleared} rerun=${rerun.cleared}`);
+      }
+    }
+  }
+  ok(`a replayed release lands where the run it replaces lands (${agreeOut}/${n})`,
+     n > 60 && agreeOut === n, bad.slice(0, 3).join(" | "));
+  ok(`and it clears what the run it replaces clears (${agreeClear}/${n})`,
+     n > 60 && agreeClear === n, badC.slice(0, 3).join(" | "));
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
