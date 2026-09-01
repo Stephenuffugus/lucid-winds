@@ -71,6 +71,15 @@ if (!(MODE in MODE_ROW)) { console.error('unknown mode: ' + MODE); process.exit(
    setting says one calm sentence about it. No picture, no difference, and never
    an error screen. */
 const NOGL = process.argv.includes('--nogl');
+/* ⛔ THE HOSTILE EYE. `--worst` stops the game's own frame loop and DRIVES the
+   view by hand into the states a round only reaches by accident and never on
+   demand: both tops out on the rail, one of them lying over, the lean at the
+   simulation's maximum, the two of them inside each other, the fall at its
+   highest point, and the camera at the hardest punch the game ever throws
+   (burst, 1.44). These pictures are DRIVEN, not played, and they are labelled
+   that way; the point is to look at the corners of the envelope on purpose
+   rather than hope a round wanders into one while somebody is watching. */
+const WORST = process.argv.includes('--worst');
 const TAG = W + 'x' + H + (DPR === 2 ? '' : '@' + DPR);
 const wait = ms => new Promise(r => setTimeout(r, ms));
 
@@ -454,6 +463,71 @@ ok(d.changedFrac >= 0.01,
 ok(errors.length === 0, '(d) no page errors' + (errors.length ? ':' : ''));
 errors.forEach(e => console.log('        ' + e));
 
+/* -------------------------------------------------------- THE HOSTILE EYE -- */
+if (WORST) {
+  const k = await page.evaluate(() => ({ R: SIM.K.arenaR, th: SIM.K.thetaMax }));
+  console.log('  note  driving the view by hand: dish radius ' + k.R + 'm, lean ceiling ' +
+              k.th + ' rad, camera punch 1.44 (a burst, the hardest the game throws)');
+  /* the game's own loop stops here so a hand written state is the last word */
+  await page.evaluate(() => {
+    window.__raf = window.requestAnimationFrame;
+    window.requestAnimationFrame = function () { return 0; };
+  });
+  await wait(400);
+  const rim = k.R * 0.999, th = k.th;
+  const top = (x, z, lx, lz, alive) =>
+    ({ x, z, w: 600, phase: 3.1, lx, lz, alive, R: 0.0254, cfg: null });
+  const cases = [
+    ['worst-1-far-rail',  { A: top(0, -rim, 0, -th, true), B: top(0.03, -rim, 0, -th, false),
+                            phase: 'play', dropProgress: 1, camz: 1.30 },
+     'both out on the FAR rail, one lying over, ringout punch'],
+    ['worst-2-near-rail', { A: top(0, rim, 0, th, false), B: top(-0.03, rim, 0, th, true),
+                            phase: 'play', dropProgress: 1, camz: 1.30 },
+     'both on the NEAR rail, the nearest one lying over'],
+    ['worst-3-side-rail', { A: top(rim, 0, th, 0, true), B: top(-rim, 0, -th, 0, true),
+                            phase: 'play', dropProgress: 1, camz: 1.44 },
+     'opposite side rails at the lean ceiling, burst punch'],
+    ['worst-4-inside',    { A: top(0, 0, th * 0.7, 0, true), B: top(0, 0, -th * 0.7, 0, true),
+                            phase: 'play', dropProgress: 1, camz: 1.44 },
+     'both tops in the same place, leaning apart'],
+    ['worst-5-both-dead', { A: top(rim, 0, th, 0, false), B: top(0, -rim, 0, -th, false),
+                            phase: 'play', dropProgress: 1, camz: 1.44 },
+     'both lying over, one on a side rail and one on the far one'],
+    ['worst-6-top-of-drop', { A: top(rim * 0.7, 0, 0, 0, true), B: top(-rim * 0.7, 0, 0, 0, true),
+                            phase: 'drop', dropProgress: 0, camz: 1.44 },
+     'the very top of the fall, with the camera punched in']
+  ];
+  /* Where the view thinks the FLOOR is, across the dish. project() puts a sim
+     position on screen through the floor height it reads off the stadium mesh,
+     so a screen y that climbs sharply at the last radius is the sampler walking
+     up the rail wall instead of staying on the play surface. */
+  const prof = await page.evaluate((R) => {
+    const out = [];
+    for (const f of [0, 0.25, 0.5, 0.72, 0.85, 0.95, 0.999]) {
+      const p = window.B3D.project(0, -R * f);   // straight out to the far rim
+      out.push(f.toFixed(3) + ':' + (p ? Math.round(p.y) : 'null'));
+    }
+    return out.join('  ');
+  }, k.R);
+  console.log('  note  screen y of the floor, out to the far rim: ' + prof);
+
+  /* ⛔ #cv is hidden for these. The 2D layer is frozen along with the loop, so
+     whatever it last drew - a tell, a banner - would sit in every picture like a
+     ghost and read as a bug in the thing being photographed. */
+  await page.evaluate(() => { document.getElementById('cv').style.visibility = 'hidden'; });
+  for (const [name, st, what] of cases) {
+    await page.evaluate(s2 => { window.B3D.sync(s2); }, st);
+    await page.bringToFront();
+    await page.screenshot({ path: path.join(OUT, 'probe-' + TAG + '-' + name + '.png') });
+    console.log('  shot  ' + name + ': ' + what);
+  }
+  await page.evaluate(() => { document.getElementById('cv').style.visibility = ''; });
+  await page.evaluate(() => { if (window.__raf) window.requestAnimationFrame = window.__raf; });
+  ok(errors.length === 0, 'nothing in the corners of the envelope raised an error' +
+     (errors.length ? ':' : ''));
+  errors.forEach(e => console.log('        ' + e));
+}
+
 /* ------------------------------------------------------ A FINISH, AND A DROP
    A picture of two tops circling says nothing about the two moments that
    actually cost something to get right: the camera punch on a finish with a top
@@ -475,7 +549,7 @@ let finished = false;
    went over, or the clock ran out and the dock came back. A detector that can
    only see one of the two endings reports "still fighting" about a finished
    round. */
-for (let i = 0, n = Math.round(PATIENCE / 0.8); i < n && !finished; i++) {
+for (let i = 0, n = WORST ? 0 : Math.round(PATIENCE / 0.8); i < n && !finished; i++) {
   await wait(800);
   finished = await page.evaluate(() =>
     (window.__gap ? window.__gap() : 0) === 99 ||
@@ -483,7 +557,7 @@ for (let i = 0, n = Math.round(PATIENCE / 0.8); i < n && !finished; i++) {
 }
 if (finished) {
   await shot('probe-' + TAG + '-finish.png');
-} else {
+} else if (!WORST) {
   console.log('  note  the round had not finished inside ' + PATIENCE + 's, so there is no finish shot');
 }
 
@@ -509,7 +583,7 @@ if (secondRound) {
   await wait(300);
   await page.evaluate(() => document.getElementById('go').click());
   await shot('probe-' + TAG + '-launch.png');
-} else {
+} else if (!WORST) {
   console.log('  note  no second round inside the budget, so there is no launch shot');
 }
 

@@ -722,5 +722,175 @@ Three things wrong, from those images:
 
 And the rail is still a chrome mirror, which is now three phases old and named in
 each of them.
-- [ ] Phase 4: hostile eye done, ALL GATES PASSED, pushed. Evidence:
+- [x] Phase 4: hostile eye done, ALL GATES PASSED, pushed. Evidence:
+
+**THE PROBE AT EVERY SHAPE A PHONE TAKES**
+
+```
+$ node test/battle3d.mjs 320 568 2 90 0
+battle3d gate, viewport 320x568, device pixel ratio 2, rung 1
+  ok    the 3D view reports itself ready
+  ok    the simulation is stepping, so the drop beat is over and this is a fight
+  ok    (a) a #b3d canvas exists with a size (320x568 css, 640x1136 backing)
+  ok         and it sits BEFORE #cv, so the 2D layer draws over it
+  ok    B3D.project answers with the tilted camera, not the flat one (189px across the dish, 116px up it)
+  ok    and the middle of the dish lands in the middle of the screen
+  ok    (b) the dish is not one flat colour (41.3% is the commonest colour, 771 distinct colours in 564x564)
+  ok    (c) the dish changes over 600ms (6.7% of cells moved, mean difference 1.74/255)
+  ok    (d) no page errors
+BATTLE3D OK
+
+$ node test/battle3d.mjs 667 375 2 90 0
+battle3d gate, viewport 667x375, device pixel ratio 2, rung 1
+  ok    (a) a #b3d canvas exists with a size (667x375 css, 1334x750 backing)
+  ok    B3D.project answers with the tilted camera, not the flat one (197px across the dish, 121px up it)
+  ok    (b) the dish is not one flat colour (51.5% is the commonest colour, 761 distinct colours in 660x660)
+  ok    (c) the dish changes over 600ms (2.9% of cells moved, mean difference 0.98/255)
+  ok    (d) no page errors
+BATTLE3D OK
+```
+
+116/189 = 0.614, 121/197 = 0.614, 136/222 = 0.613, and sin(38 degrees) = 0.6157.
+The camera is the same camera at every shape.
+
+**THE 2D GAME, TOGGLE OFF, AT BOTH SIZES**
+
+```
+$ node tools/shots.mjs
+viewport 375x667, device pixel ratio 2
+CONTROLS UNDER 48 RENDERED PIXELS: none
+TEXT UNDER 11px: none
+DASHES IN PLAYER COPY: none
+PAGE ERRORS: none
+
+$ node tools/shots.mjs 320 568
+viewport 320x568, device pixel ratio 2
+CONTROLS UNDER 48 RENDERED PIXELS: none
+TEXT UNDER 11px: none
+DASHES IN PLAYER COPY: none
+PAGE ERRORS: none
+```
+
+LOOKED at `tools/shots/12-battle-early.png` at 320: the painted dish, its three
+pockets and their red arcs, the gold ring on the player's top and the steel one
+on the opponent's, the red armed marker, the build stamp. It is the game it was.
+
+**THE FINAL GATES**
+
+```
+$ node tools/check.js
+bundle        pass  0s
+balance       pass  14s
+determinism   pass  1s
+rigs          pass  11s
+modes         pass  7s
+parts         pass  222s
+ladder        pass  22s
+bosses        pass  6s
+playthrough   pass  127s
+
+ALL GATES PASSED
+```
+
+**THE HOSTILE EYE**
+
+```
+$ node test/battle3d.mjs 375 667 2 60 0 pangkah --worst
+  note  driving the view by hand: dish radius 0.15m, lean ceiling 0.46 rad,
+        camera punch 1.44 (a burst, the hardest the game throws)
+  note  screen y of the floor, out to the far rim:
+        0.000:334  0.250:307  0.500:280  0.720:255  0.850:245  0.950:231  0.999:217
+  shot  worst-1-far-rail: both out on the FAR rail, one lying over, ringout punch
+  shot  worst-2-near-rail: both on the NEAR rail, the nearest one lying over
+  shot  worst-3-side-rail: opposite side rails at the lean ceiling, burst punch
+  shot  worst-4-inside: both tops in the same place, leaning apart
+  shot  worst-5-both-dead: both lying over, one on a side rail and one on the far one
+  shot  worst-6-top-of-drop: the very top of the fall, with the camera punched in
+  ok    nothing in the corners of the envelope raised an error
+BATTLE3D OK
+```
+
+`--worst` stops the game's own frame loop and DRIVES the view into states a round
+only reaches by accident: the rail, the lean ceiling, two tops inside each other,
+the top of the fall, and the hardest punch the game throws. These pictures are
+driven rather than played and the flag says so.
+
+WHAT THEY SHOWED, and the first one is the real find:
+
+1. **At a full finish punch the dish's own rim leaves the frame.** At camz 1.44
+   the frame is 118mm of dish half width against a 150mm dish, so in
+   `worst-3-side-rail` and `worst-5-both-dead` the tops out on the side rails are
+   simply not on the screen. A top finished at the rail can be off frame at the
+   exact moment the camera punches toward it. The 2D camera does not have this
+   problem because it PANS as well as zooms, toward the finished top, clamped to
+   0.60 of the dish (`camPunch`); this one only dollies, because that is what the
+   document asks for.
+2. **A top at the very rim reads as perched above the stadium.** In
+   `worst-1-far-rail` both tops are up on the mesh's lip, which is 30mm proud of
+   the play floor at r = R, and the dead one adds another 22mm of its own lying
+   over. The floor sampler is not at fault and I checked rather than assumed: the
+   screen y of the floor runs 334, 307, 280, 255, 245, 231, 217 out to the far
+   rim, smooth all the way, with no jump at the end that would mean it had walked
+   up the rail wall. It is the sim's dish and the mesh's dish disagreeing about
+   the last seven percent: the simulation's floor is flat to the rim, the forge's
+   climbs a lip.
+3. **Two tops in the same place read as one lump** (`worst-4-inside`) with no
+   contact, no spark and no separation, which is the moment the 2D spends sparks
+   on. Sparks are deliberately off here; this is the picture of what that costs.
+4. `worst-2-near-rail` is correct and worth saying so: both tops on the near rail,
+   one lying over, both sitting on the surface, both legible.
+
+**READY FOR REVIEW**
+
 - Three things I would fix next (honest, from the images):
+
+**1. THE FINISH PUNCH CAN HIDE THE TOP IT IS PUNCHING AT.** From
+   `worst-3-side-rail`. At camz 1.44 the visible dish is 118mm of half width
+   against a 150mm dish, and a ringout or a burst on the rail is exactly the
+   finish most likely to be out there. The 2D solves it by panning as well as
+   zooming: `camPunch` sets `CAM.fx/fy` at the finished top, clamped to 0.60 of
+   the dish radius so a top that flew off the rail cannot drag the camera into
+   the void. The fix is to carry those two numbers through the sync state and
+   spend them as a look at offset with the same clamp. I did not, because the
+   document says `camz` and says dolly.
+
+**2. THE TARGET RANGE HAS NO TARGETS.** In `tujlub` the five standing tops are
+   drawn by `drawTop`, which is what the skip guard turns off, and the sync state
+   the document defines carries `A` and `B` and nothing else. So the 3D range is
+   one top alone on an empty long range, which is worse than the 2D range rather
+   than better. Two honest ways out: carry the targets in the state and build
+   them with the same `setTop` (they are real configurations, so they would cost
+   five more top groups), or leave `tujlub` on the 2D view until they exist. I
+   would do the first; the second is one line if this has to ship sooner.
+
+**3. THE RAIL IS A CHROME MIRROR AND IT IS HALF THE PICTURE.** `lw_rail` is
+   authored `metal 1.0, rough 0.25` (`tools/forge3d/arena.py:102`) and under a
+   PMREM room it returns the room's softboxes as hard white bands; the dish reads
+   as a stainless steel bowl in a game whose own stylesheet says nothing in it
+   glows for its own sake. I tried the two renderer side fixes and kept neither,
+   and both are worth knowing about before someone tries them again:
+   **roughening it turns it to white ceramic**, because the base colour is 0.55
+   grey and a rough metal at that albedo under this much light is porcelain; and
+   **blurring the environment did nothing at all**, which is how I learned the
+   bands are not what I first thought. Lowering the exposure DID work on the rest
+   of the scene and is the one thing I kept: an ACES curve at 0.70 put the dirt
+   floor and the tops back into this game's palette. The real fix is upstream and
+   it is one number: give `lw_rail` a darker base colour, around 0.30 rather than
+   0.55, and re export the four stadiums. That is art, and art is Stephen's.
+
+Behind those three, in order, and all of them named in the phase logs above:
+the tells are drawn at the flat camera's size so they swamp the tops they sit on;
+the drop falls 220mm without its cord and both tops fall together, where the 2D
+staggers them on purpose; in `uri` the tops stand beside their posts rather than
+on them; the spin bars sit on the near rail; and nothing conveys spin at all,
+because the blur rings and the trail are 2D and the mesh at 55 pixels turning at
+`phase x 0.12` does not read as motion in a still frame.
+
+One last thing the reviewer should know: **the first round of a match shows the
+2D game for a second or two while the meshes load**, then snaps to 3D. Eight
+files a top plus the stadium, about 9MB the first time and nothing after that,
+and `B3D.ready()` is false until they are all in. It is honest and it is not
+pretty. The obvious answer is to start `enter` at the wind rather than at the
+launch, which is a two line change I did not make because the document says the
+launch path and warns twice about starting anywhere else.
+
