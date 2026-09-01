@@ -235,6 +235,18 @@ ok(moving, 'the simulation is stepping, so the drop beat is over and this is a f
 const fighting = await page.evaluate(() => document.getElementById('dock').classList.contains('hide'));
 ok(fighting, 'the round is running');
 
+/* The view loads its meshes on first use, so give it a bounded chance to finish
+   before photographing it. This is a WAIT, not a guarantee: if it never reports
+   ready the line below says so and the four checks are still made on whatever is
+   actually on the screen. */
+let ready3d = false;
+for (let i = 0; i < 60 && !ready3d; i++) {
+  ready3d = await page.evaluate(() => !!(window.B3D && window.B3D.ready && window.B3D.ready()));
+  if (!ready3d) await wait(400);
+}
+ok(ready3d, 'the 3D view reports itself ready' +
+   (ready3d ? '' : ' (it never did, so the pictures below are of whatever did load)'));
+
 await shot('probe-' + TAG + '-battle.png');
 
 /* ------------------------------------------------------------ THE FOUR ---- */

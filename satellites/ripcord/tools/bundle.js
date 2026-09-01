@@ -18,10 +18,12 @@ const out = src('play-shell.html')
   .replace('/*__RIGS__*/',   () => src('rigs.js'))
   .replace('/*__AUDIO__*/',  () => src('audio.js'))
   .replace('/*__STORE__*/',  () => src('store.js'))
+  .replace('/*__BATTLE3D__*/', () => src('battle3d.js'))
   .replace(/__BUILD__/g,     stamp);
 
 if (out.indexOf('__BUILD__') >= 0) { console.error('bundle: build stamp did not substitute'); process.exit(1); }
-for (const slot of ['__SIM__', '__WIND__', '__LADDER__', '__RIGS__', '__AUDIO__', '__STORE__'])
+for (const slot of ['__SIM__', '__WIND__', '__LADDER__', '__RIGS__', '__AUDIO__', '__STORE__',
+                    '__BATTLE3D__'])
   if (out.indexOf('/*' + slot + '*/') >= 0) { console.error('bundle: slot ' + slot + ' never filled'); process.exit(1); }
 
 fs.writeFileSync(path.join(ROOT, 'index.html'), out);

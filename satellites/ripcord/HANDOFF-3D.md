@@ -319,7 +319,159 @@ playthrough   pass  161s
 
 ALL GATES PASSED
 ```
-- [ ] Phase 1: scene stands, 2D untouched. Evidence:
+- [x] Phase 1: scene stands, 2D untouched. Evidence:
+
+```
+$ node tools/bundle.js
+index.html 363665 bytes  build 20260831q
+
+$ node test/battle3d.mjs
+battle3d gate, viewport 375x667, device pixel ratio 2
+
+  ok    the 3D battle setting survives a reload in the save file
+  ok    the wind graded, so there is a launch to make
+  ok    the simulation is stepping, so the drop beat is over and this is a fight
+  ok    the round is running
+  ok    the 3D view reports itself ready
+  ok    (a) a #b3d canvas exists with a size (375x667 css, 750x1334 backing)
+  ok         and it sits BEFORE #cv, so the 2D layer draws over it
+  ok    (b) the dish is not one flat colour (41.1% is the commonest colour, 836 distinct colours in 660x660)
+  FAIL  (c) the dish changes over 600ms (0.0% of cells moved, mean difference 0.00/255)
+  ok    (d) no page errors
+
+1 CHECK FAILED
+```
+
+(a) and (b) pass, (c) fails, exactly as this phase predicts: the tops stand at
+their spawn marks and nothing rides the simulation yet.
+
+THE 2D GAME, TOGGLE OFF. Every deterministic screen is BYTE identical to the
+same screen taken from the commit before this one:
+
+```
+$ node tools/shots.mjs
+viewport 375x667, device pixel ratio 2
+CONTROLS UNDER 48 RENDERED PIXELS: none
+TEXT UNDER 11px: none
+DASHES IN PLAYER COPY: none
+PAGE ERRORS: none
+
+$ for f in 01-first-run 02-rules-scrolled 04-workshop-build 05-workshop-weights \
+           06-workshop-tuning 07-workshop-rigs 08-modes 09-wind-empty; do cmp ...; done
+01-first-run     IDENTICAL
+02-rules-scrolled IDENTICAL
+04-workshop-build IDENTICAL
+05-workshop-weights IDENTICAL
+06-workshop-tuning IDENTICAL
+07-workshop-rigs IDENTICAL
+08-modes         IDENTICAL
+09-wind-empty    IDENTICAL
+```
+
+12-battle-early cannot be byte compared because the launch is stochastic, so it
+was compared BY EYE against the baseline: same painted dish, same rail
+furniture, same three pockets and their red arcs, same gold and steel glow
+rings, same red armed marker on the player's top, same build stamp. Only the
+tops' positions differ, and the camera envelope is a frame further along. The
+new settings row passes the 48 pixel measurement (`CONTROLS UNDER 48: none`).
+
+```
+$ node tools/check.js
+bundle        pass  0s
+balance       pass  13s
+determinism   pass  1s
+rigs          pass  10s
+modes         pass  6s
+parts         pass  199s
+ladder        pass  21s
+bosses        pass  6s
+playthrough   pass  137s
+
+ALL GATES PASSED
+```
+
+WHAT I LOOKED AT. `docs/shots-3d/probe-375x667-dish-1.png` (the 3D layer alone,
+with #cv hidden) and `probe-375x667-battle.png` (the composite: with no skip
+guard yet, the 2D draws its painted dish straight over the 3D, which is the
+correct Phase 1 picture and confirms the layer order).
+
+The 3D layer stands: the chalk ring in perspective, its lip and its three
+pockets readable, two assembled tops sitting on the floor a little apart, each
+throwing a contact shadow. Three things wrong with it:
+
+1. **THE RAIL IS A CHROME MIRROR.** `lw_rail` is authored `metal 1.0, rough 0.25`
+   (tools/forge3d/arena.py:102) and under a PMREM room its softboxes come back
+   as hard white bands. It reads as a stainless steel dog bowl, not a chalk ring
+   on packed earth, and this game's own stylesheet says nothing in it glows for
+   its own sake. I did NOT change it: it is authored art and re-lighting it is
+   an art direction call, not mine. The one line fix, if wanted, is a renderer
+   side dress in `dress()` alongside the envMapIntensity one, pushing `lw_rail`
+   to about `metal 0.55, rough 0.62`.
+2. **THE DISH FLOOR IS BARE.** The forge's placeholder floor texture reads as a
+   flat brown wash with one chalk circle and a faint horizontal shading seam
+   where the profile rings meet. Beside the painted 2D arena, which has real
+   dirt grain and rail furniture, the 3D floor is the poorer picture of the two.
+3. **THE TWO TOPS DO NOT READ AS TWO SIDES.** They are the right size (45mm on a
+   300mm dish) but both are steel toned lumps; the 2D separates them with a gold
+   ring and a steel ring and the 3D has nothing doing that job. Which one is
+   mine is a question the picture does not answer.
+
+WHAT I HAD TO DECIDE, all of it flagged rather than buried:
+
+- **`B3D.enter(mode, arenaR, cfgA, cfgB)` takes two arguments the document does
+  not list.** B3D is its own IIFE and cannot see the main IIFE's `A` and `B`, so
+  the two configurations the tops are built from have to be handed over. This is
+  the smallest extension I could find; the alternative was building the tops on
+  the first `sync`, which moves work the document puts in `enter`.
+- **`B3D.exit(full)` takes an argument**, because the document asks for two
+  behaviours from one name: `exit()` hides and stops rendering at the end of a
+  round, `exit(true)` disposes on the way back to the menu. The renderer and its
+  WebGL context survive a dispose; rebuilding a context is the expensive and
+  fragile half of this.
+- **`B3D.failed()` exists**, because the settings row has to be able to ask
+  whether the view refused to start on this device.
+- **`enter` is wired from the three launch tails and nothing else** (launch,
+  launchPass, launchTuj), and `exit(true)` from `showMenu(true)`, which is the
+  one funnel every route back to the menu passes through. This is the documented
+  trap about the menu's demo round, handled at both ends.
+- **The stadium is scaled by `arenaR x 1000 / the radius the mesh was built at`.**
+  For every standard round that is exactly 1.0, so no standard stadium is
+  rescaled. It exists for the one boss that fights in a wider dish
+  (`ladder.json arenaR 0.23`), where the rail has to be where the simulation's
+  rail is.
+- **The floor height is READ OFF THE MESH.** The dish is a bowl, not a table: the
+  forge's profile rises 13.5mm from the centre to the ridge crest. A top parked
+  at the rail with its tip at y=0 is a top buried to the waist. A fan of six rays
+  per radius samples the mesh once per round into a 49 entry table, and the
+  LOWEST hit at each radius is taken so the Posts stadium's two posts do not lift
+  every top standing at their radius.
+- **The stadiums' shadow catcher and dust card are hidden.** They are stage
+  furniture from the forge's own renders. The catcher is a large plane of 2
+  percent grey, and 2 percent grey under a hemisphere, two directionals and a lit
+  room is `#3c3c3c`, not black: the first picture of this scene had the dish
+  standing on a slab that covered the page's packed earth to the edges of the
+  phone. First image, first bug, and it would not have been found by a probe.
+- **There is one contact shadow**, from the key light, tops casting and the dish
+  receiving. The 2D renderer draws one for the stated reason that it is the only
+  depth cue that camera allows, and the first picture without one showed exactly
+  the sticker on a photograph that comment describes.
+- **`envMapIntensity` is set per material rather than `scene.environmentIntensity`.**
+  The vendored three is pinned at r161 and `Scene.environmentIntensity` does not
+  exist until r163, so the line V3D carries is inert. On this revision the room's
+  strength is a material property.
+- **The probe gained a bounded wait for `B3D.ready()`** before it photographs,
+  because the meshes load on first use and a fixed delay would race them. It is a
+  wait, not a guarantee: it reports whether readiness ever arrived and the four
+  checks are still made on whatever is actually on screen.
+
+- Stack seams, for the reviewer: part origins are MOUNT FACES, so the assembly is
+  built from the floor up out of each mesh's own bounding box and the reference
+  build lands on the document's nominal seams by itself (bit 0 to 12, ratchet 12
+  to 18, blade underside at 18, core seated on the blade's top face). A taller
+  ratchet raises the strike plane, which is what the game says it does, and it
+  falls out of the geometry rather than out of a table. The group's origin is the
+  CONTACT POINT, so a lean rotates the top about its tip and the simulation's
+  (x, z) needs no correction.
 - [ ] Phase 2: sim rides, probe fully green. Evidence:
 - [ ] Phase 3: information survives, fallback proven. Evidence:
 - [ ] Phase 4: hostile eye done, ALL GATES PASSED, pushed. Evidence:

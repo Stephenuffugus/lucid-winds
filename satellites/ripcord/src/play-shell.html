@@ -673,6 +673,10 @@ button{font:inherit;color:inherit}
     <div class="setRow"><div class="lab"><h4>Reduced motion</h4>
       <p>Turns off the spin blur, the trails and the sparks.</p></div>
       <button class="tog" id="tMotion"><i></i></button></div>
+    <div class="setRow"><div class="lab"><h4>3D battle (beta)</h4>
+      <p>Draws the round with the real parts, on a tilted camera. The game
+         underneath is the same one.</p><p id="b3dNote"></p></div>
+      <button class="tog" id="t3D"><i></i></button></div>
     <div class="setRow"><div class="lab"><h4>Progress</h4>
       <p id="storeState">&nbsp;</p></div>
       <button class="btn" id="wipe">Erase</button></div>
@@ -691,6 +695,7 @@ button{font:inherit;color:inherit}
 <script>/*__RIGS__*/</script>
 <script>/*__STORE__*/</script>
 <script>/*__AUDIO__*/</script>
+<script>/*__BATTLE3D__*/</script>
 <script>
 (function(){
 'use strict';
@@ -1014,6 +1019,11 @@ function openSheet(id){closeSheets();$(id).classList.add('up');}
 function showMenu(on){
   $('menu').classList.toggle('up',on);
   chrome(!on&&phase!=='play'&&phase!=='drop');
+  /* ⛔ Every route back to the menu comes through here, and the menu runs a
+     DEMO round of its own behind it. Leaving the 3D view active would hand it
+     two tops nobody asked to see and take the arena away from the demo, so the
+     menu is where it stops and where it gives its meshes back. */
+  if(on&&window.B3D)B3D.exit(true);
   if(on){demoIdle();}
 }
 
@@ -2471,6 +2481,15 @@ $('quitPlay').addEventListener('click',function(){
   phase='menu';A=B=null;CAM.ev=null;AUDIO.stopLoops();showMenu(true);
 });
 
+/* THE 3D BATTLE VIEW, ENTERED ONCE PER ROUND, FROM THE LAUNCH PATH ONLY.
+   ⛔ Not from "A exists". The menu and the wind screen both run a real round
+   behind them with A and B set, and starting on that would boot WebGL for a
+   backdrop nobody asked for. This is the moment the player let go of a wind. */
+function enter3D(){
+  if(!window.B3D||!B3D.wanted())return;
+  B3D.enter(mode,arenaR,A&&A.spec&&A.spec.cfg,B&&B.spec&&B.spec.cfg);
+}
+
 function launch(){
   var L=graded.launch;
   var mine=WIND.applyWind(SIM,currentSpec(),L);
@@ -2526,7 +2545,7 @@ function launch(){
     if(bs&&bs.abilityEvery){B._fired=0;B._every=bs.abilityEvery;}
   }
   camDrop();phase='drop';dropT=0;acc=0;$('card').classList.remove('up');chrome(false);
-  $('laps').style.opacity=0;
+  $('laps').style.opacity=0;enter3D();
 }
 
 /* Both winds are in. Two human builds, two human gestures, one round, and no
@@ -2542,7 +2561,7 @@ function launchPass(){
                       trigger:p2.trigger,arenaR:arenaR});
   AUDIO.startLoops();AUDIO.launch(LA.power);haptic(18);
   camDrop();phase='drop';dropT=0;acc=0;$('card').classList.remove('up');chrome(false);
-  $('laps').style.opacity=0;
+  $('laps').style.opacity=0;enter3D();
 }
 
 /* Build the next Field opponent. It costs about a third of a second of real
@@ -2606,7 +2625,7 @@ function launchTuj(L){
   B=null;
   tuj.shots++;
   camDrop();phase='drop';dropT=0;acc=0;$('card').classList.remove('up');chrome(false);
-  $('laps').style.opacity=0;
+  $('laps').style.opacity=0;enter3D();
 }
 
 /* ------------------------------------------------------------ round endings */
@@ -3848,6 +3867,10 @@ function syncToggles(){
   $('tSound').classList.toggle('on',!!save.settings.sound);
   $('tHaptic').classList.toggle('on',!!save.settings.haptics);
   $('tMotion').classList.toggle('on',!!save.settings.reduceMotion);
+  $('t3D').classList.toggle('on',!!save.settings.battle3d);
+  /* The whole of the failure story the player is owed. It says nothing at all
+     unless the view actually refused to start on this device. */
+  $('b3dNote').textContent=(window.B3D&&B3D.failed())?'3D could not start on this device.':'';
   var kind=STORE.kind();
   $('storeState').textContent = kind==='memory'
     ? 'This browser is not letting the game save, so progress will be lost when you leave.'
@@ -3862,6 +3885,15 @@ $('tHaptic').addEventListener('click',function(){
 });
 $('tMotion').addEventListener('click',function(){
   save.settings.reduceMotion=!save.settings.reduceMotion;persist();syncToggles();
+});
+$('t3D').addEventListener('click',function(){
+  save.settings.battle3d=!save.settings.battle3d;persist();
+  /* Turning it off puts the 2D game back on the very next frame rather than at
+     the next round, because a setting that needs a restart is a setting that
+     looks broken. Turning it ON waits for the next launch, which is where the
+     round builds its tops. */
+  if(!save.settings.battle3d&&window.B3D)B3D.exit();
+  syncToggles();
 });
 $('wipe').addEventListener('click',function(){
   if(this.getAttribute('data-armed')){
