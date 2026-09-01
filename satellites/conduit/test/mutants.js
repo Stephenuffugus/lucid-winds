@@ -183,6 +183,26 @@ const MUTANTS = [
     to:   "  if(false){",
     expect: "refused" },
 
+  { id: "restart-keeps-scan-phase", why: "a restart inherits the previous game's conduit scan phase",
+    from: "  T=0; cscanT=0;",
+    to:   "  T=0;",
+    expect: "identically to the first" },
+
+  { id: "ferro-touches-sim", why: "the render layer writes to game state",
+    from: "  FX.r  += FX.rv*dt;",
+    to:   "  FX.r  += FX.rv*dt; blob().x += dt*1e-6;",
+    expect: "identical with the ferro layer" },
+
+  { id: "ferro-spike-off-axis", why: "the longest spike no longer tracks the field",
+    from: "    const al = Math.cos(th - fa);",
+    to:   "    const al = Math.cos(th - fa + 0.35);",
+    expect: "points along the field" },
+
+  { id: "ferro-no-spikes", why: "the field strength stops deforming the outline",
+    from: "    const k = 1 + 0.30 * s * pole + 0.55 * s * pole * cones + wob * (0.5 + 0.5 * s);",
+    to:   "    const k = 1 + wob * (0.5 + 0.5 * s);",
+    expect: "spikes further" },
+
   { id: "spot-decay-none", why: "spot progress never decays once you break line of sight",
     from: "  } else e.spot=Math.max(0, e.spot-CFG.spotDecay*dt);",
     to:   "  } else { }",

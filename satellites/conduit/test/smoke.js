@@ -738,5 +738,112 @@ console.log("\n[14] route assist");
   ok("and none from inside solid rock", G.cheapestPath(0,0, 16,5) === null);
 }
 
+// ── 15. the ferro layer is a renderer, not a rule ────────────────────────────
+// C3. The 2D tile sim is the source of truth forever; anything else is a
+// renderer. Comparing two runs with the flag off and on would prove nothing on
+// its own, because nothing renders headless and a step that never ran looks
+// exactly like a step that changed nothing. So the ferro run also drives the
+// whole feel layer, updateFX and fieldTarget and ferroBlob, every frame. If any
+// of that writes to game state, these signatures diverge.
+console.log("\n[15] the ferro layer is a renderer, not a rule");
+{
+  const signature = (S) => JSON.stringify({
+    m:G.blobRef().mass.toFixed(9), x:G.blobRef().x.toFixed(9), y:G.blobRef().y.toFixed(9),
+    owned:S.ledger.owned.toFixed(9), alert:S.site.alert, peak:S.site.peak,
+    lock:S.site.lockdown, laid:S.stats.tilesLaid, res:S.player.residue.toFixed(9),
+    cond:S.conduits.map(c=>c.path.length+":"+c.cost.toFixed(6)+":"+c.live+":"+c.discovered).join("|"),
+    en:S.enemies.map(e=>e.x.toFixed(9)+","+e.y.toFixed(9)+","+e.hp+","+e.state+","+(e.spot||0).toFixed(9)).join("|"),
+    bod:S.bodies.map(b=>b.x.toFixed(6)+","+b.mass.toFixed(6)).join("|"),
+    wet:S.devices.map(d=>d.on).join(""),
+    deb:JSON.stringify(S.ledger.debits), cred:JSON.stringify(S.ledger.credits),
+  });
+  const run = (ferro) => {
+    CFG.ferroRender = ferro;
+    const S = G.newGame();
+    G.beginDraft(9,16); for(let y=15;y>=5;y--) G.draftStep(9,y);
+    for(let x=10;x<=16;x++) G.draftStep(x,5); G.commitDraft();
+    const marks = [];
+    for(let i=0;i<4000;i++){
+      G.step(0.016, { ax:Math.sin(i*0.017), ay:Math.cos(i*0.011) });
+      if(ferro){
+        G.updateFX(0.016);
+        G.fieldTarget(G.blobRef());
+        if(i%97===0) G.ferroBlob(0,0,10,G.fx.fa,G.fx.fs,G.fx.seed,G.fx.detail);
+      }
+      if(i%500===0) marks.push(signature(S));
+    }
+    marks.push(signature(S));
+    return marks.join("//");
+  };
+  const off = run(false), on = run(true);
+  ok("the simulation is identical with the ferro layer off and on", off===on,
+     off===on ? "" : "the renderer moved the game");
+  ok("and the run was long enough to be worth comparing", off.length > 2000,
+     "signature length "+off.length);
+  CFG.ferroRender = true;
+}
+{ // C3, found by the assertion above while it was looking for something else:
+  // a restart has to be a fresh game. cscanT, the conduit scan phase, lived
+  // outside S and newGame did not reset it, so the second game in a page
+  // inherited the first one's timing and diverged.
+  const play = () => {
+    const S = G.newGame();
+    G.beginDraft(9,16); for(let y=15;y>=5;y--) G.draftStep(9,y);
+    for(let x=10;x<=16;x++) G.draftStep(x,5); G.commitDraft();
+    for(let i=0;i<2500;i++) G.step(0.016, { ax:Math.sin(i*0.017), ay:Math.cos(i*0.011) });
+    return JSON.stringify({
+      m:G.blobRef().mass.toFixed(9), x:G.blobRef().x.toFixed(9), y:G.blobRef().y.toFixed(9),
+      alert:S.site.alert, owned:S.ledger.owned.toFixed(9),
+      en:S.enemies.map(e=>e.x.toFixed(9)+","+e.y.toFixed(9)+","+e.hp+","+e.state).join("|"),
+      cond:S.conduits.map(c=>c.path.length+":"+c.discovered).join("|") });
+  };
+  const a = play(), b = play(), c = play();
+  ok("the second game plays identically to the first", a===b, "a restart is not fresh");
+  ok("and so does the third", a===c);
+}
+
+{ // the feel layer must be stable, not merely non interfering
+  CFG.ferroRender = true;
+  const S = G.newGame(), b = G.blobRef();
+  for(let i=0;i<600;i++){ G.step(0.016,{ax:0,ay:0}); G.updateFX(0.016); }
+  const fx = G.fx;
+  ok("the render radius settles on the true radius",
+     Math.abs(fx.r - CFG.radius(b.mass)) < 0.005, `${fx.r} vs ${CFG.radius(b.mass)}`);
+  ok("no NaN anywhere in the feel layer",
+     [fx.r,fx.rv,fx.swell,fx.ripple,fx.fa,fx.fs].every(v=>isFinite(v)), JSON.stringify(fx));
+  setMass(S,b,100);
+  for(let i=0;i<600;i++){ G.step(0.016,{ax:0,ay:0}); G.updateFX(0.016); }
+  ok("and it settles again after a big change of mass",
+     Math.abs(fx.r - CFG.radius(b.mass)) < 0.005, `${fx.r} vs ${CFG.radius(b.mass)}`);
+  ok("the field strength stays inside its bounds",
+     fx.fs >= CFG.ferro.fieldMin-1e-9 && fx.fs <= CFG.ferro.fieldMax+1e-9, "fs="+fx.fs);
+}
+{ // the outline has to be geometry, not noise
+  CFG.ferroRender = true;
+  G.newGame();
+  const pts = G.ferroBlob(0, 0, 20, 0, 1, 0.7, 96);
+  ok("the outline has the detail it was asked for", pts.length === 96);
+  ok("every point is finite", pts.every(p=>isFinite(p[0])&&isFinite(p[1])));
+  const rad = pts.map(p=>Math.hypot(p[0],p[1]));
+  ok("no point collapses to the centre or runs away",
+     Math.min(...rad) > 20*0.5 && Math.max(...rad) < 20*2.6,
+     `${Math.min(...rad).toFixed(2)} to ${Math.max(...rad).toFixed(2)}`);
+  // the longest spike must point along the field, because the shape is information
+  for(const fa of [0, 1.1, -2.4, 3.0]){
+    const p = G.ferroBlob(0,0,20,fa,1,0.7,720);
+    let bi=0; for(let i=1;i<p.length;i++)
+      if(Math.hypot(p[i][0],p[i][1]) > Math.hypot(p[bi][0],p[bi][1])) bi=i;
+    const ang = Math.atan2(p[bi][1], p[bi][0]);
+    let d = Math.abs(((ang-fa+Math.PI*3)%(Math.PI*2))-Math.PI);
+    ok("the longest spike points along the field at "+fa.toFixed(1),
+       d < 0.06, "off by "+(d*180/Math.PI).toFixed(2)+" degrees");
+  }
+  const flat = G.ferroBlob(0,0,20,0,0,0.7,180).map(p=>Math.hypot(p[0],p[1]));
+  const spiky = G.ferroBlob(0,0,20,0,1,0.7,180).map(p=>Math.hypot(p[0],p[1]));
+  ok("a strong field spikes further than a weak one",
+     Math.max(...spiky) > Math.max(...flat)*1.25,
+     `${Math.max(...flat).toFixed(1)} to ${Math.max(...spiky).toFixed(1)}`);
+}
+
 console.log(`\n${pass} passed, ${fail} failed\n`);
 process.exit(fail ? 1 : 0);

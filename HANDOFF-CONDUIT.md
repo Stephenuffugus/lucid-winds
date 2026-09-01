@@ -263,7 +263,54 @@ Build in the addendum's priority order:
     plumbing is right; do not read a seed in a log as a replay.
   - **Perf before the ferro pass: update 0.07ms, draw 1.32ms** against a budget of
     5 and 8 (dev overlay, 844x390).
-- [ ] C3 gate: 3 shots in docs/shots/ read, faults: ______ · fps @4x throttle: ___ · sim-identity assertion green
+- [x] **C3 gate** (2026-09-01)
+  - **3 shots in `docs/shots/`, read, with every fault written down in
+    `docs/C3-FAULTS.md`**: `c3-a-heist.png` (the player's view mid heist),
+    `c3-b-flow.png` (Flow, two live wires), `c3-c-worst.png` (320x568, the
+    creature thin and half in a vent, lockdown, one run discovered and another
+    mid reclaim). Plus `test/closeup.js`, which crops to the creature and shoots
+    at 4x in five states, because the creature is under a tile wide and a full
+    frame cannot tell you whether it reads as ferrofluid.
+  - **faults:** the powered devices owned all the colour while the creature owned
+    none (a straight inversion of the art direction, fixed); the live wire read
+    as a gold pipe, then as a comb, then as a centipede before the fringe was
+    right; **I could not find the player in the Flow view** (fixed with a minimum
+    drawn radius, collision radius untouched); a dead run was nearly invisible,
+    which matters because a dead run is committed mass you have to find to
+    reclaim; the lockdown banner collided with the mass status line and the toast
+    was drawn underneath the control block at every phone size; at Lockdown the
+    red screen edge and the red discovered wire were the same red. All fixed.
+    Four things ticketed rather than fixed, listed in that file.
+  - **⚠️ ONE DEPARTURE FROM APPENDIX A, and it is the reason the creature now
+    reads as an oil slick rather than a soap bubble.** The appendix writes the
+    rim's middle stop as `(hueA+hueB)/2`. With violet 268 and gold 44 that is
+    **156, which is green**: the numeric average takes the long way round the
+    colour wheel. The short way runs 268 to 404, midpoint 336, magenta. The
+    appendix's geometry is verified and is copied exactly (the suite checks the
+    longest spike tracks the field at four angles); its palette arithmetic was
+    not. **Fable should sanity check this one.**
+  - **fps @4x throttle: the honest answer is that fps is the wrong measurement
+    here.** Headless shell does not vsync rAF and reports ~49 to 60fps even
+    unthrottled, so throttled fps measures the harness as much as the game. The
+    direct CPU numbers, which is what the budget is actually about:
+    `update 0.29ms, draw 3.73ms at 4x` against a budget of 5 and 8, so **4.02ms
+    of a 16.7ms frame**. At 16x, draw genuinely exceeds the 6.5ms internal
+    budget and adaptive detail drops 96 to 48: resolution goes, identity does
+    not. A real phone check is still owed and is Stephen's to make.
+  - **sim-identity assertion green**, and it earned its place immediately: it
+    went red on its first run and the cause was **not the ferro layer**. `cscanT`,
+    the conduit scan phase, lived outside `S` and `newGame()` never reset it, so
+    the second game in a page inherited the first one's scan timing, discovery
+    fired at a different moment and the guard who walks the wire arrived
+    somewhere else. **A restart was not a fresh game.** Fixed, and gated
+    separately by a three-consecutive-games assertion.
+  - The assertion is not the toothless version: nothing renders headless, so
+    comparing the flag off and on alone would prove nothing (a step that never
+    ran looks exactly like a step that changed nothing). The ferro run drives
+    `updateFX`, `fieldTarget` and `ferroBlob` every frame, so if any of the feel
+    layer wrote to game state the signatures would diverge.
+  - **suite: 178 assertions, 40 mutants, 40 killed, 0 survivors.**
+    controls 51/51 at every viewport. fullrun clean.
 - [ ] C4 gate: smoke count: ___ · verb suicide-table written in HANDOFF.md
 - [ ] C5 gate: 6/6 solvability checks · two-path logs · splice-differs assertion green
 - [ ] C6 gate: audio demo · reduced-motion pair · NO service worker confirmed

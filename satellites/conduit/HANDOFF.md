@@ -5,8 +5,8 @@
 
 ## Where we are
 
-**C1 and C2 are complete. C3, the ferro pass, is next and it is the heart of the
-build.** M1, the ship gate, is still unanswered and is still Stephen's alone.
+**C1, C2 and C3 are complete.** M1, the ship gate, is still unanswered and is
+still Stephen's alone. C4, prowl completion and the device orchestra, is next.
 
 `index.html` is a complete, playable prototype in one file, no build step,
 canvas 2D, touch first. It runs from `file://`, GitHub Pages, or anywhere.
@@ -14,10 +14,13 @@ canvas 2D, touch first. It runs from `file://`, GitHub Pages, or anywhere.
 ## How to check it, in order
 
 ```
-node test/smoke.js                 162 assertions, headless, no deps
-node test/mutants.js               36 mutants, all must be killed
+node test/smoke.js                 178 assertions, headless, no deps
+node test/mutants.js               40 mutants, all must be killed
 node test/controls.js [w] [h]      51 assertions, real touches in real Chrome
 node test/shots.js <tag>           screenshots at 320, 375, 844, 1280
+node test/gate3.js <tag>           the three C3 ritual frames
+node test/closeup.js <tag>         the creature itself, cropped, at 4x
+node test/perf.js [rate]           frame budget under CPU throttle
 node test/fullrun.js [w] [h]       plays the whole level with real touch input
 node test/lockdown.js [w] [h]      plays the lockdown loop three times
 test/drive.js                      the shared browser hands, not a test itself
@@ -193,22 +196,48 @@ order). Ferro rendering (`CFG.ferroRender` is still false: that is C3). Audio,
 haptics, splitting (M5, but `player.blobs` is already a list), the other seven
 devices, level loader, save/load, 3D. Do not add these before their phase.
 
+## What C3 changed, the ferro pass
+
+`CFG.ferroRender` is on. Appendix A's geometry is copied exactly; the creature is
+a matte near black body with an iridescent rim across the field axis and one
+specular, spiking along the field. The field points at the nearest live conduit,
+then the nearest powered source, then your own motion, so **the creature's hair
+tells you where power is flowing**. The render radius chases the true radius on
+a spring, so a harvest visibly swells you and a hit ripples and rings the rim.
+Squeezing a vent draws a stretched capsule. The conduit is the same creature: a
+ribbon that lies flat and matte when dead, stands its fringe up when live, runs a
+rim light source to device (verified travelling, not assumed), flares as it is
+slurped home on reclaim, and grows from a bright extruding tip while you draw it.
+Entering Flow spreads a ring of awareness over the site and shades the exposure
+tiers. Alarm and Lockdown press red in at the screen edges. Drinking a light
+collapses the pool into the creature.
+
+**One departure from Appendix A, flagged for Fable.** The appendix writes the
+rim's middle stop as `(hueA+hueB)/2`. With violet 268 and gold 44 that is 156,
+**green**, because the numeric average takes the long way round the wheel. The
+short way is 268 to 404, midpoint 336, magenta. That single number was why the
+creature read as a soap bubble. The geometry in the appendix is verified and
+untouched; the palette arithmetic was not.
+
+**The sim identity assertion found a bug that had nothing to do with ferro.**
+`cscanT`, the conduit scan phase, lived outside `S` and `newGame()` never reset
+it, so the second game in a page inherited the first one's scan timing and
+diverged. A restart was not a fresh game. Fixed and gated separately.
+
+Everything I saw in the three ritual frames, fixed or ticketed, is in
+`docs/C3-FAULTS.md`. Four things are ticketed there rather than fixed.
+
 ## Next action
 
-**C3, the ferro pass.** Section 3 of HANDOFF-CONDUIT is the spec and Appendix A of
-DESIGN.md is the verified maths; copy it faithfully rather than reinventing it.
-Flip `CFG.ferroRender` and make the creature and the conduit look and move like
-living ferrofluid: spikes that carry information about where power flows, a
-spring damped render radius so harvests swell you and hits ripple, the squeeze
-capsule, the conduit as a ribbon that stands up when live and flows home on
-reclaim, Flow as the creature spreading its awareness.
+**C4, prowl completion and the device orchestra**, in the addendum's priority
+order: drag a body, peek, cling, pool, battery cart dragging, then the remaining
+devices, then the vehicle battery. Every verb gets smoke assertions and a mutant
+that kills them, and the gate wants the suicide table written here: for every
+direct verb, name the watched situation where it is suicide and the wire is the
+answer.
 
-Two things in hand before starting. The frame budget has room: the dev overlay
-reads **update 0.07ms, draw 1.32ms** against a budget of 5 and 8. And the sim must
-not move: assert `step()` output is identical for a fixed seed with the flag off
-and on, because rendering may not touch the simulation.
-
-The tickets from C1 are the shot list: the player is the least visible thing on
-screen in both modes, vision cones read as flat light pools rather than
-attention, light pools read as fog, and the site's own wiring, which the player
-is supposed to walk past and wonder about, is invisible at Flow zoom.
+Before that, two things worth an hour. The four tickets in `docs/C3-FAULTS.md`
+are small and real, and the frame budget has plenty of room for them
+(`update 0.29ms, draw 3.73ms` at a 4x throttle against a budget of 5 and 8).
+And nothing here has been on a phone: every frame in `docs/shots` is headless
+Chrome. A real device pass is owed.

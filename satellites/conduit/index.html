@@ -157,11 +157,31 @@ const CFG = {
   flowTimeScale:0.10, flowRequires:"stationaryAndUnseen",
   pulseCost:4, pulseRange:8, pulseCooldownSec:6, pulseShowSec:3,
 
+  // ferrofluid rendering. Appendix A of DESIGN.md is the verified maths; these
+  // are the knobs on it. Nothing here is read by the simulation.
+  ferro:{
+    detail:96, detailLow:48, spikes:7,
+    hueA:268, hueB:44,                  // violet to gold across the field axis
+    springK:12, springDamp:0.8,         // the render radius chases the true one
+    swellPerMass:0.011, swellMax:0.55, swellDecay:3.2, swellGain:0.34,
+    rippleDecay:4.2, rippleAmp:0.20, rippleGain:0.024,
+    fieldNearTiles:3.4,                 // inside this of live power, full field
+    fieldMin:0.46, fieldMax:1.0, fieldTurn:9, rimW:0.10,
+    minBlobPx:9, minSpikePx:3.2,   // the planning view is schematic; stay findable
+    flowDim:[0, 0.26, 0.46],       // exposure tiers, darker means safer to route
+    alarmEdge:0.34, lockEdge:0.52, douseSec:1.1,
+    ribbonW:0.23, ribbonMinPx:2.6, ribbonSpike:0.26, spikeEvery:0.26, spikeWave:2.4,
+    bloomW:0.55, bloomA:0.11,
+    pulseSpeed:4.5,                     // tiles/sec of rim light, source to device
+    capsuleWidth:0.62, capsuleStretch:0.9,
+    drawBudgetMs:6.5,                   // over this, drop detail, never identity
+  },
+
   // flags — the resolved open questions, each testable
   spotEscalates:true, spotForgetAt:0.5, guardRewalks:false, guardRewalkSec:20,
   guardFollowsToPlayer:false, flowPaused:false, allowSelfCross:false,
   blockCrossOther:false, instantReclaim:false, zapEnabled:true,
-  ferroRender:false, debugLedger:true,
+  ferroRender:true, debugLedger:true,
 
   // presentation. The sim never reads any of this; it is the frame, not the game.
   // It lives here because CFG is the only home for numbers, tunables included.
@@ -242,6 +262,13 @@ function buildLevel(){
 }
 
 function newGame(){
+  // Module state that lives outside S has to be reset here too, or a restart is
+  // not a fresh game. cscanT is the conduit scan phase: left running, the second
+  // game in a page inherits the first one's timing, discovery fires at a
+  // different moment and the guard who walks the wire arrives somewhere else.
+  // Found by the ferro sim identity assertion, which is not what it was looking
+  // for. T is the render clock and resets with it.
+  T=0; cscanT=0;
   buildLevel();
   S={
     t:0, rng:mulberry(CFG.seed), mode:"prowl", flowT:0,
@@ -313,6 +340,7 @@ function douseLight(L){
   for(let y=L.y-2;y<=L.y+2;y++) for(let x=L.x-2;x<=L.x+2;x++){
     if(!inB(x,y)||Math.hypot(x-L.x,y-L.y)>2.4) continue;
     if(TT[idx(x,y)]===FLOOR) TT[idx(x,y)]=SHADOW; }
+  FX.douse={ x:L.x, y:L.y, t:0 };
   toast("Dark now."); bump(1,"light out");
 }
 
@@ -1028,6 +1056,32 @@ function drawSiteEdge(){
 function drawFrame(){
   if(grainPat){ ctx.fillStyle=grainPat; ctx.fillRect(0,0,VW,VH); }
   if(vignette){ ctx.fillStyle=vignette; ctx.fillRect(0,0,VW,VH); }
+  // Alarm and Lockdown press in at the edges. Never the only signal: the pips,
+  // the word and the cone colour all carry it too.
+  if(S.site.alert>=3){
+    const f=CFG.ferro;
+    const amp=(S.site.lockdown?f.lockEdge:f.alarmEdge)*(0.62+0.38*Math.sin(T*2.3));
+    const g=ctx.createRadialGradient(VW/2,VH/2,Math.min(VW,VH)*0.30,
+                                     VW/2,VH/2,Math.hypot(VW,VH)*0.60);
+    g.addColorStop(0,"rgba(224,72,60,0)");
+    g.addColorStop(1,"rgba(224,72,60,"+amp.toFixed(3)+")");
+    ctx.fillStyle=g; ctx.fillRect(0,0,VW,VH);
+  }
+  // Entering Flow is the creature spreading its awareness over the site.
+  if(S.mode==="flow" && FX.modeT<1){
+    const b=blob(), [px,py]=w2s(b.x,b.y), k=FX.modeT;
+    ctx.strokeStyle="hsla("+CFG.ferro.hueA+",85%,70%,"+(0.42*(1-k)).toFixed(3)+")";
+    ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(px,py, Math.hypot(VW,VH)*0.62*k, 0, 7); ctx.stroke();
+  }
+  // Drinking a light: the pool collapses into the creature.
+  if(FX.douse){
+    const d=FX.douse, k=Math.min(1, d.t/CFG.ferro.douseSec);
+    const b=blob(), [lx,ly]=w2s(d.x+0.5,d.y+0.5), [bx,by]=w2s(b.x,b.y);
+    const cx=lx+(bx-lx)*k, cy=ly+(by-ly)*k;
+    ctx.strokeStyle="rgba(226,200,150,"+(0.75*(1-k)).toFixed(3)+")"; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(cx,cy, cam.s*2.2*(1-k*0.86), 0, 7); ctx.stroke();
+  }
 }
 
 function draw(){
@@ -1043,8 +1097,21 @@ function draw(){
     let col = t===WALL?"#0A0C12" : t===SHADOW?"#151823" : t===VENT?"#191D2A"
             : t===DOOR?"#3A2E22" : "#1E2331";
     ctx.fillStyle=col; ctx.fillRect(px,py,s+1,s+1);
-    if(t!==WALL && WET[i]>0){ ctx.fillStyle="rgba(64,140,220,"+(0.10+0.16*Math.min(1,WET[i]/8))+")";
+    if(t!==WALL && WET[i]>0){
+      // A hard rectangle reads as a UI overlay. Soften the border tiles, where a
+      // dry neighbour means this is the edge of the spray.
+      const edge=(inB(x-1,y)&&WET[idx(x-1,y)]>0?0:1)+(inB(x+1,y)&&WET[idx(x+1,y)]>0?0:1)
+                +(inB(x,y-1)&&WET[idx(x,y-1)]>0?0:1)+(inB(x,y+1)&&WET[idx(x,y+1)]>0?0:1);
+      const k=Math.min(1,WET[i]/8)*(edge?0.45:1);
+      ctx.fillStyle="rgba(58,120,190,"+(0.07+0.11*k).toFixed(3)+")";
+      ctx.fillRect(px,py,s+1,s+1);
+      // a sheen that moves, so wet ground reads as a surface rather than a tint
+      ctx.fillStyle="rgba(150,205,255,"+(0.05+0.07*k*(0.5+0.5*Math.sin(T*1.7+x*0.9+y*0.6))).toFixed(3)+")";
       ctx.fillRect(px,py,s+1,s+1); }
+    if(S.mode==="flow" && t!==WALL){
+      const tier = CONC[i] ? 2 : (t===SHADOW || t===VENT ? 1 : 0);
+      if(tier){ ctx.fillStyle="rgba(3,5,11,"+CFG.ferro.flowDim[tier]+")";
+                ctx.fillRect(px,py,s+1,s+1); } }
     if(CONC[i] && t!==WALL){                          // hatched: never colour-only
       ctx.strokeStyle="rgba(140,150,180,.20)"; ctx.lineWidth=1;
       ctx.beginPath(); ctx.moveTo(px,py+s); ctx.lineTo(px+s,py); ctx.stroke(); }
@@ -1086,23 +1153,34 @@ function draw(){
 
   // sources + devices
   for(const src of S.sources){ const [px,py]=w2s(src.x,src.y);
-    ctx.fillStyle= src.kind==="generator"?"#2C6E5A":"#2A4A6E";
+    ctx.fillStyle= src.kind==="generator"?"#152D26":"#132435";
     ctx.fillRect(px+3,py+3,s-6,s-6);
-    ctx.strokeStyle="rgba(190,205,235,.22)"; ctx.lineWidth=1;
+    ctx.strokeStyle= src.kind==="generator"?"rgba(90,200,160,.55)":"rgba(110,170,225,.55)";
+    ctx.lineWidth=1.4;
     ctx.strokeRect(px+3.5,py+3.5,s-7,s-7);
     if(S.mode==="flow") deviceChip(px,py,s, src.kind==="generator"?"GEN":"SKT", null, false);
     else if(s>=CFG.ui.tileLabelMinPx)
       txt(src.kind==="generator"?"GEN":"SKT", px+s/2, py+s-6, CFG.ui.fontTile, 600,
           "#AFC2DA", "center"); }
   for(const dv of S.devices){ const [px,py]=w2s(dv.x,dv.y);
-    ctx.fillStyle= dv.on ? "#E0A73C" : "#3A4152";
+    // A powered device used to be a solid gold square, which made the machinery
+    // the loudest thing in the frame and left the creature the dimmest. The
+    // world owns no colour; the creature owns all of it. So a live device is a
+    // dark box with a lit edge and a glow, not a slab of gold.
+    if(dv.on){
+      const g=ctx.createRadialGradient(px+s/2,py+s/2,s*0.2,px+s/2,py+s/2,s*1.6);
+      g.addColorStop(0,"rgba(224,167,60,.30)"); g.addColorStop(1,"rgba(224,167,60,0)");
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(px+s/2,py+s/2,s*1.6,0,7); ctx.fill();
+    }
+    ctx.fillStyle= dv.on ? "#241B0C" : "#2B3040";
     ctx.fillRect(px+3,py+3,s-6,s-6);
-    ctx.strokeStyle= dv.on?"rgba(255,225,170,.55)":"rgba(190,205,235,.20)"; ctx.lineWidth=1;
+    ctx.strokeStyle= dv.on?"rgba(232,180,87,.95)":"rgba(190,205,235,.20)";
+    ctx.lineWidth= dv.on?1.6:1;
     ctx.strokeRect(px+3.5,py+3.5,s-7,s-7);
     const code={sprinkler:"SPR",plate:"PLT",speaker:"SPK",breaker:"BRK"}[dv.kind];
     if(S.mode==="flow") deviceChip(px,py,s, code, dv.needs, dv.on);
     else if(s>=CFG.ui.tileLabelMinPx){
-      txt(code, px+s/2, py+s-6, CFG.ui.fontTile, 600, dv.on?"#1A140A":"#AFC2DA", "center");
+      txt(code, px+s/2, py+s-6, CFG.ui.fontTile, 600, dv.on?"#E8B457":"#AFC2DA", "center");
       if(!dv.on){
         const lab="\u26a1"+dv.needs;
         ctx.font="600 "+CFG.ui.fontTile+"px ui-sans-serif,system-ui";
@@ -1138,15 +1216,7 @@ function draw(){
       ctx.strokeStyle="#E0A73C"; ctx.lineWidth=3; ctx.beginPath();
       ctx.arc(px,py,s*0.44,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,e.spot)); ctx.stroke(); } }
 
-  // player
-  { const b=blob(), [px,py]=w2s(b.x,b.y), r=CFG.radius(b.mass)*s;
-    const g=ctx.createRadialGradient(px-r*0.34,py-r*0.4,r*0.06,px,py,r*1.5);
-    g.addColorStop(0,"#232733"); g.addColorStop(0.35,"#12141C"); g.addColorStop(1,"#05060A");
-    ctx.beginPath(); ctx.arc(px,py,r,0,7); ctx.fillStyle=g; ctx.fill();
-    const fa=Math.atan2(input.ay||0.001,input.ax||0.001);
-    const rim=ctx.createLinearGradient(px-Math.cos(fa)*r,py-Math.sin(fa)*r,px+Math.cos(fa)*r,py+Math.sin(fa)*r);
-    rim.addColorStop(0,"hsla(268,90%,64%,.85)"); rim.addColorStop(1,"hsla(44,95%,72%,.9)");
-    ctx.strokeStyle=rim; ctx.lineWidth=1.5+r*0.045; ctx.stroke(); }
+  drawBlob();
 
   // pulse reveal
   if(S.player.pulseT>0){ const b=blob(), [px,py]=w2s(b.x,b.y);
@@ -1175,17 +1245,94 @@ function deviceChip(px, py, s, code, needs, on){
   ctx.strokeStyle="rgba(120,134,164,.22)"; ctx.lineWidth=1; ctx.stroke();
   txt(t, px+s/2, y+h-4, u.fontTile, 600, on?"rgba(232,180,87,.95)":"#AFC2DA", "center");
 }
+// The conduit is the same creature: a thin ferrofluid ribbon laid through tile
+// centres. Matte and flat when dead. When live it stands its spikes up and a
+// slow rim light travels source to device, so a reader can see power move.
 function drawConduit(cd, isDraft){
   if(cd.path.length<1) return;
-  const s=cam.s;
-  ctx.lineWidth=Math.max(2, s*0.22); ctx.lineJoin="round"; ctx.lineCap="round";
-  ctx.strokeStyle = isDraft ? "rgba(138,92,246,.55)"
-    : cd.discovered ? "#E0483C" : cd.live ? "#8A5CF6" : "#4A4E62";
-  ctx.beginPath();
-  cd.path.forEach((p,i)=>{ const [px,py]=w2s(p[0]+0.5,p[1]+0.5);
-    i?ctx.lineTo(px,py):ctx.moveTo(px,py); });
-  ctx.stroke();
-  if(cd.live){ ctx.strokeStyle="rgba(224,167,60,.5)"; ctx.lineWidth=Math.max(1,s*0.07); ctx.stroke(); }
+  const s=cam.s, f=CFG.ferro;
+  const pts=cd.path.map(p=>w2s(p[0]+0.5,p[1]+0.5));
+  const stroke=(w,style)=>{ ctx.lineWidth=w; ctx.strokeStyle=style;
+    ctx.lineJoin="round"; ctx.lineCap="round";
+    ctx.beginPath(); pts.forEach((q,i)=>i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));
+    ctx.stroke(); };
+
+  if(!CFG.ferroRender){
+    stroke(Math.max(2,s*0.22), isDraft ? "rgba(138,92,246,.55)"
+      : cd.discovered ? "#E0483C" : cd.live ? "#8A5CF6" : "#4A4E62");
+    if(cd.live) stroke(Math.max(1,s*0.07), "rgba(224,167,60,.5)");
+    return;
+  }
+
+  const w=Math.max(f.ribbonMinPx, s*f.ribbonW);
+  // Spikes first, so the body sits on top of their roots the way hair does.
+  if(cd.live && pts.length>1){
+    const h=Math.max(f.minSpikePx, s*f.ribbonSpike);
+    ctx.lineWidth=Math.max(1.2, s*0.075); ctx.lineCap="round";
+    ctx.strokeStyle=`hsla(${f.hueB},92%,62%,.68)`;
+    ctx.beginPath();
+    for(let i=0;i<pts.length-1;i++){
+      const a=pts[i], b=pts[i+1];
+      const dx=b[0]-a[0], dy=b[1]-a[1], L=Math.hypot(dx,dy)||1;
+      const nx=-dy/L, ny=dx/L;
+      for(let t=0.14;t<1;t+=f.spikeEvery){
+        const mx=a[0]+dx*t, my=a[1]+dy*t;
+        // Evenly spaced teeth of equal length read as a comb. Vary each one by a
+        // cheap hash of where it stands, so the fringe clusters the way spikes do.
+        const hv=Math.abs(Math.sin((i*7.13 + t*13.7)*127.1)) % 1;
+        const amp=0.35+1.05*hv;
+        const k=amp*(0.30+0.70*Math.max(0, Math.sin(T*f.spikeWave - (i+t)*1.35 + hv*5)));
+        ctx.moveTo(mx-nx*h*k*0.55, my-ny*h*k*0.55);
+        ctx.lineTo(mx+nx*h*k, my+ny*h*k);
+      }
+    }
+    ctx.stroke();
+  }
+
+  // the matte body of the ribbon
+  stroke(w, isDraft ? "rgba(60,52,86,.75)" : "#0D0F17");
+  // its rim, tinted by what it is doing
+  const rimCol = isDraft      ? `hsla(${f.hueA},85%,66%,.55)`
+               : cd.discovered? "rgba(255,140,90,.92)"
+               : cd.live      ? `hsla(${f.hueB},92%,64%,.75)`
+                              : "rgba(150,163,196,.72)";   // dead, but findable
+  stroke(Math.max(1, w*0.34), rimCol);
+
+  // A discovered run is WRONG, and says so by shape as well as colour: torchlight
+  // catches it in bright beads, not just a red line.
+  if(cd.discovered){
+    ctx.fillStyle="rgba(255,226,170,.95)";
+    for(let i=0;i<pts.length;i+=2){
+      const k=0.5+0.5*Math.sin(T*3+i);
+      ctx.beginPath(); ctx.arc(pts[i][0],pts[i][1], Math.max(1,w*0.22*k),0,7); ctx.fill(); }
+  }
+
+  // live: a slow pulse of rim light travelling source to device
+  if(cd.live && pts.length>1){
+    const head=((T*f.pulseSpeed) % (pts.length+3)) - 1.5;
+    for(let i=0;i<pts.length;i++){
+      const d=Math.abs(i-head); if(d>2) continue;
+      const k=1-d/2;
+      ctx.fillStyle=`hsla(${f.hueB+18},95%,76%,${(0.85*k*k).toFixed(3)})`;
+      ctx.beginPath(); ctx.arc(pts[i][0],pts[i][1], w*0.55*k, 0, 7); ctx.fill();
+    }
+  }
+
+  // reclaiming: the far end is being slurped home, so it flares as it goes
+  if(cd.reclaiming && pts.length){
+    const e=pts[pts.length-1];
+    const k=0.55+0.45*Math.sin(T*11);
+    ctx.fillStyle=`hsla(${f.hueA},90%,72%,${(0.5*k).toFixed(3)})`;
+    ctx.beginPath(); ctx.arc(e[0],e[1], w*1.1*k, 0, 7); ctx.fill();
+  }
+
+  // a draft grows from its leading tip: the material is being extruded
+  if(isDraft && pts.length>1){
+    const e=pts[pts.length-1];
+    tracePts(ctx, ferroBlob(e[0],e[1], w*0.95, FX.fa, 0.8, FX.seed+1.7,
+                            Math.max(24, FX.detail>>1)));
+    paintFerro(ctx, e[0], e[1], w*0.95, FX.fa, f.hueA, f.hueB);
+  }
 }
 // ── HUD ──────────────────────────────────────────────────────────────────────
 function rr(x,y,w,h,r){
@@ -1298,9 +1445,11 @@ function drawHUD(){
   drawMassRibbon(left, top, barW);
   drawAlertReadout(right-u.minTouchPx-10, top);
 
+  // Stacked under the mass status, not right aligned across from it: at 320 wide
+  // there is not room for both on that band and they overlapped.
   if(S.site.lockdown)
-    txt("Power is cut. Find the breaker.", right, top+u.barH+u.fontHud*2+16,
-        u.fontHud, 600, "#E0483C", "right");
+    txt("Power is cut. Find the breaker.", left, top+u.barH+u.fontHud*3+11,
+        u.fontHud, 600, "#E0483C");
 
   const et=envelopTarget(), nl=!et&&nearestLight();
   for(const bt of btns){
@@ -1350,13 +1499,16 @@ function drawHUD(){
     txt(text[2], x+12, y+60, u.fontHud, 400, o.on?"#E0A73C":"#8C97AE");
   }
 
+  // Above the control block, never under it. bottom-26 put the toast inside the
+  // buttons at every phone size.
+  const msgY = Math.min(bottom-4, (bb.length?Math.min(...bb.map(x=>x.y)):VH) - 12);
   if(S.draft)
     txt("route "+(S.draft.path.length-1)+" tiles  ·  costs "+S.draft.cost.toFixed(1)
       +"  ·  leaves "+(blob().mass-S.draft.cost).toFixed(0),
-      left, bottom-4, u.fontLabel, 600, "#C9D2E4");
+      left, msgY, u.fontLabel, 600, "#C9D2E4");
 
   if(S.toastT>0)
-    txt(S.toast, left, bottom-26, u.fontLabel, 600,
+    txt(S.toast, left, S.draft?msgY-20:msgY, u.fontLabel, 600,
         "rgba(201,210,228,"+Math.min(1,S.toastT).toFixed(2)+")");
 
   if(CFG.debugLedger && S.ledger.leak>1e-6){
@@ -1412,6 +1564,171 @@ function drawResult(){
     }
   } else { txt(S.result.msg, x, y, u.fontLabel, 400, "#8C97AE"); y+=26; }
   txt("tap to run it again", x, y+22, u.fontHud, 400, "#5F687C");
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FERROFLUID — Appendix A of DESIGN.md, copied faithfully, plus the feel layer.
+//
+// FX is render only. The simulation never reads it and never writes it, which is
+// what lets the sim identity assertion in the smoke suite mean something: the
+// creature can look like anything without the game underneath moving at all.
+// ─────────────────────────────────────────────────────────────────────────────
+const FX = { r:-1, rv:0, swell:0, ripple:0, lastMass:-1, fa:0, fs:0.3,
+             detail:96, seed:0.7, douse:null, modeT:1, lastMode:"prowl" };
+
+// Deform a blob outline along a field direction. Rosensweig spiking: a pole term
+// at both ends of the field axis and a cone term that breaks each pole into
+// teeth. The longest spike tracks the field, so the SHAPE is information.
+function ferroBlob(cx, cy, r, fa, s, seed, detail){
+  const N = detail || CFG.ferro.detail, nS = CFG.ferro.spikes;
+  s = Math.max(0, Math.min(1, s));
+  const pts = [];
+  for(let i = 0; i < N; i++){
+    const th = i / N * Math.PI * 2;
+    const al = Math.cos(th - fa);
+    const pole  = Math.pow(Math.abs(al), 4);
+    const cones = Math.pow(Math.max(0, Math.cos((th - fa) * nS)), 10);
+    const wob = 0.055 * Math.sin(th * 5 + T * 1.1 + seed)
+              + 0.035 * Math.sin(th * 9 - T * 0.7 + seed * 2.3);
+    const k = 1 + 0.30 * s * pole + 0.55 * s * pole * cones + wob * (0.5 + 0.5 * s);
+    pts.push([cx + Math.cos(th) * r * k, cy + Math.sin(th) * r * k]);
+  }
+  return pts;
+}
+// Smooth the point ring into a closed path (midpoint quadratics).
+function tracePts(c, pts){
+  c.beginPath();
+  c.moveTo((pts[pts.length-1][0] + pts[0][0]) / 2,
+           (pts[pts.length-1][1] + pts[0][1]) / 2);
+  for(let i = 0; i < pts.length; i++){
+    const a = pts[i], b = pts[(i+1) % pts.length];
+    c.quadraticCurveTo(a[0], a[1], (a[0]+b[0])/2, (a[1]+b[1])/2);
+  }
+  c.closePath();
+}
+// Matte near black body, a thin oil slick rim across the field axis, one
+// specular. Ferrofluid is not shiny all over; it is black with an iridescent edge.
+function paintFerro(c, cx, cy, r, fa, hueA, hueB){
+  const g = c.createRadialGradient(cx - r*0.34, cy - r*0.4, r*0.06, cx, cy, r*1.5);
+  g.addColorStop(0, "#232733"); g.addColorStop(0.35, "#12141C"); g.addColorStop(1, "#05060A");
+  c.fillStyle = g; c.fill();
+  const lx = Math.cos(fa), ly = Math.sin(fa);
+  // Appendix A writes the middle stop as (hueA+hueB)/2. With violet 268 and gold
+  // 44 that is 156, which is GREEN: the numeric average takes the long way round
+  // the wheel. Violet to gold the short way runs 268 to 404, whose midpoint is
+  // 336, magenta. The green midpoint is why the creature read as a soap bubble
+  // rather than an oil slick, and it is the one place this build departs from the
+  // appendix. The geometry there is verified; the palette arithmetic was not.
+  const mid = ((hueA + (hueB < hueA ? hueB + 360 : hueB)) / 2) % 360;
+  const rim = c.createLinearGradient(cx - lx*r, cy - ly*r, cx + lx*r, cy + ly*r);
+  rim.addColorStop(0,    `hsla(${hueA},90%,64%,.85)`);
+  rim.addColorStop(0.42, `hsla(${mid},70%,44%,.14)`);
+  rim.addColorStop(0.72, `hsla(${hueB},92%,60%,.55)`);
+  rim.addColorStop(1,    `hsla(${hueB+26},95%,72%,.9)`);
+  // proportional, or the rim is a fifth of the radius on a small creature and a
+  // twelfth on a big one, which is what made it read as a bubble skin
+  c.strokeStyle = rim; c.lineWidth = Math.max(1.1, r*CFG.ferro.rimW); c.stroke();
+  c.save(); c.clip();
+  c.beginPath();
+  c.ellipse(cx - r*0.33, cy - r*0.42, r*0.30, r*0.17, fa + 0.6, 0, 7);
+  c.fillStyle = "rgba(226,236,255,.30)"; c.fill();
+  c.restore();
+}
+
+// Where the field points, and how hard. Priority: nearest live conduit, then
+// nearest powered source, then your own motion. A reader should be able to tell
+// where power is flowing from the creature's hair.
+function fieldTarget(b){
+  const f=CFG.ferro;
+  let dx=0, dy=0, best=Infinity, found=false;
+  for(const cd of S.conduits){ if(!cd.live) continue;
+    for(const p of cd.path){
+      const ax=p[0]+0.5-b.x, ay=p[1]+0.5-b.y, d=ax*ax+ay*ay;
+      if(d<best){ best=d; dx=ax; dy=ay; found=true; } } }
+  if(!found)
+    for(const src of S.sources){
+      if(!S.conduits.some(c=>c.live && c.sourceId===src.id)) continue;
+      const ax=src.x+0.5-b.x, ay=src.y+0.5-b.y, d=ax*ax+ay*ay;
+      if(d<best){ best=d; dx=ax; dy=ay; found=true; } }
+  if(found){
+    const dist=Math.sqrt(best);
+    return { a:Math.atan2(dy,dx),
+             s: dist<=f.fieldNearTiles ? f.fieldMax
+                : Math.max(f.fieldMin, f.fieldMax*f.fieldNearTiles/dist) };
+  }
+  const vx=input.ax||0, vy=input.ay||0, m=Math.min(1, Math.hypot(vx,vy));
+  return { a: m>0.05 ? Math.atan2(vy,vx) : FX.fa,
+           s: f.fieldMin + (f.fieldMax-f.fieldMin)*m*0.55 };
+}
+
+// The feel layer. Called from the frame loop, never from step().
+function updateFX(dt){
+  if(!S) return;
+  const b=blob(), f=CFG.ferro, target=CFG.radius(b.mass);
+  if(FX.r<0){ FX.r=target; FX.lastMass=b.mass; }
+  // A liquid catches up to itself, it does not snap to a new size.
+  const c=2*f.springDamp*Math.sqrt(f.springK);
+  FX.rv += ((target-FX.r)*f.springK - FX.rv*c)*dt;
+  FX.r  += FX.rv*dt;
+  const dm=b.mass-FX.lastMass; FX.lastMass=b.mass;
+  if(dm >  0.01) FX.swell =Math.min(f.swellMax, FX.swell + dm*f.swellPerMass);
+  if(dm < -0.01) FX.ripple=Math.min(1, FX.ripple + (-dm)*f.rippleGain);
+  FX.swell =Math.max(0, FX.swell  - dt*f.swellDecay);
+  FX.ripple=Math.max(0, FX.ripple - dt*f.rippleDecay);
+  const t=fieldTarget(b);
+  FX.fa += angDiff(t.a, FX.fa)*Math.min(1, dt*f.fieldTurn);
+  FX.fs += (t.s-FX.fs)*Math.min(1, dt*f.fieldTurn*0.6);
+  if(FX.douse){ FX.douse.t+=dt; if(FX.douse.t>CFG.ferro.douseSec) FX.douse=null; }
+  if(S.mode!==FX.lastMode){ FX.lastMode=S.mode; FX.modeT=0; }
+  FX.modeT=Math.min(1, (FX.modeT||0)+dt*1.9);
+  // Adaptive detail. Under load the creature loses resolution, never identity.
+  FX.detail = perf.draw>f.drawBudgetMs ? f.detailLow : f.detail;
+}
+
+// Squeezing through a gap: a stretched capsule, length by speed, width by gap.
+// Rendering only, no physics.
+function drawCapsule(px, py, r){
+  const f=CFG.ferro, sp=Math.min(1, Math.hypot(input.ax||0, input.ay||0));
+  const len=r*(1.5 + f.capsuleStretch*2.2*sp), w=cam.s*f.capsuleWidth*0.5;
+  ctx.save(); ctx.translate(px,py); ctx.rotate(FX.fa);
+  rr(-len/2, -w/2, len, w, w/2);
+  const g=ctx.createLinearGradient(0,-w/2,0,w/2);
+  g.addColorStop(0,"#232733"); g.addColorStop(0.5,"#12141C"); g.addColorStop(1,"#05060A");
+  ctx.fillStyle=g; ctx.fill();
+  const rim=ctx.createLinearGradient(-len/2,0,len/2,0);
+  rim.addColorStop(0,`hsla(${f.hueA},90%,64%,.85)`);
+  rim.addColorStop(1,`hsla(${f.hueB},95%,72%,.9)`);
+  ctx.strokeStyle=rim; ctx.lineWidth=1.2+w*0.10; ctx.stroke();
+  ctx.restore();
+}
+
+function drawBlob(){
+  const b=blob(), f=CFG.ferro, [px,py]=w2s(b.x,b.y);
+  const base=(FX.r<0?CFG.radius(b.mass):FX.r)*cam.s;
+  const r=Math.max(f.minBlobPx, base*(1 + FX.swell*f.swellGain - FX.ripple*f.rippleAmp));
+  if(!CFG.ferroRender){                              // the old plain ring
+    const g=ctx.createRadialGradient(px-r*0.34,py-r*0.4,r*0.06,px,py,r*1.5);
+    g.addColorStop(0,"#232733"); g.addColorStop(0.35,"#12141C"); g.addColorStop(1,"#05060A");
+    ctx.beginPath(); ctx.arc(px,py,r,0,7); ctx.fillStyle=g; ctx.fill();
+    const rim=ctx.createLinearGradient(px-Math.cos(FX.fa)*r,py-Math.sin(FX.fa)*r,
+                                       px+Math.cos(FX.fa)*r,py+Math.sin(FX.fa)*r);
+    rim.addColorStop(0,`hsla(${f.hueA},90%,64%,.85)`);
+    rim.addColorStop(1,`hsla(${f.hueB},95%,72%,.9)`);
+    ctx.strokeStyle=rim; ctx.lineWidth=1.5+r*0.045; ctx.stroke();
+    return;
+  }
+  if(b.mass<CFG.squeezeAt && tileAt(b.x,b.y)===VENT){ drawCapsule(px,py,r); return; }
+  tracePts(ctx, ferroBlob(px,py,r,FX.fa,FX.fs,FX.seed,FX.detail));
+  // A wet bloom on the same outline, wide and very faint. Without it the one
+  // object that matters most is the dimmest thing in the frame; with it the
+  // creature still reads as black, just black that catches light.
+  ctx.strokeStyle=`hsla(${f.hueA},80%,62%,${f.bloomA})`;
+  ctx.lineWidth=Math.max(2, r*f.bloomW); ctx.stroke();
+  paintFerro(ctx,px,py,r,FX.fa,f.hueA,f.hueB);
+  if(FX.ripple>0.02){                                // a hit rings the rim
+    ctx.strokeStyle="rgba(224,72,60,"+(0.75*FX.ripple).toFixed(3)+")";
+    ctx.lineWidth=1+r*0.06; ctx.stroke();
+  }
 }
 
 // ── input ────────────────────────────────────────────────────────────────────
@@ -1518,7 +1835,7 @@ let last=0, perf={ update:0, draw:0, frame:0 };
 function frame(ts){
   const dt=Math.min(0.05,(ts-last)/1000||0); last=ts;
   const t0=(typeof performance!=="undefined")?performance.now():0;
-  step(dt,input); updateCamera(dt);
+  step(dt,input); updateCamera(dt); updateFX(dt);
   const t1=(typeof performance!=="undefined")?performance.now():0;
   draw();
   const t2=(typeof performance!=="undefined")?performance.now():0;
@@ -1562,6 +1879,7 @@ if(typeof globalThis!=="undefined") globalThis.CONDUIT={
   get btns(){ return btns; }, hitBtn,
   get safe(){ return SAFE; }, get view(){ return {w:VW,h:VH}; },
   get settings(){ return SET; }, openSettings, closeSettings, loadSettings, saveSettings,
+  get fx(){ return FX; }, ferroBlob, fieldTarget, updateFX, get perf(){ return perf; },
   get cam(){ return cam; }, w2s, s2w,
 };
 </script>
