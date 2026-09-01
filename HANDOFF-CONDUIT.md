@@ -311,7 +311,54 @@ Build in the addendum's priority order:
     layer wrote to game state the signatures would diverge.
   - **suite: 178 assertions, 40 mutants, 40 killed, 0 survivors.**
     controls 51/51 at every viewport. fullrun clean.
-- [ ] C4 gate: smoke count: ___ · verb suicide-table written in HANDOFF.md
+- [~] **C4 gate** (2026-09-01) — **verbs complete, devices partial. Read the gap.**
+  - **smoke count: 270** (was 178), **57 mutants, 57 killed, 0 survivors.**
+  - **Four of my own new C4 gates were decorative until the sweep caught them**,
+    which is the harness earning its keep on the same day it was written:
+    "wheeling the source away kills the run" ran a wire to a tile with no device
+    on it, so the run was never live and the assertion could not fail; the carry
+    gate was satisfied by the new harvest grace window rather than by the rule;
+    the cart's wall check only looked at where it stopped, and the cart can only
+    be driven at illegal ground by standing somewhere it cannot follow (thin, in
+    a vent); and the frozen guard could not be caught keeping his senses because
+    the vent he stands in re-freezes him every frame, so the vent has to be cut
+    first. All four now test the case that actually reaches the code.
+    New assertions cover: drag (it follows you, it is slower than walking measured
+    at 3.96 tiles per 2s against 7.20, it makes a noise a pinned patrol comes to
+    with no sightline at all, it clears a body's found flag, and it refuses Flow
+    *isolated from stillness*, which is what the first version of that gate got
+    wrong); peek (costs a mass a second held, stops at a wall rather than seeing
+    through it, refuses rather than spending you below its floor); cling (a wall
+    FACE is passable, solid rock is not, no Flow from up there, you land on floor
+    not inside a wall, and it takes 2.6x longer to be spotted); pool (not
+    instant, breaks on movement, and accrues spot at half rate with the variable
+    isolated by holding stillT down rather than by moving); the cart (it rolls,
+    never into a wall, it is heavier than a body which is heavier than nothing,
+    and wheeling it away kills the run it was feeding); the coolant combo (a
+    guard freezes, stops seeing, becomes a source worth its mass, stays frozen
+    while the vent runs, thaws when the wire is reclaimed, and killing him takes
+    the battery with him).
+  - **verb suicide table written in `satellites/conduit/HANDOFF.md`**, one row per
+    verb, every cost measured by an assertion rather than asserted by hand.
+  - **each verb demonstrated in a logged playtest:** `node test/verbs.js` fires
+    every one by a real touch on the action button at its drawn centre, having
+    first read the label off the button, so what a player sees is what gets
+    tested. Smother, drag, drink a light, cling, peek (a hold), pool, push the
+    cart: all green, no mass leaked, no page errors.
+  - **Two design collisions found by building it.** Carrying and absorbing
+    competed for the same reach, so the body you reached down to pick up was
+    eaten before the drag could start; and because a smother ends with you
+    standing on the body and absorbing one takes under a second, **the drag verb
+    was unreachable for any body you made yourself.** Fixed with a grace window.
+    The deeper version is a **Director call**: harvesting also disposes, so it is
+    usually strictly better than moving a body, and drag's niche is narrow.
+  - Also fixed: a run was live even when its source had been wheeled away from
+    it, which had never been checked because nothing could move a source before.
+  - **⚠️ THE GAP, stated plainly: C4 item 6 is not finished.** Five devices exist
+    (sprinkler, plate, speaker, breaker, coolant) and the mandatory coolant combo
+    is done, but **floodlight, fan, crane, door lock, camera and the vehicle
+    battery are not built.** The pattern is established; this is the first thing
+    to pick up.
 - [ ] C5 gate: 6/6 solvability checks · two-path logs · splice-differs assertion green
 - [ ] C6 gate: audio demo · reduced-motion pair · NO service worker confirmed
 

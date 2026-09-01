@@ -84,8 +84,8 @@ const MUTANTS = [
     expect: "vent" },
 
   { id: "force-door-open", why: "a door is passable without forcing it",
-    from: "  if(t===WALL||t===DOOR) return false;",
-    to:   "  if(t===WALL) return false;",
+    from: "  if(t===DOOR) return false;",
+    to:   "  if(false) return false;",
     expect: "" },
 
   { id: "envelop-min-mass", why: "a thin body can smother",
@@ -202,6 +202,91 @@ const MUTANTS = [
     from: "    const k = 1 + 0.30 * s * pole + 0.55 * s * pole * cones + wob * (0.5 + 0.5 * s);",
     to:   "    const k = 1 + wob * (0.5 + 0.5 * s);",
     expect: "spikes further" },
+
+  { id: "carry-and-absorb", why: "you eat the body you reached down to pick up",
+    from: "    const carried = S.act.verb===\"drag\" && S.act.target===bd;",
+    to:   "    const carried = false;",
+    expect: "comes with you" },
+
+  { id: "drag-not-slow", why: "carrying a body costs you no speed",
+    from: "  if(S.act.verb===\"drag\")   sp*=CFG.drag.speedMult;     // hands full, and heavy",
+    to:   "  if(false) sp*=CFG.drag.speedMult;",
+    expect: "slower than walking" },
+
+  { id: "drag-silent", why: "dragging a body makes no noise",
+    from: "      setGoal(e, b.x, b.y, \"investigate\"); }\n  }\n}",
+    to:   "      ; }\n  }\n}",
+    expect: "noise a patrol comes to" },
+
+  { id: "drag-frees-hands", why: "you can plan routes while carrying a corpse",
+    from: "  if(S.act.verb===\"drag\"||S.act.verb===\"cart\") return false;   // hands full",
+    to:   "  if(false) return false;",
+    expect: "hands are full" },
+
+  { id: "peek-free", why: "recon costs nothing to hold",
+    from: "  b.mass-=cost; S.ledger.owned-=cost; S.ledger.debits.damage+=cost;",
+    to:   "  ;",
+    expect: "costs mass while it is held" },
+
+  { id: "peek-through-walls", why: "the tendril sees through solid rock",
+    from: "    if(!inB(tx|0,ty|0)||TT[idx(tx|0,ty|0)]===WALL) break;",
+    to:   "    if(!inB(tx|0,ty|0)) break;",
+    expect: "stops at the wall" },
+
+  { id: "cling-tunnels", why: "clinging lets you swim through solid rock",
+    from: "    if(inB(nx,ny) && TT[idx(nx,ny)]!==WALL) return true; }\n  return false;\n}",
+    to:   "    if(true) return true; }\n  return false;\n}",
+    expect: "solid rock is not" },
+
+  { id: "cling-no-benefit", why: "clinging does not lower your profile",
+    from: "    if(S.player.clinging) secs*=1/CFG.cling.spotMult;   // half the profile",
+    to:   "    if(false) secs*=1/CFG.cling.spotMult;",
+    expect: "longer to be spotted" },
+
+  { id: "pool-no-benefit", why: "flattening does not slow the spot",
+    from: "    if(isPooled())        secs*=CFG.pool.spotMult;      // twice as slow to spot",
+    to:   "    if(false) secs*=CFG.pool.spotMult;",
+    expect: "more slowly" },
+
+  { id: "pool-instant", why: "you are flat the moment you stop",
+    from: "function isPooled(){ return S.player.stillT >= CFG.pool.sec && !S.act.verb; }",
+    to:   "function isPooled(){ return !S.act.verb; }",
+    expect: "not pooled the moment you stop" },
+
+  { id: "cart-weightless", why: "a battery cart costs you no speed to push",
+    from: "  if(S.act.verb===\"cart\")   sp*=CFG.cart.speedMult;     // heavier still",
+    to:   "  if(false) sp*=CFG.cart.speedMult;",
+    expect: "heavier than a body" },
+
+  { id: "cart-through-walls", why: "the cart rolls through solid geometry",
+    from: "  if(inB(tx,ty) && (TT[idx(tx,ty)]===FLOOR||TT[idx(tx,ty)]===SHADOW)){",
+    to:   "  if(true){",
+    expect: "never rolls into a wall" },
+
+  { id: "source-teleports-power", why: "a source keeps feeding a run it has walked away from",
+    from: "    const h=cd.path[0]; if(h[0]!==src.x||h[1]!==src.y) continue;   // it walked off",
+    to:   "    ;",
+    expect: "wheeling the source away" },
+
+  { id: "coolant-no-battery", why: "a frozen guard is not a source",
+    from: "  S.sources.push({ id:\"froz-\"+e.id, x:e.x|0, y:e.y|0, kind:\"frozen\",",
+    to:   "  if(false) S.sources.push({ id:\"froz-\"+e.id, x:e.x|0, y:e.y|0, kind:\"frozen\",",
+    expect: "becomes a source" },
+
+  { id: "coolant-battery-persists", why: "the battery outlives the freeze",
+    from: "  const i=S.sources.findIndex(s=>s.id===\"froz-\"+e.id);\n  if(i>=0) S.sources.splice(i,1);\n  if(e.state===\"frozen\")",
+    to:   "  const i=-1;\n  if(i>=0) S.sources.splice(i,1);\n  if(e.state===\"frozen\")",
+    expect: "battery is gone with it" },
+
+  { id: "frozen-still-hunts", why: "a frozen guard keeps its senses and its legs",
+    from: "    return;                                    // frozen: no senses, no legs",
+    to:   "    ;",
+    expect: "" },
+
+  { id: "no-harvest-grace", why: "a body you just made is absorbed before you can choose to carry it",
+    from: "    bd.grace=Math.max(0,(bd.grace===undefined?CFG.harvestGraceSec:bd.grace)-wdt);",
+    to:   "    bd.grace=0;",
+    expect: "offer to carry it" },
 
   { id: "spot-decay-none", why: "spot progress never decays once you break line of sight",
     from: "  } else e.spot=Math.max(0, e.spot-CFG.spotDecay*dt);",

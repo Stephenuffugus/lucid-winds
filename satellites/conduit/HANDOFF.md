@@ -5,8 +5,9 @@
 
 ## Where we are
 
-**C1, C2 and C3 are complete.** M1, the ship gate, is still unanswered and is
-still Stephen's alone. C4, prowl completion and the device orchestra, is next.
+**C1, C2 and C3 are complete. C4 is complete for the verbs and partial for the
+devices**, see the gap named below. M1, the ship gate, is still unanswered and is
+still Stephen's alone.
 
 `index.html` is a complete, playable prototype in one file, no build step,
 canvas 2D, touch first. It runs from `file://`, GitHub Pages, or anywhere.
@@ -14,8 +15,9 @@ canvas 2D, touch first. It runs from `file://`, GitHub Pages, or anywhere.
 ## How to check it, in order
 
 ```
-node test/smoke.js                 178 assertions, headless, no deps
-node test/mutants.js               40 mutants, all must be killed
+node test/smoke.js                 270 assertions, headless, no deps
+node test/mutants.js               57 mutants, all must be killed
+node test/verbs.js [w] [h]         every prowl verb, by real touch
 node test/controls.js [w] [h]      51 assertions, real touches in real Chrome
 node test/shots.js <tag>           screenshots at 320, 375, 844, 1280
 node test/gate3.js <tag>           the three C3 ritual frames
@@ -227,17 +229,74 @@ diverged. A restart was not a fresh game. Fixed and gated separately.
 Everything I saw in the three ritual frames, fixed or ticketed, is in
 `docs/C3-FAULTS.md`. Four things are ticketed there rather than fixed.
 
+## What C4 changed, the prowl layer
+
+Built in the addendum's priority order: **drag a body, peek, cling, pool, push
+the battery cart**, plus the **coolant vent** and the frozen-guard-as-battery
+combo the plan makes mandatory. The action button and the thing it does now come
+from one function, `contextVerb`, so the label a player reads can never drift
+from what happens. PEEK is a hold, and it takes the RECLAIM slot while prowling
+because RECLAIM is dead weight outside Flow.
+
+### The suicide table
+The addendum's rule is that a direct verb handles one **isolated** problem: the
+moment the target has a witness the verb becomes suicide and the wire is the
+answer. Every cost below is measured by an assertion, not asserted by hand.
+
+| Verb | What it costs you | Where it is suicide | What the wire does instead |
+|---|---|---|---|
+| **Smother** | 2s immobile and fully visible, needs mass >= 40, costs 8 | A second patrol with a sightline on the target. You are pinned in the open for two seconds in front of them | The speaker pulls the target somewhere unwatched, or the plate kills it with you nowhere near |
+| **Tap** | 2 mass, and it pulls patrols **to you** | Anywhere you can be seen. You have just invited them to look at exactly where you are | The speaker is the same noise somewhere else, which is the whole point of it |
+| **Drink a light** | 3 mass, a noise, and you must stand in the lit pool to do it | Any sightline onto that pool. You are standing in the brightest tile on the map | Route through concealed ground instead of making ground dark |
+| **Drag a body** | 3.96 tiles per 2s against 7.20 walking, a noise every 2s that pulls anyone within 7 tiles, and no Flow at all | A route to shadow that crosses a sightline. Slow, loud, and holding the evidence | Harvest it where it lies, which is also disposal, or lure the finder away |
+| **Peek** | 1 mass a second for as long as it is held, standing still | Already inside a cone. You are paying mass to stand in it | Pulse costs 4 once, goes through walls, and does not need you to be near |
+| **Cling** | No mass, but no wire from up there and no forcing doors. 2.6x longer to be spotted | A problem that needs power. You have made yourself safe and useless | Come down. Every device needs a source and a run |
+| **Pool** | Free, but half speed while flat. About 2x longer to be spotted | A guard walking straight at you. Hardest to see and slowest to leave | Nothing: pooling is what you do *while* the wire works |
+| **Push the cart** | 3.02 tiles per 2s, no Flow, and any run it was feeding dies the moment it leaves | Open ground. You are the slowest thing on the map, in the open, next to a battery | Extend the wire and leave the cart where it stands |
+
+### Two real design collisions found by building it
+
+1. **Carrying and absorbing competed for the same reach.** Standing over a body
+   harvested it, so the body you reached down to pick up was eaten before the
+   drag could start. You carry it or you absorb it, never both, and there is now
+   a short grace window after a kill because a smother ends with you standing on
+   the body and absorbing one takes well under a second. Without that window the
+   drag verb was **unreachable for any body you made yourself**.
+2. **And the deeper version of that is a Director call.** Harvesting a body
+   removes it entirely, which is also disposal, so it is usually strictly better
+   than moving it. Drag's remaining niche is narrow: you are at capacity, or you
+   cannot afford the second it takes to stand there. Worth asking whether drag
+   needs a reason to exist that harvest cannot cover.
+
+### Also
+A run is only live while its first tile is still standing on its source, which
+had never been checked. Without it a battery cart could be wheeled across the map
+and keep feeding a device from anywhere.
+
+### Not built in C4, and it is a real gap
+The remaining devices: **floodlight, fan, crane, door lock, camera**, and the
+**vehicle battery** one-shot source. C4 item 6 asks for all of them, each with a
+designed interaction with another device or verb. Five devices exist (sprinkler,
+plate, speaker, breaker, coolant) and the mandatory coolant combo is done. The
+rest are the first thing to pick up.
+
 ## Next action
 
-**C4, prowl completion and the device orchestra**, in the addendum's priority
-order: drag a body, peek, cling, pool, battery cart dragging, then the remaining
-devices, then the vehicle battery. Every verb gets smoke assertions and a mutant
-that kills them, and the gate wants the suicide table written here: for every
-direct verb, name the watched situation where it is suicide and the wire is the
-answer.
+**Finish C4's device orchestra**, which is the one part of C4 left: floodlight,
+fan, crane, door lock, camera and the vehicle battery, each with at least one
+designed interaction with another device or verb, each obeying the tap to explain
+rule and printing its needs when unpowered. The pattern is established by the
+coolant vent; copy its shape.
 
-Before that, two things worth an hour. The four tickets in `docs/C3-FAULTS.md`
-are small and real, and the frame budget has plenty of room for them
-(`update 0.29ms, draw 3.73ms` at a 4x throttle against a budget of 5 and 8).
-And nothing here has been on a phone: every frame in `docs/shots` is headless
-Chrome. A real device pass is owed.
+Then **C5, content and progression**: the level loader, the six level curriculum,
+save and load with read modify write, the residue spend screen and the first
+trait set, and Splice shipping for real. Note that C5's anti grind and save rules
+are the ones most likely to hide the kind of bug this session kept finding, so
+budget for gates rather than features.
+
+Two things owed regardless. The four tickets in `docs/C3-FAULTS.md` are small and
+real, and the frame budget has room for them. And **nothing here has ever been on
+a phone**: every frame in `docs/shots` is headless Chrome, and the fps column in
+`test/perf.js` cannot be trusted because headless shell does not vsync. A real
+device pass is Stephen's to make and nothing in this session substitutes for
+it.

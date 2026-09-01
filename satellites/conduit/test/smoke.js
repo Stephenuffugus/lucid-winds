@@ -517,7 +517,8 @@ console.log("\n[12] mechanics that had no real assertion");
   setMass(S,b,50);                                     // room to receive it
   S.bodies.push({ x:b.x, y:b.y, mass:CFG.harvest.sentry, decay:CFG.bodyDecaySec });
   const m0 = b.mass;
-  for(let i=0;i<60;i++) G.step(0.016,{ax:0,ay:0});
+  // long enough to clear the choose-to-carry grace window AND drain the body
+  for(let i=0;i<260;i++) G.step(0.016,{ax:0,ay:0});
   ok("standing on a body harvests it", b.mass > m0 + 1, "gained "+(b.mass-m0).toFixed(2));
   ok("a whole sentry is worth exactly its harvest value",
      near(b.mass - m0, CFG.harvest.sentry, 1e-6), "gained "+(b.mass-m0).toFixed(4));
@@ -843,6 +844,364 @@ console.log("\n[15] the ferro layer is a renderer, not a rule");
   ok("a strong field spikes further than a weak one",
      Math.max(...spiky) > Math.max(...flat)*1.25,
      `${Math.max(...flat).toFixed(1)} to ${Math.max(...spiky).toFixed(1)}`);
+}
+
+// ── 16. the prowl verbs ──────────────────────────────────────────────────────
+// C4, addendum 1 section 2, in its priority order. The rule that keeps both
+// layers alive is that a direct verb handles ONE ISOLATED problem: it must be
+// cheap, immediate, and carry a cost that makes it suicide the moment the target
+// has a witness. Each block below tests the cost, not just that the verb runs.
+console.log("\n[16] the prowl verbs");
+
+{ // drag a body: slow, loud, hands full
+  const S = G.newGame(), b = G.blobRef();
+  S.bodies.push({ x:b.x+0.6, y:b.y, mass:CFG.harvest.sentry, decay:CFG.bodyDecaySec });
+  ok("a body in reach can be picked up", !!G.dragTarget());
+  ok("drag starts", G.startDrag() && S.act.verb==="drag");
+  const bod = S.bodies[0], x0 = bod.x;
+  for(let i=0;i<120;i++) G.step(0.016,{ax:1,ay:0});
+  ok("the body comes with you", bod.x > x0 + 0.5, `${x0.toFixed(2)} to ${bod.x.toFixed(2)}`);
+  ok("it stays within arm's reach", Math.hypot(bod.x-b.x, bod.y-b.y) < 1.5,
+     "gap "+Math.hypot(bod.x-b.x,bod.y-b.y).toFixed(2));
+  // Hands full, isolated. After walking, canFlow is already false on stillness
+  // alone, so asserting it there proves nothing: settle first, confirm flow IS
+  // available, and only then pick the body up.
+  G.dropBody();
+  for(let i=0;i<40;i++) G.step(0.016,{ax:0,ay:0});
+  ok("standing still and unseen, flow is available", G.canFlow()===true);
+  G.startDrag();
+  ok("but not with your hands full", G.canFlow()===false);
+  // past the grace window, standing still, holding it: carrying must still beat
+  // absorbing, or the grace window is quietly doing the work instead of the rule
+  const held = S.bodies[0];
+  for(let i=0;i<Math.ceil(CFG.harvestGraceSec/0.016)+200;i++) G.step(0.016,{ax:0,ay:0});
+  ok("a body you are carrying is never absorbed, however long you hold it",
+     S.bodies.includes(held) && held.mass > CFG.harvest.sentry-0.01,
+     "mass "+(held?held.mass.toFixed(2):"gone"));
+  ok("invariant survives a drag", G.checkLedger());
+  G.dropBody();
+  ok("and you can put it down", S.act.verb===null);
+}
+{ // dragging is SLOW, which is the cost that makes it suicide when watched
+  const walk = (dragging) => {
+    const S=G.newGame(), b=G.blobRef();
+    if(dragging){ S.bodies.push({x:b.x+0.6,y:b.y,mass:12,decay:30}); G.startDrag(); }
+    const x0=b.x;
+    for(let i=0;i<120;i++) G.step(0.016,{ax:1,ay:0});
+    return b.x-x0;
+  };
+  const free=walk(false), heavy=walk(true);
+  ok("dragging is slower than walking", heavy < free*0.75,
+     `${free.toFixed(2)} free against ${heavy.toFixed(2)} carrying`);
+}
+{ // and LOUD: it pulls anyone near enough to hear it, with no sightline at all,
+  // so what brought him is the noise and nothing else
+  const S = G.newGame(), b = G.blobRef(), e = S.enemies[1];
+  e.x = 26.5; e.y = 16.5;                     // corridor
+  b.x = 26.5; b.y = 21.5;                     // generator hall, wall between them
+  ok("he cannot see you from there", !G.los(e.x,e.y,b.x,b.y));
+  S.bodies.push({ x:b.x+0.5, y:b.y, mass:12, decay:30 });
+  G.startDrag();
+  let came=false;
+  // pin him: the point is whether the noise reaches him, not whether his patrol
+  // happens to carry him out of earshot first
+  for(let i=0;i<200;i++){ if(e.state==="patrol"){ e.x=26.5; e.y=16.5; }
+    G.step(0.016,{ax:0,ay:0});
+    if(e.state==="investigate") came=true; }
+  // sampled along the way, not only at the end: he can arrive, look around and
+  // go back to his route inside the window
+  ok("carrying a body makes noise a patrol comes to", came, "ended "+e.state);
+  ok("and he is coming to where the noise was", !!e.target);
+  ok("the noise is what brought him, not a sightline", !G.los(e.x,e.y,b.x,b.y) || came);
+}
+{ // C4: a body you just made has to be carryable, or the verb is unreachable.
+  // A smother leaves you standing on it and absorbing one takes under a second.
+  const S = G.newGame(), b = G.blobRef(), e = S.enemies[0];
+  b.x = e.x + 0.4; b.y = e.y;
+  G.startEnvelop(false);
+  for(let i=0;i<200 && S.act.verb;i++){ b.x=e.x+0.4; b.y=e.y; G.step(0.016,{ax:0,ay:0}); }
+  ok("the smother left a body", S.bodies.length===1);
+  ok("and it is still there a moment later, not already absorbed",
+     (G.step(0.016,{ax:0,ay:0}), S.bodies.length===1));
+  ok("so the button can offer to carry it", G.contextVerb().id==="drag",
+     "offers "+G.contextVerb().id);
+  ok("the grace window is what makes that possible", S.bodies[0].grace > 0,
+     "grace "+S.bodies[0].grace);
+  // and once the window passes, standing on it absorbs it as before
+  for(let i=0;i<200 && S.bodies.length;i++) G.step(0.016,{ax:0,ay:0});
+  ok("after the window, standing on it still absorbs it", S.bodies.length===0);
+  ok("invariant survives the grace window", G.checkLedger());
+}
+
+{ // and it is disposal: a body you moved is no longer a body someone found
+  const S = G.newGame(), b = G.blobRef();
+  S.bodies.push({ x:b.x+0.5, y:b.y, mass:12, decay:30, found:true });
+  G.startDrag();
+  for(let i=0;i<40;i++) G.step(0.016,{ax:1,ay:0});
+  ok("moving a found body clears the find", S.bodies[0].found===false);
+}
+
+{ // peek: recon that costs you for as long as you hold it
+  const S = G.newGame(), b = G.blobRef();
+  b.x = 8.5; b.y = 20.5; S.player.face = 0;
+  const m0 = b.mass;
+  S.player.peeking = true;
+  for(let i=0;i<60;i++) G.step(0.016,{ax:0,ay:0});
+  ok("peeking costs mass while it is held", b.mass < m0 - 0.5,
+     `${m0.toFixed(2)} to ${b.mass.toFixed(2)}`);
+  ok("about a mass a second", Math.abs((m0-b.mass) - CFG.peek.costPerSec*60*0.016) < 0.05,
+     "spent "+(m0-b.mass).toFixed(3));
+  ok("the tendril reaches out", S.player.peekR > 0.5, "r="+S.player.peekR);
+  ok("invariant survives a peek", G.checkLedger());
+  S.player.peeking = false;
+}
+{ // the tendril looks ROUND a corner, never through the wall
+  const S = G.newGame(), b = G.blobRef();
+  b.x = 4.5; b.y = 20.5; S.player.face = Math.PI;      // west, into the room wall
+  S.player.peeking = true;
+  for(let i=0;i<30;i++) G.step(0.016,{ax:0,ay:0});
+  ok("the tendril stops at the wall", S.player.peekR < 2, "r="+S.player.peekR);
+  ok("and it never reaches its full range through solid rock",
+     S.player.peekR < CFG.peek.range);
+  S.player.peeking = false;
+}
+{ // it refuses rather than killing you
+  const S = G.newGame(), b = G.blobRef();
+  setMass(S,b,CFG.peek.minMass+0.2);
+  S.player.peeking = true;
+  for(let i=0;i<200;i++) G.step(0.016,{ax:0,ay:0});
+  ok("peek stops before it spends you below its floor", b.mass >= CFG.peek.minMass-1e-6,
+     "mass="+b.mass.toFixed(3));
+  ok("and it lets go by itself", S.player.peeking===false);
+}
+
+{ // cling: onto a wall FACE, never into solid rock
+  const S = G.newGame(), b = G.blobRef();
+  b.x = 3.5; b.y = 20.5;                                // beside the room A wall
+  ok("there is a wall to climb here", !!G.clingTarget());
+  ok("cling starts", G.startCling() && S.player.clinging===true);
+  ok("a wall face is passable while clinging", G.passableBlob(2,20,b.mass));
+  ok("but solid rock is not, or you could tunnel through it",
+     !G.passableBlob(0,0,b.mass), "0,0 wallSurface="+G.wallSurface(0,0));
+  ok("you cannot lay wire from up there", G.canFlow()===false);
+  G.stopCling();
+  ok("and you come down onto floor, not inside a wall",
+     S.player.clinging===false && G.TTat(b.x|0,b.y|0)!==G.tiles.WALL);
+  ok("invariant survives a climb", G.checkLedger());
+}
+{ // clinging halves your profile, which is the whole point of it
+  const seen = (cling) => {
+    const S=G.newGame(), b=G.blobRef(), e=S.enemies[0];
+    S.player.clinging=cling;
+    b.x=9.5; b.y=11.5;
+    let n=0;
+    for(;n<600 && e.spot<0.9;n++){ e.x=7.5; e.y=11.5; e.face=0; G.step(0.016,{ax:0,ay:0}); }
+    return n;
+  };
+  const open=seen(false), stuck=seen(true);
+  ok("clinging takes longer to be spotted", stuck > open*1.5,
+     `${open} frames in the open against ${stuck} up the wall`);
+}
+
+{ // pool: hold still and flatten
+  const S = G.newGame(), b = G.blobRef();
+  ok("you are not pooled the moment you stop", G.isPooled()===false);
+  for(let i=0;i<Math.ceil(CFG.pool.sec/0.016)+10;i++) G.step(0.016,{ax:0,ay:0});
+  ok("holding still flattens you", G.isPooled()===true, "stillT="+S.player.stillT.toFixed(2));
+  G.step(0.016,{ax:1,ay:0});
+  ok("and moving breaks it", G.isPooled()===false);
+}
+{ // pooled buys time before a spot. Same position, same guard, same window: the
+  // only difference is whether the body is flat, forced by holding stillT down
+  // rather than by moving, so proximity and exposure cannot creep in.
+  const measure = (pool) => {
+    const S = G.newGame(), b = G.blobRef(), e = S.enemies[0];
+    b.x = 9.5; b.y = 11.5;
+    for(let i=0;i<Math.ceil(CFG.pool.sec/0.016)+20;i++){
+      if(!pool) S.player.stillT = 0;
+      e.x=7.5; e.y=11.5; e.face=Math.PI;              // looking away while it settles
+      G.step(0.016,{ax:0,ay:0});
+    }
+    const pooled = G.isPooled();
+    e.spot = 0;
+    for(let i=0;i<40;i++){
+      if(!pool) S.player.stillT = 0;
+      e.x=7.5; e.y=11.5; e.face=0;                    // now he turns round
+      G.step(0.016,{ax:0,ay:0});
+    }
+    return { pooled, spot:e.spot };
+  };
+  const flat = measure(true), upright = measure(false);
+  ok("holding still really does pool you", flat.pooled===true);
+  ok("and denying the stillness really does not", upright.pooled===false);
+  ok("a pooled body accrues spot more slowly", flat.spot < upright.spot*0.75,
+     `${flat.spot.toFixed(3)} flat against ${upright.spot.toFixed(3)} upright`);
+  ok("about half as fast, which is what CFG says",
+     Math.abs(flat.spot*CFG.pool.spotMult - upright.spot) < 0.03,
+     `${(flat.spot*CFG.pool.spotMult).toFixed(3)} vs ${upright.spot.toFixed(3)}`);
+}
+
+{ // the action button and the thing it does come from one function, so the label
+  // a player reads can never drift from what happens
+  const S = G.newGame(), b = G.blobRef();
+  ok("with nothing in reach it offers a tap", G.contextVerb().id==="tap");
+  S.bodies.push({ x:b.x+0.5, y:b.y, mass:12, decay:30 });
+  ok("a body in reach offers to carry it", G.contextVerb().id==="drag");
+  G.doContextVerb();
+  ok("and the button does what it said", S.act.verb==="drag");
+  ok("while carrying, it offers to put it down", G.contextVerb().id==="drop");
+  G.doContextVerb();
+  ok("and it does", S.act.verb===null);
+  S.bodies.length = 0;
+  b.x = 3.5; b.y = 20.5;
+  ok("beside a wall it offers to climb", G.contextVerb().id==="cling");
+  G.doContextVerb();
+  ok("clinging, it offers to come down", G.contextVerb().id==="uncling");
+  G.doContextVerb();
+  ok("and it does", S.player.clinging===false);
+}
+
+// ── 17. the battery cart and the coolant combo ───────────────────────────────
+// C4 items 5 and 6. The cart moves the SOURCE instead of extending the wire; the
+// coolant vent turns the thing hunting you into the thing powering you.
+console.log("\n[17] moving a source, and freezing a guard into one");
+
+{ // the cart rolls, slowly, and only on floor
+  const S = G.newGame(), b = G.blobRef();
+  const cart = S.sources.find(s=>s.id==="cart-1");
+  ok("the level has a cart you can push", !!cart && cart.movable===true);
+  b.x = cart.x + 1.2; b.y = cart.y + 0.5;
+  ok("standing beside it, it offers to push", G.contextVerb().id==="cart");
+  ok("push starts", G.startCart() && S.act.verb==="cart");
+  const x0 = cart.x;
+  for(let i=0;i<200;i++) G.step(0.016,{ax:1,ay:0});
+  ok("the cart comes with you", cart.x > x0, `${x0} to ${cart.x}`);
+  ok("invariant survives a push", G.checkLedger());
+  ok("pushing a cart leaves no hands for wiring", G.canFlow()===false);
+}
+{ // The cart follows where you stand, so it can only be driven at illegal ground
+  // by standing somewhere it cannot follow you. Thin, in the vent, is exactly
+  // that: the blob fits and the cart must not.
+  const S = G.newGame(), b = G.blobRef();
+  const cart = S.sources.find(s=>s.id==="cart-1");
+  cart.x = 18; cart.y = 16; cart.fx = undefined;
+  setMass(S, b, CFG.squeezeAt-10);
+  b.x = 18.5; b.y = 15.6;
+  ok("thin enough for the vent", b.mass < CFG.squeezeAt);
+  G.startCart();
+  let bad = null;
+  for(let i=0;i<400 && !bad;i++){
+    G.step(0.016,{ax:0,ay:-1});
+    const t = G.TTat(cart.x, cart.y);
+    if(t!==G.tiles.FLOOR && t!==G.tiles.SHADOW) bad = `${cart.x},${cart.y} tile ${t}`;
+  }
+  ok("the blob went where the cart cannot", b.y < 15, "blob y="+b.y.toFixed(2));
+  ok("and the cart never followed onto illegal ground, sampled every frame",
+     !bad, bad);
+  ok("invariant survives that", G.checkLedger());
+}
+
+{ // and it is slower than carrying a body, which is slower than walking
+  // all three from the same spot, in the same direction, with room to move: the
+  // first attempt walked the free case into a wall and measured the wall
+  const go = (setup) => {
+    const S=G.newGame(), b=G.blobRef();
+    b.x=20.5; b.y=21.5;                       // generator hall, nine tiles of room east
+    setup(S,b);
+    const x0=b.x; for(let i=0;i<120;i++) G.step(0.016,{ax:1,ay:0}); return b.x-x0; };
+  const free = go(()=>{});
+  const body = go((S,b)=>{ S.bodies.push({x:b.x+0.6,y:b.y,mass:12,decay:30}); G.startDrag(); });
+  const cart = go((S,b)=>{ const c=S.sources.find(s=>s.id==="cart-1");
+                           c.x=21; c.y=21; c.fx=undefined; G.startCart(); });
+  console.log(`       walking ${free.toFixed(2)} · carrying ${body.toFixed(2)}`
+            + ` · pushing ${cart.toFixed(2)} tiles in two seconds`);
+  ok("a cart is heavier than a body", cart < body);
+  ok("and a body is heavier than nothing", body < free);
+}
+{ // a run dies when its source is wheeled out from under it. The run has to be
+  // genuinely LIVE first, or the assertion is satisfied by a wire that was never
+  // powered: the first version of this ended on a tile with no device on it.
+  const S = G.newGame();
+  const cart = S.sources.find(s=>s.id==="cart-1");
+  const col = S.devices.find(d=>d.kind==="coolant");
+  cart.x = 23; cart.y = 22;                       // in the generator hall
+  G.beginDraft(cart.x, cart.y);
+  for(let y=21; y>=16; y--) G.draftStep(23, y);
+  for(let x=24; x<=col.x; x++) G.draftStep(x, 16);
+  G.commitDraft();
+  const cd = S.conduits[0];
+  ok("a wire can be laid from the cart", S.conduits.length===1);
+  ok("and it reaches a machine the cart can actually run",
+     cart.capacity >= col.needs && cd.path[cd.path.length-1][0]===col.x);
+  ok("so the run is live", cd.live===true, "live="+cd.live);
+  ok("and the machine is on", col.on===true);
+  cart.x += 1; G.resolvePower();
+  ok("wheeling the source away kills the run it was feeding", !cd.live);
+  ok("and the machine goes off with it", !col.on);
+  ok("but the mass stays committed, it is still your wire", cd.cost > 0);
+  ok("invariant survives the source walking off", G.checkLedger());
+}
+
+{ // the coolant combo, which the plan makes mandatory
+  const S = G.newGame();
+  const col = S.devices.find(d=>d.kind==="coolant");
+  ok("the level has a coolant vent", !!col);
+  const sock = S.sources.find(s=>s.id==="sock-1");
+  ok("the socket can just about run the vent on its own",
+     sock.capacity >= col.needs, `${sock.capacity} against ${col.needs}`);
+  ok("but then it has nothing left for the sprinkler",
+     sock.capacity - col.needs < S.devices.find(d=>d.kind==="sprinkler").needs,
+     `${sock.capacity - col.needs} spare`);
+  // generator to the vent
+  G.beginDraft(22,21);
+  for(let y=20;y>=16;y--) G.draftStep(22,y);
+  for(let x=23;x<=30;x++) G.draftStep(x,16);
+  G.commitDraft();
+  ok("the generator can run it", col.on, "needs "+col.needs);
+
+  const e = S.enemies[1];
+  e.x = 30.5; e.y = 16.5; e.state="patrol";
+  G.step(0.016,{ax:0,ay:0});
+  ok("a guard who walks into it freezes", e.state==="frozen", "state="+e.state);
+  ok("and stops being able to see you", e.spot===0);
+  {
+    // Cut the vent first. While it runs it re-freezes him every frame, which
+    // would mask a frozen guard who had kept his senses: the interesting state
+    // is frozen with the vent already off.
+    S.conduits.slice().forEach(c=>G.startReclaim(c));
+    for(let i=0;i<300;i++) G.step(0.016,{ax:0,ay:0});   // long enough to retract
+    ok("the vent is off but he is still frozen", !col.on && e.state==="frozen",
+       `on=${col.on} state=${e.state} left=${(e.frozen||0).toFixed(1)}s`);
+    const b2=G.blobRef(), fx=e.x, fy=e.y;
+    b2.x=e.x+1.5; b2.y=e.y;
+    for(let i=0;i<125;i++) G.step(0.016,{ax:0,ay:0});
+    ok("a frozen guard accrues no spot at all, stood in front of", (e.spot||0)===0,
+       "spot="+e.spot);
+    ok("and he does not move", e.x===fx && e.y===fy, `${fx},${fy} to ${e.x},${e.y}`);
+    ok("and he is still frozen", e.state==="frozen");
+  }
+  const froz = S.sources.find(s=>s.id==="froz-"+e.id);
+  ok("a frozen guard becomes a source", !!froz, "no source appeared");
+  ok("worth what its mass is worth",
+     froz.capacity === Math.round(CFG.harvest[e.kind]*CFG.coolant.capacityMult),
+     "capacity "+(froz && froz.capacity));
+  ok("you can route from it", !!G.cheapestPath(froz.x, froz.y, 14, 11));
+  ok("invariant survives a freeze", G.checkLedger());
+
+  // the freeze runs out on its own now that the vent is dead
+  for(let i=0;i<Math.ceil(CFG.coolant.freezeSec/0.016)+120;i++) G.step(0.016,{ax:0,ay:0});
+  ok("and then he thaws", e.state!=="frozen", "state="+e.state);
+  ok("and the battery is gone with it",
+     !S.sources.find(s=>s.id==="froz-"+e.id));
+  ok("invariant survives the thaw", G.checkLedger());
+}
+{ // killing a frozen guard must not leave a battery behind
+  const S = G.newGame(), e = S.enemies[0];
+  G.freezeEnemy(e);
+  ok("frozen, there is a battery", !!S.sources.find(s=>s.id==="froz-"+e.id));
+  G.killEnemy(e, "test");
+  ok("killed, there is not", !S.sources.find(s=>s.id==="froz-"+e.id));
+  ok("and it left a body to harvest", S.bodies.length===1);
 }
 
 console.log(`\n${pass} passed, ${fail} failed\n`);

@@ -126,6 +126,11 @@ const CFG = {
   reclaimSpeed:6, minBlobMass:5, socketTrickle:0.5, squeezeAt:30, forceAt:70,
   harvest:{ drone:12, sentry:18, brute:30 }, bodyDecaySec:30, drainSpentSource:5,
   harvestRate:22,                      // mass/sec while touching a body
+  // A smother ends with you standing on the body, and absorbing one takes well
+  // under a second, so without a grace window the "drag a body" verb is
+  // unreachable for any body you made yourself: it is gone before you can
+  // choose. This is how long you have to decide to carry it instead.
+  harvestGraceSec:1.6,
 
   // movement
   speedBase:5.0, speedCurve:m => 1.25 - 0.005*m,
@@ -152,6 +157,16 @@ const CFG = {
   splice:{ alertOnPowerUp:1 },                 // riding the site's own wiring trips its panel
   speakerRadius:12,                            // how far a live speaker pulls
   bodyFoundRange:1.6,                          // a guard finding a corpse escalates
+
+  // The prowl verbs, addendum 1 section 2, in its priority order. Every one is
+  // cheap, immediate and only viable when nobody is looking; the moment a target
+  // has a witness the verb becomes suicide and the wire is the answer.
+  drag:{ range:1.3, speedMult:0.55, noiseSec:2.0, noiseRadius:7, lag:0.55 },
+  cart:{ range:1.4, speedMult:0.42, lag:0.7 },   // heavier than a body
+  coolant:{ freezeSec:12, capacityMult:2.5 },    // a frozen guard is a battery
+  peek:{ costPerSec:1.0, range:6, revealSec:0.6, minMass:8 },
+  cling:{ speedMult:0.78, spotMult:0.5, dropTimeMult:0.5, range:1.4 },
+  pool:{ sec:1.5, spotMult:2.0, speedMult:0.5 },
 
   // modes
   flowTimeScale:0.10, flowRequires:"stationaryAndUnseen",
@@ -274,18 +289,25 @@ function newGame(){
     t:0, rng:mulberry(CFG.seed), mode:"prowl", flowT:0,
     player:{ blobs:[{id:"core",x:5.5,y:27.5,mass:CFG.capacity,active:true}],
              capacity:CFG.capacity, traits:{insulation:0,pulseRange:CFG.pulseRange,maxSplits:1,splice:false},
-             residue:0, vx:0, vy:0, forceT:0, pulseCd:0, pulseT:0, stillT:0 },
+             residue:0, vx:0, vy:0, forceT:0, pulseCd:0, pulseT:0, stillT:0,
+             face:0, clinging:false, peeking:false, peekR:0, peekT:0 },
     ledger:{ owned:CFG.capacity, debits:{reclaimTax:0,damage:0,zapBurn:0,destroyed:0},
              credits:{harvest:0,drain:0,trickle:0}, toResidue:0, leak:0 },
     sources:[
       {id:"sock-1", x:9,  y:16, kind:"socket",    capacity:30,  noisy:false},
       {id:"gen-1",  x:22, y:21, kind:"generator", capacity:100, noisy:true},
+      // Move the source instead of extending the wire. Slow and exposed while
+      // you push it, and any run already fed by it dies the moment it leaves.
+      {id:"cart-1", x:27, y:22, kind:"cart",      capacity:50,  noisy:false, movable:true},
     ],
     devices:[
       {id:"spr-1", x:16, y:5,  kind:"sprinkler", needs:20, on:false, area:[10,4,20,11]},
       {id:"plt-1", x:12, y:8,  kind:"plate",     needs:40, on:false},
       {id:"spk-1", x:14, y:11, kind:"speaker",   needs:10, on:false},
       {id:"brk-1", x:44, y:21, kind:"breaker",   needs:30, on:false},
+      // Freeze what walks through it. A frozen guard stops being a threat and
+      // starts being a battery, which is the combo the design asks for.
+      {id:"col-1", x:30, y:16, kind:"coolant",   needs:25, on:false, area:[28,15,33,17]},
     ],
     enemies:[
       { id:"sentry-1", kind:"sentry", x:7.5, y:11.5, hp:CFG.enemyHp.sentry, face:0,
@@ -376,7 +398,8 @@ function checkLedger(){ const d = Math.abs(totalMass() - S.ledger.owned);
 // ── geometry helpers ─────────────────────────────────────────────────────────
 const tileAt=(x,y)=> inB(x|0,y|0)?TT[idx(x|0,y|0)]:WALL;
 function passableBlob(x,y,mass){ if(!inB(x,y)) return false; const t=TT[idx(x,y)];
-  if(t===WALL||t===DOOR) return false;
+  if(t===WALL) return !!(S && S.player.clinging && wallSurface(x,y));
+  if(t===DOOR) return false;
   if(t===VENT) return mass < CFG.squeezeAt;
   return true; }
 function passableEnemy(x,y){ if(!inB(x,y)) return false;
@@ -551,6 +574,7 @@ function resolvePower(){
   for(const cd of S.conduits){
     cd.live=false; if(cd.path.length<2) continue;
     const src=S.sources.find(s=>s.id===cd.sourceId); if(!src) continue;
+    const h=cd.path[0]; if(h[0]!==src.x||h[1]!==src.y) continue;   // it walked off
     const e=cd.path[cd.path.length-1], dv=deviceAt(e[0],e[1]); if(!dv) continue;
     // Lockdown cuts the site's power, not yours. The breaker is the one thing
     // you can still energise, because energising it IS the way out. Skipping
@@ -611,9 +635,22 @@ function setGoal(e, x, y, state){ e.state=state; e.target=[x|0,y|0];
 
 function updateEnemy(e, dt){
   if(e.state==="dead"||e.state==="grabbed") return;   // held: no senses, no legs
+  if(e.frozen===undefined) e.frozen=0;
   e.zapCd=Math.max(0,e.zapCd-dt);
   const b=blob();
 
+  // A live coolant vent freezes what walks through it. A frozen guard is not a
+  // threat any more, it is a battery: the one device combo the design insists on.
+  if(e.frozen>0){
+    e.frozen-=dt;
+    if(e.frozen<=0){ e.frozen=0; thawEnemy(e); }
+    return;                                    // frozen: no senses, no legs
+  }
+  const col=S.devices.find(d=>d.kind==="coolant"&&d.on);
+  if(col && col.area){
+    const [x0,y0,x1,y1]=col.area;
+    if((e.x|0)>=x0&&(e.x|0)<=x1&&(e.y|0)>=y0&&(e.y|0)<=y1){ freezeEnemy(e); return; }
+  }
   // hazards first: a wet electrified plate kills outright
   const ti=idx(e.x|0,e.y|0);
   const plate=S.devices.find(d=>d.kind==="plate"&&d.on);
@@ -631,7 +668,9 @@ function updateEnemy(e, dt){
      && los(e.x,e.y,b.x,b.y)){
     sees=true;
     const tier=expBlob(idx(b.x|0,b.y|0));
-    const secs=CFG.spotSecondsBlob[tier]*(1/CFG.sizeSpotFactor(b.mass));
+    let secs=CFG.spotSecondsBlob[tier]*(1/CFG.sizeSpotFactor(b.mass));
+    if(S.player.clinging) secs*=1/CFG.cling.spotMult;   // half the profile
+    if(isPooled())        secs*=CFG.pool.spotMult;      // twice as slow to spot
     e.spot += dt/secs * (1-0.5*(d/R));
   } else e.spot=Math.max(0, e.spot-CFG.spotDecay*dt);
 
@@ -695,9 +734,31 @@ function updateEnemy(e, dt){
       e.x+=dx/dist*Math.min(sp,dist); e.y+=dy/dist*Math.min(sp,dist);
       e.face += angDiff(Math.atan2(dy,dx), e.face)*Math.min(1, 8*dt); } }
 }
+function freezeEnemy(e){
+  if(e.frozen>0) return;
+  e.frozen=CFG.coolant.freezeSec; e.spot=0; e.path=null; e.prevState=e.state;
+  e.state="frozen";
+  // it stops being something that hunts you and starts being something you can
+  // wire into. Its capacity is what its mass is worth.
+  S.sources.push({ id:"froz-"+e.id, x:e.x|0, y:e.y|0, kind:"frozen",
+                   capacity:Math.round(CFG.harvest[e.kind]*CFG.coolant.capacityMult),
+                   noisy:false, temp:true });
+  toast("Frozen solid. It will hold a current.");
+}
+function thawEnemy(e){
+  const i=S.sources.findIndex(s=>s.id==="froz-"+e.id);
+  if(i>=0) S.sources.splice(i,1);
+  if(e.state==="frozen"){ e.state=e.prevState||"patrol"; e.path=null; e.spot=0.4; }
+  resolvePower();
+  toast("It is moving again.");
+}
 function killEnemy(e, how){
+  if(e.frozen>0){ e.frozen=0;
+    const i=S.sources.findIndex(s=>s.id==="froz-"+e.id);
+    if(i>=0) S.sources.splice(i,1); }
   e.state="dead";
-  S.bodies.push({ x:e.x, y:e.y, mass:CFG.harvest[e.kind], decay:CFG.bodyDecaySec });
+  S.bodies.push({ x:e.x, y:e.y, mass:CFG.harvest[e.kind], decay:CFG.bodyDecaySec,
+                  grace:CFG.harvestGraceSec });
   toast(how==="plate"?"Grounded through the floor.":"Down.");
   bump(1,"noise");
 }
@@ -724,7 +785,13 @@ function scanConduits(dt){
 // ── player ───────────────────────────────────────────────────────────────────
 function movePlayer(dt, ax, ay){
   const b=blob(), r=CFG.radius(b.mass);
-  const sp=CFG.speedBase*CFG.speedCurve(b.mass);
+  let sp=CFG.speedBase*CFG.speedCurve(b.mass);
+  if(S.act.verb==="drag")   sp*=CFG.drag.speedMult;     // hands full, and heavy
+  if(S.act.verb==="cart")   sp*=CFG.cart.speedMult;     // heavier still
+  if(S.player.clinging)     sp*=CFG.cling.speedMult;
+  if(isPooled())            sp*=CFG.pool.speedMult;     // flat things ooze
+  if(S.player.face===undefined) S.player.face=0;
+  if(Math.hypot(ax,ay)>0.08) S.player.face=Math.atan2(ay,ax);
   const mag=Math.hypot(ax,ay);
   if(mag>0.08){ S.player.stillT=0; } else { S.player.stillT+=dt; }
   const vx=(mag>0.08? ax/mag:0)*sp*Math.min(1,mag)*dt;
@@ -781,7 +848,7 @@ function nearestLight(){
     const d=Math.hypot(L.x+0.5-b.x, L.y+0.5-b.y); if(d<bd){ bd=d; best=L; } }
   return best;
 }
-function startEnvelop(){
+function startEnvelop(fromAbove){
   const t=envelopTarget();
   if(!t){ const b=blob();
     toast(b.mass<CFG.envelop.minMass
@@ -791,7 +858,7 @@ function startEnvelop(){
   // once you have hold of it, it does not get to notice you. Its own senses stop;
   // the risk is the two seconds you spend immobile in front of everyone else.
   t.grabbed=true; t.prevState=t.state; t.state="grabbed"; t.spot=0;
-  S.act={ verb:"envelop", target:t, t:0 };
+  S.act={ verb:"envelop", target:t, t:0, fast:!!fromAbove };
 }
 function tickEnvelop(dt){
   const a=S.act; if(a.verb!=="envelop") return;
@@ -799,7 +866,7 @@ function tickEnvelop(dt){
   if(e.state==="dead" || Math.hypot(e.x-b.x,e.y-b.y)>CFG.envelop.range*1.8){
     releaseGrab(e); S.act={verb:null,target:null,t:0}; toast("It slipped you."); return; }
   a.t+=dt;
-  if(a.t>=CFG.envelop.timeSec){
+  if(a.t>=CFG.envelop.timeSec*(a.fast?CFG.cling.dropTimeMult:1)){
     b.mass-=CFG.envelop.cost; S.ledger.owned-=CFG.envelop.cost;
     S.ledger.debits.damage+=CFG.envelop.cost;
     S.act={verb:null,target:null,t:0};
@@ -820,7 +887,177 @@ function tapNoise(){
     setGoal(e, b.x, b.y, "investigate"); pulled++; }
   toast(pulled?"Something is coming.":"Nothing heard that.");
 }
+// ── drag a body ──────────────────────────────────────────────────────────────
+// The single highest value stealth addition in the addendum. A kill is not
+// finished until the body is gone, and moving one is slow, loud, and keeps your
+// hands full: no wiring, no smothering, no flow while you are holding it.
+function dragTarget(){
+  const b=blob(); let best=null, bd=CFG.drag.range;
+  for(const bod of S.bodies){
+    const d=Math.hypot(bod.x-b.x, bod.y-b.y);
+    if(d<bd){ bd=d; best=bod; } }
+  return best;
+}
+function cartTarget(){
+  const b=blob(); let best=null, bd=CFG.cart.range;
+  for(const src of S.sources){
+    if(!src.movable) continue;
+    const d=Math.hypot(src.x+0.5-b.x, src.y+0.5-b.y);
+    if(d<bd){ bd=d; best=src; } }
+  return best;
+}
+function startCart(){
+  const t=cartTarget();
+  if(!t){ toast("Nothing here to push."); return false; }
+  S.act={ verb:"cart", target:t, t:0 };
+  toast("Slow going, and you are out in the open.");
+  return true;
+}
+function tickCart(dt){
+  const a=S.act; if(a.verb!=="cart") return;
+  const src=a.target, b=blob();
+  // It needs a continuous position of its own. Rounding into src.x every frame
+  // threw the fractional progress away, so the lerp restarted from the rounded
+  // value and the cart could never cross a tile boundary at all.
+  if(src.fx===undefined){ src.fx=src.x; src.fy=src.y; }
+  const k=Math.min(1, dt/CFG.cart.lag);
+  src.fx += ((b.x-0.5)-src.fx)*k;
+  src.fy += ((b.y-0.5)-src.fy)*k;
+  // it rolls on floor; it does not go through walls, doors or up vents
+  const tx=Math.round(src.fx), ty=Math.round(src.fy);
+  if(inB(tx,ty) && (TT[idx(tx,ty)]===FLOOR||TT[idx(tx,ty)]===SHADOW)){
+    if(tx!==src.x||ty!==src.y){ src.x=tx; src.y=ty; resolvePower(); }
+  } else { src.fx=src.x; src.fy=src.y; }        // it will not go there
+}
+function startDrag(){
+  const t=dragTarget();
+  if(!t){ toast("Nothing to carry."); return false; }
+  S.act={ verb:"drag", target:t, t:0 };
+  toast("Heavy. And it makes noise.");
+  return true;
+}
+function dropBody(){
+  if(S.act.verb!=="drag" && S.act.verb!=="cart") return;
+  S.act={ verb:null, target:null, t:0 };
+  toast("Set down.");
+}
+function tickDrag(dt){
+  const a=S.act; if(a.verb!=="drag") return;
+  const bod=a.target, b=blob();
+  if(!S.bodies.includes(bod)){ S.act={verb:null,target:null,t:0}; return; }
+  // it trails you rather than riding you, so it reads as weight
+  const k=Math.min(1, dt/CFG.drag.lag);
+  bod.x += (b.x-bod.x)*k; bod.y += (b.y-bod.y)*k;
+  bod.found=false;                       // moved out of where it was found
+  a.t+=dt;
+  if(a.t>=CFG.drag.noiseSec){
+    a.t=0;
+    for(const e of S.enemies){
+      if(e.state==="dead"||e.state==="hunt") continue;
+      if(Math.hypot(e.x-b.x,e.y-b.y)>CFG.drag.noiseRadius) continue;
+      setGoal(e, b.x, b.y, "investigate"); }
+  }
+}
+
+// ── peek ─────────────────────────────────────────────────────────────────────
+// A tendril around the corner. See without putting your body where it can be
+// seen. Costs mass for as long as you hold it, so recon is not free.
+function peekDir(){ return S.player.face||0; }
+function tickPeek(dt){
+  const b=blob();
+  if(!S.player.peeking) return;
+  if(S.mode!=="prowl" || S.act.verb){ S.player.peeking=false; return; }
+  if(b.mass-CFG.peek.costPerSec*dt < CFG.peek.minMass){
+    S.player.peeking=false; toast("Not enough of you to reach."); return; }
+  const cost=CFG.peek.costPerSec*dt;
+  b.mass-=cost; S.ledger.owned-=cost; S.ledger.debits.damage+=cost;
+  // the tendril stops at the first wall, so it looks round corners, not through
+  const a=peekDir(); let r=0;
+  for(let step=0.25; step<=CFG.peek.range; step+=0.25){
+    const tx=b.x+Math.cos(a)*step, ty=b.y+Math.sin(a)*step;
+    if(!inB(tx|0,ty|0)||TT[idx(tx|0,ty|0)]===WALL) break;
+    r=step; }
+  S.player.peekR=r;
+  S.player.peekT=CFG.peek.revealSec;
+}
+
+// ── cling ────────────────────────────────────────────────────────────────────
+// Flow up onto a wall surface. Halves your spot profile and costs nothing, but
+// you cannot lay wire from up there and you cannot force a door.
+function clingTarget(){
+  const b=blob();
+  for(let k=0;k<4;k++){
+    const nx=(b.x|0)+[1,-1,0,0][k], ny=(b.y|0)+[0,0,1,-1][k];
+    if(inB(nx,ny) && TT[idx(nx,ny)]===WALL) return [nx,ny];
+  }
+  return null;
+}
+// A wall tile is climbable only where it has a face, that is where it touches
+// something passable. Without that you could tunnel through solid rock.
+function wallSurface(x,y){
+  if(!inB(x,y) || TT[idx(x,y)]!==WALL) return false;
+  for(let k=0;k<4;k++){
+    const nx=x+[1,-1,0,0][k], ny=y+[0,0,1,-1][k];
+    if(inB(nx,ny) && TT[idx(nx,ny)]!==WALL) return true; }
+  return false;
+}
+function startCling(){
+  if(!clingTarget()){ toast("Nothing to climb here."); return false; }
+  S.player.clinging=true; toast("Up.");
+  return true;
+}
+function stopCling(){
+  const b=blob();
+  S.player.clinging=false;
+  if(TT[idx(b.x|0,b.y|0)]===WALL){          // come down onto the nearest floor
+    for(let k=0;k<4;k++){
+      const nx=(b.x|0)+[1,-1,0,0][k], ny=(b.y|0)+[0,0,1,-1][k];
+      if(passableBlob(nx,ny,b.mass)){ b.x=nx+0.5; b.y=ny+0.5; break; } } }
+  toast("Down.");
+}
+
+// ── pool ─────────────────────────────────────────────────────────────────────
+// Hold still and flatten. Twice as hard to see, half as quick to leave.
+function isPooled(){ return S.player.stillT >= CFG.pool.sec && !S.act.verb; }
+
+// One source of truth for what the action button does, so the label a player
+// reads and the thing that happens cannot drift apart.
+function contextVerb(){
+  if(S.act.verb==="envelop") return { id:"release", label:"RELEASE" };
+  if(S.act.verb==="drag")    return { id:"drop",    label:"DROP BODY" };
+  if(S.act.verb==="cart")    return { id:"drop",    label:"LET GO" };
+  if(S.player.clinging){
+    const e=envelopTarget();
+    if(e) return { id:"dropsmother", label:"DROP ON IT", target:e };
+    return { id:"uncling", label:"DROP DOWN" };
+  }
+  const e=envelopTarget(); if(e) return { id:"smother", label:"SMOTHER", target:e };
+  const b=dragTarget();    if(b) return { id:"drag",    label:"DRAG BODY", target:b };
+  const c=cartTarget();    if(c) return { id:"cart",    label:"PUSH CART", target:c };
+  const L=nearestLight();  if(L) return { id:"douse",   label:"DRINK LIGHT", target:L };
+  if(clingTarget())              return { id:"cling",   label:"CLING" };
+  return { id:"tap", label:"TAP" };
+}
+function doContextVerb(){
+  const v=contextVerb();
+  switch(v.id){
+    case "release":     releaseGrab(S.act.target); S.act={verb:null,target:null,t:0};
+                        toast("Let go."); break;
+    case "drop":        dropBody(); break;
+    case "uncling":     stopCling(); break;
+    case "dropsmother": stopCling(); startEnvelop(true); break;
+    case "smother":     startEnvelop(false); break;
+    case "drag":        startDrag(); break;
+    case "cart":        startCart(); break;
+    case "douse":       douseLight(v.target); break;
+    case "cling":       startCling(); break;
+    default:            tapNoise();
+  }
+}
+
 function canFlow(){
+  if(S.act.verb==="drag"||S.act.verb==="cart") return false;   // hands full
+  if(S.player.clinging)   return false;            // no wire from up there
   if(S.player.stillT<0.25) return false;
   return !S.enemies.some(e=>e.state!=="dead" && e.spot>0.15);
 }
@@ -837,8 +1074,13 @@ function step(dt, input){
 
   S.player.tapCd=Math.max(0,(S.player.tapCd||0)-dt);
   S.player.tapT=Math.max(0,(S.player.tapT||0)-dt);
-  if(S.act.verb) tickEnvelop(wdt);                 // you cannot move mid-smother
-  if(S.mode==="prowl" && !S.act.verb) movePlayer(wdt, input.ax||0, input.ay||0);
+  S.player.peekT=Math.max(0,(S.player.peekT||0)-dt);
+  if(S.act.verb==="envelop") tickEnvelop(wdt);     // you cannot move mid-smother
+  if(S.act.verb==="drag")    tickDrag(wdt);
+  if(S.act.verb==="cart")    tickCart(wdt);
+  tickPeek(wdt);
+  const held = S.act.verb==="envelop";
+  if(S.mode==="prowl" && !held) movePlayer(wdt, input.ax||0, input.ay||0);
   else S.player.stillT+=dt;
 
   const b=blob();
@@ -880,7 +1122,12 @@ function step(dt, input){
   // bodies: harvest and decay
   for(const bd of [...S.bodies]){
     bd.decay-=wdt;
-    if(Math.hypot(bd.x-b.x, bd.y-b.y)<0.9){
+    // You carry it or you absorb it, never both. Without this the body you
+    // reached down to pick up was eaten before the drag could start, because
+    // harvest and drag compete for exactly the same reach.
+    const carried = S.act.verb==="drag" && S.act.target===bd;
+    bd.grace=Math.max(0,(bd.grace===undefined?CFG.harvestGraceSec:bd.grace)-wdt);
+    if(!carried && bd.grace<=0 && Math.hypot(bd.x-b.x, bd.y-b.y)<0.9){
       const take=Math.min(bd.mass, CFG.harvestRate*wdt);
       bd.mass-=take; ledgerGain(take,"harvest"); }
     if(bd.decay<=0||bd.mass<=0.01) S.bodies.splice(S.bodies.indexOf(bd),1); }
@@ -912,7 +1159,7 @@ const CAN = (typeof document!=="undefined") ? document.getElementById("c") : nul
 const ctx = CAN ? CAN.getContext("2d") : null;
 let VW=0, VH=0, cam={x:24,y:16,s:26};
 const input={ ax:0, ay:0 };
-let stick=null, btns=[], lastTouchTile=null;
+let stick=null, btns=[], lastTouchTile=null, heldBtn=null;
 
 // The notch, the home indicator and the browser chrome all eat screen. Read the
 // real insets out of CSS rather than guessing them.
@@ -1153,14 +1400,14 @@ function draw(){
 
   // sources + devices
   for(const src of S.sources){ const [px,py]=w2s(src.x,src.y);
-    ctx.fillStyle= src.kind==="generator"?"#152D26":"#132435";
+    ctx.fillStyle= src.kind==="generator"?"#152D26":src.kind==="frozen"?"#12232B":src.kind==="cart"?"#231B12":"#132435";
     ctx.fillRect(px+3,py+3,s-6,s-6);
-    ctx.strokeStyle= src.kind==="generator"?"rgba(90,200,160,.55)":"rgba(110,170,225,.55)";
+    ctx.strokeStyle= src.kind==="generator"?"rgba(90,200,160,.55)":src.kind==="frozen"?"rgba(140,215,235,.75)":src.kind==="cart"?"rgba(214,168,96,.6)":"rgba(110,170,225,.55)";
     ctx.lineWidth=1.4;
     ctx.strokeRect(px+3.5,py+3.5,s-7,s-7);
-    if(S.mode==="flow") deviceChip(px,py,s, src.kind==="generator"?"GEN":"SKT", null, false);
+    if(S.mode==="flow") deviceChip(px,py,s, {generator:"GEN",socket:"SKT",cart:"CRT",frozen:"ICE"}[src.kind]||"SRC", null, false);
     else if(s>=CFG.ui.tileLabelMinPx)
-      txt(src.kind==="generator"?"GEN":"SKT", px+s/2, py+s-6, CFG.ui.fontTile, 600,
+      txt({generator:"GEN",socket:"SKT",cart:"CRT",frozen:"ICE"}[src.kind]||"SRC", px+s/2, py+s-6, CFG.ui.fontTile, 600,
           "#AFC2DA", "center"); }
   for(const dv of S.devices){ const [px,py]=w2s(dv.x,dv.y);
     // A powered device used to be a solid gold square, which made the machinery
@@ -1177,7 +1424,7 @@ function draw(){
     ctx.strokeStyle= dv.on?"rgba(232,180,87,.95)":"rgba(190,205,235,.20)";
     ctx.lineWidth= dv.on?1.6:1;
     ctx.strokeRect(px+3.5,py+3.5,s-7,s-7);
-    const code={sprinkler:"SPR",plate:"PLT",speaker:"SPK",breaker:"BRK"}[dv.kind];
+    const code={sprinkler:"SPR",plate:"PLT",speaker:"SPK",breaker:"BRK",coolant:"COL"}[dv.kind];
     if(S.mode==="flow") deviceChip(px,py,s, code, dv.needs, dv.on);
     else if(s>=CFG.ui.tileLabelMinPx){
       txt(code, px+s/2, py+s-6, CFG.ui.fontTile, 600, dv.on?"#E8B457":"#AFC2DA", "center");
@@ -1216,7 +1463,36 @@ function draw(){
       ctx.strokeStyle="#E0A73C"; ctx.lineWidth=3; ctx.beginPath();
       ctx.arc(px,py,s*0.44,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,e.spot)); ctx.stroke(); } }
 
+  // the peek tendril: a thin feeler with the same rim, reaching round the corner
+  if(S.player.peeking && S.player.peekR>0.2){
+    const b=blob(), a=S.player.face||0;
+    const [px,py]=w2s(b.x,b.y);
+    const [qx,qy]=w2s(b.x+Math.cos(a)*S.player.peekR, b.y+Math.sin(a)*S.player.peekR);
+    ctx.lineCap="round"; ctx.lineWidth=Math.max(1.6, s*0.075);
+    ctx.strokeStyle="#0D0F17";
+    ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(qx,qy); ctx.stroke();
+    ctx.lineWidth=Math.max(1, s*0.035);
+    ctx.strokeStyle=`hsla(${CFG.ferro.hueA},88%,68%,.8)`;
+    ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(qx,qy); ctx.stroke();
+    ctx.fillStyle=`hsla(${CFG.ferro.hueB},95%,72%,.9)`;
+    ctx.beginPath(); ctx.arc(qx,qy, Math.max(1.6,s*0.06), 0, 7); ctx.fill();
+  }
+  // a carried body stays tethered to you, so the weight reads
+  if(S.act.verb==="drag" && S.act.target){
+    const b=blob(), [px,py]=w2s(b.x,b.y);
+    const [bx,by]=w2s(S.act.target.x, S.act.target.y);
+    ctx.strokeStyle="rgba(200,120,90,.55)"; ctx.lineWidth=Math.max(1.4, s*0.05);
+    ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(bx,by); ctx.stroke();
+  }
   drawBlob();
+  // up a wall: a ring that says you are not on the floor any more
+  if(S.player.clinging){
+    const b=blob(), [px,py]=w2s(b.x,b.y);
+    ctx.strokeStyle="rgba(160,200,255,.45)"; ctx.lineWidth=1.5;
+    ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.arc(px,py, s*0.55, 0, 7); ctx.stroke();
+    ctx.setLineDash([]);
+  }
 
   // pulse reveal
   if(S.player.pulseT>0){ const b=blob(), [px,py]=w2s(b.x,b.y);
@@ -1451,15 +1727,18 @@ function drawHUD(){
     txt("Power is cut. Find the breaker.", left, top+u.barH+u.fontHud*3+11,
         u.fontHud, 600, "#E0483C");
 
-  const et=envelopTarget(), nl=!et&&nearestLight();
+  const cv=contextVerb();
   for(const bt of btns){
-    if(bt.id==="act") bt.label = S.act.verb ? "RELEASE" : et ? "SMOTHER"
-                                : nl ? "DRINK LIGHT" : "TAP";
+    if(bt.id==="act") bt.label = cv.label;
+    // RECLAIM is dead weight in prowl and peek needs a hold, so the slot carries
+    // whichever of the two the mode can actually use.
+    if(bt.id==="reclaim") bt.label = S.mode==="flow" ? "RECLAIM" : "PEEK";
     const on = bt.id==="flow"    ? (S.mode==="flow"||canFlow())
              : bt.id==="pulse"   ? S.player.pulseCd<=0
-             : bt.id==="act"     ? (!!et||!!nl||S.player.tapCd<=0)
+             : bt.id==="act"     ? (cv.id!=="tap" || S.player.tapCd<=0)
              : bt.id==="menu"    ? true
-             : !!S.selected;
+             : S.mode==="flow"   ? !!S.selected
+             : blob().mass>CFG.peek.minMass;
     drawButton(bt, on);
   }
   if(S.mode==="prowl" && !canFlow()){
@@ -1480,16 +1759,21 @@ function drawHUD(){
   }
 
   if(S.inspect && S.mode==="flow"){
-    const o=S.inspect, isSrc=(o.kind==="socket"||o.kind==="generator");
+    const o=S.inspect, isSrc=!!S.sources.find(x=>x.id===o.id);
     const text = isSrc
-      ? [ o.kind==="generator"?"GENERATOR":"WALL SOCKET",
+      ? [ {generator:"GENERATOR",socket:"WALL SOCKET",cart:"BATTERY CART",
+           frozen:"FROZEN GUARD"}[o.kind]||"SOURCE",
           "supplies "+o.capacity+" · used "+((S.powerUsed&&S.powerUsed[o.id])||0),
-          o.noisy?"loud while live, enemies hear further":"quiet, weak, always here" ]
+          o.noisy?"loud while live, enemies hear further"
+            : o.kind==="cart"?"you can push it, slowly, in the open"
+            : o.kind==="frozen"?"it will thaw, and then it is a guard again"
+            : "quiet, weak, always here" ]
       : [ o.kind.toUpperCase()+" · needs "+o.needs,
           { sprinkler:"wets the floor in its area",
             plate:"electrifies its tile, harmless dry, lethal wet",
             speaker:"pulls patrols to it",
-            breaker:"restores power after a lockdown" }[o.kind],
+            breaker:"restores power after a lockdown",
+            coolant:"freezes what walks through it, and a frozen one holds a current" }[o.kind],
           o.on?"powered":"no wire from a source with enough capacity" ];
     const w=Math.min(320,VW-SAFE.l-SAFE.r-32), x=left, y=btns[2].y-92;
     rr(x,y,w,76,6); ctx.fillStyle="rgba(8,10,16,.94)"; ctx.fill();
@@ -1741,11 +2025,12 @@ function onDown(px,py){
       else if(canFlow()) S.mode="flow"; else toast("Find a quiet corner first."); }
     if(bt.id==="menu"){ openSettings(); return; }
     if(bt.id==="pulse") pulse();
-    if(bt.id==="reclaim" && S.selected){ startReclaim(S.selected); S.selected=null; }
-    if(bt.id==="act"){
-      if(S.act.verb){ releaseGrab(S.act.target); S.act={verb:null,target:null,t:0}; toast("Let go."); }
-      else if(envelopTarget()) startEnvelop();
-      else { const L=nearestLight(); if(L) douseLight(L); else tapNoise(); } }
+    if(bt.id==="reclaim"){
+      if(S.mode==="flow"){ if(S.selected){ startReclaim(S.selected); S.selected=null; } }
+      else S.player.peeking=true;              // held, and it costs while held
+    }
+    if(bt.id==="act") doContextVerb();
+    heldBtn=bt.id;
     return; }
   if(S.mode==="flow"){
     const [wx,wy]=s2w(px,py); const tx=wx|0, ty=wy|0;
@@ -1782,6 +2067,8 @@ function onMove(px,py){
   if(m>R){ input.ax=dx/m; input.ay=dy/m; }
 }
 function onUp(){
+  if(heldBtn==="reclaim") S.player.peeking=false;
+  heldBtn=null;
   if(S.mode==="flow"){ if(S.draft) commitDraft(); lastTouchTile=null; return; }
   stick=null; input.ax=0; input.ay=0;
 }
@@ -1871,6 +2158,9 @@ if(typeof globalThis!=="undefined") globalThis.CONDUIT={
   idx, blobRef:()=>blob(), ledgerGain, ledgerDamage,
   // added 2026-09-01 (C1) so the mutation sweep has real gates to fail against
   bump, passableBlob, passableEnemy, conduitable, expConduit, expBlob,
+  dragTarget, startDrag, dropBody, clingTarget, startCling, stopCling, wallSurface,
+  cartTarget, startCart, freezeEnemy, thawEnemy,
+  isPooled, contextVerb, doContextVerb, tickPeek,
   scanConduits, canFlow, pulse, movePlayer, killEnemy,
   CONCat:(x,y)=>CONC[idx(x,y)], WETat:(x,y)=>WET[idx(x,y)],
   tiles:{WALL,FLOOR,SHADOW,VENT,DOOR},
