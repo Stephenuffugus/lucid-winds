@@ -250,8 +250,16 @@ const PARTS={
   bumper: {label:"Bumper", blurb:"throws in", mass:2, kind:"circle", r:8.5, rest:1.12},
   brake:  {label:"Brake",  blurb:"slows",     mass:1, kind:"zone", r:15},
   booster:{label:"Booster",blurb:"speeds",    mass:1, kind:"zone", r:12},
+  /* The ball always LAGS the deck: surface drag pulls it toward deck speed
+     from below and never past it, so in the deck's own frame it can only ever
+     walk backwards. Everything the player can reach follows from that. A vane
+     drives it AHEAD of the deck inside its zone, which is the only way to walk
+     the other way, and the only proposed part that could open ground the bare
+     deck cannot reach. */
+  vane:   {label:"Vane",   blurb:"leads",      mass:1, kind:"zone", r:13},
 };
-const TOOLS=["rail","bumper","brake","booster","erase"];
+const VANE_PUSH=340;
+const TOOLS=["rail","bumper","brake","booster","vane","erase"];
 
 /* Bodies: m is the gravitational parameter directly (accel = m / d^2).
    ~2.6e6 captures a slow pass. ~1.1e6 bends without swallowing.       */
@@ -270,8 +278,12 @@ const LEVELS=[
            {n:"Orin",x:210,y:-580,r:28,m:6.8e6,target:true}],
    note:"Ash is closer but it is not your target. Hitting it ends the run." },
 
- { name:"Around the heavy", budget:9, tol:0.26,
-   gates:[{r:70,a:-1.15,w:28}],
+ { name:"Around the heavy", budget:9, tol:0.26, needsParts:true,
+   // Inside the ring the bare deck cannot enter. Surface drag only ever
+   // pulls the ball toward deck speed from below, so in the deck frame it
+   // walks one way; at this bearing it never comes inside r=94. A vane
+   // drives it past deck speed and brings it in to r=16.
+   gates:[{r:45,a:1.571,w:28}],
    bodies:[{n:"Bell",x:-250,y:-210,r:34,m:3.4e6},
            {n:"Wren",x:-580,y:170,r:28,m:5.7e6,target:true}],
    note:"Bell is too heavy to cross. Let it bend you around toward Wren." },
@@ -714,16 +726,20 @@ function advanceDeck(s,throttleTarget){
   s.omega = Math.min(s.omega,OMEGA_MAX);
   s.theta += s.omega*DT;
   const vsx=-s.omega*s.y, vsy=s.omega*s.x;
-  let mu=MU, boost=0;
+  let mu=MU, boost=0, vane=0;
   const c=Math.cos(-s.theta), sn=Math.sin(-s.theta);
   const lx0=s.x*c-s.y*sn, ly0=s.x*sn+s.y*c;
   for(const p of parts){
     if(p.type==="brake"   && len(lx0-p.x,ly0-p.y)<PARTS.brake.r)   mu*=3.4;
     if(p.type==="booster" && len(lx0-p.x,ly0-p.y)<PARTS.booster.r) boost+=200;
+    if(p.type==="vane"    && len(lx0-p.x,ly0-p.y)<PARTS.vane.r)    vane+=VANE_PUSH;
   }
   s.vx+=(vsx-s.vx)*mu*DT; s.vy+=(vsy-s.vy)*mu*DT;
   const rr=len(s.x,s.y)||1;
   if(boost){ s.vx+=s.x/rr*boost*DT; s.vy+=s.y/rr*boost*DT; }
+  // along the direction the deck is turning, which is what carries the ball
+  // past deck speed instead of settling at it
+  if(vane){ s.vx+=(-s.y/rr)*vane*DT; s.vy+=(s.x/rr)*vane*DT; }
   const pull=BOWL*rr*rr;
   s.vx-=(s.x/rr)*pull*DT; s.vy-=(s.y/rr)*pull*DT;
   s.x+=s.vx*DT; s.y+=s.vy*DT;
@@ -1472,9 +1488,9 @@ function drawDeck(){
     if(ghost&&ghost.length>1){
       ctx.beginPath(); ctx.moveTo(ghost[0][0],ghost[0][1]);
       for(const q of ghost) ctx.lineTo(q[0],q[1]);
-      ctx.strokeStyle="rgba(242,169,59,.20)"; ctx.lineWidth=1.2;
+      ctx.strokeStyle="rgba(242,169,59,.34)"; ctx.lineWidth=1.4;
       ctx.setLineDash([4,5]); ctx.stroke(); ctx.setLineDash([]);
-      ctx.beginPath(); ctx.arc(ghost[0][0],ghost[0][1],3.4,0,7);
+      ctx.beginPath(); ctx.arc(ghost[0][0],ghost[0][1],4.2,0,7);
       ctx.fillStyle="rgba(242,169,59,.85)"; ctx.fill();
     }
   }
@@ -1517,6 +1533,18 @@ function drawPart(p,alpha){
     ctx.beginPath(); ctx.arc(p.x,p.y,PARTS.brake.r,0,7);
     ctx.fillStyle="rgba(78,110,142,.22)"; ctx.fill();
     ctx.strokeStyle="#4E6E8E"; ctx.lineWidth=1.2; ctx.setLineDash([3,3]); ctx.stroke(); ctx.setLineDash([]);
+  } else if(p.type==="vane"){
+    ctx.beginPath(); ctx.arc(p.x,p.y,PARTS.vane.r,0,7);
+    ctx.fillStyle="rgba(121,208,230,.13)"; ctx.fill();
+    ctx.strokeStyle="#79D0E6"; ctx.lineWidth=1.4; ctx.stroke();
+    // a chevron pointing the way the deck turns, so it reads as "ahead"
+    const t=Math.atan2(p.y,p.x)+Math.PI/2;
+    const cx=p.x+Math.cos(t)*4, cy=p.y+Math.sin(t)*4;
+    ctx.beginPath();
+    ctx.moveTo(cx-Math.cos(t)*7-Math.cos(t+2.4)*5, cy-Math.sin(t)*7-Math.sin(t+2.4)*5);
+    ctx.lineTo(cx+Math.cos(t)*6, cy+Math.sin(t)*6);
+    ctx.lineTo(cx-Math.cos(t)*7-Math.cos(t-2.4)*5, cy-Math.sin(t)*7-Math.sin(t-2.4)*5);
+    ctx.lineWidth=2; ctx.stroke();
   } else if(p.type==="booster"){
     ctx.beginPath(); ctx.arc(p.x,p.y,PARTS.booster.r,0,7);
     ctx.fillStyle="rgba(242,169,59,.14)"; ctx.fill();

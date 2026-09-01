@@ -338,5 +338,34 @@ console.log("\n[15] the build phase shows the track it is asking you to change")
      T.phase === "build", "phase=" + T.phase);
 }
 
+console.log("\n[16] the vane makes the ball lead the deck, which nothing else does");
+{
+  // Surface drag only ever pulls the ball TOWARD deck speed from below, so it
+  // always lags and in the deck frame it only ever walks one way. That is why
+  // no other part opens ground: they deflect the ball without changing which
+  // way it drifts. The vane drives it past deck speed.
+  const lead = parts => {
+    T.loadLevel(3);
+    for(const p of parts) T.parts.push(p);
+    T.startSpin(); T.holding = true;
+    let most = -1e9;
+    for(let s = 0; s < 12 * 120 && T.phase === "spin"; s++){
+      T.step();
+      const b = T.ball, r = Math.hypot(b.x, b.y) || 1;
+      // tangential speed of the ball, minus the deck surface speed at that radius
+      const tan = (-b.y / r) * b.vx + (b.x / r) * b.vy;
+      most = Math.max(most, tan - T.deck.omega * r);
+    }
+    return most;
+  };
+  const bare = lead([]);
+  ok("a bare deck never gets the ball ahead of the surface", bare < 1, "lead=" + bare.toFixed(1));
+  const vaned = lead([{ type: "vane", x: 30, y: 0 }, { type: "vane", x: -30, y: 0 }]);
+  ok("a vane does", vaned > 8, "lead=" + vaned.toFixed(1));
+  const bumped = lead([{ type: "bumper", x: 30, y: 0 }, { type: "bumper", x: -30, y: 0 }]);
+  ok("a bumper does not, which is why it cannot open ground",
+     bumped < vaned / 2, `bumper=${bumped.toFixed(1)} vane=${vaned.toFixed(1)}`);
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
