@@ -237,7 +237,88 @@ the progress log.
 
 ## PROGRESS LOG (append only; evidence pasted inline)
 
-- [ ] Phase 0: gate written, watched failing. Evidence:
+- [x] Phase 0: gate written, watched failing. Evidence:
+
+```
+$ node tools/bundle.js
+index.html 340304 bytes  build 20260831q
+
+$ node test/battle3d.mjs
+battle3d gate, viewport 375x667, device pixel ratio 2
+
+  ok    the 3D battle setting survives a reload in the save file
+  ok    the wind graded, so there is a launch to make
+  ok    the simulation is stepping, so the drop beat is over and this is a fight
+  ok    the round is running
+  FAIL  (a) a #b3d canvas exists with a size - there is no #b3d element in the page
+  FAIL  (b) the dish is not one flat colour (100.0% is the commonest colour, 1 distinct colours in 660x660)
+  FAIL  (c) the dish changes over 600ms (0.0% of cells moved, mean difference 0.00/255)
+  ok    (d) no page errors
+
+shots in docs/shots-3d/
+
+3 CHECKS FAILED
+$ echo $?
+1
+```
+
+Three of the four checks fail on today's code and the fourth passes, which is
+the shape it should have: there is no `#b3d`, the 3D layer is 100 percent one
+colour because there is no 3D layer, it does not change because it does not
+exist, and the untouched 2D game raises no page errors.
+
+Two things I had to get right before the failure meant anything, both written
+into the file as comments:
+
+- **(b) and (c) are measured with `#cv` HIDDEN.** `#cv` sits above `#b3d` and
+  draws a whole moving game of its own. Measured on the composite, the 2D layer
+  answers both questions and the gate goes green on a 3D layer that never
+  rendered a pixel. `docs/shots-3d/probe-*-dish-*.png` are the isolated layer;
+  `probe-*-battle.png` and `probe-*-late.png` are the composite, for looking at.
+- **The probe waits for the PHYSICS, not for a clock.** The drop beat is a
+  transform, and for its first second the tops are drawn falling while the
+  simulation has not stepped once. Under swiftshader this page runs at well
+  under ten frames a second, so a fixed 1400ms wait landed mid drop (first run
+  photographed two tops still on their cords), and a 3D layer that animated only
+  the fall would have satisfied the motion check without riding the sim at all.
+  It now polls `window.__gap()`, the game's own hook, and proceeds when the
+  distance between the two tops CHANGES.
+
+Two bugs in my own probe, found and fixed before this run: `page.screenshot`
+hung for the full protocol timeout because the picture reader is a second tab
+and a backgrounded renderer stops producing frames (`bringToFront` before every
+capture), and the two motion shots were 600ms plus however long the reader took
+(both shots are taken before either is read now).
+
+LOOKED at `docs/shots-3d/probe-375x667-battle.png` (the composite, the 2D game
+as it stands today, both tops in the dish and fighting) and
+`probe-375x667-dish-1.png` (the isolated layer: a flat `#1a0f0c` square, which
+is the page background showing through where the 3D will go). Three things wrong
+in the composite, none of them mine yet and all of them the case FOR this build:
+the tops read as flat stickers on a floor because at 40px the shaft the code
+draws is invisible and the glow ring swallows the contact shadow; a small flat
+red disc sits at the yellow top's shoulder with no outline and no explanation of
+itself; and the painted dish's vignette takes the outer third of the frame to
+near black, so the arena reads as a keyhole with three quarters of a phone
+screen doing nothing.
+
+Gates before the commit, on the unchanged build:
+
+```
+$ node tools/bundle.js && node tools/check.js
+index.html 340304 bytes  build 20260831q
+bundle        pass  0s
+balance       pass  13s
+determinism   pass  1s
+rigs          pass  10s
+modes         pass  6s
+parts         pass  200s
+ladder        pass  20s
+bosses        pass  5s
+playthrough   pass  161s
+
+ALL GATES PASSED
+```
 - [ ] Phase 1: scene stands, 2D untouched. Evidence:
 - [ ] Phase 2: sim rides, probe fully green. Evidence:
 - [ ] Phase 3: information survives, fallback proven. Evidence:
