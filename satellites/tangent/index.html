@@ -1038,9 +1038,17 @@ function camTarget(){
   const B=viewBand(), fit=Math.min(B.w,B.h);
   if(phase==="build")  return {s:fit*BUILD_FILL/(DECK_R*2), c:[deckPos[0],deckPos[1]]};
   if(phase==="spin")   return {s:fit*NEAR_FILL /(DECK_R*2), c:[deckPos[0],deckPos[1]]};
-  // the collapse is framed on the origin, because holdExtent was sized to
-  // cover both arrangements at once and the deck itself travels during it
-  if(phase==="invert") return {s:fit/(systemExtent()*2)*WIDE_FILL, c:[0,0]};
+  /* The collapse is framed on the horizon ring, not on the system. Everything
+     in the level arrives on that ring at the halfway point, so that ring IS
+     the picture; framing the whole system instead left the one moment the
+     mechanic is built around happening inside a thirty pixel circle. Past the
+     midpoint the world blooms back outward, so the camera hands back to the
+     system framing and follows it out. */
+  if(phase==="invert"){
+    if(inverting && inverting.t<0.55)
+      return {s:fit*0.72/(inverting.R*2), c:[inverting.hc[0],inverting.hc[1]]};
+    return {s:fit/(systemExtent()*2)*WIDE_FILL, c:[0,0]};
+  }
   return {s:fit/(systemExtent()*2)*WIDE_FILL, c:systemCentre()};
 }
 let camS=0, camC=[0,0], camReady=false;
@@ -1073,12 +1081,26 @@ function draw(){
   if(phase==="spin"&&wob>0.3){ sx+=Math.sin(deck.theta*6)*wob; sy+=Math.cos(deck.theta*6.3)*wob; }
   ctx.translate(o[0]+sx,o[1]+sy); ctx.scale(s,s);
 
-  if(phase!=="build") drawBodies();
+  /* The frame wide colour inversion is a single composite over the finished
+     picture, which means it inverts the actors along with the sky. Two things
+     go wrong if they are painted underneath it.
+
+     At the halfway point a difference blend with white at alpha 0.5 maps every
+     pixel to the same mid grey, so the one image the whole mechanic is built
+     around, every object collapsed onto the horizon ring, came out as a flat
+     empty field with the ring nowhere to be seen.
+
+     And once the flip has settled, matte black bodies on a black sky become
+     near white on a near white sky: on the far side the ball was invisible.
+
+     So the world inverts and the actors are painted on top of it. The sky is
+     somewhere else; the ferrofluid still looks like ferrofluid.            */
+  const actorsOnTop = !!inverting || invAmt>0.5;
+  if(phase!=="build" && !actorsOnTop) drawBodies();
   drawDeck();
   if(phase==="spin") drawPrediction();
   if(phase==="flight"||phase==="done") drawFlight();
-  drawBall();
-  if(inverting) drawHorizonFlash();
+  if(!actorsOnTop) drawBall();
   ctx.restore();
 
   // colour inversion of the whole frame. One composite op, no palette rewrite.
@@ -1102,6 +1124,24 @@ function draw(){
       ctx.globalAlpha=invAmt*S.bloom; ctx.fillStyle=S.bloomColor||"#120A22";
       ctx.fillRect(0,0,W,H); ctx.restore();
     }
+  }
+  /* Inverting a dark sky gives a pale one, and a pale flat one at that: the
+     far side came out as an empty beige field. Multiplying the starfield back
+     over it puts the depth and the stars back without undoing the flip. */
+  if(invAmt>0.5 && starCv){
+    ctx.save(); ctx.setTransform(DPR,0,0,DPR,0,0);
+    ctx.globalCompositeOperation="multiply";
+    ctx.globalAlpha=Math.min(1,(invAmt-0.5)*2)*0.72;
+    ctx.drawImage(starCv,0,0,W,H);
+    ctx.restore();
+  }
+  if(actorsOnTop){
+    ctx.save();
+    ctx.translate(o[0]+sx,o[1]+sy); ctx.scale(s,s);
+    if(phase!=="build") drawBodies();
+    drawBall();
+    if(inverting) drawHorizonFlash();
+    ctx.restore();
   }
   drawOverlay();
 }
@@ -1188,22 +1228,63 @@ function drawBodies(){
   }
 }
 
-function drawDeck(){
-  ctx.save();
-  let dp=deckPos, ds=1;
-  if(inverting){ const p=invMap(deckPos[0],deckPos[1],inverting.hc,inverting.R,Math.min(1,inverting.t));
-                 dp=[p[0],p[1]]; ds=Math.max(0.25,Math.min(2.2,p[2])); }
-  ctx.translate(dp[0],dp[1]); ctx.scale(ds,ds);
-  ctx.rotate(deck.theta);
+/* The deck face never changes: the turned finish, the sheen, the lip, the
+   bolts, the rings and the spokes are all fixed in the deck's own frame and
+   only the whole disc rotates. Drawing them every frame cost more than the
+   rest of the game put together, so the face is rendered once and blitted.
+   Anything the player can change (parts, gates, the orbit ring, the index
+   mark) stays live below.                                                 */
+let deckCv=null;
+const DECK_PAD=DECK_R+6;
+function makeDeckFace(){
+  const px=Math.max(64,Math.ceil(DECK_PAD*2*DPR*1.35));
+  deckCv=document.createElement("canvas"); deckCv.width=px; deckCv.height=px;
+  const c=deckCv.getContext("2d"), k=px/(DECK_PAD*2), keep=ctx;
+  ctx=c;                                   // the face art draws through ctx
+  c.setTransform(k,0,0,k,px/2,px/2);
+  drawDeckFace();
+  ctx=keep;
+}
+function drawDeckFace(){
   const g=ctx.createRadialGradient(0,0,2,0,0,DECK_R);
   g.addColorStop(0,"#0B0F16"); g.addColorStop(0.55,"#141A24"); g.addColorStop(1,"#1E2734");
   ctx.beginPath(); ctx.arc(0,0,DECK_R,0,7); ctx.fillStyle=g; ctx.fill();
 
-  // retaining wall, drawn as arcs between the ports
+  /* Machined, not drawn: a turned finish of fine concentric cuts plus one
+     sheen across the face. Both live inside the deck's own rotation, so the
+     highlight sweeps as it spins, which is most of what sells a disc as a
+     solid object rather than a circle. Deterministic, because anything random
+     per frame would boil.                                                  */
+  ctx.save();
+  ctx.beginPath(); ctx.arc(0,0,DECK_R,0,7); ctx.clip();
+  for(let i=0;i<46;i++){
+    const rr=6+i*2.05, a=0.030+0.026*Math.abs(Math.sin(i*2.399));
+    ctx.beginPath(); ctx.arc(0,0,rr,0,7);
+    ctx.strokeStyle=`rgba(${i%2?190:120},${i%2?205:140},${i%2?225:170},${a})`;
+    ctx.lineWidth=i%2?0.6:1.1; ctx.stroke();
+  }
+  const sh=ctx.createLinearGradient(-DECK_R,-DECK_R,DECK_R*0.55,DECK_R);
+  sh.addColorStop(0,   "rgba(190,214,240,.11)");
+  sh.addColorStop(0.42,"rgba(190,214,240,.03)");
+  sh.addColorStop(0.7, "rgba(0,0,0,.14)");
+  sh.addColorStop(1,   "rgba(0,0,0,.22)");
+  ctx.fillStyle=sh; ctx.fillRect(-DECK_R,-DECK_R,DECK_R*2,DECK_R*2);
+  ctx.restore();
+
+  // retaining wall: a rolled lip with a bevel catching the light on the inside
   ctx.lineWidth=5; ctx.lineCap="butt";
   ctx.beginPath(); ctx.arc(0,0,DECK_R,0,7); ctx.strokeStyle="#46586C"; ctx.stroke();
+  ctx.beginPath(); ctx.arc(0,0,DECK_R-3.1,0,7);
+  ctx.strokeStyle="rgba(206,224,246,.22)"; ctx.lineWidth=1.4; ctx.stroke();
   ctx.lineWidth=1; ctx.strokeStyle="#3A4A5C";
   ctx.beginPath(); ctx.arc(0,0,DECK_R+2.6,0,7); ctx.stroke();
+  // bolts around the lip, one per spoke, so the rotation has something to count
+  for(let i=0;i<12;i++){
+    const a=i*Math.PI/6, bx=Math.cos(a)*(DECK_R-8.5), by=Math.sin(a)*(DECK_R-8.5);
+    ctx.beginPath(); ctx.arc(bx,by,2.1,0,7);
+    ctx.fillStyle="#26303E"; ctx.fill();
+    ctx.strokeStyle="rgba(206,224,246,.30)"; ctx.lineWidth=0.7; ctx.stroke();
+  }
 
   ctx.strokeStyle="rgba(58,74,92,.55)"; ctx.lineWidth=0.7;
   for(let r=20;r<DECK_R;r+=20){ ctx.beginPath(); ctx.arc(0,0,r,0,7); ctx.stroke(); }
@@ -1211,6 +1292,19 @@ function drawDeck(){
   for(let i=0;i<12;i++){ const a=i*Math.PI/6;
     ctx.beginPath(); ctx.moveTo(Math.cos(a)*16,Math.sin(a)*16);
     ctx.lineTo(Math.cos(a)*DECK_R,Math.sin(a)*DECK_R); ctx.stroke(); }
+  ctx.beginPath(); ctx.arc(0,0,7,0,7); ctx.fillStyle="#27333F"; ctx.fill();
+  ctx.strokeStyle="#4A5D71"; ctx.lineWidth=1; ctx.stroke();
+}
+function drawDeck(){
+  ctx.save();
+  let dp=deckPos, ds=1;
+  if(inverting){ const p=invMap(deckPos[0],deckPos[1],inverting.hc,inverting.R,Math.min(1,inverting.t));
+                 dp=[p[0],p[1]]; ds=Math.max(0.25,Math.min(2.2,p[2])); }
+  ctx.translate(dp[0],dp[1]); ctx.scale(ds,ds);
+  ctx.rotate(deck.theta);
+  if(!deckCv) makeDeckFace();
+  ctx.drawImage(deckCv,-DECK_PAD,-DECK_PAD,DECK_PAD*2,DECK_PAD*2);
+
   if(phase!=="build"){
     // one bright index mark, so a revolution is countable at a glance
     ctx.beginPath();
@@ -1218,7 +1312,6 @@ function drawDeck(){
     ctx.strokeStyle="rgba(242,169,59,.75)"; ctx.lineWidth=2.6; ctx.stroke();
     ctx.beginPath(); ctx.arc(DECK_R*0.96,0,3.4,0,7);
     ctx.fillStyle="#F2A93B"; ctx.fill();
-    ctx.strokeStyle="rgba(58,74,92,.55)"; ctx.lineWidth=0.7;
   }
   if(phase==="spin"){
     const re=eqRadius(deck.omega);
@@ -1229,8 +1322,6 @@ function drawDeck(){
       ctx.strokeStyle="rgba(121,208,230,.20)"; ctx.lineWidth=1;
       ctx.setLineDash([1,6]); ctx.stroke(); ctx.setLineDash([]); }
   }
-  ctx.beginPath(); ctx.arc(0,0,7,0,7); ctx.fillStyle="#27333F"; ctx.fill();
-  ctx.strokeStyle="#4A5D71"; ctx.lineWidth=1; ctx.stroke();
 
   lv.gates.forEach((g2,i)=>{
     const gx=Math.cos(g2.a)*g2.r, gy=Math.sin(g2.a)*g2.r;
@@ -1337,7 +1428,7 @@ function drawDroplet(x,y){
   // Never smaller than a few screen pixels. In the system framing the true
   // radius comes out around two pixels, so the player was watching a trail
   // with nothing on the end of it. Rendering only: BALL_R still does collision.
-  const R=Math.max(BALL_R*2.05, 5.5/Math.max(1e-3,camScale()));
+  const R=Math.max(BALL_R*2.05, 7/Math.max(1e-3,camScale()));
   ctx.save();
   ctx.shadowColor="rgba(150,120,255,.55)"; ctx.shadowBlur=10;
   tracePts(ferroBlob(x,y,R,fa,s,3.1,64));
@@ -1451,23 +1542,30 @@ function drawChevrons(){
         else { const d2=panel.y+panel.h+20-ey; ex+=0; ey+=d2; ly+=d2; }
       }
     }
-    // two markers in nearly the same direction print on top of each other and
-    // become unreadable. The panel already states the shot, so it yields.
-    let clash=false;
-    for(const p of placed) if(Math.hypot(ex-p[0],ey-p[1])<30) clash=true;
-    if(clash){ if(mk.dist==null) continue; ey+=20; ly+=20; }
-    placed.push([ex,ey]);
+    /* Two markers pointing much the same way print their labels on top of each
+       other and the result is unreadable, so collisions are resolved between
+       the label BOXES rather than between the arrow tips: two arrows 50px
+       apart still overlap if their labels are 90px wide. The shot marker
+       yields, because the panel already states the shot in words. */
+    const base = dy>0.5?"bottom": dy<-0.5?"top":"middle";
+    const boxOf=(x,y)=>[ align==="right"?x-tw:align==="left"?x:x-tw/2,
+                         base==="bottom"?y-13: base==="top"?y-1: y-7, tw+8, 15 ];
+    const hits=(r)=>placed.some(p=>!(r[0]+r[2]<p[0]||p[0]+p[2]<r[0]||r[1]+r[3]<p[1]||p[1]+p[3]<r[1]));
+    let box=boxOf(lx,ly), tries=0;
+    while(hits(box) && tries<3){
+      if(mk.dist==null){ box=null; break; }        // the shot marker gives way
+      ey+=18; ly+=18; box=boxOf(lx,ly); tries++;
+    }
+    if(!box || hits(box)) continue;
+    placed.push(box);
     ctx.save();
     ctx.globalAlpha=mk.faint?0.55:1;
     ctx.translate(ex,ey); ctx.rotate(Math.atan2(dy,dx));
     ctx.beginPath(); ctx.moveTo(7,0); ctx.lineTo(-5,5.5); ctx.lineTo(-5,-5.5); ctx.closePath();
     ctx.fillStyle=mk.col; ctx.fill();
     ctx.restore();
-    ctx.textAlign=align;
-    ctx.textBaseline= dy>0.5?"bottom": dy<-0.5?"top":"middle";
-    const bx = align==="right"?lx-tw:align==="left"?lx:lx-tw/2;
-    const by = ctx.textBaseline==="bottom"?ly-13: ctx.textBaseline==="top"?ly-1: ly-7;
-    ctx.fillStyle="rgba(10,15,22,.72)"; ctx.fillRect(bx-4,by,tw+8,15);
+    ctx.textAlign=align; ctx.textBaseline=base;
+    ctx.fillStyle="rgba(10,15,22,.72)"; ctx.fillRect(box[0]-4,box[1],box[2],box[3]);
     ctx.globalAlpha=mk.faint?0.7:1; ctx.fillStyle=mk.col;
     ctx.fillText(text,lx,ly);
     ctx.globalAlpha=1;
@@ -1574,6 +1672,7 @@ function resize(){
   cv.width=Math.round(W*DPR); cv.height=Math.round(H*DPR);
   measureHUD();
   camReady=false;              // reframe cleanly rather than lerping from a stale size
+  deckCv=null;                 // the cached deck face is sized from DPR
   makeStars();
 }
 function buildPalette(){
