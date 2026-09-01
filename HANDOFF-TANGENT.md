@@ -120,12 +120,27 @@ Settings sheet (audio, haptics, reduced motion, reset saves). `manifest.json` + 
   - **New gate [11] measures the law**: 48 samples across all eight systems compare what the readout promised against what the run then did. **100% now; 93.8% against a mutant restoring the old step size**, where it catches the old build saying "crashes" and "falls in" on shots that did neither.
   - Frame cost across the whole session, spin p50 at 4x throttle: **75ms at the start → 135ms after the ferro and deck art → 55ms after caching the deck face → 38.8ms after fixing the predictor cache.** Roughly half the original, with considerably more on screen.
 
-- [ ] **AUDIT BACKLOG for the next session.** A six lens read only audit ran over the build and its two spec docs, each lens adversarially verified. 31 findings survived verification; the two high severity ones (D2, and the build layer not binding) are handled or already known. Worth picking up, roughly in order:
+- [x] **AUDIT FIXES (2026-09-01).** The six lens audit finished with **85 confirmed findings** (6 high, 24 medium, 55 low), each adversarially verified. Fixed here, all mutation proven:
+  - **`backToBuild` never restored the system** (high). Any run that went through a hole left the build screen colour inverted, the target painted in the far side's hues, and the deck sitting wherever the inversion moved it while taps still mapped to the origin, so **no part could be placed at all**. Reachable by playing Inside out and pressing Rebuild. The T1 camera work made it visible rather than causing it. Mutant proof: reverting it reports `invAmt=1` and `deckPos=0,-397.6`.
+  - **`failRun` never wrote `lastOutcome`** (medium), so a run that died to the clock reported the *previous* run's result. Mutant proof: reports `lastOutcome=land` after a failed run.
+  - **An even number of inversions kept the far side's hues** on the target (medium).
+  - **`viewBand`'s 120px floor was taller than the space it describes** on a short screen (high), putting the deck back behind the palette that the band exists to keep it clear of.
+  - **Nothing had ever placed a part** (high). Rails, bumpers, part mass and the tear apart failure were entirely unexecuted code. New check [12] places them, proves a bumper moves the ball, and loads one side until the deck shakes itself apart. Mutant proof: disabling `collideOn` gives identical positions with and without the bumper.
+  - **[11] now scores per system as well as overall.** An aggregate hides one bad level: the auditor measured a build at 97.8% overall with one system at **85%**, which a 95% aggregate gate calls fine. Now 80 samples, 10 per system, with a per system floor.
+
+- [ ] **AUDIT BACKLOG, still open.** The rest, worth picking up roughly in order:
   - **`sys` is documented as a deep copy but is a one level spread**, so every hole's `other` block is shared by reference with `LEVELS`. Nothing mutates it today, which is why the immutability check stays green, but it is one assignment away from a level editing itself.
   - **No `AudioContext.resume()` anywhere**: a context that starts suspended is permanently silent, which is the common case on iOS. Also two synthesised voices and two documented one shots have no call site at all.
   - **`OMEGA_MAX` never binds**: terminal spin is `SPIN_GAIN/SPIN_DRAG` = 2.5, below the 3.05 ceiling, so raising it in v6 changed no spin speed and only loosened the tear apart gate (which triggers at `0.72 * OMEGA_MAX`).
   - **The ball's purple glow is a no op**: the shadow state is restored before anything is painted with it.
+  - **`gatesHit` leaks between levels** in one path: `loadLevel` now clears it via `backToBuild`, but check the chip render on first load.
+  - **The prediction does not know about gates**, so the readout and the Launch button say "lands" on a shot that settles as "Landed, but short". The T2 coaching covers this for a first time player, but the readout itself is still only half the truth. Worth folding gate state into the verdict.
+  - **`OM_IDLE` is not the idle omega**: the deck settles at 0.75, not 1.15, so the ball spirals inward from r=37 to r=16 rather than parking. Worth a look because §3 leans on the parked idle orbit.
+  - **The results card overflows a short viewport** and cannot scroll, clipping its own buttons at 320x568.
+  - **`sweep.js` counts lands, not clears**, so its gate never sees the clearing windows, which is the number T4 actually cares about.
+  - **The drawn dashed line is a decimation** of the computed path (every 8th point), so its chords can exceed the capture radius and it can visually miss a body it actually hits.
   - Doc drift worth correcting in `docs/`: the 26/60/112 scoring bands do not exist (landing is flat rate capture), the shipped solvability table is stale, `flyStep`'s own contract comment is wrong, `DESIGN.md` still promises a rim auto release that `rimWall` no longer has, and three body masses sit outside D7's stated calibration bands.
+  - Full verified list, 85 findings with evidence: `/tmp/claude-1000/.../tasks/w22ax7gnj.output` for this session only. The high and medium titles are all captured above; re-run the audit rather than hunting that file if it has been cleaned up.
 
 - [ ] T4: sweep table (all levels): ______ · no-parts bot fails gates on: ______
 - [ ] T5: elements shipped: ______ · predictor honesty: ___%
@@ -162,7 +177,7 @@ Half done, nothing. Known and deliberately deferred: the 320px build deck is sma
 
 **2026-09-01 (builder, T3 partial).** Shipped and pushed: the inversion fix, the machined deck, the cached deck face, chevron box collisions. See the T3 ledger entry. **Nothing is half finished in the tree** — every commit is green on all three suites.
 
-**Next action: finish T3, then T4.** (D2 was repaired out of order after the audit; see its ledger entry.) The remaining T3 work is the ball and the far side, both listed in the ledger entry. Two things to carry in:
+**Next action: finish T3, then T4.** (D2 and four other audit bugs were repaired out of phase order; see their ledger entries.) Final state this session: **smoke 66, ui 46, sweep byte identical to the day's baseline through every commit**, working tree clean, nothing half finished. The remaining T3 work is the ball and the far side, both listed in the ledger entry. Two things to carry in:
 1. **Re-measure the frame budget on a quiet box before touching rendering again.** The numbers here were taken while another agent drove browsers on the same two cores, and A/B profiling came out backwards.
 2. **T4 will break the T2 acceptance test on purpose.** It requires a bot following only the tutorial to reach system 3, and T4 moves gates off the natural sweep so parts become mandatory. When it goes red, that is the test doing its job: the tutorial then has to teach placing a part, and a fourth beat is the likely answer.
 
