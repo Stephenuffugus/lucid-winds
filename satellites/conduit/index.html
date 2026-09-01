@@ -58,11 +58,38 @@
   button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
   #brand{margin-top:1.5rem;font-size:.68rem;letter-spacing:.26em;color:#5C6580}
 
-  #settings{position:fixed;inset:0;z-index:2;display:flex;background:rgba(5,6,10,.94);
+  /* Looked at on 2026-09-01 and the game bled through: "100 body", the alert
+     state and the TAP and FLOW buttons all stayed legible under a .94 backdrop,
+     so the controls under the panel read as if they were part of the menu.
+     Near opaque now, and the panel is a surface rather than text floating on the
+     world. No backdrop-filter: it would blur a live game canvas every frame the
+     menu is open, and per element filters have burned this codebase on iOS. */
+  #settings{position:fixed;inset:0;z-index:2;display:flex;background:rgba(5,6,10,.985);
     padding:calc(20px + var(--safe-t)) calc(20px + var(--safe-r))
             calc(20px + var(--safe-b)) calc(20px + var(--safe-l));overflow-y:auto}
   #settings.hide{display:none}
-  #setpanel{width:100%;max-width:24rem;margin:auto}
+  /* The way out is never below the fold. A landscape phone is 390px tall and the
+     panel wanted 427, which put "Back to the site" off screen entirely: the
+     container scrolled, so it was reachable, but the only exit had no affordance
+     and a player who does not think to drag is stuck in a menu. Title and exit
+     are pinned, the rows scroll between them.
+     The three declarations that make this work and are easy to lose: max-height
+     on the panel, min-height:0 on the scrolling child (without it a flex item
+     refuses to shrink below its content and nothing scrolls), and margin:auto
+     rather than align-items:center on the parent, which clips the top of an
+     overlong child instead of scrolling to it. */
+  #setpanel{width:100%;max-width:24rem;margin:auto;max-height:100%;
+    display:flex;flex-direction:column;min-height:0;
+    background:rgba(16,18,28,.92);border:1px solid rgba(120,134,164,.18);
+    border-radius:14px;padding:1.1rem}
+  #setbody{overflow-y:auto;min-height:0;flex:1 1 auto;
+    -webkit-overflow-scrolling:touch}
+  /* A scroll affordance only when there is something to scroll to. A fade that
+     is always on is a lie on a panel that fits, and this panel fits at 568 tall
+     and does not at 390. The class is set when the menu opens. */
+  #setbody.scrolls{
+    -webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 2rem),transparent);
+    mask-image:linear-gradient(to bottom,#000 calc(100% - 2rem),transparent)}
   .seth{font:600 1.3rem ui-sans-serif,system-ui;letter-spacing:.1em;margin-bottom:1rem;
     color:var(--ink)}
   .setrow{display:flex;align-items:center;justify-content:space-between;gap:1rem;
@@ -70,7 +97,19 @@
   .setrow span{color:var(--muted);font-size:.95rem}
   .setrow button{margin:0;min-width:7rem;min-height:48px;padding:.6rem 1rem;font-size:.9rem}
   .setnote{font-size:.82rem;margin-top:1rem}
-  #setclose{width:100%}
+  #setclose{width:100%;flex:0 0 auto;margin-top:1rem}
+  /* Landscape has width and no height. Shot at 844x390 the panel was a narrow
+     strip down the middle with two thirds of the screen empty on either side,
+     while a setting the player needs was cut in half by the scroll fade. Two
+     columns spend the room the phone actually has, so all four settings are on
+     screen at once and nothing scrolls. Keyed on short AND wide, not on
+     orientation, because a short window on a desktop has the same problem. */
+  @media (min-width:640px) and (max-height:480px){
+    #setpanel{max-width:36rem}
+    #setbody{display:grid;grid-template-columns:1fr 1fr;column-gap:1.4rem;
+      align-content:start}
+    #setbody .setnote{grid-column:1 / -1}
+  }
 
   #sites{position:fixed;inset:0;z-index:2;overflow-y:auto;display:flex;
     background:radial-gradient(120% 80% at 50% 0%, rgba(138,92,246,.08), transparent 60%), var(--void);
@@ -142,11 +181,14 @@
 </div></div>
 <div id="settings" class="hide"><div id="setpanel">
   <div class="seth">Settings</div>
-  <div class="setrow"><span>Sound</span><button data-set="sound"></button></div>
-  <div class="setrow"><span>Haptics</span><button data-set="haptics"></button></div>
-  <div class="setrow"><span>Controls</span><button data-set="hand"></button></div>
-  <p class="setnote">Sound and haptics are not wired yet. The switches are here so the
-  setting survives, and so nothing turns itself on when they are.</p>
+  <div id="setbody">
+    <div class="setrow"><span>Sound</span><button data-set="sound"></button></div>
+    <div class="setrow"><span>Haptics</span><button data-set="haptics"></button></div>
+    <div class="setrow"><span>Controls</span><button data-set="hand"></button></div>
+    <div class="setrow"><span>Motion</span><button data-set="motion"></button></div>
+    <p class="setnote">Sound is made on the fly, not from files, so it starts the moment
+    you turn it on. Motion follows what your device asks for unless you say otherwise.</p>
+  </div>
   <button id="setclose">Back to the site</button>
 </div></div>
 <script>
@@ -221,7 +263,7 @@ const CFG = {
     swellPerMass:0.011, swellMax:0.55, swellDecay:3.2, swellGain:0.34,
     rippleDecay:4.2, rippleAmp:0.20, rippleGain:0.024,
     fieldNearTiles:3.4,                 // inside this of live power, full field
-    fieldMin:0.46, fieldMax:1.0, fieldTurn:9, rimW:0.10,
+    fieldMin:0.46, fieldMax:1.0, fieldTurn:9, rimW:0.10, calmField:0.5,
     minBlobPx:9, minSpikePx:3.2,   // the planning view is schematic; stay findable
     flowDim:[0, 0.26, 0.46],       // exposure tiers, darker means safer to route
     alarmEdge:0.34, lockEdge:0.52, douseSec:1.1,
@@ -255,6 +297,23 @@ const CFG = {
     cardMinW:210,                // below this the inspect card is not worth moving
   },
 
+  // sound. Procedural, no files, and every number of it lives here.
+  audio:{
+    master:0.5, humLevel:0.10, wireLevel:0.045, wireHz:660,
+    humVoices:[[48,"sawtooth",0.5],[96,"sine",0.35],[73,"sine",0.2]],
+    humCut:[220, 340, 520, 760, 980],     // by alert: calm to lockdown
+    alertHz:[330, 392, 466, 587, 220],
+    // how long a continuous cue holds itself off before it may speak again
+    gap:{ harvest:0.9, hit:0.35, zap:0.25, found:1.0 },
+    musicLevel:0.35, musicVer:1,
+    // Which sites have a music file on disk. Empty until the Suno folder lands.
+    // This is a manifest and not a probe on purpose: reaching for a track that is
+    // not there logs a console error on every boot (a 404 over http, a scheme
+    // refusal over file://) and the player learns nothing from it. Add the site id
+    // here in the same commit that adds music/<id>.mp3.
+    tracks:[],
+  },
+
   grid:{ w:48, h:32 }, seed:1337, startLevel:"site-01",
 };
 
@@ -262,11 +321,19 @@ const CFG = {
 // Stored read modify write: two tabs that each write the whole object clobber
 // each other, which is a studio scar, so merge onto whatever is already there.
 const SET_KEY="conduit.settings";
-let SET={ sound:true, haptics:true, hand:"right" };
+let SET={ sound:true, haptics:true, hand:"right", motion:"full" };
+// If the device asks for less motion, start there. The player can still choose.
+function defaultMotion(){
+  try{ return (window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches) ? "reduced" : "full";
+  }catch(e){ return "full"; }
+}
 function loadSettings(){
+  SET.motion = defaultMotion();
   try{ const raw=localStorage.getItem(SET_KEY);
        if(raw) SET=Object.assign(SET, JSON.parse(raw)||{}); }catch(e){}
 }
+const reducedMotion = () => SET.motion==="reduced";
 function saveSettings(){
   try{ let cur={}; try{ cur=JSON.parse(localStorage.getItem(SET_KEY)||"{}")||{}; }catch(e){}
        localStorage.setItem(SET_KEY, JSON.stringify(Object.assign(cur, SET))); }catch(e){}
@@ -681,6 +748,7 @@ function newGame(levelId){
   // Found by the ferro sim identity assertion, which is not what it was looking
   // for. T is the render clock and resets with it.
   T=0; cscanT=0;
+  AUD.last={}; AUD.cd={};
   const L = LEVELS[levelId] || LEVELS[CFG.startLevel];
   TT=new Uint8Array(W*H); CONC=new Uint8Array(W*H); WET=new Float32Array(W*H);
   LIT=new Uint8Array(W*H);
@@ -1848,7 +1916,8 @@ function drawFrame(){
   // the word and the cone colour all carry it too.
   if(S.site.alert>=3 && alarmGrad){
     const f=CFG.ferro;
-    const amp=(S.site.lockdown?f.lockEdge:f.alarmEdge)*(0.62+0.38*Math.sin(T*2.3));
+    const amp=(S.site.lockdown?f.lockEdge:f.alarmEdge)*
+              (reducedMotion() ? 0.85 : 0.62+0.38*Math.sin(T*2.3));
     ctx.globalAlpha=amp; ctx.fillStyle=alarmGrad; ctx.fillRect(0,0,VW,VH);
     ctx.globalAlpha=1;
   }
@@ -2101,13 +2170,14 @@ function drawConduit(cd, isDraft){
       const a=pts[i], b=pts[i+1];
       const dx=b[0]-a[0], dy=b[1]-a[1], L=Math.hypot(dx,dy)||1;
       const nx=-dy/L, ny=dx/L;
+      const wave = reducedMotion() ? 0 : f.spikeWave;
       for(let t=0.14;t<1;t+=f.spikeEvery){
         const mx=a[0]+dx*t, my=a[1]+dy*t;
         // Evenly spaced teeth of equal length read as a comb. Vary each one by a
         // cheap hash of where it stands, so the fringe clusters the way spikes do.
         const hv=Math.abs(Math.sin((i*7.13 + t*13.7)*127.1)) % 1;
         const amp=0.35+1.05*hv;
-        const k=amp*(0.30+0.70*Math.max(0, Math.sin(T*f.spikeWave - (i+t)*1.35 + hv*5)));
+        const k=amp*(0.30+0.70*Math.max(0, Math.sin(T*wave - (i+t)*1.35 + hv*5)));
         ctx.moveTo(mx-nx*h*k*0.55, my-ny*h*k*0.55);
         ctx.lineTo(mx+nx*h*k, my+ny*h*k);
       }
@@ -2135,7 +2205,9 @@ function drawConduit(cd, isDraft){
 
   // live: a slow pulse of rim light travelling source to device
   if(cd.live && pts.length>1){
-    const head=((T*f.pulseSpeed) % (pts.length+3)) - 1.5;
+    // Reduced motion: the travelling light becomes a still glow at the far end,
+    // so the run still reads as carrying something without anything moving.
+    const head=reducedMotion() ? pts.length-1 : ((T*f.pulseSpeed)%(pts.length+3))-1.5;
     for(let i=0;i<pts.length;i++){
       const d=Math.abs(i-head); if(d>2) continue;
       const k=1-d/2;
@@ -2184,13 +2256,16 @@ function drawMassRibbon(x, y, w){
   const bodyW=Math.max(0, b.mass*unit), wireW=Math.max(0, committed*unit);
 
   rr(x,y,w,h,u.barRadius);
-  ctx.fillStyle="#0C0E16"; ctx.fill();
+  ctx.fillStyle="#07080D"; ctx.fill();          // the empty channel, properly dark
   ctx.strokeStyle="rgba(118,132,162,.22)"; ctx.lineWidth=1; ctx.stroke();
 
   ctx.save(); rr(x,y,w,h,u.barRadius); ctx.clip();
   if(bodyW>0.5){
+    // Lifted so the level reads by LUMINANCE, not only by hue. In greyscale the
+    // old fill was darker at its base than the empty channel beside it, which
+    // made the game's one number unreadable without colour vision.
     const g=ctx.createLinearGradient(x,y,x,y+h);
-    g.addColorStop(0,"#2E2447"); g.addColorStop(0.55,"#1B1530"); g.addColorStop(1,"#0F0B1B");
+    g.addColorStop(0,"#4A3B70"); g.addColorStop(0.55,"#2E2447"); g.addColorStop(1,"#221A38");
     ctx.fillStyle=g; ctx.fillRect(x,y,bodyW,h);
     const rim=ctx.createLinearGradient(x,y,x+bodyW,y);
     rim.addColorStop(0,"hsla(268,90%,68%,.90)"); rim.addColorStop(0.55,"hsla(300,60%,56%,.45)");
@@ -2567,7 +2642,10 @@ function drawBlob(){
     return;
   }
   if(b.mass<CFG.squeezeAt && tileAt(b.x,b.y)===VENT){ drawCapsule(px,py,r); return; }
-  tracePts(ctx, ferroBlob(px,py,r,FX.fa,FX.fs,FX.seed,FX.detail));
+  // Reduced motion damps the field rather than removing it: the creature still
+  // reads as ferrofluid, its hair just stops thrashing.
+  const fs = reducedMotion() ? Math.min(FX.fs, f.calmField) : FX.fs;
+  tracePts(ctx, ferroBlob(px,py,r,FX.fa,fs,FX.seed,FX.detail));
   // A wet bloom on the same outline, wide and very faint. Without it the one
   // object that matters most is the dimmest thing in the frame; with it the
   // creature still reads as black, just black that catches light.
@@ -2578,6 +2656,183 @@ function drawBlob(){
     ctx.strokeStyle="rgba(224,72,60,"+(0.75*FX.ripple).toFixed(3)+")";
     ctx.lineWidth=1+r*0.06; ctx.stroke();
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SOUND — procedural, no files. Built as a POLLING layer like the ferro one: it
+// watches game state for changes and plays the difference. Nothing in the
+// simulation calls it, which is what keeps the sim identity assertion honest and
+// means the game is exactly as playable with the sound off.
+//
+// Music, when Stephen's Suno folder lands, drops into music/ and is wired here
+// with graceful absence: no file, no error, no sound.
+// ─────────────────────────────────────────────────────────────────────────────
+const AUD = {
+  ctx:null, master:null, humGain:null, humFilt:null, wireGain:null, wireOsc:null,
+  noise:null, ready:false, log:[], last:{}, cd:{},
+  note(cue){ this.log.push({ t:+(S?S.stats.time:0).toFixed(2), cue });
+             if(this.log.length>400) this.log.shift(); },
+  // Harvesting and taking damage happen a little every frame, so a threshold
+  // fires over and over: one body was fifteen slurps. A cue that describes a
+  // CONTINUOUS thing has to hold itself off until the thing is plausibly over.
+  once(name, gap){
+    const now = S ? S.stats.time : 0;
+    if(this.cd[name]!==undefined && now-this.cd[name] < gap) return false;
+    this.cd[name]=now; return true;
+  },
+
+  init(){
+    if(this.ready || typeof window==="undefined") return;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return;
+    try{
+      const c = this.ctx = new AC();
+      this.master = c.createGain(); this.master.gain.value = SET.sound?CFG.audio.master:0;
+      this.master.connect(c.destination);
+
+      // the site's own hum: two low voices through a filter that opens as the
+      // place wakes up. This is the whole ambience, and it is one filter knob.
+      this.humFilt = c.createBiquadFilter();
+      this.humFilt.type="lowpass"; this.humFilt.frequency.value=CFG.audio.humCut[0];
+      this.humGain = c.createGain(); this.humGain.gain.value=CFG.audio.humLevel;
+      this.humFilt.connect(this.humGain); this.humGain.connect(this.master);
+      for(const [f,type,g] of CFG.audio.humVoices){
+        const o=c.createOscillator(), og=c.createGain();
+        o.type=type; o.frequency.value=f; og.gain.value=g;
+        o.connect(og); og.connect(this.humFilt); o.start();
+      }
+      // a live run carries something, and you can hear it
+      this.wireOsc=c.createOscillator(); this.wireGain=c.createGain();
+      this.wireOsc.type="sine"; this.wireOsc.frequency.value=CFG.audio.wireHz;
+      this.wireGain.gain.value=0;
+      this.wireOsc.connect(this.wireGain); this.wireGain.connect(this.master);
+      this.wireOsc.start();
+
+      // one buffer of noise, reused by every burst
+      const n=Math.floor(c.sampleRate*0.5), b=c.createBuffer(1,n,c.sampleRate), d=b.getChannelData(0);
+      for(let i=0;i<n;i++) d[i]=Math.random()*2-1;
+      this.noise=b;
+      this.ready=true;
+      this.note("audio ready");
+    }catch(e){ this.ready=false; }
+  },
+
+  setEnabled(on){
+    if(!this.ctx) return;
+    this.master.gain.setTargetAtTime(on?CFG.audio.master:0, this.ctx.currentTime, 0.05);
+  },
+
+  // a filtered noise burst: harvest, zap, thump, footfall
+  burst(dur, cut, level, sweepTo){
+    if(!this.ready) return;
+    const c=this.ctx, t=c.currentTime;
+    const src=c.createBufferSource(); src.buffer=this.noise; src.loop=true;
+    const f=c.createBiquadFilter(); f.type="lowpass"; f.frequency.setValueAtTime(cut,t);
+    if(sweepTo) f.frequency.exponentialRampToValueAtTime(Math.max(40,sweepTo), t+dur);
+    const g=c.createGain();
+    g.gain.setValueAtTime(0,t);
+    g.gain.linearRampToValueAtTime(level, t+Math.min(0.02,dur*0.2));
+    g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+    src.connect(f); f.connect(g); g.connect(this.master);
+    src.start(t); src.stop(t+dur+0.05);
+  },
+  // a pitched blip: escalation, discovery, the breaker coming back
+  tone(hz, dur, level, type, toHz){
+    if(!this.ready) return;
+    const c=this.ctx, t=c.currentTime;
+    const o=c.createOscillator(), g=c.createGain();
+    o.type=type||"sine"; o.frequency.setValueAtTime(hz,t);
+    if(toHz) o.frequency.exponentialRampToValueAtTime(Math.max(20,toHz), t+dur);
+    g.gain.setValueAtTime(0,t);
+    g.gain.linearRampToValueAtTime(level, t+0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+    o.connect(g); g.connect(this.master);
+    o.start(t); o.stop(t+dur+0.05);
+  },
+};
+
+// A music slot with graceful absence. Stephen's Suno folder drops into music/
+// as <site-id>.mp3; if a file is not there the game is simply quiet, with no
+// error and no broken request handling. Note the explicit r.ok check: fetch does
+// NOT throw on a 404, so a bare .catch() would let a 404 through as audio data.
+// The ?v= is the house cache-busting discipline for every asset reference.
+function loadMusic(levelId){
+  if(!AUD.ready || typeof fetch!=="function") return;
+  if(AUD.music){ try{ AUD.music.stop(); }catch(e){} AUD.music=null; }
+  if(CFG.audio.tracks.indexOf(levelId) < 0){ AUD.note("no music for "+levelId); return; }
+  const url = "music/"+levelId+".mp3?v="+CFG.audio.musicVer;
+  fetch(url)
+    .then(r=>{ if(!r.ok) throw new Error("no track"); return r.arrayBuffer(); })
+    .then(b=>AUD.ctx.decodeAudioData(b))
+    .then(buf=>{
+      const src=AUD.ctx.createBufferSource(), g=AUD.ctx.createGain();
+      src.buffer=buf; src.loop=true; g.gain.value=CFG.audio.musicLevel;
+      src.connect(g); g.connect(AUD.master); src.start();
+      AUD.music=src; AUD.note("music "+levelId);
+    })
+    .catch(()=>{ AUD.note("no music for "+levelId); });
+}
+
+// Haptics, from the same poll. Respects the settings toggle, and does nothing at
+// all where the device has no vibrator, which is most of them.
+function buzz(ms){
+  if(!SET.haptics) return;
+  try{ if(navigator && navigator.vibrate) navigator.vibrate(ms); }catch(e){}
+}
+
+// Watch the game and play the difference. Never writes to S.
+function updateAudio(dt){
+  if(!S) return;
+  const L=AUD.last, a=CFG.audio;
+  const live = S.conduits.filter(c=>c.live).length;
+  const found = S.conduits.filter(c=>c.discovered).length;
+  const harvested = S.ledger.credits.harvest;
+  const hurt = S.ledger.debits.damage;
+  const burned = S.ledger.debits.zapBurn;
+  const dead = S.enemies.filter(e=>e.state==="dead").length;
+
+  if(L.alert===undefined){ Object.assign(L,{ alert:S.site.alert, lock:S.site.lockdown,
+    live, found, harvested, hurt, burned, dead, mode:S.mode, act:S.act.verb,
+    result:!!S.result }); return; }
+
+  if(AUD.ready){
+    // the hum opens as the site wakes, and shuts off entirely in a lockdown
+    const cut = S.site.lockdown ? a.humCut[0]*0.35
+              : a.humCut[Math.min(a.humCut.length-1, S.site.alert)];
+    AUD.humFilt.frequency.setTargetAtTime(cut, AUD.ctx.currentTime, 0.4);
+    AUD.humGain.gain.setTargetAtTime(S.site.lockdown?a.humLevel*0.15:a.humLevel,
+      AUD.ctx.currentTime, 0.5);
+    // a live run carries a tone, and more of them carry more of it
+    AUD.wireGain.gain.setTargetAtTime(live? a.wireLevel*Math.min(1,0.6+0.2*live):0,
+      AUD.ctx.currentTime, 0.25);
+  }
+
+  if(S.site.alert>L.alert){ AUD.note("escalate "+S.site.alert);
+    AUD.tone(a.alertHz[Math.min(a.alertHz.length-1,S.site.alert)], 0.35, 0.16, "triangle");
+    buzz(S.site.alert>=3?[30,40,30]:20); }
+  if(S.site.lockdown && !L.lock){ AUD.note("lockdown");
+    AUD.tone(220, 0.9, 0.18, "sawtooth", 40); buzz([60,80,120]); }
+  if(!S.site.lockdown && L.lock){ AUD.note("power back");
+    AUD.burst(0.5, 900, 0.28, 90); AUD.tone(60, 0.6, 0.22, "sine", 120); buzz(90); }
+  if(found>L.found && AUD.once("found",CFG.audio.gap.found)){
+    AUD.note("wire found"); AUD.tone(1180, 0.22, 0.12, "square", 700); buzz(35); }
+  if(harvested>L.harvested+0.01 && AUD.once("harvest",CFG.audio.gap.harvest)){
+    AUD.note("harvest"); AUD.burst(0.34, 1400, 0.20, 160); buzz(18); }
+  if(hurt>L.hurt+0.05 && AUD.once("hit",CFG.audio.gap.hit)){
+    AUD.note("hit"); AUD.burst(0.16, 2600, 0.24, 300); buzz(28); }
+  if(burned>L.burned+0.01 && AUD.once("zap",CFG.audio.gap.zap)){
+    AUD.note("zap"); AUD.burst(0.12, 5200, 0.30, 900); buzz(22); }
+  if(dead>L.dead){ AUD.note("down"); AUD.burst(0.45, 700, 0.22, 80); buzz(45); }
+  if(S.mode!==L.mode){ AUD.note("mode "+S.mode);
+    AUD.tone(S.mode==="flow"?520:320, 0.30, 0.10, "sine", S.mode==="flow"?760:240); }
+  if(S.act.verb==="envelop" && L.act!=="envelop"){ AUD.note("smother"); AUD.tone(70,1.6,0.14,"sine",55); }
+  if(S.result && !L.result){ AUD.note(S.result.ok?"extracted":"lost");
+    if(S.result.ok){ AUD.tone(330,0.5,0.16,"sine",660); }
+    else AUD.tone(160,1.1,0.18,"sawtooth",60);
+    buzz(S.result.ok?[40,60,40]:[120]); }
+
+  Object.assign(L,{ alert:S.site.alert, lock:S.site.lockdown, live, found, harvested,
+    hurt, burned, dead, mode:S.mode, act:S.act.verb, result:!!S.result });
 }
 
 // ── input ────────────────────────────────────────────────────────────────────
@@ -2653,8 +2908,9 @@ function bindInput(){
 // choice. Handedness is live, because where the controls sit is the one setting
 // that changes the game you are holding.
 function settingsLabel(k){
-  return k==="hand" ? (SET.hand==="left" ? "Left handed" : "Right handed")
-                    : (SET[k] ? "On" : "Off");
+  if(k==="hand")   return SET.hand==="left" ? "Left handed" : "Right handed";
+  if(k==="motion") return SET.motion==="reduced" ? "Reduced" : "Full";
+  return SET[k] ? "On" : "Off";
 }
 function paintSettings(){
   if(typeof document==="undefined") return;
@@ -2665,6 +2921,9 @@ function openSettings(){
   if(typeof document==="undefined") return;
   paintSettings();
   document.getElementById("settings").classList.remove("hide");
+  // After it is displayed, or the measurement reads zero on a hidden element.
+  const body = document.getElementById("setbody");
+  body.classList.toggle("scrolls", body.scrollHeight > body.clientHeight + 1);
 }
 function closeSettings(){
   if(typeof document==="undefined") return;
@@ -2674,9 +2933,12 @@ function bindSettings(){
   document.querySelectorAll("#settings [data-set]").forEach(b=>{
     b.addEventListener("click",()=>{
       const k=b.getAttribute("data-set");
-      if(k==="hand") SET.hand = SET.hand==="left" ? "right" : "left";
+      if(k==="hand")        SET.hand = SET.hand==="left" ? "right" : "left";
+      else if(k==="motion") SET.motion = SET.motion==="reduced" ? "full" : "reduced";
       else SET[k] = !SET[k];
-      saveSettings(); paintSettings(); layout(); if(S) draw();
+      saveSettings(); paintSettings(); layout();
+      if(k==="sound"){ AUD.init(); AUD.setEnabled(SET.sound); }
+      if(S) draw();
     });
   });
   document.getElementById("setclose").addEventListener("click", closeSettings);
@@ -2756,11 +3018,13 @@ function openSites(){
 }
 function enterPlay(){
   if(typeof document==="undefined") return;
+  AUD.init();                       // a gesture got us here, which is when audio may start
+  AUD.setEnabled(SET.sound);
   document.getElementById("sites").classList.add("hide");
   document.getElementById("overlay").classList.add("hide");
   startLoop();
 }
-function startLevel(id){ newGame(id); resize(); enterPlay(); }
+function startLevel(id){ newGame(id); resize(); enterPlay(); loadMusic(id); }
 
 // ── boot ─────────────────────────────────────────────────────────────────────
 let last=0, looping=false, perf={ update:0, draw:0, frame:0 };
@@ -2773,7 +3037,7 @@ function startLoop(){
 function frame(ts){
   const dt=Math.min(0.05,(ts-last)/1000||0); last=ts;
   const t0=(typeof performance!=="undefined")?performance.now():0;
-  step(dt,input); updateCamera(dt); updateFX(dt);
+  step(dt,input); updateCamera(dt); updateFX(dt); updateAudio(dt);
   const t1=(typeof performance!=="undefined")?performance.now():0;
   draw();
   const t2=(typeof performance!=="undefined")?performance.now():0;
@@ -2824,7 +3088,9 @@ if(typeof globalThis!=="undefined") globalThis.CONDUIT={
   get btns(){ return btns; }, hitBtn,
   get safe(){ return SAFE; }, get view(){ return {w:VW,h:VH}; },
   get settings(){ return SET; }, openSettings, closeSettings, loadSettings, saveSettings,
+  reducedMotion, defaultMotion,
   get fx(){ return FX; }, ferroBlob, fieldTarget, updateFX, get perf(){ return perf; },
+  AUD, updateAudio, buzz, loadMusic,
   get cam(){ return cam; }, w2s, s2w,
 };
 </script>

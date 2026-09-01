@@ -1,4 +1,13 @@
-# C3 screenshot ritual — what I saw, and what I did about it
+# The screenshot ritual — what I saw, and what I did about it
+
+**Shots kept here are one representative frame per state, not every iteration.**
+Everything regenerates: `node test/gate3.js <tag>`, `node test/closeup.js <tag>`,
+`node test/shots.js <tag>`, `node test/audio.js` (the motion pair). The current
+set is prefixed `c5-` and `c6-`; `before-*` and `baseline-*` are the inherited
+build, kept for comparison.
+
+---
+
 
 HANDOFF-CONDUIT C3: shoot three frames, open them, name three faults in each
 before anyone else does, and fix or ticket every one. Shots regenerate with
@@ -162,3 +171,128 @@ no throttle           2.30ms draw     1.02ms draw, 60.2 fps
 canvas, and rebuilding one per object per frame does not scale past a handful.**
 Headless software rasterisation makes that visible far earlier than a phone's
 GPU would, which is the one way this harness flatters nothing.
+
+## Update, after C6: the gate was measuring the neighbour (2026-09-01)
+
+The budget went red again, at 15.57ms draw against an 8ms budget, and this time
+**the game was innocent**. This box has two cores and a second builder works in
+the same tree; the load average when the gate failed was 6.66.
+
+The proof was an A/B rather than an argument. The C5 build and HEAD were loaded
+alternately into the *same browser process* under the *same* load, three rounds
+each, with a fixed CPU workload timed alongside each measurement:
+
+```
+  build  draw(ms)  ref(ms)  draw/ref
+  C5       1.93     22.5    0.0856
+  HEAD     1.36     23.1    0.0588
+  C5       1.77     21.4    0.0827
+  HEAD     1.82     20.9    0.0871
+  C5       2.08     21.2    0.0980
+  HEAD     1.75     22.5    0.0777
+                            C5 0.0888 vs HEAD 0.0745
+```
+
+HEAD is very slightly **cheaper** than the approved build, and the spread within
+a build is larger than the difference between builds. There is no regression.
+
+So the gate changed, not the game. `test/perf.js` now:
+
+1. Times a fixed reference workload in the page. Over about 12ms means the
+   machine is busy, and the three absolute millisecond budgets are **skipped and
+   announced as skipped** rather than failed or, worse, quietly passed.
+2. Always asserts **draw cost divided by that reference**, median of three. A
+   loaded machine slows both halves, so the ratio survives what a millisecond
+   figure cannot.
+
+Be honest about what the unit gate buys. Observed spread across eleven samples
+was 0.059 to 0.132, so the ceiling sits at 0.16. That catches a gross regression
+of roughly twofold and up, which is the class that actually happened in C4
+(sixfold). **It will not notice a ten percent creep.** Fine budget work needs a
+quiet box, and the real number needs a phone, which is still Stephen's to take.
+
+Both new gates were watched failing on purpose: forcing the ceiling to 0.001
+reddens the unit gate, and declaring a busy box quiet reddens the 8ms budget
+while the unit gate stays green. That is the discrimination the split was for.
+
+## The landscape phone could not leave the menu (2026-09-01)
+
+Found by the controls probe at 844x390, which is the same viewport the frame
+budget uses, because a landscape phone is a first class way to hold this game.
+
+C6 added a fourth setting, Motion. Four rows plus a title plus a note plus the
+button took the panel to **427px inside a 390px viewport**, which put "Back to
+the site" entirely below the fold. `document.elementFromPoint` at the button's
+own centre returned **nothing**.
+
+It was not quite a trap: the container has `overflow-y:auto`, so a player who
+thought to drag would find the button. But the only exit from the menu had no
+affordance, and nothing on screen said there was more below. That is a menu you
+can get stuck in, which is the worst kind of small bug.
+
+Fixed by pinning the title and the exit and scrolling only the rows between
+them. Three declarations do the work and all three are easy to lose in a later
+edit, so they are commented in place:
+
+- `max-height:100%` on the panel, or it simply grows past the viewport
+- `min-height:0` on the scrolling child, or a flex item refuses to shrink below
+  its content and nothing scrolls at all
+- `margin:auto` on the panel rather than `align-items:center` on the parent,
+  because centering an overlong child **clips its top** and you can never scroll
+  back up to it
+
+Panel height at 844x390 went 427px to 350px, and the hit test now returns the
+button. Verified at 320x568 and 375x667 as well.
+
+The probe that caught it asserts two separate things, and both were watched
+going red against the old CSS: every settings control is inside the viewport
+without scrolling, and every one answers a real hit test where it is drawn. The
+second is the one that matters, because `el.click()` will happily press a button
+that is nowhere near the screen.
+
+**Worth noting for the next person: this arrived as a stale test, not as a bug.**
+The failing assertion was `rows.length === 3`, which reads like a test that
+needs its number bumped. Bumping it to 4 would have gone green and shipped the
+soft-lock. The count assertion is now a check by name, which goes red when a
+setting is renamed and stays quiet when one is added, since adding is the one
+change that was never the problem.
+
+### Then I looked at it, which changed the fix twice
+
+Pinning the exit made the gate green. The screenshots said the job was not done.
+
+**Shot one, `c6-settings-land.png` at 844x390, three faults:**
+
+1. **The game bled through and read as interactive.** Under a `.94` backdrop the
+   HUD, the alert state and the TAP and FLOW buttons stayed clearly legible, so
+   the game's controls looked like part of the menu. Backdrop is near opaque now.
+   No `backdrop-filter`: it would blur a live canvas every frame the menu is
+   open, and per element filters have burned this codebase on iOS before.
+2. **The panel had no surface.** Rows floated straight on the backdrop, so the
+   menu had no edge and no sense of sitting on top of the world. It is a card now.
+3. **The note was the new thing below the fold, with nothing to say so.** A fade
+   mask marks it, and only when there is something to scroll to, because a fade
+   on a panel that fits is a lie. The class is set when the menu opens, after it
+   is displayed, or the measurement reads zero on a hidden element.
+
+**Shot two, same frame, three more faults:** the fade now cut the **Motion** row
+in half, which reads as a rendering glitch rather than an invitation; the gap
+between that half row and the exit read as a layout accident; and the panel was
+a narrow strip with **two thirds of an 844px screen empty on either side**.
+
+That third one names the real fix. A landscape phone has width and no height, so
+the rows go to **two columns** at short-and-wide, keyed on the dimensions rather
+than on orientation because a short desktop window has the same problem. All
+four settings and the note and the exit are on screen at once, nothing scrolls,
+and the fade never fires.
+
+**Shot three is the one that is good**, and the remaining faults are small and
+named rather than fixed: the columns carry unequal weight because "Right handed"
+is a much longer label than "On" or "Full", and the note sits marginally tighter
+under the rows than the rows sit under each other.
+
+**The part worth carrying:** when the media query is disabled the probe reports
+that the **`motion` button** fails its hit test, not the close button. So pinning
+the exit, which was the whole fix at the point the gate went green, would have
+shipped a landscape phone that could leave the menu but could never reach the
+fourth setting. The gate was satisfied two fixes before the screenshot was.

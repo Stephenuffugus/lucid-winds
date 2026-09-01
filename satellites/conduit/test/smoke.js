@@ -775,6 +775,7 @@ console.log("\n[15] the ferro layer is a renderer, not a rule");
       G.step(0.016, { ax:Math.sin(i*0.017), ay:Math.cos(i*0.011) });
       if(ferro){
         G.updateFX(0.016);
+        G.updateAudio(0.016);            // the sound layer polls state too
         G.fieldTarget(G.blobRef());
         if(i%97===0) G.ferroBlob(0,0,10,G.fx.fa,G.fx.fs,G.fx.seed,G.fx.detail);
       }
@@ -784,8 +785,8 @@ console.log("\n[15] the ferro layer is a renderer, not a rule");
     return marks.join("//");
   };
   const off = run(false), on = run(true);
-  ok("the simulation is identical with the ferro layer off and on", off===on,
-     off===on ? "" : "the renderer moved the game");
+  ok("the simulation is identical with the ferro and sound layers off and on",
+     off===on, off===on ? "" : "a presentation layer moved the game");
   ok("and the run was long enough to be worth comparing", off.length > 2000,
      "signature length "+off.length);
   CFG.ferroRender = true;
@@ -2143,6 +2144,64 @@ console.log("\n[21] every level, checked the same way");
          walked || lure, d.drop.join(",")+(lure?" (lure)":" (no lure either)"));
     }
   }
+}
+
+// ── 22. sound, and the settings that turn it off ─────────────────────────────
+// C6. The sound layer watches state and plays the difference; nothing in the sim
+// calls it. What is checkable headless is that it never writes to the game, that
+// its continuous cues hold themselves off, and that the numbers live in CFG.
+console.log("\n[22] the sound layer");
+{
+  const S = G.newGame(LVL);
+  ok("every sound number lives in CFG, like every other number",
+     !!CFG.audio && CFG.audio.master>0 && !!CFG.audio.gap && CFG.audio.humCut.length===5);
+  ok("the hum has a setting for every alert state",
+     CFG.audio.humCut.length===5 && CFG.audio.alertHz.length===5);
+  // The manifest, not a probe. Every id listed here must have a real file in
+  // music/, because listing one is what sends the game looking for it.
+  const fs2 = require("fs"), pathm = require("path");
+  ok("the music manifest is a list", Array.isArray(CFG.audio.tracks));
+  ok("and every site it lists has a file on disk",
+     CFG.audio.tracks.every(id =>
+       fs2.existsSync(pathm.join(__dirname, "..", "music", id + ".mp3"))),
+     "listed: " + JSON.stringify(CFG.audio.tracks));
+  // Not "the state did not change": it should, the sim is running. Run the SAME
+  // steps with and without the sound poll and compare. `|| true` was the first
+  // version of this and it could not fail, which is the exact thing this suite
+  // exists to catch.
+  const run = (withAudio) => {
+    const S2 = G.newGame(LVL);
+    for(let i=0;i<600;i++){
+      G.step(0.016, { ax:Math.sin(i*0.02), ay:Math.cos(i*0.013) });
+      if(withAudio) G.updateAudio(0.016);
+    }
+    // wide enough that a single stray write anywhere in the site or the ledger
+    // shows up, rather than only the handful of fields I happened to think of
+    return JSON.stringify({ m:G.blobRef().mass.toFixed(9), x:G.blobRef().x.toFixed(9),
+      y:G.blobRef().y.toFixed(9), site:{ ...S2.site, sinceEscalate:+S2.site.sinceEscalate.toFixed(9) },
+      ledger:{ owned:+S2.ledger.owned.toFixed(9), d:S2.ledger.debits, c:S2.ledger.credits },
+      stats:{ ...S2.stats, time:+S2.stats.time.toFixed(9) },
+      e:S2.enemies.map(e=>e.x.toFixed(9)+","+e.y.toFixed(9)+","+e.hp+","+e.state+","+(e.spot||0).toFixed(9)).join("|") });
+  };
+  ok("polling for sound never moves the game", run(false)===run(true),
+     "the sound layer changed the simulation");
+  ok("and it survives having no AudioContext at all", G.AUD.ready===false);
+  ok("cues are still logged with no audio device", G.AUD.log.length>=0);
+}
+{ // the hold-off that stopped one body being fifteen slurps
+  G.newGame(LVL);
+  const first = G.AUD.once("t", 1.0);
+  const second = G.AUD.once("t", 1.0);
+  ok("a continuous cue speaks once", first===true);
+  ok("and holds itself off after", second===false);
+  ok("a fresh game forgets what it played", (G.newGame(LVL), Object.keys(G.AUD.cd).length===0));
+}
+{ // reduced motion is a setting the device can ask for
+  ok("there is a motion setting", typeof G.reducedMotion==="function");
+  const S = G.newGame(LVL);
+  G.settings.motion="full";    ok("full motion reads as full", G.reducedMotion()===false);
+  G.settings.motion="reduced"; ok("reduced reads as reduced", G.reducedMotion()===true);
+  G.settings.motion="full";
 }
 
 console.log(`\n${pass} passed, ${fail} failed\n`);

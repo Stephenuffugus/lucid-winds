@@ -398,6 +398,16 @@ const MUTANTS = [
     to:   "  const t=TT[idx(x,y)]; return t!==WALL && t!==DOOR && t!==VENT; }",
     expect: "goes through the vent" },
 
+  { id: "sound-touches-sim", why: "the sound layer writes to game state",
+    from: "  const live = S.conduits.filter(c=>c.live).length;",
+    to:   "  const live = S.conduits.filter(c=>c.live).length; S.site.sinceEscalate += 1e-9;",
+    expect: "never moves the game" },
+
+  { id: "cue-no-holdoff", why: "a continuous cue fires every frame again",
+    from: "    if(this.cd[name]!==undefined && now-this.cd[name] < gap) return false;",
+    to:   "    if(false) return false;",
+    expect: "holds itself off" },
+
   { id: "spot-decay-none", why: "spot progress never decays once you break line of sight",
     from: "  } else e.spot=Math.max(0, e.spot-CFG.spotDecay*dt);",
     to:   "  } else { }",
@@ -427,6 +437,14 @@ const MUTANTS = [
     from: "      bd.mass-=take; ledgerGain(take,\"harvest\"); }",
     to:   "      bd.mass-=take; }",
     expect: "harvests" },
+
+  // A site listed with no file on disk is exactly the bug that logged a console
+  // error on every boot. The manifest is only worth having if a wrong entry is
+  // caught here rather than by a player's devtools.
+  { id: "music-claims-a-track-it-has-not-got", why: "the manifest lists a site with no file",
+    from: "    tracks:[],",
+    to:   "    tracks:[\"site-02\"],",
+    expect: "has a file on disk" },
 ];
 
 const filter = process.argv[2];

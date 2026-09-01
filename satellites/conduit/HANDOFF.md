@@ -5,9 +5,10 @@
 
 ## Where we are
 
-**C1 through C5 are complete. All six curriculum levels are authored and every
-one is beatable two ways.** M1, the ship gate, is still unanswered and is still
-Stephen's alone. C6 (sound, haptics, accessibility) is next.
+**Every phase in the plan is complete: C1 through C6.** All six curriculum
+levels are authored and every one is beatable two ways. M1, the ship gate, is
+still unanswered and is still Stephen's alone, and it is now the only thing in
+the way.
 
 `index.html` is a complete, playable prototype in one file, no build step,
 canvas 2D, touch first. It runs from `file://`, GitHub Pages, or anywhere.
@@ -15,8 +16,9 @@ canvas 2D, touch first. It runs from `file://`, GitHub Pages, or anywhere.
 ## How to check it, in order
 
 ```
-node test/smoke.js                 563 assertions, headless, no deps
-node test/mutants.js               79 mutants, all must be killed
+node test/smoke.js                 574 assertions, headless, no deps
+node test/mutants.js               81 mutants, all must be killed
+node test/audio.js                 the sound cues, and the motion pair
 node test/persist.js               save across a real page reload, and two tabs
 node test/verbs.js [w] [h]         every prowl verb, by real touch
 node test/controls.js [w] [h]      51 assertions, real touches in real Chrome
@@ -32,6 +34,13 @@ test/drive.js                      the shared browser hands, not a test itself
 `?seed=1234` picks the seed. `localStorage.setItem("sws_dev_ok","1")` turns on the
 dev overlay: seed, alert state and decay timer, per enemy spot progress and state,
 the full ledger tail, and frame/update/draw times.
+
+**A note on time.** The suite has grown to 574 assertions with a lot of long
+simulation loops, so `node test/mutants.js` now runs for roughly twenty minutes
+(81 mutants, each a full suite run). That is the price of the guarantee and it is
+worth paying before a commit, but do not run it concurrently with the browser
+suites: this box has two cores and gates disagree under contention. Run them one
+at a time.
 
 `test/mutants.js` is the one to understand. HANDOFF-CONDUIT rule 3 says a gate
 you have not watched fail is decoration. This breaks one mechanic at a time in
@@ -366,16 +375,121 @@ eight exposed tiles across a patrolled spine gets found, walked and burned off
 its own crane.** The far trap wants cover or a hand; the wire goes on the short
 one.
 
+## What C6 changed, sound and accessibility
+
+**Procedural sound, no files.** A site hum of three low voices through one
+lowpass whose cutoff opens with the alert state and shuts almost off in a
+lockdown; a tone a live run carries, growing with the number of them; noise
+bursts for the slurp, the hit, the zap and the breaker thump; pitched stings for
+escalation, discovery, mode changes and the result. Every number in `CFG.audio`.
+
+**It is a POLL, like the ferro layer.** Nothing in the simulation calls it: it
+watches state and plays the difference, so the game is exactly as playable
+silent, and the identity assertion stays honest.
+
+**The cue log caught a real fault on its first run: one body was fifteen
+slurps.** Harvest and damage happen a little every frame, so a threshold fires
+over and over. Continuous cues now hold themselves off.
+
+**Haptics** on escalation, lockdown, discovery, harvest, hit, zap, a kill and the
+result, behind the settings toggle.
+
+**A music slot with graceful absence** at `music/<site>.mp3?v=`, ready for the
+Suno folder, quiet when the file is not there. It checks `r.ok` explicitly:
+fetch does not throw on a 404.
+
+**Reduced motion damps rather than deletes.** The conduit's fringe freezes
+instead of waving, the travelling rim light becomes a still glow at the far end,
+the alarm edge stops pulsing, the field is capped, and the creature still spikes.
+It follows `prefers-reduced-motion` unless the player says otherwise.
+
+**A greyscale pass found something real.** Everything reads by shape or text:
+device codes, the hatched concealed channel, exposure as brightness, alert as one
+lit pip of five plus the word, thresholds as notches plus a written state.
+**Except the mass bar, whose fill was darker at its base than the empty channel
+beside it, so the game's one number was unreadable without colour vision.** The
+fill is lifted so the level reads by luminance alone.
+
+**No service worker, and no manifest.** Asserted three ways. Not to be added
+until Fable signs one off.
+
+## What the C6 verification sweep then found, and it found three things
+
+Running every suite after C6 was not a formality. It went red in three places
+and the three had three different owners.
+
+**The game was wrong once.** Every boot logged a console error, because
+`loadMusic` reached for `music/<site>.mp3` on a site that has no track: a scheme
+refusal over `file://`, a 404 over http. The `r.ok` check was already correct so
+nothing broke, but the game complained on every level load about something the
+player cannot act on. There is now an explicit **manifest**, `CFG.audio.tracks`,
+empty until the Suno folder lands. Listing a site is what sends the game looking
+for it, so a wrong entry is now a caught bug: smoke asserts every listed id has
+a real file in `music/`, and a mutant that lists `site-02` without shipping one
+dies on that assertion.
+
+**A test was wrong once.** `rows.length === 3` on the settings panel went red
+because C6 added a fourth setting. This is the dangerous shape of failure, and
+it is worth naming: it reads like a stale number that wants bumping to 4, and
+bumping it would have gone green and shipped **a soft lock**. The fourth row
+pushed the panel to 427px inside a 390px landscape viewport and put the only way
+out of the menu below the fold, where `elementFromPoint` returned nothing. Full
+write up in `docs/C3-FAULTS.md`. The panel now pins its title and its exit and
+scrolls the rows between them, and the probe asserts reachability by hit test at
+every viewport rather than by counting rows.
+
+**The machine was wrong once, and this is the one to remember.** The frame
+budget went red at 15.57ms draw against an 8ms budget. The game was innocent:
+this box has two cores, a second builder works in the same tree, and the load
+average was 6.66. An A/B of the C5 build against HEAD alternating in the *same
+browser process* under the *same* load showed HEAD was very slightly **cheaper**
+(0.0745 against 0.0888 draw per reference unit), with more spread inside each
+build than between them.
+
+So `test/perf.js` changed rather than the game. It times a fixed CPU workload in
+the page; over about 12ms means the box is busy and the three absolute
+millisecond budgets are **skipped and announced as skipped**, never quietly
+passed. What always runs is draw cost divided by that reference, median of
+three, which a loaded machine slows on both halves so the ratio survives. Be
+honest about the reach of that: the ceiling sits at 0.16 against a norm near
+0.06, so it catches a gross regression of roughly twofold and up, the class that
+actually happened in C4. It will not notice a ten percent creep. Both new gates
+were watched failing on purpose.
+
+**The lesson underneath all three: a red gate names a suspect, not a culprit.**
+One was the code, one was the test, one was the neighbour, and the only way to
+tell them apart was to go and measure.
+
+**And the settings fix took three passes, because the gate went green two fixes
+too early.** Pinning the exit satisfied the probe. The screenshot then showed the
+game bleeding through the backdrop so the TAP and FLOW buttons read as part of
+the menu, and the panel with no surface of its own. The second shot showed the
+scroll fade cutting the Motion row in half and two thirds of an 844px screen
+sitting empty. The answer was two columns at short-and-wide, which puts every
+setting, the note and the exit on screen at once with nothing scrolling.
+
+Disabling that media query now makes the probe report **`motion`** as the
+unreachable control, not `setclose`. So the version that turned the gate green
+would have shipped a landscape phone that could leave the menu but could never
+reach the fourth setting. Looking is part of the job, and this is what it buys.
+
 ## Next action
 
-**C6, sound and identity**, which is the last phase in the plan: a procedural
-WebAudio bed that rises with the alert state, a conduit-live tone, harvest slurp,
-smother hold, and the lockdown's silence then breaker thump; haptics on
-discovery, damage, harvest and lockdown, respecting the toggle that already
-exists in settings; a `music/` slot that is silent when the files are absent;
-reduced motion (spikes damp, pulses become fades); and a colourblind check on the
-exposure tiers, which are already hatched rather than coloured. **No service
-worker unless Fable signs it off, and do not card the game in the portal.**
+**The plan is finished. What is left is not mine to do.**
+
+1. **Stephen plays it on a phone and answers M1** in `PLAYTESTS.md`. Everything
+   above is built on a loop whose fun has never been confirmed, and BUILD-PLAN is
+   explicit that nothing downstream saves a loop that is not fun here.
+2. **Fable reviews the diff** and cards the game dev-gated in the portal. Two
+   things specifically want a second pair of eyes: the **Appendix A rim hue
+   departure** (its numeric hue average lands on green), and whether the creature
+   reads as ferrofluid to a human rather than to me.
+3. Then the fine tuning passes with Stephen: CFG, difficulty, the splitting
+   decision (M5, deliberately untouched), and whether a 3D camera is worth it.
+
+If more building is wanted before that, the honest list is: the four tickets in
+`docs/C3-FAULTS.md`, a second look at the two Director calls below, and the
+music files when the Suno folder lands.
 
 Two things owed regardless. The four tickets in `docs/C3-FAULTS.md` are small and
 real, and the frame budget has room for them. And **nothing here has ever been on

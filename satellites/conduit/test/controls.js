@@ -290,9 +290,55 @@ const settle = ms => new Promise(r => setTimeout(r, ms));
       [...document.querySelectorAll("#settings [data-set]")].map(b => ({
         k: b.getAttribute("data-set"), label: b.textContent,
         h: Math.round(b.getBoundingClientRect().height) })));
-    ok("it has sound, haptics and handedness", rows.length === 3, JSON.stringify(rows.map(r=>r.k)));
+    // Name them rather than count them. A count assertion goes red when a
+    // setting is ADDED, which is the one change that is never a regression, and
+    // stays green if a setting is renamed out from under it.
+    const keys = rows.map(r => r.k);
+    for (const want of ["sound","haptics","hand","motion"])
+      ok(`it has a "${want}" setting`, keys.indexOf(want) >= 0, JSON.stringify(keys));
     ok("every switch meets the touch minimum", rows.every(r => r.h >= MIN_TOUCH),
        JSON.stringify(rows.map(r => r.h)));
+
+    // The one that a landscape phone found. A fourth setting pushed the panel to
+    // 427px inside a 390px viewport and put "Back to the site" entirely below the
+    // fold. The container scrolled, so it was technically reachable, but the only
+    // exit from the menu had no affordance. Hit tested rather than clicked,
+    // because el.click() finds an off screen button perfectly happily.
+    const reach = await page.evaluate(() => {
+      const out = [];
+      for (const el of document.querySelectorAll("#settings button")) {
+        const r = el.getBoundingClientRect();
+        const cx = r.x + r.width / 2, cy = r.y + r.height / 2;
+        const hit = document.elementFromPoint(cx, cy);
+        out.push({ id: el.id || el.getAttribute("data-set"),
+                   onScreen: cy >= 0 && cy <= innerHeight && cx >= 0 && cx <= innerWidth,
+                   hits: !!hit && (hit === el || el.contains(hit)) });
+      }
+      return out;
+    });
+    ok("every settings control is inside the viewport without scrolling",
+       reach.every(r => r.onScreen),
+       JSON.stringify(reach.filter(r => !r.onScreen).map(r => r.id)));
+    ok("and the way out answers a real tap where it is drawn",
+       reach.every(r => r.hits),
+       JSON.stringify(reach.filter(r => !r.hits).map(r => r.id)));
+
+    // A short wide phone has room across that it does not have down. If the rows
+    // have to scroll there, the two column layout has stopped applying and a
+    // setting has gone below the fold again.
+    const fold = await page.evaluate(() => {
+      const b = document.getElementById("setbody");
+      return { wide: matchMedia("(min-width:640px) and (max-height:480px)").matches,
+               scrolls: b.scrollHeight > b.clientHeight + 1,
+               cols: getComputedStyle(b).gridTemplateColumns };
+    });
+    if (fold.wide)
+      ok("in landscape every setting fits without scrolling, in two columns",
+         !fold.scrolls && fold.cols.split(" ").length === 2,
+         `scrolls ${fold.scrolls}, columns "${fold.cols}"`);
+    else
+      ok("in portrait the rows are one column", fold.cols.split(" ").length === 1,
+         `columns "${fold.cols}"`);
     const hand = await page.evaluate(() => {
       const b = [...document.querySelectorAll("#settings [data-set]")]
         .find(x => x.getAttribute("data-set") === "hand");

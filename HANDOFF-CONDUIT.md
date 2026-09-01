@@ -476,7 +476,104 @@ Build in the addendum's priority order:
     Worth knowing for later: soft radial gradients are the expensive thing on a
     canvas, and headless software rasterisation makes that unmissable.
   - **suite: 563 assertions.** Splitting (M5) is untouched, as instructed.
-- [ ] C6 gate: audio demo · reduced-motion pair · NO service worker confirmed
+- [x] **C6 gate** (2026-09-01)
+  - **audio demo run logged.** `node test/audio.js` drives a real run in real
+    Chrome with a real AudioContext and prints every cue that fired:
+    `audio ready, mode flow, mode prowl, hit, harvest, wire found, escalate 2,
+    escalate 4, lockdown, power back, zap`. Procedural, no files: a site hum of
+    three low voices through one lowpass whose cutoff opens with the alert state
+    and shuts almost off in a lockdown; a tone that a live run carries and that
+    grows with the number of them; noise bursts for the slurp, the hit, the zap
+    and the breaker thump; pitched stings for escalation, discovery, mode and the
+    result.
+  - **The log immediately caught a fault worth having: one body was FIFTEEN
+    slurps.** Harvest and damage happen a little every frame, so a threshold
+    fires over and over. Continuous cues now hold themselves off
+    (`CFG.audio.gap`), and the suite asserts one body is one slurp.
+  - **The sound layer is a POLL, like the ferro one.** Nothing in the simulation
+    calls it; it watches state and plays the difference. The C3 identity
+    assertion now drives `updateAudio` every frame too, and a separate assertion
+    runs the same six hundred steps with and without the sound poll and compares
+    a wide signature. Guarded by the `sound-touches-sim` mutant.
+  - **Haptics** on escalation, lockdown, discovery, harvest, hit, zap, a kill and
+    the result, all behind the settings toggle, and silent where there is no
+    vibrator.
+  - **A music slot with graceful absence.** `music/<site>.mp3?v=`, loaded if it
+    is there and quiet if it is not, ready for the Suno folder. It checks `r.ok`
+    explicitly, because **fetch does not throw on a 404** and a bare `.catch()`
+    would hand a 404 body to the decoder.
+  - **reduced-motion pair:** `docs/shots/c6-motion-full.png` and
+    `c6-motion-reduced.png`, same frame, both read. Reduced **damps rather than
+    deletes**: the conduit's fringe freezes instead of waving, the travelling rim
+    light becomes a still glow at the far end, the alarm edge stops pulsing and
+    the field is capped, and the suite asserts the creature still spikes rather
+    than flattening. It defaults to `prefers-reduced-motion` and the player can
+    override it in settings.
+  - **colourblind pass, and it found something.** I shot the game through a
+    greyscale filter (`docs/shots/c6-greyscale.png`) and everything read by shape
+    or text: device codes, the hatched concealed channel, exposure as brightness,
+    alert as one lit pip of five plus the word, the mass thresholds as notches
+    plus a written state. **Except the mass bar itself: its fill was darker at
+    the base than the empty channel beside it, so the game's one number was
+    unreadable without colour vision.** The fill is lifted so the level reads by
+    luminance; committed mass was already hatched rather than coloured.
+  - **NO service worker confirmed**, and asserted three ways: none registered at
+    runtime, none referenced anywhere in the file, and no manifest link either.
+    Not added, and not to be added until Fable signs one off.
+  - **suite: 576 assertions, 82 mutants, all killed.** Plus the browser suites:
+    controls 57 at each of 320x568, 375x667 and 844x390; audio, full run,
+    persistence, verbs, lockdown and perf all green.
+
+- [x] **C6 verification, which went red three times and the three had three
+  different owners** (2026-09-01)
+  - **The code was wrong once.** Every boot logged a console error: `loadMusic`
+    reached for `music/<site>.mp3` on a site with no track, a scheme refusal over
+    `file://` and a 404 over http. The `r.ok` check above was already right so
+    nothing broke, but the game complained on every level load about something a
+    player cannot act on. There is now an explicit manifest, `CFG.audio.tracks`,
+    empty until the Suno folder lands. Listing a site is what sends the game
+    looking, so a wrong entry is a caught bug: smoke asserts every listed id has
+    a real file in `music/`, and the 82nd mutant lists `site-02` without shipping
+    one and dies on that assertion.
+  - **A test was wrong once, and it was the dangerous kind.** `rows.length === 3`
+    on the settings panel went red because C6 added a fourth setting. It reads
+    exactly like a stale number wanting a bump to 4, and bumping it would have
+    gone green and shipped a soft lock: the fourth row took the panel to 427px
+    inside a 390px landscape viewport and put the only way out of the menu below
+    the fold, where `elementFromPoint` returned nothing. The container did
+    scroll, so it was reachable by a player who thought to drag, with nothing on
+    screen saying so. The count check is now a check by name, which reddens on a
+    rename and stays quiet on an addition, addition being the one change that was
+    never the problem.
+  - **And looking at it changed that fix twice more.** Pinning the title and exit
+    turned the gate green; the screenshot showed the game bleeding through a .94
+    backdrop so TAP and FLOW read as menu buttons, and a panel with no surface of
+    its own. The next shot showed the scroll fade cutting the Motion row in half
+    and two thirds of an 844px screen empty. The answer is **two columns at
+    short-and-wide**, keyed on dimensions not orientation, which fits every
+    setting, the note and the exit on screen with nothing scrolling. Disable that
+    media query and the probe now names **`motion`** as unreachable, not
+    `setclose`: the version that turned the gate green would have shipped a phone
+    that could leave the menu but never reach the fourth setting. Full write up
+    in `docs/C3-FAULTS.md`.
+  - **The machine was wrong once, and this is the one to carry.** The frame
+    budget went red at 15.57ms draw against 8ms. The game was innocent: two
+    cores, a second builder in the same tree, load average 6.66. Proved by an
+    A/B rather than an argument, the C5 build and HEAD alternating in the **same
+    browser process** under the **same** load, three rounds each: HEAD was very
+    slightly cheaper, 0.0745 against 0.0888 draw per reference unit, with more
+    spread inside each build than between them. So `test/perf.js` changed, not
+    the game. It times a fixed CPU workload in the page; over about 12ms means
+    busy, and the three absolute millisecond budgets are **skipped and announced
+    as skipped**, never quietly passed. What always runs is draw divided by that
+    reference, median of three, which a loaded machine slows on both halves.
+    Honest about its reach: ceiling 0.16 against a norm near 0.06 catches a gross
+    regression of roughly twofold and up, the class that happened in C4. It will
+    not see a ten percent creep. Both new gates were watched failing on purpose,
+    and the split discriminates: forcing "quiet" on a busy box reddens the 8ms
+    budget while the unit gate stays green.
+  - **A red gate names a suspect, not a culprit.** One was the code, one was the
+    test, one was the neighbour. The only way to tell them apart was to measure.
 
 ---
 
