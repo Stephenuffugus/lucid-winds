@@ -54,10 +54,12 @@ async function run(g, live) {
   const url = BASE + g.url + (live ? "" : (g.url.includes("?") ? "&" : "?") + "nomusic=1");
   try { await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45000 }); } catch (e) { errors.add("goto: " + e.message.split("\n")[0]); }
   await new Promise(r => setTimeout(r, 900));
-  const pre = await page.evaluate(() => !!document.getElementById("sws-music-toast"));
-  await page.evaluate(() => document.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })));   // the toast waits for a first tap
+  /* P11: at boot a fresh song is a CARD (Listen now / Later), never a toast; the chip is uniform */
+  const pre = await page.evaluate(() => ({ toast: !!document.getElementById("sws-music-toast"), card: !!document.getElementById("sws-music-card"), chip: !!document.getElementById("sws-music-chip") || !!document.getElementById("shell-music-btn"),
+    cardText: (document.getElementById("sws-music-card") || {}).textContent || "" }));
+  await page.evaluate(() => { const b = document.getElementById("sws-music-later"); if (b) b.click(); });   // dismiss the card, which is the first interaction
   await new Promise(r => setTimeout(r, 120));
-  const early = await page.evaluate(() => ({ toast: !!document.getElementById("sws-music-toast"), ids: [...document.body.children].map(c => c.id || c.tagName) }));
+  const early = await page.evaluate(() => ({ toast: !!document.getElementById("sws-music-toast"), card: !!document.getElementById("sws-music-card"), ids: [...document.body.children].map(c => c.id || c.tagName) }));
   early.pre = pre;
   await new Promise(r => setTimeout(r, 3300));
   const late = await page.evaluate(() => ({
@@ -78,14 +80,15 @@ for (const g of games) {
   t(label + "  module loaded", B.late.loaded, "window.SWSMusic absent");
   if (shelf) {
     t(label + "  ledger has " + shelf.tracks[0].id, B.late.ledger.some(e => e.id === shelf.tracks[0].id), "ledger=" + JSON.stringify(B.late.ledger.map(e => e.id)));
-    t(label + "  no toast before the first tap", !B.early.pre);
-    t(label + "  toast appeared after the first tap", B.early.toast);
-    t(label + "  toast gone by ~4s", !B.late.toast);
+    t(label + "  at boot: the CARD is up (not a toast), naming the song", B.early.pre.card && !B.early.pre.toast && new RegExp(shelf.tracks[0].title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).test(B.early.pre.cardText));
+    t(label + "  the uniform music chip (or the shell's button) is present", B.early.pre.chip);
+    t(label + "  Later closes the card", !B.early.card);
+    t(label + "  no toast lingering by ~4s", !B.late.toast);
   } else {
-    t(label + "  no shelf in fixture: ledger empty, no toast", B.late.ledger.length === 0 && !B.early.toast);
+    t(label + "  no shelf in fixture: ledger empty, no card, no toast", B.late.ledger.length === 0 && !B.early.pre.card && !B.early.toast);
   }
   const added = B.late.ids.filter(x => !A.late.ids.includes(x));
-  t(label + "  body gained nothing but the toast", added.every(x => x === "sws-music-toast"), "added=" + JSON.stringify(added));
+  t(label + "  body gained nothing but the toast, the chip, the card, the player", added.every(x => ["sws-music-toast", "sws-music-chip", "sws-music-card", "sws-music-style"].includes(x) || /^swsp|AUDIO/.test(x)), "added=" + JSON.stringify(added));
   t(label + "  zero NEW console errors vs baseline", newErr.length === 0, newErr.slice(0, 2).join(" | "));
   t(label + "  baseline (?nomusic=1) wrote no ledger", A.late.ledger.length === 0);
 }

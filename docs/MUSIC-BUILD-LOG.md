@@ -286,3 +286,29 @@ three things wrong with the live look: the toast still crosses a wordmark on tit
 toasts queue on a game that earns from two shelves at once (fine, but the player sees two pills back to back); a family
 track reads "unlocked in Action Room" when it was unlocked in Pong (the fold's wording uses the shelf name; cosmetic).
 index.html loads the manifest by LW_VERSION (fenced): the app shows the two new Originals after its next version bump.
+
+## P11 — The moment (2026-09-02, after Stephen played Rabbit Ronin)
+Stephen: "i unlocked a song but there didnt seem to be any way to even play the damn thing" · "i like a uniform music button
+across everything" · "congratulations you unlocked … would you like to listen to it now?" · "if it came with an image it may
+have art already, if not no worry at all we wont fabricate anything".
+built, module only (the 105 includes already load it; no game edited):
+- THE CARD at boot: Congratulations, title, shelf · Stephen, art only if the catalog track has `art` else a ♫ tile, Listen
+  now / Later (48px). Listen now loads music-tracks.js then music-player.js on demand, inits the shared player with the chip
+  (or the native shell's button) and plays that track by its LW_TRACKS index. Both buttons mark it revealed
+  (`sws_music_revealed`; a cloud restore never re-congratulates) and clear `sws_music_pending_reveal`.
+- MID ROUND: toast + pending; the card comes at the next boot of ANY game.
+- THE CHIP: "♫ Music", 48px, in every game with a live catalog (the native shells keep their header button). Placed ~900ms
+  after load, by a GRID search along the top and bottom edges then the side mid-edges, scoring a 3x3 footprint, worst point
+  wins; controls (button, a, role, onclick, cursor:pointer) score 3, text scores only where it is RENDERED (text-node rects),
+  paint 1, empty 0; never the bottom right (the feedback fab's); the search looks through our own card.
+gates (watched red first): unlocks 65→95 (fake manifest + player in the harness, clickable elements) · mutants 14→19, one
+  survivor exposed the cloud-restore case and got its assertion · inject 54 (card at boot, chip present, Later closes,
+  zero new console errors on 6 games) · ui 82 (card inside the viewport, buttons ≥48 measured, chip ≥48x96, chip overlaps
+  no control, backdrops excluded) · run.mjs all 10 green in 113s.
+the look, three rounds: (1) chip on Deepwell's ✕: the corner search saw it but every corner was busy and the centre-point
+  test missed the ☰ at the chip's far end → footprint scoring, controls by cursor/onclick, text-at-point; (2) chip clipping
+  the top of "SURFACE" → 3x3 footprint; (3) chip in the empty end of the LAMP row, clear of everything. Blobworks: clean.
+  The card was faintly translucent (PLAY bled through behind Later) → opaque.
+three things wrong, still: on a fully busy hub the chip reads as part of whichever row it lands in; two cards would be
+  needed if two shelves grant at once (it shows the newest and says "and 1 more"); the toast on a mid round grant still
+  crosses a wordmark on title-as-hub games.

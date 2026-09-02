@@ -30,6 +30,9 @@ A game in a family (card, board, …) unlocks the family shelf on top of its own
 ## What the generator does with a messy drop
 Folder names resolve exactly, by slug, by family alias, by a unique contains hit either way, or by an entry in `music-folder-aliases.json`; else UNMAPPED and reported. A subfolder inside a game folder maps to the game and becomes a `note` on the track (`Pit bike rally/Menu and shop song/…`). Byte-identical files on one shelf are skipped (Drive duplicates, double exports); a loose root file that duplicates a shelved one is reported as such. `01 `, `02 ` prefixes order tracks and are stripped from titles.
 
+## The moment (P11)
+At boot, a fresh song (or one earned mid round in any game last time) gets a bottom sheet: Congratulations, the title, the shelf, art only if the track has any, **Listen now** / **Later**. Listen now loads the shared player on demand and plays that song. Mid round, a song gets the small toast and its card next time. Every game carries one uniform **♫ Music** chip (48px, a free corner, never bottom right) that opens the same studio player the portal has; the native shells keep their header button instead.
+
 ## Tier 1, for a game that wants a real milestone (not built into any game yet)
 `SWSMusic.unlock('<shelf slug>', '<track id>')` grants that track and toasts. Ids are in `music-catalog.js`. One line, on the event.
 

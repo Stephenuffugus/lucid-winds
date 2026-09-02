@@ -31,24 +31,52 @@ async function boot(g, reduced) {
   await page.setRequestInterception(true);
   page.on("request", r => { if (/\/music-catalog\.js(\?|$)/.test(r.url())) r.respond({ status: 200, contentType: "application/javascript", body: CATSRC }); else r.continue(); });
   await page.goto("http://127.0.0.1:8777" + g.url, { waitUntil: "domcontentloaded", timeout: 45000 });
-  await new Promise(r => setTimeout(r, 700));
+  await new Promise(r => setTimeout(r, 2200));   // the chip places ~900ms after load, once the HUD exists
+  /* P11: measure the CARD and the CHIP on the real page before dismissing the card */
+  const moment = await page.evaluate(() => {
+    const rect = (el) => { const r = el.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height, b: r.bottom, r: r.right }; };
+    const card = document.getElementById("sws-music-card"), chip = document.getElementById("sws-music-chip"), shellBtn = document.getElementById("shell-music-btn");
+    const listen = document.getElementById("sws-music-listen"), later = document.getElementById("sws-music-later");
+    /* a control that covers 90%+ of the viewport is a backdrop (a full screen canvas), which the corner search rightly
+       looks through; only smaller controls count as collisions */
+    const area = innerWidth * innerHeight;
+    const controls = [...document.querySelectorAll("button,a,[role=button],canvas")].filter(e => { const r = e.getBoundingClientRect(); return e !== chip && !(card && card.contains(e)) && r.width > 4 && r.width * r.height < area * 0.9; });
+    const hits = (el) => { if (!el) return []; const a = rect(el); return controls.filter(c => { const b = rect(c); return a.x < b.r && a.r > b.x && a.y < b.b && a.b > b.y; }).map(c => (c.id || c.tagName) + ":" + (c.textContent || "").trim().slice(0, 12)); };
+    return { card: !!card, cardText: card ? card.textContent : "", cardRect: card ? rect(card) : null, listen: listen ? rect(listen) : null, later: later ? rect(later) : null,
+      chip: chip ? rect(chip) : null, chipHits: hits(chip), shellBtn: !!shellBtn, chipText: chip ? chip.textContent : "" };
+  });
+  if (moment.card) await page.screenshot({ path: SHOTS + "/" + g.id + "-card.png" });
+  await page.evaluate(() => { const b = document.getElementById("sws-music-later"); if (b) b.click(); });
+  await new Promise(r => setTimeout(r, 150));
   const before = await page.evaluate(() => !!document.getElementById("sws-music-toast"));
-  /* a synthetic pointerdown on document: opens the toast gate without hitting any game control */
-  await page.evaluate(() => document.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })));
+  /* a deliberate Tier 1 grant makes a toast (mid round style) so its geometry can still be measured */
+  await page.evaluate(() => { try { const c = window.LW_MUSIC_CATALOG; const sh = c.shelves.find(s => s.games.includes(window.SWSMusic.id())); if (sh) window.SWSMusic.unlock(sh.slug, sh.tracks[sh.tracks.length - 1].id); } catch (e) {} });
   await new Promise(r => setTimeout(r, 120));
   const m = await page.evaluate(() => {
     const el = document.getElementById("sws-music-toast"); if (!el) return null;
     const cs = getComputedStyle(el), r = el.getBoundingClientRect();
     return { text: el.textContent, pe: cs.pointerEvents, pos: cs.position, h: r.height, top: r.top, w: r.width, cx: r.left + r.width / 2, transition: cs.transitionProperty, animation: cs.animationName };
   });
-  return { ctx, page, m, before };
+  return { ctx, page, m, before, moment };
 }
 
 for (const g of GAMES) {
-  const { ctx, page, m, before } = await boot(g, false);
-  if (g.shelf) t(g.id + "  no toast before the first interaction", !before);
+  const { ctx, page, m, before, moment } = await boot(g, false);
+  if (g.shelf) {
+    t(g.id + "  the CARD is up at boot", moment.card);
+    t(g.id + "  card copy: Congratulations + no dash of any kind", /Congratulations/.test(moment.cardText) && !/[-–—]/.test(moment.cardText));
+    t(g.id + "  card sits inside the viewport at the bottom (" + (moment.cardRect ? Math.round(moment.cardRect.b) : "?") + ")", moment.cardRect && moment.cardRect.b <= 667.5 && moment.cardRect.y >= 0 && moment.cardRect.w >= 374);
+    t(g.id + "  Listen now and Later are each 48px+ tall, measured (" + (moment.listen ? Math.round(moment.listen.h) : "?") + "/" + (moment.later ? Math.round(moment.later.h) : "?") + ")", moment.listen && moment.later && moment.listen.h >= 48 && moment.later.h >= 48);
+    t(g.id + "  no toast before the card is dismissed", !before);
+  }
+  if (moment.chip) {
+    t(g.id + "  chip 48px+ tall and 96px+ wide, measured (" + Math.round(moment.chip.w) + "x" + Math.round(moment.chip.h) + ")", moment.chip.h >= 48 && moment.chip.w >= 96);
+    t(g.id + "  chip not in the bottom right (feedback fab) corner", !(moment.chip.r > 375 - 60 && moment.chip.b > 667 - 60));
+    t(g.id + "  chip overlaps no game control", moment.chipHits.length === 0, moment.chipHits.join(", "));
+    t(g.id + "  chip says Music, no dash", /Music/.test(moment.chipText) && !/[-–—]/.test(moment.chipText));
+  } else t(g.id + "  no chip only because the shell has its own button", moment.shellBtn);
   if (!g.shelf) { t(g.id + "  no shelf: no toast at all", !m); await page.screenshot({ path: SHOTS + "/" + g.id + ".png" }); await ctx.close(); continue; }
-  t(g.id + "  toast present after the first tap", !!m);
+  t(g.id + "  a mid round grant toasts (after the card was dismissed)", !!m);
   if (m) {
     t(g.id + "  pointer-events none, position fixed", m.pe === "none" && m.pos === "fixed");
     t(g.id + "  rendered height <= 44px (" + m.h.toFixed(1) + ")", m.h <= 44);

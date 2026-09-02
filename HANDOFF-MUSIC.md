@@ -262,10 +262,26 @@ The generator, for each game folder in `docs/music-intake.json`:
 
 **On every boot, for every ledger entry whose id exists in the catalog, the module overwrites that entry's `title`, `src`, and `game` from the catalog.** The fold uses entries as is (`music-tracks.js:137`); this is how a moved host or a fixed title reaches players who unlocked the song a month ago. Entries whose id is NOT in the catalog are left exactly as they are (LAW 14).
 
-### 6.7 The moment. Tier 0 is a toast and a badge, nothing else.
-- **In the game:** one toast. `position:fixed; top:12px; left:50%; transform:translateX(-50%)`, `pointer-events:none`, `z-index:2147483000`, max height 44px, no dashes: `♫ New song: <title>`. Shows for 3 seconds, one at a time, queued, never while `document.hidden`, no slide when `prefers-reduced-motion`. It is the ONLY DOM the module ever adds to a game, it is inert, and it removes itself. No reveal card, no modal, no button. Those live in the player, not in 117 pages you do not control.
-- **In the player:** the fold already registers the shelf at the top and `music-player.js` already pulses its button until `sws_music_seen` is set (`music-player.js:211`). You add nothing there.
-- The toast also fires for rung 0 on the title screen. That is the gift.
+### 6.7 The moment. (Revised at P11, after Stephen played Rabbit Ronin.)
+Stephen, 2026-09-02: *"i unlocked a song but there didnt seem to be any way to even play the damn thing"* and *"i like a
+uniform music button across everything"*. Tier 0's toast-only moment dead-ended in the 95 satellites that never carried
+the shared player. So:
+
+- **The card, at boot only.** When a song is fresh at boot, or was earned mid round in any game last time, a bottom sheet:
+  "Congratulations, you unlocked a song" (and N more), the title, "<shelf> · Stephen", the track's art if the catalog has
+  an `art` file for it and a ♫ tile if not (never fabricated), and two 48px buttons: **Listen now** / **Later**. Listen now
+  loads `music-tracks.js` then `music-player.js` on demand (once), inits the shared player with the chip as its button,
+  and plays that track by its index in `LW_TRACKS`. Either button marks the song revealed (`sws_music_revealed`, so a
+  cloud restore never re-congratulates) and clears it from `sws_music_pending_reveal`.
+- **Mid round: toast + pending.** A rung crossed during play, or a Tier 1 `unlock()`, shows the inert toast and is added
+  to `sws_music_pending_reveal` (read-modify-write). Its card comes at the next boot of ANY game, the only moment the
+  module can be certain nobody is mid play without a game hook.
+- **The chip, everywhere.** One "♫ Music" button, 48px tall, 96px+ wide, house palette, placed by the same free-corner
+  search `arcade-exit.js` uses (copied; it is not exported), never bottom right, skipped only where the native shell
+  already has `#shell-music-btn` or a player is already present. Tap → loads the player on demand → opens the drawer,
+  which closes back to the game. `SWSMusic.openPlayer()` does the same for a game that wants its own control.
+- One `<style id="sws-music-style">` in head; body gains only the toast, the chip, the card (and the player's own drawer
+  and audio element once opened).
 
 ### 6.8 Guarantees the module makes, and the gates that hold it to them
 | Guarantee | Gate |

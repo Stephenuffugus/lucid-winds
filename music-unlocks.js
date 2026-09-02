@@ -20,8 +20,13 @@
  *              · on a FAMILY shelf, distinct games of the family opened >= 1+breadthPer*i (the more card games you
  *              try, the more you unlock). Numbers come from the catalog's `ladder` (music-ladder.json), defaults below.
  *   off        ?nomusic=1 in the URL, or no catalog, or no identity, or a shelf-less game: no timers.
- *   the toast  waits for the player's FIRST tap or key (P7, after looking: top-centre at t=0 sits on
- *              every game's title). The grant itself never waits; the shelf is there immediately.
+ *   the moment (P11, Stephen after playing Rabbit Ronin: "i unlocked a song but there didnt seem to be any way to
+ *              even play the damn thing"): at BOOT, a fresh or pending song gets a CARD: Congratulations, you unlocked
+ *              <title>, <shelf>, art only if the track has any, Listen now / Later. Listen now loads the shared
+ *              manifest + player on demand and plays that track. A song earned MID ROUND gets the small toast and
+ *              its card at the next boot of any game, the only moment we can be sure nobody is mid play.
+ *   the chip   one uniform "Music" button, 48px, in a free corner (the exit button's own search, copied),
+ *              never bottom right, in every game that lacks the native shell's button. Opens the shared player.
  *
  * ES5 on purpose: this runs inside a hundred pages of varying age. No const,
  * no let, no arrows, no template strings. Everything is wrapped; nothing throws.
@@ -31,8 +36,9 @@
   if (window.SWSMusic) return;
 
   var LS_PROG = 'sws_music_progress', LS_LEDGER = 'sws_game_unlocks', TOAST_ID = 'sws-music-toast';
+  var LS_PENDING = 'sws_music_pending_reveal', LS_REVEALED = 'sws_music_revealed', CARD_ID = 'sws-music-card', CHIP_ID = 'sws-music-chip';
   var TICK_MS = 5000, TOAST_MS = 3000, SESSION_SECS = 60, MAX_DAYS = 366;
-  var S = { id: null, name: null, booted: false, timer: null, loadSecs: 0, sessionCounted: false, queue: [], showing: false, ticking: false, interacted: false };
+  var S = { id: null, name: null, booted: false, timer: null, loadSecs: 0, sessionCounted: false, queue: [], showing: false, ticking: false, interacted: false, styled: false, card: null, chip: null, playerCbs: [] };
 
   /* ---- storage, defensively ---------------------------------------------- */
   function lsGet(k) { try { var v = window.localStorage.getItem(k); return v == null ? null : String(v); } catch (e) { return null; } }
@@ -95,6 +101,146 @@
     return fresh;
   }
 
+  /* ---- pending reveals and revealed songs: small global lists, read-modify-write (LAW 1) ---- */
+  function readList(k) { var l = parse(lsGet(k), []); return (l && typeof l.length === 'number') ? l : []; }
+  function addPending(e) { var l = readList(LS_PENDING), i; for (i = 0; i < l.length; i++) if (l[i] && l[i].id === e.id) return; l.push({ id: e.id, title: e.title, game: e.game }); lsSet(LS_PENDING, JSON.stringify(l)); }
+  function dropPending(id) { var l = readList(LS_PENDING), out = [], i; for (i = 0; i < l.length; i++) if (l[i] && l[i].id !== id) out.push(l[i]); lsSet(LS_PENDING, JSON.stringify(out)); }
+  function isRevealed(id) { return readList(LS_REVEALED).indexOf(id) >= 0; }
+  function markRevealed(id) { var l = readList(LS_REVEALED); if (l.indexOf(id) < 0) { l.push(id); if (l.length > 500) l.splice(0, l.length - 500); lsSet(LS_REVEALED, JSON.stringify(l)); } dropPending(id); }
+
+  /* ---- the shared manifest + player, loaded on demand, once ---- */
+  function loadScript(src, cb) { try { var d = window.document, el = d.createElement('script'); el.src = src; el.async = true; el.onload = cb; el.onerror = cb; (d.head || d.documentElement).appendChild(el); } catch (e) { cb(); } }
+  function ensurePlayer(cb) {
+    if (window.SWS_MUSIC) return cb(window.SWS_MUSIC);
+    S.playerCbs.push(cb); if (S.playerCbs.length > 1) return;
+    addChip();                                                        /* Listen now may come before the settle delay: place it now */
+    function done() { var api = null; try { var d = window.document, btn = S.chip || d.getElementById('shell-music-btn') || null; if (window.SWSPlayer && window.SWSPlayer.init) api = window.SWSPlayer.init(btn ? { button: btn } : {}); } catch (e) {} api = api || window.SWS_MUSIC || null; var cbs = S.playerCbs; S.playerCbs = []; var i; for (i = 0; i < cbs.length; i++) { try { cbs[i](api); } catch (e) {} } }
+    function withTracks() { try { if (typeof window.LW_FOLD_GAME_UNLOCKS === 'function') window.LW_FOLD_GAME_UNLOCKS(); } catch (e) {} if (window.SWSPlayer) done(); else loadScript('/music-player.js', done); }
+    if (window.LW_TRACKS) withTracks(); else loadScript('/music-tracks.js', withTracks);
+  }
+  function playById(id) { ensurePlayer(function (api) { try { if (!api || !api.play) return; var L = window.LW_TRACKS || [], i; for (i = 0; i < L.length; i++) if (L[i] && L[i].id === id) { api.play(i); return; } } catch (e) {} }); }
+
+  /* ---- one style element for the card and the chip ---- */
+  function ensureStyle() {
+    if (S.styled) return; S.styled = true;
+    try { var d = window.document; var st = d.createElement('style'); st.id = 'sws-music-style';
+      st.textContent = '#' + CARD_ID + '{position:fixed;left:0;right:0;bottom:0;z-index:2147482000;box-sizing:border-box;padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));background:#0d100c;color:#e8dcc8;border-top:1px solid rgba(200,168,75,0.7);border-radius:22px 22px 0 0;box-shadow:0 -10px 30px rgba(0,0,0,0.6);font-family:system-ui,sans-serif;max-height:60vh;overflow:auto}'
+        + '#' + CARD_ID + ' .swsm-eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#c8a84b}'
+        + '#' + CARD_ID + ' .swsm-row{display:flex;align-items:center;gap:14px;margin:10px 0 14px}'
+        + '#' + CARD_ID + ' .swsm-tile{flex:0 0 64px;width:64px;height:64px;border-radius:14px;background:rgba(122,179,86,0.16);border:1px solid rgba(122,179,86,0.5);display:flex;align-items:center;justify-content:center;font-size:30px;color:#7ab356}'
+        + '#' + CARD_ID + ' .swsm-tile img{width:100%;height:100%;object-fit:cover;border-radius:14px}'
+        + '#' + CARD_ID + ' .swsm-title{font-size:20px;font-weight:700;line-height:1.2;color:#e8dcc8}'
+        + '#' + CARD_ID + ' .swsm-sub{font-size:14px;color:#8a9178;margin-top:4px}'
+        + '#' + CARD_ID + ' .swsm-btns{display:flex;gap:10px}'
+        + '#' + CARD_ID + ' button{flex:1;min-height:48px;border-radius:14px;font-size:16px;font-weight:600;font-family:inherit;cursor:pointer;border:1px solid rgba(200,168,75,0.7);background:transparent;color:#e8dcc8}'
+        + '#' + CARD_ID + ' button.swsm-primary{background:#c8a84b;color:#0d100c;border-color:#c8a84b}'
+        + '#' + CHIP_ID + '{position:fixed;z-index:2147481000;height:48px;min-width:96px;padding:0 16px;border-radius:14px;border:1px solid rgba(200,168,75,0.6);background:rgba(13,16,12,0.86);color:#e8dcc8;font:600 14px system-ui,sans-serif;white-space:nowrap;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,0.5)}';
+      (d.head || d.documentElement).appendChild(st); } catch (e) {}
+  }
+
+  /* ---- the chip: the exit button's free-corner search, copied (arcade-exit.js does not export it) ---- */
+  /* is there rendered text under (x, y)? Check the element's OWN text nodes' rectangles; a header bar whose title sits
+     150px away must not make its blank stretch score as busy. */
+  function textAt(el, x, y) {
+    try {
+      var d = window.document, n = el.childNodes, i, j, rects, range;
+      for (i = 0; i < n.length; i++) {
+        if (n[i].nodeType !== 3 || !(n[i].nodeValue || '').replace(/\s/g, '')) continue;
+        range = d.createRange(); range.selectNodeContents(n[i]); rects = range.getClientRects();
+        for (j = 0; j < rects.length; j++) if (x >= rects[j].left - 4 && x <= rects[j].right + 4 && y >= rects[j].top - 4 && y <= rects[j].bottom + 4) return true;
+      }
+    } catch (e) { return !!(el.textContent || '').replace(/\s/g, ''); }
+    return false;
+  }
+  function occupancy(x, y) {
+    try {
+      var d = window.document, stack = d.elementsFromPoint ? d.elementsFromPoint(x, y) : [d.elementFromPoint(x, y)], area = window.innerWidth * window.innerHeight, i;
+      for (i = 0; i < stack.length; i++) {
+        var el = stack[i]; if (!el || el.id === CHIP_ID || el.id === CARD_ID || (el.closest && el.closest('#' + CARD_ID))) continue;   /* look through our own card */
+        if (el === d.body || el === d.documentElement) return 0;
+        var r = el.getBoundingClientRect(); if (r.width * r.height >= area * 0.9) continue;
+        if (el.closest && el.closest('button,a,[role="button"],input,select,canvas,[onclick]')) return 3;
+        var cs = window.getComputedStyle(el);
+        if (cs && cs.cursor === 'pointer') return 3;                     /* a div that acts as a button (Deepwell's close glyph) */
+        if (textAt(el, x, y)) return 2;                                   /* text AT THE POINT, not anywhere in the element */
+        return ((cs.backgroundImage && cs.backgroundImage !== 'none') || (cs.backgroundColor && cs.backgroundColor !== 'transparent' && cs.backgroundColor.replace(/\s/g, '') !== 'rgba(0,0,0,0)')) ? 1 : 0;
+      }
+    } catch (e) {}
+    return 0;
+  }
+  /* a GRID along the top edge (left to right), then the bottom edge (left to right, stopping short of the feedback fab's
+     corner), then the side edges at mid height. Three corners were too coarse: on a busy hub every corner scores, and the
+     least bad corner was still somebody's close button. The chip is 97x48; each candidate is its centre. */
+  function freeCorner() {
+    var W = window.innerWidth || 375, H = window.innerHeight || 667, spots = [], x, i, sc;
+    var T = 'top:calc(10px + env(safe-area-inset-top,0px));', B = 'bottom:calc(10px + env(safe-area-inset-bottom,0px));';
+    for (x = 10; x + 97 <= W - 10; x += 48) spots.push({ css: 'left:' + x + 'px;' + T, x: x + 48, y: 34 });
+    for (x = 10; x + 97 <= W - 130; x += 48) spots.push({ css: 'left:' + x + 'px;' + B, x: x + 48, y: H - 34 });   /* never the bottom right: the feedback fab's */
+    spots.push({ css: 'left:10px;top:' + Math.round(H / 2 - 24) + 'px;', x: 58, y: H / 2 });
+    spots.push({ css: 'right:10px;top:' + Math.round(H / 2 - 24) + 'px;', x: W - 58, y: H / 2 });
+    /* the chip is 97px wide: score its whole footprint (left end, centre, right end), worst point wins */
+    /* the chip is 97x48: score a 3x3 grid over its footprint, worst point wins (a centre line alone let it clip a title's top) */
+    function footprint(sp) { var worst = 0, dx, dy, sc; for (dy = -16; dy <= 16; dy += 16) for (dx = -40; dx <= 40; dx += 40) { sc = occupancy(sp.x + dx, sp.y + dy); if (sc > worst) worst = sc; if (worst >= 3) return worst; } return worst; }
+    var best = spots[0], bestScore = Infinity;
+    for (i = 0; i < spots.length; i++) { sc = footprint(spots[i]); if (sc === 0) return spots[i].css; if (sc < bestScore) { bestScore = sc; best = spots[i]; } }
+    return best.css;
+  }
+  function placeChipLater() {
+    try {
+      var d = window.document, CHIP_DELAY = 900;
+      if (d.readyState === 'complete') window.setTimeout(addChip, CHIP_DELAY);
+      else window.addEventListener('load', function () { window.setTimeout(addChip, CHIP_DELAY); });
+    } catch (e) {}
+  }
+  function addChip() {
+    try {
+      var d = window.document; if (!d.body || S.chip) return;
+      if (d.getElementById('shell-music-btn') || d.getElementById(CHIP_ID) || window.SWS_MUSIC || window.SWSPlayer) return;   /* the game already has the player's button */
+      S.chipPlaced = true;
+      ensureStyle();
+      var b = d.createElement('button'); b.id = CHIP_ID; b.type = 'button'; b.textContent = '\u266B Music'; b.setAttribute('aria-label', 'Open the soundtrack');
+      var corner = freeCorner(); b.setAttribute('data-corner', corner); b.setAttribute('style', corner); b.style.height = '48px';
+      b.addEventListener('click', function () { ensurePlayer(function (api) { try { if (api && api.open) api.open(); } catch (e) {} }); });
+      d.body.appendChild(b); S.chip = b;
+    } catch (e) {}
+  }
+
+  /* ---- the card: Congratulations, you unlocked <title>. Listen now / Later. Only ever at boot. ---- */
+  function trackById(id) { var c = catalog(), i, j; if (!c) return null; for (i = 0; i < c.shelves.length; i++) for (j = 0; j < c.shelves[i].tracks.length; j++) if (c.shelves[i].tracks[j].id === id) return { s: c.shelves[i], t: c.shelves[i].tracks[j] }; return null; }
+  function showCard(e, more) {
+    try {
+      var d = window.document; if (!d.body || S.card) return;
+      ensureStyle();
+      var hit = trackById(e.id), art = hit && hit.t.art ? (catalog().base + hit.s.slug + '/' + hit.t.art) : null;
+      var card = d.createElement('div'); card.id = CARD_ID; card.setAttribute('role', 'dialog'); card.setAttribute('aria-label', 'New song unlocked');
+      card.style.position = 'fixed'; card.style.bottom = '0px'; card.style.pointerEvents = 'auto';
+      var eyebrow = d.createElement('div'); eyebrow.className = 'swsm-eyebrow'; eyebrow.textContent = 'Congratulations, you unlocked a song' + (more > 0 ? ' and ' + more + ' more' : ''); card.appendChild(eyebrow);
+      var row = d.createElement('div'); row.className = 'swsm-row';
+      var tile = d.createElement('div'); tile.className = 'swsm-tile';
+      if (art) { var img = d.createElement('img'); img.id = 'sws-music-art'; img.src = art; img.alt = ''; tile.appendChild(img); } else { tile.textContent = '\u266B'; }
+      row.appendChild(tile);
+      var txt = d.createElement('div'); var title = d.createElement('div'); title.className = 'swsm-title'; title.textContent = e.title; var sub = d.createElement('div'); sub.className = 'swsm-sub'; sub.textContent = e.game + ' \u00B7 Stephen'; txt.appendChild(title); txt.appendChild(sub); row.appendChild(txt);
+      card.appendChild(row);
+      var btns = d.createElement('div'); btns.className = 'swsm-btns';
+      var listen = d.createElement('button'); listen.id = 'sws-music-listen'; listen.type = 'button'; listen.className = 'swsm-primary'; listen.textContent = 'Listen now';
+      var later = d.createElement('button'); later.id = 'sws-music-later'; later.type = 'button'; later.textContent = 'Later';
+      function close() { try { card.remove(); } catch (x) {} S.card = null; markRevealed(e.id); S.interacted = true; showNext(); }
+      listen.addEventListener('click', function () { close(); playById(e.id); });
+      later.addEventListener('click', function () { close(); });
+      btns.appendChild(listen); btns.appendChild(later); card.appendChild(btns);
+      d.body.appendChild(card); S.card = card;
+    } catch (x) {}
+  }
+  /* at boot: the newest fresh grant, else the newest pending reveal from any game; never mid round */
+  function revealAtBoot(fresh) {
+    var list = [], i, pend = readList(LS_PENDING);
+    for (i = 0; i < fresh.length; i++) if (!isRevealed(fresh[i].id)) list.push(fresh[i]);
+    for (i = 0; i < pend.length; i++) if (pend[i] && pend[i].id && !isRevealed(pend[i].id)) list.push(pend[i]);
+    if (!list.length) return false;
+    showCard(list[list.length - 1], list.length - 1);
+    return true;
+  }
+
   /* ---- the toast: one inert pill, three seconds, queued, never while hidden ---- */
   function reduced() { try { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); } catch (e) { return false; } }
   function showNext() {
@@ -129,7 +275,7 @@
       var d = window.document; if (d && d.hidden) return;
       S.loadSecs += TICK_MS / 1000;
       writeProgress(function (p) { p.secs += TICK_MS / 1000; if (!S.sessionCounted && S.loadSecs >= SESSION_SECS) { p.sessions += 1; S.sessionCounted = true; } });
-      var fresh = rebuild(), i; for (i = 0; i < fresh.length; i++) toast(fresh[i].title);
+      var fresh = rebuild(), i; for (i = 0; i < fresh.length; i++) { addPending(fresh[i]); toast(fresh[i].title); }
     } catch (e) {}
   }
   function startTicks() { if (S.timer != null) return; S.timer = window.setInterval(tick, TICK_MS); }
@@ -150,8 +296,13 @@
       if (!catalog()) { log('no live catalog, idle'); return; }
       armInteraction();
       writeProgress(function (p) { var t = today(); if (p.days.indexOf(t) < 0) { p.days.push(t); if (p.days.length > MAX_DAYS) p.days.splice(0, p.days.length - MAX_DAYS); } });
-      var fresh = rebuild(), i; for (i = 0; i < fresh.length; i++) toast(fresh[i].title);
-      if (!shelvesFor(S.id).length) { log('no shelf for ' + S.id + ', visit recorded, idle'); return; }
+      var fresh = rebuild();
+      /* the chip waits for the page to SETTLE: at DOMContentLoaded most games have not drawn their HUD yet, and a corner
+         that measures empty now gets painted under a moment later (Deepwell's close button, P11 LOOK). */
+      placeChipLater();
+      /* the moment: a card at boot for the fresh song, or one earned mid round in ANY game last time; no toast for it */
+      if (!revealAtBoot(fresh)) { var i; for (i = 0; i < fresh.length; i++) toast(fresh[i].title); }
+      if (!shelvesFor(S.id).length) { log('no shelf for ' + S.id + ', visit recorded, no ticks'); return; }
       S.ticking = true;
       try { window.document.addEventListener('visibilitychange', onVisibility); } catch (e) {}
       if (!(window.document && window.document.hidden)) startTicks();
@@ -177,11 +328,13 @@
         for (i = 0; i < c.shelves.length && !found; i++) { var s = c.shelves[i]; if (shelfSlug && s.slug !== shelfSlug) continue; for (j = 0; j < s.tracks.length; j++) if (s.tracks[j].id === trackId) { found = s.tracks[j]; break; } }
         if (!found) return false;
         writeProgress(function (p) { if (p.unlocked.indexOf(trackId) < 0) p.unlocked.push(trackId); });
-        var fresh = rebuild(); for (i = 0; i < fresh.length; i++) toast(fresh[i].title);
+        var fresh = rebuild(); for (i = 0; i < fresh.length; i++) { addPending(fresh[i]); toast(fresh[i].title); }
         return true;
       } catch (e) { return false; }
     },
-    id: function () { return S.id; }
+    id: function () { return S.id; },
+    /* a game may open the shared player itself (the uniform chip does the same) */
+    openPlayer: function () { try { ensurePlayer(function (api) { try { if (api && api.open) api.open(); } catch (e) {} }); } catch (e) {} }
   };
   window.SWSMusic = api;
 

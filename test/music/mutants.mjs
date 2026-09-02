@@ -28,6 +28,12 @@ const MUTANTS = [
   ["keep ticking while hidden",              "var d = window.document; if (d && d.hidden) return;\n      S.loadSecs",  "var d = window.document;\n      S.loadSecs"],
   ["drop family breadth from the ladder",     "    if (shelf && shelf.kind === 'family' && breadthOf(shelf, all) >= 1 + L.breadthPer * i) return true;\n", "\n"],
   ["ignore catalog.ladder (hardcode defaults)", "function ladder() { var c = catalog(), L = (c && c.ladder) || {}, out = {}, k;", "function ladder() { var c = null, L = {}, out = {}, k;"],
+  /* P11, the moment */
+  ["card a mid round unlock (never interrupt play)", "      var fresh = rebuild(), i; for (i = 0; i < fresh.length; i++) { addPending(fresh[i]); toast(fresh[i].title); }\n    } catch (e) {}\n  }\n  function startTicks()", "      var fresh = rebuild(), i; if (fresh.length) showCard(fresh[0], 0);\n    } catch (e) {}\n  }\n  function startTicks()"],
+  ["forget a mid round unlock (pending not stored)", "function addPending(e) { var l = readList(LS_PENDING), i;", "function addPending(e) { return; var l = readList(LS_PENDING), i;"],
+  ["put the chip in the bottom right corner", "    var best = spots[0], bestScore = Infinity;\n    for (i = 0; i < spots.length; i++) { sc = footprint(spots[i]); if (sc === 0) return spots[i].css;", "    var best = spots[0], bestScore = Infinity; return 'right:10px;' + B;\n    for (i = 0; i < spots.length; i++) { sc = footprint(spots[i]); if (sc === 0) return spots[i].css;"],
+  ["Listen now does not play the song", "for (i = 0; i < L.length; i++) if (L[i] && L[i].id === id) { api.play(i); return; }", "for (i = 0; i < L.length; i++) if (L[i] && L[i].id === id) { return; }"],
+  ["card a song the player already dismissed", "for (i = 0; i < fresh.length; i++) if (!isRevealed(fresh[i].id)) list.push(fresh[i]);", "for (i = 0; i < fresh.length; i++) list.push(fresh[i]);"],
 ];
 
 let killed = 0, survived = 0, invalid = 0;
