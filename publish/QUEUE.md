@@ -88,38 +88,59 @@ with size and hookability as tie breakers.
 
 | # | Game | Folder | MB | Round end hook | Why it is on this list |
 |---|---|---|---|---|---|
-| 1 | Bloom Breaker | `bloom-breaker` | 0.23 | `gameOver` | Brick breaker is the single most durable genre on both networks. 60 levels, 24 powerups and a boss, in 235 KB. Boots straight to PLAY with no instruction wall. |
-| 2 | Berry Vine | `berry-vine` | 5.94 | `winGame` | Bubble shooter, the other evergreen. The title art is the best in the catalogue and needs no explanation in five languages. |
-| 3 | Seed Pot | `seed-pot` | 10.65 | `endRun` | Drop and merge, the genre that is actually trending right now. One finger, endless, obvious in one frame. |
-| 4 | Petal Slice | `petal-slice` | 5.36 | `endRun` | Swipe to slice. Reads instantly at 200x120, which is the size that decides whether anyone clicks. |
-| 5 | Dew Snip | `dew-snip` | 4.70 | `win` | Cut the rope with a dewdrop. Physics puzzle with a real level ladder, and the art is premium. |
-| 6 | Burr Blast | `burr-blast` | 9.96 | `winLevel` | Physics slingshot into rickety forts. Proven genre, satisfying failure, four earn moments already marked in the source. |
-| 7 | Bramblewick | `bramblewick` | 4.87 | `endRun` | A survivors run. The hottest genre of the last two years and we have one, at 5 MB. |
-| 8 | Picnic Panic | `picnic-panic` | 0.17 | `endRun` | Galaga with a snapdragon. 174 KB, pure arcade, no economy anywhere in it. |
-| 9 | Hexa Hive | `hexa-hive` | 0.11 | `gameOver` | Colour drop and match, endless, 112 KB. The lightest thing on the list and the fastest to load on a bad connection. |
-| 10 | Garden Guard | `garden-td` | 1.72 | `winLevel` | Tower defence. Nine towers, a wave ladder, and it is the only strategy shape in the ten. |
+| 1 | Bloom Breaker | `bloom-breaker` | 0.23 | `gameOver` | Brick breaker is the most durable genre on both networks. 60 levels, 24 powerups and a boss, in a 44 KB ZIP. Boots straight to PLAY with no instruction wall. |
+| 2 | Berry Vine | `berry-vine` | 5.94 | `showResults` | Bubble shooter, the other evergreen. The best title art in the catalogue and it needs no explanation in any language. |
+| 3 | Petal Slice | `petal-slice` | 5.36 | `endRun` | Swipe to slice. Reads instantly at 200x120, which is the size that decides whether anyone clicks. |
+| 4 | Dew Snip | `dew-snip` | 4.70 | `win` | Cut the rope with a dewdrop. A real level ladder and premium art. |
+| 5 | Picnic Panic | `picnic-panic` | 0.17 | `endRun` | Galaga with a snapdragon. 26 KB, pure arcade, no economy anywhere in it. |
+| 6 | Bubblenaut | `bubblenaut` | 0.26 | `gameOver` | Bubble Bobble across five worlds. The only platformer in the ten and it is 115 KB. |
+| 7 | Stop the Light | `stop-the-light` | 0.29 | `endRun` | One tap, press your luck, three fireflies and the run is over. The most instantly understood game we own. |
+| 8 | Nova Bloom | `nova-bloom` | 2.49 | `gameOver` | Twin stick starfield. Every enemy cleared plants a flower that charges the bomb. |
+| 9 | Garden Guard | `garden-td` | 1.72 | `winLevel` + `loseLevel` | Tower defence. Nine towers, a wave ladder, and the only strategy shape in the ten. |
+| 10 | Pong Arena | `pong` | 0.26 | `showResult` | Every pong that ever was, twelve career levels. An arcade classic costs a portal nothing to explain. |
 
-Total unbuilt weight of the ten: **43.7 MB** across 10 folders, every one under the
-20 MB ZIP ceiling before the builder strips anything.
+Total shipped weight of the twenty ZIPs: **40.9 MB**, the largest 5.98 MB, the
+smallest 26 KB. Every one is far under the 20 MB ceiling.
 
 **Why these ten and not ten others.** The catalogue's strength is botanical puzzle games,
-and a network catalogue full of ten quiet puzzlers converts badly. The ten above are
-eight different genres: brick breaker, bubble shooter, merge, slice, physics puzzle,
-physics slingshot, survivors, shoot em up, match drop, tower defence. Each one is a shape
-a player already knows, which is the only thing that survives a 200x120 thumbnail. Each
-one also ends: none of them is an idle game, a sandbox, or a tool.
+and a network catalogue full of ten quiet puzzlers converts badly. The ten above are ten
+different genres: brick breaker, bubble shooter, slice, physics puzzle, shoot em up,
+platformer, press your luck, twin stick, tower defence, pong. Each one is a shape a
+player already knows, which is the only thing that survives a 200x120 thumbnail.
 
-### Alternates, ranked, ready to swap in
+⭐ **And each one ENDS.** That turned out to be the criterion that did the real work.
+Four games were picked in the first pass and thrown out in the second for the same
+reason: a careless player cannot lose them. See "The four that could not be finished"
+below, which is a finding about the games, not about the harness.
 
-Held back only because the ten above cover their genre or beat them on art. Any of these
-is a build away if a network rejects one of the ten.
+### The four that could not be finished, and what that means
 
-| # | Game | MB | Hook | Note |
-|---|---|---|---|---|
-| 11 | `merge-blast` | 0.12 | `endRun` | 2048 by tapping. Loses to Seed Pot on art, wins on size. |
-| 12 | `bubblenaut` | 0.26 | `gameOver` | Bubble Bobble across five worlds. |
-| 13 | `nova-bloom` | 2.49 | `gameOver` | Twin stick. Loses to Picnic Panic only because Picnic Panic is 15x smaller. |
-| 14 | `grubtrap` | 4.64 | `gameOver` | Sokoban shove puzzle with the best title screen of the four. |
+These were on the first list and came off it in step 2, each after a recipe played them
+headless with real pointer events and could not reach a round end. Every one of them is
+a good game. That is the problem.
+
+| Game | What happened | Command and its last line |
+|---|---|---|
+| **Seed Pot** | Ten minutes and 1,500 dropped seeds left the pot **emptier** than one minute had, because merging clears more room than careless dropping fills. Its round end needs the pile over the rim for 2.5 continuous seconds (`G.overTime>2.5`). | `node publish/tools/pub_verify.mjs publish/dist/seed-pot-gd.zip --offline` → `FAIL seed-pot-gd: 2 assertion(s)` after `real 10m18s` |
+| **Hexa Hive** | Game over is a full comb (`if(!anyEmptyCell())`), but clearing a hive calls `advance()`, which does `G.level++; buildLevel()` and hands back an empty board. Four passes of the whole grid reached Hive 2 and score 1510 with the comb no fuller. | `node publish/tools/pub_verify.mjs publish/dist/hexa-hive-gd.zip --offline` → `FAIL hexa-hive-gd: 2 assertion(s)` |
+| **Merge Blast** | Reached level 10 and 14,294 points on random taps. The board refills faster than mismatches accumulate. | `node publish/tools/pub_verify.mjs publish/dist/merge-blast-gd.zip --offline` → `FAIL merge-blast-gd: 2 assertion(s)` |
+| **Inkbound** (`grubtrap`) | Passed once and failed three times. Shoving planters PENS the grubs by accident, so walking around the bed scores points instead of dying. `penned 1, grubs left 1, score 50, three lives intact.` | `node publish/tools/pub_verify.mjs publish/dist/grubtrap-gd.zip` → `FAIL grubtrap-gd: 2 assertion(s)` |
+
+⚖️ **This is worth Stephen's attention, and it is not a testing problem.** The builder
+puts the ad break on the round end, and both networks put it there too. A game whose
+round end a normal player reaches once an hour serves one ad an hour. Four of our
+strongest casual titles are built to be un-losable, which is lovely design and poor ad
+placement. If they are ever wanted on a network, they need a second break somewhere a
+player actually arrives at, a level clear or a milestone, not a game over.
+
+### Alternates still ready to swap in
+
+| Game | MB | Hook | Note |
+|---|---|---|---|
+| `hedgerow` | 5.21 | `gameOver` | Same shove genre as Inkbound and untested for the same risk. |
+| `spore-drift` | 2.66 | `_sbCapEarn` | Ambient drift, no named round end. |
+| `flatulence-fighter` | 0.15 | `gameOver` | A composure game, ends fast, and the joke is the sell. |
+| `frost-watch` | 3.40 | `win` | Hooks a win only, so a losing player would see no break. |
 
 ---
 
@@ -176,7 +197,113 @@ across languages on an international network (`fox-basket`, `bloomzap`, `mini-cr
 
 ---
 
-## Step 2 — the twenty ZIPs
+## Step 2 — the twenty ZIPs, every one played to its round end
 
-Filled in as each build is verified. See the builder-fix log at the bottom.
+```
+python3 scripts/pub_build.py satellites/<game> --target gd    (then --target gm)
+node publish/tools/pub_verify.mjs publish/dist/<game>-<target>.zip
+```
+
+`pub_verify` unzips the ZIP, serves it **from its own bare root on its own port** with
+nothing else on the origin, boots it in headless Chrome at 375x667 with touch on, runs
+the game's recipe in `publish/recipes/<game>.mjs`, and asserts:
+
+| | assertion |
+|---|---|
+| A | zero requests to lucidwinds.com or stephenuffugus.github.io |
+| B | zero 404s or failed loads of the ZIP's own files |
+| C | the network's SDK url and options block are in the shipped HTML, with a game id |
+| D | `window.__pubAd` exists, is **not** called before the round ends, and **is** called at it |
+| E | zero console errors and zero uncaught page errors |
+| F | no portal exit on screen, no Lucid Winds copy, no music unlock card, no brand in the title |
+| G | the recipe reached a round-over screen |
+| H | no horizontal overflow at 375x667; every tap target measured in rendered pixels |
+
+⛔ **The recipes are linted so they cannot cheat.** A recipe that reached the win screen
+by calling the game's own `gameOver()` would satisfy assertion D while proving nothing,
+because that is the function the ad is hooked to. `pub_verify` reads the recipe's source
+and fails the ZIP if it calls a round-end function, uses `.click()`, or dispatches
+events, and fails it again if the recipe never touches the screen at all.
+
+### Result: 20 of 20 PASS
+
+Run with the real network SDK live in the page, not stubbed.
+
+| ZIP | size | hook | round end reached | `__pubAd` at the end | result |
+|---|---|---|---|---|---|
+| `bloom-breaker-gd.zip` | 44 KB | `gameOver` | yes | 1 | **PASS** |
+| `bloom-breaker-gm.zip` | 44 KB | `gameOver` | yes | 1 | **PASS** |
+| `berry-vine-gd.zip` | 5,977 KB | `showResults` | yes | 1 | **PASS** |
+| `berry-vine-gm.zip` | 5,977 KB | `showResults` | yes | 1 | **PASS** |
+| `petal-slice-gd.zip` | 5,394 KB | `endRun` | yes | 1 | **PASS** |
+| `petal-slice-gm.zip` | 5,394 KB | `endRun` | yes | 1 | **PASS** |
+| `dew-snip-gd.zip` | 4,697 KB | `win` | yes | 1 | **PASS** |
+| `dew-snip-gm.zip` | 4,697 KB | `win` | yes | 1 | **PASS** |
+| `picnic-panic-gd.zip` | 26 KB | `endRun` | yes | 1 | **PASS** |
+| `picnic-panic-gm.zip` | 26 KB | `endRun` | yes | 1 | **PASS** |
+| `bubblenaut-gd.zip` | 115 KB | `gameOver` | yes | 1 | **PASS** |
+| `bubblenaut-gm.zip` | 115 KB | `gameOver` | yes | 1 | **PASS** |
+| `stop-the-light-gd.zip` | 204 KB | `endRun` | yes | 1 | **PASS** |
+| `stop-the-light-gm.zip` | 204 KB | `endRun` | yes | 1 | **PASS** |
+| `nova-bloom-gd.zip` | 2,442 KB | `gameOver` | yes | 1 | **PASS** |
+| `nova-bloom-gm.zip` | 2,443 KB | `gameOver` | yes | 1 | **PASS** |
+| `garden-td-gd.zip` | 1,477 KB | `winLevel + loseLevel` | yes | 1 | **PASS** |
+| `garden-td-gm.zip` | 1,477 KB | `winLevel + loseLevel` | yes | 1 | **PASS** |
+| `pong-gd.zip` | 50 KB | `showResult` | yes | 1 | **PASS** |
+| `pong-gm.zip` | 50 KB | `showResult` | yes | 1 | **PASS** |
+
+```
+$ for g in ...; do for t in gd gm; do node publish/tools/pub_verify.mjs publish/dist/$g-$t.zip; done; done
+PASS pong-gm  50 KB  ad at round end: 1
+```
+
+Total: **40.9 MB** across twenty ZIPs. Screenshots of every boot and every round end are
+in `publish/shots/`, one JSON of assertions beside each pair.
+
+### Two warnings that are recorded and not fixed
+
+- **`A 214x28` under 48 px, on all ten GameMonetize builds and none of the ten
+  GameDistribution ones.** It is an anchor the GameMonetize SDK injects into the page
+  itself. It is not ours and we cannot resize it.
+- **Bramblewick's 44 px buttons** were noted in step 1 and Bramblewick is no longer in
+  the ten, so the point is moot for this batch.
+
+### What failed, and what changed in the BUILDER because of it
+
+Every fix below is in `scripts/pub_build.py` and was re-run over every ZIP already built.
+Not one ZIP was edited by hand.
+
+| # | What the verifier found | What changed in the builder |
+|---|---|---|
+| BF1 | **`/music-unlocks.js` 404 in every ZIP, and a "CONGRATULATIONS, YOU UNLOCKED A SONG" card over the bottom third of every boot.** The file was added to 105 satellites on 2026-09-02; the builder's strip list was written in early August and names files one at a time. | After the named strips, drop **any** `<script src="/…">` or `<link href="/…">` whose file the copy does not contain. A rule that cannot be outrun by tomorrow's shell file. |
+| BF2 | **Picnic Panic still fetched `/sunbeam-sdk.js`** and every game in the fleet still fetched `/feedback.js`, because they build those loaders at run time: `s.src = "/sunbeam-sdk.js?v=7"; document.head.appendChild(s)`. No tag regex can see that, and the `onerror` handler swallowed the failure so the game looked fine. | Any absolute `.js` path in a **string literal** that the ZIP does not carry is rewritten to `data:text/javascript,`. It still assigns, still fires `onload`, and never leaves the page. |
+| BF3 | **The exit button survived in every build.** The old CSS hid `[onclick*="SWS_EXIT"]`; the fleet wires exits in JavaScript, so it matched almost nothing and shipped a live button reading "Sky Wolf Studio Arcade" that was also now dead. | Hide it four ways: the inline onclick, the id read out of the wiring (`el('exitBtn')`, `tap('b-exit')`, and Merge Blast's, which is wired two lines below where the element is fetched), the `.lw-exit` and `.swsback` classes, and `[data-go="exit"]`. Plus the aria labels, which are the one thing the fleet writes consistently. |
+| BF4 | **The midroll hooked 5 satellites out of 84.** The old list held four names in one declaration style, and its fallback rewrote `window._sbCapEarn&&window._sbCapEarn(` call sites, an idiom the fleet almost never uses: it writes `if(window._sbCapEarn) granted=window._sbCapEarn(n,tag)`. | Fifteen names in four declaration styles, **ordered by outcome coverage** so a function that runs on a win *and* a loss beats one that only runs on a win. Berry Vine declares both `winGame` and `showResults`; the first version hooked the win. Failing all of them, hook the game's own `window._sbCapEarn=function(n,tag){` definition, which 80 of 84 satellites carry identically. |
+| BF5 | **A win-only hook shows no ad to a player who loses,** and most players lose. Garden Guard has `winLevel` and nothing neutral. | When the chosen hook is win-only, hook the matching defeat function too (`loseLevel`, `loseGame`, `showLose`, …). Garden Guard now reports `winLevel`, plus the defeat function `loseLevel`. |
+| BF6 | **"Sky Wolf Studio · a Lucid Winds satellite"** on Bloom Breaker's menu, and Picnic Panic's `<title>` read "PICNIC PANIC · Garden Galaga · Lucid Winds Edition". | Take our other product's name out of the title and out of the visible copy. Text nodes only: script and style bodies are cut out first, because `a > b && c < d` looks exactly like a text node to a regex. |
+| BF7 | **"☀ +6 sunbeams" on Dew Snip's win screen** and "☀ no sunbeams this run" on Berry Vine's and Garden Guard's. `_sbCapEarn` is defined **inside each game**, not in the SDK we strip, and keeps its own cap in localStorage, so the publisher build still counted and printed the grant. The strings are built at run time, so no text pass can reach them. | A small observer in the injected head hides any leaf element whose text names the economy, whenever it appears. |
+| BF8 | 7 games over 20 MB were carrying an `art-drop/` folder of raw generated sheets that nothing in the game names: 63 MB of Nectar Drop's 89, 32 MB of Tonic Drop's 34. | Prune top-level folders no shipped html, js, css or json file mentions, and print what went. This is also what step 4 needs for Jimothy. |
+| BF9 | `sdk.showBanner !== 'undefined'` compares a function to the **string** "undefined" and is always true. It only ever worked because an outer `typeof` guard kept it away from a missing SDK. | A real `typeof … === 'function'` check, in both SDK adapters, so a partial SDK cannot throw inside a win screen. Also added `__pubAdCalls` and `__pubAdBreaks` counters, which is how assertion D is measured at all. |
+
+Two fixes went into the **harness** rather than the builder, and both were the harness
+lying rather than the build being wrong:
+
+- The recipe lint counted a recipe's own `meta.hook: "_sbCapEarn"` as the recipe calling
+  the game's code. It now reads the recipe's body, not its header.
+- The verifier flagged the words "Dew Snip" as economy copy, because the game is named
+  after the currency. The check now looks for "dew drops", never a bare "dew".
+
+### Two things a recipe taught us about driving a real game
+
+- **A touch that ENDS on a button activates it.** Bubblenaut's game over card opens under
+  the thumb that is holding the movement pad, so a 1.6 second hold released onto "Back"
+  and walked the harness politely back to the title screen. Twice, once per target. The
+  recipe now drives Bubblenaut with the A and D keys the game already documents, because
+  a key cannot mis-tap.
+- **Green offline is not green online.** Bloom Breaker passed with the SDK blocked and
+  failed with it live: the preroll delays the first frame, so the single early tap that
+  launched the ball landed before there was a ball, and the table sat on LAUNCH for the
+  whole run. Recipes now look for the affordance every pass instead of assuming a tap
+  took. Every number in the table above is from a run with the real SDK in the page.
+
 
