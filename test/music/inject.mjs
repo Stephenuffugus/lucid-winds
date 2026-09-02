@@ -15,7 +15,10 @@ import puppeteer from "puppeteer";
 import { catalog } from "../../scripts/catalog.mjs";
 
 const arg = (k) => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1].split(",").filter(Boolean) : null; };
-const CATSRC = readFileSync("/tmp/music-fixture/music-catalog.js", "utf8");
+/* --catalog <file> boots against another catalog (the REAL one, for a smoke); --force-live flips live:true in memory only */
+const catArg = process.argv.indexOf("--catalog");
+let CATSRC = readFileSync(catArg > 0 ? process.argv[catArg + 1] : "/tmp/music-fixture/music-catalog.js", "utf8");
+if (process.argv.includes("--force-live")) CATSRC = CATSRC.replace(/"live":\s*false/, '"live": true');
 const win = {}; runInNewContext(CATSRC, { window: win }); const CAT = win.LW_MUSIC_CATALOG;
 const cat = catalog();
 const shelfFor = (id) => CAT.shelves.find(s => s.games.includes(id)) || null;

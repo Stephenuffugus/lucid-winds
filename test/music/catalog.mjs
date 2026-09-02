@@ -35,16 +35,30 @@ t("fuzzy single hit: Flock -> flock-the-world, named Flock the World", !!shelf("
 t("fuzzy is logged as FUZZY", r1.log.some(l => /FUZZY/.test(l) && /Flock/.test(l)));
 t("fuzzy hits on two cards sharing one dir count as ONE: Chameleon -> abduct-a-chameleon", r1.log.some(l => /FUZZY/.test(l) && /Chameleon  /.test(l)));
 t("two folders to one shelf merge: abduct-a-chameleon has 3 tracks", shelf("abduct-a-chameleon") && shelf("abduct-a-chameleon").tracks.length === 3);
+{ const syn = { rows: [{ game: "Bubblenauts", file: "a.mp3", ext: "mp3", title: "a", bytes: 1, mb: 0, seconds: 1, kbps: 64, codec: "mp3", channels: 2, rate: 44100 },
+                        { game: "Word", file: "b.mp3", ext: "mp3", title: "b", bytes: 1, mb: 0, seconds: 1, kbps: 64, codec: "mp3", channels: 2, rate: 44100 }] };
+  const rr = generate({ intake: syn, existing: null, live: true });
+  t("reverse fuzzy: folder Bubblenauts contains the unique name Bubblenaut -> bubblenaut", !!rr.catalog.shelves.find(s => s.slug === "bubblenaut"));
+  t("reverse fuzzy needs 5+ chars and uniqueness: folder Word is UNMAPPED, not guessed", rr.unmapped.some(u => u.folder === "Word")); }
+{ const syn = { rows: [{ game: "Cosmi-cadets", file: "a.mp3", ext: "mp3", title: "a", bytes: 1, mb: 0, seconds: 1, kbps: 64, codec: "mp3", channels: 2, rate: 44100 },
+                        { game: "Quick-fire", file: "b.mp3", ext: "mp3", title: "b", bytes: 1, mb: 0, seconds: 1, kbps: 64, codec: "mp3", channels: 2, rate: 44100 }] };
+  const noAl = generate({ intake: syn, existing: null, live: true, aliases: {} });
+  t("without an alias a typo folder is UNMAPPED (Cosmi-cadets)", noAl.unmapped.some(u => u.folder === "Cosmi-cadets"));
+  const al = generate({ intake: syn, existing: null, live: true, aliases: { cosmicadets: "seed-flutter", quickfire: "action" } });
+  t("an explicit alias maps a folder to a game (Cosmi-cadets -> seed-flutter)", !!al.catalog.shelves.find(s => s.slug === "seed-flutter") && al.log.some(l => /alias/.test(l)));
+  t("an explicit alias maps a folder to a family (Quick-fire -> action)", !!al.catalog.shelves.find(s => s.kind === "family" && s.games.includes("tomato-man")));
+  const bad = generate({ intake: syn, existing: null, live: true, aliases: { cosmicadets: "no-such-slug" } });
+  t("an alias to a missing target is UNMAPPED and says why", bad.unmapped.some(u => u.folder === "Cosmi-cadets") && bad.log.some(l => /alias-target-missing/.test(l))); }
 t("shared dir: Abduct a Chameleon 3D -> one shelf abduct-a-chameleon", !!shelf("abduct-a-chameleon") && C.shelves.filter(s => s.slug === "abduct-a-chameleon").length === 1);
 t("shared dir: games[] deduped to one slug", shelf("abduct-a-chameleon") && shelf("abduct-a-chameleon").games.length === 1);
 t("unmapped: Moonlight Sonatas reported with its track count", r1.unmapped.some(u => u.folder === "Moonlight Sonatas" && u.tracks === 2));
 t("unmapped: no shelf emitted for it", !C.shelves.some(s => /moonlight/i.test(s.name) || /moonlight/.test(s.slug)));
 t("stream-hop: Jimothy folder SKIPPED, no shelf", !shelf("stream-hop") && r1.log.some(l => /SKIP/.test(l) && /Jimothy/.test(l)));
-t("family: Card Games -> card-room, kind family, named Card Room", !!shelf("card-room") && shelf("card-room").kind === "family" && shelf("card-room").name === "Card Room");
+t("family: Card Games -> card-table, kind family, named Card Table (Stephen's name)", !!shelf("card-table") && shelf("card-table").kind === "family" && shelf("card-table").name === "Card Table");
 const cardGames = cat.all.filter(g => g.cat === "card" && (g.dir || g.id)).map(g => g.dir || g.id);
-t("family: card-room games[] = every catalog game with cat card (" + new Set(cardGames).size + ")", shelf("card-room") && shelf("card-room").games.length === new Set(cardGames).size && shelf("card-room").games.includes("tarot-run"));
-t("family: Board Games -> table-games", !!shelf("table-games") && shelf("table-games").kind === "family");
-t("no shelf for a family with no folder (dice)", !shelf("dice-table"));
+t("family: card-table games[] = every catalog game with cat card (" + new Set(cardGames).size + ")", shelf("card-table") && shelf("card-table").games.length === new Set(cardGames).size && shelf("card-table").games.includes("tarot-run"));
+t("family: Board Games -> board-classics", !!shelf("board-classics") && shelf("board-classics").kind === "family");
+t("no shelf for a family with no folder (dice)", !shelf("dice-porch"));
 
 /* tracks, ids, files */
 const dw = shelf("deepwell");

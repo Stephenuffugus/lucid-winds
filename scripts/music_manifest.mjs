@@ -17,10 +17,18 @@ import { catalog } from "./catalog.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FAMILIES_PATH = join(HERE, "..", "music-families.json");
+const ALIASES_PATH  = join(HERE, "..", "music-folder-aliases.json");
 
 const norm    = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 const slugify = (s) => String(s || "").toLowerCase().replace(/['’"“”]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");   // "Warden's March" -> wardens-march
 const cleanTitle = (t) => String(t || "").replace(/^\d{1,2}[ ._-]+/, "").replace(/\s+/g, " ").trim();   // "01 Shaft Song" -> "Shaft Song"
+
+export function loadAliases(path = ALIASES_PATH) {
+  if (!existsSync(path)) return {};
+  const raw = JSON.parse(readFileSync(path, "utf8")), out = {};
+  for (const k of Object.keys(raw)) if (k[0] !== "_") out[norm(k)] = raw[k];
+  return out;
+}
 
 export function loadFamilies(path = FAMILIES_PATH) {
   const raw = JSON.parse(readFileSync(path, "utf8"));
@@ -30,19 +38,29 @@ export function loadFamilies(path = FAMILIES_PATH) {
 
 /* Resolve one folder name. Returns {kind:'game', card} | {kind:'family', key} | {kind:'none'} plus how.
    Exported so scripts/music_web_tier.mjs can map a track back to its source folder the same way. */
-export function resolve(folder, cards, families) {
+export function resolve(folder, cards, families, aliases = {}) {
   const nf = norm(folder);
+  if (aliases[nf]) {                                        // an explicit, human-confirmed override wins
+    const to = aliases[nf];
+    if (families[to]) return { kind: "family", key: to, how: "alias" };
+    const c = cards.find(c => c.key === to); if (c) return { kind: "game", card: c, how: "alias" };
+    return { kind: "none", how: "alias-target-missing:" + to };
+  }
   for (const c of cards) if (nf === norm(c.name) || nf === norm(c.dir) || nf === norm(c.id)) return { kind: "game", card: c, how: nf === norm(c.name) ? "exact" : "slug" };
   for (const key of Object.keys(families)) if (families[key].aliases.some(a => norm(a) === nf) || norm(families[key].name) === nf) return { kind: "family", key, how: "family" };
   if (nf.length >= 5) {
     const hits = cards.filter(c => norm(c.name).includes(nf));
     const keys = [...new Set(hits.map(h => h.key))];          // two cards on one dir (the Chameleons) are ONE hit
     if (keys.length === 1) return { kind: "game", card: hits[0], how: "FUZZY" };
+    /* the reverse: the FOLDER contains a unique game name ("Bubblenauts" holds "Bubblenaut"). Same length floor, same uniqueness. */
+    const rev = cards.filter(c => norm(c.name).length >= 5 && nf.includes(norm(c.name)));
+    const rkeys = [...new Set(rev.map(h => h.key))];
+    if (rkeys.length === 1) return { kind: "game", card: rev[0], how: "FUZZY" };
   }
   return { kind: "none" };
 }
 
-export function generate({ intake, existing = null, live = false, families = loadFamilies(), cat = catalog() }) {
+export function generate({ intake, existing = null, live = false, families = loadFamilies(), cat = catalog(), aliases = loadAliases() }) {
   const log = [], unmapped = [];
   const cards = cat.all.filter(g => g.dir || g.id).map(g => ({ name: g.name, dir: g.dir, id: g.id, cat: g.cat, key: g.dir || g.id }));
 
@@ -57,8 +75,8 @@ export function generate({ intake, existing = null, live = false, families = loa
   const shelves = {};   // slug -> shelf
   for (const folder of Object.keys(byFolder).sort()) {
     const rows = byFolder[folder];
-    const res = resolve(folder, cards, families);
-    if (res.kind === "none") { unmapped.push({ folder, tracks: rows.length }); log.push("UNMAPPED  " + folder + "  (" + rows.length + " tracks)"); continue; }
+    const res = resolve(folder, cards, families, aliases);
+    if (res.kind === "none") { unmapped.push({ folder, tracks: rows.length }); log.push("UNMAPPED  " + folder + "  (" + rows.length + " tracks)" + (res.how ? "  " + res.how : "")); continue; }
     let slug, name, kind, games;
     if (res.kind === "game") {
       if (res.card.key === "stream-hop") { log.push("SKIP      " + folder + "  -> stream-hop: Jimothy keeps its own bridge"); continue; }
@@ -101,9 +119,9 @@ export function generate({ intake, existing = null, live = false, families = loa
 }
 
 /* shelf slug a folder lands on, or null. Used by the web tier to disambiguate same-named files in two folders. */
-export function shelfSlugFor(folder, families = loadFamilies(), cat = catalog()) {
+export function shelfSlugFor(folder, families = loadFamilies(), cat = catalog(), aliases = loadAliases()) {
   const cards = cat.all.filter(g => g.dir || g.id).map(g => ({ name: g.name, dir: g.dir, id: g.id, cat: g.cat, key: g.dir || g.id }));
-  const r = resolve(folder, cards, families);
+  const r = resolve(folder, cards, families, aliases);
   if (r.kind === "game") return r.card.key === "stream-hop" ? null : r.card.key;
   if (r.kind === "family") return slugify(families[r.key].name);
   return null;

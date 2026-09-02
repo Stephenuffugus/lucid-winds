@@ -138,13 +138,13 @@ t("source: one IIFE guarded by if (window.SWSMusic) return", /if\s*\(\s*window\.
 { const h = browser({ pathname: "/play/cribbage.html", LW_PLAY: { id: "cribbage", name: "Cribbage" } }); const m = h.load();
   t("native without shell boot: nothing yet (URL is not /satellites/)", h.ledger().length === 0);
   m.boot({ id: "cribbage", name: "Cribbage" });
-  t("boot({id}) from the shell identifies a native", has(h, "m-card-room-dealers-choice") || has(h, "m-card-room-last-trick") || has(h, "m-card-room-shuffle-up"));
-  t("a card game with no shelf of its own unlocks Card Room track 1 only", h.ledger().length === 1 && h.ledger()[0].game === "Card Room"); }
+  t("boot({id}) from the shell identifies a native", has(h, "m-card-table-dealers-choice") || has(h, "m-card-table-last-trick") || has(h, "m-card-table-shuffle-up"));
+  t("a card game with no shelf of its own unlocks Card Table track 1 only", h.ledger().length === 1 && h.ledger()[0].game === "Card Table"); }
 { const h = browser({ pathname: "/satellites/tarot-run/" }); h.load();
-  t("a card game WITH its own shelf unlocks both: tarot-run track 1 and Card Room track 1", has(h, "m-tarot-run-cups") && h.ledger().some(e => e.game === "Card Room")); }
+  t("a card game WITH its own shelf unlocks both: tarot-run track 1 and Card Table track 1", has(h, "m-tarot-run-cups") && h.ledger().some(e => e.game === "Card Table")); }
 { const h = browser({ pathname: "/satellites/deepwell/", readyState: "loading" }); const m = h.load();
   m.boot({ id: "cribbage", name: "Cribbage" }); h.fire("DOMContentLoaded");
-  t("explicit boot({id}) wins over the URL", h.ledger().every(e => e.game === "Card Room") && h.ledger().length === 1); }
+  t("explicit boot({id}) wins over the URL", h.ledger().every(e => e.game === "Card Table") && h.ledger().length === 1); }
 
 /* idempotency, two tabs, backfill, refresh */
 { const h = browser(); const m = h.load(); h.advance(3500); const one = h.store.get("sws_game_unlocks");

@@ -167,3 +167,44 @@ shots: /tmp/music-shots/{deepwell,greenhouse-pinball,flock-the-world,chess,klond
 - `_music-drop/README.md`: the two folder rules appended (01/02 prefixes pick the free song and the order; family folder
   names make shared shelves; unmapped folders are reported, never guessed).
 `no_shrink gate: 201 ok, 0 failed` (both pre-existing docs grew only)
+
+## P9 — Hand back
+Stephen's zip landed at 04:55 UTC during P5, so the real-data path ran too.
+```
+run.mjs: all 10 steps green in 96s
+  catalog 41 · unlocks 55 · mutants 12/12 killed · sw 15 · no_shrink 203 · include --check 105/105, 12 vendored untouched · inject 48 · ui 47
+vendored sha256 vs P0 baseline: 12/12 unchanged
+fenced files (index.html, sunbeam-sdk.js, music-player.js, music-tracks.js, assets/music): git diff empty
+```
+### The real data
+intake: `Tracks-20260902T045511Z-1-001.zip`, 357 MB, moved to /tmp before unzipping (/workspaces free space went UP, 2.5→2.8 GB)
+→ 53 folders, 149 tracks, 255 min, avg 1.7 min, every file 176–240k mp3. Suno shipped two takes of most songs ("(1)", "(2)");
+every take is its own unlock, titled exactly as the file.
+generator → `music-catalog.js` **live:false**, 42 shelves, 123 tracks, version 271a86160620. Six family shelves carry
+STEPHEN'S OWN names from his folders (Card Table, Board Classics, Dice Porch, Word Garden, Logic Den, Maker Bench); the
+handoff had given him naming rights and the folders were the answer. `music-folder-aliases.json` added for explicit,
+human-confirmed overrides (checked first, gated 4 ways), empty until he confirms the first.
+web tier → /tmp/music-web/music/v1: 123 files, 191.1 MB, all transcoded to 128k, 5m22s; a stale fixture run had left 25 dummy
+files beside them, so the web tier now PRUNES to the catalog every run (43 entries = 42 shelves + SHA256SUMS). `music_verify`
+against a local server: 123/123 ok. Real catalog smoke, live flipped in memory only: pong, burr-blast, dewball, klondike, chess
+→ 40/40.
+### 11 folders held, never guessed (docs/music-unmapped.md), with my read of each
+| Folder | Tracks | Read |
+|---|---|---|
+| Conduit | 2 | satellite exists but is UNCARDED, so not in the catalog; maps itself the day it gets a card |
+| Cosmi-cadets | 2 | one letter off Cosmic Cadets (seed-flutter); an alias on his yes |
+| Quick-fire | 4 | Neon Rush, Pixel Dash: a reflex family; action (45 games)? his call |
+| Family-Boards | 2 | Boardgame Afternoon: more Board Classics, or a second board shelf? |
+| Solitair-parlor | 6 | Cozy Game Loop ×4, Rainy Card Room ×2: merge into Card Table (10) or a Solitaire Parlor sub-shelf (needs an explicit games list; small extension) |
+| Zen-Studio | 2 | Japanese Garden Stillness: the Music Studio game, or Maker Bench? |
+| Tracks | 2 | Weightless Drift, loose at the zip root: where? |
+| Lucid Winds | 2 | Midnight Greenhouse: the app's own theme, belongs in music-tracks.js Originals / the index.html follow-up |
+| Whackbox | 2 | Carnival Loop: the party game lives outside satellites/, no card dir; follow-up like Lucid Winds |
+| Menu and shop song | 1 | Dust and Gasoline: Jimothy? Jimothy keeps its own bridge |
+| Use this song for rainbow poo boost | 1 | Full Sprint Happiness: Jimothy's boost; same |
+### What happens next (not this build)
+H2, in order: Stephen puts a 1 KB `music/v1/PROBE.txt` in the host's web root → Fable pushes any commit to main → `curl -sI
+https://lucidwinds.com/music/v1/PROBE.txt` is 200 → Stephen uploads /tmp/music-web/music as one zip and extracts →
+`music_verify.mjs --base https://lucidwinds.com --local /tmp/music-web` green → `music_manifest.mjs --live` → commit →
+deploy. Until then every game carries the include and the module idles on live:false.
+deployed: **NO** · pushed to main: **NO** · branch: add-sproing-jumper

@@ -6,7 +6,7 @@
    <to>/music/v1/<shelf>/<file> (the exact path the catalog's src points at);
    then SHA256SUMS.txt beside them. Idempotent: an output newer than its source
    is skipped. Never writes under /workspaces (HANDOFF-MUSIC section 7.3). */
-import { readFileSync, writeFileSync, mkdirSync, existsSync, statSync, copyFileSync, readdirSync } from "fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync, statSync, copyFileSync, readdirSync, rmSync } from "fs";
 import { execSync } from "child_process";
 import { join, basename, dirname } from "path";
 import { createHash } from "crypto";
@@ -50,5 +50,15 @@ for (const shelf of cat.shelves) {
     sums.push(createHash("sha256").update(readFileSync(out)).digest("hex") + "  " + shelf.slug + "/" + t.file);
   }
 }
+/* PRUNE: the output mirrors the catalog exactly. Anything under music/v1 that the catalog does not name is removed,
+   so a stale run (a fixture into the same folder, a renamed shelf, a dropped track) can never ride up in the upload. */
+const want = new Set(sums.map(l => l.split("  ")[1]));
+let pruned = 0;
+const V1 = join(TO, "music", "v1");
+for (const d of readdirSync(V1, { withFileTypes: true })) {
+  if (!d.isDirectory()) { if (d.name !== "SHA256SUMS.txt") { rmSync(join(V1, d.name)); pruned++; } continue; }
+  for (const f of readdirSync(join(V1, d.name))) if (!want.has(d.name + "/" + f)) { rmSync(join(V1, d.name, f)); pruned++; }
+  if (!readdirSync(join(V1, d.name)).length) { rmSync(join(V1, d.name), { recursive: true }); pruned++; }
+}
 writeFileSync(join(TO, "music", "v1", "SHA256SUMS.txt"), sums.join("\n") + "\n");
-console.log("web tier at " + join(TO, "music", "v1") + ": " + sums.length + " files, " + (bytes / 1048576).toFixed(1) + " MB   (transcoded " + made + ", copied " + copied + ", skipped " + skipped + ")");
+console.log("web tier at " + join(TO, "music", "v1") + ": " + sums.length + " files, " + (bytes / 1048576).toFixed(1) + " MB   (transcoded " + made + ", copied " + copied + ", skipped " + skipped + ", pruned " + pruned + " stale)");
