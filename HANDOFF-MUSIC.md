@@ -204,14 +204,20 @@ ordered by file name (§7.1). Track index `i` unlocks when ANY holds:
 | Path | Condition | Default | Track 1 needs | Track 5 needs |
 |---|---|---|---|---|
 | open | `i === 0` | free | | |
-| time | visible seconds `>= secsPer * i` | 120 | 2 min | 10 min |
+| time | visible seconds `>= secsPer * i` | 480 | 8 min | 40 min |
 | days | calendar days played `>= 1 + daysPer * i` | 1 | a 2nd day | a 6th day |
 | sessions | 60s+ page loads `>= sessionsBase + i` | 2 | 3 sessions | 7 sessions |
+| milestones | breaks the game reports, `SWSMusic.milestone(n)` `>= milestonePer * i` (0 disables) | 3 | level 3 | level 15 |
 | breadth, FAMILY shelves only | distinct games of the family opened `>= 1 + breadthPer * i` | 1 | a 2nd card game | a 6th card game |
 
 Rung 0 is granted on boot; its toast waits for the first tap (§6.7). Tuning is one JSON edit and a regenerate; the
 module never needs to change. ⚠ The first draft of this section had a fixed ladder (open / 120s / day 2 / 5 sessions /
 +3); it was replaced at P9 on the Director's instruction and every gate was re-asserted under the new one.
+⚠ P12 (after Stephen played Conduit and got both songs inside two minutes): the time rung went 120 → 480 seconds so the
+first song loops a couple of times before the second arrives, and the **milestones** path was added: a game that knows its
+own breaks calls `SWSMusic.milestone(n)` (n = a level number or a count of rounds, the max is kept; no argument counts up
+by one). Conduit calls it with the number of distinct sites cleared, so *"once you make it to like level 3, you unlock
+the second song"*. Every other game is on the time / days / sessions paths until it wires the call (one line, see §11).
 
 ### 6.4 Shelves: a game, or a family
 `music-catalog.js` (generated) is:
@@ -267,15 +273,20 @@ Stephen, 2026-09-02: *"i unlocked a song but there didnt seem to be any way to e
 uniform music button across everything"*. Tier 0's toast-only moment dead-ended in the 95 satellites that never carried
 the shared player. So:
 
-- **The card, at boot only.** When a song is fresh at boot, or was earned mid round in any game last time, a bottom sheet:
+- **The card, at boot or at a milestone.** When a song is fresh at boot, or was earned mid round in any game last time, or a
+  game reports a break (`SWSMusic.milestone`) while one is pending, a bottom sheet:
   "Congratulations, you unlocked a song" (and N more), the title, "<shelf> · Stephen", the track's art if the catalog has
-  an `art` file for it and a ♫ tile if not (never fabricated), and two 48px buttons: **Listen now** / **Later**. Listen now
+  an `art` file for it and a ♫ tile if not (never fabricated), and two 48px buttons: **Play it now** / **Later**. Play it now
   loads `music-tracks.js` then `music-player.js` on demand (once), inits the shared player with the chip as its button,
   and plays that track by its index in `LW_TRACKS`. Either button marks the song revealed (`sws_music_revealed`, so a
   cloud restore never re-congratulates) and clears it from `sws_music_pending_reveal`.
 - **Mid round: toast + pending.** A rung crossed during play, or a Tier 1 `unlock()`, shows the inert toast and is added
-  to `sws_music_pending_reveal` (read-modify-write). Its card comes at the next boot of ANY game, the only moment the
-  module can be certain nobody is mid play without a game hook.
+  to `sws_music_pending_reveal` (read-modify-write). Its card comes at the next break the game reports
+  (`SWSMusic.milestone`), else at the next boot of ANY game, the only moment the module can be certain nobody is mid play
+  without a game hook. P12, Stephen: *"it should pause and open up the player and say hey you unlocked this song, do you
+  want to play this now"*: the card is the moment; while it is up the module fires `swsmusic:card` on `document`
+  (`detail.open` true, then false on close) so a game that can hold its clock does. Conduit reports its milestones; the
+  pause hook is opt in per game.
 - **The chip, everywhere.** One "♫ Music" button, 48px tall, 96px+ wide, house palette, placed by the same free-corner
   search `arcade-exit.js` uses (copied; it is not exported), never bottom right, skipped only where the native shell
   already has `#shell-music-btn` or a player is already present. Tap → loads the player on demand → opens the drawer,

@@ -19,7 +19,8 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const FAMILIES_PATH = join(HERE, "..", "music-families.json");
 const ALIASES_PATH  = join(HERE, "..", "music-folder-aliases.json");
 const LADDER_PATH   = join(HERE, "..", "music-ladder.json");
-export const LADDER_DEFAULTS = { secsPer: 120, daysPer: 1, sessionsBase: 2, breadthPer: 1 };
+const TITLES_PATH   = join(HERE, "..", "music-titles.json");   // id -> display title, Stephen's retitles of the alternate takes
+export const LADDER_DEFAULTS = { secsPer: 480, daysPer: 1, sessionsBase: 2, breadthPer: 1, milestonePer: 3 };
 
 const norm    = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 const slugify = (s) => String(s || "").toLowerCase().replace(/['’"“”]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");   // "Warden's March" -> wardens-march
@@ -53,6 +54,13 @@ function placeOnDisk(src, workDir, wrapper) {
 export function sanitizeLadder(raw) {
   const out = { ...LADDER_DEFAULTS };
   if (raw && typeof raw === "object") for (const k of Object.keys(LADDER_DEFAULTS)) if (typeof raw[k] === "number" && isFinite(raw[k]) && raw[k] >= 0) out[k] = raw[k];
+  return out;
+}
+/* display titles by track id. Applied AFTER ids are derived, so a retitle never moves a file or orphans an unlock. */
+export function loadTitles(path = TITLES_PATH) {
+  if (!existsSync(path)) return {};
+  const raw = JSON.parse(readFileSync(path, "utf8")), out = {};
+  for (const k of Object.keys(raw)) if (k[0] !== "_" && typeof raw[k] === "string" && raw[k].trim()) out[k] = raw[k].replace(/\s+/g, " ").trim();
   return out;
 }
 export function loadLadder(path = LADDER_PATH) {
@@ -98,7 +106,7 @@ export function resolve(folder, cards, families, aliases = {}) {
   return { kind: "none" };
 }
 
-export function generate({ intake, existing = null, live = false, families = loadFamilies(), cat = catalog(), aliases = loadAliases(), ladder = loadLadder() }) {
+export function generate({ intake, existing = null, live = false, families = loadFamilies(), cat = catalog(), aliases = loadAliases(), ladder = loadLadder(), titles = {} }) {
   const log = [], unmapped = [];
   const cards = cat.all.filter(g => g.dir || g.id).map(g => ({ name: g.name, dir: g.dir, id: g.id, cat: g.cat, key: g.dir || g.id }));
 
@@ -169,7 +177,7 @@ export function generate({ intake, existing = null, live = false, families = loa
       let id = base, n = 2; while (used.has(id)) id = base + "-" + (n++);
       used.add(id); ids[i] = id;
     });
-    shelf.tracks = rows.map((r, i) => ({ id: ids[i], title: cleanTitle(r.title), file: ids[i].slice(pre.length) + ".mp3", seconds: r.seconds | 0, from: r.file, ...(r.note ? { note: r.note } : {}) }));
+    shelf.tracks = rows.map((r, i) => ({ id: ids[i], title: titles[ids[i]] || cleanTitle(r.title), file: ids[i].slice(pre.length) + ".mp3", seconds: r.seconds | 0, from: r.file, ...(r.note ? { note: r.note } : {}) }));
     shelf._sha = seenSha;
     delete shelf._rows;
   }
@@ -210,7 +218,19 @@ if (process.argv[1] && import.meta.url === "file://" + process.argv[1]) {
   const unmapPath  = arg("--unmapped", "docs/music-unmapped.md");
   const live       = process.argv.includes("--live");
   if (!existsSync(intakePath)) { console.error("no intake at " + intakePath + ". Run scripts/music_intake.mjs (or music_fixture.mjs) first."); process.exit(1); }
-  const r = generate({ intake: JSON.parse(readFileSync(intakePath, "utf8")), existing: readExisting(existPath), live });
+  const intake = JSON.parse(readFileSync(intakePath, "utf8"));
+  /* Without the source files on disk the generator cannot see nested folders (a song in "Pit bike rally/Menu and shop
+     song/") or byte-identical duplicates, so a regeneration from the JSON alone silently DROPS and ADDS tracks (Sep 02:
+     143 for 144, two nested songs lost, one duplicate back). Refuse, unless told this is a fixture (--no-disk). */
+  if (intake.workDir && !existsSync(intake.workDir) && !process.argv.includes("--no-disk")) {
+    console.error("intake.workDir " + intake.workDir + " is not on disk, so nesting and duplicates cannot be reproduced and the\n" +
+                  "catalog would drift. Restore it (the master zip is in the lucid-winds-vault release vault-music-20260902:\n" +
+                  "  gh release download vault-music-20260902 -R Stephenuffugus/lucid-winds-vault -p 'Tracks-*.zip' -D /tmp\n" +
+                  "  mkdir -p " + intake.workDir + " && cd " + intake.workDir + " && unzip -o -q /tmp/Tracks-*.zip)\n" +
+                  "or pass --no-disk if this intake is a fixture that never had files.");
+    process.exit(1);
+  }
+  const r = generate({ intake, existing: readExisting(existPath), live, titles: loadTitles() });
   writeFileSync(outPath, r.source);
   writeFileSync(unmapPath, "# Unmapped music folders\n\nThese folder names did not match any game or family, so NO shelf was made for them.\nRename the folder to the game's exact arcade name (or a family name like `Card Games`) and re-run.\n\n| Folder | Tracks |\n|---|---|\n" + r.unmapped.map(u => "| " + u.folder + " | " + u.tracks + (u.dupOf && u.dupOf.length ? " (byte-identical to " + u.dupOf.join("; ") + ")" : "") + " |").join("\n") + "\n");
   for (const l of r.log) console.log(l);

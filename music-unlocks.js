@@ -17,6 +17,7 @@
  *              progress + catalog, rebuilt on every boot, merged by id, never shrunk.
  *   catalog    window.LW_MUSIC_CATALOG (music-catalog.js, generated). Nothing happens unless live:true.
  *   ladder     track i opens when ANY holds: secs >= secsPer*i · days >= 1+daysPer*i · sessions >= sessionsBase+i
+ *              · milestones >= milestonePer*i (a game reports them, see below)
  *              · on a FAMILY shelf, distinct games of the family opened >= 1+breadthPer*i (the more card games you
  *              try, the more you unlock). Numbers come from the catalog's `ladder` (music-ladder.json), defaults below.
  *   off        ?nomusic=1 in the URL, or no catalog, or no identity, or a shelf-less game: no timers.
@@ -25,6 +26,15 @@
  *              <title>, <shelf>, art only if the track has any, Listen now / Later. Listen now loads the shared
  *              manifest + player on demand and plays that track. A song earned MID ROUND gets the small toast and
  *              its card at the next boot of any game, the only moment we can be sure nobody is mid play.
+ *   milestone  (P12, Stephen after playing Conduit, Sep 02: "it should pause and open up the player and say hey you
+ *              unlocked this song, do you want to play this now", and "once you make it to like level 3, you'll
+ *              unlock the second song"). A game that knows its own breaks calls SWSMusic.milestone(n) when one
+ *              arrives: a site cleared, a round finished. n = how far the player has got (the max is kept; no
+ *              argument counts up by one). It is a rung on the ladder (milestonePer 3: level 3 opens track 2) AND
+ *              the moment a pending card shows, so the reward lands at a break, never mid round. The card tells
+ *              the page it opened and closed (document event swsmusic:card, detail.open) so a game that can hold
+ *              its clock does. The time rung is 8 minutes (secsPer 480): the first song loops a couple of times
+ *              before the second arrives, and two cards never land back to back.
  *   the chip   one uniform "Music" button, 48px, in a free corner (the exit button's own search, copied),
  *              never bottom right, in every game that lacks the native shell's button. Opens the shared player.
  *
@@ -61,7 +71,7 @@
     return out;
   }
   function srcOf(c, s, t) { return c.base + s.slug + '/' + t.file; }
-  var LADDER_DEFAULTS = { secsPer: 120, daysPer: 1, sessionsBase: 2, breadthPer: 1 };
+  var LADDER_DEFAULTS = { secsPer: 480, daysPer: 1, sessionsBase: 2, breadthPer: 1, milestonePer: 3 };
   function ladder() { var c = catalog(), L = (c && c.ladder) || {}, out = {}, k; for (k in LADDER_DEFAULTS) out[k] = (typeof L[k] === 'number' && L[k] >= 0) ? L[k] : LADDER_DEFAULTS[k]; return out; }
   /* distinct games of a family shelf this player has opened (every opened game has a progress entry) */
   function breadthOf(shelf, all) { var n = 0, i; if (!shelf || shelf.kind !== 'family' || !shelf.games) return 0; for (i = 0; i < shelf.games.length; i++) if (all[shelf.games[i]] && all[shelf.games[i]].first) n++; return n; }
@@ -71,13 +81,14 @@
     if ((p.secs | 0) >= L.secsPer * i) return true;
     if ((p.days || []).length >= 1 + L.daysPer * i) return true;
     if ((p.sessions | 0) >= L.sessionsBase + i) return true;
+    if (L.milestonePer > 0 && (p.milestones | 0) >= L.milestonePer * i) return true;
     if (shelf && shelf.kind === 'family' && breadthOf(shelf, all) >= 1 + L.breadthPer * i) return true;
     return false;
   }
 
   /* ---- progress: read, modify, write. Never wholesale. (LAW 1) ------------- */
   function readProgress() { var a = parse(lsGet(LS_PROG), {}); return (a && typeof a === 'object' && !a.length) ? a : {}; }
-  function progressFor(all) { var p = all[S.id]; if (!p || typeof p !== 'object') p = {}; if (!p.first) p.first = Date.now(); if (!p.days || !p.days.length) p.days = p.days || []; p.sessions = p.sessions | 0; p.secs = p.secs | 0; if (!p.unlocked) p.unlocked = []; return p; }
+  function progressFor(all) { var p = all[S.id]; if (!p || typeof p !== 'object') p = {}; if (!p.first) p.first = Date.now(); if (!p.days || !p.days.length) p.days = p.days || []; p.sessions = p.sessions | 0; p.secs = p.secs | 0; p.milestones = p.milestones | 0; if (!p.unlocked) p.unlocked = []; return p; }
   function writeProgress(mut) { var all = readProgress(), p = progressFor(all); mut(p); all[S.id] = p; lsSet(LS_PROG, JSON.stringify(all)); return p; }
 
   /* ---- ledger: progress + catalog. Merge by id, refresh known, keep unknown (LAW 2, 14) ---- */
@@ -205,7 +216,17 @@
     } catch (e) {}
   }
 
-  /* ---- the card: Congratulations, you unlocked <title>. Listen now / Later. Only ever at boot. ---- */
+  /* ---- the card: Congratulations, you unlocked <title>. Play it now / Later. At boot, or at a milestone the game
+     reports (a break in play); never mid round. Opening and closing it tells the page (swsmusic:card, detail.open) so a
+     game that can hold its clock while the card is up does. ---- */
+  function tellGame(open) {
+    try {
+      var d = window.document, ev = null;
+      try { ev = new window.CustomEvent('swsmusic:card', { detail: { open: !!open } }); } catch (e1) { ev = null; }
+      if (!ev && d.createEvent) { ev = d.createEvent('CustomEvent'); ev.initCustomEvent('swsmusic:card', false, false, { open: !!open }); }
+      if (ev && d.dispatchEvent) d.dispatchEvent(ev);
+    } catch (e) {}
+  }
   function trackById(id) { var c = catalog(), i, j; if (!c) return null; for (i = 0; i < c.shelves.length; i++) for (j = 0; j < c.shelves[i].tracks.length; j++) if (c.shelves[i].tracks[j].id === id) return { s: c.shelves[i], t: c.shelves[i].tracks[j] }; return null; }
   function showCard(e, more) {
     try {
@@ -222,17 +243,17 @@
       var txt = d.createElement('div'); var title = d.createElement('div'); title.className = 'swsm-title'; title.textContent = e.title; var sub = d.createElement('div'); sub.className = 'swsm-sub'; sub.textContent = e.game + ' \u00B7 Stephen'; txt.appendChild(title); txt.appendChild(sub); row.appendChild(txt);
       card.appendChild(row);
       var btns = d.createElement('div'); btns.className = 'swsm-btns';
-      var listen = d.createElement('button'); listen.id = 'sws-music-listen'; listen.type = 'button'; listen.className = 'swsm-primary'; listen.textContent = 'Listen now';
+      var listen = d.createElement('button'); listen.id = 'sws-music-listen'; listen.type = 'button'; listen.className = 'swsm-primary'; listen.textContent = 'Play it now';
       var later = d.createElement('button'); later.id = 'sws-music-later'; later.type = 'button'; later.textContent = 'Later';
-      function close() { try { card.remove(); } catch (x) {} S.card = null; markRevealed(e.id); S.interacted = true; showNext(); }
+      function close() { try { card.remove(); } catch (x) {} S.card = null; tellGame(false); markRevealed(e.id); S.interacted = true; showNext(); }
       listen.addEventListener('click', function () { close(); playById(e.id); });
       later.addEventListener('click', function () { close(); });
       btns.appendChild(listen); btns.appendChild(later); card.appendChild(btns);
-      d.body.appendChild(card); S.card = card;
+      d.body.appendChild(card); S.card = card; tellGame(true);
     } catch (x) {}
   }
-  /* at boot: the newest fresh grant, else the newest pending reveal from any game; never mid round */
-  function revealAtBoot(fresh) {
+  /* at boot or at a milestone: the newest fresh grant, else the newest pending reveal from any game; never mid round */
+  function revealPending(fresh) {
     var list = [], i, pend = readList(LS_PENDING);
     for (i = 0; i < fresh.length; i++) if (!isRevealed(fresh[i].id)) list.push(fresh[i]);
     for (i = 0; i < pend.length; i++) if (pend[i] && pend[i].id && !isRevealed(pend[i].id)) list.push(pend[i]);
@@ -301,7 +322,7 @@
          that measures empty now gets painted under a moment later (Deepwell's close button, P11 LOOK). */
       placeChipLater();
       /* the moment: a card at boot for the fresh song, or one earned mid round in ANY game last time; no toast for it */
-      if (!revealAtBoot(fresh)) { var i; for (i = 0; i < fresh.length; i++) toast(fresh[i].title); }
+      if (!revealPending(fresh)) { var i; for (i = 0; i < fresh.length; i++) toast(fresh[i].title); }
       if (!shelvesFor(S.id).length) { log('no shelf for ' + S.id + ', visit recorded, no ticks'); return; }
       S.ticking = true;
       try { window.document.addEventListener('visibilitychange', onVisibility); } catch (e) {}
@@ -329,6 +350,20 @@
         if (!found) return false;
         writeProgress(function (p) { if (p.unlocked.indexOf(trackId) < 0) p.unlocked.push(trackId); });
         var fresh = rebuild(); for (i = 0; i < fresh.length; i++) { addPending(fresh[i]); toast(fresh[i].title); }
+        return true;
+      } catch (e) { return false; }
+    },
+    /* a break in play the game knows about: a site cleared, a round finished. n = how far the player has got (max kept);
+       no argument counts up by one. A rung on the ladder, and the moment a pending card shows. */
+    milestone: function (n) {
+      try {
+        if (!S.id || !catalog()) return false;
+        var cur = (progressFor(readProgress()).milestones | 0);
+        n = (n === undefined || n === null) ? cur + 1 : Number(n);
+        if (!(n > 0)) return false;
+        writeProgress(function (p) { if (n > (p.milestones | 0)) p.milestones = n; });
+        var fresh = rebuild(), i; for (i = 0; i < fresh.length; i++) addPending(fresh[i]);
+        if (!revealPending(fresh)) { for (i = 0; i < fresh.length; i++) toast(fresh[i].title); }
         return true;
       } catch (e) { return false; }
     },

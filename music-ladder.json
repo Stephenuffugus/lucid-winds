@@ -1,7 +1,8 @@
 {
-  "_comment": "The unlock ladder, tunable. Track index i on a shelf unlocks when ANY of these is true (i=0 is free on opening the game): visible seconds >= secsPer*i; calendar days played >= 1 + daysPer*i; sessions (60s+ page loads) >= sessionsBase + i; and, on a FAMILY shelf only, distinct games of that family opened >= 1 + breadthPer*i. Edit, then `node scripts/music_manifest.mjs` regenerates music-catalog.js with it. Stephen 2026-09-02: 'it should be easy to unlock most of these to start' and 'the more card games you try, the more you unlock'.",
-  "secsPer": 120,
+  "_comment": "The unlock ladder, tunable. Track index i on a shelf unlocks when ANY of these is true (i=0 is free on opening the game): visible seconds >= secsPer*i; calendar days played >= 1 + daysPer*i; sessions (60s+ page loads) >= sessionsBase + i; milestones the game reports (SWSMusic.milestone: a level cleared, a round finished) >= milestonePer*i; and, on a FAMILY shelf only, distinct games of that family opened >= 1 + breadthPer*i. Edit, then `node scripts/music_manifest.mjs --live` regenerates music-catalog.js with it. Stephen 2026-09-02: 'it should be easy to unlock most of these to start' and 'the more card games you try, the more you unlock'; and after Conduit handed him both songs in two minutes: 'you play for a minute and the song loops a couple times, and then once you make it to like level 3 you unlock the second song, that way they're not bombarded with back to back messages' (secsPer 120 -> 480, milestonePer 3).",
+  "secsPer": 480,
   "daysPer": 1,
   "sessionsBase": 2,
-  "breadthPer": 1
+  "breadthPer": 1,
+  "milestonePer": 3
 }

@@ -73,7 +73,7 @@ t("dup: a byte-identical copy inside the same shelf is skipped (one shaft-song i
 t("loose: a root-level file is UNMAPPED as (loose), not under the wrapper name, and reported as byte-identical to flock-the-world/Trap Line", r1.unmapped.some(u => u.folder === "(loose)" && u.dupOf && u.dupOf.some(d => /Weightless Copy/.test(d) && /flock-the-world/.test(d))) && !r1.unmapped.some(u => u.folder === "Music For Games"));
 t("loose is logged as LOOSE", r1.log.some(l => /^LOOSE/.test(l) && /Weightless Copy/.test(l)));
 /* ladder emitted */
-t("catalog carries the ladder with defaults", C.ladder && C.ladder.secsPer === 120 && C.ladder.daysPer === 1 && C.ladder.sessionsBase === 2 && C.ladder.breadthPer === 1);
+t("catalog carries the ladder with defaults", C.ladder && C.ladder.secsPer === 480 && C.ladder.daysPer === 1 && C.ladder.sessionsBase === 2 && C.ladder.breadthPer === 1 && C.ladder.milestonePer === 3);
 t("ladder override reaches the catalog; invalid values ignored", (() => { const c2 = generate({ intake, existing: null, live: true, ladder: { secsPer: 60, daysPer: -3, breadthPer: "x" } }).catalog.ladder; return c2.secsPer === 60 && c2.daysPer === 1 && c2.breadthPer === 1; })());
 
 /* tracks, ids, files */
@@ -84,7 +84,10 @@ t("order prefix stripped from title: '01 Shaft Song' -> 'Shaft Song'", dw && dw.
   t("takes: 'Neon Rally (1)' -> 'Neon Rally, take 2', (2) -> take 3, the first keeps the plain name", a && a.tracks.map(x => x.title).join(" | ") === "Neon Rally | Neon Rally, take 2 | Neon Rally, take 3");
   const old = { shelves: [{ slug: "pong", tracks: [{ id: "m-pong-neon-rally-1", from: "Neon Rally (1).mp3" }] }] };
   const b2 = generate({ intake: syn, existing: old, live: true }).catalog.shelves.find(s => s.slug === "pong");
-  t("takes: an id minted before the rename is kept (keyed by source file), only the title changes", b2 && b2.tracks.some(x => x.id === "m-pong-neon-rally-1" && x.title === "Neon Rally, take 2")); }
+  t("takes: an id minted before the rename is kept (keyed by source file), only the title changes", b2 && b2.tracks.some(x => x.id === "m-pong-neon-rally-1" && x.title === "Neon Rally, take 2"));
+  const b3 = generate({ intake: syn, existing: old, live: true, titles: { "m-pong-neon-rally-1": "Neon Volley" } }).catalog.shelves.find(s => s.slug === "pong");
+  t("titles: music-titles.json retitles by id (Stephen: no knockoff names); the id and the web file never move", b3 && b3.tracks.some(x => x.id === "m-pong-neon-rally-1" && x.title === "Neon Volley" && x.file === "neon-rally-1.mp3"));
+  t("titles: generate() applies no retitle unless handed one (tests and fixtures see raw titles)", b2.tracks.every(x => x.title !== "Neon Volley")); }
 t("first track by file name is the 01 file", dw && dw.tracks[0].id === "m-deepwell-shaft-song");
 t("collision: Deep Water twice -> -deep-water and -deep-water-2", dw && dw.tracks.some(x => x.id === "m-deepwell-deep-water") && dw.tracks.some(x => x.id === "m-deepwell-deep-water-2"));
 t("web file derives from id, always .mp3 (wav -> clay-bumper.mp3)", shelf("greenhouse-pinball") && shelf("greenhouse-pinball").tracks.some(x => x.file === "clay-bumper.mp3"));

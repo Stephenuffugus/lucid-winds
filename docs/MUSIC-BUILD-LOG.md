@@ -318,3 +318,35 @@ t=2.2s), card gone · chip tap → the SOUNDTRACK drawer open with ▶ PLAYING, 
 zero console errors. Pong identical. The gap Stephen hit is closed.
 three things wrong: the "(1)" take suffix wraps a headline onto two lines; the chip is a large pill on a clean title screen;
 the drawer's glyphs are tofu in the headless font (test browser only).
+
+## P12 — Milestones, the card at a break, the retitled takes (2026-09-02, after Stephen played Conduit)
+Stephen: "when you unlock songs it should pause and open up like the player and say hey you unlocked this song, do you want to
+play this now" · "I unlocked both songs for it immediately … you play for a minute and the song loops a couple times, and then
+once you make it to like level 3 you'll unlock the second song, that way they're not bombarded with back to back messages" ·
+"take all the (one) out and we can retitle those songs mildly so they look cool when they're popping up and don't just look
+like knockoffs of each other".
+why both songs came at once: Conduit's shelf has two tracks and the time rung was 120s, so track 2 opened two minutes in.
+built:
+- LADDER: `secsPer` 120 → 480 (8 min, the first song loops a couple of times first) and a new path, `milestonePer` 3:
+  `SWSMusic.milestone(n)` from a game at its own break (n = level or round count, max kept; no argument = count up by one);
+  rung i opens at milestones >= 3i, so level 3 opens the second song. 0 disables the path. Defaults in the module and the
+  generator, knobs in music-ladder.json, emitted as catalog.ladder.
+- THE MOMENT: a milestone is also where a PENDING card shows (a song earned by time mid round toasts, then cards at the next
+  break the game reports, else at the next boot as before). The primary button now reads "Play it now". The card fires
+  `swsmusic:card` on document (detail.open true/false) so a game that can hold its clock while the card is up does.
+- CONDUIT calls `SWSMusic.milestone(<distinct sites cleared>)` from win(). Its headless suite had been dead since the carding
+  commit (a second inline <script> after the game made the harness's greedy regex swallow "</script><script>"): harness now
+  takes the first block, 576 assertions green.
+- TITLES: `music-titles.json` (id → display title), applied by the generator AFTER ids are derived, so nothing moves or
+  re-uploads; 72 alternate takes renamed ("Neon Rally, take 2" → "Neon Volley", the full list is the file, Stephen edits
+  any line and regenerates). The Originals take in music-tracks.js is "Greenhouse Before Dawn"; stamps bumped (portal +
+  shell music-tracks ?v=2026.09.02.03, 66 play pages shell.js?v=34).
+⛔ TRAP, and a guard: regenerating from docs/music-intake.json WITHOUT the source files on disk silently gave 143 tracks
+  (two nested songs, Pit bike rally's shop song and Puppy Dash's rainbow boost, fell to unmapped; a byte-identical Pollen
+  Panic duplicate came back). The intake JSON cannot see nesting or duplicates. The master lives in the vault
+  (lucid-winds-vault release vault-music-20260902, Tracks-*.zip, 374MB); unzipped into /tmp/music-intake the regeneration
+  reproduces 144 ids/files/notes exactly. The CLI now REFUSES when intake.workDir is missing unless --no-disk (fixtures).
+gates: catalog 52→55 (retitle by id, ids and files never move; generate() retitles nothing unless handed a map) · unlocks
+  +16 (milestone rungs, max kept, count-up, the card at a milestone, the document event, milestonePer 0/1 overrides, no
+  catalog) · mutants 19→23 (drop the milestone path, forget the milestone, never reveal at a milestone, never tell the page)
+  · the 120s tests rebased to 480s. run.mjs: see the commit for the green run.

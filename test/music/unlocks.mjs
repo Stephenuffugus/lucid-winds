@@ -48,13 +48,13 @@ function browser(o = {}) {
   if (o.shellButton) body.children.push(Object.assign(mk("button"), { id: "shell-music-btn" }));
   const doc = { hidden: false, readyState: o.readyState || "complete", body: o.noBody ? null : body, head, documentElement: {},
     createElement: mk, getElementById: (id) => findId(body, id), elementsFromPoint: () => [body], elementFromPoint: () => body,
-    addEventListener(type, fn) { (listeners[type] ||= []).push(fn); }, removeEventListener() {}, querySelectorAll: () => [] };
-  const spies = { raf: 0, audio: 0, actx: 0, fold: 0, errors: 0, styles: 0, tracksLoads: 0, playerLoads: 0, played: [], opened: 0, initButton: null };
+    addEventListener(type, fn) { (listeners[type] ||= []).push(fn); }, removeEventListener() {}, querySelectorAll: () => [], dispatchEvent(ev) { spies.events.push({ type: ev.type, detail: ev.detail }); return true; } };
+  const spies = { raf: 0, audio: 0, actx: 0, fold: 0, errors: 0, styles: 0, tracksLoads: 0, playerLoads: 0, played: [], opened: 0, initButton: null, events: [] };
   class FakeDate extends Date { constructor(...a) { a.length ? super(...a) : super(REAL + dayOffset * 86400000); } static now() { return REAL + dayOffset * 86400000; } }
   const win = { document: doc, localStorage: ls, location: { pathname: o.pathname || "/satellites/deepwell/", search: o.search || "" }, innerWidth: 375, innerHeight: 667, getComputedStyle: () => ({ backgroundImage: "none", backgroundColor: "transparent" }),
     setInterval(fn, ms) { const id = tid++; timers.push({ id, fn, ms, kind: "i" }); return id; }, clearInterval(id) { const i = timers.findIndex(x => x.id === id); if (i >= 0) timers.splice(i, 1); },
     setTimeout(fn, ms) { const id = tid++; timers.push({ id, fn, ms, kind: "t" }); return id; }, clearTimeout(id) { const i = timers.findIndex(x => x.id === id); if (i >= 0) timers.splice(i, 1); },
-    requestAnimationFrame() { spies.raf++; return 1; }, Audio: function () { spies.audio++; }, AudioContext: function () { spies.actx++; }, webkitAudioContext: function () { spies.actx++; },
+    requestAnimationFrame() { spies.raf++; return 1; }, CustomEvent: function (type, init) { this.type = type; this.detail = init && init.detail; }, Audio: function () { spies.audio++; }, AudioContext: function () { spies.actx++; }, webkitAudioContext: function () { spies.actx++; },
     matchMedia: () => ({ matches: !!o.reducedMotion }), addEventListener(type, fn) { (listeners[type] ||= []).push(fn); }, removeEventListener() {},
     LW_FOLD_GAME_UNLOCKS() { spies.fold++; }, Date: FakeDate, JSON, Math, String, Number, Array, Object, Error, parseInt, parseFloat, isNaN, encodeURIComponent,
     console: { log() {}, debug() {}, warn() {}, error() { spies.errors++; } } };
@@ -134,7 +134,7 @@ t("source: one IIFE guarded by if (window.SWSMusic) return", /if\s*\(\s*window\.
   t("tick is a 5s interval, exactly one", h.timers.filter(x => x.kind === "i").length === 1 && h.timers.find(x => x.kind === "i").ms === 5000);
   h.advance(55000); t("55s visible: secs 55, sessions still 0", h.progress().deepwell.secs === 55 && h.progress().deepwell.sessions === 0);
   h.advance(5000);  t("60s visible: sessions becomes 1, once", h.progress().deepwell.sessions === 1);
-  h.advance(60000); t("120s: rung 1 unlocked by ticks (track 2), sessions still 1", has(h, "m-deepwell-deep-water") && h.progress().deepwell.sessions === 1);
+  h.advance(420000); t("480s: rung 1 unlocked by ticks (track 2), sessions still 1", has(h, "m-deepwell-deep-water") && h.progress().deepwell.sessions === 1);
   t("toast fired for rung 1", h.toast() && /Deep Water/.test(h.toast().textContent));
   h.doc.hidden = true; h.fire("visibilitychange");
   t("hidden: interval cleared", h.timers.filter(x => x.kind === "i").length === 0);
@@ -164,7 +164,7 @@ const TODAY = (() => { const d = new Date(), m = d.getMonth() + 1, y = d.getDate
   t("sessions: 8 opens track 5 (The Long Climb)", has(h, "m-deepwell-the-long-climb")); }
 /* the ladder is tunable from the catalog */
 { const h = browser({ ladder: { secsPer: 60 } }); h.load(); h.fire("pointerdown"); h.advance(3500); h.advance(60000);
-  t("catalog.ladder.secsPer=60: track 2 opens at 60s instead of 120s", has(h, "m-deepwell-deep-water")); }
+  t("catalog.ladder.secsPer=60: track 2 opens at 60s instead of 480s", has(h, "m-deepwell-deep-water")); }
 { const h = browser({ ladder: { secsPer: 60 } }); h.load(); h.fire("pointerdown"); h.advance(3500); h.advance(55000);
   t("catalog.ladder.secsPer=60: and not at 55s", !has(h, "m-deepwell-deep-water")); }
 /* family breadth: the more card games you try, the more you unlock */
@@ -273,8 +273,8 @@ const TODAY = (() => { const d = new Date(), m = d.getMonth() + 1, y = d.getDate
   t("P11 a shelf-less game still gets the uniform chip, but no card when nothing is pending", !!h.chip() && !h.card()); }
 /* mid-round: toast only, and the reveal waits for the next boot of ANY game */
 { const h = browser(); h.load(); h.advance(700); h.press("sws-music-later"); h.fire("pointerdown");
-  h.advance(3500); h.advance(120000);
-  t("P11 a mid-round unlock (120s) shows the toast, not the card", h.toast() && /Deep Water/.test(h.toast().textContent) && !h.card());
+  h.advance(3500); h.advance(480000);
+  t("P11 a mid-round unlock (480s) shows the toast, not the card", h.toast() && /Deep Water/.test(h.toast().textContent) && !h.card());
   t("P11 and is stored as pending, by id", h.pending().some(p => p.id === "m-deepwell-deep-water"));
   const h2 = browser({ pathname: "/satellites/no-such-game-here/" }); h2.store.set("sws_music_pending_reveal", h.store.get("sws_music_pending_reveal")); h2.store.set("sws_game_unlocks", h.store.get("sws_game_unlocks")); h2.load(); h2.advance(700);
   t("P11 the next boot of ANY game shows the card for the pending song", h2.card() && /Deep Water/.test(h2.card().textContent));
@@ -282,9 +282,43 @@ const TODAY = (() => { const d = new Date(), m = d.getMonth() + 1, y = d.getDate
   t("P11 Later there clears it", h2.pending().length === 0); }
 { const h = browser(); h.load(); h.advance(700); h.press("sws-music-later"); h.fire("pointerdown"); h.advance(3500);
   const other = h.pending(); other.push({ id: "jimothy-x", title: "Keep", game: "Jimothy" }); h.store.set("sws_music_pending_reveal", JSON.stringify(other));
-  h.advance(120000);
+  h.advance(480000);
   t("P11 pending is read-modify-write: another tab's entry survives", h.pending().some(p => p.id === "jimothy-x") && h.pending().some(p => p.id === "m-deepwell-deep-water")); }
 { const h = browser(); h.load(); h.advance(700);
   t("P11 the module added exactly one style element to head", h.spies.styles === 1); }
+
+/* ================= P12: milestones. A game reports its own breaks; a break is a rung and the moment. ================= */
+{ const h = browser(); h.load(); h.advance(700); h.press("sws-music-later"); h.fire("pointerdown");
+  t("P12 progress carries milestones 0 from the first write", h.progress().deepwell.milestones === 0);
+  h.sb.SWSMusic.milestone(2);
+  t("P12 milestone(2) with milestonePer 3 opens nothing past track 1", !has(h, "m-deepwell-deep-water") && h.progress().deepwell.milestones === 2);
+  const n0 = h.spies.events.length;
+  t("P12 the boot card also told the page: open, then close on Later", n0 === 2 && h.spies.events[0].detail.open === true && h.spies.events[1].detail.open === false);
+  h.sb.SWSMusic.milestone(3);
+  t("P12 milestone(3) opens track 2 (level 3 opens the second song)", has(h, "m-deepwell-deep-water") && !has(h, "m-deepwell-deep-water-2"));
+  t("P12 a milestone is a break: the new song CARDS here, no toast; it stays pending until the card is answered", h.card() && /Deep Water/.test(h.card().textContent) && !h.toast() && h.pending().some(p => p.id === "m-deepwell-deep-water"));
+  t("P12 the card says Play it now", h.find("sws-music-listen") && h.find("sws-music-listen").textContent === "Play it now");
+  t("P12 the card told the page it opened (swsmusic:card open true)", h.spies.events.slice(n0).some(e => e.type === "swsmusic:card" && e.detail && e.detail.open === true));
+  h.press("sws-music-later");
+  t("P12 and that it closed (open false), after the open", (() => { const ev = h.spies.events.slice(n0).filter(e => e.type === "swsmusic:card"); return ev.length === 2 && ev[0].detail.open === true && ev[1].detail.open === false; })());
+  t("P12 Later clears the pending entry", h.pending().length === 0);
+  h.sb.SWSMusic.milestone(1);
+  t("P12 the max is kept: milestone(1) after 3 stays 3", h.progress().deepwell.milestones === 3);
+  h.sb.SWSMusic.milestone(); h.sb.SWSMusic.milestone(); h.sb.SWSMusic.milestone();
+  t("P12 no argument counts up by one: three calls take 3 to 6 and open track 3", h.progress().deepwell.milestones === 6 && has(h, "m-deepwell-deep-water-2"));
+  t("P12 no console.error", h.spies.errors === 0); }
+{ const h = browser({ ladder: { milestonePer: 1 } }); h.load(); h.advance(700); h.press("sws-music-later"); h.sb.SWSMusic.milestone(1);
+  t("P12 catalog.ladder.milestonePer=1: milestone(1) opens track 2", has(h, "m-deepwell-deep-water")); }
+{ const h = browser({ ladder: { milestonePer: 0 } }); h.load(); h.advance(700); h.press("sws-music-later"); h.sb.SWSMusic.milestone(50);
+  t("P12 milestonePer 0 disables the path (never opens everything at once)", !has(h, "m-deepwell-deep-water")); }
+/* a song earned by TIME mid round stays a toast, and the next milestone is where its card lands */
+{ const h = browser(); h.load(); h.advance(700); h.press("sws-music-later"); h.fire("pointerdown"); h.advance(3500); h.advance(480000);
+  t("P12 time rung mid round: toast, pending, no card", h.pending().some(p => p.id === "m-deepwell-deep-water") && !h.card());
+  h.advance(3500); h.sb.SWSMusic.milestone(1);
+  t("P12 the next milestone (even one that opens nothing new) cards the pending song", h.card() && /Deep Water/.test(h.card().textContent) && h.pending().some(p => p.id === "m-deepwell-deep-water"));
+  h.press("sws-music-later");
+  t("P12 answering it clears the pending entry", h.pending().length === 0 && !h.card()); }
+{ const h = browser({ noCatalog: true }); h.load();
+  t("P12 milestone() with no catalog returns false and writes nothing", h.sb.SWSMusic.milestone(3) === false && !h.store.has("sws_music_progress")); }
 
 done();

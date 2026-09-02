@@ -1691,6 +1691,11 @@ function win(){
   writeSave({ residueDelta:banked, run:null,
     site:{ id:S.level, runs:1, done:true, bestResidue:Math.max(prev.bestResidue||0, S.player.residue),
            ghost:raw.ghost, tiles:raw.tiles, economy:raw.economy, speed:raw.speed } });
+  // The soundtrack ladder (music-unlocks.js): a cleared site is a break in play, and the third
+  // distinct site cleared opens the second song (Stephen, Sep 02: "once you make it to like level 3").
+  try{ if(typeof window!=="undefined" && window.SWSMusic && window.SWSMusic.milestone){
+    const sv2=readSave(); let cleared=0; for(const k in (sv2.sites||{})) if(sv2.sites[k]&&sv2.sites[k].done) cleared++;
+    window.SWSMusic.milestone(cleared); } }catch(e){}
   S.result={ ok:true, raw, banked, medals:{
     ghost:["Unseen","Noticed","Hunted","Alarmed","Blacked out"][S.site.peak],
     efficiency:S.stats.tilesLaid+" tiles",
