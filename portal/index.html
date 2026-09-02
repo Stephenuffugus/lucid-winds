@@ -674,6 +674,14 @@
     border:1px solid var(--line);background:rgba(20,28,20,.85);color:var(--cream);
     font-family:var(--disp);font-weight:700;letter-spacing:.04em;font-size:.92rem}
   .fg-row button:hover,.fg-row button:focus-visible{border-color:var(--gold,#c8a84b)}
+  .fg-chips{display:flex;gap:8px;margin-top:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+  .fg-chips::-webkit-scrollbar{display:none}
+  .fg-chips button{flex:0 0 auto;min-height:48px;padding:0 14px;border-radius:999px;cursor:pointer;
+    border:1px solid var(--line);background:rgba(20,28,20,.7);color:var(--cream);
+    font-family:var(--disp);font-weight:700;font-size:.88rem;letter-spacing:.03em;white-space:nowrap}
+  .fg-chips button.new{border-color:var(--gold,#c8a84b);color:var(--gold,#c8a84b)}
+  .fg-chips button:hover,.fg-chips button:focus-visible{border-color:var(--leaf,#5fc08a)}
+  .fg-lead{color:var(--muted);font-size:.85rem;padding:0 2px 6px}
   #fg-results-wrap{margin-top:12px}
   .fg-none{color:var(--muted);font-size:.9rem;padding:6px 2px}
   /* slim featured strip (replaces the giant Jimothy panel) */
@@ -769,9 +777,15 @@
        paints its top matches RIGHT HERE as a shelf row; Surprise me launches
        a random released game through the normal card path. -->
   <section class="findgame reveal" id="find-game">
-    <input id="fg-search" type="search" name="game-search" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" aria-label="Search games" readonly onfocus="this.removeAttribute('readonly')"
+    <input id="fg-search" type="search" name="game-search" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" inputmode="search" enterkeyhint="search" data-lpignore="true" data-1p-ignore data-bwignore data-form-type="other" aria-label="Search games" readonly onfocus="this.removeAttribute('readonly')"
       placeholder="Search a title, a type, or a classic you know: Peggle, Wordle, Mahjong…">
+    <!-- 2026-09-02 (Stephen: "every time i go to search it suggests my email and
+         password ... have it pop up some suggestions, sudoku, something new"):
+         a chip row so a player rarely has to type into the box at all. Three
+         classics rotate per visit; SOMETHING NEW paints the newest open games. -->
+    <div class="fg-chips" id="fg-chips" aria-label="Suggestions"></div>
     <div id="fg-results-wrap" style="display:none">
+      <div class="fg-lead" id="fg-lead" style="display:none"></div>
       <div class="shelf-wrap"><div class="shelf-row" id="fg-results"></div></div>
     </div>
     <div class="fg-row">
@@ -880,7 +894,7 @@
       <button id="cat-back" type="button">&#8249; Storefront</button>
       <h2 class="arcade-h" id="everything-h">Everything <span>all 180, A to Z</span></h2>
     </div>
-    <input id="gsearch" type="search" name="catalog-search" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" aria-label="Search the catalog" readonly onfocus="this.removeAttribute('readonly')" placeholder="Search the games. Try Scrabble, Peggle, Wordle, Mahjong…">
+    <input id="gsearch" type="search" name="catalog-search" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" inputmode="search" enterkeyhint="search" data-lpignore="true" data-1p-ignore data-bwignore data-form-type="other" aria-label="Search the catalog" readonly onfocus="this.removeAttribute('readonly')" placeholder="Search the games. Try Scrabble, Peggle, Wordle, Mahjong…">
     <div class="tabs" id="tabs"></div>
     <div class="vibes" id="vibes"></div>
     <div class="grid" id="garden"></div>
@@ -1997,7 +2011,7 @@ function searchGames(qraw){
   var si=document.getElementById('fg-search'); if(!si) return;
   var res=document.getElementById('fg-results'), wrap=document.getElementById('fg-results-wrap'), t=0;
   function paint(v){
-    var q=(v||'').trim();
+    var q=(v||'').trim(); var lead=document.getElementById('fg-lead'); if(lead) lead.style.display='none';
     if(!q){ wrap.style.display='none'; res.innerHTML=''; return; }
     var out=searchCore(q).out.slice(0,8);
     window._swsHideKind=null;
@@ -2011,6 +2025,35 @@ function searchGames(qraw){
   }
   si.addEventListener('input',function(){ clearTimeout(t); var v=si.value; t=setTimeout(function(){ paint(v); },140); });
   si.addEventListener('search',function(){ paint(si.value); });
+  /* suggestion chips (2026-09-02). CLASSICS are names the ALIASES table already
+     resolves, so a chip is exactly a typed search. NEW_PICKS are the newest OPEN
+     games by the date their folder landed (git), beta ones left out so a chip
+     never dead ends on a passcode; keep this list fresh when a game goes live. */
+  var CLASSICS=['Sudoku','Mahjong','Peggle','Wordle','Tetris','Minesweeper','Solitaire','Zuma','Snake','Pong','2048','Crossword'];
+  var NEW_PICKS=['Tomato Man','Tally','Sweet Spot','Sixfold','Letter Launch','HUNCH','Abduct a Chameleon','Sled Vine','Spore Drift','Bridgevine'];
+  var chips=document.getElementById('fg-chips');
+  function byName(nm){ var r=searchCore(nm).out; for(var i=0;i<r.length;i++){ if(r[i].nm.toLowerCase()===nm.toLowerCase()) return r[i]; } return r[0]||null; }
+  function paintNew(){
+    var out=[]; for(var i=0;i<NEW_PICKS.length;i++){ var it=byName(NEW_PICKS[i]); if(it) out.push(it); }
+    window._swsHideKind=null;
+    var lead=document.getElementById('fg-lead'); if(lead){ lead.textContent='Newest in the arcade'; lead.style.display='block'; }
+    res.innerHTML=out.map(function(it){ return card(it.g, it.feat); }).join('');
+    if(window._lwLazyBoot) _lwLazyBoot();
+    wrap.style.display='block';
+    try{ gtag('event','portal_chip',{ chip:'something new' }); }catch(e){}
+  }
+  if(chips){
+    var pool=CLASSICS.slice(), pick=[];
+    while(pick.length<3&&pool.length){ pick.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]); }
+    chips.innerHTML='<button type="button" class="new">✨ Something new</button>'
+      +pick.map(function(c){ return '<button type="button" data-q="'+c+'">'+c+'</button>'; }).join('');
+    chips.addEventListener('click',function(e){
+      var b=e.target.closest('button'); if(!b) return;
+      if(b.classList.contains('new')){ si.value=''; paintNew(); return; }
+      si.value=b.getAttribute('data-q'); paint(si.value);
+      try{ gtag('event','portal_chip',{ chip:si.value }); }catch(e2){}
+    });
+  }
   document.getElementById('fg-surprise').addEventListener('click',function(){
     /* a random RELEASED game straight from the registries (the wall no
        longer pre-renders). A throwaway real card is clicked so analytics,
