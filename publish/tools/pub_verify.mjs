@@ -113,14 +113,24 @@ const h = {
   tap: async (x, y) => { await page.touchscreen.tap(x, y); await h.wait(160); },
   /* ⛔ never el.click() to prove a control works: tap the middle of its rendered box,
      the way a thumb does, so a control covered by an overlay fails like it would. */
+  /* ⛔ scroll it into view first, the way a thumb does. Jimothy's How to play card is
+     taller than the phone and its Back button sits below the fold: getBoundingClientRect
+     still returns a size for it, so a naive check called it visible and the tap landed
+     off screen, forever. */
   tapSel: async (sel, idx = 0) => {
     const box = await page.evaluate((s, i) => {
       const e = [...document.querySelectorAll(s)].filter(x => x.getBoundingClientRect().width > 0)[i];
       if (!e) return null;
+      const r0 = e.getBoundingClientRect();
+      if (r0.bottom < 0 || r0.top > innerHeight || r0.right < 0 || r0.left > innerWidth) {
+        e.scrollIntoView({ block: "center" });
+      }
       const r = e.getBoundingClientRect();
-      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2,
+               onScreen: r.top >= -2 && r.bottom <= innerHeight + 2 };
     }, sel, idx);
     if (!box) throw new Error("tapSel: nothing visible for " + sel);
+    if (!box.onScreen) throw new Error("tapSel: " + sel + " will not come on screen");
     await page.touchscreen.tap(box.x, box.y); await h.wait(200); return true;
   },
   tapText: async (re) => {

@@ -128,9 +128,12 @@ window.__pubAd = function(){
 # soundtrack chip goes with them: its script is stripped from a publisher build, so
 # leaving the button would leave a control that does nothing.
 #   [data-go=exit]  -> Pong Arena's menu tile, a data attribute the router reads
+# and `[id*="feedback"]`: the builder strips OUR feedback fab, but Jimothy carries a
+# feedback form of its own, wired to our endpoint, with a "We would love to hear what
+# you think" button on its game over screen. A publisher build must not post anywhere.
 HIDE_EXIT_CSS = ('<style>[onclick*="SWS_EXIT"],[data-sws-exit],[data-go="exit"],'
                  '.lw-exit,.swsback,[aria-label*="arcade" i],[aria-label*="soundtrack" i],'
-                 '[aria-label*="sky wolf" i]{display:none!important}</style>')
+                 '[aria-label*="sky wolf" i],[id*="feedback" i]{display:none!important}</style>')
 
 # Round-end names the fleet actually uses, most specific first. `win` and `finish`
 # are last because they are the two that could plausibly belong to something else;
@@ -295,6 +298,10 @@ def build(src_dir, target, game_id):
         return '<title>' + (t or m.group(1).split('·')[0].strip()) + '</title>'
     html = re.sub(r'<title>(.*?)</title>', _title, html, flags=re.S)
     html = re.sub(r'<meta (?:property|name)="(?:og|twitter):[^"]*"[^>]*/?>\n?', '', html)
+    # JSON-LD is search engine furniture describing the game AT OUR URL. In a publisher
+    # ZIP the url and image fields are emptied by the domain sweep and what is left is a
+    # structured claim with holes in it. Out.
+    html = re.sub(r'<script[^>]*type="application/ld\+json"[^>]*>[\s\S]*?</script>\n?', '', html)
 
     # 2e. our OTHER product's name out of the visible copy. Bloom Breaker's footer reads
     #     "Sky Wolf Studio · a Lucid Winds satellite"; on GameMonetize that is a claim
@@ -331,10 +338,13 @@ def build(src_dir, target, game_id):
     nosw = ('<script>window.__pubNoSW=function(){var p={then:function(){return p},"catch":function(){return p}};return p};'
             'window.LW_TRACKS=window.LW_TRACKS||[];window.SWSPlayer=window.SWSPlayer||{init:function(){}};'
             'window.LW_Feedback=window.LW_Feedback||{mountFab:function(){}};'
-            '(function(){var RX=/sunbeam|\\bdew drops?\\b/i,t=null;'
+            '(function(){var RX=/sunbeam|\\bdew drops?\\b|support the studio|\\bdonate\\b|tip jar/i,t=null;'
+            'function hide(e){var n=e,d=0;while(n&&d<3){var g=(n.tagName||"").toLowerCase();'
+            'if(g==="button"||g==="a"||n.getAttribute&&n.getAttribute("role")==="button"){n.style.display="none";return;}'
+            'n=n.parentElement;d++;}e.style.display="none";}'
             'function sweep(){var e=document.body?document.body.getElementsByTagName("*"):[],i;'
             'for(i=0;i<e.length;i++){if(!e[i].children.length&&RX.test(e[i].textContent||""))'
-            'e[i].style.display="none";}}'
+            'hide(e[i]);}}'
             'function q(){if(t)return;t=setTimeout(function(){t=null;try{sweep();}catch(x){}},120);}'
             'if(document.readyState!=="loading")q();else document.addEventListener("DOMContentLoaded",q);'
             'try{new MutationObserver(q).observe(document.documentElement,{childList:true,subtree:true,characterData:true});}catch(x){}'
@@ -405,7 +415,12 @@ def build(src_dir, target, game_id):
     # a build tool that can emit broken HTML must prove it did not:
     # extract every inline script and node --check it
     import subprocess, tempfile
-    blocks = re.findall(r'<script(?![^>]*src=)[^>]*>(.*?)</script>', html, re.S)
+    # ⛔ only JavaScript. This checker used to node --check every inline block including
+    # `type="application/ld+json"`, which is JSON and fails to parse as a program: the
+    # first game with structured data in its head (Jimothy) tripped a build that was
+    # perfectly fine.
+    blocks = [b for t, b in re.findall(r'<script(?![^>]*src=)([^>]*)>(.*?)</script>', html, re.S)
+              if not re.search(r'type\s*=\s*"(?!text/javascript|application/javascript|module)', t)]
     for bi, b in enumerate(blocks):
         with tempfile.NamedTemporaryFile('w', suffix='.js', delete=False) as tf:
             tf.write(b); tp = tf.name

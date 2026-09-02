@@ -8,10 +8,11 @@
 
 | Network | Contact | State | Next actor |
 |---|---|---|---|
-| GameDistribution (Azerion) | Sabina, s.sturzova@azerion.com | Replied 8/03 with full intake steps. ZIP built, draft reply in Gmail. | **Stephen**: create dev account at gamedistribution.com (profile + payment details), create the game entry, send me the gameId |
-| GameMonetize | Marian, mentolatux@gamemonetize.com | Replied 7/29: one game first, quality-reviewed. ZIP built, draft reply in Gmail. | **Stephen**: dev account at gamemonetize.com, game entry → gameId |
+| GameDistribution (Azerion) | Sabina, s.sturzova@azerion.com | **Ten games + Jimothy built and verified, marketing at all five sizes done, reply written.** See `publish/QUEUE.md` and `publish/REPLY-GD.md`. | **Stephen**: dev account at gamedistribution.com (profile + payment details), create the game entry, send Fable the gameId, send `publish/REPLY-GD.md` |
+| GameMonetize | Marian, mentolatux@gamemonetize.com | Same, and Marian asked for **one game first**. Lead with Bloom Breaker; his mail says "not simple ones" and it has 60 levels, 24 powerups and a boss in 44 KB. `publish/REPLY-GM.md`. | **Stephen**: dev account at gamemonetize.com, game entry → gameId, send `publish/REPLY-GM.md` |
 | itch.io | — | Jimothy already live | more titles whenever |
-| CrazyGames / Poki | — | not yet contacted | outreach after first GD/GM acceptance (stronger pitch with a live track record) |
+| CrazyGames | — | requirements read 2026-09-02, three titles chosen, submission text written | **Stephen**: `publish/PITCH-CRAZYGAMES.md`. ⛔ Needs a third builder target: their SDK, and a rival network's SDK inside the build is a third party ad system. |
+| Poki | — | requirements read 2026-09-02, ⚠️ **they prefer web exclusivity**, so anything that goes to GD or GM can only be their flat fee non exclusive licence | **Stephen**: read the exclusivity section of `publish/PITCH-POKI.md` and choose the door before sending |
 
 ## Division of labor
 
@@ -45,6 +46,20 @@ loads the game fine but serves no ads and may fail review.
 - Ad placement: preroll (SDK automatic) + midroll on `completeLevel`,
   throttled to one per 3 minutes — matches GameMonetize's published
   guidance (play button and win/lose screens; never on initial load).
+
+## The batch of ten (2026-09-02)
+
+`publish/QUEUE.md` is the record: how the ten were chosen out of 84 screened, the twenty
+ZIPs and the assertions each one passed, the nine builder fixes the verification forced,
+the fifty marketing images, and the Jimothy diet from 400.7 MB to 54.3 MB.
+
+```
+Bloom Breaker · Berry Vine · Petal Slice · Dew Snip · Picnic Panic
+Bubblenaut · Stop the Light · Nova Bloom · Garden Guard · Pong Arena
+```
+
+⛔ Every ZIP in `publish/dist/` carries a PLACEHOLDER game id and therefore serves no
+ads. Rebuild with the real id before any upload; that is one command and under a minute.
 
 ## Queue after the pilot clears
 

@@ -376,3 +376,108 @@ each pass rather than trusted.
   at all, so it is worth doing for its own sake.
 - **Bloom Breaker's play frame is still a dark table.** It is the busiest frame the round
   had; the game is simply dark until the bricks start breaking. Honest, not flattering.
+
+---
+
+## Step 4 — Jimothy on a diet
+
+```
+python3 publish/tools/jimothy_diet.py --budget-mb 57
+source 400.7 MB
+  dropped   171.6 MB  unreferenced folders
+  dropped    18.0 MB  music, replaced by silence
+  dropped   155.4 MB  alternate skins and rarer critters
+dieted folder 55.6 MB
+wrote /workspaces/lucid-winds/publish/dist/stream-hop-diet-gm.zip (55566 KB)
+```
+
+**`publish/dist/stream-hop-diet-{gd,gm}.zip`, 54.3 MB each.** From 400.7 MB, by three
+rules a person can check.
+
+### Exactly what was dropped
+
+| Rule | What went | Bytes |
+|---|---|---|
+| Folders no shipped file names | `art-drop`, `art-drop2`, `art-drop3`, `art-drop4`, `art-drop6`, `art-sheets`, `music-drop`, `store-listing` | **171.6 MB** |
+| Every music file | The seven soundtrack tracks and their loops, **replaced by a one second silent MP3 each**, not deleted | **18.0 MB** |
+| Alternate skins beyond the default set | 39 of Jimothy's 45 characters: all 32 costume skins except Deckhand, and the 8 rarer Seattle critters | **155.4 MB** |
+
+**Kept:** Jimothy himself, the four common Seattle critters (City Pigeon, Ballard Crow,
+Seagull, Opossum) and Deckhand Jimothy. Six characters, chosen by rarity first and then
+by size, filling a 57 MB budget. Raise `--budget-mb` and more critters come back; the
+script prints exactly which and what they cost.
+
+⛔ **The roster is filtered as well as the art.** Deleting `assets/skins/nordic/` and
+leaving Nordic Jimothy in the `CHARS` array gives a Prize Bin full of broken images and a
+console full of 404s, which is precisely what a publisher QA pass looks for. The script
+brace matches the `CHARS` array out of `index.html`, drops the entries whose art is gone,
+and writes it back. The array is read the way `scripts/catalog.mjs` reads the portal, by
+matching brackets and skipping strings and comments, never by regex.
+
+⭐ **The music is silenced, not deleted.** Jimothy's menu has a jukebox that lists seven
+tracks and unlocks them as you play. Delete the files and every row is a 404 waiting for
+the first curious reviewer. A real one second silent MP3 built with ffmpeg, written over
+each track, keeps the jukebox honest, plays nothing, and costs 4 KB instead of 2.7 MB.
+
+### It boots, and it plays a round
+
+Same harness and same assertions as the other twenty:
+
+```
+node publish/tools/pub_verify.mjs publish/dist/stream-hop-diet-gd.zip
+PASS stream-hop-diet-gd  55566 KB  ad at round end: 1
+node publish/tools/pub_verify.mjs publish/dist/stream-hop-diet-gm.zip
+PASS stream-hop-diet-gm  55566 KB  ad at round end: 1
+```
+
+Zero requests to our domains, zero own-file 404s, no console errors, the SDK verbatim,
+and `window.__pubAd` called once at the run report. The end screen reads **"FLATTENED,
+He did not see it coming, 6 ROWS CROSSED"**, which is the screen a player meets.
+Screenshots in `publish/shots/stream-hop-diet-*`.
+
+Warning recorded, not fixed: three buttons on that run report are 44 px tall
+(`go-home 117x44`, `go-share 117x44`, `go-feedback 243x44`). They are the game's, and
+`satellites/` is outside this task's fence.
+
+### Three things the diet build found that the other ten had not
+
+- **A JSON-LD block broke the build.** The builder syntax checks every inline script, and
+  Jimothy is the first game in this batch with `type="application/ld+json"` in its head.
+  JSON is not a program, so `node --check` failed a build that was perfectly fine. The
+  checker now only reads blocks that are actually JavaScript, and the structured data
+  block is stripped outright: it is a search engine description of the game **at our
+  URL**, and the domain sweep had already left it with empty `url` and `image` fields.
+- **A payment surface.** Jimothy's menu carries "Support the Studio", and behind it
+  `#sup-buy`, `#sup-donate`, `#sup-d5`, `#sup-d10`, `#sup-d25`. A publisher build must
+  not carry a checkout pointing at ours. The economy sweep now takes it, walking up from
+  the label to the button that holds it so a control does not lose its text and stay.
+- **A feedback form wired to our endpoint,** with "We would love to hear what you think"
+  on the game over screen. The builder had always stripped OUR feedback fab; this one is
+  built into the game. Anything with `feedback` in its id is now hidden.
+
+The last of those changed the builder after the other twenty ZIPs were already verified,
+so all twenty were rebuilt and re-verified against it rather than left one revision
+behind.
+
+---
+
+## Where the ZIPs are, and why they are not in git
+
+`*.zip` is in `.gitignore` with the note *"extract, wire, delete, never commit"*, and the
+repository is already 3.7 GB. The twenty two ZIPs are **built artifacts**, and they are
+rebuilt by one command each:
+
+```
+python3 scripts/pub_build.py satellites/<game> --target gd --game-id <THE REAL ID>
+python3 publish/tools/jimothy_diet.py --budget-mb 57 --game-id <THE REAL ID>
+```
+
+⛔ **And they have to be rebuilt anyway.** A placeholder id loads the game fine and
+serves no ads, so every ZIP in `publish/dist/` today is a proof that the pipeline works,
+not a thing to upload. The moment a real game id exists, the rebuild takes under a
+minute per game and the verifier proves it again.
+
+What IS committed is everything that cannot be regenerated from a command: the builder,
+the ten play recipes, the fifty marketing images, and the evidence, which is a boot
+screenshot, a round-end screenshot and a JSON of every assertion for all twenty two
+builds, in `publish/shots/`.
