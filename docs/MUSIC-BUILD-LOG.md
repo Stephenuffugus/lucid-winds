@@ -262,3 +262,27 @@ gates: `run.mjs: all 10 steps green in 96s` (catalog 51 · unlocks 65 · mutants
 thumb shipped: a shot from inside play (two clicks in: "Enter the site", then a level's "Enter"): the blob with its
 iridescent rim, a lit socket, the room. Three things wrong with it, said before Stephen does: the subject is small at card
 size; it is dark on a dark portal; no wordmark. Still the right choice over a wall of rules text. Beta card, Test Lab only.
+
+## P10 — LIVE (2026-09-02, main 8f6dc931)
+route: Stephen added the private repo `Stephenuffugus/lucid-winds-music` as a second Hostinger git deployment (dir `music`).
+"git repository exists" on his second tap meant the first had already created and deployed it. His Hostinger server key is
+an ACCOUNT-level GitHub SSH key (scanned all 42 repos: a deploy key nowhere), so nothing needed attaching.
+```
+music_verify.mjs --base https://lucidwinds.com --local /tmp/music-web  →  144/144 ok
+push branch → main: REJECTED non-fast-forward (main had the Sep 1 session's squash b5abc47c). Merged; one conflict,
+  portal/index.html (my Conduit line beside the Tangent line); resolved; portal parses, 187/26/161, counts true.
+main 99b559b5: deploy landed in ~10s; PROBE.txt and tracks still 200 AFTER the site deploy → the music checkout survives.
+main 8f6dc931: live:true + Originals ×2 + stamps (music-tracks ?v=2026.09.02.01 in portal and shell; shell.js?v=32 ×66).
+live after ~10s; portal and chess pages load the new stamps; manifest carries midnight-greenhouse ×2; file 200 audio/mpeg.
+THE LOOK, real site, clean profile, no hooks: deepwell → Action Room: Neon Rush (1) · pong → Action Room track 2 by
+  BREADTH (2nd action game) + Pong Arena: Neon Rally (1) · chess → Board Classics: Boardgame Afternoon (1). Zero console
+  errors on all three. No toast before the tap, toast after. Portal player: Action Room > Pong Arena > Board Classics >
+  Originals (11) > …
+```
+two process misses, recorded so they stop: I pushed to main without `git log HEAD..origin/main` first; and twice a chained
+command ran past a failure (a wait loop after a rejected push; a resolver whose assertion failed and then `git add && commit`
+committed conflict markers, caught before any push and amended). Gate each step on the previous exit code.
+three things wrong with the live look: the toast still crosses a wordmark on title-as-hub games (known, named fix); two
+toasts queue on a game that earns from two shelves at once (fine, but the player sees two pills back to back); a family
+track reads "unlocked in Action Room" when it was unlocked in Pong (the fold's wording uses the shelf name; cosmetic).
+index.html loads the manifest by LW_VERSION (fenced): the app shows the two new Originals after its next version bump.
