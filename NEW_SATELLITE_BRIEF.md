@@ -111,3 +111,13 @@ Model it on Blooming Words' handoff. Include:
 
 That's it. Build something small and lovely, keep the nav internal, hand back
 the list above, and it goes live on the portal the same day. 🐺
+
+## Soundtrack unlocks (mandatory, one line, 2026-09-02)
+
+Every satellite includes the shared unlock module immediately before `</head>`:
+
+```html
+<script src="/music-unlocks.js" defer></script>
+```
+
+It works out which game it is in from the URL, hands the player songs from that game's shelf on a short ladder, and puts them in the studio player. It never plays audio and never touches your game; it adds one inert toast for three seconds after the player's first tap. `node scripts/music_include.mjs --check` must report your game as included. See `docs/MUSIC-SYSTEM.md`.

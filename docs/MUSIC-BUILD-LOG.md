@@ -157,3 +157,13 @@ whose title is also the hub (Deepwell) it will sit across the title for three se
 Stephen dislikes it on a phone: arcade-exit.js already searches for an empty corner with elementFromPoint; the toast could
 borrow that. Not done in Tier 0 on purpose: it is more DOM inspection inside 172 pages we do not control.
 shots: /tmp/music-shots/{deepwell,greenhouse-pinball,flock-the-world,chess,klondike,sudoku}.png (sudoku = no shelf, no toast)
+
+## P8 — Docs and the standard
+- `docs/MUSIC-SYSTEM.md`: the one page. Pieces, the five-step path from a zip to a player, the ladder, the Tier 1 hook,
+  the five things that must not drift (propagation stamps, the two SW guards, the 12 vendored, the in-app follow-up, the
+  never-shrunk ledger, no dashes).
+- `NEW_SATELLITE_BRIEF.md`: a "Soundtrack unlocks (mandatory, one line)" section appended, with the exact include line
+  and `music_include.mjs --check` as the acceptance.
+- `_music-drop/README.md`: the two folder rules appended (01/02 prefixes pick the free song and the order; family folder
+  names make shared shelves; unmapped folders are reported, never guessed).
+`no_shrink gate: 201 ok, 0 failed` (both pre-existing docs grew only)
