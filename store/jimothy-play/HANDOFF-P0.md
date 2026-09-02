@@ -1,3 +1,5 @@
+# ⛔ PARKED 2026-09-02, do not run. Stephen: Jimothy is $3 on Steam, a free Play copy undercuts it. Fable wrote this off a stale Aug 22 note. Kept only as the shape of a Play TWA task.
+
 # HANDOFF P0 — Jumping Jimothy on Google Play, FREE (the account's first listing)
 
 > Written 2026-09-02 by Fable. Runs NOW: a free listing needs no merchant profile, and
