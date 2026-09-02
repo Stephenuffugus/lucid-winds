@@ -18,7 +18,7 @@
 
 ## 1. WHAT YOU ARE BUILDING
 
-Stephen has made roughly 200 songs, one folder per game. The arcade has 185 carded games and exactly **one** of them, Jumping Jimothy, ever gives a player a song. You are building **Tier 0**: a single shared module that, inside any game, knows which game it is in, quietly tracks how long the player has been there and how many days they have come back, and hands them songs from that game's shelf on a short generous ladder. Every song lands in the shared studio player under a shelf named after the game. No game's logic changes. No game plays the audio. The reward is the toast and the shelf.
+Stephen has made roughly 200 songs, one folder per game. The arcade has 186 carded games and exactly **one** of them, Jumping Jimothy, ever gives a player a song. You are building **Tier 0**: a single shared module that, inside any game, knows which game it is in, quietly tracks how long the player has been there and how many days they have come back, and hands them songs from that game's shelf on a short generous ladder. Every song lands in the shared studio player under a shelf named after the game. No game's logic changes. No game plays the audio. The reward is the toast and the shelf.
 
 Stephen's brief, verbatim: *"i want people to feel rewarded a lot with cool stuff like the music so theyre excited and feel rewarded constantly."* And: *"i dont want any of them to be very hard to unlock."* Take both literally.
 
@@ -45,7 +45,7 @@ node -e "console.log(require('puppeteer/package.json').version)"   # 25.4.0
 
 | Fact | Value | Why it matters |
 |---|---|---|
-| Carded games | 185 | 119 satellite cards + 67 native, per `catalog.mjs` |
+| Carded games | 186 | 119 satellite cards + 67 native, per `catalog.mjs` (`fleet_inventory.mjs` shows 185 rows because it skips the 3 cards with no directory and adds 2 uncarded dirs) |
 | Satellite directories | 117 | every one has `index.html` and exactly one `</head>` |
 | Vendored satellites | **12** | cannot be edited here; `vendor_satellites.mjs --check` reports EDITED |
 | In-scope satellite includes | **105** | 117 minus 12 |
@@ -94,7 +94,7 @@ node -e "console.log(require('puppeteer/package.json').version)"   # 25.4.0
 
 ### C. The 12 vendored satellites. You do not touch these files.
 `tomato-man abduct-a-chameleon glyph-forge litter-bug sweet-spot tarot-run sixfold letter-launch skitterlings wild-wardens tally hunch`
-Verify with `node scripts/vendor_satellites.mjs --list`. Your include script must read that list and skip them, and `--check` must still say CLEAN for all 12 when you are done.
+Verify with `node scripts/vendor_satellites.mjs --list`. Your include script must read that list and skip them, and their 12 `index.html` sha256s must match `test/music/vendored_baseline.txt` when you are done (LAW 16 explains why "CLEAN" is not the gate).
 
 ### D. Display name is not slug. Never assume.
 Acorn Drop is `tonic-drop`. OriVex is `petalvex`. Sunforge is `ring-stacker`. Blobworks is `greenhouse-pinball`. Jumping Jimothy is `stream-hop`. Super Slice is `slice-master`. Two cards, Abduct a Chameleon and Abduct a Chameleon 3D, share one dir. `scripts/catalog.mjs` returns both `name` and `dir`/`id`; the generator matches against ALL of them (§6.4).
@@ -175,7 +175,7 @@ assets/music/*      any file in the 12 vendored satellites          any game's l
 
 **LAW 15. Never claim the music is hand made.** Stephen made it with Suno on a paid tier. `artist` is `Stephen`. Nothing you write says otherwise.
 
-**LAW 16. Vendored means untouchable here.** `vendor_satellites.mjs --check` must report CLEAN for all 12 before and after your work. *`project_vendoring_off_origin_aug18`.*
+**LAW 16. Vendored means untouchable here.** ⚠️ `vendor_satellites.mjs --check` already reports EDITED for all 12 (index.html, one file each) before this build begins; that drift predates it and is reported, not fixed. So the gate is **byte-identical**: P0 records `sha256sum satellites/<12>/index.html` to `test/music/vendored_baseline.txt`, and every later phase asserts those 12 hashes are unchanged. *`project_vendoring_off_origin_aug18`.*
 
 ---
 
@@ -313,7 +313,8 @@ Stephen drags the zip into `_music-drop/` and runs `node scripts/music_intake.mj
 ## 8. PHASES. For each: run the gate, watch it fail, build, run it green, paste the evidence.
 
 Before P0: `git rev-parse HEAD` → write it in the P0 box. `no_shrink` diffs against it forever after.
-Start the static server once: `pgrep -f "http.server 8777" || (python3 -m http.server 8777 >/dev/null 2>&1 &)`.
+Start the static server once: `ss -ltn | grep -q ':8777' || (nohup python3 -m http.server 8777 --bind 127.0.0.1 >/tmp/http8777.log 2>&1 &)`; verify with `curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8777/music-tracks.js` → 200.
+⛔ Never `pgrep -f "http.server"` to test it: pgrep matches the shell command that contains those words, and reported "already running" against a dead port on 2026-09-02.
 
 ### P0. Ground truth
 Run §2. Reconcile every number. Read `satellites/stream-hop/index.html:5232-5300`, `arcade-exit.js` (whole header), `music-tracks.js:100-152`, `play/shell.js:780-905`, `sw.js:250-300`, `scripts/music_intake.mjs`, `scripts/catalog.mjs`. Correct any moved line in this document. Create `docs/MUSIC-BUILD-LOG.md` with the P0 box.
@@ -345,8 +346,8 @@ Gate `test/music/inject.mjs` on 6 natives (`chess`, `sudoku`, `memory`, `cribbag
 
 ### P6. The 105 satellite includes
 `scripts/music_include.mjs`: reads `vendor_satellites.mjs --list`, skips those 12, and for each remaining `satellites/*/index.html` asserts exactly one `</head>` (case-insensitive), asserts the include is absent, inserts `<script src="/music-unlocks.js" defer></script>` on its own line immediately before it, asserts line count grew by exactly 1. `--dry-run` prints the plan; `--apply --batch <n>` does 15 at a time; `--check` verifies every non-vendored satellite has exactly one include and every vendored one has none.
-Batches of 15. After EACH batch: `inject.mjs` on 4 satellites from that batch, `no_shrink`, `node scripts/vendor_satellites.mjs --check` still CLEAN ×12, and extract every inline `<script>` of each touched file and `vm.createScript` it (a syntax error in one block kills the page; *CLAUDE.md pitfall 2*). One commit per batch.
-> **P6** batches: __ · files: __/105 · vendored untouched: 12/12 · inject sampled: __ · no_shrink: ______
+Batches of 15. After EACH batch: `inject.mjs` on 4 satellites from that batch, `no_shrink`, the 12 vendored sha256s unchanged against `test/music/vendored_baseline.txt`, and extract every inline `<script>` of each touched file and `vm.createScript` it (a syntax error in one block kills the page; *CLAUDE.md pitfall 2*). One commit per batch.
+> **P6** batches: __ · files: __/105 · vendored sha256 unchanged: 12/12 · inject sampled: __ · no_shrink: ______
 
 ### P7. UI, and LOOK
 Gate `test/music/ui.mjs` at 375×667 on 3 satellites + 3 natives: toast computed `pointer-events` is `none`, height ≤ 44px, gone within 3.5s, text has no `-`/`–`/`—`, `prefers-reduced-motion` yields no transform animation. Then **screenshot each with the toast showing, open the images, and write three things wrong with them before Stephen does.** A green test is not a look. *CLAUDE.md, "Looking is part of the job."*
@@ -357,8 +358,8 @@ Gate `test/music/ui.mjs` at 375×667 on 3 satellites + 3 natives: toast computed
 > **P8** files: ______ · no_shrink: ______
 
 ### P9. Hand back. Then stop.
-`test/music/run.mjs` all green in one run, pasted. `node scripts/vendor_satellites.mjs --check` pasted. `git log --oneline <P0>..HEAD` pasted. `music-catalog.js` committed with `live:false`. Report the branch, the last commit, the unmapped folders, and every open question you hit. **Do not deploy. Do not push to main.**
-> **P9** run.mjs: ______ · vendored: ______ · commits: __ · live: false · deployed: **NO**
+`test/music/run.mjs` all green in one run, pasted. The 12 vendored sha256s re-checked against the P0 baseline, pasted. `git log --oneline <P0>..HEAD` pasted. `music-catalog.js` committed with `live:false`. Report the branch, the last commit, the unmapped folders, and every open question you hit. **Do not deploy. Do not push to main.**
+> **P9** run.mjs: ______ · vendored sha256: __/12 · commits: __ · live: false · deployed: **NO**
 
 ---
 
