@@ -60,7 +60,8 @@ grep -rl 'src="/arcade-exit.js'  --include=index.html satellites/ | wc -l
 | Satellite directories | `satellites/` | 117 |
 | Satellites loading `sunbeam-sdk.js` | grep above | **76** ← the free injection point |
 | Satellites loading `arcade-exit.js` | grep above | 3 |
-| Satellites loading **neither** | grep above | **26** ← these need one include line |
+| Satellites **without** `sunbeam-sdk.js` | grep above | **41** ← these need one include line |
+| ...of those, born since 2026-08-01 | see §5.5 | **29** ← every game built since Aug 7 |
 | Games with music of their own | `fleet_inventory.mjs` | 3 |
 | Games exporting a music unlock | `fleet_inventory.mjs` | **1** (Jimothy) |
 | Games that are completely silent | `fleet_inventory.mjs` | 72 |
@@ -207,6 +208,29 @@ for one. That gives you two tiers of wiring:
 Tier 0 alone means **every one of the 185 games starts rewarding the player with
 music without a single line of game logic being touched.** Build Tier 0 first and
 completely. Tier 1 is a later, optional deepening.
+
+### 5.5 ⭐ The sunbeam gap is the same gap
+
+Stephen, 2026-09-01: *"a lot of the newer games are missing sunbeam and its okay for
+now but they should be getting it."* He is right, and it is worse than "a lot":
+
+**41 of 117 satellites do not load `/sunbeam-sdk.js`, and 29 of those were born since
+2026-08-01.** Every satellite built since Aug 7 is missing it: moon-claw, skyshot,
+stop-the-light, twin-lanterns, aura-farm, create-a-critter, flock-the-world,
+bandits-box, blackout, deepwell, parallel, siege, wireworm, abduct-a-chameleon,
+glyph-forge, hunch, letter-launch, litter-bug, sixfold, sweet-spot, tally, tarot-run,
+tomato-man, wild-wardens, puppy-dash, aura-off, ripcord, conduit, tangent.
+
+The build pattern drifted: the newer a game is, the less likely it is to be wired to
+anything shared. **These are the same 41 files P5 has to open.** Adding the SDK line
+while you are already in there is one extra line in a file you already have open, and
+it closes a gap where the player currently earns nothing at all.
+
+⚠️ **But it is a separate concern, so it is a separate commit.** Do not mix a music
+include and a sunbeam include in one commit; if one has to be reverted, the other
+must survive. And ⚠ adding the SDK changes what a game PAYS OUT, which is economy,
+which is Stephen's call. Ask before wiring earn events. Adding the script tag so the
+game is *capable* of earning is safe; deciding what it pays is not.
 
 ### 5.2 The unlock ladder
 
@@ -367,9 +391,10 @@ chased its own pre-existing noise before.
 
 ---
 
-### P5 — The 26 stragglers
-The 26 satellites with neither the SDK nor the exit script get **one** `<script>` line
-each. Additive, nothing else on the line, nothing else in the file. Batch them ten at
+### P5 — The 41 stragglers, and the sunbeam gap they share
+The 41 satellites that do not load `sunbeam-sdk.js` get **one** `<script>` line each.
+⭐ **Read §5.5 first.** These are the same 41 games that earn the player nothing, so
+this phase is one pass, not two. Additive, nothing else on the line, nothing else in the file. Batch them ten at
 a time and run P4's gate between batches.
 ⛔ `str.replace`-style patches MUST assert the match happened. A silent no-match that
 reports success has cost this project a round before.
