@@ -1,3 +1,4 @@
+# Ripcord playtests (the Director's own words, dated)
 
 ## 2026-09-02, Stephen, first notes (before playing the 3D battle toggle)
 
