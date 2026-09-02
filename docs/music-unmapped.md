@@ -5,14 +5,9 @@ Rename the folder to the game's exact arcade name (or a family name like `Card G
 
 | Folder | Tracks |
 |---|---|
+| (loose) | 2 (byte-identical to Weightless Drift (1).mp3 == spore-drift: Spore-drift/Weightless Drift (1).mp3; Weightless Drift.mp3 == spore-drift: Spore-drift/Weightless Drift.mp3) |
 | Conduit | 2 |
-| Cosmi-cadets | 2 |
 | Family-Boards | 2 |
 | Lucid Winds  | 2 |
-| Menu and shop song | 1 |
-| Quick-fire | 4 |
-| Solitair-parlor | 6 |
-| Tracks | 2 |
-| Use this song for rainbow poo boost | 1 |
 | Whackbox | 2 |
 | Zen-Studio | 2 |

@@ -23,9 +23,12 @@ every song lands in the studio player under a shelf named after the game. No gam
 4. `node scripts/music_verify.mjs --catalog music-catalog.js --base https://lucidwinds.com --local /tmp/music-web` → green.
 5. `node scripts/music_manifest.mjs --live` → `live:true`. Commit. Deploy (`git push origin add-sproing-jumper:main`, Fable/Stephen only).
 
-## The ladder (Tier 0, all passive)
-track 0 on opening the game · 1 after 120 visible seconds · 2 on a second calendar day · 3 at five sessions · then every three sessions.
-A game in a family (card, board, …) unlocks the family shelf on the same clock, on top of its own shelf if it has one.
+## The ladder (Tier 0, all passive, tunable in `music-ladder.json`)
+Track `i` opens when ANY holds: visible seconds ≥ `secsPer·i` (120) · calendar days ≥ `1 + daysPer·i` · sessions ≥ `sessionsBase + i` (2) · on a FAMILY shelf, distinct games of that family opened ≥ `1 + breadthPer·i` ("the more card games you try, the more you unlock"). Track 0 is free on opening. Edit the JSON, run `scripts/music_manifest.mjs`, done; the module reads the numbers from the catalog.
+A game in a family (card, board, …) unlocks the family shelf on top of its own shelf if it has one.
+
+## What the generator does with a messy drop
+Folder names resolve exactly, by slug, by family alias, by a unique contains hit either way, or by an entry in `music-folder-aliases.json`; else UNMAPPED and reported. A subfolder inside a game folder maps to the game and becomes a `note` on the track (`Pit bike rally/Menu and shop song/…`). Byte-identical files on one shelf are skipped (Drive duplicates, double exports); a loose root file that duplicates a shelved one is reported as such. `01 `, `02 ` prefixes order tracks and are stripped from titles.
 
 ## Tier 1, for a game that wants a real milestone (not built into any game yet)
 `SWSMusic.unlock('<shelf slug>', '<track id>')` grants that track and toasts. Ids are in `music-catalog.js`. One line, on the event.

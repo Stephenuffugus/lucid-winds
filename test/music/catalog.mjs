@@ -60,6 +60,17 @@ t("family: card-table games[] = every catalog game with cat card (" + new Set(ca
 t("family: Board Games -> board-classics", !!shelf("board-classics") && shelf("board-classics").kind === "family");
 t("no shelf for a family with no folder (dice)", !shelf("dice-porch"));
 
+/* nesting, duplicates, loose files (all need the files on disk; the fixture has them) */
+t("nested: Deepwell/Boss room/Zone Boss -> deepwell shelf, subfolder kept as a note, sorted last", shelf("deepwell") && shelf("deepwell").tracks.some(x => x.id === "m-deepwell-zone-boss" && x.note === "Boss room") && shelf("deepwell").tracks[shelf("deepwell").tracks.length - 1].id === "m-deepwell-zone-boss");
+t("nested: no shelf and no unmapped entry for the subfolder name", !C.shelves.some(s => /boss/i.test(s.name)) && !r1.unmapped.some(u => /boss/i.test(u.folder)));
+t("nested is logged as NESTED", r1.log.some(l => /^NESTED/.test(l) && /Boss room/.test(l)));
+t("dup: a byte-identical copy inside the same shelf is skipped (one shaft-song id)", shelf("deepwell") && shelf("deepwell").tracks.filter(x => /shaft-song/.test(x.id)).length === 1 && r1.log.some(l => /^DUP/.test(l) && /Shaft Song copy/.test(l)));
+t("loose: a root-level file is UNMAPPED as (loose), not under the wrapper name, and reported as byte-identical to flock-the-world/Trap Line", r1.unmapped.some(u => u.folder === "(loose)" && u.dupOf && u.dupOf.some(d => /Weightless Copy/.test(d) && /flock-the-world/.test(d))) && !r1.unmapped.some(u => u.folder === "Music For Games"));
+t("loose is logged as LOOSE", r1.log.some(l => /^LOOSE/.test(l) && /Weightless Copy/.test(l)));
+/* ladder emitted */
+t("catalog carries the ladder with defaults", C.ladder && C.ladder.secsPer === 120 && C.ladder.daysPer === 1 && C.ladder.sessionsBase === 2 && C.ladder.breadthPer === 1);
+t("ladder override reaches the catalog; invalid values ignored", (() => { const c2 = generate({ intake, existing: null, live: true, ladder: { secsPer: 60, daysPer: -3, breadthPer: "x" } }).catalog.ladder; return c2.secsPer === 60 && c2.daysPer === 1 && c2.breadthPer === 1; })());
+
 /* tracks, ids, files */
 const dw = shelf("deepwell");
 t("order prefix stripped from title: '01 Shaft Song' -> 'Shaft Song'", dw && dw.tracks[0].title === "Shaft Song");

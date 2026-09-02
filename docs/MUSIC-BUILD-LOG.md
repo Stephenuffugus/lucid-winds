@@ -208,3 +208,38 @@ https://lucidwinds.com/music/v1/PROBE.txt` is 200 → Stephen uploads /tmp/music
 `music_verify.mjs --base https://lucidwinds.com --local /tmp/music-web` green → `music_manifest.mjs --live` → commit →
 deploy. Until then every game carries the include and the module idles on live:false.
 deployed: **NO** · pushed to main: **NO** · branch: add-sproing-jumper
+
+## P9b — The Director's answers, applied (2026-09-02, after the hand-back)
+Stephen: yes Cosmic Cadets (a typo) · yes Quick-fire is the action games · all card games share songs, "the more card games
+you try, the more you unlock", easy to unlock most to start · Weightless Drift is Spore Drift · "we have to find the unlock
+balance" · he did not add Jimothy songs.
+what changed, each gated:
+- **The ladder is now multi-path and tunable.** Track i opens when ANY holds: secs ≥ secsPer·i (120) · days ≥ 1+daysPer·i ·
+  sessions ≥ sessionsBase+i (2) · on a FAMILY shelf, distinct family games opened ≥ 1+breadthPer·i. Numbers live in
+  `music-ladder.json`, emitted as `catalog.ladder`, sanitized on every path (a caller's `daysPer:-3` is ignored, gated).
+  Breadth is read from progress that already existed (every opened game has a `first`). Family shelves only; a game shelf
+  ignores other games (gated). Two new mutants: drop breadth; ignore catalog.ladder. 14/14 die.
+- **Content-hash dedupe.** The loose "Weightless Drift" pair at the drop root was byte-identical to Spore-drift's own (Drive
+  duplicates loose files), and `galqntgourde1.mp3` == `galantgourde.mp3`. The generator now hashes files when they are on
+  disk and skips a duplicate within a shelf (logged DUP); a held loose file that duplicates a shelved one is reported as
+  such in docs/music-unmapped.md. The `Tracks → spore-drift` alias I had written was a misreading and came out.
+- **Nesting from the real path.** The "instruction" folders were SUBFOLDERS inside game folders
+  (`Pit bike rally/Menu and shop song/Dust and Gasoline`, `Puppy-dash/Use this song for rainbow poo boost/Full Sprint
+  Happiness`); the intake had taken the innermost folder as the game. The generator now derives the game from the on-disk
+  path (first folder under the export's wrapper) and keeps the subfolder as a `note` on the track. Both songs are on their
+  games. The intake script itself keeps the bug (pre-existing file, LAW 10); follow-up.
+- Aliases confirmed in his words: Cosmi-cadets → seed-flutter, Quick-fire → action, Solitair-parlor → card (Card Table is
+  10 tracks). `music-folder-aliases.json` quotes him per entry.
+- Fixture: every file now a distinct tone (all-silent fixtures were byte-identical and the dedupe rightly collapsed them),
+  plus a nested subfolder, an in-shelf copy, and a loose root copy. Gate reds on the way, all the test's: `dw2()` used
+  before its `const`; loose files now file under `(loose)`, not the wrapper; the nested file sorted into the middle of a
+  shelf and shifted every index (renamed to sort last); seeding `days` with an old date made every sessions test a
+  second-day test too (seeded with today); one mutant's anchor was the removed fixed-ladder line (re-aimed).
+real data now: **44 shelves, 136 tracks, 6 held** ((loose)×2 = byte-dups of Spore Drift; Conduit uncarded; Family-Boards;
+Lucid Winds; Whackbox; Zen-Studio). Web tier 136 files 206 MB, verify 136/136 locally. Real catalog byte-stable across the
+sanitize change. Upload zip: /tmp/music-upload/music-v1-20260902.zip (205 MB, PROBE.txt inside).
+vault: `vault-music-20260902` holds the 357 MB master zip + SHA256SUMS, round trip verified (`Tracks-…-001.zip: OK`).
+```
+run.mjs: all 10 steps green in 101s
+  catalog 49 · unlocks 64 · mutants 14/14 · sw 15 · no_shrink 203 · include 105/105 · inject 48 · ui 47
+```

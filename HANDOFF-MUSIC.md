@@ -195,18 +195,23 @@ Never a hard-coded slug table. The catalog carries the games each shelf belongs 
 - **`sws_game_unlocks`** is a projection: progress + catalog → ledger. `rebuild()` derives it and merges by id (LAW 1, LAW 2, LAW 14). Entry shape is exactly what the fold expects: `{ id, title, artist:'Stephen', src, game }` where `game` is the shelf's display name.
 - The cloud syncs the ledger, not progress (`index.html:50244`). On a new device the ledger arrives, the fold shows the shelf, and progress starts fresh. That is acceptable and documented.
 
-### 6.3 The ladder. Short, generous, all passive, nothing hard.
-Tracks on a shelf are ordered by file name (§7.1 tells Stephen how to order them). Track index `i` unlocks when:
+### 6.3 The ladder. Short, generous, all passive, tunable. (Revised by the Director during the build.)
+Stephen, 2026-09-02: *"it should be easy to unlock most of these to start"* and, for family shelves, *"the more card
+games you try, the more you unlock."* So the ladder is multi-path (ANY condition opens a rung) and its numbers live in
+`music-ladder.json`, emitted into the catalog as `ladder`, read by the module with defaults. Tracks on a shelf are
+ordered by file name (§7.1). Track index `i` unlocks when ANY holds:
 
-| i | Condition | Feels like |
-|---|---|---|
-| 0 | the game was opened (on boot) | a gift, before you have done anything |
-| 1 | `secs >= 120` | "oh, another one" |
-| 2 | `days.length >= 2` | being remembered |
-| 3 | `sessions >= 5` | earning it |
-| 4+ | `sessions >= 5 + 3 * (i - 3)` | the deep cuts, still not hard |
+| Path | Condition | Default | Track 1 needs | Track 5 needs |
+|---|---|---|---|---|
+| open | `i === 0` | free | | |
+| time | visible seconds `>= secsPer * i` | 120 | 2 min | 10 min |
+| days | calendar days played `>= 1 + daysPer * i` | 1 | a 2nd day | a 6th day |
+| sessions | 60s+ page loads `>= sessionsBase + i` | 2 | 3 sessions | 7 sessions |
+| breadth, FAMILY shelves only | distinct games of the family opened `>= 1 + breadthPer * i` | 1 | a 2nd card game | a 6th card game |
 
-Rung 0 fires on the title screen. That is deliberate. The first thing a new game does is hand you a song.
+Rung 0 is granted on boot; its toast waits for the first tap (§6.7). Tuning is one JSON edit and a regenerate; the
+module never needs to change. ⚠ The first draft of this section had a fixed ladder (open / 120s / day 2 / 5 sessions /
++3); it was replaced at P9 on the Director's instruction and every gate was re-asserted under the new one.
 
 ### 6.4 Shelves: a game, or a family
 `music-catalog.js` (generated) is:

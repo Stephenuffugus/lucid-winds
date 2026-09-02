@@ -16,7 +16,9 @@
  *   ledger     localStorage sws_game_unlocks = [{id,title,artist,src,game}]. A projection of
  *              progress + catalog, rebuilt on every boot, merged by id, never shrunk.
  *   catalog    window.LW_MUSIC_CATALOG (music-catalog.js, generated). Nothing happens unless live:true.
- *   ladder     track 0 on open; 1 at 120s; 2 on a second day; 3 at 5 sessions; then every 3 sessions.
+ *   ladder     track i opens when ANY holds: secs >= secsPer*i · days >= 1+daysPer*i · sessions >= sessionsBase+i
+ *              · on a FAMILY shelf, distinct games of the family opened >= 1+breadthPer*i (the more card games you
+ *              try, the more you unlock). Numbers come from the catalog's `ladder` (music-ladder.json), defaults below.
  *   off        ?nomusic=1 in the URL, or no catalog, or no identity, or a shelf-less game: no timers.
  *   the toast  waits for the player's FIRST tap or key (P7, after looking: top-centre at t=0 sits on
  *              every game's title). The grant itself never waits; the shelf is there immediately.
@@ -53,11 +55,18 @@
     return out;
   }
   function srcOf(c, s, t) { return c.base + s.slug + '/' + t.file; }
-  function rungOpen(i, p) {
+  var LADDER_DEFAULTS = { secsPer: 120, daysPer: 1, sessionsBase: 2, breadthPer: 1 };
+  function ladder() { var c = catalog(), L = (c && c.ladder) || {}, out = {}, k; for (k in LADDER_DEFAULTS) out[k] = (typeof L[k] === 'number' && L[k] >= 0) ? L[k] : LADDER_DEFAULTS[k]; return out; }
+  /* distinct games of a family shelf this player has opened (every opened game has a progress entry) */
+  function breadthOf(shelf, all) { var n = 0, i; if (!shelf || shelf.kind !== 'family' || !shelf.games) return 0; for (i = 0; i < shelf.games.length; i++) if (all[shelf.games[i]] && all[shelf.games[i]].first) n++; return n; }
+  function rungOpen(i, p, shelf, all) {
     if (i === 0) return true;
-    if (i === 1) return (p.secs | 0) >= 120;
-    if (i === 2) return (p.days || []).length >= 2;
-    return (p.sessions | 0) >= 5 + 3 * (i - 3);
+    var L = ladder();
+    if ((p.secs | 0) >= L.secsPer * i) return true;
+    if ((p.days || []).length >= 1 + L.daysPer * i) return true;
+    if ((p.sessions | 0) >= L.sessionsBase + i) return true;
+    if (shelf && shelf.kind === 'family' && breadthOf(shelf, all) >= 1 + L.breadthPer * i) return true;
+    return false;
   }
 
   /* ---- progress: read, modify, write. Never wholesale. (LAW 1) ------------- */
@@ -79,7 +88,7 @@
       out.push(hit ? { id: e.id, title: hit.t.title, artist: 'Stephen', src: srcOf(c, hit.s, hit.t), game: hit.s.name } : e);
     }
     function grant(sh, t) { if (have[t.id]) return; have[t.id] = 1; var n = { id: t.id, title: t.title, artist: 'Stephen', src: srcOf(c, sh, t), game: sh.name }; out.push(n); fresh.push(n); }
-    for (i = 0; i < shelves.length; i++) for (j = 0; j < shelves[i].tracks.length; j++) if (rungOpen(j, p)) grant(shelves[i], shelves[i].tracks[j]);
+    for (i = 0; i < shelves.length; i++) for (j = 0; j < shelves[i].tracks.length; j++) if (rungOpen(j, p, shelves[i], all)) grant(shelves[i], shelves[i].tracks[j]);
     for (i = 0; i < p.unlocked.length; i++) if (byId[p.unlocked[i]]) grant(byId[p.unlocked[i]].s, byId[p.unlocked[i]].t);
     lsSet(LS_LEDGER, JSON.stringify(out));                                      /* WRITE */
     try { if (typeof window.LW_FOLD_GAME_UNLOCKS === 'function') window.LW_FOLD_GAME_UNLOCKS(); } catch (x) {}

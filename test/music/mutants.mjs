@@ -14,7 +14,7 @@ const MUTANTS = [
   ["drop the double-load guard",            "if (window.SWSMusic) return;",                                   "/* guard removed */"],
   ["write the ledger wholesale (ignore other tabs)", "var ledger = readLedger(), have = {}",                   "var ledger = [], have = {}"],
   ["skip the src/title refresh from catalog", "out.push(hit ? { id: e.id, title: hit.t.title, artist: 'Stephen', src: srcOf(c, hit.s, hit.t), game: hit.s.name } : e);", "out.push(e);"],
-  ["rung 1 at > 120 instead of >= 120",      "if (i === 1) return (p.secs | 0) >= 120;",                       "if (i === 1) return (p.secs | 0) > 120;"],
+  ["time path at > instead of >= (120s exactly must open track 2)", "if ((p.secs | 0) >= L.secsPer * i) return true;", "if ((p.secs | 0) > L.secsPer * i) return true;"],
   ["delete ledger entries not in the catalog", "out.push(hit ? { id: e.id, title: hit.t.title, artist: 'Stephen', src: srcOf(c, hit.s, hit.t), game: hit.s.name } : e);", "if (hit) out.push({ id: e.id, title: hit.t.title, artist: 'Stephen', src: srcOf(c, hit.s, hit.t), game: hit.s.name });"],
   ["use Date.now() as the day",              "function today() { var d = new Date(), m = d.getMonth() + 1, y = d.getDate(); return d.getFullYear() + '-' + (m < 10 ? '0' : '') + m + '-' + (y < 10 ? '0' : '') + y; }", "function today() { return String(Date.now()); }"],
   ["run the tick on requestAnimationFrame",  "S.timer = window.setInterval(tick, TICK_MS);",                   "S.timer = window.requestAnimationFrame(tick);"],
@@ -26,6 +26,8 @@ const MUTANTS = [
   ["toast with pointer-events auto",         "st.pointerEvents = 'none';",                                      "st.pointerEvents = 'auto';"],
   ["ignore live:false",                      "return (c && c.live === true && c.shelves && c.shelves.length) ? c : null;", "return (c && c.shelves && c.shelves.length) ? c : null;"],
   ["keep ticking while hidden",              "var d = window.document; if (d && d.hidden) return;\n      S.loadSecs",  "var d = window.document;\n      S.loadSecs"],
+  ["drop family breadth from the ladder",     "    if (shelf && shelf.kind === 'family' && breadthOf(shelf, all) >= 1 + L.breadthPer * i) return true;\n", "\n"],
+  ["ignore catalog.ladder (hardcode defaults)", "function ladder() { var c = catalog(), L = (c && c.ladder) || {}, out = {}, k;", "function ladder() { var c = null, L = {}, out = {}, k;"],
 ];
 
 let killed = 0, survived = 0, invalid = 0;

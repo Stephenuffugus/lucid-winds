@@ -2,9 +2,15 @@
    live:false means the module does nothing; Fable flips it after scripts/music_verify.mjs
    passes against the host (HANDOFF-MUSIC section 6.4, 7). */
 window.LW_MUSIC_CATALOG = {
- "version": "271a86160620",
+ "version": "5338a86b9bef",
  "base": "/music/v1/",
  "live": false,
+ "ladder": {
+  "secsPer": 120,
+  "daysPer": 1,
+  "sessionsBase": 2,
+  "breadthPer": 1
+ },
  "shelves": [
   {
    "slug": "abduct-a-chameleon",
@@ -27,6 +33,88 @@ window.LW_MUSIC_CATALOG = {
      "file": "tiptoe-through-the-saucer.mp3",
      "seconds": 92,
      "from": "Tiptoe Through the Saucer.mp3"
+    }
+   ]
+  },
+  {
+   "slug": "action-room",
+   "name": "Action Room",
+   "kind": "family",
+   "games": [
+    "aura-off",
+    "berry-vine",
+    "bloom-breaker",
+    "bramblewick",
+    "bubblenaut",
+    "budburst",
+    "burr-blast",
+    "burrow-bowl",
+    "deepwell",
+    "dewball",
+    "flatulence-fighter",
+    "frost-watch",
+    "greenhouse-pinball",
+    "litter-bug",
+    "micro-meadow",
+    "moon-claw",
+    "nectar-drop",
+    "nova-bloom",
+    "orb-orchard",
+    "petal-plunge",
+    "petal-slice",
+    "picnic-panic",
+    "pitbike-rally",
+    "pollen-panic",
+    "pong",
+    "puppy-dash",
+    "rabbit-samurai",
+    "ripcord",
+    "seed-flutter",
+    "siege",
+    "skitterlings",
+    "skyshot",
+    "sled-vine",
+    "slice-3d",
+    "spore-drift",
+    "sproing",
+    "stop-the-light",
+    "stream-hop",
+    "sweet-spot",
+    "tangent",
+    "tempo-grove",
+    "tomato-man",
+    "vine-runner",
+    "vinewinder",
+    "wireworm"
+   ],
+   "tracks": [
+    {
+     "id": "m-action-room-neon-rush-1",
+     "title": "Neon Rush (1)",
+     "file": "neon-rush-1.mp3",
+     "seconds": 30,
+     "from": "Neon Rush (1).mp3"
+    },
+    {
+     "id": "m-action-room-neon-rush",
+     "title": "Neon Rush",
+     "file": "neon-rush.mp3",
+     "seconds": 31,
+     "from": "Neon Rush.mp3"
+    },
+    {
+     "id": "m-action-room-pixel-dash-1",
+     "title": "Pixel Dash (1)",
+     "file": "pixel-dash-1.mp3",
+     "seconds": 40,
+     "from": "Pixel Dash (1).mp3"
+    },
+    {
+     "id": "m-action-room-pixel-dash",
+     "title": "Pixel Dash",
+     "file": "pixel-dash.mp3",
+     "seconds": 40,
+     "from": "Pixel Dash.mp3"
     }
    ]
   },
@@ -310,6 +398,48 @@ window.LW_MUSIC_CATALOG = {
      "file": "clinking-glasses.mp3",
      "seconds": 111,
      "from": "Clinking Glasses.mp3"
+    },
+    {
+     "id": "m-card-table-cozy-game-loop-1",
+     "title": "Cozy Game Loop (1)",
+     "file": "cozy-game-loop-1.mp3",
+     "seconds": 83,
+     "from": "Cozy Game Loop (1).mp3"
+    },
+    {
+     "id": "m-card-table-cozy-game-loop-2",
+     "title": "Cozy Game Loop (2)",
+     "file": "cozy-game-loop-2.mp3",
+     "seconds": 117,
+     "from": "Cozy Game Loop (2).mp3"
+    },
+    {
+     "id": "m-card-table-cozy-game-loop-3",
+     "title": "Cozy Game Loop (3)",
+     "file": "cozy-game-loop-3.mp3",
+     "seconds": 81,
+     "from": "Cozy Game Loop (3).mp3"
+    },
+    {
+     "id": "m-card-table-cozy-game-loop",
+     "title": "Cozy Game Loop",
+     "file": "cozy-game-loop.mp3",
+     "seconds": 79,
+     "from": "Cozy Game Loop.mp3"
+    },
+    {
+     "id": "m-card-table-rainy-card-room-1",
+     "title": "Rainy Card Room (1)",
+     "file": "rainy-card-room-1.mp3",
+     "seconds": 83,
+     "from": "Rainy Card Room (1).mp3"
+    },
+    {
+     "id": "m-card-table-rainy-card-room",
+     "title": "Rainy Card Room",
+     "file": "rainy-card-room.mp3",
+     "seconds": 141,
+     "from": "Rainy Card Room.mp3"
     },
     {
      "id": "m-card-table-smoky-club-loop-1",
@@ -918,6 +1048,14 @@ window.LW_MUSIC_CATALOG = {
      "from": "Dust and Gasoline (1).mp3"
     },
     {
+     "id": "m-pitbike-rally-dust-and-gasoline",
+     "title": "Dust and Gasoline",
+     "file": "dust-and-gasoline.mp3",
+     "seconds": 44,
+     "from": "Dust and Gasoline.mp3",
+     "note": "Menu and shop song"
+    },
+    {
      "id": "m-pitbike-rally-solipsistic-split-m4a-remix",
      "title": "Solipsistic Split.m4a (Remix)",
      "file": "solipsistic-split-m4a-remix.mp3",
@@ -954,13 +1092,6 @@ window.LW_MUSIC_CATALOG = {
      "file": "galantgourde.mp3",
      "seconds": 77,
      "from": "galantgourde.mp3"
-    },
-    {
-     "id": "m-pollen-panic-galqntgourde1",
-     "title": "galqntgourde1",
-     "file": "galqntgourde1.mp3",
-     "seconds": 77,
-     "from": "galqntgourde1.mp3"
     }
    ]
   },
@@ -1010,6 +1141,14 @@ window.LW_MUSIC_CATALOG = {
     "puppy-dash"
    ],
    "tracks": [
+    {
+     "id": "m-puppy-dash-full-sprint-happiness",
+     "title": "Full Sprint Happiness",
+     "file": "full-sprint-happiness.mp3",
+     "seconds": 9,
+     "from": "Full Sprint Happiness.mp3",
+     "note": "Use this song for rainbow poo boost"
+    },
     {
      "id": "m-puppy-dash-wagging-tail-energy-1",
      "title": "Wagging Tail Energy (1)",
@@ -1113,6 +1252,30 @@ window.LW_MUSIC_CATALOG = {
      "file": "rip-this.mp3",
      "seconds": 182,
      "from": "rip_this.mp3"
+    }
+   ]
+  },
+  {
+   "slug": "seed-flutter",
+   "name": "Cosmic Cadets",
+   "kind": "game",
+   "games": [
+    "seed-flutter"
+   ],
+   "tracks": [
+    {
+     "id": "m-seed-flutter-stardrift-chiptune-1",
+     "title": "Stardrift Chiptune (1)",
+     "file": "stardrift-chiptune-1.mp3",
+     "seconds": 133,
+     "from": "Stardrift Chiptune (1).mp3"
+    },
+    {
+     "id": "m-seed-flutter-stardrift-chiptune",
+     "title": "Stardrift Chiptune",
+     "file": "stardrift-chiptune.mp3",
+     "seconds": 139,
+     "from": "Stardrift Chiptune.mp3"
     }
    ]
   },

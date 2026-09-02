@@ -26,7 +26,7 @@ function browser(o = {}) {
   const timers = []; let tid = 1;                                     // {id, fn, ms, kind}
   const listeners = {};
   const body = { children: [], appendChild(el) { el.parentNode = body; body.children.push(el); return el; }, removeChild(el) { body.children = body.children.filter(c => c !== el); el.parentNode = null; } };
-  const head = { appendChild(el) { el.parentNode = head; if (el.tagName === "SCRIPT" && /music-catalog\.js/.test(el.src)) { if (o.noCatalog) { el.onerror && el.onerror(); } else { runInNewContext(CATSRC, sb); if (o.notLive) sb.window.LW_MUSIC_CATALOG.live = false; el.onload && el.onload(); } } return el; } };
+  const head = { appendChild(el) { el.parentNode = head; if (el.tagName === "SCRIPT" && /music-catalog\.js/.test(el.src)) { if (o.noCatalog) { el.onerror && el.onerror(); } else { runInNewContext(CATSRC, sb); if (o.notLive) sb.window.LW_MUSIC_CATALOG.live = false; if (o.ladder) Object.assign(sb.window.LW_MUSIC_CATALOG.ladder, o.ladder); el.onload && el.onload(); } } return el; } };
   const mk = (tag) => ({ tagName: String(tag).toUpperCase(), id: "", className: "", style: {}, textContent: "", attrs: {}, parentNode: null,
     setAttribute(k, v) { this.attrs[k] = String(v); }, getAttribute(k) { return this.attrs[k]; },
     remove() { if (this.parentNode) this.parentNode.removeChild(this); }, appendChild(c) { c.parentNode = this; return c; },
@@ -126,13 +126,35 @@ t("source: one IIFE guarded by if (window.SWSMusic) return", /if\s*\(\s*window\.
   h.doc.hidden = false; }
 
 /* rung 2, 3, 4 */
+/* seed with TODAY: boot adds the current day to progress, so seeding an old date silently makes every "sessions" test a second-day test too */
+const TODAY = (() => { const d = new Date(), m = d.getMonth() + 1, y = d.getDate(); return d.getFullYear() + "-" + (m < 10 ? "0" : "") + m + "-" + (y < 10 ? "0" : "") + y; })();
 { const h = browser(); h.load(); h.advance(3500); h.day(1); h.load = null;
   const h2 = browser(); h2.store.set("sws_music_progress", h.store.get("sws_music_progress")); h2.store.set("sws_game_unlocks", h.store.get("sws_game_unlocks")); h2.day(1); h2.load();
-  t("rung 2: a second calendar day unlocks track 3", h2.progress().deepwell.days.length === 2 && has(h2, "m-deepwell-deep-water-2")); }
-{ const h = browser(); h.store.set("sws_music_progress", JSON.stringify({ deepwell: { first: 1, days: ["2026-01-01"], sessions: 5, secs: 0 } })); h.load();
-  t("rung 3: sessions 5 unlocks track 4 (Echo Chamber, by file-name order) and not track 5", has(h, "m-deepwell-echo-chamber") && !has(h, "m-deepwell-the-long-climb")); }
-{ const h = browser(); h.store.set("sws_music_progress", JSON.stringify({ deepwell: { first: 1, days: ["2026-01-01"], sessions: 8, secs: 0 } })); h.load();
-  t("rung 4: sessions 8 unlocks track 5 (The Long Climb)", has(h, "m-deepwell-the-long-climb")); }
+  t("days: a second calendar day unlocks track 2 (index 1), not track 3", h2.progress().deepwell.days.length === 2 && has(h2, "m-deepwell-deep-water") && !has(h2, "m-deepwell-deep-water-2"));
+  const h3 = browser(); h3.store.set("sws_music_progress", h2.store.get("sws_music_progress")); h3.day(2); h3.load();
+  t("days: a third calendar day unlocks track 3 (index 2)", h3.progress().deepwell.days.length === 3 && has(h3, "m-deepwell-deep-water-2")); }
+{ const h = browser(); h.store.set("sws_music_progress", JSON.stringify({ deepwell: { first: 1, days: [TODAY], sessions: 2, secs: 0 } })); h.load();
+  t("sessions: sessionsBase (2) alone opens nothing past track 1", !has(h, "m-deepwell-deep-water")); }
+{ const h = browser(); h.store.set("sws_music_progress", JSON.stringify({ deepwell: { first: 1, days: [TODAY], sessions: 3, secs: 0 } })); h.load();
+  t("sessions: 3 sessions (base+1) opens track 2", has(h, "m-deepwell-deep-water") && !has(h, "m-deepwell-deep-water-2")); }
+{ const h = browser(); h.store.set("sws_music_progress", JSON.stringify({ deepwell: { first: 1, days: [TODAY], sessions: 5, secs: 0 } })); h.load();
+  t("sessions: 5 (base+3) opens track 4 (Echo Chamber, file-name order) and not track 5", has(h, "m-deepwell-echo-chamber") && !has(h, "m-deepwell-the-long-climb")); }
+{ const h = browser(); h.store.set("sws_music_progress", JSON.stringify({ deepwell: { first: 1, days: [TODAY], sessions: 8, secs: 0 } })); h.load();
+  t("sessions: 8 opens track 5 (The Long Climb)", has(h, "m-deepwell-the-long-climb")); }
+/* the ladder is tunable from the catalog */
+{ const h = browser({ ladder: { secsPer: 60 } }); h.load(); h.fire("pointerdown"); h.advance(3500); h.advance(60000);
+  t("catalog.ladder.secsPer=60: track 2 opens at 60s instead of 120s", has(h, "m-deepwell-deep-water")); }
+{ const h = browser({ ladder: { secsPer: 60 } }); h.load(); h.fire("pointerdown"); h.advance(3500); h.advance(55000);
+  t("catalog.ladder.secsPer=60: and not at 55s", !has(h, "m-deepwell-deep-water")); }
+/* family breadth: the more card games you try, the more you unlock */
+{ const h = browser({ pathname: "/play/cribbage.html" }); h.store.set("sws_music_progress", JSON.stringify({ spider: { first: 1, days: ["2026-01-01"], sessions: 0, secs: 0 }, klondike: { first: 1, days: ["2026-01-01"], sessions: 0, secs: 0 }, freecell: { first: 1, days: ["2026-01-01"], sessions: 0, secs: 0 } })); const m = h.load(); m.boot({ id: "cribbage" });
+  const ct = ["m-card-table-dealers-choice", "m-card-table-last-trick", "m-card-table-shuffle-up"];
+  t("breadth: three other card games opened + this one = 4 -> all three Card Table tracks", ct.every(id => has(h, id)));
+  t("breadth: this game's own progress is still fresh (secs 0, sessions 0)", h.progress().cribbage.secs === 0 && h.progress().cribbage.sessions === 0); }
+{ const h = browser({ pathname: "/play/cribbage.html" }); h.store.set("sws_music_progress", JSON.stringify({ spider: { first: 1, days: ["2026-01-01"], sessions: 0, secs: 0 } })); const m = h.load(); m.boot({ id: "cribbage" });
+  t("breadth: one other card game opened = 2 -> Card Table tracks 1 and 2, not 3", has(h, "m-card-table-dealers-choice") && has(h, "m-card-table-last-trick") && !has(h, "m-card-table-shuffle-up")); }
+{ const h = browser(); h.store.set("sws_music_progress", JSON.stringify({ spider: { first: 1, days: ["2026-01-01"], sessions: 0, secs: 0 }, klondike: { first: 1, days: ["2026-01-01"], sessions: 0, secs: 0 }, freecell: { first: 1, days: ["2026-01-01"], sessions: 0, secs: 0 } })); h.load();
+  t("breadth applies to FAMILY shelves only: Deepwell (a game shelf) ignores other games", has(h, "m-deepwell-shaft-song") && !has(h, "m-deepwell-deep-water")); }
 
 /* families */
 { const h = browser({ pathname: "/play/cribbage.html", LW_PLAY: { id: "cribbage", name: "Cribbage" } }); const m = h.load();

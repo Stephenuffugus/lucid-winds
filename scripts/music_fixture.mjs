@@ -38,6 +38,13 @@ const FOLDERS = {
   "Tarot Run":                ["Major Arcana.mp3", "Cups.mp3"],                                                 // a CARD game with its own shelf: unlocks both it and Card Room
 };
 const HIGH_BITRATE = "The Long Climb.mp3";   // 192k so the web tier must transcode it
+/* after the tree is written: one NESTED subfolder inside a game folder, one byte-identical copy inside the same
+   shelf, and one loose byte-identical copy at the export root (what a Drive export does). */
+const AFTER = [
+  ["copy", "Deepwell/01 Shaft Song.mp3", "Deepwell/Shaft Song copy.mp3"],
+  ["copy", "Flock/Trap Line.mp3", "Weightless Copy.mp3"],
+  ["nested", "Deepwell/Boss room/Zone Boss.mp3"],   // "Zone" so it sorts LAST on the shelf and leaves every index assertion in the module gate alone
+];
 
 rmSync(ROOT, { recursive: true, force: true });
 mkdirSync(TREE, { recursive: true });
@@ -53,9 +60,17 @@ for (const [folder, files] of Object.entries(FOLDERS)) {
     const br = (f === HIGH_BITRATE) ? "192k" : "64k";
     const secs = (f === HIGH_BITRATE) ? 2 : 1;
     const codec = /\.wav$/i.test(f) ? "-c:a pcm_s16le" : `-c:a libmp3lame -b:a ${br}`;
-    sh(`ffmpeg -v error -y -f lavfi -i anullsrc=r=44100:cl=stereo -t ${secs} ${codec} "${out}"`);
+    /* a DISTINCT tone per file (frequency from the running index), or every fixture file is byte-identical silence and
+       the generator's content-hash dedupe rightly collapses each shelf to one track. The two deliberate copies below
+       are the only identical pairs. */
+    sh(`ffmpeg -v error -y -f lavfi -i "sine=frequency=${220 + 37 * n}:sample_rate=44100" -ac 2 -t ${secs} ${codec} "${out}"`);
     n++;
   }
+}
+
+for (const a of AFTER) {
+  if (a[0] === "copy") { mkdirSync(join(TREE, a[2], ".."), { recursive: true }); sh(`cp "${join(TREE, a[1])}" "${join(TREE, a[2])}"`); n++; }
+  else { mkdirSync(join(TREE, a[1], ".."), { recursive: true }); sh(`ffmpeg -v error -y -f lavfi -i "sine=frequency=${220 + 37 * n}:sample_rate=44100" -ac 2 -t 1 -c:a libmp3lame -b:a 64k "${join(TREE, a[1])}"`); n++; }
 }
 
 /* ---- probe: mirrors scripts/music_intake.mjs steps 2-3 ---------------------- */

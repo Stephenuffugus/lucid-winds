@@ -10,7 +10,7 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync, statSync, copyFileS
 import { execSync } from "child_process";
 import { join, basename, dirname } from "path";
 import { createHash } from "crypto";
-import { readExisting, shelfSlugFor } from "./music_manifest.mjs";
+import { readExisting, shelfSlugFor, sourceFor as manifestSource } from "./music_manifest.mjs";
 
 const arg = (k, d) => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : d; };
 const INTAKE = arg("--intake", "docs/music-intake.json"), CATALOG = arg("--catalog", "music-catalog.js"), TO = arg("--to", "/tmp/music-web");
@@ -39,8 +39,11 @@ let made = 0, copied = 0, skipped = 0, bytes = 0; const sums = [];
 for (const shelf of cat.shelves) {
   const outDir = join(TO, "music", "v1", shelf.slug); mkdirSync(outDir, { recursive: true });
   for (const t of shelf.tracks) {
-    const rows = intake.rows.filter(r => r.file === t.from && folderShelf[r.game] === shelf.slug);
-    if (rows.length !== 1) throw new Error("expected exactly one intake row for " + shelf.slug + "/" + t.from + ", found " + rows.length);
+    /* a track may come from a NESTED folder (its intake row says the subfolder) or be one of two identical files; so
+       match on file name, then keep the candidates whose on-disk path sits under a folder that resolves to this shelf */
+    let rows = intake.rows.filter(r => r.file === t.from && folderShelf[r.game] === shelf.slug);
+    if (rows.length !== 1) rows = intake.rows.filter(r => r.file === t.from).filter(r => { const p = manifestSource(r, intake.workDir); if (!p) return false; const top = p.slice(intake.workDir.length).replace(/^\/+/, "").split("/"); return (top.length > 2 ? shelfSlugFor(top[1]) : null) === shelf.slug || (top.length > 1 && shelfSlugFor(top[0]) === shelf.slug); });
+    if (!rows.length) throw new Error("no intake row for " + shelf.slug + "/" + t.from);
     const src = sourceFor(rows[0]), out = join(outDir, t.file);
     const fresh = existsSync(out) && statSync(out).mtimeMs >= statSync(src).mtimeMs;
     if (fresh) skipped++;

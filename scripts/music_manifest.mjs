@@ -8,20 +8,55 @@
    forever: a track already in the existing catalog keeps its id, keyed by
    (shelf, source file name), so a title change never orphans a player's unlock.
    Family shelves are the catalog's own `cat` field, via music-families.json. */
-import { readFileSync, writeFileSync, existsSync } from "fs";
+import { readFileSync, writeFileSync, existsSync, readdirSync } from "fs";
 import { createHash } from "crypto";
 import { runInNewContext } from "vm";
 import { fileURLToPath } from "url";
-import { dirname, join } from "path";
+import { basename, dirname, join } from "path";
 import { catalog } from "./catalog.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FAMILIES_PATH = join(HERE, "..", "music-families.json");
 const ALIASES_PATH  = join(HERE, "..", "music-folder-aliases.json");
+const LADDER_PATH   = join(HERE, "..", "music-ladder.json");
+export const LADDER_DEFAULTS = { secsPer: 120, daysPer: 1, sessionsBase: 2, breadthPer: 1 };
 
 const norm    = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 const slugify = (s) => String(s || "").toLowerCase().replace(/['’"“”]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");   // "Warden's March" -> wardens-march
 const cleanTitle = (t) => String(t || "").replace(/^\d{1,2}[ ._-]+/, "").replace(/\s+/g, " ").trim();   // "01 Shaft Song" -> "Shaft Song"
+
+/* ---- source files on disk, OPTIONAL. The intake JSON cannot see two things the generator needs: that a file sits in a
+   SUBFOLDER of a game folder (Pit bike rally/Menu and shop song/…), and that two files are byte-identical (Drive
+   exports duplicate loose files at the root). When the files are on disk, the generator reads the real path and
+   hashes the content; when they are not (regenerating elsewhere), it falls back to the JSON alone. ---- */
+const AUD = /\.(mp3|wav|flac|m4a|aac|ogg|opus|webm)$/i;
+function walk(dir, out = []) { for (const e of readdirSync(dir, { withFileTypes: true })) { if (e.name.startsWith(".") || e.name === "__MACOSX") continue; const p = join(dir, e.name); if (e.isDirectory()) walk(p, out); else if (AUD.test(e.name)) out.push(p); } return out; }
+let diskCache = null;
+export function sourceFor(row, workDir) {
+  if (row.path && existsSync(row.path)) return row.path;
+  if (!workDir || !existsSync(workDir)) return null;
+  if (!diskCache || diskCache.dir !== workDir) diskCache = { dir: workDir, files: walk(workDir) };
+  const hits = diskCache.files.filter(p => basename(p) === row.file && basename(dirname(p)) === row.game);
+  return hits.length === 1 ? hits[0] : null;
+}
+/* the folder that names the shelf is the first one under the drop's root wrapper; deeper folders are a note */
+function placeOnDisk(src, workDir, wrapper) {
+  const rel = src.slice(workDir.length).replace(/^\/+/, "").split("/");
+  if (wrapper && rel[0] === wrapper) rel.shift();
+  if (rel.length < 2) return { game: "(loose)", note: "" };
+  return { game: rel[0], note: rel.slice(1, -1).join(" / ") };
+}
+
+/* every ladder that reaches the catalog goes through this, whether it came from the file or from a caller */
+export function sanitizeLadder(raw) {
+  const out = { ...LADDER_DEFAULTS };
+  if (raw && typeof raw === "object") for (const k of Object.keys(LADDER_DEFAULTS)) if (typeof raw[k] === "number" && isFinite(raw[k]) && raw[k] >= 0) out[k] = raw[k];
+  return out;
+}
+export function loadLadder(path = LADDER_PATH) {
+  if (!existsSync(path)) return sanitizeLadder(null);
+  return sanitizeLadder(JSON.parse(readFileSync(path, "utf8")));
+}
 
 export function loadAliases(path = ALIASES_PATH) {
   if (!existsSync(path)) return {};
@@ -60,7 +95,7 @@ export function resolve(folder, cards, families, aliases = {}) {
   return { kind: "none" };
 }
 
-export function generate({ intake, existing = null, live = false, families = loadFamilies(), cat = catalog(), aliases = loadAliases() }) {
+export function generate({ intake, existing = null, live = false, families = loadFamilies(), cat = catalog(), aliases = loadAliases(), ladder = loadLadder() }) {
   const log = [], unmapped = [];
   const cards = cat.all.filter(g => g.dir || g.id).map(g => ({ name: g.name, dir: g.dir, id: g.id, cat: g.cat, key: g.dir || g.id }));
 
@@ -68,15 +103,31 @@ export function generate({ intake, existing = null, live = false, families = loa
   const prev = {};
   if (existing && existing.shelves) for (const s of existing.shelves) { prev[s.slug] = {}; for (const t of s.tracks) prev[s.slug][t.from] = t.id; }
 
-  /* group intake rows by folder, folders in sorted order for determinism */
+  /* see the files on disk if we can: real placement (nesting) and content hash (duplicates) */
+  const rows = intake.rows.map(r => ({ ...r }));
+  const srcs = rows.map(r => sourceFor(r, intake.workDir));
+  let wrapper = null;
+  if (intake.workDir && srcs.every(Boolean)) {                              // a single top-level folder holding everything is the export's wrapper
+    const tops = new Set(srcs.map(p => p.slice(intake.workDir.length).replace(/^\/+/, "").split("/")[0]));
+    if (tops.size === 1) wrapper = [...tops][0];
+  }
+  rows.forEach((r, i) => {
+    if (!srcs[i]) return;
+    r.sha = createHash("sha256").update(readFileSync(srcs[i])).digest("hex");
+    if (!intake.workDir) return;
+    const at = placeOnDisk(srcs[i], intake.workDir, wrapper);
+    if (at.game !== r.game) { log.push((at.game === "(loose)" ? "LOOSE     " : "NESTED    ") + r.game + "/" + r.file + "  -> " + at.game + (at.note ? "  (note: " + at.note + ")" : "")); r.game = at.game; }
+    if (at.note) r.note = at.note;
+  });
+  /* group by folder, folders in sorted order for determinism */
   const byFolder = {};
-  for (const r of intake.rows) (byFolder[r.game] ||= []).push(r);
+  for (const r of rows) (byFolder[r.game] ||= []).push(r);
 
   const shelves = {};   // slug -> shelf
   for (const folder of Object.keys(byFolder).sort()) {
     const rows = byFolder[folder];
     const res = resolve(folder, cards, families, aliases);
-    if (res.kind === "none") { unmapped.push({ folder, tracks: rows.length }); log.push("UNMAPPED  " + folder + "  (" + rows.length + " tracks)" + (res.how ? "  " + res.how : "")); continue; }
+    if (res.kind === "none") { unmapped.push({ folder, tracks: rows.length, files: rows.map(r => ({ file: r.file, sha: r.sha })) }); log.push("UNMAPPED  " + folder + "  (" + rows.length + " tracks)" + (res.how ? "  " + res.how : "")); continue; }
     let slug, name, kind, games;
     if (res.kind === "game") {
       if (res.card.key === "stream-hop") { log.push("SKIP      " + folder + "  -> stream-hop: Jimothy keeps its own bridge"); continue; }
@@ -95,7 +146,12 @@ export function generate({ intake, existing = null, live = false, families = loa
 
   /* tracks: file-name order; reused ids first, then new ids allocated around them */
   for (const shelf of Object.values(shelves)) {
-    const rows = shelf._rows.sort((a, b) => (a.file < b.file ? -1 : a.file > b.file ? 1 : 0));
+    const seenSha = new Map();
+    const rows = shelf._rows.sort((a, b) => (a.file < b.file ? -1 : a.file > b.file ? 1 : 0)).filter(r => {
+      if (!r.sha) return true;
+      if (seenSha.has(r.sha)) { log.push("DUP       " + r.game + "/" + r.file + "  ==  " + seenSha.get(r.sha) + "  (skipped)"); return false; }
+      seenSha.set(r.sha, r.game + "/" + r.file); return true;
+    });
     const used = new Set(), pre = "m-" + shelf.slug + "-";
     const ids = rows.map(r => { const id = prev[shelf.slug] && prev[shelf.slug][r.file]; if (id) used.add(id); return id || null; });
     rows.forEach((r, i) => {
@@ -104,13 +160,16 @@ export function generate({ intake, existing = null, live = false, families = loa
       let id = base, n = 2; while (used.has(id)) id = base + "-" + (n++);
       used.add(id); ids[i] = id;
     });
-    shelf.tracks = rows.map((r, i) => ({ id: ids[i], title: cleanTitle(r.title), file: ids[i].slice(pre.length) + ".mp3", seconds: r.seconds | 0, from: r.file }));
+    shelf.tracks = rows.map((r, i) => ({ id: ids[i], title: cleanTitle(r.title), file: ids[i].slice(pre.length) + ".mp3", seconds: r.seconds | 0, from: r.file, ...(r.note ? { note: r.note } : {}) }));
+    shelf._sha = seenSha;
     delete shelf._rows;
   }
 
+  const shelved = new Map(); for (const sh of Object.values(shelves)) { for (const [sha, where] of sh._sha) shelved.set(sha, sh.slug + ": " + where); delete sh._sha; }
+  for (const u of unmapped) { u.dupOf = u.files.filter(f => f.sha && shelved.has(f.sha)).map(f => f.file + " == " + shelved.get(f.sha)); delete u.files; if (u.dupOf.length) log.push("          " + u.folder + ": " + u.dupOf.join("; ")); }
   const list = Object.values(shelves).sort((a, b) => (a.slug < b.slug ? -1 : 1));
   const version = createHash("sha256").update(JSON.stringify(list)).digest("hex").slice(0, 12);
-  const out = { version, base: "/music/v1/", live: !!live, shelves: list };
+  const out = { version, base: "/music/v1/", live: !!live, ladder: sanitizeLadder(ladder), shelves: list };
   const source = "/* GENERATED by scripts/music_manifest.mjs from the music intake. NEVER hand edit.\n" +
                  "   live:false means the module does nothing; Fable flips it after scripts/music_verify.mjs\n" +
                  "   passes against the host (HANDOFF-MUSIC section 6.4, 7). */\n" +
@@ -143,7 +202,7 @@ if (process.argv[1] && import.meta.url === "file://" + process.argv[1]) {
   if (!existsSync(intakePath)) { console.error("no intake at " + intakePath + ". Run scripts/music_intake.mjs (or music_fixture.mjs) first."); process.exit(1); }
   const r = generate({ intake: JSON.parse(readFileSync(intakePath, "utf8")), existing: readExisting(existPath), live });
   writeFileSync(outPath, r.source);
-  writeFileSync(unmapPath, "# Unmapped music folders\n\nThese folder names did not match any game or family, so NO shelf was made for them.\nRename the folder to the game's exact arcade name (or a family name like `Card Games`) and re-run.\n\n| Folder | Tracks |\n|---|---|\n" + r.unmapped.map(u => "| " + u.folder + " | " + u.tracks + " |").join("\n") + "\n");
+  writeFileSync(unmapPath, "# Unmapped music folders\n\nThese folder names did not match any game or family, so NO shelf was made for them.\nRename the folder to the game's exact arcade name (or a family name like `Card Games`) and re-run.\n\n| Folder | Tracks |\n|---|---|\n" + r.unmapped.map(u => "| " + u.folder + " | " + u.tracks + (u.dupOf && u.dupOf.length ? " (byte-identical to " + u.dupOf.join("; ") + ")" : "") + " |").join("\n") + "\n");
   for (const l of r.log) console.log(l);
   console.log("\nshelves: " + r.catalog.shelves.length + "  tracks: " + r.catalog.shelves.reduce((a, s) => a + s.tracks.length, 0) + "  unmapped: " + r.unmapped.length + "  version: " + r.catalog.version + "  live: " + r.catalog.live);
   if (live) console.log("⚠️  live:true written. Only do this after music_verify.mjs is green against the host.");
