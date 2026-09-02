@@ -59,3 +59,19 @@ MAP       Flock  -> flock-the-world  (FUZZY)                         MAP     gre
 SKIP      Jimothy  -> stream-hop: Jimothy keeps its own bridge       UNMAPPED  Moonlight Sonatas  (2 tracks)
 ```
 real data present? no (`_music-drop/` holds only the README). The real run happens the moment docs/music-intake.json exists.
+
+## P3 — The module, and the mutants that prove its gate
+watch-it-fail: `node test/music/unlocks.mjs` → `FAIL module file exists: music-unlocks.js` (1 ok, 1 failed)
+first green attempt: 47 ok, 3 failed. All three were the TEST's (LAW 3): I assumed "The Long Climb" was Deepwell's 4th track,
+but file-name order puts "Echo Chamber" there; the rung-4 test had passed for the WRONG reason and is now asserted by the
+right id. The ES5 scanner tripped on my own header comment ("No const, no let"); it now strips comments and strings first
+(the catalog.mjs lesson).
+`unlocks gate: 52 ok, 0 failed`
+mutants, first run: 10 killed, 2 SURVIVED. Both survivors were decoration in the gate, not bugs in the module:
+- "throw when localStorage is missing": every public entry point is wrapped by law, so removing the inner guard is an
+  EQUIVALENT mutant. Replaced with a documented DOUBLE mutation (inner guard + public rebuild() guard) and the test now
+  calls rebuild/unlock/boot explicitly on dead storage.
+- "keep ticking while hidden": the test fired visibilitychange, which clears the interval, so tick()'s own hidden guard
+  never ran. Added the scenario it exists for: hidden set with NO event delivered.
+`mutants: 12 killed, 0 survived, 0 invalid, of 12`
+`node --check music-unlocks.js` → ok. Source never references Audio, AudioContext, <audio, .play(, requestAnimationFrame.
