@@ -115,3 +115,22 @@ ledger. Trace: NO request for /music-catalog.js ever reached the page. /play/sw.
 over the page mid-load; fetches made by the worker are invisible to puppeteer's request interception, so the fixture catalog
 was never served and the real server 404ed. Chess only won the race. Fix in the TEST: setBypassServiceWorker(true). The worker
 itself is gated in sw.mjs. In production the file exists and the worker fetching it is correct.
+
+## P6 — The 105 satellite includes
+watch-it-fail: `music_include.mjs --check` → `0 included, 12 vendored untouched, 105 wrong, of 117` (exit 1)
+dry run: `105 to insert, 0 already, 12 vendored (skipped), 0 skipped for </head> count`
+seven batches of 15, each: apply (asserted: one </head>, include absent, +1 line exactly) → inject on 4 of the 15 from clean
+profiles with the SW bypassed (zero NEW console errors, body gained only the toast, family/game shelf track 1 in the ledger
+where the fixture has one, ledger empty + no toast where it does not) → no_shrink (every inline <script> of every touched
+page parses; 12 vendored sha256 unchanged) → one commit.
+```
+batch 1  aura-off,blackout,bramblewick,burr-blast                inject 20/20  no_shrink 110/110  b6912c14
+batch 2  burrow-bowl,create-a-critter,dragon-philosophy,flock-the-world   24/24        125/125  1edaa25c
+batch 3  fox-basket,garden-td,hues,loop-warden                     22/22        140/140  92dfe236
+batch 4  mahjong,mini-crossword,nectar-drop,petal-alchemy          22/22        155/155  a2eb712b
+batch 5  petal-plunge,pitbike-rally,power-scalers,root-groups      20/20        170/170  f6714439
+batch 6  root-weave,seed-flutter,silt,snakes-ladders               22/22        185/185  d737bf9d
+batch 7  spore-drift,stop-motion,tinker-loft,wireworm              20/20        200/200  9325c009
+final:   check: 105 included, 12 vendored untouched, 0 wrong, of 117 · vendored sha256: 12/12 unchanged
+```
+28 satellites booted twice each across the batches; not one produced a console error the baseline did not.
