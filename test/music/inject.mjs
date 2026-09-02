@@ -51,7 +51,11 @@ async function run(g, live) {
   const url = BASE + g.url + (live ? "" : (g.url.includes("?") ? "&" : "?") + "nomusic=1");
   try { await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45000 }); } catch (e) { errors.add("goto: " + e.message.split("\n")[0]); }
   await new Promise(r => setTimeout(r, 900));
+  const pre = await page.evaluate(() => !!document.getElementById("sws-music-toast"));
+  await page.evaluate(() => document.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })));   // the toast waits for a first tap
+  await new Promise(r => setTimeout(r, 120));
   const early = await page.evaluate(() => ({ toast: !!document.getElementById("sws-music-toast"), ids: [...document.body.children].map(c => c.id || c.tagName) }));
+  early.pre = pre;
   await new Promise(r => setTimeout(r, 3300));
   const late = await page.evaluate(() => ({
     toast: !!document.getElementById("sws-music-toast"),
@@ -71,7 +75,8 @@ for (const g of games) {
   t(label + "  module loaded", B.late.loaded, "window.SWSMusic absent");
   if (shelf) {
     t(label + "  ledger has " + shelf.tracks[0].id, B.late.ledger.some(e => e.id === shelf.tracks[0].id), "ledger=" + JSON.stringify(B.late.ledger.map(e => e.id)));
-    t(label + "  toast appeared", B.early.toast);
+    t(label + "  no toast before the first tap", !B.early.pre);
+    t(label + "  toast appeared after the first tap", B.early.toast);
     t(label + "  toast gone by ~4s", !B.late.toast);
   } else {
     t(label + "  no shelf in fixture: ledger empty, no toast", B.late.ledger.length === 0 && !B.early.toast);

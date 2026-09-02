@@ -97,6 +97,8 @@ t("source: one IIFE guarded by if (window.SWSMusic) return", /if\s*\(\s*window\.
   t("progress written: first, days=[today], sessions 0, secs 0", p && p.first && Array.isArray(p.days) && p.days.length === 1 && p.sessions === 0 && p.secs === 0);
   t("a day is a local calendar date YYYY-MM-DD, not a timestamp", p && /^\d{4}-\d{2}-\d{2}$/.test(p.days[0]));
   t("fold hook called after rebuild", h.spies.fold >= 1);
+  t("no toast BEFORE the first interaction (the grant is already in the ledger)", !h.toast());
+  h.fire("pointerdown");
   const toast = h.toast();
   t("toast present with the song title, no dashes", toast && /♫ New song: Shaft Song/.test(toast.textContent) && !/[-–—]/.test(toast.textContent));
   t("toast is inert: pointer-events none, fixed, top", toast && toast.style.pointerEvents === "none" && toast.style.position === "fixed");
@@ -107,7 +109,7 @@ t("source: one IIFE guarded by if (window.SWSMusic) return", /if\s*\(\s*window\.
   t("no console.error", h.spies.errors === 0); }
 
 /* rung 1 by ticks, visibility, sessions */
-{ const h = browser(); h.load(); h.advance(3500);
+{ const h = browser(); h.load(); h.fire("pointerdown"); h.advance(3500);
   t("tick is a 5s interval, exactly one", h.timers.filter(x => x.kind === "i").length === 1 && h.timers.find(x => x.kind === "i").ms === 5000);
   h.advance(55000); t("55s visible: secs 55, sessions still 0", h.progress().deepwell.secs === 55 && h.progress().deepwell.sessions === 0);
   h.advance(5000);  t("60s visible: sessions becomes 1, once", h.progress().deepwell.sessions === 1);
@@ -158,14 +160,20 @@ t("source: one IIFE guarded by if (window.SWSMusic) return", /if\s*\(\s*window\.
   const e = entry(h, "m-deepwell-shaft-song"), k = entry(h, "jimothy-x");
   t("stale ledger entry refreshed from catalog: title, src, game", e && e.title === "Shaft Song" && e.src === "/music/v1/deepwell/shaft-song.mp3" && e.game === "Deepwell");
   t("entry not in catalog left exactly as it was", k && k.title === "Keep" && k.src === "/keep.mp3" && k.game === "Jimothy");
+  h.fire("pointerdown");
   t("no toast for an entry that was already in the ledger", !h.toast() || !/Shaft Song/.test(h.toast().textContent)); }
 
+{ const h = browser(); h.load(); h.fire("keydown");
+  t("a key press also opens the toast gate", !!h.toast()); }
+{ const h = browser(); h.load(); h.fire("pointerdown"); h.fire("pointerdown");
+  t("interaction listeners are removed after the first (second event does not re-show)", h.doc.body.children.filter(c => c.id === "sws-music-toast").length === 1); }
+
 /* Tier 1 hook, reduced motion, no body */
-{ const h = browser(); const m = h.load(); h.advance(3500); m.unlock("deepwell", "m-deepwell-echo-chamber");
+{ const h = browser(); const m = h.load(); h.fire("pointerdown"); h.advance(3500); m.unlock("deepwell", "m-deepwell-echo-chamber");
   t("unlock(shelf, id): Tier 1 hook grants an arbitrary catalog track and toasts", has(h, "m-deepwell-echo-chamber") && h.toast() && /Echo Chamber/.test(h.toast().textContent));
   const n = h.ledger().length; m.unlock("deepwell", "m-deepwell-not-a-track");
   t("unlock() with an unknown id is a no-op", h.ledger().length === n); }
-{ const h = browser({ reducedMotion: true }); h.load(); const toast = h.toast();
+{ const h = browser({ reducedMotion: true }); h.load(); h.fire("pointerdown"); const toast = h.toast();
   t("prefers-reduced-motion: no transition/animation on the toast", toast && !toast.style.transition && !toast.style.animation); }
 { const h = browser({ noBody: true }); let threw = false; try { h.load(); h.advance(5000); } catch (e) { threw = true; }
   t("no document.body: still grants, never throws", !threw && has(h, "m-deepwell-shaft-song")); }

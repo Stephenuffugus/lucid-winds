@@ -134,3 +134,26 @@ batch 7  spore-drift,stop-motion,tinker-loft,wireworm              20/20        
 final:   check: 105 included, 12 vendored untouched, 0 wrong, of 117 · vendored sha256: 12/12 unchanged
 ```
 28 satellites booted twice each across the batches; not one produced a console error the baseline did not.
+
+## P7 — UI, and LOOKING
+gate first run: `35 ok, 1 failed` — my game list had tarot-run, which is VENDORED and has no include by design. Swapped for
+greenhouse-pinball. Then `42 ok, 0 failed`. Then I opened the images.
+three things wrong, before Stephen says them:
+1. The pill lands on every game's title: across "THE SURFACE" and part of the ≡ on Deepwell, over the "HOW TO PLAY"
+   eyebrow on Chess and Sudoku, over "SKY WOLF STUDIO PRESENTS" on Flock. Inert, three seconds, but crude.
+2. It fired at t=0, on a screen the player had not read yet. The reward fought the first impression instead of landing on it.
+3. Low separation on the near-black greens; legible only because of the gold border.
+what changed: the song is still GRANTED on open (ledger written, shelf in the player immediately) but the toast now waits
+for the player's first tap or key (pointerdown/touchstart/keydown, capture, passive, removed after one use). Opacity
+0.92→0.96, border 0.6→0.7, a drop shadow. Gates updated to fire a synthetic pointerdown before measuring, plus assertions
+that there is NO toast before it, that a key also opens the gate, and that the listeners are gone after one use.
+```
+unlocks gate: 55 ok, 0 failed      mutants: 12 killed, 0 survived, 0 invalid, of 12
+ui gate: 47 ok, 0 failed           inject (deepwell, blackout, chess, klondike): 29 ok, 0 failed
+no_shrink gate: 201 ok, 0 failed
+```
+residual, honestly: the screenshots still show the pill over the title, because the test taps on the title screen. On games
+whose title is also the hub (Deepwell) it will sit across the title for three seconds in real play too. Named follow-up if
+Stephen dislikes it on a phone: arcade-exit.js already searches for an empty corner with elementFromPoint; the toast could
+borrow that. Not done in Tier 0 on purpose: it is more DOM inspection inside 172 pages we do not control.
+shots: /tmp/music-shots/{deepwell,greenhouse-pinball,flock-the-world,chess,klondike,sudoku}.png (sudoku = no shelf, no toast)

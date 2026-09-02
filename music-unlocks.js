@@ -18,6 +18,8 @@
  *   catalog    window.LW_MUSIC_CATALOG (music-catalog.js, generated). Nothing happens unless live:true.
  *   ladder     track 0 on open; 1 at 120s; 2 on a second day; 3 at 5 sessions; then every 3 sessions.
  *   off        ?nomusic=1 in the URL, or no catalog, or no identity, or a shelf-less game: no timers.
+ *   the toast  waits for the player's FIRST tap or key (P7, after looking: top-centre at t=0 sits on
+ *              every game's title). The grant itself never waits; the shelf is there immediately.
  *
  * ES5 on purpose: this runs inside a hundred pages of varying age. No const,
  * no let, no arrows, no template strings. Everything is wrapped; nothing throws.
@@ -28,7 +30,7 @@
 
   var LS_PROG = 'sws_music_progress', LS_LEDGER = 'sws_game_unlocks', TOAST_ID = 'sws-music-toast';
   var TICK_MS = 5000, TOAST_MS = 3000, SESSION_SECS = 60, MAX_DAYS = 366;
-  var S = { id: null, name: null, booted: false, timer: null, loadSecs: 0, sessionCounted: false, queue: [], showing: false, ticking: false };
+  var S = { id: null, name: null, booted: false, timer: null, loadSecs: 0, sessionCounted: false, queue: [], showing: false, ticking: false, interacted: false };
 
   /* ---- storage, defensively ---------------------------------------------- */
   function lsGet(k) { try { var v = window.localStorage.getItem(k); return v == null ? null : String(v); } catch (e) { return null; } }
@@ -87,7 +89,7 @@
   /* ---- the toast: one inert pill, three seconds, queued, never while hidden ---- */
   function reduced() { try { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); } catch (e) { return false; } }
   function showNext() {
-    if (S.showing || !S.queue.length) return;
+    if (S.showing || !S.queue.length || !S.interacted) return;
     var d = window.document; if (!d || !d.body || d.hidden) return;
     var el = d.createElement('div'), st = el.style;
     el.id = TOAST_ID; el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite');
@@ -96,12 +98,21 @@
     st.pointerEvents = 'none'; st.zIndex = '2147483000'; st.maxWidth = '90vw'; st.maxHeight = '44px'; st.boxSizing = 'border-box';
     st.padding = '10px 18px'; st.lineHeight = '20px'; st.fontSize = '14px'; st.fontFamily = 'system-ui, sans-serif';
     st.whiteSpace = 'nowrap'; st.overflow = 'hidden'; st.textOverflow = 'ellipsis';
-    st.background = 'rgba(13,16,12,0.92)'; st.color = '#e8dcc8'; st.border = '1px solid rgba(200,168,75,0.6)'; st.borderRadius = '22px';
+    st.background = 'rgba(13,16,12,0.96)'; st.color = '#e8dcc8'; st.border = '1px solid rgba(200,168,75,0.7)'; st.borderRadius = '22px';
+    st.boxShadow = '0 6px 18px rgba(0,0,0,0.55)';
     if (!reduced()) { st.transition = 'opacity 0.25s'; }
     d.body.appendChild(el); S.showing = true;
     window.setTimeout(function () { try { el.remove(); } catch (e) {} S.showing = false; showNext(); }, TOAST_MS);
   }
   function toast(title) { S.queue.push(String(title)); showNext(); }
+  /* first interaction opens the toast gate; passive, no preventDefault, removed after one use */
+  function onFirstInteraction() {
+    S.interacted = true;
+    try { var d = window.document, i; for (i = 0; i < INTERACT.length; i++) d.removeEventListener(INTERACT[i], onFirstInteraction, true); } catch (e) {}
+    showNext();
+  }
+  var INTERACT = ['pointerdown', 'touchstart', 'keydown'];
+  function armInteraction() { try { var d = window.document, i; for (i = 0; i < INTERACT.length; i++) d.addEventListener(INTERACT[i], onFirstInteraction, true); } catch (e) {} }
 
   /* ---- the tick: 5s while visible, cleared when hidden. Never rAF. ----------- */
   function tick() {
@@ -128,6 +139,7 @@
   function init() {
     try {
       if (!catalog()) { log('no live catalog, idle'); return; }
+      armInteraction();
       writeProgress(function (p) { var t = today(); if (p.days.indexOf(t) < 0) { p.days.push(t); if (p.days.length > MAX_DAYS) p.days.splice(0, p.days.length - MAX_DAYS); } });
       var fresh = rebuild(), i; for (i = 0; i < fresh.length; i++) toast(fresh[i].title);
       if (!shelvesFor(S.id).length) { log('no shelf for ' + S.id + ', visit recorded, idle'); return; }
