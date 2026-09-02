@@ -23,7 +23,9 @@ export const LADDER_DEFAULTS = { secsPer: 120, daysPer: 1, sessionsBase: 2, brea
 
 const norm    = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 const slugify = (s) => String(s || "").toLowerCase().replace(/['’"“”]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");   // "Warden's March" -> wardens-march
-const cleanTitle = (t) => String(t || "").replace(/^\d{1,2}[ ._-]+/, "").replace(/\s+/g, " ").trim();   // "01 Shaft Song" -> "Shaft Song"
+/* "01 Shaft Song" -> "Shaft Song". Suno's alternate takes come as "Title (1)", "(2)": those become "Title, take 2", "take 3"
+   (Stephen 2026-09-02: "change the 1's"). The first take keeps the plain name. Commas, never dashes. */
+const cleanTitle = (t) => String(t || "").replace(/^\d{1,2}[ ._-]+/, "").replace(/\s*\((\d{1,2})\)\s*$/, (m, n) => ", take " + (Number(n) + 1)).replace(/\s+/g, " ").trim();
 
 /* ---- source files on disk, OPTIONAL. The intake JSON cannot see two things the generator needs: that a file sits in a
    SUBFOLDER of a game folder (Pit bike rally/Menu and shop song/…), and that two files are byte-identical (Drive
@@ -151,7 +153,10 @@ export function generate({ intake, existing = null, live = false, families = loa
   /* tracks: file-name order; reused ids first, then new ids allocated around them */
   for (const shelf of Object.values(shelves)) {
     const seenSha = new Map();
-    const rows = shelf._rows.sort((a, b) => (a.file < b.file ? -1 : a.file > b.file ? 1 : 0)).filter(r => {
+    /* order: by file name, except that a song's takes stay together with the plain take FIRST. Raw byte order put
+       "Neon Rally (1).mp3" before "Neon Rally.mp3" (space sorts before dot), so the alternate take was rung 0 on live. */
+    const takeKey = (f) => { const m = /^(.*?)\s*\((\d{1,2})\)(\.[a-z0-9]+)$/i.exec(f); return m ? [m[1] + m[3], Number(m[2])] : [f, 0]; };
+    const rows = shelf._rows.sort((a, b) => { const [ka, na] = takeKey(a.file), [kb, nb] = takeKey(b.file); return ka < kb ? -1 : ka > kb ? 1 : na - nb || (a.file < b.file ? -1 : a.file > b.file ? 1 : 0); }).filter(r => {
       if (!r.sha) return true;
       if (seenSha.has(r.sha)) { log.push("DUP       " + r.game + "/" + r.file + "  ==  " + seenSha.get(r.sha) + "  (skipped)"); return false; }
       seenSha.set(r.sha, r.game + "/" + r.file); return true;

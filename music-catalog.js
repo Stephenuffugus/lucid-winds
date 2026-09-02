@@ -2,7 +2,7 @@
    live:false means the module does nothing; Fable flips it after scripts/music_verify.mjs
    passes against the host (HANDOFF-MUSIC section 6.4, 7). */
 window.LW_MUSIC_CATALOG = {
- "version": "d52b4849b50b",
+ "version": "7c31b60a5412",
  "base": "/music/v1/",
  "live": true,
  "ladder": {
@@ -21,18 +21,18 @@ window.LW_MUSIC_CATALOG = {
    ],
    "tracks": [
     {
-     "id": "m-abduct-a-chameleon-tiptoe-through-the-saucer-1",
-     "title": "Tiptoe Through the Saucer (1)",
-     "file": "tiptoe-through-the-saucer-1.mp3",
-     "seconds": 118,
-     "from": "Tiptoe Through the Saucer (1).mp3"
-    },
-    {
      "id": "m-abduct-a-chameleon-tiptoe-through-the-saucer",
      "title": "Tiptoe Through the Saucer",
      "file": "tiptoe-through-the-saucer.mp3",
      "seconds": 92,
      "from": "Tiptoe Through the Saucer.mp3"
+    },
+    {
+     "id": "m-abduct-a-chameleon-tiptoe-through-the-saucer-1",
+     "title": "Tiptoe Through the Saucer, take 2",
+     "file": "tiptoe-through-the-saucer-1.mp3",
+     "seconds": 118,
+     "from": "Tiptoe Through the Saucer (1).mp3"
     }
    ]
   },
@@ -89,13 +89,6 @@ window.LW_MUSIC_CATALOG = {
    ],
    "tracks": [
     {
-     "id": "m-action-room-neon-rush-1",
-     "title": "Neon Rush (1)",
-     "file": "neon-rush-1.mp3",
-     "seconds": 30,
-     "from": "Neon Rush (1).mp3"
-    },
-    {
      "id": "m-action-room-neon-rush",
      "title": "Neon Rush",
      "file": "neon-rush.mp3",
@@ -103,11 +96,11 @@ window.LW_MUSIC_CATALOG = {
      "from": "Neon Rush.mp3"
     },
     {
-     "id": "m-action-room-pixel-dash-1",
-     "title": "Pixel Dash (1)",
-     "file": "pixel-dash-1.mp3",
-     "seconds": 40,
-     "from": "Pixel Dash (1).mp3"
+     "id": "m-action-room-neon-rush-1",
+     "title": "Neon Rush, take 2",
+     "file": "neon-rush-1.mp3",
+     "seconds": 30,
+     "from": "Neon Rush (1).mp3"
     },
     {
      "id": "m-action-room-pixel-dash",
@@ -115,6 +108,13 @@ window.LW_MUSIC_CATALOG = {
      "file": "pixel-dash.mp3",
      "seconds": 40,
      "from": "Pixel Dash.mp3"
+    },
+    {
+     "id": "m-action-room-pixel-dash-1",
+     "title": "Pixel Dash, take 2",
+     "file": "pixel-dash-1.mp3",
+     "seconds": 40,
+     "from": "Pixel Dash (1).mp3"
     }
    ]
   },
@@ -127,25 +127,25 @@ window.LW_MUSIC_CATALOG = {
    ],
    "tracks": [
     {
+     "id": "m-aura-off-concrete-circle",
+     "title": "Concrete Circle",
+     "file": "concrete-circle.mp3",
+     "seconds": 80,
+     "from": "Concrete Circle.mp3"
+    },
+    {
      "id": "m-aura-off-concrete-circle-1",
-     "title": "Concrete Circle (1)",
+     "title": "Concrete Circle, take 2",
      "file": "concrete-circle-1.mp3",
      "seconds": 42,
      "from": "Concrete Circle (1).mp3"
     },
     {
      "id": "m-aura-off-concrete-circle-2",
-     "title": "Concrete Circle (2)",
+     "title": "Concrete Circle, take 3",
      "file": "concrete-circle-2.mp3",
      "seconds": 50,
      "from": "Concrete Circle (2).mp3"
-    },
-    {
-     "id": "m-aura-off-concrete-circle",
-     "title": "Concrete Circle",
-     "file": "concrete-circle.mp3",
-     "seconds": 80,
-     "from": "Concrete Circle.mp3"
     }
    ]
   },
@@ -158,13 +158,6 @@ window.LW_MUSIC_CATALOG = {
    ],
    "tracks": [
     {
-     "id": "m-berry-vine-berry-picking-fun-1",
-     "title": "Berry Picking Fun (1)",
-     "file": "berry-picking-fun-1.mp3",
-     "seconds": 81,
-     "from": "Berry Picking Fun (1).mp3"
-    },
-    {
      "id": "m-berry-vine-berry-picking-fun",
      "title": "Berry Picking Fun",
      "file": "berry-picking-fun.mp3",
@@ -172,11 +165,11 @@ window.LW_MUSIC_CATALOG = {
      "from": "Berry Picking Fun.mp3"
     },
     {
-     "id": "m-berry-vine-glowing-berries-1",
-     "title": "Glowing Berries (1)",
-     "file": "glowing-berries-1.mp3",
-     "seconds": 105,
-     "from": "Glowing Berries (1).mp3"
+     "id": "m-berry-vine-berry-picking-fun-1",
+     "title": "Berry Picking Fun, take 2",
+     "file": "berry-picking-fun-1.mp3",
+     "seconds": 81,
+     "from": "Berry Picking Fun (1).mp3"
     },
     {
      "id": "m-berry-vine-glowing-berries",
@@ -184,6 +177,13 @@ window.LW_MUSIC_CATALOG = {
      "file": "glowing-berries.mp3",
      "seconds": 78,
      "from": "Glowing Berries.mp3"
+    },
+    {
+     "id": "m-berry-vine-glowing-berries-1",
+     "title": "Glowing Berries, take 2",
+     "file": "glowing-berries-1.mp3",
+     "seconds": 105,
+     "from": "Glowing Berries (1).mp3"
     }
    ]
   },
@@ -196,18 +196,18 @@ window.LW_MUSIC_CATALOG = {
    ],
    "tracks": [
     {
-     "id": "m-bloom-breaker-bloom-breaker-1",
-     "title": "Bloom Breaker (1)",
-     "file": "bloom-breaker-1.mp3",
-     "seconds": 117,
-     "from": "Bloom Breaker (1).mp3"
-    },
-    {
      "id": "m-bloom-breaker-bloom-breaker",
      "title": "Bloom Breaker",
      "file": "bloom-breaker.mp3",
      "seconds": 122,
      "from": "Bloom Breaker.mp3"
+    },
+    {
+     "id": "m-bloom-breaker-bloom-breaker-1",
+     "title": "Bloom Breaker, take 2",
+     "file": "bloom-breaker-1.mp3",
+     "seconds": 117,
+     "from": "Bloom Breaker (1).mp3"
     }
    ]
   },
@@ -236,13 +236,6 @@ window.LW_MUSIC_CATALOG = {
    ],
    "tracks": [
     {
-     "id": "m-board-classics-boardgame-afternoon-1",
-     "title": "Boardgame Afternoon (1)",
-     "file": "boardgame-afternoon-1.mp3",
-     "seconds": 43,
-     "from": "Boardgame Afternoon (1).mp3"
-    },
-    {
      "id": "m-board-classics-boardgame-afternoon",
      "title": "Boardgame Afternoon",
      "file": "boardgame-afternoon.mp3",
@@ -250,11 +243,11 @@ window.LW_MUSIC_CATALOG = {
      "from": "Boardgame Afternoon.mp3"
     },
     {
-     "id": "m-board-classics-gilded-circuit-1",
-     "title": "Gilded Circuit (1)",
-     "file": "gilded-circuit-1.mp3",
-     "seconds": 74,
-     "from": "Gilded Circuit (1).mp3"
+     "id": "m-board-classics-boardgame-afternoon-1",
+     "title": "Boardgame Afternoon, take 2",
+     "file": "boardgame-afternoon-1.mp3",
+     "seconds": 43,
+     "from": "Boardgame Afternoon (1).mp3"
     },
     {
      "id": "m-board-classics-gilded-circuit",
@@ -264,11 +257,11 @@ window.LW_MUSIC_CATALOG = {
      "from": "Gilded Circuit.mp3"
     },
     {
-     "id": "m-board-classics-measured-progression-1",
-     "title": "Measured Progression (1)",
-     "file": "measured-progression-1.mp3",
-     "seconds": 125,
-     "from": "Measured Progression (1).mp3"
+     "id": "m-board-classics-gilded-circuit-1",
+     "title": "Gilded Circuit, take 2",
+     "file": "gilded-circuit-1.mp3",
+     "seconds": 74,
+     "from": "Gilded Circuit (1).mp3"
     },
     {
      "id": "m-board-classics-measured-progression",
@@ -276,6 +269,13 @@ window.LW_MUSIC_CATALOG = {
      "file": "measured-progression.mp3",
      "seconds": 148,
      "from": "Measured Progression.mp3"
+    },
+    {
+     "id": "m-board-classics-measured-progression-1",
+     "title": "Measured Progression, take 2",
+     "file": "measured-progression-1.mp3",
+     "seconds": 125,
+     "from": "Measured Progression (1).mp3"
     }
    ]
   },
@@ -312,18 +312,18 @@ window.LW_MUSIC_CATALOG = {
    ],
    "tracks": [
     {
-     "id": "m-bubblenaut-weightless-wonder-1",
-     "title": "Weightless Wonder (1)",
-     "file": "weightless-wonder-1.mp3",
-     "seconds": 160,
-     "from": "Weightless Wonder (1).mp3"
-    },
-    {
      "id": "m-bubblenaut-weightless-wonder",
      "title": "Weightless Wonder",
      "file": "weightless-wonder.mp3",
      "seconds": 144,
      "from": "Weightless Wonder.mp3"
+    },
+    {
+     "id": "m-bubblenaut-weightless-wonder-1",
+     "title": "Weightless Wonder, take 2",
+     "file": "weightless-wonder-1.mp3",
+     "seconds": 160,
+     "from": "Weightless Wonder (1).mp3"
     }
    ]
   },
@@ -336,18 +336,18 @@ window.LW_MUSIC_CATALOG = {
    ],
    "tracks": [
     {
-     "id": "m-budburst-bounce-forward-1",
-     "title": "Bounce Forward (1)",
-     "file": "bounce-forward-1.mp3",
-     "seconds": 118,
-     "from": "Bounce Forward (1).mp3"
-    },
-    {
      "id": "m-budburst-bounce-forward",
      "title": "Bounce Forward",
      "file": "bounce-forward.mp3",
      "seconds": 78,
      "from": "Bounce Forward.mp3"
+    },
+    {
+     "id": "m-budburst-bounce-forward-1",
+     "title": "Bounce Forward, take 2",
+     "file": "bounce-forward-1.mp3",
+     "seconds": 118,
+     "from": "Bounce Forward (1).mp3"
     }
    ]
   },
@@ -360,18 +360,18 @@ window.LW_MUSIC_CATALOG = {
    ],
    "tracks": [
     {
-     "id": "m-burr-blast-prickly-collision-1",
-     "title": "Prickly Collision (1)",
-     "file": "prickly-collision-1.mp3",
-     "seconds": 116,
-     "from": "Prickly Collision (1).mp3"
-    },
-    {
      "id": "m-burr-blast-prickly-collision",
      "title": "Prickly Collision",
      "file": "prickly-collision.mp3",
      "seconds": 109,
      "from": "Prickly Collision.mp3"
+    },
+    {
+     "id": "m-burr-blast-prickly-collision-1",
+     "title": "Prickly Collision, take 2",
+     "file": "prickly-collision-1.mp3",
+     "seconds": 116,
+     "from": "Prickly Collision (1).mp3"
     }
    ]
   },
@@ -400,13 +400,6 @@ window.LW_MUSIC_CATALOG = {
    ],
    "tracks": [
     {
-     "id": "m-card-table-clinking-glasses-1",
-     "title": "Clinking Glasses (1)",
-     "file": "clinking-glasses-1.mp3",
-     "seconds": 122,
-     "from": "Clinking Glasses (1).mp3"
-    },
-    {
      "id": "m-card-table-clinking-glasses",
      "title": "Clinking Glasses",
      "file": "clinking-glasses.mp3",
@@ -414,25 +407,11 @@ window.LW_MUSIC_CATALOG = {
      "from": "Clinking Glasses.mp3"
     },
     {
-     "id": "m-card-table-cozy-game-loop-1",
-     "title": "Cozy Game Loop (1)",
-     "file": "cozy-game-loop-1.mp3",
-     "seconds": 83,
-     "from": "Cozy Game Loop (1).mp3"
-    },
-    {
-     "id": "m-card-table-cozy-game-loop-2",
-     "title": "Cozy Game Loop (2)",
-     "file": "cozy-game-loop-2.mp3",
-     "seconds": 117,
-     "from": "Cozy Game Loop (2).mp3"
-    },
-    {
-     "id": "m-card-table-cozy-game-loop-3",
-     "title": "Cozy Game Loop (3)",
-     "file": "cozy-game-loop-3.mp3",
-     "seconds": 81,
-     "from": "Cozy Game Loop (3).mp3"
+     "id": "m-card-table-clinking-glasses-1",
+     "title": "Clinking Glasses, take 2",
+     "file": "clinking-glasses-1.mp3",
+     "seconds": 122,
+     "from": "Clinking Glasses (1).mp3"
     },
     {
      "id": "m-card-table-cozy-game-loop",
@@ -442,11 +421,25 @@ window.LW_MUSIC_CATALOG = {
      "from": "Cozy Game Loop.mp3"
     },
     {
-     "id": "m-card-table-rainy-card-room-1",
-     "title": "Rainy Card Room (1)",
-     "file": "rainy-card-room-1.mp3",
+     "id": "m-card-table-cozy-game-loop-1",
+     "title": "Cozy Game Loop, take 2",
+     "file": "cozy-game-loop-1.mp3",
      "seconds": 83,
-     "from": "Rainy Card Room (1).mp3"
+     "from": "Cozy Game Loop (1).mp3"
+    },
+    {
+     "id": "m-card-table-cozy-game-loop-2",
+     "title": "Cozy Game Loop, take 3",
+     "file": "cozy-game-loop-2.mp3",
+     "seconds": 117,
+     "from": "Cozy Game Loop (2).mp3"
+    },
+    {
+     "id": "m-card-table-cozy-game-loop-3",
+     "title": "Cozy Game Loop, take 4",
+     "file": "cozy-game-loop-3.mp3",
+     "seconds": 81,
+     "from": "Cozy Game Loop (3).mp3"
     },
     {
      "id": "m-card-table-rainy-card-room",
@@ -456,11 +449,11 @@ window.LW_MUSIC_CATALOG = {
      "from": "Rainy Card Room.mp3"
     },
     {
-     "id": "m-card-table-smoky-club-loop-1",
-     "title": "Smoky Club Loop (1)",
-     "file": "smoky-club-loop-1.mp3",
-     "seconds": 148,
-     "from": "Smoky Club Loop (1).mp3"
+     "id": "m-card-table-rainy-card-room-1",
+     "title": "Rainy Card Room, take 2",
+     "file": "rainy-card-room-1.mp3",
+     "seconds": 83,
+     "from": "Rainy Card Room (1).mp3"
     },
     {
      "id": "m-card-table-smoky-club-loop",
@@ -468,6 +461,13 @@ window.LW_MUSIC_CATALOG = {
      "file": "smoky-club-loop.mp3",
      "seconds": 106,
      "from": "Smoky Club Loop.mp3"
+    },
+    {
+     "id": "m-card-table-smoky-club-loop-1",
+     "title": "Smoky Club Loop, take 2",
+     "file": "smoky-club-loop-1.mp3",
+     "seconds": 148,
+     "from": "Smoky Club Loop (1).mp3"
     }
    ]
   },
@@ -480,32 +480,32 @@ window.LW_MUSIC_CATALOG = {
    ],
    "tracks": [
     {
+     "id": "m-chaff-wars-pop-n-lock",
+     "title": "Pop N Lock",
+     "file": "pop-n-lock.mp3",
+     "seconds": 132,
+     "from": "Pop N Lock.mp3"
+    },
+    {
      "id": "m-chaff-wars-pop-n-lock-1",
-     "title": "Pop N Lock (1)",
+     "title": "Pop N Lock, take 2",
      "file": "pop-n-lock-1.mp3",
      "seconds": 124,
      "from": "Pop N Lock (1).mp3"
     },
     {
      "id": "m-chaff-wars-pop-n-lock-2",
-     "title": "Pop N Lock (2)",
+     "title": "Pop N Lock, take 3",
      "file": "pop-n-lock-2.mp3",
      "seconds": 54,
      "from": "Pop N Lock (2).mp3"
     },
     {
      "id": "m-chaff-wars-pop-n-lock-3",
-     "title": "Pop N Lock (3)",
+     "title": "Pop N Lock, take 4",
      "file": "pop-n-lock-3.mp3",
      "seconds": 93,
      "from": "Pop N Lock (3).mp3"
-    },
-    {
-     "id": "m-chaff-wars-pop-n-lock",
-     "title": "Pop N Lock",
-     "file": "pop-n-lock.mp3",
-     "seconds": 132,
-     "from": "Pop N Lock.mp3"
     }
    ]
   },
@@ -542,13 +542,6 @@ window.LW_MUSIC_CATALOG = {
    ],
    "tracks": [
     {
-     "id": "m-dewball-dewy-roll-1",
-     "title": "Dewy Roll (1)",
-     "file": "dewy-roll-1.mp3",
-     "seconds": 110,
-     "from": "Dewy Roll (1).mp3"
-    },
-    {
      "id": "m-dewball-dewy-roll",
      "title": "Dewy Roll",
      "file": "dewy-roll.mp3",
@@ -556,11 +549,11 @@ window.LW_MUSIC_CATALOG = {
      "from": "Dewy Roll.mp3"
     },
     {
-     "id": "m-dewball-rolling-collection-1",
-     "title": "Rolling Collection (1)",
-     "file": "rolling-collection-1.mp3",
-     "seconds": 70,
-     "from": "Rolling Collection (1).mp3"
+     "id": "m-dewball-dewy-roll-1",
+     "title": "Dewy Roll, take 2",
+     "file": "dewy-roll-1.mp3",
+     "seconds": 110,
+     "from": "Dewy Roll (1).mp3"
     },
     {
      "id": "m-dewball-rolling-collection",
@@ -568,6 +561,13 @@ window.LW_MUSIC_CATALOG = {
      "file": "rolling-collection.mp3",
      "seconds": 65,
      "from": "Rolling Collection.mp3"
+    },
+    {
+     "id": "m-dewball-rolling-collection-1",
+     "title": "Rolling Collection, take 2",
+     "file": "rolling-collection-1.mp3",
+     "seconds": 70,
+     "from": "Rolling Collection (1).mp3"
     }
    ]
   },
@@ -584,13 +584,6 @@ window.LW_MUSIC_CATALOG = {
    ],
    "tracks": [
     {
-     "id": "m-dice-porch-riverboat-shuffle-1",
-     "title": "Riverboat Shuffle (1)",
-     "file": "riverboat-shuffle-1.mp3",
-     "seconds": 89,
-     "from": "Riverboat Shuffle (1).mp3"
-    },
-    {
      "id": "m-dice-porch-riverboat-shuffle",
      "title": "Riverboat Shuffle",
      "file": "riverboat-shuffle.mp3",
@@ -598,11 +591,11 @@ window.LW_MUSIC_CATALOG = {
      "from": "Riverboat Shuffle.mp3"
     },
     {
-     "id": "m-dice-porch-saloon-streak-1",
-     "title": "Saloon Streak (1)",
-     "file": "saloon-streak-1.mp3",
-     "seconds": 38,
-     "from": "Saloon Streak (1).mp3"
+     "id": "m-dice-porch-riverboat-shuffle-1",
+     "title": "Riverboat Shuffle, take 2",
+     "file": "riverboat-shuffle-1.mp3",
+     "seconds": 89,
+     "from": "Riverboat Shuffle (1).mp3"
     },
     {
      "id": "m-dice-porch-saloon-streak",
@@ -610,6 +603,13 @@ window.LW_MUSIC_CATALOG = {
      "file": "saloon-streak.mp3",
      "seconds": 67,
      "from": "Saloon Streak.mp3"
+    },
+    {
+     "id": "m-dice-porch-saloon-streak-1",
+     "title": "Saloon Streak, take 2",
+     "file": "saloon-streak-1.mp3",
+     "seconds": 38,
+     "from": "Saloon Streak (1).mp3"
     }
    ]
   },
@@ -622,18 +622,18 @@ window.LW_MUSIC_CATALOG = {
    ],
    "tracks": [
     {
-     "id": "m-flatulence-fighter-the-great-containment-1",
-     "title": "The Great Containment (1)",
-     "file": "the-great-containment-1.mp3",
-     "seconds": 70,
-     "from": "The Great Containment (1).mp3"
-    },
-    {
      "id": "m-flatulence-fighter-the-great-containment",
      "title": "The Great Containment",
      "file": "the-great-containment.mp3",
      "seconds": 50,
      "from": "The Great Containment.mp3"
+    },
+    {
+     "id": "m-flatulence-fighter-the-great-containment-1",
+     "title": "The Great Containment, take 2",
+     "file": "the-great-containment-1.mp3",
+     "seconds": 70,
+     "from": "The Great Containment (1).mp3"
     }
    ]
   },
@@ -646,18 +646,18 @@ window.LW_MUSIC_CATALOG = {
    ],
    "tracks": [
     {
-     "id": "m-frost-watch-frost-defense-1",
-     "title": "Frost Defense (1)",
-     "file": "frost-defense-1.mp3",
-     "seconds": 170,
-     "from": "Frost Defense (1).mp3"
-    },
-    {
      "id": "m-frost-watch-frost-defense",
      "title": "Frost Defense",
      "file": "frost-defense.mp3",
      "seconds": 168,
      "from": "Frost Defense.mp3"
+    },
+    {
+     "id": "m-frost-watch-frost-defense-1",
+     "title": "Frost Defense, take 2",
+     "file": "frost-defense-1.mp3",
+     "seconds": 170,
+     "from": "Frost Defense (1).mp3"
     }
    ]
   },
@@ -670,18 +670,18 @@ window.LW_MUSIC_CATALOG = {
    ],
    "tracks": [
     {
-     "id": "m-greenhouse-pinball-blob-works-bumper-run-1",
-     "title": "Blob Works Bumper Run (1)",
-     "file": "blob-works-bumper-run-1.mp3",
-     "seconds": 124,
-     "from": "Blob Works Bumper Run (1).mp3"
-    },
-    {
      "id": "m-greenhouse-pinball-blob-works-bumper-run",
      "title": "Blob Works Bumper Run",
      "file": "blob-works-bumper-run.mp3",
      "seconds": 131,
      "from": "Blob Works Bumper Run.mp3"
+    },
+    {
+     "id": "m-greenhouse-pinball-blob-works-bumper-run-1",
+     "title": "Blob Works Bumper Run, take 2",
+     "file": "blob-works-bumper-run-1.mp3",
+     "seconds": 124,
+     "from": "Blob Works Bumper Run (1).mp3"
     }
    ]
   },
@@ -694,32 +694,32 @@ window.LW_MUSIC_CATALOG = {
    ],
    "tracks": [
     {
+     "id": "m-hues-blending-hues",
+     "title": "Blending Hues",
+     "file": "blending-hues.mp3",
+     "seconds": 129,
+     "from": "Blending Hues.mp3"
+    },
+    {
      "id": "m-hues-blending-hues-1",
-     "title": "Blending Hues (1)",
+     "title": "Blending Hues, take 2",
      "file": "blending-hues-1.mp3",
      "seconds": 153,
      "from": "Blending Hues (1).mp3"
     },
     {
      "id": "m-hues-blending-hues-2",
-     "title": "Blending Hues (2)",
+     "title": "Blending Hues, take 3",
      "file": "blending-hues-2.mp3",
      "seconds": 117,
      "from": "Blending Hues (2).mp3"
     },
     {
      "id": "m-hues-blending-hues-3",
-     "title": "Blending Hues (3)",
+     "title": "Blending Hues, take 4",
      "file": "blending-hues-3.mp3",
      "seconds": 143,
      "from": "Blending Hues (3).mp3"
-    },
-    {
-     "id": "m-hues-blending-hues",
-     "title": "Blending Hues",
-     "file": "blending-hues.mp3",
-     "seconds": 129,
-     "from": "Blending Hues.mp3"
     }
    ]
   },
@@ -779,13 +779,6 @@ window.LW_MUSIC_CATALOG = {
    ],
    "tracks": [
     {
-     "id": "m-logic-den-interlocking-paths-1",
-     "title": "Interlocking Paths (1)",
-     "file": "interlocking-paths-1.mp3",
-     "seconds": 94,
-     "from": "Interlocking Paths (1).mp3"
-    },
-    {
      "id": "m-logic-den-interlocking-paths",
      "title": "Interlocking Paths",
      "file": "interlocking-paths.mp3",
@@ -793,11 +786,11 @@ window.LW_MUSIC_CATALOG = {
      "from": "Interlocking Paths.mp3"
     },
     {
-     "id": "m-logic-den-midnight-puzzle-1",
-     "title": "Midnight Puzzle (1)",
-     "file": "midnight-puzzle-1.mp3",
-     "seconds": 132,
-     "from": "Midnight Puzzle (1).mp3"
+     "id": "m-logic-den-interlocking-paths-1",
+     "title": "Interlocking Paths, take 2",
+     "file": "interlocking-paths-1.mp3",
+     "seconds": 94,
+     "from": "Interlocking Paths (1).mp3"
     },
     {
      "id": "m-logic-den-midnight-puzzle",
@@ -805,6 +798,13 @@ window.LW_MUSIC_CATALOG = {
      "file": "midnight-puzzle.mp3",
      "seconds": 139,
      "from": "Midnight Puzzle.mp3"
+    },
+    {
+     "id": "m-logic-den-midnight-puzzle-1",
+     "title": "Midnight Puzzle, take 2",
+     "file": "midnight-puzzle-1.mp3",
+     "seconds": 132,
+     "from": "Midnight Puzzle (1).mp3"
     }
    ]
   },
@@ -839,13 +839,6 @@ window.LW_MUSIC_CATALOG = {
    ],
    "tracks": [
     {
-     "id": "m-maker-bench-clockwork-waltz-1",
-     "title": "Clockwork Waltz (1)",
-     "file": "clockwork-waltz-1.mp3",
-     "seconds": 89,
-     "from": "Clockwork Waltz (1).mp3"
-    },
-    {
      "id": "m-maker-bench-clockwork-waltz",
      "title": "Clockwork Waltz",
      "file": "clockwork-waltz.mp3",
@@ -853,11 +846,11 @@ window.LW_MUSIC_CATALOG = {
      "from": "Clockwork Waltz.mp3"
     },
     {
-     "id": "m-maker-bench-japanese-garden-stillness-1",
-     "title": "Japanese Garden Stillness (1)",
-     "file": "japanese-garden-stillness-1.mp3",
-     "seconds": 185,
-     "from": "Japanese Garden Stillness (1).mp3"
+     "id": "m-maker-bench-clockwork-waltz-1",
+     "title": "Clockwork Waltz, take 2",
+     "file": "clockwork-waltz-1.mp3",
+     "seconds": 89,
+     "from": "Clockwork Waltz (1).mp3"
     },
     {
      "id": "m-maker-bench-japanese-garden-stillness",
@@ -867,11 +860,11 @@ window.LW_MUSIC_CATALOG = {
      "from": "Japanese Garden Stillness.mp3"
     },
     {
-     "id": "m-maker-bench-tinkering-loop-1",
-     "title": "Tinkering Loop (1)",
-     "file": "tinkering-loop-1.mp3",
-     "seconds": 50,
-     "from": "Tinkering Loop (1).mp3"
+     "id": "m-maker-bench-japanese-garden-stillness-1",
+     "title": "Japanese Garden Stillness, take 2",
+     "file": "japanese-garden-stillness-1.mp3",
+     "seconds": 185,
+     "from": "Japanese Garden Stillness (1).mp3"
     },
     {
      "id": "m-maker-bench-tinkering-loop",
@@ -879,6 +872,13 @@ window.LW_MUSIC_CATALOG = {
      "file": "tinkering-loop.mp3",
      "seconds": 39,
      "from": "Tinkering Loop.mp3"
+    },
+    {
+     "id": "m-maker-bench-tinkering-loop-1",
+     "title": "Tinkering Loop, take 2",
+     "file": "tinkering-loop-1.mp3",
+     "seconds": 50,
+     "from": "Tinkering Loop (1).mp3"
     }
    ]
   },
@@ -891,18 +891,18 @@ window.LW_MUSIC_CATALOG = {
    ],
    "tracks": [
     {
-     "id": "m-nectar-drop-golden-sympathy-1",
-     "title": "Golden Sympathy (1)",
-     "file": "golden-sympathy-1.mp3",
-     "seconds": 77,
-     "from": "Golden Sympathy (1).mp3"
-    },
-    {
      "id": "m-nectar-drop-golden-sympathy",
      "title": "Golden Sympathy",
      "file": "golden-sympathy.mp3",
      "seconds": 114,
      "from": "Golden Sympathy.mp3"
+    },
+    {
+     "id": "m-nectar-drop-golden-sympathy-1",
+     "title": "Golden Sympathy, take 2",
+     "file": "golden-sympathy-1.mp3",
+     "seconds": 77,
+     "from": "Golden Sympathy (1).mp3"
     }
    ]
   },
@@ -915,18 +915,18 @@ window.LW_MUSIC_CATALOG = {
    ],
    "tracks": [
     {
-     "id": "m-nova-bloom-neon-geometry-1",
-     "title": "Neon Geometry (1)",
-     "file": "neon-geometry-1.mp3",
-     "seconds": 180,
-     "from": "Neon Geometry (1).mp3"
-    },
-    {
      "id": "m-nova-bloom-neon-geometry",
      "title": "Neon Geometry",
      "file": "neon-geometry.mp3",
      "seconds": 194,
      "from": "Neon Geometry.mp3"
+    },
+    {
+     "id": "m-nova-bloom-neon-geometry-1",
+     "title": "Neon Geometry, take 2",
+     "file": "neon-geometry-1.mp3",
+     "seconds": 180,
+     "from": "Neon Geometry (1).mp3"
     }
    ]
   },
@@ -939,18 +939,18 @@ window.LW_MUSIC_CATALOG = {
    ],
    "tracks": [
     {
-     "id": "m-orb-orchard-orbit-garden-1",
-     "title": "Orbit Garden (1)",
-     "file": "orbit-garden-1.mp3",
-     "seconds": 180,
-     "from": "Orbit Garden (1).mp3"
-    },
-    {
      "id": "m-orb-orchard-orbit-garden",
      "title": "Orbit Garden",
      "file": "orbit-garden.mp3",
      "seconds": 197,
      "from": "Orbit Garden.mp3"
+    },
+    {
+     "id": "m-orb-orchard-orbit-garden-1",
+     "title": "Orbit Garden, take 2",
+     "file": "orbit-garden-1.mp3",
+     "seconds": 180,
+     "from": "Orbit Garden (1).mp3"
     }
    ]
   },
@@ -961,18 +961,18 @@ window.LW_MUSIC_CATALOG = {
    "games": [],
    "tracks": [
     {
-     "id": "m-originals-midnight-greenhouse-1",
-     "title": "Midnight Greenhouse (1)",
-     "file": "midnight-greenhouse-1.mp3",
-     "seconds": 181,
-     "from": "Midnight Greenhouse (1).mp3"
-    },
-    {
      "id": "m-originals-midnight-greenhouse",
      "title": "Midnight Greenhouse",
      "file": "midnight-greenhouse.mp3",
      "seconds": 210,
      "from": "Midnight Greenhouse.mp3"
+    },
+    {
+     "id": "m-originals-midnight-greenhouse-1",
+     "title": "Midnight Greenhouse, take 2",
+     "file": "midnight-greenhouse-1.mp3",
+     "seconds": 181,
+     "from": "Midnight Greenhouse (1).mp3"
     }
    ]
   },
@@ -985,18 +985,18 @@ window.LW_MUSIC_CATALOG = {
    ],
    "tracks": [
     {
-     "id": "m-petal-plunge-descent-through-blossoms-1",
-     "title": "Descent Through Blossoms (1)",
-     "file": "descent-through-blossoms-1.mp3",
-     "seconds": 147,
-     "from": "Descent Through Blossoms (1).mp3"
-    },
-    {
      "id": "m-petal-plunge-descent-through-blossoms",
      "title": "Descent Through Blossoms",
      "file": "descent-through-blossoms.mp3",
      "seconds": 203,
      "from": "Descent Through Blossoms.mp3"
+    },
+    {
+     "id": "m-petal-plunge-descent-through-blossoms-1",
+     "title": "Descent Through Blossoms, take 2",
+     "file": "descent-through-blossoms-1.mp3",
+     "seconds": 147,
+     "from": "Descent Through Blossoms (1).mp3"
     }
    ]
   },
@@ -1009,18 +1009,18 @@ window.LW_MUSIC_CATALOG = {
    ],
    "tracks": [
     {
-     "id": "m-petal-slice-petal-slice-1",
-     "title": "Petal Slice (1)",
-     "file": "petal-slice-1.mp3",
-     "seconds": 158,
-     "from": "Petal Slice (1).mp3"
-    },
-    {
      "id": "m-petal-slice-petal-slice",
      "title": "Petal Slice",
      "file": "petal-slice.mp3",
      "seconds": 153,
      "from": "Petal Slice.mp3"
+    },
+    {
+     "id": "m-petal-slice-petal-slice-1",
+     "title": "Petal Slice, take 2",
+     "file": "petal-slice-1.mp3",
+     "seconds": 158,
+     "from": "Petal Slice (1).mp3"
     }
    ]
   },
@@ -1033,32 +1033,32 @@ window.LW_MUSIC_CATALOG = {
    ],
    "tracks": [
     {
+     "id": "m-petalvex-precise-creases",
+     "title": "Precise Creases",
+     "file": "precise-creases.mp3",
+     "seconds": 174,
+     "from": "Precise Creases.mp3"
+    },
+    {
      "id": "m-petalvex-precise-creases-1",
-     "title": "Precise Creases (1)",
+     "title": "Precise Creases, take 2",
      "file": "precise-creases-1.mp3",
      "seconds": 162,
      "from": "Precise Creases (1).mp3"
     },
     {
      "id": "m-petalvex-precise-creases-2",
-     "title": "Precise Creases (2)",
+     "title": "Precise Creases, take 3",
      "file": "precise-creases-2.mp3",
      "seconds": 162,
      "from": "Precise Creases (2).mp3"
     },
     {
      "id": "m-petalvex-precise-creases-3",
-     "title": "Precise Creases (3)",
+     "title": "Precise Creases, take 4",
      "file": "precise-creases-3.mp3",
      "seconds": 144,
      "from": "Precise Creases (3).mp3"
-    },
-    {
-     "id": "m-petalvex-precise-creases",
-     "title": "Precise Creases",
-     "file": "precise-creases.mp3",
-     "seconds": 174,
-     "from": "Precise Creases.mp3"
     }
    ]
   },
@@ -1071,13 +1071,6 @@ window.LW_MUSIC_CATALOG = {
    ],
    "tracks": [
     {
-     "id": "m-picnic-panic-flamboyant-flora-1",
-     "title": "Flamboyant Flora (1)",
-     "file": "flamboyant-flora-1.mp3",
-     "seconds": 46,
-     "from": "Flamboyant Flora (1).mp3"
-    },
-    {
      "id": "m-picnic-panic-flamboyant-flora",
      "title": "Flamboyant Flora",
      "file": "flamboyant-flora.mp3",
@@ -1085,11 +1078,11 @@ window.LW_MUSIC_CATALOG = {
      "from": "Flamboyant Flora.mp3"
     },
     {
-     "id": "m-picnic-panic-galaguard-1",
-     "title": "GalaGuard (1)",
-     "file": "galaguard-1.mp3",
-     "seconds": 67,
-     "from": "GalaGuard (1).mp3"
+     "id": "m-picnic-panic-flamboyant-flora-1",
+     "title": "Flamboyant Flora, take 2",
+     "file": "flamboyant-flora-1.mp3",
+     "seconds": 46,
+     "from": "Flamboyant Flora (1).mp3"
     },
     {
      "id": "m-picnic-panic-galaguard",
@@ -1097,6 +1090,13 @@ window.LW_MUSIC_CATALOG = {
      "file": "galaguard.mp3",
      "seconds": 67,
      "from": "GalaGuard.mp3"
+    },
+    {
+     "id": "m-picnic-panic-galaguard-1",
+     "title": "GalaGuard, take 2",
+     "file": "galaguard-1.mp3",
+     "seconds": 67,
+     "from": "GalaGuard (1).mp3"
     }
    ]
   },
@@ -1116,19 +1116,19 @@ window.LW_MUSIC_CATALOG = {
      "from": "Backyard Throttle.mp3"
     },
     {
-     "id": "m-pitbike-rally-dust-and-gasoline-1",
-     "title": "Dust and Gasoline (1)",
-     "file": "dust-and-gasoline-1.mp3",
-     "seconds": 57,
-     "from": "Dust and Gasoline (1).mp3"
-    },
-    {
      "id": "m-pitbike-rally-dust-and-gasoline",
      "title": "Dust and Gasoline",
      "file": "dust-and-gasoline.mp3",
      "seconds": 44,
      "from": "Dust and Gasoline.mp3",
      "note": "Menu and shop song"
+    },
+    {
+     "id": "m-pitbike-rally-dust-and-gasoline-1",
+     "title": "Dust and Gasoline, take 2",
+     "file": "dust-and-gasoline-1.mp3",
+     "seconds": 57,
+     "from": "Dust and Gasoline (1).mp3"
     },
     {
      "id": "m-pitbike-rally-solipsistic-split-m4a-remix",
@@ -1148,18 +1148,18 @@ window.LW_MUSIC_CATALOG = {
    ],
    "tracks": [
     {
-     "id": "m-pollen-panic-pollen-panic-1",
-     "title": "Pollen Panic (1)",
-     "file": "pollen-panic-1.mp3",
-     "seconds": 56,
-     "from": "Pollen Panic (1).mp3"
-    },
-    {
      "id": "m-pollen-panic-pollen-panic",
      "title": "Pollen Panic",
      "file": "pollen-panic.mp3",
      "seconds": 44,
      "from": "Pollen Panic.mp3"
+    },
+    {
+     "id": "m-pollen-panic-pollen-panic-1",
+     "title": "Pollen Panic, take 2",
+     "file": "pollen-panic-1.mp3",
+     "seconds": 56,
+     "from": "Pollen Panic (1).mp3"
     },
     {
      "id": "m-pollen-panic-galantgourde",
@@ -1179,13 +1179,6 @@ window.LW_MUSIC_CATALOG = {
    ],
    "tracks": [
     {
-     "id": "m-pong-neon-rally-1",
-     "title": "Neon Rally (1)",
-     "file": "neon-rally-1.mp3",
-     "seconds": 42,
-     "from": "Neon Rally (1).mp3"
-    },
-    {
      "id": "m-pong-neon-rally",
      "title": "Neon Rally",
      "file": "neon-rally.mp3",
@@ -1193,11 +1186,11 @@ window.LW_MUSIC_CATALOG = {
      "from": "Neon Rally.mp3"
     },
     {
-     "id": "m-pong-paddle-echo-1",
-     "title": "Paddle Echo (1)",
-     "file": "paddle-echo-1.mp3",
-     "seconds": 65,
-     "from": "Paddle Echo (1).mp3"
+     "id": "m-pong-neon-rally-1",
+     "title": "Neon Rally, take 2",
+     "file": "neon-rally-1.mp3",
+     "seconds": 42,
+     "from": "Neon Rally (1).mp3"
     },
     {
      "id": "m-pong-paddle-echo",
@@ -1205,6 +1198,13 @@ window.LW_MUSIC_CATALOG = {
      "file": "paddle-echo.mp3",
      "seconds": 100,
      "from": "Paddle Echo.mp3"
+    },
+    {
+     "id": "m-pong-paddle-echo-1",
+     "title": "Paddle Echo, take 2",
+     "file": "paddle-echo-1.mp3",
+     "seconds": 65,
+     "from": "Paddle Echo (1).mp3"
     }
    ]
   },
@@ -1225,13 +1225,6 @@ window.LW_MUSIC_CATALOG = {
      "note": "Use this song for rainbow poo boost"
     },
     {
-     "id": "m-puppy-dash-wagging-tail-energy-1",
-     "title": "Wagging Tail Energy (1)",
-     "file": "wagging-tail-energy-1.mp3",
-     "seconds": 39,
-     "from": "Wagging Tail Energy (1).mp3"
-    },
-    {
      "id": "m-puppy-dash-wagging-tail-energy",
      "title": "Wagging Tail Energy",
      "file": "wagging-tail-energy.mp3",
@@ -1239,11 +1232,11 @@ window.LW_MUSIC_CATALOG = {
      "from": "Wagging Tail Energy.mp3"
     },
     {
-     "id": "m-puppy-dash-zoomie-sunshine-1",
-     "title": "Zoomie Sunshine (1)",
-     "file": "zoomie-sunshine-1.mp3",
-     "seconds": 72,
-     "from": "Zoomie Sunshine (1).mp3"
+     "id": "m-puppy-dash-wagging-tail-energy-1",
+     "title": "Wagging Tail Energy, take 2",
+     "file": "wagging-tail-energy-1.mp3",
+     "seconds": 39,
+     "from": "Wagging Tail Energy (1).mp3"
     },
     {
      "id": "m-puppy-dash-zoomie-sunshine",
@@ -1251,6 +1244,13 @@ window.LW_MUSIC_CATALOG = {
      "file": "zoomie-sunshine.mp3",
      "seconds": 54,
      "from": "Zoomie Sunshine.mp3"
+    },
+    {
+     "id": "m-puppy-dash-zoomie-sunshine-1",
+     "title": "Zoomie Sunshine, take 2",
+     "file": "zoomie-sunshine-1.mp3",
+     "seconds": 72,
+     "from": "Zoomie Sunshine (1).mp3"
     }
    ]
   },
@@ -1263,13 +1263,6 @@ window.LW_MUSIC_CATALOG = {
    ],
    "tracks": [
     {
-     "id": "m-rabbit-samurai-cherry-blossom-clash-1",
-     "title": "Cherry Blossom Clash (1)",
-     "file": "cherry-blossom-clash-1.mp3",
-     "seconds": 147,
-     "from": "Cherry Blossom Clash (1).mp3"
-    },
-    {
      "id": "m-rabbit-samurai-cherry-blossom-clash",
      "title": "Cherry Blossom Clash",
      "file": "cherry-blossom-clash.mp3",
@@ -1277,11 +1270,11 @@ window.LW_MUSIC_CATALOG = {
      "from": "Cherry Blossom Clash.mp3"
     },
     {
-     "id": "m-rabbit-samurai-wandering-warrior-1",
-     "title": "Wandering Warrior (1)",
-     "file": "wandering-warrior-1.mp3",
-     "seconds": 149,
-     "from": "Wandering Warrior (1).mp3"
+     "id": "m-rabbit-samurai-cherry-blossom-clash-1",
+     "title": "Cherry Blossom Clash, take 2",
+     "file": "cherry-blossom-clash-1.mp3",
+     "seconds": 147,
+     "from": "Cherry Blossom Clash (1).mp3"
     },
     {
      "id": "m-rabbit-samurai-wandering-warrior",
@@ -1289,6 +1282,13 @@ window.LW_MUSIC_CATALOG = {
      "file": "wandering-warrior.mp3",
      "seconds": 128,
      "from": "Wandering Warrior.mp3"
+    },
+    {
+     "id": "m-rabbit-samurai-wandering-warrior-1",
+     "title": "Wandering Warrior, take 2",
+     "file": "wandering-warrior-1.mp3",
+     "seconds": 149,
+     "from": "Wandering Warrior (1).mp3"
     }
    ]
   },
@@ -1301,18 +1301,18 @@ window.LW_MUSIC_CATALOG = {
    ],
    "tracks": [
     {
-     "id": "m-ripcord-sparks-in-the-arena-1",
-     "title": "Sparks in the Arena (1)",
-     "file": "sparks-in-the-arena-1.mp3",
-     "seconds": 150,
-     "from": "Sparks in the Arena (1).mp3"
-    },
-    {
      "id": "m-ripcord-sparks-in-the-arena",
      "title": "Sparks in the Arena",
      "file": "sparks-in-the-arena.mp3",
      "seconds": 146,
      "from": "Sparks in the Arena.mp3"
+    },
+    {
+     "id": "m-ripcord-sparks-in-the-arena-1",
+     "title": "Sparks in the Arena, take 2",
+     "file": "sparks-in-the-arena-1.mp3",
+     "seconds": 150,
+     "from": "Sparks in the Arena (1).mp3"
     },
     {
      "id": "m-ripcord-knife-fight",
@@ -1339,18 +1339,18 @@ window.LW_MUSIC_CATALOG = {
    ],
    "tracks": [
     {
-     "id": "m-seed-flutter-stardrift-chiptune-1",
-     "title": "Stardrift Chiptune (1)",
-     "file": "stardrift-chiptune-1.mp3",
-     "seconds": 133,
-     "from": "Stardrift Chiptune (1).mp3"
-    },
-    {
      "id": "m-seed-flutter-stardrift-chiptune",
      "title": "Stardrift Chiptune",
      "file": "stardrift-chiptune.mp3",
      "seconds": 139,
      "from": "Stardrift Chiptune.mp3"
+    },
+    {
+     "id": "m-seed-flutter-stardrift-chiptune-1",
+     "title": "Stardrift Chiptune, take 2",
+     "file": "stardrift-chiptune-1.mp3",
+     "seconds": 133,
+     "from": "Stardrift Chiptune (1).mp3"
     }
    ]
   },
@@ -1363,13 +1363,6 @@ window.LW_MUSIC_CATALOG = {
    ],
    "tracks": [
     {
-     "id": "m-skitterlings-legs-everywhere-1",
-     "title": "Legs Everywhere (1)",
-     "file": "legs-everywhere-1.mp3",
-     "seconds": 33,
-     "from": "Legs Everywhere (1).mp3"
-    },
-    {
      "id": "m-skitterlings-legs-everywhere",
      "title": "Legs Everywhere",
      "file": "legs-everywhere.mp3",
@@ -1377,11 +1370,11 @@ window.LW_MUSIC_CATALOG = {
      "from": "Legs Everywhere.mp3"
     },
     {
-     "id": "m-skitterlings-legs-in-the-dark-1",
-     "title": "Legs in the Dark (1)",
-     "file": "legs-in-the-dark-1.mp3",
-     "seconds": 19,
-     "from": "Legs in the Dark (1).mp3"
+     "id": "m-skitterlings-legs-everywhere-1",
+     "title": "Legs Everywhere, take 2",
+     "file": "legs-everywhere-1.mp3",
+     "seconds": 33,
+     "from": "Legs Everywhere (1).mp3"
     },
     {
      "id": "m-skitterlings-legs-in-the-dark",
@@ -1389,6 +1382,13 @@ window.LW_MUSIC_CATALOG = {
      "file": "legs-in-the-dark.mp3",
      "seconds": 23,
      "from": "Legs in the Dark.mp3"
+    },
+    {
+     "id": "m-skitterlings-legs-in-the-dark-1",
+     "title": "Legs in the Dark, take 2",
+     "file": "legs-in-the-dark-1.mp3",
+     "seconds": 19,
+     "from": "Legs in the Dark (1).mp3"
     }
    ]
   },
@@ -1418,18 +1418,18 @@ window.LW_MUSIC_CATALOG = {
    ],
    "tracks": [
     {
-     "id": "m-sled-vine-frozen-path-1",
-     "title": "Frozen Path (1)",
-     "file": "frozen-path-1.mp3",
-     "seconds": 152,
-     "from": "Frozen Path (1).mp3"
-    },
-    {
      "id": "m-sled-vine-frozen-path",
      "title": "Frozen Path",
      "file": "frozen-path.mp3",
      "seconds": 128,
      "from": "Frozen Path.mp3"
+    },
+    {
+     "id": "m-sled-vine-frozen-path-1",
+     "title": "Frozen Path, take 2",
+     "file": "frozen-path-1.mp3",
+     "seconds": 152,
+     "from": "Frozen Path (1).mp3"
     }
    ]
   },
@@ -1442,18 +1442,18 @@ window.LW_MUSIC_CATALOG = {
    ],
    "tracks": [
     {
-     "id": "m-slice-3d-zen-cut-1",
-     "title": "Zen Cut (1)",
-     "file": "zen-cut-1.mp3",
-     "seconds": 47,
-     "from": "Zen Cut (1).mp3"
-    },
-    {
      "id": "m-slice-3d-zen-cut",
      "title": "Zen Cut",
      "file": "zen-cut.mp3",
      "seconds": 112,
      "from": "Zen Cut.mp3"
+    },
+    {
+     "id": "m-slice-3d-zen-cut-1",
+     "title": "Zen Cut, take 2",
+     "file": "zen-cut-1.mp3",
+     "seconds": 47,
+     "from": "Zen Cut (1).mp3"
     }
    ]
   },
@@ -1466,18 +1466,18 @@ window.LW_MUSIC_CATALOG = {
    ],
    "tracks": [
     {
-     "id": "m-spore-drift-weightless-drift-1",
-     "title": "Weightless Drift (1)",
-     "file": "weightless-drift-1.mp3",
-     "seconds": 135,
-     "from": "Weightless Drift (1).mp3"
-    },
-    {
      "id": "m-spore-drift-weightless-drift",
      "title": "Weightless Drift",
      "file": "weightless-drift.mp3",
      "seconds": 135,
      "from": "Weightless Drift.mp3"
+    },
+    {
+     "id": "m-spore-drift-weightless-drift-1",
+     "title": "Weightless Drift, take 2",
+     "file": "weightless-drift-1.mp3",
+     "seconds": 135,
+     "from": "Weightless Drift (1).mp3"
     }
    ]
   },
@@ -1490,18 +1490,18 @@ window.LW_MUSIC_CATALOG = {
    ],
    "tracks": [
     {
-     "id": "m-sproing-springs-hops-1",
-     "title": "Springs & Hops (1)",
-     "file": "springs-hops-1.mp3",
-     "seconds": 51,
-     "from": "Springs & Hops (1).mp3"
-    },
-    {
      "id": "m-sproing-springs-hops",
      "title": "Springs & Hops",
      "file": "springs-hops.mp3",
      "seconds": 44,
      "from": "Springs & Hops.mp3"
+    },
+    {
+     "id": "m-sproing-springs-hops-1",
+     "title": "Springs & Hops, take 2",
+     "file": "springs-hops-1.mp3",
+     "seconds": 51,
+     "from": "Springs & Hops (1).mp3"
     }
    ]
   },
@@ -1514,18 +1514,18 @@ window.LW_MUSIC_CATALOG = {
    ],
    "tracks": [
     {
-     "id": "m-tomato-man-tomato-pursuit-1",
-     "title": "Tomato Pursuit (1)",
-     "file": "tomato-pursuit-1.mp3",
-     "seconds": 42,
-     "from": "Tomato Pursuit (1).mp3"
-    },
-    {
      "id": "m-tomato-man-tomato-pursuit",
      "title": "Tomato Pursuit",
      "file": "tomato-pursuit.mp3",
      "seconds": 34,
      "from": "Tomato Pursuit.mp3"
+    },
+    {
+     "id": "m-tomato-man-tomato-pursuit-1",
+     "title": "Tomato Pursuit, take 2",
+     "file": "tomato-pursuit-1.mp3",
+     "seconds": 42,
+     "from": "Tomato Pursuit (1).mp3"
     }
    ]
   },
@@ -1538,18 +1538,18 @@ window.LW_MUSIC_CATALOG = {
    ],
    "tracks": [
     {
-     "id": "m-vine-runner-vine-sprint-1",
-     "title": "Vine Sprint (1)",
-     "file": "vine-sprint-1.mp3",
-     "seconds": 138,
-     "from": "Vine Sprint (1).mp3"
-    },
-    {
      "id": "m-vine-runner-vine-sprint",
      "title": "Vine Sprint",
      "file": "vine-sprint.mp3",
      "seconds": 189,
      "from": "Vine Sprint.mp3"
+    },
+    {
+     "id": "m-vine-runner-vine-sprint-1",
+     "title": "Vine Sprint, take 2",
+     "file": "vine-sprint-1.mp3",
+     "seconds": 138,
+     "from": "Vine Sprint (1).mp3"
     }
    ]
   },
@@ -1562,32 +1562,32 @@ window.LW_MUSIC_CATALOG = {
    ],
    "tracks": [
     {
+     "id": "m-vinewinder-origami-snake-groove",
+     "title": "Origami Snake Groove",
+     "file": "origami-snake-groove.mp3",
+     "seconds": 86,
+     "from": "Origami Snake Groove.mp3"
+    },
+    {
      "id": "m-vinewinder-origami-snake-groove-1",
-     "title": "Origami Snake Groove (1)",
+     "title": "Origami Snake Groove, take 2",
      "file": "origami-snake-groove-1.mp3",
      "seconds": 130,
      "from": "Origami Snake Groove (1).mp3"
     },
     {
      "id": "m-vinewinder-origami-snake-groove-2",
-     "title": "Origami Snake Groove (2)",
+     "title": "Origami Snake Groove, take 3",
      "file": "origami-snake-groove-2.mp3",
      "seconds": 93,
      "from": "Origami Snake Groove (2).mp3"
     },
     {
      "id": "m-vinewinder-origami-snake-groove-3",
-     "title": "Origami Snake Groove (3)",
+     "title": "Origami Snake Groove, take 4",
      "file": "origami-snake-groove-3.mp3",
      "seconds": 77,
      "from": "Origami Snake Groove (3).mp3"
-    },
-    {
-     "id": "m-vinewinder-origami-snake-groove",
-     "title": "Origami Snake Groove",
-     "file": "origami-snake-groove.mp3",
-     "seconds": 86,
-     "from": "Origami Snake Groove.mp3"
     }
    ]
   },
@@ -1610,13 +1610,6 @@ window.LW_MUSIC_CATALOG = {
    ],
    "tracks": [
     {
-     "id": "m-word-garden-glockenspiel-garden-path-1",
-     "title": "Glockenspiel Garden Path (1)",
-     "file": "glockenspiel-garden-path-1.mp3",
-     "seconds": 46,
-     "from": "Glockenspiel Garden Path (1).mp3"
-    },
-    {
      "id": "m-word-garden-glockenspiel-garden-path",
      "title": "Glockenspiel Garden Path",
      "file": "glockenspiel-garden-path.mp3",
@@ -1624,11 +1617,11 @@ window.LW_MUSIC_CATALOG = {
      "from": "Glockenspiel Garden Path.mp3"
     },
     {
-     "id": "m-word-garden-page-turning-1",
-     "title": "Page Turning (1)",
-     "file": "page-turning-1.mp3",
-     "seconds": 108,
-     "from": "Page Turning (1).mp3"
+     "id": "m-word-garden-glockenspiel-garden-path-1",
+     "title": "Glockenspiel Garden Path, take 2",
+     "file": "glockenspiel-garden-path-1.mp3",
+     "seconds": 46,
+     "from": "Glockenspiel Garden Path (1).mp3"
     },
     {
      "id": "m-word-garden-page-turning",
@@ -1636,6 +1629,13 @@ window.LW_MUSIC_CATALOG = {
      "file": "page-turning.mp3",
      "seconds": 89,
      "from": "Page Turning.mp3"
+    },
+    {
+     "id": "m-word-garden-page-turning-1",
+     "title": "Page Turning, take 2",
+     "file": "page-turning-1.mp3",
+     "seconds": 108,
+     "from": "Page Turning (1).mp3"
     }
    ]
   }

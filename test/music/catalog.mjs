@@ -79,6 +79,12 @@ t("ladder override reaches the catalog; invalid values ignored", (() => { const 
 /* tracks, ids, files */
 const dw = shelf("deepwell");
 t("order prefix stripped from title: '01 Shaft Song' -> 'Shaft Song'", dw && dw.tracks[0].title === "Shaft Song");
+{ const syn = { rows: [["Pong-arena", "Neon Rally.mp3"], ["Pong-arena", "Neon Rally (1).mp3"], ["Pong-arena", "Neon Rally (2).mp3"]].map(([g, f]) => ({ game: g, file: f, ext: "mp3", title: f.replace(/\.mp3$/, ""), bytes: 1, mb: 0, seconds: 1, kbps: 64, codec: "mp3", channels: 2, rate: 44100 })) };
+  const a = generate({ intake: syn, existing: null, live: true }).catalog.shelves.find(s => s.slug === "pong");
+  t("takes: 'Neon Rally (1)' -> 'Neon Rally, take 2', (2) -> take 3, the first keeps the plain name", a && a.tracks.map(x => x.title).join(" | ") === "Neon Rally | Neon Rally, take 2 | Neon Rally, take 3");
+  const old = { shelves: [{ slug: "pong", tracks: [{ id: "m-pong-neon-rally-1", from: "Neon Rally (1).mp3" }] }] };
+  const b2 = generate({ intake: syn, existing: old, live: true }).catalog.shelves.find(s => s.slug === "pong");
+  t("takes: an id minted before the rename is kept (keyed by source file), only the title changes", b2 && b2.tracks.some(x => x.id === "m-pong-neon-rally-1" && x.title === "Neon Rally, take 2")); }
 t("first track by file name is the 01 file", dw && dw.tracks[0].id === "m-deepwell-shaft-song");
 t("collision: Deep Water twice -> -deep-water and -deep-water-2", dw && dw.tracks.some(x => x.id === "m-deepwell-deep-water") && dw.tracks.some(x => x.id === "m-deepwell-deep-water-2"));
 t("web file derives from id, always .mp3 (wav -> clay-bumper.mp3)", shelf("greenhouse-pinball") && shelf("greenhouse-pinball").tracks.some(x => x.file === "clay-bumper.mp3"));
