@@ -307,3 +307,72 @@ lying rather than the build being wrong:
   took. Every number in the table above is from a run with the real SDK in the page.
 
 
+
+---
+
+## Step 3 — the marketing sizes
+
+```
+node publish/tools/marketing.mjs bloom-breaker berry-vine petal-slice dew-snip \
+  picnic-panic bubblenaut stop-the-light nova-bloom garden-td pong
+pong            5 sizes from Pong Arena  (play frame: recipe, busiest of 14 frames (sd 15, frame 1000.png))
+```
+
+Fifty images in `publish/marketing/<game>/`: **512x384, 512x512, 200x120** mandatory and
+**1280x720, 1280x550** optional, exactly the list in Sabina's intake mail of 2026-08-03.
+
+Two sources and nothing else. The painted 480x480 card art from `portal-assets/thumbs/`,
+and a real frame of the game being played, taken by running **the game's own verified
+step 2 recipe** against the built ZIP and photographing it mid round. No debug overlay,
+no price, no date: a capsule with a date on it is wrong the day after it ships.
+
+**The mandatory tiles carry no title text.** GameDistribution prints the game's name
+under the tile itself, and Poki's thumbnail guide is explicit: *"avoid text entirely, it
+quickly becomes unreadable on smaller tiles"*. The two 1280 banners do carry the name,
+the portal's own one line description and the studio signature, because a banner is where
+a name is expected.
+
+### The contact sheet, opened. Three things wrong, before fixing them
+
+`publish/marketing/CONTACT-SHEET.png`, all fifty at once, opened and read.
+
+1. **Bloom Breaker's phone panel was a black rectangle, and Nova Bloom's was nearly one.**
+   The play frame was taken on a fixed nine second timer, and at nine seconds Bloom
+   Breaker was still on its dark launch screen. A banner whose "gameplay" panel is an
+   empty black box is worse than a banner with no panel at all.
+2. **The 200x120 tiles were mostly blur.** The rule was to CONTAIN the square art over a
+   blurred copy of itself so nothing was cropped. At 512x384 that is defensible. At
+   200x120 the painting held the middle 120 px and the left and right thirds were blurred
+   wings, which is most of the tile spent on nothing, at the one size where every pixel
+   is the whole advertisement.
+3. **Every banner broke its own name over two or three lines.** "Bloom / Breaker",
+   "Stop / the / Light", "Garden / Guard". The copy column was pinched between a large
+   art card and a large phone, so a 74 px title had about 300 px to live in, and the one
+   line description under it ran eight lines deep and four words wide.
+
+### And what fixing them turned up
+
+4. **Stopping the timer early was not enough.** The next pass ran until the round ended,
+   which put **GAME OVER** in Bloom Breaker's banner, **DEFEAT** in Pong Arena's and
+   **THE GARDEN RESTS** in Nova Bloom's. Three of ten banners advertising the losing
+   screen.
+5. **Scoring the canvas was scoring the wrong surface.** The frame picker read the
+   largest `<canvas>` and measured its pixel variance; several of these games draw on
+   more than one canvas and the biggest by attribute is not the one with the game on it,
+   so Stop the Light and Pong Arena both scored a flat 1 and kept their first frame.
+   It now collects candidate frames across the round and picks the busiest with PIL,
+   scoring the **screenshot**, which is the thing that actually goes in the banner
+   (`publish/tools/pick_frame.py`).
+
+All five are fixed in `publish/tools/marketing.mjs`, and the sheet was reopened after
+each pass rather than trusted.
+
+### Still imperfect, and said out loud
+
+- **Two thumbs carry a wordmark baked into the art**, Bubblenaut along the bottom and
+  Stop the Light across the top, and the 4:3 and 5:3 crops clip them. Letterboxing to
+  avoid it is worse, per finding 2. The real fix is upstream and it is Stephen's: a text
+  free variant of those two cards. Poki's guidance says thumbnails should carry no text
+  at all, so it is worth doing for its own sake.
+- **Bloom Breaker's play frame is still a dark table.** It is the busiest frame the round
+  had; the game is simply dark until the bricks start breaking. Honest, not flattering.
