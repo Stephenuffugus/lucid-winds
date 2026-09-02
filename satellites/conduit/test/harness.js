@@ -11,7 +11,10 @@ function load(){
   // without ever writing to the real game file.
   const src = process.env.CONDUIT_HTML || path.join(__dirname, "..", "index.html");
   const html = fs.readFileSync(src, "utf8");
-  const m = html.match(/<script>([\s\S]*)<\/script>/);
+  // FIRST inline block only (non-greedy): the carding pass appended a second inline
+  // <script> after the game (exit + feedback boot), and a greedy match swallowed the
+  // </script><script> between them, so the whole suite died on a SyntaxError.
+  const m = html.match(/<script>([\s\S]*?)<\/script>/);
   if(!m) throw new Error("no script block found in index.html");
   const ctx = { console, Math, performance: { now: () => Date.now() } };
   ctx.globalThis = ctx;
