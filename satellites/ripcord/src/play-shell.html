@@ -58,6 +58,8 @@ button{font:inherit;color:inherit}
 .btn.go{flex:1;max-width:280px;background:var(--ember);border-color:var(--ember);
   color:#fff;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
 .btn.icon{width:var(--tap);min-width:var(--tap);padding:0;font-size:19px}
+.btn.icon.on{border-color:var(--rope);color:var(--rope);box-shadow:0 0 0 1px rgba(201,162,39,.35) inset}
+#b3dGo{font-size:14px;font-weight:800;letter-spacing:.04em}
 .btn.ghost{background:none}
 .btn[disabled]{opacity:.38;pointer-events:none}
 
@@ -125,13 +127,16 @@ button{font:inherit;color:inherit}
 
 /* ---------- workshop innards ---------- */
 #tune{display:flex;gap:14px;align-items:flex-start;margin-bottom:8px;flex-wrap:wrap}
-#dial{width:min(158px,42vw);height:min(158px,42vw);flex:0 0 auto;touch-action:manipulation}
+#dial{width:min(224px,60vw);height:min(224px,60vw);flex:0 0 auto;touch-action:manipulation;cursor:pointer}
+.dialHint{flex:1 1 100%;margin:0 0 10px;font-size:13px;color:var(--dim);line-height:1.4}
+.dialHint b{color:var(--rope);font-weight:600}
 #lookPrev{width:100%;max-width:320px;height:auto;display:block;margin:0 auto 12px;
   border:1px solid var(--line);border-radius:12px;background:#1B1411}
 #stats{flex:1;min-width:150px}
-.stat{display:grid;grid-template-columns:56px 1fr 34px;gap:4px 9px;align-items:center;
-  font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--dim);margin-bottom:6px}
-.bar{height:6px;background:rgba(237,230,216,.10);border-radius:3px;overflow:hidden}
+.stat{display:grid;grid-template-columns:64px 1fr 44px;gap:4px 9px;align-items:center;
+  font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--chalk);margin-bottom:8px}
+.stat .v{font-size:15px;font-weight:700;color:var(--chalk);text-align:right;text-transform:none;letter-spacing:0;font-variant-numeric:tabular-nums}
+.bar{height:10px;background:rgba(237,230,216,.10);border-radius:5px;overflow:hidden}
 .bar i{display:block;height:100%;border-radius:3px;background:var(--rope);
   transition:width .62s cubic-bezier(.2,.9,.3,1)}
 /* Stats arrive, they do not appear. Each row fades up a beat after the one
@@ -208,6 +213,11 @@ button{font:inherit;color:inherit}
 .chip.art.lock .nm{opacity:.72}
 .chip.art.lock::after{display:none}
 .chip .t{font-size:11px;letter-spacing:.1em;color:var(--rope);font-weight:700}
+/* what fitting this part would do to your numbers, on the chip itself (2026-09-02,
+   Stephen: "as you flip through the pieces you can see how it will affect your stats") */
+.chip .dl{display:block;font-size:10px;letter-spacing:.02em;line-height:1.15;margin-top:3px;white-space:nowrap;text-transform:none}
+.chip .dl b{font-weight:700}.chip .dl .up{color:var(--good)}.chip .dl .dn{color:var(--ember)}.chip .dl.same{color:var(--dim)}
+.chip.art .dl{max-width:74px;overflow:hidden;text-overflow:ellipsis}
 .chip .t.t3{color:var(--ember)}
 .cosmetic label em{color:var(--steel)}
 .fitted{margin:8px 0 0;font-size:13px;line-height:1.45;color:var(--dim)}
@@ -246,8 +256,12 @@ button{font:inherit;color:inherit}
 .rig .mark{width:26px;flex:0 0 auto;text-align:center;font-size:16px;padding-top:1px}
 .rig h4{margin:0 0 3px;font-size:14px;font-weight:700;letter-spacing:.04em}
 .rig p{margin:0;font-size:13px;color:var(--dim);line-height:1.45}
-.rig.off{opacity:.42}
+.rig.off{opacity:.62}
 .rig.off h4{font-weight:600}
+.rig.hid{opacity:.38}
+.rig.on h4{color:var(--rope)}
+.rig .how{display:block;margin-top:4px;font-size:12.5px;color:var(--chalk);opacity:.85}
+.rig .how b{color:var(--rope);font-weight:600}
 .rig .pick{margin-left:auto;flex:0 0 auto;min-height:var(--tap);min-width:var(--tap);
   border-radius:11px;border:1px solid var(--line);background:var(--hi);color:var(--dim);
   padding:0 13px;font-size:13px;cursor:pointer}
@@ -481,6 +495,9 @@ button{font:inherit;color:inherit}
   .sheet,#card,#menu,#unlock,.bar i,.tog i{transition:none}
 }
 </style>
+<!-- fleet music unlocks (2026-09-02): in the SOURCE now. It used to be injected into the generated index.html, so
+     the first rebundle after the injection dropped it and the game went silent. -->
+<script src="/music-unlocks.js" defer></script>
 </head>
 <body>
 
@@ -497,6 +514,7 @@ button{font:inherit;color:inherit}
 <div class="chrome hide" id="dock">
   <button class="btn icon" id="openWs" aria-label="Workshop">&#9881;</button>
   <button class="btn go" id="go">Launch</button>
+  <button class="btn icon" id="b3dGo" aria-label="Watch the round in 3D" title="Watch in 3D">3D</button>
   <button class="btn icon" id="quitPlay" aria-label="Back to the menu">&#10005;</button>
 </div>
 
@@ -634,7 +652,10 @@ button{font:inherit;color:inherit}
     <details class="acc" id="accTune">
       <summary>Weights and move <span id="tuneSum">&nbsp;</span></summary>
       <div class="accBody">
-        <div id="tune"><canvas id="dial" width="320" height="320"></canvas><div id="stats"></div></div>
+        <div id="tune"><canvas id="dial" width="320" height="320"></canvas><div id="stats"></div>
+          <p class="dialHint"><b>Tap a hole</b> to bolt metal on. Tap it again for a heavier grade
+          (chip, slug, brick), and once more to take it off. Bunch the weight for a monster,
+          spread it to cancel out. The red needle is your wobble.</p></div>
         <div id="trig"></div>
       </div>
     </details>
@@ -1345,12 +1366,12 @@ function railRow(label,items,isOn,onPick,klass,lockable,slotKey){
         : '';
       b.innerHTML='<span class="frame'+t+(pic?'':' none')+'">'+pic+
         (it.role?'<i class="pip" style="background:'+ROLE_HEX[it.role]+'"></i>':'')+
-        '</span><span class="nm">'+(it.name||it.id)+'</span>';
+        '</span><span class="nm">'+(it.name||it.id)+'</span>'+(it.delta||'');
     }else{
       b.innerHTML=(it.icon?'<img class="cico" src="'+it.icon+'" alt="" '+
                   'onerror="this.remove();">':'')+
                 (it.role?'<span class="dot" style="background:'+ROLE_HEX[it.role]+'"></span>':'')+
-                (it.name||it.id)+tierTag(it);
+                (it.name||it.id)+tierTag(it)+(it.delta||'');
     }
     b.addEventListener('click',function(){
       if(locked){
@@ -1387,9 +1408,30 @@ function buildSlots(){
      picture chips, and a workshop that rearranges itself under your thumb is
      worse than one with no pictures in it. */
   if(!ART.ready){ loadArt(function(){ buildSlots(); }); return; }
+  /* ⛔ 2026-09-02 (Stephen: "when i pick abilities it skips back to the beginning of
+     the options"): every pick rebuilt every rail with innerHTML, so each rail's
+     scrollLeft went back to 0 and the sheet lost its place. Remember them, restore
+     them after the rebuild. */
+  var _rails=document.querySelectorAll('#sheet .rail'),_railPos=[],_ri;
+  for(_ri=0;_ri<_rails.length;_ri++)_railPos.push(_rails[_ri].scrollLeft);
+  var _sb=document.querySelector('#sheet .sheetBody'),_sTop=_sb?_sb.scrollTop:0;
   buildRoles();
   var host=$('slots');host.innerHTML='';
   var act=active().cfg;
+  /* the delta a part would make if fitted, shown on its chip */
+  var _base=SIM.build(currentCfg());
+  var _DL=[['stamina','spin'],['drive','travel'],['smash','smash'],['absorb','guard'],['burstResist','lock'],['dash','rail']];
+  function deltaFor(key,id){
+    if(act[key]===id)return '';
+    var c2=currentCfg();c2[key]=id;var b;
+    try{b=SIM.build(c2);}catch(e){return '';}
+    var ch=[],q;
+    for(q=0;q<_DL.length;q++){var f=_DL[q][0],a=_base[f]||0,v=b[f]||0;if(!a)continue;
+      var r=(v-a)/a;if(Math.abs(r)>=0.05)ch.push({n:_DL[q][1],r:r});}
+    ch.sort(function(x,y){return Math.abs(y.r)-Math.abs(x.r);});ch=ch.slice(0,2);
+    if(!ch.length)return '<span class="dl same">\u2248 same</span>';
+    return '<span class="dl">'+ch.map(function(c){return '<b class="'+(c.r>0?'up':'dn')+'">'+(c.r>0?'\u25B2':'\u25BC')+c.n+'</b>';}).join(' ')+'</span>';
+  }
   for(var i=0;i<SLOTS.length;i++){
     var key=SLOTS[i][0],label=SLOTS[i][1],list=SLOTS[i][2];
     // The fitted part always stays visible even when the filter excludes it, so
@@ -1398,7 +1440,8 @@ function buildSlots(){
     for(j=0;j<list.length;j++)
       if(roleFilter==='all'||
          (roleFilter==='mine'&&isUnlocked(list[j].id))||
-         list[j].role===roleFilter||list[j].id===act[key])shown.push(list[j]);
+         list[j].role===roleFilter||list[j].id===act[key])
+        shown.push({id:list[j].id,name:list[j].name,role:list[j].role,tier:list[j].tier,delta:deltaFor(key,list[j].id)});
     var row=railRow('<img class="slotGlyph" src="assets/glyphs/slot-'+key+
       '.webp?v='+LW_BUILD+'" alt="" onerror="this.remove();">'+
       label+' <em>'+shown.length+'</em>',shown,
@@ -1461,6 +1504,9 @@ function buildSlots(){
     function(l){cosm.launcher=l.id;},'cosmetic','launcher'));
   drawLookPreview();
   buildMods();buildRigs();summaries();
+  _rails=document.querySelectorAll('#sheet .rail');
+  for(_ri=0;_ri<_rails.length&&_ri<_railPos.length;_ri++)if(_railPos[_ri])_rails[_ri].scrollLeft=_railPos[_ri];
+  if(_sb&&_sTop)_sb.scrollTop=_sTop;
 }
 
 /* -------------------------------------------------------------- TUNING (mods) */
@@ -1519,25 +1565,32 @@ function buildRigs(){
   var activeIds={};
   for(i=0;i<on.length;i++)activeIds[on[i]]=1;
 
-  if(!live.length){
-    host.innerHTML='<p style="color:var(--dim);font-size:14px">This build has no rig. '+
-      'Rigs are combinations of parts that earn a name; keep changing things and one will turn up.</p>';
-    return;
-  }
+  /* 2026-09-02 (Stephen: "there should be special combos between pieces that make
+     sense"): the combos existed, sixteen of them, and the panel only listed the ones
+     you had already made, so a player who had not stumbled on one saw "no rig". Now it
+     is a book: every rig, with its recipe, and where you stand on it. Obvious rigs show
+     the recipe from the start; the hidden ones show it once you have found them.
+     Adding a rig = one entry in src/rigs.js; nothing here needs to change. */
   var head=document.createElement('p');
   head.style.cssText='color:var(--dim);font-size:13px;margin:0 0 6px';
-  head.textContent=live.length+' found, '+Math.min(live.length,RIGS.MAX_ACTIVE)+' active. '+
-    (live.length>RIGS.MAX_ACTIVE?'Choose which two run.':'');
+  head.textContent=RIGS.LIST.length+' rigs. '+live.length+' fit this build, '+on.length+' running.'+
+    (live.length>RIGS.MAX_ACTIVE?' Choose which '+RIGS.MAX_ACTIVE+' run.':'')+
+    (!live.length?' Fit the parts a recipe names and it switches on by itself.':'');
   host.appendChild(head);
-
-  for(i=0;i<RIGS.LIST.length;i++)(function(r){
-    if(!liveIds[r.id])return;
-    var on=!!activeIds[r.id];
+  var order=RIGS.LIST.slice().sort(function(a,b){
+    var sa=activeIds[a.id]?0:liveIds[a.id]?1:(a.obvious||save.seen['rig.'+a.id])?2:3;
+    var sb=activeIds[b.id]?0:liveIds[b.id]?1:(b.obvious||save.seen['rig.'+b.id])?2:3;
+    return sa-sb;});
+  for(i=0;i<order.length;i++)(function(r){
+    var on=!!activeIds[r.id], fits=!!liveIds[r.id], known=r.obvious||!!save.seen['rig.'+r.id];
     var d=document.createElement('div');
-    d.className='rig'+(on?'':' off');
-    d.innerHTML='<div class="mark">'+(on?'●':'○')+'</div>'+
-      '<div style="flex:1;min-width:0"><h4>'+r.name+'</h4><p>'+r.desc+'</p></div>';
-    if(live.length>RIGS.MAX_ACTIVE){
+    d.className='rig'+(on?' on':fits?'':known?' off':' hid');
+    var mark=on?'\u25CF':fits?'\u25CB':known?'\u00B7':'?';
+    d.innerHTML='<div class="mark">'+mark+'</div>'+
+      '<div style="flex:1;min-width:0"><h4>'+(known||fits?r.name:'Undiscovered')+'</h4>'+
+      '<p>'+(known||fits?r.desc:'A combination nobody has named yet. Build it and the workshop will.')+
+      (known||fits?'<span class="how"><b>How:</b> '+r.cond+'</span>':'')+'</p></div>';
+    if(fits&&live.length>RIGS.MAX_ACTIVE){
       var b=document.createElement('button');
       b.className='pick'+(on?' on':'');
       b.textContent=on?'On':'Off';
@@ -1550,7 +1603,7 @@ function buildRigs(){
       d.appendChild(b);
     }
     host.appendChild(d);
-  })(RIGS.LIST[i]);
+  })(order[i]);
 
   // A rig the player has never seen before is worth calling out once. That
   // announcement IS the discovery loop.
@@ -1744,7 +1797,7 @@ function drawDial(){
     dc.moveTo(c+Math.cos(a)*(R-14),c+Math.sin(a)*(R-14));
     dc.lineTo(c+Math.cos(a)*(R+5),c+Math.sin(a)*(R+5));dc.stroke();
   }
-  var RR=[DS*0.17,DS*0.32], HR=[15,18];
+  var RR=[DS*0.17,DS*0.32], HR=[17,20];
   for(var ri=0;ri<SIM.RINGS.length;ri++){
     dc.strokeStyle='rgba(237,230,216,.07)';dc.lineWidth=1;
     dc.beginPath();dc.arc(c,c,RR[ri],0,7);dc.stroke();
@@ -1753,10 +1806,15 @@ function drawDial(){
       var v=H[ri][i];
       dc.beginPath();dc.arc(hx,hy,HR[ri],0,7);
       if(v===0){
-        dc.strokeStyle='rgba(237,230,216,.26)';dc.lineWidth=1.5;
-        dc.setLineDash([3,3]);dc.stroke();dc.setLineDash([]);
+        /* 2026-09-02: dashed 26 percent rings did not read as buttons. A solid rim
+           with a filled well does, and the holes are a size a thumb can hit. */
+        dc.fillStyle='rgba(237,230,216,.07)';dc.fill();
+        dc.strokeStyle='rgba(237,230,216,.62)';dc.lineWidth=2.5;dc.stroke();
+        dc.fillStyle='rgba(237,230,216,.55)';dc.font='700 13px ui-sans-serif,system-ui';
+        dc.textAlign='center';dc.textBaseline='middle';dc.fillText('+',hx,hy);
       }else{
-        dc.fillStyle='#C9A227';dc.globalAlpha=.34+.22*v;dc.fill();dc.globalAlpha=1;
+        dc.fillStyle='#C9A227';dc.globalAlpha=.55+.15*v;dc.fill();dc.globalAlpha=1;
+        dc.strokeStyle='#F0D060';dc.lineWidth=2;dc.stroke();
         dc.fillStyle='#241C17';dc.font='700 12px ui-sans-serif,system-ui';
         dc.textAlign='center';dc.textBaseline='middle';
         dc.fillText(String(Math.round(SIM.WEIGHTS[v].mass*10000)/10),hx,hy);
@@ -1794,8 +1852,9 @@ function drawStats(){
   for(i=0;i<rows.length;i++){
     var k=rows[i][0],v=rows[i][1],t=rows[i][2],flag=rows[i][3];
     var cls=flag==='warn'?' warn':(flag?' up':'');
+    var col={spin:'#7FA650',travel:'#9CB4C4',smash:'#C4442B',guard:'#5B8BD6',lock:'#C9A227',rail:'#D08050',inertia:'#9C9286',wobble:'#C4442B'}[k]||'#C9A227';
     out+='<div class="stat"><span>'+k+'</span><span class="bar'+cls+'"><i style="width:'+
-      Math.max(2,Math.min(100,v*100))+'%"></i></span><span class="v">'+
+      Math.max(2,Math.min(100,v*100))+'%;background:'+col+'"></i></span><span class="v">'+
       (flag&&flag!=='warn'?'<em>'+t+'</em>':t)+'</span></div>';
   }
   $('stats').innerHTML=out;
@@ -3919,6 +3978,7 @@ function syncToggles(){
   $('tHaptic').classList.toggle('on',!!save.settings.haptics);
   $('tMotion').classList.toggle('on',!!save.settings.reduceMotion);
   $('t3D').classList.toggle('on',!!save.settings.battle3d);
+  if($('b3dGo'))$('b3dGo').classList.toggle('on',!!save.settings.battle3d);
   /* The whole of the failure story the player is owed. It says nothing at all
      unless the view actually refused to start on this device. */
   $('b3dNote').textContent=(window.B3D&&B3D.failed())?'3D could not start on this device.':'';
@@ -3945,6 +4005,14 @@ $('t3D').addEventListener('click',function(){
      round builds its tops. */
   if(!save.settings.battle3d&&window.B3D)B3D.exit();
   syncToggles();
+});
+/* 2026-09-02 (Stephen never found the 3D toggle in Settings): the same switch,
+   on the launch dock where the round is. */
+$('b3dGo').addEventListener('click',function(){
+  $('t3D').click();
+  $('hint').textContent=save.settings.battle3d?'3D on. Launch and watch.':'Back to the flat dish.';
+  $('hint').style.opacity=1;
+  setTimeout(function(){$('hint').style.opacity=0;},1600);
 });
 $('wipe').addEventListener('click',function(){
   if(this.getAttribute('data-armed')){

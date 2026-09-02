@@ -19,3 +19,20 @@ Three asks:
    settings toggle. VR is the step after (docs/VR-PILOT.md).
 
 Stakes: he sees Ripcord as a possible third store listing.
+
+### Answered the same night (Fable, 2026-09-02, build on branch)
+
+- **Stats while flipping.** Every part chip now carries the two biggest changes it would make
+  (▲smash ▼spin), computed from the real build, and the stats panel is bigger and colour coded.
+- **Weights that look tappable.** The dial is 224 px instead of 158, every empty hole is a solid
+  ring with a + in it, and a line under the dial says what tapping does (chip, slug, brick, off).
+- **Skipping back to the start.** Every pick rebuilt every rail, which reset their scroll. Rails
+  and the sheet keep their place across a pick now.
+- **Could not scroll Tuning or Looks.** Not the sheet: the fleet music card sat over the bottom
+  third and ate the gesture. The card is now a floating panel: drag by the handle, tap the
+  triangle or swipe down to fold it to a pill, folds itself after twelve idle seconds. Fleet wide.
+- **Combos.** Sixteen rigs already existed; the panel only listed ones you had made. It is a rig
+  book now: every rig with its recipe and state. Adding one is one entry in src/rigs.js.
+- **Watch in 3D.** A 3D button on the launch dock, same switch as Settings.
+- Not done: the rig book only opens at rung 4 (teaching gate, untouched); the boss test reports
+  The Post as beatable by defence 78 percent of the time, which predates this pass.

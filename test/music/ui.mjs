@@ -65,7 +65,7 @@ for (const g of GAMES) {
   if (g.shelf) {
     t(g.id + "  the CARD is up at boot", moment.card);
     t(g.id + "  card copy: Congratulations + no dash of any kind", /Congratulations/.test(moment.cardText) && !/[-–—]/.test(moment.cardText));
-    t(g.id + "  card sits inside the viewport at the bottom (" + (moment.cardRect ? Math.round(moment.cardRect.b) : "?") + ")", moment.cardRect && moment.cardRect.b <= 667.5 && moment.cardRect.y >= 0 && moment.cardRect.w >= 374);
+    t(g.id + "  card sits inside the viewport at the bottom (" + (moment.cardRect ? Math.round(moment.cardRect.b) : "?") + ")", moment.cardRect && moment.cardRect.b <= 667.5 && moment.cardRect.b >= 640 && moment.cardRect.y >= 0 && moment.cardRect.w >= 340);   /* 2026-09-02: a floating panel with a 12px margin, docked at the bottom, not glued to the edge */
     t(g.id + "  Listen now and Later are each 48px+ tall, measured (" + (moment.listen ? Math.round(moment.listen.h) : "?") + "/" + (moment.later ? Math.round(moment.later.h) : "?") + ")", moment.listen && moment.later && moment.listen.h >= 48 && moment.later.h >= 48);
     t(g.id + "  no toast before the card is dismissed", !before);
   }

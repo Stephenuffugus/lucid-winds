@@ -240,7 +240,9 @@ const TODAY = (() => { const d = new Date(), m = d.getMonth() + 1, y = d.getDate
   t("P11 the card names the song, the shelf, and says Congratulations", c && /Congratulations/.test(c.textContent) && /Shaft Song/.test(c.textContent) && /Deepwell/.test(c.textContent));
   t("P11 the card has Listen now and Later", c && !!h.find("sws-music-listen") && !!h.find("sws-music-later"));
   t("P11 no toast at boot when the card is up", !h.toast());
-  t("P11 the card is interactive (pointer-events not none) and fixed at the bottom", c && c.style.pointerEvents !== "none" && c.style.position === "fixed" && c.style.bottom === "0px");
+  /* 2026-09-02: the card became a floating, draggable panel (Stephen: movable and minimisable). It still docks at
+     the bottom by default, which it now declares with data-dock="bottom" instead of an inline bottom:0. */
+  t("P11 the card is interactive (pointer-events not none) and fixed, docked at the bottom", c && c.style.pointerEvents !== "none" && c.style.position === "fixed" && (c.style.bottom === "0px" || (c.getAttribute && c.getAttribute("data-dock") === "bottom")));
   t("P11 no dash of any kind in the card copy", c && !/[-–—]/.test(c.textContent));
   t("P11 the card shows a glyph, not a fabricated image, when the track has no art", c && !h.find("sws-music-art"));
   h.press("sws-music-later");

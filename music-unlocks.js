@@ -135,8 +135,12 @@
   function ensureStyle() {
     if (S.styled) return; S.styled = true;
     try { var d = window.document; var st = d.createElement('style'); st.id = 'sws-music-style';
-      st.textContent = '#' + CARD_ID + '{position:fixed;left:0;right:0;bottom:0;z-index:2147482000;box-sizing:border-box;padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));background:#0d100c;color:#e8dcc8;border-top:1px solid rgba(200,168,75,0.7);border-radius:22px 22px 0 0;box-shadow:0 -10px 30px rgba(0,0,0,0.6);font-family:system-ui,sans-serif;max-height:60vh;overflow:auto}'
-        + '#' + CARD_ID + ' .swsm-eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#c8a84b}'
+      st.textContent = '#' + CARD_ID + '{position:fixed;left:12px;right:12px;bottom:12px;max-width:420px;margin:0 auto;border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.55);touch-action:none;z-index:2147482000;box-sizing:border-box;padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));background:#0d100c;color:#e8dcc8;border-top:1px solid rgba(200,168,75,0.7);border-radius:22px 22px 0 0;box-shadow:0 -10px 30px rgba(0,0,0,0.6);font-family:system-ui,sans-serif;max-height:60vh;overflow:auto}'
+        + '#' + CARD_ID + ' .swsm-eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#c8a84b;padding-right:44px}'
+        + '#' + CARD_ID + ' .swsm-bar{height:22px;margin:-10px 0 4px;display:flex;align-items:center;justify-content:center;cursor:grab}'
+        + '#' + CARD_ID + ' .swsm-bar i{display:block;width:44px;height:5px;border-radius:3px;background:rgba(232,220,200,.35)}'
+        + '#' + CARD_ID + ' .swsm-min{position:absolute;top:10px;right:10px;width:40px;height:40px;min-height:40px;flex:0 0 auto;padding:0;border-radius:12px;font-size:20px;line-height:1;border:1px solid rgba(232,220,200,.25)!important;background:transparent!important;color:#e8dcc8!important}'
+        + '#sws-music-pill{position:fixed;left:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:2147482000;height:48px;padding:0 16px;border-radius:14px;border:1px solid rgba(200,168,75,0.7);background:rgba(13,16,12,0.92);color:#e8dcc8;font:600 14px system-ui,sans-serif;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.5);touch-action:none}'
         + '#' + CARD_ID + ' .swsm-row{display:flex;align-items:center;gap:14px;margin:10px 0 14px}'
         + '#' + CARD_ID + ' .swsm-tile{flex:0 0 64px;width:64px;height:64px;border-radius:14px;background:rgba(122,179,86,0.16);border:1px solid rgba(122,179,86,0.5);display:flex;align-items:center;justify-content:center;font-size:30px;color:#7ab356}'
         + '#' + CARD_ID + ' .swsm-tile img{width:100%;height:100%;object-fit:cover;border-radius:14px}'
@@ -196,6 +200,17 @@
     for (i = 0; i < spots.length; i++) { sc = footprint(spots[i]); if (sc === 0) return spots[i].css; if (sc < bestScore) { bestScore = sc; best = spots[i]; } }
     return best.css;
   }
+  /* drag a fixed element anywhere; remembers where it was left. A move over 8px swallows the click. */
+  function drag(el, key) {
+    try {
+      var sx = 0, sy = 0, ox = 0, oy = 0, on = false;
+      try { var pos = parse(lsGet(key), null); if (pos && pos.x >= 0 && pos.y >= 0 && pos.x < window.innerWidth - 40 && pos.y < window.innerHeight - 40) { el.style.right = 'auto'; el.style.bottom = 'auto'; el.style.left = pos.x + 'px'; el.style.top = pos.y + 'px'; } } catch (x) {}
+      el.addEventListener('pointerdown', function (ev) { on = true; el._moved = false; sx = ev.clientX; sy = ev.clientY; var r = el.getBoundingClientRect(); ox = r.left; oy = r.top; try { el.setPointerCapture(ev.pointerId); } catch (x) {} });
+      el.addEventListener('pointermove', function (ev) { if (!on) return; var dx = ev.clientX - sx, dy = ev.clientY - sy; if (!el._moved && Math.abs(dx) < 8 && Math.abs(dy) < 8) return; el._moved = true; var W = window.innerWidth, H = window.innerHeight, r = el.getBoundingClientRect(); el.style.right = 'auto'; el.style.bottom = 'auto'; el.style.left = Math.max(0, Math.min(W - r.width, ox + dx)) + 'px'; el.style.top = Math.max(0, Math.min(H - r.height, oy + dy)) + 'px'; });
+      function end() { if (!on) return; on = false; if (el._moved) { try { lsSet(key, JSON.stringify({ x: parseFloat(el.style.left), y: parseFloat(el.style.top) })); } catch (x) {} } }
+      el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+    } catch (e) {}
+  }
   function placeChipLater() {
     try {
       var d = window.document, CHIP_DELAY = 900;
@@ -211,7 +226,9 @@
       ensureStyle();
       var b = d.createElement('button'); b.id = CHIP_ID; b.type = 'button'; b.textContent = '\u266B Music'; b.setAttribute('aria-label', 'Open the soundtrack');
       var corner = freeCorner(); b.setAttribute('data-corner', corner); b.setAttribute('style', corner); b.style.height = '48px';
-      b.addEventListener('click', function () { ensurePlayer(function (api) { try { if (api && api.open) api.open(); } catch (e) {} }); });
+      b.style.touchAction = 'none';
+      b.addEventListener('click', function () { if (b._moved) { b._moved = false; return; } ensurePlayer(function (api) { try { if (api && api.open) api.open(); } catch (e) {} }); });
+      drag(b, 'sws_music_chip_pos');
       d.body.appendChild(b); S.chip = b;
     } catch (e) {}
   }
@@ -234,7 +251,34 @@
       ensureStyle();
       var hit = trackById(e.id), art = hit && hit.t.art ? (catalog().base + hit.s.slug + '/' + hit.t.art) : null;
       var card = d.createElement('div'); card.id = CARD_ID; card.setAttribute('role', 'dialog'); card.setAttribute('aria-label', 'New song unlocked');
-      card.style.position = 'fixed'; card.style.bottom = '0px'; card.style.pointerEvents = 'auto';
+      card.style.position = 'fixed'; card.style.pointerEvents = 'auto'; card.setAttribute('data-dock', 'bottom');   /* docked at the bottom until dragged */
+      /* 2026-09-02 (Stephen: "the music menu needs to be movable and minimizable"): the card sat
+         fixed over the bottom third of every game and ATE the scroll gesture of any menu under it
+         (Ripcord's workshop could not be scrolled from the bottom half). It is now a floating panel:
+         drag it by the handle, tap the dash or swipe it down to fold it into a pill, and it folds
+         itself after twelve idle seconds so it never blocks a menu for long. */
+      var bar = d.createElement('div'); bar.className = 'swsm-bar'; bar.innerHTML = '<i></i>'; card.appendChild(bar);
+      var minb = d.createElement('button'); minb.type = 'button'; minb.className = 'swsm-min'; minb.id = 'sws-music-min'; minb.textContent = '\u25BE'; minb.setAttribute('aria-label', 'Minimise'); card.appendChild(minb);
+      var idle = null, pill = null;
+      function armIdle() { try { if (idle) window.clearTimeout(idle); idle = window.setTimeout(minimise, 12000); } catch (x) {} }
+      function minimise() {
+        try { if (idle) window.clearTimeout(idle); idle = null; card.style.display = 'none';
+          if (!pill) { pill = d.createElement('button'); pill.type = 'button'; pill.id = 'sws-music-pill'; pill.textContent = '\u266B New song'; pill.setAttribute('aria-label', 'Show the new song');
+            pill.addEventListener('click', function () { if (pill._moved) { pill._moved = false; return; } try { pill.remove(); } catch (x) {} pill = null; card.style.display = ''; armIdle(); });
+            drag(pill, 'sws_music_pill_pos'); d.body.appendChild(pill); }
+        } catch (x) {}
+      }
+      minb.addEventListener('click', minimise);
+      card.addEventListener('pointerdown', armIdle, true);
+      /* drag by the handle; a downward flick folds it */
+      (function () { var sx = 0, sy = 0, ox = 0, oy = 0, on = false;
+        bar.addEventListener('pointerdown', function (ev) { on = true; sx = ev.clientX; sy = ev.clientY; var r = card.getBoundingClientRect(); ox = r.left; oy = r.top; card.style.right = 'auto'; card.style.bottom = 'auto'; card.style.margin = '0'; card.style.left = ox + 'px'; card.style.top = oy + 'px'; try { bar.setPointerCapture(ev.pointerId); } catch (x) {} ev.preventDefault(); });
+        bar.addEventListener('pointermove', function (ev) { if (!on) return; var W = window.innerWidth, H = window.innerHeight, r = card.getBoundingClientRect(); var nx = Math.max(0, Math.min(W - r.width, ox + ev.clientX - sx)), ny = Math.max(0, Math.min(H - r.height, oy + ev.clientY - sy)); card.style.left = nx + 'px'; card.style.top = ny + 'px'; });
+        function end(ev) { if (!on) return; on = false; var dy = ev.clientY - sy, dx = ev.clientX - sx; if (dy > 60 && Math.abs(dx) < 50) { minimise(); return; } try { lsSet('sws_music_card_pos', JSON.stringify({ x: parseFloat(card.style.left), y: parseFloat(card.style.top) })); } catch (x) {} }
+        bar.addEventListener('pointerup', end); bar.addEventListener('pointercancel', end);
+      })();
+      try { var pos = parse(lsGet('sws_music_card_pos'), null); if (pos && pos.x >= 0 && pos.y >= 0 && pos.x < window.innerWidth - 80 && pos.y < window.innerHeight - 80) { card.style.right = 'auto'; card.style.bottom = 'auto'; card.style.margin = '0'; card.style.left = pos.x + 'px'; card.style.top = pos.y + 'px'; } } catch (x) {}
+      armIdle();
       var eyebrow = d.createElement('div'); eyebrow.className = 'swsm-eyebrow'; eyebrow.textContent = 'Congratulations, you unlocked a song' + (more > 0 ? ' and ' + more + ' more' : ''); card.appendChild(eyebrow);
       var row = d.createElement('div'); row.className = 'swsm-row';
       var tile = d.createElement('div'); tile.className = 'swsm-tile';
@@ -245,7 +289,7 @@
       var btns = d.createElement('div'); btns.className = 'swsm-btns';
       var listen = d.createElement('button'); listen.id = 'sws-music-listen'; listen.type = 'button'; listen.className = 'swsm-primary'; listen.textContent = 'Play it now';
       var later = d.createElement('button'); later.id = 'sws-music-later'; later.type = 'button'; later.textContent = 'Later';
-      function close() { try { card.remove(); } catch (x) {} S.card = null; tellGame(false); markRevealed(e.id); S.interacted = true; showNext(); }
+      function close() { try { if (idle) window.clearTimeout(idle); card.remove(); if (pill) pill.remove(); } catch (x) {} pill = null; S.card = null; tellGame(false); markRevealed(e.id); S.interacted = true; showNext(); }
       listen.addEventListener('click', function () { close(); playById(e.id); });
       later.addEventListener('click', function () { close(); });
       btns.appendChild(listen); btns.appendChild(later); card.appendChild(btns);
