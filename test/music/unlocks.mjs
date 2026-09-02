@@ -190,6 +190,12 @@ const TODAY = (() => { const d = new Date(), m = d.getMonth() + 1, y = d.getDate
 { const h = browser(); h.load(); h.fire("pointerdown"); h.fire("pointerdown");
   t("interaction listeners are removed after the first (second event does not re-show)", h.doc.body.children.filter(c => c.id === "sws-music-toast").length === 1); }
 
+/* an app shelf (kind app, empty games[]) is never granted by any game */
+{ const h = browser(); h.load(); h.fire("pointerdown"); h.advance(3500);
+  h.sb.LW_MUSIC_CATALOG.shelves.push({ slug: "originals", name: "Originals", kind: "app", games: [], tracks: [{ id: "m-originals-x", title: "X", file: "x.mp3", seconds: 1, from: "x.mp3" }] });
+  h.sb.SWSMusic.rebuild();
+  t("an app shelf with empty games[] is never granted, even after rebuild", !has(h, "m-originals-x")); }
+
 /* Tier 1 hook, reduced motion, no body */
 { const h = browser(); const m = h.load(); h.fire("pointerdown"); h.advance(3500); m.unlock("deepwell", "m-deepwell-echo-chamber");
   t("unlock(shelf, id): Tier 1 hook grants an arbitrary catalog track and toasts", has(h, "m-deepwell-echo-chamber") && h.toast() && /Echo Chamber/.test(h.toast().textContent));

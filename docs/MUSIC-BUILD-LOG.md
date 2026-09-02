@@ -243,3 +243,22 @@ vault: `vault-music-20260902` holds the 357 MB master zip + SHA256SUMS, round tr
 run.mjs: all 10 steps green in 101s
   catalog 49 · unlocks 64 · mutants 14/14 · sw 15 · no_shrink 203 · include 105/105 · inject 48 · ui 47
 ```
+
+## P9c — Last mappings, the Originals route, Conduit carded (2026-09-02)
+Stephen: "they can be shared" (Family-Boards → Board Classics, Zen-Studio → Maker Bench until he makes more), "lucid winds
+theme goes in the apps originals yes", "conduit should be behind the wolfden test password so i can test it".
+- `originals` is a new alias target: an app shelf (kind app, EMPTY games[]) that ships under /music/v1/originals/ and is
+  listed in music-tracks.js Originals at go-live, never unlocked (gated: the module never grants an app shelf even after
+  rebuild). Web tier's folder lookup learned the new kind after crashing on it once.
+- Conduit: FEATURED card next to Tangent, `beta:true` (the In Development tab behind the tester passcode), embed protocol
+  block copied verbatim from Tangent (+27 lines, 2 inline scripts parse), thumb via the house tool. catalog.mjs: 187 carded,
+  26 gated, **161 openable unchanged**; `advertised_count_check.mjs`: all 7 counts still true.
+- Real catalog: **46 shelves, 144 tracks, 2 held** ((loose) = byte-dups of Spore Drift; Whackbox, outside satellites/).
+  Web tier 144 files 225 MB, verify 144/144. Vault zip refreshed (224 MB, 144 mp3s, PROBE.txt inside).
+- Thumb, LOOKED AT: the title screen is a rules sheet (the tool's own warning), the level list behind it is more text.
+  See below for what shipped and why.
+- `docs/MUSIC-GO-LIVE.md`: the exact steps, who does each.
+gates: `run.mjs: all 10 steps green in 96s` (catalog 51 · unlocks 65 · mutants 14/14 · sw 15 · no_shrink 203 · include 105/105 · inject 48 · ui 47)
+thumb shipped: a shot from inside play (two clicks in: "Enter the site", then a level's "Enter"): the blob with its
+iridescent rim, a lit socket, the room. Three things wrong with it, said before Stephen does: the subject is small at card
+size; it is dark on a dark portal; no wordmark. Still the right choice over a wall of rules text. Beta card, Test Lab only.

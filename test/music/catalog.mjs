@@ -49,6 +49,11 @@ t("two folders to one shelf merge: abduct-a-chameleon has 3 tracks", shelf("abdu
   t("an explicit alias maps a folder to a family (Quick-fire -> action)", !!al.catalog.shelves.find(s => s.kind === "family" && s.games.includes("tomato-man")));
   const bad = generate({ intake: syn, existing: null, live: true, aliases: { cosmicadets: "no-such-slug" } });
   t("an alias to a missing target is UNMAPPED and says why", bad.unmapped.some(u => u.folder === "Cosmi-cadets") && bad.log.some(l => /alias-target-missing/.test(l))); }
+{ const syn = { rows: [{ game: "Lucid Winds ", file: "Midnight Greenhouse.mp3", ext: "mp3", title: "Midnight Greenhouse", bytes: 1, mb: 0, seconds: 1, kbps: 64, codec: "mp3", channels: 2, rate: 44100 }] };
+  const og = generate({ intake: syn, existing: null, live: true, aliases: { lucidwinds: "originals" } });
+  const o = og.catalog.shelves.find(s => s.slug === "originals");
+  t("originals target: an app shelf, kind app, EMPTY games[] so no game can ever unlock it", !!o && o.kind === "app" && o.games.length === 0 && o.tracks.some(x => x.id === "m-originals-midnight-greenhouse" && x.file === "midnight-greenhouse.mp3"));
+  t("originals is logged as ORIGINALS", og.log.some(l => /^ORIGINALS/.test(l))); }
 t("shared dir: Abduct a Chameleon 3D -> one shelf abduct-a-chameleon", !!shelf("abduct-a-chameleon") && C.shelves.filter(s => s.slug === "abduct-a-chameleon").length === 1);
 t("shared dir: games[] deduped to one slug", shelf("abduct-a-chameleon") && shelf("abduct-a-chameleon").games.length === 1);
 t("unmapped: Moonlight Sonatas reported with its track count", r1.unmapped.some(u => u.folder === "Moonlight Sonatas" && u.tracks === 2));

@@ -2,7 +2,7 @@
    live:false means the module does nothing; Fable flips it after scripts/music_verify.mjs
    passes against the host (HANDOFF-MUSIC section 6.4, 7). */
 window.LW_MUSIC_CATALOG = {
- "version": "5338a86b9bef",
+ "version": "d52b4849b50b",
  "base": "/music/v1/",
  "live": false,
  "ladder": {
@@ -235,6 +235,20 @@ window.LW_MUSIC_CATALOG = {
     "vinecross"
    ],
    "tracks": [
+    {
+     "id": "m-board-classics-boardgame-afternoon-1",
+     "title": "Boardgame Afternoon (1)",
+     "file": "boardgame-afternoon-1.mp3",
+     "seconds": 43,
+     "from": "Boardgame Afternoon (1).mp3"
+    },
+    {
+     "id": "m-board-classics-boardgame-afternoon",
+     "title": "Boardgame Afternoon",
+     "file": "boardgame-afternoon.mp3",
+     "seconds": 49,
+     "from": "Boardgame Afternoon.mp3"
+    },
     {
      "id": "m-board-classics-gilded-circuit-1",
      "title": "Gilded Circuit (1)",
@@ -496,6 +510,30 @@ window.LW_MUSIC_CATALOG = {
    ]
   },
   {
+   "slug": "conduit",
+   "name": "Conduit",
+   "kind": "game",
+   "games": [
+    "conduit"
+   ],
+   "tracks": [
+    {
+     "id": "m-conduit-feel-the-ferro",
+     "title": "feel the ferro",
+     "file": "feel-the-ferro.mp3",
+     "seconds": 169,
+     "from": "feel_the_ferro.mp3"
+    },
+    {
+     "id": "m-conduit-she-said",
+     "title": "she said",
+     "file": "she-said.mp3",
+     "seconds": 220,
+     "from": "she_said.mp3"
+    }
+   ]
+  },
+  {
    "slug": "dewball",
    "name": "Dewball",
    "kind": "game",
@@ -694,6 +732,7 @@ window.LW_MUSIC_CATALOG = {
     "bridgevine",
     "chaff-wars",
     "colorsort",
+    "conduit",
     "dew-snip",
     "dewtrail",
     "flock-the-world",
@@ -814,6 +853,20 @@ window.LW_MUSIC_CATALOG = {
      "from": "Clockwork Waltz.mp3"
     },
     {
+     "id": "m-maker-bench-japanese-garden-stillness-1",
+     "title": "Japanese Garden Stillness (1)",
+     "file": "japanese-garden-stillness-1.mp3",
+     "seconds": 185,
+     "from": "Japanese Garden Stillness (1).mp3"
+    },
+    {
+     "id": "m-maker-bench-japanese-garden-stillness",
+     "title": "Japanese Garden Stillness",
+     "file": "japanese-garden-stillness.mp3",
+     "seconds": 194,
+     "from": "Japanese Garden Stillness.mp3"
+    },
+    {
      "id": "m-maker-bench-tinkering-loop-1",
      "title": "Tinkering Loop (1)",
      "file": "tinkering-loop-1.mp3",
@@ -898,6 +951,28 @@ window.LW_MUSIC_CATALOG = {
      "file": "orbit-garden.mp3",
      "seconds": 197,
      "from": "Orbit Garden.mp3"
+    }
+   ]
+  },
+  {
+   "slug": "originals",
+   "name": "Originals",
+   "kind": "app",
+   "games": [],
+   "tracks": [
+    {
+     "id": "m-originals-midnight-greenhouse-1",
+     "title": "Midnight Greenhouse (1)",
+     "file": "midnight-greenhouse-1.mp3",
+     "seconds": 181,
+     "from": "Midnight Greenhouse (1).mp3"
+    },
+    {
+     "id": "m-originals-midnight-greenhouse",
+     "title": "Midnight Greenhouse",
+     "file": "midnight-greenhouse.mp3",
+     "seconds": 210,
+     "from": "Midnight Greenhouse.mp3"
     }
    ]
   },

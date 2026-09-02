@@ -77,6 +77,7 @@ export function resolve(folder, cards, families, aliases = {}) {
   const nf = norm(folder);
   if (aliases[nf]) {                                        // an explicit, human-confirmed override wins
     const to = aliases[nf];
+    if (to === "originals") return { kind: "originals", how: "alias" };   // the app's own theme: shipped, listed in music-tracks.js Originals, never unlocked
     if (families[to]) return { kind: "family", key: to, how: "alias" };
     const c = cards.find(c => c.key === to); if (c) return { kind: "game", card: c, how: "alias" };
     return { kind: "none", how: "alias-target-missing:" + to };
@@ -129,7 +130,10 @@ export function generate({ intake, existing = null, live = false, families = loa
     const res = resolve(folder, cards, families, aliases);
     if (res.kind === "none") { unmapped.push({ folder, tracks: rows.length, files: rows.map(r => ({ file: r.file, sha: r.sha })) }); log.push("UNMAPPED  " + folder + "  (" + rows.length + " tracks)" + (res.how ? "  " + res.how : "")); continue; }
     let slug, name, kind, games;
-    if (res.kind === "game") {
+    if (res.kind === "originals") {
+      slug = "originals"; name = "Originals"; kind = "app"; games = [];          // no game can match an empty games[]; the module never grants it
+      log.push("ORIGINALS " + folder + "  -> /music/v1/originals/  (music-tracks.js Originals, always free)");
+    } else if (res.kind === "game") {
       if (res.card.key === "stream-hop") { log.push("SKIP      " + folder + "  -> stream-hop: Jimothy keeps its own bridge"); continue; }
       slug = res.card.key; name = res.card.name; kind = "game"; games = [res.card.key];
       log.push("MAP       " + folder + "  -> " + slug + "  (" + res.how + ")");
@@ -181,6 +185,7 @@ export function generate({ intake, existing = null, live = false, families = loa
 export function shelfSlugFor(folder, families = loadFamilies(), cat = catalog(), aliases = loadAliases()) {
   const cards = cat.all.filter(g => g.dir || g.id).map(g => ({ name: g.name, dir: g.dir, id: g.id, cat: g.cat, key: g.dir || g.id }));
   const r = resolve(folder, cards, families, aliases);
+  if (r.kind === "originals") return "originals";
   if (r.kind === "game") return r.card.key === "stream-hop" ? null : r.card.key;
   if (r.kind === "family") return slugify(families[r.key].name);
   return null;
