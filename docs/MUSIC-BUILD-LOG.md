@@ -42,3 +42,20 @@ fixture: 8 folders, 19 tracks (19 written), junk dirs skipped: yes
 ```
 six game folders not five: the handoff's list plus the stream-hop skip case, which needs its own folder.
 files: music-families.json (10 families = the catalog cat set) · scripts/music_fixture.mjs · output /tmp/music-fixture/{Music For Games,intake.json}
+
+## P2 — Generator → catalog
+gate red first: `node test/music/catalog.mjs` → `FAIL generator importable <- Cannot find module scripts/music_manifest.mjs` (1 ok, 1 failed)
+first green run: 31 ok, 2 failed. Both reds were the TEST's fault (LAW 3, owner = the fixture): "Siege" is the literal
+directory slug so it is an exact match, not fuzzy (swapped to "Flock" → Flock the World, and added "Chameleon" to prove
+fuzzy hits on two cards sharing one dir count as one); and I wanted `wardens-march` not `warden-s-march`, so slugify now
+strips quote characters first.
+final: `catalog gate: 35 ok, 0 failed`
+fixture catalog: `shelves: 7  tracks: 19  unmapped: 1  version: (content hash)  live: true` at /tmp/music-fixture/music-catalog.js (never in the repo)
+```
+MAP       Abduct a Chameleon 3D  -> abduct-a-chameleon  (exact)      FAMILY  Board Games -> table-games (17 games)
+MAP       Chameleon  -> abduct-a-chameleon  (FUZZY)                  FAMILY  Card Games  -> card-room   (17 games)
+MAP       Deepwell  -> deepwell  (exact)                             MAP     Tarot Run   -> tarot-run   (exact)
+MAP       Flock  -> flock-the-world  (FUZZY)                         MAP     greenhouse-pinball -> greenhouse-pinball (slug)
+SKIP      Jimothy  -> stream-hop: Jimothy keeps its own bridge       UNMAPPED  Moonlight Sonatas  (2 tracks)
+```
+real data present? no (`_music-drop/` holds only the README). The real run happens the moment docs/music-intake.json exists.

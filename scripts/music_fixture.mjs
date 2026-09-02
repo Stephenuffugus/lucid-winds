@@ -26,14 +26,16 @@ const sh = (c) => execSync(c, { encoding: "utf8", stdio: ["ignore", "pipe", "pip
 
 /* folder name -> [track file names]. See header for what each folder tests. */
 const FOLDERS = {
-  "Deepwell":                 ["01 Shaft Song.mp3", "Deep Water.mp3", "Deep  Water.mp3", "The Long Climb.mp3"],   // exact display; "Deep Water" x2 = id collision
+  "Deepwell":                 ["01 Shaft Song.mp3", "Deep Water.mp3", "Deep  Water.mp3", "The Long Climb.mp3", "Echo Chamber.mp3"],   // exact display; "Deep Water" x2 = id collision; 5 tracks so rung 4 exists
   "greenhouse-pinball":       ["Blob Bounce.mp3", "Clay Bumper.wav"],                                            // exact SLUG (display is Blobworks); wav -> transcode
-  "Siege":                    ["Warden's March.mp3", "Trap Line.mp3", "Wave Ten.mp3"],                          // FUZZY: single contains hit on "Siege of One"
+  "Flock":                    ["Warden's March.mp3", "Trap Line.mp3", "Wave Ten.mp3"],                          // FUZZY: single contains hit on "Flock the World" (NB "Siege" would be an exact SLUG hit)
+  "Chameleon":                ["Color Shift.mp3"],                                                            // FUZZY hits two cards that share ONE dir -> one hit; merges into the 3D folder's shelf
   "Abduct a Chameleon 3D":    ["Beam Up.mp3", "Tractor Hum.mp3"],                                               // shares a dir with "Abduct a Chameleon"
   "Moonlight Sonatas":        ["Nocturne One.mp3", "Nocturne Two.mp3"],                                          // UNMAPPED on purpose
   "Jimothy":                  ["Crosswalk Redux.mp3"],                                                           // maps to stream-hop -> SKIPPED
   "Card Games":               ["Shuffle Up.mp3", "Dealer's Choice.mp3", "Last Trick.mp3"],                      // family: card
   "Board Games":              ["Corner Square.mp3", "Long Game.mp3"],                                            // family: board
+  "Tarot Run":                ["Major Arcana.mp3", "Cups.mp3"],                                                 // a CARD game with its own shelf: unlocks both it and Card Room
 };
 const HIGH_BITRATE = "The Long Climb.mp3";   // 192k so the web tier must transcode it
 
