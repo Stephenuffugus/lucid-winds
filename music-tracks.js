@@ -38,6 +38,10 @@
     {id:'fog-over-the-harbor-upbeat',title:'Fog Over the Harbor (Upbeat)',artist:'Stephen', cat:'Originals', src:'/assets/music/fog-over-the-harbor-upbeat.mp3'},
     // Jimothy theme — the rest of the Jimothy OST is unlocked by playing the game
     {id:'cartridge-moonwalk',        title:'Cartridge Moonwalk',          artist:'Stephen', cat:'Originals', src:'/assets/music/cartridge-moonwalk.mp3'},
+    // 2026-09-02: the Lucid Winds theme, both takes, STREAMED from /music/v1/ (the private lucid-winds-music repo,
+    // deployed by Hostinger). Not bundled, not in git. Stephen: "lucid winds theme goes in the apps originals yes".
+    {id:'midnight-greenhouse',        title:'Midnight Greenhouse',         artist:'Stephen', cat:'Originals', src:'/music/v1/originals/midnight-greenhouse.mp3'},
+    {id:'midnight-greenhouse-1',      title:'Midnight Greenhouse (1)',     artist:'Stephen', cat:'Originals', src:'/music/v1/originals/midnight-greenhouse-1.mp3'},
 
     // ── CLASSICAL — public domain, streamed from Internet Archive (Musopen,
     //    CC0: archive.org/details/musopen-chopin, licenseurl=publicdomain/zero/1.0).

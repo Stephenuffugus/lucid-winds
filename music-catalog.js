@@ -4,7 +4,7 @@
 window.LW_MUSIC_CATALOG = {
  "version": "d52b4849b50b",
  "base": "/music/v1/",
- "live": false,
+ "live": true,
  "ladder": {
   "secsPer": 120,
   "daysPer": 1,
