@@ -225,7 +225,10 @@ because that is the function the ad is hooked to. `pub_verify` reads the recipe'
 and fails the ZIP if it calls a round-end function, uses `.click()`, or dispatches
 events, and fails it again if the recipe never touches the screen at all.
 
-### Result: 20 of 20 PASS
+### Result: 20 of 20 PASS (Opus, 2026-09-02) — re-run by Fable the same evening on the fixed builder: 24 of 24 game ZIPs PASS, plus the two Jimothy diet ZIPs
+
+⛔ The first "20 of 20" was true by the gate and false by eye: two of the twenty had the
+playfield hidden (BF10 below). The numbers in the table are from the re-run.
 
 Run with the real network SDK live in the page, not stubbed.
 
@@ -284,6 +287,10 @@ Not one ZIP was edited by hand.
 | BF7 | **"☀ +6 sunbeams" on Dew Snip's win screen** and "☀ no sunbeams this run" on Berry Vine's and Garden Guard's. `_sbCapEarn` is defined **inside each game**, not in the SDK we strip, and keeps its own cap in localStorage, so the publisher build still counted and printed the grant. The strings are built at run time, so no text pass can reach them. | A small observer in the injected head hides any leaf element whose text names the economy, whenever it appears. |
 | BF8 | 7 games over 20 MB were carrying an `art-drop/` folder of raw generated sheets that nothing in the game names: 63 MB of Nectar Drop's 89, 32 MB of Tonic Drop's 34. | Prune top-level folders no shipped html, js, css or json file mentions, and print what went. This is also what step 4 needs for Jimothy. |
 | BF9 | `sdk.showBanner !== 'undefined'` compares a function to the **string** "undefined" and is always true. It only ever worked because an outer `typeof` guard kept it away from a missing SDK. | A real `typeof … === 'function'` check, in both SDK adapters, so a partial SDK cannot throw inside a win screen. Also added `__pubAdCalls` and `__pubAdBreaks` counters, which is how assertion D is measured at all. |
+
+| BF10 | **(Fable review, 2026-09-02) Bloom Breaker and Garden Guard shipped with `#game{display:none}`: the playfield.** The exit-id sniffer read the whole document and took "game" out of `<canvas id="game">` beside an HTML comment that mentions SWS_EXIT. The gate passed both (the game-over card is DOM) and the marketing pass photographed a black table. | Sniffer reads script bodies only, and a canvas is never an exit button. New verifier assertion **I**: the largest canvas must be rendered. |
+| BF11 | The `feedback.js` inline-block strip deleted ANY block naming the file; vine-runner names it inside its 61 KB game script. | Only blocks under 2.5 KB are loaders. Larger ones stay; 2a4 stubs their runtime load. |
+| BF12 | Blooming Words wires its exit as `$("#exitPortalBtn")`; the id regex refused the `#` and the "← All Sky Wolf games" button shipped alive in a closed menu, where assertion F1 could not see it. | Regex accepts `#`. New verifier assertion **F1b**: any element whose own text is a portal exit must itself be display:none, on any screen. |
 
 Two fixes went into the **harness** rather than the builder, and both were the harness
 lying rather than the build being wrong:

@@ -7,7 +7,8 @@
 import puppeteer from "puppeteer";
 import { writeFileSync, mkdirSync } from "fs";
 
-const OUT = "/tmp/claude-1000/-workspaces-lucid-winds/948f2b8c-5802-4123-8a71-bee14fc0e11f/scratchpad/pub1/smoke";
+import { tmpdir as _tmpdir } from "os";
+const OUT = process.env.PUB_TMP ? (process.env.PUB_TMP + "/smoke") : (_tmpdir() + "/pub1-smoke");
 mkdirSync(OUT, { recursive: true });
 const slugs = process.argv.slice(2);
 const results = [];

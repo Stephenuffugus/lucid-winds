@@ -213,7 +213,14 @@ def build(src_dir, target, game_id):
     # 2a2. the studio shell never ships to a publisher: no feedback fab (posts to
     #      our endpoint), no static jukebox tags. Dynamic music loads are satisfied
     #      by the stubs injected below, so nothing 404s.
-    html = re.sub(r"<script>(?:(?!</script>).)*feedback\.js(?:(?!</script>).)*</script>\n?", '', html, flags=re.S)
+    #      ⛔ 2026-09-02 (Fable review): the fab LOADER is a 300 byte block, but this regex
+    #      matched ANY inline block naming feedback.js, and vine-runner names it inside its
+    #      61 KB game script. That build would have shipped with no game in it. Only a
+    #      small block is a loader; a big one is left alone, and 2a4 below turns its
+    #      runtime load into an inert data URL while the LW_Feedback stub swallows mountFab.
+    def _fab_block(m):
+        return '' if len(m.group(0)) < 2500 else m.group(0)
+    html = re.sub(r"<script>(?:(?!</script>).)*feedback\.js(?:(?!</script>).)*</script>\n?", _fab_block, html, flags=re.S)
     html = re.sub(r'<script src="[^"]*(?:music-tracks|music-player|engagement|dev-gate|arcade-exit)\.js[^"]*"></script>\n?', '', html)
 
     # 2a3. ⭐ THE GENERAL RULE, and the one that matters most.
@@ -256,6 +263,15 @@ def build(src_dir, target, game_id):
     html = re.sub(r'(?P<q>["\'])(?P<path>/[A-Za-z0-9._/-]+\.js(?:\?[^"\']*)?)(?P=q)', _js_literal, html)
     if stubbed:
         print('stubbed runtime script loads: ' + ', '.join(sorted(set(stubbed))))
+        # a stubbed path that is NOT one of our shell files is the game loading its own
+        # code by absolute path (burrow-bowl: /satellites/critter-pal.js). Stubbing that
+        # blanks the game. Say so, loudly; the ZIP needs that file copied in by hand.
+        SHELL = ('/music-unlocks.js', '/feedback.js', '/sunbeam-sdk.js', '/arcade-exit.js',
+                 '/music-tracks.js', '/dev-gate.js', '/music-player.js', '/engagement.js', '/sw.js')
+        odd = sorted(set(p.split('?')[0] for p in stubbed) - set(SHELL))
+        if odd:
+            print('!! review: stubbed a NON-shell script the game loads by absolute path, the '
+                  'game will be missing code: ' + ', '.join(odd))
 
     # 2b. no PWA surface in a publisher build: the sw.js and manifest files are
     #     excluded from the copy, so the references must go too or the console
@@ -270,21 +286,32 @@ def build(src_dir, target, game_id):
     #     `tap('b-exit', ...)`, so the CSS matched nothing and the build shipped a button
     #     reading "Sky Wolf Studio Arcade" that was now dead as well as forbidden.
     #     Read the id out of the wiring, and only hide it if that id really exists.
+    #     ⛔ 2026-09-02 (Fable review): the first version of this sniffer read the WHOLE
+    #     document. Bloom Breaker and Garden Guard carry the HTML comment
+    #     `<!-- exit / cross-promo (only element that calls SWS_EXIT) -->` two lines under
+    #     `<canvas id="game">`, the lookback found "game", and both publisher builds shipped
+    #     with the PLAYFIELD display:none. The verifier passed them (the game over card is
+    #     DOM) and the marketing pass photographed a black table and called it "dark".
+    #     Now: only script bodies are searched, and a canvas is never an exit button.
     exit_ids = []
-    for m in re.finditer(r'SWS_EXIT', html):
-        if html[max(0, m.start() - 8):m.start()].rstrip().endswith('window.') and \
-           html[m.end():m.end() + 10].lstrip().startswith('='):
-            continue                                   # the definition itself
-        # look back over the statement AND the line before it: Merge Blast fetches the
-        # element on one line and wires it on the next, so a lookback that stops at the
-        # newline finds no id at all
-        stmt = html[max(0, m.start() - 260):m.start()]
-        stmt = ';'.join(re.split(r';', stmt)[-2:])
-        ids = re.findall(r'''['"]([A-Za-z][\w-]{1,40})['"]''', stmt)
-        for cand in reversed(ids):
-            if re.search(r'id\s*=\s*["\']%s["\']' % re.escape(cand), html):
-                exit_ids.append(cand)
-                break
+    for body in re.findall(r'<script(?![^>]*\ssrc=)[^>]*>([\s\S]*?)</script>', html):
+        for m in re.finditer(r'SWS_EXIT', body):
+            if body[max(0, m.start() - 8):m.start()].rstrip().endswith('window.') and \
+               body[m.end():m.end() + 10].lstrip().startswith('='):
+                continue                                   # the definition itself
+            # look back over the statement AND the line before it: Merge Blast fetches the
+            # element on one line and wires it on the next, so a lookback that stops at the
+            # newline finds no id at all
+            stmt = body[max(0, m.start() - 260):m.start()]
+            stmt = ';'.join(re.split(r';', stmt)[-2:])
+            # `$("#exitPortalBtn")` (Blooming Words) carries the id with a leading `#`;
+            # the first version of this pattern refused the hash and shipped the button
+            ids = re.findall(r'''['"]#?([A-Za-z][\w-]{1,40})['"]''', stmt)
+            for cand in reversed(ids):
+                tag = re.search(r'<([A-Za-z0-9]+)[^>]*\sid\s*=\s*["\']%s["\']' % re.escape(cand), html)
+                if tag and tag.group(1).lower() != 'canvas':
+                    exit_ids.append(cand)
+                    break
     exit_ids = sorted(set(exit_ids))
     exit_css = ('<style>' + ','.join('#' + i for i in exit_ids) + '{display:none!important}</style>') if exit_ids else ''
     if exit_ids:

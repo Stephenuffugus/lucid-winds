@@ -12,7 +12,8 @@ import { join, extname, resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
-const TMP = "/tmp/claude-1000/-workspaces-lucid-winds/948f2b8c-5802-4123-8a71-bee14fc0e11f/scratchpad/pub1/scout";
+import { tmpdir as _tmpdir } from "os";
+const TMP = process.env.PUB_TMP ? (process.env.PUB_TMP + "/scout") : (_tmpdir() + "/pub1-scout");
 const MIME = { ".html":"text/html",".js":"text/javascript",".css":"text/css",".png":"image/png",".jpg":"image/jpeg",
   ".jpeg":"image/jpeg",".gif":"image/gif",".svg":"image/svg+xml",".webp":"image/webp",".json":"application/json",
   ".mp3":"audio/mpeg",".ogg":"audio/ogg",".wav":"audio/wav",".woff2":"font/woff2",".ttf":"font/ttf",".mp4":"video/mp4" };

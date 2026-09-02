@@ -21,7 +21,8 @@ import { catalog } from "../../scripts/catalog.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const OUT = join(REPO, "publish", "marketing");
-const TMP = "/tmp/claude-1000/-workspaces-lucid-winds/948f2b8c-5802-4123-8a71-bee14fc0e11f/scratchpad/pub1/mkt";
+import { tmpdir } from "os";
+const TMP = process.env.PUB_TMP ? join(process.env.PUB_TMP, "mkt") : join(tmpdir(), "pub1-mkt");
 const SIZES = [[512, 384, "square"], [512, 512, "square"], [200, 120, "square"], [1280, 720, "banner"], [1280, 550, "banner"]];
 const MIME = { ".html":"text/html", ".js":"text/javascript", ".css":"text/css", ".png":"image/png",
   ".jpg":"image/jpeg", ".jpeg":"image/jpeg", ".gif":"image/gif", ".svg":"image/svg+xml", ".webp":"image/webp",

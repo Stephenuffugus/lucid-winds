@@ -13,6 +13,13 @@
      F  no visible portal exit and no visible Sunbeam or Lucid Winds copy
      G  the recipe reached a round-over screen
      H  no horizontal overflow at 375x667; every tap target measured in rendered px
+     I  every game-sized <canvas> is actually rendered (not display:none, not zero size)
+
+   ⛔ I exists because Bloom Breaker and Garden Guard PASSED A-H with their playfield
+   hidden: the builder's exit sniffer had read `<canvas id="game">` out of an HTML
+   comment and hidden it. The game over card is DOM, so the round still "ended", and
+   the marketing pass photographed a black table. A green gate is not a look, and a
+   gate that cannot see the game is not a gate.
 
    ⛔ The ZIP is served from its OWN root, on its own port, with nothing else on the
    origin. That is the whole point: an absolute `/music-unlocks.js` resolves against the
@@ -26,7 +33,8 @@ import { fileURLToPath, pathToFileURL } from "url";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const SHOTS = join(REPO, "publish", "shots");
-const TMP = "/tmp/claude-1000/-workspaces-lucid-winds/948f2b8c-5802-4123-8a71-bee14fc0e11f/scratchpad/pub1/verify";
+import { tmpdir } from "os";
+const TMP = process.env.PUB_TMP || join(tmpdir(), "pub1-verify");
 const MIME = { ".html":"text/html", ".js":"text/javascript", ".mjs":"text/javascript", ".css":"text/css",
   ".png":"image/png", ".jpg":"image/jpeg", ".jpeg":"image/jpeg", ".gif":"image/gif", ".svg":"image/svg+xml",
   ".webp":"image/webp", ".json":"application/json", ".mp3":"audio/mpeg", ".ogg":"audio/ogg", ".wav":"audio/wav",
@@ -243,9 +251,28 @@ const seen = await page.evaluate(() => {
   return {
     exit: text.filter(t => /sky wolf studio arcade|all sky wolf games|all games|^[◄←<\s]*arcade\s*$|back to sky wolf/i.test(t)),
     brand: text.filter(t => /lucid winds/i.test(t)),
+    /* F1 only sees the END screen. Blooming Words keeps its exit in a menu that is closed
+       by then, so it passed with "← All Sky Wolf games" alive one tap away. Every element
+       whose OWN text is a portal exit must ITSELF be display:none (our CSS hides the
+       button, not its menu), whatever screen is up. */
+    exitAnywhere: [...document.querySelectorAll("button,a,[onclick],[role=button],.btn,div,span,li")]
+      .filter(e => ![...e.children].some(c => /sky wolf|arcade|all games/i.test(c.textContent || "")))
+      .filter(e => /sky wolf studio arcade|all sky wolf games|all games|^[◄←<\s]*arcade\s*$|back to sky wolf/i.test((e.textContent || "").trim()))
+      .filter(e => getComputedStyle(e).display !== "none" && !(e.parentElement && e.parentElement.tagName === "BUTTON" && getComputedStyle(e.parentElement).display === "none"))
+      .map(e => (e.tagName + "#" + (e.id || e.className)) + " " + (e.textContent || "").trim().slice(0, 30)),
     econ: text.filter(t => /sunbeam|\bdew (?:drops?|currency)\b/i.test(t)),   /* not a bare "dew": the game is CALLED Dew Snip */
     music: !!document.getElementById("sws-music-art") || /unlocked a song/i.test(document.body.innerText || ""),
     overflowX: document.documentElement.scrollWidth > window.innerWidth + 1,
+    hiddenCanvas: (() => {
+      /* the PLAYFIELD is the largest canvas by attribute size; a small icon canvas inside
+         a closed menu is legitimately 0x0 and must not fail the build */
+      const cs = [...document.querySelectorAll("canvas")].filter(c => c.width >= 100 && c.height >= 100);
+      const big = cs.reduce((a, c) => (!a || c.width * c.height > a.width * a.height) ? c : a, null);
+      return cs.filter(c => { const r = c.getBoundingClientRect(), pv = c.parentElement && c.parentElement.getBoundingClientRect();
+        const selfHidden = getComputedStyle(c).display === "none" && pv && pv.width > 0 && pv.height > 0;
+        return selfHidden || (c === big && r.width === 0 && r.height === 0); })
+        .map(c => "#" + (c.id || c.className || "canvas") + " " + c.width + "x" + c.height + " display:" + getComputedStyle(c).display);
+    })(),
     under48: tap.map(e => { const r = e.getBoundingClientRect();
       return { id: e.id || e.className || e.tagName, w: Math.round(r.width), h: Math.round(r.height) }; })
       .filter(t => t.w < 48 || t.h < 48),
@@ -257,15 +284,21 @@ A(ours.length === 0, "A", `${ours.length} request(s) to our own domains: ${[...n
 A(bad.length === 0, "B", `${bad.length} own-file failure(s): ${[...new Set(bad)].slice(0, 4).join(" | ")}`);
 /* the browser's own favicon 404 shows up here too, and in --offline every blocked
    offsite request logs one. Neither is the game's. */
+/* the ad stack's own noise is not the game's: GameDistribution's stack tried to frame
+   google.com inside a report-only CSP and Chrome logged it as a console error. It is
+   non-deterministic (Picnic Panic gd failed on it once in twelve runs) and it is theirs. */
 const realErrs = errs.filter(e => !(browserNoise.length && /status of 404/.test(e)))
-                     .filter(e => !(offline && /Failed to load resource|ERR_FAILED|ERR_BLOCKED/.test(e)));
+                     .filter(e => !(offline && /Failed to load resource|ERR_FAILED|ERR_BLOCKED/.test(e)))
+                     .filter(e => !/report-only Content Security Policy/i.test(e));
 A(realErrs.length === 0, "E", `${realErrs.length} console error(s): ${[...new Set(realErrs)].slice(0, 3).join(" | ")}`);
 A(seen.exit.length === 0, "F1", `portal exit still visible: ${JSON.stringify(seen.exit.slice(0, 3))}`);
+A(seen.exitAnywhere.length === 0, "F1b", `portal exit alive on a closed screen: ${JSON.stringify(seen.exitAnywhere.slice(0, 3))}`);
 A(seen.brand.length === 0, "F2", `Lucid Winds copy on screen: ${JSON.stringify(seen.brand.slice(0, 3))}`);
 if (seen.econ.length) warn.push(`economy words still in visible copy: ${JSON.stringify(seen.econ.slice(0, 3))}`);
 A(!seen.music, "F3", "the music unlock card is in the build");
 A(!/lucid winds|sky wolf/i.test(seen.title), "F4", `brand still in <title>: ${seen.title}`);
 A(!seen.overflowX, "H1", "the page scrolls sideways at 375x667");
+A(seen.hiddenCanvas.length === 0, "I", `game canvas hidden in the build: ${seen.hiddenCanvas.join(", ")}`);
 if (recipe) {
   A(reached, "G", "the recipe did not reach a round-over screen");
   A(adBefore === 0, "D2", `__pubAd fired ${adBefore} time(s) BEFORE the round ended`);

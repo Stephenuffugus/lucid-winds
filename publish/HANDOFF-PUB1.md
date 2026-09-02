@@ -237,3 +237,83 @@ d477c8f6  step 5: the CrazyGames and Poki pitches, and the two replies
 
 Not deployed. Not pushed to main. `publish/QUEUE.md` is the document to read after this
 one; it carries the evidence for every number above.
+
+---
+
+## 9. Fable's review, 2026-09-02 evening
+
+Ran section 3 in full, one Chrome at a time, and looked at the pictures. The verdict:
+**"20 of 20 verified" was true by the gate and false by eye.**
+
+### What was wrong
+
+1. **Bloom Breaker and Garden Guard shipped with the playfield hidden.** The exit-button
+   sniffer (2c) searched the whole document, found the HTML comment
+   `<!-- exit / cross-promo (only element that calls SWS_EXIT) -->` two lines under
+   `<canvas id="game">`, read "game" out of the markup, and both builds carried
+   `#game{display:none!important}`. The game-over card is DOM, so the recipe "reached the
+   round end", all eight assertions passed, and the marketing pass photographed a black
+   table and wrote it up as "honest, not flattering". The dark table in section 5 was
+   this bug. Fixed (BF10): the sniffer reads script bodies only and never hides a canvas.
+2. **Blooming Words kept its "← All Sky Wolf games" button alive.** Its wiring is
+   `$("#exitPortalBtn")`, the id regex refused the leading `#`, and assertion F1 only
+   looks at the end screen, where the menu is closed. Fixed (BF12) and gated (F1b).
+3. **The `feedback.js` inline-block strip (2a2) would delete a whole game.** It removed
+   ANY inline script naming feedback.js; vine-runner names it inside its 61 KB game
+   script. Not in the ten, but the builder runs over every game. Fixed (BF11): only
+   blocks under 2.5 KB are loaders; larger ones are left and their runtime load is
+   stubbed by 2a4.
+4. **Two games load their own code by absolute path** (burrow-bowl
+   `/satellites/critter-pal.js`, wild-wardens its expo bundle). 2a4 would stub those to
+   nothing and ship a blank game. The builder now prints `!! review:` when a stubbed
+   path is not one of our shell files. Not fixed further; neither is in the ten.
+5. **Four tools carried a hard-coded temp path from a dead session scratchpad**
+   (`pub_verify`, `marketing`, `scout`, `smoke_boot`). Now `os.tmpdir()` or `$PUB_TMP`.
+
+### The six risky changes, read cold
+
+| # | Verdict |
+|---|---|
+| 1 JS string-literal rewrite | Sound for the fleet. Dry run over all 84: every match is a shell file except the two in point 4. Now warned. |
+| 2 De-brand text pass | Script and style bodies really are cut out (odd indices of the split). No uppercase `<SCRIPT>` and no `>` inside attributes in the twelve, which are the two ways it could bite. |
+| 3 Runtime economy sweep | Correct and cheap on these games. Its `\bdonate\b` and `sunbeam` words would hide a help line that uses them innocently; none of the twelve does. Left as is. |
+| 4 prune_unreferenced | Conservative in the safe direction. Its gap: a folder built from a bare name (`DIR="img"; DIR+"/"+f`) or listed only in a `.txt`/`.csv`/atlas would be deleted, and a boot test only catches what one round loads. Only `og/` went from any of the twelve. |
+| 5 `[id*="feedback"]` | The only ids in the fleet containing "feedback" are Jimothy's own three. Safe today. |
+| 6 Recipes | Honest: touch and documented keys only, the lint holds, and every `-3end.png` I opened is a real round-over screen. |
+
+### Two new gates, each watched failing before it was trusted
+
+- **I** the largest canvas must be rendered. Failed on the stale `garden-td-gm.zip`
+  (`#game 375x667 display:none`), passes on the rebuild.
+- **F1b** any element whose own text is a portal exit must itself be `display:none`,
+  whatever screen is up. Failed on the stale `blooming-words-gd.zip`, passes on the rebuild.
+- Assertion E now ignores the ad stack's own report-only CSP notice (GameDistribution
+  framing google.com), which failed Picnic Panic once in twelve runs and is not ours.
+
+### The pictures
+
+- `CONTACT-SHEET.png`: Berry Vine, Petal Slice, Dew Snip, Picnic Panic, Garden Guard and
+  Pong sell at 200x120. Bloom Breaker's banner phone was a black box (the bug).
+  **Nova Bloom's "card art" is a 270x480 screenshot of an empty green grid**
+  (`portal-assets/thumbs/nova-bloom.jpg`); at 200x120 it is a dark rectangle with three
+  dots and will not sell at any size. It needs real card art before it goes anywhere.
+  Bubblenaut and Stop the Light wordmarks are chopped in the 4:3 and 5:3 crops, as said.
+- Round-end shots opened: Bloom Breaker, Bubblenaut, Jimothy, Hues. All real end screens.
+
+### The two pilots
+
+`publish/recipes/blooming-words.mjs` and `hues.mjs` written; both ZIPs rebuilt on the
+fixed builder and verified live. All twelve games are on one standard now.
+
+### The re-run
+
+All 24 game ZIPs plus the two Jimothy diet ZIPs rebuilt on the fixed builder and
+verified with the real SDK live, serially. Log in the session scratchpad
+(`pub1/full24.log`); the evidence is in `publish/shots/`.
+
+### Still Stephen's
+
+Nova Bloom card art. The text-free Bubblenaut and Stop the Light cards. The four
+un-losable games (section 6). Poki's exclusivity, which I checked against their live
+page: web exclusive, five years, Discord and YouTube Playables count as web, the
+non-exclusive door is a one-time flat fee. Opus had it right.

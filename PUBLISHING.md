@@ -8,7 +8,7 @@
 
 | Network | Contact | State | Next actor |
 |---|---|---|---|
-| GameDistribution (Azerion) | Sabina, s.sturzova@azerion.com | **Ten games + Jimothy built and verified, marketing at all five sizes done, reply written.** See `publish/QUEUE.md` and `publish/REPLY-GD.md`. | **Stephen**: dev account at gamedistribution.com (profile + payment details), create the game entry, send Fable the gameId, send `publish/REPLY-GD.md` |
+| GameDistribution (Azerion) | Sabina, s.sturzova@azerion.com | **Twelve games + Jimothy built and verified (Fable re-ran all 26 ZIPs on 2026-09-02 evening after finding two shipped with the playfield hidden; builder fixes BF10-12, see `publish/HANDOFF-PUB1.md` §9), marketing at all five sizes done, reply written.** ⚠️ Nova Bloom needs real card art before it goes anywhere. See `publish/QUEUE.md` and `publish/REPLY-GD.md`. | **Stephen**: dev account at gamedistribution.com (profile + payment details), create the game entry, send Fable the gameId, send `publish/REPLY-GD.md` |
 | GameMonetize | Marian, mentolatux@gamemonetize.com | Same, and Marian asked for **one game first**. Lead with Bloom Breaker; his mail says "not simple ones" and it has 60 levels, 24 powerups and a boss in 44 KB. `publish/REPLY-GM.md`. | **Stephen**: dev account at gamemonetize.com, game entry → gameId, send `publish/REPLY-GM.md` |
 | itch.io | — | Jimothy already live | more titles whenever |
 | CrazyGames | — | requirements read 2026-09-02, three titles chosen, submission text written | **Stephen**: `publish/PITCH-CRAZYGAMES.md`. ⛔ Needs a third builder target: their SDK, and a rival network's SDK inside the build is a third party ad system. |
