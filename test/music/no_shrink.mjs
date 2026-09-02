@@ -28,8 +28,12 @@ let anyDel = false;
 /* the only pre-existing files this build is TOLD to modify freely: the handoff (P0/P5 corrections) and the
    harness's own lock file, which changes on its own. Nothing else is exempt. */
 const EXEMPT = (f) => f === "HANDOFF-MUSIC.md" || f.startsWith(".claude/");
+/* a pre-existing file whose working copy is IDENTICAL to origin/main did not lose a line to this build: the change
+   already ships on main (it arrived by merge). Only files that differ from main are this build's to answer for. */
+const sameAsMain = (f) => sh("git diff --quiet origin/main -- " + JSON.stringify(f) + " && echo same").includes("same");
 for (const r of numstat) {
   if (!r.del || EXEMPT(r.file) || !preexisting(r.file)) continue;
+  if (sameAsMain(r.file)) { t("deletions in " + r.file + " already ship on main (merged, not mine)", true); continue; }
   anyDel = true;
   const diff = sh("git diff " + BASE + " -- " + JSON.stringify(r.file)).split("\n");
   const minus = diff.filter(l => l.startsWith("-") && !l.startsWith("---")).map(l => l.slice(1));
