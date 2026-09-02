@@ -636,3 +636,86 @@ Conduit, S1, P1, D1, T1, W1 Dewball}. Never two tasks on the same game.
 After each Opus task lands on the branch: tell Fable. Fable diffs it, runs the
 gates once more alone, looks at the screenshots, and pushes
 `add-sproing-jumper:main`.
+
+## PUB1 — the catalog, ready for the ad networks (overnight, needs nothing from Stephen)
+
+Added the evening of Sep 02. GameDistribution and GameMonetize replied in early
+August with intake steps; two ZIPs exist (Blooming Words, Hues); the next actor
+has been Stephen for a month (accounts, payment details, game IDs). This task
+makes everything else ready first, so his part stays fifteen minutes per network.
+
+```
+You are preparing the Sky Wolf Studio catalog for the HTML5 ad networks, in the
+lucid-winds repo, branch add-sproing-jumper. Nothing here needs the Director;
+he creates the network accounts later, and everything you make tonight must be
+ready the moment he hands over a game ID.
+
+Read first: PUBLISHING.md (the status board, the pilot, the verified SDK
+contracts), scripts/pub_build.py (all of it), DONE-LEDGER.md, HANDOFF.md, and
+the PUB1 section of HANDOFF-SEP02.md. Two ZIPs exist already (Blooming Words,
+Hues) with placeholder IDs; they are your reference for what "done" looks like.
+
+THE JOB, in order, one commit per numbered step:
+
+1. PICK TEN. From scripts/catalog.mjs (the one counter; never regex the
+   catalog) choose the ten strongest candidates for GameDistribution and
+   GameMonetize by these criteria, written down per game in publish/QUEUE.md:
+   openable (not dev-gated); self contained (no Firebase, no Leaflet, no CDN
+   fonts the ZIP cannot carry, zero external calls after the build pass); ZIP
+   under 20 MB; a win or round-over screen where the midroll can hook (a named
+   completeLevel, or the _sbCapEarn site the builder auto-hooks); plays at
+   375x667 with 48px targets; fun without the Sky Wolf economy. Exclude
+   Blooming Words and Hues (done), Jimothy (step 4), the 12 vendored games
+   (HANDOFF-MUSIC.md lists them), and the In Development tab. Rank them, say
+   why, and list what you rejected and why.
+
+2. BUILD TWENTY ZIPS. For each of the ten: python3 scripts/pub_build.py
+   satellites/<game> --target gd, then --target gm (placeholder ID; the
+   Director rebuilds with the real one). For EVERY ZIP: unzip to /tmp, serve
+   it, boot it headless in Chrome at 375x667, play one round to the win screen
+   with real pointer events, and assert: zero requests to any of our domains,
+   zero 404s of its own files, the SDK script tag present verbatim, the ad
+   adapter hooked (window.__pubAd defined and called once at the round end;
+   log the call), no console errors. Record each result in QUEUE.md with the
+   ZIP size. A game that fails is fixed in the BUILDER (scripts/pub_build.py),
+   never by hand editing a ZIP, and the fix is re-run on every ZIP built so
+   far.
+
+3. MARKETING SIZES. For each of the ten, the mandatory images at 512x384,
+   512x512, 200x120 and the optional 1280x720, 1280x550, in
+   publish/marketing/<game>/, rendered from the game's real art (the portal
+   thumb and the game's own assets; never a debug state, never a price or a
+   date baked into the image). Render a contact sheet of all fifty, OPEN it,
+   and write three things wrong in QUEUE.md before you fix them.
+
+4. JIMOTHY DIET. The source is satellites/stream-hop (404 MB as-is). Produce
+   publish/dist/stream-hop-diet-{gd,gm}.zip under 60 MB by dropping unused
+   decade art, alternate skins beyond the default set, and every music file
+   (the game must boot and play silent with no errors). Document exactly what
+   was dropped and prove it boots and plays a round headless, same assertions
+   as step 2.
+
+5. THE PITCHES. Write publish/PITCH-CRAZYGAMES.md and publish/PITCH-POKI.md:
+   their submission requirements as of today (read their developer docs; cite
+   the URL and the date read), which three of the ten fit each platform's
+   taste and why, and the submission text in the Director's voice (no dashes,
+   commas only; "Sky Wolf Studio", singular). Then write the two replies for
+   GameDistribution and GameMonetize as publish/REPLY-GD.md and
+   publish/REPLY-GM.md, fresh, saying the ZIPs and images are ready and asking
+   for nothing but the game entry.
+
+RULES: FILE FENCE: publish/**, scripts/pub_build.py, and the status board in
+PUBLISHING.md. Never edit a game under satellites/. Never push to main. git
+pull --rebase origin add-sproing-jumper before the first edit and before each
+commit; git add only the fence. Gates one at a time on this two core box.
+Every claim in QUEUE.md carries the command and its last line. Report: the
+ten, the twenty ZIP sizes, what failed and what you changed in the builder,
+the diet build size, and the exact three things the Director must do per
+network, naming the file to paste from.
+```
+
+**When Stephen is ready (fifteen minutes per network, any day):** create the
+developer account at gamedistribution.com, then gamemonetize.com, fill in
+payment details, create one game entry, copy the game ID, paste it to Fable.
+Fable rebuilds the ZIP with the real ID the same hour; Stephen uploads it and
+sends the reply from `publish/REPLY-GD.md` or `REPLY-GM.md`.
