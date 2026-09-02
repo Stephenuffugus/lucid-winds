@@ -28,8 +28,9 @@ export function loadFamilies(path = FAMILIES_PATH) {
   return out;
 }
 
-/* Resolve one folder name. Returns {kind:'game', card} | {kind:'family', key} | {kind:'none'} plus how. */
-function resolve(folder, cards, families) {
+/* Resolve one folder name. Returns {kind:'game', card} | {kind:'family', key} | {kind:'none'} plus how.
+   Exported so scripts/music_web_tier.mjs can map a track back to its source folder the same way. */
+export function resolve(folder, cards, families) {
   const nf = norm(folder);
   for (const c of cards) if (nf === norm(c.name) || nf === norm(c.dir) || nf === norm(c.id)) return { kind: "game", card: c, how: nf === norm(c.name) ? "exact" : "slug" };
   for (const key of Object.keys(families)) if (families[key].aliases.some(a => norm(a) === nf) || norm(families[key].name) === nf) return { kind: "family", key, how: "family" };
@@ -97,6 +98,15 @@ export function generate({ intake, existing = null, live = false, families = loa
                  "   passes against the host (HANDOFF-MUSIC section 6.4, 7). */\n" +
                  "window.LW_MUSIC_CATALOG = " + JSON.stringify(out, null, 1) + ";\n";
   return { catalog: out, source, unmapped, log };
+}
+
+/* shelf slug a folder lands on, or null. Used by the web tier to disambiguate same-named files in two folders. */
+export function shelfSlugFor(folder, families = loadFamilies(), cat = catalog()) {
+  const cards = cat.all.filter(g => g.dir || g.id).map(g => ({ name: g.name, dir: g.dir, id: g.id, cat: g.cat, key: g.dir || g.id }));
+  const r = resolve(folder, cards, families);
+  if (r.kind === "game") return r.card.key === "stream-hop" ? null : r.card.key;
+  if (r.kind === "family") return slugify(families[r.key].name);
+  return null;
 }
 
 export function readExisting(path) {

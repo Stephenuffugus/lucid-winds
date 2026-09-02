@@ -75,3 +75,18 @@ mutants, first run: 10 killed, 2 SURVIVED. Both survivors were decoration in the
   never ran. Added the scenario it exists for: hidden set with NO event delivered.
 `mutants: 12 killed, 0 survived, 0 invalid, of 12`
 `node --check music-unlocks.js` → ok. Source never references Audio, AudioContext, <audio, .play(, requestAnimationFrame.
+
+## P4 — Web tier + verify
+watch-it-fail: `node scripts/music_verify.mjs …` → `Cannot find module` (red)
+```
+web tier at /tmp/music-web/music/v1: 20 files, 0.2 MB   (transcoded 2, copied 18, skipped 0)     the 195k mp3 → 130k; the wav → mp3
+second run:                            20 files            (transcoded 0, copied 0, skipped 20)     idempotent
+verify http://127.0.0.1:8778: 20/20 ok                                                              green, with --local length check
+rm deepwell/deep-water-2.mp3 → MISS deepwell/deep-water-2.mp3 status 404 → 19/20 ok, 1 MISSING     red, exit 1
+web tier again → copied 1, skipped 19 → verify 20/20 ok                                             restored
+track pointed at a directory URL → MISS abduct-a-chameleon/ content-type "text/html; charset=utf-8" red, exit 1
+```
+a test I threw away: writing text into a file named .mp3 did NOT trip verify, because the server assigns content-type by
+extension and --local compared against the same fake. Not a hole in verify; a bad test. The directory-URL case is the real one.
+scripts/music_manifest.mjs gained two exports (resolve, shelfSlugFor) so the web tier maps a track to its source folder the
+same way the generator did; catalog gate still 35/35.
