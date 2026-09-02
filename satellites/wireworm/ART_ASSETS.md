@@ -1,5 +1,7 @@
 # WIREWORM, art asset list
 
+> Drive copy (the prompts, for the phone): https://docs.google.com/document/d/17Lbc2ZxoxsHZ03sjvCSUvRU0toSCcmPR4eGU5CQzK5s/edit  in 012Assets. This file is the source of truth; the Doc is regenerated from it.
+
 Written from the code in `satellites/wireworm/index.html` (3080 lines, 2026-09-02), not from the build notes. Every size below was computed by running the live `layoutModel` at 375x667 with the measured 64px header and 64px footer. Nothing in this file has been applied to the game; the game still draws every pixel procedurally.
 
 ## What the game is

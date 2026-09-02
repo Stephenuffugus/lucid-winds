@@ -1,5 +1,7 @@
 # SIEGE OF ONE, ART_ASSETS.md
 
+> Drive copy (the prompts, for the phone): https://docs.google.com/document/d/1N3vnhf9XX8WL8vJn1O_TFq7u7Ix-IKgXr81oJSwWVco/edit  in 012Assets. This file is the source of truth; the Doc is regenerated from it.
+
 Art list for `satellites/siege/index.html`, written from the code as it stands (4023 lines,
 read in full on 2026-09-02). Every size below is measured from `laneMetrics()` and the CSS,
 not from the build notes. Nothing here is invented: every sheet maps back to a draw function
@@ -36,7 +38,7 @@ one body touching cell 0 ends the run.
   `clamp(190px, 30vh, 340px)` = **200px in combat** (line 134). Build bar 150px, combat pad 81px,
   the watch board takes the rest (305px build, 321px combat, one column because the panel grid is
   `minmax(260px, 1fr)`). Cell width `cw = 375 / 30 = 12.5px`. Body height
-  `uh = max(40, min(110, min(laneH x 0.42, cw x 6.5)))` (line 2051) = **62px in build, 81px in
+  `uh = max(40, min(110, min(laneH x 0.42, cw x 6.5)))` (line 2050) = **62px in build, 81px in
   combat**; body width `uh / 1.35` = **46px build, 60px combat**; the hero is `uh x 1.04` =
   **84px tall**. The wall prop is `max(18, round(cw x 1.35))` = **18px wide** and
   `round(uh x 1.18)` = **73px / 96px tall**. The sky band is the top 34% of the strip (50px build,
@@ -63,8 +65,8 @@ one body touching cell 0 ends the run.
 
 - **S01, S02, S03, S04, S05 (bodies):** one function. `sil(type, w, h, colour)` line 1995 returns
   an `<svg>` string and is the ONLY place a body is drawn; it is called from `drawEntities()` at
-  lines 2111 (enemies, 46x62 / 60x81) and 2132 (hero, 60x84), from `drawBoard()` line 2220 (roster
-  pips, 22x30 or 32x44 by attribute) and from `drawNotes()` line 2281 (briefing, 18x25). PATCH:
+  lines 2110 (enemies, 46x62 / 60x81) and 2131 (hero, 60x84), from `drawBoard()` line 2219 (roster
+  pips, 22x30 or 32x44 by attribute) and from `drawNotes()` line 2280 (briefing, 18x25). PATCH:
   make `sil()` return `<i class="spr spr-TYPE" style="width:Wpx;height:Hpx"></i>` with the PNG as
   a CSS background, and widen six selectors from `svg` to `svg, .spr`: `.ent svg` 233,
   `.ent.lunge>svg` 267, `.ent.vault>svg` 269, `.pip svg` 107 and 327, `#pips.roomy .pip svg` 109,
@@ -80,11 +82,11 @@ one body touching cell 0 ends the run.
   blue, burning orange, else red). PATCH: append one `<i class="st st-burn">` per active status
   inside the `.ent` node in `drawEntities()`, toggled from `e.burns.length`, `e.shield`, `e.holdT`
   and `G.traps[e.cell].type === 'pit'`; positioned over the body with CSS.
-- **S07 (lane traps):** `drawTraps()` line 2066, the `node.innerHTML` at lines 2096 to 2098 builds
+- **S07 (lane traps):** `drawTraps()` line 2066, the `node.innerHTML` at lines 2095 to 2097 builds
   `trapIcon(t.type, 18, 'currentColor')` at 18x18 inside `.trap .g` (line 242). PATCH: swap the
   18px icon for a `.prop` background at `round(cw x 3.5)` = **44px** square (bodies already
   overlap cells, props may too), keep the `.lv` dots or bake level into the cell. The wall is the
-  exception: `.wall-body` (line 2093, CSS 259) is already an 18x73/96 box, so its two states (full,
+  exception: `.wall-body` (line 2092, CSS 259) is already an 18x73/96 box, so its two states (full,
   `.cracked` at 67% hits) become two `background-image` rules and the `.wbar` stays. The action
   classes `.bite .snap .recoil .flare .chew` (lines 250 to 281) keep working on the new element.
 - **S08 (lane backdrop):** all CSS, zero JS. `#lanebox` background stack lines 146 to 163 (sky,
@@ -94,9 +96,9 @@ one body touching cell 0 ends the run.
   `#lanebox:before` line 166 (crenellated lip, 9px) becomes a seamless strip. `#lane:after` line
   190 (torch glow and cold far end) and `.ent:after` line 236 (contact shadow) are soft alpha
   gradients and STAY CSS, magenta cutout cannot carry them. `#gateglow` line 229 warms with
-  `drawHUD()` line 2388 as the front rank crosses cell 8; also stays CSS.
+  `drawHUD()` line 2387 as the front rank crosses cell 8; also stays CSS.
 - **S09 (HUD and controls):** `drawShop()` line 2353 builds seven `.shopbtn` (64x64, line 296)
-  with `trapIcon(k, 26)` at 26x26 and the DEEPEN text glyph `⇑` at 20px (line 2362, the only text
+  with `trapIcon(k, 26)` at 26x26 and the DEEPEN text glyph `⇑` at 20px (line 2361, the only text
   glyph on the shelf). `#pad` buttons lines 462 to 464 are text arrows and `⚔` at 24 to 26px on
   98x64 / 147x64 plates. HUD stats lines 389 to 391 are text only (no icons exist). Timer ring is
   an inline SVG at line 456 driven by `drawHUD()` line 2381. All drop in as `background-image`
@@ -107,7 +109,7 @@ one body touching cell 0 ends the run.
   badges would be prepended by `drawPips()` line 2316 where the `.mut` span is built.
 - **S11 (screens):** `.sheet` 330, `.card` 336, `.bigbtn` 362, `.ghostbtn` 364, `.split .half` 353,
   `.opt .sw` 369, `.dispatch` 372. Five sheets exist: `#titlesheet` 467, `#scoresheet` 483,
-  `#oversheet` 499 (one sheet for both endings, title text set at line 2869: THE GATE HELD or THE
+  `#oversheet` 499 (one sheet for both endings, title text set at line 2868: THE GATE HELD or THE
   GATE FELL), `#optsheet` 517, `#logsheet` 531. Art drops in as `background-image` on `.card`, on
   the two button classes and on `#ovtitle` via a class toggled in `endRun()` line 2862.
 - **S12 (fx):** `playEvents()` line 2603 is the switchboard. `spawnFloat()` 2567 (rising text),
@@ -118,8 +120,8 @@ one body touching cell 0 ends the run.
 
 | id | what it is | where it draws | in-game px at 375x667 | cells | pri |
 |---|---|---|---|---|---|
-| S01 | Bodies, static: 8 enemies, marshal, hero x3 | `sil()` 1995 via drawEntities 2111/2132, drawBoard 2220, drawNotes 2281 | lane 46x62 build / 60x81 combat, hero 60x84; roster 32x44 or 14x14; notes 18x25 | 12 (3x4) | 1 |
-| S02 | Hero animation set | drawEntities 2127 to 2137, playEvents 2614 to 2621 | 60x84 | 20 (4x5) | 2 |
+| S01 | Bodies, static: 8 enemies, marshal, hero x3 | `sil()` 1995 via drawEntities 2110/2131, drawBoard 2219, drawNotes 2280 | lane 46x62 build / 60x81 combat, hero 60x84; roster 32x44 or 14x14; notes 18x25 | 12 (3x4) | 1 |
+| S02 | Hero animation set | drawEntities 2126 to 2136, playEvents 2614 to 2621 | 60x84 | 20 (4x5) | 2 |
 | S03 | Runner, brute, shielded: walk, hit, die, special | drawEntities 2101 | 60x81 | 24 (3x8) | 2 |
 | S04 | Sapper, healer, swarm: walk, hit, die, special | drawEntities 2101 | 60x81 | 24 (3x8) | 3 |
 | S05 | Flyer, warden, marshal: walk, hit, die, special | drawEntities 2101 | 60x81 | 24 (3x8) | 3 |
@@ -150,21 +152,21 @@ screen every second of both phases.
 3. **The sword swing has no visual.** `'swinghit'` (line 2625) is haptic only; `'swingmiss'`,
    `'step'`, `'blocked'`, `'heal'`, `'shield'`, non boss `'spawn'` and non boss `'kill'` are not
    handled by `playEvents()` at all. The only swing feedback is `scale(1.14)` on the hero node
-   for two ticks (`hitFlash`, line 2137). S02 and S12 exist to fix that.
+   for two ticks (`hitFlash`, line 2136). S02 and S12 exist to fix that.
 4. **The ballista fires nothing.** `'bolt'` (line 2612) only retrigs `.recoil` on the trap; no
    projectile is drawn. The longbow at least gets a 2px line (`arrowFX`). S12 has both.
 5. **Hero levels 2, 3 and 4 have no visual.** Only the float text (LEVEL 2 CLEAVE and so on,
    line 2615) and, at level 5, a recolour from `E8703A` to `FFD76A`. Colour only, so it breaks
    the file's own shape law. S01 gives the level 3 hero a slung bow and the level 5 hero a longer
    blade so the states differ by silhouette.
-6. **The snare snap animation can never be seen.** `enterCell()` line 1325 sets
+6. **The snare snap animation can never be seen.** `enterCell()` line 1327 sets
    `s.traps[cell] = null` on the same tick it emits `'snare'`, so `snareSnapFX()` retrigs a node
    that `drawTraps()` removes before the next paint. Same for the data model: a snare with
-   `used: true` is unreachable (`trapNeedsRepair` line 1133 checks it, nothing can set it and
+   `used: true` is unreachable (`trapNeedsRepair` line 1132 checks it, nothing can set it and
    survive). S07 draws the snap frame anyway; wiring it needs the node kept for 260ms.
-7. **Pits have no visual event.** `'pit'` (line 2611) is sound only; a body in a pit looks exactly
+7. **Pits have no visual event.** `'pit'` (line 2610) is sound only; a body in a pit looks exactly
    like a body on flagstones. S06 has the pit lip overlay, S12 the fall dust.
-8. **No pause screen exists.** `visibilitychange` (line 2793) sets `UI.paused` and `loop()` just
+8. **No pause screen exists.** `visibilitychange` (line 2814) sets `UI.paused` and `loop()` just
    keeps calling `render()`; nothing is drawn. **No how to play screen exists** either; the
    tutorial is the briefing panel (`drawNotes()` line 2271) on waves 1 to 3. Neither is given a
    sheet here because neither is in the code; if a pause overlay is added it should reuse the S11
@@ -266,7 +268,7 @@ Even spacing, one figure per cell, nothing touching cell edges, no text anywhere
 
 ## S02, Hero animation set
 
-**PATCH-REQUIRED wiring:** `drawEntities()` lines 2127 to 2137 builds the hero once and only moves
+**PATCH-REQUIRED wiring:** `drawEntities()` lines 2126 to 2136 builds the hero once and only moves
 it. Strips: `art/hero/walk.png` (4 frames) as `steps(4)` while `G.player.moveT` was reset this
 tick; `swing.png` (3 frames) retrigged on `'swinghit'` and `'swingmiss'` in `playEvents()`;
 `cleave.png` on `'swinghit'` when `G.player.lvl >= 2`; `bow.png` (2 frames) on `'arrow'` (line
@@ -274,7 +276,7 @@ tick; `swing.png` (3 frames) retrigged on `'swinghit'` and `'swingmiss'` in `pla
 (line 2614); `win.png` for the THE GATE HELD sheet. The gold row is the level 5 skin, swapped
 where the node is already rebuilt (line 2619). Hero draws at 60x84 in combat.
 
-**Shape law:** the hero is never hurt (enemies walk past him, line 1421 onward) so there is no
+**Shape law:** the hero is never hurt (enemies walk past him, line 1413 onward) so there is no
 hurt or death frame; do not draw one. Every frame keeps the backward lean and the trailing cloak
 so he stays findable in a crowd. The swing must be a visible arc, the game currently shows
 nothing for it.
@@ -316,8 +318,8 @@ Even spacing, one figure per cell, nothing touching cell edges, no text anywhere
 under "How art drops in". Per body: `art/enemies/<type>-walk.png` (4 frames), `<type>-hit.png`,
 `<type>-die.png` (2 frames), `<type>-special.png`. In game 46x62 build, 60x81 combat. The
 `'wallhit'` lunge (`chewFX()` line 2594, `.ent.lunge` line 267) is the brute special. The
-`'shield'` event (line 1236, currently silent) is the shielded special. The CROWBARS modifier
-(line 1278) turns runners into sappers, which is the runner special.
+`'shield'` event (line 1235, currently silent) is the shielded special. The CROWBARS modifier
+(line 1277) turns runners into sappers, which is the runner special.
 
 **Shape law:** walk cycles keep each silhouette's identity in every frame (the runner never
 stands upright, the brute never lifts its arms above the shoulder, the shielded never lowers the
@@ -356,9 +358,9 @@ Even spacing, one figure per cell, nothing touching cell edges, no text anywhere
 ## S04, Foot soldiers B: sapper, healer, swarm
 
 **PATCH-REQUIRED wiring:** as S03. The sapper special is the `'sap'` removal (`removeTrap()` line
-1219, `e.sapped`); the healer special is the `'heal'` event (line 1533, currently silent); the
+1219, `e.sapped`); the healer special is the `'heal'` event (line 1532, currently silent); the
 swarm special is the `'kill'` of one of its five bodies (each swarm body is its own entity, line
-1267, so the swarm sprite is really one vermin drawn five times, staggered by `moveT`). Files as
+1266, so the swarm sprite is really one vermin drawn five times, staggered by `moveT`). Files as
 S03. In game 46x62 build, 60x81 combat.
 
 **Shape law:** the sapper stays stooped with the satchel always on the left hip. The healer's
@@ -401,7 +403,7 @@ Even spacing, one figure per cell, nothing touching cell edges, no text anywhere
 **PATCH-REQUIRED wiring:** as S03. Flyers are `flying: true` (line 682) and skip every ground
 trap, so the flyer's "walk" is a wing beat and it must hover above the floor line (the engine
 still bottom anchors it, so leave the hover height inside the cell). The warden special is
-`'wallhit'` with `'smash'` (line 1436, `spawnFloat` SMASH at line 2601). The marshal special is
+`'wallhit'` with `'smash'` (line 1435, `spawnFloat` SMASH at line 2601). The marshal special is
 the rally (`rallied()` line 1333, currently no visual). Boss cells are tinted rose D2A0A0. Files
 as S03. In game 46x62 build, 60x81 combat.
 
@@ -445,9 +447,9 @@ Even spacing, one figure per cell, nothing touching cell edges, no text anywhere
 
 **PATCH-REQUIRED wiring:** see "How art drops in" above; one `<i class="st st-X">` per status
 appended inside the `.ent`, positioned over the body. Sources: `e.burns.length` 1 to 3 (line
-1316), `e.shield` (line 1234), `e.holdT` (snared, line 1327), pit when
+1316), `e.shield` (line 1233), `e.holdT` (snared, line 1326), pit when
 `G.traps[e.cell].type === 'pit'` and not flying, `'heal'` event, the marshal's rally
-(`rallied()` line 1333), IRONHIDE (`hasMut(s,'iron')` line 1277), the death puff on the new
+(`rallied()` line 1333), IRONHIDE (`hasMut(s,'iron')` line 1276), the death puff on the new
 `.die` class, and the hp bar (`.hpbar` line 239, 30x4, fill `C8563A`, shield `7FB3D5`, burning
 `E8703A`). Files: `art/status/burn1.png` to `burn3.png`, `shield.png`, `shield-break.png`,
 `snare.png`, `pit.png`, `heal1.png`, `heal2.png`, `rally.png`, `ironhide.png`, `puff1.png` to
@@ -488,10 +490,10 @@ Even spacing, one object per cell, nothing touching cell edges, no text anywhere
 
 ## S07, Lane trap props (six traps, four states each)
 
-**PATCH-REQUIRED wiring:** `drawTraps()` lines 2096 to 2098, the 18x18 `trapIcon()` becomes a
+**PATCH-REQUIRED wiring:** `drawTraps()` lines 2095 to 2097, the 18x18 `trapIcon()` becomes a
 44x44 `.prop` background, bottom anchored at `bottom:2px` like today. The wall keeps its own
-`.wall-body` box (18x73 build, 18x96 combat, line 2093) and its `.wbar` hp bar; the `.cracked`
-class (line 262) becomes the second wall image. Level: `t.lvl` 1 to 3 (line 2095 draws `••`
+`.wall-body` box (18x73 build, 18x96 combat, line 2092) and its `.wbar` hp bar; the `.cracked`
+class (line 262) becomes the second wall image. Level: `t.lvl` 1 to 3 (line 2094 draws `••`
 dots); the level 3 cell is baked art so depth reads by shape. Action classes retrigged by
 `playEvents()`: `.bite` on `'spike'` 2623, `.recoil` on `'bolt'` 2612, `.flare` on `'brazier'`
 2610 (plus the constant `.brz` flicker line 282), `.chew` on `'wallhit'` 2608, `.snap` on
@@ -593,8 +595,8 @@ Even spacing, nothing touching panel edges, no text anywhere.
 **DROP-IN wiring:** `#hud` line 31 stats (`#wavev`, `#scrapv`, `#bladev`, lines 389 to 391, text
 only today, 19px numerals with 11px labels), `.iconbtn` 48x48 line 36 (`#optbtn` gear,
 `#exitbtn` cross, lines 393 and 394), `.shopbtn` 64x64 line 296 with `.on` line 301 (selected)
-and `.broke` line 302 (dimmed), the seven shop icons at 26x26 from `drawShop()` line 2359 and
-the DEEPEN glyph line 2362, `#timer` 48x48 ring line 456 (arc driven at line 2381), `.tbtn`
+and `.broke` line 302 (dimmed), the seven shop icons at 26x26 from `drawShop()` line 2358 and
+the DEEPEN glyph line 2361, `#timer` 48x48 ring line 456 (arc driven at line 2381), `.tbtn`
 150x48 line 306 with `.go` line 308, `.padbtn` 98x64 line 317 and `#atk` 147x64 line 320 with
 `.held` line 321 and `.urge` pulse line 271, `#cdbar` 3px line 322 (see note 2), `#hint` line 313.
 Files: `art/ui/stat-wave.png`, `stat-scrap.png`, `stat-blade.png`, `btn-gear.png`, `btn-exit.png`,
@@ -652,7 +654,7 @@ Even spacing, one object per cell, nothing touching cell edges, no text anywhere
 `.meter.boss` 9px line 99 with fill line 100, `.pip` chip line 105 (38px, or 52px `roomy` at line
 108; see note 1 about the line 325 clobber), `.pip.boss` line 114, `.kitchip` 30px line 117 (44px
 roomy line 111), `.mut` 9px chip line 359 built in `drawPips()` line 2316 for the six `MUTATORS`
-(line 703: THE TIDE, IRONHIDE, CROWBARS, NIGHT MARCH, THE CHOIR, STONEBREAKERS), `#toast` line
+(line 702: THE TIDE, IRONHIDE, CROWBARS, NIGHT MARCH, THE CHOIR, STONEBREAKERS), `#toast` line
 374, `#boardfade` 34px line 65. Files: `art/board/panel.png`, `panel-brief.png`, `meter-track.png`,
 `meter-fill.png`, `meter-boss.png`, `pip.png`, `pip-boss.png`, `kitchip.png`, `toast.png`,
 `mut-tide.png`, `mut-iron.png`, `mut-crow.png`, `mut-march.png`, `mut-choir.png`, `mut-stone.png`,
@@ -748,10 +750,10 @@ Even spacing, nothing touching panel edges, no text anywhere.
 `EL.lane` exactly the way `spawnFloat()` line 2567 does (750ms self removal). Slash and cleave on
 `'swinghit'` 2625 at the hero cell; bolt on `'bolt'` 2612 travelling from `ev.a` to `ev.b` (the
 engine has no projectile today); arrow on `'arrow'` 2613 replacing the 2px `arrowFX()`; hit spark
-on `'hit'` 2607; spike bite on `'spike'` 2623; pit dust on `'pit'` 2611; fire burst on
-`'brazier'` 2610; wall dust and SMASH on `'wallhit'` 2608 (`chewFX()` 2594, `smash` flag);
-rubble on `'traplost'` wall 2620 (WALL DOWN float and `shake()`); level up burst on `'herolvl'`
-2614; breach flash on `'breach'` 2629; alarm flare on `'alarm'` 2624 alongside `#gateglow`; snare
+on `'hit'` 2607; spike bite on `'spike'` 2623; pit dust on `'pit'` 2610; fire burst on
+`'brazier'` 2611; wall dust and SMASH on `'wallhit'` 2608 (`chewFX()` 2594, `smash` flag);
+rubble on `'traplost'` wall 2621 (WALL DOWN float and `shake()`); level up burst on `'herolvl'`
+2614; breach flash on `'breach'` 2630; alarm flare on `'alarm'` 2624 alongside `#gateglow`; snare
 snap on `'snare'` 2609. Files: `art/fx/slash1.png`, `slash2.png`, `cleave.png`, `bolt.png`,
 `arrow.png`, `spark.png`, `bite.png`, `pitdust.png`, `fire.png`, `walldust.png`, `smash.png`,
 `rubble.png`, `levelup.png`, `breach.png`, `snap.png`. Drawn at 40 to 80px in the lane; the bolt

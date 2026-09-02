@@ -1,5 +1,7 @@
 # BLACKOUT art asset list
 
+> Drive copy (the prompts, for the phone): https://docs.google.com/document/d/1Gdvz4lAN8ZddYucbauOU8Y0uEc5SXj_RpuammkttffY/edit  in 012Assets. This file is the source of truth; the Doc is regenerated from it.
+
 Written from `satellites/blackout/index.html` as it is on branch `add-sproing-jumper`
 (3857 lines, 176 KB), not from what the docs hoped it would be. Every size below is
 measured from the stylesheet or the SVG strings at a 375x667 CSS px viewport.

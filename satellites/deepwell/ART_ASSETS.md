@@ -1,5 +1,7 @@
 # DEEPWELL art asset list
 
+> Drive copy (the prompts, for the phone): https://docs.google.com/document/d/1hvLhYpwCUFrPbenZG8Tl1DNmuZYcu9No6H8i1csYr1g/edit  in 012Assets. This file is the source of truth; the Doc is regenerated from it.
+
 Written 2026-09-02 from the code in `satellites/deepwell/index.html` (3464 lines), not from
 the docs. Every size below was measured from the CSS and the JS at 375x667. Every entity
 below exists in the code; nothing is invented, and the last section proves nothing is missed.

@@ -1,5 +1,7 @@
 # CONDUIT, art asset list
 
+> Drive copy (the prompts, for the phone): https://docs.google.com/document/d/1AMQ94G4TGKN1QUdwmTdAwP2FpIT35RRlHJw0t9U2FJY/edit  in 012Assets. This file is the source of truth; the Doc is regenerated from it.
+
 Game: `satellites/conduit/index.html` (one file, canvas 2D, no build step, no art folder today).
 Written 2026-09-02 from the code at 3131 lines, every draw function read, every screen shot opened.
 Sizes below are measured from `CFG.ui`, `CFG.ferro` and the camera maths, given at 375x667 portrait.

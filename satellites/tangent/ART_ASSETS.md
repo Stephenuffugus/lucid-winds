@@ -1,5 +1,7 @@
 # TANGENT art asset list
 
+> Drive copy (the prompts, for the phone): https://docs.google.com/document/d/1ATUBSEX-5lWBFezJNvkScVYa2N4kUbpLI6B2Jtg8uAM/edit  in 012Assets. This file is the source of truth; the Doc is regenerated from it.
+
 Written 2026-09-02 from the shipped code at `satellites/tangent/index.html` (2106 lines, 100,926 bytes), the shots in `docs/shots/`, and the design docs. Every size below was measured by running the game's own camera functions headless at 375x667 (DPR 2), not estimated. Director's brief: "tangent is getting fun but needs a lot more. Everything is very plain and boring."
 
 ## What the game is

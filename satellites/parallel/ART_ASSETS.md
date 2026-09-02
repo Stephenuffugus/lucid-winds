@@ -1,5 +1,7 @@
 # PARALLEL: art asset list
 
+> Drive copy (the prompts, for the phone): https://docs.google.com/document/d/1nNi-NyYL1bts9pLvUVBYWORxSNY3OHaqanYe6zbi3II/edit  in 012Assets. This file is the source of truth; the Doc is regenerated from it.
+
 Written from the code in `satellites/parallel/index.html` (2778 lines, single file, Sep 02 2026 copy), not from the build notes.
 
 ## What the game is
