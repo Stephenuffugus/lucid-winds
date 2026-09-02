@@ -90,3 +90,28 @@ a test I threw away: writing text into a file named .mp3 did NOT trip verify, be
 extension and --local compared against the same fake. Not a hole in verify; a bad test. The directory-URL case is the real one.
 scripts/music_manifest.mjs gained two exports (resolve, shelfSlugFor) so the web tier maps a track to its source folder the
 same way the generator did; catalog gate still 35/35.
+
+## P5 — The two shared edits (which turned out to be four files plus 66 stamps)
+watch-it-fail: sw gate `5 ok, 4 failed` (no s-w-r rule, no guard) · inject gate `24 ok, 18 failed` (window.SWSMusic absent on all 6 natives)
+what P0 did not know, found here:
+- `/play/` pages register THEIR OWN worker, `/play/sw.js?v=3` (`play/shell.js:857`), and the more specific scope wins, so the
+  root worker's guard never protects a native. `/play/sw.js` is network-first and `c.put()`s every 200 it fetches: the unedited
+  worker DID cache `/music/v1/….mp3` in the harness. It now carries the same guard; `CACHE` bumped v3→v4 per its own header;
+  registration bumped `?v=3`→`?v=4`.
+- `play/shell.js` is loaded as `shell.js?v=26` by 65 pages and `?v=30` by one (pre-existing drift). Bumped all 66 to `?v=31`.
+- LAW 10 as first written forbade any modification of a pre-existing line, which forbids stamp bumps, which forbids shipping
+  the edit. Made precise: stamp-only modifications are allowed and `no_shrink` verifies the diff is stamp-only.
+- sw.js: the `||` clause I planned would modify a line; a NEW s-w-r block (the file's own idiom, word-banks.js already copies
+  the music-tracks block verbatim) is a pure insert. +25 lines. Guard line above the static rule. `node --check` ok.
+- play/shell.js: +14 lines (initMusicUnlocks + its call after initInstall, outside initMusic's embedded early-return).
+gates:
+```
+sw gate: 15 ok, 0 failed        (root + play workers; the "add mp3 to the static regex" mutation still cannot cache /music/)
+no_shrink gate: 95 ok, 0 failed (66 html + shell.js + play/sw.js diffs all stamp-only; 12 vendored sha256 unchanged)
+inject gate: 42 ok, 0 failed    (chess c4 battleship klondike spider freecell × 2 boots; zero NEW console errors)
+```
+a red that named the harness (LAW 3): after the shell edit, chess passed and five natives failed with a 404 and an empty
+ledger. Trace: NO request for /music-catalog.js ever reached the page. /play/sw.js calls clients.claim() on activate and takes
+over the page mid-load; fetches made by the worker are invisible to puppeteer's request interception, so the fixture catalog
+was never served and the real server 404ed. Chess only won the race. Fix in the TEST: setBypassServiceWorker(true). The worker
+itself is gated in sw.mjs. In production the file exists and the worker fetching it is correct.

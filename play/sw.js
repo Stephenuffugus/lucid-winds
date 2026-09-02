@@ -28,7 +28,7 @@
    (304 when unchanged, so it costs headers, not bytes). Subresources keep the
    plain fetch: they are ?v-stamped, and rebuilding no-cors requests from a
    bare URL would break them. */
-var CACHE = "sws-play-v3";
+var CACHE = "sws-play-v4";
 
 /* Never let a hung request hang the page. fetch() only rejects on a hard
    failure; a half-connected phone leaves it pending forever, and a pending
@@ -91,6 +91,9 @@ self.addEventListener("activate", function (e) {
 self.addEventListener("fetch", function (e) {
   var req = e.request;
   if (req.method !== "GET") return;
+  // /music/ (the soundtrack audio): never cached here. This worker caches every 200 it
+  // fetches, and hundreds of megabytes of audio would evict the shells from the quota.
+  if (new URL(req.url).pathname.indexOf("/music/") === 0) return;   // HANDOFF-MUSIC LAW 5: audio streams, never cached
   // Pages (top-level + iframe navigations) must revalidate with the server.
   // A navigate Request can't carry RequestInit, so refetch by URL; if the
   // host answers with a redirect, re-issue it as a real one — a navigation

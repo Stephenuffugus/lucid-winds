@@ -252,6 +252,25 @@ self.addEventListener('fetch', function(event) {
     return;
   }
 
+  // ── music-unlocks.js + music-catalog.js: stale-while-revalidate (2026-09-02, HANDOFF-MUSIC P5) ──
+  // The shared soundtrack-unlock module and its generated catalog load
+  // WITHOUT a ?v= stamp from every game, so they ride the same rule as
+  // music-player.js: cached instantly, refreshed in the background.
+  if (url.pathname === '/music-unlocks.js' || url.pathname === '/music-catalog.js') {
+    event.respondWith(
+      caches.open(ASSET_CACHE).then(function(cache) {
+        return cache.match(event.request).then(function(cached) {
+          var refresh = fetch(event.request).then(function(response) {
+            if (response && response.ok) cache.put(event.request, response.clone());
+            return response;
+          });
+          return cached || refresh;
+        });
+      })
+    );
+    return;
+  }
+
   // ── music-tracks.js: stale-while-revalidate ──
   // Shared soundtrack manifest, loaded WITHOUT a ?v= stamp by both index.html
   // and the portal. Same reasoning as word-banks.js below: serve cached
@@ -289,6 +308,12 @@ self.addEventListener('fetch', function(event) {
     );
     return;
   }
+
+  // ── /music/ (the soundtrack audio): NEVER cached by this worker. Hundreds of
+  //    megabytes of audio would evict the app from the cache quota. It streams
+  //    from the network, one file at a time. Sits ABOVE the static rule so that
+  //    adding mp3 to that regex can never quietly cache it.
+  if (url.pathname.indexOf('/music/') === 0) return;   // HANDOFF-MUSIC LAW 5: audio streams, never cached
 
   // ── Static assets (CSS, images, fonts): cache-first ──
   // CSS added 2026-06-29 — shared.css (~315 KB) + play/shell.css are

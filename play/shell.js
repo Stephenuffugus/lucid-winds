@@ -839,6 +839,19 @@
   }
 
   // ════════════════════════════════════════════════════════════════════
+  // SOUNDTRACK UNLOCKS (2026-09-02, HANDOFF-MUSIC P5). Loads the shared
+  // /music-unlocks.js and tells it which game this is. Deliberately NOT
+  // inside initMusic(): that returns early when embedded in the portal
+  // jukebox, and an unlock must still be recorded there (the portal's own
+  // player picks it up through the storage event). Never plays audio.
+  // ════════════════════════════════════════════════════════════════════
+  function initMusicUnlocks(){
+    musLoadScript('/music-unlocks.js', function(){
+      try{ if(global.SWSMusic) global.SWSMusic.boot({ id: (global.LW_PLAY||{}).id, name: (global.LW_PLAY||{}).name }); }catch(e){}
+    });
+  }
+
+  // ════════════════════════════════════════════════════════════════════
   // ADD TO HOME SCREEN — only for games whose page ships a
   // <link rel="manifest"> (Three Sisters first; give a game a manifest and
   // it gets the button for free). Dewball pattern: the button stays visible
@@ -854,7 +867,7 @@
       || !!window.navigator.standalone;
     /* ⛔ Versioned registration (2026-07-27): bare SW URLs get edge-pinned for
        7 days, stranding installs on old workers. Bump ?v= with play/sw.js CACHE. */
-    if ('serviceWorker' in navigator) { try { navigator.serviceWorker.register('/play/sw.js?v=3'); } catch (e) {} }
+    if ('serviceWorker' in navigator) { try { navigator.serviceWorker.register('/play/sw.js?v=4'); } catch (e) {} }
     if (isStandalone) return;
     // Labeled button above the footer — the header is already full (back,
     // how-to, feedback, title, music, wallet) and an extra icon there
@@ -899,6 +912,7 @@
     if (!musEmbedded()) { try { injectFeedbackButton(); } catch (e) {} }
     try { initMusic(); } catch (e) {}
     try { initInstall(); } catch (e) {}
+    try { initMusicUnlocks(); } catch (e) {}
     try { wireEmbedBack(); } catch (e) {}
 
     // Initialize Sunbeam SDK (auto-loads Firebase compat from gstatic).
