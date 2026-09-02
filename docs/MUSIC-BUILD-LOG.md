@@ -312,3 +312,9 @@ the look, three rounds: (1) chip on Deepwell's ✕: the corner search saw it but
 three things wrong, still: on a fully busy hub the chip reads as part of whichever row it lands in; two cards would be
   needed if two shelves grant at once (it shows the newest and says "and 1 more"); the toast on a mid round grant still
   crosses a wordmark on title-as-hub games.
+live (main 420c9a33, ~5s to land): Rabbit Ronin from a clean profile → card at boot ("…and 1 more", Cherry Blossom Clash (1),
+Rabbit Ronin · Stephen) · Listen now → shared player loaded, audio PLAYING (/music/v1/rabbit-samurai/cherry-blossom-clash-1.mp3,
+t=2.2s), card gone · chip tap → the SOUNDTRACK drawer open with ▶ PLAYING, shelves Action Room / Rabbit Ronin / Originals ·
+zero console errors. Pong identical. The gap Stephen hit is closed.
+three things wrong: the "(1)" take suffix wraps a headline onto two lines; the chip is a large pill on a clean title screen;
+the drawer's glyphs are tofu in the headless font (test browser only).
