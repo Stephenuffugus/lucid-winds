@@ -73,11 +73,19 @@ framing VR-CANDIDATES.md already gave Dewball. It generalises.
 
 Why it is cheap **here** specifically: twelve satellites carry a headless `test/`
 suite today (attic, aura-farm, aura-off, budburst, conduit, moon-claw,
-power-scalers, ripcord, skyshot, stream-hop, tangent, twin-lanterns), which means
-their sim runs with no screen, which is exactly the property that let Ripcord put
-a 3D camera on an untouched game in 570 lines. Any game with a real sim/render
-split is a candidate for a 3D view riding it, and V1's first job per game is to
-find out whether that split exists.
+power-scalers, ripcord, skyshot, stream-hop, tangent, twin-lanterns). ⛔ **Corrected
+2026-09-03 by V1 and confirmed in `docs/REVIEW-3D-VR-SEP03.md` section 3:** a
+`test/` folder does NOT mean the sim runs with no screen. Of those twelve, only
+ripcord (`src/sim2.js`), conduit (`test/harness.js`, a vm with no DOM) and
+aura-off (the engine modules) run the game with no screen at all, plus the
+Attic's generator (`attic-engine.js`, but not its round); four run the game body
+behind a stubbed DOM (aura-farm, power-scalers, tangent, twin-lanterns), and four
+only compile the script blocks and then drive headless Chrome (budburst,
+moon-claw, skyshot, stream-hop). Running with no screen is exactly the property
+that let Ripcord put a 3D camera on an untouched game in 570 lines, and it is
+rarer than this paragraph first said. Any game with a real sim/render split is a
+candidate for a 3D view riding it, and V1's first job per game is to find out
+whether that split exists.
 
 Since Aug 16 the facts moved:
 
