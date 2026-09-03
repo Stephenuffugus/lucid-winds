@@ -36,3 +36,27 @@ Stakes: he sees Ripcord as a possible third store listing.
 - **Watch in 3D.** A 3D button on the launch dock, same switch as Settings.
 - Not done: the rig book only opens at rung 4 (teaching gate, untouched); the boss test reports
   The Post as beatable by defence 78 percent of the time, which predates this pass.
+
+## 2026-09-03, Stephen, brainstorm after the workshop pass
+
+> "ripcord also needs another layer to shooting your top. i'm kind of sick of the release at
+> the right time mechanic but we may need something like that. it's getting better. i'm not
+> seeing any of the zoom in zoom out for the battles. it's really fast as they start and stop.
+> we want it to really draw in the players and animate for them. i could create more worlds
+> that the matches could be taking place in to add a lot more depth."
+
+What the code does today (read, not guessed):
+- **Launch.** The wind IS the launch: laps, direction and messiness set the spin and the wobble,
+  then the top drops. There is no release timing. Open design: a second layer at the moment of
+  launch that is not a timing bar. Candidates to put in front of him: an aim (where on the dish
+  it lands, so rail vs centre is a choice), a lean (which side the wobble is loaded to at the
+  drop), or a hold (how long you let the string bind before letting go, trading power for a
+  wild start). Nothing built.
+- **Camera.** 2D has `camEvent`: `camDrop()` is a 1.12x push held 0.25s, `camPunch` a short hit
+  zoom. That is a blink, which is why he sees nothing. 3D `placeCamera(z)` accepts a zoom factor
+  and is only ever called with 1. Next: a real camera language in both views. Slow push in over
+  the drop (about a second), dolly toward the first contact, pull out on a ringout, hold on the
+  loser, a beat before the card. Reduced motion keeps today's cut.
+- **Worlds.** The dish is one arena (art in docs/ARENA art). He wants more arenas the matches
+  happen in. The 3D view already loads GLB parts (docs/FORGE3D.md), so a per-arena environment
+  is a model plus a lighting preset. An ART_ASSETS style list for arenas is the next art ask.

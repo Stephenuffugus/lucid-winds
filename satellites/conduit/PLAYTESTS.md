@@ -171,3 +171,16 @@ Not the ship gate. Things I can say from driving it that Stephen may want to wei
 - Route drawing was the weak control and is now much stronger: a drag that skips or is
   briefly blocked used to silently kill the rest of the stroke. C2's tap to tap auto
   route is still worth building on top of that.
+
+## 2026-09-03, Stephen, on building spaces
+
+> "i'm curious how we should be making 3D environments and worlds for some games like conduit
+> could potentially be really cool, or if i have a map editor or builder somehow so i could
+> design spaces and puzzles and make them really good for games like conduit."
+
+Fact: Conduit's sites are ASCII grids in `LEVELS` (index.html line 589), one character per
+tile, with `LEVEL_ORDER` naming the sequence. That is already an editor format; it only lacks
+the editor. Cheapest real step: an in-browser site painter (a page under satellites/conduit/tools/)
+that paints tiles and machines on a grid, plays the site in place, and exports the text block
+to paste into LEVELS. 3D worlds are a separate, later question: the game is top down 2D; a 3D
+"skin" would be the Ripcord battle3d pattern (same sim, a camera over GLB props).
