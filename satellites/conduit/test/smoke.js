@@ -544,9 +544,28 @@ console.log("\n[12] mechanics that had no real assertion");
   ok("standing in a cone accrues spot progress", peak > 0.05, "spot="+peak.toFixed(3));
   ok("and it stops short of a spot in that time", peak < 1);
   b.x = 40; b.y = 27;                                  // gone, out of range and sight
-  for(let i=0;i<90;i++){ pin(); G.step(0.016,{ax:0,ay:0}); }
+  /* ⛔ The window was a hard coded 90 frames, which was 1.44s and assumed decay
+     starts the instant the line breaks. It does not any more: 2026-09-03 added
+     CFG.spotHoldSec, a guard's short memory, because without it a cone wobbling
+     across a doorway erased its own progress every frame and no guard could
+     ever finish a sighting. The LAW here is unchanged and still worth guarding,
+     being seen must be reversible; only the timing moved. Derive the window from
+     the config so tuning either number can never silently invalidate this. */
+  const need = G.CFG.spotHoldSec + peak / G.CFG.spotDecay;
+  const frames = Math.ceil(need / 0.016) + 30;
+  for(let i=0;i<frames;i++){ pin(); G.step(0.016,{ax:0,ay:0}); }
   ok("spot progress decays once you break the sightline", e.spot === 0,
-     peak.toFixed(3)+" then "+e.spot.toFixed(3));
+     peak.toFixed(3)+" then "+e.spot.toFixed(3)+" after "+frames+" frames");
+  /* and the memory is real: it must NOT have decayed while the hold was live */
+  const S2 = G.newGame(LVL), b2 = G.blobRef(), e2 = S2.enemies[0];
+  const pin2 = () => { e2.x=7.5; e2.y=11.5; e2.face=0; };
+  b2.x = 9.5; b2.y = 11.5;
+  for(let i=0;i<120 && e2.spot<0.4;i++){ pin2(); G.step(0.016,{ax:0,ay:0}); }
+  const held = e2.spot;
+  b2.x = 40; b2.y = 27;
+  for(let i=0;i<Math.floor(G.CFG.spotHoldSec*0.5/0.016);i++){ pin2(); G.step(0.016,{ax:0,ay:0}); }
+  ok("a guard holds what he saw for a moment before forgetting", e2.spot === held,
+     held.toFixed(3)+" fell to "+e2.spot.toFixed(3)+" inside the hold");
 }
 
 { // the positive control: the same guard, an exposed run, does find it

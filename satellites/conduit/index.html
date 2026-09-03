@@ -225,7 +225,30 @@ const CFG = {
   // detection
   spotSecondsBlob:{ 0:0.8, 1:2.5 }, spotSecondsConduit:{ 0:1.5, 1:4.0 },
   sizeSpotFactor:m => 0.4 + 0.6*(m/100),
-  spotDecay:0.5, hearingNoisy:1.5,
+  /* ⛔⛔ 2026-09-03. This was 0.5, and at that value the meter COULD NOT FILL on
+     a concealed tile: fill there is 1/2.5 = 0.40/s against a 0.50/s decay, and
+     38% of site-01's walkable tiles are concealed, which is exactly where a
+     stealth player lives. Guards could not reach hunt, so the damage path below
+     was unreachable and the game had no fail state a careful player could meet.
+     The Director's words were "they ignore you instead of having their interests
+     peaked". 0.25 leaves the slowest fill 1.6x the decay. test/spot.js asserts
+     that ratio directly, so a later tuning pass cannot re-break it quietly. */
+  spotDecay:0.25,
+  /* And attention has memory. Without this a guard who loses the line for a
+     single frame starts forgetting immediately, so a cone that wobbles across a
+     doorway never accumulates anything. He holds what he saw for this long
+     before it starts to fade. */
+  spotHoldSec:1.2,
+  /* ⛔ THE MISSING BEHAVIOUR, and the Director's actual sentence: "its hard to
+     even get their attention cuz they ignore you instead of having their
+     interests peaked". Nothing in this game reacted to a PARTIAL sighting. A
+     guard walking past a still player gained 0.287 of a meter over about a
+     second and a half and then simply carried on, because only spot>=1 did
+     anything at all. Now a fraction of a sighting is enough to break patrol and
+     come look, which is both the fail state working and the readable feedback
+     that you have been noticed. */
+  spotInterestAt:0.35,
+  hearingNoisy:1.5,
   alertDecaySec:[0, 8, 15, 30, Infinity],
   coneWidenAtSearch:20, searchSpeedBoost:1.25,
 
@@ -1146,10 +1169,23 @@ function updateEnemy(e, dt){
      && los(e.x,e.y,b.x,b.y)){
     sees=true;
     const tier=expBlob(idx(b.x|0,b.y|0));
-    let secs=CFG.spotSecondsBlob[tier]*(1/CFG.sizeSpotFactor(b.mass));
+    /* ⛔⛔ CONCEALMENT IS A FUNCTION OF DISTANCE, and it was not. A flat 2.5s
+       spot time on a concealed tile meant a guard could walk THROUGH the player
+       (measured: closest approach 0.25 tiles, on his own patrol route) and come
+       away with 0.287 of a meter, because one pass gives about 1.6s of line and
+       the tile demanded 2.5s. Shadow should hide you from across the room, not
+       while somebody is standing on you. Blend toward the exposed rate as he
+       closes, so the concealment bonus is full at the edge of his range and gone
+       at contact. */
+    const near=Math.min(1, d/R);
+    const conceal=CFG.spotSecondsBlob[0] + (CFG.spotSecondsBlob[tier]-CFG.spotSecondsBlob[0])*near;
+    let secs=conceal*(1/CFG.sizeSpotFactor(b.mass));
     if(S.player.clinging) secs*=1/CFG.cling.spotMult;   // half the profile
     if(isPooled())        secs*=CFG.pool.spotMult;      // twice as slow to spot
     e.spot += dt/secs * (1-0.5*(d/R));
+    e.spotHold = CFG.spotHoldSec;              // he is looking right at it
+  } else if((e.spotHold||0) > 0){
+    e.spotHold -= dt;                          // still interested, not yet fading
   } else e.spot=Math.max(0, e.spot-CFG.spotDecay*dt);
 
   // Escalation, edge triggered. Nothing in the game ever bumped past 3, so
@@ -1168,6 +1204,20 @@ function updateEnemy(e, dt){
     }
     setGoal(e, b.x, b.y, "hunt"); }
   if(e.spot<CFG.spotForgetAt) e.seen=false;
+
+  /* Something caught his eye. Break patrol and go look, once per sighting, and
+     keep facing the spot while he stands there: `face` only turns while walking
+     (the move block below), so a guard who arrives and stops would otherwise
+     stare past the thing he came to inspect and never finish the meter. */
+  if(e.spot>=CFG.spotInterestAt && e.state!=="hunt"){
+    if(!e.curious){
+      e.curious=true;
+      setGoal(e, b.x, b.y, "investigate");
+    }
+    if(!e.path || e.pi>=e.path.length)
+      e.face += angDiff(Math.atan2(b.y-e.y, b.x-e.x), e.face)*Math.min(1, 6*dt);
+  }
+  if(e.spot<CFG.spotForgetAt) e.curious=false;
 
   // hearing: a live speaker is the loudest thing on the site
   const spk=S.devices.find(dv=>dv.kind==="speaker"&&dv.on);
