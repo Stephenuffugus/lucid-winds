@@ -101,8 +101,13 @@ const TYPES = { '.html':'text/html', '.js':'text/javascript', '.json':'applicati
   '.glb':'model/gltf-binary', '.gltf':'model/gltf+json', '.bin':'application/octet-stream' };
 const server = http.createServer((req, res) => {
   const rel = decodeURIComponent(req.url.split('?')[0]).replace(/^\/+/, '') || 'index.html';
-  const file = path.join(ROOT, rel);
-  if (!file.startsWith(ROOT) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {
+  /* 2026-09-03: the fleet shell (/music-unlocks.js and friends) lives at the SITE root, one level
+     above the games, and index.html includes it by absolute path. Serve it from there, the way the
+     host does, instead of failing the gate on a 404 the player will never see. */
+  let file = path.join(ROOT, rel);
+  if (!fs.existsSync(file) && /^[a-z-]+\.js$/.test(rel)) file = path.join(ROOT, '..', '..', rel);
+  const shell = file === path.join(ROOT, '..', '..', rel);
+  if ((!file.startsWith(ROOT) && !shell) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {
     res.writeHead(404); res.end('not found'); return;
   }
   res.writeHead(200, { 'Content-Type': TYPES[path.extname(file)] || 'application/octet-stream' });

@@ -354,10 +354,29 @@ function layoutCamera(){
   cam.far  = S.camDist * 3;
   placeCamera(1);
 }
-function placeCamera(z){
-  var d = S.camDist / Math.max(1, z || 1);
-  S.cam.position.set(0, d * Math.sin(ELEV), d * Math.cos(ELEV));
-  S.cam.lookAt(0, 0, 0);
+/* 2026-09-03: the camera MOVES. It orbits the dish slowly all round long, the
+   direction flipping each round so two rounds never look the same; it pushes in
+   and climbs with the 2D camera's zoom (the drop, a hard contact, the finish);
+   and it looks toward the 2D camera's focus point, so a finish is framed on the
+   loser. Every move is eased, nothing snaps. Reduced motion: the fixed shot. */
+var C3 = { yaw: 0, dir: 1, z: 1, lx: 0, lz: 0, seeded: false };
+function placeCamera(z, wx, wz, dt, reduce){
+  z = Math.max(1, z || 1);
+  if (reduce){ C3.z = z; C3.lx = 0; C3.lz = 0; C3.yaw = 0; }
+  else {
+    dt = (dt > 0 && dt < 0.2) ? dt : 0.016;
+    var g = 1 - Math.exp(-dt * 6);
+    C3.z += (z - C3.z) * g;
+    var R = S.rimR * 0.55, tx = wx || 0, tz = wz || 0;
+    tx = Math.max(-R, Math.min(R, tx * 1000 * 0.5)); tz = Math.max(-R, Math.min(R, tz * 1000 * 0.5));
+    C3.lx += (tx - C3.lx) * g; C3.lz += (tz - C3.lz) * g;
+    C3.yaw += C3.dir * 0.055 * dt;            /* a full lap would take two minutes */
+  }
+  var d = S.camDist / C3.z;
+  var el = ELEV + (C3.z - 1) * 0.45;          /* pushing in also climbs a little */
+  var cy = Math.cos(C3.yaw), sy = Math.sin(C3.yaw);
+  S.cam.position.set(C3.lx + d * Math.cos(el) * sy, d * Math.sin(el), C3.lz + d * Math.cos(el) * cy);
+  S.cam.lookAt(C3.lx, 0, C3.lz);
   S.cam.updateProjectionMatrix();
 }
 function sized(){
@@ -420,7 +439,9 @@ function sync(st){
   if (!sized()) return;
   pose(0, st.A, st);
   pose(1, st.B, st);
-  placeCamera(st.camz || 1);
+  if (st.phase === 'drop' && !C3.seeded){ C3.seeded = true; C3.dir = -C3.dir; }
+  if (st.phase !== 'drop') C3.seeded = false;
+  placeCamera(st.camz || 1, st.camwx, st.camwz, st.dt, st.reduce);
   S.renderer.render(S.scene, S.cam);
 }
 

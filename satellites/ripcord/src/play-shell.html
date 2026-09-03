@@ -3203,6 +3203,7 @@ function onHit(c){
   AUDIO.hit(c.impulse,c.swing);
   haptic(c.impulse>0.03?34:10);
   if(save.settings.reduceMotion)return;
+  camContact(c);
   var s=scale(), n=Math.min(16,3+Math.round(c.impulse*420));
   for(var i=0;i<n;i++){
     var a=Math.random()*Math.PI*2, v=40+Math.random()*260*Math.min(2,c.swing);
@@ -3325,12 +3326,33 @@ function endTujShot(){
    because the rail is gameplay and the whole dish must stay visible.
    Reduced motion turns the camera off entirely - it is drama, not
    information. */
-var CAM={ev:null,z:1,fx:0,fy:0};
-function camEvent(x,y,peak,rise,hold,fall){
+/* 2026-09-03 (Stephen: "i'm not seeing any of the zoom in zoom out for the
+   battles. it's really fast as they start and stop. we want it to really draw
+   in the players"): the drop was a 0.25 s blink and the finish a 0.55 s one.
+   Now it is a language with four beats, each long enough to be seen:
+     DROP     push in as the tops fall, settle out over the first second of play
+     CONTACT  a short dolly toward a hard hit, weaker hits do not move the camera
+     FINISH   a slow push onto the loser, held for the whole beat before the card
+   and the focus GLIDES between points instead of snapping. Priority keeps a
+   contact from stealing the finish. Play still sits at 1.0 between events: the
+   rail is gameplay and the whole dish must stay visible. Reduced motion turns
+   all of it off. The 3D view reads CAM.z and CAM.wx/wz off sync() and does its
+   own orbit and dolly from them. */
+var CAM={ev:null,z:1,fx:0,fy:0,tx:0,ty:0,wx:0,wz:0};
+function camEvent(x,y,peak,rise,hold,fall,prio){
   if(save.settings.reduceMotion)return;
-  CAM.ev={x:x,y:y,peak:peak,rise:rise,hold:hold,fall:fall,t:0};
+  prio=prio||1;
+  if(CAM.ev&&CAM.ev.prio>prio&&CAM.ev.t<CAM.ev.rise+CAM.ev.hold)return;
+  CAM.ev={x:x,y:y,peak:peak,rise:rise,hold:hold,fall:fall,t:0,prio:prio};
 }
-function camDrop(){ camEvent(CX(),CY(),1.12,0,0.25,1.0); }
+function camDrop(){ CAM.fx=CX();CAM.fy=CY();camEvent(CX(),CY(),1.20,0.55,0.45,1.30,2); }
+function camContact(c){
+  // a dolly toward a hard hit; soft ones are the sparks' job
+  if(!c||c.impulse<0.018)return;
+  var s=scale(),r=RAD()*0.62;
+  var x=CX()+Math.max(-r,Math.min(r,c.x*s)), y=CY()+Math.max(-r,Math.min(r,c.z*s));
+  camEvent(x,y,1.07+Math.min(0.09,c.impulse*3),0.14,0.22,0.62,1);
+}
 function camPunch(top,peak){
   // focus on the finished top, clamped near the dish so a ringout that
   // flew off the rail does not drag the camera into the void
@@ -3340,21 +3362,28 @@ function camPunch(top,peak){
     x=CX()+Math.max(-r,Math.min(r,top.x*s));
     y=CY()+Math.max(-r,Math.min(r,top.z*s));
   }
-  camEvent(x,y,peak,0.14,0.55,0.75);
+  camEvent(x,y,peak,0.34,1.05,0.90,3);
 }
 function camUpdate(dt){
   var e=CAM.ev,k=0;
   if(e){
     e.t+=dt;
-    if(e.t<e.rise)k=1-Math.pow(1-e.t/e.rise,3);
+    if(e.t<e.rise){var q=e.t/e.rise;k=q*q*(3-2*q);}
     else if(e.t<e.rise+e.hold)k=1;
     else if(e.t<e.rise+e.hold+e.fall){
       var u=(e.t-e.rise-e.hold)/e.fall;k=1-u*u*(3-2*u);
     }else{CAM.ev=null;e=null;}
   }
   CAM.z=1+((e?e.peak:1)-1)*k;
-  CAM.fx=e?e.x:0;CAM.fy=e?e.y:0;
+  // the focus glides: toward the event while it is up, back to the dish centre after
+  CAM.tx=e?e.x:CX();CAM.ty=e?e.y:CY();
+  var g=1-Math.exp(-dt*(e&&e.t<e.rise?9:5));
+  CAM.fx+=(CAM.tx-CAM.fx)*g;CAM.fy+=(CAM.ty-CAM.fy)*g;
+  var sc=scale()||1;
+  CAM.wx=(CAM.fx-CX())/sc;CAM.wz=(CAM.fy-CY())/sc;
 }
+/* a read only window for the camera tests; nothing in the game calls it */
+window.__RC=function(){return {phase:phase,z:CAM.z,fx:CAM.fx,fy:CAM.fy,b3d:b3dOn};};
 
 /* ================================================================ RENDERING ==
    ONE GUARD. When the 3D battle view is up it owns the dish - the stadium, the
@@ -3387,7 +3416,8 @@ function frame(now){
 
   b3dOn=!!(window.B3D&&B3D.active&&B3D.ready()&&B3D.wanted());
   if(b3dOn)B3D.sync({A:t3(A),B:t3(B),phase:phase,
-                     dropProgress:phase==='drop'?dropT/DROP_DUR:1,camz:CAM.z});
+                     dropProgress:phase==='drop'?dropT/DROP_DUR:1,camz:CAM.z,
+                     camwx:CAM.wx,camwz:CAM.wz,reduce:!!save.settings.reduceMotion,dt:dt});
 
   ctx.clearRect(0,0,W,H);
   /* the 3D camera does its own dolly off the same CAM.z, so applying this one

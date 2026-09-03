@@ -270,6 +270,11 @@
       }
       minb.addEventListener('click', minimise);
       card.addEventListener('pointerdown', armIdle, true);
+      /* the player touched the GAME while the card was up: get out of the way. Found by Ripcord's
+         playthrough gate, where the card sat over the Launch button. */
+      function outside(ev) { try { if (card.style.display !== 'none' && ev.target && !card.contains(ev.target)) minimise(); } catch (x) {} }
+      d.addEventListener('pointerdown', outside, true);
+      try { window.SWSMusic = window.SWSMusic || {}; window.SWSMusic.fold = minimise; } catch (x) {}
       /* drag by the handle; a downward flick folds it */
       (function () { var sx = 0, sy = 0, ox = 0, oy = 0, on = false;
         bar.addEventListener('pointerdown', function (ev) { on = true; sx = ev.clientX; sy = ev.clientY; var r = card.getBoundingClientRect(); ox = r.left; oy = r.top; card.style.right = 'auto'; card.style.bottom = 'auto'; card.style.margin = '0'; card.style.left = ox + 'px'; card.style.top = oy + 'px'; try { bar.setPointerCapture(ev.pointerId); } catch (x) {} ev.preventDefault(); });
@@ -289,7 +294,7 @@
       var btns = d.createElement('div'); btns.className = 'swsm-btns';
       var listen = d.createElement('button'); listen.id = 'sws-music-listen'; listen.type = 'button'; listen.className = 'swsm-primary'; listen.textContent = 'Play it now';
       var later = d.createElement('button'); later.id = 'sws-music-later'; later.type = 'button'; later.textContent = 'Later';
-      function close() { try { if (idle) window.clearTimeout(idle); card.remove(); if (pill) pill.remove(); } catch (x) {} pill = null; S.card = null; tellGame(false); markRevealed(e.id); S.interacted = true; showNext(); }
+      function close() { try { if (idle) window.clearTimeout(idle); d.removeEventListener('pointerdown', outside, true); card.remove(); if (pill) pill.remove(); } catch (x) {} pill = null; S.card = null; tellGame(false); markRevealed(e.id); S.interacted = true; showNext(); }
       listen.addEventListener('click', function () { close(); playById(e.id); });
       later.addEventListener('click', function () { close(); });
       btns.appendChild(listen); btns.appendChild(later); card.appendChild(btns);
