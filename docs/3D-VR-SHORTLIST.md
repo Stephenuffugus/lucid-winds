@@ -509,3 +509,44 @@ The second fleet wide one: the **"♫ Music" chip overlaps and clips the title o
 Skyshot, Create A Critter, The Attic and Dewball**, and on Tangent it is drawn over the play
 area and covers a mount point on the deck. Whatever the VR answer is, that chip needs a home
 that is not on top of the game.
+
+---
+
+## AGAINST SECTION 9 (Fable's first guesses)
+
+Section 9 says it exists so the audit has something to refute, and that a guess the code
+contradicts is wrong. Read only after the pass above was written. Where it lands:
+
+**Confirmed:** Ripcord, Aura Off and Sweet Spot as STANDING; Lucid Winds as `NONE`; Dewball,
+Abduct a Chameleon 3D, Create A Critter and Slice 3D as `SKIN`; Jade Garden (mahjong) and Sea
+Battle (battleship) as TABLETOP; Kanoodle and PadLab correctly flagged as not carded rows.
+
+**Refuted, with the line:**
+
+| the guess | what the code says |
+|---|---|
+| Create A Critter is **STANDING** | It is TABLETOP. The camera orbits `lookAt(0,0.72,0)` at `create-a-critter/index.html:2155` and the creature is a small thing on a surface you circle. Standing needs a body verb; drawing on a slate and putting a hand out is a table. |
+| Super Slice **forest only** is STANDING | The forest chases too. `slice-3d/index.html:2237` targets the knife's own x and y, lerped `:2243` to `:2245`, shake at `:2247`. NEVER-IMMERSIVE, all modes. |
+| Stream Hop is **NEVER-IMMERSIVE** | TABLETOP with a named reframe. `stream-hop/index.html:1895` scrolls `G.camY` up the rows, and a one axis lane is the cheapest treadmill in the catalog: nail the camera, run the rows at the player, no rule changes. |
+| **Puppy Dash, Sled Vine, Pitbike Rally and Bubblenaut** are runners or chase cameras | **None of the four moves its view.** Puppy Dash's translates are sprite local (`:267`, `:300`), Sled Vine's likewise (`:324`, `:773`), Pitbike Rally's `view` is a fit scaler set only inside `resize()` (`src-dly17/render.js:15-25`, never per frame), and Bubblenaut's `fit()` is a `scale()` (`:1016`). They are "the obstacles move, the camera does not" designs, which is the comfort profile VR wants. They are WINDOW because the hands do nothing a thumb cannot, not because they are hazards. Skitterlings is the same shape and says so in its own code: `o.x -= G.speed * dt` at `:1790`. |
+| Moon Claw, Burrow Bowl and Skyshot are **TABLETOP** | All three are STANDING. A claw machine, a skee ball lane and a slingshot are things you stand at and use your arm on, not boards you reach into. This is the guess I would most want re-checked on the device, because it changes the scene height. |
+| Conduit is route **NONE** | `PRERENDER` with a `NONE` carve out. The ferro law covers the creature and the conduit; `satellites/conduit/ART_ASSETS.md` says in its own words that floors, machines, sources, patrols, fixtures, FX, HUD, icons, screens and backdrops are unaffected. Twelve of fourteen sheets can proceed today, and reading "Conduit: NONE" as a blanket would stop work that is already specified. |
+| Ripcord's parts are route **NONE** | `SKIN`. "The geometry is the stats" forbids *generating* art that ignores `sim2.js`; it does not forbid meshes, and 112 of them already exist, derived from those stats, sitting unused outside `src/battle3d.js`. `NONE` would be the wrong instruction on the one game whose meshes are already paid for. |
+| Abduct a Chameleon is route **SKIN** | The 2D card is `canvas2d`, so `PRERENDER`. Only the **3D** card is three.js, and it is a different file, `abduct-3d.html`, which the triage read as the 2D game until this morning. |
+| Ring Stacker (**Sunforge**) and Siege of One are TABLETOP | Both stayed WINDOW. Sunforge and Siege are fixed camera and fit one screen, so they pass the first half of the test and fail the second: the hands tap, they do not reach, place, flick, throw or stack. I hold these two loosely and would change them on one sentence from the Director about what the hands are doing. |
+
+**On the proportions, which section 9 asked about explicitly.** It expected roughly two thirds
+WINDOW, a dozen TABLETOP at S or M, five or six STANDING, a dozen NEVER-IMMERSIVE. The result
+is **WINDOW 88 (47 percent), TABLETOP 79 (42 percent), STANDING 10, NEVER-IMMERSIVE 10.**
+
+STANDING and NEVER-IMMERSIVE landed almost exactly where it guessed. The two that moved are
+WINDOW and TABLETOP, and the reason is one measurement: **almost nothing in this catalog moves
+its camera.** 165 of 187 rows are fixed, and the fleet's house pattern is a `540 by 960` stage
+with `fit()` doing a `scale()` and every `ctx.translate` being sprite local. So the section 4
+test, "a board or arena that fits one screen is the natural TABLETOP shape", passes far more
+often than a guess from names would suggest.
+
+**That is a bigger number than it is an opportunity, and the effort column is where the honesty
+is:** 72 of the 79 TABLETOP rows are `L`, because a 2D board needs a new camera, a new input
+model and new meshes, all three. The cheap band is still eleven games long. The lane count says
+what the catalog *is*; the effort count says what is *buyable*.
