@@ -65,37 +65,73 @@ function catalog() {
    as unknown as well, which published a false claim about a file in the repo
    root and left three rows untriaged. */
 const OWN_ORIGINS = ["https://lucidwinds.com", "http://lucidwinds.com", "https://www.lucidwinds.com"];
+/* libraries and wrappers are not the game */
+const NOT_GAME = /(^|\/)(three|GLTFLoader|OrbitControls|firebase|sw|service-worker|dev-gate|shell|sunbeam-sdk|feedback|engagement|polyfill|analytics)[.\-]/i;
 
-function sourceFiles(g) {
-  if (g.kind !== "satellite") return ["play/" + g.id + ".html", "games/" + g.id + ".js"];
-  if (g.dir) return ["satellites/" + g.dir + "/index.html"];
-
-  let u = String(g.url || "");
-  for (const o of OWN_ORIGINS) if (u.startsWith(o)) { u = u.slice(o.length) || "/"; break; }
-  if (/^[a-z]+:\/\//i.test(u)) return [];              /* somebody else's origin */
-  u = u.split("#")[0].split("?")[0];                    /* ?v=20260808b is a cache buster, not a path */
-  if (!u.startsWith("/")) return [];
-  let page = u === "/" || u.endsWith("/") ? u.slice(1) + "index.html" : u.slice(1);
-  if (!page) page = "index.html";
-  if (!existsSync(page)) return [];
-
-  /* A LAUNCHER PAGE IS NOT THE GAME. party/host.html is 7KB of shell that pulls
-     its logic from party/shell/*.js; reading the launcher alone would call
-     Whack Box clean without having read a line of it. So follow the relative
-     <script src> the page declares, one level, files that exist only. This
-     branch is reached by root relative rows ONLY, so no satellite or native
-     verdict can move because of it. */
-  const files = [page];
+/* ⛔⛔ A WRAPPER IS NOT THE GAME, and on 2026-09-03 this resolver was reading a
+   wrapper for 13 rows and calling every one of them clean. Two shapes:
+     play/<id>.html is a 53 line SHELL that defers to /games/<id>.js for some
+       ids and /games/_inline/<id>.js for others. Guessing games/<id>.js read
+       2.8KB of header for Checkers, Reversi, Backgammon, Sokoban, Farkle,
+       Shut the Box, Three Sisters, Bloom Wheel and Nonogram Bloom, so their
+       "ok" was reached without one line of their logic.
+     several vendored satellite index.html files are REDIRECT STUBS: Sweet Spot
+       635 bytes pointing at sweet-spot.html, Letter Launch 1KB pointing at
+       docs/, Wild Wardens, Dragon Philosophy. Same false clean.
+   And the card's url, not the dir, is the game: Abduct a Chameleon and Abduct a
+   Chameleon 3D are two rows in one dir, and only the url tells them apart. */
+function followRedirect(page, hops) {
+  if (hops <= 0 || !existsSync(page)) return page;
+  let src; try { src = readFileSync(page, "utf8"); } catch (e) { return page; }
+  if (src.length > 20000) return page;                       /* a real game, not a stub */
+  const m = src.match(/http-equiv\s*=\s*["']refresh["'][^>]*url\s*=\s*([^"'>\s]+)/i)
+         || src.match(/location\.replace\(\s*['"]([^'"]+)['"]/);
+  if (!m) return page;
+  const t = m[1].split("#")[0].split("?")[0].replace(/^\.\//, "");
   const dir = page.includes("/") ? page.slice(0, page.lastIndexOf("/") + 1) : "";
-  let src = "";
-  try { src = readFileSync(page, "utf8"); } catch (e) { return files; }
+  let next = t.startsWith("/") ? t.slice(1) : dir + t;
+  if (next.endsWith("/")) next += "index.html";
+  return existsSync(next) ? followRedirect(next, hops - 1) : page;
+}
+/* the local <script src> a page declares, in order, wrappers dropped */
+function declaredScripts(page) {
+  const out = [], dir = page.includes("/") ? page.slice(0, page.lastIndexOf("/") + 1) : "";
+  let src = ""; try { src = readFileSync(page, "utf8"); } catch (e) { return out; }
   for (const m of src.matchAll(/<script[^>]*\ssrc\s*=\s*["']([^"']+)["']/gi)) {
     let r = m[1].split("#")[0].split("?")[0];
     if (/^[a-z]+:\/\//i.test(r) || r.startsWith("//")) continue;   /* a CDN is not our source */
     const f = r.startsWith("/") ? r.slice(1) : dir + r;
-    if (existsSync(f) && !files.includes(f)) files.push(f);
+    if (existsSync(f) && !NOT_GAME.test(f) && !out.includes(f)) out.push(f);
   }
-  return files;
+  return out;
+}
+
+/* Which files in THIS repo are a catalog row's source. Returns [] when the
+   source genuinely lives on another origin, which is what makes a row read
+   "unknown". */
+function sourceFiles(g) {
+  if (g.kind !== "satellite") {
+    const shell = "play/" + g.id + ".html";
+    if (!existsSync(shell)) return [];
+    const out = [shell, ...declaredScripts(shell)];
+    for (const c of ["games/" + g.id + ".js", "games/_inline/" + g.id + ".js"])
+      if (existsSync(c) && !out.includes(c)) out.push(c);
+    return out;
+  }
+  /* THE URL IS THE GAME. The dir is only the fallback for a card with none. */
+  let u = String(g.url || "");
+  for (const o of OWN_ORIGINS) if (u.startsWith(o)) { u = u.slice(o.length) || "/"; break; }
+  if (/^[a-z]+:\/\//i.test(u)) return [];                    /* somebody else's origin */
+  u = u.split("#")[0].split("?")[0];                          /* ?v=20260818a is a cache buster */
+  let page = null;
+  if (u.startsWith("/")) {
+    page = u === "/" || u.endsWith("/") ? u.slice(1) + "index.html" : u.slice(1);
+    if (!page) page = "index.html";
+  }
+  if ((!page || !existsSync(page)) && g.dir) page = "satellites/" + g.dir + "/index.html";
+  if (!page || !existsSync(page)) return [];
+  page = followRedirect(page, 3);
+  return [page, ...declaredScripts(page)];
 }
 
 /* ---------- detectors. Each returns null or {level, why}. ----------------- */
@@ -151,7 +187,17 @@ function scan(src) {
                   transform or a label. It is a readout. Nothing to replace.
        optional   tilt is one steering option beside drag. Caution.
        control    tilt moves the game and nothing else does. Blocked. */
-  if (/deviceorientation|devicemotion|DeviceOrientationEvent|accelerationIncludingGravity/.test(code)) {
+  /* ⛔ AND A WORD IS NOT A LISTENER. Reading the real games instead of their
+     wrappers put a 2MB minified Expo bundle in front of this detector (Wild
+     Wardens) and it fired on the word "deviceorientation" inside a
+     documentation URL in a react-native error string, with ZERO
+     addEventListener registrations anywhere in the file. A bare-word test over
+     a vendor bundle will keep finding words. Require a real use. */
+  const tiltUse = /addEventListener\(\s*['"](?:deviceorientation(?:absolute)?|devicemotion)['"]/.test(code)
+    || /\bon(?:deviceorientation|devicemotion)\s*=/.test(code)
+    || /\bDevice(?:Orientation|Motion)Event\b\s*(?:[.)&|;,]|$)/m.test(code)
+    || /\baccelerationIncludingGravity\b/.test(code);
+  if (tiltUse) {
     /* the body of every tilt handler, bounded the way the pinch detector bounds
        its window, so a 7MB file cannot turn this into a whole file read */
     const bodies = [...code.matchAll(
@@ -208,6 +254,13 @@ function scan(src) {
 
 /* ---------- selftest ------------------------------------------------------ */
 if (process.argv.includes("--selftest")) {
+  /* The resolver cases use repo relative paths, so from any other cwd every one
+     of them fails and the gate reports ten phantom failures. A red gate names a
+     suspect, not a culprit, so say which. */
+  if (!existsSync(PORTAL)) {
+    console.log("SELFTEST CANNOT RUN: " + PORTAL + " not found. Run from the repo root.");
+    process.exit(2);
+  }
   const T = [
     ["keyboard only blocks", `addEventListener('keydown',f)`, "blocked", "keyboard"],
     ["keyboard plus pointer is fine", `addEventListener('keydown',f);addEventListener('pointerdown',g)`, null, "keyboard"],
@@ -241,6 +294,8 @@ if (process.argv.includes("--selftest")) {
        learned in August to ask what the branch DOES, and this is the same
        lesson arriving at the same file a second time. A cosmetic readout needs
        no controller equivalent because it is not a control. */
+    ["a device api named inside a string is not a tilt handler",
+      `var help='see https://dev.to/li/how-to-requestpermission-for-devicemotion-and-deviceorientation-events-in-ios-13-46g2';addEventListener('pointerdown',f);`, null, ""],
     ["a tilt handler that only writes a CSS variable is decoration, not a control",
       `window.addEventListener('deviceorientation', e => { card.style.setProperty('--mx', e.gamma + '%'); });`, null, ""],
     ["a tilt handler that only writes a transform is decoration",
@@ -282,8 +337,21 @@ if (process.argv.includes("--selftest")) {
       { kind: "satellite", url: "https://stephenuffugus.github.io/Tomato-Man/", dir: null }, null],
     ["a satellite with a dir is unchanged",
       { kind: "satellite", url: "/satellites/conduit/", dir: "conduit" }, "satellites/conduit/index.html"],
-    ["a native row is unchanged",
-      { kind: "native", url: "/play/sudoku.html", id: "sudoku" }, "play/sudoku.html"]
+    ["a native row still reads its shell",
+      { kind: "native", url: "/play/sudoku.html", id: "sudoku" }, "play/sudoku.html"],
+    /* ⛔⛔ THE THIRD WAVE, 2026-09-03: 13 rows were being triaged by their
+       WRAPPER. These four fail against the resolver that shipped this morning. */
+    ["a native shell pulls in the games/_inline module it defers to",
+      { kind: "native", url: "/play/checkers.html", id: "checkers" }, "games/_inline/checkers.js"],
+    ["a redirect stub is not the game",
+      { kind: "satellite", url: "/satellites/sweet-spot/?v=20260818a", dir: "sweet-spot" },
+      "satellites/sweet-spot/sweet-spot.html"],
+    ["a redirect into a subfolder is followed",
+      { kind: "satellite", url: "/satellites/letter-launch/?v=20260818a", dir: "letter-launch" },
+      "satellites/letter-launch/docs/index.html"],
+    ["two cards in one dir are two different games",
+      { kind: "satellite", url: "/satellites/abduct-a-chameleon/abduct-3d.html?v=20260818a", dir: "abduct-a-chameleon" },
+      "satellites/abduct-a-chameleon/abduct-3d.html"]
   ]) {
     const got = sourceFiles(row);
     const ok = want === null ? got.length === 0 : got.includes(want);

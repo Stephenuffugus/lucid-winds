@@ -6,8 +6,8 @@ Every call should be checked against the Quest 2 before it is believed.
 
 | verdict | count | meaning |
 |---|---|---|
-| ok | 174 | nothing found that stops a controller pointer |
-| caution | 12 | playable, worth an eye on the device |
+| ok | 170 | nothing found that stops a controller pointer |
+| caution | 16 | playable, worth an eye on the device |
 | blocked | 0 | needs a keyboard, two fingers, or device tilt |
 | unknown | 1 | source not readable from this repo (external repos) |
 
@@ -15,6 +15,7 @@ Every call should be checked against the Quest 2 before it is believed.
 
 Games that already carry the thing a VR version would need.
 
+- **Abduct a Chameleon 3D** — already 3D with Three.js
 - **Ripcord** — already 3D with Three.js
 - **LOAF** — already 3D with Three.js
 - **Create A Critter** — already 3D with Three.js
@@ -26,19 +27,23 @@ Games that already carry the thing a VR version would need.
 
 ## Caution
 
-- **Lucid Winds** — reads device tilt, so confirm on the device that tilt is not required to play; reveals UI on hover, which is fiddly to hold with a ray; 391 declared sizes under 32px, small for a ray
+- **Lucid Winds** — reads device tilt, so confirm on the device that tilt is not required to play; reveals UI on hover, which is fiddly to hold with a ray; 388 declared sizes under 32px, small for a ray
+- **Abduct a Chameleon 3D** — 20 declared sizes under 32px, small for a ray
 - **Glyph Forge** — reveals UI on hover, which is fiddly to hold with a ray
 - **Sixfold** — 25 declared sizes under 32px, small for a ray
-- **Flock the World** — 13 declared sizes under 32px, small for a ray
-- **Deepwell** — 12 declared sizes under 32px, small for a ray
+- **Flock the World** — 14 declared sizes under 32px, small for a ray
+- **Deepwell** — 13 declared sizes under 32px, small for a ray
 - **HUNCH** — reveals UI on hover, which is fiddly to hold with a ray
 - **Times Table Quest** — pinch to zoom has no controller equivalent and there is no wheel handler to stand in
-- **Power Scalers** — 13 declared sizes under 32px, small for a ray
+- **Tally** — 15 declared sizes under 32px, small for a ray
+- **Power Scalers** — 14 declared sizes under 32px, small for a ray
 - **Sproing** — offers tilt steering, so confirm the drag option is the default in a headset
-- **Jumping Jimothy** — 29 declared sizes under 32px, small for a ray
-- **Silt** — 15 declared sizes under 32px, small for a ray
+- **Nectar Drop** — 12 declared sizes under 32px, small for a ray
+- **Jumping Jimothy** — 30 declared sizes under 32px, small for a ray
+- **Silt** — 16 declared sizes under 32px, small for a ray
+- **Sled Vine** — 12 declared sizes under 32px, small for a ray
 - **Mosaic Garden** — 14 declared sizes under 32px, small for a ray
 
 ## Everything else reads clean
 
-Tomato Man · Abduct a Chameleon · Abduct a Chameleon 3D · Ripcord · Tangent · Conduit · Aura Off · Litter Bug · The Attic · LOAF · Stop the Light · Skyshot · Twin Lanterns · Moon Claw · Burrow Bowl · Puppy Dash · Whack Box · Sweet Spot · Tarot Run · Letter Launch · Skitterlings · Aura Farm · Create A Critter · Bandit's Box · Blackout · Parallel · Wireworm · Siege of One · Wild Wardens · Shell Shuffle · Hues · Merge & Blast · Flipbook · Fox & Basket · Super Slice · Sunforge · Pop N Lock · Snakes & Ladders · Doodle Pad · Mouse Trap · Stop Motion · Rabbit Ronin · Garden Path · Garden Estates · Blooming Words · Tally · Picnic Panic · Pollen Panic · Vinewinder · Vine Runner · Pit Bike Rally · Dragon Philosophy · Bloom Breaker · Pong Arena · Budburst · Burr Blast · Garden Guard · Sprout Dice · Petal Plunge · Bramblewick · Word Lightning · Rootbound · OriVex · Hedgerow · Bubblenaut · Inkbound · Hexa Hive · No Pain, No Gain · Jade Garden · Nectar Drop · Petal Slice · Seed Pot · Blobworks · Dewball · Dew Snip · Berry Vine · Cosmic Cadets · Tetroku · Seed Reel · Season Sway · Meadow Weave · Petal Alchemy · Cipher Bloom · Root Groups · First Sprout · Plot Bloom · Think Fast · Impossible Garden · Star Field · Flatulence Fighter · Line Loom · Rule Root · Pollinator Paths · Tempo Grove · Root Weave · Sled Vine · Spore Drift · Bridgevine · Bramble Court · Nova Bloom · Orb Orchard · Fence Off · Frost Watch · Lamplighter · Loop Warden · Mini Crossword · Mosaic Draft · Tinker Loft · Acorn Drop · Music Studio · Bloom Wheel · Breathing Garden · Color Garden · Pixel Garden · Seed Toss · Story Seeds · Stone Garden · Rhythm and Vine · Klondike · Spider · FreeCell · Pyramid · TriPeaks · Golf Solitaire · Cribbage · Euchre · Bleeding Hearts · Garden Spades · Garden Rummy · 2048 · Lights Out · Minesweeper · Sudoku · Word Search · Root Rush · Tower of Hanoi · 15 Puzzle · Nonogram Bloom · Bee's Pollen Sort · Flood Fill · Vine Puzzle · Sokoban · Block Drop · Garden Lines · Kakuro · Root Flow · Root Maze · Petal Match · Word Sprout · Vine Words · Chess · Four in a Row · Sea Battle · Code Breaker · Checkers · Reversi · Backgammon · Mancala · Five in a Row · Go (Living Stones) · Word Trellis · Master Pollinator · Three Sisters · Stop at Ten · Memory · Echo · Daily Bloom · Fast Math · Memory Meadow · Speed Sort · Yacht-Sea · Farkle · Shut the Box · Dew Trail
+Tomato Man · Abduct a Chameleon · Ripcord · Tangent · Conduit · Aura Off · Litter Bug · The Attic · LOAF · Stop the Light · Skyshot · Twin Lanterns · Moon Claw · Burrow Bowl · Puppy Dash · Whack Box · Sweet Spot · Tarot Run · Letter Launch · Skitterlings · Aura Farm · Create A Critter · Bandit's Box · Blackout · Parallel · Wireworm · Siege of One · Wild Wardens · Shell Shuffle · Hues · Merge & Blast · Flipbook · Fox & Basket · Super Slice · Sunforge · Pop N Lock · Snakes & Ladders · Doodle Pad · Mouse Trap · Stop Motion · Rabbit Ronin · Garden Path · Garden Estates · Blooming Words · Picnic Panic · Pollen Panic · Vinewinder · Vine Runner · Pit Bike Rally · Dragon Philosophy · Bloom Breaker · Pong Arena · Budburst · Burr Blast · Garden Guard · Sprout Dice · Petal Plunge · Bramblewick · Word Lightning · Rootbound · OriVex · Hedgerow · Bubblenaut · Inkbound · Hexa Hive · No Pain, No Gain · Jade Garden · Petal Slice · Seed Pot · Blobworks · Dewball · Dew Snip · Berry Vine · Cosmic Cadets · Tetroku · Seed Reel · Season Sway · Meadow Weave · Petal Alchemy · Cipher Bloom · Root Groups · First Sprout · Plot Bloom · Think Fast · Impossible Garden · Star Field · Flatulence Fighter · Line Loom · Rule Root · Pollinator Paths · Tempo Grove · Root Weave · Spore Drift · Bridgevine · Bramble Court · Nova Bloom · Orb Orchard · Fence Off · Frost Watch · Lamplighter · Loop Warden · Mini Crossword · Mosaic Draft · Tinker Loft · Acorn Drop · Music Studio · Bloom Wheel · Breathing Garden · Color Garden · Pixel Garden · Seed Toss · Story Seeds · Stone Garden · Rhythm and Vine · Klondike · Spider · FreeCell · Pyramid · TriPeaks · Golf Solitaire · Cribbage · Euchre · Bleeding Hearts · Garden Spades · Garden Rummy · 2048 · Lights Out · Minesweeper · Sudoku · Word Search · Root Rush · Tower of Hanoi · 15 Puzzle · Nonogram Bloom · Bee's Pollen Sort · Flood Fill · Vine Puzzle · Sokoban · Block Drop · Garden Lines · Kakuro · Root Flow · Root Maze · Petal Match · Word Sprout · Vine Words · Chess · Four in a Row · Sea Battle · Code Breaker · Checkers · Reversi · Backgammon · Mancala · Five in a Row · Go (Living Stones) · Word Trellis · Master Pollinator · Three Sisters · Stop at Ten · Memory · Echo · Daily Bloom · Fast Math · Memory Meadow · Speed Sort · Yacht-Sea · Farkle · Shut the Box · Dew Trail
