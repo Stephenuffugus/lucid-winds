@@ -23,8 +23,17 @@ The effort scale is section 4's, applied strictly: **anything needing a new came
 new input model AND new meshes is L.** Every purely 2D game needs all three, so the entire
 board and card shelf is `L` no matter how obvious a chess set in VR sounds. `S` and `M` are
 reached only two ways: the game is already three.js with a camera that does not translate,
-or its simulation already runs with no screen and a 3D view can ride it. **That is the
-whole of the cheap band and it is eleven games long.**
+or its simulation already runs with no screen and a 3D view can ride it.
+
+⛔ **And the letter follows the DAYS, not the heuristic.** Section 4 defines the brackets by
+days first, S is 3 or less and M is 10 or less, and offers the three way test as guidance
+after. My first pass graded Create A Critter and Budburst `S` off the guidance while the
+rows below estimated 5 and 4 days, which is `M`. `scripts/vr_audit_check.mjs` now asserts
+that any row stating `BUILD n days` carries the letter section 4 gives that number, and it
+was watched to fail on exactly those two rows before it was trusted.
+
+**There is no `S` in either body lane. The cheap band is twelve games and the cheapest of
+them is four days.**
 
 ---
 
@@ -64,10 +73,11 @@ and rip the cord; two tops go at each other in a dish on the table and one of th
 **The hands:** a launcher in one hand, a circle drawn in the air with the other, then a grip
 and a pull.
 
-**Effort, about 12 days:** 3 for the dish scene at table scale from meshes that already
+**Effort, about 10 days (`M`):** 3 for the dish scene at table scale from meshes that already
 exist, 3 for the wind grader to read a controller pose instead of a screen path (flatten Z,
 reuse `wind.js` unchanged), 2 for the pull gesture as a velocity spike along the cord axis,
-2 for the comfort and fallback pass, 2 for the device round.
+2 for the comfort and fallback pass. The device round is the Director's, not build time,
+which is where my first estimate of 12 came from.
 
 **Headless path:** yes, the best in the fleet. `sim2.js`, `wind.js` and `rigs.js` are DOM
 free modules and `test/` carries a determinism harness, so a determinism gate that the sim
@@ -113,7 +123,7 @@ with your own body, and the game scores how much you did **not** overdo it.
 sliding along your jaw, arms crossed and perfectly still, and the size of the gesture is
 the score.
 
-**Effort, about 10 days:** 2 for the ring scene and the opponent rig, 3 for mapping the
+**Effort, about 10 days (`M`):** 2 for the ring scene and the opponent rig, 3 for mapping the
 twelve frozen joints onto controller and head pose, 2 for amplitude from real gesture size,
 1 for the crowd, 2 for comfort and the 2D fallback.
 
@@ -140,7 +150,7 @@ special and it is also the reason it could take three weeks instead of two.
 
 ---
 
-### 3. Create A Critter — TABLETOP, SAFE, S
+### 3. Create A Critter — TABLETOP, SAFE, M
 `SKIN` · shots: `create-a-critter-3draw.png`, `-1boot.png`
 
 **The thirty seconds:** you scribble an animal on a slate, it puffs up into a real creature,
@@ -149,7 +159,7 @@ walks across the table toward you, and you put your hand out and feed it.
 **The hands:** draw on a slate held in front of you, then an open palm the creature walks
 into.
 
-**Effort, about 5 days:** 1 for the XR session and the table scene, 1 for the camera at
+**Effort, about 5 days (`M`):** 1 for the XR session and the table scene, 1 for the camera at
 eye height (the orbit is already correct), 2 for turning twenty odd toolbar buttons into
 things a ray can hit, 1 for the feed and cuddle interactions.
 
@@ -188,7 +198,7 @@ push a bead of black fluid along its wiring, waking machines and keeping out of 
 **The hands:** you reach into a lit floorplan and drag the bead along the wire, tapping
 machines to wake them.
 
-**Effort, about 8 days:** 1 for the ride (the sim already runs with no DOM), 2 for the table
+**Effort, about 8 days (`M`):** 1 for the ride (the sim already runs with no DOM), 2 for the table
 scene and the site at real scale, 2 for the four verb buttons as objects rather than a HUD,
 1 for the fluid at table scale, 2 for comfort and fallback.
 
@@ -226,7 +236,7 @@ drop it, and it grips exactly as hard as it says it does.
 **The hands:** a joystick under one hand, a button under the other, and your face against
 the glass.
 
-**Effort, about 9 days:** 2 for the cabinet, 2 for the pile physics at real scale, 2 for the
+**Effort, about 9 days (`M`):** 2 for the cabinet, 2 for the pile physics at real scale, 2 for the
 joystick and button as held objects, 1 for the prize chute, 2 for comfort and fallback.
 
 **Headless path:** partial. `test/check.mjs` pulls pure helpers out under `vm`; `test/play.mjs`
@@ -258,7 +268,7 @@ let go, and watch the seed arc up into a bud that is still moving.
 
 **The hands:** one hand holds the fork, the other pulls the pouch back and releases.
 
-**Effort, about 8 days:** 2 for the garden scene, 2 for the two handed sling (the hardest
+**Effort, about 8 days (`M`):** 2 for the garden scene, 2 for the two handed sling (the hardest
 part and the whole point), 1 for the arc preview in 3D, 1 for the buds, 2 for comfort.
 
 **Headless path:** partial. `test/check.mjs` under `vm` for helpers, `test/play.mjs` drives a
@@ -289,7 +299,7 @@ rim, and then let go and watch a ball fall through the gravity of the bodies you
 
 **The hands:** fingers on the rim of a spinning deck, parts pressed on, then hands off.
 
-**Effort, about 9 days:** 2 for the table scene, 2 for the deck as a grabbable disc, 2 for
+**Effort, about 9 days (`M`):** 2 for the table scene, 2 for the deck as a grabbable disc, 2 for
 the part palette as objects, 1 for the collapse moment in stereo, 2 for comfort.
 
 **Headless path:** close. `test/harness.js` runs the game body in a `vm` behind a stubbed
@@ -323,7 +333,7 @@ sits in a box, and lets you scratch behind an ear.
 **The hands:** a hand put down at floor level for a cat to walk into, and a scratch behind
 an ear.
 
-**Effort, about 10 days:** 2 for the room at real scale, 2 for pinning the camera per moment
+**Effort, about 10 days (`M`):** 2 for the room at real scale, 2 for pinning the camera per moment
 instead of lerping (the CARE to SAFE fix), 3 for touch interactions on the cat, 3 for comfort
 and fallback.
 
@@ -355,7 +365,7 @@ raccoon forward one square at a time while the road slides toward you.
 **The hands:** a finger that pokes a raccoon forward a square at a time, on a road that
 slides toward you under a camera that never moves.
 
-**Effort, about 7 days:** 1 for the treadmill reframe, 2 for the table scene, 2 for the
+**Effort, about 7 days (`M`):** 1 for the treadmill reframe, 2 for the table scene, 2 for the
 sprite to mesh pass on the hazards, 2 for comfort and fallback.
 
 **Reframe, named:** `G.camY` at `satellites/stream-hop/index.html:1895` scrolls the view up
@@ -384,7 +394,7 @@ would say yes, and I would park this one until Steam is live.
 
 ---
 
-### 10. Budburst — STANDING, SAFE, S
+### 10. Budburst — STANDING, SAFE, M
 `PRERENDER` · shots: `budburst-1boot.png`, `budburst-2play.png`
 
 **The thirty seconds:** a cluster of buds hangs in front of you and you flick one up into it,
@@ -392,7 +402,7 @@ leaning to read the angle off the wall before you let go.
 
 **The hands:** you pull back and flick a bud up at a cluster hanging in front of you.
 
-**Effort, about 4 days:** 1 for the hanging board, 1 for the flick as a controller throw,
+**Effort, about 4 days (`M`):** 1 for the hanging board, 1 for the flick as a controller throw,
 1 for the bounce preview, 1 for comfort and the 2D fallback. **The cheapest honest body verb
 in the catalog.**
 
@@ -410,7 +420,7 @@ pips at about 26 px, well under the 48 px rule, and they are a mode selector.
 
 **The one question:** Budburst is the cheapest thing here and the least distinctive. **Is a
 four day proof of the whole pipeline worth doing first, before the ten day builds?** I think
-it is, and it is the only S in the STANDING lane.
+it is, and it is the cheapest row in either body lane.
 
 ---
 
@@ -548,5 +558,5 @@ often than a guess from names would suggest.
 
 **That is a bigger number than it is an opportunity, and the effort column is where the honesty
 is:** 72 of the 79 TABLETOP rows are `L`, because a 2D board needs a new camera, a new input
-model and new meshes, all three. The cheap band is still eleven games long. The lane count says
+model and new meshes, all three. The cheap band is still twelve games long. The lane count says
 what the catalog *is*; the effort count says what is *buyable*.

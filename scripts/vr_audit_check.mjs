@@ -72,6 +72,21 @@ export function check(jsonPath = JSON_PATH) {
       bad(at + `cite "${cite}" is neither a file:line nor UNREAD`);
     /* an UNREAD row must say why, in the cite itself */
     if (/^UNREAD$/.test(cite)) bad(at + "UNREAD with no reason");
+
+    /* ⛔⛔ THE LETTER MUST MATCH THE DAYS. Section 4 defines the brackets by
+       days, S is 3 or less and M is 10 or less, and then offers the "new camera
+       AND new input AND new meshes" test as guidance. On 2026-09-03 the first
+       pass of this audit graded Create A Critter S while its own shortlist row
+       estimated 5 days, and Budburst S against 4 days, because the letters came
+       from the guidance and the days came from thinking about the actual build.
+       A row that states its days must agree with its own letter. */
+    const m = String(r.notes || "").match(/\bBUILD\s+(\d+)\s+days?\b/i);
+    if (m) {
+      const d = +m[1];
+      const want = d <= 3 ? "S" : d <= 10 ? "M" : "L";
+      if (r.effort !== want)
+        bad(at + `notes say BUILD ${d} days, which is ${want} by section 4, but effort is ${r.effort}`);
+    }
   }
   return fails;
 }
