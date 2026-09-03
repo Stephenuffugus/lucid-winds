@@ -60,3 +60,25 @@ What the code does today (read, not guessed):
 - **Worlds.** The dish is one arena (art in docs/ARENA art). He wants more arenas the matches
   happen in. The 3D view already loads GLB parts (docs/FORGE3D.md), so a per-arena environment
   is a model plus a lighting preset. An ART_ASSETS style list for arenas is the next art ask.
+
+## 2026-09-03, Stephen, on the launch layer (aim, lean, hold)
+
+> "oh i like these and the ability to change creates a unique power wheel potential in
+> combination with all the counter weighting, balancing, and other stats it could be really
+> involved. i'm liking it more and more. we just need a way to show how your choices are
+> going to affect your stats. maybe some things you have to learn."
+
+Direction, as understood:
+- Not one launch layer but a **launch style you pick**: Aim (where you land), Lean (which way
+  you wobble from the start), Hold (power against control, no timing bar). Three ways to send
+  the same top, chosen before the wind, and a real part of the build alongside weights and
+  tuning. A power wheel, in his words.
+- **Every choice shows its effect before you commit.** The stats panel must react live to the
+  launch style the way the part chips now show deltas: pick Hold and see spin up, guard down;
+  pick Aim and see travel; pick Lean and see the wobble needle turn.
+- **And some of it stays hidden, to be learned.** Not everything is printed: a few
+  interactions (a lean into a wide blade, a hold on a light top) are found by playing, the
+  way the non obvious rigs are.
+Build plan when picked up: launch style as a fourth workshop choice (Core, Weights, Tuning,
+Launch), the three styles as data with their stat hooks, the wind screen carrying the one
+extra gesture each needs, the stats panel live to it, rigs allowed to read it.
