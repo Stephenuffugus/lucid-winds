@@ -129,6 +129,7 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <div class="helprow"><div class="hi">4</div><div><b>Speed is your blade.</b> Swing fast enough and you slice straight through hedgehogs and crows. Touch them slowly and they hurt you. You can also stomp a hedgehog from above.</div></div>
     <div class="helprow"><div class="hi">5</div><div><b>Free the mice.</b> Three mice sit in little cages. Run into a cage to pop the mouse out. Freed mice follow you in a happy line. Bounce pads and cannons launch you to the high ledges.</div></div>
     <div class="helprow"><div class="hi">6</div><div><b>Carrots are coin.</b> Every carrot you carry out of a cleared dojo goes into your bank. Spend them at the <b class="hl">Dojo Shop</b>: longer vine, mightier fling, swifter paws, a fourth heart. Big spike pits have no floor worth landing on. Swing them.</div></div>
+    <div class="helprow"><div class="hi">7</div><div><b>Dash to cut.</b> Once you have cleared the first six dojos, the <b class="hl">DASH</b> button lunges you forward, blade out, on the ground or in the air. It needs a moment to recover, unless the dash connects: a kill cools it at once, so a line of enemies is a chain, and every link is worth more.</div></div>
     <div style="height:18px"></div>
     <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
   </div></div>
@@ -472,8 +473,9 @@ function startLevel(li, freshRun){
   var keepMice=(G&&!freshRun)?G.miceTotal:0;
   G={ lvl:lvl, li:li, phase:'play', t:0,
     bx:lvl.spawn.x, by:lvl.spawn.y, vx:0, vy:0, onGround:false, facing:1,
-    held:{left:false,right:false,jump:false,rope:false}, prevJump:false, prevRope:false,
+    held:{left:false,right:false,jump:false,rope:false,dash:false}, prevJump:false, prevRope:false,
     rope:{attached:false,node:null,len:0}, ropeVisual:0, dashed:false, dashT:0,
+    dashCd:0, dashChain:0, dashHit:false, hitstop:0, shake:0, ghosts:[], prevDash:false,
     lives:keepLives, score:keepScore, carrots:0, mice:0, miceTotal:keepMice,
     invuln:0, cam:0, trail:[], followers:[], parts:[], floats:[],
     clearT:0, moleY:0, sunAmt:(G&&!freshRun)?(G.sunAmt||0):0,
@@ -573,25 +575,26 @@ function interact(dt){
      slices straight through; a slow touch hurts. A falling stomp also works
      on hedgehogs. */
   var spd=Math.sqrt(G.vx*G.vx+G.vy*G.vy);
-  var slicing = G.rope.attached ? spd>340 : spd>430;
+  var dashing = G.dashT>0;
+  var slicing = dashing || (G.rope.attached ? spd>340 : spd>430);
   for(i=0;i<L.hogs.length;i++){ var hg2=L.hogs[i]; if(hg2.dead)continue;
     if(!ovl(G.bx,G.by,HW,HH,hg2.x,hg2.y,16,14)) continue;
     var stomp = !G.rope.attached && G.vy>250 && G.by<hg2.y-8;
-    if(slicing||stomp){ hg2.dead=true; G.score+=30; sfx('slash'); haptic(14);
+    if(slicing||stomp){ hg2.dead=true; if(dashing)dashKill(hg2.x,hg2.y,30); else G.score+=30; sfx('slash'); haptic(14);
       floatUp(hg2.x,hg2.y-20,'slash!'); burst(hg2.x,hg2.y,'#d9cfe6',10);
       if(stomp){ G.vy=-460; G.onGround=false; } }
     else if(G.invuln<=0) hurt();
   }
   for(i=0;i<L.crows.length;i++){ var cw2=L.crows[i]; if(cw2.dead)continue;
     if(!ovl(G.bx,G.by,HW,HH,cw2.x,cw2.y,17,12)) continue;
-    if(slicing){ cw2.dead=true; G.score+=40; sfx('slash'); haptic(14);
+    if(slicing){ cw2.dead=true; if(dashing)dashKill(cw2.x,cw2.y,40); else G.score+=40; sfx('slash'); haptic(14);
       floatUp(cw2.x,cw2.y-20,'slash!'); burst(cw2.x,cw2.y,'#3a3f4a',10); }
     else if(G.invuln<=0) hurt();
   }
   for(i=0;i<L.spits.length;i++){ var st2=L.spits[i]; if(st2.dead)continue;
     if(!ovl(G.bx,G.by,HW,HH,st2.x,st2.y,17,15)) continue;
     var stomp2 = !G.rope.attached && G.vy>250 && G.by<st2.y-8;
-    if(slicing||stomp2){ st2.dead=true; G.score+=35; sfx('slash'); haptic(14);
+    if(slicing||stomp2){ st2.dead=true; if(dashing)dashKill(st2.x,st2.y,35); else G.score+=35; sfx('slash'); haptic(14);
       floatUp(st2.x,st2.y-20,'slash!'); burst(st2.x,st2.y,'#8a9a4a',10);
       if(stomp2){ G.vy=-460; G.onGround=false; } }
     else if(G.invuln<=0) hurt();
@@ -599,7 +602,7 @@ function interact(dt){
   /* their lobs: slice them out of the air at speed, or wear them */
   for(i=L.projs.length-1;i>=0;i--){ var pj2=L.projs[i];
     if(!ovl(G.bx,G.by,HW,HH,pj2.x,pj2.y,pj2.r+4,pj2.r+4)) continue;
-    if(slicing){ L.projs.splice(i,1); G.score+=5; sfx('slash'); burst(pj2.x,pj2.y,'#9bd36a',6); }
+    if(slicing){ L.projs.splice(i,1); G.score+=5; if(dashing)G.dashCd=Math.min(G.dashCd,0.5); sfx('slash'); burst(pj2.x,pj2.y,'#9bd36a',6); }
     else if(G.invuln<=0){ L.projs.splice(i,1); hurt(); }
   }
   /* spikes */
@@ -636,7 +639,7 @@ function levelClear(){ if(G.phase!=='play')return; G.phase='clear'; G.clearT=2.0
   var hadDash=dashUnlocked();
   PROG.cleared=Math.max(PROG.cleared||0, G.li+1);
   if(!hadDash && dashUnlocked()){
-    floatUp(G.bx,G.by-70,'AIR DASH learned! tap JUMP in the air');
+    floatUp(G.bx,G.by-70,'DASH learned! tap DASH. A kill cools it, chain them');
   }
   save();
   var amt=Math.min(12, 8+G.mice+Math.floor(G.carrots/4));
@@ -666,18 +669,44 @@ function burst(x,y,col,n){ for(var i=0;i<n;i++){ var a=Math.random()*6.28,s=40+M
   if(G.parts.length>180)G.parts.splice(0,G.parts.length-180); }
 
 /* ---------- input processing ---------- */
+/* ---------- the DASH ATTACK (2026-09-03, Stephen: "it's a dash and an attack,
+   there's a cooldown unless maybe a certain criteria are met") ----------
+   The old air dash was movement only, once per airtime. Now the dash IS the blade:
+   for 0.18 s the ronin is slicing whatever it passes through, on the ground or in
+   the air, from a run or straight off the vine. It costs a 1.4 s cooldown, and the
+   criteria that waives it is a KILL: a dash that connects cools instantly, so a line
+   of hedgehogs is a chain, and every chained kill is worth more than the last. */
+var DASH_CD=1.4, DASH_T=0.18, DASH_V=600;
+function doDash(){
+  if(!dashUnlocked()||G.dashCd>0||G.dashT>0)return false;
+  if(G.rope.attached)releaseRope(false);
+  G.dashT=DASH_T; G.dashCd=DASH_CD; G.dashHit=false; G.dashed=true;
+  G.vx=G.facing*DASH_V; if(G.vy>0)G.vy=0;
+  sfx('dash'); haptic(10); burst(G.bx-G.facing*10,G.by,'#e8dcc8',8);
+  return true;
+}
+/* a read only window for the headless tests; nothing in the game calls it */
+window.__RR=function(){ return {G:G,unlocked:dashUnlocked(),screen:curScreen,running:running}; };
+function dashKill(x,y,base){
+  G.dashHit=true; G.dashChain++;
+  var pts=base*G.dashChain;
+  G.score+=pts; G.dashCd=0;
+  G.hitstop=0.06; G.shake=0.14;
+  floatUp(x,y-34,G.dashChain>1?'x'+G.dashChain+' chain!':'dash kill');
+  if(G.dashChain>=3)haptic([10,20,10,20,10]);
+  return pts;
+}
 function processInput(){
   var jumpEdge=G.held.jump&&!G.prevJump, ropeEdge=G.held.rope&&!G.prevRope, ropeUp=(!G.held.rope&&G.prevRope);
+  var dashEdge=G.held.dash&&!G.prevDash;
+  if(dashEdge)doDash();
   if(jumpEdge){ if(G.rope.attached)releaseRope(true);
     else if(G.onGround){ G.vy=-JUMP; G.onGround=false; sfx('jump'); haptic(8); }
-    else if(dashUnlocked() && !G.dashed){
-      /* AIR DASH: one forward lunge per airtime, learned by clearing world 1 */
-      G.dashed=true; G.dashT=0.16; G.vx=G.facing*560; if(G.vy>0)G.vy=0;
-      sfx('dash'); haptic(10); burst(G.bx-G.facing*10,G.by,'#e8dcc8',8);
-    } }
+    else doDash();   /* JUMP in the air still dashes, the way it was taught */
+  }
   if(ropeEdge && !G.rope.attached) tryGrapple();      /* press the field -> shoot the rope */
   if(ropeUp && G.rope.attached) releaseRope(true);    /* let go of the field -> fling off */
-  G.prevJump=G.held.jump; G.prevRope=G.held.rope;
+  G.prevJump=G.held.jump; G.prevRope=G.held.rope; G.prevDash=G.held.dash;
 }
 
 /* ---------- step ---------- */
@@ -712,6 +741,10 @@ function step(dt){ if(!G)return; if(dt>0.05)dt=0.05; G.t+=dt;
   if(G.phase!=='play')return;
 
   if(G.invuln>0)G.invuln-=dt;
+  if(G.dashCd>0){ G.dashCd-=dt; if(G.dashCd<=0&&!G.dashHit)G.dashChain=0; }
+  if(G.shake>0)G.shake-=dt;
+  if(G.dashT>0){ G.ghosts.push({x:G.bx,y:G.by,f:G.facing,life:0.22}); }
+  for(var gi=G.ghosts.length-1;gi>=0;gi--){ G.ghosts[gi].life-=dt; if(G.ghosts[gi].life<=0)G.ghosts.splice(gi,1); }
   processInput();
 
   if(G.rope.attached){ G.ropeVisual=Math.min(1,G.ropeVisual+dt*6); pendulum(dt); }
@@ -740,7 +773,9 @@ function step(dt){ if(!G)return; if(dt>0.05)dt=0.05; G.t+=dt;
 function updateCam(){ var maxCam=Math.max(0,G.lvl.W*T-VW); G.cam=Math.max(0,Math.min(maxCam,G.bx-VW*0.42)); }
 
 /* ---------- render ---------- */
-function loop(ts){ if(!running)return; if(!lastTs)lastTs=ts; var dt=(ts-lastTs)/1000; lastTs=ts; step(dt); render(); if(running)requestAnimationFrame(loop); }
+function loop(ts){ if(!running)return; if(!lastTs)lastTs=ts; var dt=(ts-lastTs)/1000; lastTs=ts;
+  if(G&&G.hitstop>0){ G.hitstop-=dt; render(); if(running)requestAnimationFrame(loop); return; }   /* a dash kill freezes the frame for a beat */
+  step(dt); render(); if(running)requestAnimationFrame(loop); }
 
 /* ---------- background worlds ----------
    Every theme gets a real backdrop: sky gradient, then two parallax
@@ -797,6 +832,7 @@ function render(){ if(!ctx||!G)return; var L=G.lvl, cam=G.cam, i;
   drawBgSil(L.theme,'near',cam);
 
   ctx.save(); ctx.translate(-cam,0);
+  if(G.shake>0){ var sk=G.shake*28; ctx.translate((Math.random()-.5)*sk,(Math.random()-.5)*sk); }
   /* tiles */
   var c0=Math.max(0,colAt(cam)-1), c1=Math.min(L.W-1,colAt(cam+VW)+1);
   for(var r=0;r<L.H;r++){ for(var c=c0;c<=c1;c++){ if(L.grid[r][c]) drawTile(c*T,r*T,L.theme, L.grid[r-1]&&L.grid[r-1][c]); } }
@@ -834,6 +870,7 @@ function render(){ if(!ctx||!G)return; var L=G.lvl, cam=G.cam, i;
   /* followers (mice) */
   for(i=0;i<G.followers.length;i++)drawMouse(G.followers[i].x,G.followers[i].y,G.t+i);
   /* bunny */
+  drawGhosts();
   drawBunny();
   /* mole rat on clear */
   if(G.phase==='clear')drawMole(L.diamond.x, 22*T, G.moleY);
@@ -982,7 +1019,16 @@ function drawMole(x,groundY,t){ var rise=t*46; ctx.save(); ctx.translate(x-46, g
   ctx.fillStyle='#c8a84b'; ctx.fillRect(21,-16,4,8);
   ctx.restore(); }
 
+function drawGhosts(){
+  for(var i=0;i<G.ghosts.length;i++){ var gh=G.ghosts[i];
+    ctx.save(); ctx.translate(gh.x,gh.y); ctx.scale(gh.f,1); ctx.globalAlpha=gh.life/0.22*0.45;
+    ctx.fillStyle='#efe6d6'; ctx.beginPath(); ctx.ellipse(0,2,11,13,0,0,6.28); ctx.fill();
+    ctx.beginPath(); ctx.arc(2,-11,9,0,6.28); ctx.fill();
+    ctx.fillStyle='#c0392b'; roundRect(-6,-16,17,5,2); ctx.fill();
+    ctx.restore(); }
+}
 function drawBunny(){ var x=G.bx, y=G.by, f=G.facing; ctx.save(); ctx.translate(x,y); ctx.scale(f,1);
+  if(G.dashT>0){ ctx.strokeStyle='rgba(243,235,220,.85)'; ctx.lineWidth=3; ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(10,-4); ctx.lineTo(34,-14); ctx.stroke(); ctx.beginPath(); ctx.moveTo(8,4); ctx.lineTo(30,10); ctx.stroke(); ctx.lineCap='butt'; }
   if(G.invuln>0 && Math.floor(G.t*16)%2===0)ctx.globalAlpha=0.5;
   var run=(Math.abs(G.vx)>20 && G.onGround)?Math.sin(G.t*16):0;
   /* tiny sword on the back */
@@ -1028,12 +1074,20 @@ var BLEFT={x:22,y:VH-118,w:92,h:96};
 var BRIGHT={x:124,y:VH-118,w:92,h:96};
 var BJUMP={x:VW-118,y:VH-124,w:96,h:96};
 var BROPE={x:VW-118,y:VH-232,w:96,h:96};
+var BDASH={x:VW-226,y:VH-118,w:92,h:96};   /* 2026-09-03: the dash attack, Stephen's ask */
 function drawControls(){ if(G.phase!=='play'&&G.phase!=='clear')return;
   padBtn(BLEFT,'◀', G.held.left);
   padBtn(BRIGHT,'▶', G.held.right);
   padBtn(BJUMP,'JUMP', G.held.jump, '#3f6b34');
   /* the VINE gets a real button (2026-08-21 rebuild). Field press still works. */
   padBtn(BROPE,'VINE', G.held.rope, '#2e4a2a');
+  if(dashUnlocked()){
+    var ready=G.dashCd<=0;
+    padBtn(BDASH,'DASH', G.held.dash, ready?'#6b2f2a':'#2a2320');
+    if(!ready){ var cx=BDASH.x+BDASH.w/2, cy=BDASH.y+BDASH.h/2, k=1-G.dashCd/DASH_CD;
+      ctx.globalAlpha=0.9; ctx.strokeStyle='#c8a84b'; ctx.lineWidth=4; ctx.beginPath(); ctx.arc(cx,cy,BDASH.w/2-3,-Math.PI/2,-Math.PI/2+k*6.283); ctx.stroke(); ctx.globalAlpha=1; }
+    if(G.dashChain>1){ ctx.fillStyle='#e6cd6a'; ctx.font='800 13px system-ui'; ctx.textAlign='center'; ctx.fillText('x'+G.dashChain,BDASH.x+BDASH.w/2,BDASH.y-6); }
+  }
   if(G.rope.attached){ ctx.globalAlpha=0.5+0.3*Math.sin(G.t*10); ctx.fillStyle='#e6cd6a'; ctx.font='700 13px system-ui'; ctx.textAlign='center'; ctx.fillText('drag to swing · release to fling', VW/2, VH-24); ctx.globalAlpha=1; ctx.textAlign='left'; }
 }
 function padBtn(b,label,active,tint){ var cx=b.x+b.w/2, cy=b.y+b.h/2, r=b.w/2;
@@ -1061,12 +1115,13 @@ function evList(e){ var out=[]; var r=cv.getBoundingClientRect();
 function inCircle(p,b){ var cx=b.x+b.w/2, cy=b.y+b.h/2, r=b.w/2+8; return (p.x-cx)*(p.x-cx)+(p.y-cy)*(p.y-cy)<=r*r; }
 function inRect(p,b){ return p.x>=b.x&&p.x<=b.x+b.w&&p.y>=b.y&&p.y<=b.y+b.h; }
 function applyPointers(pts){ if(!G)return;
-  var L=false,R=false,J=false,Ro=false,ropePt=null;
+  var L=false,R=false,J=false,Ro=false,D=false,ropePt=null;
   for(var i=0;i<pts.length;i++){ var p=pts[i];
     if(inCircle(p,BLEFT)){ L=true; continue; }
     if(inCircle(p,BRIGHT)){ R=true; continue; }
     if(inCircle(p,BJUMP)){ J=true; continue; }
     if(inCircle(p,BROPE)){ Ro=true; continue; }
+    if(dashUnlocked()&&inCircle(p,BDASH)){ D=true; continue; }
     if(inRect(p,PAUSE)) continue;
     /* any touch on the open field also throws/holds the vine (Jessie),
        and now there is a VINE button too (Stephen rebuild) */
@@ -1074,7 +1129,7 @@ function applyPointers(pts){ if(!G)return;
   }
   /* drag where you want to swing: the rope touch steers the pendulum */
   if(Ro && ropePt && G.rope.attached){ if(ropePt.x < G.bx-14)L=true; else if(ropePt.x > G.bx+14)R=true; }
-  G.held.left=L; G.held.right=R; G.held.jump=J; G.held.rope=Ro;
+  G.held.left=L; G.held.right=R; G.held.jump=J; G.held.rope=Ro; G.held.dash=D;
 }
 function onDown(e){ if(curScreen!=='s-play')return; e.preventDefault(); ac();
   var pts=evList(e);
@@ -1085,7 +1140,7 @@ function onDown(e){ if(curScreen!=='s-play')return; e.preventDefault(); ac();
 function onMove(e){ if(curScreen!=='s-play')return; e.preventDefault(); applyPointers(evList(e)); }
 function onUp(e){ if(curScreen!=='s-play')return; e.preventDefault();
   if(e.touches&&e.touches.length){ applyPointers(evList(e)); }
-  else if(G){ G.held.left=G.held.right=G.held.jump=G.held.rope=false; }
+  else if(G){ G.held.left=G.held.right=G.held.jump=G.held.rope=G.held.dash=false; }
 }
 cv.addEventListener('touchstart',onDown,{passive:false});
 cv.addEventListener('touchmove',onMove,{passive:false});
@@ -1106,6 +1161,7 @@ function syncKeys(){ if(!G)return;
   G.held.right = !!(KEYS['arrowright']||KEYS['d']);
   G.held.jump = !!(KEYS[' ']||KEYS['arrowup']||KEYS['w']);
   G.held.rope = !!(KEYS['shift']||KEYS['e']||KEYS['arrowdown']||KEYS['s']);
+  G.held.dash = !!(KEYS['k']||KEYS['x']||KEYS['f']);
 }
 
 /* ---------- share ---------- */
