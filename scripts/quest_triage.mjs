@@ -27,7 +27,16 @@
                 thumb. Small targets that pass on a phone can miss in VR.
 */
 import { readFileSync, writeFileSync, existsSync } from "fs";
-import { catalog as cat } from "./catalog.mjs";
+/* ⛔⛔ catalog.mjs runs ITS OWN selftest at module-evaluation time on any
+   process whose argv carries --selftest, and then process.exit(0)s. A STATIC
+   import of it here meant `node scripts/quest_triage.mjs --selftest` printed
+   the CATALOG's six checks, exited 0, and never reached this file's twelve
+   detector cases at all. The gate the VR handoff names has therefore never
+   run, on any day, since it was written: it was a green light wired to a
+   different lamp. Fixed 2026-09-03 by importing catalog.mjs LAZILY (dynamic
+   import is not hoisted), so the selftest block below is reached first and
+   both selftests are runnable. */
+let cat = null;
 
 const PORTAL = "portal/index.html";
 const OUT = "QUEST-COMPAT.md";
@@ -39,10 +48,54 @@ const OUT = "QUEST-COMPAT.md";
 function catalog() {
   return cat(PORTAL).all.map(g => ({
     name: g.name, url: g.url, cat: g.cat, beta: g.gated, kind: g.kind,
-    files: g.kind === "satellite"
-      ? (g.dir ? ["satellites/" + g.dir + "/index.html"] : [])
-      : ["play/" + g.id + ".html", "games/" + g.id + ".js"]
+    files: sourceFiles(g)
   }));
+}
+
+/* Which files in THIS repo are a catalog row's source. Returns [] when the
+   source genuinely lives on another origin, which is what makes a row read
+   "unknown".
+
+   Four shapes of url appear in the FEATURED array:
+     /satellites/<dir>/          a vendored satellite            (105 rows)
+     /<page>.html, /<d>/<p>.html a page in this repo's own tree  (LOAF, Whack Box)
+     https://lucidwinds.com/...  the app's OWN origin, so also this repo
+     https://<other host>/...    genuinely somebody else's origin (Pom Pond)
+   Only the last one is unknown. Before 2026-09-03 the middle two were reported
+   as unknown as well, which published a false claim about a file in the repo
+   root and left three rows untriaged. */
+const OWN_ORIGINS = ["https://lucidwinds.com", "http://lucidwinds.com", "https://www.lucidwinds.com"];
+
+function sourceFiles(g) {
+  if (g.kind !== "satellite") return ["play/" + g.id + ".html", "games/" + g.id + ".js"];
+  if (g.dir) return ["satellites/" + g.dir + "/index.html"];
+
+  let u = String(g.url || "");
+  for (const o of OWN_ORIGINS) if (u.startsWith(o)) { u = u.slice(o.length) || "/"; break; }
+  if (/^[a-z]+:\/\//i.test(u)) return [];              /* somebody else's origin */
+  u = u.split("#")[0].split("?")[0];                    /* ?v=20260808b is a cache buster, not a path */
+  if (!u.startsWith("/")) return [];
+  let page = u === "/" || u.endsWith("/") ? u.slice(1) + "index.html" : u.slice(1);
+  if (!page) page = "index.html";
+  if (!existsSync(page)) return [];
+
+  /* A LAUNCHER PAGE IS NOT THE GAME. party/host.html is 7KB of shell that pulls
+     its logic from party/shell/*.js; reading the launcher alone would call
+     Whack Box clean without having read a line of it. So follow the relative
+     <script src> the page declares, one level, files that exist only. This
+     branch is reached by root relative rows ONLY, so no satellite or native
+     verdict can move because of it. */
+  const files = [page];
+  const dir = page.includes("/") ? page.slice(0, page.lastIndexOf("/") + 1) : "";
+  let src = "";
+  try { src = readFileSync(page, "utf8"); } catch (e) { return files; }
+  for (const m of src.matchAll(/<script[^>]*\ssrc\s*=\s*["']([^"']+)["']/gi)) {
+    let r = m[1].split("#")[0].split("?")[0];
+    if (/^[a-z]+:\/\//i.test(r) || r.startsWith("//")) continue;   /* a CDN is not our source */
+    const f = r.startsWith("/") ? r.slice(1) : dir + r;
+    if (existsSync(f) && !files.includes(f)) files.push(f);
+  }
+  return files;
 }
 
 /* ---------- detectors. Each returns null or {level, why}. ----------------- */
@@ -86,12 +139,52 @@ function scan(src) {
   /* MOTION. Tilt and shake have no analogue in a headset. But the house
      pattern offers tilt as ONE steering option beside drag, and Sproing was
      called blocked when its own settings key already lets you pick drag
-     instead. A control scheme you can turn off is a caution, not a wall. */
+     instead. A control scheme you can turn off is a caution, not a wall.
+
+     ⛔⛔ AND MOST TILT IN THIS CATALOG IS NOT A CONTROL AT ALL. On 2026-09-03
+     this detector called Lucid Winds and LOAF blocked; Lucid Winds turns a
+     compass needle with it (index.html:53839) and LOAF moves the shine on a
+     card (loaf.html:4775) beside a pointermove handler that writes the same
+     two CSS variables. Same lesson as the 19 pinch false positives: ask what
+     the handler DOES, not whether it exists. Three shapes:
+       cosmetic   every tilt handler only writes style, a CSS variable, a
+                  transform or a label. It is a readout. Nothing to replace.
+       optional   tilt is one steering option beside drag. Caution.
+       control    tilt moves the game and nothing else does. Blocked. */
   if (/deviceorientation|devicemotion|DeviceOrientationEvent|accelerationIncludingGravity/.test(code)) {
+    /* the body of every tilt handler, bounded the way the pinch detector bounds
+       its window, so a 7MB file cannot turn this into a whole file read */
+    const bodies = [...code.matchAll(
+      /addEventListener\(\s*['"](?:deviceorientation(?:absolute)?|devicemotion)['"]\s*,\s*(?:function\s*\([^)]*\)|\([^)]*\)\s*=>|[A-Za-z_$][\w$]*\s*=>)?\s*\{([\s\S]{0,600})/g)]
+      .map(m => m[1]);
+    /* Writes that change how a thing LOOKS, and nothing else. */
+    const cosmeticOnly = bodies.length > 0 && bodies.every(b => {
+      const writes = b.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/\/\/[^\n]*/g, " ")
+        .split(/[;\n]/).map(t => t.trim()).filter(Boolean)
+        .filter(t => /=[^=]|\+\+|--|\bsetProperty\b|\bsetAttribute\b/.test(t))
+        .filter(t => !/^(var|let|const)\s/.test(t))          /* a local of its own is not a game write */
+        .filter(t => !/^(if|return|else|for|while|try|catch)\b/.test(t));
+      return writes.length > 0 && writes.every(t =>
+        /\.style\b|setProperty\s*\(\s*['"]--|\.textContent|\.innerText|\.innerHTML|\.className|classList|setAttribute\s*\(\s*['"](?:style|class|transform)/.test(t));
+    });
     const optional = /steer\s*[:=]|['"]drag['"]|controlMode|steerMode/.test(code);
-    f.push(optional
+    /* ⛔ AND BLOCKED NEEDS THE SAME BAR THE OTHER TWO DETECTORS ALREADY USE.
+       Lucid Winds' tilt turns a compass needle through TWO named functions
+       (_onDevOrient -> _updateCompass -> style.transform), which no bounded
+       static read is going to prove cosmetic, and it was called blocked for it
+       on the first run that could read the file. The keyboard detector blocks
+       on `keys && !pointer` and the pinch detector blocks on `!singleTouch`:
+       both reserve blocked for "there is no other way in". Tilt now does too.
+       A game with a live pointer path is at worst a caution, because a wrong
+       blocked is the expensive error here (19 of them in August) and a caution
+       costs one look on the device, which is what this file is for. */
+    const pointerPath = /(pointerdown|pointermove|touchstart|mousedown|onclick|addEventListener\(\s*['"]click)/.test(code);
+    if (cosmeticOnly) { /* a readout, not a control. Nothing to replace. */ }
+    else if (!pointerPath)
+      f.push({ level: "blocked", why: "steers by device tilt with no alternative" });
+    else f.push(optional
       ? { level: "caution", why: "offers tilt steering, so confirm the drag option is the default in a headset" }
-      : { level: "blocked", why: "steers by device tilt with no alternative" });
+      : { level: "caution", why: "reads device tilt, so confirm on the device that tilt is not required to play" });
   }
 
   /* HOVER. A controller ray DOES hover, so this is a caution: it usually works
@@ -130,7 +223,34 @@ if (process.argv.includes("--selftest")) {
     ["two finger only, no single pointer path, blocks",
       `if(e.touches.length===2){zoom=dist(e);spin(e);}`, "blocked", "single pointer"],
     ["tilt with no alternative blocks", `window.addEventListener("deviceorientation",f)`, "blocked", "no alternative"],
-    ["tilt offered beside drag cautions", `window.addEventListener("deviceorientation",f);SET.steer="drag";`, "caution", "confirm the drag option"],
+    /* the Aug 16 regression guard, kept, with the pointer path Sproing really
+       has (satellites/sproing/index.html: `steer:'drag'` is its default and
+       INP.tiltAxis is read only when steer !== 'drag'). Without a pointer path
+       in the fixture the row would block, which is correct now and was never
+       what this case was about. */
+    ["tilt offered beside drag cautions",
+      `addEventListener('pointerdown',g);window.addEventListener("deviceorientation",f);SET.steer="drag";`, "caution", "confirm the drag option"],
+    /* ⛔⛔ THE SECOND WAVE OF FALSE POSITIVES, 2026-09-03. Fixing the resolver
+       made three readable rows readable and instantly called two of them
+       BLOCKED for tilt: Lucid Winds, whose tilt turns a compass NEEDLE
+       (index.html:53839, and `_updateCompass(0)` runs first so the compass
+       works with no sensor at all), and LOAF, whose tilt moves the SHINE on a
+       card (loaf.html:4775) beside a `pointermove` handler that sets the same
+       two CSS variables (loaf.html:4765). Neither game steers anything. The
+       detector was asking whether a tilt listener EXISTS; the pinch detector
+       learned in August to ask what the branch DOES, and this is the same
+       lesson arriving at the same file a second time. A cosmetic readout needs
+       no controller equivalent because it is not a control. */
+    ["a tilt handler that only writes a CSS variable is decoration, not a control",
+      `window.addEventListener('deviceorientation', e => { card.style.setProperty('--mx', e.gamma + '%'); });`, null, ""],
+    ["a tilt handler that only writes a transform is decoration",
+      `window.addEventListener("deviceorientation",function(e){ img.style.transform='rotate('+e.alpha+'deg)'; });`, null, ""],
+    ["a tilt handler that only writes text is decoration",
+      `window.addEventListener("deviceorientation",function(e){ el.textContent = cardinals[e.alpha/45|0]; });`, null, ""],
+    ["a tilt handler that moves the player and has no pointer path at all still blocks",
+      `window.addEventListener("deviceorientation",function(e){ player.vx += e.gamma*0.1; player.x+=player.vx; });`, "blocked", "no alternative"],
+    ["tilt beside a live pointer path is a caution, not a wall",
+      `addEventListener('pointerdown',aim);window.addEventListener("deviceorientation",function(e){ player.vx += e.gamma*0.1; });`, "caution", "not required to play"],
     ["hover cautions", `.tip:hover{display:block}`, "caution", "hover"],
     ["a plain page is clean", `<p>hello</p><button onclick="go()">go</button>`, null, ""]
   ];
@@ -143,6 +263,45 @@ if (process.argv.includes("--selftest")) {
     console.log((ok ? "  ok   " : "  FAIL ") + nm + " -> " + got + (ok ? "" : "  wanted " + want));
     if (!ok) bad++;
   }
+  /* ---- the RESOLVER, which decides "unknown" ------------------------------
+     ⛔⛔ Until 2026-09-03 the resolver only knew `/satellites/<dir>/`, so three
+     rows whose source sits in this repo were published as "source not readable
+     from this repo (external repos)": Lucid Winds (index.html), LOAF
+     (loaf.html) and Whack Box (party/host.html). An unknown is a row nobody
+     triaged, so a wrong unknown hides real blockers, and the document said the
+     opposite of the truth about a file in the repo root. These cases fail
+     against the old resolver. */
+  for (const [nm, row, want] of [
+    ["the app's own absolute origin resolves to the repo root page",
+      { kind: "satellite", url: "https://lucidwinds.com/?from=portal", dir: null }, "index.html"],
+    ["a root relative page resolves to the repo file",
+      { kind: "satellite", url: "/loaf.html", dir: null }, "loaf.html"],
+    ["a query string does not hide the page",
+      { kind: "satellite", url: "/party/host.html?v=20260808b", dir: null }, "party/host.html"],
+    ["a foreign origin stays unreadable",
+      { kind: "satellite", url: "https://stephenuffugus.github.io/Tomato-Man/", dir: null }, null],
+    ["a satellite with a dir is unchanged",
+      { kind: "satellite", url: "/satellites/conduit/", dir: "conduit" }, "satellites/conduit/index.html"],
+    ["a native row is unchanged",
+      { kind: "native", url: "/play/sudoku.html", id: "sudoku" }, "play/sudoku.html"]
+  ]) {
+    const got = sourceFiles(row);
+    const ok = want === null ? got.length === 0 : got.includes(want);
+    console.log((ok ? "  ok   " : "  FAIL ") + nm + " -> [" + got.join(", ") + "]" +
+      (ok ? "" : "  wanted " + want));
+    if (!ok) bad++;
+  }
+  /* A launcher page is not the game. party/host.html is 7KB of shell that pulls
+     its logic from party/shell/*.js, so reading the launcher alone would call
+     Whack Box clean without having read a line of Whack Box. */
+  {
+    const got = sourceFiles({ kind: "satellite", url: "/party/host.html?v=20260808b", dir: null });
+    const ok = got.some(f => /^party\/shell\//.test(f));
+    console.log((ok ? "  ok   " : "  FAIL ") + "a launcher page pulls in the local scripts it declares -> " +
+      got.length + " files");
+    if (!ok) bad++;
+  }
+
   /* ⛔ a comment mentioning a keyboard is not a keyboard dependency */
   const c = scan(`<!-- press space to jump -->\n<button onclick=go()>go</button>`).flags.length;
   console.log((c === 0 ? "  ok   " : "  FAIL ") + "a comment about keys is not a dependency (" + c + " flags)");
@@ -152,6 +311,7 @@ if (process.argv.includes("--selftest")) {
 }
 
 /* ---------- run ----------------------------------------------------------- */
+cat = (await import("./catalog.mjs")).catalog;
 const rows = [];
 for (const g of catalog()) {
   let src = "";
@@ -180,7 +340,9 @@ if (process.argv.includes("--report")) {
 } else {
   let md = "# QUEST COMPATIBILITY — " + rows.length + " titles triaged\n\n";
   md += "Generated by `scripts/quest_triage.mjs`. **Nothing here has been run on a headset.**\n";
-  md += "This is a shortlist so nobody has to open 183 games to find the interesting ones.\n";
+  /* was the literal "183", which was wrong on the day it was written (186) and
+     wronger now (187). A generated document should not hardcode its own size. */
+  md += "This is a shortlist so nobody has to open " + rows.length + " games to find the interesting ones.\n";
   md += "Every call should be checked against the Quest 2 before it is believed.\n\n";
   md += "| verdict | count | meaning |\n|---|---|---|\n";
   md += "| ok | " + by("ok").length + " | nothing found that stops a controller pointer |\n";
