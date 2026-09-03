@@ -778,6 +778,7 @@ function unlock(id){
 }
 
 var cfg=save.build||{core:'iron',blade:'wheel',assist:'wing',ratchet:'3-60',bit:'point'};
+if(!cfg.launch)cfg.launch='aim';
 var holes=save.build&&save.build.holes?save.build.holes:[[0,0,0,0,0,0],[0,0,0,0,0,0]];
 var trigger=(save.build&&save.build.trigger)||'charged';
 var chosenRigs=(save.build&&save.build.rigs)||[];
@@ -808,7 +809,7 @@ var pending=[null,null];    // each player's graded wind, held until both are in
 
 function storeBuild(){
   save.build={core:cfg.core,blade:cfg.blade,assist:cfg.assist,ratchet:cfg.ratchet,
-              bit:cfg.bit,holes:holes,trigger:trigger,rigs:chosenRigs};
+              bit:cfg.bit,launch:cfg.launch||'aim',holes:holes,trigger:trigger,rigs:chosenRigs};
   save.mods=mods; save.cosmetics=cosm; save.facing=facing; save.rung=rung;
   save.p2=p2;
   persist();
@@ -1049,6 +1050,27 @@ function showMenu(on){
 }
 
 /* ------------------------------------------------------------- SLOT PICKERS */
+/* ── LAUNCH STYLES (2026-09-03, Stephen: "the ability to change creates a unique
+   power wheel ... we just need a way to show how your choices are going to affect
+   your stats. maybe some things you have to learn"). Three ways to send the same
+   top, chosen in the workshop, each one extra gesture on the wind screen and one
+   change at the drop. Nothing here touches the simulation: every effect is a
+   change to the spawn call, which is the same door the wind grade already uses.
+   Two interactions are NOT printed anywhere and announce themselves once found. */
+var LAUNCH_STYLES=[
+  {id:'aim', name:'Aim', role:'balance',
+   desc:'After the wind, tap the dish where you want it to land. Near the rail to ride it, dead centre to hold the middle, next to them to pick the fight on frame one.',
+   stat:'Start anywhere inside the ridge. No change to the numbers, a change to the ground.',
+   hint:'Tap the dish where you want it to land, then Launch.'},
+  {id:'lean', name:'Lean', role:'attack',
+   desc:'After the wind, drag once to tip it. It starts wobbling that way: lean at them and the heavy side comes round at them first; lean away and play safe.',
+   stat:'Starting wobble 10 percent, pointed where you drag. The needle turns with it.',
+   hint:'Drag once to set the lean, then Launch.'},
+  {id:'hold', name:'Hold', role:'stamina',
+   desc:'Hold Launch and the string binds. Let go early for a clean, tame start. Hold longer for up to a quarter more spin at the price of a wild one. Past two seconds it stalls.',
+   stat:'Spin up to +25 percent, wobble +6 and a tilted start with it. Stalls at 1.8 s.',
+   hint:'Hold Launch to build power. Let go to fire.'}];
+function launchStyle(){ for(var i=0;i<LAUNCH_STYLES.length;i++)if(LAUNCH_STYLES[i].id===(active().cfg.launch||'aim'))return LAUNCH_STYLES[i]; return LAUNCH_STYLES[0]; }
 var SLOTS=[['core','Core',SIM.CORES],['blade','Blade',SIM.BLADES],['assist','Assist',SIM.ASSISTS],
            ['ratchet','Ratchet',SIM.RATCHETS],['bit','Bit',SIM.BITS]];
 var PART_LISTS={core:SIM.CORES,blade:SIM.BLADES,assist:SIM.ASSISTS,ratchet:SIM.RATCHETS,bit:SIM.BITS};
@@ -1489,6 +1511,14 @@ function buildSlots(){
     an.innerHTML='<span>'+SIM.ABILITY_TEXT[ab]+'</span>';
     $('trig').appendChild(an);
   }
+  var lsItems=LAUNCH_STYLES.map(function(st){ return {id:st.id,name:st.name,role:st.role,
+    delta:(active().cfg.launch||'aim')===st.id?'':'<span class="dl">'+({aim:'<b class="up">\u25B2place</b>',lean:'<b class="up">\u25B2wobble aim</b>',hold:'<b class="up">\u25B2spin</b> <b class="dn">\u25BCcontrol</b>'}[st.id])+'</span>'}; });
+  $('trig').appendChild(railRow('Launch style',lsItems,
+    function(t){return (active().cfg.launch||'aim')===t.id;},function(t){active().cfg.launch=t.id;}));
+  var ls=launchStyle(), ln=document.createElement('p');
+  ln.className='fitted';
+  ln.innerHTML='<span>'+ls.desc+'</span><b>'+ls.stat+'</b>';
+  $('trig').appendChild(ln);
 
   var looks=$('looks');looks.innerHTML='';
   function plain(a){var o=[],k;for(k=0;k<a.length;k++)o.push({id:a[k],name:a[k]});return o;}
@@ -1857,6 +1887,8 @@ function drawStats(){
       Math.max(2,Math.min(100,v*100))+'%;background:'+col+'"></i></span><span class="v">'+
       (flag&&flag!=='warn'?'<em>'+t+'</em>':t)+'</span></div>';
   }
+  var lst=launchStyle();
+  out+='<div class="stat"><span>launch</span><span style="grid-column:2/4;text-transform:none;letter-spacing:0;font-size:12px;color:var(--chalk)"><b style="color:var(--rope)">'+lst.name+'.</b> '+lst.stat+'</span></div>';
   $('stats').innerHTML=out;
   // ⛔ .stat rows are born at opacity 0 for the reveal-card stagger, and
   // only revealStats releases them - so this whole panel, the rigged
@@ -2346,6 +2378,7 @@ var phase='menu';           // menu | wind | drop | play | done | over | taya
    skips it, because the second time you see an animation you want it gone. */
 var dropT=0, DROP_DUR=0.80;
 var stroke=[],graded=null,lastGrade=null;
+var LST={aim:null,leanAng:null,holdT:0,holding:false,holdStart:0};
 var A=null,B=null,acc=0,last=0,pa=0,pb=0,flash=0,flashTxt='',flashCol='#EDE6D8',flashSym='';
 var liveTurn=0,lastAng=0,winding=false;
 var WANT=3, OVER=WANT*1.45;
@@ -2370,6 +2403,28 @@ function setLaps(n){
                   : 'keep going';
 }
 
+function drawLaunchStyle(){
+  if(!graded)return;
+  var sc=scale();
+  if(LST.aim){
+    var ax=CX()+LST.aim.x*sc, ay=CY()+LST.aim.z*sc, t=performance.now()/1000;
+    ctx.strokeStyle='rgba(237,230,216,.9)';ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(ax,ay,14+Math.sin(t*4)*2,0,7);ctx.stroke();
+    ctx.beginPath();ctx.arc(ax,ay,3,0,7);ctx.fillStyle='#C9A227';ctx.fill();
+  }
+  if(LST.leanAng!==null){
+    var L=RAD()*0.34, ex=CX()+Math.cos(LST.leanAng)*L, ey=CY()+Math.sin(LST.leanAng)*L;
+    ctx.strokeStyle='#C4442B';ctx.lineWidth=4;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(CX(),CY());ctx.lineTo(ex,ey);ctx.stroke();
+    ctx.beginPath();ctx.arc(ex,ey,7,0,7);ctx.fillStyle='#C4442B';ctx.fill();ctx.lineCap='butt';
+  }
+  if(LST.holding){
+    var ht=(performance.now()-LST.holdStart)/1000, k=Math.min(1,ht/1.2), stall=ht>1.8;
+    $('go').textContent=stall?'Stalling':'Hold  '+Math.round(k*100)+'%';
+    ctx.strokeStyle=stall?'#C4442B':'#C9A227';ctx.lineWidth=6;
+    ctx.beginPath();ctx.arc(CX(),CY(),RAD()*0.92,-Math.PI/2,-Math.PI/2+k*Math.PI*2);ctx.stroke();
+  }
+}
 function resetRound(){
   /* ⛔ THE WIND SCREEN IS NOT THE BATTLE. It draws a dial, three lap lanes and a
      grade card over the painted dish, all of it sized off RAD, and the first
@@ -2378,6 +2433,7 @@ function resetRound(){
      between rounds and the 3D comes back at the next launch. */
   if(window.B3D)B3D.exit();
   phase='wind';stroke=[];graded=null;A=B=null;
+  LST.aim=null;LST.leanAng=null;LST.holdT=0;LST.holding=false;$('go').textContent='Launch';
   liveTurn=0;winding=false;setLaps(0);
   sparks=[];trailA=[];trailB=[];
   $('card').classList.remove('up');
@@ -2437,9 +2493,34 @@ cv.addEventListener('pointermove',function(e){
 });
 function endWind(){
   winding=false;
-  if(phase!=='wind'||stroke.length<10){setLaps(0);return;}
+  if(phase!=='wind')return;
+  /* the launch style gesture: once the wind is graded, a TAP places the aim and a
+     straight DRAG sets the lean. Circles are always a new wind. */
+  if(graded&&stroke.length&&mode!=='pass'&&mode!=='tujlub'){
+    var st=launchStyle(), p0=stroke[0], p1=stroke[stroke.length-1];
+    var dx=p1.x-p0.x, dy=p1.y-p0.y, len=Math.hypot(dx,dy), path=0, si;
+    for(si=1;si<stroke.length;si++)path+=Math.hypot(stroke[si].x-stroke[si-1].x,stroke[si].y-stroke[si-1].y);
+    // straight means the finger went somewhere and did not come back: a circle has a
+    // long path and almost no displacement, a lean drag has both about equal
+    var straight=path>0&&len/path>0.8;
+    if(st.id==='aim'&&len<12&&stroke.length<40){
+      var sc=scale(), r=Math.hypot(p1.x,p1.y)/sc, lim=arenaR*0.78;
+      var k=r>lim?lim/r:1;
+      LST.aim={x:p1.x/sc*k,z:p1.y/sc*k};
+      haptic(6);$('hint').textContent='Landing there. Launch when ready.';$('hint').style.opacity=1;
+      setLaps(0);return;
+    }
+    if(st.id==='lean'&&len>28&&straight){
+      LST.leanAng=Math.atan2(dy,dx);
+      haptic(6);$('hint').textContent='Leaning that way. Launch when ready.';$('hint').style.opacity=1;
+      setLaps(0);return;
+    }
+  }
+  if(stroke.length<10){setLaps(0);return;}
   graded=WIND.grade(stroke);lastGrade=graded;showCard(graded);
-  $('laps').style.opacity=0;$('hint').style.opacity=0;
+  $('laps').style.opacity=0;
+  if(mode!=='pass'&&mode!=='tujlub'){$('hint').textContent=launchStyle().hint;$('hint').style.opacity=1;}
+  else $('hint').style.opacity=0;
 }
 cv.addEventListener('pointerup',endWind);
 // ⛔ A long press can raise a selection or a context menu, and the browser then
@@ -2512,6 +2593,15 @@ function countTo(el,to,ms){
 cv.addEventListener('pointerdown',function(){ if(phase==='drop')dropT=DROP_DUR; });
 
 /* ---------------------------------------------------------------- launching */
+/* Hold: press and keep pressing Launch. The click that follows the release fires
+   the launch with the held time on it. */
+$('go').addEventListener('pointerdown',function(){
+  if(phase!=='wind'||!graded||launchStyle().id!=='hold'||mode==='pass'||mode==='tujlub')return;
+  LST.holding=true;LST.holdStart=performance.now();
+});
+function endHold(){ if(!LST.holding)return; LST.holding=false; LST.holdT=(performance.now()-LST.holdStart)/1000; }
+$('go').addEventListener('pointerup',endHold);
+$('go').addEventListener('pointercancel',endHold);
 $('go').addEventListener('click',function(){
   if(phase==='play'||phase==='drop')return;
   if(phase==='over'){
@@ -2557,7 +2647,15 @@ function enter3D(){
 
 function launch(){
   var L=graded.launch;
-  var mine=WIND.applyWind(SIM,currentSpec(),L);
+  /* ── the launch style's change, on a COPY of the grade ── */
+  var st=launchStyle(), foundNote=null, specNow=currentSpec();
+  if(st.id==='hold'&&LST.holdT>0){
+    var light=specNow.mass<=0.030, stallAt=light?1.4:1.8, h=Math.min(1,LST.holdT/1.2);
+    var mul=LST.holdT>stallAt?0.80:1+0.25*h*(light?1.3:1);
+    L=Object.assign({},L,{power:L.power*mul,windImb:Math.min(0.42,L.windImb+0.06*h),lean:L.lean+0.05*h});
+    if(light&&LST.holdT<=stallAt&&h>0.5&&!save.seen['found.feathersnap']){save.seen['found.feathersnap']=1;persist();foundNote='Feather Snap';}
+  }
+  var mine=WIND.applyWind(SIM,specNow,L);
   AUDIO.startLoops();AUDIO.launch(L.power);haptic(18);
 
   if(mode==='tujlub'){launchTuj(L);return;}
@@ -2587,6 +2685,14 @@ function launch(){
 
   A=SIM.spawn(mine,{angle:la[0],power:L.power,lean:L.lean,phase:L.phase,trigger:trigger,
                     arenaR:arenaR,bowlMul:bowlMul});
+  if(st.id==='aim'&&LST.aim&&mode!=='uri'){A.x=LST.aim.x;A.z=LST.aim.z;}
+  if(st.id==='lean'&&LST.leanAng!==null){
+    var bl=null;for(var bi=0;bi<SIM.BLADES.length;bi++)if(SIM.BLADES[bi].id===active().cfg.blade)bl=SIM.BLADES[bi];
+    var wide=bl&&bl.radius>=0.024, mag=Math.max(L.lean,0.10)*(wide?1.5:1);
+    A.lx=Math.cos(LST.leanAng)*mag;A.lz=Math.sin(LST.leanAng)*mag;
+    if(wide&&!save.seen['found.rimcarry']){save.seen['found.rimcarry']=1;persist();foundNote='Rim Carry';}
+  }
+  if(foundNote)setTimeout(function(){showUnlock(foundNote,'Found');},900);
   if(mode==='uri'){
     // Endurance, and the tops must never touch. The honest way to express that
     // is not a flag inside the collision solver, it is to stop calling it: each
@@ -3383,7 +3489,7 @@ function camUpdate(dt){
   CAM.wx=(CAM.fx-CX())/sc;CAM.wz=(CAM.fy-CY())/sc;
 }
 /* a read only window for the camera tests; nothing in the game calls it */
-window.__RC=function(){return {phase:phase,z:CAM.z,fx:CAM.fx,fy:CAM.fy,b3d:b3dOn};};
+window.__RC=function(){return {phase:phase,graded:!!graded,strokeN:stroke.length,turn:liveTurn,z:CAM.z,fx:CAM.fx,fy:CAM.fy,b3d:b3dOn,launch:active().cfg.launch,lst:{aim:LST.aim,leanAng:LST.leanAng,holdT:LST.holdT},A:A?{x:A.x,z:A.z,w:A.w,lx:A.lx,lz:A.lz}:null};};
 
 /* ================================================================ RENDERING ==
    ONE GUARD. When the 3D battle view is up it owns the dish - the stadium, the
@@ -3428,11 +3534,11 @@ function frame(now){
   }
   if(!b3dOn){
     drawArena();
-    if(phase==='wind'){drawWindTrack();drawStroke();}
+    if(phase==='wind'){drawWindTrack();drawStroke();drawLaunchStyle();}
     if(tuj)for(var i=0;i<tuj.targets.length;i++)drawTop(tuj.targets[i],'#8E9BA2',false);
     if(B)withDrop(B,0.14,function(){drawTop(B,'#8E9BA2',false,trailB);});
     if(A)withDrop(A,0,function(){drawTop(A,TRAIL_HEX[cosm.trail]||'#C9A227',true,trailA);});
-  }else if(phase==='wind'){drawWindTrack();drawStroke();}
+  }else if(phase==='wind'){drawWindTrack();drawStroke();drawLaunchStyle();}
   drawSparks();
   drawTells();
   drawArmed();

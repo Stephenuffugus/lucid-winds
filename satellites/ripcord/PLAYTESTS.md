@@ -82,3 +82,21 @@ Direction, as understood:
 Build plan when picked up: launch style as a fourth workshop choice (Core, Weights, Tuning,
 Launch), the three styles as data with their stat hooks, the wind screen carrying the one
 extra gesture each needs, the stats panel live to it, rigs allowed to read it.
+
+### Built (Fable, 2026-09-03): the launch styles
+
+In the workshop under Weights and move, a **Launch style** rail: Aim, Lean, Hold. The chip
+carries its delta like a part does, the line under it says what the style costs and buys, and
+the stats panel names it. On the wind screen the hint tells you the one extra gesture:
+- **Aim:** after the wind, tap the dish; a ring marks the landing; it spawns there (inside 78
+  percent of the dish). No tap means the usual spawn, so a lazy round is unchanged.
+- **Lean:** after the wind, one straight drag sets the starting lean direction, magnitude 0.10
+  or the wind's own lean if larger. A red needle shows it.
+- **Hold:** press and keep pressing Launch. Up to +25 percent spin at 1.2 s, wobble +6 and a
+  tilted start with it, a stall to 80 percent past 1.8 s. The button reads the percentage and
+  a gold arc fills round the dish.
+Two hidden interactions, announced once when found: **Rim Carry** (lean on a wide blade,
+radius 0.024 or more, carries 1.5x) and **Feather Snap** (hold on a top of mass 0.030 or less,
+1.3x the bonus but it stalls at 1.4 s). Pass the phone and Tujlub keep the plain launch for
+now. Measured headless: aim placed exactly, lean applied, hold 1017 to 1271 spin. Gates:
+determinism OK, playthrough OK, battle3d OK, boss test red as before.
