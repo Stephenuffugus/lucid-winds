@@ -194,5 +194,6 @@ with routes, lights and the facility's own wire, then **Play it** runs the real 
 (`index.html?site=custom`). **Export** gives the JSON. To edit a shipped site, open
 `index.html?site=site-02&dump=1` once, then **Load last dump** in the editor. Everything
 autosaves in the browser. The game side is `buildFromRows`, `dumpSite`, `siteFromJSON`
-and the `?site=` flag. Proven headless end to end: dump, edit, play. Harness, drive and
-full run tests green.
+and the `?site=` flag. Proven headless end to end: dump, edit, play. Harness and drive tests
+green; the full run test reports one FAIL that predates this work (it loads the game over
+file:// and the fleet music include at /music-unlocks.js cannot resolve there).
