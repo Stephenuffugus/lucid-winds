@@ -1,5 +1,7 @@
 # RIPCORD, the arenas: an art asset list for eight worlds
 
+> Drive copy (the prompts, for the phone): https://docs.google.com/document/d/1jVVHplyHfWm8x_ijQKjLlumPywxGOvgTnvIyEx-xAcs/edit  in 012Assets / newest request again. This file is the source of truth.
+
 Sky Wolf Studio. Written 2026-09-03 against branch `add-sproing-jumper`.
 Every number below was read out of the code on that day, with the file and
 line it came from. If a line number drifts, grep the quoted symbol.
