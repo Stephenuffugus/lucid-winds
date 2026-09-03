@@ -187,6 +187,7 @@
     <div class="setrow"><span>Haptics</span><button data-set="haptics"></button></div>
     <div class="setrow"><span>Controls</span><button data-set="hand"></button></div>
     <div class="setrow"><span>Motion</span><button data-set="motion"></button></div>
+    <div class="setrow"><span>Site editor</span><a href="editor.html" style="display:inline-flex;align-items:center;justify-content:center;min-height:48px;min-width:96px;padding:0 14px;border:1px solid #8A5CF6;border-radius:12px;color:#D6DEEE;text-decoration:none">Open</a></div>
     <p class="setnote">Sound is made on the fly, not from files, so it starts the moment
     you turn it on. Motion follows what your device asks for unless you say otherwise.</p>
   </div>
@@ -578,6 +579,36 @@ function buildHiveSpine(){
 }
 
 // Any floor tile touching a wall is unlit. Cover comes from geometry, free.
+/* ── sites from TEXT (2026-09-03, the editor's format) ─────────────────────────
+   One character per tile, H rows of W: '#' wall, '.' floor, 's' shadow, 'v' vent,
+   'd' door. A second block of rows marks concealed channels with '='. This is what
+   editor.html writes and what CONDUIT.dumpSite() reads back, so a site can leave
+   the code, be edited on a phone, and come back. autoShadow runs the same shadow
+   pass the hand built sites use; vents survive it, as in buildVentStack. */
+const ROW_CH={0:'#',1:'.',2:'s',3:'v',4:'d'}, CH_ROW={'#':WALL,' ':WALL,'.':FLOOR,'s':SHADOW,'v':VENT,'d':DOOR};
+function buildFromRows(rows,conc,autoShadow){
+  const vents=[];
+  for(let y=0;y<H;y++){ const r=rows[y]||''; for(let x=0;x<W;x++){ const c=r[x]||'#'; const t=CH_ROW[c]; TT[idx(x,y)]=(t===undefined?WALL:t); if(t===VENT) vents.push([x,y]); } }
+  if(conc) for(let y=0;y<H;y++){ const r=conc[y]||''; for(let x=0;x<W;x++) if(r[x]==='=') CONC[idx(x,y)]=1; }
+  if(autoShadow) shadowByGeometry();
+  for(const [x,y] of vents) TT[idx(x,y)]=VENT;
+}
+function dumpSite(){
+  const rows=[],conc=[];
+  for(let y=0;y<H;y++){ let a='',b=''; for(let x=0;x<W;x++){ a+=ROW_CH[TT[idx(x,y)]]||'#'; b+=CONC[idx(x,y)]?'=':' '; } rows.push(a); conc.push(b); }
+  const L=LEVELS[S&&S.level]||{};
+  return { id:L.id||'custom', name:L.name||'Custom site', teaches:L.teaches||'', rows, conc, autoShadow:false,
+           start:L.start||[6,27], exfil:L.exfil||{x:40,y:20}, sources:clone(L.sources||[]), devices:clone(L.devices||[]),
+           enemies:clone(L.enemies||[]), lights:clone(L.lights||[]), siteWires:clone(L.siteWires||[]), targets:clone(L.targets||[]) };
+}
+function siteFromJSON(o){
+  const L=Object.assign({}, o, { id:o.id||'custom', name:o.name||'Custom site', teaches:o.teaches||'',
+    build:()=>buildFromRows(o.rows||[], o.conc||null, !!o.autoShadow),
+    start:o.start||[6,27], exfil:o.exfil||{x:40,y:20}, sources:o.sources||[], devices:o.devices||[],
+    enemies:o.enemies||[], lights:o.lights||[], siteWires:o.siteWires||[], targets:o.targets||[] });
+  delete L.rows; delete L.conc; delete L.autoShadow;
+  return L;
+}
 function shadowByGeometry(){
   const base=TT.slice();
   for(let y=0;y<H;y++) for(let x=0;x<W;x++){ const i=idx(x,y);
@@ -3056,16 +3087,31 @@ function frame(ts){
 // A playtest is only worth logging if it can be replayed. ?seed=1234 picks the
 // run; the seed is shown in the dev overlay, which is gated the way the rest of
 // the studio gates dev tools.
-let DEV=false;
+let DEV=false, BOOT_SITE=null, BOOT_DUMP=false;
 function readBootFlags(){
   if(typeof location!=="undefined" && location.search){
     const m=location.search.match(/[?&]seed=(\d+)/);
     if(m) CFG.seed=parseInt(m[1],10)|0;
+    const sm=location.search.match(/[?&]site=([a-z0-9_-]+)/i);
+    if(sm){
+      BOOT_SITE=sm[1];
+      if(BOOT_SITE==='custom'){
+        try{ const o=JSON.parse(localStorage.getItem('conduit_custom_site')||'null'); if(o&&o.rows){ o.id='custom'; LEVELS.custom=siteFromJSON(o); } }catch(e){}
+      }
+      if(!LEVELS[BOOT_SITE]) BOOT_SITE=null;
+    }
+    if(/[?&]dump=1/.test(location.search)) BOOT_DUMP=true;
   }
   try{ DEV = localStorage.getItem("sws_dev_ok")==="1"; }catch(e){ DEV=false; }
 }
 if(typeof document!=="undefined" && CAN){
   readBootFlags(); loadSettings(); newGame(); resize(); bindInput(); bindSettings();
+  if(BOOT_SITE){
+    /* straight into the named site: the editor's Play button, and a way to reach any site
+       from a link. The dump writes the site's rows for editor.html's "Load last dump". */
+    startLevel(BOOT_SITE);
+    if(BOOT_DUMP){ try{ localStorage.setItem('conduit_site_dump', JSON.stringify(dumpSite())); }catch(e){} }
+  }
   document.getElementById("go").addEventListener("click", openSites);
   document.getElementById("sitesclose").addEventListener("click",()=>{
     document.getElementById("sites").classList.add("hide");
@@ -3081,6 +3127,7 @@ if(typeof globalThis!=="undefined") globalThis.CONDUIT={
   // added 2026-09-01 (C1) so the mutation sweep has real gates to fail against
   bump, passableBlob, passableEnemy, conduitable, expConduit, expBlob,
   LEVELS, LEVEL_ORDER, TRAITS, readSave, writeSave, buyTrait, traitCost, traitRank,
+  buildFromRows, dumpSite, siteFromJSON,
   applyTraits, suspendRun, resumeRun, medalLine, renderSites, openSites, startLevel, clearSave:()=>{ try{ STORE.removeItem(SAVE_KEY); }catch(e){} },
   dragTarget, startDrag, dropBody, clingTarget, startCling, stopCling, wallSurface,
   cartTarget, startCart, freezeEnemy, thawEnemy,

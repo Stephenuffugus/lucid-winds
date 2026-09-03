@@ -184,3 +184,15 @@ the editor. Cheapest real step: an in-browser site painter (a page under satelli
 that paints tiles and machines on a grid, plays the site in place, and exports the text block
 to paste into LEVELS. 3D worlds are a separate, later question: the game is top down 2D; a 3D
 "skin" would be the Ripcord battle3d pattern (same sim, a camera over GLB props).
+
+### Built the same night (Fable, 2026-09-03): the site editor
+
+`satellites/conduit/editor.html`, also reachable from Settings → Site editor. Paint the
+48 by 32 grid (floor, wall, shadow, vent, door, concealed channel), place the start, the
+exfil, sources, devices (with areas, crane drops, doorlock doors, fan direction), patrols
+with routes, lights and the facility's own wire, then **Play it** runs the real game on it
+(`index.html?site=custom`). **Export** gives the JSON. To edit a shipped site, open
+`index.html?site=site-02&dump=1` once, then **Load last dump** in the editor. Everything
+autosaves in the browser. The game side is `buildFromRows`, `dumpSite`, `siteFromJSON`
+and the `?site=` flag. Proven headless end to end: dump, edit, play. Harness, drive and
+full run tests green.

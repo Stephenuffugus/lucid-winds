@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Conduit site editor</title>
+<!-- CONDUIT SITE EDITOR (2026-09-03). Stephen: "if i have a map editor or builder somehow so i
+     could design spaces and puzzles and make them really good for games like conduit."
+     Paint the 48x32 grid, place every kind of thing the sites use, then PLAY it in the real
+     game (index.html?site=custom reads localStorage.conduit_custom_site) or EXPORT the JSON.
+     To edit a shipped site: open index.html?site=site-02&dump=1 once, come back, Load last dump.
+     Standalone: no dependency on the game's code. The format is buildFromRows in index.html. -->
+<style>
+  :root{--bg:#05060A;--panel:#12141C;--line:#232733;--ink:#D6DEEE;--dim:#78869F;--gold:#E0A73C;--violet:#8A5CF6;--red:#E0483C;--cyan:#6FB0EE;--tap:48px}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.4 system-ui,sans-serif;height:100%}
+  #top{position:sticky;top:0;z-index:5;background:var(--panel);border-bottom:1px solid var(--line);padding:8px 10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  #top h1{font-size:13px;letter-spacing:.2em;text-transform:uppercase;margin:0 6px 0 0;color:var(--gold)}
+  button,select,input{font:inherit;color:inherit;background:#0E1119;border:1px solid var(--line);border-radius:10px;min-height:var(--tap);padding:0 12px}
+  button{cursor:pointer}
+  button.on{border-color:var(--violet);color:#fff;background:#1E1930}
+  button.go{background:var(--gold);color:#0d100c;border-color:var(--gold);font-weight:700}
+  input[type=text],input[type=number]{width:110px}
+  #tools{padding:4px 0 6px;border-bottom:1px solid var(--line)}
+  #tools .grp{display:flex;gap:6px;flex-wrap:nowrap;align-items:center;overflow-x:auto;padding:4px 10px;scrollbar-width:none}
+  #tools .grp::-webkit-scrollbar{display:none}
+  #tools .grp button,#tools .grp label{flex:0 0 auto;white-space:nowrap}
+  #tools small{display:block;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;font-size:10px;padding:4px 10px 0}
+  #wrap{overflow:auto;-webkit-overflow-scrolling:touch;background:#000;border-bottom:1px solid var(--line);max-height:54vh}
+  canvas{display:block;touch-action:none;image-rendering:pixelated}
+  #props{padding:8px 10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-bottom:1px solid var(--line);min-height:56px}
+  #props label{color:var(--dim);font-size:12px}
+  #status{padding:6px 10px;color:var(--dim);font-size:12px;min-height:30px}
+  #io{padding:8px 10px;display:flex;gap:8px;flex-wrap:wrap}
+  textarea{width:100%;min-height:140px;background:#0E1119;color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px;font:12px/1.4 ui-monospace,monospace}
+  .hid{display:none!important}
+</style>
+</head>
+<body>
+<div id="top">
+  <h1>Conduit site editor</h1>
+  <input type="text" id="siteName" placeholder="Site name" aria-label="Site name">
+  <button class="go" id="play">Play it</button>
+  <button id="zoomOut" aria-label="Zoom out">&minus;</button>
+  <button id="zoomIn" aria-label="Zoom in">+</button>
+  <button id="undo">Undo</button>
+</div>
+<div id="wrap"><canvas id="cv"></canvas></div>
+<div id="tools">
+  <small>Tiles (drag to paint)</small><div class="grp">
+    <button data-tool="floor" class="on">Floor</button><button data-tool="wall">Wall</button>
+    <button data-tool="shadow">Shadow</button><button data-tool="vent">Vent</button><button data-tool="door">Door</button>
+    <button data-tool="conc">Concealed</button><button data-tool="unconc">Clear concealed</button>
+    <label style="color:var(--dim)"><input type="checkbox" id="autoShadow"> auto shadow on load</label>
+  </div>
+  <small>Things (tap to place, tap a thing to select, Delete removes)</small><div class="grp">
+    <button data-tool="start">Start</button><button data-tool="exfil">Exfil</button>
+    <button data-tool="source">Source</button><button data-tool="device">Device</button>
+    <button data-tool="enemy">Enemy</button><button data-tool="route">Route point</button>
+    <button data-tool="light">Light</button><button data-tool="wire">Site wire point</button>
+    <button data-tool="area">Area corner</button><button data-tool="aux">Drop / door / dir</button>
+    <button data-tool="select">Select</button><button id="del" style="border-color:var(--red)">Delete</button>
+  </div>
+</div>
+<div id="props"></div>
+<div id="status">Tap a tool, then paint. Everything autosaves in this browser.</div>
+<div id="io">
+  <button id="export">Export JSON</button><button id="import">Import JSON</button>
+  <button id="loadDump">Load last dump</button><button id="blank">New blank site</button>
+  <button id="copy">Copy</button>
+  <textarea id="json" class="hid" spellcheck="false"></textarea>
+</div>
+<script>
+(function(){
+'use strict';
+var W=48,H=32, LS='conduit_custom_site', DUMP='conduit_site_dump';
+var TILE={wall:'#',floor:'.',shadow:'s',vent:'v',door:'d'};
+var COL={'#':'#0A0C12','.':'#1E2331','s':'#151823','v':'#191D2A','d':'#3A2E22'};
+var SRC_KINDS=['socket','generator','cart','vehicle','frozen'];
+var DEV_KINDS=['sprinkler','plate','speaker','breaker','coolant','floodlight','fan','crane','doorlock','camera'];
+var ENEMY_KINDS=['sentry','drone','brute'];
+var site=null, tool='floor', cell=16, sel=null, undo=[], painting=false, paintVal=null;
+var cv=document.getElementById('cv'), g=cv.getContext('2d');
+var $=function(id){return document.getElementById(id);};
+
+function blank(){
+  var rows=[],conc=[],y;
+  for(y=0;y<H;y++){ rows.push(new Array(W+1).join('#')); conc.push(new Array(W+1).join(' ')); }
+  return {id:'custom',name:'New site',teaches:'',rows:rows,conc:conc,autoShadow:true,
+          start:[6,27],exfil:{x:40,y:20},sources:[],devices:[],enemies:[],lights:[],siteWires:[],targets:[]};
+}
+function load(){
+  try{ var o=JSON.parse(localStorage.getItem(LS)||'null'); if(o&&o.rows) site=o; }catch(e){}
+  if(!site) site=blank();
+  $('siteName').value=site.name||''; $('autoShadow').checked=!!site.autoShadow;
+}
+function save(){ site.name=$('siteName').value||'Custom site'; site.autoShadow=$('autoShadow').checked; site.id='custom';
+  try{ localStorage.setItem(LS,JSON.stringify(site)); }catch(e){} }
+function snap(){ undo.push(JSON.stringify(site)); if(undo.length>40) undo.shift(); }
+function setRow(y,x,ch,which){ var r=site[which][y]; site[which][y]=r.substr(0,x)+ch+r.substr(x+1); }
+function tileAt(x,y){ return (site.rows[y]||'')[x]||'#'; }
+
+/* ── drawing ── */
+function layout(){ cv.width=W*cell; cv.height=H*cell; draw(); }
+function draw(){
+  var x,y;
+  for(y=0;y<H;y++) for(x=0;x<W;x++){
+    var t=tileAt(x,y); g.fillStyle=COL[t]||'#000'; g.fillRect(x*cell,y*cell,cell,cell);
+    if(t==='v'){ g.fillStyle='#BEC8E1'; for(var k=0;k<3;k++) g.fillRect(x*cell+2,y*cell+3+k*Math.max(3,cell/4),cell-4,1); }
+    if(t==='d'){ g.strokeStyle='#E0A73C'; g.strokeRect(x*cell+1.5,y*cell+1.5,cell-3,cell-3); }
+    if((site.conc[y]||'')[x]==='='){ g.strokeStyle='rgba(140,150,180,.7)'; g.beginPath(); g.moveTo(x*cell,y*cell+cell); g.lineTo(x*cell+cell,y*cell); g.stroke(); }
+  }
+  g.strokeStyle='rgba(255,255,255,.05)'; g.beginPath();
+  for(x=0;x<=W;x++){ g.moveTo(x*cell,0); g.lineTo(x*cell,H*cell); } for(y=0;y<=H;y++){ g.moveTo(0,y*cell); g.lineTo(W*cell,y*cell); } g.stroke();
+  // site wires
+  g.strokeStyle='#8A5CF6'; g.lineWidth=Math.max(2,cell/5);
+  site.siteWires.forEach(function(w){ g.beginPath(); w.forEach(function(p,i){ var px=(p[0]+.5)*cell,py=(p[1]+.5)*cell; i?g.lineTo(px,py):g.moveTo(px,py); }); g.stroke(); });
+  g.lineWidth=1;
+  // areas
+  site.devices.forEach(function(d){ if(d.area){ g.strokeStyle='rgba(224,167,60,.6)'; g.setLineDash([4,3]); g.strokeRect(d.area[0]*cell,d.area[1]*cell,(d.area[2]-d.area[0]+1)*cell,(d.area[3]-d.area[1]+1)*cell); g.setLineDash([]); }
+    if(d.drop) mark(d.drop[0],d.drop[1],'#E0A73C','x'); if(d.door) mark(d.door[0],d.door[1],'#E0A73C','D'); });
+  // routes
+  site.enemies.forEach(function(e){ if(e.route&&e.route.length){ g.strokeStyle='#D08050'; g.beginPath(); e.route.forEach(function(p,i){ var px=(p[0]+.5)*cell,py=(p[1]+.5)*cell; i?g.lineTo(px,py):g.moveTo(px,py); }); g.stroke();
+    e.route.forEach(function(p){ g.fillStyle='#D08050'; g.fillRect((p[0]+.5)*cell-2,(p[1]+.5)*cell-2,4,4); }); } });
+  site.lights.forEach(function(l){ dot(l.x,l.y,'#E0C896',0.32); });
+  site.sources.forEach(function(s){ dot(s.x,s.y,'#5AC8A0',0.45,s.kind[0].toUpperCase()); });
+  site.devices.forEach(function(d){ dot(d.x,d.y,'#E8B457',0.45,d.kind.substr(0,2)); });
+  site.enemies.forEach(function(e){ dot(e.x-.5,e.y-.5,'#E0483C',0.45,e.kind[0].toUpperCase()); });
+  dot(site.start[0]-.5,site.start[1]-.5,'#6FB0EE',0.42,'S');
+  mark(site.exfil.x,site.exfil.y,'#E0A73C','E');
+  if(sel){ var o=sel.obj, sx=o.x!==undefined?o.x:o[0], sy=o.y!==undefined?o.y:o[1]; if(sel.kind==='enemy'||sel.kind==='start'){sx-=.5;sy-=.5;}
+    g.strokeStyle='#fff'; g.lineWidth=2; g.strokeRect(sx*cell-2,sy*cell-2,cell+4,cell+4); g.lineWidth=1; }
+}
+function dot(x,y,col,r,ch){ g.fillStyle=col; g.beginPath(); g.arc((x+.5)*cell,(y+.5)*cell,cell*r,0,7); g.fill();
+  if(ch&&cell>=12){ g.fillStyle='#05060A'; g.font='700 '+Math.round(cell*.5)+'px system-ui'; g.textAlign='center'; g.textBaseline='middle'; g.fillText(ch,(x+.5)*cell,(y+.5)*cell+1); } }
+function mark(x,y,col,ch){ g.strokeStyle=col; g.lineWidth=2; g.strokeRect(x*cell+2,y*cell+2,cell-4,cell-4); g.lineWidth=1;
+  if(cell>=12){ g.fillStyle=col; g.font='700 '+Math.round(cell*.5)+'px system-ui'; g.textAlign='center'; g.textBaseline='middle'; g.fillText(ch,(x+.5)*cell,(y+.5)*cell+1); } }
+
+/* ── input ── */
+function cellOf(ev){ var r=cv.getBoundingClientRect(); return {x:Math.floor((ev.clientX-r.left)/cell), y:Math.floor((ev.clientY-r.top)/cell)}; }
+function inGrid(c){ return c.x>=0&&c.y>=0&&c.x<W&&c.y<H; }
+function hit(c){
+  var i;
+  for(i=0;i<site.enemies.length;i++) if(Math.floor(site.enemies[i].x)===c.x&&Math.floor(site.enemies[i].y)===c.y) return {kind:'enemy',obj:site.enemies[i],list:site.enemies,i:i};
+  for(i=0;i<site.devices.length;i++) if(site.devices[i].x===c.x&&site.devices[i].y===c.y) return {kind:'device',obj:site.devices[i],list:site.devices,i:i};
+  for(i=0;i<site.sources.length;i++) if(site.sources[i].x===c.x&&site.sources[i].y===c.y) return {kind:'source',obj:site.sources[i],list:site.sources,i:i};
+  for(i=0;i<site.lights.length;i++) if(site.lights[i].x===c.x&&site.lights[i].y===c.y) return {kind:'light',obj:site.lights[i],list:site.lights,i:i};
+  if(Math.floor(site.start[0])===c.x&&Math.floor(site.start[1])===c.y) return {kind:'start',obj:site.start};
+  if(site.exfil.x===c.x&&site.exfil.y===c.y) return {kind:'exfil',obj:site.exfil};
+  return null;
+}
+function nextId(prefix,list){ var n=1; while(list.some(function(o){return o.id===prefix+'-'+n;})) n++; return prefix+'-'+n; }
+function paint(c){
+  if(!inGrid(c)) return;
+  if(tool==='conc'){ setRow(c.y,c.x,'=','conc'); if(tileAt(c.x,c.y)==='#') setRow(c.y,c.x,'.','rows'); }
+  else if(tool==='unconc') setRow(c.y,c.x,' ','conc');
+  else setRow(c.y,c.x,TILE[tool],'rows');
+}
+cv.addEventListener('pointerdown',function(ev){
+  ev.preventDefault(); var c=cellOf(ev); if(!inGrid(c)) return;
+  if(TILE[tool]||tool==='conc'||tool==='unconc'){ snap(); painting=true; try{cv.setPointerCapture(ev.pointerId);}catch(e){} paint(c); draw(); return; }
+  var h=hit(c);
+  if(tool==='select'){ sel=h; props(); draw(); return; }
+  snap();
+  if(tool==='start'){ site.start=[c.x+.5,c.y+.5]; }
+  else if(tool==='exfil'){ site.exfil={x:c.x,y:c.y}; }
+  else if(tool==='light'){ if(h&&h.kind==='light') h.list.splice(h.i,1); else site.lights.push({x:c.x,y:c.y}); }
+  else if(tool==='source'){ var s={id:nextId('src',site.sources),x:c.x,y:c.y,kind:'socket',capacity:30,noisy:false}; site.sources.push(s); sel={kind:'source',obj:s,list:site.sources,i:site.sources.length-1}; }
+  else if(tool==='device'){ var d={id:nextId('dev',site.devices),x:c.x,y:c.y,kind:'speaker',needs:20}; site.devices.push(d); sel={kind:'device',obj:d,list:site.devices,i:site.devices.length-1}; }
+  else if(tool==='enemy'){ var e={id:nextId('enemy',site.enemies),kind:'sentry',x:c.x+.5,y:c.y+.5,route:[[c.x,c.y]]}; site.enemies.push(e); sel={kind:'enemy',obj:e,list:site.enemies,i:site.enemies.length-1}; }
+  else if(tool==='route'){ var en=sel&&sel.kind==='enemy'?sel.obj:site.enemies[site.enemies.length-1]; if(!en){ status('Place an enemy first.'); return; } en.route=en.route||[]; en.route.push([c.x,c.y]); }
+  else if(tool==='wire'){ var w=site.siteWires[site.siteWires.length-1]; if(!w||w.done){ w=[]; site.siteWires.push(w); } w.push([c.x,c.y]); }
+  else if(tool==='area'){ var dv=sel&&sel.kind==='device'?sel.obj:null; if(!dv){ status('Select a device first (sprinkler, coolant, floodlight take an area).'); return; }
+    if(!dv.area||dv.area.length===4){ dv.area=[c.x,c.y]; status('First corner set. Tap the opposite corner.'); } else { dv.area=[Math.min(dv.area[0],c.x),Math.min(dv.area[1],c.y),Math.max(dv.area[0],c.x),Math.max(dv.area[1],c.y)]; } }
+  else if(tool==='aux'){ var dd=sel&&sel.kind==='device'?sel.obj:null; if(!dd){ status('Select a device first.'); return; }
+    if(dd.kind==='crane') dd.drop=[c.x,c.y]; else if(dd.kind==='doorlock') dd.door=[c.x,c.y]; else if(dd.kind==='fan'){ dd.dir=[Math.sign(c.x-dd.x)||0,Math.sign(c.y-dd.y)||0]; } else status('Only a crane (drop), a doorlock (door) or a fan (direction) take this.'); }
+  props(); draw(); save();
+});
+cv.addEventListener('pointermove',function(ev){ if(!painting) return; paint(cellOf(ev)); draw(); });
+function endPaint(){ if(painting){ painting=false; save(); } }
+cv.addEventListener('pointerup',endPaint); cv.addEventListener('pointercancel',endPaint);
+$('del').addEventListener('click',function(){ if(!sel||!sel.list) return; snap(); sel.list.splice(sel.list.indexOf(sel.obj),1); sel=null; props(); draw(); save(); });
+document.querySelectorAll('[data-tool]').forEach(function(b){ b.addEventListener('click',function(){ tool=b.getAttribute('data-tool'); document.querySelectorAll('[data-tool]').forEach(function(x){x.classList.toggle('on',x===b);}); if(tool==='wire'){ var w=site.siteWires[site.siteWires.length-1]; if(w) w.done=true; } status(HELP[tool]||''); }); });
+var HELP={floor:'Drag to lay floor.',wall:'Drag to wall it back up.',shadow:'Shadowed floor: cheaper to cross unseen. Or tick auto shadow and let the game place it.',vent:'A vent: a body cannot pass, a wire can.',door:'A door tile, opened by a doorlock device.',conc:'Concealed channel: wire here is never spotted, costs 1.6x.',start:'Where the blob starts.',exfil:'Where the run ends.',source:'Power source. Set its kind and capacity below.',device:'A machine. Set its kind and how much power it needs below.',enemy:'A patrol. Then use Route point to give it a path.',route:'Adds a point to the selected (or last) enemy route.',light:'A ceiling lamp. Tap again to remove.',wire:'Adds a point to the facility wire. Pick another tool to end the run.',area:'For a sprinkler, coolant or floodlight: tap two corners of its area.',aux:'Crane: tap the drop tile. Doorlock: tap its door. Fan: tap a tile in the wind direction.',select:'Tap a thing to edit it below.'};
+function status(t){ $('status').textContent=t; }
+function props(){
+  var p=$('props'); p.innerHTML='';
+  if(!sel){ p.innerHTML='<label>Nothing selected.</label>'; return; }
+  var o=sel.obj, k=sel.kind, html='<label>'+k+'</label>';
+  function field(lbl,key,type,opts){ var v=o[key]; if(opts) html+='<label>'+lbl+' <select data-k="'+key+'">'+opts.map(function(x){return '<option'+(v===x?' selected':'')+'>'+x+'</option>';}).join('')+'</select></label>';
+    else html+='<label>'+lbl+' <input data-k="'+key+'" type="'+type+'" value="'+(v===undefined?'':v)+'"></label>'; }
+  if(k==='source'){ field('id','id','text'); field('kind','kind',null,SRC_KINDS); field('capacity','capacity','number'); field('noisy','noisy',null,['false','true']); field('movable','movable',null,['false','true']); field('burst','burst',null,['false','true']); }
+  if(k==='device'){ field('id','id','text'); field('kind','kind',null,DEV_KINDS); field('needs','needs','number'); html+='<label>area '+(o.area?o.area.join(','):'none')+'</label>'; }
+  if(k==='enemy'){ field('id','id','text'); field('kind','kind',null,ENEMY_KINDS); html+='<label>route '+(o.route?o.route.length:0)+' points <button data-act="clearRoute">clear</button></label>';
+    html+='<label><input type="checkbox" data-act="target"'+(site.targets.indexOf(o.id)>=0?' checked':'')+'> target</label>'; }
+  if(k==='light'||k==='exfil'||k==='start') html+='<label>at '+(o.x!==undefined?o.x+','+o.y:o.join(','))+'</label>';
+  p.innerHTML=html;
+  p.querySelectorAll('[data-k]').forEach(function(el){ el.addEventListener('change',function(){ snap(); var key=el.getAttribute('data-k'), v=el.value;
+    if(el.type==='number') v=parseFloat(v)||0; if(v==='true') v=true; if(v==='false') v=false;
+    if(key==='id'){ var old=o.id; var ti=site.targets.indexOf(old); if(ti>=0) site.targets[ti]=v; }
+    o[key]=v; if(key==='kind'&&k==='device'&&['sprinkler','coolant','floodlight'].indexOf(v)<0) delete o.area; draw(); save(); }); });
+  var cr=p.querySelector('[data-act=clearRoute]'); if(cr) cr.addEventListener('click',function(){ snap(); o.route=[[Math.floor(o.x),Math.floor(o.y)]]; props(); draw(); save(); });
+  var tg=p.querySelector('[data-act=target]'); if(tg) tg.addEventListener('change',function(){ snap(); var i=site.targets.indexOf(o.id); if(tg.checked&&i<0) site.targets.push(o.id); if(!tg.checked&&i>=0) site.targets.splice(i,1); save(); });
+}
+$('undo').addEventListener('click',function(){ var s=undo.pop(); if(!s) return; site=JSON.parse(s); sel=null; props(); draw(); save(); });
+$('zoomIn').addEventListener('click',function(){ cell=Math.min(40,cell+4); layout(); });
+$('zoomOut').addEventListener('click',function(){ cell=Math.max(8,cell-4); layout(); });
+$('siteName').addEventListener('change',save); $('autoShadow').addEventListener('change',save);
+$('play').addEventListener('click',function(){ save(); location.href='index.html?site=custom'; });
+$('export').addEventListener('click',function(){ save(); var out=JSON.parse(JSON.stringify(site)); out.siteWires=out.siteWires.map(function(w){ return w.filter(function(p){return p&&p.length===2;}); }); $('json').value=JSON.stringify(out); $('json').classList.remove('hid'); status('Exported. Copy it, or paste it into LEVELS by hand with siteFromJSON.'); });
+$('copy').addEventListener('click',function(){ $('json').classList.remove('hid'); $('json').select(); try{ document.execCommand('copy'); status('Copied.'); }catch(e){ status('Select the text and copy it.'); } });
+$('import').addEventListener('click',function(){ $('json').classList.remove('hid'); if(!$('json').value){ status('Paste site JSON into the box, then tap Import again.'); return; } try{ var o=JSON.parse($('json').value); if(!o.rows) throw 0; snap(); site=o; site.conc=site.conc||site.rows.map(function(){return new Array(W+1).join(' ');}); sel=null; $('siteName').value=site.name||''; $('autoShadow').checked=!!site.autoShadow; props(); draw(); save(); status('Imported '+(site.name||'site')+'.'); }catch(e){ status('That is not a site JSON.'); } });
+$('loadDump').addEventListener('click',function(){ try{ var o=JSON.parse(localStorage.getItem(DUMP)||'null'); if(!o||!o.rows){ status('No dump yet. Open index.html?site=site-02&dump=1 (any site id), then come back.'); return; } snap(); site=o; site.id='custom'; sel=null; $('siteName').value=site.name||''; $('autoShadow').checked=false; props(); draw(); save(); status('Loaded '+site.name+' from the game.'); }catch(e){ status('Could not read the dump.'); } });
+$('blank').addEventListener('click',function(){ snap(); site=blank(); sel=null; $('siteName').value=site.name; $('autoShadow').checked=true; props(); draw(); save(); status('Blank 48 by 32 site. Lay floor first.'); });
+
+load(); cell=16; layout(); props();
+})();
+</script>
+</body>
+</html>
