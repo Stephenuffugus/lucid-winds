@@ -2,7 +2,8 @@
 
 Written by Opus on 2026-09-03 after finishing `HANDOFF-3D-VR.md` section 5, task V1.
 Companion to that file, which is the brief this answers. **For Fable: section 5 below is
-the paste ready review prompt.** Everything above it is what you need to know before you
+the paste ready prompt, and it carries TWO tasks, the audit review and a separate spec ask
+for the fleet music player.** Everything above it is what you need to know before you
 read a line of the output.
 
 Branch `add-sproing-jumper`, three commits, nothing pushed to main:
@@ -219,12 +220,64 @@ wrong. Touch no game folder, touch no script, and do not edit any of the four do
 you are reviewing: findings go in your review and Opus applies them. If a gate fails,
 report the failing line rather than fixing it.
 
-REPORT: the four gates' last lines; the cite audit hit rate as a fraction with every miss
-named; your verdict on each of the seven checks as HOLDS, WRONG or UNPROVEN, with the line
-that decided it; your answer on the lane inflation question and the ranking departure,
-which are yours to settle; anything Opus called a finding that is actually a known thing
-you had already written down somewhere; and the one thing you would change before the
-Director reads it.
+REPORT ON THE REVIEW: the four gates' last lines; the cite audit hit rate as a fraction
+with every miss named; your verdict on each of the seven checks as HOLDS, WRONG or
+UNPROVEN, with the line that decided it; your answer on the lane inflation question and
+the ranking departure, which are yours to settle; anything Opus called a finding that is
+actually a known thing you had already written down somewhere; and the one thing you would
+change before the Director reads it.
+
+═══════════════════════════════════════════════════════════════════════════════
+SECOND, SEPARATE TASK, NOT PART OF THE REVIEW: THE FLEET MUSIC PLAYER
+═══════════════════════════════════════════════════════════════════════════════
+
+The Director's ask, in his words: "I want the whole studio's music player to function the
+way it does in Jumping Jimothy, where one can just open and click the notes next to a song
+to put it on or remove it from the current playlist."
+
+He is describing a real gap and the two implementations are genuinely different today.
+
+HOW JIMOTHY DOES IT (satellites/stream-hop/index.html:5379 to 5386):
+Every owned track row carries a 34px circular button with a music-note glyph (U+266B),
+`.rot`, gold-filled when the track is in rotation and outlined when it is not (CSS at
+:310 and :313). ONE TAP toggles `PROG.playlist[t.id]` and re-renders. `ev.stopPropagation()`
+keeps that tap off the row, so tapping the NOTE changes the rotation and tapping the ROW
+plays the song, which is two verbs in one row with no mode. There is exactly ONE rotation,
+it is always the thing that plays, it is never named, and :5384 guarantees it can never be
+emptied: `if(!Object.keys(PROG.playlist).length) PROG.playlist[t.id]=1`. New unlocks join
+it automatically at :5267. It is four lines of state and it needs no explaining.
+
+HOW THE FLEET PLAYER DOES IT TODAY (music-player.js):
+Named playlists. To put one song in a mix a player must: press new playlist, TYPE A NAME
+INTO A `window.prompt` (:198), enter an EDIT MODE on that playlist (`plEdit` at :200),
+tap the tracks, then press Done (:240). Four steps and a modal before the first song moves,
+`st.edit` is a mode the player has to hold in their head, and outside that mode there is no
+per-row control at all: the check/plus marker only exists while editing (:267). The
+machinery underneath is good, `plToggleMember` at :129 is exactly the right primitive, it
+is the UI in front of it that is wrong.
+
+WHAT TO SPEC (do not build it in this session; the Director approves before code):
+1. Every track row in the drawer gets a persistent note toggle, Jimothy's shape: one tap,
+   in or out, filled or outlined, no mode, `stopPropagation` so the row still plays.
+2. There is a CURRENT ROTATION that is always what plays, unnamed, and it cannot be
+   emptied. That is the default and it is what the note toggles.
+3. Named playlists STAY for anyone using them, but they stop being the price of admission:
+   they become "save this rotation as", after the fact, not before.
+4. ⛔ `window.prompt` goes, whatever else happens. It is blocked or ugly in a PWA, it is
+   awful on a phone, and in a headset it is a system keyboard the player did not ask for.
+5. Migration: existing `sws_playlists` entries must survive, and a player who has never
+   made one must never see the word playlist.
+6. Fleet reach: 105 satellites carry the include, 12 are VENDORED and untouchable, so
+   whatever this is has to be ONE edit to music-player.js and nothing else. Read
+   HANDOFF-MUSIC.md and docs/MUSIC-BUILD-LOG.md, which are the SSOT, before writing a line
+   of spec, and check `test/music/run.mjs` (10 gates) still describes the behaviour you
+   are proposing.
+7. ⚠️ Jimothy is VENDORED from its own repo (satellites/stream-hop/VENDORED.json). Do not
+   change Jimothy to match the fleet. The fleet moves to Jimothy.
+
+REPORT ON THE MUSIC TASK, separately from the review: the spec, the one file it touches,
+what happens to a player who already has named playlists, and which of the 10 music gates
+would have to change.
 ```
 
 ---
