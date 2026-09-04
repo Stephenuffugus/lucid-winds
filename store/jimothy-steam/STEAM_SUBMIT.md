@@ -67,6 +67,30 @@ the tax/bank verification, both below.
 Steam takes an unpacked folder, not an installer, which is why the build target
 is `dir`. Do not zip it.
 
+
+## ✅ Steam achievements: IN THE BUILD as of Sep 04 2026 (revision 3)
+
+26 achievements = the game's 21 badges + 5 seasonal, one API name rule
+(`ACH_` + badge id upper-cased), generated table + 64x64 icon pairs in
+`ACHIEVEMENTS.md` / `capsules/out/achievements/` by `python3 capsules/achievements.py`.
+
+How it is wired: `steamworks.js` (native, main process only) behind IPC;
+`preload.js` exposes `window.__steam` with `unlock` and `sync`; the game calls
+`steamUnlock(id)` the moment `achCheck()` awards a badge and `steamSyncAll()` once at
+boot so earlier progress is replayed. `contextIsolation` stays on. Without a Steam
+client the bridge reports `on:false` and every call returns false; the game does not
+know or care. Proven by `node test/electron_boot.mjs` (real shell under xvfb).
+
+⛔ What cannot be proven here: an unlock that Steam RECORDS. That needs Steam running,
+so the first real test is Stephen's: install from his own library after the build is
+live, take the first hop, watch for "Silly Little Guy" in the overlay.
+
+Steamworks order (his clicks): 1) define + Publish the 26 achievements
+(ACHIEVEMENTS.md), 2) upload the revision 3 zip to the depot and set it live,
+3) tick **Steam Achievements** under the app's Store Presence → features (it was
+honestly unticked on Aug 21 when there were none), 4) test one unlock.
+The Steam overlay (Shift+Tab) is enabled too; check it in the fullscreen playtest.
+
 ### ✅ Icon and version strings: EMBEDDED as of Sep 04 2026
 `npm run dist:win` now ends with `npm run brand` (`tools/brand_exe.mjs`, pure Node via
 resedit) which writes `capsules/out/jimothy.ico` and the version block into the exe.

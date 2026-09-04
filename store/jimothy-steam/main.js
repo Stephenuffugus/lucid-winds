@@ -4,6 +4,12 @@
    a Steam build must never need our host to be up. */
 const { app, BrowserWindow, shell, Menu, screen } = require('electron');
 const path = require('path');
+const steam = require('./steam');
+
+/* Steam overlay (Shift+Tab) needs these two Chromium switches set before the app
+   is ready. Harmless when Steam is not running. */
+try { require('steamworks.js').electronEnableSteamOverlay(); } catch (e) {}
+const TEST_BOOT = process.argv.includes('--test-boot');
 
 const ASPECT = 640 / 1136;   // the game's portrait shape, one source of truth
 
@@ -30,7 +36,8 @@ function createWindow() {
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
-      backgroundThrottling: false
+      backgroundThrottling: false,
+      preload: path.join(__dirname, 'preload.js')
     }
   });
 
@@ -53,6 +60,21 @@ function createWindow() {
   });
   win.loadFile(path.join(__dirname, 'app', 'index.html'));
 
+  /* --test-boot: prove the shell boots, the bridge is in the page and Steam
+     failed soft (or not) — then quit. Run by test/electron_boot.mjs under xvfb. */
+  if (TEST_BOOT) {
+    win.webContents.on('did-finish-load', async () => {
+      try {
+        const r = await win.webContents.executeJavaScript(
+          `(async()=>({ bridge: typeof window.__steam, status: await window.__steam.status(),
+             unlockNoSteam: await window.__steam.unlock('ACH_FIRST'),
+             title: document.title, splash: !!document.querySelector('#s-splash') }))()`);
+        console.log('TEST_BOOT ' + JSON.stringify(r));
+      } catch (e) { console.log('TEST_BOOT_ERROR ' + e.message); }
+      setTimeout(() => app.quit(), 300);
+    });
+  }
+
   /* any outward link opens in the player's browser, never inside the game */
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (/^https?:/.test(url)) shell.openExternal(url);
@@ -64,6 +86,8 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  const st = steam.start();
+  console.log('steam: ' + (st.on ? 'on' : 'off (' + st.why + ')'));
   createWindow();
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
 });

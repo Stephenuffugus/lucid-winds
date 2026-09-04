@@ -1109,7 +1109,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v8.6';
+var BUILD='v8.7';
 var curScreen='s-splash';
 var _leaveTimer=null;
 /* dir is optional: 'push' swooshes in from the right (going deeper), 'pop' swooshes back
@@ -1195,6 +1195,19 @@ function _o(v){ return (v && typeof v==='object' && !(v instanceof Array)) ? v :
 function saveProg(){ LS.set('sh_prog', JSON.stringify(PROG));
   try{ cloudPush(); }catch(e){}   // debounced, and only ever after a pull
 }
+/* ===== STEAM ACHIEVEMENTS (2026-09-04) =====
+   The Steam shell (store/jimothy-steam) exposes window.__steam from a preload;
+   the web and itch builds have no such object and every call below is a no-op.
+   Badge id -> Steamworks API name is one rule, ACH_ + the id upper-cased
+   (first -> ACH_FIRST, ssn_spring -> ACH_SSN_SPRING), and the table in
+   store/jimothy-steam/ACHIEVEMENTS.md is generated from ACH by that rule, so the
+   two cannot drift by hand. Progress stays in PROG.ach as before: Steam is told,
+   never asked, and a boot sync replays every badge already earned so a player
+   who started on the web (or before this build) gets their Steam unlocks. */
+function steamApi(id){ return 'ACH_'+String(id).toUpperCase(); }
+function steamUnlock(id){ try{ if(window.__steam) window.__steam.unlock(steamApi(id)); }catch(e){} }
+function steamSyncAll(){ try{ if(!window.__steam) return; var l=[],k; for(k in (PROG.ach||{})) if(PROG.ach[k]) l.push(steamApi(k)); if(l.length) window.__steam.sync(l); }catch(e){} }
+try{ steamSyncAll(); }catch(e){}
 var FIRST_RUN = !LS.get('sh_hopped');   // drives the one time control hint
 /* The botanical hoppers (Toadling, Button Bug...) retired when the game became Jimothy.
    Nobody loses anything: every one they had earned pays out as bottlecaps for the bin. */
@@ -2537,7 +2550,7 @@ function achCheck(){
   try{ storeUnlockCheck(); }catch(e){}   /* earned just now, so this one DOES get a card */
   var won=[];
   for(var i=0;i<ACH.length;i++){ var a=ACH[i];
-    if(!PROG.ach[a.id] && achMet(a.id)){ PROG.ach[a.id]=1; PROG.caps=(PROG.caps||0)+25; won.push(a); } }
+    if(!PROG.ach[a.id] && achMet(a.id)){ PROG.ach[a.id]=1; PROG.caps=(PROG.caps||0)+25; won.push(a); steamUnlock(a.id); } }
   musicCheck();
   if(won.length){ saveProg();
     // mid-run it is a float on the board; anywhere else it earns a card. bankRun()
@@ -5218,7 +5231,7 @@ function boot(){
   /* 2026-08-16 audit: drifted a THIRD time, 73 against jimothy-v77. The two
      numbers are the same number now; test/jimothy-check.js fails the build if
      they ever separate again. */
-  var SWV='78';
+  var SWV='79';
   if('serviceWorker' in navigator){ try{
     /* ⛔ AUTO-UPDATE. The SW is network-first + skipWaiting + clients.claim, so a fresh
        deploy is fetched immediately — but an already-OPEN page keeps showing the version
