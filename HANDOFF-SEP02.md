@@ -633,8 +633,9 @@ Lane F (3D and VR, added Sep 03): **V1** any time, it is read only on the games 
 writes docs/ and QUEST-COMPAT.md; **V2** after Stephen picks a game from
 docs/3D-VR-SHORTLIST.md, fenced to that one game. Both prompts in `HANDOFF-3D-VR.md`.
 Lane G (Keepsies, added Sep 04): the marble game, `HANDOFF-KEEPSIES.md`. New folder
-`satellites/keepsies/`, so its fence overlaps nothing: **K0** any time, **K1** next, then
-Stephen plays K1 on his phone before **K2**; **K3** after K2. One Opus at a time on it.
+`satellites/keepsies/`, so its fence overlaps nothing. Built as ONE unattended overnight run,
+K0 to K3 back to back (the prompt is at the top of that file); Stephen's phone notes fold in as
+K1.5 whenever they arrive. One Opus at a time on it; a later session resumes from its SESSION STATE.
 
 Two terminals that are always safe together: any two of {C1, M1 minus
 Conduit, S1, P1, D1, T1, W1 Dewball}. Never two tasks on the same game.

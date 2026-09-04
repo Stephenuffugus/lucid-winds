@@ -2,7 +2,71 @@
 **Written 2026-09-04 by Fable, from Stephen's v2 design (`satellites/keepsies/docs/DESIGN.md`, 27 sections, authored 2026-09-03 in a meeting) after reading it whole, reading Ripcord whole, and measuring the physics bet headless on this box.**
 **Director: Stephen. He makes every design and economy call. Fable reviews your work and deploys it. You build.**
 
-There is no code. The design is complete and unusually good, and it is also wrong in five places that only a run can find (section 4). This file is the design plus what the fleet already knows, in build order, with gates.
+There is no code. The design is complete and unusually good, and it is also wrong in five places that only a run can find (section 4). This file is the design plus what the fleet already knows, in build order, with gates. It is written for an unattended overnight run: Opus reads, builds K0 to K3 in order, never waits on a human, and leaves a morning report.
+
+---
+
+## THE PROMPT (paste as is into a fresh Opus session; the same prompt resumes a later session)
+
+```
+You are Claude Opus, building KEEPSIES, a realistic 3D marble game, in the lucid-winds repo at
+/workspaces/lucid-winds on branch add-sproing-jumper, overnight and unattended. The Director is
+Stephen; he is asleep and reads your work in the morning. Fable (another Claude) wrote your plan,
+reviews every line you produce against it, and deploys. You build.
+
+READ FIRST, whole, in this order, before any edit:
+1. /workspaces/lucid-winds/HANDOFF-KEEPSIES.md. Section 0 binds you. Section 15 is the overnight
+   protocol you run under. Section 16 is the report you write before you stop.
+2. /workspaces/lucid-winds/satellites/keepsies/docs/DESIGN.md. Stephen's design, the source of truth
+   for what the game is. Where the plan's section 4 corrects it, the plan wins.
+3. /workspaces/lucid-winds/satellites/keepsies/sim/probes/README.md. The physics measurements.
+4. /workspaces/lucid-winds/CLAUDE.md, the sections LOOKING IS PART OF THE JOB and WHAT THE DIRECTOR
+   EXPECTS.
+5. The Ripcord files named in the plan's section 3, each when you reach the phase that copies it.
+
+THE FENCE. You touch satellites/keepsies/** and the ledger, session state and morning report of
+HANDOFF-KEEPSIES.md. Nothing else. git add only those paths, never -A. git pull --rebase origin
+add-sproing-jumper before the first edit and before every push. Never push to main. Never edit
+another satellite, portal/index.html, scripts/, music-unlocks.js, or any sw.js.
+
+THE ORDER. K0, then K1, then K2, then K3, exactly as section 6 lays them out. Inside K0 the order is
+physics, harness, then pixels. A phase is done when tools/check.js prints ALL GATES PASSED, every new
+gate has been watched to fail once, the screenshots have been opened with the Read tool and described
+with three faults each, the ledger box holds pasted command output, and the work is committed and
+pushed. Then the next phase. Do not stop after K1 to wait for Stephen: his phone notes fold in later
+as K1.5. If the whole night is not enough, the morning report says where you are.
+
+THE OVERNIGHT PROTOCOL. Never wait on a human. An ambiguity is the smallest reasonable choice, logged
+in satellites/keepsies/docs/DECISIONS.md with one line of why. A gate still red after three honest
+attempts is written into SESSION STATE as BLOCKED with its last thirty lines of output, and you move
+to the next subsystem that does not depend on it; you never weaken, skip or delete a gate to pass it.
+This box has two cores: run gates one at a time, use at most two helper agents and never for a
+judgement call. Commit and push after every green subsystem, not at the end of the night. When your
+context is running long, finish the current subsystem, run the gates, commit, push, write SESSION
+STATE with the exact next action, write the morning report, and stop. The next session starts with
+this same prompt and resumes from SESSION STATE.
+
+THE FIRST THING YOU DO after reading is git pull --rebase origin add-sproing-jumper, then K0 step 1:
+write satellites/keepsies/tools/check.js with one gate that fails, run it, paste the failure into the
+ledger, commit "keepsies K0: the gate, failing", push. Then K0 step 2.
+
+TOOLS. Node 24. puppeteer with a cached Chrome at /workspaces/lucid-winds/node_modules/puppeteer;
+WebGL needs the swiftshader flags in section 9; never delete ~/.cache/puppeteer. Blender 4.0.2 and
+gltfpack are on the PATH. Fetch Rapier by npm-installing @dimforge/rapier3d-deterministic-compat@0.20.0
+into a scratch directory under /tmp and copying dist/rapier.mjs into satellites/keepsies/lib/; never a
+node_modules inside the repo. Copy three.js and its loaders from satellites/ripcord/assets/3d/lib/
+with the subfolders intact.
+
+LAWS. No dashes of any kind in player copy, commas. No exclamation points in system text. "Sky Wolf
+Studio", singular. Never say any art is hand painted. Directions before play. 48 px touch targets
+measured as rendered pixels at 375 wide, proven with elementFromPoint, never el.click(). Every patch to
+an existing file asserts its anchor matched exactly once. A checkbox flips only with pasted evidence.
+A green gate is not a look. Every number lives in src/data/tuning.json.
+
+DO NOT install anything into the repo, register a service worker, load anything from a CDN at
+runtime, change a number in DESIGN.md, invent a feature the design does not have, ask Stephen a
+question and wait for the answer, or call a phase done before its ledger box is full.
+```
 
 ---
 
@@ -20,6 +84,7 @@ There is no code. The design is complete and unusually good, and it is also wron
 10. **At most two helper agents, never for a judgement call**, and never two gates at once (rule 6).
 11. **Never write a `[x]` before the work exists.** The evidence ledger takes commands and their real output, not the word done.
 12. **Update SESSION STATE at the bottom of this file at the end of every session**: exact state, half-done work, next action.
+13. **Overnight law.** You never wait on a human. Section 15 says what to do instead, section 16 what to leave behind.
 
 ---
 
@@ -178,7 +243,7 @@ DESIGN's phases P0 to P5 keep their scope and numbering; section 6 restates them
 
 ## 6. THE PHASES
 
-Each phase: scope, the files it may create, the gates (written first, watched to fail), the screenshots, the phone checklist, the commit. **The phone checklist** (DESIGN §0.3): each phase writes `docs/checklists/kN.md`, ten lines of what to try on a phone and what should happen; the builder cannot run it, Stephen runs it when he plays, and K1's is the one that gates. Fable diffs each phase when it lands, runs the gates alone, looks at the shots, and deploys. Do not start a phase before the previous phase's ledger box is full.
+Each phase: scope, the files it may create, the gates (written first, watched to fail), the screenshots, the phone checklist, the commit. **The phone checklist** (DESIGN §0.3): each phase writes `docs/checklists/kN.md`, ten lines of what to try on a phone and what should happen; the builder cannot run it, Stephen runs it when he wakes, and his notes become the K1.5 feel pass. Phases run back to back; nothing here waits on a human. Fable diffs each phase when it lands, runs the gates alone, looks at the shots, and deploys. Do not start a phase before the previous phase's ledger box is full.
 
 ### K0: Skeleton, physics, the harness that fails (DESIGN P0)
 
@@ -199,7 +264,7 @@ Each phase: scope, the files it may create, the gates (written first, watched to
 
 ### K1: Ringer is fun on a phone (DESIGN P1)
 
-The phase Stephen signs off by feel. Nothing in K2 starts until he has played this on his phone and written in `PLAYTESTS.md`.
+The phase that has to feel right. Overnight, the builder's own judgement stands in for Stephen's: the `knuckle` gate numbers, a described shot of the brace and the break, and one line in the ledger saying what a fast flick, a slow push and a hooked snap each did. K2 follows on the same night. Stephen's phone notes, when they exist, are **K1.5**, a feel pass that reopens `input/knuckle.js` and `tuning.json` and nothing else, and it runs before K3 is called done.
 
 **The Knuckle (`input/knuckle.js` → `core/snap.js`).** One continuous gesture, three layers, exactly DESIGN §7. Implementation detail the design leaves to you:
 - *Brace.* `pointerdown` within 1.6x the taw's screen radius starts a brace. Sample the touch point at every `pointermove`; jitter = RMS of displacement over the last 600 ms. Cone half-angle = `lerp(6°, 1.5°, settle01)` where `settle01` rises linearly over 1.2 s of jitter under 2 px and falls by 0.5 on any move over 8 px. Haptic `settle` at settle01 = 1 (navigator.vibrate 8 ms where present). The reticle is a ring around the taw whose radius breathes with the cone. While braced the HUD shows: aim line (direction only, 0.35 m long, no path), charge meter, threat shimmer.
@@ -236,7 +301,7 @@ The phase Stephen signs off by feel. Nothing in K2 starts until he has played th
 
 **Gates:** `harness` gains `sticking` (a scripted backspin AimSource, offset.y = -0.7, into a single mib at 0.5 m stops the taw within 0.1 m of the struck mib's original position on at least 70 percent of 200 seeds; watched to fail by zeroing `k_back`), `ringer_rules` (a Node test that plays 500 AI-vs-AI games through the referee, asserts every game ends, 7 pocketed by the winner, shoot-again fired whenever a mib exited, poison only when on), `knuckle` (above), `playthrough` (`test/playthrough.mjs`: boot, skip onboarding via a dev flag, set up a quickplay Ringer vs Rookie, play to the end with scripted flicks, assert the result screen and that the save recorded one match; then the same with pull-back on).
 **Shoot:** the brace with the reticle settled, the moment after a break with mibs scattering, the top-down view, the results card, all at both sizes. Then the worst angle: camera at the ring edge looking out.
-**Stephen's sign-off:** he plays three Ringer games on his phone and writes what he felt in `PLAYTESTS.md`. If the snap does not feel like a snap, K1 is not done, whatever the gates say.
+**K1.5, when Stephen's notes exist:** he plays three Ringer games on his phone and writes what he felt in `PLAYTESTS.md`. If the snap does not feel like a snap, K1.5 reopens the Knuckle until it does, whatever the gates say. The builder checks `PLAYTESTS.md` at the start of every session and runs K1.5 the moment there is an entry.
 **Commit:** one per subsystem (knuckle, referee, ai, env, hud, techniques), each with gates green.
 
 ### K2: The collection and the economy close the loop (DESIGN P2)
@@ -404,13 +469,13 @@ Stores come later and are Stephen's list (Play as a TWA, Meta as a 2D PWA first,
 
 **You decide (log in `docs/DECISIONS.md`):** the 20 rung persona names and quirks, chore wording, shader recipe parameters, technique toast copy, icon design, the placeholder grail figure, tuning values that keep every gate green.
 
-**Fable decides:** portal carding, deploys, the service worker, merge order with the other builders, when K2 starts (after Stephen's K1 notes).
+**Fable decides:** portal carding, deploys, the service worker, merge order with the other builders, and when the beta flag comes off the card.
 
 ---
 
 ## 12. STEPHEN ONLY (physical, when the phase lands)
 
-1. **After K1:** play three Ringer games on the phone. Write what the snap felt like in `satellites/keepsies/PLAYTESTS.md`. Answer #10 and #11 if you can feel them.
+1. **In the morning, after K1 landed:** play three Ringer games on the phone (Fable deploys the branch or you open the codespace port). Write what the snap felt like in `satellites/keepsies/PLAYTESTS.md`. That entry starts K1.5. Answer #10 and #11 if you can feel them.
 2. **During K2:** the Meshy lane for the four grail figures and the Curator's First Marble (a sulphide with a tiny marble inside), and the two arenas. Pilot one figure first, name the generation exactly like the file, zip them back; the forge fits them. The placeholder ships until then and nothing waits on it.
 3. **After K3:** answer OPEN #4, #5, #8, #9. Play a boss loss and say whether the no-ransom rule is too hot.
 4. **Any time:** the title. "Keepsies" is uncleared.
@@ -440,7 +505,10 @@ This is the largest single game in the fleet: a physics engine, a 3D renderer, t
 - [ ] `sticking` green (percent), `ringer_rules` green (500 games, counts)
 - [ ] `playthrough` green (Ringer vs Rookie to the result screen; the pull-back run too)
 - [ ] shots: brace, break, top-down, results, at both sizes, plus the worst angle; faults written
-- [ ] Stephen's `PLAYTESTS.md` entry exists and says the snap feels like a snap
+- [ ] one ledger line describing what a fast flick, a slow push and a hooked snap each did on screen
+
+### K1.5 (when `PLAYTESTS.md` has an entry)
+- [ ] Stephen's entry quoted; what changed in `knuckle.js` and `tuning.json` and why; `knuckle` and `sticking` still green
 - [ ] commits
 
 ### K2
@@ -461,6 +529,35 @@ This is the largest single game in the fleet: a physics engine, a 3D renderer, t
 
 ---
 
+
+## 15. THE OVERNIGHT PROTOCOL (how an unattended run behaves)
+
+1. **Never wait on a human.** Every question that would have gone to Stephen becomes the smallest reasonable choice, logged in `docs/DECISIONS.md` as one line of what and one line of why. The open questions in section 11 stay open; the code takes the recommended answer where one is written and the design's default where none is.
+2. **Phases run back to back.** K0, K1, K2, K3. A phase ends only with its ledger box full. There is no pause between phases and no pause for feel: K1.5 is where Stephen's notes fold in, whenever they arrive.
+3. **A red gate after three honest attempts is BLOCKED, not fixed by force.** Write `BLOCKED: <gate>` in SESSION STATE with the last thirty lines of its output and the three things tried, then move to the next subsystem that does not depend on it. Never weaken a threshold, shrink a sample, delete an assertion or comment out a check to get green. A gate that was made to pass is worse than a red one, because the morning reader trusts it.
+4. **Two cores.** Gates one at a time. The browser gates (`render`, `playthrough`, `knuckle`, `budget`) are the ones that flake under contention: a failure in the suite is rerun alone, twice; two passes alone is a pass and is written that way. At most two helper agents, only for reading or for a mechanical sweep, never for a judgement call, never in parallel with a gate.
+5. **Commit and push after every green subsystem.** Small commits, each with gates green, each pushed. A night's work that sits uncommitted in a dead session did not happen.
+6. **Context is a resource.** When the session is running long: finish the subsystem in hand, gates, commit, push, SESSION STATE with the exact next action (file, function, step number), the morning report, stop. The next session opens with the same prompt and resumes from SESSION STATE. Never start a subsystem you cannot finish and commit inside the context you have left.
+7. **Screenshots still happen at night.** The ritual is the same: shoot from where the player stands, open with the Read tool, name three faults, write them down. The faults are the morning reader's first list.
+8. **The design is not edited.** A number that has to change changes in `tuning.json`; a rule that has to change is a DECISIONS line and a note in the morning report, and the design line stands until Stephen edits it.
+9. **Nothing leaves the fence.** If a fix seems to need a file outside `satellites/keepsies/`, it goes in the morning report as a request to Fable, and the game works around it tonight.
+10. **Disk.** The box had 4.0 GB free on Sep 04. Scratch installs live under `/tmp`, renders and raw shots that are not evidence are deleted after they are read, and nothing over a few MB is committed except the two vendored libraries.
+
+## 16. THE MORNING REPORT (write it before you stop, most recent on top, keep every one)
+
+```
+### Morning report, <date and time>
+Phases: K0 <done|partial|not started> (<commit>), K1 ..., K2 ..., K3 ...
+Gates: <the last full tools/check.js summary line, and which gates were skipped in fast mode if any>
+Play it: <what is playable right now and how to reach it: the screen path from boot to a match>
+Look at: <five docs/shots/ files worth opening first, one line each on what is wrong in them>
+Decided without you: <the three most consequential DECISIONS.md lines, verbatim>
+Blocked: <each BLOCKED gate with one line of why, or "none">
+For Fable: <anything outside the fence, or "nothing">
+For Stephen: <which open questions the night's choices leaned on, and the phone checklist to run>
+Next action: <file, function, step, the first thing the next session does>
+```
+
 ## SESSION STATE (builder updates this at the end of every session)
 
-**2026-09-04, Fable.** Plan written. No code. `satellites/keepsies/` holds `docs/DESIGN.md` (the v2 design verbatim) and `sim/probes/` (the Rapier measurements behind section 2 and 4.1, with the bugged first sweep kept on purpose). Next action: K0, step 1, the gate that fails.
+**2026-09-04, Fable.** Plan written and verified (two read-only checkers, 87 claims, the wrong ones applied), then reshaped for an unattended overnight run: the prompt at the top, the overnight protocol in section 15, the morning report in section 16, and the K1 sign-off turned into K1.5 so K2 follows the same night. No code. `satellites/keepsies/` holds `docs/DESIGN.md` (the v2 design verbatim), `sim/probes/` (the Rapier measurements behind sections 2 and 4.1, with the bugged first sweep kept on purpose), and the in-folder state files. Next action: K0, step 1, the gate that fails.
