@@ -632,6 +632,9 @@ Lane E: **T1** any time. **R1** after Stephen's three rounds.
 Lane F (3D and VR, added Sep 03): **V1** any time, it is read only on the games and
 writes docs/ and QUEST-COMPAT.md; **V2** after Stephen picks a game from
 docs/3D-VR-SHORTLIST.md, fenced to that one game. Both prompts in `HANDOFF-3D-VR.md`.
+Lane G (Keepsies, added Sep 04): the marble game, `HANDOFF-KEEPSIES.md`. New folder
+`satellites/keepsies/`, so its fence overlaps nothing: **K0** any time, **K1** next, then
+Stephen plays K1 on his phone before **K2**; **K3** after K2. One Opus at a time on it.
 
 Two terminals that are always safe together: any two of {C1, M1 minus
 Conduit, S1, P1, D1, T1, W1 Dewball}. Never two tasks on the same game.
