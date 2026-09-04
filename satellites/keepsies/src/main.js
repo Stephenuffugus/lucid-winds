@@ -161,18 +161,7 @@ function wireButtons() {
     SAVE.merge({ seen: { rules: true } });
     showScreen('setup'); buildHouseRules(); buildAnte();
   });
-  $('setupGo').addEventListener('click', () => {
-    // ⛔ the pot goes up HERE, before a single shot, and the marbles leave the
-    // inventory in the same write
-    if (G.houseRules.keepsies && G.stake.length) {
-      if (!escrow(G.stake, G.theirStake, 'Dusty Coyle')) {
-        $('anteSay').textContent = 'That stake could not be put up. Nothing has moved.';
-        return;
-      }
-      G.save = SAVE.load();
-    }
-    showScreen('match'); startMatch();
-  });
+  $('setupGo').addEventListener('click', () => { beginMatch(); });
   $('setupBack').addEventListener('click', () => { showScreen('title'); });
   $('collect').addEventListener('click', () => openCollection());
   $('collBack').addEventListener('click', () => showScreen('title'));
@@ -451,6 +440,13 @@ function buildAnte() {
   }
   G.thumbs.close();
   refreshAnte();
+  /* ⛔ THE STRIP SCROLLS, AND A STAKE YOU CANNOT SEE IS A STAKE YOU DID NOT MAKE.
+     The setup screenshot showed six marbles, none of them marked, over a sentence
+     saying two were up: the staked one was simply off the right hand edge. */
+  const first = G.stake.length ? $('stake-' + G.stake[0].id) : null;
+  if (first && first.scrollIntoView) {
+    try { first.scrollIntoView({ block: 'nearest', inline: 'center' }); } catch (e) { }
+  }
 }
 
 function toggleStake(group) {
@@ -478,8 +474,19 @@ function refreshAnte() {
   G.theirStake = matchTheirStake(G.stake, G.catalog, G.dropRng, ['common', 'uncommon', 'rare']);
   const verdict = tierMatchOk(G.stake, G.theirStake);
   G.anteOk = verdict.ok;
+  // "Winner keeps all 2." read like a bug on the setup screenshot. Say what is
+  // actually at risk, in words, and name the player's own marble.
+  const mine2 = G.stake.map(m2 => m2.name || m2.id).join(' and ');
+  // ⛔ name THEIRS too. The setup screenshot showed two near black clay marbles
+  // side by side, indistinguishable at 56 px, over a sentence whose second half
+  // was the word "theirs": the one screen meant to make a stake feel real told
+  // you nothing about what you were playing for.
+  const yours2 = G.theirStake.map(t2 => t2.name || t2.id).join(' and ');
   say2.textContent = verdict.ok
-    ? 'Winner keeps all ' + (G.stake.length + G.theirStake.length) + '.'
+    ? (G.stake.length === 1
+      ? 'Your ' + mine2 + ' against their ' + yours2 + '. Winner takes both.'
+      : G.stake.length + ' of yours against ' + G.theirStake.length + ' of theirs. Winner takes all '
+        + (G.stake.length + G.theirStake.length) + '.')
     : verdict.reason;
   $('setupGo').disabled = !verdict.ok;
   $('theirsLabel').hidden = !verdict.ok;
@@ -533,6 +540,30 @@ function buildHouseRules() {
 
 /* -------------------------------------------------------------- the match */
 
+/**
+ * Leave the setup screen for the ring. The pot goes up HERE, before a single
+ * shot, and the marbles leave the inventory in the same write.
+ *
+ * ⛔ The button and the dev API both come through this one door, so a shot taken
+ * headless walks the same escrow a player walks. The screenshot run found this:
+ * it staked a marble, called start() straight past this function, and the result
+ * card said "nothing was up" over a pot that really was selected.
+ * @returns {boolean} false when the stake was refused and nothing moved
+ */
+function beginMatch(opts) {
+  if (G.houseRules.keepsies && G.stake.length) {
+    G.lastStakeNames = G.stake.map(m => m.name || m.id).join(' and ');
+    if (!escrow(G.stake, G.theirStake, 'Dusty Coyle')) {
+      $('anteSay').textContent = 'That stake could not be put up. Nothing has moved.';
+      return false;
+    }
+    G.save = SAVE.load();
+  }
+  showScreen('match');
+  startMatch(opts);
+  return true;
+}
+
 function startMatch(opts) {
   endMatch();
   const o = opts || {};
@@ -545,7 +576,10 @@ function startMatch(opts) {
     houseRules: Object.assign({}, G.houseRules, o.houseRules),
     players: [
       { name: 'You', ai: null, tawEntry: 'taw_clearie' },
-      { name: 'Dusty', ai: o.opponent || 'rookie', tawEntry: 'taw_bumblebee' }
+      // ⛔ ONE NAME. The setup screen said Dusty Coyle and the result card said
+      // Dusty, which is two people on two adjacent screens. DESIGN 10.7 and the
+      // league table both write him as Dusty Coyle.
+      { name: 'Dusty Coyle', ai: o.opponent || 'rookie', tawEntry: 'taw_bumblebee' }
     ],
     hooks: {
       onPocket: () => AUDIO.impact({ material: 'glass', diameterMm: 16, relSpeed: 1.4, seed: 0.5 }),
@@ -556,7 +590,7 @@ function startMatch(opts) {
   buildMeshes();
   G.R.doLag();
   say(G.R.match.turn === 0 ? 'You won the lag. Hold your shooter, then flick.'
-    : 'Dusty won the lag and shoots first.');
+    : (G.R.match.players[1].name + ' won the lag and shoots first.'));
   G.R.frameShot(G.rig, true);
   G.rig.update(1 / 60);
   G.lastFramedTurn = G.R.match.turn;
@@ -777,7 +811,9 @@ function updateHud() {
 
 function finishMatch(s) {
   const won = s.winner === 0;
-  $('resultTitle').textContent = won ? 'You win' : 'Dusty wins';
+  // the opponent's name comes from the match, so league two does not still say Dusty
+  const oppName = (G.R.match.players[1] || {}).name || 'Dusty Coyle';
+  $('resultTitle').textContent = won ? 'You win' : oppName + ' wins';
   $('rPocket').textContent = s.pocketed[0] + ' of ' + G.R.match.toWin;
   $('rShots').textContent = String(s.shots);
   const names = G.R.state.techniques.map(id => (RINGER_TECHNIQUES[id] || {}).name).filter(Boolean);
@@ -788,16 +824,33 @@ function finishMatch(s) {
   // an inventory item carries an id, not a name: the name lives in the catalog,
   // and "Dusty keeps ." is a worse sentence than any of the ones it replaced
   const nameOf = (m) => m.name || ((G.catalog.marbles.find(c => c.id === m.id) || {}).name) || m.id;
-  const potLine = pot.won.length ? 'You keep ' + pot.won.map(nameOf).join(' and ') + '.'
-    : (pot.lost.length ? 'Dusty keeps ' + pot.lost.map(nameOf).join(' and ') + '.' : '');
+  /* ⛔ "keep" is the word for your OWN marble. On a win the sentence has to name
+     the one that crossed the ring, because that is the only thing on this card a
+     player will remember tomorrow. The screenshot said "You keep Peewee." over a
+     marble that had just been taken off Dusty. */
+  const list = (a) => a.map(nameOf).join(' and ');
+  const opp = oppName;
+  let potLine = '';
+  if (pot.won.length) {
+    potLine = 'You won ' + list(pot.won) + ' off ' + opp + '.';
+    if (pot.returned.length || G.lastStakeNames) potLine += ' ' + (G.lastStakeNames || '') + ' came home.';
+  } else if (pot.lost.length) {
+    potLine = opp + ' keeps your ' + list(pot.lost) + '.';
+  } else if (pot.returned.length) {
+    potLine = 'Nobody lost anything. ' + list(pot.returned) + ' came home.';
+  }
   $('rPot').textContent = potLine || 'nothing was up';
+  G.lastStakeNames = '';   // one match, one sentence: it does not carry over
   $('rTech').textContent = names.length ? names.join(', ') : 'none yet';
   /* the GAME's wallet, which is the one the player spends (DESIGN 17) */
   const earned = G.econ.payForMatch({
     won, pocketed: s.pocketed[0], toWin: G.R.match.toWin,
     newTechniques: names.filter(n => (G.save.profile.techniques || []).indexOf(n) < 0)
   });
-  $('rSun').textContent = earned.total + '  (' + earned.paid.map(p => p.reason).join(', ') + ')';
+  $('rSun').textContent = String(earned.total);
+  // the reasons are a receipt, not a headline: they belong under the card in the
+  // small type, where they do not outshout the marble that changed hands
+  $('rWhy').textContent = earned.paid.length ? earned.paid.map(p => p.reason).join(', ') : '';
   /* and the FLEET's, which is a different number on a different scale and never
      converts either way (HANDOFF-KEEPSIES 4.6) */
   const pay = won ? G.tuning.economy.fleetSunbeamsPerMatchMax : G.tuning.economy.fleetSunbeamsPerMatchMin;
@@ -975,6 +1028,7 @@ function installDevHook() {
       };
     },
     start: (opts) => { G.seenRules = true; showScreen('match'); startMatch(opts); },
+    go: (opts) => { G.seenRules = true; return beginMatch(opts); },
     rules: () => showScreen('rules'),
     setup: () => { showScreen('setup'); buildHouseRules(); buildAnte(); return G.houseRules; },
     stake: (id) => {

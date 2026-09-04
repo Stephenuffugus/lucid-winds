@@ -19,23 +19,10 @@ import { bodySpec } from '../core/marbleBody.js?v=20260904a';
 
 export { TIER_ORDER, TIER_LABEL } from './tiers.js?v=20260904a';
 import { TIER_ORDER } from './tiers.js?v=20260904a';
+// the word ladders live in a file with no imports so they can be measured
+// against the catalogue in Node, where three.js cannot follow
+export { hardnessWord, weightWord } from './words.js?v=20260904a';
 
-/** Hardness and integrity in words. DESIGN 20, and the reason there is no table. */
-export function hardnessWord(h) {
-  if (h == null) return 'holds together';
-  if (h >= 1.35) return 'shrugs it off';
-  if (h >= 1.2) return 'endures';
-  if (h >= 1.05) return 'holds together';
-  if (h >= 0.9) return 'takes its chances';
-  return 'chips easily';
-}
-export function weightWord(spec) {
-  const g = spec.mass * 1000;
-  if (g >= 25) return 'arrives, and stays';
-  if (g >= 14) return 'carries';
-  if (g >= 8) return 'travels light';
-  return 'barely there';
-}
 
 /**
  * The starter set of DESIGN 16.4: the clay pool, all six cat's eyes, two

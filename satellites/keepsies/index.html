@@ -27,6 +27,14 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--chalk);overflow:
   align-items:center;gap:16px;padding:24px calc(20px + env(safe-area-inset-left,0px)) calc(24px + var(--sb));
   background:radial-gradient(120% 90% at 50% 30%,rgba(13,16,12,.74),rgba(13,16,12,.96));
   text-align:center;overflow-y:auto}
+/* ⛔ A CENTRED FLEX COLUMN THAT SCROLLS EATS ITS OWN TOP. Once the collection's
+   grid grew past the screen, `justify-content:center` pushed the heading off the
+   top edge where no scroll can reach it, and the flex shrink that used to land on
+   the grid moved to the filter strip and crushed seven 48 px chips into a 12 px
+   line of empty outlines. A screen taller than the phone starts at the top, and
+   nothing in it shrinks. */
+.veil>*{flex:0 0 auto}
+#collection{justify-content:flex-start}
 .wordmark{font-size:2.4rem;letter-spacing:.16em;margin:0;color:var(--chalk);text-transform:uppercase}
 .studio{font-size:.8rem;letter-spacing:.18em;color:var(--muted);text-transform:uppercase;margin:0}
 .rules{max-width:22rem;margin:0;color:var(--chalk);opacity:.94;font-size:1rem;text-align:left;
@@ -91,12 +99,22 @@ button.quiet{background:transparent;color:var(--muted);border:1px solid rgba(152
   background:transparent;color:var(--muted);border:1px solid rgba(152,160,134,.4);text-transform:none;
   letter-spacing:.04em}
 #filters button.on{background:rgba(200,168,75,.16);color:var(--chalk);border-color:var(--brass)}
-/* the grid scrolls, and it FADES at the bottom so a half visible row reads as
-   more marbles rather than as a clipped one */
+/* ⛔ THE GRID DOES NOT SCROLL. The collection screen already scrolls, and a
+   scroll inside a scroll made a peephole: the screenshot showed three and a half
+   marbles out of eighteen, with the second row's names sliced through the middle
+   because the flex parent shrank the grid to 196 px under its own 253 px cap.
+   The marbles flow, the page scrolls, and the shop sits underneath them where a
+   shop belongs. */
 #grid{display:grid;grid-template-columns:repeat(3,96px);gap:10px;justify-content:center;
-  max-height:38vh;overflow-y:auto;padding:2px;
-  mask-image:linear-gradient(180deg,#000 0,#000 86%,transparent 100%);
-  -webkit-mask-image:linear-gradient(180deg,#000 0,#000 86%,transparent 100%)}
+  padding:2px;flex:0 0 auto}
+/* A way out that does not depend on how many marbles you own.
+   ⛔ Pinned over a blur, it stood ON the shop: the screenshot had BACK floating
+   across the Collector's Pouch with both of them unreadable. It carries its own
+   opaque ground now, and the screen reserves room so the last pouch scrolls clear
+   of it rather than under it. */
+.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-index:3;
+  align-self:flex-start;min-width:0;width:auto;padding:0 22px;
+  background:var(--bg);box-shadow:0 0 0 12px var(--bg),0 14px 20px 10px rgba(13,16,12,.94)}
 /* ⛔ min-width and min-height are RESET here. The global button rule sets a
    200 px minimum for the game's big buttons, and without overriding it a 96 px
    tile rendered at 205 px and the three column grid overlapped itself. */
@@ -152,7 +170,9 @@ button.quiet{background:transparent;color:var(--muted);border:1px solid rgba(152
   border:1px solid rgba(152,160,134,.4);background:rgba(20,23,15,.7);position:relative;overflow:hidden;
   cursor:pointer}
 .stake canvas{width:100%;height:100%;display:block}
-.stake.on{border-color:var(--brass);background:rgba(200,168,75,.2)}
+.stake.on{border-color:var(--brass);background:rgba(200,168,75,.2);box-shadow:0 0 0 2px rgba(200,168,75,.55),0 4px 10px rgba(0,0,0,.5);transform:translateY(-3px)}
+/* a tick, so the staked one reads at a glance and not only by its border */
+.stake.on::after{content:'';position:absolute;right:3px;bottom:3px;width:12px;height:12px;border-radius:50%;background:var(--brass);box-shadow:inset 0 0 0 2px var(--bg)}
 .stake .rib{position:absolute;left:0;top:0;bottom:0;width:3px}
 .stake .cnt{position:absolute;right:2px;top:2px;font-size:.54rem;color:var(--bg);background:var(--brass);
   border-radius:6px;padding:0 4px}
@@ -205,6 +225,11 @@ button.quiet{background:transparent;color:var(--muted);border:1px solid rgba(152
   padding:16px 20px;max-width:23rem;width:100%}
 .row{display:flex;justify-content:space-between;font-size:.95rem;margin:.34rem 0}
 .row span:last-child{color:var(--brass)}
+/* the pot reads as a sentence, not as a stat line */
+.row.pot{display:block;margin:0 0 .6rem;padding:0 0 .6rem;border-bottom:1px solid rgba(200,168,75,.22)}
+.row.pot span:first-child{display:block;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.row.pot span:last-child{display:block;font-size:1.05rem;line-height:1.35;margin-top:.24rem}
+.why{margin:.3rem 0 0;font-size:.72rem;line-height:1.4;color:var(--muted)}
 </style>
 <script type="importmap">
 { "imports": { "three": "./lib/three.module.min.js" } }
@@ -284,13 +309,18 @@ button.quiet{background:transparent;color:var(--muted);border:1px solid rgba(152
 </div>
 
 <div id="collection" class="veil" hidden>
+  <!-- ⛔ BACK LIVES AT THE TOP. Pinned to the bottom it stood on the shop, twice:
+       sticky measures from the scrollport while the button's place in the flow is
+       below the fold, so it floated across the pouches with both unreadable. At
+       the top it is where a phone puts a way out, it is on screen the moment the
+       screen opens, and content scrolls UNDER it the way a header should. -->
+  <button id="collBack" class="quiet sticky">Back</button>
   <h2>Your marbles</h2>
   <p id="collWallet" class="studio" style="letter-spacing:.1em"></p>
   <div id="filters"></div>
   <div id="grid"></div>
   <div id="pouches"></div>
   <p id="pouchSay"></p>
-  <button id="collBack" class="quiet">Back</button>
 </div>
 
 <div id="inspect" hidden>
@@ -307,11 +337,14 @@ button.quiet{background:transparent;color:var(--muted);border:1px solid rgba(152
 <div id="results" class="veil" hidden>
   <h2 id="resultTitle">You win</h2>
   <div class="card">
+    <!-- the pot is first and loudest: it is the only row where a marble changed
+         hands, and it is what the game is named after -->
+    <div class="row pot"><span>The pot</span><span id="rPot">nothing was up</span></div>
     <div class="row"><span>Pocketed</span><span id="rPocket">0</span></div>
     <div class="row"><span>Shots</span><span id="rShots">0</span></div>
     <div class="row"><span>Techniques</span><span id="rTech">none yet</span></div>
-    <div class="row"><span>The pot</span><span id="rPot">nothing was up</span></div>
     <div class="row"><span>Sunbeams</span><span id="rSun">0</span></div>
+    <p class="why" id="rWhy"></p>
   </div>
   <button id="again">Rematch</button>
   <button id="toTitle" class="quiet">Home</button>

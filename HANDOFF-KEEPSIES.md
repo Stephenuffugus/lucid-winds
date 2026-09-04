@@ -874,12 +874,145 @@ CATALOG FAILED
   per epic shaders the design asks for are still one shared fallback; the light pool behind the marble
   is too faint to register; and the grail figures are not there at all, which is the glb lane.
 
-- [ ] `pity_math`, `clay_regen`, `escrow_crash`, `save_migrate` each green and each watched to fail
-  — `save_migrate` is DONE as the `save` gate (the migration chain, the two tab merge, the write probe,
-  each watched to fail). The other three wait on the economy, which is not built.
-- [ ] `playthrough` extended green (it plays two whole games; the pouch, the stake and the ransom are not built)
-- [ ] shots: inspect x3, grid, ante mid-roll, loss card, showcase room from the door and from inside a wall
-- [x] commits: `46befcb5`
+- [x] the economy: the wallet, the clay pool and the three pouches, gates `clay_regen` and `pity_math`.
+  `meta/economy.js` is the only module in the game that reads `Date`, and it reads it at one function,
+  `today(now)`, which is a local midnight day number. The clay pool regenerates to FULL on a new day
+  rather than by the hour, so a player who does not open the game for a week is not punished for it, and
+  `spend` refuses and moves nothing rather than half paying. `clay_regen` steps an injected clock across
+  midnight, across a missed week and BACKWARDS, and watched to fail by regenerating per call.
+
+  `pity_math` pulls a hundred thousand times per pouch and holds three things: the base roll matches the
+  printed table within half a point, pity fires exactly where DESIGN 11 says it does, and **pity is a
+  floor and never a ceiling** — no tier may come out below its printed rate, which is the oldest trick
+  in the genre and the one worth gating against.
+```
+Standard Pouch, 100,000 pulls
+  ok    1. the base roll matches the printed table, worst tier off by 0.111 points (uncommon)
+    with pity: common 63.83%  uncommon 23.30%  rare 10.16%  epic 2.71%  grail 0.00%
+  ok    2. never 10 pulls without a rare: the worst run was 9, and pity supplied 6,554
+  ok    2. never 40 pulls without an epic: the worst run was 39, and pity supplied 2,285
+  ok    3. pity only ever helps: no tier came out below its printed rate
+  ok    a one of one never arrives twice: 0 duplicate grails in 100,000 pulls
+PITY MATH OK
+```
+  ⛔ **For Stephen, and it is in the morning report too:** the Standard Pouch's printed odds and its felt
+  odds are very different. The table says 3.6 percent rare and 0.4 percent epic. What a player actually
+  gets is **10.16 percent rare and 2.71 percent epic**, because at a 3.6 percent base rate roughly seven
+  of every ten runs of ten pulls contain no rare at all, so the guarantee fires constantly. Nothing is
+  broken and both design statements are honoured; the pouch is simply about three times more generous on
+  rares and seven times on epics than its own table reads.
+
+- [x] the keepsies loop itself: the ante, the escrow and the settle, gate `escrow_crash`.
+  This is the thing the game is named after. Staked marbles LEAVE both inventories and sit in a pot
+  marked `inMatch` in ONE save write, before a single shot is fired; the next boot finds `inMatch` and
+  hands everything back. The gate starts a REAL child process, has it stake, and SIGKILLs it between the
+  escrow write and the first turn, then loads the save it left on disk and counts.
+```
+  ok    a player starts with three marbles: 3
+  ok    staking one of them succeeded
+  ok    and the pot went up BEFORE anything was played
+  ok    and then the process was killed outright: SIGKILL
+  ok    the save left on disk still had the pot up, which is the crash we wanted
+  ok    booting recovered exactly one marble: 1
+  ok    and the inventory is whole again, every uid exactly once: u1,u2,u3
+  ok    booting a second time recovers nothing more: 0
+  ok    losing really loses it, and it does not come back: u1,u3
+  ok    a draw returns everything: u1,u2,u3
+ESCROW CRASH OK
+```
+  Watched to fail three ways: an escrow that does not remove from the inventory duplicates the marble
+  (`u1,u1,u2,u3`), a boot that forgets the pot eats it, and a loss that quietly returns the marble makes
+  the whole game meaningless. The tier matched rule refuses with a reason rather than a dead button.
+
+- [x] `playthrough` extended green: it now refuses PLAY with nothing staked, checks the pot went up
+  BEFORE the first turn, and checks the staked marble left the inventory in the same write.
+```
+  ok    with nothing staked, PLAY is refused
+  ok    the pot went up BEFORE the first turn
+  ok    and the staked marble LEFT the inventory in the same write: 18 became 17
+  ok    and the card says where the marbles went: Dusty keeps your Dirt Plain.
+  ok    the Standard Pouch is pressable when it can be afforded
+  ok    the pouch says what came out: Clearie. Nothing to hide.
+  ok    and it cost 300 sunbeams: 1669 became 1369
+  ok    and a pouch you cannot afford is disabled rather than failing on the tap
+  ok    zero page errors across two whole games
+PLAYTHROUGH OK
+```
+
+- [x] `words`, a new gate, and the two bugs it found before it was five minutes old.
+  DESIGN 20 shows hardness and weight as WORDS rather than numbers, which is right and is also a trap:
+  the vocabulary is written by hand and the catalogue is generated, and nothing made them agree. The
+  first weight ladder topped out at 25 grams over a game whose heaviest marble is a 16.7 g steelie, so
+  **58 of 65 marbles printed "barely there"** and two of its four words could never appear. Rebanded
+  against the measured masses. Then the gate went red a second time on the hardness ladder, and the
+  cause was upstream: DESIGN gives Mercury "−hardness (0.8)" and Kiln Kiss "agate hardness (1.3)" inside
+  their passive TEXT and nowhere else, so `bodySpec` never saw either and the inspect card called
+  Mercury "shrugs it off" directly above its own passive saying its hardness is 0.8. The generator now
+  lifts a parenthesised hardness into `arena.hardness`. DESIGN's number, unchanged; only carried.
+```
+weight
+  ok    1. every word is reachable from the catalogue
+      1  barely there
+      4  light, and quick off the thumb
+     49  the usual heft
+      4  heavy in the hand
+      7  arrives, and stays
+  ok    2. no single word swallows the catalogue: the widest is "the usual heft" at 75.4 percent
+  ok    3. the ladder never goes backwards: 0 inversions
+hardness
+  ok    1. every word is reachable from the catalogue
+  ok    2. the widest is "takes its chances" at 73.8 percent, the ceiling is 80
+WORDS OK
+```
+  All three rules watched to fail: a flattened band gave `"the usual heft" at 81.5 percent` and an
+  unreachable rung, and a swapped return gave `1 inversions, first at The Ember Dragon then Bearing`.
+
+- [x] the shots opened again, and four faults fixed from looking rather than from a gate.
+  (1) The result card said **"nothing was up"** over a pot that really was selected, because the
+  screenshot run called `start()` and walked straight past the escrow; there is one door now,
+  `beginMatch()`, and the button and the dev API both use it. (2) The card then said "You keep Peewee."
+  over a marble just taken off Dusty; "keep" is the word for your own marble, so it names which one
+  crossed the ring, and the pot is the first and largest row rather than a stat line under Techniques.
+  (3) The setup screen showed six marbles with none marked over a sentence saying two were up: the
+  staked one was off the right hand edge of a strip that scrolls. It scrolls into view now and the on
+  state has a tick. (4) The collection was a peephole, three and a half marbles of eighteen with the
+  second row's names sliced through the middle, because a scroll inside a scroll shrank the grid to
+  196 px under its own 253 px cap.
+
+  **What is still wrong, named.** The results card: the ring behind YOU WIN is a smudge at near
+  background contrast with two invisible specks in it, the bottom third is empty while the top is
+  crowded, and the marble you just won is described in a sentence rather than rendered in that space.
+  The collection: the pouches are three full width buttons filling the bottom half under a wallet
+  reading 0, so the loudest thing on the screen is a shop you cannot use; and the four cat's eyes are
+  one marble recoloured four times, same vane shape, same highlight, same silhouette. Inspect: the
+  turntable marble is soft and small with a stair stepped edge, less crisp than the 96 px thumbnails
+  next door, and "You have never held one of these" sits 900 px below the name with no ownership badge
+  near it.
+- [x] a second pass over the shots, after the first pass changed the layout under them.
+  Fixing the collection's peephole moved every control on that screen, and the gate caught the
+  consequence before a person could: `playthrough` refuses to press a control that is not under its own
+  centre, and BACK had gone below the fold. Pinning it to the bottom put it ON the shop, twice, so it
+  now lives at the top where a phone puts a way out and the content scrolls under it. Two more faults
+  came out of the same look: a centred flex column that scrolls **eats its own top**, so "Your marbles"
+  was pushed off the screen where no scroll could reach it, and the shrink that used to land on the grid
+  moved to the filter strip and crushed seven 48 px chips into a 12 px line of empty outlines.
+  Then the small ones: the opponent was **Dusty Coyle on one screen and Dusty on the next**, which is two
+  people; his name is read from the match now, so league two will not still say Dusty. The ante names
+  what you are playing FOR as well as what you are playing with, because two near black clay marbles at
+  56 px told you nothing. The match camera tightened, `spanFactor` 0.78 to 0.72 and `spanAdd` 1.85 to
+  1.35, which is the difference between both arcs of the ring being cut off screen and the ring reading
+  as a circle.
+  **The worst angles, shot on purpose.** `k1-lowest.png` is the lowest a player can get the camera and
+  `k1-under.png` is under the floor, which needs a dev flag to reach. At the lowest reachable angle the
+  world ends at a hard straight horizon with an unlit dark polygon hanging above it, the FAR arc of the
+  chalk ring breaks into three disconnected dashes while the near arc is a solid wide band, and the mibs
+  lose their contact shadows and read as pasted onto the dirt rather than resting in it. From under the
+  floor the ground is a hard edged unlit polygon with no thickness in a navy void. That last one is
+  guarded from players; the first two are not, and they are the arena's next art job.
+- [ ] shots: ante mid-roll, loss card, showcase room from the door and from inside a wall
+- [ ] ceremonies, the ransom window, progression, onboarding beats 2 to 6, the glb lane, the eight
+  per epic shaders
+- [x] commits: `46befcb5` the catalog and the recipes, `597a9fec` the collection and the turntable, `b3d341fa` the wallet and the clay pool, `c81d1a87` the pouches, `cd0dca5e` the pot and the escrow
 
 ### K3
 - [ ] `arena_rules`, `damage_math`, `condition_matrix`, `arena_shape` (the table, every matchup), `boss_ladder` (five rates), `ai_budget` (100 turns, min candidates), `budget` (three runs alone)
@@ -920,6 +1053,76 @@ For Fable: <anything outside the fence, or "nothing">
 For Stephen: <which open questions the night's choices leaned on, and the phone checklist to run>
 Next action: <file, function, step, the first thing the next session does>
 ```
+
+### Morning report, 2026-09-04, the second half of the night
+
+**Phases:** K0 **done**. K1 **done but for pass and play**. K2 **most of the way**: the catalog, the
+marbles' looks, the collection, the turntable, the economy, the three pouches and **the keepsies loop
+itself** are built. What is left of K2 is the ceremonies, the ransom window, progression, onboarding
+beats 2 to 6, the glb lane and the eight per epic shaders. K3 **not started**.
+
+**The headline: a marble is now genuinely at risk.** You put one up, Dusty matches it, and the winner
+takes both. The stake leaves your inventory before a shot is fired, and if the phone dies mid match the
+next boot hands it back. `escrow_crash` proves that by starting a real child process, having it stake,
+and SIGKILLing it between the escrow write and the first turn.
+
+**Gates:** seventeen, all green, every one watched to fail on purpose. Four are new tonight.
+```
+lint pass 0s · catalog pass 0s · stamp pass 0s · harness pass 15s · save pass 0s
+clay_regen pass 0s · pity_math pass 0s · words pass 0s · escrow_crash pass 0s
+ringer_rules pass 0s · ai_budget pass 17s · ringer_ai pass 43s · render pass 42s
+knuckle pass 20s · audio_budget pass 10s · playthrough pass 50s
+ALL GATES PASSED
+```
+
+**Look at, in this order:**
+1. `docs/shots/k1-setup.png` The ante. Your marble against theirs, and the sentence under it now names
+   yours: "Your Dirt Plain against theirs. Winner takes both."
+2. `docs/shots/k1-results.png` The pot is the first and largest row on the card, and it says which
+   marble crossed the ring. It is still a card floating over a black wash, and the marble you won is a
+   sentence rather than an object. That is the next thing built.
+3. `docs/shots/k2-collection.png` Your marbles, all of them, no longer a peephole.
+4. `docs/shots/k2-inspect.png` One marble on the turntable with its traits in words.
+
+**⛔ The one thing to decide, Stephen: the Standard Pouch's printed odds and its felt odds are very
+different.** Measured over a hundred thousand pulls. The table says 3.6 percent rare and 0.4 percent
+epic. What a player actually gets is **10.16 percent rare and 2.71 percent epic**, because at a 3.6
+percent base rate roughly seven of every ten runs of ten pulls contain no rare at all, so the pity
+guarantee fires constantly: 6,554 of the rares and 2,285 of the epics in that run came from pity rather
+than from the roll. Nothing is broken and both of DESIGN 11's statements are honoured at once. The pouch
+is simply about three times more generous on rares and seven times on epics than its own table reads. If
+the printed number should be the felt number, the pity window wants to be much longer than ten. Left as
+the design writes it.
+
+**Decided without you tonight, the three that matter:**
+- *"⛔ a word ladder written by hand against a catalogue generated by machine will drift."* DESIGN 20
+  shows weight and hardness as words, and nothing made the words agree with the marbles. The first
+  weight ladder topped out at 25 grams over a game whose heaviest marble is 16.7 g, so **58 of 65
+  marbles printed "barely there"**, every steelie included, and two of its four words could never
+  appear. There is a gate for it now.
+- *"⛔ a number written into prose is still a number."* That gate then went red on a rung that could
+  never print, and the cause was upstream: DESIGN gives Mercury "−hardness (0.8)" and Kiln Kiss "agate
+  hardness (1.3)" inside their passive text and nowhere else, so the code never saw either and the
+  inspect card called Mercury "shrugs it off" directly above its own passive saying 0.8. The generator
+  carries it now. Your number, unchanged.
+- *"the ante has one door."* The screenshot run had been calling `start()` directly, so it staked a
+  marble and then produced a result card reading "nothing was up" over a pot that really was selected. A
+  test entrance that skips the escrow proves nothing about the escrow.
+
+**Found by opening the pictures, not by any gate:** the result card called a marble taken off Dusty one
+you "keep"; the setup screen showed six marbles with none of them marked, because the one you staked was
+off the right hand edge of a strip that scrolls; and the collection was a scroll inside a scroll, three
+and a half marbles of eighteen with the second row's names sliced through the middle.
+
+**Blocked:** none.
+
+**Still owed to you from the first half of the night:** `docs/checklists/k1.md` on your phone, and the
+two questions it asks. Does the snap feel like a snap, and does the marble weigh anything. That entry is
+K1.5 and the next session runs it before anything else.
+
+**Next action:** `src/render/ceremony.js`. The loop has stakes now and nothing marks them.
+
+---
 
 ### Morning report, 2026-09-04, overnight
 
@@ -1015,27 +1218,40 @@ the whole game and does not exist yet.
 
 ## SESSION STATE (builder updates this at the end of every session)
 
-**2026-09-04, Opus, overnight run.** K0 complete. K1 complete but for pass and play. K2 started: the
-catalog and the marbles' looks are done, the economy is not. K3 not started. Thirteen gates green and
-each watched to fail; evidence pasted in the ledger above. Eleven screenshots opened and their faults
-named. Ten commits, all pushed to `origin add-sproing-jumper`: `4b8d3043` the failing gate, `14a6bca0`
-physics and harness, `58621d7e` the first rendered marble, `8b57d09c` the referee, `bbb7b629` the Rapier
-spin clamp and the retune, `3b8f5e93` the Knuckle and the planner, `adbc1f42` the playable game,
-`dd551363` the first morning report, `a81c51bb` calibration and the save, `1c3013ab` the sound,
-`df2f4d02` the setup screen and the drop shot, `46befcb5` the catalog and the twelve recipes.
+**2026-09-04, Opus, overnight run.** K0 complete. K1 complete but for pass and play. **K2: the catalog,
+the marbles' looks, the collection, the economy, the pouches and the keepsies loop are done**; what is
+left of it is the ceremonies, the ransom window, progression, onboarding beats 2 to 6, the glb lane and
+the eight per epic shaders. K3 not started. **Seventeen gates green**, each watched to fail, evidence
+pasted in the ledger above. Fifteen screenshots opened and their faults named.
 
-Nothing outside `satellites/keepsies/**` and this file was touched. One near miss worth recording: a
-heredoc without an absolute path wrote a Keepsies `manifest.json` over the repo root's own, and it was
-restored from git inside a minute; every shell call after that used absolute paths.
+Commits, all pushed to `origin add-sproing-jumper`: `4b8d3043` the failing gate, `14a6bca0` physics and
+harness, `58621d7e` the first rendered marble, `8b57d09c` the referee, `bbb7b629` the Rapier spin clamp
+and the retune, `3b8f5e93` the Knuckle and the planner, `adbc1f42` the playable game, `dd551363` the
+first morning report, `a81c51bb` calibration and the save, `1c3013ab` the sound, `df2f4d02` the setup
+screen and the drop shot, `46befcb5` the catalog and the twelve recipes, `e25c6dd6` the morning report,
+`597a9fec` the collection and the turntable, `92d98730` the ledger brought up to date, `b3d341fa` the
+wallet and the clay pool, `c81d1a87` the pouches, `cd0dca5e` the pot and the escrow.
 
-**Exact next action:** `src/meta/economy.js` does not exist. Create it with the wallet and the clay pool
-only: `balance()`, `earn(n, reason)`, `spend(n, reason) -> bool`, a change event, and the pool at ten
-regenerating to ten daily. It writes through `meta/save.js`, which already holds `wallet.sunbeams` and
-`clayPool: {count, lastRegen}` in its schema, so no migration is needed. The daily reset is local
-midnight and is computed from `Date` ONLY inside `meta/`, never in `core/`, because `core/` has to
-produce the same answer on a server in another timezone. Then write `test/clay_regen.mjs`: step an
-injected clock across midnight, across a missed week, and backwards, and assert the pool never exceeds
-ten and never goes negative. Watch it fail by regenerating per call rather than per day.
+Nothing outside `satellites/keepsies/**` and this file was touched; `git diff --name-only 5a7315eb..HEAD`
+outside those two paths returns nothing. One near miss worth recording: a heredoc without an absolute
+path wrote a Keepsies `manifest.json` over the repo root's own, and it was restored from git inside a
+minute; every shell call after that used absolute paths.
 
-Everything it needs is in place: the catalog is generated, all sixty five marbles render, the save
-merges safely across two tabs, and the collection screen is there to spend into.
+**Exact next action:** `src/render/ceremony.js` does not exist, and it is the next thing because the
+loop now has stakes and nothing marks them. Build the win and loss ceremony DESIGN 18 asks for: the pot
+resolving on screen with the marble that changed hands RENDERED rather than named in a sentence, over
+the ring rather than over a black wash. The result card is already correct in its facts and wrong in its
+weight, and the faults are written in the K2 ledger box: the ring behind YOU WIN is a smudge, the bottom
+third is empty, and the won marble is a line of text in the space where it should be sitting. Reuse
+`createThumbnailer` from `meta/collection.js` rather than the match renderer, for the reason written in
+its header: the tiles rendered empty the first time because they borrowed the game's renderer and
+mutated its viewport.
+
+Then the ransom window, which is the other half of losing: 24 hours, R400, E1500, G5000, written into
+`tuning.json` and read from `meta/economy.js`, with the countdown stored beside the pot in the save so a
+crash cannot lose it. `escrow_crash` is the pattern to extend for it, and its child process shim is
+already file backed.
+
+Everything those need is in place: the catalogue is generated, all sixty five marbles render, the save
+merges safely across two tabs, the wallet and the clay pool regenerate against an injectable clock, the
+pouches pull with pity, and a marble is now genuinely at risk in a match.

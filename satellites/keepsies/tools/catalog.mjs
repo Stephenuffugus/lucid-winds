@@ -83,8 +83,25 @@ function classOf(word, fallback) {
 }
 
 const marbles = [];
+/**
+ * ⛔ A NUMBER WRITTEN INTO PROSE IS STILL A NUMBER. DESIGN gives two marbles a
+ * hardness inside their passive text and nowhere else: Mercury is steel with
+ * "−hardness (0.8)" and Kiln Kiss is clay with "agate hardness (1.3)". Left in
+ * the sentence, bodySpec never saw them, so the inspect card called Mercury
+ * "shrugs it off" directly above its own passive saying its hardness is 0.8.
+ * `test/words.mjs` found it, by noticing that the softest word in the game could
+ * never print. The number is DESIGN's, unchanged: this only carries it.
+ */
+function arenaFrom(m) {
+  const text = [(m.passive || {}).text, (m.active || {}).text].filter(Boolean).join(' ');
+  const hit = text.match(/hardness\s*\((\d+(?:\.\d+)?)\)/i);
+  return hit ? { hardness: parseFloat(hit[1]) } : null;
+}
+
 const push = (m) => {
   if (marbles.some(x => x.id === m.id)) throw new Error('catalog: two marbles share the id ' + m.id);
+  const arena = arenaFrom(m);
+  if (arena) m.arena = arena;
   marbles.push(m);
 };
 

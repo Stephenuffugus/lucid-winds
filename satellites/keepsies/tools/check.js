@@ -28,6 +28,7 @@ const GATES = [
   { name: 'save',         cmd: ['test/save.mjs'],         need: 'SAVE OK' },
   { name: 'clay_regen',   cmd: ['test/clay_regen.mjs'],   need: 'CLAY REGEN OK' },
   { name: 'pity_math',    cmd: ['test/pity_math.mjs'],    need: 'PITY MATH OK' },
+  { name: 'words',        cmd: ['test/words.mjs'],        need: 'WORDS OK' },
   { name: 'escrow_crash', cmd: ['test/escrow_crash.mjs'], need: 'ESCROW CRASH OK' },
   { name: 'ringer_rules', cmd: ['test/ringer_rules.mjs'], need: 'RINGER RULES OK' },
   { name: 'ai_budget',    cmd: ['test/ai_budget.mjs'],   need: 'AI BUDGET OK', slow: true },

@@ -60,8 +60,20 @@ await shot('k1-title');
 await page.evaluate(() => window.KEEPSIES_DEV.rules());
 await wait(250);
 await shot('k1-rules');
+await page.evaluate(() => window.KEEPSIES_DEV.collection());
+await wait(900);
+await shot('k2-collection');
+await page.evaluate(() => window.KEEPSIES_DEV.inspect('bloodstone_aggie'));
+await wait(800);
+await shot('k2-inspect');
 
-await page.evaluate(() => window.KEEPSIES_DEV.start({ seed: 909090, forceFirst: 0 }));
+/* the setup screen with a real pot on it, because "nothing was up" is the least
+   interesting thing a result card can say about a game called Keepsies */
+await page.evaluate(() => { window.KEEPSIES_DEV.setup(); window.KEEPSIES_DEV.stake('dirt_plain'); });
+await wait(500);
+await shot('k1-setup');
+/* go() is the same door the PLAY button uses, so the pot really goes up */
+await page.evaluate(() => window.KEEPSIES_DEV.go({ seed: 909090, forceFirst: 0 }));
 await page.evaluate(() => window.KEEPSIES_DEV.settleCamera(60));
 await wait(400);
 await shot('k1-board');

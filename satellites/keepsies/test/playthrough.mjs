@@ -129,7 +129,7 @@ async function playAMatch(usePullback, label) {
     return {
       screen: s.screen, matchesPlayed: s.matchesPlayed,
       title: g('resultTitle'), pocket: g('rPocket'), shots: g('rShots'),
-      tech: g('rTech'), sun: g('rSun')
+      tech: g('rTech'), sun: g('rSun'), why: g('rWhy')
     };
   });
   console.log('  ' + label + ': the player took ' + shots + ' shots, ' + cancels + ' cancelled, '
@@ -213,7 +213,7 @@ say(inMatch.indexOf('bombing') >= 0, 'and the match is playing under the rule yo
 /* ---- a whole game with the Knuckle ---- */
 const a = await playAMatch(false, 'with the Knuckle');
 say(a.screen === 'results', 'the Knuckle game reached a result card, which said: ' + a.title);
-say(a.title === 'You win' || a.title === 'Dusty wins', 'the card names a winner: ' + a.title);
+say(a.title === 'You win' || a.title === 'Dusty Coyle wins', 'the card names a winner: ' + a.title);
 say(/\d+ of \d+/.test(a.pocket || ''), 'it reports what you pocketed: ' + a.pocket);
 say(parseInt(a.shots, 10) > 0, 'it reports the shot count: ' + a.shots);
 say(a.matchesPlayed === 1, 'one match has been recorded, not ' + a.matchesPlayed);
@@ -227,8 +227,10 @@ const wallet = await page.evaluate(() => window.KEEPSIES_DEV.wallet());
 say(wallet.sunbeams > 0, 'the game wallet was paid for the match: ' + wallet.sunbeams + ' sunbeams');
 say(wallet.clay.count === wallet.clay.max, 'and the clay pool is full at ' + wallet.clay.count
   + ' of ' + wallet.clay.max);
-say(/\d+/.test(a.sun) && a.sun.indexOf('match completed') >= 0,
-  'and the card says what it paid for: ' + a.sun);
+// the number is the headline and the reasons are the receipt beneath it, but
+// both have to be ON the card: a payout with no stated reason is a mystery
+say(/^\d+$/.test(a.sun.trim()) && a.why.indexOf('match completed') >= 0,
+  'and the card says what it paid for: ' + a.sun + ', because ' + a.why);
 await page.screenshot({ path: join(OUT, 'k1-results.png') });
 
 /* ---- and the same game with the pull back fallback ---- */
