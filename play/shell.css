@@ -4,7 +4,13 @@
    their own in-canvas display fonts (Bebas Neue / Georgia / DM Mono set
    directly on game elements). Imported here so a single shell.css bump
    swaps the font on all 66 shell games at once. */
-@import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap');
+/* Bebas Neue is NOT decoration here: shared.css styles 183 rules in it and 38 files under
+   games/ ask for it, but only index.html and wild.html were loading it — so every native game
+   fell back to the system sans, which is wider, and labels sized for a condensed face clipped.
+   Measured on /play/sprout.html before this line: "Bebas Neue" and plain sans-serif both
+   rendered "ENTER" at 162.69px (identical = never loaded), and the ENTER key was 47.6px wide
+   holding 59.5px of text. Sep 04 2026. */
+@import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=Bebas+Neue&display=swap');
 /* ════════════════════════════════════════════════════════════════════
  * Sky Wolf Studios — /play/ shell stylesheet
  *
@@ -221,6 +227,25 @@ body { display: flex; flex-direction: column; }
   #shell-feedback { display: none; }
   .shell-hdr { gap: 7px; padding-left: 8px; padding-right: 8px; }
 }
+
+/* ── Un-clamp horizontal overflow, in the game shells ONLY ──
+   shared.css:20-21 sets html{overflow-x:hidden} and body{overflow-x:hidden} for the main
+   Lucid Winds page. Every /play/ shell inherits it, and in a game shell that clamp does two
+   bad things (both measured Sep 04 2026):
+
+   1. It makes .shell-hdr's `position:sticky; top:0` do nothing. Measured on five games, the
+      header's own top read -77 to -120px at scrollY 77-120 — it scrolls away like a static
+      element, taking the back arrow, the wallet and the sign-in button off screen on any
+      game taller than the viewport.
+   2. Content wider than the viewport becomes PERMANENTLY unreachable rather than scrollable.
+      Word Search's 10th column (words are placed in it) and Music Studio's Solo/Mute row are
+      both sealed off by it.
+
+   The main app keeps its clamp; this override is scoped to the shell stylesheet, which loads
+   after shared.css. A board that is genuinely too wide now scrolls instead of hiding content
+   — that is a bug made visible, not a bug created, and those boards are named in
+   FLEET-ART-DETAIL-NATIVES.md to be fixed at source. */
+html, body { overflow-x: visible; }
 
 /* ── Game mount area ──
    Reusing the same #fg-ag id that LW uses, so any game that does

@@ -2268,6 +2268,14 @@
     .wg{display:grid;gap:clamp(1px,.4vw,3px);width:clamp(280px,94vw,420px);margin:0 auto;padding:clamp(4px,1.5vw,8px);animation:boardFadeIn .4s cubic-bezier(.25,.46,.45,.94)}
     .wc{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:clamp(1.3rem,4vw,1.8rem);font-weight:700;cursor:pointer;background:rgba(18,24,16,.7);border:1px solid rgba(74,124,53,.08);border-radius:clamp(3px,.8vw,6px);color:rgba(240,235,216,.75);-webkit-tap-highlight-color:transparent;min-height:36px;transition:all .18s cubic-bezier(.25,.46,.45,.94);position:relative}
     .wc:active{transform:scale(.9);transition-duration:.06s}
+    /* Sep 04 2026 fleet audit, confirmed on a second look: the grid is clamp(280px,94vw,420px)
+       = 352 px on a 375 px phone, and ten cells at the 36 px floor plus nine gaps need ~370 to
+       394 px (a grid item's min-width:auto picks up the floor transferred through aspect-ratio),
+       so the tenth column was sliced by the viewport and, with html/body overflow-x hidden at the
+       time, could never be scrolled to, while words were still placed in it. On a phone the floor
+       comes off: every cell fits at ~32 px, which is a normal word search letter, and this is a
+       drag-select board, not a tap-per-cell one. */
+    @media (max-width:480px){ .wc{min-height:0;min-width:0} }
     .wc.wf{background:rgba(122,179,86,.3);border-color:rgba(122,179,86,.35);color:#7ab356;box-shadow:inset 0 0 8px rgba(74,124,53,.08);text-shadow:0 0 8px rgba(122,179,86,.3)}
     .wc.wf-flash{animation:wfPulse .4s ease}
     @keyframes wfPulse{0%{background:rgba(122,179,86,.6);transform:scale(1.1)}100%{background:rgba(122,179,86,.3);transform:scale(1)}}
@@ -2502,6 +2510,13 @@
     /* ═══ DOUBLE SHUTTER — Strategy Shut the Box ═══ */
     .ds-wrap{display:flex;flex-direction:column;align-items:center;gap:clamp(8px,2vw,14px);padding:clamp(8px,2vw,14px);max-width:min(96vw,460px);margin:0 auto}
     .ds-row{display:grid;grid-template-columns:repeat(9,1fr);gap:clamp(3px,1vw,6px);width:100%}
+    /* Sep 04 2026 fleet audit, confirmed on a second look: on a 375 px phone the row is ~343 px
+       and nine tiles at the 48 px touch floor need ~456 px (a grid item's min-width:auto picks
+       up the floor transferred through aspect-ratio), so tiles 8 and 9 sat off screen and could
+       not be tapped, which in Shut the Box means the game cannot be finished. Five to a row on
+       a phone keeps every tile at 68 px and every tile on the screen; 1 to 9 still read left to
+       right, top to bottom. */
+    @media (max-width:480px){ .ds-row{grid-template-columns:repeat(5,1fr)} }
     .ds-tile{aspect-ratio:1;min-height:48px;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#FAF5E8,#E8DCC8);border:2px solid #C4B998;border-radius:clamp(4px,1.5vw,8px);font-family:'Bebas Neue',sans-serif;font-size:clamp(1.1rem,4vw,1.6rem);color:#2C1810;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 2px 6px rgba(0,0,0,0.3);transition:transform .12s,background .15s,opacity .25s;position:relative}
     .ds-tile.shut{background:linear-gradient(180deg,#3a2818,#2a1810);border-color:#5a4530;color:#5a4530;text-shadow:0 1px 0 rgba(0,0,0,0.5);box-shadow:inset 0 2px 6px rgba(0,0,0,0.5),0 1px 2px rgba(0,0,0,0.4);cursor:default;opacity:0.55}
     .ds-tile.shut::after{content:'×';position:absolute;font-size:1.6em;color:rgba(200,168,75,0.35);font-weight:800;pointer-events:none}

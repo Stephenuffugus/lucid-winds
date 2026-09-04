@@ -905,6 +905,28 @@
     // appearing to mount but not animating.
     try { document.body.classList.add('game-active'); } catch (e) {}
 
+    // Per-game painted backdrop. All 66 native games shared ONE radial gradient
+    // (shell.css) because nothing here ever said WHICH game this is. Now a backdrop
+    // is a file drop: paint /assets/games/bg/<id>.jpg and that game has one.
+    // Probed with an Image() first so a game with no backdrop paints nothing and the
+    // gradient stays. The dark two-stop scrim is not optional — these are game boards,
+    // not posters, and an unscrimmed photo makes every board unreadable. Sep 04 2026.
+    try {
+      document.body.setAttribute('data-game', LW_PLAY.id);
+      var _bg = new Image();
+      _bg.onload = function () {
+        try {
+          var b = document.body.style;
+          b.backgroundImage = "linear-gradient(rgba(13,20,16,.62), rgba(13,20,16,.82)), url('" + _bg.src + "')";
+          b.backgroundSize = 'cover';
+          b.backgroundPosition = 'center';
+          b.backgroundAttachment = 'fixed';
+          document.body.classList.add('has-game-bg');
+        } catch (e) {}
+      };
+      _bg.src = '/assets/games/bg/' + LW_PLAY.id + '.jpg';
+    } catch (e) {}
+
     setTitle();
     renderWallet();
     wireWalletButton();
