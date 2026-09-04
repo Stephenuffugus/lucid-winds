@@ -22,6 +22,7 @@ const FAST = process.argv.includes('--fast');
 
 const GATES = [
   { name: 'lint',    cmd: ['tools/lint.mjs'],  need: 'LINT OK' },
+  { name: 'catalog', cmd: ['tools/catalog.mjs', '--check'], need: 'CATALOG OK' },
   { name: 'stamp',   cmd: ['tools/stamp.mjs'], need: 'STAMP OK' },
   { name: 'harness', cmd: ['sim/harness.js', '--scenario=all'], need: 'SIM OK' },
   { name: 'save',         cmd: ['test/save.mjs'],         need: 'SAVE OK' },

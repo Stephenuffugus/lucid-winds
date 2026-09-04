@@ -16,9 +16,10 @@
  */
 import {
   createWorld, disposeWorld, addSurface, addMarble, removeMarble, impulse, place,
-  step, atRest, specOf, positionOf, velocityOf, ringDistance, resolved
+  step, atRest, specOf, positionOf, velocityOf, ringDistance, resolved,
+  snapshot, restore, setTimestep
 } from '../core/physics.js?v=20260904a';
-import { makeStreams } from '../core/rng.js?v=20260904a';
+import { makeStreams, makeRng } from '../core/rng.js?v=20260904a';
 import { aimToImpulse, makeAim, dirFromDeg, powerForSpeed } from '../core/snap.js?v=20260904a';
 import { STARTER_ENTRIES, CROSS_MIX } from '../core/marbleBody.js?v=20260904a';
 import { sin, cos, atan2, len2, clamp, DEG } from '../core/dmath.js?v=20260904a';
@@ -378,6 +379,34 @@ export function createRinger(setup) {
   return {
     world: W, match: M, mibs: G.mibs, taws, state: G,
     ringRadius,
+    /**
+     * ROOKIE ASSIST (DESIGN 7.8): the first four tenths of a second of where the
+     * shot would go, and not one frame more. It is drawn from a SNAPSHOT of this
+     * exact world stepped forward with this exact AimSource, so it is not a
+     * guess about the physics, it is the physics run early and thrown away.
+     *
+     * ⛔ Never in ranked, and off by default from level four. A full trajectory
+     * would make the Knuckle a slingshot with extra steps, which DESIGN 7 forbids
+     * outright; four tenths of a second is barely past the shooter's own nose.
+     */
+    preview(aim, seconds) {
+      const taw = shooterTaw();
+      if (!W.marbles.has(taw.id)) return [];
+      const bytes = snapshot(W);
+      const C = restore(bytes, T);
+      setTimestep(C, T.ai.candidateStep);
+      const previewRng = makeRng(1234);
+      impulse(C, taw.id, aimToImpulse(aim, specOf(C, taw.id), T, previewRng));
+      const steps = Math.round((seconds || 0.4) / T.ai.candidateStep);
+      const path = [];
+      for (let n = 0; n < steps; n++) {
+        step(C);
+        if (n % 2 === 0) { const p = positionOf(C, taw.id); path.push({ x: p.x, y: p.y, z: p.z }); }
+      }
+      disposeWorld(C);
+      return path;
+    },
+
     /**
      * May this player bomb right now? The house rule has to be on AND the taw
      * has to be inside the ring, which is the real rule: you cannot drop a shot

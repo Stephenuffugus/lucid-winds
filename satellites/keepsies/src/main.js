@@ -37,6 +37,7 @@ const G = {
   matchesPlayed: 0, seenRules: false, calib: { max: null },
   placeDrag: null, lastToast: 0, sunbeams: 0, said: '', lastFramedTurn: -1,
   save: null, calibrator: null, lastRollAudio: 0, warming: false,
+  assist: true, lastAssist: 0,
   houseRules: { keepsies: true, slips: true, bombing: false, poison: false, ringSizeFt: 10 }
 };
 
@@ -324,7 +325,7 @@ function onBrace(st) {
   const t = G.R.tawOnScreen(G.rig);
   const ret = $('reticle'), line = $('aimline');
   if (!st.bracing || !t) {
-    ret.hidden = true; line.hidden = true; $('power').hidden = true;
+    ret.hidden = true; line.hidden = true; $('power').hidden = true; $('assist').hidden = true;
     if (G.warming) { G.warming = false; AUDIO.stopWarming(); }
     return;
   }
@@ -356,6 +357,47 @@ function onBrace(st) {
   if (G.R.canBomb() && G.said.indexOf('drop shot') < 0 && G.R.state.phase === 'aim') {
     say('Your shooter is inside the ring, so a snap toward yourself is a drop shot.');
   }
+  drawAssist(st, t);
+}
+
+/**
+ * Rookie Assist: the first four tenths of a second of where a medium shot would
+ * go, as a short line of dots, redrawn a few times a second because the preview
+ * runs the real physics on a snapshot and is not free.
+ */
+function drawAssist(st, t) {
+  const el = $('assist');
+  if (!G.assist || !st.bracing || G.R.state.phase !== 'aim') { el.hidden = true; return; }
+  const now = performance.now();
+  if (now - G.lastAssist < 180 && !el.hidden) return;
+  G.lastAssist = now;
+  const az = G.rig.state.azimuth + Math.PI;
+  const aim = makeAssistAim(az, st);
+  const path = G.R.preview(aim, G.tuning.snap.assistSeconds);
+  el.textContent = '';
+  for (let i = 0; i < path.length; i++) {
+    const p = G.rig.project(path[i].x, path[i].y, path[i].z);
+    if (!p.visible) continue;
+    const d = document.createElement('span');
+    d.className = 'dot';
+    d.style.left = p.x + 'px';
+    d.style.top = p.y + 'px';
+    d.style.opacity = String(0.7 - 0.55 * (i / Math.max(1, path.length - 1)));
+    el.appendChild(d);
+  }
+  el.hidden = el.childElementCount === 0;
+}
+
+function makeAssistAim(azimuth, st) {
+  return {
+    origin: { x: 0, y: 0, z: 0 },
+    dir: { x: Math.sin(azimuth), y: 0, z: Math.cos(azimuth) },
+    power01: 0.55,
+    contactOffset: { x: 0, y: 0 },
+    pathCurvature: 0, wildness01: 0,
+    braced01: clamp(st.settle01, 0, 1), warmed: false,
+    coneDegOverride: 0.2
+  };
 }
 
 function onAim(aim) {
@@ -370,8 +412,9 @@ function onAim(aim) {
   if (!G.R || G.screen !== 'match' || G.R.state.simulating) return;
   hideAim();
   if (G.R.state.phase === 'place') G.R.commitPlace();
+  $('assist').hidden = true;
   const imp = G.R.shoot(aim);
-  if (!imp) { say('That one slipped, so it does not count. Take it again.'); return; }
+  if (!imp) { showSlip(); return; }
   say(describe(aim, imp));
 }
 
@@ -386,7 +429,17 @@ function describe(aim, imp) {
   return 'Clean through the middle.';
 }
 
-function hideAim() { $('reticle').hidden = true; $('aimline').hidden = true; $('power').hidden = true; }
+function hideAim() {
+  $('reticle').hidden = true; $('aimline').hidden = true;
+  $('power').hidden = true; $('assist').hidden = true;
+}
+
+/** A slip is the game handing your turn back, so it says so plainly and once. */
+function showSlip() {
+  say('Take it again.');
+  $('slipCard').hidden = false;
+  setTimeout(() => { $('slipCard').hidden = true; }, 1800);
+}
 function showPower(p) { $('power').hidden = false; $('powerFill').style.width = (p * 100).toFixed(0) + '%'; }
 function say(s) { G.said = s; $('say').textContent = s; }
 
@@ -587,6 +640,7 @@ function installDevHook() {
           slipsLeft: R.match.players.map(p => p.slipsLeft),
           taw: R.tawOnScreen(G.rig)
         } : null,
+        assist: G.assist,
         knuckle: G.knuckle.state(),
         lastAim: G.knuckle.lastAim(),
         audio: AUDIO.isRunning()
@@ -603,6 +657,9 @@ function installDevHook() {
     /** Drive the pull back fallback the same way. */
     drag(from, to, offset) { return G.pullback._feed(from, to, G.R ? G.R.tawOnScreen(G.rig) : null, offset); },
     setPullback(on) { G.usePullback = !!on; },
+    setAssist(on) { G.assist = !!on; if (!G.assist) $('assist').hidden = true; return G.assist; },
+    assistDots() { const el = $('assist'); return el.hidden ? 0 : el.childElementCount; },
+    slipShowing() { return !$('slipCard').hidden; },
     /** Step the match forward without waiting for real time. */
     tick(n) { for (let i = 0; i < (n || 60); i++) physStep(); syncMeshes(1); return G.R ? G.R.world.steps : 0; },
     /** Resolve the shot in flight. */

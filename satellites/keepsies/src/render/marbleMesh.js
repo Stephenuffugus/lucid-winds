@@ -7,9 +7,12 @@
  * interior read, and a specular glint. It costs one draw call and it holds up at
  * 96 px on a phone, which is the size a marble actually is in play.
  *
- * Recipes are the design's own list (DESIGN 10.1). K0 needs clearGlass; K1 adds
- * clay, catsEye and steel for the cross and the starters. The rest arrive with
- * the catalog in K2.
+ * ⛔ EVERY RECIPE IN DESIGN 10.1 IS HERE, AND THAT WAS NOT TRUE UNTIL THE CONTACT
+ * SHEET WAS LOOKED AT. Five modes existed and the catalog asked for twelve, so
+ * thirty two of the sixty five marbles rendered as plain coloured spheres with
+ * no complaint from anything: swirls with no swirl, corkscrews with no screw,
+ * slag with nothing turbulent in it. Nothing measured it because nothing could;
+ * a picture of all sixty five, opened, is what caught it.
  */
 import * as THREE from 'three';
 
@@ -41,72 +44,150 @@ uniform float uOpacity;
 uniform float uVaneCount;
 uniform float uVaneWidth;
 uniform float uBandScale;
-uniform float uMode;       // 0 clay, 1 clearGlass, 2 catsEye, 3 steel, 4 agateBands
+uniform float uMode;
 uniform float uSeed;
 varying vec3 vN;
 varying vec3 vV;
 varying vec3 vLocal;
 
 float hash1(float n){ return fract(sin(n * 43758.5453123) * 43758.5453123); }
+float hash3(vec3 p){ return fract(sin(dot(p, vec3(12.9898, 78.233, 37.719))) * 43758.5453); }
+float vnoise(vec3 p){
+  vec3 i = floor(p), f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  float n000 = hash3(i), n100 = hash3(i + vec3(1,0,0));
+  float n010 = hash3(i + vec3(0,1,0)), n110 = hash3(i + vec3(1,1,0));
+  float n001 = hash3(i + vec3(0,0,1)), n101 = hash3(i + vec3(1,0,1));
+  float n011 = hash3(i + vec3(0,1,1)), n111 = hash3(i + vec3(1,1,1));
+  return mix(mix(mix(n000,n100,f.x), mix(n010,n110,f.x), f.y),
+             mix(mix(n001,n101,f.x), mix(n011,n111,f.x), f.y), f.z);
+}
+float fbm(vec3 p){
+  float a = 0.5, v = 0.0;
+  for (int i = 0; i < 4; i++) { v += a * vnoise(p); p *= 2.03; a *= 0.5; }
+  return v;
+}
 
 void main(){
   vec3 N = normalize(vN);
   vec3 V = normalize(vV);
   vec3 L = normalize(uLight);
   float ndl = max(dot(N, L), 0.0);
-  float rim = pow(1.0 - max(dot(N, V), 0.0), uFresnel);
 
-  // the fake interior: how deep through the marble this pixel looks
+  // P is the point on the marble in ITS OWN frame, so every pattern below turns
+  // with the marble instead of being painted on the screen
   vec3 P = normalize(vLocal);
   float depth = 1.0 - abs(dot(P, V));
-
   vec3 body = mix(uSkin, uCore, depth);
+  float metal = 0.0;
 
-  if (uMode > 1.5 && uMode < 2.5) {
-    // cat's eye: flat vanes standing in the middle, seen through the glass
-    float a = atan(P.z, P.x);
-    float f = abs(sin(a * uVaneCount * 0.5 + uSeed));
-    float vane = smoothstep(1.0 - uVaneWidth, 1.0, f) * smoothstep(0.62, 0.18, abs(P.y));
-    body = mix(body, uVane, vane * 0.92);
-  } else if (uMode > 3.5) {
-    // agate bands: layers laid down around one axis
-    float b = sin((P.y + P.x * 0.35) * uBandScale + uSeed * 6.28);
-    body = mix(body, uVane, smoothstep(0.1, 0.85, b) * 0.55);
-  } else if (uMode < 0.5) {
-    // clay: matte, and grainy enough that it never reads as plastic
+  if (uMode < 0.5) {
+    // CLAY: matte and grainy, so it never reads as plastic
     float g = hash1(floor(P.x * 90.0) + floor(P.y * 90.0) * 57.0 + floor(P.z * 90.0) * 131.0);
     body *= 0.9 + g * 0.2;
+  } else if (uMode < 1.5) {
+    // CLEAR GLASS: nothing inside. The edge does all the work.
+  } else if (uMode < 2.5) {
+    // CAT'S EYE: flat vanes standing in the middle, seen through the glass. A
+    // real one is a narrow blade edge on, so the vane is thin and it FADES at
+    // the poles rather than wrapping the whole marble.
+    float a = atan(P.z, P.x);
+    float blade = abs(cos(a * uVaneCount + uSeed * 6.28));
+    float vane = pow(blade, 8.0) * smoothstep(0.75, 0.12, abs(P.y));
+    body = mix(body, uVane, clamp(vane * 1.15, 0.0, 0.95));
+    body = mix(body, uCore * 0.6, smoothstep(0.55, 1.0, abs(P.y)) * 0.5);
+  } else if (uMode < 3.5) {
+    // STEEL: no interior at all, and a hard sky to floor gradient reflected off
+    // the surface. Metal without something to reflect is the black soap problem.
+    // ⛔ A hard horizon across the middle read as a SEAM, not a reflection, and
+    // it made every steel marble the same marble on the contact sheet. The
+    // reflection is now a soft ground to sky blend whose horizon sits where the
+    // seed puts it, with a faint smear of the room in it, so a Bearing and a
+    // Chrome Dome are two different pieces of metal rather than two greys.
+    metal = 1.0;
+    float up = N.y * 0.5 + 0.5;
+    float horizon = 0.44 + uSeed * 0.16;
+    float smear = fbm(reflect(-V, N) * 2.4 + uSeed * 9.0) * 0.5 + 0.5;
+    vec3 ground = mix(uCore * 0.35, uCore, smear);
+    vec3 sky = mix(uSkin, uRim, smoothstep(0.55, 1.0, up) * (0.4 + 0.6 * smear));
+    body = mix(ground, sky, smoothstep(horizon - 0.13, horizon + 0.13, up));
+    body += uRim * pow(max(dot(reflect(-L, N), V), 0.0), 60.0) * 0.9;
+  } else if (uMode < 4.5) {
+    // AGATE BANDS: layers laid down around one axis, uneven the way stone is
+    float b = sin((P.y * 1.0 + P.x * 0.35) * uBandScale + uSeed * 6.28 + fbm(P * 2.2) * 1.4);
+    body = mix(body, uVane, smoothstep(0.05, 0.9, b) * 0.62);
+    body = mix(body, uCore * 0.7, smoothstep(0.55, 1.0, -b) * 0.35);
+  } else if (uMode < 5.5) {
+    // SWIRL: one ribbon twisted through the middle
+    float a = atan(P.z, P.x) + P.y * 3.4 + uSeed * 6.28;
+    float ribbon = pow(abs(cos(a)), 6.0) * smoothstep(0.95, 0.15, abs(P.y));
+    body = mix(body, uVane, clamp(ribbon * 1.2, 0.0, 0.9));
+  } else if (uMode < 6.5) {
+    // CORKSCREW: the same idea wound much tighter, several turns of it
+    float a = atan(P.z, P.x) * 2.0 + P.y * 11.0 + uSeed * 6.28;
+    float w = pow(abs(cos(a)), 3.0) * smoothstep(1.0, 0.25, abs(P.y));
+    body = mix(body, uVane, clamp(w * 0.95, 0.0, 0.88));
+  } else if (uMode < 7.5) {
+    // PATCH: an opaque field over part of the marble, with a soft ragged edge
+    vec3 axis = normalize(vec3(sin(uSeed * 6.28), 0.55, cos(uSeed * 6.28)));
+    float d = dot(P, axis) + fbm(P * 3.1 + uSeed * 10.0) * 0.45 - 0.2;
+    body = mix(body, uVane, smoothstep(0.0, 0.22, d));
+  } else if (uMode < 8.5) {
+    // SLAG: turbulent, one of a kind, and the reason collectors chase pretty ones
+    float t = fbm(P * 2.6 + uSeed * 20.0);
+    float t2 = fbm(P * 6.0 - uSeed * 7.0);
+    body = mix(body, uVane, smoothstep(0.42, 0.72, t));
+    body = mix(body, uCore * 0.55, smoothstep(0.55, 0.85, t2) * 0.6);
+  } else if (uMode < 9.5) {
+    // ONION LAYERS: concentric shells, seen through each other
+    float r = length(vLocal);
+    float shell = sin(r * 26.0 + uSeed * 6.28);
+    body = mix(body, uVane, smoothstep(0.2, 0.95, shell) * 0.5);
+    body = mix(body, uSkin, smoothstep(0.75, 1.0, depth) * 0.35);
+  } else if (uMode < 10.5) {
+    // LUTZ: bands with metallic flecks caught in them. Real gold? No.
+    float b = sin(P.y * uBandScale + uSeed * 6.28);
+    body = mix(body, uVane, smoothstep(0.1, 0.85, b) * 0.55);
+    float flecks = step(0.86, hash3(floor(P * 34.0)));
+    body += uRim * flecks * smoothstep(0.0, 0.6, b) * 0.85;
+  } else {
+    // CUSTOM: the epics and the grails, until each gets its own. Deep, moving
+    // interior plus a glow from within, which is what "that is not paint" means.
+    float t = fbm(P * 3.0 + uSeed * 12.0);
+    float a = atan(P.z, P.x) + P.y * 2.2 + t * 2.4;
+    body = mix(body, uVane, pow(abs(cos(a)), 4.0) * 0.7);
+    body += uVane * pow(1.0 - abs(dot(P, V)), 3.0) * 0.35;
+    body = mix(body, uCore * 0.4, smoothstep(0.5, 1.0, t) * 0.3);
   }
 
   float diffuse = 0.30 + 0.70 * ndl;
-  vec3 col = body * diffuse;
+  vec3 col = body * mix(diffuse, 0.55 + 0.45 * ndl, metal);
 
-  // one hard glint, the thing that says "this is round and it is polished"
   vec3 H = normalize(L + V);
   float spec = pow(max(dot(N, H), 0.0), uGloss) * (uMode < 0.5 ? 0.25 : 1.0);
   col += vec3(spec);
 
   if (uMode > 0.5) {
-    // What actually distinguishes glass from painted plastic is not the
-    // highlight, it is the EDGE: a dark band where the sphere bends the view
-    // away, and a bright ring outside it where it turns the light back at you.
-    // Without both, a fresnel term just tints the silhouette and the marble
-    // stays plastic, which is what the first K0 shot showed.
+    // What separates glass from painted plastic is not the highlight, it is the
+    // EDGE: a dark band where the sphere bends the view away and a bright ring
+    // outside it where it turns the light back at you.
     float edge = 1.0 - max(dot(N, V), 0.0);
     float band = smoothstep(0.55, 0.86, edge) * (1.0 - smoothstep(0.90, 0.985, edge));
-    col *= 1.0 - band * 0.62;
-    col += uRim * pow(edge, uFresnel) * 1.25;
-    // a second glint bounced off the far inside wall, small and offset
+    col *= 1.0 - band * (metal > 0.5 ? 0.30 : 0.62);
+    col += uRim * pow(edge, uFresnel) * (metal > 0.5 ? 0.7 : 1.25);
     float back = pow(max(dot(reflect(-L, N), -V), 0.0), 26.0);
     col += uRim * back * 0.55;
   } else {
-    col += uSkin * rim * 0.18;
+    col += uSkin * pow(1.0 - max(dot(N, V), 0.0), uFresnel) * 0.18;
   }
 
   gl_FragColor = vec4(col, uOpacity);
 }`;
 
-const MODES = { clay: 0, clearGlass: 1, catsEye: 2, steel: 3, agateBands: 4 };
+const MODES = {
+  clay: 0, clearGlass: 1, catsEye: 2, steel: 3, agateBands: 4,
+  swirl: 5, corkscrew: 6, patch: 7, slag: 8, onionLayers: 9, lutzSparkle: 10, custom: 11
+};
 
 /** A number in 0..1 from a marble uid, so two Commies are not identical. */
 function seedOf(uid) {
@@ -139,13 +220,13 @@ export function makeMarbleMaterial(render, tuning, uid) {
       uLight: { value: new THREE.Vector3(-1.6, 3.0, 1.4).normalize() },
       uFresnel: { value: tuning.render.fresnelPower },
       uEdgeDark: { value: 0.62 },
-      uGloss: { value: recipe === 'clay' ? 12 : (recipe === 'steel' ? 90 : 54) },
+      uGloss: { value: recipe === 'clay' ? 12 : (recipe === 'steel' ? 120 : 54) },
       uOpacity: { value: 1 },
       uVaneCount: { value: (render && render.vaneCount) || 3 },
       uVaneWidth: { value: 0.34 },
       uBandScale: { value: 9 },
       uMode: { value: mode },
-      uSeed: { value: seed }
+      uSeed: { value: (render && render.seed != null) ? render.seed : seed }
     }
   });
 }

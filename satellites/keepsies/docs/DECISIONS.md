@@ -129,3 +129,26 @@ The house rule has to be on and the taw has to be inside the ring, which is the 
 
 **2026-09-04 — the playthrough's press helper walks up from the pixel to the control.**
 A chip's centre pixel belongs to its own label span, so a strict `elementFromPoint(...).id === id` reported an unpressable button that a thumb presses perfectly well. Walking up the parent chain still proves the pixel belongs to that control and nothing is on top of it, which is the thing the rule is actually for.
+
+## K2
+
+**2026-09-04 — the catalog is generated from `docs/DESIGN.md` and the generator handles three sections that are not tables.**
+DESIGN 10 says "generated from tables in this doc" and it is taken literally: names, tiers, classes, passives, actives and lore come out of the doc and nowhere else, because the doc is where Stephen writes. Section 10.2 is a table with ONE ROW that packs six marbles (the six cat's eyes) and it expands or the count is short by five; 10.3 is bold prose under group headings where the heading gives the class; 10.6 and 10.7 carry a Figure or a Boss column where the others carry a Class. Sixty designed plus five boss signatures is sixty five, and the `catalog` gate fails if the JSON is stale, watched by hand editing one name and by deleting a marble from the design.
+
+**2026-09-04 — the boss signatures are counted once, not twice.**
+They ARE rares, epics and a grail, and the design's own heading counts them inside the sixty five. The first version of the count checked per tier against the designed totals INCLUDING signatures and reported sixteen rares against a want of fourteen on a catalog that was exactly right.
+
+**2026-09-04 — every marble gets a palette from its own name, and the hue has a tenth of a degree of granularity.**
+Whole degrees collided three times in sixty five names. Two marbles that read the same at 64 px are the fault the contact sheet exists to catch, so the hue is finer and hand chosen palettes in `marbles.overrides.json` win over the generated one. Sixty four distinct palettes across sixty five marbles, and the one shared pair is deliberate: the Coffee Tin Champ IS a chipped Bumblebee Aggie.
+
+**2026-09-04 — ⛔ ALL TWELVE RECIPES EXIST NOW, AND THE CONTACT SHEET IS WHY.**
+Five shader modes existed and the catalog asked for twelve, so THIRTY TWO OF THE SIXTY FIVE marbles rendered as plain coloured spheres and nothing complained: swirls with no swirl, corkscrews with no screw, slag with nothing turbulent in it, and every epic and grail falling through to clear glass. No gate could have caught it and no gate did. A picture of all sixty five, opened and read, caught it in one look. swirl, corkscrew, patch, slag, onionLayers, lutzSparkle and a custom interior for the epics are written, and the cat's eye vane is a blade rather than a smear.
+
+**2026-09-04 — a cat's eye has three vanes, not one.**
+DESIGN 10.2 writes the recipe as `catsEye(1, color)` and the 1 is the number of COLOURS: the very next tier names a "Nine Vane" as the wilder variant, which only makes sense against a normal one that has some. At one vane the shader drew a single wide smear that read as a stain.
+
+**2026-09-04 — the four steel marbles are separated by hand, and steel reflects a room rather than wearing a seam.**
+On the first sheet Bearing, Chrome Dome and Drop Anchor were three identical grey spheres with an identical hard band across the middle, which is the exact fault the sheet exists to find. Steel has almost no saturation so a hue chosen from a name does nothing for it. They now carry hand chosen values, and the reflection is a soft ground to sky blend whose horizon sits where the seed puts it with a smear of the room in it.
+
+**2026-09-04 — the four grails carry the custom interior until Stephen's figures arrive.**
+As plain glass they were the four least interesting marbles on the sheet, which is backwards for the rarest things in the game. The glb lane is still a K2 item and the placeholder knight is still owed.

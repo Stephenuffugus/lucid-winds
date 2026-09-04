@@ -171,6 +171,40 @@ say(!!pb && pb.assist === 'pullback' && pb.power01 > 0.5 && pb.wildness01 === 0,
   + ', wildness ' + (pb ? pb.wildness01 : '?') + ', flagged ' + (pb ? pb.assist : '?'));
 await page.evaluate(() => window.KEEPSIES_DEV.setPullback(false));
 
+/* ---- Rookie Assist shows a SHORT path, and only a short one ---- */
+// the pull back drag above FIRED A SHOT, so the board is mid flight; a brace
+// cannot start while the marbles are still moving and the first version of this
+// block sat there measuring zero dots on a turn that was not the player's
+await page.evaluate(() => { window.KEEPSIES_DEV.settle(1500); window.KEEPSIES_DEV.playAiTurns(40); });
+await settleToPlayerTurn();
+const assist = await page.evaluate(async () => {
+  const d = window.KEEPSIES_DEV;
+  d.setAssist(true);
+  const t = d.state().match.taw;
+  const c = document.getElementById('stage');
+  c.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 7, clientX: t.x, clientY: t.y, bubbles: true }));
+  for (let i = 0; i < 30; i++) {
+    c.dispatchEvent(new PointerEvent('pointermove', { pointerId: 7, clientX: t.x, clientY: t.y, bubbles: true }));
+  }
+  await new Promise(r => setTimeout(r, 320));
+  for (let i = 0; i < 10; i++) {
+    c.dispatchEvent(new PointerEvent('pointermove', { pointerId: 7, clientX: t.x, clientY: t.y, bubbles: true }));
+  }
+  const withAssist = d.assistDots();
+  d.setAssist(false);
+  for (let i = 0; i < 10; i++) {
+    c.dispatchEvent(new PointerEvent('pointermove', { pointerId: 7, clientX: t.x, clientY: t.y, bubbles: true }));
+  }
+  const without = d.assistDots();
+  c.dispatchEvent(new PointerEvent('pointerup', { pointerId: 7, clientX: t.x, clientY: t.y, bubbles: true }));
+  d.setAssist(true);
+  return { withAssist, without };
+});
+say(assist.withAssist > 0, 'Rookie Assist draws a path while braced: ' + assist.withAssist + ' dots');
+say(assist.withAssist <= 10, 'and it is SHORT, a quarter of a second and no more: '
+  + assist.withAssist + ' dots, the ceiling is 10');
+say(assist.without === 0, 'and switching it off really removes it: ' + assist.without + ' dots');
+
 say(errors.length === 0, 'zero page errors' + (errors.length ? ': ' + errors.slice(0, 3).join(' | ') : ''));
 
 await browser.close();
