@@ -82,7 +82,9 @@ export function blank() {
       pullback: false, rookieAssist: true, quality: null
     },
     stats: { matches: 0, wins: 0, pocketed: 0, shots: 0, bestPocketedInATurn: 0 },
-    seen: { rules: false, onboarded: false }
+    // `beats` is which onboarding beats are finished, by id, so a player who
+    // closes the tab in beat 3 comes back to beat 3
+    seen: { rules: false, onboarded: false, beats: [] }
   };
 }
 
@@ -174,7 +176,14 @@ export function merge(partial) {
       }
     }
     if (partial.settings) Object.assign(s.settings, partial.settings);
-    if (partial.seen) Object.assign(s.seen, partial.seen);
+    if (partial.seen) {
+      // beats are a union like the inventory: two tabs must not undo each other
+      if (partial.seen.beats) {
+        s.seen.beats = s.seen.beats || [];
+        for (const b of partial.seen.beats) if (s.seen.beats.indexOf(b) < 0) s.seen.beats.push(b);
+      }
+      for (const k of Object.keys(partial.seen)) if (k !== 'beats') s.seen[k] = partial.seen[k];
+    }
   });
 }
 

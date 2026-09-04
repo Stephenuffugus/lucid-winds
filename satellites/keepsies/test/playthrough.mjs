@@ -230,55 +230,82 @@ if (sawRules) {
   say(goBtn && !goBtn.blocked, 'the rules card dismisses to the match setup');
 }
 await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'setup', { timeout: 20000 });
+
+/* ---- DESIGN 16, beat 3: the game sets up the first game, not the player ---- */
+const firstSetup = await page.evaluate(() => ({
+  beat: window.KEEPSIES_DEV.beat(),
+  hr: window.KEEPSIES_DEV.houseRules(),
+  anteHidden: document.getElementById('ante').hidden,
+  go: !document.getElementById('setupGo').disabled
+}));
+say(firstSetup.beat === 'dusty' || firstSetup.beat === 'break',
+  'the first setup is still inside the onboarding: beat ' + firstSetup.beat);
+say(firstSetup.hr.keepsies === false && firstSetup.hr.ringSizeFt === 7,
+  'and the game has set the table itself: For Fair, ' + firstSetup.hr.ringSizeFt + ' foot, slips '
+  + firstSetup.hr.slips);
+say(firstSetup.go === true,
+  'and PLAY is live with nothing staked, because For Fair stakes nothing');
 const bombChip = await press('hr-bombing');
-say(bombChip && !bombChip.blocked, 'the house rule chips are pressable');
+say(bombChip && !bombChip.blocked, 'the house rule chips are still pressable');
 const hrNow = await page.evaluate(() => window.KEEPSIES_DEV.houseRules());
 say(hrNow.bombing === true, 'and a tap really changed the rule: bombing is ' + hrNow.bombing);
-/* ---- the ante: the pot goes up before a shot is fired ---- */
-const noStake = await page.evaluate(() => ({
-  disabled: document.getElementById('setupGo').disabled,
-  say: document.getElementById('anteSay').textContent
-}));
-say(noStake.disabled === true, 'with nothing staked, PLAY is refused: ' + noStake.say);
-const staked = await page.evaluate(() => window.KEEPSIES_DEV.stake('dirt_plain'));
-say(!!staked && staked.staked.length === 1, 'staking a clay marble puts one up: ' + staked.staked.join(','));
-say(staked.ok === true, 'and the opponent matched it: ' + staked.theirs.join(',') + ' (' + staked.say + ')');
-const invBefore = await page.evaluate(() => window.KEEPSIES_DEV.inventory());
 
 const setupBtn = await press('setupGo');
 say(setupBtn && !setupBtn.blocked, 'PLAY on the setup starts the match');
-const pot = await page.evaluate(() => ({ up: window.KEEPSIES_DEV.potUp(), pot: window.KEEPSIES_DEV.pot(), inv: window.KEEPSIES_DEV.inventory() }));
-say(pot.up === true, 'the pot went up BEFORE the first turn');
-say(pot.inv === invBefore - 1, 'and the staked marble LEFT the inventory in the same write: '
-  + invBefore + ' became ' + pot.inv);
-say(!!pot.pot && pot.pot.mine.length === 1 && pot.pot.theirs.length === 1,
-  'and both sides are in the pot: yours ' + pot.pot.mine.length + ', theirs ' + pot.pot.theirs.length);
 await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'match', { timeout: 20000 });
 const inMatch = await page.evaluate(() => document.getElementById('houseRules').textContent);
 say(inMatch.indexOf('bombing') >= 0, 'and the match is playing under the rule you chose: ' + inMatch);
 
-/* ---- a whole game with the Knuckle ---- */
+/* ---- a whole game with the Knuckle, which is beats 2, 2.5 and 3 ---- */
 const a = await playAMatch(false, 'with the Knuckle');
 say(a.screen === 'results', 'the Knuckle game reached a result card, which said: ' + a.title);
+const afterFirst = await page.evaluate(() => window.KEEPSIES_DEV.beat());
+say(afterFirst === 'tin',
+  'and one game carried the player through the break, the stick and Dusty, to the tin: ' + afterFirst);
+
+/* ---- beat 4: the tin, and the heirloom laid on a cloth ---- */
+const invAtTin = await page.evaluate(() => window.KEEPSIES_DEV.inventory());
+say(invAtTin === 0,
+  'nothing has been given away yet, because the starters come out of the tin: ' + invAtTin + ' marbles');
+await press('again');
+await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'tin', { timeout: 20000 });
+const cloth = await page.evaluate(() => ({
+  count: document.getElementById('heirlooms').querySelectorAll('button').length,
+  drew: [...document.querySelectorAll('#heirlooms canvas')].every(c => c.width === 168),
+  takeDisabled: document.getElementById('tinTake').disabled,
+  label: document.getElementById('tinTake').textContent
+}));
+say(cloth.count === 3, 'the tin lays three rares on a cloth: ' + cloth.count);
+say(cloth.drew === true, 'and RENDERS all three rather than listing them');
+say(cloth.takeDisabled === true, 'and you cannot take the tin without picking one: ' + cloth.label);
+const heirBtn = await press('heir-lutz');
+say(heirBtn && !heirBtn.blocked, 'an heirloom is pressable at its centre');
+const picked = await page.evaluate(() => ({
+  label: document.getElementById('tinTake').textContent,
+  lore: document.getElementById('heirSay').textContent,
+  on: document.querySelectorAll('#heirlooms button.on').length
+}));
+say(picked.on === 1, 'and exactly one is chosen at a time: ' + picked.on);
+say(picked.label.indexOf('Lutz') >= 0, 'and the button names it: ' + picked.label);
+say(picked.lore.length > 0, 'and it says something about the marble rather than its stats: ' + picked.lore);
+await press('tinTake');
+await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'collection', { timeout: 20000 });
+const afterTin = await page.evaluate(() => ({
+  inv: window.KEEPSIES_DEV.inventory(),
+  beat: window.KEEPSIES_DEV.beat(),
+  hasLutz: window.KEEPSIES_DEV.hasMarble('lutz'),
+  hasOthers: window.KEEPSIES_DEV.hasMarble('mercury') || window.KEEPSIES_DEV.hasMarble('bloodstone_aggie')
+}));
+say(afterTin.inv >= 19, 'taking the tin fills the shelf: ' + afterTin.inv + ' marbles');
+say(afterTin.hasLutz === true, 'and the one you picked is really in there');
+say(afterTin.hasOthers === false,
+  'and the two you did not pick are NOT, because they go back into the pouch pool');
+say(afterTin.beat === 'firstKeepsies', 'and the next beat is the first game for keeps: ' + afterTin.beat);
 say(a.title === 'You win' || a.title === 'Dusty Coyle wins', 'the card names a winner: ' + a.title);
-/* the pot ceremony, caught mid flight */
-say(!!a.ceremony, 'the pot ceremony ran before the card'
-  + (a.ceremony ? ': ' + a.ceremony.name + ' ' + a.ceremony.line : ', and it did NOT'));
-if (a.ceremony) {
-  say(a.ceremony.drew === true, 'and it RENDERED the marble at 220 px rather than naming it');
-  say(a.ceremony.name.length > 0 && a.ceremony.line.length > 0,
-    'and it said which marble and whose it is: ' + a.ceremony.name + ' ' + a.ceremony.line);
-  say(a.ceremony.resultsStillHidden === true, 'and the result card waited behind it');
-}
 say(/\d+ of \d+/.test(a.pocket || ''), 'it reports what you pocketed: ' + a.pocket);
 say(parseInt(a.shots, 10) > 0, 'it reports the shot count: ' + a.shots);
 say(a.matchesPlayed === 1, 'one match has been recorded, not ' + a.matchesPlayed);
-const after = await page.evaluate(() => ({
-  up: window.KEEPSIES_DEV.potUp(), inv: window.KEEPSIES_DEV.inventory(),
-  line: document.getElementById('rPot').textContent
-}));
-say(after.up === false, 'and the pot settled rather than staying up');
-say(after.line.length > 0, 'and the card says where the marbles went: ' + after.line);
+say(!a.ceremony, 'and For Fair there was NO pot ceremony, because nothing changed hands');
 const wallet = await page.evaluate(() => window.KEEPSIES_DEV.wallet());
 say(wallet.sunbeams > 0, 'the game wallet was paid for the match: ' + wallet.sunbeams + ' sunbeams');
 say(wallet.clay.count === wallet.clay.max, 'and the clay pool is full at ' + wallet.clay.count
@@ -287,18 +314,55 @@ say(wallet.clay.count === wallet.clay.max, 'and the clay pool is full at ' + wal
 // both have to be ON the card: a payout with no stated reason is a mystery
 say(/^\d+$/.test(a.sun.trim()) && a.why.indexOf('match completed') >= 0,
   'and the card says what it paid for: ' + a.sun + ', because ' + a.why);
-await page.screenshot({ path: join(OUT, 'k1-results.png') });
 
-/* ---- and the same game with the pull back fallback ---- */
-await press('again');
+/* ---- beat 5: the first game for keeps, with the ante put up FOR the player ---- */
+const wayOn = await page.evaluate(() => document.getElementById('collBack').textContent);
+say(wayOn.indexOf('real ones') >= 0,
+  'the tin leads somewhere rather than dead ending on a full shelf: "' + wayOn + '"');
+await press('collBack');
 await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'setup', { timeout: 20000 });
-// a fresh match needs a fresh stake: the last one is gone
-await page.evaluate(() => window.KEEPSIES_DEV.stake('dirt_plain'));
+const beat5 = await page.evaluate(() => ({
+  beat: window.KEEPSIES_DEV.beat(),
+  hr: window.KEEPSIES_DEV.houseRules(),
+  staked: window.KEEPSIES_DEV.stakeNow(),
+  say: document.getElementById('anteSay').textContent,
+  go: !document.getElementById('setupGo').disabled
+}));
+say(beat5.beat === 'firstKeepsies', 'the last beat sets up a real game: ' + beat5.beat);
+say(beat5.hr.keepsies === true, 'and it turns keepsies ON, which the player has not seen before');
+say(beat5.staked.length === 1 && beat5.staked[0] === 'dirt_plain',
+  'and it puts ONE CLAY up for them, so a stake can be seen before it is chosen: '
+  + beat5.staked.join(','));
+say(beat5.go === true, 'and PLAY is live: ' + beat5.say);
+const invBefore = await page.evaluate(() => window.KEEPSIES_DEV.inventory());
 await press('setupGo');
+const pot = await page.evaluate(() => ({ up: window.KEEPSIES_DEV.potUp(), pot: window.KEEPSIES_DEV.pot(), inv: window.KEEPSIES_DEV.inventory() }));
+say(pot.up === true, 'the pot went up BEFORE the first turn');
+say(pot.inv === invBefore - 1, 'and the staked marble LEFT the inventory in the same write: '
+  + invBefore + ' became ' + pot.inv);
+say(!!pot.pot && pot.pot.mine.length === 1 && pot.pot.theirs.length === 1,
+  'and both sides are in the pot: yours ' + pot.pot.mine.length + ', theirs ' + pot.pot.theirs.length);
 await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'match', { timeout: 20000 });
-const b = await playAMatch(true, 'with the pull back fallback');
+const b = await playAMatch(true, 'with the pull back fallback, for keeps');
 say(b.screen === 'results', 'the pull back game reached a result card too, which said: ' + b.title);
 say(b.matchesPlayed === 2, 'two matches have now been recorded, not ' + b.matchesPlayed);
+/* the pot ceremony, caught mid flight */
+say(!!b.ceremony, 'the pot ceremony ran before the card'
+  + (b.ceremony ? ': ' + b.ceremony.name + ' ' + b.ceremony.line : ', and it did NOT'));
+if (b.ceremony) {
+  say(b.ceremony.drew === true, 'and it RENDERED the marble at 220 px rather than naming it');
+  say(b.ceremony.name.length > 0 && b.ceremony.line.length > 0,
+    'and it said which marble and whose it is: ' + b.ceremony.name + ' ' + b.ceremony.line);
+  say(b.ceremony.resultsStillHidden === true, 'and the result card waited behind it');
+}
+const after = await page.evaluate(() => ({
+  up: window.KEEPSIES_DEV.potUp(), inv: window.KEEPSIES_DEV.inventory(),
+  line: document.getElementById('rPot').textContent, beat: window.KEEPSIES_DEV.beat()
+}));
+say(after.up === false, 'and the pot settled rather than staying up');
+say(after.line.length > 0, 'and the card says where the marbles went: ' + after.line);
+say(after.beat === null, 'and the first four minutes are over: beat ' + after.beat);
+await page.screenshot({ path: join(OUT, 'k1-results.png') });
 await page.evaluate(() => window.KEEPSIES_DEV.setPullback(false));
 
 /* ---- the collection, and the turntable that makes a marble worth owning ---- */

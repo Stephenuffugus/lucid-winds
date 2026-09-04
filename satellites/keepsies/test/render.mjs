@@ -153,6 +153,11 @@ await page.mouse.click(skip.cx, skip.cy);
 /* DIRECTIONS BEFORE PLAY: the rules card stands between the title and the first
    match, and it is asserted here so nobody quietly removes it. */
 await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'rules', { timeout: 20000 });
+/* ⛔ THIS GATE IS ABOUT PIXELS, NOT ABOUT THE SCRIPT. The first four minutes are
+   walked assertion by assertion in `playthrough`; here the player is put into the
+   state of somebody who has already been through them, so the setup screen under
+   test is the ordinary one rather than the For Fair table the onboarding sets. */
+await page.evaluate(() => window.KEEPSIES_DEV.skipOnboarding());
 const go = await page.evaluate(() => {
   const b = document.getElementById('rulesGo');
   const r = b.getBoundingClientRect();

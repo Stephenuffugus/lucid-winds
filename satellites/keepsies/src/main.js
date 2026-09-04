@@ -33,6 +33,7 @@ import { createEconomy } from './meta/economy.js?v=20260904a';
 import { createDrops } from './meta/drops.js?v=20260904a';
 import * as RANSOM from './meta/ransom.js?v=20260904a';
 import * as PROG from './meta/progression.js?v=20260904a';
+import { createOnboarding, dustyLine } from './meta/beats.js?v=20260904a';
 import { tierMatchOk, matchTheirStake, escrow, settle, recoverOnBoot, potUp, currentPot }
   from './game/match.js?v=20260904a';
 import { makeRng } from './core/rng.js?v=20260904a';
@@ -111,6 +112,7 @@ async function boot() {
      lapsed by a tab that is still open */
   const swept = RANSOM.sweepOnBoot(Date.now());
   if (swept.lapsed) G.save = SAVE.load();
+  G.onboard = createOnboarding(G.tuning);
   grantStartersOnce();
 
   G.knuckle = createKnuckle(canvas, G.tuning, {
@@ -159,17 +161,17 @@ function wireButtons() {
     AUDIO.unlock();
     // calibration first, ONCE, because a player shooting against a stranger's
     // thumb can neither reach full power nor find the top of their own range
-    if (!G.calib.own) startCalibration();
-    else if (G.seenRules) { showScreen('setup'); buildHouseRules(); buildAnte(); }
-    else showScreen('rules');
+    if (!G.calib.own) { startCalibration(); return; }
+    nextScreenForOnboarding();
   });
   $('calibSkip').addEventListener('click', () => { finishCalibration(null); });
   $('rulesGo').addEventListener('click', () => {
     G.seenRules = true;
     SAVE.merge({ seen: { rules: true } });
-    showScreen('setup'); buildHouseRules(); buildAnte();
+    nextScreenForOnboarding();
   });
   $('setupGo').addEventListener('click', () => { beginMatch(); });
+  $('tinTake').addEventListener('click', () => { takeTheTin(); });
   $('setupBack').addEventListener('click', () => { showScreen('title'); });
   $('rsPay').addEventListener('click', () => {
     if (!G.ransomOffer) return;
@@ -189,14 +191,24 @@ function wireButtons() {
     if (after) after(); else showScreen('title');
   });
   $('collect').addEventListener('click', () => openCollection());
-  $('collBack').addEventListener('click', () => showScreen('title'));
+  $('collBack').addEventListener('click', () => {
+    const b = G.onboard && G.onboard.beat();
+    if (b && b.id === 'firstKeepsies') { nextScreenForOnboarding(); return; }
+    showScreen('title');
+  });
   $('inspectBack').addEventListener('click', () => openCollection());
   // one finger drag spins the marble on the table
   $('stage').addEventListener('pointermove', (e) => {
     if (G.screen !== 'inspect' || !e.buttons) return;
     G.turntable.nudge(e.movementX || 0);
   });
-  $('again').addEventListener('click', () => { G.stake = []; showScreen('setup'); buildHouseRules(); buildAnte(); });
+  $('again').addEventListener('click', () => {
+    G.stake = [];
+    // during the first four minutes this button is not a rematch, it is the
+    // next beat: after the game with Dusty it opens his tin
+    if (G.onboard && G.onboard.active()) { nextScreenForOnboarding(); return; }
+    showScreen('setup'); buildHouseRules(); buildAnte();
+  });
   $('toTitle').addEventListener('click', () => { endMatch(); showScreen('title'); });
   $('topDown').addEventListener('click', () => {
     G.topDown = !G.topDown;
@@ -222,6 +234,7 @@ function showScreen(name) {
   $('inspect').hidden = name !== 'inspect';
   $('results').hidden = name !== 'results';
   $('ransom').hidden = name !== 'ransom';
+  $('tin').hidden = name !== 'tin';
   if (name !== 'inspect' && G.turntable) { G.turntable.clear(); G.inspecting = null; }
   if (name !== 'match') { $('pauseCard').hidden = true; G.paused = false; hideAim(); }
 }
@@ -265,8 +278,59 @@ function finishCalibration(result) {
     G.save = SAVE.load();
   }
   endMatch();
-  if (G.seenRules) { showScreen('setup'); buildHouseRules(); buildAnte(); }
-  else showScreen('rules');
+  /* ⛔ SKIPPING STILL FINISHES THE BEAT. Firing it only on a real result put a
+     player who tapped Skip straight back into calibration, forever, because
+     `nextScreenForOnboarding` asks the beat where to go and the beat had not
+     moved. The beat is "the game has asked for your snap", not "the game got
+     one": the default power curve is the cost of skipping, not a locked door. */
+  G.onboard.fire('calibrated');
+  nextScreenForOnboarding();
+}
+
+/**
+ * Where the player goes next, asked of the onboarding rather than of a flag.
+ *
+ * ⛔ ONE PLACE DECIDES. Before this there were three: the play button, the end of
+ * calibration and the rules card each had their own `if (G.seenRules)`, which is
+ * how an onboarding grows a hole. Every one of them asks here now.
+ */
+/**
+ * Fire an onboarding event and, if it moved a beat, say the new one out loud.
+ *
+ * ⛔ IT IS SAFE TO CALL FROM ANYWHERE. The beat decides whether it cares; a hook
+ * that fires on every shot must not need to know which beat it is.
+ */
+function fireBeat(event) {
+  if (!G.onboard || !G.onboard.active()) return false;
+  const moved = G.onboard.fire(event);
+  if (!moved.advanced) return false;
+  const b = G.onboard.beat();
+  if (b && (b.id === 'sticking' || b.id === 'break')) say(b.lines[0]);
+  return true;
+}
+
+/** Dusty talks, one line a turn, spare and funny (DESIGN 16.3). */
+function onboardingChat() {
+  if (!G.onboard || !G.onboard.active()) return;
+  const b = G.onboard.beat();
+  if (!b || b.id !== 'dusty') return;
+  if (!G.R || G.R.match.turn !== 1) return;
+  say(dustyLine(G.chatTurn = (G.chatTurn || 0) + 1));
+}
+
+function nextScreenForOnboarding() {
+  const b = G.onboard && G.onboard.beat();
+  if (!b) {
+    if (G.seenRules) { showScreen('setup'); buildHouseRules(); buildAnte(); }
+    else showScreen('rules');
+    return;
+  }
+  if (b.id === 'calibrate') { startCalibration(); return; }
+  if (b.id === 'tin') { openTin(); return; }
+  // the break, the sticking beat and Dusty are all played on a real board, so
+  // they go through the rules card once and then into a match
+  if (!G.seenRules) { showScreen('rules'); return; }
+  showScreen('setup'); buildHouseRules(); buildAnte();
 }
 
 /* ------------------------------------------------------------ the wallet */
@@ -287,11 +351,86 @@ function paintWallet() {
  * screen of its own and lands with the pouches; the three candidates stay out of
  * the grant until then rather than being handed over silently.
  */
+/**
+ * ⛔ NOTHING IS GRANTED AT BOOT ANY MORE. The starters arrive in beat 4, out of
+ * Dusty's tin, with the heirloom chosen rather than assigned. This is only the
+ * safety net for a save that finished onboarding in an older build and would
+ * otherwise open an empty collection.
+ */
 function grantStartersOnce() {
   if (G.save.inventory.length) return;
+  if (!G.save.seen.onboarded) return;           // beat 4 has not happened yet
   const { give } = starterGrant(G.catalog, makeRng(20260904));
   SAVE.merge({ inventory: give });
   G.save = SAVE.load();
+}
+
+/**
+ * Beat 4 of DESIGN 16: the tin, and the heirloom laid on a cloth.
+ *
+ * ⛔ THE STARTERS ARE GRANTED HERE, NOT AT BOOT. They used to arrive silently the
+ * first time the page loaded, so a player met their whole collection before the
+ * game had said a word about it, and the heirloom choice the design asks for did
+ * not exist at all: `starterGrant` returned three candidates and nobody ever read
+ * them. The two not picked go back into the pouch pool, which is what they are for.
+ */
+function openTin() {
+  G.heirloomPick = null;
+  const wrap = $('heirlooms');
+  wrap.textContent = '';
+  const three = G.onboard.heirlooms(G.catalog);
+  G.thumbs.open(168);
+  let i = 0;
+  for (const e of three) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.id = 'heir-' + e.id;
+    const c = document.createElement('canvas');
+    c.width = c.height = 168;
+    b.appendChild(c);
+    const nm = document.createElement('span');
+    nm.textContent = e.name;
+    b.appendChild(nm);
+    const kit = document.createElement('span');
+    kit.className = 'kit';
+    kit.textContent = (e.passive || {}).name || '';
+    b.appendChild(kit);
+    b.addEventListener('click', () => pickHeirloom(e));
+    wrap.appendChild(b);
+    G.thumbs.paint(c, e, i++);
+  }
+  G.thumbs.close();
+  // before the first tap there is nothing to read but a name and a two word kit,
+  // so the cloth says what it is asking
+  $('heirSay').textContent = 'Pick one up. It is yours for good.';
+  $('tinTake').disabled = true;
+  $('tinTake').textContent = 'Pick one first';
+  showScreen('tin');
+}
+
+function pickHeirloom(entry) {
+  G.heirloomPick = entry;
+  for (const b of $('heirlooms').querySelectorAll('button')) {
+    b.className = b.id === 'heir-' + entry.id ? 'on' : '';
+  }
+  // the lore, because the choice should be made on the marble rather than on the stat
+  $('heirSay').textContent = entry.lore || '';
+  $('tinTake').disabled = false;
+  $('tinTake').textContent = 'Take ' + entry.name;
+}
+
+function takeTheTin() {
+  if (!G.heirloomPick) return;
+  const { give } = starterGrant(G.catalog, makeRng(20260904));
+  const pick = G.heirloomPick;
+  give.push({
+    id: pick.id, uid: pick.id + '-heirloom', acquired: Date.now(),
+    source: 'starter', cosmeticSeed: 0.5
+  });
+  SAVE.merge({ inventory: give });
+  G.save = SAVE.load();
+  G.onboard.fire('tookTheTin');
+  openCollection();
 }
 
 function openCollection() {
@@ -301,6 +440,13 @@ function openCollection() {
   buildOffers();
   buildPouches();
   $('pouchSay').textContent = '';
+  /* ⛔ THE TIN HAS TO LEAD SOMEWHERE. Beat 4 ends on this screen with a shelf full
+     of marbles and, before this, no way forward except BACK to a title screen: the
+     one moment the game has just given the player everything, and it left them to
+     guess. During the onboarding the way out IS the next beat. */
+  const b = G.onboard && G.onboard.beat();
+  $('collBack').textContent = (b && b.id === 'firstKeepsies')
+    ? 'Play him for real ones' : 'Back';
 }
 
 /**
@@ -502,6 +648,16 @@ function openInspect(entry, item) {
  */
 function buildAnte() {
   const wrap = $('ante');
+  /* beat 5 is "ante 1 clay each": the game puts it up so the player can see what
+     a stake looks like before they are asked to choose one */
+  const beat5 = G.onboard && G.onboard.beat() && G.onboard.beat().id === 'firstKeepsies';
+  if (beat5 && !G.stake.length && G.houseRules.keepsies) {
+    const clay = G.save.inventory.find(i => i.id === 'dirt_plain');
+    if (clay) {
+      const e = G.catalog.marbles.find(m => m.id === 'dirt_plain');
+      G.stake.push({ uid: clay.uid, id: 'dirt_plain', tier: e.tier, name: e.name });
+    }
+  }
   wrap.hidden = !G.houseRules.keepsies;
   if (wrap.hidden) { G.stake = []; G.theirStake = []; G.anteOk = true; return; }
   const strip = $('stakeStrip');
@@ -595,6 +751,20 @@ function refreshAnte() {
 function buildHouseRules() {
   const row = $('hrRow');
   row.textContent = '';
+  /* ⛔ THE FIRST TWO GAMES ARE SET UP BY THE GAME, NOT BY THE PLAYER. DESIGN 16
+     is exact: beat 3 is a seven foot game, slips on, FOR FAIR, and beat 5 is the
+     same table with one clay each on it. A player handed five chips before they
+     have played once is being asked a question they cannot answer yet. */
+  const beat = G.onboard && G.onboard.beat();
+  if (beat && (beat.id === 'dusty' || beat.id === 'break' || beat.id === 'sticking')) {
+    G.houseRules.keepsies = false;
+    G.houseRules.slips = true;
+    G.houseRules.ringSizeFt = 7;
+  } else if (beat && beat.id === 'firstKeepsies') {
+    G.houseRules.keepsies = true;
+    G.houseRules.slips = true;
+    G.houseRules.ringSizeFt = 7;
+  }
   for (const r of HOUSE_RULES) {
     const b = document.createElement('button');
     b.className = 'chip';
@@ -667,7 +837,13 @@ function startMatch(opts) {
     ],
     hooks: {
       onPocket: () => AUDIO.impact({ material: 'glass', diameterMm: 16, relSpeed: 1.4, seed: 0.5 }),
-      onTechnique: (id) => showToast(id),
+      onTechnique: (id) => {
+        showToast(id);
+        // beat 2.5 asks for one guided backspin shot, and this is the moment it
+        // lands: the technique detector already knows a stick when it sees one
+        if (id === 'sticking') fireBeat('stuck');
+      },
+      onResolve: () => { fireBeat('brokeTheCross'); onboardingChat(); },
       onOver: (s) => finishMatch(s)
     }
   });
@@ -1004,6 +1180,16 @@ function finishMatch(s) {
      progression never requires keepsies, so a player who stakes nothing still
      climbs. The level up bonus is paid through the economy, so it lands in the
      wallet's own change feed like every other earn. */
+  /* beat 3 is a whole game For Fair, beat 5 is a whole game for keeps, and the
+     difference between them is whether anything was in the pot */
+  /* ⛔ THE STICKING BEAT CANNOT DEADLOCK. DESIGN 16.2 teaches sticking with one
+     guided backspin shot, and a player who never manages one would otherwise sit
+     on beat 2.5 forever. The beat still waits for exactly one event; the GAME
+     decides that the guided window has closed and fires it, with a gentler line. */
+  const b4 = G.onboard && G.onboard.beat();
+  if (b4 && b4.id === 'sticking') fireBeat('stuck');
+  if (pot.won.length || pot.lost.length || pot.returned.length) fireBeat('playedForKeeps');
+  else fireBeat('playedDusty');
   const lvl = PROG.awardMatch(won, G.tuning, G.econ);
   G.save = SAVE.load();
   const p2 = PROG.snapshot(G.tuning);
@@ -1280,6 +1466,20 @@ function installDevHook() {
     },
     offers: () => RANSOM.openOffers(Date.now()),
     grantXp: (n) => { const r = PROG.award(n, 'a gate said so', G.tuning, G.econ); buildPouches(); return r; },
+    beat: () => { const b = G.onboard && G.onboard.beat(); return b ? b.id : null; },
+    beatSkip: () => (G.onboard ? G.onboard.skip() : null),
+    tin: () => { openTin(); return G.catalog ? true : false; },
+    // the state of a player who has already been through the first four minutes:
+    // onboarding done, starters on the shelf, no heirloom chosen for them
+    skipOnboarding: () => {
+      G.onboard.finish();
+      G.save = SAVE.load();
+      grantStartersOnce();
+      return { inventory: G.save.inventory.length, beat: G.onboard.beat() };
+    },
+    title: () => { showScreen('title'); return true; },
+    hasMarble: (id) => G.save.inventory.some(i => i.id === id),
+    stakeNow: () => G.stake.map(m => m.id),
     progress: () => {
       const p = PROG.snapshot(G.tuning);
       const unlocked = {};

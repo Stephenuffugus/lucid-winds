@@ -1135,9 +1135,70 @@ PROGRESSION OK
 
   And `check.js` prints what FAILED rather than its last twenty five lines, which is why those three
   assertions had to be hunted by hand in the first place.
+- [x] **onboarding beats 2 to 6** (`src/meta/beats.js`), which closes the first four minutes DESIGN 16
+  asks for. The beat machine owns which beat you are on, what it says and what it is waiting for, and it
+  owns no DOM, so the whole script can be walked in Node.
+
+  ⛔ **A beat waits for ONE event and nothing else advances it**, so a double tap cannot skip one.
+  ⛔ **The state is in the save**, so a player who closes the tab in beat 3 comes back to beat 3.
+  ⛔ **The skip appears only after the break**, because the break teaches the one control the game has,
+  and it lands ON the tin rather than past it: nobody loses their starters for being experienced.
+```
+  ok    1. the beats are the design's, in order: calibrate, break, sticking, dusty, tin, firstKeepsies
+  ok       and no two beats wait for the same event, which would let one finish the other
+  ok    2. the wrong event moves nothing: still on calibrate
+  ok       and firing it again does nothing, so a double tap cannot skip a beat
+  ok    3. a new instance over the same save resumes on it: sticking, 2 of 6 done
+  ok    4. there is no skip on the calibration, because it is the hook
+  ok       and it lands ON the tin rather than past it: tin
+  ok    5. the heirloom is a choice of three: Bloodstone Aggie, Lutz, Mercury
+  ok    6. finishing the last beat ends the onboarding, and it never starts again
+ONBOARDING OK
+```
+  Watched to fail four ways: a beat any event can advance, a skip offered on the hook itself, a skip that
+  jumps past the tin, and state held in a variable rather than in the save.
+
+  **What changed in the game.** The starters no longer arrive silently at boot: they come out of Dusty's
+  tin in beat 4, with the heirloom **chosen** rather than assigned, and the two not picked go back into
+  the pouch pool. `starterGrant` had been returning three candidates that nobody ever read. The first two
+  games are set up by the game rather than by the player, exactly as DESIGN 16 writes them: beat 3 is
+  seven foot, slips on, For Fair, and beat 5 is the same table with one clay put up FOR them, so a stake
+  can be seen before it has to be chosen. Dusty talks, one line a turn.
+
+  `playthrough` now walks the whole four minutes: PLAY, three snaps, the rules card, the For Fair game,
+  the tin with three rares rendered on a cloth, the pick, the shelf filling to nineteen, and the first
+  game for keeps with the ceremony at the end of it.
+```
+  ok    and one game carried the player through the break, the stick and Dusty, to the tin: tin
+  ok    nothing has been given away yet, because the starters come out of the tin: 0 marbles
+  ok    the tin lays three rares on a cloth: 3, and RENDERS all three
+  ok    and you cannot take the tin without picking one: Pick one first
+  ok    and it says something about the marble rather than its stats: Real gold? No. Real trouble.
+  ok    taking the tin fills the shelf: 19 marbles
+  ok    and the two you did not pick are NOT there, because they go back into the pouch pool
+  ok    the tin leads somewhere rather than dead ending on a full shelf: "Play him for real ones"
+  ok    and it puts ONE CLAY up for them: dirt_plain
+  ok    and PLAY is live: Your Dirt Plain against their Bottle Green. Winner takes both.
+  ok    the pot ceremony ran before the card: Bottle Green is yours now, off Dusty Coyle.
+  ok    and the first four minutes are over: beat null
+PLAYTHROUGH OK
+```
+
+  ⛔ **Three real bugs came out of building it.** Writing the beat machine over `meta/onboarding.js`,
+  which DESIGN names for the whole of section 16 and which the K1 calibration already occupied, produced
+  a page that loaded nothing with no error in the console; restored from git and the beat machine is
+  `beats.js`. **Skipping the calibration trapped the player in the calibration**, forever, because beat 1
+  fired only on a real result and the screen chooser asks the beat where to go; the render gate found it
+  by being the only thing in the build that ever taps Skip. And the sticking beat could deadlock a player
+  who never manages a backspin shot, so the game closes that window itself.
+
+  **Faults still in `docs/shots/k2-tin.png`.** The cloth is a flat warm rectangle with no texture and no
+  edge, so it reads as a panel rather than as cloth. Mercury is a grey sphere with a black lower half and
+  reads as a bearing rather than as a rare worth choosing. And "Bloodstone Aggie" wraps to two lines while
+  the other two do not, so one name block is twice the height of its neighbours.
 - [ ] shots: ante mid-roll, showcase room from the door and from inside a wall
-- [ ] onboarding beats 2 to 6, the glb lane, the eight per epic shaders
-- [x] commits: `46befcb5` the catalog and the recipes, `597a9fec` the collection and the turntable, `b3d341fa` the wallet and the clay pool, `c81d1a87` the pouches, `cd0dca5e` the pot and the escrow, `c249b460` the words gate and the second look, `9dc85389` the pot ceremony, `92b468b0` the ransom window
+- [ ] the glb lane, the eight per epic shaders
+- [x] commits: `46befcb5` the catalog and the recipes, `597a9fec` the collection and the turntable, `b3d341fa` the wallet and the clay pool, `c81d1a87` the pouches, `cd0dca5e` the pot and the escrow, `c249b460` the words gate and the second look, `9dc85389` the pot ceremony, `92b468b0` the ransom window, `1efd6229` progression
 
 ### K3
 - [ ] `arena_rules`, `damage_math`, `condition_matrix`, `arena_shape` (the table, every matchup), `boss_ladder` (five rates), `ai_budget` (100 turns, min candidates), `budget` (three runs alone)
@@ -1181,10 +1242,11 @@ Next action: <file, function, step, the first thing the next session does>
 
 ### Morning report, 2026-09-04, the second half of the night
 
-**Phases:** K0 **done**. K1 **done but for pass and play**. K2 **nearly**: the catalog, the marbles'
-looks, the collection, the turntable, the economy, the three pouches, **the keepsies loop itself**,
-**the pot ceremony**, **the ransom window** and **progression** are built. What is left of K2 is
-onboarding beats 2 to 6, the glb lane and the eight per epic shaders. K3 **not started**.
+**Phases:** K0 **done**. K1 **done but for pass and play**. K2 **done but for art**: the catalog, the
+marbles' looks, the collection, the turntable, the economy, the three pouches, **the keepsies loop
+itself**, **the pot ceremony**, **the ransom window**, **progression** and **the whole first four
+minutes** are built. What is left of K2 is the glb lane and the eight per epic shaders, which are both
+art rather than systems. K3 **not started**.
 
 **The headline: a marble is now genuinely at risk, you watch it change hands, and if you lose a good
 one you get 24 hours to buy it back.** You put one up,
@@ -1196,14 +1258,15 @@ lore line, which is the difference between winning something and being told you 
 rare or better and Dusty offers it back for 24 hours at the design's prices; the deadline is a timestamp
 in the save, so it survives the tab being closed for 23 of them.
 
-**Gates:** eighteen, all green, every one watched to fail on purpose. Six are new tonight, and the
-playthrough grew thirty five assertions.
+**Gates:** nineteen, all green, every one watched to fail on purpose. Seven are new tonight, and the
+playthrough grew from twenty six assertions to sixty three: it now walks the first four minutes from
+PLAY to the first game for keeps.
 ```
 lint pass 0s · catalog pass 0s · stamp pass 0s · harness pass 14s · save pass 0s
-clay_regen pass 0s · pity_math pass 0s · words pass 0s · escrow_crash pass 1s
-ransom pass 1s · progression pass 0s · ringer_rules pass 0s · ai_budget pass 16s
-ringer_ai pass 41s · render pass 44s · knuckle pass 22s · audio_budget pass 10s
-playthrough pass 78s
+clay_regen pass 0s · pity_math pass 0s · words pass 0s · escrow_crash pass 0s
+ransom pass 1s · progression pass 0s · onboarding pass 0s · ringer_rules pass 0s
+ai_budget pass 15s · ringer_ai pass 40s · render pass 39s · knuckle pass 20s
+audio_budget pass 10s · playthrough pass 68s
 ALL GATES PASSED
 ```
 
@@ -1211,6 +1274,7 @@ ALL GATES PASSED
 1. `docs/shots/k1-setup.png` The ante. Your marble against theirs, and the sentence under it now names
    yours: "Your Dirt Plain against theirs. Winner takes both."
 2. `docs/shots/k1-ceremony.png` The pot resolving. This is the one to look at.
+   Then `k2-tin.png`, which is Dusty's tin with the three heirlooms on a cloth.
    Then `k2-loss-ceremony.png` and `k2-ransom.png`, which are the same moment from the losing side.
 3. `docs/shots/k1-results.png` The card behind it. The pot is its first and largest row and it says
    which marble crossed the ring.
@@ -1253,7 +1317,7 @@ and a half marbles of eighteen with the second row's names sliced through the mi
 two questions it asks. Does the snap feel like a snap, and does the marble weigh anything. That entry is
 K1.5 and the next session runs it before anything else.
 
-**Next action:** onboarding beats 2 to 6, which is the last thing standing between K2 and K3.
+**Next action:** K3, the Arena. K2's systems are all in; what is left of it is art.
 
 ---
 
@@ -1354,8 +1418,8 @@ the whole game and does not exist yet.
 **2026-09-04, Opus, overnight run.** K0 complete. K1 complete but for pass and play. **K2: the catalog,
 the marbles' looks, the collection, the economy, the pouches and the keepsies loop are done**; what is
 left of it is the ceremonies, the ransom window, progression, onboarding beats 2 to 6, the glb lane and
-the eight per epic shaders. K3 not started. **Eighteen gates green**, each watched to fail, evidence
-pasted in the ledger above. Twenty two screenshots opened and their faults named.
+the eight per epic shaders. K3 not started. **Nineteen gates green**, each watched to fail, evidence
+pasted in the ledger above. Twenty five screenshots opened and their faults named.
 
 Commits, all pushed to `origin add-sproing-jumper`: `4b8d3043` the failing gate, `14a6bca0` physics and
 harness, `58621d7e` the first rendered marble, `8b57d09c` the referee, `bbb7b629` the Rapier spin clamp
@@ -1371,21 +1435,20 @@ outside those two paths returns nothing. One near miss worth recording: a heredo
 path wrote a Keepsies `manifest.json` over the repo root's own, and it was restored from git inside a
 minute; every shell call after that used absolute paths.
 
-**Exact next action:** onboarding beats 2 to 6 (`PW`-style flow in `src/main.js`, no new module). Beat
-1 exists as the calibration. DESIGN 16 lays out the rest and two of them are now wiring rather than
-building, because the systems under them shipped tonight:
+**Exact next action:** K3. K2's systems are all in and what is left of it is art: the glb lane on a low
+poly figure in `tools/forge/`, and the eight per epic shaders that are currently one shared fallback.
+Both want Stephen's eye more than another night of building, so K3 is the better use of a session.
 
-- **Beat 2, the break.** One shot at a full cross with Rookie Assist on, and nothing else on screen.
-- **Beat 3, meet Dusty.** One full seven foot game, slips on, For Fair, one line of his chat per turn.
-- **Beat 4, the tin.** The collection opened for the first time, with the clay pool explained.
-- **Beat 5, first keepsies.** Vs Dusty, ante one clay each. ⛔ The design runs the loss ceremony AND the
-  ransom explainer here on a worthless clay so the system is learned before it can hurt. Both exist now,
-  with one wrinkle to solve: a clay common is NOT ransom eligible, so the explainer has to show the card
-  without opening a real offer. Pass a `demo: true` offer into `showRansomCard` and do not write it.
-- **Beat 6, the heirloom.** The three candidates of DESIGN 16.4, and `starterGrant` already returns the
-  two they do not pick so they can go back into the pouch pool.
+Start with `src/game/arena.js` and the damage model, because everything else in K3 hangs off it: DESIGN
+9 gives `dmg = clamp((relSpeed - 1.2) x attackerMassKg x 55 / defenderHardness, 0, 35)` and four visual
+tiers at 100, 69, 39 and 0. The hardness it divides by is now real per marble, carried out of the design's
+own prose into `arena.hardness` by the catalog generator, so Mercury really is 0.8 and Kiln Kiss really
+is 1.3. Its gate is `condition_matrix` from DESIGN 22: every condition times every active, firing exactly
+when specified, and `arena_shape` from 9.9.
 
-The flow needs a `seen.onboarded` gate, which is already in the save schema and already false.
+⛔ Before any of it, read the two open questions in this file's section 11 and the ones written into the
+morning reports. The pouch pity finding and the XP curve reading are both Director calls that change
+numbers, and both are cheap to change now and expensive to change after a playtest.
 
 Everything those need is in place: the catalogue is generated, all sixty five marbles render, the save
 merges safely across two tabs, the wallet and the clay pool regenerate against an injectable clock, the

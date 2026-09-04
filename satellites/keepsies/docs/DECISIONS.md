@@ -290,3 +290,30 @@ Every gate asks `unlocked('pouches')` and the level lives in `tuning.json` only.
 
 **2026-09-04 — a failing gate prints what FAILED, not its last twenty five lines.**
 `check.js` printed "3 FAILED" over a wall of green because the failures were early and the tail was late, and the three had to be hunted by rerunning the gate by hand. It now prints every FAIL line with a line either side, and the tail after it.
+
+**2026-09-04 — ⛔ `beats.js`, because `onboarding.js` was already taken, and overwriting it cost a boot.**
+DESIGN names one file for the whole of section 16 and the calibration shipped into it in K1. Writing the beat machine over the top produced a page that loaded nothing with no error in the console, because a missing named export fails the whole module graph. Restored from git inside a minute. Two files, two jobs: `onboarding.js` measures a thumb, `beats.js` runs the script.
+
+**2026-09-04 — the first match covers beats 2, 2.5 and 3, and DESIGN separates them.**
+DESIGN 16 gives the break its own window (0:20 to 1:00) on a board with nobody else on it, then Dusty arrives for a full game at 1:00. There is no one player match mode: `startMatch` always seats two. So the first game IS the break, the sticking lesson and the game with Dusty, in that order, on one board: the break beat completes on the first shot that resolves, the sticking beat on the first stick or when the match ends, and Dusty's beat when the game does. A solo board is a small feature and this is flagged for the Director rather than built without him.
+
+**2026-09-04 — the sticking beat cannot deadlock.**
+A player who never manages a backspin shot would otherwise sit on beat 2.5 forever. The beat still waits for exactly one event, which is the rule the gate holds; the GAME decides the guided window has closed and fires it, with a gentler line. A beat machine that can wait for something a player cannot do is a lock on the front door.
+
+**2026-09-04 — the starters arrive out of the tin, not at boot.**
+They used to be granted silently the first time the page loaded, so a player met their whole collection before the game had said a word about it, and the heirloom choice DESIGN 16.4 asks for did not exist at all: `starterGrant` returned three candidates and nobody ever read them. They arrive in beat 4 now, with the heirloom chosen on its lore rather than assigned, and the two not picked go back into the pouch pool, which is what they are for. `grantStartersOnce` survives only as a safety net for a save that finished onboarding in an older build.
+
+**2026-09-04 — the first two games are set up by the game, not by the player.**
+DESIGN 16 is exact: beat 3 is a seven foot game, slips on, For Fair, and beat 5 is the same table with one clay each on it. A player handed five house rule chips before they have played once is being asked a question they cannot answer yet, so the chips are set and the ante for beat 5 is put up for them.
+
+**2026-09-04 — ⛔ skipping the calibration used to trap the player in the calibration.**
+Beat 1 fired only on a real result, so somebody who tapped Skip went back to the screen they had just left, forever, because `nextScreenForOnboarding` asks the beat where to go and the beat had not moved. The beat is "the game has asked for your snap", not "the game got one": the default power curve is the cost of skipping, not a locked door. The render gate found it by being the only thing in the build that ever taps Skip.
+
+**2026-09-04 — one place decides where the player goes next.**
+The play button, the end of calibration and the rules card each had their own `if (G.seenRules)`, which is how an onboarding grows a hole. They all call `nextScreenForOnboarding()` now and it asks the beat.
+
+**2026-09-04 — the tin has to lead somewhere.**
+Beat 4 ends on the collection with a shelf full of marbles and, before this, no way forward except BACK to a title screen: the one moment the game has just given the player everything, and it left them to guess. During the onboarding the way out IS the next beat, and the button says so.
+
+**2026-09-04 — the render gate is about pixels, not about the script.**
+The first four minutes are walked assertion by assertion in `playthrough`. `render` puts the player into the state of somebody who has already been through them, so the setup screen under test is the ordinary one rather than the For Fair table the onboarding sets. Two gates, two questions.

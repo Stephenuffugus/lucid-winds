@@ -57,6 +57,21 @@ const shot = async (name) => {
 const wait = (ms) => new Promise(r => setTimeout(r, ms));
 
 await shot('k1-title');
+
+/* beat 4 of the onboarding: the tin, and the heirloom laid on a cloth */
+await page.evaluate(() => {
+  const d = window.KEEPSIES_DEV;
+  d.beatSkip();                     // "I have played marbles before", which lands ON the tin
+  d.tin();
+});
+await wait(900);
+await shot('k2-tin');
+await page.evaluate(() => { const b = document.getElementById('heir-lutz'); if (b) b.click(); });
+await wait(400);
+await shot('k2-tin-picked');
+await page.evaluate(() => { const b = document.getElementById('tinTake'); if (b) b.click(); });
+await wait(900);
+await page.evaluate(() => window.KEEPSIES_DEV.title());
 await page.evaluate(() => window.KEEPSIES_DEV.rules());
 await wait(250);
 await shot('k1-rules');
