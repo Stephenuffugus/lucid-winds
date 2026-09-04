@@ -364,3 +364,10 @@ There is no `hz` in the tuning, so `1 / T.physics.hz` was NaN and `n++ < NaN` wa
 
 **2026-09-04 — a contact event carries physics ids, not uids.**
 `addMarble` returns an integer and the events are in those; the referee speaks uids. Reading `e.a` as a uid made every ownership lookup miss, so a marble rolled straight through an enemy and nothing was ever recorded as a hit. Watched to fail by putting the ids back.
+
+**2026-09-04 — ⛔⛔ A SLICE EDIT DELETED 826 LINES OF THE HANDOFF AND NOTHING NOTICED FOR THREE COMMITS.**
+Commit `958d8838` rewrote the ledger's K3 box with `s[:i] + new + s[j:]`, where `i = s.index('### K3')`. That string appears TWICE: once in the PLAN's section 6 and once in the EVIDENCE LEDGER's section 14. It matched the first, so everything between the plan's K3 heading and section 15 was replaced: the rest of the plan, sections 7 through 13, and **the entire evidence ledger, every K0, K1, K1.5 and K2 box, with the whole night's pasted gate output in them**. The file went from 1455 lines to 629 and three further commits were built on top of the wreckage without anybody looking at a line count.
+
+Every code patch in this build asserts that its anchor matched exactly once, which is a rule written into this very file. The rule was not applied to the document the rule is written in. Restored from `93aa300a` and respliced with `rindex` plus an assertion that exactly one earlier occurrence exists.
+
+The lesson is narrower and sharper than "assert your anchors": **`index()` on a heading is a guess, because a plan and its ledger use the same headings on purpose.** When a document mirrors its own structure, anchor on the LAST occurrence or on something unique to the section, and check the line count before and after. A silent deletion in a markdown file has no test, no gate and no red output; the only thing that would have caught this is a diff nobody read.
