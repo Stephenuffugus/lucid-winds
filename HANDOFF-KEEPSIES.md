@@ -849,6 +849,107 @@ For Stephen: <which open questions the night's choices leaned on, and the phone 
 Next action: <file, function, step, the first thing the next session does>
 ```
 
+### Morning report, 2026-09-04, overnight
+
+**Phases:** K0 **done** (`14a6bca0`, `58621d7e`). K1 **built and playable, four items short of complete**
+(`8b57d09c`, `bbb7b629`, `3b8f5e93`, `adbc1f42`). K2 **not started**. K3 **not started**.
+
+**Gates:** nine, all green, run twice, alone.
+```
+lint  pass 0s · stamp  pass 0s · harness  pass 15s · ringer_rules  pass 0s
+ai_budget  pass 17s · ringer_ai  pass 43s · render  pass 37s · knuckle  pass 19s
+playthrough  pass 24s
+ALL GATES PASSED
+```
+Nothing was skipped. `ai_budget`, `ringer_ai` and `playthrough` are marked slow, so `--fast` will skip
+those three and say so. Every gate has been watched to fail on purpose and the red output is in the
+ledger above.
+
+**Play it:** open `satellites/keepsies/index.html`. PLAY, then the rules card, then you are in a game of
+Ringer against Dusty. Drag anywhere on the dirt to slide your shooter along the ring edge; put your thumb
+on the shooter and hold it still until the ring around it shrinks and turns gold; flick up through the
+marble. Start the flick low on the marble for backspin, high for follow, off to one side for english,
+along a curve for a wild one. Seven of thirteen wins. `docs/checklists/k1.md` is your ten things to try
+and the two questions the build is actually asking.
+
+**Look at, in this order:**
+1. `docs/shots/k1-brace.png` The signature interaction, working. The reticle is still bigger than the
+   marble it surrounds, because it is drawn at the thumb's grab radius and the 48 px law makes that
+   bigger than a 22 mm marble at this distance.
+2. `docs/shots/k1-break.png` The cross scattering. Nothing has a motion cue, so at twelve pixels a
+   marble you cannot tell which ones are moving.
+3. `docs/shots/k1-board.png` A whole board. The middle of the frame is a lot of empty dirt, which is
+   what real scale in a three metre ring costs, and a cat's eye and a clay are indistinguishable at
+   this size.
+4. `docs/shots/k1-results.png` The loop closed: seven of seven, Clean Sweep earned. The card floats over
+   a black wash and the technique sits in a table row next to Sunbeams, both of which the K2 ceremony
+   fixes.
+5. `docs/shots/k1-under.png` The forbidden angle. The floor does not leak, and there is nothing down
+   there, which is why the camera now clamps at the ground.
+
+**Decided without you, the three that matter most, verbatim from `docs/DECISIONS.md`:**
+- *"⛔⛔ THE BIGGEST FINDING OF THE NIGHT: Rapier hard clamps angular velocity to pi/4 radians per step,
+  and the floor contact is now ours."* Measured in a vacuum: 94.25 rad/s at 1/120, 47.12 at 1/60, 188.50
+  at 1/240, always exactly pi/4 per step, no parameter for it. A 22 mm taw rolling at 2.6 m/s needs 236.
+  **Every bit of backspin, topspin and english the design is built around was being silently thrown away
+  at that ceiling**, and a sweep of `kBack` from 1.25 to 13 returned byte identical numbers. The floor
+  contact patch is now ours; the alternatives (a smaller timestep, a scaled up world) were rejected for
+  breaking the 1/120 step and metric scale respectively.
+- *"rolling resistance 0.02 to 0.06, and the break from 4.0 to 4.5 m/s. This overrides two numbers the
+  plan fixed."* The plan's 0.02 was measured while Rapier's own floor friction was quietly doing half the
+  braking. With the patch model owning it, 0.02 brakes almost nothing: the taw coasted eleven metres and
+  nothing in the scene slept inside eight seconds, on a gate that had been green an hour earlier.
+- *"AI aim noise 8, 3, 1 degrees becomes 2.5, 1.5, 0.8."* A taw and a mib touch inside a window of about
+  1.9 cm, so at a metre and a half a hit needs the aim inside 0.73 degrees. At the design's 8 degrees a
+  Rookie connected on 17 percent of shots and dragged a game to 59 shots and past two minutes of physics.
+
+Two more numbers moved and both are written up with their measurements: the thumb speed band 0.2 to 2.4
+m/s became 0.35 to 1.2, because 2.4 m/s of screen travel is nine CSS pixels a millisecond and no thumb
+does it; and the ease curve exponent is stated in sixteenths so it can be computed with square roots
+instead of `Math.pow`, which is not bit reproducible across engines.
+
+**Blocked:** none. Nothing was left red, weakened or skipped.
+
+**For Fable:** nothing outside the fence was touched. One thing for you to know when you card it: the
+portal row and the thumb are not made yet, because `tools/make_thumb.mjs` is a K3 item in the plan and
+K3 has not started. `beta: true` is correct whenever you do card it. `node tools/check.js` from
+`satellites/keepsies/` is the whole story in three minutes.
+
+**For Stephen:** the night leaned on these open questions and took the smallest reasonable answer to each.
+**#10, the break power in the tutorial:** it wants a firm snap, not a medium one. A 4.5 m/s break puts one
+to three mibs out on 94 percent of two hundred seeds; the design's 3.5 knocks out nothing at any setting
+tested. **#11, the ring size for the first league:** the seven foot ring is measurably easier and is what
+the playthrough gate uses; the ten foot ring is the default everywhere else and both are in `tuning`.
+**#4 and #9** were not reached, because they belong to the Arena and the economy.
+Please run `satellites/keepsies/docs/checklists/k1.md` on your phone and write what you felt in
+`PLAYTESTS.md`. The two questions are: does the snap feel like a snap, and does the marble weigh
+anything. That entry is K1.5 and the next session runs it before anything else.
+
+**Next action:** K1's four remaining items, in `satellites/keepsies/HANDOFF.md` under "What K1 still
+owes", starting with calibration, `meta/onboarding.js` step one, three hardest snaps and the ninetieth
+percentile into `calib.max`. Then audio beyond impacts and the `audio_budget` gate. Then K2, beginning
+with `tools/catalog.mjs` reading `docs/DESIGN.md` sections 10.2 to 10.7.
+
+---
+
 ## SESSION STATE (builder updates this at the end of every session)
+
+**2026-09-04, Opus, overnight run.** K0 complete, K1 built and playable and four items short of complete,
+K2 and K3 not started. Nine gates green and each watched to fail; evidence pasted in the ledger above.
+Six screenshots opened and three faults named in each. Five commits, all pushed to
+`origin add-sproing-jumper`: `4b8d3043` the failing gate, `14a6bca0` physics and harness, `58621d7e` the
+first rendered marble, `8b57d09c` the referee, `bbb7b629` the Rapier spin clamp and the retune,
+`3b8f5e93` the Knuckle and the planner, `adbc1f42` the playable game.
+
+Nothing outside `satellites/keepsies/**` and this file was touched. One near miss worth recording: a
+heredoc without an absolute path wrote a Keepsies `manifest.json` over the repo root's own, and it was
+restored from git inside a minute; every shell call after that used absolute paths.
+
+**Exact next action:** `src/meta/onboarding.js` does not exist. Create it with step one of DESIGN 16
+only, the calibration: a marble on dirt, "Show me your hardest snap.", three snaps through the existing
+Knuckle, the ninetieth percentile of the three stored as `calib.max` and handedness from the side of the
+first brace. `main.js` already holds `G.calib` and passes it to the Knuckle through the `calib()` hook,
+so the wiring is one line; what is missing is the screen and the store. Then `test/knuckle.mjs` gains a
+seventh case asserting that a calibrated player's hardest snap reads power 1.0 and a stranger's does not.
 
 **2026-09-04, Fable.** Plan written and verified (two read-only checkers, 87 claims, the wrong ones applied), then reshaped for an unattended overnight run: the prompt at the top, the overnight protocol in section 15, the morning report in section 16, and the K1 sign-off turned into K1.5 so K2 follows the same night. No code. `satellites/keepsies/` holds `docs/DESIGN.md` (the v2 design verbatim), `sim/probes/` (the Rapier measurements behind sections 2 and 4.1, with the bugged first sweep kept on purpose), and the in-folder state files. Next action: K0, step 1, the gate that fails.
