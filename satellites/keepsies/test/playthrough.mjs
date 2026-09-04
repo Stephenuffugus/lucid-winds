@@ -200,6 +200,12 @@ say(a.title === 'You win' || a.title === 'Dusty wins', 'the card names a winner:
 say(/\d+ of \d+/.test(a.pocket || ''), 'it reports what you pocketed: ' + a.pocket);
 say(parseInt(a.shots, 10) > 0, 'it reports the shot count: ' + a.shots);
 say(a.matchesPlayed === 1, 'one match has been recorded, not ' + a.matchesPlayed);
+const wallet = await page.evaluate(() => window.KEEPSIES_DEV.wallet());
+say(wallet.sunbeams > 0, 'the game wallet was paid for the match: ' + wallet.sunbeams + ' sunbeams');
+say(wallet.clay.count === wallet.clay.max, 'and the clay pool is full at ' + wallet.clay.count
+  + ' of ' + wallet.clay.max);
+say(/\d+/.test(a.sun) && a.sun.indexOf('match completed') >= 0,
+  'and the card says what it paid for: ' + a.sun);
 await page.screenshot({ path: join(OUT, 'k1-results.png') });
 
 /* ---- and the same game with the pull back fallback ---- */

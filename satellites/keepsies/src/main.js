@@ -28,6 +28,7 @@ import { createTurntable, createThumbnailer, useMaterialFactory, groupForGrid, s
   from './meta/collection.js?v=20260904a';
 import * as MARBLEMESH from './render/marbleMesh.js?v=20260904a';
 import { bodySpec } from './core/marbleBody.js?v=20260904a';
+import { createEconomy } from './meta/economy.js?v=20260904a';
 import { makeRng } from './core/rng.js?v=20260904a';
 import { makeMarbleMaterial } from './render/marbleMesh.js?v=20260904a';
 
@@ -45,7 +46,7 @@ const G = {
   save: null, calibrator: null, lastRollAudio: 0, warming: false,
   assist: true, lastAssist: 0,
   houseRules: { keepsies: true, slips: true, bombing: false, poison: false, ringSizeFt: 10 },
-  catalog: null, turntable: null, thumbs: null, filter: 'all', inspecting: null
+  catalog: null, turntable: null, thumbs: null, filter: 'all', inspecting: null, econ: null
 };
 
 /* The house rules of DESIGN 8.3, as the player meets them: what each one DOES,
@@ -85,6 +86,10 @@ async function boot() {
   G.turntable = createTurntable(G.stage, G.tuning);
   useMaterialFactory(MARBLEMESH);
   G.thumbs = createThumbnailer(G.tuning);
+  G.econ = createEconomy(G.tuning);
+  G.econ.clayPool();          // roll the day over before anything reads it
+  G.econ.touchStreak();
+  G.econ.onChange(() => { G.save = SAVE.load(); paintWallet(); });
   grantStartersOnce();
 
   G.knuckle = createKnuckle(canvas, G.tuning, {
@@ -120,6 +125,7 @@ async function boot() {
 
   wireButtons();
   $('boot').hidden = true;
+  paintWallet();
   showScreen('title');
   G.booted = true;
   G.last = performance.now();
@@ -222,6 +228,16 @@ function finishCalibration(result) {
   endMatch();
   if (G.seenRules) { showScreen('setup'); buildHouseRules(); }
   else showScreen('rules');
+}
+
+/* ------------------------------------------------------------ the wallet */
+
+/** What the player has, on the title and above the collection. */
+function paintWallet() {
+  const w = $('wallet');
+  if (!w || !G.econ) return;
+  const s = G.econ.snapshot();
+  w.textContent = s.sunbeams + ' sunbeams, ' + s.clay.count + ' of ' + s.clay.max + ' clay';
 }
 
 /* -------------------------------------------------------- the collection */
@@ -615,14 +631,22 @@ function finishMatch(s) {
   $('rShots').textContent = String(s.shots);
   const names = G.R.state.techniques.map(id => (RINGER_TECHNIQUES[id] || {}).name).filter(Boolean);
   $('rTech').textContent = names.length ? names.join(', ') : 'none yet';
+  /* the GAME's wallet, which is the one the player spends (DESIGN 17) */
+  const earned = G.econ.payForMatch({
+    won, pocketed: s.pocketed[0], toWin: G.R.match.toWin,
+    newTechniques: names.filter(n => (G.save.profile.techniques || []).indexOf(n) < 0)
+  });
+  $('rSun').textContent = earned.total + '  (' + earned.paid.map(p => p.reason).join(', ') + ')';
+  /* and the FLEET's, which is a different number on a different scale and never
+     converts either way (HANDOFF-KEEPSIES 4.6) */
   const pay = won ? G.tuning.economy.fleetSunbeamsPerMatchMax : G.tuning.economy.fleetSunbeamsPerMatchMin;
-  let granted = 0;
-  try { if (window._sbCapEarn) granted = window._sbCapEarn(pay, 'keepsies:match'); } catch (e) { }
-  G.sunbeams += granted;
-  $('rSun').textContent = String(granted);
+  try { if (window._sbCapEarn) G.sunbeams += window._sbCapEarn(pay, 'keepsies:match'); } catch (e) { }
+  paintWallet();
   G.matchesPlayed++;
+  // the wallet is NOT written here any more: economy.payForMatch already earned
+  // into it above, and adding the same amount again through the merge would pay
+  // the player twice for one match
   SAVE.merge({
-    wallet: { sunbeams: granted },
     stats: { matches: 1, wins: won ? 1 : 0, shots: s.shots, pocketed: s.pocketed[0] },
     profile: { techniques: G.R.state.techniques.slice() }
   });
@@ -800,6 +824,8 @@ function installDevHook() {
       return { name: $('iName').textContent, tier: $('iTier').textContent, traits: $('iTraits').childElementCount / 2 };
     },
     inventory: () => G.save.inventory.length,
+    wallet: () => G.econ.snapshot(),
+    econ: () => G.econ,
     catalogCount: () => G.catalog.marbles.length,
     houseRules: () => Object.assign({}, G.houseRules),
     calibrate: () => startCalibration(),

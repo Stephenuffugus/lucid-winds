@@ -170,3 +170,18 @@ The provenance line was empty for anything outside the inventory, which on the r
 
 **2026-09-04 — the epics glow from inside.**
 On the inspect card the Galaxy was a dark sphere on a dark background, which is a poor answer to its own lore line, "Hold it to the light. That's not paint." The shared custom interior now emits rather than only mixing toward the core. The eight per epic shaders the design asks for are still owed.
+
+**2026-09-04 — `Date` is read in `meta/economy.js` and nowhere else in the game.**
+The daily reset is local midnight, so somebody has to read a clock. `core/` may not: it has to give the same answer on a phone in Auckland, a phone in Lisbon and a Cloud Function in us-central1, and a clock is exactly the kind of thing that would break that. The clock is injectable so `clay_regen` can walk it forward a week, sideways across two midnights and BACKWARDS, which is a real case (a timezone change, a user setting the date, a device that boots at the epoch).
+
+**2026-09-04 — the clay pool regenerates to FULL on a new day, not by one a day and not per call.**
+All three failure modes were watched. Per call hands out unlimited free marbles; by one a day punishes a player who was away; and a clock that went backwards either does nothing for ever or does it on every read. A player away a week comes back to ten, not to seventeen and not to three.
+
+**2026-09-04 — a refused spend moves NOTHING, and negative amounts are no ops.**
+Watched: removing the balance check let the wallet go to minus three hundred and twenty. A negative spend is not an earn and a negative earn is not a theft.
+
+**2026-09-04 — the match wallet is written once, by the economy, and the save merge no longer adds it again.**
+The first wiring had `economy.payForMatch` earn into the wallet AND the results merge write the same amount, which paid the player twice for one match. The merge now carries stats and techniques only.
+
+**2026-09-04 — the two currencies are wired in two different places on purpose.**
+`economy.earn` is the game's, four to six hundred a day of honest play, and it is what the results card reports and what a pouch costs. `window._sbCapEarn` is the fleet's, thirty a day across every satellite, and it is called beside it at match end. They never convert in either direction. OPEN #9 is what the player sees the first one CALLED; until Stephen answers, the UI says Sunbeams per the design.

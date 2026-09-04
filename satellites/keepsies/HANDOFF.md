@@ -44,15 +44,15 @@ fail on purpose and the red output is in the root handoff's ledger.
 **K2, in order.**
 2. **The economy** (`meta/economy.js`, `meta/drops.js`): the wallet, the faucets, the clay pool, the
    three pouches with pity counters, dust. Gates `pity_math` and `clay_regen`.
-5. **The keepsies loop** (`game/match.js`): the ante with the tier matched rule, escrow written with
+3. **The keepsies loop** (`game/match.js`): the ante with the tier matched rule, escrow written with
    `inMatch` BEFORE the first turn, the winner taking the pot, and the ransom window. Gate
    `escrow_crash`. This is the game's whole point and it does not exist yet.
-5. **The ceremonies** (`render/ceremony.js`) and the showcase room. DESIGN 18 asks for disproportionate
+4. **The ceremonies** (`render/ceremony.js`) and the showcase room. DESIGN 18 asks for disproportionate
    polish here and the result card currently floats over a black wash.
-6. **The glb lane**, end to end, on one low poly knight built in `tools/forge/`: load on first inspect,
+5. **The glb lane**, end to end, on one low poly knight built in `tools/forge/`: load on first inspect,
    LOD, dispose, and the turntable showing it inside a clear sphere. It is a knight and not a dragon on
    purpose: the Ember Dragon is a real grail and a dragon placeholder would be mistaken for it.
-7. **Eight per epic shaders.** They currently share one custom interior, which reads as cloud rather
+6. **Eight per epic shaders.** They currently share one custom interior, which reads as cloud rather
    than as a galaxy, a molten core and a thunderhead.
 
 **Done in K2 already:** `tools/catalog.mjs` and all sixty five marbles; all twelve render recipes;
