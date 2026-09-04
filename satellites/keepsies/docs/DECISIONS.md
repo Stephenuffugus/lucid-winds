@@ -48,3 +48,24 @@ Five hundred true games would take about ninety minutes on this box and would ta
 
 **2026-09-04 — the referee's win condition is seven or more, not exactly seven.**
 The test asserted "exactly seven" and failed a fifth of the games. The test was wrong: a shot that pockets three takes a player from six to nine and they won at seven. The only way to win with fewer is the poison ending where the ring empties with an opponent out.
+
+**2026-09-04 — ⛔⛔ THE BIGGEST FINDING OF THE NIGHT: Rapier hard clamps angular velocity to pi/4 radians per step, and the floor contact is now ours.**
+Measured, in a vacuum, with nothing touching and no gravity: set a body spinning at 1000 rad/s, step once, read back 94.25 at 1/120, 47.12 at 1/60, 188.50 at 1/240. In every case the product with the timestep is 0.7854 exactly. There is no integration parameter for it; `lengthUnit` does not touch it, because it is an angle.
+
+What that means for a marble game: a 22 mm taw rolling without slipping at 2.6 m/s needs 236 rad/s and a 16 mm mib needs 325. Above about one metre per second NO MARBLE IN THIS ENGINE CAN SPIN FAST ENOUGH TO ROLL. It slides instead, and every bit of backspin, topspin and side english a player puts on a shot is silently discarded at the ceiling. That is why a sweep of `kBack` from 1.25 to 13 returned byte identical numbers: all of them clamped to the same 94.25, and the entire input scheme, the thing DESIGN 7 is built around, did nothing at all.
+
+The fix, and the three alternatives that were rejected first. A smaller timestep raises the ceiling (1/480 gives 377 rad/s) but costs four times the physics and DESIGN 4 fixes the step at 1/120. Scaling the world up ten times and rendering it down would work and would break DESIGN 21.1, metric scale, which is the one thing VR cannot survive. Living with it means the game has no spin, which is the game.
+
+So the floor contact patch is ours. Every marble carries an unclamped `spin` vector in `core/physics.js`; each step the patch velocity `u = v + w x (-R n)` decides sliding or rolling, and Coulomb friction is applied as a force on the body and a torque on that spin, capped so a step can never overshoot. Rapier's angvel is written from it, clamped, for rendering and for marble on marble contact only, and the floor's own friction is set to zero with a Min combine rule so nothing is counted twice. What it costs is stated in the file: spin picked up from a marble on marble collision is overwritten rather than read back, so billiards style throw between two marbles is not modelled. The effects that matter both survive: a struck mib arrives with no spin and friction spins it up to rolling, and the taw carries its snapped spin straight through the collision.
+
+**2026-09-04 — `lengthUnit` set to 0.02.**
+Rapier's defaults assume objects about a metre across and allow 5 mm of penetration. Our mibs are 16 mm, so a third of a marble could sink into the floor. Setting it tightens every tolerance by fifty times. Measured alone: the break went from 93.5 to 95 percent in band and the taw stayed inside twice as often.
+
+**2026-09-04 — rolling resistance 0.02 to 0.06, and the break from 4.0 to 4.5 m/s. This overrides two numbers the plan fixed.**
+The plan's 0.02 was measured against a model where Rapier's own floor friction was silently doing half the braking. With the patch model owning it, 0.02 brakes almost nothing: the taw coasted eleven metres and NOTHING in the scene slept inside eight seconds, on a gate that had been green an hour earlier. Swept 0.02 to 0.18 against launch 3.5 to 6.0, fourteen seeds each. 0.06 at 4.5 m/s sits in the middle of the widest plateau: 1 to 3 mibs out on 94 percent of 200 seeds, everything asleep on 100 percent, and a shot that settles in 4.2 s where the plan's numbers took 6.9. Reported to Stephen and Fable in the morning report because it changes two numbers they set.
+
+**2026-09-04 — a mib is pocketed and removed the instant its centre crosses the ring.**
+The real rule, and not an optimisation. A mib struck by a six metre per second taw leaves at nearly eight and rolls sixteen metres; without this the shot could not resolve until it stopped and the player watched a marble they had already won trundle off the map. The harness does the same so that it measures the game.
+
+**2026-09-04 — kBack 3.0, kTop 2.0, and the sticking scenario shoots at 2.6 m/s.**
+Swept kBack 2.4 to 3.6 against launch 1.8 to 3.4. At 3.0 the taw sticks within 0.1 m on 100 percent of shots from 1.8 to 2.6 m/s and 81 percent at 3.0 m/s. The scenario also asserts the taw HIT the mib, because below about 2 m/s a heavy backspin stops the taw before it arrives and a stop shot that never gets there would otherwise pass the gate. kTop is 2.0 rather than matching kBack: a thumb snap naturally finds backspin more easily than follow, and this is the first number K1.5 should question.

@@ -12,16 +12,19 @@
     "sleepAngular": 0.5,
     "restedSeconds": 0.5,
     "resolveCapSeconds": 6.0,
+    "lengthUnit": 0.02,
+    "slipEpsilon": 0.01,
     "_note": "damping is numerical only now; the feel comes from rollingMu (HANDOFF-KEEPSIES 4.1). Rapier has no rolling resistance, so physics.js applies it as a per step force and resets forces every step because addForce is persistent."
   },
 
   "surface": {
     "_": "rollingMu brakes travel; spinningMu brakes yaw about the contact normal. Rapier has neither, and without the second one a marble that picked up spin in a collision spins on the spot for ever and nothing in the scene ever sleeps.",
-    "dirt":     { "friction": 0.55, "restitution": 0.35, "rollingMu": 0.02,  "spinningMu": 0.02 },
-    "polished": { "friction": 0.18, "restitution": 0.60, "rollingMu": 0.008, "spinningMu": 0.008 },
-    "ice":      { "friction": 0.04, "restitution": 0.60, "rollingMu": 0.002, "spinningMu": 0.002 },
-    "sand":     { "friction": 0.90, "restitution": 0.20, "rollingMu": 0.06,  "spinningMu": 0.06 },
-    "rubber":   { "friction": 0.60, "restitution": 1.10, "rollingMu": 0.02,  "spinningMu": 0.02, "exitSpeedClamp": 4.5 }
+    "__retune": "rollingMu was 0.02 in the plan, measured against a physics model in which Rapier was silently doing half the braking with its own floor friction. Now that the contact patch is ours (physics.js scar 4) that friction is zero in the solver and 0.02 brakes nothing: the taw coasted eleven metres and NOTHING in the scene slept inside eight seconds. Swept 0.02 to 0.18 against launch 3.5 to 6.0, 14 seeds each. 0.06 with a 4.5 m/s break is the middle of the widest plateau: 1 to 3 mibs out on 100 percent, everything asleep on 100 percent, and a shot that settles in 4.3 s instead of 6.9. The other surfaces keep the plan's ratios to dirt.",
+    "dirt":     { "friction": 0.55, "restitution": 0.35, "rollingMu": 0.06,  "spinningMu": 0.06 },
+    "polished": { "friction": 0.18, "restitution": 0.60, "rollingMu": 0.024, "spinningMu": 0.024 },
+    "ice":      { "friction": 0.04, "restitution": 0.60, "rollingMu": 0.006, "spinningMu": 0.006 },
+    "sand":     { "friction": 0.90, "restitution": 0.20, "rollingMu": 0.18,  "spinningMu": 0.18 },
+    "rubber":   { "friction": 0.60, "restitution": 1.10, "rollingMu": 0.06,  "spinningMu": 0.06, "exitSpeedClamp": 4.5 }
   },
 
   "material": {
@@ -47,9 +50,9 @@
     "crossSpacing": 0.075,
     "mibCount": 13,
     "pocketedToWin": 7,
-    "breakSpeed": 4.0,
+    "breakSpeed": 4.5,
     "lagLineOffset": 0.3,
-    "_breakSpeed": "4.0 m/s is 0.64 of the 0.5 to 6.0 launch range. The design's 3.5 knocks nothing out at any tested setting (HANDOFF-KEEPSIES 4.1)."
+    "_breakSpeed": "4.5 m/s is 0.73 of the 0.5 to 6.0 launch range: a firm snap, not a maximum one. The design's 3.5 knocks nothing out at any tested setting, and the plan's 4.0 lands at 93 percent rather than 100 once the contact patch became ours. See surface.__retune."
   },
 
   "snap": {
@@ -68,8 +71,8 @@
     "fineAngleMaxDeg": 25,
     "knuckledConeFactor": 0.6,
     "knuckledPowerCap": 0.9,
-    "kBack": 1.25,
-    "kTop": 1.0,
+    "kBack": 3.0,
+    "kTop": 2.0,
     "kSide": 0.8,
     "kWild": 0.02,
     "kWildSpin": 0.6,

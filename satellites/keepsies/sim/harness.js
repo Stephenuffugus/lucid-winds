@@ -15,11 +15,13 @@ import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
-import { initPhysics, createWorld, disposeWorld, addSurface, addMarble, impulse, place, step, atRest, hash, positionOf, specOf, ringDistance } from '../src/core/physics.js?v=20260904a';
+import { initPhysics, createWorld, disposeWorld, addSurface, addMarble, removeMarble, impulse, place, step, atRest, hash, positionOf, specOf, ringDistance } from '../src/core/physics.js?v=20260904a';
 import { makeRng, makeStreams } from '../src/core/rng.js?v=20260904a';
 import { aimToImpulse, makeAim, dirFromDeg, powerForSpeed } from '../src/core/snap.js?v=20260904a';
 import { sin, cos, normalize, DEG } from '../src/core/dmath.js?v=20260904a';
 import { STARTER_ENTRIES } from '../src/core/marbleBody.js?v=20260904a';
+import { len2 as _len2 } from '../src/core/dmath.js?v=20260904a';
+const len2 = _len2;
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, '..');
@@ -60,16 +62,31 @@ function buildRingerScene(sc, seed) {
   return { W, rng, mibs, taw };
 }
 
-/** Step until the shot has resolved or the scenario's cap runs out. */
-function settle(W, maxSeconds) {
+/**
+ * Step until the shot has resolved or the scenario's cap runs out.
+ *
+ * `pocket` is the real Ringer rule and it is not an optimisation: a mib whose
+ * centre passes the ring is POCKETED at that moment and stops being part of the
+ * game. Without it a mib struck by a six metre per second taw leaves at nearly
+ * eight and rolls sixteen metres, and the shot cannot resolve until it stops,
+ * so the player watches a marble they have already won trundle off the map.
+ */
+function settle(W, maxSeconds, pocket) {
   const cap = Math.round(maxSeconds / TUNING.physics.fixedStep);
+  const pocketed = [];
   let n = 0;
   while (n < cap) {
     step(W);
     n++;
+    if (pocket) {
+      for (const id of pocket.watch) {
+        if (pocketed.indexOf(id) >= 0) continue;
+        if (ringDistance(W, id) > W.ringRadius) { pocketed.push(id); removeMarble(W, id); }
+      }
+    }
     if (W.shotT >= TUNING.physics.restedSeconds && atRest(W)) break;
   }
-  return { steps: n, seconds: n * TUNING.physics.fixedStep, settled: atRest(W) };
+  return { steps: n, seconds: n * TUNING.physics.fixedStep, settled: atRest(W), pocketed };
 }
 
 function fireAim(W, id, aimSpec, rng, extraDeg, dirOverride) {
@@ -95,15 +112,45 @@ const RUNNERS = {
     for (let s = sc.seeds.from; s <= sc.seeds.to; s++) {
       const { W, rng, mibs, taw } = buildRingerScene(sc, s);
       fireAim(W, taw, sc.shot, rng.match);
-      const done = settle(W, sc.maxSeconds);
-      let out = 0;
-      for (const id of mibs) if (ringDistance(W, id) > W.ringRadius) out++;
+      const done = settle(W, sc.maxSeconds, { watch: mibs });
+      const left = mibs.filter(id => W.marbles.has(id));
       rows.push({
-        seed: s, mibsOut: out,
+        seed: s, mibsOut: done.pocketed.length,
         tawIn: ringDistance(W, taw) <= W.ringRadius ? 1 : 0,
         allAsleep: done.settled ? 1 : 0,
         restSeconds: done.seconds,
-        farthestMib: Math.max(...mibs.map(id => ringDistance(W, id)))
+        farthestMib: left.length ? Math.max(...left.map(id => ringDistance(W, id))) : 0
+      });
+      disposeWorld(W);
+    }
+    return rows;
+  },
+
+  /**
+   * Sticking: the backspin stop shot, and the reason the Knuckle reads contact
+   * offset at all. A taw snapped low across the ball into a single mib should
+   * kill its own travel and sit down roughly where the mib was standing. Without
+   * it a player can pocket a mib but never control where the taw ends up, and
+   * Ringer stops being a game of position.
+   */
+  stick(sc) {
+    const rows = [];
+    for (let s = sc.seeds.from; s <= sc.seeds.to; s++) {
+      const W = createWorld(TUNING, { ringRadius: sc.ringRadius });
+      addSurface(W, { kind: sc.surface, box: sc.floor, pos: { x: 0, y: -sc.floor.hy, z: 0 } });
+      const rng = makeStreams(s);
+      const mib = addMarble(W, entryFor(sc.mib.entry), { x: 0, z: 0 });
+      const taw = addMarble(W, entryFor(sc.taw.entry), { x: 0, z: sc.taw.z });
+      fireAim(W, taw, sc.shot, rng.match);
+      settle(W, sc.maxSeconds, null);
+      const tp = positionOf(W, taw);
+      const mp = positionOf(W, mib);
+      rows.push({
+        seed: s,
+        tawToMark: len2(tp.x, tp.z),                 // the mib's original spot is the origin
+        mibMoved: len2(mp.x, mp.z),
+        stuck: len2(tp.x, tp.z) <= sc.withinMetres ? 1 : 0,
+        hit: len2(mp.x, mp.z) > 0.03 ? 1 : 0
       });
       disposeWorld(W);
     }

@@ -1,0 +1,56 @@
+{
+  "name": "sticking",
+  "kind": "stick",
+  "_": "DESIGN 7.3 and 22. A backspin AimSource with contact offset y of -0.7, snapped into a single mib half a metre away, must stop the taw within 0.1 m of where the mib was standing on at least 70 percent of 200 seeds. Watched to fail by zeroing kBack.",
+  "surface": "dirt",
+  "floor": {
+    "hx": 5,
+    "hy": 0.05,
+    "hz": 5
+  },
+  "ringRadius": 1.525,
+  "mib": {
+    "entry": "commie"
+  },
+  "taw": {
+    "entry": "taw_clearie",
+    "z": -0.5
+  },
+  "shot": {
+    "speedMps": 2.6,
+    "dirDeg": 0,
+    "contactOffset": {
+      "x": 0,
+      "y": -0.7
+    },
+    "wildness01": 0,
+    "braced01": 1,
+    "coneDegOverride": 0.5
+  },
+  "withinMetres": 0.1,
+  "seeds": {
+    "from": 1,
+    "to": 200
+  },
+  "maxSeconds": 8,
+  "asserts": [
+    {
+      "id": "the taw hits the mib at all",
+      "kind": "fraction",
+      "metric": "hit",
+      "atLeast": 0.98
+    },
+    {
+      "id": "backspin stops the taw on the mark",
+      "kind": "fraction",
+      "metric": "stuck",
+      "atLeast": 0.7
+    },
+    {
+      "id": "how far the taw ended from the mark",
+      "kind": "report",
+      "metric": "tawToMark"
+    }
+  ],
+  "_tuning": "kBack 3.0 and a 2.6 m/s shot come from a sweep of kBack 2.4 to 3.6 against launch 1.8 to 3.4. At 3.0 the taw sticks on 100 percent of shots from 1.8 to 2.6 m/s and 81 percent at 3.0. Below about 2.0 m/s the taw stops BEFORE it reaches the mib, which is why this scenario also asserts that it hit the thing at all: a stop shot that never arrives would otherwise pass."
+}

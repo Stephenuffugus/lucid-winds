@@ -17,6 +17,27 @@
  * 3. The design's break (3.5 m/s, damping 0.18) knocks out ZERO mibs. The
  *    numbers that work are in tuning.json and were measured, not guessed
  *    (HANDOFF-KEEPSIES 4.1).
+ * 4. ⛔⛔ RAPIER HARD CLAMPS ANGULAR VELOCITY TO PI/4 RADIANS PER STEP. At 1/120
+ *    that is 94.25 rad/s, measured in a vacuum with nothing touching, and there
+ *    is no integration parameter for it. A 22 mm taw rolling at 2.6 m/s needs
+ *    236 rad/s, so at any real shooting speed a marble in this engine CANNOT
+ *    spin fast enough to roll, let alone carry backspin. Setting kBack anywhere
+ *    from 1.25 to 13 produced byte identical results because every one of them
+ *    was clamped to the same number.
+ *
+ *    So the floor contact is OURS. Every marble carries its own unclamped `spin`
+ *    here; the patch model below decides whether it is sliding or rolling and
+ *    applies the friction force and the torque itself; and Rapier's angvel is
+ *    written from that each step, clamped, for rendering and for marble on
+ *    marble contact only. The floor's own friction is set to zero in Rapier with
+ *    a Min combine rule so nothing is counted twice.
+ *
+ *    What that costs, stated plainly: spin picked up FROM a marble on marble
+ *    collision is overwritten rather than read back, so billiards style throw
+ *    between two marbles is not modelled. A struck mib arrives with no spin, its
+ *    patch slips, and friction spins it up to rolling, which is right. The taw
+ *    keeps the spin it was snapped with straight through the collision, which is
+ *    the effect the whole input scheme exists to give the player.
  */
 import RAPIER from '../../lib/rapier.mjs';
 import { len2, len3 } from './dmath.js?v=20260904a';
@@ -50,6 +71,11 @@ export function createWorld(tuning, opts) {
   const t = tuning.physics;
   const world = new RAPIER.World({ x: 0, y: t.gravityY, z: 0 });
   world.timestep = t.fixedStep;
+  // Rapier's default tolerances assume objects about a metre across and allow
+  // 5 mm of penetration. Our marbles are 16 mm, so that default lets a third of
+  // a mib sink into the floor. lengthUnit tells the solver how big a typical
+  // object here really is and scales every tolerance with it.
+  if (t.lengthUnit) world.integrationParameters.lengthUnit = t.lengthUnit;
   return {
     rapier: world,
     tuning,
@@ -66,6 +92,20 @@ export function createWorld(tuning, opts) {
     restedFor: 0,
     _pre: []
   };
+}
+
+/**
+ * Write a marble's true spin into Rapier, clamped to what the engine will accept.
+ * The clamp is pi/4 radians per step and is not negotiable; above it the marble
+ * simply renders as a blur, which is what a marble at that speed looks like.
+ */
+function pushSpin(m, dt) {
+  const w = m.spin;
+  const mag = len3(w.x, w.y, w.z);
+  const cap = 0.7853981633974483 / dt;
+  if (mag <= cap) { m.body.setAngvel({ x: w.x, y: w.y, z: w.z }, false); return; }
+  const k = cap / mag;
+  m.body.setAngvel({ x: w.x * k, y: w.y * k, z: w.z * k }, false);
 }
 
 /** Free the wasm memory this world holds. Call it when a match or a candidate ends. */
@@ -95,13 +135,19 @@ export function addSurface(W, spec) {
     const b = spec.box || { hx: 5, hy: 0.05, hz: 5 };
     desc = RAPIER.ColliderDesc.cuboid(b.hx, b.hy, b.hz);
   }
-  desc.setFriction(s.friction).setRestitution(s.restitution)
+  /* Friction ZERO with a Min combine rule, so marble on floor friction is ours
+     alone (scar 4) while marble on marble keeps Rapier's own averaging. The
+     surface's real friction is still in tuning.json and is still used; it is just
+     used by the patch model in step() instead of by the solver. */
+  desc.setFriction(0).setFrictionCombineRule(RAPIER.CoefficientCombineRule.Min)
+    .setRestitution(s.restitution)
     .setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS);
   const col = W.rapier.createCollider(desc, body);
   W.statics.set(col.handle, {
     kind: spec.kind,
     rollingMu: s.rollingMu,
     spinningMu: s.spinningMu == null ? s.rollingMu : s.spinningMu,
+    friction: s.friction,
     normal: spec.normal || { x: 0, y: 1, z: 0 }
   });
   return col.handle;
@@ -132,6 +178,7 @@ export function addMarble(W, entry, pos, uid) {
     id, uid: uid || ('m' + id), entryId: entry.id, entry, spec,
     body: rb, collider: col,
     surfaces: new Set(), // static collider handles this marble is touching
+    spin: { x: 0, y: 0, z: 0 }, // the TRUE angular velocity, unclamped. See scar 4.
     out: false
   });
   W.byCollider.set(col.handle, id);
@@ -168,7 +215,15 @@ export function impulse(W, id, imp) {
   if (!m) throw new Error('physics: impulse to unknown marble ' + id);
   m.body.wakeUp();
   if (imp.lin) m.body.applyImpulse({ x: imp.lin.x, y: imp.lin.y || 0, z: imp.lin.z }, true);
-  if (imp.ang) m.body.applyTorqueImpulse({ x: imp.ang.x, y: imp.ang.y, z: imp.ang.z }, true);
+  if (imp.ang) {
+    // straight into OUR spin, never applyTorqueImpulse: Rapier would clamp it to
+    // 94 rad/s and every snap would carry the same spin as every other (scar 4)
+    const inv = 1 / m.spec.inertia;
+    m.spin.x += imp.ang.x * inv;
+    m.spin.y += imp.ang.y * inv;
+    m.spin.z += imp.ang.z * inv;
+    pushSpin(m, W.tuning.physics.fixedStep);
+  }
   W.shotT = 0;
   W.restedFor = 0;
 }
@@ -180,6 +235,7 @@ export function place(W, id, pos, opts) {
   if (!opts || opts.zeroVelocity !== false) {
     m.body.setLinvel({ x: 0, y: 0, z: 0 }, true);
     m.body.setAngvel({ x: 0, y: 0, z: 0 }, true);
+    m.spin.x = m.spin.y = m.spin.z = 0;
   }
 }
 
@@ -206,49 +262,86 @@ export function step(W) {
     // ⛔ addForce AND addTorque are persistent in Rapier. These two lines are not optional.
     body.resetForces(true);
     body.resetTorques(true);
-    if (body.isSleeping()) continue;
+    if (body.isSleeping()) { m.spin.x = m.spin.y = m.spin.z = 0; continue; }
     const v = body.linvel();
     const speed = len3(v.x, v.y, v.z);
     body.enableCcd(speed > tun.ccdAboveSpeed);
-    if (m.surfaces.size === 0) continue; // in the air: neither rolling nor spinning on anything
-    let mu = 0, spinMu = 0, nx = 0, ny = 1, nz = 0;
+    if (m.surfaces.size === 0) { pushSpin(m, dt); continue; } // in the air, spin just persists
+    let mu = 0, spinMu = 0, kinMu = 0, nx = 0, ny = 1, nz = 0;
     for (const h of m.surfaces) {
       const s = W.statics.get(h);
       if (!s) continue;
       if (s.rollingMu > mu) { mu = s.rollingMu; nx = s.normal.x; ny = s.normal.y; nz = s.normal.z; }
       if (s.spinningMu > spinMu) spinMu = s.spinningMu;
+      const k = (m.spec.friction + s.friction) * 0.5;   // Rapier's own average rule, kept
+      if (k > kinMu) kinMu = k;
     }
     const mass = m.spec.mass;
+    const inertia = m.spec.inertia;
+    const R = m.spec.radius;
+    const w = m.spin;
 
-    // rolling resistance: a roughly constant deceleration along the floor, which
-    // is what a real marble feels and what Rapier does not have
-    const sp = len2(v.x, v.z);
-    if (mu > 0 && sp >= 1e-6) {
-      const brake = mu * mass * g;
-      const most = sp * mass / dt;         // never reverse a marble that is nearly still
-      const f = brake < most ? brake : most;
-      body.addForce({ x: (-v.x / sp) * f, y: 0, z: (-v.z / sp) * f }, true);
-    }
+    /* THE CONTACT PATCH. This is where backspin becomes a stop shot.
+     *
+     * The vector from the centre to the ground contact is -R*n, so the material
+     * at the contact is moving at  u = v + w x (-R*n). If that is not zero the
+     * marble is SLIDING and Coulomb friction acts on the patch, which both slows
+     * the marble and torques its spin toward rolling. A marble snapped with
+     * backspin arrives with its patch moving FORWARD faster than the marble, so
+     * friction pushes backward hard: it digs in and sits down. That is Sticking,
+     * and it is the reason the Knuckle reads where the snap crossed the ball.
+     *
+     * The force is capped so one step can never overshoot the slip and reverse
+     * it: for a solid sphere the patch speed falls at (1/m + R^2/I)|F| and
+     * R^2/I is 2.5/m, hence the 3.5. */
+    const rcx = -R * nx, rcy = -R * ny, rcz = -R * nz;
+    let ux = v.x + (w.y * rcz - w.z * rcy);
+    let uy = v.y + (w.z * rcx - w.x * rcz);
+    let uz = v.z + (w.x * rcy - w.y * rcx);
+    const un = ux * nx + uy * ny + uz * nz;
+    ux -= un * nx; uy -= un * ny; uz -= un * nz;
+    const slip = len3(ux, uy, uz);
 
-    // spinning resistance about the contact normal. Without it a marble that
-    // picked up yaw in a collision spins on the spot for ever: angular damping is
-    // exponential, so it never reaches zero, and nothing in the scene ever sleeps.
-    // Only the component ALONG the normal is braked; the rolling components are
-    // already coupled to translation through contact friction, and braking those
-    // would fight the floor.
-    if (spinMu > 0) {
-      const w = body.angvel();
+    if (slip > tun.slipEpsilon && kinMu > 0) {
+      const load = mass * g;
+      const cap = slip * mass / (3.5 * dt);
+      const fmag = Math.min(kinMu * load, cap);
+      const fx = -(ux / slip) * fmag, fy = -(uy / slip) * fmag, fz = -(uz / slip) * fmag;
+      body.addForce({ x: fx, y: 0, z: fz }, true);
+      // the same force at the patch is a torque about the centre
+      const k = dt / inertia;
+      w.x += (rcy * fz - rcz * fy) * k;
+      w.y += (rcz * fx - rcx * fz) * k;
+      w.z += (rcx * fy - rcy * fx) * k;
+    } else {
+      // rolling. The spin is whatever rolling without slipping demands, plus a
+      // yaw about the contact normal that nothing else brakes.
       const wn = w.x * nx + w.y * ny + w.z * nz;
-      const mag = wn < 0 ? -wn : wn;
-      if (mag >= 1e-6) {
-        const inertia = m.spec.inertia;
-        const brakeT = spinMu * mass * g * m.spec.radius;
-        const mostT = mag * inertia / dt;
-        const tq = brakeT < mostT ? brakeT : mostT;
-        const s = wn < 0 ? 1 : -1;
-        body.addTorque({ x: nx * tq * s, y: ny * tq * s, z: nz * tq * s }, true);
+      const rollx = (ny * v.z - nz * v.y) / R;
+      const rolly = (nz * v.x - nx * v.z) / R;
+      const rollz = (nx * v.y - ny * v.x) / R;
+      let keep = wn;
+      if (spinMu > 0) {
+        const rate = spinMu * mass * g * R / inertia;   // rad per second per second
+        const mag = keep < 0 ? -keep : keep;
+        const left = mag - rate * dt;
+        keep = left <= 0 ? 0 : (keep < 0 ? -left : left);
+      }
+      w.x = rollx + nx * keep;
+      w.y = rolly + ny * keep;
+      w.z = rollz + nz * keep;
+
+      // rolling resistance: a roughly constant deceleration along the floor,
+      // which is what a real marble feels and what Rapier does not have
+      const sp = len2(v.x, v.z);
+      if (mu > 0 && sp >= 1e-6) {
+        const brake = mu * mass * g;
+        const most = sp * mass / dt;       // never reverse a marble that is nearly still
+        const f = brake < most ? brake : most;
+        body.addForce({ x: (-v.x / sp) * f, y: 0, z: (-v.z / sp) * f }, true);
       }
     }
+    pushSpin(m, dt);
   }
 
   W.rapier.step(W.queue);
@@ -315,7 +408,7 @@ export function step(W) {
   let allRest = true;
   for (const m of W.marbles.values()) {
     if (m.body.isSleeping()) continue;
-    const v = m.body.linvel(), w = m.body.angvel();
+    const v = m.body.linvel(), w = m.spin;
     if (len3(v.x, v.y, v.z) > tun.sleepLinear || len3(w.x, w.y, w.z) > tun.sleepAngular) { allRest = false; break; }
   }
   W.restedFor = allRest ? W.restedFor + dt : 0;
@@ -352,9 +445,10 @@ export function hash(W) {
   mix(ids.length);
   for (const id of ids) {
     const m = W.marbles.get(id);
-    const p = m.body.translation(), r = m.body.rotation(), v = m.body.linvel(), w = m.body.angvel();
+    const p = m.body.translation(), r = m.body.rotation(), v = m.body.linvel();
     mix(id);
-    for (const n of [p.x, p.y, p.z, r.x, r.y, r.z, r.w, v.x, v.y, v.z, w.x, w.y, w.z]) mix(quantise(n));
+    for (const n of [p.x, p.y, p.z, r.x, r.y, r.z, r.w, v.x, v.y, v.z,
+      m.spin.x, m.spin.y, m.spin.z]) mix(quantise(n));
     mix(m.body.isSleeping() ? 1 : 0);
   }
   return ('00000000' + h.toString(16)).slice(-8);
@@ -396,7 +490,7 @@ export function snapshot(W) {
     nextId: W.nextId, ringRadius: W.ringRadius,
     marbles: [...W.marbles.values()].map(m => ({
       id: m.id, uid: m.uid, entry: m.entry, body: m.body.handle, collider: m.collider.handle,
-      surfaces: [...m.surfaces], out: m.out
+      surfaces: [...m.surfaces], spin: [m.spin.x, m.spin.y, m.spin.z], out: m.out
     })),
     statics: [...W.statics.entries()].map(([h, s]) => [h, s])
   };
@@ -434,7 +528,9 @@ export function restore(bytes, tuning) {
     W.marbles.set(m.id, {
       id: m.id, uid: m.uid, entryId: m.entry.id, entry: m.entry,
       spec: bodySpec(m.entry, tuning), body, collider,
-      surfaces: new Set(m.surfaces), out: m.out
+      surfaces: new Set(m.surfaces),
+      spin: m.spin ? { x: m.spin[0], y: m.spin[1], z: m.spin[2] } : { x: 0, y: 0, z: 0 },
+      out: m.out
     });
     W.byCollider.set(m.collider, m.id);
   }
