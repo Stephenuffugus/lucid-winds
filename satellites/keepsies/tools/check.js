@@ -36,6 +36,9 @@ const GATES = [
   { name: 'damage',       cmd: ['test/damage.mjs'],       need: 'DAMAGE OK' },
   { name: 'arena',        cmd: ['test/arena.mjs'],        need: 'ARENA OK' },
   { name: 'ringer_rules', cmd: ['test/ringer_rules.mjs'], need: 'RINGER RULES OK' },
+  { name: 'camera',       cmd: ['test/camera.mjs'],       need: 'CAMERA OK' },
+  { name: 'spyglass',     cmd: ['test/spyglass.mjs'],     need: 'SPYGLASS OK' },
+  { name: 'formations',   cmd: ['test/formations.mjs'],   need: 'FORMATIONS OK' },
   { name: 'ai_budget',    cmd: ['test/ai_budget.mjs'],   need: 'AI BUDGET OK', slow: true },
   { name: 'ringer_ai',    cmd: ['test/ringer_ai.mjs'],   need: 'RINGER AI OK', slow: true }
 ];

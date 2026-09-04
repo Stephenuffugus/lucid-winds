@@ -15,7 +15,7 @@
  */
 import * as THREE from 'three';
 import { RoomEnvironment } from '../../lib/environments/RoomEnvironment.js';
-import { renderScale } from './quality.js?v=20260904c';
+import { renderScale } from './quality.js?v=20260904d';
 
 /**
  * @typedef {{update:(dt:number)=>void, getRay:(pose?:object)=>{origin:object,dir:object},
@@ -126,6 +126,22 @@ export function draw(stage, rig) {
 }
 
 /**
+ * The spyglass (core/spyglass.js): a second lens on the SAME scene through the same renderer,
+ * drawn into a square of the canvas after the main frame. The scissor keeps the clear inside
+ * the square, and the viewport's y counts from the bottom, as WebGL does.
+ */
+export function drawInset(stage, camera, rect) {
+  const r = stage.renderer, H = stage.height;
+  const y = H - rect.top - rect.size;
+  r.setScissorTest(true);
+  r.setViewport(rect.left, y, rect.size, rect.size);
+  r.setScissor(rect.left, y, rect.size, rect.size);
+  r.render(stage.scene, camera);
+  r.setScissorTest(false);
+  r.setViewport(0, 0, stage.width, H);
+}
+
+/**
  * Draw somebody else's scene through the SAME renderer. A second WebGL context
  * on a phone is a second GPU allocation, and the inspect turntable is one marble.
  */
@@ -164,7 +180,13 @@ export function createOrbitRig(stage, opts) {
        taken. */
     minElevationDeg: o.minElevationDeg == null ? 3 : o.minElevationDeg,
     maxElevationDeg: o.maxElevationDeg == null ? 86 : o.maxElevationDeg,
-    allowUnder: false
+    allowUnder: false,
+    /* The player's orbit and pinch, as offsets the auto-frame lays on top of its
+       own answer. Before these existed cameraCtl wrote wantAzimuth/wantDistance
+       directly and frameShot overwrote both every frame, so the designed pinch
+       zoom and one-finger orbit (DESIGN 8.5, 7.7) did nothing in a match. */
+    userAz: 0,
+    userZoom: 1
   };
   const rig = {
     camera: cam,
@@ -205,6 +227,8 @@ export function createOrbitRig(stage, opts) {
       };
     },
     setTarget(x, y, z) { state.target.set(x, y, z); },
+    /** Forget the player's orbit and pinch. Called on the turn-change cut. */
+    resetUser() { state.userAz = 0; state.userZoom = 1; },
     /** The drawing surface in CSS pixels, so callers can ask if a point is on it. */
     get viewport() { return { w: stage.width, h: stage.height }; },
     dispose() { }

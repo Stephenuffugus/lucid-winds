@@ -6,9 +6,9 @@
 <meta name="theme-color" content="#0d100c">
 <meta name="description" content="Snap real marbles for keeps in the playground game and a marble battle arena, and risk the most beautiful thing you own.">
 <title>Keepsies</title>
-<link rel="manifest" href="manifest.json?v=20260904c">
-<link rel="icon" href="icon-192.png?v=20260904c">
-<link rel="apple-touch-icon" href="icon-192.png?v=20260904c">
+<link rel="manifest" href="manifest.json?v=20260904d">
+<link rel="icon" href="icon-192.png?v=20260904d">
+<link rel="apple-touch-icon" href="icon-192.png?v=20260904d">
 <style>
 :root{
   --dirt:#4a3f31; --bg:#0d100c; --chalk:#e8dcc8; --brass:#c8a84b;
@@ -248,9 +248,15 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
     radial-gradient(46% 26% at 50% 30%, rgba(200,168,75,.13), rgba(13,16,12,0) 70%),
     linear-gradient(180deg,rgba(13,16,12,.78) 0%,rgba(13,16,12,.10) 24%,
       rgba(13,16,12,.10) 46%,rgba(13,16,12,.92) 60%,rgba(13,16,12,.98) 100%)}
-#inspectCard{position:absolute;left:0;right:0;bottom:calc(84px + var(--sb));padding:0 22px;text-align:center}
-#inspectCard .ribbon{font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;color:var(--brass);margin:0}
-#inspectCard h3{font-size:1.5rem;margin:.2rem 0 .35rem;color:var(--chalk);font-weight:600}
+/* the marble owns the top third (turntable LIFT), the card owns the box under it. The card
+   hangs from the top of that box like a plinth label (a bottom anchored card left a 135px void
+   between sphere and ribbon on a short card), and a grail card with two ability rows, 358px tall
+   at 320 wide, fills the box and scrolls instead of climbing into the sphere. pointer-events stay off unless it overflows, so a drag on the text still spins the marble. */
+#inspectCard{position:absolute;left:0;right:0;top:35%;bottom:calc(84px + var(--sb));padding:6px 22px 0;text-align:center;
+  display:flex;flex-direction:column;overflow-y:auto;overscroll-behavior:contain}
+#inspectCard .ribbon{font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:var(--brass);margin:0}
+#inspectCard h3{font-size:1.5rem;margin:.2rem 0 .35rem;color:var(--chalk);font-weight:600;text-wrap:balance}
+@media (max-width:340px){#inspectCard h3{font-size:1.3rem}}
 #iLore{margin:0 0 .7rem;font-size:.92rem;color:var(--muted);font-style:italic}
 #iTraits{margin:0;display:grid;grid-template-columns:auto 1fr;gap:2px 12px;text-align:left;
   max-width:20rem;margin:0 auto;font-size:.84rem}
@@ -301,10 +307,19 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
   background:rgba(13,16,12,.58);border-radius:7px;padding:4px 10px;white-space:nowrap}
 /* the message carries its own dark plate. It used to be bare text over dirt and
    it landed straight on the far chalk arc, where cream on cream is unreadable. */
-#say{position:absolute;left:50%;transform:translateX(-50%);top:calc(56px + var(--st));
+/* the guidance line lives in the band that is dirt in every frame, between the shooter and what it is
+   shooting at: pinned to the top it sat over the last marble (k2-endgame-one, 14% of the height) */
+#say{position:absolute;left:50%;transform:translateX(-50%);top:62%;
   max-width:88%;text-align:center;font-size:.82rem;line-height:1.3;color:var(--chalk);
   background:rgba(13,16,12,.62);border-radius:8px;padding:6px 12px}
 #reticle{position:absolute;border:2px solid rgba(232,220,200,.8);border-radius:50%}
+/* the spyglass: a square viewfinder over a narrow lens render of the same dirt, looking down the
+   aim line to the mib the shot is pointed at; the bracket is the cone's width at that range */
+#spyglass{position:absolute;left:50%;transform:translateX(-50%);width:180px;height:180px;border:2px solid var(--brass);
+  border-radius:10px;box-shadow:0 0 0 1px rgba(0,0,0,.6),0 6px 18px rgba(0,0,0,.5);pointer-events:none;box-sizing:border-box}
+#spyHair{position:absolute;left:50%;top:0;bottom:0;width:1px;margin-left:-.5px;background:rgba(232,220,200,.3)}
+#spyCone{position:absolute;top:50%;left:50%;height:28px;transform:translate(-50%,-50%);box-sizing:border-box;
+  border-left:2px solid rgba(232,220,200,.6);border-right:2px solid rgba(232,220,200,.6)}
 #aimline{position:absolute;height:3px;border-radius:2px;
   background:linear-gradient(90deg,rgba(200,168,75,.95),rgba(200,168,75,0));
   transform-origin:0 50%}
@@ -411,6 +426,9 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
   <div id="say">Drag to place your shooter, then hold it and flick.</div>
   <div id="reticle" hidden></div>
   <div id="aimline" hidden></div>
+  <!-- the spyglass (core/spyglass.js): the frame is DOM, the picture underneath is a second lens
+       render on the same canvas -->
+  <div id="spyglass" hidden><div id="spyHair"></div><div id="spyCone"></div></div>
   <div id="power" hidden><div id="powerFill"></div></div>
   <div id="corners">
     <button id="topDown">Top down</button>
@@ -543,6 +561,6 @@ window._sbCapEarn=function(n,tag){
   return granted;
 };
 </script>
-<script type="module" src="src/main.js?v=20260904c"></script>
+<script type="module" src="src/main.js?v=20260904d"></script>
 </body>
 </html>

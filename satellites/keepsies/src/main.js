@@ -9,35 +9,36 @@
  * DIRECTIONS BEFORE PLAY. The rules card is shown before the first match of the
  * mode, which is a studio standard and not a preference.
  */
-import { detectQuality } from './render/quality.js?v=20260904c';
-import { createStage, createOrbitRig, resize, draw, drawScene, THREE } from './render/scene.js?v=20260904c';
-import { buildRingerGround } from './render/arenaEnv.js?v=20260904c';
-import { makeMarbleMesh, makeContactShadow, placeContactShadow } from './render/marbleMesh.js?v=20260904c';
-import { attachCameraControls } from './input/cameraCtl.js?v=20260904c';
-import { createKnuckle } from './input/knuckle.js?v=20260904c';
-import { createPullback } from './input/pullback.js?v=20260904c';
-import * as AUDIO from './audio/synth.js?v=20260904c';
-import { initPhysics, positionOf, specOf, velocityOf } from './core/physics.js?v=20260904c';
-import { createRinger } from './game/ringer.js?v=20260904c';
-import { RINGER_TECHNIQUES } from './core/techniques.js?v=20260904c';
-import { launchSpeed } from './core/snap.js?v=20260904c';
-import { clamp, len2, DEG } from './core/dmath.js?v=20260904c';
-import * as SAVE from './meta/save.js?v=20260904c';
-import { createCalibration, calibrationFrom } from './meta/onboarding.js?v=20260904c';
-import { playPotCeremony } from './render/ceremony.js?v=20260904c';
+import { detectQuality } from './render/quality.js?v=20260904d';
+import { createStage, createOrbitRig, resize, draw, drawScene, drawInset, THREE } from './render/scene.js?v=20260904d';
+import { spyglassFor, scopePxPerM } from './core/spyglass.js?v=20260904d';
+import { buildRingerGround } from './render/arenaEnv.js?v=20260904d';
+import { makeMarbleMesh, makeContactShadow, placeContactShadow } from './render/marbleMesh.js?v=20260904d';
+import { attachCameraControls } from './input/cameraCtl.js?v=20260904d';
+import { createKnuckle } from './input/knuckle.js?v=20260904d';
+import { createPullback } from './input/pullback.js?v=20260904d';
+import * as AUDIO from './audio/synth.js?v=20260904d';
+import { initPhysics, positionOf, specOf, velocityOf, place, removeMarble } from './core/physics.js?v=20260904d';
+import { createRinger } from './game/ringer.js?v=20260904d';
+import { RINGER_TECHNIQUES } from './core/techniques.js?v=20260904d';
+import { launchSpeed } from './core/snap.js?v=20260904d';
+import { clamp, len2, DEG } from './core/dmath.js?v=20260904d';
+import * as SAVE from './meta/save.js?v=20260904d';
+import { createCalibration, calibrationFrom } from './meta/onboarding.js?v=20260904d';
+import { playPotCeremony } from './render/ceremony.js?v=20260904d';
 import { createTurntable, createThumbnailer, useMaterialFactory, groupForGrid, starterGrant, provenance, hardnessWord, weightWord, TIER_ORDER, TIER_LABEL }
-  from './meta/collection.js?v=20260904c';
-import * as MARBLEMESH from './render/marbleMesh.js?v=20260904c';
-import { bodySpec } from './core/marbleBody.js?v=20260904c';
-import { createEconomy } from './meta/economy.js?v=20260904c';
-import { createDrops } from './meta/drops.js?v=20260904c';
-import * as RANSOM from './meta/ransom.js?v=20260904c';
-import * as PROG from './meta/progression.js?v=20260904c';
-import { createOnboarding, dustyLine } from './meta/beats.js?v=20260904c';
+  from './meta/collection.js?v=20260904d';
+import * as MARBLEMESH from './render/marbleMesh.js?v=20260904d';
+import { bodySpec } from './core/marbleBody.js?v=20260904d';
+import { createEconomy } from './meta/economy.js?v=20260904d';
+import { createDrops } from './meta/drops.js?v=20260904d';
+import * as RANSOM from './meta/ransom.js?v=20260904d';
+import * as PROG from './meta/progression.js?v=20260904d';
+import { createOnboarding, dustyLine } from './meta/beats.js?v=20260904d';
 import { tierMatchOk, matchTheirStake, escrow, settle, recoverOnBoot, potUp, currentPot }
-  from './game/match.js?v=20260904c';
-import { makeRng } from './core/rng.js?v=20260904c';
-import { makeMarbleMaterial } from './render/marbleMesh.js?v=20260904c';
+  from './game/match.js?v=20260904d';
+import { makeRng } from './core/rng.js?v=20260904d';
+import { makeMarbleMaterial } from './render/marbleMesh.js?v=20260904d';
 
 const $ = (id) => document.getElementById(id);
 const TEST = /[?&]keepsiestest=1/.test(location.search);
@@ -64,13 +65,16 @@ const HOUSE_RULES = [
   { key: 'slips', label: 'Slips', sub: 'one redo for a fumble' },
   { key: 'bombing', label: 'Bombing', sub: 'drop shots allowed' },
   { key: 'poison', label: 'Poison', sub: 'knock out the enemy shooter' },
-  { key: 'ringSizeFt', label: 'Ring', sub: 'seven, ten or thirteen foot', cycle: [7, 10, 13] }
+  { key: 'ringSizeFt', label: 'Ring', sub: 'seven, ten or thirteen foot', cycle: [7, 10, 13] },
+  /* the lay of the thirteen: see FORMATIONS in game/ringer.js for what each one is */
+  { key: 'formation', label: 'Lay', sub: 'cross, x, ring or bunch', cycle: ['cross', 'x', 'ring', 'bunch'],
+    show: (v) => 'the ' + v }
 ];
 
 /* ------------------------------------------------------------------- boot */
 
 async function boot() {
-  const res = await fetch('src/data/tuning.json?v=20260904c');
+  const res = await fetch('src/data/tuning.json?v=20260904d');
   if (!res.ok) throw new Error('tuning.json did not load: ' + res.status);
   G.tuning = await res.json();
   G.save = SAVE.load();
@@ -80,10 +84,10 @@ async function boot() {
   AUDIO.configure(G.tuning);
   AUDIO.setEnabled(G.save.settings.sound !== false);
 
-  const cat = await fetch('src/data/marbles.json?v=20260904c');
+  const cat = await fetch('src/data/marbles.json?v=20260904d');
   if (!cat.ok) throw new Error('marbles.json did not load: ' + cat.status);
   G.catalog = await cat.json();
-  const dt = await fetch('src/data/droptables.json?v=20260904c');
+  const dt = await fetch('src/data/droptables.json?v=20260904d');
   if (!dt.ok) throw new Error('droptables.json did not load: ' + dt.status);
   G.dropTables = await dt.json();
 
@@ -96,6 +100,8 @@ async function boot() {
 
   await initPhysics();
   G.turntable = createTurntable(G.stage, G.tuning);
+  // the zoom aim: one narrow lens, square, on the same scene (core/spyglass.js)
+  G.spy = { cam: new THREE.PerspectiveCamera((G.tuning.render.spyglass || {}).fovDeg || 5, 1, 0.02, 80), on: false, rect: null, info: null };
   useMaterialFactory(MARBLEMESH);
   G.thumbs = createThumbnailer(G.tuning);
   G.econ = createEconomy(G.tuning);
@@ -645,6 +651,10 @@ function openInspect(entry, item) {
     dl.appendChild(dt); dl.appendChild(dd);
   }
   $('iProv').textContent = provenance(item);
+  // only a card that overflows its box may take the pointer; otherwise a drag on the text spins the marble
+  const card = $('inspectCard');
+  card.scrollTop = 0;
+  card.style.pointerEvents = card.scrollHeight > card.clientHeight + 1 ? 'auto' : '';
 }
 
 /* ------------------------------------------------------------ match setup */
@@ -768,10 +778,12 @@ function buildHouseRules() {
     G.houseRules.keepsies = false;
     G.houseRules.slips = true;
     G.houseRules.ringSizeFt = 7;
+    G.houseRules.formation = 'cross';     // the beat that teaches you to break the cross
   } else if (beat && beat.id === 'firstKeepsies') {
     G.houseRules.keepsies = true;
     G.houseRules.slips = true;
     G.houseRules.ringSizeFt = 7;
+    G.houseRules.formation = 'cross';
   }
   for (const r of HOUSE_RULES) {
     const b = document.createElement('button');
@@ -784,7 +796,7 @@ function buildHouseRules() {
     b.appendChild(label); b.appendChild(sub);
     const paint = () => {
       const v = G.houseRules[r.key];
-      if (r.cycle) { label.textContent = v + ' foot'; sub.textContent = 'tap to change'; b.className = 'chip on'; }
+      if (r.cycle) { label.textContent = r.show ? r.show(v) : v + ' foot'; sub.textContent = 'tap to change'; b.className = 'chip on'; }
       else { label.textContent = r.label; sub.textContent = r.sub; b.className = 'chip' + (v ? ' on' : ''); }
     };
     b.addEventListener('click', () => {
@@ -878,6 +890,7 @@ function startMatch(opts) {
   G.R.frameShot(G.rig, true);
   G.rig.update(1 / 60);
   G.lastFramedTurn = G.R.match.turn;
+  if (G.rig.resetUser) G.rig.resetUser();
   G.freeCam = false;
   updateHud();
 }
@@ -950,6 +963,48 @@ function groundPoint(x, y) {
 
 /* --------------------------------------------------------------- the shot */
 
+/** The zoom aim (core/spyglass.js). While braced, if the mib the shot is pointed at is under
+    openBelowPx across on the main screen, a square scope opens at the top: the same dirt through
+    a narrow lens from the main camera's own position, down the aim line, with the cone's width
+    at that range as a bracket. The main camera and the cone are not touched. */
+function updateSpyglass(st, t) {
+  const C = G.tuning.render.spyglass;
+  if (!C || !G.spy || G.screen !== 'match' || G.usePullback) return hideSpyglass();
+  const taw = G.R.shooterTaw();
+  const tp = positionOf(G.R.world, taw.id);
+  const live = G.R.liveMibs().map(m => { const p = positionOf(G.R.world, m.id); return { x: p.x, z: p.z, id: m.id }; });
+  const s = spyglassFor({ tawX: tp.x, tawZ: tp.z, azimuth: G.rig.state.azimuth + Math.PI, live, coneDeg: st.coneDeg }, C);
+  if (!s) return hideSpyglass();
+  // how big that mib is on the MAIN screen decides whether the scope is worth opening
+  const r = specOf(G.R.world, s.mib.id).radius;
+  const c = G.rig.project(s.mib.x, r, s.mib.z), e = G.rig.project(s.mib.x, r * 2, s.mib.z);
+  const mainPx = Math.abs(e.y - c.y) * 2;
+  if (!(mainPx < (C.openBelowPx == null ? 14 : C.openBelowPx))) return hideSpyglass();
+  const size = C.sizePx || 180, top = C.top == null ? 96 : C.top;
+  const el = $('spyglass');
+  el.hidden = false;
+  el.style.top = top + 'px'; el.style.width = el.style.height = size + 'px';
+  G.spy.rect = { left: Math.round((G.stage.width - size) / 2), top, size };
+  const cam = G.spy.cam;
+  cam.position.copy(G.rig.camera.position);
+  cam.lookAt(s.tx, r, s.tz);
+  const camDist = Math.hypot(cam.position.x - s.tx, cam.position.y - r, cam.position.z - s.tz);
+  const ppm = scopePxPerM(camDist, C);
+  const bracket = Math.max(6, Math.min(size - 10, 2 * s.coneHalfM * ppm));
+  const cone = $('spyCone');
+  cone.style.width = bracket + 'px';
+  cone.style.borderColor = st.settle01 > 0.98 ? 'rgba(200,168,75,.95)' : 'rgba(232,220,200,.6)';
+  G.spy.on = true;
+  G.spy.info = { range: +s.range.toFixed(3), lateral: +s.lateral.toFixed(3), coneDeg: +st.coneDeg.toFixed(2),
+    coneHalfM: +s.coneHalfM.toFixed(3), camDist: +camDist.toFixed(2), mainPx: +mainPx.toFixed(1),
+    mibPx: +(r * 2 * ppm).toFixed(1), bracketPx: +bracket.toFixed(1) };
+}
+function hideSpyglass() {
+  if (G.spy) { G.spy.on = false; G.spy.info = null; }
+  const el = $('spyglass');
+  if (el) el.hidden = true;
+}
+
 function onBrace(st) {
   if (!G.R || (G.screen !== 'match' && G.screen !== 'calib')) return;
   if (st.bracing && G.R.state.phase === 'place') G.R.commitPlace();
@@ -957,6 +1012,8 @@ function onBrace(st) {
   const ret = $('reticle'), line = $('aimline');
   if (!st.bracing || !t) {
     ret.hidden = true; line.hidden = true; $('power').hidden = true; $('assist').hidden = true;
+    $('say').hidden = false;
+    hideSpyglass();
     if (G.warming) { G.warming = false; AUDIO.stopWarming(); }
     return;
   }
@@ -967,6 +1024,9 @@ function onBrace(st) {
      grab radius now, so at a full brace the ring sits just outside your thumb. */
   const px = (t.grabR || t.r * 1.6) * (0.70 + st.coneDeg * 0.16);
   ret.hidden = false;
+  // a brace is the player saying they have read it: the guidance line and any toast go the
+  // moment a thumb goes down, and come back when it lifts
+  $('toast').hidden = true; $('say').hidden = true;
   ret.style.left = (t.x - px) + 'px';
   ret.style.top = (t.y - px) + 'px';
   ret.style.width = ret.style.height = (px * 2) + 'px';
@@ -983,6 +1043,7 @@ function onBrace(st) {
   line.style.top = (t.y - px - 6) + 'px';
   line.style.width = '54px';
   line.style.transform = 'rotate(-90deg)';
+  updateSpyglass(st, t);
   // the drop shot only exists when the rule is on AND your taw is inside the
   // ring, so the game says so at the moment it becomes possible
   if (G.R.canBomb() && G.said.indexOf('drop shot') < 0 && G.R.state.phase === 'aim') {
@@ -1102,7 +1163,8 @@ function updateHud() {
   const hr = M.houseRules;
   $('houseRules').textContent = [
     hr.keepsies ? 'keeps' : 'for fair', hr.slips ? 'slips' : null,
-    hr.bombing ? 'bombing' : null, hr.poison ? 'poison' : null, hr.ringSizeFt + ' foot'
+    hr.bombing ? 'bombing' : null, hr.poison ? 'poison' : null, hr.ringSizeFt + ' foot',
+    hr.formation && hr.formation !== 'cross' ? 'the ' + hr.formation : null
   ].filter(Boolean).join(', ');
 }
 
@@ -1413,6 +1475,9 @@ function frame(now) {
     if (!G.freeCam) {
       const t = G.R.match.turn;
       const snapIt = t !== G.lastFramedTurn;
+      // the cut also forgets the last shooter's orbit and pinch, BEFORE the frame
+      // is computed, or the hard cut would land on the previous player's offsets
+      if (snapIt && G.rig.resetUser) G.rig.resetUser();
       G.R.frameShot(G.rig, snapIt);
       if (snapIt) { G.lastFramedTurn = t; G.rig.update(1 / 60); }
     }
@@ -1437,7 +1502,7 @@ function frame(now) {
     // a thumb held perfectly still sends no pointermove, and the settle is a
     // clock: read it every frame so the reticle tightens whether or not the
     // browser has anything to say
-    if (!G.usePullback && G.knuckle) { const ks = G.knuckle.state(); if (ks.bracing) onBrace(ks); }
+    if (!G.usePullback && G.knuckle) { const ks = G.knuckle.state(); if (ks.bracing) onBrace(ks); else if (G.spy && G.spy.on) hideSpyglass(); }
     if (now - G.lastRollAudio > 60) { G.lastRollAudio = now; updateRollingAudio(); }
     if (!$('toast').hidden && now - G.lastToast > 2400) $('toast').hidden = true;
   }
@@ -1452,6 +1517,7 @@ function frame(now) {
 
   G.rig.update(dt);
   draw(G.stage, G.rig);
+  if (G.spy && G.spy.on && G.spy.rect) drawInset(G.stage, G.spy.cam, G.spy.rect);
   G.frames++;
 }
 
@@ -1616,6 +1682,37 @@ function installDevHook() {
       return Object.assign({}, G.tuning.render.ringerCam);
     },
     /** Let the camera finish moving without waiting for frames. A fixture. */
+    /**
+     * Reach an end game for a camera shot WITHOUT a fake state: every live mib past
+     * the first `keep` is placed outside the ring and the next physics step pockets
+     * it through the real rule (ringer.js: a mib whose centre crosses the ring is
+     * pocketed at that moment). Nothing about the game is bypassed; the marbles
+     * simply took a very short route out. Dev only, used by the k2 endgame shots.
+     */
+    pocketAllBut(keep) {
+      if (!G.R) return 0;
+      const R = G.R, M = R.match, W = R.world;
+      const gone = R.liveMibs().slice(Math.max(0, keep | 0));
+      /* ⛔ Three versions of this hook. The first placed the mibs outside the ring and left
+         them THERE, live, in a tidy line in the dirt, and the camera framed that line as the
+         end game (k2-endgame-one.png, first pass). The second raised `simulating` and stepped
+         the physics so tick() would run the ring rule, and the ring rule is followed by
+         resolveShot(), which threw 'resolve out of phase (turn)' because no shot was in
+         flight (the layout re-shoot died there at both widths). Faking the shot phase is no
+         better: resolveShot hands every mib to the shooter and the seventh ends the match.
+         So this does what tick() does to a mib that crosses the ring, removeMarble and the
+         pocket sound, and settles the referee's books BY HAND, dealt alternately so a close
+         game is left standing and nobody reaches toWin. */
+      gone.forEach((m, i) => {
+        removeMarble(W, m.id);
+        const k = M.mibs.indexOf(m.uid);
+        if (k >= 0) M.mibs.splice(k, 1);
+        M.players[i % M.players.length].pocketed.push(m.uid);
+        AUDIO.impact({ material: 'glass', diameterMm: 16, relSpeed: 1.4, seed: 0.5 });
+      });
+      syncMeshes(1);
+      return R.liveMibs().length;
+    },
     settleCamera(n) {
       for (let i = 0; i < (n || 40); i++) {
         if (G.R && !G.freeCam) G.R.frameShot(G.rig, false);
@@ -1633,6 +1730,11 @@ function installDevHook() {
         tawWorld: { x: +p.x.toFixed(3), z: +p.z.toFixed(3) },
         proj: { x: +c.x.toFixed(1), y: +c.y.toFixed(1), visible: c.visible },
         viewport: G.rig.viewport,
+        // the frame the player is actually getting, and their own orbit and pinch on top of it
+        azimuth: +G.rig.state.azimuth.toFixed(4), wantAzimuth: +G.rig.state.wantAzimuth.toFixed(4),
+        userAz: +(G.rig.state.userAz || 0).toFixed(4), userZoom: +(G.rig.state.userZoom || 1).toFixed(4),
+        frameInfo: G.rig.state.frameInfo || null, mibsLeft: G.R.liveMibs().length,
+        spy: G.spy && G.spy.on ? G.spy.info : null,
         cam: {
           az: +G.rig.state.azimuth.toFixed(3), wantAz: +G.rig.state.wantAzimuth.toFixed(3),
           dist: +G.rig.state.distance.toFixed(2), wantDist: +G.rig.state.wantDistance.toFixed(2),

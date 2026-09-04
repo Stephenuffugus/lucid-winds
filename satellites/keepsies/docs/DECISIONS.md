@@ -416,3 +416,126 @@ Measured through the real Knuckle with a settled brace: at 2.5 degrees Dusty won
 
 **2026-09-04 — the match camera is a longer lens, further back, a little lower.**
 Five framings of the same brace were shot on a contact sheet (`docs/shots/k1-cam-before.png`, `k1-cam-after.png`): the current 42 degree lens, the same lens at 34, and three longer lenses further back. A 28 degree lens at about 3.4 m compresses the empty dirt between the shooter and the cross, draws a mib at ten foot at about ten pixels rather than eight, and puts the far chalk arc in the clear band between the score pips and the message, where at 33 to 37 degrees it ran through the pips. The shooter stays at four fifths of the screen height, clear of the house rules chip, which the 34 degree lens at the old distance did not manage. Elevation is 30 rather than DESIGN 8.5's "~35" for that one reason. This does not make ten foot marbles big; nothing on a 375 px screen at real scale does. It makes them a fifth bigger and the frame less empty, and it is one block in `tuning.json` if the Director wants the old one back.
+
+## K2.5, the Director's phone
+
+**2026-09-04 — the end game camera leans in, and it does not touch the cone.**
+Stephen played it on his phone and wrote "the end game is almost impossible after playing it, there needs to be a zoom aim something." The sports framing stood a fixed 1.9 m back from the gap between the shooter and the cross, which is right for thirteen mibs and wrong for one: with a single mib 1.0 m away the camera sat 2.9 m off and a 16 mm mib was 7.4 px tall on a 375 px screen, while the settled cone is plus or minus 1.5 degrees and that mib subtends 0.6, so a lone far mib was under a coin toss at a perfect hold. This file's own K1 entry had named the answer and parked it: "a camera that leans toward the cross while you are aiming is the real answer and it is not built." It is built in `core/framing.js`, pure maths so `test/camera.mjs` gates it without a world. Below `leanFull` (5) live mibs, `spanAdd` slides from 1.9 toward `spanAddEnd` (0.75) and `targetBias` from 0.5 toward 0.7, reaching the full lean at exactly one mib, and a spread floor keeps two survivors on opposite sides inside a portrait frame. Measured by the gate: a full cross frames at 3.80 m exactly as before (5.6 px a mib), one mib at 1.75 m (12.2 px a mib, 1.65 times). The accuracy cone is untouched: DESIGN 9.6 never rubber bands aim, and a closer camera lets you see the marble and turn to face it, it does not make the thumb steadier. The gate was watched to fail by setting the lean numbers back to the old fixed framing: distance ratio 1.00 where under 0.7 is wanted, 7.4 px unchanged.
+
+**2026-09-04 — pinch zoom and one finger orbit were built and inert, and orbit is the coarse aim.**
+DESIGN 8.5 lists pinch zoom and one finger orbit, DESIGN 7.7 makes orbit the aim itself ("aiming direction = camera forward plus or minus the snap's fine angle"), and `input/cameraCtl.js` implemented both correctly. Then `frameShot` overwrote `wantAzimuth` and `wantDistance` every frame while not in freeCam, and `freeCam` is only ever set by the dev hook, so in a match a one finger drag moved the camera for one frame and a pinch for one frame. The player has only ever had the snap's fine angle, plus or minus 25 degrees off a centroid they could not turn away from, which is the other half of why the last marble was impossible. The player's orbit and pinch are now offsets, `rig.state.userAz` and `rig.state.userZoom`, that `frameFor` lays on top of its own answer; the turn change cut resets them, before the frame is computed so the hard cut cannot land on the previous shooter's offsets. `knuckle.js` reads the damped azimuth, so the aim follows the orbit with no other change. Gated in `test/camera.mjs`: an azimuth offset of 0.3 survives the auto frame exactly, the auto azimuth does not move, and a pinch multiplier is clamped to the lens limits.
+
+**2026-09-04 — four lays, all thirteen, and only the cross is ever forced.**
+"More formations." `createRinger` hard coded the cross; it now takes a `formation` house rule and lays one of four from `FORMATIONS` in `game/ringer.js`: the cross (Ringer's plus, the standard and the default), the x (the same plus turned forty five degrees so no arm runs straight from the shooter), the ring (Ring Taw's circle, thirteen round the rim and nothing in the middle, so a centre break hits nothing), and the bunch (a packed hexagon, one, six and six). Every lay is thirteen mibs 75 mm apart, so seven still wins, `ringer_rules` still conserves thirteen and the AI, which samples live positions, needs no change. The onboarding beats force the cross because Dusty's copy teaches you to break the cross; the sim harness lays its own cross and does not read this table, so `ringer_break` and `replay_hash` are untouched. `test/formations.mjs` asserts thirteen, no pair closer than the spacing, every mib inside half the seven foot ring, centred, and pairwise distinct; watched to fail by laying the bunch with twelve.
+
+**2026-09-04 — the lean's end frame is derived, and the camera gate now looks at the shooter.**
+The lean above guessed its end frame: a fixed 0.75 m behind a look point 70% of the way to the
+mib. The gate said 1.75 m and 12 pixels and was green. A headless probe of the real engine then
+put the shooter at y = 866 on a 667 px screen with one mib left, off the bottom, and `match.taw`
+empty: the brace is a touch on the shooter, so that frame could not be played at all. The gate
+never projected the shooter. It does now, by its own geometry (`test/camera.mjs`, `project()`),
+and the end frame is derived rather than chosen: for a camera at elevation e looking at a ground
+point, a ground point a metres along the view axis lands at y/halfHeight = a sin e / ((a cos e + d)
+tanV). Holding the shooter above the bottom HUD (the house rules chip and the two buttons, 0.66
+of the half height) and the far side of the target cluster below the top HUD (0.80) gives two
+floors on the distance, and the closest camera is where they balance, bias 0.30. Both floors and
+the spread floor are hard at every lean. Measured in the engine from the placing spot on a ten
+foot ring: 13 mibs 3.42 m (unchanged), two 2.06 m, one 1.55 m with the shooter at y 618 of 667
+before the HUD edges and clear of the chip after them. From the ring edge a lone mib now sits
+about 2.7 m from the camera instead of 4.1 m, eight pixels instead of five, and that is the
+physical limit of one portrait frame at a 28 degree lens: a 16 mm mib at 1.5 m subtends 0.6
+degrees whatever the camera does. The pinch now reaches the target by half zoom: at 0.24x after a
+48 degree orbit the first slide left the mib 0.24 m beside the look point, which at 1.15 m depth
+is off the right edge of a portrait frame, and `k2-endgame-pinch` was a picture of dirt. Every
+new assertion was watched to fail (floors off, the linear slide back, both HUD edges at 0.95).
+
+**2026-09-04 — the spyglass: the zoom aim is a second lens, not a moved camera.**
+"There needs to be a zoom aim something." The camera cannot be it, for the reason above, and
+there is a second reason: the settled cone is plus or minus 1.5 degrees, 130 mm wide at 2.5 m,
+against a 16 mm mib. The question the player is asking of the screen at the last marble is not
+"where is it" but "is it inside my cone, and how centred". So while the thumb is braced and the
+mib the shot is pointed at is under 14 px across on the main screen, a square scope opens at the
+top: the same dirt through a 5 degree lens from the main camera's own position, looking straight
+down the aim line (camera forward through the shooter, DESIGN 7.7) to the range of the mib
+nearest that LINE, with the cone's width at that range as a bracket that goes gold when the hold
+has settled. The main camera does not move and the cone is not touched (DESIGN 9.6). Orbit walks
+the bracket onto the marble; holding still tightens it. In the scope a 16 mm mib 2.5 m off is
+13 px and the settled bracket 66 px. `core/spyglass.js` decides where it looks and what it
+marks, `render/scene.js` draws it into the same canvas through the same renderer (a second
+WebGL context on a phone is a second GPU allocation, the turntable already made that call),
+`main.js` wires it to the brace. Gate `test/spyglass.mjs`, watched to fail on "the mib nearest
+the line, not the nearest mib": with the last two on opposite sides of the ring the nearest one
+is very often the one you are turned away from. Shot `k2-endgame-spyglass` is a real brace held
+1.7 s at one mib. DESIGN says not to invent features; this one the Director asked for by name,
+and it is DESIGN 8.5's zoom given the only shape that keeps 9.6.
+
+**2026-09-04 — the inspect card hangs from the marble, and the abilities speak to the player.**
+Looked at the grail on the turntable: the GRAIL ribbon sat inside the sphere's lower rim at 375,
+and at 320 the title printed across the marble (a grail card with two ability rows is 358 px
+tall on a 568 px screen). The marble now owns the top third (`createTurntable` LIFT 0.20 to
+0.29, the sphere spans 10 to 31 percent of the height, aspect independent because the vertical
+lens is fixed) and the card owns the box under it from 35% down to the Back button, hanging from
+the top like a plinth label; a card taller than the box scrolls inside it and only then takes
+the pointer, so a drag on the text still spins the marble. The ribbon was .68rem, under the
+0.7rem floor. Then the words: the 45 ability cells on the card were DESIGN 10's own shorthand
+printed as they stand, "+50% dmg", an arrow, "*taw/active shooter*" with markdown stars, and a
+note to self, "(the ONLY heal in the game — keep it that way)". They now say the same mechanic
+in the player's words with every number kept and no dashes, in `marbles.overrides.json` (the
+catalog is generated from the doc, so the doc's cell is kept beside each as `spec` and the
+generator deep merges abilities so an override cannot drop an id). `CATALOG OK`.
+
+**2026-09-04 — a dev hook reaches the end game through the referee's books, not a faked shot.**
+`pocketAllBut(n)` went through three versions. The first placed the mibs outside the ring and
+left them there, live, in a tidy line the camera framed as the end game. The second raised
+`simulating` and stepped the physics so `tick()` would apply the ring rule, and the ring rule is
+followed by `resolveShot()`, which threw "resolve out of phase (turn)" because no shot was in
+flight; the layout re-shoot died there at both widths. Faking the shot phase is no better:
+`resolveShot` hands every pocketed mib to the shooter and the seventh ends the match. The third
+does what `tick()` does to a mib that crosses the ring (remove it from the world, play the
+pocket) and settles the referee's books by hand, dealt alternately, so an end game is a 6 to 5
+match still standing. Probed: 13 to 2 to 1 live, books 6 and 5, phase unchanged, no errors.
+
+**2026-09-04 — two more things only the frames said, after the gates were green.**
+Looked at `k2-endgame-one` with the HUD edges in: the shooter sat on the ring line above the chip as
+asked, and the lone mib at 14% of the height peeked out from under the bottom edge of Dusty's line,
+the guidance element `#say`, pinned to the top of the screen since the first build. The band that is
+dirt in every frame is between the shooter and what it is shooting at, so the line now sits at 62%
+of the height (under the cross on a full board, above the shooter in the end game, and calibration
+has its own header) and both it and any toast hide the moment a thumb braces and return when it
+lifts. Then `k2-endgame-pinch`: the pinch reached only 1.39 m at 0.24x because the second pass took
+the shooter floor at the slid look point, and a look point on the target puts the shooter 1.5 m
+behind it, which the floor then refused. The floors belong to the auto frame; a player who pinches
+in has chosen to give up the shooter for a look at the lay, so the pinch multiplies the auto
+distance and it now reaches 0.9 m with the mib centred at 22 px. Final numbers from the placing
+spot on a ten foot ring, 375 by 667: 13 mibs 3.42 m, two 2.35 m, one 1.93 m with the shooter at
+83% of the height and the mib at 14%; in the scope the last mib is 16.6 px inside an 81 px settled
+bracket (a 3.5 degree lens, 180 px, 64 px from the top now that the top band is free).
+
+**2026-09-04 — the short screen is the binding one, and the lean may not regress the approved frame.**
+`k2-endgame-one-320`: the shooter at 83% of the height sat half behind the house rules chip, and the
+braced reticle cut into it. The HUD is pixels from the bottom and the fit edge is a fraction of the
+screen, so a 568 px screen is where the chip climbs highest (83%) and where the edge must be set.
+A fixed bottom edge of 0.56 then pushed a FULL cross from 3.80 m to 4.22 m in the gate, because the
+contact sheet's own framing puts the shooter at 82% in that scenario. So the bottom edge is now
+fitEdgeBottom or the sports frame's own shooter height, whichever is lower on the screen: at a full
+cross the floor reproduces the approved framing exactly, and in the lean the balance bias of 0.30
+puts the lone mib's shooter at 78% on both screens, the same height the approved frame gives it.
+The bottom edge alone is not the binding floor at one mib (the top edge is), which is why a
+fail-watch on it alone stays green and the watch that proved the mechanism widened both.
+
+**2026-09-04 — the spread floor was pulling the approved mid game frame back, and only the numbers said so.**
+The final chain printed "full 11 mibs at 4.13 m" at 375 and 3.42 at 320 for the same seed: after a
+scatter, one mib at the side of the ring tripped the spread floor and the whole eleven mib frame
+stood 20% further back, every marble a fifth smaller, for most of a match. The ring is 3 m across
+and a portrait 28 degree lens cannot hold it; the approved sports frame lets side mibs leave the
+screen and the player orbits or goes top down, which is DESIGN 7.7's coarse aim doing its job. So
+the spread is now measured across the view axis and along it rather than as a radius (a mib
+knocked to the far edge on the axis needs vertical room and no horizontal room), the horizontal
+floor applies only below leanFull, where a survivor off the side would be the whole game, and
+the vertical floor uses the along axis extent. With the guidance line gone from the top the
+target's edge went back up to the pocket dots (0.84 of the half height), which is also a closer
+lean: the balance bias is 0.26 and the lone mib's shooter stays at 78%. The gate gained a
+scattered full board that must keep the sports framing; it read 5.50 m on the old code and 3.90
+after. Every number that was checked here came from a printed line nobody asked for; the frames
+looked fine.
+

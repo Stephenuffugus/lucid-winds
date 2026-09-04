@@ -312,6 +312,13 @@ for (const m of marbles) {
   const o = overrides[m.id];
   if (!o) continue;
   if (o.render) { Object.assign(m.render, o.render); delete o.render; }
+  // an ability override changes the words on the card, never the ability: id and name stay,
+  // and the doc's own cell is kept as `spec` so a later doc change shows in the diff
+  for (const k of ['passive', 'active']) {
+    if (!o[k] || !m[k]) continue;
+    if (o[k].text && o[k].text !== m[k].text) m[k].spec = m[k].text;
+    Object.assign(m[k], o[k]); delete o[k];
+  }
   Object.assign(m, o);
 }
 

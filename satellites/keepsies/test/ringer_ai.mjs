@@ -15,8 +15,8 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { initPhysics } from '../src/core/physics.js?v=20260904c';
-import { createRinger } from '../src/game/ringer.js?v=20260904c';
+import { initPhysics } from '../src/core/physics.js?v=20260904d';
+import { createRinger } from '../src/game/ringer.js?v=20260904d';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const T = JSON.parse(readFileSync(join(ROOT, 'src/data/tuning.json'), 'utf8'));

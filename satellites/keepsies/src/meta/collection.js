@@ -14,14 +14,14 @@
  * here as data.
  */
 import * as THREE from 'three';
-import { makeMarbleMesh } from '../render/marbleMesh.js?v=20260904c';
-import { bodySpec } from '../core/marbleBody.js?v=20260904c';
+import { makeMarbleMesh } from '../render/marbleMesh.js?v=20260904d';
+import { bodySpec } from '../core/marbleBody.js?v=20260904d';
 
-export { TIER_ORDER, TIER_LABEL } from './tiers.js?v=20260904c';
-import { TIER_ORDER } from './tiers.js?v=20260904c';
+export { TIER_ORDER, TIER_LABEL } from './tiers.js?v=20260904d';
+import { TIER_ORDER } from './tiers.js?v=20260904d';
 // the word ladders live in a file with no imports so they can be measured
 // against the catalogue in Node, where three.js cannot follow
-export { hardnessWord, weightWord } from './words.js?v=20260904c';
+export { hardnessWord, weightWord } from './words.js?v=20260904d';
 
 
 /**
@@ -85,8 +85,12 @@ export function createTurntable(stage, tuning) {
    * 2 d tan(fov/2); the marble is two units across; so d puts it at exactly the
    * fraction of the screen we asked for. The camera axis stays parallel to z and
    * the whole rig is offset DOWNWARD instead of tilting, because tilting a
-   * portrait camera skews the sphere into an egg. */
-  const FOV = 28, WANT = 0.21, LIFT = 0.20;
+   * portrait camera skews the sphere into an egg.
+   *
+   * LIFT 0.29 (was 0.20) puts the sphere in the top third, 10 to 31 percent of the height, because
+   * the card under it needs the rest: a grail card with two ability rows measured 323px tall at
+   * 375 wide and 358px at 320, and at 0.20 the 320 card printed its title across the sphere. */
+  const FOV = 28, WANT = 0.21, LIFT = 0.29;
   const halfTan = Math.tan(FOV * Math.PI / 360);
   const dist = 2 / (WANT * 2 * halfTan);
   const cam = new THREE.PerspectiveCamera(FOV, 1, 0.01, dist * 3);

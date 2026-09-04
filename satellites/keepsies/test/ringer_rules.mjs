@@ -19,8 +19,8 @@
  *   - a player never shoots after being poisoned out
  *   - a slip is spent at most once per player per game and never consumes a turn
  */
-import { createMatch, skipLag, resolveLag, mayPlace, placeTaw, fireShot, resolveShot, summary, PHASE, DEFAULT_HOUSE_RULES } from '../src/core/rules-ringer.js?v=20260904c';
-import { makeRng } from '../src/core/rng.js?v=20260904c';
+import { createMatch, skipLag, resolveLag, mayPlace, placeTaw, fireShot, resolveShot, summary, PHASE, DEFAULT_HOUSE_RULES } from '../src/core/rules-ringer.js?v=20260904d';
+import { makeRng } from '../src/core/rng.js?v=20260904d';
 
 const GAMES = parseInt(process.argv[2] || '500', 10);
 const RING = 1.525;

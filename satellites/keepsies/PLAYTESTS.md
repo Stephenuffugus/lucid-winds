@@ -55,3 +55,22 @@ tight for a real finger and wants to be 3 or 4.
 player who never sticks is released at the end of the match), which is right. The ten foot ring's
 speck sized mibs, which is real scale and a camera question, tried in a contact sheet and recorded in
 DECISIONS.
+
+## 2026-09-04, Stephen, his phone, build 20260904b (the K1.5 test)
+
+His words from the terminal, as typed: "keepsies end game is almost impossible after playting it
+there needs to be a zoom aim something some way to make it more possible to hit the last couple
+marbles. its getting there. more formations and a lot more details."
+
+What it became the same evening, all in `docs/DECISIONS.md` under K2.5: the lean (the camera
+stands as close as the frame allows at the last marbles, shooter always above the HUD), the
+orbit and the pinch brought back to life (both were built and inert), four lays as a house rule,
+the spyglass (a second lens down the aim line with the cone's width as a bracket, the thing he
+asked for by name), the inspect card off the marble, and the abilities in the player's words.
+
+What only he can answer next, on the phone: whether the scope opens at the right moment (it
+opens when the mib the shot points at is under 14 px on the main screen), whether the bracket
+reads as "my cone", whether the lean from the ring edge feels closer or merely different, and
+whether 1.7 s to a settled bracket is patience or a wait. Every number is in `tuning.json`
+under `render.ringerCam` and `render.spyglass`.
+

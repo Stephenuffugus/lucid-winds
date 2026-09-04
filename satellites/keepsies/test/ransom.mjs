@@ -43,8 +43,8 @@ globalThis.localStorage = {
   setItem: (k, v) => { const d = disk(); d[k] = String(v); writeFileSync(FILE, JSON.stringify(d)); },
   removeItem: (k) => { const d = disk(); delete d[k]; writeFileSync(FILE, JSON.stringify(d)); }
 };
-const SAVE = await import(${JSON.stringify(join(ROOT, 'src/meta/save.js'))} + '?v=20260904c');
-const R = await import(${JSON.stringify(join(ROOT, 'src/meta/ransom.js'))} + '?v=20260904c');
+const SAVE = await import(${JSON.stringify(join(ROOT, 'src/meta/save.js'))} + '?v=20260904d');
+const R = await import(${JSON.stringify(join(ROOT, 'src/meta/ransom.js'))} + '?v=20260904d');
 const T = JSON.parse(readFileSync(${JSON.stringify(join(ROOT, 'src/data/tuning.json'))}, 'utf8'));
 const T0 = ${T0}, HOUR = ${HOUR};
 const mode = process.argv[2];

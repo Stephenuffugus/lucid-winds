@@ -24,9 +24,9 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import * as A from '../src/core/rules-arena.js?v=20260904c';
-import * as D from '../src/core/damage.js?v=20260904c';
-import { bodySpec } from '../src/core/marbleBody.js?v=20260904c';
+import * as A from '../src/core/rules-arena.js?v=20260904d';
+import * as D from '../src/core/damage.js?v=20260904d';
+import { bodySpec } from '../src/core/marbleBody.js?v=20260904d';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const T = JSON.parse(readFileSync(join(ROOT, 'src/data/tuning.json'), 'utf8'));
@@ -189,9 +189,9 @@ say(s.players[1].shattered === 3 && s.players[0].left === 3,
 
 /* ---- 8: the mode on a real board, headless ---- */
 console.log('');
-const P = await import('../src/core/physics.js?v=20260904c');
+const P = await import('../src/core/physics.js?v=20260904d');
 await P.initPhysics();
-const { createArena } = await import('../src/game/arena.js?v=20260904c');
+const { createArena } = await import('../src/game/arena.js?v=20260904d');
 const live = createArena({
   tuning: T, catalog: C, seed: 4242, arena: 'ring',
   players: [

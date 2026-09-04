@@ -81,6 +81,12 @@ await shot('k2-collection');
 await page.evaluate(() => window.KEEPSIES_DEV.inspect('bloodstone_aggie'));
 await wait(800);
 await shot('k2-inspect');
+/* a GRAIL on the turntable, as it renders today: the shader recipe that stands in for the
+   Meshy sculpt (ART_ASSETS item 2). The prompt for the sculpt is not written until this
+   has been looked at, which is that file's own rule. */
+await page.evaluate(() => window.KEEPSIES_DEV.inspect('the_drowned_knight'));
+await wait(800);
+await shot('k2-inspect-grail');
 
 /* the setup screen with a real pot on it, because "nothing was up" is the least
    interesting thing a result card can say about a game called Keepsies */
@@ -125,6 +131,89 @@ await shot('k1-break');
 
 await page.evaluate(() => window.KEEPSIES_DEV.settle(1500));
 await wait(200);
+
+/* THE END GAME, from the Director's phone (2026-09-04): "almost impossible to hit the
+   last couple marbles, there needs to be a zoom aim something". Reached through the
+   real pocket rule (pocketAllBut places the rest outside the ring and the next step
+   pockets them), framed by the same frameShot a thumb gets, and every number printed
+   is read back from debugCam so the ledger carries measurements, not descriptions.
+   The orbit and the pinch are dispatched as REAL pointer events on the canvas, outside
+   the marble, which is DESIGN 7.7's coarse aim and used to be overwritten every frame. */
+const cam = () => page.evaluate(() => {
+  const c = window.KEEPSIES_DEV.debugCam();
+  return { mibs: c.mibsLeft, dist: c.cam.dist, az: c.azimuth, userAz: c.userAz, userZoom: c.userZoom, t: c.frameInfo && c.frameInfo.t };
+});
+const full = await cam();
+await page.evaluate(() => window.KEEPSIES_DEV.pocketAllBut(2));
+await page.evaluate(() => window.KEEPSIES_DEV.settleCamera(90));
+await wait(300);
+const two = await cam();
+await shot('k2-endgame-two');
+await page.evaluate(() => window.KEEPSIES_DEV.pocketAllBut(1));
+await page.evaluate(() => window.KEEPSIES_DEV.settleCamera(90));
+await wait(300);
+const one = await cam();
+await shot('k2-endgame-one');
+
+/* the spyglass: a REAL brace on the taw with one mib left, held 1.7 s so the cone has settled,
+   then let go without a flick (under the cancel band, never a wasted turn) */
+await page.evaluate(() => new Promise((done) => {
+  const d = window.KEEPSIES_DEV;
+  const t = d.state().match.taw;
+  const c = document.getElementById('stage');
+  c.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 7, clientX: t.x, clientY: t.y, bubbles: true }));
+  const t0 = performance.now();
+  let k = 0;
+  const iv = setInterval(() => {
+    c.dispatchEvent(new PointerEvent('pointermove', { pointerId: 7, clientX: t.x + ((k++ & 1) ? 0.3 : -0.3), clientY: t.y, bubbles: true }));
+    if (performance.now() - t0 > 1700) { clearInterval(iv); done(); }
+  }, 16);
+}));
+await wait(150);
+await shot('k2-endgame-spyglass');
+console.log('  spyglass: ' + JSON.stringify(await page.evaluate(() => window.KEEPSIES_DEV.debugCam().spy)));
+await page.evaluate(() => {
+  const t = window.KEEPSIES_DEV.state().match.taw || { x: 187, y: 600 };
+  document.getElementById('stage').dispatchEvent(new PointerEvent('pointerup', { pointerId: 7, clientX: t.x, clientY: t.y, bubbles: true }));
+});
+await wait(300);
+console.log('  endgame lean: full ' + full.mibs + ' mibs at ' + full.dist + ' m, two at ' + two.dist + ' m, one at ' + one.dist + ' m (t ' + one.t + ')');
+
+/* a real one finger orbit, dispatched outside the marble so the Knuckle does not claim it */
+await page.evaluate(() => new Promise((done) => {
+  const c = document.getElementById('stage');
+  let x = 40, y = 120, k = 0;
+  c.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 9, clientX: x, clientY: y, bubbles: true, isPrimary: true }));
+  const iv = setInterval(() => {
+    x += 12; k++;
+    c.dispatchEvent(new PointerEvent('pointermove', { pointerId: 9, clientX: x, clientY: y, bubbles: true, isPrimary: true }));
+    if (k >= 10) { clearInterval(iv); c.dispatchEvent(new PointerEvent('pointerup', { pointerId: 9, clientX: x, clientY: y, bubbles: true, isPrimary: true })); done(); }
+  }, 16);
+}));
+await page.evaluate(() => window.KEEPSIES_DEV.settleCamera(90));
+await wait(300);
+const orbited = await cam();
+await shot('k2-endgame-orbit');
+console.log('  orbit survives: azimuth ' + one.az + ' -> ' + orbited.az + ' (userAz ' + orbited.userAz + '), distance ' + one.dist + ' -> ' + orbited.dist);
+
+/* a real pinch, two pointers spreading apart, which is zoom IN */
+await page.evaluate(() => new Promise((done) => {
+  const c = document.getElementById('stage');
+  let a = 170, b = 205, k = 0;
+  const ev = (type, id, x) => c.dispatchEvent(new PointerEvent(type, { pointerId: id, clientX: x, clientY: 420, bubbles: true }));
+  ev('pointerdown', 7, a); ev('pointerdown', 8, b);
+  const iv = setInterval(() => {
+    a -= 7; b += 7; k++;
+    ev('pointermove', 7, a); ev('pointermove', 8, b);
+    if (k >= 8) { clearInterval(iv); ev('pointerup', 7, a); ev('pointerup', 8, b); done(); }
+  }, 16);
+}));
+await page.evaluate(() => window.KEEPSIES_DEV.settleCamera(90));
+await wait(300);
+const pinched = await cam();
+await shot('k2-endgame-pinch');
+console.log('  pinch survives: distance ' + orbited.dist + ' -> ' + pinched.dist + ' (userZoom ' + pinched.userZoom + ')');
+
 await page.evaluate(() => {
   const b = document.getElementById('topDown');
   const r = b.getBoundingClientRect();

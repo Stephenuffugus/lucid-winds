@@ -799,7 +799,48 @@ ALL GATES PASSED
   been pointing, which is the design's promise that a messy flick is not a weak one, it is a wild one.
 
 ### K1.5 (when `PLAYTESTS.md` has an entry)
-- [ ] Stephen's entry quoted; what changed in `knuckle.js` and `tuning.json` and why; `knuckle` and `sticking` still green
+- [x] **Stephen's entry, 2026-09-04, his phone, build 20260904b** (quoted in full in `PLAYTESTS.md`): "keepsies end
+  game is almost impossible after playting it there needs to be a zoom aim something some way to make it more
+  possible to hit the last couple marbles. its getting there. more formations and a lot more details." Fable,
+  same evening, all in `docs/DECISIONS.md` under "K2.5, the Director's phone", every number measured:
+  - **Diagnosed first.** The sports framing stood a fixed 1.9 m back from the shooter to cross gap, right for 13
+    mibs and wrong for 1: a 16 mm mib 7 px tall on a 375 px screen, inside a settled cone of plus or minus 1.5
+    degrees when the mib subtends 0.6. And the deeper bug: **pinch zoom and one finger orbit were built and
+    INERT** (`frameShot` overwrote `wantAzimuth` and `wantDistance` every frame), and DESIGN 7.7 makes orbit the
+    coarse aim. So the player had the snap's fine angle off a centroid they could not turn away from.
+  - **The lean** (`core/framing.js`, new, pure): below `leanFull` (5) live mibs the camera slides from the sports
+    framing to the closest stand that keeps the shooter above the bottom HUD and the target below the top HUD,
+    both floors DERIVED from the projection and hard at every lean. ⛔ The first lean guessed its end frame and
+    the gate was green while a probe of the real engine put the shooter at y = 866 of 667, off the bottom, and
+    the brace is a touch on the shooter. `test/camera.mjs` now projects the shooter and every mib at 13, 3, 2
+    and 1 by its own geometry, HUD edges as the test's own constants. Engine, from the placing spot on a ten
+    foot ring: 13 mibs 3.42 m (unchanged), 2 at 2.31 m, 1 at 1.73 m, shooter at 78% of the height on both
+    screens (the 568 px screen is the binding one, its chip tops out at 83%), the mib at 9% under the dots.
+    Physical limit of one portrait frame at a 28 degree lens: about 8 px for the last mib, from 5.
+  - **Orbit and pinch live** (`rig.state.userAz` / `userZoom` as offsets over the auto frame, reset on the turn
+    cut); the pinch's look point reaches the target by half zoom (at 0.24x after a 48 degree orbit the first
+    slide framed dirt). Shots `k2-endgame-orbit`, `k2-endgame-pinch`, REAL pointer events.
+  - **The spyglass** (`core/spyglass.js`, `drawInset` in `render/scene.js`, `updateSpyglass` in `main.js`): the
+    zoom aim he asked for by name. While braced and the mib the shot is pointed at is under 14 px on the main
+    screen, a square 180 px scope opens at the top: the same dirt through a 3.5 degree lens from the main
+    camera's own position, down the aim line to the mib nearest the LINE, with the cone's width at that range
+    as a bracket that goes gold when settled. Main camera and cone untouched (DESIGN 9.6). In the scope the
+    last mib is 17 px inside an 84 px settled bracket (measured, `k2-endgame-spyglass`, both widths). The guidance
+    line `#say` moved from the top of the screen (over the last marble) to the dirt between shooter and target. Gate `test/spyglass.mjs`. Shot `k2-endgame-spyglass`, a
+    real 1.7 s brace. Dusty's toast now hides the moment a thumb braces (it sat over the last marble).
+  - **Four lays** (`FORMATIONS` in `game/ringer.js`, house rule `formation`, setup chip "Lay"): cross, x, ring,
+    bunch, thirteen each; only the cross is ever forced. Gate `test/formations.mjs`.
+  - **The inspect card** hangs from the marble (turntable LIFT 0.29, card box from 35% to the Back button, scrolls
+    only when a grail overflows) and the **45 ability cells** are in the player's words (`marbles.overrides.json`,
+    the generator deep merges abilities and keeps the doc's cell as `spec`; `CATALOG OK`).
+  - **Dev hook `pocketAllBut(n)`** reaches an end game through the ring rule and the referee's books dealt 6 and 5
+    (three versions; `resolveShot` ends a match at seven pocketed, so a faked shot cannot be the path).
+  - **Every new gate watched to fail**: camera (floors off, linear slide, both HUD edges wide; the first fail
+    watch mutated tuning's edge and the gate, reading its edge from the same field, stayed green, so the edges
+    are the test's constants now), spyglass (nearest mib instead of nearest the line), formations (bunch of 12).
+  - ⚠️ `ai_budget` went RED under the other session's `ffmpeg -threads 2` on both cores (2 h+): an A/B of HEAD
+    source against this tree under the same load failed IDENTICALLY (7 of 8 candidates at turn 0, ratio 0.84
+    against 0.85). Environmental, not this work; it has not yet passed alone because the box has not been alone.
 - [x] **Fable's review pass, 2026-09-04, before Stephen's entry.** `PLAYTESTS.md` has it in full. The build was
   verified first (`node tools/check.js` ALL GATES PASSED, 21; `node test/mutants.js` 29 killed 0 survived;
   fence clean), then PLAYED through the front door: a scratch driver dispatching real `pointerdown`,
@@ -851,7 +892,43 @@ node test/mutants.js
 29 killed, 0 survived, 0 anchors missed, of 29 mutants
 MUTANTS OK
 ```
-- [ ] commits
+- [x] gates after the K1.5 pass, full suite on the stamped tree (20260904d), alone, pasted below; mutants line
+  follows it:
+```
+node tools/check.js
+lint            pass  0s
+catalog         pass  0s
+stamp           pass  0s
+harness         pass  12s
+save            pass  0s
+clay_regen      pass  0s
+pity_math       pass  0s
+words           pass  0s
+escrow_crash    pass  0s
+ransom          pass  1s
+progression     pass  0s
+onboarding      pass  0s
+damage          pass  0s
+arena           pass  1s
+ringer_rules    pass  0s
+camera          pass  0s
+spyglass        pass  0s
+formations      pass  0s
+ai_budget       pass  14s
+ringer_ai       pass  39s
+render          pass  41s
+knuckle         pass  17s
+audio_budget    pass  8s
+playthrough     pass  53s
+ALL GATES PASSED
+
+node test/mutants.js
+29 killed, 0 survived, 0 anchors missed, of 29 mutants
+MUTANTS OK
+```
+- [x] commits: one commit on `add-sproing-jumper`, "keepsies: the end game, from Stephen's phone" (this
+  file and everything under `satellites/keepsies`, with the 17 shots that are this pass's evidence), then the
+  fleet art lane in a second commit. Not pushed to main: that is the Director's push, and his phone test.
 
 ### K2 (done but for art: the catalog, the collection, the economy, the keepsies loop, the ceremony, the ransom window, progression and the whole first four minutes)
 - [x] `catalog` green: 65 entries, doc and JSON agree:
@@ -1627,6 +1704,29 @@ the whole game and does not exist yet.
 ---
 
 ## SESSION STATE (builder updates this at the end of every session)
+
+**2026-09-04 late, Fable, after Stephen's phone test (K1.5).** His words are in `PLAYTESTS.md`; what they became
+is the K1.5 ledger box above and `docs/DECISIONS.md` under "K2.5, the Director's phone". In one line: the end
+game camera leans as close as a portrait frame allows with the shooter always above the HUD, orbit and pinch
+are alive (they were built and inert), four lays are a house rule, and the zoom aim he asked for is a
+spyglass, a second 3.5 degree lens down the aim line with the cone's width as a bracket. Also the inspect card
+off the marble and the 45 ability cells in the player's words. Every gate new tonight was watched to fail.
+
+**What changed, by file:** `src/core/framing.js` (new), `src/core/spyglass.js` (new), `src/game/ringer.js`
+(`frameShot` through `frameFor`; `FORMATIONS`), `src/core/rules-ringer.js` (`formation` house rule),
+`src/render/scene.js` (`userAz`/`userZoom`, `resetUser`, `drawInset`), `src/input/cameraCtl.js` (offsets),
+`src/main.js` (lean reset on the cut, Lay chip, `updateSpyglass`/`hideSpyglass`, toast hides on brace, inspect
+card overflow rule, dev hooks `pocketAllBut` v3 and `debugCam` fields), `src/meta/collection.js` (turntable
+LIFT 0.29), `src/data/tuning.json` (`ringerCam` lean and HUD edges, `spyglass`), `src/data/marbles.overrides.json`
++ regenerated `marbles.json` (ability copy, `spec` kept), `tools/catalog.mjs` (deep merge of abilities),
+`index.html` (inspect card box, `#spyglass`), `test/camera.mjs`, `test/formations.mjs`, `test/spyglass.mjs`
+(new, in `tools/check.js`), `tools/shots.mjs` (endgame, orbit, pinch, spyglass, grail inspect shots).
+
+**Exact next action:** Stephen plays the end game on the phone: does the scope open when he expects it, does
+the bracket read as his cone, does the lean from the ring edge feel closer, is 1.7 s to a settled bracket
+patience or a wait. Every number is in `tuning.json`. `ai_budget` must pass ALONE once the box is alone
+(the other session's trailer render held both cores all evening; the A/B says the red is the load). The
+three Director calls for K3 stand. Pass and play is still unbuilt. Art is still art.
 
 **2026-09-04, Fable, review of the overnight build.** Verified (21 gates, 29 mutants, fence), then played
 through the front door with real pointer events and fixed what a thumb hits, in the order a thumb hits it.

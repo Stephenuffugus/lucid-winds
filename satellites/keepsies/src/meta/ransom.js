@@ -27,7 +27,7 @@
  * care about, and putting a price on a clay marble would make the free tier feel
  * like a trap. `priceFor` returns 0 for them and `offerFor` skips them.
  */
-import * as SAVE from './save.js?v=20260904c';
+import * as SAVE from './save.js?v=20260904d';
 
 /** What a tier costs to buy back, or 0 when its tier is not ransomed at all. */
 export function priceFor(tier, tuning) {

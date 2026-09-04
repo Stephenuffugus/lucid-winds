@@ -24,13 +24,13 @@
 import {
   createWorld, addSurface, addMarble, removeMarble, impulse, place, step,
   resolved, atRest, outsideRing, positionOf
-} from '../core/physics.js?v=20260904c';
-import { makeStreams } from '../core/rng.js?v=20260904c';
-import { aimToImpulse, makeAim, dirFromDeg, powerForSpeed } from '../core/snap.js?v=20260904c';
-import { bodySpec } from '../core/marbleBody.js?v=20260904c';
-import { sin, cos, atan2, len2, clamp, DEG } from '../core/dmath.js?v=20260904c';
-import { freshMarble, tierOf } from '../core/damage.js?v=20260904c';
-import * as R from '../core/rules-arena.js?v=20260904c';
+} from '../core/physics.js?v=20260904d';
+import { makeStreams } from '../core/rng.js?v=20260904d';
+import { aimToImpulse, makeAim, dirFromDeg, powerForSpeed } from '../core/snap.js?v=20260904d';
+import { bodySpec } from '../core/marbleBody.js?v=20260904d';
+import { sin, cos, atan2, len2, clamp, DEG } from '../core/dmath.js?v=20260904d';
+import { freshMarble, tierOf } from '../core/damage.js?v=20260904d';
+import * as R from '../core/rules-arena.js?v=20260904d';
 
 /**
  * @param {{tuning:object, catalog:object, seed:number, arena?:string,

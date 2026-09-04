@@ -22,9 +22,9 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { createDrops } from '../src/meta/drops.js?v=20260904c';
-import { makeRng } from '../src/core/rng.js?v=20260904c';
-import { TIER_ORDER } from '../src/meta/tiers.js?v=20260904c';
+import { createDrops } from '../src/meta/drops.js?v=20260904d';
+import { makeRng } from '../src/core/rng.js?v=20260904d';
+import { TIER_ORDER } from '../src/meta/tiers.js?v=20260904d';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const T = JSON.parse(readFileSync(join(ROOT, 'src/data/tuning.json'), 'utf8'));

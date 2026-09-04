@@ -17,8 +17,8 @@
  * ⛔ A DUPE GRAIL NEVER HAPPENS. DESIGN 10.6 is absolute about it: reroll to the
  * highest epic instead. A one of one that arrives twice is not a one of one.
  */
-import * as SAVE from './save.js?v=20260904c';
-import { TIER_ORDER } from './tiers.js?v=20260904c';
+import * as SAVE from './save.js?v=20260904d';
+import { TIER_ORDER } from './tiers.js?v=20260904d';
 
 /**
  * @param {object} tables parsed droptables.json

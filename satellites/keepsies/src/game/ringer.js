@@ -18,19 +18,59 @@ import {
   createWorld, disposeWorld, addSurface, addMarble, removeMarble, impulse, place,
   step, atRest, specOf, positionOf, velocityOf, ringDistance, resolved,
   snapshot, restore, setTimestep
-} from '../core/physics.js?v=20260904c';
-import { makeStreams, makeRng } from '../core/rng.js?v=20260904c';
-import { aimToImpulse, makeAim, dirFromDeg, powerForSpeed } from '../core/snap.js?v=20260904c';
-import { STARTER_ENTRIES, CROSS_MIX } from '../core/marbleBody.js?v=20260904c';
-import { sin, cos, atan2, len2, clamp, DEG } from '../core/dmath.js?v=20260904c';
+} from '../core/physics.js?v=20260904d';
+import { makeStreams, makeRng } from '../core/rng.js?v=20260904d';
+import { aimToImpulse, makeAim, dirFromDeg, powerForSpeed } from '../core/snap.js?v=20260904d';
+import { STARTER_ENTRIES, CROSS_MIX } from '../core/marbleBody.js?v=20260904d';
+import { sin, cos, atan2, len2, clamp, DEG } from '../core/dmath.js?v=20260904d';
+import { frameFor } from '../core/framing.js?v=20260904d';
 import {
   createMatch, skipLag, resolveLag, mayPlace, placeTaw, fireShot, resolveShot,
   summary, edgePosition, PHASE, DEFAULT_HOUSE_RULES
-} from '../core/rules-ringer.js?v=20260904c';
-import { plan } from './ai.js?v=20260904c';
-import { detect as detectTechniques } from '../core/techniques.js?v=20260904c';
+} from '../core/rules-ringer.js?v=20260904d';
+import { plan } from './ai.js?v=20260904d';
+import { detect as detectTechniques } from '../core/techniques.js?v=20260904d';
 
 const RING_FT = { 7: '7ft', 10: '10ft', 13: '13ft' };
+
+const SQ3 = 1.7320508075688772;
+const PI = 3.141592653589793;
+/**
+ * The lays. Each returns thirteen [x, z] pairs, adjacent mibs `sp` apart, centred on
+ * the ring. All four are real ways people lay marbles, not inventions:
+ *   cross  Ringer's plus, arms of three. The standard, and what the tutorial breaks.
+ *   x      the same plus turned forty five degrees, so the arms run diagonal to the
+ *          shooter and there is no straight line down an arm to snap along.
+ *   ring   Ring Taw's circle: thirteen round the rim, nothing in the middle, so a
+ *          break through the centre hits nothing and every shot is a rim shot.
+ *   bunch  a packed hexagon, one, six and six, the tight pile a break scatters.
+ * Only the cross is ever used by the onboarding and the sim scenarios; the harness
+ * lays its own cross and does not read this table.
+ */
+export const FORMATIONS = {
+  cross(sp) {
+    const o = [];
+    for (let i = -3; i <= 3; i++) { o.push([i * sp, 0]); if (i !== 0) o.push([0, i * sp]); }
+    return o;
+  },
+  x(sp) {
+    const d = sp / 1.4142135623730951, o = [[0, 0]];
+    for (let i = 1; i <= 3; i++) o.push([i * d, i * d], [-i * d, -i * d], [i * d, -i * d], [-i * d, i * d]);
+    return o;
+  },
+  ring(sp) {
+    const r = sp / (2 * sin(PI / 13)), o = [];
+    for (let i = 0; i < 13; i++) { const a = (i / 13) * 2 * PI; o.push([sin(a) * r, cos(a) * r]); }
+    return o;
+  },
+  bunch(sp) {
+    const o = [[0, 0]];
+    for (let i = 0; i < 6; i++) { const a = (i / 6) * 2 * PI; o.push([sin(a) * sp, cos(a) * sp]); }
+    for (let i = 0; i < 6; i++) { const a = (i / 6) * 2 * PI + PI / 6; o.push([sin(a) * sp * SQ3, cos(a) * sp * SQ3]); }
+    return o;
+  }
+};
+export const FORMATION_NAMES = Object.keys(FORMATIONS);
 
 /**
  * @param {{tuning:object, seed:number, houseRules?:object,
@@ -47,17 +87,19 @@ export function createRinger(setup) {
   const W = createWorld(T, { ringRadius });
   addSurface(W, { kind: 'dirt', box: { hx: 30, hy: 0.05, hz: 30 }, pos: { x: 0, y: -0.05, z: 0 } });
 
-  /* the cross: thirteen mibs in a plus, arms of three, 75 mm apart.
+  /* The lay: thirteen mibs, 75 mm apart, in one of the FORMATIONS below. The cross
+     is the Ringer standard and the default; the others are real marble lays a
+     house can call (house rule `formation`), asked for by the Director on
+     2026-09-04 after his phone playtest ("more formations"). Every lay is thirteen
+     so seven still wins and every conservation gate holds as written.
      `bare` lays none of them: calibration is one marble on dirt and nothing
      else on the screen, which is the first thing DESIGN 16.1 asks for. */
   const sp = T.ringer.crossSpacing;
   const mibs = [];      // {id, uid, entry}
   let k = 0;
   if (!setup.bare) {
-    for (let i = -3; i <= 3; i++) {
-      mibs.push(mib(i * sp, 0, k++));
-      if (i !== 0) mibs.push(mib(0, i * sp, k++));
-    }
+    const lay = FORMATIONS[hr.formation] || FORMATIONS.cross;
+    for (const [x, z] of lay(sp)) mibs.push(mib(x, z, k++));
   }
   function mib(x, z, idx) {
     const entry = STARTER_ENTRIES[CROSS_MIX[idx % CROSS_MIX.length]];
@@ -304,42 +346,26 @@ export function createRinger(setup) {
    * DESIGN 8.5: elevated behind the taw, framing the taw and the cross together.
    * The camera is a CameraRig like every other, so K5 can swap in an XRRig.
    */
+  /* Sports framing, and it is a composition decision, not a maths one: the
+   * TARGET is centred and the ball sits in the near foreground. The maths lives
+   * in core/framing.js so it can be gated without a world; this feeds it real
+   * positions and the player's own orbit and pinch, and applies the answer. */
   function frameShot(rig, snap) {
     const taw = shooterTaw();
     if (!W.marbles.has(taw.id)) return;
     const tp = positionOf(W, taw.id);
-    const live = liveMibs();
-    let cx = 0, cz = 0;
-    if (live.length) {
-      for (const m of live) { const p = positionOf(W, m.id); cx += p.x; cz += p.z; }
-      cx /= live.length; cz /= live.length;
-    }
-    let dx = cx - tp.x, dz = cz - tp.z;
-    if (len2(dx, dz) < 1e-3) { dx = -tp.x; dz = -tp.z; }      // nothing to shoot at: look inward
-    if (len2(dx, dz) < 1e-3) { dx = 0; dz = 1; }
-    const span = Math.max(0.9, len2(dx, dz));
-    /* Sports framing, and it is a composition decision, not a maths one: the
-     * TARGET is centred and the ball sits in the near foreground. Aiming at the
-     * midpoint of taw and cross put both of them hard against the frame edges
-     * with two thirds of the picture empty dirt between them, which is what the
-     * first K1 shot showed. Biasing the look point toward the cross puts the
-     * thing you are shooting at in the middle of the screen and your shooter
-     * where your thumb already is. */
-    if (setup.bare) {
-      // one marble, close, the way you look at a marble you are about to snap
-      const C0 = T.render.calibCam;
-      rig.setTarget(tp.x, 0.012, tp.z);
-      rig.state.wantAzimuth = atan2(-tp.x, -tp.z);
-      rig.state.wantDistance = C0.distance;
-      rig.state.elevationDeg = C0.elevationDeg;
-      if (snap) { rig.state.azimuth = rig.state.wantAzimuth; rig.state.distance = rig.state.wantDistance; }
-      return;
-    }
-    const C = T.render.ringerCam;
-    rig.setTarget(tp.x + dx * C.targetBias, 0.012, tp.z + dz * C.targetBias);
-    rig.state.wantAzimuth = atan2(-dx, -dz);
-    rig.state.wantDistance = clamp(span * C.spanFactor + C.spanAdd, C.minDistance, C.maxDistance);
-    rig.state.elevationDeg = C.elevationDeg;
+    const live = liveMibs().map(m => { const p = positionOf(W, m.id); return { x: p.x, z: p.z }; });
+    const vp = rig.viewport;
+    const f = frameFor({
+      tawX: tp.x, tawZ: tp.z, live, bare: !!setup.bare,
+      aspect: vp && vp.h ? vp.w / vp.h : 0.56,
+      user: { az: rig.state.userAz || 0, zoom: rig.state.userZoom || 1 }
+    }, T.render.ringerCam, T.render.calibCam);
+    rig.setTarget(f.tx, 0.012, f.tz);
+    rig.state.wantAzimuth = f.azimuth;
+    rig.state.wantDistance = f.distance;
+    rig.state.elevationDeg = f.elevation;
+    rig.state.frameInfo = f.auto;           // the dev hook reads this; nothing else does
     if (snap) {
       rig.state.azimuth = rig.state.wantAzimuth;
       rig.state.distance = rig.state.wantDistance;

@@ -1,6 +1,5 @@
 {
   "_": "Every physics and balance number in Keepsies. A literal constant in a .js file is a review failure (HANDOFF-KEEPSIES 5.7). The harness, the AI worker and the game all load this same file.",
-
   "physics": {
     "fixedStep": 0.008333333333333333,
     "gravityY": -9.81,
@@ -16,26 +15,79 @@
     "slipEpsilon": 0.01,
     "_note": "damping is numerical only now; the feel comes from rollingMu (HANDOFF-KEEPSIES 4.1). Rapier has no rolling resistance, so physics.js applies it as a per step force and resets forces every step because addForce is persistent."
   },
-
   "surface": {
     "_": "rollingMu brakes travel; spinningMu brakes yaw about the contact normal. Rapier has neither, and without the second one a marble that picked up spin in a collision spins on the spot for ever and nothing in the scene ever sleeps.",
     "__retune": "rollingMu was 0.02 in the plan, measured against a physics model in which Rapier was silently doing half the braking with its own floor friction. Now that the contact patch is ours (physics.js scar 4) that friction is zero in the solver and 0.02 brakes nothing: the taw coasted eleven metres and NOTHING in the scene slept inside eight seconds. Swept 0.02 to 0.18 against launch 3.5 to 6.0, 14 seeds each. 0.06 with a 4.5 m/s break is the middle of the widest plateau: 1 to 3 mibs out on 100 percent, everything asleep on 100 percent, and a shot that settles in 4.3 s instead of 6.9. The other surfaces keep the plan's ratios to dirt.",
-    "dirt":     { "friction": 0.55, "restitution": 0.35, "rollingMu": 0.06,  "spinningMu": 0.06 },
-    "polished": { "friction": 0.18, "restitution": 0.60, "rollingMu": 0.024, "spinningMu": 0.024 },
-    "ice":      { "friction": 0.04, "restitution": 0.60, "rollingMu": 0.006, "spinningMu": 0.006 },
-    "sand":     { "friction": 0.90, "restitution": 0.20, "rollingMu": 0.18,  "spinningMu": 0.18 },
-    "rubber":   { "friction": 0.60, "restitution": 1.10, "rollingMu": 0.06,  "spinningMu": 0.06, "exitSpeedClamp": 4.5 }
+    "dirt": {
+      "friction": 0.55,
+      "restitution": 0.35,
+      "rollingMu": 0.06,
+      "spinningMu": 0.06
+    },
+    "polished": {
+      "friction": 0.18,
+      "restitution": 0.6,
+      "rollingMu": 0.024,
+      "spinningMu": 0.024
+    },
+    "ice": {
+      "friction": 0.04,
+      "restitution": 0.6,
+      "rollingMu": 0.006,
+      "spinningMu": 0.006
+    },
+    "sand": {
+      "friction": 0.9,
+      "restitution": 0.2,
+      "rollingMu": 0.18,
+      "spinningMu": 0.18
+    },
+    "rubber": {
+      "friction": 0.6,
+      "restitution": 1.1,
+      "rollingMu": 0.06,
+      "spinningMu": 0.06,
+      "exitSpeedClamp": 4.5
+    }
   },
-
   "material": {
-    "clay":    { "density": 1800, "restitution": 0.55, "friction": 0.45, "hardness": 1.0 },
-    "glass":   { "density": 2500, "restitution": 0.78, "friction": 0.30, "hardness": 1.0 },
-    "agate":   { "density": 2650, "restitution": 0.72, "friction": 0.34, "hardness": 1.3 },
-    "stone":   { "density": 2650, "restitution": 0.72, "friction": 0.34, "hardness": 1.15 },
-    "steel":   { "density": 7800, "restitution": 0.60, "friction": 0.22, "hardness": 1.4 },
-    "fantasy": { "density": 2500, "restitution": 0.78, "friction": 0.30, "hardness": 1.0 }
+    "clay": {
+      "density": 1800,
+      "restitution": 0.55,
+      "friction": 0.45,
+      "hardness": 1.0
+    },
+    "glass": {
+      "density": 2500,
+      "restitution": 0.78,
+      "friction": 0.3,
+      "hardness": 1.0
+    },
+    "agate": {
+      "density": 2650,
+      "restitution": 0.72,
+      "friction": 0.34,
+      "hardness": 1.3
+    },
+    "stone": {
+      "density": 2650,
+      "restitution": 0.72,
+      "friction": 0.34,
+      "hardness": 1.15
+    },
+    "steel": {
+      "density": 7800,
+      "restitution": 0.6,
+      "friction": 0.22,
+      "hardness": 1.4
+    },
+    "fantasy": {
+      "density": 2500,
+      "restitution": 0.78,
+      "friction": 0.3,
+      "hardness": 1.0
+    }
   },
-
   "diameterMm": {
     "mib": 16,
     "taw": 22,
@@ -43,10 +95,13 @@
     "arenaOversizeCap": 35,
     "overrideMaxPercent": 25
   },
-
   "ringer": {
     "ringRadius": 1.525,
-    "ringSizeRadius": { "7ft": 1.0668, "10ft": 1.525, "13ft": 1.9812 },
+    "ringSizeRadius": {
+      "7ft": 1.0668,
+      "10ft": 1.525,
+      "13ft": 1.9812
+    },
     "crossSpacing": 0.075,
     "mibCount": 13,
     "pocketedToWin": 7,
@@ -54,7 +109,6 @@
     "lagLineOffset": 0.3,
     "_breakSpeed": "4.5 m/s is 0.73 of the 0.5 to 6.0 launch range: a firm snap, not a maximum one. The design's 3.5 knocks nothing out at any tested setting, and the plan's 4.0 lands at 93 percent rather than 100 once the contact patch became ours. See surface.__retune."
   },
-
   "snap": {
     "launchMin": 0.5,
     "launchMax": 6.0,
@@ -85,7 +139,6 @@
     "_powerEase": "The exponent of the ease out curve, in sixteenths: 21/16 = 1.3125. At that exponent the top 20 percent of a player's effort buys the last 12.1 percent of power, which is what DESIGN 7.2 asks for. It is stated in sixteenths because Math.pow is not bit reproducible across engines and core computes it with four square roots instead.",
     "_k": "kBack, kTop, kSide and kWildSpin are MULTIPLES OF THE NATURAL ROLLING RATE (launch speed divided by radius), so they are scale free: 1.0 of top spin is exactly the spin a marble of that size would have if it were rolling at that speed. Tuned in K1 against the sticking scenario."
   },
-
   "arena": {
     "damageSpeedFloor": 1.2,
     "damageScale": 55,
@@ -102,7 +155,6 @@
     "enteringMomentum": 0.5,
     "_ring": "DESIGN 9.8: The Ring arena REUSES the Ringer environment, so it takes the Ringer 10 foot radius rather than carrying a second number. An arena of its own 0.9 m sent every shot straight out of it: at 0.7 power a marble leaves at 5 m/s and 0.9 m is four tenths of a second away.",
     "settleCapSeconds": 6,
-
     "ringOutSeconds": 3,
     "aimTimerRankedSeconds": 12,
     "charge": {
@@ -114,45 +166,92 @@
       "full": 100
     }
   },
-
   "_arenaAi": "In Ringer the AI aims at a cross of thirteen marbles and a fixed angular noise is a fair way to be bad at it. In the Arena there is ONE enemy marble, about 16 mm wide, and at two and a half metres that is 0.37 degrees: a fixed 0.8 degree noise misses 720 shots out of 720, which is what the first measurement showed. So the Arena AI states its HIT RATE and derives the angle from the geometry, which makes its difficulty a design number rather than an accident of scale.",
-  "arenaAi": { "hitRate": { "rookie": 0.35, "sharp": 0.55, "shark": 0.75 }, "arriveSpeed": 1.6 },
+  "arenaAi": {
+    "hitRate": {
+      "rookie": 0.35,
+      "sharp": 0.55,
+      "shark": 0.75
+    },
+    "arriveSpeed": 1.6
+  },
   "ai": {
     "deadlineMs": 1200,
-    "candidates": { "rookie": 6, "sharp": 14, "shark": 24 },
-    "percentile": { "rookie": 0.60, "sharp": 0.85, "shark": 1.0 },
-    "noiseDeg": { "rookie": 5.0, "sharp": 1.5, "shark": 0.8 },
+    "candidates": {
+      "rookie": 6,
+      "sharp": 14,
+      "shark": 24
+    },
+    "percentile": {
+      "rookie": 0.6,
+      "sharp": 0.85,
+      "shark": 1.0
+    },
+    "noiseDeg": {
+      "rookie": 5.0,
+      "sharp": 1.5,
+      "shark": 0.8
+    },
     "_rookie": "2.5 degrees was set from an AI against AI sweep at ten foot. Played against with a settled brace and dead straight flicks through the real Knuckle, that Rookie won eleven matches out of eleven, and at seven foot, which is the ring the first four minutes are played on, he pocketed six in six shots once the cross was open: his candidates are SIMULATED, so a hit is a pocket, and at a metre the 1.9 cm window is a whole degree wide. DESIGN 10.7 calls him the boy you beat first. Five degrees, measured against the same driver, is in DECISIONS.",
     "_noiseDeg": "DESIGN 13.4 says 8, 3 and 1 degrees. Measured against this geometry those are unplayable: a taw and a mib touch inside a window of about 1.9 cm, so at a metre and a half a hit needs the aim inside 0.73 degrees, and a Rookie at 8 degrees connects on 17 percent of shots and drags a game to 59 shots and past two minutes of physics. Swept 0.8 to 8 over five games each: 0.8 gives 11 shots a game and a 64 percent strike rate, 1.5 gives 20 and 48, 2.5 gives 26 and 36, 4 gives 39 and 28, 8 gives 59 and 17. The ladder keeps the design's shape, a Rookie about three times sloppier than a Shark, at numbers this ring can actually be played in.",
     "candidateStep": 0.016666666666666666,
     "candidateMarbleSeconds": 2.0,
-    "batch": { "candidates": 4, "marbleSeconds": 1.0 },
+    "batch": {
+      "candidates": 4,
+      "marbleSeconds": 1.0
+    },
     "lowQualityDivisor": 2
   },
-
   "_progression": "DESIGN 20. XP comes from any match, won or lost, For Fair included, because progression never requires keepsies. xpPerLevel is the cost of ONE level up and it scales with the level you are leaving: going from 3 to 4 costs 360. See DECISIONS 2026-09-04 for the reading of 'level N needs 120xN XP' and why the cumulative reading was rejected.",
   "progression": {
     "xpPerLevel": 120,
     "levelCap": 30,
     "levelUpSunbeams": 20,
-    "xp": { "win": 100, "loss": 40, "bossWin": 300 },
+    "xp": {
+      "win": 100,
+      "loss": 40,
+      "bossWin": 300
+    },
     "_announce": "DESIGN 20's table is the design and stays whole. This list is what EXISTS in the build today, and the level up card only announces keys on it: promising a player keepsies against people, in a build with no online, sends them looking for a screen that is not there. Add a key here the day the thing ships. Today the list is one long: the pouches are the only unlock that exists. The Arena, the house rules editor, the Practice Ring, the Foundry, the Glacier and the four leagues are all K3, and human keepsies is Phase 4.",
-    "announce": ["pouches"],
+    "announce": [
+      "pouches"
+    ],
     "unlocks": {
-      "ringer": 1, "aiKeepsies": 1,
+      "ringer": 1,
+      "aiKeepsies": 1,
       "pouches": 2,
-      "arena": 3, "bagEditing": 3,
-      "houseRules": 4, "practiceRing": 4,
-      "humanKeepsies": 5, "passAndPlay": 5,
+      "arena": 3,
+      "bagEditing": 3,
+      "houseRules": 4,
+      "practiceRing": 4,
+      "humanKeepsies": 5,
+      "passAndPlay": 5,
       "foundry": 7,
-      "glacier": 9, "leagueII": 9,
-      "leagueIII": 13, "leagueIV": 17, "leagueV": 21
+      "glacier": 9,
+      "leagueII": 9,
+      "leagueIII": 13,
+      "leagueIV": 17,
+      "leagueV": 21
     }
   },
   "economy": {
-    "dust": { "common": 5, "uncommon": 25, "rare": 120, "epic": 600 },
-    "ransom": { "rare": 400, "epic": 1500, "grail": 5000, "windowHours": 24 },
-    "pouchPrice": { "standard": 300, "collector": 1200, "grail": 6000 },
+    "dust": {
+      "common": 5,
+      "uncommon": 25,
+      "rare": 120,
+      "epic": 600
+    },
+    "ransom": {
+      "rare": 400,
+      "epic": 1500,
+      "grail": 5000,
+      "windowHours": 24
+    },
+    "pouchPrice": {
+      "standard": 300,
+      "collector": 1200,
+      "grail": 6000
+    },
     "clayPoolSize": 10,
     "showcaseSlots": 6,
     "showcaseSlotsUpgraded": 12,
@@ -162,7 +261,11 @@
     "matchCompletionMax": 40,
     "chorePay": 60,
     "choresPerDay": 3,
-    "streak": { "3": 100, "5": 150, "7": 250 },
+    "streak": {
+      "3": 100,
+      "5": 150,
+      "7": 250
+    },
     "techniqueFirstEarn": 50,
     "levelUpPerLevel": 20,
     "xpPerLevelBase": 120,
@@ -173,7 +276,6 @@
     "fleetSunbeamsPerMatchMin": 2,
     "fleetSunbeamsPerMatchMax": 6
   },
-
   "render": {
     "envIntensity": 0.55,
     "ringerCam": {
@@ -182,10 +284,16 @@
       "targetBias": 0.5,
       "spanFactor": 1.0,
       "spanAdd": 1.9,
+      "__lean": "The end game lean (core/framing.js). Below leanFull live mibs the look point slides from targetBias to targetBiasEnd and the camera from the sports framing to the closest stand that keeps the shooter above the bottom HUD (fitEdgeBottom of the half height) and the target below the top HUD (fitEdgeTop). fitEdgeTop 0.84 keeps the target under the names and pocket dots (the guidance line no longer lives at the top); fitEdgeBottom 0.56 keeps the shooter and its reticle above the house rules chip on a 568 px screen, where the chip (pixels from the bottom) reaches 83% of the height; targetBiasEnd 0.26 is where the two floors balance at 30 degrees and a 28 degree lens (derived in framing.js, not chosen). spreadMargin widens the frame for survivors on opposite sides. Every floor is hard at every lean.",
+      "leanFull": 5,
+      "targetBiasEnd": 0.26,
+      "spreadMargin": 1.15,
       "elevationDeg": 30,
       "fov": 28,
       "minDistance": 0.9,
-      "maxDistance": 5.5
+      "maxDistance": 5.5,
+      "fitEdgeTop": 0.84,
+      "fitEdgeBottom": 0.56
     },
     "calibCam": {
       "_": "Calibration is one marble on dirt and DESIGN 16.1 means one marble, close enough to be a thing you touch. Framed at the whole ring it was a single dot on a big empty ellipse.",
@@ -194,26 +302,78 @@
     },
     "fresnelPower": 2.6,
     "quality": {
-      "low":    { "resolutionScale": 0.6, "shadows": "off",  "transmission": false, "shotCam": false },
-      "medium": { "resolutionScale": 0.8, "shadows": "one",  "transmission": false, "shotCam": true },
-      "high":   { "resolutionScale": 1.0, "shadows": "soft", "transmission": true,  "shotCam": true }
+      "low": {
+        "resolutionScale": 0.6,
+        "shadows": "off",
+        "transmission": false,
+        "shotCam": false
+      },
+      "medium": {
+        "resolutionScale": 0.8,
+        "shadows": "one",
+        "transmission": false,
+        "shotCam": true
+      },
+      "high": {
+        "resolutionScale": 1.0,
+        "shadows": "soft",
+        "transmission": true,
+        "shotCam": true
+      }
     },
     "dynamicResDownAboveMs": 16,
     "dynamicResUpBelowMs": 12,
     "dynamicResUpAfterSeconds": 5,
-    "budget": { "drawCalls": 50, "marbleDrawCalls": 24, "triangles": 120000, "debrisMax": 24, "debrisTtlSeconds": 4 }
+    "budget": {
+      "drawCalls": 50,
+      "marbleDrawCalls": 24,
+      "triangles": 120000,
+      "debrisMax": 24,
+      "debrisTtlSeconds": 4
+    },
+    "spyglass": {
+      "_": "The zoom aim (core/spyglass.js): a square scope of sizePx at fovDeg, top px below the top of the screen, that opens while braced when the mib the shot is pointed at is under openBelowPx across on the main screen. minAhead is how far in front of the shooter a mib must be to count.",
+      "fovDeg": 3.5,
+      "sizePx": 180,
+      "top": 64,
+      "openBelowPx": 14,
+      "minAhead": 0.05
+    }
   },
-
   "audio": {
     "cpuBudgetMsPerFrame": 1.5,
     "maxRollingLoops": 8,
     "impactGain": 0.35,
     "detuneCents": 18,
     "modes": {
-      "glass": { "count": 4, "loHz": 1800, "hiHz": 6000, "q": 22, "decay": 0.45 },
-      "clay":  { "count": 2, "loHz": 300,  "hiHz": 900,  "q": 5,  "decay": 0.12 },
-      "steel": { "count": 5, "loHz": 900,  "hiHz": 5200, "q": 40, "decay": 1.10 },
-      "stone": { "count": 3, "loHz": 700,  "hiHz": 2600, "q": 12, "decay": 0.28 }
+      "glass": {
+        "count": 4,
+        "loHz": 1800,
+        "hiHz": 6000,
+        "q": 22,
+        "decay": 0.45
+      },
+      "clay": {
+        "count": 2,
+        "loHz": 300,
+        "hiHz": 900,
+        "q": 5,
+        "decay": 0.12
+      },
+      "steel": {
+        "count": 5,
+        "loHz": 900,
+        "hiHz": 5200,
+        "q": 40,
+        "decay": 1.1
+      },
+      "stone": {
+        "count": 3,
+        "loHz": 700,
+        "hiHz": 2600,
+        "q": 12,
+        "decay": 0.28
+      }
     },
     "referenceDiameterMm": 16
   }

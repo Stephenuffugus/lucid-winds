@@ -42,14 +42,20 @@ export function attachCameraControls(canvas, rig, hooks) {
     const dx = e.clientX - p.x;
     p.x = e.clientX; p.y = e.clientY;
     moved += Math.abs(dx) + Math.abs(e.clientY - p.oy);
+    /* Written to BOTH the want values and the user offsets. In a match frameShot
+       rebuilds the want values every frame from its auto-frame plus these offsets,
+       so writing the offsets is what makes the gesture survive; in freeCam nothing
+       rebuilds them and the direct write is what moves the camera. */
     if (pointers.size === 1) {
       rig.state.wantAzimuth -= dx * 0.007;
+      rig.state.userAz = (rig.state.userAz || 0) - dx * 0.007;
     } else if (pointers.size === 2) {
       const span = pinchSpan();
       if (lastPinch > 0) {
         const k = lastPinch / Math.max(1, span);
         rig.state.wantDistance = Math.max(rig.state.minDistance,
           Math.min(rig.state.maxDistance, rig.state.wantDistance * k));
+        rig.state.userZoom = Math.max(0.15, Math.min(4, (rig.state.userZoom || 1) * k));
       }
       lastPinch = span;
     }
@@ -73,8 +79,10 @@ export function attachCameraControls(canvas, rig, hooks) {
 
   function onWheel(e) {
     e.preventDefault();
+    const k = 1 + e.deltaY * 0.0012;
     rig.state.wantDistance = Math.max(rig.state.minDistance,
-      Math.min(rig.state.maxDistance, rig.state.wantDistance * (1 + e.deltaY * 0.0012)));
+      Math.min(rig.state.maxDistance, rig.state.wantDistance * k));
+    rig.state.userZoom = Math.max(0.15, Math.min(4, (rig.state.userZoom || 1) * k));
   }
   canvas.addEventListener('wheel', onWheel, { passive: false });
 
