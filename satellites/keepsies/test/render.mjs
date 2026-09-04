@@ -137,25 +137,53 @@ say(btn.h >= 48 && btn.w >= 48, '(c) PLAY measures ' + btn.w.toFixed(0) + ' by '
   + ' rendered px at ' + W + ' wide, the floor is 48');
 
 await page.mouse.click(btn.cx, btn.cy);
-await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'range', { timeout: 20000 });
+/* DIRECTIONS BEFORE PLAY: the rules card stands between the title and the first
+   match, and it is asserted here so nobody quietly removes it. */
+await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'rules', { timeout: 20000 });
+const go = await page.evaluate(() => {
+  const b = document.getElementById('rulesGo');
+  const r = b.getBoundingClientRect();
+  const cx = Math.round(r.left + r.width / 2), cy = Math.round(r.top + r.height / 2);
+  const hit = document.elementFromPoint(cx, cy);
+  return { w: r.width, h: r.height, hitId: hit ? hit.id : null, cx, cy };
+});
+say(go.hitId === 'rulesGo' && go.h >= 48,
+  '(c) the rules card comes before the first match and its button is '
+  + go.w.toFixed(0) + ' by ' + go.h.toFixed(0) + ' rendered px');
+await page.mouse.click(go.cx, go.cy);
+await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'match', { timeout: 20000 });
+await page.evaluate(() => window.KEEPSIES_DEV.settle(1400));
+await new Promise(r => setTimeout(r, 300));
 
-const shotA = await page.screenshot({ path: join(OUT, 'k0-marble-' + W + '.png') });
+const shotA = await page.screenshot({ path: join(OUT, 'k1-ring-' + W + '.png') });
 const a = await stat(shotA);
-/* ⛔ The threshold is 0.45, not Ripcord's 0.92, because 0.92 could not catch its
+/* ⛔ The threshold is 0.72, not Ripcord's 0.92, because 0.92 could not catch its
    own failure here. Watched: with every light removed, the sky removed and the
    clear colour black, this frame still read 57.5% dominant across 495 colours
    and PASSED. Two reasons, both worth knowing. The dirt is lit by the PMREM
    room environment, which survives deleting every light; and the marble's fake
    glass is lit by its own uniform, not by the scene, so it looks the same in the
-   dark. A gate you have not watched fail is decoration, and this one was. */
-say(a.dom < 0.45, '(b) the frame is not one flat colour: the commonest colour is '
+   dark. A gate you have not watched fail is decoration, and this one was.
+
+   It sat at 0.45 while K0 framed one marble close up. A Ringer board framed at
+   three metres is legitimately mostly dirt and reads 56%, so the flat colour
+   test alone cannot separate a real board from a dead one at this distance. The
+   LUMINANCE BAND below is what actually catches the dark now: the same lights
+   off scene reads 0.7 percent against a floor of 16. */
+say(a.dom < 0.72, '(b) the frame is not one flat colour: the commonest colour is '
   + (a.dom * 100).toFixed(1) + '% of it, across ' + a.colours + ' colours');
 say(a.lum > 0.16 && a.lum < 0.90, '(b) the frame is lit: mean luminance '
   + (a.lum * 100).toFixed(1) + '%, the band is 16 to 90');
 
-/* (d) a snap, then two frames 600 ms apart. A still life would give the same
-   picture twice; a marble under physics will not. */
-await page.evaluate(() => window.KEEPSIES_DEV.snap({ dir: { x: 0, y: 0, z: -1 }, power01: 0.55 }));
+/* (d) a real snap through the real Knuckle, then two frames 600 ms apart. A
+   still life would give the same picture twice; a marble under physics will not. */
+await page.evaluate(() => {
+  const t = window.KEEPSIES_DEV.state().match.taw;
+  if (!t) return null;
+  const out = [];
+  for (let i = 0; i <= 18; i++) out.push({ x: t.x, y: t.y - (300 * i / 18), t: 1000 + 55 * i / 18 });
+  return window.KEEPSIES_DEV.flick(out);
+});
 await new Promise(r => setTimeout(r, 120));
 const b1 = await stat(await page.screenshot());
 await new Promise(r => setTimeout(r, 600));
@@ -164,20 +192,21 @@ const d = diff(b1, b2);
 say(d.movedFrac > 0.02, '(d) two frames 600 ms apart differ: ' + (d.movedFrac * 100).toFixed(1)
   + '% of cells moved, mean difference ' + d.meanDiff.toFixed(2) + ' of 255');
 
-const st = await page.evaluate(() => window.KEEPSIES_DEV.state());
-say(st.steps > 100, '(d) the physics is stepping: ' + st.steps + ' steps, world clock ' + st.t.toFixed(2) + ' s');
+const st = await page.evaluate(() => { window.KEEPSIES_DEV.settle(1400); return window.KEEPSIES_DEV.state(); });
+say(st.match && st.match.shots >= 1, '(d) the match is being played: ' + st.match.shots
+  + ' shots, ' + st.match.mibsLeft + ' mibs left in the ring, pocketed ' + st.match.pocketed.join(' and '));
 
 say(errors.length === 0, '(a) zero page errors' + (errors.length ? ': ' + errors.slice(0, 4).join(' | ') : ''));
 
 /* the small screen, and the worst angle a player can find */
 await page.setViewport({ width: 320, height: 568, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
 await new Promise(r => setTimeout(r, 400));
-await page.screenshot({ path: join(OUT, 'k0-marble-320.png') });
+await page.screenshot({ path: join(OUT, 'k1-ring-320.png') });
 const small = await page.evaluate(() => {
-  const b = document.getElementById('hudExit').getBoundingClientRect();
+  const b = document.getElementById('pause').getBoundingClientRect();
   return { w: b.width, h: b.height };
 });
-say(small.h >= 48 && small.w >= 48, '(c) the Back control measures ' + small.w.toFixed(0) + ' by '
+say(small.h >= 48 && small.w >= 48, '(c) the Pause control measures ' + small.w.toFixed(0) + ' by '
   + small.h.toFixed(0) + ' rendered px at 320 wide');
 
 /* The worst angle, on purpose: the camera driven BELOW the ground plane, looking
@@ -185,28 +214,27 @@ say(small.h >= 48 && small.w >= 48, '(c) the Back control measures ' + small.w.t
    floor and no green gate has ever noticed that by itself. */
 await page.setViewport({ width: 375, height: 667, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
 await new Promise(r => setTimeout(r, 300));
-await page.evaluate(() => { window.KEEPSIES_DEV.reset(); });
 // the lowest a PLAYER can actually get: the rig clamps at the ground
 const low = await page.evaluate(() => window.KEEPSIES_DEV.camera(30, -40, 0.9));
 await new Promise(r => setTimeout(r, 400));
-await page.screenshot({ path: join(OUT, 'k0-marble-lowest.png') });
+await page.screenshot({ path: join(OUT, 'k1-ring-lowest.png') });
 say(low.elevationDeg >= 0, '(e) the camera cannot go under the ground: asked for -40 degrees, got '
   + low.elevationDeg + ' degrees');
 // and what is down there anyway, forced, because the shot is the evidence
 await page.evaluate(() => window.KEEPSIES_DEV.camera(30, -22, 0.9, { allowUnder: true }));
 await new Promise(r => setTimeout(r, 500));
-await page.screenshot({ path: join(OUT, 'k0-marble-under.png') });
+await page.screenshot({ path: join(OUT, 'k1-ring-under.png') });
 
-writeFileSync(join(OUT, 'k0-render-report.txt'),
+writeFileSync(join(OUT, 'k1-render-report.txt'),
   'render gate ' + new Date().toISOString() + '\n'
   + 'flat colour share ' + (a.dom * 100).toFixed(1) + '%, ' + a.colours + ' colours\n'
   + 'cells moved in 600 ms ' + (d.movedFrac * 100).toFixed(1) + '%, mean diff ' + d.meanDiff.toFixed(2) + '\n'
-  + 'PLAY ' + btn.w.toFixed(0) + 'x' + btn.h.toFixed(0) + ' px, Back at 320 ' + small.w.toFixed(0) + 'x' + small.h.toFixed(0) + ' px\n'
+  + 'PLAY ' + btn.w.toFixed(0) + 'x' + btn.h.toFixed(0) + ' px, Pause at 320 ' + small.w.toFixed(0) + 'x' + small.h.toFixed(0) + ' px\n'
   + 'page errors ' + errors.length + '\n');
 
 await browser.close();
 server.close();
 
-console.log('\nshots in docs/shots: k0-marble-375.png, k0-marble-320.png, k0-marble-lowest.png, k0-marble-under.png');
+console.log('\nshots in docs/shots: k1-ring-375.png, k1-ring-320.png, k1-ring-lowest.png, k1-ring-under.png');
 console.log(fails.length ? '\n' + fails.length + ' FAILED\nRENDER FAILED' : '\nRENDER OK');
 process.exit(fails.length ? 1 : 0);

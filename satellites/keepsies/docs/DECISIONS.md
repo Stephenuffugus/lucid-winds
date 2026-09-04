@@ -81,3 +81,21 @@ The first version folded the difficulty's aiming error into each candidate befor
 
 **2026-09-04 — AI aim noise 8, 3, 1 degrees becomes 2.5, 1.5, 0.8.**
 A taw and a mib touch inside a window of about 1.9 cm, so at a metre and a half a hit needs the aim inside 0.73 degrees. Measured over five games each: 8 degrees connects on 17 percent of shots and drags a game to 59 shots, 4 gives 39 shots, 2.5 gives 26, 1.5 gives 20, 0.8 gives 11. The design's ladder shape is kept, a Rookie about three times sloppier than a Shark, at numbers this ring can be played in. Measured after: Shark takes 95 percent off a Rookie, two Rookies split 40 to 60 over twenty games, and a game runs 4 to 49 shots.
+
+**2026-09-04 — the contact offset is the BRACE ANCHOR, not the first sample of the snap window.**
+The design says "where the snap path crosses the marble". For a quick flick those are the same point. For a slow push over 220 ms the thumb has already left the marble by the time the 90 ms window opens, and reading the offset there gave a dead centre push a full topspin reading. Where your thumb was SITTING on the marble is the contact, which is also what it means in the dirt.
+
+**2026-09-04 — the ease curve lives in exactly one place, `core/snap.js`.**
+The plan puts one ease between thumb speed and power and the design puts one between thumb speed and launch speed. Two would bend the curve twice and the replay would disagree with the AI. `knuckle.js` produces a linear power01 (normalised human effort) and `launchSpeed` eases it.
+
+**2026-09-04 — the Ringer camera's framing lives in `tuning.render.ringerCam` and was chosen by looking.**
+Three framings were tried and shot before one was kept: the first put the shooter and the cross against opposite frame edges with two thirds empty dirt between, the second put the shooter off the bottom of the screen entirely. The numbers kept are the third, picked off a contact sheet of four. A camera is a set of numbers like any other and it belongs in tuning where it can be argued with.
+
+**2026-09-04 — a turn change CUTS the camera, it does not swoop.**
+Getting behind the other shooter is about a hundred and forty degrees of azimuth, and damping across it is a long dizzy swing for the player and, for a good twenty frames, a board with no shooter visible at all. The drift within a turn stays smooth.
+
+**2026-09-04 — the shooter returns to the ring edge the moment the turn is yours.**
+Not a convenience. A shot leaves the taw three or four metres out; leaving it there while the game says "place your shooter" put it off the bottom of the screen with nothing to hold, and the playthrough gate found a match frozen exactly there. The real rule already says a taw that left comes back to the edge.
+
+**2026-09-04 — `tawOnScreen` returns null when the shooter is not on the screen.**
+It used to hand back whatever the projection said, and the Knuckle gate found a shooter at y = 1117 on a screen 667 tall. A position that is not on the screen is not a grab target, and saying so out loud is cheaper than a silently unplayable turn.

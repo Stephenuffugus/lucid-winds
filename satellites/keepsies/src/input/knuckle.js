@@ -187,7 +187,7 @@ export function createKnuckle(canvas, tuning, hooks) {
     if (S.active) { S.secondFinger = true; return; }   // a planted second finger
     const r = canvas.getBoundingClientRect();
     const x = e.clientX - r.left, y = e.clientY - r.top;
-    if (len2(x - taw.x, y - taw.y) > taw.r * 1.6) return;   // not on the shooter
+    if (len2(x - taw.x, y - taw.y) > (taw.grabR || taw.r * 1.6)) return;   // not on the shooter
     S.active = true;
     S.pointerId = e.pointerId;
     S.samples.length = 0;

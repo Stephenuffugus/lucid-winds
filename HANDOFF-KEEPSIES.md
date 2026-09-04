@@ -642,11 +642,161 @@ ALL GATES PASSED
 - [x] commit and push: see the commits below.
 
 ### K1
-- [ ] `knuckle` gate: five assertions, each pasted, one watched to fail
-- [ ] `sticking` green (percent), `ringer_rules` green (500 games, counts)
-- [ ] `playthrough` green (Ringer vs Rookie to the result screen; the pull-back run too)
-- [ ] shots: brace, break, top-down, results, at both sizes, plus the worst angle; faults written
-- [ ] one ledger line describing what a fast flick, a slow push and a hooked snap each did on screen
+- [x] `knuckle` gate, in real Chrome, against the AimSource the RUNNING GAME produced:
+```
+  ok    the shooter is on screen at 188,482 with a 16 px grab radius
+  ok    what a thumb lands on at the shooter's centre is the game canvas, not a HUD panel: stage
+  ok    the shooter's grab area measures 51 rendered px across at 375 wide (drawn 32), the floor is 48
+  a hard straight flick through the centre  thumb 1.44  power 1.000  offset 0.00,0.00  wild 0.00
+  the same path at a quarter of the speed   thumb 0.36  power 0.012  offset 0.00,0.00  wild 0.00
+  a flick from under the centre             thumb 1.44  power 1.000  offset 0.00,-0.85  wild 0.00
+  a flick from above the centre             thumb 1.44  power 1.000  offset 0.00,0.85  wild 0.00
+  a hooked path                             thumb 1.44  power 1.000  offset 0.00,0.00  wild 0.63
+  a slow tap                                CANCELLED
+  ok    1. a hard flick gives power 1.000, the floor is 0.80
+  ok    1. and wildness 0.000, the ceiling is 0.10
+  ok    2. a quarter speed push gives power 0.012, the ceiling is 0.30
+  ok    2. and it is still a legal shot, not a cancel
+  ok    3. from under the centre the contact offset y is -0.85, which is backspin
+  ok    3. from above it is 0.85, which is follow
+  ok    4. a hooked path gives wildness 0.63, the floor is 0.50
+  ok    5. a slow tap is not a shot at all
+  ok    5. and the turn count did not move: 0 shots before, 0 after
+  ok    the pull back fallback makes the same AimSource: power 0.79, wildness 0, flagged pullback
+  ok    zero page errors
+KNUCKLE OK
+```
+  watched to fail by flipping the contact offset sign, then restored:
+```
+  FAIL  3. from under the centre the contact offset y is 0.85, which is backspin
+  FAIL  3. from above it is -0.85, which is follow
+KNUCKLE FAILED
+```
+  ⛔ On its first run this gate found the shooter at **y = 1117 on a screen 667 tall**: off the bottom of
+  the frame, with `elementFromPoint` returning nothing and every contact offset measured against a
+  marble nobody could see. `tawOnScreen` now returns null rather than a position that is not on the
+  screen, and it reports `grabR` so the 48 px law is measured against the area a thumb may land in
+  rather than the drawn dot.
+
+- [x] `sticking` green, 200 seeds, and green for the first time only after the Rapier spin clamp was found:
+```
+sticking  (200 runs, 1.9s)
+  ok    the taw hits the mib at all: 100.0% (want 98%), n=200
+  ok    backspin stops the taw on the mark: 100.0% (want 70%), n=200
+  note  how far the taw ended from the mark: mean 0.037 over 200 runs
+```
+  watched to fail with `kBack` zeroed: `0.0% (want 70%)`, mean distance 1.285 m.
+
+- [x] `ringer_rules` green, 500 games:
+```
+games              500 of 500 ended
+shots              10.4 mean, 20 worst
+shoot again        3118 times
+winner pocketed    7, 8, 9 (seven or more, a shot can take three at once)
+poison             fired in 60 of the 167 games with the rule on, and 0 with it off
+slips              500 spent, never consuming a shot or a turn
+RINGER RULES OK
+```
+  watched to fail three ways: shoot again removed, a mib leaked, the poison house rule check deleted.
+  That third one COULD NOT FAIL at first, because the outcome generator only attempted a poison knock
+  out when the rule was already on. Fixed, then watched.
+
+- [x] `ringer_ai` green, 40 real games with the real physics (a gate the plan did not name):
+```
+rookie vs rookie   wins 8 / 12   shots 19.9 mean, 6 to 49   unfinished 0
+shark vs rookie    wins 19 / 1   shots 12.0 mean, 4 to 25   unfinished 0
+seat fairness      40% to seat one, the band is 20 to 80
+the ladder         Shark takes 95% off a Rookie, the floor is 65
+RINGER AI OK
+```
+
+- [x] `ai_budget` green, 100 Shark turns: `24.0 candidates mean, 24 worst`, `166 ms mean against a 1200 ms
+  deadline`, `worst ratio 0.73`. Watched to fail at a 50 ms deadline: 29 problems, one candidate a turn.
+
+- [x] `playthrough` green, two whole games in a real browser:
+```
+  ok    PLAY is pressable at its centre
+  ok    the rules card comes before the first match, which is the studio standard
+  ok    the rules card dismisses to play
+  with the Knuckle: the player took 9 shots, 0 cancelled, 10 turns of the loop
+  ok    the Knuckle game reached a result card, which said: Dusty wins
+  ok    it reports what you pocketed: 6 of 7
+  ok    it reports the shot count: 19
+  ok    one match has been recorded, not 1
+  with the pull back fallback: the player took 3 shots, 0 cancelled, 4 turns of the loop
+  ok    the pull back game reached a result card too, which said: You win
+  ok    two matches have now been recorded, not 2
+  ok    HOME is pressable and leaves the match
+  ok    the embed protocol and the sunbeam cap helper are both real functions
+  ok    zero page errors across two whole games
+PLAYTHROUGH OK
+```
+  watched to fail by removing the rules card from the path: `FAIL the rules card comes before the first
+  match, which is the studio standard`.
+  ⛔ This gate found a match **frozen on the player's turn, unplayable**: a shot leaves the shooter three
+  or four metres outside the ring, the game said "place your shooter", and the shooter was off the bottom
+  of the screen with nothing to hold. The real rule already says a taw that left comes back to the edge,
+  so now it does, the moment the turn is theirs. It also found that the camera DAMPED across the hundred
+  and forty degree swing between turns, leaving twenty frames with no shooter visible at all; a turn
+  change now cuts.
+
+- [x] full suite, nine gates:
+```
+lint            pass  0s
+stamp           pass  0s
+harness         pass  15s
+ringer_rules    pass  0s
+ai_budget       pass  17s
+ringer_ai       pass  45s
+render          pass  34s
+knuckle         pass  19s
+playthrough     pass  21s
+
+ALL GATES PASSED
+```
+
+- [x] shots at 375x667 and 320x568, opened with the Read tool, faults named.
+
+  **`k1-board.png`.** ⛔ The first framing put the shooter and the cross hard against opposite frame
+  edges with two thirds of the picture empty dirt between them; the second put the shooter off the
+  bottom entirely. The camera's numbers now live in `tuning.render.ringerCam` and were chosen from a
+  contact sheet of four framings rather than derived. Remaining faults: (1) the middle of the frame is
+  still a lot of empty dirt, which is what real scale in a three metre ring costs; (2) a 16 mm mib reads
+  as a twelve pixel dot and you cannot tell a cat's eye from a clay at that size; (3) the near and far
+  chalk arcs read as two separate lines rather than one circle until you move the camera.
+
+  **`k1-brace.png`.** The signature interaction, rendered: a gold ring around the shooter that has
+  visibly settled, and a brass aim line pointing at the cross. Faults: (1) the reticle is still larger
+  than the marble inside it, because it is drawn at the thumb's grab radius and the 48 px law makes that
+  radius bigger than a real 22 mm marble at this distance; (2) the aim line is a straight stalk with no
+  taper and reads as an antenna at a glance; (3) nothing on screen distinguishes "settled" from "nearly
+  settled" except colour, so a player who is not looking at the ring gets no signal.
+
+  **`k1-break.png`.** The cross scattered, the taw travelling, and the game saying "Clean through the
+  middle, and hard." Faults: (1) the house rules line landed on the near chalk arc, cream on cream,
+  unreadable, which is the second chalk arc it has landed on and is why it now carries its own plate;
+  (2) the camera keeps reframing DURING the shot so the composition drifts while you are watching the
+  most important half second in the game; (3) nothing has a motion cue, so at twelve pixels a marble you
+  cannot tell which ones are moving.
+
+  **`k1-results.png`.** Seven of seven, fifteen shots, Clean Sweep earned, six Sunbeams. Faults: (1) the
+  card floats over a near black wash with a ghost of the ring behind it, and the board you just won on
+  deserves to be visible; (2) the technique sits in a table row next to Sunbeams, which undersells the
+  one line meant to be a discovery; (3) it is vertically off centre with dead space under HOME. All
+  three are the ceremony that DESIGN 18 asks for and that lands in K2.
+
+  **`k1-lowest.png`** (the lowest angle a player can reach) and **`k1-under.png`** (forced below the
+  ground through the dev hook). The floor does not leak: nothing of the world is visible from beneath
+  it. Under the floor is a near black screen, which is why the rig clamps at three degrees above the
+  ground and the render gate asserts the clamp.
+
+- [x] what a fast flick, a slow push and a hooked snap each did on screen, in one line each.
+  **A fast flick** through the centre of the shooter: power 1.000, the taw left at about 5.8 m/s, hit
+  the cross and scattered it, and the game said "Clean through the middle, and hard." **A slow push**
+  along the same path at a quarter of the speed: power 0.012, a legal soft nudge that crept the shooter
+  about a marble's width and did not cost the turn. **A hooked snap**: wildness 0.63, the game said
+  "That was a wild one", the spin axis tilted and the shot went visibly wide of where the aim line had
+  been pointing, which is the design's promise that a messy flick is not a weak one, it is a wild one.
 
 ### K1.5 (when `PLAYTESTS.md` has an entry)
 - [ ] Stephen's entry quoted; what changed in `knuckle.js` and `tuning.json` and why; `knuckle` and `sticking` still green

@@ -185,6 +185,8 @@ export function createOrbitRig(stage, opts) {
       };
     },
     setTarget(x, y, z) { state.target.set(x, y, z); },
+    /** The drawing surface in CSS pixels, so callers can ask if a point is on it. */
+    get viewport() { return { w: stage.width, h: stage.height }; },
     dispose() { }
   };
   rig.update(1 / 60);

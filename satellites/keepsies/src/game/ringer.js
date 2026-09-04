@@ -102,7 +102,12 @@ export function createRinger(setup) {
   /* ------------------------------------------------------------------ lag */
 
   function doLag() {
-    if (setup.skipLag) { skipLag(M, rng.match); }
+    if (setup.forceFirst != null) {
+      // a fixture, not a cheat: a gate that has to drive the player's turn needs
+      // the player to have one, and a lag it cannot control is a coin toss
+      resolveLag(M, setup.players.map((p, i) => i === setup.forceFirst ? -0.01 : -0.30));
+    }
+    else if (setup.skipLag) { skipLag(M, rng.match); }
     else {
       // both roll at a line beyond the ring; closest without crossing goes first
       const line = ringRadius + T.ringer.lagLineOffset;
@@ -110,10 +115,32 @@ export function createRinger(setup) {
       resolveLag(M, d);
     }
     G.phase = 'place';
+    resetPlacement();
     if (hooks.onPhase) hooks.onPhase(G.phase);
   }
 
   /* ---------------------------------------------------------------- place */
+
+  /**
+   * Bring the shooter back to the ring edge, on the side it ended up on.
+   *
+   * ⛔ Not a convenience. A shot leaves the taw three or four metres outside the
+   * ring, and leaving it lying there while the game says "place your shooter"
+   * puts it off the bottom of the screen with no marble to hold: the playthrough
+   * gate found a match frozen exactly there, on the player's turn, unable to
+   * shoot. The real rule already says a taw that left comes back to the edge, so
+   * it comes back the moment the turn is theirs, and the drag adjusts from there.
+   */
+  function resetPlacement() {
+    if (!mayPlace(M)) return;
+    const taw = shooterTaw();
+    let a = G.placeAngle;
+    if (W.marbles.has(taw.id)) {
+      const p = positionOf(W, taw.id);
+      if (len2(p.x, p.z) > 1e-4) a = atan2(p.x, p.z);
+    }
+    setPlaceAngle(a);
+  }
 
   /** Drag along the ring edge. The angle is all the player chooses. */
   function setPlaceAngle(a) {
@@ -234,7 +261,7 @@ export function createRinger(setup) {
       if (hooks.onOver) hooks.onOver(summary(M));
     } else {
       G.phase = mayPlace(M) ? 'place' : 'aim';
-      if (!mayPlace(M)) G.phase = 'aim';
+      if (G.phase === 'place') resetPlacement();
       if (hooks.onResolve) hooks.onResolve(r);
     }
     if (hooks.onPhase) hooks.onPhase(G.phase);
@@ -283,18 +310,40 @@ export function createRinger(setup) {
     }
     const dx = cx - tp.x, dz = cz - tp.z;
     const span = len2(dx, dz);
-    rig.setTarget((tp.x + cx) * 0.5, 0.012, (tp.z + cz) * 0.5);
+    /* Sports framing, and it is a composition decision, not a maths one: the
+     * TARGET is centred and the ball sits in the near foreground. Aiming at the
+     * midpoint of taw and cross put both of them hard against the frame edges
+     * with two thirds of the picture empty dirt between them, which is what the
+     * first K1 shot showed. Biasing the look point toward the cross puts the
+     * thing you are shooting at in the middle of the screen and your shooter
+     * where your thumb already is. */
+    const C = T.render.ringerCam;
+    rig.setTarget(tp.x + dx * C.targetBias, 0.012, tp.z + dz * C.targetBias);
     rig.state.wantAzimuth = atan2(-dx, -dz);
-    rig.state.wantDistance = clamp(span * 1.05 + 0.42, 0.5, 4.5);
-    rig.state.elevationDeg = 33;
+    rig.state.wantDistance = clamp(span * C.spanFactor + C.spanAdd, C.minDistance, C.maxDistance);
+    rig.state.elevationDeg = C.elevationDeg;
     if (snap) {
       rig.state.azimuth = rig.state.wantAzimuth;
       rig.state.distance = rig.state.wantDistance;
     }
   }
 
-  /** Where the shooter is on screen, in CSS pixels, for the Knuckle to grab. */
-  function tawOnScreen(rig) {
+  /**
+   * Where the shooter is on screen, in CSS pixels, for the Knuckle to grab.
+   *
+   * ⛔ Returns null when it is not actually ON the screen. The first version
+   * handed back a projected point wherever it landed, and the Knuckle gate found
+   * a shooter at y = 1117 on a screen 667 tall: off the bottom of the frame,
+   * with elementFromPoint returning nothing and every contact offset measured
+   * against a marble the player could not see. A position that is not on the
+   * screen is not a grab target, and saying so out loud is cheaper than a
+   * silently unplayable turn.
+   *
+   * `grabR` is the radius a thumb may land inside, which is 1.6 times the drawn
+   * radius, and the drawn radius has a floor so that a marble at real scale in a
+   * three metre ring is still a 48 px target.
+   */
+  function tawOnScreen(rig, viewport) {
     const taw = shooterTaw();
     if (!W.marbles.has(taw.id)) return null;
     const p = positionOf(W, taw.id);
@@ -303,13 +352,16 @@ export function createRinger(setup) {
     if (!c.visible) return null;
     const e = rig.project(p.x, p.y + spec.radius, p.z);
     const r = Math.max(16, len2(e.x - c.x, e.y - c.y) * 1.35);
-    return { x: c.x, y: c.y, r };
+    const vw = viewport ? viewport.w : (rig.viewport ? rig.viewport.w : null);
+    const vh = viewport ? viewport.h : (rig.viewport ? rig.viewport.h : null);
+    if (vw && vh && (c.x < -r || c.y < -r || c.x > vw + r || c.y > vh + r)) return null;
+    return { x: c.x, y: c.y, r, grabR: r * 1.6 };
   }
 
   return {
     world: W, match: M, mibs: G.mibs, taws, state: G,
     ringRadius,
-    doLag, setPlaceAngle, commitPlace, shoot, tick, aiTurn, frameShot, tawOnScreen,
+    doLag, setPlaceAngle, resetPlacement, commitPlace, shoot, tick, aiTurn, frameShot, tawOnScreen,
     liveMibs, uidOf, idOfUid,
     shooterTaw,
     isAiTurn: () => !!M.players[M.turn].ai,

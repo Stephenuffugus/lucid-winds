@@ -12,7 +12,7 @@
 <style>
 :root{
   --dirt:#4a3f31; --bg:#0d100c; --chalk:#e8dcc8; --brass:#c8a84b;
-  --glass:#9fc9e8; --muted:#8a9178; --sb:env(safe-area-inset-bottom,0px);
+  --glass:#9fc9e8; --muted:#98a086; --sb:env(safe-area-inset-bottom,0px);
   --st:env(safe-area-inset-top,0px);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -24,27 +24,74 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--chalk);overflow:
 [hidden]{display:none !important}
 
 .veil{position:fixed;inset:0;display:flex;flex-direction:column;justify-content:center;
-  align-items:center;gap:18px;padding:24px calc(24px + env(safe-area-inset-left,0px)) calc(24px + var(--sb));
-  background:radial-gradient(120% 90% at 50% 30%,rgba(13,16,12,.72),rgba(13,16,12,.96));
-  text-align:center}
+  align-items:center;gap:16px;padding:24px calc(20px + env(safe-area-inset-left,0px)) calc(24px + var(--sb));
+  background:radial-gradient(120% 90% at 50% 30%,rgba(13,16,12,.74),rgba(13,16,12,.96));
+  text-align:center;overflow-y:auto}
 .wordmark{font-size:2.4rem;letter-spacing:.16em;margin:0;color:var(--chalk);text-transform:uppercase}
 .studio{font-size:.8rem;letter-spacing:.18em;color:var(--muted);text-transform:uppercase;margin:0}
-.rules{max-width:22rem;margin:0;color:var(--chalk);opacity:.92;font-size:1rem}
+.rules{max-width:22rem;margin:0;color:var(--chalk);opacity:.94;font-size:1rem;text-align:left;
+  padding-left:1.1rem}
+.rules li{margin:.5rem 0}
 .rules b{color:var(--brass);font-weight:600}
+h2{font-size:1.15rem;letter-spacing:.1em;text-transform:uppercase;margin:0;color:var(--brass)}
 button{font:inherit;color:var(--bg);background:var(--brass);border:0;border-radius:10px;
   min-height:56px;min-width:200px;padding:0 26px;font-size:1.05rem;letter-spacing:.12em;
   text-transform:uppercase;cursor:pointer}
-button.quiet{background:transparent;color:var(--muted);border:1px solid rgba(138,145,120,.5);
+button.quiet{background:transparent;color:var(--muted);border:1px solid rgba(152,160,134,.5);
   min-height:48px;min-width:180px;font-size:.9rem}
-#hud{position:fixed;left:0;right:0;top:0;padding:calc(10px + var(--st)) 14px 10px;
-  display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none;
-  background:linear-gradient(180deg,rgba(13,16,12,.34),rgba(13,16,12,0) 72%)}
-#hudLine{font-size:.85rem;color:var(--chalk);max-width:60%;text-shadow:0 1px 3px rgba(0,0,0,.8)}
-#hudExit{pointer-events:auto;min-height:48px;min-width:56px;background:transparent;
-  color:var(--chalk);border:0;font-size:.8rem;letter-spacing:.1em;padding:0 8px;
-  text-shadow:0 1px 3px rgba(0,0,0,.8)}
+
+/* ---- match HUD. Text, bars and sockets only: it has to be drawable to a
+       canvas texture in K5, so no CSS filters live here. ---- */
+#hud{position:fixed;inset:0;pointer-events:none}
+#scores{position:absolute;left:0;right:0;top:0;padding:calc(8px + var(--st)) 12px 8px;
+  display:flex;justify-content:space-between;align-items:flex-start;
+  background:linear-gradient(180deg,rgba(13,16,12,.42),rgba(13,16,12,0) 78%)}
+.side{display:flex;flex-direction:column;gap:5px;min-width:44%}
+.side.them{align-items:flex-end}
+.who{font-size:.78rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);
+  text-shadow:0 1px 3px rgba(0,0,0,.85)}
+.who.on{color:var(--brass)}
+.sockets{display:flex;gap:4px}
+.sock{width:13px;height:13px;border-radius:50%;border:1px solid rgba(232,220,200,.42)}
+.sock.full{background:var(--brass);border-color:var(--brass)}
+/* the house rules sit at the FOOT of the screen above the corner buttons. They
+   used to sit under the sockets, where they landed on the chalk ring and were
+   unreadable grey on cream. */
+/* Its own dark plate, like the message. Moving it from one chalk arc to the
+   other only found the other chalk arc: cream on cream is unreadable wherever
+   the ring happens to be, and the ring is a circle, so it is at the top AND the
+   bottom of the frame. */
+#houseRules{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(70px + var(--sb));
+  font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:var(--chalk);opacity:.86;
+  background:rgba(13,16,12,.58);border-radius:7px;padding:4px 10px;white-space:nowrap}
+/* the message carries its own dark plate. It used to be bare text over dirt and
+   it landed straight on the far chalk arc, where cream on cream is unreadable. */
+#say{position:absolute;left:50%;transform:translateX(-50%);top:calc(56px + var(--st));
+  max-width:88%;text-align:center;font-size:.82rem;line-height:1.3;color:var(--chalk);
+  background:rgba(13,16,12,.62);border-radius:8px;padding:6px 12px}
+#reticle{position:absolute;border:2px solid rgba(232,220,200,.8);border-radius:50%}
+#aimline{position:absolute;height:3px;border-radius:2px;
+  background:linear-gradient(90deg,rgba(200,168,75,.95),rgba(200,168,75,0));
+  transform-origin:0 50%}
+#power{position:absolute;left:50%;bottom:calc(98px + var(--sb));width:150px;height:6px;margin-left:-75px;
+  background:rgba(232,220,200,.22);border-radius:3px;overflow:hidden}
+#powerFill{height:100%;width:0;background:var(--brass)}
+#corners{position:absolute;left:0;right:0;bottom:0;padding:10px 10px calc(10px + var(--sb));
+  display:flex;justify-content:space-between}
+#corners button{pointer-events:auto;min-height:48px;min-width:104px;font-size:.78rem;
+  background:rgba(13,16,12,.66);color:var(--chalk);border:1px solid rgba(152,160,134,.45);
+  letter-spacing:.1em}
+#toast{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);text-align:center;
+  background:rgba(13,16,12,.88);border:1px solid var(--brass);border-radius:12px;padding:14px 20px;
+  max-width:17rem}
+#toastName{font-size:1.3rem;letter-spacing:.1em;text-transform:uppercase;color:var(--brass);margin:0 0 4px}
+#toastBlurb{font-size:.88rem;color:var(--chalk);margin:0}
 #boot{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
   padding:24px;color:var(--muted);font-size:.95rem;text-align:center}
+.card{background:rgba(13,16,12,.9);border:1px solid rgba(200,168,75,.5);border-radius:14px;
+  padding:16px 20px;max-width:23rem;width:100%}
+.row{display:flex;justify-content:space-between;font-size:.95rem;margin:.34rem 0}
+.row span:last-child{color:var(--brass)}
 </style>
 <script type="importmap">
 { "imports": { "three": "./lib/three.module.min.js" } }
@@ -58,17 +105,54 @@ button.quiet{background:transparent;color:var(--muted);border:1px solid rgba(138
 <div id="title" class="veil" hidden>
   <p class="studio">Sky Wolf Studio</p>
   <h1 class="wordmark">Keepsies</h1>
-  <p class="rules">
-    Knuckle down and snap. <b>Tap the dirt</b> to send the shooter, drag with one finger to walk
-    around it, pinch to come closer. This is the range, so nothing is at stake yet.
-  </p>
+  <p class="rules" style="text-align:center;padding:0">Thirteen marbles in a cross, a ten foot ring, and a shooter you snap with your thumb.</p>
   <button id="play">Play</button>
   <button id="exitTitle" class="quiet">Sky Wolf Studio Arcade</button>
 </div>
 
+<div id="rulesCard" class="veil" hidden>
+  <h2>Ringer</h2>
+  <ul class="rules">
+    <li><b>The objective.</b> Knock seven of the thirteen mibs out of the ring before your opponent does.</li>
+    <li><b>The turn.</b> Knock one out and you shoot again from where your shooter lies. Knock none out and the turn passes.</li>
+    <li><b>The shot.</b> Hold your thumb on the shooter and keep it still, the reticle tightens as your aim settles, then flick through the marble. Flick from below it for backspin, from above for follow, from the side for english.</li>
+  </ul>
+  <button id="rulesGo">Knuckle down</button>
+</div>
+
 <div id="hud" hidden>
-  <span id="hudLine">Tap to snap.</span>
-  <button id="hudExit">Back</button>
+  <div id="scores">
+    <div class="side me"><span class="who" id="whoMe">You</span><span class="sockets" id="sockMe"></span></div>
+    <div class="side them"><span class="who" id="whoThem">Dusty</span><span class="sockets" id="sockThem"></span></div>
+  </div>
+  <div id="houseRules">keeps, slips, ten foot</div>
+  <div id="say">Drag to place your shooter, then hold it and flick.</div>
+  <div id="reticle" hidden></div>
+  <div id="aimline" hidden></div>
+  <div id="power" hidden><div id="powerFill"></div></div>
+  <div id="corners">
+    <button id="topDown">Top down</button>
+    <button id="pause">Pause</button>
+  </div>
+  <div id="toast" hidden><p id="toastName">Sticking</p><p id="toastBlurb"></p></div>
+</div>
+
+<div id="results" class="veil" hidden>
+  <h2 id="resultTitle">You win</h2>
+  <div class="card">
+    <div class="row"><span>Pocketed</span><span id="rPocket">0</span></div>
+    <div class="row"><span>Shots</span><span id="rShots">0</span></div>
+    <div class="row"><span>Techniques</span><span id="rTech">none yet</span></div>
+    <div class="row"><span>Sunbeams</span><span id="rSun">0</span></div>
+  </div>
+  <button id="again">Rematch</button>
+  <button id="toTitle" class="quiet">Home</button>
+</div>
+
+<div id="pauseCard" class="veil" hidden>
+  <h2>Paused</h2>
+  <button id="resume">Resume</button>
+  <button id="abandon" class="quiet">Abandon the match</button>
 </div>
 
 <script src="/music-unlocks.js" defer></script>
@@ -113,11 +197,6 @@ window._sbCapEarn=function(n,tag){
   if(granted>0 && window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(granted,tag).catch(function(){});
   return granted;
 };
-
-document.getElementById('hudExit').addEventListener('click',function(){
-  document.getElementById('hud').hidden=true;
-  document.getElementById('title').hidden=false;
-});
 </script>
 <script type="module" src="src/main.js?v=20260904a"></script>
 </body>
