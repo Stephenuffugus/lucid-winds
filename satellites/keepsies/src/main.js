@@ -9,35 +9,35 @@
  * DIRECTIONS BEFORE PLAY. The rules card is shown before the first match of the
  * mode, which is a studio standard and not a preference.
  */
-import { detectQuality } from './render/quality.js?v=20260904b';
-import { createStage, createOrbitRig, resize, draw, drawScene, THREE } from './render/scene.js?v=20260904b';
-import { buildRingerGround } from './render/arenaEnv.js?v=20260904b';
-import { makeMarbleMesh, makeContactShadow, placeContactShadow } from './render/marbleMesh.js?v=20260904b';
-import { attachCameraControls } from './input/cameraCtl.js?v=20260904b';
-import { createKnuckle } from './input/knuckle.js?v=20260904b';
-import { createPullback } from './input/pullback.js?v=20260904b';
-import * as AUDIO from './audio/synth.js?v=20260904b';
-import { initPhysics, positionOf, specOf, velocityOf } from './core/physics.js?v=20260904b';
-import { createRinger } from './game/ringer.js?v=20260904b';
-import { RINGER_TECHNIQUES } from './core/techniques.js?v=20260904b';
-import { launchSpeed } from './core/snap.js?v=20260904b';
-import { clamp, len2, DEG } from './core/dmath.js?v=20260904b';
-import * as SAVE from './meta/save.js?v=20260904b';
-import { createCalibration, calibrationFrom } from './meta/onboarding.js?v=20260904b';
-import { playPotCeremony } from './render/ceremony.js?v=20260904b';
+import { detectQuality } from './render/quality.js?v=20260904c';
+import { createStage, createOrbitRig, resize, draw, drawScene, THREE } from './render/scene.js?v=20260904c';
+import { buildRingerGround } from './render/arenaEnv.js?v=20260904c';
+import { makeMarbleMesh, makeContactShadow, placeContactShadow } from './render/marbleMesh.js?v=20260904c';
+import { attachCameraControls } from './input/cameraCtl.js?v=20260904c';
+import { createKnuckle } from './input/knuckle.js?v=20260904c';
+import { createPullback } from './input/pullback.js?v=20260904c';
+import * as AUDIO from './audio/synth.js?v=20260904c';
+import { initPhysics, positionOf, specOf, velocityOf } from './core/physics.js?v=20260904c';
+import { createRinger } from './game/ringer.js?v=20260904c';
+import { RINGER_TECHNIQUES } from './core/techniques.js?v=20260904c';
+import { launchSpeed } from './core/snap.js?v=20260904c';
+import { clamp, len2, DEG } from './core/dmath.js?v=20260904c';
+import * as SAVE from './meta/save.js?v=20260904c';
+import { createCalibration, calibrationFrom } from './meta/onboarding.js?v=20260904c';
+import { playPotCeremony } from './render/ceremony.js?v=20260904c';
 import { createTurntable, createThumbnailer, useMaterialFactory, groupForGrid, starterGrant, provenance, hardnessWord, weightWord, TIER_ORDER, TIER_LABEL }
-  from './meta/collection.js?v=20260904b';
-import * as MARBLEMESH from './render/marbleMesh.js?v=20260904b';
-import { bodySpec } from './core/marbleBody.js?v=20260904b';
-import { createEconomy } from './meta/economy.js?v=20260904b';
-import { createDrops } from './meta/drops.js?v=20260904b';
-import * as RANSOM from './meta/ransom.js?v=20260904b';
-import * as PROG from './meta/progression.js?v=20260904b';
-import { createOnboarding, dustyLine } from './meta/beats.js?v=20260904b';
+  from './meta/collection.js?v=20260904c';
+import * as MARBLEMESH from './render/marbleMesh.js?v=20260904c';
+import { bodySpec } from './core/marbleBody.js?v=20260904c';
+import { createEconomy } from './meta/economy.js?v=20260904c';
+import { createDrops } from './meta/drops.js?v=20260904c';
+import * as RANSOM from './meta/ransom.js?v=20260904c';
+import * as PROG from './meta/progression.js?v=20260904c';
+import { createOnboarding, dustyLine } from './meta/beats.js?v=20260904c';
 import { tierMatchOk, matchTheirStake, escrow, settle, recoverOnBoot, potUp, currentPot }
-  from './game/match.js?v=20260904b';
-import { makeRng } from './core/rng.js?v=20260904b';
-import { makeMarbleMaterial } from './render/marbleMesh.js?v=20260904b';
+  from './game/match.js?v=20260904c';
+import { makeRng } from './core/rng.js?v=20260904c';
+import { makeMarbleMaterial } from './render/marbleMesh.js?v=20260904c';
 
 const $ = (id) => document.getElementById(id);
 const TEST = /[?&]keepsiestest=1/.test(location.search);
@@ -70,7 +70,7 @@ const HOUSE_RULES = [
 /* ------------------------------------------------------------------- boot */
 
 async function boot() {
-  const res = await fetch('src/data/tuning.json?v=20260904b');
+  const res = await fetch('src/data/tuning.json?v=20260904c');
   if (!res.ok) throw new Error('tuning.json did not load: ' + res.status);
   G.tuning = await res.json();
   G.save = SAVE.load();
@@ -80,10 +80,10 @@ async function boot() {
   AUDIO.configure(G.tuning);
   AUDIO.setEnabled(G.save.settings.sound !== false);
 
-  const cat = await fetch('src/data/marbles.json?v=20260904b');
+  const cat = await fetch('src/data/marbles.json?v=20260904c');
   if (!cat.ok) throw new Error('marbles.json did not load: ' + cat.status);
   G.catalog = await cat.json();
-  const dt = await fetch('src/data/droptables.json?v=20260904b');
+  const dt = await fetch('src/data/droptables.json?v=20260904c');
   if (!dt.ok) throw new Error('droptables.json did not load: ' + dt.status);
   G.dropTables = await dt.json();
 

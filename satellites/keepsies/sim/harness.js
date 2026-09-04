@@ -15,12 +15,12 @@ import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
-import { initPhysics, createWorld, disposeWorld, addSurface, addMarble, removeMarble, impulse, place, step, atRest, hash, positionOf, specOf, ringDistance } from '../src/core/physics.js?v=20260904b';
-import { makeRng, makeStreams } from '../src/core/rng.js?v=20260904b';
-import { aimToImpulse, makeAim, dirFromDeg, powerForSpeed } from '../src/core/snap.js?v=20260904b';
-import { sin, cos, normalize, DEG } from '../src/core/dmath.js?v=20260904b';
-import { STARTER_ENTRIES } from '../src/core/marbleBody.js?v=20260904b';
-import { len2 as _len2 } from '../src/core/dmath.js?v=20260904b';
+import { initPhysics, createWorld, disposeWorld, addSurface, addMarble, removeMarble, impulse, place, step, atRest, hash, positionOf, specOf, ringDistance } from '../src/core/physics.js?v=20260904c';
+import { makeRng, makeStreams } from '../src/core/rng.js?v=20260904c';
+import { aimToImpulse, makeAim, dirFromDeg, powerForSpeed } from '../src/core/snap.js?v=20260904c';
+import { sin, cos, normalize, DEG } from '../src/core/dmath.js?v=20260904c';
+import { STARTER_ENTRIES } from '../src/core/marbleBody.js?v=20260904c';
+import { len2 as _len2 } from '../src/core/dmath.js?v=20260904c';
 const len2 = _len2;
 
 const HERE = dirname(fileURLToPath(import.meta.url));

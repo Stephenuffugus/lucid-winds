@@ -7,7 +7,7 @@ Every choice the build made that the design did not make for it, newest last, on
 **2026-09-04 — `package.json` with `"type": "module"` and no dependencies.**
 Why: `src/core/` has to be ES modules for the browser and run unchanged in Node, and Node reads `.js` as CommonJS without this. Zero dependencies, so nothing is installed into the repo. `satellites/aura-off/package.json` is the fleet precedent.
 
-**2026-09-04 — Rapier is imported by relative path (`../../lib/rapier.mjs`), not through the import map.**
+**2026-09-04 — Rapier is imported by relative path (`../../lib/rapier.js`), not through the import map.**
 Why: the plan maps both `three` and `rapier` in the import map, but a bare `rapier` specifier does not resolve in Node, and `core/` must run headless unchanged. `three` stays in the import map because only `render/` imports it and `render/` never runs in Node.
 
 **2026-09-04 — lib files carry no `?v=` query; the `stamp` gate asserts they do not.**

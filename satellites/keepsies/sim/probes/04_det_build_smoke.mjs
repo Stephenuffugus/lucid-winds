@@ -12,7 +12,7 @@
  *
  * Run: node sim/probes/04_det_build_smoke.mjs   (from satellites/keepsies)
  */
-import RAPIER from '../../lib/rapier.mjs';
+import RAPIER from '../../lib/rapier.js';
 
 await RAPIER.init();
 console.log('rapier (deterministic-compat)', RAPIER.version());

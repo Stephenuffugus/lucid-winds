@@ -63,7 +63,7 @@ await page.setContent(page404, { waitUntil: 'load' });
 const result = await page.evaluate(async (cell, cols, tuning, marbles) => {
   const THREE = await import('/lib/three.module.min.js');
   const { RoomEnvironment } = await import('/lib/environments/RoomEnvironment.js');
-  const { makeMarbleMaterial } = await import('/src/render/marbleMesh.js?v=20260904b');
+  const { makeMarbleMaterial } = await import('/src/render/marbleMesh.js?v=20260904c');
 
   const canvas = document.getElementById('c');
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, preserveDrawingBuffer: true });

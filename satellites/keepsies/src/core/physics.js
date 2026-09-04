@@ -39,9 +39,9 @@
  *    keeps the spin it was snapped with straight through the collision, which is
  *    the effect the whole input scheme exists to give the player.
  */
-import RAPIER from '../../lib/rapier.mjs';
-import { len2, len3 } from './dmath.js?v=20260904b';
-import { bodySpec } from './marbleBody.js?v=20260904b';
+import RAPIER from '../../lib/rapier.js';
+import { len2, len3 } from './dmath.js?v=20260904c';
+import { bodySpec } from './marbleBody.js?v=20260904c';
 
 let _ready = false;
 

@@ -16,10 +16,10 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { initPhysics, createWorld, disposeWorld, addSurface, addMarble } from '../src/core/physics.js?v=20260904b';
-import { makeStreams } from '../src/core/rng.js?v=20260904b';
-import { STARTER_ENTRIES, CROSS_MIX } from '../src/core/marbleBody.js?v=20260904b';
-import { plan } from '../src/game/ai.js?v=20260904b';
+import { initPhysics, createWorld, disposeWorld, addSurface, addMarble } from '../src/core/physics.js?v=20260904c';
+import { makeStreams } from '../src/core/rng.js?v=20260904c';
+import { STARTER_ENTRIES, CROSS_MIX } from '../src/core/marbleBody.js?v=20260904c';
+import { plan } from '../src/game/ai.js?v=20260904c';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const T = JSON.parse(readFileSync(join(ROOT, 'src/data/tuning.json'), 'utf8'));

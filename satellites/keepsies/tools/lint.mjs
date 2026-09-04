@@ -115,6 +115,23 @@ for (const [re, msg] of [
   }
 }
 
+/* ⛔ NOTHING THE BROWSER FETCHES MAY END IN .mjs. The live host serves .mjs as
+   text/plain and a module script with that type is refused outright, so the
+   physics import failed and the boot overlay never cleared (Sep 04: "Keepsies is
+   loading" forever, while 21 gates were green against a local server whose MIME
+   table is not the host's). Runtime code is src/, lib/ and index.html; the tests
+   and tools stay .mjs because Node, not the host, runs them. */
+for (const file of walk(join(ROOT, 'src'), []).concat(walk(join(ROOT, 'lib'), []), [htmlPath])) {
+  if (!/\.(js|mjs|html)$/.test(file)) continue;
+  const src = readFileSync(file, 'utf8');
+  if (file.endsWith('.mjs')) { note(file, 0, 'a runtime module ends in .mjs, the host serves that as text/plain'); continue; }
+  const lines = src.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    const m = lines[i].match(/(?:from\s*|import\s*\(\s*|<script[^>]*src=)['"]([^'"]+\.mjs)(?:\?[^'"]*)?['"]/);
+    if (m) note(file, i + 1, 'imports ' + m[1] + ' at runtime, the host serves .mjs as text/plain');
+  }
+}
+
 /* ------------------------------------------------------------------- verdict */
 
 if (bad.length) {

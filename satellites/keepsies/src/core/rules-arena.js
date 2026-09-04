@@ -22,8 +22,8 @@
  * with no attack momentum this turn, and DESIGN 9.2 is explicit that this IS the
  * cost. Re perch shifts the rack a slot and changes where you enter later.
  */
-import { tierOf, applyHit, ringOut, chargeFor, addCharge } from './damage.js?v=20260904b';
-import { shouldFire } from './specials.js?v=20260904b';
+import { tierOf, applyHit, ringOut, chargeFor, addCharge } from './damage.js?v=20260904c';
+import { shouldFire } from './specials.js?v=20260904c';
 
 export const PHASE = { READ: 'read', ACT: 'act', SHOT: 'shot', RESOLVE: 'resolve', OVER: 'over' };
 export const ACT = { NONE: 'none', SWAP: 'swap', REPERCH: 'reperch' };
