@@ -78,6 +78,10 @@ async function waitPlayerTurn(ms) {
   try {
     await page.waitForFunction(() => {
       const s = window.KEEPSIES_DEV.state();
+      // the ceremony counts as an end: waiting only for 'results' sails straight
+      // past it, which is how the first version of this gate managed to assert
+      // nothing about a ceremony that was running the whole time
+      if (document.querySelector('.ceremony')) return true;
       return s.screen === 'results' || (s.match && !s.match.simulating && s.match.turn === 0 && s.match.taw);
     }, { timeout: ms || 25000 });
   } catch (e) { return false; }
@@ -111,11 +115,36 @@ async function drag() {
 async function playAMatch(usePullback, label) {
   await page.evaluate((pb) => window.KEEPSIES_DEV.setPullback(pb), usePullback);
   await page.evaluate(() => window.KEEPSIES_DEV.start({ seed: 909090, forceFirst: 0, houseRules: { ringSizeFt: 7, bombing: false } }));
-  let turns = 0, shots = 0, cancels = 0;
+  let turns = 0, shots = 0, cancels = 0, seenCeremony = null;
   while (turns++ < 90) {
     const alive = await waitPlayerTurn();
     if (!alive) break;
     const s = await page.evaluate(() => window.KEEPSIES_DEV.state());
+    /* ⛔ CATCH THE CEREMONY WHILE IT IS UP. It resolves itself in under two
+       seconds, so a gate that only reads the end state would sit through it and
+       call a ceremony that never appeared a pass. DESIGN 18 calls this the
+       emotional core of the game; it gets an assertion, not a wait. */
+    // keep looking until it has something in it, rather than latching on the
+    // first frame of an overlay that has not placed its marble yet
+    if (!seenCeremony || !seenCeremony.name) {
+      seenCeremony = await page.evaluate(() => {
+        const v = document.querySelector('.ceremony');
+        if (!v) return null;
+        const c = v.querySelector('.cer-marble');
+        return {
+          name: (v.querySelector('.cer-name') || {}).textContent || '',
+          line: (v.querySelector('.cer-line') || {}).textContent || '',
+          kind: c ? (c.className.indexOf('won') >= 0 ? 'won' : 'lost') : 'none',
+          drew: !!(c && c.querySelector('canvas') && c.querySelector('canvas').width === 220),
+          resultsStillHidden: document.getElementById('results').hidden
+        };
+      });
+    }
+    if (seenCeremony && seenCeremony.name && s.screen !== 'results') {
+      await page.evaluate(() => window.KEEPSIES_DEV.ceremonySkip());
+      await new Promise(r => setTimeout(r, 60));
+      continue;
+    }
     if (s.screen === 'results') break;
     const aim = usePullback ? await drag() : await snap();
     if (!aim) { cancels++; continue; }
@@ -132,6 +161,7 @@ async function playAMatch(usePullback, label) {
       tech: g('rTech'), sun: g('rSun'), why: g('rWhy')
     };
   });
+  end.ceremony = seenCeremony;
   console.log('  ' + label + ': the player took ' + shots + ' shots, ' + cancels + ' cancelled, '
     + turns + ' turns of the loop');
   return end;
@@ -214,6 +244,15 @@ say(inMatch.indexOf('bombing') >= 0, 'and the match is playing under the rule yo
 const a = await playAMatch(false, 'with the Knuckle');
 say(a.screen === 'results', 'the Knuckle game reached a result card, which said: ' + a.title);
 say(a.title === 'You win' || a.title === 'Dusty Coyle wins', 'the card names a winner: ' + a.title);
+/* the pot ceremony, caught mid flight */
+say(!!a.ceremony, 'the pot ceremony ran before the card'
+  + (a.ceremony ? ': ' + a.ceremony.name + ' ' + a.ceremony.line : ', and it did NOT'));
+if (a.ceremony) {
+  say(a.ceremony.drew === true, 'and it RENDERED the marble at 220 px rather than naming it');
+  say(a.ceremony.name.length > 0 && a.ceremony.line.length > 0,
+    'and it said which marble and whose it is: ' + a.ceremony.name + ' ' + a.ceremony.line);
+  say(a.ceremony.resultsStillHidden === true, 'and the result card waited behind it');
+}
 say(/\d+ of \d+/.test(a.pocket || ''), 'it reports what you pocketed: ' + a.pocket);
 say(parseInt(a.shots, 10) > 0, 'it reports the shot count: ' + a.shots);
 say(a.matchesPlayed === 1, 'one match has been recorded, not ' + a.matchesPlayed);
@@ -307,6 +346,31 @@ say(poor === true, 'and a pouch you cannot afford is disabled rather than failin
 
 
 await press('collBack');
+await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'title', { timeout: 20000 });
+
+/* ---- reduce motion: the ceremony must still hand over the card ---- */
+await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
+const rm = await page.evaluate(() => {
+  const d = window.KEEPSIES_DEV;
+  d.setup();
+  d.stake('dirt_plain');
+  return d.go({ seed: 121212, forceFirst: 0 });
+});
+say(rm === true, 'a second staked match starts under reduce motion');
+await page.evaluate(() => { window.KEEPSIES_DEV.forceEnd(0); });
+await page.waitForFunction(() => !!document.querySelector('.ceremony'), { timeout: 20000 });
+const still = await page.evaluate(() => {
+  const v = document.querySelector('.ceremony');
+  const c = v.querySelector('.cer-marble');
+  return { still: !!(c && c.className.indexOf('still') >= 0), name: (v.querySelector('.cer-name') || {}).textContent };
+});
+say(still.still === true, 'and the ceremony stands still rather than rolling: ' + still.name);
+await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'results', { timeout: 20000 });
+say(true, 'and it still handed over the result card, which is the whole contract');
+await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'no-preference' }]);
+await press('again');
+await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'setup', { timeout: 20000 });
+await press('setupBack');
 await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'title', { timeout: 20000 });
 
 /* ---- the way out ---- */

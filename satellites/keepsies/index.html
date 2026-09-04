@@ -131,6 +131,50 @@ button.quiet{background:transparent;color:var(--muted);border:1px solid rgba(152
 .tile .rib{position:absolute;left:0;top:0;bottom:0;width:4px}
 .rib.common{background:#6f7a63}.rib.uncommon{background:#5f9e77}.rib.rare{background:#4f86c6}
 .rib.epic{background:#9b6bd6}.rib.grail{background:var(--brass)}
+/* THE POT CEREMONY (DESIGN 18). It sits over everything, it is tappable
+   anywhere to skip, and it never has a scroll of its own. */
+.ceremony{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;animation:cerIn .22s ease-out;
+  align-items:center;justify-content:center;gap:10px;overflow:hidden;
+  /* ⛔ IT HAS TO KILL THE BOARD. At .86 in the middle the HUD pips, the chat
+     toast and both match buttons read straight through, so the one moment in
+     the game where nothing else should be asking for attention had five other
+     things on screen. Opaque in the middle, and the board only ghosts at the
+     very edges. */
+  background:var(--bg)}
+.cer-stage{position:relative;width:100%;height:230px;display:flex;align-items:center;justify-content:center}
+/* a shadow on the ground, under the marble and travelling with it */
+.cer-marble{position:absolute}
+.cer-marble canvas{display:block;width:110px;height:110px}
+.cer-marble::after{content:'';position:absolute;left:50%;bottom:1px;width:70px;height:11px;
+  margin-left:-35px;border-radius:50%;z-index:-1;
+  background:radial-gradient(50% 50%,rgba(0,0,0,.95),rgba(0,0,0,0) 70%)}
+.cer-marble{width:110px;height:110px;will-change:transform}
+/* it comes in from the right and leaves to the left, into your bag */
+/* ⛔ THE WRAPPER TRAVELS AND THE CANVAS SPINS, and they are separate because the
+   ground shadow lives on the wrapper. With the rotation on the same element the
+   shadow rotated with the ball and sat at eight o'clock instead of underneath. */
+.cer-marble.won{transform:translateX(62vw)}
+.cer-marble.won.go{transition:transform 1s cubic-bezier(.22,.62,.3,1);transform:translateX(0)}
+.cer-marble.won canvas{transform:rotate(0deg)}
+.cer-marble.won.go canvas{transition:transform 1s cubic-bezier(.22,.62,.3,1);transform:rotate(430deg)}
+/* and yours goes the other way, away from you, toward whoever won it */
+.cer-marble.lost{transform:translateX(0);opacity:1}
+.cer-marble.lost.go{transition:transform 1s cubic-bezier(.4,0,.7,.5),opacity 1s ease-in;
+  transform:translateX(64vw);opacity:.15}
+.cer-marble.lost canvas{transform:rotate(0deg)}
+.cer-marble.lost.go canvas{transition:transform 1s cubic-bezier(.4,0,.7,.5);transform:rotate(500deg)}
+.cer-marble.still{position:relative;transform:none;margin:0 6px}
+.cer-name{margin:0;font-size:1.5rem;letter-spacing:.04em;color:var(--chalk)}
+.cer-line{margin:0;font-size:.95rem;color:var(--brass)}
+.cer-tier{margin:0;font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+.cer-lore{margin:.5rem 1.6rem 0;font-size:.82rem;line-height:1.45;color:var(--muted);font-style:italic;max-width:20rem}
+.cer-skip{margin:26px 0 0;font-size:.56rem;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--muted);opacity:.55}
+@keyframes cerIn{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion: reduce){
+  .cer-marble,.cer-marble.go{transition:none}
+  .ceremony{animation:none}
+}
 /* the inspect turntable draws on the main canvas, so this is only its text */
 /* a pool of light under the marble and a dark cloth below it, so a jewel is
    sitting on something rather than floating in a void */

@@ -24,6 +24,7 @@ import { launchSpeed } from './core/snap.js?v=20260904a';
 import { clamp, len2, DEG } from './core/dmath.js?v=20260904a';
 import * as SAVE from './meta/save.js?v=20260904a';
 import { createCalibration, calibrationFrom } from './meta/onboarding.js?v=20260904a';
+import { playPotCeremony } from './render/ceremony.js?v=20260904a';
 import { createTurntable, createThumbnailer, useMaterialFactory, groupForGrid, starterGrant, provenance, hardnessWord, weightWord, TIER_ORDER, TIER_LABEL }
   from './meta/collection.js?v=20260904a';
 import * as MARBLEMESH from './render/marbleMesh.js?v=20260904a';
@@ -866,7 +867,37 @@ function finishMatch(s) {
   });
   G.save = SAVE.load();
   try { if (window.SWSMusic && SWSMusic.milestone) SWSMusic.milestone(G.matchesPlayed); } catch (e) { }
-  showScreen('results');
+  /* ⛔ THE CEREMONY RUNS BEFORE THE CARD, NEVER INSTEAD OF IT. DESIGN 18 calls
+     the pot resolution the emotional core of the game, and it is, because it is
+     the only moment where the thing that changed hands is a THING rather than a
+     sentence. `playPotCeremony` calls back exactly once on every path, including
+     the skip tap and a marble that will not render, so the card always arrives. */
+  // the board's last line and its technique toast belong to the match that just
+  // ended, and reading them through the ceremony makes them look like its own
+  say('');
+  $('toast').hidden = true;
+  G.ceremony = playPotCeremony({
+    host: document.body,
+    thumbs: G.thumbs,
+    catalog: G.catalog,
+    won: pot.won.map(m => ({ id: m.id, name: nameOf(m), tier: m.tier })),
+    lost: pot.lost.map(m => ({ id: m.id, name: nameOf(m), tier: m.tier })),
+    opponent: oppName,
+    onBeat: (kind, m) => {
+      // the clink is the impact synth, fed a plausible hit rather than a new sound
+      const e = G.catalog.marbles.find(c => c.id === m.id);
+      try {
+        AUDIO.impact({
+          relSpeed: kind === 'won' ? 1.5 : 1.1,
+          material: (e && e.class) || 'glass',
+          diameterMm: (e && e.diameterMm) || 16,
+          seed: 0.5, surface: false
+        });
+      } catch (err) { }
+      try { if (navigator.vibrate) navigator.vibrate(kind === 'won' ? 14 : 8); } catch (err) { }
+    },
+    done: () => { G.ceremony = null; showScreen('results'); }
+  });
 }
 
 /* --------------------------------------------------------------- the loop */
@@ -1038,6 +1069,15 @@ function installDevHook() {
       return { staked: G.stake.map(s2 => s2.id), theirs: G.theirStake.map(t => t.id), ok: G.anteOk, say: $('anteSay').textContent };
     },
     pot: () => currentPot(),
+    // the ceremony is 1.1 s a marble and a gate should not sit through it
+    ceremonySkip: () => { if (G.ceremony) { G.ceremony.skip(); return true; } return false; },
+    // end a match on the spot, so a gate can reach the ceremony without playing
+    // fifteen shots to get there
+    forceEnd: (winner) => {
+      if (!G.R) return false;
+      finishMatch({ winner: winner, pocketed: [G.R.match.toWin, 0], shots: 1 });
+      return true;
+    },
     potUp: () => potUp(),
     collection: () => { openCollection(); return { tiles: $('grid').querySelectorAll('.tile').length }; },
     inspect: (id) => {

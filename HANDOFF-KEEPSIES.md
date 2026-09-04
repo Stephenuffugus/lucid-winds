@@ -1009,9 +1009,46 @@ WORDS OK
   lose their contact shadows and read as pasted onto the dirt rather than resting in it. From under the
   floor the ground is a hard edged unlit polygon with no thickness in a navy void. That last one is
   guarded from players; the first two are not, and they are the arena's next art job.
+- [x] **the pot ceremony** (`src/render/ceremony.js`), which DESIGN 18 calls the emotional core of the
+  game, and it is, because it is the only moment where the thing that changed hands is a THING rather
+  than a sentence. Won marbles roll in one by one with their tier, their name, who they came off and
+  their own lore line; a lost one rolls away toward the winner and fades. It renders each marble ONCE
+  through the thumbnailer's own tiny renderer and then moves a picture, for the reason written in that
+  module's header: the grid tiles rendered empty the first time because they borrowed the match renderer
+  and mutated its viewport, and a live second scene here would be the same mistake on the one screen a
+  player sees after every match.
+```
+  ok    the pot ceremony ran before the card: Cat's Eye Banana is yours now, off Dusty Coyle.
+  ok    and it RENDERED the marble at 220 px rather than naming it
+  ok    and it said which marble and whose it is
+  ok    and the result card waited behind it
+  ok    a second staked match starts under reduce motion
+  ok    and the ceremony stands still rather than rolling: Cat's Eye Grass Snake
+  ok    and it still handed over the result card, which is the whole contract
+PLAYTHROUGH OK
+```
+  Watched to fail three ways: a ceremony whose marble will not render (`ran before the card, and it did
+  NOT`), no ceremony at all, and a reduced motion path with its own timer deleted, which hangs the gate
+  at exactly the contract assertion and exits 1.
+
+  ⛔ **The gate had to be taught that the ceremony is an end.** Its wait resolved on
+  `screen === 'results'`, which only happens after the ceremony finishes, so the first version sailed
+  past a ceremony running the whole time and asserted nothing. `tools/shots.mjs` had the same hole and
+  had been photographing the result card and calling it the ceremony shot.
+
+  **Four faults found by opening `docs/shots/k1-ceremony.png` four times.** A 260 ms lead in meant it
+  opened as a black rectangle with nothing in it. At 0.86 alpha the HUD pips, the opponent's chat line
+  and both match buttons read straight through the veil, so the one moment where nothing else should be
+  asking for attention had five other things on screen. The ground shadow lived on the stage box, so the
+  marble rolled and its shadow stayed put, forty pixels behind. And the shadow then rotated WITH the
+  ball once it moved onto the marble, because travel and spin were on the same element.
+
+  **What is still wrong with it, named.** The shadow is a thin smear with no ground plane under it, so
+  the marble and its shadow float together in a void. The lore line runs nearly edge to edge at 375
+  wide. And 350 px of empty black sits above the marble against 250 below the text, so the group hangs
+  low with nothing framing it.
 - [ ] shots: ante mid-roll, loss card, showcase room from the door and from inside a wall
-- [ ] ceremonies, the ransom window, progression, onboarding beats 2 to 6, the glb lane, the eight
-  per epic shaders
+- [ ] the ransom window, progression, onboarding beats 2 to 6, the glb lane, the eight per epic shaders
 - [x] commits: `46befcb5` the catalog and the recipes, `597a9fec` the collection and the turntable, `b3d341fa` the wallet and the clay pool, `c81d1a87` the pouches, `cd0dca5e` the pot and the escrow, `c249b460` the words gate and the second look
 
 ### K3
@@ -1057,32 +1094,35 @@ Next action: <file, function, step, the first thing the next session does>
 ### Morning report, 2026-09-04, the second half of the night
 
 **Phases:** K0 **done**. K1 **done but for pass and play**. K2 **most of the way**: the catalog, the
-marbles' looks, the collection, the turntable, the economy, the three pouches and **the keepsies loop
-itself** are built. What is left of K2 is the ceremonies, the ransom window, progression, onboarding
-beats 2 to 6, the glb lane and the eight per epic shaders. K3 **not started**.
+marbles' looks, the collection, the turntable, the economy, the three pouches, **the keepsies loop
+itself** and **the pot ceremony** are built. What is left of K2 is the ransom window, progression,
+onboarding beats 2 to 6, the glb lane and the eight per epic shaders. K3 **not started**.
 
-**The headline: a marble is now genuinely at risk.** You put one up, Dusty matches it, and the winner
-takes both. The stake leaves your inventory before a shot is fired, and if the phone dies mid match the
-next boot hands it back. `escrow_crash` proves that by starting a real child process, having it stake,
-and SIGKILLing it between the escrow write and the first turn.
+**The headline: a marble is now genuinely at risk, and you watch it change hands.** You put one up,
+Dusty matches it, and the winner takes both. The stake leaves your inventory before a shot is fired, and
+if the phone dies mid match the next boot hands it back. `escrow_crash` proves that by starting a real
+child process, having it stake, and SIGKILLing it between the escrow write and the first turn. Then the
+pot ceremony rolls the marble across the screen with its tier, its name, who it came off and its own
+lore line, which is the difference between winning something and being told you won something.
 
-**Gates:** seventeen, all green, every one watched to fail on purpose. Four are new tonight.
+**Gates:** sixteen, all green, every one watched to fail on purpose. Four are new tonight, and the
+playthrough grew eleven assertions.
 ```
-lint pass 0s · catalog pass 0s · stamp pass 0s · harness pass 15s · save pass 0s
-clay_regen pass 0s · pity_math pass 0s · words pass 0s · escrow_crash pass 0s
-ringer_rules pass 0s · ai_budget pass 17s · ringer_ai pass 43s · render pass 42s
-knuckle pass 20s · audio_budget pass 10s · playthrough pass 50s
+lint pass 0s · catalog pass 0s · stamp pass 0s · harness pass 14s · save pass 0s
+clay_regen pass 0s · pity_math pass 0s · words pass 0s · escrow_crash pass 1s
+ringer_rules pass 0s · ai_budget pass 15s · ringer_ai pass 41s · render pass 45s
+knuckle pass 20s · audio_budget pass 11s · playthrough pass 63s
 ALL GATES PASSED
 ```
 
 **Look at, in this order:**
 1. `docs/shots/k1-setup.png` The ante. Your marble against theirs, and the sentence under it now names
    yours: "Your Dirt Plain against theirs. Winner takes both."
-2. `docs/shots/k1-results.png` The pot is the first and largest row on the card, and it says which
-   marble crossed the ring. It is still a card floating over a black wash, and the marble you won is a
-   sentence rather than an object. That is the next thing built.
-3. `docs/shots/k2-collection.png` Your marbles, all of them, no longer a peephole.
-4. `docs/shots/k2-inspect.png` One marble on the turntable with its traits in words.
+2. `docs/shots/k1-ceremony.png` The pot resolving. This is the one to look at.
+3. `docs/shots/k1-results.png` The card behind it. The pot is its first and largest row and it says
+   which marble crossed the ring.
+4. `docs/shots/k2-collection.png` Your marbles, all of them, no longer a peephole.
+5. `docs/shots/k2-inspect.png` One marble on the turntable with its traits in words.
 
 **⛔ The one thing to decide, Stephen: the Standard Pouch's printed odds and its felt odds are very
 different.** Measured over a hundred thousand pulls. The table says 3.6 percent rare and 0.4 percent
@@ -1120,7 +1160,7 @@ and a half marbles of eighteen with the second row's names sliced through the mi
 two questions it asks. Does the snap feel like a snap, and does the marble weigh anything. That entry is
 K1.5 and the next session runs it before anything else.
 
-**Next action:** `src/render/ceremony.js`. The loop has stakes now and nothing marks them.
+**Next action:** the ransom window, the other half of losing.
 
 ---
 
@@ -1221,8 +1261,8 @@ the whole game and does not exist yet.
 **2026-09-04, Opus, overnight run.** K0 complete. K1 complete but for pass and play. **K2: the catalog,
 the marbles' looks, the collection, the economy, the pouches and the keepsies loop are done**; what is
 left of it is the ceremonies, the ransom window, progression, onboarding beats 2 to 6, the glb lane and
-the eight per epic shaders. K3 not started. **Seventeen gates green**, each watched to fail, evidence
-pasted in the ledger above. Fifteen screenshots opened and their faults named.
+the eight per epic shaders. K3 not started. **Sixteen gates green**, each watched to fail, evidence
+pasted in the ledger above. Sixteen screenshots opened and their faults named.
 
 Commits, all pushed to `origin add-sproing-jumper`: `4b8d3043` the failing gate, `14a6bca0` physics and
 harness, `58621d7e` the first rendered marble, `8b57d09c` the referee, `bbb7b629` the Rapier spin clamp
@@ -1238,20 +1278,16 @@ outside those two paths returns nothing. One near miss worth recording: a heredo
 path wrote a Keepsies `manifest.json` over the repo root's own, and it was restored from git inside a
 minute; every shell call after that used absolute paths.
 
-**Exact next action:** `src/render/ceremony.js` does not exist, and it is the next thing because the
-loop now has stakes and nothing marks them. Build the win and loss ceremony DESIGN 18 asks for: the pot
-resolving on screen with the marble that changed hands RENDERED rather than named in a sentence, over
-the ring rather than over a black wash. The result card is already correct in its facts and wrong in its
-weight, and the faults are written in the K2 ledger box: the ring behind YOU WIN is a smudge, the bottom
-third is empty, and the won marble is a line of text in the space where it should be sitting. Reuse
-`createThumbnailer` from `meta/collection.js` rather than the match renderer, for the reason written in
-its header: the tiles rendered empty the first time because they borrowed the game's renderer and
-mutated its viewport.
+**Exact next action:** the ransom window, which is the other half of losing. DESIGN 18 puts it right
+after the loss ceremony: "if ransom eligible, the offer card slides in (24h countdown starts)". 24 hours,
+R400, E1500, G5000, written into `tuning.json` and read from `meta/economy.js`, with the countdown stored
+BESIDE the pot in the save so a crash cannot lose it. `escrow_crash` is the pattern to extend, and its
+child process shim is already file backed: kill a process holding an open ransom and prove the offer, its
+deadline and the marble all survive, then prove an expired offer releases the marble exactly once. The
+loss ceremony already exists and already knows which marble left, so the offer card hangs off its `done`.
 
-Then the ransom window, which is the other half of losing: 24 hours, R400, E1500, G5000, written into
-`tuning.json` and read from `meta/economy.js`, with the countdown stored beside the pot in the save so a
-crash cannot lose it. `escrow_crash` is the pattern to extend for it, and its child process shim is
-already file backed.
+After that, progression (`meta/progression.js`, XP, levels, unlocks) and onboarding beats 2 to 6, which
+are the last two things standing between K2 and K3.
 
 Everything those need is in place: the catalogue is generated, all sixty five marbles render, the save
 merges safely across two tabs, the wallet and the clay pool regenerate against an injectable clock, the

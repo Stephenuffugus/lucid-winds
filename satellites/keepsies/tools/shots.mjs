@@ -137,6 +137,9 @@ for (let i = 0; i < 60; i++) {
     d.playAiTurns(40);
     d.settleCamera(50);
     const s = d.state();
+    // the ceremony is an end too, and it is over in under two seconds: a loop
+    // that only stops at 'results' photographs the card and never the ceremony
+    if (document.querySelector('.ceremony .cer-marble')) return true;
     if (s.screen === 'results') return true;
     if (!s.match || s.match.simulating || s.match.turn !== 0 || !s.match.taw) return false;
     const t = s.match.taw;
@@ -149,6 +152,10 @@ for (let i = 0; i < 60; i++) {
   if (done) break;
   await wait(40);
 }
+/* the ceremony, caught while the marble is crossing the screen */
+await wait(420);
+await shot('k1-ceremony');
+await page.evaluate(() => window.KEEPSIES_DEV.ceremonySkip());
 await wait(400);
 await shot('k1-results');
 

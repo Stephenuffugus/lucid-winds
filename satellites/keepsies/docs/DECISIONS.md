@@ -233,3 +233,18 @@ The setup screen said Dusty Coyle and the result card said Dusty, which is two p
 
 **2026-09-04 — ⛔ a centred flex column that scrolls eats its own top, and the shrink lands somewhere.**
 Letting the collection grid grow to its real height moved the whole screen's layout: `justify-content:center` pushed "Your marbles" off the top edge where no scroll can reach it, and the flex shrink that used to be absorbed by the grid moved to the filter strip and crushed seven 48 px chips into a 12 px line of empty outlines. A screen taller than the phone starts at the top, and nothing inside it shrinks.
+
+**2026-09-04 — the pot ceremony renders the marble ONCE and then moves a picture.**
+DESIGN 18 calls the post match pot resolution the emotional core of the game, and it is, because it is the only moment where the thing that changed hands is a THING rather than a sentence. It uses the thumbnailer's own tiny renderer for the reason written in that module's header: the grid tiles rendered EMPTY the first time because they borrowed the match renderer and mutated its viewport, and a ceremony running a second live scene every frame would be the same mistake with a longer fuse, on the one screen a player sees after every match. One render into a canvas, then transforms. The compromise is that a rolling sphere's specular highlight does not rotate with its pattern and here it does; at ceremony speed the eye reads the pattern, and if it ever reads wrong the fix is a fixed highlight composited over the rotating one, not a live scene.
+
+**2026-09-04 — the wrapper travels and the canvas spins, because the shadow lives on the wrapper.**
+With the roll rotation on the same element as the ground shadow, the shadow rotated with the ball and sat at eight o'clock instead of underneath. Found by opening the shot.
+
+**2026-09-04 — ⛔ the ceremony calls back exactly once on every path, and the gate proves it.**
+End of sequence, skip tap, reduced motion, and the failure path where a marble will not render. A ceremony that can swallow the results screen is worse than no ceremony, so `playthrough` runs a second staked match with `prefers-reduced-motion: reduce` emulated and asserts the ceremony stands still AND still hands the card over. Watched to fail by deleting the reduced motion path's own timer: the gate hangs at exactly that assertion and exits 1.
+
+**2026-09-04 — the gate had to be taught that the ceremony is an end.**
+Its wait resolved on `screen === 'results'`, which only happens after the ceremony finishes, so the first version sailed straight past a ceremony that was running the whole time and asserted nothing about it. The wait now treats a `.ceremony` element as an end too, and the same fix was needed in `tools/shots.mjs`, which had been photographing the result card and calling it the ceremony shot.
+
+**2026-09-04 — no empty first beat, and the board goes quiet.**
+A 260 ms lead in meant the ceremony spent a quarter of a second as a black rectangle with nothing in it, which is how the gate first caught it. And at 0.86 alpha in the middle the HUD pips, the opponent's chat line and both match buttons read straight through the veil, so the one moment where nothing else should be asking for attention had five other things on screen. The veil is opaque and the match's last line and technique toast are cleared before it opens.
