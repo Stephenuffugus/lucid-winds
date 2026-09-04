@@ -61,8 +61,8 @@ reports:
 
 1. **Suno, before midnight Sep 3 your time.** The download cap is retroactive
    to the whole back catalogue. Stems come free with the song.
-2. **Jimothy on Steam.** The rejection (Aug 26) was the Library Logo carrying
-   the tagline; you resubmitted. Valve's page review is 3 to 5 **business** days
+2. **Jimothy on Steam. ACCEPTED (you told Fable Sep 02).** The rejection (Aug 26) was the Library Logo carrying
+   the tagline; you resubmitted and it passed. The line below is history. Valve's page review is 3 to 5 **business** days
    and Labor Day (Sep 7) sits in the window, so silence until about Sep 8 is
    normal, not a problem. Check the store page's review status in Steamworks
    under the app's Store Presence; if it says anything other than "in review",
