@@ -329,3 +329,15 @@ A hit that overkills a cracked marble by thirty does not pay thirty. Otherwise t
 
 **2026-09-04 — a condition is a pure predicate over a fact sheet.**
 It never reads the world, never reads a clock and never mutates anything, so `condition_matrix` sweeps every condition against every event with no physics step at all: 42 cells, printed as a grid, and the gate fails on any cell that is not exactly right.
+
+**2026-09-04 — ⛔ nobody ever stands in an empty arena.**
+DESIGN 9.1 gives each player one active marble, and when that marble shatters the next legal one rolls in by itself: the CHOICE of which marble is the swap, not whether to have one. The gate found this by shattering an active and then asking that player to shoot, which threw rather than played. The replacement enters with no attack momentum, the same as any other entry, because it did not choose to be there either.
+
+**2026-09-04 — a rung out marble is not a lost marble, and the gate says so at the limit.**
+All three of your marbles rung out, none shattered, and the match is still going: they simply roll back in. That is the whole difference between DESIGN 9.7's two win textures, so the gate asserts it in its strongest form rather than its mildest, and watching it fail means flipping the win condition to "all benched" and seeing that one assertion go red.
+
+**2026-09-04 — actives are read AFTER the damage.**
+So a "when it cracks" condition answers the hit that cracked it, in the same resolution, rather than a turn later. A condition that can only respond next turn is a condition nobody would choose.
+
+**2026-09-04 — the hazard count is asserted as a SEQUENCE, not as one number.**
+DESIGN 9.2 says hazards are turn cycle deterministic and never wall clock, and an indicator that promises "fires in 1 turn" has to be telling the truth. One reading of a counter proves nothing; five in a row, alternating and never skipping, proves the cycle.

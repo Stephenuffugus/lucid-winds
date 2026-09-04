@@ -34,6 +34,7 @@ const GATES = [
   { name: 'progression',  cmd: ['test/progression.mjs'],  need: 'PROGRESSION OK' },
   { name: 'onboarding',   cmd: ['test/onboarding.mjs'],   need: 'ONBOARDING OK' },
   { name: 'damage',       cmd: ['test/damage.mjs'],       need: 'DAMAGE OK' },
+  { name: 'arena',        cmd: ['test/arena.mjs'],        need: 'ARENA OK' },
   { name: 'ringer_rules', cmd: ['test/ringer_rules.mjs'], need: 'RINGER RULES OK' },
   { name: 'ai_budget',    cmd: ['test/ai_budget.mjs'],   need: 'AI BUDGET OK', slow: true },
   { name: 'ringer_ai',    cmd: ['test/ringer_ai.mjs'],   need: 'RINGER AI OK', slow: true }

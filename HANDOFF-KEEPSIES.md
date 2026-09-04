@@ -381,7 +381,41 @@ DAMAGE OK
   (42 damage in two seconds instead of 8), an active firing without a full meter, and an overkill paying
   for the roll rather than for what landed.
 
-- [ ] `rules-arena.js`: the turn machine, swap and re perch, ring out against shatter, the win conditions
+- [x] **`src/core/rules-arena.js`**: the turn machine, swap and re perch, ring out against shatter, and
+  the win conditions. Pure, like the Ringer referee: it never touches physics, never touches the DOM and
+  never draws anything.
+
+  ⛔ **Nobody ever stands in an empty arena.** DESIGN 9.1 gives each player one active marble, and when
+  that marble shatters the next legal one rolls in by itself: the CHOICE of which marble is the swap, not
+  whether to have one. The gate found this by shattering an active and then asking that player to shoot,
+  which threw rather than played.
+
+  ⛔ **A rung out marble is not a lost marble**, and the gate says so at the limit: all three rung out,
+  none shattered, and the match is still going. That is the whole difference between DESIGN 9.7's two
+  win textures.
+
+  ⛔ **Actives are read AFTER the damage**, so a "when it cracks" condition answers the hit that cracked
+  it, in the same resolution rather than a turn later. A condition that can only respond next turn is a
+  condition nobody would choose.
+```
+  ok    1. both sides roll a marble in before anybody shoots
+  ok       the damage is still there a turn later, because the arena is a developing situation
+  ok       and the hazard cycle counts TURNS rather than seconds, and never skips: 1, 2, 1, 2, 1
+  ok    2. a swap rolls a benched marble in: a-1
+  ok       and a second act in the same turn is refused: One move a turn.
+  ok       and the marble that just entered shoots with no attack momentum, which IS the cost
+  ok    3. a rung out marble goes to the rack KEEPING its integrity: 61
+  ok       and with ALL THREE rung out and none shattered the match is STILL going
+  ok    4. your own marbles do not damage each other: a-1 is at 100
+  ok    5. the active is read AFTER the damage, so "when it cracks" answers the hit that cracked it
+  ok    6. a bagmate shatters, and the survivors can read it
+  ok    7. shattering all three ends it, with the right winner: player 0 after 3 turns
+  ok       and a shot after the end throws rather than quietly playing on
+ARENA OK
+```
+  Watched to fail four ways: friendly fire damaging your own bag, a ring out that heals the marble,
+  unlimited positioning acts, and losing because your marbles were merely rung out.
+- [ ] `game/arena.js`: the mode on a real board, which is what `arena_shape` needs before it can be honest
 - [ ] the three arenas, the quality scaler, `tools/make_thumb.mjs`
 - [ ] `arena_shape`: 8 to 14 turns a player, and no class matchup outside 35 to 65 percent
 - [ ] Sharp and Shark tuning, and the five bosses
