@@ -164,6 +164,29 @@ say(go.hitId === 'rulesGo' && go.h >= 48,
   '(c) the rules card comes before the first match and its button is '
   + go.w.toFixed(0) + ' by ' + go.h.toFixed(0) + ' rendered px');
 await page.mouse.click(go.cx, go.cy);
+/* the match setup, where the house rules live */
+await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'setup', { timeout: 20000 });
+const chips = await page.evaluate(() => {
+  const out = [];
+  for (const id of ['hr-keepsies', 'hr-slips', 'hr-bombing', 'hr-poison', 'hr-ringSizeFt']) {
+    const el = document.getElementById(id);
+    if (!el) { out.push({ id, missing: true }); continue; }
+    const r = el.getBoundingClientRect();
+    let hit = document.elementFromPoint(Math.round(r.left + r.width / 2), Math.round(r.top + r.height / 2));
+    while (hit && hit.id !== id && hit.parentElement) hit = hit.parentElement;
+    out.push({ id, w: r.width, h: r.height, ok: !!hit && hit.id === id });
+  }
+  return out;
+});
+const badChip = chips.find(c => c.missing || !c.ok || c.h < 48);
+say(!badChip, '(c) all five house rule chips are 48 rendered px tall and reachable at their centres'
+  + (badChip ? ', except ' + badChip.id : ''));
+const goPlay = await page.evaluate(() => {
+  const b = document.getElementById('setupGo');
+  const r = b.getBoundingClientRect();
+  return { cx: Math.round(r.left + r.width / 2), cy: Math.round(r.top + r.height / 2) };
+});
+await page.mouse.click(goPlay.cx, goPlay.cy);
 await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'match', { timeout: 20000 });
 await page.evaluate(() => window.KEEPSIES_DEV.settle(1400));
 await new Promise(r => setTimeout(r, 300));

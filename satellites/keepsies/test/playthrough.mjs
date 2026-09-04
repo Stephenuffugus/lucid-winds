@@ -59,7 +59,10 @@ async function press(id) {
     if (!el || el.offsetParent === null) return null;
     const r = el.getBoundingClientRect();
     const cx = Math.round(r.left + r.width / 2), cy = Math.round(r.top + r.height / 2);
-    const hit = document.elementFromPoint(cx, cy);
+    // walk up from the pixel to the control it belongs to: a chip's centre lands
+    // on its own label span, which is still that chip and still a real hit
+    let hit = document.elementFromPoint(cx, cy);
+    while (hit && hit.id !== id && hit.parentElement) hit = hit.parentElement;
     return { cx, cy, w: r.width, h: r.height, hitId: hit ? hit.id : null };
   }, id);
   if (!b) return null;
@@ -107,7 +110,7 @@ async function drag() {
 /** Play a whole match. Returns what the result card said. */
 async function playAMatch(usePullback, label) {
   await page.evaluate((pb) => window.KEEPSIES_DEV.setPullback(pb), usePullback);
-  await page.evaluate(() => window.KEEPSIES_DEV.start({ seed: 909090, forceFirst: 0, houseRules: { ringSizeFt: 7 } }));
+  await page.evaluate(() => window.KEEPSIES_DEV.start({ seed: 909090, forceFirst: 0, houseRules: { ringSizeFt: 7, bombing: false } }));
   let turns = 0, shots = 0, cancels = 0;
   while (turns++ < 90) {
     const alive = await waitPlayerTurn();
@@ -177,9 +180,18 @@ try {
 say(sawRules, 'the rules card comes before the first match, which is the studio standard');
 if (sawRules) {
   const goBtn = await press('rulesGo');
-  say(goBtn && !goBtn.blocked, 'the rules card dismisses to play');
+  say(goBtn && !goBtn.blocked, 'the rules card dismisses to the match setup');
 }
+await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'setup', { timeout: 20000 });
+const bombChip = await press('hr-bombing');
+say(bombChip && !bombChip.blocked, 'the house rule chips are pressable');
+const hrNow = await page.evaluate(() => window.KEEPSIES_DEV.houseRules());
+say(hrNow.bombing === true, 'and a tap really changed the rule: bombing is ' + hrNow.bombing);
+const setupBtn = await press('setupGo');
+say(setupBtn && !setupBtn.blocked, 'PLAY on the setup starts the match');
 await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'match', { timeout: 20000 });
+const inMatch = await page.evaluate(() => document.getElementById('houseRules').textContent);
+say(inMatch.indexOf('bombing') >= 0, 'and the match is playing under the rule you chose: ' + inMatch);
 
 /* ---- a whole game with the Knuckle ---- */
 const a = await playAMatch(false, 'with the Knuckle');
@@ -192,6 +204,8 @@ await page.screenshot({ path: join(OUT, 'k1-results.png') });
 
 /* ---- and the same game with the pull back fallback ---- */
 await press('again');
+await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'setup', { timeout: 20000 });
+await press('setupGo');
 await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'match', { timeout: 20000 });
 const b = await playAMatch(true, 'with the pull back fallback');
 say(b.screen === 'results', 'the pull back game reached a result card too, which said: ' + b.title);

@@ -277,8 +277,18 @@ export function createKnuckle(canvas, tuning, hooks) {
     // bend it twice and the replay would disagree with the AI.
     if (S.secondFinger) power01 = Math.min(power01, T.knuckledPowerCap);
 
+    /* BOMBING (DESIGN 8.3). Brace on the taw and snap DOWN the screen, toward
+     * yourself, and the marble is lifted and dropped instead of rolled. It is a
+     * house rule and it is only legal with your taw inside the ring, so the game
+     * layer decides whether this flag survives; the input's job is only to notice
+     * that the thumb went the other way. */
+    const down = win.length >= 2 && (win[win.length - 1].y - win[0].y) > 40;
+    const bomb = down && !!hooks.bombingAllowed && hooks.bombingAllowed();
+
     const aim = makeAim({
       dir: { x: Math.sin(azimuth), y: 0, z: Math.cos(azimuth) },
+      bomb,
+      bombLift: bomb ? 0.82 : undefined,
       power01,
       contactOffset: offset,
       pathCurvature: curv,

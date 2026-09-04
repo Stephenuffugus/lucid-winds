@@ -120,3 +120,12 @@ Eight loops is the budget. Sorting by speed before the cut means the marble you 
 
 **2026-09-04 — there is no listening gate and there will not be one.**
 A machine can say a break makes sound, does not clip, and stays inside its voice budget. It cannot say the glass sounds like glass. That question is line seven of `docs/checklists/k1.md` and it belongs to a person with the volume up.
+
+**2026-09-04 — the house rules are chips that say what they DO, and the ring size cycles rather than toggling.**
+DESIGN 8.3 names five toggles. A player meeting "poison" for the first time has no idea what it means, so each chip carries a second line: "knock out the enemy shooter", "one redo for a fumble". Ring size is three values, so it cycles on tap and says so. Every chip is 48 rendered pixels tall at 375 wide and reachable at its centre, proven by walking up from `elementFromPoint` to the control that owns the pixel.
+
+**2026-09-04 — bombing is a snap DOWN the screen, and the game only offers it when it is legal.**
+The house rule has to be on and the taw has to be inside the ring, which is the real rule: you cannot drop a shot onto the cross from outside the line. The input notices the thumb went the other way; `game/ringer.js` decides whether that is allowed; and the message line says so at the moment it becomes possible rather than in a manual.
+
+**2026-09-04 — the playthrough's press helper walks up from the pixel to the control.**
+A chip's centre pixel belongs to its own label span, so a strict `elementFromPoint(...).id === id` reported an unpressable button that a thumb presses perfectly well. Walking up the parent chain still proves the pixel belongs to that control and nothing is on top of it, which is the thing the rule is actually for.

@@ -378,6 +378,16 @@ export function createRinger(setup) {
   return {
     world: W, match: M, mibs: G.mibs, taws, state: G,
     ringRadius,
+    /**
+     * May this player bomb right now? The house rule has to be on AND the taw
+     * has to be inside the ring, which is the real rule: you cannot drop a shot
+     * onto the cross from outside the line.
+     */
+    canBomb() {
+      if (!hr.bombing) return false;
+      const t = shooterTaw();
+      return W.marbles.has(t.id) && ringDistance(W, t.id) <= ringRadius;
+    },
     doLag, setPlaceAngle, resetPlacement, commitPlace, shoot, tick, aiTurn, frameShot, tawOnScreen,
     liveMibs, uidOf, idOfUid,
     shooterTaw,

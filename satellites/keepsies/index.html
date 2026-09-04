@@ -68,6 +68,16 @@ button.quiet{background:transparent;color:var(--muted);border:1px solid rgba(152
   display:flex;flex-direction:column;align-items:center;gap:16px}
 #calibBottom button{pointer-events:auto;min-height:48px;font-size:.8rem;opacity:.72;
   text-transform:none;letter-spacing:.06em}
+#oppLine{margin:.5rem 0 0;font-size:.9rem;color:var(--muted);text-align:left}
+/* the house rules, as chips. Forty eight rendered pixels tall at 375 wide, and
+   they say what they DO rather than what they are called. */
+#hrRow{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:23rem}
+.chip{min-height:48px;min-width:96px;padding:0 14px;border-radius:10px;font-size:.8rem;
+  letter-spacing:.06em;background:transparent;color:var(--muted);
+  border:1px solid rgba(152,160,134,.45);cursor:pointer;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;line-height:1.15}
+.chip .sub{font-size:.66rem;opacity:.75;text-transform:none;letter-spacing:0}
+.chip.on{background:rgba(200,168,75,.16);color:var(--chalk);border-color:var(--brass)}
 #calibDots{gap:12px}
 #calibDots .sock{width:20px;height:20px;border-width:2px}
 .sock.full{background:var(--brass);border-color:var(--brass)}
@@ -136,6 +146,17 @@ button.quiet{background:transparent;color:var(--muted);border:1px solid rgba(152
     <div id="calibDots" class="sockets"></div>
     <button id="calibSkip" class="quiet">I have played marbles before</button>
   </div>
+</div>
+
+<div id="setup" class="veil" hidden>
+  <h2>Ringer</h2>
+  <div class="card">
+    <div class="row"><span>Against</span><span id="oppName">Dusty Coyle</span></div>
+    <p id="oppLine">Beat everyone on his street. His street is small.</p>
+  </div>
+  <div id="hrRow"></div>
+  <button id="setupGo">Play</button>
+  <button id="setupBack" class="quiet">Back</button>
 </div>
 
 <div id="rulesCard" class="veil" hidden>

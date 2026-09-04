@@ -36,8 +36,19 @@ const G = {
   topDown: false, paused: false, freeCam: false,
   matchesPlayed: 0, seenRules: false, calib: { max: null },
   placeDrag: null, lastToast: 0, sunbeams: 0, said: '', lastFramedTurn: -1,
-  save: null, calibrator: null, lastRollAudio: 0, warming: false
+  save: null, calibrator: null, lastRollAudio: 0, warming: false,
+  houseRules: { keepsies: true, slips: true, bombing: false, poison: false, ringSizeFt: 10 }
 };
+
+/* The house rules of DESIGN 8.3, as the player meets them: what each one DOES,
+   not what it is called. Quickplay defaults are the design's. */
+const HOUSE_RULES = [
+  { key: 'keepsies', label: 'Keeps', sub: 'winner keeps the marbles' },
+  { key: 'slips', label: 'Slips', sub: 'one redo for a fumble' },
+  { key: 'bombing', label: 'Bombing', sub: 'drop shots allowed' },
+  { key: 'poison', label: 'Poison', sub: 'knock out the enemy shooter' },
+  { key: 'ringSizeFt', label: 'Ring', sub: 'seven, ten or thirteen foot', cycle: [7, 10, 13] }
+];
 
 /* ------------------------------------------------------------------- boot */
 
@@ -64,6 +75,7 @@ async function boot() {
     taw: () => (G.R && (G.screen === 'match' || G.screen === 'calib') && canAim() ? G.R.tawOnScreen(G.rig) : null),
     aimAzimuth: () => G.rig.state.azimuth + Math.PI,
     calib: () => G.calib,
+    bombingAllowed: () => !!G.R && G.screen === 'match' && G.R.canBomb(),
     onBrace: onBrace,
     onAim: onAim,
     onCancel: () => { say('That was too soft to count, so it does not. Take it again.'); hideAim(); },
@@ -105,16 +117,18 @@ function wireButtons() {
     // calibration first, ONCE, because a player shooting against a stranger's
     // thumb can neither reach full power nor find the top of their own range
     if (!G.calib.own) startCalibration();
-    else if (G.seenRules) { showScreen('match'); startMatch(); }
+    else if (G.seenRules) { showScreen('setup'); buildHouseRules(); }
     else showScreen('rules');
   });
   $('calibSkip').addEventListener('click', () => { finishCalibration(null); });
   $('rulesGo').addEventListener('click', () => {
     G.seenRules = true;
     SAVE.merge({ seen: { rules: true } });
-    showScreen('match'); startMatch();
+    showScreen('setup'); buildHouseRules();
   });
-  $('again').addEventListener('click', () => { showScreen('match'); startMatch(); });
+  $('setupGo').addEventListener('click', () => { showScreen('match'); startMatch(); });
+  $('setupBack').addEventListener('click', () => { showScreen('title'); });
+  $('again').addEventListener('click', () => { showScreen('setup'); buildHouseRules(); });
   $('toTitle').addEventListener('click', () => { endMatch(); showScreen('title'); });
   $('topDown').addEventListener('click', () => {
     G.topDown = !G.topDown;
@@ -133,6 +147,7 @@ function showScreen(name) {
   G.screen = name;
   $('title').hidden = name !== 'title';
   $('calib').hidden = name !== 'calib';
+  $('setup').hidden = name !== 'setup';
   $('rulesCard').hidden = name !== 'rules';
   $('hud').hidden = name !== 'match';
   $('results').hidden = name !== 'results';
@@ -178,8 +193,39 @@ function finishCalibration(result) {
     G.save = SAVE.load();
   }
   endMatch();
-  if (G.seenRules) { showScreen('match'); startMatch(); }
+  if (G.seenRules) { showScreen('setup'); buildHouseRules(); }
   else showScreen('rules');
+}
+
+/* ------------------------------------------------------------ match setup */
+
+function buildHouseRules() {
+  const row = $('hrRow');
+  row.textContent = '';
+  for (const r of HOUSE_RULES) {
+    const b = document.createElement('button');
+    b.className = 'chip';
+    b.id = 'hr-' + r.key;
+    b.type = 'button';
+    const label = document.createElement('span');
+    const sub = document.createElement('span');
+    sub.className = 'sub';
+    b.appendChild(label); b.appendChild(sub);
+    const paint = () => {
+      const v = G.houseRules[r.key];
+      if (r.cycle) { label.textContent = v + ' foot'; sub.textContent = 'tap to change'; b.className = 'chip on'; }
+      else { label.textContent = r.label; sub.textContent = r.sub; b.className = 'chip' + (v ? ' on' : ''); }
+    };
+    b.addEventListener('click', () => {
+      if (r.cycle) {
+        const i = r.cycle.indexOf(G.houseRules[r.key]);
+        G.houseRules[r.key] = r.cycle[(i + 1) % r.cycle.length];
+      } else G.houseRules[r.key] = !G.houseRules[r.key];
+      paint();
+    });
+    paint();
+    row.appendChild(b);
+  }
 }
 
 /* -------------------------------------------------------------- the match */
@@ -193,8 +239,7 @@ function startMatch(opts) {
     skipLag: !!o.calibrating,
     bare: !!o.calibrating,
     forceFirst: o.calibrating ? 0 : o.forceFirst,
-    houseRules: Object.assign(
-      { keepsies: true, slips: true, bombing: false, poison: false, ringSizeFt: 10 }, o.houseRules),
+    houseRules: Object.assign({}, G.houseRules, o.houseRules),
     players: [
       { name: 'You', ai: null, tawEntry: 'taw_clearie' },
       { name: 'Dusty', ai: o.opponent || 'rookie', tawEntry: 'taw_bumblebee' }
@@ -306,6 +351,11 @@ function onBrace(st) {
   line.style.top = (t.y - px - 6) + 'px';
   line.style.width = '54px';
   line.style.transform = 'rotate(-90deg)';
+  // the drop shot only exists when the rule is on AND your taw is inside the
+  // ring, so the game says so at the moment it becomes possible
+  if (G.R.canBomb() && G.said.indexOf('drop shot') < 0 && G.R.state.phase === 'aim') {
+    say('Your shooter is inside the ring, so a snap toward yourself is a drop shot.');
+  }
 }
 
 function onAim(aim) {
@@ -327,6 +377,7 @@ function onAim(aim) {
 
 /** One line about what the game just saw, in the voice (DESIGN 16.2). */
 function describe(aim, imp) {
+  if (aim.bomb) return 'Straight down on top of them.';
   if (aim.wildness01 >= 0.5) return 'That was a wild one.';
   if (aim.contactOffset.y <= -0.35) return 'Low across the ball.';
   if (aim.contactOffset.y >= 0.35) return 'Over the top of it.';
@@ -543,6 +594,8 @@ function installDevHook() {
     },
     start: (opts) => { G.seenRules = true; showScreen('match'); startMatch(opts); },
     rules: () => showScreen('rules'),
+    setup: () => { showScreen('setup'); buildHouseRules(); return G.houseRules; },
+    houseRules: () => Object.assign({}, G.houseRules),
     calibrate: () => startCalibration(),
     wipeSave: () => { G.save = SAVE.wipe(); G.calib = calibrationFrom(G.save, G.tuning); G.seenRules = false; return true; },
     /** Drive the whole Knuckle from a synthesised path. Returns the AimSource. */
