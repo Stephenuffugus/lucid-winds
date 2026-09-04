@@ -1012,7 +1012,7 @@ WORDS OK
 - [ ] shots: ante mid-roll, loss card, showcase room from the door and from inside a wall
 - [ ] ceremonies, the ransom window, progression, onboarding beats 2 to 6, the glb lane, the eight
   per epic shaders
-- [x] commits: `46befcb5` the catalog and the recipes, `597a9fec` the collection and the turntable, `b3d341fa` the wallet and the clay pool, `c81d1a87` the pouches, `cd0dca5e` the pot and the escrow
+- [x] commits: `46befcb5` the catalog and the recipes, `597a9fec` the collection and the turntable, `b3d341fa` the wallet and the clay pool, `c81d1a87` the pouches, `cd0dca5e` the pot and the escrow, `c249b460` the words gate and the second look
 
 ### K3
 - [ ] `arena_rules`, `damage_math`, `condition_matrix`, `arena_shape` (the table, every matchup), `boss_ladder` (five rates), `ai_budget` (100 turns, min candidates), `budget` (three runs alone)
@@ -1230,7 +1230,8 @@ and the retune, `3b8f5e93` the Knuckle and the planner, `adbc1f42` the playable 
 first morning report, `a81c51bb` calibration and the save, `1c3013ab` the sound, `df2f4d02` the setup
 screen and the drop shot, `46befcb5` the catalog and the twelve recipes, `e25c6dd6` the morning report,
 `597a9fec` the collection and the turntable, `92d98730` the ledger brought up to date, `b3d341fa` the
-wallet and the clay pool, `c81d1a87` the pouches, `cd0dca5e` the pot and the escrow.
+wallet and the clay pool, `c81d1a87` the pouches, `cd0dca5e` the pot and the escrow, `c249b460` the
+words gate and the second look at every screen.
 
 Nothing outside `satellites/keepsies/**` and this file was touched; `git diff --name-only 5a7315eb..HEAD`
 outside those two paths returns nothing. One near miss worth recording: a heredoc without an absolute
