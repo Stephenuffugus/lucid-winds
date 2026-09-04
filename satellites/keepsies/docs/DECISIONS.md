@@ -37,3 +37,14 @@ Why: measured. The fingerprint's sensitivity floor is between 1e-8 and 1e-7 of r
 ## Measurements worth a Director's eye
 
 **The break takes about 6.9 seconds to fully stop.** At the plan's numbers (rollingMu 0.02, break at 4.0 m/s) 200 seeds settle at a mean of 6.85 s, and the design's resolve cap is 6 s, so nearly every break will hit the cap rather than come to rest on its own. At rollingMu 0.04 the same shot settles in 3.87 s and the taw stays inside every time, but nothing at all leaves the ring at 4 m/s. This is a feel question, not a gate question: both gates are green as the plan specifies them. Raised in the morning report, not decided here.
+
+## K1
+
+**2026-09-04 — a slip is declared by the game, never pressed by the player.**
+The design leaves "fumble" undefined and the plan offers two honest triggers. The one chosen: the pointer left the canvas during the 90 ms sample window, which is a thumb sliding off the edge of the screen and is the digital cousin of a knuckle slipping in the dirt. The input layer flags the AimSource `slipped`, the referee hands the turn straight back and spends the slip, and no shot is fired. Why this one: it is pre commitment rather than a mid action button, it sits nowhere near the legal soft nudge band of 0.35 to 0.6 m per second (a slip is about WHERE the pointer went, not how fast), and it can never be used to take back a shot that simply went badly. Once per player per game, and only when the house rule is on.
+
+**2026-09-04 — `ringer_rules` tests the referee against a seeded outcome generator, not against five hundred real physics games.**
+Five hundred true games would take about ninety minutes on this box and would take the same transitions. The physics has its own gate. Written up in the test's own header so nobody mistakes it for a shortcut.
+
+**2026-09-04 — the referee's win condition is seven or more, not exactly seven.**
+The test asserted "exactly seven" and failed a fifth of the games. The test was wrong: a shot that pockets three takes a player from six to nine and they won at seven. The only way to win with fewer is the poison ending where the ring empties with an opponent out.

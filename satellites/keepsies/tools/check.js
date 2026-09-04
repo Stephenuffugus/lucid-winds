@@ -23,7 +23,8 @@ const FAST = process.argv.includes('--fast');
 const GATES = [
   { name: 'lint',    cmd: ['tools/lint.mjs'],  need: 'LINT OK' },
   { name: 'stamp',   cmd: ['tools/stamp.mjs'], need: 'STAMP OK' },
-  { name: 'harness', cmd: ['sim/harness.js', '--scenario=all'], need: 'SIM OK' }
+  { name: 'harness', cmd: ['sim/harness.js', '--scenario=all'], need: 'SIM OK' },
+  { name: 'ringer_rules', cmd: ['test/ringer_rules.mjs'], need: 'RINGER RULES OK' }
 ];
 
 /* Browser gates drive the real page in a real browser and need puppeteer.
