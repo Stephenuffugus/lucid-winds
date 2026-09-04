@@ -187,6 +187,56 @@ say(s.players[1].shattered === 3 && s.players[0].left === 3,
   '   the summary reads: ' + s.players[0].name + ' kept ' + s.players[0].left
   + ', ' + s.players[1].name + ' lost ' + s.players[1].shattered);
 
+/* ---- 8: the mode on a real board, headless ---- */
+console.log('');
+const P = await import('../src/core/physics.js?v=20260904a');
+await P.initPhysics();
+const { createArena } = await import('../src/game/arena.js?v=20260904a');
+const live = createArena({
+  tuning: T, catalog: C, seed: 4242, arena: 'ring',
+  players: [
+    { name: 'A', ai: 'sharp', bag: ['old_ironsides', 'bearing', 'clearie'] },
+    { name: 'B', ai: 'sharp', bag: ['clearie', 'peppermint', 'bearing'] }
+  ]
+});
+say(live.bodies.size === 2,
+  '8. the mode puts exactly the two ACTIVE marbles on the floor: ' + live.bodies.size
+  + ' of six, because a benched marble is on a rack and cannot be hit');
+let shots = 0, touched = 0, moved = 0;
+for (let i = 0; i < 24 && !live.match.over; i++) {
+  const p = live.match.turn;
+  const before = live.activePos(p);
+  const ringOutsBefore = live.match.log.filter(e => e.kind === 'ringout').length;
+  live.aiTurn();
+  live.settle();
+  shots++;
+  if (live.state.contacts.length) touched++;
+  const after = live.activePos(p) || { x: 99, z: 99 };
+  const rangOut = live.match.log.filter(e => e.kind === 'ringout').length > ringOutsBefore;
+  /* ⛔ A RING OUT IS ALSO "IT WENT SOMEWHERE", and it is the case that hides the
+     bug: a marble that leaves the ring is despawned and re enters at the SAME
+     rack position, so its coordinates are identical to a marble that never moved
+     at all. Counting only the coordinates would let a dead settle loop through on
+     every ring out. */
+  if (rangOut || (before && Math.abs(after.x - before.x) + Math.abs(after.z - before.z) > 0.01)) moved++;
+}
+say(moved === shots,
+  '   EVERY shot moves its marble or rings it out: ' + moved + ' of ' + shots
+  + '. ⛔ This is the assertion that catches a settle loop whose step count is NaN, '
+  + 'which fired 720 shots without turning the world over once');
+say(touched > 0,
+  '   and the AI connects: ' + touched + ' of ' + shots + ' shots touched an enemy marble');
+let conserved = true;
+for (const pl of live.match.players) {
+  const uids = pl.bag.map(m => m.uid);
+  if (new Set(uids).size !== 3) conserved = false;
+  for (const m of pl.bag) if (m.integrity < 0 || m.integrity > 100) conserved = false;
+}
+say(conserved,
+  '   and after ' + shots + ' shots every marble is still exactly one marble with a legal integrity');
+say(live.match.players.every(pl => pl.active === null || pl.bag.some(m => m.uid === pl.active)),
+  '   and nobody is holding a marble that is not in their bag');
+
 console.log('');
 if (fails.length) { console.log(fails.length + ' FAILED\nARENA FAILED'); process.exit(1); }
 console.log('ARENA OK');

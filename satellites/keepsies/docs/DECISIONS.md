@@ -341,3 +341,26 @@ So a "when it cracks" condition answers the hit that cracked it, in the same res
 
 **2026-09-04 — the hazard count is asserted as a SEQUENCE, not as one number.**
 DESIGN 9.2 says hazards are turn cycle deterministic and never wall clock, and an indicator that promises "fires in 1 turn" has to be telling the truth. One reading of a counter proves nothing; five in a row, alternating and never skipping, proves the cycle.
+
+**2026-09-04 — ⛔⛔ FOR STEPHEN, THE BIGGEST K3 FINDING: the damage floor and The Ring cannot both hold.**
+Measured, not reasoned. DESIGN 9.3 puts a 1.2 m/s floor under all damage, and DESIGN 9.8 says The Ring reuses the Ringer environment, which is a 1.52 m radius with an edge drop off. Three AI against AI sweeps, 360 shots each:
+
+```
+arrive 3.6 m/s | hit 26% | ringouts 116% of shots | mean damage a hit 11.8
+arrive 1.2 m/s | hit 48% | ringouts  21% of shots | mean damage a hit  0.0
+arrive 0.6 m/s | hit 54% | ringouts   4% of shots | mean damage a hit  0.0
+```
+
+A hit hard enough to hurt is a hit hard enough to push both marbles off a ten foot ring, and a hit gentle enough to stay on it lands under the floor and does literally nothing. There is no speed where The Ring is a shattering arena. Three ways out, and the choice is the Director's: **the Arena's ring is bigger than the Ringer's**, which contradicts "reuses the Ringer env" but only by a number; **The Ring is bounded rather than open**, which the Foundry's own "rubber bumpers" already establishes as a thing arenas have; or **the damage floor comes down**, which changes a DESIGN number and makes every gentle nudge chip a marble. Nothing has been changed: `damageScale` is 55 and `damageSpeedFloor` is 1.2, exactly as written.
+
+**2026-09-04 — and a second one under it: at metric marble masses, DESIGN 9.3's formula does about one damage.**
+`dmg = (relSpeed - 1.2) x attackerMassKg x 55 / hardness`. A real 16 mm glass marble is 5.36 grams, so a hard 5 m/s hit does `3.8 x 0.00536 x 55 = 1.1` damage and a steelie does 3.5: a marble takes between ten and a hundred clean hits to shatter, against DESIGN 9.9's target of 8 to 14 turns a player. A sweep of `damageScale` at 55, 200, 400, 700, 1100 and 1600 finished 0, 0, 0, 0, 0 and 3 matches out of ten inside 120 turns. The scale wants to be in the low thousands for the design's own turn window, OR the formula wants mass in grams, but which of those it is depends on the ring question above, so nothing is changed.
+
+**2026-09-04 — the Arena AI states its HIT RATE and derives its angle from the geometry.**
+In Ringer the AI aims at a cross of thirteen marbles and a fixed angular noise is a fair way to be bad at it. In the Arena there is ONE enemy marble, 16 mm wide, and at two and a half metres that is 0.37 degrees: Ringer's 0.8 degree shark noise missed 720 shots out of 720, measured, which is not a hard opponent, it is a broken one. Uniform error inside plus or minus N degrees hits a window of w degrees with probability w/N, so N = w / hitRate and the difficulty is a number somebody chose. Rookie 0.35, sharp 0.55, shark 0.75; a sharp AI measured 54.6 percent.
+
+**2026-09-04 — ⛔ `physics.fixedStep`, not `physics.hz`, and the gate that would have caught it.**
+There is no `hz` in the tuning, so `1 / T.physics.hz` was NaN and `n++ < NaN` was false on the first test: the Arena's settle loop never ran a single step. The shot fired, the impulse landed on a body nobody ever integrated, and the next turn's impulse landed on top of it, so velocities grew and positions never changed. The measurement said 720 shots and 0 contacts and looked exactly like an AI that could not aim. The gate now asserts that EVERY shot moves its marble or rings it out, and a ring out counts as going somewhere, because a rung out marble re enters at its rack and its coordinates are identical to a marble that never moved.
+
+**2026-09-04 — a contact event carries physics ids, not uids.**
+`addMarble` returns an integer and the events are in those; the referee speaks uids. Reading `e.a` as a uid made every ownership lookup miss, so a marble rolled straight through an enemy and nothing was ever recorded as a hit. Watched to fail by putting the ids back.

@@ -98,6 +98,11 @@
     "lastMarbleMeterMultiplier": 2,
     "glassShatterBonusPercent": 40,
     "closeRangeM": 0.25,
+    "_entering": "DESIGN 9.2: a swapped marble enters with no attack momentum this turn and that IS the cost. Half impulse rather than none, so the shot still positions and still counts as a turn: a move that forfeits the turn entirely is a move nobody makes.",
+    "enteringMomentum": 0.5,
+    "_ring": "DESIGN 9.8: The Ring arena REUSES the Ringer environment, so it takes the Ringer 10 foot radius rather than carrying a second number. An arena of its own 0.9 m sent every shot straight out of it: at 0.7 power a marble leaves at 5 m/s and 0.9 m is four tenths of a second away.",
+    "settleCapSeconds": 6,
+
     "ringOutSeconds": 3,
     "aimTimerRankedSeconds": 12,
     "charge": {
@@ -110,6 +115,8 @@
     }
   },
 
+  "_arenaAi": "In Ringer the AI aims at a cross of thirteen marbles and a fixed angular noise is a fair way to be bad at it. In the Arena there is ONE enemy marble, about 16 mm wide, and at two and a half metres that is 0.37 degrees: a fixed 0.8 degree noise misses 720 shots out of 720, which is what the first measurement showed. So the Arena AI states its HIT RATE and derives the angle from the geometry, which makes its difficulty a design number rather than an accident of scale.",
+  "arenaAi": { "hitRate": { "rookie": 0.35, "sharp": 0.55, "shark": 0.75 }, "arriveSpeed": 1.6 },
   "ai": {
     "deadlineMs": 1200,
     "candidates": { "rookie": 6, "sharp": 14, "shark": 24 },

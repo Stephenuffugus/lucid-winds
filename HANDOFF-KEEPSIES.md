@@ -415,9 +415,45 @@ ARENA OK
 ```
   Watched to fail four ways: friendly fire damaging your own bag, a ring out that heals the marble,
   unlimited positioning acts, and losing because your marbles were merely rung out.
-- [ ] `game/arena.js`: the mode on a real board, which is what `arena_shape` needs before it can be honest
+- [x] **`src/game/arena.js`**: the mode on a real board, headless, sharing Ringer's Knuckle and its
+  `aimToImpulse` exactly as DESIGN 9.2 step 3 requires. Two bugs in it were only findable by running it:
+
+  ⛔ **`physics.fixedStep`, not `physics.hz`.** There is no `hz` in the tuning, so `1 / T.physics.hz` was
+  NaN and `n++ < NaN` was false on the first test: the settle loop never ran a single step. The shot
+  fired, the impulse landed on a body nobody ever integrated, and the next turn's impulse landed on top
+  of it. The measurement said **720 shots and 0 contacts** and looked exactly like an AI that could not
+  aim. The gate now asserts that EVERY shot moves its marble or rings it out.
+
+  ⛔ **A contact event carries physics ids, not uids.** `addMarble` returns an integer; the referee
+  speaks uids. Every ownership lookup missed, so a marble rolled straight through an enemy.
+
+  ⛔ **The Arena AI states its HIT RATE and derives its angle from the geometry.** One enemy marble at
+  two and a half metres is a 0.37 degree window, and Ringer's 0.8 degree shark noise misses all of it.
+  Uniform error inside plus or minus N hits a w wide window with probability w/N, so N = w / hitRate.
+  Rookie 0.35, sharp 0.55, shark 0.75; a sharp AI measures 54.6 percent.
+```
+  ok    8. the mode puts exactly the two ACTIVE marbles on the floor: 2 of six
+  ok       EVERY shot moves its marble or rings it out: 24 of 24
+  ok       and the AI connects: 11 of 24 shots touched an enemy marble
+  ok       and after 24 shots every marble is still exactly one marble with a legal integrity
+ARENA OK
+```
+- [ ] ⛔⛔ **`arena_shape` IS NOT PASSING AND IT IS NOT A BUG. It is a Director call, and it is the
+  headline of this phase.** DESIGN 9.3 puts a 1.2 m/s floor under all damage and DESIGN 9.8 says The Ring
+  reuses the Ringer environment, a 1.52 m radius with an edge drop off. Measured over 360 shots each:
+```
+arrive 3.6 m/s | hit 26% | ringouts 116% of shots | mean damage a hit 11.8
+arrive 1.2 m/s | hit 48% | ringouts  21% of shots | mean damage a hit  0.0
+arrive 0.6 m/s | hit 54% | ringouts   4% of shots | mean damage a hit  0.0
+```
+  **A hit hard enough to hurt is a hit hard enough to push both marbles off a ten foot ring, and a hit
+  gentle enough to stay on it lands under the floor and does nothing at all.** There is no speed where
+  The Ring is a shattering arena. And underneath that, a second one: at metric masses the formula does
+  about one damage a hit, because a 16 mm glass marble is 5.36 GRAMS, so `3.8 x 0.00536 x 55 = 1.1`. A
+  sweep of `damageScale` at 55, 200, 400, 700, 1100 and 1600 finished 0, 0, 0, 0, 0 and 3 matches of ten
+  inside 120 turns, against a target of 8 to 14. Nothing has been changed: `damageScale` is 55 and
+  `damageSpeedFloor` is 1.2, exactly as DESIGN writes them.
 - [ ] the three arenas, the quality scaler, `tools/make_thumb.mjs`
-- [ ] `arena_shape`: 8 to 14 turns a player, and no class matchup outside 35 to 65 percent
 - [ ] Sharp and Shark tuning, and the five bosses
 
 ## 15. THE OVERNIGHT PROTOCOL (how an unattended run behaves)
@@ -454,9 +490,9 @@ Next action: <file, function, step, the first thing the next session does>
 marbles' looks, the collection, the turntable, the economy, the three pouches, **the keepsies loop
 itself**, **the pot ceremony**, **the ransom window**, **progression** and **the whole first four
 minutes** are built. What is left of K2 is the glb lane and the eight per epic shaders, which are both
-art rather than systems. K3 **started**: the damage model, the six programmed actives and the Arena
-referee are in and gated, all three pure and all three sweepable in Node. What K3 still needs is the
-mode on a real board.
+art rather than systems. K3 **started**: the damage model, the six programmed actives, the Arena
+referee and the mode on a real board are in and gated. What K3 needs next is not code, it is a decision:
+`arena_shape` cannot pass as the design is written, and why is the headline below.
 
 **The headline: a marble is now genuinely at risk, you watch it change hands, and if you lose a good
 one you get 24 hours to buy it back.** You put one up,
@@ -470,13 +506,13 @@ in the save, so it survives the tab being closed for 23 of them.
 
 **Gates:** twenty one, all green, every one watched to fail on purpose. Nine are new tonight, and the
 playthrough grew from twenty six assertions to sixty three: it now walks the first four minutes from
-PLAY to the first game for keeps.
+PLAY to the first game for keeps. `arena_shape` is deliberately NOT among them, for the reason below.
 ```
-lint pass 0s · catalog pass 0s · stamp pass 0s · harness pass 14s · save pass 0s
-clay_regen pass 0s · pity_math pass 1s · words pass 0s · escrow_crash pass 0s
+lint pass 0s · catalog pass 0s · stamp pass 0s · harness pass 13s · save pass 0s
+clay_regen pass 0s · pity_math pass 0s · words pass 0s · escrow_crash pass 0s
 ransom pass 1s · progression pass 0s · onboarding pass 0s · damage pass 0s
-arena pass 0s · ringer_rules pass 0s · ai_budget pass 15s · ringer_ai pass 40s
-render pass 43s · knuckle pass 20s · audio_budget pass 11s · playthrough pass 69s
+arena pass 1s · ringer_rules pass 0s · ai_budget pass 15s · ringer_ai pass 39s
+render pass 40s · knuckle pass 18s · audio_budget pass 10s · playthrough pass 65s
 ALL GATES PASSED
 ```
 
@@ -491,7 +527,26 @@ ALL GATES PASSED
 4. `docs/shots/k2-collection.png` Your marbles, all of them, no longer a peephole.
 5. `docs/shots/k2-inspect.png` One marble on the turntable with its traits in words.
 
-**⛔ The one thing to decide, Stephen: the Standard Pouch's printed odds and its felt odds are very
+**⛔⛔ THE ONE THING TO DECIDE, STEPHEN: the Arena's damage floor and The Ring cannot both hold.**
+Measured, not reasoned, over 360 AI shots at each speed:
+```
+arrive 3.6 m/s | hit 26% | ringouts 116% of shots | mean damage a hit 11.8
+arrive 1.2 m/s | hit 48% | ringouts  21% of shots | mean damage a hit  0.0
+arrive 0.6 m/s | hit 54% | ringouts   4% of shots | mean damage a hit  0.0
+```
+DESIGN 9.3 puts a 1.2 m/s floor under all damage. DESIGN 9.8 says The Ring reuses the Ringer
+environment, which is a ten foot ring with an edge drop off. **A hit hard enough to hurt is a hit hard
+enough to push both marbles off that ring, and a hit gentle enough to stay on it does literally nothing.**
+There is no speed where The Ring is a shattering arena. Three ways out and all three are yours: the
+Arena's ring is bigger than the Ringer's; or The Ring is bounded rather than open, which the Foundry's
+own rubber bumpers already establish as a thing your arenas have; or the damage floor comes down, which
+makes every gentle nudge chip a marble. Underneath it sits a second one: at real marble masses the
+formula does about ONE damage a hit, because a 16 mm glass marble is 5.36 grams and `3.8 x 0.00536 x 55`
+is 1.1, so a marble takes between ten and a hundred clean hits to shatter against your own target of 8 to
+14 turns. **Nothing has been changed.** `damageScale` is 55 and `damageSpeedFloor` is 1.2 exactly as you
+wrote them, and the sweep that says the scale wants to be in the low thousands is in DECISIONS.
+
+**⛔ And still open from earlier: the Standard Pouch's printed odds and its felt odds are very
 different.** Measured over a hundred thousand pulls. The table says 3.6 percent rare and 0.4 percent
 epic. What a player actually gets is **10.16 percent rare and 2.71 percent epic**, because at a 3.6
 percent base rate roughly seven of every ten runs of ten pulls contain no rare at all, so the pity
@@ -527,7 +582,7 @@ and a half marbles of eighteen with the second row's names sliced through the mi
 two questions it asks. Does the snap feel like a snap, and does the marble weigh anything. That entry is
 K1.5 and the next session runs it before anything else.
 
-**Next action:** `game/arena.js`, the mode on a real board. Its three pure halves are already in.
+**Next action:** your call on the Arena's ring, below. Everything else in K3 waits on it.
 
 ---
 
@@ -645,24 +700,21 @@ outside those two paths returns nothing. One near miss worth recording: a heredo
 path wrote a Keepsies `manifest.json` over the repo root's own, and it was restored from git inside a
 minute; every shell call after that used absolute paths.
 
-**Exact next action:** `src/game/arena.js`, the mode on a real board. Its three pure halves are already
-in and gated: `core/damage.js` (integrity, charge, the shatter point), `core/specials.js` (the six
-conditions) and `core/rules-arena.js` (the turn machine). What is missing is the part that runs a world
-and feeds the referee what happened, which is exactly the shape of `game/ringer.js`: read that file first
-and copy its seams rather than inventing new ones. It already owns the camera rig, the Knuckle wiring,
-the settle loop and `frameShot`, and the Arena's brace and snap are IDENTICAL to Ringer's by design
-(DESIGN 9.2 step 3), so the input layer is reuse rather than new code.
+**Exact next action: none, until Stephen answers the ring question.** It is written at the top of the
+morning report and in DECISIONS, with the measurements. Every remaining piece of K3 depends on the
+answer: the three arenas, the boss ladder, the class win rates and `arena_shape` itself are all downstream
+of whether a shattering arena is bounded or open and of how hard a hit is.
 
-Build it in this order and gate at each step:
-1. **The Ring arena only**, which is the Ringer environment with an edge drop off, so no new art at all.
-   A ring out is the taw leaving the disc, which `outsideRing` already answers.
-2. **The contact log.** The referee wants `{attacker, defender, relSpeed}` per contact, and `physics.js`
-   already produces contact events for the audio; widen that path rather than adding a second one.
-3. **`arena_shape`**, DESIGN 9.9, which cannot be honest until 1 and 2 exist: AI against AI across every
-   class matchup, landing at 8 to 14 turns a player and no matchup outside 35 to 65 percent.
-4. Then Foundry and Glacier, which DO want art and a hazard on a two turn cycle.
+While it is open, the work that does NOT depend on it, in order:
+1. **The Arena on screen.** `game/arena.js` runs headless today and has no UI at all: no rack, no
+   integrity read on the marble, no charge glow, no condition picker. All four are DESIGN 9.1 and 9.5 and
+   none of them cares how hard a hit is. The integrity tiers already exist in `core/damage.js` and the
+   marble mesh recipes already exist, so "chipped" and "cracked" are decals over a solved renderer.
+2. **The condition picker**, which is the pre match screen where a player chooses one condition per
+   marble. `core/specials.js` already answers `choosable()` and every condition carries its own blurb.
+3. **K1.5**, which is still unrun and still the most valuable hour anybody could spend on this game.
 
-⛔ Before any of it, read the two open questions in this file's section 11 and the ones written into the
+⛔ Before any of it, read the two open questions in this file's section 11⛔ Before any of it, read the two open questions in this file's section 11 and the ones written into the
 morning reports. The pouch pity finding and the XP curve reading are both Director calls that change
 numbers, and both are cheap to change now and expensive to change after a playtest.
 
