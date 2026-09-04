@@ -11,9 +11,13 @@
  * fast mode SKIPS a sample sensitive gate, it never shrinks it, because a gate
  * that reports a failure on passing code teaches you to ignore the output.
  */
-const { execFileSync } = require('child_process');
-const path = require('path');
-const ROOT = path.join(__dirname, '..');
+import { execFileSync } from 'node:child_process';
+import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+
+const require = createRequire(import.meta.url);
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const FAST = process.argv.includes('--fast');
 
 const GATES = [

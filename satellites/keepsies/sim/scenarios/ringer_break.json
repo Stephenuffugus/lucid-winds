@@ -1,0 +1,26 @@
+{
+  "name": "ringer_break",
+  "kind": "break",
+  "_": "HANDOFF-KEEPSIES 4.1 redefines this gate. A 4.0 m/s clean snap through the centre mib, aim jitter half a degree, seeds 1 to 200: mibs out in [1,3] on at least 80 percent of shots, everything asleep by 8 seconds on 100 percent. The taw staying inside is NOT this gate; it is reported. The design's 3.5 m/s knocks nothing out at any tested setting.",
+  "surface": "dirt",
+  "floor": { "hx": 5, "hy": 0.05, "hz": 5 },
+  "ringRadius": 1.525,
+  "cross": { "entry": "commie", "spacing": 0.075 },
+  "taw": { "entry": "taw_clearie", "z": -1.45, "jitterX": 0.02 },
+  "shot": {
+    "speedMps": 4.0,
+    "dirDeg": 0,
+    "contactOffset": { "x": 0, "y": 0 },
+    "wildness01": 0,
+    "braced01": 1,
+    "coneDegOverride": 0.5
+  },
+  "seeds": { "from": 1, "to": 200 },
+  "maxSeconds": 8,
+  "asserts": [
+    { "id": "a break puts 1 to 3 mibs out", "kind": "fractionInBand", "metric": "mibsOut", "min": 1, "max": 3, "atLeast": 0.80 },
+    { "id": "everything is asleep inside 8 seconds", "kind": "fraction", "metric": "allAsleep", "atLeast": 1.0 },
+    { "id": "the taw staying in is measured, not required", "kind": "report", "metric": "tawIn" },
+    { "id": "how long a shot takes to settle", "kind": "report", "metric": "restSeconds" }
+  ]
+}

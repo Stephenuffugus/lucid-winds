@@ -1,0 +1,169 @@
+{
+  "_": "Every physics and balance number in Keepsies. A literal constant in a .js file is a review failure (HANDOFF-KEEPSIES 5.7). The harness, the AI worker and the game all load this same file.",
+
+  "physics": {
+    "fixedStep": 0.008333333333333333,
+    "gravityY": -9.81,
+    "maxSubstepsPerFrame": 8,
+    "ccdAboveSpeed": 2.0,
+    "linearDamping": 0.02,
+    "angularDamping": 0.02,
+    "sleepLinear": 0.02,
+    "sleepAngular": 0.5,
+    "restedSeconds": 0.5,
+    "resolveCapSeconds": 6.0,
+    "_note": "damping is numerical only now; the feel comes from rollingMu (HANDOFF-KEEPSIES 4.1). Rapier has no rolling resistance, so physics.js applies it as a per step force and resets forces every step because addForce is persistent."
+  },
+
+  "surface": {
+    "_": "rollingMu brakes travel; spinningMu brakes yaw about the contact normal. Rapier has neither, and without the second one a marble that picked up spin in a collision spins on the spot for ever and nothing in the scene ever sleeps.",
+    "dirt":     { "friction": 0.55, "restitution": 0.35, "rollingMu": 0.02,  "spinningMu": 0.02 },
+    "polished": { "friction": 0.18, "restitution": 0.60, "rollingMu": 0.008, "spinningMu": 0.008 },
+    "ice":      { "friction": 0.04, "restitution": 0.60, "rollingMu": 0.002, "spinningMu": 0.002 },
+    "sand":     { "friction": 0.90, "restitution": 0.20, "rollingMu": 0.06,  "spinningMu": 0.06 },
+    "rubber":   { "friction": 0.60, "restitution": 1.10, "rollingMu": 0.02,  "spinningMu": 0.02, "exitSpeedClamp": 4.5 }
+  },
+
+  "material": {
+    "clay":    { "density": 1800, "restitution": 0.55, "friction": 0.45, "hardness": 1.0 },
+    "glass":   { "density": 2500, "restitution": 0.78, "friction": 0.30, "hardness": 1.0 },
+    "agate":   { "density": 2650, "restitution": 0.72, "friction": 0.34, "hardness": 1.3 },
+    "stone":   { "density": 2650, "restitution": 0.72, "friction": 0.34, "hardness": 1.15 },
+    "steel":   { "density": 7800, "restitution": 0.60, "friction": 0.22, "hardness": 1.4 },
+    "fantasy": { "density": 2500, "restitution": 0.78, "friction": 0.30, "hardness": 1.0 }
+  },
+
+  "diameterMm": {
+    "mib": 16,
+    "taw": 22,
+    "peewee": 12,
+    "arenaOversizeCap": 35,
+    "overrideMaxPercent": 25
+  },
+
+  "ringer": {
+    "ringRadius": 1.525,
+    "ringSizeRadius": { "7ft": 1.0668, "10ft": 1.525, "13ft": 1.9812 },
+    "crossSpacing": 0.075,
+    "mibCount": 13,
+    "pocketedToWin": 7,
+    "breakSpeed": 4.0,
+    "lagLineOffset": 0.3,
+    "_breakSpeed": "4.0 m/s is 0.64 of the 0.5 to 6.0 launch range. The design's 3.5 knocks nothing out at any tested setting (HANDOFF-KEEPSIES 4.1)."
+  },
+
+  "snap": {
+    "launchMin": 0.5,
+    "launchMax": 6.0,
+    "powerEaseSixteenths": 21,
+    "thumbSpeedMin": 0.2,
+    "thumbSpeedMaxDefault": 2.4,
+    "cancelBelow": 0.35,
+    "softNudgeTo": 0.6,
+    "sampleWindowMs": 90,
+    "jitterWindowMs": 600,
+    "settleSeconds": 1.2,
+    "coneWideDeg": 6.0,
+    "coneTightDeg": 1.5,
+    "fineAngleMaxDeg": 25,
+    "knuckledConeFactor": 0.6,
+    "knuckledPowerCap": 0.9,
+    "kBack": 1.25,
+    "kTop": 1.0,
+    "kSide": 0.8,
+    "kWild": 0.02,
+    "kWildSpin": 0.6,
+    "wildAxisMaxDeg": 25,
+    "warmChargePerTurn": 4,
+    "bombLiftMetres": 0.25,
+    "_powerEase": "The exponent of the ease out curve, in sixteenths: 21/16 = 1.3125. At that exponent the top 20 percent of a player's effort buys the last 12.1 percent of power, which is what DESIGN 7.2 asks for. It is stated in sixteenths because Math.pow is not bit reproducible across engines and core computes it with four square roots instead.",
+    "_k": "kBack, kTop, kSide and kWildSpin are MULTIPLES OF THE NATURAL ROLLING RATE (launch speed divided by radius), so they are scale free: 1.0 of top spin is exactly the spin a marble of that size would have if it were rolling at that speed. Tuned in K1 against the sticking scenario."
+  },
+
+  "arena": {
+    "damageSpeedFloor": 1.2,
+    "damageScale": 55,
+    "damageCap": 35,
+    "burnPerContactSecond": 4,
+    "burnTickSeconds": 0.5,
+    "tierChipped": 70,
+    "tierCracked": 40,
+    "lastMarbleHardnessBonus": 0.15,
+    "lastMarbleMeterMultiplier": 2,
+    "glassShatterBonusPercent": 40,
+    "ringOutSeconds": 3,
+    "aimTimerRankedSeconds": 12,
+    "charge": {
+      "perTenDealt": 8,
+      "perTenTaken": 12,
+      "perRailHit": 5,
+      "perWarmTurn": 4,
+      "benchedBioluminous": 4,
+      "full": 100
+    }
+  },
+
+  "ai": {
+    "deadlineMs": 1200,
+    "candidates": { "rookie": 6, "sharp": 14, "shark": 24 },
+    "percentile": { "rookie": 0.60, "sharp": 0.85, "shark": 1.0 },
+    "noiseDeg": { "rookie": 8, "sharp": 3, "shark": 1 },
+    "candidateStep": 0.016666666666666666,
+    "candidateMarbleSeconds": 2.0,
+    "batch": { "candidates": 4, "marbleSeconds": 1.0 },
+    "lowQualityDivisor": 2
+  },
+
+  "economy": {
+    "dust": { "common": 5, "uncommon": 25, "rare": 120, "epic": 600 },
+    "ransom": { "rare": 400, "epic": 1500, "grail": 5000, "windowHours": 24 },
+    "pouchPrice": { "standard": 300, "collector": 1200, "grail": 6000 },
+    "clayPoolSize": 10,
+    "showcaseSlots": 6,
+    "showcaseSlotsUpgraded": 12,
+    "showcaseUpgradeCost": 2000,
+    "firstWinOfDay": 150,
+    "matchCompletionMin": 15,
+    "matchCompletionMax": 40,
+    "chorePay": 60,
+    "choresPerDay": 3,
+    "streak": { "3": 100, "5": 150, "7": 250 },
+    "techniqueFirstEarn": 50,
+    "levelUpPerLevel": 20,
+    "xpPerLevelBase": 120,
+    "levelCap": 30,
+    "xpWin": 100,
+    "xpLoss": 40,
+    "xpBossWin": 300,
+    "fleetSunbeamsPerMatchMin": 2,
+    "fleetSunbeamsPerMatchMax": 6
+  },
+
+  "render": {
+    "envIntensity": 0.55,
+    "fresnelPower": 2.6,
+    "quality": {
+      "low":    { "resolutionScale": 0.6, "shadows": "off",  "transmission": false, "shotCam": false },
+      "medium": { "resolutionScale": 0.8, "shadows": "one",  "transmission": false, "shotCam": true },
+      "high":   { "resolutionScale": 1.0, "shadows": "soft", "transmission": true,  "shotCam": true }
+    },
+    "dynamicResDownAboveMs": 16,
+    "dynamicResUpBelowMs": 12,
+    "dynamicResUpAfterSeconds": 5,
+    "budget": { "drawCalls": 50, "marbleDrawCalls": 24, "triangles": 120000, "debrisMax": 24, "debrisTtlSeconds": 4 }
+  },
+
+  "audio": {
+    "cpuBudgetMsPerFrame": 1.5,
+    "maxRollingLoops": 8,
+    "impactGain": 0.35,
+    "detuneCents": 18,
+    "modes": {
+      "glass": { "count": 4, "loHz": 1800, "hiHz": 6000, "q": 22, "decay": 0.45 },
+      "clay":  { "count": 2, "loHz": 300,  "hiHz": 900,  "q": 5,  "decay": 0.12 },
+      "steel": { "count": 5, "loHz": 900,  "hiHz": 5200, "q": 40, "decay": 1.10 },
+      "stone": { "count": 3, "loHz": 700,  "hiHz": 2600, "q": 12, "decay": 0.28 }
+    },
+    "referenceDiameterMm": 16
+  }
+}

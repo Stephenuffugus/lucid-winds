@@ -1,0 +1,104 @@
+{
+  "name": "replay_hash",
+  "kind": "replay",
+  "_": "Determinism is a product feature: seed plus input log must give a bit identical replay, and Phase 4 moves real marbles on that promise. Two runs of the same six shot log agree; different seeds disagree, so the fingerprint is not a frozen value; and a stray Math.random injected into the world mid shot changes it, which is the self test. A taw that has left the ring returns to the edge for its next shot, six positions sixty degrees apart, each aimed back at the cross: that is the real rule and it is also what keeps the fixture bounded.",
+  "surface": "dirt",
+  "floor": {
+    "hx": 5,
+    "hy": 0.05,
+    "hz": 5
+  },
+  "ringRadius": 1.525,
+  "cross": {
+    "entry": "commie",
+    "spacing": 0.075
+  },
+  "taw": {
+    "entry": "taw_clearie",
+    "z": -1.45,
+    "jitterX": 0.02
+  },
+  "aimSpreadDeg": 14,
+  "shotSeconds": 6,
+  "shots": [
+    {
+      "speedMps": 4.0,
+      "contactOffset": {
+        "x": 0.0,
+        "y": 0.0
+      },
+      "wildness01": 0.0,
+      "coneDegOverride": 0.5
+    },
+    {
+      "speedMps": 2.2,
+      "contactOffset": {
+        "x": 0.4,
+        "y": -0.6
+      },
+      "wildness01": 0.0,
+      "coneDegOverride": 0.5
+    },
+    {
+      "speedMps": 5.5,
+      "contactOffset": {
+        "x": -0.3,
+        "y": 0.5
+      },
+      "wildness01": 0.7,
+      "coneDegOverride": 0.5
+    },
+    {
+      "speedMps": 1.1,
+      "contactOffset": {
+        "x": 0.0,
+        "y": -0.9
+      },
+      "wildness01": 0.0,
+      "coneDegOverride": 0.5
+    },
+    {
+      "speedMps": 3.3,
+      "contactOffset": {
+        "x": 0.8,
+        "y": 0.0
+      },
+      "wildness01": 0.3,
+      "coneDegOverride": 0.5
+    },
+    {
+      "speedMps": 6.0,
+      "contactOffset": {
+        "x": -0.6,
+        "y": -0.4
+      },
+      "wildness01": 1.0,
+      "coneDegOverride": 0.5
+    }
+  ],
+  "seeds": {
+    "from": 1,
+    "to": 20
+  },
+  "asserts": [
+    {
+      "id": "two runs of the same log agree",
+      "kind": "replayEqual"
+    },
+    {
+      "id": "different seeds give different fingerprints",
+      "kind": "replayDistinct",
+      "atLeast": 0.9
+    },
+    {
+      "id": "a stray Math.random inside the step is caught",
+      "kind": "replayCatchesNoise"
+    }
+  ],
+  "noise": {
+    "perStep": 1e-07,
+    "steps": 240
+  },
+  "_noise": "A stray Math.random inside step() perturbs the world EVERY step, not once, so that is what the self test injects: a sub micron nudge on each of the first 240 steps. The magnitude is 1e-7 m and it is chosen from a measurement, not a feeling. The fingerprint quantises to 1e-6 m, and a sweep of injected drift found its sensitivity floor between 1e-8 and 1e-7 of relative velocity per step: at 1e-9 m per step only 18 to 20 of 20 seeds diverged, run to run, which is a FLAKY GATE and worse than none. At 1e-7 m per step the final state moves by about 4e-4 m, four hundred times the quantiser, and every seed diverges. A real Math.random bug is far larger than either. The floor also tells Phase 4 what it has: last bit float differences between two phones, around 1e-16, do not move this hash over one shot.",
+  "edgeStepDeg": 60
+}
