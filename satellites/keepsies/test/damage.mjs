@@ -108,7 +108,17 @@ const att2 = { massKg: 0.0167, materialClass: 'steel', charge: 0 };
 const def2 = { massKg: 0.005, materialClass: 'glass', hardness: 1, charge: 0, integrity: 5, shattered: false };
 const over = D.applyHit(att2, def2, 8, {}, T);
 say(over.dmg === 5 && over.rolled > 5,
-  '   and an overkill pays for the 5 that landed, not the ' + over.rolled.toFixed(0) + ' that was rolled');
+  '   and an overkill REPORTS the 5 that landed, not the ' + over.rolled.toFixed(0) + ' that was rolled');
+/* ⛔ AND THE CHARGE IS THE PART THAT MATTERS. `test/mutants.js` caught this one:
+   the assertion above reads the RETURN VALUE, so breaking the charge line left it
+   green and the gate was decorative for the thing it claimed to test. The attacker
+   must be paid for the five that landed, which is exactly 4 charge, and not for
+   the six that were rolled, which would be 4.96. */
+const wantCharge = D.chargeFor('dealt', 5, false, T);
+say(Math.abs(att2.charge - wantCharge) < 1e-9,
+  '   and the CHARGE it earned is for those 5 too: ' + att2.charge.toFixed(2)
+  + ', wanted ' + wantCharge.toFixed(2) + ', and paying for the roll would be '
+  + D.chargeFor('dealt', over.rolled, false, T).toFixed(2));
 
 /* ---- 6: burn ---- */
 const bs = { lastBurn: null };
