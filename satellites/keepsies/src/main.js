@@ -17,7 +17,7 @@ import { attachCameraControls } from './input/cameraCtl.js?v=20260904a';
 import { createKnuckle } from './input/knuckle.js?v=20260904a';
 import { createPullback } from './input/pullback.js?v=20260904a';
 import * as AUDIO from './audio/synth.js?v=20260904a';
-import { initPhysics, positionOf, specOf } from './core/physics.js?v=20260904a';
+import { initPhysics, positionOf, specOf, velocityOf } from './core/physics.js?v=20260904a';
 import { createRinger } from './game/ringer.js?v=20260904a';
 import { RINGER_TECHNIQUES } from './core/techniques.js?v=20260904a';
 import { launchSpeed } from './core/snap.js?v=20260904a';
@@ -36,7 +36,7 @@ const G = {
   topDown: false, paused: false, freeCam: false,
   matchesPlayed: 0, seenRules: false, calib: { max: null },
   placeDrag: null, lastToast: 0, sunbeams: 0, said: '', lastFramedTurn: -1,
-  save: null, calibrator: null
+  save: null, calibrator: null, lastRollAudio: 0, warming: false
 };
 
 /* ------------------------------------------------------------------- boot */
@@ -218,6 +218,8 @@ function startMatch(opts) {
 
 function endMatch() {
   if (!G.R) return;
+  AUDIO.stopAll();
+  G.warming = false;
   for (const [, mesh] of G.meshes) { G.stage.scene.remove(mesh); mesh.material.dispose(); }
   for (const [, sh] of G.shadows) { G.stage.scene.remove(sh); sh.material.dispose(); sh.geometry.dispose(); }
   G.meshes.clear(); G.shadows.clear(); G.prev.clear();
@@ -276,7 +278,11 @@ function onBrace(st) {
   if (st.bracing && G.R.state.phase === 'place') G.R.commitPlace();
   const t = G.R.tawOnScreen(G.rig);
   const ret = $('reticle'), line = $('aimline');
-  if (!st.bracing || !t) { ret.hidden = true; line.hidden = true; $('power').hidden = true; return; }
+  if (!st.bracing || !t) {
+    ret.hidden = true; line.hidden = true; $('power').hidden = true;
+    if (G.warming) { G.warming = false; AUDIO.stopWarming(); }
+    return;
+  }
   /* The reticle breathes with the cone: wide while you are still moving, tight
      when the hold has settled. The first version scaled from the DRAWN radius by
      up to four times, which drew a big gold hoop around a sixteen pixel marble
@@ -289,6 +295,9 @@ function onBrace(st) {
   ret.style.width = ret.style.height = (px * 2) + 'px';
   ret.style.borderColor = st.settle01 > 0.98 ? 'rgba(200,168,75,.95)' : 'rgba(232,220,200,.55)';
   ret.style.borderWidth = st.settle01 > 0.98 ? '2px' : '1px';
+  // the warming shimmer, while the taw is being rubbed
+  if (st.warmed && !G.warming) { G.warming = true; AUDIO.startWarming(); }
+  else if (!st.warmed && G.warming) { G.warming = false; AUDIO.stopWarming(); }
   // DIRECTION ONLY, never a predicted path. That is DESIGN 7.1 and it is not
   // negotiable in ranked play, so it is not built at all. It starts OUTSIDE the
   // reticle so the two do not read as one shape.
@@ -404,6 +413,29 @@ function physStep() {
   }
 }
 
+/**
+ * The sound of marbles travelling. Read straight off the world's own contact
+ * bookkeeping: a marble is rolling when it is touching something and going
+ * somewhere, and the surface it is touching decides what that sounds like.
+ * Updated a few times a second, not every step, because a filter frequency does
+ * not need to be set at 120 Hz to be heard.
+ */
+function updateRollingAudio() {
+  if (!G.R || !AUDIO.isRunning()) return;
+  const W = G.R.world;
+  const moving = [];
+  for (const [id, m] of W.marbles) {
+    if (m.surfaces.size === 0) continue;
+    const v = velocityOf(W, id);
+    const sp = len2(v.x, v.z);
+    if (sp < 0.05) continue;
+    let kind = 'dirt';
+    for (const h of m.surfaces) { const st = W.statics.get(h); if (st) { kind = st.kind; break; } }
+    moving.push({ id, speed: sp, surface: kind, diameterMm: m.spec.diameterMm });
+  }
+  AUDIO.updateRolling(moving);
+}
+
 function syncMeshes(alpha) {
   if (!G.R) return;
   const W = G.R.world;
@@ -474,6 +506,7 @@ function frame(now) {
     if (G.topDown) { G.rig.state.elevationDeg = 84; G.rig.state.wantDistance = G.R.ringRadius * 1.9; }
     else if (G.rig.state.elevationDeg > 60) G.rig.state.elevationDeg = 33;
     if (G.screen === 'match') updateHud();
+    if (now - G.lastRollAudio > 60) { G.lastRollAudio = now; updateRollingAudio(); }
     if (!$('toast').hidden && now - G.lastToast > 2400) $('toast').hidden = true;
   }
 

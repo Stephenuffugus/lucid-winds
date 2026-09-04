@@ -111,3 +111,12 @@ DESIGN 16.1 opens with "a marble sits on dirt", and the first build put three pa
 
 **2026-09-04 — the calibration marble comes back for the next snap.**
 Three shots off a practice tee. Without it the camera was still chasing the last one when the player reached for the next and there was no marble under their thumb, which is exactly the failure the Knuckle gate caught in the match loop.
+
+**2026-09-04 — `audio_budget` renders the graph offline and measures the samples, rather than counting what was scheduled.**
+The plan asks for an offline render in Node, and Node has no WebAudio, so it runs in the same headless Chrome as the other browser gates through `OfflineAudioContext`, which is the same graph the game plays through. It measures peak, rms and clipped sample count off real audio: a break of twenty impacts renders at rms 0.0296 and peak 0.526 with zero clipped samples, silence renders as exactly zero, and one marble is quieter than twenty. Watched to fail by turning the limiter off and raising the gain nine times, which produced 277 clipped samples and a peak of 2.943, and again by removing the rolling loop cap.
+
+**2026-09-04 — the rolling loop cap drops the QUIETEST loop, not an arbitrary one.**
+Eight loops is the budget. Sorting by speed before the cut means the marble you are watching is the marble you can hear; without the sort the cap would silence whichever marble happened to be first in a Map.
+
+**2026-09-04 — there is no listening gate and there will not be one.**
+A machine can say a break makes sound, does not clip, and stays inside its voice budget. It cannot say the glass sounds like glass. That question is line seven of `docs/checklists/k1.md` and it belongs to a person with the volume up.
