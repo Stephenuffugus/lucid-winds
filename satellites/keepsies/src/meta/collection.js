@@ -17,10 +17,8 @@ import * as THREE from 'three';
 import { makeMarbleMesh } from '../render/marbleMesh.js?v=20260904a';
 import { bodySpec } from '../core/marbleBody.js?v=20260904a';
 
-export const TIER_ORDER = ['common', 'uncommon', 'rare', 'epic', 'grail'];
-export const TIER_LABEL = {
-  common: 'Common', uncommon: 'Uncommon', rare: 'Rare', epic: 'Epic', grail: 'Grail'
-};
+export { TIER_ORDER, TIER_LABEL } from './tiers.js?v=20260904a';
+import { TIER_ORDER } from './tiers.js?v=20260904a';
 
 /** Hardness and integrity in words. DESIGN 20, and the reason there is no table. */
 export function hardnessWord(h) {

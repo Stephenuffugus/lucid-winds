@@ -185,3 +185,15 @@ The first wiring had `economy.payForMatch` earn into the wallet AND the results 
 
 **2026-09-04 — the two currencies are wired in two different places on purpose.**
 `economy.earn` is the game's, four to six hundred a day of honest play, and it is what the results card reports and what a pouch costs. `window._sbCapEarn` is the fleet's, thirty a day across every satellite, and it is called beside it at match end. They never convert in either direction. OPEN #9 is what the player sees the first one CALLED; until Stephen answers, the UI says Sunbeams per the design.
+
+**2026-09-04 — the tier ladder moved into `meta/tiers.js`, a file with no imports.**
+`meta/drops.js` took `TIER_ORDER` from `meta/collection.js`, which imports three, so the `pity_math` gate could not load the module it was meant to be testing. Data that everything needs belongs somewhere nothing has to be dragged in behind it.
+
+**2026-09-04 — pity is a FLOOR on the printed table, never a replacement for it, and the gate proves it cannot claw back.**
+DESIGN 11 prints both a weight table and a pity guarantee, and both have to be true at once. The only reading under which they are: the weights are the base roll, and pity sits on top, so the rate a player sees is at or above what is printed and never below. The gate measures the base roll against the table within half a point AND asserts that no pitied tier came out below its printed rate. A pity system that quietly takes back what it gave is the oldest trick in the genre.
+
+**2026-09-04 — ⛔ FOR STEPHEN: the Standard Pouch's printed odds and its felt odds are very different, and the pity is why.**
+Measured over a hundred thousand pulls. The table says 3.6 percent rare and 0.4 percent epic. What a player actually gets is **10.16 percent rare and 2.71 percent epic**, because at a 3.6 percent base rate roughly seven of every ten runs of ten pulls contain no rare at all, so the guarantee fires constantly: 6,554 of the rares and 2,285 of the epics in that run came from pity rather than from the roll. Nothing here is broken and both design statements are honoured; the pouch is simply about three times more generous on rares and seven times on epics than its own table reads. If the printed number should be the felt number, the pity window wants to be much longer than ten. Left as the design writes it and raised in the morning report.
+
+**2026-09-04 — a duplicate only becomes dust for a GRAIL.**
+DESIGN 11 says dupes become dust and DESIGN 10.6 says no dupe grails ever. Below grail a second copy is a second marble, which is the whole point of a clay pool and of ten identical commons on the cross, so it is kept. A grail that would repeat rerolls to the highest epic and the duplicate never exists; over a hundred thousand grail pulls, zero duplicates, and 15,088 rerolls once all four were held.

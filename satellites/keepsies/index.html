@@ -91,8 +91,12 @@ button.quiet{background:transparent;color:var(--muted);border:1px solid rgba(152
   background:transparent;color:var(--muted);border:1px solid rgba(152,160,134,.4);text-transform:none;
   letter-spacing:.04em}
 #filters button.on{background:rgba(200,168,75,.16);color:var(--chalk);border-color:var(--brass)}
+/* the grid scrolls, and it FADES at the bottom so a half visible row reads as
+   more marbles rather than as a clipped one */
 #grid{display:grid;grid-template-columns:repeat(3,96px);gap:10px;justify-content:center;
-  max-height:52vh;overflow-y:auto;padding:2px}
+  max-height:38vh;overflow-y:auto;padding:2px;
+  mask-image:linear-gradient(180deg,#000 0,#000 86%,transparent 100%);
+  -webkit-mask-image:linear-gradient(180deg,#000 0,#000 86%,transparent 100%)}
 /* ⛔ min-width and min-height are RESET here. The global button rule sets a
    200 px minimum for the game's big buttons, and without overriding it a 96 px
    tile rendered at 205 px and the three column grid overlapped itself. */
@@ -128,6 +132,16 @@ button.quiet{background:transparent;color:var(--muted);border:1px solid rgba(152
 #iProv{margin:.7rem 0 0;font-size:.78rem;color:var(--muted)}
 #inspectBack{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(20px + var(--sb));
   pointer-events:auto}
+/* the pouches: the price and the odds IN WORDS, plus the pity counter as
+   "next rare in N", because a number a player can watch is a promise kept */
+#pouches{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:23rem}
+#pouches button{min-height:56px;min-width:104px;max-width:11rem;padding:6px 12px;border-radius:10px;
+  font-size:.74rem;letter-spacing:.04em;text-transform:none;line-height:1.2;
+  background:rgba(200,168,75,.14);color:var(--chalk);border:1px solid rgba(200,168,75,.5);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+#pouches button:disabled{background:transparent;color:var(--muted);border-color:rgba(152,160,134,.3)}
+#pouches .sub{font-size:.62rem;opacity:.8}
+#pouchSay{margin:0;font-size:.86rem;color:var(--chalk);min-height:1.3em;text-align:center;max-width:22rem}
 #calibDots{gap:12px}
 #calibDots .sock{width:20px;height:20px;border-width:2px}
 .sock.full{background:var(--brass);border-color:var(--brass)}
@@ -249,8 +263,11 @@ button.quiet{background:transparent;color:var(--muted);border:1px solid rgba(152
 
 <div id="collection" class="veil" hidden>
   <h2>Your marbles</h2>
+  <p id="collWallet" class="studio" style="letter-spacing:.1em"></p>
   <div id="filters"></div>
   <div id="grid"></div>
+  <div id="pouches"></div>
+  <p id="pouchSay"></p>
   <button id="collBack" class="quiet">Back</button>
 </div>
 

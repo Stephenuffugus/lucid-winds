@@ -257,6 +257,28 @@ say(prov.length > 0, 'every marble carries a provenance line: ' + prov);
 await page.screenshot({ path: join(OUT, 'k2-inspect-rare.png') });
 await press('inspectBack');
 await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'collection', { timeout: 20000 });
+
+/* ---- a pouch, which is the other half of the loop ---- */
+const before = await page.evaluate(() => window.KEEPSIES_DEV.wallet().sunbeams);
+await page.evaluate(() => window.KEEPSIES_DEV.grantSunbeams(1500));
+const std = await press('pouch-standard');
+say(std && !std.blocked, 'the Standard Pouch is pressable when it can be afforded');
+const opened = await page.evaluate(() => ({
+  say: window.KEEPSIES_DEV.pouchSay(),
+  wallet: window.KEEPSIES_DEV.wallet().sunbeams,
+  inventory: window.KEEPSIES_DEV.inventory()
+}));
+say(opened.say.length > 0, 'the pouch says what came out: ' + opened.say);
+say(opened.wallet === before + 1500 - 300 || opened.wallet === before + 1500 - 300 + 5,
+  'and it cost 300 sunbeams: ' + (before + 1500) + ' became ' + opened.wallet);
+await page.screenshot({ path: join(OUT, 'k2-pouches.png') });
+const poor = await page.evaluate(() => {
+  const b = document.getElementById('pouch-grail');
+  return b ? b.disabled : null;
+});
+say(poor === true, 'and a pouch you cannot afford is disabled rather than failing on the tap');
+
+
 await press('collBack');
 await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'title', { timeout: 20000 });
 

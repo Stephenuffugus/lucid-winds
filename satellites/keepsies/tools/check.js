@@ -27,6 +27,7 @@ const GATES = [
   { name: 'harness', cmd: ['sim/harness.js', '--scenario=all'], need: 'SIM OK' },
   { name: 'save',         cmd: ['test/save.mjs'],         need: 'SAVE OK' },
   { name: 'clay_regen',   cmd: ['test/clay_regen.mjs'],   need: 'CLAY REGEN OK' },
+  { name: 'pity_math',    cmd: ['test/pity_math.mjs'],    need: 'PITY MATH OK' },
   { name: 'ringer_rules', cmd: ['test/ringer_rules.mjs'], need: 'RINGER RULES OK' },
   { name: 'ai_budget',    cmd: ['test/ai_budget.mjs'],   need: 'AI BUDGET OK', slow: true },
   { name: 'ringer_ai',    cmd: ['test/ringer_ai.mjs'],   need: 'RINGER AI OK', slow: true }

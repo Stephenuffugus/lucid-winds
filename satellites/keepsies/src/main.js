@@ -29,6 +29,7 @@ import { createTurntable, createThumbnailer, useMaterialFactory, groupForGrid, s
 import * as MARBLEMESH from './render/marbleMesh.js?v=20260904a';
 import { bodySpec } from './core/marbleBody.js?v=20260904a';
 import { createEconomy } from './meta/economy.js?v=20260904a';
+import { createDrops } from './meta/drops.js?v=20260904a';
 import { makeRng } from './core/rng.js?v=20260904a';
 import { makeMarbleMaterial } from './render/marbleMesh.js?v=20260904a';
 
@@ -46,7 +47,8 @@ const G = {
   save: null, calibrator: null, lastRollAudio: 0, warming: false,
   assist: true, lastAssist: 0,
   houseRules: { keepsies: true, slips: true, bombing: false, poison: false, ringSizeFt: 10 },
-  catalog: null, turntable: null, thumbs: null, filter: 'all', inspecting: null, econ: null
+  catalog: null, turntable: null, thumbs: null, filter: 'all', inspecting: null, econ: null,
+  drops: null, dropRng: null
 };
 
 /* The house rules of DESIGN 8.3, as the player meets them: what each one DOES,
@@ -75,6 +77,9 @@ async function boot() {
   const cat = await fetch('src/data/marbles.json?v=20260904a');
   if (!cat.ok) throw new Error('marbles.json did not load: ' + cat.status);
   G.catalog = await cat.json();
+  const dt = await fetch('src/data/droptables.json?v=20260904a');
+  if (!dt.ok) throw new Error('droptables.json did not load: ' + dt.status);
+  G.dropTables = await dt.json();
 
   G.tier = detectQuality(G.tuning);
   const canvas = $('stage');
@@ -87,6 +92,8 @@ async function boot() {
   useMaterialFactory(MARBLEMESH);
   G.thumbs = createThumbnailer(G.tuning);
   G.econ = createEconomy(G.tuning);
+  G.drops = createDrops(G.dropTables, G.catalog, G.tuning);
+  G.dropRng = makeRng((Date.now() ^ 0x9e3779b9) | 0);
   G.econ.clayPool();          // roll the day over before anything reads it
   G.econ.touchStreak();
   G.econ.onChange(() => { G.save = SAVE.load(); paintWallet(); });
@@ -259,6 +266,53 @@ function openCollection() {
   showScreen('collection');
   buildFilters();
   buildGrid();
+  buildPouches();
+  $('pouchSay').textContent = '';
+}
+
+/**
+ * The pouches. Price and odds IN WORDS, per the plan's screen table, and the
+ * pity counter shown as "next rare in N": a promise a player can watch is worth
+ * more than one they have to take on faith.
+ */
+function buildPouches() {
+  const row = $('pouches');
+  row.textContent = '';
+  const bal = G.econ.balance();
+  $('collWallet').textContent = bal + ' sunbeams';
+  for (const kind of Object.keys(G.dropTables).filter(k => k[0] !== '_')) {
+    const t = G.dropTables[kind];
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.id = 'pouch-' + kind;
+    b.disabled = bal < t.price;
+    const name = document.createElement('span');
+    name.textContent = t.name + ', ' + t.price;
+    const sub = document.createElement('span');
+    sub.className = 'sub';
+    const guard = G.drops.nextGuarantee(kind);
+    const promises = [];
+    if (guard.rare != null) promises.push('a rare within ' + guard.rare);
+    if (guard.epic != null) promises.push('an epic within ' + guard.epic);
+    sub.textContent = promises.length ? promises.join(', ') : t.odds;
+    b.appendChild(name); b.appendChild(sub);
+    b.addEventListener('click', () => openPouch(kind));
+    row.appendChild(b);
+  }
+}
+
+function openPouch(kind) {
+  const res = G.drops.open(kind, G.dropRng, G.econ);
+  G.save = SAVE.load();
+  if (!res.ok) { $('pouchSay').textContent = 'Not enough sunbeams for that one.'; return; }
+  let line = res.entry.name + '. ' + (res.entry.lore || '');
+  if (res.dust) line = res.entry.name + ' again, so it went to dust for ' + res.dust + '.';
+  else if (res.rerolled) line = res.entry.name + '. You already hold every grail, so it came up an epic.';
+  else if (res.pitied) line = res.entry.name + ', which the pouch owed you.';
+  $('pouchSay').textContent = line;
+  paintWallet();
+  buildGrid();
+  buildPouches();
 }
 
 const FILTERS = [['all', 'All'], ['stakeable', 'Stakeable']].concat(
@@ -825,6 +879,9 @@ function installDevHook() {
     },
     inventory: () => G.save.inventory.length,
     wallet: () => G.econ.snapshot(),
+    pouch: (kind) => openPouch(kind),
+    grantSunbeams: (n) => { G.econ.earn(n, 'a gate said so'); buildPouches(); return G.econ.balance(); },
+    pouchSay: () => $('pouchSay').textContent,
     econ: () => G.econ,
     catalogCount: () => G.catalog.marbles.length,
     houseRules: () => Object.assign({}, G.houseRules),
