@@ -854,6 +854,26 @@ CATALOG FAILED
   lightness. (3) The grails are soft clouds rather than sulphides with a figure inside, and will stay
   that way until the glb lane lands.
 
+- [x] the inspect turntable and the collection grid, and four bugs that only looking found.
+  The grid is 96 px tiles with a real rendered marble in each, a tier ribbon and a count badge; the
+  turntable is full screen with the marble at the 140 px DESIGN 7 specifies and its traits in WORDS.
+  `playthrough` now walks both and asserts that every tile actually rendered pixels, that a tile is
+  96 px, and that no raw stat number reaches the inspect card. Watched to fail by deleting the tile's
+  drawImage: `0 of 9 have pixels in them`.
+
+  The four bugs, each found by opening the screen rather than by any test: the tiles rendered EMPTY
+  because they borrowed the game's renderer, changed its viewport and scissor and read the wrong pixels
+  back, leaving the game's renderer on a 96 px viewport; they then rendered at 205 px because the global
+  button rule's 200 px minimum was never reset and the three column grid overlapped itself; the
+  turntable put a unit sphere across the whole top half of a portrait screen because its distance was
+  guessed rather than solved from the field of view; and the Galaxy was a dark sphere on a dark card,
+  which is a poor answer to its own lore line, "Hold it to the light. That's not paint."
+
+  Shots: `docs/shots/k2-collection.png`, `k2-inspect.png`, `k2-inspect-epic.png`, `k2-inspect-rare.png`.
+  Faults still in them: the epic interior reads as cloud rather than depth and stars, because the eight
+  per epic shaders the design asks for are still one shared fallback; the light pool behind the marble
+  is too faint to register; and the grail figures are not there at all, which is the glb lane.
+
 - [ ] `pity_math`, `clay_regen`, `escrow_crash`, `save_migrate` each green and each watched to fail
   — `save_migrate` is DONE as the `save` gate (the migration chain, the two tab merge, the write probe,
   each watched to fail). The other three wait on the economy, which is not built.
@@ -982,11 +1002,14 @@ Please run `docs/checklists/k1.md` on your phone and write what you felt in `PLA
 questions: does the snap feel like a snap, and does the marble weigh anything. That entry is K1.5 and
 the next session runs it before anything else.
 
-**Next action:** `src/meta/collection.js` does not exist. Build the inspect turntable first, because it
-is the screen that makes a marble worth owning and everything else in K2 is downstream of caring about
-one: full screen, High materials even on Medium since it is a static scene, drag to spin, the marble at
-140 px, and the name, tier, class, lore, passive, active and provenance line beside it. The catalog it
-reads from is already generated and every entry already renders.
+**Next action:** `src/meta/economy.js` does not exist. Build the wallet and the clay pool first, because
+every other thing left in K2 spends from them: `balance()`, `earn(n, reason)`, `spend(n, reason)` over
+`meta/save.js`, a change event, the faucets of DESIGN 17, and the clay pool at ten regenerating to ten
+daily with the daily reset computed from `Date` ONLY inside `meta/`, never in `core/`. Its gate is
+`clay_regen`, which steps the clock across midnight and across a missed week. Then `meta/drops.js` and
+the three pouches with their pity counters, gate `pity_math`, a hundred thousand pulls per pouch
+converging on the table within half a point. Then `game/match.js` and the ante, which is the point of
+the whole game and does not exist yet.
 
 ---
 
@@ -1005,11 +1028,14 @@ Nothing outside `satellites/keepsies/**` and this file was touched. One near mis
 heredoc without an absolute path wrote a Keepsies `manifest.json` over the repo root's own, and it was
 restored from git inside a minute; every shell call after that used absolute paths.
 
-**Exact next action:** `src/meta/collection.js` does not exist. Create it with the inspect turntable
-only, per DESIGN 20 and the plan's K2 screen table: full screen over a dimmed board, High materials even
-on a Medium device because it is a static scene, one finger drag to spin, the marble drawn at 140 px,
-and beside it the name, the tier ribbon, the class, the lore line, the passive and active text, and
-integrity and hardness as words rather than numbers. `src/data/marbles.json` already holds all sixty
-five with a palette and a recipe each, `render/marbleMesh.js` already renders every one of them, and
-`tools/contact_sheet.mjs` already proves it. What is missing is the screen. After it, the collection
-grid: three columns at 375 wide, 96 px tiles, a tier ribbon and a filter row.
+**Exact next action:** `src/meta/economy.js` does not exist. Create it with the wallet and the clay pool
+only: `balance()`, `earn(n, reason)`, `spend(n, reason) -> bool`, a change event, and the pool at ten
+regenerating to ten daily. It writes through `meta/save.js`, which already holds `wallet.sunbeams` and
+`clayPool: {count, lastRegen}` in its schema, so no migration is needed. The daily reset is local
+midnight and is computed from `Date` ONLY inside `meta/`, never in `core/`, because `core/` has to
+produce the same answer on a server in another timezone. Then write `test/clay_regen.mjs`: step an
+injected clock across midnight, across a missed week, and backwards, and assert the pool never exceeds
+ten and never goes negative. Watch it fail by regenerating per call rather than per day.
+
+Everything it needs is in place: the catalog is generated, all sixty five marbles render, the save
+merges safely across two tabs, and the collection screen is there to spend into.
