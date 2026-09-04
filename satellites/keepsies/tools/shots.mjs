@@ -93,25 +93,21 @@ await page.evaluate(() => window.KEEPSIES_DEV.settleCamera(60));
 await wait(400);
 await shot('k1-board');
 
-/* the brace, held still until the reticle has settled */
-await page.evaluate(async () => {
+/* the brace, held still until the reticle has settled. The settle is measured
+   in TIME (knuckle.js), so the hold is a real 1.6 s of pointermoves and not a
+   burst of ninety in one tick. */
+await page.evaluate(() => new Promise((done) => {
   const d = window.KEEPSIES_DEV;
   const t = d.state().match.taw;
   const c = document.getElementById('stage');
   c.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 5, clientX: t.x, clientY: t.y, bubbles: true }));
-  for (let i = 0; i < 90; i++) {
-    c.dispatchEvent(new PointerEvent('pointermove', { pointerId: 5, clientX: t.x, clientY: t.y, bubbles: true }));
-  }
-});
-await wait(1600);
-await page.evaluate(() => {
-  const d = window.KEEPSIES_DEV;
-  const t = d.state().match.taw;
-  const c = document.getElementById('stage');
-  for (let i = 0; i < 40; i++) {
-    c.dispatchEvent(new PointerEvent('pointermove', { pointerId: 5, clientX: t.x, clientY: t.y, bubbles: true }));
-  }
-});
+  const t0 = performance.now();
+  let k = 0;
+  const iv = setInterval(() => {
+    c.dispatchEvent(new PointerEvent('pointermove', { pointerId: 5, clientX: t.x + ((k++ & 1) ? 0.3 : -0.3), clientY: t.y, bubbles: true }));
+    if (performance.now() - t0 > 1600) { clearInterval(iv); done(d.state().knuckle.settle01); }
+  }, 16);
+}));
 await wait(350);
 await shot('k1-brace');
 

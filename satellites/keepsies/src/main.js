@@ -9,35 +9,35 @@
  * DIRECTIONS BEFORE PLAY. The rules card is shown before the first match of the
  * mode, which is a studio standard and not a preference.
  */
-import { detectQuality } from './render/quality.js?v=20260904a';
-import { createStage, createOrbitRig, resize, draw, drawScene, THREE } from './render/scene.js?v=20260904a';
-import { buildRingerGround } from './render/arenaEnv.js?v=20260904a';
-import { makeMarbleMesh, makeContactShadow, placeContactShadow } from './render/marbleMesh.js?v=20260904a';
-import { attachCameraControls } from './input/cameraCtl.js?v=20260904a';
-import { createKnuckle } from './input/knuckle.js?v=20260904a';
-import { createPullback } from './input/pullback.js?v=20260904a';
-import * as AUDIO from './audio/synth.js?v=20260904a';
-import { initPhysics, positionOf, specOf, velocityOf } from './core/physics.js?v=20260904a';
-import { createRinger } from './game/ringer.js?v=20260904a';
-import { RINGER_TECHNIQUES } from './core/techniques.js?v=20260904a';
-import { launchSpeed } from './core/snap.js?v=20260904a';
-import { clamp, len2, DEG } from './core/dmath.js?v=20260904a';
-import * as SAVE from './meta/save.js?v=20260904a';
-import { createCalibration, calibrationFrom } from './meta/onboarding.js?v=20260904a';
-import { playPotCeremony } from './render/ceremony.js?v=20260904a';
+import { detectQuality } from './render/quality.js?v=20260904b';
+import { createStage, createOrbitRig, resize, draw, drawScene, THREE } from './render/scene.js?v=20260904b';
+import { buildRingerGround } from './render/arenaEnv.js?v=20260904b';
+import { makeMarbleMesh, makeContactShadow, placeContactShadow } from './render/marbleMesh.js?v=20260904b';
+import { attachCameraControls } from './input/cameraCtl.js?v=20260904b';
+import { createKnuckle } from './input/knuckle.js?v=20260904b';
+import { createPullback } from './input/pullback.js?v=20260904b';
+import * as AUDIO from './audio/synth.js?v=20260904b';
+import { initPhysics, positionOf, specOf, velocityOf } from './core/physics.js?v=20260904b';
+import { createRinger } from './game/ringer.js?v=20260904b';
+import { RINGER_TECHNIQUES } from './core/techniques.js?v=20260904b';
+import { launchSpeed } from './core/snap.js?v=20260904b';
+import { clamp, len2, DEG } from './core/dmath.js?v=20260904b';
+import * as SAVE from './meta/save.js?v=20260904b';
+import { createCalibration, calibrationFrom } from './meta/onboarding.js?v=20260904b';
+import { playPotCeremony } from './render/ceremony.js?v=20260904b';
 import { createTurntable, createThumbnailer, useMaterialFactory, groupForGrid, starterGrant, provenance, hardnessWord, weightWord, TIER_ORDER, TIER_LABEL }
-  from './meta/collection.js?v=20260904a';
-import * as MARBLEMESH from './render/marbleMesh.js?v=20260904a';
-import { bodySpec } from './core/marbleBody.js?v=20260904a';
-import { createEconomy } from './meta/economy.js?v=20260904a';
-import { createDrops } from './meta/drops.js?v=20260904a';
-import * as RANSOM from './meta/ransom.js?v=20260904a';
-import * as PROG from './meta/progression.js?v=20260904a';
-import { createOnboarding, dustyLine } from './meta/beats.js?v=20260904a';
+  from './meta/collection.js?v=20260904b';
+import * as MARBLEMESH from './render/marbleMesh.js?v=20260904b';
+import { bodySpec } from './core/marbleBody.js?v=20260904b';
+import { createEconomy } from './meta/economy.js?v=20260904b';
+import { createDrops } from './meta/drops.js?v=20260904b';
+import * as RANSOM from './meta/ransom.js?v=20260904b';
+import * as PROG from './meta/progression.js?v=20260904b';
+import { createOnboarding, dustyLine } from './meta/beats.js?v=20260904b';
 import { tierMatchOk, matchTheirStake, escrow, settle, recoverOnBoot, potUp, currentPot }
-  from './game/match.js?v=20260904a';
-import { makeRng } from './core/rng.js?v=20260904a';
-import { makeMarbleMaterial } from './render/marbleMesh.js?v=20260904a';
+  from './game/match.js?v=20260904b';
+import { makeRng } from './core/rng.js?v=20260904b';
+import { makeMarbleMaterial } from './render/marbleMesh.js?v=20260904b';
 
 const $ = (id) => document.getElementById(id);
 const TEST = /[?&]keepsiestest=1/.test(location.search);
@@ -51,7 +51,7 @@ const G = {
   matchesPlayed: 0, seenRules: false, calib: { max: null },
   placeDrag: null, lastToast: 0, sunbeams: 0, said: '', lastFramedTurn: -1,
   save: null, calibrator: null, lastRollAudio: 0, warming: false,
-  assist: true, lastAssist: 0,
+  assist: true, lastAssist: 0, lastShooter: 0,
   houseRules: { keepsies: true, slips: true, bombing: false, poison: false, ringSizeFt: 10 },
   catalog: null, turntable: null, thumbs: null, filter: 'all', inspecting: null, econ: null,
   drops: null, dropRng: null, stake: [], theirStake: [], anteOk: false
@@ -70,7 +70,7 @@ const HOUSE_RULES = [
 /* ------------------------------------------------------------------- boot */
 
 async function boot() {
-  const res = await fetch('src/data/tuning.json?v=20260904a');
+  const res = await fetch('src/data/tuning.json?v=20260904b');
   if (!res.ok) throw new Error('tuning.json did not load: ' + res.status);
   G.tuning = await res.json();
   G.save = SAVE.load();
@@ -80,17 +80,18 @@ async function boot() {
   AUDIO.configure(G.tuning);
   AUDIO.setEnabled(G.save.settings.sound !== false);
 
-  const cat = await fetch('src/data/marbles.json?v=20260904a');
+  const cat = await fetch('src/data/marbles.json?v=20260904b');
   if (!cat.ok) throw new Error('marbles.json did not load: ' + cat.status);
   G.catalog = await cat.json();
-  const dt = await fetch('src/data/droptables.json?v=20260904a');
+  const dt = await fetch('src/data/droptables.json?v=20260904b');
   if (!dt.ok) throw new Error('droptables.json did not load: ' + dt.status);
   G.dropTables = await dt.json();
 
   G.tier = detectQuality(G.tuning);
   const canvas = $('stage');
   G.stage = createStage(canvas, G.tuning, G.tier);
-  G.rig = createOrbitRig(G.stage, { target: { x: 0, y: 0.012, z: 0 }, distance: 2.2, elevationDeg: 33 });
+  G.rig = createOrbitRig(G.stage, { target: { x: 0, y: 0.012, z: 0 }, distance: 2.2, elevationDeg: 33,
+    fov: G.tuning.render.ringerCam.fov });
   G.ground = buildRingerGround(G.stage, G.tuning, { discRadius: 30 });
 
   await initPhysics();
@@ -118,6 +119,10 @@ async function boot() {
   G.knuckle = createKnuckle(canvas, G.tuning, {
     taw: () => (G.R && (G.screen === 'match' || G.screen === 'calib') && canAim() ? G.R.tawOnScreen(G.rig) : null),
     aimAzimuth: () => G.rig.state.azimuth + Math.PI,
+    // where a screen point lands on the dirt, so a flick's angle is the angle
+    // between the two places the thumb was OVER, not an angle on glass
+    groundPoint: (x, y) => groundPoint(x, y),
+    groundFactor: () => Math.sin(G.rig.state.elevationDeg * DEG),
     calib: () => G.calib,
     bombingAllowed: () => !!G.R && G.screen === 'match' && G.R.canBomb(),
     onBrace: onBrace,
@@ -131,6 +136,7 @@ async function boot() {
   G.pullback = createPullback(canvas, G.tuning, {
     taw: () => (G.R && G.screen === 'match' && canAim() ? G.R.tawOnScreen(G.rig) : null),
     aimAzimuth: () => G.rig.state.azimuth + Math.PI,
+    groundFactor: () => Math.sin(G.rig.state.elevationDeg * DEG),
     onDrag: (r) => { showPower(r.power01); },
     onAim: onAim,
     onCancel: () => hideAim(),
@@ -541,7 +547,9 @@ function openPouch(kind) {
   const res = G.drops.open(kind, G.dropRng, G.econ);
   G.save = SAVE.load();
   if (!res.ok) { $('pouchSay').textContent = 'Not enough sunbeams for that one.'; return; }
-  let line = res.entry.name + '. ' + (res.entry.lore || '');
+  // an uncommon has no lore line in the design, and "Blue Onion. " is a
+  // sentence that stops; say where it came from instead
+  let line = res.entry.name + (res.entry.lore ? '. ' + res.entry.lore : ', out of the pouch.');
   if (res.dust) line = res.entry.name + ' again, so it went to dust for ' + res.dust + '.';
   else if (res.rerolled) line = res.entry.name + '. You already hold every grail, so it came up an epic.';
   else if (res.pitied) line = res.entry.name + ', which the pouch owed you.';
@@ -805,6 +813,12 @@ function buildHouseRules() {
  * @returns {boolean} false when the stake was refused and nothing moved
  */
 function beginMatch(opts) {
+  /* ⛔ THE PLAYER BREAKS THE CROSS IN BEAT 2. DESIGN 16.2 is "brace, snap the
+     cross", and when Dusty won the lag he broke it instead while the message
+     still said hold your shooter and flick: the first thing the game teaches was
+     being done to the player rather than by them. The lag is real from beat 5. */
+  const b0 = G.onboard && G.onboard.beat();
+  if (b0 && b0.id === 'break') opts = Object.assign({}, opts || {}, { forceFirst: 0 });
   if (G.houseRules.keepsies && G.stake.length) {
     G.lastStakeNames = G.stake.map(m => m.name || m.id).join(' and ');
     if (!escrow(G.stake, G.theirStake, 'Dusty Coyle')) {
@@ -828,7 +842,13 @@ function startMatch(opts) {
     bare: !!o.calibrating,
     forceFirst: o.calibrating ? 0 : o.forceFirst,
     houseRules: Object.assign({}, G.houseRules, o.houseRules),
-    players: [
+    /* ⛔ CALIBRATION HAS ONE PLAYER. With Dusty in the world the first counted
+       snap resolved, the turn passed to him, and the AI never plays on the calib
+       screen, so the second and third snaps were refused at pointerdown: the
+       camera cut to his marble on the far side and nothing answered the thumb.
+       The gates never saw it because their feed skips the "is it your turn" check
+       a real thumb goes through. A world of one shoots every time. */
+    players: o.calibrating ? [{ name: 'You', ai: null, tawEntry: 'taw_clearie' }] : [
       { name: 'You', ai: null, tawEntry: 'taw_clearie' },
       // ⛔ ONE NAME. The setup screen said Dusty Coyle and the result card said
       // Dusty, which is two people on two adjacent screens. DESIGN 10.7 and the
@@ -840,10 +860,14 @@ function startMatch(opts) {
       onTechnique: (id) => {
         showToast(id);
         // beat 2.5 asks for one guided backspin shot, and this is the moment it
-        // lands: the technique detector already knows a stick when it sees one
-        if (id === 'sticking') fireBeat('stuck');
+        // lands: the technique detector already knows a stick when it sees one.
+        // ⛔ THE PLAYER'S stick, not Dusty's: the beats listen to one thumb.
+        if (id === 'sticking' && G.lastShooter === 0) fireBeat('stuck');
       },
-      onResolve: () => { fireBeat('brokeTheCross'); onboardingChat(); },
+      // ⛔ "brokeTheCross" is the PLAYER breaking it. Fired on every resolve, it
+      // fired on Dusty's opening shot and the sticking lesson was on screen
+      // before the player had snapped once.
+      onResolve: () => { if (G.lastShooter === 0) fireBeat('brokeTheCross'); onboardingChat(); },
       onOver: (s) => finishMatch(s)
     }
   });
@@ -911,6 +935,17 @@ function attachPlacement(canvas) {
   const drop = (e) => { if (G.placeDrag === e.pointerId) G.placeDrag = null; };
   canvas.addEventListener('pointerup', drop);
   canvas.addEventListener('pointercancel', drop);
+}
+
+/** The point on the ground plane under a CSS pixel, or null above the horizon. */
+function groundPoint(x, y) {
+  const vp = G.rig.viewport;
+  if (!vp || !vp.w || !vp.h) return null;
+  const r = G.rig.getRay({ x: (x / vp.w) * 2 - 1, y: -((y / vp.h) * 2 - 1) });
+  if (Math.abs(r.dir.y) < 1e-6) return null;
+  const t = -r.origin.y / r.dir.y;
+  if (t <= 0) return null;
+  return { x: r.origin.x + r.dir.x * t, z: r.origin.z + r.dir.z * t };
 }
 
 /* --------------------------------------------------------------- the shot */
@@ -1009,6 +1044,7 @@ function onAim(aim) {
   hideAim();
   if (G.R.state.phase === 'place') G.R.commitPlace();
   $('assist').hidden = true;
+  G.lastShooter = 0;
   const imp = G.R.shoot(aim);
   if (!imp) { showSlip(); return; }
   say(describe(aim, imp));
@@ -1051,6 +1087,7 @@ function showToast(id) {
 function updateHud() {
   if (!G.R) return;
   const M = G.R.match;
+  if (M.players.length < 2) return;        // calibration is a world of one, and it has no HUD
   for (const [el, i] of [[$('sockMe'), 0], [$('sockThem'), 1]]) {
     const have = M.players[i].pocketed.length;
     if (el.childElementCount !== M.toWin) {
@@ -1149,6 +1186,9 @@ function finishMatch(s) {
   // an inventory item carries an id, not a name: the name lives in the catalog,
   // and "Dusty keeps ." is a worse sentence than any of the ones it replaced
   const nameOf = (m) => m.name || ((G.catalog.marbles.find(c => c.id === m.id) || {}).name) || m.id;
+  // the escrow record carries an id and a uid; the tier printed over the
+  // ceremony comes from the catalog, or the loss side ran with a blank tier line
+  const tierOf = (m) => m.tier || ((G.catalog.marbles.find(c => c.id === m.id) || {}).tier) || '';
   /* ⛔ "keep" is the word for your OWN marble. On a win the sentence has to name
      the one that crossed the ring, because that is the only thing on this card a
      player will remember tomorrow. The screenshot said "You keep Peewee." over a
@@ -1233,7 +1273,7 @@ function finishMatch(s) {
      timer on a screen nobody is looking at. */
   G.offers = pot.lost.length
     ? RANSOM.offerFor(
-      pot.lost.map(m => ({ uid: m.uid, id: m.id, tier: m.tier, name: nameOf(m) })),
+      pot.lost.map(m => ({ uid: m.uid, id: m.id, tier: tierOf(m), name: nameOf(m) })),
       oppName, G.tuning, Date.now())
     : [];
   // the board's last line and its technique toast belong to the match that just
@@ -1244,8 +1284,8 @@ function finishMatch(s) {
     host: document.body,
     thumbs: G.thumbs,
     catalog: G.catalog,
-    won: pot.won.map(m => ({ id: m.id, name: nameOf(m), tier: m.tier })),
-    lost: pot.lost.map(m => ({ id: m.id, name: nameOf(m), tier: m.tier })),
+    won: pot.won.map(m => ({ id: m.id, name: nameOf(m), tier: tierOf(m) })),
+    lost: pot.lost.map(m => ({ id: m.id, name: nameOf(m), tier: tierOf(m) })),
     opponent: oppName,
     onBeat: (kind, m) => {
       // the clink is the impact synth, fed a plausible hit rather than a new sound
@@ -1362,6 +1402,7 @@ function frame(now) {
     if (G.screen === 'match' && !G.R.state.simulating && G.R.state.phase !== 'over'
       && G.R.isAiTurn() && !G.R.state.aiThinking) {
       say(G.R.match.players[G.R.match.turn].name + ' is lining one up.');
+      G.lastShooter = 1;
       G.R.aiTurn();
     }
     // ⛔ CUT, do not swoop. When the turn passes, the camera has to travel about
@@ -1375,9 +1416,28 @@ function frame(now) {
       G.R.frameShot(G.rig, snapIt);
       if (snapIt) { G.lastFramedTurn = t; G.rig.update(1 / 60); }
     }
-    if (G.topDown) { G.rig.state.elevationDeg = 84; G.rig.state.wantDistance = G.R.ringRadius * 1.9; }
+    /* ⛔ TOP DOWN LOOKS AT THE WHOLE PROBLEM. At 1.9 radii over the sports
+       framing's biased target the cross sat in the top eighth of the screen,
+       under the message bubble: the one view that exists to show where the
+       marbles are hid them. Centred between the shooter and the cross, from a
+       little higher, both are in the clear middle of the frame. */
+    if (G.topDown) {
+      const t = G.R.shooterTaw();
+      const tp = positionOf(G.R.world, t.id);
+      const live = G.R.liveMibs();
+      let cx = 0, cz = 0;
+      for (const m of live) { const p = positionOf(G.R.world, m.id); cx += p.x; cz += p.z; }
+      if (live.length) { cx /= live.length; cz /= live.length; }
+      G.rig.setTarget((tp.x + cx) * 0.5, 0.012, (tp.z + cz) * 0.5);
+      G.rig.state.elevationDeg = 84;
+      G.rig.state.wantDistance = G.R.ringRadius * 2.5;
+    }
     else if (G.rig.state.elevationDeg > 60) G.rig.state.elevationDeg = 33;
     if (G.screen === 'match') updateHud();
+    // a thumb held perfectly still sends no pointermove, and the settle is a
+    // clock: read it every frame so the reticle tightens whether or not the
+    // browser has anything to say
+    if (!G.usePullback && G.knuckle) { const ks = G.knuckle.state(); if (ks.bracing) onBrace(ks); }
     if (now - G.lastRollAudio > 60) { G.lastRollAudio = now; updateRollingAudio(); }
     if (!$('toast').hidden && now - G.lastToast > 2400) $('toast').hidden = true;
   }
@@ -1414,7 +1474,10 @@ function installDevHook() {
           mibsLeft: R.liveMibs().length, shots: R.match.shotNumber,
           winner: R.match.winner, techniques: R.state.techniques.slice(),
           slipsLeft: R.match.players.map(p => p.slipsLeft),
-          taw: R.tawOnScreen(G.rig)
+          taw: R.tawOnScreen(G.rig),
+          // the referee's last word on the last shot, so a driver can ask why a
+          // stick did not stick without reading the log
+          lastResolve: (() => { const l = R.match.log; for (let i = l.length - 1; i >= 0; i--) if (l[i].type === 'resolve') return l[i]; return null; })()
         } : null,
         assist: G.assist,
         knuckle: G.knuckle.state(),
@@ -1509,7 +1572,7 @@ function installDevHook() {
       syncMeshes(1);
       return k;
     },
-    aiTurn() { return G.R ? G.R.aiTurn() : null; },
+    aiTurn() { G.lastShooter = 1; return G.R ? G.R.aiTurn() : null; },
     /**
      * Play the opponent's turns to completion without waiting for real time.
      * A gate that waits for the frame loop to grind an AI shot out at software
@@ -1519,7 +1582,7 @@ function installDevHook() {
     playAiTurns(maxTurns) {
       let n = 0;
       while (G.R && G.R.state.phase !== 'over' && G.R.isAiTurn() && n++ < (maxTurns || 40)) {
-        if (!G.R.state.simulating) G.R.aiTurn();
+        if (!G.R.state.simulating) { G.lastShooter = 1; G.R.aiTurn(); }
         let k = 0;
         while (G.R.state.simulating && k++ < 1500) physStep();
       }
@@ -1537,6 +1600,21 @@ function installDevHook() {
       return { azimuthDeg, elevationDeg: st.elevationDeg, distance, clamped: !st.allowUnder };
     },
     followShot() { G.freeCam = false; },
+    /** The live mibs, in the world and on the screen, so a driver can AIM the way a thumb does. */
+    mibs() {
+      if (!G.R) return [];
+      return G.R.liveMibs().map(m => {
+        const p = positionOf(G.R.world, m.id);
+        const c = G.rig.project(p.x, p.y, p.z);
+        return { uid: m.uid, x: +p.x.toFixed(3), z: +p.z.toFixed(3), sx: +c.x.toFixed(1), sy: +c.y.toFixed(1), visible: c.visible, ring: +len2(p.x, p.z).toFixed(3) };
+      });
+    },
+    /** Retune the match camera live, for a contact sheet of framings. */
+    setCam(patch) {
+      Object.assign(G.tuning.render.ringerCam, patch || {});
+      if (patch && patch.fov) { G.rig.camera.fov = patch.fov; G.rig.camera.updateProjectionMatrix(); }
+      return Object.assign({}, G.tuning.render.ringerCam);
+    },
     /** Let the camera finish moving without waiting for frames. A fixture. */
     settleCamera(n) {
       for (let i = 0; i < (n || 40); i++) {

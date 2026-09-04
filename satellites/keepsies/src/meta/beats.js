@@ -24,7 +24,7 @@
  * ⛔ THE STATE IS IN THE SAVE, NOT IN A VARIABLE. A player who closes the tab in
  * beat 3 comes back to beat 3, not to the title screen with half a collection.
  */
-import * as SAVE from './save.js?v=20260904a';
+import * as SAVE from './save.js?v=20260904b';
 
 /**
  * The beats, in order. `waitsFor` is the ONE event that finishes each one, and

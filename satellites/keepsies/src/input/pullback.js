@@ -11,8 +11,8 @@
  * with like. Nothing in the copy ever shames it, and nothing in the game is
  * closed off by it.
  */
-import { clamp, len2, atan2, DEG } from '../core/dmath.js?v=20260904a';
-import { makeAim } from '../core/snap.js?v=20260904a';
+import { clamp, len2, atan2, DEG } from '../core/dmath.js?v=20260904b';
+import { makeAim } from '../core/snap.js?v=20260904b';
 
 /** How far back you have to drag for a full power shot, in CSS pixels. */
 const FULL_DRAG_PX = 190;
@@ -89,7 +89,11 @@ export function createPullback(canvas, tuning, hooks) {
       return null;
     }
     const base = hooks.aimAzimuth ? hooks.aimAzimuth() : 0;
-    const fine = clamp((out.deg * DEG), -T.fineAngleMaxDeg * DEG, T.fineAngleMaxDeg * DEG);
+    // a screen angle is not a yaw: the camera looks down at the dirt, so the
+    // drag's angle is mapped onto the ground the same way the Knuckle's is
+    const k = hooks.groundFactor ? clamp(hooks.groundFactor(), 0.05, 1) : 1;
+    const screen = clamp(out.deg * DEG, -80 * DEG, 80 * DEG);
+    const fine = clamp(Math.atan(Math.tan(screen) * k), -T.fineAngleMaxDeg * DEG, T.fineAngleMaxDeg * DEG);
     const aim = makeAim({
       dir: { x: Math.sin(base + fine), y: 0, z: Math.cos(base + fine) },
       power01: out.power01,

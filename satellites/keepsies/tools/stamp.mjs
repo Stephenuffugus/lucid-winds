@@ -36,8 +36,15 @@ function walk(dir, out) {
   return out;
 }
 
+/* ⛔ THE TESTS, THE HARNESS AND THE TOOLS ARE STAMPED TOO. They import the same
+   modules with the same queries, and Node treats a different query as a DIFFERENT
+   MODULE with its own state: a test importing `save.js?v=a` beside a module that
+   imports `save.js?v=b` gets two saves that do not see each other's writes. */
 const FILES = [
   ...walk(join(ROOT, 'src'), []).filter(f => f.endsWith('.js')),
+  ...walk(join(ROOT, 'test'), []).filter(f => f.endsWith('.mjs') || f.endsWith('.js')),
+  ...walk(join(ROOT, 'sim'), []).filter(f => f.endsWith('.mjs') || f.endsWith('.js')),
+  ...walk(join(ROOT, 'tools'), []).filter(f => f.endsWith('.mjs') || f.endsWith('.js')),
   join(ROOT, 'index.html'),
   join(ROOT, 'manifest.json')
 ];
@@ -45,7 +52,10 @@ const FILES = [
 /* Every reference to a file this game serves. Bare specifiers (three) are the
    import map's job; /music-unlocks.js belongs to the fleet and is not ours to
    stamp; anything under lib/ is byte frozen and must carry no query at all. */
-const REF = /(?:from\s+|import\s*\(\s*|src\s*=\s*|href\s*=\s*)(['"])([^'"]+)\1/g;
+/* ⛔ `fetch(` IS A REFERENCE TOO. The three data files are fetched, not imported,
+   and the first stamp left them at the old query: a retuned tuning.json would have
+   reached a returning phone as the cached old one. */
+const REF = /(?:from\s+|import\s*\(\s*|fetch\s*\(\s*|src\s*=\s*|href\s*=\s*)(['"])([^'"]+)\1/g;
 
 function classify(spec) {
   if (/^https?:/.test(spec) || spec.startsWith('//')) return 'external';
@@ -59,15 +69,23 @@ function classify(spec) {
 const version = JSON.parse(readFileSync(join(ROOT, 'src/version.json'), 'utf8'));
 const BUILD = BUMP || version.build;
 
+/* ⛔ AND EVERY LITERAL `?v=` TOKEN, WHATEVER IT IS ATTACHED TO. A test that builds
+   its import as `join(ROOT, 'x.js') + '?v=20260904b'`, a manifest's `"src":`, a
+   `start_url`: none of those are a `from` or an `import(`, and the first bump
+   left six files a build behind. Node then held TWO copies of `save.js`, one per
+   query, and the progression gate wiped one and read the other. */
+const TOKEN = /\?v=\d{8}[a-z]\b/g;
+
 if (BUMP) {
   let changed = 0;
   for (const f of FILES) {
     const src = readFileSync(f, 'utf8');
-    const out = src.replace(REF, (whole, q, spec) => {
+    let out = src.replace(REF, (whole, q, spec) => {
       if (classify(spec) !== 'ours') return whole;
       const clean = spec.split('?')[0];
       return whole.replace(spec, clean + '?v=' + BUMP);
     });
+    out = out.replace(TOKEN, '?v=' + BUMP);
     if (out !== src) { writeFileSync(f, out); changed++; }
   }
   writeFileSync(join(ROOT, 'src/version.json'), JSON.stringify({ build: BUMP, phase: version.phase }) + '\n');
@@ -99,6 +117,10 @@ for (const spec of importMapSpecs(readFileSync(join(ROOT, 'index.html'), 'utf8')
 for (const f of FILES) {
   const src = readFileSync(f, 'utf8');
   let m;
+  TOKEN.lastIndex = 0;
+  while ((m = TOKEN.exec(src))) {
+    if (m[0] !== '?v=' + BUILD) bad.push(relative(ROOT, f) + ': "' + m[0] + '" is stale, want ?v=' + BUILD);
+  }
   REF.lastIndex = 0;
   while ((m = REF.exec(src))) {
     const spec = m[2];

@@ -800,6 +800,57 @@ ALL GATES PASSED
 
 ### K1.5 (when `PLAYTESTS.md` has an entry)
 - [ ] Stephen's entry quoted; what changed in `knuckle.js` and `tuning.json` and why; `knuckle` and `sticking` still green
+- [x] **Fable's review pass, 2026-09-04, before Stephen's entry.** `PLAYTESTS.md` has it in full. The build was
+  verified first (`node tools/check.js` ALL GATES PASSED, 21; `node test/mutants.js` 29 killed 0 survived;
+  fence clean), then PLAYED through the front door: a scratch driver dispatching real `pointerdown`,
+  `pointermove` and `pointerup` on the canvas at 375 by 667, every button found by `elementFromPoint`,
+  twelve matches over two runs and five more per retune after. Every gate and screenshot had been feeding
+  the Knuckle through `_feed()`, which skips `begin()` and the "is it your turn" check a thumb goes through.
+  ⛔ **The first thing a thumb would have hit: calibration soft locked on the second snap** (Dusty was in
+  the calibration world and took the turn). Then: every clean shot called wild (hold jitter inside the 90 ms
+  window), the settle counted events not time (0.6 s on a 120 Hz phone, never for a perfectly still thumb),
+  `[] || [e]` is `[]` so synthetic moves fed no samples, Dusty broke the cross in the beat that teaches the
+  break, a flick's screen angle read straight into the world (six degrees past what it pointed at from a
+  37 degree camera), a purple Banana, the far plane at the sky's radius, the setup screen eating its own
+  title, `button.quiet` outranking the "opaque" sticky BACK, and the stamp tool missing `fetch(` and every
+  test's `+ '?v='` (Node then held two `save.js` and `progression` went red on the bump). All in DECISIONS
+  with the measurement. Rookie Dusty moved 2.5 to 5 degrees (won 11 of 11 before; 8 and 6.5 fail `ringer_ai`).
+  The match camera is a 28 degree lens further back (`k1-cam-before.png`, `k1-cam-after.png`). The build
+  stamp is `20260904b`.
+- [x] a thumb shaped backspin snap STICKS: measured through the real Knuckle at seven foot, a 2.9 m/s launch
+  from 0.7 radii below centre came to rest 2.8 cm from the mib it struck and the referee called Sticking;
+  the same flick at 5.5 m/s blew through and pocketed two. The stick lives in the soft half of the range.
+- [x] gates after the review, full suite and mutants, pasted below:
+```
+node tools/check.js
+lint            pass  0s
+catalog         pass  0s
+stamp           pass  0s
+harness         pass  12s
+save            pass  0s
+clay_regen      pass  0s
+pity_math       pass  0s
+words           pass  0s
+escrow_crash    pass  1s
+ransom          pass  1s
+progression     pass  0s
+onboarding      pass  0s
+damage          pass  0s
+arena           pass  1s
+ringer_rules    pass  0s
+ai_budget       pass  14s
+ringer_ai       pass  42s
+render          pass  40s
+knuckle         pass  18s
+audio_budget    pass  9s
+playthrough     pass  58s
+
+ALL GATES PASSED
+
+node test/mutants.js
+29 killed, 0 survived, 0 anchors missed, of 29 mutants
+MUTANTS OK
+```
 - [ ] commits
 
 ### K2 (done but for art: the catalog, the collection, the economy, the keepsies loop, the ceremony, the ransom window, progression and the whole first four minutes)
@@ -1352,6 +1403,35 @@ For Stephen: <which open questions the night's choices leaned on, and the phone 
 Next action: <file, function, step, the first thing the next session does>
 ```
 
+### Review report, 2026-09-04, Fable, after the overnight build
+
+**Phases:** K0 done. K1 done but for pass and play, and now PLAYED: the calibration, the break, the stick, a
+whole game and the first game for keeps have been walked with real pointer events, twelve matches over two
+runs. K2 done but for art. K3 unchanged and still blocked on the same Director call.
+
+**Gates:** the suite and the mutants as pasted in the K1.5 ledger box above. Nothing weakened, one gate
+tool widened (`stamp` now reaches `fetch(` and every literal `?v=` token, because Node holds two copies of a
+module imported under two queries and `progression` went red the moment the build was bumped).
+
+**Play it:** `lucidwinds.com/satellites/keepsies/` once main deploys, build `20260904b`. PLAY, three snaps,
+the rules, a seven foot game For Fair against Dusty where you break first, his tin, the collection, one clay
+each for keeps. `docs/checklists/k1.md` is still the list.
+
+**Look at:** `docs/shots/k1-cam-before.png` and `k1-cam-after.png` (the framing), `k1-brace.png` (the
+reticle now goes gold on a still hold), `k2-collection.png` (the cat's eyes carry their names), and the
+regenerated `k1-lowest.png` (no navy polygon above the horizon).
+
+**Decided:** twelve DECISIONS entries dated 2026-09-04 under the review heading. The two that change a
+number: Rookie 2.5 to 5 degrees, and the match camera. Both are one block in `tuning.json`.
+
+**For Stephen, unchanged:** the three Director calls. And K1.5 on the phone, which is now possible: the game
+no longer stops at the second calibration snap.
+
+**Next action:** Stephen's phone, `docs/checklists/k1.md`, `PLAYTESTS.md`. If the reticle takes longer than
+about 1.5 s to go gold with a still thumb, raise the jitter threshold in `knuckle.js` (2 px) to 3 or 4.
+
+---
+
 ### Morning report, 2026-09-04, the second half of the night
 
 **Phases:** K0 **done**. K1 **done but for pass and play**. K2 **done but for art**: the catalog, the
@@ -1548,44 +1628,22 @@ the whole game and does not exist yet.
 
 ## SESSION STATE (builder updates this at the end of every session)
 
-**2026-09-04, Opus, overnight run.** K0 complete. K1 complete but for pass and play. **K2: the catalog,
-the marbles' looks, the collection, the economy, the pouches and the keepsies loop are done**; what is
-left of it is the ceremonies, the ransom window, progression, onboarding beats 2 to 6, the glb lane and
-the eight per epic shaders. K3 not started. **Twenty one gates green**, each watched to fail, evidence
-pasted in the ledger above. Twenty five screenshots opened and their faults named.
+**2026-09-04, Fable, review of the overnight build.** Verified (21 gates, 29 mutants, fence), then played
+through the front door with real pointer events and fixed what a thumb hits, in the order a thumb hits it.
+Everything is in `docs/DECISIONS.md` under the 2026-09-04 review entries, in `PLAYTESTS.md`, and in the K1.5
+ledger box above. Build stamp `20260904b`. Pushed to main at Stephen's direction so he can play it on his
+phone.
 
-Commits, all pushed to `origin add-sproing-jumper`: `4b8d3043` the failing gate, `14a6bca0` physics and
-harness, `58621d7e` the first rendered marble, `8b57d09c` the referee, `bbb7b629` the Rapier spin clamp
-and the retune, `3b8f5e93` the Knuckle and the planner, `adbc1f42` the playable game, `dd551363` the
-first morning report, `a81c51bb` calibration and the save, `1c3013ab` the sound, `df2f4d02` the setup
-screen and the drop shot, `46befcb5` the catalog and the twelve recipes, `e25c6dd6` the morning report,
-`597a9fec` the collection and the turntable, `92d98730` the ledger brought up to date, `b3d341fa` the
-wallet and the clay pool, `c81d1a87` the pouches, `cd0dca5e` the pot and the escrow, `c249b460` the
-words gate and the second look at every screen.
+**What changed, by file:** `src/input/knuckle.js` (motion onset for speed, curvature and angle; settle by the
+clock; empty coalesced list; ground mapped fine angle), `src/input/pullback.js` (ground mapped angle),
+`src/main.js` (one player calibration; the player breaks in beat 2; beats gated on the player's shots; ground
+unprojection; settle ticked every frame; top down framing; tier on the loss ceremony; pouch line; dev hooks
+`mibs`, `setCam`, `lastResolve`), `src/render/scene.js` (far plane 200), `src/data/tuning.json` (Rookie 5
+degrees; camera fov 28, span 1.0/1.9, elevation 30, bias 0.5), `src/data/marbles.overrides.json` and the
+regenerated `marbles.json` (cat's eye vanes), `index.html` (veils start at the top, `button.sticky`, opaque
+setup and rules), `tools/stamp.mjs` (tests, sim, tools, `fetch(`, literal tokens), `tools/shots.mjs` (a real
+time brace).
 
-Nothing outside `satellites/keepsies/**` and this file was touched; `git diff --name-only 5a7315eb..HEAD`
-outside those two paths returns nothing. One near miss worth recording: a heredoc without an absolute
-path wrote a Keepsies `manifest.json` over the repo root's own, and it was restored from git inside a
-minute; every shell call after that used absolute paths.
-
-**Exact next action: none, until Stephen answers the ring question.** It is written at the top of the
-morning report and in DECISIONS, with the measurements. Every remaining piece of K3 depends on the
-answer: the three arenas, the boss ladder, the class win rates and `arena_shape` itself are all downstream
-of whether a shattering arena is bounded or open and of how hard a hit is.
-
-While it is open, the work that does NOT depend on it, in order:
-1. **The Arena on screen.** `game/arena.js` runs headless today and has no UI at all: no rack, no
-   integrity read on the marble, no charge glow, no condition picker. All four are DESIGN 9.1 and 9.5 and
-   none of them cares how hard a hit is. The integrity tiers already exist in `core/damage.js` and the
-   marble mesh recipes already exist, so "chipped" and "cracked" are decals over a solved renderer.
-2. **The condition picker**, which is the pre match screen where a player chooses one condition per
-   marble. `core/specials.js` already answers `choosable()` and every condition carries its own blurb.
-3. **K1.5**, which is still unrun and still the most valuable hour anybody could spend on this game.
-
-⛔ Before any of it, read the two open questions in this file's section 11⛔ Before any of it, read the two open questions in this file's section 11 and the ones written into the
-morning reports. The pouch pity finding and the XP curve reading are both Director calls that change
-numbers, and both are cheap to change now and expensive to change after a playtest.
-
-Everything those need is in place: the catalogue is generated, all sixty five marbles render, the save
-merges safely across two tabs, the wallet and the clay pool regenerate against an injectable clock, the
-pouches pull with pity, and a marble is now genuinely at risk in a match.
+**Exact next action:** Stephen plays `docs/checklists/k1.md` on the phone and writes `PLAYTESTS.md`. After
+that, the Director calls (Arena ring, pouch odds, XP reading) unblock K3. Pass and play is still the one K1
+item never built. The glb lane and the eight per epic shaders are still art.

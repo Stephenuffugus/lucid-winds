@@ -24,8 +24,8 @@
  * carries `touch-action: none` and `user-select: none`, and the brace takes
  * setPointerCapture, or the snap never arrives at all.
  */
-import { clamp, len2, DEG } from '../core/dmath.js?v=20260904a';
-import { makeAim } from '../core/snap.js?v=20260904a';
+import { clamp, len2, DEG } from '../core/dmath.js?v=20260904b';
+import { makeAim } from '../core/snap.js?v=20260904b';
 
 /** A CSS pixel is about 0.264 mm of real glass, and that is already device
  *  independent: devicePixelRatio would count the same thing twice. */
@@ -56,7 +56,8 @@ export function createKnuckle(canvas, tuning, hooks) {
     warmArc: 0, warmed: false, warmAngle: 0, warmT: 0,
     handedness: null,
     lastAim: null, lastCancel: null,
-    outsideCanvas: false
+    outsideCanvas: false,
+    lastTick: 0, spiked: false   // the settle clock, and whether the last jitter reading was a jump
   };
 
   const on = () => !hooks.enabled || hooks.enabled();
@@ -95,7 +96,7 @@ export function createKnuckle(canvas, tuning, hooks) {
    * then moved for 30 would otherwise read as a third of its real speed.
    */
   function thumbSpeed(t) {
-    const win = S.samples.filter(s => s.t >= t - T.sampleWindowMs);
+    const win = motion(S.samples.filter(s => s.t >= t - T.sampleWindowMs));
     if (win.length < 2) return 0;
     const a = win[0], b = win[win.length - 1];
     const span = b.t - a.t;
@@ -104,16 +105,44 @@ export function createKnuckle(canvas, tuning, hooks) {
   }
 
   /**
+   * The part of a sample window in which the thumb was actually MOVING: from
+   * the last sample still within a couple of pixels of where the window began.
+   *
+   * ⛔ THE BRACE IS INSIDE THE WINDOW. The last 90 ms before release hold the
+   * flick AND the tail of the still hold before it, and both the speed and the
+   * curvature were being read from the first sample of the window, which was a
+   * hold sample. Speed came out a third low because the span included forty
+   * milliseconds of not moving, and the hold's sub pixel jitter, a few reversals
+   * over one pixel of arc, read as a hook: measured, a dead straight snap after
+   * a steady hold gave wildness 0.57 to 1.00 and the game called every clean
+   * shot a wild one. The onset is where the thumb has left the first sample by
+   * two pixels; everything before it is the brace.
+   */
+  function motion(win) {
+    if (win.length < 3) return win;
+    const o = win[0];
+    let start = 0;
+    for (let i = 1; i < win.length; i++) {
+      if (len2(win[i].x - o.x, win[i].y - o.y) > 2) { start = i - 1; break; }
+      start = i;
+    }
+    return win.slice(start);
+  }
+
+  /**
    * Signed curvature of the snap path, averaged: how much the direction turned
    * per pixel travelled. A clean straight snap is near zero; a hooked one is not.
    */
-  function curvature(win) {
+  function curvature(win0) {
+    const win = motion(win0);
     if (win.length < 4) return 0;
     let turn = 0, arc = 0, prevAng = null;
     for (let i = 1; i < win.length; i++) {
       const dx = win[i].x - win[i - 1].x, dy = win[i].y - win[i - 1].y;
       const L = len2(dx, dy);
-      if (L < 0.5) continue;
+      // a segment under two pixels is jitter, not a path: a hook is a turn
+      // sustained over real travel, and sub pixel reversals must not vote
+      if (L < 2) continue;
       const ang = Math.atan2(dy, dx);
       if (prevAng !== null) {
         let d = ang - prevAng;
@@ -195,6 +224,7 @@ export function createKnuckle(canvas, tuning, hooks) {
     S.warmArc = 0; S.warmed = false; S.warmT = 0;
     S.outsideCanvas = false;
     S.downAt = now(); S.downX = x; S.downY = y;
+    S.lastTick = S.downAt; S.spiked = false;
     if (S.handedness === null) S.handedness = x < r.width / 2 ? 'left' : 'right';
     push(x, y, S.downAt);
     try { canvas.setPointerCapture(e.pointerId); } catch (err) { }
@@ -208,21 +238,47 @@ export function createKnuckle(canvas, tuning, hooks) {
     const t = now();
     // getCoalescedEvents is where the real 120 Hz samples are, and a flick that
     // lasts 90 ms is three pointermove events without it
-    const list = (e.getCoalescedEvents && e.getCoalescedEvents()) || [e];
+    // ⛔ and an EMPTY list is not a list. For a pointermove that did not come
+    // from the input pipeline (a gate, a screenshot driver, some browsers on
+    // some devices) getCoalescedEvents() returns [] and is truthy, so every
+    // move was dropped and the snap was measured from pointerdown to pointerup:
+    // a hard flick after a long brace read as a nudge and cancelled.
+    let list = e.getCoalescedEvents ? e.getCoalescedEvents() : null;
+    if (!list || !list.length) list = [e];
     for (const ev of list) push(ev.clientX - r.left, ev.clientY - r.top, t);
     const x = e.clientX - r.left, y = e.clientY - r.top;
     S.outsideCanvas = x < 0 || y < 0 || x > r.width || y > r.height;
 
+    tickSettle(t);
+    updateWarming(x, y, t, hooks.taw());
+    report();
+  }
+
+  /**
+   * The settle, advanced by the CLOCK.
+   *
+   * ⛔ IT USED TO BE COUNTED IN EVENTS: a sixtieth of a second per pointermove,
+   * so a hold settled in 72 events, which is 1.2 s on a 60 Hz screen, 0.6 s on
+   * a 120 Hz phone, and NEVER for a thumb held so still the browser sends no
+   * pointermove at all, which is exactly the thumb DESIGN 7.1 rewards. Now it
+   * is time since the hold went still, ticked from every move and from every
+   * frame while braced (`state()` ticks it too), and a jump of more than eight
+   * pixels costs half of it, as before.
+   */
+  function tickSettle(t) {
+    if (!S.active) return;
+    const dt = S.lastTick ? clamp((t - S.lastTick) / 1000, 0, 0.1) : 0;
+    S.lastTick = t;
     const j = jitter(t);
-    const dt = 1 / 60;
-    if (j > 8) S.settle01 = clamp(S.settle01 - 0.5, 0, 1);
-    else if (j < 2) S.settle01 = clamp(S.settle01 + dt / T.settleSeconds, 0, 1);
+    if (j > 8) { if (!S.spiked) { S.settle01 = clamp(S.settle01 - 0.5, 0, 1); S.spiked = true; } }
+    else {
+      S.spiked = false;
+      if (j < 2) S.settle01 = clamp(S.settle01 + dt / T.settleSeconds, 0, 1);
+    }
     if (S.settle01 >= 1 && !S.lastSettleHaptic) {
       S.lastSettleHaptic = true;
       if (hooks.haptic) hooks.haptic('settle');
     }
-    updateWarming(x, y, t, hooks.taw());
-    report();
   }
 
   function end(e) {
@@ -309,22 +365,45 @@ export function createKnuckle(canvas, tuning, hooks) {
     return aim;
   }
 
-  /** Where the flick pointed, relative to straight up the screen, capped. */
-  function fineAngle(win) {
+  /**
+   * Where the flick pointed, relative to straight up the screen, capped, and
+   * mapped onto the GROUND.
+   *
+   * ⛔ A SCREEN ANGLE IS NOT A YAW. The camera looks down at the dirt from about
+   * thirty seven degrees, so a marble ten degrees off the shooter's forward line
+   * sits sixteen degrees off vertical on the screen. Reading the flick's screen
+   * angle straight into the world sent a flick pointed AT a marble six degrees
+   * past it, every time, and an aiming driver hit one shot in four. The ground
+   * yaw is atan(tan(screen) x sin(elevation)); at top down it is the identity.
+   */
+  function fineAngle(win0) {
+    const win = motion(win0);
     if (win.length < 2) return 0;
     const a = win[0], b = win[win.length - 1];
     const dx = b.x - a.x, dy = b.y - a.y;
     if (len2(dx, dy) < 4) return 0;
-    // screen up is away from the player, which is the camera's forward
-    const ang = Math.atan2(dx, -dy);
     const cap = T.fineAngleMaxDeg * DEG;
-    return clamp(ang, -cap, cap);
+    // exact where it can be: the two points on the dirt under where the flick
+    // began and ended, and the yaw between them, relative to the camera's forward
+    if (hooks.groundPoint && hooks.aimAzimuth) {
+      const pa = hooks.groundPoint(a.x, a.y), pb = hooks.groundPoint(b.x, b.y);
+      if (pa && pb && len2(pb.x - pa.x, pb.z - pa.z) > 1e-4) {
+        let yaw = Math.atan2(pb.x - pa.x, pb.z - pa.z) - hooks.aimAzimuth();
+        while (yaw > Math.PI) yaw -= Math.PI * 2;
+        while (yaw < -Math.PI) yaw += Math.PI * 2;
+        return clamp(yaw, -cap, cap);
+      }
+    }
+    // otherwise the foreshortening alone: screen up is the camera's forward
+    const screen = clamp(Math.atan2(dx, -dy), -80 * DEG, 80 * DEG);
+    const k = hooks.groundFactor ? clamp(hooks.groundFactor(), 0.05, 1) : 1;
+    return clamp(Math.atan(Math.tan(screen) * k), -cap, cap);
   }
 
   function reset() {
     S.active = false; S.pointerId = -1; S.secondFinger = false;
     S.samples.length = 0; S.settle01 = 0; S.lastSettleHaptic = false;
-    S.outsideCanvas = false;
+    S.outsideCanvas = false; S.lastTick = 0; S.spiked = false;
     report();
   }
 
@@ -333,6 +412,9 @@ export function createKnuckle(canvas, tuning, hooks) {
   }
 
   function state() {
+    // a still thumb sends no events, so the frame loop reads this to keep the
+    // clock running; the tick is idempotent and cheap
+    if (S.active) tickSettle(now());
     return {
       bracing: S.active,
       settle01: S.settle01,

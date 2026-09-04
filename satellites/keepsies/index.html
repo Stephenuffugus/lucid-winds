@@ -6,9 +6,9 @@
 <meta name="theme-color" content="#0d100c">
 <meta name="description" content="Snap real marbles for keeps in the playground game and a marble battle arena, and risk the most beautiful thing you own.">
 <title>Keepsies</title>
-<link rel="manifest" href="manifest.json?v=20260904a">
-<link rel="icon" href="icon-192.png?v=20260904a">
-<link rel="apple-touch-icon" href="icon-192.png?v=20260904a">
+<link rel="manifest" href="manifest.json?v=20260904b">
+<link rel="icon" href="icon-192.png?v=20260904b">
+<link rel="apple-touch-icon" href="icon-192.png?v=20260904b">
 <style>
 :root{
   --dirt:#4a3f31; --bg:#0d100c; --chalk:#e8dcc8; --brass:#c8a84b;
@@ -32,9 +32,18 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--chalk);overflow:
    top edge where no scroll can reach it, and the flex shrink that used to land on
    the grid moved to the filter strip and crushed seven 48 px chips into a 12 px
    line of empty outlines. A screen taller than the phone starts at the top, and
-   nothing in it shrinks. */
+   nothing in it shrinks.
+   ⛔ AND IT WAS FIXED FOR ONE SCREEN. The setup screen grew the same way once
+   the ante strips were on it: RINGER was cut off at the top and BACK at the
+   bottom at 375 by 667. So every veil starts at the top and centres itself with
+   auto margins instead, which collapse to nothing the moment it is taller than
+   the phone. */
 .veil>*{flex:0 0 auto}
-#collection{justify-content:flex-start}
+.veil{justify-content:flex-start}
+.veil>*:first-child{margin-top:auto}
+.veil>*:last-child{margin-bottom:auto}
+#collection>*:first-child{margin-top:0}
+#collection>*:last-child{margin-bottom:0}
 .wordmark{font-size:2.4rem;letter-spacing:.16em;margin:0;color:var(--chalk);text-transform:uppercase}
 .studio{font-size:.8rem;letter-spacing:.18em;color:var(--muted);text-transform:uppercase;margin:0}
 .rules{max-width:22rem;margin:0;color:var(--chalk);opacity:.94;font-size:1rem;text-align:left;
@@ -112,7 +121,10 @@ button.quiet{background:transparent;color:var(--muted);border:1px solid rgba(152
    across the Collector's Pouch with both of them unreadable. It carries its own
    opaque ground now, and the screen reserves room so the last pouch scrolls clear
    of it rather than under it. */
-.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-index:3;
+/* ⛔ `button.quiet` outranks `.sticky`, so the opaque ground written here was
+   never painted: the collection scrolled its own heading straight through the
+   BACK button. The selector carries the element now. */
+button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-index:3;
   align-self:flex-start;min-width:0;width:auto;padding:0 22px;
   background:var(--bg);box-shadow:0 0 0 12px var(--bg),0 14px 20px 10px rgba(13,16,12,.94)}
 /* ⛔ min-width and min-height are RESET here. The global button rule sets a
@@ -135,8 +147,10 @@ button.quiet{background:transparent;color:var(--muted);border:1px solid rgba(152
    and the arena reading through it put four stray marbles around the sphere */
 #ransom{background:var(--bg)}
 /* the collection is a place, not an overlay: the arena reading through it put
-   stray match marbles and the chalk arc behind the shelf */
-#collection,#results{background:var(--bg)}
+   stray match marbles and the chalk arc behind the shelf. So are the setup
+   screen and the rules card: through the wash the chalk ring drew a pale stripe
+   straight across the BOMBING and POISON chips, and across the rules' title. */
+#collection,#results,#setup,#rulesCard{background:var(--bg)}
 #offers{display:flex;flex-direction:column;gap:8px;align-items:center;width:100%}
 #offers button{display:flex;align-items:center;gap:12px;width:100%;max-width:21rem;
   min-height:64px;padding:8px 12px;text-align:left;text-transform:none;letter-spacing:0;
@@ -529,6 +543,6 @@ window._sbCapEarn=function(n,tag){
   return granted;
 };
 </script>
-<script type="module" src="src/main.js?v=20260904a"></script>
+<script type="module" src="src/main.js?v=20260904b"></script>
 </body>
 </html>

@@ -15,7 +15,7 @@
  */
 import * as THREE from 'three';
 import { RoomEnvironment } from '../../lib/environments/RoomEnvironment.js';
-import { renderScale } from './quality.js?v=20260904a';
+import { renderScale } from './quality.js?v=20260904b';
 
 /**
  * @typedef {{update:(dt:number)=>void, getRay:(pose?:object)=>{origin:object,dir:object},
@@ -92,8 +92,16 @@ function makeSky() {
     fragmentShader: 'uniform vec3 uTop; uniform vec3 uMid; uniform vec3 uLow; varying float vH;'
       + 'void main(){ float h = clamp(vH*0.5+0.5, 0.0, 1.0);'
       + ' vec3 c = mix(uLow, uMid, smoothstep(0.42, 0.500, h));'
-      + ' c = mix(c, uTop, smoothstep(0.505, 0.90, h));'
-      + ' gl_FragColor = vec4(c, 1.0); }'
+      // the fog colour holds for the first few degrees above the horizon, so the
+      // dirt fades into the same colour the sky starts with, then dusk takes over
+      + ' c = mix(c, uTop, smoothstep(0.53, 0.78, h));'
+      // ⛔ a raw ShaderMaterial writes LINEAR values and the renderer encodes
+      // nothing for it, so the sky came out a third as bright as the fog it was
+      // meant to match and the horizon was a hard step from lit dirt to a dark
+      // wall. Encoded by hand here (the colours are linear because colour
+      // management converted them on the way in); `#include <colorspace_fragment>`
+      // failed to compile in this material and left the sky the clear colour.
+      + ' gl_FragColor = vec4(pow(c, vec3(1.0 / 2.2)), 1.0); }'
   });
   const sky = new THREE.Mesh(geo, mat);
   sky.frustumCulled = false;
@@ -133,7 +141,11 @@ export function drawScene(stage, scene, camera) {
  */
 export function createOrbitRig(stage, opts) {
   const o = opts || {};
-  const cam = new THREE.PerspectiveCamera(o.fov || 42, 1, 0.01, 60);
+  /* ⛔ THE FAR PLANE IS PAST THE SKY. The sky is a sphere of radius 60 and the far
+     plane was 60, so from anywhere but dead centre the far half of the sky was
+     clipped and the renderer's clear colour showed through as a hard edged navy
+     polygon above the horizon, which is exactly what k1-lowest.png shows. */
+  const cam = new THREE.PerspectiveCamera(o.fov || 42, 1, 0.01, 200);
   const state = {
     target: new THREE.Vector3(o.target ? o.target.x : 0, o.target ? o.target.y : 0, o.target ? o.target.z : 0),
     azimuth: o.azimuth == null ? 0 : o.azimuth,

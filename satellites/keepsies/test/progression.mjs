@@ -27,8 +27,8 @@ import { dirname, join } from 'node:path';
 /* a memory backed save, the way save.js falls back in Node */
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const T = JSON.parse(readFileSync(join(ROOT, 'src/data/tuning.json'), 'utf8'));
-const SAVE = await import(join(ROOT, 'src/meta/save.js') + '?v=20260904a');
-const P = await import(join(ROOT, 'src/meta/progression.js') + '?v=20260904a');
+const SAVE = await import(join(ROOT, 'src/meta/save.js') + '?v=20260904b');
+const P = await import(join(ROOT, 'src/meta/progression.js') + '?v=20260904b');
 
 const fails = [];
 const say = (ok, line) => { console.log((ok ? '  ok    ' : '  FAIL  ') + line); if (!ok) fails.push(line); };

@@ -20,8 +20,8 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { createEconomy, today } from '../src/meta/economy.js?v=20260904a';
-import { wipe, load } from '../src/meta/save.js?v=20260904a';
+import { createEconomy, today } from '../src/meta/economy.js?v=20260904b';
+import { wipe, load } from '../src/meta/save.js?v=20260904b';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const T = JSON.parse(readFileSync(join(ROOT, 'src/data/tuning.json'), 'utf8'));

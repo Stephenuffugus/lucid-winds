@@ -23,8 +23,8 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import * as D from '../src/core/damage.js?v=20260904a';
-import * as S from '../src/core/specials.js?v=20260904a';
+import * as D from '../src/core/damage.js?v=20260904b';
+import * as S from '../src/core/specials.js?v=20260904b';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const T = JSON.parse(readFileSync(join(ROOT, 'src/data/tuning.json'), 'utf8'));

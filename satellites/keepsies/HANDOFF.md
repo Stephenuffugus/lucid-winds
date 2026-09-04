@@ -4,9 +4,13 @@
 
 ## Where we are
 
-**2026-09-04. K0 done. K1 done but for pass and play. K2 started: the catalog, the marbles' looks, the
-save and the collection are finished; the economy, the keepsies loop and the ceremonies are not.
-K3 not started.**
+**2026-09-04, after Fable's review. K0 done. K1 done but for pass and play, and PLAYED with real pointer
+events for the first time (see `PLAYTESTS.md`). K2 done but for art: catalog, looks, collection, economy,
+pouches, the keepsies loop, the ceremonies, the ransom window, progression and the first four minutes.
+K3 started and blocked on a Director call (the Arena's damage floor against The Ring).** Build `20260904b`,
+on main. The review's findings and fixes are the 2026-09-04 review entries in `docs/DECISIONS.md`; the
+short version is that twenty one green gates fed the Knuckle through `_feed()` and the game soft locked on
+the second calibration snap for a real thumb. ⛔ Review a build by PLAYING it through the front door.
 
 A whole game of Ringer runs on a phone sized screen. Calibration, then the rules card, then a match
 setup with the house rules, then: lag, place the shooter on the ring edge, brace until the reticle
@@ -22,6 +26,7 @@ All sixty five marbles exist as data generated from the design and render distin
 node tools/check.js            thirteen gates, about four minutes
 node tools/check.js --fast     skips the sample sensitive ones and says which
 node tools/shots.mjs           the screenshots, then OPEN them
+node tools/frontdoor.mjs       PLAY it with real pointer events (not a gate), then OPEN what it shot
 node tools/contact_sheet.mjs   all 65 marbles in one picture, then OPEN it
 node tools/catalog.mjs         regenerate src/data/marbles.json from the design
 node sim/harness.js --scenario=all --csv /tmp/k.csv
