@@ -142,6 +142,21 @@ button.quiet{background:transparent;color:var(--muted);border:1px solid rgba(152
 #pouches button:disabled{background:transparent;color:var(--muted);border-color:rgba(152,160,134,.3)}
 #pouches .sub{font-size:.62rem;opacity:.8}
 #pouchSay{margin:0;font-size:.86rem;color:var(--chalk);min-height:1.3em;text-align:center;max-width:22rem}
+/* the ante. The pot is chosen HERE and the marbles are gone the moment PLAY is
+   pressed, so the strip has to make it obvious what is being risked. */
+#ante{display:flex;flex-direction:column;align-items:center;gap:6px;max-width:23rem;width:100%}
+.antelabel{margin:0;font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+#stakeStrip,#theirStrip{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:8px;width:100%;
+  padding:2px;justify-content:flex-start;min-height:62px}
+.stake{flex:0 0 auto;min-width:56px;min-height:56px;width:56px;height:56px;padding:0;border-radius:10px;
+  border:1px solid rgba(152,160,134,.4);background:rgba(20,23,15,.7);position:relative;overflow:hidden;
+  cursor:pointer}
+.stake canvas{width:100%;height:100%;display:block}
+.stake.on{border-color:var(--brass);background:rgba(200,168,75,.2)}
+.stake .rib{position:absolute;left:0;top:0;bottom:0;width:3px}
+.stake .cnt{position:absolute;right:2px;top:2px;font-size:.54rem;color:var(--bg);background:var(--brass);
+  border-radius:6px;padding:0 4px}
+#anteSay{margin:0;font-size:.78rem;color:var(--muted);min-height:1.2em;text-align:center}
 #calibDots{gap:12px}
 #calibDots .sock{width:20px;height:20px;border-width:2px}
 .sock.full{background:var(--brass);border-color:var(--brass)}
@@ -228,6 +243,13 @@ button.quiet{background:transparent;color:var(--muted);border:1px solid rgba(152
     <p id="oppLine">Beat everyone on his street. His street is small.</p>
   </div>
   <div id="hrRow"></div>
+  <div id="ante" hidden>
+    <p class="antelabel">Your stake</p>
+    <div id="stakeStrip"></div>
+    <p id="anteSay"></p>
+    <p class="antelabel" id="theirsLabel" hidden>Against theirs</p>
+    <div id="theirStrip"></div>
+  </div>
   <button id="setupGo">Play</button>
   <button id="setupBack" class="quiet">Back</button>
 </div>
@@ -288,6 +310,7 @@ button.quiet{background:transparent;color:var(--muted);border:1px solid rgba(152
     <div class="row"><span>Pocketed</span><span id="rPocket">0</span></div>
     <div class="row"><span>Shots</span><span id="rShots">0</span></div>
     <div class="row"><span>Techniques</span><span id="rTech">none yet</span></div>
+    <div class="row"><span>The pot</span><span id="rPot">nothing was up</span></div>
     <div class="row"><span>Sunbeams</span><span id="rSun">0</span></div>
   </div>
   <button id="again">Rematch</button>

@@ -197,3 +197,15 @@ Measured over a hundred thousand pulls. The table says 3.6 percent rare and 0.4 
 
 **2026-09-04 — a duplicate only becomes dust for a GRAIL.**
 DESIGN 11 says dupes become dust and DESIGN 10.6 says no dupe grails ever. Below grail a second copy is a second marble, which is the whole point of a clay pool and of ten identical commons on the cross, so it is kept. A grail that would repeat rerolls to the highest epic and the duplicate never exists; over a hundred thousand grail pulls, zero duplicates, and 15,088 rerolls once all four were held.
+
+**2026-09-04 — the escrow is written BEFORE the first turn, and the gate kills a real process to prove it.**
+Keepsies is real property to the player, so a bug here is not a bug, it is a theft. Staked marbles leave both inventories and sit in a pot marked `inMatch` in the same write, before a single shot. `escrow_crash` starts a real child process, has it stake, and SIGKILLs it between that write and the first turn; the save it leaves on disk is then loaded and counted. A marble is in an inventory or it is in the pot, never in both and never in neither. Watched to fail three ways: an escrow that does not remove from the inventory duplicates it (u1,u1,u2,u3), a boot that forgets to hand the pot back eats it, and a loss that quietly returns the marble makes the whole game meaningless.
+
+**2026-09-04 — the tier matched rule refuses with a REASON, never with a dead button.**
+"Same number each. You have 2 up and they have 1." "Too far apart. A common does not play against an epic." A refusal a player cannot understand is indistinguishable from a bug, and this one is standing between them and their best marble.
+
+**2026-09-04 — a duplicate is only dust at grail; below that a second copy is a second marble.**
+Ten identical clay marbles on the cross is the design's own picture of the clay pool, so keeping duplicates is the point rather than an oversight.
+
+**2026-09-04 — the pot line names the marble, which took a second look.**
+`pot.mine` holds inventory items, which carry an id and no name, so the results card read "Dusty keeps ." The name lives in the catalog and is looked up there.

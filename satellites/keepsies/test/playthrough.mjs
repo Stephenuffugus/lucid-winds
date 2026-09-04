@@ -187,8 +187,25 @@ const bombChip = await press('hr-bombing');
 say(bombChip && !bombChip.blocked, 'the house rule chips are pressable');
 const hrNow = await page.evaluate(() => window.KEEPSIES_DEV.houseRules());
 say(hrNow.bombing === true, 'and a tap really changed the rule: bombing is ' + hrNow.bombing);
+/* ---- the ante: the pot goes up before a shot is fired ---- */
+const noStake = await page.evaluate(() => ({
+  disabled: document.getElementById('setupGo').disabled,
+  say: document.getElementById('anteSay').textContent
+}));
+say(noStake.disabled === true, 'with nothing staked, PLAY is refused: ' + noStake.say);
+const staked = await page.evaluate(() => window.KEEPSIES_DEV.stake('dirt_plain'));
+say(!!staked && staked.staked.length === 1, 'staking a clay marble puts one up: ' + staked.staked.join(','));
+say(staked.ok === true, 'and the opponent matched it: ' + staked.theirs.join(',') + ' (' + staked.say + ')');
+const invBefore = await page.evaluate(() => window.KEEPSIES_DEV.inventory());
+
 const setupBtn = await press('setupGo');
 say(setupBtn && !setupBtn.blocked, 'PLAY on the setup starts the match');
+const pot = await page.evaluate(() => ({ up: window.KEEPSIES_DEV.potUp(), pot: window.KEEPSIES_DEV.pot(), inv: window.KEEPSIES_DEV.inventory() }));
+say(pot.up === true, 'the pot went up BEFORE the first turn');
+say(pot.inv === invBefore - 1, 'and the staked marble LEFT the inventory in the same write: '
+  + invBefore + ' became ' + pot.inv);
+say(!!pot.pot && pot.pot.mine.length === 1 && pot.pot.theirs.length === 1,
+  'and both sides are in the pot: yours ' + pot.pot.mine.length + ', theirs ' + pot.pot.theirs.length);
 await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'match', { timeout: 20000 });
 const inMatch = await page.evaluate(() => document.getElementById('houseRules').textContent);
 say(inMatch.indexOf('bombing') >= 0, 'and the match is playing under the rule you chose: ' + inMatch);
@@ -200,6 +217,12 @@ say(a.title === 'You win' || a.title === 'Dusty wins', 'the card names a winner:
 say(/\d+ of \d+/.test(a.pocket || ''), 'it reports what you pocketed: ' + a.pocket);
 say(parseInt(a.shots, 10) > 0, 'it reports the shot count: ' + a.shots);
 say(a.matchesPlayed === 1, 'one match has been recorded, not ' + a.matchesPlayed);
+const after = await page.evaluate(() => ({
+  up: window.KEEPSIES_DEV.potUp(), inv: window.KEEPSIES_DEV.inventory(),
+  line: document.getElementById('rPot').textContent
+}));
+say(after.up === false, 'and the pot settled rather than staying up');
+say(after.line.length > 0, 'and the card says where the marbles went: ' + after.line);
 const wallet = await page.evaluate(() => window.KEEPSIES_DEV.wallet());
 say(wallet.sunbeams > 0, 'the game wallet was paid for the match: ' + wallet.sunbeams + ' sunbeams');
 say(wallet.clay.count === wallet.clay.max, 'and the clay pool is full at ' + wallet.clay.count
@@ -211,6 +234,8 @@ await page.screenshot({ path: join(OUT, 'k1-results.png') });
 /* ---- and the same game with the pull back fallback ---- */
 await press('again');
 await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'setup', { timeout: 20000 });
+// a fresh match needs a fresh stake: the last one is gone
+await page.evaluate(() => window.KEEPSIES_DEV.stake('dirt_plain'));
 await press('setupGo');
 await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'match', { timeout: 20000 });
 const b = await playAMatch(true, 'with the pull back fallback');

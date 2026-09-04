@@ -181,11 +181,18 @@ const chips = await page.evaluate(() => {
 const badChip = chips.find(c => c.missing || !c.ok || c.h < 48);
 say(!badChip, '(c) all five house rule chips are 48 rendered px tall and reachable at their centres'
   + (badChip ? ', except ' + badChip.id : ''));
+/* keepsies is on by default, so something has to be put up before PLAY will go.
+   That refusal is the point of the ante and this gate honours it rather than
+   working around it. */
+const ante = await page.evaluate(() => window.KEEPSIES_DEV.stake('dirt_plain'));
+say(!!ante && ante.ok === true, '(c) a stake can be put up and the opponent matches it: '
+  + (ante ? ante.staked.join(',') + ' against ' + ante.theirs.join(',') : 'nothing'));
 const goPlay = await page.evaluate(() => {
   const b = document.getElementById('setupGo');
   const r = b.getBoundingClientRect();
-  return { cx: Math.round(r.left + r.width / 2), cy: Math.round(r.top + r.height / 2) };
+  return { cx: Math.round(r.left + r.width / 2), cy: Math.round(r.top + r.height / 2), disabled: b.disabled };
 });
+say(goPlay.disabled === false, '(c) and PLAY becomes available once there is a pot');
 await page.mouse.click(goPlay.cx, goPlay.cy);
 await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'match', { timeout: 20000 });
 await page.evaluate(() => window.KEEPSIES_DEV.settle(1400));

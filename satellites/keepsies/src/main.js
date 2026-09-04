@@ -30,6 +30,8 @@ import * as MARBLEMESH from './render/marbleMesh.js?v=20260904a';
 import { bodySpec } from './core/marbleBody.js?v=20260904a';
 import { createEconomy } from './meta/economy.js?v=20260904a';
 import { createDrops } from './meta/drops.js?v=20260904a';
+import { tierMatchOk, matchTheirStake, escrow, settle, recoverOnBoot, potUp, currentPot }
+  from './game/match.js?v=20260904a';
 import { makeRng } from './core/rng.js?v=20260904a';
 import { makeMarbleMaterial } from './render/marbleMesh.js?v=20260904a';
 
@@ -48,7 +50,7 @@ const G = {
   assist: true, lastAssist: 0,
   houseRules: { keepsies: true, slips: true, bombing: false, poison: false, ringSizeFt: 10 },
   catalog: null, turntable: null, thumbs: null, filter: 'all', inspecting: null, econ: null,
-  drops: null, dropRng: null
+  drops: null, dropRng: null, stake: [], theirStake: [], anteOk: false
 };
 
 /* The house rules of DESIGN 8.3, as the player meets them: what each one DOES,
@@ -97,6 +99,10 @@ async function boot() {
   G.econ.clayPool();          // roll the day over before anything reads it
   G.econ.touchStreak();
   G.econ.onChange(() => { G.save = SAVE.load(); paintWallet(); });
+  /* ⛔ FIRST, before anything else can read the inventory: if a pot was up when
+     the tab last closed, everything in it comes home and the match never was. */
+  const rec = recoverOnBoot();
+  if (rec.recovered) G.save = SAVE.load();
   grantStartersOnce();
 
   G.knuckle = createKnuckle(canvas, G.tuning, {
@@ -146,16 +152,27 @@ function wireButtons() {
     // calibration first, ONCE, because a player shooting against a stranger's
     // thumb can neither reach full power nor find the top of their own range
     if (!G.calib.own) startCalibration();
-    else if (G.seenRules) { showScreen('setup'); buildHouseRules(); }
+    else if (G.seenRules) { showScreen('setup'); buildHouseRules(); buildAnte(); }
     else showScreen('rules');
   });
   $('calibSkip').addEventListener('click', () => { finishCalibration(null); });
   $('rulesGo').addEventListener('click', () => {
     G.seenRules = true;
     SAVE.merge({ seen: { rules: true } });
-    showScreen('setup'); buildHouseRules();
+    showScreen('setup'); buildHouseRules(); buildAnte();
   });
-  $('setupGo').addEventListener('click', () => { showScreen('match'); startMatch(); });
+  $('setupGo').addEventListener('click', () => {
+    // ⛔ the pot goes up HERE, before a single shot, and the marbles leave the
+    // inventory in the same write
+    if (G.houseRules.keepsies && G.stake.length) {
+      if (!escrow(G.stake, G.theirStake, 'Dusty Coyle')) {
+        $('anteSay').textContent = 'That stake could not be put up. Nothing has moved.';
+        return;
+      }
+      G.save = SAVE.load();
+    }
+    showScreen('match'); startMatch();
+  });
   $('setupBack').addEventListener('click', () => { showScreen('title'); });
   $('collect').addEventListener('click', () => openCollection());
   $('collBack').addEventListener('click', () => showScreen('title'));
@@ -165,7 +182,7 @@ function wireButtons() {
     if (G.screen !== 'inspect' || !e.buttons) return;
     G.turntable.nudge(e.movementX || 0);
   });
-  $('again').addEventListener('click', () => { showScreen('setup'); buildHouseRules(); });
+  $('again').addEventListener('click', () => { G.stake = []; showScreen('setup'); buildHouseRules(); buildAnte(); });
   $('toTitle').addEventListener('click', () => { endMatch(); showScreen('title'); });
   $('topDown').addEventListener('click', () => {
     G.topDown = !G.topDown;
@@ -233,7 +250,7 @@ function finishCalibration(result) {
     G.save = SAVE.load();
   }
   endMatch();
-  if (G.seenRules) { showScreen('setup'); buildHouseRules(); }
+  if (G.seenRules) { showScreen('setup'); buildHouseRules(); buildAnte(); }
   else showScreen('rules');
 }
 
@@ -405,6 +422,85 @@ function openInspect(entry, item) {
 
 /* ------------------------------------------------------------ match setup */
 
+/**
+ * The ante (DESIGN 12.1). Tap up to three of your own, the opponent matches you
+ * tier for tier, and the tier matched rule refuses with a reason rather than
+ * with a disabled button nobody can explain.
+ */
+function buildAnte() {
+  const wrap = $('ante');
+  wrap.hidden = !G.houseRules.keepsies;
+  if (wrap.hidden) { G.stake = []; G.theirStake = []; G.anteOk = true; return; }
+  const strip = $('stakeStrip');
+  strip.textContent = '';
+  const groups = groupForGrid(G.save.inventory, G.catalog, 'stakeable');
+  G.thumbs.open(96);
+  let i = 0;
+  for (const g of groups) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'stake' + (G.stake.some(s2 => s2.id === g.entry.id) ? ' on' : '');
+    b.id = 'stake-' + g.entry.id;
+    b.title = g.entry.name;
+    const rib = document.createElement('span'); rib.className = 'rib ' + g.entry.tier; b.appendChild(rib);
+    const c = document.createElement('canvas'); c.width = c.height = 96; b.appendChild(c);
+    if (g.count > 1) { const n2 = document.createElement('span'); n2.className = 'cnt'; n2.textContent = String(g.count); b.appendChild(n2); }
+    b.addEventListener('click', () => toggleStake(g));
+    strip.appendChild(b);
+    G.thumbs.paint(c, g.entry, i++);
+  }
+  G.thumbs.close();
+  refreshAnte();
+}
+
+function toggleStake(group) {
+  const at = G.stake.findIndex(s2 => s2.uid === group.items[0].uid || s2.id === group.entry.id);
+  if (at >= 0) G.stake.splice(at, 1);
+  else {
+    if (G.stake.length >= 3) { $('anteSay').textContent = 'Three marbles each is the most anyone stakes.'; return; }
+    const free = group.items.find(it => !G.stake.some(s2 => s2.uid === it.uid));
+    if (!free) return;
+    G.stake.push({ uid: free.uid, id: group.entry.id, tier: group.entry.tier, name: group.entry.name });
+  }
+  buildAnte();
+}
+
+function refreshAnte() {
+  const say2 = $('anteSay');
+  if (!G.stake.length) {
+    G.theirStake = []; G.anteOk = false;
+    $('theirsLabel').hidden = true;
+    $('theirStrip').textContent = '';
+    say2.textContent = 'Put something up. Clay is free and it still counts.';
+    $('setupGo').disabled = true;
+    return;
+  }
+  G.theirStake = matchTheirStake(G.stake, G.catalog, G.dropRng, ['common', 'uncommon', 'rare']);
+  const verdict = tierMatchOk(G.stake, G.theirStake);
+  G.anteOk = verdict.ok;
+  say2.textContent = verdict.ok
+    ? 'Winner keeps all ' + (G.stake.length + G.theirStake.length) + '.'
+    : verdict.reason;
+  $('setupGo').disabled = !verdict.ok;
+  $('theirsLabel').hidden = !verdict.ok;
+  const strip = $('theirStrip');
+  strip.textContent = '';
+  if (!verdict.ok) return;
+  G.thumbs.open(96);
+  let i = 0;
+  for (const t of G.theirStake) {
+    const e = G.catalog.marbles.find(m => m.id === t.id);
+    const b = document.createElement('span');
+    b.className = 'stake on';
+    b.title = t.name;
+    const rib = document.createElement('span'); rib.className = 'rib ' + t.tier; b.appendChild(rib);
+    const c = document.createElement('canvas'); c.width = c.height = 96; b.appendChild(c);
+    strip.appendChild(b);
+    if (e) G.thumbs.paint(c, e, i++);
+  }
+  G.thumbs.close();
+}
+
 function buildHouseRules() {
   const row = $('hrRow');
   row.textContent = '';
@@ -428,6 +524,7 @@ function buildHouseRules() {
         G.houseRules[r.key] = r.cycle[(i + 1) % r.cycle.length];
       } else G.houseRules[r.key] = !G.houseRules[r.key];
       paint();
+      if (r.key === 'keepsies') buildAnte();
     });
     paint();
     row.appendChild(b);
@@ -684,6 +781,16 @@ function finishMatch(s) {
   $('rPocket').textContent = s.pocketed[0] + ' of ' + G.R.match.toWin;
   $('rShots').textContent = String(s.shots);
   const names = G.R.state.techniques.map(id => (RINGER_TECHNIQUES[id] || {}).name).filter(Boolean);
+  /* the pot settles here, and it is the only place a staked marble changes hands */
+  const pot = potUp() ? settle(won ? 0 : 1) : { won: [], lost: [], returned: [] };
+  G.save = SAVE.load();
+  G.stake = [];
+  // an inventory item carries an id, not a name: the name lives in the catalog,
+  // and "Dusty keeps ." is a worse sentence than any of the ones it replaced
+  const nameOf = (m) => m.name || ((G.catalog.marbles.find(c => c.id === m.id) || {}).name) || m.id;
+  const potLine = pot.won.length ? 'You keep ' + pot.won.map(nameOf).join(' and ') + '.'
+    : (pot.lost.length ? 'Dusty keeps ' + pot.lost.map(nameOf).join(' and ') + '.' : '');
+  $('rPot').textContent = potLine || 'nothing was up';
   $('rTech').textContent = names.length ? names.join(', ') : 'none yet';
   /* the GAME's wallet, which is the one the player spends (DESIGN 17) */
   const earned = G.econ.payForMatch({
@@ -869,7 +976,15 @@ function installDevHook() {
     },
     start: (opts) => { G.seenRules = true; showScreen('match'); startMatch(opts); },
     rules: () => showScreen('rules'),
-    setup: () => { showScreen('setup'); buildHouseRules(); return G.houseRules; },
+    setup: () => { showScreen('setup'); buildHouseRules(); buildAnte(); return G.houseRules; },
+    stake: (id) => {
+      const g = groupForGrid(G.save.inventory, G.catalog, 'stakeable').find(x => x.entry.id === id);
+      if (!g) return null;
+      toggleStake(g);
+      return { staked: G.stake.map(s2 => s2.id), theirs: G.theirStake.map(t => t.id), ok: G.anteOk, say: $('anteSay').textContent };
+    },
+    pot: () => currentPot(),
+    potUp: () => potUp(),
     collection: () => { openCollection(); return { tiles: $('grid').querySelectorAll('.tile').length }; },
     inspect: (id) => {
       const e = G.catalog.marbles.find(m => m.id === id);
