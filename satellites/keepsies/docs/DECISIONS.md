@@ -317,3 +317,15 @@ Beat 4 ends on the collection with a shelf full of marbles and, before this, no 
 
 **2026-09-04 — the render gate is about pixels, not about the script.**
 The first four minutes are walked assertion by assertion in `playthrough`. `render` puts the player into the state of somebody who has already been through them, so the setup screen under test is the ordinary one rather than the For Fair table the onboarding sets. Two gates, two questions.
+
+**2026-09-04 — K3: six conditions ship, and `onRail` is the one held back.**
+DESIGN 9.5 lists seven launch conditions and says so in its own margin: "cut `on rail` OR `Nth contact` if playtest shows condition-guessing is too diffuse; ship max 6." `onRail` is the cut, because it is the only one a player cannot deliberately arrange for an opponent to walk into: `Nth contact` is the aggressive read and `close range` is the positional one, and both reward a plan. The seventh is written into `specials.js`, marked `shipped: false`, and left out of `SHIPPED`, so the cut is visible and reversible rather than forgotten.
+
+**2026-09-04 — an active takes BOTH halves, always.**
+Full meter AND condition met. A marble that fires on a full meter alone has no secret, and one that fires on the condition alone has no meter to watch, and the meter being public while the condition is secret is the entire mind game of DESIGN 9.5.
+
+**2026-09-04 — charge is earned on the damage that LANDED, not the damage that was rolled.**
+A hit that overkills a cracked marble by thirty does not pay thirty. Otherwise the cheapest way to charge a meter is to keep hitting something that is already dead, which is the opposite of what the meter is for.
+
+**2026-09-04 — a condition is a pure predicate over a fact sheet.**
+It never reads the world, never reads a clock and never mutates anything, so `condition_matrix` sweeps every condition against every event with no physics step at all: 42 cells, printed as a grid, and the gate fails on any cell that is not exactly right.
