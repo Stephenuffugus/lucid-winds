@@ -348,6 +348,55 @@ say(poor === true, 'and a pouch you cannot afford is disabled rather than failin
 await press('collBack');
 await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'title', { timeout: 20000 });
 
+/* ---- losing a rare opens the buy back window, and the card is real ---- */
+const lostRare = await page.evaluate(() => {
+  const d = window.KEEPSIES_DEV;
+  const m = d.grantMarble('bloodstone_aggie');
+  d.grantSunbeams(1000);
+  d.setup();
+  d.stake('bloodstone_aggie');
+  d.go({ seed: 313131, forceFirst: 1 });
+  d.forceEnd(1);                                     // the opponent wins it
+  return { granted: m, offers: d.offers().length };
+});
+say(!!lostRare.granted && lostRare.granted.tier === 'rare',
+  'a rare goes into the inventory and gets staked: ' + (lostRare.granted || {}).name);
+say(lostRare.offers === 1, 'and losing it opens exactly one buy back offer: ' + lostRare.offers);
+await page.evaluate(() => window.KEEPSIES_DEV.ceremonySkip());
+await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'ransom', { timeout: 20000 });
+const card = await page.evaluate(() => ({
+  name: document.getElementById('rsName').textContent,
+  say: document.getElementById('rsSay').textContent,
+  clock: document.getElementById('rsClock').textContent,
+  drew: !!(document.querySelector('#ransomArt canvas')),
+  payEnabled: !document.getElementById('rsPay').disabled
+}));
+say(card.name === 'Bloodstone Aggie', 'the offer card names the marble: ' + card.name);
+say(card.drew === true, 'and RENDERS it rather than describing it');
+say(card.say.indexOf('400') >= 0, 'and says the price in sunbeams: ' + card.say);
+say(card.clock.indexOf('hours left') >= 0, 'and how long is left: ' + card.clock);
+say(card.payEnabled === true, 'and the buy back button is live because it can be afforded');
+const invBeforePay = await page.evaluate(() => window.KEEPSIES_DEV.inventory());
+const payBtn = await press('rsPay');
+say(payBtn && !payBtn.blocked, 'the buy back button is pressable at its centre');
+const bought = await page.evaluate(() => ({
+  say: document.getElementById('rsSay').textContent,
+  inv: window.KEEPSIES_DEV.inventory(),
+  offers: window.KEEPSIES_DEV.offers().length,
+  wallet: window.KEEPSIES_DEV.wallet().sunbeams
+}));
+say(bought.inv === invBeforePay + 1,
+  'and the marble comes home: ' + invBeforePay + ' became ' + bought.inv);
+say(bought.offers === 0, 'and the offer closes: ' + bought.offers + ' still open');
+say(bought.say.indexOf('yours again') >= 0, 'and the card says so: ' + bought.say);
+await press('rsLater');
+await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'results', { timeout: 20000 });
+say(true, 'and it hands over to the result card, which is the same contract the ceremony has');
+await press('again');
+await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'setup', { timeout: 20000 });
+await press('setupBack');
+await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'title', { timeout: 20000 });
+
 /* ---- reduce motion: the ceremony must still hand over the card ---- */
 await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
 const rm = await page.evaluate(() => {

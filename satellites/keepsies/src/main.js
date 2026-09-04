@@ -31,6 +31,7 @@ import * as MARBLEMESH from './render/marbleMesh.js?v=20260904a';
 import { bodySpec } from './core/marbleBody.js?v=20260904a';
 import { createEconomy } from './meta/economy.js?v=20260904a';
 import { createDrops } from './meta/drops.js?v=20260904a';
+import * as RANSOM from './meta/ransom.js?v=20260904a';
 import { tierMatchOk, matchTheirStake, escrow, settle, recoverOnBoot, potUp, currentPot }
   from './game/match.js?v=20260904a';
 import { makeRng } from './core/rng.js?v=20260904a';
@@ -104,6 +105,11 @@ async function boot() {
      the tab last closed, everything in it comes home and the match never was. */
   const rec = recoverOnBoot();
   if (rec.recovered) G.save = SAVE.load();
+  /* and then the windows that ran out while the game was closed, which is where
+     most of them will run out: a 24 hour offer opened at midnight is almost never
+     lapsed by a tab that is still open */
+  const swept = RANSOM.sweepOnBoot(Date.now());
+  if (swept.lapsed) G.save = SAVE.load();
   grantStartersOnce();
 
   G.knuckle = createKnuckle(canvas, G.tuning, {
@@ -164,6 +170,23 @@ function wireButtons() {
   });
   $('setupGo').addEventListener('click', () => { beginMatch(); });
   $('setupBack').addEventListener('click', () => { showScreen('title'); });
+  $('rsPay').addEventListener('click', () => {
+    if (!G.ransomOffer) return;
+    const r = RANSOM.pay(G.ransomOffer.uid, Date.now());
+    if (!r.ok) { $('rsSay').textContent = r.reason; return; }
+    G.save = SAVE.load();
+    paintWallet();
+    // it comes home the way anything else does, with its name said out loud
+    $('rsSay').textContent = r.marble.name + ' is yours again.';
+    $('rsPay').disabled = true;
+    $('rsLater').textContent = 'Good';
+    G.ransomOffer = null;
+  });
+  $('rsLater').addEventListener('click', () => {
+    const after = G.ransomAfter;
+    G.ransomOffer = null; G.ransomAfter = null;
+    if (after) after(); else showScreen('title');
+  });
   $('collect').addEventListener('click', () => openCollection());
   $('collBack').addEventListener('click', () => showScreen('title'));
   $('inspectBack').addEventListener('click', () => openCollection());
@@ -197,6 +220,7 @@ function showScreen(name) {
   $('collection').hidden = name !== 'collection';
   $('inspect').hidden = name !== 'inspect';
   $('results').hidden = name !== 'results';
+  $('ransom').hidden = name !== 'ransom';
   if (name !== 'inspect' && G.turntable) { G.turntable.clear(); G.inspecting = null; }
   if (name !== 'match') { $('pauseCard').hidden = true; G.paused = false; hideAim(); }
 }
@@ -273,8 +297,54 @@ function openCollection() {
   showScreen('collection');
   buildFilters();
   buildGrid();
+  buildOffers();
   buildPouches();
   $('pouchSay').textContent = '';
+}
+
+/**
+ * Any open buy back offer, for as long as it is open.
+ *
+ * ⛔ THE ONLY PLACE A LAPSED WINDOW IS ANNOUNCED. "Let it go for now" on the card
+ * after a match is not a decline, so if this row did not exist the offer would
+ * quietly time out and the player would never learn there had been one.
+ */
+function buildOffers() {
+  const wrap = $('offers');
+  wrap.textContent = '';
+  const open = RANSOM.openOffers(Date.now());
+  const entryOf = (id) => G.catalog.marbles.find(m => m.id === id);
+  for (const o2 of open) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.id = 'offer-' + o2.uid;
+    // every other place in the game that talks about a marble shows it, and this
+    // is the one with a deadline on it
+    const e = entryOf(o2.id);
+    if (e) {
+      try {
+        const c = document.createElement('canvas');
+        c.width = c.height = 88;
+        G.thumbs.open(88);
+        G.thumbs.paint(c, e, 0);
+        G.thumbs.close();
+        b.appendChild(c);
+      } catch (err) { }
+    }
+    const words = document.createElement('span');
+    words.className = 'words';
+    const line = document.createElement('span');
+    line.className = 'lead';
+    line.textContent = 'Buy back ' + o2.name + ', ' + o2.price + ' sunbeams';
+    const small = document.createElement('span');
+    small.className = 'small';
+    small.textContent = o2.from + ' has it. ' + RANSOM.timeLeftWords(o2.msLeft) + '.';
+    words.appendChild(line);
+    words.appendChild(small);
+    b.appendChild(words);
+    b.addEventListener('click', () => showRansomCard(o2, () => openCollection()));
+    wrap.appendChild(b);
+  }
 }
 
 /**
@@ -810,6 +880,62 @@ function updateHud() {
   ].filter(Boolean).join(', ');
 }
 
+/**
+ * The offer card, then the result card. DESIGN 18 puts the buy back offer
+ * immediately after the loss ceremony, and DESIGN 12 says one offer and no
+ * negotiation UI, so it is a card with two buttons and a countdown.
+ *
+ * ⛔ IT NEVER STANDS BETWEEN THE PLAYER AND THE RESULT. "Let it go for now" is
+ * not a decline: the offer stays open for its 24 hours and the collection can
+ * reach it again. The only thing this card decides is whether you pay NOW.
+ */
+function showRansomOrResults() {
+  const open = RANSOM.openOffers(Date.now());
+  const mine = open.filter(r => (G.offers || []).some(o2 => o2.uid === r.uid));
+  if (!mine.length) { showScreen('results'); return; }
+  showRansomCard(mine[0], () => showScreen('results'));
+}
+
+/** Paint one offer. `after` runs when the card is finished with, either way. */
+function showRansomCard(offer, after) {
+  G.ransomOffer = offer;
+  G.ransomAfter = after;
+  const entry = G.catalog.marbles.find(m => m.id === offer.id);
+  const art = $('ransomArt');
+  art.textContent = '';
+  if (entry) {
+    try {
+      const c = document.createElement('canvas');
+      c.width = c.height = 240;
+      G.thumbs.open(240);
+      G.thumbs.paint(c, entry, 0);
+      G.thumbs.close();
+      art.appendChild(c);
+    } catch (e) { }
+  }
+  $('rsHead').textContent = offer.from + ' kept it';
+  $('rsTier').textContent = offer.tier;
+  $('rsName').textContent = offer.name;
+  // say the price AND what you have, because a card that asks for a number you
+  // cannot see is asking you to remember one
+  // ⛔ his name was on this card three times and the number twice. The header
+  // says who has it, the sentence says the price, the clock line says what you
+  // have, and the button does one thing.
+  const bal = G.econ.balance();
+  $('rsSay').textContent = 'Yours again for ' + offer.price + ' sunbeams.';
+  paintRansomClock();
+  const can = bal >= offer.price;
+  $('rsPay').disabled = !can;
+  $('rsPay').textContent = can ? 'Buy it back' : 'Not enough yet';
+  showScreen('ransom');
+}
+
+function paintRansomClock() {
+  if (!G.ransomOffer) return;
+  const left = Math.max(0, G.ransomOffer.expires - Date.now());
+  $('rsClock').textContent = RANSOM.timeLeftWords(left) + '. You have ' + G.econ.balance() + '.';
+}
+
 function finishMatch(s) {
   const won = s.winner === 0;
   // the opponent's name comes from the match, so league two does not still say Dusty
@@ -872,6 +998,15 @@ function finishMatch(s) {
      the only moment where the thing that changed hands is a THING rather than a
      sentence. `playPotCeremony` calls back exactly once on every path, including
      the skip tap and a marble that will not render, so the card always arrives. */
+  /* ⛔ THE OFFER IS WRITTEN AT THE SETTLE, NOT WHEN THE CARD IS SHOWN. A player
+     who closes the tab on the loss ceremony still has their 24 hours when they
+     come back, because the deadline is a timestamp in the save rather than a
+     timer on a screen nobody is looking at. */
+  G.offers = pot.lost.length
+    ? RANSOM.offerFor(
+      pot.lost.map(m => ({ uid: m.uid, id: m.id, tier: m.tier, name: nameOf(m) })),
+      oppName, G.tuning, Date.now())
+    : [];
   // the board's last line and its technique toast belong to the match that just
   // ended, and reading them through the ceremony makes them look like its own
   say('');
@@ -896,7 +1031,7 @@ function finishMatch(s) {
       } catch (err) { }
       try { if (navigator.vibrate) navigator.vibrate(kind === 'won' ? 14 : 8); } catch (err) { }
     },
-    done: () => { G.ceremony = null; showScreen('results'); }
+    done: () => { G.ceremony = null; showRansomOrResults(); }
   });
 }
 
@@ -1090,6 +1225,17 @@ function installDevHook() {
     wallet: () => G.econ.snapshot(),
     pouch: (kind) => openPouch(kind),
     grantSunbeams: (n) => { G.econ.earn(n, 'a gate said so'); buildPouches(); return G.econ.balance(); },
+    // put one named marble in the inventory, so a gate can lose something worth
+    // ransoming without playing until the pouches hand it one
+    grantMarble: (id) => {
+      const e = G.catalog.marbles.find(m => m.id === id);
+      if (!e) return null;
+      const uid = id + '-gate-' + (G.save.inventory.length + 1);
+      SAVE.merge({ inventory: [{ id: id, uid: uid, tier: e.tier, acquired: Date.now(), source: 'gate', cosmeticSeed: 0.5 }] });
+      G.save = SAVE.load();
+      return { uid: uid, tier: e.tier, name: e.name };
+    },
+    offers: () => RANSOM.openOffers(Date.now()),
     pouchSay: () => $('pouchSay').textContent,
     econ: () => G.econ,
     catalogCount: () => G.catalog.marbles.length,

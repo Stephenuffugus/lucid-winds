@@ -71,6 +71,10 @@ export function blank() {
     bags: { arena: [] },
     bossTrophies: {},
     pot: { inMatch: false, escrow: [] },
+    // open buy back offers on marbles you lost. One entry per marble, and the
+    // deadline lives here rather than in a timer, because a 24 hour window has
+    // to survive the tab being closed for 23 of them.
+    ransoms: [],
     chores: {},
     streak: { days: 0, last: 0 },
     settings: {
@@ -145,6 +149,15 @@ export function merge(partial) {
     if (partial.inventory) {
       const have = new Set(s.inventory.map(m => m.uid));
       for (const m of partial.inventory) if (!have.has(m.uid)) s.inventory.push(m);
+    }
+    // ⛔ ransoms merge by uid like the inventory, never by replacement. Two tabs
+    // that both saw a loss must not end up with the marble offered twice, and a
+    // tab that has not seen the newest offer must not delete it by writing its
+    // own shorter list back.
+    if (partial.ransoms) {
+      const held = new Set((s.ransoms || []).map(r => r.uid));
+      s.ransoms = s.ransoms || [];
+      for (const r of partial.ransoms) if (!held.has(r.uid)) s.ransoms.push(r);
     }
     if (partial.wallet && partial.wallet.sunbeams) s.wallet.sunbeams += partial.wallet.sunbeams;
     if (partial.stats) {

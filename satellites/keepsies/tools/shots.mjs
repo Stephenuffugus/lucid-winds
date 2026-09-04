@@ -159,6 +159,28 @@ await page.evaluate(() => window.KEEPSIES_DEV.ceremonySkip());
 await wait(400);
 await shot('k1-results');
 
+/* the offer card: lose a rare on purpose and photograph what a player is shown */
+await page.evaluate(() => {
+  const d = window.KEEPSIES_DEV;
+  d.grantMarble('bloodstone_aggie');
+  d.grantSunbeams(1000);
+  d.setup();
+  d.stake('bloodstone_aggie');
+  d.go({ seed: 313131, forceFirst: 1 });
+  d.forceEnd(1);
+});
+await wait(500);
+await shot('k2-loss-ceremony');
+await page.evaluate(() => window.KEEPSIES_DEV.ceremonySkip());
+await wait(600);
+await shot('k2-ransom');
+await page.evaluate(() => { const b = document.getElementById('rsLater'); if (b) b.click(); });
+await wait(400);
+await shot('k2-loss-results');
+await page.evaluate(() => window.KEEPSIES_DEV.collection());
+await wait(900);
+await shot('k2-offers');
+
 /* the worst angle a player can reach, and then the one they cannot */
 await page.evaluate(() => window.KEEPSIES_DEV.start({ seed: 909090, forceFirst: 0 }));
 await page.evaluate(() => window.KEEPSIES_DEV.settleCamera(60));

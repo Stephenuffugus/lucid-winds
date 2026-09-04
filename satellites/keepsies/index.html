@@ -131,6 +131,29 @@ button.quiet{background:transparent;color:var(--muted);border:1px solid rgba(152
 .tile .rib{position:absolute;left:0;top:0;bottom:0;width:4px}
 .rib.common{background:#6f7a63}.rib.uncommon{background:#5f9e77}.rib.rare{background:#4f86c6}
 .rib.epic{background:#9b6bd6}.rib.grail{background:var(--brass)}
+/* the offer card owns the screen the way the ceremony does: it is a decision,
+   and the arena reading through it put four stray marbles around the sphere */
+#ransom{background:var(--bg)}
+/* the collection is a place, not an overlay: the arena reading through it put
+   stray match marbles and the chalk arc behind the shelf */
+#collection,#results{background:var(--bg)}
+#offers{display:flex;flex-direction:column;gap:8px;align-items:center;width:100%}
+#offers button{display:flex;align-items:center;gap:12px;width:100%;max-width:21rem;
+  min-height:64px;padding:8px 12px;text-align:left;text-transform:none;letter-spacing:0;
+  border-color:rgba(200,168,75,.6);background:rgba(200,168,75,.1)}
+#offers canvas{flex:0 0 auto;width:44px;height:44px;display:block}
+#offers .words{display:block}
+#offers .lead{display:block;font-size:.86rem;line-height:1.25;color:var(--chalk)}
+#offers .small{display:block;font-size:.68rem;color:var(--brass);margin-top:3px}
+#ransomArt{position:relative;width:120px;height:120px;margin:2px 0}
+#ransomArt canvas{display:block;width:120px;height:120px}
+#ransomArt::after{content:'';position:absolute;left:50%;bottom:2px;width:78px;height:13px;
+  margin-left:-39px;border-radius:50%;
+  background:radial-gradient(50% 50%,rgba(0,0,0,.95),rgba(0,0,0,0) 70%)}
+#ransomArt canvas{position:relative;z-index:1}
+#rsName{margin:0}
+#rsSay{margin:0;max-width:20rem;color:var(--chalk);font-size:.95rem;line-height:1.45}
+#rsClock{color:var(--brass)}
 /* THE POT CEREMONY (DESIGN 18). It sits over everything, it is tappable
    anywhere to skip, and it never has a scroll of its own. */
 .ceremony{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;animation:cerIn .22s ease-out;
@@ -361,6 +384,10 @@ button.quiet{background:transparent;color:var(--muted);border:1px solid rgba(152
   <button id="collBack" class="quiet sticky">Back</button>
   <h2>Your marbles</h2>
   <p id="collWallet" class="studio" style="letter-spacing:.1em"></p>
+  <!-- ⛔ ABOVE THE GRID. An open offer is the only thing on this screen with a
+       deadline on it, and under the grid it was the least visible thing here:
+       the screenshot of a live offer did not contain the offer. -->
+  <div id="offers"></div>
   <div id="filters"></div>
   <div id="grid"></div>
   <div id="pouches"></div>
@@ -392,6 +419,19 @@ button.quiet{background:transparent;color:var(--muted);border:1px solid rgba(152
   </div>
   <button id="again">Rematch</button>
   <button id="toTitle" class="quiet">Home</button>
+</div>
+
+<!-- The buy back offer. DESIGN 12: one offer, no negotiation UI. It is a card,
+     not a screen, and it is the only place in the game with a countdown on it. -->
+<div id="ransom" class="veil" hidden>
+  <p class="studio" id="rsHead">Dusty Coyle kept it</p>
+  <div id="ransomArt"></div>
+  <p class="cer-tier" id="rsTier"></p>
+  <h2 id="rsName">Bloodstone Aggie</h2>
+  <p id="rsSay">Dusty Coyle will sell it back for 400 sunbeams.</p>
+  <p id="rsClock" class="studio"></p>
+  <button id="rsPay">Buy it back</button>
+  <button id="rsLater" class="quiet">Let it go for now</button>
 </div>
 
 <div id="pauseCard" class="veil" hidden>

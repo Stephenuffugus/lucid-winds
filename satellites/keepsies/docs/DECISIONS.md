@@ -248,3 +248,21 @@ Its wait resolved on `screen === 'results'`, which only happens after the ceremo
 
 **2026-09-04 — no empty first beat, and the board goes quiet.**
 A 260 ms lead in meant the ceremony spent a quarter of a second as a black rectangle with nothing in it, which is how the gate first caught it. And at 0.86 alpha in the middle the HUD pips, the opponent's chat line and both match buttons read straight through the veil, so the one moment where nothing else should be asking for attention had five other things on screen. The veil is opaque and the match's last line and technique toast are cleared before it opens.
+
+**2026-09-04 — the ransom deadline is a timestamp in the save, never a timer.**
+A 24 hour window has to survive the tab being closed for 23 of them, the phone being off, and the game being opened in a second tab. Nothing in `meta/ransom.js` schedules anything: every read asks the clock what time it is and compares. The offer is written at the SETTLE rather than when the card is shown, so a player who closes the tab on the loss ceremony still has their full window when they come back.
+
+**2026-09-04 — an expired offer is marked, not deleted.**
+"The winner kept it" is a fact about your collection that a player should be able to read later, and an offer that vanishes silently is indistinguishable from a bug that ate a marble. `expire` sets `lapsed` exactly once and keeps the row; `history()` returns everything that ever happened. Watched to fail by deleting instead of marking, which the gate catches twice: the offer cannot be found to refuse, and the history is empty.
+
+**2026-09-04 — commons and uncommons are never ransomed, and that is the clay pool's whole point.**
+DESIGN 12 says rare+ and means it. The clay pool exists so anybody can play for keeps without risking anything they care about, and putting a price on a clay marble would turn the free tier into a trap. `priceFor` returns 0 for them and `offerFor` skips them. Watched to fail by removing the skip.
+
+**2026-09-04 — "let it go for now" is not a decline.**
+The card after a loss decides one thing only: whether you pay NOW. The offer stays open for its 24 hours and the collection reaches it again, which is also the only place a lapse is ever announced. That row sits ABOVE the grid: it is the only thing on that screen with a deadline on it, and under the grid the screenshot of a live offer did not contain the offer.
+
+**2026-09-04 — the countdown rounds UP.**
+Flooring meant an offer opened one second ago said "23 hours left" on the card that opened it, which reads as a countdown that starts by losing an hour, which reads as a bug.
+
+**2026-09-04 — the collection, the results card and the offer card are opaque.**
+All three are places rather than overlays, and the arena reading through the veil put stray match marbles and the chalk arc behind the shelf and around the marble on the offer card.

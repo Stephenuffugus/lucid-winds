@@ -1047,9 +1047,53 @@ PLAYTHROUGH OK
   the marble and its shadow float together in a void. The lore line runs nearly edge to edge at 375
   wide. And 350 px of empty black sits above the marble against 250 below the text, so the group hangs
   low with nothing framing it.
-- [ ] shots: ante mid-roll, loss card, showcase room from the door and from inside a wall
-- [ ] the ransom window, progression, onboarding beats 2 to 6, the glb lane, the eight per epic shaders
-- [x] commits: `46befcb5` the catalog and the recipes, `597a9fec` the collection and the turntable, `b3d341fa` the wallet and the clay pool, `c81d1a87` the pouches, `cd0dca5e` the pot and the escrow, `c249b460` the words gate and the second look
+- [x] **the ransom window** (`src/meta/ransom.js`), which is the other half of losing. DESIGN 12: lose a
+  rare or better and the winner will sell it back for 24 hours at R400, E1500, G5000. One offer, no
+  negotiation UI.
+
+  ⛔ **The deadline is a timestamp in the save, never a timer.** A 24 hour window has to survive the tab
+  being closed for 23 of them, the phone being off, and a second tab. Nothing schedules anything; every
+  read asks the clock and compares. The offer is written at the SETTLE rather than when the card is
+  shown, so a player who closes the tab on the loss ceremony still has their full window.
+
+  ⛔ **An expired offer is marked, not deleted.** "The winner kept it" is a fact about your collection
+  you should be able to read later, and an offer that vanishes silently is indistinguishable from a bug
+  that ate a marble.
+
+  ⛔ **Commons and uncommons are never ransomed**, which is the clay pool's whole point: playing for
+  keeps has to be free, and a price on a clay marble turns the free tier into a trap.
+```
+  ok    1. the prices are the design's: rare 400, epic 1500, grail 5000
+  ok       and a common or an uncommon is never ransomed
+  ok       losing a common opens no offer at all: 0 on the books
+  ok    2. losing a rare opens exactly one offer
+  ok       and then the process was killed outright
+  ok       the offer survived the crash with its price: 400 sunbeams
+  ok       and its deadline came through the crash intact: 23 hours left
+  ok    3. paying costs exactly the price: 400
+  ok       and the marble comes home exactly once: u1
+  ok    4. paying twice is refused: You already bought that one back.
+  ok    5. too poor is a refusal that says the number: That is 400 sunbeams and you have 10.
+  ok    6. past 24 hours the offer is gone from the open list: 0
+  ok       and it cannot be paid: Dusty Coyle kept it. The window closed.
+  ok       and the offer is KEPT rather than deleted: 1 in the history
+RANSOM OK
+```
+  Watched to fail four ways: a ransom opened on a clay common, a window that never closes, paying twice
+  (which produced `u1,u1`, the duplicated marble the gate exists to prevent), and an offer that deletes
+  itself instead of lapsing. `playthrough` also walks the whole thing in a browser: grant a rare, stake
+  it, lose it, read the card, press BUY IT BACK at its centre, and watch the marble come home while the
+  offer closes and the wallet drops by exactly 400.
+
+  **Six faults found by opening `k2-ransom.png` and `k2-offers.png` twice each.** The arena read straight
+  through the card, so four stray match marbles sat around the sphere. The countdown said 23 hours left
+  on the card that opened it, because it floored. The card asked for 400 sunbeams and never said whether
+  you had them. Then it said Dusty Coyle three times and 400 twice in half a screen. The offer row in the
+  collection was BELOW the whole grid, so the screenshot of a live offer did not contain the offer. And
+  that row was the lowest contrast control on a screen where it is the only thing with a deadline.
+- [ ] shots: ante mid-roll, showcase room from the door and from inside a wall
+- [ ] progression, onboarding beats 2 to 6, the glb lane, the eight per epic shaders
+- [x] commits: `46befcb5` the catalog and the recipes, `597a9fec` the collection and the turntable, `b3d341fa` the wallet and the clay pool, `c81d1a87` the pouches, `cd0dca5e` the pot and the escrow, `c249b460` the words gate and the second look, `9dc85389` the pot ceremony
 
 ### K3
 - [ ] `arena_rules`, `damage_math`, `condition_matrix`, `arena_shape` (the table, every matchup), `boss_ladder` (five rates), `ai_budget` (100 turns, min candidates), `budget` (three runs alone)
@@ -1095,23 +1139,26 @@ Next action: <file, function, step, the first thing the next session does>
 
 **Phases:** K0 **done**. K1 **done but for pass and play**. K2 **most of the way**: the catalog, the
 marbles' looks, the collection, the turntable, the economy, the three pouches, **the keepsies loop
-itself** and **the pot ceremony** are built. What is left of K2 is the ransom window, progression,
+itself**, **the pot ceremony** and **the ransom window** are built. What is left of K2 is progression,
 onboarding beats 2 to 6, the glb lane and the eight per epic shaders. K3 **not started**.
 
-**The headline: a marble is now genuinely at risk, and you watch it change hands.** You put one up,
+**The headline: a marble is now genuinely at risk, you watch it change hands, and if you lose a good
+one you get 24 hours to buy it back.** You put one up,
 Dusty matches it, and the winner takes both. The stake leaves your inventory before a shot is fired, and
 if the phone dies mid match the next boot hands it back. `escrow_crash` proves that by starting a real
 child process, having it stake, and SIGKILLing it between the escrow write and the first turn. Then the
 pot ceremony rolls the marble across the screen with its tier, its name, who it came off and its own
-lore line, which is the difference between winning something and being told you won something.
+lore line, which is the difference between winning something and being told you won something. Lose a
+rare or better and Dusty offers it back for 24 hours at the design's prices; the deadline is a timestamp
+in the save, so it survives the tab being closed for 23 of them.
 
-**Gates:** sixteen, all green, every one watched to fail on purpose. Four are new tonight, and the
-playthrough grew eleven assertions.
+**Gates:** seventeen, all green, every one watched to fail on purpose. Five are new tonight, and the
+playthrough grew twenty five assertions.
 ```
-lint pass 0s · catalog pass 0s · stamp pass 0s · harness pass 14s · save pass 0s
-clay_regen pass 0s · pity_math pass 0s · words pass 0s · escrow_crash pass 1s
-ringer_rules pass 0s · ai_budget pass 15s · ringer_ai pass 41s · render pass 45s
-knuckle pass 20s · audio_budget pass 11s · playthrough pass 63s
+lint pass 0s · catalog pass 0s · stamp pass 0s · harness pass 13s · save pass 0s
+clay_regen pass 0s · pity_math pass 1s · words pass 0s · escrow_crash pass 1s
+ransom pass 1s · ringer_rules pass 0s · ai_budget pass 17s · ringer_ai pass 42s
+render pass 39s · knuckle pass 20s · audio_budget pass 11s · playthrough pass 81s
 ALL GATES PASSED
 ```
 
@@ -1119,6 +1166,7 @@ ALL GATES PASSED
 1. `docs/shots/k1-setup.png` The ante. Your marble against theirs, and the sentence under it now names
    yours: "Your Dirt Plain against theirs. Winner takes both."
 2. `docs/shots/k1-ceremony.png` The pot resolving. This is the one to look at.
+   Then `k2-loss-ceremony.png` and `k2-ransom.png`, which are the same moment from the losing side.
 3. `docs/shots/k1-results.png` The card behind it. The pot is its first and largest row and it says
    which marble crossed the ring.
 4. `docs/shots/k2-collection.png` Your marbles, all of them, no longer a peephole.
@@ -1160,7 +1208,7 @@ and a half marbles of eighteen with the second row's names sliced through the mi
 two questions it asks. Does the snap feel like a snap, and does the marble weigh anything. That entry is
 K1.5 and the next session runs it before anything else.
 
-**Next action:** the ransom window, the other half of losing.
+**Next action:** progression, then onboarding beats 2 to 6.
 
 ---
 
@@ -1261,8 +1309,8 @@ the whole game and does not exist yet.
 **2026-09-04, Opus, overnight run.** K0 complete. K1 complete but for pass and play. **K2: the catalog,
 the marbles' looks, the collection, the economy, the pouches and the keepsies loop are done**; what is
 left of it is the ceremonies, the ransom window, progression, onboarding beats 2 to 6, the glb lane and
-the eight per epic shaders. K3 not started. **Sixteen gates green**, each watched to fail, evidence
-pasted in the ledger above. Sixteen screenshots opened and their faults named.
+the eight per epic shaders. K3 not started. **Seventeen gates green**, each watched to fail, evidence
+pasted in the ledger above. Twenty screenshots opened and their faults named.
 
 Commits, all pushed to `origin add-sproing-jumper`: `4b8d3043` the failing gate, `14a6bca0` physics and
 harness, `58621d7e` the first rendered marble, `8b57d09c` the referee, `bbb7b629` the Rapier spin clamp
@@ -1278,16 +1326,21 @@ outside those two paths returns nothing. One near miss worth recording: a heredo
 path wrote a Keepsies `manifest.json` over the repo root's own, and it was restored from git inside a
 minute; every shell call after that used absolute paths.
 
-**Exact next action:** the ransom window, which is the other half of losing. DESIGN 18 puts it right
-after the loss ceremony: "if ransom eligible, the offer card slides in (24h countdown starts)". 24 hours,
-R400, E1500, G5000, written into `tuning.json` and read from `meta/economy.js`, with the countdown stored
-BESIDE the pot in the save so a crash cannot lose it. `escrow_crash` is the pattern to extend, and its
-child process shim is already file backed: kill a process holding an open ransom and prove the offer, its
-deadline and the marble all survive, then prove an expired offer releases the marble exactly once. The
-loss ceremony already exists and already knows which marble left, so the offer card hangs off its `done`.
+**Exact next action:** `src/meta/progression.js`. XP, levels and unlocks, over `meta/save.js`, which
+already holds `profile.level` and `profile.xp` so there is no migration. The faucets are the ones the
+economy already fires on: a match played, a match won, a technique seen for the first time, a marble
+ransomed. Unlocks gate the leagues, and league 1 is the only one open today.
 
-After that, progression (`meta/progression.js`, XP, levels, unlocks) and onboarding beats 2 to 6, which
-are the last two things standing between K2 and K3.
+Its gate is the same shape as `clay_regen`: an injected clock is not needed, but an injected XP table is,
+so the curve lives in `tuning.json` and the test asserts the curve is monotonic, that a level is never
+lost, that XP earned while at the cap is not silently dropped, and that the same event cannot pay twice.
+Watch it fail by awarding a level on every call.
+
+Then onboarding beats 2 to 6, which are the last thing standing between K2 and K3. Beat 5 is the one
+that matters: DESIGN 16 runs the loss ceremony and the ransom explainer on a WORTHLESS CLAY so the
+system is learned before it can hurt, and both of those now exist, so beat 5 is wiring rather than
+building. Note the wrinkle: a clay common is not ransom eligible, so the explainer beat has to show the
+card without opening a real offer.
 
 Everything those need is in place: the catalogue is generated, all sixty five marbles render, the save
 merges safely across two tabs, the wallet and the clay pool regenerate against an injectable clock, the
