@@ -32,6 +32,7 @@ import { bodySpec } from './core/marbleBody.js?v=20260904a';
 import { createEconomy } from './meta/economy.js?v=20260904a';
 import { createDrops } from './meta/drops.js?v=20260904a';
 import * as RANSOM from './meta/ransom.js?v=20260904a';
+import * as PROG from './meta/progression.js?v=20260904a';
 import { tierMatchOk, matchTheirStake, escrow, settle, recoverOnBoot, potUp, currentPot }
   from './game/match.js?v=20260904a';
 import { makeRng } from './core/rng.js?v=20260904a';
@@ -356,7 +357,19 @@ function buildPouches() {
   const row = $('pouches');
   row.textContent = '';
   const bal = G.econ.balance();
-  $('collWallet').textContent = bal + ' sunbeams';
+  const lv = PROG.snapshot(G.tuning);
+  $('collWallet').textContent = bal + ' sunbeams, level ' + lv.level;
+  /* ⛔ THE GATE IS A QUESTION, NOT A NUMBER. DESIGN 20 opens pouches at level 2,
+     and the level lives in tuning.json only: the moment a screen writes
+     `level >= 2` the unlock table has two homes and one of them will drift. */
+  if (!PROG.unlocked('pouches', G.tuning)) {
+    const p = document.createElement('p');
+    p.className = 'why';
+    p.textContent = 'Pouches open at level ' + PROG.unlockLevel('pouches', G.tuning)
+      + '. Play a match, win or lose, and you are most of the way there.';
+    row.appendChild(p);
+    return;
+  }
   for (const kind of Object.keys(G.dropTables).filter(k => k[0] !== '_')) {
     const t = G.dropTables[kind];
     const b = document.createElement('button');
@@ -889,6 +902,15 @@ function updateHud() {
  * not a decline: the offer stays open for its 24 hours and the collection can
  * reach it again. The only thing this card decides is whether you pay NOW.
  */
+/** The unlock keys in the words a player would use. DESIGN 20's table, said out loud. */
+const UNLOCK_WORDS = {
+  ringer: 'Ringer', aiKeepsies: 'keepsies against the ladder', pouches: 'the pouches',
+  arena: 'the Arena', bagEditing: 'bag editing', houseRules: 'the house rules editor',
+  practiceRing: 'the Practice Ring', humanKeepsies: 'keepsies against people',
+  passAndPlay: 'pass and play', foundry: 'the Foundry', glacier: 'the Glacier',
+  leagueII: 'League II', leagueIII: 'League III', leagueIV: 'League IV', leagueV: 'League V'
+};
+
 function showRansomOrResults() {
   const open = RANSOM.openOffers(Date.now());
   const mine = open.filter(r => (G.offers || []).some(o2 => o2.uid === r.uid));
@@ -978,6 +1000,27 @@ function finishMatch(s) {
   // the reasons are a receipt, not a headline: they belong under the card in the
   // small type, where they do not outshout the marble that changed hands
   $('rWhy').textContent = earned.paid.length ? earned.paid.map(p => p.reason).join(', ') : '';
+  /* ⛔ XP FROM ANY MATCH, WON OR LOST, For Fair included: DESIGN 12 says
+     progression never requires keepsies, so a player who stakes nothing still
+     climbs. The level up bonus is paid through the economy, so it lands in the
+     wallet's own change feed like every other earn. */
+  const lvl = PROG.awardMatch(won, G.tuning, G.econ);
+  G.save = SAVE.load();
+  const p2 = PROG.snapshot(G.tuning);
+  // ⛔ on a card that announces level 5, "560 to level 6" in the row above names a
+  // second level and buries the news. When a level was gained the row is the XP
+  // and nothing else, and the level up line carries the rest.
+  $('rXp').textContent = '+' + lvl.gained + ' XP'
+    + ((lvl.levels.length || p2.atCap) ? '' : ', ' + p2.toNext + ' to level ' + (p2.level + 1));
+  if (lvl.levels.length) {
+    const opened = [];
+    for (const lv of lvl.levels) for (const k of PROG.unlocksAt(lv, G.tuning)) opened.push(UNLOCK_WORDS[k] || k);
+    $('rLevel').hidden = false;
+    $('rLevel').textContent = 'Level ' + lvl.level + '. ' + lvl.paid + ' sunbeams'
+      + (opened.length ? ', and ' + opened.join(' and ') + ' now open.' : '.');
+  } else {
+    $('rLevel').hidden = true;
+  }
   /* and the FLEET's, which is a different number on a different scale and never
      converts either way (HANDOFF-KEEPSIES 4.6) */
   const pay = won ? G.tuning.economy.fleetSunbeamsPerMatchMax : G.tuning.economy.fleetSunbeamsPerMatchMin;
@@ -1236,6 +1279,13 @@ function installDevHook() {
       return { uid: uid, tier: e.tier, name: e.name };
     },
     offers: () => RANSOM.openOffers(Date.now()),
+    grantXp: (n) => { const r = PROG.award(n, 'a gate said so', G.tuning, G.econ); buildPouches(); return r; },
+    progress: () => {
+      const p = PROG.snapshot(G.tuning);
+      const unlocked = {};
+      for (const k of Object.keys(G.tuning.progression.unlocks)) unlocked[k] = PROG.unlocked(k, G.tuning);
+      return Object.assign({}, p, { unlocked: unlocked });
+    },
     pouchSay: () => $('pouchSay').textContent,
     econ: () => G.econ,
     catalogCount: () => G.catalog.marbles.length,

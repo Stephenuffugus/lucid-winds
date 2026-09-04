@@ -297,6 +297,10 @@ button.quiet{background:transparent;color:var(--muted);border:1px solid rgba(152
 .row.pot span:first-child{display:block;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 .row.pot span:last-child{display:block;font-size:1.05rem;line-height:1.35;margin-top:.24rem}
 .why{margin:.3rem 0 0;font-size:.72rem;line-height:1.4;color:var(--muted)}
+/* a level up is the only line on this card that is news, and it is a line
+   rather than a filled slab: a brass block reads as a button and is not one */
+.levelup{margin:.8rem 0 0;padding:.2rem 0 .2rem .8rem;font-size:1.02rem;line-height:1.45;
+  color:var(--brass);border-left:3px solid var(--brass);text-align:left;font-weight:600}
 </style>
 <script type="importmap">
 { "imports": { "three": "./lib/three.module.min.js" } }
@@ -415,7 +419,9 @@ button.quiet{background:transparent;color:var(--muted);border:1px solid rgba(152
     <div class="row"><span>Shots</span><span id="rShots">0</span></div>
     <div class="row"><span>Techniques</span><span id="rTech">none yet</span></div>
     <div class="row"><span>Sunbeams</span><span id="rSun">0</span></div>
+    <div class="row"><span>Progress</span><span id="rXp">0 XP</span></div>
     <p class="why" id="rWhy"></p>
+    <p class="levelup" id="rLevel" hidden></p>
   </div>
   <button id="again">Rematch</button>
   <button id="toTitle" class="quiet">Home</button>

@@ -52,8 +52,24 @@ page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.
 const fails = [];
 const say = (ok, line) => { console.log((ok ? '  ok    ' : '  FAIL  ') + line); if (!ok) fails.push(line); };
 
-/** A real button press, located by what is actually under its centre. */
-async function press(id) {
+/**
+ * A real button press, located by what is actually under its centre.
+ *
+ * ⛔ IT DOES NOT SCROLL BY DEFAULT, and that is the point: a control that is not
+ * under its own centre is a control a player cannot tap without knowing to look
+ * for it, and refusing to press it is how this gate found BACK sitting below the
+ * fold of the collection. Pass `{scroll: true}` where scrolling really is what a
+ * player would do, such as reaching the shop under their own shelf. Anything that
+ * should be reachable WITHOUT scrolling must be pressed without it.
+ */
+async function press(id, opts) {
+  if (opts && opts.scroll) {
+    await page.evaluate((id) => {
+      const el = document.getElementById(id);
+      if (el && el.scrollIntoView) el.scrollIntoView({ block: 'center' });
+    }, id);
+    await new Promise(r => setTimeout(r, 120));
+  }
   const b = await page.evaluate((id) => {
     const el = document.getElementById(id);
     if (!el || el.offsetParent === null) return null;
@@ -158,7 +174,8 @@ async function playAMatch(usePullback, label) {
     return {
       screen: s.screen, matchesPlayed: s.matchesPlayed,
       title: g('resultTitle'), pocket: g('rPocket'), shots: g('rShots'),
-      tech: g('rTech'), sun: g('rSun'), why: g('rWhy')
+      tech: g('rTech'), sun: g('rSun'), why: g('rWhy'),
+      xp: g('rXp'), levelUp: document.getElementById('rLevel').hidden ? '' : g('rLevel')
     };
   });
   end.ceremony = seenCeremony;
@@ -325,9 +342,25 @@ await press('inspectBack');
 await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'collection', { timeout: 20000 });
 
 /* ---- a pouch, which is the other half of the loop ---- */
+/* ⛔ THE POUCHES ARE GATED ON LEVEL 2 (DESIGN 20), and two matches do not always
+   get there: two losses are 80 XP against a 120 cost. This gate asserts the gate
+   itself before it opens it, because a lock nobody checks is a lock that quietly
+   stops working. */
+const locked = await page.evaluate(() => ({
+  level: window.KEEPSIES_DEV.progress().level,
+  pouch: !!document.getElementById('pouch-standard'),
+  say: (document.getElementById('pouches').textContent || '')
+}));
+if (locked.level < 2) {
+  say(locked.pouch === false, 'below level 2 there are no pouches to press at all');
+  say(locked.say.indexOf('open at level 2') >= 0, 'and the screen says why: ' + locked.say.slice(0, 70));
+  await page.evaluate(() => window.KEEPSIES_DEV.grantXp(400));
+} else {
+  say(true, 'the player is already level ' + locked.level + ', so the pouches are open');
+}
 const before = await page.evaluate(() => window.KEEPSIES_DEV.wallet().sunbeams);
 await page.evaluate(() => window.KEEPSIES_DEV.grantSunbeams(1500));
-const std = await press('pouch-standard');
+const std = await press('pouch-standard', { scroll: true });
 say(std && !std.blocked, 'the Standard Pouch is pressable when it can be afforded');
 const opened = await page.evaluate(() => ({
   say: window.KEEPSIES_DEV.pouchSay(),
@@ -347,6 +380,17 @@ say(poor === true, 'and a pouch you cannot afford is disabled rather than failin
 
 await press('collBack');
 await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'title', { timeout: 20000 });
+
+/* ---- progression: XP from any match, and the pouches are gated on it ---- */
+say(/\d+ XP/.test(a.xp || ''), 'the card says what the match was worth in XP: ' + a.xp);
+say((a.xp || '').indexOf('to level') >= 0 || (a.levelUp || '').indexOf('Level') >= 0,
+  'and either how far to the next level or that one was reached: ' + (a.levelUp || a.xp));
+const prog = await page.evaluate(() => window.KEEPSIES_DEV.progress());
+say(prog.level >= 2, 'the player has climbed past level 1: level ' + prog.level
+  + ', ' + prog.xp + ' XP in');
+say(prog.unlocked.pouches === true, 'and that is what opens the pouches');
+say(prog.unlocked.arena === false || prog.level >= 3,
+  'and the Arena is still shut, because it opens at ' + 3 + ' and this player is ' + prog.level);
 
 /* ---- losing a rare opens the buy back window, and the card is real ---- */
 const lostRare = await page.evaluate(() => {

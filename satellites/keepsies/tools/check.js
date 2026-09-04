@@ -31,6 +31,7 @@ const GATES = [
   { name: 'words',        cmd: ['test/words.mjs'],        need: 'WORDS OK' },
   { name: 'escrow_crash', cmd: ['test/escrow_crash.mjs'], need: 'ESCROW CRASH OK' },
   { name: 'ransom',       cmd: ['test/ransom.mjs'],       need: 'RANSOM OK' },
+  { name: 'progression',  cmd: ['test/progression.mjs'],  need: 'PROGRESSION OK' },
   { name: 'ringer_rules', cmd: ['test/ringer_rules.mjs'], need: 'RINGER RULES OK' },
   { name: 'ai_budget',    cmd: ['test/ai_budget.mjs'],   need: 'AI BUDGET OK', slow: true },
   { name: 'ringer_ai',    cmd: ['test/ringer_ai.mjs'],   need: 'RINGER AI OK', slow: true }
@@ -85,7 +86,21 @@ if (bad.length) {
   console.log('\n' + '='.repeat(64));
   for (const r of bad) {
     console.log('\n--- ' + r.g.name + ' (wanted: ' + r.g.need + ') ---');
-    console.log(r.out.split('\n').slice(-26).join('\n'));
+    /* ⛔ SHOW THE FAILING LINES, NOT THE LAST LINES. The tail of a gate that
+       failed three assertions early can be twenty five green ones, which is
+       exactly what happened on 2026-09-04: the summary printed "3 FAILED" over a
+       wall of ok, and the three had to be hunted down by rerunning by hand. */
+    const lines = r.out.split('\n');
+    const bad2 = [];
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].indexOf('FAIL') >= 0 || /Error|error:/.test(lines[i])) {
+        for (let k = Math.max(0, i - 1); k <= Math.min(lines.length - 1, i + 1); k++) {
+          if (bad2.indexOf(lines[k]) < 0) bad2.push(lines[k]);
+        }
+      }
+    }
+    console.log(bad2.length ? bad2.join('\n') : lines.slice(-26).join('\n'));
+    if (bad2.length) console.log('\n(tail)\n' + lines.slice(-6).join('\n'));
   }
 }
 if (skipped.length)

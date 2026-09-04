@@ -159,6 +159,20 @@ await page.evaluate(() => window.KEEPSIES_DEV.ceremonySkip());
 await wait(400);
 await shot('k1-results');
 
+/* a level up, which is the only line on the result card that is news */
+await page.evaluate(() => {
+  const d = window.KEEPSIES_DEV;
+  d.grantXp(1000);                     // sit just under the next level
+  const p = d.progress();
+  d.grantXp(Math.max(0, p.needed - p.xp - 60));
+  d.setup(); d.stake('dirt_plain'); d.go({ seed: 424242, forceFirst: 0 });
+  d.forceEnd(0);
+});
+await wait(300);
+await page.evaluate(() => window.KEEPSIES_DEV.ceremonySkip());
+await wait(500);
+await shot('k2-levelup');
+
 /* the offer card: lose a rare on purpose and photograph what a player is shown */
 await page.evaluate(() => {
   const d = window.KEEPSIES_DEV;

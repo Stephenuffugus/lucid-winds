@@ -1091,9 +1091,53 @@ RANSOM OK
   you had them. Then it said Dusty Coyle three times and 400 twice in half a screen. The offer row in the
   collection was BELOW the whole grid, so the screenshot of a live offer did not contain the offer. And
   that row was the lowest contrast control on a screen where it is the only thing with a deadline.
+- [x] **progression** (`src/meta/progression.js`). DESIGN 20: XP from any match won or lost, For Fair
+  included, win 100 loss 40 boss 300, cap 30, every level up pays level times 20.
+
+  ⛔ **Losing pays, and that is a rule rather than a kindness.** DESIGN 12 says progression never
+  requires keepsies, so a player who stakes nothing still climbs and the pot is never the only way up.
+
+  ⛔ **One award can cross several levels and each pays its own bonus once.** A boss win at 300 crosses
+  two. Paying only the last level and paying one twice are the two ways it goes wrong; both are gated.
+
+  ⛔ **At the cap the XP is kept, not dropped**, so raising the cap later hands a player the levels they
+  already earned. Silently binning it is the sort of thing nobody notices until the cap moves.
+
+  ⛔ **The level up card announces only what EXISTS.** DESIGN's unlock table stays whole in tuning, and a
+  second list says what this build has. It is one key long today: the pouches. A card reading "keepsies
+  against people now open" sends a player looking for a screen that is not there.
+```
+  ok    1. the curve is 120 times the level you are leaving: 120, 240, 360, 480
+  ok       and it only ever goes up, all the way to the cap of 30
+  ok    2. losing pays 40 XP, because progression never requires keepsies: 40
+  ok       and three losses alone reach level 2: 3 losses
+  ok    3. two thousand XP crosses 5 levels at once: 2, 3, 4, 5, 6
+  ok       and the bonus is level times 20 for EVERY level crossed: 400, wanted 400
+  ok       and no level was paid twice: none was
+  ok    4. the cap holds at 30
+  ok       and XP at the cap is KEPT rather than dropped: 447800 became 447900
+  ok    5. across a thousand awards a level is never lost, ending at 30
+  ok    6. the unlocks are the design's: pouches 2, arena 3, practice 4, pass and play 5
+  ok       and the card does NOT announce human keepsies, because it has not shipped: []
+PROGRESSION OK
+```
+  Watched to fail four ways: paying only the last level crossed, a level up that throws the leftover XP
+  away, the cap used as a bin, and a key with no gate closed by accident. The pouches are gated on it now
+  and `playthrough` asserts the LOCK before it opens it, because a lock nobody checks is a lock that
+  quietly stops working.
+
+  ⛔ **A flaky gate was a real fault.** `playthrough` failed three assertions in one `check.js` run and
+  passed the next, which is the shape of a race and was not one: after the level up granted mid test, the
+  three pouch buttons landed below the fold, and `press()` refuses a control that is not under its own
+  centre. It passes `{scroll: true}` for the shop now, because scrolling to a shop under your own shelf
+  is what a player does, and stays strict everywhere else, because that strictness is what found BACK
+  below the fold an hour earlier. Reproduced 1 in 3, then clean 4 of 4.
+
+  And `check.js` prints what FAILED rather than its last twenty five lines, which is why those three
+  assertions had to be hunted by hand in the first place.
 - [ ] shots: ante mid-roll, showcase room from the door and from inside a wall
-- [ ] progression, onboarding beats 2 to 6, the glb lane, the eight per epic shaders
-- [x] commits: `46befcb5` the catalog and the recipes, `597a9fec` the collection and the turntable, `b3d341fa` the wallet and the clay pool, `c81d1a87` the pouches, `cd0dca5e` the pot and the escrow, `c249b460` the words gate and the second look, `9dc85389` the pot ceremony
+- [ ] onboarding beats 2 to 6, the glb lane, the eight per epic shaders
+- [x] commits: `46befcb5` the catalog and the recipes, `597a9fec` the collection and the turntable, `b3d341fa` the wallet and the clay pool, `c81d1a87` the pouches, `cd0dca5e` the pot and the escrow, `c249b460` the words gate and the second look, `9dc85389` the pot ceremony, `92b468b0` the ransom window
 
 ### K3
 - [ ] `arena_rules`, `damage_math`, `condition_matrix`, `arena_shape` (the table, every matchup), `boss_ladder` (five rates), `ai_budget` (100 turns, min candidates), `budget` (three runs alone)
@@ -1137,9 +1181,9 @@ Next action: <file, function, step, the first thing the next session does>
 
 ### Morning report, 2026-09-04, the second half of the night
 
-**Phases:** K0 **done**. K1 **done but for pass and play**. K2 **most of the way**: the catalog, the
-marbles' looks, the collection, the turntable, the economy, the three pouches, **the keepsies loop
-itself**, **the pot ceremony** and **the ransom window** are built. What is left of K2 is progression,
+**Phases:** K0 **done**. K1 **done but for pass and play**. K2 **nearly**: the catalog, the marbles'
+looks, the collection, the turntable, the economy, the three pouches, **the keepsies loop itself**,
+**the pot ceremony**, **the ransom window** and **progression** are built. What is left of K2 is
 onboarding beats 2 to 6, the glb lane and the eight per epic shaders. K3 **not started**.
 
 **The headline: a marble is now genuinely at risk, you watch it change hands, and if you lose a good
@@ -1152,13 +1196,14 @@ lore line, which is the difference between winning something and being told you 
 rare or better and Dusty offers it back for 24 hours at the design's prices; the deadline is a timestamp
 in the save, so it survives the tab being closed for 23 of them.
 
-**Gates:** seventeen, all green, every one watched to fail on purpose. Five are new tonight, and the
-playthrough grew twenty five assertions.
+**Gates:** eighteen, all green, every one watched to fail on purpose. Six are new tonight, and the
+playthrough grew thirty five assertions.
 ```
-lint pass 0s · catalog pass 0s · stamp pass 0s · harness pass 13s · save pass 0s
-clay_regen pass 0s · pity_math pass 1s · words pass 0s · escrow_crash pass 1s
-ransom pass 1s · ringer_rules pass 0s · ai_budget pass 17s · ringer_ai pass 42s
-render pass 39s · knuckle pass 20s · audio_budget pass 11s · playthrough pass 81s
+lint pass 0s · catalog pass 0s · stamp pass 0s · harness pass 14s · save pass 0s
+clay_regen pass 0s · pity_math pass 0s · words pass 0s · escrow_crash pass 1s
+ransom pass 1s · progression pass 0s · ringer_rules pass 0s · ai_budget pass 16s
+ringer_ai pass 41s · render pass 44s · knuckle pass 22s · audio_budget pass 10s
+playthrough pass 78s
 ALL GATES PASSED
 ```
 
@@ -1208,7 +1253,7 @@ and a half marbles of eighteen with the second row's names sliced through the mi
 two questions it asks. Does the snap feel like a snap, and does the marble weigh anything. That entry is
 K1.5 and the next session runs it before anything else.
 
-**Next action:** progression, then onboarding beats 2 to 6.
+**Next action:** onboarding beats 2 to 6, which is the last thing standing between K2 and K3.
 
 ---
 
@@ -1309,8 +1354,8 @@ the whole game and does not exist yet.
 **2026-09-04, Opus, overnight run.** K0 complete. K1 complete but for pass and play. **K2: the catalog,
 the marbles' looks, the collection, the economy, the pouches and the keepsies loop are done**; what is
 left of it is the ceremonies, the ransom window, progression, onboarding beats 2 to 6, the glb lane and
-the eight per epic shaders. K3 not started. **Seventeen gates green**, each watched to fail, evidence
-pasted in the ledger above. Twenty screenshots opened and their faults named.
+the eight per epic shaders. K3 not started. **Eighteen gates green**, each watched to fail, evidence
+pasted in the ledger above. Twenty two screenshots opened and their faults named.
 
 Commits, all pushed to `origin add-sproing-jumper`: `4b8d3043` the failing gate, `14a6bca0` physics and
 harness, `58621d7e` the first rendered marble, `8b57d09c` the referee, `bbb7b629` the Rapier spin clamp
@@ -1326,21 +1371,21 @@ outside those two paths returns nothing. One near miss worth recording: a heredo
 path wrote a Keepsies `manifest.json` over the repo root's own, and it was restored from git inside a
 minute; every shell call after that used absolute paths.
 
-**Exact next action:** `src/meta/progression.js`. XP, levels and unlocks, over `meta/save.js`, which
-already holds `profile.level` and `profile.xp` so there is no migration. The faucets are the ones the
-economy already fires on: a match played, a match won, a technique seen for the first time, a marble
-ransomed. Unlocks gate the leagues, and league 1 is the only one open today.
+**Exact next action:** onboarding beats 2 to 6 (`PW`-style flow in `src/main.js`, no new module). Beat
+1 exists as the calibration. DESIGN 16 lays out the rest and two of them are now wiring rather than
+building, because the systems under them shipped tonight:
 
-Its gate is the same shape as `clay_regen`: an injected clock is not needed, but an injected XP table is,
-so the curve lives in `tuning.json` and the test asserts the curve is monotonic, that a level is never
-lost, that XP earned while at the cap is not silently dropped, and that the same event cannot pay twice.
-Watch it fail by awarding a level on every call.
+- **Beat 2, the break.** One shot at a full cross with Rookie Assist on, and nothing else on screen.
+- **Beat 3, meet Dusty.** One full seven foot game, slips on, For Fair, one line of his chat per turn.
+- **Beat 4, the tin.** The collection opened for the first time, with the clay pool explained.
+- **Beat 5, first keepsies.** Vs Dusty, ante one clay each. ⛔ The design runs the loss ceremony AND the
+  ransom explainer here on a worthless clay so the system is learned before it can hurt. Both exist now,
+  with one wrinkle to solve: a clay common is NOT ransom eligible, so the explainer has to show the card
+  without opening a real offer. Pass a `demo: true` offer into `showRansomCard` and do not write it.
+- **Beat 6, the heirloom.** The three candidates of DESIGN 16.4, and `starterGrant` already returns the
+  two they do not pick so they can go back into the pouch pool.
 
-Then onboarding beats 2 to 6, which are the last thing standing between K2 and K3. Beat 5 is the one
-that matters: DESIGN 16 runs the loss ceremony and the ransom explainer on a WORTHLESS CLAY so the
-system is learned before it can hurt, and both of those now exist, so beat 5 is wiring rather than
-building. Note the wrinkle: a clay common is not ransom eligible, so the explainer beat has to show the
-card without opening a real offer.
+The flow needs a `seen.onboarded` gate, which is already in the save schema and already false.
 
 Everything those need is in place: the catalogue is generated, all sixty five marbles render, the save
 merges safely across two tabs, the wallet and the clay pool regenerate against an injectable clock, the

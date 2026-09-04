@@ -266,3 +266,27 @@ Flooring meant an offer opened one second ago said "23 hours left" on the card t
 
 **2026-09-04 — the collection, the results card and the offer card are opaque.**
 All three are places rather than overlays, and the arena reading through the veil put stray match marbles and the chalk arc behind the shelf and around the marble on the offer card.
+
+**2026-09-04 — ⛔ FOR STEPHEN: "level N needs 120xN XP" has two readings and one of them ends the game in 36 wins.**
+DESIGN 20 writes the curve as "level N needs 120×N XP" with a cap of 30. Read cumulatively, reaching level 30 costs 3,600 XP, which is 36 wins at 100 a win, and the cap would be hit in an afternoon. Read as the cost of ONE level up, leaving level N, the whole ladder is 120 × (1+2+…+29) = 52,200 XP, about 520 matches. Built as the second, because the first makes the cap meaningless. `xpPerLevel` is in `tuning.json` and one number changes it.
+
+**2026-09-04 — losing pays 40, and that is a rule rather than a kindness.**
+DESIGN 12: "progression never requires keepsies", and DESIGN 20 pays 40 XP for a loss, For Fair included. A player who never stakes anything still climbs, which is what makes the ladder survivable and what stops the pot from being the only way forward.
+
+**2026-09-04 — one award can cross several levels, and each one pays its own bonus exactly once.**
+A boss win at 300 XP can cross two levels. Paying only the final level and paying one level twice are the two ways this goes wrong; both are gated, and the bonus goes through `economy.earn` rather than touching the wallet, so it lands in the wallet's own change feed like every other earn.
+
+**2026-09-04 — at the cap the XP is kept, not dropped.**
+A player at 30 keeps banking, so raising the cap later hands them the levels they already earned. Silently discarding XP is the kind of thing nobody notices until the cap moves and everybody is furious.
+
+**2026-09-04 — ⛔ the level up card only announces unlocks that EXIST.**
+DESIGN 20's unlock table stays whole in `tuning.json`, and a second list, `announce`, says which of them this build actually has. Today it is one key long: the pouches. A card reading "keepsies against people and pass and play now open" sends a player looking for screens that are not there, and human keepsies is Phase 4. The day a thing ships, its key goes on the list.
+
+**2026-09-04 — an unlock is a question, never a copy of the number.**
+Every gate asks `unlocked('pouches')` and the level lives in `tuning.json` only. The moment a screen writes `level >= 2` the table has two homes and one of them drifts. The playthrough asserts the LOCK before it opens it, because a lock nobody checks is a lock that quietly stops working.
+
+**2026-09-04 — ⛔ a flaky gate was a real fault: the shop sat below the fold after a level up.**
+`playthrough` failed three assertions in one run of `check.js` and passed the next, which is the shape of a race and was not one. `press()` refuses to press a control that is not under its own centre, and after the level up granted mid test the three pouch buttons landed below the fold, so whether the press worked depended on where an earlier screen had left the scroll. The gate now passes `{scroll: true}` for the shop, because scrolling to a shop under your own shelf is what a player does, and it stays strict everywhere else, because that strictness is what found BACK below the fold of the collection an hour earlier. Reproduced 1 in 3, then clean 4 of 4.
+
+**2026-09-04 — a failing gate prints what FAILED, not its last twenty five lines.**
+`check.js` printed "3 FAILED" over a wall of green because the failures were early and the tail was late, and the three had to be hunted by rerunning the gate by hand. It now prints every FAIL line with a line either side, and the tail after it.
