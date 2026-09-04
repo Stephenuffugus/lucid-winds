@@ -10,7 +10,7 @@
  * mode, which is a studio standard and not a preference.
  */
 import { detectQuality } from './render/quality.js?v=20260904a';
-import { createStage, createOrbitRig, resize, draw, THREE } from './render/scene.js?v=20260904a';
+import { createStage, createOrbitRig, resize, draw, drawScene, THREE } from './render/scene.js?v=20260904a';
 import { buildRingerGround } from './render/arenaEnv.js?v=20260904a';
 import { makeMarbleMesh, makeContactShadow, placeContactShadow } from './render/marbleMesh.js?v=20260904a';
 import { attachCameraControls } from './input/cameraCtl.js?v=20260904a';
@@ -24,6 +24,12 @@ import { launchSpeed } from './core/snap.js?v=20260904a';
 import { clamp, len2, DEG } from './core/dmath.js?v=20260904a';
 import * as SAVE from './meta/save.js?v=20260904a';
 import { createCalibration, calibrationFrom } from './meta/onboarding.js?v=20260904a';
+import { createTurntable, createThumbnailer, useMaterialFactory, groupForGrid, starterGrant, provenance, hardnessWord, weightWord, TIER_ORDER, TIER_LABEL }
+  from './meta/collection.js?v=20260904a';
+import * as MARBLEMESH from './render/marbleMesh.js?v=20260904a';
+import { bodySpec } from './core/marbleBody.js?v=20260904a';
+import { makeRng } from './core/rng.js?v=20260904a';
+import { makeMarbleMaterial } from './render/marbleMesh.js?v=20260904a';
 
 const $ = (id) => document.getElementById(id);
 const TEST = /[?&]keepsiestest=1/.test(location.search);
@@ -38,7 +44,8 @@ const G = {
   placeDrag: null, lastToast: 0, sunbeams: 0, said: '', lastFramedTurn: -1,
   save: null, calibrator: null, lastRollAudio: 0, warming: false,
   assist: true, lastAssist: 0,
-  houseRules: { keepsies: true, slips: true, bombing: false, poison: false, ringSizeFt: 10 }
+  houseRules: { keepsies: true, slips: true, bombing: false, poison: false, ringSizeFt: 10 },
+  catalog: null, turntable: null, thumbs: null, filter: 'all', inspecting: null
 };
 
 /* The house rules of DESIGN 8.3, as the player meets them: what each one DOES,
@@ -64,6 +71,10 @@ async function boot() {
   AUDIO.configure(G.tuning);
   AUDIO.setEnabled(G.save.settings.sound !== false);
 
+  const cat = await fetch('src/data/marbles.json?v=20260904a');
+  if (!cat.ok) throw new Error('marbles.json did not load: ' + cat.status);
+  G.catalog = await cat.json();
+
   G.tier = detectQuality(G.tuning);
   const canvas = $('stage');
   G.stage = createStage(canvas, G.tuning, G.tier);
@@ -71,6 +82,10 @@ async function boot() {
   G.ground = buildRingerGround(G.stage, G.tuning, { discRadius: 30 });
 
   await initPhysics();
+  G.turntable = createTurntable(G.stage, G.tuning);
+  useMaterialFactory(MARBLEMESH);
+  G.thumbs = createThumbnailer(G.tuning);
+  grantStartersOnce();
 
   G.knuckle = createKnuckle(canvas, G.tuning, {
     taw: () => (G.R && (G.screen === 'match' || G.screen === 'calib') && canAim() ? G.R.tawOnScreen(G.rig) : null),
@@ -129,6 +144,14 @@ function wireButtons() {
   });
   $('setupGo').addEventListener('click', () => { showScreen('match'); startMatch(); });
   $('setupBack').addEventListener('click', () => { showScreen('title'); });
+  $('collect').addEventListener('click', () => openCollection());
+  $('collBack').addEventListener('click', () => showScreen('title'));
+  $('inspectBack').addEventListener('click', () => openCollection());
+  // one finger drag spins the marble on the table
+  $('stage').addEventListener('pointermove', (e) => {
+    if (G.screen !== 'inspect' || !e.buttons) return;
+    G.turntable.nudge(e.movementX || 0);
+  });
   $('again').addEventListener('click', () => { showScreen('setup'); buildHouseRules(); });
   $('toTitle').addEventListener('click', () => { endMatch(); showScreen('title'); });
   $('topDown').addEventListener('click', () => {
@@ -151,7 +174,10 @@ function showScreen(name) {
   $('setup').hidden = name !== 'setup';
   $('rulesCard').hidden = name !== 'rules';
   $('hud').hidden = name !== 'match';
+  $('collection').hidden = name !== 'collection';
+  $('inspect').hidden = name !== 'inspect';
   $('results').hidden = name !== 'results';
+  if (name !== 'inspect' && G.turntable) { G.turntable.clear(); G.inspecting = null; }
   if (name !== 'match') { $('pauseCard').hidden = true; G.paused = false; hideAim(); }
 }
 
@@ -196,6 +222,115 @@ function finishCalibration(result) {
   endMatch();
   if (G.seenRules) { showScreen('setup'); buildHouseRules(); }
   else showScreen('rules');
+}
+
+/* -------------------------------------------------------- the collection */
+
+/**
+ * DESIGN 16.4: Dusty rattles the tin. The clay pool, all six cat's eyes and two
+ * uncommons, once, on the first boot. The heirloom choice of three rares is a
+ * screen of its own and lands with the pouches; the three candidates stay out of
+ * the grant until then rather than being handed over silently.
+ */
+function grantStartersOnce() {
+  if (G.save.inventory.length) return;
+  const { give } = starterGrant(G.catalog, makeRng(20260904));
+  SAVE.merge({ inventory: give });
+  G.save = SAVE.load();
+}
+
+function openCollection() {
+  showScreen('collection');
+  buildFilters();
+  buildGrid();
+}
+
+const FILTERS = [['all', 'All'], ['stakeable', 'Stakeable']].concat(
+  TIER_ORDER.map(t => [t, TIER_LABEL[t]]));
+
+function buildFilters() {
+  const row = $('filters');
+  row.textContent = '';
+  for (const [key, label] of FILTERS) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.id = 'flt-' + key;
+    b.textContent = label;
+    b.className = G.filter === key ? 'on' : '';
+    b.addEventListener('click', () => { G.filter = key; buildFilters(); buildGrid(); });
+    row.appendChild(b);
+  }
+}
+
+/**
+ * One tile per catalog entry with a count, because ten identical clay marbles
+ * are ten marbles and one tile. Each tile is a tiny still of the real material,
+ * drawn once into its own 2D canvas rather than kept as a live 3D view: a grid
+ * of ninety six live marbles is ninety six draw calls for a menu.
+ */
+function buildGrid() {
+  const grid = $('grid');
+  grid.textContent = '';
+  const groups = groupForGrid(G.save.inventory, G.catalog, G.filter);
+  G.thumbs.open(128);
+  let idx = 0;
+  for (const g of groups) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'tile';
+    b.id = 'tile-' + g.entry.id;
+    const rib = document.createElement('span');
+    rib.className = 'rib ' + g.entry.tier;
+    b.appendChild(rib);
+    const c = document.createElement('canvas');
+    c.width = c.height = 96;
+    b.appendChild(c);
+    if (g.count > 1) {
+      const n = document.createElement('span');
+      n.className = 'cnt';
+      n.textContent = String(g.count);
+      b.appendChild(n);
+    }
+    const nm = document.createElement('span');
+    nm.className = 'nm';
+    nm.textContent = g.entry.name;
+    b.appendChild(nm);
+    b.addEventListener('click', () => openInspect(g.entry, g.items[0]));
+    grid.appendChild(b);
+    G.thumbs.paint(c, g.entry, idx++);
+  }
+  G.thumbs.close();
+  if (!groups.length) {
+    const p = document.createElement('p');
+    p.style.color = 'var(--muted)';
+    p.textContent = 'Nothing here yet.';
+    grid.appendChild(p);
+  }
+}
+
+function openInspect(entry, item) {
+  G.inspecting = { entry, item };
+  showScreen('inspect');
+  const spec = G.turntable.show(entry);
+  $('iTier').textContent = TIER_LABEL[entry.tier] || entry.tier;
+  $('iName').textContent = entry.name;
+  $('iLore').textContent = entry.lore || '';
+  const dl = $('iTraits');
+  dl.textContent = '';
+  const rows = [
+    ['Class', entry.class],
+    ['Size', entry.diameterMm + ' mm'],
+    ['Weight', weightWord(spec)],
+    ['Under fire', hardnessWord(spec.hardness)]
+  ];
+  if (entry.passive) rows.push([entry.passive.name, entry.passive.text]);
+  if (entry.active) rows.push([entry.active.name, entry.active.text]);
+  for (const [k, v] of rows) {
+    const dt = document.createElement('dt'); dt.textContent = k;
+    const dd = document.createElement('dd'); dd.textContent = v;
+    dl.appendChild(dt); dl.appendChild(dd);
+  }
+  $('iProv').textContent = provenance(item);
 }
 
 /* ------------------------------------------------------------ match setup */
@@ -614,6 +749,14 @@ function frame(now) {
     if (!$('toast').hidden && now - G.lastToast > 2400) $('toast').hidden = true;
   }
 
+  if (G.screen === 'inspect' && G.turntable) {
+    G.turntable.update(dt);
+    G.turntable.aspect(G.stage.width, G.stage.height);
+    drawScene(G.stage, G.turntable.scene, G.turntable.camera);
+    G.frames++;
+    return;
+  }
+
   G.rig.update(dt);
   draw(G.stage, G.rig);
   G.frames++;
@@ -649,6 +792,15 @@ function installDevHook() {
     start: (opts) => { G.seenRules = true; showScreen('match'); startMatch(opts); },
     rules: () => showScreen('rules'),
     setup: () => { showScreen('setup'); buildHouseRules(); return G.houseRules; },
+    collection: () => { openCollection(); return { tiles: $('grid').querySelectorAll('.tile').length }; },
+    inspect: (id) => {
+      const e = G.catalog.marbles.find(m => m.id === id);
+      if (!e) return null;
+      openInspect(e, G.save.inventory.find(i => i.id === id) || null);
+      return { name: $('iName').textContent, tier: $('iTier').textContent, traits: $('iTraits').childElementCount / 2 };
+    },
+    inventory: () => G.save.inventory.length,
+    catalogCount: () => G.catalog.marbles.length,
     houseRules: () => Object.assign({}, G.houseRules),
     calibrate: () => startCalibration(),
     wipeSave: () => { G.save = SAVE.wipe(); G.calib = calibrationFrom(G.save, G.tuning); G.seenRules = false; return true; },

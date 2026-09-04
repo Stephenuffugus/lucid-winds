@@ -152,3 +152,21 @@ On the first sheet Bearing, Chrome Dome and Drop Anchor were three identical gre
 
 **2026-09-04 — the four grails carry the custom interior until Stephen's figures arrive.**
 As plain glass they were the four least interesting marbles on the sheet, which is backwards for the rarest things in the game. The glb lane is still a K2 item and the placeholder knight is still owed.
+
+**2026-09-04 — the grid's thumbnails get their OWN small renderer, not the game's.**
+The first version borrowed the main renderer, changed its viewport and scissor to draw a 96 px tile, and read the pixels back out of its canvas. The tiles came out empty and the game's renderer was left with a 96 px viewport. A menu is allowed one 128 px context for as long as it is open and `close()` gives it back.
+
+**2026-09-04 — the tile resets `min-width` and `min-height`.**
+The global button rule sets a 200 px minimum for the game's large buttons, so a 96 px tile rendered at 205 px and the three column grid overlapped itself. The playthrough gate now measures a tile and asserts it is 96 px, so this cannot come back quietly.
+
+**2026-09-04 — the inspect camera's distance is SOLVED, not chosen.**
+DESIGN 7's screen table says the marble is drawn at 140 px with the card below it. Guessing a distance put a unit sphere across the whole top half of a portrait screen and off the left edge, because in portrait the vertical field is the constraint. Visible height at distance d is 2 d tan(fov/2), so d follows from the fraction of the screen the marble should occupy, and the rig is offset downward rather than tilted because tilting a portrait camera skews a sphere into an egg.
+
+**2026-09-04 — integrity and hardness are shown as words.**
+DESIGN 20 asks for it and the playthrough gate enforces it: no raw stat number may reach the inspect card. "Endures" tells a player what a marble is for; 1.3 tells them nothing and invites a spreadsheet. Numbers are for the Practice Ring.
+
+**2026-09-04 — a marble you have never held says so.**
+The provenance line was empty for anything outside the inventory, which on the rarest marbles in the game is the emptiest possible answer. It now reads "You have never held one of these."
+
+**2026-09-04 — the epics glow from inside.**
+On the inspect card the Galaxy was a dark sphere on a dark background, which is a poor answer to its own lore line, "Hold it to the light. That's not paint." The shared custom interior now emits rather than only mixing toward the core. The eight per epic shaders the design asks for are still owed.

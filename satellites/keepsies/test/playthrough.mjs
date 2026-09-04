@@ -212,10 +212,49 @@ say(b.screen === 'results', 'the pull back game reached a result card too, which
 say(b.matchesPlayed === 2, 'two matches have now been recorded, not ' + b.matchesPlayed);
 await page.evaluate(() => window.KEEPSIES_DEV.setPullback(false));
 
-/* ---- the way out ---- */
-const home = await press('toTitle');
-say(home && !home.blocked, 'HOME is pressable and leaves the match');
+/* ---- the collection, and the turntable that makes a marble worth owning ---- */
+await press('toTitle');
 await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'title', { timeout: 20000 });
+const coll = await press('collect');
+say(coll && !coll.blocked, 'the collection is reachable from the title');
+await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'collection', { timeout: 20000 });
+const grid = await page.evaluate(() => {
+  const tiles = [...document.querySelectorAll('.tile')];
+  const painted = tiles.filter(t => {
+    const c = t.querySelector('canvas');
+    if (!c) return false;
+    const g = c.getContext('2d');
+    const d = g.getImageData(0, 0, c.width, c.height).data;
+    // a tile that rendered has pixels that are not all transparent
+    for (let i = 3; i < d.length; i += 4 * 37) if (d[i] > 8) return true;
+    return false;
+  }).length;
+  const r = tiles[0] ? tiles[0].getBoundingClientRect() : null;
+  return { tiles: tiles.length, painted, w: r ? r.width : 0, h: r ? r.height : 0 };
+});
+say(grid.tiles > 0, 'the grid has ' + grid.tiles + ' tiles in it');
+say(grid.painted === grid.tiles, 'and every one of them RENDERED a marble: ' + grid.painted
+  + ' of ' + grid.tiles + ' have pixels in them');
+say(grid.w >= 90 && grid.w <= 104, 'the tiles are ' + grid.w.toFixed(0) + ' by ' + grid.h.toFixed(0)
+  + ' rendered px, and the design says 96');
+
+const inspected = await page.evaluate(() => window.KEEPSIES_DEV.inspect('bloodstone_aggie'));
+say(!!inspected && inspected.name === 'Bloodstone Aggie',
+  'inspect opens on a marble by name: ' + (inspected ? inspected.name : 'nothing'));
+say(!!inspected && inspected.traits >= 4, 'and it lists ' + (inspected ? inspected.traits : 0)
+  + ' traits, in words rather than numbers');
+const words = await page.evaluate(() => document.getElementById('iTraits').textContent);
+say(!/\d\.\d/.test(words.replace('16 mm', '')),
+  'and no raw stat number reached the card: ' + words.slice(0, 70));
+const prov = await page.evaluate(() => document.getElementById('iProv').textContent);
+say(prov.length > 0, 'every marble carries a provenance line: ' + prov);
+await page.screenshot({ path: join(OUT, 'k2-inspect-rare.png') });
+await press('inspectBack');
+await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'collection', { timeout: 20000 });
+await press('collBack');
+await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'title', { timeout: 20000 });
+
+/* ---- the way out ---- */
 const exitOk = await page.evaluate(() => typeof window.SWS_EXIT === 'function' && !!window._sbCapEarn);
 say(exitOk, 'the embed protocol and the sunbeam cap helper are both real functions');
 

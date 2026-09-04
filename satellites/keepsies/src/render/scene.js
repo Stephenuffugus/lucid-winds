@@ -118,6 +118,14 @@ export function draw(stage, rig) {
 }
 
 /**
+ * Draw somebody else's scene through the SAME renderer. A second WebGL context
+ * on a phone is a second GPU allocation, and the inspect turntable is one marble.
+ */
+export function drawScene(stage, scene, camera) {
+  stage.renderer.render(scene, camera);
+}
+
+/**
  * An orbit camera that always looks at a target, at a fixed elevation and a
  * distance the caller can set. One finger drags the azimuth, pinch changes the
  * distance; `input/cameraCtl.js` owns the gestures, this owns the maths.

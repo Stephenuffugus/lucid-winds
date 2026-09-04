@@ -153,11 +153,15 @@ void main(){
   } else {
     // CUSTOM: the epics and the grails, until each gets its own. Deep, moving
     // interior plus a glow from within, which is what "that is not paint" means.
+    // ⛔ An epic has to be worth holding up to the light, and the first version
+    // was a dark sphere on a dark card: the interior was mixed DOWN toward the
+    // core everywhere and nothing in it emitted. Now the depths glow.
     float t = fbm(P * 3.0 + uSeed * 12.0);
     float a = atan(P.z, P.x) + P.y * 2.2 + t * 2.4;
-    body = mix(body, uVane, pow(abs(cos(a)), 4.0) * 0.7);
-    body += uVane * pow(1.0 - abs(dot(P, V)), 3.0) * 0.35;
-    body = mix(body, uCore * 0.4, smoothstep(0.5, 1.0, t) * 0.3);
+    body = mix(body, uVane, pow(abs(cos(a)), 4.0) * 0.8);
+    body += uVane * pow(1.0 - abs(dot(P, V)), 2.4) * 0.55;
+    body += uRim * smoothstep(0.55, 0.95, t) * 0.42;
+    body *= 1.35;
   }
 
   float diffuse = 0.30 + 0.70 * ndl;
