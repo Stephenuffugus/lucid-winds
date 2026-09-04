@@ -47,9 +47,73 @@ export function bodySpec(entry, tuning) {
   return { radius, diameterMm: dMm, density, mass, inertia, restitution, friction, hardness, materialClass: cls };
 }
 
-/** The three catalog entries the harness and K0 need before there is a catalog. */
+/**
+ * The handful of catalog entries K0 and K1 need before `tools/catalog.mjs`
+ * generates the real sixty five from the design's own tables in K2. Names, tiers
+ * and lore are the design's (DESIGN 10.2); the render blocks are recipes, and a
+ * recipe is a shader, never a painted texture, because a painted marble would
+ * not turn with the marble.
+ */
 export const STARTER_ENTRIES = {
-  commie: { id: 'commie', name: 'Commie', tier: 'common', class: 'glass', diameterMm: 16 },
-  clearie: { id: 'clearie', name: 'Clearie', tier: 'common', class: 'glass', diameterMm: 16 },
-  taw_clearie: { id: 'taw_clearie', name: 'Clearie Shooter', tier: 'common', class: 'glass', diameterMm: 22 }
+  commie: {
+    id: 'commie', name: 'Commie', tier: 'common', class: 'glass', diameterMm: 16,
+    lore: 'Common as dirt and twice as brave.',
+    render: { type: 'procedural', recipe: 'clearGlass', palette: ['#2f3f52', '#87a8c4', '#e6f1ff'] }
+  },
+  clearie: {
+    id: 'clearie', name: 'Clearie', tier: 'common', class: 'glass', diameterMm: 16,
+    lore: 'Nothing to hide.',
+    render: { type: 'procedural', recipe: 'clearGlass', palette: ['#3a4a45', '#b8d6cd', '#f2fffb'] }
+  },
+  dirt_plain: {
+    id: 'dirt_plain', name: 'Dirt Plain', tier: 'common', class: 'clay', diameterMm: 16,
+    lore: 'Somebody made ten thousand of these in an afternoon.',
+    render: { type: 'procedural', recipe: 'clay', palette: ['#6b5641', '#8a7159', '#a8917a'] }
+  },
+  chalkie: {
+    id: 'chalkie', name: 'Chalkie', tier: 'common', class: 'clay', diameterMm: 16,
+    lore: 'Writes on pavement in a pinch.',
+    render: { type: 'procedural', recipe: 'clay', palette: ['#cfc7b6', '#e6dfd1', '#fffaf0'] }
+  },
+  cats_banana: {
+    id: 'cats_banana', name: "Cat's Eye Banana", tier: 'common', class: 'glass', diameterMm: 16,
+    lore: 'The playground standard, accept no substitute.',
+    render: { type: 'procedural', recipe: 'catsEye', vaneCount: 3, palette: ['#2b3340', '#9fb6cc', '#f2d34a'] }
+  },
+  cats_bluejay: {
+    id: 'cats_bluejay', name: "Cat's Eye Blue Jay", tier: 'common', class: 'glass', diameterMm: 16,
+    lore: 'The playground standard, accept no substitute.',
+    render: { type: 'procedural', recipe: 'catsEye', vaneCount: 3, palette: ['#232c3a', '#93a9c0', '#3f7fd6'] }
+  },
+  cats_grass: {
+    id: 'cats_grass', name: "Cat's Eye Grass Snake", tier: 'common', class: 'glass', diameterMm: 16,
+    lore: 'The playground standard, accept no substitute.',
+    render: { type: 'procedural', recipe: 'catsEye', vaneCount: 3, palette: ['#20301f', '#8fb08c', '#48b04a' ] }
+  },
+  cats_ember: {
+    id: 'cats_ember', name: "Cat's Eye Ember", tier: 'common', class: 'glass', diameterMm: 16,
+    lore: 'The playground standard, accept no substitute.',
+    render: { type: 'procedural', recipe: 'catsEye', vaneCount: 3, palette: ['#331f1c', '#c49a8e', '#e05a26'] }
+  },
+  bearing: {
+    id: 'bearing', name: 'Bearing', tier: 'uncommon', class: 'steel', diameterMm: 16,
+    lore: 'Came out of something that used to turn.',
+    render: { type: 'procedural', recipe: 'steel', palette: ['#3a3d42', '#aeb4bb', '#f0f4f8'] }
+  },
+  taw_clearie: {
+    id: 'taw_clearie', name: 'Clearie Shooter', tier: 'common', class: 'glass', diameterMm: 22,
+    lore: 'The one you learn on.',
+    render: { type: 'procedural', recipe: 'clearGlass', palette: ['#1f3a55', '#7fb6e2', '#eaf6ff'] }
+  },
+  taw_bumblebee: {
+    id: 'taw_bumblebee', name: 'Bumblebee Shooter', tier: 'common', class: 'glass', diameterMm: 22,
+    lore: 'Mind the stripes.',
+    render: { type: 'procedural', recipe: 'agateBands', palette: ['#2a2110', '#d8a83a', '#3a2f18'] }
+  }
 };
+
+/** The thirteen the cross is laid with, in the order they are placed. */
+export const CROSS_MIX = [
+  'commie', 'cats_banana', 'clearie', 'cats_bluejay', 'dirt_plain', 'cats_grass', 'commie',
+  'chalkie', 'cats_ember', 'clearie', 'commie', 'dirt_plain', 'cats_banana'
+];

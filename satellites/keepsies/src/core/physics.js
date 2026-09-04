@@ -85,6 +85,7 @@ export function createWorld(tuning, opts) {
     statics: new Map(),      // collider handle -> {kind, normal, rollingMu}
     events: /** @type {ContactEvent[]} */ ([]),
     ringRadius: (opts && opts.ringRadius) || tuning.ringer.ringRadius,
+    dt: t.fixedStep,   // the world's OWN step, see setTimestep
     t: 0,
     shotT: 0,
     steps: 0,
@@ -92,6 +93,21 @@ export function createWorld(tuning, opts) {
     restedFor: 0,
     _pre: []
   };
+}
+
+/**
+ * Change a world's step. The AI's candidates run at 1/60 while the match always
+ * resolves at 1/120, and a guess is allowed to be coarser than the record.
+ *
+ * ⛔ Both numbers have to move together. The first version set Rapier's timestep
+ * and left `step()` integrating its own forces at the tuning's 1/120, so every
+ * rolling resistance cap and every spin update in a candidate was half of what
+ * the real shot would do, and the planner was predicting a game it was not
+ * playing.
+ */
+export function setTimestep(W, dt) {
+  W.dt = dt;
+  W.rapier.timestep = dt;
 }
 
 /**
@@ -245,7 +261,7 @@ export function place(W, id, pos, opts) {
  */
 export function step(W) {
   const tun = W.tuning.physics;
-  const dt = tun.fixedStep;
+  const dt = W.dt;
   const g = -tun.gravityY;
   W.events.length = 0;
 
@@ -518,7 +534,7 @@ export function restore(bytes, tuning) {
     rapier: world, tuning, queue: new RAPIER.EventQueue(true),
     marbles: new Map(), byCollider: new Map(), statics: new Map(), events: [],
     ringRadius: meta.ringRadius, t: meta.t, shotT: meta.shotT, steps: meta.steps,
-    nextId: meta.nextId, restedFor: meta.restedFor, _pre: []
+    nextId: meta.nextId, restedFor: meta.restedFor, dt: tuning.physics.fixedStep, _pre: []
   };
   for (const [h, s] of meta.statics) W.statics.set(h, s);
   for (const m of meta.marbles) {

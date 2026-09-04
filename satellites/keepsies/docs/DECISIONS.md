@@ -69,3 +69,15 @@ The real rule, and not an optimisation. A mib struck by a six metre per second t
 
 **2026-09-04 — kBack 3.0, kTop 2.0, and the sticking scenario shoots at 2.6 m/s.**
 Swept kBack 2.4 to 3.6 against launch 1.8 to 3.4. At 3.0 the taw sticks within 0.1 m on 100 percent of shots from 1.8 to 2.6 m/s and 81 percent at 3.0 m/s. The scenario also asserts the taw HIT the mib, because below about 2 m/s a heavy backspin stops the taw before it arrives and a stop shot that never gets there would otherwise pass the gate. kTop is 2.0 rather than matching kBack: a thumb snap naturally finds backspin more easily than follow, and this is the first number K1.5 should question.
+
+**2026-09-04 — ⛔ a `?v=` query makes a SECOND COPY of a module in Node, not just a cache buster.**
+The plan says Node resolves `./x.js?v=20260904a` to `x.js`, and it does, but Node keys the module cache by the FULL URL. Importing `physics.js` and `physics.js?v=20260904a` gives two separate module instances with two separate `_ready` flags and two separate Rapier states, and the second one throws "call initPhysics before createWorld" on a world you just initialised. A probe hit it within a minute of the referee existing. This raises the stakes on the `stamp` gate considerably: it is not only about the host's cache, it is about module IDENTITY, and one stale `?v=` on one import would give the browser two copies of a module and two copies of its state. Written into the gate's own header.
+
+**2026-09-04 — the planner evaluates a CLEAN plan and the hand shakes afterwards.**
+The first version folded the difficulty's aiming error into each candidate before scoring it, then took the sixtieth percentile. So a Rookie looked at six shots it already knew would miss and chose a middling miss: one mib pocketed per ten shots, and games of a hundred and fifty. It also implies an opponent that can predict its own mistakes, which is not what a mistake is. Candidates now differ only in target and power; the percentile picks how good a PLAN this opponent settles for; the noise is applied to the chosen aim afterwards. Games fell from 154 shots to 61 on that change alone.
+
+**2026-09-04 — a candidate world changes BOTH timesteps or neither.**
+`evaluate()` set Rapier's timestep to 1/60 and left `step()` integrating its own rolling resistance and spin at the tuning's 1/120, so every guess was computed against different physics from the shot it was predicting. `setTimestep(W, dt)` now moves both, and the world carries its own `dt`.
+
+**2026-09-04 — AI aim noise 8, 3, 1 degrees becomes 2.5, 1.5, 0.8.**
+A taw and a mib touch inside a window of about 1.9 cm, so at a metre and a half a hit needs the aim inside 0.73 degrees. Measured over five games each: 8 degrees connects on 17 percent of shots and drags a game to 59 shots, 4 gives 39 shots, 2.5 gives 26, 1.5 gives 20, 0.8 gives 11. The design's ladder shape is kept, a Rookie about three times sloppier than a Shark, at numbers this ring can be played in. Measured after: Shark takes 95 percent off a Rookie, two Rookies split 40 to 60 over twenty games, and a game runs 4 to 49 shots.
