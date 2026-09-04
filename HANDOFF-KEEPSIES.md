@@ -454,7 +454,9 @@ Next action: <file, function, step, the first thing the next session does>
 marbles' looks, the collection, the turntable, the economy, the three pouches, **the keepsies loop
 itself**, **the pot ceremony**, **the ransom window**, **progression** and **the whole first four
 minutes** are built. What is left of K2 is the glb lane and the eight per epic shaders, which are both
-art rather than systems. K3 **not started**.
+art rather than systems. K3 **started**: the damage model, the six programmed actives and the Arena
+referee are in and gated, all three pure and all three sweepable in Node. What K3 still needs is the
+mode on a real board.
 
 **The headline: a marble is now genuinely at risk, you watch it change hands, and if you lose a good
 one you get 24 hours to buy it back.** You put one up,
@@ -466,15 +468,15 @@ lore line, which is the difference between winning something and being told you 
 rare or better and Dusty offers it back for 24 hours at the design's prices; the deadline is a timestamp
 in the save, so it survives the tab being closed for 23 of them.
 
-**Gates:** nineteen, all green, every one watched to fail on purpose. Seven are new tonight, and the
+**Gates:** twenty one, all green, every one watched to fail on purpose. Nine are new tonight, and the
 playthrough grew from twenty six assertions to sixty three: it now walks the first four minutes from
 PLAY to the first game for keeps.
 ```
 lint pass 0s · catalog pass 0s · stamp pass 0s · harness pass 14s · save pass 0s
-clay_regen pass 0s · pity_math pass 0s · words pass 0s · escrow_crash pass 0s
-ransom pass 1s · progression pass 0s · onboarding pass 0s · ringer_rules pass 0s
-ai_budget pass 15s · ringer_ai pass 40s · render pass 39s · knuckle pass 20s
-audio_budget pass 10s · playthrough pass 68s
+clay_regen pass 0s · pity_math pass 1s · words pass 0s · escrow_crash pass 0s
+ransom pass 1s · progression pass 0s · onboarding pass 0s · damage pass 0s
+arena pass 0s · ringer_rules pass 0s · ai_budget pass 15s · ringer_ai pass 40s
+render pass 43s · knuckle pass 20s · audio_budget pass 11s · playthrough pass 69s
 ALL GATES PASSED
 ```
 
@@ -525,7 +527,7 @@ and a half marbles of eighteen with the second row's names sliced through the mi
 two questions it asks. Does the snap feel like a snap, and does the marble weigh anything. That entry is
 K1.5 and the next session runs it before anything else.
 
-**Next action:** K3, the Arena. K2's systems are all in; what is left of it is art.
+**Next action:** `game/arena.js`, the mode on a real board. Its three pure halves are already in.
 
 ---
 
@@ -626,7 +628,7 @@ the whole game and does not exist yet.
 **2026-09-04, Opus, overnight run.** K0 complete. K1 complete but for pass and play. **K2: the catalog,
 the marbles' looks, the collection, the economy, the pouches and the keepsies loop are done**; what is
 left of it is the ceremonies, the ransom window, progression, onboarding beats 2 to 6, the glb lane and
-the eight per epic shaders. K3 not started. **Nineteen gates green**, each watched to fail, evidence
+the eight per epic shaders. K3 not started. **Twenty one gates green**, each watched to fail, evidence
 pasted in the ledger above. Twenty five screenshots opened and their faults named.
 
 Commits, all pushed to `origin add-sproing-jumper`: `4b8d3043` the failing gate, `14a6bca0` physics and
@@ -643,16 +645,22 @@ outside those two paths returns nothing. One near miss worth recording: a heredo
 path wrote a Keepsies `manifest.json` over the repo root's own, and it was restored from git inside a
 minute; every shell call after that used absolute paths.
 
-**Exact next action:** K3. K2's systems are all in and what is left of it is art: the glb lane on a low
-poly figure in `tools/forge/`, and the eight per epic shaders that are currently one shared fallback.
-Both want Stephen's eye more than another night of building, so K3 is the better use of a session.
+**Exact next action:** `src/game/arena.js`, the mode on a real board. Its three pure halves are already
+in and gated: `core/damage.js` (integrity, charge, the shatter point), `core/specials.js` (the six
+conditions) and `core/rules-arena.js` (the turn machine). What is missing is the part that runs a world
+and feeds the referee what happened, which is exactly the shape of `game/ringer.js`: read that file first
+and copy its seams rather than inventing new ones. It already owns the camera rig, the Knuckle wiring,
+the settle loop and `frameShot`, and the Arena's brace and snap are IDENTICAL to Ringer's by design
+(DESIGN 9.2 step 3), so the input layer is reuse rather than new code.
 
-Start with `src/game/arena.js` and the damage model, because everything else in K3 hangs off it: DESIGN
-9 gives `dmg = clamp((relSpeed - 1.2) x attackerMassKg x 55 / defenderHardness, 0, 35)` and four visual
-tiers at 100, 69, 39 and 0. The hardness it divides by is now real per marble, carried out of the design's
-own prose into `arena.hardness` by the catalog generator, so Mercury really is 0.8 and Kiln Kiss really
-is 1.3. Its gate is `condition_matrix` from DESIGN 22: every condition times every active, firing exactly
-when specified, and `arena_shape` from 9.9.
+Build it in this order and gate at each step:
+1. **The Ring arena only**, which is the Ringer environment with an edge drop off, so no new art at all.
+   A ring out is the taw leaving the disc, which `outsideRing` already answers.
+2. **The contact log.** The referee wants `{attacker, defender, relSpeed}` per contact, and `physics.js`
+   already produces contact events for the audio; widen that path rather than adding a second one.
+3. **`arena_shape`**, DESIGN 9.9, which cannot be honest until 1 and 2 exist: AI against AI across every
+   class matchup, landing at 8 to 14 turns a player and no matchup outside 35 to 65 percent.
+4. Then Foundry and Glacier, which DO want art and a hazard on a two turn cycle.
 
 ⛔ Before any of it, read the two open questions in this file's section 11 and the ones written into the
 morning reports. The pouch pity finding and the XP curve reading are both Director calls that change
