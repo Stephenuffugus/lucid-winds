@@ -492,7 +492,21 @@ This is the largest single game in the fleet: a physics engine, a 3D renderer, t
 ## 14. EVIDENCE LEDGER (fill in place, with commands and their real output, most recent last)
 
 ### K0
-- [ ] `tools/check.js` written first, run, FAILED (paste)
+- [x] `tools/check.js` written first, run, FAILED:
+```
+$ node tools/check.js
+harness         node:internal/modules/cjs/loader:1459
+  throw err;
+  ^
+
+Error: Cannot find module '/workspaces/lucid-winds/satellites/keepsies/sim/harness.js'
+    code: 'MODULE_NOT_FOUND',
+FAIL  0s
+
+--- harness (wanted: SIM OK) ---
+1 GATE FAILED
+EXIT=1
+```
 - [ ] `ringer_break` green (paste the line with the mean and the distribution), then watched to fail at `rollingMu.dirt = 0.04` (paste), restored
 - [ ] `replay_hash` green across two runs (paste both hashes), self test catches `Math.random` (paste)
 - [ ] `render` green (paste), watched to fail with lights off (paste)
