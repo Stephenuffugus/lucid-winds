@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#0d100c">
+<meta name="description" content="Snap real marbles for keeps in the playground game and a marble battle arena, and risk the most beautiful thing you own.">
+<title>Keepsies</title>
+<link rel="manifest" href="manifest.json?v=20260904a">
+<link rel="icon" href="icon-192.png?v=20260904a">
+<link rel="apple-touch-icon" href="icon-192.png?v=20260904a">
+<style>
+:root{
+  --dirt:#4a3f31; --bg:#0d100c; --chalk:#e8dcc8; --brass:#c8a84b;
+  --glass:#9fc9e8; --muted:#8a9178; --sb:env(safe-area-inset-bottom,0px);
+  --st:env(safe-area-inset-top,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--chalk);overflow:hidden;
+  font-family:ui-rounded,"Avenir Next",Avenir,Corbel,"Segoe UI",system-ui,sans-serif;
+  font-size:16px;line-height:1.45;overscroll-behavior:none}
+#stage{position:fixed;inset:0;width:100%;height:100%;display:block;
+  touch-action:none;user-select:none;-webkit-user-select:none}
+[hidden]{display:none !important}
+
+.veil{position:fixed;inset:0;display:flex;flex-direction:column;justify-content:center;
+  align-items:center;gap:18px;padding:24px calc(24px + env(safe-area-inset-left,0px)) calc(24px + var(--sb));
+  background:radial-gradient(120% 90% at 50% 30%,rgba(13,16,12,.72),rgba(13,16,12,.96));
+  text-align:center}
+.wordmark{font-size:2.4rem;letter-spacing:.16em;margin:0;color:var(--chalk);text-transform:uppercase}
+.studio{font-size:.8rem;letter-spacing:.18em;color:var(--muted);text-transform:uppercase;margin:0}
+.rules{max-width:22rem;margin:0;color:var(--chalk);opacity:.92;font-size:1rem}
+.rules b{color:var(--brass);font-weight:600}
+button{font:inherit;color:var(--bg);background:var(--brass);border:0;border-radius:10px;
+  min-height:56px;min-width:200px;padding:0 26px;font-size:1.05rem;letter-spacing:.12em;
+  text-transform:uppercase;cursor:pointer}
+button.quiet{background:transparent;color:var(--muted);border:1px solid rgba(138,145,120,.5);
+  min-height:48px;min-width:180px;font-size:.9rem}
+#hud{position:fixed;left:0;right:0;top:0;padding:calc(10px + var(--st)) 14px 10px;
+  display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none;
+  background:linear-gradient(180deg,rgba(13,16,12,.34),rgba(13,16,12,0) 72%)}
+#hudLine{font-size:.85rem;color:var(--chalk);max-width:60%;text-shadow:0 1px 3px rgba(0,0,0,.8)}
+#hudExit{pointer-events:auto;min-height:48px;min-width:56px;background:transparent;
+  color:var(--chalk);border:0;font-size:.8rem;letter-spacing:.1em;padding:0 8px;
+  text-shadow:0 1px 3px rgba(0,0,0,.8)}
+#boot{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+  padding:24px;color:var(--muted);font-size:.95rem;text-align:center}
+</style>
+<script type="importmap">
+{ "imports": { "three": "./lib/three.module.min.js" } }
+</script>
+</head>
+<body>
+<canvas id="stage"></canvas>
+
+<div id="boot">Keepsies is loading.</div>
+
+<div id="title" class="veil" hidden>
+  <p class="studio">Sky Wolf Studio</p>
+  <h1 class="wordmark">Keepsies</h1>
+  <p class="rules">
+    Knuckle down and snap. <b>Tap the dirt</b> to send the shooter, drag with one finger to walk
+    around it, pinch to come closer. This is the range, so nothing is at stake yet.
+  </p>
+  <button id="play">Play</button>
+  <button id="exitTitle" class="quiet">Sky Wolf Studio Arcade</button>
+</div>
+
+<div id="hud" hidden>
+  <span id="hudLine">Tap to snap.</span>
+  <button id="hudExit">Back</button>
+</div>
+
+<script src="/music-unlocks.js" defer></script>
+<script>
+/* ===== Sky Wolf Studio embed protocol =====
+   The portal frames games with ?embed=1 and listens for {sws:'ready'} and
+   {sws:'close'}. Rules when embedded:
+     - NEVER history.back() or navigate; an iframe with no history entry goes
+       blank, which is the black screen bug.
+     - Every in game back or close is an INTERNAL screen switch.
+     - Only the explicit exit calls SWS_EXIT(). */
+(function(){
+  var framed=false; try{ framed = window.parent!==window; }catch(e){ framed=true; }
+  window.SWS_EMBED=framed;
+  window.SWS_EXIT=function(){
+    if(framed){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; }
+    location.href='https://lucidwinds.com/portal/';
+  };
+  if(framed){
+    try{ parent.postMessage({sws:'ready'},'*'); }catch(e){}
+    window.addEventListener('load',function(){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} });
+  }
+  var ex=document.getElementById('exitTitle');
+  if(ex) ex.addEventListener('click',function(){ window.SWS_EXIT(); });
+  /* No service worker is registered here, by any path. The studio has been taken
+     down twice by one: a hung fetch never settles respondWith and paints a black
+     screen, and caches.keys() is origin wide so two workers delete each other's
+     caches. An offline shell for Keepsies is a separate, reviewed step. */
+})();
+
+/* studio standard 30 a day sunbeam cap helper (SUNBEAM_EARN_POLICY.md).
+   The game's own wallet is a different number with a different name inside
+   meta/economy.js; these two never convert. */
+window._sbCapEarn=function(n,tag){
+  var granted=0;
+  try{ var k='sw_sb_keepsies';
+    var s={}; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){}
+    var d=Math.floor(Date.now()/864e5); if(s.d!==d) s={d:d,n:0};
+    n=Math.min(n,Math.max(0,30-(s.n||0))); if(n<=0) return 0;
+    s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s)); granted=n;
+  }catch(e){}
+  if(granted>0 && window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(granted,tag).catch(function(){});
+  return granted;
+};
+
+document.getElementById('hudExit').addEventListener('click',function(){
+  document.getElementById('hud').hidden=true;
+  document.getElementById('title').hidden=false;
+});
+</script>
+<script type="module" src="src/main.js?v=20260904a"></script>
+</body>
+</html>

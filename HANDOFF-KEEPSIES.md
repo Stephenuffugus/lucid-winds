@@ -507,12 +507,139 @@ FAIL  0s
 1 GATE FAILED
 EXIT=1
 ```
-- [ ] `ringer_break` green (paste the line with the mean and the distribution), then watched to fail at `rollingMu.dirt = 0.04` (paste), restored
-- [ ] `replay_hash` green across two runs (paste both hashes), self test catches `Math.random` (paste)
-- [ ] `render` green (paste), watched to fail with lights off (paste)
-- [ ] `stamp` green: every `?v=` in `src/` equals `src/version.json`; watched to fail by editing one import by hand
-- [ ] shots: `docs/shots/k0-marble-375.png`, `-320.png`, `-under.png`, three faults each written here
-- [ ] commit hash, pushed to `origin add-sproing-jumper`
+- [x] `ringer_break` green, 200 seeds:
+```
+ringer_break  (200 runs, 7.5s)
+  ok    a break puts 1 to 3 mibs out: 93.5% in [1,3] (want 80%), n=200, distribution {"0":13,"1":69,"2":81,"3":37}
+  ok    everything is asleep inside 8 seconds: 100.0% (want 100%), n=200
+  note  the taw staying in is measured, not required: mean 0.175 over 200 runs
+  note  how long a shot takes to settle: mean 6.852 over 200 runs
+```
+  watched to fail at `rollingMu.dirt = 0.04`, then restored:
+```
+  FAIL  a break puts 1 to 3 mibs out: 0.0% in [1,3] (want 80%), n=60, distribution {"0":60}
+  note  the taw staying in is measured, not required: mean 1.000 over 60 runs
+  note  how long a shot takes to settle: mean 3.873 over 60 runs
+```
+  (that second block is also the measurement behind the open question in the morning report: at 0.04 a
+  break settles in 3.9 s instead of 6.9 s and the taw always stays in, but nothing leaves the ring.)
+
+- [x] `replay_hash` green, 20 seeds, both runs `72f78ea0` on seed 1:
+```
+replay_hash  (20 runs, 9.7s)
+  ok    two runs of the same log agree: 20 seeds, 0 mismatched; first 72f78ea0 / 72f78ea0
+  ok    different seeds give different fingerprints: 20 distinct of 20 (want 90%)
+  ok    a stray Math.random inside the step is caught: 20 of 20 seeds changed when Math.random was injected into the step (the fingerprint catches it)
+```
+  watched to fail with a REAL `Math.random` inside `physics.step`, injected at four magnitudes to find
+  the fingerprint's sensitivity floor rather than guess it:
+```
+relative velocity noise 1e-9 per step ->   ok    two runs of the same log agree: 8 seeds, 0 mismatched
+relative velocity noise 1e-8 per step ->   ok    two runs of the same log agree: 8 seeds, 0 mismatched
+relative velocity noise 1e-7 per step ->   FAIL  two runs of the same log agree: 8 seeds, 8 mismatched; first 08fbb25f / fd4b12c1
+relative velocity noise 1e-6 per step ->   FAIL  two runs of the same log agree: 8 seeds, 8 mismatched; first a4589915 / 6ebfeee9
+```
+  The floor is between 1e-8 and 1e-7 of relative drift per step. Two things came out of that. The self
+  test's own injection was sitting ON the floor and flaked, 20 of 20 then 18 of 20, so it was raised to
+  1e-7 m per step and now catches 20 of 20 on three consecutive runs. And the hash quantiser was going
+  BLIND on runaway marbles, which is written up in `docs/DECISIONS.md`.
+
+- [x] `render` green:
+```
+  ok    (c) PLAY is what the thumb lands on at its centre: elementFromPoint gave play
+  ok    (c) PLAY measures 200 by 56 rendered px at 375 wide, the floor is 48
+  ok    (b) the frame is not one flat colour: the commonest colour is 21.6% of it, across 518 colours
+  ok    (b) the frame is lit: mean luminance 37.8%, the band is 16 to 90
+  ok    (d) two frames 600 ms apart differ: 16.6% of cells moved, mean difference 1.92 of 255
+  ok    (d) the physics is stepping: 159 steps, world clock 1.32 s
+  ok    (a) zero page errors
+  ok    (c) the Back control measures 56 by 48 rendered px at 320 wide
+  ok    (e) the camera cannot go under the ground: asked for -40 degrees, got 3 degrees
+RENDER OK
+```
+  ⛔ **The first version of this gate could not fail.** With every light deleted it still read 57.5%
+  dominant and PASSED at Ripcord's 0.92 threshold, because the dirt is lit by the PMREM room environment
+  which survives deleting every light, and the marble's fake glass is lit by its own uniform rather than
+  by the scene. Threshold tightened to 0.45 and a luminance band added. Watched to fail with every light,
+  the sky, the environment and the clear colour removed:
+```
+  FAIL  (b) the frame is not one flat colour: the commonest colour is 97.5% of it, across 444 colours
+  FAIL  (b) the frame is lit: mean luminance 0.7%, the band is 16 to 90
+RENDER FAILED
+```
+
+- [x] `stamp` green, watched to fail three ways (a missing query, a query on a vendored lib in `src`, a
+  query on a vendored lib in the import map), then restored:
+```
+$ node tools/stamp.mjs
+every relative import in src, index.html and manifest.json carries ?v=20260904a, and nothing under lib/ carries a query
+STAMP OK
+
+STAMP FAILED, build is 20260904a
+  src/main.js: "./render/quality.js" carries no ?v=
+STAMP FAILED, build is 20260904a
+  src/render/scene.js: "../../lib/environments/RoomEnvironment.js?v=20260904a" is a vendored lib and must carry no query
+STAMP FAILED, build is 20260904a
+  index.html import map: "./lib/three.module.min.js?v=1" is a vendored lib and must carry no query
+```
+  The import map check was added because the first checker could not see it: `three` is bound in JSON
+  inside a script tag and none of the checker's forms reached it. A rule that cannot see the file it
+  governs is not a rule.
+
+- [x] `lint` green (a gate the plan did not name; core purity and the copy laws), watched to fail three ways:
+```
+  index.html:0  a dash reached the player, use a comma   >> "This is the range - nothing is at stake yet."
+  src/core/snap.js:74  core calls Math.random, use core/rng.js
+  src/core/dmath.js:60  core calls a transcendental, use core/dmath.js   >> return Math.sin(x);
+LINT FAILED
+```
+
+- [x] full suite, twice, alone:
+```
+lint            pass  0s
+stamp           pass  0s
+harness         pass  17s
+render          pass  33s
+
+ALL GATES PASSED
+```
+
+- [x] shots, opened with the Read tool, three faults each.
+
+  **`docs/shots/k0-marble-375.png`** (the player's view at 375x667). ⛔ The FIRST version of this shot had
+  no marble in it at all and the gate went green on it: the camera was pointed at the ring centre with
+  the taw 0.55 m behind it, and every assertion passed on a photograph of empty dirt. That is the whole
+  reason for this ritual. After the fix, the three faults that remain: (1) the chalk ring reads as a
+  straight road line rather than a circle, because at a 17 degree camera the curvature over 1.5 m is
+  below a pixel; K1's Ringer camera at 35 degrees is where that gets tested properly. (2) the marble's
+  silhouette carries visible stair steps against the bright glass rim, which is swiftshader without MSAA
+  and needs checking on a real device before it is called a bug. (3) the horizon is empty: no ring, no
+  cross, no second marble, nothing to be small against except the ground itself, which the plan predicted
+  and K1 fills.
+
+  **`docs/shots/k0-marble-320.png`** (the small screen). (1) the HUD scrim still draws a faintly visible
+  horizontal seam across flat dirt where the gradient ends. (2) the marble reads navy rather than clear
+  glass; the body colour is too dark for a Clearie and the palette wants raising before the catalog
+  lands. (3) the chalk line sits almost exactly on the horizon at this aspect, so the two read as one
+  line and the ring loses its ground.
+
+  **`docs/shots/k0-marble-lowest.png`** (the lowest angle a PLAYER can reach). Nothing wrong: the rig
+  clamps at 3 degrees above the ground and the frame still holds dirt, chalk, marble and sky.
+
+  **`docs/shots/k0-marble-under.png`** (the forbidden angle, forced through the dev hook). (1) it is a
+  near black screen. The good news is what it is NOT: the dirt disc is single sided so nothing leaks
+  through the floor, no world visible from below, none of the chameleon bug. (2) there is nothing down
+  there at all, so a player who got under would think the game had crashed, which is why the rig now
+  clamps and the gate asserts the clamp. (3) the sky sphere's lower half renders almost black from
+  inside, so even the clamp's own backstop has no colour in it.
+
+  **`icon-192.png`** (opened, twice). The first drawing read as a smiling face: a ball with a chalk arc
+  under it. Redrawn as two marbles on dirt with the ring behind them. Remaining faults: (1) the vanes
+  inside read as a bright propeller rather than a cat's eye blade, too symmetric and too opaque, (2) the
+  scattered stones read as soft dust motes floating in front rather than grit in the ground, (3) the ring
+  disappears into the vignette on the left. Good enough as the placeholder `ART_ASSETS.md` calls for.
+
+- [x] commit and push: see the commits below.
 
 ### K1
 - [ ] `knuckle` gate: five assertions, each pasted, one watched to fail

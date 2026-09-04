@@ -21,13 +21,19 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const FAST = process.argv.includes('--fast');
 
 const GATES = [
+  { name: 'lint',    cmd: ['tools/lint.mjs'],  need: 'LINT OK' },
+  { name: 'stamp',   cmd: ['tools/stamp.mjs'], need: 'STAMP OK' },
   { name: 'harness', cmd: ['sim/harness.js', '--scenario=all'], need: 'SIM OK' }
 ];
 
 /* Browser gates drive the real page in a real browser and need puppeteer.
    They are SKIPPED with a note when the browser is absent, never failed:
-   a gate that fails for want of a dependency teaches you to ignore gates. */
-const BROWSER_GATES = [];
+   a gate that fails for want of a dependency teaches you to ignore gates.
+   They are also the ones that flake under contention on a two core box, so a
+   failure here is rerun ALONE, twice, before it is believed. */
+const BROWSER_GATES = [
+  { name: 'render', cmd: ['test/render.mjs'], need: 'RENDER OK' }
+];
 
 const results = [];
 let browserNote = '';
