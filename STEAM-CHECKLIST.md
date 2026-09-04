@@ -169,15 +169,23 @@ clock. It is the single most valuable button in this file.**
 
 # PART TWO — the build. Can happen while Valve reviews the page.
 
-### ☐ 7. YOU · Upload the build. One command.
-```bash
-cd store/jimothy-steam
-LW_STEAM_USER=<your steamworks login> ./steampipe/upload.sh
-```
-It re-vendors from the live game and repackages first, so it cannot ship a stale
-Jimothy. If it stops and says steamcmd is missing, it prints the exact command to
-run.
-**Done when:** the upload finishes without an error.
+### ☐ 7. YOU · Upload the build through the web uploader (Sep 04 2026 revision)
+Steam refuses logins from the codespace (datacenter IP, permanent), so `upload.sh`
+and steamcmd cannot run from here. The build is a zip you upload in your own browser.
+
+1. Download `jimothy-steam-build-20260904.zip` (350 MB) from
+   https://github.com/Stephenuffugus/lucid-winds-vault/releases/tag/vault-20260904
+   (log in to GitHub first; the vault is private).
+2. Open https://partner.steamgames.com/apps/depotuploads/5043360 and upload the
+   zip as-is to depot **5043361**. Do not unzip it: the zip root is the depot
+   root, with `Jumping Jimothy.exe` at the top, which is what the launch option
+   already saved in step 8 expects.
+3. Wait for the page to say the build was processed (it appears under Builds).
+
+The zip was re-vendored Sep 04 from the live game (soda not beer, window title
+"Jumping Jimothy", portal music include stripped) and passed
+`node scripts/steam_bootprobe.mjs` (commerce dark, zero external requests).
+**Done when:** the build shows on the Builds page.
 
 ### ☐ 8. YOU · Point Steam at the exe
 Steamworks → **Builds** → set the build live on the **default** branch.

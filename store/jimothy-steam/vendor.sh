@@ -58,6 +58,28 @@ assert not re.search(r'\bCrossy Road\b', s), 'a third-party trademark is still i
 assert 'Jimothy the Jumping Nugget' not in s, 'the retired name is still in the Steam build'
 print('  stripped web-only SEO metadata from the desktop build')
 
+# 3c) the studio soundtrack unlocks (music-unlocks.js, Sep 02) are a portal
+#     feature: the script and the player it loads on demand both live on our
+#     host, and the tracks stream from /music. A Steam build must reach for
+#     nothing, so the include goes. The game never depends on it (the script
+#     is inert without the portal identity anyway).
+n_music = len(re.findall(r'<script src="/music-unlocks\.js"[^>]*></script>\s*', s))
+assert n_music == 1, 'expected exactly one music-unlocks include in the canonical game, found %d' % n_music
+s = re.sub(r'<script src="/music-unlocks\.js"[^>]*></script>\s*', '', s)
+assert 'music-unlocks' not in s, 'the music include survived the strip'
+print('  stripped the portal music include from the desktop build')
+
+# 3d) the SEO pass (Aug 27) retitled the WEB page for search ("...free in your
+#     browser") and added a screen-reader-only h1 saying the same. A paid desktop
+#     build's window title must be the product name, and "free" must not be in it.
+assert s.count('<title>') == 1, 'expected one <title>'
+s = re.sub(r'<title>[^<]*</title>', '<title>Jumping Jimothy</title>', s)
+n_h1 = len(re.findall(r'<h1 style="position:absolute;width:1px;[^"]*">[^<]*</h1>\s*', s))
+assert n_h1 == 1, 'expected exactly one screen-reader SEO h1, found %d' % n_h1
+s = re.sub(r'<h1 style="position:absolute;width:1px;[^"]*">[^<]*</h1>\s*', '', s)
+assert 'free in your browser</title>' not in s and 'free browser hopper' not in s, 'web SEO copy survived'
+print('  retitled the window and dropped the SEO h1 for the desktop build')
+
 # 4) fonts: drop the three Google Fonts tags for one local stylesheet
 s = re.sub(r'<link rel="preconnect" href="https://fonts\.[^>]*>\s*', '', s)
 s = re.sub(r'<link href="https://fonts\.googleapis\.com[^>]*>',
