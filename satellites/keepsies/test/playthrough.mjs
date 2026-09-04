@@ -140,6 +140,33 @@ await page.waitForFunction(() => window.KEEPSIES_DEV && window.KEEPSIES_DEV.stat
 /* ---- the path a person actually walks ---- */
 const playBtn = await press('play');
 say(playBtn && !playBtn.blocked, 'PLAY is pressable at its centre');
+
+/* ---- the first twenty seconds: three snaps, and the power curve becomes yours ---- */
+await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'calib', { timeout: 20000 });
+const beforeCalib = await page.evaluate(() => window.KEEPSIES_DEV.state().calib);
+say(beforeCalib.own === false, 'before calibration the power curve is a default, not the player\'s');
+for (const [px, ms] of [[300, 55], [330, 50], [360, 48]]) {
+  await page.waitForFunction(() => {
+    const s = window.KEEPSIES_DEV.state();
+    return s.screen !== 'calib' || (s.match && !s.match.simulating && s.match.taw);
+  }, { timeout: 20000 });
+  const still = await page.evaluate(() => window.KEEPSIES_DEV.state().screen === 'calib');
+  if (!still) break;
+  await page.evaluate((px, ms) => {
+    const d = window.KEEPSIES_DEV, t = d.state().match.taw;
+    const pts = [];
+    for (let i = 0; i <= 18; i++) pts.push({ x: t.x, y: t.y - px * i / 18, t: 1000 + ms * i / 18 });
+    d.flick(pts);
+    d.settle(1500);
+  }, px, ms);
+  await new Promise(r => setTimeout(r, 260));
+}
+const afterCalib = await page.evaluate(() => window.KEEPSIES_DEV.state().calib);
+say(afterCalib.own === true, 'after three snaps the power curve is the player\'s own');
+say(afterCalib.max > beforeCalib.max, 'and it moved to match a harder thumb: '
+  + beforeCalib.max.toFixed(2) + ' to ' + afterCalib.max.toFixed(2) + ' metres a second');
+const saved = await page.evaluate(() => window.KEEPSIES_DEV.state().save);
+say(saved.backend === 'local', 'it was written to real storage, not to memory: ' + saved.backend);
 /* Directions before play is a studio standard, so its absence is a FAILURE with
    a sentence, not a stack trace: a gate that crashes tells the morning reader
    less than a gate that says which rule was broken. */

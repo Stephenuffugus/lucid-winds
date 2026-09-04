@@ -53,6 +53,23 @@ button.quiet{background:transparent;color:var(--muted);border:1px solid rgba(152
 .who.on{color:var(--brass)}
 .sockets{display:flex;gap:4px}
 .sock{width:13px;height:13px;border-radius:50%;border:1px solid rgba(232,220,200,.42)}
+/* ⛔ NOT a full veil. DESIGN 16.1 opens with a marble on dirt and one line, and
+   the first version put three paragraphs on a near black wash over the top of
+   the marble the player is being asked to snap. This darkens the top and the
+   bottom and leaves the middle of the screen alone. */
+#calib{position:fixed;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(13,16,12,.90) 0%,rgba(13,16,12,.78) 12%,
+    rgba(13,16,12,.42) 24%,rgba(13,16,12,.12) 33%,rgba(13,16,12,0) 42%,
+    rgba(13,16,12,0) 60%,rgba(13,16,12,.22) 72%,rgba(13,16,12,.66) 86%,rgba(13,16,12,.94) 100%)}
+#calibTop{position:absolute;left:0;right:0;top:calc(24px + var(--st));padding:0 22px;text-align:center}
+#calibTop h2{font-size:1.25rem;line-height:1.3}
+#calibSay{font-size:.92rem;color:var(--chalk);opacity:.9;margin:.6rem 0 0;min-height:1.4em}
+#calibBottom{position:absolute;left:0;right:0;bottom:calc(22px + var(--sb));
+  display:flex;flex-direction:column;align-items:center;gap:16px}
+#calibBottom button{pointer-events:auto;min-height:48px;font-size:.8rem;opacity:.72;
+  text-transform:none;letter-spacing:.06em}
+#calibDots{gap:12px}
+#calibDots .sock{width:20px;height:20px;border-width:2px}
 .sock.full{background:var(--brass);border-color:var(--brass)}
 /* the house rules sit at the FOOT of the screen above the corner buttons. They
    used to sit under the sockets, where they landed on the chalk ring and were
@@ -108,6 +125,17 @@ button.quiet{background:transparent;color:var(--muted);border:1px solid rgba(152
   <p class="rules" style="text-align:center;padding:0">Thirteen marbles in a cross, a ten foot ring, and a shooter you snap with your thumb.</p>
   <button id="play">Play</button>
   <button id="exitTitle" class="quiet">Sky Wolf Studio Arcade</button>
+</div>
+
+<div id="calib" hidden>
+  <div id="calibTop">
+    <h2>Show me your hardest snap</h2>
+    <p id="calibSay">Thumb on the marble, and flick through it.</p>
+  </div>
+  <div id="calibBottom">
+    <div id="calibDots" class="sockets"></div>
+    <button id="calibSkip" class="quiet">I have played marbles before</button>
+  </div>
 </div>
 
 <div id="rulesCard" class="veil" hidden>

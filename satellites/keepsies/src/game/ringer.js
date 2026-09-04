@@ -46,13 +46,17 @@ export function createRinger(setup) {
   const W = createWorld(T, { ringRadius });
   addSurface(W, { kind: 'dirt', box: { hx: 30, hy: 0.05, hz: 30 }, pos: { x: 0, y: -0.05, z: 0 } });
 
-  /* the cross: thirteen mibs in a plus, arms of three, 75 mm apart */
+  /* the cross: thirteen mibs in a plus, arms of three, 75 mm apart.
+     `bare` lays none of them: calibration is one marble on dirt and nothing
+     else on the screen, which is the first thing DESIGN 16.1 asks for. */
   const sp = T.ringer.crossSpacing;
   const mibs = [];      // {id, uid, entry}
   let k = 0;
-  for (let i = -3; i <= 3; i++) {
-    mibs.push(mib(i * sp, 0, k++));
-    if (i !== 0) mibs.push(mib(0, i * sp, k++));
+  if (!setup.bare) {
+    for (let i = -3; i <= 3; i++) {
+      mibs.push(mib(i * sp, 0, k++));
+      if (i !== 0) mibs.push(mib(0, i * sp, k++));
+    }
   }
   function mib(x, z, idx) {
     const entry = STARTER_ENTRIES[CROSS_MIX[idx % CROSS_MIX.length]];
@@ -69,6 +73,7 @@ export function createRinger(setup) {
 
   const M = createMatch({
     ringRadius,
+    toWin: setup.bare ? 99 : undefined,
     mibs: mibs.map(m => m.uid),
     players: setup.players.map((p, i) => ({ name: p.name, tawUid: 'taw-' + i, ai: p.ai })),
     houseRules: hr
@@ -308,8 +313,10 @@ export function createRinger(setup) {
       for (const m of live) { const p = positionOf(W, m.id); cx += p.x; cz += p.z; }
       cx /= live.length; cz /= live.length;
     }
-    const dx = cx - tp.x, dz = cz - tp.z;
-    const span = len2(dx, dz);
+    let dx = cx - tp.x, dz = cz - tp.z;
+    if (len2(dx, dz) < 1e-3) { dx = -tp.x; dz = -tp.z; }      // nothing to shoot at: look inward
+    if (len2(dx, dz) < 1e-3) { dx = 0; dz = 1; }
+    const span = Math.max(0.9, len2(dx, dz));
     /* Sports framing, and it is a composition decision, not a maths one: the
      * TARGET is centred and the ball sits in the near foreground. Aiming at the
      * midpoint of taw and cross put both of them hard against the frame edges
@@ -317,6 +324,16 @@ export function createRinger(setup) {
      * first K1 shot showed. Biasing the look point toward the cross puts the
      * thing you are shooting at in the middle of the screen and your shooter
      * where your thumb already is. */
+    if (setup.bare) {
+      // one marble, close, the way you look at a marble you are about to snap
+      const C0 = T.render.calibCam;
+      rig.setTarget(tp.x, 0.012, tp.z);
+      rig.state.wantAzimuth = atan2(-tp.x, -tp.z);
+      rig.state.wantDistance = C0.distance;
+      rig.state.elevationDeg = C0.elevationDeg;
+      if (snap) { rig.state.azimuth = rig.state.wantAzimuth; rig.state.distance = rig.state.wantDistance; }
+      return;
+    }
     const C = T.render.ringerCam;
     rig.setTarget(tp.x + dx * C.targetBias, 0.012, tp.z + dz * C.targetBias);
     rig.state.wantAzimuth = atan2(-dx, -dz);

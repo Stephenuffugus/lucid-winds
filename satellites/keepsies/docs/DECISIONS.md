@@ -99,3 +99,15 @@ Not a convenience. A shot leaves the taw three or four metres out; leaving it th
 
 **2026-09-04 — `tawOnScreen` returns null when the shooter is not on the screen.**
 It used to hand back whatever the projection said, and the Knuckle gate found a shooter at y = 1117 on a screen 667 tall. A position that is not on the screen is not a grab target, and saying so out loud is cheaper than a silently unplayable turn.
+
+**2026-09-04 — `meta/save.js` was built during K1 rather than K2, because calibration needs somewhere to live.**
+The plan puts the save in K2. Calibration is a K1 item and is worthless without persistence: a player who recalibrates on every load is worse off than one who never calibrated. The module is the real one the plan describes, not a stub, so K2 inherits it: versioned schema, a migration chain that exists before it is needed, a write probe (Safari in private mode hands you a localStorage whose setItem throws), and read modify write merge on every write with marbles union by uid, counters adding and bests taking the max.
+
+**2026-09-04 — the 90th percentile of three snaps, not the maximum.**
+DESIGN 7.5 says the ninetieth percentile and it is right: one wild outlier should not set a bar the player then has to clear on every shot for the rest of the game. For three samples that is nine tenths of the way from the second to the third. There is also a floor, so three taps cannot calibrate a player into a game where a full effort snap is a dribble.
+
+**2026-09-04 — calibration lays no cross, no chalk, and frames the marble close.**
+DESIGN 16.1 opens with "a marble sits on dirt", and the first build put three paragraphs on a near black wash on top of the very marble the player is asked to snap, framed at the whole ring so it was one dot on a big empty ellipse, with the chalk line running straight through its middle so it read as a shelf edge. The screen is now a vignette with one line, the scene is bare, and `tuning.render.calibCam` frames it at 42 cm.
+
+**2026-09-04 — the calibration marble comes back for the next snap.**
+Three shots off a practice tee. Without it the camera was still chasing the last one when the player reached for the next and there was no marble under their thumb, which is exactly the failure the Knuckle gate caught in the match loop.

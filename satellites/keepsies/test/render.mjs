@@ -137,6 +137,19 @@ say(btn.h >= 48 && btn.w >= 48, '(c) PLAY measures ' + btn.w.toFixed(0) + ' by '
   + ' rendered px at ' + W + ' wide, the floor is 48');
 
 await page.mouse.click(btn.cx, btn.cy);
+/* Calibration comes first on a first run, and its skip is a real control. */
+await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'calib', { timeout: 20000 });
+const skip = await page.evaluate(() => {
+  const b = document.getElementById('calibSkip');
+  const r = b.getBoundingClientRect();
+  const cx = Math.round(r.left + r.width / 2), cy = Math.round(r.top + r.height / 2);
+  const hit = document.elementFromPoint(cx, cy);
+  return { w: r.width, h: r.height, hitId: hit ? hit.id : null, cx, cy };
+});
+say(skip.hitId === 'calibSkip' && skip.h >= 48,
+  '(c) calibration comes first and its skip is ' + skip.w.toFixed(0) + ' by ' + skip.h.toFixed(0)
+  + ' rendered px, reachable at its centre');
+await page.mouse.click(skip.cx, skip.cy);
 /* DIRECTIONS BEFORE PLAY: the rules card stands between the title and the first
    match, and it is asserted here so nobody quietly removes it. */
 await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'rules', { timeout: 20000 });

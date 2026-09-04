@@ -22,6 +22,8 @@ import { createRinger } from './game/ringer.js?v=20260904a';
 import { RINGER_TECHNIQUES } from './core/techniques.js?v=20260904a';
 import { launchSpeed } from './core/snap.js?v=20260904a';
 import { clamp, len2, DEG } from './core/dmath.js?v=20260904a';
+import * as SAVE from './meta/save.js?v=20260904a';
+import { createCalibration, calibrationFrom } from './meta/onboarding.js?v=20260904a';
 
 const $ = (id) => document.getElementById(id);
 const TEST = /[?&]keepsiestest=1/.test(location.search);
@@ -33,7 +35,8 @@ const G = {
   acc: 0, last: 0, raf: 0, screen: 'title', frames: 0, booted: false,
   topDown: false, paused: false, freeCam: false,
   matchesPlayed: 0, seenRules: false, calib: { max: null },
-  placeDrag: null, lastToast: 0, sunbeams: 0, said: '', lastFramedTurn: -1
+  placeDrag: null, lastToast: 0, sunbeams: 0, said: '', lastFramedTurn: -1,
+  save: null, calibrator: null
 };
 
 /* ------------------------------------------------------------------- boot */
@@ -42,8 +45,12 @@ async function boot() {
   const res = await fetch('src/data/tuning.json?v=20260904a');
   if (!res.ok) throw new Error('tuning.json did not load: ' + res.status);
   G.tuning = await res.json();
-  G.calib.max = G.tuning.snap.thumbSpeedMaxDefault;
+  G.save = SAVE.load();
+  SAVE.watchOtherTabs();
+  G.calib = calibrationFrom(G.save, G.tuning);
+  G.seenRules = !!G.save.seen.rules;
   AUDIO.configure(G.tuning);
+  AUDIO.setEnabled(G.save.settings.sound !== false);
 
   G.tier = detectQuality(G.tuning);
   const canvas = $('stage');
@@ -54,14 +61,14 @@ async function boot() {
   await initPhysics();
 
   G.knuckle = createKnuckle(canvas, G.tuning, {
-    taw: () => (G.R && G.screen === 'match' && canAim() ? G.R.tawOnScreen(G.rig) : null),
+    taw: () => (G.R && (G.screen === 'match' || G.screen === 'calib') && canAim() ? G.R.tawOnScreen(G.rig) : null),
     aimAzimuth: () => G.rig.state.azimuth + Math.PI,
     calib: () => G.calib,
     onBrace: onBrace,
     onAim: onAim,
     onCancel: () => { say('That was too soft to count, so it does not. Take it again.'); hideAim(); },
     haptic: (k) => { if (navigator.vibrate) { try { navigator.vibrate(k === 'settle' ? 8 : 14); } catch (e) { } } },
-    enabled: () => !G.usePullback && G.screen === 'match' && !G.paused
+    enabled: () => !G.usePullback && (G.screen === 'match' || G.screen === 'calib') && !G.paused
   });
   G.knuckle.attach();
 
@@ -95,10 +102,18 @@ async function boot() {
 function wireButtons() {
   $('play').addEventListener('click', () => {
     AUDIO.unlock();
-    if (G.seenRules) { showScreen('match'); startMatch(); }
+    // calibration first, ONCE, because a player shooting against a stranger's
+    // thumb can neither reach full power nor find the top of their own range
+    if (!G.calib.own) startCalibration();
+    else if (G.seenRules) { showScreen('match'); startMatch(); }
     else showScreen('rules');
   });
-  $('rulesGo').addEventListener('click', () => { G.seenRules = true; showScreen('match'); startMatch(); });
+  $('calibSkip').addEventListener('click', () => { finishCalibration(null); });
+  $('rulesGo').addEventListener('click', () => {
+    G.seenRules = true;
+    SAVE.merge({ seen: { rules: true } });
+    showScreen('match'); startMatch();
+  });
   $('again').addEventListener('click', () => { showScreen('match'); startMatch(); });
   $('toTitle').addEventListener('click', () => { endMatch(); showScreen('title'); });
   $('topDown').addEventListener('click', () => {
@@ -117,10 +132,54 @@ function wireButtons() {
 function showScreen(name) {
   G.screen = name;
   $('title').hidden = name !== 'title';
+  $('calib').hidden = name !== 'calib';
   $('rulesCard').hidden = name !== 'rules';
   $('hud').hidden = name !== 'match';
   $('results').hidden = name !== 'results';
   if (name !== 'match') { $('pauseCard').hidden = true; G.paused = false; hideAim(); }
+}
+
+/* --------------------------------------------------------- calibration */
+
+function startCalibration() {
+  G.calibrator = createCalibration({
+    tuning: G.tuning,
+    save: G.save,
+    onSay: (t) => { $('calibSay').textContent = t; },
+    onProgress: (n) => calibDots(n),
+    onDone: (r) => finishCalibration(r)
+  });
+  calibDots(0);
+  $('calibSay').textContent = 'Thumb on the marble, and flick through it.';
+  // no ring during calibration: the chalk ran straight through the middle of the
+  // marble and read as a shelf edge it was balanced on
+  if (G.ground) G.ground.chalk.visible = false;
+  showScreen('calib');
+  // a marble on dirt to snap, and nothing else on the screen
+  startMatch({ seed: 20260904, forceFirst: 0, calibrating: true });
+  showScreen('calib');
+}
+
+function calibDots(n) {
+  const el = $('calibDots');
+  if (el.childElementCount !== 3) {
+    el.textContent = '';
+    for (let i = 0; i < 3; i++) { const d = document.createElement('span'); d.className = 'sock'; el.appendChild(d); }
+  }
+  for (let i = 0; i < 3; i++) el.children[i].className = 'sock' + (i < n ? ' full' : '');
+}
+
+function finishCalibration(result) {
+  G.calibrator = null;
+  if (G.ground) G.ground.chalk.visible = true;
+  if (result) {
+    G.calib = { max: result.max, own: true, handedness: result.handedness };
+    SAVE.merge({ profile: { calib: { max: result.max, samples: result.samples }, handedness: result.handedness } });
+    G.save = SAVE.load();
+  }
+  endMatch();
+  if (G.seenRules) { showScreen('match'); startMatch(); }
+  else showScreen('rules');
 }
 
 /* -------------------------------------------------------------- the match */
@@ -131,8 +190,9 @@ function startMatch(opts) {
   G.R = createRinger({
     tuning: G.tuning,
     seed: o.seed || (Date.now() & 0x7fffffff),
-    skipLag: false,
-    forceFirst: o.forceFirst,
+    skipLag: !!o.calibrating,
+    bare: !!o.calibrating,
+    forceFirst: o.calibrating ? 0 : o.forceFirst,
     houseRules: Object.assign(
       { keepsies: true, slips: true, bombing: false, poison: false, ringSizeFt: 10 }, o.houseRules),
     players: [
@@ -212,7 +272,7 @@ function attachPlacement(canvas) {
 /* --------------------------------------------------------------- the shot */
 
 function onBrace(st) {
-  if (!G.R || G.screen !== 'match') return;
+  if (!G.R || (G.screen !== 'match' && G.screen !== 'calib')) return;
   if (st.bracing && G.R.state.phase === 'place') G.R.commitPlace();
   const t = G.R.tawOnScreen(G.rig);
   const ret = $('reticle'), line = $('aimline');
@@ -240,6 +300,14 @@ function onBrace(st) {
 }
 
 function onAim(aim) {
+  // during calibration a snap is a measurement, not a shot
+  if (G.calibrator && G.screen === 'calib') {
+    G.calibrator.take(aim);
+    if (G.R && !G.R.state.simulating && G.R.state.phase === 'place') G.R.commitPlace();
+    if (G.R && G.R.state.phase === 'aim') { G.R.shoot(aim); }
+    hideAim();
+    return;
+  }
   if (!G.R || G.screen !== 'match' || G.R.state.simulating) return;
   hideAim();
   if (G.R.state.phase === 'place') G.R.commitPlace();
@@ -305,6 +373,12 @@ function finishMatch(s) {
   G.sunbeams += granted;
   $('rSun').textContent = String(granted);
   G.matchesPlayed++;
+  SAVE.merge({
+    wallet: { sunbeams: granted },
+    stats: { matches: 1, wins: won ? 1 : 0, shots: s.shots, pocketed: s.pocketed[0] },
+    profile: { techniques: G.R.state.techniques.slice() }
+  });
+  G.save = SAVE.load();
   try { if (window.SWSMusic && SWSMusic.milestone) SWSMusic.milestone(G.matchesPlayed); } catch (e) { }
   showScreen('results');
 }
@@ -361,7 +435,7 @@ function frame(now) {
   const dt = Math.min(0.25, (now - G.last) / 1000);
   G.last = now;
 
-  if (G.R && G.screen === 'match' && !G.paused) {
+  if (G.R && (G.screen === 'match' || G.screen === 'calib') && !G.paused) {
     const h = G.tuning.physics.fixedStep;
     const maxSteps = G.tuning.physics.maxSubstepsPerFrame;
     G.acc += dt;
@@ -372,7 +446,17 @@ function frame(now) {
     if (G.acc > h * maxSteps) G.acc = 0;
     syncMeshes(G.R.state.simulating ? G.acc / h : 1);
 
-    if (!G.R.state.simulating && G.R.state.phase !== 'over' && G.R.isAiTurn() && !G.R.state.aiThinking) {
+    // calibration: the marble flies off into the dark, then comes back to the
+    // same spot for the next snap, the way three shots off a practice tee do.
+    // Without this the camera is still chasing the last one when the player
+    // reaches for the next and there is no marble under their thumb.
+    if (G.screen === 'calib' && !G.R.state.simulating) {
+      G.R.resetPlacement();
+      G.R.frameShot(G.rig, true);
+      G.rig.update(1 / 60);
+    }
+    if (G.screen === 'match' && !G.R.state.simulating && G.R.state.phase !== 'over'
+      && G.R.isAiTurn() && !G.R.state.aiThinking) {
       say(G.R.match.players[G.R.match.turn].name + ' is lining one up.');
       G.R.aiTurn();
     }
@@ -389,7 +473,7 @@ function frame(now) {
     }
     if (G.topDown) { G.rig.state.elevationDeg = 84; G.rig.state.wantDistance = G.R.ringRadius * 1.9; }
     else if (G.rig.state.elevationDeg > 60) G.rig.state.elevationDeg = 33;
-    updateHud();
+    if (G.screen === 'match') updateHud();
     if (!$('toast').hidden && now - G.lastToast > 2400) $('toast').hidden = true;
   }
 
@@ -408,6 +492,9 @@ function installDevHook() {
         screen: G.screen, frames: G.frames, quality: G.tier.name, paused: G.paused,
         matchesPlayed: G.matchesPlayed, said: G.said, sunbeams: G.sunbeams,
         usePullback: G.usePullback, seenRules: G.seenRules,
+        calib: { max: G.calib.max, own: G.calib.own },
+        calibrating: G.calibrator ? G.calibrator.state() : null,
+        save: { backend: SAVE.backendName(), matches: G.save.stats.matches, sunbeams: G.save.wallet.sunbeams },
         match: R ? {
           phase: R.state.phase, simulating: R.state.simulating, turn: R.match.turn,
           pocketed: R.match.players.map(p => p.pocketed.length),
@@ -423,6 +510,8 @@ function installDevHook() {
     },
     start: (opts) => { G.seenRules = true; showScreen('match'); startMatch(opts); },
     rules: () => showScreen('rules'),
+    calibrate: () => startCalibration(),
+    wipeSave: () => { G.save = SAVE.wipe(); G.calib = calibrationFrom(G.save, G.tuning); G.seenRules = false; return true; },
     /** Drive the whole Knuckle from a synthesised path. Returns the AimSource. */
     flick(samples) { return G.knuckle._feed(samples, G.R ? G.R.tawOnScreen(G.rig) : null); },
     /** Drive the pull back fallback the same way. */
