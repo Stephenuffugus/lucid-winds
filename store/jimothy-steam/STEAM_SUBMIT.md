@@ -67,7 +67,14 @@ the tax/bank verification, both below.
 Steam takes an unpacked folder, not an installer, which is why the build target
 is `dir`. Do not zip it.
 
-### Two honest gaps in the exe
+### ✅ Icon and version strings: EMBEDDED as of Sep 04 2026
+`npm run dist:win` now ends with `npm run brand` (`tools/brand_exe.mjs`, pure Node via
+resedit) which writes `capsules/out/jimothy.ico` and the version block into the exe.
+Verified by extracting the icon group back out with `wrestool` and looking at it.
+The wine route below is dead on this box (64-bit wine cannot run rcedit-ia32); the
+paragraph is kept as history.
+
+### Two honest gaps in the exe (history, first one closed Sep 04)
 
 - **No icon and no version metadata are embedded — but the .ico now exists.**
   `python3 capsules/icon.py` builds `capsules/out/jimothy.ico` (256/128/64/48/32/

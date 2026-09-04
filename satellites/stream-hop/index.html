@@ -702,7 +702,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
         letter-spacing:.01em;text-shadow:0 1px 3px rgba(0,0,0,.95),0 0 10px rgba(0,0,0,.7);
         -webkit-user-select:text;user-select:text">
         Made by <b style="color:#c8a84b;font-weight:800">Sky Wolf Studio</b><br>
-        Everything else we make is free in your browser at lucidwinds.com
+        Thank you for playing. You keep a very small studio going.
       </div>
     </div>
     <div class="foot" id="buildstamp"></div>
@@ -1109,7 +1109,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v8.5';
+var BUILD='v8.6';
 var curScreen='s-splash';
 var _leaveTimer=null;
 /* dir is optional: 'push' swooshes in from the right (going deeper), 'pop' swooshes back
@@ -4889,14 +4889,26 @@ function bezelPoll(){
     next.classList.add('show'); prev.classList.remove('show');
   }catch(e){}
 }
-var SHARE_URL="https://lucidwinds.com/jimothy/";
+/* ⛔ WHERE A SHARE POINTS DEPENDS ON WHERE THE PLAYER BOUGHT IT (2026-09-04, Stephen:
+   "make it worth the $3"). A Steam buyer who shares must send friends to the Steam
+   page, never to the free web copy: that share reads as "it's free elsewhere" and
+   comes back as a refund. Resolved at share time, not at load: STEAM_BUILD is
+   assigned further down this script and is undefined here. */
+function shareUrl(){ return STEAM_BUILD ? "https://store.steampowered.com/app/5043360/" : "https://lucidwinds.com/jimothy/"; }
 function shareIt(){ var txt=shareText();
-  if(navigator.share){ navigator.share({text:txt,url:SHARE_URL}).catch(function(){}); return; }
-  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt+"\n"+SHARE_URL).catch(function(){}); } }
+  if(navigator.share){ navigator.share({text:txt,url:shareUrl()}).catch(function(){}); return; }
+  /* no share sheet (desktop, Electron): copy, and SAY so on the button that was pressed.
+     A silent copy reads as a dead button, which on a paid build is a complaint. */
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt+"\n"+shareUrl()).then(function(){ shareCopiedFlash(); }).catch(function(){}); } }
+function shareCopiedFlash(){
+  ['go-share','pz-share'].forEach(function(id){ var b=$(id); if(!b||b.offsetParent===null||b._flash) return;
+    var was=b.innerHTML; b._flash=true;
+    b.innerHTML='<img class="bicon" src="'+((b.querySelector('img')||{}).src||'')+'" alt="" style="width:38px;height:38px">Copied';
+    setTimeout(function(){ b.innerHTML=was; b._flash=false; }, 1600); }); }
 /* split out from shareIt so the text can be read and checked without opening a share sheet */
 function shareText(){
   var sc=(G&&G.score)||0, who=curChar(), txt;
-  if(!G){ txt="Meet Jumping Jimothy, Seattle's roundest raccoon. Come hop him across the rainy city, it is free."; }
+  if(!G){ txt="Meet Jumping Jimothy, Seattle's roundest raccoon. Come hop him across the rainy city"+(STORE_BUILD?".":", it is free."); }
   /* The Daily share is the one that has to survive being pasted into a group chat: the
      day number so people know you are talking about the same road, the squares so they
      can see how it went, and nothing else. No score inflation, no hashtags. */
@@ -5206,7 +5218,7 @@ function boot(){
   /* 2026-08-16 audit: drifted a THIRD time, 73 against jimothy-v77. The two
      numbers are the same number now; test/jimothy-check.js fails the build if
      they ever separate again. */
-  var SWV='77';
+  var SWV='78';
   if('serviceWorker' in navigator){ try{
     /* ⛔ AUTO-UPDATE. The SW is network-first + skipWaiting + clients.claim, so a fresh
        deploy is fetched immediately — but an already-OPEN page keeps showing the version

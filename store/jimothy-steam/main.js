@@ -41,6 +41,16 @@ function createWindow() {
   try { win.setAspectRatio(ASPECT); } catch (e) {}
 
   Menu.setApplicationMenu(null);
+
+  /* Fullscreen the way desktop players reach for it: F11 or Alt+Enter toggles,
+     Escape leaves it (Escape inside a run is the game's own pause key, so it only
+     acts here when the window is actually fullscreen and the game has not eaten
+     it). With no application menu there is no default F11 binding at all. */
+  win.webContents.on('before-input-event', (e, input) => {
+    if (input.type !== 'keyDown') return;
+    const alt = input.alt && input.key === 'Enter';
+    if (input.key === 'F11' || alt) { win.setFullScreen(!win.isFullScreen()); e.preventDefault(); }
+  });
   win.loadFile(path.join(__dirname, 'app', 'index.html'));
 
   /* any outward link opens in the player's browser, never inside the game */
