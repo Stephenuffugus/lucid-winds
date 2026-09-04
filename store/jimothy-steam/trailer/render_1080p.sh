@@ -1,10 +1,10 @@
 #!/bin/bash
 set -e
 cd /workspaces/lucid-winds
-S=/tmp/claude-1000/-workspaces-lucid-winds/52e9c072-e551-422b-a4e2-48089a1000bc/scratchpad/tr
+S="$(cd "$(dirname "$0")" && pwd)"   # t1..t3.txt, caption600.ttf, endcard.png sit beside this script; output lands here too
 FONT=$S/caption600.ttf
 T1="Hop the roundest\nraccoon in Seattle"; T2="100 levels across\nthe rainy city"; T3="Collect bottlecaps,\nunlock 45 critters"
-time ffmpeg -v error -y -i assets/preview.mp4 -framerate 30 -loop 1 -t 38.2 -i $S/endcard.png -filter_complex "
+time ffmpeg -v error -y -i "${IN:-assets/preview.mp4}" -framerate 30 -loop 1 -t 38.2 -i $S/endcard.png -filter_complex "
 [0:v]crop=856:1501:112:240,split=2[gcrop][gbg];
 [gbg]scale=192:108,gblur=sigma=3,scale=1920:1080:flags=fast_bilinear,eq=brightness=-0.2:saturation=0.8[bg];
 [gcrop]scale=-2:1080[fg];
