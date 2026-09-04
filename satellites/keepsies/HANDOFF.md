@@ -4,49 +4,58 @@
 
 ## Where we are
 
-**2026-09-04. K0 done. K1 mostly done and playable. K2 and K3 not started.**
+**2026-09-04. K0 done. K1 done but for pass and play. K2 started: the catalog and the marbles' looks
+are finished, the economy is not. K3 not started.**
 
-A whole game of Ringer runs on a phone sized screen: title, rules card, lag, place the shooter on the
-ring edge, brace until the reticle settles, flick through the marble, watch the cross scatter, shoot
-again if you pocketed, and a result card. Two whole games are played end to end by the `playthrough`
-gate every time it runs, one with the Knuckle and one with the pull back fallback.
+A whole game of Ringer runs on a phone sized screen. Calibration, then the rules card, then a match
+setup with the house rules, then: lag, place the shooter on the ring edge, brace until the reticle
+settles, flick through the marble, watch the cross scatter, shoot again if you pocketed, and a result
+card. Two whole games are played end to end by the `playthrough` gate every time it runs, one with the
+Knuckle and one with the pull back fallback.
+
+All sixty five marbles exist as data generated from the design and render distinctly.
 
 ## The one command
 
 ```
-node tools/check.js          nine gates, about three minutes
-node tools/check.js --fast   skips the sample sensitive ones and says which
-node tools/shots.mjs         the screenshots, then OPEN them
+node tools/check.js            thirteen gates, about four minutes
+node tools/check.js --fast     skips the sample sensitive ones and says which
+node tools/shots.mjs           the screenshots, then OPEN them
+node tools/contact_sheet.mjs   all 65 marbles in one picture, then OPEN it
+node tools/catalog.mjs         regenerate src/data/marbles.json from the design
 node sim/harness.js --scenario=all --csv /tmp/k.csv
 node tools/stamp.mjs --bump 20260905a
 ```
 
-## What is built
+## The gates
 
-- `core/` physics with our own contact patch, rng, dmath, marbleBody, snap, the Ringer referee,
-  the technique detector. Zero DOM, runs in Node unchanged.
-- `game/` the Ringer mode controller and the shot planner (Rookie, Sharp, Shark).
-- `input/` the Knuckle and the pull back fallback, plus camera gestures.
-- `render/` scene and CameraRig, the fake glass, contact shadows, the dirt ring, quality tiers.
-- `audio/` impacts only, synthesised from contact events.
-- `sim/` the harness and three scenarios; `test/` six gates; `tools/` check, stamp, lint, shots, icons.
+`lint` `catalog` `stamp` `harness` (ringer_break, sticking, replay_hash) `save` `ringer_rules`
+`ai_budget` `ringer_ai` `render` `knuckle` `audio_budget` `playthrough`. Every one has been watched to
+fail on purpose and the red output is in the root handoff's ledger.
 
-## What K1 still owes, in the order it should be picked up
+## What is left, in the order it should be picked up
 
-1. **Calibration.** Onboarding's first twenty seconds, three hardest snaps, ninetieth percentile stored.
-   Until it exists every player uses `snap.thumbSpeedMaxDefault`, which is a guess at a stranger's thumb.
-2. **Audio beyond impacts.** Rolling loops per marble, the warming shimmer, and the `audio_budget` gate.
-   The game currently clicks when marbles touch and is otherwise silent.
-3. **Pass and play.** Two local profiles on one device.
-4. **The house rules row.** The toggles exist in the referee and in `tuning`; there is no UI for them, so
-   quickplay defaults are all anybody can play.
-5. **Bombing.** The AimSource carries `bomb` and `core/snap.js` implements the drop shot; no input path
-   reaches it.
-6. **Rookie Assist.** The first 0.4 s of predicted path at levels 1 to 3, never in ranked.
-7. **A slip affordance.** The referee hands the turn back and the input flags it, but nothing on screen
-   tells the player what just happened beyond one line of text.
+**K1, one item.**
+1. **Pass and play.** Two local profiles on one device. Deferred on purpose: `meta/save.js` holds one
+   profile, and a second one wants the economy's inventory beside it, so it belongs with the keepsies
+   loop rather than in front of it.
 
-## Three things a new session must know before touching physics
+**K2, in order.**
+2. **The inspect turntable** (`meta/collection.js`): full screen, High materials even on Medium because
+   it is a static scene, drag to spin, the marble at 140 px, name, tier, class, lore, passive, active,
+   and the provenance line. Then the collection grid, three columns at 375, 96 px tiles.
+3. **The glb lane**, end to end, on one low poly knight built in `tools/forge/`: load on first inspect,
+   LOD, dispose, and the turntable showing it inside a clear sphere. It is a knight and not a dragon on
+   purpose: the Ember Dragon is a real grail and a dragon placeholder would be mistaken for it.
+4. **The economy** (`meta/economy.js`, `meta/drops.js`): the wallet, the faucets, the clay pool, the
+   three pouches with pity counters, dust. Gates `pity_math` and `clay_regen`.
+5. **The keepsies loop** (`game/match.js`): the ante with the tier matched rule, escrow written with
+   `inMatch` BEFORE the first turn, the winner taking the pot, and the ransom window. Gate
+   `escrow_crash`. This is the game's whole point and it does not exist yet.
+6. **The ceremonies** (`render/ceremony.js`) and the showcase room. DESIGN 18 asks for disproportionate
+   polish here and the result card currently floats over a black wash.
+
+## Four things a new session must know before touching physics or art
 
 1. **Rapier hard clamps angular velocity to pi/4 radians per step**, which is 94.25 rad/s at 1/120, with
    no parameter to change it. A 22 mm taw rolling at 2.6 m/s needs 236. So the floor contact patch is
@@ -54,6 +63,9 @@ node tools/stamp.mjs --bump 20260905a
    applies the friction itself, the floor's friction is zero in the solver, and Rapier's angvel is
    written from ours for rendering only. Read scar 4 at the top of that file before changing anything.
 2. **`addForce` and `addTorque` are persistent.** `resetForces` and `resetTorques` come first, every step.
-3. **Nothing in `src/core/` may call a transcendental.** Use `core/dmath.js`. The `lint` gate enforces it
-   and has been watched to catch it. A `?v=` query also makes a SECOND COPY of a module with its own
-   state, in Node and in the browser, which is the real reason the `stamp` gate matters.
+3. **Nothing in `src/core/` may call a transcendental.** Use `core/dmath.js`. A `?v=` query also makes a
+   SECOND COPY of a module with its own state, in Node and in the browser, which is the real reason the
+   `stamp` gate matters.
+4. **The contact sheet is not decoration.** It found thirty two marbles rendering as plain spheres that
+   every gate was happy with. Render it and open it after any change to `render/marbleMesh.js` or the
+   catalog.

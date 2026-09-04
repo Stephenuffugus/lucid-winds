@@ -802,12 +802,64 @@ ALL GATES PASSED
 - [ ] Stephen's entry quoted; what changed in `knuckle.js` and `tuning.json` and why; `knuckle` and `sticking` still green
 - [ ] commits
 
-### K2
-- [ ] `catalog` green: 65 entries, doc and JSON agree; the contact sheet opened and read
+### K2 (started; the catalog and the marbles' looks are done, the economy is not)
+- [x] `catalog` green: 65 entries, doc and JSON agree:
+```
+designed  commons 14  uncommons 20  rares 14  epics 8  grails 4   = 60
+signatures 5  (Coffee Tin Champ, The Thumbsplitter, House Edge, Old Ironsides, The First Marble)
+total   65 of 65
+the generated catalog matches src/data/marbles.json exactly
+CATALOG OK
+```
+  watched to fail twice, then restored:
+```
+src/data/marbles.json is STALE against docs/DESIGN.md. Run node tools/catalog.mjs
+CATALOG FAILED
+
+2 problems:
+  common holds 13 designed marbles, want 14
+  the catalog holds 64 marbles, want 65
+CATALOG FAILED
+```
+  The generator handles the three sections that are not tables: 10.2's one row that packs six cat's
+  eyes, 10.3's bold prose under group headings, and 10.6 and 10.7's Figure and Boss columns. The count
+  check took one try to get right: the boss signatures ARE rares, epics and a grail, so counting them
+  inside the per tier totals reported sixteen rares against a want of fourteen on a catalog that was
+  exactly correct.
+
+- [x] the contact sheet opened and read, three times, and it found what no gate could.
+  `docs/shots/k2-contact-sheet.png`, all 65 at 128 px.
+
+  **First look. ⛔ THIRTY TWO OF THE SIXTY FIVE MARBLES WERE PLAIN COLOURED SPHERES.** Five shader
+  recipes existed and the catalog asked for twelve, so every swirl had no swirl, every corkscrew no
+  screw, slag nothing turbulent in it, and all eight epics and four grails fell through to clear glass.
+  Nothing measured it because nothing could: the palettes were all distinct numbers, the JSON was
+  correct, every gate was green. A picture of all sixty five, opened, caught it in one look. All twelve
+  recipes are written now.
+
+  **Second look.** The four steel marbles were four identical grey spheres with an identical hard band
+  across the middle, which is precisely the "any two that read the same at 64 px" fault this sheet
+  exists to catch. Steel has almost no saturation so a hue drawn from a name does nothing for it.
+  Separated by hand in `marbles.overrides.json`, and steel now reflects a soft ground to sky blend whose
+  horizon sits where its seed puts it rather than wearing a seam.
+
+  **Third look.** The four grails read as the four least interesting marbles in the game, which is
+  backwards for the rarest things in it, and the cat's eye vanes read as smears rather than blades.
+  Grails carry the custom interior until Stephen's figures arrive; a cat's eye has three vanes, because
+  DESIGN 10.2's `catsEye(1, color)` counts colours and the very next tier names a Nine Vane.
+
+  **What is still wrong with it, named.** (1) Bearing and Chrome Dome still share a horizon shape and
+  differ only in value; they are two greys before they are two objects. (2) A dozen marbles read as
+  near black circles at 64 px, because the generated core colour is 55 percent of an already dark
+  lightness. (3) The grails are soft clouds rather than sulphides with a figure inside, and will stay
+  that way until the glb lane lands.
+
 - [ ] `pity_math`, `clay_regen`, `escrow_crash`, `save_migrate` each green and each watched to fail
-- [ ] `playthrough` extended green
-- [ ] shots: inspect x3, grid, ante mid-roll, loss card, showcase room from the door and from inside a wall; faults written
-- [ ] commits
+  — `save_migrate` is DONE as the `save` gate (the migration chain, the two tab merge, the write probe,
+  each watched to fail). The other three wait on the economy, which is not built.
+- [ ] `playthrough` extended green (it plays two whole games; the pouch, the stake and the ransom are not built)
+- [ ] shots: inspect x3, grid, ante mid-roll, loss card, showcase room from the door and from inside a wall
+- [x] commits: `46befcb5`
 
 ### K3
 - [ ] `arena_rules`, `damage_math`, `condition_matrix`, `arena_shape` (the table, every matchup), `boss_ladder` (five rates), `ai_budget` (100 turns, min candidates), `budget` (three runs alone)
@@ -851,105 +903,113 @@ Next action: <file, function, step, the first thing the next session does>
 
 ### Morning report, 2026-09-04, overnight
 
-**Phases:** K0 **done** (`14a6bca0`, `58621d7e`). K1 **built and playable, four items short of complete**
-(`8b57d09c`, `bbb7b629`, `3b8f5e93`, `adbc1f42`). K2 **not started**. K3 **not started**.
+**Phases:** K0 **done**. K1 **done but for pass and play**. K2 **started**: the catalog and the marbles'
+looks are finished, the economy is not. K3 **not started**.
 
-**Gates:** nine, all green, run twice, alone.
+**Gates:** thirteen, all green, every one watched to fail on purpose.
 ```
-lint  pass 0s · stamp  pass 0s · harness  pass 15s · ringer_rules  pass 0s
-ai_budget  pass 17s · ringer_ai  pass 43s · render  pass 37s · knuckle  pass 19s
-playthrough  pass 24s
+lint  pass 0s · catalog  pass 0s · stamp  pass 0s · harness  pass 16s · save  pass 0s
+ringer_rules  pass 0s · ai_budget  pass 17s · ringer_ai  pass 46s · render  pass 34s
+knuckle  pass 21s · audio_budget  pass 11s · playthrough  pass 26s
 ALL GATES PASSED
 ```
-Nothing was skipped. `ai_budget`, `ringer_ai` and `playthrough` are marked slow, so `--fast` will skip
-those three and say so. Every gate has been watched to fail on purpose and the red output is in the
-ledger above.
+Nothing skipped, nothing weakened, nothing left red. `ai_budget`, `ringer_ai` and `playthrough` are
+marked slow so `--fast` skips those three and says so.
 
-**Play it:** open `satellites/keepsies/index.html`. PLAY, then the rules card, then you are in a game of
-Ringer against Dusty. Drag anywhere on the dirt to slide your shooter along the ring edge; put your thumb
-on the shooter and hold it still until the ring around it shrinks and turns gold; flick up through the
+**Play it:** open `satellites/keepsies/index.html`. PLAY, then it asks for your three hardest snaps and
+measures your thumb, then the rules card, then a setup screen where the house rules are five chips you
+can actually change, then a game of Ringer against Dusty. Drag on the dirt to slide your shooter along
+the ring; hold your thumb on it until the ring around it shrinks and turns gold; flick up through the
 marble. Start the flick low on the marble for backspin, high for follow, off to one side for english,
-along a curve for a wild one. Seven of thirteen wins. `docs/checklists/k1.md` is your ten things to try
-and the two questions the build is actually asking.
+along a curve for a wild one. Seven of thirteen wins.
+`docs/checklists/k1.md` is your ten things to try and the two questions the build is asking.
 
 **Look at, in this order:**
-1. `docs/shots/k1-brace.png` The signature interaction, working. The reticle is still bigger than the
-   marble it surrounds, because it is drawn at the thumb's grab radius and the 48 px law makes that
-   bigger than a 22 mm marble at this distance.
-2. `docs/shots/k1-break.png` The cross scattering. Nothing has a motion cue, so at twelve pixels a
+1. `docs/shots/k2-contact-sheet.png` All sixty five marbles. Opening this three times is what found the
+   biggest art fault of the night, and what is still wrong with it is written under the K2 ledger box.
+2. `docs/shots/k1-calibration.png` The first twenty seconds. A marble on dirt and one line, which took
+   four attempts: the first buried it under three paragraphs on a black wash.
+3. `docs/shots/k1-brace.png` The signature interaction, with Rookie Assist's dotted path. The reticle is
+   still bigger than the marble inside it, because it is drawn at the thumb's 48 px grab radius.
+4. `docs/shots/k1-break.png` The cross scattering. Nothing has a motion cue, so at twelve pixels a
    marble you cannot tell which ones are moving.
-3. `docs/shots/k1-board.png` A whole board. The middle of the frame is a lot of empty dirt, which is
-   what real scale in a three metre ring costs, and a cat's eye and a clay are indistinguishable at
-   this size.
-4. `docs/shots/k1-results.png` The loop closed: seven of seven, Clean Sweep earned. The card floats over
-   a black wash and the technique sits in a table row next to Sunbeams, both of which the K2 ceremony
-   fixes.
-5. `docs/shots/k1-under.png` The forbidden angle. The floor does not leak, and there is nothing down
-   there, which is why the camera now clamps at the ground.
+5. `docs/shots/k1-results.png` The loop closed. The card floats over a black wash and the technique sits
+   in a table row next to Sunbeams, which undersells the one line meant to be a discovery. Both are the
+   ceremony DESIGN 18 asks for, and both are K2.
 
-**Decided without you, the three that matter most, verbatim from `docs/DECISIONS.md`:**
+**Decided without you, the four that matter most, verbatim from `docs/DECISIONS.md`:**
 - *"⛔⛔ THE BIGGEST FINDING OF THE NIGHT: Rapier hard clamps angular velocity to pi/4 radians per step,
-  and the floor contact is now ours."* Measured in a vacuum: 94.25 rad/s at 1/120, 47.12 at 1/60, 188.50
-  at 1/240, always exactly pi/4 per step, no parameter for it. A 22 mm taw rolling at 2.6 m/s needs 236.
-  **Every bit of backspin, topspin and english the design is built around was being silently thrown away
-  at that ceiling**, and a sweep of `kBack` from 1.25 to 13 returned byte identical numbers. The floor
-  contact patch is now ours; the alternatives (a smaller timestep, a scaled up world) were rejected for
-  breaking the 1/120 step and metric scale respectively.
+  and the floor contact is now ours."* Measured in a vacuum: 94.25 rad/s at 1/120, always exactly pi/4
+  per step, no parameter for it. A 22 mm taw rolling at 2.6 m/s needs 236. **Every bit of backspin,
+  topspin and english the design is built around was being silently thrown away at that ceiling**, and a
+  sweep of `kBack` from 1.25 to 13 returned byte identical numbers. The floor contact patch is ours now;
+  a smaller timestep and a scaled up world were both rejected, for breaking the 1/120 step and metric
+  scale respectively.
+- *"⛔ ALL TWELVE RECIPES EXIST NOW, AND THE CONTACT SHEET IS WHY."* Five shader modes existed and the
+  catalog asked for twelve, so **thirty two of the sixty five marbles rendered as plain coloured
+  spheres** and nothing complained: swirls with no swirl, slag with nothing turbulent in it, every epic
+  and grail falling through to clear glass. No gate could have caught it. A picture, opened, did.
 - *"rolling resistance 0.02 to 0.06, and the break from 4.0 to 4.5 m/s. This overrides two numbers the
-  plan fixed."* The plan's 0.02 was measured while Rapier's own floor friction was quietly doing half the
-  braking. With the patch model owning it, 0.02 brakes almost nothing: the taw coasted eleven metres and
-  nothing in the scene slept inside eight seconds, on a gate that had been green an hour earlier.
-- *"AI aim noise 8, 3, 1 degrees becomes 2.5, 1.5, 0.8."* A taw and a mib touch inside a window of about
-  1.9 cm, so at a metre and a half a hit needs the aim inside 0.73 degrees. At the design's 8 degrees a
-  Rookie connected on 17 percent of shots and dragged a game to 59 shots and past two minutes of physics.
+  plan fixed."* The plan's 0.02 was measured while Rapier's own floor friction was quietly doing half
+  the braking; with the patch model owning it, 0.02 brakes almost nothing and nothing in the scene slept.
+- *"AI aim noise 8, 3, 1 degrees becomes 2.5, 1.5, 0.8."* A taw and a mib touch inside about 1.9 cm, so
+  at a metre and a half a hit needs the aim inside 0.73 degrees. At 8 degrees a Rookie connected on 17
+  percent of shots and dragged a game to 59 shots.
 
-Two more numbers moved and both are written up with their measurements: the thumb speed band 0.2 to 2.4
-m/s became 0.35 to 1.2, because 2.4 m/s of screen travel is nine CSS pixels a millisecond and no thumb
-does it; and the ease curve exponent is stated in sixteenths so it can be computed with square roots
-instead of `Math.pow`, which is not bit reproducible across engines.
+Two more numbers moved with their measurements written down: the thumb speed band 0.2 to 2.4 m/s became
+0.35 to 1.2, because 2.4 m/s of screen travel is nine CSS pixels a millisecond and no thumb does it; and
+Rookie Assist shows 0.25 s of path rather than the design's 0.4, because at ten foot 0.4 s reaches almost
+the whole way to the cross and reads as the full trajectory DESIGN 7.1 forbids outright.
 
-**Blocked:** none. Nothing was left red, weakened or skipped.
+**Blocked:** none.
 
-**For Fable:** nothing outside the fence was touched. One thing for you to know when you card it: the
-portal row and the thumb are not made yet, because `tools/make_thumb.mjs` is a K3 item in the plan and
-K3 has not started. `beta: true` is correct whenever you do card it. `node tools/check.js` from
-`satellites/keepsies/` is the whole story in three minutes.
+**For Fable:** nothing outside the fence was touched. When you card it: `beta: true` is right, and the
+thumb does not exist yet because `tools/make_thumb.mjs` is a K3 item. `node tools/check.js` from
+`satellites/keepsies/` is the whole story in four minutes. One near miss is recorded in SESSION STATE: a
+heredoc without an absolute path wrote a Keepsies `manifest.json` over the repo root's own; it was
+restored from git inside a minute and every shell call afterwards used absolute paths.
 
-**For Stephen:** the night leaned on these open questions and took the smallest reasonable answer to each.
-**#10, the break power in the tutorial:** it wants a firm snap, not a medium one. A 4.5 m/s break puts one
-to three mibs out on 94 percent of two hundred seeds; the design's 3.5 knocks out nothing at any setting
-tested. **#11, the ring size for the first league:** the seven foot ring is measurably easier and is what
-the playthrough gate uses; the ten foot ring is the default everywhere else and both are in `tuning`.
-**#4 and #9** were not reached, because they belong to the Arena and the economy.
-Please run `satellites/keepsies/docs/checklists/k1.md` on your phone and write what you felt in
-`PLAYTESTS.md`. The two questions are: does the snap feel like a snap, and does the marble weigh
-anything. That entry is K1.5 and the next session runs it before anything else.
+**For Stephen:** the night leaned on these and took the smallest reasonable answer to each.
+**#10, the break power in the tutorial:** it wants a firm snap. 4.5 m/s puts one to three mibs out on 94
+percent of two hundred seeds; the design's 3.5 knocks out nothing at any setting tested.
+**#11, the ring size for the first league:** the seven foot ring is measurably easier, and it shows: in
+the playthrough gate a player clears seven of seven in three shots at seven foot and loses six to seven
+in nineteen shots at ten. Dusty's league may want ten rather than seven, or Dusty may want to be worse.
+Both sizes are in `tuning` and the setup screen switches between them, so you can feel it.
+**#9, the currency's name:** the results card says Sunbeams, per the design, and the fleet's own
+`_sbCapEarn` pays quietly beside it. Two numbers, one name, still open.
+Please run `docs/checklists/k1.md` on your phone and write what you felt in `PLAYTESTS.md`. The two
+questions: does the snap feel like a snap, and does the marble weigh anything. That entry is K1.5 and
+the next session runs it before anything else.
 
-**Next action:** K1's four remaining items, in `satellites/keepsies/HANDOFF.md` under "What K1 still
-owes", starting with calibration, `meta/onboarding.js` step one, three hardest snaps and the ninetieth
-percentile into `calib.max`. Then audio beyond impacts and the `audio_budget` gate. Then K2, beginning
-with `tools/catalog.mjs` reading `docs/DESIGN.md` sections 10.2 to 10.7.
+**Next action:** `src/meta/collection.js` does not exist. Build the inspect turntable first, because it
+is the screen that makes a marble worth owning and everything else in K2 is downstream of caring about
+one: full screen, High materials even on Medium since it is a static scene, drag to spin, the marble at
+140 px, and the name, tier, class, lore, passive, active and provenance line beside it. The catalog it
+reads from is already generated and every entry already renders.
 
 ---
 
 ## SESSION STATE (builder updates this at the end of every session)
 
-**2026-09-04, Opus, overnight run.** K0 complete, K1 built and playable and four items short of complete,
-K2 and K3 not started. Nine gates green and each watched to fail; evidence pasted in the ledger above.
-Six screenshots opened and three faults named in each. Five commits, all pushed to
-`origin add-sproing-jumper`: `4b8d3043` the failing gate, `14a6bca0` physics and harness, `58621d7e` the
-first rendered marble, `8b57d09c` the referee, `bbb7b629` the Rapier spin clamp and the retune,
-`3b8f5e93` the Knuckle and the planner, `adbc1f42` the playable game.
+**2026-09-04, Opus, overnight run.** K0 complete. K1 complete but for pass and play. K2 started: the
+catalog and the marbles' looks are done, the economy is not. K3 not started. Thirteen gates green and
+each watched to fail; evidence pasted in the ledger above. Eleven screenshots opened and their faults
+named. Ten commits, all pushed to `origin add-sproing-jumper`: `4b8d3043` the failing gate, `14a6bca0`
+physics and harness, `58621d7e` the first rendered marble, `8b57d09c` the referee, `bbb7b629` the Rapier
+spin clamp and the retune, `3b8f5e93` the Knuckle and the planner, `adbc1f42` the playable game,
+`dd551363` the first morning report, `a81c51bb` calibration and the save, `1c3013ab` the sound,
+`df2f4d02` the setup screen and the drop shot, `46befcb5` the catalog and the twelve recipes.
 
 Nothing outside `satellites/keepsies/**` and this file was touched. One near miss worth recording: a
 heredoc without an absolute path wrote a Keepsies `manifest.json` over the repo root's own, and it was
 restored from git inside a minute; every shell call after that used absolute paths.
 
-**Exact next action:** `src/meta/onboarding.js` does not exist. Create it with step one of DESIGN 16
-only, the calibration: a marble on dirt, "Show me your hardest snap.", three snaps through the existing
-Knuckle, the ninetieth percentile of the three stored as `calib.max` and handedness from the side of the
-first brace. `main.js` already holds `G.calib` and passes it to the Knuckle through the `calib()` hook,
-so the wiring is one line; what is missing is the screen and the store. Then `test/knuckle.mjs` gains a
-seventh case asserting that a calibrated player's hardest snap reads power 1.0 and a stranger's does not.
-
-**2026-09-04, Fable.** Plan written and verified (two read-only checkers, 87 claims, the wrong ones applied), then reshaped for an unattended overnight run: the prompt at the top, the overnight protocol in section 15, the morning report in section 16, and the K1 sign-off turned into K1.5 so K2 follows the same night. No code. `satellites/keepsies/` holds `docs/DESIGN.md` (the v2 design verbatim), `sim/probes/` (the Rapier measurements behind sections 2 and 4.1, with the bugged first sweep kept on purpose), and the in-folder state files. Next action: K0, step 1, the gate that fails.
+**Exact next action:** `src/meta/collection.js` does not exist. Create it with the inspect turntable
+only, per DESIGN 20 and the plan's K2 screen table: full screen over a dimmed board, High materials even
+on a Medium device because it is a static scene, one finger drag to spin, the marble drawn at 140 px,
+and beside it the name, the tier ribbon, the class, the lore line, the passive and active text, and
+integrity and hardness as words rather than numbers. `src/data/marbles.json` already holds all sixty
+five with a palette and a recipe each, `render/marbleMesh.js` already renders every one of them, and
+`tools/contact_sheet.mjs` already proves it. What is missing is the screen. After it, the collection
+grid: three columns at 375 wide, 96 px tiles, a tier ribbon and a filter row.
