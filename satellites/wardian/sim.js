@@ -31,7 +31,7 @@ var TEST_SRC = extract(HTML, '// ---- TEST_EXPORT_START ----', '// ---- TEST_EXP
 
 var EXPORTS = ['CONFIG', 'makeRNG', 'seedFromString', 'mixSeed', 'clamp',
   'FLORA', 'FLORA_ORDER', 'FAUNA', 'FAUNA_ORDER',
-  'clockFromMs', 'seasonOf', 'phaseOf', 'lightOf', 'hourWord', 'moonPhase', 'isFullMoon',
+  'clockFromMs', 'applyClock', 'seasonOf', 'phaseOf', 'lightOf', 'hourWord', 'moonPhase', 'isFullMoon',
   'newGrid', 'mist', 'envTick', 'mossCover', 'surfaceMoist', 'totalWater', 'newPlant', 'rootMoist', 'growPlant', 'spreadMoss', 'segCount',
   'addAgents', 'fauna', 'arrivals', 'rareCheck', 'newJar', 'tick', 'catchUp', 'census',
   'snapshot', 'findNaN', 'POLICIES', 'runDays', 'maxGenOf', 'TEST'];

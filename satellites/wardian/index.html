@@ -235,7 +235,7 @@ var CONFIG = Object.freeze({
      it is why a mist means something. Nothing dies of it, the plants curl. */
   SEAL_LEAK: 0.012,
   MIST_ADD: 0.25, MIST_COOLDOWN_S: 20,
-  NUTRIENT_FROM_LEAF: 0.3, NUTRIENT_DRAW_PER_GROWTH: 0.02,
+  NUTRIENT_FROM_LEAF: 0.3, NUTRIENT_DRAW_PER_GROWTH: 0.012,
   LIGHT_DAY: 1.0, LIGHT_DUSK: 0.4, LIGHT_NIGHT: 0.08,
   SEG_MAX: 400, AGENT_MAX: 25, PARTICLE_MAX: 60,
 
@@ -248,12 +248,13 @@ var CONFIG = Object.freeze({
   /* how fast a segment fills out, and how fast a frond unrolls. The unfurl is
      the signature of this game and it is forty ticks, which is under seven
      hours of jar time and about four seconds of montage. */
-  GROWTH_PER_TICK: 0.036, CURL_TICKS: 40,
+  GROWTH_PER_TICK: 0.044, CURL_TICKS: 40,
   MOSS_SPREAD_P: 0.006, MOSS_SPREAD_MOIST: 0.12, MOSS_COVER_MAX: 0.55,
   LEAF_LIFE_TICKS: 1600, DECAY_PER_TICK: 0.0016,
   /* ⛔ these were 0.4 and 0.5: a surface cell never passes 0.30 in a sealed
      jar, so the springtails could never arrive and no gate had noticed */
-  SPRINGTAIL_DECAY: 0.25, SPRINGTAIL_MOIST: 0.20, PILLBUG_LEAVES: 3,
+  SPRINGTAIL_DECAY: 0.25, SPRINGTAIL_MOIST: 0.20, PILLBUG_LEAVES: 3, ROLL_MS: 3000,
+  STARTLE_WU: 60, LONGPRESS_MS: 500, SWIPE_PX: 90,
   BEETLE_NIGHTS: 4, BEETLE_MOSS_COVER: 0.30
 });
 
@@ -292,17 +293,21 @@ function clamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
 var FLORA = {
   moss:      { id: 'moss', name: 'Cushion moss', kind: 'cells', start: true },
   fern:      { id: 'fern', name: 'Button fern', kind: 'tree', start: true,
-               branchP: 0.18, jitter: 12, maxGen: 4, leafEvery: 1.5 },
+               branchP: 0.18, jitter: 12, maxGen: 4, leafEvery: 1, crown: 5, spread: 62 },
   vine:      { id: 'vine', name: 'Glass vine', kind: 'tree',
-               branchP: 0.10, jitter: 8, maxGen: 6, leafEvery: 2.2, climbs: true },
-  mushroom:  { id: 'mushroom', name: 'Ghost mushroom', kind: 'fruit', nightOnly: true, needNutrient: 0.5 },
+               branchP: 0.10, jitter: 8, maxGen: 6, leafEvery: 2, climbs: true },
+  mushroom:  { id: 'mushroom', name: 'Ghost mushroom', kind: 'fruit', nightOnly: true,
+               needNutrient: 0.5, tintLeaf: '#DCD6C4', glow: '#CFE6C0' },
   dewsprout: { id: 'dewsprout', name: 'Dew sprout', kind: 'tree',
-               branchP: 0.0, jitter: 4, maxGen: 1, leafEvery: 1.0, needHumidity: 0.7 },
+               branchP: 0.0, jitter: 4, maxGen: 1, leafEvery: 1, needHumidity: 0.7 },
   frostfern: { id: 'frostfern', name: 'Frost fern', kind: 'tree', rare: true,
-               branchP: 0.16, jitter: 14, maxGen: 3, leafEvery: 1.4 },
+               branchP: 0.16, jitter: 14, maxGen: 3, leafEvery: 1, crown: 4, spread: 54,
+               tintLeaf: '#BFD8E4' },
   sunburst:  { id: 'sunburst', name: 'Sunburst bloom', kind: 'tree', rare: true,
-               branchP: 0.05, jitter: 6, maxGen: 2, leafEvery: 2.0 },
-  mooncap:   { id: 'mooncap', name: 'Moon cap', kind: 'fruit', rare: true, nightOnly: true, needNutrient: 0.3 }
+               branchP: 0.05, jitter: 6, maxGen: 2, leafEvery: 1, crown: 6, spread: 78,
+               tintLeaf: '#E0B255' },
+  mooncap:   { id: 'mooncap', name: 'Moon cap', kind: 'fruit', rare: true, nightOnly: true,
+               needNutrient: 0.3, tintLeaf: '#BFC8E8', glow: '#8FA8E8' }
 };
 var FLORA_ORDER = ['moss', 'fern', 'vine', 'mushroom', 'dewsprout', 'frostfern', 'sunburst', 'mooncap'];
 var FAUNA = {
@@ -439,8 +444,14 @@ function mossCover(state) {
 /* A plant is never removed. Dormancy is the only downward state and it is
    reversible within WAKE_TICKS of moisture coming back (3.2). */
 function newPlant(species, x, seedN) {
+  /* every plant decides its own shape once, so two of a species are never
+     twins: how many fronds in the crown, how wide they fan, which way it leans */
+  var r = makeRNG(mixSeed(seedN, 97)), sp = FLORA[species];
+  var crown = sp && sp.crown ? Math.max(3, sp.crown - 1 + Math.floor(r() * 3)) : 0;
   return {
     sp: species, x: x, dormant: 0, dryTicks: 0, wetTicks: 0, seed: seedN, born: 0,
+    crown: crown, fan: 0.8 + r() * 0.5, lean: (r() - 0.5) * 18, scale: 0.82 + r() * 0.40,
+    z: r(),
     segs: [{ a: -90, l: 1, g: 0, gen: 0, p: -1, leaf: 0, curl: 1, age: 0 }],
     fruit: 0, open: 0
   };
@@ -494,7 +505,9 @@ function growPlant(state, p, r, phase) {
     return;
   }
 
-  var atCap = segCount(state) >= CONFIG.SEG_MAX;
+  /* ⛔ room is COUNTED, not a boolean tested once: a crown pushes five at a
+     time and a single flag let the jar overshoot SEG_MAX by four */
+  var room = CONFIG.SEG_MAX - segCount(state), atCap = room <= 0;
   for (i = 0; i < p.segs.length; i++) {
     var s = p.segs[i];
     s.age++;
@@ -508,15 +521,27 @@ function growPlant(state, p, r, phase) {
     if (s.leaf && s.curl > 0) s.curl = Math.max(0, s.curl - 1 / CONFIG.CURL_TICKS);
     if (s.g >= 1 && !s.done) {
       s.done = 1;
-      if (!atCap && s.gen < sp.maxGen) {
-        var kids = r() < sp.branchP ? 2 : 1;
+      /* a crown species puts its whole first ring up from the base at once, so
+         it reads as a fern and not as a blade of grass with two buds on it */
+      if (s.noBranch) { /* a replacement leaf, and nothing more */ }
+      else if (!atCap && s.gen === 0 && sp.crown) {
+        var c, ring = Math.min(p.crown || sp.crown, room);
+        for (c = 0; c < ring; c++) {
+          var t = ring === 1 ? 0 : (c / (ring - 1) - 0.5) * 2;
+          room--;
+          p.segs.push({ a: -90 + (p.lean || 0) + t * sp.spread * (p.fan || 1) * 0.5 + (r() - 0.5) * sp.jitter,
+            l: 0.92 - Math.abs(t) * 0.16, g: 0, gen: 1, p: i, leaf: 1, curl: 1, age: 0 });
+        }
+      } else if (!atCap && s.gen < sp.maxGen) {
+        var kids = Math.min(r() < sp.branchP ? 2 : 1, room);
         var k;
+        room -= kids;
         for (k = 0; k < kids; k++) {
           var spread = kids === 1 ? (r() - 0.5) * sp.jitter : (k === 0 ? -1 : 1) * (sp.jitter + r() * sp.jitter);
           p.segs.push({ a: s.a + spread, l: s.l * 0.86, g: 0, gen: s.gen + 1, p: i,
             leaf: (s.gen + 1) >= Math.ceil(sp.leafEvery) ? 1 : 0, curl: 1, age: 0 });
         }
-      } else if (!s.leaf && s.gen >= 1) {
+      } else if (!s.leaf && s.gen >= 1 && !s.noBranch) {
         s.leaf = 1; s.curl = 1;
       }
     }
@@ -526,8 +551,14 @@ function growPlant(state, p, r, phase) {
       s.shed = 1; s.leaf = 0;
       cell.d = clamp(cell.d + CONFIG.NUTRIENT_FROM_LEAF, 0, 1);
       state.shed++;
-      if (!atCap) p.segs.push({ a: s.a + (r() - 0.5) * sp.jitter, l: s.l, g: 0, gen: s.gen,
-        p: s.p, leaf: 1, curl: 1, age: 0 });
+      /* the replacement is a LEAF, not a new branch. ⛔ it used to carry the
+         parent's generation, so every shed leaf grew a whole new limb and two
+         ferns filled a 400 segment budget in a month. */
+      if (room > 0) {
+        room--;
+        p.segs.push({ a: s.a + (r() - 0.5) * sp.jitter, l: s.l, g: 0, gen: s.gen,
+          p: s.p, leaf: 1, curl: 1, age: 0, noBranch: 1 });
+      }
     }
   }
 }
@@ -570,7 +601,9 @@ function fauna(state, r, phase) {
     var a = state.agents[i];
     f = FAUNA[a.sp];
     a.asleep = (f.nightOnly && phase !== 'night') ? 1 : 0;
-    if (a.rolled > 0) { a.rolled--; continue; }
+    /* rolled is milliseconds, so the view can count it down in real time and
+       the headless run can count it down ten minutes at a time */
+    if (a.rolled > 0) { a.rolled = Math.max(0, a.rolled - CONFIG.TICK_MIN * 60000); continue; }
     if (a.asleep) continue;
     /* steer to what it needs: springtails to mould, pillbugs to decay, the
        beetle wanders the glass at night */
@@ -638,20 +671,34 @@ function newJar(seedN, hemi) {
   for (x = 0; x < CONFIG.GRID_W; x++) s.moss.push(0);
   /* what the Jarwright left in it */
   s.moss[10] = 1; s.moss[11] = 1;
-  s.plants.push(newPlant('fern', 8, mixSeed(seedN, 11)));
-  s.plants.push(newPlant('fern', 16, mixSeed(seedN, 13)));
+  var pr = makeRNG(mixSeed(seedN, 21));
+  /* x is a position along the jar, sink is how deep it is set into the soil;
+     the ground itself is a curve the view owns */
+  s.props = [
+    { kind: 'stone', x: 46, y: 0, r: 9, sink: 2.6, rot: pr() * 3 },
+    { kind: 'stone', x: 58, y: 0, r: 5.4, sink: 1.6, rot: pr() * 3 },
+    { kind: 'wood', x: 182, y: 0, r: 13, sink: 2.2, rot: 0 }
+  ];
+  /* not at 8 and 16: a jar with two plants placed symmetrically reads as a
+     diagram. One near the stones, one off to the right of centre. */
+  s.plants.push(newPlant('fern', 7, mixSeed(seedN, 11)));
+  s.plants.push(newPlant('fern', 15, mixSeed(seedN, 13)));
   s.discovered.moss = 1; s.discovered.fern = 1;
   return s;
 }
 /* one tick, ten minutes, live and catching up alike */
-function tick(state, clock) {
-  var r = makeRNG(state.rngState);
-  state.tickN++;
+function applyClock(state, clock) {
   var phase = phaseOf(clock.hour, clock.season);
   state.env.phase = phase;
   state.env.light = lightOf(phase);
   state.env.season = clock.season;
   state.env.hour = clock.hour;
+  return phase;
+}
+function tick(state, clock) {
+  var r = makeRNG(state.rngState);
+  state.tickN++;
+  var phase = applyClock(state, clock);
   if (phase === 'night' && state.lastPhase !== 'night') state.nights++;
   state.lastPhase = phase;
 
@@ -738,14 +785,19 @@ function snapshot(state) {
       var s = p.segs[k];
       ss.push([round(s.a), round(s.l), round(s.g), s.gen, s.p, s.leaf, round(s.curl)]);
     }
-    pl.push([p.sp, round(p.x), p.dormant, p.dryTicks, round(p.fruit), ss]);
+    pl.push([p.sp, round(p.x), p.dormant, p.dryTicks, round(p.fruit), p.crown, round(p.lean), ss]);
   }
   var ag = [];
   for (i = 0; i < state.agents.length; i++) {
     var a = state.agents[i];
     ag.push([a.sp, round(a.x), round(a.y), a.asleep, a.rolled]);
   }
-  return JSON.stringify({ t: state.tickN, grid: g, moss: state.moss, plants: pl, agents: ag,
+  var pr2 = [];
+  for (i = 0; i < state.props.length; i++) {
+    var q = state.props[i];
+    pr2.push([q.kind, round(q.x), round(q.sink), round(q.r)]);
+  }
+  return JSON.stringify({ t: state.tickN, grid: g, moss: state.moss, plants: pl, agents: ag, props: pr2,
     hum: round(state.humidity), glass: round(state.glass),
     spores: round(state.spores), nights: state.nights,
     shed: state.shed, seen: state.seen, journal: state.journal.length });
@@ -1053,3 +1105,1045 @@ function suitePurity(T, src) {
     code.indexOf('plants.splice') < 0 && code.indexOf('agents.splice') < 0 && code.indexOf('journal.splice') < 0);
 }
 // ---- TEST_EXPORT_END ----
+
+/* ========================= 16. VIEW ========================= */
+/* World units: the jar interior is 24 columns of 10 wu, so 240 wide. The soil
+   is the bottom 80. Everything below is drawn in wu and scaled once. */
+var WU = 10, JAR_W = CONFIG.GRID_W * WU, JAR_H = 258, SOIL_H = CONFIG.GRID_H * WU;
+var SOIL_TOP = JAR_H - SOIL_H, RIM = 9;
+var SEG_LEN = 15, SWAY_DEG = 2.6, SWAY_SPD = 0.00055;
+var FROND_TURN = 4.9, FROND_LEN = 34;
+/* the soil is not a shelf. It is mounded in the middle and lumpy along it, and
+   everything that stands on it asks this function where the ground is. */
+function soilY(x) {
+  var u = clamp(x / JAR_W, 0, 1);
+  return SOIL_TOP - 9 * Math.sin(Math.PI * u) - 4.2 * Math.sin(x * 0.052 + 1.3)
+    - 2.0 * Math.sin(x * 0.148 + 0.4) - 1.0 * Math.sin(x * 0.33);
+}
+function soilPath(ctx) {
+  var x;
+  ctx.beginPath();
+  ctx.moveTo(wx(-1), wy(soilY(0)));
+  for (x = 0; x <= JAR_W; x += 3) ctx.lineTo(wx(x), wy(soilY(x)));
+  ctx.lineTo(wx(JAR_W + 1), wy(JAR_H + RIM));
+  ctx.lineTo(wx(-1), wy(JAR_H + RIM));
+  ctx.closePath();
+}
+
+var V = { cv: null, ctx: null, W: 0, H: 0, dpr: 1, k: 1, ox: 0, oy: 0, t: 0 };
+
+function wx(x) { return V.ox + x * V.k; }
+function wy(y) { return V.oy + y * V.k; }
+function unwx(sx) { return (sx - V.ox) / V.k; }
+function unwy(sy) { return (sy - V.oy) / V.k; }
+
+function fitCanvas() {
+  var cv = V.cv, r = cv.getBoundingClientRect();
+  /* ⛔ measure the element, never innerHeight: the browser chrome lies */
+  V.W = Math.max(1, Math.round(r.width));
+  V.H = Math.max(1, Math.round(r.height));
+  V.dpr = Math.min(2.5, window.devicePixelRatio || 1);
+  cv.width = Math.round(V.W * V.dpr);
+  cv.height = Math.round(V.H * V.dpr);
+  /* ⛔ setting canvas.width CLEARS the context state, so the transform is set
+     after the resize and never before it */
+  V.ctx.setTransform(V.dpr, 0, 0, V.dpr, 0, 0);
+  var outW = JAR_W + RIM * 2, outH = JAR_H + RIM * 2 + 16;
+  V.k = Math.min(V.W * 0.88 / outW, V.H * 0.70 / outH);
+  V.ox = (V.W - JAR_W * V.k) / 2;
+  V.oy = (V.H - JAR_H * V.k) / 2 + V.H * 0.03;
+}
+
+/* ---- colour by hour: one tint drives the room, the glass and the leaves ---- */
+var TINTS = {
+  dawn:  { sky: '#3E3325', warm: '#C79A5A', amb: 0.42, leaf: '#6E9E58', glow: '#E0B071' },
+  day:   { sky: '#5A5136', warm: '#E9D7A6', amb: 0.72, leaf: '#7BB264', glow: '#FFF1C8' },
+  dusk:  { sky: '#3A2A26', warm: '#C87F4A', amb: 0.38, leaf: '#5E8B4F', glow: '#D98C55' },
+  night: { sky: '#141C24', warm: '#4E6478', amb: 0.16, leaf: '#3F5E45', glow: '#8FB6D4' }
+};
+function tint(state) { return TINTS[state.env.phase] || TINTS.day; }
+/* ⛔ scatter needs a HASH, not modular arithmetic on the index: (i*137)%719
+   walks a constant step in x and a constant step in y, so the grain lands in
+   diagonal dashes and the soil looks hatched. */
+function hash01(i, salt) {
+  var h = (i * 374761393 + (salt || 0) * 668265263) | 0;
+  h = (h ^ (h >>> 13)) * 1274126177 | 0;
+  h = h ^ (h >>> 16);
+  return ((h >>> 0) % 100003) / 100003;
+}
+/* ⛔ this must read its OWN output. It only parsed #rrggbb, so the moment a
+   mixed colour was mixed again it returned NaN, canvas kept the last fill, and
+   the moss came out black in the first shot of the jar. */
+function rgbOf(c) {
+  if (c.charAt(0) === '#') {
+    var p = parseInt(c.slice(1), 16);
+    return [(p >> 16) & 255, (p >> 8) & 255, p & 255];
+  }
+  var m = c.match(/-?\d+(\.\d+)?/g);
+  return [+m[0], +m[1], +m[2]];
+}
+function mixHex(a, b, u) {
+  var pa = rgbOf(a), pb = rgbOf(b);
+  return 'rgb(' + Math.round(pa[0] * (1 - u) + pb[0] * u) + ','
+    + Math.round(pa[1] * (1 - u) + pb[1] * u) + ','
+    + Math.round(pa[2] * (1 - u) + pb[2] * u) + ')';
+}
+
+/* ---- the room behind the jar ---- */
+function drawRoom(ctx, state) {
+  var T = tint(state);
+  var g = ctx.createLinearGradient(0, 0, 0, V.H);
+  g.addColorStop(0, mixHex('#17120E', T.sky, 0.55));
+  g.addColorStop(0.62, '#17120E');
+  g.addColorStop(1, '#100C09');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, V.W, V.H);
+  /* the window the jar sits near, which is where the light comes from */
+  var lightCol = state.env.phase === 'night' ? '150,180,205' : '255,232,182';
+  /* the window the jar is standing near: a soft pane of light up and left, and
+     the glow it throws on the wall behind */
+  var px = V.W * 0.30, py = V.H * 0.16, pw = V.W * 0.52, ph = V.H * 0.30;
+  var pg = ctx.createRadialGradient(px, py, 4, px, py, Math.max(pw, ph) * 1.5);
+  pg.addColorStop(0, 'rgba(' + lightCol + ',' + (0.06 + T.amb * 0.16).toFixed(3) + ')');
+  pg.addColorStop(0.55, 'rgba(' + lightCol + ',' + (0.02 + T.amb * 0.05).toFixed(3) + ')');
+  pg.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = pg; ctx.fillRect(0, 0, V.W, V.H);
+  var cx = V.W * 0.5, cy = wy(SOIL_TOP * 0.35);
+  var rg = ctx.createRadialGradient(cx, cy, 8, cx, cy, V.W * 0.85);
+  rg.addColorStop(0, 'rgba(' + lightCol + ',' + (0.03 + T.amb * 0.08).toFixed(3) + ')');
+  rg.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = rg; ctx.fillRect(0, 0, V.W, V.H);
+  /* the vignette, so the eye goes to the jar and nowhere else */
+  var vg = ctx.createRadialGradient(V.W / 2, V.H * 0.52, V.W * 0.28, V.W / 2, V.H * 0.52, V.W * 1.05);
+  vg.addColorStop(0, 'rgba(0,0,0,0)');
+  vg.addColorStop(1, 'rgba(0,0,0,.55)');
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, V.W, V.H);
+  /* the table the jar stands on */
+  var ty = wy(JAR_H) + 2 * V.k;
+  var tg = ctx.createLinearGradient(0, ty, 0, V.H);
+  tg.addColorStop(0, mixHex('#2A1F16', T.warm, 0.10));
+  tg.addColorStop(1, '#150F0B');
+  ctx.fillStyle = tg; ctx.fillRect(0, ty, V.W, V.H - ty);
+  ctx.fillStyle = 'rgba(0,0,0,.34)';
+  ctx.beginPath();
+  ctx.ellipse(wx(JAR_W / 2), ty + 3 * V.k, JAR_W * 0.56 * V.k, 7 * V.k, 0, 0, 6.2832);
+  ctx.fill();
+}
+
+/* ---- the jar shell, drawn twice: behind everything and in front of it ---- */
+function jarPath(ctx, inset) {
+  var x = wx(-RIM + inset), y = wy(-RIM + inset);
+  var w = (JAR_W + RIM * 2 - inset * 2) * V.k, h = (JAR_H + RIM * 2 - inset * 2) * V.k;
+  var r = 22 * V.k;
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+function drawBackGlass(ctx, state) {
+  var T = tint(state);
+  ctx.save(); jarPath(ctx, 0);
+  var g = ctx.createLinearGradient(0, wy(-RIM), 0, wy(JAR_H));
+  g.addColorStop(0, mixHex('#1E2A20', T.warm, 0.13));
+  g.addColorStop(1, '#131A15');
+  ctx.fillStyle = g; ctx.fill();
+  ctx.restore();
+}
+
+/* ---- soil, wet where it is wet ---- */
+function drawSoil(ctx, state) {
+  var x, y, i;
+  ctx.save(); soilPath(ctx); ctx.clip();
+  /* ONE gradient down the whole depth, so there are no shelf lines in it */
+  var sg = ctx.createLinearGradient(0, wy(SOIL_TOP - 12), 0, wy(JAR_H));
+  sg.addColorStop(0, '#5C452F');
+  sg.addColorStop(0.22, '#48331F');
+  sg.addColorStop(0.62, '#31231A');
+  sg.addColorStop(1, '#1F160F');
+  ctx.fillStyle = sg;
+  ctx.fillRect(wx(-2), wy(SOIL_TOP - 26), (JAR_W + 4) * V.k, (SOIL_H + 40) * V.k);
+  /* the wet, as ONE soft gradient down the depth plus a few damp patches.
+     ⛔ a rect per cell paints a visible grid of vertical stripes into the soil */
+  var rows = [], y2, x2;
+  for (y2 = 0; y2 < CONFIG.GRID_H; y2++) {
+    var t2 = 0;
+    for (x2 = 0; x2 < CONFIG.GRID_W; x2++) t2 += state.grid[y2][x2].m;
+    rows.push(t2 / CONFIG.GRID_W);
+  }
+  var wg = ctx.createLinearGradient(0, wy(SOIL_TOP - 6), 0, wy(JAR_H));
+  for (y2 = 0; y2 < rows.length; y2++) {
+    wg.addColorStop(y2 / (rows.length - 1), 'rgba(18,11,6,' + Math.min(0.44, rows[y2] * 0.46).toFixed(3) + ')');
+  }
+  ctx.fillStyle = wg;
+  ctx.fillRect(wx(-2), wy(SOIL_TOP - 26), (JAR_W + 4) * V.k, (SOIL_H + 40) * V.k);
+  for (x2 = 0; x2 < CONFIG.GRID_W; x2 += 2) {
+    var wet = state.grid[1][x2].m - rows[1];
+    if (Math.abs(wet) < 0.05) continue;
+    var px2 = wx(x2 * WU + WU / 2), py2 = wy(SOIL_TOP + 14);
+    var bg = ctx.createRadialGradient(px2, py2, 1, px2, py2, 22 * V.k);
+    bg.addColorStop(0, 'rgba(18,11,6,' + Math.min(0.22, Math.abs(wet) * 0.5).toFixed(3) + ')');
+    bg.addColorStop(1, 'rgba(18,11,6,0)');
+    ctx.fillStyle = bg;
+    ctx.fillRect(px2 - 22 * V.k, py2 - 22 * V.k, 44 * V.k, 44 * V.k);
+  }
+  /* big soft mottling first, so the soil is not one flat wash */
+  for (i = 0; i < 14; i++) {
+    var bx = hash01(i, 5) * JAR_W, by = SOIL_TOP + hash01(i, 6) * SOIL_H;
+    var br = (14 + hash01(i, 7) * 22) * V.k;
+    var mg = ctx.createRadialGradient(wx(bx), wy(by), 1, wx(bx), wy(by), br);
+    mg.addColorStop(0, i % 2 ? 'rgba(126,96,62,.12)' : 'rgba(14,9,5,.16)');
+    mg.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = mg;
+    ctx.fillRect(wx(bx) - br, wy(by) - br, br * 2, br * 2);
+  }
+  /* pebbles and old roots set INTO the face, so it is a cut through ground and
+     not a painted wall */
+  for (i = 0; i < 9; i++) {
+    var sx2 = hash01(i, 41) * JAR_W, sy2 = SOIL_TOP + 6 + hash01(i, 42) * (SOIL_H - 14);
+    var sr = (2.2 + hash01(i, 43) * 3.4) * V.k;
+    ctx.fillStyle = 'rgba(126,112,92,.20)';
+    ctx.beginPath();
+    ctx.ellipse(wx(sx2), wy(sy2), sr, sr * 0.72, hash01(i, 44) * 3, 0, 6.2832); ctx.fill();
+    ctx.fillStyle = 'rgba(216,196,162,.09)';
+    ctx.beginPath();
+    ctx.ellipse(wx(sx2) - sr * 0.25, wy(sy2) - sr * 0.24, sr * 0.44, sr * 0.26, 0, 0, 6.2832); ctx.fill();
+  }
+  ctx.strokeStyle = 'rgba(184,150,104,.13)';
+  ctx.lineCap = 'round';
+  for (i = 0; i < 7; i++) {
+    var rx0 = hash01(i, 45) * JAR_W, ry0 = soilY(rx0) + 3;
+    ctx.lineWidth = Math.max(0.6, (1.4 - i * 0.1) * V.k);
+    ctx.beginPath();
+    ctx.moveTo(wx(rx0), wy(ry0));
+    ctx.quadraticCurveTo(wx(rx0 + (hash01(i, 46) - 0.5) * 26), wy(ry0 + 14),
+      wx(rx0 + (hash01(i, 47) - 0.5) * 44), wy(ry0 + 12 + hash01(i, 48) * 26));
+    ctx.stroke();
+  }
+  /* then the crumbs */
+  for (i = 0; i < 320; i++) {
+    var gx = hash01(i, 1) * JAR_W;
+    var gy = SOIL_TOP - 10 + hash01(i, 2) * (SOIL_H + 10);
+    if (gy < soilY(gx)) continue;
+    ctx.fillStyle = hash01(i, 3) > 0.72 ? 'rgba(212,182,138,.15)' : 'rgba(10,6,4,.22)';
+    ctx.beginPath();
+    ctx.arc(wx(gx), wy(gy), (0.45 + hash01(i, 4) * 0.9) * V.k, 0, 6.2832);
+    ctx.fill();
+  }
+  /* the drainage gravel, under a curve of its own */
+  for (i = 0; i < 64; i++) {
+    var px = hash01(i, 11) * JAR_W;
+    var py = JAR_H - 18 + Math.sin(px * 0.11 + 2) * 3 + hash01(i, 12) * 15;
+    ctx.fillStyle = hash01(i, 14) > 0.6 ? 'rgba(168,150,122,.20)' : 'rgba(120,104,84,.16)';
+    ctx.beginPath();
+    ctx.arc(wx(px), wy(py), (1.1 + hash01(i, 13) * 1.5) * V.k, 0, 6.2832); ctx.fill();
+  }
+  ctx.restore();
+  /* the crumb line where the soil meets the air, lit from the window side */
+  ctx.strokeStyle = 'rgba(214,182,132,.30)';
+  ctx.lineWidth = Math.max(0.8, 1.3 * V.k);
+  ctx.beginPath();
+  for (x = 0; x <= JAR_W; x += 3) {
+    var sy = soilY(x);
+    if (x === 0) ctx.moveTo(wx(x), wy(sy)); else ctx.lineTo(wx(x), wy(sy));
+  }
+  ctx.stroke();
+  /* leaf litter, sitting ON the ground rather than floating over it */
+  for (x = 0; x < CONFIG.GRID_W; x++) {
+    var d = state.grid[0][x].d;
+    if (d <= 0.01) continue;
+    var lx = x * WU + WU / 2;
+    ctx.fillStyle = 'rgba(158,116,64,' + Math.min(0.55, d * 0.9).toFixed(3) + ')';
+    ctx.beginPath();
+    ctx.ellipse(wx(lx), wy(soilY(lx) + 1.4), 4.4 * V.k, 1.8 * V.k, (x % 5) * 0.4, 0, 6.2832);
+    ctx.fill();
+  }
+}
+function drawMoss(ctx, state) {
+  var T = tint(state), x, i;
+  /* one pass of overlapping cushions, then the fur over all of them, so a run
+     of moss reads as a carpet and not as a row of identical scallops */
+  /* the moss sits UNDER the ferns in value, or the two fight at a glance */
+  var lit = mixHex(T.leaf, '#7FAE68', 0.40), dark = mixHex(T.leaf, '#2E4C28', 0.58);
+  /* ⛔ one ellipse per covered column is a caterpillar. A run of moss is drawn
+     as ONE path whose top edge wanders, so it reads as a carpet. */
+  var runs = [], cur = null;
+  for (x = 0; x < CONFIG.GRID_W; x++) {
+    if (state.moss[x]) { if (!cur) { cur = [x, x]; runs.push(cur); } else cur[1] = x; }
+    else cur = null;
+  }
+  var mossTop = function (xx) {
+    return soilY(xx) - 3.0 - 3.4 * Math.abs(Math.sin(xx * 0.19 + 0.7))
+      - 2.1 * Math.sin(xx * 0.41 + 2.1) - 1.2 * Math.sin(xx * 0.83);
+  };
+  for (i = 0; i < runs.length; i++) {
+    var x0 = runs[i][0] * WU, x1 = (runs[i][1] + 1) * WU, xx;
+    ctx.beginPath();
+    ctx.moveTo(wx(x0), wy(soilY(x0) + 0.6));
+    for (xx = x0; xx <= x1; xx += 2.5) {
+      var e = Math.min(1, Math.min(xx - x0, x1 - xx) / 12);
+      e = e * e * (3 - 2 * e);
+      ctx.lineTo(wx(xx), wy(soilY(xx) + 0.6 - (soilY(xx) + 0.6 - mossTop(xx)) * e));
+    }
+    /* the underside follows the GROUND back, so there is no flat green shelf */
+    for (xx = x1; xx >= x0; xx -= 2.5) ctx.lineTo(wx(xx), wy(soilY(xx) + 0.6));
+    ctx.closePath();
+    var mg2 = ctx.createLinearGradient(0, wy(mossTop(x0) - 4), 0, wy(soilY(x0) + 1));
+    mg2.addColorStop(0, mixHex(dark, lit, 0.66));
+    mg2.addColorStop(0.72, dark);
+    mg2.addColorStop(1, mixHex(dark, '#241A13', 0.72));
+    ctx.fillStyle = mg2; ctx.fill();
+  }
+  ctx.lineCap = 'round';
+  for (x = 0; x < CONFIG.GRID_W; x++) {
+    if (!state.moss[x]) continue;
+    var mx = x * WU + WU / 2;
+    for (i = 0; i < 13; i++) {
+      var bx = x * WU + hash01(x * 17 + i, 31) * WU;
+      var base = mossTop(bx) + 1.4;
+      var top = 2.6 + hash01(x * 17 + i, 32) * 3.8;
+      var sway = REDUCED ? 0 : Math.sin(V.t * 0.0009 + x * 0.7 + i) * 0.7;
+      ctx.strokeStyle = hash01(x * 17 + i, 33) > 0.62 ? lit : mixHex(dark, lit, 0.34);
+      ctx.lineWidth = Math.max(0.5, 0.75 * V.k);
+      ctx.beginPath();
+      ctx.moveTo(wx(bx), wy(base));
+      ctx.lineTo(wx(bx + sway), wy(base - top));
+      ctx.stroke();
+    }
+  }
+}
+
+/* ---- a plant: every segment placed from its parent's tip ---- */
+/* ⛔ THIS RETURNS SCREEN POINTS. It used to return world units and drawPlant
+   handed them straight to the canvas, so both ferns grew out of the top of the
+   jar and stood in the room. Anything that leaves here is already scaled. */
+function layoutPlant(state, p) {
+  var wxr = p.x * WU + WU / 2;
+  var z = p.z === undefined ? 0.5 : p.z;
+  /* depth in a flat jar: a plant further back stands higher on the mound, is
+     smaller, and loses a little colour to the air between */
+  var pts = [], i, rootX = wx(wxr), rootY = wy(soilY(wxr) + 1 - z * 4);
+  var still = REDUCED || p.dormant, ps = (p.scale || 1) * (1 - z * 0.22);
+  for (i = 0; i < p.segs.length; i++) {
+    var s = p.segs[i];
+    var from = s.p < 0 ? { x: rootX, y: rootY } : (pts[s.p] || { x: rootX, y: rootY });
+    var sway = still ? 0 : Math.sin(V.t * SWAY_SPD + i * 0.7 + p.x) * SWAY_DEG * (1 + s.gen * 0.5);
+    var a = (s.a + sway) * Math.PI / 180;
+    var len = SEG_LEN * s.l * ps * Math.max(0.06, s.g) * V.k;
+    pts.push({ x: from.x + Math.cos(a) * len, y: from.y + Math.sin(a) * len, a: a, from: from, len: len });
+  }
+  return pts;
+}
+/* The frond. A rolled one is a crozier, a spiral that tightens toward the tip;
+   an open one is a pinnate blade. curl 1 to 0 walks between them, and the
+   leaflets open from the base up, which is what a real fern does. */
+function drawFrond(ctx, x0, y0, ang, curl, size, col, glow) {
+  var n = 15, i, a = ang, px = x0, py = y0, turn = FROND_TURN * curl;
+  var len = size * (1 - 0.38 * curl), spine = [];
+  for (i = 0; i <= n; i++) {
+    spine.push({ x: px, y: py, a: a, u: i / n });
+    var da = turn * (0.35 + 1.5 * (i / n)) / n;
+    px += Math.cos(a) * (len / n); py += Math.sin(a) * (len / n);
+    a += da;
+  }
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  if (glow) { ctx.shadowColor = glow; ctx.shadowBlur = 7 * V.k; }
+  ctx.strokeStyle = col; ctx.lineWidth = Math.max(0.7, 1.15 * V.k);
+  ctx.beginPath(); ctx.moveTo(spine[0].x, spine[0].y);
+  for (i = 1; i <= n; i++) ctx.lineTo(spine[i].x, spine[i].y);
+  ctx.stroke();
+  ctx.fillStyle = col;
+  for (i = 2; i <= n; i++) {
+    var s = spine[i], u = s.u;
+    /* the leaflets open from the base up, and they run nearly to the tip: a
+       frond that stops leafing at four fifths reads as a bald stick */
+    var open = clamp((1 - curl) * 2.1 - u * 0.62, 0, 1);
+    if (open <= 0.02) continue;
+    var taper = u < 0.12 ? u / 0.12 : (u > 0.9 ? (1 - u) / 0.1 : 1);
+    var ll = size * 0.30 * open * (0.45 + 0.55 * Math.sin(Math.PI * Math.pow(u, 0.55))) * taper;
+    if (ll < 0.4) continue;
+    var k2;
+    for (k2 = -1; k2 <= 1; k2 += 2) {
+      var la = s.a + k2 * (1.05 - 0.25 * u);
+      ctx.beginPath();
+      ctx.moveTo(s.x, s.y);
+      ctx.quadraticCurveTo(
+        s.x + Math.cos(la) * ll * 0.7 - Math.cos(s.a) * ll * 0.2,
+        s.y + Math.sin(la) * ll * 0.7 - Math.sin(s.a) * ll * 0.2,
+        s.x + Math.cos(la) * ll * 0.55 + Math.cos(s.a) * ll * 0.55,
+        s.y + Math.sin(la) * ll * 0.55 + Math.sin(s.a) * ll * 0.55);
+      ctx.quadraticCurveTo(
+        s.x + Math.cos(la) * ll * 0.20 + Math.cos(s.a) * ll * 0.30,
+        s.y + Math.sin(la) * ll * 0.20 + Math.sin(s.a) * ll * 0.30,
+        s.x, s.y);
+      ctx.fill();
+    }
+  }
+  ctx.shadowBlur = 0;
+}
+function drawPlant(ctx, state, p) {
+  var sp = FLORA[p.sp], T = tint(state), pts = layoutPlant(state, p), i;
+  /* two of the same species should not be twins */
+  var vary = ((p.seed >>> 3) % 100) / 100;
+  var z = p.z === undefined ? 0.5 : p.z, ps = (p.scale || 1) * (1 - z * 0.22);
+  var col = sp.tintLeaf ? sp.tintLeaf : T.leaf;
+  if (p.dormant) col = mixHex(col, '#7C7156', 0.62);
+  col = mixHex(col, T.sky, z * 0.30);
+  var stem = mixHex(col, '#3A2C1E', 0.42);
+  if (sp.kind === 'fruit') { drawFruit(ctx, state, p, T); return; }
+  /* a plant standing further back still has to TOUCH the ground: a little
+     heaped soil and a contact shadow, or it floats over the mound */
+  var bx0 = p.x * WU + WU / 2, by0 = soilY(bx0) + 1 - z * 4;
+  ctx.fillStyle = mixHex('#3A2A1C', T.sky, 0.2);
+  ctx.beginPath();
+  ctx.ellipse(wx(bx0), wy(by0 + 0.6), (7 - z * 2) * V.k, (2.4 - z * 0.6) * V.k, 0, 0, 6.2832);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(12,8,5,.36)';
+  ctx.beginPath();
+  ctx.ellipse(wx(bx0), wy(by0 + 1.4), (5 - z) * V.k, 1.3 * V.k, 0, 0, 6.2832);
+  ctx.fill();
+  ctx.lineCap = 'round';
+  for (i = 0; i < pts.length; i++) {
+    var s = p.segs[i], q = pts[i];
+    ctx.strokeStyle = stem;
+    ctx.lineWidth = Math.max(0.8, (2.4 - s.gen * 0.35) * (0.85 + vary * 0.35) * V.k);
+    ctx.beginPath(); ctx.moveTo(q.from.x, q.from.y); ctx.lineTo(q.x, q.y); ctx.stroke();
+  }
+  for (i = 0; i < pts.length; i++) {
+    var s2 = p.segs[i], q2 = pts[i];
+    if (!s2.leaf) continue;
+    drawFrond(ctx, q2.x, q2.y, q2.a, s2.curl,
+      FROND_LEN * s2.l * ps * Math.max(0.3, s2.g) * (0.82 + vary * 0.38) * V.k, col,
+      sp.glow && state.env.phase === 'night' ? sp.glow : null);
+  }
+}
+function drawFruit(ctx, state, p, T) {
+  var sp = FLORA[p.sp], fx = p.x * WU + WU / 2, cx = wx(fx), cy = wy(soilY(fx) + 1);
+  var up = p.fruit;
+  if (up <= 0.01) return;
+  var h = 16 * up, capR = 7 * up;
+  var col = sp.tintLeaf || mixHex(T.leaf, '#D8D2C0', 0.55);
+  if (sp.glow && state.env.phase === 'night') { ctx.shadowColor = sp.glow; ctx.shadowBlur = 12 * V.k; }
+  ctx.strokeStyle = mixHex(col, '#3A2C1E', 0.3);
+  ctx.lineWidth = Math.max(0.9, 2.1 * V.k);
+  ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx, cy - h * V.k); ctx.stroke();
+  ctx.fillStyle = col;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy - h * V.k, capR * V.k, capR * 0.72 * V.k, 0, Math.PI, 0);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+}
+
+/* ---- the animals ---- */
+function drawAgents(ctx, state) {
+  var i, T = tint(state);
+  for (i = 0; i < state.agents.length; i++) {
+    var a = state.agents[i], f = FAUNA[a.sp];
+    var x = wx(a.x * WU), y = wy(soilY(a.x * WU) - a.y * 8 + 2);
+    if (a.sp === 'springtail') {
+      var hop = a.asleep ? 0 : Math.abs(Math.sin(V.t * 0.006 + a.phase)) * 2.4;
+      ctx.fillStyle = mixHex('#D8CDB4', T.sky, 0.35);
+      ctx.beginPath(); ctx.arc(x, y - hop * V.k, 1.5 * V.k, 0, 6.2832); ctx.fill();
+    } else if (a.sp === 'pillbug') {
+      ctx.fillStyle = mixHex('#8E8272', T.sky, 0.25);
+      if (a.rolled > 0) {
+        ctx.beginPath(); ctx.arc(x, y - 3 * V.k, 3.6 * V.k, 0, 6.2832); ctx.fill();
+        ctx.strokeStyle = 'rgba(30,24,18,.55)'; ctx.lineWidth = Math.max(0.5, 0.7 * V.k);
+        var s2;
+        for (s2 = -2; s2 <= 2; s2++) {
+          ctx.beginPath();
+          ctx.arc(x, y - 3 * V.k, 3.6 * V.k, 1.1 + s2 * 0.42, 1.5 + s2 * 0.42); ctx.stroke();
+        }
+      } else {
+        ctx.beginPath();
+        ctx.ellipse(x, y - 2.4 * V.k, 4.6 * V.k, 2.7 * V.k, Math.sin(V.t * 0.002 + a.phase) * 0.12, 0, 6.2832);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(30,24,18,.5)'; ctx.lineWidth = Math.max(0.5, 0.7 * V.k);
+        var b;
+        for (b = -1; b <= 1; b++) {
+          ctx.beginPath();
+          ctx.moveTo(x + b * 1.7 * V.k, y - 4.6 * V.k);
+          ctx.lineTo(x + b * 1.7 * V.k, y - 0.4 * V.k); ctx.stroke();
+        }
+      }
+    } else {
+      if (a.asleep) {
+        ctx.fillStyle = 'rgba(90,82,66,.5)';
+        ctx.beginPath(); ctx.ellipse(x, y - 2 * V.k, 3.4 * V.k, 2.1 * V.k, 0, 0, 6.2832); ctx.fill();
+      } else {
+        ctx.shadowColor = '#9FE08A'; ctx.shadowBlur = 14 * V.k;
+        ctx.fillStyle = '#CFF3B4';
+        ctx.beginPath(); ctx.ellipse(x, y - 3 * V.k, 3.2 * V.k, 2.2 * V.k, 0, 0, 6.2832); ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+    }
+  }
+}
+
+/* ---- the hardscape the player can move in edit mode ---- */
+/* everything here is SET INTO the ground: a stone that floats above the soil
+   line was the first thing wrong with the first shot of this jar */
+function drawHardscape(ctx, state) {
+  var i, T = tint(state);
+  for (i = 0; i < state.props.length; i++) {
+    var pr = state.props[i];
+    var gy = soilY(pr.x) + pr.sink;
+    var x = wx(pr.x), y = wy(gy);
+    ctx.fillStyle = 'rgba(10,7,4,.34)';
+    ctx.beginPath();
+    ctx.ellipse(x, wy(soilY(pr.x) + 1.2), pr.r * 1.15 * V.k, pr.r * 0.34 * V.k, 0, 0, 6.2832);
+    ctx.fill();
+    if (pr.kind === 'stone') {
+      var g = ctx.createLinearGradient(x - pr.r * V.k, y - pr.r * V.k, x + pr.r * V.k, y + pr.r * V.k);
+      g.addColorStop(0, mixHex('#8A8073', T.warm, 0.22));
+      g.addColorStop(1, mixHex('#4A4339', T.sky, 0.30));
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.ellipse(x, y, pr.r * V.k, pr.r * 0.76 * V.k, pr.rot, 0, 6.2832); ctx.fill();
+      ctx.fillStyle = 'rgba(255,246,225,.13)';
+      ctx.beginPath();
+      ctx.ellipse(x - pr.r * 0.3 * V.k, y - pr.r * 0.34 * V.k, pr.r * 0.44 * V.k, pr.r * 0.2 * V.k, pr.rot, 0, 6.2832);
+      ctx.fill();
+    } else {
+      /* driftwood: a forked limb lying in the soil, not a brown comma */
+      ctx.strokeStyle = mixHex('#6B563E', T.sky, 0.24);
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      ctx.lineWidth = Math.max(2.2, pr.r * 0.62 * V.k);
+      ctx.beginPath();
+      ctx.moveTo(x - pr.r * V.k, y + 1.5 * V.k);
+      ctx.quadraticCurveTo(x - pr.r * 0.1 * V.k, y - pr.r * 0.55 * V.k, x + pr.r * V.k, y - pr.r * 0.1 * V.k);
+      ctx.stroke();
+      ctx.lineWidth = Math.max(1, pr.r * 0.24 * V.k);
+      ctx.beginPath();
+      ctx.moveTo(x + pr.r * 0.15 * V.k, y - pr.r * 0.34 * V.k);
+      ctx.quadraticCurveTo(x + pr.r * 0.5 * V.k, y - pr.r * 0.9 * V.k, x + pr.r * 0.95 * V.k, y - pr.r * 0.86 * V.k);
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(226,206,172,.16)';
+      ctx.lineWidth = Math.max(0.6, pr.r * 0.1 * V.k);
+      ctx.beginPath();
+      ctx.moveTo(x - pr.r * 0.7 * V.k, y - pr.r * 0.05 * V.k);
+      ctx.quadraticCurveTo(x, y - pr.r * 0.5 * V.k, x + pr.r * 0.8 * V.k, y - pr.r * 0.2 * V.k);
+      ctx.stroke();
+    }
+    if (EDIT) {
+      ctx.strokeStyle = 'rgba(201,162,75,.75)'; ctx.lineWidth = Math.max(1, 1.2 * V.k);
+      ctx.beginPath(); ctx.arc(x, y, (pr.r + 5) * V.k, 0, 6.2832); ctx.stroke();
+    }
+  }
+}
+
+/* ---- the front of the glass: rim, one specular streak, condensation ---- */
+function drawFrontGlass(ctx, state) {
+  var T = tint(state), i;
+  ctx.save(); jarPath(ctx, 0); ctx.clip();
+  /* condensation sits ON the glass: thick under the lid, thinning downward,
+     with a few beads that have run and left a track. ⛔ spread evenly it reads
+     as dust floating in the middle of the jar. */
+  var n = Math.round(clamp((state.humidity - 0.40) * 2.2, 0, 1) * 70);
+  for (i = 0; i < n; i++) {
+    var dx = hash01(i, 21) * JAR_W;
+    var band = Math.pow(hash01(i, 22), 2.6);
+    var slide = ((V.t * 0.0022 + hash01(i, 23) * 300) % 300) * (0.04 + hash01(i, 24) * 0.05);
+    var dy = 3 + band * (JAR_H - 40) + slide;
+    if (dy > soilY(dx) - 4) continue;
+    var rr = (0.4 + Math.pow(hash01(i, 25), 2.4) * 3.2) * (0.55 + state.humidity * 0.8);
+    ctx.fillStyle = 'rgba(232,246,248,' + (0.08 + hash01(i, 26) * 0.10).toFixed(3) + ')';
+    ctx.beginPath(); ctx.arc(wx(dx), wy(dy), rr * V.k, 0, 6.2832); ctx.fill();
+  }
+  /* ⛔ no tails on the beads: a drop with a line above it reads as something
+     swimming. The wet is a fog band under the lid, thickest at the top. */
+  var fg = ctx.createLinearGradient(0, wy(-RIM), 0, wy(JAR_H * 0.55));
+  var fa = clamp((state.humidity - 0.40) * 0.62, 0, 0.2);
+  fg.addColorStop(0, 'rgba(228,242,244,' + fa.toFixed(3) + ')');
+  fg.addColorStop(1, 'rgba(228,242,244,0)');
+  ctx.fillStyle = fg;
+  ctx.fillRect(wx(-RIM), wy(-RIM), (JAR_W + RIM * 2) * V.k, JAR_H * 0.6 * V.k);
+  /* rain on the OUTSIDE, when the jar is listening to a real sky */
+  if (state.weather && (state.weather.kind === 'rain' || state.weather.kind === 'snow')) {
+    ctx.strokeStyle = state.weather.kind === 'rain' ? 'rgba(200,222,238,.22)' : 'rgba(232,240,248,.30)';
+    ctx.lineWidth = Math.max(0.6, 1 * V.k);
+    for (i = 0; i < 26; i++) {
+      var rx = ((i * 97) % 240), ry = ((V.t * 0.09 + i * 53) % (JAR_H + 40)) - 20;
+      ctx.beginPath(); ctx.moveTo(wx(rx), wy(ry)); ctx.lineTo(wx(rx - 2), wy(ry + 11)); ctx.stroke();
+    }
+  }
+  /* the sheen: a band of light down the left of the glass, feathered at BOTH
+     edges. ⛔ a gradient poured into a rectangle leaves a visible vertical seam
+     where the rectangle stops, and that seam is the whole tell. */
+  /* ⛔ do NOT fade this with destination-out: it erases the jar underneath and
+     leaves a black slab where the sheen was meant to be. A radial gradient
+     feathers on every side by itself. */
+  var cxs = wx(34), cys = wy(58);
+  var sh = ctx.createRadialGradient(cxs, cys, 4 * V.k, cxs, cys, 190 * V.k);
+  sh.addColorStop(0, 'rgba(255,255,255,.15)');
+  sh.addColorStop(0.30, 'rgba(255,255,255,.075)');
+  sh.addColorStop(0.72, 'rgba(255,255,255,.016)');
+  sh.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = sh;
+  ctx.fillRect(wx(-RIM), wy(-RIM), (JAR_W + RIM * 2) * V.k, (JAR_H + RIM * 2) * V.k);
+  /* the light that gathers along the right side of a curved jar */
+  var rr2 = ctx.createLinearGradient(wx(JAR_W - 34), 0, wx(JAR_W), 0);
+  rr2.addColorStop(0, 'rgba(214,236,232,0)');
+  rr2.addColorStop(1, 'rgba(214,236,232,.09)');
+  ctx.fillStyle = rr2;
+  ctx.fillRect(wx(JAR_W - 34), wy(-RIM), 34 * V.k, (JAR_H + RIM) * V.k);
+  ctx.restore();
+  /* the rim */
+  ctx.strokeStyle = 'rgba(226,240,238,.30)';
+  ctx.lineWidth = Math.max(1, 2.1 * V.k);
+  jarPath(ctx, 0); ctx.stroke();
+  ctx.strokeStyle = 'rgba(201,162,75,.42)';
+  ctx.lineWidth = Math.max(1, 3.4 * V.k);
+  ctx.beginPath();
+  ctx.moveTo(wx(-RIM + 6), wy(-RIM + 3)); ctx.lineTo(wx(JAR_W + RIM - 6), wy(-RIM + 3));
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(201,162,75,.28)';
+  ctx.beginPath();
+  ctx.moveTo(wx(-RIM + 4), wy(JAR_H + RIM - 3)); ctx.lineTo(wx(JAR_W + RIM - 4), wy(JAR_H + RIM - 3));
+  ctx.stroke();
+}
+/* The hour, as a VEIL over the jar. ⛔ it used to ADD light at every hour, so
+   the night jar came out paler than the noon one. Night takes light away and
+   gives back one small cold glow near the lid; noon adds a warm one. */
+var VEIL = {
+  dawn:  { veil: 'rgba(48,34,26,.20)', glow: '255,214,168', gA: 0.11 },
+  day:   { veil: 'rgba(255,238,196,.045)', glow: '255,242,206', gA: 0.13 },
+  dusk:  { veil: 'rgba(52,26,20,.26)', glow: '236,150,96', gA: 0.12 },
+  night: { veil: 'rgba(8,14,26,.50)', glow: '150,186,220', gA: 0.09 }
+};
+function drawLight(ctx, state) {
+  var L = VEIL[state.env.phase] || VEIL.day;
+  ctx.save(); jarPath(ctx, 0); ctx.clip();
+  ctx.fillStyle = L.veil;
+  ctx.fillRect(wx(-RIM), wy(-RIM), (JAR_W + RIM * 2) * V.k, (JAR_H + RIM * 2) * V.k);
+  var gx = wx(JAR_W * 0.30), gy = wy(JAR_H * 0.10);
+  var g = ctx.createRadialGradient(gx, gy, 3 * V.k, gx, gy, JAR_W * 0.95 * V.k);
+  g.addColorStop(0, 'rgba(' + L.glow + ',' + L.gA.toFixed(3) + ')');
+  g.addColorStop(0.5, 'rgba(' + L.glow + ',' + (L.gA * 0.30).toFixed(3) + ')');
+  g.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(wx(-RIM), wy(-RIM), (JAR_W + RIM * 2) * V.k, (JAR_H + RIM * 2) * V.k);
+  /* and the floor of the jar keeps the least of it */
+  var fg = ctx.createLinearGradient(0, wy(SOIL_TOP - 30), 0, wy(JAR_H));
+  fg.addColorStop(0, 'rgba(0,0,0,0)');
+  fg.addColorStop(1, 'rgba(0,0,0,' + (state.env.phase === 'night' ? '.34' : '.20') + ')');
+  ctx.fillStyle = fg;
+  ctx.fillRect(wx(-RIM), wy(SOIL_TOP - 30), (JAR_W + RIM * 2) * V.k, (SOIL_H + 40) * V.k);
+  ctx.restore();
+}
+/* mist droplets and the wake sparkle */
+function drawParticles(ctx) {
+  var i;
+  for (i = 0; i < PARTS.length; i++) {
+    var p = PARTS[i];
+    ctx.fillStyle = 'rgba(214,236,240,' + (p.life / p.max * 0.7).toFixed(3) + ')';
+    ctx.beginPath(); ctx.arc(wx(p.x), wy(p.y), p.r * V.k, 0, 6.2832); ctx.fill();
+  }
+}
+
+var PARTS = [], REDUCED = false, EDIT = false;
+function puff(x, y, n) {
+  var i;
+  for (i = 0; i < n && PARTS.length < CONFIG.PARTICLE_MAX; i++) {
+    PARTS.push({ x: x + (Math.random() - 0.5) * 30, y: y + (Math.random() - 0.5) * 16,
+      vy: 0.10 + Math.random() * 0.20, r: 0.9 + Math.random() * 1.6,
+      life: 900 + Math.random() * 700, max: 1600 });
+  }
+}
+function stepParticles(dt) {
+  var i;
+  for (i = PARTS.length - 1; i >= 0; i--) {
+    var p = PARTS[i];
+    p.y += p.vy * dt * 0.06; p.life -= dt;
+    if (p.life <= 0 || p.y > JAR_H) PARTS.splice(i, 1);
+  }
+}
+
+function draw(state) {
+  var ctx = V.ctx;
+  ctx.clearRect(0, 0, V.W, V.H);
+  drawRoom(ctx, state);
+  drawBackGlass(ctx, state);
+  drawSoil(ctx, state);
+  drawMoss(ctx, state);
+  var i;
+  for (i = 0; i < state.plants.length; i++) drawPlant(ctx, state, state.plants[i]);
+  drawAgents(ctx, state);
+  drawHardscape(ctx, state);
+  drawParticles(ctx);
+  drawFrontGlass(ctx, state);
+  drawLight(ctx, state);
+}
+
+/* ========================= 17. INPUT ========================= */
+var G = null, RAF = 0, LAST = 0, SHIVER = 0, MISTED_AT = 0, MONTAGE = null, FRAMES = 0;
+/* ⛔ ONE clock on the page. The HUD read Date.now() while the jar's light came
+   from the last tick, so the chip said night over a noon jar. Everything asks
+   nowMs(); the test hook moves it and the whole picture follows. */
+var NOW_OFF = 0;
+function nowMs() { return Date.now() + NOW_OFF; }
+var PRESS = null, DRAG = null, LP = 0;
+
+function el(id) { return document.getElementById(id); }
+function toast(msg) {
+  var t = el('toast');
+  t.textContent = msg; t.classList.add('on');
+  clearTimeout(toast._h);
+  toast._h = setTimeout(function () { t.classList.remove('on'); }, 1900);
+}
+function haptic(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }
+
+function doMist(sx, sy) {
+  var now = nowMs();
+  if (now - MISTED_AT < CONFIG.MIST_COOLDOWN_S * 1000) return false;
+  MISTED_AT = now;
+  mist(G);
+  puff(sx === undefined ? JAR_W / 2 : unwx(sx), sy === undefined ? 40 : unwy(sy), 26);
+  SFX.play('mist');
+  haptic(12);
+  return true;
+}
+function startle(wxp, wyp) {
+  var i, hit = 0;
+  for (i = 0; i < G.agents.length; i++) {
+    var a = G.agents[i];
+    var ax = a.x * WU, ay = soilY(ax) - a.y * 8;
+    if (Math.abs(ax - wxp) < CONFIG.STARTLE_WU && Math.abs(ay - wyp) < CONFIG.STARTLE_WU) {
+      if (a.sp === 'pillbug') { a.rolled = CONFIG.ROLL_MS; hit++; }
+      else a.x = clamp(a.x + (a.x < wxp / WU ? -1.4 : 1.4), 0, CONFIG.GRID_W - 0.01);
+    }
+  }
+  SHIVER = 260;
+  SFX.play('tonk');
+  haptic(8);
+  return hit;
+}
+function propAt(wxp, wyp) {
+  var i, best = -1, bd = 1e9;
+  for (i = 0; i < G.props.length; i++) {
+    var q = G.props[i], d = Math.hypot(q.x - wxp, soilY(q.x) + q.sink - wyp);
+    if (d < q.r + 12 && d < bd) { bd = d; best = i; }
+  }
+  return best;
+}
+function setEdit(on) {
+  EDIT = !!on;
+  el('btnEditDone').hidden = !EDIT;
+  if (EDIT) toast('Move the stones. Tap done when it looks right.');
+}
+
+function bindInput() {
+  var cv = V.cv;
+  cv.addEventListener('pointerdown', function (e) {
+    if (MONTAGE) { MONTAGE = null; el('montage').hidden = true; return; }
+    cv.setPointerCapture(e.pointerId);
+    PRESS = { x: e.clientX, y: e.clientY, t: performance.now(), moved: 0, id: e.pointerId };
+    var p = propAt(unwx(e.clientX), unwy(e.clientY));
+    LP = setTimeout(function () {
+      if (!PRESS || PRESS.moved > 12) return;
+      if (!EDIT) setEdit(true);
+      if (p >= 0) DRAG = { i: p, ox: G.props[p].x - unwx(PRESS.x),
+        oy: soilY(G.props[p].x) + G.props[p].sink - unwy(PRESS.y) };
+      haptic(14);
+    }, CONFIG.LONGPRESS_MS);
+    if (EDIT && p >= 0) DRAG = { i: p, ox: G.props[p].x - unwx(e.clientX),
+      oy: soilY(G.props[p].x) + G.props[p].sink - unwy(e.clientY) };
+  });
+  cv.addEventListener('pointermove', function (e) {
+    if (!PRESS) return;
+    PRESS.moved = Math.max(PRESS.moved, Math.hypot(e.clientX - PRESS.x, e.clientY - PRESS.y));
+    if (DRAG) {
+      var q = G.props[DRAG.i];
+      q.x = clamp(unwx(e.clientX) + DRAG.ox, 8, JAR_W - 8);
+      q.sink = clamp(unwy(e.clientY) + DRAG.oy - soilY(q.x), -4, 9);
+    }
+  });
+  function up(e) {
+    clearTimeout(LP);
+    if (!PRESS) return;
+    var dx = e.clientX - PRESS.x, dy = e.clientY - PRESS.y;
+    var held = performance.now() - PRESS.t;
+    if (!DRAG) {
+      if (dy > CONFIG.SWIPE_PX && Math.abs(dy) > Math.abs(dx) * 1.2) {
+        if (!doMist(e.clientX, e.clientY)) toast('The glass is still wet.');
+      } else if (PRESS.moved < 12 && held < CONFIG.LONGPRESS_MS) {
+        startle(unwx(e.clientX), unwy(e.clientY));
+      }
+    }
+    DRAG = null; PRESS = null;
+    saveSoon();
+  }
+  cv.addEventListener('pointerup', up);
+  cv.addEventListener('pointercancel', function () { clearTimeout(LP); DRAG = null; PRESS = null; });
+
+  el('btnEditDone').addEventListener('click', function () { setEdit(false); saveSoon(); });
+  el('btnMenu').addEventListener('click', function () { el('scrMenu').classList.add('on'); });
+  el('btnMenuClose').addEventListener('click', function () { el('scrMenu').classList.remove('on'); });
+  el('chipDay').addEventListener('click', function () { openScreen('scrJournal'); });
+  el('btnJournal').addEventListener('click', function () { el('scrMenu').classList.remove('on'); openScreen('scrJournal'); });
+  el('btnPouch').addEventListener('click', function () { el('scrMenu').classList.remove('on'); openScreen('scrPouch'); });
+  el('btnAbout').addEventListener('click', function () { el('scrMenu').classList.remove('on'); openScreen('scrAbout'); });
+  el('btnSettings').addEventListener('click', function () { el('scrMenu').classList.remove('on'); el('scrSettings').classList.add('on'); });
+  el('btnSettingsClose').addEventListener('click', function () { el('scrSettings').classList.remove('on'); });
+  el('btnJournalBack').addEventListener('click', function () { closeScreens(); });
+  el('btnPouchBack').addEventListener('click', function () { closeScreens(); });
+  el('btnAboutBack').addEventListener('click', function () { closeScreens(); });
+  el('btnPhoto').addEventListener('click', function () { toast('The camera comes in the next pass.'); });
+  el('montage').addEventListener('click', function () { MONTAGE = null; el('montage').hidden = true; });
+}
+function openScreen(id) {
+  closeScreens();
+  if (id === 'scrJournal') renderJournal();
+  if (id === 'scrPouch') renderPouch();
+  el(id).classList.add('on');
+}
+function closeScreens() {
+  var i, all = ['scrJournal', 'scrPouch', 'scrAbout'];
+  for (i = 0; i < all.length; i++) el(all[i]).classList.remove('on');
+}
+
+/* ========================= 18. SOUND ========================= */
+/* Three sounds, made on the fly, no files. The fleet's music chip owns music. */
+var SFX = {
+  ac: null, on: true,
+  ctx: function () {
+    if (!this.on) return null;
+    if (!this.ac) {
+      var C = window.AudioContext || window.webkitAudioContext;
+      if (!C) return null;
+      this.ac = new C();
+    }
+    if (this.ac.state === 'suspended') this.ac.resume();
+    return this.ac;
+  },
+  play: function (id) {
+    var ac = this.ctx();
+    if (!ac) return;
+    var t = ac.currentTime, g = ac.createGain(), o;
+    g.connect(ac.destination);
+    if (id === 'mist') {
+      var buf = ac.createBuffer(1, ac.sampleRate * 0.7, ac.sampleRate), d = buf.getChannelData(0), i;
+      for (i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 2.2) * 0.5;
+      var src = ac.createBufferSource(); src.buffer = buf;
+      var bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 3200; bp.Q.value = 0.7;
+      src.connect(bp); bp.connect(g);
+      g.gain.setValueAtTime(0.16, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.7);
+      src.start(t); src.stop(t + 0.7);
+    } else {
+      o = ac.createOscillator(); o.type = 'sine';
+      o.frequency.setValueAtTime(id === 'tonk' ? 320 : 180, t);
+      o.frequency.exponentialRampToValueAtTime(id === 'tonk' ? 148 : 90, t + 0.16);
+      o.connect(g);
+      g.gain.setValueAtTime(0.10, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+      o.start(t); o.stop(t + 0.24);
+    }
+  }
+};
+
+/* ========================= 19. JOURNAL AND POUCH (stubs until P2) ========================= */
+function renderJournal() {
+  var list = el('journalList'), html = '', i;
+  el('sporeCount').textContent = Math.floor(G.spores) + ' spores';
+  for (i = 0; i < FLORA_ORDER.length; i++) {
+    var k = FLORA_ORDER[i], f = FLORA[k], known = !!G.discovered[k];
+    html += '<div class="spread' + (known ? '' : ' locked') + '"><canvas width="112" height="112" data-sp="' + k + '"></canvas>'
+      + '<div><span class="nm">' + (known ? f.name : 'Not yet') + '</span>'
+      + '<span class="bd">' + (known ? 'It is in the jar.' : 'A shape you have not met.') + '</span></div></div>';
+  }
+  list.innerHTML = html;
+}
+function renderPouch() {
+  var list = el('pouchList'), html = '', k;
+  el('sporeCount2').textContent = Math.floor(G.spores) + ' spores';
+  for (k in CONFIG.SEED_COST) {
+    html += '<div class="shoprow"><span><span class="nm">' + FLORA[k].name + '</span>'
+      + '<span class="sub">' + CONFIG.SEED_COST[k] + ' spores</span></span>'
+      + '<button class="buy" data-seed="' + k + '">BUY</button></div>';
+  }
+  list.innerHTML = html;
+}
+
+/* ========================= 20. SAVE ========================= */
+var SAVE_T = 0;
+function saveNow() {
+  try {
+    G.lastSeen = nowMs();
+    localStorage.setItem(CONFIG.SAVE_KEY, JSON.stringify({ v: CONFIG.SAVE_V, s: G, set: SETTINGS }));
+  } catch (e) {}
+}
+function saveSoon() {
+  clearTimeout(SAVE_T);
+  SAVE_T = setTimeout(saveNow, 900);
+}
+var SETTINGS = { sound: 1, motion: 1, tilt: 0, weather: 0, hemi: null };
+function guessHemi() {
+  var z = '';
+  try { z = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) {}
+  var south = ['Australia/', 'Pacific/Auckland', 'Pacific/Fiji', 'America/Sao_Paulo',
+    'America/Argentina', 'America/Buenos_Aires', 'America/Santiago', 'America/Lima',
+    'Africa/Johannesburg', 'Indian/', 'Antarctica/'], i;
+  for (i = 0; i < south.length; i++) if (z.indexOf(south[i]) === 0) return 'south';
+  return 'north';
+}
+function loadJar() {
+  var raw = null;
+  try { raw = localStorage.getItem(CONFIG.SAVE_KEY); } catch (e) {}
+  if (raw) {
+    try {
+      var o = JSON.parse(raw);
+      if (o && o.v === CONFIG.SAVE_V && o.s && o.s.plants) {
+        if (o.set) SETTINGS = o.set;
+        return o.s;
+      }
+    } catch (e) {}
+  }
+  var seed = seedFromString(String(Date.now()) + ':' + Math.random());
+  var s = newJar(seed, SETTINGS.hemi || guessHemi());
+  s.lastSeen = nowMs(); s.startMs = nowMs();
+  s.fresh = 1;
+  return s;
+}
+
+/* ========================= 21. BOOT ========================= */
+function hudText() {
+  el('chipDay').textContent = 'Day ' + G.dayCount + ', ' + hourWord(G.env.hour);
+}
+function liveTick() {
+  var now = nowMs(), step = CONFIG.TICK_MIN * 60000;
+  var n = Math.floor((now - G.lastSeen) / step);
+  if (n <= 0) return 0;
+  var i;
+  for (i = 1; i <= n; i++) tick(G, clockFromMs(G.lastSeen + i * step, G.hemi));
+  G.lastSeen += n * step;
+  return n;
+}
+function frame(ts) {
+  RAF = 0;
+  if (document.hidden) return;
+  var dt = LAST ? Math.min(120, ts - LAST) : 16;
+  LAST = ts;
+  V.t = ts; FRAMES++;
+  /* the light follows the minute, not the ten minute tick */
+  applyClock(G, clockFromMs(nowMs(), G.hemi));
+  if (SHIVER > 0) SHIVER -= dt;
+  stepParticles(dt);
+  var i;
+  for (i = 0; i < G.agents.length; i++) if (G.agents[i].rolled > 0) G.agents[i].rolled = Math.max(0, G.agents[i].rolled - dt);
+  liveTick();
+  if (MONTAGE) stepMontage(dt);
+  draw(G);
+  hudText();
+  RAF = requestAnimationFrame(frame);
+}
+function kick() { if (!RAF && !document.hidden) RAF = requestAnimationFrame(frame); }
+
+/* the catch up montage: the jar plays the days you were away, and one tap
+   anywhere skips it. It is never a screen, it is a line over the glass. */
+function stepMontage(dt) {
+  MONTAGE.t += dt;
+  var u = Math.min(1, MONTAGE.t / CONFIG.CATCHUP_MONTAGE_MS);
+  var want = Math.floor(u * MONTAGE.n), i;
+  for (i = MONTAGE.done; i < want; i++) {
+    tick(MONTAGE.state, clockFromMs(MONTAGE.from + i * CONFIG.TICK_MIN * 60000, MONTAGE.state.hemi));
+  }
+  MONTAGE.done = want;
+  if (u >= 1) { MONTAGE = null; el('montage').hidden = true; }
+}
+function runCatchUp() {
+  var away = nowMs() - G.lastSeen;
+  if (away < CONFIG.TICK_MIN * 60000 * 6) { liveTick(); return; }
+  var days = Math.floor(away / 86400000);
+  var from = G.lastSeen;
+  var res = catchUp(G, nowMs());
+  if (res.ticks <= 0) return;
+  var grew = res.after.segments - res.before.segments;
+  var line = days >= 1 ? (days === 1 ? 'A day passed' : days + ' days passed') : 'A few hours passed';
+  if (grew > 0) line += ', and it grew';
+  el('montageText').textContent = line + '.';
+  el('montage').hidden = false;
+  MONTAGE = { t: 0, n: 0, done: 0, from: from, state: G };
+  setTimeout(function () { if (MONTAGE) { MONTAGE = null; el('montage').hidden = true; } }, CONFIG.CATCHUP_MONTAGE_MS + 400);
+}
+
+function boot() {
+  V.cv = el('jar');
+  V.ctx = V.cv.getContext('2d');
+  REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  G = loadJar();
+  if (!G.props) G.props = newJar(G.seed, G.hemi).props;
+  SFX.on = !!SETTINGS.sound;
+  fitCanvas();
+  bindInput();
+  runCatchUp();
+  if (!G.fresh) el('firstLine').classList.add('gone');
+  else setTimeout(function () {
+    el('firstLine').textContent = 'Swipe down to mist. Tap the glass to say hello.';
+    setTimeout(function () { el('firstLine').classList.add('gone'); G.fresh = 0; saveSoon(); }, 6000);
+  }, 3400);
+  window.addEventListener('resize', function () { fitCanvas(); });
+  window.addEventListener('orientationchange', function () { setTimeout(fitCanvas, 120); });
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) { if (RAF) cancelAnimationFrame(RAF); RAF = 0; LAST = 0; saveNow(); }
+    else { runCatchUp(); kick(); }
+  });
+  setInterval(saveNow, 60000);
+  kick();
+  try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {}
+  window.addEventListener('load', function () { try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {} });
+}
+
+/* the hook the browser gates drive. It never changes what the game does, it
+   only lets a test move the clock and put a bug where it can be tapped. */
+window.WARDIAN_TEST = {
+  state: function () { return G; },
+  view: function () { return V; },
+  /* run n ticks, misting on the policy a cared for jar gets, so a shot is of a
+     jar somebody looked after and not of one left in a cupboard */
+  advance: function (n, policy) {
+    var i, step = CONFIG.TICK_MIN * 60000, pol = POLICIES[policy || 'twoDay'];
+    for (i = 1; i <= n; i++) {
+      var ck = clockFromMs(G.lastSeen + i * step, G.hemi);
+      if (pol && pol(G, ck)) mist(G);
+      tick(G, ck);
+    }
+    G.lastSeen += n * step;
+    NOW_OFF += n * step;
+    applyClock(G, clockFromMs(nowMs(), G.hemi));
+    return G.tickN;
+  },
+  setHour: function (h) {
+    var d = new Date(); d.setHours(h, 0, 0, 0);
+    NOW_OFF = d.getTime() - Date.now();
+    G.lastSeen = nowMs();
+    applyClock(G, clockFromMs(nowMs(), G.hemi));
+    return G.env.phase;
+  },
+  mist: function () { return mist(G); },
+  place: function (sp, x) {
+    G.agents.push({ sp: sp, x: x, y: 0.2, vx: 0, vy: 0, asleep: 0, rolled: 0, phase: 1 });
+    G.seen[sp] = 1; G.discovered[sp] = 1;
+    return G.agents.length - 1;
+  },
+  surface: function () { return surfaceMoist(G); },
+  toWorld: function (sx, sy) { return { x: unwx(sx), y: unwy(sy) }; },
+  toScreen: function (x, y) { return { x: wx(x), y: wy(y) }; },
+  setCurl: function (c) {
+    var i, k, n = 0;
+    for (i = 0; i < G.plants.length; i++) for (k = 0; k < G.plants[i].segs.length; k++) {
+      if (G.plants[i].segs[k].leaf) { G.plants[i].segs[k].curl = c; n++; }
+    }
+    return n;
+  },
+  raf: function () { return RAF; },
+  frames: function () { return FRAMES; },
+  mistedAt: function () { return MISTED_AT; },
+  parts: function () { return PARTS.length; },
+  edit: function () { return EDIT; }
+};
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+else boot();
+</script>
+</body>
+</html>
