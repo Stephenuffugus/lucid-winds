@@ -626,6 +626,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
 #intro-cap{ position:absolute; left:0; right:0; bottom:118px; text-align:center; color:#f5ebd0; font-size:20px; font-weight:700;
   line-height:1.42; padding:0 30px; text-shadow:0 2px 12px #000, 0 0 2px #000; opacity:0; transition:opacity .5s ease; }
 #intro-nav{ position:absolute; left:0; right:0; bottom:34px; display:flex; justify-content:center; gap:12px; z-index:5; }
+#pad-ring{position:fixed;pointer-events:none;display:none;border:3px solid var(--gold);border-radius:14px;box-shadow:0 0 0 3px rgba(0,0,0,.65),0 0 18px rgba(200,168,75,.75);z-index:9999;transition:left .08s,top .08s,width .08s,height .08s}
 </style>
 <script src="/music-unlocks.js" defer></script>
 </head>
@@ -1109,7 +1110,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v8.7';
+var BUILD='v8.8';
 var curScreen='s-splash';
 var _leaveTimer=null;
 /* dir is optional: 'push' swooshes in from the right (going deeper), 'pop' swooshes back
@@ -5033,6 +5034,85 @@ function boot(){
   setTimeout(fit, 250); setTimeout(fit, 1200);
   cv.addEventListener('pointerdown',onDown,{passive:false}); window.addEventListener('pointerup',onUp,{passive:false});
   window.addEventListener('keydown',onKey);
+  /* ===== GAMEPAD (2026-09-04, Stephen: "a d-pad makes it so much better") =====
+     Standard-mapping pads (Xbox, PlayStation, Steam Input). In a run the D-pad and
+     the left stick hop through the SAME queueHop the keyboard uses, with the same
+     orientation (down = forward). Start or B pauses. Everywhere else the D-pad moves
+     a gold focus ring over the clickable things on the current screen or overlay,
+     A presses, B presses the nearest back/close/done. No new game logic: every press
+     ends in an existing click handler or queueHop. Polled on its own rAF; the
+     Gamepad API has no press events. */
+  (function(){
+    if(!navigator.getGamepads) return;
+    var DEAD=0.5, REPEAT_AFTER=260, REPEAT_EVERY=150;
+    var prev={}, held={}, focusEl=null, ring=null, seen=false;
+    var DIRS=['up','down','left','right'];
+    function mkRing(){ if(ring) return ring; ring=document.createElement('div'); ring.id='pad-ring'; document.body.appendChild(ring); return ring; }
+    function hideRing(){ if(ring) ring.style.display='none'; }
+    function drawRing(){ if(!focusEl||focusEl.offsetParent===null){ hideRing(); return; }
+      var r=focusEl.getBoundingClientRect(); var g=mkRing(); g.style.display='block';
+      g.style.left=(r.left-5)+'px'; g.style.top=(r.top-5)+'px'; g.style.width=(r.width+10)+'px'; g.style.height=(r.height+10)+'px'; }
+    function visible(el){ if(!el||el.offsetParent===null) return false; var r=el.getBoundingClientRect(); return r.width>4&&r.height>4; }
+    /* what the player can actually press: every clickable that is on screen AND not
+       covered by something else (an open overlay hides the buttons under it by failing
+       the hit test, so overlays need no special casing and neither do new screens) */
+    function targets(){
+      var els=document.querySelectorAll('button,.btn,.lv-cell,.skincard,a[href],[role="button"]'), out=[];
+      var vw=window.innerWidth, vh=window.innerHeight;
+      for(var i=0;i<els.length;i++){ var e=els[i]; if(e.disabled||e.id==='pad-ring'||!visible(e)) continue;
+        var r=e.getBoundingClientRect(); if(r.bottom<0||r.right<0||r.top>vh||r.left>vw) continue;
+        var hit=document.elementFromPoint(Math.min(vw-1,Math.max(0,r.left+r.width/2)), Math.min(vh-1,Math.max(0,r.top+r.height/2)));
+        if(!hit||!(e===hit||e.contains(hit)||hit.contains(e))) continue;
+        if(out.indexOf(e)<0) out.push(e); }
+      out.sort(function(a,b){ var ra=a.getBoundingClientRect(), rb=b.getBoundingClientRect(); return (ra.top-rb.top)||(ra.left-rb.left); });
+      return out;
+    }
+    function center(el){ var r=el.getBoundingClientRect(); return {x:r.left+r.width/2, y:r.top+r.height/2}; }
+    function move(list, dir){
+      if(!list.length){ focusEl=null; return; }
+      if(!focusEl||list.indexOf(focusEl)<0){ focusEl=list[0]; sfx('ui'); return; }
+      var c=center(focusEl), best=null, bestD=1e9;
+      for(var i=0;i<list.length;i++){ var e=list[i]; if(e===focusEl) continue; var q=center(e), dx=q.x-c.x, dy=q.y-c.y;
+        var ok=(dir==='up'&&dy<-8)||(dir==='down'&&dy>8)||(dir==='left'&&dx<-8)||(dir==='right'&&dx>8); if(!ok) continue;
+        var along=(dir==='up'||dir==='down')?Math.abs(dy):Math.abs(dx), across=(dir==='up'||dir==='down')?Math.abs(dx):Math.abs(dy);
+        var d=along+across*2.2; if(d<bestD){ bestD=d; best=e; } }
+      if(!best){ var i2=list.indexOf(focusEl); best=(dir==='down'||dir==='right')?list[Math.min(list.length-1,i2+1)]:list[Math.max(0,i2-1)]; }
+      if(best!==focusEl){ focusEl=best; sfx('ui'); try{ focusEl.scrollIntoView({block:'nearest',inline:'nearest'}); }catch(e){} }
+    }
+    function press(el){ if(!el) return; try{ el.click(); }catch(e){} }
+    function backOf(list){ for(var i=0;i<list.length;i++){ var t=(list[i].textContent||'').trim().toLowerCase();
+        if(/^(back|close|done|menu|main menu|resume|✕|×|‹|←)/.test(t) || /back|close/.test(list[i].className) || /^(b-back|back|close)/.test(list[i].id)) return list[i]; } return null; }
+    function poll(ts){
+      var gps=navigator.getGamepads(), gp=null;
+      for(var i=0;i<gps.length;i++){ if(gps[i]&&gps[i].connected){ gp=gps[i]; break; } }
+      if(!gp){ if(seen){ seen=false; hideRing(); focusEl=null; } return; }
+      if(!seen){ seen=true; try{ toast('🎮 Controller connected'); }catch(e){} }
+      var bt=function(i){ var b=gp.buttons[i]; return !!(b&&(b.pressed||b.value>0.5)); };
+      var ax=gp.axes[0]||0, ay=gp.axes[1]||0;
+      var now={ up:bt(12)||ay<-DEAD, down:bt(13)||ay>DEAD, left:bt(14)||ax<-DEAD, right:bt(15)||ax>DEAD, a:bt(0), b:bt(1), start:bt(9), back:bt(8) };
+      var fire={}, k;
+      for(k in now){ if(now[k]&&!prev[k]){ fire[k]=true; held[k]=ts; }
+        else if(now[k]&&DIRS.indexOf(k)>=0&&ts-held[k]>REPEAT_AFTER){ fire[k]=true; held[k]=ts-(REPEAT_AFTER-REPEAT_EVERY); } }
+      prev=now;
+      if(curScreen==='s-play' && G && G.phase==='play'){
+        hideRing(); focusEl=null;
+        if(fire.down) queueHop('up'); else if(fire.up) queueHop('down');
+        if(fire.left) queueHop('left'); else if(fire.right) queueHop('right');
+        if(fire.start||fire.b) pauseRun();
+        return;
+      }
+      if(curScreen==='s-splash'){ hideRing(); if(fire.a||fire.start) splashTapped(); return; }
+      if(curScreen==='s-pause' && (fire.start||fire.b)){ hideRing(); focusEl=null; resumeRun(); return; }
+      var list=targets(); if(focusEl&&list.indexOf(focusEl)<0) focusEl=null;
+      for(var d=0; d<DIRS.length; d++) if(fire[DIRS[d]]) { move(list, DIRS[d]); break; }
+      if(fire.a){ if(!focusEl||list.indexOf(focusEl)<0) focusEl=list[0]||null; press(focusEl); }
+      if(fire.b){ press(backOf(list)); }
+      drawRing();
+    }
+    function loop(ts){ try{ poll(ts||0); }catch(e){} requestAnimationFrame(loop); }
+    requestAnimationFrame(loop);
+    window.__padPoll=poll;   /* the gamepad gate drives one tick with a fake pad */
+  })();
   // d-pad — pointerdown (not click) so hops feel instant
   applyPadLayout();
   // ▲ = back, ▼ = forward (descending view); both thumbs get both
@@ -5231,7 +5311,7 @@ function boot(){
   /* 2026-08-16 audit: drifted a THIRD time, 73 against jimothy-v77. The two
      numbers are the same number now; test/jimothy-check.js fails the build if
      they ever separate again. */
-  var SWV='79';
+  var SWV='80';
   if('serviceWorker' in navigator){ try{
     /* ⛔ AUTO-UPDATE. The SW is network-first + skipWaiting + clients.claim, so a fresh
        deploy is fetched immediately — but an already-OPEN page keeps showing the version

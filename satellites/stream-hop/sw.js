@@ -20,7 +20,7 @@
       bug 2, and died. Deploying constantly made this fire constantly. Cache
       cleanup now runs after the claim, on a delay, and only touches our own
       versioned caches. */
-var CACHE = "jimothy-v79";
+var CACHE = "jimothy-v80";
 var NET_TIMEOUT = 4000;
 
 self.addEventListener("install", function (e) { e.waitUntil(self.skipWaiting()); });
