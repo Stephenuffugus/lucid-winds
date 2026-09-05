@@ -131,7 +131,7 @@ A visual phase is not done until you have looked at the screenshot and named thr
 
 | # | game | handoff | plan | what a first playable is | SESSION STATE |
 |---|---|---|---|---|---|
-| 1 | | | `plans/<game>/HANDOFF-<GAME>.md` | | not started |
+| 1 | Fathom | `docs/handoffs-uploaded/six-20260905/6handoffs/HANDOFF-FATHOM.md` | `plans/fathom/HANDOFF-FATHOM.md` (written 2026-09-05, Fable) | level 1 cleared with real taps: drag to move, tap to throw, the ring lights the cave, a cache glints, the exit sings back. That is P1 step 5 of the plan | not started |
 | 2 | | | | | not started |
 | 3 | | | | | not started |
 
