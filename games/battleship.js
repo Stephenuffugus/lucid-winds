@@ -30,7 +30,7 @@ if(!document.getElementById('th-kf')){
     '.th-cell.clickable:hover{background:rgba(122,179,86,0.18)}',
     '.th-cell.clickable:active{transform:scale(0.94)}',
     '.th-cell.water{background:rgba(18,26,22,0.78)}',
-    '.th-cell.water-alt{background:rgba(22,30,26,0.88)}',
+    '.th-cell.water-alt{background:rgba(32,44,38,0.9)}',
     '.th-cell.placed{background:rgba(74,124,53,0.5);box-shadow:inset 0 0 0 1px rgba(122,179,86,0.7);border-radius:3px}',
     '.th-cell.ghost-ok{background:rgba(122,179,86,0.45)!important;box-shadow:inset 0 0 0 2px rgba(200,168,75,0.8)}',
     '.th-cell.ghost-bad{background:rgba(199,80,80,0.45)!important;box-shadow:inset 0 0 0 2px rgba(199,80,80,0.9)}',
@@ -48,12 +48,12 @@ if(!document.getElementById('th-kf')){
     '.th-radar-overlay::before{content:"";position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,rgba(200,168,75,0.45) 0deg,transparent 120deg);animation:thRadarSweep 1.1s linear 2}',
     '.th-radar-count{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:Bebas Neue,sans-serif;font-size:1.6rem;color:var(--gold);text-shadow:0 0 6px rgba(0,0,0,0.9);letter-spacing:0.05em;z-index:5}',
     '.th-grid-wrap{display:grid;grid-template-columns:16px 1fr;grid-template-rows:16px 1fr;gap:2px;width:100%;position:relative}',
-    '.th-coord-row{display:grid;grid-template-columns:16px repeat(10,1fr);gap:1px;align-items:center;font-family:DM Mono,monospace;font-size:0.52rem;color:var(--muted);letter-spacing:0.02em}',
-    '.th-coord-col{display:grid;grid-template-rows:repeat(10,1fr);gap:1px;align-items:center;justify-items:center;font-family:DM Mono,monospace;font-size:0.52rem;color:var(--muted);letter-spacing:0.02em}',
+    '.th-coord-row{display:grid;grid-template-columns:16px repeat(10,1fr);gap:1px;align-items:center;font-family:DM Mono,monospace;font-size:0.7rem;color:rgba(232,220,200,0.78);letter-spacing:0.02em}',
+    '.th-coord-col{display:grid;grid-template-rows:repeat(10,1fr);gap:1px;align-items:center;justify-items:center;font-family:DM Mono,monospace;font-size:0.7rem;color:rgba(232,220,200,0.78);letter-spacing:0.02em}',
     '.th-grid{display:grid;grid-template-columns:repeat(10,1fr);gap:1px;background:rgba(74,124,53,0.08);border:1.5px solid rgba(74,124,53,0.18);border-radius:6px;overflow:hidden;position:relative}',
     '.th-grid.turn-active{animation:thTurnRing 1.6s ease-in-out infinite}',
-    '.th-ship-tray{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:6px}',
-    '.th-ship-chip{background:rgba(122,179,86,0.18);border:1.5px solid rgba(122,179,86,0.5);border-radius:8px;padding:5px 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:54px;transition:transform 0.1s,background 0.12s,border-color 0.12s;-webkit-tap-highlight-color:transparent}',
+    '.th-ship-tray{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-bottom:6px}',
+    '.th-ship-chip{background:rgba(122,179,86,0.18);border:1.5px solid rgba(122,179,86,0.5);border-radius:8px;padding:5px 5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0;flex:1 1 0;transition:transform 0.1s,background 0.12s,border-color 0.12s;-webkit-tap-highlight-color:transparent}',
     '.th-ship-chip.sel{background:rgba(200,168,75,0.28);border-color:var(--gold);transform:translateY(-1px)}',
     '.th-ship-chip.placed{background:rgba(74,124,53,0.12);border-color:rgba(74,124,53,0.4);opacity:0.65}',
     '.th-ship-chip.placed.sel{opacity:1;background:rgba(200,168,75,0.28);border-color:var(--gold)}',
@@ -63,10 +63,10 @@ if(!document.getElementById('th-kf')){
     '.th-ship-dot{width:10px;height:10px;background:rgba(122,179,86,0.75);border:1px solid rgba(122,179,86,0.95);border-radius:1px}',
     '.th-ship-chip.placed .th-ship-dot{background:rgba(74,124,53,0.5)}',
     '.th-diff-row{display:flex;gap:5px;justify-content:center;margin:4px 0 6px;flex-wrap:wrap}',
-    '.th-diff-btn{background:rgba(18,26,20,0.65);border:1.5px solid rgba(122,179,86,0.3);border-radius:6px;padding:10px 14px;font-family:DM Mono,monospace;font-size:0.62rem;color:var(--muted);letter-spacing:0.06em;cursor:pointer;transition:all 0.12s;-webkit-tap-highlight-color:transparent;min-height:44px;display:inline-flex;align-items:center}',
+    '.th-diff-btn{background:rgba(18,26,20,0.65);border:1.5px solid rgba(200,168,75,0.75);border-radius:6px;padding:10px 14px;font-family:DM Mono,monospace;font-size:0.7rem;color:var(--cream);letter-spacing:0.06em;cursor:pointer;transition:all 0.12s;-webkit-tap-highlight-color:transparent;min-height:44px;display:inline-flex;align-items:center}',
     '.th-diff-btn.on{background:rgba(122,179,86,0.25);border-color:var(--sage);color:var(--cream)}',
     '.th-diff-btn:active{transform:scale(0.96)}',
-    '.th-special-btn{background:rgba(26,36,28,0.8);border:1.5px solid rgba(200,168,75,0.5);color:var(--gold);font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;font-size:0.68rem;padding:10px 14px;border-radius:6px;cursor:pointer;transition:all 0.12s;min-height:44px;-webkit-tap-highlight-color:transparent;display:inline-flex;align-items:center;justify-content:center}',
+    '.th-special-btn{background:rgba(26,36,28,0.8);border:1.5px solid rgba(200,168,75,0.75);color:var(--cream);font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;font-size:0.68rem;padding:10px 14px;border-radius:6px;cursor:pointer;transition:all 0.12s;min-height:44px;-webkit-tap-highlight-color:transparent;display:inline-flex;align-items:center;justify-content:center}',
     '.th-special-btn:active{transform:scale(0.95)}',
     '.th-special-btn.armed{background:rgba(200,168,75,0.3);border-color:var(--gold);color:var(--cream);animation:thAimPulse 1.1s ease-in-out infinite}',
     '.th-special-btn.used{opacity:0.35;cursor:not-allowed}',
@@ -518,11 +518,11 @@ function GBS(a){
       if(isSel)cls+=' sel';
       if(isPlaced)cls+=' placed';
       h+='<div class="'+cls+'" onclick="_BSsel('+si+')">';
-      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.62rem;color:var(--cream);letter-spacing:0.05em">'+SHIP_NAMES[si]+'</div>';
+      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.58rem;color:var(--cream);letter-spacing:0.04em;white-space:nowrap">'+SHIP_NAMES[si]+'</div>';
       h+='<div class="th-ship-dots '+(dir==='v'?'v':'')+'">';
       for(var k=0;k<len;k++)h+='<div class="th-ship-dot"></div>';
       h+='</div>';
-      h+='<div style="font-size:0.44rem;color:'+(isPlaced?'var(--sage)':'var(--muted)')+';letter-spacing:0.04em">'+(isPlaced?'✓ placed':isSel?'selected':'tap')+'</div>';
+      h+='<div style="font-size:0.62rem;color:'+(isPlaced?'var(--sage)':'var(--muted)')+';letter-spacing:0.04em">'+(isPlaced?'✓':isSel?'selected':'tap')+'</div>';   /* the tick alone: the word made five chips wrap to two rows at 375 and pushed the board below the fold; the chip's placed style says the rest */
       h+='</div>';
     }
     h+='</div>';

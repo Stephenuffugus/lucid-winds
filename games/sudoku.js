@@ -198,7 +198,7 @@ function GU(a){
   _setDiff('medium');ms(a);mm(a);
   if(!document.getElementById('u-notes-style')){var _us=document.createElement('style');_us.id='u-notes-style';
     _us.textContent='.unwrap{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);width:100%;height:100%;font-size:clamp(7px,1.9vw,10px);line-height:1;color:var(--sage);opacity:.9;font-family:"DM Mono",monospace;place-items:center;padding:1px;box-sizing:border-box}'
-      +'.utb{display:flex;gap:10px;justify-content:center;width:min(calc(100vw - 32px),400px);margin:clamp(6px,2vw,10px) auto 0}'
+      +'.utb{display:flex;gap:10px;justify-content:center;width:min(calc(100vw - 32px),400px);margin:4px auto 0}'
       +'.utbb{flex:1;min-height:48px;border-radius:12px;border:1.5px solid rgba(74,124,53,.25);background:rgba(26,31,23,.65);color:var(--cream);font-family:"DM Mono",monospace;font-size:.72rem;letter-spacing:.05em;cursor:pointer;-webkit-tap-highlight-color:transparent}'
       +'.utbb.on{border-color:#C8A84B;background:rgba(200,168,75,.16);color:#f0e2c0}'
       // portal parity: shared.css lacks these app-side rules (highlights + done chips)

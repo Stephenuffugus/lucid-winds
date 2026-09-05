@@ -286,7 +286,7 @@ window._gameFns.breathing=function BR(a){
 
   // Single-structure shell — techniques + cat chips injected below after render.
   pan.innerHTML=''+
-    '<canvas id="BRcv" style="display:block;margin:6px auto;width:100%;max-width:360px;height:260px;background:#0d100c;border-radius:8px;"></canvas>'+
+    '<canvas id="BRcv" style="display:block;margin:6px auto;width:100%;max-width:360px;height:260px;background:#0d100c;border-radius:8px;border:1px solid rgba(200,168,75,.22);box-shadow:0 0 40px -8px rgba(122,179,86,.25);"></canvas>'+
     '<div id="BRph" style="font-family:Bebas Neue,sans-serif;font-size:1.4rem;color:#e8dcc8;letter-spacing:3px;opacity:.85;margin:4px 0;">READY</div>'+
     '<div id="BRct" style="font-family:Bebas Neue,sans-serif;font-size:2rem;color:rgba(232,220,200,0.35);min-height:2rem;"></div>'+
     '<div id="BRinfo" style="font-size:.7rem;font-weight:500;opacity:.6;margin:4px 0;">Breaths: 0</div>'+
@@ -299,7 +299,7 @@ window._gameFns.breathing=function BR(a){
     // Category chips
     '<div id="BRcats" style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;padding:2px 4px 6px;"></div>'+
     // Technique cards container
-    '<div id="BRlist" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:4px;"></div>';
+    '<div id="BRlist" style="display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:1fr;align-items:stretch;gap:6px;padding:4px;"></div>';
   a.appendChild(pan);
   mc(a).innerHTML='<button class="gb" id="BRgo" onclick="_BRG()">▶ START</button> '
     +'<button class="gb" onclick="_BRR()">↺ RESET</button> '
@@ -339,12 +339,12 @@ window._gameFns.breathing=function BR(a){
     });
     el.innerHTML=keys.map(function(k){
       var p=PATTERNS[k];var sel=k===curKey;
-      var adv=p.advanced?'<span style="color:var(--gold);font-size:0.6rem;margin-left:4px;">◆</span>':'';
-      var aud=p.audible?'<span style="color:var(--sage);font-size:0.6rem;margin-left:4px;">🔈</span>':'';
+      var adv=p.advanced?'<span style="color:var(--gold);font-size:0.7rem;margin-left:4px;">◆</span>':'';
+      var aud=p.audible?'<span style="color:var(--sage);font-size:0.7rem;margin-left:4px;">🔈</span>':'';
       return '<button class="gb" onclick="_BRP(\''+k+'\')" style="padding:8px 6px;text-align:left;min-height:64px;display:flex;flex-direction:column;justify-content:center;gap:2px;font-family:inherit;'
-        +(sel?'background:rgba(122,179,86,0.22);border-color:var(--sage);':'')+'">'
-        +'<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.05em;color:var(--cream);">'+p.name+adv+aud+'</div>'
-        +'<div style="font-family:DM Mono,monospace;font-size:0.7rem;font-weight:500;color:var(--sage);opacity:0.85;">'+p.tag+'</div>'
+        +(sel?'background:rgba(122,179,86,0.22);border-color:var(--sage);box-shadow:0 0 0 1px var(--sage),0 0 18px rgba(122,179,86,.22);':'')+'">'
+        +'<div style="font-family:Bebas Neue,sans-serif;font-size:0.82rem;letter-spacing:0.05em;color:var(--cream);min-height:2.2em;display:flex;align-items:center;">'+p.name+adv+aud+'</div>'
+        +'<div style="font-family:DM Mono,monospace;font-size:0.7rem;font-weight:400;color:var(--sage);opacity:0.7;">'+p.tag+'</div>'
         +'</button>';
     }).join('');
   }
