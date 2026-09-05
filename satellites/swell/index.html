@@ -75,7 +75,11 @@ html,body{margin:0;padding:0;height:100%;background:var(--ink);color:var(--cream
   margin:6px 0;padding:14px 16px;font-family:inherit;text-transform:uppercase}
 .btn.small{min-height:48px;font-size:.8rem;letter-spacing:.14em}
 .btn.ghost{border-color:rgba(140,133,152,.32);color:var(--dim)}
-.btn.on{border-color:var(--amber);color:var(--ink);background:var(--amber)}
+/* a chosen segment is marked, not filled. A solid amber slab made OFF the
+   loudest thing on the ambient screen, louder than START, which is the button
+   you actually came for. */
+.btn.on{border-color:var(--amber);color:var(--amber);background:rgba(232,179,106,.14);
+  box-shadow:inset 0 0 0 1px rgba(232,179,106,.5)}
 .row{display:flex;gap:10px;width:100%;max-width:340px}
 .row > *{flex:1 1 0;min-width:0;width:auto;max-width:none}
 .cap{font-size:.72rem;letter-spacing:.22em;color:var(--dim);margin:12px 0 6px;
@@ -131,6 +135,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--ink);color:var(--cream
 
   <div class="screen" id="scrMoods">
     <div class="cap">Choose a mood</div>
+    <div class="spacer" style="flex:0.6"></div>
     <div id="moodCards" style="width:100%;max-width:340px"></div>
     <div class="spacer"></div>
     <button class="btn small ghost" id="btnMoodsBack">BACK</button>
@@ -140,14 +145,14 @@ html,body{margin:0;padding:0;height:100%;background:var(--ink);color:var(--cream
     <div class="spacer"></div>
     <div class="title">AMBIENT</div>
     <p class="tiny" style="text-align:center">It plays by itself, holding and letting go, until you stop it.</p>
-    <div class="cap">Sleep timer</div>
+    <div class="cap" style="text-align:center">Sleep timer</div>
     <div class="row" id="sleepRow">
       <button class="btn small" data-min="15">15</button>
       <button class="btn small" data-min="30">30</button>
       <button class="btn small" data-min="60">60</button>
       <button class="btn small on" data-min="0">OFF</button>
     </div>
-    <p class="tiny">Keeps playing while this screen stays on.</p>
+    <p class="tiny" style="text-align:center">Keeps playing while this screen stays on.</p>
     <div class="spacer"></div>
     <button class="btn" id="btnAmbientStart">START</button>
     <button class="btn small ghost" id="btnAmbientBack">BACK</button>
@@ -271,7 +276,7 @@ function smoothstep(a, b, t) {
    own tonic, so Storm's `i` is [0,3,7] and its key is 9 (A). */
 var MOODS = {
   dawn: {
-    id: 'dawn', name: 'Dawn', line: 'warm, wide, a film first morning',
+    id: 'dawn', name: 'Dawn', line: "warm, wide, a film's first morning",
     key: 0, bpm: 66, tonic: 'I',
     chords: {
       I:  { pcs: [0, 4, 7, 11], dist: 0 },
@@ -313,7 +318,7 @@ var MOODS = {
     colour: { strings: '#C98A5A', choir: '#7FA8C8', brass: '#E8B54A', timp: '#A32E38', wash: '#1B1A26' }
   },
   lullaby: {
-    id: 'lullaby', name: 'Lullaby', line: 'a music box and soft strings for the end of the day',
+    id: 'lullaby', name: 'Lullaby', line: 'a music box and soft strings, late on',
     key: 0, bpm: 58, tonic: 'I',
     chords: {
       I:   { pcs: [0, 4, 7],  dist: 0 },
