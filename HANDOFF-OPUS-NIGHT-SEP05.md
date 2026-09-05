@@ -132,7 +132,7 @@ A visual phase is not done until you have looked at the screenshot and named thr
 | # | game | handoff | plan | what a first playable is | SESSION STATE |
 |---|---|---|---|---|---|
 | 1 | Fathom | `docs/handoffs-uploaded/six-20260905/6handoffs/HANDOFF-FATHOM.md` | `plans/fathom/HANDOFF-FATHOM.md` (written 2026-09-05, Fable) | level 1 cleared with real taps: drag to move, tap to throw, the ring lights the cave, a cache glints, the exit sings back. That is P1 step 5 of the plan | not started |
-| 2 | | | | | not started |
+| 2 | Asterism | `docs/handoffs-uploaded/six-20260905/6handoffs/HANDOFF-ASTERISM.md` | `plans/asterism/HANDOFF-ASTERISM.md` (written 2026-09-05, Fable; the star catalogue is packed at `plans/asterism/hyg-asterism.json`) | the real sky from Columbus at a frozen time with Vega overhead, three real taps join Vega, Deneb and Altair, a typed name saves to the almanac. That is P1 step 4 | not started |
 | 3 | | | | | not started |
 
 (Rows are added as handoffs land. A row's SESSION STATE is written by Opus: `DONE P1` and so on,
