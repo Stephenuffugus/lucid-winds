@@ -5,6 +5,27 @@ kinds of item: what is already done, what only Stephen can do, and what Opus
 builds. Every Opus task has a prompt block you paste as-is into a fresh Opus
 session. Read this file top to bottom once, then work the ORDER section.
 
+## STATE, Sep 05 2026 early (Fable), read this first
+
+Everything below this block is the Sep 02 plan; this is where things stand three days on.
+
+- **Keepsies** took Sep 04 evening after Stephen's phone notes: lean camera, spyglass (the zoom aim),
+  four lays, orbit and pinch alive, inspect card and ability copy. Commit `bc7be9c2`, LIVE on
+  lucidwinds.com as build 20260904d. Ledger: `HANDOFF-KEEPSIES.md` K1.5 box and SESSION STATE;
+  decisions in `satellites/keepsies/docs/DECISIONS.md` under "K2.5, the Director's phone". Next is
+  his phone again; K3 waits on his three calls.
+- **The fleet art audit** (all 186 games shot and looked at) is `FLEET-ART-AUDIT-SEP04.md` plus the
+  two DETAIL files and FACTS. Its cross-cutting jobs 3, 4, 5 (code half), 6, 7 (native half) and 10
+  are done, measured and looked at, commits `40466406 e0164451 1e0322cc ab99df55 a6df3f35 bf609f16
+  5b445902`; all of it reached main under the other session's deploys. Where it stands, what is the
+  Director's and what is next: `HANDOFF-ART-FLEET.md` SESSION STATE and §3. The probes that produced
+  every number are in `scripts/fleet/` with a README.
+- **Still Stephen's:** the three calls in `HANDOFF-ART-FLEET.md` §5, JOB 8 (emoji as art), JOB 9
+  (delete the phone photos, vault the masters), Keepsies K3's three calls, and every painting lane
+  (backdrops for 66 natives, Glyph Forge, Tarot Run, Tomato Man, the Keepsies grails).
+- **Next on the build side:** the long tail per game, starting with the audit's seven "poor" games
+  (`FLEET-ART-AUDIT-SEP04.md` ranked table from line 391), CSS and composition jobs that need no paint.
+
 ## How to use this file
 
 **One Opus, one task at a time** (safest): open a terminal, paste the prompt for
