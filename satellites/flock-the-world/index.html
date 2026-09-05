@@ -3764,6 +3764,8 @@ function setSpreadOrder(s,rid,seed){
   const r=s.regions[rid];r.cOrder={};r.cN=order.length||1;
   order.forEach((c,i)=>r.cOrder[c.idx]=i);
 }
+let LAND_PATH=null;
+function landPath(){ if(LAND_PATH)return LAND_PATH; const p=new Path2D(); COUNTRIES.forEach(c=>p.addPath(countryPath(c))); return LAND_PATH=p; }
 function countryPath(c){
   if(c.path)return c.path;
   const p=new Path2D();
@@ -3909,13 +3911,16 @@ const K_MAP='ftw_map';
 const MAP_STYLES={
   night:{name:'Night desk',ocean:'#04121e',grat:'#0a1926',route:'#14222e',border:'#061119',coast:'rgba(127,168,196,0.10)',
     idle:(lib,tint)=>`hsl(210 ${12+lib*24}% ${16+lib*6+tint*0.7}%)`,unlit:tint=>`hsl(30 12% ${15+tint*0.5}%)`,
-    lost:['#170b0e','#1c0d10'],sib:tint=>`hsl(210 30% ${28+tint}%)`,lit:15,sat:20,label:'#dfe9f055',crt:.28},
+    lost:['#170b0e','#1c0d10'],sib:tint=>`hsl(210 30% ${28+tint}%)`,lit:15,sat:20,label:'#dfe9f055',crt:.28,
+    shore:'rgba(170,205,235,0.11)',cname:'#e6eef4',cnameHalo:'rgba(4,18,30,0.75)',vig:0.34},
   day:{name:'Daylight',ocean:'#12304d',grat:'#1f4468',route:'#2f5478',border:'#08172a',coast:'rgba(160,205,235,0.22)',
     idle:(lib,tint)=>`hsl(210 ${16+lib*22}% ${36+lib*8+tint*0.9}%)`,unlit:tint=>`hsl(32 16% ${33+tint*0.6}%)`,
-    lost:['#3a1a22','#47202b'],sib:tint=>`hsl(210 34% ${46+tint}%)`,lit:31,sat:34,label:'#f2f7fbaa',crt:.12},
+    lost:['#3a1a22','#47202b'],sib:tint=>`hsl(210 34% ${46+tint}%)`,lit:31,sat:34,label:'#f2f7fbaa',crt:.12,
+    shore:'rgba(225,240,255,0.16)',cname:'#f6f9fc',cnameHalo:'rgba(8,23,42,0.8)',vig:0.26},
   paper:{name:'Paper map',ocean:'#c9d5de',grat:'#b5c3ce',route:'#9cb0bf',border:'#2a3946',coast:'rgba(20,40,60,0.18)',
     idle:(lib,tint)=>`hsl(210 ${10+lib*14}% ${60+lib*7+tint*0.8}%)`,unlit:tint=>`hsl(32 20% ${64+tint*0.5}%)`,
-    lost:['#8f5f68','#9c6a74'],sib:tint=>`hsl(210 28% ${70+tint}%)`,lit:44,sat:44,label:'#1b2a38aa',crt:.06}
+    lost:['#8f5f68','#9c6a74'],sib:tint=>`hsl(210 28% ${70+tint}%)`,lit:44,sat:44,label:'#1b2a38aa',crt:.06,
+    shore:'rgba(255,255,255,0.38)',cname:'#1b2a38',cnameHalo:'rgba(236,242,246,0.85)',vig:0.12}
 };
 const MAP_ORDER=['night','day','paper'];
 let mapStyleKey=(()=>{const k=lsGet(K_MAP);return MAP_STYLES[k]?k:'night';})();
@@ -3987,6 +3992,13 @@ function drawWorld(v,st,highlight){
      at a glance in sun (the outer half falls on the sea, the inner half on land) */
   ctx.strokeStyle=P.coast;ctx.lineWidth=Math.max(1.4,3/(v.z/v.fitZ));
   for(const c of COUNTRIES)ctx.stroke(countryPath(c));
+  /* shore band: the same strokes clipped to the land, so every country wears a thin
+     light rim on its inside edge. Relief at a glance; nothing new to read.
+     (Sep 05, Stephen: "a lot more detail without making it confusing or cluttered") */
+  ctx.save();ctx.clip(landPath());
+  ctx.strokeStyle=P.shore;ctx.lineWidth=Math.max(3.5,9/(v.z/v.fitZ));
+  ctx.stroke(landPath());
+  ctx.restore();
   /* borders */
   ctx.strokeStyle=P.border;ctx.lineWidth=Math.max(0.35,0.8/(v.z/v.fitZ));
   for(const c of COUNTRIES)ctx.stroke(countryPath(c));
@@ -4034,8 +4046,30 @@ function drawWorld(v,st,highlight){
       ctx.strokeStyle='#05070b';ctx.lineWidth=0.7;ctx.stroke();
     }
   }
-  /* region labels when zoomed */
-  if(v.z>v.fitZ*1.25){
+  /* the sea darkens toward the edges of the screen: depth, drawn in screen space */
+  ctx.setTransform(v.dpr,0,0,v.dpr,0,0);
+  {const g=ctx.createRadialGradient(v.w/2,v.h/2,Math.min(v.w,v.h)*0.35,v.w/2,v.h/2,Math.max(v.w,v.h)*0.75);
+   g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,`rgba(0,0,0,${P.vig})`);ctx.fillStyle=g;ctx.fillRect(0,0,v.w,v.h);}
+  v.apply(ctx);
+  /* country names once the player has zoomed in: only where the name fits inside the
+     country's own box on screen, so small countries earn a name as the zoom deepens */
+  if(v.z>v.containZ*2.4){
+    const fs=Math.max(2.5,10/(v.z/v.fitZ)+1.2);
+    ctx.font=`600 ${fs}px system-ui,sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.lineJoin='round';ctx.lineWidth=fs*0.28;ctx.strokeStyle=P.cnameHalo;ctx.fillStyle=P.cname;
+    const x0=-v.tx/v.z-40,x1=(v.w-v.tx)/v.z+40,y0=-v.ty/v.z-20,y1=(v.h-v.ty)/v.z+20;
+    for(const c of COUNTRIES){
+      const cx=c.c[0],cy=c.c[1];
+      if(cx<x0||cx>x1||cy<y0||cy>y1)continue;
+      if(highlight!=null&&highlight===c.idx)continue;
+      const bw=c.bb[2]-c.bb[0];
+      if(ctx.measureText(c.n).width>bw*1.05)continue;
+      ctx.strokeText(c.n,cx,cy);ctx.fillText(c.n,cx,cy);
+    }
+  }
+  /* region labels when zoomed, until the country names take over (two label layers on
+     top of each other read as noise: NORTH AFRICA across Libya, Sep 05 shot) */
+  if(v.z>v.fitZ*1.25&&!(v.z>v.containZ*2.4)){
     ctx.font=`700 ${9/(v.z/v.fitZ)+4}px system-ui,sans-serif`;
     ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.fillStyle=P.label;
@@ -5670,7 +5704,7 @@ window._sbCapEarn=function(n,tag){
   /* offline shell: registered here so the whole game (art and sfx included)
      works offline after one session. Bump ?v= with sw.js SHELL_VERSION. */
   if('serviceWorker' in navigator){
-    try{ navigator.serviceWorker.register('sw.js?v=20260905b'); }catch(e){}
+    try{ navigator.serviceWorker.register('sw.js?v=20260905c'); }catch(e){}
   }
   if(framed){
     try{ parent.postMessage({sws:'ready'},'*'); }catch(e){}
