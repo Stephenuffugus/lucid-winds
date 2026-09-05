@@ -6,9 +6,9 @@
 <meta name="theme-color" content="#0d100c">
 <meta name="description" content="Build anything out of colored blocks in a pocket 3D studio where every color is a note.">
 <title>Blockspace</title>
-<link rel="manifest" href="manifest.json?v=20260905a">
-<link rel="icon" href="icon-192.png?v=20260905a">
-<link rel="apple-touch-icon" href="icon-192.png?v=20260905a">
+<link rel="manifest" href="manifest.json?v=20260905b">
+<link rel="icon" href="icon-192.png?v=20260905b">
+<link rel="apple-touch-icon" href="icon-192.png?v=20260905b">
 <style>
 :root{
   --bg:#0d100c; --ink:#e8dcc8; --gold:#c8a84b; --sage:#7ab356; --muted:#98a086;
@@ -85,9 +85,9 @@ input[type=text],textarea{width:100%;font:inherit;color:var(--ink);background:rg
   border-radius:12px;padding:12px;min-height:48px}
 textarea{min-height:120px;font-family:ui-monospace,Menlo,monospace;font-size:12px}
 #cube{width:96px;height:96px;flex:none}
-.card{position:fixed;z-index:25;background:var(--pane);border:1px solid var(--line);border-radius:var(--r);padding:10px;
-  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;gap:6px;flex-wrap:wrap;justify-content:center;max-width:calc(100vw - 20px)}
-#selcard{left:50%;transform:translateX(-50%);bottom:calc(var(--bar) + 18px + var(--sb))}
+.card{position:fixed;z-index:25;left:0;right:0;margin:0 auto;width:max-content;max-width:calc(100vw - 20px);background:var(--pane);border:1px solid var(--line);border-radius:var(--r);padding:10px;
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;gap:6px;flex-wrap:wrap;justify-content:center;align-items:center}
+#selcard{bottom:calc(var(--bar) + 18px + var(--sb))}
 #selcard .ib{width:52px;height:52px}
 #paintmode{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--bar) + 18px + var(--sb));z-index:25}
 .toast{position:fixed;left:50%;transform:translateX(-50%);top:calc(var(--bar) + var(--st) + 14px);z-index:60;background:var(--pane);
@@ -118,7 +118,7 @@ textarea{min-height:120px;font-family:ui-monospace,Menlo,monospace;font-size:12p
 #projacts{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
 @media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
 </style>
-<script type="importmap">{"imports":{"three":"./lib/three.module.min.js?v=20260905a"}}</script>
+<script type="importmap">{"imports":{"three":"./lib/three.module.min.js?v=20260905b"}}</script>
 </head>
 <body>
 <div id="sky"></div>
@@ -167,6 +167,7 @@ textarea{min-height:120px;font-family:ui-monospace,Menlo,monospace;font-size:12p
   <div id="grads"></div>
   <h3>Palettes</h3>
   <div class="row" id="presets"></div>
+  <div class="row" style="margin-top:8px"><button class="btn" id="todayBtn">Today's palette</button><span id="todayWord" style="color:var(--muted);font-size:14px"></span></div>
   <h3>Sound</h3>
   <div class="row" id="packs"></div>
 </div>
@@ -209,6 +210,12 @@ textarea{min-height:120px;font-family:ui-monospace,Menlo,monospace;font-size:12p
     <button class="btn" id="mSnap">Share a picture</button>
     <button class="btn" id="mGravity">Gravity check</button>
   </div>
+  <h3>Play with it</h3>
+  <div class="row">
+    <button class="btn" id="mMusicBox">Music box</button>
+    <button class="btn" id="mPlayMode">Play mode</button>
+    <button class="btn" id="mReplay">Watch it build</button>
+  </div>
   <h3>Grid</h3>
   <div class="seg" id="gridSeg"><button data-g="16">16</button><button data-g="24" class="on">24</button><button data-g="32">32</button><button data-g="48">48</button></div>
   <h3>Sky</h3>
@@ -226,6 +233,7 @@ textarea{min-height:120px;font-family:ui-monospace,Menlo,monospace;font-size:12p
   <div class="row">
     <button class="btn" id="mExport">Export file</button>
     <button class="btn" id="mCode">Copy code</button>
+    <button class="btn" id="mLink">Copy link</button>
     <button class="btn" id="mImport">Import</button>
   </div>
   <div id="importBox" hidden style="margin-top:10px">
@@ -280,6 +288,10 @@ textarea{min-height:120px;font-family:ui-monospace,Menlo,monospace;font-size:12p
 </div>
 
 <div id="toast" class="toast"></div>
+<div id="mbchip" class="card" hidden style="top:calc(var(--bar) + var(--st) + 10px)">
+  <span id="mbLabel" style="font-weight:800;color:var(--gold);padding:0 6px">Music box</span>
+  <button class="btn" id="mbSlower">Slower</button><button class="btn" id="mbFaster">Faster</button><button class="btn" id="mbAxis">Axis X</button><button class="btn gold" id="mbStop">Stop</button>
+</div>
 <div id="shake"></div>
 <script src="/music-unlocks.js" defer></script>
 <script type="module">
@@ -292,7 +304,7 @@ import * as THREE from 'three';
    ===================================================================================== */
 
 /* [S1] CONFIG ------------------------------------------------------------------------ */
-const VERSION='20260905a';
+const VERSION='20260905b';
 const CHUNK=8, CAP_SOFT=3000, CAP_HARD=5000, PAL_MAX=32, UNDO_MAX=200;
 const GRIDS=[16,24,32,48];
 const $=id=>document.getElementById(id);
@@ -582,7 +594,7 @@ addEventListener('keydown',e=>{ if(e.target.tagName==='INPUT'||e.target.tagName=
   else if(e.key==='m') toggleMirror(); });
 
 /* [S8] TOOLS ------------------------------------------------------------------------- */
-function setTool(t){ S.tool=t; for(const b of document.querySelectorAll('#tools .ib')) b.classList.toggle('on',b.dataset.tool===t);
+function setTool(t){ S.tool=t; if(t!=='play'&&MB.on) MB.stop(); for(const b of document.querySelectorAll('#tools .ib')) b.classList.toggle('on',b.dataset.tool===t);
   $('paintmode').hidden=t!=='paint'; if(t!=='select') setSel(null); S.dupFrom=null; S.gradA=null; AUDIO.fx('ui'); }
 function setPaintMode(m){ S.paintMode=m; for(const b of document.querySelectorAll('#paintmode button')) b.classList.toggle('on',b.dataset.pm===m); $('pmSub').textContent=m==='face'?'F':m==='block'?'B':'▣'; S.gradA=null; }
 function errorNudge(){ const el=document.body; el.classList.remove('shaking'); void el.offsetWidth; el.classList.add('shaking'); haptic([20,40,20]); AUDIO.fx('error'); }
@@ -601,6 +613,7 @@ function toolAt(x,y,locked){
     case 'erase': if(!hit||hit.kind!=='block') return; if(locked&&lockLast===hit.id) return; lockLast=hit.id; eraseBlock(hit.b,locked); break;
     case 'paint': if(!hit||hit.kind!=='block') return; paintHit(hit); break;
     case 'select': if(!hit||hit.kind!=='block'){ setSel(null); return; } setSel(hit.id); AUDIO.fx('ui'); break;
+    case 'play': if(!hit||hit.kind!=='block') return; AUDIO.noteFor(hit.b.f[hit.face],hit.b); FX.place(hit.b,true); haptic(8); break;
   }
 }
 function placeAt(cell,f,r,m,locked){
@@ -957,7 +970,7 @@ $('pBack').onclick=()=>{ $('projects').hidden=true; };
 $('pNew').onclick=()=>{ startProject(newProject('Build '+(readIndex().length+1))); $('projects').hidden=true; };
 function duplicateProject(){ const p=JSON.parse(JSON.stringify(S.P)); p.id='p'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); p.name=(S.P.name+' copy').slice(0,40); p.created=p.modified=Date.now(); saveNow(); startProject(p); toast('Copied. You are now in the copy.'); }
 function openProject(id){ if(S.P){ S.P.thumb=makeThumb(); saveNow(); } const p=loadProject(id); if(!p){ toast('That build could not be opened'); return; } startProject(p); }
-function startProject(p){ S.P=p; S.undo.length=0; S.redo.length=0; S.sel=null; S.dupFrom=null; S.grad=null; S.gradA=null; S.color=0; S.blocksPlaced=p.blocks.length;
+function startProject(p){ if(typeof MB!=='undefined'&&MB.on) MB.stop(); if(typeof REPLAY!=='undefined'&&REPLAY.on) REPLAY.stop(); S.P=p; S.undo.length=0; S.redo.length=0; S.sel=null; S.dupFrom=null; S.grad=null; S.gradA=null; S.color=0; S.blocksPlaced=p.blocks.length;
   indexProject(); rebuildWorld(); CAM.load(p.camera); if(!p.blocks.length) CAM.reframe(); $('name').textContent=p.name; MIRRORFX.update(); setSel(null);
   setColor(p.palette.findIndex(h=>h!=null)); renderSwatches(); renderGrads(); updateBars(); $('hint').hidden=!!p.blocks.length||!$('welcome').hidden; saveNow(); }
 
@@ -1001,16 +1014,74 @@ const STARTERS=[
       return starterFrom('Smiley',pal,bl,[],'bubbles'); }}
 ];
 
+
+/* [S13b] TOOLTIPS: long-press any icon button to hear what it is ------------------- */
+for(const b of document.querySelectorAll('.ib[aria-label]')){ let t; b.addEventListener('pointerdown',()=>{ b._lp=false; t=setTimeout(()=>{ b._lp=true; toast(b.getAttribute('aria-label')); haptic(10); },480); }); for(const ev of ['pointerup','pointerleave','pointercancel']) b.addEventListener(ev,()=>clearTimeout(t));
+  /* the release after a long press must not also fire the button */
+  b.addEventListener('click',e=>{ if(b._lp){ b._lp=false; e.stopImmediatePropagation(); e.preventDefault(); } },true); }
+
+/* [S17] MUSIC BOX: a glowing plane sweeps an axis; every block it passes plays ------ */
+const MB={on:false,axis:0,bpm:108,t0:0,col:-1,mesh:null,
+  start(){ if(this.on) return; if(!S.P.blocks.length){ toast('Build something first, then the music box can play it'); return; } for(const sh of document.querySelectorAll('.sheet.open')) sh.classList.remove('open'); this.on=true; this.col=-1; this.t0=performance.now(); AUDIO.unlock();
+    if(!this.mesh){ this.mesh=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.MeshBasicMaterial({color:0xc8a84b,transparent:true,opacity:0.22,side:THREE.DoubleSide,depthWrite:false,blending:THREE.AdditiveBlending})); this.mesh.renderOrder=4; scene.add(this.mesh); }
+    this.mesh.visible=true; this.fit(); $('mbchip').hidden=false; this.label(); setTool('play'); },
+  stop(){ if(!this.on) return; this.on=false; if(this.mesh) this.mesh.visible=false; $('mbchip').hidden=true; },
+  fit(){ const N=S.P.gridSize; this.mesh.scale.set(N,N,1); this.mesh.rotation.set(0,this.axis===0?Math.PI/2:0,0); },
+  label(){ $('mbLabel').textContent='Music box · '+this.bpm; $('mbAxis').textContent=this.axis===0?'Axis X':'Axis Z'; },
+  tick(){ if(!this.on) return; const N=S.P.gridSize; const per=N*(30/this.bpm); const u=((performance.now()-this.t0)/1000%per)/per; const x=u*N-N/2;
+    if(this.axis===0) this.mesh.position.set(x,N/2,0); else this.mesh.position.set(0,N/2,x);
+    const c=Math.min(N-1,Math.floor(u*N)); if(c!==this.col){ this.col=c; this.strike(c); } },
+  strike(c){ const bl=S.P.blocks.filter(b=>b.p[this.axis]===c); if(!bl.length) return; bl.sort((a,b)=>a.p[1]-b.p[1]); const step=Math.max(1,Math.ceil(bl.length/12)); let i=0;
+    for(let k=0;k<bl.length;k+=step){ const b=bl[k]; AUDIO.note(b.f[2],{pos:worldOf(b.p),height:b.p[1],delay:i*0.012,vel:0.5,pack:b.m===1?'crystal':undefined}); FX.place(b,true); i++; } }
+};
+$('mMusicBox').onclick=()=>{ closeSheet('menu'); MB.start(); }; $('mbStop').onclick=()=>{ MB.stop(); setTool('build'); };
+$('mbSlower').onclick=()=>{ MB.bpm=Math.max(48,MB.bpm-12); MB.label(); }; $('mbFaster').onclick=()=>{ MB.bpm=Math.min(240,MB.bpm+12); MB.label(); };
+$('mbAxis').onclick=()=>{ MB.axis=MB.axis?0:1; MB.fit(); MB.label(); };
+/* play mode: taps on blocks play them instead of changing them */
+$('mPlayMode').onclick=()=>{ closeSheet('menu'); setTool(S.tool==='play'?'build':'play'); toast(S.tool==='play'?'Play mode: tap blocks to hear them':'Back to building'); };
+
+/* [S18] WATCH IT BUILD: the sculpture rebuilds itself, one block at a time, with sound */
+const REPLAY={on:false,timer:0,
+  start(){ if(this.on||!S.P.blocks.length) return; const order=S.P.blocks.slice().sort((a,b)=>a.id-b.id); this.on=true; setTool('play');
+    for(const b of order) FX.hidden.add(b.id); allChunksDirty(); flushChunks(1e9);
+    const steps=Math.min(120,order.length), per=Math.ceil(order.length/steps), gap=Math.max(60,Math.min(140,12000/steps)); let i=0;
+    const tick=()=>{ if(!this.on) return; const chunk=order.slice(i,i+per); i+=per; chunk.forEach((b,k)=>{ FX.hidden.delete(b.id); FX.place(b,false); if(k===0) AUDIO.note(b.f[2],{pos:worldOf(b.p),height:b.p[1],vel:0.55,pack:b.m===1?'crystal':undefined}); });
+      if(i<order.length) this.timer=setTimeout(tick,gap); else { this.on=false; setTimeout(()=>{ allChunksDirty(); toast('That is how you built it'); },200); } };
+    tick(); },
+  stop(){ if(!this.on) return; this.on=false; clearTimeout(this.timer); FX.hidden.clear(); allChunksDirty(); }
+};
+$('mReplay').onclick=()=>{ closeSheet('menu'); REPLAY.start(); };
+canvas.addEventListener('pointerdown',()=>{ if(REPLAY.on){ REPLAY.stop(); setTool('build'); } },{capture:true});
+
+/* [S19] TODAY'S PALETTE: date-seeded, no server, the same for everyone ---------------- */
+const TODAY_WORDS=['lighthouse','rocket','castle','robot','whale','cactus','treehouse','submarine','dragon','snowman','pirate ship','volcano','ice cream','giraffe','space station','windmill','sea turtle','hot air balloon','tractor','octopus','skyscraper','campfire','penguin','bridge','mushroom house','race car','fox','waterfall','airplane','sandcastle','dinosaur','train','bee hive','pagoda','koala','tent','crab','ferris wheel','owl','boat'];
+function todaySeed(){ const d=new Date(); const s=d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate(); let x=s^0x9e3779b9; return ()=>{ x^=x<<13; x^=x>>>17; x^=x<<5; return ((x>>>0)%100000)/100000; }; }
+function todayPalette(){ const r=todaySeed(); const base=r()*360; const cols=[]; for(let i=0;i<5;i++){ const h=(base+i*(52+r()*30))%360; cols.push(hslToHex(h,50+r()*35,38+r()*30)); } return {cols,word:TODAY_WORDS[Math.floor(r()*TODAY_WORDS.length)]}; }
+$('todayBtn').onclick=()=>{ const t=todayPalette(); loadPresetList(t.cols,"Today's"); toast("Today's idea: build a "+t.word,3200); };
+(function(){ const t=todayPalette(); $('todayWord').textContent='idea: a '+t.word; })();
+
+/* [S20] SHARE LINK: the whole build in the URL hash, compressed ------------------------ */
+const b64u={enc(u8){ let s=''; for(const c of u8) s+=String.fromCharCode(c); return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }, dec(t){ t=t.replace(/-/g,'+').replace(/_/g,'/'); while(t.length%4) t+='='; const s=atob(t); const u=new Uint8Array(s.length); for(let i=0;i<s.length;i++) u[i]=s.charCodeAt(i); return u; }};
+async function packJSON(txt){ if(!window.CompressionStream) return null; const cs=new CompressionStream('deflate-raw'); const w=cs.writable.getWriter(); w.write(new TextEncoder().encode(txt)); w.close(); return new Uint8Array(await new Response(cs.readable).arrayBuffer()); }
+async function unpackJSON(u8){ const ds=new DecompressionStream('deflate-raw'); const w=ds.writable.getWriter(); w.write(u8); w.close(); return new TextDecoder().decode(await new Response(ds.readable).arrayBuffer()); }
+async function copyLink(){ const txt=exportJSON(); const u8=await packJSON(txt); if(!u8){ copyCode(); return; } const link=location.origin+location.pathname+'#b='+b64u.enc(u8);
+  if(link.length>60000){ toast('This build is too big for a link. Use Copy code instead.'); return; }
+  try{ if(navigator.share){ await navigator.share({title:S.P.name,url:link}); return; } }catch(e){ if(e&&e.name==='AbortError') return; }
+  try{ await navigator.clipboard.writeText(link); toast('Link copied. Anyone who opens it gets a copy of this build.',3000); }catch(e){ $('importBox').hidden=false; $('importTA').value=link; toast('Copy the link from the box below'); } }
+$('mLink').onclick=copyLink;
+async function importFromHash(){ const m=location.hash.match(/#b=([A-Za-z0-9_-]+)/); if(!m) return false; try{ const txt=await unpackJSON(b64u.dec(m[1])); history.replaceState(null,'',location.pathname+location.search); importText(txt); $('welcome').hidden=true; S.settings.seenWelcome=true; saveSettings(); return true; }catch(e){ toast('That link did not open'); return false; } }
+
 /* [S16] BOOT ------------------------------------------------------------------------- */
 loadSettings(); document.body.classList.toggle('left',!!S.settings.left); $('sky').className=S.settings.sky==='day'?'':S.settings.sky;
 (function boot(){
   let p=null; const cur=LS.get(KEY_CUR); if(cur) p=loadProject(cur); if(!p){ const ix=readIndex(); if(ix.length) p=loadProject(ix[0].id); } if(!p) p=newProject();
   if(S.settings.seenWelcome) $('welcome').hidden=true;
   resize(); startProject(p); setSky(S.settings.sky);
+  importFromHash();
   requestAnimationFrame(loop);
 })();
 let lastT=0;
-function loop(t){ requestAnimationFrame(loop); CAM.tick(); FX.tick(); flushChunks(4); SELFX.update(); AUDIO.listenerTick(); renderer.render(scene,camera); }
+function loop(t){ requestAnimationFrame(loop); CAM.tick(); FX.tick(); MB.tick(); flushChunks(4); SELFX.update(); AUDIO.listenerTick(); renderer.render(scene,camera); }
 /* service worker, versioned so a deploy reaches a returning player */
 if('serviceWorker' in navigator && !DEV && location.protocol.startsWith('http')){ addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js?v='+VERSION).then(reg=>{ reg.addEventListener('updatefound',()=>{ const nw=reg.installing; nw&&nw.addEventListener('statechange',()=>{ if(nw.state==='installed'&&navigator.serviceWorker.controller){ toast('New version ready. Reopen Blockspace to get it.',4000); } }); }); }).catch(()=>{}); }); }
 /* portal handshake: the arcade frames games with ?embed=1 and listens for ready/close */
@@ -1018,7 +1089,7 @@ if('serviceWorker' in navigator && !DEV && location.protocol.startsWith('http'))
   window.SWS_EXIT=function(){ saveNow(); if(framed){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; } if(document.referrer.indexOf('/portal')>=0&&history.length>1){ history.back(); } else { location.href='https://lucidwinds.com/portal/'; } };
   if(framed){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} addEventListener('load',()=>{ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} }); } })();
 /* dev and test hook */
-if(DEV){ window.BS={S,CAM,run,undo,redo,placeAt,eraseBlock,gravityCheck,raycast,toolAt,setTool,setColor,chunks,flushChunks,exportJSON,importText,startProject,newProject,STARTERS,AUDIO,FX,renderer,scene,camera,key,worldOf,setGrid,toggleMirror,loadPreset,expandGradient,gradientSpan,bucketFill,setPaintMode,openProjects,makeThumb,saveNow,readIndex}; }
+if(DEV){ window.BS={S,CAM,run,undo,redo,MB,REPLAY,todayPalette,copyLink,packJSON,unpackJSON,b64u,importFromHash,placeAt,eraseBlock,gravityCheck,raycast,toolAt,setTool,setColor,chunks,flushChunks,exportJSON,importText,startProject,newProject,STARTERS,AUDIO,FX,renderer,scene,camera,key,worldOf,setGrid,toggleMirror,loadPreset,expandGradient,gradientSpan,bucketFill,setPaintMode,openProjects,makeThumb,saveNow,readIndex}; }
 </script>
 </body>
 </html>
