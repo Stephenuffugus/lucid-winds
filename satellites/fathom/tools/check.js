@@ -22,6 +22,7 @@ const ROOT = join(__dirname, '..');
 const FAST = process.argv.includes('--fast');
 
 const GATES = [
+  { name: 'lint',    cmd: ['tools/lint.mjs'],              need: 'LINT OK' },
   { name: 'levels',  cmd: ['tools/levels.mjs', '--check'], need: 'LEVELS OK' },
   { name: 'test',    cmd: ['sim.js', '--test'],            need: 'FATHOM TEST OK' },
   { name: 'solve',   cmd: ['sim.js', '--solve'],           need: 'FATHOM SOLVE OK' },
@@ -33,7 +34,9 @@ const GATES = [
    never failed: a gate that fails for want of a dependency teaches you to
    ignore gates. They are also the ones that flake under contention on a two
    core box, so a failure here is rerun ALONE, twice, before it is believed. */
-const BROWSER_GATES = [];
+const BROWSER_GATES = [
+  { name: 'boot', cmd: ['test/boot.mjs'], need: 'BOOT OK' }
+];
 
 const results = [];
 try {

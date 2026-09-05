@@ -42,28 +42,29 @@ html,body{margin:0;padding:0;height:100%;background:#000;color:var(--cream);
   transition:opacity 500ms ease-out}
 #hud.dim{opacity:.2}
 #stones{position:absolute;left:calc(12px + env(safe-area-inset-left,0px));
-  top:calc(10px + var(--safeT));font-size:.85rem;letter-spacing:.14em;
-  color:var(--cyan);text-shadow:0 0 10px rgba(159,232,255,.45)}
-#stones .sc{font-size:1.15rem;letter-spacing:.06em}
+  top:calc(10px + var(--safeT));font-size:.7rem;letter-spacing:.18em;
+  color:var(--dim)}
+#stones .sc{font-size:.95rem;letter-spacing:.06em;color:var(--cyan);opacity:.8}
 #depthTag{position:absolute;left:50%;transform:translateX(-50%);
   top:calc(10px + var(--safeT));font-size:.8rem;letter-spacing:.2em;color:var(--dim)}
-.iconbtn{position:absolute;pointer-events:auto;background:rgba(10,18,22,.55);
-  border:1px solid rgba(159,232,255,.32);color:var(--cyan);border-radius:14px;
+.iconbtn{position:absolute;pointer-events:auto;background:rgba(8,14,18,.4);
+  border:1px solid rgba(159,232,255,.18);color:var(--cyan);border-radius:14px;
+  opacity:.72;
   display:flex;align-items:center;justify-content:center;font-size:1.1rem;
   padding:0;line-height:1}
 #btnPause{right:calc(12px + env(safe-area-inset-right,0px));
   top:calc(8px + var(--safeT));width:48px;height:48px}
 #btnHum{right:calc(14px + env(safe-area-inset-right,0px));
   bottom:calc(18px + var(--safeB));width:56px;height:56px;border-radius:50%;
-  font-size:.66rem;letter-spacing:.1em;flex-direction:column;gap:2px}
+  font-size:.7rem;letter-spacing:.08em;flex-direction:column;gap:2px}
 #btnHum.cool{opacity:.35;border-color:rgba(159,232,255,.14)}
 #btnHum .ring{display:block;width:18px;height:18px;border-radius:50%;
   border:2px solid currentColor}
 #hint{position:absolute;left:50%;transform:translateX(-50%);
-  bottom:calc(92px + var(--safeB));width:86%;max-width:320px;text-align:center;
-  font-size:.85rem;line-height:1.5;color:var(--cream);opacity:0;
-  transition:opacity 600ms ease-out;text-shadow:0 0 12px rgba(0,0,0,.9)}
-#hint.on{opacity:.92}
+  bottom:calc(122px + var(--safeB));width:90%;max-width:300px;text-align:center;
+  font-size:.75rem;line-height:1.75;color:var(--cream);opacity:0;letter-spacing:.07em;
+  transition:opacity 700ms ease-out;text-shadow:0 0 12px rgba(0,0,0,.9)}
+#hint.on{opacity:.5}
 
 /* ---------- screens ---------- */
 .screen{position:absolute;inset:0;z-index:10;background:#000;
@@ -78,18 +79,19 @@ html,body{margin:0;padding:0;height:100%;background:#000;color:var(--cream);
   color:var(--cyan);border-radius:16px;font-size:1rem;letter-spacing:.18em;
   margin:7px 0;padding:14px 16px;font-family:inherit}
 .btn.small{min-height:48px;font-size:.85rem;letter-spacing:.14em}
+.btn.lead{min-height:60px;font-size:1.05rem;border-color:rgba(159,232,255,.6)}
 .btn.ghost{border-color:rgba(159,232,255,.2);color:var(--dim)}
 .btn[disabled]{opacity:.4}
 .btn.wide{max-width:330px}
 .row{display:flex;gap:10px;width:100%;max-width:330px}
 .row .btn{margin:7px 0}
-.title-line{font-size:.82rem;letter-spacing:.18em;color:var(--dim);
-  text-align:center;margin:2px 0 18px;line-height:1.6}
+.title-line{font-size:.74rem;letter-spacing:.11em;color:var(--dim);
+  text-align:center;margin:2px 0 18px;line-height:1.7;padding:0 6px}
 .lede{font-size:.9rem;line-height:1.7;color:var(--cream);text-align:left;
   width:100%;max-width:330px;margin:9px 0}
 .cap{font-size:.75rem;letter-spacing:.16em;color:var(--dim);margin:14px 0 4px;
   width:100%;max-width:330px;text-align:left}
-#titleArt{width:100%;max-width:330px;height:112px;display:block;margin-top:6px}
+#titleArt{width:100%;max-width:330px;height:138px;display:block;margin-top:6px;margin-bottom:10px}
 .card{pointer-events:auto;width:100%;max-width:330px;min-height:64px;
   background:rgba(8,16,20,.9);border:1px solid rgba(159,232,255,.3);
   border-radius:16px;margin:6px 0;padding:12px 16px;display:flex;
@@ -143,9 +145,9 @@ html,body{margin:0;padding:0;height:100%;background:#000;color:var(--cream);
 
   <div class="screen on" id="scrTitle">
     <div class="spacer"></div>
-    <canvas id="titleArt" width="660" height="224" aria-label="FATHOM"></canvas>
+    <canvas id="titleArt" width="720" height="300" aria-label="FATHOM"></canvas>
     <div class="title-line">The only light is the sound you throw</div>
-    <button class="btn" id="btnPlay">PLAY</button>
+    <button class="btn lead" id="btnPlay">PLAY</button>
     <button class="btn" id="btnDeep">THE DEEP</button>
     <button class="btn small" id="btnHow">HOW TO PLAY</button>
     <div class="toggles">
@@ -269,9 +271,18 @@ var CONFIG = Object.freeze({
   CATCH_R: 13, RIBBON_PTS: 7, RIBBON_EVERY_MS: 40,
 
   /* the budgets, asserted not hoped */
-  MAX_SEGMENTS: 600, MAX_LURKERS: 8, HASH_CELL: 64, MAX_GHOSTS: 24,
+  /* MAX_SEGMENTS counts the MERGED walls, which is what collision and the
+     thrown stone walk. MAX_WALLS counts the per tile faces the LIGHT sweeps
+     along; there are five to seven times as many and they are cheap, but a cave
+     that blew past this would be a cave that drops frames on a phone. */
+  MAX_SEGMENTS: 600, MAX_WALLS: 2000, MAX_LURKERS: 8, HASH_CELL: 64, MAX_GHOSTS: 24,
 
   /* the screen */
+  /* the crest: a wall face lit in the last fifth of a second draws a shade
+     whiter, so a bright edge RUNS ALONG a wall behind the ring. Without it the
+     only difference between the near end of a wall and its far end is a few
+     hundred milliseconds of fade, which is invisible. */
+  WALL_FLASH_MS: 220,
   HUD_DIM_MS: 3000, HUD_DIM_ALPHA: 0.2, CAUGHT_FADE_MS: 600,
   TAP_SLOP_PX: 12, JOY_R: 70, JOY_DEAD: 10, JOY_KNOB: 22, JOY_MARGIN: 16,
 
@@ -675,44 +686,57 @@ function cellAt(grid, tx, ty) {
 }
 function gridOpen(grid, tx, ty) { return isOpenCh(cellAt(grid, tx, ty)) && cellAt(grid, tx, ty) !== WALL; }
 
-/* Every boundary between water and rock becomes an axis aligned segment whose
-   normal points INTO the water, and collinear runs on the same side merge.
+/* Every boundary between water and rock becomes an axis aligned edge whose
+   normal points INTO the water. There are TWO views of those edges and the
+   difference is the whole look of the game:
+
+     gridEdges     one edge per tile face. This is what the LIGHT works on, so a
+                   wave sweeps ALONG a wall instead of switching the whole wall
+                   on at once. The first build lit merged runs and a twelve tile
+                   wall flashed on in one frame; it read as a technical drawing,
+                   not as light finding a cave.
+     gridToSegments the same edges with collinear runs merged. This is what
+                   COLLISION and the thrown stone work on, and it is what the
+                   MAX_SEGMENTS budget counts.
+
    Two edges can sit on the same grid line with opposite normals (water left of
    the line in one row, right of it in another), so the merge key carries the
    normal; without that a wall would grow a face it does not have. */
-function gridToSegments(grid) {
-  var T = CONFIG.TILE, H = grid.length, W = grid[0].length;
-  var horiz = {}, vert = {}, tx, ty, key;
-  function pushRun(bag, k, a) { if (!bag[k]) bag[k] = []; bag[k].push(a); }
+function gridEdges(grid) {
+  var T = CONFIG.TILE, H = grid.length, W = grid[0].length, out = [], tx, ty;
   for (ty = 0; ty < H; ty++) {
     for (tx = 0; tx < W; tx++) {
       if (!gridOpen(grid, tx, ty)) continue;
-      if (!gridOpen(grid, tx, ty - 1)) { key = (ty * T) + '|1'; pushRun(horiz, key, tx); }
-      if (!gridOpen(grid, tx, ty + 1)) { key = ((ty + 1) * T) + '|-1'; pushRun(horiz, key, tx); }
-      if (!gridOpen(grid, tx - 1, ty)) { key = (tx * T) + '|1'; pushRun(vert, key, ty); }
-      if (!gridOpen(grid, tx + 1, ty)) { key = ((tx + 1) * T) + '|-1'; pushRun(vert, key, ty); }
+      if (!gridOpen(grid, tx, ty - 1)) out.push({ x1: tx * T, y1: ty * T, x2: (tx + 1) * T, y2: ty * T, nx: 0, ny: 1, litAt: -1e9 });
+      if (!gridOpen(grid, tx, ty + 1)) out.push({ x1: tx * T, y1: (ty + 1) * T, x2: (tx + 1) * T, y2: (ty + 1) * T, nx: 0, ny: -1, litAt: -1e9 });
+      if (!gridOpen(grid, tx - 1, ty)) out.push({ x1: tx * T, y1: ty * T, x2: tx * T, y2: (ty + 1) * T, nx: 1, ny: 0, litAt: -1e9 });
+      if (!gridOpen(grid, tx + 1, ty)) out.push({ x1: (tx + 1) * T, y1: ty * T, x2: (tx + 1) * T, y2: (ty + 1) * T, nx: -1, ny: 0, litAt: -1e9 });
     }
   }
-  var segs = [], k, list, i, run0, prev;
-  for (k in horiz) {
-    list = horiz[k].slice().sort(function (a, b) { return a - b; });
-    var hy = parseFloat(k.split('|')[0]), hn = parseFloat(k.split('|')[1]);
-    run0 = list[0]; prev = list[0];
-    for (i = 1; i <= list.length; i++) {
-      if (i === list.length || list[i] !== prev + 1) {
-        segs.push({ x1: run0 * T, y1: hy, x2: (prev + 1) * T, y2: hy, nx: 0, ny: hn, litAt: -1e9 });
-        if (i < list.length) run0 = list[i];
-      }
-      prev = list[i];
-    }
+  return out;
+}
+function gridToSegments(grid) {
+  var edges = gridEdges(grid), bags = {}, i, e, key, k;
+  for (i = 0; i < edges.length; i++) {
+    e = edges[i];
+    if (e.y1 === e.y2) key = 'h|' + e.y1 + '|' + e.ny + '|' + (e.x1 / CONFIG.TILE);
+    else key = 'v|' + e.x1 + '|' + e.nx + '|' + (e.y1 / CONFIG.TILE);
+    /* bag by line and normal; the index inside the bag is the run position */
+    var bagKey = key.split('|').slice(0, 3).join('|');
+    var pos = parseFloat(key.split('|')[3]);
+    if (!bags[bagKey]) bags[bagKey] = [];
+    bags[bagKey].push(pos);
   }
-  for (k in vert) {
-    list = vert[k].slice().sort(function (a, b) { return a - b; });
-    var vx = parseFloat(k.split('|')[0]), vn = parseFloat(k.split('|')[1]);
-    run0 = list[0]; prev = list[0];
+  var segs = [], T = CONFIG.TILE;
+  for (k in bags) {
+    var parts = k.split('|'), horiz = parts[0] === 'h';
+    var fixed = parseFloat(parts[1]), norm = parseFloat(parts[2]);
+    var list = bags[k].slice().sort(function (a, b) { return a - b; });
+    var run0 = list[0], prev = list[0];
     for (i = 1; i <= list.length; i++) {
       if (i === list.length || list[i] !== prev + 1) {
-        segs.push({ x1: vx, y1: run0 * T, x2: vx, y2: (prev + 1) * T, nx: vn, ny: 0, litAt: -1e9 });
+        if (horiz) segs.push({ x1: run0 * T, y1: fixed, x2: (prev + 1) * T, y2: fixed, nx: 0, ny: norm, litAt: -1e9 });
+        else segs.push({ x1: fixed, y1: run0 * T, x2: fixed, y2: (prev + 1) * T, nx: norm, ny: 0, litAt: -1e9 });
         if (i < list.length) run0 = list[i];
       }
       prev = list[i];
@@ -1059,6 +1083,8 @@ function newRun(opts) {
   var grid = mode === 'deep' ? caveGrid(seed, depth) : LEVELS[level].grid;
   var segs = gridToSegments(grid);
   var hash = buildHash(segs);
+  var walls = gridEdges(grid);
+  var wallHash = buildHash(walls);
   var scan = gridScan(grid);
   /* A cave with no way out is a BUG WITH A NAME, not a TypeError forty lines
      later. The solve gate used to die inside Node's module loader when an exit
@@ -1071,7 +1097,7 @@ function newRun(opts) {
   var st = {
     mode: mode, level: level, depth: depth, seed: seed,
     now: 0, steps: 0,
-    grid: grid, segs: segs, hash: hash,
+    grid: grid, segs: segs, hash: hash, walls: walls, wallHash: wallHash,
     p: { x: scan.start.x, y: scan.start.y, sp: 0 },
     stones: stones, stonesStart: stones,
     ripples: [], flying: [], ghosts: [],
@@ -1223,12 +1249,14 @@ function update(st, input, dt) {
     var R = st.ripples[i];
     R.rPrev = R.r;
     R.r = Math.min(R.max, R.r + R.speed * dt);
-    var cand = segsNear(st.hash, R.x, R.y, R.r);
+    /* the light works on the per tile faces, so the wavefront sweeps ALONG a
+       long wall instead of switching all twelve tiles of it on in one frame */
+    var cand = segsNear(st.wallHash, R.x, R.y, R.r);
     for (j = 0; j < cand.length; j++) {
       var si = cand[j];
       if (R.lit[si]) continue;
-      var q = nearestOnSeg(st.segs[si], R.x, R.y);
-      if (q.d > R.rPrev && q.d <= R.r) { R.lit[si] = 1; st.segs[si].litAt = st.now; }
+      var q = nearestOnSeg(st.walls[si], R.x, R.y);
+      if (q.d > R.rPrev && q.d <= R.r) { R.lit[si] = 1; st.walls[si].litAt = st.now; }
     }
     for (j = 0; j < st.caches.length; j++) {
       if (st.caches[j].taken || R.litE['c' + j]) continue;
@@ -1364,6 +1392,561 @@ function solveStep(st, plan, dt) {
 }
 // ---- SIM_EXPORT_END ----
 
+/* ========================= 6. VIEW ========================= */
+/* Line strokes on black. Nothing is painted that sound did not reveal.
+   NO shadowBlur anywhere: a wide low alpha stroke under a thin bright one is
+   the same look and it is the difference between sixty frames and a slideshow
+   on a phone with six hundred segments alive. */
+var CV, CTX, CSSW = 360, CSSH = 640, DPR = 1, SCALE = 1;
+var CAM = { x: 0, y: 0 };
+var PAL = { wall: '#9FE8FF', warm: '#FFC97A', red: '#FF5A4D', me: '#7FD8CC' };
+
+function fitCanvas() {
+  if (!CV) return;
+  var vv = window.visualViewport;
+  var w = Math.round(vv ? vv.width : window.innerWidth);
+  var h = Math.round(vv ? vv.height : window.innerHeight);
+  DPR = Math.min(2.5, window.devicePixelRatio || 1);
+  var pw = Math.round(w * DPR), ph = Math.round(h * DPR);
+  /* canvas.width = CLEARS the canvas and resets the transform, so it is only
+     ever assigned when the size actually changed, and the frame after it
+     repaints from scratch. */
+  if (CV.width !== pw || CV.height !== ph) { CV.width = pw; CV.height = ph; }
+  CSSW = w; CSSH = h;
+  SCALE = Math.min(w, h) / CONFIG.VIEW_W;
+}
+function worldW() { return CONFIG.GRID_W * CONFIG.TILE; }
+function worldH() { return CONFIG.GRID_H * CONFIG.TILE; }
+function clampCam(st) {
+  var halfW = CSSW / 2 / SCALE, halfH = CSSH / 2 / SCALE;
+  var cx = st.p.x, cy = st.p.y;
+  if (worldW() > halfW * 2) cx = Math.max(halfW, Math.min(worldW() - halfW, cx));
+  else cx = worldW() / 2;
+  if (worldH() > halfH * 2) cy = Math.max(halfH, Math.min(worldH() - halfH, cy));
+  else cy = worldH() / 2;
+  CAM.x = cx; CAM.y = cy;
+}
+function sx(wx) { return (wx - CAM.x) * SCALE + CSSW / 2; }
+function sy(wy) { return (wy - CAM.y) * SCALE + CSSH / 2; }
+function toWorldX(px) { return (px - CSSW / 2) / SCALE + CAM.x; }
+function toWorldY(py) { return (py - CSSH / 2) / SCALE + CAM.y; }
+
+/* held high, then let go: a wall stays readable for most of its life and then
+   leaves quickly, which is what makes you hurry */
+function fadeEase(a) { return a <= 0 ? 0 : a >= 1 ? 1 : a * a * (3 - 2 * a); }
+function lineStroke(x1, y1, x2, y2, col, a, wide, thin) {
+  CTX.globalAlpha = a * 0.22; CTX.strokeStyle = col; CTX.lineWidth = wide;
+  CTX.beginPath(); CTX.moveTo(x1, y1); CTX.lineTo(x2, y2); CTX.stroke();
+  CTX.globalAlpha = a; CTX.lineWidth = thin;
+  CTX.beginPath(); CTX.moveTo(x1, y1); CTX.lineTo(x2, y2); CTX.stroke();
+}
+function glint(x, y, r, col, a, spokes) {
+  CTX.globalAlpha = a * 0.3; CTX.strokeStyle = col; CTX.lineWidth = 5;
+  CTX.beginPath(); CTX.arc(x, y, r, 0, 6.2832); CTX.stroke();
+  CTX.globalAlpha = a; CTX.lineWidth = 1.6;
+  CTX.beginPath(); CTX.arc(x, y, r, 0, 6.2832); CTX.stroke();
+  if (spokes) {
+    CTX.globalAlpha = a * 0.9; CTX.lineWidth = 1.2;
+    var k, ang;
+    for (k = 0; k < 4; k++) {
+      ang = k * Math.PI / 2 + Math.PI / 4;
+      CTX.beginPath();
+      CTX.moveTo(x + Math.cos(ang) * r * 1.4, y + Math.sin(ang) * r * 1.4);
+      CTX.lineTo(x + Math.cos(ang) * r * 2.4, y + Math.sin(ang) * r * 2.4);
+      CTX.stroke();
+    }
+  }
+}
+
+function draw(st, G) {
+  if (!CTX) return;
+  var C = CONFIG, i, a;
+  CTX.setTransform(DPR, 0, 0, DPR, 0, 0);
+  CTX.globalAlpha = 1;
+  CTX.fillStyle = '#000';
+  CTX.fillRect(0, 0, CSSW, CSSH);
+  if (!st) return;
+  clampCam(st);
+  var now = st.now;
+  var reduce = !G.motion;
+  /* butt caps on the wall faces: they abut exactly, and round caps put a bright
+     bead at every tile boundary along a wall */
+  CTX.lineCap = 'butt';
+
+  /* 1. the walls the sound has found */
+  var pad = 40;
+  for (i = 0; i < st.walls.length; i++) {
+    var s = st.walls[i];
+    a = 1 - (now - s.litAt) / C.WALL_FADE_MS;
+    if (a <= 0) continue;
+    var ax = sx(s.x1), ay = sy(s.y1), bx = sx(s.x2), by = sy(s.y2);
+    if ((ax < -pad && bx < -pad) || (ax > CSSW + pad && bx > CSSW + pad)) continue;
+    if ((ay < -pad && by < -pad) || (ay > CSSH + pad && by > CSSH + pad)) continue;
+    lineStroke(ax, ay, bx, by, PAL.wall, fadeEase(a), 5, 1.5);
+    var age = now - s.litAt;
+    if (age < C.WALL_FLASH_MS) {
+      CTX.globalAlpha = (1 - age / C.WALL_FLASH_MS) * 0.85;
+      CTX.strokeStyle = '#ffffff'; CTX.lineWidth = 1.7;
+      CTX.beginPath(); CTX.moveTo(ax, ay); CTX.lineTo(bx, by); CTX.stroke();
+    }
+  }
+  CTX.lineCap = 'round';
+
+  /* 2. what the sound found that is worth walking to */
+  for (i = 0; i < st.caches.length; i++) {
+    var c = st.caches[i];
+    if (c.taken) continue;
+    a = 1 - (now - c.litAt) / C.PICKUP_FADE_MS;
+    if (a <= 0) continue;
+    glint(sx(c.x), sy(c.y), 4.5 * SCALE, PAL.warm, fadeEase(a), false);
+    CTX.globalAlpha = fadeEase(a) * 0.9;
+    CTX.beginPath(); CTX.arc(sx(c.x), sy(c.y), 1.6 * SCALE, 0, 6.2832); CTX.fillStyle = PAL.warm; CTX.fill();
+  }
+  for (i = 0; i < st.pearls.length; i++) {
+    var pl = st.pearls[i];
+    if (pl.taken) continue;
+    a = 1 - (now - pl.litAt) / C.PICKUP_FADE_MS;
+    if (a <= 0) continue;
+    glint(sx(pl.x), sy(pl.y), 3.4 * SCALE, '#ffffff', fadeEase(a), true);
+  }
+  a = 1 - (now - st.exit.litAt) / C.PICKUP_FADE_MS;
+  if (a > 0) {
+    var ex = sx(st.exit.x), ey = sy(st.exit.y), r = 9 * SCALE, ea = fadeEase(a);
+    CTX.globalAlpha = ea * 0.28; CTX.strokeStyle = PAL.warm; CTX.lineWidth = 6;
+    CTX.beginPath();
+    CTX.moveTo(ex, ey - r); CTX.lineTo(ex + r * 0.62, ey); CTX.lineTo(ex, ey + r);
+    CTX.lineTo(ex - r * 0.62, ey); CTX.closePath(); CTX.stroke();
+    CTX.globalAlpha = ea; CTX.lineWidth = 1.8; CTX.stroke();
+  }
+
+  /* 3. the ghosts. DOTS, never a polyline: a line reads as a wall, and this is
+     the one thing in the cave that must not. */
+  for (i = 0; i < st.ghosts.length; i++) {
+    var g = st.ghosts[i];
+    a = 1 - (now - g.litAt) / C.CREATURE_FADE_MS;
+    if (a <= 0) continue;
+    var ga = fadeEase(a), n = g.pts.length / 2, k, t, px, py, seg;
+    CTX.fillStyle = PAL.red;
+    for (k = 0; k < 22; k++) {
+      t = k / 21 * (n - 1);
+      seg = Math.min(n - 2, Math.floor(t));
+      var f = t - seg;
+      px = g.pts[seg * 2] * (1 - f) + g.pts[seg * 2 + 2] * f;
+      py = g.pts[seg * 2 + 1] * (1 - f) + g.pts[seg * 2 + 3] * f;
+      CTX.globalAlpha = ga * (0.25 + 0.75 * (k / 21));
+      CTX.beginPath();
+      CTX.arc(sx(px), sy(py), (0.9 + 1.9 * (k / 21)) * SCALE, 0, 6.2832);
+      CTX.fill();
+    }
+  }
+
+  /* 4. the light itself */
+  for (i = 0; i < st.ripples.length; i++) {
+    var R = st.ripples[i];
+    if (R.r <= 0) continue;
+    /* the wavefront is the brightest thin thing on the screen and it dims as it
+       spends itself. The first build drew it wide and faint and it read as a
+       pencil circle laid over a drawing rather than as the thing that made the
+       drawing. */
+    /* it spends itself fast, so a big ring over rock it has already passed is a
+       whisper rather than a line laid over the drawing */
+    var ra = Math.pow(1 - R.r / R.max, 2.2);
+    ra = 0.09 + 0.91 * ra;
+    var rr = R.r * SCALE, rx = sx(R.x), ry = sy(R.y);
+    CTX.globalAlpha = ra * 0.10; CTX.strokeStyle = PAL.wall; CTX.lineWidth = 6;
+    CTX.beginPath(); CTX.arc(rx, ry, rr, 0, 6.2832); CTX.stroke();
+    if (!reduce) {
+      CTX.globalAlpha = ra * 0.95; CTX.strokeStyle = PAL.wall; CTX.lineWidth = 1.5;
+      CTX.beginPath(); CTX.arc(rx + 1, ry, rr, 0, 6.2832); CTX.stroke();
+      CTX.globalAlpha = ra * 0.68; CTX.strokeStyle = '#ffffff'; CTX.lineWidth = 1.1;
+      CTX.beginPath(); CTX.arc(rx - 1, ry, rr, 0, 6.2832); CTX.stroke();
+    } else {
+      CTX.globalAlpha = ra * 0.95; CTX.strokeStyle = PAL.wall; CTX.lineWidth = 1.6;
+      CTX.beginPath(); CTX.arc(rx, ry, rr, 0, 6.2832); CTX.stroke();
+    }
+  }
+
+  /* 5. the stone on its way */
+  for (i = 0; i < st.flying.length; i++) {
+    var f2 = st.flying[i];
+    var fx = sx(f2.x), fy = sy(f2.y) - (f2.arc || 0) * SCALE;
+    CTX.globalAlpha = 0.34; CTX.strokeStyle = PAL.warm; CTX.lineWidth = 1;
+    CTX.beginPath(); CTX.moveTo(sx(f2.x0), sy(f2.y0)); CTX.lineTo(fx, fy); CTX.stroke();
+    CTX.globalAlpha = 1; CTX.fillStyle = '#fff';
+    CTX.beginPath(); CTX.arc(fx, fy, 2.1 * SCALE, 0, 6.2832); CTX.fill();
+  }
+
+  /* 6. you */
+  var mx = sx(st.p.x), my = sy(st.p.y), gr = C.PLAYER_GLOW_R * SCALE;
+  var grad = CTX.createRadialGradient(mx, my, 0, mx, my, gr);
+  grad.addColorStop(0, 'rgba(127,216,204,0.55)');
+  grad.addColorStop(0.45, 'rgba(127,216,204,0.16)');
+  grad.addColorStop(1, 'rgba(127,216,204,0)');
+  CTX.globalAlpha = 1; CTX.fillStyle = grad;
+  CTX.beginPath(); CTX.arc(mx, my, gr, 0, 6.2832); CTX.fill();
+  CTX.fillStyle = PAL.me; CTX.globalAlpha = 0.95;
+  CTX.beginPath(); CTX.arc(mx, my, 2.6 * SCALE, 0, 6.2832); CTX.fill();
+
+  /* 7. the two things your thumb is doing */
+  if (G.reticle) {
+    var tx = sx(G.reticle.x), ty = sy(G.reticle.y);
+    CTX.globalAlpha = 0.5; CTX.strokeStyle = PAL.warm; CTX.lineWidth = 1;
+    CTX.setLineDash([4, 5]);
+    CTX.beginPath(); CTX.moveTo(mx, my); CTX.lineTo(tx, ty); CTX.stroke();
+    CTX.setLineDash([]);
+    CTX.globalAlpha = 0.85; CTX.lineWidth = 1.6;
+    CTX.beginPath(); CTX.arc(tx, ty, 9, 0, 6.2832); CTX.stroke();
+    CTX.beginPath(); CTX.arc(tx, ty, 2, 0, 6.2832); CTX.stroke();
+  }
+  if (G.joy) {
+    CTX.globalAlpha = 0.22; CTX.strokeStyle = PAL.me; CTX.lineWidth = 1.4;
+    CTX.beginPath(); CTX.arc(G.joy.cx, G.joy.cy, C.JOY_R, 0, 6.2832); CTX.stroke();
+    CTX.globalAlpha = 0.5;
+    CTX.beginPath();
+    CTX.arc(G.joy.cx + G.joy.dx * C.JOY_R, G.joy.cy + G.joy.dy * C.JOY_R, C.JOY_KNOB, 0, 6.2832);
+    CTX.stroke();
+  }
+  CTX.globalAlpha = 1;
+}
+
+/* the word, drawn as strokes, with the game's own ring behind it */
+function drawTitle(t) {
+  var cv = document.getElementById('titleArt');
+  if (!cv) return;
+  var g = cv.getContext('2d'), W = cv.width, H = cv.height;
+  g.clearRect(0, 0, W, H);
+  /* the game's own ring, rising from below the word. Centred ON the word it was
+     clipped by the canvas top and bottom and read as two arcs flanking it. */
+  var r = (t % 3600) / 3600, k;
+  for (k = 0; k < 2; k++) {
+    /* never let one of these close into a small hoop near the tagline: it stops
+       reading as a wave and starts reading as a drawn circle on the copy */
+    var f = (r + k * 0.5) % 1;
+    var rr = f * (W * 0.52) + W * 0.24;
+    g.globalAlpha = 0.11 * Math.pow(1 - f, 1.5);
+    g.strokeStyle = PAL.wall; g.lineWidth = 2.4;
+    g.beginPath(); g.arc(W / 2, H * 0.92, rr, 0, 6.2832); g.stroke();
+  }
+  g.globalAlpha = 1;
+  g.font = '600 78px ui-sans-serif, system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  if (g.letterSpacing !== undefined) g.letterSpacing = '9px';
+  g.lineJoin = 'round';
+  g.globalAlpha = 0.20; g.strokeStyle = PAL.wall; g.lineWidth = 9;
+  g.strokeText('FATHOM', W / 2, H * 0.44);
+  g.globalAlpha = 1; g.lineWidth = 2.2;
+  g.strokeText('FATHOM', W / 2, H * 0.44);
+}
+
+/* ========================= 7. AUDIO ========================= */
+/* Every sound is synthesised. Silence is the instrument, so the mix is sparse
+   and the budget is counted, not hoped: TEST reads AUDIO.voices(). */
+var AUDIO = (function () {
+  var ac = null, master = null, noiseBuf = null, brownBuf = null;
+  var slithers = [], drone = null, dripT = 0, on = true, voices = 0;
+  function ctx() { return ac; }
+  function makeNoise() {
+    var n = ac.sampleRate * 1.2, b = ac.createBuffer(1, n, ac.sampleRate), d = b.getChannelData(0), i;
+    for (i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+    return b;
+  }
+  function makeBrown() {
+    var n = ac.sampleRate * 2.4, b = ac.createBuffer(1, n, ac.sampleRate), d = b.getChannelData(0), i, last = 0;
+    for (i = 0; i < n; i++) {
+      var w = Math.random() * 2 - 1;
+      last = (last + 0.02 * w) / 1.02;
+      d[i] = last * 3.2;
+    }
+    return b;
+  }
+  function start() {
+    if (ac) { if (ac.state === 'suspended') ac.resume(); return; }
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    ac = new AC();
+    master = ac.createGain();
+    master.gain.value = on ? 0.8 : 0;
+    master.connect(ac.destination);
+    noiseBuf = makeNoise(); brownBuf = makeBrown();
+    drone = ac.createOscillator();
+    var dg = ac.createGain();
+    drone.type = 'sine'; drone.frequency.value = 55; dg.gain.value = 0.03;
+    drone.connect(dg); dg.connect(master); drone.start();
+  }
+  function setOn(v) { on = !!v; if (master) master.gain.setTargetAtTime(on ? 0.8 : 0, ac.currentTime, 0.02); }
+  function env(node, t0, peak, dur, rel) {
+    node.gain.setValueAtTime(0.0001, t0);
+    node.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak), t0 + 0.012);
+    node.gain.exponentialRampToValueAtTime(0.0001, t0 + dur + (rel || 0));
+  }
+  function panFor(wx, camx) {
+    var p = ac.createStereoPanner ? ac.createStereoPanner() : null;
+    if (p) p.pan.value = Math.max(-1, Math.min(1, (wx - camx) / 300));
+    return p;
+  }
+  function blip(t0, f0, f1, dur, peak, type) {
+    var o = ac.createOscillator(), g = ac.createGain();
+    o.type = type || 'sine';
+    o.frequency.setValueAtTime(f0, t0);
+    o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t0 + dur);
+    env(g, t0, peak, dur);
+    o.connect(g); g.connect(master);
+    o.start(t0); o.stop(t0 + dur + 0.08);
+    voices++; o.onended = function () { voices--; };
+    return g;
+  }
+  function burst(t0, dur, peak, cut) {
+    var s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
+    s.buffer = noiseBuf; s.loop = true;
+    f.type = 'lowpass'; f.frequency.value = cut;
+    env(g, t0, peak, dur);
+    s.connect(f); f.connect(g); g.connect(master);
+    s.start(t0); s.stop(t0 + dur + 0.06);
+    voices++; s.onended = function () { voices--; };
+  }
+  /* the ping, and the room answering it. The echo spacing IS the size of the
+     room, which is why the sim hands the nearest wall distance to the event. */
+  function ping(nearWall) {
+    if (!ac) return;
+    var t0 = ac.currentTime + 0.005, k;
+    blip(t0, 880, 440, 0.12, 0.30);
+    burst(t0, 0.08, 0.16, 1200);
+    var gap = Math.min(0.55, nearWall / CONFIG.RING_SPEED + 0.06);
+    for (k = 1; k <= 3; k++) blip(t0 + k * gap, 760 - k * 60, 400 - k * 40, 0.10, 0.30 * Math.pow(0.5, k));
+  }
+  function singback(dx, dist) {
+    if (!ac) return;
+    var t0 = ac.currentTime + 0.01, i, freqs = [261.63, 329.63, 392.0];
+    var p = ac.createStereoPanner ? ac.createStereoPanner() : null;
+    if (p) { p.pan.value = Math.max(-1, Math.min(1, dx / 300)); p.connect(master); }
+    var vol = 0.25 * Math.min(1, 120 / Math.max(40, dist));
+    for (i = 0; i < 3; i++) {
+      var o = ac.createOscillator(), g = ac.createGain();
+      o.type = 'sine'; o.frequency.value = freqs[i];
+      env(g, t0 + i * 0.045, vol * (i === 0 ? 1 : 0.62), 0.9);
+      o.connect(g); g.connect(p || master);
+      o.start(t0); o.stop(t0 + 1.05);
+      voices++; o.onended = function () { voices--; };
+    }
+  }
+  function hum() {
+    if (!ac) return;
+    var t0 = ac.currentTime + 0.005;
+    blip(t0, 110, 96, 0.6, 0.26, 'triangle');
+    burst(t0, 0.28, 0.05, 500);
+  }
+  function pickup(warm) {
+    if (!ac) return;
+    var t0 = ac.currentTime + 0.005;
+    blip(t0, warm ? 660 : 990, warm ? 990 : 1480, 0.16, 0.18, 'triangle');
+  }
+  function caught() {
+    if (!ac) return;
+    var t0 = ac.currentTime + 0.005;
+    blip(t0, 180, 60, 0.7, 0.30, 'sawtooth');
+    burst(t0, 0.5, 0.12, 320);
+  }
+  /* one slither voice per lurker, made once at level load with gain 0 and
+     panned every frame. Never a node per frame. */
+  function bindLurkers(n) {
+    if (!ac) return;
+    var i;
+    for (i = 0; i < slithers.length; i++) { try { slithers[i].src.stop(); } catch (e) {} }
+    slithers = [];
+    for (i = 0; i < n; i++) {
+      var s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
+      var p = ac.createStereoPanner ? ac.createStereoPanner() : null;
+      s.buffer = brownBuf; s.loop = true;
+      f.type = 'bandpass'; f.frequency.value = 300; f.Q.value = 1.4;
+      g.gain.value = 0;
+      s.connect(f); f.connect(g);
+      if (p) { g.connect(p); p.connect(master); } else g.connect(master);
+      s.start();
+      slithers.push({ src: s, gain: g, pan: p });
+    }
+  }
+  function updateLurkers(st, camx) {
+    if (!ac || !slithers.length) return;
+    var i, L, d, v;
+    for (i = 0; i < slithers.length && i < st.lurkers.length; i++) {
+      L = st.lurkers[i];
+      d = distOf(L.x, L.y, st.p.x, st.p.y);
+      v = Math.max(0, 1 - d / CONFIG.HEAR_R);
+      slithers[i].gain.gain.value = 0.35 * v * v;
+      if (slithers[i].pan) slithers[i].pan.pan.value = Math.max(-1, Math.min(1, (L.x - camx) / 300));
+    }
+    for (; i < slithers.length; i++) slithers[i].gain.gain.value = 0;
+  }
+  function ambient(dt, rnd) {
+    if (!ac) return;
+    dripT -= dt;
+    if (dripT <= 0) {
+      dripT = 4 + rnd() * 5;
+      var t0 = ac.currentTime + 0.01;
+      var o = ac.createOscillator(), g = ac.createGain();
+      var p = ac.createStereoPanner ? ac.createStereoPanner() : null;
+      o.type = 'sine'; o.frequency.setValueAtTime(2400, t0);
+      o.frequency.exponentialRampToValueAtTime(1400, t0 + 0.08);
+      env(g, t0, 0.05, 0.08);
+      o.connect(g);
+      if (p) { p.pan.value = rnd() * 2 - 1; g.connect(p); p.connect(master); } else g.connect(master);
+      o.start(t0); o.stop(t0 + 0.2);
+      voices++; o.onended = function () { voices--; };
+    }
+  }
+  function stopAll() {
+    var i;
+    for (i = 0; i < slithers.length; i++) { try { slithers[i].src.stop(); } catch (e) {} }
+    slithers = [];
+  }
+  return {
+    start: start, setOn: setOn, ping: ping, singback: singback, hum: hum,
+    pickup: pickup, caught: caught, bindLurkers: bindLurkers,
+    updateLurkers: updateLurkers, ambient: ambient, stopAll: stopAll,
+    voices: function () { return voices + slithers.length + (ac ? 1 : 0); },
+    ready: function () { return !!ac; }, ctx: ctx
+  };
+})();
+
+/* ========================= 8. INPUT ========================= */
+/* Pointer events only. THE TAP AND THE DRAG SHARE ONE SURFACE and they are told
+   apart by SLOP, never by a timer: the finger lands, a reticle appears at the
+   clamped target, and if it moves more than TAP_SLOP_PX a joystick is born
+   where it landed instead. Holding still and letting go is a throw, which reads
+   as hold to aim. A SECOND finger while a stick is live throws at once, with no
+   slop wait, so two thumbs work: left moves, right throws. */
+function bindInput(G) {
+  var C = CONFIG;
+  var pointers = {};
+  function stop(e) { if (e.cancelable) e.preventDefault(); }
+  function clampTarget(st, wx, wy) {
+    var dx = wx - st.p.x, dy = wy - st.p.y, d = Math.sqrt(dx * dx + dy * dy);
+    if (d < 1e-6) return { x: st.p.x, y: st.p.y - 1 };
+    var m = Math.min(d, C.THROW_MAX);
+    return { x: st.p.x + dx / d * m, y: st.p.y + dy / d * m };
+  }
+  CV.addEventListener('pointerdown', function (e) {
+    if (G.screen !== 'play' || !G.st || G.st.over) return;
+    stop(e);
+    AUDIO.start();
+    try { CV.setPointerCapture(e.pointerId); } catch (err) {}
+    var px = e.clientX, py = e.clientY;
+    if (G.joy) {
+      /* the other thumb: throw now, no slop, no reticle */
+      G.pendingThrow = clampTarget(G.st, toWorldX(px), toWorldY(py));
+      pointers[e.pointerId] = { role: 'throw' };
+      return;
+    }
+    pointers[e.pointerId] = { role: 'candidate', x0: px, y0: py };
+    G.reticle = clampTarget(G.st, toWorldX(px), toWorldY(py));
+  });
+  CV.addEventListener('pointermove', function (e) {
+    var p = pointers[e.pointerId];
+    if (!p || !G.st) return;
+    var px = e.clientX, py = e.clientY;
+    if (p.role === 'candidate') {
+      if (Math.abs(px - p.x0) > C.TAP_SLOP_PX || Math.abs(py - p.y0) > C.TAP_SLOP_PX) {
+        p.role = 'joystick';
+        G.reticle = null;
+        G.joy = {
+          id: e.pointerId, dx: 0, dy: 0,
+          cx: Math.max(C.JOY_R + C.JOY_MARGIN, Math.min(CSSW - C.JOY_R - C.JOY_MARGIN, p.x0)),
+          cy: Math.max(C.JOY_R + C.JOY_MARGIN, Math.min(CSSH - C.JOY_R - C.JOY_MARGIN, p.y0))
+        };
+      } else {
+        G.reticle = clampTarget(G.st, toWorldX(px), toWorldY(py));
+      }
+    }
+    if (p.role === 'joystick' && G.joy && G.joy.id === e.pointerId) {
+      var dx = px - G.joy.cx, dy = py - G.joy.cy, mag = Math.sqrt(dx * dx + dy * dy);
+      if (mag < C.JOY_DEAD) { G.joy.dx = 0; G.joy.dy = 0; }
+      else {
+        var cl = Math.min(mag, C.JOY_R), f = (cl - C.JOY_DEAD) / (C.JOY_R - C.JOY_DEAD);
+        G.joy.dx = dx / mag * f; G.joy.dy = dy / mag * f;
+      }
+    }
+  });
+  function release(e) {
+    var p = pointers[e.pointerId];
+    delete pointers[e.pointerId];
+    try { CV.releasePointerCapture(e.pointerId); } catch (err) {}
+    if (!p || !G.st) return;
+    if (p.role === 'candidate' && e.type === 'pointerup' && G.screen === 'play' && !G.st.over) {
+      G.pendingThrow = clampTarget(G.st, toWorldX(e.clientX), toWorldY(e.clientY));
+    }
+    if (p.role === 'joystick' && G.joy && G.joy.id === e.pointerId) G.joy = null;
+    G.reticle = null;
+  }
+  CV.addEventListener('pointerup', release);
+  CV.addEventListener('pointercancel', release);
+  CV.addEventListener('lostpointercapture', function (e) {
+    /* the sticky stick heal, learned on the chameleon: when the browser eats a
+       pointerup the stick survived with stale dx and the player kept walking */
+    if (G.joy && G.joy.id === e.pointerId && !pointers[e.pointerId]) G.joy = null;
+  });
+
+  window.addEventListener('keydown', function (e) {
+    if (e.repeat) return;
+    G.keys[e.code] = 1;
+    if (e.code === 'Space') { AUDIO.start(); G.pendingHum = true; if (e.cancelable) e.preventDefault(); }
+    if (e.code === 'Escape' && G.screen === 'play') G.wantPause = true;
+  });
+  window.addEventListener('keyup', function (e) { delete G.keys[e.code]; });
+  window.addEventListener('blur', function () {
+    G.keys = {}; G.joy = null; G.reticle = null; pointers = {};
+    if (G.screen === 'play' && G.st && !G.st.over) G.wantPause = true;
+  });
+  window.addEventListener('resize', fitCanvas);
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', fitCanvas);
+}
+function gatherInput(G) {
+  var inp = { mx: 0, my: 0 };
+  if (G.keys.KeyW || G.keys.ArrowUp) inp.my -= 1;
+  if (G.keys.KeyS || G.keys.ArrowDown) inp.my += 1;
+  if (G.keys.KeyA || G.keys.ArrowLeft) inp.mx -= 1;
+  if (G.keys.KeyD || G.keys.ArrowRight) inp.mx += 1;
+  if (G.joy) { inp.mx += G.joy.dx; inp.my += G.joy.dy; }
+  if (G.pendingThrow) { inp.throwX = G.pendingThrow.x; inp.throwY = G.pendingThrow.y; G.pendingThrow = null; }
+  if (G.pendingHum) { inp.hum = true; G.pendingHum = false; }
+  return inp;
+}
+
+/* ========================= 9. SAVE ========================= */
+/* Read, modify, write. Two tabs cannot lower anything: stars only go up, the
+   best depth only goes deeper, and a storage event pulls the other tab's work
+   in rather than overwriting it. */
+var SAVE = (function () {
+  var KEY = CONFIG.SAVE_KEY;
+  function blank() {
+    return { v: CONFIG.SAVE_V, stars: [0, 0, 0, 0, 0], bestDepth: 0, sound: 1, motion: 1, seen: { how: 0 } };
+  }
+  function read() {
+    var s = blank(), raw;
+    try { raw = localStorage.getItem(KEY); } catch (e) { return s; }
+    if (!raw) return s;
+    var got;
+    try { got = JSON.parse(raw); } catch (e) { return s; }
+    if (!got || typeof got !== 'object') return s;
+    var i;
+    if (got.stars && got.stars.length) for (i = 0; i < 5; i++) s.stars[i] = Math.max(0, Math.min(3, got.stars[i] | 0));
+    s.bestDepth = Math.max(0, got.bestDepth | 0);
+    s.sound = got.sound === 0 ? 0 : 1;
+    s.motion = got.motion === 0 ? 0 : 1;
+    s.seen = { how: got.seen && got.seen.how ? 1 : 0 };
+    return s;
+  }
+  function write(mut) {
+    var s = read();
+    mut(s);
+    var cur = read(), i;
+    for (i = 0; i < 5; i++) s.stars[i] = Math.max(s.stars[i], cur.stars[i]);
+    s.bestDepth = Math.max(s.bestDepth, cur.bestDepth);
+    try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {}
+    return s;
+  }
+  return { read: read, write: write, blank: blank };
+})();
+
 // ---- TEST_EXPORT_START ----
 /* ========================= 10. TEST ========================= */
 /* Harness copied from satellites/deepwell/index.html line 1550. Runs at ?test=1
@@ -1458,6 +2041,16 @@ function suiteGeometry(T) {
   T.eq('a three by three box is four walls after merge', box.length, 4);
   var ring = gridToSegments(RING5);
   T.eq('a five by five ring is eight walls after merge', ring.length, 8);
+  T.eq('and sixteen tile faces before it, which is what the light sweeps', gridEdges(RING5).length, 16);
+  T.eq('a three by three box has four faces either way', gridEdges(BOX3).length, 4);
+  var corrE = gridEdges(corridor(6, 3));
+  T.eq('a corridor four long has ten faces before merge', corrE.length, 10);
+  var allTile = true, ee;
+  for (ee = 0; ee < corrE.length; ee++) {
+    var L2 = Math.abs(corrE[ee].x2 - corrE[ee].x1) + Math.abs(corrE[ee].y2 - corrE[ee].y1);
+    if (Math.abs(L2 - CONFIG.TILE) > 1e-9) allTile = false;
+  }
+  T.assert('every face is exactly one tile long, so the sweep is even', allTile);
   var corr = gridToSegments(corridor(6, 3));
   T.eq('a one tile corridor four long is four walls', corr.length, 4);
   var hs = null, i;
@@ -1510,7 +2103,8 @@ function suiteRipple(T) {
   var segs = [{ x1: wallX, y1: -400, x2: wallX, y2: 400, nx: -1, ny: 0, litAt: -1e9 }];
   var hash = buildHash(segs);
   var st = {
-    now: 0, segs: segs, hash: hash, ripples: [], caches: [], pearls: [], lurkers: [],
+    now: 0, segs: segs, hash: hash, walls: segs, wallHash: hash,
+    ripples: [], caches: [], pearls: [], lurkers: [],
     ghosts: [], exit: { x: 9999, y: 9999, litAt: -1e9, revealed: 0, lastSing: -1e9 },
     flying: [], p: { x: 0, y: 0, sp: 0 }, stones: 0, over: null, events: [],
     humCd: 0, rng: makeRNG(1)
@@ -1536,13 +2130,20 @@ function suiteRipple(T) {
 
   var st2 = newRun({ mode: 'campaign', level: 0, seed: 5 });
   var before = 0, i;
-  for (i = 0; i < st2.segs.length; i++) if (st2.segs[i].litAt > 0) before++;
+  for (i = 0; i < st2.walls.length; i++) if (st2.walls[i].litAt > 0) before++;
   T.eq('a fresh cave is completely dark', before, 0);
   update(st2, { throwX: st2.p.x + 40, throwY: st2.p.y }, CONFIG.STEP);
+  for (i = 0; i < 24; i++) update(st2, {}, CONFIG.STEP);
+  var early = 0;
+  for (i = 0; i < st2.walls.length; i++) if (st2.walls[i].litAt > 0) early++;
   for (i = 0; i < 60; i++) update(st2, {}, CONFIG.STEP);
   var after = 0;
-  for (i = 0; i < st2.segs.length; i++) if (st2.segs[i].litAt > 0) after++;
-  T.assert('one thrown stone lights the room it lands in (' + after + ' walls)', after > 0);
+  for (i = 0; i < st2.walls.length; i++) if (st2.walls[i].litAt > 0) after++;
+  T.assert('one thrown stone lights the room it lands in (' + after + ' faces)', after > 0);
+  /* THE SWEEP. If a wall switched on all at once the count a quarter of a
+     second in would already be the final count, and the game would look like a
+     drawing rather than like light arriving. */
+  T.assert('and the light ARRIVES, it does not switch on (' + early + ' faces early, ' + after + ' at the end)', early < after);
 
   var st3 = newRun({ mode: 'campaign', level: 0, seed: 5 });
   for (i = 0; i < 10; i++) { update(st3, { throwX: st3.p.x + 10 * i, throwY: st3.p.y + 10 }, CONFIG.STEP); }
@@ -1602,6 +2203,8 @@ function suiteLevels(T) {
     T.assert('cave ' + (i + 1) + ' rows are all ' + CONFIG.GRID_W + ' wide', widthsOk);
     var segs = gridToSegments(L.grid);
     T.assert('cave ' + (i + 1) + ' is inside the segment budget (' + segs.length + ' of ' + CONFIG.MAX_SEGMENTS + ')', segs.length <= CONFIG.MAX_SEGMENTS);
+    var faces = gridEdges(L.grid);
+    T.assert('cave ' + (i + 1) + ' is inside the face budget (' + faces.length + ' of ' + CONFIG.MAX_WALLS + ')', faces.length <= CONFIG.MAX_WALLS);
     var scan = gridScan(L.grid);
     T.assert('cave ' + (i + 1) + ' has a start and an exit', !!scan.start && !!scan.exit);
     if (!scan.start || !scan.exit) continue;
@@ -1689,7 +2292,8 @@ function suiteLurkers(T) {
   var segs = [], hash = buildHash(segs);
   function bench() {
     return {
-      now: 0, segs: segs, hash: hash, ripples: [], caches: [], pearls: [], ghosts: [],
+      now: 0, segs: segs, hash: hash, walls: segs, wallHash: hash,
+      ripples: [], caches: [], pearls: [], ghosts: [],
       lurkers: [], flying: [], p: { x: 0, y: 0, sp: 0 }, stones: 9, stonesStart: 9,
       exit: { x: 1e6, y: 1e6, litAt: -1e9, revealed: 0, lastSing: -1e9 },
       humCd: 0, humCount: 0, pearlsGot: 0, pearlsTotal: 0, over: null,
@@ -1850,3 +2454,308 @@ function suitePurity(T, src) {
     src.indexOf('Math.random') >= 0 && code.indexOf('Math.random') < 0);
 }
 // ---- TEST_EXPORT_END ----
+
+/* ========================= 11. BOOT ========================= */
+var STAMP = '20260905a';
+var G = {
+  screen: 'title', st: null, mode: 'campaign', level: 0, depth: 1,
+  keys: {}, joy: null, reticle: null, pendingThrow: null, pendingHum: false,
+  wantPause: false, save: null, sound: 1, motion: 1,
+  hintUntil: 0, hudTouched: 0, caughtAt: 0, frames: 0, seed: 1,
+  ambientRng: makeRNG(1)
+};
+function $(id) { return document.getElementById(id); }
+var SCREENS = { title: 'scrTitle', select: 'scrSelect', how: 'scrHow', pause: 'scrPause', clear: 'scrClear' };
+function showScreen(name) {
+  var k;
+  for (k in SCREENS) $(SCREENS[k]).classList.toggle('on', k === name);
+  G.screen = name;
+  $('hud').style.display = (name === 'play') ? '' : 'none';
+  if (name === 'play') { G.hudTouched = G.frames; $('hud').classList.remove('dim'); }
+}
+function toast(msg) {
+  var t = $('toast');
+  t.textContent = msg; t.classList.add('on');
+  clearTimeout(G.toastT);
+  G.toastT = setTimeout(function () { t.classList.remove('on'); }, 1700);
+}
+function starGlyphs(n, total) {
+  var s = '', i;
+  for (i = 0; i < (total || 3); i++) s += i < n ? '<span>✦</span>' : '<span class="off">✧</span>';
+  return s;
+}
+
+/* ---------------------------------------------------------------- screens */
+function buildLevelCards() {
+  var wrap = $('levelCards'), i, html = '';
+  for (i = 0; i < LEVELS.length; i++) {
+    var got = G.save.stars[i] || 0;
+    var open = (i === 0) || (G.save.stars[i - 1] > 0);
+    html += '<button class="card" data-lv="' + i + '"' + (open ? '' : ' disabled') + '>' +
+      '<span><span class="nm">' + LEVELS[i].name + '</span>' +
+      '<span class="sub">' + (open ? (got ? 'cleared' : 'not yet found') : 'clear the cave before it') + '</span></span>' +
+      '<span class="stars">' + starGlyphs(open ? got : 0) + '</span></button>';
+  }
+  wrap.innerHTML = html;
+  var cards = wrap.querySelectorAll('.card'), k;
+  for (k = 0; k < cards.length; k++) {
+    cards[k].addEventListener('click', function (e) {
+      var lv = parseInt(e.currentTarget.getAttribute('data-lv'), 10);
+      AUDIO.start();
+      startCampaign(lv);
+    });
+  }
+}
+function refreshToggles() {
+  var sTxt = G.sound ? 'SOUND ON' : 'SOUND OFF';
+  var mTxt = G.motion ? 'MOTION ON' : 'MOTION OFF';
+  $('btnSound').textContent = sTxt; $('btnSound2').textContent = sTxt;
+  $('btnMotion').textContent = mTxt; $('btnMotion2').textContent = mTxt;
+  var deepOpen = (G.save.stars[CONFIG.ENDLESS_UNLOCK_LEVEL - 1] || 0) > 0;
+  /* a locked button says its own name and stays ghosted; a button whose LABEL
+     is a sentence about being locked reads as broken copy */
+  $('btnDeep').textContent = 'THE DEEP';
+  $('btnDeep').classList.toggle('ghost', !deepOpen);
+}
+
+/* ------------------------------------------------------------------- runs */
+function beginRun() {
+  AUDIO.bindLurkers(G.st.lurkers.length);
+  G.joy = null; G.reticle = null; G.pendingThrow = null; G.pendingHum = false;
+  G.caughtAt = 0;
+  G.ambientRng = makeRNG(mixSeed(G.seed, STREAM_AMBIENT));
+  $('fade').style.opacity = 0; $('fadeLine').style.opacity = 0;
+  showScreen('play');
+  fitCanvas();
+  var hint = G.mode === 'deep' ? ('Depth ' + G.depth) : LEVELS[G.level].hint;
+  $('hint').textContent = hint;
+  $('hint').classList.add('on');
+  G.hintUntil = performance.now() + 2500;
+  $('depthTag').textContent = G.mode === 'deep' ? ('DEPTH ' + G.depth) : '';
+  updateHud();
+  try { parent.postMessage({ sws: 'game-music', on: true }, '*'); } catch (e) {}
+}
+function startCampaign(level) {
+  G.mode = 'campaign'; G.level = level; G.depth = 1;
+  G.seed = (seedFromString(CONFIG.GAME_ID + ':' + level) ^ 0) >>> 0;
+  G.st = newRun({ mode: 'campaign', level: level, seed: G.seed });
+  beginRun();
+}
+function startDeep(depth) {
+  G.mode = 'deep'; G.depth = depth;
+  G.seed = seedFromString(CONFIG.GAME_ID + ':deep:' + depth + ':' + (G.save.bestDepth + 1));
+  G.st = newRun({ mode: 'deep', seed: G.seed, depth: depth });
+  beginRun();
+}
+function restartRun() {
+  if (G.mode === 'deep') startDeep(G.depth);
+  else startCampaign(G.level);
+}
+function showClear() {
+  var st = G.st, n = starsFor(st);
+  if (G.mode === 'campaign') {
+    G.save = SAVE.write(function (s) { s.stars[G.level] = Math.max(s.stars[G.level], n); });
+    $('clearName').textContent = LEVELS[G.level].name;
+    $('clearWord').textContent = 'You found the way through';
+    $('btnNext').textContent = (G.level + 1 < LEVELS.length) ? 'NEXT CAVE' : 'BACK TO THE CAVES';
+  } else {
+    G.save = SAVE.write(function (s) { s.bestDepth = Math.max(s.bestDepth, G.depth); });
+    $('clearName').textContent = 'DEPTH ' + G.depth;
+    $('clearWord').textContent = 'The water opens below you';
+    $('btnNext').textContent = 'DEEPER';
+  }
+  $('clearStars').innerHTML = starGlyphs(n);
+  $('clearStones').textContent = 'stones left ' + st.stones + ' of ' + st.stonesStart;
+  $('clearPearls').textContent = st.pearlsTotal
+    ? ('pearls ' + st.pearlsGot + ' of ' + st.pearlsTotal) : 'no pearls in this cave';
+  AUDIO.stopAll();
+  showScreen('clear');
+  buildLevelCards(); refreshToggles();
+  try {
+    parent.postMessage({ sws: 'earn', moment: G.mode === 'deep' ? 'fathom-depth' : 'fathom-clear',
+      detail: G.mode === 'deep' ? String(G.depth) : LEVELS[G.level].id }, '*');
+  } catch (e) {}
+}
+function updateHud() {
+  if (!G.st) return;
+  $('stoneCount').textContent = G.st.stones;
+  var cd = G.st.humCd > 0;
+  $('btnHum').classList.toggle('cool', cd);
+}
+
+/* ------------------------------------------------------------------- loop */
+var lastTs = 0, acc = 0;
+function frame(ts) {
+  requestAnimationFrame(frame);
+  G.frames++;
+  var dtMs = lastTs ? Math.min(100, ts - lastTs) : 16.7;
+  lastTs = ts;
+  if (G.screen === 'title') drawTitle(ts);
+
+  if (G.screen === 'play' && G.st) {
+    if (G.wantPause) { G.wantPause = false; showScreen('pause'); return; }
+    acc += dtMs;
+    var stepMs = CONFIG.STEP * 1000, guard = 0;
+    while (acc >= stepMs && guard < 6) {
+      var st = G.st;
+      var was = st.over;
+      update(st, gatherInput(G), CONFIG.STEP);
+      consumeEvents(st);
+      acc -= stepMs; guard++;
+      if (!was && st.over) break;
+    }
+    if (acc > stepMs * 6) acc = 0;
+    AUDIO.updateLurkers(G.st, CAM.x);
+    AUDIO.ambient(dtMs / 1000, G.ambientRng);
+    updateHud();
+    if (G.hintUntil && ts > G.hintUntil) { $('hint').classList.remove('on'); G.hintUntil = 0; }
+    if (G.frames - G.hudTouched > CONFIG.HUD_DIM_MS / 16.7) $('hud').classList.add('dim');
+    if (G.st.over === 'caught' && !G.caughtAt) beginCaught(ts);
+    if (G.st.over === 'caught' && ts - G.caughtAt > CONFIG.CAUGHT_FADE_MS + 500) restartRun();
+    if (G.st.over === 'clear') showClear();
+  }
+  draw(G.screen === 'play' || G.screen === 'pause' ? G.st : null, G);
+}
+function beginCaught(ts) {
+  G.caughtAt = ts;
+  AUDIO.caught();
+  $('fade').style.opacity = 1;
+  $('fadeLine').textContent = 'The dark took you back to the start.';
+  $('fadeLine').style.opacity = 1;
+}
+function consumeEvents(st) {
+  var i, e;
+  for (i = 0; i < st.events.length; i++) {
+    e = st.events[i];
+    if (e.t === 'ping') AUDIO.ping(e.nearWall);
+    else if (e.t === 'singback') AUDIO.singback(e.x - st.p.x, distOf(e.x, e.y, st.p.x, st.p.y));
+    else if (e.t === 'hum') AUDIO.hum();
+    else if (e.t === 'pickup') { AUDIO.pickup(true); toast('three more stones'); }
+    else if (e.t === 'pearl') { AUDIO.pickup(false); toast('a pearl'); }
+  }
+}
+
+/* ------------------------------------------------------------------- wire */
+function wire() {
+  var tap = function (id, fn) {
+    var el = $(id);
+    if (el) el.addEventListener('click', function (ev) { AUDIO.start(); G.hudTouched = G.frames; $('hud').classList.remove('dim'); fn(ev); });
+  };
+  tap('btnPlay', function () { buildLevelCards(); showScreen('select'); });
+  tap('btnDeep', function () {
+    if ((G.save.stars[CONFIG.ENDLESS_UNLOCK_LEVEL - 1] || 0) > 0) startDeep(Math.max(1, G.save.bestDepth) );
+    else toast('Clear the third cave to open the deep');
+  });
+  tap('btnHow', function () { showScreen('how'); });
+  tap('btnHowOk', function () {
+    G.save = SAVE.write(function (s) { s.seen.how = 1; });
+    showScreen('title');
+  });
+  tap('btnSelBack', function () { showScreen('title'); });
+  tap('btnPause', function () { showScreen('pause'); });
+  tap('btnResume', function () { showScreen('play'); });
+  tap('btnRestart', function () { restartRun(); });
+  tap('btnQuit', function () { AUDIO.stopAll(); buildLevelCards(); showScreen('select'); });
+  tap('btnClearMenu', function () { buildLevelCards(); showScreen('select'); });
+  tap('btnNext', function () {
+    if (G.mode === 'deep') startDeep(G.depth + 1);
+    else if (G.level + 1 < LEVELS.length) startCampaign(G.level + 1);
+    else { buildLevelCards(); showScreen('select'); }
+  });
+  tap('btnHum', function () { G.pendingHum = true; });
+  var toggleSound = function () {
+    G.sound = G.sound ? 0 : 1;
+    G.save = SAVE.write(function (s) { s.sound = G.sound; });
+    AUDIO.setOn(!!G.sound); refreshToggles();
+  };
+  var toggleMotion = function () {
+    G.motion = G.motion ? 0 : 1;
+    G.save = SAVE.write(function (s) { s.motion = G.motion; });
+    refreshToggles();
+  };
+  tap('btnSound', toggleSound); tap('btnSound2', toggleSound);
+  tap('btnMotion', toggleMotion); tap('btnMotion2', toggleMotion);
+  $('hud').addEventListener('pointerdown', function () { G.hudTouched = G.frames; $('hud').classList.remove('dim'); }, true);
+  window.addEventListener('storage', function (e) {
+    if (e.key === CONFIG.SAVE_KEY) { G.save = SAVE.read(); buildLevelCards(); refreshToggles(); }
+  });
+}
+
+/* ===== Sky Wolf Studio embed protocol ===== */
+(function () {
+  var framed = false; try { framed = window.parent !== window; } catch (e) { framed = true; }
+  window.SWS_EXIT = function () {
+    if (framed) { try { parent.postMessage({ sws: 'close' }, '*'); } catch (e) {} return; }
+    if (document.referrer.indexOf('/portal') >= 0 && history.length > 1) history.back();
+    else location.replace('https://lucidwinds.com/portal/');
+  };
+  if (framed) {
+    try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {}
+    window.addEventListener('load', function () { try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {} });
+  }
+})();
+
+function boot() {
+  CV = $('board');
+  CTX = CV.getContext('2d');
+  G.save = SAVE.read();
+  G.sound = G.save.sound; G.motion = G.save.motion;
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) G.motion = 0;
+  AUDIO.setOn(!!G.sound);
+  fitCanvas();
+  bindInput(G);
+  wire();
+  buildLevelCards();
+  refreshToggles();
+  showScreen('title');
+  requestAnimationFrame(frame);
+
+  if (location.search.indexOf('test=1') >= 0) {
+    var rep = TEST.run(), out = 'FATHOM self test\n\n', i;
+    for (i = 0; i < rep.failures.length; i++) out += 'FAIL  ' + rep.failures[i].name + '   ' + rep.failures[i].detail + '\n';
+    out += '\nPASSED ' + rep.passed + ' / FAILED ' + rep.failed + ' (total ' + rep.total + ')';
+    var panel = $('testPanel');
+    panel.textContent = out; panel.classList.add('on');
+    window.__TEST__ = rep;
+  }
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('./sw.js?v=' + STAMP).catch(function () {});
+    });
+  }
+}
+
+/* the read only hook the browser gates use to READ what the page believes.
+   Nothing here drives the game: every gate presses the real element. */
+window.FATHOM_DEV = {
+  stamp: STAMP,
+  screen: function () { return G.screen; },
+  frames: function () { return G.frames; },
+  state: function () { return G.st ? snapshot(G.st) : null; },
+  hud: function () { return { stones: $('stoneCount').textContent, dim: $('hud').classList.contains('dim') }; },
+  litCache: function () {
+    if (!G.st) return 0;
+    var n = 0, i;
+    for (i = 0; i < G.st.caches.length; i++) if (G.st.caches[i].litAt > 0) n++;
+    return n;
+  },
+  litWalls: function () {
+    if (!G.st) return 0;
+    var n = 0, i;
+    for (i = 0; i < G.st.walls.length; i++) if (G.st.walls[i].litAt > 0) n++;
+    return n;
+  },
+  player: function () { return G.st ? { x: G.st.p.x, y: G.st.p.y } : null; },
+  save: function () { return SAVE.read(); },
+  voices: function () { return AUDIO.voices(); },
+  audioReady: function () { return AUDIO.ready(); },
+  scale: function () { return { SCALE: SCALE, CSSW: CSSW, CSSH: CSSH, camx: CAM.x, camy: CAM.y }; },
+  world: function (px, py) { return { x: toWorldX(px), y: toWorldY(py) }; },
+  screenOf: function (wx, wy) { return { x: sx(wx), y: sy(wy) }; }
+};
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+else boot();
+</script>
+</body>
+</html>
