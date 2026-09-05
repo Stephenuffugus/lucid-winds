@@ -4,7 +4,8 @@
 // "Queen Bee" / "Pollen" since the game stands on its own and we're
 // building toward full custom art + expansions.
 //
-// Art roadmap: assets/games/masterpollinator/ holds per-card art.
+// Art roadmap: assets/games/masterpollinator/ holds per-card art (1024px masters) and the
+// -card.jpg cuts the game actually loads (tools/cut_cards.py).
 // Names/requirements are stable so art can drop in without code changes.
 (function(){
 'use strict';
@@ -862,7 +863,7 @@ window._gameFns.pollen = function PN(a){
       +'<span style="font-family:Arial,sans-serif;font-weight:800;font-size:'+fs+'px;line-height:1;color:'+p.edge+';text-shadow:0 0 2px rgba(255,255,255,0.85),0 1px 1px rgba(255,255,255,0.5);">'+(TOK_GLYPH[c]||'')+'</span></span>';
   }
 
-  // Art-first renderer: if assets/games/masterpollinator/<slug>.png loads,
+  // Art-first renderer: if assets/games/masterpollinator/<slug>-card.jpg loads,
   // it fills the centre of the card. On 404 the img element is removed
   // and the emoji tier icon shows through underneath. Flower name sits
   // under the art in small caps so players can read it at a glance.
@@ -881,9 +882,9 @@ window._gameFns.pollen = function PN(a){
   //   • Flower name in the cost bar in tiny caps so it's legible without
   //     fighting the art for attention.
   //
-  // Tier-aware art path: assets/games/masterpollinator/tier{N}/<slug>.png
+  // Tier-aware art path: assets/games/masterpollinator/tier{N}/<slug>-card.jpg
   // matches the folder structure Stephen ships art in. Fallback to flat
-  // assets/games/masterpollinator/<slug>.png is checked too via two img
+  // assets/games/masterpollinator/<slug>-card.jpg is checked too via two img
   // tags chained by onerror.
   function renderCard(card,isReserved,compact){
     var aff=canAfford(me(),card);
@@ -909,8 +910,10 @@ window._gameFns.pollen = function PN(a){
     var USE_PILL=
       '<div style="position:absolute;top:3px;right:4px;z-index:3;box-shadow:0 2px 5px rgba(0,0,0,0.5);border-radius:50%;">'+tokDot(card.produces,24)+'</div>';
     // Two-stage art lookup: tier folder first, then flat fallback.
-    var artTier='assets/games/masterpollinator/tier'+card.tier+'/'+card.slug+'.png';
-    var artFlat='assets/games/masterpollinator/'+card.slug+'.png';
+    // ⛔ the -card.jpg CUTS (448px, ~50KB, tools/cut_cards.py), never the 1024px masters beside
+    // them: a twelve card board pulled 20.2 MB through the masters (fleet audit Sep 04, JOB 6)
+    var artTier='assets/games/masterpollinator/tier'+card.tier+'/'+card.slug+'-card.jpg';
+    var artFlat='assets/games/masterpollinator/'+card.slug+'-card.jpg';
     var artImg=card.slug?(
       '<img src="'+artTier+'" alt="" '
       +'onerror="if(this.src.indexOf(\'/tier\')>=0){this.src=\''+artFlat+'\';}else{this.style.display=\'none\';}" '
@@ -1011,8 +1014,8 @@ window._gameFns.pollen = function PN(a){
       // Pollinator card — same art-first treatment as plant cards.
       // Tier-aware path: assets/games/masterpollinator/pollinators/<slug>.png
       // Falls back to flat pollinator-<slug>.png, then to emoji on miss.
-      var pTier='assets/games/masterpollinator/pollinators/'+(p.slug||'')+'.png';
-      var pFlat='assets/games/masterpollinator/pollinator-'+(p.slug||'')+'.png';
+      var pTier='assets/games/masterpollinator/pollinators/'+(p.slug||'')+'-card.jpg';
+      var pFlat='assets/games/masterpollinator/pollinator-'+(p.slug||'')+'-card.jpg';
       var pArt=p.slug?(
         '<img src="'+pTier+'" alt="" '
         +'onerror="if(this.src.indexOf(\'/pollinators/\')>=0){this.src=\''+pFlat+'\';}else{this.style.display=\'none\';}" '
@@ -1203,8 +1206,10 @@ window._gameFns.pollen = function PN(a){
     ov.style.cssText='position:fixed;inset:0;z-index:200000;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.86);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:16px;animation:pnFadeIn 0.22s ease;';
     ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});
     var bgShade=card.tier===1?'#4a7c35':card.tier===2?'#c8a84b':'#ffd700';
-    var artTier='assets/games/masterpollinator/tier'+card.tier+'/'+card.slug+'.png';
-    var artFlat='assets/games/masterpollinator/'+card.slug+'.png';
+    // ⛔ the -card.jpg CUTS (448px, ~50KB, tools/cut_cards.py), never the 1024px masters beside
+    // them: a twelve card board pulled 20.2 MB through the masters (fleet audit Sep 04, JOB 6)
+    var artTier='assets/games/masterpollinator/tier'+card.tier+'/'+card.slug+'-card.jpg';
+    var artFlat='assets/games/masterpollinator/'+card.slug+'-card.jpg';
     var displayName=card.hideName?'Mystery Bloom':esc(card.name||'');
     var tierName=TIER_NAMES[card.tier-1]||'';
     var aff = me() && !me().isAI ? canAfford(me(),card) : {affordable:false};

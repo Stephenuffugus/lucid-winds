@@ -48,3 +48,11 @@ requirement bar (color×count chips) along the bottom.
   underneath the edges of the art.
 - **Slug must match the catalog exactly** — case, hyphens, no spaces.
   See `MANIFEST.md` for the full slug list.
+
+## Ship cuts (Sep 05 2026)
+
+The game loads `<slug>-card.jpg` (448px, JPEG q82, about 50 KB) from beside each master, cut by
+`python3 tools/cut_cards.py assets/games/masterpollinator`. The 1024px masters stay here for
+repainting and are never referenced by `games/pollen.js`: a twelve card board used to pull 20.2 MB
+through them. Re-run the cutter after replacing a master; a cut newer than its master is skipped.
+
