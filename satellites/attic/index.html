@@ -102,6 +102,8 @@
     background:#1c1610; border:1px solid #4a3b26; border-radius:24px; color:#a8906a;
     font-family:ui-monospace, monospace; font-size:0.62rem; letter-spacing:0.16em; cursor:pointer; }
   .backchip:active { background:#2a2016; color:#d9a94e; }
+  #sndBtn { margin-left:auto; }
+  #sndBtn.off { color:#5e5240; text-decoration:line-through; }
 
   .rummage[disabled] { opacity:0.45; filter:grayscale(0.6); }
   .brokenote { font-size:0.68rem; color:#a8906a; text-align:center; margin-top:8px; line-height:1.5; }
@@ -540,7 +542,7 @@
   <div class="motes" id="motes"></div>
 </div>
 <div class="wrap">
-  <div class="backrow"><button class="backchip" id="swsBack" type="button" aria-label="Back to the arcade">&#8249; BACK TO THE ARCADE</button></div>
+  <div class="backrow"><button class="backchip" id="swsBack" type="button" aria-label="Back to the arcade">&#8249; BACK TO THE ARCADE</button><button class="backchip" id="sndBtn" type="button" aria-label="Sound on or off">SOUND ON</button></div>
   <h1>THE ATTIC<small>Sky Wolf Studio</small></h1>
   <p class="demo-note">Every rummage turns up one object that has never existed before and never will again. Records, comics, tapes, carded toys, handheld games, lunchboxes, paperbacks, zines, board games and cereal boxes, each with its own era, its own wear, and its own story.</p>
 
@@ -735,9 +737,84 @@
     if (WIPE_SLOT && WIPE_SLOT.parentNode && WIPE_SLOT.querySelector('.wipeBox')) WIPE_SLOT.innerHTML = WIPE_CLEAN;
     WIPE_SLOT = null; WIPE_CLEAN = '';
   }
+  /* ── SOUND (2026-09-05) ──────────────────────────────────────────────
+     A WebAudio synth in the page, no files, in the attic's voice: paper, wood and dust.
+     A tap on any button, the rummage rustle, the wipe brushing, a plate sting that climbs
+     with the grade (a thud for TRASHED, four notes for MINT, a fanfare for FACTORY SEALED),
+     the dust panel's rustle and the stub ding, a scrap crumple, the want list bell, the card
+     snap. Unlocked on the first touch, muted by the SOUND chip (kept in attic_snd), muted at
+     the speaker so `log` still records every beat for the gate; `render(name, arg)` bounces
+     one cue offline and returns its RMS so the gate can prove air moved. */
+  var SFX = (function () {
+    var ctx = null, master = null, on = true, log = [], noiseBuf = null, lastDust = 0;
+    try { on = localStorage.getItem('attic_snd') !== '0'; } catch (e) {}
+    function unlock() {
+      if (ctx) { if (ctx.state === 'suspended') { try { ctx.resume(); } catch (e) {} } return ctx; }
+      try { var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null;
+        ctx = new AC(); master = ctx.createGain(); master.gain.value = 0.45; master.connect(ctx.destination); } catch (e) { ctx = null; }
+      return ctx;
+    }
+    function tone(f0, f1, dur, type, vol, t0) {
+      if (!ctx) return; var o = ctx.createOscillator(), g = ctx.createGain(), t = (t0 != null ? t0 : ctx.currentTime);
+      o.type = type || 'sine'; o.frequency.setValueAtTime(f0, t); if (f1) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol || 0.3, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.03);
+    }
+    function noise(dur, vol, kind, freq, t0) {
+      if (!ctx) return;
+      if (!noiseBuf || noiseBuf.sampleRate !== ctx.sampleRate) { var n = Math.floor(ctx.sampleRate * 0.6), b = ctx.createBuffer(1, n, ctx.sampleRate), d = b.getChannelData(0), i; for (i = 0; i < n; i++) d[i] = Math.random() * 2 - 1; noiseBuf = b; }
+      var src = ctx.createBufferSource(); src.buffer = noiseBuf; var f = ctx.createBiquadFilter(); f.type = kind || 'lowpass'; f.frequency.value = freq || 900; if (kind === 'bandpass') f.Q.value = 1.2;
+      var g = ctx.createGain(), t = (t0 != null ? t0 : ctx.currentTime); g.gain.setValueAtTime(vol || 0.2, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      src.connect(f); f.connect(g); g.connect(master); src.start(t); src.stop(t + dur + 0.03);
+    }
+    var GRADE_NOTES = { 'TRASHED': [], 'PLAYED': [392], 'GOOD': [440], 'FINE': [523, 659], 'NEAR MINT': [523, 659, 784], 'MINT': [523, 659, 784, 1047] };
+    var cues = {
+      tap: function () { tone(700, 500, 0.045, 'sine', 0.14); },
+      rummage: function () { var t = ctx.currentTime; noise(0.22, 0.28, 'lowpass', 900, t); noise(0.18, 0.18, 'lowpass', 600, t + 0.16); tone(180, 120, 0.12, 'sine', 0.12, t + 0.05); },
+      wipe: function () { var t = ctx.currentTime; noise(0.55, 0.22, 'bandpass', 1800, t); noise(0.4, 0.14, 'bandpass', 2600, t + 0.3); },
+      plate: function (grade) {
+        var t = ctx.currentTime, notes = GRADE_NOTES[grade] || [440], i;
+        if (!notes.length) { noise(0.25, 0.3, 'lowpass', 300, t); tone(90, 50, 0.3, 'sine', 0.3, t); return; }
+        for (i = 0; i < notes.length; i++) tone(notes[i], 0, 0.22, 'triangle', 0.18, t + i * 0.1);
+      },
+      sealed: function () { var t = ctx.currentTime, i, f = [523, 659, 784, 1047, 1319]; for (i = 0; i < 5; i++) tone(f[i], 0, 0.3, 'triangle', 0.18, t + i * 0.1); for (i = 0; i < 4; i++) tone(1800 + i * 300, 3200 + i * 200, 0.6, 'sine', 0.05, t + 0.4 + i * 0.05); noise(0.5, 0.05, 'highpass', 4000, t + 0.4); },
+      dust: function () { var t = ctx.currentTime; noise(0.16, 0.5, 'bandpass', 1200, t); noise(0.1, 0.22, 'lowpass', 700, t); },
+      stub: function () { var t = ctx.currentTime; noise(0.05, 0.2, 'highpass', 2500, t); tone(1568, 0, 0.18, 'sine', 0.16, t + 0.02); tone(2093, 0, 0.22, 'sine', 0.1, t + 0.1); },
+      scrap: function () { var t = ctx.currentTime; noise(0.3, 0.3, 'lowpass', 1200, t); noise(0.15, 0.2, 'lowpass', 700, t + 0.12); },
+      want: function () { var t = ctx.currentTime; tone(1319, 0, 0.3, 'sine', 0.18, t); tone(1760, 0, 0.4, 'sine', 0.14, t + 0.14); },
+      flip: function () { noise(0.05, 0.3, 'highpass', 1800); tone(320, 200, 0.05, 'sine', 0.1); }
+    };
+    function play(name, arg) {
+      var c = cues[name]; if (!c) return false;
+      if (name === 'dust') { var now = Date.now(); if (now - lastDust < 110) return true; lastDust = now; }
+      log.push(name); if (log.length > 80) log.shift();
+      if (!on) return true;
+      if (!unlock()) return true;
+      try { c(arg); } catch (e) {}
+      return true;
+    }
+    function toggle() { on = !on; try { localStorage.setItem('attic_snd', on ? '1' : '0'); } catch (e) {} if (on) play('tap'); return on; }
+    function render(name, arg, done) {
+      var c = cues[name]; if (!c) { done(-1); return; }
+      var OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext; if (!OAC) { done(-1); return; }
+      var sc = ctx, sm = master, sn = noiseBuf;
+      try {
+        ctx = new OAC(1, 44100, 44100); master = ctx.createGain(); master.gain.value = 0.45; master.connect(ctx.destination); noiseBuf = null;
+        c(arg);
+        var o = ctx; ctx = sc; master = sm; noiseBuf = sn;
+        o.startRendering().then(function (buf) { var d = buf.getChannelData(0), i, sum = 0; for (i = 0; i < d.length; i++) sum += d[i] * d[i]; done(Math.sqrt(sum / d.length)); }, function () { done(-1); });
+      } catch (e) { ctx = sc; master = sm; noiseBuf = sn; done(-1); }
+    }
+    try { document.addEventListener('touchstart', function () { unlock(); }, { passive: true }); document.addEventListener('pointerdown', function () { unlock(); }); } catch (e) {}
+    return { play: play, toggle: toggle, on: function () { return on; }, unlock: unlock, cues: cues, log: log, reset: function () { log.length = 0; }, ctxRef: function () { return ctx; }, render: render };
+  })();
+  window.ATTIC_SFX = SFX;
+  document.addEventListener('click', function (e) { var t = e.target; while (t && t !== document) { if (t.tagName === 'BUTTON') { SFX.play('tap'); break; } t = t.parentNode; } }, true);
+
   function wipeReveal(slot, h, size) {
     if (!slot) return;
     wipeSettle();
+    SFX.play('wipe');
     var clean = ATTIC_OBJECT.renderItem(h, size).svg;
     if (!motion()) { slot.innerHTML = clean; return; }
     var dusty = ATTIC_OBJECT.renderItem(h, size, { dusty: true }).svg;
@@ -915,6 +992,7 @@
       var paid = E.payGrails(WAL, hit.length);
       saveWallet(); paintWallet(); paintWants();
       toast('WANT LIST: ' + hit[0] + '. Crossed off, plus ' + paid + ' tickets.', 4200);
+      SFX.play('want');
     }
     return hit.length;
   }
@@ -962,6 +1040,8 @@
      is the highest grade index ever pulled, so ask BEFORE payReveal moves it. */
   var LAST_FIRST_SEAL = false;
   function payForReveal(h, it) {
+    /* the sting lands when the cloth is done, which is when the plate appears */
+    setTimeout(function () { SFX.play(it.grade === 'FACTORY SEALED' ? 'sealed' : 'plate', it.grade); }, 900);
     if (revealed[h]) return 0;
     LAST_FIRST_SEAL = it.grade === 'FACTORY SEALED' && (WAL.best | 0) < E.gIdx('FACTORY SEALED');
     revealed[h] = 1; saveRevealed();
@@ -1366,6 +1446,7 @@
     for (i = 0; i < pulls.length; i++) if (pulls[i] === h) { pulls.splice(i, 1); break; }
     saveShelf(); saveRevealed(); saveFound(); renderShelf();
     var paid = E.payScrap(WAL); saveWallet(); paintWallet();
+    SFX.play('scrap');
     toast(paid ? 'Back in the pile. That is one ticket.'
                : 'Back in the pile. One more scrap makes a ticket.');
     return paid;
@@ -1388,6 +1469,7 @@
   })();
   document.getElementById('fcFlip').onclick = function () {
     this.className = this.className.indexOf('flipped') >= 0 ? 'fcFlip' : 'fcFlip flipped';
+    SFX.play('flip');
   };
   document.getElementById('fcClose').onclick = closeFlip;
   document.getElementById('fcSave').onclick = saveCard;
@@ -1406,10 +1488,14 @@
     if (!E.spend(WAL, E.RUMMAGE_COST)) { toast('No tickets left.'); return; }
     saveWallet(); paintWallet();
     show(randHash());
+    SFX.play('rummage');
     /* the header is 700px tall on a phone, so a find dropped in below it was
        landing off the bottom of the screen every single time */
     if (card.scrollIntoView) { try { card.scrollIntoView({ block: 'nearest' }); } catch (e) { card.scrollIntoView(); } }
   };
+  function paintSnd() { var b = document.getElementById('sndBtn'); if (!b) return; b.textContent = SFX.on() ? 'SOUND ON' : 'SOUND OFF'; b.className = 'backchip' + (SFX.on() ? '' : ' off'); }
+  document.getElementById('sndBtn').onclick = function () { SFX.toggle(); paintSnd(); };
+  paintSnd();
   document.getElementById('wantOpen').onclick = function () { paintWants(); document.getElementById('wantSheet').className = 'sheet on'; };
   document.getElementById('wantClose').onclick = function () { document.getElementById('wantSheet').className = 'sheet'; };
   document.getElementById('wantSheet').onclick = function (e) { if (e.target === this) this.className = 'sheet'; };
@@ -1608,6 +1694,7 @@
      or one programmatic dustStroke call. Without the stroke id a slow thumb
      over one spot cleans it instantly and a fast snake clears the panel. */
   function dustErase(D, x0, y0, x1, y1, stroke) {
+    SFX.play('dust');
     var dx = x1 - x0, dy = y1 - y0, L2 = dx * dx + dy * dy, R = D.R;
     var minx = Math.min(x0, x1) - R, maxx = Math.max(x0, x1) + R;
     var miny = Math.min(y0, y1) - R, maxy = Math.max(y0, y1) + R;
@@ -1647,7 +1734,7 @@
       if (D.stubs[i].found) continue;
       if (dustStubDepth(D, D.stubs[i]) < 0.25) { D.stubs[i].found = 1; D.found++; changed++; }
     }
-    if (changed) document.getElementById('dustFound').textContent = D.found;
+    if (changed) { document.getElementById('dustFound').textContent = D.found; SFX.play('stub'); }
     document.getElementById('dustPct').textContent = Math.round(dustCleared(D) * 100);
     return changed;
   }
@@ -1764,6 +1851,7 @@
   /* headless hook */
   if (/[?&]attictest=1/.test(location.search)) {
     window.ATTIC_DEV = {
+      sfx: SFX,
       wallet: function () { return WAL; },
       dustLeft: function () { return E.dustLeft(WAL, dayIndex()); },
       dustOpen: dustOpen, dustEnd: dustEnd,

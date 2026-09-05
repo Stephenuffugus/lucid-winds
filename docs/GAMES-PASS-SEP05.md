@@ -194,3 +194,7 @@ A 1953 lunchbox and a 1998 zine used to wear the same cream $4.99 oval. Now each
 ### Litter Bug sound pass (Sep 05, later)
 
 A synth in the page, no files: sixteen cues on the real paths (belt, bins, grub, lid, wire, clean shift, shift over, the week stamp, the jar, hits and crits, win and lose) and a SOUND pill on the home screen that remembers. Every cue is bounced offline in the gate and has to move air. Nobody has heard it yet; that is Stephen's phone. Shot: `lb-sound-home.png`.
+
+### The Attic sound pass (Sep 05, later)
+
+A synth in the page in the attic's voice: rummage rustle, the wipe, a plate sting that climbs with the grade and a fanfare for FACTORY SEALED, dust and stubs, scrap, the want list bell, the card snap, and a SOUND chip in the header. Every cue is bounced offline in the gate and has to move air. Unheard by a human. Shot: `attic-sound-head.png`.

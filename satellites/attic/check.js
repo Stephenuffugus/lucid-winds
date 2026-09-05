@@ -638,6 +638,37 @@ if (process.env.AT_NOBROWSER === '1') { console.log('\n(browser group skipped: A
     ok('before the wipe the wear line is empty and hidden', wear.before.text === '' && wear.before.shown === 'none', JSON.stringify(wear.before));
     ok('after the wipe it prints a line from the bank for the grade on the plate', wear.after.length > 10 && wear.inBank && wear.shown === 'block' && wear.h > 10, JSON.stringify(wear));
 
+    group('sound: every beat has a cue, every cue moves air, the chip mutes it');
+    const snd = await page.evaluate(async () => {
+      const S = window.ATTIC_SFX, D = window.ATTIC_DEV; const wait = ms => new Promise(r => setTimeout(r, ms));
+      S.reset();
+      const names = Object.keys(S.cues);
+      const rms = {};
+      for (const n of names) rms[n] = await new Promise(res => S.render(n, n === 'plate' ? 'GOOD' : undefined, res));
+      rms['plate TRASHED'] = await new Promise(res => S.render('plate', 'TRASHED', res));
+      rms['plate MINT'] = await new Promise(res => S.render('plate', 'MINT', res));
+      const silent = Object.keys(rms).filter(k => !(rms[k] > 0.002));
+      /* the beats from the real paths */
+      D.setTix(30);
+      document.getElementById('go').click(); const rummage = S.log.indexOf('rummage') >= 0 && S.log.indexOf('tap') >= 0;
+      document.getElementById('gb').click(); await wait(1300); const wipe = S.log.indexOf('wipe') >= 0, sting = S.log.indexOf('plate') >= 0 || S.log.indexOf('sealed') >= 0;
+      /* a FRESH panel: the DUST OFF group above already found this panel's stubs */
+      D.dustOpen(); D.dustReset(); const st = D.dustState(); D.dustStroke(0, st.h / 2, st.w, st.h / 2); const dust = S.log.indexOf('dust') >= 0;
+      D.dustSweeps(40); const stub = S.log.indexOf('stub') >= 0; D.dustEnd();
+      /* the chip */
+      const chip = document.getElementById('sndBtn'); const r = chip.getBoundingClientRect();
+      const label1 = chip.textContent; chip.click(); const off = !S.on(); const stored = localStorage.getItem('attic_snd'); const label2 = chip.textContent;
+      S.reset(); document.getElementById('wantOpen').click(); document.getElementById('wantClose').click(); const loggedWhileOff = S.log.indexOf('tap') >= 0;
+      chip.click(); const back = S.on();
+      return { cues: names.length, silent, rummage, wipe, sting, dust, stub, chipH: Math.round(r.height), label1, label2, off, stored, loggedWhileOff, back, ctx: !!S.ctxRef() };
+    });
+    ok('a cue for every beat of the attic', snd.cues >= 10, snd.cues);
+    ok('every cue moves air when bounced offline, the plate at three grades too', snd.silent.length === 0, snd.silent.join(', '));
+    ok('a rummage, a wipe and its plate sting, a dust stroke and a stub each speak from the real path', snd.rummage && snd.wipe && snd.sting && snd.dust && snd.stub, JSON.stringify({ rummage: snd.rummage, wipe: snd.wipe, sting: snd.sting, dust: snd.dust, stub: snd.stub }));
+    ok('the SOUND chip mutes, remembers and unmutes, at 48px', snd.chipH >= 48 && snd.label1 === 'SOUND ON' && snd.label2 === 'SOUND OFF' && snd.off && snd.stored === '0' && snd.back, JSON.stringify({ h: snd.chipH, l1: snd.label1, l2: snd.label2, stored: snd.stored }));
+    ok('muted still logs the beat: the mute is at the speaker', snd.loggedWhileOff);
+    ok('an AudioContext exists after the first beat', snd.ctx);
+
     group('persistence survives a reload');
     const persisted = await page.evaluate(() => {
       const D = window.ATTIC_DEV;
