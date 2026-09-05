@@ -90,7 +90,9 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
 .shopline button{flex:none; min-width:96px; min-height:52px; border-radius:12px; border:1px solid #e88a80;
   background:linear-gradient(180deg,#d0574a,#9a2f27); color:#fff2ee; font-weight:800; font-size:15px; cursor:pointer}
 .shopline button:disabled{background:#241a15; border-color:var(--line); color:var(--muted)}
-.worldhead{font-weight:800; letter-spacing:2px; color:var(--gold); font-size:15px; margin:16px 0 8px; text-transform:uppercase}
+.worldblock{padding:4px 12px 12px; margin:10px 0 0; border-radius:16px; border:1px solid var(--line); background:linear-gradient(180deg,var(--w0,#20351c) 0%,var(--w1,#16210f) 60%,var(--w2,#0c1208) 100%); box-shadow:inset 0 1px 0 rgba(255,255,255,.04), 0 8px 20px #0006}
+.worldblock .dojogrid{margin:0 auto}
+.worldhead{font-weight:800; letter-spacing:2px; color:var(--gold); font-size:15px; margin:10px 0 8px; text-transform:uppercase}
 .worldhead small{color:var(--muted); font-weight:600; letter-spacing:1px; margin-left:8px; text-transform:none}
 .dojogrid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; max-width:460px}
 .dojocell{min-height:72px; border-radius:14px; border:1px solid var(--line); background:#171210; color:var(--cream);
@@ -1555,6 +1557,9 @@ function renderSelect(){
   for(w=0;w<WORLD_DEFS.length;w++){
     var WD2=WORLD_DEFS[w], wStars=0, done=0;
     for(li2=w*6;li2<w*6+6;li2++){ wStars+=(PROG.stars[li2]||0); if(li2<(PROG.cleared||0))done++; }
+    /* each world wears its own sky on the map, so the four read as places (Sep 05) */
+    var sk2=SKY[WD2.theme]||SKY.crate;
+    html+='<div class="worldblock" style="--w0:'+sk2[0]+';--w1:'+sk2[1]+';--w2:'+sk2[2]+'">';
     html+='<div class="worldhead">'+WD2.name+'<small>'+done+' of 6 cleared · '+wStars+' ★</small></div>';
     html+='<div class="dojogrid">';
     for(li2=w*6;li2<w*6+6;li2++){
@@ -1563,7 +1568,7 @@ function renderSelect(){
       html+='<button class="dojocell'+(unlocked?'':' locked')+(li2===(PROG.cleared||0)?' next':'')+'" data-dojo="'+li2+'">'
         +(li2+1)+'<span class="st">'+(unlocked?stx:'🔒')+'</span></button>';
     }
-    html+='</div>';
+    html+='</div></div>';
   }
   $('select-worlds').innerHTML=html;
 }
