@@ -327,3 +327,16 @@ A character is not done when it can hop. The worm is the only character; the ter
 | icons 192, 512, maskable | files in the folder | existing art, not on this list |
 
 Events in the SIM with no visual today: `abandoned` (the hum stops), `combodrop` (the ring goes dark, silent on purpose per the code comment at 2786), `rescue` (both terminal pairs teleport with no tell of any kind, index.html:656), `discharged` (cells vanish, one pluck), `charged` (a dot appears above the head). `rescue` is the one to watch: it moves the objectives to the player and the player is never told.
+
+## Fleet audit rows (Sep 04)
+
+Added Sep 05 from the fleet art audit. Same rules as above.
+
+| file | spec | replaces |
+|---|---|---|
+| `assets/ww-substrate-1024.png` | 1024x1024 PNG, tileable, dark solder-mask green with ghost copper traces, dust, subtle vignette; drawn into the 373x373 board. | Replaces the flat #0c1209 fillRect and the 19+19 invisible etch lines at index.html:2446-2456 (sheet 01 in the game's own ART_ASSETS.md). |
+| `assets/ww-bezel-frame-512.png` | 512x512 PNG, transparent centre, 9-slice-safe brass bezel with screw heads at the corners and a warm inner rim light. | Gives the board an edge. Today it meets the page through a hard 14px radius and a 3-value colour step; it also replaces the amber strokeRect overload frame at index.html:2459-2466. |
+| `assets/ww-wire-autotile-32x256.png` | One sheet, 32 cells at 256x256, transparent: 16 neighbour combinations x 2 states (live copper, dead oxidised). Live cells carry the bead/solder joint painted in. | Replaces drawWireCell at index.html:2419, which draws rounded strokes to neighbours plus a dot. In game one cell is 18.65px, so 256 is generous headroom (sheet 02). |
+| `assets/ww-terminals-4x256.png` | One sheet, 4 cells at 256x256, transparent: green, blue, amber and red brass sockets, each a genuinely different silhouette (triangle plate, square plate, diamond plate, cross plate) not just a different hue. | Replaces the disc + ring + glyph terminal loop at index.html:2526-2547. Fixes the 'five identical blue rings' problem I photographed (sheet 03). |
+| `assets/ww-head-8x256.png` | One sheet, 8 cells at 256x256, transparent: the worm head at eight headings, painted as a cream ceramic bead with two dark eyes, plus a dead variant tint. | Replaces the #eaffd0 disc with two eye dots at index.html:2577-2584 (sheet 04). |
+| `assets/ww-pad-glyphs-2x256.png` | Two 256x256 transparent cells: painted brass rotary arrows, left and right, with a warm rim light. | Replaces the faint HTML arrow entities in the two 170x108 turn pads, which are currently the emptiest part of the screen (sheet 07). |

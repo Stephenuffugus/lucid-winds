@@ -45,3 +45,14 @@ Sculptural, matte, muted colour, the detail in the silhouette not the surface.
 The First Marble (item 3, `the_first_marble`) is a sulphide containing a tiny marble: not a figure, a
 sphere in a sphere. No Meshy; it is a shader recipe with a second, smaller sphere inside, and it is on
 the K3 list.
+
+## Fleet audit rows (Sep 04)
+
+Added Sep 05 from the fleet art audit. Same rules as above.
+
+| file | spec | replaces |
+|---|---|---|
+| `assets/env/ring-chalk-1024.png` | 1024x1024 PNG, transparent, a scraped and chalked ten-foot ring with worn breaks and scuffed dirt inside the line, projected flat onto the ground plane as a decal. | The ring is in the game's own one-line pitch on the boot screen and appears in no frame. Biggest composition win available and it does not fight the procedural rule. |
+| `assets/env/backdrop-lot-2048x1024.jpg` | 2048x1024 strip or equirect, dusk lot edge: chain-link, weed line, one lamp, everything low contrast and warm so the marbles stay the brightest thing in frame. | Gives the far plane a horizon. Today the dirt runs to the top edge and the frame has no depth cue beyond the vignette. |
+| `assets/ui/boss-dusty.webp, boss-marlene, boss-pitboss, boss-ironsides, boss-curator` | 160x160 WebP each (also used at 96x96 on the ladder), portrait, one clear silhouette per character per ART_ASSETS.md row 6. | Already specified in the game's own art doc; currently a monogram disc drawn by code. |
+| `assets/models/grails/*.glb (Drowned Knight, Astronomer, Koi, Ember Dragon)` | Figure fills ~70 percent of a 22mm sphere, shown at 140px on the inspect turntable, per ART_ASSETS.md row 2. | Already specified; placeholder is one low-poly knight. |

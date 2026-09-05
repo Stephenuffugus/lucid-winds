@@ -155,3 +155,16 @@ Two more Keepers unlock later (`dewkeeper`, `emberkeep`) — same three files ea
 Do as many or as few as you like, in any order. Each one you finish just quietly makes the game prettier. I will keep the manifest and versioning in sync on my end, so you only ever have to drop a correctly-named PNG in the right folder.
 
 — Your Lead Dev
+
+## Fleet audit rows (Sep 04)
+
+Added Sep 05 from the fleet art audit. Same rules as above.
+
+| file | spec | replaces |
+|---|---|---|
+| `assets/gg/maps/map_w1_kitchen.png` | 540x960 full-bleed portrait, under 512KB. Night kitchen-garden bed: raised timber beds, a compost bin at the bottom gate, the winding dirt path painted right in, warm lantern rim light, deep near-black soil, sage foliage, gold glints. | Replaces the code gradient + procedural dirt ribbon on World 1 map 1. drawBg() already calls spr(ctx,'map_kitchen') and falls through to the gradient because assets/gg/maps/ does not exist. |
+| `assets/gg/maps/map_w1_herbspiral.png` | 540x960 full-bleed portrait, under 512KB. Same night garden, different signature terrain: a stone herb spiral, thyme and sage tufts, path painted in. | Second of the four World 1 maps named in ART_ASSETS.md section 6. Right now every map looks identical because they all share the same gradient. |
+| `assets/gg/maps/map_w1_pond.png` | 540x960 full-bleed portrait, under 512KB. Moonlit pond edge, reeds, lily pads, wet stone path painted in. | Third World 1 map. Same hook, same reason. |
+| `assets/gg/maps/map_w1_trellis.png` | 540x960 full-bleed portrait, under 512KB. Bean trellis and arch, hanging vines, straw path painted in. | Fourth World 1 map. Same hook, same reason. |
+| `assets/gg/ui/title_hero_540x960.jpg` | 540x960 full-bleed. The Keeper standing in the kitchen bed at night, back three-quarter, watering can lowered; bottom 45% deliberately dark and quiet so the button stack reads on it. | Replaces the empty flat black behind the GARDEN GUARD wordmark on the title screen. |
+| `assets/gg/ui/ls_thumb_kitchen_128x128.png` | 128x128 transparent, one per map (4 files: kitchen, herbspiral, pond, trellis). A tiny painted vignette of that map's signature feature. | Gives the level-select tiles something other than a numeral, so two tiles in the same frame stop sharing a silhouette. |

@@ -660,3 +660,15 @@ Things the code has that no sheet could invent and every sheet respects: there i
 war (every patrol is always drawn, so "reveal" verbs are sim only); the pooled state and the
 tap knock have no drawing at all today; a body has no kind; the brute is placed on no level;
 the only death is "Dissipated."; and there is no pause.
+
+## Fleet audit rows (Sep 04)
+
+Added Sep 05 from the fleet art audit. Same rules as above.
+
+| file | spec | replaces |
+|---|---|---|
+| `conduit-floors.png` | 2048x512 sheet, 2 rows x 8 cells at 256px, magenta FF00FF gutters and background; wall, wall face, floor, shadow, concealed hatch, vent, door, wet overlay, lit, exfil, void grain, corner tick, in near-black iron 12141C with hairline 1C2030 edges | replaces the single ctx.fillRect flat-colour-per-tile-type at index.html line 1954, so the floor stops being five untextured greys and walls get a face |
+| `conduit-backdrops.png` | 3216x512 strip, 1 row x 6 seamless 512 cells with 24px magenta gutters, one material per site, all within two values of #05060A | fills the empty black void that currently surrounds every site so the floor slabs sit on ground instead of floating on nothing |
+| `conduit-machines.png` | 2048x1024 sheet, 4 rows x 8 cells at 256px, ten devices off and on plus action frames, 17.4px in-game inside a 24px tile, magenta cutout | the ten devices are currently identical small outlined boxes with three-letter text labels (SPR, PLT, SPK); art gives each one a silhouette so the level reads without reading |
+| `conduit-patrols.png` | 2048x1024 sheet, 4 rows x 8 cells at 256px, drone, sentry and brute in eight states each plus bodies and spot ring, 14px in-game, magenta cutout | enemies are the same flat dots as everything else; they are the only moving threat and need to be the most legible thing on the board |
+| `conduit-title-plate.jpg` | 375x667 full-bleed, a near-black facility interior with a violet cast and one lit duct, no text | backs the instructions gate, which today is body copy on flat void and is the first thing anyone sees |

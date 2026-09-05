@@ -882,3 +882,15 @@ per enemy can be afforded, the order of value is: walk 4, die 2, hit 1, special 
 | HTML 462 to 464 | pad glyphs ◀ ⚔ ▶ | S09 |
 | HTML 467 to 538 | title, score, over, options, log sheets | S11 |
 | `manifest.webmanifest`, `icon-*.png` | app icon | S13 |
+
+## Fleet audit rows (Sep 04)
+
+Added Sep 05 from the fleet art audit. Same rules as above.
+
+| file | spec | replaces |
+|---|---|---|
+| `art/lane/sky-wall.png` | 375x68 at 1x, export 1125x204 at 3x, full-bleed, no transparency. Painted night keep wall from the inside: solid lit stone with merlon notches cut in the top edge, moon low and behind, warm horizon haze under it. | Replaces the six-layer #lanebox CSS stack (index.html:146-163) whose dashed teeth read as a scanline ruler and whose radial moon reads as a grey status dot. |
+| `art/lane/floor.png` | 375x132 at 1x, export 1125x396 at 3x, full-bleed, tiles horizontally. Flagstone courses in perspective, lit warm amber at the left (gate) end fading cold blue at the right, top 12px a soft transition band into the wall foot. | Replaces #lane:before (index.html:175), whose 1px slab lines photograph as graph paper and meet the sky on a hard 34% seam. |
+| `art/hero/walk.png` | 4-frame horizontal strip, each cell 180x243 (3x of the 60x81 combat body), transparent PNG. Orange-cloaked defender, big readable silhouette, warm gold rim light from the gate side, sword held low. | Replaces the shared sil() SVG so the hero stops being the same stamp as the enemies; ART_ASSETS.md S02 already specs the full set. |
+| `art/enemies/runner-walk.png` | 4-frame horizontal strip, each cell 180x243, transparent PNG. Thin hunched runner, cold blue-grey, cool rim light from the far end, distinctly narrower shoulders and forward lean than the hero. | Gives the commonest enemy a silhouette the player can tell from their own body at a glance; ART_ASSETS.md S03 specs the hit/die/special companions. |
+| `art/lane/gate.png` | 13x132 at 1x, export 39x396 at 3x, transparent PNG. Iron-banded timber gate leaf with a lit warm edge on its inner face. | The gate is the whole premise and currently renders as a 13px orange accent line (#gate, index.html:205); a painted strip at the same 13px makes it read as a door without changing the truthful cell width. |

@@ -328,3 +328,14 @@ Every character below needs at least idle, move, hit, die and win. Frame counts 
 | `flashHint` (730) | the "Deck is full" hint text | none, text |
 | `frame` (1948) | the loop, DOM throttle fill and rpm, coach text | 08 (throttle fill) |
 | `resize` (1988) | canvas sizing, cache invalidation | none |
+
+## Fleet audit rows (Sep 04)
+
+Added Sep 05 from the fleet art audit. Same rules as above.
+
+| file | spec | replaces |
+|---|---|---|
+| `bg-nearside-1080x2340.jpg` | full-bleed opaque, cover fit. Painted deep-space field: near-black ground, one violet/sage nebula mass off centre, warm gold dust low, stars thinning behind the centre of frame. | Replaces the procedural makeStars blit at draw() line 1280 (already a drawImage, so it is a one-line swap). Kills the flat noise field that makes the whole screen read as one grey value. |
+| `deck-face-1024x1024.png` | transparent PNG, 1024 square, drawn top-down. Brushed metal dish face, warm rim light on the upper-left lip, real bolt heads with cast shadow, engraved index mark and orbit ring. | Replaces the makeDeckFace radial + etch-ring cache at line 1446, which is already a cached drawImage blit. This is the largest object on screen and currently pure wireframe. |
+| `bodies-sheet-1536x512.png` | transparent, 12 cells at 128x128 (target, hazard, heavy, flip body, off-side outline, far-side variants), authored 4x for a 12-25px draw. | Replaces the small dark ferro blobs drawn by drawBodies at line 1395, so the things the player aims at read as objects instead of dots. |
+| `bg-farside-maw-1080x2340.jpg (plus -cess, -nix)` | three full-bleed opaque plates, authored as the finished inverted look, NOT pre-inverted. Maw seared rust (hue 22), Cess verdant green (hue 96), Nix cold cyan (hue 168). | Replaces the flat beige field the composite stack currently produces on the far side of an inversion; drawn at line 1342 in place of the multiplied-back starfield. |

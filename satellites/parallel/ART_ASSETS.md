@@ -389,3 +389,15 @@ Nothing else in the file paints. The SIM block (lines 344 to 1281), the test sui
 4. **Every icon is a font glyph** (`☰ ⚙ ↺ ✕ ◀ ▲ ■ ▶ ▼ ⚷ ★`). `⚷` in particular depends on the device font having it.
 5. **`--good #67d6a5` is declared and never used** by any element.
 6. **The one placeholder rectangle** is the WAIT button's `■`, which is the same shape as the amber diamond's bounding box; Sheet 05 keeps it a square and never a circle so it cannot be confused with avatar A.
+
+## Fleet audit rows (Sep 04)
+
+Added Sep 05 from the fleet art audit. Same rules as above.
+
+| file | spec | replaces |
+|---|---|---|
+| `tile-wall-92x92.png` | 92x92 transparent, painted stone block with a warm top rim light and a dark bottom bevel, 3 variants; must still read at 30px, the 12x12 phone cell size named in ART_ASSETS.md | replaces the flat #2b3048 .t-wall rectangle that fills most of the frame and gives the board a light direction |
+| `avatar-a-92x92.png + avatar-b-92x92.png` | 92x92 transparent pair - a violet moth-lantern for A and its amber mirrored twin for B, soft inner glow, clearly the same creature reflected | replaces the CSS circle and diamond so the mirror premise is legible at a glance |
+| `door-a-92x92.png + door-b-92x92.png` | 92x92 transparent, arched doorway with a lit sill in each twin's colour and a soft threshold glow | replaces the dashed CSS outline, which currently reads as an unfinished placeholder rather than a goal |
+| `pad-icons-64x64.png` | 4-up 64px sheet on transparent (left, jump, wait, right) painted in cream with a warm rim, matching stroke weights | replaces the font glyphs on the control pad, which the game's own art doc names as the reason it looks plain |
+| `bg-parallel-540x960.jpg` | 540x960 full-bleed indigo chamber, vertical light shaft on the centre line, near-black corners | gives the board a room to sit in instead of a flat --bg fill |

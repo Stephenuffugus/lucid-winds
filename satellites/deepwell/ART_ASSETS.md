@@ -781,3 +781,14 @@ a column that snaps 18 to 36 px per tap with no motion (01), and four saved stat
 (`surfaced`, `collapses`, `mined`, `deepest` in `defaultSave` 1390) that the logbook never
 prints. None of those are art tasks on their own, but every sheet above leaves a cell for
 the day they get wired.
+
+## Fleet audit rows (Sep 04)
+
+Added Sep 05 from the fleet art audit. Same rules as above.
+
+| file | spec | replaces |
+|---|---|---|
+| `satellites/deepwell/art/deepwell-04-shale.png (and -topsoil, -darkseam, -wetshelf, -theglass)` | 136x480 transparent PNG each (68px wide in game at 2x), must tile seamlessly top-to-bottom, painted rock strata with seams and dust | Replaces the six flat colour divs at renderShaft line 2669. Wired by changing that line to `background:url(...) center top / 68px auto repeat-y`. |
+| `satellites/deepwell/art/deepwell-01-miner.png` | 1024x2048 sheet, 32 cells, transparent; the miner rendered at 28px plus the lamp pool from 42x44 up to 284px wide | Replaces `#youMark`, currently a 16px amber CSS ring with a 5px dot - the only character in the game. |
+| `satellites/deepwell/art/deepwell-09-surface-header.png` | 694x280 JPG (347x140 in game at 2x), full-bleed painted headframe and winch over the well mouth at dusk | Gives the surface screen a face. Drops in as the first child of `.scrollpane` per the spec's sheet 09; right now that screen opens with nothing but text. |
+| `satellites/deepwell/art/deepwell-08-gear.png` | 640x640 sheet, 16 cells at 40px in game, transparent: tank, lamp, pack, brace, boots, charm, plus cash, sack, pick, winch, down arrow, maxed seal | Breaks the four identical shop rows apart - each one gets its own object instead of the same grey price box. |

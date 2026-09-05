@@ -802,3 +802,14 @@ Every function that touches the DOM is in the table above. Nothing in lines 160 
 - Search result "Nothing here worth carrying away" and Ask result "They give you nothing"
   are toasts with no icon slot; sheet 05 cells 17 and 18 are the first art those moments
   will have.
+
+## Fleet audit rows (Sep 04)
+
+Added Sep 05 from the fleet art audit. Same rules as above.
+
+| file | spec | replaces |
+|---|---|---|
+| `bg-parlour-540x960.jpg` | 540x960, full-bleed, dark oak panelling with a cold fireplace and one lamp, painted almost to black so 12-16% opacity over #0a0b0f still reads as a room | Gives the page a ground. There is currently no background image of any kind, just a flat hex. |
+| `room-96x96.png (x6: study, cellar, hall, kitchen, library, conservatory)` | 96x96 each, transparent, painted corner-of-the-room vignettes lit by a single warm source | Fills the left of each .row so the SEARCH A ROOM list has silhouettes instead of six identical text bars. |
+| `suspect-256x320.png (x6)` | 256x320 each, transparent, painted shoulder-up figures with genuinely different builds, hats, collars and hair, in the existing cyan/gold/grey key | Replaces the one repeated 34x44 SVG silhouette so the six suspects can be told apart at 44px. |
+| `watch-face-256.png` | 256x256, transparent, painted brass pocket-watch face with engraved ticks and a scratched crystal | Sits under the existing SVG hand and ring from watchSvg(), replacing the flat dark disc with the only piece of real object art in the game. |
