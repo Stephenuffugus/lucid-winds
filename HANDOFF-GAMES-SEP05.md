@@ -134,3 +134,12 @@ What was played, what was seen (the three things wrong per frame), what was fixe
 hash, what is not done and why, what needs Stephen (art to paint, a design call, a name).
 Never "verified" without the shot you looked at. Never "done" for a thing that is on the branch
 and not on main.
+
+## JOB D (added Sep 05 ~11:00 ET), Rabbit Ronin: the story between the dojos
+Stephen finished dojo 6 on his phone and wrote: the cut from one level to the next is cold, the
+dash appeared "magically", he wants a simple progressing story on fade in / fade out cards between
+levels, with the ronin looking for his sword in the first dojos and finding it (a small animation)
+where the dash unlocks today. **The story is written and the build is specified in
+`satellites/rabbit-samurai/STORY.md`. Build exactly that.** The camera scoot he also asked for
+(thumbs covering the rabbit) is DONE by Fable, commit on the branch, do not redo it.
+Do JOB D after JOB B and before JOB C. Fence for it: `satellites/rabbit-samurai/**` only.

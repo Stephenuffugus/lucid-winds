@@ -795,12 +795,12 @@ function bgLayer(theme,layer){ var key=theme+'-'+layer;
     im.src='assets/bg-'+theme+'-'+layer+'.png'; }
   return BGIMG[key]; }
 function drawBgSil(theme,layer,cam){
-  var far=(layer==='far'), sp=far?0.16:0.42, base=far?740:830, al=far?0.5:0.85;
+  var far=(layer==='far'), sp=far?0.16:0.42, base=(far?740:830)-VSHIFT, al=far?0.5:0.85;
   var img=bgLayer(theme,layer);
   if(img.ok){ var iw=img.im.width||1080, ih=img.im.height||640, sc=(far?0.75:1)* (VH*0.62/ih);
     var w2=iw*sc, off=((cam*sp)%w2+w2)%w2;
     ctx.globalAlpha=1;
-    for(var x2=-off;x2<VW;x2+=w2)ctx.drawImage(img.im,x2, (far?820:900)-ih*sc, w2, ih*sc);
+    for(var x2=-off;x2<VW;x2+=w2)ctx.drawImage(img.im,x2, (far?820:900)-VSHIFT-ih*sc, w2, ih*sc);
     return; }
   ctx.globalAlpha=al; ctx.fillStyle=far?'rgba(10,14,10,0.9)':'rgba(6,9,6,0.95)';
   var seg=far?170:120, off2=((cam*sp)%seg+seg)%seg, i2, x3;
@@ -831,11 +831,14 @@ function render(){ if(!ctx||!G)return; var L=G.lvl, cam=G.cam, i;
   drawBgSil(L.theme,'far',cam);
   drawBgSil(L.theme,'near',cam);
 
-  ctx.save(); ctx.translate(-cam,0);
+  ctx.save(); ctx.translate(-cam,-VSHIFT);
   if(G.shake>0){ var sk=G.shake*28; ctx.translate((Math.random()-.5)*sk,(Math.random()-.5)*sk); }
   /* tiles */
   var c0=Math.max(0,colAt(cam)-1), c1=Math.min(L.W-1,colAt(cam+VW)+1);
   for(var r=0;r<L.H;r++){ for(var c=c0;c<=c1;c++){ if(L.grid[r][c]) drawTile(c*T,r*T,L.theme, L.grid[r-1]&&L.grid[r-1][c]); } }
+  /* the ground continues under the lifted world (VSHIFT): the bottom floor row repeats
+     down to the screen edge, pits stay open */
+  for(var r2=L.H;r2<L.H+3;r2++){ for(var c2=c0;c2<=c1;c2++){ if(L.grid[L.H-1][c2]) drawTile(c2*T,r2*T,L.theme,true); } }
   /* entities */
   for(i=0;i<L.spikes.length;i++)drawSpike(L.spikes[i]);
   for(i=0;i<L.bounces.length;i++)drawBounce(L.bounces[i]);
@@ -1069,6 +1072,14 @@ function drawHUD(){
 }
 function drawHeart(x,y,full){ ctx.save(); ctx.translate(x,y); ctx.fillStyle=full?'#e05666':'#3a2b2b';
   ctx.beginPath(); ctx.arc(-3,-1,3.2,0,6.28); ctx.arc(3,-1,3.2,0,6.28); ctx.moveTo(-6,0.5); ctx.lineTo(0,7); ctx.lineTo(6,0.5); ctx.closePath(); ctx.fill(); ctx.restore(); }
+/* 2026-09-05, Stephen, playing dojo 6 on his phone: "the screen needs scooted up just a
+   little so the buttons aren't blocking the screen. Right now my thumbs have to block the
+   rabbit because of where the buttons are." The floor is rows 22 and 23 (y 880 to 960) and
+   the pads start at y 836, so the ronin ran at thumb height. The world is DRAWN 110px higher
+   (rows 0 to 2 are empty sky in every dojo: platforms start at row 10 and their anchors at
+   row 6) and three more floor rows are painted under it so the ground meets the bottom edge.
+   Touch zones, physics and the level itself are untouched: this is the camera, not the map. */
+var VSHIFT=110;
 var PAUSE={x:8,y:10,w:44,h:40};
 var BLEFT={x:22,y:VH-118,w:92,h:96};
 var BRIGHT={x:124,y:VH-118,w:92,h:96};
