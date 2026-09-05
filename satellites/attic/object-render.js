@@ -16,7 +16,11 @@
 
   function hb(h, n) { return parseInt(h.substr(n * 2, 2), 16); }
   function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
-  function fit(text, max, avail) { return Math.min(max, (avail || 260) / (Math.max(6, String(text).length) * 0.72)); }
+  /* ⛔ `ls` is the era's letter-spacing in user units: the 80s and 90s titles spread 2.4 and 3
+     units a glyph, and a fit that did not know that ran a 40 glyph title 100 units past its
+     box on the first era contact sheet (2026-09-05). Width is glyphs x 0.72 x size plus the
+     spacing between them, so the spacing comes off the available width first. */
+  function fit(text, max, avail, ls) { var n = Math.max(6, String(text).length); return Math.max(5, Math.min(max, ((avail || 260) - (n - 1) * (ls || 0)) / (n * 0.72))); }
   /* ⛔ NEVER PICK INK BY EYE FROM ONE ERA. Five palettes go through every
      renderer, so a colour that reads on the 1950s cream field is invisible on
      the 1980s near black one. The paperback title was drawn in c[2] on c[1]:
@@ -31,12 +35,23 @@
   function inkOn(bg) { return lum(bg) > 0.42 ? '#17130d' : '#f6efdd'; }
   function dk2(hex) { var h2 = String(hex).replace('#', ''); var r = parseInt(h2.substr(0, 2), 16), g2 = parseInt(h2.substr(2, 2), 16), b = parseInt(h2.substr(4, 2), 16); var f = function (v) { return ('0' + Math.max(0, Math.round(v * 0.72)).toString(16)).slice(-2); }; return '#' + f(r) + f(g2) + f(b); }
 
+  /* ERA DEPTH (2026-09-05). Three of the five eras shared Georgia and a title was the same
+     drawing in five palettes. `ta` is the title's era treatment, dropped into every class's
+     title text: 50s script (italic, tight), 60s bubble (fat round outline in the dark ink),
+     70s slab (spaced, a hard mitre outline), 80s chrome (wide caps, a hairline of the pop
+     colour), 90s grunge (monospace spread wide, a little faded). Attribute strings only, so
+     the nine title lines keep their own sizes and fits. */
   var ERA_LOOK = {
-    '1950s': { c: ['#efe3cd', '#2e7f7a', '#d24a35', '#1e2a32'], f: 'Georgia, serif' },
-    '1960s': { c: ['#e8571d', '#7a2a8a', '#f2b01e', '#241430'], f: 'Georgia, serif' },
-    '1970s': { c: ['#caa452', '#7a4a22', '#3f5b3a', '#241a10'], f: 'Georgia, serif' },
-    '1980s': { c: ['#101018', '#1c1c2c', '#ff2d7a', '#26f0e0'], f: '"Arial Narrow", system-ui, sans-serif' },
-    '1990s': { c: ['#d8d4c8', '#3a3a38', '#8a2b20', '#191917'], f: 'ui-monospace, monospace' }
+    '1950s': { c: ['#efe3cd', '#2e7f7a', '#d24a35', '#1e2a32'], f: 'Georgia, serif',
+      ta: 'font-style="italic" letter-spacing="-0.4"', ls: -0.4 },
+    '1960s': { c: ['#e8571d', '#7a2a8a', '#f2b01e', '#241430'], f: '"Trebuchet MS", "Arial Rounded MT Bold", sans-serif',
+      ta: 'paint-order="stroke" stroke="#241430" stroke-width="1.6" stroke-linejoin="round" letter-spacing="-0.6"', ls: -0.6 },
+    '1970s': { c: ['#caa452', '#7a4a22', '#3f5b3a', '#241a10'], f: 'Rockwell, "Courier New", Georgia, serif',
+      ta: 'paint-order="stroke" stroke="#241a10" stroke-width="1.3" stroke-linejoin="miter" letter-spacing="1.8"', ls: 1.8 },
+    '1980s': { c: ['#101018', '#1c1c2c', '#ff2d7a', '#26f0e0'], f: '"Arial Narrow", system-ui, sans-serif',
+      ta: 'paint-order="stroke" stroke="#26f0e0" stroke-width="0.7" letter-spacing="1.8"', ls: 1.8 },
+    '1990s': { c: ['#d8d4c8', '#3a3a38', '#8a2b20', '#191917'], f: 'ui-monospace, monospace',
+      ta: 'letter-spacing="2.2" opacity="0.9"', ls: 2.2 }
   };
 
   /* ⛔ ONE DUST RENDERER, IN sleeve-render.js. This file used to carry a
@@ -119,11 +134,41 @@
     }
     return s;
   }
+  /* ⛔ THE PRICE STICKER IS AN ERA OBJECT (2026-09-05). One cream oval said "$4.99" on a
+     1953 lunchbox and a 1998 zine alike. The era is read the way the engine reads it
+     (byte 1 mod 5), the price byte stays byte 25 and the tilt byte 24, so nothing else
+     moves. Five stickers a dealer would actually have used: a paper price dot in cents,
+     a trading stamp, an orange price gun label, a black neon shop tag, a clearance
+     barcode. The group carries data-era so a gate can count five. */
+  var ERA_NAMES = ['1950s', '1960s', '1970s', '1980s', '1990s'];
   function priceSticker(h, px, py, big) {
-    var rx = big ? 26 : 24, ry = big ? 14 : 13;
-    return '<g transform="rotate(' + (-6 + hb(h, 24) % 12) + ' ' + px + ' ' + py + ')">'
-      + '<ellipse cx="' + px + '" cy="' + py + '" rx="' + rx + '" ry="' + ry + '" fill="#f5efdd" stroke="#c9bfa4" stroke-width="1"/>'
-      + '<text x="' + px + '" y="' + (py + 4) + '" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" fill="#5a4f3a">$' + (1 + hb(h, 25) % 5) + '.99</text></g>';
+    var era = hb(h, 1) % 5, tilt = -6 + hb(h, 24) % 12, pb = hb(h, 25), s = '';
+    var open = '<g data-era="' + ERA_NAMES[era] + '" transform="rotate(' + tilt + ' ' + px + ' ' + py + ')">';
+    if (era === 0) {          // paper price dot, in cents, a red ring, serif
+      s = '<circle cx="' + px + '" cy="' + py + '" r="14" fill="#f3e9d2" stroke="#c9bfa4" stroke-width="1"/>'
+        + '<circle cx="' + px + '" cy="' + py + '" r="11" fill="none" stroke="#c94a3a" stroke-width="1.2"/>'
+        + '<text x="' + px + '" y="' + (py + 3.5) + '" text-anchor="middle" font-family="Georgia, serif" font-style="italic" font-weight="700" font-size="9.5" fill="#8a2b20">' + (19 + (pb % 5) * 10) + '&#162;</text>';
+    } else if (era === 1) {   // trading stamp: green, perforated edge
+      s = '<rect x="' + (px - 17) + '" y="' + (py - 12) + '" width="34" height="24" fill="#e9e3c8"/>'
+        + '<rect x="' + (px - 17) + '" y="' + (py - 12) + '" width="34" height="24" fill="none" stroke="#f6f2e4" stroke-width="2" stroke-dasharray="2 2"/>'
+        + '<rect x="' + (px - 14) + '" y="' + (py - 9) + '" width="28" height="18" fill="#2e7f4a"/>'
+        + '<text x="' + px + '" y="' + (py - 1) + '" text-anchor="middle" font-family="Georgia, serif" font-weight="700" font-size="5.5" fill="#e9e3c8" letter-spacing="0.6">TRADING</text>'
+        + '<text x="' + px + '" y="' + (py + 6) + '" text-anchor="middle" font-family="Georgia, serif" font-weight="700" font-size="6.5" fill="#f2d16b">' + (1 + pb % 3) + '0 STAMPS</text>';
+    } else if (era === 2) {   // price gun label: orange, a torn left edge, a SALE line
+      s = '<path d="M' + (px - 16) + ' ' + (py - 9) + ' l3 2 l-3 2 l3 2 l-3 2 l3 2 l-3 2 l3 2 l-3 2 l34 0 l0 -16 Z" fill="#e8772a" stroke="#a84e14" stroke-width="0.8"/>'
+        + '<text x="' + (px + 2) + '" y="' + (py + 1) + '" text-anchor="middle" font-family="ui-monospace, monospace" font-weight="700" font-size="9" fill="#2a1408">$' + (1 + pb % 4) + '.' + (pb % 2 ? '29' : '49') + '</text>'
+        + '<text x="' + (px + 2) + '" y="' + (py + 7) + '" text-anchor="middle" font-family="ui-monospace, monospace" font-size="4.5" fill="#2a1408" letter-spacing="1.2">SALE</text>';
+    } else if (era === 3) {   // black shop tag with a neon edge
+      s = '<rect x="' + (px - 18) + '" y="' + (py - 10) + '" width="36" height="20" rx="3" fill="#101018" stroke="#ff2d7a" stroke-width="1.2"/>'
+        + '<text x="' + px + '" y="' + (py + 1) + '" text-anchor="middle" font-family="\'Arial Narrow\', system-ui, sans-serif" font-weight="700" font-size="9" fill="#26f0e0" letter-spacing="1">$' + (3 + pb % 7) + '.99</text>'
+        + '<text x="' + px + '" y="' + (py + 7.5) + '" text-anchor="middle" font-family="\'Arial Narrow\', system-ui, sans-serif" font-size="4.5" fill="#ff2d7a" letter-spacing="1.5">NEW LOW</text>';
+    } else {                  // clearance barcode
+      var i, bars = '';
+      for (i = 0; i < 11; i++) bars += '<rect x="' + (px - 15 + i * 2.7) + '" y="' + (py - 8) + '" width="' + ((pb >> (i % 7)) & 1 ? 1.6 : 0.8) + '" height="8" fill="#1a1a18"/>';
+      s = '<rect x="' + (px - 19) + '" y="' + (py - 11) + '" width="38" height="22" fill="#f6f4ee" stroke="#b9b5aa" stroke-width="0.8"/>' + bars
+        + '<text x="' + px + '" y="' + (py + 8) + '" text-anchor="middle" font-family="ui-monospace, monospace" font-size="5" fill="#1a1a18" letter-spacing="0.4">CLEARANCE ' + (1 + pb % 5) + '.99</text>';
+    }
+    return open + s + '</g>';
   }
   /* SHRINKWRAP. Two crossing highlights and a heat seam, which is what a
      wrapped object actually looks like: the gloss does not follow the art. */
@@ -393,7 +438,7 @@
     }
     g += '</g>';
     g += '<rect x="' + ax + '" y="' + (ay + ah - 46) + '" width="' + aw + '" height="46" fill="' + c[3] + '" opacity="0.88"/>'
-      + '<text x="' + (ax + aw / 2) + '" y="' + (ay + ah - 26) + '" text-anchor="middle" font-family="' + look.f + '" font-weight="800" font-size="' + fit(it.name, 17, aw - 8) + '" fill="' + c[0] + '">' + esc(it.name) + '</text>'
+      + '<text x="' + (ax + aw / 2) + '" y="' + (ay + ah - 26) + '" text-anchor="middle" font-family="' + look.f + '" font-weight="800" ' + look.ta + ' font-size="' + fit(it.name, 17, aw - 8, look.ls) + '" fill="' + c[0] + '">' + esc(it.name) + '</text>'
       + '<text x="' + (ax + aw / 2) + '" y="' + (ay + ah - 10) + '" text-anchor="middle" font-family="' + look.f + '" font-style="italic" font-size="' + fit(String(it.sub).replace(/"/g, '').slice(0, 40), 9, aw - 10) + '" fill="' + c[0] + '" opacity="0.85">' + esc(String(it.sub).replace(/"/g, '').slice(0, 40)) + '</text>';
     // spine label strip, handwritten-ish
     g += '<rect x="' + (bx + 20) + '" y="' + (by + bh - 58) + '" width="' + (bw - 40) + '" height="34" fill="#efe8d2"/>'
@@ -422,7 +467,7 @@
     if (cardBack === 1) { var r1; for (r1 = 0; r1 < 12; r1++) { var ra = (r1 / 12) * Math.PI * 2; g += '<path d="M' + (bx + bw / 2) + ' ' + (by + 172) + ' L' + (bx + bw / 2 + Math.cos(ra) * 130) + ' ' + (by + 172 + Math.sin(ra) * 130) + ' L' + (bx + bw / 2 + Math.cos(ra + 0.2) * 130) + ' ' + (by + 172 + Math.sin(ra + 0.2) * 130) + ' Z" fill="' + c[1] + '" opacity="0.35"/>'; } }
     if (cardBack === 2) { var ck; for (ck = 0; ck < 12; ck++) g += '<rect x="' + (bx + 8 + ck * ((bw - 16) / 12)) + '" y="' + (by + 84) + '" width="' + ((bw - 16) / 12) + '" height="14" fill="' + (ck % 2 ? c[1] : c[2]) + '" opacity="0.8"/>'; g += '<rect x="' + (bx + 8) + '" y="' + (by + bh - 40) + '" width="' + (bw - 16) + '" height="10" fill="' + c[1] + '" opacity="0.7"/>'; }
     g += '<rect x="' + (bx + 8) + '" y="' + (by + 26) + '" width="' + (bw - 16) + '" height="52" fill="' + c[1] + '"/>'
-      + '<text x="' + (bx + bw / 2) + '" y="' + (by + 50) + '" text-anchor="middle" font-family="' + look.f + '" font-weight="800" font-size="' + fit(it.name, 16, bw - 28) + '" fill="' + c[0] + '">' + esc(it.name) + '</text>'
+      + '<text x="' + (bx + bw / 2) + '" y="' + (by + 50) + '" text-anchor="middle" font-family="' + look.f + '" font-weight="800" ' + look.ta + ' font-size="' + fit(it.name, 16, bw - 28, look.ls) + '" fill="' + c[0] + '">' + esc(it.name) + '</text>'
       /* slice(0,38) alone left the gimmick line running off the card edge,
          clipped mid word ("key included (wrong ke"). Fit it to the card. */
       + '<text x="' + (bx + bw / 2) + '" y="' + (by + 68) + '" text-anchor="middle" font-family="' + look.f + '" font-size="' + fit(String(it.sub).slice(0, 44), 8.5, bw - 26) + '" fill="' + c[0] + '" opacity="0.9">' + esc(String(it.sub).slice(0, 44)) + '</text>';
@@ -463,7 +508,7 @@
     // title plate on a jaunty angle
     g += '<g transform="rotate(-4 150 ' + (by + 62) + ')">'
       + '<rect x="' + (bx + 18) + '" y="' + (by + 34) + '" width="' + (bw - 36) + '" height="52" rx="5" fill="' + c[2] + '"/>'
-      + '<text x="150" y="' + (by + 67) + '" text-anchor="middle" font-family="' + look.f + '" font-weight="800" font-size="' + fit(it.name, 24, bw - 52) + '" fill="' + c[0] + '">' + esc(it.name) + '</text></g>';
+      + '<text x="150" y="' + (by + 67) + '" text-anchor="middle" font-family="' + look.f + '" font-weight="800" ' + look.ta + ' font-size="' + fit(it.name, 24, bw - 52, look.ls) + '" fill="' + c[0] + '">' + esc(it.name) + '</text></g>';
     var premise = String(it.sub).split('&middot;')[0].split('·')[0];
     /* fixed 11px on a 46 char slice ran "the rules are four pages and two of
        them are a" straight off both sides of the lid */
@@ -499,7 +544,7 @@
       + '<rect x="' + bx + '" y="' + by + '" width="' + bw + '" height="' + bh + '" rx="3" fill="' + pop + '"/>'
       + '<rect x="' + bx + '" y="' + by + '" width="' + bw + '" height="40" fill="' + deep + '"/>'
       + '<text x="' + (bx + bw / 2) + '" y="' + (by + 25) + '" text-anchor="middle" font-family="' + look.f + '" font-size="10" letter-spacing="3" fill="' + c[0] + '">MORNING FOODS</text>';
-    g += '<text x="' + (bx + bw / 2) + '" y="' + (by + 76) + '" text-anchor="middle" font-family="' + look.f + '" font-weight="800" font-size="' + fit(it.name, 19, bw - 14) + '" fill="' + c[0] + '" stroke="' + deep + '" stroke-width="0.8">' + esc(it.name) + '</text>';
+    g += '<text x="' + (bx + bw / 2) + '" y="' + (by + 76) + '" text-anchor="middle" font-family="' + look.f + '" font-weight="800" ' + look.ta + ' font-size="' + fit(it.name, 19, bw - 14, look.ls) + '" fill="' + c[0] + '" stroke="' + deep + '" stroke-width="0.8">' + esc(it.name) + '</text>';
     // mascot: rolled head shape
     var mx = bx + bw / 2, my = by + 148, mtype = hb(h, 9) < 128 ? hb(h, 17) % 4 : 4 + hb(h, 9) % 4;   // LAYOUT BANK 2
     var skin = ['#f2c14e', '#8ac46a', '#e88a5a', '#9ad8e8'][hb(h, 18) % 4];
@@ -598,7 +643,7 @@
     if (hb(h, 18) % 3 === 0) g += '<path d="M' + (ax + 8) + ' ' + (ay + ah - 6) + ' q ' + (aw * 0.2) + ' -' + (ah * 0.34) + ' ' + (aw * 0.42) + ' -4 Z" fill="' + c[3] + '" opacity="0.55"/>';
     // masthead
     g += '<rect x="' + bx + '" y="' + by + '" width="' + bw + '" height="54" fill="' + c[3] + '"/>'
-      + '<text x="' + (bx + bw / 2 + 14) + '" y="' + (by + 26) + '" text-anchor="middle" font-family="' + look.f + '" font-weight="800" font-size="' + fit(String(it.name).slice(0, 44), 21, bw - 68) + '" fill="' + c[2] + '">' + esc(String(it.name).slice(0, 44)) + '</text>'
+      + '<text x="' + (bx + bw / 2 + 14) + '" y="' + (by + 26) + '" text-anchor="middle" font-family="' + look.f + '" font-weight="800" ' + look.ta + ' font-size="' + fit(String(it.name).slice(0, 44), 21, bw - 68, look.ls) + '" fill="' + c[2] + '">' + esc(String(it.name).slice(0, 44)) + '</text>'
       + '<text x="' + (bx + bw / 2 + 14) + '" y="' + (by + 44) + '" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" letter-spacing="2" fill="' + c[0] + '" opacity="0.85">' + (it._issue || 1) + ' &middot; ' + it.year + '</text>';
     // corner box, bottom left of the masthead, where a real one lives
     g += '<rect x="' + (bx + 5) + '" y="' + (by + 5) + '" width="34" height="44" fill="' + c[0] + '" stroke="' + c[2] + '" stroke-width="1.5"/>'
@@ -638,7 +683,7 @@
     if (vig !== 1) g += '<ellipse cx="' + mx + '" cy="' + my + '" rx="60" ry="74" fill="none" stroke="' + c[2] + '" stroke-width="2.5"/>';
     // title and author
     var pink = inkOn(c[1]);
-    g += '<text x="' + (bx + bw / 2 + 5) + '" y="' + (by + 42) + '" text-anchor="middle" font-family="' + look.f + '" font-weight="800" font-size="' + fit(it.name, 20, bw - 40) + '" fill="' + pink + '">' + esc(String(it.name).slice(0, 34)) + '</text>'
+    g += '<text x="' + (bx + bw / 2 + 5) + '" y="' + (by + 42) + '" text-anchor="middle" font-family="' + look.f + '" font-weight="800" ' + look.ta + ' font-size="' + fit(it.name, 20, bw - 40, look.ls) + '" fill="' + pink + '">' + esc(String(it.name).slice(0, 34)) + '</text>'
       + '<text x="' + (bx + bw / 2 + 5) + '" y="' + (by + 62) + '" text-anchor="middle" font-family="' + look.f + '" font-style="italic" font-size="10" fill="' + pink + '" opacity="0.75">' + esc(String(it.sub).split('·')[0].trim()) + '</text>';
     // colophon and price
     g += '<rect x="' + (bx + 22) + '" y="' + (by + bh - 34) + '" width="16" height="16" fill="' + c[2] + '"/>'
@@ -714,7 +759,7 @@
     // printed title on the bezel
     /* ⛔ inkOn(shell), never #ffffff: a pale 1990s shell made the printed title white on grey */
     g += '<text x="' + (bx + bw / 2) + '" y="' + (by + 22) + '" text-anchor="middle" font-family="ui-monospace, monospace" font-size="7.5" letter-spacing="2.5" fill="' + inkOn(shell) + '" opacity="0.72">' + esc(String(it.sub).split('·')[0].trim().toUpperCase().slice(0, 24)) + '</text>'
-      + '<text x="' + (bx + bw / 2) + '" y="' + (by + 158) + '" text-anchor="middle" font-family="' + look.f + '" font-weight="800" font-size="' + fit(it.name, 18, bw - 26) + '" fill="' + inkOn(shell) + '">' + esc(String(it.name).slice(0, 28)) + '</text>';
+      + '<text x="' + (bx + bw / 2) + '" y="' + (by + 158) + '" text-anchor="middle" font-family="' + look.f + '" font-weight="800" ' + look.ta + ' font-size="' + fit(it.name, 18, bw - 26, look.ls) + '" fill="' + inkOn(shell) + '">' + esc(String(it.name).slice(0, 28)) + '</text>';
     // d pad and buttons
     var dx2 = bx + 44, dy2 = by + 202;
     g += '<rect x="' + (dx2 - 9) + '" y="' + (dy2 - 27) + '" width="18" height="54" rx="4" fill="#211f1c"/>'
@@ -764,7 +809,7 @@
     // title banner across the middle
     g += '<g transform="rotate(-3 ' + (bx + bw / 2) + ' ' + (by + bh * 0.5) + ')">'
       + '<rect x="' + (bx + 20) + '" y="' + (by + bh * 0.38) + '" width="' + (bw - 40) + '" height="42" rx="6" fill="' + c[2] + '" stroke="' + c[3] + '" stroke-width="2"/>'
-      + '<text x="' + (bx + bw / 2) + '" y="' + (by + bh * 0.38 + 27) + '" text-anchor="middle" font-family="' + look.f + '" font-weight="800" font-size="' + fit(it.name, 22, bw - 62) + '" fill="' + c[3] + '">' + esc(String(it.name).slice(0, 34)) + '</text></g>';
+      + '<text x="' + (bx + bw / 2) + '" y="' + (by + bh * 0.38 + 27) + '" text-anchor="middle" font-family="' + look.f + '" font-weight="800" ' + look.ta + ' font-size="' + fit(it.name, 22, bw - 62, look.ls) + '" fill="' + c[3] + '">' + esc(String(it.name).slice(0, 34)) + '</text></g>';
     // latch and hinge
     g += '<rect x="' + (bx + bw / 2 - 15) + '" y="' + (by + bh - 12) + '" width="30" height="16" rx="3" fill="#5d564c"/>'
       + '<rect x="' + (bx + bw / 2 - 9) + '" y="' + (by + bh - 8) + '" width="18" height="7" rx="2" fill="#8f8a80"/>'

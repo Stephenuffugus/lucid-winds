@@ -186,3 +186,7 @@ Every grade now says where its wear came from, one line under the plate after th
 ### Litter Bug identity pass (Sep 05, later)
 
 Every bug's lore now ends on a line about a part it actually has, the specimen card and the PNG name its family, and the Bugdex has family chips that filter the grid. The bigger find: a new mint is drawn at growth 0.36 and most scored parts grow in between level 4 and 17, so a LEGENDARY minted as a plain grub with nine chips it did not show. The chips for parts not grown in are dashed now, the mint screen says how many are still to come and which is next at what level, and the ledger has a GROWN row. Shots: `lb-identity-mint.png`, `lb-identity-dex.png`, `lb-identity-spec-front.png`, `lb-identity-spec-back.png`, `lb-identity-card.png`. Driver `lbident.mjs`.
+
+### The Attic era pass (Sep 05, later)
+
+A 1953 lunchbox and a 1998 zine used to wear the same cream $4.99 oval. Now each era has its own sticker (paper cent dot, trading stamp, price gun label, neon shop tag, clearance barcode) and its own title voice (script, bubble, slab, chrome, grunge) on every class but records. Sheet: `attic-era-sheet.png` (`erasheet.mjs`).

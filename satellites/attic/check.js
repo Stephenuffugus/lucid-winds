@@ -35,7 +35,7 @@ try {
   ATTIC = require(process.env.AT_ENGINE ? path.resolve(process.env.AT_ENGINE) : path.join(ROOT, 'attic-engine.js'));
   ECON = require(path.join(ROOT, 'attic-econ.js'));
   SLEEVE = require(path.join(ROOT, 'sleeve-render.js'));
-  OBJ = require(path.join(ROOT, 'object-render.js'));
+  OBJ = require(process.env.AT_OBJECT ? path.resolve(process.env.AT_OBJECT) : path.join(ROOT, 'object-render.js'));   /* AT_OBJECT: a mutant renderer to watch */
 } catch (e) {
   console.error('harness: could not load the game :: ' + e.message);
   process.exit(2);
@@ -294,6 +294,29 @@ group('the reveal: nothing says the condition before the wipe');
     if (OBJ.renderItem(HASHES[j], 240, { dusty: true }).svg !== OBJ.renderItem(HASHES[j], 240).svg) differs++;
   }
   ok('the dusty state is a different picture from the clean one', differs === 300, differs + '/300');
+}
+group('era depth: five eras, five stickers, five title treatments');
+{
+  /* the era is byte 1 mod 5 (the engine's law); the sticker shows on wiped grades up to
+     NEAR MINT; the title carries the era treatment. Sweep every class at GOOD. */
+  const eraSeen = {}, taSeen = {}, missing = [];
+  ATTIC.CLASSES.forEach(c => {
+    const base = HASHES.find(h => ATTIC.hashToItem(h).cls === c);
+    if (!base) return;
+    for (let e = 0; e < 5; e++) {
+      const h = setByte(setByte(base, 1, e), 2, 0x88);   // era e, GOOD
+      const it = ATTIC.hashToItem(h), svg = OBJ.renderItem(h, 300).svg;
+      const m = svg.match(/data-era="([0-9]{4}s)"/);
+      if (c !== 'RECORD') { if (m && m[1] === it.era) eraSeen[it.era] = (eraSeen[it.era] || 0) + 1; else missing.push(c + '/' + it.era); }
+      if (c !== 'RECORD') { const ta = { '1950s': /font-style="italic"/, '1960s': /stroke-linejoin="round"/, '1970s': /stroke-linejoin="miter"/, '1980s': /stroke="#26f0e0" stroke-width="0\.7"/, '1990s': /letter-spacing="2\.2"/ }[it.era]; if (ta && ta.test(svg)) taSeen[it.era] = (taSeen[it.era] || 0) + 1; }
+    }
+  });
+  ok('every non record class shows the sticker of its era at GOOD, all five eras', Object.keys(eraSeen).length === 5 && missing.length === 0, missing.slice(0, 6).join(', ') || Object.keys(eraSeen).join(' '));
+  ok('every era puts its own treatment on the title', Object.keys(taSeen).length === 5 && Object.values(taSeen).every(n => n >= 8), JSON.stringify(taSeen));
+  /* the sticker is grade blind below MINT and absent above NEAR MINT */
+  const base = HASHES.find(h => ATTIC.hashToItem(h).cls === 'TOY');
+  const at = g => (OBJ.renderItem(setByte(base, 2, g), 300).svg.match(/data-era=/g) || []).length;
+  ok('the sticker shows on TRASHED through NEAR MINT and not on MINT or FACTORY SEALED', at(0x08) === 1 && at(0xC0) === 1 && at(0xE8) === 1 && at(0xFA) === 0 && at(0xFF) === 0, [at(0x08), at(0xC0), at(0xE8), at(0xFA), at(0xFF)].join(','));
 }
 group('the condition ladder is legible: seven grades, seven pictures');
 {
@@ -607,7 +630,9 @@ if (process.env.AT_NOBROWSER === '1') { console.log('\n(browser group skipped: A
         const grade = document.getElementById('gp').textContent.replace(/[^A-Z ]/g, '').trim();
         const bank = (window.ATTIC && window.ATTIC.WEAR && window.ATTIC.WEAR[grade]) || [];
         const r = s2.getBoundingClientRect();
-        res({ before, after: s2.textContent, shown: getComputedStyle(s2).display, grade, inBank: bank.indexOf(s2.textContent) >= 0, h: Math.round(r.height) });
+        /* the slot is the class flaw (when the class has one) followed by the wear story, so the
+           story is the END of the text, not the whole of it */
+        res({ before, after: s2.textContent, shown: getComputedStyle(s2).display, grade, inBank: bank.some(l => s2.textContent.slice(-l.length) === l), h: Math.round(r.height) });
       }, 1300);
     }));
     ok('before the wipe the wear line is empty and hidden', wear.before.text === '' && wear.before.shown === 'none', JSON.stringify(wear.before));
