@@ -13,23 +13,15 @@ this file wins; every difference is in section 3 with its reason.
 
 - 2026-09-05 Fable: plan written. Nothing built.
 - 2026-09-05 Opus: P0 step 1, the gate red with no `sim.js` to run, pasted in section 13.
-- 2026-09-05 Opus: **P0 DONE. P1, P2 and P3 not started.** Three gates green: `lint`, `theory` (110 assertions),
-  `render`. `docs/shots/p0-swell.wav` exists, fourteen seconds, mono, 1.2 MB, and its envelope is in section 13.
-  Everything the app needs to RUN is written (SYNTH, SCHEDULER, ENGINE, AURORA, INPUT, RECORD, AMBIENT, SAVE, BOOT and
-  every screen), but only the render gate has exercised it: **nothing has driven this page with a real pointer yet and
-  no screenshot has been taken of it.**
-  **NEXT ACTION, exactly:** P1 step 3, write `satellites/swell/test/hold.mjs`, the shape of
-  `satellites/asterism/test/draw.mjs`, using `test/harness.mjs` which is already here and already carries the autoplay
-  flag. It must assert, with REAL pointer events on `#stage`: an eight second hold moves `SWELL_DEV.state()` through
-  `held`, with `SWELL_DEV.sectionLive` becoming true for strings, then violins, then horns, then choir, each later than
-  the last; a release moves it to `resolving` and then to `idle`; a press and release inside 180 ms logs a hit rather
-  than a hold; and `SWELL_DEV.rafRunning()` is false two seconds after silence (3.11, the battery rule). Then P1 step 4:
-  `tools/shots.mjs` (copy Asterism's, which gates the shutter and not the walk) for `p1-swell.png` mid hold and
-  `p1-resolve.png` a second after release, and OPEN THEM: if the curtain reads as a gradient rectangle rather than as
-  light, the band count and the noise in `curtain()` are what to change, before P2.
-  **Then** P2 (multi touch, the three moods in the picker, ambient with the wake lock, the recorder) and P3 (tilt,
-  video, the battery sweep, the thumb and the documents). The theory for ambient and the sleep timer is already written
-  and asserted; only the wiring and its gates are left.
+- 2026-09-05 Opus: **DONE P3.** P0, P1, P2 and P3 built and green. Seven gates in `tools/check.js`, every one watched to
+  fail, output in section 13. Five screenshots and one WAV opened and three faults named in each.
+  The app is playable end to end by a real thumb: hold to swell, let go to resolve, three fingers for three sections,
+  three moods, ambient with the wake lock and a sleep timer, a recording of the sound or of the sound and the light,
+  and the frame loop stops when nothing is sounding, measured at all four sizes.
+  **NOT BUILT, on purpose:** the mood plates (behind `art/plates.json`, which ships empty), the particles the design
+  mentions, and an embedded font. **Wired but unproven:** tilt, because a headless browser has no gyroscope.
+  **Next action for whoever opens this:** nothing is half finished. The open questions are in the morning report and
+  the biggest of them is Stephen's ear.
 
 ---
 
@@ -506,7 +498,165 @@ FAIL  dawn never puts two voices on the same note   [expected 0, got 397]
 8. And the gate itself was measuring wrong: half second windows measure the
    beating between detuned voices as much as the crescendo.
 ```
+
+### The whole suite, green (2026-09-05, end of the run)
+
+```
+$ node satellites/swell/tools/check.js
+lint            pass  0s
+theory          pass  0s
+render          pass  3s
+hold            pass  26s
+record          pass  9s
+layout          pass  30s
+thumb           pass  11s
+
+ALL GATES PASSED
+
+$ node sim.js --test
+PASSED 110 / FAILED 0   (total 110)
+
+$ node tools/shots.mjs
+the battery pass: 412x915 idle, 375x667 idle, 320x568 idle, 915x412 idle
+11 shots, all under 200 KB
+```
+
+### The swell as it stands, which is what the WAV holds
+
+```
+  the envelope, RMS every half second in dBFS:
+  0.0s  -35.3   0.5s  -31.1   1.0s  -30.0   1.5s  -25.9   2.0s  -25.7
+  2.5s  -25.5   3.0s  -24.0   3.5s  -24.8   4.0s  -23.5   4.5s  -25.0
+  5.0s  -22.6   5.5s  -20.0   6.0s  -20.2   6.5s  -18.9   7.0s  -20.5
+  7.5s  -21.1   8.0s  -25.3   8.5s  -27.3   9.0s  -31.5   9.5s  -35.7
+  10.0s -18.7   10.5s -39.0   11.0s -49.7   11.5s -61.1   12.0s -68.5
+  12.5s -82.1   13.0s -101.6  13.5s -117.8
+```
+
+Sixteen decibels of crescendo from the press to the top of the hold, a peak sample of 0.404 against a ceiling of 0.9,
+thirty oscillators against a budget of forty eight, and the spike at ten seconds is the timpani landing with the
+tonic. **`docs/shots/p0-swell.wav` is the shot. Listen to it before reading anything else.**
+
+### Every gate watched to fail
+
+```
+$ (an edge weight that does not sum to one)
+FAIL  dawn edge weights all sum to one and name real chords: I weights sum to 1.100
+$ (the tension bias removed)
+FAIL  dawn wanders further from home under tension (1.06 against 1.06)
+$ (the voices choosing their tones independently again)
+FAIL  dawn never puts two voices on the same note   [expected 0, got 397]
+$ (the first note's attack at two seconds)
+FAIL  sound is there fifty milliseconds after the press: -63.5 dBFS
+$ (the ceiling gain at three)
+FAIL  the ceiling holds, the peak sample is 1.253
+$ (cadences pointed at vi instead of the tonic)
+FAIL  and it ends on the tonic, which is the whole promise
+$ (the horns coming in before the violins)
+FAIL  the orchestra arrives in order: strings, horns, violins, choir
+$ (the frame loop never stopping)
+FAIL  the frame loop stops when nothing is sounding, which is the battery rule
+FAIL  and it really is stopped: no frames at all in a second (1971 then 2043)
+$ (the audio context opened at boot)
+FAIL  no audio context exists before the first touch
+$ (the Blob read on stop() instead of in onstop)
+FAIL  and it is a real recording, 0 KB
+$ (the app not saying which way the file went)
+FAIL  and it tells the player which way it went: ""
+$ (.btn.small at 40 px)                       60 red lines across four sizes
+$ (the chrome never getting out of the way)
+FAIL  375x667  the chrome is out of the way half a second after a touch
+$ (REC parked in the music pill's seat)
+FAIL  375x667  the bottom left 120 by 120 is free for the music pill: btnRec at 14,593
+```
+
+### Nine things the gates and the ear caught
+
+```
+1. VOICE LEADING COLLAPSED TO A UNISON inside four chords, and the plan's own
+   assertion could not see it: a unison is the smallest possible move.
+2. GESTURES WERE IMMEDIATE, NOT SCHEDULED. A release scheduled for six seconds
+   fired the moment it was queued; the render gate asked for a six second hold
+   and got a flat envelope with only the strings in it. Ambient mode queues its
+   whole night the same way and had exactly the same bug in it.
+3. THE RESPONSE TO A PRESS WAS SILENCE, 78 dB down at fifty milliseconds.
+4. THE CRESCENDO ONLY GOT BRIGHTER, so it dipped across a chord change.
+5. THE AURORA WAS A STRIPED RECTANGLE filling the whole screen, which is the
+   exact failure the plan names at P1 step 4.
+6. THE AURORA WENT BLACK ON RELEASE while five seconds of cadence were still
+   sounding: p1-resolve.png was a blank screen and the picture and the sound
+   disagreed.
+7. THREE 404s ON EVERY BOOT from probing for art that does not exist yet.
+8. A LINE OF BROKEN COPY on the mood picker: "a film first morning".
+9. A FILLED AMBER SLAB on the ambient screen, louder than START.
+```
+
 ## 15. THE MORNING REPORT
+
+### Morning report, 2026-09-05
+
+**Phases:** P0 (`98322fe1`, `d0a2d8cb`), P1 (`63db0a11`), P2 (`b82ddca9`), P3 (this commit). Swell is **DONE P3**.
+
+**Gates:** `ALL GATES PASSED`, seven: `lint theory render hold record layout thumb`. 110 assertions in
+`sim.js --test`. Every one watched to fail; fifteen failure columns are in section 13. `tools/shots.mjs` also measures
+the battery rule at all four sizes and all four are idle after silence.
+
+**LISTEN TO THIS FIRST:** `satellites/swell/docs/shots/p0-swell.wav`. Fourteen seconds, mono, 1.2 MB, double
+clickable. A press at 0.2 seconds, a release at 6.2, rendered offline through the same synth the app runs. That file is
+the review; everything else here is bookkeeping.
+
+**Play it:** `satellites/swell/index.html`. Hold anywhere. Let go. Menu for the moods, ambient and settings. REC bottom
+right; the video toggle is in Settings and it is off until asked for. `?test=1` runs the assertion harness into a panel.
+
+**Look at:** these five.
+1. `docs/shots/p1-swell.png` — the whole orchestra under one finger. **Wrong with it:** the curtains blur into one mass
+   at the base where they all meet the floor; the tops are needles rather than the ragged edge an aurora has; over half
+   the screen is empty, which is right for a dark game and still reads as bottom heavy.
+2. `docs/shots/p1-resolve.png` — the curtain falling and cooling a second after release. **Wrong with it:** the cool
+   blue and the warm amber read as two separate curtains rather than one cooling one; the bottom is a hard bright band;
+   the composition is the same as the swell shot at lower brightness, so the two are hard to tell apart.
+3. `docs/shots/p2-two-fingers.png` — the second finger owning the choir. **Wrong with it:** it looks almost identical
+   to the resolve shot, so the thing it is meant to show is not visible in a still; the ice blue is the only clue.
+4. `docs/shots/p2-moods.png` — the picker. **Wrong with it:** a big dead gap between the last card and BACK; the mood
+   names are set in the same weight as everything else so the cards read flat; nothing shows which mood is playing
+   except a thin border.
+5. `docs/thumb.png` — the arcade tile. **Wrong with it:** the top half is empty except one blue spike; at 150 px on the
+   shelf that spike may vanish and leave only amber; the amber curtains blur into one mass.
+
+**Decided without you** (all of `docs/DECISIONS.md`, these three matter most):
+- *"voice leading takes the nearest FREE tone that keeps a voice above the one below it."* The plan's rule collapsed all
+  three voices onto one note within four chords and its own assertion was happy about it.
+- *"gestures are scheduled, not immediate."* Ambient mode had the same bug the render gate found.
+- *"the first note of a touch takes forty milliseconds."* The plan asks for a fifty millisecond response in the same
+  paragraph that gives the strings a 0.35 second attack; this is how both are true.
+
+**Blocked:** none.
+
+**For Fable:** nothing outside the fence was touched by this leg. To list it: `docs/thumb.png` goes to
+`portal-assets/thumbs/swell.png` and the card is in section 8; every line of it is true now. One thing worth your own
+eyes: earlier in the run, on the Fathom and Asterism legs, a persisted shell directory created three files outside a
+fence, and one of them briefly appended to the repository root `index.html`. It was restored with `git checkout` and
+verified byte identical to HEAD.
+
+**For Stephen, and this one is really for you:**
+- **The ear.** You are the producer. The WAV is Dawn, one finger, six seconds. What I cannot hear and you can: whether
+  the strings are too bright at the top of the filter sweep; whether the timpani at the cadence is too loud, it is the
+  spike at ten seconds and it is the single loudest thing in the file; whether the hall at 0.28 wet is too much; and
+  whether six seconds of hold is enough of an arc or whether the layering windows want stretching. Every one of those
+  is one number in CONFIG or in the SPEC table and a line in DECISIONS.
+- **Storm and Lullaby have never been heard by anybody.** The WAV is Dawn. `node sim.js --walk=storm,3` prints their
+  chord walks to read, but nobody has listened to them. If you want them rendered too, that is one line in the render
+  gate.
+- **The name.** SWELL is what the folder and the title say. Tutti, Maestro, Crescendo and Holdfast are yours, and so is
+  the worry that Swell is a common word.
+- **The phone.** The gates run under an autoplay flag a phone does not have. An AudioContext made before a gesture
+  stays suspended on iOS with every scheduled note landing in silence and no error; the engine is opened inside
+  `pointerdown` for exactly that reason and only a real phone can prove it. Also on the phone: three fingers at once,
+  a quick tap, tilt (which no gate can reach), Lullaby with the fifteen minute timer, and one recording shared to
+  Jessie.
+
+**Next action:** nothing in Swell is half finished. The next session takes the next row of section 5 of the spine.
+
 
 ### Morning report, 2026-09-05
 
@@ -567,6 +717,71 @@ record, layout`.
 ---
 
 ## 15. THE MORNING REPORT
+
+### Morning report, 2026-09-05
+
+**Phases:** P0 (`98322fe1`, `d0a2d8cb`), P1 (`63db0a11`), P2 (`b82ddca9`), P3 (this commit). Swell is **DONE P3**.
+
+**Gates:** `ALL GATES PASSED`, seven: `lint theory render hold record layout thumb`. 110 assertions in
+`sim.js --test`. Every one watched to fail; fifteen failure columns are in section 13. `tools/shots.mjs` also measures
+the battery rule at all four sizes and all four are idle after silence.
+
+**LISTEN TO THIS FIRST:** `satellites/swell/docs/shots/p0-swell.wav`. Fourteen seconds, mono, 1.2 MB, double
+clickable. A press at 0.2 seconds, a release at 6.2, rendered offline through the same synth the app runs. That file is
+the review; everything else here is bookkeeping.
+
+**Play it:** `satellites/swell/index.html`. Hold anywhere. Let go. Menu for the moods, ambient and settings. REC bottom
+right; the video toggle is in Settings and it is off until asked for. `?test=1` runs the assertion harness into a panel.
+
+**Look at:** these five.
+1. `docs/shots/p1-swell.png` — the whole orchestra under one finger. **Wrong with it:** the curtains blur into one mass
+   at the base where they all meet the floor; the tops are needles rather than the ragged edge an aurora has; over half
+   the screen is empty, which is right for a dark game and still reads as bottom heavy.
+2. `docs/shots/p1-resolve.png` — the curtain falling and cooling a second after release. **Wrong with it:** the cool
+   blue and the warm amber read as two separate curtains rather than one cooling one; the bottom is a hard bright band;
+   the composition is the same as the swell shot at lower brightness, so the two are hard to tell apart.
+3. `docs/shots/p2-two-fingers.png` — the second finger owning the choir. **Wrong with it:** it looks almost identical
+   to the resolve shot, so the thing it is meant to show is not visible in a still; the ice blue is the only clue.
+4. `docs/shots/p2-moods.png` — the picker. **Wrong with it:** a big dead gap between the last card and BACK; the mood
+   names are set in the same weight as everything else so the cards read flat; nothing shows which mood is playing
+   except a thin border.
+5. `docs/thumb.png` — the arcade tile. **Wrong with it:** the top half is empty except one blue spike; at 150 px on the
+   shelf that spike may vanish and leave only amber; the amber curtains blur into one mass.
+
+**Decided without you** (all of `docs/DECISIONS.md`, these three matter most):
+- *"voice leading takes the nearest FREE tone that keeps a voice above the one below it."* The plan's rule collapsed all
+  three voices onto one note within four chords and its own assertion was happy about it.
+- *"gestures are scheduled, not immediate."* Ambient mode had the same bug the render gate found.
+- *"the first note of a touch takes forty milliseconds."* The plan asks for a fifty millisecond response in the same
+  paragraph that gives the strings a 0.35 second attack; this is how both are true.
+
+**Blocked:** none.
+
+**For Fable:** nothing outside the fence was touched by this leg. To list it: `docs/thumb.png` goes to
+`portal-assets/thumbs/swell.png` and the card is in section 8; every line of it is true now. One thing worth your own
+eyes: earlier in the run, on the Fathom and Asterism legs, a persisted shell directory created three files outside a
+fence, and one of them briefly appended to the repository root `index.html`. It was restored with `git checkout` and
+verified byte identical to HEAD.
+
+**For Stephen, and this one is really for you:**
+- **The ear.** You are the producer. The WAV is Dawn, one finger, six seconds. What I cannot hear and you can: whether
+  the strings are too bright at the top of the filter sweep; whether the timpani at the cadence is too loud, it is the
+  spike at ten seconds and it is the single loudest thing in the file; whether the hall at 0.28 wet is too much; and
+  whether six seconds of hold is enough of an arc or whether the layering windows want stretching. Every one of those
+  is one number in CONFIG or in the SPEC table and a line in DECISIONS.
+- **Storm and Lullaby have never been heard by anybody.** The WAV is Dawn. `node sim.js --walk=storm,3` prints their
+  chord walks to read, but nobody has listened to them. If you want them rendered too, that is one line in the render
+  gate.
+- **The name.** SWELL is what the folder and the title say. Tutti, Maestro, Crescendo and Holdfast are yours, and so is
+  the worry that Swell is a common word.
+- **The phone.** The gates run under an autoplay flag a phone does not have. An AudioContext made before a gesture
+  stays suspended on iOS with every scheduled note landing in silence and no error; the engine is opened inside
+  `pointerdown` for exactly that reason and only a real phone can prove it. Also on the phone: three fingers at once,
+  a quick tap, tilt (which no gate can reach), Lullaby with the fifteen minute timer, and one recording shared to
+  Jessie.
+
+**Next action:** nothing in Swell is half finished. The next session takes the next row of section 5 of the spine.
+
 
 The template in `plans/fathom/HANDOFF-FATHOM.md` section 15, with this file's phases. Add one line: **Listen to:** the path of
 the WAV and its envelope in numbers.

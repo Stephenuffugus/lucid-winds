@@ -78,6 +78,33 @@ if (got) {
   say(saved.indexOf(got.name) < 0 && !/webm|mp4|blob/i.test(saved), 'and nothing about the recording is kept in the save');
 }
 
+/* the light as well as the sound, behind its own toggle in Settings */
+await tap(page, '#btnSavedDone'); await sleep(200);
+await tap(page, '#btnMenu'); await sleep(200);
+await tap(page, '#btnSettings'); await sleep(250);
+await centre(page, '#btnVideo').then(c => say(!!c && c.h >= 48 && c.onTop, 'the video toggle is reachable in Settings'));
+say(!(await dev(() => window.SWELL_DEV.wantVideo())), 'and it is off until it is asked for');
+await tap(page, '#btnVideo'); await sleep(200);
+say(await dev(() => window.SWELL_DEV.wantVideo()), 'tapping it turns it on');
+say(/LIGHT/.test(await dev(() => document.getElementById('btnVideo').textContent)), 'and the button says what it will do now');
+say((await dev(() => window.SWELL_DEV.videoCapSeconds())) === 30, 'a recording is capped at thirty seconds');
+await tap(page, '#btnSettingsClose'); await sleep(200);
+await press();
+await page.waitForFunction(() => window.SWELL_DEV.state() === 'held', { timeout: 10000 });
+await tap(page, '#btnRec'); await sleep(2500);
+await lift();
+await tap(page, '#btnRec');
+const vid = await page.waitForFunction(() => {
+  const r = window.SWELL_DEV.lastRecording();
+  return r && /^video/.test(r.type) ? r : null;
+}, { timeout: 20000 }).then(() => dev(() => window.SWELL_DEV.lastRecording())).catch(() => null);
+say(!!vid, 'with the light on, REC keeps a video');
+if (vid) {
+  say(/^video\/(webm|mp4)/.test(vid.type), 'of a type this app asked for: ' + vid.type);
+  say(vid.size > 20000, 'and it is a real file, ' + Math.round(vid.size / 1024) + ' KB');
+  say(/\.(webm|mp4)$/.test(vid.name), 'named with the right extension: ' + vid.name);
+}
+
 say(errors.length === 0, 'nothing landed on the console' + (errors.length ? ': ' + errors.join(' | ') : ''));
 await browser.close(); close();
 console.log('');

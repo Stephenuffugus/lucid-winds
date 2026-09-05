@@ -162,6 +162,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--ink);color:var(--cream
     <div class="cap">Settings</div>
     <button class="btn small" id="btnSoundTest">PLAY ONE SWELL</button>
     <button class="btn small" id="btnTilt">TILT OFF</button>
+    <button class="btn small" id="btnVideo">RECORD SOUND ONLY</button>
     <button class="btn small" id="btnMotion">MOTION ON</button>
     <div class="tiny" id="tiltNote">Tilt leans the brightness of the sound. It asks the phone first.</div>
     <button class="btn small ghost" id="btnSettingsClose">CLOSE</button>
@@ -1508,19 +1509,33 @@ document.addEventListener('visibilitychange', function () {
 
 /* ---- recording ---- */
 var MIMES = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm'];
-function pickMime() {
-  var i;
+var VMIMES = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/mp4', 'video/webm'];
+function pickMime(video) {
+  var list = video ? VMIMES : MIMES, i;
   if (!window.MediaRecorder) return null;
-  for (i = 0; i < MIMES.length; i++) if (MediaRecorder.isTypeSupported(MIMES[i])) return MIMES[i];
+  for (i = 0; i < list.length; i++) if (MediaRecorder.isTypeSupported(list[i])) return list[i];
   return '';
 }
+/* thirty seconds is the cap, because a recording that runs until the phone
+   fills up is not a keepsake and nobody watches a five minute aurora */
+var VIDEO_CAP_S = 30;
 function toggleRecord() {
   if (G.recorder) { G.recorder.stop(); return; }
   var ctx = audio();
   if (!ctx) return;
-  var stream = ENG.stream();
-  var mime = pickMime();
-  if (!stream || mime === null) { toast('This browser will not record.'); return; }
+  var audioStream = ENG.stream();
+  if (!audioStream) { toast('This browser will not record.'); return; }
+  var stream = audioStream, mime = pickMime(!!G.wantVideo);
+  if (G.wantVideo && CV.captureStream) {
+    /* the aurora and the sound together: the canvas track plus the audio track
+       the master already feeds */
+    try {
+      var vs = CV.captureStream(30);
+      var tracks = vs.getVideoTracks().concat(audioStream.getAudioTracks());
+      stream = new MediaStream(tracks);
+    } catch (e) { mime = pickMime(false); }
+  }
+  if (mime === null) { toast('This browser will not record.'); return; }
   G.chunks = [];
   try { G.recorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream); }
   catch (e) { toast('This browser will not record.'); return; }
@@ -1528,6 +1543,7 @@ function toggleRecord() {
   G.recorder.ondataavailable = function (e) { if (e.data && e.data.size) G.chunks.push(e.data); };
   /* the Blob arrives in onstop, never on stop() */
   G.recorder.onstop = function () {
+    clearTimeout(G.recCap);
     var blob = new Blob(G.chunks, { type: G.recMime });
     G.recorder = null;
     $('btnRec').classList.remove('on');
@@ -1537,6 +1553,9 @@ function toggleRecord() {
   G.recorder.start();
   G.recStart = Date.now();
   $('btnRec').classList.add('on');
+  /* the cap stops it by itself, and the sheet comes up the same way */
+  clearTimeout(G.recCap);
+  G.recCap = setTimeout(function () { if (G.recorder) G.recorder.stop(); }, VIDEO_CAP_S * 1000);
   tickRec();
 }
 function tickRec() {
@@ -1545,7 +1564,8 @@ function tickRec() {
   setTimeout(tickRec, 250);
 }
 function offerRecording(blob) {
-  var ext = /mp4/.test(blob.type) ? 'm4a' : 'webm';
+  var isVid = /^video/.test(blob.type);
+  var ext = /mp4/.test(blob.type) ? (isVid ? 'mp4' : 'm4a') : 'webm';
   var d = new Date();
   var pad = function (n) { return (n < 10 ? '0' : '') + n; };
   var name = 'swell-' + G.mood + '-' + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) +
@@ -1652,6 +1672,11 @@ function wire() {
         if (r === 'granted') go(); else toast('The phone said no to tilt.');
       }).catch(function () { toast('The phone said no to tilt.'); });
     } else go();
+  });
+  tap('btnVideo', function () {
+    G.wantVideo = G.wantVideo ? 0 : 1;
+    $('btnVideo').textContent = G.wantVideo ? 'RECORD THE LIGHT TOO' : 'RECORD SOUND ONLY';
+    toast(G.wantVideo ? 'It will keep the picture as well, up to thirty seconds.' : 'Sound only.');
   });
   tap('btnMotion', function () {
     G.settings.motion = G.settings.motion ? 0 : 1;
@@ -1771,6 +1796,8 @@ window.SWELL_DEV = {
   lastRecording: function () {
     return G.lastBlob ? { size: G.lastBlob.size, type: G.lastBlob.type, name: G.lastName, path: G.lastPath || null } : null;
   },
+  wantVideo: function () { return !!G.wantVideo; },
+  videoCapSeconds: function () { return VIDEO_CAP_S; },
   render: async function (opts) {
     opts = opts || {};
     var secs = opts.seconds || 14, sr = opts.sampleRate || 44100;

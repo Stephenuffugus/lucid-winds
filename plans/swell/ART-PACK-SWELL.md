@@ -1,62 +1,70 @@
-# Swell, Art Pack (four sheets, paste ready)
+# Swell art pack
 
-**For:** Stephen's Midjourney month. Relax mode, four variations per prompt, upscale only the pick. The app ships with no
-image files: the aurora is generated from the music and stays generated. These sheets sit behind the three mood cards in the
-picker and, if it beats the drawn one, the icon. Bring the PNGs to `satellites/swell/art-drop/` (never overwrite a raw file)
-and the ART-LEDGER row moves from LISTED to DROPPED.
+Four sheets, paste ready. **The app ships finished without any of them**: the aurora is generated
+from the engine's own state and stays generated. Only the three mood plates change what a player
+sees, and they sit behind the picker cards at 45 percent. `satellites/swell/ART_ASSETS.md` says
+exactly how a delivered plate gets wired in, which is: drop the file in `art/` and add its mood id to
+`art/plates.json`.
 
-**The look, in one line:** a dark concert hall seen from the podium, painted light. Cinematic, generous, a little
-overwhelming in the good way. No instruments in focus, no people, no text.
-
-**Locked suffix for every Swell prompt** (paste it on the end of each one; reuse the seed of the first pick on the others):
-
-```
---style raw --s 200 --chaos 6 --no text, letters, watermark, people, faces, hands, instruments
-```
+The `--ar` and `--style` flags are Midjourney syntax, not player copy.
 
 ---
 
-## Sheet 1 of 4: Dawn plate (4:3)
+## 1. `mood-dawn.png` — behind the Dawn card
 
-File back: `mood-dawn.png`. Behind the Dawn card at 45 percent.
-
-```
-the first light of morning pouring into a vast empty concert hall from high windows, warm amber and pale gold haze, dust in the light, wide cinematic painting, soft, generous, hopeful, no instruments, no people --ar 4:3
-```
-
-## Sheet 2 of 4: Storm plate (4:3)
-
-File back: `mood-storm.png`. Behind the Storm card.
+Sits behind small type at 45 percent, so it must be quiet, low contrast and empty in the middle.
 
 ```
-a vast dark concert hall with weather inside it, low storm clouds rolling under the ceiling, a single shaft of cold blue light on the empty podium, deep indigo and slate, brass gold glints in the dark, dramatic cinematic painting, no instruments, no people --ar 4:3
+the first light over a wide flat country, low warm cloud, no sun disc, no
+horizon detail, almost no contrast, soft amber and grey, painterly, empty in
+the middle, --ar 4:3 --style raw --stylize 150
 ```
 
-## Sheet 3 of 4: Lullaby plate (4:3)
-
-File back: `mood-lullaby.png`. Behind the Lullaby card.
+## 2. `mood-storm.png` — behind the Storm card
 
 ```
-a small warm room at night with a music box glow, soft lavender and dusk blue, a curtain moving gently, tiny points of light drifting like slow snow, calm, quiet, safe, painted, no instruments, no people --ar 4:3
+weather coming in over open water, low dark cloud with one bright break in it,
+no lightning, no rain, no boat, cold grey and a little brass, almost no
+contrast, empty in the middle, --ar 4:3 --style raw --stylize 150
 ```
 
-Pick, for all three, the one that reads at the size of a card (about 340 by 255 on a phone) with the mood name laid over it.
-
-## Sheet 4 of 4: Icon mark (1:1)
-
-File back: `icon-mark.png`. The PWA icon, only if it beats the drawn one; the mark inside the central 80 percent.
+## 3. `mood-lullaby.png` — behind the Lullaby card
 
 ```
-app icon, three vertical curtains of aurora light rising from a single point at the bottom centre, amber ice blue and gold on near black, centred, generous margin, flat painted glow, no border, no text --ar 1:1
+a dark room late in the evening with one warm lamp out of frame, soft shadow on
+a wall, no furniture, no person, no window, very low contrast, warm grey and
+faint amber, empty in the middle, --ar 4:3 --style raw --stylize 120
 ```
+
+All three delivered 4:3. They go in as `art/mood-<name>.jpg` at 1200x900, q80. **The host resizes
+anything over 1600 px on a side**, so never deliver larger.
 
 ---
 
-## Delivery table
+## 4. `icon-mark.png` — only if it beats the drawn one
 
-| Sheet | Ratio | File back | Where it lands |
-|---|---|---|---|
-| 1 Dawn | 4:3 | `mood-dawn.png` | `satellites/swell/art/mood-dawn.jpg` 1200x900 q80 |
-| 2 Storm | 4:3 | `mood-storm.png` | `satellites/swell/art/mood-storm.jpg` 1200x900 q80 |
-| 3 Lullaby | 4:3 | `mood-lullaby.png` | `satellites/swell/art/mood-lullaby.jpg` 1200x900 q80 |
-| 4 Icon mark | 1:1 | `icon-mark.png` | `icon-512.png`, `icon-192.png`, `icon-maskable-512.png` |
+The drawn icon already ships: bands of light rising out of one point, warm at the bottom and cool at
+the top, which is how the orchestra stacks. A painted one only replaces it if it reads better at
+48 px.
+
+```
+app icon, five bands of light rising from a single point at the bottom, amber at
+the base going to pale blue at the top, on near black, flat, minimal, centred,
+no instrument, no note, no waveform, no text, --ar 1:1 --style raw --stylize 100
+```
+
+512, 192, and a **maskable 512 with the mark inside the central 80 percent**: Android crops maskable
+icons to an arbitrary shape, and a corner radius over 50 in viewBox units collapses the tile to a
+circle whose transparent corners composite to BLACK on an iOS home screen.
+
+---
+
+## What NOT to draw
+
+- **No instrument.** No violin, no conductor, no baton, no sheet music, no piano. Nobody in this app
+  is a musician and the whole promise is that you do not need to be.
+- **No waveform, no equaliser bars, no spectrum.** Those are pictures of audio software.
+- **No face, no hands, no figure.** The only hand in this app is the player's own.
+- **No aurora photograph.** The aurora in the app is generated and it is stylised; a photograph of a
+  real one behind a picker card would promise something the screen does not do.
+- **Nothing busy in the middle of a plate.** Small type sits there.

@@ -31,6 +31,7 @@ const SIZES = {
 };
 const { base, close } = await serve();
 const wrote = [];
+const battery = [];
 
 async function shoot(page, name) {
   if (!want(name)) return;
@@ -92,11 +93,28 @@ for (const key of Object.keys(SIZES)) {
     await shoot(page, 'p2-ambient');
     await tap(page, '#btnAmbientBack'); await sleep(250);
   }
+  /* THE BATTERY PASS, MEASURED AT EVERY WIDTH. 3.11 says the frame loop stops
+     when nothing is sounding. A rule nobody measures at every size is a hope. */
+  await page.waitForFunction(() => window.SWELL_DEV.state() === 'idle', { timeout: 30000 }).catch(() => {});
+  const idle = await page.waitForFunction(() => !window.SWELL_DEV.rafRunning(), { timeout: 20000 })
+    .then(() => true).catch(() => false);
+  const f0 = await page.evaluate(() => window.SWELL_DEV.frames());
+  await sleep(1200);
+  const f1 = await page.evaluate(() => window.SWELL_DEV.frames());
+  battery.push({ tag: size.width + 'x' + size.height, idle: idle, drew: f1 - f0 });
   await browser.close();
-  console.log('  (' + size.width + 'x' + size.height + ' done)');
+  console.log('  (' + size.width + 'x' + size.height + ' done, frame loop ' +
+    (idle && f1 === f0 ? 'idle after silence' : 'STILL RUNNING, ' + (f1 - f0) + ' frames in a second') + ')');
 }
 close();
+const busy = battery.filter(b => !b.idle || b.drew > 0);
+console.log('\nthe battery pass: ' + battery.map(b => b.tag + ' ' + (b.idle && b.drew === 0 ? 'idle' : 'BUSY')).join(', '));
 const over = wrote.filter(w => w.kb > 200);
 console.log('\n' + wrote.length + ' shots' + (over.length ? ', ' + over.length + ' OVER the limit' : ', all under 200 KB'));
 console.log('OPEN THEM. A shot nobody looked at is how a gradient rectangle ships as an aurora.');
+if (busy.length) {
+  console.log('THE FRAME LOOP KEEPS RUNNING AFTER SILENCE AT: ' + busy.map(b => b.tag).join(', '));
+  console.log('SHOTS BATTERY FAILED');
+  process.exit(1);
+}
 console.log(over.length ? 'SHOTS OVER LIMIT' : 'SHOTS OK');

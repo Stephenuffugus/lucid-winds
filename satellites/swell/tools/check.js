@@ -35,7 +35,8 @@ const BROWSER_GATES = [
   { name: 'render', cmd: ['test/render.mjs'], need: 'RENDER OK' },
   { name: 'hold',   cmd: ['test/hold.mjs'],   need: 'HOLD OK', slow: true },
   { name: 'record', cmd: ['test/record.mjs'], need: 'RECORD OK' },
-  { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK', slow: true }
+  { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK', slow: true },
+  { name: 'thumb',  cmd: ['tools/thumb.mjs'],  need: 'THUMB OK', slow: true }
 ];
 
 const results = [];
