@@ -9,12 +9,15 @@ thin Android shell that opens it full screen, offline through the game's own ser
 ```
 /tmp/bw/node_modules/.bin/bubblewrap     npm i @bubblewrap/cli   (in /tmp/bw)
 /tmp/bw/jdk                              Temurin JDK 17 (Bubblewrap wants 17, the box has 25)
-/tmp/bw/sdk                              Android cmdline-tools + platform-tools + build-tools;34.0.0 + platforms;android-34
+/tmp/bw/sdk                              Android cmdline-tools + platform-tools + build-tools;36.1.0 + platforms;android-36 (Bubblewrap 1.24 pins 36.1.0), plus a `bin` symlink to cmdline-tools/latest/bin because Bubblewrap validates the SDK by looking for `tools/` or `bin/`
 ~/.bubblewrap/config.json                {"jdkPath":"/tmp/bw/jdk","androidSdkPath":"/tmp/bw/sdk"}
 ```
 Recreate after a codespace rebuild: `bash store/ftw-play/twa/setup-toolchain.sh` (below).
 
 ## Build
+
+Bubblewrap prompts through inquirer and crashes without a TTY (`ERR_USE_AFTER_CLOSE`), so
+`~/.bubblewrap/config.json` is written by hand and every command gets `printf '\n\n\n' |` on stdin.
 
 ```
 cd store/ftw-play/twa
