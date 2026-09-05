@@ -3,25 +3,24 @@
 
 ## SESSION STATE — the next action
 
-**2026-09-04 late, Fable.** Opus's four claims were verified before anything was built on them:
-Meshy ledger proven both ways (old file 2 POSTs, fixed 1), backdrop hook applies only when the file
-exists, overflow-x measured (sticky 45 of 45, rootrush slide peaks 356 px under 375), Bebas loaded
-8 of 8 in the after column (the before control was invalid, see §6). The two boards with genuinely
-untappable content are fixed and measured (Shut the Box 18 of 18 tiles on screen at 48 px, Word
-Search 100 of 100 cells, 33 px at 375 and 28 at 320, zero sidescroll on both). Dice set rendered
-and cut to 128 px ship sprites; discs 4 of 5 rendered when Blender was killed for memory, the last
-one is rendering again. **Committed** on `add-sproing-jumper` as `40466406` (fenced: play/shell.*,
-shared.css, forge3d, tools/pieces rig + cutter + dice sprites, these docs). Render masters stay out
-of git; the rig regenerates them.
+**2026-09-05 early, Fable.** After Keepsies (its own handoff), the audit's cross-cutting jobs went down
+in lift order, each measured before and after and looked at, each its own commit on `add-sproing-jumper`:
+JOB 4 header clipping (`e0164451`, with JOB 3), JOB 3 the ♫ chip (same), JOB 6 Queen Bee's 20 MB boards
+(`1e0322cc`), JOB 5's code half (`ab99df55`), JOB 7's five native cards (`a6df3f35`), the piece rig's
+dice and discs (`bf609f16`), and the four shell fixes plus two boards from the first pass (`40466406`).
+JOB 10's nine boards do not reproduce on this tree (row in §3). Everything is on the branch; main
+carries what the other session deployed under its Jimothy push (bc7be9c2, 40466406) and nothing after.
 
-1. **Three Director calls are still OPEN** in §5. Do not guess them.
-2. **Next build work, in order:** the remaining seven sidescrolling natives from
-   `FLEET-ART-DETAIL-NATIVES.md` (petalfall 79, farkle 71, reversi 34, stopten 10, merge 7,
-   backgammon 5, c4 4 px), each measured at 375 and 320 and LOOKED at; then the disc sprites
-   into whichever game asked for them; then stones, rings, tiles through the same rig.
-3. **Keepsies took the evening** (Stephen's phone notes on the end game); that work is its own
-   commit `bc7be9c2` and its own handoff, `HANDOFF-KEEPSIES.md`.
-4. Tandem tree still: `git add` fenced paths only, `git pull --rebase --autostash` first.
+**Still open, in order:**
+1. **Three Director calls in §5.** Unchanged. Plus JOB 8 (emoji as art, a policy) and JOB 9 (delete the
+   16 MB of phone photos in `assets/games/pipe/repello/`, move masters to the vault), both his nod.
+2. **JOB 7's satellite cards** (row in §3): three need their own taps written down, two have no page.
+3. **JOB 5's paint**: Glyph Forge, Tarot Run and Tomato Man art from the image lane; briefs exist.
+4. **JOB 1's art**: the backdrop hook is live for 66 natives and `assets/games/bg/` is empty; the specs
+   are in `FLEET-ART-AUDIT-SEP04.md` under Backgrounds & backdrops. That is the image lane.
+5. The long tail: 900 CSS jobs and 747 art files named per game in the two DETAIL files.
+
+Tandem tree still: `git add` fenced paths only, `git pull --rebase --autostash` first.
 
 ---
 
@@ -65,6 +64,7 @@ The whole rebuild pipeline lives in the session scratchpad and is re-runnable:
 | **Per-game backdrop hook** | `play/shell.js` `init()` | file present → applies with scrim; absent → old gradient untouched |
 | **JOB 4: header no longer clips "Sign in"** (Fable) | `play/shell.css`, `play/shell.js`, `music-player.js` | with the SDK's own `(+8 pending)` chip: overflow **17px→0 at 320, 15px→0 at 375**, header 61px on one line at 320/360/375/390. Cause was the music button's attract state forcing `min-width:96px` in the header row (Stephen's 7/17 glow-up), now glyph+pulse under 400px; feedback button hidden under 400 (was 360); "pending" word dropped under 400; wallet's "☀ 0" no longer wraps |
 | **JOB 7 (native half): five cards re-shot** (Fable) | `assets/games/thumbs/{chess,c4,lights,pipe,slider}.png` | were 128 to 256px paletted at 7 to 15 KB (Chess 9 KB); now 400x400 from the play frame, board element clipped exactly (Chess the inner 8x8 with every rank, Four in a Row with ten discs on it, Pipe without its instruction line), 256 colour dithered, 57 to 133 KB; looked at on a labelled sheet (⛔ an unlabelled sheet had me reading Pipe as Lights) |
+| **JOB 7 (satellite half): not done** (Fable, Sep 05) | none | Sprout Dice, Rootbound and Twin Lanterns each need deeper navigation than a start tap (the first playable floor is at the bottom of the climb list; Rootbound's bed cell is not a button and a text match hits the grid; Twin Lanterns' path wants two named lanterns first); Whack Box and Jade Garden have no page under `satellites/` (Jade Garden is a spec in `assets/`). The shooter is `scratchpad/satshoot.mjs`; each needs its own three taps written down |
 | **JOB 10's nine boards: not reproduced** (Fable, Sep 05) | measured, no change | with the overflow un-clamp in place, `documentElement.scrollWidth - innerWidth` and the widest element past the right edge both read **0 at 375 and 320, boot and first play frame, how-to sheet open or closed**, for petalfall, farkle, reversi, stopten, merge, backgammon and c4 (boards confirmed rendered by screenshot). Stop Ten's `.st-mode` at x 856 sits inside an overflow-hidden carousel. Whatever produced 4 to 79 px on Sep 04 is not on this tree by this method; if a board scrolls on a phone, measure the state it scrolls in first |
 | **JOB 5 (the code half): templated art slots no longer fetched** (Fable) | `satellites/glyph-forge/index.html`, `satellites/tarot-run/index.html`, `tarot-run/manifest.json` | both loaders skip a slot still carrying its template and the static `enemy-{id}` / `enemy-?` attributes are empty until the game sets a real id; headless: **0 malformed art-slot requests** in both (legit slots still ask). Tarot Run's manifest points at the arcade's shared icon so an installed app has one; the painted art itself is still the image lane |
 | **JOB 6: Queen Bee ships cuts, not masters** (Fable) | `games/pollen.js`, `tools/cut_cards.py`, `assets/games/masterpollinator/**/*-card.jpg` | a twelve card board: **15 art requests, 20.2 MB → 0.5 MB**; 101 masters (134 MB, opaque RGB) cut to 512px JPEG q82 (4.4 MB, ~20-50 KB each); board and inspect view looked at, the inspect box is 528 device px so 512 is 1:1 |
