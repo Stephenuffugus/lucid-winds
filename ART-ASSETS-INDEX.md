@@ -1,4 +1,22 @@
-# ART ASSETS INDEX, every game that needs paint (Sep 05 2026)
+# ART ASSETS INDEX
+
+## BATCH 1, six files. Nothing below this box matters until these are in.
+
+| # | file | what | covers |
+|---|---|---|---|
+| 1 | `assets/games/bg/family-bench-900x1600.jpg` | a dark greenhouse potting bench seen from above, worn wood or slate, one warm lamp from the upper left, corners falling to near black, nothing in the middle third | 41 natives: every puzzle, pattern, word, math and creative game |
+| 2 | `assets/games/bg/family-table-900x1600.jpg` | a dark green felt table with a warm lamp pool at the centre, near black corners, a hint of worn wood along the bottom edge | 14 natives: every card and dice game |
+| 3 | `assets/games/bg/family-board-900x1600.jpg` | a dark walnut tabletop, straight grain, one warm lamp from the upper left, near black corners | 11 natives: every board game |
+| 4 | `satellites/litter-bug/bug-style-hero-1024x1024.png` | ONE bug, cel shaded flat vector look, facing right, in the game palette (rust, moss, spark, ooze, glass, ash); never shipped, it sets the style every traced part follows | every bug in Litter Bug |
+| 5 | `satellites/litter-bug/bg-alley-900x1600.jpg` | the night alley: brick, green dumpster with the lid up and a cat on it, chain fence right, one sodium lamp top right with a puddle, near black ground band across the bottom third | every screen of Litter Bug |
+| 6 | `satellites/attic/bg-attic-900x1600.png` | a midnight attic: rafters top third, a round dormer window right with one cool shaft of light, crates along the floor, a bulb top left; about fifteen points lighter than #171310 so the shapes read | every screen of The Attic |
+
+The three family plates are wired by me once they land: the backdrop hook already picks
+`assets/games/bg/<id>.jpg` per game, so each game gets a copy of its family's plate under its own name.
+Full bleed plates are portrait 900x1600 (the host resizes any side over 1600). Masters stay yours; web
+copies are cut under new names.
+
+## Everything else (parked until batch 1 is in)
 
 One `ART_ASSETS.md` per game, in the game's own folder. Natives keep theirs in `assets/games/<id>/`
 (drop the files there too); satellites in `satellites/<slug>/`; the eleven vendored satellites in
