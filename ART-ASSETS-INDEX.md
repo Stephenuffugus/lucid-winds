@@ -1,5 +1,7 @@
 # ART ASSETS INDEX
 
+> The phone copy of batch 1 is a Google Doc in 012Assets: https://docs.google.com/document/d/1ZJ_65jToqmmKH9bXIrp3JHyJxUfCwTz7fYTzPLwcQ5g/edit ("ART QUEUE — START HERE"). This file is the source of truth; the Doc is regenerated from it.
+
 ## BATCH 1, six files. Nothing below this box matters until these are in.
 
 | # | file | what | covers |
