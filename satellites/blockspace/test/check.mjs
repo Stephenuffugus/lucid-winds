@@ -124,6 +124,16 @@ await pg.evaluate(async()=>{ const u8=await BS.packJSON(BS.exportJSON()); locati
 await frames(3); ok(await count()===smileyN&&await pg.evaluate(()=>location.hash==='')&&await pg.evaluate(()=>BS.S.P.name==='Smiley'),'opening a link imports the build as a copy and clears the hash');
 await pg.mouse.move(165,32); await pg.mouse.down(); await sleep(560); await pg.mouse.up(); await frames(2);
 ok(await pg.evaluate(()=>document.getElementById('toast').classList.contains('on')&&document.getElementById('toast').textContent==='Mirror'),'long-press on an icon says what it is');
+const stl=await pg.evaluate(()=>{ const buf=BS.exportSTL(); const dv=new DataView(buf); return {bytes:buf.byteLength,tris:dv.getUint32(80,true),blocks:BS.S.P.blocks.length,z0:dv.getFloat32(84+12+8,true)}; });
+ok(stl.tris===stl.blocks*12&&stl.bytes===84+50*stl.tris,'STL export has twelve triangles per block ('+stl.tris+' triangles, '+stl.bytes+' bytes)');
+ok(await pg.evaluate(()=>BS.CLIP.canRecord()),'this browser can record a clip (MediaRecorder + captureStream)');
+await pg.evaluate(()=>{ BS.MB.bpm=240; BS.CLIP.start(); }); await sleep(600);
+ok(await pg.evaluate(()=>!!BS.CLIP.rec&&BS.CLIP.rec.state==='recording'&&document.getElementById('mbLabel').textContent.includes('recording')),'record a clip starts the music box and the recorder');
+const clipBytes=await pg.evaluate(()=>new Promise(r=>{ const orig=BS.CLIP.finish.bind(BS.CLIP); BS.CLIP.finish=async(mime)=>{ const n=BS.CLIP.chunks.reduce((s,c)=>s+c.size,0); BS.CLIP.rec=null; BS.CLIP.chunks=[]; BS.MB.label(); r(n); }; BS.CLIP.stop(); }));
+ok(clipBytes>1000,'the clip has bytes in it ('+clipBytes+')');
+await pg.evaluate(()=>{ BS.MB.stop(); BS.setTool('build'); BS.setSky('night'); }); await frames(4);
+ok(await pg.evaluate(()=>!!BS.FIREFLIES.pts&&BS.FIREFLIES.pts.visible),'fireflies come out at night');
+await pg.evaluate(()=>BS.setSky('day')); await frames(2); ok(await pg.evaluate(()=>!BS.FIREFLIES.pts.visible),'and go away by day');
 console.log('── perf: 2000 blocks');
 await pg.evaluate(()=>{ const p=BS.newProject('perf'); p.gridSize=32; let id=1; for(let x=0;x<20;x++) for(let z=0;z<20;z++) for(let y=0;y<5;y++) p.blocks.push({id:id++,p:[x,y,z],r:[0,0,0],f:[x%12,z%12,y%12,3,4,5],m:(x+z)%9===0?1:0}); p.nid=id; BS.startProject(p); BS.CAM.reframe(); });
 await frames(10);

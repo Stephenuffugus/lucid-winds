@@ -6,9 +6,9 @@
 <meta name="theme-color" content="#0d100c">
 <meta name="description" content="Build anything out of colored blocks in a pocket 3D studio where every color is a note.">
 <title>Blockspace</title>
-<link rel="manifest" href="manifest.json?v=20260905b">
-<link rel="icon" href="icon-192.png?v=20260905b">
-<link rel="apple-touch-icon" href="icon-192.png?v=20260905b">
+<link rel="manifest" href="manifest.json?v=20260905c">
+<link rel="icon" href="icon-192.png?v=20260905c">
+<link rel="apple-touch-icon" href="icon-192.png?v=20260905c">
 <style>
 :root{
   --bg:#0d100c; --ink:#e8dcc8; --gold:#c8a84b; --sage:#7ab356; --muted:#98a086;
@@ -118,7 +118,7 @@ textarea{min-height:120px;font-family:ui-monospace,Menlo,monospace;font-size:12p
 #projacts{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
 @media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
 </style>
-<script type="importmap">{"imports":{"three":"./lib/three.module.min.js?v=20260905b"}}</script>
+<script type="importmap">{"imports":{"three":"./lib/three.module.min.js?v=20260905c"}}</script>
 </head>
 <body>
 <div id="sky"></div>
@@ -215,6 +215,7 @@ textarea{min-height:120px;font-family:ui-monospace,Menlo,monospace;font-size:12p
     <button class="btn" id="mMusicBox">Music box</button>
     <button class="btn" id="mPlayMode">Play mode</button>
     <button class="btn" id="mReplay">Watch it build</button>
+    <button class="btn" id="mClip">Record a clip</button>
   </div>
   <h3>Grid</h3>
   <div class="seg" id="gridSeg"><button data-g="16">16</button><button data-g="24" class="on">24</button><button data-g="32">32</button><button data-g="48">48</button></div>
@@ -234,6 +235,7 @@ textarea{min-height:120px;font-family:ui-monospace,Menlo,monospace;font-size:12p
     <button class="btn" id="mExport">Export file</button>
     <button class="btn" id="mCode">Copy code</button>
     <button class="btn" id="mLink">Copy link</button>
+    <button class="btn" id="mStl">3D print file</button>
     <button class="btn" id="mImport">Import</button>
   </div>
   <div id="importBox" hidden style="margin-top:10px">
@@ -304,7 +306,7 @@ import * as THREE from 'three';
    ===================================================================================== */
 
 /* [S1] CONFIG ------------------------------------------------------------------------ */
-const VERSION='20260905b';
+const VERSION='20260905c';
 const CHUNK=8, CAP_SOFT=3000, CAP_HARD=5000, PAL_MAX=32, UNDO_MAX=200;
 const GRIDS=[16,24,32,48];
 const $=id=>document.getElementById(id);
@@ -833,6 +835,7 @@ const AUDIO={
     this.dry=c.createGain(); this.wet=c.createGain(); this.wet.gain.value=0.16; const conv=c.createConvolver(); conv.buffer=this.impulse(0.8);
     this.dry.connect(this.limiter); this.wet.connect(conv); conv.connect(this.limiter); this.limiter.connect(this.master); this.master.connect(c.destination);
     this.ambGain=c.createGain(); this.ambGain.gain.value=0; this.ambGain.connect(this.limiter);
+    try{ this.recDest=c.createMediaStreamDestination(); this.master.connect(this.recDest); }catch(e){ this.recDest=null; }
     this.applySettings(); if(S.settings.amb||S.settings.asmr) this.startAmbience(); },
   applySettings(){ if(!this.master) return; const v=(S.settings.sound?1:0)*Math.pow(S.settings.vol/100,1.5)*(S.settings.asmr?0.7:1); this.master.gain.setTargetAtTime(v,this.ctx.currentTime,0.05); },
   impulse(sec){ const c=this.ctx, n=Math.floor(c.sampleRate*sec), b=c.createBuffer(2,n,c.sampleRate); for(let ch=0;ch<2;ch++){ const d=b.getChannelData(ch); for(let i=0;i<n;i++){ d[i]=(Math.random()*2-1)*Math.pow(1-i/n,2.6)*0.5; } } return b; },
@@ -1071,6 +1074,44 @@ async function copyLink(){ const txt=exportJSON(); const u8=await packJSON(txt);
 $('mLink').onclick=copyLink;
 async function importFromHash(){ const m=location.hash.match(/#b=([A-Za-z0-9_-]+)/); if(!m) return false; try{ const txt=await unpackJSON(b64u.dec(m[1])); history.replaceState(null,'',location.pathname+location.search); importText(txt); $('welcome').hidden=true; S.settings.seenWelcome=true; saveSettings(); return true; }catch(e){ toast('That link did not open'); return false; } }
 
+/* [S21] STL EXPORT: every block as twelve triangles, 10 mm per block, binary STL ----- */
+function exportSTL(){ const bl=S.P.blocks; const n=bl.length*12; const buf=new ArrayBuffer(84+50*n); const dv=new DataView(buf); let o=80; dv.setUint32(o,n,true); o+=4;
+  const m=new THREE.Matrix4(), v=[new THREE.Vector3(),new THREE.Vector3(),new THREE.Vector3(),new THREE.Vector3()], nm=new THREE.Vector3(), a=new THREE.Vector3(), b=new THREE.Vector3(); const N=S.P.gridSize;
+  for(const blk of bl){ blockMatrix(blk,m); for(const F of FACES){ for(let i=0;i<4;i++) v[i].set(F.v[i][0],F.v[i][1],F.v[i][2]).applyMatrix4(m);
+      for(const tri of [[0,1,2],[0,2,3]]){ const p0=v[tri[0]],p1=v[tri[1]],p2=v[tri[2]]; nm.copy(a.subVectors(p1,p0)).cross(b.subVectors(p2,p0)).normalize();
+        // STL is Z-up: (x, y, z) here is (x, -z, y) there, scaled to 10 mm per block, lifted so the floor is z = 0
+        const put=(vec)=>{ dv.setFloat32(o,(vec.x+N/2)*10,true); dv.setFloat32(o+4,(N/2-vec.z)*10,true); dv.setFloat32(o+8,vec.y*10,true); o+=12; };
+        dv.setFloat32(o,nm.x,true); dv.setFloat32(o+4,-nm.z,true); dv.setFloat32(o+8,nm.y,true); o+=12; put(p0); put(p1); put(p2); dv.setUint16(o,0,true); o+=2; } } }
+  return buf; }
+$('mStl').onclick=()=>{ if(!S.P.blocks.length){ toast('Build something first'); return; } const blob=new Blob([exportSTL()],{type:'model/stl'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=(S.P.name.replace(/[^a-z0-9]+/gi,'-')||'blockspace')+'.stl'; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },2000); toast('3D print file saved. Each block is 10 mm.',3000); AUDIO.fx('ui'); };
+
+/* [S22] RECORD A CLIP: one music box sweep, picture and sound, to the share sheet ------- */
+const CLIP={rec:null,chunks:[],timer:0,
+  canRecord(){ return !!(window.MediaRecorder&&canvas.captureStream); },
+  start(){ if(this.rec) return; if(!this.canRecord()){ toast('This browser cannot record video. Try Chrome.'); return; } if(!S.P.blocks.length){ toast('Build something first'); return; }
+    AUDIO.unlock(); if(!MB.on) MB.start(); const N=S.P.gridSize; const secs=Math.min(15,Math.max(4,N*(30/MB.bpm)));
+    const tracks=[...canvas.captureStream(30).getVideoTracks()]; if(AUDIO.recDest) tracks.push(...AUDIO.recDest.stream.getAudioTracks());
+    const mime=['video/mp4;codecs=avc1','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'].find(m=>MediaRecorder.isTypeSupported(m))||'';
+    try{ this.rec=new MediaRecorder(new MediaStream(tracks),mime?{mimeType:mime,videoBitsPerSecond:6e6}:undefined); }catch(e){ toast('Recording did not start'); this.rec=null; return; }
+    this.chunks=[]; this.rec.ondataavailable=e=>{ if(e.data&&e.data.size) this.chunks.push(e.data); }; this.rec.onstop=()=>this.finish(mime);
+    this.rec.start(250); $('mbLabel').textContent='● recording'; this.timer=setTimeout(()=>this.stop(),secs*1000); },
+  stop(){ clearTimeout(this.timer); if(this.rec&&this.rec.state!=='inactive') this.rec.stop(); },
+  async finish(mime){ const blob=new Blob(this.chunks,{type:mime||'video/webm'}); this.rec=null; this.chunks=[]; MB.label(); const ext=mime.startsWith('video/mp4')?'mp4':'webm';
+    const file=new File([blob],(S.P.name.replace(/[^a-z0-9]+/gi,'-')||'blockspace')+'.'+ext,{type:blob.type});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){ try{ await navigator.share({files:[file],title:S.P.name}); return; }catch(e){ if(e&&e.name==='AbortError') return; } }
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=file.name; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },4000); toast('Clip saved ('+Math.round(blob.size/1024)+' KB)'); }
+};
+$('mClip').onclick=()=>{ closeSheet('menu'); CLIP.start(); };
+
+/* [S23] FIREFLIES: only at night, only charm ------------------------------------------- */
+const FIREFLIES={pts:null,base:null,t0:performance.now(),
+  ensure(){ if(this.pts) return; const n=48, pos=new Float32Array(n*3); this.base=new Float32Array(n*3); const N=S.P.gridSize; for(let i=0;i<n;i++){ this.base[i*3]=(Math.random()-.5)*N*0.9; this.base[i*3+1]=1+Math.random()*N*0.35; this.base[i*3+2]=(Math.random()-.5)*N*0.9; }
+    const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.BufferAttribute(pos,3)); const m=new THREE.PointsMaterial({color:0xffe27a,size:0.28,transparent:true,opacity:0.9,depthWrite:false,blending:THREE.AdditiveBlending,sizeAttenuation:true}); this.pts=new THREE.Points(g,m); this.pts.frustumCulled=false; scene.add(this.pts); },
+  tick(){ const night=S.settings.sky==='night'; if(!night){ if(this.pts) this.pts.visible=false; return; } this.ensure(); this.pts.visible=true; if(reduceMotion) return; const t=(performance.now()-this.t0)/1000; const a=this.pts.geometry.attributes.position.array;
+    for(let i=0;i<a.length/3;i++){ a[i*3]=this.base[i*3]+Math.sin(t*0.5+i)*1.2; a[i*3+1]=this.base[i*3+1]+Math.sin(t*0.9+i*1.7)*0.5; a[i*3+2]=this.base[i*3+2]+Math.cos(t*0.4+i*0.6)*1.2; }
+    this.pts.geometry.attributes.position.needsUpdate=true; this.pts.material.opacity=0.55+0.4*Math.abs(Math.sin(t*1.3)); }
+};
+
 /* [S16] BOOT ------------------------------------------------------------------------- */
 loadSettings(); document.body.classList.toggle('left',!!S.settings.left); $('sky').className=S.settings.sky==='day'?'':S.settings.sky;
 (function boot(){
@@ -1081,7 +1122,7 @@ loadSettings(); document.body.classList.toggle('left',!!S.settings.left); $('sky
   requestAnimationFrame(loop);
 })();
 let lastT=0;
-function loop(t){ requestAnimationFrame(loop); CAM.tick(); FX.tick(); MB.tick(); flushChunks(4); SELFX.update(); AUDIO.listenerTick(); renderer.render(scene,camera); }
+function loop(t){ requestAnimationFrame(loop); CAM.tick(); FX.tick(); MB.tick(); FIREFLIES.tick(); flushChunks(4); SELFX.update(); AUDIO.listenerTick(); renderer.render(scene,camera); }
 /* service worker, versioned so a deploy reaches a returning player */
 if('serviceWorker' in navigator && !DEV && location.protocol.startsWith('http')){ addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js?v='+VERSION).then(reg=>{ reg.addEventListener('updatefound',()=>{ const nw=reg.installing; nw&&nw.addEventListener('statechange',()=>{ if(nw.state==='installed'&&navigator.serviceWorker.controller){ toast('New version ready. Reopen Blockspace to get it.',4000); } }); }); }).catch(()=>{}); }); }
 /* portal handshake: the arcade frames games with ?embed=1 and listens for ready/close */
@@ -1089,7 +1130,7 @@ if('serviceWorker' in navigator && !DEV && location.protocol.startsWith('http'))
   window.SWS_EXIT=function(){ saveNow(); if(framed){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; } if(document.referrer.indexOf('/portal')>=0&&history.length>1){ history.back(); } else { location.href='https://lucidwinds.com/portal/'; } };
   if(framed){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} addEventListener('load',()=>{ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} }); } })();
 /* dev and test hook */
-if(DEV){ window.BS={S,CAM,run,undo,redo,MB,REPLAY,todayPalette,copyLink,packJSON,unpackJSON,b64u,importFromHash,placeAt,eraseBlock,gravityCheck,raycast,toolAt,setTool,setColor,chunks,flushChunks,exportJSON,importText,startProject,newProject,STARTERS,AUDIO,FX,renderer,scene,camera,key,worldOf,setGrid,toggleMirror,loadPreset,expandGradient,gradientSpan,bucketFill,setPaintMode,openProjects,makeThumb,saveNow,readIndex}; }
+if(DEV){ window.BS={S,CAM,run,undo,redo,MB,REPLAY,exportSTL,CLIP,FIREFLIES,setSky,todayPalette,copyLink,packJSON,unpackJSON,b64u,importFromHash,placeAt,eraseBlock,gravityCheck,raycast,toolAt,setTool,setColor,chunks,flushChunks,exportJSON,importText,startProject,newProject,STARTERS,AUDIO,FX,renderer,scene,camera,key,worldOf,setGrid,toggleMirror,loadPreset,expandGradient,gradientSpan,bucketFill,setPaintMode,openProjects,makeThumb,saveNow,readIndex}; }
 </script>
 </body>
 </html>

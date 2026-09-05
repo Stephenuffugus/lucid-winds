@@ -34,6 +34,12 @@ offline-complete and the host caches by URL).
   so the select card and the music box chip wrapped one button per line. Centred with
   `left:0;right:0;margin:auto;width:max-content` instead.
 
+- **Record a clip**: one music box sweep (4 to 15 s) captured from the canvas with the audio bus
+  through MediaRecorder, then the share sheet or a download. mp4 where the browser offers it,
+  webm otherwise. The shareable 15 seconds the plan wanted from the Music Box.
+- **3D print file**: binary STL, twelve triangles per block, 10 mm per block, Z-up, floor at z = 0.
+- **Fireflies** at night (charm layer, first item): 48 additive points drifting over the build.
+
 ## Gate
 
 `node test/check.mjs` (from `satellites/blockspace`, needs the repo's node_modules; a symlink is
@@ -41,7 +47,7 @@ in place). Boots headless with swiftshader and drives REAL pointer events: tap t
 block's top, hold-to-draw a 24-block line that is one undo step, an orbit drag that places nothing,
 face and block paint, erase, select + rotate + glass, mirror twin, 4x4 bucket fill, gradient span,
 a two-block floating cluster falling and coming back with one undo, thumbnail, save, reload, JSON
-round trip, then a 2000-block recolor timing. 43 checks. Screenshots land in `test/out/`; look at
+round trip, then a 2000-block recolor timing. 49 checks. Screenshots land in `test/out/`; look at
 them, the gate does not. `node test/thumb.mjs` renders the portal thumbnail.
 
 ## Not done, honestly (PLAN QA items that need a phone or ears)
