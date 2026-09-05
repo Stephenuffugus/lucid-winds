@@ -928,7 +928,8 @@ MUTANTS OK
 ```
 - [x] commits: one commit on `add-sproing-jumper`, "keepsies: the end game, from Stephen's phone" (this
   file and everything under `satellites/keepsies`, with the 17 shots that are this pass's evidence), then the
-  fleet art lane in a second commit. Not pushed to main: that is the Director's push, and his phone test.
+  fleet art lane in a second commit. It reached main under the other session's Jimothy deploy (bb01a141) at
+  about 00:10Z Sep 05: https://lucidwinds.com/satellites/keepsies/ serves stamp 20260904d with the spyglass.
 
 ### K2 (done but for art: the catalog, the collection, the economy, the keepsies loop, the ceremony, the ransom window, progression and the whole first four minutes)
 - [x] `catalog` green: 65 entries, doc and JSON agree:
@@ -1724,9 +1725,10 @@ LIFT 0.29), `src/data/tuning.json` (`ringerCam` lean and HUD edges, `spyglass`),
 
 **Exact next action:** Stephen plays the end game on the phone: does the scope open when he expects it, does
 the bracket read as his cone, does the lean from the ring edge feel closer, is 1.7 s to a settled bracket
-patience or a wait. Every number is in `tuning.json`. `ai_budget` must pass ALONE once the box is alone
-(the other session's trailer render held both cores all evening; the A/B says the red is the load). The
-three Director calls for K3 stand. Pass and play is still unbuilt. Art is still art.
+patience or a wait. Every number is in `tuning.json`. The build is LIVE (stamp 20260904d, it rode the
+other session's deploy to main). `ai_budget` passed alone in 14 s once the box was quiet; the earlier red
+was the other session's trailer render (A/B identical). The three Director calls for K3 stand. Pass and
+play is still unbuilt. Art is still art.
 
 **2026-09-04, Fable, review of the overnight build.** Verified (21 gates, 29 mutants, fence), then played
 through the front door with real pointer events and fixed what a thumb hits, in the order a thumb hits it.
