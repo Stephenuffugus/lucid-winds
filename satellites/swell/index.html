@@ -439,7 +439,13 @@ function cadenceFor(mood, chordName, holdSeconds) {
 }
 /* how much of each section is in the room, by how long a finger has been down */
 function layerGain(section, t) {
-  if (section === 'strings') return smoothstep(CONFIG.HOLD_STRINGS[0], CONFIG.HOLD_STRINGS[1], t);
+  /* the strings are the response, so their curve is fast at the front: a
+     smoothstep is almost nothing at fifty milliseconds and a touch that takes
+     a fifth of a second to speak does not feel like a touch */
+  if (section === 'strings') {
+    var u = clamp((t - CONFIG.HOLD_STRINGS[0]) / (CONFIG.HOLD_STRINGS[1] - CONFIG.HOLD_STRINGS[0]), 0, 1);
+    return Math.pow(u, 0.35);
+  }
   if (section === 'violins') return smoothstep(CONFIG.HOLD_VIOLINS[0], CONFIG.HOLD_VIOLINS[1], t);
   if (section === 'horns') return smoothstep(CONFIG.HOLD_HORNS[0], CONFIG.HOLD_HORNS[1], t);
   if (section === 'choir') return smoothstep(CONFIG.HOLD_CHOIR[0], CONFIG.HOLD_CHOIR[1], t);
@@ -494,6 +500,432 @@ function sleepGain(elapsedS, minutes) {
   return clamp((end - elapsedS) / CONFIG.SLEEP_FADE_S, 0, 1);
 }
 // ---- THEORY_EXPORT_END ----
+
+/* ========================= 5. SYNTH and ENGINE ========================= */
+/* ONE ENGINE, TWO PUMPS. In the app a setInterval every TICK_MS calls
+   ENG.pump(ctx.currentTime + LOOKAHEAD_S); in the render gate an
+   OfflineAudioContext renders faster than real time, so the gate calls the same
+   pump in a loop across the whole render. The scheduler, the synth and the
+   engine are the same code either way; only the thing that turns the handle
+   changes.
+
+   VOICES ARE HELD AND GLIDED, NOT RETRIGGERED. Four sections of three voices,
+   retriggered every bar, is sixty six oscillators during the crossfade against
+   a budget of forty eight. Keeping each voice running and ramping its frequency
+   to the new chord holds the count at about thirty five for a whole hold, and
+   it is what a string section actually does: it does not re attack every bar. */
+function mtof(m) { return 440 * Math.pow(2, (m - 69) / 12); }
+
+var ENG = (function () {
+  var ctx = null, master = null, swell = null, ceiling = null, comp = null, dry = null, wet = null, conv = null;
+  var streamDest = null, oscCount = 0, oscPeak = 0, madeOsc = 0;
+  var sections = {}, state = 'idle', mood = MOODS.dawn;
+  var sessionSeed = 1, heldFrom = 0, bar = 0, nextBarAt = 0, curChord = 'I';
+  var fingers = [], chordLog = [], resolveAt = 0, resolveSteps = [], endAt = 0;
+  var lastPumped = 0, tiltOffset = 0, sleepStart = 0, sleepMinutes = 0;
+  /* GESTURES ARE SCHEDULED, NOT IMMEDIATE. press(t) and release(t) take an
+     AudioContext time and go in this queue; step() acts on them when the pump
+     reaches that time. Acting on the CALL instead meant a release scheduled for
+     six seconds fired the moment it was queued: the render gate asked for a six
+     second hold and got a hold that ended before the first pump, so only the
+     strings ever came in. Ambient mode queues its whole night the same way and
+     had exactly the same bug waiting in it. */
+  var queue = [];
+
+  var SPEC = {
+    strings: { detune: [-9, -3, 4, 10], type: 'sawtooth', attack: 0.35, release: 1.2, oct: 0, gain: 0.26, q: 0.7 },
+    violins: { detune: [-6, 3, 9], type: 'sawtooth', attack: 0.8, release: 1.4, oct: 12, gain: 0.17, q: 0.8 },
+    horns:   { detune: [-5, 5], type: 'sawtooth', attack: 0.12, release: 0.9, oct: 0, gain: 0.19, q: 0.9 },
+    choir:   { detune: [0, 4], type: 'sawtooth', attack: 0.9, release: 1.6, oct: 12, gain: 0.155, q: 8 }
+  };
+
+  /* a decaying noise impulse, two channels, built once. Rebuilding it per mood
+     would allocate a three and a half second buffer on the main thread. */
+  function impulse(seconds) {
+    var n = Math.max(1, Math.floor(ctx.sampleRate * seconds));
+    var b = ctx.createBuffer(2, n, ctx.sampleRate), c, i;
+    var pre = Math.floor(ctx.sampleRate * CONFIG.HALL_PREDELAY_S);
+    for (c = 0; c < 2; c++) {
+      var d = b.getChannelData(c);
+      for (i = 0; i < n; i++) {
+        if (i < pre) { d[i] = 0; continue; }
+        var t = (i - pre) / (n - pre);
+        d[i] = (Math.random() * 2 - 1) * Math.pow(1 - t, 2.6) * Math.exp(-t * 4.2);
+      }
+    }
+    return b;
+  }
+  function noiseBuffer(seconds) {
+    var n = Math.max(1, Math.floor(ctx.sampleRate * seconds));
+    var b = ctx.createBuffer(1, n, ctx.sampleRate), d = b.getChannelData(0), i;
+    for (i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+    return b;
+  }
+  var NOISE = null;
+
+  function newOsc() {
+    var o = ctx.createOscillator();
+    oscCount++; madeOsc++;
+    if (oscCount > oscPeak) oscPeak = oscCount;
+    o.onended = function () { oscCount--; };
+    return o;
+  }
+  function newNoise() {
+    var s = ctx.createBufferSource();
+    s.buffer = NOISE; s.loop = true;
+    oscCount++; madeOsc++;
+    if (oscCount > oscPeak) oscPeak = oscCount;
+    s.onended = function () { oscCount--; };
+    return s;
+  }
+
+  function buildMaster() {
+    comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -8; comp.knee.value = 10; comp.ratio.value = 14;
+    comp.attack.value = 0.003; comp.release.value = 0.25;
+    ceiling = ctx.createGain(); ceiling.gain.value = 0.9;
+    comp.connect(ceiling);
+    ceiling.connect(ctx.destination);
+    if (ctx.createMediaStreamDestination) {
+      try { streamDest = ctx.createMediaStreamDestination(); ceiling.connect(streamDest); } catch (e) { streamDest = null; }
+    }
+    conv = ctx.createConvolver();
+    conv.buffer = impulse(CONFIG.HALL_S);
+    dry = ctx.createGain(); dry.gain.value = 1 - CONFIG.HALL_WET;
+    wet = ctx.createGain(); wet.gain.value = CONFIG.HALL_WET;
+    dry.connect(comp); wet.connect(conv); conv.connect(comp);
+    master = ctx.createGain(); master.gain.value = 1;
+    /* THE CRESCENDO IS LOUDER, NOT ONLY BRIGHTER. With intensity driving the
+       filter alone, the sum of the sections wobbled by half a decibel across a
+       chord change and the swell dipped between four and five seconds. A real
+       crescendo grows in level as well as in colour, and this makes the rise
+       monotone by construction rather than by luck of the voicing. */
+    swell = ctx.createGain(); swell.gain.value = 0.55;
+    swell.connect(master);
+    master.connect(dry); master.connect(wet);
+  }
+  function buildSection(key) {
+    var g = ctx.createGain(); g.gain.value = 0;
+    var f = ctx.createBiquadFilter();
+    f.type = 'lowpass'; f.frequency.value = CONFIG.FILTER_MIN; f.Q.value = SPEC[key] ? SPEC[key].q : 0.8;
+    var p = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+    g.connect(f);
+    if (p) { f.connect(p); p.connect(swell); } else f.connect(swell);
+    return { key: key, gain: g, filter: f, pan: p, voices: [], pitches: [], live: false };
+  }
+
+  /* one held voice: its oscillators run for the life of the hold and its
+     frequency is ramped to each new chord tone */
+  function makeVoice(key, midi, t0, fast) {
+    var spec = SPEC[key], g = ctx.createGain(), i, oscs = [];
+    /* THE FIRST NOTE OF A TOUCH TAKES FORTY MILLISECONDS. Everything after it
+       takes its own attack. Without this the response to a press was seventy
+       eight decibels down fifty milliseconds in, which is silence. */
+    var atk = fast ? 0.04 : spec.attack;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.linearRampToValueAtTime(1 / spec.detune.length, t0 + atk);
+    g.connect(sections[key].gain);
+    for (i = 0; i < spec.detune.length; i++) {
+      var o = newOsc();
+      o.type = spec.type;
+      o.frequency.setValueAtTime(mtof(midi + spec.oct), t0);
+      o.detune.value = spec.detune[i];
+      o.connect(g);
+      o.start(t0);
+      oscs.push(o);
+    }
+    if (key === 'choir') {
+      /* two formants in parallel, morphed by intensity: quiet is oo, loud is ah */
+      var f1 = ctx.createBiquadFilter(), f2 = ctx.createBiquadFilter();
+      f1.type = 'bandpass'; f1.frequency.value = 300; f1.Q.value = 8;
+      f2.type = 'bandpass'; f2.frequency.value = 870; f2.Q.value = 8;
+      g.disconnect();
+      g.connect(f1); g.connect(f2);
+      f1.connect(sections[key].gain); f2.connect(sections[key].gain);
+      var lfo = newOsc(), lg = ctx.createGain();
+      lfo.frequency.value = 5.5; lg.gain.value = 8;
+      lfo.connect(lg);
+      for (i = 0; i < oscs.length; i++) lg.connect(oscs[i].detune);
+      lfo.start(t0);
+      return { gain: g, oscs: oscs, midi: midi, f1: f1, f2: f2, lfo: lfo };
+    }
+    if (key === 'horns') {
+      /* a forty cent scoop into the note, and a soft drive */
+      for (i = 0; i < oscs.length; i++) {
+        oscs[i].detune.setValueAtTime(spec.detune[i] - 40, t0);
+        oscs[i].detune.linearRampToValueAtTime(spec.detune[i], t0 + 0.09);
+      }
+      var ws = ctx.createWaveShaper();
+      var curve = new Float32Array(1024), k;
+      for (k = 0; k < 1024; k++) { var x = (k / 1023) * 2 - 1; curve[k] = Math.tanh(x * 2.2); }
+      ws.curve = curve; ws.oversample = '2x';
+      g.disconnect(); g.connect(ws); ws.connect(sections[key].gain);
+      return { gain: g, oscs: oscs, midi: midi, shaper: ws };
+    }
+    return { gain: g, oscs: oscs, midi: midi };
+  }
+  function glideVoice(v, key, midi, t) {
+    var spec = SPEC[key], i;
+    for (i = 0; i < v.oscs.length; i++) {
+      var f = v.oscs[i].frequency;
+      f.cancelScheduledValues(t);
+      f.setValueAtTime(f.value, t);
+      f.linearRampToValueAtTime(mtof(midi + spec.oct), t + 0.12);
+    }
+    v.midi = midi;
+  }
+  function stopVoice(v, t, release) {
+    var i;
+    v.gain.gain.cancelScheduledValues(t);
+    v.gain.gain.setValueAtTime(Math.max(0.0001, v.gain.gain.value), t);
+    v.gain.gain.linearRampToValueAtTime(0, t + release);
+    for (i = 0; i < v.oscs.length; i++) { try { v.oscs[i].stop(t + release + 0.05); } catch (e) {} }
+    if (v.lfo) { try { v.lfo.stop(t + release + 0.05); } catch (e) {} }
+  }
+
+  /* the flute and the air over the top */
+  var air = null;
+  function startAir(t) {
+    if (air) return;
+    var s = newNoise(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+    f.type = 'bandpass'; f.frequency.value = 1800; f.Q.value = 2;
+    g.gain.setValueAtTime(0.0001, t);
+    s.connect(f); f.connect(g); g.connect(master);
+    s.start(t);
+    air = { src: s, gain: g };
+  }
+  function stopAir(t) {
+    if (!air) return;
+    air.gain.gain.cancelScheduledValues(t);
+    air.gain.gain.setValueAtTime(Math.max(0.0001, air.gain.gain.value), t);
+    air.gain.gain.linearRampToValueAtTime(0, t + 1.2);
+    try { air.src.stop(t + 1.4); } catch (e) {}
+    air = null;
+  }
+  /* a timpani hit: a swept noise burst and a sine thump two octaves under */
+  function timpani(t, midi, gain) {
+    var s = newNoise(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+    f.type = 'bandpass'; f.Q.value = 1.4;
+    f.frequency.setValueAtTime(400, t);
+    f.frequency.exponentialRampToValueAtTime(90, t + 0.09);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(gain, t + 0.006);
+    g.gain.linearRampToValueAtTime(0, t + 0.5);
+    s.connect(f); f.connect(g); g.connect(master);
+    s.start(t); s.stop(t + 0.55);
+    var o = newOsc(), og = ctx.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(mtof(midi - 24), t);
+    og.gain.setValueAtTime(0.0001, t);
+    og.gain.linearRampToValueAtTime(gain * 1.5, t + 0.008);
+    og.gain.linearRampToValueAtTime(0, t + 0.45);
+    o.connect(og); og.connect(master);
+    o.start(t); o.stop(t + 0.5);
+  }
+  /* a staccato hit on the next eighth */
+  function staccato(t, midi) {
+    var i, pitches = leadVoices([midi, midi + 4, midi + 7], mood, curChord, 48);
+    for (i = 0; i < pitches.length; i++) {
+      var o = newOsc(), g = ctx.createGain();
+      o.type = 'sawtooth'; o.frequency.setValueAtTime(mtof(pitches[i]), t);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(0.09, t + 0.012);
+      g.gain.linearRampToValueAtTime(0, t + CONFIG.STACCATO_S);
+      o.connect(g); g.connect(master);
+      o.start(t); o.stop(t + CONFIG.STACCATO_S + 0.05);
+    }
+  }
+
+  function sectionAudible(key, held) {
+    if (key === 'strings') return layerGain('strings', held);
+    if (key === 'violins') return layerGain('violins', held);
+    if (key === 'horns') return layerGain('horns', held);
+    if (key === 'choir') return layerGain('choir', held);
+    return 0;
+  }
+
+  function setChord(name, t) {
+    curChord = name;
+    chordLog.push(name);
+    var k, i;
+    for (k in sections) {
+      var sec = sections[k];
+      if (!sec.voices.length) continue;
+      var want = leadVoices(sec.pitches, mood, name, 48);
+      for (i = 0; i < sec.voices.length; i++) glideVoice(sec.voices[i], k, want[i], t);
+      sec.pitches = want;
+    }
+  }
+  function ensureVoices(key, t, fast) {
+    var sec = sections[key];
+    if (sec.voices.length) return;
+    sec.pitches = leadVoices(chordPitches(mood, curChord, 48).slice(0, CONFIG.VOICES_PER_SECTION), mood, curChord, 48);
+    var i;
+    for (i = 0; i < CONFIG.VOICES_PER_SECTION; i++) sec.voices.push(makeVoice(key, sec.pitches[i], t, fast));
+    sec.live = true;
+  }
+
+  /* ---- the pump. Everything that places a note happens in here. ---- */
+  function pump(until) {
+    if (!ctx) return;
+    var t = Math.max(lastPumped, 0);
+    while (t < until) {
+      step(t);
+      t += 0.02;
+    }
+    lastPumped = until;
+  }
+  function step(t) {
+    while (queue.length && queue[0].t <= t) {
+      var ev = queue.shift();
+      if (ev.kind === 'press') doPress(ev.t, ev.x, ev.y, ev.pmul);
+      else if (ev.kind === 'release') doRelease(ev.t);
+      else if (ev.kind === 'hit') doHit(ev.t);
+    }
+    if (state === 'idle') return;
+    var held = t - heldFrom;
+    var k, i;
+    if (state === 'held') {
+      /* the bar line: one chord per bar, biased by how long this has gone on */
+      if (t >= nextBarAt) {
+        bar++;
+        var tension = clamp(held / CONFIG.TENSION_FULL_S, 0, 1);
+        setChord(walkNext(mood, curChord, tension, sessionSeed, bar), nextBarAt);
+        nextBarAt += gridStep(mood.bpm, 1) * 4;
+      }
+      var inten = intensityAt(held, fingers.length ? fingers[0].pmul : 1);
+      for (k in sections) {
+        var want = sectionAudible(k, held);
+        if (want > 0.002) ensureVoices(k, t);
+        var sec = sections[k];
+        sec.gain.gain.setTargetAtTime(want * SPEC[k].gain, t, 0.05);
+        sec.filter.frequency.setTargetAtTime(clamp(filterHz(inten) + tiltOffset, 200, 9000), t, 0.08);
+        if (sec.pan && fingers.length) sec.pan.pan.setTargetAtTime(fingers[0].pan, t, 0.1);
+        if (k === 'choir') {
+          for (i = 0; i < sec.voices.length; i++) {
+            var v = sec.voices[i];
+            if (!v.f1) continue;
+            v.f1.frequency.setTargetAtTime(300 + (730 - 300) * inten, t, 0.2);
+            v.f2.frequency.setTargetAtTime(870 + (1090 - 870) * inten, t, 0.2);
+          }
+        }
+      }
+      swell.gain.setTargetAtTime(0.55 + 0.45 * inten, t, 0.25);
+      if (held > 0.4) startAir(t);
+      if (air) air.gain.gain.setTargetAtTime(0.15 * (1 - inten) * 0.5, t, 0.2);
+      if (held >= CONFIG.TIMP_ROLL_FROM) {
+        if (!ENGINE_ROLL.next || t >= ENGINE_ROLL.next) {
+          var jitter = (mixSeed(sessionSeed, bar * 97 + Math.floor(t * 11)) % 1000) / 1000 * 0.015;
+          timpani(t, chordPitches(mood, mood.tonic, 48)[0], 0.12);
+          ENGINE_ROLL.next = t + 0.09 + jitter;
+        }
+      }
+    } else if (state === 'resolving') {
+      if (resolveSteps.length && t >= resolveSteps[0].at) {
+        var s0 = resolveSteps.shift();
+        setChord(s0.name, s0.at);
+        if (s0.last) timpani(s0.at, chordPitches(mood, mood.tonic, 48)[0], 0.22);
+      }
+      var frac = clamp(1 - (t - resolveAt) / CONFIG.RESOLVE_TAIL_S, 0, 1);
+      swell.gain.setTargetAtTime(0.55 + 0.45 * frac, t, 0.4);
+      for (k in sections) {
+        sections[k].gain.gain.setTargetAtTime(sections[k].gain.gain.value * 0 + frac * frac * SPEC[k].gain * 0.9, t, 0.35);
+      }
+      if (air) air.gain.gain.setTargetAtTime(0, t, 0.4);
+      if (t >= endAt) {
+        for (k in sections) {
+          var sc = sections[k], j;
+          for (j = 0; j < sc.voices.length; j++) stopVoice(sc.voices[j], t, 0.4);
+          sc.voices = []; sc.pitches = []; sc.live = false;
+        }
+        stopAir(t);
+        state = 'idle';
+      }
+    }
+  }
+  var ENGINE_ROLL = { next: 0 };
+
+  /* ---- what a finger does ---- */
+  function doPress(t, xFrac, yFrac, pmul) {
+    if (!ctx) return;
+    var order = fingers.length;
+    fingers.push({ x: xFrac, y: yFrac, pan: panFor(xFrac), reg: registerFor(yFrac), pmul: pmul || 1, at: t });
+    if (state !== 'held') {
+      state = 'held';
+      heldFrom = t;
+      bar = 0;
+      curChord = mood.tonic;
+      chordLog = [mood.tonic];
+      nextBarAt = t + gridStep(mood.bpm, 1) * 4;
+      lastPumped = Math.max(lastPumped, t);
+      ENGINE_ROLL.next = 0;
+      ensureVoices('strings', t, true);
+    } else if (order === 1) {
+      ensureVoices('choir', t);
+    } else if (order >= 2) {
+      ensureVoices('horns', t);
+    }
+  }
+  function doRelease(t) {
+    if (!ctx || state !== 'held') { fingers = []; return; }
+    fingers = [];
+    var held = t - heldFrom;
+    var names = cadenceFor(mood, curChord, held);
+    var start = nextGrid(t, mood.bpm, 2);
+    var barS = gridStep(mood.bpm, 1) * 4, i;
+    resolveSteps = [];
+    for (i = 0; i < names.length; i++) {
+      resolveSteps.push({ name: names[i], at: start + i * barS * 0.5, last: i === names.length - 1 });
+    }
+    resolveAt = start;
+    endAt = start + (names.length - 1) * barS * 0.5 + CONFIG.RESOLVE_TAIL_S;
+    state = 'resolving';
+  }
+  function doHit(t) {
+    if (!ctx) return;
+    staccato(nextGrid(t, mood.bpm, 2), chordPitches(mood, curChord, 48)[0] + 12);
+  }
+  function queueAt(kind, t, x, y, pmul) {
+    queue.push({ kind: kind, t: t, x: x, y: y, pmul: pmul });
+    queue.sort(function (a, b) { return a.t - b.t; });
+    /* a gesture at or before the pump's own edge is acted on at once, so a live
+       finger never waits for the next tick */
+    if (t <= lastPumped) step(Math.max(t, lastPumped));
+  }
+  function press(t, x, y, pmul) { queueAt('press', t, x, y, pmul); }
+  function release(t) { queueAt('release', t); }
+  function hit(t) { queueAt('hit', t); }
+
+  return {
+    init: function (audioCtx, moodKey, seed) {
+      ctx = audioCtx;
+      mood = MOODS[moodKey || 'dawn'];
+      sessionSeed = seed || 1;
+      oscCount = 0; oscPeak = 0; madeOsc = 0;
+      state = 'idle'; fingers = []; chordLog = []; lastPumped = 0; queue = [];
+      NOISE = noiseBuffer(1.5);
+      buildMaster();
+      sections = { strings: buildSection('strings'), violins: buildSection('violins'),
+        horns: buildSection('horns'), choir: buildSection('choir') };
+      return this;
+    },
+    ctx: function () { return ctx; },
+    press: press, release: release, hit: hit, pump: pump,
+    setMood: function (k) { if (MOODS[k]) mood = MOODS[k]; },
+    moodKey: function () { return mood.id; },
+    setTilt: function (deg) { tiltOffset = clamp(deg, -30, 30) / 30 * 1200; },
+    setMaster: function (v, t) { if (master) master.gain.setTargetAtTime(clamp(v, 0, 1), t || ctx.currentTime, 0.4); },
+    stream: function () { return streamDest ? streamDest.stream : null; },
+    state: function () { return state; },
+    chordLog: function () { return chordLog.slice(); },
+    oscPeak: function () { return oscPeak; },
+    oscNow: function () { return oscCount; },
+    oscMade: function () { return madeOsc; },
+    held: function (t) { return state === 'held' ? (t - heldFrom) : 0; },
+    intensity: function (t) { return state === 'held' ? intensityAt(t - heldFrom, 1) : 0; },
+    sectionGain: function (k) { return sections[k] ? sections[k].gain.gain.value : 0; },
+    sectionLive: function (k) { return !!(sections[k] && sections[k].live); }
+  };
+})();
 
 // ---- TEST_EXPORT_START ----
 /* ========================= 12. TEST ========================= */
@@ -656,6 +1088,8 @@ function suiteGrid(T) {
 function suiteLayers(T) {
   T.near('strings are all the way in by half a second', layerGain('strings', 0.5), 1, 1e-9);
   T.assert('and already speaking at a tenth', layerGain('strings', 0.1) > 0.05);
+  /* the response requirement, made a rule of the curve rather than a hope */
+  T.assert('and a third of the way in at fifty milliseconds (' + layerGain('strings', 0.05).toFixed(2) + ')', layerGain('strings', 0.05) > 0.33);
   T.eq('violins are silent at half a second', layerGain('violins', 0.5), 0);
   T.near('and all the way in at three', layerGain('violins', 3), 1, 1e-9);
   T.eq('horns are silent at three', layerGain('horns', 3), 0);
@@ -759,3 +1193,550 @@ function suitePurity(T, src) {
   T.assert('and it never opens an AudioContext', code.indexOf('AudioContext') < 0 && code.indexOf('currentTime') < 0);
 }
 // ---- TEST_EXPORT_END ----
+
+/* ========================= 13. AURORA, INPUT, BOOT ========================= */
+var STAMP = '20260905a';
+var G = {
+  screen: 'podium', save: null, mood: 'dawn', settings: { tilt: 0, motion: 1 },
+  motion: 1, frames: 0, rafOn: false, lastTouch: 0, quiet: 0,
+  ctx: null, ticker: null, recorder: null, chunks: [], recStart: 0,
+  sleepMin: 0, ambient: false, ambientPlanList: null, ambientAt: 0, ambientStart: 0,
+  fingers: {}, curtains: [], seed: 1
+};
+function $(id) { return document.getElementById(id); }
+var SHEETS = ['scrMenu', 'scrSettings', 'scrSaved'];
+var SCREENS = ['scrMoods', 'scrAmbient', 'scrAbout'];
+function closeSheets() { for (var i = 0; i < SHEETS.length; i++) $(SHEETS[i]).classList.remove('on'); }
+function showScreen(n) {
+  var i;
+  for (i = 0; i < SCREENS.length; i++) $(SCREENS[i]).classList.toggle('on', SCREENS[i] === n);
+  closeSheets();
+  G.screen = n || 'podium';
+  $('chrome').style.display = n ? 'none' : '';
+}
+function showSheet(n) {
+  closeSheets();
+  if (n) $(n).classList.add('on');
+  G.screen = n || 'podium';
+}
+function toast(m) {
+  var t = $('toast');
+  t.textContent = m; t.classList.add('on');
+  clearTimeout(G.toastT);
+  G.toastT = setTimeout(function () { t.classList.remove('on'); }, 1900);
+}
+
+/* ---- the aurora. Reads engine state only, and stops when nothing sounds. ---- */
+var CV, CTX, CSSW = 375, CSSH = 667, DPR = 1;
+function fitCanvas() {
+  if (!CV) return;
+  var vv = window.visualViewport;
+  var w = Math.round(vv ? vv.width : window.innerWidth), h = Math.round(vv ? vv.height : window.innerHeight);
+  DPR = Math.min(2.5, window.devicePixelRatio || 1);
+  var pw = Math.round(w * DPR), ph = Math.round(h * DPR);
+  if (CV.width !== pw || CV.height !== ph) { CV.width = pw; CV.height = ph; }
+  CSSW = w; CSSH = h;
+}
+var SECT_ORDER = ['strings', 'violins', 'horns', 'choir'];
+function curtain(g, x, w, height, colour, alpha, seedN, shimmer) {
+  var bands = 9, i;
+  for (i = 0; i < bands; i++) {
+    var f = i / (bands - 1);
+    var wob = shimmer ? Math.sin(G.frames * 0.013 + i * 1.7 + seedN) * (w * 0.06) : 0;
+    var bx = x - w / 2 + w * f + wob;
+    var gr = g.createLinearGradient(0, CSSH, 0, CSSH - height * (0.55 + 0.45 * Math.sin(f * Math.PI)));
+    gr.addColorStop(0, 'rgba(0,0,0,0)');
+    gr.addColorStop(0.35, hexA(colour, alpha * 0.55 * (0.4 + 0.6 * Math.sin(f * Math.PI))));
+    gr.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = gr;
+    g.fillRect(bx - w / bands * 0.9, CSSH - height, w / bands * 1.8, height);
+  }
+}
+function hexA(hex, a) {
+  var r = parseInt(hex.slice(1, 3), 16), gg = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+  return 'rgba(' + r + ',' + gg + ',' + b + ',' + clamp(a, 0, 1).toFixed(3) + ')';
+}
+function paint() {
+  if (!CTX) return;
+  var mood = MOODS[G.mood], now = G.ctx ? G.ctx.currentTime : 0;
+  CTX.setTransform(DPR, 0, 0, DPR, 0, 0);
+  CTX.globalAlpha = 1;
+  CTX.fillStyle = '#08070C';
+  CTX.fillRect(0, 0, CSSW, CSSH);
+  var inten = ENG.intensity(now), held = ENG.held(now), any = 0, i;
+  /* the wash: the room warms as the tension climbs */
+  if (inten > 0.01) {
+    var wash = CTX.createLinearGradient(0, CSSH, 0, 0);
+    wash.addColorStop(0, hexA(mood.colour.wash, 0.55 * inten));
+    wash.addColorStop(1, 'rgba(0,0,0,0)');
+    CTX.fillStyle = wash;
+    CTX.fillRect(0, 0, CSSW, CSSH);
+  }
+  var fingerXs = [], k;
+  for (k in G.fingers) fingerXs.push(G.fingers[k].x);
+  for (i = 0; i < SECT_ORDER.length; i++) {
+    var key = SECT_ORDER[i];
+    var lvl = ENG.sectionLive(key) ? layerGain(key, held) : 0;
+    if (ENG.state() === 'resolving') lvl *= 0.7;
+    if (lvl < 0.01) continue;
+    any += lvl;
+    var col = key === 'choir' ? mood.colour.choir : (key === 'horns' ? mood.colour.brass : mood.colour.strings);
+    var x = fingerXs.length ? fingerXs[Math.min(i, fingerXs.length - 1)] * CSSW : CSSW * (0.28 + 0.15 * i);
+    curtain(CTX, x, CSSW * (0.42 + 0.16 * i), CSSH * (0.35 + 0.5 * lvl), col, lvl * 0.85, i * 3.1, G.motion);
+  }
+  if (held >= CONFIG.TIMP_ROLL_FROM) {
+    CTX.fillStyle = hexA(mood.colour.timp, 0.10 + 0.06 * Math.abs(Math.sin(G.frames * 0.11)));
+    CTX.fillRect(0, CSSH - 26, CSSW, 26);
+  }
+  G.anyLight = any;
+}
+function frame() {
+  G.frames++;
+  paint();
+  var silent = (ENG.state() === 'idle') && !Object.keys(G.fingers).length && (G.anyLight || 0) < 0.01;
+  if (silent) {
+    G.quiet++;
+    /* 3.11: the frame loop STOPS when there is nothing to draw, which is the
+       battery pass made a rule rather than a hope */
+    if (G.quiet > CONFIG.IDLE_STOP_S * 60) { G.rafOn = false; paint(); return; }
+  } else G.quiet = 0;
+  requestAnimationFrame(frame);
+}
+function wake() {
+  if (G.rafOn) return;
+  G.rafOn = true; G.quiet = 0;
+  requestAnimationFrame(frame);
+}
+
+/* ---- the audio, opened by the first press and never before ---- */
+function audio() {
+  if (G.ctx) { if (G.ctx.state === 'suspended') G.ctx.resume(); return G.ctx; }
+  var AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return null;
+  G.ctx = new AC();
+  ENG.init(G.ctx, G.mood, G.seed);
+  /* Chris Wilson's two clocks: this interval only LOOKS AHEAD; every note is
+     placed on the AudioContext clock inside pump */
+  G.ticker = setInterval(function () {
+    if (G.ctx) ENG.pump(G.ctx.currentTime + CONFIG.LOOKAHEAD_S);
+    if (G.ambient) ambientTick();
+    if (G.sleepMin) {
+      var el = G.ctx.currentTime - G.ambientStart;
+      ENG.setMaster(sleepGain(el, G.sleepMin), G.ctx.currentTime);
+      if (el >= G.sleepMin * 60) stopAmbient();
+    }
+  }, CONFIG.TICK_MS);
+  try { parent.postMessage({ sws: 'game-music', on: true }, '*'); } catch (e) {}
+  return G.ctx;
+}
+
+/* ---- input ---- */
+function bindInput() {
+  CV.addEventListener('pointerdown', function (e) {
+    if (e.cancelable) e.preventDefault();
+    var ctx = audio();
+    if (!ctx) return;
+    try { CV.setPointerCapture(e.pointerId); } catch (err) {}
+    $('firstLine').classList.add('gone');
+    hush(true);
+    wake();
+    G.fingers[e.pointerId] = { x: e.clientX / CSSW, y: e.clientY / CSSH, t0: Date.now(),
+      pmul: pressureMul(e.pressure, e.width) };
+    ENG.press(ctx.currentTime, e.clientX / CSSW, e.clientY / CSSH, G.fingers[e.pointerId].pmul);
+  });
+  CV.addEventListener('pointermove', function (e) {
+    var f = G.fingers[e.pointerId];
+    if (!f) return;
+    f.x = e.clientX / CSSW; f.y = e.clientY / CSSH;
+  });
+  function up(e) {
+    var f = G.fingers[e.pointerId];
+    delete G.fingers[e.pointerId];
+    try { CV.releasePointerCapture(e.pointerId); } catch (err) {}
+    if (!f || !G.ctx) return;
+    var ms = Date.now() - f.t0;
+    if (isHit(ms) && Object.keys(G.fingers).length === 0 && ENG.held(G.ctx.currentTime) < 0.4) {
+      ENG.hit(G.ctx.currentTime);
+      ENG.release(G.ctx.currentTime);
+    } else if (Object.keys(G.fingers).length === 0) {
+      ENG.release(G.ctx.currentTime);
+    }
+    hush(false);
+  }
+  CV.addEventListener('pointerup', up);
+  CV.addEventListener('pointercancel', up);
+  window.addEventListener('blur', function () {
+    var k;
+    for (k in G.fingers) delete G.fingers[k];
+    if (G.ctx && ENG.state() === 'held') ENG.release(G.ctx.currentTime);
+    hush(false);
+  });
+  window.addEventListener('resize', fitCanvas);
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', fitCanvas);
+}
+/* the chrome gets out of the way while a finger is down and comes back after
+   two seconds of stillness (3.9). The fleet's music chip is not ours to move. */
+function hush(on) {
+  clearTimeout(G.hushT);
+  if (on) { $('chrome').classList.add('hush'); return; }
+  G.hushT = setTimeout(function () { $('chrome').classList.remove('hush'); }, CONFIG.UI_FADE_S * 1000);
+}
+
+/* ---- ambient ---- */
+function startAmbient() {
+  var ctx = audio();
+  if (!ctx) return;
+  G.ambient = true;
+  G.ambientStart = ctx.currentTime;
+  G.ambientPlanList = ambientPlan(mixSeed(G.seed, 5150), 3600);
+  G.ambientAt = 0;
+  wake();
+  if (navigator.wakeLock && navigator.wakeLock.request) {
+    navigator.wakeLock.request('screen').then(function (w) { G.wakeLock = w; }, function () {});
+  }
+  showScreen(null);
+  toast('It plays by itself now.');
+}
+function stopAmbient() {
+  G.ambient = false;
+  if (G.ctx && ENG.state() === 'held') ENG.release(G.ctx.currentTime);
+  if (G.wakeLock) { try { G.wakeLock.release(); } catch (e) {} G.wakeLock = null; }
+  ENG.setMaster(1, G.ctx ? G.ctx.currentTime : 0);
+  G.sleepMin = 0;
+}
+function ambientTick() {
+  if (!G.ambient || !G.ctx) return;
+  var el = G.ctx.currentTime - G.ambientStart;
+  while (G.ambientAt < G.ambientPlanList.length && G.ambientPlanList[G.ambientAt].start <= el) {
+    var ev = G.ambientPlanList[G.ambientAt++];
+    var x = 0.3 + (ev.finger * 0.4);
+    ENG.press(G.ambientStart + ev.start, x, ev.register === 12 ? 0.2 : (ev.register === -12 ? 0.8 : 0.5), 1);
+    ENG.release(G.ambientStart + ev.start + ev.dur);
+  }
+}
+document.addEventListener('visibilitychange', function () {
+  if (document.visibilityState === 'visible' && G.ambient && navigator.wakeLock) {
+    navigator.wakeLock.request('screen').then(function (w) { G.wakeLock = w; }, function () {});
+  }
+});
+
+/* ---- recording ---- */
+var MIMES = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm'];
+function pickMime() {
+  var i;
+  if (!window.MediaRecorder) return null;
+  for (i = 0; i < MIMES.length; i++) if (MediaRecorder.isTypeSupported(MIMES[i])) return MIMES[i];
+  return '';
+}
+function toggleRecord() {
+  if (G.recorder) { G.recorder.stop(); return; }
+  var ctx = audio();
+  if (!ctx) return;
+  var stream = ENG.stream();
+  var mime = pickMime();
+  if (!stream || mime === null) { toast('This browser will not record.'); return; }
+  G.chunks = [];
+  try { G.recorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream); }
+  catch (e) { toast('This browser will not record.'); return; }
+  G.recMime = G.recorder.mimeType || mime || 'audio/webm';
+  G.recorder.ondataavailable = function (e) { if (e.data && e.data.size) G.chunks.push(e.data); };
+  /* the Blob arrives in onstop, never on stop() */
+  G.recorder.onstop = function () {
+    var blob = new Blob(G.chunks, { type: G.recMime });
+    G.recorder = null;
+    $('btnRec').classList.remove('on');
+    $('recLabel').textContent = 'REC';
+    offerRecording(blob);
+  };
+  G.recorder.start();
+  G.recStart = Date.now();
+  $('btnRec').classList.add('on');
+  tickRec();
+}
+function tickRec() {
+  if (!G.recorder) return;
+  $('recLabel').textContent = String(Math.floor((Date.now() - G.recStart) / 1000));
+  setTimeout(tickRec, 250);
+}
+function offerRecording(blob) {
+  var ext = /mp4/.test(blob.type) ? 'm4a' : 'webm';
+  var d = new Date();
+  var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+  var name = 'swell-' + G.mood + '-' + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) +
+    '-' + pad(d.getHours()) + pad(d.getMinutes()) + '.' + ext;
+  G.lastBlob = blob; G.lastName = name;
+  $('savedName').textContent = name + ', ' + Math.round(blob.size / 1024) + ' KB';
+  showSheet('scrSaved');
+}
+function shareRecording() {
+  var blob = G.lastBlob;
+  if (!blob) return;
+  try {
+    var file = new File([blob], G.lastName, { type: blob.type });
+    if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
+      navigator.share({ files: [file], title: 'Swell' }).catch(function () {});
+      G.lastPath = 'share';
+      return;
+    }
+  } catch (e) {}
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = G.lastName;
+  document.body.appendChild(a); a.click();
+  setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 2000);
+  G.lastPath = 'download';
+  toast('It is in your downloads.');
+}
+
+/* ---- wiring ---- */
+function buildMoodCards() {
+  var wrap = $('moodCards'), i;
+  wrap.innerHTML = '';
+  for (i = 0; i < MOOD_ORDER.length; i++) {
+    var m = MOODS[MOOD_ORDER[i]];
+    var b = document.createElement('button');
+    b.className = 'moodcard' + (m.id === G.mood ? ' on' : '');
+    b.setAttribute('data-mood', m.id);
+    b.innerHTML = '<span class="plate" data-plate="' + m.id + '"></span><span class="nm">' + m.name +
+      '</span><span class="sub">' + m.line + '</span>';
+    wrap.appendChild(b);
+    b.addEventListener('click', (function (id) {
+      return function () { setMood(id); showScreen(null); };
+    })(m.id));
+  }
+  /* A delivered plate is used and a missing one costs nothing.
+     ⛔ Probing for the three image files directly put three 404s on the console
+     of every boot, forever, for art that does not exist yet. art/plates.json
+     says what has actually landed. */
+  var plates = wrap.querySelectorAll('.plate'), k;
+  if (G.plates) {
+    for (k = 0; k < plates.length; k++) {
+      var id = plates[k].getAttribute('data-plate');
+      if (G.plates.indexOf(id) >= 0) plates[k].style.backgroundImage = 'url(art/mood-' + id + '.jpg?v=' + STAMP + ')';
+    }
+  }
+}
+function setMood(id) {
+  G.mood = id;
+  ENG.setMood(id);
+  $('chipMood').textContent = MOODS[id].name.toUpperCase();
+  G.save = SAVE.write(function (s) { s.mood = id; });
+  buildMoodCards();
+}
+function wire() {
+  var tap = function (id, fn) {
+    var el = $(id);
+    if (el) el.addEventListener('click', function (e) { fn(e); });
+  };
+  tap('btnMenu', function () { showSheet('scrMenu'); });
+  tap('btnMenuClose', function () { showSheet(null); });
+  tap('btnMoods', function () { buildMoodCards(); showScreen('scrMoods'); });
+  tap('btnMoodsBack', function () { showScreen(null); });
+  tap('chipMood', function () { buildMoodCards(); showScreen('scrMoods'); });
+  tap('btnAmbientOpen', function () { showScreen('scrAmbient'); });
+  tap('btnAmbientBack', function () { showScreen(null); });
+  tap('btnAmbientStart', function () { G.ambientStart = 0; startAmbient(); });
+  tap('btnSettings', function () { showSheet('scrSettings'); });
+  tap('btnSettingsClose', function () { showSheet(null); });
+  tap('btnAbout', function () { showScreen('scrAbout'); });
+  tap('btnAboutBack', function () { showScreen(null); });
+  tap('btnRec', function () { toggleRecord(); });
+  tap('btnSavedShare', function () { shareRecording(); });
+  tap('btnSavedDone', function () { showSheet(null); });
+  tap('btnSoundTest', function () {
+    var ctx = audio();
+    if (!ctx) return;
+    showSheet(null); wake(); hush(true);
+    ENG.press(ctx.currentTime + 0.05, 0.5, 0.5, 1);
+    ENG.release(ctx.currentTime + 5.5);
+    setTimeout(function () { hush(false); }, 6000);
+  });
+  tap('btnTilt', function () {
+    if (G.settings.tilt) { G.settings.tilt = 0; ENG.setTilt(0); saveSettings(); return; }
+    var go = function () {
+      G.settings.tilt = 1; saveSettings();
+      window.addEventListener('deviceorientation', function (e) {
+        if (!G.settings.tilt) return;
+        if (G.tiltBase === undefined) G.tiltBase = e.beta || 0;
+        ENG.setTilt(clamp((e.beta || 0) - G.tiltBase, -30, 30));
+      });
+    };
+    if (window.DeviceOrientationEvent && DeviceOrientationEvent.requestPermission) {
+      DeviceOrientationEvent.requestPermission().then(function (r) {
+        if (r === 'granted') go(); else toast('The phone said no to tilt.');
+      }).catch(function () { toast('The phone said no to tilt.'); });
+    } else go();
+  });
+  tap('btnMotion', function () {
+    G.settings.motion = G.settings.motion ? 0 : 1;
+    G.motion = G.settings.motion;
+    saveSettings();
+  });
+  var row = $('sleepRow').querySelectorAll('button'), i;
+  for (i = 0; i < row.length; i++) {
+    row[i].addEventListener('click', (function (btn) {
+      return function () {
+        var k;
+        for (k = 0; k < row.length; k++) row[k].classList.remove('on');
+        btn.classList.add('on');
+        G.sleepMin = parseInt(btn.getAttribute('data-min'), 10) || 0;
+      };
+    })(row[i]));
+  }
+}
+function saveSettings() {
+  G.save = SAVE.write(function (s) { s.tilt = G.settings.tilt; s.motion = G.settings.motion; });
+  $('btnTilt').textContent = 'TILT ' + (G.settings.tilt ? 'ON' : 'OFF');
+  $('btnMotion').textContent = 'MOTION ' + (G.settings.motion ? 'ON' : 'OFF');
+}
+
+/* ========================= 11. SAVE ========================= */
+var SAVE = (function () {
+  var KEY = CONFIG.SAVE_KEY;
+  function blank() { return { v: CONFIG.SAVE_V, mood: 'dawn', tilt: 0, motion: 1, seen: { how: 0 } }; }
+  function read() {
+    var s = blank(), raw, got;
+    try { raw = localStorage.getItem(KEY); } catch (e) { return s; }
+    if (!raw) return s;
+    try { got = JSON.parse(raw); } catch (e) { return s; }
+    if (!got || typeof got !== 'object') return s;
+    if (MOODS[got.mood]) s.mood = got.mood;
+    s.tilt = got.tilt ? 1 : 0;
+    s.motion = got.motion === 0 ? 0 : 1;
+    s.seen = { how: got.seen && got.seen.how ? 1 : 0 };
+    return s;
+  }
+  function write(mut) {
+    var s = read(); mut(s);
+    try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {}
+    return s;
+  }
+  return { read: read, write: write, blank: blank };
+})();
+
+/* ===== Sky Wolf Studio embed protocol ===== */
+(function () {
+  var framed = false; try { framed = window.parent !== window; } catch (e) { framed = true; }
+  window.SWS_EXIT = function () {
+    if (framed) { try { parent.postMessage({ sws: 'close' }, '*'); } catch (e) {} return; }
+    if (document.referrer.indexOf('/portal') >= 0 && history.length > 1) history.back();
+    else location.replace('https://lucidwinds.com/portal/');
+  };
+  if (framed) {
+    try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {}
+    window.addEventListener('load', function () { try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {} });
+  }
+})();
+
+function boot() {
+  CV = $('stage'); CTX = CV.getContext('2d');
+  G.save = SAVE.read();
+  G.mood = G.save.mood;
+  G.settings = { tilt: G.save.tilt, motion: G.save.motion };
+  G.motion = G.settings.motion;
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) G.motion = 0;
+  G.seed = seedFromString(CONFIG.GAME_ID + ':' + (Date.now() % 100000));
+  fitCanvas();
+  bindInput();
+  wire();
+  fetch('art/plates.json?v=' + STAMP).then(function (r) { return r.json(); }).then(function (j) {
+    G.plates = (j && j.have) || [];
+    buildMoodCards();
+  }).catch(function () { G.plates = []; });
+  buildMoodCards();
+  $('chipMood').textContent = MOODS[G.mood].name.toUpperCase();
+  saveSettings();
+  if (G.save.seen.how) $('firstLine').classList.add('gone');
+  else G.save = SAVE.write(function (s) { s.seen.how = 1; });
+  wake();
+  if (location.search.indexOf('test=1') >= 0) {
+    var rep = TEST.run(), out = 'SWELL self test\n\n', i;
+    for (i = 0; i < rep.failures.length; i++) out += 'FAIL  ' + rep.failures[i].name + '   ' + rep.failures[i].detail + '\n';
+    out += '\nPASSED ' + rep.passed + ' / FAILED ' + rep.failed + ' (total ' + rep.total + ')';
+    $('testPanel').textContent = out; $('testPanel').classList.add('on');
+    window.__TEST__ = rep;
+  }
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('./sw.js?v=' + STAMP).catch(function () {});
+    });
+  }
+}
+
+/* The read only hook the gates use, plus ONE thing that writes: an offline
+   render. The engine is the same engine; only the pump changes, because an
+   OfflineAudioContext renders faster than real time and a setInterval cannot
+   keep up with it. */
+window.SWELL_DEV = {
+  stamp: STAMP,
+  frames: function () { return G.frames; },
+  rafRunning: function () { return G.rafOn; },
+  screen: function () { return G.screen; },
+  mood: function () { return G.mood; },
+  audioReady: function () { return !!G.ctx; },
+  state: function () { return ENG.state(); },
+  held: function () { return G.ctx ? ENG.held(G.ctx.currentTime) : 0; },
+  sectionGain: function (k) { return ENG.sectionGain(k); },
+  sectionLive: function (k) { return ENG.sectionLive(k); },
+  chordLog: function () { return ENG.chordLog(); },
+  oscPeak: function () { return ENG.oscPeak(); },
+  hushed: function () { return document.getElementById('chrome').classList.contains('hush'); },
+  recording: function () { return !!G.recorder; },
+  lastRecording: function () {
+    return G.lastBlob ? { size: G.lastBlob.size, type: G.lastBlob.type, name: G.lastName, path: G.lastPath || null } : null;
+  },
+  render: async function (opts) {
+    opts = opts || {};
+    var secs = opts.seconds || 14, sr = opts.sampleRate || 44100;
+    var OC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    var oc = new OC(2, Math.floor(sr * secs), sr);
+    ENG.init(oc, opts.mood || 'dawn', opts.seed || 4242);
+    ENG.press(opts.pressAt === undefined ? 0.2 : opts.pressAt, 0.5, 0.5, 1);
+    ENG.release(opts.releaseAt === undefined ? 6.2 : opts.releaseAt);
+    var t = 0;
+    while (t < secs) { ENG.pump(t); t += 0.05; }
+    ENG.pump(secs);
+    var buf = await oc.startRendering();
+    var ch = buf.getChannelData(0), ch2 = buf.numberOfChannels > 1 ? buf.getChannelData(1) : ch;
+    var i, peak = 0, wins = [], w;
+    for (i = 0; i < ch.length; i++) { var a = Math.abs(ch[i]); if (a > peak) peak = a; }
+    for (w = 0; w * 0.5 < secs; w++) {
+      var a0 = Math.floor(w * 0.5 * sr), a1 = Math.min(ch.length, Math.floor((w + 1) * 0.5 * sr));
+      var sum = 0;
+      for (i = a0; i < a1; i++) sum += ch[i] * ch[i];
+      wins.push(a1 > a0 ? Math.sqrt(sum / (a1 - a0)) : 0);
+    }
+    /* the plan measures the response over 0.25 to 0.30 seconds, which is the
+       window that answers "did it speak inside fifty milliseconds"; a half
+       second window starting at zero is mostly the silence before the press */
+    var pa = opts.pressAt === undefined ? 0.2 : opts.pressAt;
+    var b0 = Math.floor((pa + 0.05) * sr), b1 = Math.floor((pa + 0.10) * sr), rs = 0;
+    for (i = b0; i < b1 && i < ch.length; i++) rs += ch[i] * ch[i];
+    var out = { peak: peak, rmsHalfSeconds: wins, responseRms: Math.sqrt(rs / Math.max(1, b1 - b0)),
+      chordLog: ENG.chordLog(), oscPeak: ENG.oscPeak(),
+      oscMade: ENG.oscMade(), sampleRate: sr, seconds: secs };
+    if (opts.wav) out.wav = toWav(ch, sr);
+    /* the live context is gone now; a fresh page is what a gate uses */
+    return out;
+  }
+};
+/* sixteen bit PCM MONO, so Stephen can double click it and fourteen seconds
+   still fits inside the evidence limit; stereo at 44.1 kHz is 2.4 MB. */
+function toWav(l, sr) {
+  var n = l.length, bytes = 44 + n * 2, buf = new ArrayBuffer(bytes), v = new DataView(buf), i, o = 0;
+  function s(str) { for (var k = 0; k < str.length; k++) v.setUint8(o++, str.charCodeAt(k)); }
+  function u32(x) { v.setUint32(o, x, true); o += 4; }
+  function u16(x) { v.setUint16(o, x, true); o += 2; }
+  s('RIFF'); u32(bytes - 8); s('WAVE'); s('fmt '); u32(16); u16(1); u16(1); u32(sr);
+  u32(sr * 2); u16(2); u16(16); s('data'); u32(n * 2);
+  for (i = 0; i < n; i++) { v.setInt16(o, Math.max(-1, Math.min(1, l[i])) * 32767, true); o += 2; }
+  var bin = '', u8 = new Uint8Array(buf), k;
+  for (k = 0; k < u8.length; k += 8192) bin += String.fromCharCode.apply(null, u8.subarray(k, k + 8192));
+  return btoa(bin);
+}
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+else boot();
+</script>
+</body>
+</html>
