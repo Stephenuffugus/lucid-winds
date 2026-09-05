@@ -188,7 +188,7 @@ function _buildLevels(){
     '@keyframes psWobble{0%,100%{transform:translateY(-6px)}50%{transform:translateY(-8px) rotate(1deg)}}',
     '#PSpan{max-width:min(96vw,520px);margin:0 auto;padding:10px;user-select:none;-webkit-user-select:none;box-sizing:border-box;position:relative;animation:psFade .4s ease}',
     '.PStubes{display:flex;gap:clamp(6px,2vw,10px);justify-content:center;align-items:flex-end;flex-wrap:wrap;padding:14px 6px;min-height:180px;position:relative}',
-    '.PStube{position:relative;width:clamp(48px,12vw,54px);min-height:clamp(130px,34vw,150px);border-radius:0 0 12px 12px;border:2px solid rgba(220,180,120,0.35);border-top:1.5px dashed rgba(220,180,120,0.25);display:flex;flex-direction:column-reverse;align-items:center;padding:3px;cursor:pointer;-webkit-tap-highlight-color:transparent;background:linear-gradient(180deg,rgba(26,31,23,0.15) 0%,rgba(26,31,23,0.55) 100%);box-shadow:inset 0 -8px 12px rgba(0,0,0,0.28),inset 2px 0 4px rgba(255,220,160,0.06);transition:transform .22s cubic-bezier(.25,.46,.45,.94),box-shadow .22s ease}',
+    '.PStube{position:relative;width:clamp(52px,12vw,56px);min-height:clamp(130px,34vw,150px);border-radius:0 0 12px 12px;border:2px solid rgba(220,180,120,0.35);border-top:1.5px dashed rgba(220,180,120,0.25);display:flex;flex-direction:column-reverse;align-items:center;padding:3px;cursor:pointer;-webkit-tap-highlight-color:transparent;background:linear-gradient(180deg,rgba(26,31,23,0.15) 0%,rgba(26,31,23,0.55) 100%);box-shadow:inset 0 -8px 12px rgba(0,0,0,0.28),inset 2px 0 4px rgba(255,220,160,0.06);transition:transform .22s cubic-bezier(.25,.46,.45,.94),box-shadow .22s ease}',
     '.PStube.sel{border-color:#c8a84b;box-shadow:inset 0 -8px 12px rgba(0,0,0,0.3),0 0 16px rgba(200,168,75,0.35);animation:psWobble 1.6s ease-in-out infinite}',
     '.PStube.done{border-color:rgba(122,179,86,0.7);box-shadow:inset 0 -10px 14px rgba(0,0,0,0.3),0 0 14px rgba(122,179,86,0.28)}',
     '.PSpol{width:calc(100% - 2px);height:clamp(22px,6vw,26px);border-radius:3px;margin-bottom:1px;position:relative;box-shadow:inset 0 1px 0 rgba(255,255,255,0.18),inset 0 -1px 0 rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center;font-size:.74rem;line-height:1}',
@@ -203,7 +203,7 @@ function _buildLevels(){
     '.PSb.gold{border-color:#c8a84b;color:#c8a84b;background:linear-gradient(180deg,rgba(200,168,75,0.18),rgba(160,130,50,0.22))}',
     '.PSb.pulse{animation:psPop 1.1s ease-in-out infinite}',
     '.PSb[disabled]{opacity:.35;pointer-events:none}',
-    '.PSlvl{font-family:Georgia,serif;font-style:italic;font-size:0.7rem;color:rgba(232,220,200,0.75);letter-spacing:0.04em}',
+    '.PSlvl{font-family:Georgia,serif;font-style:italic;font-size:0.72rem;color:rgba(232,220,200,.85);letter-spacing:0.04em}',
     '.PSlvl strong{color:#c8a84b;font-style:normal}',
     /* vial skins — earned by campaign progress */
     '.PStube.skin-honey{border-radius:0 0 24px 24px;border-color:rgba(230,180,80,0.65);background:linear-gradient(180deg,rgba(70,50,15,0.2) 0%,rgba(120,85,25,0.5) 100%)}',

@@ -240,6 +240,10 @@
        then the top row last. */
     spots.push({ css: 'left:10px;top:' + Math.round(H / 2 - 24) + 'px;', x: 58, y: H / 2 });
     spots.push({ css: 'right:10px;top:' + Math.round(H / 2 - 24) + 'px;', x: W - 58, y: H / 2 });
+    /* three quarters down as well: a menu that ends above its footer leaves its free band there
+       (Cipher Bloom's chip sat on the Gallery button with 150px of empty dark below the menu) */
+    spots.push({ css: 'left:10px;top:' + Math.round(H * 0.75 - 24) + 'px;', x: 58, y: H * 0.75 });
+    spots.push({ css: 'right:10px;top:' + Math.round(H * 0.75 - 24) + 'px;', x: W - 58, y: H * 0.75 });
     for (x = 10; x + 97 <= W - 130; x += 48) spots.push({ css: 'left:' + x + 'px;' + B, x: x + 48, y: H - 34 });   /* never the bottom right: the feedback fab's */
     for (x = 10; x + 97 <= W - 10; x += 48) spots.push({ css: 'left:' + x + 'px;' + T, x: x + 48, y: 34 });
     /* the chip is 97px wide: score its whole footprint (left end, centre, right end), worst point wins */
@@ -287,7 +291,8 @@
   function cornersDebug() {
       var W = window.innerWidth || 375, H = window.innerHeight || 667, out = [], x;
       var T = 'top:calc(10px + env(safe-area-inset-top,0px));', B = 'bottom:calc(10px + env(safe-area-inset-bottom,0px));';
-      var spots = [{ css: 'left:10px;top:' + Math.round(H / 2 - 24) + 'px;', x: 58, y: H / 2 }, { css: 'right:10px;top:' + Math.round(H / 2 - 24) + 'px;', x: W - 58, y: H / 2 }];
+      var spots = [{ css: 'left:10px;top:' + Math.round(H / 2 - 24) + 'px;', x: 58, y: H / 2 }, { css: 'right:10px;top:' + Math.round(H / 2 - 24) + 'px;', x: W - 58, y: H / 2 },
+        { css: 'left:10px;top:' + Math.round(H * 0.75 - 24) + 'px;', x: 58, y: H * 0.75 }, { css: 'right:10px;top:' + Math.round(H * 0.75 - 24) + 'px;', x: W - 58, y: H * 0.75 }];
       for (x = 10; x + 97 <= W - 130; x += 48) spots.push({ css: 'left:' + x + 'px;' + B, x: x + 48, y: H - 34 });
       for (x = 10; x + 97 <= W - 10; x += 48) spots.push({ css: 'left:' + x + 'px;' + T, x: x + 48, y: 34 });
       for (var i = 0; i < spots.length; i++) { var worst = 0, dx, dy, sc; for (dy = -16; dy <= 16; dy += 16) for (dx = -40; dx <= 40; dx += 40) { sc = occupancy(spots[i].x + dx, spots[i].y + dy); if (sc > worst) worst = sc; } out.push({ css: spots[i].css, score: worst }); }

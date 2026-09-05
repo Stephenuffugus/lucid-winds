@@ -33,7 +33,7 @@
     // gestures before the canvas sees them, so the Keeper can scroll the
     // button panel below without fighting the draw handler. Horizontal
     // strokes still draw; circular/mandala strokes work fine.
-    canvas=document.createElement('canvas');canvas.style.cssText='display:block;width:100%;aspect-ratio:1;max-width:420px;margin:0 auto;border-radius:12px;touch-action:pan-y;background:#0d100c';
+    canvas=document.createElement('canvas');canvas.style.cssText='display:block;width:100%;aspect-ratio:1;max-width:420px;margin:0 auto;border-radius:12px;touch-action:pan-y;background:#0d100c;box-shadow:0 0 0 1px rgba(200,168,75,.18),0 8px 30px rgba(0,0,0,.6)';
     a.appendChild(canvas);ctx=canvas.getContext('2d');
     bufC=document.createElement('canvas');bufX=bufC.getContext('2d');
   
@@ -181,11 +181,11 @@
       }
       colorPh+=dt*0.02;if(colorPh>1)colorPh-=1;
       ctx.fillStyle='#0d100c';ctx.fillRect(0,0,W,H);
-      ctx.beginPath();ctx.arc(cx,cy,radius,0,Math.PI*2);ctx.strokeStyle='rgba(74,124,53,0.06)';ctx.lineWidth=1;ctx.stroke();
-      ctx.strokeStyle='rgba(74,124,53,0.03)';ctx.lineWidth=0.5;
+      ctx.beginPath();ctx.arc(cx,cy,radius,0,Math.PI*2);ctx.strokeStyle='rgba(74,124,53,0.18)';ctx.lineWidth=1;ctx.stroke();
+      ctx.strokeStyle='rgba(74,124,53,0.10)';ctx.lineWidth=0.5;
       var step=(Math.PI*2)/symmetry;
       for(var i=0;i<symmetry;i++){var ga=step*i+rotAngle;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(ga)*radius,cy+Math.sin(ga)*radius);ctx.stroke()}
-      ctx.beginPath();ctx.arc(cx,cy,3,0,Math.PI*2);ctx.fillStyle='rgba(212,168,67,0.15)';ctx.fill();
+      ctx.beginPath();ctx.arc(cx,cy,3,0,Math.PI*2);ctx.fillStyle='rgba(212,168,67,0.45)';ctx.fill();
       ctx.save();ctx.translate(cx,cy);ctx.rotate(rotAngle);ctx.translate(-cx,-cy);ctx.drawImage(bufC,0,0,W,H);ctx.restore();
       // Draw custom path preview
       if(_bwDrawingPath&&_bwCustomPath.length>1){ctx.beginPath();ctx.moveTo(_bwCustomPath[0].x*W,_bwCustomPath[0].y*H);for(var pi=1;pi<_bwCustomPath.length;pi++)ctx.lineTo(_bwCustomPath[pi].x*W,_bwCustomPath[pi].y*H);ctx.strokeStyle='rgba(200,168,75,0.5)';ctx.lineWidth=2;ctx.setLineDash([4,4]);ctx.stroke();ctx.setLineDash([])}
@@ -204,7 +204,7 @@
   
     var _bbs='min-height:56px;min-width:clamp(72px,20vw,96px);padding:0.5rem 0.4rem;font-size:clamp(.55rem,1.6vw,.7rem);background:rgba(26,31,23,.9);border:1.5px solid rgba(74,124,53,.25);border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.03);text-align:center';
     // Color palette
-    var _bwPalette=['#7ab356','#4a7c35','#c8a84b','#e8dcc8','#c07070','#5bafd4','#9b59b6','#c76a30','#e8a050','#3B5323','#D4A843','#e8dcc8'];
+    var _bwPalette=['#7ab356','#4a7c35','#c8a84b','#e8dcc8','#c07070','#5bafd4','#9b59b6','#c76a30','#e8a050','#3B5323','#D4A843','#c4849a'];   /* #e8dcc8 was listed twice; a rose makes thirteen distinct colours */
     var palDiv=document.createElement('div');palDiv.style.cssText='display:flex;gap:4px;justify-content:center;flex-wrap:wrap;padding:6px 4px';
     _bwPalette.forEach(function(c){
       var sw=document.createElement('div');
@@ -221,7 +221,7 @@
     a.appendChild(palDiv);
   
     var ctrlDiv=mc(a);
-    var _bls='display:block;font-size:clamp(0.32rem,0.9vw,0.38rem);color:var(--muted);margin-top:2px;letter-spacing:0.04em';
+    var _bls='display:block;font-size:clamp(0.62rem,2vw,0.72rem);color:var(--muted);margin-top:2px;letter-spacing:0.04em';
     // Primary controls — always visible. Stephen: 'bloom wheel should have
     // a few of the most important buttons at the top or readily available
     // like, clear.' CLEAR + SAVE now live with the petals row so players
@@ -245,7 +245,7 @@
       +'<div style="display:flex;gap:6px;padding:8px 4px;flex-wrap:wrap;justify-content:center;align-items:center;background:rgba(13,16,12,.92);border-top:1px solid rgba(74,124,53,.15);margin:0 -12px">'
       +'<button class="gb" style="'+_bbs+';border-color:rgba(217,107,75,0.35);color:#e8a090" onclick="_BWClear()">✕ CLEAR<span style="'+_bls+'">CANVAS</span></button>'
       +'<button class="gb" style="'+_bbs+';border-color:rgba(200,168,75,0.4);color:var(--gold);background:rgba(200,168,75,0.08)" onclick="_BWSave()">💾 SAVE<span style="'+_bls+'">IMAGE</span></button>'
-      +'<button class="gb" style="min-height:40px;padding:0.35rem 0.9rem;font-size:0.55rem;letter-spacing:0.1em;background:rgba(26,31,23,.6);border:1px solid rgba(74,124,53,.2);border-radius:8px;" onclick="_BWMore()" id="BWmoreTog">▼ MORE</button>'
+      +'<button class="gb" style="min-height:48px;padding:0.35rem 0.9rem;font-size:0.7rem;letter-spacing:0.1em;background:rgba(26,31,23,.6);border:1px solid rgba(74,124,53,.2);border-radius:8px;" onclick="_BWMore()" id="BWmoreTog">▼ MORE</button>'
       +'</div>'
       +'<div id="BWmoreRow" style="display:none;gap:6px;padding:6px 0;flex-wrap:wrap;justify-content:center">'
       +'<button class="gb" style="'+_bbs+';min-width:clamp(88px,24vw,110px)" onclick="_BWPath()" id="BWpath">◯ SPIN<span style="'+_bls+'">PATH</span></button>'
