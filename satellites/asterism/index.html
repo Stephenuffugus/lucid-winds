@@ -35,36 +35,41 @@ html,body{margin:0;padding:0;height:100%;background:var(--ink);color:var(--cream
 
 /* ---------- the sky screen furniture ---------- */
 #chrome{position:absolute;inset:0;pointer-events:none;z-index:5}
-.chip{position:absolute;pointer-events:auto;background:rgba(10,16,34,.72);
-  border:1px solid rgba(232,201,122,.28);color:var(--cream);border-radius:14px;
-  min-height:48px;padding:8px 14px;font-size:.8rem;letter-spacing:.05em;
+.chip{position:absolute;pointer-events:auto;background:rgba(10,16,34,.34);
+  border:1px solid rgba(232,201,122,.14);color:rgba(232,226,210,.78);border-radius:14px;
+  min-height:48px;padding:8px 14px;font-size:.76rem;letter-spacing:.05em;
   font-family:var(--serif);display:flex;flex-direction:column;justify-content:center;
   text-align:left;line-height:1.35;max-width:62vw}
 .chip .sub{font-size:.72rem;color:var(--dim);letter-spacing:.06em}
 #chipPlace{left:calc(12px + env(safe-area-inset-left,0px));top:calc(10px + var(--safeT))}
-.iconbtn{position:absolute;pointer-events:auto;background:rgba(10,16,34,.72);
-  border:1px solid rgba(232,201,122,.28);color:var(--gold);border-radius:14px;
+.iconbtn{position:absolute;pointer-events:auto;background:rgba(10,16,34,.34);
+  border:1px solid rgba(232,201,122,.18);color:rgba(232,201,122,.8);border-radius:14px;
   display:flex;align-items:center;justify-content:center;padding:0;line-height:1;
   font-family:var(--serif);font-size:1.05rem}
 #btnMenu{right:calc(12px + env(safe-area-inset-right,0px));top:calc(10px + var(--safeT));
   width:48px;height:48px}
 #btnDraw{right:calc(14px + env(safe-area-inset-right,0px));bottom:calc(18px + var(--safeB));
-  width:56px;height:56px;border-radius:50%;font-size:.66rem;letter-spacing:.12em}
+  width:56px;height:56px;border-radius:50%;font-size:.7rem;letter-spacing:.1em}
 #btnUndo{right:calc(80px + env(safe-area-inset-right,0px));bottom:calc(22px + var(--safeB));
-  width:48px;height:48px;border-radius:50%;font-size:.62rem;letter-spacing:.1em}
+  width:48px;height:48px;border-radius:50%;font-size:.7rem;letter-spacing:.06em}
 #btnUndo[hidden]{display:none}
 #starLabel{position:absolute;pointer-events:none;font-size:.78rem;letter-spacing:.1em;
   color:var(--gold);text-shadow:0 0 12px rgba(0,0,0,.95);opacity:0;
   transition:opacity 260ms ease-out;white-space:nowrap;transform:translate(-50%,0)}
 #starLabel.on{opacity:.95}
+/* THE CARD NEVER EATS A STAR. It is an invitation laid over the sky, and with
+   five hundred stars on a phone screen a card that takes pointer events swallows
+   whole constellations: on the first ever night, taps on Vega and Deneb landed
+   on it instead. Only its button is tappable, and the first star you pick puts
+   it away. */
 #promptCard{position:absolute;left:50%;transform:translateX(-50%);
-  top:calc(70px + var(--safeT));width:86%;max-width:330px;pointer-events:auto;
+  top:calc(70px + var(--safeT));width:86%;max-width:330px;pointer-events:none;
   background:rgba(10,16,34,.86);border:1px solid rgba(232,201,122,.24);
   border-radius:16px;padding:14px 16px;font-size:.82rem;line-height:1.6;color:var(--cream)}
 #promptCard[hidden]{display:none}
-#promptCard .cap{font-size:.68rem;letter-spacing:.2em;color:var(--dim);
+#promptCard .cap{font-size:.7rem;letter-spacing:.2em;color:var(--dim);
   text-transform:uppercase;margin-bottom:6px}
-#promptCard button{margin-top:10px}
+
 
 /* ---------- sheets and screens ---------- */
 .screen{position:absolute;inset:0;z-index:10;background:var(--ink);
@@ -79,7 +84,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--ink);color:var(--cream
   overscroll-behavior:contain}
 .sheet.on{display:flex}
 .spacer{flex:1 1 auto;min-height:8px}
-.btn{pointer-events:auto;width:100%;max-width:330px;min-height:56px;
+.btn{pointer-events:auto;width:100%;max-width:330px;min-height:56px;flex:0 0 auto;
   background:rgba(18,26,51,.9);border:1px solid rgba(232,201,122,.4);
   color:var(--gold);border-radius:14px;font-size:.95rem;letter-spacing:.16em;
   margin:6px 0;padding:14px 16px;font-family:var(--serif);text-transform:uppercase}
@@ -94,11 +99,11 @@ html,body{margin:0;padding:0;height:100%;background:var(--ink);color:var(--cream
 .tiny{font-size:.7rem;line-height:1.7;color:var(--dim);width:100%;max-width:330px;margin:6px 0}
 .title{font-size:1.3rem;letter-spacing:.2em;color:var(--gold);font-variant:small-caps;
   text-align:center;margin:4px 0 2px}
-input[type=text],input[type=date],input[type=number]{width:100%;max-width:330px;min-height:48px;
+input[type=text],input[type=date],input[type=number]{width:100%;max-width:330px;min-height:48px;flex:0 0 auto;
   background:rgba(7,10,26,.9);border:1px solid rgba(232,201,122,.3);color:var(--cream);
   border-radius:12px;padding:10px 14px;font-family:var(--serif);font-size:1rem;margin:6px 0}
 input:focus{outline:1px solid var(--gold)}
-.card{pointer-events:auto;width:100%;max-width:330px;min-height:88px;
+.card{pointer-events:auto;width:100%;max-width:330px;min-height:88px;flex:0 0 auto;
   background:rgba(18,26,51,.86);border:1px solid rgba(232,201,122,.22);
   border-radius:14px;margin:6px 0;padding:12px 14px;display:flex;align-items:center;
   gap:12px;color:var(--cream);font-family:var(--serif);text-align:left}
@@ -111,8 +116,14 @@ input:focus{outline:1px solid var(--gold)}
   box-shadow:inset 0 0 44px rgba(120,96,52,.28);min-height:120px;text-align:left}
 #mythPaper .nm{font-variant:small-caps;letter-spacing:.14em;font-size:1.1rem;
   display:block;margin-bottom:10px;color:#3A2F1C}
-#cityList{width:100%;max-width:330px;max-height:220px;overflow-y:auto;
-  border:1px solid var(--line);border-radius:12px;margin:6px 0}
+/* ⛔ flex:0 0 auto AND a real height. A scrolling child in a flex column gets
+   squeezed by its siblings: with only a max-height this list collapsed to two
+   pixels at 320 wide and every city in it was clipped away. The fleet has hit
+   this before; it is written down as "a scroll row in a flex column clips". */
+#cityList{width:100%;max-width:330px;height:196px;flex:0 0 auto;overflow-y:auto;
+  border:1px solid var(--line);border-radius:12px;margin:6px 0;
+  -webkit-overflow-scrolling:touch}
+@media (max-height:600px){ #cityList{height:150px} }
 #cityList button{display:block;width:100%;text-align:left;background:none;border:0;
   border-bottom:1px solid rgba(36,48,85,.6);color:var(--cream);font-family:var(--serif);
   font-size:.85rem;padding:12px 14px;min-height:48px}
@@ -144,7 +155,7 @@ input:focus{outline:1px solid var(--gold)}
     <div id="promptCard" hidden>
       <div class="cap">Prompt of the night</div>
       <div id="promptText"></div>
-      <button class="btn small ghost" id="btnPromptOk">GOT IT</button>
+      <div class="cap" style="margin:8px 0 0;letter-spacing:.14em">Tap the sky to begin</div>
     </div>
   </div>
 
@@ -1115,6 +1126,528 @@ function starsOf(cat, hips) {
 }
 // ---- ASTRO_EXPORT_END ----
 
+/* ========================= 6. SKY ========================= */
+/* The star layer is drawn ONCE to an offscreen canvas and redrawn only when the
+   view or the time changes. The per frame composite is that layer, at most
+   sixty twinkling stars, the moon, the ground and the pen. A twinkle that
+   redrew the sky would be a re render storm, which is the one perf note the
+   design leaves. */
+var CV, CTX, LAYER, LCTX, CSSW = 375, CSSH = 667, DPR = 1;
+var PAL_DARK = '#070A1A', PAL_TWI = '#0E1836', PAL_DUSK = '#1B2A55', PAL_DAY = '#3E5E93';
+
+function fitCanvas() {
+  if (!CV) return;
+  var vv = window.visualViewport;
+  var w = Math.round(vv ? vv.width : window.innerWidth);
+  var h = Math.round(vv ? vv.height : window.innerHeight);
+  DPR = Math.min(2.5, window.devicePixelRatio || 1);
+  var pw = Math.round(w * DPR), ph = Math.round(h * DPR);
+  if (CV.width !== pw || CV.height !== ph) { CV.width = pw; CV.height = ph; }
+  if (!LAYER) LAYER = document.createElement('canvas');
+  if (LAYER.width !== pw || LAYER.height !== ph) { LAYER.width = pw; LAYER.height = ph; }
+  LCTX = LAYER.getContext('2d');
+  CSSW = w; CSSH = h;
+  G.layerDirty = true;
+}
+/* THE SIZE AND THE BRIGHTNESS BOTH FALL OFF, HARD. The first curve was linear
+   from 4.5 px at magnitude minus one to 1.2 px at five, and since almost every
+   star in the catalogue is between three and five, the whole sky came out as
+   dots of one size: five hundred pieces of confetti with no Summer Triangle in
+   them. The eye finds a constellation by CONTRAST, so magnitude zero is now
+   about five times the area of magnitude four and six times the alpha. */
+function starRadius(mag) {
+  return 0.75 + 3.7 * Math.pow(clamp((5.4 - mag) / 6.9, 0, 1), 2.0);
+}
+/* the floor matters as much as the curve. At 0.16 the faint stars vanished and
+   the sky read as five bright ones in a void, which is the opposite mistake to
+   the confetti and just as wrong: a dark sky is FULL of faint stars. */
+function starAlpha(mag) {
+  return clamp(1.15 * Math.pow(clamp((5.6 - mag) / 6.5, 0, 1), 1.05), 0.32, 1);
+}
+var CI_STOPS = [[0.0, 191, 212, 255], [0.3, 228, 236, 255], [0.6, 255, 255, 255],
+  [1.0, 255, 243, 208], [1.5, 255, 217, 160], [9.9, 255, 182, 138]];
+/* a faint star has almost no colour to the eye, so the tint is pulled back
+   toward white as it dims: real, and it stops the sky reading as confetti */
+function ciColor(ci, mag) {
+  var i, c = CI_STOPS[CI_STOPS.length - 1];
+  for (i = 0; i < CI_STOPS.length; i++) if (ci < CI_STOPS[i][0]) { c = CI_STOPS[i]; break; }
+  if (mag === undefined) return 'rgb(' + c[1] + ',' + c[2] + ',' + c[3] + ')';
+  var k = clamp((4.6 - mag) / 3.2, 0.15, 1);
+  return 'rgb(' + Math.round(232 + (c[1] - 232) * k) + ',' +
+    Math.round(238 + (c[2] - 238) * k) + ',' + Math.round(255 + (c[3] - 255) * k) + ')';
+}
+function skyPalette(sa) {
+  if (sa < CONFIG.SUN_DARK) return PAL_DARK;
+  if (sa < CONFIG.SUN_DUSK) return PAL_TWI;
+  if (sa < 0) return PAL_DUSK;
+  return PAL_DAY;
+}
+function magLimitFor(sa) {
+  if (sa < CONFIG.SUN_DARK) return CONFIG.MAG_LIMIT_DARK;
+  if (sa < CONFIG.SUN_DUSK) return CONFIG.MAG_LIMIT_TWILIGHT;
+  return CONFIG.MAG_LIMIT_DUSK;
+}
+/* the hills. Drawn by code from a seeded noise so every place gets the same
+   horizon every night; a painted strip replaces it if one is ever delivered. */
+/* rolling hills with a ragged top, not a compass arc. Six octaves and a small
+   sharp one for the treeline; the same everywhere, so a place gets the same
+   horizon every night. */
+function groundY(px) {
+  var r = 0, i, x = px / Math.max(1, CSSW);
+  for (i = 1; i <= 6; i++) r += Math.sin(x * 6.2832 * i * 1.31 + i * i * 0.9) / Math.pow(i, 0.8);
+  r += Math.sin(x * 6.2832 * 17 + 1.3) * 0.26 + Math.sin(x * 6.2832 * 29 + 4.1) * 0.15
+    + Math.sin(x * 6.2832 * 47 + 2.4) * 0.08;
+  return r * 0.026;
+}
+function drawGround(g) {
+  var horizonPts = [], px, p;
+  for (px = 0; px <= CSSW; px += 6) {
+    p = project(0 + groundY(px) * 40, unproject(px, CSSH / 2, G.view.alt, G.view.az, G.view.fov, CSSW, CSSH).az,
+      G.view.alt, G.view.az, G.view.fov, CSSW, CSSH);
+    horizonPts.push([px, p.behind ? CSSH + 40 : p.y]);
+  }
+  var minY = CSSH + 50, maxY = -50, i;
+  for (i = 0; i < horizonPts.length; i++) {
+    minY = Math.min(minY, horizonPts[i][1]);
+    maxY = Math.max(maxY, horizonPts[i][1]);
+  }
+  if (minY > CSSH) return;
+  g.beginPath();
+  g.moveTo(0, CSSH + 4);
+  for (i = 0; i < horizonPts.length; i++) g.lineTo(horizonPts[i][0], horizonPts[i][1]);
+  g.lineTo(CSSW, CSSH + 4);
+  g.closePath();
+  /* the skyglow is painted UNDER the ground and the ridge cuts it. Painted as a
+     band that stops at the highest point of the ridge it left a hard horizontal
+     seam straight across the screen; clipped INSIDE the ground it lit the land,
+     which is backwards. The light near a horizon is in the air. */
+  var glow = g.createLinearGradient(0, minY - 130, 0, Math.min(CSSH, maxY + 30));
+  glow.addColorStop(0, 'rgba(96,116,170,0)');
+  glow.addColorStop(0.75, 'rgba(96,116,170,.16)');
+  glow.addColorStop(1, 'rgba(110,132,190,.30)');
+  g.fillStyle = glow;
+  g.fillRect(0, minY - 130, CSSW, Math.min(CSSH, maxY + 30) - (minY - 130) + 2);
+  g.fillStyle = '#04060E';
+  g.fill();
+  g.strokeStyle = 'rgba(150,165,205,.26)'; g.lineWidth = 1; g.stroke();
+}
+/* the offscreen star layer */
+function renderLayer() {
+  if (!LCTX) return;
+  var cat = G.cat;
+  if (!cat) return;
+  var J = jd(G.whenMs), lat = G.place.lat, lon = G.place.lon;
+  var sa = sunAlt(J, lat, lon);
+  var lim = magLimitFor(sa);
+  G.sunAlt = sa; G.magLimit = lim;
+  LCTX.setTransform(DPR, 0, 0, DPR, 0, 0);
+  LCTX.clearRect(0, 0, CSSW, CSSH);
+  LCTX.fillStyle = skyPalette(sa);
+  LCTX.fillRect(0, 0, CSSW, CSSH);
+  G.screenOfStar = {};
+  G.visible = [];
+  var i, drawn = 0;
+  for (i = 0; i < cat.n; i++) {
+    if (cat.mag[i] > lim) continue;
+    var p = altAz(cat.ra[i], cat.dec[i], lat, lon, J);
+    if (p.alt < -2) continue;
+    var s = project(p.alt, p.az, G.view.alt, G.view.az, G.view.fov, CSSW, CSSH);
+    if (s.behind) continue;
+    if (s.x < -20 || s.x > CSSW + 20 || s.y < -20 || s.y > CSSH + 20) continue;
+    var r = starRadius(cat.mag[i]);
+    var av = starAlpha(cat.mag[i]) * (p.alt < 0 ? 0.22 : 1);
+    LCTX.globalAlpha = av;
+    LCTX.fillStyle = ciColor(cat.ci[i], cat.mag[i]);
+    LCTX.beginPath(); LCTX.arc(s.x, s.y, r, 0, 6.2832); LCTX.fill();
+    if (cat.mag[i] < 1.6) {
+      /* a soft halo under the brightest, so the eye lands on them first and the
+         Summer Triangle is a triangle instead of three more dots. A GRADIENT:
+         a flat disc at low alpha reads as a washer or a bullet hole. */
+      var col = ciColor(cat.ci[i], cat.mag[i]);
+      var gr = LCTX.createRadialGradient(s.x, s.y, r * 0.6, s.x, s.y, r * 4.2);
+      gr.addColorStop(0, col);
+      gr.addColorStop(1, 'rgba(7,10,26,0)');
+      LCTX.globalAlpha = av * 0.30;
+      LCTX.fillStyle = gr;
+      LCTX.beginPath(); LCTX.arc(s.x, s.y, r * 4.2, 0, 6.2832); LCTX.fill();
+      LCTX.fillStyle = col;
+      LCTX.globalAlpha = av * 0.5;
+      LCTX.strokeStyle = ciColor(cat.ci[i], cat.mag[i]); LCTX.lineWidth = 0.8;
+      LCTX.beginPath();
+      LCTX.moveTo(s.x - r * 3.2, s.y); LCTX.lineTo(s.x + r * 3.2, s.y);
+      LCTX.moveTo(s.x, s.y - r * 3.2); LCTX.lineTo(s.x, s.y + r * 3.2);
+      LCTX.stroke();
+    }
+    G.visible.push({ i: i, x: s.x, y: s.y, alt: p.alt, mag: cat.mag[i] });
+    G.screenOfStar[i] = { x: s.x, y: s.y, alt: p.alt };
+    drawn++;
+  }
+  LCTX.globalAlpha = 1;
+  drawGround(LCTX);
+  G.drawnCount = drawn;
+  G.layerDirty = false;
+}
+function drawMoon(g) {
+  var J = jd(G.whenMs);
+  var m = moon(J);
+  var p = altAz(m.ra, m.dec, G.place.lat, G.place.lon, J);
+  if (p.alt < -2) return;
+  var s = project(p.alt, p.az, G.view.alt, G.view.az, G.view.fov, CSSW, CSSH);
+  if (s.behind) return;
+  var r = Math.max(6, (Math.min(CSSW, CSSH) / G.view.fov) * 0.55);
+  g.save();
+  g.globalAlpha = 0.13; g.fillStyle = '#FFF6DC';
+  g.beginPath(); g.arc(s.x, s.y, r * 3.2, 0, 6.2832); g.fill();
+  g.globalAlpha = 1;
+  g.beginPath(); g.arc(s.x, s.y, r, 0, 6.2832); g.fillStyle = '#1A2038'; g.fill();
+  /* the lit part: a circle minus an ellipse whose width is the phase */
+  var k = Math.cos(m.phase * 2 * Math.PI);
+  g.save();
+  g.beginPath(); g.arc(s.x, s.y, r, 0, 6.2832); g.clip();
+  g.fillStyle = '#FFF6DC';
+  g.beginPath();
+  g.ellipse(s.x, s.y, r, r, 0, -Math.PI / 2, Math.PI / 2, m.phase > 0.5);
+  g.ellipse(s.x, s.y, r * Math.abs(k), r, 0, Math.PI / 2, -Math.PI / 2, k > 0 ? (m.phase <= 0.5) : (m.phase > 0.5));
+  g.fill();
+  g.restore();
+  g.globalAlpha = 0.5; g.strokeStyle = 'rgba(255,246,220,.4)'; g.lineWidth = 0.8;
+  g.beginPath(); g.arc(s.x, s.y, r, 0, 6.2832); g.stroke();
+  g.restore();
+}
+/* the pen: chalk gold, a slight waver, an ease out on a new line */
+function wavePoints(ax, ay, bx, by, seed) {
+  var n = 10, pts = [], i, r = makeRNG(seed);
+  var dx = bx - ax, dy = by - ay, len = Math.sqrt(dx * dx + dy * dy) || 1;
+  var nx = -dy / len, ny = dx / len;
+  for (i = 0; i <= n; i++) {
+    var t = i / n;
+    var w = (r() - 0.5) * 1.9 * Math.sin(t * Math.PI);
+    pts.push([ax + dx * t + nx * w, ay + dy * t + ny * w]);
+  }
+  return pts;
+}
+function drawConstellation(g, hips, edges, born, alpha) {
+  var i, j, cat = G.cat;
+  g.save();
+  g.lineCap = 'round'; g.lineJoin = 'round';
+  for (i = 0; i < edges.length; i++) {
+    var a = G.screenOfStar[cat.byHip[hips[edges[i][0]]]];
+    var b = G.screenOfStar[cat.byHip[hips[edges[i][1]]]];
+    if (!a || !b) continue;
+    var age = born && born[i] !== undefined ? (G.nowFrame - born[i]) : 9999;
+    var t = clamp(age / 350, 0, 1);
+    t = 1 - Math.pow(1 - t, 3);
+    var pts = wavePoints(a.x, a.y, b.x, b.y, seedFromString(hips[edges[i][0]] + ':' + hips[edges[i][1]]));
+    var upto = Math.max(1, Math.round(t * (pts.length - 1)));
+    g.globalAlpha = (alpha === undefined ? 1 : alpha) * 0.22; g.strokeStyle = '#E8C97A'; g.lineWidth = 4;
+    g.beginPath(); g.moveTo(pts[0][0], pts[0][1]);
+    for (j = 1; j <= upto; j++) g.lineTo(pts[j][0], pts[j][1]);
+    g.stroke();
+    g.globalAlpha = (alpha === undefined ? 1 : alpha); g.lineWidth = 1.5;
+    g.beginPath(); g.moveTo(pts[0][0], pts[0][1]);
+    for (j = 1; j <= upto; j++) g.lineTo(pts[j][0], pts[j][1]);
+    g.stroke();
+  }
+  for (i = 0; i < hips.length; i++) {
+    var st = G.screenOfStar[cat.byHip[hips[i]]];
+    if (!st) continue;
+    g.globalAlpha = (alpha === undefined ? 1 : alpha);
+    g.strokeStyle = '#E8C97A'; g.lineWidth = 1.2;
+    g.beginPath(); g.arc(st.x, st.y, 6, 0, 6.2832); g.stroke();
+  }
+  g.restore();
+}
+
+function paint() {
+  if (!CTX) return;
+  if (G.layerDirty) renderLayer();
+  CTX.setTransform(DPR, 0, 0, DPR, 0, 0);
+  CTX.globalAlpha = 1;
+  CTX.drawImage(LAYER, 0, 0, LAYER.width, LAYER.height, 0, 0, CSSW, CSSH);
+  /* twinkle: at most sixty of the brightest, alpha noise only */
+  if (G.settings.twinkle && G.motion && G.visible) {
+    var i, n = 0, t = G.nowFrame / 1000;
+    for (i = 0; i < G.visible.length && n < CONFIG.TWINKLE_MAX; i++) {
+      var v = G.visible[i];
+      if (v.mag > CONFIG.TWINKLE_MAG || v.alt < 0) continue;
+      var a = 1 + CONFIG.TWINKLE_AMP * Math.sin(t * (2.1 + (v.i % 7) * 0.37) + v.i);
+      CTX.globalAlpha = clamp(a - 1 + 0.5, 0, 1) * starAlpha(v.mag);
+      CTX.fillStyle = ciColor(G.cat.ci[v.i], v.mag);
+      CTX.beginPath(); CTX.arc(v.x, v.y, starRadius(v.mag) * 0.9, 0, 6.2832); CTX.fill();
+      n++;
+    }
+    CTX.globalAlpha = 1;
+  }
+  drawMoon(CTX);
+  if (G.shown) drawConstellation(CTX, G.shown.s, G.shown.e, null, 0.75);
+  if (G.draw.hips.length) drawConstellation(CTX, G.draw.hips, G.draw.edges, G.draw.born, 1);
+}
+
+/* ========================= 7. DRAW ========================= */
+/* A tap picks the NEAREST star within 28 css px and says which one it got,
+   because a star is a two pixel dot and the 48 px law is for buttons. */
+function pickStar(px, py) {
+  var best = -1, bestD = CONFIG.PICK_PX * CONFIG.PICK_PX, i;
+  for (i = 0; i < G.visible.length; i++) {
+    var v = G.visible[i];
+    if (v.alt < 0) continue;
+    if (!pickable(G.cat, v.i, G.magLimit)) continue;
+    var d = (v.x - px) * (v.x - px) + (v.y - py) * (v.y - py);
+    if (d < bestD) { bestD = d; best = v.i; }
+  }
+  return best;
+}
+function showStarLabel(i) {
+  var s = G.screenOfStar[i];
+  if (!s) return;
+  var el = $('starLabel');
+  el.textContent = starName(G.cat, i);
+  el.style.left = s.x + 'px';
+  el.style.top = (s.y + 14) + 'px';
+  el.classList.add('on');
+  clearTimeout(G.labelT);
+  G.labelT = setTimeout(function () { el.classList.remove('on'); }, CONFIG.LABEL_MS);
+}
+function tapSky(px, py) {
+  var i = pickStar(px, py);
+  if (i < 0) return false;
+  var hip = G.cat.hip[i];
+  var at = G.draw.hips.indexOf(hip);
+  if (at >= 0) {
+    /* tapping the star you just took undoes it; tapping any other star already
+       in the chain branches from it */
+    if (at === G.draw.hips.length - 1 && G.draw.hips.length > 1) { undoLast(); return true; }
+    G.draw.from = at;
+    showStarLabel(i);
+    AUDIO.chime(G.cat.mag[i]);
+    return true;
+  }
+  if (G.draw.hips.length >= CONFIG.MAX_STARS_PER) { toast('That is as many stars as one shape can hold.'); return false; }
+  G.draw.hips.push(hip);
+  var k = G.draw.hips.length - 1;
+  if (k > 0) {
+    var from = (G.draw.from === null || G.draw.from === undefined) ? k - 1 : G.draw.from;
+    G.draw.edges.push([from, k]);
+    G.draw.born.push(G.nowFrame);
+    AUDIO.scratch();
+  }
+  G.draw.from = null;
+  showStarLabel(i);
+  AUDIO.chime(G.cat.mag[i]);
+  syncDrawUi();
+  dismissPrompt();
+  return true;
+}
+function undoLast() {
+  if (!G.draw.hips.length) return;
+  var k = G.draw.hips.length - 1;
+  for (var i = G.draw.edges.length - 1; i >= 0; i--) {
+    if (G.draw.edges[i][0] === k || G.draw.edges[i][1] === k) { G.draw.edges.splice(i, 1); G.draw.born.splice(i, 1); }
+  }
+  G.draw.hips.pop();
+  G.draw.from = null;
+  syncDrawUi();
+}
+function syncDrawUi() {
+  var n = G.draw.hips.length;
+  $('btnDraw').textContent = n >= 2 ? 'DONE' : (n === 1 ? 'ONE' : 'DRAW');
+  $('btnUndo').hidden = n === 0;
+}
+function clearDraw() {
+  G.draw = { hips: [], edges: [], born: [], from: null };
+  syncDrawUi();
+}
+
+/* ========================= 8. ALMANAC ========================= */
+var SAVE = (function () {
+  var KEY = CONFIG.SAVE_KEY;
+  function blank() {
+    return { v: CONFIG.SAVE_V, place: null, entries: [],
+      settings: { sound: 1, twinkle: 1, motion: 1 }, seen: { how: 0 }, promptDay: '' };
+  }
+  function read() {
+    var s = blank(), raw, got, i;
+    try { raw = localStorage.getItem(KEY); } catch (e) { return s; }
+    if (!raw) return s;
+    try { got = JSON.parse(raw); } catch (e) { return s; }
+    if (!got || typeof got !== 'object') return s;
+    if (got.place && typeof got.place.lat === 'number') s.place = got.place;
+    if (got.entries && got.entries.length) for (i = 0; i < got.entries.length; i++) s.entries.push(got.entries[i]);
+    if (got.settings) {
+      s.settings.sound = got.settings.sound === 0 ? 0 : 1;
+      s.settings.twinkle = got.settings.twinkle === 0 ? 0 : 1;
+      s.settings.motion = got.settings.motion === 0 ? 0 : 1;
+    }
+    s.seen = { how: got.seen && got.seen.how ? 1 : 0 };
+    s.promptDay = got.promptDay || '';
+    return s;
+  }
+  /* read, modify, write, and MERGE the entries by id rather than replacing the
+     list: two tabs open on the same almanac must not lose each other's work */
+  function write(mut) {
+    var s = read();
+    mut(s);
+    var cur = read(), byId = {}, i, out = [];
+    for (i = 0; i < cur.entries.length; i++) byId[cur.entries[i].id] = cur.entries[i];
+    for (i = 0; i < s.entries.length; i++) byId[s.entries[i].id] = s.entries[i];
+    for (i in byId) out.push(byId[i]);
+    if (s.deleted) { out = out.filter(function (e) { return s.deleted.indexOf(e.id) < 0; }); }
+    out.sort(function (a, b) { return (a.t || '') < (b.t || '') ? 1 : -1; });
+    s.entries = out;
+    delete s.deleted;
+    try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {}
+    return s;
+  }
+  return { read: read, write: write, blank: blank };
+})();
+
+function entryFromDraw(name, seed) {
+  return {
+    id: 'c' + seedFromString(G.draw.hips.join(',') + name + G.whenMs).toString(36),
+    v: 1, s: G.draw.hips.slice(), e: G.draw.edges.map(function (x) { return [x[0], x[1]]; }),
+    n: name, m: seed, t: new Date(G.whenMs).toISOString(),
+    p: [Math.round(G.place.lat * 100) / 100, Math.round(G.place.lon * 100) / 100],
+    pn: G.place.name, d: new Date(G.whenMs).toISOString()
+  };
+}
+function featuresOf(entry) {
+  var stars = starsOf(G.cat, entry.s);
+  var J = jd(Date.parse(entry.d || entry.t));
+  var alt = 0, i;
+  for (i = 0; i < stars.length; i++) alt += altAz(stars[i].ra, stars[i].dec, entry.p[0], entry.p[1], J).alt;
+  return features(stars, entry.e, { meanAlt: stars.length ? alt / stars.length : 90 });
+}
+
+/* ========================= 9. AUDIO ========================= */
+var AUDIO = (function () {
+  var ac = null, master = null, noiseBuf = null, air = null, on = true, voices = 0;
+  function start() {
+    if (ac) { if (ac.state === 'suspended') ac.resume(); return; }
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    ac = new AC();
+    master = ac.createGain(); master.gain.value = on ? 0.9 : 0; master.connect(ac.destination);
+    var n = ac.sampleRate * 1.5, b = ac.createBuffer(1, n, ac.sampleRate), d = b.getChannelData(0), i;
+    for (i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+    noiseBuf = b;
+    /* the air tone: the room the whole app sits in */
+    var src = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
+    src.buffer = noiseBuf; src.loop = true;
+    f.type = 'lowpass'; f.frequency.value = 340; g.gain.value = 0.02;
+    src.connect(f); f.connect(g); g.connect(master); src.start();
+    air = { src: src, gain: g };
+  }
+  function setOn(v) { on = !!v; if (master) master.gain.setTargetAtTime(on ? 0.9 : 0, ac.currentTime, 0.02); }
+  function env(g, t0, peak, dur) {
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak), t0 + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  }
+  /* a bright star rings DEEPER, which is the design's call and reads as weight */
+  function chime(mag) {
+    if (!ac) return;
+    var t0 = ac.currentTime + 0.005;
+    var f = 330 + clamp((mag + 1) / 6, 0, 1) * 550;
+    var o = ac.createOscillator(), g = ac.createGain();
+    o.type = 'sine'; o.frequency.value = f;
+    env(g, t0, 0.22, 0.4);
+    o.connect(g); g.connect(master); o.start(t0); o.stop(t0 + 0.5);
+    voices++; o.onended = function () { voices--; };
+  }
+  function scratch() {
+    if (!ac) return;
+    var t0 = ac.currentTime + 0.005;
+    var s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
+    s.buffer = noiseBuf; s.loop = true;
+    f.type = 'bandpass'; f.frequency.value = 2000; f.Q.value = 0.9;
+    env(g, t0, 0.10, 0.18);
+    s.connect(f); f.connect(g); g.connect(master); s.start(t0); s.stop(t0 + 0.25);
+    voices++; s.onended = function () { voices--; };
+  }
+  function swell() {
+    if (!ac) return;
+    var t0 = ac.currentTime + 0.01, i, fr = [110, 164.81, 220];
+    for (i = 0; i < 3; i++) {
+      var o = ac.createOscillator(), g = ac.createGain();
+      o.type = 'sine'; o.frequency.setValueAtTime(fr[i] * 0.98, t0);
+      o.frequency.linearRampToValueAtTime(fr[i], t0 + 1.4);
+      env(g, t0 + i * 0.08, 0.13, 1.5);
+      o.connect(g); g.connect(master); o.start(t0); o.stop(t0 + 1.7);
+      voices++; o.onended = function () { voices--; };
+    }
+  }
+  return { start: start, setOn: setOn, chime: chime, scratch: scratch, swell: swell,
+    ready: function () { return !!ac; }, voices: function () { return voices + (ac ? 2 : 0); } };
+})();
+
+/* ========================= 10. INPUT ========================= */
+/* One finger drags the dome, a tap without slop picks a star, two fingers pinch
+   the field of view. A drag NEVER picks; the slop is 10 px. */
+function bindInput() {
+  var pointers = {}, pinch = null, panFrom = null;
+  CV.addEventListener('pointerdown', function (e) {
+    if (e.cancelable) e.preventDefault();
+    AUDIO.start();
+    try { CV.setPointerCapture(e.pointerId); } catch (err) {}
+    pointers[e.pointerId] = { x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY, moved: false };
+    var ids = Object.keys(pointers);
+    if (ids.length === 2) {
+      var a = pointers[ids[0]], b = pointers[ids[1]];
+      pinch = { d0: Math.hypot(a.x - b.x, a.y - b.y) || 1, fov0: G.view.fov, a: ids[0], b: ids[1] };
+      panFrom = null;
+    } else if (ids.length === 1) {
+      panFrom = { x: e.clientX, y: e.clientY, alt: G.view.alt, az: G.view.az };
+    }
+  });
+  CV.addEventListener('pointermove', function (e) {
+    var p = pointers[e.pointerId];
+    if (!p) return;
+    p.x = e.clientX; p.y = e.clientY;
+    if (Math.abs(p.x - p.x0) > CONFIG.DRAG_SLOP_PX || Math.abs(p.y - p.y0) > CONFIG.DRAG_SLOP_PX) p.moved = true;
+    if (pinch && pointers[pinch.a] && pointers[pinch.b]) {
+      var a = pointers[pinch.a], b = pointers[pinch.b];
+      var d = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+      /* a wider gesture means a NARROWER field, the way a magnifier works */
+      G.view.fov = clamp(pinch.fov0 * pinch.d0 / d, CONFIG.FOV_MIN, CONFIG.FOV_MAX);
+      G.layerDirty = true;
+      return;
+    }
+    if (panFrom && Object.keys(pointers).length === 1) {
+      var degPerPx = G.view.fov / Math.min(CSSW, CSSH);
+      G.view.az = mod(panFrom.az - (p.x - panFrom.x) * degPerPx / Math.max(0.25, Math.cos(G.view.alt * DEG)), 360);
+      G.view.alt = clamp(panFrom.alt + (p.y - panFrom.y) * degPerPx, -20, 88);
+      G.layerDirty = true;
+    }
+  });
+  function release(e) {
+    var p = pointers[e.pointerId];
+    delete pointers[e.pointerId];
+    try { CV.releasePointerCapture(e.pointerId); } catch (err) {}
+    if (pinch && (e.pointerId === pinch.a || e.pointerId === pinch.b)) {
+      pinch = null;
+      var rest = Object.keys(pointers);
+      /* the survivor takes over the pan with no jump */
+      panFrom = rest.length === 1
+        ? { x: pointers[rest[0]].x, y: pointers[rest[0]].y, alt: G.view.alt, az: G.view.az } : null;
+      return;
+    }
+    if (!p) return;
+    if (e.type === 'pointerup' && !p.moved && G.screen === 'sky') {
+      /* ANY tap on the sky puts the prompt away, hit or miss. It had a GOT IT
+         button, and that button sat over Vega on a 375 wide phone on the first
+         ever night: the card ate the star it was inviting you to draw. */
+      dismissPrompt();
+      tapSky(p.x0, p.y0);
+    }
+    if (!Object.keys(pointers).length) panFrom = null;
+  }
+  CV.addEventListener('pointerup', release);
+  CV.addEventListener('pointercancel', release);
+  window.addEventListener('blur', function () { pointers = {}; pinch = null; panFrom = null; });
+  window.addEventListener('resize', fitCanvas);
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', fitCanvas);
+}
+
 // ---- TEST_EXPORT_START ----
 /* ========================= 12. TEST ========================= */
 /* Harness copied from satellites/deepwell/index.html line 1550, with Fathom's
@@ -1415,3 +1948,681 @@ function suitePurity(T, src) {
   T.assert('and Date is only ever used to BUILD a UTC timestamp', code.indexOf('getHours') < 0 && code.indexOf('getMonth') < 0);
 }
 // ---- TEST_EXPORT_END ----
+
+/* ========================= 13. BOOT ========================= */
+var STAMP = '20260905a';
+var G = {
+  cat: null, place: null, whenMs: 0, mode: 'tonight',
+  view: { alt: 55, az: 180, fov: CONFIG.FOV_DEFAULT },
+  draw: { hips: [], edges: [], born: [], from: null },
+  shown: null, screen: 'sky', save: null, settings: { sound: 1, twinkle: 1, motion: 1 },
+  motion: 1, layerDirty: true, visible: [], screenOfStar: {}, drawnCount: 0,
+  nowFrame: 0, frames: 0, magLimit: 5, sunAlt: -30,
+  myth: null, mythSeed: 0, rerolls: 0, alternates: [], pending: null,
+  spread: null, posterLayout: 'chart', frozen: null
+};
+function $(id) { return document.getElementById(id); }
+var SHEETS = ['scrMenu', 'scrName', 'scrMyth', 'scrPlace', 'scrSettings'];
+var SCREENS = ['scrHow', 'scrAlmanac', 'scrSpread', 'scrPoster', 'scrAbout'];
+function closeSheets() { for (var i = 0; i < SHEETS.length; i++) $(SHEETS[i]).classList.remove('on'); }
+function showScreen(name) {
+  var i;
+  for (i = 0; i < SCREENS.length; i++) $(SCREENS[i]).classList.toggle('on', SCREENS[i] === name);
+  closeSheets();
+  G.screen = name === null ? 'sky' : name;
+  $('chrome').style.display = (name === null) ? '' : 'none';
+}
+function showSheet(name) {
+  closeSheets();
+  if (name) $(name).classList.add('on');
+  G.screen = name || 'sky';
+  $('chrome').style.display = name ? '' : '';
+}
+function toast(msg) {
+  var t = $('toast');
+  t.textContent = msg; t.classList.add('on');
+  clearTimeout(G.toastT);
+  G.toastT = setTimeout(function () { t.classList.remove('on'); }, 1900);
+}
+/* the clock. ?t=<iso> freezes it for a gate or a shot; a real boot never does. */
+function nowMs() { return G.frozen !== null ? G.frozen : Date.now(); }
+
+/* The app has no time zone table, so local time is LONGITUDE time and the chip
+   says "about" (3.7). Reading the device's own hours instead put Columbus at
+   four in the morning on a headless rig sitting in UTC, which is a lie about
+   where the player is standing. */
+function fmtWhen(ms, lon) {
+  var local = ms + (lon / 15) * 3600000;
+  var d = new Date(local);
+  var h = d.getUTCHours(), m = d.getUTCMinutes();
+  var ap = h < 12 ? 'am' : 'pm', hh = h % 12; if (hh === 0) hh = 12;
+  return 'about ' + hh + ':' + (m < 10 ? '0' : '') + m + ' ' + ap;
+}
+function refreshChip() {
+  $('placeName').textContent = G.place.name;
+  $('placeTime').textContent = (G.mode === 'tonight' ? 'tonight, ' : '') + fmtWhen(G.whenMs, G.place.lon) +
+    (G.mode === 'birth' ? ', ' + new Date(G.whenMs).toISOString().slice(0, 10) : '');
+}
+
+/* ---------------------------------------------------------------- the myth */
+function typeOut(el, text, done) {
+  clearInterval(G.typeT);
+  var i = 0, step = Math.max(1, Math.round(CONFIG.TYPE_CPS / 20));
+  el.textContent = '';
+  G.typing = true;
+  G.typeT = setInterval(function () {
+    i = Math.min(text.length, i + step);
+    el.textContent = text.slice(0, i);
+    if (i >= text.length) { clearInterval(G.typeT); G.typing = false; if (done) done(); }
+  }, 50);
+  G.finishTyping = function () {
+    clearInterval(G.typeT); el.textContent = text; G.typing = false; if (done) done();
+  };
+}
+function openMyth(entry) {
+  G.pending = entry;
+  G.rerolls = 0; G.alternates = [entry.m];
+  $('mythName').textContent = entry.n;
+  var f = featuresOf(entry);
+  var text = mythFor(f, entry.m);
+  showSheet('scrMyth');
+  $('btnAnother').textContent = 'ANOTHER';
+  $('btnAnother').disabled = false;
+  typeOut($('mythText'), text, function () { AUDIO.swell(); });
+}
+
+/* -------------------------------------------------------------- the poster */
+function drawChartTo(g, w, h, entry, layout) {
+  var i, cat = G.cat;
+  var stars = starsOf(cat, entry.s);
+  if (!stars.length) return;
+  var J = jd(Date.parse(entry.d || entry.t));
+  var lat = entry.p[0], lon = entry.p[1];
+  var pts = [], cAlt = 0, cAz = 0, sx2 = 0, cy2 = 0;
+  for (i = 0; i < stars.length; i++) {
+    var p = altAz(stars[i].ra, stars[i].dec, lat, lon, J);
+    pts.push(p); cAlt += p.alt;
+    sx2 += Math.sin(p.az * DEG); cy2 += Math.cos(p.az * DEG);
+  }
+  cAlt /= stars.length; cAz = mod(Math.atan2(sx2, cy2) * RAD, 360);
+  var chartH = layout === 'minimal' ? h : Math.round(h * 0.58);
+  g.fillStyle = layout === 'minimal' ? '#000000' : '#070A1A';
+  g.fillRect(0, 0, w, h);
+  /* the sky around it, faint, so the shape has a field to sit in */
+  var fov = 60;
+  var lim = layout === 'minimal' ? 4.4 : 5.0;
+  for (i = 0; i < cat.n; i++) {
+    if (cat.mag[i] > lim) continue;
+    var q = altAz(cat.ra[i], cat.dec[i], lat, lon, J);
+    if (q.alt < -5) continue;
+    var s = project(q.alt, q.az, cAlt, cAz, fov, w, chartH);
+    if (s.behind || s.x < 0 || s.x > w || s.y < 0 || s.y > chartH) continue;
+    g.globalAlpha = 0.75;
+    g.fillStyle = ciColor(cat.ci[i]);
+    g.beginPath(); g.arc(s.x, s.y, Math.max(1.2, starRadius(cat.mag[i]) * (w / 700)), 0, 6.2832); g.fill();
+  }
+  g.globalAlpha = 1;
+  /* the shape itself */
+  var scr = [];
+  for (i = 0; i < stars.length; i++) scr.push(project(pts[i].alt, pts[i].az, cAlt, cAz, fov, w, chartH));
+  g.strokeStyle = '#E8C97A'; g.lineCap = 'round'; g.lineJoin = 'round';
+  for (i = 0; i < entry.e.length; i++) {
+    var a = scr[entry.e[i][0]], b = scr[entry.e[i][1]];
+    if (!a || !b) continue;
+    g.globalAlpha = 0.25; g.lineWidth = w / 150;
+    g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke();
+    g.globalAlpha = 1; g.lineWidth = w / 500;
+    g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke();
+  }
+  for (i = 0; i < scr.length; i++) {
+    g.globalAlpha = 1; g.lineWidth = w / 700;
+    g.beginPath(); g.arc(scr[i].x, scr[i].y, w / 110, 0, 6.2832); g.stroke();
+  }
+  return { chartH: chartH, cAlt: cAlt, cAz: cAz };
+}
+function renderPoster(g, w, h, entry, layout) {
+  var info = drawChartTo(g, w, h, entry, layout);
+  if (!info) return;
+  var pad = Math.round(w * 0.09);
+  g.textAlign = 'center';
+  g.fillStyle = '#E8E2D2';
+  var serif = '"Iowan Old Style", Georgia, "Times New Roman", serif';
+  if (layout === 'minimal') {
+    var one = (G.mythTextFor(entry) || '').split('. ')[0] + '.';
+    g.font = Math.round(w * 0.055) + 'px ' + serif;
+    g.fillStyle = '#E8C97A';
+    g.fillText(entry.n, w / 2, h - pad * 2.1);
+    g.font = Math.round(w * 0.026) + 'px ' + serif;
+    g.fillStyle = 'rgba(232,226,210,.8)';
+    wrapText(g, one, w / 2, h - pad * 1.25, w - pad * 2, Math.round(w * 0.036), 2);
+  } else {
+    g.fillStyle = '#070A1A';
+    g.fillRect(0, info.chartH, w, h - info.chartH);
+    g.strokeStyle = 'rgba(232,201,122,.35)'; g.lineWidth = Math.max(1, w / 900);
+    g.beginPath(); g.moveTo(pad, info.chartH + pad * 0.2); g.lineTo(w - pad, info.chartH + pad * 0.2); g.stroke();
+    g.fillStyle = '#E8C97A';
+    g.font = Math.round(w * 0.048) + 'px ' + serif;
+    g.fillText(entry.n.toUpperCase(), w / 2, info.chartH + pad * 1.05);
+    g.fillStyle = 'rgba(232,226,210,.88)';
+    g.font = Math.round(w * 0.022) + 'px ' + serif;
+    wrapText(g, G.mythTextFor(entry), w / 2, info.chartH + pad * 1.75, w - pad * 2, Math.round(w * 0.033), 12);
+  }
+  if (layout === 'plate') {
+    g.strokeStyle = 'rgba(232,201,122,.55)';
+    g.lineWidth = Math.max(2, w / 320);
+    g.strokeRect(pad * 0.45, pad * 0.45, w - pad * 0.9, h - pad * 0.9);
+    g.lineWidth = Math.max(1, w / 900);
+    g.strokeRect(pad * 0.62, pad * 0.62, w - pad * 1.24, h - pad * 1.24);
+    var c, cs = [[pad * 0.45, pad * 0.45], [w - pad * 0.45, pad * 0.45],
+      [pad * 0.45, h - pad * 0.45], [w - pad * 0.45, h - pad * 0.45]];
+    for (c = 0; c < 4; c++) {
+      g.beginPath(); g.arc(cs[c][0], cs[c][1], pad * 0.16, 0, 6.2832); g.stroke();
+      g.beginPath(); g.arc(cs[c][0], cs[c][1], pad * 0.09, 0, 6.2832); g.stroke();
+    }
+  }
+  /* the footer, and the credit that has to be on every one of these */
+  g.textAlign = 'center';
+  g.fillStyle = 'rgba(124,135,168,.85)';
+  g.font = Math.round(w * 0.019) + 'px ' + serif;
+  var when = new Date(entry.d || entry.t);
+  g.fillText(entry.n + ', charted from ' + (entry.pn || (entry.p[0] + ', ' + entry.p[1])) +
+    ' on ' + when.toISOString().slice(0, 10), w / 2, h - Math.round(w * 0.055));
+  g.font = Math.round(w * 0.0145) + 'px ' + serif;
+  g.fillStyle = 'rgba(124,135,168,.7)';
+  g.fillText('charted with Asterism, lucidwinds.com', w / 2, h - Math.round(w * 0.033));
+  g.fillText('Star data from the HYG database by David Nash, astronexus.com, CC BY SA 4.0',
+    w / 2, h - Math.round(w * 0.014));
+}
+function wrapText(g, text, cx, y, maxW, lh, maxLines) {
+  var words = text.split(' '), line = '', lines = [], i;
+  for (i = 0; i < words.length; i++) {
+    var t = line ? line + ' ' + words[i] : words[i];
+    if (g.measureText(t).width > maxW && line) { lines.push(line); line = words[i]; }
+    else line = t;
+  }
+  if (line) lines.push(line);
+  for (i = 0; i < Math.min(lines.length, maxLines || 99); i++) g.fillText(lines[i], cx, y + i * lh);
+  return Math.min(lines.length, maxLines || 99);
+}
+G.mythTextFor = function (entry) { return mythFor(featuresOf(entry), entry.m); };
+
+/* --------------------------------------------------------------- the link */
+function b64u(s) { return btoa(unescape(encodeURIComponent(s))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+function unb64u(s) {
+  s = s.replace(/-/g, '+').replace(/_/g, '/');
+  while (s.length % 4) s += '=';
+  return decodeURIComponent(escape(atob(s)));
+}
+function linkFor(entry) {
+  return location.origin + location.pathname + '?v=' + STAMP + '#c=' + b64u(JSON.stringify(entry));
+}
+function importFromHash() {
+  var h = location.hash || '';
+  if (h.indexOf('#c=') !== 0) return null;
+  try {
+    var e = JSON.parse(unb64u(h.slice(3)));
+    if (!e || !e.s || !e.e || !e.n) return null;
+    history.replaceState(null, '', location.pathname + location.search);
+    return e;
+  } catch (err) { return null; }
+}
+function shareEntry(entry) {
+  var url = linkFor(entry);
+  if (navigator.share) {
+    navigator.share({ title: entry.n, url: url }).catch(function () {});
+    return;
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(function () { toast('The link is on your clipboard.'); },
+      function () { showLinkBox(url); });
+    return;
+  }
+  showLinkBox(url);
+}
+function showLinkBox(url) {
+  var f = $('importField');
+  f.value = url; showSheet('scrSettings'); f.select();
+  toast('Copy the link from the box.');
+}
+
+/* ------------------------------------------------------------- the almanac */
+function drawThumb(cv, entry) {
+  var g = cv.getContext('2d'), w = cv.width, h = cv.height, i;
+  g.fillStyle = '#050814'; g.fillRect(0, 0, w, h);
+  var stars = starsOf(G.cat, entry.s);
+  if (!stars.length) return;
+  var geo = shapeGeometry(stars), p = geo.pts, minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
+  for (i = 0; i < p.length; i++) {
+    minX = Math.min(minX, p[i].x); maxX = Math.max(maxX, p[i].x);
+    minY = Math.min(minY, p[i].y); maxY = Math.max(maxY, p[i].y);
+  }
+  var sx2 = (maxX - minX) || 1, sy2 = (maxY - minY) || 1;
+  var k = Math.min((w * 0.7) / sx2, (h * 0.7) / sy2);
+  var toX = function (q) { return w / 2 + (q.x - (minX + maxX) / 2) * k; };
+  var toY = function (q) { return h / 2 - (q.y - (minY + maxY) / 2) * k; };
+  g.strokeStyle = '#E8C97A'; g.lineWidth = Math.max(1, w / 90); g.lineCap = 'round';
+  for (i = 0; i < entry.e.length; i++) {
+    var a = p[entry.e[i][0]], b = p[entry.e[i][1]];
+    if (!a || !b) continue;
+    g.beginPath(); g.moveTo(toX(a), toY(a)); g.lineTo(toX(b), toY(b)); g.stroke();
+  }
+  g.fillStyle = '#FFF6DC';
+  for (i = 0; i < p.length; i++) {
+    g.beginPath(); g.arc(toX(p[i]), toY(p[i]), Math.max(1.6, w / 44), 0, 6.2832); g.fill();
+  }
+}
+function buildAlmanac() {
+  var list = $('almanacList'), e = G.save.entries, i;
+  list.innerHTML = '';
+  $('almanacEmpty').hidden = e.length > 0;
+  for (i = 0; i < e.length; i++) {
+    var b = document.createElement('button');
+    b.className = 'card';
+    b.setAttribute('data-id', e[i].id);
+    var cv = document.createElement('canvas'); cv.width = 128; cv.height = 128;
+    var box = document.createElement('span');
+    box.innerHTML = '<span class="nm">' + esc(e[i].n) + '</span><span class="sub">' +
+      esc((e[i].pn || '') + ', ' + new Date(e[i].d || e[i].t).toISOString().slice(0, 10)) + '</span>';
+    b.appendChild(cv); b.appendChild(box);
+    list.appendChild(b);
+    drawThumb(cv, e[i]);
+    b.addEventListener('click', (function (id) {
+      return function () { openSpread(id); };
+    })(e[i].id));
+  }
+}
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function openSpread(id) {
+  var e = null, i;
+  for (i = 0; i < G.save.entries.length; i++) if (G.save.entries[i].id === id) e = G.save.entries[i];
+  if (!e) return;
+  G.spread = e;
+  $('spreadName').textContent = e.n;
+  $('spreadWhen').textContent = (e.pn || '') + ', ' + new Date(e.d || e.t).toISOString().slice(0, 10);
+  drawThumb($('spreadChart'), e);
+  $('spreadMyth').textContent = G.mythTextFor(e);
+  var f = featuresOf(e);
+  $('spreadWell').textContent = 'Well placed in ' + wellPlacedMonth(f.ra, e.p[1], new Date().getUTCFullYear()) + ' evenings.';
+  showScreen('scrSpread');
+}
+
+/* ------------------------------------------------------------ place & time */
+function buildCityList(q) {
+  var el = $('cityList'), i, n = 0;
+  el.innerHTML = '';
+  q = (q || '').toLowerCase();
+  for (i = 0; i < CITIES.length && n < 60; i++) {
+    if (q && CITIES[i][0].toLowerCase().indexOf(q) < 0 && CITIES[i][1].toLowerCase().indexOf(q) < 0) continue;
+    var b = document.createElement('button');
+    b.textContent = CITIES[i][0];
+    b.setAttribute('data-i', i);
+    el.appendChild(b);
+    b.addEventListener('click', (function (k) {
+      return function () {
+        $('latField').value = CITIES[k][2];
+        $('lonField').value = CITIES[k][3];
+        G.pickedCity = CITIES[k][0];
+        toast(CITIES[k][0]);
+      };
+    })(i));
+    n++;
+  }
+}
+function applyPlaceAndTime() {
+  var lat = parseFloat($('latField').value), lon = parseFloat($('lonField').value);
+  if (isFinite(lat) && isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) {
+    G.place = { name: G.pickedCity || (lat.toFixed(2) + ', ' + lon.toFixed(2)), lat: lat, lon: lon };
+    G.save = SAVE.write(function (s) { s.place = G.place; });
+  }
+  if (G.mode === 'birth') {
+    var d = $('birthDate').value;
+    if (d) {
+      /* nine in the evening LOCAL, which with no time zone table is longitude
+         time: an hour of error moves nothing a poster can show (3.7) */
+      var parts = d.split('-');
+      G.whenMs = Date.UTC(+parts[0], +parts[1] - 1, +parts[2], 0, 0, 0)
+        + (CONFIG.EVENING_HOUR - G.place.lon / 15) * 3600000;
+    }
+  } else {
+    var mins = parseInt($('hourScrub').value, 10) || 0;
+    var base = new Date(nowMs());
+    G.whenMs = mins ? (Date.UTC(base.getUTCFullYear(), base.getUTCMonth(), base.getUTCDate(), 0, 0, 0)
+      + mins * 60000 - G.place.lon / 15 * 3600000) : nowMs();
+  }
+  G.layerDirty = true;
+  refreshChip();
+  showSheet(null);
+}
+function useMyLocation() {
+  var st = $('geoState');
+  if (!navigator.geolocation) { st.textContent = 'This browser keeps its location to itself.'; return; }
+  st.textContent = 'Asking, and giving it six seconds.';
+  var done = false;
+  var timer = setTimeout(function () {
+    if (done) return;
+    done = true;
+    st.textContent = 'No answer in six seconds. Pick a city instead.';
+  }, CONFIG.GEO_TIMEOUT_MS);
+  navigator.geolocation.getCurrentPosition(function (pos) {
+    if (done) return;
+    done = true; clearTimeout(timer);
+    $('latField').value = Math.round(pos.coords.latitude * 100) / 100;
+    $('lonField').value = Math.round(pos.coords.longitude * 100) / 100;
+    G.pickedCity = 'Where you are';
+    st.textContent = 'Found you, near enough.';
+  }, function () {
+    if (done) return;
+    done = true; clearTimeout(timer);
+    st.textContent = 'That was a no. Pick a city instead.';
+  }, { timeout: CONFIG.GEO_TIMEOUT_MS, maximumAge: 600000 });
+}
+
+/* ------------------------------------------------------------------- loop */
+function frame(ts) {
+  requestAnimationFrame(frame);
+  G.nowFrame = ts;
+  G.frames++;
+  if (G.cat) paint();
+}
+
+/* ------------------------------------------------------------------- wire */
+function wire() {
+  var tap = function (id, fn) {
+    var el = $(id);
+    if (el) el.addEventListener('click', function (e) { AUDIO.start(); fn(e); });
+  };
+  tap('btnMenu', function () { showSheet('scrMenu'); });
+  tap('btnMenuClose', function () { showSheet(null); });
+  tap('btnAbout', function () { showScreen('scrAbout'); });
+  tap('btnAboutBack', function () { showScreen(null); });
+  tap('btnSettings', function () { showSheet('scrSettings'); });
+  tap('btnSettingsClose', function () { showSheet(null); });
+  tap('btnHowOk', function () {
+    G.save = SAVE.write(function (s) { s.seen.how = 1; });
+    showScreen(null);
+  });
+  tap('btnUndo', function () { undoLast(); });
+  tap('btnDraw', function () {
+    if (G.draw.hips.length < 2) { toast('Tap two stars or more, then come back.'); return; }
+    $('nameField').value = '';
+    showSheet('scrName');
+  });
+  tap('btnDice', function () {
+    $('nameField').value = rollName(seedFromString(G.draw.hips.join(',') + ':' + (G.diceN = (G.diceN || 0) + 1)));
+  });
+  tap('btnNameCancel', function () { showSheet(null); });
+  tap('btnNameSave', function () {
+    var nm = $('nameField').value.trim();
+    if (!nm) nm = rollName(seedFromString(G.draw.hips.join(',')));
+    var e = entryFromDraw(nm, seedFromString(nm + G.draw.hips.join(',')));
+    openMyth(e);
+  });
+  tap('btnAnother', function () {
+    if (G.rerolls >= CONFIG.REROLL_MAX - 1) { toast('Keep one of these.'); return; }
+    G.rerolls++;
+    G.pending.m = mixSeed(G.pending.m, 17 + G.rerolls);
+    G.alternates.push(G.pending.m);
+    if (G.rerolls >= CONFIG.REROLL_MAX - 1) $('btnAnother').textContent = 'KEEP ONE OF THESE';
+    typeOut($('mythText'), mythFor(featuresOf(G.pending), G.pending.m), function () { AUDIO.swell(); });
+  });
+  tap('btnMythShare', function () { if (G.pending) shareEntry(G.pending); });
+  tap('btnMythKeep', function () {
+    var e = G.pending;
+    G.save = SAVE.write(function (s) { s.entries.push(e); });
+    clearDraw();
+    G.shown = e;
+    showSheet(null);
+    toast('It is in your almanac.');
+  });
+  $('mythPaper').addEventListener('click', function () { if (G.typing && G.finishTyping) G.finishTyping(); });
+  tap('btnAlmanac', function () { buildAlmanac(); showScreen('scrAlmanac'); });
+  tap('btnAlmBack', function () { showScreen(null); });
+  tap('btnSpreadBack', function () { buildAlmanac(); showScreen('scrAlmanac'); });
+  tap('btnShowSky', function () { G.shown = G.spread; G.layerDirty = true; showScreen(null); toast('It is on the sky, where it is now.'); });
+  tap('btnShare', function () { if (G.spread) shareEntry(G.spread); });
+  tap('btnDelete', function () {
+    if (!G.spread) return;
+    if (!confirm('Take ' + G.spread.n + ' out of the almanac?')) return;
+    var id = G.spread.id;
+    G.save = SAVE.write(function (s) { s.deleted = [id]; });
+    if (G.shown && G.shown.id === id) G.shown = null;
+    buildAlmanac(); showScreen('scrAlmanac');
+  });
+  tap('btnPoster', function () { G.posterLayout = 'chart'; refreshPoster(); showScreen('scrPoster'); });
+  tap('btnPosterBack', function () { showScreen('scrSpread'); });
+  tap('btnLayChart', function () { G.posterLayout = 'chart'; refreshPoster(); });
+  tap('btnLayMin', function () { G.posterLayout = 'minimal'; refreshPoster(); });
+  tap('btnLayPlate', function () { G.posterLayout = 'plate'; refreshPoster(); });
+  tap('btnExport', function () { exportPoster(); });
+  tap('chipPlace', function () { openPlaceSheet('tonight'); });
+  tap('btnBirth', function () { openPlaceSheet('birth'); });
+  tap('btnModeTonight', function () { setPlaceMode('tonight'); });
+  tap('btnModeBirth', function () { setPlaceMode('birth'); });
+  tap('btnPlaceClose', function () { showSheet(null); });
+  tap('btnPlaceGo', function () { applyPlaceAndTime(); });
+  tap('btnGeo', function () { useMyLocation(); });
+  $('citySearch').addEventListener('input', function (e) { buildCityList(e.target.value); });
+  $('hourScrub').addEventListener('input', function (e) {
+    var mins = parseInt(e.target.value, 10) || 0;
+    $('hourLabel').textContent = mins ? ('about ' + Math.floor(mins / 60) + ':' + (mins % 60 < 10 ? '0' : '') + (mins % 60)) : 'right now';
+  });
+  tap('btnPromptShow', function () { showPrompt(true); });
+  var toggle = function (key, id, label) {
+    return function () {
+      G.settings[key] = G.settings[key] ? 0 : 1;
+      G.save = SAVE.write(function (s) { s.settings[key] = G.settings[key]; });
+      if (key === 'sound') AUDIO.setOn(!!G.settings.sound);
+      if (key === 'motion') G.motion = G.settings.motion;
+      $(id).textContent = label + (G.settings[key] ? ' ON' : ' OFF');
+    };
+  };
+  tap('btnSound', toggle('sound', 'btnSound', 'SOUND'));
+  tap('btnTwinkle', toggle('twinkle', 'btnTwinkle', 'TWINKLE'));
+  tap('btnMotion', toggle('motion', 'btnMotion', 'MOTION'));
+  tap('btnExportAlm', function () {
+    var s = b64u(JSON.stringify(G.save.entries));
+    $('importField').value = s;
+    if (navigator.clipboard) navigator.clipboard.writeText(s).catch(function () {});
+    toast('Your almanac is in the box.');
+  });
+  tap('btnImportAlm', function () {
+    try {
+      var got = JSON.parse(unb64u($('importField').value.trim()));
+      if (!got.length) throw new Error('empty');
+      G.save = SAVE.write(function (s) { s.entries = s.entries.concat(got); });
+      buildAlmanac();
+      toast(got.length + ' brought in.');
+    } catch (e) { toast('That did not look like an almanac.'); }
+  });
+  window.addEventListener('storage', function (e) {
+    if (e.key === CONFIG.SAVE_KEY) { G.save = SAVE.read(); buildAlmanac(); }
+  });
+}
+function setPlaceMode(m) {
+  G.mode = m;
+  $('tonightBox').hidden = m !== 'tonight';
+  $('birthBox').hidden = m !== 'birth';
+  $('btnModeTonight').classList.toggle('ghost', m !== 'tonight');
+  $('btnModeBirth').classList.toggle('ghost', m === 'tonight');
+}
+function openPlaceSheet(m) {
+  setPlaceMode(m);
+  $('latField').value = G.place.lat;
+  $('lonField').value = G.place.lon;
+  G.pickedCity = G.place.name;
+  buildCityList('');
+  if (!$('birthDate').value) $('birthDate').value = new Date(nowMs()).toISOString().slice(0, 10);
+  showSheet('scrPlace');
+}
+function refreshPoster() {
+  var cv = $('posterPreview'), g = cv.getContext('2d');
+  if (!G.spread) return;
+  renderPoster(g, cv.width, cv.height, G.spread, G.posterLayout);
+}
+function exportPoster() {
+  if (!G.spread) return;
+  var cv = document.createElement('canvas');
+  cv.width = CONFIG.POSTER_W; cv.height = CONFIG.POSTER_H;
+  renderPoster(cv.getContext('2d'), cv.width, cv.height, G.spread, G.posterLayout);
+  var name = G.spread.n.replace(/[^A-Za-z0-9]+/g, '-').toLowerCase() + '-asterism.png';
+  cv.toBlob(function (blob) {
+    if (!blob) { toast('The poster would not render.'); return; }
+    try {
+      var file = new File([blob], name, { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
+        navigator.share({ files: [file], title: G.spread.n }).catch(function () {});
+        return;
+      }
+    } catch (e) {}
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = name; document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 2000);
+    toast('The poster is in your downloads.');
+  }, 'image/png');
+}
+function dismissPrompt() {
+  if ($('promptCard').hidden) return;
+  $('promptCard').hidden = true;
+  G.save = SAVE.write(function (s) { s.promptDay = new Date(nowMs()).toISOString().slice(0, 10); });
+}
+function showPrompt(force) {
+  var day = new Date(nowMs()).toISOString().slice(0, 10);
+  if (!force && G.save.promptDay === day) return;
+  $('promptText').textContent = PROMPTS[dailySeedFor(day) % PROMPTS.length];
+  $('promptCard').hidden = false;
+  showSheet(null);
+}
+
+/* ===== Sky Wolf Studio embed protocol ===== */
+(function () {
+  var framed = false; try { framed = window.parent !== window; } catch (e) { framed = true; }
+  window.SWS_EXIT = function () {
+    if (framed) { try { parent.postMessage({ sws: 'close' }, '*'); } catch (e) {} return; }
+    if (document.referrer.indexOf('/portal') >= 0 && history.length > 1) history.back();
+    else location.replace('https://lucidwinds.com/portal/');
+  };
+  if (framed) {
+    try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {}
+    window.addEventListener('load', function () { try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {} });
+  }
+})();
+
+function boot() {
+  CV = $('sky'); CTX = CV.getContext('2d');
+  var q = new URLSearchParams(location.search);
+  var t = q.get('t');
+  if (t) { var p = Date.parse(t); if (isFinite(p)) G.frozen = p; }
+  G.save = SAVE.read();
+  G.settings = G.save.settings;
+  G.motion = G.settings.motion;
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) G.motion = 0;
+  AUDIO.setOn(!!G.settings.sound);
+  /* place and time never block on the network or on GPS: the saved place, else
+     Columbus, shown by name so it is never a secret (3.6) */
+  G.place = G.save.place || { name: CONFIG.FALLBACK_PLACE.name, lat: CONFIG.FALLBACK_PLACE.lat, lon: CONFIG.FALLBACK_PLACE.lon };
+  G.whenMs = nowMs();
+  fitCanvas();
+  bindInput();
+  wire();
+  syncDrawUi();
+  refreshChip();
+  setPlaceMode('tonight');
+  $('btnSound').textContent = 'SOUND ' + (G.settings.sound ? 'ON' : 'OFF');
+  $('btnTwinkle').textContent = 'TWINKLE ' + (G.settings.twinkle ? 'ON' : 'OFF');
+  $('btnMotion').textContent = 'MOTION ' + (G.settings.motion ? 'ON' : 'OFF');
+  requestAnimationFrame(frame);
+
+  fetch('./data/hyg-asterism.json?v=' + STAMP).then(function (r) { return r.json(); }).then(function (j) {
+    G.cat = buildCatalogue(j);
+    G.layerDirty = true;
+    var shared = importFromHash();
+    if (shared) {
+      G.shown = shared;
+      G.pending = shared;
+      G.place = { name: shared.pn || (shared.p[0] + ', ' + shared.p[1]), lat: shared.p[0], lon: shared.p[1] };
+      G.whenMs = Date.parse(shared.d || shared.t) || nowMs();
+      refreshChip();
+      G.layerDirty = true;
+      openMyth(shared);
+      $('btnMythKeep').textContent = 'SAVE TO MY ALMANAC';
+    } else if (!G.save.seen.how) {
+      showScreen('scrHow');
+    } else {
+      showPrompt(false);
+    }
+    if (location.search.indexOf('test=1') >= 0) {
+      var rep = TEST.run({ cat: G.cat }), out = 'ASTERISM self test\n\n', i;
+      for (i = 0; i < rep.failures.length; i++) out += 'FAIL  ' + rep.failures[i].name + '   ' + rep.failures[i].detail + '\n';
+      out += '\nPASSED ' + rep.passed + ' / FAILED ' + rep.failed + ' (total ' + rep.total + ')';
+      $('testPanel').textContent = out; $('testPanel').classList.add('on');
+      window.__TEST__ = rep;
+    }
+  }).catch(function (e) {
+    toast('The star catalogue did not load.');
+  });
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('./sw.js?v=' + STAMP).catch(function () {});
+    });
+  }
+}
+
+/* the read only hook the browser gates use to READ what the page believes.
+   Nothing here drives the app: every gate presses the real element. */
+window.ASTERISM_DEV = {
+  stamp: STAMP,
+  frames: function () { return G.frames; },
+  ready: function () { return !!G.cat; },
+  screen: function () { return G.screen; },
+  drawn: function () { return G.drawnCount; },
+  aboveHorizon: function () {
+    if (!G.cat) return 0;
+    var J = jd(G.whenMs), n = 0, i;
+    for (i = 0; i < G.cat.n; i++) {
+      if (G.cat.mag[i] > G.magLimit) continue;
+      if (altAz(G.cat.ra[i], G.cat.dec[i], G.place.lat, G.place.lon, J).alt >= -2) n++;
+    }
+    return n;
+  },
+  view: function () { return { alt: G.view.alt, az: G.view.az, fov: G.view.fov }; },
+  place: function () { return G.place; },
+  when: function () { return G.whenMs; },
+  /* where a star IS, whether or not the current view happens to show it. The
+     boot gate asks this about Polaris, which is behind you when you are looking
+     south, and a screen position would be null through no fault of the sky. */
+  altAzOfHip: function (hip) {
+    var i = G.cat ? G.cat.byHip[hip] : undefined;
+    if (i === undefined) return null;
+    return altAz(G.cat.ra[i], G.cat.dec[i], G.place.lat, G.place.lon, jd(G.whenMs));
+  },
+  /* how far the nearest PICKABLE star is from a screen point. A gate that wants
+     empty sky has to find some: with five hundred stars on a phone screen, a
+     point chosen by eye is usually within the pick radius of one. */
+  nearestStarPx: function (x, y) {
+    var best = 1e9, i;
+    for (i = 0; i < G.visible.length; i++) {
+      var v = G.visible[i];
+      if (v.alt < 0 || !pickable(G.cat, v.i, G.magLimit)) continue;
+      best = Math.min(best, Math.hypot(v.x - x, v.y - y));
+    }
+    return best;
+  },
+  pickAt: function (x, y) { return pickStar(x, y); },
+  screenOfHip: function (hip) {
+    var i = G.cat ? G.cat.byHip[hip] : undefined;
+    return i === undefined ? null : (G.screenOfStar[i] || null);
+  },
+  draw: function () { return { hips: G.draw.hips.slice(), edges: G.draw.edges.length }; },
+  save: function () { return SAVE.read(); },
+  myth: function () { return $('mythText').textContent; },
+  typing: function () { return !!G.typing; },
+  voices: function () { return AUDIO.voices(); }
+};
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+else boot();
+</script>
+</body>
+</html>
