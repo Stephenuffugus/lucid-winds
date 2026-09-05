@@ -198,3 +198,7 @@ A synth in the page, no files: sixteen cues on the real paths (belt, bins, grub,
 ### The Attic sound pass (Sep 05, later)
 
 A synth in the page in the attic's voice: rummage rustle, the wipe, a plate sting that climbs with the grade and a fanfare for FACTORY SEALED, dust and stubs, scrap, the want list bell, the card snap, and a SOUND chip in the header. Every cue is bounced offline in the gate and has to move air. Unheard by a human. Shot: `attic-sound-head.png`.
+
+### Litter Bug vocabulary 2 (Sep 05, later)
+
+Segment shapes (teardrop scales, flat, ringed), an oil slick sweep, wing tints and a second leg pair on the thorax, all cosmetic, every grade unmoved over 3000 bugs. Sheet: `lb-vocab2-sheet.png`.
