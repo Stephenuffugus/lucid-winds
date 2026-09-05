@@ -135,7 +135,12 @@ hash, what is not done and why, what needs Stephen (art to paint, a design call,
 Never "verified" without the shot you looked at. Never "done" for a thing that is on the branch
 and not on main.
 
-## JOB D (added Sep 05 ~11:00 ET), Rabbit Ronin: the story between the dojos
+## JOB D (added Sep 05 ~11:00 ET, DONE by Fable ~12:30 ET, commit on the branch): Rabbit Ronin story
+**Built and proven, do not redo.** The cards, fades, sword scene, Comfort toggle and "tap DASH"
+prompt are in; 17 headless checks with real taps pass; the cards were looked at. Skip to JOB C.
+The original brief follows for the record.
+
+### JOB D (original), Rabbit Ronin: the story between the dojos
 Stephen finished dojo 6 on his phone and wrote: the cut from one level to the next is cold, the
 dash appeared "magically", he wants a simple progressing story on fade in / fade out cards between
 levels, with the ronin looking for his sword in the first dojos and finding it (a small animation)

@@ -91,6 +91,39 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
 .dojocell.locked{opacity:.35; pointer-events:none}
 .dojocell.next{border-color:var(--gold); box-shadow:0 0 12px rgba(200,168,75,.35)}
 .dojocell:active{transform:scale(.97)}
+/* ---- the story between the dojos (2026-09-05, STORY.md) ---- */
+#fade{position:absolute; inset:0; background:#000; opacity:0; pointer-events:none; transition:opacity .4s ease; z-index:30}
+#fade.on{opacity:1}
+#s-story{z-index:25; cursor:pointer; background:linear-gradient(180deg,var(--sky0,#20351c) 0%,var(--sky1,#16210f) 55%,var(--sky2,#0c1208) 100%)}
+#s-story .st-pad{justify-content:center; align-items:center; text-align:center; padding:40px 34px 70px; position:relative}
+.st-kick{font-size:12px; letter-spacing:4px; text-transform:uppercase; color:var(--gold); margin-bottom:10px}
+.st-name{font-size:30px; font-weight:800; color:var(--cream); margin-bottom:22px; line-height:1.15}
+.st-line{font-family:Georgia,'Times New Roman',serif; font-size:20px; line-height:1.55; color:var(--cream); max-width:440px}
+.st-line2{font-family:Georgia,'Times New Roman',serif; font-size:18px; line-height:1.5; color:var(--gold); max-width:440px; margin-top:18px; opacity:0}
+#s-story.sword .st-line2{animation:st-line2 .6s 3.2s ease-out forwards}
+.st-tap{position:absolute; left:0; right:0; bottom:34px; font-size:13px; letter-spacing:2px; text-transform:uppercase; color:var(--muted)}
+.st-bar{position:absolute; left:0; bottom:0; height:3px; background:var(--gold); width:0}
+#st-art{display:none; width:300px; height:190px; margin-bottom:14px}
+#s-story.sword #st-art{display:block}
+#sw-lid{transform-box:fill-box; transform-origin:left center}
+#sw-blade{transform:translate(0,58px); opacity:0}
+#sw-arc{stroke-dasharray:260; stroke-dashoffset:260; opacity:0}
+.st-spark{opacity:0; transform-box:fill-box; transform-origin:center}
+#s-story.sword #sw-lid{animation:st-lid .55s .6s ease-out forwards}
+#s-story.sword #sw-blade{animation:st-blade .9s 1.2s ease-out forwards}
+#s-story.sword #sw-arc{animation:st-arc .5s 2.2s ease-out forwards}
+#s-story.sword .st-spark{animation:st-spark .7s 2.5s ease-out forwards}
+@keyframes st-lid{to{transform:rotate(-78deg)}}
+@keyframes st-blade{from{transform:translate(0,58px);opacity:0}to{transform:translate(0,0);opacity:1}}
+@keyframes st-arc{from{stroke-dashoffset:260;opacity:0}to{stroke-dashoffset:0;opacity:1}}
+@keyframes st-spark{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:scale(1)}}
+@keyframes st-line2{to{opacity:1}}
+@media (prefers-reduced-motion:reduce){
+  #fade{transition:none}
+  #s-story.sword #sw-lid,#s-story.sword #sw-blade,#s-story.sword #sw-arc,#s-story.sword .st-spark,#s-story.sword .st-line2{animation:none}
+  #sw-lid{transform:rotate(-78deg)} #sw-blade{transform:none;opacity:1} #sw-arc{stroke-dashoffset:0;opacity:1} .st-spark{opacity:1} .st-line2{opacity:1}
+  .st-bar{display:none}
+}
 </style>
 <meta name="description" content="A rabbit ronin and a dagger on a vine. Swing the bramble canyons, slice foes at full speed, spend carrots at the dojo shop.">
 <link rel="canonical" href="https://lucidwinds.com/satellites/rabbit-samurai/">
@@ -100,6 +133,7 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">Rabbit Ronin</h1>
 <div id="wrap"><div id="stage">
   <canvas id="game"></canvas>
+  <div id="fade"></div>
 
   <!-- TITLE -->
   <div class="screen center on" id="s-title"><div class="pad center">
@@ -118,6 +152,49 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
       </div>
     </div>
     <div class="foot" id="buildstamp"></div>
+  </div></div>
+
+  <!-- STORY: the card between dojos. Text and rules in STORY.md (Stephen, 2026-09-05:
+       "you finish a level and it just cuts straight to the next level which makes it feel
+       kind of cold"). The whole card is the tap target. -->
+  <div class="screen" id="s-story"><div class="pad st-pad">
+    <svg id="st-art" viewBox="0 0 300 190" aria-hidden="true">
+      <rect x="0" y="150" width="300" height="40" fill="#0c1208"/>
+      <rect x="0" y="148" width="300" height="4" fill="#3f6b34"/>
+      <g id="sw-bunny" transform="translate(72,150)">
+        <ellipse cx="-4" cy="-38" rx="4" ry="13" fill="#efe6d6" transform="rotate(-10 -4 -38)"/><ellipse cx="6" cy="-39" rx="4" ry="13" fill="#efe6d6"/>
+        <ellipse cx="-4" cy="-38" rx="1.8" ry="8" fill="#e58fa0" transform="rotate(-10 -4 -38)"/><ellipse cx="6" cy="-39" rx="1.8" ry="8" fill="#e58fa0"/>
+        <ellipse cx="0" cy="-8" rx="14" ry="17" fill="#efe6d6"/>
+        <ellipse cx="-5" cy="8" rx="5" ry="6" fill="#e2d7c3"/><ellipse cx="6" cy="8" rx="5" ry="6" fill="#e2d7c3"/>
+        <circle cx="3" cy="-24" r="12" fill="#f3ebdc"/>
+        <rect x="-8" y="-31" width="22" height="6" rx="2" fill="#c0392b"/>
+        <path d="M14 -30 L25 -27 L24 -22 L14 -25 Z" fill="#c0392b"/><path d="M14 -29 L23 -36 L26 -32 L15 -25 Z" fill="#c0392b"/>
+        <circle cx="6" cy="-22" r="2" fill="#2a2320"/><circle cx="-1" cy="-22" r="2" fill="#2a2320"/><circle cx="3" cy="-17" r="1.8" fill="#e58fa0"/>
+      </g>
+      <g id="sw-crate" transform="translate(150,150)">
+        <rect x="-42" y="-58" width="84" height="58" fill="#7a5a3a" stroke="#3a2a1a" stroke-width="2"/>
+        <path d="M-42 -58 L42 0 M42 -58 L-42 0" stroke="#3a2a1a" stroke-width="2"/>
+        <rect x="-40" y="-56" width="80" height="54" fill="#2a1d12"/>
+      </g>
+      <g transform="translate(150,150)"><g id="sw-blade">
+        <rect x="-3" y="-118" width="6" height="86" fill="#d9dde3" stroke="#8a929c" stroke-width="1"/>
+        <rect x="-12" y="-34" width="24" height="6" rx="2" fill="#c8a84b"/>
+        <rect x="-4" y="-28" width="8" height="24" rx="2" fill="#8a5a2a"/>
+      </g></g>
+      <g transform="translate(150,150)"><g id="sw-lid"><rect x="-44" y="-66" width="88" height="10" fill="#8a6a45" stroke="#3a2a1a" stroke-width="2"/></g></g>
+      <path id="sw-arc" d="M96 88 A64 64 0 0 1 204 60" fill="none" stroke="#ffd77a" stroke-width="4" stroke-linecap="round"/>
+      <g fill="#ffe9a8">
+        <path class="st-spark" d="M226 48 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3z"/>
+        <path class="st-spark" d="M92 40 l2 6 6 2 -6 2 -2 6 -2 -6 -6 -2 6 -2z"/>
+        <path class="st-spark" d="M186 22 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z"/>
+      </g>
+    </svg>
+    <div class="st-kick" id="st-kick"></div>
+    <div class="st-name" id="st-name"></div>
+    <div class="st-line" id="st-line"></div>
+    <div class="st-line2" id="st-line2"></div>
+    <div class="st-tap">Tap to continue</div>
+    <div class="st-bar" id="st-bar"></div>
   </div></div>
 
   <!-- HOW -->
@@ -140,6 +217,7 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <div style="height:8px"></div>
     <div class="settingline"><span>Sound</span><div class="toggle on" id="tg-sound"><b></b></div></div>
     <div class="settingline"><span>Haptics</span><div class="toggle on" id="tg-haptic"><b></b></div></div>
+    <div class="settingline"><span>Story cards</span><div class="toggle on" id="tg-story"><b></b></div></div>
     <div style="height:8px"></div>
     <button class="btn ghost sm" id="set-back" style="max-width:400px;margin:0 auto">Back</button>
   </div></div>
@@ -215,8 +293,8 @@ function worldOf(li){ return WORLD_DEFS[Math.min(WORLD_DEFS.length-1,Math.floor(
 
 /* ---------- storage + settings ---------- */
 var LS={ get:function(k){try{return localStorage.getItem(k);}catch(e){return null;}}, set:function(k,v){try{localStorage.setItem(k,v);}catch(e){}} };
-var SET={ sound:true, haptic:true };
-(function(){ try{ var s=JSON.parse(LS.get('rs_set')||'{}'); ['sound','haptic'].forEach(function(k){ if(typeof s[k]==='boolean')SET[k]=s[k]; }); }catch(e){} })();
+var SET={ sound:true, haptic:true, story:true };
+(function(){ try{ var s=JSON.parse(LS.get('rs_set')||'{}'); ['sound','haptic','story'].forEach(function(k){ if(typeof s[k]==='boolean')SET[k]=s[k]; }); }catch(e){} })();
 function saveSet(){ LS.set('rs_set', JSON.stringify(SET)); }
 
 var PROG={ bestScore:0, bestLevel:0, totalMice:0, bank:0, up:{vine:0,fling:0,heart:0,paws:0} };
@@ -465,7 +543,7 @@ function genLevel(li){
 }
 
 /* ---------- start / state ---------- */
-function startRun(){ startLevel(Math.min(PROG.cleared||0, LEVELS-1), true); }
+function startRun(){ var li=Math.min(PROG.cleared||0, LEVELS-1); runStory(storyCards(li), function(){ startLevel(li, true); }); }
 function startLevel(li, freshRun){
   var lvl=genLevel(li);
   var keepLives=(G&&!freshRun)?G.lives:maxLives();
@@ -638,16 +716,100 @@ function levelClear(){ if(G.phase!=='play')return; G.phase='clear'; G.clearT=2.0
   if(G.clearStars>(PROG.stars[G.li]||0))PROG.stars[G.li]=G.clearStars;
   var hadDash=dashUnlocked();
   PROG.cleared=Math.max(PROG.cleared||0, G.li+1);
-  if(!hadDash && dashUnlocked()){
-    floatUp(G.bx,G.by-70,'DASH learned! tap DASH. A kill cools it, chain them');
-  }
+  /* the sixth clear used to float "DASH learned"; the sword card (STORY.md) does that now,
+     and the DASH button carries a "tap DASH" prompt until the first dash. */
+  void hadDash;
   save();
   var amt=Math.min(12, 8+G.mice+Math.floor(G.carrots/4));
   var granted=0; try{ if(window._sbCapEarn)granted=window._sbCapEarn(amt,'rabbitsamurai:lvl'+G.li)||0; }catch(e){}
   G.sunAmt=(G.sunAmt||0)+granted;
   burst(G.lvl.diamond.x,G.lvl.diamond.y,'#bfe0f2',18);
 }
-function advanceLevel(){ if(G.li<LEVELS-1) startLevel(G.li+1,false); else winRun(); }
+function advanceLevel(){
+  /* reached from inside step() when the clear countdown ends. The story card sits between
+     this dojo and the next (STORY.md); with nothing owed the next dojo starts at once as before. */
+  var n=G.li+1;
+  var q=n<LEVELS ? storyCards(n) : ((storyOn()&&!PROG.story.end)?[{kind:'end'}]:[]);
+  var then=n<LEVELS ? function(){ startLevel(n,false); } : function(){ winRun(); };
+  if(!q.length){ then(); return; }
+  G.phase='story';
+  runStory(q,then);
+}
+
+/* ---------- the story between the dojos (2026-09-05, STORY.md) ----------
+   Stephen, dojo 6 on his phone: "you finish a level and it just cuts straight to the next
+   level which makes it feel kind of cold... I unlocked the dash attack but it just cut to
+   level 7 and I magically had a dash attack for no reason." A card after each clear, a world
+   card before each world, the sword found after dojo 6 (that is the dash), the sheath at the
+   end. Once per dojo per save; a replay of a cleared dojo shows nothing. Comfort toggle. */
+var STORY_WORLD=[
+  'The dojo burned on a Tuesday. The crows took the sword. The mole says it went east, through the yards. You have a dagger, a vine, and no master to tell you no.',
+  'The trail goes underground. The crows do not like the dark, which is why the mice dug here first.',
+  'Green, and loud with birds. The ones that spit are new. Do not stand still to admire the leaves.',
+  'Thin air, hard rock, and every crow that ever stole anything. The sheath is up there. So is whoever paid for it.' ];
+var STORY_DOJO=[
+  'The crates are stacked to hide something. Start with the ones that rattle.',
+  'The mole says the crows sold it. To whom, he did not say, and he was paid not to.',
+  'Three mice in cages. Nobody caged them for a reason. Let them out anyway.',
+  'A hedgehog with a receipt. The sword passed through here. So did a lot of carrots.',
+  'The last yard before the fence. The mole is nervous, which means you are close.',
+  'The sixth yard. Whatever is under these crates, the crows wanted it kept.',
+  'First time with the sword in your hand. It is heavier than you remember. So are you.',
+  'The mole has a cousin down here. The cousin has a grudge. The grudge has a map.',
+  'Crows at the tunnel mouths. They can see in the dark after all. Somebody told them.',
+  'A cage with a note: WE KNOW WHERE YOU ARE. The mice inside want out either way.',
+  'The tunnels tilt upward. The mole says the grove is next, and to mind the spitters.',
+  'You cut a crow out of the air for the first time. It felt like something. Write that down later.',
+  'The mole is late. The mole is never late. Keep moving.',
+  'An old training post, scarred where a blade once practised. Someone was taught here. Not you.',
+  'The mice in this grove know your name. Word travels when you keep opening cages.',
+  'The mole turns up with a bandage and no story. Whatever it was, it is behind you now.',
+  'The crows nest in the peaks. The grove is where they come down to feed. Cut the feeding short.',
+  'The last tree before the rock. From here you climb, and the sword gets no lighter.',
+  'The wind takes your ears. The vine is the only thing on this mountain that holds.',
+  'A cage hung over the drop. Whoever hung it wanted you to reach for it. Reach anyway.',
+  'The mole, out of breath, says the buyer is a crow with a title. Titles are for the ground.',
+  'Cannons on the ledges. Somebody armed birds. Somebody is going to regret the expense.',
+  'The sheath, nailed to a post like a trophy. Take it back. The nail can stay.',
+  'The last post on the last peak. Everything you came for is on the other side of it.' ];
+var STORY_SWORD=['Under the sixth crate, wrapped in a rice sack: the sword. Your master\u2019s. The crows kept the sheath.',
+  'Draw it and you lunge. Everything the blade passes through is cut. A kill sharpens it. That is the DASH.'];
+var STORY_END='The sword goes back in its sheath. The mice go wherever mice go. The mole asks what a ronin does now. You show him the vine. Same as before. Just sharper.';
+if(!PROG.story||typeof PROG.story!=='object')PROG.story={};
+function storyOn(){ return SET.story!==false; }
+function noMotion(){ try{ return !!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches); }catch(e){ return false; } }
+/* the cards owed before dojo li starts. The sword scene is owed once the sixth dojo is cleared,
+   whether that happened today or on a save from before the story existed. */
+function storyCards(li){ var q=[];
+  if(!PROG.sword && (PROG.cleared||0)>=6) q.push({kind:'sword'});
+  if(storyOn()){ var w=Math.floor(li/6);
+    if(li%6===0 && !PROG.story['w'+w]) q.push({kind:'world',w:w});
+    if(!PROG.story['d'+li]) q.push({kind:'dojo',li:li}); }
+  return q; }
+var storyQ=[], storyThen=null, storyTimer=null;
+function runStory(q,then){ if(!q||!q.length){ then(); return; }
+  storyQ=q.slice(); storyThen=then;
+  fadeOut(function(){ showCard(storyQ.shift()); }); }
+function fadeOut(cb){ var f=$('fade'); if(!f){ cb(); return; } f.classList.add('on'); setTimeout(cb, noMotion()?0:420); }
+function fadeIn(){ var f=$('fade'); if(f)f.classList.remove('on'); }
+function showCard(c){ var el=$('s-story'), kick='', name='', line='', line2='', theme='crate', ms=5500;
+  el.classList.remove('sword');
+  if(c.kind==='world'){ var wd=WORLD_DEFS[c.w]; theme=wd.theme; kick='World '+(c.w+1)+' of '+WORLD_DEFS.length; name=wd.name; line=STORY_WORLD[c.w]; ms=6500; PROG.story['w'+c.w]=1; }
+  else if(c.kind==='dojo'){ var wd2=worldOf(c.li); theme=wd2.theme; kick='Dojo '+(c.li+1)+' of '+LEVELS; name=wd2.name+' '+(c.li%6+1); line=STORY_DOJO[c.li]||''; PROG.story['d'+c.li]=1; }
+  else if(c.kind==='sword'){ theme='crate'; kick='After the sixth yard'; name='The sword'; line=STORY_SWORD[0]; line2=STORY_SWORD[1]; ms=9500; el.classList.add('sword'); PROG.sword=1; }
+  else if(c.kind==='end'){ theme='peak'; kick='The Peaks, cleared'; name='The sheath'; line=STORY_END; ms=8500; PROG.story.end=1; }
+  save();
+  var sk=SKY[theme]||SKY.crate; el.style.setProperty('--sky0',sk[0]); el.style.setProperty('--sky1',sk[1]); el.style.setProperty('--sky2',sk[2]);
+  $('st-kick').textContent=kick; $('st-name').textContent=name; $('st-line').textContent=line; $('st-line2').textContent=line2;
+  show('s-story'); fadeIn();
+  /* the gold line along the bottom is the clock: the card moves on by itself, a tap moves it now */
+  var bar=$('st-bar'); if(bar){ bar.style.transition='none'; bar.style.width='0'; void bar.offsetWidth; bar.style.transition='width '+ms+'ms linear'; bar.style.width='100%'; }
+  clearTimeout(storyTimer); storyTimer=setTimeout(storyNext, ms); }
+function storyNext(){ if(curScreen!=='s-story')return; clearTimeout(storyTimer); storyTimer=null;
+  if(storyQ.length){ fadeOut(function(){ showCard(storyQ.shift()); }); return; }
+  var t=storyThen; storyThen=null; fadeOut(function(){ if(t)t(); fadeIn(); }); }
+tap('s-story',function(){ storyNext(); });
+window.addEventListener('keydown',function(e){ if(curScreen==='s-story'&&(e.key==='Enter'||e.key===' '||e.key==='Escape')){ e.preventDefault(); storyNext(); } });
 function winRun(){ running=false; showResults(true); }
 function gameOver(){ G.phase='over'; running=false; if(G.score>(PROG.bestScore||0)){PROG.bestScore=G.score;save();} showResults(false); }
 function showResults(win){
@@ -681,6 +843,7 @@ function doDash(){
   if(!dashUnlocked()||G.dashCd>0||G.dashT>0)return false;
   if(G.rope.attached)releaseRope(false);
   G.dashT=DASH_T; G.dashCd=DASH_CD; G.dashHit=false; G.dashed=true;
+  if(!PROG.dashUsed){ PROG.dashUsed=1; save(); }
   G.vx=G.facing*DASH_V; if(G.vy>0)G.vy=0;
   sfx('dash'); haptic(10); burst(G.bx-G.facing*10,G.by,'#e8dcc8',8);
   return true;
@@ -1098,6 +1261,9 @@ function drawControls(){ if(G.phase!=='play'&&G.phase!=='clear')return;
     if(!ready){ var cx=BDASH.x+BDASH.w/2, cy=BDASH.y+BDASH.h/2, k=1-G.dashCd/DASH_CD;
       ctx.globalAlpha=0.9; ctx.strokeStyle='#c8a84b'; ctx.lineWidth=4; ctx.beginPath(); ctx.arc(cx,cy,BDASH.w/2-3,-Math.PI/2,-Math.PI/2+k*6.283); ctx.stroke(); ctx.globalAlpha=1; }
     if(G.dashChain>1){ ctx.fillStyle='#e6cd6a'; ctx.font='800 13px system-ui'; ctx.textAlign='center'; ctx.fillText('x'+G.dashChain,BDASH.x+BDASH.w/2,BDASH.y-6); }
+    else if(!PROG.dashUsed){ var px=BDASH.x+BDASH.w/2, py=BDASH.y-12; ctx.globalAlpha=0.7+0.3*Math.sin(G.t*5);
+      ctx.fillStyle='rgba(20,15,12,0.85)'; roundRect(px-40,py-11,80,22,11); ctx.fill();
+      ctx.fillStyle='#ffe9a8'; ctx.font='800 13px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('tap DASH',px,py); ctx.textBaseline='alphabetic'; ctx.globalAlpha=1; }
   }
   if(G.rope.attached){ ctx.globalAlpha=0.5+0.3*Math.sin(G.t*10); ctx.fillStyle='#e6cd6a'; ctx.font='700 13px system-ui'; ctx.textAlign='center'; ctx.fillText('drag to swing · release to fling', VW/2, VH-24); ctx.globalAlpha=1; ctx.textAlign='left'; }
 }
@@ -1203,7 +1369,7 @@ $('select-worlds').addEventListener('click',function(e){
   var b=e.target.closest?e.target.closest('button[data-dojo]'):null; if(!b)return;
   var li3=parseInt(b.getAttribute('data-dojo'),10);
   if(!(li3>=0&&li3<LEVELS)||li3>(PROG.cleared||0))return;
-  sfx('ui'); startLevel(li3,true);
+  sfx('ui'); runStory(storyCards(li3), function(){ startLevel(li3,true); });
 });
 
 /* ---------- dojo shop ---------- */
@@ -1247,7 +1413,7 @@ tap('go-home',function(){ sfx('ui'); show('s-title'); });
 tap('go-share',function(){ sfx('ui'); shareIt(); });
 function wireToggle(id,key){ var el=$(id); function paint(){ if(SET[key])el.classList.add('on'); else el.classList.remove('on'); } paint();
   var host=el.parentNode||el; host.addEventListener('click',function(e){ e.preventDefault(); SET[key]=!SET[key]; paint(); saveSet(); sfx('ui'); }); }
-wireToggle('tg-sound','sound'); wireToggle('tg-haptic','haptic');
+wireToggle('tg-sound','sound'); wireToggle('tg-haptic','haptic'); wireToggle('tg-story','story');
 $('buildstamp').textContent='Rabbit Ronin '+BUILD+' (formerly Rabbit Samurai)';
 renderShop();
 window.addEventListener('pagehide',closeAC); window.addEventListener('beforeunload',closeAC);
@@ -1268,6 +1434,8 @@ if(TESTMODE){
     startLevel:function(li){ startLevel(li||0,false); return snap(); },
     state:function(){ return snap(); },
     full:function(){ return G; },
+    story:{ cards:storyCards, next:storyNext, prog:function(){ return PROG; }, set:SET, screen:function(){ return curScreen; },
+      clear:function(){ levelClear(); return snap(); }, advance:function(){ advanceLevel(); return curScreen; } },
     input:function(keys){ if(!G)return null; keys=keys||{};
       G.held.left=!!keys.left; G.held.right=!!keys.right; G.held.jump=!!keys.jump; G.held.rope=!!keys.rope; return snap(); },
     step:function(dt){ step(dt||1/60); return snap(); },

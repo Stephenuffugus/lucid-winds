@@ -10,8 +10,11 @@ I magically had a dash attack for no reason. Maybe he's trying to find his sword
 levels and you get it then and it should have a small animation and story telling about how he
 got it."
 
-This file is the story and the spec. The build belongs to whoever picks up JOB D in
-`HANDOFF-GAMES-SEP05.md`. Voice: spare, wry, one or two lines, the register the game's copy
+This file is the story and the spec. **Built Sep 05 (Fable), same day:** `#s-story` card, `#fade`
+sheet, `storyCards()` / `runStory()` / `showCard()`, the sword SVG scene, `SET.story` toggle,
+`PROG.story` seen flags, `PROG.sword`, `PROG.dashUsed` and the "tap DASH" prompt. Proof:
+`RB_DEV.story` hooks under `?rstest=1`, 17 checks with real taps (fresh player, the sixth clear,
+replays, old saves, toggle off, reduced motion). Voice: spare, wry, one or two lines, the register the game's copy
 already uses. No dashes, no exclamation marks.
 
 ## The spine
