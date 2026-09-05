@@ -109,6 +109,8 @@ https://store.steampowered.com/app/5043360/
 
 ## 6. Streamers and curators (the highest value hour of the two weeks)
 
+Names, contact routes and a curator list are in `JIMOTHY-OUTREACH.md` (Sep 05).
+
 1. Steamworks → the app → **Request Steam Product Keys**: ask for 50 Release State Override keys
    (they work before release, so a streamer can play the week before).
 2. Steamworks → **Curator Connect**: send the game to 25 curators whose lists include words like
