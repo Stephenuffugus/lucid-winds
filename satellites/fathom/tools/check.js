@@ -35,7 +35,10 @@ const GATES = [
    ignore gates. They are also the ones that flake under contention on a two
    core box, so a failure here is rerun ALONE, twice, before it is believed. */
 const BROWSER_GATES = [
-  { name: 'boot', cmd: ['test/boot.mjs'], need: 'BOOT OK' }
+  { name: 'boot', cmd: ['test/boot.mjs'], need: 'BOOT OK' },
+  { name: 'play',   cmd: ['test/play.mjs'],   need: 'PLAY OK' },
+  { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK' },
+  { name: 'level1', cmd: ['test/level1.mjs'], need: 'LEVEL1 OK', slow: true }
 ];
 
 const results = [];

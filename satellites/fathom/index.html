@@ -105,9 +105,13 @@ html,body{margin:0;padding:0;height:100%;background:#000;color:var(--cream);
 .toggles{display:flex;gap:10px;width:100%;max-width:330px;margin-top:4px}
 .toggles .btn{margin:7px 0}
 #clearName{font-size:1.15rem;letter-spacing:.2em;color:var(--cyan);margin:6px 0 2px}
-#clearStars{font-size:1.6rem;letter-spacing:.22em;color:var(--amber);margin:10px 0}
+#clearStars{font-size:1.6rem;letter-spacing:.22em;color:var(--amber);margin:14px 0 12px}
+#scrClear .spacer:first-child{flex:1.1}
+#scrClear .spacer:last-of-type{flex:1.6}
+#scrClear{background:rgba(0,0,0,.84)}
 #clearStars .off{color:#33414a}
-.stat{font-size:.85rem;color:var(--cream);opacity:.85;margin:3px 0}
+.stat{font-size:.78rem;color:var(--dim);letter-spacing:.13em;margin:5px 0;
+  text-transform:uppercase}
 #fade{position:absolute;inset:0;z-index:9;background:#000;opacity:0;
   pointer-events:none;transition:opacity 260ms linear}
 #fadeLine{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);
@@ -1356,6 +1360,7 @@ function snapshot(st) {
   var i, out = {
     now: r(st.now), steps: st.steps, stones: st.stones, over: st.over,
     px: r(st.p.x), py: r(st.p.y), pearls: st.pearlsGot,
+    hums: st.humCount, throws: st.throwCount,
     exit: st.exit.revealed, ripples: [], lurkers: [], caches: [], ghosts: st.ghosts.length
   };
   for (i = 0; i < st.ripples.length; i++) out.ripples.push([r(st.ripples[i].x), r(st.ripples[i].y), r(st.ripples[i].r)]);
@@ -2614,7 +2619,11 @@ function frame(ts) {
     if (G.st.over === 'caught' && ts - G.caughtAt > CONFIG.CAUGHT_FADE_MS + 500) restartRun();
     if (G.st.over === 'clear') showClear();
   }
-  draw(G.screen === 'play' || G.screen === 'pause' ? G.st : null, G);
+  /* the cave keeps drawing under the pause veil AND under the clear card, so
+     the last of the light is still fading behind the words. The first build
+     drew nothing at all on the clear screen and the card sat on a flat black
+     rectangle. */
+  draw(G.screen === 'play' || G.screen === 'pause' || G.screen === 'clear' ? G.st : null, G);
 }
 function beginCaught(ts) {
   G.caughtAt = ts;
@@ -2746,6 +2755,15 @@ window.FATHOM_DEV = {
     return n;
   },
   player: function () { return G.st ? { x: G.st.p.x, y: G.st.p.y } : null; },
+  /* the shortest tile walk through the cave the player is standing in. READ
+     ONLY: the gates steer a real joystick along it, they do not follow it. */
+  route: function () {
+    if (!G.st) return null;
+    var scan = gridScan(G.st.grid);
+    return bfsPath(G.st.grid, scan.start.tx, scan.start.ty, scan.exit.tx, scan.exit.ty);
+  },
+  tile: function () { return CONFIG.TILE; },
+  stick: function () { return G.joy ? { dx: G.joy.dx, dy: G.joy.dy } : null; },
   save: function () { return SAVE.read(); },
   voices: function () { return AUDIO.voices(); },
   audioReady: function () { return AUDIO.ready(); },
