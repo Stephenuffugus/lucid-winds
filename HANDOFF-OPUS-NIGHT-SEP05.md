@@ -20,6 +20,10 @@ morning. This file is the spine those three sessions hang on. The per-game plans
    `python3 -m http.server 8777 --bind 127.0.0.1 &` (the Keepsies gates and the Ronin solver use
    it); if `ls ~/.cache/puppeteer` is empty, `npx puppeteer browsers install chrome`; the FTW
    Android toolchain is `store/ftw-play/twa/setup-toolchain.sh` only when it is needed.
+   **The durable move (Sep 05):** when the codespace is closed for the refresh, change its machine type to **8 core, 32 GB
+   RAM, 64 GB disk** (GitHub: the codespace's three dot menu, Change machine type; `/workspaces` and the home directory
+   persist). Cores bill only while the box runs; storage bills always. Parallel builders (section 5b) need it; a fresh
+   clone of this repo alone is 4 GB.
    **Disk, before the night starts:** `df -h /` must show at least 3 GB free. On the evening of
    Sep 05 it showed 735 MB (`.git` 3.9 GB, `assets/` 1.9 GB of untracked video and drops,
    `/workspaces/tools` 1.2 GB, `~/.cache` 1.3 GB of which puppeteer's Chrome must stay). An
@@ -46,6 +50,11 @@ sessions on one tree double the risk of collision, not the output, on a two core
 the plans by what matters most, tell Opus the order, and expect the tail to carry into a second
 night. A plan that reads "phase 1 is a playable loop with one screen, everything else is later"
 gets a playable game; a plan that lists every feature gets a half built one.
+
+**With twelve plans written (Sep 05 evening):** the plans total about 100 hours of one Opus (7 to 10 each). One builder
+on two cores: two games to a first playable a night, so six nights. Three builders on eight cores: five or six a night,
+so two or three nights, with Fable reviewing in the mornings in the order of the table. Nothing about the plans changes
+between those two; only section 5b does.
 
 ## 3. The plan template (every `plans/<game>/HANDOFF-<GAME>.md` has these sections, numbered)
 
@@ -149,8 +158,38 @@ A visual phase is not done until you have looked at the screenshot and named thr
 | 5 | Doohickey | `docs/handoffs-uploaded/six-20260905/6handoffs/HANDOFF-DOOHICKEY.md` | `plans/doohickey/HANDOFF-DOOHICKEY.md` (written 2026-09-05, Fable; the physics engine is copied from Burr Blast, the domino cascade is a 300 trial gate) | a marble rolled down two planks knocks over eight dominoes into the bell, 100 percent of 300 seeded trials, and a real drag from the tray places a plank on the grid. That is P1 step 3. The largest of the six, about 10 hours | not started |
 | 6 | Airworthy | `docs/handoffs-uploaded/six-20260905/6handoffs/HANDOFF-AIRWORTHY.md` | `plans/airworthy/HANDOFF-AIRWORTHY.md` (written 2026-09-05, Fable; the flight model has every coefficient written down and the phugoid is an assertion) | a pull back throws a badly trimmed plane across the gym, it porpoises, two elevator bends from the result card fix it. That is P1 step 4 | not started |
 
+| 7 | Windup | `docs/handoffs-uploaded/six-more-20260905/6morehandoffs/HANDOFF-WINDUP.md` | `plans/windup/HANDOFF-WINDUP.md` (written 2026-09-05, Fable) | a real circular drag on the crank plays Twinkle from a punched strip and stopping the finger leaves the tines ringing. That is P1 step 4. About 7.5 hours | not started |
+| 8 | Inkswing | `docs/handoffs-uploaded/six-more-20260905/6morehandoffs/HANDOFF-INKSWING.md` | `plans/inkswing/HANDOFF-INKSWING.md` (written 2026-09-05, Fable) | a real fling of the brass bob draws a spiral that dies into its centre and a second ink layers over it. That is P1 step 4. About 8 hours | not started |
+| 9 | Gerplunk | `docs/handoffs-uploaded/six-more-20260905/6morehandoffs/HANDOFF-GERPLUNK.md` | `plans/gerplunk/HANDOFF-GERPLUNK.md` (written 2026-09-05, Fable; portrait first, his call) | a real flick skips a stone at least six times with a tick per skip and the plunk, and the tally matches. That is P1 step 3. About 7 hours | not started |
+| 10 | Whistlestop | `docs/handoffs-uploaded/six-more-20260905/6morehandoffs/HANDOFF-WHISTLESTOP.md` | `plans/whistlestop/HANDOFF-WHISTLESTOP.md` (written 2026-09-05, Fable; inherits the Doohickey editor rules) | eight real drags snap curves into a loop with the chime, a whistle starts a train, a lever sends it the other way. That is P1 step 5. About 8 hours | not started |
+| 11 | Updraft | `docs/handoffs-uploaded/six-more-20260905/6morehandoffs/HANDOFF-UPDRAFT.md` | `plans/updraft/HANDOFF-UPDRAFT.md` (written 2026-09-05, Fable; the kite lives on a sphere, written down) | real hold pulses launch the kite through the turbulent layer, a slide leans it, a dive and save is in the numbers. That is P1 step 3. About 8.5 hours | not started |
+| 12 | Strata | `docs/handoffs-uploaded/six-more-20260905/6morehandoffs/HANDOFF-STRATA.md` | `plans/strata/HANDOFF-STRATA.md` (written 2026-09-05, Fable; the variety sheet is a gate a human reads) | fifty generated skeletons on one sheet with five worth a screenshot, then a real brush stroke pours dust off a rib. That is P1 step 4. About 10 hours, the largest of the second six | not started |
+
 (Rows are added as handoffs land. A row's SESSION STATE is written by Opus: `DONE P1` and so on,
 or `BLOCKED <gate>`.)
+
+## 5b. Parallel mode (Stephen allowed it on Sep 05: "opus can run parallel agents to build. im not opposed to that")
+
+Parallel only pays on a box with more than two cores. On the 2 core, 8 GB box every gate already flakes under
+contention (HANDOFF-KEEPSIES 15.4); two builders there halve each other. So:
+
+- **2 cores:** one builder, the order above, no helper agents for judgement calls. This is the default.
+- **8 cores (after the machine type change in section 1 step 3):** one coordinator Opus that does NOT build. It reads the
+  spine, then spawns up to **three builder agents**, each handed exactly one plan by path and the prompt in section 4
+  with this paragraph appended. Builders never share a fence: three games, three folders. When a builder finishes a game
+  (its plan's SESSION STATE says DONE P2 or better, or BLOCKED), the coordinator hands it the next plan in the order.
+  The coordinator's only other job is the combined morning report at the top of this file.
+- **The tandem law, mechanical.** Every builder: `git pull --rebase --autostash origin add-sproing-jumper` before every
+  commit; `git add satellites/<game> plans/<game>/HANDOFF-<GAME>.md` only; a rebase conflict outside the fence is taken
+  as theirs; pushes are retried on rejection after another rebase. Never `-A`, never main.
+- **Gates serialise across builders.** Every gate run is wrapped: `flock -w 1800 /tmp/sws-gate.lock node tools/check.js`
+  (and the same lock around any single `test/*.mjs`). Browser gates from two builders at once are a coin even on eight
+  cores because Chrome is the load; the lock makes them wait their turn instead of failing each other.
+- **Disk.** Three builders shoot three sets of screenshots; the disk check in section 1 step 3 is a hard floor of 3 GB
+  before the coordinator spawns anyone, and each builder deletes raw shots that are not evidence after reading them.
+- **The prompt line to append for a builder:** "You are builder N of 3. Your plan is <path>. You share this tree with two
+  other builders; the fence and the lock above are absolute. When your plan's SESSION STATE reads DONE P2 or BLOCKED,
+  stop and report to the coordinator; do not start another plan yourself."
 
 ## 6. The morning (Fable's review, per game, in the order above)
 
