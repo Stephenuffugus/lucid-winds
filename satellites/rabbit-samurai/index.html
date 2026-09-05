@@ -44,6 +44,14 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .screen.on{display:flex}
 .pad{padding:26px; flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch}
 .center{align-items:center; justify-content:center; text-align:center}
+#hero{display:block; width:100%; max-width:440px; height:auto; margin:0 auto 14px; border-radius:18px; box-shadow:0 12px 30px #000a, 0 0 0 1px #2a331f}
+#hero-vine{animation:hero-sway 3.2s ease-in-out infinite alternate}
+#hero-crows{animation:hero-drift 9s linear infinite}
+#hero-halo{animation:hero-glow 4s ease-in-out infinite alternate}
+@keyframes hero-sway{from{transform:rotate(-3deg)}to{transform:rotate(3deg)}}
+@keyframes hero-drift{from{transform:translateX(-30px)}to{transform:translateX(340px)}}
+@keyframes hero-glow{from{opacity:.6}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){ #hero-vine,#hero-crows,#hero-halo{animation:none} }
 .title-word{font-size:50px; line-height:1; color:var(--cream); font-weight:800; text-shadow:0 3px 0 #3a1512, 0 0 26px #c0392b55; letter-spacing:1px}
 .title-word b{color:var(--red)}
 .title-sub{color:var(--gold); font-size:14px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
@@ -138,6 +146,41 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <!-- TITLE -->
   <div class="screen center on" id="s-title"><div class="pad center">
     <div style="flex:1"></div>
+    <!-- the hero: the ronin on his crates under a crescent, vine up to a bramble, crows on the
+         wind (2026-09-05, "we can make the graphics better too"; the title was bare text) -->
+    <svg id="hero" viewBox="0 0 440 230" aria-hidden="true">
+      <defs>
+        <linearGradient id="hsky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1b2940"/><stop offset="0.6" stop-color="#16210f"/><stop offset="1" stop-color="#0c1208"/></linearGradient>
+        <radialGradient id="hmoon" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#e8eef7" stop-opacity="0.35"/><stop offset="1" stop-color="#e8eef7" stop-opacity="0"/></radialGradient>
+      </defs>
+      <rect x="0" y="0" width="440" height="230" rx="18" fill="url(#hsky)"/>
+      <g id="hero-stars" fill="#dfe8f7">
+        <circle cx="40" cy="30" r="1.3"/><circle cx="96" cy="18" r="1"/><circle cx="150" cy="44" r="1.2"/><circle cx="230" cy="22" r="1"/><circle cx="300" cy="50" r="1.3"/><circle cx="352" cy="16" r="1"/><circle cx="410" cy="40" r="1.2"/><circle cx="380" cy="82" r="1"/><circle cx="70" cy="70" r="1"/>
+      </g>
+      <circle id="hero-halo" cx="356" cy="58" r="52" fill="url(#hmoon)"/>
+      <circle cx="356" cy="58" r="22" fill="#e8eef7" opacity="0.9"/><circle cx="366" cy="50" r="20" fill="#1b2940"/>
+      <g id="hero-crows" fill="#3a4658">
+        <path d="M120 62 q10 -10 20 0 q-10 -3 -20 0z"/><path d="M150 50 q9 -9 18 0 q-9 -3 -18 0z"/><path d="M92 80 q8 -8 16 0 q-8 -3 -16 0z"/>
+      </g>
+      <g fill="#0e150d" opacity="0.9">
+        <path d="M0 150 L30 150 L30 122 L74 122 L74 140 L110 140 L110 116 L150 116 L150 150 L200 150 L200 134 L240 134 L240 150 L290 150 L290 128 L330 128 L330 144 L380 144 L380 120 L440 120 L440 230 L0 230z"/>
+      </g>
+      <g fill="#0a1108"><path d="M0 178 Q40 160 80 176 Q120 192 160 174 Q200 158 240 176 Q280 194 320 176 Q360 160 400 176 L440 176 L440 230 L0 230z"/></g>
+      <g id="hero-anchor" transform="translate(300,76)"><circle r="9" fill="#5a4a7a"/><g stroke="#3e3358" stroke-width="2"><path d="M-12 0 L12 0 M0 -12 L0 12 M-8 -8 L8 8 M-8 8 L8 -8"/></g><circle r="3" fill="#8f7fb8"/></g>
+      <g id="hero-vine" style="transform-origin:300px 76px"><path d="M300 76 Q258 100 202 126" fill="none" stroke="#6f9c44" stroke-width="3.5" stroke-linecap="round"/><path d="M300 76 Q258 100 202 126" fill="none" stroke="#9ec46a" stroke-width="1.4" stroke-linecap="round"/><ellipse cx="270" cy="92" rx="5" ry="2.4" fill="#7ab356" transform="rotate(-28 270 92)"/><ellipse cx="236" cy="110" rx="5" ry="2.4" fill="#7ab356" transform="rotate(-28 236 110)"/></g>
+      <g transform="translate(150,196)"><rect x="0" y="-36" width="36" height="36" fill="#7a5330" stroke="#5c3d22" stroke-width="2"/><path d="M0 -36 L36 0 M36 -36 L0 0" stroke="#6b482a" stroke-width="1.5"/><rect x="36" y="-36" width="36" height="36" fill="#7a5330" stroke="#5c3d22" stroke-width="2"/><path d="M36 -36 L72 0 M72 -36 L36 0" stroke="#6b482a" stroke-width="1.5"/><rect x="18" y="-72" width="36" height="36" fill="#7a5330" stroke="#5c3d22" stroke-width="2"/><path d="M18 -72 L54 -36 M54 -72 L18 -36" stroke="#6b482a" stroke-width="1.5"/><rect x="20" y="-75" width="32" height="4" fill="#9ec46a"/></g>
+      <g id="hero-bunny" transform="translate(186,124) scale(1.15)">
+        <path d="M-9 -6 L-15 -20" stroke="#c9ccd4" stroke-width="2.5"/><path d="M-8 -4 L-10 -9" stroke="#8a5a2a" stroke-width="3"/>
+        <ellipse cx="-3" cy="-24" rx="3.2" ry="10" fill="#efe6d6" transform="rotate(-11 -3 -24)"/><ellipse cx="4" cy="-25" rx="3.2" ry="10" fill="#efe6d6" transform="rotate(3 4 -25)"/>
+        <ellipse cx="-3" cy="-24" rx="1.4" ry="6" fill="#e58fa0" transform="rotate(-11 -3 -24)"/><ellipse cx="4" cy="-25" rx="1.4" ry="6" fill="#e58fa0" transform="rotate(3 4 -25)"/>
+        <ellipse cx="0" cy="2" rx="11" ry="13" fill="#efe6d6"/><ellipse cx="-4" cy="15" rx="4" ry="5" fill="#e2d7c3"/><ellipse cx="5" cy="15" rx="4" ry="5" fill="#e2d7c3"/>
+        <circle cx="2" cy="-11" r="9" fill="#f3ebdc"/><rect x="-6" y="-16" width="17" height="5" rx="2" fill="#c0392b"/>
+        <path d="M11 -15 L20 -13 L19 -9 L11 -11z" fill="#c0392b"/><path d="M11 -14 L18 -19 L20 -16 L12 -11z" fill="#c0392b"/>
+        <circle cx="4" cy="-10" r="1.6" fill="#2a2320"/><circle cx="-1" cy="-10" r="1.6" fill="#2a2320"/><circle cx="2" cy="-6" r="1.4" fill="#e58fa0"/>
+        <path d="M10 2 L26 -6" stroke="#c9ccd4" stroke-width="2.5" stroke-linecap="round"/>
+      </g>
+      <g fill="#e07a1f"><path d="M92 176 l-6 -12 h12z"/><path d="M256 172 l-6 -12 h12z"/></g><g fill="#5fae3a"><path d="M92 160 l-3 -8 h6z"/><path d="M256 156 l-3 -8 h6z"/></g>
+    </svg>
     <div class="title-word"><b>Rabbit</b> Ronin</div>
     <div class="title-sub">Sky Wolf Studio</div>
     <div class="ribbon">A rabbit ronin and a dagger on a vine. <b class="hl">Swing</b> the bramble canyons, slice through <b class="hl">hedgehogs and crows at full speed</b>, free the caged <b class="hl">mice</b>, and spend your <b class="hl">carrots</b> at the dojo shop on a longer vine, a mightier fling and a fourth heart.</div>
