@@ -139,7 +139,7 @@
         + '#' + CARD_ID + ' .swsm-eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#c8a84b;padding-right:44px}'
         + '#' + CARD_ID + ' .swsm-bar{height:22px;margin:-10px 0 4px;display:flex;align-items:center;justify-content:center;cursor:grab}'
         + '#' + CARD_ID + ' .swsm-bar i{display:block;width:44px;height:5px;border-radius:3px;background:rgba(232,220,200,.35)}'
-        + '#' + CARD_ID + ' .swsm-min{position:absolute;top:10px;right:10px;width:40px;height:40px;min-height:40px;flex:0 0 auto;padding:0;border-radius:12px;font-size:20px;line-height:1;border:1px solid rgba(232,220,200,.25)!important;background:transparent!important;color:#e8dcc8!important}'
+        + '#' + CARD_ID + ' .swsm-min{position:absolute;top:8px;right:8px;width:48px;height:48px;min-height:48px;flex:0 0 auto;padding:0;border-radius:12px;font-size:20px;line-height:1;border:1px solid rgba(232,220,200,.25)!important;background:transparent!important;color:#e8dcc8!important}'
         + '#sws-music-pill{position:fixed;left:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:2147482000;height:48px;padding:0 16px;border-radius:14px;border:1px solid rgba(200,168,75,0.7);background:rgba(13,16,12,0.92);color:#e8dcc8;font:600 14px system-ui,sans-serif;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.5);touch-action:none}'
         + '#' + CARD_ID + ' .swsm-row{display:flex;align-items:center;gap:14px;margin:10px 0 14px}'
         + '#' + CARD_ID + ' .swsm-tile{flex:0 0 64px;width:64px;height:64px;border-radius:14px;background:rgba(122,179,86,0.16);border:1px solid rgba(122,179,86,0.5);display:flex;align-items:center;justify-content:center;font-size:30px;color:#7ab356}'

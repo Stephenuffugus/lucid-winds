@@ -382,19 +382,22 @@ function draw(){
     if(c2===0){ line(x2,y2,x2,y2+CELL); } if(r2===0){ line(x2,y2,x2+CELL,y2); }
   }
   // outer frame
-  ctx.strokeStyle='#e8dcc8'; ctx.lineWidth=SAVE.cb?5:4; ctx.strokeRect(BX,BY,CELL*N,CELL*N);
+  ctx.save(); ctx.shadowColor='#c8a84b'; ctx.shadowBlur=18;   /* the board met black through a hard 4px line */
+  ctx.strokeStyle='#e8dcc8'; ctx.lineWidth=SAVE.cb?5:4; ctx.strokeRect(BX,BY,CELL*N,CELL*N); ctx.restore();
   // per-row/col satisfied pips
   ctx.fillStyle='rgba(200,168,75,0.9)'; ctx.font='700 '+Math.max(10,CELL*0.16)+'px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle';
   // status line
-  ctx.fillStyle='#8a9178'; ctx.font='600 15px system-ui'; ctx.textAlign='center'; ctx.textBaseline='alphabetic';
+  ctx.fillStyle='#8a9178'; ctx.font='600 20px system-ui'; ctx.textAlign='center'; ctx.textBaseline='alphabetic';
   var placed=0; for(var q=0;q<N*N;q++)if(G.marks[q]===2)placed++;
   ctx.fillText(placed+' / '+N+' stars planted', VW/2, BY+CELL*N+34);
   // always-on directions (Jessie 2026-07-15: "No directions"); the conflict
   // warning takes the first line's slot when it fires
   if(anyConflict(conf)){ ctx.fillStyle='#e58fa0'; ctx.fillText('two stars are touching', VW/2, BY+CELL*N+58); }
-  else { ctx.fillStyle='#8a9178'; ctx.font='13px system-ui'; ctx.fillText('Tap to plant a star · tap again to clear', VW/2, BY+CELL*N+58); }
-  ctx.fillStyle='#8a9178'; ctx.font='13px system-ui';
-  ctx.fillText('One per row, column, and colored bed · none may touch', VW/2, BY+CELL*N+76);
+  else { ctx.fillStyle='#8a9178'; ctx.font='17px system-ui'; ctx.fillText('Tap to plant a star · tap again to clear', VW/2, BY+CELL*N+58); }
+  ctx.fillStyle='#8a9178'; ctx.font='17px system-ui';
+  /* two lines: at a readable size the one line ran under the feedback button at the right edge */
+  ctx.fillText('One per row, column, and colored bed', VW/2, BY+CELL*N+76);
+  ctx.fillText('None may touch', VW/2, BY+CELL*N+96);
 }
 function line(a,b,c,d){ ctx.beginPath(); ctx.moveTo(a,b); ctx.lineTo(c,d); ctx.stroke(); }
 function dot(x,y,r){ ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fill(); }
