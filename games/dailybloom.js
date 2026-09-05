@@ -787,7 +787,7 @@ function domainSparkline(domainKey){
   if(pts.length<2)return '';
   var col=DOMAINS[domainKey].color;
   var last=pts[pts.length-1], prev=pts[pts.length-2];
-  var arrow=last>prev?'▲':last<prev?'▼':'—';
+  var arrow=last>prev?'▲':last<prev?'▼':'·';
   var arrowCol=last>prev?'#8fc57a':last<prev?'#e07a7a':'rgba(232,220,200,0.5)';
   return '<span class="DBtrend" style="color:'+arrowCol+'">'+arrow+'</span>';
 }

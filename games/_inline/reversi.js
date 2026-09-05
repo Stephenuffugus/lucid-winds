@@ -249,23 +249,23 @@
       var p1=0,p2=0;for(var i=0;i<64;i++){if(bd[i]===1)p1++;if(bd[i]===2)p2++;}
       updateScore();
       if(p1>p2){
-        _e('game_win');_playWin();sm('You win! '+p1+' – '+p2);_sr('reversi',{w:true,s:p1});
+        _e('game_win');_playWin();sm('You win, '+p1+' to '+p2);_sr('reversi',{w:true,s:p1});
         stats.w++;stats.streak++;if(stats.streak>stats.best)stats.best=stats.streak;
         saveStats();renderStats();
         if(window._lwGameEnd)_lwGameEnd({won:true,title:'YOU WIN',
-          line:'moss '+p1+' – lichen '+p2,sub:'best streak '+stats.best,
+          line:'moss '+p1+', lichen '+p2,sub:'best streak '+stats.best,
           retry:function(){window._RVN();},retryLabel:'↻ NEW GAME',viewLabel:'view the board'});
       }else if(p2>p1){
-        _e('game_loss');_play('lose');sm('AI wins '+p2+' – '+p1);_sr('reversi',{w:false,s:p1});
+        _e('game_loss');_play('lose');sm('AI wins, '+p2+' to '+p1);_sr('reversi',{w:false,s:p1});
         stats.l++;stats.streak=0;saveStats();renderStats();
         if(window._lwGameEnd)_lwGameEnd({won:false,title:'AI WINS',
-          line:'lichen '+p2+' – moss '+p1,sub:'best streak '+stats.best,
+          line:'lichen '+p2+', moss '+p1,sub:'best streak '+stats.best,
           retry:function(){window._RVN();},retryLabel:'↻ NEW GAME',viewLabel:'view the board'});
       }else{
-        _e('milestone');sm('Draw! '+p1+' – '+p2);_sr('reversi',{w:false,s:p1});
+        _e('milestone');sm('Draw! '+p1+' to '+p2);_sr('reversi',{w:false,s:p1});
         stats.d++;stats.streak=0;saveStats();renderStats();
         if(window._lwGameEnd)_lwGameEnd({won:false,title:'DRAW',
-          line:'moss '+p1+' – lichen '+p2,sub:'best streak '+stats.best,
+          line:'moss '+p1+', lichen '+p2,sub:'best streak '+stats.best,
           retry:function(){window._RVN();},retryLabel:'↻ NEW GAME',viewLabel:'view the board'});
       }
     }

@@ -457,7 +457,7 @@
     window._BGHint=function(){
       if(TURN!=='human'||PHASE!=='move'||MOVES_LEFT.length===0)return;
       var best=_bestMoveFor('human');
-      if(!best){sm('No hint — no valid moves');return;}
+      if(!best){sm('No hint, no valid moves');return;}
       BG_HINT={from:best.from,to:best.to,die:best.die};
       _play('tap');
       rn(); // rn() renders the hint status text itself (see st= in rn)

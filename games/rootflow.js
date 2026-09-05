@@ -422,10 +422,10 @@ function buildDOM(host){
   pan=document.createElement('div'); pan.id='RFpan'; host.appendChild(pan);
   topBar=document.createElement('div'); topBar.className='RFtop'; pan.appendChild(topBar);
   topBar.innerHTML=
-    '<div class="RFtopCell"><div class="RFtopLbl">TIER</div><div class="RFtopVal" id="RFtier">—</div></div>'+
+    '<div class="RFtopCell"><div class="RFtopLbl">TIER</div><div class="RFtopVal" id="RFtier">·</div></div>'+
     '<div class="RFtopCell"><div class="RFtopLbl">PUZZLE</div><div class="RFtopVal" id="RFpuz">1</div></div>'+
     '<div class="RFtopCell"><div class="RFtopLbl">TIME</div><div class="RFtopVal" id="RFtime">0:00</div></div>'+
-    '<div class="RFtopCell"><div class="RFtopLbl">HINTS</div><div class="RFtopVal" id="RFh">—</div></div>';
+    '<div class="RFtopCell"><div class="RFtopLbl">HINTS</div><div class="RFtopVal" id="RFh">·</div></div>';
   topEls.tier=topBar.querySelector('#RFtier');
   topEls.puzzle=topBar.querySelector('#RFpuz');
   topEls.time=topBar.querySelector('#RFtime');
@@ -603,7 +603,7 @@ function renderCell(r,c){
 function updateHUD(){
   if(!topEls.tier)return;
   var meta=TIERS[S.tier];
-  topEls.tier.textContent=(meta&&meta.label)||'—';
+  topEls.tier.textContent=(meta&&meta.label)||'·';
   topEls.puzzle.textContent=S.solvedCount+1;
   topEls.hints.textContent=S.hintsLeft+'/'+(meta?meta.hints:0);
 }
@@ -683,7 +683,7 @@ function showWinCard(elapsed){
   winCard=document.createElement('div'); winCard.className='RFwin';
   var bestKey='lw_rootflow_best_'+S.tier;
   var best=parseInt(localStorage.getItem(bestKey)||'9999',10);
-  var bestStr=(best>=9999)?'—':fmtTime(best);
+  var bestStr=(best>=9999)?'·':fmtTime(best);
   var hintsUsed=TIERS[S.tier].hints-S.hintsLeft;
   winCard.innerHTML=
     '<div class="RFwinTitle">ROOTED</div>'+

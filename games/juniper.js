@@ -499,7 +499,7 @@ window._gameFns.juniper = function Juniper(a){
     h+='<div style="display:flex;justify-content:center;align-items:center;gap:10px;padding:4px 8px 8px;flex-wrap:wrap;">';
     h+='<div style="display:inline-flex;align-items:center;gap:8px;padding:6px 14px;background:rgba(0,0,0,0.4);border:1px solid rgba(180,140,70,0.3);border-radius:999px;font-family:Georgia,serif;">';
     h+='<span style="font-family:DM Mono,monospace;font-size:0.5rem;color:rgba(232,220,200,0.55);letter-spacing:0.14em;text-transform:uppercase;">Deadwood</span>';
-    h+='<span style="font-size:1.4rem;font-weight:700;color:'+dwColor+';line-height:1;text-shadow:0 1px 3px rgba(0,0,0,0.5);">'+(dwIsNum?dw:'—')+'</span>';
+    h+='<span style="font-size:1.4rem;font-weight:700;color:'+dwColor+';line-height:1;text-shadow:0 1px 3px rgba(0,0,0,0.5);">'+(dwIsNum?dw:'·')+'</span>';
     h+='</div>';
     if(isGin){
       h+='<button onclick="_JUG()" class="ju-gin-btn" style="min-height:48px;padding:8px 20px;font-family:Georgia,serif;font-weight:700;font-size:0.95rem;background:linear-gradient(180deg,#ffdc70,#c48f1f);border:2px solid #ffdc70;color:#3a2a08;letter-spacing:0.06em;border-radius:8px;text-shadow:0 1px 0 rgba(255,255,255,0.5);box-shadow:0 0 22px rgba(255,220,112,0.7),inset 0 1px 0 rgba(255,255,255,0.5);cursor:pointer;animation:juGinPulse 0.9s ease-in-out infinite;">GIN!</button>';

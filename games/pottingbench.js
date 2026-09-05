@@ -39,7 +39,7 @@ window._gameFns.pottingbench=function PB(a){
   var bestMs=0;
   try{bestMs=parseInt(localStorage.getItem('lw_pb_best')||'0',10)||0;}catch(e){}
 
-  ms(a,'Potting Bench · best <span id="PBb">'+(bestMs?(bestMs/1000).toFixed(2)+'s':'—')+'</span>');
+  ms(a,'Potting Bench · best <span id="PBb">'+(bestMs?(bestMs/1000).toFixed(2)+'s':'·')+'</span>');
   mm(a);
   var pan=document.createElement('div');pan.id='PBpan';
   pan.style.cssText='max-width:420px;margin:0 auto;padding:8px;text-align:center;';
@@ -175,7 +175,7 @@ window._gameFns.pottingbench=function PB(a){
   }
 
   function renderMenu(){
-    var bestStr=bestMs?(bestMs/1000).toFixed(2)+'s':'—';
+    var bestStr=bestMs?(bestMs/1000).toFixed(2)+'s':'·';
     var h='';
     h+='<div style="margin:8px 0 14px;">';
     h+='<div style="font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--muted);letter-spacing:0.06em;margin-bottom:6px;">Beat your best time</div>';
@@ -190,7 +190,7 @@ window._gameFns.pottingbench=function PB(a){
   }
 
   function renderEnd(secs,newBest,stuck){
-    var bestStr=bestMs?(bestMs/1000).toFixed(2)+'s':'—';
+    var bestStr=bestMs?(bestMs/1000).toFixed(2)+'s':'·';
     var h='';
     h+='<div style="margin:8px 0 14px;">';
     h+='<div style="font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--muted);letter-spacing:0.06em;margin-bottom:6px;">'+(stuck?'STUCK':'CLEARED')+'</div>';

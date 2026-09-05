@@ -260,10 +260,10 @@
         won: true,
         title: 'DAILY TRIO #'+dayNum(),
         line: phenosFound+' trios in '+fmtSecs(secs),
-        sub: first ? 'locked in — come back tomorrow' : 'practice run — today already counted',
+        sub: first ? 'locked in, come back tomorrow' : 'practice run, today already counted',
         retry: window._setDaily
       });
-      sm('🌿 Daily done: '+phenosFound+' trios in '+fmtSecs(secs)+(first?' — locked in.':' (practice).'));
+      sm('🌿 Daily done: '+phenosFound+' trios in '+fmtSecs(secs)+(first?', locked in.':' (practice).'));
     }
 
     function renderBoard() {
@@ -374,7 +374,7 @@
         } else {
           _play('buzz');
           selected.forEach(function(i) { if (cards[i]) cards[i].classList.add('wrong'); });
-          sm("Not quite — one trait doesn't align.");
+          sm("Not quite, one trait doesn't align.");
           locked = true;
           setTimeout(function() {
             selected.forEach(function(i) {
@@ -423,7 +423,7 @@
       startRound('daily');
       var rec = dailyLoad();
       sm(rec && rec.done
-         ? 'Practice run — today already locked in at ' + fmtSecs(rec.secs) + '.'
+         ? 'Practice run, today already locked in at ' + fmtSecs(rec.secs) + '.'
          : 'Same deck for everyone today. Find ' + DAILY_TARGET + ' trios, fast.');
     };
     window._setRestart = function() {

@@ -316,8 +316,8 @@
         _sr('yahtzee',{w:tot>=150,s:tot});
         var lines=[
           {label:'Upper section',value:upperSum,color:'#7ab356'},
-          {label:'Upper bonus',value:bonus?'+35':'—',color:bonus?'#ffdc70':'rgba(232,220,200,0.4)'},
-          {label:'Yahtzee bonus',value:yBonus?'+'+yBonus:'—',color:yBonus?'#ffdc70':'rgba(232,220,200,0.4)'},
+          {label:'Upper bonus',value:bonus?'+35':'0',color:bonus?'#ffdc70':'rgba(232,220,200,0.4)'},
+          {label:'Yahtzee bonus',value:yBonus?'+'+yBonus:'0',color:yBonus?'#ffdc70':'rgba(232,220,200,0.4)'},
           {label:'Lower section',value:lowerSum,color:'#dc8a8a'},
           {label:'TOTAL',value:tot,color:'#ffdc70',big:true,medal:medal}
         ];

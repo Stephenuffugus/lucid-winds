@@ -637,7 +637,7 @@ function buildDOM(a){
   // Top bar
   topBar=document.createElement('div'); topBar.className='KKtop'; pan.appendChild(topBar);
   topBar.innerHTML=
-    '<div class="KKtopCell"><div class="KKtopLbl">DIFFICULTY</div><div class="KKtopVal" id="KKdiff">—</div></div>'+
+    '<div class="KKtopCell"><div class="KKtopLbl">DIFFICULTY</div><div class="KKtopVal" id="KKdiff">·</div></div>'+
     '<div class="KKtopCell"><div class="KKtopLbl">TIME</div><div class="KKtopVal" id="KKtime">0:00</div></div>'+
     '<div class="KKtopCell"><div class="KKtopLbl">ERRORS</div><div class="KKtopVal" id="KKerrs">0</div></div>';
   topEls.diff=topBar.querySelector('#KKdiff');
@@ -646,8 +646,8 @@ function buildDOM(a){
   // Active-run readout
   runPanel=document.createElement('div'); runPanel.className='KKrun'; pan.appendChild(runPanel);
   runPanel.innerHTML=
-    '<div class="KKrunCell" data-dir="h"><div class="KKrunLbl">ROW</div><div class="KKrunFrac">—</div><div class="KKrunNeed"></div><div class="KKcombos" style="display:none">Show options</div></div>'+
-    '<div class="KKrunCell" data-dir="v"><div class="KKrunLbl">COLUMN</div><div class="KKrunFrac">—</div><div class="KKrunNeed"></div><div class="KKcombos" style="display:none">Show options</div></div>';
+    '<div class="KKrunCell" data-dir="h"><div class="KKrunLbl">ROW</div><div class="KKrunFrac">·</div><div class="KKrunNeed"></div><div class="KKcombos" style="display:none">Show options</div></div>'+
+    '<div class="KKrunCell" data-dir="v"><div class="KKrunLbl">COLUMN</div><div class="KKrunFrac">·</div><div class="KKrunNeed"></div><div class="KKcombos" style="display:none">Show options</div></div>';
   runEls.h=runPanel.querySelector('[data-dir="h"]');
   runEls.v=runPanel.querySelector('[data-dir="v"]');
   runPanel.addEventListener('click', function(e){
@@ -784,10 +784,10 @@ function hasConflict(r,c,val){
 function updateRunPanel(){
   if(!runPanel)return;
   if(!S||!S.selected){
-    runEls.h.querySelector('.KKrunFrac').textContent='—';
+    runEls.h.querySelector('.KKrunFrac').textContent='·';
     runEls.h.querySelector('.KKrunNeed').textContent='Tap a cell';
     runEls.h.querySelector('.KKcombos').style.display='none';
-    runEls.v.querySelector('.KKrunFrac').textContent='—';
+    runEls.v.querySelector('.KKrunFrac').textContent='·';
     runEls.v.querySelector('.KKrunNeed').textContent='';
     runEls.v.querySelector('.KKcombos').style.display='none';
     return;
@@ -808,7 +808,7 @@ function renderRunCell(cellEl, run, clue, clueKey){
   var needEl=cellEl.querySelector('.KKrunNeed');
   var combosEl=cellEl.querySelector('.KKcombos');
   if(!clue){
-    fracEl.textContent='—'; needEl.textContent='no clue'; combosEl.style.display='none';
+    fracEl.textContent='·'; needEl.textContent='no clue'; combosEl.style.display='none';
     fracEl.className='KKrunFrac';
     return;
   }
@@ -874,7 +874,7 @@ function mkBtn(label, style, onClick, disabled){
 
 function updateTop(){
   if(!topEls.diff)return;
-  topEls.diff.textContent=(DIFF_META[S.difficulty]||{}).label||'—';
+  topEls.diff.textContent=(DIFF_META[S.difficulty]||{}).label||'·';
   topEls.errs.textContent=S.errors;
 }
 
@@ -980,7 +980,7 @@ function showWinCard(elapsed, stars, isNewBest){
   var starsStr=''; for(var i=0;i<3;i++)starsStr+=(i<stars?'★':'☆');
   var bestKey='lw_kakuro_best_'+S.difficulty;
   var best=parseInt(localStorage.getItem(bestKey)||'9999',10);
-  var bestStr=(best>=9999)?'—':fmtTime(best);
+  var bestStr=(best>=9999)?'·':fmtTime(best);
   winCard.innerHTML=
     '<div class="KKwinTitle">GARDEN SOLVED</div>'+
     '<div class="KKstars">'+starsStr+'</div>'+
@@ -1001,7 +1001,7 @@ function showDifficultyPicker(){
     var meta=DIFF_META[d];
     var bestKey='lw_kakuro_best_'+d;
     var best=parseInt(localStorage.getItem(bestKey)||'9999',10);
-    var bestStr=(best>=9999)?'—':fmtTime(best);
+    var bestStr=(best>=9999)?'·':fmtTime(best);
     btnsHtml+='<button class="KKdiffBtn" data-diff="'+d+'"><div class="KKdlv"><span>'+meta.label+'</span><span class="KKdiffBest">best '+bestStr+'</span></div><div class="KKdsub">'+meta.sub+'</div></button>';
   });
   overlay.innerHTML=

@@ -223,7 +223,7 @@
     window._MMU=function(){if(_mmDailyDone||_mmOver)return;if(cur.length>0){_play('tap');cur.pop();rnC()}};
     window._MMG=function(){
       if(_mmDailyDone){sm('Come back tomorrow for a new code');return;}
-      if(_mmOver){sm('Round over — tap NEW GAME');return;}
+      if(_mmOver){sm('Round over, tap NEW GAME');return;}
       if(cur.length!==4){sm('Place 4 seeds first');return;}
       _play('snap');
       // Haptic buzz on guess submit \u2014 same feel as Wordle's Enter
@@ -465,7 +465,7 @@
       if(msb)msb.innerHTML='Guesses: <strong id="MMg">'+guesses.length+'</strong>/'+_mmMaxG;
       _resultHost.innerHTML='';
       if(_mmCountdownIv){clearInterval(_mmCountdownIv);_mmCountdownIv=null;}
-      sm(_mmDailyDone?'Daily already played — come back tomorrow':'');
+      sm(_mmDailyDone?'Daily already played, come back tomorrow':'');
       _mmRenderStats();rn();
       if(_mmDailyDone){
         var lastG=guesses.length&&guesses[guesses.length-1];

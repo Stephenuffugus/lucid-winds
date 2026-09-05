@@ -120,7 +120,7 @@ window._gameFns.vinewords=function VW(a){
   var wordBar=document.createElement('div');
   wordBar.style.cssText='text-align:center;font-family:DM Mono,monospace;font-size:1.5rem;color:var(--cream);min-height:44px;padding:6px 0;letter-spacing:0.08em;font-weight:700;';
   wordBar.id='VWword';
-  wordBar.textContent='—';
+  wordBar.textContent='\u00a0';
   pan.appendChild(wordBar);
 
   var btnRow=document.createElement('div');
@@ -149,7 +149,7 @@ window._gameFns.vinewords=function VW(a){
   var foundBar=document.createElement('div');
   foundBar.id='VWfound';
   foundBar.style.cssText='margin-top:10px;padding:8px 10px;background:rgba(26,31,23,0.45);border:1px solid rgba(122,179,86,0.25);border-radius:8px;max-height:120px;overflow-y:auto;font-size:0.72rem;color:var(--cream);line-height:1.6;';
-  foundBar.innerHTML='<div style="font-family:Bebas Neue,sans-serif;color:var(--gold);font-size:0.8rem;letter-spacing:0.12em;margin-bottom:4px;">FOUND · <span id="VWfcount">0</span></div><div id="VWflist" style="font-family:DM Mono,monospace;letter-spacing:0.02em;">—</div>';
+  foundBar.innerHTML='<div style="font-family:Bebas Neue,sans-serif;color:var(--gold);font-size:0.8rem;letter-spacing:0.12em;margin-bottom:4px;">FOUND · <span id="VWfcount">0</span></div><div id="VWflist" style="font-family:DM Mono,monospace;letter-spacing:0.02em;">·</div>';
   pan.appendChild(foundBar);
 
   // Summary / missed-words host (hidden until game ends)
@@ -289,7 +289,7 @@ window._gameFns.vinewords=function VW(a){
     var canSubmit=w.length>=3&&DICT[w]&&!foundSet[w];
     el.style.color=canSubmit?'var(--sage)':(w.length>=3&&foundSet[w]?'rgba(200,168,75,0.7)':'var(--cream)');
     // Symbol cue alongside color (fleet colorblind standard): ✓ = submittable word
-    el.textContent=w?(w.toUpperCase()+(canSubmit?' ✓':'')):'—';
+    el.textContent=w?(w.toUpperCase()+(canSubmit?' ✓':'')):'\u00a0';
     var sb=document.getElementById('VWsubmit');
     if(sb){sb.disabled=!canSubmit;sb.style.opacity=canSubmit?'1':'0.45';}
     var cb=document.getElementById('VWclear');
@@ -343,7 +343,7 @@ window._gameFns.vinewords=function VW(a){
     var fc=document.getElementById('VWfcount');if(fc)fc.textContent=foundList.length;
     var fl=document.getElementById('VWflist');
     if(!fl)return;
-    if(foundList.length===0){fl.textContent='—';return;}
+    if(foundList.length===0){fl.textContent='none yet';return;}
     // Group by length for quick read
     var parts=[];
     for(var i=0;i<foundList.length;i++){
@@ -525,7 +525,7 @@ window._gameFns.vinewords=function VW(a){
         }
         html+=parts.join(' · ')+'</div>';
       }
-      return html||'<div>—</div>';
+      return html||'<div>none yet</div>';
     }
     var pct=maxScore?score/maxScore:0;
     var rank=rankFor(pct);

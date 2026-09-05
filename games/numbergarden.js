@@ -202,7 +202,7 @@ window._gameFns.numbergarden=function NG(a){
     // HUD
     h+='<div class="ng-hud">';
     h+='<div><div class="lbl">CORRECT</div><div class="val" id="NGc">'+correct+'</div></div>';
-    h+='<div><div class="lbl">SPEED</div><div class="val" id="NGsp">—</div></div>';
+    h+='<div><div class="lbl">SPEED</div><div class="val" id="NGsp">·</div></div>';
     h+='<div><div class="lbl">STREAK</div><div class="val" id="NGst">'+streak+'</div></div>';
     h+='</div>';
     // Time bar (only shown during running)
@@ -228,7 +228,7 @@ window._gameFns.numbergarden=function NG(a){
     var e;
     if(e=document.getElementById('NGc'))e.textContent=correct;
     if(e=document.getElementById('NGst'))e.textContent=streak;
-    var avgSpeed=correct>0?(Math.round(totalSolveTime/correct/100)/10+'s'):'—';
+    var avgSpeed=correct>0?(Math.round(totalSolveTime/correct/100)/10+'s'):'·';
     if(e=document.getElementById('NGsp'))e.textContent=avgSpeed;
     if(e=document.getElementById('NGmode'))e.textContent=MODE_META[mode].label;
     if(e=document.getElementById('NGbest'))e.textContent=_loadBest();

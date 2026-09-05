@@ -376,7 +376,7 @@
           var has=false;for(var si=0;si<seqs.length;si++)if(seqs[si][0].f===idx){has=true;break;}
           if(has){sel=idx;_play('tap');rn();}
           // Forced-capture refusal used to be a silent dead tap.
-          else if(seqs.length&&seqs[0][0].j){sm('Capture available — you must jump');}
+          else if(seqs.length&&seqs[0][0].j){sm('Capture available, you must jump');}
         }
       }else{
         var seqs2=allSequences(bd,1);
@@ -470,7 +470,7 @@
       } else if(noProgress>=50){
         // 50-half-move no-capture/no-man-advance rule — stops king-vs-king
         // endgames (and similar) from shuffling forever with no exit.
-        gameOver=true;_play('lose');sm('Draw — 50 moves with no capture');_sr('checkers',{w:false,s:0,lo:1});
+        gameOver=true;_play('lose');sm('Draw, 50 moves with no capture');_sr('checkers',{w:false,s:0,lo:1});
         stats.d++;stats.streak=0;
         saveStats();renderStats();
         if(window._lwGameEnd)_lwGameEnd({won:false,title:'DRAW',

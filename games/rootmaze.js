@@ -611,8 +611,8 @@ function buildDOM(host){
   topBar=document.createElement('div'); topBar.className='RMtop'; pan.appendChild(topBar);
   topBar.innerHTML=
     '<div class="RMtopCell"><div class="RMtopLbl">TURNS</div><div class="RMtopVal" id="RMt">0</div></div>'+
-    '<div class="RMtopCell"><div class="RMtopLbl">DIFFICULTY</div><div class="RMtopVal" id="RMd">—</div></div>'+
-    '<div class="RMtopCell"><div class="RMtopLbl">BEST</div><div class="RMtopVal" id="RMb">—</div></div>';
+    '<div class="RMtopCell"><div class="RMtopLbl">DIFFICULTY</div><div class="RMtopVal" id="RMd">·</div></div>'+
+    '<div class="RMtopCell"><div class="RMtopLbl">BEST</div><div class="RMtopVal" id="RMb">·</div></div>';
   topEls.turns=topBar.querySelector('#RMt');
   topEls.difficulty=topBar.querySelector('#RMd');
   topEls.best=topBar.querySelector('#RMb');
@@ -719,10 +719,10 @@ function updateHUD(){
   topEls.turns.textContent=S.turns;
   var meta=DIFF_META[S.difficulty];
   var vMeta=VARIANTS[S.variant];
-  topEls.difficulty.textContent=(vMeta?vMeta.label.charAt(0):'')+' · '+(meta?meta.label.replace(' MIRROR',''):'—');
+  topEls.difficulty.textContent=(vMeta?vMeta.label.charAt(0):'')+' · '+(meta?meta.label.replace(' MIRROR',''):'·');
   var bestKey='lw_rootmaze_best_'+S.variant+'_'+S.difficulty;
   var best=parseInt(localStorage.getItem(bestKey)||'9999',10);
-  topEls.best.textContent=(best>=9999)?'—':best+'t';
+  topEls.best.textContent=(best>=9999)?'·':best+'t';
   // Quest queue
   var qh='';
   qh+='<div class="RMquestCell"><span class="RMquestLbl">FIND</span>';
@@ -751,7 +751,7 @@ function showEndCard(won){
   endCard=document.createElement('div'); endCard.className='RMend'+(won?'':' lose');
   var bestKey='lw_rootmaze_best_'+S.variant+'_'+S.difficulty;
   var best=parseInt(localStorage.getItem(bestKey)||'9999',10);
-  var bestStr=(best>=9999)?'—':best+' turns';
+  var bestStr=(best>=9999)?'·':best+' turns';
   endCard.innerHTML=
     '<div class="RMendTitle">'+(won?'MAZE MASTERED':'MIRROR WINS')+'</div>'+
     '<div class="RMendStats">'+S.turns+' turns  ·  best '+bestStr+'<br>'+S.playerTIdx+' / '+S.playerTargets.length+' treasures</div>';
