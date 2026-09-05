@@ -13,14 +13,19 @@ the game folder; you do not fetch anything from the network at night.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
-- 2026-09-05 Fable: plan written, catalogue packed and checked (Vega, Polaris, Sirius, Altair, Deneb, Betelgeuse all present
-  with the right numbers). Nothing built.
-- 2026-09-05 Opus: P0 step 1, `tools/check.js` with one gate and no `sim.js` to run, red, pasted in section 13.
-- 2026-09-05 Opus: **P0 done except the boot gate.** CONFIG, DATA (catalogue loader, the 88 regions with their charted
-  English names, 172 cities, 30 prompts), ASTRO and the whole MYTH grammar are in `index.html`; `sim.js` runs them
-  headless with `--test`, `--myth=N` and `--sky=lat,lon,iso`. 97 assertions green, 5000 myths green, both watched to
-  fail. The `--sky` listing is in section 13 and it is right by eye. Next action: P0 step 3, `test/boot.mjs`, which
-  needs the SKY layer to draw something, so it goes with P1 step 1.
+- 2026-09-05 Fable: plan written, catalogue packed and checked. Nothing built.
+- 2026-09-05 Opus: P0 step 1, the gate red with no `sim.js` to run, pasted in section 13.
+- 2026-09-05 Opus: **DONE P3.** P0, P1, P2 and P3 built and green. Eight gates in `tools/check.js`, every one watched to
+  fail, output in section 13. Thirteen screenshots opened with the Read tool and three faults named in each. The app is
+  playable end to end by a real thumb: the real sky for a place and a time, the pen, the myth, the almanac, three poster
+  layouts exporting a 2048x2560 PNG, a share link that a fresh browser opens into the same sky, Birth Sky, the moon with
+  its phase, the Milky Way, the time scrubber and a prompt a night.
+  **NOT BUILT, on purpose:** the official 88 lines (plan 3.4, a licence question of its own), the six anchor myths
+  (`data/anchors.json` is Stephen and Penny's and it is empty), planets, meteor showers, the family almanac, an embedded
+  serif, and the four art sheets, none of which the app waits on.
+  **Next action for whoever opens this:** nothing is half finished. The open questions are in the morning report and two
+  of them are Stephen's: the CC BY SA licence read before a paid store, and whether the system serif holds up with a
+  printed poster in his hand.
 
 ---
 
@@ -548,6 +553,113 @@ up, near the zenith, in the middle of July at midnight. Arcturus is going down i
 low in the south, Deneb is climbing in the north east, and the moon is a day old and below the
 horizon. That is the sky over Columbus on that night.
 
+### The whole suite, green (2026-09-05, end of the run)
+
+```
+$ node satellites/asterism/tools/check.js
+lint            pass  0s
+astro           pass  0s
+myth            pass  1s
+boot            pass  2s
+draw            pass  15s
+almanac         pass  30s
+layout          pass  52s
+thumb           pass  3s
+
+ALL GATES PASSED
+
+$ node sim.js --test
+PASSED 105 / FAILED 0   (total 105)
+
+$ node sim.js --myth=5000
+5000 myths: 5000 distinct, 67 to 116 words
+ASTERISM MYTH OK
+```
+
+### Every gate watched to fail
+
+```
+$ (the sign of the longitude term flipped)          6 red lines, including
+FAIL  Vega is 82.78 degrees up   [expected about 82.78, got -8.406]
+FAIL  and 96.75 degrees round from north, east of south   [expected about 96.75, got 341.91]
+
+$ (a dash in one ORIGIN_OPEN fragment)
+FAIL  no dash, no exclamation point and no always, never or forever in the corpus
+
+$ (PICK_PX at 2)
+FAIL  three real taps made three stars (0)
+FAIL  and they are Vega, Deneb and Altair: []
+
+$ (the prompt card taking pointer events again)
+FAIL  a tap on Deneb lands on the sky and not on the card (promptCard)
+
+$ (.btn.small at 40 px)                             90 red lines across three widths
+
+$ (the .row rule removed)
+FAIL  375x667  nothing hangs off the side of its sheet: btnLayMin by 318 px
+
+$ (the city list back to a max height only)
+FAIL  320x568  a city in the list is 48 px tall and reachable
+
+$ (the share link carrying a raw GPS reading)
+FAIL  and the place at city precision: [39.960371,-83.000229]
+FAIL  and no reading sharper than two decimals of a degree: 39.960371, -83.000229
+
+$ (the poster at half size)
+FAIL  at 2048 by 2560: 1024 by 1280
+```
+
+### Nine things the gates caught that a green run would have hidden
+
+```
+1. unproject was out by 38 degrees at the edge of a 90 degree field. The forward
+   map is the 2R stereographic form with R a half, so the inverse is
+   c = 2 atan(rho); the textbook R = 1 version was in there. Every star still
+   lands somewhere plausible; only a TAP would have been wrong, silently.
+2. Four whole SHAPE lists read as unreachable because the myth gate matched a
+   fragment by the text before its first slot, and they START with {N}.
+3. The Prompt of the Night card ate star taps: its GOT IT button sat exactly on
+   Vega at 375 wide on a first ever night.
+4. The city list collapsed to two pixels at 320 wide inside a flex column.
+5. SHARE hung half off the right edge of the myth sheet, and THREE checks were
+   blind to it: the page level scroll width, elementFromPoint after
+   scrollIntoView, and my own eye until the shot was opened.
+6. The draw gate tapped stars pixel perfect, so PICK_PX at 2 stayed green.
+7. The draw gate tapped "empty sky" onto HIP 80883, because with five hundred
+   stars on a phone a point chosen by eye is inside the pick radius of one.
+8. One almanac assertion ended in `|| true`.
+9. The shots tool's single shot filter skipped its own setup, so p2-myth
+   photographed an empty sky.
+```
+
+### And three the eye caught that no counter would
+
+```
+1. A copper kettle that kept the mice honest for eleven years: a loop drew its
+   noun from creatures and its deed from vessels. Five archetypes now.
+2. Star counts printed as digits. "3 stars" is a receipt, "three stars" is a myth.
+3. A sky that passed every assertion and read as five hundred pieces of
+   confetti, because the magnitude to size curve was linear and almost the whole
+   catalogue sits between magnitude three and five.
+```
+
+### The sky, for a human to check against a planetarium app
+
+```
+$ node sim.js --sky=39.96,-83,2026-07-15T04:00:00Z
+JD 2461236.66667   LST 18.0018 h   sun altitude -24.4
+moon: phase 0.029 (1 percent lit)  alt -19.4  az 324.5
+869 stars above the horizon. The twenty brightest:
+  Arcturus  -0.05  alt 37.9  az 263.7      Vega   0.03  alt 82.8  az  96.4
+  Altair     0.76  alt 50.3  az 134.0      Spica  0.98  alt  8.5  az 247.6
+  Antares    1.06  alt 20.3  az 201.6      Deneb  1.25  alt 60.2  az  66.3
+  Polaris    1.97  alt 39.5  az   0.8      (the full twenty are above)
+```
+
+Polaris stands due north at 39.5 degrees, which is the latitude. Vega is near the zenith at midnight
+in July. Arcturus is going down in the west, Antares is low in the south, and the moon is a day old
+and below the horizon. That is the sky over Columbus on that night.
+
 ## 14. THE OVERNIGHT PROTOCOL
 
 As `plans/fathom/HANDOFF-FATHOM.md` section 14, with `P0, P1, P2, P3` of this file and the browser gates `boot, draw,
@@ -559,6 +671,69 @@ CONFIG and DECISIONS are; nothing leaves the fence; disk.
 ---
 
 ## 15. THE MORNING REPORT
+
+### Morning report, 2026-09-05
+
+**Phases:** P0 done (`9b2b32e8`, `7356b456`), P1 done (`2bbe7198`), P2 and P3 done (`80a78bba` and the commit this
+report is in). Asterism is **DONE P3**.
+
+**Gates:** `ALL GATES PASSED`, eight of them, none skipped. `lint astro myth boot draw almanac layout thumb`. 105
+assertions in `sim.js --test`, 5000 myths in `sim.js --myth`. Every gate was watched to fail and both columns are in
+section 13.
+
+**Play it:** `satellites/asterism/index.html`. It opens on the real sky over Columbus, tonight, with a prompt. Tap two
+stars or more, DONE, name it or roll the dice, and the myth types itself. Menu for the almanac, Birth Sky, settings and
+the About sheet with the HYG credit. From a spread: SHOW ON SKY, MAKE A POSTER, SHARE A LINK. `?t=<iso>` freezes the
+clock for a gate or a shot; `?test=1` runs the assertion harness into a panel.
+
+**The `--sky` listing** is in section 13, pasted so you can hold a phone with a planetarium app next to it. It is right.
+
+**Look at:** these five first.
+1. `docs/shots/p1-sky-mid.png` — the sky. **Wrong with it:** the Milky Way still reads as a smooth diagonal wash rather
+   than a mottled river; it and the skyglow merge into one brightening across the lower half; the faint stars are all
+   within a quarter pixel of each other in size, which is true and still reads slightly as texture.
+2. `docs/shots/p1-draw.png` — the Summer Triangle joined. **Wrong with it:** the shape is a chain and not a closed
+   triangle, because closing a loop needs a tap back on the first star and the shot did not; the star label is a gold
+   caption that does not match the rest of the type; the picked stars glow the same gold as the line, so the shape reads
+   as one object rather than as stars with a line between them.
+3. `docs/shots/p2-myth.png` — the parchment. **Wrong with it:** the constellation is squeezed into the top third and on
+   a shorter phone the sheet would cover it entirely; small caps at 1.1 rem makes a violent size jump on the first
+   letter of each word; the paper's inset shadow is heavy enough to read as a drop shadow.
+4. `docs/shots/p2-poster.png` — the poster preview. **Wrong with it:** at 256 px wide the myth is four pixel type, so
+   the preview shows a layout rather than a poster; the toast sits under the buttons in the shot; the chart's field now
+   fits the shape, which leaves the sky around it sparse.
+5. `docs/thumb.png` — the arcade tile. **Wrong with it:** centring the shape pulled the horizon high, so the two dark
+   hills flank it like a canyon; the Milky Way is out of frame; the upper half is empty.
+
+**Decided without you** (all of `docs/DECISIONS.md`, these three matter most):
+- *"the magnitude curve: size and brightness both fall off, hard, with a floor."* The plan's linear curve put almost the
+  whole catalogue inside one pixel of size and the Summer Triangle was three more pieces of confetti.
+- *"the myth corpus is 290 fragments across FIVE archetypes, not four."* A loop drew its noun from creatures and its
+  deed from vessels, and a copper kettle kept the mice honest for eleven years.
+- *"`unproject` uses c = 2 atan(rho)."* Out by 38 degrees at the edge of the field, and only a tap would ever have been
+  wrong.
+
+**Blocked:** none.
+
+**For Fable:** nothing outside the fence was touched. To list it: `docs/thumb.png` goes to
+`portal-assets/thumbs/asterism.png` and the card is in section 8 of this plan; every line of it is true now. Two files
+were created by mistake outside the fence during the run, `test/almanac.mjs` at the repo root and (in the Fathom leg)
+`test/harness.mjs` and `tools/thumb.mjs`, and all three were moved or removed the moment they were noticed.
+
+**For Stephen:**
+- **The licence.** HYG v4.4 is CC BY SA 4.0, not public domain as the design says. The catalogue ships as its own file
+  with the licence inside it and the credit is in the About sheet and on every exported poster, which is the strongest
+  form of the argument that the share alike attaches to the data and not to the app. Before Asterism goes on a paid
+  store that wants a lawyer's read, this is the thing to read.
+- **The name.** ASTERISM is what the folder and the title say. Skywright, Starlore and The Almanac are still yours.
+- **The serif.** The system stack ships. The plan says the poster decides; you decide with one in your hand.
+- **The six anchor myths** with Penny. `data/anchors.json` is empty and it is labelled as theirs. The generated corpus is
+  290 fragments in the studio voice and it is decent, but six by hand would change the whole register.
+- **The phone checklist** once Fable lists it: draw the Summer Triangle from the porch, name it, read the myth, roll
+  ANOTHER twice, export a poster, and open the share link on Jessie's phone.
+
+**Next action:** nothing in Asterism is half finished. The next session takes the next row of section 5 of the spine.
+
 
 The template in `plans/fathom/HANDOFF-FATHOM.md` section 15, with this file's phases. Add one line: **the `--sky` listing**
 pasted, so the morning reader can hold a phone with a planetarium app next to it.
