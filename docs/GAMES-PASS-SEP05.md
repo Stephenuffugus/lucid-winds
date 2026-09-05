@@ -182,3 +182,7 @@ Forty Shinies ends a shift now instead of leaving twenty dead seconds on the clo
 ### The Attic condition pass (Sep 05, later)
 
 Every grade now says where its wear came from, one line under the plate after the wipe (a bank per grade in the engine, `revealStory`), the class flaw sits in the same block, the ledger gets a WEAR row and the shared PNG prints the line above the plate. The workout VHS cover stripes were bleeding past the cassette on shared cards; the cover art is clipped now. Shots: `attic-wear-find.png`, `attic-wear-ledger.png`, `attic-wear-card.png`.
+
+### Litter Bug identity pass (Sep 05, later)
+
+Every bug's lore now ends on a line about a part it actually has, the specimen card and the PNG name its family, and the Bugdex has family chips that filter the grid. The bigger find: a new mint is drawn at growth 0.36 and most scored parts grow in between level 4 and 17, so a LEGENDARY minted as a plain grub with nine chips it did not show. The chips for parts not grown in are dashed now, the mint screen says how many are still to come and which is next at what level, and the ledger has a GROWN row. Shots: `lb-identity-mint.png`, `lb-identity-dex.png`, `lb-identity-spec-front.png`, `lb-identity-spec-back.png`, `lb-identity-card.png`. Driver `lbident.mjs`.
