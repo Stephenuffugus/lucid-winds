@@ -190,8 +190,8 @@ The zip was re-vendored Sep 04 from the live game (soda not beer, window title
 ### ☐ 7b. YOU · Achievements (added Sep 04; before the revision 3 build goes live)
 Stats & Achievements → Achievements: 26 rows from `store/jimothy-steam/ACHIEVEMENTS.md`
 (API names exact, both icons each), Save, **Publish**. Then upload
-`jimothy-steam-build-20260904-r3-achievements.zip` from the same vault release, set it
-live on default, and tick **Steam Achievements** in Store Presence features.
+`jimothy-steam-build-20260905-r4-achievements-controller.zip` from the same vault release, set it
+live on default, and tick **Steam Achievements** and **Partial controller support** in Store Presence features.
 Revision 2 can go through build review first; later builds need no re-review.
 **Done when:** the store page shows "26 achievements" and your first hop pops one.
 

@@ -10,7 +10,7 @@ Icons: `capsules/out/achievements/<API>.png` (earned) and `<API>_locked.png` (no
 3. Display Name, Description, Hidden as in the table. Upload the two icons per row.
 4. **Save**, then the **Publish** tab → **Prepare for Publishing** → **Publish to Steam**.
    Achievements are live only after Publish; before that every unlock call quietly fails.
-5. Then upload the achievements build (revision 3 zip) and test one unlock from your own
+5. Then upload the achievements build (revision 4 zip, which also carries controller support) and test one unlock from your own
    Steam library: take the first hop, "Silly Little Guy" should pop in the overlay.
 
 | # | API Name | Display Name | Description | Hidden | Icon (earned / locked) |

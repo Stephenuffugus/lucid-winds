@@ -68,7 +68,23 @@ Steam takes an unpacked folder, not an installer, which is why the build target
 is `dir`. Do not zip it.
 
 
-## ✅ Steam achievements: IN THE BUILD as of Sep 04 2026 (revision 3)
+
+## ✅ Controller support: IN THE GAME as of Sep 05 2026 (revision 4 build)
+
+Standard-mapping pads (Xbox, PlayStation and anything Steam Input presents as one).
+In a run: D-pad or left stick hops through the same `queueHop` the keyboard uses, same
+orientation (down = forward), key-repeat while held; Start or B pauses, Start resumes.
+Everywhere else: the D-pad moves a gold focus ring over whatever is clickable and not
+covered on screen (a hit test, so overlays such as the daily reward card just work),
+A presses, B presses the nearest back/close/done. Gate: `satellites/stream-hop/test/
+gamepad-check.mjs`, a fake pad driving the REAL poll loop, 11 checks.
+
+Steamworks: Store Presence → Supported Features → tick **Partial controller support**
+for now (the code redeem box still wants a keyboard; everything else is pad-driven).
+Application → Steam Input: leave the default; Steam presents pads as standard gamepads.
+His playtest with a real pad on the Steam build is the only test this box cannot run.
+
+## ✅ Steam achievements: IN THE BUILD as of Sep 04 2026 (revision 3, now folded into revision 4)
 
 26 achievements = the game's 21 badges + 5 seasonal, one API name rule
 (`ACH_` + badge id upper-cased), generated table + 64x64 icon pairs in
