@@ -294,7 +294,7 @@
       for(var i=0;i<4;i++){
         if(cur[i]===undefined||cur[i]!==code[i])candidates.push(i);
       }
-      if(!candidates.length){sm('Your current guess already matches \u2014 hit GUESS');return;}
+      if(!candidates.length){sm('Your current guess already matches, hit GUESS');return;}
       var pos=candidates[Math.floor(Math.random()*candidates.length)];
       cur[pos]=code[pos];
       _hintUsed=true;

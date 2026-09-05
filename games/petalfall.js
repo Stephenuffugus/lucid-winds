@@ -1119,7 +1119,7 @@ function newGame(){
 }
 
 function GPF(a){
-  ms(a,'Block Drop'); mm(a);
+  ms(a,''); mm(a);
   buildLayout(a);
   mc(a);
   // Stop the RAF loop + drop input listeners when the player leaves the game.

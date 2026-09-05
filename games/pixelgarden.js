@@ -33,7 +33,7 @@ window._gameFns.pixelgarden = function PG(a){
   killOverlays();
   if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(killOverlays);
 
-  ms(a,'PIXEL GARDEN · <span id="PGsz">16×16</span>');
+  ms(a,'')  // the size is already the Canvas line below; the title is the header;
   mm(a);
   var pan=document.createElement('div');
   pan.style.cssText='max-width:420px;margin:0 auto;padding:6px;user-select:none;text-align:center;';
@@ -49,25 +49,29 @@ window._gameFns.pixelgarden = function PG(a){
   pan.appendChild(sizeRow);
 
   canvas=document.createElement('canvas');
-  canvas.style.cssText='display:block;border-radius:4px;border:1px solid rgba(122,179,86,0.2);margin:6px auto;touch-action:none;image-rendering:pixelated;';
+  canvas.style.cssText='display:block;border-radius:4px;border:2px solid rgba(200,168,75,0.35);box-shadow:0 6px 22px rgba(0,0,0,.6),0 0 0 6px rgba(13,16,12,.9);margin:10px auto;touch-action:none;image-rendering:pixelated;';
   pan.appendChild(canvas);
 
   // Palette
   var palEl=document.createElement('div');
-  palEl.style.cssText='display:flex;flex-wrap:wrap;gap:3px;justify-content:center;padding:6px 0;';
+  palEl.style.cssText='display:grid;grid-template-columns:repeat(auto-fill,48px);gap:6px;justify-content:center;max-width:min(100%,318px);margin:0 auto;padding:10px 0 6px;';
   pan.appendChild(palEl);
 
   // Tools
   var toolEl=document.createElement('div');
-  toolEl.style.cssText='display:flex;gap:4px;justify-content:center;padding:4px 0;flex-wrap:wrap;';
+  toolEl.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:6px 0;max-width:340px;margin:0 auto;';
   pan.appendChild(toolEl);
 
-  mc(a).innerHTML='<button class="gb" onclick="_PGCLR()">CLEAR</button>'
-    +'<button class="gb" onclick="_PGUN()">UNDO</button>'
-    +'<button class="gb" onclick="_PGSV()">SAVE</button>'
-    +'<button class="gb" onclick="_PGGal()">📂 GALLERY</button>'
-    +'<button class="gb" onclick="_PGCompose()">🧩 COMPOSE</button>'
-    +'<button class="gb" onclick="_PGExport()">⬇ PNG</button>';
+  // two rows of three, so no button is ever stranded alone on a row (GRID and PNG were)
+  var act=document.createElement('div');
+  act.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-width:340px;margin:10px auto 0;padding:0 6px;';
+  act.innerHTML='<button class="gb" onclick="_PGCLR()" style="min-height:48px">CLEAR</button>'
+    +'<button class="gb" onclick="_PGUN()" style="min-height:48px">UNDO</button>'
+    +'<button class="gb" onclick="_PGSV()" style="min-height:48px">SAVE</button>'
+    +'<button class="gb" onclick="_PGGal()" style="min-height:48px">📂 GALLERY</button>'
+    +'<button class="gb" onclick="_PGCompose()" style="min-height:48px">🧩 COMPOSE</button>'
+    +'<button class="gb" onclick="_PGExport()" style="min-height:48px">⬇ PNG</button>';
+  a.appendChild(act);
 
   function initGrid(){
     pixels=[];
@@ -216,7 +220,7 @@ window._gameFns.pixelgarden = function PG(a){
     var snap=undoStack.pop();
     if(snap.grid!==GRID){
       GRID=snap.grid;
-      var szEl=document.getElementById('PGsz');if(szEl)szEl.textContent=GRID+'×'+GRID;
+      var szEl=(document.getElementById('PGsz')||{});if(szEl)szEl.textContent=GRID+'×'+GRID;
       initCanvas();
     }
     pixels=snap.state;totalPixels=snap.tp;render();_play('tap');
@@ -369,7 +373,7 @@ window._gameFns.pixelgarden = function PG(a){
     if(!entry)return;
     saveUndo(); // allow UNDO to recover pre-load state (snapshot keeps its grid)
     GRID=entry.grid;
-    var szEl=document.getElementById('PGsz');if(szEl)szEl.textContent=GRID+'×'+GRID;
+    var szEl=(document.getElementById('PGsz')||{});if(szEl)szEl.textContent=GRID+'×'+GRID;
     // Reinit with loaded data. totalPixels recounts from the loaded art;
     // pixelsSinceSave resets — loading isn't fresh work, so load+SAVE
     // can't cash in strokes painted before the load.
@@ -393,7 +397,7 @@ window._gameFns.pixelgarden = function PG(a){
     // there's unsaved work (one mis-tap used to destroy a painting).
     if(totalPixels>0&&window.confirm&&!window.confirm('Switch to '+s+'×'+s+'? Your current canvas will be cleared.'))return;
     GRID=s;
-    var szEl=document.getElementById('PGsz');if(szEl)szEl.textContent=GRID+'×'+GRID;
+    var szEl=(document.getElementById('PGsz')||{});if(szEl)szEl.textContent=GRID+'×'+GRID;
     pixelsSinceSave=0;
     initGrid();initCanvas();buildPalette();buildTools();render();
     sm('Canvas: '+GRID+'×'+GRID);

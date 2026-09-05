@@ -63,9 +63,9 @@
     boardWrap.appendChild(topCoords.cloneNode(true));
     // Tools: Undo + Hint
     var tools=document.createElement('div');
-    tools.style.cssText='display:flex;gap:6px;justify-content:center;padding:4px 0';
-    tools.innerHTML='<button class="gb" id="RVundo" onclick="_RVU()" style="min-height:48px;padding:4px 14px;font-size:0.7rem">↩ UNDO</button>'
-      +'<button class="gb" id="RVhint" onclick="_RVH()" style="min-height:48px;padding:4px 14px;font-size:0.7rem">💡 HINT</button>';
+    tools.style.cssText='display:flex;gap:10px;justify-content:center;padding:6px 0';
+    tools.innerHTML='<button class="gb" id="RVundo" onclick="_RVU()" style="min-height:48px;padding:4px 14px;font-size:0.7rem;flex:0 0 132px">↩ UNDO</button>'
+      +'<button class="gb" id="RVhint" onclick="_RVH()" style="min-height:48px;padding:4px 14px;font-size:0.7rem;flex:0 0 132px">💡 HINT</button>';
     a.appendChild(tools);
     mc(a).innerHTML='<select class="gsl" id="RVd" onchange="_RVSetDiff(this.value)" style="min-width:140px">'
       +'<option value="1">Seedling</option><option value="2">Sapling</option><option value="3">Grove</option><option value="4">Old Growth</option>'
@@ -192,7 +192,7 @@
       var el=document.getElementById('RVs');if(!el)return;
       var status=tn===1&&!ov?'Your turn · '+m1+' moves':tn===2&&!ov?'AI thinking · '+m2+' moves':'Game over';
       el.innerHTML='<span style="color:#7ab356">&#9679; Moss: <strong>'+p1+'</strong></span>'
-        +'<span style="color:var(--muted);font-family:DM Mono,monospace;font-size:0.58rem">'+status+'</span>'
+        +'<span style="color:var(--muted);font-family:DM Mono,monospace;font-size:0.7rem">'+status+'</span>'
         +'<span style="color:#C8A84B">Lichen: <strong>'+p2+'</strong> &#9679;</span>';
     }
     // Star-point markers (Go-board style hoshi) at key strategic squares

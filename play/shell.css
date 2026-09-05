@@ -350,7 +350,14 @@ html, body { overflow-x: visible; }
    inside shell, since the shell header already shows the wallet.
    Games still REFERENCE #_h via getElementById, so we keep the element
    in DOM but hide the bar visually. */
-#fg-ag .gu-bar { display: none; }
+/* Sep 05: the RIGHT half is the duplicate (multiplier + timer, the header has the wallet).
+   The LEFT half is the game's own live line: Word Search's Found 0/6, Shut the Box's rolls
+   and open score, Stop Ten's attempts, Potting Bench's best. 54 natives write it and none of
+   it was on screen. Show the left half as a quiet centred line; keep #_h in the DOM, hidden. */
+#fg-ag .gu-bar { display: flex; justify-content: center; background: transparent; box-shadow: none; border: 0; padding: 6px 10px 2px; font-size: .72rem; color: var(--muted); letter-spacing: .02em; text-align: center; }
+#fg-ag .gu-bar .gu-left { flex: 0 1 auto; }
+#fg-ag .gu-bar .gu-right { display: none; }
+#fg-ag .gu-bar:has(.gu-left:empty) { display: none; }
 
 /* ── Cold-load placeholder ──
    Shown inside #shell-mount until the game module finishes loading and

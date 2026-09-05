@@ -374,7 +374,7 @@ function sliderVictory(){
 function onDResize(){positionTiles();}
 
 function GD(a){
-  ms(a,'Sliding Puzzle');mm(a);
+  ms(a,'');mm(a);
   pan=document.createElement('div');pan.id='Dpan';a.appendChild(pan);
   mc(a).innerHTML='<select class="gsl" id="Dsize" onchange="_DN()"><option value="3">3×3</option><option value="4" selected>4×4 (15 Puzzle)</option><option value="5">5×5</option></select>';
   window.addEventListener('resize',onDResize);

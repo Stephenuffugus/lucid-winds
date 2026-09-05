@@ -19,9 +19,9 @@ var _e=G.e,_play=G.play,_playWin=G.playWin,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,sh=G.
     '.wc.wf-shine::after{content:"";position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(100deg,transparent 20%,rgba(232,220,200,.75) 50%,transparent 80%);background-size:200% 100%;animation:wsShine .7s ease-out;pointer-events:none;z-index:3}',
     '.wc.wd{background:rgba(200,168,75,.32)!important;border-color:rgba(200,168,75,.65)!important;color:var(--gold)!important;text-shadow:0 0 8px rgba(200,168,75,.4);box-shadow:inset 0 0 10px rgba(200,168,75,.18)}',
     '.wc.wm{animation:wsMiss .32s ease-out}',
-    '.ws-word{padding:3px 8px;border-radius:4px;font-family:DM Mono,monospace;font-weight:600;transition:all .3s ease}',
+    '.ws-word{padding:8px 12px;min-height:34px;box-sizing:border-box;display:inline-flex;align-items:center;border-radius:8px;font-family:DM Mono,monospace;font-weight:600;letter-spacing:.04em;transition:all .3s ease}',
     '.ws-word.done{text-decoration:line-through;opacity:.45;color:var(--sage);border:1px solid rgba(122,179,86,0.35);background:rgba(122,179,86,0.06)}',
-    '.ws-word.pending{color:var(--cream);border:1px solid rgba(200,168,75,0.25);background:rgba(200,168,75,0.04)}'
+    '.ws-word.pending{color:var(--cream);border:1px solid rgba(200,168,75,0.42);background:rgba(200,168,75,0.09)}'
   ].join('');
   document.head.appendChild(s);
 })();
@@ -320,7 +320,7 @@ function GW(a){
   ms(a,'<span id="Wtheme" style="color:var(--gold);font-family:Georgia,serif;font-style:italic;letter-spacing:.06em;">Flora</span> &middot; Found: <strong id="Wf">0</strong>/<strong id="Wt">6</strong>');mm(a);
   gd=document.createElement('div');gd.className='wg';gd.id='Wg';a.appendChild(gd);
   wl=document.createElement('div');wl.id='Wl';
-  wl.style.cssText='display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:10px 8px;font-size:.72rem;max-width:min(calc(100vw - 24px),460px);margin:0 auto;';
+  wl.style.cssText='display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:12px 8px;font-size:.74rem;max-width:min(calc(100vw - 24px),460px);margin:0 auto;';
   a.appendChild(wl);
   mc(a).innerHTML='<select class="gsl" id="Wd" onchange="_WN()"><option value="8-5">Easy</option><option value="10-6" selected>Medium</option><option value="13-8">Hard</option></select> <button class="gb" onclick="_WN()">↻ New Game</button>';
   window._WN();

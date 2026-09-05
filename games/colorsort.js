@@ -553,7 +553,7 @@ function GPS(a){
     if(timerId){clearInterval(timerId);timerId=null;}
     if(_xt)_xt();
   });
-  ms(a,'Bee’s Pollen Sort');mm(a);
+  ms(a,'');mm(a);
   pan=document.createElement('div');pan.id='PSpan';a.appendChild(pan);
   mc(a);
   var start=Math.min(loadProgress(),LEVELS.length-1);

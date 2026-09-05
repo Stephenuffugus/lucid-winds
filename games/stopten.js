@@ -148,7 +148,7 @@ window._gameFns.stopten=function ST(a){
   // Sweep any rules overlay left behind by a previous mount.
   var _staleOV=document.getElementById('STrulesOV');if(_staleOV)_staleOV.remove();
 
-  ms(a,'Stop at Ten · <span id="STa">0</span>/'+MAX_ATTEMPTS+' · best <span id="STb">·</span>');
+  ms(a,'attempt <span id="STa">0</span>/'+MAX_ATTEMPTS+' · best <span id="STb">none yet</span>');
   mm(a);
   var statsRow=document.createElement('div');statsRow.className='st-stats';statsRow.id='STstats';a.appendChild(statsRow);
   var pan=document.createElement('div');pan.id='STpan';
@@ -192,7 +192,7 @@ window._gameFns.stopten=function ST(a){
   function renderStats(){
     var p=stats.w+stats.l;
     var pct=p?Math.round(stats.w/p*100):0;
-    statsRow.innerHTML='mode <strong>'+mode.toUpperCase()+'</strong> · played <strong>'+p+'</strong> · hit <strong>'+pct+'%</strong> · streak <strong>'+stats.streak+'</strong> · best ±<strong>'+(stats.best?stats.best.toFixed(2)+'s':'·')+'</strong>';
+    statsRow.innerHTML='played <strong>'+p+'</strong> · hit <strong>'+pct+'%</strong> · streak <strong>'+stats.streak+'</strong> · best ±<strong>'+(stats.best?stats.best.toFixed(2)+'s':'·')+'</strong>';
   }
 
   function tick(){
@@ -366,7 +366,7 @@ window._gameFns.stopten=function ST(a){
     attempts++;
     if(delta<best)best=delta;
     var ba=document.getElementById('STa');if(ba)ba.textContent=attempts;
-    var bb=document.getElementById('STb');if(bb)bb.textContent=isFinite(best)?('±'+best.toFixed(2)+'s'):'·';
+    var bb=document.getElementById('STb');if(bb)bb.textContent=isFinite(best)?('±'+best.toFixed(2)+'s'):'none yet';
     // Reward — drip Sunbeam progress per tier
     if(t.sb>0){for(var i=0;i<t.sb;i++)_e('progress');}
     if(t.lbl==='PERFECT'){_e('game_win');_playWin();_sr('stopten',{w:true,s:Math.round(delta*1000),mode:mode,lo:1});}
@@ -550,7 +550,7 @@ window._gameFns.stopten=function ST(a){
     attempts=0;best=Infinity;elapsed=0;sessionDone=false;
     twostopPhase=0;twostopDelta1=0;chaosFakeDigit='';
     var ba=document.getElementById('STa');if(ba)ba.textContent=0;
-    var bb=document.getElementById('STb');if(bb)bb.textContent='·';
+    var bb=document.getElementById('STb');if(bb)bb.textContent='none yet';
     renderStats();render();
   };
   // Switch mode WITHOUT rebuilding the whole panel. Just flip the

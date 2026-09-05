@@ -40,7 +40,7 @@ window._gameFns.storyseeds=function SS(a){
 
   var currentPrompt=null,_ssWon=false;
 
-  ms(a,'Story Seeds · <span id="SSw">0 words</span>');
+  ms(a,'<span id="SSw">0 words</span>');
   mm(a);
   var pan=document.createElement('div');pan.id='SSpan';
   pan.style.cssText='max-width:420px;margin:0 auto;padding:10px;';
@@ -60,7 +60,7 @@ window._gameFns.storyseeds=function SS(a){
     h+='<div style="font-family:Georgia,serif;font-size:1.15rem;color:#c8a84b;letter-spacing:0.08em;">\ud83d\udcd6 YOUR JOURNAL</div>';
     h+='<button onclick="document.getElementById(\'SS-journal\').remove()" style="min-height:48px;min-width:48px;background:transparent;border:1px solid rgba(138,145,120,0.4);color:#8a9178;border-radius:10px;font-size:0.8rem;cursor:pointer;">\u2715</button></div>';
     if(!entries.length){
-      h+='<div style="font-family:Georgia,serif;font-style:italic;color:#8a9178;text-align:center;padding:30px 10px;">Nothing pressed between these pages yet.<br>Write ten words and tap SAVE \u2014 they\u2019ll live here.</div>';
+      h+='<div style="font-family:Georgia,serif;font-style:italic;color:#8a9178;text-align:center;padding:30px 10px;">Nothing pressed between these pages yet.<br>Write ten words and tap SAVE; they\u2019ll live here.</div>';
     } else {
       var tw=0;for(var i=0;i<entries.length;i++)tw+=entries[i].words||0;
       h+='<div style="font-size:0.72rem;color:#8a9178;margin-bottom:10px;">'+entries.length+' entr'+(entries.length===1?'y':'ies')+' \u00b7 '+tw+' words all-time</div>';

@@ -1071,7 +1071,7 @@ function GRR(a){
     document.removeEventListener('touchend',onDragEnd);
     document.removeEventListener('touchcancel',onDragEnd);
   });
-  ms(a,'Root Rush');mm(a);
+  ms(a,'');mm(a);
   pan=document.createElement('div');pan.id='RRpan';a.appendChild(pan);
   mc(a);
   var start=Math.min(loadProgress(),LEVELS.length-1);

@@ -177,7 +177,7 @@ window._gameFns.dewtrail=function DT(a){
   var t0=0,elapsed=0,timerId=0,gen=0;
   var pan;
 
-  ms(a,'<span style="color:var(--gold)">Dew Trail</span> · <span id="DTd">#'+dayNum()+'</span> · <span id="DTt">0:00</span> · 🔥<span id="DTs">'+streak().n+'</span>');
+  ms(a,'day <span id="DTd">#'+dayNum()+'</span> · <span id="DTt">0:00</span> · 🔥<span id="DTs">'+streak().n+'</span>');
   mm(a);
   pan=document.createElement('div');pan.className='dt-wrap';a.appendChild(pan);
   mc(a).innerHTML='<button class="gb" onclick="_DTN()">↻ New Game</button>';

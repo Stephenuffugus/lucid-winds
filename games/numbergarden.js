@@ -172,7 +172,7 @@ window._gameFns.numbergarden=function NG(a){
     document.head.appendChild(st);
   }
 
-  ms(a,'FAST MATH · <strong id="NGmode">'+MODE_META[mode].label+'</strong> · best <strong id="NGbest">'+_loadBest()+'</strong>');
+  ms(a,'<strong id="NGmode">'+MODE_META[mode].label+'</strong> · best <strong id="NGbest">'+_loadBest()+'</strong>');
   mm(a);
   var statsRow=document.createElement('div');statsRow.className='ng-stats';a.appendChild(statsRow);
   var pan=document.createElement('div');pan.id='NGpan';

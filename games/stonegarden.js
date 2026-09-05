@@ -35,7 +35,7 @@ function loadMatter(cb){
 
 window._gameFns=window._gameFns||{};
 window._gameFns.stonegarden=function SG(a){
-  if(ms)ms(a,'<strong id="SGh">Stone Garden</strong>');
+  if(ms)ms(a,'');
   if(mm)mm(a);
 
   var pan=document.createElement('div');
@@ -198,7 +198,7 @@ function startGame(pan,a){
     if(engine){World.clear(world,false);Engine.clear(engine);engine=null;world=null;}
     stones=[];trayL=[];trayR=[];carries={};rockToCarrier={};touchPos={};particles=[];
     var h='<div style="font-family:Bebas Neue,sans-serif;font-size:1.5rem;color:var(--sage);letter-spacing:3px;margin:22px 0 6px;">STONE GARDEN</div>'
-      +'<div style="font-style:italic;font-size:0.78rem;color:var(--muted);margin-bottom:18px;line-height:1.45;max-width:320px;margin-left:auto;margin-right:auto;">Drag stones from either tray and stack them into a cairn. Tap ROTATE to spin the tray pieces before you lift. Steady hands \u2014 the wind has opinions.</div>'
+      +'<div style="font-style:italic;font-size:0.78rem;color:var(--muted);margin-bottom:18px;line-height:1.45;max-width:320px;margin-left:auto;margin-right:auto;">Drag stones from either tray and stack them into a cairn. Tap ROTATE to spin the tray pieces before you lift. Steady hands; the wind has opinions.</div>'
       +'<button class="gb" onclick="_SGbegin(\'zen\')" style="display:block;width:260px;margin:8px auto;padding:14px;min-height:56px;">ZEN MODE<div style="font-size:0.72rem;opacity:0.85;font-style:italic;margin-top:2px;">No fail. Wind gusts shake the stack.</div></button>'
       +'<button class="gb" onclick="_SGbegin(\'challenge\')" style="display:block;width:260px;margin:8px auto;padding:14px;min-height:56px;">CHALLENGE<div style="font-size:0.72rem;opacity:0.85;font-style:italic;margin-top:2px;">Reach '+CHALLENGE_TARGET+'px. 3 topples and out.</div></button>'
       +'<div style="margin-top:18px;font-size:0.72rem;color:var(--muted);line-height:1.8;">'

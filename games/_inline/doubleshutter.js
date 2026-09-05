@@ -23,7 +23,7 @@
     var rows,sel,d1,d2,phase,rolls,gameOver,_bestScore;
     var rollGen=0; // bumped on every roll AND New Game — invalidates a stale tumble onDone
     try{_bestScore=parseInt(localStorage.getItem('lw_ds_best')||'999',10);}catch(e){_bestScore=999;}
-    ms(a,'Rolls: <strong id="DSr">0</strong> · Open score: <strong id="DSo">135</strong> · Best: <strong id="DSbest">'+(_bestScore>=999?'·':_bestScore)+'</strong>');mm(a);
+    ms(a,'Rolls: <strong id="DSr">0</strong> · Open score: <strong id="DSo">135</strong> · Best: <strong id="DSbest">'+(_bestScore>=999?'none yet':_bestScore)+'</strong>');mm(a);
     // Directions
     var dir=document.createElement('div');
     // ⛔ the five line rules block resolved to 9.6px at 375 (a 0.6rem floor, under the 0.7rem house
@@ -166,7 +166,7 @@
         sm('🌿 PERFECT! Every tile shut!');_e('game_win');_playWin();_sr('doubleshutter',{w:true,s:0,lo:1});
         phase='done';rn();
         if(window._lwGameEnd)_lwGameEnd({won:true,title:'THE BOX IS SHUT',
-          line:'a perfect game \u2014 every tile down, both rows',sub:'score 0 \u00b7 the best there is',
+          line:'a perfect game; every tile down, both rows',sub:'score 0 \u00b7 the best there is',
           retry:function(){window._DSN();},retryLabel:'\u21bb NEW ROUND',viewLabel:'admire the box'});
         return;
       }

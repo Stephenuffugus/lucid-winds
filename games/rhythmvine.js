@@ -30,7 +30,7 @@ window._gameFns.rhythmvine=function RV(a){
   var lastResult=null;
 
   // ─── HUD header ───────────────────────────────────────────
-  ms(a,'Rhythm Vine · <span id="RVs">0</span> · combo <span id="RVc">0</span>');
+  ms(a,'score <span id="RVs">0</span> · combo <span id="RVc">0</span>');
   mm(a);
   var pan=document.createElement('div');pan.id='RVpan';
   // width:100% matters: the /play/ shell mounts into a column flexbox and

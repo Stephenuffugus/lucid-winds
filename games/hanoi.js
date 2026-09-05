@@ -340,7 +340,7 @@ function hanoiVictory(){
 // ── Game lifecycle ─────────────────────────────────────────────────────────
 function GH(a){
   var stale=document.getElementById('HwinOv');if(stale)stale.remove(); // remount hygiene
-  ms(a,'Tower of Hanoi');mm(a);
+  ms(a,'');mm(a);
   pan=document.createElement('div');pan.id='Hpan';a.appendChild(pan);
   var pegChoice='<select class="gsl" id="Hp4" onchange="_HN()"><option value="3">3 pegs</option><option value="4">4 pegs</option></select>';
   var diskChoice='<select class="gsl" id="Hd" onchange="_HN()"><option value="3">3</option><option value="4">4</option><option value="5" selected>5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select> disks';

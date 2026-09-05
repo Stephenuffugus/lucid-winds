@@ -84,7 +84,7 @@ window._gameFns.seedsow=function SS(a){
     document.head.appendChild(ss);
   }
 
-  ms(a,'Mancala · <span id="SSm">Your turn</span>');
+  ms(a,'<span id="SSm">Your turn</span>');
   mm(a);
   var statsRow=document.createElement('div');statsRow.className='ss-stats';statsRow.id='SSstats';a.appendChild(statsRow);
   var pan=document.createElement('div');pan.id='SSpan';
@@ -189,7 +189,7 @@ window._gameFns.seedsow=function SS(a){
       busy=true;gameOver=true;
       if(window._lwGameEnd)window._lwGameEnd({won:won,
         title:won?'You win!':(pp<ap?'Computer wins':'A tie'),
-        line:pp+' \u2014 '+ap+' \u00b7 lifetime '+stats.w+'W-'+stats.l+'L-'+stats.d+'D'+(stats.streak>1?' \u00b7 \ud83d\udd25 '+stats.streak+' streak':''),
+        line:pp+' to '+ap+' \u00b7 lifetime '+stats.w+'W '+stats.l+'L '+stats.d+'D'+(stats.streak>1?' \u00b7 \ud83d\udd25 '+stats.streak+' streak':''),
         retry:function(){if(window._SSN)window._SSN();},
         retryLabel:'\u21bb NEW GAME',viewLabel:'view the board'});
       return true;

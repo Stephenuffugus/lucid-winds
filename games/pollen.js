@@ -630,7 +630,7 @@ window._gameFns.pollen = function PN(a){
     document.body.appendChild(ov);
   }
 
-  ms(a,'<strong id="PNt">Master Pollinator</strong>');
+  ms(a,'');
   mm(a);
   // One-time stylesheet — keeps the animations + card polish scoped
   // to this game without bloating the main stylesheet.

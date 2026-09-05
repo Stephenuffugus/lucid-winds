@@ -630,7 +630,7 @@ window._gameFns.trellis = function TR(a){
   }
   function saveStats(){try{localStorage.setItem('lw_tr_stats',JSON.stringify(stats));}catch(e){}}
 
-  ms(a,'<strong id="TRt">Word Trellis</strong>');
+  ms(a,'');
   mm(a);
   pan=document.createElement('div');pan.id='TRpan';
   pan.style.cssText='max-width:min(100%,460px);min-width:0;margin:0 auto;padding:6px 4px;user-select:none;box-sizing:border-box;';
