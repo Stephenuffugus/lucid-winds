@@ -31,7 +31,7 @@ here. Litter Bug edits live in `/workspaces/Litter_Bug` and are re-vendored; The
 | # | pass | status |
 |---|---|---|
 | 1 | Audit rows: dust that lets the object through, the room lifted, inked titles, paperwork contrast, WIPE one line, motes | done Sep 05, 24420f3c |
-| 2 | Layout banks: records 4 to 8 sleeve layouts, VHS 3 to 6 motifs, cereal 4 to 8 mascots, comics 3 to 6 covers, toys 2 to 5 card backs, handhelds 3 to 6 shells, so the pictures stop repeating before the names do | next |
+| 2 | Layout banks: records 4 to 8 sleeve layouts, VHS 3 to 6 motifs, cereal 4 to 8 mascots, comics 1 to 3 covers, toys 1 to 3 card backs, handhelds 1 to 3 shells, board games dice or spinner or pawns, paperbacks 1 to 3 vignettes, lunchboxes 1 to 3 scenes, zines 1 to 3 pages; every switch on a byte the renderers never spent (7 to 15, 30, 31), so an existing find only changes picture when its new byte says so; sixty renders old and new looked at, gate 128 ok | done Sep 05 |
 | 3 | Era depth: each era gets its own type treatment per class (50s script, 60s bubble, 70s slab, 80s chrome, 90s grunge) and one era only oddity (a price sticker style, a rental stamp, a mail order coupon) | queued |
 | 4 | Condition as story: each grade adds one line to the provenance (where the wear came from) | queued |
 | 5 | The shelf as a room: the plank art, finds sit on it in rows, a sealed find gets a glass case | queued |

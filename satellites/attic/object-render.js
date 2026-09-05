@@ -29,6 +29,7 @@
     return 0.2126 * r + 0.7152 * g2 + 0.0722 * b;
   }
   function inkOn(bg) { return lum(bg) > 0.42 ? '#17130d' : '#f6efdd'; }
+  function dk2(hex) { var h2 = String(hex).replace('#', ''); var r = parseInt(h2.substr(0, 2), 16), g2 = parseInt(h2.substr(2, 2), 16), b = parseInt(h2.substr(4, 2), 16); var f = function (v) { return ('0' + Math.max(0, Math.round(v * 0.72)).toString(16)).slice(-2); }; return '#' + f(r) + f(g2) + f(b); }
 
   var ERA_LOOK = {
     '1950s': { c: ['#efe3cd', '#2e7f7a', '#d24a35', '#1e2a32'], f: 'Georgia, serif' },
@@ -360,17 +361,28 @@
       + '<rect x="' + bx + '" y="' + by + '" width="14" height="' + bh + '" rx="6" fill="#201c16"/>';
     var ax = bx + 22, ay = by + 16, aw = bw - 36, ah = bh - 92;
     g += '<rect x="' + ax + '" y="' + ay + '" width="' + aw + '" height="' + ah + '" fill="' + c[0] + '"/>';
-    var motif = hb(h, 16) % 3;
+    var motif = hb(h, 8) < 128 ? hb(h, 16) % 3 : 3 + hb(h, 8) % 3;   // LAYOUT BANK 2: byte 8 opens three more
     if (motif === 0) {           // horror slash
       g += '<path d="M' + ax + ' ' + (ay + ah) + ' L' + (ax + aw) + ' ' + ay + ' l0 ' + ah + ' Z" fill="' + c[1] + '"/>'
         + '<path d="M' + (ax + aw * 0.18) + ' ' + ay + ' l16 0 L' + (ax + aw * 0.62) + ' ' + (ay + ah) + ' l-16 0 Z" fill="' + c[2] + '"/>';
     } else if (motif === 1) {    // floating moon + silhouette hills
       g += '<circle cx="' + (ax + aw / 2) + '" cy="' + (ay + ah * 0.34) + '" r="' + (aw * 0.26) + '" fill="' + c[2] + '"/>'
         + '<path d="M' + ax + ' ' + (ay + ah) + ' q ' + (aw * 0.25) + ' -' + (ah * 0.4) + ' ' + (aw * 0.5) + ' 0 q ' + (aw * 0.25) + ' -' + (ah * 0.3) + ' ' + (aw * 0.5) + ' 0 Z" fill="' + c[3] + '"/>';
-    } else {                     // neon grid horizon
+    } else if (motif === 2) {    // neon grid horizon
       var i;
       for (i = 0; i < 5; i++) g += '<rect x="' + ax + '" y="' + (ay + ah * 0.55 + i * 9) + '" width="' + aw + '" height="2.5" fill="' + c[3] + '" opacity="' + (0.9 - i * 0.15) + '"/>';
       g += '<circle cx="' + (ax + aw / 2) + '" cy="' + (ay + ah * 0.42) + '" r="' + (aw * 0.2) + '" fill="' + c[2] + '"/>';
+    } else if (motif === 3) {    // burning skyline: towers, flames licking up the lower third
+      var k; for (k = 0; k < 6; k++) g += '<rect x="' + (ax + 4 + k * (aw / 6)) + '" y="' + (ay + ah * (0.35 + ((k * 7) % 5) * 0.06)) + '" width="' + (aw / 6 - 5) + '" height="' + ah + '" fill="' + c[3] + '"/>';
+      g += '<path d="M' + ax + ' ' + (ay + ah) + ' q ' + (aw * 0.12) + ' -' + (ah * 0.3) + ' ' + (aw * 0.24) + ' -' + (ah * 0.1) + ' q ' + (aw * 0.1) + ' -' + (ah * 0.34) + ' ' + (aw * 0.26) + ' -' + (ah * 0.12) + ' q ' + (aw * 0.14) + ' -' + (ah * 0.26) + ' ' + (aw * 0.26) + ' -' + (ah * 0.02) + ' q ' + (aw * 0.14) + ' -' + (ah * 0.2) + ' ' + (aw * 0.24) + ' 0 l0 ' + (ah * 0.4) + ' Z" fill="' + c[2] + '" opacity="0.9"/>';
+    } else if (motif === 4) {    // the eye: one huge iris, a slit of light across it
+      var ex = ax + aw / 2, ey = ay + ah * 0.42;
+      g += '<ellipse cx="' + ex + '" cy="' + ey + '" rx="' + (aw * 0.46) + '" ry="' + (ah * 0.26) + '" fill="' + c[3] + '"/>'
+        + '<circle cx="' + ex + '" cy="' + ey + '" r="' + (ah * 0.2) + '" fill="' + c[2] + '"/><circle cx="' + ex + '" cy="' + ey + '" r="' + (ah * 0.09) + '" fill="' + c[3] + '"/>'
+        + '<rect x="' + ax + '" y="' + (ey - 3) + '" width="' + aw + '" height="6" fill="' + c[0] + '" opacity="0.55"/>';
+    } else {                     // workout: diagonal stripes and a leaping figure
+      var w2; for (w2 = -1; w2 < 6; w2++) g += '<path d="M' + (ax + w2 * (aw / 4)) + ' ' + ay + ' l' + (aw / 8) + ' 0 l-' + (aw / 3) + ' ' + ah + ' l-' + (aw / 8) + ' 0 Z" fill="' + (w2 % 2 ? c[2] : c[3]) + '" opacity="0.8"/>';
+      g += figure(ax + aw * 0.5, ay + ah * 0.5, 0.9, c[0], false, c[0]);
     }
     g += '<rect x="' + ax + '" y="' + (ay + ah - 46) + '" width="' + aw + '" height="46" fill="' + c[3] + '" opacity="0.88"/>'
       + '<text x="' + (ax + aw / 2) + '" y="' + (ay + ah - 26) + '" text-anchor="middle" font-family="' + look.f + '" font-weight="800" font-size="' + fit(it.name, 17, aw - 8) + '" fill="' + c[0] + '">' + esc(it.name) + '</text>'
@@ -397,6 +409,10 @@
       + '<rect x="' + bx + '" y="' + by + '" width="' + bw + '" height="' + bh + '" rx="8" fill="' + c[2] + '"/>'
       + '<rect x="' + (bx + 8) + '" y="' + (by + 8) + '" width="' + (bw - 16) + '" height="' + (bh - 16) + '" rx="5" fill="' + c[0] + '"/>'
       + '<ellipse cx="' + (bx + bw / 2) + '" cy="' + (by + 16) + '" rx="14" ry="6" fill="#ffffff" opacity="0.9"/>';   // hang hole
+    /* LAYOUT BANK 2: byte 11 gives the card back rays or a checker band behind the bubble */
+    var cardBack = hb(h, 11) < 110 ? 0 : 1 + hb(h, 11) % 2;
+    if (cardBack === 1) { var r1; for (r1 = 0; r1 < 12; r1++) { var ra = (r1 / 12) * Math.PI * 2; g += '<path d="M' + (bx + bw / 2) + ' ' + (by + 172) + ' L' + (bx + bw / 2 + Math.cos(ra) * 130) + ' ' + (by + 172 + Math.sin(ra) * 130) + ' L' + (bx + bw / 2 + Math.cos(ra + 0.2) * 130) + ' ' + (by + 172 + Math.sin(ra + 0.2) * 130) + ' Z" fill="' + c[1] + '" opacity="0.35"/>'; } }
+    if (cardBack === 2) { var ck; for (ck = 0; ck < 12; ck++) g += '<rect x="' + (bx + 8 + ck * ((bw - 16) / 12)) + '" y="' + (by + 84) + '" width="' + ((bw - 16) / 12) + '" height="14" fill="' + (ck % 2 ? c[1] : c[2]) + '" opacity="0.8"/>'; g += '<rect x="' + (bx + 8) + '" y="' + (by + bh - 40) + '" width="' + (bw - 16) + '" height="10" fill="' + c[1] + '" opacity="0.7"/>'; }
     g += '<rect x="' + (bx + 8) + '" y="' + (by + 26) + '" width="' + (bw - 16) + '" height="52" fill="' + c[1] + '"/>'
       + '<text x="' + (bx + bw / 2) + '" y="' + (by + 50) + '" text-anchor="middle" font-family="' + look.f + '" font-weight="800" font-size="' + fit(it.name, 16, bw - 28) + '" fill="' + c[0] + '">' + esc(it.name) + '</text>'
       /* slice(0,38) alone left the gimmick line running off the card edge,
@@ -452,7 +468,11 @@
       for (var i = 0; i < P.length; i++) s += '<circle cx="' + (x + P[i][0]) + '" cy="' + (y + P[i][1]) + '" r="2.6" fill="' + c[3] + '"/>';
       return s + '</g>';
     }
-    g += die(bx + 26, by + bh - 52, d1, -12 + hb(h, 19) % 24) + die(bx + 62, by + bh - 46, d2, -12 + hb(h, 26) % 24);
+    /* LAYOUT BANK 2: byte 13 swaps the dice for a spinner or a pair of pawns */
+    var piece = hb(h, 13) < 110 ? 0 : 1 + hb(h, 13) % 2;
+    if (piece === 1) { var scx = bx + 48, scy = by + bh - 40, sa2 = (hb(h, 19) % 360) * Math.PI / 180; var sk; for (sk = 0; sk < 6; sk++) { var t0 = sk * Math.PI / 3, t1 = t0 + Math.PI / 3; g += '<path d="M' + scx + ' ' + scy + ' L' + (scx + Math.cos(t0) * 24) + ' ' + (scy + Math.sin(t0) * 24) + ' A24 24 0 0 1 ' + (scx + Math.cos(t1) * 24) + ' ' + (scy + Math.sin(t1) * 24) + ' Z" fill="' + (sk % 2 ? c[0] : c[2]) + '"/>'; } g += '<path d="M' + scx + ' ' + scy + ' l' + (Math.cos(sa2) * 22) + ' ' + (Math.sin(sa2) * 22) + '" stroke="' + c[3] + '" stroke-width="3" stroke-linecap="round"/><circle cx="' + scx + '" cy="' + scy + '" r="3" fill="' + c[3] + '"/>'; }
+    else if (piece === 2) { var pk; for (pk = 0; pk < 2; pk++) { var pxp = bx + 34 + pk * 30, pyp = by + bh - 22; g += '<circle cx="' + pxp + '" cy="' + (pyp - 26) + '" r="7" fill="' + (pk ? c[2] : c[0]) + '"/><path d="M' + (pxp - 6) + ' ' + (pyp - 20) + ' q 6 6 6 12 l-8 8 l16 0 l-8 -8 q 0 -6 6 -12 Z" fill="' + (pk ? c[2] : c[0]) + '"/><ellipse cx="' + pxp + '" cy="' + pyp + '" rx="12" ry="4" fill="' + (pk ? c[2] : c[0]) + '"/>'; } }
+    else g += die(bx + 26, by + bh - 52, d1, -12 + hb(h, 19) % 24) + die(bx + 62, by + bh - 46, d2, -12 + hb(h, 26) % 24);
     // players chip
     var players = String(it.sub).match(/\d+ to \d+ players/);
     g += '<rect x="' + (bx + bw - 108) + '" y="' + (by + bh - 44) + '" width="94" height="24" rx="12" fill="' + c[0] + '"/>'
@@ -473,7 +493,7 @@
       + '<text x="' + (bx + bw / 2) + '" y="' + (by + 25) + '" text-anchor="middle" font-family="' + look.f + '" font-size="10" letter-spacing="3" fill="' + c[0] + '">MORNING FOODS</text>';
     g += '<text x="' + (bx + bw / 2) + '" y="' + (by + 76) + '" text-anchor="middle" font-family="' + look.f + '" font-weight="800" font-size="' + fit(it.name, 19, bw - 14) + '" fill="' + c[0] + '" stroke="' + deep + '" stroke-width="0.8">' + esc(it.name) + '</text>';
     // mascot: rolled head shape
-    var mx = bx + bw / 2, my = by + 148, mtype = hb(h, 17) % 4;
+    var mx = bx + bw / 2, my = by + 148, mtype = hb(h, 9) < 128 ? hb(h, 17) % 4 : 4 + hb(h, 9) % 4;   // LAYOUT BANK 2
     var skin = ['#f2c14e', '#8ac46a', '#e88a5a', '#9ad8e8'][hb(h, 18) % 4];
     g += '<circle cx="' + mx + '" cy="' + my + '" r="40" fill="' + skin + '"/>'
       + '<circle cx="' + (mx - 13) + '" cy="' + (my - 8) + '" r="5" fill="#ffffff"/><circle cx="' + (mx + 13) + '" cy="' + (my - 8) + '" r="5" fill="#ffffff"/>'
@@ -483,6 +503,10 @@
     if (mtype === 1) g += '<path d="M' + (mx - 34) + ' ' + (my - 22) + ' l-12 -26 l24 8 Z" fill="' + skin + '"/><path d="M' + (mx + 34) + ' ' + (my - 22) + ' l12 -26 l-24 8 Z" fill="' + skin + '"/>'; // wolf ears
     if (mtype === 2) g += '<circle cx="' + mx + '" cy="' + my + '" r="48" fill="none" stroke="#ffffff" stroke-width="5" opacity="0.75"/>';                                              // astro helmet
     if (mtype === 3) g += '<path d="M' + (mx - 30) + ' ' + (my - 30) + ' q 30 -34 60 0" stroke="' + deep + '" stroke-width="8" fill="none"/>';                                          // combover
+    if (mtype === 4) g += '<path d="M' + (mx - 42) + ' ' + (my + 14) + ' l84 0 l-30 34 l-24 0 Z" fill="' + deep + '"/><path d="M' + (mx + 30) + ' ' + (my + 22) + ' l22 14 l-14 4 Z" fill="' + deep + '"/>';   // bandana
+    if (mtype === 5) g += '<circle cx="' + (mx - 13) + '" cy="' + (my - 8) + '" r="11" fill="none" stroke="' + deep + '" stroke-width="3"/><circle cx="' + (mx + 13) + '" cy="' + (my - 8) + '" r="11" fill="none" stroke="' + deep + '" stroke-width="3"/><path d="M' + (mx - 2) + ' ' + (my - 8) + ' l4 0" stroke="' + deep + '" stroke-width="3"/>';   // round specs
+    if (mtype === 6) g += '<path d="M' + (mx - 30) + ' ' + (my - 34) + ' l0 -22 l15 12 l15 -20 l15 20 l15 -12 l0 22 Z" fill="' + c[0] + '" stroke="' + deep + '" stroke-width="2"/>';   // crown
+    if (mtype === 7) g += '<path d="M' + (mx - 36) + ' ' + (my - 20) + ' l-4 -30 l24 16 Z" fill="' + skin + '" stroke="' + deep + '" stroke-width="1.5"/><path d="M' + (mx + 36) + ' ' + (my - 20) + ' l4 -30 l-24 16 Z" fill="' + skin + '" stroke="' + deep + '" stroke-width="1.5"/><path d="M' + (mx - 40) + ' ' + (my + 4) + ' l-16 -2 M' + (mx - 40) + ' ' + (my + 10) + ' l-16 2 M' + (mx + 40) + ' ' + (my + 4) + ' l16 -2 M' + (mx + 40) + ' ' + (my + 10) + ' l16 2" stroke="' + deep + '" stroke-width="2" stroke-linecap="round"/>';   // cat
     // bowl of loops
     g += '<ellipse cx="' + (bx + bw / 2) + '" cy="' + (by + bh - 44) + '" rx="56" ry="20" fill="#ffffff"/>'
       + '<ellipse cx="' + (bx + bw / 2) + '" cy="' + (by + bh - 48) + '" rx="50" ry="14" fill="' + skin + '" opacity="0.9"/>';
@@ -544,12 +568,25 @@
     var ax = bx + 12, ay = by + 60, aw = bw - 24, ah = bh - 132;
     g += '<rect x="' + ax + '" y="' + ay + '" width="' + aw + '" height="' + ah + '" fill="' + c[1] + '"/>';
     var i, R = aw * 0.52, mx = ax + aw / 2, my = ay + ah * 0.46;
-    for (i = 0; i < 16; i++) {
-      var a1 = (i / 16) * Math.PI * 2, a2 = a1 + 0.18;
-      g += '<path d="M' + mx + ' ' + my + ' L' + (mx + Math.cos(a1) * R) + ' ' + (my + Math.sin(a1) * R)
-        + ' L' + (mx + Math.cos(a2) * R) + ' ' + (my + Math.sin(a2) * R) + ' Z" fill="' + c[2] + '" opacity="0.5"/>';
+    var cover = hb(h, 10) < 110 ? 0 : 1 + hb(h, 10) % 2;   // LAYOUT BANK 2: burst, split panel, or the city
+    if (cover === 0) {
+      for (i = 0; i < 16; i++) {
+        var a1 = (i / 16) * Math.PI * 2, a2 = a1 + 0.18;
+        g += '<path d="M' + mx + ' ' + my + ' L' + (mx + Math.cos(a1) * R) + ' ' + (my + Math.sin(a1) * R)
+          + ' L' + (mx + Math.cos(a2) * R) + ' ' + (my + Math.sin(a2) * R) + ' Z" fill="' + c[2] + '" opacity="0.5"/>';
+      }
+      g += figure(mx - 6, my + 10, 1.05, c[3], hb(h, 17) % 2 === 0);
+    } else if (cover === 1) {   // split panel: two halves, hero left, a villain silhouette right, a jagged tear between
+      g += '<rect x="' + (ax + aw / 2) + '" y="' + ay + '" width="' + (aw / 2) + '" height="' + ah + '" fill="' + c[3] + '"/>'
+        + '<path d="M' + (ax + aw / 2 - 8) + ' ' + ay + ' l14 ' + (ah * 0.2) + ' l-10 ' + (ah * 0.2) + ' l12 ' + (ah * 0.2) + ' l-8 ' + (ah * 0.2) + ' l6 ' + (ah * 0.2) + ' l-14 0 Z" fill="' + c[2] + '"/>'
+        + figure(ax + aw * 0.27, my + 14, 0.92, c[3], hb(h, 17) % 2 === 0)
+        + figure(ax + aw * 0.75, my + 14, 0.92, c[1], false)
+        + '<circle cx="' + (ax + aw * 0.75) + '" cy="' + (my - 12) + '" r="6" fill="' + c[2] + '"/>';
+    } else {                    // the city: skyline along the floor, a moon, the hero leaping
+      var k2; for (k2 = 0; k2 < 7; k2++) g += '<rect x="' + (ax + k2 * (aw / 7)) + '" y="' + (ay + ah * (0.55 + ((k2 * 5) % 4) * 0.08)) + '" width="' + (aw / 7 - 3) + '" height="' + ah + '" fill="' + c[3] + '"/>';
+      g += '<circle cx="' + (ax + aw * 0.76) + '" cy="' + (ay + ah * 0.2) + '" r="' + (aw * 0.14) + '" fill="' + c[2] + '"/>'
+        + '<g transform="rotate(-18 ' + mx + ' ' + (my - 20) + ')">' + figure(mx, my - 20, 1.0, c[3], hb(h, 17) % 2 === 0) + '</g>';
     }
-    g += figure(mx - 6, my + 10, 1.05, c[3], hb(h, 17) % 2 === 0);
     if (hb(h, 18) % 3 === 0) g += '<path d="M' + (ax + 8) + ' ' + (ay + ah - 6) + ' q ' + (aw * 0.2) + ' -' + (ah * 0.34) + ' ' + (aw * 0.42) + ' -4 Z" fill="' + c[3] + '" opacity="0.55"/>';
     // masthead
     g += '<rect x="' + bx + '" y="' + by + '" width="' + bw + '" height="54" fill="' + c[3] + '"/>'
@@ -580,13 +617,17 @@
     for (i = 0; i < 26; i++) g += '<rect x="' + (bx + bw - 9) + '" y="' + (by + 6 + i * 10) + '" width="9" height="1" fill="#c2b48c" opacity="0.7"/>';
     // vignette illustration
     var mx = bx + bw / 2 - 4, my = by + 150;
-    g += '<ellipse cx="' + mx + '" cy="' + my + '" rx="60" ry="74" fill="' + c[0] + '"/>'
+    /* LAYOUT BANK 2: byte 14 gives a framed rectangle vignette or a moon over water instead of the oval */
+    var vig = hb(h, 14) < 110 ? 0 : 1 + hb(h, 14) % 2;
+    if (vig === 1) g += '<rect x="' + (mx - 58) + '" y="' + (my - 70) + '" width="116" height="140" fill="' + c[0] + '"/><rect x="' + (mx - 58) + '" y="' + (my - 70) + '" width="116" height="140" fill="none" stroke="' + c[2] + '" stroke-width="3"/><rect x="' + (mx - 50) + '" y="' + (my - 62) + '" width="100" height="124" fill="none" stroke="' + c[2] + '" stroke-width="1" opacity="0.6"/>';
+    else if (vig === 2) g += '<ellipse cx="' + mx + '" cy="' + my + '" rx="60" ry="74" fill="' + c[3] + '"/><circle cx="' + (mx + 14) + '" cy="' + (my - 34) + '" r="18" fill="' + c[2] + '"/><rect x="' + (mx - 60) + '" y="' + (my + 10) + '" width="120" height="64" fill="' + c[0] + '" opacity="0.55"/><path d="M' + (mx - 40) + ' ' + (my + 24) + ' l80 0 M' + (mx - 30) + ' ' + (my + 36) + ' l60 0 M' + (mx - 46) + ' ' + (my + 48) + ' l92 0" stroke="' + c[2] + '" stroke-width="2" opacity="0.6"/>';
+    if (vig !== 2) g += '<ellipse cx="' + mx + '" cy="' + my + '" rx="60" ry="74" fill="' + c[0] + '"' + (vig === 1 ? ' opacity="0"' : '') + '/>'
       + '<path d="M' + (mx - 60) + ' ' + (my + 34) + ' q 30 -26 60 -4 q 28 20 60 2 l0 42 l-120 0 Z" fill="' + c[3] + '" opacity="0.75"/>'
       + '<circle cx="' + (mx + 30) + '" cy="' + (my - 40) + '" r="14" fill="' + c[2] + '" opacity="0.9"/>'
       + figure(mx - 14, my + 12, 0.72, c[3], false);
     if (hb(h, 17) % 2) g += '<path d="M' + (mx + 18) + ' ' + (my + 46) + ' l0 -34 l16 -12 l16 12 l0 34 Z" fill="' + c[3] + '"/>'
       + '<rect x="' + (mx + 28) + '" y="' + (my + 20) + '" width="9" height="12" fill="' + c[2] + '" opacity="0.9"/>';
-    g += '<ellipse cx="' + mx + '" cy="' + my + '" rx="60" ry="74" fill="none" stroke="' + c[2] + '" stroke-width="2.5"/>';
+    if (vig !== 1) g += '<ellipse cx="' + mx + '" cy="' + my + '" rx="60" ry="74" fill="none" stroke="' + c[2] + '" stroke-width="2.5"/>';
     // title and author
     var pink = inkOn(c[1]);
     g += '<text x="' + (bx + bw / 2 + 5) + '" y="' + (by + 42) + '" text-anchor="middle" font-family="' + look.f + '" font-weight="800" font-size="' + fit(it.name, 20, bw - 40) + '" fill="' + pink + '">' + esc(String(it.name).slice(0, 34)) + '</text>'
@@ -618,7 +659,11 @@
       var rr = Math.max(0.4, 3.2 - d / 14) * (1 - ((hb(h, 17 + ((i + j) % 8)) % 40) / 120));
       g += '<circle cx="' + (mx + dx) + '" cy="' + (my + dy) + '" r="' + rr.toFixed(2) + '" fill="' + ink + '" opacity="0.8"/>';
     }
-    g += figure(mx, my + 4, 0.62, ink, false);
+    /* LAYOUT BANK 2: byte 30 swaps the halftone blob for a slogan block or a row of faces */
+    var zl = hb(h, 30) < 110 ? 0 : 1 + hb(h, 30) % 2;
+    if (zl === 1) { g += '<rect x="' + (bx + 22) + '" y="' + (my - 46) + '" width="' + (bw - 56) + '" height="92" fill="' + ink + '"/>'; var zw = ['NO', 'YES', 'WHY', 'NOW', 'US', 'GO'][hb(h, 31) % 6]; g += '<text x="' + (mx) + '" y="' + (my + 14) + '" text-anchor="middle" font-family="ui-monospace, monospace" font-weight="700" font-size="44" fill="' + paper + '">' + zw + '</text>'; }
+    else if (zl === 2) { var zf; for (zf = 0; zf < 4; zf++) g += figure(bx + 40 + zf * 34, my + 2, 0.4, ink, false); }
+    else g += figure(mx, my + 4, 0.62, ink, false);
     // off register title: the same words printed twice, a whisker apart
     var t = String(it.name).slice(0, 34), fs = fit(t, 19, bw - 46);
     g += '<text x="' + (bx + bw / 2 - 5) + '" y="' + (by + 48) + '" text-anchor="middle" font-family="ui-monospace, monospace" font-weight="700" font-size="' + fs + '" fill="' + ink + '" opacity="0.28" transform="translate(2,1.6)">' + esc(t) + '</text>'
@@ -641,6 +686,10 @@
       + '<rect x="' + bx + '" y="' + by + '" width="' + bw + '" height="' + bh + '" rx="16" fill="' + shell + '"/>'
       + '<rect x="' + (bx + 5) + '" y="' + (by + 5) + '" width="' + (bw - 10) + '" height="' + (bh - 10) + '" rx="13" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.16"/>';
     var sx = bx + 20, sy2 = by + 30, sw = bw - 40, sh = 100;
+    /* LAYOUT BANK 2: byte 12 gives a two tone lower shell or a speaker grille */
+    var shellStyle = hb(h, 12) < 110 ? 0 : 1 + hb(h, 12) % 2;
+    if (shellStyle === 1) g += '<path d="M' + bx + ' ' + (by + 170) + ' L' + (bx + bw) + ' ' + (by + 170) + ' L' + (bx + bw) + ' ' + (by + bh - 16) + ' q 0 16 -16 16 L' + (bx + 16) + ' ' + (by + bh) + ' q -16 0 -16 -16 Z" fill="' + dk2(shell) + '"/>';
+    if (shellStyle === 2) { var gk; for (gk = 0; gk < 5; gk++) g += '<rect x="' + (bx + bw - 62) + '" y="' + (by + 176 + gk * 6) + '" width="44" height="2.5" rx="1" fill="#000000" opacity="0.35"/>'; }
     g += '<rect x="' + (sx - 6) + '" y="' + (sy2 - 6) + '" width="' + (sw + 12) + '" height="' + (sh + 12) + '" rx="6" fill="#1b1b18"/>'
       + '<rect x="' + sx + '" y="' + sy2 + '" width="' + sw + '" height="' + sh + '" fill="#93a877"/>'
       + '<rect x="' + sx + '" y="' + sy2 + '" width="' + sw + '" height="' + (sh * 0.34) + '" fill="#a6b98a" opacity="0.6"/>';
@@ -691,9 +740,15 @@
        banner on it. Sky, sun and trees above the banner; the figure below it,
        silhouetted the other way round against the ground. */
     var sky = c[0], ground = c[3];
-    g += '<circle cx="' + (ix + iw * 0.84) + '" cy="' + (iy + ih * 0.2) + '" r="' + (ih * 0.15) + '" fill="' + c[2] + '"/>';
+    /* LAYOUT BANK 2: byte 15 sends the litho scene to space or the desert */
+    var scene = hb(h, 15) < 110 ? 0 : 1 + hb(h, 15) % 2;
     var i;
-    for (i = 0; i < 4; i++) g += '<path d="M' + (ix + iw * (0.05 + i * 0.13)) + ' ' + (iy + ih * 0.34) + ' l' + (iw * 0.055) + ' -' + (ih * 0.22) + ' l' + (iw * 0.055) + ' ' + (ih * 0.22) + ' Z" fill="' + ground + '" opacity="0.72"/>';
+    if (scene === 1) { g += '<rect x="' + ix + '" y="' + iy + '" width="' + iw + '" height="' + (ih * 0.68) + '" fill="' + c[3] + '" opacity="0.85"/>'; for (i = 0; i < 14; i++) g += '<circle cx="' + (ix + ((hb(h, 20 + (i % 8)) * (i + 3)) % iw)) + '" cy="' + (iy + ((hb(h, 21 + (i % 7)) * (i + 5)) % (ih * 0.6))) + '" r="1.6" fill="' + c[0] + '"/>'; g += '<circle cx="' + (ix + iw * 0.78) + '" cy="' + (iy + ih * 0.24) + '" r="' + (ih * 0.16) + '" fill="' + c[2] + '"/><ellipse cx="' + (ix + iw * 0.78) + '" cy="' + (iy + ih * 0.24) + '" rx="' + (ih * 0.28) + '" ry="' + (ih * 0.06) + '" fill="none" stroke="' + c[0] + '" stroke-width="2" transform="rotate(-18 ' + (ix + iw * 0.78) + ' ' + (iy + ih * 0.24) + ')"/>'; }
+    else if (scene === 2) { g += '<circle cx="' + (ix + iw * 0.2) + '" cy="' + (iy + ih * 0.18) + '" r="' + (ih * 0.13) + '" fill="' + c[2] + '"/>'; for (i = 0; i < 3; i++) { var cxc = ix + iw * (0.55 + i * 0.16), cyc = iy + ih * 0.34; g += '<path d="M' + (cxc - 4) + ' ' + cyc + ' l0 -' + (ih * 0.22) + ' q 4 -6 8 0 l0 ' + (ih * 0.22) + ' Z M' + (cxc - 12) + ' ' + (cyc - 6) + ' l0 -' + (ih * 0.1) + ' q 4 -5 8 0 l0 ' + (ih * 0.06) + ' l-8 6 Z M' + (cxc + 4) + ' ' + (cyc - 4) + ' l0 -' + (ih * 0.12) + ' q 4 -5 8 0 l0 ' + (ih * 0.08) + ' l-8 6 Z" fill="' + ground + '"/>'; } }
+    else {
+      g += '<circle cx="' + (ix + iw * 0.84) + '" cy="' + (iy + ih * 0.2) + '" r="' + (ih * 0.15) + '" fill="' + c[2] + '"/>';
+      for (i = 0; i < 4; i++) g += '<path d="M' + (ix + iw * (0.05 + i * 0.13)) + ' ' + (iy + ih * 0.34) + ' l' + (iw * 0.055) + ' -' + (ih * 0.22) + ' l' + (iw * 0.055) + ' ' + (ih * 0.22) + ' Z" fill="' + ground + '" opacity="0.72"/>';
+    }
     g += '<rect x="' + ix + '" y="' + (iy + ih * 0.68) + '" width="' + iw + '" height="' + (ih * 0.32) + '" fill="' + ground + '" opacity="0.9"/>'
       + '<path d="M' + ix + ' ' + (iy + ih * 0.68) + ' q ' + (iw * 0.25) + ' -' + (ih * 0.09) + ' ' + (iw * 0.5) + ' 0 q ' + (iw * 0.25) + ' ' + (ih * 0.07) + ' ' + (iw * 0.5) + ' 0 l0 ' + (ih * 0.06) + ' l-' + iw + ' 0 Z" fill="' + ground + '" opacity="0.9"/>'
       + figure(ix + iw * 0.2, iy + ih * 0.82, 0.42, sky, hb(h, 18) % 3 === 0)

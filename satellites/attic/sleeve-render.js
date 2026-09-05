@@ -147,7 +147,10 @@
     h = it.hash;   // normalised, so a junk paste still renders
     var look = ERA_LOOK[it.era], c = look.c;
     var band = it.name, album = it.sub.split('"')[1] || '';
-    var layout = hb(h, 16) % 4;
+    /* LAYOUT BANK 2 (2026-09-05): byte 7 was unspent. Below 128 the sleeve keeps the layout it has
+       always had; at 128 and up it takes one of four new ones. Names, eras and grades come from
+       other bytes and do not move. */
+    var layout = hb(h, 7) < 128 ? hb(h, 16) % 4 : 4 + hb(h, 7) % 4;
     var g = '';
 
     g += '<rect width="300" height="300" fill="' + c[0] + '"/>';
@@ -175,10 +178,34 @@
       g += '<circle cx="150" cy="132" r="86" fill="' + c[2] + '"/><circle cx="150" cy="132" r="58" fill="' + c[1] + '"/><circle cx="150" cy="132" r="12" fill="' + c[0] + '"/>'
         + '<text x="150" y="246" text-anchor="middle" font-family="' + look.f + '" font-weight="800" font-size="' + fit(band, 27, 280) + '" fill="' + c[3] + '"' + (look.it ? ' font-style="italic"' : '') + '>' + esc(band) + '</text>'
         + '<text x="150" y="266" text-anchor="middle" font-family="' + look.f + '" font-size="13" fill="' + c[2] + '">' + esc(album) + '</text>';
-    } else {                     // BARS: horizontal banding, right-set type
+    } else if (layout === 3) {   // BARS: horizontal banding, right-set type
       var i; for (i = 0; i < 7; i++) g += '<rect y="' + (i * 44) + '" width="300" height="22" fill="' + (i % 2 ? c[1] : c[2]) + '" opacity="' + (0.16 + i * 0.12) + '"/>';
       g += '<text x="282" y="84" text-anchor="end" font-family="' + look.f + '" font-weight="800" font-size="' + fit(band, 30, 266) + '" fill="' + c[3] + '">' + esc(band) + '</text>'
         + '<text x="282" y="112" text-anchor="end" font-family="' + look.f + '" font-size="15" fill="' + c[3] + '" opacity="0.8">' + esc(album) + '</text>';
+    } else if (layout === 4) {   // SPLIT: two colour halves, the band name set tall up the seam
+      g += '<rect width="150" height="300" fill="' + c[1] + '"/><rect x="150" width="150" height="300" fill="' + c[2] + '"/>'
+        + '<rect x="142" width="16" height="300" fill="' + c[3] + '"/>'
+        + '<g transform="rotate(-90 150 150)"><text x="150" y="158" text-anchor="middle" font-family="' + look.f + '" font-weight="800" font-size="' + fit(band, 30, 270) + '" fill="' + c[0] + '">' + esc(band) + '</text></g>'
+        + '<text x="24" y="270" font-family="' + look.f + '" font-size="14" fill="' + c[3] + '">' + esc(album) + '</text>'
+        + '<circle cx="222" cy="72" r="34" fill="' + c[0] + '" opacity="0.9"/><circle cx="222" cy="72" r="6" fill="' + c[3] + '"/>';
+    } else if (layout === 5) {   // PLATE: a photograph plate with a title strip under it, the label house look
+      g += '<rect x="24" y="22" width="252" height="176" fill="' + c[3] + '"/>'
+        + '<rect x="24" y="22" width="252" height="176" fill="' + c[2] + '" opacity="0.45"/>'
+        + '<circle cx="' + (60 + hb(h, 26) % 160) + '" cy="' + (70 + hb(h, 27) % 80) + '" r="' + (26 + hb(h, 28) % 30) + '" fill="' + c[1] + '" opacity="0.85"/>'
+        + '<path d="M24 198 L120 120 L180 160 L276 96 L276 198 Z" fill="' + c[0] + '" opacity="0.35"/>'
+        + '<rect x="24" y="198" width="252" height="6" fill="' + c[2] + '"/>'
+        + '<text x="28" y="240" font-family="' + look.f + '" font-weight="800" font-size="' + fit(band, 26, 244) + '" fill="' + c[3] + '">' + esc(band) + '</text>'
+        + '<text x="28" y="262" font-family="' + look.f + '" font-size="13" fill="' + c[2] + '">' + esc(album) + '</text>';
+    } else if (layout === 6) {   // TARGET: concentric rings off centre, the name across the middle
+      var rr2; for (rr2 = 150; rr2 > 0; rr2 -= 26) g += '<circle cx="190" cy="120" r="' + rr2 + '" fill="' + ((rr2 / 26) % 2 ? c[1] : c[2]) + '"/>';
+      g += '<rect y="132" width="300" height="52" fill="' + c[3] + '" opacity="0.92"/>'
+        + '<text x="150" y="168" text-anchor="middle" font-family="' + look.f + '" font-weight="800" font-size="' + fit(band, 30, 276) + '" fill="' + c[0] + '">' + esc(band) + '</text>'
+        + '<text x="150" y="222" text-anchor="middle" font-family="' + look.f + '" font-style="italic" font-size="14" fill="' + c[3] + '">' + esc(album) + '</text>';
+    } else {                     // GRID: nine tiles, one inverted, the name in a bar
+      var gi, gj; for (gi = 0; gi < 3; gi++) for (gj = 0; gj < 3; gj++) { var inv = (gi * 3 + gj) === (hb(h, 28) % 9); g += '<rect x="' + (18 + gi * 90) + '" y="' + (18 + gj * 60) + '" width="84" height="54" fill="' + (inv ? c[2] : c[1]) + '"/>' + (inv ? '<circle cx="' + (60 + gi * 90) + '" cy="' + (45 + gj * 60) + '" r="16" fill="' + c[0] + '"/>' : ''); }
+      g += '<rect y="206" width="300" height="60" fill="' + c[3] + '"/>'
+        + '<text x="150" y="238" text-anchor="middle" font-family="' + look.f + '" font-weight="800" font-size="' + fit(band, 26, 276) + '" fill="' + c[0] + '">' + esc(band) + '</text>'
+        + '<text x="150" y="256" text-anchor="middle" font-family="' + look.f + '" font-size="12" fill="' + c[0] + '" opacity="0.8">' + esc(album) + '</text>';
     }
     // label logo chip + era year, always
     g += '<rect x="16" y="272" width="12" height="12" fill="' + c[2] + '"/>'
