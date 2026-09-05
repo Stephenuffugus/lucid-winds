@@ -18,7 +18,7 @@ here. Litter Bug edits live in `/workspaces/Litter_Bug` and are re-vendored; The
 | 2 | Vocabulary 1: body patterns x5, wing styles x3, horn kinds x2, spine kinds x2, antenna styles x2, eye styles x2, leg styles x2, head kinds x3, all appended rolls, grades identical 3000/3000 | done Sep 05 |
 | 3 | Vocabulary 2: tail kinds beyond the scored three (cosmetic), segment shapes (oval, teardrop, flat), leg count variants, a second accent material on wings, iridescence for glass palettes | next |
 | 4 | The style hero lands: trace parts to SVG symbols in that style, drop in through `PART_SOURCES` one part at a time, compare against procedural on a sheet | waits on the hero |
-| 5 | Specimen card: a flip card like the plant cards (front art and grade, back the parts ledger, hash, mint date), and a downloadable 640x960 share card via canvas | queued |
+| 5 | Specimen card: a flip card like the plant cards (front art and grade, back the parts ledger, fighter sheet, scrap palette, date, full hash), SHARE through the system sheet and SAVE THE CARD as a 640x960 PNG rendered on a canvas the way the plant cards are; a gate assertion measures the paint in the art band and was watched red on a mutant with no bug drawn | done Sep 05 |
 | 6 | Identity depth: the parts named in the lore (a bug with an eyespot wing gets a line about it), more name banks, a species family tree in the Bugdex (families by wing kind and head) | queued |
 | 7 | Loop: trial scoring on a tempo curve so the clock matters, a featured block each day, a weekly crown ladder with its own purse, a Bugdex completion meter | queued |
 | 8 | The world map (upstream `world.html`: territory, breeding, raids) brought into the game as the fifth screen | queued, big |
