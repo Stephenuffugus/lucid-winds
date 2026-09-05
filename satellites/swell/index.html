@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>SWELL</title>
+<meta name="description" content="Hold the screen and an orchestra swells out of silence. Let go and it resolves, always. You cannot play a wrong note. You can only conduct.">
+<meta name="theme-color" content="#08070C">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SWELL">
+<link rel="manifest" href="./manifest.webmanifest?v=20260905a">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260905a">
+<link rel="icon" href="./icon-192.png?v=20260905a">
+<link rel="canonical" href="https://lucidwinds.com/satellites/swell/">
+<style>
+/*  SWELL
+    game id: swell   accent amber #E8B36A on near black
+    Nothing is on the screen while a finger is down. The chrome fades out on
+    touch and back in after two seconds of stillness, and the BOTTOM LEFT
+    120x120 belongs to the fleet's music chip and its folded pill. */
+:root{
+  --ink:#08070C; --panel:#14121B; --line:#2A2634;
+  --amber:#E8B36A; --ice:#A8D8F0; --gold:#F2D06B; --deep:#8C2F39;
+  --cream:#EDE6DA; --dim:#8C8598;
+  --safeT:env(safe-area-inset-top,0px);
+  --safeB:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%;background:var(--ink);color:var(--cream);
+  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  overscroll-behavior:none;-webkit-user-select:none;user-select:none}
+#app{position:fixed;inset:0;overflow:hidden;background:var(--ink)}
+#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+
+#chrome{position:absolute;inset:0;pointer-events:none;z-index:5;
+  transition:opacity 700ms ease-out}
+#chrome.hush{opacity:0}
+.chip{position:absolute;pointer-events:auto;background:rgba(20,18,27,.5);
+  border:1px solid rgba(232,179,106,.22);color:var(--cream);border-radius:14px;
+  min-height:48px;padding:8px 16px;font-size:.8rem;letter-spacing:.16em;
+  display:flex;align-items:center;font-family:inherit;text-transform:uppercase}
+#chipMood{left:calc(12px + env(safe-area-inset-left,0px));top:calc(10px + var(--safeT))}
+.iconbtn{position:absolute;pointer-events:auto;background:rgba(20,18,27,.5);
+  border:1px solid rgba(232,179,106,.22);color:var(--amber);border-radius:14px;
+  display:flex;align-items:center;justify-content:center;padding:0;line-height:1;
+  font-size:1.05rem;font-family:inherit}
+#btnMenu{right:calc(12px + env(safe-area-inset-right,0px));top:calc(10px + var(--safeT));
+  width:48px;height:48px}
+#btnRec{right:calc(14px + env(safe-area-inset-right,0px));bottom:calc(18px + var(--safeB));
+  width:56px;height:56px;border-radius:50%;font-size:.7rem;letter-spacing:.06em;
+  flex-direction:column;gap:3px}
+#btnRec.on{border-color:#E2574C;color:#E2574C}
+#btnRec .dot{width:12px;height:12px;border-radius:50%;background:currentColor;display:block}
+#firstLine{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:82%;max-width:320px;text-align:center;font-size:.95rem;line-height:1.8;
+  letter-spacing:.06em;color:var(--cream);opacity:.72;
+  transition:opacity 900ms ease-out;pointer-events:none}
+#firstLine.gone{opacity:0}
+
+.screen{position:absolute;inset:0;z-index:10;background:var(--ink);display:none;
+  flex-direction:column;align-items:center;
+  padding:calc(18px + var(--safeT)) 18px calc(18px + var(--safeB));
+  overflow-y:auto;overscroll-behavior:contain}
+.screen.on{display:flex}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:12;background:var(--panel);
+  border-top:1px solid var(--line);border-radius:20px 20px 0 0;max-height:88%;
+  display:none;flex-direction:column;align-items:center;
+  padding:18px 18px calc(20px + var(--safeB));overflow-y:auto;overscroll-behavior:contain}
+.sheet.on{display:flex}
+.spacer{flex:1 1 auto;min-height:8px}
+.btn{pointer-events:auto;width:100%;max-width:340px;min-height:56px;flex:0 0 auto;
+  background:rgba(24,21,33,.92);border:1px solid rgba(232,179,106,.36);
+  color:var(--amber);border-radius:14px;font-size:.95rem;letter-spacing:.18em;
+  margin:6px 0;padding:14px 16px;font-family:inherit;text-transform:uppercase}
+.btn.small{min-height:48px;font-size:.8rem;letter-spacing:.14em}
+.btn.ghost{border-color:rgba(140,133,152,.32);color:var(--dim)}
+.btn.on{border-color:var(--amber);color:var(--ink);background:var(--amber)}
+.row{display:flex;gap:10px;width:100%;max-width:340px}
+.row > *{flex:1 1 0;min-width:0;width:auto;max-width:none}
+.cap{font-size:.72rem;letter-spacing:.22em;color:var(--dim);margin:12px 0 6px;
+  width:100%;max-width:340px;text-align:left;text-transform:uppercase}
+.lede{font-size:.9rem;line-height:1.75;color:var(--cream);width:100%;max-width:340px;margin:8px 0}
+.tiny{font-size:.72rem;line-height:1.7;color:var(--dim);width:100%;max-width:340px;margin:6px 0}
+.title{font-size:1.3rem;letter-spacing:.28em;color:var(--amber);text-align:center;margin:6px 0 2px}
+.moodcard{pointer-events:auto;position:relative;width:100%;max-width:340px;min-height:72px;
+  flex:0 0 auto;background:rgba(24,21,33,.92);border:1px solid rgba(232,179,106,.24);
+  border-radius:16px;margin:6px 0;padding:14px 18px;text-align:left;color:var(--cream);
+  font-family:inherit;overflow:hidden}
+.moodcard.on{border-color:var(--amber)}
+.moodcard .nm{display:block;font-size:1rem;letter-spacing:.22em;color:var(--amber);text-transform:uppercase}
+.moodcard .sub{display:block;font-size:.75rem;color:var(--dim);margin-top:5px;letter-spacing:.03em}
+.moodcard .plate{position:absolute;inset:0;background-size:cover;background-position:center;
+  opacity:.45;pointer-events:none}
+@media (min-width:600px){
+  #moodCards{display:flex;gap:10px;width:100%;max-width:760px}
+  #moodCards .moodcard{flex:1 1 0;max-width:none}
+}
+#toast{position:fixed;left:50%;bottom:calc(14px + var(--safeB));transform:translateX(-50%);
+  background:rgba(20,18,27,.95);border:1px solid rgba(232,179,106,.3);color:var(--cream);
+  padding:10px 16px;border-radius:12px;font-size:.82rem;z-index:40;opacity:0;
+  pointer-events:none;transition:opacity 180ms ease-out;max-width:84%;text-align:center}
+#toast.on{opacity:1}
+#testPanel{position:absolute;inset:0;z-index:60;background:#05040a;color:#cfe;overflow:auto;
+  font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;padding:14px;display:none;white-space:pre-wrap}
+#testPanel.on{display:block}
+@media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
+</style>
+<script src="/music-unlocks.js?v=20260905a" defer></script>
+</head>
+<body>
+<h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">SWELL</h1>
+<div id="app">
+  <canvas id="stage"></canvas>
+
+  <div id="chrome">
+    <button class="chip" id="chipMood">DAWN</button>
+    <button class="iconbtn" id="btnMenu" aria-label="Menu">&#9776;</button>
+    <button class="iconbtn" id="btnRec" aria-label="Record"><span class="dot"></span><span id="recLabel">REC</span></button>
+    <div id="firstLine">Hold anywhere. Let go when it feels right.</div>
+  </div>
+
+  <div class="sheet" id="scrMenu">
+    <div class="cap">Swell</div>
+    <button class="btn" id="btnMoods">CHOOSE A MOOD</button>
+    <button class="btn small" id="btnAmbientOpen">AMBIENT</button>
+    <button class="btn small" id="btnSettings">SETTINGS</button>
+    <button class="btn small ghost" id="btnAbout">ABOUT</button>
+    <button class="btn small ghost" id="btnMenuClose">CLOSE</button>
+  </div>
+
+  <div class="screen" id="scrMoods">
+    <div class="cap">Choose a mood</div>
+    <div id="moodCards" style="width:100%;max-width:340px"></div>
+    <div class="spacer"></div>
+    <button class="btn small ghost" id="btnMoodsBack">BACK</button>
+  </div>
+
+  <div class="screen" id="scrAmbient">
+    <div class="spacer"></div>
+    <div class="title">AMBIENT</div>
+    <p class="tiny" style="text-align:center">It plays by itself, holding and letting go, until you stop it.</p>
+    <div class="cap">Sleep timer</div>
+    <div class="row" id="sleepRow">
+      <button class="btn small" data-min="15">15</button>
+      <button class="btn small" data-min="30">30</button>
+      <button class="btn small" data-min="60">60</button>
+      <button class="btn small on" data-min="0">OFF</button>
+    </div>
+    <p class="tiny">Keeps playing while this screen stays on.</p>
+    <div class="spacer"></div>
+    <button class="btn" id="btnAmbientStart">START</button>
+    <button class="btn small ghost" id="btnAmbientBack">BACK</button>
+  </div>
+
+  <div class="sheet" id="scrSettings">
+    <div class="cap">Settings</div>
+    <button class="btn small" id="btnSoundTest">PLAY ONE SWELL</button>
+    <button class="btn small" id="btnTilt">TILT OFF</button>
+    <button class="btn small" id="btnMotion">MOTION ON</button>
+    <div class="tiny" id="tiltNote">Tilt leans the brightness of the sound. It asks the phone first.</div>
+    <button class="btn small ghost" id="btnSettingsClose">CLOSE</button>
+  </div>
+
+  <div class="screen" id="scrAbout">
+    <div class="spacer"></div>
+    <div class="title">SWELL</div>
+    <p class="lede" style="text-align:center">You cannot play a wrong note. You can only conduct.</p>
+    <p class="tiny">Hold the screen and the orchestra comes up out of silence. Strings first, then violins, then horns, then a choir over the top. Let go and it resolves, every time.</p>
+    <p class="tiny">Every sound here is made by the phone. Nothing is recorded, nothing is downloaded, nothing leaves unless you send it.</p>
+    <p class="tiny">Sky Wolf Studio</p>
+    <div class="spacer"></div>
+    <button class="btn small ghost" id="btnAboutBack">BACK</button>
+  </div>
+
+  <div class="sheet" id="scrSaved">
+    <div class="cap">Your recording</div>
+    <div class="lede" id="savedName"></div>
+    <button class="btn" id="btnSavedShare">SHARE IT</button>
+    <button class="btn small ghost" id="btnSavedDone">DONE</button>
+  </div>
+
+  <div id="toast"></div>
+  <div id="testPanel"></div>
+</div>
+
+<script>
+/* ============================================================================
+   SWELL   game id: swell
+   Single file, no deps, no audio library, no samples. Layers per
+   HANDOFF-SWELL section 4:
+   CONFIG, THEORY, MOODS, SCHEDULER, SYNTH, ENGINE, AURORA, INPUT, RECORD,
+   AMBIENT, SAVE, TEST, BOOT.
+
+   THE ONE LAW OF THIS FILE
+     MUSICAL TIME IS THE AUDIOCONTEXT CLOCK. setTimeout and requestAnimationFrame
+     may draw and may poll; they may never place a note. The SCHEDULER is the
+     only thing that touches an AudioParam, and it does it by looking ahead on
+     ctx.currentTime.
+
+   THE RULE OF THE EXPORT BLOCK
+     Nothing between THEORY_EXPORT_START and THEORY_EXPORT_END may touch
+     document, window, performance, Math.random or an AudioContext. sim.js runs
+     that block in plain Node, so the harmony can be checked without a speaker.
+   ========================================================================== */
+
+// ---- THEORY_EXPORT_START ----
+/* ========================= 1. CONFIG ========================= */
+var CONFIG = Object.freeze({
+  GAME_ID: 'swell', SAVE_KEY: 'lw_swell_v1', SAVE_V: 1,
+
+  OSC_MAX: 48, TAP_MS: 180, LOOKAHEAD_S: 0.1, TICK_MS: 25,
+
+  HOLD_STRINGS: Object.freeze([0, 0.5]),
+  HOLD_VIOLINS: Object.freeze([0.5, 3]),
+  HOLD_HORNS: Object.freeze([3, 7]),
+  HOLD_CHOIR: Object.freeze([7, 10]),
+  TIMP_ROLL_FROM: 7,
+
+  TENSION_FULL_S: 12, RESOLVE_TAIL_S: 5, STACCATO_S: 0.25,
+  FILTER_MIN: 400, FILTER_MAX: 4400,
+  HALL_S: 3.5, HALL_PREDELAY_S: 0.02, HALL_WET: 0.28,
+  IDLE_STOP_S: 2, UI_FADE_S: 2,
+
+  AMBIENT_HOLD_S: Object.freeze([4, 14]),
+  AMBIENT_GAP_S: Object.freeze([3, 9]),
+  SLEEP_MIN: Object.freeze([15, 30, 60]),
+  /* the last minute of a sleep timer is the fade; before that the music is
+     exactly as loud as it was */
+  SLEEP_FADE_S: 60,
+  /* a voice is a note of a section and each section holds three of them */
+  VOICES_PER_SECTION: 3
+});
+
+/* ========================= 2. RNG ========================= */
+function makeRNG(seed) {
+  var a = seed >>> 0;
+  var r = function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    var t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  r.int = function (n) { return Math.floor(r() * n); };
+  r.range = function (lo, hi) { return lo + r() * (hi - lo); };
+  r.seed = seed >>> 0;
+  return r;
+}
+function seedFromString(s) {
+  var h = 2166136261 >>> 0, i;
+  for (i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return h >>> 0;
+}
+function mixSeed(seed, salt) {
+  var h = (seed ^ 0x9E3779B9) >>> 0;
+  h = Math.imul(h ^ (salt + 0x85EBCA6B), 0x27D4EB2D) >>> 0;
+  h ^= h >>> 15; h = Math.imul(h, 0x165667B1) >>> 0; h ^= h >>> 13;
+  return h >>> 0;
+}
+function clamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
+function smoothstep(a, b, t) {
+  if (b <= a) return t >= b ? 1 : 0;
+  var u = clamp((t - a) / (b - a), 0, 1);
+  return u * u * (3 - 2 * u);
+}
+
+/* ========================= 3. MOODS ========================= */
+/* Every weight, distance and cadence is transcribed from HANDOFF-SWELL section
+   4. A number that sounds wrong changes HERE and gets a line in DECISIONS; the
+   structure does not change at night. Pitch classes are relative to the mood's
+   own tonic, so Storm's `i` is [0,3,7] and its key is 9 (A). */
+var MOODS = {
+  dawn: {
+    id: 'dawn', name: 'Dawn', line: 'warm, wide, a film first morning',
+    key: 0, bpm: 66, tonic: 'I',
+    chords: {
+      I:  { pcs: [0, 4, 7, 11], dist: 0 },
+      II: { pcs: [2, 6, 9],     dist: 1 },
+      V:  { pcs: [7, 11, 2],    dist: 1 },
+      iii:{ pcs: [4, 7, 11],    dist: 2 },
+      vi: { pcs: [9, 0, 4],     dist: 2 }
+    },
+    edges: {
+      I:  [['II', 0.35], ['vi', 0.25], ['V', 0.20], ['iii', 0.20]],
+      II: [['I', 0.40], ['V', 0.30], ['vi', 0.30]],
+      V:  [['I', 0.50], ['vi', 0.30], ['iii', 0.20]],
+      vi: [['II', 0.40], ['V', 0.30], ['I', 0.30]],
+      iii:[['vi', 0.50], ['II', 0.30], ['I', 0.20]]
+    },
+    cadence: { far: ['II', 'V', 'I'], near: ['V', 'I'], sigh: ['II', 'I'] },
+    colour: { strings: '#E8B36A', choir: '#A8D8F0', brass: '#F2D06B', timp: '#8C2F39', wash: '#2A1F2E' }
+  },
+  storm: {
+    id: 'storm', name: 'Storm', line: 'low pulse, brass, weather coming',
+    key: 9, bpm: 72, tonic: 'i',
+    chords: {
+      i:  { pcs: [0, 3, 7],  dist: 0 },
+      VII:{ pcs: [10, 2, 5], dist: 1 },
+      V:  { pcs: [7, 11, 2], dist: 1 },
+      iv: { pcs: [5, 8, 0],  dist: 2 },
+      VI: { pcs: [8, 0, 3],  dist: 2 },
+      III:{ pcs: [3, 7, 10], dist: 3 }
+    },
+    edges: {
+      i:  [['VI', 0.30], ['iv', 0.25], ['VII', 0.25], ['III', 0.20]],
+      VI: [['VII', 0.35], ['III', 0.35], ['iv', 0.30]],
+      III:[['VII', 0.40], ['VI', 0.30], ['iv', 0.30]],
+      VII:[['i', 0.40], ['VI', 0.30], ['III', 0.30]],
+      iv: [['V', 0.45], ['VII', 0.30], ['i', 0.25]],
+      V:  [['i', 0.70], ['VI', 0.30]]
+    },
+    cadence: { far: ['iv', 'V', 'i'], near: ['V', 'i'], sigh: ['VI', 'i'] },
+    colour: { strings: '#C98A5A', choir: '#7FA8C8', brass: '#E8B54A', timp: '#A32E38', wash: '#1B1A26' }
+  },
+  lullaby: {
+    id: 'lullaby', name: 'Lullaby', line: 'a music box and soft strings for the end of the day',
+    key: 0, bpm: 58, tonic: 'I',
+    chords: {
+      I:   { pcs: [0, 4, 7],  dist: 0 },
+      IV:  { pcs: [5, 9, 0],  dist: 1 },
+      Vsus:{ pcs: [7, 0, 2],  dist: 1 },
+      vi:  { pcs: [9, 0, 4],  dist: 2 },
+      ii:  { pcs: [2, 5, 9],  dist: 2 }
+    },
+    edges: {
+      I:   [['vi', 0.35], ['IV', 0.35], ['ii', 0.30]],
+      vi:  [['IV', 0.50], ['ii', 0.30], ['I', 0.20]],
+      IV:  [['I', 0.50], ['Vsus', 0.30], ['ii', 0.20]],
+      ii:  [['Vsus', 0.50], ['IV', 0.30], ['I', 0.20]],
+      Vsus:[['I', 0.80], ['vi', 0.20]]
+    },
+    cadence: { far: ['ii', 'Vsus', 'I'], near: ['IV', 'I'], sigh: ['IV', 'I'] },
+    colour: { strings: '#D9A886', choir: '#BFD8E8', brass: '#E8CB93', timp: '#6E3340', wash: '#221C28' }
+  }
+};
+var MOOD_ORDER = ['dawn', 'storm', 'lullaby'];
+
+/* ========================= 4. THEORY ========================= */
+/* MIDI 60 is middle C, so the strings' home octave 4 starts at 48. */
+function chordOf(mood, name) { return mood.chords[name]; }
+function distOf(mood, name) { var c = mood.chords[name]; return c ? c.dist : 0; }
+/* The chord as MIDI numbers, ASCENDING from the home octave. Placing each
+   pitch class at `base + pc % 12` scrambled the voicing: Storm's tonic came out
+   57, 48, 52, which is the right three notes in the wrong order and a different
+   inversion every chord. Each note is now stacked above the one before it. */
+function chordPitches(mood, name, octaveBase) {
+  var c = mood.chords[name], out = [], i;
+  if (!c) return out;
+  var p = octaveBase + ((mood.key + c.pcs[0]) % 12);
+  out.push(p);
+  for (i = 1; i < c.pcs.length; i++) {
+    var q = octaveBase + ((mood.key + c.pcs[i]) % 12);
+    while (q <= out[out.length - 1]) q += 12;
+    out.push(q);
+  }
+  return out;
+}
+/* one chord per bar. The tension bias makes far chords likelier the longer a
+   finger has been down; at tension 0 it is the mood's own weights. */
+function walkNext(mood, from, tension, sessionSeed, bar) {
+  var edges = mood.edges[from];
+  if (!edges || !edges.length) return mood.tonic;
+  var i, total = 0, w = [];
+  for (i = 0; i < edges.length; i++) {
+    var bias = 1 + 2 * clamp(tension, 0, 1) * distOf(mood, edges[i][0]);
+    w.push(edges[i][1] * bias);
+    total += w[i];
+  }
+  var r = (mixSeed(sessionSeed, bar) >>> 8) / 16777216 * total;
+  for (i = 0; i < edges.length; i++) { r -= w[i]; if (r <= 0) return edges[i][0]; }
+  return edges[edges.length - 1][0];
+}
+/* Each voice steps to the nearest pitch of the new chord THAT IS STILL FREE and
+   still above the voice below it.
+   ⛔ Choosing the nearest tone for each voice INDEPENDENTLY collapsed all three
+   onto one note within four chords, and the "no voice moves more than six
+   semitones" assertion was perfectly happy about it, because a unison is the
+   smallest possible move. Reading eight bars of output found it; no counter
+   would have. A section playing one note in triplicate is not a chord. */
+function leadVoices(prev, mood, name, octaveBase) {
+  var chord = chordPitches(mood, name, octaveBase);
+  if (!chord.length) return prev.slice();
+  /* every octave of every chord tone within reach */
+  /* only the tones inside the section's own register are candidates. Without
+     the bound the stack creeps: over three hundred chords in Storm the bottom
+     voice walked out of the bottom of the cello and the top out of the top of
+     the violin, one nearest tone at a time, and every single move was legal. */
+  var lo = octaveBase - 3, hi = octaveBase + 27;
+  var cand = [], i, j, oct;
+  for (j = 0; j < chord.length; j++) {
+    for (oct = -36; oct <= 36; oct += 12) {
+      var pp = chord[j] + oct;
+      if (pp >= lo && pp <= hi) cand.push(pp);
+    }
+  }
+  cand.sort(function (a, b) { return a - b; });
+  /* the voices in order from the bottom, each taking the nearest free tone that
+     keeps it above the one under it */
+  var order = [], out = new Array(prev.length);
+  for (i = 0; i < prev.length; i++) order.push(i);
+  order.sort(function (a, b) { return prev[a] - prev[b]; });
+  var used = {}, floor = -1e9;
+  for (i = 0; i < order.length; i++) {
+    var v = prev[order[i]], best = null, bestD = 1e9;
+    for (j = 0; j < cand.length; j++) {
+      var p = cand[j];
+      if (used[p]) continue;
+      if (p <= floor) continue;
+      var d = Math.abs(p - v);
+      if (d < bestD || (d === bestD && p < best)) { bestD = d; best = p; }
+    }
+    if (best === null) {
+      /* nothing left above the voice below: take the nearest free tone at all,
+         which can only happen with more voices than the chord has octaves */
+      for (j = 0; j < cand.length; j++) {
+        if (used[cand[j]]) continue;
+        var d2 = Math.abs(cand[j] - v);
+        if (d2 < bestD) { bestD = d2; best = cand[j]; }
+      }
+    }
+    used[best] = 1; floor = best;
+    out[order[i]] = best;
+  }
+  return out;
+}
+/* the grid. div 1 is the beat, 2 the eighth. */
+function gridStep(bpm, div) { return 60 / bpm / (div || 1); }
+function nextGrid(t, bpm, div) {
+  var step = gridStep(bpm, div);
+  return Math.ceil((t + 0.02) / step - 1e-9) * step;
+}
+/* which cadence a release earns */
+function cadenceFor(mood, chordName, holdSeconds) {
+  var d = distOf(mood, chordName);
+  if (d >= 2 || holdSeconds > 8) return mood.cadence.far.slice();
+  if (d === 1) return mood.cadence.near.slice();
+  if (holdSeconds < 1.5) return mood.cadence.sigh.slice();
+  return mood.cadence.near.slice();
+}
+/* how much of each section is in the room, by how long a finger has been down */
+function layerGain(section, t) {
+  if (section === 'strings') return smoothstep(CONFIG.HOLD_STRINGS[0], CONFIG.HOLD_STRINGS[1], t);
+  if (section === 'violins') return smoothstep(CONFIG.HOLD_VIOLINS[0], CONFIG.HOLD_VIOLINS[1], t);
+  if (section === 'horns') return smoothstep(CONFIG.HOLD_HORNS[0], CONFIG.HOLD_HORNS[1], t);
+  if (section === 'choir') return smoothstep(CONFIG.HOLD_CHOIR[0], CONFIG.HOLD_CHOIR[1], t);
+  if (section === 'timp') return t >= CONFIG.TIMP_ROLL_FROM ? smoothstep(CONFIG.TIMP_ROLL_FROM, CONFIG.TIMP_ROLL_FROM + 2, t) : 0;
+  return 0;
+}
+function intensityAt(t, pressureMul) { return clamp(t / 10, 0, 1) * (pressureMul === undefined ? 1 : pressureMul); }
+function filterHz(intensity) { return CONFIG.FILTER_MIN + (CONFIG.FILTER_MAX - CONFIG.FILTER_MIN) * clamp(intensity, 0, 1); }
+/* the first finger down is the strings and it drives the clock; the second is
+   the choir; the third is the brass, early, whatever the clock says */
+function sectionForFinger(order) { return order === 0 ? 'strings' : (order === 1 ? 'choir' : 'brass'); }
+/* a press shorter than TAP_MS is a hit, not a hold */
+function isHit(ms) { return ms < CONFIG.TAP_MS; }
+/* the register a finger's height asks for: the top third up an octave, the
+   bottom third down */
+function registerFor(yFraction) { return yFraction < 1 / 3 ? 12 : (yFraction > 2 / 3 ? -12 : 0); }
+function panFor(xFraction) { return clamp(xFraction * 2 - 1, -1, 1) * 0.7; }
+/* PointerEvent.pressure and width are a bonus, never a requirement (3.7) */
+function pressureMul(pressure, width) {
+  var p = (pressure && pressure > 0 && pressure < 1) ? pressure : null;
+  if (p === null && width && width > 0) p = clamp(width / 40, 0, 1);
+  if (p === null) return 1;
+  return 0.7 + 0.6 * clamp(p, 0, 1);
+}
+
+/* the ambient policy: holds and gaps drawn from the seeded stream, one to two
+   virtual fingers, and never two holds at once on the same finger */
+function ambientPlan(seed, seconds) {
+  var out = [], f, t, n = 0;
+  for (f = 0; f < 2; f++) {
+    t = f * 2.5;
+    while (t < seconds) {
+      var r = makeRNG(mixSeed(seed, f * 1000 + n));
+      var hold = CONFIG.AMBIENT_HOLD_S[0] + r() * (CONFIG.AMBIENT_HOLD_S[1] - CONFIG.AMBIENT_HOLD_S[0]);
+      var gap = CONFIG.AMBIENT_GAP_S[0] + r() * (CONFIG.AMBIENT_GAP_S[1] - CONFIG.AMBIENT_GAP_S[0]);
+      if (t + hold > seconds) break;
+      out.push({ finger: f, start: t, dur: hold, register: (r() < 0.5 ? 0 : (r() < 0.5 ? 12 : -12)) });
+      t += hold + gap;
+      n++;
+    }
+  }
+  out.sort(function (a, b) { return a.start - b.start; });
+  return out;
+}
+/* the master multiplier a sleep timer asks for. Exactly as loud as it was until
+   the last minute, then down to nothing. */
+function sleepGain(elapsedS, minutes) {
+  if (!minutes) return 1;
+  var end = minutes * 60;
+  if (elapsedS <= end - CONFIG.SLEEP_FADE_S) return 1;
+  if (elapsedS >= end) return 0;
+  return clamp((end - elapsedS) / CONFIG.SLEEP_FADE_S, 0, 1);
+}
+// ---- THEORY_EXPORT_END ----
+
+// ---- TEST_EXPORT_START ----
+/* ========================= 12. TEST ========================= */
+var TEST = {
+  results: [],
+  assert: function (n, c, d) { this.results.push({ name: n, pass: !!c, detail: d || '' }); },
+  eq: function (n, a, b) { this.assert(n, a === b, 'expected ' + b + ', got ' + a); },
+  near: function (n, a, b, tol) { this.assert(n, Math.abs(a - b) <= tol, 'expected about ' + b + ', got ' + a); },
+  report: function () {
+    var p = 0, f = 0, fails = [], i;
+    for (i = 0; i < this.results.length; i++) { if (this.results[i].pass) p++; else { f++; fails.push(this.results[i]); } }
+    return { passed: p, failed: f, total: this.results.length, failures: fails };
+  },
+  runSuite: function (n, fn, a) {
+    try { fn(this, a); } catch (e) { this.assert('the ' + n + ' suite ran to the end', false, String(e && e.message || e)); }
+  },
+  run: function (extra) {
+    this.results = [];
+    this.runSuite('moods', suiteMoods);
+    this.runSuite('walk', suiteWalk);
+    this.runSuite('leading', suiteLeading);
+    this.runSuite('grid', suiteGrid);
+    this.runSuite('layers', suiteLayers);
+    this.runSuite('touch', suiteTouch);
+    this.runSuite('ambient', suiteAmbient);
+    this.runSuite('sleep', suiteSleep);
+    this.runSuite('copy', suiteCopy);
+    if (extra && extra.src) this.runSuite('purity', suitePurity, extra.src);
+    return this.report();
+  }
+};
+
+function eachMood(fn) { var k; for (k in MOODS) fn(MOODS[k], k); }
+
+function suiteMoods(T) {
+  T.eq('there are three moods', MOOD_ORDER.length, 3);
+  eachMood(function (m, k) {
+    var names = Object.keys(m.chords), i, from, bad = [];
+    T.assert(k + ' names its tonic and has it', !!m.chords[m.tonic]);
+    T.eq(k + ' tonic is at distance zero', m.chords[m.tonic].dist, 0);
+    for (from in m.edges) {
+      var sum = 0, e = m.edges[from];
+      if (!m.chords[from]) bad.push(from + ' has edges but is not a chord');
+      for (i = 0; i < e.length; i++) {
+        sum += e[i][1];
+        if (!m.chords[e[i][0]]) bad.push(from + ' points at ' + e[i][0] + ' which is not a chord');
+      }
+      if (Math.abs(sum - 1) > 0.001) bad.push(from + ' weights sum to ' + sum.toFixed(3));
+    }
+    T.assert(k + ' edge weights all sum to one and name real chords' + (bad.length ? ': ' + bad.join(', ') : ''), bad.length === 0);
+    var missing = [];
+    for (i = 0; i < names.length; i++) if (!m.edges[names[i]]) missing.push(names[i]);
+    T.assert(k + ' gives every chord somewhere to go' + (missing.length ? ': ' + missing.join(', ') : ''), missing.length === 0);
+    /* the cadence rule reaches the tonic in at most three steps, always */
+    var c, cbad = [];
+    for (c in m.cadence) {
+      var arr = m.cadence[c];
+      if (arr.length > 3) cbad.push(c + ' is ' + arr.length + ' chords long');
+      if (arr[arr.length - 1] !== m.tonic) cbad.push(c + ' does not end on the tonic');
+      for (i = 0; i < arr.length; i++) if (!m.chords[arr[i]]) cbad.push(c + ' names ' + arr[i]);
+    }
+    T.assert(k + ' cadences reach the tonic in three or fewer' + (cbad.length ? ': ' + cbad.join(', ') : ''), cbad.length === 0);
+    var pbad = [];
+    for (i = 0; i < names.length; i++) {
+      var pcs = m.chords[names[i]].pcs;
+      if (pcs.length < 3) pbad.push(names[i] + ' has ' + pcs.length + ' notes');
+      for (var j = 0; j < pcs.length; j++) if (pcs[j] < 0 || pcs[j] > 11) pbad.push(names[i] + ' has a pitch class of ' + pcs[j]);
+    }
+    T.assert(k + ' chords are three notes or more, all in one octave' + (pbad.length ? ': ' + pbad.join(', ') : ''), pbad.length === 0);
+  });
+}
+
+function suiteWalk(T) {
+  eachMood(function (m, k) {
+    var i, off = 0, cur = m.tonic;
+    for (i = 0; i < 1000; i++) {
+      var next = walkNext(m, cur, (i % 7) / 6, 4242, i);
+      var ok = false, e = m.edges[cur], j;
+      for (j = 0; j < e.length; j++) if (e[j][0] === next) ok = true;
+      if (!ok) off++;
+      cur = next;
+    }
+    T.eq(k + ' never steps to a chord it has no edge to', off, 0);
+    /* THE TENSION BIAS, MEASURED. A thousand bars held to the full and a
+       thousand held not at all: the held ones sit further from home. */
+    var sumHot = 0, sumCold = 0;
+    cur = m.tonic;
+    for (i = 0; i < 1000; i++) { cur = walkNext(m, cur, 1, 777, i); sumHot += distOf(m, cur); }
+    cur = m.tonic;
+    for (i = 0; i < 1000; i++) { cur = walkNext(m, cur, 0, 777, i); sumCold += distOf(m, cur); }
+    T.assert(k + ' wanders further from home under tension (' + (sumHot / 1000).toFixed(2) + ' against ' + (sumCold / 1000).toFixed(2) + ')',
+      sumHot > sumCold * 1.05);
+    var a = [], b = [];
+    cur = m.tonic; for (i = 0; i < 40; i++) { cur = walkNext(m, cur, 0.5, 9090, i); a.push(cur); }
+    cur = m.tonic; for (i = 0; i < 40; i++) { cur = walkNext(m, cur, 0.5, 9090, i); b.push(cur); }
+    T.eq(k + ' walks the same chords from the same session seed', a.join(' '), b.join(' '));
+    cur = m.tonic; var c2 = [];
+    for (i = 0; i < 40; i++) { cur = walkNext(m, cur, 0.5, 9091, i); c2.push(cur); }
+    T.assert(k + ' walks somewhere else from a different one', c2.join(' ') !== a.join(' '));
+  });
+}
+
+function suiteLeading(T) {
+  eachMood(function (m, k) {
+    var names = Object.keys(m.chords), r = makeRNG(31 + names.length), i, worst = 0;
+    var voices = chordPitches(m, m.tonic, 48).slice(0, 3);
+    for (i = 0; i < 1000; i++) {
+      var to = names[r.int(names.length)];
+      var next = leadVoices(voices, m, to, 48);
+      var j;
+      for (j = 0; j < voices.length; j++) worst = Math.max(worst, Math.abs(next[j] - voices[j]));
+      voices = next;
+    }
+    T.assert(k + ' never moves a voice more than six semitones (worst ' + worst + ')', worst <= 6);
+    /* ⛔ THE ASSERTION A UNISON PASSES. Nearest tone per voice, chosen
+       independently, collapses three voices onto one note inside four chords
+       and moves nobody more than a tone doing it. */
+    var collapsed = 0, unspread = 0, r2 = makeRNG(97), v2 = chordPitches(m, m.tonic, 48).slice(0, 3);
+    for (i = 0; i < 400; i++) {
+      v2 = leadVoices(v2, m, names[r2.int(names.length)], 48);
+      var uniq = {}, j3;
+      for (j3 = 0; j3 < v2.length; j3++) uniq[v2[j3]] = 1;
+      if (Object.keys(uniq).length < v2.length) collapsed++;
+      if (Math.max.apply(null, v2) - Math.min.apply(null, v2) < 3) unspread++;
+    }
+    T.eq(k + ' never puts two voices on the same note', collapsed, 0);
+    T.eq(k + ' and never squeezes the three of them inside a tone', unspread, 0);
+    var asc = true, v3 = chordPitches(m, m.tonic, 48).slice(0, 3);
+    for (i = 0; i < 200; i++) {
+      v3 = leadVoices(v3, m, names[r2.int(names.length)], 48);
+      if (!(v3[0] < v3[1] && v3[1] < v3[2])) asc = false;
+    }
+    T.assert(k + ' keeps the voices stacked, bottom to top', asc);
+    var drift = false, v4 = chordPitches(m, m.tonic, 48).slice(0, 3);
+    for (i = 0; i < 300; i++) {
+      v4 = leadVoices(v4, m, names[r2.int(names.length)], 48);
+      if (v4[0] < 30 || v4[2] > 84) drift = true;
+    }
+    T.assert(k + ' and they stay in the register they started in', !drift);
+    var pcs = m.chords[m.tonic].pcs, inChord = true, j2;
+    var v = leadVoices([50, 55, 60], m, m.tonic, 48);
+    for (j2 = 0; j2 < v.length; j2++) if (pcs.indexOf(((v[j2] - m.key) % 12 + 12) % 12) < 0) inChord = false;
+    T.assert(k + ' lands every voice inside the chord it moved to', inChord);
+    T.eq(k + ' keeps three voices', v.length, 3);
+  });
+}
+
+function suiteGrid(T) {
+  var bpm = 66, eighth = gridStep(bpm, 2);
+  T.near('an eighth at 66 bpm is 0.4545 seconds', eighth, 0.4545, 0.001);
+  T.near('a release a third of the way through an eighth waits for the next one',
+    nextGrid(eighth * 3.3, bpm, 2), eighth * 4, 1e-6);
+  T.near('and a release ON an eighth takes the next one, not that one',
+    nextGrid(eighth * 4, bpm, 2), eighth * 5, 1e-6);
+  T.assert('a quantised time is never earlier than the release', nextGrid(1.234, bpm, 2) >= 1.234);
+  T.assert('and never more than one eighth later', nextGrid(1.234, bpm, 2) - 1.234 <= eighth + 1e-9);
+  T.near('a bar at 72 bpm is 3.333 seconds', gridStep(72, 1) * 4, 3.3333, 0.001);
+}
+
+function suiteLayers(T) {
+  T.near('strings are all the way in by half a second', layerGain('strings', 0.5), 1, 1e-9);
+  T.assert('and already speaking at a tenth', layerGain('strings', 0.1) > 0.05);
+  T.eq('violins are silent at half a second', layerGain('violins', 0.5), 0);
+  T.near('and all the way in at three', layerGain('violins', 3), 1, 1e-9);
+  T.eq('horns are silent at three', layerGain('horns', 3), 0);
+  T.near('and in at seven', layerGain('horns', 7), 1, 1e-9);
+  T.eq('the choir is silent before seven', layerGain('choir', 6.99), 0);
+  T.near('and open at ten', layerGain('choir', 10), 1, 1e-9);
+  T.eq('the timpani roll waits for seven', layerGain('timp', 6.9), 0);
+  var rising = true, i, prev = -1;
+  for (i = 0; i <= 12; i += 0.1) {
+    var g = layerGain('violins', i);
+    if (g < prev - 1e-9) rising = false;
+    prev = g;
+  }
+  T.assert('every layer only ever comes in, it never dips', rising);
+  T.near('intensity is full at ten seconds', intensityAt(10), 1, 1e-9);
+  T.near('the filter opens from 400 to 4400', filterHz(0), 400, 1e-9);
+  T.near('and at the top', filterHz(1), 4400, 1e-9);
+}
+
+function suiteTouch(T) {
+  T.assert('a hundred millisecond press is a hit', isHit(100));
+  T.assert('and two hundred is a hold', !isHit(200));
+  T.assert('the line is at a hundred and eighty', isHit(179) && !isHit(181));
+  T.eq('the first finger is the strings', sectionForFinger(0), 'strings');
+  T.eq('the second is the choir', sectionForFinger(1), 'choir');
+  T.eq('the third is the brass', sectionForFinger(2), 'brass');
+  T.eq('a finger at the top asks for an octave up', registerFor(0.1), 12);
+  T.eq('at the bottom, one down', registerFor(0.9), -12);
+  T.eq('in the middle, neither', registerFor(0.5), 0);
+  T.near('a finger on the left pans left', panFor(0), -0.7, 1e-9);
+  T.near('and on the right, right', panFor(1), 0.7, 1e-9);
+  T.eq('a phone that reports nothing is not punished for it', pressureMul(0, 0), 1);
+  T.assert('a light touch is quieter and a heavy one louder',
+    pressureMul(0.2, 0) < 1 && pressureMul(0.9, 0) > 1);
+  T.assert('and a phone that only reports width still counts', pressureMul(0, 30) !== 1);
+}
+
+function suiteAmbient(T) {
+  var plan = ambientPlan(1234, 600), i, bad = [];
+  T.assert('ten minutes of ambient holds at least twenty times (' + plan.length + ')', plan.length >= 20);
+  for (i = 0; i < plan.length; i++) {
+    if (plan[i].dur < CONFIG.AMBIENT_HOLD_S[0] - 1e-9 || plan[i].dur > CONFIG.AMBIENT_HOLD_S[1] + 1e-9) {
+      bad.push('a hold of ' + plan[i].dur.toFixed(1) + ' seconds');
+    }
+  }
+  T.assert('every hold is inside the window' + (bad.length ? ': ' + bad.slice(0, 3).join(', ') : ''), bad.length === 0);
+  var last = {}, overlap = 0;
+  for (i = 0; i < plan.length; i++) {
+    var f = plan[i].finger;
+    if (last[f] !== undefined && plan[i].start < last[f] - 1e-9) overlap++;
+    last[f] = plan[i].start + plan[i].dur;
+  }
+  T.eq('and no finger ever holds twice at once', overlap, 0);
+  var gaps = [], j;
+  for (j = 0; j < 2; j++) {
+    var prevEnd = null;
+    for (i = 0; i < plan.length; i++) {
+      if (plan[i].finger !== j) continue;
+      if (prevEnd !== null) gaps.push(plan[i].start - prevEnd);
+      prevEnd = plan[i].start + plan[i].dur;
+    }
+  }
+  var gbad = gaps.filter(function (g) { return g < CONFIG.AMBIENT_GAP_S[0] - 1e-6 || g > CONFIG.AMBIENT_GAP_S[1] + 1e-6; });
+  T.assert('and every gap is inside its window too' + (gbad.length ? ': ' + gbad.slice(0, 3).join(', ') : ''), gbad.length === 0);
+  T.assert('two fingers are used', plan.some(function (p) { return p.finger === 1; }));
+  T.eq('the same seed plans the same night', JSON.stringify(ambientPlan(1234, 120)), JSON.stringify(ambientPlan(1234, 120)));
+  T.assert('a different seed plans a different one', JSON.stringify(ambientPlan(1235, 120)) !== JSON.stringify(ambientPlan(1234, 120)));
+}
+
+function suiteSleep(T) {
+  T.eq('with no timer nothing fades', sleepGain(99999, 0), 1);
+  T.eq('a fifteen minute timer is untouched at thirteen minutes', sleepGain(13 * 60, 15), 1);
+  T.eq('and still untouched at fourteen', sleepGain(14 * 60, 15), 1);
+  T.assert('it is on its way down at fourteen and a half', sleepGain(14.5 * 60, 15) > 0 && sleepGain(14.5 * 60, 15) < 1);
+  T.eq('and it is gone at fifteen', sleepGain(15 * 60, 15), 0);
+  T.eq('and stays gone', sleepGain(20 * 60, 15), 0);
+  T.eq('an hour timer is untouched at fifty nine', sleepGain(59 * 60, 60), 1);
+  T.eq('and gone at sixty', sleepGain(60 * 60, 60), 0);
+}
+
+function suiteCopy(T) {
+  var strings = [], k;
+  for (k in MOODS) { strings.push(MOODS[k].name); strings.push(MOODS[k].line); }
+  var bad = [], i;
+  for (i = 0; i < strings.length; i++) {
+    if (/[-‐-―−]/.test(strings[i])) bad.push('dash in: ' + strings[i]);
+    if (strings[i].indexOf('!') >= 0) bad.push('exclamation in: ' + strings[i]);
+  }
+  T.assert('no dash and no exclamation point in a mood name or its line' + (bad.length ? ' [' + bad.join(' | ') + ']' : ''), bad.length === 0);
+  T.eq('the moods are named as the plan names them', MOOD_ORDER.map(function (k2) { return MOODS[k2].name; }).join(','), 'Dawn,Storm,Lullaby');
+  T.assert('every mood says what it is in one line', MOOD_ORDER.every(function (k2) { return MOODS[k2].line.length > 12 && MOODS[k2].line.length < 70; }));
+}
+
+function suitePurity(T, src) {
+  var code = src.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^[ \t]*\/\/.*$/gm, ' ');
+  T.assert('the comment stripper left the code behind', code.length > 6000);
+  T.assert('THEORY never rolls an unseeded die', code.indexOf('Math.random') < 0);
+  T.assert('THEORY never touches the document', code.indexOf('document.') < 0);
+  T.assert('THEORY never touches the window', code.indexOf('window.') < 0);
+  T.assert('THEORY never reads a clock', code.indexOf('Date.now') < 0 && code.indexOf('performance.now') < 0);
+  T.assert('and it never opens an AudioContext', code.indexOf('AudioContext') < 0 && code.indexOf('currentTime') < 0);
+}
+// ---- TEST_EXPORT_END ----
