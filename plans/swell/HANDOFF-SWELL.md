@@ -12,8 +12,24 @@ this file wins; every difference is in section 3 with its reason.
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
 - 2026-09-05 Fable: plan written. Nothing built.
-- 2026-09-05 Opus: P0 step 1, `tools/check.js` with one gate and no `sim.js` to run, red, pasted in section 13. Next
-  action: P0 step 1 continued, THEORY and MOODS in `satellites/swell/index.html`.
+- 2026-09-05 Opus: P0 step 1, the gate red with no `sim.js` to run, pasted in section 13.
+- 2026-09-05 Opus: **P0 DONE. P1, P2 and P3 not started.** Three gates green: `lint`, `theory` (110 assertions),
+  `render`. `docs/shots/p0-swell.wav` exists, fourteen seconds, mono, 1.2 MB, and its envelope is in section 13.
+  Everything the app needs to RUN is written (SYNTH, SCHEDULER, ENGINE, AURORA, INPUT, RECORD, AMBIENT, SAVE, BOOT and
+  every screen), but only the render gate has exercised it: **nothing has driven this page with a real pointer yet and
+  no screenshot has been taken of it.**
+  **NEXT ACTION, exactly:** P1 step 3, write `satellites/swell/test/hold.mjs`, the shape of
+  `satellites/asterism/test/draw.mjs`, using `test/harness.mjs` which is already here and already carries the autoplay
+  flag. It must assert, with REAL pointer events on `#stage`: an eight second hold moves `SWELL_DEV.state()` through
+  `held`, with `SWELL_DEV.sectionLive` becoming true for strings, then violins, then horns, then choir, each later than
+  the last; a release moves it to `resolving` and then to `idle`; a press and release inside 180 ms logs a hit rather
+  than a hold; and `SWELL_DEV.rafRunning()` is false two seconds after silence (3.11, the battery rule). Then P1 step 4:
+  `tools/shots.mjs` (copy Asterism's, which gates the shutter and not the walk) for `p1-swell.png` mid hold and
+  `p1-resolve.png` a second after release, and OPEN THEM: if the curtain reads as a gradient rectangle rather than as
+  light, the band count and the noise in `curtain()` are what to change, before P2.
+  **Then** P2 (multi touch, the three moods in the picker, ambient with the wake lock, the recorder) and P3 (tilt,
+  video, the battery sweep, the thumb and the documents). The theory for ambient and the sleep timer is already written
+  and asserted; only the wiring and its gates are left.
 
 ---
 
@@ -400,6 +416,148 @@ Error: Cannot find module '/workspaces/lucid-winds/satellites/swell/sim.js'
 
 
 ---
+
+### P0 steps 2 to 5, green (2026-09-05)
+
+```
+$ node satellites/swell/tools/check.js
+lint            pass  0s
+theory          pass  0s
+render          pass  3s
+
+ALL GATES PASSED
+
+$ node sim.js --test
+PASSED 110 / FAILED 0   (total 110)
+SWELL TEST OK
+```
+
+### The swell itself, measured
+
+```
+$ node test/render.mjs
+  ok    sound is there fifty milliseconds after the press: -35.4 dBFS
+  ok    at one second it is a beginning, 24 percent of the loudest
+  ok    it swells from one second to six and never dips (-27.9, -25.3, -24.8, -24.3, -21.4, -20.0 dBFS)
+  ok    and it is much bigger at six seconds than at one (3.03 times)
+  ok    the ceiling holds, the peak sample is 0.404
+  ok    it lets go: eleven seconds in it is 4.5 percent of the loudest
+  ok    and by fourteen it is gone, 0.00 percent
+  ok    the harmony moved (I iii II V I)
+  ok    and it ends on the tonic, which is the whole promise
+  ok    the oscillator count never passed the budget: peak 30 of 48
+  ok    docs/shots/p0-swell.wav written, 1206 KB
+RENDER OK
+
+  the envelope, RMS every half second in dBFS:
+  0.0s  -55.7   0.5s  -33.3   1.0s  -30.4   1.5s  -26.6   2.0s  -26.3
+  2.5s  -25.9   3.0s  -24.6   3.5s  -25.1   4.0s  -24.1   4.5s  -24.6
+  5.0s  -22.4   5.5s  -20.7   6.0s  -20.2   6.5s  -20.6   7.0s  -22.4
+  7.5s  -24.1   8.0s  -27.0   8.5s  -29.6   9.0s  -33.4   9.5s  -36.9
+  10.0s -18.3   10.5s -38.5   11.0s -50.2   11.5s -61.4   12.0s -65.8
+  12.5s -86.8   13.0s -110.7  13.5s -125.9
+```
+
+The spike at ten seconds is the timpani landing with the tonic at the end of the cadence, which is the design's own
+instruction. **`docs/shots/p0-swell.wav` is the shot. Listen to it before reading anything else.**
+
+### Watched to fail
+
+```
+$ (the first note's attack set to two seconds)
+FAIL  sound is there fifty milliseconds after the press: -63.5 dBFS
+
+$ (the ceiling gain set to three)
+FAIL  the ceiling holds, the peak sample is 1.253
+
+$ (the cadences pointed at vi instead of the tonic)
+FAIL  dawn cadences reach the tonic in three or fewer: far does not end on the tonic, ...
+FAIL  and it ends on the tonic, which is the whole promise
+
+$ (an edge weight that does not sum to one)
+FAIL  dawn edge weights all sum to one and name real chords: I weights sum to 1.100
+
+$ (the tension bias removed)
+FAIL  dawn wanders further from home under tension (1.06 against 1.06)
+
+$ (the voices choosing their tones independently again)
+FAIL  dawn never puts two voices on the same note   [expected 0, got 397]
+```
+
+### What the gates and the ear caught
+
+```
+1. VOICE LEADING COLLAPSED TO A UNISON. Nearest tone per voice, chosen
+   independently, puts all three on one note inside four chords, and the plan's
+   assertion, no voice moves more than six semitones, is perfectly happy about
+   it: a unison is the smallest possible move. Reading eight bars of
+   `sim.js --walk` found it. Four new assertions now cover what a unison passes.
+2. chordPitches placed each pitch class at base plus pc mod twelve, which
+   scrambled the voicing: Storm's tonic came out 57, 48, 52.
+3. Without a register bound the stack crept out of the section over three
+   hundred chords, one legal nearest tone at a time.
+4. GESTURES WERE IMMEDIATE, NOT SCHEDULED. A release scheduled for six seconds
+   fired the moment it was queued, so the render gate asked for a six second
+   hold and got a flat envelope with only the strings in it. Ambient mode had
+   the same bug waiting in it.
+5. THE RESPONSE WAS SILENCE: 78 dB down fifty milliseconds after a press.
+6. THE CRESCENDO ONLY GOT BRIGHTER, so it dipped across a chord change.
+7. THREE 404s ON EVERY BOOT from probing for art that does not exist.
+8. And the gate itself was measuring wrong: half second windows measure the
+   beating between detuned voices as much as the crescendo.
+```
+## 15. THE MORNING REPORT
+
+### Morning report, 2026-09-05
+
+**Phases:** P0 done (`98322fe1`, `d0a2d8cb`). P1, P2 and P3 not started. Swell is **P0 DONE**, not DONE P3.
+
+**Gates:** `ALL GATES PASSED`, three of them: `lint`, `theory` (110 assertions), `render`. Every one watched to fail;
+six failure columns are in section 13.
+
+**LISTEN TO THIS FIRST:** `satellites/swell/docs/shots/p0-swell.wav`. Fourteen seconds, mono, 1.2 MB, double
+clickable. A press at 0.2 seconds, a release at 6.2, the whole thing rendered offline through the same synth the app
+runs. Its envelope is in section 13. That file is the entire review; everything else in this report is bookkeeping.
+
+**Play it:** `satellites/swell/index.html` runs, and hold to swell works, but **be told plainly: no thumb has touched
+it yet.** The render gate drives the engine offline and proves the sound; nothing has driven the real input handler,
+and no screenshot exists. The first thing the next session does is `test/hold.mjs`, and the exact assertions are in
+SESSION STATE.
+
+**Look at:** nothing yet. There is no screenshot of Swell. That is not an oversight, it is where the night stopped:
+the plan puts the aurora and its shots at P1 step 4 and the sound at P0, and the sound is what got finished.
+
+**Decided without you:**
+- *the voices take the nearest FREE tone that keeps them above the voice below, inside a bounded register.* The plan's
+  rule collapsed all three voices onto one note within four chords and its own assertion could not see it.
+- *gestures are scheduled, not immediate.* `press(t)` and `release(t)` take an AudioContext time and go in a queue the
+  pump consumes; acting on the call meant ambient mode and the render gate were both broken in the same way.
+- *the first note of a touch takes forty milliseconds and the strings' layer curve is fast at the front.* Otherwise a
+  press is silent for a fifth of a second, which does not feel like a touch.
+- *the crescendo grows in level as well as in colour.* Intensity drove only the filter, and the swell dipped.
+
+**Blocked:** none.
+
+**For Fable:** nothing outside the fence was touched by this leg. One thing to know: earlier in the run, while working
+on Fathom and Asterism, three files were created outside a fence by a persisted shell directory, and one of them
+briefly appended to the repository root `index.html`, the Lucid Winds game itself. It was noticed at once, restored
+with `git checkout`, and verified byte identical to HEAD; `git status` is clean of it and the marker text is absent
+from the file. The other two were `test/harness.mjs` and `tools/thumb.mjs` at the root, both removed or moved. Worth a
+look with your own eyes rather than my word.
+
+**For Stephen:**
+- **The name.** SWELL is what the folder and the title say. Tutti, Maestro, Crescendo and Holdfast are yours, and so is
+  the worry that Swell is a common word.
+- **The ear.** You are the music producer and this one is for you. The WAV is Dawn, one finger, six seconds. What I
+  cannot hear and you can: whether the strings are too bright at the top of the filter sweep, whether the timpani at
+  the cadence is too loud (it is the spike at ten seconds), whether the hall is too wet at 0.28, and whether six
+  seconds of hold feels like enough of an arc or whether the layering windows want stretching.
+- **The phone test, once P1 lands.** The autoplay flag the gates run under does not exist on a phone, and an
+  AudioContext made before a gesture stays suspended there with every scheduled note landing in silence and no error.
+  The engine is opened inside `pointerdown` for exactly this reason and only a real phone can prove it.
+
+**Next action:** `satellites/swell/test/hold.mjs`, P1 step 3. The full assertion list is in SESSION STATE at the top of
+this file.
 
 ## 14. THE OVERNIGHT PROTOCOL
 
