@@ -172,7 +172,7 @@ Screenshots are evidence, under 200 KB each, and never regenerated just to regen
 
 | # | game | handoff | plan | what a first playable is | SESSION STATE |
 |---|---|---|---|---|---|
-| 1 | Fathom | `docs/handoffs-uploaded/six-20260905/6handoffs/HANDOFF-FATHOM.md` | `plans/fathom/HANDOFF-FATHOM.md` (written 2026-09-05, Fable) | level 1 cleared with real taps: drag to move, tap to throw, the ring lights the cave, a cache glints, the exit sings back. That is P1 step 5 of the plan | not started |
+| 1 | Fathom | `docs/handoffs-uploaded/six-20260905/6handoffs/HANDOFF-FATHOM.md` | `plans/fathom/HANDOFF-FATHOM.md` (written 2026-09-05, Fable) | level 1 cleared with real taps: drag to move, tap to throw, the ring lights the cave, a cache glints, the exit sings back. That is P1 step 5 of the plan | **DONE P3** (2026-09-05, ten gates, morning report in the plan section 15) |
 | 2 | Asterism | `docs/handoffs-uploaded/six-20260905/6handoffs/HANDOFF-ASTERISM.md` | `plans/asterism/HANDOFF-ASTERISM.md` (written 2026-09-05, Fable; the star catalogue is packed at `plans/asterism/hyg-asterism.json`) | the real sky from Columbus at a frozen time with Vega overhead, three real taps join Vega, Deneb and Altair, a typed name saves to the almanac. That is P1 step 4 | not started |
 | 3 | Swell | `docs/handoffs-uploaded/six-20260905/6handoffs/HANDOFF-SWELL.md` | `plans/swell/HANDOFF-SWELL.md` (written 2026-09-05, Fable; the three moods are data in section 4) | one finger held for six seconds swells strings to choir and lets go into a cadence that ends on the tonic, rendered to `docs/shots/p0-swell.wav` for Stephen to hear. That is P0 step 5 | not started |
 
