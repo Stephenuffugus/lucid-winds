@@ -177,19 +177,20 @@ h1 em{font-style:normal;color:var(--sodium)}
 
 /* ---------- pick ---------- */
 #pick .hdr{padding:calc(env(safe-area-inset-top) + 14px) 16px 10px}
-#pick .pickhdr{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding:7px 12px 6px}
+#pick .pickhdr{display:flex;align-items:center;gap:8px;padding:6px 8px 5px 12px}
+.picktxt{flex:1 1 auto;min-width:0;display:flex;align-items:baseline;gap:2px 10px;flex-wrap:wrap}
+.pickback{flex:0 0 auto;margin:0;padding:0 14px;min-height:48px;font-size:10px}
 #pick h2{margin:0;font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--sodium)}
 .pickhint{font-size:10.5px;color:var(--dim);line-height:1.4}
 /* "the giant button to start is almost in the way": compact, centred, still 48px */
-.cta.pickcta{max-width:320px;margin:10px auto 0;padding:12px;font-size:13px}
-#pickFoot{padding-top:7px}
-#pickInfo{font-size:11px}
+.cta.pickcta{flex:0 0 auto;width:auto;min-width:150px;max-width:none;margin:0;padding:0 16px;font-size:12.5px}
+#pickRow{display:flex;align-items:stretch;gap:8px;margin-top:6px}
 #pickWrap{flex:1;position:relative;overflow:hidden;touch-action:none;background:#04121e}
 #pickMap,#pickFx{position:absolute;left:0;top:0}
 .crt{position:absolute;inset:0;pointer-events:none;opacity:.28;
   background:repeating-linear-gradient(0deg,#0000 0 2px,#00000055 2px 3px)}
-#pickFoot{padding:10px 12px calc(env(safe-area-inset-bottom) + 12px);border-top:1px solid var(--line);background:#080d14}
-#pickInfo{font-size:11.5px;color:var(--ice);min-height:46px;line-height:1.45}
+#pickFoot{padding:8px 12px calc(env(safe-area-inset-bottom) + 10px);border-top:1px solid var(--line);background:#080d14}
+#pickInfo{font-size:11.5px;color:var(--ice);min-height:0;line-height:1.45;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 
 /* ---------- HUD ----------
    The HUD floats OVER the map instead of stacking above it, so the map owns
@@ -421,10 +422,10 @@ h1 em{font-style:normal;color:var(--sodium)}
 #rpop .rpX{position:absolute;top:2px;right:2px;width:48px;height:48px;border:0;background:none;
   color:var(--dim);font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center}
 #rpop .act,#rpop .buy{min-height:48px}
-#coWrap{display:block;margin:0 0 8px}
-#coWrap span{display:block;font-size:9px;letter-spacing:.16em;text-transform:uppercase;
+#coWrap{display:block;position:relative;flex:1 1 auto;min-width:0;margin:0}
+#coWrap span{position:absolute;left:12px;top:5px;right:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;
   color:var(--dim);margin-bottom:4px}
-#coInput{width:100%;min-height:48px;padding:0 12px;border-radius:10px;background:#101822;
+#coInput{width:100%;min-height:48px;padding:13px 12px 0;border-radius:10px;background:#101822;
   border:1px solid var(--line);color:var(--paper);font:inherit;font-size:14px}
 #coInput:focus{outline:none;border-color:var(--sodium)}
 #breaking.gold{border-color:var(--sodium);background:#171103ee;color:#ffe9c9}
@@ -593,9 +594,12 @@ h1 em{font-style:normal;color:var(--sodium)}
   #end #endRecs{grid-column:1}
   #end .cta{grid-column:1;max-width:360px;margin-top:8px}
   #end .howbtn{grid-column:1;margin-top:8px}
-  #coWrap{display:flex;align-items:center;gap:10px;margin-bottom:6px}
-  #coWrap span{margin-bottom:0;flex:0 0 auto;display:inline-block}
-  #coInput{flex:1 1 auto}
+  /* Sep 05: the pick footer stacked info, label, input, Deploy and Back to
+     206px of a 412px screen. One row now: info left, name and Deploy right. */
+  #pick .pickhdr{min-height:48px;padding:0 6px 0 12px}
+  #pickFoot{display:flex;align-items:center;gap:10px;padding:5px 12px calc(env(safe-area-inset-bottom) + 5px)}
+  #pickInfo{flex:1 1 auto;min-width:0;-webkit-line-clamp:2;font-size:11px;line-height:1.35}
+  #pickRow{flex:0 0 auto;width:min(52%,480px);margin:0}
   .nb{min-height:48px}.nb svg{width:13px;height:13px}
   #nav{padding-top:5px;padding-bottom:calc(env(safe-area-inset-bottom) + 5px)}
   .sheetbody{max-height:94%}
@@ -887,6 +891,21 @@ h1 em{font-style:normal;color:var(--sodium)}
 }
 /* ⛔ LATE CSS BLOCK LAW: media overrides live at the stylesheet END or they
    silently lose to base rules below them. */
+/* the shared music player folds into a "New song" pill pinned bottom left, which on the
+   pick screen is the vendor name box (Sep 05, 412x915 and 915x412 both). While the pick
+   screen is up the pill rides above the footer, over the map's empty ocean. A pill the
+   player has dragged carries its own inline position and is not moved. */
+body:has(#pick.on) #sws-music-pill{bottom:calc(env(safe-area-inset-bottom,0px) + 102px)}
+@media (orientation:landscape) and (max-height:560px){
+  body:has(#pick.on) #sws-music-pill{bottom:calc(env(safe-area-inset-bottom,0px) + 70px)}
+}
+@media (max-width:360px){
+  body:has(#pick.on) #sws-music-pill{bottom:calc(env(safe-area-inset-bottom,0px) + 158px)}
+  /* Sep 05: at 320 the one-row pick footer left the vendor box 84px wide and the
+     label on top of the name. The two stack here; the band is still 61%, was 47%. */
+  #pickRow{flex-wrap:wrap}
+  #coWrap,.cta.pickcta{flex:1 1 100%}
+}
 @media (max-width:430px){
   /* Aug 27: the fourth HUD stat (Suspicion) squeezed the Date to "Jul 21, 20…"
      in portrait (probe shot 08). .sval ellipsizes on ANY flex shrink, so the
@@ -945,19 +964,31 @@ h1 em{font-style:normal;color:var(--sodium)}
        smaller at the top, clean up that UI." One compact line; the MAP is the
        screen. The how-to sentence rides the same line and wraps under it on a
        narrow phone. -->
+  <!-- Sep 05, Stephen: "the map is made extra small and the name box and the
+       button to deploy take up half the screen". Measured at 915x412 (the
+       orientation the game asks for): header 30, map band 177, footer 206, so
+       the footer WAS half the screen and the map got 43%. Portrait 412x915:
+       footer 249 of 915 and the contain-fit world a 412x166 strip in a 599px
+       band. The way back moves up here, the vendor name and Deploy share one
+       48px row with the label floating inside the box, and portrait opens
+       zoomed in instead of showing the whole world as a postage stamp. -->
   <div class="hdr pickhdr">
-    <h2>Choose your launch country</h2>
-    <span class="pickhint">Tap a country. Cameras go up there and spread. Pinch or drag to look around.</span>
+    <div class="picktxt">
+      <h2>Choose your launch country</h2>
+      <span class="pickhint">Tap a country. Cameras go up there and spread. Pinch or drag to look around.</span>
+    </div>
+    <button class="howbtn pickback" id="pickBackBtn">Menu</button>
   </div>
   <div id="pickWrap"><canvas id="pickMap"></canvas><canvas id="pickFx"></canvas><div class="crt"></div>
     <div class="zoomui"><button class="zb" data-z="in">IN</button><button class="zb" data-z="out">OUT</button><button class="zb" data-z="fit">FIT</button></div>
   </div>
   <div id="pickFoot">
     <div id="pickInfo">No region selected.</div>
-    <label id="coWrap"><span>Name your vendor</span>
-      <input id="coInput" type="text" maxlength="24" autocomplete="off" spellcheck="false"></label>
-    <button class="cta pickcta" id="beginBtn" style="opacity:.4" disabled>Deploy first unit</button>
-    <button class="howbtn" id="pickBackBtn" style="margin-top:6px">Back to the menu</button>
+    <div id="pickRow">
+      <label id="coWrap"><span>Name your vendor</span>
+        <input id="coInput" type="text" maxlength="24" autocomplete="off" spellcheck="false"></label>
+      <button class="cta pickcta" id="beginBtn" style="opacity:.4" disabled>Deploy first unit</button>
+    </div>
   </div>
 </section>
 
@@ -5166,7 +5197,12 @@ function guideTick(){
 }
 
 /* ============================ SCREENS ============================ */
-function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id));}
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id));
+  /* the shared music chip seats itself against the screen that is showing; a screen
+     change is the moment it lands on the new one's controls (it sat on the vendor
+     name box on the pick screen, Sep 05). Ask it to look again once the new screen
+     has painted. The player's own drag still wins inside the chip. */
+  try{if(window.SWSMusic&&window.SWSMusic.reseat)setTimeout(window.SWSMusic.reseat,120);}catch(e){}}
 let chosenMode='CONTRACTOR',chosenDiff='Vendor',pickedRegion=null,pickedCountry=null,gv=null,pv=null,tutSeen=false,lastResult='';
 /* the input remembers what you called yourself last time; a first-time player
    gets one of the invented names as a placeholder so the field is never a blank
@@ -5240,6 +5276,11 @@ function initPick(){
       drawWorld(pv,null,pickedCountry);
     });
     window._dbgPv=pv; /* probe/debug handle */
+    /* portrait: contain-fit puts the whole world in a 412x166 strip, countries
+       the size of a fingernail. Open at 2x that, centred; FIT still shows
+       everything, pinch and drag still work, landscape is untouched. */
+    pv.layout();
+    if(innerHeight>innerWidth){pv.z=Math.min(pv.fitZ,pv.containZ*2);pv.center(PW/2,PH/2);}
     bindZoomUi(wrap, pv, ()=>drawWorld(pv,null,pickedCountry));
     window.addEventListener('resize',()=>{pv.layout();drawWorld(pv,null,pickedCountry);});
   }
@@ -5573,7 +5614,7 @@ window._sbCapEarn=function(n,tag){
   /* offline shell: registered here so the whole game (art and sfx included)
      works offline after one session. Bump ?v= with sw.js SHELL_VERSION. */
   if('serviceWorker' in navigator){
-    try{ navigator.serviceWorker.register('sw.js?v=20260827i'); }catch(e){}
+    try{ navigator.serviceWorker.register('sw.js?v=20260905a'); }catch(e){}
   }
   if(framed){
     try{ parent.postMessage({sws:'ready'},'*'); }catch(e){}
