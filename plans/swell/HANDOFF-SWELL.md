@@ -11,7 +11,9 @@ this file wins; every difference is in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
-- 2026-09-05 Fable: plan written. Nothing built. Next action: section 5, P0, step 1.
+- 2026-09-05 Fable: plan written. Nothing built.
+- 2026-09-05 Opus: P0 step 1, `tools/check.js` with one gate and no `sim.js` to run, red, pasted in section 13. Next
+  action: P0 step 1 continued, THEORY and MOODS in `satellites/swell/index.html`.
 
 ---
 
@@ -386,9 +388,16 @@ photograph.
 
 ## 13. EVIDENCE LEDGER (fill in place, with commands and their real output, most recent last)
 
+### P0 step 1, the gate that fails (2026-09-05)
+
 ```
-(empty; the first entry is P0 step 4, the render gate watched to fail twice, and the p0-swell.wav envelope numbers)
+$ node satellites/swell/tools/check.js
+theory          FAIL  0s
+--- theory (wanted: SWELL TEST OK) ---
+Error: Cannot find module '/workspaces/lucid-winds/satellites/swell/sim.js'
+1 GATE FAILED
 ```
+
 
 ---
 
