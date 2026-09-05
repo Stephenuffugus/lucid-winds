@@ -35,5 +35,7 @@ manifest, and sets `window.__DESKTOP_BUILD` (hides the portal button).
 - `steampipe/app_build.vdf` + `depot_build.vdf` with FTW_APPID / FTW_DEPOTID placeholders.
 - `shots/`: six 1920x1080 screenshots from Aug 25.
 Still yours: create the app ($100) and paste the two ids, set $0.99, a thirty second trailer,
-then the page goes in. The Windows build follows the Jimothy route (zip in the vault, web
-depot uploader in your browser).
+then the page goes in. The Windows build is DONE and parked: `flock-the-world-steam-build-20260905.zip`
+(126 MB, `Flock the World.exe` at the zip root, branded icon, music include stripped, desktop boot
+gate green) in vault release `vault-20260905-ftw`. Upload it at partner.steamgames.com/apps/depotuploads/<appid>
+the day the app exists; launch option `Flock the World.exe`, Windows.
