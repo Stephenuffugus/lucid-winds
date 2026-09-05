@@ -14,7 +14,12 @@ a fleet law and is listed in section 3 with its reason.
 
 - 2026-09-05 Fable: plan written. Nothing built. Next action: section 5, P0, step 1 (the scaffold).
 - 2026-09-05 Opus: P0 step 1 done, `tools/check.js` exists with the `test` gate and it is RED (no sim.js yet), pasted in
-  section 13. Next action: P0 step 1 continued, write `satellites/fathom/index.html` (CONFIG, RNG, GEN, SIM, VIEW, BOOT).
+  section 13.
+- 2026-09-05 Opus: THE RULES ARE BUILT AND PROVED. CONFIG, RNG, DATA (five caves), GEN, SIM and TEST are in
+  `index.html`; `sim.js` runs them headless. Four node gates green: `levels`, `test` (160 assertions), `solve` (five
+  caves times five seeds), `deep` (200 generated caves). Each watched to fail, pasted in section 13. Nothing is drawn
+  yet, so there is nothing to look at. Next action: VIEW, AUDIO, INPUT, SAVE and BOOT spliced into `index.html` before
+  the `// ---- TEST_EXPORT_START ----` marker, then the `boot` browser gate (P0 step 3).
 
 ---
 
@@ -474,6 +479,79 @@ Error: Cannot find module '/workspaces/lucid-winds/satellites/fathom/sim.js'
 1 GATE FAILED
 ```
 
+### P0 steps 2 to 4, the rules and the four node gates (2026-09-05)
+
+```
+$ node satellites/fathom/tools/check.js
+levels          pass  0s
+test            pass  0s
+solve           pass  0s
+deep            pass  0s
+
+ALL GATES PASSED
+
+$ node sim.js --solve
+  cave 1  FIRST WATER           11.4s   51 tiles  4 thrown  2 left  0/1 pearls  2 stars  5/5 seeds
+  cave 2  THE LARDER            12.1s   54 tiles  4 thrown  4 left  0/1 pearls  2 stars  5/5 seeds
+  cave 3  SOMETHING LISTENS     13.5s   60 tiles  6 thrown  5 left  0/2 pearls  2 stars  5/5 seeds
+  cave 4  HOLDING BREATH        12.1s   54 tiles  3 thrown  2 left  0/2 pearls  2 stars  5/5 seeds
+  cave 5  THE LONG GALLERY      13.8s   61 tiles  6 thrown  4 left  0/3 pearls  2 stars  5/5 seeds
+FATHOM SOLVE OK
+
+$ node sim.js --endless=200
+200 deep caves: worst segment count 312 of 600, smallest cave 237 open tiles,
+most open 55 percent of the grid, shortest route 31 tiles
+FATHOM DEEP OK
+```
+
+**Each gate watched to fail, and what it printed.**
+
+```
+$ node sim.js --test --over=CATCH_R=0
+FAIL  touching one ends the run   [expected caught, got null]
+FAIL  and it says caught exactly once   [expected 1, got 0]
+FAIL  a run that is over stays over   [expected 1, got 0]
+PASSED 157 / FAILED 3   (total 160)
+
+$ node sim.js --test --over=HEAR_R=1
+FAIL  a lurker that hears a stone goes to investigate   [expected invest, got drift]
+FAIL  a hum is heard, and what they come to is you   [expected invest, got drift]
+FAIL  they walk at the player, not at a stone   [expected about 372, got 0]
+PASSED 157 / FAILED 3   (total 160)
+
+$ (cave three's X moved one tile into rock)
+$ node sim.js --test
+FAIL  cave 3 has a start and an exit
+FAIL  the determinism suite ran to the end   [cave 3 has no exit]
+FAIL  the hum suite ran to the end   [cave 3 has no exit]
+PASSED 145 / FAILED 3   (total 148)
+$ node sim.js --solve
+FAIL  cave 3 SOMETHING LISTENS: 0 of 5 seeds got through. seed 5005: cave 3 has no exit
+1 CAVE(S) FAILED
+
+$ node sim.js --endless=30 --over=ENDLESS_FILL=0.46,ENDLESS_SMOOTH=5
+FAIL  deep seed 10668 depth 9: 77 percent open, that is a room not a cave
+FAIL  deep seed 10799 depth 10: 77 percent open, that is a room not a cave
+30 deep caves: ... most open 83 percent of the grid, shortest route none
+30 DEEP CAVE(S) FAILED
+```
+
+**What the gates caught that a green run would have hidden.**
+
+1. `--over=RING_SPEED=0` did not print a red line, it threw a TypeError from inside the harness and
+   the reader got a Node module loader stack. Three fixes: `newRun` throws a NAMED error for a cave
+   with no start or no exit, every suite runs inside `runSuite` so a suite that dies is one failed
+   assertion, and `runSolve` catches the throw per seed.
+2. The purity gate went red on its own comment. `suitePurity` greps for `Math.random` inside SIM and
+   the sentence at the top of SIM says "no Math.random", so it would ALSO have gone green on a
+   comment claiming the opposite. It now strips comments first and asserts that the stripper works.
+3. The deep caves were not caves. Every existing check was green on a 28 by 48 open box: connected,
+   inside the segment budget, caches reachable. See `docs/DECISIONS.md`.
+4. `put()` in `tools/levels.mjs` silently overwrote a cache when a lurker was moved onto it, and cave
+   three quietly lost a cache. It now throws on a marker dropped on a marker.
+5. The bot was eaten in three of five caves because the lurkers spawned on the only route and the
+   authored throws were aimed down the corridor the bot was about to walk. Both were the design
+   being wrong rather than the code, and both are written up in `docs/DECISIONS.md`.
 
 ---
 

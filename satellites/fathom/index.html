@@ -1,0 +1,1852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>FATHOM</title>
+<meta name="description" content="The only light is the sound you throw. Toss an echo stone, watch the cave sketch itself in, and move while the dark is busy with the noise.">
+<meta name="theme-color" content="#9FE8FF">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FATHOM">
+<link rel="manifest" href="./manifest.webmanifest?v=20260905a">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260905a">
+<link rel="icon" href="./icon-192.png?v=20260905a">
+<link rel="canonical" href="https://lucidwinds.com/satellites/fathom/">
+<style>
+/*  FATHOM
+    game id: fathom   accent cyan #9FE8FF
+    Line strokes on black. Nothing is painted that sound did not reveal.
+    HUD corners are assigned and the BOTTOM LEFT IS EMPTY, because the fleet's
+    music chip and its folded pill seat themselves there (HANDOFF-FATHOM 3.12).
+    Every stroke width and ease in VIEW is a feel number; the numbers that
+    decide the GAME live in CONFIG and nowhere else. */
+:root{
+  --ink:#000000;
+  --cyan:#9FE8FF; --amber:#FFC97A; --red:#FF5A4D; --teal:#7FD8CC;
+  --dim:#4a6570; --cream:#dfeef4;
+  --safeT:env(safe-area-inset-top,0px);
+  --safeB:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%;background:#000;color:var(--cream);
+  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-variant-numeric:tabular-nums;overscroll-behavior:none;
+  -webkit-user-select:none;user-select:none}
+#app{position:fixed;inset:0;overflow:hidden;background:#000}
+#board{position:absolute;inset:0;width:100%;height:100%;display:block;
+  touch-action:none;background:#000}
+
+/* ---------- HUD ---------- */
+#hud{position:absolute;inset:0;pointer-events:none;z-index:5;
+  transition:opacity 500ms ease-out}
+#hud.dim{opacity:.2}
+#stones{position:absolute;left:calc(12px + env(safe-area-inset-left,0px));
+  top:calc(10px + var(--safeT));font-size:.85rem;letter-spacing:.14em;
+  color:var(--cyan);text-shadow:0 0 10px rgba(159,232,255,.45)}
+#stones .sc{font-size:1.15rem;letter-spacing:.06em}
+#depthTag{position:absolute;left:50%;transform:translateX(-50%);
+  top:calc(10px + var(--safeT));font-size:.8rem;letter-spacing:.2em;color:var(--dim)}
+.iconbtn{position:absolute;pointer-events:auto;background:rgba(10,18,22,.55);
+  border:1px solid rgba(159,232,255,.32);color:var(--cyan);border-radius:14px;
+  display:flex;align-items:center;justify-content:center;font-size:1.1rem;
+  padding:0;line-height:1}
+#btnPause{right:calc(12px + env(safe-area-inset-right,0px));
+  top:calc(8px + var(--safeT));width:48px;height:48px}
+#btnHum{right:calc(14px + env(safe-area-inset-right,0px));
+  bottom:calc(18px + var(--safeB));width:56px;height:56px;border-radius:50%;
+  font-size:.66rem;letter-spacing:.1em;flex-direction:column;gap:2px}
+#btnHum.cool{opacity:.35;border-color:rgba(159,232,255,.14)}
+#btnHum .ring{display:block;width:18px;height:18px;border-radius:50%;
+  border:2px solid currentColor}
+#hint{position:absolute;left:50%;transform:translateX(-50%);
+  bottom:calc(92px + var(--safeB));width:86%;max-width:320px;text-align:center;
+  font-size:.85rem;line-height:1.5;color:var(--cream);opacity:0;
+  transition:opacity 600ms ease-out;text-shadow:0 0 12px rgba(0,0,0,.9)}
+#hint.on{opacity:.92}
+
+/* ---------- screens ---------- */
+.screen{position:absolute;inset:0;z-index:10;background:#000;
+  display:none;flex-direction:column;align-items:center;
+  padding:calc(20px + var(--safeT)) 20px calc(20px + var(--safeB));
+  overflow-y:auto;overscroll-behavior:contain}
+.screen.on{display:flex}
+.screen.veil{background:rgba(0,0,0,.88)}
+.spacer{flex:1 1 auto;min-height:8px}
+.btn{pointer-events:auto;width:100%;max-width:330px;min-height:56px;
+  background:rgba(10,20,26,.9);border:1px solid rgba(159,232,255,.42);
+  color:var(--cyan);border-radius:16px;font-size:1rem;letter-spacing:.18em;
+  margin:7px 0;padding:14px 16px;font-family:inherit}
+.btn.small{min-height:48px;font-size:.85rem;letter-spacing:.14em}
+.btn.ghost{border-color:rgba(159,232,255,.2);color:var(--dim)}
+.btn[disabled]{opacity:.4}
+.btn.wide{max-width:330px}
+.row{display:flex;gap:10px;width:100%;max-width:330px}
+.row .btn{margin:7px 0}
+.title-line{font-size:.82rem;letter-spacing:.18em;color:var(--dim);
+  text-align:center;margin:2px 0 18px;line-height:1.6}
+.lede{font-size:.9rem;line-height:1.7;color:var(--cream);text-align:left;
+  width:100%;max-width:330px;margin:9px 0}
+.cap{font-size:.75rem;letter-spacing:.16em;color:var(--dim);margin:14px 0 4px;
+  width:100%;max-width:330px;text-align:left}
+#titleArt{width:100%;max-width:330px;height:112px;display:block;margin-top:6px}
+.card{pointer-events:auto;width:100%;max-width:330px;min-height:64px;
+  background:rgba(8,16,20,.9);border:1px solid rgba(159,232,255,.3);
+  border-radius:16px;margin:6px 0;padding:12px 16px;display:flex;
+  align-items:center;justify-content:space-between;gap:10px;
+  color:var(--cream);font-family:inherit;text-align:left}
+.card .nm{font-size:.95rem;letter-spacing:.1em;color:var(--cyan)}
+.card .sub{font-size:.72rem;color:var(--dim);letter-spacing:.06em;margin-top:3px}
+.card[disabled]{opacity:.42}
+.stars{font-size:.95rem;letter-spacing:.16em;color:var(--amber);white-space:nowrap}
+.stars .off{color:#33414a}
+.toggles{display:flex;gap:10px;width:100%;max-width:330px;margin-top:4px}
+.toggles .btn{margin:7px 0}
+#clearName{font-size:1.15rem;letter-spacing:.2em;color:var(--cyan);margin:6px 0 2px}
+#clearStars{font-size:1.6rem;letter-spacing:.22em;color:var(--amber);margin:10px 0}
+#clearStars .off{color:#33414a}
+.stat{font-size:.85rem;color:var(--cream);opacity:.85;margin:3px 0}
+#fade{position:absolute;inset:0;z-index:9;background:#000;opacity:0;
+  pointer-events:none;transition:opacity 260ms linear}
+#fadeLine{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);
+  width:80%;text-align:center;font-size:.95rem;letter-spacing:.1em;
+  color:var(--cream);opacity:0;transition:opacity 260ms linear}
+#toast{position:fixed;left:50%;top:14%;transform:translateX(-50%);
+  background:rgba(6,14,18,.94);border:1px solid rgba(159,232,255,.34);
+  color:var(--cream);padding:10px 16px;border-radius:12px;font-size:.85rem;
+  z-index:40;opacity:0;pointer-events:none;transition:opacity 180ms ease-out;
+  max-width:84%;text-align:center}
+#toast.on{opacity:1}
+#testPanel{position:absolute;inset:0;z-index:60;background:#04070a;color:#cfe;
+  overflow:auto;font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;
+  padding:14px;display:none;white-space:pre-wrap}
+#testPanel.on{display:block}
+.fail{color:#ff8080}.pass{color:#9be36b}
+@media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
+</style>
+<script src="/music-unlocks.js?v=20260905a" defer></script>
+</head>
+<body>
+<h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">FATHOM</h1>
+<div id="app">
+  <canvas id="board"></canvas>
+
+  <div id="hud">
+    <div id="stones"><span class="sc" id="stoneCount">0</span> STONES</div>
+    <div id="depthTag"></div>
+    <button class="iconbtn" id="btnPause" aria-label="Pause">&#9613;&#9613;</button>
+    <button class="iconbtn" id="btnHum" aria-label="Hum"><span class="ring"></span>HUM</button>
+    <div id="hint"></div>
+  </div>
+
+  <div id="fade"><div id="fadeLine"></div></div>
+
+  <div class="screen on" id="scrTitle">
+    <div class="spacer"></div>
+    <canvas id="titleArt" width="660" height="224" aria-label="FATHOM"></canvas>
+    <div class="title-line">The only light is the sound you throw</div>
+    <button class="btn" id="btnPlay">PLAY</button>
+    <button class="btn" id="btnDeep">THE DEEP</button>
+    <button class="btn small" id="btnHow">HOW TO PLAY</button>
+    <div class="toggles">
+      <button class="btn small" id="btnSound">SOUND ON</button>
+      <button class="btn small" id="btnMotion">MOTION ON</button>
+    </div>
+    <div class="spacer"></div>
+    <div class="title-line" style="margin:0;font-size:.7rem">SKY WOLF STUDIO</div>
+  </div>
+
+  <div class="screen" id="scrSelect">
+    <div class="cap">CHOOSE A CAVE</div>
+    <div id="levelCards"></div>
+    <div class="spacer"></div>
+    <button class="btn small ghost" id="btnSelBack">BACK</button>
+  </div>
+
+  <div class="screen" id="scrHow">
+    <div class="cap">HOW TO PLAY</div>
+    <p class="lede">Tap to throw a stone. The sound shows you the cave.</p>
+    <p class="lede">Drag to move. The light fades, so remember it.</p>
+    <p class="lede">Things down here hear too. They go to the stone, not to you.</p>
+    <div class="spacer"></div>
+    <button class="btn" id="btnHowOk">GOT IT</button>
+  </div>
+
+  <div class="screen veil" id="scrPause">
+    <div class="spacer"></div>
+    <div class="cap" style="text-align:center">PAUSED</div>
+    <button class="btn" id="btnResume">RESUME</button>
+    <button class="btn small" id="btnRestart">RESTART CAVE</button>
+    <button class="btn small ghost" id="btnQuit">LEAVE THE CAVE</button>
+    <div class="toggles">
+      <button class="btn small" id="btnSound2">SOUND ON</button>
+      <button class="btn small" id="btnMotion2">MOTION ON</button>
+    </div>
+    <div class="spacer"></div>
+  </div>
+
+  <div class="screen veil" id="scrClear">
+    <div class="spacer"></div>
+    <div id="clearName">THE CAVE</div>
+    <div class="title-line" style="margin-bottom:0" id="clearWord">You found the way through</div>
+    <div id="clearStars"></div>
+    <div class="stat" id="clearStones"></div>
+    <div class="stat" id="clearPearls"></div>
+    <div class="spacer"></div>
+    <button class="btn" id="btnNext">NEXT</button>
+    <button class="btn small ghost" id="btnClearMenu">MENU</button>
+  </div>
+
+  <div id="toast"></div>
+  <div id="testPanel"></div>
+</div>
+
+<script>
+/* ============================================================================
+   FATHOM   game id: fathom
+   Single file, no deps, no network, no framework. Layer order per
+   HANDOFF-FATHOM section 4:
+   CONFIG, RNG, DATA, GEN, SIM, VIEW, AUDIO, INPUT, SAVE, TEST, BOOT.
+
+   THE ONE RULE OF THIS FILE
+     Nothing between SIM_EXPORT_START and SIM_EXPORT_END may touch document,
+     window, performance or Math.random. sim.js runs that block in plain Node
+     so the rules of the game have exactly one implementation and a headless
+     bot can play it. A Math.random in SIM breaks --solve silently, so TEST
+     greps for it and fails.
+
+   WORLD UNITS
+     The camera shows 360 world units across the SHORT axis on every phone, so
+     a 320 phone and a 412 phone play the same game. 1 wu is 1 CSS px on a 360
+     wide phone. Every number below is wu, wu per second, or milliseconds.
+
+   SEED POLICY
+     ?seed=<n> boots that exact deep run. Streams are split by mixSeed so
+     adding a lurker never moves the cave.
+   ========================================================================== */
+
+// ---- SIM_EXPORT_START ----
+/* ========================= 1. CONFIG ========================= */
+var CONFIG = Object.freeze({
+  GAME_ID: 'fathom',
+  SAVE_KEY: 'lw_fathom_v1',
+  SAVE_V: 1,
+
+  /* camera and the world grid */
+  VIEW_W: 360, TILE: 24, GRID_W: 30, GRID_H: 50,
+
+  /* the player */
+  PLAYER_R: 7, PLAYER_SPEED: 110, PLAYER_GLOW_R: 20,
+  /* the speed above which you are "moving fast" and a near lurker frenzies.
+     Six tenths of a walk: a careful crawl is safe, a run is not. */
+  PLAYER_FAST: 66,
+
+  /* the throw */
+  THROW_MAX: 160, STONE_FLIGHT_MS: 350, STONE_ARC_H: 26, STONE_BOUNCE: 1,
+  /* a bounced stone lands this far back along its own flight, so it pings in
+     the water beside the wall and never inside it */
+  BOUNCE_BACKOFF: 3,
+
+  /* the ping */
+  RING_SPEED: 300, RING_MAX_R: 340, MAX_RIPPLES: 6,
+  WALL_FADE_MS: 2500, PICKUP_FADE_MS: 2500, CREATURE_FADE_MS: 1200,
+
+  /* the hum */
+  HUM_R: 120, HUM_COOLDOWN_MS: 2000, HUM_RING_SPEED: 300,
+
+  /* the economy */
+  CACHE_STONES: 3,
+  STONES: Object.freeze([6, 8, 8, 5, 10]),
+  PEARLS: Object.freeze([1, 1, 2, 2, 3]),
+  /* you walk onto a cache or a pearl to take it; the ping only shows you it is
+     there. Half a tile plus the player, so a brush past counts. */
+  PICKUP_R: 14, EXIT_R: 16,
+
+  /* the lurkers */
+  LURKER_R: 6, LURKER_DRIFT: 40, LURKER_INVESTIGATE: 165,
+  DRIFT_TURN_MS: 1800, ARRIVE_R: 10,
+  HEAR_R: 420, MILL_MS: 3000, FRENZY_R: 60, FRENZY_MS: 2000, FRENZY_SPEED: 132,
+  CATCH_R: 13, RIBBON_PTS: 7, RIBBON_EVERY_MS: 40,
+
+  /* the budgets, asserted not hoped */
+  MAX_SEGMENTS: 600, MAX_LURKERS: 8, HASH_CELL: 64, MAX_GHOSTS: 24,
+
+  /* the screen */
+  HUD_DIM_MS: 3000, HUD_DIM_ALPHA: 0.2, CAUGHT_FADE_MS: 600,
+  TAP_SLOP_PX: 12, JOY_R: 70, JOY_DEAD: 10, JOY_KNOB: 22, JOY_MARGIN: 16,
+
+  /* the deep */
+  /* The plan's 0.46 and 5 passes dissolved every deep cave into one open box
+     28 by 48 tiles with the walls only at the border: 78 percent open, 142
+     segments, and nothing to remember, which is the whole game. The sweep
+     (tools/sweep is sim.js --over) walked fill 0.46 to 0.56 against 2 to 5
+     passes; 0.56 with 4 lands at 43 percent open and about 200 segments, which
+     reads as chambers joined by passages. The endless gate now asserts the
+     openness and the route length, so a box can never come back quietly. */
+  ENDLESS_START_STONES: 8, ENDLESS_FILL: 0.56, ENDLESS_SMOOTH: 4,
+  ENDLESS_UNLOCK_LEVEL: 3, ENDLESS_SPAWN_CLEAR: 8,
+  ENDLESS_MAX_OPEN: 0.55, ENDLESS_MIN_ROUTE: 30,
+
+  /* the singback repeats while the exit is remembered */
+  SINGBACK_EVERY_MS: 6000,
+  /* the fixed step the whole game runs on */
+  STEP: 1 / 60
+});
+
+/* ========================= 2. RNG ========================= */
+/* mulberry32, copied from satellites/deepwell/index.html line 661. Same names,
+   because a fleet that spells its dice three ways cannot share a test. */
+function makeRNG(seed) {
+  var a = seed >>> 0;
+  var r = function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    var t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  r.int = function (n) { return Math.floor(r() * n); };
+  r.range = function (lo, hi) { return lo + Math.floor(r() * (hi - lo + 1)); };
+  r.pick = function (arr) { return arr[Math.floor(r() * arr.length)]; };
+  r.shuffle = function (arr) {
+    var a2 = arr.slice(), i, j, tmp;
+    for (i = a2.length - 1; i > 0; i--) { j = Math.floor(r() * (i + 1)); tmp = a2[i]; a2[i] = a2[j]; a2[j] = tmp; }
+    return a2;
+  };
+  r.seed = seed >>> 0;
+  return r;
+}
+function seedFromString(s) {
+  var h = 2166136261 >>> 0, i;
+  for (i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return h >>> 0;
+}
+/* stream splitter: the cave of seed S is the same cave whatever the lurkers
+   later roll, because they roll on a different stream. */
+function mixSeed(seed, salt) {
+  var h = (seed ^ 0x9E3779B9) >>> 0;
+  h = Math.imul(h ^ (salt + 0x85EBCA6B), 0x27D4EB2D) >>> 0;
+  h ^= h >>> 15; h = Math.imul(h, 0x165667B1) >>> 0; h ^= h >>> 13;
+  return h >>> 0;
+}
+function dailySeedFor(dateStr) { return seedFromString(dateStr + CONFIG.GAME_ID); }
+var STREAM_CAVE = 1, STREAM_LURKER = 2, STREAM_AMBIENT = 3;
+
+/* ========================= 3. DATA ========================= */
+// ---- LEVELS_START ---- generated by tools/levels.mjs, never edited by hand
+var LEVELS = [
+  {
+    id: 'first-water', name: 'FIRST WATER',
+    hint: 'Tap to throw a stone. The sound shows you the cave.',
+    grid: [
+      '##############################',
+      '##############################',
+      '##############################',
+      '#########............#########',
+      '#########............#########',
+      '#########............#########',
+      '#########.....S......#########',
+      '#########............#########',
+      '#########............#########',
+      '#########............#########',
+      '#########............#########',
+      '#############.....############',
+      '#############.....############',
+      '#############.....############',
+      '#############.....############',
+      '#############.....############',
+      '#############.....############',
+      '#############.....############',
+      '#############.....############',
+      '####..............############',
+      '####..............############',
+      '####.............#############',
+      '####.............#############',
+      '####..p..........#############',
+      '####.............#.......#####',
+      '####.............#.......#####',
+      '####.............#.......#####',
+      '#####.....########.......#####',
+      '#####.....########.......#####',
+      '#####.....##########...#######',
+      '#####.....##########...#######',
+      '#####.....##########...#######',
+      '#####.....##########...#######',
+      '#####.....##########...#######',
+      '####......................####',
+      '####......................####',
+      '####......................####',
+      '####......................####',
+      '####......................####',
+      '####.................X....####',
+      '####......................####',
+      '####......................####',
+      '####......................####',
+      '####......................####',
+      '##############################',
+      '##############################',
+      '##############################',
+      '##############################',
+      '##############################',
+      '##############################'
+    ]
+  },
+  {
+    id: 'the-larder', name: 'THE LARDER',
+    hint: 'Caches only glint inside a ring. Throw to find more throws.',
+    grid: [
+      '##############################',
+      '##############################',
+      '##############################',
+      '###.........##################',
+      '###.........##################',
+      '###.........##################',
+      '###....S....##################',
+      '###.........##################',
+      '###.........##################',
+      '###.........##################',
+      '######...#####################',
+      '######...#####################',
+      '######...#####################',
+      '######...#####################',
+      '######...#####################',
+      '###........................###',
+      '###........................###',
+      '###.......................p###',
+      '###........................###',
+      '###........................###',
+      '###........................###',
+      '####...################...####',
+      '####...################...####',
+      '####...################...####',
+      '####...################...####',
+      '####...################...####',
+      '####...###########..........##',
+      '####...###########..........##',
+      '####...###########..........##',
+      '###..........#####..........##',
+      '###..........#####.......o..##',
+      '###.........................##',
+      '###.........................##',
+      '###..o...............#########',
+      '###..........#################',
+      '###...............############',
+      '#############.....############',
+      '#############.....############',
+      '#############.....############',
+      '#############.....############',
+      '#############.....############',
+      '######...................#####',
+      '######...................#####',
+      '######...................#####',
+      '######...o..........X....#####',
+      '######...................#####',
+      '######...................#####',
+      '##############################',
+      '##############################',
+      '##############################'
+    ]
+  },
+  {
+    id: 'something-listens', name: 'SOMETHING LISTENS',
+    hint: 'Something down here hears. It goes to the stone, not to you.',
+    grid: [
+      '##############################',
+      '##############################',
+      '##############################',
+      '##########...........#########',
+      '##########...........#########',
+      '##########.....S.....#########',
+      '##########...........#########',
+      '##########...........#########',
+      '##########...........#########',
+      '##############...#############',
+      '##############...#############',
+      '##############...#############',
+      '###.........................##',
+      '###.........................##',
+      '###.......................p.##',
+      '###.........................##',
+      '###.........................##',
+      '###.........................##',
+      '###.........................##',
+      '###.........................##',
+      '###.........................##',
+      '###.........................##',
+      '###.........................##',
+      '###.........................##',
+      '###.........................##',
+      '###......#############......##',
+      '###......#############......##',
+      '###..o...#############..o...##',
+      '###......#############......##',
+      '###.L....#############......##',
+      '###......#############......##',
+      '#####...################...###',
+      '#####...################...###',
+      '#####...################...###',
+      '#####...################...###',
+      '####.......................###',
+      '####.......................###',
+      '####.......................###',
+      '####p......................###',
+      '####.......................###',
+      '####.......................###',
+      '#############.....############',
+      '#############.....############',
+      '#############.....############',
+      '#########..............#######',
+      '#########..............#######',
+      '#########..........X...#######',
+      '#########..............#######',
+      '##############################',
+      '##############################'
+    ]
+  },
+  {
+    id: 'holding-breath', name: 'HOLDING BREATH',
+    hint: 'The hum is free and weak, and it calls them to you.',
+    grid: [
+      '##############################',
+      '##############################',
+      '##############################',
+      '############.......###########',
+      '############.......###########',
+      '############...S...###########',
+      '############.......###########',
+      '############.......###########',
+      '##############...#############',
+      '##############...#############',
+      '##############...#############',
+      '#####....................#####',
+      '#####....................#####',
+      '#####....................#####',
+      '#####....................#####',
+      '#####....................#####',
+      '######...############...######',
+      '######...############...######',
+      '######...############...######',
+      '######.L.############...######',
+      '######...############...######',
+      '######...############...######',
+      '#####....................#####',
+      '#####....................#####',
+      '#####.p..................#####',
+      '#####....................#####',
+      '#####....................#####',
+      '##############...#############',
+      '##############...#############',
+      '##############...#############',
+      '########..............########',
+      '########..............########',
+      '########....o.........########',
+      '########..............########',
+      '########..............########',
+      '#########...######...#########',
+      '#########...######...#########',
+      '#########...######...#########',
+      '#########...######...#########',
+      '#######.................######',
+      '#######.................######',
+      '#######.................######',
+      '#######..p...........X..######',
+      '#######.................######',
+      '#######.................######',
+      '##############################',
+      '##############################',
+      '##############################',
+      '##############################',
+      '##############################'
+    ]
+  },
+  {
+    id: 'the-long-gallery', name: 'THE LONG GALLERY',
+    hint: 'Three of them. Give each one a different noise to chase.',
+    grid: [
+      '##############################',
+      '##############################',
+      '##############################',
+      '###..........#######........##',
+      '###..........#######........##',
+      '###...S.....................##',
+      '###.......................o.##',
+      '###.........................##',
+      '###..........#######........##',
+      '######...###########........##',
+      '######...###########........##',
+      '######...##############...####',
+      '######...##############...####',
+      '###.........................##',
+      '###.........................##',
+      '###.........................##',
+      '###.........................##',
+      '###......................L..##',
+      '###.........................##',
+      '###p........................##',
+      '###.........................##',
+      '###.........................##',
+      '#############.....############',
+      '#############.....############',
+      '###.........................##',
+      '###.........................##',
+      '###........................p##',
+      '###.........................##',
+      '###.o....................L..##',
+      '###.........................##',
+      '###.........................##',
+      '###.........................##',
+      '####...#######...#######...###',
+      '####...#######...#######...###',
+      '####...#######...#######...###',
+      '####...#######...#######...###',
+      '###.........................##',
+      '###.........................##',
+      '###.........................##',
+      '###.......................o.##',
+      '###.L.......................##',
+      '###.p.......................##',
+      '###.........................##',
+      '###################...########',
+      '###################...########',
+      '##############.............###',
+      '##############.............###',
+      '##############..........X..###',
+      '##############.............###',
+      '##############################'
+    ]
+  }
+];
+// ---- LEVELS_END ----
+
+/* The bot's script for each cave: WHERE it throws, in tiles, and WHEN. The
+   route itself is not authored, it is the shortest walk the BFS finds, so a
+   cave whose exit gets bricked in fails `sim.js --solve` instead of quietly
+   timing out. Only the throws are authored, because only the throws are a
+   judgement about the cave. */
+var SOLVE = [
+  { throws: [
+    { atMs: 200, tx: 14, ty: 10 }, { atMs: 2500, tx: 15, ty: 18 },
+    { atMs: 6000, tx: 8, ty: 22 }, { atMs: 10000, tx: 7, ty: 30 },
+    { atMs: 15000, tx: 12, ty: 38 }, { atMs: 19000, tx: 20, ty: 39 }
+  ] },
+  { throws: [
+    { atMs: 200, tx: 7, ty: 12 }, { atMs: 3000, tx: 7, ty: 20 },
+    { atMs: 7000, tx: 5, ty: 28 }, { atMs: 11000, tx: 10, ty: 32 },
+    { atMs: 15000, tx: 15, ty: 38 }, { atMs: 19000, tx: 19, ty: 44 }
+  ] },
+  /* cave 3 is the lure lesson. The lurker lives in the west arm and the way
+     through runs east and then south, so the early stones are simply out of its
+     hearing and the cave teaches that a stone is safe when nothing is near.
+     An earlier draft spawned it in the middle of the hall and threw down the
+     corridor the bot was about to walk; it was eaten in two seconds every
+     single time, which is the honest reading of that design. */
+  { throws: [
+    { atMs: 200, tx: 20, ty: 5 }, { atMs: 2500, tx: 13, ty: 13 },
+    { atMs: 5000, tx: 24, ty: 20 }, { atMs: 7500, tx: 24, ty: 30 },
+    { atMs: 10000, tx: 18, ty: 38 }, { atMs: 12000, tx: 17, ty: 44 }
+  ] },
+  { throws: [
+    { atMs: 200, tx: 15, ty: 10 }, { atMs: 4000, tx: 7, ty: 18 },
+    { atMs: 9000, tx: 15, ty: 28 }, { atMs: 14000, tx: 19, ty: 37 },
+    { atMs: 18000, tx: 21, ty: 42 }
+  ] },
+  /* cave 5 is the gauntlet and its script is the whole lesson in one run: while
+     the way through passes a lurker, the stone goes somewhere it can hear but
+     you are not. A stone thrown PAST a lurker draws it across your line and
+     that is how the bot was eaten four ways; a stone thrown to its own side,
+     four or five tiles off your line, stops it there and you walk down the
+     other side of the room. Everything else is thrown where nothing can hear
+     it at all, which is what the empty caves are for. */
+  { throws: [
+    { atMs: 200, tx: 9, ty: 7 }, { atMs: 2000, tx: 5, ty: 14 },
+    { atMs: 4000, tx: 21, ty: 14 }, { atMs: 6000, tx: 21, ty: 20 },
+    { atMs: 7200, tx: 23, ty: 26 }, { atMs: 8600, tx: 10, ty: 37 }
+  ] }
+];
+
+
+/* ========================= 4. GEN ========================= */
+var WALL = '#';
+function isOpenCh(ch) { return ch !== WALL && ch !== undefined; }
+function cellAt(grid, tx, ty) {
+  if (ty < 0 || ty >= grid.length) return WALL;
+  var row = grid[ty];
+  if (tx < 0 || tx >= row.length) return WALL;
+  return row.charAt(tx);
+}
+function gridOpen(grid, tx, ty) { return isOpenCh(cellAt(grid, tx, ty)) && cellAt(grid, tx, ty) !== WALL; }
+
+/* Every boundary between water and rock becomes an axis aligned segment whose
+   normal points INTO the water, and collinear runs on the same side merge.
+   Two edges can sit on the same grid line with opposite normals (water left of
+   the line in one row, right of it in another), so the merge key carries the
+   normal; without that a wall would grow a face it does not have. */
+function gridToSegments(grid) {
+  var T = CONFIG.TILE, H = grid.length, W = grid[0].length;
+  var horiz = {}, vert = {}, tx, ty, key;
+  function pushRun(bag, k, a) { if (!bag[k]) bag[k] = []; bag[k].push(a); }
+  for (ty = 0; ty < H; ty++) {
+    for (tx = 0; tx < W; tx++) {
+      if (!gridOpen(grid, tx, ty)) continue;
+      if (!gridOpen(grid, tx, ty - 1)) { key = (ty * T) + '|1'; pushRun(horiz, key, tx); }
+      if (!gridOpen(grid, tx, ty + 1)) { key = ((ty + 1) * T) + '|-1'; pushRun(horiz, key, tx); }
+      if (!gridOpen(grid, tx - 1, ty)) { key = (tx * T) + '|1'; pushRun(vert, key, ty); }
+      if (!gridOpen(grid, tx + 1, ty)) { key = ((tx + 1) * T) + '|-1'; pushRun(vert, key, ty); }
+    }
+  }
+  var segs = [], k, list, i, run0, prev;
+  for (k in horiz) {
+    list = horiz[k].slice().sort(function (a, b) { return a - b; });
+    var hy = parseFloat(k.split('|')[0]), hn = parseFloat(k.split('|')[1]);
+    run0 = list[0]; prev = list[0];
+    for (i = 1; i <= list.length; i++) {
+      if (i === list.length || list[i] !== prev + 1) {
+        segs.push({ x1: run0 * T, y1: hy, x2: (prev + 1) * T, y2: hy, nx: 0, ny: hn, litAt: -1e9 });
+        if (i < list.length) run0 = list[i];
+      }
+      prev = list[i];
+    }
+  }
+  for (k in vert) {
+    list = vert[k].slice().sort(function (a, b) { return a - b; });
+    var vx = parseFloat(k.split('|')[0]), vn = parseFloat(k.split('|')[1]);
+    run0 = list[0]; prev = list[0];
+    for (i = 1; i <= list.length; i++) {
+      if (i === list.length || list[i] !== prev + 1) {
+        segs.push({ x1: vx, y1: run0 * T, x2: vx, y2: (prev + 1) * T, nx: vn, ny: 0, litAt: -1e9 });
+        if (i < list.length) run0 = list[i];
+      }
+      prev = list[i];
+    }
+  }
+  /* a stable order, so two runs of the same cave hash the same */
+  segs.sort(function (a, b) { return (a.y1 - b.y1) || (a.x1 - b.x1) || (a.y2 - b.y2) || (a.x2 - b.x2); });
+  return segs;
+}
+
+function buildHash(segs) {
+  var C = CONFIG.HASH_CELL, hash = {}, i, s, cx0, cx1, cy0, cy1, cx, cy, k;
+  for (i = 0; i < segs.length; i++) {
+    s = segs[i];
+    cx0 = Math.floor(Math.min(s.x1, s.x2) / C); cx1 = Math.floor(Math.max(s.x1, s.x2) / C);
+    cy0 = Math.floor(Math.min(s.y1, s.y2) / C); cy1 = Math.floor(Math.max(s.y1, s.y2) / C);
+    for (cy = cy0; cy <= cy1; cy++) for (cx = cx0; cx <= cx1; cx++) {
+      k = cx + ',' + cy;
+      if (!hash[k]) hash[k] = [];
+      hash[k].push(i);
+    }
+  }
+  return hash;
+}
+/* every segment index whose cell is within r of (x, y), each once */
+function segsNear(hash, x, y, r) {
+  var C = CONFIG.HASH_CELL, out = [], seen = {}, cx, cy, k, list, i;
+  var cx0 = Math.floor((x - r) / C), cx1 = Math.floor((x + r) / C);
+  var cy0 = Math.floor((y - r) / C), cy1 = Math.floor((y + r) / C);
+  for (cy = cy0; cy <= cy1; cy++) for (cx = cx0; cx <= cx1; cx++) {
+    list = hash[cx + ',' + cy];
+    if (!list) continue;
+    for (i = 0; i < list.length; i++) if (!seen[list[i]]) { seen[list[i]] = 1; out.push(list[i]); }
+  }
+  return out;
+}
+
+function nearestOnSeg(s, px, py) {
+  var dx = s.x2 - s.x1, dy = s.y2 - s.y1;
+  var len2 = dx * dx + dy * dy, t;
+  if (len2 <= 0) t = 0;
+  else {
+    t = ((px - s.x1) * dx + (py - s.y1) * dy) / len2;
+    t = t < 0 ? 0 : (t > 1 ? 1 : t);
+  }
+  var qx = s.x1 + dx * t, qy = s.y1 + dy * t;
+  return { x: qx, y: qy, d: Math.sqrt((px - qx) * (px - qx) + (py - qy) * (py - qy)) };
+}
+
+/* the ray from (x0,y0) to (x1,y1) against every segment near it; the closest
+   hit or null. Used for a thrown stone that meets rock. */
+function rayHit(segs, hash, x0, y0, x1, y1) {
+  var dx = x1 - x0, dy = y1 - y0;
+  var len = Math.sqrt(dx * dx + dy * dy);
+  if (len < 1e-9) return null;
+  var mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
+  var cand = segsNear(hash, mx, my, len / 2 + CONFIG.HASH_CELL), i, s;
+  var best = null, bestT = 1e9;
+  for (i = 0; i < cand.length; i++) {
+    s = segs[cand[i]];
+    var ex = s.x2 - s.x1, ey = s.y2 - s.y1;
+    var den = dx * ey - dy * ex;
+    if (Math.abs(den) < 1e-9) continue;
+    var t = ((s.x1 - x0) * ey - (s.y1 - y0) * ex) / den;
+    var u = ((s.x1 - x0) * dy - (s.y1 - y0) * dx) / den;
+    if (t < 0 || t > 1 || u < 0 || u > 1) continue;
+    if (t < bestT) { bestT = t; best = { x: x0 + dx * t, y: y0 + dy * t, t: t, seg: cand[i] }; }
+  }
+  return best;
+}
+
+/* what the letters in a grid mean, in world units, once per run */
+function gridScan(grid) {
+  var T = CONFIG.TILE, out = { start: null, exit: null, caches: [], pearls: [], lurkers: [] };
+  var tx, ty, ch;
+  for (ty = 0; ty < grid.length; ty++) {
+    for (tx = 0; tx < grid[ty].length; tx++) {
+      ch = grid[ty].charAt(tx);
+      var wx = tx * T + T / 2, wy = ty * T + T / 2;
+      if (ch === 'S') out.start = { x: wx, y: wy, tx: tx, ty: ty };
+      else if (ch === 'X') out.exit = { x: wx, y: wy, tx: tx, ty: ty };
+      else if (ch === 'o') out.caches.push({ x: wx, y: wy, tx: tx, ty: ty });
+      else if (ch === 'p') out.pearls.push({ x: wx, y: wy, tx: tx, ty: ty });
+      else if (ch === 'L') out.lurkers.push({ x: wx, y: wy, tx: tx, ty: ty });
+    }
+  }
+  return out;
+}
+
+/* breadth first over open tiles. The campaign's solve script walks what this
+   returns, so a level whose exit is bricked in fails the gate rather than
+   quietly timing out. */
+function bfsPath(grid, sx, sy, gx, gy) {
+  var W = grid[0].length, H = grid.length;
+  var prev = new Int32Array(W * H).fill(-1);
+  var seen = new Uint8Array(W * H);
+  var q = [sy * W + sx], head = 0, D = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  seen[sy * W + sx] = 1;
+  while (head < q.length) {
+    var cur = q[head++];
+    if (cur === gy * W + gx) break;
+    var cx = cur % W, cy = (cur - cx) / W, i;
+    for (i = 0; i < 4; i++) {
+      var nx = cx + D[i][0], ny = cy + D[i][1];
+      if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+      if (!gridOpen(grid, nx, ny)) continue;
+      var k = ny * W + nx;
+      if (seen[k]) continue;
+      seen[k] = 1; prev[k] = cur; q.push(k);
+    }
+  }
+  var goal = gy * W + gx;
+  if (!seen[goal]) return null;
+  var path = [], at = goal;
+  while (at !== -1) { path.push([at % W, (at - (at % W)) / W]); at = prev[at]; }
+  path.reverse();
+  return path;
+}
+function floodCount(grid, sx, sy) {
+  var p = bfsPath(grid, sx, sy, sx, sy);
+  return p ? 1 : 0;
+}
+
+/* --------------------------------------------------------- the deep caves */
+function largestComponent(cells, W, H) {
+  var seen = new Int32Array(W * H).fill(0), best = null, id = 0, i;
+  for (i = 0; i < W * H; i++) {
+    if (cells[i] === 1 || seen[i]) continue;
+    id++;
+    var q = [i], head = 0, group = [];
+    seen[i] = id;
+    while (head < q.length) {
+      var cur = q[head++]; group.push(cur);
+      var cx = cur % W, cy = (cur - cx) / W, d;
+      var D = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+      for (d = 0; d < 4; d++) {
+        var nx = cx + D[d][0], ny = cy + D[d][1];
+        if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+        var k = ny * W + nx;
+        if (cells[k] === 1 || seen[k]) continue;
+        seen[k] = id; q.push(k);
+      }
+    }
+    if (!best || group.length > best.length) best = group;
+  }
+  return best || [];
+}
+function caveRows(seed, depth) {
+  var W = CONFIG.GRID_W, H = CONFIG.GRID_H;
+  var r = makeRNG(mixSeed(seed + depth * 1013904223, STREAM_CAVE));
+  var cells = new Uint8Array(W * H), x, y, i, pass;
+  for (y = 0; y < H; y++) for (x = 0; x < W; x++) {
+    cells[y * W + x] = (x === 0 || y === 0 || x === W - 1 || y === H - 1 || r() < CONFIG.ENDLESS_FILL) ? 1 : 0;
+  }
+  for (pass = 0; pass < CONFIG.ENDLESS_SMOOTH; pass++) {
+    var next = new Uint8Array(W * H);
+    for (y = 0; y < H; y++) for (x = 0; x < W; x++) {
+      var n = 0, ax, ay;
+      for (ay = -1; ay <= 1; ay++) for (ax = -1; ax <= 1; ax++) {
+        if (ax === 0 && ay === 0) continue;
+        var px = x + ax, py = y + ay;
+        if (px < 0 || py < 0 || px >= W || py >= H) { n++; continue; }
+        n += cells[py * W + px];
+      }
+      next[y * W + x] = (x === 0 || y === 0 || x === W - 1 || y === H - 1) ? 1 : (n >= 5 ? 1 : 0);
+    }
+    cells = next;
+  }
+  var group = largestComponent(cells, W, H);
+  var keep = new Uint8Array(W * H);
+  for (i = 0; i < group.length; i++) keep[group[i]] = 1;
+  var rows = [], line;
+  for (y = 0; y < H; y++) {
+    line = '';
+    for (x = 0; x < W; x++) line += keep[y * W + x] ? '.' : '#';
+    rows.push(line);
+  }
+  return { rows: rows, open: group, rng: r };
+}
+function setCh(rows, tx, ty, ch) {
+  rows[ty] = rows[ty].substring(0, tx) + ch + rows[ty].substring(tx + 1);
+}
+/* one deep cave: connected, under the segment budget, with a start at the top,
+   an exit as far from it as the cave allows, and nothing hostile within
+   ENDLESS_SPAWN_CLEAR tiles of where you land. */
+function caveGrid(seed, depth) {
+  var W = CONFIG.GRID_W, attempt, smooth;
+  for (attempt = 0; attempt < 24; attempt++) {
+    var built = caveRows(seed + attempt, depth);
+    var rows = built.rows, open = built.open, r = built.rng;
+    /* THE GENERATOR OWNS THE QUALITY, THE GATE ONLY VERIFIES IT. A cave that is
+       mostly water is a swimming pool: you can see across it, so there is
+       nothing to remember and the ping has no work to do. */
+    if (open.length < 220) continue;
+    if (open.length > CONFIG.ENDLESS_MAX_OPEN * CONFIG.GRID_W * CONFIG.GRID_H) continue;
+    var segs = gridToSegments(rows);
+    if (segs.length > CONFIG.MAX_SEGMENTS) {
+      /* the plan's escape hatch: smooth it once more before giving up on the
+         seed, because one more pass usually buys the budget back */
+      var relaxed = rows, ok = false;
+      for (smooth = 0; smooth < 3 && !ok; smooth++) {
+        relaxed = smoothRows(relaxed);
+        if (gridToSegments(relaxed).length <= CONFIG.MAX_SEGMENTS) ok = true;
+      }
+      if (!ok) continue;
+      rows = relaxed;
+      var re = [], yy, xx;
+      for (yy = 0; yy < rows.length; yy++) for (xx = 0; xx < W; xx++) if (rows[yy].charAt(xx) !== WALL) re.push(yy * W + xx);
+      open = re;
+      if (open.length < 220) continue;
+      if (open.length > CONFIG.ENDLESS_MAX_OPEN * CONFIG.GRID_W * CONFIG.GRID_H) continue;
+    }
+    var sIdx = open[0], i;
+    for (i = 0; i < open.length; i++) if (open[i] < sIdx) sIdx = open[i];
+    var sx = sIdx % W, sy = (sIdx - sx) / W;
+    /* the exit is the open cell the BFS reaches last */
+    var far = null, farD = -1;
+    var dist = bfsField(rows, sx, sy);
+    for (i = 0; i < open.length; i++) {
+      var d = dist[open[i]];
+      if (d > farD) { farD = d; far = open[i]; }
+    }
+    /* and an exit you can reach in twenty tiles is a corridor, not a descent */
+    if (farD < CONFIG.ENDLESS_MIN_ROUTE) continue;
+    var ex = far % W, ey = (far - ex) / W;
+    setCh(rows, sx, sy, 'S'); setCh(rows, ex, ey, 'X');
+    var pool = [];
+    for (i = 0; i < open.length; i++) {
+      var cx = open[i] % W, cy = (open[i] - (open[i] % W)) / W;
+      if (rows[cy].charAt(cx) !== '.') continue;
+      if (Math.max(Math.abs(cx - sx), Math.abs(cy - sy)) < CONFIG.ENDLESS_SPAWN_CLEAR) continue;
+      if (dist[open[i]] < 0) continue;
+      pool.push([cx, cy]);
+    }
+    pool = r.shuffle(pool);
+    var want = Math.max(2, 6 - depth) + 2 + Math.min(CONFIG.MAX_LURKERS, 1 + depth);
+    if (pool.length < want) continue;
+    var at = 0, n;
+    for (n = 0; n < Math.max(2, 6 - depth); n++) { setCh(rows, pool[at][0], pool[at][1], 'o'); at++; }
+    for (n = 0; n < 2; n++) { setCh(rows, pool[at][0], pool[at][1], 'p'); at++; }
+    for (n = 0; n < Math.min(CONFIG.MAX_LURKERS, 1 + depth); n++) { setCh(rows, pool[at][0], pool[at][1], 'L'); at++; }
+    return rows;
+  }
+  /* 24 seeds in a row failed: hand back the first cave that is at least
+     connected rather than a null the caller has to guess about */
+  var fb = caveRows(seed, 1).rows;
+  setCh(fb, 1, 1, 'S');
+  return fb;
+}
+function smoothRows(rows) {
+  var W = rows[0].length, H = rows.length, out = [], x, y;
+  for (y = 0; y < H; y++) {
+    var line = '';
+    for (x = 0; x < W; x++) {
+      var n = 0, ax, ay;
+      for (ay = -1; ay <= 1; ay++) for (ax = -1; ax <= 1; ax++) {
+        if (ax === 0 && ay === 0) continue;
+        n += gridOpen(rows, x + ax, y + ay) ? 0 : 1;
+      }
+      var edge = (x === 0 || y === 0 || x === W - 1 || y === H - 1);
+      line += edge ? WALL : (n >= 5 ? WALL : '.');
+    }
+    out.push(line);
+  }
+  return out;
+}
+function bfsField(rows, sx, sy) {
+  var W = rows[0].length, H = rows.length;
+  var dist = new Int32Array(W * H).fill(-1);
+  var q = [sy * W + sx], head = 0;
+  dist[sy * W + sx] = 0;
+  while (head < q.length) {
+    var cur = q[head++], cx = cur % W, cy = (cur - (cur % W)) / W, i;
+    var D = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+    for (i = 0; i < 4; i++) {
+      var nx = cx + D[i][0], ny = cy + D[i][1];
+      if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+      if (!gridOpen(rows, nx, ny)) continue;
+      var k = ny * W + nx;
+      if (dist[k] >= 0) continue;
+      dist[k] = dist[cur] + 1; q.push(k);
+    }
+  }
+  return dist;
+}
+
+/* ========================= 5. SIM ========================= */
+/* Pure over (state, input, dt). No document, no window, no clock, no
+   Math.random. sim.js runs this exact block in Node. */
+
+function pushOut(segs, hash, x, y, R) {
+  var pass, i, cand, s, q, nx, ny;
+  for (pass = 0; pass < 2; pass++) {
+    cand = segsNear(hash, x, y, R + 2);
+    for (i = 0; i < cand.length; i++) {
+      s = segs[cand[i]];
+      q = nearestOnSeg(s, x, y);
+      if (q.d < R) {
+        if (q.d > 1e-6) { nx = (x - q.x) / q.d; ny = (y - q.y) / q.d; }
+        else { nx = s.nx; ny = s.ny; }
+        x = q.x + nx * R; y = q.y + ny * R;
+      }
+    }
+  }
+  return { x: x, y: y };
+}
+function nearestWallDist(segs, hash, x, y) {
+  var radii = [140, 320, CONFIG.RING_MAX_R * 2], k, cand, i, q, best = 1e9;
+  for (k = 0; k < radii.length; k++) {
+    cand = segsNear(hash, x, y, radii[k]);
+    for (i = 0; i < cand.length; i++) {
+      q = nearestOnSeg(segs[cand[i]], x, y);
+      if (q.d < best) best = q.d;
+    }
+    if (best < 1e9) return best;
+  }
+  return radii[radii.length - 1];
+}
+function dist2(ax, ay, bx, by) { var dx = ax - bx, dy = ay - by; return dx * dx + dy * dy; }
+function distOf(ax, ay, bx, by) { return Math.sqrt(dist2(ax, ay, bx, by)); }
+
+function newRipple(st, x, y, maxR, speed, src) {
+  st.ripples.push({ x: x, y: y, r: 0, rPrev: 0, max: maxR, speed: speed, born: st.now, src: src, lit: {}, litE: {} });
+  while (st.ripples.length > CONFIG.MAX_RIPPLES) st.ripples.shift();
+}
+/* a noise at (x, y): every lurker that can hear it turns and goes to it, and
+   this is the whole hook, so it is one function and it is tested */
+function heardAt(st, x, y) {
+  var i, L;
+  for (i = 0; i < st.lurkers.length; i++) {
+    L = st.lurkers[i];
+    if (L.state === 'frenzy') continue;
+    if (distOf(L.x, L.y, x, y) > CONFIG.HEAR_R) continue;
+    L.state = 'invest'; L.tx = x; L.ty = y; L.stateT = 0;
+  }
+}
+
+function newRun(opts) {
+  opts = opts || {};
+  var mode = opts.mode || 'campaign';
+  var level = opts.level || 0;
+  var depth = opts.depth || 1;
+  var seed = (opts.seed === undefined || opts.seed === null) ? 1 : (opts.seed >>> 0);
+  var grid = mode === 'deep' ? caveGrid(seed, depth) : LEVELS[level].grid;
+  var segs = gridToSegments(grid);
+  var hash = buildHash(segs);
+  var scan = gridScan(grid);
+  /* A cave with no way out is a BUG WITH A NAME, not a TypeError forty lines
+     later. The solve gate used to die inside Node's module loader when an exit
+     was bricked in, which is exactly the shape of failure a morning reader
+     cannot act on. */
+  if (!scan.start) throw new Error('cave ' + (mode === 'deep' ? 'deep ' + seed : level + 1) + ' has no start');
+  if (!scan.exit) throw new Error('cave ' + (mode === 'deep' ? 'deep ' + seed : level + 1) + ' has no exit');
+  var stones = mode === 'deep' ? CONFIG.ENDLESS_START_STONES : CONFIG.STONES[level];
+  var rng = makeRNG(mixSeed(seed + level * 7919 + depth * 104729, STREAM_LURKER));
+  var st = {
+    mode: mode, level: level, depth: depth, seed: seed,
+    now: 0, steps: 0,
+    grid: grid, segs: segs, hash: hash,
+    p: { x: scan.start.x, y: scan.start.y, sp: 0 },
+    stones: stones, stonesStart: stones,
+    ripples: [], flying: [], ghosts: [],
+    caches: [], pearls: [],
+    exit: { x: scan.exit.x, y: scan.exit.y, litAt: -1e9, revealed: 0, lastSing: -1e9 },
+    lurkers: [],
+    humCd: 0, humCount: 0,
+    pearlsGot: 0, pearlsTotal: scan.pearls.length,
+    over: null, caughtCount: 0, throwCount: 0,
+    events: [], rng: rng
+  };
+  var i;
+  for (i = 0; i < scan.caches.length; i++) st.caches.push({ x: scan.caches[i].x, y: scan.caches[i].y, taken: 0, litAt: -1e9 });
+  for (i = 0; i < scan.pearls.length; i++) st.pearls.push({ x: scan.pearls[i].x, y: scan.pearls[i].y, taken: 0, litAt: -1e9 });
+  for (i = 0; i < scan.lurkers.length && i < CONFIG.MAX_LURKERS; i++) {
+    var a = rng() * Math.PI * 2;
+    st.lurkers.push({
+      x: scan.lurkers[i].x, y: scan.lurkers[i].y,
+      hx: Math.cos(a), hy: Math.sin(a),
+      state: 'drift', stateT: 0, turnT: rng() * CONFIG.DRIFT_TURN_MS,
+      tx: 0, ty: 0, ribbon: [], ribT: 0, litAt: -1e9
+    });
+  }
+  return st;
+}
+
+function throwStone(st, wx, wy) {
+  if (st.stones <= 0 || st.over) return false;
+  var px = st.p.x, py = st.p.y;
+  var dx = wx - px, dy = wy - py, d = Math.sqrt(dx * dx + dy * dy);
+  if (d < 1e-6) { dx = 0; dy = -1; d = 1; }
+  var m = Math.min(d, CONFIG.THROW_MAX);
+  var tx = px + dx / d * m, ty = py + dy / d * m;
+  if (CONFIG.STONE_BOUNCE) {
+    var hit = rayHit(st.segs, st.hash, px, py, tx, ty);
+    if (hit) {
+      var back = Math.max(0, hit.t * m - CONFIG.BOUNCE_BACKOFF);
+      tx = px + dx / d * back; ty = py + dy / d * back;
+    }
+  }
+  st.stones--;
+  st.throwCount++;
+  st.flying.push({ x0: px, y0: py, x1: tx, y1: ty, t: 0, dur: CONFIG.STONE_FLIGHT_MS, x: px, y: py });
+  return true;
+}
+function doHum(st) {
+  if (st.humCd > 0 || st.over) return false;
+  st.humCd = CONFIG.HUM_COOLDOWN_MS;
+  st.humCount++;
+  newRipple(st, st.p.x, st.p.y, CONFIG.HUM_R, CONFIG.HUM_RING_SPEED, 'hum');
+  st.events.push({ t: 'hum', x: st.p.x, y: st.p.y });
+  heardAt(st, st.p.x, st.p.y);
+  return true;
+}
+
+function updateLurker(st, L, dt, playerFast, humming) {
+  var C = CONFIG, sp, dx, dy, d;
+  var toP = distOf(L.x, L.y, st.p.x, st.p.y);
+  if (L.state !== 'frenzy' && toP < C.FRENZY_R && (playerFast || humming)) {
+    L.state = 'frenzy'; L.stateT = C.FRENZY_MS;
+  }
+  if (L.state === 'frenzy') {
+    L.stateT -= dt * 1000;
+    dx = st.p.x - L.x; dy = st.p.y - L.y; d = Math.sqrt(dx * dx + dy * dy) || 1;
+    L.hx = dx / d; L.hy = dy / d; sp = C.FRENZY_SPEED;
+    if (L.stateT <= 0) { L.state = 'drift'; L.turnT = 0; }
+  } else if (L.state === 'invest') {
+    dx = L.tx - L.x; dy = L.ty - L.y; d = Math.sqrt(dx * dx + dy * dy) || 1;
+    if (d <= C.ARRIVE_R) { L.state = 'mill'; L.stateT = C.MILL_MS; sp = 0; }
+    else { L.hx = dx / d; L.hy = dy / d; sp = C.LURKER_INVESTIGATE; }
+  } else if (L.state === 'mill') {
+    L.stateT -= dt * 1000;
+    L.turnT -= dt * 1000;
+    if (L.turnT <= 0) {
+      var a = st.rng() * Math.PI * 2;
+      L.hx = Math.cos(a); L.hy = Math.sin(a); L.turnT = C.DRIFT_TURN_MS * 0.35;
+    }
+    sp = C.LURKER_DRIFT * 0.5;
+    if (L.stateT <= 0) { L.state = 'drift'; L.turnT = 0; }
+  } else {
+    L.turnT -= dt * 1000;
+    if (L.turnT <= 0) {
+      var a2 = st.rng() * Math.PI * 2;
+      L.hx = Math.cos(a2); L.hy = Math.sin(a2); L.turnT = C.DRIFT_TURN_MS;
+    }
+    sp = C.LURKER_DRIFT;
+  }
+  L.x += L.hx * sp * dt; L.y += L.hy * sp * dt;
+  var out = pushOut(st.segs, st.hash, L.x, L.y, C.LURKER_R);
+  /* a blind thing that walks into rock turns; it does not grind along it
+     forever, which is what makes them read as animals rather than as sliders */
+  if (Math.abs(out.x - L.x) > 0.001 || Math.abs(out.y - L.y) > 0.001) {
+    if (L.state === 'drift') L.turnT = Math.min(L.turnT, 120);
+  }
+  L.x = out.x; L.y = out.y;
+  L.ribT -= dt * 1000;
+  if (L.ribT <= 0) {
+    L.ribbon.push(L.x); L.ribbon.push(L.y);
+    while (L.ribbon.length > C.RIBBON_PTS * 2) L.ribbon.shift(), L.ribbon.shift();
+    L.ribT = C.RIBBON_EVERY_MS;
+  }
+}
+
+function update(st, input, dt) {
+  var C = CONFIG, i, j;
+  input = input || {};
+  dt = dt || C.STEP;
+  st.events = [];
+  if (st.over) { st.now += dt * 1000; st.steps++; return st; }
+  st.now += dt * 1000;
+  st.steps++;
+
+  /* --- the player --- */
+  var mx = input.mx || 0, my = input.my || 0;
+  var mag = Math.sqrt(mx * mx + my * my);
+  if (mag > 1) { mx /= mag; my /= mag; mag = 1; }
+  var speed = C.PLAYER_SPEED * mag;
+  st.p.sp = speed;
+  if (mag > 0) {
+    st.p.x += mx * speed * dt;
+    st.p.y += my * speed * dt;
+    var np = pushOut(st.segs, st.hash, st.p.x, st.p.y, C.PLAYER_R);
+    st.p.x = np.x; st.p.y = np.y;
+  }
+
+  /* --- the thrown stone and the hum --- */
+  if (input.throwX !== undefined && input.throwX !== null) throwStone(st, input.throwX, input.throwY);
+  var hummedNow = false;
+  if (input.hum) hummedNow = doHum(st);
+  if (st.humCd > 0) st.humCd = Math.max(0, st.humCd - dt * 1000);
+
+  for (i = st.flying.length - 1; i >= 0; i--) {
+    var f = st.flying[i];
+    f.t += dt * 1000;
+    var u = Math.min(1, f.t / f.dur);
+    f.x = f.x0 + (f.x1 - f.x0) * u;
+    f.y = f.y0 + (f.y1 - f.y0) * u;
+    f.arc = Math.sin(u * Math.PI) * C.STONE_ARC_H;
+    if (u >= 1) {
+      st.flying.splice(i, 1);
+      newRipple(st, f.x1, f.y1, C.RING_MAX_R, C.RING_SPEED, 'stone');
+      st.events.push({ t: 'ping', x: f.x1, y: f.y1, nearWall: nearestWallDist(st.segs, st.hash, f.x1, f.y1) });
+      heardAt(st, f.x1, f.y1);
+    }
+  }
+
+  /* --- the light --- */
+  for (i = st.ripples.length - 1; i >= 0; i--) {
+    var R = st.ripples[i];
+    R.rPrev = R.r;
+    R.r = Math.min(R.max, R.r + R.speed * dt);
+    var cand = segsNear(st.hash, R.x, R.y, R.r);
+    for (j = 0; j < cand.length; j++) {
+      var si = cand[j];
+      if (R.lit[si]) continue;
+      var q = nearestOnSeg(st.segs[si], R.x, R.y);
+      if (q.d > R.rPrev && q.d <= R.r) { R.lit[si] = 1; st.segs[si].litAt = st.now; }
+    }
+    for (j = 0; j < st.caches.length; j++) {
+      if (st.caches[j].taken || R.litE['c' + j]) continue;
+      var dc = distOf(R.x, R.y, st.caches[j].x, st.caches[j].y);
+      if (dc > R.rPrev && dc <= R.r) { R.litE['c' + j] = 1; st.caches[j].litAt = st.now; }
+    }
+    for (j = 0; j < st.pearls.length; j++) {
+      if (st.pearls[j].taken || R.litE['p' + j]) continue;
+      var dp = distOf(R.x, R.y, st.pearls[j].x, st.pearls[j].y);
+      if (dp > R.rPrev && dp <= R.r) { R.litE['p' + j] = 1; st.pearls[j].litAt = st.now; }
+    }
+    if (!R.litE.x) {
+      var dx2 = distOf(R.x, R.y, st.exit.x, st.exit.y);
+      if (dx2 > R.rPrev && dx2 <= R.r) {
+        R.litE.x = 1; st.exit.litAt = st.now;
+        if (!st.exit.revealed) {
+          st.exit.revealed = 1; st.exit.lastSing = st.now;
+          st.events.push({ t: 'singback', x: st.exit.x, y: st.exit.y, first: 1 });
+        }
+      }
+    }
+    for (j = 0; j < st.lurkers.length; j++) {
+      var L = st.lurkers[j];
+      if (R.litE['l' + j]) continue;
+      var dl = distOf(R.x, R.y, L.x, L.y);
+      if (dl > R.rPrev && dl <= R.r) {
+        R.litE['l' + j] = 1; L.litAt = st.now;
+        /* THE SNAPSHOT. The ghost is where it WAS. Never draw the live one, or
+           the light follows it and the whole feeling goes. */
+        var pts = L.ribbon.slice();
+        pts.push(L.x); pts.push(L.y);
+        st.ghosts.push({ pts: pts, litAt: st.now });
+        while (st.ghosts.length > C.MAX_GHOSTS) st.ghosts.shift();
+      }
+    }
+    if (R.r >= R.max) st.ripples.splice(i, 1);
+  }
+  for (i = st.ghosts.length - 1; i >= 0; i--) {
+    if (st.now - st.ghosts[i].litAt > C.CREATURE_FADE_MS) st.ghosts.splice(i, 1);
+  }
+
+  /* --- the things that hunt --- */
+  var playerFast = speed > C.PLAYER_FAST;
+  for (i = 0; i < st.lurkers.length; i++) updateLurker(st, st.lurkers[i], dt, playerFast, hummedNow);
+
+  /* --- what you can pick up --- */
+  for (i = 0; i < st.caches.length; i++) {
+    if (st.caches[i].taken) continue;
+    if (distOf(st.p.x, st.p.y, st.caches[i].x, st.caches[i].y) <= C.PICKUP_R) {
+      st.caches[i].taken = 1; st.stones += C.CACHE_STONES;
+      st.events.push({ t: 'pickup', kind: 'cache', x: st.caches[i].x, y: st.caches[i].y });
+    }
+  }
+  for (i = 0; i < st.pearls.length; i++) {
+    if (st.pearls[i].taken) continue;
+    if (distOf(st.p.x, st.p.y, st.pearls[i].x, st.pearls[i].y) <= C.PICKUP_R) {
+      st.pearls[i].taken = 1; st.pearlsGot++;
+      st.events.push({ t: 'pearl', x: st.pearls[i].x, y: st.pearls[i].y });
+    }
+  }
+  if (st.exit.revealed && st.now - st.exit.lastSing >= C.SINGBACK_EVERY_MS) {
+    st.exit.lastSing = st.now;
+    st.events.push({ t: 'singback', x: st.exit.x, y: st.exit.y, first: 0 });
+  }
+
+  /* --- the two ways a run ends --- */
+  for (i = 0; i < st.lurkers.length; i++) {
+    if (distOf(st.p.x, st.p.y, st.lurkers[i].x, st.lurkers[i].y) <= C.CATCH_R) {
+      st.over = 'caught'; st.caughtCount++;
+      st.events.push({ t: 'caught', x: st.p.x, y: st.p.y });
+      break;
+    }
+  }
+  if (!st.over && distOf(st.p.x, st.p.y, st.exit.x, st.exit.y) <= C.EXIT_R) {
+    st.over = 'clear';
+    st.events.push({ t: 'clear', stars: starsFor(st) });
+  }
+  return st;
+}
+
+/* One star for the way out, two for every pearl, three for still holding a
+   third of the stones you came in with. Time is never scored: this is a memory
+   game and thinking has to be free (HANDOFF-FATHOM 3.8). */
+function starsFor(st) {
+  if (st.over !== 'clear') return 0;
+  var n = 1;
+  if (st.pearlsTotal > 0 && st.pearlsGot >= st.pearlsTotal) n++;
+  else if (st.pearlsTotal === 0) n++;
+  if (st.stones >= Math.ceil(st.stonesStart / 3)) n++;
+  return n;
+}
+
+/* the deterministic view of a run: what two runs of the same seed and the same
+   inputs must agree on, to nine places */
+function snapshot(st) {
+  var r = function (v) { return Math.round(v * 1e6) / 1e6; };
+  var i, out = {
+    now: r(st.now), steps: st.steps, stones: st.stones, over: st.over,
+    px: r(st.p.x), py: r(st.p.y), pearls: st.pearlsGot,
+    exit: st.exit.revealed, ripples: [], lurkers: [], caches: [], ghosts: st.ghosts.length
+  };
+  for (i = 0; i < st.ripples.length; i++) out.ripples.push([r(st.ripples[i].x), r(st.ripples[i].y), r(st.ripples[i].r)]);
+  for (i = 0; i < st.lurkers.length; i++) out.lurkers.push([r(st.lurkers[i].x), r(st.lurkers[i].y), st.lurkers[i].state]);
+  for (i = 0; i < st.caches.length; i++) out.caches.push(st.caches[i].taken);
+  return out;
+}
+
+/* the campaign bot: walk the shortest tile path, throw where the level says to
+   throw. sim.js --solve runs this and the level that cannot be finished is the
+   one that fails, not the one that times out. */
+function solveScript(st, throws) {
+  var scan = gridScan(st.grid);
+  var path = bfsPath(st.grid, scan.start.tx, scan.start.ty, scan.exit.tx, scan.exit.ty);
+  return { path: path, throws: (throws || []).slice() };
+}
+function solveStep(st, plan, dt) {
+  var C = CONFIG, T = C.TILE;
+  if (!plan.i) plan.i = 1;
+  var input = { mx: 0, my: 0 };
+  if (plan.throws.length && st.now >= plan.throws[0].atMs && st.stones > 0) {
+    var th = plan.throws.shift();
+    input.throwX = th.tx * T + T / 2; input.throwY = th.ty * T + T / 2;
+  }
+  if (plan.path && plan.i < plan.path.length) {
+    var node = plan.path[plan.i];
+    var gx = node[0] * T + T / 2, gy = node[1] * T + T / 2;
+    var dx = gx - st.p.x, dy = gy - st.p.y, d = Math.sqrt(dx * dx + dy * dy);
+    if (d < 4) { plan.i++; }
+    else { input.mx = dx / d; input.my = dy / d; }
+  }
+  update(st, input, dt);
+  return input;
+}
+// ---- SIM_EXPORT_END ----
+
+// ---- TEST_EXPORT_START ----
+/* ========================= 10. TEST ========================= */
+/* Harness copied from satellites/deepwell/index.html line 1550. Runs at ?test=1
+   in the page and inside sim.js --test in Node, over the SAME source. */
+var TEST = {
+  results: [],
+  assert: function (name, cond, detail) { this.results.push({ name: name, pass: !!cond, detail: detail || '' }); },
+  eq: function (name, a, b) { this.assert(name, a === b, 'expected ' + b + ', got ' + a); },
+  near: function (name, a, b, tol) { this.assert(name, Math.abs(a - b) <= tol, 'expected about ' + b + ', got ' + a); },
+  ok: function (name, fn) {
+    try { fn(); this.assert(name, true); }
+    catch (e) { this.assert(name, false, String(e && e.message || e)); }
+  },
+  throws: function (name, fn) {
+    try { fn(); this.assert(name, false, 'it did not throw'); }
+    catch (e) { this.assert(name, true); }
+  },
+  report: function () {
+    var p = 0, f = 0, fails = [], i;
+    for (i = 0; i < this.results.length; i++) {
+      if (this.results[i].pass) p++; else { f++; fails.push(this.results[i]); }
+    }
+    return { passed: p, failed: f, total: this.results.length, failures: fails };
+  },
+  /* EVERY SUITE RUNS EVEN IF THE ONE BEFORE IT BLEW UP. Bricking a cave's exit
+     made newRun throw, the throw escaped the harness, and what a reader saw was
+     a Node module loader stack instead of one red line naming the cave. A suite
+     that dies is one failed assertion and the rest of the harness carries on. */
+  runSuite: function (name, fn) {
+    try { fn(this); }
+    catch (e) { this.assert('the ' + name + ' suite ran to the end', false, String(e && e.message || e)); }
+  },
+  run: function (extra) {
+    this.results = [];
+    this.runSuite('rng', suiteRNG);
+    this.runSuite('geometry', suiteGeometry);
+    this.runSuite('ripple', suiteRipple);
+    this.runSuite('throw', suiteThrow);
+    this.runSuite('levels', suiteLevels);
+    this.runSuite('economy', suiteEconomy);
+    this.runSuite('determinism', suiteDeterminism);
+    this.runSuite('lurkers', suiteLurkers);
+    this.runSuite('hum', suiteHum);
+    this.runSuite('stars', suiteStars);
+    this.runSuite('deep', suiteDeep);
+    this.runSuite('copy', suiteCopy);
+    if (extra && extra.simSrc) this.runSuite('purity', function (T) { suitePurity(T, extra.simSrc); });
+    return this.report();
+  }
+};
+
+var BOX3 = ['###', '#.#', '###'];
+var RING5 = ['#####', '#...#', '#.#.#', '#...#', '#####'];
+function corridor(w, h) {
+  var rows = [], y, x, line;
+  for (y = 0; y < h; y++) {
+    line = '';
+    for (x = 0; x < w; x++) line += (x === 0 || y === 0 || x === w - 1 || y === h - 1) ? '#' : '.';
+    rows.push(line);
+  }
+  return rows;
+}
+
+function suiteRNG(T) {
+  var a = makeRNG(12345), b = makeRNG(12345), i, same = true;
+  for (i = 0; i < 500; i++) if (a() !== b()) same = false;
+  T.assert('rng same seed same stream', same);
+  var c = makeRNG(12346), d = makeRNG(12345), diff = false;
+  for (i = 0; i < 50; i++) if (c() !== d()) diff = true;
+  T.assert('rng different seed different stream', diff);
+  var r = makeRNG(7), inRange = true;
+  for (i = 0; i < 2000; i++) { var v = r(); if (v < 0 || v >= 1) inRange = false; }
+  T.assert('rng stays in zero to one', inRange);
+  var r2 = makeRNG(9), lo = 99, hi = -1;
+  for (i = 0; i < 2000; i++) { var x = r2.range(3, 6); lo = Math.min(lo, x); hi = Math.max(hi, x); }
+  T.eq('rng range low bound', lo, 3);
+  T.eq('rng range high bound', hi, 6);
+  T.eq('seedFromString is stable', seedFromString('fathom'), seedFromString('fathom'));
+  T.assert('seedFromString separates inputs', seedFromString('a2026') !== seedFromString('b2026'));
+  T.assert('mixSeed separates streams', mixSeed(5, STREAM_CAVE) !== mixSeed(5, STREAM_LURKER));
+  T.assert('mixSeed separates seeds', mixSeed(5, 1) !== mixSeed(6, 1));
+  T.eq('daily seed is date stable', dailySeedFor('2026-09-05'), dailySeedFor('2026-09-05'));
+  T.assert('daily seed moves with the date', dailySeedFor('2026-09-05') !== dailySeedFor('2026-09-06'));
+  var sh = makeRNG(4).shuffle([1, 2, 3, 4, 5]);
+  T.eq('shuffle keeps the count', sh.length, 5);
+  T.assert('shuffle keeps the members', sh.slice().sort().join(',') === '1,2,3,4,5');
+}
+
+function suiteGeometry(T) {
+  var T24 = CONFIG.TILE;
+  var box = gridToSegments(BOX3);
+  T.eq('a three by three box is four walls after merge', box.length, 4);
+  var ring = gridToSegments(RING5);
+  T.eq('a five by five ring is eight walls after merge', ring.length, 8);
+  var corr = gridToSegments(corridor(6, 3));
+  T.eq('a one tile corridor four long is four walls', corr.length, 4);
+  var hs = null, i;
+  for (i = 0; i < corr.length; i++) if (corr[i].y1 === corr[i].y2 && corr[i].ny === 1) hs = corr[i];
+  T.assert('the top wall of a corridor faces down into the water', !!hs && hs.ny === 1);
+  T.eq('and it is as long as the corridor', hs ? hs.x2 - hs.x1 : 0, 4 * T24);
+
+  /* the normal carries the merge key: water on the left of a grid line in one
+     row and on its right in another must NOT merge into one wall */
+  /* water in column 1 on row 1 and in column 2 on row 2 puts two faces on the
+     grid line x = 2 tiles, in touching rows, pointing opposite ways. Merge on
+     the coordinate alone and they become one wall through solid rock. */
+  var jag = ['######', '#.####', '##.###', '######'];
+  var js = gridToSegments(jag), vertAtSame = 0, normals = [];
+  for (i = 0; i < js.length; i++) {
+    if (js[i].x1 === js[i].x2 && js[i].x1 === 2 * T24) { vertAtSame++; normals.push(js[i].nx); }
+  }
+  T.eq('two faces on one grid line stay two walls', vertAtSame, 2);
+  T.assert('and they face opposite ways', normals.length === 2 && normals[0] === -normals[1]);
+
+  var s = { x1: 0, y1: 0, x2: 100, y2: 0, nx: 0, ny: 1, litAt: -1e9 };
+  T.near('nearest point on a wall, straight down', nearestOnSeg(s, 50, 30).d, 30, 1e-9);
+  T.near('nearest point past the end clamps to the end', nearestOnSeg(s, 140, 0).d, 40, 1e-9);
+
+  /* the push out: a circle three units into a wall comes out at exactly its
+     own radius, along the normal, and not one unit further */
+  var segs = [s], hash = buildHash(segs);
+  var out = pushOut(segs, hash, 50, 3, CONFIG.PLAYER_R);
+  T.near('push out lands the player at its radius from the wall', nearestOnSeg(s, out.x, out.y).d, CONFIG.PLAYER_R, 1e-6);
+  T.near('push out does not slide the player along the wall', out.x, 50, 1e-9);
+  T.assert('push out moves along the normal, not through the wall', out.y > 0);
+  var clear = pushOut(segs, hash, 50, 40, CONFIG.PLAYER_R);
+  T.near('push out leaves a player who is already clear alone', clear.y, 40, 1e-9);
+
+  var boxSegs = gridToSegments(BOX3), boxHash = buildHash(boxSegs);
+  var hit = rayHit(boxSegs, boxHash, 36, 36, 36, 200);
+  T.assert('a ray into rock finds the wall', !!hit);
+  T.near('and finds the near face of it, not the far one', hit ? hit.y : -1, 2 * T24, 1e-6);
+  T.assert('a ray that stops short of rock finds nothing', !rayHit(boxSegs, boxHash, 36, 36, 36, 40));
+
+  var near = segsNear(boxHash, 36, 36, 20);
+  T.assert('the spatial hash finds the walls of the room you are in', near.length === 4);
+  T.eq('the spatial hash returns each wall once', near.length, (function () { var seen = {}, n = 0, k; for (k = 0; k < near.length; k++) if (!seen[near[k]]) { seen[near[k]] = 1; n++; } return n; })());
+}
+
+function suiteRipple(T) {
+  /* THE WHOLE FEEL OF THE GAME IS THIS TEST. A wall lights on the step the
+     ring reaches it and not on the step before. */
+  var wallX = 103;
+  var segs = [{ x1: wallX, y1: -400, x2: wallX, y2: 400, nx: -1, ny: 0, litAt: -1e9 }];
+  var hash = buildHash(segs);
+  var st = {
+    now: 0, segs: segs, hash: hash, ripples: [], caches: [], pearls: [], lurkers: [],
+    ghosts: [], exit: { x: 9999, y: 9999, litAt: -1e9, revealed: 0, lastSing: -1e9 },
+    flying: [], p: { x: 0, y: 0, sp: 0 }, stones: 0, over: null, events: [],
+    humCd: 0, rng: makeRNG(1)
+  };
+  newRipple(st, 0, 0, CONFIG.RING_MAX_R, CONFIG.RING_SPEED, 'stone');
+  var step = CONFIG.STEP, perStep = CONFIG.RING_SPEED * step;
+  var litStep = -1, n;
+  for (n = 1; n <= 40; n++) {
+    var R = st.ripples[0];
+    R.rPrev = R.r; R.r = Math.min(R.max, R.r + R.speed * step);
+    st.now += step * 1000;
+    var q = nearestOnSeg(segs[0], R.x, R.y);
+    if (!R.lit[0] && q.d > R.rPrev && q.d <= R.r) { R.lit[0] = 1; segs[0].litAt = st.now; litStep = n; }
+  }
+  var want = Math.ceil(wallX / perStep);
+  T.eq('a wall at 103 units lights on the step the ring reaches it', litStep, want);
+  T.assert('and the step before it was still dark', want > 1 && (want - 1) * perStep < wallX);
+  T.eq('a wall lights once per ripple, never twice', st.ripples[0].lit[0], 1);
+
+  /* a second ripple lights the same wall again, because it is a second sound */
+  newRipple(st, 0, 0, CONFIG.RING_MAX_R, CONFIG.RING_SPEED, 'stone');
+  T.eq('a second sound gets its own lit set', Object.keys(st.ripples[1].lit).length, 0);
+
+  var st2 = newRun({ mode: 'campaign', level: 0, seed: 5 });
+  var before = 0, i;
+  for (i = 0; i < st2.segs.length; i++) if (st2.segs[i].litAt > 0) before++;
+  T.eq('a fresh cave is completely dark', before, 0);
+  update(st2, { throwX: st2.p.x + 40, throwY: st2.p.y }, CONFIG.STEP);
+  for (i = 0; i < 60; i++) update(st2, {}, CONFIG.STEP);
+  var after = 0;
+  for (i = 0; i < st2.segs.length; i++) if (st2.segs[i].litAt > 0) after++;
+  T.assert('one thrown stone lights the room it lands in (' + after + ' walls)', after > 0);
+
+  var st3 = newRun({ mode: 'campaign', level: 0, seed: 5 });
+  for (i = 0; i < 10; i++) { update(st3, { throwX: st3.p.x + 10 * i, throwY: st3.p.y + 10 }, CONFIG.STEP); }
+  for (i = 0; i < 30; i++) update(st3, {}, CONFIG.STEP);
+  T.assert('never more ripples alive than the budget', st3.ripples.length <= CONFIG.MAX_RIPPLES);
+}
+
+function suiteThrow(T) {
+  var st = newRun({ mode: 'campaign', level: 0, seed: 3 });
+  var s0 = st.stones;
+  update(st, { throwX: st.p.x + 5000, throwY: st.p.y }, CONFIG.STEP);
+  T.eq('a throw spends one stone', st.stones, s0 - 1);
+  T.eq('and puts one stone in the air', st.flying.length, 1);
+  var f = st.flying[0];
+  T.near('a throw past the arm clamps to the throw range', distOf(f.x0, f.y0, f.x1, f.y1), CONFIG.THROW_MAX, 30);
+  var steps = 0;
+  while (st.flying.length && steps < 200) { update(st, {}, CONFIG.STEP); steps++; }
+  T.assert('the stone lands in about the flight time', Math.abs(steps * CONFIG.STEP * 1000 - CONFIG.STONE_FLIGHT_MS) < 40);
+
+  /* a stone thrown into rock stops at the rock and pings in the water beside
+     it, never inside it */
+  var st2 = newRun({ mode: 'campaign', level: 0, seed: 3 });
+  var wallDir = { x: st2.p.x, y: st2.p.y - 1000 };
+  update(st2, { throwX: wallDir.x, throwY: wallDir.y }, CONFIG.STEP);
+  var g = st2.flying[0];
+  var toWall = nearestWallDist(st2.segs, st2.hash, g.x1, g.y1);
+  T.assert('a stone thrown at rock lands short of it, in the water (' + toWall.toFixed(1) + ' units clear)', toWall > 0.5);
+  T.assert('a bounced stone travels less than the full throw', distOf(g.x0, g.y0, g.x1, g.y1) < CONFIG.THROW_MAX);
+
+  var st3 = newRun({ mode: 'campaign', level: 0, seed: 3 });
+  st3.stones = 0;
+  update(st3, { throwX: st3.p.x + 40, throwY: st3.p.y }, CONFIG.STEP);
+  T.eq('with no stones there is no throw', st3.flying.length, 0);
+  T.eq('and the count never goes below zero', st3.stones, 0);
+
+  var st4 = newRun({ mode: 'campaign', level: 0, seed: 3 });
+  update(st4, { throwX: st4.p.x + 40, throwY: st4.p.y }, CONFIG.STEP);
+  var pings = 0, i;
+  for (i = 0; i < 60; i++) {
+    update(st4, {}, CONFIG.STEP);
+    var e;
+    for (e = 0; e < st4.events.length; e++) if (st4.events[e].t === 'ping') pings++;
+  }
+  T.eq('a landed stone fires exactly one ping', pings, 1);
+}
+
+function suiteLevels(T) {
+  T.eq('there are five campaign caves', LEVELS.length, 5);
+  T.eq('and a starting stone count for each', CONFIG.STONES.length, 5);
+  T.eq('and a pearl count for each', CONFIG.PEARLS.length, 5);
+  var i, j;
+  for (i = 0; i < LEVELS.length; i++) {
+    var L = LEVELS[i];
+    T.eq('cave ' + (i + 1) + ' is ' + CONFIG.GRID_H + ' rows', L.grid.length, CONFIG.GRID_H);
+    var widthsOk = true;
+    for (j = 0; j < L.grid.length; j++) if (L.grid[j].length !== CONFIG.GRID_W) widthsOk = false;
+    T.assert('cave ' + (i + 1) + ' rows are all ' + CONFIG.GRID_W + ' wide', widthsOk);
+    var segs = gridToSegments(L.grid);
+    T.assert('cave ' + (i + 1) + ' is inside the segment budget (' + segs.length + ' of ' + CONFIG.MAX_SEGMENTS + ')', segs.length <= CONFIG.MAX_SEGMENTS);
+    var scan = gridScan(L.grid);
+    T.assert('cave ' + (i + 1) + ' has a start and an exit', !!scan.start && !!scan.exit);
+    if (!scan.start || !scan.exit) continue;
+    var path = bfsPath(L.grid, scan.start.tx, scan.start.ty, scan.exit.tx, scan.exit.ty);
+    T.assert('cave ' + (i + 1) + ' can actually be walked from the start to the exit', !!path);
+    T.eq('cave ' + (i + 1) + ' carries the pearls the design asked for', scan.pearls.length, CONFIG.PEARLS[i]);
+    var st = newRun({ mode: 'campaign', level: i, seed: 1 });
+    T.eq('cave ' + (i + 1) + ' hands out the stones the design asked for', st.stones, CONFIG.STONES[i]);
+    T.assert('cave ' + (i + 1) + ' starts you in the water, not in rock', nearestWallDist(st.segs, st.hash, st.p.x, st.p.y) >= CONFIG.PLAYER_R - 0.001);
+    T.assert('cave ' + (i + 1) + ' keeps its lurkers inside the budget', st.lurkers.length <= CONFIG.MAX_LURKERS);
+    var far = true, k;
+    for (k = 0; k < scan.lurkers.length; k++) {
+      if (Math.max(Math.abs(scan.lurkers[k].tx - scan.start.tx), Math.abs(scan.lurkers[k].ty - scan.start.ty)) < 8) far = false;
+    }
+    T.assert('cave ' + (i + 1) + ' never spawns a lurker on top of you', far);
+  }
+  T.eq('the teaching order puts the first lurker in cave three', gridScan(LEVELS[2].grid).lurkers.length, 1);
+  T.eq('cave one has nothing hunting in it', gridScan(LEVELS[0].grid).lurkers.length, 0);
+  T.eq('cave two has nothing hunting in it either', gridScan(LEVELS[1].grid).lurkers.length, 0);
+  T.eq('cave five is the gauntlet', gridScan(LEVELS[4].grid).lurkers.length, 3);
+  T.assert('cave four is the tight one', CONFIG.STONES[3] < CONFIG.STONES[2]);
+}
+
+function suiteEconomy(T) {
+  var st = newRun({ mode: 'campaign', level: 1, seed: 1 });
+  var s0 = st.stones;
+  var c = st.caches[0];
+  st.p.x = c.x; st.p.y = c.y;
+  update(st, {}, CONFIG.STEP);
+  T.eq('walking onto a cache pays out', st.stones, s0 + CONFIG.CACHE_STONES);
+  T.eq('and the cache is gone', st.caches[0].taken, 1);
+  update(st, {}, CONFIG.STEP);
+  T.eq('a taken cache never pays twice', st.stones, s0 + CONFIG.CACHE_STONES);
+
+  var st2 = newRun({ mode: 'campaign', level: 1, seed: 1 });
+  var p = st2.pearls[0];
+  st2.p.x = p.x; st2.p.y = p.y;
+  update(st2, {}, CONFIG.STEP);
+  T.eq('walking onto a pearl takes it', st2.pearlsGot, 1);
+  var gotEvent = false, i;
+  for (i = 0; i < st2.events.length; i++) if (st2.events[i].t === 'pearl') gotEvent = true;
+  T.assert('and the pearl says so', gotEvent);
+
+  var st3 = newRun({ mode: 'campaign', level: 0, seed: 1 });
+  st3.p.x = st3.exit.x; st3.p.y = st3.exit.y;
+  update(st3, {}, CONFIG.STEP);
+  T.eq('touching the crystal ends the cave', st3.over, 'clear');
+}
+
+function suiteDeterminism(T) {
+  var inputs = [], i, r = makeRNG(99);
+  for (i = 0; i < 400; i++) {
+    var inp = { mx: r() * 2 - 1, my: r() * 2 - 1 };
+    if (i % 47 === 0) { inp.throwX = 200 + r() * 200; inp.throwY = 200 + r() * 200; }
+    if (i % 131 === 0) inp.hum = true;
+    inputs.push(inp);
+  }
+  function play(seed) {
+    var st = newRun({ mode: 'campaign', level: 2, seed: seed });
+    for (var k = 0; k < inputs.length; k++) update(st, inputs[k], CONFIG.STEP);
+    return JSON.stringify(snapshot(st));
+  }
+  var a = play(4242), b = play(4242);
+  T.eq('the same seed and the same inputs give the same run', a, b);
+  /* the seed steers the DRIFT. Once a lurker has heard a stone it beelines,
+     and a beeline is the same beeline whatever the dice said, so the seed has
+     to be read where it is actually spent: a cave nobody has made a noise in. */
+  function drift(seed) {
+    var st = newRun({ mode: 'campaign', level: 2, seed: seed }), k;
+    for (k = 0; k < 180; k++) update(st, {}, CONFIG.STEP);
+    return JSON.stringify(snapshot(st));
+  }
+  T.assert('a different seed sends the thing in the dark a different way', drift(4243) !== drift(4242));
+  T.eq('and the same seed sends it the same way twice', drift(4242), drift(4242));
+
+  var deepA = caveGrid(777, 3).join('|'), deepB = caveGrid(777, 3).join('|');
+  T.eq('the same deep seed is the same cave', deepA, deepB);
+  T.assert('a different deep seed is a different cave', caveGrid(778, 3).join('|') !== deepA);
+  T.assert('a different depth is a different cave', caveGrid(777, 4).join('|') !== deepA);
+}
+
+function suiteLurkers(T) {
+  /* THE HOOK, ASSERTED. A ping thrown away from you pulls the thing in the
+     dark AWAY from you. If this ever goes red the game is a different game. */
+  var segs = [], hash = buildHash(segs);
+  function bench() {
+    return {
+      now: 0, segs: segs, hash: hash, ripples: [], caches: [], pearls: [], ghosts: [],
+      lurkers: [], flying: [], p: { x: 0, y: 0, sp: 0 }, stones: 9, stonesStart: 9,
+      exit: { x: 1e6, y: 1e6, litAt: -1e9, revealed: 0, lastSing: -1e9 },
+      humCd: 0, humCount: 0, pearlsGot: 0, pearlsTotal: 0, over: null,
+      caughtCount: 0, throwCount: 0, events: [], rng: makeRNG(11),
+      mode: 'campaign', level: 0, depth: 1, seed: 1, steps: 0, grid: BOX3
+    };
+  }
+  var st = bench();
+  st.lurkers.push({ x: 30, y: 0, hx: 1, hy: 0, state: 'drift', stateT: 0, turnT: 9e9, tx: 0, ty: 0, ribbon: [], ribT: 0, litAt: -1e9 });
+  var d0 = distOf(st.p.x, st.p.y, st.lurkers[0].x, st.lurkers[0].y);
+  heardAt(st, 230, 0);
+  T.eq('a lurker that hears a stone goes to investigate', st.lurkers[0].state, 'invest');
+  var i;
+  for (i = 0; i < 60; i++) update(st, {}, CONFIG.STEP);
+  var d1 = distOf(st.p.x, st.p.y, st.lurkers[0].x, st.lurkers[0].y);
+  T.assert('and it walks AWAY from you toward the stone (' + d0.toFixed(0) + ' to ' + d1.toFixed(0) + ' units)', d1 > d0 + 20);
+
+  var st2 = bench();
+  st2.lurkers.push({ x: CONFIG.HEAR_R + 80, y: 0, hx: 1, hy: 0, state: 'drift', stateT: 0, turnT: 9e9, tx: 0, ty: 0, ribbon: [], ribT: 0, litAt: -1e9 });
+  heardAt(st2, 0, 0);
+  T.eq('a lurker out of earshot never hears the stone', st2.lurkers[0].state, 'drift');
+
+  var st3 = bench();
+  st3.lurkers.push({ x: 200, y: 0, hx: 1, hy: 0, state: 'invest', stateT: 0, turnT: 9e9, tx: 210, ty: 0, ribbon: [], ribT: 0, litAt: -1e9 });
+  for (i = 0; i < 30; i++) update(st3, {}, CONFIG.STEP);
+  T.eq('it mills where the sound was', st3.lurkers[0].state, 'mill');
+  T.near('it arrives within a body length of the sound', distOf(st3.lurkers[0].x, st3.lurkers[0].y, 210, 0), 0, CONFIG.ARRIVE_R + 6);
+  for (i = 0; i < Math.ceil(CONFIG.MILL_MS / 1000 * 60) + 4; i++) update(st3, {}, CONFIG.STEP);
+  T.eq('and after the milling it goes back to wandering', st3.lurkers[0].state, 'drift');
+
+  var st4 = bench();
+  st4.lurkers.push({ x: CONFIG.FRENZY_R - 10, y: 0, hx: 1, hy: 0, state: 'drift', stateT: 0, turnT: 9e9, tx: 0, ty: 0, ribbon: [], ribT: 0, litAt: -1e9 });
+  update(st4, { mx: 0, my: -1 }, CONFIG.STEP);
+  T.eq('running past a lurker sets it off', st4.lurkers[0].state, 'frenzy');
+  /* a frenzied lurker ten units away eats you in a third of a second, and a
+     run that is over freezes, so the TIMER can only be read from somewhere it
+     cannot reach: put the player out of its range and watch the clock run. */
+  st4.p.x = 5000;
+  for (i = 0; i < Math.ceil(CONFIG.FRENZY_MS / 1000 * 60) + 4; i++) update(st4, {}, CONFIG.STEP);
+  T.assert('and the frenzy runs out', st4.lurkers[0].state !== 'frenzy');
+  T.eq('a frenzy that runs out goes back to wandering', st4.lurkers[0].state, 'drift');
+
+  var st5 = bench();
+  st5.lurkers.push({ x: CONFIG.FRENZY_R - 10, y: 0, hx: 1, hy: 0, state: 'drift', stateT: 0, turnT: 9e9, tx: 0, ty: 0, ribbon: [], ribT: 0, litAt: -1e9 });
+  update(st5, {}, CONFIG.STEP);
+  T.eq('standing still beside one does not', st5.lurkers[0].state, 'drift');
+
+  var st6 = bench();
+  st6.lurkers.push({ x: CONFIG.CATCH_R - 2, y: 0, hx: 1, hy: 0, state: 'drift', stateT: 0, turnT: 9e9, tx: 0, ty: 0, ribbon: [], ribT: 0, litAt: -1e9 });
+  update(st6, {}, CONFIG.STEP);
+  T.eq('touching one ends the run', st6.over, 'caught');
+  var caughtEvents = 0;
+  for (i = 0; i < st6.events.length; i++) if (st6.events[i].t === 'caught') caughtEvents++;
+  T.eq('and it says caught exactly once', caughtEvents, 1);
+  update(st6, {}, CONFIG.STEP);
+  T.eq('a run that is over stays over', st6.caughtCount, 1);
+
+  var st7 = bench();
+  st7.lurkers.push({ x: 40, y: 0, hx: 1, hy: 0, state: 'drift', stateT: 0, turnT: 9e9, tx: 0, ty: 0, ribbon: [], ribT: 0, litAt: -1e9 });
+  newRipple(st7, 0, 0, CONFIG.RING_MAX_R, CONFIG.RING_SPEED, 'stone');
+  for (i = 0; i < 40; i++) update(st7, {}, CONFIG.STEP);
+  T.assert('the light crossing a lurker leaves a ghost of where it was', st7.ghosts.length >= 1);
+  /* guarded, because a gate that throws instead of failing cannot be counted:
+     with RING_SPEED at 0 the light never arrives and this used to be a
+     TypeError in the middle of the harness rather than one red line */
+  var g0 = st7.ghosts[0];
+  T.assert('the ghost is a snapshot, not the live creature', !!g0 && g0.pts.length >= 2 && st7.now - g0.litAt >= 0);
+  for (i = 0; i < Math.ceil(CONFIG.CREATURE_FADE_MS / 1000 * 60) + 10; i++) update(st7, {}, CONFIG.STEP);
+  T.eq('and it is pruned when it has faded', st7.ghosts.length, 0);
+}
+
+function suiteHum(T) {
+  var st = newRun({ mode: 'campaign', level: 0, seed: 2 });
+  var ok = update(st, { hum: true }, CONFIG.STEP);
+  T.eq('a hum makes a ring', st.ripples.length, 1);
+  T.eq('the hum ring is the weak one', st.ripples[0].max, CONFIG.HUM_R);
+  T.assert('the hum ring is much smaller than a stone', CONFIG.HUM_R < CONFIG.RING_MAX_R / 2);
+  T.eq('the hum costs no stones', st.stones, CONFIG.STONES[0]);
+  var before = st.humCount;
+  update(st, { hum: true }, CONFIG.STEP);
+  T.eq('a second hum inside the cooldown is refused', st.humCount, before);
+  var i;
+  for (i = 0; i < Math.ceil(CONFIG.HUM_COOLDOWN_MS / 1000 * 60) + 2; i++) update(st, {}, CONFIG.STEP);
+  update(st, { hum: true }, CONFIG.STEP);
+  T.eq('and allowed once the cooldown is out', st.humCount, before + 1);
+
+  /* the cost of the hum is that it calls them to YOU */
+  var st2 = newRun({ mode: 'campaign', level: 2, seed: 2 });
+  var L = st2.lurkers[0];
+  L.x = st2.p.x + 200; L.y = st2.p.y;
+  update(st2, { hum: true }, CONFIG.STEP);
+  T.eq('a hum is heard, and what they come to is you', st2.lurkers[0].state, 'invest');
+  T.near('they walk at the player, not at a stone', st2.lurkers[0].tx, st2.p.x, 1);
+}
+
+function suiteStars(T) {
+  var st = newRun({ mode: 'campaign', level: 0, seed: 1 });
+  T.eq('an unfinished cave has no stars', starsFor(st), 0);
+  st.over = 'clear';
+  st.pearlsTotal = 1; st.pearlsGot = 0; st.stones = 0; st.stonesStart = 6;
+  T.eq('the way out alone is one star', starsFor(st), 1);
+  st.pearlsGot = 1;
+  T.eq('every pearl is the second star', starsFor(st), 2);
+  st.stones = 2;
+  T.eq('holding a third of your stones is the third', starsFor(st), 3);
+  st.stones = 1;
+  T.eq('one under the third is not', starsFor(st), 2);
+  st.over = 'caught';
+  T.eq('being caught scores nothing at all', starsFor(st), 0);
+}
+
+function suiteDeep(T) {
+  var d, seed, checked = 0;
+  for (seed = 1; seed <= 6; seed++) {
+    for (d = 1; d <= 3; d++) {
+      var rows = caveGrid(seed * 37, d);
+      var scan = gridScan(rows);
+      if (!scan.start || !scan.exit) { T.assert('deep cave ' + seed + '/' + d + ' has a start and an exit', false); continue; }
+      var path = bfsPath(rows, scan.start.tx, scan.start.ty, scan.exit.tx, scan.exit.ty);
+      if (!path) { T.assert('deep cave ' + seed + '/' + d + ' connects start to exit', false); continue; }
+      var segs = gridToSegments(rows);
+      if (segs.length > CONFIG.MAX_SEGMENTS) { T.assert('deep cave ' + seed + '/' + d + ' is inside the segment budget', false); continue; }
+      checked++;
+    }
+  }
+  T.eq('eighteen deep caves all connect and fit the budget', checked, 18);
+  var st = newRun({ mode: 'deep', seed: 91, depth: 2 });
+  T.eq('a deep run starts with the deep loadout', st.stones, CONFIG.ENDLESS_START_STONES);
+  T.assert('a deep run has something hunting in it', st.lurkers.length >= 1);
+  T.assert('and it never exceeds the lurker budget', st.lurkers.length <= CONFIG.MAX_LURKERS);
+}
+
+function suiteCopy(T) {
+  var strings = [], i;
+  for (i = 0; i < LEVELS.length; i++) { strings.push(LEVELS[i].name); strings.push(LEVELS[i].hint); }
+  var bad = [], j;
+  for (j = 0; j < strings.length; j++) {
+    if (/[-‐-―−]/.test(strings[j])) bad.push('dash in: ' + strings[j]);
+    if (strings[j].indexOf('!') >= 0) bad.push('exclamation in: ' + strings[j]);
+  }
+  T.assert('no dashes and no exclamation points in any cave name or hint' + (bad.length ? ' [' + bad.join(' | ') + ']' : ''), bad.length === 0);
+  T.assert('every cave is named', LEVELS.every ? LEVELS.every(function (L) { return !!L.name; }) : true);
+  T.assert('every cave teaches something in one line', (function () { var k; for (k = 0; k < LEVELS.length; k++) if (!LEVELS[k].hint || LEVELS[k].hint.length > 74) return false; return true; })());
+}
+
+function suitePurity(T, src) {
+  /* THE COMMENTS COME OUT FIRST. The first version of this gate went red on
+     the sentence "no document, no window, no Math.random" written at the top
+     of SIM, which means it would also have gone GREEN on a comment that said
+     the opposite. A grep its own prose can satisfy is not a gate. */
+  var code = src.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^[ \t]*\/\/.*$/gm, ' ');
+  T.assert('the comment stripper left the code behind', code.length > 8000);
+  T.assert('SIM never rolls an unseeded die', code.indexOf('Math.random') < 0);
+  T.assert('SIM never touches the document', code.indexOf('document.') < 0);
+  T.assert('SIM never touches the window', code.indexOf('window.') < 0);
+  T.assert('SIM never reads a clock', code.indexOf('Date.now') < 0 && code.indexOf('performance.now') < 0);
+  T.assert('the stripper really does strip: it finds the word in the comments',
+    src.indexOf('Math.random') >= 0 && code.indexOf('Math.random') < 0);
+}
+// ---- TEST_EXPORT_END ----

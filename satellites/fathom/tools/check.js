@@ -12,17 +12,20 @@
  * FAILING lines rather than the tail, because the tail of a gate that died on
  * assertion three is twenty five green ones.
  */
-import { execFileSync } from 'node:child_process';
-import { createRequire } from 'node:module';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+/* CommonJS on purpose. This file is named check.js because the plan and every
+   morning report name it that, and an ESM .js with no package.json makes Node
+   print a MODULE_TYPELESS warning above the gate table on every single run. */
+const { execFileSync } = require('node:child_process');
+const { join } = require('node:path');
 
-const require = createRequire(import.meta.url);
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const ROOT = join(__dirname, '..');
 const FAST = process.argv.includes('--fast');
 
 const GATES = [
-  { name: 'test', cmd: ['sim.js', '--test'], need: 'FATHOM TEST OK' }
+  { name: 'levels',  cmd: ['tools/levels.mjs', '--check'], need: 'LEVELS OK' },
+  { name: 'test',    cmd: ['sim.js', '--test'],            need: 'FATHOM TEST OK' },
+  { name: 'solve',   cmd: ['sim.js', '--solve'],           need: 'FATHOM SOLVE OK' },
+  { name: 'deep',    cmd: ['sim.js', '--endless=200'],     need: 'FATHOM DEEP OK', slow: true }
 ];
 
 /* Browser gates drive the real page in a real browser with real pointer events
@@ -50,10 +53,15 @@ for (const g of GATES) {
   const t0 = Date.now();
   let out = '', code = 0;
   try {
-    out = execFileSync('node', g.cmd, {
+    /* stderr is CAPTURED, not inherited. A tool that reports on stderr used to
+       spill its whole run into the middle of this table and the pass line
+       landed on the last row of it. */
+    const r = execFileSync('node', g.cmd, {
       cwd: ROOT, encoding: 'utf8', maxBuffer: 32 * 1024 * 1024,
+      stdio: ['ignore', 'pipe', 'pipe'],
       env: Object.assign({}, process.env, { NODE_PATH: '/workspaces/lucid-winds/node_modules' })
     });
+    out = r;
   } catch (e) {
     out = (e.stdout || '') + (e.stderr || '');
     code = e.status === undefined ? 1 : e.status;
