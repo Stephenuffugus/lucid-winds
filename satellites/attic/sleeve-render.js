@@ -207,26 +207,26 @@
         + '<rect y="168" width="300" height="8" fill="' + c[2] + '"/>'
         + '<rect x="12" y="' + (108) + '" width="' + (276) + '" height="46" fill="' + c[3] + '" opacity="0.9"/>'
         + '<text x="24" y="' + (140) + '" font-family="' + look.f + '" font-weight="800" ' + look.ta + ' font-size="' + fit(band, 30, 252, look.ls) + '" fill="' + c[0] + '"' + '>' + esc(band) + '</text>'
-        + '<text x="20" y="222" font-family="' + look.f + '" font-size="17" fill="' + c[0] + '">' + esc(album) + '</text>'
+        + '<text x="20" y="222" font-family="' + look.f + '" font-size="' + fit(album, 17, 262) + '" fill="' + c[0] + '">' + esc(album) + '</text>'
         + '<rect x="20" y="236" width="90" height="3" fill="' + c[2] + '"/>';
     } else if (layout === 1) {   // DIAGONAL: band name on an angle over a split field
       g += '<path d="M0 300 L300 0 L300 300 Z" fill="' + c[1] + '"/>'
         + '<g transform="rotate(-32 150 150)"><rect x="-40" y="130" width="380" height="44" fill="' + c[2] + '"/>'
         + '<text x="150" y="160" text-anchor="middle" font-family="' + look.f + '" font-weight="800" ' + look.ta + ' font-size="' + fit(band, 26, 292, look.ls) + '" fill="' + c[0] + '">' + esc(band) + '</text></g>'
-        + '<text x="284" y="252" text-anchor="end" font-family="' + look.f + '" font-size="14" fill="' + c[3] + '">' + esc(album) + '</text>';
+        + '<text x="284" y="252" text-anchor="end" font-family="' + look.f + '" font-size="' + fit(album, 14, 250) + '" fill="' + c[3] + '">' + esc(album) + '</text>';
     } else if (layout === 2) {   // SUN: centered circle motif
       g += '<circle cx="150" cy="132" r="86" fill="' + c[2] + '"/><circle cx="150" cy="132" r="58" fill="' + c[1] + '"/><circle cx="150" cy="132" r="12" fill="' + c[0] + '"/>'
         + '<text x="150" y="246" text-anchor="middle" font-family="' + look.f + '" font-weight="800" ' + look.ta + ' font-size="' + fit(band, 27, 280, look.ls) + '" fill="' + c[3] + '"' + '>' + esc(band) + '</text>'
-        + '<text x="150" y="266" text-anchor="middle" font-family="' + look.f + '" font-size="13" fill="' + c[2] + '">' + esc(album) + '</text>';
+        + '<text x="150" y="266" text-anchor="middle" font-family="' + look.f + '" font-size="' + fit(album, 13, 270) + '" fill="' + c[2] + '">' + esc(album) + '</text>';
     } else if (layout === 3) {   // BARS: horizontal banding, right-set type
       var i; for (i = 0; i < 7; i++) g += '<rect y="' + (i * 44) + '" width="300" height="22" fill="' + (i % 2 ? c[1] : c[2]) + '" opacity="' + (0.16 + i * 0.12) + '"/>';
       g += '<text x="282" y="84" text-anchor="end" font-family="' + look.f + '" font-weight="800" ' + look.ta + ' font-size="' + fit(band, 30, 266, look.ls) + '" fill="' + c[3] + '">' + esc(band) + '</text>'
-        + '<text x="282" y="112" text-anchor="end" font-family="' + look.f + '" font-size="15" fill="' + c[3] + '" opacity="0.8">' + esc(album) + '</text>';
+        + '<text x="282" y="112" text-anchor="end" font-family="' + look.f + '" font-size="' + fit(album, 15, 262) + '" fill="' + c[3] + '" opacity="0.8">' + esc(album) + '</text>';
     } else if (layout === 4) {   // SPLIT: two colour halves, the band name set tall up the seam
       g += '<rect width="150" height="300" fill="' + c[1] + '"/><rect x="150" width="150" height="300" fill="' + c[2] + '"/>'
         + '<rect x="142" width="16" height="300" fill="' + c[3] + '"/>'
         + '<g transform="rotate(-90 150 150)"><text x="150" y="158" text-anchor="middle" font-family="' + look.f + '" font-weight="800" ' + look.ta + ' font-size="' + fit(band, 30, 270, look.ls) + '" fill="' + c[0] + '">' + esc(band) + '</text></g>'
-        + '<text x="24" y="270" font-family="' + look.f + '" font-size="14" fill="' + c[3] + '">' + esc(album) + '</text>'
+        + '<text x="24" y="270" font-family="' + look.f + '" font-size="' + fit(album, 14, 200) + '" fill="' + c[3] + '">' + esc(album) + '</text>'
         + '<circle cx="222" cy="72" r="34" fill="' + c[0] + '" opacity="0.9"/><circle cx="222" cy="72" r="6" fill="' + c[3] + '"/>';
     } else if (layout === 5) {   // PLATE: a photograph plate with a title strip under it, the label house look
       g += '<rect x="24" y="22" width="252" height="176" fill="' + c[3] + '"/>'
@@ -235,17 +235,17 @@
         + '<path d="M24 198 L120 120 L180 160 L276 96 L276 198 Z" fill="' + c[0] + '" opacity="0.35"/>'
         + '<rect x="24" y="198" width="252" height="6" fill="' + c[2] + '"/>'
         + '<text x="28" y="240" font-family="' + look.f + '" font-weight="800" ' + look.ta + ' font-size="' + fit(band, 26, 244, look.ls) + '" fill="' + c[3] + '">' + esc(band) + '</text>'
-        + '<text x="28" y="262" font-family="' + look.f + '" font-size="13" fill="' + c[2] + '">' + esc(album) + '</text>';
+        + '<text x="28" y="262" font-family="' + look.f + '" font-size="' + fit(album, 13, 246) + '" fill="' + c[2] + '">' + esc(album) + '</text>';
     } else if (layout === 6) {   // TARGET: concentric rings off centre, the name across the middle
       var rr2; for (rr2 = 150; rr2 > 0; rr2 -= 26) g += '<circle cx="190" cy="120" r="' + rr2 + '" fill="' + ((rr2 / 26) % 2 ? c[1] : c[2]) + '"/>';
       g += '<rect y="132" width="300" height="52" fill="' + c[3] + '" opacity="0.92"/>'
         + '<text x="150" y="168" text-anchor="middle" font-family="' + look.f + '" font-weight="800" ' + look.ta + ' font-size="' + fit(band, 30, 276, look.ls) + '" fill="' + c[0] + '">' + esc(band) + '</text>'
-        + '<text x="150" y="222" text-anchor="middle" font-family="' + look.f + '" font-style="italic" font-size="14" fill="' + c[3] + '">' + esc(album) + '</text>';
+        + '<text x="150" y="222" text-anchor="middle" font-family="' + look.f + '" font-style="italic" font-size="' + fit(album, 14, 276) + '" fill="' + c[3] + '">' + esc(album) + '</text>';
     } else {                     // GRID: nine tiles, one inverted, the name in a bar
       var gi, gj; for (gi = 0; gi < 3; gi++) for (gj = 0; gj < 3; gj++) { var inv = (gi * 3 + gj) === (hb(h, 28) % 9); g += '<rect x="' + (18 + gi * 90) + '" y="' + (18 + gj * 60) + '" width="84" height="54" fill="' + (inv ? c[2] : c[1]) + '"/>' + (inv ? '<circle cx="' + (60 + gi * 90) + '" cy="' + (45 + gj * 60) + '" r="16" fill="' + c[0] + '"/>' : ''); }
       g += '<rect y="206" width="300" height="60" fill="' + c[3] + '"/>'
         + '<text x="150" y="238" text-anchor="middle" font-family="' + look.f + '" font-weight="800" ' + look.ta + ' font-size="' + fit(band, 26, 276, look.ls) + '" fill="' + c[0] + '">' + esc(band) + '</text>'
-        + '<text x="150" y="256" text-anchor="middle" font-family="' + look.f + '" font-size="12" fill="' + c[0] + '" opacity="0.8">' + esc(album) + '</text>';
+        + '<text x="150" y="256" text-anchor="middle" font-family="' + look.f + '" font-size="' + fit(album, 12, 276) + '" fill="' + c[0] + '" opacity="0.8">' + esc(album) + '</text>';
     }
     // label logo chip + era year, always
     g += '<rect x="16" y="272" width="12" height="12" fill="' + c[2] + '"/>'

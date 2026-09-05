@@ -352,6 +352,15 @@
 .shCard:active .shObj{ filter:brightness(1.12) }
 .shObj{ padding:8px 10px 0; position:relative }
 .shObj svg{ width:100%; height:auto; display:block }
+/* ⛔ THINGS STAND ON THE BOARD. Every object is drawn in a 300 square, and a board game or a
+   lunchbox is a landscape box in the middle of it, so on the first shelf they floated an
+   inch above the plank while the tall boxes sat on it. Each class slides down by the air
+   under its drawn box (its by + bh in object-render.js), so the drawn bottom and its shadow
+   meet the plank. Records fill the square and stay put. */
+/* the drawn bottom includes the shadow the renderer throws under the box (about 14 units), so
+   the tall classes already reach the board and only the two landscape boxes slide down */
+.shObj[data-cls="GAME"] svg{ transform:translateY(13%) }
+.shObj[data-cls="LUNCHBOX"] svg{ transform:translateY(12.5%) }
 /* the plank: a board with a lit top edge, grain, and the shadow it throws on the wall below */
 .shPlank{ height:14px; position:relative; background:linear-gradient(180deg, #6b4d2c 0, #4b3620 48%, #332413 100%);
   border-top:1px solid #a07a44; box-shadow:0 9px 14px rgba(0,0,0,0.62) }
@@ -662,10 +671,10 @@
 </div></div>
 <div id="toast"></div>
 
-<script src="attic-engine.js?v=20260905f"></script>
-<script src="attic-econ.js?v=20260905f"></script>
-<script src="sleeve-render.js?v=20260905f"></script>
-<script src="object-render.js?v=20260905f"></script>
+<script src="attic-engine.js?v=20260905g"></script>
+<script src="attic-econ.js?v=20260905g"></script>
+<script src="sleeve-render.js?v=20260905g"></script>
+<script src="object-render.js?v=20260905g"></script>
 <script>
 (function () {
   'use strict';
@@ -1245,7 +1254,7 @@
     for (i = 0; i < SH_SHOWN; i++) {
       h = list[i]; it = ATTIC.hashToItem(h); wiped = !!revealed[h];
       html += '<button class="shCard' + (wiped && it.grade === 'FACTORY SEALED' ? ' sealed' : '') + '" data-h="' + h + '">'
-        + '<div class="shObj">' + ATTIC_OBJECT.renderItem(h, 260, { dusty: !wiped }).svg + '</div>'
+        + '<div class="shObj" data-cls="' + esc(it.cls) + '">' + ATTIC_OBJECT.renderItem(h, 260, { dusty: !wiped }).svg + '</div>'
         + '<div class="shPlank"></div>'
         + '<div class="shLabel"><div class="shName">' + esc(it.name) + (wiped && it.revealSuffix ? esc(it.revealSuffix) : '') + '</div>'
         + '<div class="shFoot">'

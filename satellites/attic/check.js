@@ -644,14 +644,23 @@ if (process.env.AT_NOBROWSER === '1') { console.log('\n(browser group skipped: A
       const cs = sealed ? getComputedStyle(sealed, '::before') : null;
       const caseOk = !!cs && parseFloat(cs.borderTopWidth) >= 1 && cs.backgroundImage !== 'none';
       const cardBox = getComputedStyle(cards[0]).borderTopWidth;
+      /* every object's DRAWN bottom (the svg's content box, not its square) must meet its plank:
+         a board game floated an inch above the board on the first shelf */
+      const seats = cards.map(c => { const svg = c.querySelector('.shObj svg'), pl = c.querySelector('.shPlank').getBoundingClientRect();
+        let bb; try { bb = svg.getBBox(); } catch (e) { return null; }
+        /* the dust layer paints past the square and the svg clips it, so the drawn bottom is capped at 300 */
+        const r = svg.getBoundingClientRect(), sc = r.height / 300; const bottom = r.top + Math.min(300, bb.y + bb.height) * sc;
+        return Math.round(pl.top - bottom); });
+      const seatOk = seats.every(g => g !== null && g >= -6 && g <= 14), seatMax = Math.max.apply(null, seats), seatMin = Math.min.apply(null, seats);
       D.dropPull(sealedH); delete D.revealed()[sealedH];
       D.closeShelf();
-      return { n: cards.length, parts, sameRow, plankH: Math.round(plankH), wall: wall !== 'none', caseOk, cardBox };
+      return { n: cards.length, parts, sameRow, plankH: Math.round(plankH), wall: wall !== 'none', caseOk, cardBox, seatOk, seatMin, seatMax, seats };
     });
     ok('every find stands on a plank with its label under the board', room.n >= 4 && room.parts, JSON.stringify(room));
     ok('two finds in a row share one continuous plank', room.sameRow && room.plankH >= 10, JSON.stringify({ sameRow: room.sameRow, plankH: room.plankH }));
     ok('the wall is boards, and the cards have no box of their own', room.wall && room.cardBox === '0px', JSON.stringify({ wall: room.wall, cardBox: room.cardBox }));
     ok('a factory sealed find sits in a glass case', room.caseOk, room.caseOk);
+    ok('every object stands on its plank: drawn bottom within a thumb of the board', room.seatOk, JSON.stringify({ min: room.seatMin, max: room.seatMax, seats: room.seats }));
 
     group('the wear line waits for the wipe');
     const wear = await page.evaluate(() => new Promise((res) => {

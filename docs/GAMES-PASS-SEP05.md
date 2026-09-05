@@ -220,3 +220,11 @@ The fight is a ledger now (the 300px hole is gone), the tell coaches one sentenc
 ### The Attic era pass, records (Sep 05, later)
 
 The flagship class had been left out of the era pass. Records now wear the era sticker (shared with the other nine classes) and the era title voice on all eight sleeve layouts. Sheet: `attic-era-records-sheet.png` (`recsheet.mjs`).
+
+### Litter Bug mint moment (Sep 05, later)
+
+The jar lifts, the bug rises, the grade stamps, the name settles. Frames: `lb-mint-jar.png`, `lb-mint-rise.png`, `lb-mint-settled.png`.
+
+### The Attic shelf, objects stand (Sep 05, later)
+
+A board game and a lunchbox floated above the plank; every class now slides down by the air under its drawn box and the gate measures the seat on every card. The record album sub lines now fit their room instead of clipping.
