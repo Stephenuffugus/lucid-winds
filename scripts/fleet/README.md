@@ -44,3 +44,8 @@ None of them touch the tree; they measure and screenshot into a directory you pa
 - `shot.mjs` — one screenshot from where the player stands: how-to sheet seeded closed, music card
   dismissed, an optional start tap by regex. `shot_tap.mjs` adds `TAP_CELLS=1` for a filled Nonogram.
 
+
+## Added Sep 05 after the Shut the Box report
+- `overflow.mjs <path> [W] [H] [tapRegex]` — horizontal overflow at a DEVICE width (default 412x915). Exit 1 and the widest offenders when anything runs past the edge. Sweep: `for f in play/*.html; do node scripts/fleet/overflow.mjs /$f 412 915 | tail -1; done`.
+- `bump.sh [letter] [shell]` — re-pins `shared.css?v=` (and `shell.css`/`shell.js`) in every native. Run it in the same commit as any change to those files; a changed shared.css with an old pin ships to nobody for hours and to a phone that played earlier, never.
+- Every check runs at 412x915 as well as 375x667 and 320x568, and a game with a fleet skin (dice `lw_dice_style`, cards, wardrobe) is shot in each skin, not only the fresh-profile default.

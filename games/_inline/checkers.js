@@ -49,7 +49,7 @@
     // Directions
     var dir=document.createElement('div');
     dir.style.cssText='text-align:center;padding:0.35rem 0.8rem;margin:0.2rem auto;max-width:400px;font-family:DM Sans,sans-serif;font-size:clamp(0.7rem,1.7vw,0.72rem);color:var(--cream);line-height:1.4;opacity:0.78';
-    dir.innerHTML='Tap your <strong style="color:#7ab356">seedling</strong>, then tap where to move. Jump over <strong style="color:#C8A84B">pods</strong> to capture — multi-jumps are forced.';
+    dir.innerHTML='Tap your <strong style="color:#7ab356">seedling</strong>, then tap where to move. Jump over <strong style="color:#C8A84B">pods</strong> to capture. Multi-jumps are forced.';
     a.appendChild(dir);
     var gd=document.createElement('div');gd.className='ckb';gd.id='CK';a.appendChild(gd);
     // Tools: Undo + Hint

@@ -181,7 +181,7 @@
       _MMN();
     };
     function _mmModeLabel(){return _mmMode.charAt(0).toUpperCase()+_mmMode.slice(1);}
-    mc(a).innerHTML='<div style="display:flex;gap:8px;padding:4px 0;flex-wrap:wrap;justify-content:center"><button class="gb" style="'+_bbs+';background:rgba(74,124,53,.2);border-color:rgba(122,179,86,.35);color:var(--sage)" onclick="_MMG()">&#10003; GUESS</button><button class="gb" style="'+_bbs+'" onclick="_MMU()">&#9003; UNDO</button><button class="gb" style="'+_bbs+'" onclick="_MMH()" id="MMhint">💡 HINT</button><button class="gb" style="'+_bbs+'" onclick="_MMMode()" id="MMmode">MODE: '+_mmModeLabel().toUpperCase()+'</button><button class="gb-new" onclick="_MMN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button></div>';
+    mc(a).innerHTML='<div style="display:flex;gap:8px;padding:4px 0;flex-wrap:wrap;justify-content:center;align-items:center"><button class="gb" style="'+_bbs+';background:rgba(74,124,53,.2);border-color:rgba(122,179,86,.35);color:var(--sage)" onclick="_MMG()">&#10003; GUESS</button><button class="gb" style="'+_bbs+'" onclick="_MMU()">&#9003; UNDO</button><button class="gb" style="'+_bbs+'" onclick="_MMH()" id="MMhint">💡 HINT</button><button class="gb" style="'+_bbs+'" onclick="_MMMode()" id="MMmode">MODE: '+_mmModeLabel().toUpperCase()+'</button><button class="gb-new" onclick="_MMN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button></div>';
     function rn(){
       bd.innerHTML='';
       guesses.forEach(function(g){
