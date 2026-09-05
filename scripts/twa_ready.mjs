@@ -90,6 +90,22 @@ try {
   const out = execFileSync("node", [join(ROOT, "scripts", "_offline_check.mjs"), slug], { cwd: ROOT, stdio: "pipe" }).toString();
   ok("cold launches offline", out.includes("✅"), (out.match(/offline toys\/tabs: \d+.*/) || [""])[0]);
 } catch (e) { warn("cold launches offline", "check did not run — is the server on 8777 up?"); }
+/* 5. ASSETLINKS — the handshake that removes the URL bar. Only meaningful once the app has a
+      package name; today that is Flock the World. The fingerprint must be the PLAY APP SIGNING
+      key's SHA-256, not the upload key's. */
+if (slug === "flock-the-world") {
+  try {
+    const r = await fetch("https://lucidwinds.com/.well-known/assetlinks.json", { redirect: "manual" });
+    const ct = r.headers.get("content-type") || "";
+    const body = r.status === 200 ? await r.text() : "";
+    let j = null; try { j = JSON.parse(body); } catch (e) {}
+    const entry = Array.isArray(j) && j.find(x => x.target && x.target.package_name === "com.skywolfstudio.flocktheworld");
+    const fp = entry && entry.target.sha256_cert_fingerprints && entry.target.sha256_cert_fingerprints[0] || "";
+    const real = /^([0-9A-F]{2}:){31}[0-9A-F]{2}$/.test(fp);
+    ok("assetlinks.json is live, JSON, no redirect", r.status === 200 && ct.includes("json"), `status ${r.status}, ${ct || "no content type"}`);
+    if (r.status === 200) (real ? ok : warn)("assetlinks carries a real Play App Signing fingerprint", real ? true : "still the placeholder — paste the SHA-256 from Play Console → App signing, then deploy");
+  } catch (e) { warn("assetlinks.json is live", "fetch failed: " + e.message); }
+}
 
 console.log(fails ? `\n⛔ ${fails} gate(s) failed — not ready to list` : `\n✅ ready to list${warns ? ` (${warns} warning)` : ""}`);
 process.exit(fails ? 1 : 0);
