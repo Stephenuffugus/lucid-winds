@@ -18,7 +18,7 @@
  */
 import { writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { serve, open, reporter, tap, sleep, ROOT, stickDown, stickUp, walkRoute, steerStep, nextFrame } from './harness.mjs';
+import { serve, open, reporter, tap, sleep, ROOT, stickDown, stickUp, walkRoute, steerStep, nextFrame , waitFrames} from './harness.mjs';
 
 const { base, close } = await serve();
 const { browser, page, errors } = await open(base);
@@ -35,7 +35,7 @@ await page.waitForFunction(() => window.FATHOM_DEV.screen() === 'play', { timeou
 const home = await dev(() => ({ x: window.innerWidth / 2, y: window.innerHeight - 150 }));
 
 async function clearCurrent(which) {
-  await page.waitForFunction(() => window.FATHOM_DEV.frames() > 6, { timeout: 20000 });
+  await waitFrames(page, 6);
   const route = await dev(() => window.FATHOM_DEV.route());
   await stickDown(page, home);
   const walk = await walkRoute(page, home, route, { throwEvery: 110 });
@@ -50,7 +50,7 @@ if (await clearCurrent(1)) { await tap(page, '#btnNext'); await page.waitForFunc
 if (await clearCurrent(2)) { await tap(page, '#btnNext'); await page.waitForFunction(() => window.FATHOM_DEV.screen() === 'play', { timeout: 20000 }); }
 
 /* cave three: the first one with something in it */
-await page.waitForFunction(() => window.FATHOM_DEV.frames() > 6, { timeout: 20000 });
+await waitFrames(page, 6);
 const three = await dev(() => ({ lurkers: window.FATHOM_DEV.state().lurkers.length, stones: window.FATHOM_DEV.state().stones }));
 say(three.lurkers === 1, 'cave three has exactly one thing in the dark');
 const startStones = three.stones;
@@ -110,7 +110,17 @@ while (iters < 900 && !caught) {
 }
 say(ghosted, 'the ring crossed it and left a ghost of where it was' + (ghosted ? ', shot' : ''));
 say(caught, 'walking straight at it gets you caught (' + iters + ' steers after reaching its room)');
-if (caught) writeFileSync(join(SHOTS, 'p2-caught.png'), await page.screenshot({ type: 'png' }));
+if (caught) {
+  /* photograph the BEAT, not its first frame. Shot the instant `caught` shows
+     up, the fade has not run and the line has not arrived, and what lands on
+     disk is a lit cave with a smear of half opacity type across it. */
+  const lineUp = await page.waitForFunction(() => {
+    const el = document.getElementById('fadeLine');
+    return Number(getComputedStyle(el).opacity) > 0.9 && getComputedStyle(document.getElementById('fade')).opacity === '1';
+  }, { timeout: 15000 }).then(() => true).catch(() => false);
+  say(lineUp, 'the screen goes black and the line arrives after it');
+  writeFileSync(join(SHOTS, 'p2-caught.png'), await page.screenshot({ type: 'png' }));
+}
 await stickUp(page, home);
 
 /* the restart: back at the start, with the stones you came in with */
@@ -128,7 +138,7 @@ say(Math.hypot(after.p.x - startAt.x, after.p.y - startAt.y) < 2,
 say(after.s.over === null, 'the run is live again, not stuck on the caught state');
 
 /* and it can still be finished */
-await page.waitForFunction(() => window.FATHOM_DEV.frames() > 4, { timeout: 20000 });
+await waitFrames(page, 6);
 const route3 = await dev(() => window.FATHOM_DEV.route());
 await stickDown(page, home);
 const walk3 = await walkRoute(page, home, route3, { throwEvery: 110 });
@@ -153,7 +163,7 @@ const inDeep = await page.waitForFunction(() => window.FATHOM_DEV.screen() === '
   .then(() => true).catch(() => false);
 say(inDeep, 'THE DEEP opens into a cave');
 if (inDeep) {
-  await page.waitForFunction(() => window.FATHOM_DEV.frames() > 8, { timeout: 20000 });
+  await waitFrames(page, 6);
   const d = await dev(() => ({
     tag: document.getElementById('depthTag').textContent,
     route: (window.FATHOM_DEV.route() || []).length,

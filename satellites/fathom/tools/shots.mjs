@@ -16,7 +16,7 @@
  */
 import { writeFileSync, mkdirSync, existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { serve, open, ROOT, tap, tapAt, sleep } from '../test/harness.mjs';
+import { serve, open, ROOT, tap, tapAt, sleep , waitFrames} from '../test/harness.mjs';
 
 const OUT = join(ROOT, 'docs', 'shots');
 if (!existsSync(OUT)) mkdirSync(OUT, { recursive: true });
@@ -39,7 +39,7 @@ async function toPlay(page, lv) {
   await page.waitForFunction(() => window.FATHOM_DEV.screen() === 'select', { timeout: 20000 });
   await tap(page, '.card[data-lv="' + lv + '"]');
   await page.waitForFunction(() => window.FATHOM_DEV.screen() === 'play', { timeout: 20000 });
-  await page.waitForFunction(() => window.FATHOM_DEV.frames() > 8, { timeout: 20000 });
+  await waitFrames(page, 6);
 }
 /* a throw at a screen point, then wait for the ring to be worth photographing */
 async function throwAndWait(page, dx, dy, r) {
@@ -66,7 +66,7 @@ for (const key of Object.keys(SIZES)) {
   const size = SIZES[key];
   const tag = size.width + 'x' + size.height;
   const { browser, page } = await open(base, size);
-  if (want('title-' + key)) { await page.waitForFunction(() => window.FATHOM_DEV.frames() > 20, { timeout: 20000 }); await shoot(page, 'title-' + key); }
+  if (want('title-' + key)) { await waitFrames(page, 10); await shoot(page, 'title-' + key); }
   await toPlay(page, 0);
   if (key === 'mid' && want('p0-glow')) await shoot(page, 'p0-glow');
   if (want('p1-ping-' + key)) {
@@ -90,7 +90,7 @@ if (want('p1-cache')) {
     await page.waitForFunction(() => window.FATHOM_DEV && window.FATHOM_DEV.frames() > 2, { timeout: 30000 });
     await tap(page, '#btnDeep');
     await page.waitForFunction(() => window.FATHOM_DEV.screen() === 'play', { timeout: 20000 });
-    await page.waitForFunction(() => window.FATHOM_DEV.frames() > 8, { timeout: 20000 });
+    await waitFrames(page, 6);
     await throwAndWait(page, 0, -110, 150);
     const lit = await page.waitForFunction(() => {
       const raw = window.FATHOM_DEV;

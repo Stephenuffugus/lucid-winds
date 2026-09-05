@@ -1,57 +1,91 @@
-# Fathom, Art Pack (three sheets, paste ready)
+# Fathom art pack
 
-**For:** Stephen's Midjourney month. Relax mode, four variations per prompt, upscale only the pick. Fathom ships with no image
-files and looks finished without these; they upgrade the title and the store tile. Bring the PNGs to
-`satellites/fathom/art-drop/` (never overwrite a raw file) and the ART-LEDGER row moves from LISTED to DROPPED.
+Three sheets, paste ready. **The game ships finished without any of them**: sonar line art on black
+IS the design, and `satellites/fathom/ART_ASSETS.md` lists the exact paths the code reads so a drop
+can be wired in ten minutes. Nothing waits on this.
 
-**The look, in one line:** sonar sketching a flooded cave. Pure black, thin cold cyan line light, one warm amber glint, a small
-blind creature. Eerie and beautiful, never horror, a ten year old can look at it.
-
-**Locked suffix for every Fathom prompt** (paste it on the end of each one, then reuse the seed of the first pick on the other two):
-
-```
---style raw --s 180 --chaos 8 --no text, watermark, letters, people, faces, gore
-```
+The `--ar` and `--style` flags below are Midjourney syntax, not player copy; the no dashes law
+applies to what a player reads, and none of this is read by a player.
 
 ---
 
-## Sheet 1 of 3: Title backdrop (9:16)
+## 1. `title-bg.png` — the backdrop behind the drawn word
 
-File back: `title-bg.png`. Used behind the drawn word FATHOM at 35 percent opacity; the code resizes it to 900x1600.
-
-```
-a small blind pale cave creature seen from behind at the edge of still black water inside a vast flooded cavern, the cave walls and stalactites drawn only as thin glowing cyan sonar lines that fade into total darkness, one expanding ring of pale cyan light on the water, a single tiny warm amber glint far away, deep black everywhere else, bioluminescent deep cave, minimal line art on black, high contrast, calm and eerie, no fog, no clutter --ar 9:16
-```
-
-Pick the one where the ring reads as light moving outward, not as a drawn circle, and where the black stays black.
-
-## Sheet 2 of 3: Key art (1:1)
-
-File back: `key-art.png`. The portal thumb and any store tile; the code cuts a 512 square under 150 KB.
+Painted in at 35 percent opacity behind a stroked cyan FATHOM, so it must be **dark, quiet and
+bottom heavy**, with nothing important in the middle third where the word sits.
 
 ```
-square composition, a tiny echo stone falling into black water at the exact centre, one bright cyan ring spreading from where it lands, the ring catching the edges of cave rocks and a long dim ribbon of red orange dots curling in the dark at the ring's edge, everything else pure black, thin glowing line art, bioluminescent deep cave, minimal, high contrast, eerie and beautiful, readable at small size --ar 1:1
+a flooded limestone cave chamber seen from underwater, almost total darkness, one
+faint cold cyan glow far below picking out the edges of rock shelves and a still
+water surface, bioluminescent, no creature, no diver, no light source visible,
+deep blue black, fine grain, painterly, wide empty space in the upper middle,
+--ar 9:16 --style raw --stylize 250
 ```
 
-Pick the one that still reads at the size of a postage stamp: stone, ring, one hint of the creature.
-
-## Sheet 3 of 3: Icon mark (1:1)
-
-File back: `icon-mark.png`. The PWA icon and favicon, only if it beats the drawn mark; the mark must sit inside the central 80
-percent of the square because Android crops the corners.
+Second angle, if the first is too busy:
 
 ```
-app icon, a single small pale stone dropping into black water with one clean cyan ring around the splash, centred, generous black margin on all sides, flat glowing line art, two colours only cyan and pale white on pure black, no gradient background, no border, no text --ar 1:1
+the mouth of a submerged cave passage in near total black, a single ring of pale
+cyan light expanding through the water and catching the rock walls where it
+touches them, everything else unlit, minimal, quiet, no creature, no text,
+--ar 9:16 --style raw --stylize 200
 ```
 
-Pick the one with the fewest lines. If none beats the drawn icon, skip it; the drawn one ships.
+Delivered 9:16. Goes in as `art/title-bg.jpg`, 900x1600, q80, under 300 KB. **The host resizes
+anything over 1600 px**, so never deliver larger than that.
 
 ---
 
-## Delivery table
+## 2. `key-art.png` — the arcade tile and a store tile
 
-| Sheet | Ratio | File back | Where it lands in the game |
-|---|---|---|---|
-| 1 Title backdrop | 9:16 | `title-bg.png` | `satellites/fathom/art/title-bg.jpg` 900x1600 q80 |
-| 2 Key art | 1:1 | `key-art.png` | `portal-assets/thumbs/fathom.png` 512x512 png, under 150 KB |
-| 3 Icon mark | 1:1 | `icon-mark.png` | `icon-512.png`, `icon-192.png`, `icon-maskable-512.png` |
+Square, and it has to read at 150 px on a shelf next to a hundred other tiles, so: one shape, one
+light, no small detail.
+
+```
+a small pale stone sinking through black water with one expanding ring of cold
+cyan light around it, the ring catching fragments of cave wall where it passes
+them, everything else pure black, sonar, minimal, high contrast, no text,
+--ar 1:1 --style raw --stylize 150
+```
+
+Warmer alternative, if the cyan reads cold on the shelf:
+
+```
+pitch black water, a single warm amber crystal glowing faintly far off, and a
+ring of cold cyan light expanding toward it from the near corner, only the rock
+the ring has touched is visible, minimal, no creature, no text,
+--ar 1:1 --style raw --stylize 150
+```
+
+Goes in as `docs/thumb.png`, 512 square, under 150 KB. Fable moves it to
+`portal-assets/thumbs/fathom.png`.
+
+---
+
+## 3. `icon-mark.png` — the PWA icon, only if it beats the drawn one
+
+The drawn icon is already shipped (`node tools/icons.mjs`). A painted one only replaces it if it
+reads better at 48 px.
+
+```
+app icon, a single expanding ring of cold cyan light on pure black with one small
+warm dot at its centre and two short fragments of cave wall lit where the ring
+touches them, flat, minimal, centred, no text, no gradient background,
+--ar 1:1 --style raw --stylize 100
+```
+
+Three files come out of one square: 512, 192, and a **maskable 512 with the mark inside the central
+80 percent**. Android crops maskable icons to an arbitrary shape and only the central 80 percent is
+guaranteed visible, and a corner radius over 50 in viewBox units collapses the tile to a circle
+whose transparent corners composite to BLACK on an iOS home screen.
+
+---
+
+## What NOT to draw
+
+- **No eye.** The player is blind. The first drawn icon put an amber dot in a dark halo at the
+  centre of a ring and it read as a pupil.
+- **No aperture, no reticle, no crosshair.** A ring with symmetrical radial ticks reads as a camera.
+- **No creature on the tile.** The lurkers are only ever seen as a fading ghost of where they were,
+  and a picture of one on the shelf gives away the only thing the game keeps hidden.
+- **No diver, no torch, no helmet light.** There is no light in this game except the sound.

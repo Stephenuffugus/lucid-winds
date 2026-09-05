@@ -113,10 +113,10 @@ html,body{margin:0;padding:0;height:100%;background:#000;color:var(--cream);
 .stat{font-size:.78rem;color:var(--dim);letter-spacing:.13em;margin:5px 0;
   text-transform:uppercase}
 #fade{position:absolute;inset:0;z-index:9;background:#000;opacity:0;
-  pointer-events:none;transition:opacity 260ms linear}
-#fadeLine{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);
-  width:80%;text-align:center;font-size:.95rem;letter-spacing:.1em;
-  color:var(--cream);opacity:0;transition:opacity 260ms linear}
+  pointer-events:none;transition:opacity 380ms linear}
+#fadeLine{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:82%;text-align:center;font-size:.9rem;letter-spacing:.09em;line-height:1.7;
+  color:var(--cream);opacity:0;transition:opacity 420ms linear}
 #toast{position:fixed;left:50%;top:14%;transform:translateX(-50%);
   background:rgba(6,14,18,.94);border:1px solid rgba(159,232,255,.34);
   color:var(--cream);padding:10px 16px;border-radius:12px;font-size:.85rem;
@@ -1518,7 +1518,10 @@ function draw(st, G) {
     /* three little stones in a heap, not a ring with a dot in it: a bullseye
        is the ripple's shape language and a cache must never borrow it */
     var ca = fadeEase(a), cx2 = sx(c.x), cy2 = sy(c.y), kk;
-    var heap = [[-3.1, 1.4, 2.0], [3.0, 1.6, 1.8], [0.2, -2.4, 2.2]];
+    /* the pickup radius is 14 units, so a glyph about ten across is honest
+       about how near you have to be. At two unit stones it was four physical
+       pixels and smaller than a letter of the hint line under it. */
+    var heap = [[-4.4, 2.0, 3.0], [4.3, 2.3, 2.7], [0.3, -3.4, 3.3]];
     /* each stone gets its own soft halo. One flat disc behind all three read as
        a coaster, a hard edged circle of lighter black. */
     CTX.fillStyle = PAL.warm;
@@ -1691,6 +1694,14 @@ function drawTitle(t) {
 var AUDIO = (function () {
   var ac = null, master = null, noiseBuf = null, brownBuf = null;
   var slithers = [], drone = null, dripT = 0, on = true, voices = 0;
+  /* THE ECHO IS A BUS, NOT THREE MORE OSCILLATORS PER PING. Built once, it is
+     three permanent nodes; built the other way, two overlapping pings and a hum
+     put fourteen voices in the air against a budget of twelve, which is what
+     the play gate caught. The delay time is still the room: the sim hands the
+     nearest wall distance to the ping event and it is set per throw, the way a
+     reverb send is. */
+  var echoDelay = null, echoFb = null, echoWet = null;
+  var PERMANENT = 4;   // the drone and the three nodes of the echo bus
   function ctx() { return ac; }
   function makeNoise() {
     var n = ac.sampleRate * 1.2, b = ac.createBuffer(1, n, ac.sampleRate), d = b.getChannelData(0), i;
@@ -1719,6 +1730,12 @@ var AUDIO = (function () {
     var dg = ac.createGain();
     drone.type = 'sine'; drone.frequency.value = 55; dg.gain.value = 0.03;
     drone.connect(dg); dg.connect(master); drone.start();
+    echoDelay = ac.createDelay(1.2);
+    echoFb = ac.createGain(); echoWet = ac.createGain();
+    echoDelay.delayTime.value = 0.18;
+    echoFb.gain.value = 0.42; echoWet.gain.value = 0.5;
+    echoDelay.connect(echoFb); echoFb.connect(echoDelay);
+    echoDelay.connect(echoWet); echoWet.connect(master);
   }
   function setOn(v) { on = !!v; if (master) master.gain.setTargetAtTime(on ? 0.8 : 0, ac.currentTime, 0.02); }
   function env(node, t0, peak, dur, rel) {
@@ -1731,23 +1748,25 @@ var AUDIO = (function () {
     if (p) p.pan.value = Math.max(-1, Math.min(1, (wx - camx) / 300));
     return p;
   }
-  function blip(t0, f0, f1, dur, peak, type) {
+  function blip(t0, f0, f1, dur, peak, type, echo) {
     var o = ac.createOscillator(), g = ac.createGain();
     o.type = type || 'sine';
     o.frequency.setValueAtTime(f0, t0);
     o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t0 + dur);
     env(g, t0, peak, dur);
     o.connect(g); g.connect(master);
+    if (echo && echoDelay) g.connect(echoDelay);
     o.start(t0); o.stop(t0 + dur + 0.08);
     voices++; o.onended = function () { voices--; };
     return g;
   }
-  function burst(t0, dur, peak, cut) {
+  function burst(t0, dur, peak, cut, echo) {
     var s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
     s.buffer = noiseBuf; s.loop = true;
     f.type = 'lowpass'; f.frequency.value = cut;
     env(g, t0, peak, dur);
     s.connect(f); f.connect(g); g.connect(master);
+    if (echo && echoDelay) g.connect(echoDelay);
     s.start(t0); s.stop(t0 + dur + 0.06);
     voices++; s.onended = function () { voices--; };
   }
@@ -1755,11 +1774,11 @@ var AUDIO = (function () {
      room, which is why the sim hands the nearest wall distance to the event. */
   function ping(nearWall) {
     if (!ac) return;
-    var t0 = ac.currentTime + 0.005, k;
-    blip(t0, 880, 440, 0.12, 0.30);
-    burst(t0, 0.08, 0.16, 1200);
+    var t0 = ac.currentTime + 0.005;
     var gap = Math.min(0.55, nearWall / CONFIG.RING_SPEED + 0.06);
-    for (k = 1; k <= 3; k++) blip(t0 + k * gap, 760 - k * 60, 400 - k * 40, 0.10, 0.30 * Math.pow(0.5, k));
+    if (echoDelay) echoDelay.delayTime.setTargetAtTime(gap, ac.currentTime, 0.005);
+    blip(t0, 880, 440, 0.12, 0.30, 'sine', true);
+    burst(t0, 0.08, 0.16, 1200, true);
   }
   function singback(dx, dist) {
     if (!ac) return;
@@ -1850,7 +1869,7 @@ var AUDIO = (function () {
     start: start, setOn: setOn, ping: ping, singback: singback, hum: hum,
     pickup: pickup, caught: caught, bindLurkers: bindLurkers,
     updateLurkers: updateLurkers, ambient: ambient, stopAll: stopAll,
-    voices: function () { return voices + slithers.length + (ac ? 1 : 0); },
+    voices: function () { return voices + slithers.length + (ac ? PERMANENT : 0); },
     ready: function () { return !!ac; }, ctx: ctx
   };
 })();
@@ -2571,9 +2590,17 @@ function beginRun() {
   G.joy = null; G.reticle = null; G.pendingThrow = null; G.pendingHum = false;
   G.caughtAt = 0;
   G.ambientRng = makeRNG(mixSeed(G.seed, STREAM_AMBIENT));
+  clearTimeout(G.caughtT);
   $('fade').style.opacity = 0; $('fadeLine').style.opacity = 0;
+  $('hud').style.opacity = '';
   showScreen('play');
   fitCanvas();
+  /* the camera is placed the instant the run starts, not on the first frame
+     that happens to draw. Without this, anything that asks where a world point
+     is on screen between beginRun and the first draw gets the camera at the
+     origin, and the boot gate caught exactly that once in ten runs: a player
+     reported at screen x 550 on a 375 wide phone. */
+  clampCam(G.st);
   /* the depth is already on the screen top centre; the hint slot teaches, and
      in the deep there is one thing to teach and it is only true the first time */
   var hint = G.mode === 'deep'
@@ -2662,7 +2689,7 @@ function frame(ts) {
     if (G.hintUntil && ts > G.hintUntil) { $('hint').classList.remove('on'); G.hintUntil = 0; }
     if (G.frames - G.hudTouched > CONFIG.HUD_DIM_MS / 16.7) $('hud').classList.add('dim');
     if (G.st.over === 'caught' && !G.caughtAt) beginCaught(ts);
-    if (G.st.over === 'caught' && ts - G.caughtAt > CONFIG.CAUGHT_FADE_MS + 500) restartRun();
+    if (G.st.over === 'caught' && ts - G.caughtAt > CONFIG.CAUGHT_FADE_MS + 1100) restartRun();
     if (G.st.over === 'clear') showClear();
   }
   /* the cave keeps drawing under the pause veil AND under the clear card, so
@@ -2671,12 +2698,18 @@ function frame(ts) {
      rectangle. */
   draw(G.screen === 'play' || G.screen === 'pause' || G.screen === 'clear' ? G.st : null, G);
 }
+/* THE LINE ARRIVES AFTER THE BLACK. Shown at the same moment as the fade, it
+   read as a smear across the brightest part of the cave: half opacity type over
+   a lit ring and the player glow. The HUD goes with it, because a stone count
+   shouting through the one quiet beat in the game undercuts it. */
 function beginCaught(ts) {
   G.caughtAt = ts;
   AUDIO.caught();
   $('fade').style.opacity = 1;
+  $('hud').style.opacity = 0;
   $('fadeLine').textContent = 'The dark took you back to the start.';
-  $('fadeLine').style.opacity = 1;
+  clearTimeout(G.caughtT);
+  G.caughtT = setTimeout(function () { $('fadeLine').style.opacity = 1; }, CONFIG.CAUGHT_FADE_MS - 120);
 }
 function consumeEvents(st) {
   var i, e;

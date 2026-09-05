@@ -193,3 +193,14 @@ export async function walkRoute(page, home, route, opts = {}) {
   }
   return { done: false, ranOut: true, iters, node, threw };
 }
+
+/* Wait for N MORE frames than there are now.
+   ⛔ `waitForFunction(() => frames() > 12)` is a trap: the frame counter runs on
+   the title screen too, so by the time a gate reaches the play screen it is
+   already past twelve and the wait returns instantly, before a single frame of
+   the CAVE has been drawn. The boot gate read a black pixel one run in six for
+   exactly this reason. Always wait relative to now. */
+export async function waitFrames(page, n) {
+  const now = await page.evaluate(() => window.FATHOM_DEV.frames());
+  await page.waitForFunction((f) => window.FATHOM_DEV.frames() > f, { timeout: 40000 }, now + n);
+}

@@ -12,14 +12,18 @@ a fleet law and is listed in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
-- 2026-09-05 Fable: plan written. Nothing built. Next action: section 5, P0, step 1 (the scaffold).
-- 2026-09-05 Opus: P0 step 1 done, `tools/check.js` exists with the `test` gate and it is RED (no sim.js yet), pasted in
-  section 13.
-- 2026-09-05 Opus: THE RULES ARE BUILT AND PROVED. CONFIG, RNG, DATA (five caves), GEN, SIM and TEST are in
-  `index.html`; `sim.js` runs them headless. Four node gates green: `levels`, `test` (160 assertions), `solve` (five
-  caves times five seeds), `deep` (200 generated caves). Each watched to fail, pasted in section 13. Nothing is drawn
-  yet, so there is nothing to look at. Next action: VIEW, AUDIO, INPUT, SAVE and BOOT spliced into `index.html` before
-  the `// ---- TEST_EXPORT_START ----` marker, then the `boot` browser gate (P0 step 3).
+- 2026-09-05 Fable: plan written. Nothing built.
+- 2026-09-05 Opus: P0 step 1, `tools/check.js` with one gate and no `sim.js` to run, red, pasted in section 13.
+- 2026-09-05 Opus: **DONE P3.** P0, P1, P2 and P3 are all built and green. Ten gates in `tools/check.js`, every one
+  watched to fail, output pasted in section 13. Twelve screenshots opened with the Read tool and three faults named in
+  each; the ones worth acting on were acted on and the rest are in the morning report. The game is playable end to end
+  by a real thumb: five caves, lurkers, the hum, sound, the save, and THE DEEP.
+  **NOT BUILT, on purpose:** occlusion (design 11, plan 3.5, v1.1), the secondary echo off a big wall (design 5,
+  stretch), a second species, the daily seed and share card, Penny mode, and `art/title-bg.jpg` which the code reads
+  if it ever appears.
+  **Next action for whoever opens this:** nothing is half finished. If more time goes into Fathom, the first thing is
+  the world scale question in the morning report (a deep cave reads as a chunky maze because a screen is only fifteen
+  tiles wide), and it is Stephen's call, not a session's.
 
 ---
 
@@ -555,6 +559,93 @@ FAIL  deep seed 10799 depth 10: 77 percent open, that is a room not a cave
 
 ---
 
+### The whole suite, green (2026-09-05, end of the run)
+
+```
+$ node satellites/fathom/tools/check.js
+lint            pass  0s
+levels          pass  0s
+test            pass  0s
+solve           pass  0s
+deep            pass  1s
+boot            pass  2s
+play            pass  3s
+layout          pass  4s
+level1          pass  12s
+campaign        pass  46s
+
+ALL GATES PASSED
+
+$ node sim.js --test
+PASSED 170 / FAILED 0   (total 170)
+
+$ node test/campaign.mjs
+  ok    cave 1 cleared by the thumb (678 steers, 5 stones, node 50 of 51)
+  ok    cave 2 cleared by the thumb (713 steers, 6 stones, node 53 of 54)
+  ok    cave three has exactly one thing in the dark
+  ok    there is a way to the room it lives in, 32 tiles
+  ok    the thumb walked to its room (423 steers)
+  ok    the stone is thrown onto the cave, not onto a button (board)
+  ok    the ring crossed it and left a ghost of where it was, shot
+  ok    walking straight at it gets you caught (4 steers after reaching its room)
+  ok    the screen goes black and the line arrives after it
+  ok    and the cave restarts with the stones you came in with (8, now 8)
+  ok    and puts you back where you started, 0.0 units off
+  ok    cave three is finished after the fright (797 steers, node 59 of 60)
+  ok    three caves are in the save: [1,1,2,0,0]
+  ok    and clearing the third cave opens the deep
+  ok    THE DEEP opens into a cave
+  ok    the depth is on the screen: "DEPTH 1"
+  ok    the generated cave has a real way through, 64 tiles
+  ok    and a real throw lights it: 0 walls to 3
+CAMPAIGN OK
+```
+
+### The rest of the gates, watched to fail
+
+```
+$ node test/boot.mjs                    (with the player glow drawn at alpha 0)
+  FAIL  the canvas is lit where the player stands: rgb(0,0,0) at 188,163
+
+$ node tools/lint.mjs                   (with a dash put into the tagline)
+  FAIL  no dash in anything a player reads: ["The only light - the sound you throw"]
+
+$ node test/layout.mjs                  (with .btn.small at 40 px)
+  24 FAILURES, e.g. FAIL  375x667  HOW TO PLAY  330x46
+
+$ node test/layout.mjs                  (with the stone count parked bottom left)
+  FAIL  375x667  the bottom left 120 by 120 is free for the music pill: stones at 8,629
+
+$ node test/play.mjs                    (with TAP_SLOP_PX at 500)
+  FAIL  a real 80 px drag to the right moved the player right, world x 348.0 to 348.0
+  FAIL  letting the stick go throws nothing either (1 throws, still 2)
+
+$ node test/play.mjs                    (with HUM_COOLDOWN_MS at 0)
+  FAIL  a second hum inside the cooldown is refused (1 hums, still 2)
+
+$ node test/play.mjs                    (with four extra oscillators per ping)
+  FAIL  six throws and six hums never put more than twelve voices in the air (peak 26)
+```
+
+### Three flakes, each chased to its cause rather than rerun
+
+```
+1. boot failed once in the suite reporting the player at screen x 550 on a 375 wide phone.
+   CAUSE: the camera is only placed inside draw(), so anything asking where a world point is
+   between beginRun and the first draw got the camera at the origin. FIX: clampCam in beginRun.
+2. boot then read a BLACK pixel at the right place, one run in six.
+   CAUSE: `waitForFunction(() => frames() > 12)`. The frame counter runs on the title screen, so
+   by the time a gate reached the play screen it was already past twelve and the wait returned
+   before a single frame of the CAVE had been drawn. FIX: waitFrames(page, n) waits for n MORE,
+   and every gate and tool uses it. Six clean runs after.
+3. the caught screenshot showed a lit cave although the gate asserted the veil was opaque.
+   CAUSE: not the game. My own shell loop waited on a log file that still held the PREVIOUS run's
+   summary line, so the copy grabbed the old PNG while the gate was still running. The file on
+   disk was correct all along, mean brightness 1.88 of 765.
+```
+
+---
+
 ## 14. THE OVERNIGHT PROTOCOL (how an unattended run behaves)
 
 1. **Never wait on a human.** Every question that would have gone to Stephen becomes the smallest reasonable choice, logged in
@@ -584,6 +675,71 @@ FAIL  deep seed 10799 depth 10: 77 percent open, that is a room not a cave
 ---
 
 ## 15. THE MORNING REPORT (write it before you stop, most recent on top, keep every one)
+
+### Morning report, 2026-09-05, end of the first night
+
+**Phases:** P0 done (`e5a5d7fe`, `03c376d7`), P1 done (`57d81259`), P2 done (`7b81bd36`), P3 done (`33a72ccb` and the
+commit this report is in). Fathom is **DONE P3**.
+
+**Gates:** `ALL GATES PASSED`, ten of them, none skipped. `lint levels test solve deep boot play layout level1
+campaign`. 170 assertions in `sim.js --test`. Every gate was watched to fail and both columns are in section 13. Three
+flakes were chased to their causes rather than rerun; all three were real and all three are fixed.
+
+**Play it:** `satellites/fathom/index.html`. Title, PLAY, then the first cave card. Drag anywhere to move, tap anywhere
+to throw, HUM bottom right. Cave two unlocks when cave one is cleared and so on; THE DEEP opens after cave three. A
+whole cave takes about a minute. `?test=1` runs the assertion harness into a panel on the page.
+
+**Look at:** these five first.
+1. `docs/shots/p1-ping-mid.png` — the moment the game is about. The corridor mouth is white hot where the wave just
+   touched it, the top wall has settled to cyan, and the ring is a whisper where it has passed. **Wrong with it:** the
+   room's floor is not drawn yet because the ring has not reached it, which reads as a missing wall; the lit wall ends
+   are hard butt caps that look chopped; the hint still wraps to two lines with an orphan.
+2. `docs/shots/p2-lurker.png` — the ghost, a red ribbon of separate beads on an undulating body beside the player, with
+   a cache glinting. **Wrong with it:** the head bead is a step larger than the second rather than a taper; the
+   undulation is invisible at the head; the cache's three halos overlap into a cloverleaf.
+3. `docs/shots/p2-caught.png` — total black, one line. **Wrong with it:** nothing at all is left on screen, so it reads
+   as the app going blank rather than as still being down there; the line keeps a full stop the tagline does not; it is
+   the only screen in the game with no cyan on it.
+4. `docs/shots/p3-deep.png` and `docs/shots/p1-cache.png` — a generated cave. **Wrong with them:** the walls read as a
+   chunky maze, almost a platformer level, because a screen is only fifteen tiles wide and every corner is a 24 unit
+   right angle; the lit region is all one brightness once the ring has passed, so the sweep only reads in the moment;
+   the revealed shape is off to one side leaving a third of the screen dead.
+5. `docs/thumb.png` — the arcade tile, shot in a generated cave. **Wrong with it:** the left third is empty so it will
+   sit off centre on the shelf; only one ring is really visible so the sonar reading rests on one circle; the blocky
+   corners again.
+
+**Decided without you** (all of `docs/DECISIONS.md`, these three matter most):
+- *"the light works on per tile faces, collision works on merged runs."* Lighting merged runs switched a twelve tile
+  wall on in one frame and the screen read as a technical drawing rather than as light arriving.
+- *"`ENDLESS_FILL` 0.56 and `ENDLESS_SMOOTH` 4, not 0.46 and 5."* At the plan's numbers every deep cave came out as one
+  open box, 78 percent water with rock only at the border, and every existing check was green on it.
+- *"the lurker spawns in caves three, four and five moved off the shortest route."* The first draft put them on it and
+  the bot was eaten within three seconds of every start. A lurker standing in the only corridor is a coin toss, not a
+  lure.
+
+**Blocked:** none.
+
+**For Fable:** nothing outside the fence was touched. To list it: `docs/thumb.png` goes to
+`portal-assets/thumbs/fathom.png`, and the card is written out in section 8 of this plan. Every line of it is true now
+(the thumb is 56 KB, the live URL will carry `20260905a`, the description has no dashes). Two files were created by
+mistake outside the fence during the run, `test/harness.mjs` and `tools/thumb.mjs` at the repo root, and both were
+removed the moment they were noticed; `git status` is clean of them.
+
+**For Stephen:**
+- **The name.** FATHOM is what the folder and the title say, and section 10 makes it yours. Sounder, Pitch and
+  Darkwater are still on the table and nothing in the build depends on the word.
+- **The world scale, which is the one thing I would change and did not.** A screen shows fifteen tiles across, so every
+  cave corner is a big right angle and a generated cave reads as a maze rather than as rock. Halving the tile (12 units
+  instead of 24, a 60 by 100 grid) would make the caves look like caves, and it would double the face count and change
+  every hand made level. That is a design call and it is yours.
+- **Occlusion.** Not built, per the design's own recommendation. It is the single biggest change available: with it,
+  the ring stops reading as a circle laid over the screen in a big empty room, which is the one honest complaint left
+  in every play shot.
+- **The phone checklist** for the Pixel 9 once Fable lists it: drag to move, tap to throw, both thumbs at once (left
+  moves, right throws), the hum on cooldown, one deliberate catch, one clear, and THE DEEP.
+
+**Next action:** nothing in Fathom is half finished. The next session takes the next row of section 5 of the spine.
+
 
 ```
 ### Morning report, <date and time>

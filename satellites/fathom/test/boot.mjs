@@ -13,7 +13,7 @@
  * Assertion 5 is the reason this gate exists. A game that paints black on black
  * is the easiest thing in the world to ship and call atmosphere.
  */
-import { serve, open, reporter, tap, centre, sleep, puppeteer } from './harness.mjs';
+import { serve, open, reporter, tap, centre, sleep, puppeteer , waitFrames} from './harness.mjs';
 
 const { base, close } = await serve();
 const { browser, page, errors } = await open(base);
@@ -50,7 +50,7 @@ await page.waitForFunction(() => window.FATHOM_DEV.screen() === 'play', { timeou
 say(true, 'two real taps reach the play screen');
 
 /* 5. there is light where the player is */
-await page.waitForFunction(() => window.FATHOM_DEV.frames() > 12, { timeout: 20000 });
+await waitFrames(page, 6);
 const pix = await page.evaluate(() => {
   const p = window.FATHOM_DEV.player();
   const s = window.FATHOM_DEV.screenOf(p.x, p.y);

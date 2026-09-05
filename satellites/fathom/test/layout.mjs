@@ -12,7 +12,7 @@
  * to the fleet's music chip and its folded pill, and nothing of Fathom's may be
  * in it.
  */
-import { serve, open, reporter, tap, centre, sleep } from './harness.mjs';
+import { serve, open, reporter, tap, centre, sleep , waitFrames} from './harness.mjs';
 
 const { base, close } = await serve();
 const { fails, say } = reporter();
@@ -53,7 +53,7 @@ for (const size of SIZES) {
   /* the cave itself */
   await tap(page, '.card[data-lv="0"]');
   await page.waitForFunction(() => window.FATHOM_DEV.screen() === 'play', { timeout: 15000 });
-  await page.waitForFunction(() => window.FATHOM_DEV.frames() > 6, { timeout: 20000 });
+  await waitFrames(page, 6);
   await check('#btnPause', 'PAUSE');
   await check('#btnHum', 'HUM', 56);
 

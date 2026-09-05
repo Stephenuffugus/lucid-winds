@@ -16,7 +16,7 @@
  * element a thumb would land on, and every wait is on what the sim believes,
  * never on a clock: this rig runs at a few frames a second.
  */
-import { serve, open, reporter, tap, centre, tapAt, drag, dragEnd, sleep } from './harness.mjs';
+import { serve, open, reporter, tap, centre, tapAt, drag, dragEnd, sleep , waitFrames} from './harness.mjs';
 
 const { base, close } = await serve();
 const { browser, page, errors } = await open(base);
@@ -27,7 +27,7 @@ await tap(page, '#btnPlay');
 await page.waitForFunction(() => window.FATHOM_DEV.screen() === 'select', { timeout: 20000 });
 await tap(page, '.card[data-lv="0"]');
 await page.waitForFunction(() => window.FATHOM_DEV.screen() === 'play', { timeout: 20000 });
-await page.waitForFunction(() => window.FATHOM_DEV.frames() > 8, { timeout: 20000 });
+await waitFrames(page, 6);
 
 const at = await dev(() => {
   const p = window.FATHOM_DEV.player();
@@ -107,6 +107,21 @@ await tap(page, '#btnHum');
 await sleep(200);
 const humsLater = await dev(() => window.FATHOM_DEV.state().hums);
 say(humsLater === humsAfter, 'a second hum inside the cooldown is refused (' + humsAfter + ' hums, still ' + humsLater + ')');
+
+/* 8. the audio budget. Silence is this game's instrument, so the mix is counted
+   rather than hoped: at most twelve sounding nodes, with the ambient drone and
+   one slither voice per lurker among them. */
+say(await dev(() => window.FATHOM_DEV.audioReady()), 'the audio context opened on the first press');
+let peak = 0;
+for (let i = 0; i < 6; i++) {
+  const p2 = await dev(() => { const q = window.FATHOM_DEV.player(); return window.FATHOM_DEV.screenOf(q.x, q.y); });
+  await tapAt(page, Math.max(24, Math.min(340, p2.x + (i % 2 ? 60 : -60))), Math.max(30, Math.min(460, p2.y + 60)));
+  await tap(page, '#btnHum');
+  peak = Math.max(peak, await dev(() => window.FATHOM_DEV.voices()));
+  await sleep(90);
+}
+peak = Math.max(peak, await dev(() => window.FATHOM_DEV.voices()));
+say(peak > 0 && peak <= 12, 'six throws and six hums never put more than twelve voices in the air (peak ' + peak + ')');
 
 say(errors.length === 0, 'nothing landed on the console' + (errors.length ? ': ' + errors.join(' | ') : ''));
 

@@ -21,7 +21,7 @@
  */
 import { writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { serve, open, reporter, tap, tapAt, sleep, ROOT, stickDown, stickUp, walkRoute } from './harness.mjs';
+import { serve, open, reporter, tap, tapAt, sleep, ROOT, stickDown, stickUp, walkRoute , waitFrames} from './harness.mjs';
 
 const { base, close } = await serve();
 const { browser, page, errors } = await open(base);
@@ -33,7 +33,7 @@ await tap(page, '#btnPlay');
 await page.waitForFunction(() => window.FATHOM_DEV.screen() === 'select', { timeout: 20000 });
 await tap(page, '.card[data-lv="0"]');
 await page.waitForFunction(() => window.FATHOM_DEV.screen() === 'play', { timeout: 20000 });
-await page.waitForFunction(() => window.FATHOM_DEV.frames() > 8, { timeout: 20000 });
+await waitFrames(page, 6);
 say(true, 'two real taps from the title reach cave one');
 
 const route = await dev(() => window.FATHOM_DEV.route());
