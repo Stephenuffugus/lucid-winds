@@ -14,16 +14,58 @@
   function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
 
   // era → visual language: [bg, field, ink, pop], font stack, weight
+  /* ERA DEPTH (2026-09-05): the same five title voices the other nine classes got, on the band
+     name: 50s script, 60s bubble, 70s slab, 80s chrome, 90s grunge. `ls` is the letter spacing
+     in user units and fit() takes it off the width first. */
   var ERA_LOOK = {
-    '1950s': { c: ['#efe3cd', '#2e7f7a', '#d24a35', '#1e2a32'], f: 'Georgia, serif', it: 1 },
-    '1960s': { c: ['#e8571d', '#7a2a8a', '#f2b01e', '#241430'], f: 'Georgia, serif', it: 0 },
-    '1970s': { c: ['#caa452', '#7a4a22', '#3f5b3a', '#241a10'], f: 'Georgia, serif', it: 0 },
-    '1980s': { c: ['#101018', '#1c1c2c', '#ff2d7a', '#26f0e0'], f: '"Arial Narrow", system-ui, sans-serif', it: 0 },
-    '1990s': { c: ['#d8d4c8', '#3a3a38', '#8a2b20', '#191917'], f: 'ui-monospace, monospace', it: 0 }
+    '1950s': { c: ['#efe3cd', '#2e7f7a', '#d24a35', '#1e2a32'], f: 'Georgia, serif',
+      ta: 'font-style="italic" letter-spacing="-0.4"', ls: -0.4 },
+    '1960s': { c: ['#e8571d', '#7a2a8a', '#f2b01e', '#241430'], f: '"Trebuchet MS", "Arial Rounded MT Bold", sans-serif',
+      ta: 'paint-order="stroke" stroke="#241430" stroke-width="1.6" stroke-linejoin="round" letter-spacing="-0.6"', ls: -0.6 },
+    '1970s': { c: ['#caa452', '#7a4a22', '#3f5b3a', '#241a10'], f: 'Rockwell, "Courier New", Georgia, serif',
+      ta: 'paint-order="stroke" stroke="#241a10" stroke-width="1.3" stroke-linejoin="miter" letter-spacing="1.8"', ls: 1.8 },
+    '1980s': { c: ['#101018', '#1c1c2c', '#ff2d7a', '#26f0e0'], f: '"Arial Narrow", system-ui, sans-serif',
+      ta: 'paint-order="stroke" stroke="#26f0e0" stroke-width="0.7" letter-spacing="1.8"', ls: 1.8 },
+    '1990s': { c: ['#d8d4c8', '#3a3a38', '#8a2b20', '#191917'], f: 'ui-monospace, monospace',
+      ta: 'letter-spacing="2.2" opacity="0.9"', ls: 2.2 }
   };
 
-  // 0.72em average glyph width for bold caps; avail = pixels the line may span
-  function fit(text, max, avail) { return Math.min(max, (avail || 260) / (Math.max(6, text.length) * 0.72)); }
+  // 0.72em average glyph width for bold caps; avail = pixels the line may span, less the spacing
+  function fit(text, max, avail, ls) { var n = Math.max(6, String(text).length); return Math.max(5, Math.min(max, ((avail || 260) - (n - 1) * (ls || 0)) / (n * 0.72))); }
+
+  /* ⛔ THE PRICE STICKER IS AN ERA OBJECT (2026-09-05), shared with object-render.js so a 1953
+     lunchbox and a 1953 record wear the same paper cent dot. Era is byte 1 mod 5, the price
+     byte 25, the tilt byte 24. */
+  var ERA_NAMES = ['1950s', '1960s', '1970s', '1980s', '1990s'];
+  function priceSticker(h, px, py, big) {
+    var era = hb(h, 1) % 5, tilt = -6 + hb(h, 24) % 12, pb = hb(h, 25), s = '';
+    var open = '<g data-era="' + ERA_NAMES[era] + '" transform="rotate(' + tilt + ' ' + px + ' ' + py + ')">';
+    if (era === 0) {          // paper price dot, in cents, a red ring, serif
+      s = '<circle cx="' + px + '" cy="' + py + '" r="14" fill="#f3e9d2" stroke="#c9bfa4" stroke-width="1"/>'
+        + '<circle cx="' + px + '" cy="' + py + '" r="11" fill="none" stroke="#c94a3a" stroke-width="1.2"/>'
+        + '<text x="' + px + '" y="' + (py + 3.5) + '" text-anchor="middle" font-family="Georgia, serif" font-style="italic" font-weight="700" font-size="9.5" fill="#8a2b20">' + (19 + (pb % 5) * 10) + '&#162;</text>';
+    } else if (era === 1) {   // trading stamp: green, perforated edge
+      s = '<rect x="' + (px - 17) + '" y="' + (py - 12) + '" width="34" height="24" fill="#e9e3c8"/>'
+        + '<rect x="' + (px - 17) + '" y="' + (py - 12) + '" width="34" height="24" fill="none" stroke="#f6f2e4" stroke-width="2" stroke-dasharray="2 2"/>'
+        + '<rect x="' + (px - 14) + '" y="' + (py - 9) + '" width="28" height="18" fill="#2e7f4a"/>'
+        + '<text x="' + px + '" y="' + (py - 1) + '" text-anchor="middle" font-family="Georgia, serif" font-weight="700" font-size="5.5" fill="#e9e3c8" letter-spacing="0.6">TRADING</text>'
+        + '<text x="' + px + '" y="' + (py + 6) + '" text-anchor="middle" font-family="Georgia, serif" font-weight="700" font-size="6.5" fill="#f2d16b">' + (1 + pb % 3) + '0 STAMPS</text>';
+    } else if (era === 2) {   // price gun label: orange, a torn left edge, a SALE line
+      s = '<path d="M' + (px - 16) + ' ' + (py - 9) + ' l3 2 l-3 2 l3 2 l-3 2 l3 2 l-3 2 l3 2 l-3 2 l34 0 l0 -16 Z" fill="#e8772a" stroke="#a84e14" stroke-width="0.8"/>'
+        + '<text x="' + (px + 2) + '" y="' + (py + 1) + '" text-anchor="middle" font-family="ui-monospace, monospace" font-weight="700" font-size="9" fill="#2a1408">$' + (1 + pb % 4) + '.' + (pb % 2 ? '29' : '49') + '</text>'
+        + '<text x="' + (px + 2) + '" y="' + (py + 7) + '" text-anchor="middle" font-family="ui-monospace, monospace" font-size="4.5" fill="#2a1408" letter-spacing="1.2">SALE</text>';
+    } else if (era === 3) {   // black shop tag with a neon edge
+      s = '<rect x="' + (px - 18) + '" y="' + (py - 10) + '" width="36" height="20" rx="3" fill="#101018" stroke="#ff2d7a" stroke-width="1.2"/>'
+        + '<text x="' + px + '" y="' + (py + 1) + '" text-anchor="middle" font-family="\'Arial Narrow\', system-ui, sans-serif" font-weight="700" font-size="9" fill="#26f0e0" letter-spacing="1">$' + (3 + pb % 7) + '.99</text>'
+        + '<text x="' + px + '" y="' + (py + 7.5) + '" text-anchor="middle" font-family="\'Arial Narrow\', system-ui, sans-serif" font-size="4.5" fill="#ff2d7a" letter-spacing="1.5">NEW LOW</text>';
+    } else {                  // clearance barcode
+      var i, bars = '';
+      for (i = 0; i < 11; i++) bars += '<rect x="' + (px - 15 + i * 2.7) + '" y="' + (py - 8) + '" width="' + ((pb >> (i % 7)) & 1 ? 1.6 : 0.8) + '" height="8" fill="#1a1a18"/>';
+      s = '<rect x="' + (px - 19) + '" y="' + (py - 11) + '" width="38" height="22" fill="#f6f4ee" stroke="#b9b5aa" stroke-width="0.8"/>' + bars
+        + '<text x="' + px + '" y="' + (py + 8) + '" text-anchor="middle" font-family="ui-monospace, monospace" font-size="5" fill="#1a1a18" letter-spacing="0.4">CLEARANCE ' + (1 + pb % 5) + '.99</text>';
+    }
+    return open + s + '</g>';
+  }
 
   /* ════════════════════════════════════════════════════════════════════
      THE DUST. One renderer, exported, used by every family: object-render.js
@@ -129,10 +171,8 @@
         + '<rect x="' + (40 + hb(h, 20) % 120) + '" y="0" width="2" height="' + (60 + hb(h, 21) % 80) + '" fill="#ffffff" opacity="0.25"/>';  // seam split
     }
     if (grade !== 'FACTORY SEALED' && grade !== 'MINT') {
-      var px = 216 + hb(h, 22) % 40, py = 18 + hb(h, 23) % 30;
-      w += '<g transform="rotate(' + (-6 + hb(h, 24) % 12) + ' ' + px + ' ' + py + ')">'
-        + '<ellipse cx="' + px + '" cy="' + py + '" rx="26" ry="14" fill="#f5efdd" stroke="#c9bfa4" stroke-width="1"/>'
-        + '<text x="' + px + '" y="' + (py + 4) + '" text-anchor="middle" font-family="ui-monospace, monospace" font-size="11" fill="#5a4f3a">$' + (1 + hb(h, 25) % 5) + '.99</text></g>';
+      var px = 216 + hb(h, 22) % 40, py = 22 + hb(h, 23) % 30;
+      w += priceSticker(h, px, py, true);
     }
     if (grade === 'FACTORY SEALED') {
       w += '<path d="M0 210 L300 60 L300 96 L0 246 Z" fill="#ffffff" opacity="0.16"/>'
@@ -166,26 +206,26 @@
       g += '<rect y="176" width="300" height="124" fill="' + c[1] + '"/>'
         + '<rect y="168" width="300" height="8" fill="' + c[2] + '"/>'
         + '<rect x="12" y="' + (108) + '" width="' + (276) + '" height="46" fill="' + c[3] + '" opacity="0.9"/>'
-        + '<text x="24" y="' + (140) + '" font-family="' + look.f + '" font-weight="800" font-size="' + fit(band, 30, 252) + '" fill="' + c[0] + '"' + (look.it ? ' font-style="italic"' : '') + '>' + esc(band) + '</text>'
+        + '<text x="24" y="' + (140) + '" font-family="' + look.f + '" font-weight="800" ' + look.ta + ' font-size="' + fit(band, 30, 252, look.ls) + '" fill="' + c[0] + '"' + '>' + esc(band) + '</text>'
         + '<text x="20" y="222" font-family="' + look.f + '" font-size="17" fill="' + c[0] + '">' + esc(album) + '</text>'
         + '<rect x="20" y="236" width="90" height="3" fill="' + c[2] + '"/>';
     } else if (layout === 1) {   // DIAGONAL: band name on an angle over a split field
       g += '<path d="M0 300 L300 0 L300 300 Z" fill="' + c[1] + '"/>'
         + '<g transform="rotate(-32 150 150)"><rect x="-40" y="130" width="380" height="44" fill="' + c[2] + '"/>'
-        + '<text x="150" y="160" text-anchor="middle" font-family="' + look.f + '" font-weight="800" font-size="' + fit(band, 26, 292) + '" fill="' + c[0] + '">' + esc(band) + '</text></g>'
+        + '<text x="150" y="160" text-anchor="middle" font-family="' + look.f + '" font-weight="800" ' + look.ta + ' font-size="' + fit(band, 26, 292, look.ls) + '" fill="' + c[0] + '">' + esc(band) + '</text></g>'
         + '<text x="284" y="252" text-anchor="end" font-family="' + look.f + '" font-size="14" fill="' + c[3] + '">' + esc(album) + '</text>';
     } else if (layout === 2) {   // SUN: centered circle motif
       g += '<circle cx="150" cy="132" r="86" fill="' + c[2] + '"/><circle cx="150" cy="132" r="58" fill="' + c[1] + '"/><circle cx="150" cy="132" r="12" fill="' + c[0] + '"/>'
-        + '<text x="150" y="246" text-anchor="middle" font-family="' + look.f + '" font-weight="800" font-size="' + fit(band, 27, 280) + '" fill="' + c[3] + '"' + (look.it ? ' font-style="italic"' : '') + '>' + esc(band) + '</text>'
+        + '<text x="150" y="246" text-anchor="middle" font-family="' + look.f + '" font-weight="800" ' + look.ta + ' font-size="' + fit(band, 27, 280, look.ls) + '" fill="' + c[3] + '"' + '>' + esc(band) + '</text>'
         + '<text x="150" y="266" text-anchor="middle" font-family="' + look.f + '" font-size="13" fill="' + c[2] + '">' + esc(album) + '</text>';
     } else if (layout === 3) {   // BARS: horizontal banding, right-set type
       var i; for (i = 0; i < 7; i++) g += '<rect y="' + (i * 44) + '" width="300" height="22" fill="' + (i % 2 ? c[1] : c[2]) + '" opacity="' + (0.16 + i * 0.12) + '"/>';
-      g += '<text x="282" y="84" text-anchor="end" font-family="' + look.f + '" font-weight="800" font-size="' + fit(band, 30, 266) + '" fill="' + c[3] + '">' + esc(band) + '</text>'
+      g += '<text x="282" y="84" text-anchor="end" font-family="' + look.f + '" font-weight="800" ' + look.ta + ' font-size="' + fit(band, 30, 266, look.ls) + '" fill="' + c[3] + '">' + esc(band) + '</text>'
         + '<text x="282" y="112" text-anchor="end" font-family="' + look.f + '" font-size="15" fill="' + c[3] + '" opacity="0.8">' + esc(album) + '</text>';
     } else if (layout === 4) {   // SPLIT: two colour halves, the band name set tall up the seam
       g += '<rect width="150" height="300" fill="' + c[1] + '"/><rect x="150" width="150" height="300" fill="' + c[2] + '"/>'
         + '<rect x="142" width="16" height="300" fill="' + c[3] + '"/>'
-        + '<g transform="rotate(-90 150 150)"><text x="150" y="158" text-anchor="middle" font-family="' + look.f + '" font-weight="800" font-size="' + fit(band, 30, 270) + '" fill="' + c[0] + '">' + esc(band) + '</text></g>'
+        + '<g transform="rotate(-90 150 150)"><text x="150" y="158" text-anchor="middle" font-family="' + look.f + '" font-weight="800" ' + look.ta + ' font-size="' + fit(band, 30, 270, look.ls) + '" fill="' + c[0] + '">' + esc(band) + '</text></g>'
         + '<text x="24" y="270" font-family="' + look.f + '" font-size="14" fill="' + c[3] + '">' + esc(album) + '</text>'
         + '<circle cx="222" cy="72" r="34" fill="' + c[0] + '" opacity="0.9"/><circle cx="222" cy="72" r="6" fill="' + c[3] + '"/>';
     } else if (layout === 5) {   // PLATE: a photograph plate with a title strip under it, the label house look
@@ -194,17 +234,17 @@
         + '<circle cx="' + (60 + hb(h, 26) % 160) + '" cy="' + (70 + hb(h, 27) % 80) + '" r="' + (26 + hb(h, 28) % 30) + '" fill="' + c[1] + '" opacity="0.85"/>'
         + '<path d="M24 198 L120 120 L180 160 L276 96 L276 198 Z" fill="' + c[0] + '" opacity="0.35"/>'
         + '<rect x="24" y="198" width="252" height="6" fill="' + c[2] + '"/>'
-        + '<text x="28" y="240" font-family="' + look.f + '" font-weight="800" font-size="' + fit(band, 26, 244) + '" fill="' + c[3] + '">' + esc(band) + '</text>'
+        + '<text x="28" y="240" font-family="' + look.f + '" font-weight="800" ' + look.ta + ' font-size="' + fit(band, 26, 244, look.ls) + '" fill="' + c[3] + '">' + esc(band) + '</text>'
         + '<text x="28" y="262" font-family="' + look.f + '" font-size="13" fill="' + c[2] + '">' + esc(album) + '</text>';
     } else if (layout === 6) {   // TARGET: concentric rings off centre, the name across the middle
       var rr2; for (rr2 = 150; rr2 > 0; rr2 -= 26) g += '<circle cx="190" cy="120" r="' + rr2 + '" fill="' + ((rr2 / 26) % 2 ? c[1] : c[2]) + '"/>';
       g += '<rect y="132" width="300" height="52" fill="' + c[3] + '" opacity="0.92"/>'
-        + '<text x="150" y="168" text-anchor="middle" font-family="' + look.f + '" font-weight="800" font-size="' + fit(band, 30, 276) + '" fill="' + c[0] + '">' + esc(band) + '</text>'
+        + '<text x="150" y="168" text-anchor="middle" font-family="' + look.f + '" font-weight="800" ' + look.ta + ' font-size="' + fit(band, 30, 276, look.ls) + '" fill="' + c[0] + '">' + esc(band) + '</text>'
         + '<text x="150" y="222" text-anchor="middle" font-family="' + look.f + '" font-style="italic" font-size="14" fill="' + c[3] + '">' + esc(album) + '</text>';
     } else {                     // GRID: nine tiles, one inverted, the name in a bar
       var gi, gj; for (gi = 0; gi < 3; gi++) for (gj = 0; gj < 3; gj++) { var inv = (gi * 3 + gj) === (hb(h, 28) % 9); g += '<rect x="' + (18 + gi * 90) + '" y="' + (18 + gj * 60) + '" width="84" height="54" fill="' + (inv ? c[2] : c[1]) + '"/>' + (inv ? '<circle cx="' + (60 + gi * 90) + '" cy="' + (45 + gj * 60) + '" r="16" fill="' + c[0] + '"/>' : ''); }
       g += '<rect y="206" width="300" height="60" fill="' + c[3] + '"/>'
-        + '<text x="150" y="238" text-anchor="middle" font-family="' + look.f + '" font-weight="800" font-size="' + fit(band, 26, 276) + '" fill="' + c[0] + '">' + esc(band) + '</text>'
+        + '<text x="150" y="238" text-anchor="middle" font-family="' + look.f + '" font-weight="800" ' + look.ta + ' font-size="' + fit(band, 26, 276, look.ls) + '" fill="' + c[0] + '">' + esc(band) + '</text>'
         + '<text x="150" y="256" text-anchor="middle" font-family="' + look.f + '" font-size="12" fill="' + c[0] + '" opacity="0.8">' + esc(album) + '</text>';
     }
     // label logo chip + era year, always
@@ -218,7 +258,7 @@
     return { svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"' + ((opts && opts.dusty) ? ' data-dusty="1"' : '') + ' width="' + size + '" height="' + size + '">' + g + '</svg>', item: it };
   }
 
-  var API = { renderSleeve: renderSleeve, grime: grime, ramp: ramp };
+  var API = { renderSleeve: renderSleeve, grime: grime, ramp: ramp, priceSticker: priceSticker };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else root.ATTIC_SLEEVE = API;
 })(this);

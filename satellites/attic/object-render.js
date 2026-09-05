@@ -140,36 +140,8 @@
      moves. Five stickers a dealer would actually have used: a paper price dot in cents,
      a trading stamp, an orange price gun label, a black neon shop tag, a clearance
      barcode. The group carries data-era so a gate can count five. */
-  var ERA_NAMES = ['1950s', '1960s', '1970s', '1980s', '1990s'];
-  function priceSticker(h, px, py, big) {
-    var era = hb(h, 1) % 5, tilt = -6 + hb(h, 24) % 12, pb = hb(h, 25), s = '';
-    var open = '<g data-era="' + ERA_NAMES[era] + '" transform="rotate(' + tilt + ' ' + px + ' ' + py + ')">';
-    if (era === 0) {          // paper price dot, in cents, a red ring, serif
-      s = '<circle cx="' + px + '" cy="' + py + '" r="14" fill="#f3e9d2" stroke="#c9bfa4" stroke-width="1"/>'
-        + '<circle cx="' + px + '" cy="' + py + '" r="11" fill="none" stroke="#c94a3a" stroke-width="1.2"/>'
-        + '<text x="' + px + '" y="' + (py + 3.5) + '" text-anchor="middle" font-family="Georgia, serif" font-style="italic" font-weight="700" font-size="9.5" fill="#8a2b20">' + (19 + (pb % 5) * 10) + '&#162;</text>';
-    } else if (era === 1) {   // trading stamp: green, perforated edge
-      s = '<rect x="' + (px - 17) + '" y="' + (py - 12) + '" width="34" height="24" fill="#e9e3c8"/>'
-        + '<rect x="' + (px - 17) + '" y="' + (py - 12) + '" width="34" height="24" fill="none" stroke="#f6f2e4" stroke-width="2" stroke-dasharray="2 2"/>'
-        + '<rect x="' + (px - 14) + '" y="' + (py - 9) + '" width="28" height="18" fill="#2e7f4a"/>'
-        + '<text x="' + px + '" y="' + (py - 1) + '" text-anchor="middle" font-family="Georgia, serif" font-weight="700" font-size="5.5" fill="#e9e3c8" letter-spacing="0.6">TRADING</text>'
-        + '<text x="' + px + '" y="' + (py + 6) + '" text-anchor="middle" font-family="Georgia, serif" font-weight="700" font-size="6.5" fill="#f2d16b">' + (1 + pb % 3) + '0 STAMPS</text>';
-    } else if (era === 2) {   // price gun label: orange, a torn left edge, a SALE line
-      s = '<path d="M' + (px - 16) + ' ' + (py - 9) + ' l3 2 l-3 2 l3 2 l-3 2 l3 2 l-3 2 l3 2 l-3 2 l34 0 l0 -16 Z" fill="#e8772a" stroke="#a84e14" stroke-width="0.8"/>'
-        + '<text x="' + (px + 2) + '" y="' + (py + 1) + '" text-anchor="middle" font-family="ui-monospace, monospace" font-weight="700" font-size="9" fill="#2a1408">$' + (1 + pb % 4) + '.' + (pb % 2 ? '29' : '49') + '</text>'
-        + '<text x="' + (px + 2) + '" y="' + (py + 7) + '" text-anchor="middle" font-family="ui-monospace, monospace" font-size="4.5" fill="#2a1408" letter-spacing="1.2">SALE</text>';
-    } else if (era === 3) {   // black shop tag with a neon edge
-      s = '<rect x="' + (px - 18) + '" y="' + (py - 10) + '" width="36" height="20" rx="3" fill="#101018" stroke="#ff2d7a" stroke-width="1.2"/>'
-        + '<text x="' + px + '" y="' + (py + 1) + '" text-anchor="middle" font-family="\'Arial Narrow\', system-ui, sans-serif" font-weight="700" font-size="9" fill="#26f0e0" letter-spacing="1">$' + (3 + pb % 7) + '.99</text>'
-        + '<text x="' + px + '" y="' + (py + 7.5) + '" text-anchor="middle" font-family="\'Arial Narrow\', system-ui, sans-serif" font-size="4.5" fill="#ff2d7a" letter-spacing="1.5">NEW LOW</text>';
-    } else {                  // clearance barcode
-      var i, bars = '';
-      for (i = 0; i < 11; i++) bars += '<rect x="' + (px - 15 + i * 2.7) + '" y="' + (py - 8) + '" width="' + ((pb >> (i % 7)) & 1 ? 1.6 : 0.8) + '" height="8" fill="#1a1a18"/>';
-      s = '<rect x="' + (px - 19) + '" y="' + (py - 11) + '" width="38" height="22" fill="#f6f4ee" stroke="#b9b5aa" stroke-width="0.8"/>' + bars
-        + '<text x="' + px + '" y="' + (py + 8) + '" text-anchor="middle" font-family="ui-monospace, monospace" font-size="5" fill="#1a1a18" letter-spacing="0.4">CLEARANCE ' + (1 + pb % 5) + '.99</text>';
-    }
-    return open + s + '</g>';
-  }
+  /* the era sticker lives in sleeve-render.js now, so records wear it too (2026-09-05) */
+  function priceSticker(h, px, py, big) { return S.priceSticker(h, px, py, big); }
   /* SHRINKWRAP. Two crossing highlights and a heat seam, which is what a
      wrapped object actually looks like: the gloss does not follow the art. */
   function shrink(bx, by, bw, bh) {

@@ -307,12 +307,12 @@ group('era depth: five eras, five stickers, five title treatments');
       const h = setByte(setByte(base, 1, e), 2, 0x88);   // era e, GOOD
       const it = ATTIC.hashToItem(h), svg = OBJ.renderItem(h, 300).svg;
       const m = svg.match(/data-era="([0-9]{4}s)"/);
-      if (c !== 'RECORD') { if (m && m[1] === it.era) eraSeen[it.era] = (eraSeen[it.era] || 0) + 1; else missing.push(c + '/' + it.era); }
-      if (c !== 'RECORD') { const ta = { '1950s': /font-style="italic"/, '1960s': /stroke-linejoin="round"/, '1970s': /stroke-linejoin="miter"/, '1980s': /stroke="#26f0e0" stroke-width="0\.7"/, '1990s': /letter-spacing="2\.2"/ }[it.era]; if (ta && ta.test(svg)) taSeen[it.era] = (taSeen[it.era] || 0) + 1; }
+      if (m && m[1] === it.era) eraSeen[it.era] = (eraSeen[it.era] || 0) + 1; else missing.push(c + '/' + it.era);
+      { const ta = { '1950s': /font-style="italic"/, '1960s': /stroke-linejoin="round"/, '1970s': /stroke-linejoin="miter"/, '1980s': /stroke="#26f0e0" stroke-width="0\.7"/, '1990s': /letter-spacing="2\.2"/ }[it.era]; if (ta && ta.test(svg)) taSeen[it.era] = (taSeen[it.era] || 0) + 1; }
     }
   });
-  ok('every non record class shows the sticker of its era at GOOD, all five eras', Object.keys(eraSeen).length === 5 && missing.length === 0, missing.slice(0, 6).join(', ') || Object.keys(eraSeen).join(' '));
-  ok('every era puts its own treatment on the title', Object.keys(taSeen).length === 5 && Object.values(taSeen).every(n => n >= 8), JSON.stringify(taSeen));
+  ok('every class, records included, shows the sticker of its era at GOOD, all five eras', Object.keys(eraSeen).length === 5 && missing.length === 0, missing.slice(0, 6).join(', ') || Object.keys(eraSeen).join(' '));
+  ok('every era puts its own treatment on the title, records included', Object.keys(taSeen).length === 5 && Object.values(taSeen).every(n => n >= 9), JSON.stringify(taSeen));
   /* the sticker is grade blind below MINT and absent above NEAR MINT */
   const base = HASHES.find(h => ATTIC.hashToItem(h).cls === 'TOY');
   const at = g => (OBJ.renderItem(setByte(base, 2, g), 300).svg.match(/data-era=/g) || []).length;
