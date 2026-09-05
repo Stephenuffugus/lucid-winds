@@ -11,8 +11,12 @@ await p.setViewport({ width: 412, height: 915, hasTouch: true, isMobile: true })
 p.on('pageerror', e => { console.error('pageerror: ' + e.message); process.exitCode = 1; });
 /* a player cannot stand in dojo 7+ without having cleared world 1, which
    is the AIR DASH unlock — so the bot gets it too and uses it as a save */
+if (process.env.RS_NOSTRUCT) await p.evaluateOnNewDocument(() => { window.__RS_NOSTRUCT = 1; });
 await p.evaluateOnNewDocument(() => { try {
-  localStorage.setItem('rabbitsamurai_save', JSON.stringify({ cleared: 6, up: { vine: 0, fling: 0, heart: 0, paws: 0 }, bank: 0, stars: {} }));
+  localStorage.setItem('rabbitsamurai_save', JSON.stringify({ cleared: 6, sword: 1, dashUsed: 1, up: { vine: 0, fling: 0, heart: 0, paws: 0 }, bank: 0, stars: {} }));
+  /* the story cards (Sep 05) sit between dojos; the solver restarts dojos itself, so they stay off here */
+  localStorage.setItem('rs_set', JSON.stringify({ sound: false, haptic: false, story: false }));
+  if (window.__RS_NOSTRUCT) localStorage.setItem('rs_nostruct', '1');
 } catch (e) {} });
 await p.goto('http://127.0.0.1:8777/satellites/rabbit-samurai/index.html?rstest=1', { waitUntil: 'domcontentloaded' });
 await p.waitForFunction('!!window.RB_DEV');
@@ -26,10 +30,13 @@ const POLICIES = [
      tuned around them. */
   { rel: 0.45, drop: false, lip: true }, { rel: 0.22, drop: false, lip: true }
 ];
+const ONLY = process.env.RS_ONLY ? process.env.RS_ONLY.split(',').map(Number) : null;
+const TRACE = !!process.env.RS_TRACE;
 for (let li = 0; li < 24; li++) {
+  if (ONLY && ONLY.indexOf(li + 1) < 0) continue;
   let res = null, used = null;
   for (const pol of POLICIES) {
-    res = await p.evaluate(async (li, pol) => {
+    res = await p.evaluate(async (li, pol, TRACE) => {
     const D = window.RB_DEV;
     D.start(0); D.startLevel(li);
     const G = D.full();
@@ -37,12 +44,13 @@ for (let li = 0; li < 24; li++) {
     const solid = (c) => { const g = G.lvl.grid; return !!(g[22] && g[22][c]); };
     const gapAt = (c) => { let w = 0; while (!solid(c + w) && c + w < G.lvl.W) w++; return w; };
     let steps = 0, cleared = false, hurts = 0, lastLives = G.lives, ropeThrows = 0;
-    let lastRelease = -999, lastNode = null, dashPulse = 0;
+    let lastRelease = -999, lastNode = null, dashPulse = 0; const trace = [];
     const start = G.levelsCleared;
     for (steps = 0; steps < 60 * 150; steps++) {
       const g = D.full();
       if (!g || g.levelsCleared > start || g.phase === 'clear') { cleared = true; break; }
       if (g.lives < lastLives) hurts++; lastLives = g.lives;
+      if (TRACE && steps % 30 === 0 && steps < 1500) trace.push(`${steps}:c${Math.floor(g.bx/T)} y${Math.round(g.by)}${g.onGround?'G':'a'}${g.rope.attached?'R':''} L${g.lives}`);
       const col = Math.floor(g.bx / T);
       if (g.rope.attached) {
         g.held.left = false; g.held.right = true; g.held.jump = false; g.held.rope = true;
@@ -65,6 +73,12 @@ for (let li = 0; li < 24; li++) {
            at the calmer run speed an early hop lands a 2 wide pit short */
         const atLip = aheadGap && (aheadGap.at * T - g.bx) < 26;
         const jumpCue = pol.lip ? atLip : !!aheadGap;
+        /* a wall one or two tiles tall ahead (crate stack, stair, terrace step, Sep 05):
+           hop it at the lip like a thumb would; the in-game bot already does */
+        const wallClose = (() => { const g2 = G.lvl.grid, c1 = col + 1; if (c1 >= G.lvl.W) return false;
+          const footRow = Math.floor((g.by + 15) / T);
+          const wall = !!(g2[footRow] && g2[footRow][c1]) || !!(g2[footRow - 1] && g2[footRow - 1][c1]);
+          return wall && (c1 * T - g.bx) < 30; })();
         if (g.onGround && hogAhead && pitNear && !aheadGap) {
           /* a hog patrolling a pit lip: stand and let it turn, as a thumb
              would. Lip variants also hop straight up if one closes in from
@@ -74,7 +88,7 @@ for (let li = 0; li < 24; li++) {
             const hogClose = g.lvl.hogs.some(h => !h.dead && Math.abs(h.x - g.bx) < 55 && Math.abs(h.y - g.by) < 50);
             if (hogClose) { g.vy = -770; g.onGround = false; }
           }
-        } else if (g.onGround && (inHole || jumpCue || hogAhead)) {
+        } else if (g.onGround && (inHole || jumpCue || hogAhead || wallClose)) {
           g.vy = -770; g.onGround = false;
         } else if (pol.drop && !g.onGround && solid(col) && lastNode && g.bx > lastNode.x + 20) {
           g.held.right = false;
@@ -95,8 +109,8 @@ for (let li = 0; li < 24; li++) {
       }
       D.step(1 / 60);
     }
-    return { cleared, steps, hurts, ropeThrows, name: D.full() && D.full().lvl.name, W: D.full() && D.full().lvl.W };
-    }, li, pol);
+    return { cleared, steps, hurts, ropeThrows, name: D.full() && D.full().lvl.name, W: D.full() && D.full().lvl.W, at: D.full() ? Math.round(D.full().bx / T) : -1, trace: TRACE ? trace.join(' ') : undefined };
+    }, li, pol, TRACE);
     if (res.cleared) { used = pol; break; }
   }
   console.log('dojo', li + 1, JSON.stringify(res), used ? ('policy rel=' + used.rel + ' drop=' + used.drop) : 'NO POLICY CLEARED');
