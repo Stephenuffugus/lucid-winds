@@ -228,3 +228,11 @@ The jar lifts, the bug rises, the grade stamps, the name settles. Frames: `lb-mi
 ### The Attic shelf, objects stand (Sep 05, later)
 
 A board game and a lunchbox floated above the plank; every class now slides down by the air under its drawn box and the gate measures the seat on every card. The record album sub lines now fit their room instead of clipping.
+
+### Known at 320 wide (Sep 05, later)
+
+Both games scale a 540 wide stage to the phone. At 320x568 that scale is 0.59, so every 76 CSS px button in Litter Bug measures 44 rendered px there (the arena, the open, the mint and the dumpster all compose fine at 320). The 48 px law is measured at 375x667, where every control passes. Raising every button to 82 CSS px would clear 48 at 320 and grow them to 63 at 412; that is a composition call, parked.
+
+### Litter Bug Bugdex sorts (Sep 05, later)
+
+NEWEST, GRADE and LEVEL under the family chips; newest first is the default now. Shot: `lb-dex-sort.png`.
