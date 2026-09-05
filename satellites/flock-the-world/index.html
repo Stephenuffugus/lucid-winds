@@ -18,6 +18,7 @@
   --void:#05070b; --deep:#0a1018; --panel:#101822; --panel2:#16212e; --line:#22303f;
   --ice:#7fa8c4; --dim:#5b7186; --sodium:#ffa229; --sodium-d:#c47512;
   --blood:#ff3b30; --scan:#39e6c3; --paper:#dfe9f0; --grn:#7ef0a6;
+  --ocean:#04121e; --crt:.28;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;height:100%;background:var(--void);color:var(--paper);
@@ -185,9 +186,9 @@ h1 em{font-style:normal;color:var(--sodium)}
 /* "the giant button to start is almost in the way": compact, centred, still 48px */
 .cta.pickcta{flex:0 0 auto;width:auto;min-width:150px;max-width:none;margin:0;padding:0 16px;font-size:12.5px}
 #pickRow{display:flex;align-items:stretch;gap:8px;margin-top:6px}
-#pickWrap{flex:1;position:relative;overflow:hidden;touch-action:none;background:#04121e}
+#pickWrap{flex:1;position:relative;overflow:hidden;touch-action:none;background:var(--ocean)}
 #pickMap,#pickFx{position:absolute;left:0;top:0}
-.crt{position:absolute;inset:0;pointer-events:none;opacity:.28;
+.crt{position:absolute;inset:0;pointer-events:none;opacity:var(--crt);
   background:repeating-linear-gradient(0deg,#0000 0 2px,#00000055 2px 3px)}
 #pickFoot{padding:8px 12px calc(env(safe-area-inset-bottom) + 10px);border-top:1px solid var(--line);background:#080d14}
 #pickInfo{font-size:11.5px;color:var(--ice);min-height:0;line-height:1.45;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
@@ -322,7 +323,7 @@ h1 em{font-style:normal;color:var(--sodium)}
 }
 
 /* ---------- map ---------- */
-#mapWrap{flex:1;position:relative;overflow:hidden;touch-action:none;background:#04121e}
+#mapWrap{flex:1;position:relative;overflow:hidden;touch-action:none;background:var(--ocean)}
 #map,#fx{position:absolute;left:0;top:0}
 #fx{pointer-events:none}
 /* the wire: a continuously scrolling news bar, not a flip card */
@@ -374,6 +375,15 @@ h1 em{font-style:normal;color:var(--sodium)}
 .rec{width:6px;height:6px;border-radius:50%;background:var(--blood);animation:blink 1.4s infinite}
 @keyframes blink{50%{opacity:.15}}
 .zoomui{position:absolute;right:8px;top:8px;display:flex;flex-direction:column;gap:5px}
+/* the map style name, shown for a moment when MAP cycles it */
+.maptoast{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);padding:9px 16px;border-radius:12px;
+  background:#0a1018e0;border:1px solid var(--line);color:var(--paper);font-size:12px;letter-spacing:.1em;
+  text-transform:uppercase;opacity:0;transition:opacity .25s;pointer-events:none;z-index:5;white-space:nowrap}
+.maptoast.on{opacity:1}
+/* over a light map the HUD's fade-out tail left SUBJUGATION and PATRIOTISM on bare sea: the
+   scrim stays near solid down to the bars, and the status pill gets a body */
+html[data-map="day"] #hud,html[data-map="paper"] #hud{background:linear-gradient(#0a1018f8,#080d14ee 78%,#080d14b8)}
+.mappip{flex:1;padding:0 6px;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;min-width:0}
 /* 48px floor, measured as rendered px at 375x667: this page is not scaled,
    so the CSS px IS the rendered px. The old 32px squares failed the floor. */
 .zb{width:48px;height:48px;border:1px solid var(--line);border-radius:10px;background:#0a1018cc;
@@ -896,8 +906,11 @@ h1 em{font-style:normal;color:var(--sodium)}
    screen is up the pill rides above the footer, over the map's empty ocean. A pill the
    player has dragged carries its own inline position and is not moved. */
 body:has(#pick.on) #sws-music-pill{bottom:calc(env(safe-area-inset-bottom,0px) + 102px)}
+/* in the game the same pill sat on LEDGER and DEPLOY in the nav bar (412x915, Sep 05) */
+body:has(#game.on) #sws-music-pill{bottom:calc(env(safe-area-inset-bottom,0px) + 150px)}
 @media (orientation:landscape) and (max-height:560px){
   body:has(#pick.on) #sws-music-pill{bottom:calc(env(safe-area-inset-bottom,0px) + 70px)}
+  body:has(#game.on) #sws-music-pill{bottom:calc(env(safe-area-inset-bottom,0px) + 140px)}
 }
 @media (max-width:360px){
   body:has(#pick.on) #sws-music-pill{bottom:calc(env(safe-area-inset-bottom,0px) + 158px)}
@@ -948,6 +961,7 @@ body:has(#pick.on) #sws-music-pill{bottom:calc(env(safe-area-inset-bottom,0px) +
   <div class="diffdesc" id="diffDesc"></div>
   <label class="tipsrow"><input type="checkbox" id="tipsChk" checked> Briefings and field notes</label>
   <div id="musicRows" style="display:none"></div>
+  <div id="mapRows"></div>
   <button class="cta" id="resumeBtn" style="display:none;background:var(--panel2);color:var(--paper);border:1px solid var(--sodium);box-shadow:none">Resume your run</button>
   <button class="cta" id="startBtn">Open for business</button>
   <p class="fine" id="recLine" style="margin-top:14px"></p>
@@ -980,7 +994,7 @@ body:has(#pick.on) #sws-music-pill{bottom:calc(env(safe-area-inset-bottom,0px) +
     <button class="howbtn pickback" id="pickBackBtn">Menu</button>
   </div>
   <div id="pickWrap"><canvas id="pickMap"></canvas><canvas id="pickFx"></canvas><div class="crt"></div>
-    <div class="zoomui"><button class="zb" data-z="in">IN</button><button class="zb" data-z="out">OUT</button><button class="zb" data-z="fit">FIT</button></div>
+    <div class="zoomui"><button class="zb" data-z="in">IN</button><button class="zb" data-z="out">OUT</button><button class="zb" data-z="fit">FIT</button><button class="zb" data-z="style" aria-label="Map colours">MAP</button></div>
   </div>
   <div id="pickFoot">
     <div id="pickInfo">No region selected.</div>
@@ -1024,7 +1038,7 @@ body:has(#pick.on) #sws-music-pill{bottom:calc(env(safe-area-inset-bottom,0px) +
     <div id="toasts"></div>
     <div id="rpop"></div>
     <div id="pill"><span class="rec"></span><span class="mono" id="pillTxt">LIVE</span></div>
-    <div class="zoomui"><button class="zb" data-z="in">IN</button><button class="zb" data-z="out">OUT</button><button class="zb" data-z="fit">FIT</button></div>
+    <div class="zoomui"><button class="zb" data-z="in">IN</button><button class="zb" data-z="out">OUT</button><button class="zb" data-z="fit">FIT</button><button class="zb" data-z="style" aria-label="Map colours">MAP</button></div>
     <div id="breaking"><b>BREAKING</b><span id="breakTxt"></span><button id="breakX" aria-label="Dismiss">✕</button></div>
     <div id="guide"><span id="guideTxt"></span><button type="button" class="gskip gnext" id="guideNext">Next</button><button type="button" class="gskip" id="guideSkip">Skip briefing</button></div>
     <div id="rotHint"><span id="rotTxt">Tip: turn your phone sideways. In landscape the whole map fits the screen.</span><button class="rx" id="rotX">✕</button></div>
@@ -3876,44 +3890,81 @@ function bindZoomUi(container,v,redraw){
   container.querySelectorAll('.zb').forEach(b=>b.onclick=()=>{
     if(b.dataset.z==='in')v.zoomAt(1.35,v.w/2,v.h/2);
     else if(b.dataset.z==='out')v.zoomAt(0.74,v.w/2,v.h/2);
+    else if(b.dataset.z==='style'){cycleMapStyle();mapToast(container,MP().name);sfx('ui_tap');}
     else{v.z=v.containZ;v.center(PW/2,PH/2);} // FIT = the whole map
     redraw();
   });
 }
 
 /* ============================ RENDER ============================ */
-function idleFill(rr,tint){return`hsl(210 ${12+rr.liberty*24}% ${16+rr.liberty*6+(tint||0)*0.7}%)`;}
+/* ---- map colour styles ----
+   Sep 05, Stephen, playing outside: "it's kind of bright outside and since everything's
+   so dark it's actually really hard to see the map now. We could have a couple different
+   variations that people can pick from." Three: the night desk (as it was), Daylight
+   (the same blues, twice the light, land well clear of the sea), and Paper (a light map,
+   dark borders, for direct sun). Every colour the renderer paints comes from here; the
+   land/sea edge also gets a coast line in all three, which is the "more detail without
+   clutter" half of the note. Picked from the menu, or the MAP button on the map cycles. */
+const K_MAP='ftw_map';
+const MAP_STYLES={
+  night:{name:'Night desk',ocean:'#04121e',grat:'#0a1926',route:'#14222e',border:'#061119',coast:'rgba(127,168,196,0.10)',
+    idle:(lib,tint)=>`hsl(210 ${12+lib*24}% ${16+lib*6+tint*0.7}%)`,unlit:tint=>`hsl(30 12% ${15+tint*0.5}%)`,
+    lost:['#170b0e','#1c0d10'],sib:tint=>`hsl(210 30% ${28+tint}%)`,lit:15,sat:20,label:'#dfe9f055',crt:.28},
+  day:{name:'Daylight',ocean:'#12304d',grat:'#1f4468',route:'#2f5478',border:'#08172a',coast:'rgba(160,205,235,0.22)',
+    idle:(lib,tint)=>`hsl(210 ${16+lib*22}% ${36+lib*8+tint*0.9}%)`,unlit:tint=>`hsl(32 16% ${33+tint*0.6}%)`,
+    lost:['#3a1a22','#47202b'],sib:tint=>`hsl(210 34% ${46+tint}%)`,lit:31,sat:34,label:'#f2f7fbaa',crt:.12},
+  paper:{name:'Paper map',ocean:'#c9d5de',grat:'#b5c3ce',route:'#9cb0bf',border:'#2a3946',coast:'rgba(20,40,60,0.18)',
+    idle:(lib,tint)=>`hsl(210 ${10+lib*14}% ${60+lib*7+tint*0.8}%)`,unlit:tint=>`hsl(32 20% ${64+tint*0.5}%)`,
+    lost:['#8f5f68','#9c6a74'],sib:tint=>`hsl(210 28% ${70+tint}%)`,lit:44,sat:44,label:'#1b2a38aa',crt:.06}
+};
+const MAP_ORDER=['night','day','paper'];
+let mapStyleKey=(()=>{const k=lsGet(K_MAP);return MAP_STYLES[k]?k:'night';})();
+function MP(){return MAP_STYLES[mapStyleKey];}
+function applyMapStyle(){const p=MP();try{const r=document.documentElement.style;r.setProperty('--ocean',p.ocean);r.setProperty('--crt',p.crt);document.documentElement.setAttribute('data-map',mapStyleKey);}catch(e){}}
+function setMapStyle(k){if(!MAP_STYLES[k])return;mapStyleKey=k;lsSet(K_MAP,k);applyMapStyle();renderMapRows();}
+function cycleMapStyle(){setMapStyle(MAP_ORDER[(MAP_ORDER.indexOf(mapStyleKey)+1)%MAP_ORDER.length]);}
+function mapToast(container,txt){let t=container.querySelector('.maptoast');
+  if(!t){t=document.createElement('div');t.className='maptoast';container.appendChild(t);}
+  t.textContent=txt;t.classList.add('on');clearTimeout(t._to);t._to=setTimeout(()=>t.classList.remove('on'),1300);}
+function renderMapRows(){const m=$('mapRows');if(!m)return;
+  m.innerHTML='<div class="seclab">Map colours</div><div class="musrow">'+MAP_ORDER.map(k=>
+    `<button class="muspip mappip${k===mapStyleKey?' on':''}" data-map="${k}">${MAP_STYLES[k].name}</button>`).join('')
+    +'</div><span class="pickhint" style="display:block;margin-top:6px">Daylight and Paper are for playing outside. The MAP button on the map cycles them too.</span>';
+  m.querySelectorAll('[data-map]').forEach(b=>b.onclick=()=>{setMapStyle(b.dataset.map);sfx('ui_tap');});}
+applyMapStyle();
+function idleFill(rr,tint){return MP().idle(rr.liberty,tint||0);}
 function countryFill(c,st,flick){
   const rr=R[c.r];
   if(!st)return idleFill(rr,c.tint);
   const r=st.regions[c.r];
-  if(r.lost)return flick?'#1c0d10':'#170b0e';
+  if(r.lost)return MP().lost[flick?1:0];
   if(!r.active)return idleFill(rr,c.tint);
   if(r.pstate==='uprising'&&flick)return'#2fe0bd';
   /* progressive country-by-country spread within the region */
   const rank=(r.cOrder&&r.cOrder[c.idx]!==undefined)?r.cOrder[c.idx]:0;
   const prog=Math.max(0,Math.min(1,r.coverage*r.cN-rank));
-  if(prog<=0)return`hsl(30 12% ${15+(c.tint||0)*0.5}%)`; /* signed but unlit */
+  if(prog<=0)return MP().unlit(c.tint||0); /* signed but unlit */
   const ctl=r.control;
   const hue=42-40*Math.min(1,ctl*1.15);
-  const sat=20+ (58+30*r.coverage-20)*prog;
-  const lit=15+(16+34*r.coverage-15+4)*prog;
+  const sat=MP().sat+(58+30*r.coverage-20)*prog;
+  const lit=MP().lit+(16+34*r.coverage-15+4)*prog;
   return`hsl(${hue} ${sat}% ${lit}%)`;
 }
 function drawWorld(v,st,highlight){
   const ctx=v.ctx;
   v.clear(ctx);
   ctx.setTransform(v.dpr,0,0,v.dpr,0,0);
-  ctx.fillStyle='#04121e';ctx.fillRect(0,0,v.w,v.h);
+  const P=MP();
+  ctx.fillStyle=P.ocean;ctx.fillRect(0,0,v.w,v.h);
   v.apply(ctx);
   /* graticule */
-  ctx.strokeStyle='#0a1926';ctx.lineWidth=0.7/v.z*v.fitZ+0.2;
+  ctx.strokeStyle=P.grat;ctx.lineWidth=0.7/v.z*v.fitZ+0.2;
   ctx.beginPath();
   for(let lon=LON0;lon<=LON0+360;lon+=30){const x=projX(lon);ctx.moveTo(x,0);ctx.lineTo(x,PH);}
   for(let lat=-60;lat<=85;lat+=30){const y=projY(lat);ctx.moveTo(0,y);ctx.lineTo(PW,y);}
   ctx.stroke();
   /* routes */
-  ctx.setLineDash([3,5]);ctx.strokeStyle='#14222e';ctx.lineWidth=1;
+  ctx.setLineDash([3,5]);ctx.strokeStyle=P.route;ctx.lineWidth=1;
   ctx.beginPath();
   for(const[a,b]of ROUTES){
     const[ax,ay]=anchorOf(a),[bx,by]=anchorOf(b);
@@ -3927,13 +3978,17 @@ function drawWorld(v,st,highlight){
     let fill=countryFill(c,st,flick);
     if(highlight!=null){
       if(highlight===c.idx)fill='#ffa229';
-      else if(R[c.r].id===COUNTRIES[highlight].r)fill=`hsl(210 30% ${28+(c.tint||0)}%)`;
+      else if(R[c.r].id===COUNTRIES[highlight].r)fill=P.sib(c.tint||0);
     }
     ctx.fillStyle=fill;
     ctx.fill(countryPath(c));
   }
+  /* coast line: a soft wide stroke under the borders so the land/sea edge reads
+     at a glance in sun (the outer half falls on the sea, the inner half on land) */
+  ctx.strokeStyle=P.coast;ctx.lineWidth=Math.max(1.4,3/(v.z/v.fitZ));
+  for(const c of COUNTRIES)ctx.stroke(countryPath(c));
   /* borders */
-  ctx.strokeStyle='#061119';ctx.lineWidth=Math.max(0.35,0.8/(v.z/v.fitZ));
+  ctx.strokeStyle=P.border;ctx.lineWidth=Math.max(0.35,0.8/(v.z/v.fitZ));
   for(const c of COUNTRIES)ctx.stroke(countryPath(c));
   /* active-region country borders slightly lit */
   if(st){
@@ -3983,7 +4038,7 @@ function drawWorld(v,st,highlight){
   if(v.z>v.fitZ*1.25){
     ctx.font=`700 ${9/(v.z/v.fitZ)+4}px system-ui,sans-serif`;
     ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillStyle='#dfe9f055';
+    ctx.fillStyle=P.label;
     for(const r of REGIONS){const[ax,ay]=anchorOf(r.id);
       ctx.fillText(r.name.toUpperCase(),ax,ay-8);}
   }
@@ -5232,6 +5287,7 @@ function initMenu(){
       CARD_ART[DIFF_ART[k]]?`<img class="dfart" src="art/card/${DIFF_ART[k]}.webp?v=trim3" alt="">`:''}<span>${k}</span></button>`).join('');
   document.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{chosenDiff=b.dataset.d;initMenu();});
   $('diffDesc').textContent=DIFFS[chosenDiff].label;
+  renderMapRows();
   const tc=$('tipsChk');
   if(tc&&!tc._wired){tc._wired=1;tc.checked=lsGet(K_TIPS)!=='0';
     tc.onchange=()=>{try{lsSet(K_TIPS,tc.checked?'1':'0');}catch(e){}};}
@@ -5614,7 +5670,7 @@ window._sbCapEarn=function(n,tag){
   /* offline shell: registered here so the whole game (art and sfx included)
      works offline after one session. Bump ?v= with sw.js SHELL_VERSION. */
   if('serviceWorker' in navigator){
-    try{ navigator.serviceWorker.register('sw.js?v=20260905a'); }catch(e){}
+    try{ navigator.serviceWorker.register('sw.js?v=20260905b'); }catch(e){}
   }
   if(framed){
     try{ parent.postMessage({sws:'ready'},'*'); }catch(e){}
