@@ -23,24 +23,30 @@ if(startRe){ await pg.evaluate((src)=>{const re=new RegExp(src,"i"); const b=[..
 // ⛔ innerWidth follows the LAYOUT viewport: when content is wider than the phone, mobile
 // Chrome widens the layout viewport and innerWidth grows with it (412 -> 443 on Reversi),
 // so scrollWidth vs innerWidth is always "clean". Measure against the device width.
-const rep=await pg.evaluate((W)=>{
-  const iw=W, sw=Math.max(document.documentElement.scrollWidth, document.body.scrollWidth);
+const MINW=+process.env.MINW||24, MINH=+process.env.MINH||12;
+const rep=await pg.evaluate((W,MINW,MINH)=>{
+  const iw=W, swRaw=Math.max(document.documentElement.scrollWidth, document.body.scrollWidth);
+  // ⛔ when html or body clips horizontally the page cannot pan, so scrollWidth over-reports; the
+  // layout viewport (innerWidth on a mobile emulation) widening past the device width is the
+  // signal that matters, and it is the one the player feels (Shell Shuffle: 323 scroll, 320 layout)
+  const ox=(el)=>getComputedStyle(el).overflowX; const clipped=['hidden','clip'].includes(ox(document.documentElement))||['hidden','clip'].includes(ox(document.body));
+  const sw=clipped?Math.max(W, window.innerWidth):swRaw;
   const off=[]; const fixedOrHidden=(e)=>{ let n=e; while(n&&n!==document.body){ const cs=getComputedStyle(n); if(cs.display==="none"||cs.visibility==="hidden"||+cs.opacity===0) return true; n=n.parentElement;} return false; };
   // an element inside a horizontal scroller (overflow-x auto/scroll/hidden/clip) that itself
   // stays on screen is not page overflow: a mode strip's fifth chip is meant to be off to the right
   const clippedByAncestor=(e)=>{ let n=e.parentElement; while(n&&n!==document.body){ const ox=getComputedStyle(n).overflowX; if(ox&&ox!=='visible'){ const rr=n.getBoundingClientRect(); if(rr.right<=iw+0.5&&rr.left>=-0.5) return true; } n=n.parentElement; } return false; };
-  for(const e of document.querySelectorAll("body *")){ const r=e.getBoundingClientRect(); if(r.width<24||r.height<12) continue; if(fixedOrHidden(e)) continue; if(clippedByAncestor(e)) continue;
+  for(const e of document.querySelectorAll("body *")){ const r=e.getBoundingClientRect(); if(r.width<MINW||r.height<MINH) continue; if(fixedOrHidden(e)) continue; if(clippedByAncestor(e)) continue;
     const over=Math.max(r.right-iw, -r.left); if(over>0.5){ off.push({tag:e.tagName.toLowerCase(), id:e.id||"", cls:(e.className&&e.className.baseVal!==undefined?e.className.baseVal:e.className||"").toString().split(/\s+/).slice(0,2).join("."), left:Math.round(r.left), right:Math.round(r.right), w:Math.round(r.width), over:Math.round(over*10)/10}); } }
   off.sort((a,b)=>b.over-a.over||b.w-a.w);
   // DUMP=1: the top offender's markup and its ancestor chain, so a nameless div can be found
-  let dump=null; if(off.length){ const els2=[...document.querySelectorAll('body *')].filter(e=>{const r=e.getBoundingClientRect(); return r.width>=24&&r.height>=12&&Math.max(r.right-iw,-r.left)>0.5;});
+  let dump=null; if(off.length){ const els2=[...document.querySelectorAll('body *')].filter(e=>{const r=e.getBoundingClientRect(); return r.width>=MINW&&r.height>=MINH&&Math.max(r.right-iw,-r.left)>0.5;});
     els2.sort((a,b)=>{const ra=a.getBoundingClientRect(), rb=b.getBoundingClientRect(); return Math.max(rb.right-iw,-rb.left)-Math.max(ra.right-iw,-ra.left)||rb.width-ra.width;});
     const e=els2.find(x=>!clippedByAncestor(x))||els2[0]; const chain=[]; let n=e; while(n&&n!==document.body){ const r=n.getBoundingClientRect(); const cs=getComputedStyle(n); chain.push((n.tagName.toLowerCase())+(n.id?'#'+n.id:'')+(n.className&&typeof n.className==='string'&&n.className?'.'+n.className.split(/\s+/)[0]:'')+' ['+Math.round(r.left)+'..'+Math.round(r.right)+' w'+Math.round(r.width)+' disp:'+cs.display+' pos:'+cs.position+' ml:'+cs.marginLeft+' w:'+cs.width+']'); n=n.parentElement; }
     dump={html:e.outerHTML.slice(0,240), chain}; }
   // outermost offenders only: drop any whose ancestor is also listed
   const els=[...document.querySelectorAll("body *")];
-  return {iw, sw, layout:window.innerWidth, n:off.length, top:off.slice(0,6), dump};
-}, W);
-console.log(JSON.stringify({path, W, layoutW:rep.layout, scrollWidth:rep.sw, overflowPx:Math.max(0,rep.sw-rep.iw), offenders:rep.n, top:rep.top}));
+  return {iw, sw, swRaw, clipped, layout:window.innerWidth, n:clipped?0:off.length, top:clipped?[]:off.slice(0,6), dump:clipped?null:dump};
+}, W, MINW, MINH);
+console.log(JSON.stringify({path, W, layoutW:rep.layout, scrollWidth:rep.sw, rawScrollWidth:rep.swRaw, bodyClips:rep.clipped, overflowPx:Math.max(0,rep.sw-rep.iw), offenders:rep.n, top:rep.top}));
 if(process.env.DUMP&&rep.dump){ console.log('TOP OFFENDER: '+rep.dump.html); rep.dump.chain.forEach(c=>console.log('  '+c)); }
 await b.close(); s.close(); process.exit(rep.sw>rep.iw||rep.n?1:0);

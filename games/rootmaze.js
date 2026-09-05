@@ -751,7 +751,7 @@ function showEndCard(won){
   endCard=document.createElement('div'); endCard.className='RMend'+(won?'':' lose');
   var bestKey='lw_rootmaze_best_'+S.variant+'_'+S.difficulty;
   var best=parseInt(localStorage.getItem(bestKey)||'9999',10);
-  var bestStr=(best>=9999)?'·':best+' turns';
+  var bestStr=(best>=9999)?'none yet':best+' turns';
   endCard.innerHTML=
     '<div class="RMendTitle">'+(won?'MAZE MASTERED':'MIRROR WINS')+'</div>'+
     '<div class="RMendStats">'+S.turns+' turns  ·  best '+bestStr+'<br>'+S.playerTIdx+' / '+S.playerTargets.length+' treasures</div>';

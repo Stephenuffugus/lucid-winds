@@ -93,10 +93,11 @@ window._gameFns.bleedinghearts = function BH(a){
     +'box-sizing:border-box;'
     +'background:'
       +'url("'+_BH_FELT+'"),'
+      +'linear-gradient(180deg,rgba(13,16,12,.92) 0,rgba(13,16,12,0) 64px),'
       +'radial-gradient(ellipse at 50% 0%,rgba(255,255,255,0.04) 0%,transparent 50%),'
       +'radial-gradient(circle at 50% 100%,rgba(0,0,0,0.3) 0%,transparent 65%),'
       +'linear-gradient(135deg,#3a1020 0%,#2a0a18 55%,#1a0510 100%);'
-    +'background-size:180px 180px, auto, auto, auto;'
+    +'background-size:180px 180px, auto, auto, auto, auto;'
     +'border-radius:14px;'
     +'border:2px solid #6b4520;'
     +'box-shadow:'
@@ -390,7 +391,7 @@ window._gameFns.bleedinghearts = function BH(a){
     if(faceDown){return '<div style="'+_cdBackCss(28,40,4)+'display:inline-block;"></div>';}
     var col=c.suit==='hearts'||c.suit==='diamonds'?'#c47a7a':'#1a1f17';
     var bc=extraClass==='sel'?'var(--gold)':extraClass==='play'?'#7AB956':'#C4B998';
-    return '<div style="display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:42px;height:58px;border-radius:6px;background:#F5F0E1;border:2px solid '+bc+';color:'+col+';font-weight:700;position:relative;'+(extraClass==='play'?'cursor:pointer;':'')+(extraClass==='sel'?'transform:translateY(-6px);box-shadow:0 4px 12px rgba(200,168,75,0.4);cursor:pointer;':'')+'"><div style="font-size:0.75rem;position:absolute;top:2px;left:4px;">'+c.rank+'</div><div style="font-size:1.2rem;">'+_pip(c.suit)+'</div></div>';
+    return '<div style="display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:100%;max-width:48px;aspect-ratio:29/40;height:auto;border-radius:6px;background:#F5F0E1;border:2px solid '+bc+';color:'+col+';font-weight:700;position:relative;'+(extraClass==='play'?'cursor:pointer;':'')+(extraClass==='sel'?'transform:translateY(-6px);box-shadow:0 4px 12px rgba(200,168,75,0.4);cursor:pointer;':'')+'"><div style="font-size:0.75rem;position:absolute;top:2px;left:4px;">'+c.rank+'</div><div style="font-size:1.2rem;">'+_pip(c.suit)+'</div></div>';
   }
 
   function render(){
@@ -423,12 +424,12 @@ window._gameFns.bleedinghearts = function BH(a){
                     : danger ? '0 0 10px rgba(230,57,70,0.5)'
                     : '0 0 6px '+color+'33';
       h+='<div style="text-align:center;padding:5px 3px;background:rgba(0,0,0,0.35);border-radius:6px;border:'+borderStyle+';box-shadow:'+boxShadow+';'+(danger?'animation:bhDanger 1.4s ease-in-out infinite;':'')+'">';
-      h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.12em;color:'+color+';text-transform:uppercase;line-height:1;">'+NAMES[p]+(you?' ·':'')+(winning?' <span style="color:#ffdc70;">♔</span>':'')+'</div>';
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.66rem;letter-spacing:0.1em;color:'+color+';text-transform:uppercase;line-height:1;">'+NAMES[p]+(you?' ·':'')+(winning?' <span style="color:#ffdc70;">♔</span>':'')+'</div>';
       h+='<div style="font-family:Georgia,serif;font-size:1.45rem;font-weight:700;color:#f5ebd0;line-height:1;margin-top:2px;text-shadow:0 2px 3px rgba(0,0,0,0.5);">'+scores[p]+'</div>';
       if(trumpRoundPts(p)){
-        h+='<div style="font-family:Georgia,serif;font-style:italic;font-size:0.58rem;color:#dc8a8a;margin-top:2px;line-height:1;">+'+roundPts[p]+'</div>';
+        h+='<div style="font-family:Georgia,serif;font-style:italic;font-size:0.7rem;color:#dc8a8a;margin-top:2px;line-height:1;">+'+roundPts[p]+'</div>';
       }else{
-        h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:rgba(232,220,200,0.35);margin-top:2px;line-height:1;">, </div>';
+        h+='<div style="font-family:DM Mono,monospace;font-size:0.66rem;color:rgba(232,220,200,0.35);margin-top:2px;line-height:1;">·</div>';
       }
       h+='</div>';
     }
@@ -445,7 +446,7 @@ window._gameFns.bleedinghearts = function BH(a){
     }
     h+='</div>';
     // North — face-down cards with horizontal overlap for compactness
-    h+='<div class="'+_seatCls(N)+'" style="text-align:center;padding:6px;border-radius:10px;"><div style="font-family:DM Mono,monospace;font-size:0.6rem;color:'+PLAYER_COLORS[N]+';letter-spacing:0.14em;margin-bottom:5px;text-transform:uppercase;font-weight:700;">NORTH <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;margin-left:4px;">×'+seatCount(N)+'</span>'+_voidTags(N)+'</div><div style="display:inline-flex;justify-content:center;">';
+    h+='<div class="'+_seatCls(N)+'" style="text-align:center;padding:6px;border-radius:10px;"><div style="font-family:DM Mono,monospace;font-size:0.7rem;color:'+PLAYER_COLORS[N]+';letter-spacing:0.12em;margin-bottom:5px;text-transform:uppercase;font-weight:700;">NORTH <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;margin-left:4px;">×'+seatCount(N)+'</span>'+_voidTags(N)+'</div><div style="display:inline-flex;justify-content:center;">';
     // Tight overlap — 13 backs fanning horizontally shouldn't eat the whole row.
     for(var n=0;n<seatCount(N);n++)h+='<span class="'+(isNewlyDealt(N,n)?'cd-deal-in':'')+'" style="display:inline-block;margin-left:'+(n===0?'0':'-22px')+';">'+_cardHtml(null,true)+'</span>';
     h+='</div></div>';
@@ -456,7 +457,7 @@ window._gameFns.bleedinghearts = function BH(a){
     for(var w=0;w<seatCount(W);w++)h+='<span class="'+(isNewlyDealt(W,w)?'cd-deal-in':'')+'" style="display:block;margin-top:'+(w===0?'0':'-34px')+';">'+_cardHtml(null,true)+'</span>';
     h+='</div></div>';
     // Trick
-    h+='<div style="position:relative;min-height:160px;background:rgba(26,31,23,0.3);border-radius:8px;">';
+    h+='<div style="position:relative;min-height:160px;background:rgba(20,10,16,0.55);box-shadow:inset 0 0 44px rgba(0,0,0,.65);border-radius:8px;">';
     if(phase==='dealing'){
       var left=52-(dealt[0]+dealt[1]+dealt[2]+dealt[3]);
       h+='<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">'
@@ -515,14 +516,14 @@ window._gameFns.bleedinghearts = function BH(a){
       }
       h+='</div>';
       var ready=passSelection.length===3;
-      h+='<button class="gb" onclick="_BHPASS()" '+(ready?'':'disabled')+' style="min-height:44px;padding:10px 22px;font-family:Georgia,serif;font-size:0.85rem;'+(ready?'background:linear-gradient(180deg,rgba(255,220,112,0.25),rgba(200,168,75,0.3));border:2px solid #ffdc70;color:#f5ebd0;box-shadow:0 0 14px rgba(255,220,112,0.35);':'opacity:0.5;')+'">';
+      h+='<button class="gb" onclick="_BHPASS()" '+(ready?'':'disabled')+' style="min-height:44px;padding:10px 22px;font-family:Georgia,serif;font-size:0.85rem;'+(ready?'background:linear-gradient(180deg,rgba(255,220,112,0.25),rgba(200,168,75,0.3));border:2px solid #ffdc70;color:#f5ebd0;box-shadow:0 0 14px rgba(255,220,112,0.35);':'border:1.5px dashed rgba(255,220,112,.5);color:rgba(245,235,208,.7);background:rgba(0,0,0,.25);')+'">';
       h+=ready ? 'Pass '+dirLabel.toLowerCase() : 'Tap '+(3-passSelection.length)+' more';
       h+='</button>';
       h+='</div>';
     }
     // Player hand
     h+='<div class="'+_seatCls(S)+'" style="padding:6px;border-radius:10px;"><div style="font-family:DM Mono,monospace;font-size:0.62rem;color:'+PLAYER_COLORS[S]+';text-align:center;letter-spacing:0.14em;margin-bottom:6px;text-transform:uppercase;font-weight:700;">Your Hand</div>';
-    h+='<div style="display:flex;gap:3px;justify-content:center;flex-wrap:wrap;">';
+    h+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;justify-items:center;max-width:min(94vw,420px);margin:0 auto;">';
     var leadS=trick.length>0?trick[0].card.suit:'';
     var playable=[];
     if(phase==='play'&&currentPlayer===S)playable=getPlayable(hands[S],leadS,trickNum===0);
@@ -537,7 +538,7 @@ window._gameFns.bleedinghearts = function BH(a){
       var col=cc.suit==='hearts'||cc.suit==='diamonds'?'#b42a2a':'#1a1a1a';
       var bc=isSel?'#ffdc70':canP?'#7ab356':'#c4b998';
       if(isQS&&!isSel)bc='#8b0000';
-      var sty='display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:42px;height:60px;border-radius:6px;background:linear-gradient(180deg,#faf3dd,#f0e7c8);border:2px solid '+bc+';color:'+col+';font-weight:700;position:relative;font-family:Georgia,serif;transition:transform .15s ease;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 2px 5px rgba(0,0,0,0.4);';
+      var sty='display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:100%;max-width:48px;aspect-ratio:7/10;height:auto;border-radius:6px;background:linear-gradient(180deg,#faf3dd,#f0e7c8);border:2px solid '+bc+';color:'+col+';font-weight:700;position:relative;font-family:Georgia,serif;transition:transform .15s ease;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 2px 5px rgba(0,0,0,0.4);';
       if(canP||phase==='passing')sty+='cursor:pointer;';
       if(isSel)sty+='transform:translateY(-10px);box-shadow:0 0 0 2px #ffdc70,0 8px 16px rgba(255,220,112,0.4);';
       if(!canP&&phase==='play')sty+='opacity:0.45;filter:saturate(0.6);';
@@ -568,7 +569,7 @@ window._gameFns.bleedinghearts = function BH(a){
         var ltSeatCol=PLAYER_COLORS[ltc.player];
         var ltWin=(ltc.player===lastTrick.winner);
         h+='<div style="text-align:center;">';
-        h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;letter-spacing:0.14em;color:'+ltSeatCol+';text-transform:uppercase;margin-bottom:4px;font-weight:700;">'+NAMES[ltc.player]+(ltWin?' <span style="color:#ffdc70;">✦</span>':'')+'</div>';
+        h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;letter-spacing:0.12em;color:'+ltSeatCol+';text-transform:uppercase;margin-bottom:4px;font-weight:700;">'+NAMES[ltc.player]+(ltWin?' <span style="color:#ffdc70;">✦</span>':'')+'</div>';
         h+='<div style="width:60px;height:84px;border-radius:8px;background:linear-gradient(180deg,#faf3dd,#f0e7c8);border:2px solid '+(ltWin?'#ffdc70':ltSeatCol)+';color:'+ltCol+';display:inline-flex;flex-direction:column;align-items:center;justify-content:center;font-family:Georgia,serif;font-weight:700;font-size:0.9rem;box-shadow:'+(ltWin?'0 0 18px rgba(255,220,112,0.5),':'')+'0 3px 8px rgba(0,0,0,0.6);">';
         h+='<span>'+ltc.card.rank+'</span><span style="font-size:1.6rem;line-height:1;">'+_pip(ltc.card.suit)+'</span>';
         h+='</div></div>';

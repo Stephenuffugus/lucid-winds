@@ -81,7 +81,7 @@
     // Stats strip above controls
     var _mmStatsRow=document.createElement('div');
     _mmStatsRow.id='MMstats';
-    _mmStatsRow.style.cssText='display:flex;justify-content:center;gap:14px;padding:4px 0;font-family:DM Mono,monospace;font-size:0.62rem;color:rgba(232,220,200,0.7);letter-spacing:0.06em';
+    _mmStatsRow.style.cssText='display:flex;justify-content:center;gap:14px;padding:4px 0;font-family:DM Mono,monospace;font-size:0.78rem;color:rgba(232,220,200,0.85);letter-spacing:0.05em;flex-wrap:wrap';
     a.appendChild(_mmStatsRow);
     // Restore persisted mode + render
     try{var pm=localStorage.getItem('lw_mm_mode');if(pm==='color'||pm==='shape'||pm==='letter'||pm==='number')_mmMode=pm;}catch(e){}
@@ -199,6 +199,8 @@
         row.appendChild(fb);
         bd.appendChild(row);
       });
+      // the newest guess into view, so a frame is never all keypad and no board
+      try{var _lr=bd.lastElementChild;if(_lr&&bd.children.length>1)_lr.scrollIntoView({block:'center',behavior:'smooth'});}catch(e){}
       bd.scrollTop=bd.scrollHeight;
       rnC();
     }

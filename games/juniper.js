@@ -68,7 +68,7 @@ window._gameFns.juniper = function Juniper(a){
       +'url("'+_JU_FELT+'"),'
       +'radial-gradient(ellipse at 50% 0%,rgba(255,255,255,0.05) 0%,transparent 50%),'
       +'radial-gradient(circle at 50% 100%,rgba(0,0,0,0.3) 0%,transparent 65%),'
-      +'linear-gradient(135deg,#2a1f48 0%,#1f1838 55%,#15102a 100%);'
+      +'linear-gradient(135deg,#12271c 0%,#0e2016 55%,#0b1a12 100%);'
     +'background-size:180px 180px, auto, auto, auto;'
     +'border-radius:14px;'
     +'border:2px solid #6b4520;'
@@ -498,13 +498,13 @@ window._gameFns.juniper = function Juniper(a){
     var isGin = canKnock && dw===0;
     h+='<div style="display:flex;justify-content:center;align-items:center;gap:10px;padding:4px 8px 8px;flex-wrap:wrap;">';
     h+='<div style="display:inline-flex;align-items:center;gap:8px;padding:6px 14px;background:rgba(0,0,0,0.4);border:1px solid rgba(180,140,70,0.3);border-radius:999px;font-family:Georgia,serif;">';
-    h+='<span style="font-family:DM Mono,monospace;font-size:0.5rem;color:rgba(232,220,200,0.55);letter-spacing:0.14em;text-transform:uppercase;">Deadwood</span>';
+    h+='<span style="font-family:DM Mono,monospace;font-size:0.7rem;color:rgba(232,220,200,0.7);letter-spacing:0.12em;text-transform:uppercase;">Deadwood</span>';
     h+='<span style="font-size:1.4rem;font-weight:700;color:'+dwColor+';line-height:1;text-shadow:0 1px 3px rgba(0,0,0,0.5);">'+(dwIsNum?dw:'·')+'</span>';
     h+='</div>';
     if(isGin){
       h+='<button onclick="_JUG()" class="ju-gin-btn" style="min-height:48px;padding:8px 20px;font-family:Georgia,serif;font-weight:700;font-size:0.95rem;background:linear-gradient(180deg,#ffdc70,#c48f1f);border:2px solid #ffdc70;color:#3a2a08;letter-spacing:0.06em;border-radius:8px;text-shadow:0 1px 0 rgba(255,255,255,0.5);box-shadow:0 0 22px rgba(255,220,112,0.7),inset 0 1px 0 rgba(255,255,255,0.5);cursor:pointer;animation:juGinPulse 0.9s ease-in-out infinite;">GIN!</button>';
     }else{
-      h+='<button onclick="_JUK()" '+(canKnock?'':'disabled')+' style="min-height:48px;padding:8px 18px;font-family:Georgia,serif;font-weight:700;font-size:0.85rem;background:'+(canKnock?'linear-gradient(180deg,rgba(255,220,112,0.3),rgba(200,168,75,0.4))':'rgba(0,0,0,0.4)')+';border:'+(canKnock?'2':'1.5')+'px solid '+(canKnock?'#ffdc70':'rgba(232,220,200,0.25)')+';color:'+(canKnock?'#f5ebd0':'rgba(232,220,200,0.4)')+';letter-spacing:0.06em;border-radius:8px;cursor:'+(canKnock?'pointer':'not-allowed')+';'+(canKnock?'box-shadow:0 0 14px rgba(255,220,112,0.45),inset 0 1px 0 rgba(255,255,255,0.15);animation:juKnockPulse 1.4s ease-in-out infinite;':'')+'">KNOCK'+(canKnock&&dwIsNum?' &middot; '+dw:'')+'</button>';
+      h+='<button onclick="_JUK()" '+(canKnock?'':'disabled')+' style="min-height:48px;padding:8px 18px;font-family:Georgia,serif;font-weight:700;font-size:0.85rem;background:'+(canKnock?'linear-gradient(180deg,rgba(255,220,112,0.3),rgba(200,168,75,0.4))':'rgba(0,0,0,0.4)')+';border:'+(canKnock?'2':'1.5')+'px '+(canKnock?'solid':'dashed')+' '+(canKnock?'#ffdc70':'rgba(232,220,200,0.32)')+';color:'+(canKnock?'#f5ebd0':'rgba(232,220,200,0.62)')+';letter-spacing:0.06em;border-radius:8px;cursor:'+(canKnock?'pointer':'not-allowed')+';'+(canKnock?'box-shadow:0 0 14px rgba(255,220,112,0.45),inset 0 1px 0 rgba(255,255,255,0.15);animation:juKnockPulse 1.4s ease-in-out infinite;':'')+'">KNOCK'+(canKnock&&dwIsNum?' &middot; '+dw:'')+'</button>';
     }
     if(phase==='knockChoice'){
       h+='<button onclick="_JUP()" style="min-height:48px;padding:8px 18px;font-family:Georgia,serif;font-weight:700;font-size:0.85rem;background:rgba(0,0,0,0.45);border:1.5px solid rgba(232,220,200,0.45);color:#f5ebd0;letter-spacing:0.06em;border-radius:8px;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,0.1);">PASS</button>';
@@ -526,7 +526,7 @@ window._gameFns.juniper = function Juniper(a){
       if(meldKind==='set'){ bgTop='#fff0d0'; bgBot='#f3deaa'; bdr='#c48f3a'; }
       else if(meldKind==='run'){ bgTop='#d6e6f5'; bgBot='#b9d4ec'; bdr='#5b9bd1'; }
       else { bgTop='#faf3dd'; bgBot='#f0e7c8'; bdr='#b8a878'; }
-      var sty='width:46px;height:64px;border-radius:6px;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;font-family:Georgia,serif;border:2px solid '+bdr+';background:linear-gradient(180deg,'+bgTop+','+bgBot+');color:'+col+';position:relative;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,0.55),0 2px 5px rgba(0,0,0,0.5);transition:transform .15s;';
+      var sty='min-width:48px;width:48px;height:66px;border-radius:6px;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;font-family:Georgia,serif;border:2px solid '+bdr+';background:linear-gradient(180deg,'+bgTop+','+bgBot+');color:'+col+';position:relative;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,0.55),0 2px 5px rgba(0,0,0,0.5);transition:transform .15s;';
       h+='<div onclick="_JUCC('+k+')" style="'+sty+'">';
       h+='<span style="font-size:0.78rem;position:absolute;top:2px;left:5px;line-height:1;">'+c.rank+'</span>';
       h+='<span style="font-size:0.58rem;position:absolute;top:14px;left:6px;line-height:1;">'+_pip(c.suit)+'</span>';

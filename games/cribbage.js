@@ -31,19 +31,19 @@ window._gameFns.cribbage = function CRIB(a){
       +'<rect width="100%" height="100%" filter="url(#n)"/>'
     +'</svg>'
   );
-  pan.style.cssText='max-width:460px;margin:0 auto;padding:6px 12px 14px;user-select:none;box-sizing:border-box;'
+  pan.style.cssText='max-width:min(100%,460px);min-width:0;margin:0 auto;padding:6px 12px 14px;user-select:none;box-sizing:border-box;'
     +'background:'
       +'url("'+_FELT_NOISE+'"),'
       +'radial-gradient(ellipse at 50% 0%,rgba(255,255,255,0.06) 0%,transparent 55%),'
       +'radial-gradient(circle at 30% 100%,rgba(0,0,0,0.22) 0%,transparent 60%),'
-      +'linear-gradient(135deg,#0f5c35 0%,#0b4d2c 55%,#083d22 100%);'
+      +'linear-gradient(135deg,#123a24 0%,#0e3220 55%,#0a2417 100%);'
     +'background-size:180px 180px, auto, auto, auto;'
     +'border-radius:16px;'
     +'border:2px solid #6b4520;'
     +'box-shadow:'
       +'inset 0 0 0 1px rgba(180,140,70,0.25),'
       +'inset 0 0 32px rgba(0,0,0,0.4),'
-      +'0 6px 24px rgba(0,0,0,0.55),'
+      +'0 6px 24px rgba(0,0,0,0.55),0 20px 50px -24px #000,'
       +'0 1px 0 rgba(255,220,140,0.08);';
   a.appendChild(pan);
   // Style-aware pip — Garden swaps ♠♥♦♣ for 🍄🌸🐝🐦
@@ -546,7 +546,7 @@ window._gameFns.cribbage = function CRIB(a){
       h+='<div style="font-family:Georgia,serif;font-style:italic;font-size:0.7rem;color:#ffdc70;animation:cbThink 1.2s ease-in-out infinite;">Thinking…</div>';
     }
     h+='</div>';
-    h+='<div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;min-height:64px;align-items:center;">';
+    h+='<div style="display:flex;gap:4px;justify-content:center;flex-wrap:nowrap;min-height:64px;align-items:center;">';
     if(G.phase==='show'||G.phase==='gameover'){
       G.aHand.forEach(function(c){h+=_cardHtml(c,false,false,false,false);});
     }else{
@@ -616,7 +616,7 @@ window._gameFns.cribbage = function CRIB(a){
     h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:rgba(122,179,86,0.95);letter-spacing:0.14em;text-transform:uppercase;">Your Hand</div>';
     if(G.phase==='discard')h+='<div style="font-family:Georgia,serif;font-style:italic;font-size:0.7rem;color:rgba(232,220,200,0.7);">'+(2-G.pSelected.length)+' more for the crib</div>';
     h+='</div>';
-    h+='<div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;min-height:72px;align-items:center;">';
+    h+='<div style="display:flex;gap:4px;justify-content:center;flex-wrap:nowrap;min-height:72px;align-items:center;">';
     G.pHand.slice(0,pShown()).forEach(function(c,i){
       var isSel=G.pSelected.indexOf(i)>=0;
       var isPlayed=G.pPlayed.indexOf(i)>=0;
@@ -625,7 +625,7 @@ window._gameFns.cribbage = function CRIB(a){
     });
     h+='</div></div>';
     // ── ACTION BUTTONS ──
-    h+='<div style="display:flex;gap:6px;justify-content:center;padding:8px 0 2px;flex-wrap:wrap;">';
+    h+='<div style="display:flex;gap:6px;justify-content:center;padding:8px 0 2px;flex-wrap:nowrap;">';
     if(G.phase==='discard'&&G.pSelected.length===2){
       h+='<button class="gb" onclick="_CBD()" style="min-height:48px;padding:10px 22px;font-size:0.8rem;background:rgba(122,179,86,0.2);border-color:rgba(122,179,86,0.6);color:#e8dcc8;">✓ Send to Crib</button>';
     }
@@ -666,7 +666,7 @@ window._gameFns.cribbage = function CRIB(a){
       var shadow = hl
         ? 'box-shadow:0 0 0 2px #ffdc70,0 0 18px rgba(255,220,112,0.55);transform:translateY(-6px);'
         : 'box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 2px 4px rgba(0,0,0,0.45);';
-      h+='<div style="width:48px;height:66px;border-radius:6px;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;border:2px solid '+bdr+';background:linear-gradient(180deg,#faf3dd,#f0e7c8);color:'+color+';position:relative;font-family:Georgia,serif;transition:transform .25s,box-shadow .25s;'+shadow+'">';
+      h+='<div style="width:clamp(36px,12vw,48px);height:auto;aspect-ratio:8/11;border-radius:6px;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;border:2px solid '+bdr+';background:linear-gradient(180deg,#faf3dd,#f0e7c8);color:'+color+';position:relative;font-family:Georgia,serif;transition:transform .25s,box-shadow .25s;'+shadow+'">';
       h+='<span style="font-size:12px;position:absolute;top:2px;left:4px;line-height:1;font-weight:700;">'+RANKS[card.rank]+'</span>';
       h+='<span style="font-size:10px;position:absolute;top:13px;left:5px;line-height:1;">'+_pip(card.suit)+'</span>';
       h+='<span style="font-size:22px;line-height:1;">'+_pip(card.suit)+'</span>';
@@ -696,7 +696,7 @@ window._gameFns.cribbage = function CRIB(a){
     var prevPct = Math.min(100, prevScore/121*100);
     var h='';
     h+='<div style="display:flex;align-items:center;gap:8px;">';
-    h+='<div style="flex:0 0 auto;font-family:DM Mono,monospace;font-size:0.7rem;letter-spacing:0.18em;color:'+color+';width:34px;font-weight:700;">'+label+'</div>';
+    h+='<div style="flex:0 0 auto;font-family:DM Mono,monospace;font-size:0.7rem;letter-spacing:0.18em;color:'+color+';width:auto;min-width:78px;padding-right:6px;font-weight:700;">'+label+'</div>';
     // Track — subtle gradient on the exposed board surface
     h+='<div style="flex:1;position:relative;height:18px;background:linear-gradient(180deg,#2a1810,#1a0f08);border:1px solid rgba(0,0,0,0.65);border-radius:9px;box-shadow:inset 0 2px 4px rgba(0,0,0,0.65),inset 0 -1px 0 rgba(255,220,140,0.08);">';
     // Hole dots every ~5 points (121/5 ≈ 24 holes) for texture
@@ -711,7 +711,7 @@ window._gameFns.cribbage = function CRIB(a){
       h+='<div style="position:absolute;top:2px;left:'+prevPct+'%;transform:translateX(-50%);width:11px;height:13px;border-radius:50% 50% 4px 4px;background:linear-gradient(180deg,'+color+' 0%,'+_darken(color)+' 100%);border:1px solid rgba(0,0,0,0.45);opacity:0.5;box-shadow:0 2px 3px rgba(0,0,0,0.35);"></div>';
     }
     // Front peg — filled, gradient, brass-like top highlight. Sits at current score.
-    h+='<div class="cb-peg" style="position:absolute;top:1px;left:'+pct+'%;transform:translateX(-50%);width:13px;height:15px;border-radius:50% 50% 4px 4px;background:'
+    h+='<div class="cb-peg" style="position:absolute;top:1px;left:calc(7px + (100% - 14px) * '+pct+' / 100);transform:translateX(-50%);width:13px;height:15px;border-radius:50% 50% 4px 4px;background:'
       +'radial-gradient(ellipse at 50% 20%,rgba(255,255,255,0.6) 0%,rgba(255,255,255,0) 40%),'
       +'linear-gradient(180deg,'+color+' 0%,'+_darken(color)+' 100%);'
       +'border:1px solid rgba(0,0,0,0.6);'
@@ -737,7 +737,7 @@ window._gameFns.cribbage = function CRIB(a){
     if(isStarter)borderCol='#d4b86a';
     var redCol='#b42a2a', blackCol='#1a1a1a';
     var color=isRed(c)?redCol:blackCol;
-    var style='width:48px;height:66px;border-radius:6px;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;'
+    var style='width:clamp(36px,12vw,48px);height:auto;aspect-ratio:8/11;border-radius:6px;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;'
       +'border:2px solid '+borderCol+';'
       +'background:linear-gradient(180deg,#faf3dd 0%,#f0e7c8 100%);'
       +'color:'+color+';position:relative;vertical-align:middle;'

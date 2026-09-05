@@ -683,7 +683,7 @@ function showWinCard(elapsed){
   winCard=document.createElement('div'); winCard.className='RFwin';
   var bestKey='lw_rootflow_best_'+S.tier;
   var best=parseInt(localStorage.getItem(bestKey)||'9999',10);
-  var bestStr=(best>=9999)?'·':fmtTime(best);
+  var bestStr=(best>=9999)?'none yet':fmtTime(best);
   var hintsUsed=TIERS[S.tier].hints-S.hintsLeft;
   winCard.innerHTML=
     '<div class="RFwinTitle">ROOTED</div>'+
