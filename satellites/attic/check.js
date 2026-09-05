@@ -95,9 +95,9 @@ const srcs = []; { const re = /<script[^>]*\bsrc="([^"]+)"/g; let m; while ((m =
 ok('every script src resolves to a file on disk',
   /* a root absolute src (the arcade's /music-unlocks.js include, Sep 02) lives at the repo
      root, two levels up from this folder, not beside the page */
-  srcs.every(s2 => fs.existsSync(s2.charAt(0) === '/' ? path.join(ROOT, '..', '..', s2) : path.join(ROOT, s2))), srcs.join(' '));
+  srcs.every(s2 => { const f = s2.split('?')[0]; return fs.existsSync(f.charAt(0) === '/' ? path.join(ROOT, '..', '..', f) : path.join(ROOT, f)); }), srcs.join(' '));
 ok('the page loads all four modules',
-  ['attic-engine.js', 'attic-econ.js', 'sleeve-render.js', 'object-render.js'].every(f => srcs.indexOf(f) >= 0), srcs.join(' '));
+  ['attic-engine.js', 'attic-econ.js', 'sleeve-render.js', 'object-render.js'].every(f => srcs.some(s2 => s2.split('?')[0] === f)), srcs.join(' '));
 const BODY = SRC.slice(SRC.indexOf('<body'));
 ok('the card still renders dusty before the wipe', /renderItem\([^)]*\{\s*dusty:\s*!/.test(BODY),
   'no dusty render call found in show()');
