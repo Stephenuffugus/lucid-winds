@@ -522,6 +522,11 @@ var ENG = (function () {
   var sections = {}, state = 'idle', mood = MOODS.dawn;
   var sessionSeed = 1, heldFrom = 0, bar = 0, nextBarAt = 0, curChord = 'I';
   var fingers = [], chordLog = [], resolveAt = 0, resolveSteps = [], endAt = 0;
+  /* what the LIGHT should show while the sound resolves. held() returns zero
+     the moment a finger lifts, so the aurora snapped to black on release while
+     five seconds of cadence were still sounding: the picture and the sound
+     disagreed, and a shot a second after letting go was a blank screen. */
+  var heldAtRelease = 0;
   var lastPumped = 0, tiltOffset = 0, sleepStart = 0, sleepMinutes = 0;
   /* GESTURES ARE SCHEDULED, NOT IMMEDIATE. press(t) and release(t) take an
      AudioContext time and go in this queue; step() acts on them when the pump
@@ -869,6 +874,7 @@ var ENG = (function () {
     if (!ctx || state !== 'held') { fingers = []; return; }
     fingers = [];
     var held = t - heldFrom;
+    heldAtRelease = held;
     var names = cadenceFor(mood, curChord, held);
     var start = nextGrid(t, mood.bpm, 2);
     var barS = gridStep(mood.bpm, 1) * 4, i;
@@ -922,6 +928,18 @@ var ENG = (function () {
     oscMade: function () { return madeOsc; },
     held: function (t) { return state === 'held' ? (t - heldFrom) : 0; },
     intensity: function (t) { return state === 'held' ? intensityAt(t - heldFrom, 1) : 0; },
+    /* the two the AURORA reads: how big the thing was, and how much of it is
+       still in the air. While resolving they carry the hold that earned it. */
+    drawHeld: function (t) {
+      if (state === 'held') return t - heldFrom;
+      if (state === 'resolving') return heldAtRelease;
+      return 0;
+    },
+    drawFade: function (t) {
+      if (state === 'held') return 1;
+      if (state !== 'resolving') return 0;
+      return clamp(1 - (t - resolveAt) / CONFIG.RESOLVE_TAIL_S, 0, 1);
+    },
     sectionGain: function (k) { return sections[k] ? sections[k].gain.gain.value : 0; },
     sectionLive: function (k) { return !!(sections[k] && sections[k].live); }
   };
@@ -1238,23 +1256,56 @@ function fitCanvas() {
   CSSW = w; CSSH = h;
 }
 var SECT_ORDER = ['strings', 'violins', 'horns', 'choir'];
-function curtain(g, x, w, height, colour, alpha, seedN, shimmer) {
-  var bands = 9, i;
-  for (i = 0; i < bands; i++) {
-    var f = i / (bands - 1);
-    var wob = shimmer ? Math.sin(G.frames * 0.013 + i * 1.7 + seedN) * (w * 0.06) : 0;
-    var bx = x - w / 2 + w * f + wob;
-    var gr = g.createLinearGradient(0, CSSH, 0, CSSH - height * (0.55 + 0.45 * Math.sin(f * Math.PI)));
-    gr.addColorStop(0, 'rgba(0,0,0,0)');
-    gr.addColorStop(0.35, hexA(colour, alpha * 0.55 * (0.4 + 0.6 * Math.sin(f * Math.PI))));
-    gr.addColorStop(1, 'rgba(0,0,0,0)');
-    g.fillStyle = gr;
-    g.fillRect(bx - w / bands * 0.9, CSSH - height, w / bands * 1.8, height);
-  }
+/* THE CURTAIN IS A PLUME OF LIGHT, NOT A STRIPED RECTANGLE.
+   The first one drew each band as a fillRect with a vertical gradient, four
+   sections wide enough to overlap, at an alpha that filled the screen: what
+   came out was a wall of hard edged beige stripes with no darkness left in it,
+   which is the exact failure the plan warns about. Each band is now a radial
+   gradient squashed horizontally, so it is soft on every edge; the sections sit
+   at different x so they read as separate voices; they add their light rather
+   than paint over each other; and the top half of the screen stays dark,
+   because an aurora is light IN a dark sky. */
+/* two colours mixed, so a curtain can cool as it falls instead of only dimming */
+function mixHex(a, b, t) {
+  t = clamp(t, 0, 1);
+  var pa = [parseInt(a.slice(1, 3), 16), parseInt(a.slice(3, 5), 16), parseInt(a.slice(5, 7), 16)];
+  var pb = [parseInt(b.slice(1, 3), 16), parseInt(b.slice(3, 5), 16), parseInt(b.slice(5, 7), 16)];
+  var h = function (v) { var x = Math.round(v).toString(16); return x.length < 2 ? '0' + x : x; };
+  return '#' + h(pa[0] + (pb[0] - pa[0]) * t) + h(pa[1] + (pb[1] - pa[1]) * t) + h(pa[2] + (pb[2] - pa[2]) * t);
 }
 function hexA(hex, a) {
   var r = parseInt(hex.slice(1, 3), 16), gg = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
   return 'rgba(' + r + ',' + gg + ',' + b + ',' + clamp(a, 0, 1).toFixed(3) + ')';
+}
+function plume(g, cx, halfW, height, colour, alpha, seedN, shimmer) {
+  var bands = 7, i;
+  var prev = g.globalCompositeOperation;
+  g.globalCompositeOperation = 'lighter';
+  for (i = 0; i < bands; i++) {
+    var f = bands === 1 ? 0.5 : i / (bands - 1);
+    var off = (f - 0.5) * 2;
+    /* a fixed noise per band, so a curtain has a shape of its own and is not a
+       comb of identical teeth */
+    var n1 = Math.sin(seedN * 3.1 + i * 2.399), n2 = Math.sin(seedN * 1.7 + i * 4.113);
+    var wob = shimmer ? Math.sin(G.frames * 0.011 + i * 1.31 + seedN) * halfW * 0.10 : 0;
+    var x = cx + off * halfW * 0.86 + wob + n2 * halfW * 0.08;
+    var h = height * (0.52 + 0.48 * Math.cos(off * 1.35)) * (0.82 + 0.18 * n1);
+    if (h < 6) continue;
+    var w = halfW * (0.26 + 0.10 * (1 + n2));
+    var a = alpha * (1 - off * off * 0.72) * (0.72 + 0.28 * (1 + n1) / 2);
+    if (a < 0.004) continue;
+    g.save();
+    g.translate(x, CSSH + h * 0.12);
+    g.scale(Math.max(0.02, w / h), 1);
+    var gr = g.createRadialGradient(0, 0, h * 0.06, 0, 0, h);
+    gr.addColorStop(0, hexA(colour, a));
+    gr.addColorStop(0.42, hexA(colour, a * 0.45));
+    gr.addColorStop(1, hexA(colour, 0));
+    g.fillStyle = gr;
+    g.beginPath(); g.arc(0, 0, h, 0, 6.2832); g.fill();
+    g.restore();
+  }
+  g.globalCompositeOperation = prev;
 }
 function paint() {
   if (!CTX) return;
@@ -1263,30 +1314,60 @@ function paint() {
   CTX.globalAlpha = 1;
   CTX.fillStyle = '#08070C';
   CTX.fillRect(0, 0, CSSW, CSSH);
-  var inten = ENG.intensity(now), held = ENG.held(now), any = 0, i;
+  var held = ENG.drawHeld(now), fade = ENG.drawFade(now), any = 0, i;
+  var inten = intensityAt(held, 1) * fade;
   /* the wash: the room warms as the tension climbs */
   if (inten > 0.01) {
-    var wash = CTX.createLinearGradient(0, CSSH, 0, 0);
-    wash.addColorStop(0, hexA(mood.colour.wash, 0.55 * inten));
+    var wash = CTX.createLinearGradient(0, CSSH, 0, CSSH * 0.35);
+    wash.addColorStop(0, hexA(mood.colour.wash, 0.42 * inten));
     wash.addColorStop(1, 'rgba(0,0,0,0)');
     CTX.fillStyle = wash;
-    CTX.fillRect(0, 0, CSSW, CSSH);
+    CTX.fillRect(0, CSSH * 0.35, CSSW, CSSH * 0.65);
   }
+  /* the curtains stay where the fingers left them while the sound resolves.
+     Reading the live finger list meant every section snapped from under the
+     thumb to its home position at the exact moment of release, which is a jump
+     nothing in the sound is doing. */
   var fingerXs = [], k;
   for (k in G.fingers) fingerXs.push(G.fingers[k].x);
+  if (fingerXs.length) G.lastFingerXs = fingerXs.slice();
+  else if (fade > 0 && G.lastFingerXs) fingerXs = G.lastFingerXs.slice();
+  /* Each section stands somewhere of its own. ONLY the section a finger owns
+     follows that finger; the rest keep their homes, spread across the width, so
+     four curtains read as four voices instead of stacking into one flame. */
+  /* spread wide, and each section its own shape: the strings are a broad low
+     bed, the choir is a tall thin thing standing over the top of them, which is
+     what they are in the ear */
+  var HOME = [0.22, 0.42, 0.78, 0.60];
+  var WIDE = { strings: 0.20, violins: 0.135, horns: 0.11, choir: 0.085 };
+  var TALL = { strings: 0.28, violins: 0.40, horns: 0.36, choir: 0.54 };
+  var GROW = { strings: 0.26, violins: 0.40, horns: 0.36, choir: 0.42 };
   for (i = 0; i < SECT_ORDER.length; i++) {
     var key = SECT_ORDER[i];
     var lvl = ENG.sectionLive(key) ? layerGain(key, held) : 0;
-    if (ENG.state() === 'resolving') lvl *= 0.7;
+    /* on the way out the whole curtain cools and falls together, over the same
+       five seconds the tail takes */
+    lvl *= fade;
     if (lvl < 0.01) continue;
     any += lvl;
     var col = key === 'choir' ? mood.colour.choir : (key === 'horns' ? mood.colour.brass : mood.colour.strings);
-    var x = fingerXs.length ? fingerXs[Math.min(i, fingerXs.length - 1)] * CSSW : CSSW * (0.28 + 0.15 * i);
-    curtain(CTX, x, CSSW * (0.42 + 0.16 * i), CSSH * (0.35 + 0.5 * lvl), col, lvl * 0.85, i * 3.1, G.motion);
+    /* washed cool on the way out, which is what the design asks for and what a
+       room does when the brass stops */
+    col = mixHex(col, mood.colour.choir, (1 - fade) * 0.55);
+    var owner = key === 'choir' ? 1 : (key === 'horns' ? 2 : (key === 'strings' ? 0 : -1));
+    var x = (owner >= 0 && fingerXs.length > owner ? fingerXs[owner] : HOME[i]) * CSSW;
+    /* the choir sits over the top of everything, so it is drawn brighter than
+       its level alone would ask for: it is the thing you hear open above the
+       strings and it should be the thing you SEE open too */
+    var lift = key === 'choir' ? 1.5 : (key === 'violins' ? 1.15 : 1);
+    plume(CTX, x, CSSW * WIDE[key], CSSH * (TALL[key] + GROW[key] * lvl), col, lvl * 0.40 * lift, i * 5.7 + 1.3, G.motion);
   }
-  if (held >= CONFIG.TIMP_ROLL_FROM) {
-    CTX.fillStyle = hexA(mood.colour.timp, 0.10 + 0.06 * Math.abs(Math.sin(G.frames * 0.11)));
-    CTX.fillRect(0, CSSH - 26, CSSW, 26);
+  if (held >= CONFIG.TIMP_ROLL_FROM && fade > 0.05) {
+    var tg = CTX.createLinearGradient(0, CSSH, 0, CSSH - 34);
+    tg.addColorStop(0, hexA(mood.colour.timp, 0.20 + 0.10 * Math.abs(Math.sin(G.frames * 0.11))));
+    tg.addColorStop(1, hexA(mood.colour.timp, 0));
+    CTX.fillStyle = tg;
+    CTX.fillRect(0, CSSH - 34, CSSW, 34);
   }
   G.anyLight = any;
 }
