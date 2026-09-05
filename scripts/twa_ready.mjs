@@ -100,10 +100,10 @@ if (slug === "flock-the-world") {
     const body = r.status === 200 ? await r.text() : "";
     let j = null; try { j = JSON.parse(body); } catch (e) {}
     const entry = Array.isArray(j) && j.find(x => x.target && x.target.package_name === "com.skywolfstudio.flocktheworld");
-    const fp = entry && entry.target.sha256_cert_fingerprints && entry.target.sha256_cert_fingerprints[0] || "";
-    const real = /^([0-9A-F]{2}:){31}[0-9A-F]{2}$/.test(fp);
+    const fps = entry && entry.target.sha256_cert_fingerprints || [];
+    const real = fps.length > 0 && fps.every(fp => /^([0-9A-F]{2}:){31}[0-9A-F]{2}$/.test(fp));
     ok("assetlinks.json is live, JSON, no redirect", r.status === 200 && ct.includes("json"), `status ${r.status}, ${ct || "no content type"}`);
-    if (r.status === 200) (real ? ok : warn)("assetlinks carries a real Play App Signing fingerprint", real ? true : "still the placeholder — paste the SHA-256 from Play Console → App signing, then deploy");
+    if (r.status === 200) (real ? ok : warn)("assetlinks carries a real Play App Signing fingerprint", real ? true : "a placeholder is still in the list — paste the SHA-256 from Play Console → App signing over it, then deploy");
   } catch (e) { warn("assetlinks.json is live", "fetch failed: " + e.message); }
 }
 
