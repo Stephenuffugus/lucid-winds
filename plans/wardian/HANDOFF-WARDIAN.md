@@ -11,11 +11,20 @@ this file wins; every difference is in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
-- 2026-09-05 Fable: plan written. Nothing built.
-- 2026-09-05 Opus: P0 step 1, `tools/check.js` with one gate and no `sim.js` to run, red. Next action: P0 step 1
-  continued, CONFIG, SPECIES, ENV, FLORA and SIM in `satellites/wardian/index.html`.
+**P0 is DONE and pushed** (2026-09-05). `node satellites/wardian/tools/check.js`
+prints ALL GATES PASSED: one gate, `sim`, 101 assertions. Four mutations watched
+to fail, in the ledger at section 13, with the fourteen day census.
 
----
+The SIM and TEST layers live in `satellites/wardian/index.html` between the
+`SIM_EXPORT` and `TEST_EXPORT` markers; `sim.js` reads them through the markers
+so there is one implementation of the rules. `--test`, `--days=N[,policy]` and
+`--catchup=DAYS` all work.
+
+**Next action:** P1 step 1, the jar you can watch. Draw the jar into `#jar` in
+`satellites/wardian/index.html`: the VIEW section goes after the SIM markers,
+starting with `drawJar(ctx, state, t)`, then the plant renderer that reads
+`seg.curl` so an unrolling frond is visible, then the day and night light. The
+shot to make first is `docs/shots/p1-jar-day.png`.
 
 ## 0. RULES OF ENGAGEMENT
 
@@ -381,9 +390,92 @@ sway and the catch up before the tap and the mist; the jar has to be worth watch
 
 ## 13. EVIDENCE LEDGER (fill in place, with commands and their real output, most recent last)
 
+### P0 step 1, the gate that fails first (2026-09-05)
+
 ```
-(empty; the first entry is P0 step 2, the two mutations watched to fail, and the --days=14 census)
+$ node tools/check.js
+sim             FAIL  1s
+  marker not found: // ---- SIM_EXPORT_START ---- / // ---- SIM_EXPORT_END ----
+1 GATE FAILED
 ```
+
+### P0 step 2, the ecosystem green (2026-09-05)
+
+```
+$ node sim.js --test
+PASSED 101 / FAILED 0   (total 101)
+WARDIAN TEST OK
+
+$ node tools/check.js
+sim             pass  0s
+ALL GATES PASSED
+```
+
+Four mutations, each watched to go red, each restored:
+
+```
+$ node sim.js --test --over=WAKE_TICKS=9999
+FAIL  and a mist wakes it inside six ticks (-1)
+PASSED 100 / FAILED 1   (total 101)
+
+$ # a dormant plant spliced out of tick(), by hand, then restored
+FAIL  under never mist, nothing in the jar dies, sickens or leaves over thirty days: fern fell on day 8, mooncap fell on day 8, a plant was removed on day 8
+FAIL  under weekly mist, nothing in the jar dies, sickens or leaves over thirty days: fern fell on day 15, mooncap fell on day 15, a plant was removed on day 15
+FAIL  and it never splices a plant or an agent out of the jar
+PASSED 92 / FAILED 3   (total 95)
+
+$ node sim.js --test --over=SPRINGTAIL_MOIST=0.5
+FAIL  under twoDay mist every animal finds the jar inside a month: springtail never came
+PASSED 100 / FAILED 1   (total 101)
+
+$ node sim.js --test --over=GROWTH_PER_TICK=0.004
+FAIL  a fern reaches its third generation inside two days (0)
+FAIL  and it has leaves on it
+FAIL  and it is a real jar, not two sticks (23 segments)
+PASSED 98 / FAILED 3   (total 101)
+```
+
+Two real bugs the gates found, both fixed before P0 closed:
+
+- **the springtails could never arrive.** Their gate wanted a surface cell wetter
+  than 0.5 and a sealed jar's surface never passes 0.30, so a third of the fauna
+  was dead content that no other check minded. `SPRINGTAIL_MOIST` 0.5 to 0.20,
+  `SPRINGTAIL_DECAY` 0.4 to 0.25, and `suiteArrivals` now fails if any animal
+  cannot find a misted jar inside a month.
+- **moss reached 58 percent against a 55 percent ceiling.** The ceiling was a
+  fraction tested once at the door, and one pass seeds both sides of several
+  cushions. Counted in cells now, with the room decremented as it is used.
+
+The fourteen day census, a jar misted every second day, nothing planted by hand:
+
+```
+a jar under "twoDay" mist, 14 days, from the first of April
+  day   segs  moss  bugs  dorm  surf  water  species
+    1     11     5     0     0   0.18   33.4  fern mooncap
+    2     13     5     0     0   0.09   32.0  fern mooncap
+    3     23     6     0     0   0.11   36.6  fern mooncap
+    4     23     6     0     0   0.06   35.2  fern mooncap
+    5     23     6     0     0   0.10   39.9  fern mooncap
+    6     23     6     0     0   0.07   38.5  fern mooncap
+    7     23     7     0     0   0.12   43.2  fern mooncap
+    8     23     7     0     0   0.08   41.8  fern mooncap
+    9     23     7     0     0   0.13   46.5  fern mooncap
+   10     23     7     0     0   0.10   45.1  fern mooncap
+   11     23     9     1     0   0.15   49.8  fern glowbeetle mooncap
+   12     23     9     1     0   0.12   48.5  fern glowbeetle mooncap
+   13     34    11    12     0   0.16   53.0  fern glowbeetle mooncap pillbug springtail
+   14     56    13    12     0   0.13   51.6  fern glowbeetle mooncap pillbug springtail
+
+spores 146.7, journal 4 entries, humidity 0.51
+WARDIAN CENSUS OK
+```
+
+Reading it: the two ferns run out of ladder on day 3 and the segment count sits
+at 23 until the first leaves fall on day 13. That plateau is real and it is what
+the pouch is for; by day 14 the jar has 146 spores, which is nine seeds. The
+mooncap on day 1 is not a bug, the moon of 2026-04-02 is full and the jar starts
+on 04-01. Water climbs because a mist adds more than the seal leaks, which is
+why nothing in here can be overwatered.
 
 ---
 

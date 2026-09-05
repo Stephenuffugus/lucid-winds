@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>WARDIAN</title>
+<meta name="description" content="A sealed jar that lives on your time. Moss, ferns and small bugs grow while you are away, night falls when it falls outside, and nothing in the jar can ever die.">
+<meta name="theme-color" content="#17120E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="WARDIAN">
+<link rel="manifest" href="./manifest.webmanifest?v=20260905a">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260905a">
+<link rel="icon" href="./icon-192.png?v=20260905a">
+<link rel="canonical" href="https://lucidwinds.com/satellites/wardian/">
+<style>
+/*  WARDIAN
+    game id: wardian   a warm dark room, green glass, brass
+    NOTHING IN THE JAR CAN DIE, GET SICK, OR LEAVE. That is the promise, it is a
+    studio law, and sim.js asserts it over thirty simulated days under every
+    watering policy. The BOTTOM LEFT 120x120 belongs to the fleet's music chip. */
+:root{
+  --room:#17120E; --room2:#221A13; --panel:#241C15; --line:#3A2E22;
+  --brass:#C9A24B; --leaf:#6FA45C; --cream:#EDE3D2; --dim:#9A8B76;
+  --paper:#EFE4C8;
+  --safeT:env(safe-area-inset-top,0px);
+  --safeB:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%;background:var(--room);color:var(--cream);
+  font-family:ui-serif,Georgia,"Iowan Old Style","Times New Roman",serif;
+  overscroll-behavior:none;-webkit-user-select:none;user-select:none}
+#app{position:fixed;inset:0;overflow:hidden;background:var(--room)}
+#jar{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+
+#chrome{position:absolute;inset:0;pointer-events:none;z-index:5}
+.chip{position:absolute;pointer-events:auto;background:rgba(36,28,21,.72);
+  border:1px solid rgba(201,162,75,.28);color:var(--cream);border-radius:12px;
+  min-height:48px;padding:8px 14px;font-size:.82rem;letter-spacing:.06em;
+  display:flex;align-items:center;font-family:inherit}
+#chipDay{left:calc(12px + env(safe-area-inset-left,0px));top:calc(10px + var(--safeT))}
+.iconbtn{position:absolute;pointer-events:auto;background:rgba(36,28,21,.72);
+  border:1px solid rgba(201,162,75,.28);color:var(--brass);border-radius:12px;
+  display:flex;align-items:center;justify-content:center;padding:0;line-height:1;
+  font-size:1.05rem;font-family:inherit}
+#btnMenu{right:calc(12px + env(safe-area-inset-right,0px));top:calc(10px + var(--safeT));width:48px;height:48px}
+#btnPhoto{right:calc(14px + env(safe-area-inset-right,0px));bottom:calc(18px + var(--safeB));
+  width:56px;height:56px;border-radius:50%;font-size:.66rem;letter-spacing:.08em}
+#btnEditDone{left:50%;transform:translateX(-50%);top:calc(10px + var(--safeT));
+  min-width:120px;height:56px;border-radius:14px;font-size:.85rem;letter-spacing:.16em}
+#btnEditDone[hidden]{display:none}
+#firstLine{position:absolute;left:50%;bottom:calc(96px + var(--safeB));transform:translateX(-50%);
+  width:84%;max-width:320px;text-align:center;font-size:.9rem;line-height:1.8;
+  color:var(--cream);opacity:.8;transition:opacity 800ms ease-out;pointer-events:none}
+#firstLine.gone{opacity:0}
+#montage{position:absolute;left:50%;top:22%;transform:translateX(-50%);
+  width:86%;max-width:330px;text-align:center;pointer-events:auto;
+  background:rgba(23,18,14,.82);border:1px solid rgba(201,162,75,.24);
+  border-radius:14px;padding:14px 16px;font-size:.9rem;line-height:1.7}
+#montage[hidden]{display:none}
+#montage .tap{display:block;font-size:.72rem;color:var(--dim);margin-top:8px;letter-spacing:.1em}
+#pouchBar{position:absolute;left:0;right:0;bottom:calc(10px + var(--safeB));
+  display:flex;gap:8px;justify-content:center;pointer-events:auto;padding:0 90px 0 130px}
+#pouchBar[hidden]{display:none}
+.seedchip{min-width:56px;min-height:56px;border-radius:14px;background:rgba(36,28,21,.86);
+  border:1px solid rgba(201,162,75,.3);color:var(--cream);font-family:inherit;font-size:.68rem;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.seedchip.on{border-color:var(--brass);color:var(--brass)}
+
+.screen{position:absolute;inset:0;z-index:10;background:var(--room);display:none;
+  flex-direction:column;align-items:center;
+  padding:calc(18px + var(--safeT)) 18px calc(18px + var(--safeB));
+  overflow-y:auto;overscroll-behavior:contain}
+.screen.on{display:flex}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:12;background:var(--panel);
+  border-top:1px solid var(--line);border-radius:18px 18px 0 0;max-height:88%;
+  display:none;flex-direction:column;align-items:center;
+  padding:18px 18px calc(20px + var(--safeB));overflow-y:auto;overscroll-behavior:contain}
+.sheet.on{display:flex}
+.spacer{flex:1 1 auto;min-height:8px}
+.btn{pointer-events:auto;width:100%;max-width:340px;min-height:56px;flex:0 0 auto;
+  background:rgba(36,28,21,.92);border:1px solid rgba(201,162,75,.34);color:var(--brass);
+  border-radius:12px;font-size:.92rem;letter-spacing:.14em;margin:6px 0;padding:14px 16px;
+  font-family:inherit;text-transform:uppercase}
+.btn.small{min-height:48px;font-size:.78rem;letter-spacing:.11em}
+.btn.ghost{border-color:rgba(154,139,118,.3);color:var(--dim)}
+.btn.on{border-color:var(--brass);color:var(--brass);background:rgba(201,162,75,.14)}
+.row{display:flex;gap:10px;width:100%;max-width:340px}
+.row > *{flex:1 1 0;min-width:0;width:auto;max-width:none}
+.cap{font-size:.72rem;letter-spacing:.2em;color:var(--dim);margin:12px 0 6px;width:100%;
+  max-width:340px;text-align:left;text-transform:uppercase}
+.lede{font-size:.9rem;line-height:1.8;color:var(--cream);width:100%;max-width:340px;margin:8px 0}
+.tiny{font-size:.74rem;line-height:1.7;color:var(--dim);width:100%;max-width:340px;margin:6px 0}
+.title{font-size:1.25rem;letter-spacing:.24em;color:var(--brass);text-align:center;margin:6px 0 2px}
+#journalList{width:100%;max-width:340px}
+.spread{width:100%;background:var(--paper);color:#3A2E1C;border-radius:10px;margin:8px 0;
+  padding:14px 16px;display:flex;gap:12px;align-items:flex-start;
+  box-shadow:inset 0 0 34px rgba(120,96,52,.22)}
+.spread canvas{width:56px;height:56px;flex:0 0 56px;border-radius:8px;background:#E4D7B6}
+.spread .nm{font-size:.98rem;letter-spacing:.08em;display:block;color:#3A2E1C}
+.spread .bd{font-size:.78rem;line-height:1.65;margin-top:5px;display:block;color:#54452E}
+.spread.locked .nm{color:#8A7A5E}
+.letter{width:100%;background:#E8DCC0;color:#3A2E1C;border-radius:8px;margin:8px 0;
+  padding:14px 16px;font-size:.82rem;line-height:1.75;
+  box-shadow:inset 0 0 26px rgba(120,96,52,.18)}
+.letter .from{display:block;margin-top:8px;font-size:.72rem;color:#6A5A40;letter-spacing:.08em}
+.shoprow{width:100%;max-width:340px;min-height:64px;flex:0 0 auto;display:flex;align-items:center;
+  gap:12px;background:rgba(36,28,21,.86);border:1px solid rgba(201,162,75,.2);border-radius:12px;
+  margin:5px 0;padding:10px 14px;color:var(--cream);font-family:inherit;text-align:left}
+.shoprow .nm{font-size:.88rem;display:block}
+.shoprow .sub{font-size:.7rem;color:var(--dim);display:block;margin-top:3px}
+.shoprow .buy{margin-left:auto;min-width:76px;min-height:48px;border-radius:10px;
+  background:rgba(201,162,75,.14);border:1px solid rgba(201,162,75,.4);color:var(--brass);
+  font-family:inherit;font-size:.74rem;letter-spacing:.08em}
+#sporeCount{font-size:.8rem;color:var(--brass);letter-spacing:.1em}
+#toast{position:fixed;left:50%;bottom:calc(14px + var(--safeB));transform:translateX(-50%);
+  background:rgba(23,18,14,.95);border:1px solid rgba(201,162,75,.3);color:var(--cream);
+  padding:10px 16px;border-radius:12px;font-size:.82rem;z-index:40;opacity:0;
+  pointer-events:none;transition:opacity 180ms ease-out;max-width:84%;text-align:center}
+#toast.on{opacity:1}
+#testPanel{position:absolute;inset:0;z-index:60;background:#0d0a07;color:#dfe;overflow:auto;
+  font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;padding:14px;display:none;white-space:pre-wrap}
+#testPanel.on{display:block}
+@media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
+</style>
+<script src="/music-unlocks.js?v=20260905a" defer></script>
+</head>
+<body>
+<h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">WARDIAN</h1>
+<div id="app">
+  <canvas id="jar"></canvas>
+
+  <div id="chrome">
+    <button class="chip" id="chipDay">Day 1, morning</button>
+    <button class="iconbtn" id="btnMenu" aria-label="Menu">&#9776;</button>
+    <button class="iconbtn" id="btnPhoto" aria-label="Photograph the jar">PHOTO</button>
+    <button class="iconbtn" id="btnEditDone" hidden>DONE</button>
+    <div id="firstLine">The Jarwright left this for you.</div>
+    <div id="montage" hidden><span id="montageText"></span><span class="tap">tap to skip</span></div>
+    <div id="pouchBar" hidden></div>
+  </div>
+
+  <div class="sheet" id="scrMenu">
+    <div class="cap">Wardian</div>
+    <button class="btn" id="btnJournal">THE JOURNAL</button>
+    <button class="btn small" id="btnPouch">THE POUCH</button>
+    <button class="btn small" id="btnSettings">SETTINGS</button>
+    <button class="btn small ghost" id="btnAbout">ABOUT</button>
+    <button class="btn small ghost" id="btnMenuClose">CLOSE</button>
+  </div>
+
+  <div class="screen" id="scrJournal">
+    <div class="cap">The journal <span id="sporeCount" style="float:right"></span></div>
+    <div id="journalList"></div>
+    <div class="spacer"></div>
+    <button class="btn small ghost" id="btnJournalBack">BACK</button>
+  </div>
+
+  <div class="screen" id="scrPouch">
+    <div class="cap">The pouch <span id="sporeCount2" style="float:right"></span></div>
+    <div id="pouchList" style="width:100%;max-width:340px"></div>
+    <div class="spacer"></div>
+    <button class="btn small ghost" id="btnPouchBack">BACK</button>
+  </div>
+
+  <div class="sheet" id="scrSettings">
+    <div class="cap">Settings</div>
+    <button class="btn small" id="btnSound">SOUND ON</button>
+    <button class="btn small" id="btnMotion">MOTION ON</button>
+    <button class="btn small" id="btnTilt">TILT OFF</button>
+    <button class="btn small" id="btnWeather">LET THE JAR LISTEN TO YOUR SKY</button>
+    <div class="tiny" id="weatherState">The jar is running on the clock.</div>
+    <button class="btn small" id="btnHemi">NORTHERN SEASONS</button>
+    <div class="cap">Your jar</div>
+    <button class="btn small ghost" id="btnExport">COPY MY JAR</button>
+    <input type="text" id="importField" placeholder="Paste a jar here" autocomplete="off"
+      style="width:100%;max-width:340px;min-height:48px;flex:0 0 auto;background:rgba(23,18,14,.9);
+      border:1px solid rgba(201,162,75,.28);color:var(--cream);border-radius:10px;padding:10px 14px;
+      font-family:inherit;font-size:.9rem;margin:6px 0">
+    <button class="btn small ghost" id="btnImport">BRING IT IN</button>
+    <button class="btn small ghost" id="btnSettingsClose">CLOSE</button>
+  </div>
+
+  <div class="screen" id="scrAbout">
+    <div class="spacer"></div>
+    <div class="title">WARDIAN</div>
+    <p class="lede" style="text-align:center">A tiny world that lives on your time</p>
+    <p class="tiny">In 1829 a doctor named Nathaniel Ward left a moth chrysalis in a sealed jar with a little soil, forgot about it, and came back to find a fern growing. He had not watered it once. The jar had been raining on itself.</p>
+    <p class="tiny">This one keeps his habit. Night falls in it when night falls outside your window. Nothing in it can die, get sick, or leave.</p>
+    <p class="tiny">Sky Wolf Studio</p>
+    <div class="spacer"></div>
+    <button class="btn small ghost" id="btnAboutBack">BACK</button>
+  </div>
+
+  <div id="toast"></div>
+  <div id="testPanel"></div>
+</div>
+
+<script>
+/* ============================================================================
+   WARDIAN   game id: wardian
+   Single file, no deps. Layers per HANDOFF-WARDIAN section 4:
+   CONFIG, RNG, SPECIES, ENV, FLORA, FAUNA, SIM, CLOCK, WEATHER, VIEW, INPUT,
+   JOURNAL, ECONOMY, SAVE, TEST, BOOT.
+
+   THE PROMISE, WHICH IS ALSO A GATE
+     NOTHING IN THE JAR CAN DIE, GET SICK, OR LEAVE. No plant, no agent and no
+     journal entry is ever removed by the simulation. A plant can go dormant and
+     it comes back. sim.js runs thirty simulated days under every watering
+     policy and fails the build if any species count ever goes down.
+
+   ONE TICK, TEN MINUTES, EVERYWHERE
+     Live and catching up are the same function with a different number of
+     iterations. The view interpolates between ticks; the sim never runs at any
+     other rate, so there is one system to test and it is this one.
+   ========================================================================== */
+
+// ---- SIM_EXPORT_START ----
+/* ========================= 1. CONFIG ========================= */
+var CONFIG = Object.freeze({
+  GAME_ID: 'wardian', SAVE_KEY: 'lw_wardian_v1', SAVE_V: 1,
+
+  TICK_MIN: 10, CATCHUP_CAP_DAYS: 14, CATCHUP_MONTAGE_MS: 3000,
+  GRID_W: 24, GRID_H: 8,
+
+  MOIST_MAX: 1.0, MOIST_EVAP_DAY: 0.0020, MOIST_EVAP_NIGHT: 0.0005,
+  ROOT_ROWS: 3, ROOT_WEIGHT: Object.freeze([0.5, 0.3, 0.2]),
+  /* down is gravity and up is the wick, and the wick is much slower, which is
+     why the top of a terrarium goes dry while the bottom of it never does */
+  MOIST_PERCOLATE: 0.05, MOIST_RISE: 0.030,
+  /* the glass is a reservoir: the day lifts water onto it and the night runs it
+     back down the sides into the BOTTOM row, not onto the surface (3.2) */
+  CONDENSE_DAY: 0.012, CONDENSE_NIGHT: 0.05, HUMIDITY_PER_GLASS: 0.28,
+  /* a lid is a lid, not a weld. This is the ONLY way water leaves the jar and
+     it is why a mist means something. Nothing dies of it, the plants curl. */
+  SEAL_LEAK: 0.012,
+  MIST_ADD: 0.25, MIST_COOLDOWN_S: 20,
+  NUTRIENT_FROM_LEAF: 0.3, NUTRIENT_DRAW_PER_GROWTH: 0.02,
+  LIGHT_DAY: 1.0, LIGHT_DUSK: 0.4, LIGHT_NIGHT: 0.08,
+  SEG_MAX: 400, AGENT_MAX: 25, PARTICLE_MAX: 60,
+
+  DORMANT_AFTER_DRY_TICKS: 480, DORMANT_MOIST: 0.12, WAKE_TICKS: 6,
+  SPORES_PER_SPECIES_PER_DAY: 3, SPORES_DAILY_CAP: 30,
+  SEED_COST: Object.freeze({ moss: 5, fern: 12, vine: 15, mushroom: 15, dewsprout: 10 }),
+  WEATHER_CACHE_MIN: 60, GEO_TIMEOUT_MS: 6000,
+  DAWN_H: 5, DAY_H: 7, DUSK_H: 18, NIGHT_H: 20, SEASON_SHIFT_H: 1,
+
+  /* how fast a segment fills out, and how fast a frond unrolls. The unfurl is
+     the signature of this game and it is forty ticks, which is under seven
+     hours of jar time and about four seconds of montage. */
+  GROWTH_PER_TICK: 0.036, CURL_TICKS: 40,
+  MOSS_SPREAD_P: 0.006, MOSS_SPREAD_MOIST: 0.12, MOSS_COVER_MAX: 0.55,
+  LEAF_LIFE_TICKS: 1600, DECAY_PER_TICK: 0.0016,
+  /* ⛔ these were 0.4 and 0.5: a surface cell never passes 0.30 in a sealed
+     jar, so the springtails could never arrive and no gate had noticed */
+  SPRINGTAIL_DECAY: 0.25, SPRINGTAIL_MOIST: 0.20, PILLBUG_LEAVES: 3,
+  BEETLE_NIGHTS: 4, BEETLE_MOSS_COVER: 0.30
+});
+
+/* ========================= 2. RNG ========================= */
+function makeRNG(seed) {
+  var a = seed >>> 0;
+  var r = function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    var t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  r.int = function (n) { return Math.floor(r() * n); };
+  r.range = function (lo, hi) { return lo + r() * (hi - lo); };
+  r.state = function () { return a >>> 0; };
+  r.setState = function (v) { a = v >>> 0; };
+  return r;
+}
+function seedFromString(s) {
+  var h = 2166136261 >>> 0, i;
+  for (i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return h >>> 0;
+}
+function mixSeed(seed, salt) {
+  var h = (seed ^ 0x9E3779B9) >>> 0;
+  h = Math.imul(h ^ (salt + 0x85EBCA6B), 0x27D4EB2D) >>> 0;
+  h ^= h >>> 15; h = Math.imul(h, 0x165667B1) >>> 0; h ^= h >>> 13;
+  return h >>> 0;
+}
+function clamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
+
+/* ========================= 3. SPECIES ========================= */
+/* Eight flora and three fauna. `rare` species arrive only on a real condition
+   or its clock fallback, so a player who never turns the weather on can still
+   find all of them (3.10). */
+var FLORA = {
+  moss:      { id: 'moss', name: 'Cushion moss', kind: 'cells', start: true },
+  fern:      { id: 'fern', name: 'Button fern', kind: 'tree', start: true,
+               branchP: 0.18, jitter: 12, maxGen: 4, leafEvery: 1.5 },
+  vine:      { id: 'vine', name: 'Glass vine', kind: 'tree',
+               branchP: 0.10, jitter: 8, maxGen: 6, leafEvery: 2.2, climbs: true },
+  mushroom:  { id: 'mushroom', name: 'Ghost mushroom', kind: 'fruit', nightOnly: true, needNutrient: 0.5 },
+  dewsprout: { id: 'dewsprout', name: 'Dew sprout', kind: 'tree',
+               branchP: 0.0, jitter: 4, maxGen: 1, leafEvery: 1.0, needHumidity: 0.7 },
+  frostfern: { id: 'frostfern', name: 'Frost fern', kind: 'tree', rare: true,
+               branchP: 0.16, jitter: 14, maxGen: 3, leafEvery: 1.4 },
+  sunburst:  { id: 'sunburst', name: 'Sunburst bloom', kind: 'tree', rare: true,
+               branchP: 0.05, jitter: 6, maxGen: 2, leafEvery: 2.0 },
+  mooncap:   { id: 'mooncap', name: 'Moon cap', kind: 'fruit', rare: true, nightOnly: true, needNutrient: 0.3 }
+};
+var FLORA_ORDER = ['moss', 'fern', 'vine', 'mushroom', 'dewsprout', 'frostfern', 'sunburst', 'mooncap'];
+var FAUNA = {
+  springtail: { id: 'springtail', name: 'Springtails', swarm: [6, 12], speed: 1.4 },
+  pillbug:    { id: 'pillbug', name: 'Pillbug', swarm: [1, 1], speed: 0.5 },
+  glowbeetle: { id: 'glowbeetle', name: 'Glowbeetle', swarm: [1, 2], speed: 0.7, nightOnly: true }
+};
+var FAUNA_ORDER = ['springtail', 'pillbug', 'glowbeetle'];
+
+/* ========================= 4. CLOCK ========================= */
+/* The DEVICE clock and nothing else. A player who moves time zones sees the jar
+   follow the phone, which is the promise (3.5). */
+function clockFromMs(ms, hemi) {
+  var d = new Date(ms);
+  var h = d.getHours() + d.getMinutes() / 60;
+  var month = d.getMonth();
+  return { ms: ms, hour: h, month: month, season: seasonOf(month, hemi), day: Math.floor(ms / 86400000) };
+}
+function seasonOf(month, hemi) {
+  var north = ['winter', 'winter', 'spring', 'spring', 'spring', 'summer',
+    'summer', 'summer', 'autumn', 'autumn', 'autumn', 'winter'][month];
+  if (hemi !== 'south') return north;
+  return { winter: 'summer', spring: 'autumn', summer: 'winter', autumn: 'spring' }[north];
+}
+/* the edges move by up to an hour with the season, so a winter jar gets dark
+   early the way the room does */
+function phaseOf(hour, season) {
+  var shift = season === 'summer' ? -CONFIG.SEASON_SHIFT_H : (season === 'winter' ? CONFIG.SEASON_SHIFT_H : 0);
+  var dawn = CONFIG.DAWN_H + shift, day = CONFIG.DAY_H + shift;
+  var dusk = CONFIG.DUSK_H - shift, night = CONFIG.NIGHT_H - shift;
+  if (hour >= night || hour < dawn) return 'night';
+  if (hour < day) return 'dawn';
+  if (hour < dusk) return 'day';
+  return 'dusk';
+}
+function lightOf(phase) {
+  if (phase === 'day') return CONFIG.LIGHT_DAY;
+  if (phase === 'night') return CONFIG.LIGHT_NIGHT;
+  return CONFIG.LIGHT_DUSK;
+}
+function hourWord(hour) {
+  if (hour < 5) return 'the small hours';
+  if (hour < 7) return 'dawn';
+  if (hour < 12) return 'morning';
+  if (hour < 17) return 'afternoon';
+  if (hour < 20) return 'evening';
+  return 'night';
+}
+/* the moon, for the moon cap. The same formula Asterism uses. */
+function moonPhase(ms) { return ((ms / 86400000 + 2440587.5 - 2451550.1) / 29.530588853) % 1; }
+function isFullMoon(ms) {
+  var p = moonPhase(ms), e = Math.abs(p - 0.5);
+  return Math.min(e, 1 - e) < 0.03;
+}
+
+/* ========================= 5. ENV ========================= */
+function newGrid() {
+  var g = [], y, x;
+  for (y = 0; y < CONFIG.GRID_H; y++) {
+    var row = [];
+    for (x = 0; x < CONFIG.GRID_W; x++) row.push({ m: y < 3 ? 0.30 : 0.06, n: 0.35, d: 0 });
+    g.push(row);
+  }
+  return g;
+}
+function surfaceRow(state) { return state.grid[0]; }
+function mist(state) {
+  var x, row = surfaceRow(state);
+  for (x = 0; x < CONFIG.GRID_W; x++) row[x].m = clamp(row[x].m + CONFIG.MIST_ADD, 0, CONFIG.MOIST_MAX);
+  state.humidity = clamp(state.humidity + 0.22, 0, 1);
+  state.mistedAt = state.tickN;
+  return true;
+}
+function envTick(state, phase) {
+  var y, x, evap = phase === 'night' ? CONFIG.MOIST_EVAP_NIGHT : CONFIG.MOIST_EVAP_DAY;
+  /* A sealed jar is a closed loop. The day lifts water off the soil and holds it
+     on the glass; the night runs it back down the SIDES, so it lands in the
+     bottom row and has to be wicked up again. That is why the top of a jar goes
+     dry and a plant sleeps, and why the water is never actually lost (3.2). */
+  var lifted = 0;
+  for (x = 0; x < CONFIG.GRID_W; x++) {
+    var c = state.grid[0][x];
+    var e = Math.min(c.m, evap * (0.6 + 0.8 * state.env.light));
+    c.m -= e; lifted += e;
+  }
+  state.glass = Math.max(0, state.glass + lifted - CONFIG.SEAL_LEAK * (0.5 + 0.5 * state.env.light));
+  var back = state.glass * (phase === 'night' ? CONFIG.CONDENSE_NIGHT : CONFIG.CONDENSE_DAY);
+  state.glass = Math.max(0, state.glass - back);
+  var bottom = state.grid[CONFIG.GRID_H - 1], share = back / CONFIG.GRID_W, spill = 0;
+  for (x = 0; x < CONFIG.GRID_W; x++) {
+    var want = bottom[x].m + share;
+    if (want > CONFIG.MOIST_MAX) { spill += want - CONFIG.MOIST_MAX; want = CONFIG.MOIST_MAX; }
+    bottom[x].m = want;
+  }
+  state.glass += spill;
+  state.humidity = clamp(0.40 + state.glass * CONFIG.HUMIDITY_PER_GLASS, 0.15, 1);
+  /* between rows: gravity down, wick up, and the wick is the slow one */
+  for (y = 0; y < CONFIG.GRID_H - 1; y++) {
+    for (x = 0; x < CONFIG.GRID_W; x++) {
+      var aa = state.grid[y][x], bb = state.grid[y + 1][x];
+      var diff = aa.m - bb.m;
+      var flow = diff > 0 ? diff * CONFIG.MOIST_PERCOLATE : diff * CONFIG.MOIST_RISE;
+      if (flow > 0) flow = Math.min(flow, CONFIG.MOIST_MAX - bb.m);
+      else flow = -Math.min(-flow, CONFIG.MOIST_MAX - aa.m);
+      aa.m = clamp(aa.m - flow, 0, CONFIG.MOIST_MAX);
+      bb.m = clamp(bb.m + flow, 0, CONFIG.MOIST_MAX);
+    }
+  }
+  for (y = 0; y < CONFIG.GRID_H; y++) for (x = 0; x < CONFIG.GRID_W; x++) {
+    var cc = state.grid[y][x];
+    if (cc.d > 0) {
+      var gone = Math.min(cc.d, CONFIG.DECAY_PER_TICK);
+      cc.d -= gone; cc.n = clamp(cc.n + gone * 0.6, 0, 1);
+    }
+  }
+}
+function surfaceMoist(state) {
+  var x, t = 0;
+  for (x = 0; x < CONFIG.GRID_W; x++) t += state.grid[0][x].m;
+  return t / CONFIG.GRID_W;
+}
+function totalWater(state) {
+  var y, x, t = state.glass;
+  for (y = 0; y < CONFIG.GRID_H; y++) for (x = 0; x < CONFIG.GRID_W; x++) t += state.grid[y][x].m;
+  return t;
+}
+function mossCover(state) {
+  var i, n = 0;
+  for (i = 0; i < state.moss.length; i++) if (state.moss[i]) n++;
+  return n / CONFIG.GRID_W;
+}
+
+/* ========================= 6. FLORA ========================= */
+/* A plant is never removed. Dormancy is the only downward state and it is
+   reversible within WAKE_TICKS of moisture coming back (3.2). */
+function newPlant(species, x, seedN) {
+  return {
+    sp: species, x: x, dormant: 0, dryTicks: 0, wetTicks: 0, seed: seedN, born: 0,
+    segs: [{ a: -90, l: 1, g: 0, gen: 0, p: -1, leaf: 0, curl: 1, age: 0 }],
+    fruit: 0, open: 0
+  };
+}
+function plantCell(state, p) {
+  var gx = clamp(Math.round(p.x), 0, CONFIG.GRID_W - 1);
+  return state.grid[0][gx];
+}
+/* A plant is not a sponge sitting on the soil, it has roots. It reads the top
+   three rows, weighted, which is why an afternoon does not put a fern to sleep
+   and a fortnight of neglect does (3.2). */
+function rootMoist(state, p) {
+  var gx = clamp(Math.round(p.x), 0, CONFIG.GRID_W - 1), y, t = 0;
+  for (y = 0; y < CONFIG.ROOT_ROWS; y++) t += state.grid[y][gx].m * CONFIG.ROOT_WEIGHT[y];
+  return t;
+}
+function rootDraw(state, p, amount) {
+  var gx = clamp(Math.round(p.x), 0, CONFIG.GRID_W - 1), y, c;
+  for (y = 0; y < CONFIG.ROOT_ROWS; y++) {
+    c = state.grid[y][gx];
+    c.m = clamp(c.m - amount * CONFIG.ROOT_WEIGHT[y], 0, CONFIG.MOIST_MAX);
+  }
+}
+function segCount(state) {
+  var i, n = 0;
+  for (i = 0; i < state.plants.length; i++) n += state.plants[i].segs.length;
+  return n;
+}
+function growPlant(state, p, r, phase) {
+  var sp = FLORA[p.sp], cell = plantCell(state, p), root = rootMoist(state, p), i;
+  /* dormancy, and the way back out of it */
+  if (root < CONFIG.DORMANT_MOIST) { p.dryTicks++; p.wetTicks = 0; }
+  else { p.wetTicks++; p.dryTicks = 0; }
+  if (!p.dormant && p.dryTicks >= CONFIG.DORMANT_AFTER_DRY_TICKS) p.dormant = 1;
+  if (p.dormant && p.wetTicks >= CONFIG.WAKE_TICKS) { p.dormant = 0; p.woke = state.tickN; }
+  if (p.dormant) {
+    for (i = 0; i < p.segs.length; i++) p.segs[i].curl = Math.min(1, p.segs[i].curl + 0.02);
+    return;
+  }
+  var light = state.env.light, food = Math.min(root, cell.n);
+  if (sp.needHumidity && state.humidity < sp.needHumidity) food *= 0.25;
+  var rate = CONFIG.GROWTH_PER_TICK * clamp(food * 2.2, 0, 1) * (0.35 + 0.65 * light);
+  if (rate <= 0) return;
+
+  if (sp.kind === 'fruit') {
+    /* a fruiting body comes up at night and goes back down by day. It is never
+       removed, it is only closed. */
+    var wantsUp = (!sp.nightOnly || phase === 'night') && cell.n >= (sp.needNutrient || 0);
+    p.fruit = clamp(p.fruit + (wantsUp ? rate * 2 : -rate * 2), 0, 1);
+    cell.n = clamp(cell.n - (wantsUp ? rate * CONFIG.NUTRIENT_DRAW_PER_GROWTH : 0), 0, 1);
+    return;
+  }
+
+  var atCap = segCount(state) >= CONFIG.SEG_MAX;
+  for (i = 0; i < p.segs.length; i++) {
+    var s = p.segs[i];
+    s.age++;
+    if (s.g < 1) {
+      s.g = Math.min(1, s.g + rate);
+      cell.n = clamp(cell.n - rate * CONFIG.NUTRIENT_DRAW_PER_GROWTH, 0, 1);
+      rootDraw(state, p, rate * CONFIG.NUTRIENT_DRAW_PER_GROWTH * 0.5);
+    }
+    /* the unfurl: a frond arrives rolled and opens over CURL_TICKS. This is the
+       thing the design says has to be worth thirty seconds. */
+    if (s.leaf && s.curl > 0) s.curl = Math.max(0, s.curl - 1 / CONFIG.CURL_TICKS);
+    if (s.g >= 1 && !s.done) {
+      s.done = 1;
+      if (!atCap && s.gen < sp.maxGen) {
+        var kids = r() < sp.branchP ? 2 : 1;
+        var k;
+        for (k = 0; k < kids; k++) {
+          var spread = kids === 1 ? (r() - 0.5) * sp.jitter : (k === 0 ? -1 : 1) * (sp.jitter + r() * sp.jitter);
+          p.segs.push({ a: s.a + spread, l: s.l * 0.86, g: 0, gen: s.gen + 1, p: i,
+            leaf: (s.gen + 1) >= Math.ceil(sp.leafEvery) ? 1 : 0, curl: 1, age: 0 });
+        }
+      } else if (!s.leaf && s.gen >= 1) {
+        s.leaf = 1; s.curl = 1;
+      }
+    }
+    /* a leaf that has had its life falls to the soil and feeds it. The PLANT is
+       never removed; it grows another one. */
+    if (s.leaf && s.curl <= 0 && s.age > CONFIG.LEAF_LIFE_TICKS && !s.shed) {
+      s.shed = 1; s.leaf = 0;
+      cell.d = clamp(cell.d + CONFIG.NUTRIENT_FROM_LEAF, 0, 1);
+      state.shed++;
+      if (!atCap) p.segs.push({ a: s.a + (r() - 0.5) * sp.jitter, l: s.l, g: 0, gen: s.gen,
+        p: s.p, leaf: 1, curl: 1, age: 0 });
+    }
+  }
+}
+function spreadMoss(state, r) {
+  /* the ceiling is counted in CELLS, not checked once at the door: a single
+     pass can seed both sides of several cushions and walk straight past a
+     fraction test (⛔ that is how 55 percent became 58) */
+  var x, count = 0;
+  for (x = 0; x < CONFIG.GRID_W; x++) if (state.moss[x]) count++;
+  var room = Math.floor(CONFIG.MOSS_COVER_MAX * CONFIG.GRID_W) - count;
+  if (room <= 0) return;
+  var next = state.moss.slice();
+  for (x = 0; x < CONFIG.GRID_W; x++) {
+    if (!state.moss[x]) continue;
+    var sides = [x - 1, x + 1], k;
+    for (k = 0; k < 2; k++) {
+      var nx = sides[k];
+      if (room <= 0) break;
+      if (nx < 0 || nx >= CONFIG.GRID_W || next[nx]) continue;
+      if (state.grid[0][nx].m < CONFIG.MOSS_SPREAD_MOIST) continue;
+      if (r() < CONFIG.MOSS_SPREAD_P) { next[nx] = 1; room--; }
+    }
+    if (room <= 0) break;
+  }
+  state.moss = next;
+}
+
+/* ========================= 7. FAUNA ========================= */
+/* An agent is never removed. A glowbeetle sleeps by day; it does not leave. */
+function addAgents(state, species, r) {
+  var f = FAUNA[species], n = f.swarm[0] + Math.floor(r() * (f.swarm[1] - f.swarm[0] + 1)), i;
+  for (i = 0; i < n && state.agents.length < CONFIG.AGENT_MAX; i++) {
+    state.agents.push({ sp: species, x: r() * CONFIG.GRID_W, y: r() * 1.4,
+      vx: (r() - 0.5) * f.speed, vy: 0, asleep: 0, rolled: 0, phase: r() * 6.28 });
+  }
+}
+function fauna(state, r, phase) {
+  var i, f;
+  for (i = 0; i < state.agents.length; i++) {
+    var a = state.agents[i];
+    f = FAUNA[a.sp];
+    a.asleep = (f.nightOnly && phase !== 'night') ? 1 : 0;
+    if (a.rolled > 0) { a.rolled--; continue; }
+    if (a.asleep) continue;
+    /* steer to what it needs: springtails to mould, pillbugs to decay, the
+       beetle wanders the glass at night */
+    var best = -1, bestV = -1, x;
+    for (x = 0; x < CONFIG.GRID_W; x++) {
+      var v = a.sp === 'springtail' ? state.grid[0][x].d * state.grid[0][x].m
+        : (a.sp === 'pillbug' ? state.grid[0][x].d : state.grid[0][x].m * 0.3);
+      if (v > bestV) { bestV = v; best = x; }
+    }
+    var dx = (best - a.x);
+    a.vx = a.vx * 0.72 + clamp(dx, -1, 1) * f.speed * 0.28 + (r() - 0.5) * f.speed * 0.2;
+    a.x = clamp(a.x + a.vx * 0.35, 0, CONFIG.GRID_W - 0.01);
+    a.y = clamp(a.y + (r() - 0.5) * 0.1, 0, 1.6);
+    if (bestV > 0.02 && Math.abs(dx) < 0.8) {
+      var c = state.grid[0][best];
+      c.d = Math.max(0, c.d - (a.sp === 'pillbug' ? 0.004 : 0.002));
+      c.n = clamp(c.n + 0.001, 0, 1);
+    }
+  }
+}
+function arrivals(state, r, phase) {
+  var x, found = null;
+  if (!state.seen.springtail) {
+    for (x = 0; x < CONFIG.GRID_W; x++) {
+      if (state.grid[0][x].d > CONFIG.SPRINGTAIL_DECAY && state.grid[0][x].m > CONFIG.SPRINGTAIL_MOIST) { found = 'springtail'; break; }
+    }
+  }
+  if (!found && !state.seen.pillbug && state.shed >= CONFIG.PILLBUG_LEAVES) found = 'pillbug';
+  if (!found && !state.seen.glowbeetle && state.nights >= CONFIG.BEETLE_NIGHTS
+    && mossCover(state) > CONFIG.BEETLE_MOSS_COVER) found = 'glowbeetle';
+  if (!found) return null;
+  state.seen[found] = state.tickN;
+  addAgents(state, found, r);
+  return found;
+}
+/* the rares, on real conditions with clock fallbacks (3.10) */
+function rareCheck(state, clock) {
+  var w = state.weather;
+  if (!state.seen.frostfern) {
+    var cold = w ? (w.temp !== undefined && w.temp < 0)
+      : (clock.season === 'winter' && phaseOf(clock.hour, clock.season) === 'night');
+    if (cold) return 'frostfern';
+  }
+  if (!state.seen.sunburst) {
+    var bright = w ? (w.kind === 'clear' && phaseOf(clock.hour, clock.season) === 'day' && clock.season === 'summer')
+      : (clock.season === 'summer' && clock.hour >= 11 && clock.hour < 13);
+    if (bright) return 'sunburst';
+  }
+  if (!state.seen.mooncap && isFullMoon(clock.ms) && phaseOf(clock.hour, clock.season) === 'night') return 'mooncap';
+  return null;
+}
+
+/* ========================= 8. SIM ========================= */
+function newJar(seedN, hemi) {
+  var s = {
+    v: CONFIG.SAVE_V, seed: seedN >>> 0, rngState: mixSeed(seedN, 7),
+    tickN: 0, lastSeen: 0, startMs: 0, hemi: hemi || 'north',
+    grid: newGrid(), moss: [], plants: [], agents: [], humidity: 0.55, glass: 0,
+    env: { light: CONFIG.LIGHT_DAY, phase: 'day', season: 'spring', hour: 9 },
+    seen: {}, discovered: {}, journal: [], events: [],
+    spores: 0, sporesToday: 0, sporeDay: -1, shed: 0, nights: 0, lastPhase: 'day',
+    weather: null, mistedAt: -9999, dayCount: 1
+  };
+  var x;
+  for (x = 0; x < CONFIG.GRID_W; x++) s.moss.push(0);
+  /* what the Jarwright left in it */
+  s.moss[10] = 1; s.moss[11] = 1;
+  s.plants.push(newPlant('fern', 8, mixSeed(seedN, 11)));
+  s.plants.push(newPlant('fern', 16, mixSeed(seedN, 13)));
+  s.discovered.moss = 1; s.discovered.fern = 1;
+  return s;
+}
+/* one tick, ten minutes, live and catching up alike */
+function tick(state, clock) {
+  var r = makeRNG(state.rngState);
+  state.tickN++;
+  var phase = phaseOf(clock.hour, clock.season);
+  state.env.phase = phase;
+  state.env.light = lightOf(phase);
+  state.env.season = clock.season;
+  state.env.hour = clock.hour;
+  if (phase === 'night' && state.lastPhase !== 'night') state.nights++;
+  state.lastPhase = phase;
+
+  envTick(state, phase);
+  spreadMoss(state, r);
+  var i;
+  for (i = 0; i < state.plants.length; i++) growPlant(state, state.plants[i], r, phase);
+  fauna(state, r, phase);
+
+  var came = arrivals(state, r, phase);
+  if (came) pushEvent(state, 'fauna', came, clock);
+  var rare = rareCheck(state, clock);
+  if (rare) {
+    state.seen[rare] = state.tickN;
+    state.discovered[rare] = 1;
+    state.plants.push(newPlant(rare, 4 + (state.plants.length * 5) % 18, mixSeed(state.seed, 40 + state.plants.length)));
+    pushEvent(state, 'flora', rare, clock);
+  }
+
+  /* spores accrue per discovered species per day, to a cap, and never expire */
+  var dayIdx = Math.floor(clock.ms / 86400000);
+  if (dayIdx !== state.sporeDay) {
+    state.sporeDay = dayIdx; state.sporesToday = 0;
+    if (state.startMs) state.dayCount = Math.max(1, Math.floor((clock.ms - state.startMs) / 86400000) + 1);
+  }
+  var perDay = Object.keys(state.discovered).length * CONFIG.SPORES_PER_SPECIES_PER_DAY;
+  var want = Math.min(perDay, CONFIG.SPORES_DAILY_CAP);
+  var perTick = want / (1440 / CONFIG.TICK_MIN);
+  var give = Math.min(perTick, Math.max(0, want - state.sporesToday));
+  state.sporesToday += give; state.spores += give;
+
+  state.rngState = r.state();
+  return state;
+}
+function pushEvent(state, kind, id, clock) {
+  state.events.push({ kind: kind, id: id, at: clock.ms, tick: state.tickN });
+  if (!state.discovered[id]) state.discovered[id] = 1;
+  /* the journal only ever grows */
+  state.journal.push({ id: id, kind: kind, at: clock.ms, day: state.dayCount });
+}
+/* Catch up is the same loop with more turns of the handle, and the clock is
+   advanced PER TICK so nights and days pass in order.
+   ⛔ A catch up that ticks elapsed / TICK times with the clock frozen at "now"
+   grows a month of daytime. */
+function catchUp(state, nowMs) {
+  var capMs = CONFIG.CATCHUP_CAP_DAYS * 86400000;
+  var elapsed = Math.max(0, Math.min(nowMs - state.lastSeen, capMs));
+  var n = Math.floor(elapsed / (CONFIG.TICK_MIN * 60000));
+  var before = census(state), i;
+  for (i = 1; i <= n; i++) {
+    var atMs = state.lastSeen + i * CONFIG.TICK_MIN * 60000;
+    tick(state, clockFromMs(atMs, state.hemi));
+  }
+  state.lastSeen = state.lastSeen + n * CONFIG.TICK_MIN * 60000;
+  /* if the player was away longer than the cap, the jar still knows what day it
+     is: the clock is the phone's, the SIM just does not run a month of ticks */
+  if (nowMs - state.lastSeen > 0) state.lastSeen = nowMs;
+  return { ticks: n, before: before, after: census(state) };
+}
+function census(state) {
+  var c = { segments: segCount(state), moss: 0, agents: state.agents.length,
+    plants: state.plants.length, journal: state.journal.length, species: {},
+    dormant: 0, surf: Math.round(surfaceMoist(state) * 100) / 100,
+    water: Math.round(totalWater(state) * 100) / 100 };
+  var i;
+  for (i = 0; i < state.plants.length; i++) if (state.plants[i].dormant) c.dormant++;
+  for (i = 0; i < state.moss.length; i++) if (state.moss[i]) c.moss++;
+  for (i = 0; i < state.plants.length; i++) c.species[state.plants[i].sp] = (c.species[state.plants[i].sp] || 0) + 1;
+  for (i = 0; i < state.agents.length; i++) c.species[state.agents[i].sp] = (c.species[state.agents[i].sp] || 0) + 1;
+  return c;
+}
+/* the whole state as one comparable string, for the determinism gate */
+function snapshot(state) {
+  var round = function (v) { return Math.round(v * 1e5) / 1e5; };
+  var i, y, x, g = [];
+  for (y = 0; y < CONFIG.GRID_H; y++) for (x = 0; x < CONFIG.GRID_W; x++) {
+    var c = state.grid[y][x];
+    g.push([round(c.m), round(c.n), round(c.d)]);
+  }
+  var pl = [];
+  for (i = 0; i < state.plants.length; i++) {
+    var p = state.plants[i], ss = [], k;
+    for (k = 0; k < p.segs.length; k++) {
+      var s = p.segs[k];
+      ss.push([round(s.a), round(s.l), round(s.g), s.gen, s.p, s.leaf, round(s.curl)]);
+    }
+    pl.push([p.sp, round(p.x), p.dormant, p.dryTicks, round(p.fruit), ss]);
+  }
+  var ag = [];
+  for (i = 0; i < state.agents.length; i++) {
+    var a = state.agents[i];
+    ag.push([a.sp, round(a.x), round(a.y), a.asleep, a.rolled]);
+  }
+  return JSON.stringify({ t: state.tickN, grid: g, moss: state.moss, plants: pl, agents: ag,
+    hum: round(state.humidity), glass: round(state.glass),
+    spores: round(state.spores), nights: state.nights,
+    shed: state.shed, seen: state.seen, journal: state.journal.length });
+}
+function findNaN(o, path, out) {
+  path = path || '$'; out = out || [];
+  if (typeof o === 'number') { if (!isFinite(o)) out.push(path); return out; }
+  if (o && typeof o === 'object') { var k; for (k in o) findNaN(o[k], path + '.' + k, out); }
+  return out;
+}
+/* the watering policies the census is run under */
+var POLICIES = {
+  never:  function () { return false; },
+  daily:  function (state, clock) { return clock.hour >= 8 && clock.hour < 8 + CONFIG.TICK_MIN / 60; },
+  weekly: function (state, clock) {
+    return Math.floor(clock.ms / 86400000) % 7 === 0 && clock.hour >= 8 && clock.hour < 8 + CONFIG.TICK_MIN / 60;
+  },
+  twoDay: function (state, clock) {
+    return Math.floor(clock.ms / 86400000) % 2 === 0 && clock.hour >= 8 && clock.hour < 8 + CONFIG.TICK_MIN / 60;
+  }
+};
+/* run days under a policy from a fixed start, for the gates and for --days */
+function runDays(days, policyName, seedN, startMs, hemi) {
+  var state = newJar(seedN === undefined ? 4242 : seedN, hemi);
+  var start = startMs === undefined ? Date.UTC(2026, 3, 1, 6, 0, 0) : startMs;
+  state.lastSeen = start; state.startMs = start;
+  var policy = POLICIES[policyName] || POLICIES.never;
+  var perDay = 1440 / CONFIG.TICK_MIN, d, i, log = [];
+  for (d = 0; d < days; d++) {
+    for (i = 0; i < perDay; i++) {
+      var ms = start + (d * perDay + i) * CONFIG.TICK_MIN * 60000;
+      var clock = clockFromMs(ms, state.hemi);
+      if (policy(state, clock)) mist(state);
+      tick(state, clock);
+    }
+    log.push({ day: d + 1, c: census(state) });
+  }
+  state.lastSeen = start + days * 86400000;
+  return { state: state, log: log };
+}
+function maxGenOf(state, species) {
+  var i, k, best = -1;
+  for (i = 0; i < state.plants.length; i++) {
+    if (species && state.plants[i].sp !== species) continue;
+    for (k = 0; k < state.plants[i].segs.length; k++) best = Math.max(best, state.plants[i].segs[k].gen);
+  }
+  return best;
+}
+// ---- SIM_EXPORT_END ----
+
+// ---- TEST_EXPORT_START ----
+/* ========================= 15. TEST ========================= */
+var TEST = {
+  results: [],
+  assert: function (n, c, d) { this.results.push({ name: n, pass: !!c, detail: d || '' }); },
+  eq: function (n, a, b) { this.assert(n, a === b, 'expected ' + b + ', got ' + a); },
+  near: function (n, a, b, tol) { this.assert(n, Math.abs(a - b) <= tol, 'expected about ' + b + ', got ' + a); },
+  report: function () {
+    var p = 0, f = 0, fails = [], i;
+    for (i = 0; i < this.results.length; i++) { if (this.results[i].pass) p++; else { f++; fails.push(this.results[i]); } }
+    return { passed: p, failed: f, total: this.results.length, failures: fails };
+  },
+  runSuite: function (n, fn, a) {
+    try { fn(this, a); } catch (e) { this.assert('the ' + n + ' suite ran to the end', false, String(e && e.message || e)); }
+  },
+  run: function (extra) {
+    this.results = [];
+    this.runSuite('clock', suiteClock);
+    this.runSuite('env', suiteEnv);
+    this.runSuite('growth', suiteGrowth);
+    this.runSuite('dormancy', suiteDormancy);
+    this.runSuite('catchup', suiteCatchUp);
+    this.runSuite('nothing dies', suiteNothingDies);
+    this.runSuite('budget', suiteBudget);
+    this.runSuite('arrivals', suiteArrivals);
+    this.runSuite('determinism', suiteDeterminism);
+    this.runSuite('copy', suiteCopy);
+    if (extra && extra.src) this.runSuite('purity', suitePurity, extra.src);
+    return this.report();
+  }
+};
+
+function suiteClock(T) {
+  T.eq('midnight is night', phaseOf(0, 'spring'), 'night');
+  T.eq('six is dawn', phaseOf(6, 'spring'), 'dawn');
+  T.eq('noon is day', phaseOf(12, 'spring'), 'day');
+  T.eq('seven in the evening is dusk', phaseOf(19, 'spring'), 'dusk');
+  T.eq('ten at night is night', phaseOf(22, 'spring'), 'night');
+  /* the edges move with the season, so a winter jar goes dark early */
+  T.eq('a winter evening is dark by seven', phaseOf(19.5, 'winter'), 'night');
+  T.eq('and a summer one is not', phaseOf(19.5, 'summer'), 'dusk');
+  T.eq('January is winter in the north', seasonOf(0, 'north'), 'winter');
+  T.eq('and summer in the south', seasonOf(0, 'south'), 'summer');
+  T.eq('July is summer in the north', seasonOf(6, 'north'), 'summer');
+  T.eq('and winter in the south', seasonOf(6, 'south'), 'winter');
+  T.eq('the light at noon is full', lightOf('day'), CONFIG.LIGHT_DAY);
+  T.assert('and at night it is nearly nothing', lightOf('night') < 0.1);
+  T.eq('nine in the morning has a word for it', hourWord(9), 'morning');
+  T.eq('and so does eight at night', hourWord(20), 'night');
+  /* the moon, on two published moments */
+  T.assert('the moon is full on 2000-01-21', isFullMoon(Date.UTC(2000, 0, 21, 4, 40)));
+  T.assert('and it is not on the new moon two weeks before', !isFullMoon(Date.UTC(2000, 0, 6, 18, 14)));
+}
+
+function suiteEnv(T) {
+  var s = newJar(1);
+  var before = s.grid[0][3].m;
+  mist(s);
+  T.near('a mist raises the whole surface row', s.grid[0][3].m - before, CONFIG.MIST_ADD, 1e-9);
+  T.assert('and it raises the humidity too', s.humidity > 0.55);
+  var i;
+  for (i = 0; i < CONFIG.GRID_W; i++) T.assert('the mist reaches column ' + i, s.grid[0][i].m > before - 1e-9);
+  var s2 = newJar(2);
+  s2.grid[0][0].m = 1.0; s2.grid[1][0].m = 0.1;
+  envTick(s2, 'day');
+  T.assert('water percolates downward', s2.grid[1][0].m > 0.1);
+  T.assert('and the cell above gives some of it up', s2.grid[0][0].m < 1.0);
+  var s3 = newJar(3);
+  s3.grid[0][5].d = 0.5;
+  var n0 = s3.grid[0][5].n;
+  for (i = 0; i < 50; i++) envTick(s3, 'day');
+  T.assert('a decayed leaf turns into nutrient', s3.grid[0][5].n > n0);
+  T.assert('and the decay goes down as it does', s3.grid[0][5].d < 0.5);
+  var s4 = newJar(4), m0 = s4.grid[0][0].m;
+  for (i = 0; i < 100; i++) envTick(s4, 'day');
+  T.assert('a jar left in the light dries at the surface', s4.grid[0][0].m < m0);
+  T.assert('but a sealed jar keeps its water: the humidity goes up as it does', s4.humidity > 0.5);
+}
+
+function suiteGrowth(T) {
+  var r2 = runDays(2, 'twoDay', 4242);
+  T.assert('a fern reaches its third generation inside two days (' + maxGenOf(r2.state, 'fern') + ')',
+    maxGenOf(r2.state, 'fern') >= 3);
+  T.assert('and it has leaves on it', (function () {
+    var i, k, n = 0;
+    for (i = 0; i < r2.state.plants.length; i++) for (k = 0; k < r2.state.plants[i].segs.length; k++) if (r2.state.plants[i].segs[k].leaf) n++;
+    return n;
+  })() > 0);
+  var r5 = runDays(5, 'twoDay', 4242);
+  var cover = r5.log[4].c.moss / CONFIG.GRID_W;
+  T.assert('moss covers at least a fifth of the surface by day five (' + (cover * 100).toFixed(0) + ' percent)', cover >= 0.20);
+  T.assert('and it never covers more than the ceiling', cover <= CONFIG.MOSS_COVER_MAX + 1e-9);
+  var r30 = runDays(30, 'daily', 4242);
+  T.assert('and still not after a month (' + (r30.log[29].c.moss / CONFIG.GRID_W * 100).toFixed(0) + ' percent)',
+    r30.log[29].c.moss / CONFIG.GRID_W <= CONFIG.MOSS_COVER_MAX + 1e-9);
+  /* the unfurl is the signature, so it is timed */
+  var s = newJar(9), seg = { a: -90, l: 1, g: 1, gen: 1, p: 0, leaf: 1, curl: 1, age: 0, done: 1 };
+  s.plants[0].segs.push(seg);
+  s.grid[0][8].m = 0.8; s.grid[0][8].n = 0.8;
+  var i, ticks = 0;
+  for (i = 0; i < 200 && seg.curl > 0; i++) { growPlant(s, s.plants[0], makeRNG(1), 'day'); ticks++; }
+  T.assert('a frond takes about forty ticks to unroll (' + ticks + ')', ticks >= CONFIG.CURL_TICKS && ticks <= CONFIG.CURL_TICKS + 4);
+}
+
+function suiteDormancy(T) {
+  var r = runDays(6, 'never', 4242);
+  var dormant = 0, i;
+  for (i = 0; i < r.state.plants.length; i++) if (r.state.plants[i].dormant) dormant++;
+  T.assert('a jar left dry for six days has dormant plants in it (' + dormant + ')', dormant > 0);
+  T.assert('and it has lost none of them (' + r.state.plants.length + ' plants, it started with 2)',
+    r.state.plants.length >= 2);
+  T.assert('a dormant plant is curled, not gone', (function () {
+    var k, p = null;
+    for (k = 0; k < r.state.plants.length; k++) if (r.state.plants[k].dormant) p = r.state.plants[k];
+    return p && p.segs.length > 0 && p.segs[0].curl > 0.02;
+  })());
+  var g0 = maxGenOf(r.state, 'fern');
+  var clock = clockFromMs(r.state.lastSeen, 'north');
+  tick(r.state, clock);
+  T.eq('and it does not grow while it sleeps', maxGenOf(r.state, 'fern'), g0);
+  /* misting a dormant jar wakes it inside WAKE_TICKS */
+  mist(r.state);
+  var woke = -1;
+  for (i = 1; i <= CONFIG.WAKE_TICKS + 3; i++) {
+    tick(r.state, clockFromMs(r.state.lastSeen + i * CONFIG.TICK_MIN * 60000, 'north'));
+    var stillAsleep = 0, k2;
+    for (k2 = 0; k2 < r.state.plants.length; k2++) if (r.state.plants[k2].dormant) stillAsleep++;
+    if (!stillAsleep && woke < 0) woke = i;
+  }
+  T.assert('and a mist wakes it inside six ticks (' + woke + ')', woke > 0 && woke <= CONFIG.WAKE_TICKS);
+}
+
+function suiteCatchUp(T) {
+  var s = newJar(4242);
+  var start = Date.UTC(2026, 3, 1, 6, 0, 0);
+  s.lastSeen = start; s.startMs = start;
+  var res = catchUp(s, start + 30 * 86400000);
+  var capTicks = CONFIG.CATCHUP_CAP_DAYS * 1440 / CONFIG.TICK_MIN;
+  T.eq('thirty days away ticks exactly the fourteen day cap', res.ticks, capTicks);
+  T.eq('and the jar still knows what day it is', s.lastSeen, start + 30 * 86400000);
+  /* ⛔ a catch up with the clock frozen at "now" grows a month of daytime */
+  var s2 = newJar(4242);
+  s2.lastSeen = start; s2.startMs = start;
+  catchUp(s2, start + 3 * 86400000);
+  T.assert('three days of catch up passes three nights (' + s2.nights + ')', s2.nights >= 3 && s2.nights <= 4);
+  T.assert('and it grew something while it was away', segCount(s2) > 2);
+  var s3 = newJar(4242);
+  s3.lastSeen = start; s3.startMs = start;
+  var r3 = catchUp(s3, start + 1000);
+  T.eq('coming back a second later ticks nothing', r3.ticks, 0);
+  T.assert('and nothing is lost by looking', s3.plants.length === 2);
+}
+
+function suiteNothingDies(T) {
+  var pols = ['never', 'daily', 'weekly', 'twoDay'], k;
+  for (k = 0; k < pols.length; k++) {
+    var run = runDays(30, pols[k], 4242), i, sp, bad = [];
+    var prev = null;
+    for (i = 0; i < run.log.length; i++) {
+      var c = run.log[i].c;
+      if (prev) {
+        for (sp in prev.species) {
+          if ((c.species[sp] || 0) < prev.species[sp]) bad.push(sp + ' fell on day ' + (i + 1));
+        }
+        if (c.plants < prev.plants) bad.push('a plant was removed on day ' + (i + 1));
+        if (c.agents < prev.agents) bad.push('an agent was removed on day ' + (i + 1));
+        if (c.journal < prev.journal) bad.push('a journal entry was removed on day ' + (i + 1));
+        if (c.moss < prev.moss) bad.push('moss went backwards on day ' + (i + 1));
+      }
+      prev = c;
+    }
+    T.assert('under ' + pols[k] + ' mist, nothing in the jar dies, sickens or leaves over thirty days'
+      + (bad.length ? ': ' + bad.slice(0, 3).join(', ') : ''), bad.length === 0);
+    var nan = findNaN(census(run.state));
+    T.assert('and there is no NaN anywhere in it under ' + pols[k], nan.length === 0, nan.join(', '));
+  }
+}
+
+function suiteBudget(T) {
+  var run = runDays(30, 'daily', 4242), i, worst = 0;
+  for (i = 0; i < run.log.length; i++) worst = Math.max(worst, run.log[i].c.segments);
+  T.assert('the segment count never passes the budget over a month (' + worst + ' of ' + CONFIG.SEG_MAX + ')', worst <= CONFIG.SEG_MAX);
+  T.assert('and it is a real jar, not two sticks (' + worst + ' segments)', worst > 40);
+  T.assert('the agent count stays inside its budget', run.state.agents.length <= CONFIG.AGENT_MAX);
+  var maxSpores = 0;
+  T.assert('spores never come in faster than the daily cap',
+    run.state.spores <= CONFIG.SPORES_DAILY_CAP * 30 + 1);
+  T.assert('and they do come in', run.state.spores > 10);
+}
+
+/* every arrival condition has to be reachable by a jar that is only misted.
+   ⛔ this suite exists because the springtails wanted a surface wetter than a
+   sealed jar can ever be, and eight other gates were happy about it. */
+function suiteArrivals(T) {
+  var pols = ['daily', 'twoDay'], k, i;
+  for (k = 0; k < pols.length; k++) {
+    var run = runDays(30, pols[k], 4242), missing = [];
+    for (i = 0; i < FAUNA_ORDER.length; i++) if (!run.state.seen[FAUNA_ORDER[i]]) missing.push(FAUNA_ORDER[i]);
+    T.assert('under ' + pols[k] + ' mist every animal finds the jar inside a month'
+      + (missing.length ? ': ' + missing.join(', ') + ' never came' : ''), missing.length === 0);
+    T.assert('and every one of them has a journal line under ' + pols[k],
+      run.state.journal.length >= FAUNA_ORDER.length);
+  }
+  /* and the plants get all the way up, or the maxGen numbers are decoration */
+  var r = runDays(30, 'twoDay', 4242);
+  T.eq('a fern reaches the top of its ladder in a month', maxGenOf(r.state, 'fern'), FLORA.fern.maxGen);
+  var seenOnce = runDays(30, 'never', 4242);
+  T.assert('and an untended jar still keeps everything it started with', seenOnce.state.plants.length >= 2);
+}
+
+function suiteDeterminism(T) {
+  var a = runDays(6, 'twoDay', 4242), b = runDays(6, 'twoDay', 4242);
+  T.eq('the same seed and the same policy give the same jar', snapshot(a.state), snapshot(b.state));
+  var c = runDays(6, 'twoDay', 4243);
+  T.assert('a different seed gives a different one', snapshot(c.state) !== snapshot(a.state));
+  var d = runDays(6, 'daily', 4242);
+  T.assert('and so does a different way of caring for it', snapshot(d.state) !== snapshot(a.state));
+  var nan = findNaN(JSON.parse(snapshot(a.state)));
+  T.assert('and there is no NaN in the saved shape of it', nan.length === 0, nan.join(', '));
+}
+
+function suiteCopy(T) {
+  var names = [], k;
+  for (k in FLORA) names.push(FLORA[k].name);
+  for (k in FAUNA) names.push(FAUNA[k].name);
+  var bad = [], i;
+  for (i = 0; i < names.length; i++) {
+    if (/[-‐-―−]/.test(names[i])) bad.push('dash in: ' + names[i]);
+    if (names[i].indexOf('!') >= 0) bad.push('exclamation in: ' + names[i]);
+  }
+  T.assert('no dash and no exclamation point in a species name' + (bad.length ? ' [' + bad.join(' | ') + ']' : ''), bad.length === 0);
+  T.eq('there are eight flora', FLORA_ORDER.length, 8);
+  T.eq('and three fauna', FAUNA_ORDER.length, 3);
+  var missing = [];
+  for (i = 0; i < FLORA_ORDER.length; i++) if (!FLORA[FLORA_ORDER[i]]) missing.push(FLORA_ORDER[i]);
+  for (i = 0; i < FAUNA_ORDER.length; i++) if (!FAUNA[FAUNA_ORDER[i]]) missing.push(FAUNA_ORDER[i]);
+  T.assert('and every one of them is defined' + (missing.length ? ': ' + missing.join(', ') : ''), missing.length === 0);
+  T.assert('every seed in the pouch costs something', (function () {
+    var kk; for (kk in CONFIG.SEED_COST) if (!(CONFIG.SEED_COST[kk] > 0)) return false; return true;
+  })());
+  T.assert('and nothing that can only be found is for sale', (function () {
+    var kk; for (kk in CONFIG.SEED_COST) if (FLORA[kk] && FLORA[kk].rare) return false; return true;
+  })());
+}
+
+function suitePurity(T, src) {
+  var code = src.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^[ \t]*\/\/.*$/gm, ' ');
+  T.assert('the comment stripper left the code behind', code.length > 9000);
+  T.assert('SIM never rolls an unseeded die', code.indexOf('Math.random') < 0);
+  T.assert('SIM never touches the document', code.indexOf('document.') < 0);
+  T.assert('SIM never touches the window', code.indexOf('window.') < 0);
+  T.assert('SIM never reads a clock of its own', code.indexOf('Date.now') < 0 && code.indexOf('performance.now') < 0);
+  /* and it never deletes anything, which is the promise expressed as a grep */
+  T.assert('and it never splices a plant or an agent out of the jar',
+    code.indexOf('plants.splice') < 0 && code.indexOf('agents.splice') < 0 && code.indexOf('journal.splice') < 0);
+}
+// ---- TEST_EXPORT_END ----
