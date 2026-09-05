@@ -6,9 +6,9 @@
 <meta name="theme-color" content="#0d100c">
 <meta name="description" content="Build anything out of colored blocks in a pocket 3D studio where every color is a note.">
 <title>Blockspace</title>
-<link rel="manifest" href="manifest.json?v=20260905c">
-<link rel="icon" href="icon-192.png?v=20260905c">
-<link rel="apple-touch-icon" href="icon-192.png?v=20260905c">
+<link rel="manifest" href="manifest.json?v=20260905d">
+<link rel="icon" href="icon-192.png?v=20260905d">
+<link rel="apple-touch-icon" href="icon-192.png?v=20260905d">
 <style>
 :root{
   --bg:#0d100c; --ink:#e8dcc8; --gold:#c8a84b; --sage:#7ab356; --muted:#98a086;
@@ -118,7 +118,7 @@ textarea{min-height:120px;font-family:ui-monospace,Menlo,monospace;font-size:12p
 #projacts{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
 @media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
 </style>
-<script type="importmap">{"imports":{"three":"./lib/three.module.min.js?v=20260905c"}}</script>
+<script type="importmap">{"imports":{"three":"./lib/three.module.min.js?v=20260905d"}}</script>
 </head>
 <body>
 <div id="sky"></div>
@@ -306,7 +306,7 @@ import * as THREE from 'three';
    ===================================================================================== */
 
 /* [S1] CONFIG ------------------------------------------------------------------------ */
-const VERSION='20260905c';
+const VERSION='20260905d';
 const CHUNK=8, CAP_SOFT=3000, CAP_HARD=5000, PAL_MAX=32, UNDO_MAX=200;
 const GRIDS=[16,24,32,48];
 const $=id=>document.getElementById(id);
@@ -1106,7 +1106,8 @@ $('mClip').onclick=()=>{ closeSheet('menu'); CLIP.start(); };
 /* [S23] FIREFLIES: only at night, only charm ------------------------------------------- */
 const FIREFLIES={pts:null,base:null,t0:performance.now(),
   ensure(){ if(this.pts) return; const n=48, pos=new Float32Array(n*3); this.base=new Float32Array(n*3); const N=S.P.gridSize; for(let i=0;i<n;i++){ this.base[i*3]=(Math.random()-.5)*N*0.9; this.base[i*3+1]=1+Math.random()*N*0.35; this.base[i*3+2]=(Math.random()-.5)*N*0.9; }
-    const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.BufferAttribute(pos,3)); const m=new THREE.PointsMaterial({color:0xffe27a,size:0.28,transparent:true,opacity:0.9,depthWrite:false,blending:THREE.AdditiveBlending,sizeAttenuation:true}); this.pts=new THREE.Points(g,m); this.pts.frustumCulled=false; scene.add(this.pts); },
+    const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.BufferAttribute(pos,3)); const c2=document.createElement('canvas'); c2.width=c2.height=32; const g2=c2.getContext('2d'); const rg=g2.createRadialGradient(16,16,1,16,16,16); rg.addColorStop(0,'rgba(255,240,170,1)'); rg.addColorStop(0.35,'rgba(255,226,122,.85)'); rg.addColorStop(1,'rgba(255,226,122,0)'); g2.fillStyle=rg; g2.fillRect(0,0,32,32);
+    const m=new THREE.PointsMaterial({map:new THREE.CanvasTexture(c2),color:0xffffff,size:0.6,transparent:true,opacity:0.9,depthWrite:false,blending:THREE.AdditiveBlending,sizeAttenuation:true}); this.pts=new THREE.Points(g,m); this.pts.frustumCulled=false; scene.add(this.pts); },
   tick(){ const night=S.settings.sky==='night'; if(!night){ if(this.pts) this.pts.visible=false; return; } this.ensure(); this.pts.visible=true; if(reduceMotion) return; const t=(performance.now()-this.t0)/1000; const a=this.pts.geometry.attributes.position.array;
     for(let i=0;i<a.length/3;i++){ a[i*3]=this.base[i*3]+Math.sin(t*0.5+i)*1.2; a[i*3+1]=this.base[i*3+1]+Math.sin(t*0.9+i*1.7)*0.5; a[i*3+2]=this.base[i*3+2]+Math.cos(t*0.4+i*0.6)*1.2; }
     this.pts.geometry.attributes.position.needsUpdate=true; this.pts.material.opacity=0.55+0.4*Math.abs(Math.sin(t*1.3)); }
