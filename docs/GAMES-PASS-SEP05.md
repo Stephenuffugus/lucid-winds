@@ -190,3 +190,7 @@ Every bug's lore now ends on a line about a part it actually has, the specimen c
 ### The Attic era pass (Sep 05, later)
 
 A 1953 lunchbox and a 1998 zine used to wear the same cream $4.99 oval. Now each era has its own sticker (paper cent dot, trading stamp, price gun label, neon shop tag, clearance barcode) and its own title voice (script, bubble, slab, chrome, grunge) on every class but records. Sheet: `attic-era-sheet.png` (`erasheet.mjs`).
+
+### Litter Bug sound pass (Sep 05, later)
+
+A synth in the page, no files: sixteen cues on the real paths (belt, bins, grub, lid, wire, clean shift, shift over, the week stamp, the jar, hits and crits, win and lose) and a SOUND pill on the home screen that remembers. Every cue is bounced offline in the gate and has to move air. Nobody has heard it yet; that is Stephen's phone. Shot: `lb-sound-home.png`.
