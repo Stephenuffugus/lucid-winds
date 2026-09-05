@@ -22,12 +22,12 @@ var SOFT_DROP_MULTIPLIER=20;  // soft-drop speed multiplier of gravity
 // Each shape stored as a bounding-box grid. Rotation produces new grids
 // (not rotated-around-center) to match SRS expectations.
 var PIECES={
-  I:{ shape:[[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]], color:'#7EC4D4', name:'I' },
-  O:{ shape:[[1,1],[1,1]],                             color:'#E8C968', name:'O' },
-  T:{ shape:[[0,1,0],[1,1,1],[0,0,0]],                 color:'#B785C2', name:'T' },
-  S:{ shape:[[0,1,1],[1,1,0],[0,0,0]],                 color:'#8FC57A', name:'S' },
+  I:{ shape:[[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]], color:'#E8DCC8', name:'I' },
+  O:{ shape:[[1,1],[1,1]],                             color:'#C8A84B', name:'O' },
+  T:{ shape:[[0,1,0],[1,1,1],[0,0,0]],                 color:'#E8A0BF', name:'T' },
+  S:{ shape:[[0,1,1],[1,1,0],[0,0,0]],                 color:'#7AB356', name:'S' },
   Z:{ shape:[[1,1,0],[0,1,1],[0,0,0]],                 color:'#D78689', name:'Z' },
-  J:{ shape:[[1,0,0],[1,1,1],[0,0,0]],                 color:'#7095C2', name:'J' },
+  J:{ shape:[[1,0,0],[1,1,1],[0,0,0]],                 color:'#5B9BD5', name:'J' },
   L:{ shape:[[0,0,1],[1,1,1],[0,0,0]],                 color:'#D48A5A', name:'L' }
 };
 var PIECE_KEYS=['I','O','T','S','Z','J','L'];
@@ -106,7 +106,7 @@ function seasonForLevel(lv){ return SEASONS[Math.floor((lv-1)/10)%SEASONS.length
     '#PFcombo{position:absolute;bottom:12%;left:50%;transform:translate(-50%,0);pointer-events:none;font-family:Bebas Neue,sans-serif;font-size:clamp(1.1rem,3vw,1.5rem);color:#f5ebd0;text-shadow:0 1px 6px rgba(0,0,0,0.9),0 0 12px rgba(122,179,86,0.6);letter-spacing:0.14em;animation:pfComboPulse .42s ease-in-out}',
     // Bottom action row
     '.PFactionRow{display:grid;grid-template-columns:1fr 1.8fr 1.3fr 1fr;gap:10px;padding:12px 4px 8px}',
-    '.PFactBtn{min-height:54px;padding:0.35rem 0.2rem;font-family:Georgia,serif;border-radius:10px;background:rgba(26,31,23,0.75);border:1.5px solid rgba(220,180,120,0.3);color:#e8dcc8;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:transform .08s ease,background .12s ease;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}',
+    '.PFactBtn{min-height:54px;padding:0.35rem 0.2rem;font-family:Georgia,serif;border-radius:10px;background:rgba(26,31,23,0.75);border:1.5px solid rgba(220,180,120,0.3);color:#e8dcc8;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:transform .08s ease,background .12s ease;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;margin-bottom:calc(10px + env(safe-area-inset-bottom,0px))}',
     '.PFactBtn:active,.PFactBtn.pressed{background:rgba(200,168,75,0.24);transform:scale(0.96)}',
     '.PFactBtn.gold{background:linear-gradient(180deg,rgba(200,168,75,0.28),rgba(160,130,50,0.32));border-color:#c8a84b;color:#ffdc70;font-weight:600}',
     '.PFactIcon{font-size:1.15rem;line-height:1}',
@@ -1003,7 +1003,7 @@ function buildLayout(a){
   // Bottom action row
   var actRow=document.createElement('div'); actRow.className='PFactionRow'; pan.appendChild(actRow);
   actRow.innerHTML=
-    '<button class="PFactBtn" data-act="hold"><span class="PFactIcon">⧉</span><span class="PFactLabel">HOLD</span></button>'+
+    '<button class="PFactBtn" data-act="hold"><span class="PFactIcon">◫</span><span class="PFactLabel">HOLD</span></button>'+
     '<button class="PFactBtn gold" data-act="hard"><span class="PFactIcon">⏬</span><span class="PFactLabel">DROP</span></button>'+
     '<button class="PFactBtn" data-act="soft"><span class="PFactIcon">↓</span><span class="PFactLabel">FAST</span></button>'+
     '<button class="PFactBtn" data-act="pause"><span class="PFactIcon">⏸</span><span class="PFactLabel">PAUSE</span></button>';

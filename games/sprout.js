@@ -34,7 +34,7 @@ var EXTRA_GUESSES=('aahed aalii aargh abaca abaci aback abafts abamp abase abash
   s.textContent=[
     '.pw-stage{display:flex;flex-direction:column;align-items:center;gap:4px;padding:4px 2px 10px;max-width:540px;margin:0 auto;width:100%;box-sizing:border-box}',
     // Board: compact so the bigger keyboard gets proper space
-    '.pw-board{display:grid;grid-template-columns:1fr;gap:4px;padding:2px 0;width:min(260px,70vw);margin:0 auto;box-sizing:border-box}',
+    '.pw-board{display:grid;grid-template-columns:1fr;gap:4px;padding:2px 0;width:min(320px,86vw);margin:0 auto;box-sizing:border-box}',
     '.pw-row{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;width:100%;box-sizing:border-box}',
     '.pw-cell{position:relative;aspect-ratio:1;width:100%;border:2px solid rgba(74,124,53,.5);background:rgba(13,16,12,.7);color:var(--cream,#e8dcc8);font-family:Bebas Neue,sans-serif;font-size:clamp(1rem,5vw,1.5rem);font-weight:400;display:flex;align-items:center;justify-content:center;text-transform:uppercase;border-radius:6px;line-height:1;user-select:none;box-sizing:border-box;box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 2px 0 rgba(0,0,0,.3);transition:background .28s ease,border-color .28s ease,color .28s ease,transform .1s ease;-webkit-backface-visibility:hidden;backface-visibility:hidden;transform-style:preserve-3d}',
     '.pw-cell.pw-typed{border-color:rgba(200,168,75,.8);box-shadow:0 0 10px rgba(200,168,75,.25)}',
@@ -73,7 +73,7 @@ var EXTRA_GUESSES=('aahed aalii aargh abaca abaci aback abafts abamp abase abash
     '.pw-kb-row{display:flex;gap:5px;justify-content:center;touch-action:manipulation;padding:0 2px}',
     '.pw-key{position:relative;flex:1 1 0;min-height:76px;min-width:0;max-width:none;background:rgba(36,42,30,.95);border:1.5px solid rgba(90,130,70,.42);color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:1.55rem;font-weight:600;border-radius:8px;cursor:pointer;transition:background .15s ease,border-color .15s ease,transform .08s ease,color .15s ease,opacity .15s ease;display:flex;align-items:center;justify-content:center;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;padding:0 2px;letter-spacing:.05em;box-shadow:0 3px 6px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.04)}',
     '.pw-key:active{transform:scale(.93);background:rgba(74,124,53,.3)}',
-    '.pw-key.wide{flex:1.8 1 0;font-size:.85rem;letter-spacing:.1em;font-weight:700}',
+    '.pw-key.wide{flex:2.4 1 0;font-size:.72rem;letter-spacing:.1em;font-weight:700}',
     // Colors chosen to read clearly against the dark theme. Miss keys
     // go PROPER dark (near-black) with muted label — matches Wordle
     // dark mode's used-letter contrast. Hit/near tint full opacity.

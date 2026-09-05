@@ -72,7 +72,7 @@ var DOMAINS={
     '@keyframes dbFade{0%{opacity:0;transform:translateY(4px)}100%{opacity:1;transform:translateY(0)}}',
     '@keyframes dbPop{0%{transform:scale(0.5);opacity:0}55%{transform:scale(1.15);opacity:1}100%{transform:scale(1);opacity:1}}',
     '@keyframes dbPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}',
-    '#DBpan{max-width:min(100vw,440px);margin:0 auto;padding:12px;user-select:none;-webkit-user-select:none;box-sizing:border-box;text-align:center;color:#e8dcc8;font-family:Georgia,serif;animation:dbFade .3s ease}',
+    '#DBpan{max-width:min(100vw,440px);margin:0 auto;padding:12px;user-select:none;-webkit-user-select:none;box-sizing:border-box;text-align:center;color:#e8dcc8;font-family:Georgia,serif;animation:dbFade .3s ease;min-height:calc(100vh - 240px);display:flex;flex-direction:column;justify-content:center}',
     // Session hub
     '.DBhub{padding:16px 12px}',
     '.DBhubTitle{font-family:Bebas Neue,sans-serif;font-size:1.8rem;letter-spacing:0.22em;color:#c8a84b;margin-bottom:4px}',
@@ -85,12 +85,12 @@ var DOMAINS={
     '.DBhubNote{margin-top:14px;padding:9px 12px;font-size:0.7rem;font-weight:500;color:rgba(232,220,200,0.65);line-height:1.55;font-style:italic;border-top:1px solid rgba(74,124,53,0.2)}',
     // Progress dots
     '.DBdots{display:flex;gap:6px;justify-content:center;padding:6px 0}',
-    '.DBdot{width:10px;height:10px;border-radius:50%;border:1.5px solid rgba(122,179,86,0.3);background:transparent;transition:all .2s ease}',
-    '.DBdot.done{background:#7ab356;border-color:#7ab356}',
+    '.DBdot{width:12px;height:12px;border-radius:50%;border:1.5px solid rgba(122,179,86,0.3);background:transparent;transition:all .2s ease}',
+    '.DBdot.done{background:linear-gradient(180deg,#c8a84b,#7ab356);border-color:#7ab356}',
     '.DBdot.active{border-color:#c8a84b;box-shadow:0 0 8px rgba(200,168,75,0.45);animation:dbPulse 1.2s ease-in-out infinite}',
     // Exercise header
-    '.DBexTitle{font-family:Bebas Neue,sans-serif;font-size:1.05rem;letter-spacing:0.14em;color:#8fc57a;margin:6px 0 2px}',
-    '.DBexDesc{font-size:0.72rem;color:rgba(232,220,200,0.6);font-style:italic;margin-bottom:8px;min-height:1.5em}',
+    '.DBexTitle{font-family:Bebas Neue,sans-serif;font-size:1.3rem;letter-spacing:0.14em;color:#8fc57a;margin:6px 0 2px}',
+    '.DBexDesc{font-size:0.72rem;color:rgba(232,220,200,0.78);font-style:italic;margin-bottom:8px;min-height:1.5em}',
     // Explainer card (shown before each exercise for 2.5s)
     '.DBexplain{background:rgba(26,36,22,0.75);border:1.5px solid rgba(122,179,86,0.28);border-radius:10px;padding:14px 16px;margin:10px auto;max-width:360px;animation:dbPop .3s cubic-bezier(.2,1.2,.3,1) both}',
     '.DBexplainTitle{font-family:Bebas Neue,sans-serif;font-size:1rem;letter-spacing:0.18em;color:#c8a84b;margin-bottom:4px}',
@@ -101,7 +101,7 @@ var DOMAINS={
     '.DBexplainGo{display:flex;align-items:center;justify-content:center;width:fit-content;min-height:48px;box-sizing:border-box;margin:14px auto 0;padding:8px 24px;border-radius:9px;background:rgba(122,179,86,0.25);border:1.5px solid rgba(122,179,86,0.5);color:#8fc57a;font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.16em;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;font-weight:700}',
     // Option buttons (word, math, flanker, stroop)
     '.DBopts{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:10px 0}',
-    '.DBopt{position:relative;min-height:48px;padding:10px 16px;border-radius:10px;background:rgba(26,36,22,0.75);border:1.5px solid rgba(122,179,86,0.3);color:#e8dcc8;font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.08em;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:transform .08s ease}',
+    '.DBopt{position:relative;min-height:48px;padding:10px 16px;border-radius:10px;background:rgba(26,36,22,0.75);border:1.5px solid rgba(122,179,86,0.3);color:#e8dcc8;font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.08em;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:transform .08s ease;box-shadow:inset 0 1px 0 rgba(255,255,255,0.10),0 6px 14px rgba(0,0,0,0.5)}',
     '.DBopt:active{transform:scale(0.96)}',
     '.DBopt.good{background:rgba(122,179,86,0.3);border-color:#7ab356;color:#7ab356}',
     '.DBopt.bad{background:rgba(199,80,80,0.22);border-color:#c47a7a;color:#c47a7a}',

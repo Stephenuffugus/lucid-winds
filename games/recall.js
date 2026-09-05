@@ -26,7 +26,7 @@ window._gameFns.recall=function RC(a){
   ms(a,'Round <span id="RCr">1</span>/'+totalRounds+' · Score <span id="RCs">0</span>');
   mm(a);
   var pan=document.createElement('div');pan.id='RCpan';
-  pan.style.cssText='max-width:420px;margin:0 auto;padding:10px;min-height:340px;';
+  pan.style.cssText='max-width:420px;margin:0 auto;padding:10px;min-height:calc(100vh - 260px);display:flex;flex-direction:column;justify-content:center;';
   a.appendChild(pan);
   mc(a).innerHTML='<button class="gb" onclick="_RCN()">↻ New Game</button>';
 
@@ -64,7 +64,7 @@ window._gameFns.recall=function RC(a){
     for(var i=0;i<targets.length;i++){
       h+='<div style="width:74px;height:86px;background:rgba(212,168,67,0.15);border:2px solid var(--gold);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;">';
       h+='<span style="font-size:1.8rem;">'+targets[i].emoji+'</span>';
-      h+='<span style="font-family:Bebas Neue,sans-serif;font-size:0.5rem;opacity:0.6;letter-spacing:1px;">'+targets[i].name+'</span>';
+      h+='<span style="font-family:Bebas Neue,sans-serif;font-size:0.72rem;opacity:0.85;letter-spacing:1px;">'+targets[i].name+'</span>';
       h+='</div>';
     }
     h+='</div><div id="RCtm" style="font-family:Bebas Neue,sans-serif;font-size:1.4rem;color:var(--gold);"></div></div>';
@@ -108,7 +108,7 @@ window._gameFns.recall=function RC(a){
     for(var i=0;i<allChoices.length;i++){
       h+='<div id="RCc'+i+'" onclick="_RCT('+i+')" style="width:74px;height:86px;background:rgba(26,36,22,0.5);border:2px solid rgba(122,179,86,0.2);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;">';
       h+='<span style="font-size:1.8rem;">'+allChoices[i].emoji+'</span>';
-      h+='<span style="font-family:Bebas Neue,sans-serif;font-size:0.5rem;opacity:0.6;letter-spacing:1px;">'+allChoices[i].name+'</span>';
+      h+='<span style="font-family:Bebas Neue,sans-serif;font-size:0.72rem;opacity:0.85;letter-spacing:1px;">'+allChoices[i].name+'</span>';
       h+='</div>';
     }
     h+='</div><div id="RCmsg" style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);margin-top:6px;">0/'+targetCount+' selected</div></div>';

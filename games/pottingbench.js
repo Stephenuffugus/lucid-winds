@@ -180,10 +180,10 @@ window._gameFns.pottingbench=function PB(a){
     h+='<div style="margin:8px 0 14px;">';
     h+='<div style="font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--muted);letter-spacing:0.06em;margin-bottom:6px;">Beat your best time</div>';
     h+='<div style="font-family:DM Mono,monospace;font-size:clamp(2.6rem,12vw,4rem);color:var(--cream);letter-spacing:0.04em;line-height:1;text-shadow:0 0 18px rgba(200,168,75,0.15);">0.00</div>';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);opacity:0.7;letter-spacing:0.1em;margin:4px 0 18px;">SECONDS</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.72rem;color:var(--muted);opacity:0.7;letter-spacing:0.1em;margin:4px 0 18px;">SECONDS</div>';
     h+='<button onclick="_PBstart()" style="min-width:170px;min-height:72px;padding:18px 32px;font-family:Bebas Neue,sans-serif;font-size:1.3rem;letter-spacing:0.16em;background:linear-gradient(180deg,rgba(122,179,86,0.35),rgba(74,124,53,0.25));border:2.5px solid var(--sage);color:var(--sage);border-radius:14px;cursor:pointer;box-shadow:0 4px 18px rgba(74,124,53,0.4);">▶ START</button>';
     h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--gold);margin-top:18px;letter-spacing:0.06em;">BEST: '+bestStr+'</div>';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);opacity:0.7;margin-top:6px;">30 cards · match shape, color, or count</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.72rem;color:var(--muted);opacity:0.7;margin-top:6px;">30 cards · match shape, color, or count</div>';
     h+='</div>';
     pan.innerHTML=h;
     var draw=document.getElementById('PBdrawBtn');if(draw)draw.style.display='none';
@@ -195,7 +195,7 @@ window._gameFns.pottingbench=function PB(a){
     h+='<div style="margin:8px 0 14px;">';
     h+='<div style="font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--muted);letter-spacing:0.06em;margin-bottom:6px;">'+(stuck?'STUCK':'CLEARED')+'</div>';
     h+='<div style="font-family:DM Mono,monospace;font-size:clamp(2.6rem,12vw,4rem);color:'+(newBest?'var(--gold)':'var(--cream)')+';letter-spacing:0.04em;line-height:1;text-shadow:0 0 18px '+(newBest?'rgba(200,168,75,0.4)':'rgba(122,179,86,0.15)')+';">'+secs+'</div>';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);opacity:0.7;letter-spacing:0.1em;margin:4px 0 18px;">SECONDS</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.72rem;color:var(--muted);opacity:0.7;letter-spacing:0.1em;margin:4px 0 18px;">SECONDS</div>';
     if(newBest)h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;color:var(--gold);letter-spacing:0.14em;margin-bottom:14px;text-shadow:0 0 18px rgba(200,168,75,0.4);">🌟 NEW BEST</div>';
     h+='<button onclick="_PBstart()" style="min-width:170px;min-height:64px;padding:14px 28px;font-family:Bebas Neue,sans-serif;font-size:1.1rem;letter-spacing:0.14em;background:linear-gradient(180deg,rgba(122,179,86,0.3),rgba(74,124,53,0.2));border:2px solid var(--sage);color:var(--sage);border-radius:12px;cursor:pointer;">↻ TRY AGAIN</button>';
     h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--gold);margin-top:14px;letter-spacing:0.06em;">BEST: '+bestStr+'</div>';

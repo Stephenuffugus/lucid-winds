@@ -135,7 +135,7 @@ window._gameFns.numbergarden=function NG(a){
     var st=document.createElement('style');st.id='NGstyle';
     st.textContent=[
       '#NGpan{padding:8px 6px;}',
-      '.ng-stats{display:flex;justify-content:center;gap:14px;padding:2px 0;font-family:DM Mono,monospace;font-size:0.62rem;color:rgba(232,220,200,0.72);letter-spacing:0.06em;}',
+      '.ng-stats{display:flex;justify-content:center;gap:14px;padding:2px 0;font-family:DM Mono,monospace;font-size:0.72rem;color:rgba(232,220,200,0.72);letter-spacing:0.06em;}',
       '.ng-stats strong{color:var(--gold);}',
       '.ng-hud{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:8px 6px;background:rgba(26,31,23,0.55);border-radius:8px;margin:4px 0;font-family:DM Mono,monospace;}',
       '.ng-hud .lbl{font-family:Bebas Neue,sans-serif;font-size:0.72rem;color:#7ab356;letter-spacing:0.08em;}',
@@ -160,11 +160,11 @@ window._gameFns.numbergarden=function NG(a){
       '.ng-pad button.go{color:#7ab356;background:rgba(122,179,86,0.18);border-color:rgba(122,179,86,0.45);}',
       '.ng-modes{display:flex;gap:4px;padding:4px 4px 8px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}',
       '.ng-modes::-webkit-scrollbar{display:none;}',
-      '.ng-mode{padding:6px 12px;min-height:48px;display:flex;align-items:center;font-family:DM Mono,monospace;font-size:0.62rem;letter-spacing:0.06em;background:rgba(26,31,23,0.6);border:1px solid rgba(122,179,86,0.22);border-radius:6px;color:rgba(232,220,200,0.72);cursor:pointer;flex:0 0 auto;white-space:nowrap;transition:background 0.15s,border-color 0.15s,color 0.15s;}',
+      '.ng-mode{padding:6px 12px;min-height:48px;display:flex;align-items:center;font-family:DM Mono,monospace;font-size:0.72rem;letter-spacing:0.06em;background:rgba(26,31,23,0.6);border:1px solid rgba(122,179,86,0.22);border-radius:6px;color:rgba(232,220,200,0.72);cursor:pointer;flex:0 0 auto;white-space:nowrap;transition:background 0.15s,border-color 0.15s,color 0.15s;}',
       '.ng-mode.on{background:rgba(200,168,75,0.2);border-color:var(--gold);color:var(--gold);}',
       '.ng-mode.master.on{background:linear-gradient(135deg,rgba(200,168,75,0.25),rgba(122,179,86,0.2));}',
       '.ng-desc{font-family:Cormorant Garamond,serif;font-style:italic;font-size:0.78rem;color:rgba(232,220,200,0.75);text-align:center;margin:4px auto 8px;max-width:300px;}',
-      '#NGrulesOV{position:fixed;inset:0;z-index:200000;background:rgba(5,8,4,0.88);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:16px;animation:ngFade 0.25s ease;}',
+      '#NGrulesOV{position:fixed;inset:0;z-index:200000;background:rgba(5,8,4,0.95);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:16px;animation:ngFade 0.25s ease;}',
       '#NGrulesOV .card{max-width:420px;width:100%;max-height:84vh;overflow-y:auto;padding:22px 20px;background:linear-gradient(180deg,rgba(18,22,14,0.98),rgba(10,12,8,0.98));border:1.5px solid rgba(200,168,75,0.35);border-radius:14px;box-shadow:0 32px 64px rgba(0,0,0,0.7);font-family:DM Mono,monospace;color:var(--cream);font-size:0.72rem;line-height:1.6;}',
       '#NGrulesOV h2{font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.14em;color:var(--gold);border-bottom:1px solid rgba(200,168,75,0.3);margin:14px 0 8px;padding-bottom:4px;}',
       '@keyframes ngFade{from{opacity:0}to{opacity:1}}'

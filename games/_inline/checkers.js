@@ -58,7 +58,7 @@
     tools.innerHTML='<button class="gb" id="CKundo" onclick="_CKU()" style="min-height:48px;padding:8px 14px;font-size:0.7rem">↩ UNDO</button>'
       +'<button class="gb" id="CKhint" onclick="_CKH()" style="min-height:48px;padding:8px 14px;font-size:0.7rem">💡 HINT</button>';
     a.appendChild(tools);
-    mc(a).innerHTML='<select class="gsl" id="CKd" onchange="_CKSetDiff(this.value)" style="min-width:140px">'
+    mc(a).innerHTML='<select class="gsl" id="CKd" onchange="_CKSetDiff(this.value)" style="min-width:140px;height:48px;align-self:center">'
       +'<option value="1">Seedling</option>'
       +'<option value="2">Sapling</option>'
       +'<option value="3">Grove</option>'

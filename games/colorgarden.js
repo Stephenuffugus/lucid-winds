@@ -125,14 +125,14 @@ window._gameFns.colorgarden=function CG(a){
   colorPanel.appendChild(rightCol);
 
   colorDisplay=document.createElement('div');
-  colorDisplay.style.cssText='width:100%;height:44px;border-radius:8px;background:'+currentColor+';border:2px solid rgba(232,220,200,0.25);box-shadow:0 2px 6px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;font-family:DM Mono,monospace;font-size:0.7rem;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,0.6);letter-spacing:0.05em;';
+  colorDisplay.style.cssText='width:100%;height:28px;border-radius:8px;background:'+currentColor+';border:2px solid rgba(232,220,200,0.25);box-shadow:0 2px 6px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;font-family:DM Mono,monospace;font-size:0.7rem;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,0.6);letter-spacing:0.05em;';
   colorDisplay.textContent=currentColor.toUpperCase();
   rightCol.appendChild(colorDisplay);
 
   // Slider label
   var slLbl=document.createElement('div');
   slLbl.textContent='BRIGHTNESS';
-  slLbl.style.cssText='font-family:DM Mono,monospace;font-size:0.55rem;letter-spacing:0.08em;color:var(--muted,#8a9178);text-align:center;';
+  slLbl.style.cssText='font-family:DM Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:var(--muted,#8a9178);text-align:center;';
   rightCol.appendChild(slLbl);
 
   // Brightness slider (value/darkness)
