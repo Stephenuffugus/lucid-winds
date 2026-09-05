@@ -138,7 +138,7 @@ while(run.combatEnemy.hp > 0 && run.combatPlayer.hp > 0 && turn < 30){
   if(!played){
     // end turn
     try {
-      console.log(`  T${run.combat.turn} END TURN. hp=${run.combatPlayer.hp} enemyHp=${run.combatEnemy.hp} (intent was: ${run.combatEnemy.intent ? run.combatEnemy.intent.desc : '—'})`);
+      console.log(`  T${run.combat.turn} END TURN. hp=${run.combatPlayer.hp} enemyHp=${run.combatEnemy.hp} (intent was: ${run.combatEnemy.intent ? run.combatEnemy.intent.desc : ', '})`);
       game.endTurn();
     } catch(e){
       console.log('  ! ERROR ending turn: ' + e.message);

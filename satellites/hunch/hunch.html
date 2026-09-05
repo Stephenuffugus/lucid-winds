@@ -5,7 +5,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-<title>HUNCH — draw it, the machine guesses</title>
+<title>HUNCH · draw it, the machine guesses</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Space+Mono:ital@0;1&display=swap" rel="stylesheet"/>
@@ -162,14 +162,14 @@
     <div class="hero">
       <h1>HUN<b>CH</b></h1>
       <div class="mono sub">draw it. the machine guesses. read its mind.</div>
-      <p>You get a thing to draw — a storm, a feeling, a bad pun. You get one minute. Then a real AI looks at your drawing and takes its best guess. Score by how close it gets.</p>
+      <p>You get a thing to draw, a storm, a feeling, a bad pun. You get one minute. Then a real AI looks at your drawing and takes its best guess. Score by how close it gets.</p>
       <button class="btn" id="btnPlay">Play</button>
       <button class="btn ghost" id="btnHow">How it works</button>
       <div class="howto hide" id="howBox">
-        <p><b>1.</b> A prompt appears — sometimes simple, often weird and abstract. There's no "correct" drawing.</p>
+        <p><b>1.</b> A prompt appears, sometimes simple, often weird and abstract. There's no "correct" drawing.</p>
         <p><b>2.</b> Draw it before the timer runs out. Pen, colors, eraser. That's it. The constraint is the point.</p>
-        <p><b>3.</b> The AI guesses <b>blind</b> — it can't see the prompt. Then it grades how close its guess was to your secret word.</p>
-        <p><b>4.</b> Land a hit (50+), build your streak — each one multiplies your points. Miss, and the streak resets. The machine's wrong guesses are the best part.</p>
+        <p><b>3.</b> The AI guesses <b>blind</b> · it can't see the prompt. Then it grades how close its guess was to your secret word.</p>
+        <p><b>4.</b> Land a hit (50+), build your streak, each one multiplies your points. Miss, and the streak resets. The machine's wrong guesses are the best part.</p>
       </div>
     </div>
   </div>
@@ -177,7 +177,7 @@
   <!-- ROUND -->
   <div class="screen card hide" id="scRound">
     <div class="prompt">
-      <div class="label"><div class="k">Draw this</div><div class="v" id="promptText">—</div></div>
+      <div class="label"><div class="k">Draw this</div><div class="v" id="promptText"> · </div></div>
       <div class="timer">
         <svg width="62" height="62" viewBox="0 0 62 62"><circle cx="31" cy="31" r="27" fill="none" stroke="#2c3052" stroke-width="6"/><circle id="ring" cx="31" cy="31" r="27" fill="none" stroke="#c8ff4d" stroke-width="6" stroke-linecap="round" stroke-dasharray="169.6" stroke-dashoffset="0"/></svg>
         <div class="t" id="tNum">50</div>
@@ -209,14 +209,14 @@
   <div class="screen card res hide" id="scResult">
     <div class="row">
       <img class="thumb" id="resThumb" alt="your drawing"/>
-      <div class="target">You were drawing<b id="resTarget">—</b></div>
+      <div class="target">You were drawing<b id="resTarget"> · </b></div>
     </div>
     <div id="resBody">
       <div class="guesses" id="resGuesses"></div>
       <div class="quip" id="resQuip"></div>
       <div class="scoreline">
         <div class="big" id="resScore">0</div><div class="of">/ 100</div>
-        <div class="verdict"><div class="v" id="resVerdict">—</div><div class="s" id="resStreakMsg"></div></div>
+        <div class="verdict"><div class="v" id="resVerdict"> · </div><div class="s" id="resStreakMsg"></div></div>
       </div>
     </div>
     <div class="err hide" id="resErr"></div>
@@ -251,7 +251,7 @@ async function topUpPrompts(t){
   if(topUpInFlight[t])return; topUpInFlight[t]=true;
   try{
     const desc={1:"concrete, drawable objects, animals, and everyday scenes",2:"abstract feelings, emotions, moods and intangible states",3:"absurd, surreal, funny, meta or internet-flavoured concepts"}[t];
-    const sys="You generate fresh prompts for a drawing-guessing game. Return ONLY a raw JSON array of 12 short prompt strings — no markdown, no preamble. Each prompt is "+desc+", 1-8 words, evocative, varied and family-friendly.";
+    const sys="You generate fresh prompts for a drawing-guessing game. Return ONLY a raw JSON array of 12 short prompt strings, no markdown, no preamble. Each prompt is "+desc+", 1-8 words, evocative, varied and family-friendly.";
     const txt=await callClaude([{role:"user",content:[{type:"text",text:"Give 12 brand-new prompts. Avoid repeating any of these: "+DECK[t].slice(0,50).join("; ")+". JSON array only."}]}],sys);
     const arr=parseJSON(txt);
     if(Array.isArray(arr))arr.forEach(p=>{if(typeof p==='string'&&p.trim().length>1&&!DECK[t].includes(p.trim()))DECK[t].push(p.trim());});
@@ -394,7 +394,7 @@ function finishRound(dataURL,guessRes,judgeRes,errMsg){
   $('resTarget').textContent=target;
   if(errMsg){
     $('resBody').classList.add('hide');$('resErr').classList.remove('hide');
-    $('resErr').textContent="Couldn't reach the machine ("+errMsg+"). Your drawing's safe — try Next, or check the connection.";
+    $('resErr').textContent="Couldn't reach the machine ("+errMsg+"). Your drawing's safe, try Next, or check the connection.";
     renderLog();return;
   }
   $('resBody').classList.remove('hide');$('resErr').classList.add('hide');
@@ -417,7 +417,7 @@ function finishRound(dataURL,guessRes,judgeRes,errMsg){
   refreshStats();
   log.unshift({thumb:dataURL,target,guess:(guessRes.guesses||['—'])[0],score:raw,hit});
   renderLog();
-  lastShare=`HUNCH — drew “${target}”, machine guessed “${(guessRes.guesses||['—'])[0]}” (${raw}/100)${hit?' ✅':' ❌'} · streak ${streak} 🔥`;
+  lastShare=`HUNCH · drew “${target}”, machine guessed “${(guessRes.guesses||[', '])[0]}” (${raw}/100)${hit?' ✅':' ❌'} · streak ${streak} 🔥`;
 }
 
 function animateNum(el,to){let v=0;const step=Math.max(1,Math.round(to/18));const id=setInterval(()=>{v+=step;if(v>=to){v=to;clearInterval(id);}el.textContent=v;},22);}
@@ -449,14 +449,14 @@ async function callClaude(messages,system,temperature){
 function parseJSON(txt){const clean=(txt||'').replace(/```json/gi,'').replace(/```/g,'').trim();return JSON.parse(clean);}
 
 async function aiGuess(b64){
-  const system="You are playing a drawing-guessing game. You are shown a human's hand drawing on a white background. You do NOT know the intended answer. Look carefully and reason ONLY from the marks actually present. Reply with ONLY raw JSON, no markdown: {\"observation\":\"one concrete sentence describing the shapes/lines/objects you literally see\",\"guesses\":[\"best\",\"second\",\"third\"],\"quip\":\"one short playful aside\"}. Fill 'observation' first and base every guess on it. Guesses are 1-6 words, sincere, best first. Never let the quip change your guesses — if it's hard to read, guess at the closest real thing the marks resemble rather than something random.";
+  const system="You are playing a drawing-guessing game. You are shown a human's hand drawing on a white background. You do NOT know the intended answer. Look carefully and reason ONLY from the marks actually present. Reply with ONLY raw JSON, no markdown: {\"observation\":\"one concrete sentence describing the shapes/lines/objects you literally see\",\"guesses\":[\"best\",\"second\",\"third\"],\"quip\":\"one short playful aside\"}. Fill 'observation' first and base every guess on it. Guesses are 1-6 words, sincere, best first. Never let the quip change your guesses, if it's hard to read, guess at the closest real thing the marks resemble rather than something random.";
   const messages=[{role:"user",content:[
     {type:"image",source:{type:"base64",media_type:"image/png",data:b64}},
     {type:"text",text:"Study this drawing carefully. First describe what you actually see, then give 3 sincere guesses grounded in that, then one witty aside. JSON only."}
   ]}];
   const txt=await callClaude(messages,system,0.4);
   try{const j=parseJSON(txt);if(!Array.isArray(j.guesses)||!j.guesses.length)throw 0;return j;}
-  catch(e){return {observation:"",guesses:[(txt||'').slice(0,40)||'the machine blinked'],quip:"I can't make this one out — respect, though."};}
+  catch(e){return {observation:"",guesses:[(txt||'').slice(0,40)||'the machine blinked'],quip:"I can't make this one out, respect, though."};}
 }
 async function aiJudge(target,guesses){
   const system="You judge a drawing-guessing game. Given the SECRET concept the player drew and the guesser's guesses, score how well the guesser captured the concept. Scoring: exact or clear match=90-100; right idea / strong synonym=70-89; adjacent or partial=45-69; vaguely related=20-44; way off=0-19. Be fair but a little generous for abstract concepts. Reply with ONLY raw JSON: {\"score\":<int 0-100>,\"verdict\":\"<3-5 word verdict>\"}.";

@@ -701,7 +701,7 @@ export function figureMarkup(opts) {
 export function buildFigure(opts) {
   const o = opts || {};
   const doc = o.doc || (typeof document !== 'undefined' ? document : null);
-  if (!doc) throw new Error('buildFigure needs a document — pass opts.doc, or use figureMarkup() for a string');
+  if (!doc) throw new Error('buildFigure needs a document, pass opts.doc, or use figureMarkup() for a string');
 
   const markup = figureMarkup(o);
   let svg = null;

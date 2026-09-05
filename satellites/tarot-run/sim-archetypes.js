@@ -338,7 +338,7 @@ const pct=(x,n)=>(100*x/n).toFixed(0)+'%';
 const med=(arr)=>{ const s=arr.slice().sort((a,b)=>a-b); return s[Math.floor(s.length/2)]; };
 const avg=(x,n)=>(x/n).toFixed(1);
 
-console.log(`\n================  TAROT RUN — ARCHETYPE STRESS  (${SEEDS} seeds/cell)  ================`);
+console.log(`\n================  TAROT RUN · ARCHETYPE STRESS  (${SEEDS} seeds/cell)  ================`);
 console.log(`NOTE: win% is a SHAPE signal, not a target. Read the deltas, not the digits.\n`);
 
 console.log(`--- 1. SURVIVAL MATRIX  (win% · median death floor /15) ---`);
@@ -386,5 +386,5 @@ for(const po of POLS){
   for(const pt of PATRONS){ const a=M[pt][po]; s+=a.cut.strong;f+=a.cut.faint;si+=a.cut.silent;t+=a.cut.tower;n+=a.combats; }
   console.log(`  ${po.padEnd(9)} Sun ${pct(s,n)}  faint ${pct(f,n)}  silent ${pct(si,n)}  Tower ${pct(t,n)}`);
 }
-console.log(`\n(Interpretation + recommendations are printed by the wrapper / given in chat —`);
+console.log(`\n(Interpretation + recommendations are printed by the wrapper / given in chat · `);
 console.log(` nothing here is auto-applied. Tune by the user's felt playtest, not these digits.)\n`);

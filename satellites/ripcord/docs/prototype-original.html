@@ -135,12 +135,12 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--lo);color:var(--
 <div id="field"><canvas id="cv"></canvas></div>
 
 <div class="chrome" id="top">
-  <div id="score">0 — 0<small>first to 4</small></div>
-  <div id="vs">—</div>
+  <div id="score">0, 0<small>first to 4</small></div>
+  <div id="vs"> · </div>
 </div>
 
 <div id="laps"><div id="lapNum">0.0</div><div id="lapMsg">of 3 winds</div></div>
-<div id="hint">Trace the ring — three times around</div>
+<div id="hint">Trace the ring, three times around</div>
 
 <div class="chrome" id="dock">
   <button class="btn icon" id="openWs">⚙</button>
@@ -148,10 +148,10 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--lo);color:var(--
   <button class="btn icon" id="cycleFoe">⇄</button>
 </div>
 
-<div id="unlock"><small>Part unlocked</small><b id="unlockName">—</b></div>
+<div id="unlock"><small>Part unlocked</small><b id="unlockName"> · </b></div>
 
 <div id="card">
-  <div class="row"><div id="gl">—</div><div><div id="note">—</div><div id="sub">—</div></div></div>
+  <div class="row"><div id="gl"> · </div><div><div id="note"> · </div><div id="sub"> · </div></div></div>
   <div id="bars"></div>
 </div>
 
@@ -159,21 +159,21 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--lo);color:var(--
   <div id="sheetTop"><h2>Workshop</h2><button class="btn" id="closeWs">Done</button></div>
   <div id="sheetBody">
     <details class="acc" id="accBuild" open>
-      <summary>Build <span id="buildSum">—</span></summary>
+      <summary>Build <span id="buildSum"> · </span></summary>
       <div class="accBody">
         <div id="roles"></div>
         <div id="slots"></div>
       </div>
     </details>
     <details class="acc" id="accTune">
-      <summary>Weights &amp; trigger <span id="tuneSum">—</span></summary>
+      <summary>Weights &amp; trigger <span id="tuneSum"> · </span></summary>
       <div class="accBody">
         <div id="tune"><canvas id="dial" width="300" height="300"></canvas><div id="stats"></div></div>
         <div id="trig"></div>
       </div>
     </details>
     <details class="acc" id="accLooks">
-      <summary>Looks <span id="lookSum">—</span></summary>
+      <summary>Looks <span id="lookSum"> · </span></summary>
       <div class="accBody"><div id="looks"></div></div>
     </details>
   </div>
@@ -1686,7 +1686,7 @@ function railRow(label,items,isOn,onPick,klass){
     b.className='chip'+(isOn(it)?' on':'')+(locked?' lock':'');
     b.innerHTML=(it.role?'<span class="dot" style="background:'+ROLE_HEX[it.role]+'"></span>':'')+(it.name||it);
     if(locked) b.addEventListener('click',()=>{
-      $('benchOut').textContent='Locked — win it off a ladder opponent.';});
+      $('benchOut').textContent='Locked, win it off a ladder opponent.';});
     else b.addEventListener('click',()=>{onPick(it);buildSlots();refresh();});
     r.appendChild(b);
   }
@@ -1874,7 +1874,7 @@ function setLaps(n){
   el.textContent=n.toFixed(1);
   el.classList.toggle('ready',n>=WANT*0.9&&n<=OVER);
   el.classList.toggle('over',n>OVER);
-  msg.textContent = n>OVER ? 'over-wound — string bunching'
+  msg.textContent = n>OVER ? 'over-wound, string bunching'
                   : n>=WANT*0.9 ? 'release'
                   : n<0.2 ? 'of 3 winds'
                   : 'keep going';
@@ -1882,7 +1882,7 @@ function setLaps(n){
 function resetRound(){phase='wind';stroke=[];graded=null;A=B=null;
   liveTurn=0;winding=false;setLaps(0);
   $('card').classList.remove('up');chrome(true);
-  $('hint').textContent='Trace the ring — three times around';}
+  $('hint').textContent='Trace the ring, three times around';}
 
 function pt(e){const r=cv.getBoundingClientRect();
   return {x:e.clientX-r.left-CX(),y:e.clientY-r.top-CY(),t:performance.now()};}
@@ -1922,8 +1922,8 @@ function showCard(g){
 
 $('go').addEventListener('click',()=>{
   if(phase==='play')return;
-  if(phase==='over'){pa=pb=0;$('score').innerHTML='0 — 0<small>first to 4</small>';resetRound();return;}
-  if(!graded){$('hint').textContent='Wind it first — draw 3 circles.';$('hint').style.opacity=1;return;}
+  if(phase==='over'){pa=pb=0;$('score').innerHTML='0, 0<small>first to 4</small>';resetRound();return;}
+  if(!graded){$('hint').textContent='Wind it first, draw 3 circles.';$('hint').style.opacity=1;return;}
   const L=graded.launch;
   const mine=WIND.applyWind(SIM,currentSpec(),L);
   const fw={power:1.02,dir:Math.random()<.5?1:-1,lean:.034,windImb:.01,windImbAng:0,phase:Math.random()*6.283};
@@ -1953,11 +1953,11 @@ function endRound(){
         const won=awardDrop();
         if(facing===rung&&rung<LADDER.length-1){rung++;facing=rung;}
         updateVs();buildSlots();
-        $('hint').textContent=won?'Beat '+LADDER[Math.max(0,facing-1)].name+' — next up '+opp().name
-                                 :'Match won — next up '+opp().name;
+        $('hint').textContent=won?'Beat '+LADDER[Math.max(0,facing-1)].name+' · next up '+opp().name
+                                 :'Match won, next up '+opp().name;
         if(won)showUnlock(won);
       } else {
-        $('hint').textContent='They take the match — Launch to try again';
+        $('hint').textContent='They take the match; Launch to try again';
       }
       phase='over';}
     else {resetRound(); if(lastGrade)showCard(lastGrade);}

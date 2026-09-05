@@ -76,7 +76,7 @@ export const MC_LINES = Object.freeze({
     'Openers. Say who you are in about a second and a half.',
     'Round one. This is the handshake and it is already worth points.',
     'First thing out of the bag. The square is listening.',
-    'Here we go. Whatever they open with, remember it — you cannot use it twice.'
+    'Here we go. Whatever they open with, remember it, you cannot use it twice.'
   ]),
 
   /* ── ordinary beat, no cue fired ──────────────────────────────────────── */
@@ -101,13 +101,13 @@ export const MC_LINES = Object.freeze({
     'AURA 100%. Right on the light.',
     'AURA 100%. That was the exact size it needed to be, no bigger.',
     'AURA 100%. Calm. That is the whole trick and hardly anybody does it.',
-    'Perfect. Not loud — perfect. There is a difference and the crowd knows it.'
+    'Perfect. Not loud, perfect. There is a difference and the crowd knows it.'
   ]),
 
   /* ── a whiff. WARM. Never at anyone's expense. ────────────────────────── */
   whiff: Object.freeze([
     'PERDIÓ AURA. It happens. It happens to everybody here.',
-    'PERDIÓ AURA — shake it out, there is another round in about four seconds.',
+    'PERDIÓ AURA · shake it out, there is another round in about four seconds.',
     'Left that one in the bag. Go and get it, it is still in there.',
     'Missed the light. The square is being extremely kind about it and so am I.',
     'PERDIÓ AURA. Everyone in this circle has done that exact thing on a Tuesday.'
@@ -117,7 +117,7 @@ export const MC_LINES = Object.freeze({
   repeat: Object.freeze([
     'Seen it. The square has a memory and it is annoyingly good.',
     'Twice is a habit. The crowd wants a new sentence, not a louder one.',
-    'Same one again — half the aura for double the nerve.',
+    'Same one again, half the aura for double the nerve.',
     'This bracket does not pay for reruns.',
     'They have already answered that one. Something else.'
   ]),
@@ -198,14 +198,14 @@ export const MC_LINES = Object.freeze({
 
   /* ── the battle ends ──────────────────────────────────────────────────── */
   final: Object.freeze([
-    'And that is the battle. Everybody applaud — that is the entire point of this.',
+    'And that is the battle. Everybody applaud, that is the entire point of this.',
     'Done. Nine rounds, no words, no contact, nobody hurt.',
     'That is it. Both of you, back in the circle, the queue is enormous.'
   ]),
 
   win: Object.freeze([
     'Winner. No cup, no cash, but every person here saw it happen.',
-    'Took it. And took a move home too — they always leave one behind.',
+    'Took it. And took a move home too, they always leave one behind.',
     'That is yours. Walk it off, it is a Tuesday, there is another one next week.',
     'Won it in front of everybody. That is the whole reason anyone comes out.'
   ]),
@@ -219,7 +219,7 @@ export const MC_LINES = Object.freeze({
   loss: Object.freeze([
     'Not tonight. Same square, same time, next week.',
     'Lost the meter, kept the room. Everybody stayed until the end.',
-    'They were better tonight. Watch what they did — that is how you get it back.',
+    'They were better tonight. Watch what they did, that is how you get it back.',
     'Beaten fairly and applauded properly. That is a good night out.',
     'Out of it. Nobody is going home yet though, so stay in the circle.'
   ])
@@ -336,7 +336,7 @@ export const ACT_LINES = Object.freeze({
       'Third battle in this city in three days and the crowd has followed all three.',
       'Prize is three thousand pesos. Half the people here would do it for nothing and they know it.'
     ]),
-    win: 'Took the capital. Three thousand pesos or nothing at all — either way, everybody saw.',
+    win: 'Took the capital. Three thousand pesos or nothing at all, either way, everybody saw.',
     loss: 'The panel had their say and the crowd had theirs. Learn both and come back on Sunday.'
   }),
 

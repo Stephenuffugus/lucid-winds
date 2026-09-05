@@ -2,7 +2,7 @@
 // ones. Runs on the same harness the test suites use.
 const out=[];
 const L=s=>out.push(s);
-L('# SHARDFALL — current-state audit');
+L('# SHARDFALL · current-state audit');
 L('');
 L('_Generated from the live tables in `index.html`. Do not hand-edit; regenerate._');
 L('');
@@ -26,7 +26,7 @@ L('| biome | ends at (tiles) | depth (m) | ground | cave density | roster |');
 L('|---|---|---|---|---|---|');
 let prev=0;
 for(const b of BIOMES){
-  L(`| ${b[1]} | ${b[0]} | ${Math.max(0,prev-SURFACE)}–${Math.max(0,b[0]-SURFACE)} | ${b[2]} | ${b[3]} | ${b[4].join(', ')} |`);
+  L(`| ${b[1]} | ${b[0]} | ${Math.max(0,prev-SURFACE)} · ${Math.max(0,b[0]-SURFACE)} | ${b[2]} | ${b[3]} | ${b[4].join(', ')} |`);
   prev=b[0];
 }
 L('');
@@ -35,7 +35,7 @@ L('');
 L('| enemy | hp | dmg | spd | armor | size | ai | windup | active | atk cd | lunge | shoot | shards |');
 L('|---|---|---|---|---|---|---|---|---|---|---|---|---|');
 for(const k in ENEMIES){const e=ENEMIES[k];const a=e.atk||{};
-  L(`| ${k}${e.boss?' **(boss)**':''} | ${e.hp} | ${e.dmg} | ${e.spd} | ${e.arm||0} | ${e.w}x${e.h} | ${e.ai} | ${a.wind||'—'} | ${a.act||'—'} | ${a.cd||'—'} | ${a.lunge||'—'} | ${e.shoot?`cd ${e.shoot.cd} dmg ${e.shoot.dmg} x${e.shoot.count||1} r${e.shoot.range}`:'—'} | ${e.shards} |`);
+  L(`| ${k}${e.boss?' **(boss)**':''} | ${e.hp} | ${e.dmg} | ${e.spd} | ${e.arm||0} | ${e.w}x${e.h} | ${e.ai} | ${a.wind||', '} | ${a.act||', '} | ${a.cd||', '} | ${a.lunge||', '} | ${e.shoot?`cd ${e.shoot.cd} dmg ${e.shoot.dmg} x${e.shoot.count||1} r${e.shoot.range}`:', '} | ${e.shards} |`);
 }
 L('');
 L('### Depth scaling');
@@ -53,7 +53,7 @@ L('| base | slot | dmg | cd | dps | range/speed | sockets | colors | armor | hp 
 L('|---|---|---|---|---|---|---|---|---|---|---|---|');
 for(const k in GEAR){const g=GEAR[k];
   const dps=g.dmg&&g.cd?(g.dmg/g.cd).toFixed(1):'—';
-  L(`| ${g.n} | ${g.slot}${g.shield?' (shield)':''} | ${g.dmg||'—'} | ${g.cd||'—'} | ${dps} | ${g.range||g.speed||'—'} | ${g.sockets} | ${g.sc||'—'} | ${g.arm||0} | ${g.hp||0} | ${g.fuel||0} | ${g.dig!==undefined?g.dig:'—'} |`);
+  L(`| ${g.n} | ${g.slot}${g.shield?' (shield)':''} | ${g.dmg||', '} | ${g.cd||', '} | ${dps} | ${g.range||g.speed||', '} | ${g.sockets} | ${g.sc||', '} | ${g.arm||0} | ${g.hp||0} | ${g.fuel||0} | ${g.dig!==undefined?g.dig:', '} |`);
 }
 L('');
 L('## Gems by type');
@@ -78,7 +78,7 @@ L('## Uniques');
 L('');
 L('| base | primary | alternate |');
 L('|---|---|---|');
-for(const k in UNIQUES) L(`| ${k} | **${UNIQUES[k].n}** — ${UNIQUES[k].d} | ${UNIQ2[k]?`**${UNIQ2[k].n}** — ${UNIQ2[k].d}`:'—'} |`);
+for(const k in UNIQUES) L(`| ${k} | **${UNIQUES[k].n}** · ${UNIQUES[k].d} | ${UNIQ2[k]?`**${UNIQ2[k].n}** — ${UNIQ2[k].d}`:', '} |`);
 L('');
 L('## Attunements (in-run levels)');
 L('');
@@ -97,13 +97,13 @@ L('## Threat tiers');
 L('');
 L('| tier | requires | shards | rarity | effect |');
 L('|---|---|---|---|---|');
-THREATS.forEach((t,i)=>L(`| ${i} — ${t.n} | ${t.req} bosses | ${(t.shard*100).toFixed(0)}% | ${(t.rare*100).toFixed(0)}% | ${t.d} |`));
+THREATS.forEach((t,i)=>L(`| ${i} · ${t.n} | ${t.req} bosses | ${(t.shard*100).toFixed(0)}% | ${(t.rare*100).toFixed(0)}% | ${t.d} |`));
 L('');
 L('## Meta tree');
 L('');
 L('| id | branch | effect | cost | requires |');
 L('|---|---|---|---|---|');
-for(const n of TREE) L(`| ${n.id} | ${n.br} | ${n.n} | ${n.cost} | ${n.req||'—'} |`);
+for(const n of TREE) L(`| ${n.id} | ${n.br} | ${n.n} | ${n.cost} | ${n.req||', '} |`);
 L('');
 L('## Economy');
 L('');
@@ -131,7 +131,7 @@ L('| band | air target | character | identity |');
 L('|---|---|---|---|');
 for(const b of BIOMES){const S=BSHAPE[b[1]];if(!S)continue;
  const id=[S.rooms?'room templates':'',S.vent?S.vent+' vents':'',S.heat?'heat '+S.heat+'/s':'',S.dark?'darkness x'+S.dark:''].filter(Boolean).join(', ')||'—';
- L(`| ${b[1]} | ${S.air?S.air.toFixed(2):'—'} | ${S.n} | ${id} |`)}
+ L(`| ${b[1]} | ${S.air?S.air.toFixed(2):', '} | ${S.n} | ${id} |`)}
 L('');
 L('## Affix tiers');
 L('');

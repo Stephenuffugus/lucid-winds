@@ -276,7 +276,7 @@ var BALL_HALF_NDC = 0.24;  /* the ball's own half width at the usual trail dista
         fc = await frameShot(found, CLOSE_H, '');
         fw = await frameShot(found, WIDE_H, '-wide');
       } catch (e) {
-        report.push(kind+': ⛔ SHOT FAILED — '+e.message); bad++;
+        report.push(kind+': ⛔ SHOT FAILED · '+e.message); bad++;
         continue;
       }
 
@@ -292,17 +292,17 @@ var BALL_HALF_NDC = 0.24;  /* the ball's own half width at the usual trail dista
                 ' from '+fc.bear+'°, model '+Math.round(fc.hgt)+'cm tall'+
                 '  [stood '+Math.round(fc.off)+'cm back, pitch '+fc.pitch.toFixed(2)+
                 ', ball '+Math.round(fc.ballD)+'cm]';
-        if (fc.behind === 8) flags.push('MISSED — subject entirely behind the camera');
-        else if (fc.vis < 0.9) flags.push('CROPPED — '+((1-fc.vis)*100).toFixed(0)+'% of it is off the edge');
-        if (fc.clear < 0.5) flags.push('BLOCKED — only '+(fc.clear*100).toFixed(0)+
+        if (fc.behind === 8) flags.push('MISSED · subject entirely behind the camera');
+        else if (fc.vis < 0.9) flags.push('CROPPED · '+((1-fc.vis)*100).toFixed(0)+'% of it is off the edge');
+        if (fc.clear < 0.5) flags.push('BLOCKED · only '+(fc.clear*100).toFixed(0)+
                                        '% of it has line of sight from the best of 8 approaches');
-        if (fc.slip > fc.off*0.2) flags.push('PARKED OUT OF BOUNDS — the world pulled the ball '+
+        if (fc.slip > fc.off*0.2) flags.push('PARKED OUT OF BOUNDS · the world pulled the ball '+
                                        Math.round(fc.slip)+'cm back before the shot');
-        if (fc.h < 0.12) flags.push('TINY — fills only '+(fc.h*100).toFixed(0)+'% of frame height');
+        if (fc.h < 0.12) flags.push('TINY · fills only '+(fc.h*100).toFixed(0)+'% of frame height');
         /* a landmark that is wide and low disappears over a globe's horizon: the
            close shot is fine and the wide shot is a smudge. That is a real defect
            in the LANDMARK, not in the probe, so it is reported, not corrected. */
-        if (fw && fw.h < 0.05) flags.push('VANISHES WIDE — only '+(fw.h*100).toFixed(1)+'% of frame from back');
+        if (fw && fw.h < 0.05) flags.push('VANISHES WIDE · only '+(fw.h*100).toFixed(1)+'% of frame from back');
       }
       if (flags.length){ line += '\n    ⛔ ' + flags.join('; '); bad++; }
       report.push(line);
@@ -312,7 +312,7 @@ var BALL_HALF_NDC = 0.24;  /* the ball's own half width at the usual trail dista
   await browser.close();
   console.log(report.join('\n'));
   console.log(errs.length ? ('PAGE ERRORS: '+errs.join(' | ')) : 'no page errors');
-  console.log(bad ? ('⛔ '+bad+' shot(s) flagged above — those images are not evidence')
+  console.log(bad ? ('⛔ '+bad+' shot(s) flagged above, those images are not evidence')
                   : 'framing ok on every shot');
-  console.log('images in '+OUT+'  — now OPEN them');
+  console.log('images in '+OUT+' · now OPEN them');
 })().catch(function(e){ console.error('SHOTS FAILED: '+e.message); process.exit(1); });

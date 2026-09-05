@@ -165,7 +165,7 @@
     document.getElementById('over').classList.remove('show');
     const lo=document.getElementById('levelover'); if(lo) lo.classList.remove('show');
     const mn=document.getElementById('menu'); if(mn) mn.classList.remove('show');   // reset == a clean, playable board
-    msg(mode==='climb'?('Daily Climb — stage '+(climbStage+1)+' of 3'):(mode==='level'?('Level '+level+' — build the words on the list!'):(mode==='hunt'?('Word Hunt — launch '+HUNT_STOCK+' letters, then spell what they make!'):(mode==='daily'?('Daily '+prettyDate(todayKey())+' — drag to aim.'):'Drag down to aim, release to drop.'))));
+    msg(mode==='climb'?('Daily Climb, stage '+(climbStage+1)+' of 3'):(mode==='level'?('Level '+level+' · build the words on the list!'):(mode==='hunt'?('Word Hunt, launch '+HUNT_STOCK+' letters, then spell what they make!'):(mode==='daily'?('Daily '+prettyDate(todayKey())+' · drag to aim.'):'Drag down to aim, release to drop.'))));
     updateHUD(); syncMode(); renderLevelBar(); hideChip(); updateItemBar();
   }
   function lowestEmpty(c){for(let r=ROWS-1;r>=0;r--) if(!grid[r][c]) return r; return -1;}
@@ -254,7 +254,7 @@
         const t=targets.find(x=>!x.done && x.w.toLowerCase()===lw);
         if(t){ const g=scoreAndClear(w); t.done=true; renderLevelBar(); msg(w.toUpperCase()+' \u2713  +'+g);
           if(targets.every(x=>x.done)) setTimeout(mode==='climb'?climbAdvance:levelComplete,450); }
-        else if(DICT.has(lw)){ chip(w,'bad'); sfx('bad'); msg('&ldquo;'+w.toUpperCase()+'&rdquo; \u2014 not on the list.'); }
+        else if(DICT.has(lw)){ chip(w,'bad'); sfx('bad'); msg('&ldquo;'+w.toUpperCase()+'&rdquo;, not on the list.'); }
         else { chip(w,'bad'); shake=10; sfx('bad'); msg('Not a word.'); }
       } else if(mode==='hunt'){ huntSubmit(w,lw); }
       else if(DICT.has(lw)){ const g=scoreAndClear(w); msg(w.toUpperCase()+' &rarr; +'+g+(streak>1?' (x'+streak+' streak!)':'')); }
@@ -363,7 +363,7 @@
     const give=huntTarget[huntHelps % huntTarget.length];   // hand over a letter of the word
     queue.unshift(current); queue.pop(); current=give; updateHUD();   // pop keeps the launch queue a fixed length
     huntHelps++;
-    if(huntHelps>1 && dropBlocker()) msg('Help: ‘'+give+'’ — but a block dropped!'); else msg('Help: place the ‘'+give+'’.');
+    if(huntHelps>1 && dropBlocker()) msg('Help: ‘'+give+'’, but a block dropped!'); else msg('Help: place the ‘'+give+'’.');
     renderLevelBar();
   }
   function huntSubmit(w,lw){
@@ -410,7 +410,7 @@
         ? '<span class="lchip" style="letter-spacing:2px">'+huntTarget+'</span><button class="lretry" id="huntHelp" title="Need a letter (drops a block after the first)">＋ letter</button>'
         : (huntStock<HUNT_STOCK
             ? '<span class="lvl" style="opacity:.8">launch '+(HUNT_STOCK-huntStock)+' more…</span>'
-            : '<span class="lvl" style="opacity:.8">keep launching — no word yet…</span>');
+            : '<span class="lvl" style="opacity:.8">keep launching, no word yet…</span>');
       bar.innerHTML='<button class="lmenu" id="lvlMenu" title="Game modes">&#9776;</button>'+
         '<span class="lvl">Hunt</span>'+(huntTarget?'<span class="lvl" style="opacity:.7;font-size:11px">spell</span>':'')+mid+
         '<button class="lretry" id="lvlRetry" title="New hunt">&#8635;</button>';
@@ -435,7 +435,7 @@
     bar.classList.add('show');
     const rb=document.getElementById('lvlRetry'); if(rb) rb.onclick=()=>reset();
     const mb=document.getElementById('lvlMenu'); if(mb) mb.onclick=openMenu;
-    if(stuck) msg('Out of tiles — trace a word on the board, or tap &#8635; to retry.');
+    if(stuck) msg('Out of tiles, trace a word on the board, or tap &#8635; to retry.');
     if(!was) fit();   // bar appeared → the stage got shorter, refit the canvas
   }
   function levelComplete(){
@@ -447,7 +447,7 @@
     if(!lo){ reset(); return; }
     document.getElementById('levelTitle').textContent=last?('All '+LEVELS().length+' Levels Cleared! 🎉'):('Level '+cleared+' Cleared!');
     document.getElementById('levelNum').textContent=cleared;
-    document.getElementById('levelSub').textContent=last?'You beat them all — looping to 1. More coming!':('Score '+score+'  •  +10 🪙');
+    document.getElementById('levelSub').textContent=last?'You beat them all, looping to 1. More coming!':('Score '+score+'  •  +10 🪙');
     document.getElementById('levelNext').textContent=last?'Play Again':'Next Level →';
     lo.classList.add('show'); syncMode();
   }
@@ -459,7 +459,7 @@
       if(!lo){ reset(); return; }
       document.getElementById('levelTitle').textContent='Stage '+cleared+' of 3 cleared!';
       document.getElementById('levelNum').textContent=cleared;
-      document.getElementById('levelSub').textContent='Score '+score+' — keep climbing!';
+      document.getElementById('levelSub').textContent='Score '+score+' · keep climbing!';
       document.getElementById('levelNext').textContent='Next Stage →';
       lo.classList.add('show');
     } else climbComplete();

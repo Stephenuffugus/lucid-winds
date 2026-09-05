@@ -57,17 +57,17 @@ const expectedHit = game.scaledEnemyHit({ player:P(), enemy:E() }, 9); // what t
 console.log('  player.hp before endTurn:', hpBefore, ' player.block:', P().block, ' scaled hit:', expectedHit);
 game.endTurn();
 console.log('  player.hp after  endTurn:', P().hp, ' (expected', hpBefore - expectedHit, ')');
-console.log('  RESULT:', P().hp === hpBefore - expectedHit ? 'PASS — enemy dealt scaled damage' : 'FAIL — damage mismatch');
+console.log('  RESULT:', P().hp === hpBefore - expectedHit ? 'PASS · enemy dealt scaled damage' : 'FAIL · damage mismatch');
 
 console.log('\n--- TEST B: 6 turns, player passes every turn, random real intents ---');
 for(let t=0; t<6 && E().hp>0 && P().hp>0; t++){
   const intent = E().intent;
   const hp0 = P().hp;
   game.endTurn();
-  console.log(`  turn ${t}: intent=${intent?intent.desc+'('+intent.type+(intent.value!=null?' '+intent.value:'')+')':'—'}  hp ${hp0} -> ${P().hp}  (Δ ${P().hp-hp0})`);
+  console.log(`  turn ${t}: intent=${intent?intent.desc+'('+intent.type+(intent.value!=null?' '+intent.value:'')+')':', '}  hp ${hp0} -> ${P().hp}  (Δ ${P().hp-hp0})`);
 }
 console.log('  Player HP after 6 idle turns:', P().hp, '/ started 60');
-console.log('  RESULT:', P().hp < 60 ? 'PASS — player took damage over time' : 'FAIL — player never took damage');
+console.log('  RESULT:', P().hp < 60 ? 'PASS · player took damage over time' : 'FAIL · player never took damage');
 
 console.log('\n--- TEST C: direct resolveEnemyIntent unit check ---');
 const ctx = { player:{hp:50,block:0,debuffs:{},buffs:{}}, enemy:{hp:10,block:0,debuffs:{},intent:{type:'attack',value:7}}, combat:{}, run:run };
@@ -80,7 +80,7 @@ const wctx = { player:{hp:50,block:0,debuffs:{},buffs:{ward:10}}, enemy:{hp:10,b
 const wexp = game.scaledEnemyHit(wctx, 6);
 game.resolveEnemyIntent(wctx);
 console.log('  ward 10, hit ' + wexp + ' -> hp ' + wctx.player.hp + ' ward ' + (wctx.player.buffs.ward||0) +
-  ':', (wctx.player.hp===50 && wctx.player.buffs.ward===10-wexp) ? 'PASS — ward soaked it, hp intact' : 'FAIL');
+  ':', (wctx.player.hp===50 && wctx.player.buffs.ward===10-wexp) ? 'PASS · ward soaked it, hp intact' : 'FAIL');
 
 console.log('\n--- TEST E: a Studied card deals +2 ---');
 // fresh combat, find a basic Wands strike in hand or force one
@@ -103,7 +103,7 @@ function playInjected(studied){
 const plain = playInjected(false);
 const study = playInjected(true);
 console.log(`  Two of Wands plain=${plain}  studied=${study}  (expect studied = plain+2)`);
-console.log('  RESULT:', study === plain + 2 ? 'PASS — Study adds +2' : 'FAIL — Study not applied');
+console.log('  RESULT:', study === plain + 2 ? 'PASS · Study adds +2' : 'FAIL · Study not applied');
 
 console.log('\n--- TEST F: a Spread Arcanum fires at combat start ---');
 const fr = game.freshRun('spread-seed', 'magician'); game.state.run = fr;
@@ -112,7 +112,7 @@ fr.floor = 0; fr.path[0].chosenNode = 0; fr.currentNode = fr.path[0].nodes[0];
 game.startCombat(fr.path[0].nodes[0].enemyId);
 const fb = fr.combatPlayer.block, fs2 = (fr.combatPlayer.buffs.strength||0);
 console.log(`  start block=${fb} (expect >=12)  strength=${fs2} (expect >=2)`);
-console.log('  RESULT:', (fb>=12 && fs2>=2) ? 'PASS — Spread boons applied at combat start' : 'FAIL');
+console.log('  RESULT:', (fb>=12 && fs2>=2) ? 'PASS · Spread boons applied at combat start' : 'FAIL');
 
 console.log('\n--- TEST G: The Chain escalates on same suit, resets on off-suit ---');
 const gr = game.freshRun('chain-seed', 'magician'); game.state.run = gr;
@@ -128,7 +128,7 @@ const b=gplay('wands-2');   // chain2 -> +3  -> 8   (B21 steep curve: 3/6/10/15)
 const off=gplay('swords-2');// off-suit: chain resets to swords1 -> pierce 3
 const d=gplay('wands-2');   // wands chain reset to 1 -> +0 -> 5
 console.log(`  Wands chain: ${a}, ${b} (expect 5,8); off-suit Swords ${off} (expect 3); Wands after reset ${d} (expect 5)`);
-console.log('  RESULT:', (a===5&&b===8&&off===3&&d===5) ? 'PASS — Chain escalates (B21: +3 at chain-2) and resets on suit change' : 'FAIL');
+console.log('  RESULT:', (a===5&&b===8&&off===3&&d===5) ? 'PASS · Chain escalates (B21: +3 at chain-2) and resets on suit change' : 'FAIL');
 
 console.log('\n--- TEST H: Wands lay Ember, the detonator cashes it in ---');
 const hr = game.freshRun('web-seed', 'magician'); game.state.run = hr;
@@ -149,4 +149,4 @@ const det = hplay('wands-9');                 // consume 1 Ember -> 9 + 3*1 = 12
 const emberAfter = hen().debuffs.burn || 0;   // expect 0 (consumed)
 console.log(`  wands-4: dmg=${lay} (expect 5), Ember laid=${emberLaid} (expect 1)`);
 console.log(`  wands-9 detonate: dmg=${det} (expect 12), Ember after=${emberAfter} (expect 0)`);
-console.log('  RESULT:', (lay===5 && emberLaid===1 && det===12 && emberAfter===0) ? 'PASS — Ember lays and detonates' : 'FAIL');
+console.log('  RESULT:', (lay===5 && emberLaid===1 && det===12 && emberAfter===0) ? 'PASS · Ember lays and detonates' : 'FAIL');

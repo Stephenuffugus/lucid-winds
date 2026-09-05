@@ -119,11 +119,11 @@ export const ACTS = Object.freeze([
     fitWeight: 1,
     teaches: 'Learn the triangle. Learn that arms and legs are separate jobs.',
     blurb: 'Nothing else is on. Twenty minutes where the square belongs to whoever showed up.',
-    scoringNote: 'Decided on noise. Cheering, applause, laughing — all of it counts.',
+    scoringNote: 'Decided on noise. Cheering, applause, laughing, all of it counts.',
     qualify: Object.freeze({
       turns: 3,
       bar: 940,
-      line: 'Somebody has to go first and it is you. Nobody opposite — three moves, and the square decides.'
+      line: 'Somebody has to go first and it is you. Nobody opposite, three moves, and the square decides.'
     })
   }),
   Object.freeze({
@@ -294,7 +294,7 @@ export const OPPONENTS = Object.freeze([
     reads: 'm',
     pool: Object.freeze(['sigma', 'aurawalk', 'eyeroll', 'sixseven']),
     drop: 'sigma',
-    line: 'Keeps goal on this concrete every afternoon. Treats the circle the same way — nothing gets past him twice.'
+    line: 'Keeps goal on this concrete every afternoon. Treats the circle the same way, nothing gets past him twice.'
   }),
 
   /* ── ACT 2 · THE PARK BRACKET ────────────────────────────────────────── */
@@ -578,7 +578,7 @@ export const OPPONENTS = Object.freeze([
     // it is the original job done properly.
     pool: Object.freeze(['boat', 'swirl', 'grimace', 'stillwater', 'aurawalk', 'freeze', 'sixseven']),
     drop: null,
-    line: 'The child at the prow. Forty metres of carved wood, sixty rowers behind, and one job — make aura for all of them, and do not fall in.'
+    line: 'The child at the prow. Forty metres of carved wood, sixty rowers behind, and one job, make aura for all of them, and do not fall in.'
   })
 ]);
 

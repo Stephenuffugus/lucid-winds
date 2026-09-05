@@ -154,7 +154,7 @@ export function renderTracks() {
         const best = G.best[key];
         const featHere = isFeat && feat.variant === v.id;
         return '<button class="vbtn' + (featHere ? ' feat' : '') + '" data-ti="' + ti + '" data-v="' + v.id + '" ' +
-          'title="' + v.label + (best ? ' — best ' + fmtTime(best / 1000) : '') + '">' +
+          'title="' + v.label + (best ? ' · best ' + fmtTime(best / 1000) : '') + '">' +
           (v.tag || '▶') + (featHere ? '🔥' : '') + (medals ? '<i>' + medals + '</i>' : '') + '</button>';
       }).join('');
       const bestN = G.best[configKey(ti, 0)];
@@ -273,7 +273,7 @@ export function renderGarage() {
   if (rac > 0) {
     const fixbar = document.createElement('button');
     fixbar.className = 'ghost-btn fix-all';
-    fixbar.textContent = '🔧 REPAIR ALL PARTS — ' + rac.toLocaleString() + ' ⚙';
+    fixbar.textContent = '🔧 REPAIR ALL PARTS · ' + rac.toLocaleString() + ' ⚙';
     fixbar.addEventListener('click', () => {
       if (repairAll()) { saveNow(); renderGarage(); } else flashWallet('garage-wallet');
     });
@@ -338,8 +338,8 @@ export function showResults(r) {
     ['Best lap bonus', r.bestLapBonus],
   ];
   if (r.golden) rows.push(['✨ Golden Sprocket', r.golden]);
-  if (r.daily) rows.push(['🔥 Daily streak ' + r.daily.streak + (r.daily.newTitle ? (' — NEW TITLE: ' + r.daily.newTitle.toUpperCase()) : (r.daily.title ? (' · ' + r.daily.title) : '')), 0]);
-  for (const m of r.medals) rows.push([medalImg(m, 'medal-row') + ' ' + m.toUpperCase() + ' medal — ' + t.name, S.DATA.economy.medals[m]]);
+  if (r.daily) rows.push(['🔥 Daily streak ' + r.daily.streak + (r.daily.newTitle ? (' · NEW TITLE: ' + r.daily.newTitle.toUpperCase()) : (r.daily.title ? (' · ' + r.daily.title) : '')), 0]);
+  for (const m of r.medals) rows.push([medalImg(m, 'medal-row') + ' ' + m.toUpperCase() + ' medal · ' + t.name, S.DATA.economy.medals[m]]);
   if (r.setPay) rows.push(['Race-set completion bonus', r.setPay]);
   const tb = document.getElementById('res-rows');
   tb.innerHTML = rows.map(x => '<div class="rrow"><span>' + x[0] + '</span><b>+' + x[1].toLocaleString() + ' ⚙</b></div>').join('')
@@ -348,7 +348,7 @@ export function showResults(r) {
   document.getElementById('res-wallet').textContent = G.wallet.toLocaleString() + ' ⚙';
   document.getElementById('res-order').innerHTML = r.order.map((b, i) =>
     '<div class="orow' + (b.isAI ? '' : ' me') + '"><i style="background:' + b.color + '"></i>' + (i + 1) + '. ' + b.name +
-    (b.finished ? ' — ' + fmtTime(b.finishTime) : ' — DNF') + '</div>').join('');
+    (b.finished ? ' — ' + fmtTime(b.finishTime) : ' · DNF') + '</div>').join('');
 
   const ni = S.race.trackIndex + 1;
   const nextBtn = document.getElementById('res-next');

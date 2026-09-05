@@ -151,7 +151,7 @@ function selfTest(){
 
 var st = selfTest();
 if (st.length){
-  console.error('⛔ VARIETY AUDIT SELF-TEST FAILED — the instrument is broken, not the game:');
+  console.error('⛔ VARIETY AUDIT SELF-TEST FAILED · the instrument is broken, not the game:');
   st.forEach(function(f){ console.error('   ' + f); });
   process.exit(2);
 }
@@ -208,7 +208,7 @@ out.forEach(function(r){
     String(close.length).padEnd(9) + String(ones.length).padEnd(10) + lms.length);
 });
 
-console.log('\nTHE CLOSING MENU  (only edible at or after the ★★ bar — what the last minutes taste like)');
+console.log('\nTHE CLOSING MENU  (only edible at or after the ★★ bar, what the last minutes taste like)');
 console.log('   share = of everything eaten in that stretch, by COUNT / by VOLUME');
 out.forEach(function(r){
   var tot = 0, vol = 0;

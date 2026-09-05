@@ -50,7 +50,7 @@ var H=require('./node_harness.js');
         (L.worst.length?'  ← '+L.worst.map(function(x){return x.k+' '+x.d+'cm apart, needs '+x.need;}).join(', '):''));
     });
   }
-  console.log('\n'+(bad?('NEIGHBOURS_FAIL — '+bad+' landmark(s) with something standing in them')
-                      :'NEIGHBOURS_PASS — every landmark stands clear'));
+  console.log('\n'+(bad?('NEIGHBOURS_FAIL · '+bad+' landmark(s) with something standing in them')
+                      :'NEIGHBOURS_PASS · every landmark stands clear'));
   process.exit(bad?1:0);
 })();

@@ -343,9 +343,9 @@ results.forEach(r=>{
 const overall = results.reduce((a,r)=>a+r.wins,0) / (results.length*NUM_RUNS) * 100;
 console.log(`\nOverall win rate: ${overall.toFixed(1)}%   [healthy band 30-55% greedy AI]`);
 const easy = results.filter(r=>r.pct>70), hard = results.filter(r=>r.pct<15);
-if(easy.length) console.log(`⚠ Trivial Sigils: ${easy.map(r=>r.sigilId).join(', ')} — nerf their boon/curated pool`);
-if(hard.length) console.log(`⚠ Brutal Sigils:  ${hard.map(r=>r.sigilId).join(', ')} — the seal is too costly`);
-if(!easy.length && !hard.length) console.log(`✓ All Sigils inside the healthy band — depth power is balanced.`);
+if(easy.length) console.log(`⚠ Trivial Sigils: ${easy.map(r=>r.sigilId).join(', ')} · nerf their boon/curated pool`);
+if(hard.length) console.log(`⚠ Brutal Sigils:  ${hard.map(r=>r.sigilId).join(', ')} · the seal is too costly`);
+if(!easy.length && !hard.length) console.log(`✓ All Sigils inside the healthy band, depth power is balanced.`);
 const free = results.find(r=>r.sigilId==='free');
 if(free) console.log(`\nBaseline (Free Inscription): ${free.pct.toFixed(1)}%  (Phase-2 reference ~37-41%)`);
 
@@ -408,7 +408,7 @@ if(lvKeys.length===0){
     const lo = byLevel[lvKeys[i-1]], hi = byLevel[lvKeys[i]];
     if((hi.total?hi.wins/hi.total*100:0) + 5 < (lo.total?lo.wins/lo.total*100:0)) monotone=false;
   }
-  console.log(monotone ? '  ✓ Champion scaling is monotone-ish.' : '  ⚠ Champion scaling inverts — check apply() curves.');
+  console.log(monotone ? '  ✓ Champion scaling is monotone-ish.' : '  ⚠ Champion scaling inverts, check apply() curves.');
 }
 
 /* ====================================================================
@@ -435,8 +435,8 @@ archRows.forEach(row=>{
 const playable = archRows.filter(r=>r.name!=='other');
 const domArch = playable.slice().sort((a,b)=>b.share-a.share)[0];
 const archDominant = domArch && domArch.share > 60 ? domArch : null;
-if(archDominant) console.log(`  ⚠ '${archDominant.name}' is played in ${archDominant.share.toFixed(0)}% of runs — strategy diversity is thin.`);
-else console.log('  ✓ No single archetype exceeds 60% of runs — strategy space is varied.');
+if(archDominant) console.log(`  ⚠ '${archDominant.name}' is played in ${archDominant.share.toFixed(0)}% of runs, strategy diversity is thin.`);
+else console.log('  ✓ No single archetype exceeds 60% of runs, strategy space is varied.');
 
 /* ====================================================================
    5. DETERMINISM ASSERTION
@@ -451,8 +451,8 @@ SIGIL_IDS.forEach(sid=>{
   console.log(`  ${sid.padEnd(7)} encIdx ${a.encounterIdx}/${b.encounterIdx}  casts ${a.dmgLog.length}/${b.dmgLog.length}  ${ok ? 'PASS' : 'FAIL'}`);
 });
 console.log(detPass
-  ? '  ✓ DETERMINISM PASS — identical reruns.'
-  : '  ✗ DETERMINISM FAIL — reruns diverge; Phase-6 fix regressed.');
+  ? '  ✓ DETERMINISM PASS · identical reruns.'
+  : '  ✗ DETERMINISM FAIL · reruns diverge; Phase-6 fix regressed.');
 
 /* ====================================================================
    BALANCE VERDICT
@@ -471,5 +471,5 @@ else if(playable.length) verdicts.push(`Strategy diversity OK; most common '${(d
 verdicts.push(`Determinism: ${detPass ? 'PASS' : 'FAIL'}.`);
 verdicts.forEach(v=>console.log(`• ${v}`));
 const anyAlarm = easy.length || hard.length || overpowered.length || dead.length || archDominant || !detPass;
-console.log(anyAlarm ? `\nVERDICT: tuning needed — see flagged items.` : `\nVERDICT: depth systems balanced; determinism holds.`);
+console.log(anyAlarm ? `\nVERDICT: tuning needed, see flagged items.` : `\nVERDICT: depth systems balanced; determinism holds.`);
 console.log(`===================================================`);

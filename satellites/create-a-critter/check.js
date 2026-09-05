@@ -204,7 +204,7 @@ var MUTATIONS=[
   ['every $(id) resolves and no id is used twice', function(s){ return s.replace("$('critName')","$('critNameTypo')"); }],
   ['every [data-*] selector matches a real attribute', function(s){ return s.replace(/querySelectorAll\('\[data-limb\]'\)/,"querySelectorAll('[data-limbo]')"); }],
   ['no silent catch: every empty catch is annotated /*ok: why */', function(s){ return s.replace('function lsMax(k,v){','function lsMax(k,v){ try{ }catch(e){ } '); }],
-  ['no dash characters in player facing copy', function(s){ return s.replace('A new version is ready. Tap to update.','A new version is ready — tap to update'); }],
+  ['no dash characters in player facing copy', function(s){ return s.replace('A new version is ready. Tap to update.','A new version is ready, tap to update'); }],
   ['no literal closing script tag inside a JS string', function(s){ return s.replace("var BUILD='","var HAX='<\/script> oh no'; var BUILD='"); }],
   ['service worker safety (prefixed caches, versions in step)', function(s){ return s.replace('var BUILD=',"var SHELL_VERSION='v9'; navigator.serviceWorker.register('sw.js?v=8'); caches.keys().then(function(k){ k.forEach(function(n){ caches.delete(n); }); }); var BUILD="); }],
   ['localStorage discipline: merged nursery writes, bests through lsMax', function(s){ return s.replace('function persistCur(){',"function persistCur(){ jSet(K_NEST,NEST); lsSet('cac_berry_best','9');"); }],

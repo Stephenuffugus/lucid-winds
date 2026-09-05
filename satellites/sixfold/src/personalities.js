@@ -166,7 +166,7 @@
   // ---------- roster (ship 8) ----------
   const ARCHES = {
     berserker: {
-      name: "Berserker", tell: "Repeats the stance that just hit — counter the repeat.",
+      name: "Berserker", tell: "Repeats the stance that just hit, counter the repeat.",
       stars: 1, w: { bias: 0.60, read: 0.10, noise: 0.30 },
       bias: "winStay", readStrength: 0.6, yomi: 1, bind: "drive", spend: "never",
       triggers: [{ when: (c) => c.aiHP > c.playerHP, effect: (d, c) => {
@@ -174,7 +174,7 @@
       } }],
     },
     stone: {
-      name: "Stone", tell: "Picks bunch in one arc — counter the cluster.",
+      name: "Stone", tell: "Picks bunch in one arc, counter the cluster.",
       stars: 2, w: { bias: 0.72, read: 0.08, noise: 0.20 },
       bias: "homeArc", readStrength: 0.45, yomi: 1, bind: "random", spend: "insight",
       // low HP -> narrow onto the home-arc centre
@@ -184,32 +184,32 @@
       } }],
     },
     drunkard: {
-      name: "Drunkard", tell: "Never repeats — eliminate its last pick.",
+      name: "Drunkard", tell: "Never repeats, eliminate its last pick.",
       stars: 2, w: { bias: 0.74, read: 0.08, noise: 0.18 },
       bias: "neverRepeat", readStrength: 0.45, yomi: 1, bind: "random", spend: "insight",
     },
     mirror: {
-      name: "Mirror", tell: "Plays YOUR last stance — counter your own previous move.",
+      name: "Mirror", tell: "Plays YOUR last stance, counter your own previous move.",
       stars: 2, w: { bias: 0.80, read: 0.00, noise: 0.20 },
       bias: "mirrorPlayer", readStrength: 0, yomi: 1, bind: "random", spend: "insight",
     },
     metronome: {
-      name: "Metronome", tell: "Marches a fixed step — find the cadence, stay ahead.",
+      name: "Metronome", tell: "Marches a fixed step, find the cadence, stay ahead.",
       stars: 3, w: { bias: 0.75, read: 0.00, noise: 0.25 },
       bias: "rotate", readStrength: 0, yomi: 1, bind: "random", spend: "insight",
     },
     trickster: {
-      name: "Trickster", tell: "Beats your counter — don't take the bait, go a level deeper.",
+      name: "Trickster", tell: "Beats your counter, don't take the bait, go a level deeper.",
       stars: 4, w: { bias: 0.20, read: 0.55, noise: 0.25 },
       bias: "favorStance", readStrength: 0.85, yomi: 2, bind: "antiread", spend: "insight",
     },
     ghost: {
-      name: "Ghost", tell: "Near-random + sharp read — survive on your own unpredictability.",
+      name: "Ghost", tell: "Near-random + sharp read, survive on your own unpredictability.",
       stars: 5, w: { bias: 0.05, read: 0.35, noise: 0.60 },
       bias: "favorStance", readStrength: 0.9, yomi: 1, bind: "random", spend: "hoard-foresight",
     },
     echo: {
-      name: "Echo", tell: "Learns you in real time — it does to you what you do to others.",
+      name: "Echo", tell: "Learns you in real time, it does to you what you do to others.",
       stars: 5, w: { bias: 0.10, read: 0.65, noise: 0.25 },
       bias: "adaptiveCounter", readStrength: 0.9, yomi: 1, bind: "read", spend: "foresight-on-doubt",
     },

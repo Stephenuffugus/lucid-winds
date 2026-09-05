@@ -318,7 +318,7 @@ export const SPECIALS = Object.freeze({
   counter: { key: 'counter', label: 'COUNTER', blurb: 'Bonus scaled by how big their last move was.' },
   finisher: { key: 'finisher', label: 'FINISHER', blurb: 'Only with the meter close. Large swing.' },
   evade: { key: 'evade', label: 'EVADE', blurb: 'Negates their debuff and their counter this turn.' },
-  hype: { key: 'hype', label: 'HYPE', blurb: 'Turn your back and work the room. Cheap turn, big hype, and the crowd faces you next — where there is a crowd.' },
+  hype: { key: 'hype', label: 'HYPE', blurb: 'Turn your back and work the room. Cheap turn, big hype, and the crowd faces you next, where there is a crowd.' },
   read: { key: 'read', label: 'READ', blurb: 'Reveals their next category before you commit.' },
   persist: { key: 'persist', label: 'PERSIST', blurb: 'Scores again, smaller, on the next turn.' }
 });
@@ -1374,7 +1374,7 @@ function applyHype(match, plan) {
   plan.specialFired = true;
   plan.roomTurned = match.round < match.rounds;
   plan.specialDetail = match.scoring === 'judges'
-    ? 'no room to turn — a panel does not clap'
+    ? 'no room to turn, a panel does not clap'
     : plan.roomTurned ? 'the room turns with you'
       : 'played to the room, with nothing left to spend it on';
 }
@@ -1398,7 +1398,7 @@ function applyFinisher(match, plan) {
   if (plan.special !== 'finisher') return;
   if (!meterCloseFor(match, plan.side.side)) {
     plan.specialFired = false;
-    plan.specialDetail = 'too early — the meter was not close';
+    plan.specialDetail = 'too early, the meter was not close';
     return;
   }
   plan.extra *= TUNING.finisherMult;

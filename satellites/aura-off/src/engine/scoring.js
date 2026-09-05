@@ -308,7 +308,7 @@ export const PATTERNS = Object.freeze([
     id: 'river',
     name: 'RÍO ARRIBA',
     mult: 1.5,
-    blurb: 'River Prow, Swirl & Swing and Ground Spin — where it started.',
+    blurb: 'River Prow, Swirl & Swing and Ground Spin, where it started.',
     test: function (moves) {
       const want = { boat: 0, swirl: 0, spin: 0 };
       for (let i = 0; i < 3; i++) {

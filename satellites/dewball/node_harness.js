@@ -141,7 +141,7 @@ function boot(opts){
   var html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
   /* pull the main game script (the one that follows the three.min.js include) */
   var mark = html.indexOf('<script src="three.min.js"></script>');
-  if (mark < 0) throw new Error('harness: three.min.js include not found — index.html restructured');
+  if (mark < 0) throw new Error('harness: three.min.js include not found, index.html restructured');
   var s0 = html.indexOf('<script>', mark); s0 = html.indexOf('>', s0) + 1;
   var s1 = html.indexOf('<\/script>', s0);
   if (s0 < 0 || s1 < 0) throw new Error('harness: main script block not found');
@@ -231,7 +231,7 @@ function boot(opts){
   vm.runInContext(pre, ctx, { filename:'dewball-portal.js' });
   vm.runInContext(game, ctx, { filename:'dewball-main.js' });
 
-  if (!sandbox.DB_DEV) throw new Error('harness: DB_DEV missing — is ?dbtest=1 in location.search?');
+  if (!sandbox.DB_DEV) throw new Error('harness: DB_DEV missing, is ?dbtest=1 in location.search?');
   sandbox.DB_DEV._errs = errs;
   sandbox.DB_DEV._win = sandbox;
   return sandbox.DB_DEV;

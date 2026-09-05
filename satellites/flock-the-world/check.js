@@ -2119,7 +2119,7 @@ try {
    in memory and re-runs the source-level checks, which must go red. */
 if (process.env.FTW_SELFTEST === '1') {
   group('self test (these SHOULD fail)');
-  const mutated = SRC.replace("<title>FLOCK THE WORLD", "<title>FLOCK — THE WORLD");
+  const mutated = SRC.replace("<title>FLOCK THE WORLD", "<title>FLOCK · THE WORLD");
   let hit = 0;
   stripHtmlComments(mutated).split('\n').forEach(l => { if (DASHES.test(l)) hit++; });
   ok('mutation: an injected dash is caught', hit > 0);

@@ -107,14 +107,14 @@ function buzz(pattern) {
 /* -------------------------------------------------------------------------- */
 
 const HOW = Object.freeze([
-  'THE TRIANGLE — Flex beats Bait. Bait beats Flow. Flow beats Flex. Reading it right is worth half again as much.',
-  'THE LIGHT — Release the hold when the needle is on the white. Perfect doubles it. Clean is most of it. Late is a whiff, and a whiff is PERDIÓ AURA.',
-  'THE MARK — Holding longer makes the move bigger. The white mark on the bar is the size the crowd rewards. Bigger is not better, and going over the mark costs you more than stopping short of it.',
-  'SAY SOMETHING NEW — The second time you throw a move it is worth about two thirds. The third, under half. Repeating yourself is how you lose.',
-  'ARMS AND LEGS ARE SEPARATE JOBS — Blend takes the arms of one move and the legs of another. A real split scores. Two of a kind does not.',
-  'THE ROOM — A crowd rewards laughing and surprise. A panel rewards composure and something they have not seen. Some nights you have both, and they want opposite things.',
-  'NINE ROUNDS — The bar at the top is a tug of war, not a health bar. Whoever it is leaning towards at the end took it.',
-  'EL FARMEO — Almost every fight starts with you going up on your own. No rival means no triangle, so it is only the light and the mark. Clear the bar and you start the battle level or better; fall short and you start behind. You always get in.'
+  'THE TRIANGLE · Flex beats Bait. Bait beats Flow. Flow beats Flex. Reading it right is worth half again as much.',
+  'THE LIGHT · Release the hold when the needle is on the white. Perfect doubles it. Clean is most of it. Late is a whiff, and a whiff is PERDIÓ AURA.',
+  'THE MARK · Holding longer makes the move bigger. The white mark on the bar is the size the crowd rewards. Bigger is not better, and going over the mark costs you more than stopping short of it.',
+  'SAY SOMETHING NEW · The second time you throw a move it is worth about two thirds. The third, under half. Repeating yourself is how you lose.',
+  'ARMS AND LEGS ARE SEPARATE JOBS · Blend takes the arms of one move and the legs of another. A real split scores. Two of a kind does not.',
+  'THE ROOM · A crowd rewards laughing and surprise. A panel rewards composure and something they have not seen. Some nights you have both, and they want opposite things.',
+  'NINE ROUNDS · The bar at the top is a tug of war, not a health bar. Whoever it is leaning towards at the end took it.',
+  'EL FARMEO · Almost every fight starts with you going up on your own. No rival means no triangle, so it is only the light and the mark. Clear the bar and you start the battle level or better; fall short and you start behind. You always get in.'
 ]);
 
 /* -------------------------------------------------------------------------- */
@@ -796,7 +796,7 @@ export function createGame(cfg) {
       }
       return soloTail(snap);
     }
-    if (snap.reveal) return 'They are going ' + snap.reveal.category + ' — answer it';
+    if (snap.reveal) return 'They are going ' + snap.reveal.category + ' · answer it';
     // Not on round one. The meter is close because nobody has moved yet, so
     // announcing a finisher there is urgency about nothing.
     if (snap.round > 1 && snap.finisherOpen && hasLiveFinisher()) return 'The meter is close. You can end it.';
@@ -825,7 +825,7 @@ export function createGame(cfg) {
       S.blendA = id;
       S.blendStep = 2;
       refreshDeck();
-      hud.setPrompt('Now the LEGS — pick the move you take the bottom half from');
+      hud.setPrompt('Now the LEGS · pick the move you take the bottom half from');
       hud.setHype(snapshot().hype, TUNING.blendCost, true, true);
       buzz(8);
       return;
@@ -863,7 +863,7 @@ export function createGame(cfg) {
     S.blendA = null;
     refreshDeck();
     hud.setHype(snapshot().hype, TUNING.blendCost, true, true);
-    hud.setPrompt('Blend — pick the move you take the ARMS from');
+    hud.setPrompt('Blend, pick the move you take the ARMS from');
     buzz(8);
   }
 
@@ -1223,7 +1223,7 @@ export function createGame(cfg) {
       if (OPPONENTS[i].act === act.id && isBeaten(OPPONENTS[i].id)) names.push(OPPONENTS[i].name);
     }
     el.mapSub.textContent = names.length
-      ? act.name + ' — you beat ' + names.join(', ') + '.'
+      ? act.name + ' · you beat ' + names.join(', ') + '.'
       : act.name + ' — ' + act.setting + '.';
   }
 
@@ -1235,7 +1235,7 @@ export function createGame(cfg) {
       const allDone = isBeaten(next.id);
       el.mapSub.textContent = allDone
         ? 'That is the whole circuit. The square is still there on Tuesday.'
-        : 'Next — ' + next.name + '. ' + next.line;
+        : 'Next · ' + next.name + '. ' + next.line;
     }
 
     if (el.actList) {

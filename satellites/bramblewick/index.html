@@ -443,31 +443,31 @@ var G=null;
    Each: distinct pest pool + pacing + palette + boss arc. Reaction-lane themed.
    hazard field is data for a follow-up pass (env hazards) — currently no-op. ---------------- */
 var STAGES=[
- { id:'greenhouse', name:'Greenhouse Floor', flavor:'Home turf. No gimmick — just you and the reaction engine.',
+ { id:'greenhouse', name:'Greenhouse Floor', flavor:'Home turf. No gimmick, just you and the reaction engine.',
    pal:{t:'#0f150d',b:'#070a06',acc:'122,179,86'},
    pool:function(t){ if(t<25)return['aphid','aphid','mite','thrip']; if(t<70)return['aphid','mite','locust','beetle','thrip','weevil']; if(t<140)return['aphid','locust','beetle','slug','wasp','mite','weevil','mealybug','spittle']; return['aphid','locust','beetle','slug','wasp','mite','weevil','mealybug','scale','cutworm','beetle','wasp','spittle']; },
    tune:{rateMul:1,hpMul:1,burstEvery:60,eliteEvery:72,eliteStart:55}, hazard:null,
-   bosses:[{id:'grubfather',at:150,intro:'GRUBFATHER — break the shell with Rot (Spore + Sap)'},{id:'stormwing',afterPrev:45,final:true,intro:'STORMWING, the Locust Queen — dodge the volleys'}] },
+   bosses:[{id:'grubfather',at:150,intro:'GRUBFATHER · break the shell with Rot (Spore + Sap)'},{id:'stormwing',afterPrev:45,final:true,intro:'STORMWING, the Locust Queen, dodge the volleys'}] },
  { id:'sunkenbeds', name:'The Sunken Beds', flavor:'Slow and thick. Sap cracks the shell.',
    pal:{t:'#0e1a16',b:'#040a08',acc:'74,138,118'},
    pool:function(t){ if(t<20)return['aphid','aphid','mite','mealybug']; if(t<70)return['aphid','mite','mealybug','mealybug','scale','beetle']; if(t<140)return['mealybug','scale','beetle','beetle','slug','slug','cutworm','mite']; return['slug','slug','scale','scale','beetle','cutworm','cutworm','mealybug','weevil','thrip']; },
    tune:{rateMul:0.8,hpMul:1.0,burstEvery:60,eliteEvery:999,eliteStart:999}, hazard:{type:'pools',n:4,r:66},
-   bosses:[{id:'tideshell',at:130,final:true,crackOn:{status:'sap',hits:1},intro:'TIDESHELL, the Bog Matron — any Sap reaction cracks her shell'}] },
+   bosses:[{id:'tideshell',at:130,final:true,crackOn:{status:'sap',hits:1},intro:'TIDESHELL, the Bog Matron, any Sap reaction cracks her shell'}] },
  { id:'sundrift', name:'The Sundrift Meadow', flavor:'Fast and light. A dense, squishy swarm.',
    pal:{t:'#241a08',b:'#0f0a04',acc:'230,210,74'},
    pool:function(t){ if(t<20)return['aphid','aphid','aphid','thrip']; if(t<60)return['aphid','thrip','thrip','mite','wasp']; if(t<130)return['wasp','wasp','locust','locust','thrip','mite','aphid']; return['wasp','wasp','locust','locust','locust','thrip','thrip','mite','aphid','weevil','spittle']; },
    tune:{rateMul:1.33,hpMul:0.9,burstEvery:45,eliteEvery:999,eliteStart:999}, hazard:{type:'heat'},
-   bosses:[{id:'stormwing',at:100,final:true,tune:{fireT:1.4,addMix:['wasp','locust']},intro:'THE SOLSTICE QUEEN — Stormwing at her hottest'}] },
+   bosses:[{id:'stormwing',at:100,final:true,tune:{fireT:1.4,addMix:['wasp','locust']},intro:'THE SOLSTICE QUEEN · Stormwing at her hottest'}] },
  { id:'understory', name:'The Hothouse Understory', flavor:'Immune-heavy. Spore the crowd, then chain.',
    pal:{t:'#120a1a',b:'#06040a',acc:'155,122,214'},
    pool:function(t){ if(t<25)return['aphid','mite','weevil']; if(t<80)return['weevil','weevil','beetle','mealybug','mite']; if(t<150)return['mealybug','mealybug','weevil','beetle','beetle','cutworm','locust']; return['mealybug','mealybug','weevil','weevil','beetle','cutworm','cutworm','scale','vineborer']; },
    tune:{rateMul:1.0,hpMul:1.05,burstEvery:60,eliteEvery:45,eliteStart:40}, hazard:{type:'sporefog',cycle:35,active:8},
-   bosses:[{id:'broodmother',at:160,final:true,crackOn:{status:'spore',hits:8},intro:'CORDYCEPS BROODMOTHER — land Spore reactions to break her ward'}] },
+   bosses:[{id:'broodmother',at:160,final:true,crackOn:{status:'spore',hits:8},intro:'CORDYCEPS BROODMOTHER · land Spore reactions to break her ward'}] },
  { id:'longdark', name:'The Long Dark Conservatory', flavor:'Everything, at once, at its coldest. Shatter them.',
    pal:{t:'#060a12',b:'#010208',acc:'143,208,232'},
    pool:function(t){ if(t<15)return['aphid','mite','thrip']; return['aphid','locust','beetle','beetle','slug','wasp','mite','weevil','weevil','scale','mealybug','cutworm','cutworm','thrip','spittle']; },
    tune:{rateMul:1.1,hpMul:1.15,burstEvery:40,eliteEvery:50,eliteStart:30}, hazard:{type:'frostsnap',snap:20,wave:30},
-   bosses:[{id:'frostmaw',at:135,intro:'FROSTMAW — it hits harder while it is frozen'},{id:'wiltqueen',afterPrev:50,final:true,intro:'THE WILT QUEEN — the true end'}] }
+   bosses:[{id:'frostmaw',at:135,intro:'FROSTMAW · it hits harder while it is frozen'},{id:'wiltqueen',afterPrev:50,final:true,intro:'THE WILT QUEEN · the true end'}] }
 ];
 var BOSS_SPAWN={grubfather:spawnGrubfather, stormwing:spawnStormwing, tideshell:spawnTideshell, broodmother:spawnBroodmother, frostmaw:spawnFrostmaw, wiltqueen:spawnWiltQueen};
 var BOSS_NAMES={grubfather:'The Grubfather', stormwing:'Stormwing', tideshell:'Tideshell', broodmother:'The Broodmother', frostmaw:'Frostmaw', wiltqueen:'The Wilt Queen'};
@@ -1135,7 +1135,7 @@ function endRun(win){
     'Time survived: <b>'+fmtTime(G.time)+'</b><br>Pests cleared: <b>'+G.kills+'</b><br>Loam banked: <b>'+G.loamRun+'</b> 🌱'+
     (stageUnlocked?'<br><b style="color:#7ab356">New ground unlocked: '+STAGES[store.stagesUnlocked-1].name+'</b>':'')+
     (unlocked?'<br><b style="color:#c8a84b">New Verdancy unlocked: '+VERD[store.maxVerdancy].name+'</b>':'')+
-    '<br><span class="small">Codex — Reactions '+rxDisc+'/25 · Grafts '+gfDisc+'/15 · Total Loam '+store.loam+'</span>';
+    '<br><span class="small">Codex · Reactions '+rxDisc+'/25 · Grafts '+gfDisc+'/15 · Total Loam '+store.loam+'</span>';
   showLayer('over');
 }
 function fmtTime(t){ var m=Math.floor(t/60), s=Math.floor(t%60); return m+':'+(s<10?'0':'')+s; }
@@ -1430,7 +1430,7 @@ function drawGlyph(kind,x,y,r){
 function drawBossBar(p){ var w=VW*0.7, x=(VW-w)/2, y=54; ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fillRect(x-2,y-2,w+4,12);
   ctx.fillStyle=p.armorBack?'#8a6a4a':'#c65b5b'; ctx.fillRect(x,y,w*Math.max(0,p.hp/p.maxhp),8);
   ctx.fillStyle='#e8dcc8'; ctx.font='bold 13px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='alphabetic';
-  ctx.fillText(p.meta.name.toUpperCase()+(p.armorBack?' — shell up':''), VW/2, y-6); }
+  ctx.fillText(p.meta.name.toUpperCase()+(p.armorBack?' · shell up':''), VW/2, y-6); }
 function drawFX(){
   for(var i=0;i<fx.n;i++){ var f=fx.a[i]; if(!f.active) continue; var t=f.life/f.max;
     if(f.kind==='ring'||f.kind==='react'||f.kind==='nova'){ ctx.globalAlpha=t*0.8; ctx.strokeStyle=f.col; ctx.lineWidth=(f.kind==='nova')?4:2.5; ctx.beginPath(); ctx.arc(f.x,f.y, f.r*(1-t*0.5), 0,6.283); ctx.stroke();
@@ -1480,7 +1480,7 @@ function drawDraft(){
   // dim
   ctx.fillStyle='rgba(5,7,4,0.72)'; ctx.fillRect(0,0,VW,VH);
   ctx.fillStyle='#e8dcc8'; ctx.font='bold 20px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.fillText('LEVEL '+G.level+' — DRAFT', VW/2, VH*0.30);
+  ctx.fillText('LEVEL '+G.level+' · DRAFT', VW/2, VH*0.30);
   ctx.font='14px sans-serif'; ctx.fillStyle='#8a9178'; ctx.fillText('Tap a card', VW/2, VH*0.30+24);
   var cards=G.draft.cards; var cw=VW-56, ch=108, gap=14; var startY=VH*0.37;
   for(var i=0;i<cards.length;i++){ var c=cards[i]; var x=28, y=startY+i*(ch+gap);

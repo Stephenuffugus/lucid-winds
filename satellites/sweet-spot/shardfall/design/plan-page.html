@@ -1,4 +1,4 @@
-<title>Shardfall — the long plan</title>
+<title>Shardfall, the long plan</title>
 <style>
 /* ── tokens ─────────────────────────────────────────────────────────────────
    Light is the base set. Dark redefines only the tokens, once behind
@@ -164,9 +164,9 @@ pre code{background:none; border:0; padding:0; color:var(--ink-soft)}
 <div class="wrap">
 <header>
   <p class="eyebrow">Shardfall · design plan · session 8</p>
-  <h1>The long plan <span class="dim">— what's broken, and the order to fix it in</span></h1>
+  <h1>The long plan <span class="dim"> · what's broken, and the order to fix it in</span></h1>
   <p class="standfirst">Eight sessions in, the game is playable, installs offline and plays on three device classes.
-  This plan is what seven parallel research passes and a round of measurement said to do next — starting with
+  This plan is what seven parallel research passes and a round of measurement said to do next, starting with
   three structural faults nobody knew were there.</p>
   <div class="meta">
     <span>429 node assertions</span><span>36 browser checks</span><span>24 PWA checks</span>
@@ -203,7 +203,7 @@ pre code{background:none; border:0; padding:0; color:var(--ink-soft)}
 ./test/run.sh          # 429 assertions across 7 suites
 node test/browser.js   # 36 checks in real Chromium
 node test/pwa.js       # 24 checks: offline, save migration
-node test/shots.js     # screenshots — the only way to judge feel
+node test/shots.js     # screenshots, the only way to judge feel
 ./design/audit.sh      # regenerate CURRENT-STATE.md from live tables</code></pre>
 <p>Then read <code>CLAUDE.md</code> for the hard rules, then §1 and §2 here, then start Sprint&nbsp;0.</p>
 <div class="note warn">
@@ -242,7 +242,7 @@ Everything below improves the game; none of it substitutes for somebody playing 
     <tr><td>abyss</td><td class="num">0.045</td><td class="num">0.433</td></tr>
   </tbody>
 </table></div>
-<p>The caves band is 90% air — an open void, not caves. Then the world abruptly becomes
+<p>The caves band is 90% air, an open void, not caves. Then the world abruptly becomes
 <em>more</em> solid and stays flat for the remaining 2,800 tiles. No opening out, no tightening,
 no rhythm. The code comment claims density “grows a touch with depth”; it does the opposite,
 and then does nothing.</p>
@@ -253,7 +253,7 @@ never read anywhere in the file.</strong> The pattern fires once as a burst on t
 the boss reverts to identical behaviour. The comment above it claims <code>e.pat</code> “then
 colors ongoing behaviour”. It does not.</p>
 <p>So the five minibosses are still, functionally, the HP sponges the original handoff complained
-about — now with a roar and a brief invulnerability.</p>
+about, now with a roar and a brief invulnerability.</p>
 
 <h3>2.3 · Every telegraph draws the wrong distance <span class="chip measured">Measured</span></h3>
 <p>The whole point of the windup system is that a hit is readable before it lands, and the ground
@@ -267,7 +267,7 @@ reach is <code>range + lunge × act</code>:</p>
     <tr><td>wraith</td><td class="num">28</td><td class="num">82</td><td class="num bad">2.94×</td></tr>
     <tr><td>ember</td><td class="num">22</td><td class="num">64</td><td class="num bad">2.91×</td></tr>
     <tr><td>voidmaw</td><td class="num">40</td><td class="num">108</td><td class="num bad">2.71×</td></tr>
-    <tr><td colspan="4"><em>all 19 enemies range 1.6× – 3.6×</em></td></tr>
+    <tr><td colspan="4"><em>all 19 enemies range 1.6× · 3.6×</em></td></tr>
   </tbody>
 </table></div>
 <p>Standing just outside the marker is not safe on any enemy in the game. This teaches the player
@@ -277,13 +277,13 @@ the wrong thing, which is worse than having no marker at all.</p>
 <p><code>mkItem(baseId, rarity)</code> takes no item level. Affix ranges are constant forever, the
 base pool is unlock-gated but not depth-gated, and rarity odds are fixed at the drop site. Only
 <em>shard count</em> scales with depth.</p>
-<p>A sword found at 3,000 m is statistically identical to one found at 50 m — which quietly
+<p>A sword found at 3,000 m is statistically identical to one found at 50 m, which quietly
 removes the entire reason an ARPG exists.</p>
 
 <h3>2.5 · Everything looks the same because everything is a rectangle</h3>
 <p>Flat quads with a face dot. A rockling and a crawler differ only by hue, and under the depth
 darkness at 1,500 m they differ by almost nothing. This is a <em>fairness</em> problem before it
-is an aesthetic one — you cannot react to a threat you cannot identify.</p>
+is an aesthetic one, you cannot react to a threat you cannot identify.</p>
 
 <hr>
 
@@ -293,26 +293,26 @@ is an aesthetic one — you cannot react to a threat you cannot identify.</p>
 <h3>Sprites are data, baked once</h3>
 <p>One string per pixel row, characters indexing a palette ramp, baked into offscreen canvases at
 load and blitted thereafter. Runtime cost equals the <code>fillRect</code> it replaces. Adding an
-enemy stays a table entry. Full roster projects to <strong>40–60 KB of readable, diffable
+enemy stays a table entry. Full roster projects to <strong>40 to 60 KB of readable, diffable
 source</strong>, against a current file of ~150 KB.</p>
 
 <h3>One rig, many skins</h3>
-<p>Dead Cells' real saving wasn't 3D — it was reusing one skeleton across every monster. Its
+<p>Dead Cells' real saving wasn't 3D · it was reusing one skeleton across every monster. Its
 artist says that alone “spared me hundred of hours”. We can't ship a 3D pipeline, but we can ship
-that idea: three parametric rigs — humanoid, quadruped, floater — and each of the 19 enemies
+that idea: three parametric rigs, humanoid, quadruped, floater, and each of the 19 enemies
 becomes a <code>(rig, proportions, ramp, top-shape, scale)</code> tuple.</p>
 
 <h3>The palette</h3>
 <p>Six five-step ramps plus one reserved player ramp and four accents, with hue rotating warm→cool
-as value drops — which is what stops a ramp reading as one colour at five brightnesses.</p>
+as value drops, which is what stops a ramp reading as one colour at five brightnesses.</p>
 <div class="note">
   <span class="lbl">The rule that does most of the work</span>
   <p><strong>Nothing in the game may be cream except the player.</strong> Every terrain and creature
   ramp tops out at a muted mid-value. In a dark, destructible, visually busy world the eye finds you
-  instantly — and it costs nothing but discipline about which hex values go where.</p>
+  instantly, and it costs nothing but discipline about which hex values go where.</p>
 </div>
 <p>The research pass built and <em>measured</em> a 63-colour version against the real WCAG luminance
-formula. Its first attempt failed — a rust enemy at 1.14:1 against lit terrain — and the corrected
+formula. Its first attempt failed, a rust enemy at 1.14:1 against lit terrain, and the corrected
 version clears 3.92:1 against terrain base and 2.61:1 against the brightest terrain highlight. Use
 the measured values, not the prototype's first pass.</p>
 
@@ -334,8 +334,8 @@ death 3.</p>
 <p class="lede">Keep the shape, cap the extremes, split the curves.</p>
 
 <h3>Keep flat armour, but cap it</h3>
-<p><code>max(1, dmg − armor)</code> is the right shape — strong against swarms, weak against one big
-hit — and it's what differentiates Vanguard from Marksman. But unbounded flat subtraction against
+<p><code>max(1, dmg − armor)</code> is the right shape, strong against swarms, weak against one big
+hit, and it's what differentiates Vanguard from Marksman. But unbounded flat subtraction against
 depth-scaled damage inverts at depth.</p>
 <p><strong>Decision:</strong> keep flat subtraction, add a floor of 15% of incoming damage.
 <code>taken = max(dmg × 0.15, dmg − armor)</code>. Armour can remove at most 85% of a hit, ever.</p>
@@ -361,31 +361,31 @@ which flattens the curve into a wall. Split them, so deep enemies are <em>toughe
 <div class="tw"><table>
   <thead><tr><th>Target</th><th class="num">Hits to kill</th><th class="num">Seconds</th></tr></thead>
   <tbody>
-    <tr><td>trash grunt</td><td class="num">2–3</td><td class="num">0.8–1.5</td></tr>
-    <tr><td>tough grunt</td><td class="num">5–7</td><td class="num">2.5–4</td></tr>
-    <tr><td>elite</td><td class="num">8–12</td><td class="num">4–7</td></tr>
-    <tr><td>miniboss</td><td class="num">45–70</td><td class="num">40–75</td></tr>
-    <tr><td><strong>player</strong></td><td class="num"><strong>6–9</strong></td><td class="num">—</td></tr>
+    <tr><td>trash grunt</td><td class="num">2 to 3</td><td class="num">0.8 to 1.5</td></tr>
+    <tr><td>tough grunt</td><td class="num">5 to 7</td><td class="num">2.5 to 4</td></tr>
+    <tr><td>elite</td><td class="num">8 to 12</td><td class="num">4 to 7</td></tr>
+    <tr><td>miniboss</td><td class="num">45 to 70</td><td class="num">40 to 75</td></tr>
+    <tr><td><strong>player</strong></td><td class="num"><strong>6 to 9</strong></td><td class="num"> · </td></tr>
   </tbody>
 </table></div>
 <p>Write these as assertions: build a representative loadout at each depth and check TTK lands in
-band. This is the single highest-value test we do not yet have — it's how balance stops being vibes.</p>
+band. This is the single highest-value test we do not yet have, it's how balance stops being vibes.</p>
 
 <h2 id="s6"><span class="n">06</span> The descent arc <span class="chip proposal">Proposal</span></h2>
 <p class="lede">Tight → open → built → tight → vast.</p>
 <div class="tw"><table>
   <thead><tr><th>Band</th><th class="num">Depth</th><th>Shape</th><th class="num">Air target</th><th>Identity</th></tr></thead>
   <tbody>
-    <tr><td>Rim</td><td class="num">0–10</td><td>open sky, safe</td><td class="num">—</td><td>tutorial, camp</td></tr>
-    <tr><td>Caves</td><td class="num">10–340</td><td><strong>tight, winding</strong></td><td class="num">0.42</td><td>teaches dodge</td></tr>
-    <tr><td>Bloom</td><td class="num">340–840</td><td><strong>open caverns, shafts</strong></td><td class="num">0.58</td><td>spore clouds block sight</td></tr>
-    <tr><td>Ruins</td><td class="num">840–1540</td><td><strong>rooms and corridors</strong></td><td class="num">0.48</td><td>flanking; built geometry</td></tr>
-    <tr><td>Forge</td><td class="num">1540–2340</td><td><strong>narrow and hot</strong></td><td class="num">0.36</td><td>heat drains fuel</td></tr>
-    <tr><td>Abyss</td><td class="num">2340–3140</td><td><strong>vast, dark, sparse</strong></td><td class="num">0.62</td><td>your lamp is the only light</td></tr>
+    <tr><td>Rim</td><td class="num">0 to 10</td><td>open sky, safe</td><td class="num"> · </td><td>tutorial, camp</td></tr>
+    <tr><td>Caves</td><td class="num">10 to 340</td><td><strong>tight, winding</strong></td><td class="num">0.42</td><td>teaches dodge</td></tr>
+    <tr><td>Bloom</td><td class="num">340 to 840</td><td><strong>open caverns, shafts</strong></td><td class="num">0.58</td><td>spore clouds block sight</td></tr>
+    <tr><td>Ruins</td><td class="num">840 to 1540</td><td><strong>rooms and corridors</strong></td><td class="num">0.48</td><td>flanking; built geometry</td></tr>
+    <tr><td>Forge</td><td class="num">1540 to 2340</td><td><strong>narrow and hot</strong></td><td class="num">0.36</td><td>heat drains fuel</td></tr>
+    <tr><td>Abyss</td><td class="num">2340 to 3140</td><td><strong>vast, dark, sparse</strong></td><td class="num">0.62</td><td>your lamp is the only light</td></tr>
   </tbody>
 </table></div>
 <p>Tension and relief alternate, and the final band is the most open <em>and</em> the most dangerous
-— which is the note to end on. Caves at 0.42 rather than today's 0.90 is the single biggest change.</p>
+ · which is the note to end on. Caves at 0.42 rather than today's 0.90 is the single biggest change.</p>
 
 <hr>
 
@@ -407,7 +407,7 @@ band. This is the single highest-value test we do not yet have — it's how bala
     <li><strong>Add a recovery state.</strong> <em>Tell → punish window → reset</em> is two-thirds
     built: there's no recovery, so there's no punish window.</li>
   </ol>
-  <p class="exit"><b>Exit</b> — all suites green, plus assertions for marker accuracy, the windup
+  <p class="exit"><b>Exit</b> · all suites green, plus assertions for marker accuracy, the windup
   floor, and <code>e.pat</code> actually changing behaviour.</p>
 </div>
 
@@ -415,20 +415,20 @@ band. This is the single highest-value test we do not yet have — it's how bala
   <h3><span class="sn">Sprint 1</span> Art foundation</h3>
   <p class="goal">Prove the pipeline on one band before committing the roster.</p>
   <ol>
-    <li>Port the sprite baker behind the existing <code>drawEntity()</code> seam — player and the
+    <li>Port the sprite baker behind the existing <code>drawEntity()</code> seam, player and the
     four caves-band enemies only.</li>
     <li>Adopt the WCAG-measured palette. Add a contrast assertion: every actor ramp against every
     terrain ramp must clear 3:1. A test, not a guideline.</li>
     <li>Retile terrain with the lit-edge treatment (lit top and left, shadowed base and right).</li>
     <li>Three parametric rigs, so the remaining 15 enemies are cheap.</li>
   </ol>
-  <p class="exit"><b>Exit</b> — the caves band looks finished; the rest still renders on the rect fallback.</p>
+  <p class="exit"><b>Exit</b> · the caves band looks finished; the rest still renders on the rect fallback.</p>
 </div>
 
 <div class="sprint">
   <h3><span class="sn">Sprint 2</span> Art rollout</h3>
   <p class="goal">The remaining roster, gear, pickups, POIs and per-biome tile sets.</p>
-  <p class="exit"><b>Exit</b> — black-fill every sprite; all 19 nameable, no two sharing a top-shape within a band.</p>
+  <p class="exit"><b>Exit</b> · black-fill every sprite; all 19 nameable, no two sharing a top-shape within a band.</p>
 </div>
 
 <div class="sprint">
@@ -436,11 +436,11 @@ band. This is the single highest-value test we do not yet have — it's how bala
   <p class="goal">Make balance measurable.</p>
   <ol>
     <li>Split HP/damage scaling; armour floor; crit multiplier soft cap at 4.0×.</li>
-    <li>Build the <strong>TTK harness</strong> — assemble a representative build per depth and assert
+    <li>Build the <strong>TTK harness</strong> · assemble a representative build per depth and assert
     hits-to-kill and hits-to-die land in band.</li>
     <li>Rebalance Threat tiers against the new curves.</li>
   </ol>
-  <p class="exit"><b>Exit</b> — the TTK harness passes at every depth, for every class.</p>
+  <p class="exit"><b>Exit</b> · the TTK harness passes at every depth, for every class.</p>
 </div>
 
 <div class="sprint">
@@ -448,11 +448,11 @@ band. This is the single highest-value test we do not yet have — it's how bala
   <p class="goal">The missing ARPG spine. A real refactor.</p>
   <ol>
     <li><code>mkItem(baseId, rarity, ilvl)</code>, where <code>ilvl</code> derives from drop depth.</li>
-    <li><strong>Affix tiers</strong> — five per affix with ascending ranges, gated by <code>ilvl</code>.</li>
+    <li><strong>Affix tiers</strong> · five per affix with ascending ranges, gated by <code>ilvl</code>.</li>
     <li>Depth-gate base availability; scale rarity odds with depth and Threat.</li>
-    <li>Fewer, better drops: target 8–12 items per run, 2–3 worth a look, 1 worth equipping.</li>
+    <li>Fewer, better drops: target 8 to 12 items per run, 2 to 3 worth a look, 1 worth equipping.</li>
   </ol>
-  <p class="exit"><b>Exit</b> — a 3,000 m item is visibly and statistically better than a 100 m item.</p>
+  <p class="exit"><b>Exit</b> · a 3,000 m item is visibly and statistically better than a 100 m item.</p>
 </div>
 
 <div class="sprint">
@@ -465,7 +465,7 @@ band. This is the single highest-value test we do not yet have — it's how bala
     <li>Threat-budget per spawn group rather than uniform random, so fights have shape.</li>
     <li>Audit elite modifiers for the ones that feel unfair.</li>
   </ol>
-  <p class="exit"><b>Exit</b> — every boss fight has three recognisably different phases.</p>
+  <p class="exit"><b>Exit</b> · every boss fight has three recognisably different phases.</p>
 </div>
 
 <div class="sprint">
@@ -475,10 +475,10 @@ band. This is the single highest-value test we do not yet have — it's how bala
     <li>Rework supports so each answers “what does this let the skill do that it couldn't?”</li>
     <li>Audit for soup: 62 gems × 22 attunements × 12 boons × 15 tree nodes is a lot of stacking.
     Explicit power budgets per source.</li>
-    <li>Build an <strong>archetype validator</strong> — construct each of the 8 target builds
+    <li>Build an <strong>archetype validator</strong> · construct each of the 8 target builds
     headlessly and assert it reaches viable numbers at 1,500 m.</li>
   </ol>
-  <p class="exit"><b>Exit</b> — all 8 archetypes validate, and no build exceeds 1.6× the weakest viable one.</p>
+  <p class="exit"><b>Exit</b> · all 8 archetypes validate, and no build exceeds 1.6× the weakest viable one.</p>
 </div>
 
 <div class="sprint">
@@ -486,23 +486,23 @@ band. This is the single highest-value test we do not yet have — it's how bala
   <p class="goal">Every number here is currently wrong in a specific, measured way.</p>
   <ol>
     <li><strong>Screenshake is 5.9% of screen width at max</strong> (16 px on a 272 px view). Hades is
-    0.4%. Cap at 8 px, <code>trauma²</code> decay, distance falloff — and stop shaking on ordinary
+    0.4%. Cap at 8 px, <code>trauma²</code> decay, distance falloff, and stop shaking on ordinary
     hits. In Hades only 3 of 207 enemies shake the screen on death, all explosive.</li>
-    <li><strong>Add player-damage hitstop.</strong> Hades gives ~10–40 ms at 10% speed for dealing
+    <li><strong>Add player-damage hitstop.</strong> Hades gives ~10 to 40 ms at 10% speed for dealing
     damage and ~140 ms at 1% for taking it. We have none. Highest-value single feel change available.</li>
-    <li>Rewrite hitstop as a time-scale system — the impact frame must play at full speed
+    <li>Rewrite hitstop as a time-scale system, the impact frame must play at full speed
     <em>before</em> the freeze, and the freeze must never be a hard zero.</li>
     <li><strong>Buffer and forgiveness timers must run on unscaled time.</strong> A 160 ms hitstop
     currently eats the entire 120 ms jump buffer.</li>
-    <li>Widen the camera toward 22 tiles. At 17 the player is 13% of screen height — twice Celeste's
+    <li>Widen the camera toward 22 tiles. At 17 the player is 13% of screen height, twice Celeste's
     ratio, in a game with flight and ranged enemies. <em>Prototype first; it changes engagement
     ranges.</em></li>
     <li>Coalesce damage numbers by source; never float one for damage <em>taken</em>.</li>
     <li>Voice budget 6 → 16 with per-class caps, a compressor, and panning by screen position.</li>
-    <li><code>prefers-reduced-motion</code>, intensity sliders, and Okabe–Ito damage colours — which
+    <li><code>prefers-reduced-motion</code>, intensity sliders, and Okabe; Ito damage colours, which
     work because they vary luminance, not just hue, so it's a palette swap rather than a redesign.</li>
   </ol>
-  <p class="exit"><b>Exit</b> — shot-for-shot comparisons, and a feel checklist in the handoff.</p>
+  <p class="exit"><b>Exit</b> · shot-for-shot comparisons, and a feel checklist in the handoff.</p>
 </div>
 
 <div class="sprint">
@@ -515,7 +515,7 @@ band. This is the single highest-value test we do not yet have — it's how bala
     <li>A hazard and a traversal rule unique to each band, so a biome isn't a palette swap.</li>
     <li>Signposting so secrets are findable rather than lucky.</li>
   </ol>
-  <p class="exit"><b>Exit</b> — a blind descent has a felt rhythm.</p>
+  <p class="exit"><b>Exit</b> · a blind descent has a felt rhythm.</p>
 </div>
 
 <div class="sprint">
@@ -530,16 +530,16 @@ band. This is the single highest-value test we do not yet have — it's how bala
 <ol>
   <li><strong>Camera width.</strong> Research says 17 tiles is roughly half what a game with flight
   and ranged enemies wants. But widening changes every engagement range.
-  <em>Recommendation: dynamic — 17 at rest, 22 when moving fast.</em></li>
+  <em>Recommendation: dynamic, 17 at rest, 22 when moving fast.</em></li>
   <li><strong>Art scope.</strong> The roster is ~2 sprints. Worth it now, or ship mechanics first?
   <em>Recommendation: now. Everything else is invisible until the game reads.</em></li>
-  <li><strong>How hard should this be?</strong> 6–9 hits to die is Hades-ish; 3–4 would be Dead
-  Cells-ish. <em>Recommendation: 6–9, because flight and destructible terrain give you more ways to
+  <li><strong>How hard should this be?</strong> 6 to 9 hits to die is Hades-ish; 3 to 4 would be Dead
+  Cells-ish. <em>Recommendation: 6 to 9, because flight and destructible terrain give you more ways to
   make mistakes.</em></li>
   <li><strong>Does the Vault stay?</strong> It's the one thing softening the roguelite loop. Built
-  and working — but the first thing to cut if art and feel work make the game easier.</li>
+  and working, but the first thing to cut if art and feel work make the game easier.</li>
   <li><strong>Sky Wolf Studios.</strong> Shardfall hasn't been raised with the Director. If it joins
-  the sunbeams economy, shards need a conversion story — and that's a Sprint 4 dependency, not an
+  the sunbeams economy, shards need a conversion story, and that's a Sprint 4 dependency, not an
   afterthought.</li>
 </ol>
 

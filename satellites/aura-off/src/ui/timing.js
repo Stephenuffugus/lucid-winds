@@ -254,7 +254,7 @@ export function createTiming(opts) {
     }
     if (d <= T.close) return 'JUST OVER';
     if (d <= T.ragged) return 'BIG';
-    return 'TOO BIG — EASE OFF';
+    return 'TOO BIG · EASE OFF';
   }
 
   /* ---- the loop -------------------------------------------------------- */
@@ -498,7 +498,7 @@ export function createTiming(opts) {
 
     if (el.title) el.title.textContent = c.title || 'Move';
     hint(c.hint || 'Hold to size it. Release on the light.');
-    padText('HOLD — RELEASE ON THE LIGHT');
+    padText('HOLD · RELEASE ON THE LIGHT');
     held(false);
     paintAmp(AMP_RANGE.min);
     paintIdeal(ideal);

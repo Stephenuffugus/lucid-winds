@@ -1333,10 +1333,10 @@
         <span class="hud-stat">⚔ <strong id="hud-encounter">1</strong>/13</span>
         <div class="hp-bar"><div id="hud-hp-fill" style="width: 100%"></div></div>
         <span class="hud-stat">♥ <strong id="hud-hp">50</strong></span>
-        <span class="hud-stat fluency-stat" id="hud-fluency-wrap" data-tip="Fluency — each defeated enemy boosts spell damage by +6% (up to +72%)">✦ <strong id="hud-fluency">×1.00</strong></span>
+        <span class="hud-stat fluency-stat" id="hud-fluency-wrap" data-tip="Fluency, each defeated enemy boosts spell damage by +6% (up to +72%)">✦ <strong id="hud-fluency">×1.00</strong></span>
       </div>
       <div class="hud-right">
-        <button class="btn icon small" id="btn-fs-hud" aria-label="Toggle fullscreen" data-tip="Fullscreen — hides the phone's nav/URL bars so the Inscribe button is never covered">⛶</button>
+        <button class="btn icon small" id="btn-fs-hud" aria-label="Toggle fullscreen" data-tip="Fullscreen, hides the phone's nav/URL bars so the Inscribe button is never covered">⛶</button>
         <button class="btn icon small" id="btn-mute-hud" aria-label="Toggle sound">🔊</button>
         <button class="btn icon small" id="btn-flee">⌫</button>
       </div>
@@ -1349,7 +1349,7 @@
         <div class="enemy-portrait placeholder" id="enemy-portrait"
              data-art-slot="">
         </div>
-        <div class="enemy-name" id="enemy-name">—</div>
+        <div class="enemy-name" id="enemy-name"> · </div>
         <div class="enemy-hp-row">
           <div class="enemy-hp-bar"><div id="enemy-hp-ghost" style="width: 100%"></div><div id="enemy-hp-fill" style="width: 100%"></div></div>
           <span id="enemy-hp-text">0/0</span>
@@ -1360,8 +1360,8 @@
 
     <div class="spell-area">
       <div class="spell-readout">
-        <span id="spell-formula" style="font-family: 'JetBrains Mono', monospace; font-size: 11px;">—</span>
-        <span class="spell-damage" id="spell-damage" data-tip="Damage = POWER × XMULT × fluency. XMULT is a MULTIPLIER that compounds when your runes share an element or a shape (3-of-a-kind multiplies hard) — that's where the big numbers come from. Tap a rune to read it.">0</span>
+        <span id="spell-formula" style="font-family: 'JetBrains Mono', monospace; font-size: 11px;"> · </span>
+        <span class="spell-damage" id="spell-damage" data-tip="Damage = POWER × XMULT × fluency. XMULT is a MULTIPLIER that compounds when your runes share an element or a shape (3-of-a-kind multiplies hard), that's where the big numbers come from. Tap a rune to read it.">0</span>
       </div>
       <div class="spell-slots" id="spell-slots">
         <div class="spell-slot" data-slot="0">I</div>
@@ -1381,7 +1381,7 @@
     </div><!-- /.play-scroll -->
 
     <div class="cast-row">
-      <button class="btn" id="btn-guide-bar" aria-label="Field guide — open/close while you read your hand">✦ Codex</button>
+      <button class="btn" id="btn-guide-bar" aria-label="Field guide, open/close while you read your hand">✦ Codex</button>
       <button class="btn cast" id="btn-cast" disabled>Inscribe</button>
     </div>
   </section>
@@ -1576,7 +1576,7 @@ const RUNES = [
     desc:'+1 power to the next rune in line.', starter:true,
     effect:(ctx,i)=>{ if(ctx.runes[i+1]) ctx.runeMod[i+1].add += 1; } },
   { id:'hollow', name:'Hollow', element:'Void',   shape:'Sigil',  basePower:1, rarity:'common', glyph:'⊘',
-    desc:"Strips the foe's armor this turn — your hit ignores it.", starter:true,
+    desc:"Strips the foe's armor this turn, your hit ignores it.", starter:true,
     effect:(ctx)=>{ ctx.ignoreWard = true; } },
   { id:'ray',    name:'Ray',    element:'Light',  shape:'Bolt',   basePower:2, rarity:'common', glyph:'✦',
     desc:'+50% vs Shadow-aligned foes.', starter:true,
@@ -1683,7 +1683,7 @@ const RUNES = [
       ctx.runeMod[i].add += cnt;
     } },
   { id:'eclipse',    name:'Eclipse',   element:'Shadow', shape:'Sigil',  basePower:0, rarity:'rare', glyph:'☋',
-    desc:'True damage — your spell pierces all armor this turn.',
+    desc:'True damage, your spell pierces all armor this turn.',
     effect:(ctx)=>{ ctx.trueDamage = true; } },
 
   // ---------- MYTHIC (the broken pieces) ----------
@@ -1891,7 +1891,7 @@ function intentView(run){
 function intentTip(run){
   const it = run && run.intent;
   if(!it) return 'The foe will strike next turn.';
-  if(it.kind==='charge')  return `Winding up — it UNLEASHES ${it.unleashDmg||'a heavy blow'} next turn. Race it down, or brace.`;
+  if(it.kind==='charge')  return `Winding up, it UNLEASHES ${it.unleashDmg||'a heavy blow'} next turn. Race it down, or brace.`;
   if(it.kind==='unleash') return `A heavy blow incoming: ${it.dmg} damage this turn.`;
   if(it.kind==='mend')    return `It mends ${it.heal} of its wounds and strikes for ${it.dmg}. Don't let it stall.`;
   return `It strikes for ${it.dmg} this turn.`;
@@ -2677,7 +2677,7 @@ function cast(){
       run.bossPhaseSeen = ph;
       const dom = runDominantElement(run);
       if(ph===2) showComboBanner(dom ? `THE SOVEREIGN READS YOUR ${dom.toUpperCase()}` : 'THE SOVEREIGN READS YOUR GRAMMAR', true, true);
-      else if(ph===3) showComboBanner('THE SOVEREIGN — THE FINAL VERSE', true, true);
+      else if(ph===3) showComboBanner('THE SOVEREIGN · THE FINAL VERSE', true, true);
     }
   }
 
@@ -2854,7 +2854,7 @@ function onVictory(){
   saveState();
   const ascLine = asc > 0 ? ` <span style="color:var(--crimson)">[${ascById(asc).name}]</span>` : '';
   const unlockLine = newTierUnlocked
-    ? `<br><b style="color:var(--gilt-bright)">✦ Unlocked: ${ascById(asc+1).name}</b> — ${ascById(asc+1).blurb}`
+    ? `<br><b style="color:var(--gilt-bright)">✦ Unlocked: ${ascById(asc+1).name}</b> · ${ascById(asc+1).blurb}`
     : (dd ? `<br><span style="color:var(--gilt)">Daily score ${dailyScore(13,true)} · ${dd.streak}-day streak 🔥</span>`
           : '');
   showModal({
@@ -3021,7 +3021,7 @@ function forgetGlyphPicker(advance, onCancel){
   all.forEach(id=>{ counts[id] = (counts[id]||0)+1; });
   const m = document.getElementById('modal-content');
   m.innerHTML = `<h2>Forget a Glyph</h2>
-    <p>Strike one rune from your codex for the rest of this run — a leaner deck draws your strongest lines more often.</p>
+    <p>Strike one rune from your codex for the rest of this run, a leaner deck draws your strongest lines more often.</p>
     <div class="choices" id="forget-list"></div>`;
   const list = m.querySelector('#forget-list');
   Object.keys(counts).sort((a,b)=>{
@@ -3038,7 +3038,7 @@ function forgetGlyphPicker(advance, onCancel){
       <div class="reward-rune-info">
         <span class="name">${r.name}${counts[id]>1?` ×${counts[id]}`:''}${sealed?' · <span style="color:var(--crimson)">SEALED</span>':''}</span>
         <span class="desc">${r.desc}</span>
-        <span class="tags">${r.element} · ${r.shape}${sealed?' · dead draw — your Sigil seals it':''}</span>
+        <span class="tags">${r.element} · ${r.shape}${sealed?' · dead draw, your Sigil seals it':''}</span>
       </div>`;
     el.onclick = ()=>{ removeOneFromDeck(run, id); GFAudio.reward(); advance(); };
     list.appendChild(el);
@@ -3205,13 +3205,13 @@ function renderGame(){
   if(dEl){
     const sg = sigilOf(run);
     const chips = [];
-    chips.push(`<span class="dchip" data-tip="${sg.desc||'Your run identity — blesses and forbids.'}">◈ <b>${sg.name}</b></span>`);
+    chips.push(`<span class="dchip" data-tip="${sg.desc||'Your run identity, blesses and forbids.'}">◈ <b>${sg.name}</b></span>`);
     if(run.champion && CHAMPIONS[run.champion.id]){
       chips.push(`<span class="dchip" data-tip="${CHAMPIONS[run.champion.id].desc}">★ ${CHAMPIONS[run.champion.id].name} <b>Lv${run.champion.level||1}</b></span>`);
     }
     const relObjs = (run.relics||[]).map(id=>RELICS.find(x=>x.id===id)).filter(Boolean);
     const pips = relObjs.map(r=>`<i class="rtok r-${r.rarity}"></i>`).join('');
-    const relTip = relObjs.length ? relObjs.map(r=>`${r.name} — ${r.desc}`).join(' · ') : 'No relics bound yet.';
+    const relTip = relObjs.length ? relObjs.map(r=>`${r.name} · ${r.desc}`).join(' · ') : 'No relics bound yet.';
     chips.push(`<span class="dchip${relObjs.length?'':' dim'}" data-tip="${relTip}">⬡ relics <b>${relObjs.length}</b>${pips}</span>`);
     const pr = run.progression && run.progression.prophecy;
     if(pr){
@@ -3219,7 +3219,7 @@ function renderGame(){
     }
     const bound = (run.boundElements||[]);
     if(bound.length) chips.push(`<span class="dchip dim" data-tip="Elements bound this run unlock their deeper runes">⛓ ${bound.join(' ')}</span>`);
-    if(sg.forbid && sg.forbid.length) chips.push(`<span class="dchip dim" data-tip="Sealed by your Sigil — these runes deal 0">⊘ ${sg.forbid.join(' ')}</span>`);
+    if(sg.forbid && sg.forbid.length) chips.push(`<span class="dchip dim" data-tip="Sealed by your Sigil, these runes deal 0">⊘ ${sg.forbid.join(' ')}</span>`);
     // Batch E: transmutation chase — surface the closest hidden triad as a
     // visible build goal (it was an invisible easter egg that drove no drafting).
     const _boundIds = new Set(run.progression._boundIds || []);
@@ -3239,7 +3239,7 @@ function renderGame(){
   // Enemy
   document.getElementById('enemy-name').textContent = enemy.name;
   const armorBadge = enemy.armor
-    ? ` <span class="enemy-armor" data-tip="Armor — shrugs off ${enemy.armor} from every hit. Pierce it (Hollow, Eclipse, Air via the Storm Sigil) or just strike bigger.">⛊${enemy.armor}</span>`
+    ? ` <span class="enemy-armor" data-tip="Armor, shrugs off ${enemy.armor} from every hit. Pierce it (Hollow, Eclipse, Air via the Storm Sigil) or just strike bigger.">⛊${enemy.armor}</span>`
     : '';
   document.getElementById('enemy-hp-text').innerHTML = `${run.enemyHp}/${run.enemyMaxHp}${armorBadge}`;
   const hpPct = (100 * run.enemyHp / run.enemyMaxHp) + '%';
@@ -3268,7 +3268,7 @@ function renderGame(){
   if(bossPhase(run) >= 1){
     const dom = runDominantElement(run);
     if(dom) threatMeter.innerHTML +=
-      `<div class="boss-read" data-tip="The Sovereign dampens spells built on ${dom} — the element you leaned on most. Finish it with a second line.">⟁ counters <b>${dom}</b></div>`;
+      `<div class="boss-read" data-tip="The Sovereign dampens spells built on ${dom} · the element you leaned on most. Finish it with a second line.">⟁ counters <b>${dom}</b></div>`;
   }
 
   // Spell slots
@@ -3346,16 +3346,16 @@ function renderGame(){
       // credits for rescuing new players. Wins over the mono-stack advice above.
       if(bossPhase(run) >= 2){
         const dom = runDominantElement(run);
-        msg = dom ? `▲ The Sovereign dampens ${dom} — cast a spell that ISN'T mostly ${dom}`
-                  : '▲ The Sovereign counters your main line — bring a second element';
+        msg = dom ? `▲ The Sovereign dampens ${dom} · cast a spell that ISN'T mostly ${dom}`
+                  : '▲ The Sovereign counters your main line, bring a second element';
       } else if(!monoElStaged && topEl && byEl[topEl] >= 3){
-        msg = `▲ Fuse 3 ${topEl} runes in one spell — huge hit`;
+        msg = `▲ Fuse 3 ${topEl} runes in one spell, huge hit`;
       } else if(!monoShStaged && topSh && bySh[topSh] >= 3){
-        msg = `▲ Fuse 3 ${topSh}-shape runes — same idea, big XMULT`;
+        msg = `▲ Fuse 3 ${topSh}-shape runes, same idea, big XMULT`;
       } else if(present.length===0 && topEl && byEl[topEl] >= 2){
-        msg = `▲ Stack your ${topEl} runes — same element multiplies`;
+        msg = `▲ Stack your ${topEl} runes, same element multiplies`;
       } else if(present.length===0 && topSh && bySh[topSh] >= 2){
-        msg = `▲ Stack 2 ${topSh}-shape runes — same shape multiplies`;
+        msg = `▲ Stack 2 ${topSh}-shape runes, same shape multiplies`;
       }
     }
     coachEl.textContent = msg;
@@ -3520,7 +3520,7 @@ function renderCodex(){
       el.innerHTML = `<div><div class="name">${c.name}${star}</div><div class="glyphs">${glyphs}</div></div><div class="peak">${c.peakDamage}</div>`;
     } else {
       el.style.opacity = '0.45';
-      el.innerHTML = `<div><div class="name">??? ${combo.id===prophecyId?'· PROPHECY ✦':'· locked'}</div><div class="glyphs">▢ ▢ ▢</div></div><div class="peak">—</div>`;
+      el.innerHTML = `<div><div class="name">??? ${combo.id===prophecyId?'· PROPHECY ✦':'· locked'}</div><div class="glyphs">▢ ▢ ▢</div></div><div class="peak"> · </div>`;
     }
     cEl.appendChild(el);
   });
@@ -3594,7 +3594,7 @@ function renderGuidePanel(){
   const lbl = t => `<div style="text-align:left;font-family:'JetBrains Mono',monospace;font-size:11px;color:#c7a155;text-transform:uppercase;letter-spacing:.06em;margin:0 0 4px;">${t}</div>`;
 
   let html = `<h2 style="margin:0 32px 4px 0;font-size:18px;">✦ Field Guide</h2>
-    <p style="color:var(--parchment-sh);font-size:12px;margin:0 0 12px;">What you've named — and what this hand can make right now.</p>`;
+    <p style="color:var(--parchment-sh);font-size:12px;margin:0 0 12px;">What you've named, and what this hand can make right now.</p>`;
 
   html += lbl('Ready from your hand');
   if(readyIds.length){
@@ -3602,7 +3602,7 @@ function renderGuidePanel(){
       readyIds.map(id=>`<div class="codex-combo"><div><div class="name">${known[id].name}</div><div class="glyphs">${readyNow[id].join(' ')}</div></div><div class="peak">▲</div></div>`).join('') +
       `</div>`;
   } else {
-    html += `<p style="color:var(--parchment-sh);font-size:12px;margin:0 0 14px;font-style:italic;">Nothing you've named is buildable from this hand. Try stacking 3 of one element — or 3 of one shape — to find a new fusion.</p>`;
+    html += `<p style="color:var(--parchment-sh);font-size:12px;margin:0 0 14px;font-style:italic;">Nothing you've named is buildable from this hand. Try stacking 3 of one element, or 3 of one shape, to find a new fusion.</p>`;
   }
 
   html += lbl(`Fusions you've named · ${knownIds.length}/${NAMED_COMBOS.length}`);
@@ -3615,7 +3615,7 @@ function renderGuidePanel(){
       }).join('') +
       `</div>`;
   } else {
-    html += `<p style="color:var(--parchment-sh);font-size:12px;margin:0;font-style:italic;">You haven't named a fusion yet. Fuse 3 runes that share an element or a shape — the codex remembers what you discover, forever.</p>`;
+    html += `<p style="color:var(--parchment-sh);font-size:12px;margin:0;font-style:italic;">You haven't named a fusion yet. Fuse 3 runes that share an element or a shape, the codex remembers what you discover, forever.</p>`;
   }
 
   body.innerHTML = html;
@@ -3634,11 +3634,11 @@ function showIntro(){
     <h2>How to Play</h2>
     <div style="font-family:'IM Fell English',serif;color:var(--parchment-dk);font-size:14px;line-height:1.6;text-align:left;padding:4px 4px 12px;">
       <p style="margin:0 0 8px;">Fight 13 foes, then a boss. Each turn you fuse runes into one spell:</p>
-      <p style="margin:0 0 6px;">① Tap up to <b>3 runes</b> from your hand — they fill slots <b>I · II · III</b>.</p>
+      <p style="margin:0 0 6px;">① Tap up to <b>3 runes</b> from your hand, they fill slots <b>I · II · III</b>.</p>
       <p style="margin:0 0 6px;">② <b>Order matters.</b> The gold number is live damage = POWER × <b>XMULT</b>. The little line beside it shows exactly how it adds up.</p>
-      <p style="margin:0 0 6px;">③ <b>XMULT</b> is a multiplier that compounds when your runes share an <b>element</b> or a <b>shape</b> — 3 of a kind multiplies <i>hard</i>. That's where big numbers come from.</p>
+      <p style="margin:0 0 6px;">③ <b>XMULT</b> is a multiplier that compounds when your runes share an <b>element</b> or a <b>shape</b> · 3 of a kind multiplies <i>hard</i>. That's where big numbers come from.</p>
       <p style="margin:0 0 6px;">④ Tap <b>Inscribe</b> to cast. Survive, take a reward, repeat.</p>
-      <p style="margin:8px 0 0;color:var(--parchment-sh);">Your <b>Sigil</b> (picked at run start) blesses one element and seals another — that's your build. Casting a rune <b>binds</b> its element and reveals deeper runes. Combos you discover are named in the codex forever.</p>
+      <p style="margin:8px 0 0;color:var(--parchment-sh);">Your <b>Sigil</b> (picked at run start) blesses one element and seals another, that's your build. Casting a rune <b>binds</b> its element and reveals deeper runes. Combos you discover are named in the codex forever.</p>
     </div>
     <div class="choices" id="intro-choices"></div>`;
   const list = m.querySelector('#intro-choices');
@@ -3668,7 +3668,7 @@ function chooseSigil(){
     const A = ascById(pick);
     const nm = m.querySelector('#asc-name'), bl = m.querySelector('#asc-blurb');
     if(nm) nm.textContent = `${A.name}${pick>0?` (Ascension ${pick})`:''}`;
-    if(bl) bl.textContent = pick === 0 ? 'The base codex — as the sim balanced it.' : A.blurb;
+    if(bl) bl.textContent = pick === 0 ? 'The base codex, as the sim balanced it.' : A.blurb;
     const up = m.querySelector('#asc-up'), dn = m.querySelector('#asc-dn');
     if(up) up.disabled = pick >= maxAsc;
     if(dn) dn.disabled = pick <= 0;
@@ -3683,11 +3683,11 @@ function chooseSigil(){
   // intent, not by parsing boon math. Free (no element rail) is shown LAST and
   // flagged "advanced" so it isn't the path-of-least-resistance blandest start.
   const SIGIL_TAGLINES = {
-    free:  '◆ no element rail — for players who know the codex (advanced)',
-    ember: '🔥 good for: stacking Fire — aggressive, high tempo',
-    order: '┼ good for: one-element symmetry — XMULT compounds',
-    void:  '⊙ good for: high-risk Void payoffs — fragile, explosive',
-    tide:  '≈ good for: Water scaling — tanky, snowballs late',
+    free:  '◆ no element rail, for players who know the codex (advanced)',
+    ember: '🔥 good for: stacking Fire, aggressive, high tempo',
+    order: '┼ good for: one-element symmetry · XMULT compounds',
+    void:  '⊙ good for: high-risk Void payoffs, fragile, explosive',
+    tide:  '≈ good for: Water scaling, tanky, snowballs late',
     zephyr:'≋ good for: Air chains & retrigger loops',
     umbra: '☾ good for: Shadow + Light eclipse combos',
   };
@@ -3850,7 +3850,7 @@ function showComboBanner(name, isNew, big){
 /* ----- STORY: the Scribe unwriting a contract the Sovereign signed ----- */
 const GF_STORY = {
   prologue: [
-    { place: 'THE CODEX',   line: 'They signed your name first — a contract you never read, in ink you never spilled.' },
+    { place: 'THE CODEX',   line: 'They signed your name first, a contract you never read, in ink you never spilled.' },
     { place: 'THE DEBT',    line: 'The Sovereign holds the only copy. To be free you must unwrite it: rune by rune, verse by verse, back to the hand that signed.' },
     { place: 'THE ASCENT',  line: 'Thirteen wardens stand between you and the Signatory. Inscribe your spells. Climb the archive. Unwrite your name.' },
   ],
@@ -3860,7 +3860,7 @@ const GF_STORY = {
     3: { place: 'THE WORKS',      line: 'Brass and order. The archive remembers what you erased.' },
     4: { place: 'THE SIGNATORY',  line: 'A door with your name on it. Beyond it, the hand that signed.' },
   },
-  victory: 'The last stroke lifts. Your name unwrites itself from the Codex — and for the first time, it is yours to sign.',
+  victory: 'The last stroke lifts. Your name unwrites itself from the Codex, and for the first time, it is yours to sign.',
   defeat:  'The ink closes over you. The Codex keeps your name a while longer.',
 };
 
@@ -3932,11 +3932,11 @@ function gfShareText(){
   const res = window._gfResult || {};
   const daily = res.seed && /^daily-/.test(res.seed);
   const tag = daily ? ('Daily Sigil ' + res.seed.replace('daily-','')) : 'a run';
-  const line = res.won ? 'inscribed the whole codex — 13/13 ✷'
+  const line = res.won ? 'inscribed the whole codex, 13/13 ✷'
                        : ('fell at encounter ' + (res.reached || 1) + '/13');
   const d = state.meta.daily || {};
   const extra = daily ? `\nScore ${dailyScore(res.reached||1, !!res.won)}${d.streak?` · ${d.streak}-day streak 🔥`:''}` : '';
-  return `Glyph Forge — ${tag}\nI ${line}.${extra}\nFuse runes. Find what shouldn't work.\n${location.origin}${location.pathname}`;
+  return `Glyph Forge · ${tag}\nI ${line}.${extra}\nFuse runes. Find what shouldn't work.\n${location.origin}${location.pathname}`;
 }
 async function gfShare(){
   const text = gfShareText();
@@ -3946,7 +3946,7 @@ async function gfShare(){
   }
   try{
     await navigator.clipboard.writeText(text);
-    gfToast('Result copied — paste it anywhere');
+    gfToast('Result copied, paste it anywhere');
   }catch(e){
     window.prompt('Copy your result:', text);
   }
@@ -4256,7 +4256,7 @@ window.GLYPH_FORGE = { state, RUNES, ENEMIES, NAMED_COMBOS, resolveSpell, RELICS
   }
   badge.addEventListener('click',()=>toggle());
   window.addEventListener('keydown',e=>{ if(e.key==='`'||e.key==='~'){ e.preventDefault(); toggle(); } });
-  console.log('%cGlyph Forge DEV sandbox — press ` (backtick) or click ⚙ dev (bottom-left)','color:#d4a849;font-weight:bold');
+  console.log('%cGlyph Forge DEV sandbox, press ` (backtick) or click ⚙ dev (bottom-left)','color:#d4a849;font-weight:bold');
 })();
 </script>
 </body>

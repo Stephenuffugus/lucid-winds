@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
-<title>UMBRA — shadow run</title>
+<title>UMBRA · shadow run</title>
 <style>
   :root{ --paper:#fff6e6; --ink:#23314a; --tomato:#e8332a; --aloe:#4fb56a; --beam:#ffd23f; }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
@@ -64,7 +64,7 @@
 <div id="toast"></div>
 <div id="menu" class="overlay show">
   <h1>UMBRA</h1>
-  <div class="tag">The sun is death. Shade is the only ground you can stand on — and it moves as the sun sweeps. Find the route to the flag. Don't step into the light.</div>
+  <div class="tag">The sun is death. Shade is the only ground you can stand on, and it moves as the sun sweeps. Find the route to the flag. Don't step into the light.</div>
   <div class="grid" id="lvlGrid"></div>
   <div class="hintline">Left thumb = move • DASH only clears a thin gap, and burns you fast in the open • SHADE drops safe ground • SPF = brief immunity • Ride drifting clouds and moving cart-shadows • Orange sand burns even in shade.</div>
 </div>
@@ -265,7 +265,7 @@ function winLevel(){ mode='win'; const L=run.L; const noDeath=run.deaths===0, un
   best[li]=Math.max(best[li]||0,score+1);
   document.getElementById('winMedal').textContent=medal;
   document.getElementById('winTime').textContent=`Time ${run.t.toFixed(1)}s  (par ${L.par}s) ${underPar?'✓':''}`;
-  document.getElementById('winDeaths').textContent=`Burns ${run.deaths} ${noDeath?'— flawless ✓':''}`;
+  document.getElementById('winDeaths').textContent=`Burns ${run.deaths} ${noDeath?', flawless ✓':''}`;
   document.getElementById('winNext').style.display=li<LEVELS.length-1?'':'none';
   document.getElementById('play-ui').classList.add('hidden'); setOverlay('win'); }
 

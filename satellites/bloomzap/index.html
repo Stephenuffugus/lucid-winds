@@ -240,7 +240,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
       <div class="chips" id="you-chips"></div>
     </div>
     <div class="midfill" id="midfill">
-      <div id="bedinfo">🌧️ <b id="bedleft">–</b> words still in the storm</div>
+      <div id="bedinfo">🌧️ <b id="bedleft"> · </b> words still in the storm</div>
       <div id="announce" class="ann"></div>
     </div>
     <div class="worddisp" id="worddisp"><div class="msg" id="wmsg"></div><span class="wghost" id="wghost">tap letters to spell</span></div>
@@ -437,11 +437,11 @@ function startGame(mode, diffKey){
   var _bi=$('bedinfo');
   if(_bi){
     var note;
-    if(mode==='ai') note='🌧️ <b id="bedleft">–</b> words in the shared storm  ·  first to '+D.target+' wins';
+    if(mode==='ai') note='🌧️ <b id="bedleft"> · </b> words in the shared storm  ·  first to '+D.target+' wins';
     else if(mode==='storm') note='⚡ <b>Level 1</b>  ·  strike '+D.target+' words before the clock';
-    else if(mode==='timed') note='🌧️ <b id="bedleft">–</b> words left  ·  ⏱ '+Math.round(D.target*10)+'s on the clock';
-    else if(mode==='free') note='🌧️ <b id="bedleft">–</b> words left  ·  ☁️ no clock, take your time';
-    else { var bt=BEST[D.key]; note='🌧️ <b id="bedleft">–</b> words still in the storm'+(bt?('  ·  🏅 best '+fmtTime(bt)):''); }
+    else if(mode==='timed') note='🌧️ <b id="bedleft"> · </b> words left  ·  ⏱ '+Math.round(D.target*10)+'s on the clock';
+    else if(mode==='free') note='🌧️ <b id="bedleft"> · </b> words left  ·  ☁️ no clock, take your time';
+    else { var bt=BEST[D.key]; note='🌧️ <b id="bedleft"> · </b> words still in the storm'+(bt?('  ·  🏅 best '+fmtTime(bt)):''); }
     _bi.innerHTML=note;
   }
   renderPlay();

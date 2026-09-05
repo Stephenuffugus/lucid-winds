@@ -1093,7 +1093,7 @@ body::after{
       <button class="btn tiny" id="btn-daily">Today's Spread</button>
       <button class="btn tiny dim" id="btn-sws-exit" style="min-height:44px;">&#10094; All Sky Wolf Games</button>
     </div>
-    <div class="title-meta" id="title-meta">—</div>
+    <div class="title-meta" id="title-meta"> · </div>
     <div class="flex-grow"></div>
   </section>
 
@@ -1127,8 +1127,8 @@ body::after{
 
       <div class="enemy-zone">
         <div class="enemy-portrait placeholder" id="enemy-portrait" data-glyph="?" data-art-slot=""></div>
-        <div class="enemy-name" id="enemy-name">—</div>
-        <div class="enemy-intent" id="enemy-intent">—</div>
+        <div class="enemy-name" id="enemy-name"> · </div>
+        <div class="enemy-intent" id="enemy-intent"> · </div>
         <div class="enemy-hp-row">
           <div class="hp-bar"><div id="enemy-hp-fill" style="width: 100%"></div></div>
           <span class="hp-num"><span id="enemy-hp">0</span> / <span id="enemy-maxhp">0</span></span>
@@ -1645,7 +1645,7 @@ const MAJOR_CARDS = [
   },
   { id:'major-15', name:'The Devil',         suit:'major', arcanaNum:15, cost:0, glyph:'♅',
     desc:'Strike 22. Lose 6 HP (unblocked).',
-    flavor:'Yes, but at what cost — yes.',
+    flavor:'Yes, but at what cost, yes.',
     rarity:'rare',
     play(ctx){ const r = dealDamage(ctx, 22); ctx.player.hp = Math.max(1, ctx.player.hp - 6); return combine(r, {selfDamage:6}); }
   },
@@ -1989,7 +1989,7 @@ const VEILS = [
   { name:'Veil VI',    desc:'…and their blows land +25% harder.',                 mods:{ enemyHp:1.20, restHeal:0.32, enemyDmg:1.25, maxHp:54 } },
   { name:'Veil VII',   desc:'…and the Chain costs 1 more energy per link.',       mods:{ enemyHp:1.20, restHeal:0.32, enemyDmg:1.25, maxHp:54, chainTaxPlus:1 } },
   { name:'Veil VIII',  desc:'…and rest barely mends you (25%).',                  mods:{ enemyHp:1.20, restHeal:0.25, enemyDmg:1.25, maxHp:54, chainTaxPlus:1 } },
-  { name:'Veil IX',    desc:'…and you start at 48 HP — and every fight opens with a curse in your draw.', mods:{ enemyHp:1.20, restHeal:0.25, enemyDmg:1.25, maxHp:48, chainTaxPlus:1, startCurse:true } },
+  { name:'Veil IX',    desc:'…and you start at 48 HP · and every fight opens with a curse in your draw.', mods:{ enemyHp:1.20, restHeal:0.25, enemyDmg:1.25, maxHp:48, chainTaxPlus:1, startCurse:true } },
   { name:'Veil X',     desc:'The deepest dark. +30% HP, +40% damage, 44 HP.',     mods:{ enemyHp:1.30, restHeal:0.25, enemyDmg:1.40, maxHp:44, chainTaxPlus:1, startCurse:true } },
 ];
 
@@ -2030,16 +2030,16 @@ function mirrorBonusWard(){ return 2 * mirrorRank('deepWard'); }
 const PATRONS = {
   magician: { id:'magician', name:'The Magician', glyph:'☿', primary:'wands',
     relic:'querents-coin',
-    tagline:'Tempo & fire. +1 energy on turn 1. Wands-heavy — end fights before they begin.' },
+    tagline:'Tempo & fire. +1 energy on turn 1. Wands-heavy, end fights before they begin.' },
   priestess:{ id:'priestess', name:'The High Priestess', glyph:'☽', primary:'swords',
     relic:'crooked-lens',
-    tagline:'Control & foresight. See the enemy\'s intent further ahead. Swords — debuff and dismantle.' },
+    tagline:'Control & foresight. See the enemy\'s intent further ahead. Swords, debuff and dismantle.' },
   empress:  { id:'empress', name:'The Empress', glyph:'♀', primary:'cups',
     relic:'thurible',
-    tagline:'Sustain & bloom. Heal 2 every turn. Cups — outlast anything, win the long fight.' },
+    tagline:'Sustain & bloom. Heal 2 every turn. Cups, outlast anything, win the long fight.' },
   emperor:  { id:'emperor', name:'The Emperor', glyph:'♂', primary:'pents',
     relic:'wax-mask',
-    tagline:'Defense & dominion. Start each combat with 6 Block. Pentacles — a wall that punches back.' },
+    tagline:'Defense & dominion. Start each combat with 6 Block. Pentacles, a wall that punches back.' },
 };
 
 /* Bespoke 16-card starter decks. Each is a different *texture*, not the
@@ -2315,7 +2315,7 @@ function startCombat(enemyId){
   teachOnce('combatBasics', {
     title: 'The Reading Begins',
     sub: 'Spend your hand to break the keeper before it breaks you.',
-    body: 'Each turn you have <b>energy</b> to play cards. The enemy shows its next move as an <b>intent</b> — block it or out-race it. Unplayed cards <b>discard</b> at end of turn, so spend fully.<br><br><b>Long-press</b> (or right-click) any card to inspect it — and to <b>Channel</b> it to your Patron once per turn instead of playing it.',
+    body: 'Each turn you have <b>energy</b> to play cards. The enemy shows its next move as an <b>intent</b> · block it or out-race it. Unplayed cards <b>discard</b> at end of turn, so spend fully.<br><br><b>Long-press</b> (or right-click) any card to inspect it, and to <b>Channel</b> it to your Patron once per turn instead of playing it.',
     icon: '☼', label: 'Begin'
   });
   return ctx;
@@ -2439,7 +2439,7 @@ function playCard(handIdx){
     if(ctx.combat.prophecyProgress === 1){
       teachOnce('prophecy', {
         title: 'The Prophecy', sub: 'The Reading foretells three suits.',
-        body: 'Your Reading names a sequence — <b>Past · Present · Future</b>. Play Minors of those suits <b>in order</b> (any turns). Off-suit never resets it, so it only ever moves forward. Complete all three for a one-time payoff: <b>heal, a strike, and +1 max energy</b>.',
+        body: 'Your Reading names a sequence · <b>Past · Present · Future</b>. Play Minors of those suits <b>in order</b> (any turns). Off-suit never resets it, so it only ever moves forward. Complete all three for a one-time payoff: <b>heal, a strike, and +1 max energy</b>.',
         icon: '☽', label: 'I\'ll follow it'
       });
     }
@@ -2450,7 +2450,7 @@ function playCard(handIdx){
   if(MINOR && ctx.combat.chainCount >= 2 && ctx.combat.chainCount !== 3){
     teachOnce('chain', {
       title: 'The Chain', sub: 'Same suit, again and again.',
-      body: 'Playing Minors of the <b>same suit in a row</b> builds a Chain — each link adds escalating power (<b>+3 / +6 / +10 / +15</b>). Off-suit breaks it; Majors are wild. A chain of <b>3</b> detonates that suit\'s <b>Aspect</b> — a loud payoff.',
+      body: 'Playing Minors of the <b>same suit in a row</b> builds a Chain, each link adds escalating power (<b>+3 / +6 / +10 / +15</b>). Off-suit breaks it; Majors are wild. A chain of <b>3</b> detonates that suit\'s <b>Aspect</b> · a loud payoff.',
       icon: '⛓', label: 'Keep the chain'
     });
     showChainBanner(card.suit, ctx.combat.chainCount, chainBonusFor(ctx.combat.chainCount));
@@ -2867,9 +2867,9 @@ function onCombatWin(){
     if(undiscovered.length){
       const r = pickRand(undiscovered, rng);
       run.relics.push(r.id); state.meta.relicsFound[r.id] = true;
-      temptBanner = `☇ The Tower's Prize — <b>${r.name}</b>`;
+      temptBanner = `☇ The Tower's Prize · <b>${r.name}</b>`;
     } else {
-      run.gold += 40; temptBanner = `☇ The Tower's Prize — <b>40 gold</b>`;
+      run.gold += 40; temptBanner = `☇ The Tower's Prize · <b>40 gold</b>`;
     }
     run.tempt = null;
   }
@@ -2925,7 +2925,7 @@ function showSpreadModal(choices){
   const have = (state.run.spread||[]).map(id => ARCANA_BOONS[id] && ARCANA_BOONS[id].name).filter(Boolean);
   showModal({
     title: 'The Spread Deepens',
-    sub: have.length ? `Your Spread: ${have.join(' · ')}` : 'Claim an Arcanum — it binds to you for the whole climb.',
+    sub: have.length ? `Your Spread: ${have.join(' · ')}` : 'Claim an Arcanum, it binds to you for the whole climb.',
     choices: offered.map(id => {
       const b = ARCANA_BOONS[id];
       return { icon:b.glyph, label:b.name, note:b.desc,
@@ -2975,7 +2975,7 @@ function showTemptTower(node, proceed){
   const dare = pickRand(dares, rng);
   showModal({
     title: 'The Tower',
-    sub: isBoss ? 'Before the keeper — dare you?' : 'A harder road pays a richer prize.',
+    sub: isBoss ? 'Before the keeper, dare you?' : 'A harder road pays a richer prize.',
     body: `Take on <b>${dare.label}</b> this fight. Win, and an <b>undiscovered relic</b> is yours.`,
     choices: [
       { icon:'☇', label:'Tempt the Tower', note:'Accept the dare for a guaranteed relic', onClick: () => { run.tempt = { mod: dare.mod }; proceed(); } },
@@ -3038,9 +3038,9 @@ function enterNextAct(){
   const nextAct = ACTS[run.act - 1];
   saveState();
   showModal({
-    title: `${clearedName} — cleared`,
+    title: `${clearedName} · cleared`,
     sub: `Act ${run.act} of ${ACTS.length}: ${nextAct.name}`,
-    body: `The way down opens. You bind your wounds (<strong>+${mend} HP</strong>) and descend — the dark gets deeper, and a new keeper waits at the bottom.`,
+    body: `The way down opens. You bind your wounds (<strong>+${mend} HP</strong>) and descend, the dark gets deeper, and a new keeper waits at the bottom.`,
     choices: [
       { icon:'↡', label:`Descend into ${nextAct.name}`, onClick: () => { showScreen('map-screen'); renderMap(); } }
     ]
@@ -3118,7 +3118,7 @@ function showRunSummary(victory){
   function render(copied){
     const choices = [];
     if(isDaily){
-      choices.push({ icon:'⎘', label: copied ? '✓ Copied — paste it anywhere' : 'Share this reading',
+      choices.push({ icon:'⎘', label: copied ? '✓ Copied, paste it anywhere' : 'Share this reading',
         note: copied ? '' : 'A spoiler-free result to brag with',
         onClick: () => { copyDailyShare(victory, score, depth); render(true); } });
     }
@@ -3153,9 +3153,9 @@ function copyDailyShare(victory, score, depth){
   }
   const streak = (state.meta.daily && state.meta.daily.streak) || 1;
   const text = [
-    `🔮 Tarot Run — Daily ${date}`,
+    `🔮 Tarot Run · Daily ${date}`,
     `${patron}  ${bar}`,
-    victory ? `♔ CROWNED — ${score} pts` : `Fell at floor ${depth} — ${score} pts`,
+    victory ? `♔ CROWNED · ${score} pts` : `Fell at floor ${depth} · ${score} pts`,
     `streak ${streak}🔥 · stephenuffugus.github.io/Tarot_Run`,
   ].join('\n');
   try {
@@ -3265,7 +3265,7 @@ function showRestModal(){
         onClick: () => { state.run.hp = Math.min(state.run.maxHp, state.run.hp + Math.min(25, Math.floor(state.run.maxHp * veilMod('restHeal', 0.4)))); advanceFloor(); } },
       { icon:'✦', label:`Study a card`, note:`Permanently +2 to one card's Strike / Pierce / Block / Heal.`,
         onClick: () => { showStudyModal(); } },
-      { icon:'✎', label:`The Hermit's Bargain`, note:`Banish a card from your deck forever — thin the deck, sharpen your draws.`,
+      { icon:'✎', label:`The Hermit's Bargain`, note:`Banish a card from your deck forever, thin the deck, sharpen your draws.`,
         onClick: () => { showBanishModal(); } },
     ]
   });
@@ -3358,7 +3358,7 @@ function showMerchantModal(){
   function banishPicker(){
     m.innerHTML = `
       <div class="modal-title">Banish a Card</div>
-      <div class="modal-sub">The merchant takes it off your hands — ◈ ${SHOP_PRICE.banish}.</div>
+      <div class="modal-sub">The merchant takes it off your hands · ◈ ${SHOP_PRICE.banish}.</div>
       <div class="dv-grid" id="shop-bgrid"></div>
       <div class="modal-choices"><div class="modal-choice" id="shop-bback">
         <div class="mc-icon">‹</div><div class="mc-text"><strong>Back to the stall</strong>
@@ -3383,7 +3383,7 @@ function showMerchantModal(){
     const g = run.gold, can = p => g >= p;
     m.innerHTML = `
       <div class="modal-title">The Merchant</div>
-      <div class="modal-sub">"Everything has a price — even what you'd rather forget."</div>
+      <div class="modal-sub">"Everything has a price, even what you'd rather forget."</div>
       <div class="shop-cards" id="shop-cards"></div>
       <div class="modal-choices" id="shop-rows"></div>
       <div class="shop-gold">your gold &nbsp;◈ <strong>${g}</strong></div>
@@ -3418,8 +3418,8 @@ function showMerchantModal(){
     };
     if(relicStock){
       const sold = relicStock.sold;
-      addRow('☆', sold ? `${relicStock.relic.name} — yours` : `Relic · ${relicStock.relic.name}`,
-        sold ? relicStock.relic.desc : `${relicStock.relic.desc} — ◈ ${relicStock.price}`,
+      addRow('☆', sold ? `${relicStock.relic.name} · yours` : `Relic · ${relicStock.relic.name}`,
+        sold ? relicStock.relic.desc : `${relicStock.relic.desc} · ◈ ${relicStock.price}`,
         !sold && can(relicStock.price),
         () => buy(relicStock.price, () => {
           relicStock.sold = true;
@@ -3428,12 +3428,12 @@ function showMerchantModal(){
         }));
     }
     addRow('✎', 'Banish a card',
-      `Remove one card from your deck — coin, not blood. — ◈ ${SHOP_PRICE.banish}`,
+      `Remove one card from your deck, coin, not blood. · ◈ ${SHOP_PRICE.banish}`,
       can(SHOP_PRICE.banish) && run.deck.length > 1,
       banishPicker);
     const needsHeal = run.hp < run.maxHp;
     addRow('♥', 'A mended wound',
-      needsHeal ? `Heal ${healAmt} HP. — ◈ ${SHOP_PRICE.heal}` : `You are already whole.`,
+      needsHeal ? `Heal ${healAmt} HP. · ◈ ${SHOP_PRICE.heal}` : `You are already whole.`,
       needsHeal && can(SHOP_PRICE.heal),
       () => buy(SHOP_PRICE.heal, () => { run.hp = Math.min(run.maxHp, run.hp + healAmt); }));
     m.querySelector('#shop-leave').onclick = leave;
@@ -3465,7 +3465,7 @@ function showEventModal(){
     {
       title: 'The Inkwell',
       sub: 'A pen still warm from someone\'s hand.',
-      body: 'You can pay a price in HP to redraw your deck — banish one card forever.',
+      body: 'You can pay a price in HP to redraw your deck, banish one card forever.',
       choices: [
         { icon:'✎', label:'Banish a card', note:'-6 HP, choose a card to remove from your deck', onClick:()=>{
           // B29 — pay the HP only if you actually banish (cancelling is free).
@@ -3537,7 +3537,7 @@ function showEventModal(){
           if(rng() < 0.5){ const g = state.run.gold; state.run.gold = g * 2;
             showModal({ title:'Red', body:`The card turns red. Your purse swells to <strong>${state.run.gold} gold</strong>.`, choices:[{ label:'Onward', onClick:()=>advanceFloor() }] });
           } else { state.run.gold = Math.floor(state.run.gold / 2);
-            showModal({ title:'Black', body:`The card turns black. The table takes its due — <strong>${state.run.gold} gold</strong> remains.`, choices:[{ label:'Onward', onClick:()=>advanceFloor() }] }); }
+            showModal({ title:'Black', body:`The card turns black. The table takes its due · <strong>${state.run.gold} gold</strong> remains.`, choices:[{ label:'Onward', onClick:()=>advanceFloor() }] }); }
         }},
         { icon:'⛒', label:'Pocket your coins', onClick:()=>advanceFloor() },
       ]
@@ -3547,7 +3547,7 @@ function showEventModal(){
       sub: 'He sells candles that burn your years.',
       body: 'A stub of grey wax. "Light it," he says, "and what you spend in coin, you keep in the marrow."',
       choices: [
-        { icon:'♥', label:'Buy the candle', note: state.run.gold>=30 ? '−30 gold → +8 max HP (and heal 8)' : 'Costs 30 gold — you can\'t afford it',
+        { icon:'♥', label:'Buy the candle', note: state.run.gold>=30 ? '−30 gold → +8 max HP (and heal 8)' : 'Costs 30 gold, you can\'t afford it',
           onClick:()=>{
             if(state.run.gold < 30){ advanceFloor(); return; }
             state.run.gold -= 30; state.run.maxHp += 8; state.run.hp = Math.min(state.run.maxHp, state.run.hp + 8);
@@ -3559,14 +3559,14 @@ function showEventModal(){
     {
       title: 'The Confessional',
       sub: 'The grille is cold. Something listens.',
-      body: 'A booth of black wood. You may unburden the deck of one card — no blood, only confession — or leave a tithe and take understanding for it.',
+      body: 'A booth of black wood. You may unburden the deck of one card, no blood, only confession, or leave a tithe and take understanding for it.',
       choices: [
-        { icon:'✎', label:'Unburden a card', note:'Banish one card from your deck — free, no HP', onClick:()=>{ showBanishModal(); }},
-        { icon:'☽', label:'Leave a tithe', note: state.run.gold>=25 ? '−25 gold → +15 Insight (kept forever)' : 'Costs 25 gold — you can\'t afford it',
+        { icon:'✎', label:'Unburden a card', note:'Banish one card from your deck, free, no HP', onClick:()=>{ showBanishModal(); }},
+        { icon:'☽', label:'Leave a tithe', note: state.run.gold>=25 ? '−25 gold → +15 Insight (kept forever)' : 'Costs 25 gold, you can\'t afford it',
           onClick:()=>{
             if(state.run.gold < 25){ advanceFloor(); return; }
             state.run.gold -= 25; state.meta.insight = (state.meta.insight||0) + 15; saveState();
-            showModal({ title:'Understanding', body:`The coin drops out of hearing. <strong>+15 Insight</strong> — ${state.meta.insight} total, yours past death.`, choices:[{ label:'Onward', onClick:()=>advanceFloor() }] });
+            showModal({ title:'Understanding', body:`The coin drops out of hearing. <strong>+15 Insight</strong> · ${state.meta.insight} total, yours past death.`, choices:[{ label:'Onward', onClick:()=>advanceFloor() }] });
           }},
         { icon:'⛒', label:'Say nothing', onClick:()=>advanceFloor() },
       ]
@@ -3591,7 +3591,7 @@ function showEventModal(){
     {
       title: 'The Hall of Echoes',
       sub: 'Two mirrors, and you between them.',
-      body: 'Stand in the narrow hall and what you carry is carried twice. Press a card to the glass and a second falls into your hands — for a price in blood.',
+      body: 'Stand in the narrow hall and what you carry is carried twice. Press a card to the glass and a second falls into your hands, for a price in blood.',
       choices: [
         { icon:'☆', label:'Double a card', note:'−6 HP → copy a random card already in your deck', onClick:()=>{
           if(!state.run.deck.length){ advanceFloor(); return; }
@@ -3630,7 +3630,7 @@ function showEventModal(){
       body: 'An old brass scale, the kind they weigh hearts on. It trades freely, in either direction.',
       choices: [
         { icon:'◈', label:'Bleed for coin', note:'−8 HP → +30 gold', onClick:()=>{ state.run.hp = Math.max(1, state.run.hp - 8); state.run.gold += 30; advanceFloor(); }},
-        { icon:'♥', label:'Buy back blood', note: state.run.gold>=30 ? '−30 gold → +15 HP' : 'Costs 30 gold — you can\'t afford it',
+        { icon:'♥', label:'Buy back blood', note: state.run.gold>=30 ? '−30 gold → +15 HP' : 'Costs 30 gold, you can\'t afford it',
           onClick:()=>{ if(state.run.gold < 30){ advanceFloor(); return; } state.run.gold -= 30; state.run.hp = Math.min(state.run.maxHp, state.run.hp + 15); advanceFloor(); }},
         { icon:'⛒', label:'Leave the scale', onClick:()=>advanceFloor() },
       ]
@@ -3640,13 +3640,13 @@ function showEventModal(){
       sub: 'A contract already half-signed, in your hand.',
       body: 'Power, offered plainly. The price is written small, at the bottom, in something darker than ink.',
       choices: [
-        { icon:'☆', label:'Sign', note:'A relic — but lose 6 max HP', onClick:()=>{
+        { icon:'☆', label:'Sign', note:'A relic, but lose 6 max HP', onClick:()=>{
           const undiscovered = RELICS.filter(r => !state.run.relics.includes(r.id));
           if(undiscovered.length){
             const r = pickRand(undiscovered, rng);
             state.run.relics.push(r.id); state.meta.relicsFound[r.id] = true;
             state.run.maxHp = Math.max(20, state.run.maxHp - 6); state.run.hp = Math.min(state.run.hp, state.run.maxHp);
-            showModal({ title:'Signed', body:`<strong>${r.name}</strong> is yours. The ledger takes <strong>6 max HP</strong> — now ${state.run.hp}/${state.run.maxHp}.`, choices:[{ label:'Onward', onClick:()=>advanceFloor() }] });
+            showModal({ title:'Signed', body:`<strong>${r.name}</strong> is yours. The ledger takes <strong>6 max HP</strong> · now ${state.run.hp}/${state.run.maxHp}.`, choices:[{ label:'Onward', onClick:()=>advanceFloor() }] });
           } else {
             state.run.gold += 20;
             showModal({ title:'Nothing Left to Sell You', body:`The Devil shrugs and tosses you <strong>20 gold</strong> for your trouble.`, choices:[{ label:'Onward', onClick:()=>advanceFloor() }] });
@@ -3775,8 +3775,8 @@ function renderHand(){
     const costEl = el.querySelector('.card-cost');
     costEl.textContent = effectiveCost;
     if(chainTax > 0 && effectiveCost > 0){ costEl.classList.add('cost-taxed'); costEl.title = `+${chainTax} chain tax`; }
-    if(fateRev){ costEl.classList.add('cost-fate'); costEl.title = 'Reversed — cheaper, but weaker'; }
-    else if(hasShadow){ costEl.title = 'Shadow face — a different effect, same cost'; }
+    if(fateRev){ costEl.classList.add('cost-fate'); costEl.title = 'Reversed, cheaper, but weaker'; }
+    else if(hasShadow){ costEl.title = 'Shadow face, a different effect, same cost'; }
     const playable = !card.unplayable && ctx.player.energy >= effectiveCost && !(card.suit === 'major' && ctx.combat.currentMajorCast);
     el.classList.add(playable ? 'playable' : 'unplayable');
     el.onclick = () => { if(playable) playCard(idx); };
@@ -3793,7 +3793,7 @@ function renderHand(){
   // B32 — first time a Shadow face appears in hand, explain the orientation flip.
   if(sawShadow) teachOnce('shadow', {
     title: 'The Shadow Face', sub: 'A card drew Reversed (↻).',
-    body: 'This card flipped to its <b>Shadow</b> — same cost, but its suit role <b>inverts</b> (a striker lays embers, a wall throws a fist, a healer wards…). It opens combos the upright face can\'t. Long-press to inspect <b>both</b> faces.',
+    body: 'This card flipped to its <b>Shadow</b> · same cost, but its suit role <b>inverts</b> (a striker lays embers, a wall throws a fist, a healer wards…). It opens combos the upright face can\'t. Long-press to inspect <b>both</b> faces.',
     icon: '↻', label: 'Embrace it'
   });
 }
@@ -3951,13 +3951,13 @@ function renderReadingStrip(){
     el.onclick = () => {
       const seq = ctx.combat.reading.map(s => SUIT_NAME[s] || s).join('  →  ');
       showModal({
-        title: done ? 'The Prophecy — fulfilled' : 'The Prophecy',
+        title: done ? 'The Prophecy, fulfilled' : 'The Prophecy',
         sub: seq,
         body: done
           ? 'You walked the foretold path. Its blessing is spent for this fight.'
-          : `Play a Minor of each suit <strong>in order</strong> — any turns, off-suit never resets it:<br><br>`
+          : `Play a Minor of each suit <strong>in order</strong> · any turns, off-suit never resets it:<br><br>`
             + ctx.combat.reading.map((s,k)=>`${k<prog?'✔':(k===prog?'▶':'·')} <strong>${SUIT_NAME[s]||s}</strong>`).join('<br>')
-            + `<br><br>Fulfil it → <strong>Heal 12 · Strike 12 · +1 max energy</strong>.<br>Ignore it freely — it never punishes.`,
+            + `<br><br>Fulfil it → <strong>Heal 12 · Strike 12 · +1 max energy</strong>.<br>Ignore it freely, it never punishes.`,
       });
     };
     strip.appendChild(el);
@@ -3984,7 +3984,7 @@ function cutTheDeck(){
   ov.id = 'cut-overlay';
   ov.innerHTML =
     '<div class="cut-title">The Reading</div>' +
-    '<div class="cut-sub">Cut the deck. Land the bright Arcana — the Sun favors a steady hand. The Tower waits at the edges.</div>' +
+    '<div class="cut-sub">Cut the deck. Land the bright Arcana, the Sun favors a steady hand. The Tower waits at the edges.</div>' +
     '<div class="cut-strip" id="cut-strip"></div>' +
     '<div class="cut-result" id="cut-result">&nbsp;</div>' +
     '<button class="cut-btn" id="cut-btn">Cut</button>';
@@ -4033,7 +4033,7 @@ function cutTheDeck(){
       // The Sun reveals the path — a free first step of the Prophecy
       if((c.combat.prophecyProgress||0) < 1) c.combat.prophecyProgress = 1;
       title = 'The Sun'; glyph = '☉';
-      msg = 'The deck favors you — +2 Strength, and the Sun reveals the Prophecy’s first step.';
+      msg = 'The deck favors you · +2 Strength, and the Sun reveals the Prophecy’s first step.';
     } else if(zone === 'faint'){
       c.player.buffs.strength = (c.player.buffs.strength || 0) + 1;
       c.combat.readingFortune = 'faint';
@@ -4043,11 +4043,11 @@ function cutTheDeck(){
       c.player.debuffs.weak = (c.player.debuffs.weak || 0) + 2;
       c.combat.readingFortune = 'tower';
       title = 'The Tower'; glyph = '⚡';
-      msg = 'A bad cut — the Tower falls. You start Weak 2.';
+      msg = 'A bad cut, the Tower falls. You start Weak 2.';
     } else {
       c.combat.readingFortune = 'silent';
       title = 'Silence'; glyph = '·';
-      msg = 'The deck stays silent. Read it the old way — 1 energy a card.';
+      msg = 'The deck stays silent. Read it the old way, 1 energy a card.';
     }
     land.textContent = glyph;
     ov.querySelector('#cut-result').innerHTML = '<strong>' + title + '.</strong> ' + msg;
@@ -4168,7 +4168,7 @@ function showPeekPicker(n){
   const discardSet = new Set();
   m.innerHTML = `
     <div class="modal-title">The High Priestess</div>
-    <div class="modal-sub">The top of your draw, in order. Tap any to mark it for the discard — the rest stay on top.</div>
+    <div class="modal-sub">The top of your draw, in order. Tap any to mark it for the discard, the rest stay on top.</div>
     <div class="dv-grid" id="peek-grid"></div>
     <div class="modal-choices" id="peek-confirm"></div>`;
   const grid = m.querySelector('#peek-grid');
@@ -4256,7 +4256,7 @@ function renderMap(){
   document.getElementById('map-gold').textContent = run.gold;
   const _act = ACTS[(run.act || 1) - 1] || ACTS[0];
   const _fl = run.path.findIndex(f => !f.completed) + 1;
-  document.getElementById('map-title').textContent = `Act ${run.act || 1}/${ACTS.length} · ${_act.name} — Floor ${_fl}/15`;
+  document.getElementById('map-title').textContent = `Act ${run.act || 1}/${ACTS.length} · ${_act.name} · Floor ${_fl}/15`;
   const body = document.getElementById('map-rooms');
   body.innerHTML = '';
   const nextFloor = run.path.findIndex(f => !f.completed);
@@ -4321,7 +4321,7 @@ function showCardInspect(card, entry){
       ? `<br><small style="color:var(--blood-bright)">↻ SHADOW (drawn reversed): ${card.reversedDesc}</small><br><small style="color:var(--card-cream-dim)">Upright: ${card.desc}</small>`
       : `<br><small style="color:var(--card-cream-dim)">↻ Shadow face (if reversed): ${card.reversedDesc}</small>`;
   } else if(fateRev){
-    fateLine = `<br><small style="color:var(--blood-bright)">↻ REVERSED — costs 1 less, effect ×${fateMultFor().toFixed(2)}</small>`;
+    fateLine = `<br><small style="color:var(--blood-bright)">↻ REVERSED · costs 1 less, effect ×${fateMultFor().toFixed(2)}</small>`;
   }
   info.innerHTML = `<em>${card.flavor || ''}</em>${fateLine}`;
   // In-combat hand actions: Patron Channel + the Priestess's Turn of Fate
@@ -4332,7 +4332,7 @@ function showCardInspect(card, entry){
     act.className = 'ci-actions';
     const pc = patronChannel();
     const used = state.run.combat.channeledThisTurn;
-    const btns = [`<button class="ci-channel"${used?' disabled':''}>${used?'Channel spent this turn':'⟐ Channel — '+pc.label}</button>`];
+    const btns = [`<button class="ci-channel"${used?' disabled':''}>${used?'Channel spent this turn':'⟐ Channel, '+pc.label}</button>`];
     const isPriestessMinor = state.run.patron === 'priestess' && isMinor;
     const canTurn = isPriestessMinor && !state.run.combat.fateTurnedThisTurn;
     if(isPriestessMinor){
@@ -4450,7 +4450,7 @@ function refreshTitle(){
     const inProgress = state.run && state.run.daily && state.run.dailySeed === ts;
     const doneToday = meta.daily && meta.daily.lastSeed === ts && !inProgress;
     if(inProgress){ dailyBtn.textContent = "Resume Today's Spread"; dailyBtn.classList.remove('dim'); }
-    else if(doneToday){ dailyBtn.textContent = `Daily done — ${meta.daily.lastScore||0} pts`; dailyBtn.classList.add('dim'); }
+    else if(doneToday){ dailyBtn.textContent = `Daily done · ${meta.daily.lastScore||0} pts`; dailyBtn.classList.add('dim'); }
     else { dailyBtn.textContent = "Today's Spread"; dailyBtn.classList.remove('dim'); }
   }
 }
@@ -4480,17 +4480,17 @@ function showOpeningReading(done){
   const offers = [
     { icon:'☆', label:'The Gift', note:'A random rare card joins your deck.',
       apply:()=>{ addCard(ALL_CARDS.filter(c => c.rarity==='rare' && c.suit!=='major')); goToMap(); } },
-    { icon:'⚸', label:'The Edge', note:'An uncommon card of your own suit — sharpen the engine.',
+    { icon:'⚸', label:'The Edge', note:'An uncommon card of your own suit, sharpen the engine.',
       apply:()=>{ let p = ALL_CARDS.filter(c => c.rarity==='uncommon' && c.suit===prim); if(!p.length) p = ALL_CARDS.filter(c => c.rarity==='uncommon' && c.suit!=='major'); addCard(p); goToMap(); } },
-    { icon:'✦', label:'The Wild Card', note:'An uncommon card OUTSIDE your suit — a splash.',
+    { icon:'✦', label:'The Wild Card', note:'An uncommon card OUTSIDE your suit, a splash.',
       apply:()=>{ let p = ALL_CARDS.filter(c => c.rarity==='uncommon' && c.suit!=='major' && c.suit!==prim); if(!p.length) p = ALL_CARDS.filter(c => c.rarity==='uncommon' && c.suit!=='major'); addCard(p); goToMap(); } },
-    { icon:'✎', label:'The Cull', note:'Banish a starter now — thin the deck from the first hand.',
+    { icon:'✎', label:'The Cull', note:'Banish a starter now, thin the deck from the first hand.',
       apply:()=>{ showBanishModal({ onDone: goToMap }); } },
     { icon:'◈', label:'The Full Purse', note:'Begin the climb with +60 gold.',
       apply:()=>{ run.gold += 60; goToMap(); } },
     { icon:'♥', label:'The Strong Heart', note:'+10 max HP for the whole climb.',
       apply:()=>{ run.maxHp += 10; run.hp += 10; goToMap(); } },
-    { icon:'☽', label:"The Devil's Discount", note:'Take an Arcana boon now — but lose 7 max HP.',
+    { icon:'☽', label:"The Devil's Discount", note:'Take an Arcana boon now, but lose 7 max HP.',
       apply:()=>{ run.maxHp = Math.max(20, run.maxHp - 7); run.hp = Math.min(run.hp, run.maxHp);
         const keys = Object.keys(ARCANA_BOONS).filter(k => !run.spread.includes(k));
         const k = pickRand(keys.length ? keys : Object.keys(ARCANA_BOONS), rng); if(k) run.spread.push(k); goToMap(); } },
@@ -4499,7 +4499,7 @@ function showOpeningReading(done){
   const three = offers.slice(0, 3);
   showModal({
     title: 'The Opening Reading',
-    sub: 'Before the first door — set the tone of this run.',
+    sub: 'Before the first door, set the tone of this run.',
     body: 'Take one omen into the Tower. The rest fade.',
     choices: three.map(o => ({ icon:o.icon, label:o.label, note:o.note, onClick:o.apply })),
     hideClose: true
@@ -4537,13 +4537,13 @@ function chooseVeil(patronId){
     choices.push({
       icon: i === 0 ? '○' : '◈',
       label: v.name,
-      note: v.desc + (tags.length ? `  —  ${tags.join(' · ')}` : ''),
+      note: v.desc + (tags.length ? ` · ${tags.join(' · ')}` : ''),
       onClick: () => { state.meta.selectedVeil = i; saveState(); startRun(patronId); }
     });
   }
   showModal({
     title: 'Which Veil will you lift?',
-    sub: 'Each Veil makes the Tower crueller — and the climb mean more. Clear a run to unlock the next.',
+    sub: 'Each Veil makes the Tower crueller, and the climb mean more. Clear a run to unlock the next.',
     choices
   });
 }
@@ -4571,7 +4571,7 @@ function showMirror(){
     return {
       icon: t.glyph,
       label: `${t.name}  ·  rank ${rank}/${t.max}`,
-      note: `${t.desc(rank)}  —  ${status}`,
+      note: `${t.desc(rank)} · ${status}`,
       onClick: () => {
         if(!maxed && afford){
           state.meta.insight -= cost;
@@ -4692,7 +4692,7 @@ function endTurnWithFX(){
     showModal({
       title: 'The Hand Resets',
       sub: 'Every turn is a fresh deal.',
-      body: 'At the end of each turn your unplayed cards slide to the <b>discard pile</b> and you draw a new hand. They are <b>not lost</b> — when the draw pile runs dry it reshuffles from the discard. So spend each turn fully: a card you hold is a card wasted.',
+      body: 'At the end of each turn your unplayed cards slide to the <b>discard pile</b> and you draw a new hand. They are <b>not lost</b> · when the draw pile runs dry it reshuffles from the discard. So spend each turn fully: a card you hold is a card wasted.',
       choices: [{ icon:'↻', label:'I understand', onClick: () => { if(state.meta) state.meta.taughtHandReset = true; saveState(); endTurnWithFX(); } }]
     });
     return;

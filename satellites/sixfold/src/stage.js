@@ -144,7 +144,7 @@
         '<div class="hero">' +
         '<div class="clash-title">CLASH</div><div class="clash-sub">break the bind</div>' +
         '<div class="bind-big-row">' +
-        BINDS.map((b) => `<button class="bindbtn-lg" data-b="${b.id}" aria-label="${b.name} — beats ${b.beats}"><span class="bg">${b.glyph}</span><span class="bn">${b.name}</span><span class="bd">beats ${b.beats}</span></button>`).join("") +
+        BINDS.map((b) => `<button class="bindbtn-lg" data-b="${b.id}" aria-label="${b.name} · beats ${b.beats}"><span class="bg">${b.glyph}</span><span class="bn">${b.name}</span><span class="bd">beats ${b.beats}</span></button>`).join("") +
         "</div>" +
         '<div class="bind-timer' + (timed && !reduced ? " on" : "") + '"><div class="fill"></div></div>' +
         "</div>";

@@ -659,7 +659,7 @@ async function loadLevels(){
     }
   }catch(_){ /* file:// or unhosted — baked only */ }
   // always add the baked prototype card at the end
-  LEVELS.push({ file:null, name:'prototype', display:'Prototype Meadow — the training field', data:BAKED_MAP, loaded:true, thumb:null, biome:'greenwood' });
+  LEVELS.push({ file:null, name:'prototype', display:'Prototype Meadow, the training field', data:BAKED_MAP, loaded:true, thumb:null, biome:'greenwood' });
 }
 async function fetchLevelData(entry){
   if(entry.loaded && entry.data) return entry.data;
@@ -713,7 +713,7 @@ function conspicuity(conceal,m,shifting){
   return clamp01((1-conceal)+MOVE_BEACON*m+(shifting?SHIFT_SHIMMER:0));
 }
 function spottedReason(mq,m,S,domKey){
-  if(domKey==='lava'||domKey==='void') return "Out in the open — you can't hide here";
+  if(domKey==='lava'||domKey==='void') return "Out in the open, you can't hide here";
   const colorMiss=1-mq, unsettled=1-S, top=Math.max(colorMiss,m,unsettled);
   if(top===m && m>0.25) return "You moved";
   if(top===colorMiss && colorMiss>0.25) return "Your color didn't match the ground";
@@ -1321,9 +1321,9 @@ addEventListener('drop', e=>{ e.preventDefault();
     if(!j.grid || !Array.isArray(j.terrain)) throw 0;
     if(!(j.spawns||[]).some(s=>s.role==='hider')) (j.spawns=j.spawns||[]).push({x:(j.grid.cols/2)|0,y:(j.grid.rows/2)|0,role:'hider'});
     if(!(j.spawns||[]).some(s=>s.role==='seeker')) j.spawns.push({x:1,y:1,role:'seeker'});
-    const entry={ file:null, name:j.name||'custom', display:(j.name||'Custom')+' — dropped', data:j, loaded:true, thumb:null };
+    const entry={ file:null, name:j.name||'custom', display:(j.name||'Custom')+' · dropped', data:j, loaded:true, thumb:null };
     LEVELS.push(entry); ensureAudio(); pendingMode='PRACTICE'; startRound(entry,'PRACTICE',PRACTICE_DIFF);
-    showToast('Loaded "'+(j.name||'custom map')+'" — Practice');
+    showToast('Loaded "'+(j.name||'custom map')+'", Practice');
   }catch(_){ showToast('That is not a SCANNER map export'); } };
   r.readAsText(f);
 });
@@ -1514,7 +1514,7 @@ function setActivePaintColor(rgb){ if(player.splitPaint && studio.activeTone===1
 function activeTarget(){ return (player.splitPaint && studio.activeTone===1)?player.targetPaint2:player.targetPaint; }
 function toggleSplit(){ player.splitPaint=!player.splitPaint; SFX.ui();
   if(player.splitPaint){ player.targetPaint2={...player.targetPaint}; player.currentPaint2={...player.currentPaint};
-    player.paintHSV2=rgb2hsv(player.targetPaint); studio.activeTone=1; showToast('2-tone camo ON — paint the 2nd tone'); }
+    player.paintHSV2=rgb2hsv(player.targetPaint); studio.activeTone=1; showToast('2-tone camo ON · paint the 2nd tone'); }
   else { studio.activeTone=0; showToast('2-tone camo off'); }
   syncHexField(); }
 function openStudio(){ studio.open=true; studio.state='OPEN_IDLE'; SFX.ui(); syncHexField(); }
@@ -1527,7 +1527,7 @@ function enterPaint(){ if(!round||roundState!=='PLAYING'||round.mode==='HUNT') r
   ctrlMode='PAINT'; player.vx=0; player.vy=0; input.mx=0; input.my=0; input.speed=0; input.moveMag=0;
   joystick=null; freezeHeld=false;
   if(fromLook){ camLock=true; SFX.shutter(); vibe(10); if(!settings.photosensitive) screenFlash(0.10);   // the shutter IS the lock
-    composeNudge(); coachOnce('seenHoldHint','📌 View held — the pill takes you home'); }
+    composeNudge(); coachOnce('seenHoldHint','📌 View held, the pill takes you home'); }
   else { camPan.x=0; camPan.y=0; }
   openStudio(); }
 function exitPaint(){ if(studio.open) closeStudio();
@@ -1900,7 +1900,7 @@ function updateUfo(u,dt,D){
     round.reasonUntil=nowMs()+2600; SFX.spotted(); addTrauma(TRAUMA.spotted); punchZoom(-0.05,90,420); FX.spottedV=1; spawnShards(player.x,player.y,COL.danger,9); vibe([30,50,30]);
     // forgiving: a kid caught mid-paint/look is sent home with a warning — the camera GLIDES back (never snaps)
     if(ctrlMode!=='MOVE' && !round.diff.practice){ if(holdBracketT>0.3) spawnShards(player.x,player.y,COL.amber,6);
-      goHome(); panBoost=HOLD_GLIDE_MUL; showToast('Spotted — move!'); }
+      goHome(); panBoost=HOLD_GLIDE_MUL; showToast('Spotted, move!'); }
   }
   if((prev==='CHASE'||prev==='SCAN'||prev==='INVESTIGATE') && u.suspicion<EXIT_SUSPECT && u.state==='PATROL') SFX.relief();
 }
@@ -2726,7 +2726,7 @@ function drawInspectOverlay(lite){
   const dn = vz<0.66?'FAR':(vz<0.9?'SEEKER':(vz<1.3?'NORMAL':'CLOSE'));
   ctx.globalAlpha=a; panel(vpW/2-130, 8, 260, 46, 10);
   txt("👁 SEEKER'S VIEW · "+dn, vpW/2, 22, 12, dn==='SEEKER'?COL.green:COL.muted, 'center','800');
-  txt(co.word+'  ·  '+mqn+'%  —  '+(mqn>=85?'you blend!':'still visible'), vpW/2, 42, 13, wc, 'center','700');
+  txt(co.word+'  ·  '+mqn+'% · '+(mqn>=85?'you blend!':'still visible'), vpW/2, 42, 13, wc, 'center','700');
   ctx.globalAlpha=1;
   // hint to exit
   txt('drag to look · pinch/scroll to zoom · 🎨 holds the shot · 👁 done', vpW/2, vpH-70, 10, COL.muted, 'center','600');
@@ -2735,7 +2735,7 @@ function drawInspectOverlay(lite){
 // Doing beats reading: five steps watched live from the sim. Practice-only, skippable, one-time.
 const TOUR=[
   { icon:'🕹', text:'Push the move side gently to sneak around', test:(dt,t)=> input.speed>0 ? t+dt : t, need:0.9 },
-  { icon:'👁', text:'Tap 👁 — rise up to the hunters’ view',      test:(dt,t)=> ctrlMode==='INSPECT' ? t+dt : t, need:0.7 },
+  { icon:'👁', text:'Tap 👁 · rise up to the hunters’ view',      test:(dt,t)=> ctrlMode==='INSPECT' ? t+dt : t, need:0.7 },
   { icon:'🤏', text:'Pinch or scroll to zoom in and out',         test:(dt,t)=> Math.abs(vz-VZ_SEEKER)>0.1 ? t+dt : t, need:0.25 },
   { icon:'🎨', text:'Tap 🎨 to hold the shot, then press MATCH',  test:(dt,t)=> (studio.open && paintCoach().mqAim>=0.85) ? t+dt : t, need:0.15 },   // AIM match — instant on MATCH; the crawl mustn't gate a kid
   { icon:'⏱', text:'Now hold still… melt into the ground',       test:(dt,t)=> player.conceal>=0.85 ? t+dt : t, need:0.4 },
@@ -2744,7 +2744,7 @@ const tut={ active:false, step:0, t:0, doneT:0 };
 function startTour(){ tut.active=true; tut.step=0; tut.t=0; tut.doneT=0; }
 function endTour(done){ tut.active=false; settings.tourDone=true;
   settings.seenLookHint=true; settings.seenHoldHint=true; saveSettings();   // the tour teaches what the one-shot hints would
-  if(done){ SFX.best(); showToast('⭐ You know everything now — happy hiding!'); spawnShards(player.x,player.y,COL.amber,14); } }
+  if(done){ SFX.best(); showToast('⭐ You know everything now, happy hiding!'); spawnShards(player.x,player.y,COL.amber,14); } }
 function stepTour(dt){ if(!tut.active) return;
   if(!round||round.mode!=='PRACTICE'){ tut.active=false; return; }
   if(tut.step>=TOUR.length){ tut.doneT+=dt; if(tut.doneT>2.2) endTour(true); return; }
@@ -3068,7 +3068,7 @@ function netOnServer(m){
   else if(m.t==='err'){ NET.err=m.why||'error'; SFX.back(); }
   else if(m.t==='peer'){ NET.peer=!!m.on;
     if(m.on){ SFX.confirm();
-      if(NET.role==='host'){ pendingMode='VS'; appState='LEVEL_SELECT'; menuIndex=0; showToast('🌐 Player joined — pick the hiding ground'); } }
+      if(NET.role==='host'){ pendingMode='VS'; appState='LEVEL_SELECT'; menuIndex=0; showToast('🌐 Player joined, pick the hiding ground'); } }
     else { if(appState==='ROUND'||appState==='SUMMARY'){ showToast('🌐 the other player left'); netReset(); gotoTitle(); }
       else if(NET.role==='host'&&appState==='LEVEL_SELECT'&&pendingMode==='VS'){ showToast('🌐 the other player left'); appState='ONLINE'; }
       else showToast('🌐 the other player left'); } }
@@ -3093,7 +3093,7 @@ function netOnPeer(d){
     if(hide2pLeft()<=0){ const u=round.ufos[0];
       if(u && Math.hypot(u.x-player.x,u.y-player.y)<HUNT_SCAN_R*1.4 && losClear(u.x,u.y,player.x,player.y)){
         player.exposedUntil = nowMs() + EXPOSE_S*1000;
-        SFX.spotted(); FX.spottedV=1; showToast('⚠ SCANNED — you are exposed!');
+        SFX.spotted(); FX.spottedV=1; showToast('⚠ SCANNED · you are exposed!');
       } else { SFX.match(0.4); }
     }
   }
@@ -3156,7 +3156,7 @@ function remoteUfoStep(u,dt,D){
   if(prev!=='CHASE'&&prev!=='BEAM'&&(u.state==='CHASE'||u.state==='BEAM')){ round.metrics.spottedCount++;
     round.spottedReason=spottedReason(player.mq,player.m,player.S,player.ref.dominantKey);
     round.reasonUntil=nowMs()+2600; SFX.spotted(); FX.spottedV=1;
-    if(ctrlMode!=='MOVE'&&!round.diff.practice){ goHome(); panBoost=HOLD_GLIDE_MUL; showToast('Spotted — move!'); } }
+    if(ctrlMode!=='MOVE'&&!round.diff.practice){ goHome(); panBoost=HOLD_GLIDE_MUL; showToast('Spotted, move!'); } }
 }
 function stepHostNet(dt){
   NET.snapT+=dt; if(NET.snapT<1/12) return; NET.snapT=0;
@@ -3246,7 +3246,7 @@ function drawOnline(){ const cx=vpW/2; navList=[];
   else if(NET.role==='host' && NET.code && !NET.peer){
     txt('YOUR ROOM CODE', cx, by, 11, COL.muted,'center','700');
     txt(NET.code.split('').join(' '), cx, by+40, 44, COL.amber,'center','800');
-    txt('the hunter joins with this code — you will HIDE', cx, by+74, 11, COL.muted,'center','500'); by+=90;
+    txt('the hunter joins with this code, you will HIDE', cx, by+74, 11, COL.muted,'center','500'); by+=90;
     // the QR carries the whole join: scan on the other phone, land in the
     // room. Encodes the relay mirror URL + ?join=CODE.
     const qc=qrCanvasFor(NET.code);
@@ -3258,7 +3258,7 @@ function drawOnline(){ const cx=vpW/2; navList=[];
     navBtn('Cancel', bx,by,bw,44, ()=>{ netLeave(); }, {size:14});
   }
   else if(NET.status==='loading'){ txt('waiting for the hunter to load…', cx, by+20, 13, COL.muted,'center','600'); }
-  else if(NET.role==='guest' && NET.peer){ txt('joined '+NET.code+' — the hider is picking a map…', cx, by+20, 13, COL.cyan,'center','600'); }
+  else if(NET.role==='guest' && NET.peer){ txt('joined '+NET.code+' · the hider is picking a map…', cx, by+20, 13, COL.cyan,'center','600'); }
   else {
     navBtn('🏠  Host a game (you hide)', bx,by,bw,52, ()=>{ netConnect(()=>{ try{NET.ws.send(JSON.stringify({t:'host'}));}catch(_){} }); }, {size:15}); by+=62;
     navBtn('🛸  Join with a code (you hunt)', bx,by,bw,52, ()=>{ NET.codeInput=''; appState='ONLINE_JOIN'; menuIndex=0; }, {size:15}); by+=70;
@@ -3295,7 +3295,7 @@ function triggerAbduction(u){ if(round.finalized||!player.alive) return;
 function endRound(win){ if(round.finalized||roundState==='TIMEOUT'||roundState==='CAUGHT') return;
   if(win){ if(studio.open){ studio.open=false; studio.state='CLOSED'; } ctrlMode='MOVE'; camPan.x=0; camPan.y=0; camLock=false; pinch=null; roundState='TIMEOUT'; round.summaryT=0; SFX.win(); } }
 function togglePause(){ if(appState!=='ROUND') return;
-  if(round && round.online){ showToast('🌐 no pausing online — use LEAVE to quit'); return; }
+  if(round && round.online){ showToast('🌐 no pausing online, use LEAVE to quit'); return; }
   if(roundState==='PLAYING'){ if(studio.open){ studio.open=false; studio.state='CLOSED'; } ctrlMode='MOVE'; camPan.x=0; camPan.y=0; camLock=false; pinch=null; roundState='PAUSED'; menuIndex=0; SFX.ui(); stopAllLoops(); }
   else if(roundState==='PAUSED') resumeRound(); }
 function resumeRound(){ showHelp=false; roundState='RESUME_COUNTDOWN'; round.countdown=RESUME_COUNTDOWN; round.lastCount=null; SFX.ui(); }
@@ -3467,7 +3467,7 @@ function huntPulse(){ if(!round||round.mode!=='HUNT'||player.pulseCd>0||roundSta
        perfectly blended hider could never be picked up even when found).
        Three per round; a hit EXPOSES the hider for a few seconds. */
     if(round.hide2pNet>0){ showToast('scanners come online after the hide phase'); return; }
-    if((NET.scans|0)<=0){ showToast('no scan charges left — hunt with your eyes'); return; }
+    if((NET.scans|0)<=0){ showToast('no scan charges left, hunt with your eyes'); return; }
     NET.scans--; player.pulseCd=PULSE_CD; player.pulseT=0.55; SFX.match(0.5); addTrauma(0.08);
     netSend({k:'ping'});
     return;
@@ -4032,8 +4032,8 @@ function drawTitle(){
   if(tagY<by-14) txt('Paint yourself to vanish. Outlast the hunters.', cx, tagY, Math.min(14,vpW*0.037), COL.muted,'center','500');
   if(tagY+16<by-14) txt('six regions · twelve hiding grounds · one long night', cx, tagY+16, 10, 'rgba(140,150,175,0.75)','center','500');
   navBtn('▶  PLAY', bx,by,bw,ROWS[0], ()=>{ startPlay(); }, {size:20}); by+=ROWS[0]+gap;
-  navBtn('🌐  Play Online — 1v1', bx,by,bw,ROWS[1], ()=>{ appState='ONLINE'; menuIndex=0; SFX.ui(); }, {size:15}); by+=ROWS[1]+gap;
-  navBtn('🧪  3D — new, in the lab', bx,by,bw,ROWS[2], ()=>{ try{ location.href='abduct-3d.html'; }catch(_){} }, {size:13, color:COL.green}); by+=ROWS[2]+gap;
+  navBtn('🌐  Play Online, 1v1', bx,by,bw,ROWS[1], ()=>{ appState='ONLINE'; menuIndex=0; SFX.ui(); }, {size:15}); by+=ROWS[1]+gap;
+  navBtn('🧪  3D · new, in the lab', bx,by,bw,ROWS[2], ()=>{ try{ location.href='abduct-3d.html'; }catch(_){} }, {size:13, color:COL.green}); by+=ROWS[2]+gap;
   const hw=(bw-gap)/2;
   navBtn('👕  Wardrobe', bx,by,hw,ROWS[3], ()=>{ appState='WARDROBE'; menuIndex=0; SFX.ui(); }, {size:14});
   navBtn('⚙  Settings', bx+hw+gap,by,hw,ROWS[3], ()=>{ openSettings('TITLE'); }, {size:14}); by+=ROWS[3]+gap;
@@ -4043,7 +4043,7 @@ function drawTitle(){
   navBtn(settings.muted?'Muted':'Sound', bx+(tw+gap)*2,by,tw,ROWS[4], ()=>{ setMuted(!settings.muted); }, {size:12});
   if(EMBED){                                                        // P22: inside the portal iframe
     navBtn('⛶  Open full screen', cx-Math.min(150,vpW*0.3), vpH-46, Math.min(300,vpW*0.6), 34, ()=>openStandalone(), {size:12});
-    if(!LS_OK) txt('⚠ progress may not save inside the portal — open full screen to keep your XP', cx, vpH-58, 10, PAL.warn,'center','600');
+    if(!LS_OK) txt('⚠ progress may not save inside the portal, open full screen to keep your XP', cx, vpH-58, 10, PAL.warn,'center','600');
   }
   // the long build line overflowed both edges of a 375px phone; the short one always fits
   else if(vpH>=440) txt(vpW>=620?'v0.2 "Photo Loop" · offline · drag a SCANNER .json onto the window to playtest it':'v0.2 · offline', cx, vpH-14, 11, COL.muted,'center','500');
@@ -4068,7 +4068,7 @@ function drawModeSelect(){ const cx=vpW/2;
     {n:'Survive', s:'Outlast the hunters', go:()=>route('SURVIVE')},
     {n:'Heat · Endless', s:'Escalates forever', go:()=>route('HEAT')},
     {n:'Daily Challenge', s:'One seeded run/day'+(((PROGRESS.daily&&PROGRESS.daily.streak)||0)>1?' · 🔥 '+PROGRESS.daily.streak:''), go:()=>startDaily()},
-    {n:'🛸 Hunt', s:'BE the alien — catch chameleons', go:()=>route('HUNT'), color:COL.cyan},
+    {n:'🛸 Hunt', s:'BE the alien, catch chameleons', go:()=>route('HUNT'), color:COL.cyan},
     {n:'Time Attack', s:'Bank hidden beacons vs the clock', go:()=>route('TA')},
     {n:'⚙ Salvage', s:'Build the cutter and shoot one down', go:()=>route('SALVAGE'), color:COL.amber},
   ];
@@ -4114,7 +4114,7 @@ let levelOrderNames=[];                                        // display order 
 const REGION_ORDER=['greenwood','dunes','tundra','downtown','xeno','bog'];
 const REGION_NAME={ greenwood:'THE GREENWOOD', dunes:'THE BURNING FLATS', tundra:'THE WHITE NORTH',
   downtown:'THE GREY CITY', xeno:'THE OTHERWORLD', bog:'THE SUNKEN SOUTH' };
-const REGION_TAG={ greenwood:'soft grass, deep leaves — where hiders learn', dunes:'open sand and sun-bleached rock',
+const REGION_TAG={ greenwood:'soft grass, deep leaves, where hiders learn', dunes:'open sand and sun-bleached rock',
   tundra:'snow, ice, and long sightlines', downtown:'concrete blocks and back alleys',
   xeno:'moss, crystal, and fire', bog:'mud, mist, and drowned stone' };
 // P19: each region HUNTS differently — small, openly-stated multipliers (greenwood is the baseline)
@@ -4130,7 +4130,7 @@ function drawLevelSelect(){ const cx=vpW/2;
   txt('SELECT LEVEL', cx, 40, 22, COL.txt,'center','800');
   const sub = pendingMode==='PRACTICE'?'Practice / Zen' : pendingMode==='HEAT'?'Heat · Endless'
     : pendingMode==='HUNT'?'🛸 Hunt' : pendingMode==='TA'?'Time Attack · Beacon Run'
-    : pendingMode==='VS'?'🌐 Online 1v1 — pick where you will hide' : 'Survive';
+    : pendingMode==='VS'?'🌐 Online 1v1, pick where you will hide' : 'Survive';
   txt(sub, cx, 64, 12, COL.amber,'center','600');
   const pad=14, top=84, bottomReserve=62, headH=26;
   const cols=clamp(Math.floor(vpW/240),1,4);
@@ -4165,7 +4165,7 @@ function drawLevelSelect(){ const cx=vpW/2;
     ctx.fillStyle=mc; ctx.beginPath(); ctx.arc(gx+5,hy+12,4,0,TAU); ctx.fill();
     const mastered=g.b && PROGRESS.biomeMedals && PROGRESS.biomeMedals[g.b];
     txt((g.b?REGION_NAME[g.b]:'ELSEWHERE')+(mastered?'  ✦':''), gx+16, hy+12, 11, mastered?COL.amber:COL.txt,'left','800');
-    if(vpW>=560) txt(mastered?'region mastered — every terrain blended':(g.b?REGION_TAG[g.b]:''), gx+gridW, hy+12, 9, mastered?COL.amber:COL.muted,'right','500'); }
+    if(vpW>=560) txt(mastered?'region mastered, every terrain blended':(g.b?REGION_TAG[g.b]:''), gx+gridW, hy+12, 9, mastered?COL.amber:COL.muted,'right','500'); }
   for(let i=0;i<pos.length;i++){ const {e,x}=pos[i]; const y=gy+pos[i].y;
     const idx=navList.length; const sel=idx===menuIndex;
     const locked=(e.unlockLevel||0)>plv;                                     // P12 map-unlock arc
@@ -4222,7 +4222,7 @@ function drawSummary(){ const cx=vpW/2, s=round.summary; if(!s){ gotoTitle(); re
   if(round.online==='host' && !round._netEnd){ round._netEnd=1;
     netSend({k:'end', win: s.outcome==='WIN' ? 'hider' : 'hunter', score:s.score}); }
   const win=s.outcome==='WIN', hunt=!!s.hunt, ta=!!s.ta, salv=!!s.salv;
-  if(round.online){ txt(NET.role==='host'?'🌐 you HID — human hunter':'🌐 you HUNTED — human hider', cx, vpH*0.14-24, 11, COL.cyan,'center','700'); }
+  if(round.online){ txt(NET.role==='host'?'🌐 you HID · human hunter':'🌐 you HUNTED · human hider', cx, vpH*0.14-24, 11, COL.cyan,'center','700'); }
   // staged reveal: headline → grade slam → stat rows cascade → score counts up (instant under reduced motion)
   const age=FX_MOTION>0 ? (nowMs()-(s.t0||0))/1000 : 99;
   const headA=clamp01(age/0.25);
@@ -4279,7 +4279,7 @@ function drawSummary(){ const cx=vpW/2, s=round.summary; if(!s){ gotoTitle(); re
   if(round.online){                                              // P20: online rematches go through the lobby (host re-picks)
     const obw=Math.min(280,vpW-48);
     if(NET.peer && NET.role==='host')
-      navBtn('Rematch — pick a map', cx-obw/2, by, obw, 46, ()=>{ pendingMode='VS'; appState='LEVEL_SELECT'; menuIndex=0; }, {size:14});
+      navBtn('Rematch, pick a map', cx-obw/2, by, obw, 46, ()=>{ pendingMode='VS'; appState='LEVEL_SELECT'; menuIndex=0; }, {size:14});
     else if(NET.peer)
       navBtn('Waiting for the hider…', cx-obw/2, by, obw, 46, ()=>{}, {size:13});
     else navBtn('Back to Title', cx-obw/2, by, obw, 46, ()=>{ netLeave(); gotoTitle(); }, {size:14});
@@ -4478,16 +4478,16 @@ function drawHelp(){ ctx.fillStyle='rgba(8,12,25,0.88)'; ctx.fillRect(0,0,vpW,vp
   const cx=vpW/2; let y=vpH*0.14;
   txt('HOW TO PLAY', cx, y, 24, COL.amber,'center','800'); y+=44;
   const lines=[
-    'You are a person, seen from above — paint your body to match the ground.',
+    'You are a person, seen from above, paint your body to match the ground.',
     'UFOs scan from their ships for anything that does not match the terrain.',
     '',
-    '🕹  MOVE: drag the move side — push gently to SNEAK, far to walk.',
+    '🕹  MOVE: drag the move side, push gently to SNEAK, far to walk.',
     '      Drag the other side to peek toward the ships.',
     '👁  LOOK: tap 👁 to plant yourself and rise to the hunters’ altitude.',
     '      Drag to look around · pinch or scroll to zoom in and out.',
-    '🎨  PAINT: tap 🎨 — the view is HELD like a photo while you paint.',
+    '🎨  PAINT: tap 🎨 · the view is HELD like a photo while you paint.',
     '      MATCH samples the ground; nudge the color until you read “HIDDEN”.',
-    '      Tap empty space to look again — your framing stays put.',
+    '      Tap empty space to look again, your framing stays put.',
     '⏱  HOLD STILL to settle. 🌳 Hug cover. The MODE pill takes you home.',
     '🪝  TONGUE zips you to the nearest cover, your way out of a beam lock.',
     '🕳  BURROW sinks you into soft ground: only your eyes show, until it wears off.',

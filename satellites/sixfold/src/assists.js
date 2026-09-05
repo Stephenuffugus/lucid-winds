@@ -91,7 +91,7 @@
 
   // UI helper: the banner competitive modes must show.
   function statusLabel(mode) {
-    if (mode && !mode.honorsAssists) return "Assists off — competitive";
+    if (mode && !mode.honorsAssists) return "Assists off, competitive";
     const c = current();
     return c ? ("Assist: " + c.name) : "Assists: none";
   }

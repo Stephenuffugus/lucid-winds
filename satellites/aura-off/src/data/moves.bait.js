@@ -291,7 +291,7 @@ export const BAIT_MOVES = [
     lo: 0.2,
     idealAmp: 1.40,
     dur: 1700,
-    hint: 'Head back on the crack, then fold at the waist — one hand clamped over your own face, the other down on your own knee. Let the shoulders do the shaking.',
+    hint: 'Head back on the crack, then fold at the waist, one hand clamped over your own face, the other down on your own knee. Let the shoulders do the shaking.',
     lag: 0,
     frames: [
       { t: 0 },
@@ -479,7 +479,7 @@ export const BAIT_MOVES = [
     lo: 0.0,
     idealAmp: 1.30,
     dur: 1500,
-    hint: 'Look away like it is nothing, come back slow, then snap it round twice as fast with a hand up to your own brow — and once more after that. Feet do not move.',
+    hint: 'Look away like it is nothing, come back slow, then snap it round twice as fast with a hand up to your own brow, and once more after that. Feet do not move.',
     lag: 0,
     special: 'read',
     frames: [

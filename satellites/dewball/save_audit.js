@@ -112,6 +112,6 @@ var serr = null;
 try { S.start('level', 1); S.absorbAll(); S.endRun(); } catch(e){ serr = e; }
 check('corrupt sunbeam ledger does not break a run', !serr, serr ? String(serr.message) : '');
 
-console.log('\n' + (fails.length ? ('SAVE_AUDIT_FAIL — ' + fails.length + ' problem(s)') : 'SAVE_AUDIT_PASS'));
+console.log('\n' + (fails.length ? ('SAVE_AUDIT_FAIL · ' + fails.length + ' problem(s)') : 'SAVE_AUDIT_PASS'));
 notes.forEach(function(n){ console.log('note: ' + n); });
 process.exit(fails.length ? 1 : 0);

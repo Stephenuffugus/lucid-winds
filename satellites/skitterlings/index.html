@@ -2172,7 +2172,7 @@ function openCollection() {
     });
     const CAP = 300;
     order.slice(0, CAP).forEach(seed => grid.appendChild(makeCell(seed)));
-    if (more) more.textContent = order.length > CAP ? ("+ " + (order.length - CAP) + " more — favourites, rarest and newest shown first") : "";
+    if (more) more.textContent = order.length > CAP ? ("+ " + (order.length - CAP) + " more, favourites, rarest and newest shown first") : "";
   }
   show(collScreen);
 }
@@ -2271,7 +2271,7 @@ function openHatch() {
   rolledSeed = null; $("hatchRar").innerHTML = "";
   $("hatchCanvas").classList.remove("reveal", "epic", "legendary");
   $("equipRolledBtn").style.display = "none"; $("favRolledBtn").style.display = "none";
-  $("hatchLabel").innerHTML = "Spend coins to roll a brand-new skitterling.<br>Millions of possibilities — every one unique, named, and yours forever.";
+  $("hatchLabel").innerHTML = "Spend coins to roll a brand-new skitterling.<br>Millions of possibilities, every one unique, named, and yours forever.";
   updatePieceUI(); show(hatchScreen); showBig(save.equipped, true);
 }
 const EPIC_PITY = 40;                 // a dry streak this long forces the next roll to Epic+
@@ -2302,7 +2302,7 @@ function doRoll(minRarity) {
   $("hatchRar").innerHTML = '<span class="new-badge">✦ NEW ✦</span>'
     + `<div class="rar-pill" style="background:${tr.rarColor};color:#0e1326">${cap1(tr.material)} · ${tr.rarity}</div>`;
   $("hatchLabel").innerHTML = (isNamed ? "<b>New Skitterdex entry!</b> " : "")
-    + `Say hello to <b>${charName(seed)}</b> — added to your collection.`;
+    + `Say hello to <b>${charName(seed)}</b> · added to your collection.`;
   $("equipRolledBtn").style.display = "block"; $("favRolledBtn").style.display = "block";
   refreshFavRolled(); coinCount.textContent = save.coins; updatePieceUI();
   return tr;
@@ -2310,7 +2310,7 @@ function doRoll(minRarity) {
 function roll() {
   if (!Wallet.spend(ROLL_COST, "roll")) return toast("Need " + ROLL_COST + " coins");
   let minR = 0;
-  if (save.rarityBoosts > 0) { save.rarityBoosts--; minR = 2; toast("Rarity Booster used — Rare+ guaranteed"); }   // WS4 consumable
+  if (save.rarityBoosts > 0) { save.rarityBoosts--; minR = 2; toast("Rarity Booster used; Rare+ guaranteed"); }   // WS4 consumable
   if ((save.sinceEpic || 0) >= EPIC_PITY) minR = Math.max(minR, 3);    // pity overrides up to Epic+
   save.pieces = (save.pieces || 0) + 2;                                // small consolation toward crafting
   doRoll(minR);
@@ -2335,7 +2335,7 @@ function updatePieceUI() {
 
 /* ----- boosters / shop ----- */
 const SHOP = [
-  { id: "shield", name: "Shield", desc: "Start your next run protected — absorbs one hit.", cost: 800 },
+  { id: "shield", name: "Shield", desc: "Start your next run protected, absorbs one hit.", cost: 800 },
   { id: "magnet", name: "Coin Magnet", desc: "Auto-collect coins for your whole next run.", cost: 500 },
   { id: "rarity", name: "Rarity Booster", desc: "Your next vault roll is guaranteed Rare or better.", cost: 350 },
   { id: "doubler", name: "Coin Doubler", desc: "Permanently doubles every coin you bank. Yours forever.", cost: 5000, perm: true }
@@ -2654,7 +2654,7 @@ window.SK = {
   rollMany(n) { for (let i = 0; i < (n || 1); i++) { const s = nextRollSeed(); if (!save.owned.includes(s)) save.owned.push(s); } persist(); toast((n || 1) + " skitterlings added"); },
   addPieces(n) { save.pieces = (save.pieces || 0) + (n | 0); persist(); toast("+" + (n | 0) + " pieces"); return save.pieces; },
   giveBooster(kind, n) { n = n || 1; if (kind === "shield") save.shields = (save.shields || 0) + n; else if (kind === "magnet") save.magnets = (save.magnets || 0) + n; else if (kind === "rarity") save.rarityBoosts = (save.rarityBoosts || 0) + n; else if (kind === "doubler") save.coinDoubler = true; persist(); toast("booster: " + kind); },
-  wipe() { save = Object.assign(defaultSave(), {}); persist(); toast("Save wiped — reload"); }
+  wipe() { save = Object.assign(defaultSave(), {}); persist(); toast("Save wiped, reload"); }
 };
 
 /* Visible build stamp — lets a tester confirm at a glance they're on the latest

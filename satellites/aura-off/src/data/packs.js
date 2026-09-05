@@ -160,7 +160,7 @@ const CHAVE_ABERTA = {
   // moves at the top are gated on the crowd, because a crowd is the one thing
   // the Brazilian scene has more of than anywhere else.
   routeNote:
-    'Two moves come with the pack. The rest are earned in the bracket — throw ' +
+    'Two moves come with the pack. The rest are earned in the bracket, throw ' +
     'what you have, and pull a room.',
 
   moves: [
@@ -470,7 +470,7 @@ const AURA_INFINITA = {
   // loanword for doing the same thing over and over to accumulate a resource,
   // and here the resource is nothing.
   routeNote:
-    'Two moves come with the pack. The other three are earned by repetition — ' +
+    'Two moves come with the pack. The other three are earned by repetition · ' +
     'do the ones you have, over and over, for no reward, until they turn into ' +
     'more.',
 
@@ -749,7 +749,7 @@ const AURA_INFINITA = {
       lo: 0.2,
       idealAmp: 1.35,
       dur: 1900,
-      hint: 'Stand still and look down at your own two empty hands for a full second. Then lift them straight over your head anyway and hold it up there. Let it wobble — it is heavy.',
+      hint: 'Stand still and look down at your own two empty hands for a full second. Then lift them straight over your head anyway and hold it up there. Let it wobble, it is heavy.',
       lag: 0,
       /* NO SPECIAL, DELIBERATELY. balance-sim measured this pack move as
          pay-to-win: with every pack move owned the expert spent more turns on

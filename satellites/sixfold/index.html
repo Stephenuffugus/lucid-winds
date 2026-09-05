@@ -738,12 +738,12 @@ body.reduce .fighter-art .sprite { animation: none !important; }
   <header>
     <h1>SIX<span class="dot">·</span>FOLD</h1>
     <span class="tag">stance duel</span>
-    <span class="beambal" id="beambal" title="Sunbeams — cosmetic currency">☀ 0</span>
+    <span class="beambal" id="beambal" title="Sunbeams, cosmetic currency">☀ 0</span>
   </header>
 
   <div class="foebar">
     <div class="who">
-      <span class="fn" id="foename">—</span>
+      <span class="fn" id="foename"> · </span>
       <span class="stars" id="foestars"></span>
       <span class="tell" id="foetell"></span>
     </div>
@@ -763,7 +763,7 @@ body.reduce .fighter-art .sprite { animation: none !important; }
       <div class="hp" id="php"></div>
       <div class="ribbon" id="pribbon"></div>
       <div class="barwrap"><span class="barlbl">unpred</span>
-        <div class="bar" id="pbar"><div class="bar-fill"></div><span class="bar-num">—</span></div></div>
+        <div class="bar" id="pbar"><div class="bar-fill"></div><span class="bar-num"> · </span></div></div>
     </div>
     <div class="fighter" id="af">
       <div class="nm" id="aname">Ronin</div>
@@ -771,7 +771,7 @@ body.reduce .fighter-art .sprite { animation: none !important; }
       <div class="hp" id="ahp"></div>
       <div class="ribbon" id="aribbon"></div>
       <div class="barwrap"><span class="barlbl">unpred</span>
-        <div class="bar" id="abar"><div class="bar-fill"></div><span class="bar-num">—</span></div></div>
+        <div class="bar" id="abar"><div class="bar-fill"></div><span class="bar-num"> · </span></div></div>
     </div>
   </div>
 
@@ -789,7 +789,7 @@ body.reduce .fighter-art .sprite { animation: none !important; }
   </div>
 
   <div class="meter">
-    <div class="resolve" id="presolve" title="Resolve — buys information, never force">資 <span class="rpips"></span></div>
+    <div class="resolve" id="presolve" title="Resolve, buys information, never force">資 <span class="rpips"></span></div>
     <button class="spendbtn" id="insightbtn">Insight <span class="c">1</span></button>
     <button class="spendbtn" id="foresightbtn">Foresight <span class="c">2</span></button>
     <span class="aimeter" id="aimeter"></span>
@@ -894,7 +894,7 @@ body.reduce .fighter-art .sprite { animation: none !important; }
   <div class="overlay" id="duelscreen" aria-hidden="true" role="dialog" aria-label="Ranked Duel"></div>
 
   <!-- Title / home screen — the cinematic front door (populated by glue) -->
-  <div id="title" aria-hidden="true" role="dialog" aria-label="SIXFOLD — title"></div>
+  <div id="title" aria-hidden="true" role="dialog" aria-label="SIXFOLD · title"></div>
 
   <!-- First-run / on-demand how-to guide -->
   <div class="overlay" id="howto" aria-hidden="true" role="dialog" aria-label="How to play">
@@ -1619,7 +1619,7 @@ body.reduce .fighter-art .sprite { animation: none !important; }
   // ---------- roster (ship 8) ----------
   const ARCHES = {
     berserker: {
-      name: "Berserker", tell: "Repeats the stance that just hit — counter the repeat.",
+      name: "Berserker", tell: "Repeats the stance that just hit, counter the repeat.",
       stars: 1, w: { bias: 0.60, read: 0.10, noise: 0.30 },
       bias: "winStay", readStrength: 0.6, yomi: 1, bind: "drive", spend: "never",
       triggers: [{ when: (c) => c.aiHP > c.playerHP, effect: (d, c) => {
@@ -1627,7 +1627,7 @@ body.reduce .fighter-art .sprite { animation: none !important; }
       } }],
     },
     stone: {
-      name: "Stone", tell: "Picks bunch in one arc — counter the cluster.",
+      name: "Stone", tell: "Picks bunch in one arc, counter the cluster.",
       stars: 2, w: { bias: 0.72, read: 0.08, noise: 0.20 },
       bias: "homeArc", readStrength: 0.45, yomi: 1, bind: "random", spend: "insight",
       // low HP -> narrow onto the home-arc centre
@@ -1637,32 +1637,32 @@ body.reduce .fighter-art .sprite { animation: none !important; }
       } }],
     },
     drunkard: {
-      name: "Drunkard", tell: "Never repeats — eliminate its last pick.",
+      name: "Drunkard", tell: "Never repeats, eliminate its last pick.",
       stars: 2, w: { bias: 0.74, read: 0.08, noise: 0.18 },
       bias: "neverRepeat", readStrength: 0.45, yomi: 1, bind: "random", spend: "insight",
     },
     mirror: {
-      name: "Mirror", tell: "Plays YOUR last stance — counter your own previous move.",
+      name: "Mirror", tell: "Plays YOUR last stance, counter your own previous move.",
       stars: 2, w: { bias: 0.80, read: 0.00, noise: 0.20 },
       bias: "mirrorPlayer", readStrength: 0, yomi: 1, bind: "random", spend: "insight",
     },
     metronome: {
-      name: "Metronome", tell: "Marches a fixed step — find the cadence, stay ahead.",
+      name: "Metronome", tell: "Marches a fixed step, find the cadence, stay ahead.",
       stars: 3, w: { bias: 0.75, read: 0.00, noise: 0.25 },
       bias: "rotate", readStrength: 0, yomi: 1, bind: "random", spend: "insight",
     },
     trickster: {
-      name: "Trickster", tell: "Beats your counter — don't take the bait, go a level deeper.",
+      name: "Trickster", tell: "Beats your counter, don't take the bait, go a level deeper.",
       stars: 4, w: { bias: 0.20, read: 0.55, noise: 0.25 },
       bias: "favorStance", readStrength: 0.85, yomi: 2, bind: "antiread", spend: "insight",
     },
     ghost: {
-      name: "Ghost", tell: "Near-random + sharp read — survive on your own unpredictability.",
+      name: "Ghost", tell: "Near-random + sharp read, survive on your own unpredictability.",
       stars: 5, w: { bias: 0.05, read: 0.35, noise: 0.60 },
       bias: "favorStance", readStrength: 0.9, yomi: 1, bind: "random", spend: "hoard-foresight",
     },
     echo: {
-      name: "Echo", tell: "Learns you in real time — it does to you what you do to others.",
+      name: "Echo", tell: "Learns you in real time, it does to you what you do to others.",
       stars: 5, w: { bias: 0.10, read: 0.65, noise: 0.25 },
       bias: "adaptiveCounter", readStrength: 0.9, yomi: 1, bind: "read", spend: "foresight-on-doubt",
     },
@@ -2537,7 +2537,7 @@ body.reduce .fighter-art .sprite { animation: none !important; }
         '<div class="hero">' +
         '<div class="clash-title">CLASH</div><div class="clash-sub">break the bind</div>' +
         '<div class="bind-big-row">' +
-        BINDS.map((b) => `<button class="bindbtn-lg" data-b="${b.id}" aria-label="${b.name} — beats ${b.beats}"><span class="bg">${b.glyph}</span><span class="bn">${b.name}</span><span class="bd">beats ${b.beats}</span></button>`).join("") +
+        BINDS.map((b) => `<button class="bindbtn-lg" data-b="${b.id}" aria-label="${b.name} · beats ${b.beats}"><span class="bg">${b.glyph}</span><span class="bn">${b.name}</span><span class="bd">beats ${b.beats}</span></button>`).join("") +
         "</div>" +
         '<div class="bind-timer' + (timed && !reduced ? " on" : "") + '"><div class="fill"></div></div>' +
         "</div>";
@@ -3226,7 +3226,7 @@ body.reduce .fighter-art .sprite { animation: none !important; }
     nodeEls.forEach((el,j)=>el.classList.toggle("aiming",j===i));
     if(Stage.toStance)Stage.toStance("P",i);      // pre-pivot for anticipation
     $("verdict").textContent="Strike?";
-    $("sub").textContent=STANCES[i].n+" — tap again";
+    $("sub").textContent=STANCES[i].n+" · tap again";
   }
   function preview(i){
     if(busy||over)return;
@@ -3248,7 +3248,7 @@ body.reduce .fighter-art .sprite { animation: none !important; }
   /* ---- round flow (engine-driven) ---- */
   const VERDICT={clean:"CLEAN!",glance:"Glance",whiff:"Whiff",clash:"Clash"};
   function subText(o){
-    if(o.bind) return o.winner? (o.winner==="P"?"bind won — a cut":"bind lost — grazed") : "blades spark — locked";
+    if(o.bind) return o.winner? (o.winner==="P"?"bind won, a cut":"bind lost, grazed") : "blades spark, locked";
     return {clean:o.winner==="P"?"you struck deep":"you got opened up",
       glance:o.winner==="P"?"a grazing cut":"grazed you",
       whiff:"blades pass, nothing",clash:"stances mirror"}[o.kind];
@@ -3318,7 +3318,7 @@ body.reduce .fighter-art .sprite { animation: none !important; }
     g.bus.on("info-revealed",({side,action,payload})=>{
       if(side==="P") applyReveal(action,payload);
       // if you paid Insight to expose the foe's meter, you also catch it spending
-      else if(side==="A" && aiResolveVisible && action==="FORESIGHT") showToast("foe spends Foresight — reading you 👁");
+      else if(side==="A" && aiResolveVisible && action==="FORESIGHT") showToast("foe spends Foresight, reading you 👁");
     });
     g.bus.on("round-revealed",({pPick,aPick,outcome})=>{
       showAiPick(aPick,pPick);
@@ -3333,7 +3333,7 @@ body.reduce .fighter-art .sprite { animation: none !important; }
       const vEl=$("verdict"); vEl.classList.toggle("read",read);
       vEl.textContent= read ? "READ!" : (outcome.bind && outcome.winner ? "BIND!" : VERDICT[outcome.kind]);
       const early=game.state().playerHist.length<=3;   // coach the clockwise rule early
-      $("sub").textContent= read ? "you read it — clean!" : (misread ? "you had the read — strike one BEFORE their stance" : (early?teachReason(pPick,aPick):subText(outcome)));
+      $("sub").textContent= read ? "you read it, clean!" : (misread ? "you had the read, strike one BEFORE their stance" : (early?teachReason(pPick,aPick):subText(outcome)));
       const hub=$("hub"); hub.classList.remove("flash-clean","flash-glance","flash-read","flash-whiff"); void hub.offsetWidth;
       if(read)hub.classList.add("flash-read");
       else if(outcome.winner&&outcome.kind==="clean")hub.classList.add("flash-clean");
@@ -3414,7 +3414,7 @@ body.reduce .fighter-art .sprite { animation: none !important; }
     saveStats();
   }
   function showResult(win,summary,beams,ascentInfo){
-    const tell=summary.tell||"well hidden — no clear tell";
+    const tell=summary.tell||"well hidden, no clear tell";
     const streakChip=streak>1?`<div class="chip streak"><b>×${streak}</b><span>win streak</span></div>`:"";
     const readsChip=matchReads>0?`<div class="chip reads"><b>🎯 ${matchReads}</b><span>${matchReads===1?"read":"reads"} landed</span></div>`:"";
     const comboChip=bestCombo>=3?`<div class="chip"><b>🔥 ×${bestCombo}</b><span>best combo</span></div>`:"";
@@ -3497,7 +3497,7 @@ body.reduce .fighter-art .sprite { animation: none !important; }
   }
   function hintResolveOnce(){
     try{ if(localStorage.getItem("sixfold_resolvehint"))return; localStorage.setItem("sixfold_resolvehint","1"); }catch(e){}
-    showToast("資 Resolve ready — Insight reads their habits · Foresight glimpses their next stance");
+    showToast("資 Resolve ready; Insight reads their habits · Foresight glimpses their next stance");
   }
   function applyReveal(action,payload){
     if(action==="FORESIGHT"&&payload.predict){
@@ -3509,7 +3509,7 @@ body.reduce .fighter-art .sprite { animation: none !important; }
       foresightNode=payload.predict.pick;
       foresightStrike=null;
       nodeEls[foresightNode].classList.add("foresight");           // foe's likely stance
-      showToast("Foresight: foe likely "+STANCES[foresightNode].n+" — read the wheel and punish it");
+      showToast("Foresight: foe likely "+STANCES[foresightNode].n+" · read the wheel and punish it");
     }else if(action==="INSIGHT"){
       aiResolveVisible=true;
       Readout.render(game.state().playerHist,game.state().aiHist,game.state().outcomes,{aiRibbonK:10});
@@ -3531,10 +3531,10 @@ body.reduce .fighter-art .sprite { animation: none !important; }
     if(!taught){
       try{localStorage.setItem("sixfold_predicthint","1");}catch(e){}
       predictNudge._m=true;
-      showToast("⚠ They're reading you — your picks are forming a pattern. Mix it up to break the read.");
+      showToast("⚠ They're reading you, your picks are forming a pattern. Mix it up to break the read.");
     }else if(!predictNudge._m){
       predictNudge._m=true;
-      showToast("⚠ Getting readable — vary your stances");
+      showToast("⚠ Getting readable, vary your stances");
     }
   }
   function clearForesight(){
@@ -3546,7 +3546,7 @@ body.reduce .fighter-art .sprite { animation: none !important; }
     let first=false;
     try{ first=!localStorage.getItem("sixfold_readhint"); if(first)localStorage.setItem("sixfold_readhint","1"); }catch(e){}
     // the big on-screen READ! stamp carries repeat reads; only the first teaches
-    if(first) showToast("🎯 READ! That's the skill — predict, counter, win. Reading beats luck.");
+    if(first) showToast("🎯 READ! That's the skill, predict, counter, win. Reading beats luck.");
   }
 
   function ribbonOpts(){
@@ -3605,7 +3605,7 @@ body.reduce .fighter-art .sprite { animation: none !important; }
   function mirrorTeachOnce(){
     if(isPvP||foeId!=="mirror")return;
     try{ if(localStorage.getItem("sixfold_mirrorhint"))return; localStorage.setItem("sixfold_mirrorhint","1"); }catch(e){}
-    setTimeout(()=>showToast("🪞 This foe copies your LAST stance — beat it by countering your own previous move."), reduced()?0:600);
+    setTimeout(()=>showToast("🪞 This foe copies your LAST stance, beat it by countering your own previous move."), reduced()?0:600);
   }
   function dailySeed(){ const d=new Date(); return (d.getUTCFullYear()*1e4+(d.getUTCMonth()+1)*100+d.getUTCDate())>>>0; }
 
@@ -3694,7 +3694,7 @@ body.reduce .fighter-art .sprite { animation: none !important; }
     const box=$("arenas"); if(box){[...box.children].forEach(c=>c.classList.toggle("sel",c._arena===id));} }
   // per-arena lighting tint on the FIGHTERS so they pick up each scene's colour
   // temperature instead of looking pasted on. Grouped by biome mood; deliberately
-  // SUBTLE (brightness/saturation/warmth only — no hue-rotate that would skew art).
+  // SUBTLE (brightness/saturation/warmth only, no hue-rotate that would skew art).
   const TINT_WARM="saturate(1.09) brightness(.95) sepia(.12)";       // fire/sunset/autumn
   const TINT_COOL="saturate(.98) brightness(1.02) contrast(1.03)";   // ice/water/sky
   const TINT_NIGHT="saturate(.95) brightness(.9) contrast(1.05)";    // dark/eerie
@@ -3752,14 +3752,14 @@ body.reduce .fighter-art .sprite { animation: none !important; }
       o._arena=id;
       o.textContent=THEMES[id].glyph+" "+THEMES[id].name+(open?"":" 🔒");
       o.style.fontSize="11px";o.style.width="auto";o.style.padding="0 9px";
-      o.onclick=open?(()=>setArena(id)):(()=>showToast(THEMES[id].name+" — unlock in the Ascent ⛰"));
+      o.onclick=open?(()=>setArena(id)):(()=>showToast(THEMES[id].name+", unlock in the Ascent ⛰"));
       box.appendChild(o);
     });
   }
 
   /* ---- THE ASCENT: single-player campaign ladder ----
      Climb a fixed sequence of foes; each win unlocks a fighter or arena (cosmetic
-     reward only — never changes combat odds; difficulty is a fair, symmetric knob).
+     reward only, never changes combat odds; difficulty is a fair, symmetric knob).
      Casual stays a fully open sandbox; the Ascent is the structured progression. */
   // The tower. You begin with the Ronin + the Dojo; every rung unlocks a fighter
   // or arena (cosmetic only). Difficulty is the single fair, symmetric knob.
@@ -3852,7 +3852,7 @@ body.reduce .fighter-art .sprite { animation: none !important; }
   let ascentRun=-1; // index of the rung being fought, or -1 for free play
   function saveAscent(){try{localStorage.setItem("sixfold_ascent",String(ascentCleared));}catch(e){}}
   function ascentStars(d){const n=Math.round(d*4)+1;return "★".repeat(n)+"☆".repeat(5-n);}
-  function rewardLabel(r){return r.type==="title"?("Title — "+r.name):((r.type==="skin"?"Unlock fighter: ":"Unlock arena: ")+r.name);}
+  function rewardLabel(r){return r.type==="title"?("Title, "+r.name):((r.type==="skin"?"Unlock fighter: ":"Unlock arena: ")+r.name);}
   function openAscent(){renderAscent();const o=$("ascent");o.classList.add("show");o.setAttribute("aria-hidden","false");
     const cur=o.querySelector(".rung.cur")||o.querySelector(".rung"); if(cur&&cur.scrollIntoView)cur.scrollIntoView({block:"center"});}
   function closeAscent(){$("ascent").classList.remove("show");$("ascent").setAttribute("aria-hidden","true");}
@@ -3904,7 +3904,7 @@ body.reduce .fighter-art .sprite { animation: none !important; }
     renderSkinPicker();                                   // keep the customizer in sync
     if(!game || over || introPlaying) renderFighter("P"); // reflect now when not mid-duel
     const live=(game && !over && !introPlaying);
-    showToast("Playing as "+Skins.get(id).name+(live?" — from your next duel":""));
+    showToast("Playing as "+Skins.get(id).name+(live?", from your next duel":""));
     renderCollection();                                  // refresh the equipped highlight
   }
   function renderCollection(){
@@ -3940,7 +3940,7 @@ body.reduce .fighter-art .sprite { animation: none !important; }
     const winRate=stats.matches?Math.round(stats.wins/stats.matches*100):0;
     const earned=unlockedSkinSet().size, total=collectionEntries().length;
     let favI=-1,favN=0; stats.stance.forEach((c,i)=>{ if(c>favN){favN=c;favI=i;} });
-    const fav=favI<0?"—":(STANCES[favI].g+" "+STANCES[favI].n);
+    const fav=favI<0?", ":(STANCES[favI].g+" "+STANCES[favI].n);
     const stat=(v,l,cls)=>`<div class="pstat ${cls||""}"><b>${v}</b><span>${l}</span></div>`;
     $("profile").innerHTML=
       `<div class="hero profile"><h2>PROFILE</h2>`+
@@ -3949,7 +3949,7 @@ body.reduce .fighter-art .sprite { animation: none !important; }
         stat(winRate+"%","win rate")+
         stat(bestStreak,"best streak","gold")+
         stat(ladder.tier().glyph+" "+ladder.tier().name,"ranked tier","gold")+
-        stat(ladder.wins+"–"+ladder.losses,"ranked W–L")+
+        stat(ladder.wins+", "+ladder.losses,"ranked W; L")+
         stat("🎯 "+lifetimeReads,"reads landed","gold")+
         stat(stats.bestUnpred+"%","best unpred")+
         stat(earned+" / "+total,"fighters")+
@@ -3965,7 +3965,7 @@ body.reduce .fighter-art .sprite { animation: none !important; }
   function dailyChallenge(){ // foe/diff/arena are a pure function of today's date
     const seed=dailySeed(), ids=Personalities.ids(), arenas=Object.keys(THEMES);
     return { foe: ids[seed%ids.length],
-      diff: Math.round((0.4+((Math.floor(seed/7))%11)/10*0.5)*100)/100,   // fair 0.40–0.90 band
+      diff: Math.round((0.4+((Math.floor(seed/7))%11)/10*0.5)*100)/100,   // fair 0.40 to 0.90 band
       arena: arenas[Math.floor(seed/3)%arenas.length] };
   }
   let dailyState=(function(){try{return JSON.parse(localStorage.getItem("sixfold_daily")||"{}")||{};}catch(e){return{};}})();
@@ -4026,8 +4026,8 @@ body.reduce .fighter-art .sprite { animation: none !important; }
   function shareDaily(){
     const s=dailyState; if(!s.date){showToast("Play today's duel first");return;}
     const txt="SIXFOLD Daily "+s.date+"\n"+(s.win?"⚔ Victory":"☠ Defeat")+" · "+s.rounds+" rounds · "+s.unpred+"% unread · "+s.streak+"🔥\nstephenuffugus.github.io/sixfold";
-    if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(()=>showToast("Copied — share your duel"),()=>showToast("⚔ "+s.date));
-    else showToast("⚔ Daily "+s.date+" — "+(s.win?"Victory":"Defeat"));
+    if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(()=>showToast("Copied, share your duel"),()=>showToast("⚔ "+s.date));
+    else showToast("⚔ Daily "+s.date+", "+(s.win?"Victory":"Defeat"));
   }
   function openDaily(){ renderDaily(); const o=$("dailyscreen"); o.classList.add("show"); o.setAttribute("aria-hidden","false"); }
   function closeDaily(){ const o=$("dailyscreen"); o.classList.remove("show"); o.setAttribute("aria-hidden","true"); refreshDailyPrompt(); }
@@ -4063,7 +4063,7 @@ body.reduce .fighter-art .sprite { animation: none !important; }
     ascentRun=-1; modeId="daily"; foeId=c.foe; difficulty=c.diff;
     closeDaily(); hideResult(); setArena(c.arena,true); updateFoeBar(); newGame();
   }
-  // home-screen Daily nudge — the return hook, surfaced instead of buried
+  // home-screen Daily nudge, the return hook, surfaced instead of buried
   function refreshDailyPrompt(){
     const el=$("dailyprompt"); if(!el)return;
     if(dailyState.date===utcKey(0)){ el.style.display="none"; return; }   // already played today
@@ -4075,13 +4075,13 @@ body.reduce .fighter-art .sprite { animation: none !important; }
 
   /* ---- RANKED DUEL (PvP): live head-to-head + Tier ladder ----
      Transport-agnostic: matchmaking + the duel channel go through Net (LocalMock
-     today, Firebase later). Rank rewards OUTCOMES of symmetric duels only — never
+     today, Firebase later). Rank rewards OUTCOMES of symmetric duels only, never
      the combat math. A Sentinel (no-opponent fallback) is a fair AI at the player's
      rank, clearly labelled, at reduced rank stakes (can't be farmed). */
   const nowMs=()=>{ try{ return Date.now(); }catch(e){ return 0; } };
   function openDuel(){ renderDuel(); const o=$("duelscreen"); o.classList.add("show"); o.setAttribute("aria-hidden","false"); }
   function closeDuel(){ if(pvpSearch){pvpSearch.cancel();pvpSearch=null;} const o=$("duelscreen"); o.classList.remove("show"); o.setAttribute("aria-hidden","true"); }
-  // honest "your standing" panel — REAL earned data only (peak / current / record /
+  // honest "your standing" panel · REAL earned data only (peak / current / record /
   // placement). No invented rivals: the global leaderboard arrives with cloud play.
   function standingRows(){
     const t=ladder.tier(), peakT=Rank.tierFor(ladder.peak);
@@ -4166,18 +4166,18 @@ body.reduce .fighter-art .sprite { animation: none !important; }
     const arenas=[...unlockedArenaSet()]; setArena(arenas.length?rid(arenas):"dojo",true);
     closeDuel(); hideResult();
     newGame();
-    // teach the pillar ONCE, proudly: ranked is pure — only your own reads help.
+    // teach the pillar ONCE, proudly: ranked is pure, only your own reads help.
     let taughtPillar=false; try{ taughtPillar=!!localStorage.getItem("sixfold_rankedpillar"); }catch(e){}
     if(!taughtPillar){
       try{localStorage.setItem("sixfold_rankedpillar","1");}catch(e){}
-      setTimeout(()=>showToast("⚔ Ranked is pure — assist charms rest. Only your own reads (Insight · Foresight) help here."), reduced()?0:500);
+      setTimeout(()=>showToast("⚔ Ranked is pure, assist charms rest. Only your own reads (Insight · Foresight) help here."), reduced()?0:500);
     }else{
       setTimeout(()=>showToast(opponent.kind==="sentinel"
-        ? "👻 Sentinel engaged — "+opponent.name+" · reduced stakes"
-        : "⚔ Rival found — "+opponent.name), reduced()?0:500);
+        ? "👻 Sentinel engaged, "+opponent.name+" · reduced stakes"
+        : "⚔ Rival found, "+opponent.name), reduced()?0:500);
     }
   }
-  // Abandoning a LIVE, in-progress ranked duel counts as a loss — no free dodge.
+  // Abandoning a LIVE, in-progress ranked duel counts as a loss, no free dodge.
   // (Closes the "navigate away while losing -> eat no rating" exploit.)
   function abandonPvp(){
     if(pvpResolved)return; pvpResolved=true;
@@ -4185,7 +4185,7 @@ body.reduce .fighter-art .sprite { animation: none !important; }
     ladder.applyResult(false,{rating:opp.rating,kind:opp.kind,id:opp.id},nowMs());
     savePvp();
     if(pvpSession){ try{pvpSession.close();}catch(e){} }
-    showToast("Ranked duel abandoned — counted as a loss");
+    showToast("Ranked duel abandoned, counted as a loss");
   }
   function leavePvp(){
     if(pvpSession){ try{pvpSession.close();}catch(e){} }
@@ -4253,14 +4253,14 @@ body.reduce .fighter-art .sprite { animation: none !important; }
   }
   function handlePvpDisconnect(){
     if(over||pvpResolved||!isPvP)return;
-    showToast("⚠ Rival disconnected — duel awarded to you");
+    showToast("⚠ Rival disconnected, duel awarded to you");
     over=true; busy=true; matchWinner="P";
     $("roundlbl").textContent="Match over"; $("verdict").textContent="VICTORY"; $("verdict").style.color=getCss("--gold"); $("sub").textContent="rival fled the duel";
     const st=game?game.state():{round:1,playerHist:[]};
     const summary={winner:"P",rounds:st.round,unpredictabilityPct:Readout.unpredictabilityPct(st.playerHist||[]),difficulty,worstRound:0,tell:""};
     // a local drop can't be authoritative (the bus dying mid-duel decides nothing
     // real until Phase 2 makes results server-authoritative w/ a reconnect grace),
-    // so award the win at REDUCED stakes — discourages rage-quit-to-feed-wins.
+    // so award the win at REDUCED stakes, discourages rage-quit-to-feed-wins.
     pvpMatchOver(true,summary,{stakesKind:"sentinel"});
   }
 
@@ -4314,7 +4314,7 @@ body.reduce .fighter-art .sprite { animation: none !important; }
     const charms=[{id:null,name:"None",glyph:"∅"}].concat(Object.values(Assists.CHARMS));
     charms.forEach(c=>{
       const o=document.createElement("div");o.className="opt"+((Assists.current()?Assists.current().id:null)===c.id?" sel":"");
-      o.textContent=c.glyph;o.title=c.name+(c.effect?" — "+c.effect:"");
+      o.textContent=c.glyph;o.title=c.name+(c.effect?", "+c.effect:"");
       o.onclick=()=>{Assists.equip(c.id);syncSel(box,o);updateCharmUI();applyCompass();updateFoeBar();};
       box.appendChild(o);
     });
@@ -4323,7 +4323,7 @@ body.reduce .fighter-art .sprite { animation: none !important; }
   function updateCharmUI(){
     const mode=Engine.MODES[modeId], active=Assists.active(mode), equipped=Assists.current();
     $("charmhint").textContent = (!mode.honorsAssists && equipped)
-      ? equipped.name+" is INERT here — "+mode.id+" is competitive."
+      ? equipped.name+" is INERT here, "+mode.id+" is competitive."
       : "Charms go inert the moment a match is ranked, seeded, or PvP.";
   }
   function applyCompass(){
@@ -4343,7 +4343,7 @@ body.reduce .fighter-art .sprite { animation: none !important; }
       const open=unlocked.has(s.id);
       const o=document.createElement("div");o.className="opt"+(s.id===player.skin?" sel":"")+(open?"":" lock");
       o.textContent=s.name+(open?"":" 🔒");o.style.fontSize="11px";o.style.width="auto";o.style.padding="0 8px";
-      o.onclick=open?(()=>{player.skin=s.id;syncSel(skins,o);renderFighter("P");}):(()=>showToast(s.name+" — unlock in the Ascent ⛰"));
+      o.onclick=open?(()=>{player.skin=s.id;syncSel(skins,o);renderFighter("P");}):(()=>showToast(s.name+", unlock in the Ascent ⛰"));
       skins.appendChild(o);
     });
   }
@@ -4367,7 +4367,7 @@ body.reduce .fighter-art .sprite { animation: none !important; }
   // Forge click: if not owned, try to buy with sunbeams; once owned, select it.
   function tryBuyOrSelect(key,cost,apply,box,o){
     if(!boughtCosmetics.has(key)){
-      if(!spendSunbeams(cost)){ showToast("Need ☀"+cost+" — win duels & trials to earn sunbeams"); return; }
+      if(!spendSunbeams(cost)){ showToast("Need ☀"+cost+", win duels & trials to earn sunbeams"); return; }
       boughtCosmetics.add(key); saveShop();
       o.classList.remove("buy"); const pr=o.querySelector(".price"); if(pr)pr.remove();
       showToast("Forged ✦ −☀"+cost);
@@ -4379,7 +4379,7 @@ body.reduce .fighter-art .sprite { animation: none !important; }
   function showToast(t){const el=$("toast");el.textContent=t;el.classList.add("show");clearTimeout(showToast._t);showToast._t=setTimeout(()=>el.classList.remove("show"),2600);}
 
   /* ---- TITLE / HOME screen: the cinematic front door + mode hub ---- */
-  // Menu track. The owner's standout/hero track drops in HERE when provided —
+  // Menu track. The owner's standout/hero track drops in HERE when provided · 
   // swap MENU_MUSIC for its id and it becomes the title/Champion accent.
   const MENU_MUSIC="lastbreath1";
   function menuMusic(){ return "music/"+MENU_MUSIC+".mp3"; }
