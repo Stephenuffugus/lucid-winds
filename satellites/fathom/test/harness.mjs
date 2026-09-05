@@ -118,3 +118,78 @@ export const dragEnd = (page, x, y) => page.evaluate((x, y) => {
 }, x, y);
 
 export const sleep = ms => new Promise(r => setTimeout(r, ms));
+/* ------------------------------------------------------- the steered thumb
+   A finger goes down on the canvas, moves once past the slop so the floating
+   stick is born where it landed, and from then on it is AIMED: every step
+   dispatches one pointermove that points the stick from where the player is to
+   where the player wants to be. That is what a hand on a floating stick does.
+   Nothing here writes to the sim; the only thing that reaches the game is a
+   pointer event on the canvas. */
+export async function stickDown(page, home) {
+  await page.evaluate((x, y) => {
+    const el = document.elementFromPoint(x, y);
+    el.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 21, pointerType: 'touch', isPrimary: true, bubbles: true, cancelable: true, clientX: x, clientY: y }));
+  }, home.x, home.y);
+  await page.evaluate((x, y) => {
+    document.getElementById('board').dispatchEvent(new PointerEvent('pointermove', { pointerId: 21, pointerType: 'touch', isPrimary: true, bubbles: true, cancelable: true, clientX: x + 20, clientY: y }));
+  }, home.x, home.y);
+  return page.evaluate(() => !!window.FATHOM_DEV.stick());
+}
+export function stickUp(page, home) {
+  return page.evaluate((x, y) => {
+    document.getElementById('board').dispatchEvent(new PointerEvent('pointerup', { pointerId: 21, pointerType: 'touch', isPrimary: true, bubbles: true, cancelable: true, clientX: x, clientY: y }));
+  }, home.x, home.y);
+}
+/* one steer. aim is { tx, ty } in tiles, or { lurker: true } for the nearest
+   thing in the dark. Returns what the page believes after the move. */
+export const steerStep = (page, home, aim) => page.evaluate((home, aim) => {
+  const p = window.FATHOM_DEV.player();
+  const tile = window.FATHOM_DEV.tile();
+  const s = window.FATHOM_DEV.state();
+  let gx, gy;
+  if (aim.lurker) {
+    let best = null, bd = 1e9;
+    for (const L of (s.lurkers || [])) {
+      const d = Math.hypot(L[0] - p.x, L[1] - p.y);
+      if (d < bd) { bd = d; best = L; }
+    }
+    if (!best) return { d: -1, over: s.over, frames: window.FATHOM_DEV.frames(), stones: s.stones, screen: window.FATHOM_DEV.screen(), noAim: true };
+    gx = best[0]; gy = best[1];
+  } else {
+    gx = aim.tx * tile + tile / 2; gy = aim.ty * tile + tile / 2;
+  }
+  const dx = gx - p.x, dy = gy - p.y, d = Math.hypot(dx, dy) || 1;
+  document.getElementById('board').dispatchEvent(new PointerEvent('pointermove', {
+    pointerId: 21, pointerType: 'touch', isPrimary: true, bubbles: true, cancelable: true,
+    clientX: home.x + dx / d * 70, clientY: home.y + dy / d * 70
+  }));
+  return { d, over: s.over, frames: window.FATHOM_DEV.frames(), stones: s.stones, screen: window.FATHOM_DEV.screen() };
+}, home, aim);
+
+export const nextFrame = (page, was) =>
+  page.waitForFunction((f) => window.FATHOM_DEV.frames() > f, { timeout: 30000 }, was).catch(() => {});
+
+/* walk the shortest route to the exit. Returns how it went, never throws. */
+export async function walkRoute(page, home, route, opts = {}) {
+  const max = opts.max || 2600;
+  let node = 1, iters = 0, stuck = 0, lastD = 1e9, threw = 0;
+  while (node < route.length && iters < max) {
+    iters++;
+    const st = await steerStep(page, home, { tx: route[node][0], ty: route[node][1] });
+    if (st.over || st.screen !== 'play') return { done: st.over === 'clear', over: st.over, iters, node, threw, screen: st.screen };
+    if (st.d < 7) { node++; stuck = 0; lastD = 1e9; continue; }
+    if (st.d > lastD - 0.05) stuck++; else stuck = 0;
+    lastD = st.d;
+    if (opts.throwEvery && iters % opts.throwEvery === 0 && st.stones > 1) {
+      const at = await page.evaluate(() => {
+        const p = window.FATHOM_DEV.player(); const s = window.FATHOM_DEV.screenOf(p.x, p.y);
+        return { x: Math.max(24, Math.min(window.innerWidth - 24, s.x)), y: Math.max(30, Math.min(window.innerHeight - 200, s.y - 90)) };
+      });
+      await tapAt(page, at.x, at.y);
+      threw++;
+    }
+    if (stuck > 70) return { done: false, stuckAt: route[node], iters, node, threw };
+    await nextFrame(page, st.frames);
+  }
+  return { done: false, ranOut: true, iters, node, threw };
+}

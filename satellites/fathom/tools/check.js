@@ -38,7 +38,8 @@ const BROWSER_GATES = [
   { name: 'boot', cmd: ['test/boot.mjs'], need: 'BOOT OK' },
   { name: 'play',   cmd: ['test/play.mjs'],   need: 'PLAY OK' },
   { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK' },
-  { name: 'level1', cmd: ['test/level1.mjs'], need: 'LEVEL1 OK', slow: true }
+  { name: 'level1', cmd: ['test/level1.mjs'], need: 'LEVEL1 OK', slow: true },
+  { name: 'campaign', cmd: ['test/campaign.mjs'], need: 'CAMPAIGN OK', slow: true }
 ];
 
 const results = [];

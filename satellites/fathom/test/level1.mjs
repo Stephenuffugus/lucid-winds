@@ -21,7 +21,7 @@
  */
 import { writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { serve, open, reporter, tap, tapAt, sleep, ROOT } from './harness.mjs';
+import { serve, open, reporter, tap, tapAt, sleep, ROOT, stickDown, stickUp, walkRoute } from './harness.mjs';
 
 const { base, close } = await serve();
 const { browser, page, errors } = await open(base);
@@ -43,56 +43,15 @@ say(!!route && route.length > 20, 'the cave has a way through, ' + (route ? rout
 /* the finger goes down in the lower middle and STAYS down; from here on it is
    steered, which is what a thumb on a floating stick actually is */
 const home = await dev(() => ({ x: window.innerWidth / 2, y: window.innerHeight - 150 }));
-await dev((x, y) => {
-  const el = document.elementFromPoint(x, y);
-  el.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 21, pointerType: 'touch', isPrimary: true, bubbles: true, cancelable: true, clientX: x, clientY: y }));
-}, home.x, home.y);
-/* one move past the slop so the stick is born where the finger landed */
-await dev((x, y) => {
-  const el = document.getElementById('board');
-  el.dispatchEvent(new PointerEvent('pointermove', { pointerId: 21, pointerType: 'touch', isPrimary: true, bubbles: true, cancelable: true, clientX: x + 20, clientY: y }));
-}, home.x, home.y);
-const stickBorn = await dev(() => !!window.FATHOM_DEV.stick());
-say(stickBorn, 'the finger past the slop makes a stick, not a throw');
+say(await stickDown(page, home), 'the finger past the slop makes a stick, not a throw');
 
-let node = 1, iters = 0, stuck = 0, lastD = 1e9, threw = 0;
-const MAX_ITERS = 2200;
-while (node < route.length && iters < MAX_ITERS) {
-  iters++;
-  const st = await dev((tile, tx, ty, hx, hy) => {
-    const p = window.FATHOM_DEV.player();
-    const gx = tx * tile + tile / 2, gy = ty * tile + tile / 2;
-    let dx = gx - p.x, dy = gy - p.y;
-    const d = Math.hypot(dx, dy) || 1;
-    const el = document.getElementById('board');
-    el.dispatchEvent(new PointerEvent('pointermove', {
-      pointerId: 21, pointerType: 'touch', isPrimary: true, bubbles: true, cancelable: true,
-      clientX: hx + dx / d * 70, clientY: hy + dy / d * 70
-    }));
-    const s = window.FATHOM_DEV.state();
-    return { d, over: s.over, frames: window.FATHOM_DEV.frames(), stones: s.stones, screen: window.FATHOM_DEV.screen() };
-  }, TILE, route[node][0], route[node][1], home.x, home.y);
-
-  if (st.over || st.screen !== 'play') break;
-  if (st.d < 7) { node++; stuck = 0; lastD = 1e9; continue; }
-  if (st.d > lastD - 0.05) stuck++; else stuck = 0;
-  lastD = st.d;
-  /* a stone every so often, so the run spends its budget the way a person does */
-  if (iters % 90 === 0 && st.stones > 1) {
-    const at = await dev(() => { const p = window.FATHOM_DEV.player(); const s = window.FATHOM_DEV.screenOf(p.x, p.y); return { x: Math.max(24, Math.min(window.innerWidth - 24, s.x)), y: Math.max(30, Math.min(window.innerHeight - 200, s.y - 90)) }; });
-    await tapAt(page, at.x, at.y);
-    threw++;
-  }
-  if (stuck > 60) { say(false, 'the thumb got stuck at tile ' + route[node] + ' after ' + iters + ' steers'); break; }
-  await page.waitForFunction((f) => window.FATHOM_DEV.frames() > f, { timeout: 30000 }, st.frames).catch(() => {});
-}
-await dev((x, y) => {
-  document.getElementById('board').dispatchEvent(new PointerEvent('pointerup', { pointerId: 21, pointerType: 'touch', isPrimary: true, bubbles: true, cancelable: true, clientX: x, clientY: y }));
-}, home.x, home.y);
+const walk = await walkRoute(page, home, route, { throwEvery: 90 });
+await stickUp(page, home);
+if (walk.stuckAt) say(false, 'the thumb got stuck at tile ' + walk.stuckAt + ' after ' + walk.iters + ' steers');
 
 const cleared = await page.waitForFunction(() => window.FATHOM_DEV.screen() === 'clear', { timeout: 60000 })
   .then(() => true).catch(() => false);
-say(cleared, 'the thumb walked the cave and the clear card came up (' + iters + ' steers, ' + threw + ' stones thrown, node ' + node + ' of ' + route.length + ')');
+say(cleared, 'the thumb walked the cave and the clear card came up (' + walk.iters + ' steers, ' + walk.threw + ' stones thrown, node ' + walk.node + ' of ' + route.length + ')');
 
 if (cleared) {
   const dir = join(ROOT, 'docs', 'shots');

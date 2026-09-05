@@ -240,6 +240,13 @@ var CONFIG = Object.freeze({
 
   /* camera and the world grid */
   VIEW_W: 360, TILE: 24, GRID_W: 30, GRID_H: 50,
+  /* the camera may run this far past the edge of the cave. Clamped hard to the
+     world, a deep run opened with the player jammed into the top left corner
+     under the stone count, because a generated cave starts at its highest open
+     cell. In a game where unrevealed space is black, void beyond the wall and
+     rock you have not lit look exactly the same, so the margin costs nothing
+     and it keeps you off the edge of your own screen. */
+  CAM_MARGIN: 80,
 
   /* the player */
   PLAYER_R: 7, PLAYER_SPEED: 110, PLAYER_GLOW_R: 20,
@@ -272,7 +279,11 @@ var CONFIG = Object.freeze({
   LURKER_R: 6, LURKER_DRIFT: 40, LURKER_INVESTIGATE: 165,
   DRIFT_TURN_MS: 1800, ARRIVE_R: 10,
   HEAR_R: 420, MILL_MS: 3000, FRENZY_R: 60, FRENZY_MS: 2000, FRENZY_SPEED: 132,
-  CATCH_R: 13, RIBBON_PTS: 7, RIBBON_EVERY_MS: 40,
+  /* the trail is the creature. At the plan's 7 points every 40 ms it was 240 ms
+     long, which is 40 world units at investigate speed: a four pixel sliver on
+     a 360 unit screen, and no amount of drawing makes that read as an eel.
+     Twelve points every 55 ms is 600 ms and about 100 units. */
+  CATCH_R: 13, RIBBON_PTS: 12, RIBBON_EVERY_MS: 55,
 
   /* the budgets, asserted not hoped */
   /* MAX_SEGMENTS counts the MERGED walls, which is what collision and the
@@ -1424,10 +1435,11 @@ function worldW() { return CONFIG.GRID_W * CONFIG.TILE; }
 function worldH() { return CONFIG.GRID_H * CONFIG.TILE; }
 function clampCam(st) {
   var halfW = CSSW / 2 / SCALE, halfH = CSSH / 2 / SCALE;
+  var M = CONFIG.CAM_MARGIN;
   var cx = st.p.x, cy = st.p.y;
-  if (worldW() > halfW * 2) cx = Math.max(halfW, Math.min(worldW() - halfW, cx));
+  if (worldW() > halfW * 2) cx = Math.max(halfW - M, Math.min(worldW() - halfW + M, cx));
   else cx = worldW() / 2;
-  if (worldH() > halfH * 2) cy = Math.max(halfH, Math.min(worldH() - halfH, cy));
+  if (worldH() > halfH * 2) cy = Math.max(halfH - M, Math.min(worldH() - halfH + M, cy));
   else cy = worldH() / 2;
   CAM.x = cx; CAM.y = cy;
 }
@@ -1503,9 +1515,25 @@ function draw(st, G) {
     if (c.taken) continue;
     a = 1 - (now - c.litAt) / C.PICKUP_FADE_MS;
     if (a <= 0) continue;
-    glint(sx(c.x), sy(c.y), 4.5 * SCALE, PAL.warm, fadeEase(a), false);
-    CTX.globalAlpha = fadeEase(a) * 0.9;
-    CTX.beginPath(); CTX.arc(sx(c.x), sy(c.y), 1.6 * SCALE, 0, 6.2832); CTX.fillStyle = PAL.warm; CTX.fill();
+    /* three little stones in a heap, not a ring with a dot in it: a bullseye
+       is the ripple's shape language and a cache must never borrow it */
+    var ca = fadeEase(a), cx2 = sx(c.x), cy2 = sy(c.y), kk;
+    var heap = [[-3.1, 1.4, 2.0], [3.0, 1.6, 1.8], [0.2, -2.4, 2.2]];
+    /* each stone gets its own soft halo. One flat disc behind all three read as
+       a coaster, a hard edged circle of lighter black. */
+    CTX.fillStyle = PAL.warm;
+    for (kk = 0; kk < 3; kk++) {
+      CTX.globalAlpha = ca * 0.11;
+      CTX.beginPath();
+      CTX.arc(cx2 + heap[kk][0] * SCALE, cy2 + heap[kk][1] * SCALE, heap[kk][2] * 2.6 * SCALE, 0, 6.2832);
+      CTX.fill();
+    }
+    for (kk = 0; kk < 3; kk++) {
+      CTX.globalAlpha = ca;
+      CTX.beginPath();
+      CTX.arc(cx2 + heap[kk][0] * SCALE, cy2 + heap[kk][1] * SCALE, heap[kk][2] * SCALE, 0, 6.2832);
+      CTX.fill();
+    }
   }
   for (i = 0; i < st.pearls.length; i++) {
     var pl = st.pearls[i];
@@ -1530,17 +1558,31 @@ function draw(st, G) {
     var g = st.ghosts[i];
     a = 1 - (now - g.litAt) / C.CREATURE_FADE_MS;
     if (a <= 0) continue;
-    var ga = fadeEase(a), n = g.pts.length / 2, k, t, px, py, seg;
+    /* the trail a lurker leaves is a straight line when it is beelining, and a
+       straight line of even dots reads as a barcode. The dots ride a small
+       standing wave across the trail, fixed per ghost so a memory does not
+       wriggle, and the head is fat and bright while the tail thins away. */
+    var ga = fadeEase(a), n = g.pts.length / 2, k, t, px, py, seg, f;
+    if (n < 2) continue;
+    var phase = (g.litAt % 997) / 997 * 6.2832;
     CTX.fillStyle = PAL.red;
-    for (k = 0; k < 22; k++) {
-      t = k / 21 * (n - 1);
+    for (k = 0; k < 18; k++) {
+      var u = k / 17;
+      t = u * (n - 1);
       seg = Math.min(n - 2, Math.floor(t));
-      var f = t - seg;
+      f = t - seg;
       px = g.pts[seg * 2] * (1 - f) + g.pts[seg * 2 + 2] * f;
       py = g.pts[seg * 2 + 1] * (1 - f) + g.pts[seg * 2 + 3] * f;
-      CTX.globalAlpha = ga * (0.25 + 0.75 * (k / 21));
+      var tx2 = g.pts[seg * 2 + 2] - g.pts[seg * 2], ty2 = g.pts[seg * 2 + 3] - g.pts[seg * 2 + 1];
+      var tl = Math.sqrt(tx2 * tx2 + ty2 * ty2) || 1;
+      /* the body undulates and the head and tail do not, which is how a swimming
+         thing moves. Largest at the tail was backwards and only ever showed as a
+         hook on the last two beads. */
+      var wob = Math.sin(u * 9.5 + phase) * 5.0 * Math.sin(u * Math.PI);
+      px += -ty2 / tl * wob; py += tx2 / tl * wob;
+      CTX.globalAlpha = ga * (0.18 + 0.82 * Math.pow(u, 1.4));
       CTX.beginPath();
-      CTX.arc(sx(px), sy(py), (0.9 + 1.9 * (k / 21)) * SCALE, 0, 6.2832);
+      CTX.arc(sx(px), sy(py), (0.7 + 1.9 * Math.pow(u, 1.6)) * SCALE, 0, 6.2832);
       CTX.fill();
     }
   }
@@ -2532,10 +2574,14 @@ function beginRun() {
   $('fade').style.opacity = 0; $('fadeLine').style.opacity = 0;
   showScreen('play');
   fitCanvas();
-  var hint = G.mode === 'deep' ? ('Depth ' + G.depth) : LEVELS[G.level].hint;
+  /* the depth is already on the screen top centre; the hint slot teaches, and
+     in the deep there is one thing to teach and it is only true the first time */
+  var hint = G.mode === 'deep'
+    ? (G.depth <= 1 ? 'These caves are not made by hand' : '')
+    : LEVELS[G.level].hint;
   $('hint').textContent = hint;
-  $('hint').classList.add('on');
-  G.hintUntil = performance.now() + 2500;
+  $('hint').classList.toggle('on', !!hint);
+  G.hintUntil = hint ? (performance.now() + 2500) : 0;
   $('depthTag').textContent = G.mode === 'deep' ? ('DEPTH ' + G.depth) : '';
   updateHud();
   try { parent.postMessage({ sws: 'game-music', on: true }, '*'); } catch (e) {}
@@ -2761,6 +2807,18 @@ window.FATHOM_DEV = {
     if (!G.st) return null;
     var scan = gridScan(G.st.grid);
     return bfsPath(G.st.grid, scan.start.tx, scan.start.ty, scan.exit.tx, scan.exit.ty);
+  },
+  /* the shortest walk from where you are to any tile. What a player who
+     remembers the cave already knows; the gates use it to get to a room. */
+  pathTo: function (tx, ty) {
+    if (!G.st) return null;
+    return bfsPath(G.st.grid, Math.floor(G.st.p.x / CONFIG.TILE), Math.floor(G.st.p.y / CONFIG.TILE), tx, ty);
+  },
+  lurkerTiles: function () {
+    if (!G.st) return [];
+    var out = [], i;
+    for (i = 0; i < G.st.lurkers.length; i++) out.push([Math.floor(G.st.lurkers[i].x / CONFIG.TILE), Math.floor(G.st.lurkers[i].y / CONFIG.TILE)]);
+    return out;
   },
   tile: function () { return CONFIG.TILE; },
   stick: function () { return G.joy ? { dx: G.joy.dx, dy: G.joy.dy } : null; },
