@@ -26,9 +26,13 @@
     ms(a,'Rolls: <strong id="DSr">0</strong> · Open score: <strong id="DSo">135</strong> · Best: <strong id="DSbest">'+(_bestScore>=999?'—':_bestScore)+'</strong>');mm(a);
     // Directions
     var dir=document.createElement('div');
-    dir.style.cssText='text-align:center;padding:0.4rem 0.8rem;margin:0.2rem auto;max-width:440px;font-family:DM Sans,sans-serif;font-size:clamp(0.6rem,1.7vw,0.75rem);color:var(--cream);line-height:1.55;opacity:0.9';
+    // ⛔ the five line rules block resolved to 9.6px at 375 (a 0.6rem floor, under the 0.7rem house
+    // minimum) and pushed the board below the fold; it now sits behind a closed disclosure at 0.72rem
+    dir.style.cssText='text-align:center;padding:0.4rem 0.8rem;margin:0.2rem auto;max-width:440px;font-family:DM Sans,sans-serif;font-size:clamp(0.72rem,1.9vw,0.8rem);color:var(--cream);line-height:1.55;opacity:0.9';
     dir.innerHTML='Roll <strong>2 dice</strong>. Shut any open tiles that <strong>add up to your roll</strong>. One tile or several, your choice.<br>FRONT row reads <strong>1 → 9</strong>, BACK row reads <strong>9 → 1</strong> (mirrored). A <strong>back tile stays covered</strong> until you shut the <strong>front tile above it</strong>. Plan your knockdowns: flipping the FRONT 1 reveals the BACK 9 in that column.<br>If you get stuck, open tiles become your score and <strong style="color:var(--gold)">front tiles count double</strong>. Once every open tile is <strong>6 or less</strong>, you may roll just <strong>1 die</strong>. Shut all 18 for a perfect game.';
-    a.appendChild(dir);
+    var det=document.createElement('details');det.className='ds-rules';det.style.cssText='margin:0 auto 0.2rem;max-width:440px;text-align:center';
+    var sum=document.createElement('summary');sum.textContent='How to play';sum.style.cssText='cursor:pointer;font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;font-size:0.9rem;color:var(--gold);padding:6px 10px;min-height:44px;display:flex;align-items:center;justify-content:center;list-style:none';
+    det.appendChild(sum);det.appendChild(dir);a.appendChild(det);
     var wrap=document.createElement('div');wrap.className='ds-wrap';a.appendChild(wrap);
     // BACK row renders on top (physical game orientation)
     var r1Lbl=document.createElement('div');r1Lbl.className='ds-rowlbl';r1Lbl.innerHTML='BACK &nbsp;·&nbsp; 9 → 1 &nbsp;·&nbsp; counts ×1';wrap.appendChild(r1Lbl);

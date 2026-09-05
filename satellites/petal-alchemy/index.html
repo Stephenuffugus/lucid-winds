@@ -50,7 +50,7 @@ html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:non
   border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#1a2415,#121a0f);
   color:var(--cream); font-size:18px; font-weight:700; letter-spacing:.5px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
 .btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.12)}
-.btn.primary{background:linear-gradient(180deg,#d98fa6,#b2657c); color:#241018; border-color:#eeb0c2; box-shadow:0 4px 0 #6f2f42, 0 8px 20px #0006}
+.btn.primary{background:linear-gradient(180deg,#8fc36a,#5e8c3f); color:#0d1a08; border-color:#b8e29a; box-shadow:0 4px 0 #35521f, 0 8px 20px #0006} /* was the pink slab: the only saturated shape on a midnight page, fighting the pink title above it; pink stays the accent on .pill and discoveries */
 .btn.sm{min-height:72px; font-size:15px}
 .btn.ghost{background:#0f150c; color:var(--muted)}
 .row{display:flex; gap:12px; width:100%}
@@ -68,15 +68,17 @@ h2.sc-h{font-size:30px; color:var(--pink); font-weight:800; margin-bottom:4px}
 .foot{margin-top:auto; padding-top:16px; text-align:center; color:var(--muted); font-size:11px}
 /* ---- play ---- */
 #s-play{padding:0}
-#pa-top{display:flex; align-items:center; gap:8px; padding:6px 10px; border-bottom:1px solid var(--line); background:#0e140d; flex:none}
+#pa-top{display:flex; align-items:center; gap:8px; padding:6px 14px 6px 10px; border-bottom:1px solid var(--line); background:#0e140d; flex:none} /* right padding: the Blooms button touched the screen edge */
 #pa-top .tbtn{min-width:72px; height:72px; border:1px solid var(--line); border-radius:11px; background:#121a0f; color:var(--cream); font-size:18px; font-weight:800; display:flex; align-items:center; justify-content:center; cursor:pointer}
 #pa-top .grow{flex:1}
 #pa-mode{font-size:15px; font-weight:800; color:var(--pink)}
-#pa-count{font-size:12px; color:var(--muted)}
+#pa-count{font-size:12px; color:rgba(232,220,200,.85); text-shadow:0 1px 2px #000}
 #pa-goal{padding:8px 12px; font-size:13px; color:var(--gold); background:#141005; border-bottom:1px solid var(--line); display:none}
 #pa-goal.on{display:block}
 #pa-search{margin:8px 12px 4px; padding:10px 12px; min-height:72px; border-radius:11px; border:1px solid var(--line); background:#0f150c; color:var(--cream); font-size:14px; outline:none; flex:none}
-.shelf{flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:8px 10px 10px; display:flex; flex-wrap:wrap; gap:8px; align-content:flex-start}
+.shelf{flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:8px 10px 10px; display:flex; flex-wrap:wrap; gap:8px; align-content:flex-start; align-content:flex-start}
+/* the empty lower half is a shelf waiting to fill, not a page that failed: a quiet hint sits after the tiles */
+.shelf::after{content:'Tap two tiles to combine them'; flex:1 0 100%; align-self:flex-start; text-align:center; padding:28px 12px 0; color:rgba(232,220,200,.38); font-size:13px; letter-spacing:.04em}
 .tile{min-width:82px; min-height:72px; flex:0 0 auto; border:1px solid var(--line); border-radius:12px; background:linear-gradient(180deg,#182013,#10160d); padding:6px 10px 5px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; cursor:pointer; transition:transform .07s}
 .tile:active{transform:scale(.94)}
 .tile .ic{font-size:22px; line-height:1}
@@ -87,7 +89,7 @@ h2.sc-h{font-size:30px; color:var(--pink); font-weight:800; margin-bottom:4px}
 .tile.newx{animation:pop .5s ease}
 @keyframes pop{0%{transform:scale(.4);filter:brightness(2)}60%{transform:scale(1.12)}100%{transform:scale(1)}}
 #pa-tray{flex:none; display:flex; align-items:center; gap:6px; padding:10px 10px calc(10px + env(safe-area-inset-bottom,0px)); border-top:1px solid var(--line); background:#0e140d}
-.slot{flex:1; min-height:72px; border:1px dashed var(--line); border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; background:#0f150c; cursor:pointer}
+.slot{flex:1; min-height:72px; border:1px dashed rgba(200,168,75,.4); border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; background:#18210f; cursor:pointer} /* was #0f150c on a #0e140d bar: the two source slots did not read as slots */
 .slot.full{border-style:solid; background:linear-gradient(180deg,#182013,#10160d)}
 .slot .ic{font-size:22px}
 .slot .nm{font-size:10px; color:var(--cream); font-weight:700}
