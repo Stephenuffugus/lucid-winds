@@ -45,11 +45,11 @@ function optimalCount(n,p){return p===4?fsCount(n):(Math.pow(2,n)-1);}
     '@keyframes hGlow{0%,100%{filter:drop-shadow(0 0 6px rgba(200,168,75,0.3))}50%{filter:drop-shadow(0 0 14px rgba(200,168,75,0.6))}}',
     '#Hpan{max-width:min(96vw,520px);margin:0 auto;padding:10px 12px 14px;user-select:none;-webkit-user-select:none;touch-action:none;box-sizing:border-box;position:relative;animation:hPanIn .4s ease}',
     '#Hpan::before{content:"";position:absolute;inset:0;border-radius:14px;background:radial-gradient(ellipse at 50% 8%,rgba(122,179,86,0.08) 0%,transparent 60%),linear-gradient(180deg,rgba(13,16,12,0.0) 0%,rgba(28,36,24,0.35) 70%,rgba(42,30,20,0.55) 100%);pointer-events:none;z-index:0}',
-    '.hpegs{display:flex;justify-content:space-around;align-items:flex-end;gap:clamp(4px,1.5vw,10px);padding:10px 8px 0;position:relative;z-index:1}',
+    '.hpegs{display:flex;justify-content:space-evenly;align-items:flex-end;gap:clamp(4px,1.5vw,10px);padding:10px 8px 0;position:relative;z-index:1;padding-inline:6%}',
     '.hpeg{flex:1;min-width:0;display:flex;flex-direction:column-reverse;align-items:center;cursor:pointer;position:relative;padding-bottom:2px;-webkit-tap-highlight-color:transparent;min-height:clamp(210px,55vw,280px)}',
     '.hpeg.sel .hrod{background:linear-gradient(180deg,#8a6a42 0%,#6b4520 55%,#3a2410 100%);box-shadow:0 0 14px rgba(200,168,75,0.35);}',
     '.hpeg.sel::after{content:"";position:absolute;inset:-4px 0 20px 0;background:radial-gradient(ellipse at 50% 30%,rgba(200,168,75,0.12) 0%,transparent 70%);border-radius:12px;pointer-events:none;z-index:-1}',
-    '.hrod{width:6px;flex-grow:1;min-height:20px;background:linear-gradient(180deg,#6b4520 0%,#4a2d14 55%,#2a1810 100%);border-radius:3px;box-shadow:inset 1px 0 0 rgba(255,220,160,0.12),inset -1px 0 0 rgba(0,0,0,0.25);position:absolute;bottom:22px;left:50%;transform:translateX(-50%);z-index:0}',
+    '.hrod{width:12px;z-index:0;flex-grow:1;min-height:clamp(120px,32vw,160px);background:linear-gradient(180deg,#6b4520 0%,#4a2d14 55%,#2a1810 100%);border-radius:3px;box-shadow:inset 1px 0 0 rgba(255,220,160,0.12),inset -1px 0 0 rgba(0,0,0,0.25);position:absolute;bottom:22px;left:50%;transform:translateX(-50%);z-index:0}',
     '.hbase{position:absolute;bottom:0;left:0;right:0;height:22px;background:radial-gradient(ellipse at 50% 40%,rgba(120,80,40,0.75) 0%,rgba(42,24,12,0.9) 70%);border-radius:0 0 10px 10px;box-shadow:inset 0 2px 4px rgba(255,200,140,0.12),0 2px 10px rgba(0,0,0,0.4);z-index:0}',
     '.hbase::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(120,80,40,0.35) 0%,transparent 70%);border-radius:inherit}',
     '.hdk{width:var(--dw,60px);height:clamp(14px,3.6vw,22px);border-radius:8px;margin-bottom:2px;position:relative;z-index:2;box-shadow:inset 0 1px 0 rgba(255,255,255,0.15),inset 0 -1px 0 rgba(0,0,0,0.2),0 3px 7px rgba(0,0,0,0.35);transition:transform .2s cubic-bezier(.18,1.1,.3,1),box-shadow .2s ease;animation:hDiskLand .3s cubic-bezier(.18,1.1,.3,1)}',
@@ -343,7 +343,7 @@ function GH(a){
   ms(a,'');mm(a);
   pan=document.createElement('div');pan.id='Hpan';a.appendChild(pan);
   var pegChoice='<select class="gsl" id="Hp4" onchange="_HN()"><option value="3">3 pegs</option><option value="4">4 pegs</option></select>';
-  var diskChoice='<select class="gsl" id="Hd" onchange="_HN()"><option value="3">3</option><option value="4">4</option><option value="5" selected>5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select> disks';
+  var diskChoice='<select class="gsl" id="Hd" onchange="_HN()"><option value="3">3</option><option value="4">4</option><option value="5" selected>5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select> <span style="font-family:DM Mono,monospace;font-size:0.72rem;color:rgba(122,179,86,.95);letter-spacing:.04em">disks</span>';
   mc(a).innerHTML=pegChoice+' '+diskChoice;
   // Global controls (New / Undo) live inside pan now via render()
   if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){

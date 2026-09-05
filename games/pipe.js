@@ -16,7 +16,8 @@ function GPP(a){
   var IMG_ST=VI+'vine-straight.png',IMG_CR=VI+'vine-corner.png',IMG_SR=VI+'vine-source.png',IMG_EN=VI+'vine-end.png';
   var EX_ST=[1,0,1,0],EX_CR=[1,1,0,0],EX_EN=[0,0,0,1];
   ms(a,'\ud83c\udf3f LEVEL <strong id="PPl">'+level+'</strong> \u00b7 <span id="PPc">0</span>/<span id="PPt">'+SZ*SZ+'</span> vines');mm(a);
-  var gd=document.createElement('div');gd.className='lg';gd.id='PP';gd.style.gridTemplateColumns='repeat('+SZ+',1fr)';gd.style.gap='2px';gd.style.width='clamp(300px,92vw,420px)';a.appendChild(gd);
+  var _ppst=document.createElement('style');_ppst.textContent='#PP{gap:0}#PP>div{border-radius:0}#PP>div img{border-radius:0}';a.appendChild(_ppst);
+  var gd=document.createElement('div');gd.className='lg';gd.id='PP';gd.style.gridTemplateColumns='repeat('+SZ+',1fr)';gd.style.gap='0';gd.style.width='clamp(300px,92vw,420px)';a.appendChild(gd);
   mc(a).innerHTML='<button class="gb" onclick="_PPN()">↻ New Game</button>';
   function dirOf(f,t){var d=t-f;return d===-SZ?0:d===1?1:d===SZ?2:d===-1?3:-1}
   function adjCnt(ci,vis){var cy=Math.floor(ci/SZ),cx=ci%SZ,c=0;if(cy>0&&!vis[ci-SZ])c++;if(cx<SZ-1&&!vis[ci+1])c++;if(cy<SZ-1&&!vis[ci+SZ])c++;if(cx>0&&!vis[ci-1])c++;return c}
@@ -92,14 +93,14 @@ function GPP(a){
       // the end "looks like a crossroad". Overlay a 🌱 START / 🌸 FINISH
       // marker in the corner that doesn't rotate with the tile.
       if(i===srcI){
-        var s=document.createElement('div');s.style.cssText='position:absolute;top:1px;left:2px;font-size:0.55rem;font-family:Bebas Neue,sans-serif;color:#7ab356;letter-spacing:0.06em;text-shadow:0 0 4px #000,0 0 2px #000;pointer-events:none;z-index:2;';
+        var s=document.createElement('div');s.style.cssText='position:absolute;bottom:4px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:0.6rem;font-family:Bebas Neue,sans-serif;color:#7ab356;letter-spacing:0.06em;text-shadow:0 0 4px #000,0 0 2px #000;pointer-events:none;z-index:2;';
         s.textContent='🌱 START';wrap.appendChild(s);
         // Big arrow showing exactly which way the vine leaves the start, so
         // it can never read as an ambiguous crossroad (Stephen 2026-06-28).
         var _se=pExit(srcI);var _arr=_se[0]?'↑':_se[1]?'→':_se[2]?'↓':_se[3]?'←':'';
         if(_arr){var ar=document.createElement('div');ar.style.cssText='position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:bold;color:#aef08a;text-shadow:0 0 6px #000,0 0 3px #000;pointer-events:none;z-index:2;';ar.textContent=_arr;wrap.appendChild(ar);}
       } else if(i===endI){
-        var f=document.createElement('div');f.style.cssText='position:absolute;top:1px;left:2px;font-size:0.55rem;font-family:Bebas Neue,sans-serif;color:'+(st.won?'#c8a84b':'#e8a0bf')+';letter-spacing:0.06em;text-shadow:0 0 4px #000,0 0 2px #000;pointer-events:none;z-index:2;'+(st.won?'':'animation:pipeBlink 1.4s ease-in-out infinite;');
+        var f=document.createElement('div');f.style.cssText='position:absolute;bottom:4px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:0.6rem;font-family:Bebas Neue,sans-serif;color:'+(st.won?'#c8a84b':'#e8a0bf')+';letter-spacing:0.06em;text-shadow:0 0 4px #000,0 0 2px #000;pointer-events:none;z-index:2;'+(st.won?'':'animation:pipeBlink 1.4s ease-in-out infinite;');
         f.textContent=st.won?'🌸 BLOOM':'🌸 FINISH';wrap.appendChild(f);
       }
       if(!g.fixed){

@@ -92,7 +92,7 @@ window._gameFns.seedtoss2=function ST(a){
   mc(a).innerHTML='<button class="gb" onclick="_STN()" style="min-height:48px;padding:10px 22px;font-weight:700;">↻ New Game</button>';
 
   function setup(){
-    pan.innerHTML='<canvas id="STc" width="'+W+'" height="'+H+'" style="background:#0d100c;border:1px solid rgba(122,179,86,0.2);border-radius:10px;touch-action:none;max-width:100%;"></canvas><div id="STmsg" style="font-family:Bebas Neue,sans-serif;font-size:0.9rem;color:var(--cream);min-height:20px;margin-top:6px;"></div>';
+    pan.innerHTML='<canvas id="STc" width="'+W+'" height="'+H+'" style="background:#0d100c;border:1px solid rgba(122,179,86,0.2);border-radius:10px;touch-action:none;max-width:100%;"></canvas><div id="STmsg" style="font-family:Bebas Neue,sans-serif;font-size:0.9rem;color:var(--cream);min-height:0;margin-top:6px;"></div>';
     canvas=document.getElementById('STc');ctx=canvas.getContext('2d');
     GROUND_Y=H*0.88;
     canvas.addEventListener('touchstart',onDown,{passive:false});
@@ -559,7 +559,7 @@ window._gameFns.seedtoss2=function ST(a){
       // Header at the top of the canvas — arcs flying above this still
       // score: +1 pt per 2 px, capped at +1000.
       ctx.fillStyle='rgba(232,220,200,0.75)';
-      ctx.font='bold 9px monospace';ctx.textAlign='center';ctx.textBaseline='top';
+      ctx.font='bold 12px monospace';ctx.textAlign='center';ctx.textBaseline='top';
       ctx.fillText('▲ higher = more pts · keep climbing · cap +1000',W/2,2);
       ctx.textBaseline='alphabetic';
     }
@@ -610,9 +610,11 @@ window._gameFns.seedtoss2=function ST(a){
     }
     // Idle hint
     if(phase==='ready'&&totalThrown===0&&seed){
-      ctx.fillStyle='rgba(232,220,200,0.5)';
       ctx.font='italic 13px serif';ctx.textAlign='center';
-      ctx.fillText('Flick the seed upward ↑',seed.x,seed.y+30);
+      var _hw=ctx.measureText('Flick the seed upward ↑').width+22;
+      ctx.fillStyle='rgba(13,16,12,0.72)';ctx.beginPath();if(ctx.roundRect)ctx.roundRect(seed.x-_hw/2,seed.y+40,_hw,24,12);else ctx.rect(seed.x-_hw/2,seed.y+40,_hw,24);ctx.fill();
+      ctx.fillStyle='rgba(232,220,200,0.85)';
+      ctx.fillText('Flick the seed upward ↑',seed.x,seed.y+57);
     }
   }
 

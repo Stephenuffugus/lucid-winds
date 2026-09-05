@@ -31,7 +31,7 @@
         '.yDie.rolling{animation:yDieRoll 0.85s cubic-bezier(.18,.7,.3,1) both;}'+
         '.yDie.held{transform:translateY(-6px) scale(0.96);filter:saturate(0.85);}'+
         /* Yacht-Sea: cool blue cast so the dice sit against the navy pan */
-        '.yDie img{filter:hue-rotate(-16deg) saturate(0.92) brightness(1.06) drop-shadow(0 2px 3px rgba(0,0,0,0.4));}'+
+        '.yDie img{filter:drop-shadow(0 2px 3px rgba(0,0,0,0.4));}'+
         '@keyframes yBestPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,220,112,0.4),inset 0 1px 0 rgba(255,255,255,0.08)}50%{box-shadow:0 0 12px rgba(255,220,112,0.55),inset 0 1px 0 rgba(255,255,255,0.12)}}'+
         '.yBestPulse{animation:yBestPulse 1.4s ease-in-out infinite;}'+
         '@keyframes yYahtzeeIn{0%{opacity:0}100%{opacity:1}}'+
@@ -75,7 +75,7 @@
         +'url("'+_Y_FELT+'"),'
         +'radial-gradient(ellipse at 50% 0%,rgba(255,255,255,0.05) 0%,transparent 50%),'
         +'radial-gradient(circle at 50% 100%,rgba(0,0,0,0.3) 0%,transparent 65%),'
-        +'linear-gradient(135deg,#123048 0%,#0c2036 55%,#07162a 100%);'
+        +'linear-gradient(135deg,#12211a 0%,#0d1713 55%,#080f0c 100%);'
       +'background-size:180px 180px, auto, auto, auto;'
       +'border-radius:14px;'
       +'border:2px solid #6b4520;'
@@ -114,7 +114,7 @@
       // fixed slots. Held dice glow + lift IN PLACE instead of moving to a
       // separate smaller tray, so holding never reflows/resizes the layout.
       h+='<div style="background:radial-gradient(ellipse at 50% 50%,rgba(0,0,0,0.18) 0%,rgba(0,0,0,0.4) 100%);border:1px solid rgba(0,0,0,0.5);border-radius:10px;padding:10px;margin-bottom:6px;box-shadow:inset 0 2px 8px rgba(0,0,0,0.5);min-height:120px;">';
-      h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.18em;color:rgba(232,220,200,0.45);text-align:center;text-transform:uppercase;margin-bottom:6px;">'+(rolls>0?'Held dice glow \u00b7 tap to release':'Roll \u00b7 then tap dice to keep')+'</div>';
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.68rem;letter-spacing:0.16em;color:rgba(232,220,200,0.55);text-align:center;text-transform:uppercase;margin-bottom:6px;">'+(rolls>0?'Held dice glow \u00b7 tap to release':'Roll \u00b7 then tap dice to keep')+'</div>';
       h+='<div style="display:flex;gap:clamp(6px,2vw,12px);justify-content:center;flex-wrap:wrap;">';
       for(var i=0;i<5;i++){
         var held=kept[i];
@@ -182,7 +182,7 @@
         var val=done?scores[i]:(rolls>0?cs(i):null);
         var canScore=!done&&rolls>0;
         var isBest = canScore && i===bestIdx && bestVal>0;
-        var rowBg = done ? 'rgba(0,0,0,0.45)' : isBest ? 'linear-gradient(180deg,rgba(255,220,112,0.16),rgba(200,168,75,0.08))' : 'rgba(0,0,0,0.3)';
+        var rowBg = done ? 'rgba(0,0,0,0.45)' : isBest ? 'linear-gradient(180deg,rgba(255,220,112,0.16),rgba(200,168,75,0.08))' : (i%2 ? 'rgba(255,255,255,0.028)' : 'rgba(0,0,0,0.3)');
         var rowBorder = done ? '1px solid rgba(232,220,200,0.15)' : isBest ? '1.5px solid #ffdc70' : '1px solid rgba(232,220,200,0.18)';
         var animCls = isBest ? 'yBestPulse' : '';
         var rs='';
@@ -196,15 +196,15 @@
             rs = '<span style="font-family:DM Mono,monospace;font-size:0.7rem;color:rgba(230,57,70,0.55);">0</span>';
           }
         } else {
-          rs = '<span style="color:rgba(232,220,200,0.3);font-family:DM Mono,monospace;font-size:0.65rem;">, </span>';
+          rs = '<span style="color:rgba(232,220,200,0.35);font-family:DM Mono,monospace;font-size:0.8rem;">·</span>';
         }
         var clickAttr = canScore ? 'onclick="_YS('+i+')" style="cursor:pointer;' : 'style="';
-        return '<div class="'+animCls+'" '+clickAttr+'display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 10px;margin:2px 0;background:'+rowBg+';border:'+rowBorder+';border-radius:6px;'+(done?'opacity:0.62;':'')+'">'
+        return '<div class="'+animCls+'" '+clickAttr+'display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 12px;margin:2px 0;background:'+rowBg+';border:'+rowBorder+';border-left:3px solid '+(i<6?'rgba(122,179,86,.35)':'rgba(220,138,138,.35)')+';border-radius:6px;'+(done?'opacity:0.62;':'')+'">'
           +'<div style="display:flex;align-items:center;gap:8px;min-width:0;">'
             +'<span style="font-size:1rem;line-height:1;flex-shrink:0;">'+CATS[i].icon+'</span>'
             +'<div style="min-width:0;">'
               +'<div style="font-family:Georgia,serif;font-size:0.75rem;font-weight:700;color:#f5ebd0;line-height:1.1;">'+CATS[i].name+' <span style="font-weight:400;font-size:0.82em;color:#5fb0d9;letter-spacing:0.02em;">'+CATS[i].sub+'</span></div>'
-              +'<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:rgba(232,220,200,0.55);letter-spacing:0.06em;line-height:1.1;margin-top:1px;">'+CATS[i].desc+'</div>'
+              +'<div style="font-family:DM Mono,monospace;font-size:0.68rem;color:rgba(232,220,200,0.6);letter-spacing:0.04em;line-height:1.15;margin-top:2px;">'+CATS[i].desc+'</div>'
             +'</div>'
           +'</div>'
           +'<div style="flex-shrink:0;text-align:right;min-width:42px;">'+rs+'</div>'
@@ -216,7 +216,7 @@
       var bonus=upperSum>=63?35:0;
       var pct=Math.min(100,Math.round(upperSum/63*100));
       h+='<div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0 4px;padding:0 4px;">';
-      h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:#7ab356;letter-spacing:0.18em;text-transform:uppercase;font-weight:700;">Upper</div>';
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:#7ab356;letter-spacing:0.18em;text-transform:uppercase;font-weight:700;">Upper</div>';
       h+='<div style="font-family:Georgia,serif;font-style:italic;font-size:0.62rem;color:'+(bonus?'#ffdc70':'rgba(232,220,200,0.55)')+';">'+(bonus?'BONUS +35':upperSum+' / 63 to bonus')+'</div>';
       h+='</div>';
       // Bonus progress bar
@@ -225,7 +225,7 @@
       h+='</div>';
       for(var i=0;i<6;i++)h+=row(i);
       // ── LOWER SECTION ────────────────────────────────────────────
-      h+='<div style="margin:10px 0 4px;padding:0 4px;font-family:DM Mono,monospace;font-size:0.55rem;color:#dc8a8a;letter-spacing:0.18em;text-transform:uppercase;font-weight:700;">Lower</div>';
+      h+='<div style="margin:10px 0 4px;padding:0 4px;font-family:DM Mono,monospace;font-size:0.7rem;color:#dc8a8a;letter-spacing:0.18em;text-transform:uppercase;font-weight:700;">Lower</div>';
       for(var i=6;i<13;i++)h+=row(i);
       // ── TOTAL ────────────────────────────────────────────────────
       var total=bonus+yBonus;for(var k in scores)total+=scores[k];

@@ -242,12 +242,12 @@ window._gameFns.trellis = function TR(a){
     var trStyle=document.createElement('style');trStyle.id='TRstyle';
     trStyle.textContent=[
       '#TRpan{padding-top:8px;max-width:100%;min-width:0;overflow-x:hidden;}',
-      '#TRboard{display:grid;grid-template-columns:repeat(15,1fr);gap:1px;max-width:100%;width:clamp(300px,94vw,440px);margin:6px auto;background:linear-gradient(135deg,#3b2a14,#5a3f22,#3b2a14);padding:5px;border-radius:10px;box-shadow:0 8px 26px rgba(0,0,0,0.55),inset 0 1px 0 rgba(255,255,255,0.08);border:2px solid #2a1d0e;}',
+      '#TRboard{display:grid;grid-template-columns:repeat(15,1fr);gap:1px;max-width:100%;width:clamp(300px,94vw,440px);margin:6px auto;background:linear-gradient(135deg,#3b2a14,#5a3f22,#3b2a14);padding:5px;border-radius:10px;box-shadow:0 0 0 6px rgba(0,0,0,.5),0 18px 40px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,0.08);border:2px solid #2a1d0e;}',
       '.tr-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:2px;transition:background .15s,transform .12s,box-shadow .15s;position:relative;font-family:Bebas Neue,sans-serif;-webkit-tap-highlight-color:transparent;}',
-      '.tr-cell.prem-tw{background:#c75050;color:#fff;box-shadow:inset 0 0 6px rgba(0,0,0,0.35);}',
-      '.tr-cell.prem-dw{background:#e89846;color:#fff;box-shadow:inset 0 0 6px rgba(0,0,0,0.3);}',
-      '.tr-cell.prem-tl{background:#3a8bd8;color:#fff;box-shadow:inset 0 0 6px rgba(0,0,0,0.3);}',
-      '.tr-cell.prem-dl{background:#5aa0e0;color:#fff;box-shadow:inset 0 0 6px rgba(0,0,0,0.3);}',
+      '.tr-cell.prem-tw{background:#a85c62;color:#fff;box-shadow:inset 0 0 6px rgba(0,0,0,0.35);}',
+      '.tr-cell.prem-dw{background:#c8a84b;color:#1a1205;box-shadow:inset 0 0 6px rgba(0,0,0,0.3);}',
+      '.tr-cell.prem-tl{background:#5f9a48;color:#0d100c;box-shadow:inset 0 0 6px rgba(0,0,0,0.3);}',
+      '.tr-cell.prem-dl{background:#9dc27a;color:#0d100c;box-shadow:inset 0 0 6px rgba(0,0,0,0.3);}',
       '.tr-cell.prem-empty{background:linear-gradient(180deg,#2a2f22,#1e2318);}',
       '.tr-cell.center{background:#4a5038;color:#c8a84b;}',
       '.tr-cell.drop-ok{background:rgba(200,168,75,0.45)!important;box-shadow:inset 0 0 0 2px #c8a84b,0 0 10px rgba(200,168,75,0.4)!important;}',
@@ -256,12 +256,12 @@ window._gameFns.trellis = function TR(a){
       '.tr-cell.tentative:active{cursor:grabbing;}',
       '@keyframes trPlaced{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.15);opacity:1}100%{transform:scale(1);opacity:1}}',
       '.tr-letter{font-weight:700;font-size:clamp(11px,2.4vw,16px);line-height:1;}',
-      '.tr-val{position:absolute;bottom:2px;right:3px;font-family:DM Mono,monospace;font-size:7px;opacity:0.75;}',
-      '.tr-prem-label{font-size:7px;letter-spacing:.05em;opacity:0.88;text-shadow:0 1px 1px rgba(0,0,0,0.4);}',
+      '.tr-val{position:absolute;bottom:2px;right:3px;font-family:DM Mono,monospace;font-size:9px;opacity:0.75;}',
+      '.tr-prem-label{font-size:9px;letter-spacing:0;opacity:0.88;text-shadow:0 1px 1px rgba(0,0,0,0.4);}',
       '.tr-center-star{font-size:clamp(12px,2.8vw,18px);opacity:0.9;}',
       // Rack
-      '#TRrack{display:flex;gap:5px;justify-content:center;padding:8px 6px;flex-wrap:wrap;background:linear-gradient(180deg,rgba(42,30,14,0.55),rgba(28,20,10,0.65));border-radius:10px;margin:6px auto;max-width:clamp(280px,94vw,400px);border:1px solid rgba(200,168,75,0.18);box-shadow:inset 0 2px 6px rgba(0,0,0,0.35);}',
-      '.tr-rack-tile{width:48px;height:58px;border-radius:6px;background:linear-gradient(180deg,#fbf6e1,#e8dba8);color:#1a1205;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:grab;font-weight:700;border:2px solid #8a7044;box-shadow:0 3px 6px rgba(0,0,0,0.4),inset 0 -2px 0 rgba(110,80,20,0.4),inset 0 1px 0 rgba(255,255,255,0.6);position:relative;font-family:Bebas Neue,sans-serif;transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;touch-action:none;}',
+      '#TRrack{display:flex;gap:5px;justify-content:center;padding:8px 6px;flex-wrap:nowrap;background:linear-gradient(180deg,rgba(42,30,14,0.55),rgba(28,20,10,0.65));border-radius:10px;margin:6px auto;max-width:clamp(280px,94vw,400px);border:1px solid rgba(200,168,75,0.18);box-shadow:inset 0 2px 6px rgba(0,0,0,0.35);}',
+      '.tr-rack-tile{width:clamp(40px,12.2vw,48px);height:58px;border-radius:6px;background:linear-gradient(180deg,#fbf6e1,#e8dba8);color:#1a1205;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:grab;font-weight:700;border:2px solid #8a7044;box-shadow:0 3px 6px rgba(0,0,0,0.4),inset 0 -2px 0 rgba(110,80,20,0.4),inset 0 1px 0 rgba(255,255,255,0.6);position:relative;font-family:Bebas Neue,sans-serif;transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;touch-action:none;}',
       '.tr-rack-tile:active{cursor:grabbing;transform:translateY(-3px) scale(1.02);box-shadow:0 8px 14px rgba(0,0,0,0.5),inset 0 -2px 0 rgba(110,80,20,0.4);}',
       '.tr-rack-tile.sel{border-color:#c8a84b;transform:translateY(-4px) scale(1.04);box-shadow:0 10px 18px rgba(200,168,75,0.35),inset 0 -2px 0 rgba(110,80,20,0.4);}',
       '.tr-rack-tile .letter{font-size:22px;line-height:1;}',
@@ -274,7 +274,7 @@ window._gameFns.trellis = function TR(a){
       // Legend + stats
       '.tr-stats{display:flex;justify-content:center;gap:14px;padding:2px 0;font-family:DM Mono,monospace;font-size:0.7rem;color:rgba(232,220,200,0.72);letter-spacing:0.06em;}',
       '.tr-stats strong{color:var(--gold);}',
-      '.tr-score-bar{display:flex;justify-content:space-between;align-items:center;padding:6px 12px;font-family:Bebas Neue,sans-serif;letter-spacing:1px;background:rgba(26,31,23,0.6);border-radius:8px;margin:4px auto;max-width:clamp(280px,94vw,400px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.04);}',
+      '.tr-score-bar{display:flex;justify-content:space-between;align-items:center;padding:6px 12px;font-family:Bebas Neue,sans-serif;letter-spacing:1px;background:rgba(13,16,12,0.94);position:sticky;top:0;z-index:5;border-radius:8px;margin:4px auto;max-width:clamp(280px,94vw,400px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.04);}',
       '.tr-score-bar .you{color:#7ab356;font-size:.95rem;}',
       '.tr-score-bar .bag{color:rgba(232,220,200,0.68);font-size:.7rem;font-family:DM Mono,monospace;}',
       '.tr-score-bar .cpu{color:#c47a7a;font-size:.95rem;}',
@@ -773,7 +773,7 @@ window._gameFns.trellis = function TR(a){
     h+='<p>• Drag any rack tile onto the board to place it.<br>• Drag a placed (gold) tile to move it to a new spot.<br>• Drag a placed tile onto the rack to return it.<br>• Tap a placed tile to pop it back.<br>• <strong>RECALL</strong> returns every tentative tile.<br>• <strong>SHUFFLE</strong> reorders your rack.</p>';
     h+='<h2>Game end</h2>';
     h+='<p>Bag empties + one rack empty → game ends. Players lose the value of tiles still in their rack; the player who emptied their rack GAINS the opponent\'s leftover.</p>';
-    h+='<div style="text-align:center;margin-top:14px;"><button class="gb" onclick="document.getElementById(\'TRrulesOV\').remove()" style="min-height:48px;padding:10px 22px;">CLOSE</button></div>';
+    h+='<div style="text-align:center;margin-top:14px;position:sticky;bottom:-22px;padding:10px 0 12px;background:linear-gradient(180deg,rgba(14,17,11,0),rgba(14,17,11,.98) 40%);"><button class="gb" onclick="document.getElementById(\'TRrulesOV\').remove()" style="min-height:48px;padding:10px 22px;">CLOSE</button></div>';
     h+='</div>';
     ov.innerHTML=h;
     document.body.appendChild(ov);
@@ -789,7 +789,7 @@ window._gameFns.trellis = function TR(a){
   try{
     if(!localStorage.getItem('lw_tr_rules_seen')){
       var g0=TRgen;
-      setTimeout(function(){if(g0!==TRgen)return;if(window._TRrules)window._TRrules();},700);
+      setTimeout(function(){if(g0!==TRgen)return;if(document.getElementById('shell-dir-play'))return;if(window._TRrules)window._TRrules();},700);
     }
   }catch(e){}
 };
