@@ -1347,7 +1347,7 @@
     <div class="enemy-stage" id="enemy-stage">
       <div class="enemy">
         <div class="enemy-portrait placeholder" id="enemy-portrait"
-             data-art-slot="enemy-{id}">
+             data-art-slot="">
         </div>
         <div class="enemy-name" id="enemy-name">—</div>
         <div class="enemy-hp-row">
@@ -3159,6 +3159,9 @@ function hydrateArt(){
   document.querySelectorAll('[data-art-slot]').forEach(el=>{
     const slot = el.getAttribute('data-art-slot');
     if(!slot || !el.classList.contains('placeholder')) return;
+    // a slot still carrying its template ("enemy-{id}", "card-${card.id}") is not a file:
+    // the first build fetched art-slots/enemy-{id}.png literally on every boot
+    if(/[{}$?]/.test(slot)) return;
     if(el.querySelector('img')) return;
     const cached = ART_CACHE.get(slot);
     if(cached === 'missing') return;

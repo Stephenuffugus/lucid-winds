@@ -241,3 +241,6 @@ If Stephen can only generate part of the deck for a soft launch, prioritize this
 6. The remaining 52 minors (court cards first, then 5-10s, then 2-4s)
 
 Even with just the 22 Majors + 11 enemies + title (34 images), the game is shippable — the minor cards retain their unicode-glyph placeholders gracefully.
+
+> **Sep 05 2026 (Fable):** `manifest.json` points at the arcade's shared `/assets/icons/icon-192x192.png` for now, because `art-slots/icon-192.png` never landed and an installed Tarot Run had no icon at all. When the painted icons arrive, put them in `art-slots/` and point the manifest back. The loader also no longer fetches templated slots (`enemy-?`) literally.
+
