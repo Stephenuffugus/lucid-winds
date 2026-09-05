@@ -241,7 +241,7 @@ window._gameFns.trellis = function TR(a){
   if(!document.getElementById('TRstyle')){
     var trStyle=document.createElement('style');trStyle.id='TRstyle';
     trStyle.textContent=[
-      '#TRpan{padding-top:8px;}',
+      '#TRpan{padding-top:8px;max-width:100%;min-width:0;overflow-x:hidden;}',
       '#TRboard{display:grid;grid-template-columns:repeat(15,1fr);gap:1px;max-width:100%;width:clamp(300px,94vw,440px);margin:6px auto;background:linear-gradient(135deg,#3b2a14,#5a3f22,#3b2a14);padding:5px;border-radius:10px;box-shadow:0 8px 26px rgba(0,0,0,0.55),inset 0 1px 0 rgba(255,255,255,0.08);border:2px solid #2a1d0e;}',
       '.tr-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:2px;transition:background .15s,transform .12s,box-shadow .15s;position:relative;font-family:Bebas Neue,sans-serif;-webkit-tap-highlight-color:transparent;}',
       '.tr-cell.prem-tw{background:#c75050;color:#fff;box-shadow:inset 0 0 6px rgba(0,0,0,0.35);}',
@@ -633,7 +633,7 @@ window._gameFns.trellis = function TR(a){
   ms(a,'<strong id="TRt">Word Trellis</strong>');
   mm(a);
   pan=document.createElement('div');pan.id='TRpan';
-  pan.style.cssText='max-width:460px;margin:0 auto;padding:6px 4px;user-select:none;';
+  pan.style.cssText='max-width:min(100%,460px);min-width:0;margin:0 auto;padding:6px 4px;user-select:none;box-sizing:border-box;';
   a.appendChild(pan);
   mc(a).innerHTML='<button class="gb" onclick="_TRnew()">↻ New Game</button>';
 
