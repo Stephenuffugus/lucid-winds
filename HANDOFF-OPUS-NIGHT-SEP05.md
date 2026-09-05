@@ -136,8 +136,8 @@ A visual phase is not done until you have looked at the screenshot and named thr
 | 3 | Swell | `docs/handoffs-uploaded/six-20260905/6handoffs/HANDOFF-SWELL.md` | `plans/swell/HANDOFF-SWELL.md` (written 2026-09-05, Fable; the three moods are data in section 4) | one finger held for six seconds swells strings to choir and lets go into a cadence that ends on the tonic, rendered to `docs/shots/p0-swell.wav` for Stephen to hear. That is P0 step 5 | not started |
 
 | 4 | Wardian | `docs/handoffs-uploaded/six-20260905/6handoffs/HANDOFF-WARDIAN.md` | `plans/wardian/HANDOFF-WARDIAN.md` (written 2026-09-05, Fable; nothing dies is a gate) | a fern unfurls over real minutes in a jar whose light follows the phone clock, a swipe mists it, a tap rolls the pillbug, and a 30 day headless run never removes a plant. That is P1 step 2 | not started |
-| 5 | | | | | not started |
-| 6 | | | | | not started |
+| 5 | Doohickey | `docs/handoffs-uploaded/six-20260905/6handoffs/HANDOFF-DOOHICKEY.md` | `plans/doohickey/HANDOFF-DOOHICKEY.md` (written 2026-09-05, Fable; the physics engine is copied from Burr Blast, the domino cascade is a 300 trial gate) | a marble rolled down two planks knocks over eight dominoes into the bell, 100 percent of 300 seeded trials, and a real drag from the tray places a plank on the grid. That is P1 step 3. The largest of the six, about 10 hours | not started |
+| 6 | Airworthy | `docs/handoffs-uploaded/six-20260905/6handoffs/HANDOFF-AIRWORTHY.md` | `plans/airworthy/HANDOFF-AIRWORTHY.md` (written 2026-09-05, Fable; the flight model has every coefficient written down and the phugoid is an assertion) | a pull back throws a badly trimmed plane across the gym, it porpoises, two elevator bends from the result card fix it. That is P1 step 4 | not started |
 
 (Rows are added as handoffs land. A row's SESSION STATE is written by Opus: `DONE P1` and so on,
 or `BLOCKED <gate>`.)
