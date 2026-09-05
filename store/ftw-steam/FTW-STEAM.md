@@ -25,3 +25,15 @@ manifest, and sets `window.__DESKTOP_BUILD` (hides the portal button).
 - The sunbeam earn stays local (no portal in the build) — harmless.
 - Content note for review: the game names no real people or agencies
   (fictional composites; the satire IS the product).
+
+## Sep 05 update: what is now ready
+
+- `STORE_PAGE_FILL.md`: every store field, About This Game BBCode, tags, content survey, AI
+  disclosure, supported features, asset manifest.
+- `capsules/build.py` → `capsules/out/`: all eight Valve sizes (title only, hero without title,
+  transparent logo), client icons (`ftw.ico`, `app_icon_184.jpg`, `icon_256.png`). Looked at.
+- `steampipe/app_build.vdf` + `depot_build.vdf` with FTW_APPID / FTW_DEPOTID placeholders.
+- `shots/`: six 1920x1080 screenshots from Aug 25.
+Still yours: create the app ($100) and paste the two ids, set $0.99, a thirty second trailer,
+then the page goes in. The Windows build follows the Jimothy route (zip in the vault, web
+depot uploader in your browser).
