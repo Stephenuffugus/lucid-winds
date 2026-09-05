@@ -549,14 +549,14 @@ var LEVELS=[
     '@keyframes rrExitGlow{0%,100%{box-shadow:inset 0 0 24px rgba(255,220,112,0.25),inset 0 0 0 2px rgba(200,168,75,0.35)}50%{box-shadow:inset 0 0 36px rgba(255,220,112,0.45),inset 0 0 0 2px rgba(255,220,112,0.6)}}',
     '@keyframes rrSprout{0%,100%{filter:drop-shadow(0 0 6px rgba(122,179,86,0.5))}50%{filter:drop-shadow(0 0 14px rgba(122,179,86,0.85))}}',
     '#RRpan{max-width:min(96vw,480px);margin:0 auto;padding:12px;user-select:none;-webkit-user-select:none;touch-action:none;box-sizing:border-box;position:relative;animation:rrPanIn .4s ease}',
-    '.RRboard{position:relative;width:100%;aspect-ratio:1;background:linear-gradient(135deg,#3a2410 0%,#2a1810 55%,#1a0c08 100%);border:2px solid #6b4520;border-radius:10px;box-shadow:inset 0 0 0 1px rgba(220,160,90,0.18),inset 0 0 40px rgba(0,0,0,0.6),0 6px 22px rgba(0,0,0,0.55);overflow:visible}',
+    '.RRboard{position:relative;width:100%;aspect-ratio:1;background:linear-gradient(135deg,#3a2410 0%,#2a1810 55%,#1a0c08 100%);border:2px solid #6b4520;border-radius:10px;box-shadow:inset 0 0 0 1px rgba(220,160,90,0.18),inset 0 0 40px rgba(0,0,0,0.6),0 0 70px rgba(0,0,0,0.85),0 10px 30px rgba(0,0,0,0.6);overflow:visible}',
     '.RRgrid{position:absolute;inset:4px;background-image:linear-gradient(rgba(255,220,160,0.06) 1px,transparent 1px),linear-gradient(90deg,rgba(255,220,160,0.06) 1px,transparent 1px);background-size:calc(100%/6) calc(100%/6);border-radius:6px}',
-    '.RRexit{position:absolute;right:-6px;width:10px;background:radial-gradient(ellipse at 100% 50%,rgba(255,220,112,0.6) 0%,rgba(200,168,75,0.2) 60%,transparent 100%);pointer-events:none;animation:rrExitGlow 2.2s ease-in-out infinite}',
+    '.RRexit{position:absolute;right:-10px;width:16px;background:radial-gradient(ellipse at 100% 50%,rgba(255,220,112,0.6) 0%,rgba(200,168,75,0.2) 60%,transparent 100%);pointer-events:none;animation:rrExitGlow 2.2s ease-in-out infinite}',
     '.RRblock{position:absolute;border-radius:8px;cursor:grab;transition:transform .18s cubic-bezier(.2,1.1,.3,1),box-shadow .18s ease;will-change:transform;box-shadow:inset 0 1px 0 rgba(255,220,160,0.22),inset 0 -1px 0 rgba(0,0,0,0.3),0 3px 7px rgba(0,0,0,0.45)}',
     '.RRblock.drag{cursor:grabbing;transition:none;transform:scale(1.02);box-shadow:inset 0 1px 0 rgba(255,220,160,0.3),0 6px 16px rgba(0,0,0,0.6);z-index:10}',
     '.RRblock::before{content:"";position:absolute;inset:2px;border-radius:6px;background:inherit;filter:brightness(1.15);opacity:.3;pointer-events:none}',
-    '.RRblock.vert::after{content:"";position:absolute;inset:0;border-radius:8px;background:repeating-linear-gradient(180deg,transparent 0,transparent 6px,rgba(0,0,0,0.08) 6px,rgba(0,0,0,0.08) 7px);pointer-events:none}',
-    '.RRblock.horiz::after{content:"";position:absolute;inset:0;border-radius:8px;background:repeating-linear-gradient(90deg,transparent 0,transparent 6px,rgba(0,0,0,0.08) 6px,rgba(0,0,0,0.08) 7px);pointer-events:none}',
+    '.RRblock.vert::after{content:"";position:absolute;inset:0;border-radius:8px;background:repeating-linear-gradient(180deg,transparent 0,transparent 5px,rgba(0,0,0,0.10) 5px,rgba(0,0,0,0.10) 6px),repeating-linear-gradient(180deg,transparent 0,transparent 11px,rgba(255,220,160,0.05) 11px,rgba(255,220,160,0.05) 13px);pointer-events:none}',
+    '.RRblock.horiz::after{content:"";position:absolute;inset:0;border-radius:8px;background:repeating-linear-gradient(90deg,transparent 0,transparent 5px,rgba(0,0,0,0.10) 5px,rgba(0,0,0,0.10) 6px),repeating-linear-gradient(90deg,transparent 0,transparent 11px,rgba(255,220,160,0.05) 11px,rgba(255,220,160,0.05) 13px);pointer-events:none}',
     '.RRblock.special{background:linear-gradient(180deg,#a0d070 0%,#7ab356 55%,#5a9338 100%)!important;border:1.5px solid rgba(200,168,75,0.55);animation:rrSprout 2.6s ease-in-out infinite}',
     '.RRblock.special::before{background:radial-gradient(circle at 50% 40%,rgba(255,255,200,0.45) 0%,transparent 60%);filter:none;opacity:1}',
     '.RRblock.special .RRleaf{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:1.6rem;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5))}',
@@ -567,7 +567,7 @@ var LEVELS=[
     '.RRb{min-height:48px;padding:5px 12px;font-size:.7rem;font-family:Georgia,serif;font-weight:700;border-radius:6px;cursor:pointer;background:rgba(26,31,23,0.7);border:1.5px solid rgba(122,179,86,0.4);color:#e8dcc8;transition:all .15s}',
     '.RRb:active{background:rgba(122,179,86,0.2);transform:scale(.96)}',
     '.RRb.gold{border-color:#c8a84b;color:#c8a84b;background:linear-gradient(180deg,rgba(200,168,75,0.18),rgba(160,130,50,0.22))}',
-    '.RRb[disabled]{opacity:.35;pointer-events:none}',
+    '.RRb[disabled]{opacity:.55;border-style:dashed;pointer-events:none}',
     '.RRlvl{font-family:Georgia,serif;font-style:italic;font-size:0.7rem;color:rgba(232,220,200,0.75);letter-spacing:0.04em}',
     '.RRlvl strong{color:#c8a84b;font-style:normal}'
   ].join('');
@@ -616,7 +616,9 @@ function cloneBlocks(){
 }
 
 // Palette for non-special blocks — wooden warm tones
-var WOOD_COLORS=['#7a5028','#8a5832','#6e4624','#94603a','#6b3c1e','#7f4a26','#8a6042','#9a5836','#654020','#8c5224'];
+// ten browns that only spanned #654020 to #9a5836 were indistinguishable at 375 (fleet audit row 150);
+// a pale birch, a grey bark and a dark peat are in the rotation now so neighbours read apart
+var WOOD_COLORS=['#7a5028','#c4a882','#6e4624','#6a6055','#94603a','#3d2a1c','#8a6042','#9a5836','#5c3a1e','#b08a5a'];
 function blockColor(idx,special){
   if(special)return '#7ab356';
   return WOOD_COLORS[idx%WOOD_COLORS.length];

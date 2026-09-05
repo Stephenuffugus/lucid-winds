@@ -39,7 +39,7 @@ function GPY(a){
   ms(a,'Cleared: <strong id="PYcl">0</strong>/28 · Moves: <strong id="PYmv">0</strong>');mm(a);
   var gd=document.createElement('div');gd.id='PYgd';a.appendChild(gd);
   var _pyStyleLbl='🃏 Style';
-  mc(a).innerHTML='<button class="gb" id="PYundoBtn" onclick="_PYUndo()" disabled style="opacity:0.45;">↶ Undo</button> <button class="gb" onclick="_PYN()">↻ New Game</button> <button class="gb" id="PYstyle" onclick="_PYToggleStyle()" style="font-size:0.7rem;">'+_pyStyleLbl+'</button>';
+  mc(a).innerHTML='<button class="gb" id="PYundoBtn" onclick="_PYUndo()" disabled style="opacity:0.45;">↶ Undo</button> <button class="gb" onclick="_PYN()">↻ New Game</button> <button class="gb" id="PYstyle" onclick="_PYToggleStyle()" style="font-size:0.75rem;">'+_pyStyleLbl+'</button>';
   function snapshot(){
     history.push(JSON.stringify({stock:stock, waste:waste, moves:moves, removed:removed}));
     refreshUndoBtn();
@@ -222,7 +222,8 @@ function GPY(a){
           // Only the row that just landed pops in; everything above it is
           // already on the table and must not re-animate on the next repaint.
           if(fresh)cd.className+=' cd-deal-in';
-          if(!isExposed(pi))cd.style.opacity='.5';
+          /* covered cards are dimmed by TONE, not opacity: at .5 the white faces merged into one grey haze and 21 of 28 cards lost their edges (fleet audit row 151) */
+          if(!isExposed(pi)){cd.style.filter='brightness(.5) saturate(.65)';cd.style.opacity='1';}
           else cd.style.cursor='pointer';
           if(sel&&sel.type==='pyr'&&sel.idx===pi)cd.className+=' gc-sel';
           // Smart-drop: this exposed card pairs with the selection → glow green.

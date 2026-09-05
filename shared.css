@@ -2201,6 +2201,8 @@
 
     /* Game buttons — organic pill, scaled text, 48px min */
     .gb{background:rgba(26,31,23,.82);border:1.5px solid rgba(74,124,53,.22);color:rgba(122,179,86,.95);font-size:clamp(.8rem,2.2vw,.92rem);padding:clamp(10px,2.6vw,14px) clamp(16px,4vw,24px);border-radius:24px;cursor:pointer;font-family:'DM Mono',monospace;-webkit-tap-highlight-color:transparent;min-height:48px;min-width:48px;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:all .2s cubic-bezier(.25,.46,.45,.94);box-shadow:0 2px 6px rgba(0,0,0,.2),inset 0 1px 0 rgba(122,179,86,.03);letter-spacing:.04em;position:relative;overflow:hidden;font-weight:600}
+    /* a dead control and a live one shared one pill (Five in a Row's REDO, fleet audit row 156): dashed and dimmed when disabled */
+    .gb[disabled],.gb.off{opacity:.38;border-style:dashed}
     .gb::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 30% 20%,rgba(74,124,53,.05) 0%,transparent 65%);pointer-events:none;transition:opacity .3s}
     .gb:hover::before{opacity:.8}
     .gb:active{background:rgba(74,124,53,.18);transform:scale(.95);box-shadow:0 0 10px rgba(74,124,53,.12);transition-duration:.08s}
@@ -2368,7 +2370,7 @@
     .gc-up{background-color:rgba(20,26,18,.94);background-size:cover;background-position:center;background-repeat:no-repeat;border:1.5px solid rgba(74,124,53,.55);color:var(--cream);cursor:pointer;text-shadow:0 1px 2px rgba(0,0,0,0.3);position:relative;overflow:hidden;isolation:isolate;box-shadow:inset 0 0 0 1px rgba(232,220,200,.18),0 3px 8px rgba(0,0,0,.5),0 1px 2px rgba(0,0,0,.6),inset 0 0 12px rgba(74,124,53,.06)}
     .gc-dn{background-color:rgba(30,38,26,.8);background-size:cover;background-position:center;background-repeat:no-repeat;border:1.5px solid rgba(42,48,37,.7);cursor:default;box-shadow:inset 0 0 0 1px rgba(200,168,78,.14),0 3px 8px rgba(0,0,0,.5),0 1px 2px rgba(0,0,0,.55)}
     .gc-sel{box-shadow:inset 0 0 0 99px rgba(200,168,78,.18),0 0 8px rgba(200,168,78,.4)!important;border-color:rgba(200,168,78,.5)!important}
-    .gc-empty{background:rgba(14,20,12,.4);border:1px solid rgba(74,124,53,.28);box-shadow:inset 0 0 14px rgba(0,0,0,.5);border-radius:clamp(5px,1.4vw,10px)}
+    .gc-empty{background:rgba(14,20,12,.4);border:1px solid rgba(74,124,53,.18);box-shadow:inset 0 2px 10px rgba(0,0,0,.6),inset 0 0 0 1px rgba(200,168,75,.22);border-radius:clamp(5px,1.4vw,10px)}
     .gc-fnd{background-color:rgba(26,31,23,.5);background-size:50%;background-position:center;background-repeat:no-repeat;border:1.5px solid rgba(74,124,53,.2)}
     /* Ported from index.html 2026-07-01 — these never made it into the portal
        stylesheet, so buried cards' corner pips (z-index:2, escaping the card's

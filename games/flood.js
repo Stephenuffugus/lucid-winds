@@ -14,6 +14,7 @@ if(!document.getElementById('ff-style')){
   stl.textContent='@keyframes ffPop{0%{transform:scale(1)}45%{transform:scale(1.16)}100%{transform:scale(1)}}'
     +'.ff-cell{will-change:transform}.ff-cell.ff-pop{animation:ffPop .22s ease}'
     +'.ff-gemgrid .lc{border-radius:26%}'
+    +'#FFg{padding:8px;border-radius:14px;border:1px solid rgba(200,168,75,.22);box-shadow:inset 0 0 32px rgba(0,0,0,.55),0 8px 24px rgba(0,0,0,.45);background:rgba(10,14,9,.55)}'
     +'@keyframes ffShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}'
     +'.ff-shake{animation:ffShake .4s ease}'
     +'.ff-stats{display:flex;gap:18px;justify-content:center;align-items:center;flex-wrap:wrap;padding:10px 8px 4px;font-family:"DM Mono",monospace;font-size:clamp(.85rem,3.6vw,1.05rem);color:#e8dcc8;letter-spacing:.03em}'
@@ -30,12 +31,14 @@ if(!document.getElementById('ff-style')){
     +'.ff-mbg{position:fixed;inset:0;background:rgba(4,10,6,.74);display:flex;align-items:center;justify-content:center;z-index:99999;padding:16px}'
     +'.ff-modal{background:linear-gradient(160deg,#1a2216,#10160e);border:2px solid rgba(200,168,75,.3);border-radius:20px;padding:20px;max-width:390px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 14px 44px rgba(0,0,0,.6)}'
     +'.ff-mtitle{font-family:"DM Mono",monospace;font-size:1.15rem;color:#C8A84B;text-align:center;margin-bottom:6px;letter-spacing:.08em}'
-    +'.ff-mlabel{font-family:"DM Mono",monospace;font-size:.7rem;color:#8a9178;letter-spacing:.12em;margin:16px 0 8px}'
+    +'.ff-mlabel{font-family:"DM Mono",monospace;font-size:.7rem;color:rgba(232,220,200,.62);letter-spacing:.12em;margin:16px 0 8px}'
     +'.ff-mrow{display:flex;gap:10px}'
     +'.ff-opt{flex:1;min-height:52px;padding:10px;border-radius:12px;border:2px solid rgba(122,179,86,.2);background:rgba(18,24,16,.6);color:#c8d0bc;cursor:pointer;font-family:"DM Mono",monospace;font-size:.78rem;display:flex;flex-direction:column;align-items:center;gap:5px}'
     +'.ff-opt.sel{border-color:#C8A84B;background:rgba(200,168,75,.12);color:#e8dcc8}.ff-opt .ic{font-size:1.4rem}'
     +'.ff-pack{width:100%;display:flex;align-items:center;gap:12px;padding:9px 11px;border-radius:12px;border:2px solid rgba(122,179,86,.2);background:rgba(18,24,16,.6);cursor:pointer;margin-bottom:8px}'
     +'.ff-pack.sel{border-color:#C8A84B;background:rgba(200,168,75,.12)}'
+    +'.ff-pack:not(.sel){opacity:.72}.ff-pack:not(.sel) .sw i{filter:saturate(.8)}'
+    +'.ff-opt .ic{height:30px;display:flex;align-items:center;justify-content:center}'
     +'.ff-pack .pn{font-family:"DM Mono",monospace;font-size:.8rem;color:#e8dcc8;min-width:96px;text-align:left}'
     +'.ff-pack .sw{display:flex;gap:4px;flex:1}.ff-pack .sw i{width:20px;height:20px;border-radius:5px;display:block;flex:1;max-width:26px}'
     +'.ff-done{margin-top:18px;width:100%;min-height:54px;border-radius:14px;border:none;background:linear-gradient(160deg,#7ab356,#5a8f3e);color:#0b2415;font-family:"DM Mono",monospace;font-weight:700;font-size:.95rem;letter-spacing:.06em;cursor:pointer}';
@@ -49,7 +52,8 @@ function GFL(a){
     {id:'wild',   label:'Wild',   n:17, par:42, cap:60}
   ];
   var NCOL=6;
-  var AUTUMN=['#4a7c35','#C8A84B','#4a7aaa','#c76a30','#9b59b6','#c75050'];
+  // sage and slate sat at nearly the same value and merged on the 17 wide Wild board; sage up, slate down (fleet audit row 155)
+var AUTUMN=['#5a9440','#C8A84B','#3a5f8f','#c76a30','#9b59b6','#c75050'];
   var LF=['assets/games/flood/leaf-sage.png','assets/games/flood/leaf-gold.png','assets/games/flood/leaf-slate.png','assets/games/flood/leaf-copper.png','assets/games/flood/leaf-plum.png','assets/games/flood/leaf-crimson.png'];
   var STYLES=[{id:'leaves',label:'Leaves',ic:'🍂'},{id:'solid',label:'Solid',ic:'⬤'},{id:'gem',label:'Gem',ic:'◆'}];
   var PACKS=[
@@ -289,7 +293,12 @@ function GFL(a){
       fillRow.innerHTML='';
       for(var s=0;s<STYLES.length;s++){(function(idx){
         var o=document.createElement('div'); o.className='ff-opt'+(idx===styleIdx?' sel':'');
-        o.innerHTML='<span class="ic">'+STYLES[idx].ic+'</span>'+STYLES[idx].label;
+        /* every fill style previews ITSELF: a leaf, an enamel disc, a faceted gem, instead of two glyphs beside one picture */
+        var sid=STYLES[idx].id, pv;
+        if(sid==='leaves') pv='<span class="ic" style="width:30px;border-radius:8px;background:url(assets/games/flood/leaf-gold.png) center/cover"></span>';
+        else if(sid==='gem') pv='<span class="ic" style="width:24px;height:24px;margin:3px 0;transform:rotate(45deg);border-radius:26%;background:radial-gradient(circle at 34% 28%,rgba(255,255,255,.65),rgba(255,255,255,0) 44%),#3a5f8f"></span>';
+        else pv='<span class="ic" style="width:30px;border-radius:50%;background:radial-gradient(circle at 34% 28%,rgba(255,255,255,.4),rgba(255,255,255,0) 44%),#c76a30"></span>';
+        o.innerHTML=pv+STYLES[idx].label;
         o.onclick=function(){ styleIdx=idx; try{localStorage.setItem('lw_flood_style',styleId());}catch(e){} renderFill(); repaintAll(); };
         fillRow.appendChild(o);
       })(s);}

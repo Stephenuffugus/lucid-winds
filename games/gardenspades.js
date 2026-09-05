@@ -65,14 +65,14 @@ window._gameFns.gardenspades = function GardenSpades(a){
   // One-shot: the team whose -100 sandbag penalty just hit, for screen flash.
   var penaltyFlash=-1;
 
-  ms(a,'<span style="font-family:Georgia,serif;letter-spacing:.06em;">♠ Round <strong id="GSr" style="color:#5b9bd1;font-size:1.2em;">1</strong></span>');
+  ms(a,'<span style="font-family:Georgia,serif;letter-spacing:.06em;">♠ Round <strong id="GSr" style="color:#7ab356;font-size:1.2em;">1</strong></span>');
   mm(a);
   var pan=document.createElement('div');pan.id='GSpan';
   // Felt table — deep teal/navy for spades, signature partnership-game palette.
   var _GS_FELT="data:image/svg+xml;utf8,"+encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180">'
       +'<filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="11"/>'
-      +'<feColorMatrix values="0 0 0 0 0.04  0 0 0 0 0.06  0 0 0 0 0.08  0 0 0 .08 0"/></filter>'
+      +'<feColorMatrix values="0 0 0 0 0.05  0 0 0 0 0.08  0 0 0 0 0.05  0 0 0 .08 0"/></filter>'
       +'<rect width="100%" height="100%" filter="url(#n)"/>'
     +'</svg>'
   );
@@ -81,18 +81,19 @@ window._gameFns.gardenspades = function GardenSpades(a){
       +'url("'+_GS_FELT+'"),'
       +'radial-gradient(ellipse at 50% 0%,rgba(255,255,255,0.05) 0%,transparent 50%),'
       +'radial-gradient(circle at 50% 100%,rgba(0,0,0,0.3) 0%,transparent 65%),'
-      +'linear-gradient(135deg,#0e3a5c 0%,#0a2c46 55%,#062035 100%);'
+      +'linear-gradient(135deg,#12271c 0%,#0e2016 55%,#0b1a12 100%);'
     +'background-size:180px 180px, auto, auto, auto;'
     +'border-radius:14px;'
     +'border:2px solid #6b4520;'
     +'box-shadow:'
       +'inset 0 0 0 1px rgba(180,140,70,0.25),'
       +'inset 0 0 40px rgba(0,0,0,0.45),'
+      +'0 0 24px 14px rgba(13,16,12,0.9),'
       +'0 6px 22px rgba(0,0,0,0.55);';
   a.appendChild(pan);
   function _pip(suitName){return (window._cdPipFor)?window._cdPipFor(suitName):SI[suitName];}
   // Per-team identity colors — spades is partnership so team-color, not seat.
-  var TEAM_COLORS=['#5b9bd1','#dc8a8a']; // us=blue, them=red
+  var TEAM_COLORS=['#7ab356','#dc8a8a']; // us=sage, them=rose (blue vanished on the old blue felt, and the felt is green now)
   function _teamColor(p){return TEAM_COLORS[p%2];}
   // mc(a) empty — controls go inside the pan via render().
   mc(a);
@@ -369,11 +370,11 @@ window._gameFns.gardenspades = function GardenSpades(a){
     var bagAnim = bags>=9?'animation:gsBagDanger 1s ease-in-out infinite;':bags>=7?'animation:gsBagPulse 1.6s ease-in-out infinite;':'';
     var bidLine = teamBid>0
       ? '<span style="font-family:Georgia,serif;font-size:0.95rem;font-weight:700;color:'+(contractMet?'#7ab356':'#f5ebd0')+';">'+teamTaken+'</span><span style="font-family:DM Mono,monospace;font-size:0.55rem;color:rgba(232,220,200,0.55);"> / '+teamBid+'</span>'
-      : '<span style="font-family:Georgia,serif;font-style:italic;font-size:0.6rem;color:rgba(232,220,200,0.45);">awaiting bid</span>';
+      : '<span style="font-family:Georgia,serif;font-style:italic;font-size:0.7rem;color:rgba(232,220,200,0.45);">awaiting bid</span>';
     return '<div style="flex:1;background:linear-gradient(180deg,rgba(0,0,0,0.4),rgba(0,0,0,0.55));border:1.5px solid '+color+';border-radius:8px;padding:6px 10px;'+bagAnim+'box-shadow:inset 0 1px 0 rgba(255,255,255,0.06),0 2px 6px rgba(0,0,0,0.4);">'
       +'<div style="display:flex;align-items:center;justify-content:space-between;">'
         +'<div>'
-          +'<div style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.12em;color:'+color+';text-transform:uppercase;line-height:1;">'+label+'</div>'
+          +'<div style="font-family:DM Mono,monospace;font-size:0.7rem;letter-spacing:0.12em;color:'+color+';text-transform:uppercase;line-height:1;">'+label+'</div>'
           +'<div style="font-family:Georgia,serif;font-size:1.5rem;font-weight:700;color:#f5ebd0;line-height:1;margin-top:2px;text-shadow:0 2px 3px rgba(0,0,0,0.5);">'+teamScore[teamIdx]+'</div>'
         +'</div>'
         +'<div style="text-align:right;">'
@@ -392,16 +393,16 @@ window._gameFns.gardenspades = function GardenSpades(a){
     if(b<0){
       // Pre-bid placeholder — only show when bidding is in progress.
       if(phase!=='bidding')return '';
-      return '<span style="display:inline-block;padding:1px 5px;margin-left:5px;font-size:0.48rem;font-family:Georgia,serif;font-style:italic;color:rgba(232,220,200,0.4);background:rgba(0,0,0,0.3);border:1px dashed rgba(232,220,200,0.25);border-radius:3px;vertical-align:middle;">…</span>';
+      return '<span style="display:inline-block;padding:1px 5px;margin-left:5px;font-size:0.7rem;font-family:Georgia,serif;font-style:italic;color:rgba(232,220,200,0.4);background:rgba(0,0,0,0.3);border:1px dashed rgba(232,220,200,0.25);border-radius:3px;vertical-align:middle;">…</span>';
     }
     if(b===0){
       var taken=tricksTaken[seat];
       var nilBroken = taken>0;
-      return '<span style="display:inline-block;padding:1px 6px;margin-left:5px;font-size:0.48rem;font-family:Georgia,serif;font-weight:700;color:'+(nilBroken?'#e63946':'#ffdc70')+';background:rgba(0,0,0,0.45);border:1px solid '+(nilBroken?'#e63946':'#ffdc70')+';border-radius:3px;vertical-align:middle;letter-spacing:0.05em;">NIL'+(nilBroken?' BROKEN':'')+'</span>';
+      return '<span style="display:inline-block;padding:1px 6px;margin-left:5px;font-size:0.7rem;font-family:Georgia,serif;font-weight:700;color:'+(nilBroken?'#e63946':'#ffdc70')+';background:rgba(0,0,0,0.45);border:1px solid '+(nilBroken?'#e63946':'#ffdc70')+';border-radius:3px;vertical-align:middle;letter-spacing:0.05em;">NIL'+(nilBroken?' BROKEN':'')+'</span>';
     }
     var t=tricksTaken[seat];
     var contractMet = t>=b;
-    return '<span style="display:inline-block;padding:1px 6px;margin-left:5px;font-size:0.5rem;font-family:Georgia,serif;color:'+(contractMet?'#7ab356':'#f5ebd0')+';background:rgba(0,0,0,0.45);border:1px solid '+(contractMet?'#7ab356':'rgba(232,220,200,0.4)')+';border-radius:3px;vertical-align:middle;font-weight:700;">'+t+'/'+b+'</span>';
+    return '<span style="display:inline-block;padding:1px 6px;margin-left:5px;font-size:0.7rem;font-family:Georgia,serif;color:'+(contractMet?'#7ab356':'#f5ebd0')+';background:rgba(0,0,0,0.45);border:1px solid '+(contractMet?'#7ab356':'rgba(232,220,200,0.4)')+';border-radius:3px;vertical-align:middle;font-weight:700;">'+t+'/'+b+'</span>';
   }
   // Seat class — pulsing turn ring on active, dim on inactive during live phases.
   function _seatCls(seat){
@@ -421,13 +422,13 @@ window._gameFns.gardenspades = function GardenSpades(a){
     // ── CONTROLS BAR — top right, matching the other card games ──
     var gsStyleName = (window._cdStyleLabel && typeof window._cdStyle==='function') ? window._cdStyleLabel(window._cdStyle()) : 'Floral';
     h+='<div style="display:flex;justify-content:flex-end;align-items:center;gap:6px;margin-bottom:6px;">';
-    h+='<button class="gb" onclick="if(window._cdToggleStyle){window._cdToggleStyle();if(typeof render===\'function\')render();}" title="Cycle card style" style="display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:8px 14px;font-size:0.62rem;background:linear-gradient(180deg,rgba(180,140,70,0.25),rgba(120,90,40,0.35));border:1px solid rgba(220,180,120,0.45);color:#f5ebd0;font-family:Georgia,serif;font-style:italic;box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 2px 5px rgba(0,0,0,0.5);">';
+    h+='<button class="gb" onclick="if(window._cdToggleStyle){window._cdToggleStyle();if(typeof render===\'function\')render();}" title="Cycle card style" style="display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:8px 14px;font-size:0.7rem;background:linear-gradient(180deg,rgba(180,140,70,0.25),rgba(120,90,40,0.35));border:1px solid rgba(220,180,120,0.45);color:#f5ebd0;font-family:Georgia,serif;font-style:italic;box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 2px 5px rgba(0,0,0,0.5);">';
     h+='<img src="assets/decks/floral/suit-spade.png" alt="" onerror="this.style.display=\'none\';" style="width:18px;height:18px;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.7));">';
-    h+='<span style="color:rgba(232,220,200,0.6);font-style:normal;font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.12em;text-transform:uppercase;margin-right:2px;">Deck</span>';
+    h+='<span style="color:rgba(232,220,200,0.6);font-style:normal;font-family:DM Mono,monospace;font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;margin-right:2px;">Deck</span>';
     h+='<span>'+gsStyleName+'</span>';
     h+='</button>';
     if(history.length>0){
-      h+='<button class="gb" onclick="_GShist()" title="Score history" style="display:inline-flex;align-items:center;gap:4px;min-height:44px;padding:8px 12px;font-size:0.6rem;background:rgba(0,0,0,0.4);border:1px solid rgba(232,220,200,0.3);color:rgba(232,220,200,0.85);font-family:Georgia,serif;font-style:italic;">📜 History</button>';
+      h+='<button class="gb" onclick="_GShist()" title="Score history" style="display:inline-flex;align-items:center;gap:4px;min-height:44px;padding:8px 12px;font-size:0.7rem;background:rgba(0,0,0,0.4);border:1px solid rgba(232,220,200,0.3);color:rgba(232,220,200,0.85);font-family:Georgia,serif;font-style:italic;">📜 History</button>';
     }
     h+='<button class="gb" onclick="_GSN()" title="New game" style="display:inline-flex;align-items:center;gap:5px;min-height:44px;padding:8px 14px;font-size:0.65rem;background:linear-gradient(180deg,rgba(122,179,86,0.3),rgba(74,124,53,0.4));border:1px solid rgba(122,179,86,0.55);color:#f5ebd0;font-family:Georgia,serif;box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 2px 5px rgba(0,0,0,0.5);">↻ New Game</button>';
     h+='</div>';
@@ -443,13 +444,13 @@ window._gameFns.gardenspades = function GardenSpades(a){
       h+='<span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:linear-gradient(180deg,rgba(0,0,0,0.5),rgba(0,0,0,0.7));border:1px solid #ffdc70;border-radius:999px;font-family:Georgia,serif;font-size:0.68rem;color:#f5ebd0;letter-spacing:0.05em;box-shadow:0 0 10px rgba(255,220,112,0.3);'+brokenAnim+'">';
       h+='<span style="color:#1a1a1a;font-size:0.95rem;line-height:1;background:#f5ebd0;border-radius:50%;width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;font-size:0.7rem;">♠</span>Spades broken</span>';
     }else{
-      h+='<span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:rgba(0,0,0,0.3);border:1px dashed rgba(232,220,200,0.25);border-radius:999px;font-family:Georgia,serif;font-style:italic;font-size:0.62rem;color:rgba(232,220,200,0.55);letter-spacing:0.05em;">';
+      h+='<span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:rgba(0,0,0,0.3);border:1px dashed rgba(232,220,200,0.25);border-radius:999px;font-family:Georgia,serif;font-style:italic;font-size:0.7rem;color:rgba(232,220,200,0.55);letter-spacing:0.05em;">';
       h+='<span style="opacity:0.5;font-size:0.85rem;line-height:1;">♠</span>Spades unbroken</span>';
     }
     h+='</div>';
     // ── PARTNER (NORTH) ─────────────────────────────────────────
     h+='<div class="'+_seatCls(N)+'" style="text-align:center;padding:6px;">'
-      +'<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:'+_teamColor(N)+';letter-spacing:0.14em;margin-bottom:5px;text-transform:uppercase;font-weight:700;">'
+      +'<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:'+_teamColor(N)+';letter-spacing:0.14em;margin-bottom:5px;text-transform:uppercase;font-weight:700;">'
         +'PARTNER <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;margin-left:4px;">×'+seatCount(N)+'</span>'
         +_bidPill(N)
       +'</div>'
@@ -459,14 +460,14 @@ window._gameFns.gardenspades = function GardenSpades(a){
     // ── MIDDLE ROW: WEST | TRICK | EAST ─────────────────────────
     h+='<div style="display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:6px 4px;min-height:160px;">';
     h+='<div class="'+_seatCls(W)+'" style="padding:4px;">'
-      +'<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:'+_teamColor(W)+';text-align:center;letter-spacing:0.14em;margin-bottom:5px;text-transform:uppercase;font-weight:700;">'
+      +'<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:'+_teamColor(W)+';text-align:center;letter-spacing:0.14em;margin-bottom:5px;text-transform:uppercase;font-weight:700;">'
         +'WEST <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;margin-left:2px;">×'+seatCount(W)+'</span>'+_bidPill(W)
       +'</div>'
       +'<div style="display:inline-flex;flex-direction:column;align-items:center;">';
     for(var w=0;w<seatCount(W);w++)h+='<div class="'+(isNewlyDealt(W,w)?'cd-deal-in':'')+'" style="'+_cdBackCss(30,42,5)+'margin-top:'+(w===0?'0':'-34px')+';"></div>';
     h+='</div></div>';
     // ── TRICK AREA ──────────────────────────────────────────────
-    h+='<div style="position:relative;min-height:160px;background:radial-gradient(ellipse at 50% 50%,rgba(0,0,0,0.18) 0%,rgba(0,0,0,0.4) 100%);border-radius:8px;border:1px solid rgba(0,0,0,0.5);box-shadow:inset 0 2px 8px rgba(0,0,0,0.45);">';
+    h+='<div style="position:relative;min-height:120px;background:radial-gradient(ellipse at 50% 50%,rgba(0,0,0,0.18) 0%,rgba(0,0,0,0.4) 100%),radial-gradient(circle at 50% 50%,rgba(200,168,75,0.10) 0%,rgba(200,168,75,0.03) 38%,transparent 60%);border-radius:8px;border:1px solid rgba(0,0,0,0.5);box-shadow:inset 0 2px 8px rgba(0,0,0,0.45);">';
     if(phase==='dealing'){
       var gsLeft=52-(dealt[0]+dealt[1]+dealt[2]+dealt[3]);
       h+='<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">'
@@ -485,7 +486,7 @@ window._gameFns.gardenspades = function GardenSpades(a){
     }
     h+='</div>';
     h+='<div class="'+_seatCls(E)+'" style="padding:4px;">'
-      +'<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:'+_teamColor(E)+';text-align:center;letter-spacing:0.14em;margin-bottom:5px;text-transform:uppercase;font-weight:700;">'
+      +'<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:'+_teamColor(E)+';text-align:center;letter-spacing:0.14em;margin-bottom:5px;text-transform:uppercase;font-weight:700;">'
         +'EAST <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;margin-left:2px;">×'+seatCount(E)+'</span>'+_bidPill(E)
       +'</div>'
       +'<div style="display:inline-flex;flex-direction:column;align-items:center;">';
@@ -519,7 +520,7 @@ window._gameFns.gardenspades = function GardenSpades(a){
         h+='<button class="gb" onclick="_GSB('+bj+')" style="min-width:38px;min-height:46px;padding:6px 4px;background:'+(isSj?'linear-gradient(180deg,rgba(255,220,112,0.25),rgba(200,168,75,0.35))':'rgba(0,0,0,0.4)')+';border:'+(isSj?'2':'1.5')+'px solid '+(isSj?'#ffdc70':'rgba(232,220,200,0.3)')+';border-radius:6px;font-family:Georgia,serif;font-weight:700;font-size:0.95rem;color:#f5ebd0;'+(isSj?'box-shadow:0 0 12px rgba(255,220,112,0.4);':'')+'">'+bj+'</button>';
       }
       h+='</div>';
-      h+='<div style="margin-top:6px;font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.1em;color:rgba(232,220,200,0.4);">'+(suggested>0?'Suggested: '+suggested:'')+'</div>';
+      h+='<div style="margin-top:6px;font-family:DM Mono,monospace;font-size:0.7rem;letter-spacing:0.1em;color:rgba(232,220,200,0.4);">'+(suggested>0?'Suggested: '+suggested:'')+'</div>';
       h+='</div>';
       h+='</div>';
     }
@@ -535,7 +536,7 @@ window._gameFns.gardenspades = function GardenSpades(a){
     }
     // ── YOUR HAND (SOUTH) ───────────────────────────────────────
     h+='<div class="'+_seatCls(S)+'" style="padding:4px;">'
-      +'<div style="font-family:DM Mono,monospace;font-size:0.62rem;color:'+_teamColor(S)+';text-align:center;letter-spacing:0.14em;margin-bottom:6px;text-transform:uppercase;font-weight:700;">'
+      +'<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:'+_teamColor(S)+';text-align:center;letter-spacing:0.14em;margin-bottom:6px;text-transform:uppercase;font-weight:700;">'
         +'Your Hand'+_bidPill(S)
       +'</div>';
     h+='<div style="display:flex;gap:3px;justify-content:center;flex-wrap:wrap;">';
@@ -557,9 +558,9 @@ window._gameFns.gardenspades = function GardenSpades(a){
     // ── HISTORY OVERLAY ─────────────────────────────────────────
     if(showingHistory){
       h+='<div onclick="_GShistClose()" style="position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.2rem;cursor:pointer;backdrop-filter:blur(4px);overflow-y:auto;">';
-      h+='<div style="font-family:DM Mono,monospace;font-size:0.6rem;letter-spacing:0.2em;color:rgba(232,220,200,0.65);text-transform:uppercase;margin-bottom:14px;">Score History</div>';
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;letter-spacing:0.2em;color:rgba(232,220,200,0.65);text-transform:uppercase;margin-bottom:14px;">Score History</div>';
       h+='<div style="background:rgba(0,0,0,0.5);border:1px solid rgba(180,140,70,0.3);border-radius:10px;padding:12px;max-width:96vw;width:520px;box-shadow:0 6px 22px rgba(0,0,0,0.6);">';
-      h+='<div style="display:grid;grid-template-columns:48px 1fr 1fr;gap:6px;align-items:center;font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.12em;text-transform:uppercase;padding-bottom:6px;border-bottom:1px solid rgba(232,220,200,0.2);margin-bottom:6px;">';
+      h+='<div style="display:grid;grid-template-columns:48px 1fr 1fr;gap:6px;align-items:center;font-family:DM Mono,monospace;font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;padding-bottom:6px;border-bottom:1px solid rgba(232,220,200,0.2);margin-bottom:6px;">';
       h+='<div style="color:rgba(232,220,200,0.6);">Round</div>';
       h+='<div style="color:'+TEAM_COLORS[0]+';text-align:center;">YOU + PARTNER</div>';
       h+='<div style="color:'+TEAM_COLORS[1]+';text-align:center;">OPPONENTS</div>';
@@ -581,7 +582,7 @@ window._gameFns.gardenspades = function GardenSpades(a){
         h+='</div>';
       }
       h+='</div>';
-      h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.15em;color:rgba(232,220,200,0.4);margin-top:18px;">Tap anywhere to close</div>';
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;letter-spacing:0.15em;color:rgba(232,220,200,0.4);margin-top:18px;">Tap anywhere to close</div>';
       h+='</div>';
     }
     // ── SANDBAG -100 PENALTY FLASH ──────────────────────────────

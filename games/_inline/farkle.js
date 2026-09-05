@@ -55,7 +55,7 @@
         +'<rect width="100%" height="100%" filter="url(#n)"/>'
       +'</svg>'
     );
-    pan.style.cssText='max-width:min(96vw,560px);margin:0 auto;padding:6px 14px 14px;user-select:none;box-sizing:border-box;'
+    pan.style.cssText='max-width:min(100vw - 16px,560px);margin:0 auto;padding:6px 14px 14px;user-select:none;box-sizing:border-box;'
       +'background:'
         +'url("'+_F_FELT+'"),'
         +'radial-gradient(ellipse at 50% 0%,rgba(255,160,90,0.08) 0%,transparent 50%),'
@@ -67,6 +67,7 @@
       +'box-shadow:'
         +'inset 0 0 0 1px rgba(220,160,90,0.25),'
         +'inset 0 0 38px rgba(0,0,0,0.5),'
+        +'0 0 40px rgba(0,0,0,0.8),'
         +'0 6px 22px rgba(0,0,0,0.6);';
     a.appendChild(pan);
     mc(a); // empty — controls go inside pan
@@ -152,7 +153,7 @@
       var rollDisabled=rolling||busted||gameOver;
       var bankDisabled=rolling||liveTurn()<=0||busted||gameOver;
       h+='<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">';
-      h+='<div style="font-family:Georgia,serif;font-style:italic;font-size:0.7rem;color:rgba(232,220,200,0.65);flex:1 1 140px;min-width:0;text-align:center;">'+hint+'</div>';
+      h+='<div style="font-family:Georgia,serif;font-style:italic;font-size:0.72rem;color:rgba(255,220,180,0.78);flex:1 1 140px;min-width:0;text-align:center;">'+hint+'</div>';
       h+='<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;">';
       h+='<button class="gb" onclick="_FR()" '+(rollDisabled?'disabled':'')+' style="min-height:48px;padding:10px 14px;font-size:0.7rem;font-family:Georgia,serif;font-weight:700;background:'+(rollDisabled?'rgba(0,0,0,0.4)':'linear-gradient(180deg,rgba(255,180,90,0.3),rgba(200,130,60,0.4))')+';border:'+(rollDisabled?'1px solid rgba(232,220,200,0.25)':'2px solid #ffb45a')+';color:'+(rollDisabled?'rgba(232,220,200,0.4)':'#fff0d6')+';border-radius:6px;cursor:'+(rollDisabled?'not-allowed':'pointer')+';'+(rollDisabled?'':'box-shadow:inset 0 1px 0 rgba(255,255,255,0.15),0 2px 5px rgba(0,0,0,0.5);')+'">🎲 Roll</button>';
       h+='<button class="gb" onclick="_FB()" '+(bankDisabled?'disabled':'')+' style="min-height:48px;padding:10px 14px;font-size:0.7rem;font-family:Georgia,serif;font-weight:700;background:'+bs.bg+';border:2px solid '+bs.bdr+';color:'+bs.col+';border-radius:6px;cursor:'+(bankDisabled?'not-allowed':'pointer')+';'+bs.gl+'">💰 Bank'+(liveTurn()>0?' '+liveTurn():'')+'</button>';
@@ -164,7 +165,7 @@
       // smaller tray, so holding a die never reflows/resizes the layout.
       h+='<div style="background:radial-gradient(ellipse at 50% 50%,rgba(0,0,0,0.18) 0%,rgba(0,0,0,0.45) 100%);border:1px solid rgba(0,0,0,0.55);border-radius:10px;padding:10px;margin-bottom:6px;box-shadow:inset 0 2px 8px rgba(0,0,0,0.55);min-height:120px;">';
       h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;min-height:14px;">';
-      h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;letter-spacing:0.06em;color:rgba(232,220,200,0.5);text-transform:uppercase;">'+(turn>0?'Kept dice glow \u00b7 tap to release':'Roll \u00b7 then tap dice to keep')+'</div>';
+      h+='<div style="font-family:Georgia,serif;font-size:0.75rem;letter-spacing:0.18em;color:rgba(232,220,200,0.62);text-transform:uppercase;">'+(turn>0?'Kept dice glow \u00b7 tap to release':'Roll \u00b7 then tap dice to keep')+'</div>';
       if(turn>0)h+='<div style="font-family:Georgia,serif;font-size:0.7rem;color:rgba(232,220,200,0.7);flex-shrink:0;">Locked: <strong style="color:#ffdc70;">'+turn+'</strong></div>';
       h+='</div>';
       h+='<div style="display:flex;gap:clamp(6px,2vw,10px);justify-content:center;flex-wrap:wrap;">';
@@ -175,7 +176,7 @@
         var heldBox=held?'box-shadow:0 0 0 3px #ffb45a,0 0 14px rgba(255,180,90,0.55),inset 0 0 12px rgba(255,180,90,0.18);background:rgba(255,180,90,0.10);':'';
         h+='<div onclick="_FHold('+i+')" class="fDie'+(roll?' rolling':'')+(held?' held':'')+'" data-i="'+i+'" style="width:clamp(62px,17vw,88px);height:clamp(62px,17vw,88px);display:flex;align-items:center;justify-content:center;border-radius:clamp(8px,2.5vw,12px);cursor:'+(dice[i]?'pointer':'default')+';'+heldBox+stagger+'">';
         if(dice[i])h+=seedDie(dice[i]);
-        else h+='<span style="font-size:2rem;color:rgba(232,220,200,0.25);">\u00b7</span>';
+        else h+='<span style="display:block;width:10px;height:10px;border-radius:50%;background:rgba(255,180,90,0.28);box-shadow:0 0 6px rgba(255,180,90,0.25);"></span>';
         h+='</div>';
       }
       h+='</div></div>';

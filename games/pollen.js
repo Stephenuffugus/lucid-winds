@@ -343,13 +343,16 @@ window._gameFns.pollen = function PN(a){
     h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.12em;color:var(--sage);margin-bottom:8px;">SEATS</div>';
     for(var i=0;i<st.seats.length;i++){
       var s=st.seats[i];
-      h+='<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;background:rgba(26,31,23,0.5);border:1px solid rgba(122,179,86,0.15);border-radius:10px;padding:8px 10px;">';
-      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--cream);width:40px;">P'+(i+1)+'</div>';
-      h+='<input type="text" value="'+esc(s.name||'')+'" oninput="_PNsetName('+i+',this.value)" maxlength="12" style="flex:1;min-width:0;background:rgba(13,16,12,0.7);border:1px solid rgba(122,179,86,0.2);border-radius:6px;color:var(--cream);font-family:DM Mono,monospace;font-size:0.7rem;padding:8px 10px;min-height:48px;">';
-      h+='<button class="gb" onclick="_PNsetAI('+i+',false)" style="min-height:48px;padding:8px 10px;font-size:0.7rem;'+(!s.isAI?'background:rgba(122,179,86,0.25);border-color:var(--sage);color:var(--sage);':'')+'">HUMAN</button>';
-      h+='<button class="gb" onclick="_PNsetAI('+i+',true)" style="min-height:48px;padding:8px 10px;font-size:0.7rem;'+(s.isAI?'background:rgba(196,122,122,0.22);border-color:#c47a7a;color:#c47a7a;':'')+'">CPU</button>';
+      h+='<div class="pn-seatrow" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px;background:rgba(26,31,23,0.5);border:1px solid rgba(122,179,86,0.15);border-radius:10px;padding:6px 10px;">';
+      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--cream);width:28px;flex:none;">P'+(i+1)+'</div>';
+      h+='<input type="text" value="'+esc(s.name||'')+'" oninput="_PNsetName('+i+',this.value)" maxlength="12" style="flex:1 1 110px;min-width:0;background:rgba(13,16,12,0.7);border:1px solid rgba(122,179,86,0.2);border-radius:6px;color:var(--cream);font-family:DM Mono,monospace;font-size:0.9rem;padding:6px 8px;min-height:48px;">';
+      /* the three seat buttons travel as one unit, so on a narrow phone they drop to a second line
+         together and the name field keeps its width (at 320 the field had been squeezed to 18px) */
+      h+='<div class="pn-seatbtns" style="display:flex;gap:8px;margin-left:auto;">';
+      h+='<button class="gb" onclick="_PNsetAI('+i+',false)" style="min-height:48px;padding:8px 8px;font-size:0.7rem;'+(!s.isAI?'background:rgba(122,179,86,0.25);border-color:var(--sage);color:var(--sage);':'')+'">HUMAN</button>';
+      h+='<button class="gb" onclick="_PNsetAI('+i+',true)" style="min-height:48px;padding:8px 8px;font-size:0.7rem;'+(s.isAI?'background:rgba(196,122,122,0.22);border-color:#c47a7a;color:#c47a7a;':'')+'">CPU</button>';
       if(st.seats.length>1)h+='<button class="gb" onclick="_PNdropSeat('+i+')" style="min-height:48px;min-width:48px;padding:8px;font-size:0.7rem;color:var(--muted);">✕</button>';
-      h+='</div>';
+      h+='</div></div>';
     }
     if(st.seats.length<4){
       h+='<button class="gb" onclick="_PNaddSeat()" style="width:100%;margin:4px 0 14px;min-height:48px;font-size:0.7rem;letter-spacing:0.08em;">+ ADD SEAT</button>';
@@ -678,6 +681,7 @@ window._gameFns.pollen = function PN(a){
       +'.pn-seat.active{animation:pnSeatGlow 2.4s ease-in-out infinite;}'
       // ─── setup / modal shells ─────────────────────────────────────────
       +'.pn-modal{background:'
+      +'radial-gradient(ellipse at 50% 108%,rgba(74,124,53,0.30),transparent 58%),'
       +'radial-gradient(ellipse at top,rgba(200,168,75,0.08),transparent 60%),'
       +'linear-gradient(180deg,rgba(18,22,14,0.98),rgba(10,12,8,0.98));'
       +'box-shadow:0 32px 64px rgba(0,0,0,0.7),0 0 0 1px rgba(200,168,75,0.18),inset 0 1px 0 rgba(255,220,140,0.08);'

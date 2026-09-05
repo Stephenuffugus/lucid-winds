@@ -33,7 +33,7 @@ window._gameFns.vinecross=function VC(a){
   mm(a);
   // Stats strip
   var statsRow=document.createElement('div');statsRow.id='VCstats';
-  statsRow.style.cssText='display:flex;justify-content:center;gap:14px;padding:2px 0;font-family:DM Mono,monospace;font-size:0.7rem;font-weight:500;color:rgba(232,220,200,0.72);letter-spacing:0.06em';
+  statsRow.style.cssText='display:flex;justify-content:center;gap:14px;padding:9px 0 11px;margin-bottom:6px;border-bottom:1px solid rgba(122,179,86,.12);font-family:DM Mono,monospace;font-size:0.7rem;font-weight:500;color:rgba(232,220,200,0.72);letter-spacing:0.06em';
   a.appendChild(statsRow);
   var pan=document.createElement('div');pan.id='VCpan';
   pan.style.cssText='max-width:560px;margin:0 auto;padding:4px;user-select:none;text-align:center;';
@@ -43,7 +43,7 @@ window._gameFns.vinecross=function VC(a){
   toolRow.style.cssText='display:flex;gap:6px;justify-content:center;padding:4px 0;flex-wrap:wrap';
   toolRow.innerHTML='<button class="gb" id="VCundo" onclick="_VCU()" style="min-height:48px;padding:8px 16px;font-size:0.7rem">↩ UNDO</button>'
     +'<button class="gb" id="VCredo" onclick="_VCR()" style="min-height:48px;padding:8px 16px;font-size:0.7rem">↪ REDO</button>'
-    +'<button class="gb" id="VChint" onclick="_VCH()" style="min-height:48px;padding:8px 16px;font-size:0.7rem">💡 HINT</button>';
+    +'<button class="gb" id="VChint" onclick="_VCH()" style="min-height:48px;padding:8px 16px;font-size:0.7rem;border-color:rgba(200,168,75,.5);color:#c8a84b">💡 HINT</button>';
   a.appendChild(toolRow);
   // Diff + size + new game
   mc(a).innerHTML='<select class="gsl" id="VCd" onchange="_VCL(this.value)" style="min-width:140px">'
@@ -90,7 +90,7 @@ window._gameFns.vinecross=function VC(a){
     if(CELL>46)CELL=46;
     if(CELL<18)CELL=18;
     var W=PAD*2+CELL*(SZ-1);
-    var h='<canvas id="VCcv" width="'+W+'" height="'+W+'" style="display:block;margin:4px auto;border-radius:10px;touch-action:none;max-width:100%;box-shadow:0 8px 28px rgba(0,0,0,0.5),0 0 0 3px #3b2a14;"></canvas>';
+    var h='<canvas id="VCcv" width="'+W+'" height="'+W+'" style="display:block;margin:4px auto;border-radius:10px;touch-action:none;max-width:100%;box-shadow:0 0 0 3px #3b2a14,0 0 0 6px rgba(120,86,40,.42),0 14px 34px rgba(0,0,0,.65);"></canvas>';
     pan.innerHTML=h;
     cvs=document.getElementById('VCcv');ctx=cvs.getContext('2d');
     cvs.addEventListener('click',onClick);
@@ -111,6 +111,15 @@ window._gameFns.vinecross=function VC(a){
     var sh=ctx.createRadialGradient(W/2,W/2,W*0.3,W/2,W/2,W*0.72);
     sh.addColorStop(0,'rgba(0,0,0,0)');sh.addColorStop(1,'rgba(0,0,0,0.45)');
     ctx.fillStyle=sh;ctx.fillRect(0,0,W,W);
+    // wood grain: long faint strokes running one way and two knots, so the board is timber and
+    // not brown vinyl (fleet audit row 156). Drawn under the grid lines, deterministic, no image.
+    ctx.save();ctx.globalAlpha=0.16;ctx.strokeStyle='#2a1a0a';ctx.lineWidth=1;
+    for(var gi=0;gi<26;gi++){var gy=(gi*W/26)+((gi*37)%11)-5;ctx.beginPath();ctx.moveTo(0,gy);
+      for(var gx=0;gx<W;gx+=W/6){ctx.quadraticCurveTo(gx+W/12,gy+Math.sin(gx*0.02+gi)*3,gx+W/6,gy+Math.cos(gi*1.7+gx*0.01)*2.4);}ctx.stroke();}
+    ctx.globalAlpha=0.22;ctx.strokeStyle='#3b2a14';ctx.lineWidth=1.4;
+    var knots=[[W*0.22,W*0.31],[W*0.71,W*0.66]];
+    for(var ki=0;ki<knots.length;ki++){for(var kr=3;kr<16;kr+=3.5){ctx.beginPath();ctx.ellipse(knots[ki][0],knots[ki][1],kr*1.6,kr,0.4,0,Math.PI*2);ctx.stroke();}}
+    ctx.restore();
     // Grid lines — darker warm tone
     ctx.strokeStyle='rgba(28,20,10,0.72)';
     ctx.lineWidth=1.2;

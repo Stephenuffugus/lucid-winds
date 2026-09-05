@@ -32,7 +32,8 @@ var dragStartX=0, dragStartY=0, dragStartCell=-1, dragMoved=false;
     '@keyframes dTileIn{0%{transform:scale(0.85);opacity:0}100%{transform:scale(1);opacity:1}}',
     '#Dpan{max-width:min(96vw,440px);margin:0 auto;padding:12px;user-select:none;-webkit-user-select:none;touch-action:none;box-sizing:border-box;position:relative;animation:dPanIn .4s ease}',
     '.Dboard{position:relative;width:100%;aspect-ratio:1;background:linear-gradient(135deg,rgba(28,36,24,.6) 0%,rgba(18,24,16,.75) 55%,rgba(12,16,10,.85) 100%);border:2px solid rgba(122,179,86,0.25);border-radius:14px;box-shadow:inset 0 0 32px rgba(0,0,0,0.55),inset 0 0 0 1px rgba(122,179,86,0.08),0 6px 20px rgba(0,0,0,0.45);overflow:hidden}',
-    '.Dtile{position:absolute;width:var(--ts);height:var(--ts);display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-weight:700;color:#f5ebd0;background:linear-gradient(180deg,rgba(122,179,86,0.45) 0%,rgba(74,124,53,0.55) 100%);border:1.5px solid rgba(200,168,75,0.4);border-radius:10px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.15),inset 0 -2px 4px rgba(0,0,0,0.25),0 3px 8px rgba(0,0,0,0.4);cursor:pointer;transition:transform .16s cubic-bezier(.2,1.1,.3,1),box-shadow .16s ease,background .16s ease;will-change:transform;text-shadow:0 1px 2px rgba(0,0,0,0.45)}',
+    '.Dtile{position:absolute;width:var(--ts);height:var(--ts);display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-weight:700;color:#f5ebd0;background:linear-gradient(180deg,rgba(122,179,86,0.45) 0%,rgba(74,124,53,0.55) 100%);border:1.5px solid rgba(200,168,75,0.4);border-radius:10px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.15),inset 0 -2px 4px rgba(0,0,0,0.25),0 3px 8px rgba(0,0,0,0.4);cursor:pointer;transition:transform .16s cubic-bezier(.2,1.1,.3,1),box-shadow .16s ease,background .16s ease;will-change:transform;filter:brightness(var(--tint,1));text-shadow:0 1px 2px rgba(0,0,0,0.45)}',
+    '.Dsock{position:absolute;width:var(--ts);height:var(--ts);border-radius:10px;background:radial-gradient(ellipse at 50% 62%,rgba(0,0,0,.6),rgba(0,0,0,.22) 72%);box-shadow:inset 0 4px 12px rgba(0,0,0,.75),inset 0 0 0 1px rgba(0,0,0,.45);pointer-events:none}',
     '.Dtile:active{filter:brightness(1.1)}',
     '.Dtile.home{background:linear-gradient(180deg,rgba(200,168,75,0.45) 0%,rgba(160,130,55,0.55) 100%);border-color:rgba(255,220,112,0.55);color:#fff0d6;box-shadow:inset 0 1px 0 rgba(255,255,255,0.18),inset 0 -2px 4px rgba(0,0,0,0.2),0 0 12px rgba(200,168,75,0.35),0 3px 8px rgba(0,0,0,0.4)}',
     '.Dtile.home::after{content:"\\2713";position:absolute;top:2px;right:4px;font-size:0.6em;color:#fff0d6;opacity:.9;pointer-events:none}',
@@ -43,7 +44,7 @@ var dragStartX=0, dragStartY=0, dragStartCell=-1, dragMoved=false;
     '.Db{min-height:48px;padding:8px 14px;font-size:0.72rem;font-family:Georgia,serif;font-weight:700;border-radius:6px;cursor:pointer;background:rgba(26,31,23,0.7);border:1.5px solid rgba(122,179,86,0.4);color:#e8dcc8;transition:all .15s}',
     '.Db:active{background:rgba(122,179,86,0.2);transform:scale(.96)}',
     '.Db.gold{border-color:#c8a84b;color:#c8a84b;background:linear-gradient(180deg,rgba(200,168,75,0.18),rgba(160,130,50,0.22))}',
-    '.Db[disabled]{opacity:.35;pointer-events:none}'
+    '.Db[disabled]{opacity:.55;border-style:dashed;pointer-events:none}'
   ].join('');
   document.head.appendChild(s);
 })();
@@ -225,6 +226,8 @@ function positionTiles(){
       el=document.createElement('div');
       el.className='Dtile';
       el.setAttribute('data-v',val);
+      /* fifteen tiles shared one silhouette; a per tile brightness jitter (0.93 to 1.07) gives the board a rhythm without touching the palette */
+      el.style.setProperty('--tint',(0.93+((val*7)%9)*0.0175).toFixed(3));
       el.textContent=val;
       el.style.setProperty('--ts',tsize+'px');
       el.style.fontSize=Math.round(tsize*0.42)+'px';
@@ -250,6 +253,13 @@ function positionTiles(){
   // Remove any stale tile elements
   for(var v2 in existing){
     if(!seen[v2]){try{existing[v2].remove();}catch(e){}}
+  }
+  /* the empty square was a hole in the render; it is a recessed socket now, positioned like a tile */
+  var ei=tl.indexOf(0), sock=gd.querySelector('.Dsock');
+  if(ei>=0){
+    if(!sock){sock=document.createElement('div');sock.className='Dsock';gd.insertBefore(sock,gd.firstChild);}
+    sock.style.width=tsize+'px';sock.style.height=tsize+'px';
+    sock.style.transform='translate('+(pad+(ei%SZ)*tsize)+'px,'+(pad+Math.floor(ei/SZ)*tsize)+'px)';
   }
 }
 
