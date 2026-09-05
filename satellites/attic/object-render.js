@@ -361,6 +361,13 @@
       + '<rect x="' + bx + '" y="' + by + '" width="14" height="' + bh + '" rx="6" fill="#201c16"/>';
     var ax = bx + 22, ay = by + 16, aw = bw - 36, ah = bh - 92;
     g += '<rect x="' + ax + '" y="' + ay + '" width="' + aw + '" height="' + ah + '" fill="' + c[0] + '"/>';
+    /* the cover art is CLIPPED to the cover: the workout stripes ran a third of the
+       cover's width past both edges and out over the clamshell on every shared card
+       until 2026-09-05. The id is cut from bytes 3 to 7 (never byte 2, the grade, or
+       the dusty art would change with the condition) and starts with a hex letter so
+       the broken colour sweep, which reads #x as a colour, does not trip on it. */
+    var cid = 'c' + String(h).slice(6, 16);
+    g += '<clipPath id="' + cid + '"><rect x="' + ax + '" y="' + ay + '" width="' + aw + '" height="' + ah + '"/></clipPath><g clip-path="url(#' + cid + ')">';
     var motif = hb(h, 8) < 128 ? hb(h, 16) % 3 : 3 + hb(h, 8) % 3;   // LAYOUT BANK 2: byte 8 opens three more
     if (motif === 0) {           // horror slash
       g += '<path d="M' + ax + ' ' + (ay + ah) + ' L' + (ax + aw) + ' ' + ay + ' l0 ' + ah + ' Z" fill="' + c[1] + '"/>'
@@ -384,6 +391,7 @@
       var w2; for (w2 = -1; w2 < 6; w2++) g += '<path d="M' + (ax + w2 * (aw / 4)) + ' ' + ay + ' l' + (aw / 8) + ' 0 l-' + (aw / 3) + ' ' + ah + ' l-' + (aw / 8) + ' 0 Z" fill="' + (w2 % 2 ? c[2] : c[3]) + '" opacity="0.8"/>';
       g += figure(ax + aw * 0.5, ay + ah * 0.5, 0.9, c[0], false, c[0]);
     }
+    g += '</g>';
     g += '<rect x="' + ax + '" y="' + (ay + ah - 46) + '" width="' + aw + '" height="46" fill="' + c[3] + '" opacity="0.88"/>'
       + '<text x="' + (ax + aw / 2) + '" y="' + (ay + ah - 26) + '" text-anchor="middle" font-family="' + look.f + '" font-weight="800" font-size="' + fit(it.name, 17, aw - 8) + '" fill="' + c[0] + '">' + esc(it.name) + '</text>'
       + '<text x="' + (ax + aw / 2) + '" y="' + (ay + ah - 10) + '" text-anchor="middle" font-family="' + look.f + '" font-style="italic" font-size="' + fit(String(it.sub).replace(/"/g, '').slice(0, 40), 9, aw - 10) + '" fill="' + c[0] + '" opacity="0.85">' + esc(String(it.sub).replace(/"/g, '').slice(0, 40)) + '</text>';

@@ -178,3 +178,7 @@ drawn dust are now good enough to ship; the plate and the veil would be upgrades
 ### Litter Bug loop pass (Sep 05, later)
 
 Forty Shinies ends a shift now instead of leaving twenty dead seconds on the clock: the done screen says CLEAN SHIFT with the time, the picker keeps the fastest clean per block, one block is featured each day and a clean shift there stamps a seven day strip. Bugdex has a families row. Shots: `lb-loop-picker.png`, `lb-loop-clean-shift.png`, `lb-loop-dex-families.png`, `lb-loop-picker-day2.png`. Driver `lbloop.mjs`. Grub cleaned in 21.5 s with real taps; sort ran the clock out at 35, so sort is the block a clean shift has to be earned on.
+
+### The Attic condition pass (Sep 05, later)
+
+Every grade now says where its wear came from, one line under the plate after the wipe (a bank per grade in the engine, `revealStory`), the class flaw sits in the same block, the ledger gets a WEAR row and the shared PNG prints the line above the plate. The workout VHS cover stripes were bleeding past the cassette on shared cards; the cover art is clipped now. Shots: `attic-wear-find.png`, `attic-wear-ledger.png`, `attic-wear-card.png`.

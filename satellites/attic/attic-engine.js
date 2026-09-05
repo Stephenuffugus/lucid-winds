@@ -133,6 +133,64 @@
     return PROV[hb(h, 5) % PROV.length].replace('{p}', PLACES[hb(h, 6) % PLACES.length]);
   }
 
+  /* ── WEAR: where the condition came from ──────────────────────────────
+     The plate says GOOD; this says why. One line per find, chosen by the grade
+     and told in the past tense, so a grade is a life the object had and not a
+     label. FINE and NEAR MINT had NOTHING after the wipe before 2026-09-05
+     (the class flaw prints on the low three, the mint tag on the top two).
+     ⛔ GRADE DERIVED, so it is a reveal flourish: `revealStory`, printed only
+     after the wipe, never in the sticker, the sub or the provenance. */
+  var WEAR = {
+    'TRASHED': [
+      'Two winters in a wet basement did this.', 'A dog got to it first, then the damp.',
+      'It rode loose in a truck bed for most of a decade.', 'Kids. Years and years of kids.',
+      'A pipe let go above the shelf it sat on.', 'Somebody used it to prop a door through a whole summer.',
+      'Left in a garage by a window that faced south.', 'It was in the box the mice found.',
+      'Stored under the sink with the bleach.', 'Went through a flood, then a yard sale, then a flood.'
+    ],
+    'PLAYED': [
+      'Loved hard by one kid and handed down to a younger brother.', 'Out every Saturday morning for six years.',
+      'Took it to school in a backpack, more than once.', 'It went to camp three summers running.',
+      'Lived on the floor of a shared bedroom.', 'Lent out and returned, and returned again.',
+      'Passed around a whole street of cousins.', 'Rode along on every long drive to grandma\'s.',
+      'Worked for a living: this one got used.', 'Somebody\'s favourite, and it shows.'
+    ],
+    'GOOD': [
+      'Played with, then put away properly.', 'One careful owner and one careless one.',
+      'Kept on a shelf that caught the afternoon sun.', 'Handled plenty, dropped once.',
+      'Taken out for holidays and boxed again after.', 'A grown up owned this and treated it as one.',
+      'Sat in a den for twenty years next to the good chair.', 'Used, wiped down, and used again.',
+      'Kept in the original box with the lid a little off.', 'Enjoyed by someone who read the instructions.'
+    ],
+    'FINE': [
+      'Handled by adults only.', 'Opened once at Christmas, then boxed.',
+      'Kept in the closet with the good sheets.', 'A collector had it before you and it shows.',
+      'Lived in a glass front cabinet in a quiet house.', 'The kind of thing a grandmother kept for company.',
+      'Stayed in a drawer that nobody else was allowed in.', 'Bought, admired, shelved, forgotten kindly.'
+    ],
+    'NEAR MINT': [
+      'Nobody ever really played with it.', 'Bought as a spare and never needed.',
+      'Kept in a display case, out of the sun.', 'Thirty years in tissue paper.',
+      'Set aside the day it came home and left there.', 'The owner looked but never touched.',
+      'Filed in a closet with the tags still on.', 'Stayed in the bag it was sold in.'
+    ],
+    'MINT': [
+      'Never opened. Somebody always meant to.', 'A store went under with it still on the shelf.',
+      'Sat in a warehouse behind a pallet for decades.', 'Bought two, opened one. This is the other.',
+      'A layaway nobody came back for.', 'Boxed in the stockroom, missed at the count.'
+    ],
+    'FACTORY SEALED': [
+      'The tape is the factory\'s tape. Nobody has been inside.', 'Shrink still tight, corners still square.',
+      'Straight from a case that was never cut open.', 'Sealed the day it was made and sealed today.'
+    ]
+  };
+  function wearStory(h) {
+    var bank = WEAR[grade(h)] || WEAR.GOOD;
+    /* a fresh index off two bytes the provenance already spends, folded so the
+       story does not march in step with the place */
+    return bank[(hb(h, 6) * 7 + hb(h, 5) * 3 + hb(h, 4)) % bank.length];
+  }
+
   // ── RECORDS ──────────────────────────────────────────────────────
   var R_NOUNS = ['GRAVEL', 'VOLTAGE', 'ANTLER', 'TURNPIKE', 'FURNACE', 'PONTOON', 'MOTH', 'CASSEROLE', 'CULVERT', 'THISTLE', 'ODOMETER', 'BASEMENT', 'CINDER', 'MERIDIAN', 'AWNING', 'GRISTLE', 'LANTERN', 'SUMP PUMP', 'ORCHARD', 'ASPHALT', 'DEWCLAW', 'TOLLBOOTH', 'BROADSIDE', 'HANDSAW', 'DRIVEWAY', 'HAYLOFT', 'SWITCHYARD', 'BREAKWATER', 'BOILER', 'MILLPOND'];
   var R_PLURALS = ['DADS', 'LADS', 'ANTLERS', 'PRINTERS', 'REGULARS', 'DEACONS', 'MAJORETTES', 'WELDERS', 'COUSINS', 'BARONS', 'PALLBEARERS', 'UNDERSTUDIES', 'NIGHT JANITORS', 'ALTERNATES', 'SHORT ORDERS', 'BOTTLE RETURNS', 'SNOW BIRDS', 'LOT ATTENDANTS'];
@@ -576,6 +634,7 @@
        deleted off the item afterwards so nothing downstream can read them. */
     item.revealSuffix = null;
     item.revealNote = null;
+    item.revealStory = wearStory(h);
     var g = item.grade;
     if (g === 'MINT' || g === 'FACTORY SEALED') { if (item._mint) item.revealSuffix = item._mint; }
     else if (g === 'TRASHED' || g === 'PLAYED' || g === 'GOOD') { if (item._flaw) item.revealNote = item._flaw; }
@@ -619,7 +678,7 @@
   }
 
   var API = {
-    hashToItem: hashToItem, _grade: grade, _class: classOf, _norm: normHash,
+    hashToItem: hashToItem, _grade: grade, _class: classOf, _norm: normHash, _wear: wearStory, WEAR: WEAR,
     CLASS_SPLIT: CLASS_SPLIT, CLASS_WORD: CLASS_WORD, gradeAtLeast: gradeAtLeast,
     ERROR_RATE: 16 / 256,
     CLASSES: (function () { var a = [], i; for (i = 0; i < CLASS_SPLIT.length; i++) a.push(CLASS_SPLIT[i].c); return a; })(),

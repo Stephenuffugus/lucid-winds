@@ -201,3 +201,5 @@ that are actually open right now, and when none is, it says when one opens.
   content job and it is bigger than this pass.
 - **No proof of play.** Tickets, shelf and want list are all local. Trivially
   editable. Fine for now, worth knowing before anything is ever sold or ranked.
+
+- Sep 05 (later), condition as story: `revealStory` on every item from a WEAR bank per grade in attic-engine.js, printed only after the wipe (find card, flip card front, ledger WEAR row, shared PNG). The class flaw joined it under the plate. Workout VHS cover art clipped to the cover (it bled past the cassette on shared cards). PNG plate steps down when name and sub both wrap. Pins 20260905c. Gate 132 ok; the two story assertions watched red with `AT_ENGINE=` pointing at a mutant engine.

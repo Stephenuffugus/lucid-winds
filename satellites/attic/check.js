@@ -31,7 +31,8 @@ const FILE = process.env.AT_FILE ? path.resolve(process.env.AT_FILE) : path.join
 let SRC, ATTIC, ECON, OBJ, SLEEVE;
 try {
   SRC = fs.readFileSync(FILE, 'utf8');
-  ATTIC = require(path.join(ROOT, 'attic-engine.js'));
+  /* AT_ENGINE points the node side at a copy of the engine, so a mutant can be watched */
+  ATTIC = require(process.env.AT_ENGINE ? path.resolve(process.env.AT_ENGINE) : path.join(ROOT, 'attic-engine.js'));
   ECON = require(path.join(ROOT, 'attic-econ.js'));
   SLEEVE = require(path.join(ROOT, 'sleeve-render.js'));
   OBJ = require(path.join(ROOT, 'object-render.js'));
@@ -253,7 +254,7 @@ group('generator depth: "never existed before", measured');
    Predicate over an item builder, so a leak can be manufactured and watched. */
 function setByte(h, n, v) { return h.slice(0, n * 2) + ('0' + v.toString(16)).slice(-2) + h.slice(n * 2 + 2); }
 function revealPredicates(build, render) {
-  let textLeaks = 0, artLeaks = 0, gradesSeen = {}, flourish = 0;
+  let textLeaks = 0, artLeaks = 0, gradesSeen = {}, flourish = 0, storyByGrade = {};
   for (let j = 0; j < 220; j++) {
     const base = HASHES[j];
     let firstText = null, firstArt = null;
@@ -262,6 +263,7 @@ function revealPredicates(build, render) {
       const it = build(h);
       gradesSeen[it.grade] = 1;
       if (it.revealSuffix || it.revealNote) flourish++;
+      if (it.revealStory) { (storyByGrade[it.grade] = storyByGrade[it.grade] || {})[it.revealStory] = 1; }
       const text = [it.cls, it.name, it.sub, it.sticker, it.era, it.year, it.provenance, it.error].join('|');
       const art = render(h, 300, { dusty: true }).svg;
       if (firstText === null) { firstText = text; firstArt = art; continue; }
@@ -269,7 +271,9 @@ function revealPredicates(build, render) {
       if (art !== firstArt) artLeaks++;
     }
   }
-  return { textLeaks, artLeaks, grades: Object.keys(gradesSeen).length, flourish };
+  const storyGrades = Object.keys(storyByGrade).length;
+  const storyMinDistinct = Math.min.apply(null, Object.keys(gradesSeen).map(g => Object.keys(storyByGrade[g] || {}).length));
+  return { textLeaks, artLeaks, grades: Object.keys(gradesSeen).length, flourish, storyGrades, storyMinDistinct };
 }
 group('the reveal: nothing says the condition before the wipe');
 {
@@ -278,6 +282,9 @@ group('the reveal: nothing says the condition before the wipe');
   ok('the pre reveal TEXT is independent of the grade', P.textLeaks === 0, P.textLeaks + ' leaks');
   ok('the DUSTY ART is independent of the grade', P.artLeaks === 0, P.artLeaks + ' leaks');
   ok('a revealed flourish still exists to print after the wipe', P.flourish > 0, P.flourish + ' flourishes');
+  /* 2026-09-05: FINE and NEAR MINT used to have nothing to say after the wipe */
+  ok('every one of the seven grades tells where its wear came from after the wipe', P.storyGrades === 7, P.storyGrades + ' grades with a story');
+  ok('the wear story is a bank, not one line per grade', P.storyMinDistinct >= 4, P.storyMinDistinct + ' distinct at the thinnest grade');
   const h = HASHES[3];
   ok('a dusty render is marked data-dusty and a clean one is not',
     /data-dusty/.test(OBJ.renderItem(h, 240, { dusty: true }).svg) && !/data-dusty/.test(OBJ.renderItem(h, 240).svg));
@@ -586,6 +593,25 @@ if (process.env.AT_NOBROWSER === '1') { console.log('\n(browser group skipped: A
       dust.full.screens + ' panel widths (' + dust.full.dist + 'px)');
     ok('and it is still clearable inside ninety seconds', dust.full.cleared >= 0.9, pct(dust.full.cleared));
     ok('clearing it turns up the stubs', dust.full.found >= 8, dust.full.found + ' of 10');
+
+    group('the wear line waits for the wipe');
+    const wear = await page.evaluate(() => new Promise((res) => {
+      const D = window.ATTIC_DEV;
+      D.setTix(30);
+      document.getElementById('go').click();
+      const slot = document.getElementById('wearSlot');
+      const before = { text: slot ? slot.textContent : null, shown: slot ? getComputedStyle(slot).display : null };
+      document.getElementById('gb').click();
+      setTimeout(() => {
+        const s2 = document.getElementById('wearSlot');
+        const grade = document.getElementById('gp').textContent.replace(/[^A-Z ]/g, '').trim();
+        const bank = (window.ATTIC && window.ATTIC.WEAR && window.ATTIC.WEAR[grade]) || [];
+        const r = s2.getBoundingClientRect();
+        res({ before, after: s2.textContent, shown: getComputedStyle(s2).display, grade, inBank: bank.indexOf(s2.textContent) >= 0, h: Math.round(r.height) });
+      }, 1300);
+    }));
+    ok('before the wipe the wear line is empty and hidden', wear.before.text === '' && wear.before.shown === 'none', JSON.stringify(wear.before));
+    ok('after the wipe it prints a line from the bank for the grade on the plate', wear.after.length > 10 && wear.inBank && wear.shown === 'block' && wear.h > 10, JSON.stringify(wear));
 
     group('persistence survives a reload');
     const persisted = await page.evaluate(() => {

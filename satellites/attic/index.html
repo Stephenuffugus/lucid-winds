@@ -208,6 +208,10 @@
   .err b { letter-spacing:0.2em; }
 
   .gradeSlot { margin-top:14px; }
+  /* the wear line: why the plate says what it says. Empty until the wipe. */
+  .wear { display:none; font-size:0.82rem; font-style:italic; color:#c4b294; line-height:1.45; margin-top:8px; text-align:center; }
+  .graded .wear { display:block; }
+  .wear .flaw { font-style:normal; color:#b8a888; }
   .gradeBtn {
     width:100%; min-height:52px; border:1px solid #4a3b26; border-radius:8px;
     background:linear-gradient(180deg, #33281c, #241b12);
@@ -636,10 +640,10 @@
 </div></div>
 <div id="toast"></div>
 
-<script src="attic-engine.js?v=20260905b"></script>
-<script src="attic-econ.js?v=20260905b"></script>
-<script src="sleeve-render.js?v=20260905b"></script>
-<script src="object-render.js?v=20260905b"></script>
+<script src="attic-engine.js?v=20260905c"></script>
+<script src="attic-econ.js?v=20260905c"></script>
+<script src="sleeve-render.js?v=20260905c"></script>
+<script src="object-render.js?v=20260905c"></script>
 <script>
 (function () {
   'use strict';
@@ -991,12 +995,12 @@
       + '<div class="nm" id="nmSlot">' + esc(it.name) + (isRevealed && it.revealSuffix ? esc(it.revealSuffix) : '') + '</div>'
       + (it.sub ? '<div class="sub">' + esc(it.sub) + '</div>' : '')
       + (it.sticker ? '<div class="sub">' + esc(it.sticker) + '</div>' : '')
-      + '<div class="sub" id="noteSlot">' + (isRevealed && it.revealNote ? esc(it.revealNote) : '') + '</div>'
       + '<div class="prov">' + esc(it.provenance) + '</div>'
       + (it.error ? '<div class="err"><b>FACTORY ERROR</b><br>' + esc(it.error) + '</div>' : '')
       + '<div class="gradeSlot' + (isRevealed ? ' graded' : '') + '" id="gs">'
       +   '<button class="gradeBtn" id="gb">WIPE OFF THE DUST &middot; CHECK CONDITION</button>'
       +   '<div class="gradePlate" id="gp"></div>'
+      +   '<div class="wear" id="wearSlot">' + (isRevealed ? wearHTML(it) : '') + '</div>'
       + '</div>'
       + '<div class="meta">' + h.slice(0, 16) + '&hellip; &middot; ' + it.year + '</div>'
       + '<button class="scrapbtn" id="scrap">SCRAP THIS</button>';
@@ -1021,7 +1025,7 @@
       paintPlate();
       gs.className = 'gradeSlot graded';
       if (it.revealSuffix) document.getElementById('nmSlot').textContent = it.name + it.revealSuffix;
-      if (it.revealNote) document.getElementById('noteSlot').textContent = it.revealNote;
+      document.getElementById('wearSlot').innerHTML = wearHTML(it);
       payForReveal(h, it);
       if (it.grade === 'FACTORY SEALED') {
         card.className = 'card on sealedhit';
@@ -1160,6 +1164,13 @@
 
   /* ── THE OBJECT CARD ────────────────────────────────────────────────── */
   var FC_H = null, FC_BLOB = null;
+  /* the condition, told: the class flaw (what is wrong with it) and the wear story
+     (how it got that way), one block under the plate, printed only after the wipe */
+  function wearHTML(it) {
+    var flaw = it.revealNote ? String(it.revealNote).replace(/^\s*[a-z]/, function (c) { return c.toUpperCase(); }) : '';
+    if (flaw && !/[.!?]$/.test(flaw)) flaw += '.';
+    return (flaw ? '<span class="flaw">' + esc(flaw) + '</span> ' : '') + esc(it.revealStory || '');
+  }
   function plateHTML(it, wiped) {
     if (!wiped) return '<button class="gradeBtn" id="fcWipe" style="width:100%;min-height:52px">WIPE OFF THE DUST &middot; CHECK CONDITION</button>';
     if (it.grade === 'FACTORY SEALED') return '<div class="gradePlate g-sealed" style="display:flex">&#9733; FACTORY SEALED &#9733;</div>';
@@ -1173,13 +1184,14 @@
       + '<div class="cls">' + esc(it.cls) + ' &middot; ' + esc(it.era) + '</div>'
       + '<div class="nm">' + esc(it.name) + (wiped && it.revealSuffix ? esc(it.revealSuffix) : '') + '</div>'
       + (it.sub ? '<div class="sub">' + esc(it.sub) + '</div>' : '')
-      + (wiped && it.revealNote ? '<div class="sub">' + esc(it.revealNote) + '</div>' : '')
       + (it.error ? '<div class="err"><b>FACTORY ERROR</b><br>' + esc(it.error) + '</div>' : '')
-      + '<div class="gradeSlot">' + plateHTML(it, wiped) + '</div>';
+      + '<div class="gradeSlot' + (wiped ? ' graded' : '') + '">' + plateHTML(it, wiped)
+      +   '<div class="wear">' + (wiped ? wearHTML(it) : '') + '</div></div>';
     document.getElementById('fcBack').innerHTML =
       '<div class="fcHead">' + ATTIC_OBJECT.renderItem(h, 64, { dusty: !wiped }).svg
       + '<div><div class="s">' + esc(it.cls) + '</div><div class="t">' + esc(it.name) + '</div></div></div>'
       + row('CONDITION', wiped ? it.grade : 'not wiped yet')
+      + (wiped && it.revealStory ? row('WEAR', it.revealStory) : '')
       + row('ERA', it.era + ', dated ' + it.year)
       + row('FOUND', foundWhen(h, true))
       + (it.sticker ? row('MARKINGS', it.sticker) : '')
@@ -1274,8 +1286,9 @@
         x.fillStyle = '#b8a888'; x.font = 'italic 19px Georgia, serif';
         y = wrapText(x, it.sub, W / 2, y + 12, W - 100, 26, 2);
       }
-      /* the grade plate */
-      var pw = 380, ph = 62, px = (W - pw) / 2, py = 790;
+      /* the grade plate: it steps down when the name and the sub both wrap, so the wear
+         line above it never lands on the sub or under the plate */
+      var pw = 380, ph = 62, px = (W - pw) / 2, py = Math.min(826, Math.max(790, y + 52));
       var lk = GRADE_LOOK[it.grade] || GRADE_LOOK.GOOD, label = wiped ? it.grade : 'STILL UNDER DUST';
       if (wiped && it.grade === 'FACTORY SEALED') {
         var gd = x.createLinearGradient(px, 0, px + pw, 0);
@@ -1288,10 +1301,14 @@
         x.fillStyle = wiped ? lk[0] : '#8a8378'; x.font = '24px ui-monospace, monospace';
       }
       x.fillText(label, W / 2, py + 41);
+      if (wiped && it.revealStory) {
+        x.fillStyle = '#c4b294'; x.font = 'italic 18px Georgia, serif';
+        wrapText(x, it.revealStory, W / 2, py - 24, W - 110, 22, 1);
+      }
       x.fillStyle = '#9a8a6e'; x.font = '14px ui-monospace, monospace';
-      x.fillText(h.slice(0, 24) + '  ' + (found[h] ? foundWhen(h, true) : ''), W / 2, 894);
+      x.fillText(h.slice(0, 24) + '  ' + (found[h] ? foundWhen(h, true) : ''), W / 2, 906);
       x.fillStyle = '#8a7a5e'; x.font = '14px ui-monospace, monospace';
-      x.fillText('one of one  ' + String.fromCharCode(183) + '  Sky Wolf Studio', W / 2, 922);
+      x.fillText('one of one  ' + String.fromCharCode(183) + '  Sky Wolf Studio', W / 2, 928);
       cb(cv);
     }
     x.fillStyle = '#171310'; x.fillRect(0, 0, W, H);
