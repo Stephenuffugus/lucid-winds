@@ -20,6 +20,12 @@ morning. This file is the spine those three sessions hang on. The per-game plans
    `python3 -m http.server 8777 --bind 127.0.0.1 &` (the Keepsies gates and the Ronin solver use
    it); if `ls ~/.cache/puppeteer` is empty, `npx puppeteer browsers install chrome`; the FTW
    Android toolchain is `store/ftw-play/twa/setup-toolchain.sh` only when it is needed.
+   **Disk, before the night starts:** `df -h /` must show at least 3 GB free. On the evening of
+   Sep 05 it showed 735 MB (`.git` 3.9 GB, `assets/` 1.9 GB of untracked video and drops,
+   `/workspaces/tools` 1.2 GB, `~/.cache` 1.3 GB of which puppeteer's Chrome must stay). An
+   overnight run shoots screenshots and renders audio; at 735 MB it will die mid phase. Stephen
+   decides what leaves: the two videos in `assets/` (129 MB, already in the vault or his phone),
+   `/workspaces/tools`, and a `git gc` are the candidates; Fable never deletes his files.
 4. **Planning (Fable, one session, one handoff at a time, in the priority order Stephen gives).**
    Read the handoff whole. Grep the fleet for what already exists that it can use. Write
    `plans/<game>/HANDOFF-<GAME>.md` in the shape of section 3. Commit and push each plan as it is
@@ -88,7 +94,9 @@ READ FIRST, whole, in this order, before any edit:
 1. /workspaces/lucid-winds/HANDOFF-OPUS-NIGHT-SEP05.md. Sections 3, 5 and 6 bind you.
 2. /workspaces/lucid-winds/CLAUDE.md, the sections LOOKING IS PART OF THE JOB and WHAT THE
    DIRECTOR EXPECTS.
-3. The first plan in section 5's order, whole, then the handoff it names, whole.
+3. The first plan in section 5's order (they live at /workspaces/lucid-winds/plans/<game>/
+   HANDOFF-<GAME>.md), whole, then the handoff it names, whole. plans/fathom is read first even
+   when it is DONE, because the other five plans refer to its sections 0, 2, 9, 14 and 15.
 
 THE FENCE. Each plan names its own: satellites/<game>/** plus that plan's ledger and morning
 report. Nothing else. git add only those paths, never -A. git pull --rebase --autostash origin
@@ -119,7 +127,9 @@ paste the failure into the ledger, commit "<game> P0: the gate, failing", push. 
 TOOLS. Node 24. puppeteer at /workspaces/lucid-winds/node_modules with a cached Chrome; headless
 WebGL needs --use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader; never delete
 ~/.cache/puppeteer. A static server for the repo: python3 -m http.server 8777 --bind 127.0.0.1.
-The fleet's shell, music hook and Sunbeam SDK are named in each plan's section 2.
+Everything you may copy from the fleet is named, with line numbers, in each plan's section 2;
+there is no Sunbeam SDK for satellites and nothing listens for the earn message tonight, so
+make no economy claims in copy.
 
 LAWS. No dashes of any kind in player copy, commas. No exclamation points in system text. "Sky
 Wolf Studio", singular. 48 px rendered touch targets at 375 wide, proved by elementFromPoint,
@@ -127,7 +137,7 @@ never by calling a handler. Every import and asset carries ?v=<stamp>. Runtime m
 A visual phase is not done until you have looked at the screenshot and named three things wrong.
 ```
 
-## 5. The order (Stephen fills this in; Fable writes the plans in this order)
+## 5. The order (proposed by Fable 2026-09-05 by value times overnight feasibility; Stephen may reorder any row before pasting section 4)
 
 | # | game | handoff | plan | what a first playable is | SESSION STATE |
 |---|---|---|---|---|---|
