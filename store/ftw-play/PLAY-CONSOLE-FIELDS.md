@@ -9,7 +9,7 @@ are yours alone and are marked **STEPHEN**. Everything else is copied straight f
 | Field | Value |
 |---|---|
 | Account type | Organization (D-U-N-S on file). Paid apps need the **merchant profile**: Setup → Payments profile. **STEPHEN** |
-| Developer name shown on Play | Sky Wolf Studio |
+| Developer name shown on Play | Sky Wolf Studio (Developer ID 5511621967707579601) |
 | Contact email | **STEPHEN** (the studio address, not personal) |
 
 ## Create app
