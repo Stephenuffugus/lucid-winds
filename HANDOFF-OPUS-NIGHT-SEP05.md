@@ -20,10 +20,8 @@ morning. This file is the spine those three sessions hang on. The per-game plans
    `python3 -m http.server 8777 --bind 127.0.0.1 &` (the Keepsies gates and the Ronin solver use
    it); if `ls ~/.cache/puppeteer` is empty, `npx puppeteer browsers install chrome`; the FTW
    Android toolchain is `store/ftw-play/twa/setup-toolchain.sh` only when it is needed.
-   **The durable move (Sep 05):** when the codespace is closed for the refresh, change its machine type to **8 core, 32 GB
-   RAM, 64 GB disk** (GitHub: the codespace's three dot menu, Change machine type; `/workspaces` and the home directory
-   persist). Cores bill only while the box runs; storage bills always. Parallel builders (section 5b) need it; a fresh
-   clone of this repo alone is 4 GB.
+   **Machine: this box, 2 cores, and that is the ruling (Stephen, Sep 05: "I'm not going to switch to eight cores. I'm not
+   paying $0.72 an hour."). One Opus at a time, as long as it takes; slow is fine.**
    **Disk, before the night starts:** `df -h /` must show at least 3 GB free. On the evening of
    Sep 05 it showed 735 MB (`.git` 3.9 GB, `assets/` 1.9 GB of untracked video and drops,
    `/workspaces/tools` 1.2 GB, `~/.cache` 1.3 GB of which puppeteer's Chrome must stay). An
@@ -51,10 +49,13 @@ the plans by what matters most, tell Opus the order, and expect the tail to carr
 night. A plan that reads "phase 1 is a playable loop with one screen, everything else is later"
 gets a playable game; a plan that lists every feature gets a half built one.
 
-**With twelve plans written (Sep 05 evening):** the plans total about 100 hours of one Opus (7 to 10 each). One builder
-on two cores: two games to a first playable a night, so six nights. Three builders on eight cores: five or six a night,
-so two or three nights, with Fable reviewing in the mornings in the order of the table. Nothing about the plans changes
-between those two; only section 5b does.
+**With twelve plans written (Sep 05 evening), one builder on two cores, running up to 24 hours:** the plans total
+about 100 hours of one Opus (7 to 10 each), so a 24 hour run lands about three games to the end of P2 or P3 and starts a
+fourth. Each Opus session ends when its context does; Stephen pastes the same prompt again and the next session resumes
+from the first plan whose SESSION STATE is not DONE P3 or BLOCKED. **The codespace will be closed and reopened during the
+run.** That is survivable only because every green subsystem is committed and pushed before the next one starts; a session
+that dies with uncommitted work loses it, so the protocol's "commit and push after every green subsystem" is the whole
+insurance policy.
 
 ## 3. The plan template (every `plans/<game>/HANDOFF-<GAME>.md` has these sections, numbered)
 
@@ -91,59 +92,80 @@ between those two; only section 5b does.
 13. **The overnight protocol.** Copied from HANDOFF-KEEPSIES.md section 15, unchanged.
 14. **The morning report.** Copied from HANDOFF-KEEPSIES.md section 16, unchanged.
 
-## 4. THE PROMPT for the night (paste as is into a fresh Opus session; the same prompt resumes it)
+## 4. THE PROMPT (paste as is into a fresh Opus session; paste the same prompt again after every session end or codespace restart, it resumes itself)
 
 ```
 You are Claude Opus, building new games for Sky Wolf Studio in the lucid-winds repo at
-/workspaces/lucid-winds on branch add-sproing-jumper, overnight and unattended. The Director is
-Stephen; he is asleep and reads your work in the morning. Fable (another Claude) wrote your plans,
-reviews every game you produce against them, and deploys. You build.
+/workspaces/lucid-winds on branch add-sproing-jumper, unattended, for as long as this run lasts.
+The Director is Stephen; he reads your work when he is back. Fable (another Claude) wrote your
+plans, reviews every game you produce against them, and deploys. You build. One builder, this
+box, two cores; slow is fine, stopping is not.
 
-READ FIRST, whole, in this order, before any edit:
-1. /workspaces/lucid-winds/HANDOFF-OPUS-NIGHT-SEP05.md. Sections 3, 5 and 6 bind you.
-2. /workspaces/lucid-winds/CLAUDE.md, the sections LOOKING IS PART OF THE JOB and WHAT THE
+THIS RUN MAY BE INTERRUPTED. Your session ends when its context ends, and the codespace itself
+will be closed and reopened at least once during the run. The same prompt starts the next
+session. Nothing survives those breaks except what is committed AND pushed, so you commit and
+push after every green subsystem, never at the end of a phase only.
+
+FIRST, whether this is the first session or a resumed one:
+1. git pull --rebase --autostash origin add-sproing-jumper
+2. df -h / must show at least 2 GB free. If it does not: delete satellites/*/docs/shots/*.png
+   that are not referenced from a ledger or a morning report, run npm cache clean --force,
+   delete nothing under ~/.cache/puppeteer and nothing under assets/, then check again.
+3. ls ~/.cache/puppeteer/chrome must list a version; if it is empty, run
+   npx puppeteer browsers install chrome from /workspaces/lucid-winds.
+4. Start the static server if nothing answers on it:
+   (python3 -m http.server 8777 --bind 127.0.0.1 >/dev/null 2>&1 &)
+5. Read /workspaces/lucid-winds/HANDOFF-OPUS-NIGHT-SEP05.md whole. Sections 3, 5 and 6 bind you.
+6. Read /workspaces/lucid-winds/CLAUDE.md, the sections LOOKING IS PART OF THE JOB and WHAT THE
    DIRECTOR EXPECTS.
-3. The first plan in section 5's order (they live at /workspaces/lucid-winds/plans/<game>/
-   HANDOFF-<GAME>.md), whole, then the handoff it names, whole. plans/fathom is read first even
-   when it is DONE, because the other five plans refer to its sections 0, 2, 9, 14 and 15.
+7. Read /workspaces/lucid-winds/plans/fathom/HANDOFF-FATHOM.md whole, even if Fathom is DONE,
+   because every other plan points at its sections 0, 2, 9, 14 and 15.
+8. Find your plan: the first row of section 5 whose plan's SESSION STATE is not DONE P3 and not
+   BLOCKED. Read that plan whole, then the handoff it names, whole. If its SESSION STATE names a
+   next action, that is where you start; if it is empty, start at its P0 step 1.
 
 THE FENCE. Each plan names its own: satellites/<game>/** plus that plan's ledger and morning
 report. Nothing else. git add only those paths, never -A. git pull --rebase --autostash origin
 add-sproing-jumper before the first edit and before every push. Never push to main. Never edit
-another satellite, portal/index.html, scripts/, music-unlocks.js, or any sw.js. Another session
-may be in this tree; a rebase conflict outside your fence is resolved by taking theirs.
+another satellite, portal/index.html, scripts/, music-unlocks.js, or any other game's sw.js.
+Another session may have been in this tree; a rebase conflict outside your fence is resolved by
+taking theirs.
 
 THE ORDER. The plans in section 5, one game at a time, each to its gates, then the next. Inside a
 plan the phases in order. A phase is done when tools/check.js prints ALL GATES PASSED, every new
 gate has been watched to fail once, the screenshots have been opened with the Read tool and
 described with three faults each, the ledger holds pasted command output, and the work is
-committed and pushed. Then the next phase. Do not stop after a game to wait for anyone.
+committed and pushed. A plan is done for this run when its P3 is done or when it is BLOCKED;
+write DONE P3 or BLOCKED <gate> in its SESSION STATE and the same word in section 5's row, then
+move to the next row. Do not stop after a game to wait for anyone. When the table has no row
+left, write the combined morning report at the top of the spine and stop.
 
 THE OVERNIGHT PROTOCOL. Never wait on a human. An ambiguity is the smallest reasonable choice,
 logged in that game's docs/DECISIONS.md with one line of why. A gate still red after three
 honest attempts is written into the plan's SESSION STATE as BLOCKED with its last thirty lines of
-output, and you move on; you never weaken, skip or delete a gate to pass it. This box has two
-cores: run gates one at a time, never more than two helper agents and never for a judgement call.
-Commit and push after every green phase. When your context is running long, finish the phase,
-run the gates, commit, push, write SESSION STATE with the exact next action and the morning
-report, and stop. The next session starts with this same prompt and resumes from the first plan
-whose SESSION STATE is not DONE.
+output, and you move on; you never weaken, skip or delete a gate to pass it. Two cores: run
+gates one at a time; a browser gate that fails inside the suite is rerun alone, twice, and two
+passes alone is a pass. No helper agents for judgement calls; at most two, only for reading or a
+mechanical sweep, never while a gate runs. When your context is running long: finish the
+subsystem in hand, run its gates, commit, push, write SESSION STATE with the exact next action
+(file, function, step number), write the morning report at the top of the plan's section 15,
+and stop. Never start a subsystem you cannot finish and commit inside the context you have left.
 
-THE FIRST THING YOU DO after reading is git pull --rebase --autostash origin add-sproing-jumper,
-then P0 of the first plan: write satellites/<game>/tools/check.js with one gate that fails, run it,
-paste the failure into the ledger, commit "<game> P0: the gate, failing", push. Then P1.
+THE FIRST THING YOU DO on a fresh plan after reading is P0 step 1: write
+satellites/<game>/tools/check.js with one gate that fails, run it, paste the failure into the
+ledger, commit "<game> P0: the gate, failing", push. Then the rest of P0, then P1.
 
 TOOLS. Node 24. puppeteer at /workspaces/lucid-winds/node_modules with a cached Chrome; headless
 WebGL needs --use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader; never delete
-~/.cache/puppeteer. A static server for the repo: python3 -m http.server 8777 --bind 127.0.0.1.
-Everything you may copy from the fleet is named, with line numbers, in each plan's section 2;
-there is no Sunbeam SDK for satellites and nothing listens for the earn message tonight, so
-make no economy claims in copy.
+~/.cache/puppeteer. The static server is on 127.0.0.1:8777. Everything you may copy from the
+fleet is named, with line numbers, in each plan's section 2; there is no Sunbeam SDK for
+satellites and nothing listens for the earn message, so make no economy claims in copy.
 
 LAWS. No dashes of any kind in player copy, commas. No exclamation points in system text. "Sky
 Wolf Studio", singular. 48 px rendered touch targets at 375 wide, proved by elementFromPoint,
 never by calling a handler. Every import and asset carries ?v=<stamp>. Runtime modules are .js.
 A visual phase is not done until you have looked at the screenshot and named three things wrong.
+Screenshots are evidence, under 200 KB each, and never regenerated just to regenerate them.
 ```
 
 ## 5. The order (proposed by Fable 2026-09-05 by value times overnight feasibility; Stephen may reorder any row before pasting section 4)
@@ -168,7 +190,7 @@ A visual phase is not done until you have looked at the screenshot and named thr
 (Rows are added as handoffs land. A row's SESSION STATE is written by Opus: `DONE P1` and so on,
 or `BLOCKED <gate>`.)
 
-## 5b. Parallel mode (Stephen allowed it on Sep 05: "opus can run parallel agents to build. im not opposed to that")
+## 5b. Parallel mode (NOT IN USE: Stephen ruled Sep 05 evening to stay on 2 cores with one builder at a time. Kept for the day a bigger box exists.)
 
 Parallel only pays on a box with more than two cores. On the 2 core, 8 GB box every gate already flakes under
 contention (HANDOFF-KEEPSIES 15.4); two builders there halve each other. So:
