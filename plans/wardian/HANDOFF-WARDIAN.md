@@ -11,20 +11,18 @@ this file wins; every difference is in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
-**P0 is DONE and pushed** (2026-09-05). `node satellites/wardian/tools/check.js`
-prints ALL GATES PASSED: one gate, `sim`, 101 assertions. Four mutations watched
-to fail, in the ledger at section 13, with the fourteen day census.
+**P0 and P1 are DONE and pushed** (2026-09-05). `node satellites/wardian/tools/check.js`
+prints ALL GATES PASSED across four gates: `sim` (101 assertions), `lint`,
+`boot`, `touch`. Every gate has been watched to fail, twice for the two that
+turned out to be decoration. Evidence in section 13, shots in
+`satellites/wardian/docs/shots/`, calls in `satellites/wardian/docs/DECISIONS.md`.
 
-The SIM and TEST layers live in `satellites/wardian/index.html` between the
-`SIM_EXPORT` and `TEST_EXPORT` markers; `sim.js` reads them through the markers
-so there is one implementation of the rules. `--test`, `--days=N[,policy]` and
-`--catchup=DAYS` all work.
-
-**Next action:** P1 step 1, the jar you can watch. Draw the jar into `#jar` in
-`satellites/wardian/index.html`: the VIEW section goes after the SIM markers,
-starting with `drawJar(ctx, state, t)`, then the plant renderer that reads
-`seg.curl` so an unrolling frond is visible, then the day and night light. The
-shot to make first is `docs/shots/p1-jar-day.png`.
+**Next action:** P2 step 1, the rest of the flora. In
+`satellites/wardian/index.html`, `growPlant` already handles `crown` and `fruit`
+species; the vine needs its climb (a segment that reaches a glass column turns
+to follow it) and the dewsprout needs its droplet leaf. Then P2 step 2, the
+fauna drawn properly, then the JOURNAL with its 24 written lines and
+`test/journal.mjs`, then the pouch spending spores, then `test/layout.mjs`.
 
 ## 0. RULES OF ENGAGEMENT
 
@@ -476,6 +474,100 @@ the pouch is for; by day 14 the jar has 146 spores, which is nine seeds. The
 mooncap on day 1 is not a bug, the moon of 2026-04-02 is full and the jar starts
 on 04-01. Water climbs because a mist adds more than the seal leaks, which is
 why nothing in here can be overwatered.
+
+### P1, the jar you can watch (2026-09-05)
+
+```
+$ node tools/check.js
+sim             pass  1s
+lint            pass  0s
+boot            pass  3s
+touch           pass  8s
+
+ALL GATES PASSED
+```
+
+The touch gate, every press a real pointer at a point elementFromPoint agrees is
+reachable:
+
+```
+$ node test/touch.mjs
+  ok    a 120 px swipe down mists the jar (surface up 0.250, MIST_ADD is 0.25)
+  ok    and droplets come off the swipe (26)
+  ok    a second swipe inside the cooldown does nothing (0.000)
+  ok    and a 40 px drag is not a swipe (0.000)
+  ok    the tap landed on the glass and not on a button (jar)
+  ok    a tap over a pillbug rolls it up for about three seconds (2850 ms)
+  ok    and it counts down in real time (1800.1 ms)
+  ok    a tap on the far side of the jar does not (0)
+  ok    the jar does not start in edit mode
+  ok    a 620 ms press opens edit mode
+  ok    and the done button is a 48 px target on top (56 px)
+  ok    and a 46 px drag moves the stone by the drag distance (36.0 world units, the drag was 36.0)
+  ok    and dragging in edit mode never moves a plant
+  ok    the loop is asking for frames while the tab is visible (7)
+  ok    and it stops inside a second of the tab hiding (0 frames asked for)
+  ok    and the jar was written to the save on the way out
+  ok    nothing landed on the console
+
+TOUCH OK
+```
+
+Four more mutations watched to fail, each restored:
+
+```
+$ # SWIPE_PX 90 to 900
+FAIL  a 120 px swipe down mists the jar (surface up 0.000, MIST_ADD is 0.25)
+FAIL  and droplets come off the swipe (0)
+
+$ # the visibilitychange stop removed
+FAIL  and it stops inside a second of the tab hiding (31 frames asked for)
+
+$ # the night veil made additive again, the bug the first night shot caught
+FAIL  and the inside of the jar at midnight is darker than at one (84 against 78 average brightness)
+
+$ # a dash put into a line the player reads
+FAIL  no dash in anything a player reads: ["A tiny world - it lives on your time"]
+```
+
+**Two gates were decoration when first written, and the watch caught it.** The
+darkness assertion averaged the WHOLE canvas, and the room is most of the
+picture, so it stayed green with the night veil inverted; it measures the jar
+interior now. And the frame loop assertion passed with its own guard deleted,
+because the visibilitychange handler was doing the stopping; it was rewatched
+with the handler broken and goes red properly.
+
+### The shots, opened and read (2026-09-05)
+
+**`docs/shots/p1-jar-day.png`** — a jar on a table in a dark room, two ferns of
+different size, moss between them, stones set into the soil. Three things wrong
+with it: the soil face is still a wide flat brown band across a third of the
+frame and only the crumbs break it up; the condensation on the glass reads as an
+even sprinkle rather than beads gathering at the top; and the room behind is
+plain, so the jar has nothing to sit in front of.
+
+**`docs/shots/p1-jar-night.png`** — the same jar cold and dark, the fronds gone
+sage, the light coming from one point near the lid. Three things wrong: the soil
+stays warm brown while the air above it has gone blue, so the horizon is an
+abrupt seam; nothing in the frame says night except the colour, because the
+glowbeetle has not arrived by day 10; and the beads are identical to the day
+shot when they should be catching a colder light.
+
+**`docs/shots/p1-unfurl.png`** — six panels, curl 1.0 down to 0.0. It reads: at
+1.0 the fronds are tight croziers, at 0.6 they are opening hooks, at 0.0 they
+are full pinnate blades. Three things wrong: the crown crosses over itself at
+0.2 and 0.0 so the silhouette muddles; the panels show the whole plant rather
+than one frond, so the unfurl is smaller in frame than it should be; and the
+moss fringe sits at almost the same value as the ferns, which is why it was
+pushed a step darker after this shot was taken.
+
+**Six things the shots caught that no gate would have.** The plants were laid
+out in world units and drawn as pixels, so both ferns stood in the ROOM above
+the jar. `mixHex` could not read its own output, so the moss came out black. The
+grain was placed by modular arithmetic and landed in diagonal dashes. A
+`destination-out` fade erased the jar and left a black slab down one side. The
+night jar was brighter than the noon one. And the fronds went bald for the last
+fifth of their length.
 
 ---
 

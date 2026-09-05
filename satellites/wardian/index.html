@@ -45,7 +45,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--room);color:var(--crea
   font-size:1.05rem;font-family:inherit}
 #btnMenu{right:calc(12px + env(safe-area-inset-right,0px));top:calc(10px + var(--safeT));width:48px;height:48px}
 #btnPhoto{right:calc(14px + env(safe-area-inset-right,0px));bottom:calc(18px + var(--safeB));
-  width:56px;height:56px;border-radius:50%;font-size:.66rem;letter-spacing:.08em}
+  width:56px;height:56px;border-radius:50%;font-size:.7rem;letter-spacing:.06em}
 #btnEditDone{left:50%;transform:translateX(-50%);top:calc(10px + var(--safeT));
   min-width:120px;height:56px;border-radius:14px;font-size:.85rem;letter-spacing:.16em}
 #btnEditDone[hidden]{display:none}
@@ -63,7 +63,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--room);color:var(--crea
   display:flex;gap:8px;justify-content:center;pointer-events:auto;padding:0 90px 0 130px}
 #pouchBar[hidden]{display:none}
 .seedchip{min-width:56px;min-height:56px;border-radius:14px;background:rgba(36,28,21,.86);
-  border:1px solid rgba(201,162,75,.3);color:var(--cream);font-family:inherit;font-size:.68rem;
+  border:1px solid rgba(201,162,75,.3);color:var(--cream);font-family:inherit;font-size:.7rem;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
 .seedchip.on{border-color:var(--brass);color:var(--brass)}
 
@@ -1438,7 +1438,7 @@ function layoutPlant(state, p) {
 /* The frond. A rolled one is a crozier, a spiral that tightens toward the tip;
    an open one is a pinnate blade. curl 1 to 0 walks between them, and the
    leaflets open from the base up, which is what a real fern does. */
-function drawFrond(ctx, x0, y0, ang, curl, size, col, glow) {
+function drawFrond(ctx, x0, y0, ang, curl, size, col) {
   var n = 15, i, a = ang, px = x0, py = y0, turn = FROND_TURN * curl;
   var len = size * (1 - 0.38 * curl), spine = [];
   for (i = 0; i <= n; i++) {
@@ -1447,8 +1447,10 @@ function drawFrond(ctx, x0, y0, ang, curl, size, col, glow) {
     px += Math.cos(a) * (len / n); py += Math.sin(a) * (len / n);
     a += da;
   }
+  /* ⛔ no shadowBlur in here. This runs once per FROND and the budget is four
+     hundred segments; the glow belongs to the fruiting bodies and the beetle,
+     which there are never more than a handful of. */
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  if (glow) { ctx.shadowColor = glow; ctx.shadowBlur = 7 * V.k; }
   ctx.strokeStyle = col; ctx.lineWidth = Math.max(0.7, 1.15 * V.k);
   ctx.beginPath(); ctx.moveTo(spine[0].x, spine[0].y);
   for (i = 1; i <= n; i++) ctx.lineTo(spine[i].x, spine[i].y);
@@ -1480,7 +1482,6 @@ function drawFrond(ctx, x0, y0, ang, curl, size, col, glow) {
       ctx.fill();
     }
   }
-  ctx.shadowBlur = 0;
 }
 function drawPlant(ctx, state, p) {
   var sp = FLORA[p.sp], T = tint(state), pts = layoutPlant(state, p), i;
@@ -1514,8 +1515,7 @@ function drawPlant(ctx, state, p) {
     var s2 = p.segs[i], q2 = pts[i];
     if (!s2.leaf) continue;
     drawFrond(ctx, q2.x, q2.y, q2.a, s2.curl,
-      FROND_LEN * s2.l * ps * Math.max(0.3, s2.g) * (0.82 + vary * 0.38) * V.k, col,
-      sp.glow && state.env.phase === 'night' ? sp.glow : null);
+      FROND_LEN * s2.l * ps * Math.max(0.3, s2.g) * (0.82 + vary * 0.38) * V.k, col);
   }
 }
 function drawFruit(ctx, state, p, T) {
@@ -1777,6 +1777,7 @@ function draw(state) {
 }
 
 /* ========================= 17. INPUT ========================= */
+var STAMP = '20260905a';
 var G = null, RAF = 0, LAST = 0, SHIVER = 0, MISTED_AT = 0, MONTAGE = null, FRAMES = 0;
 /* ⛔ ONE clock on the page. The HUD read Date.now() while the jar's light came
    from the last tick, so the chip said night over a noon jar. Everything asks
@@ -1836,8 +1837,11 @@ function setEdit(on) {
 function bindInput() {
   var cv = V.cv;
   cv.addEventListener('pointerdown', function (e) {
-    if (MONTAGE) { MONTAGE = null; el('montage').hidden = true; return; }
-    cv.setPointerCapture(e.pointerId);
+    if (MONTAGE) { endMontage(); return; }
+    /* ⛔ setPointerCapture THROWS on a pointer id the browser does not have
+       active, and the throw takes the rest of this handler with it, so the jar
+       stops answering the thumb entirely. It is a nicety, not a requirement. */
+    try { cv.setPointerCapture(e.pointerId); } catch (err) {}
     PRESS = { x: e.clientX, y: e.clientY, t: performance.now(), moved: 0, id: e.pointerId };
     var p = propAt(unwx(e.clientX), unwy(e.clientY));
     LP = setTimeout(function () {
@@ -1890,7 +1894,7 @@ function bindInput() {
   el('btnPouchBack').addEventListener('click', function () { closeScreens(); });
   el('btnAboutBack').addEventListener('click', function () { closeScreens(); });
   el('btnPhoto').addEventListener('click', function () { toast('The camera comes in the next pass.'); });
-  el('montage').addEventListener('click', function () { MONTAGE = null; el('montage').hidden = true; });
+  el('montage').addEventListener('click', function () { endMontage(); });
 }
 function openScreen(id) {
   closeScreens();
@@ -2038,32 +2042,53 @@ function frame(ts) {
 }
 function kick() { if (!RAF && !document.hidden) RAF = requestAnimationFrame(frame); }
 
-/* the catch up montage: the jar plays the days you were away, and one tap
-   anywhere skips it. It is never a screen, it is a line over the glass. */
+/* The catch up montage. The jar PLAYS the days you were away rather than
+   announcing them: the ticks are run a handful at a time with the view drawing
+   between them, so you watch the light swing and the fronds open. One tap
+   anywhere skips to the end. It is never a screen, it is a line over the glass.
+   ⛔ the state must not be caught up before the montage starts, or there is
+   nothing left to watch. */
+function catchTicks(k) {
+  var i, step = CONFIG.TICK_MIN * 60000;
+  for (i = 0; i < k; i++) {
+    MONTAGE.done++;
+    tick(G, clockFromMs(MONTAGE.from + MONTAGE.done * step, G.hemi));
+  }
+}
+function endMontage() {
+  if (!MONTAGE) return;
+  var step = CONFIG.TICK_MIN * 60000;
+  catchTicks(MONTAGE.n - MONTAGE.done);
+  G.lastSeen = MONTAGE.from + MONTAGE.n * step;
+  if (MONTAGE.now > G.lastSeen) G.lastSeen = MONTAGE.now;
+  MONTAGE = null;
+  el('montage').hidden = true;
+  applyClock(G, clockFromMs(nowMs(), G.hemi));
+  saveSoon();
+}
 function stepMontage(dt) {
   MONTAGE.t += dt;
-  var u = Math.min(1, MONTAGE.t / CONFIG.CATCHUP_MONTAGE_MS);
-  var want = Math.floor(u * MONTAGE.n), i;
-  for (i = MONTAGE.done; i < want; i++) {
-    tick(MONTAGE.state, clockFromMs(MONTAGE.from + i * CONFIG.TICK_MIN * 60000, MONTAGE.state.hemi));
-  }
-  MONTAGE.done = want;
-  if (u >= 1) { MONTAGE = null; el('montage').hidden = true; }
+  var left = MONTAGE.n - MONTAGE.done;
+  if (left <= 0 || MONTAGE.t > CONFIG.CATCHUP_MONTAGE_MS * 2.4) { endMontage(); return; }
+  catchTicks(Math.min(left, MONTAGE.per));
 }
 function runCatchUp() {
-  var away = nowMs() - G.lastSeen;
-  if (away < CONFIG.TICK_MIN * 60000 * 6) { liveTick(); return; }
-  var days = Math.floor(away / 86400000);
+  var now = nowMs(), step = CONFIG.TICK_MIN * 60000;
+  var elapsed = Math.max(0, Math.min(now - G.lastSeen, CONFIG.CATCHUP_CAP_DAYS * 86400000));
+  var n = Math.floor(elapsed / step);
+  if (n <= 0) return;
   var from = G.lastSeen;
-  var res = catchUp(G, nowMs());
-  if (res.ticks <= 0) return;
-  var grew = res.after.segments - res.before.segments;
+  if (n < 36) {
+    MONTAGE = { from: from, n: n, done: 0, t: 0, per: n, now: now };
+    endMontage();
+    return;
+  }
+  var days = Math.floor((now - from) / 86400000);
   var line = days >= 1 ? (days === 1 ? 'A day passed' : days + ' days passed') : 'A few hours passed';
-  if (grew > 0) line += ', and it grew';
   el('montageText').textContent = line + '.';
   el('montage').hidden = false;
-  MONTAGE = { t: 0, n: 0, done: 0, from: from, state: G };
-  setTimeout(function () { if (MONTAGE) { MONTAGE = null; el('montage').hidden = true; } }, CONFIG.CATCHUP_MONTAGE_MS + 400);
+  MONTAGE = { from: from, n: n, done: 0, t: 0, now: now,
+    per: Math.max(4, Math.min(90, Math.ceil(n / (CONFIG.CATCHUP_MONTAGE_MS / 16)))) };
 }
 
 function boot() {
@@ -2089,8 +2114,32 @@ function boot() {
   });
   setInterval(saveNow, 60000);
   kick();
+  /* the in page test panel, for a phone with no console: index.html?test=1 */
+  if (location.search.indexOf('test=1') >= 0) runPanel();
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('./sw.js?v=' + STAMP).catch(function () {});
+    });
+  }
   try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {}
   window.addEventListener('load', function () { try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {} });
+}
+
+/* the assertion harness, run in the page so a phone can see it */
+function runPanel() {
+  var src = document.documentElement.innerHTML;
+  var a = src.indexOf('// ---- SIM_EXPORT_START ----'), b = src.indexOf('// ---- SIM_EXPORT_END ----');
+  var rep = TEST.run({ src: a >= 0 && b > a ? src.slice(a, b) : '' });
+  var out = 'WARDIAN  ' + rep.passed + ' passed, ' + rep.failed + ' failed, '
+    + rep.total + ' assertions\n\n', i;
+  for (i = 0; i < rep.failures.length; i++) {
+    out += 'FAIL  ' + rep.failures[i].name
+      + (rep.failures[i].detail ? '   [' + rep.failures[i].detail + ']' : '') + '\n';
+  }
+  if (!rep.failed) out += 'ALL GREEN\n';
+  el('testPanel').textContent = out;
+  el('testPanel').classList.add('on');
+  window.__TEST__ = rep;
 }
 
 /* the hook the browser gates drive. It never changes what the game does, it
@@ -2136,6 +2185,11 @@ window.WARDIAN_TEST = {
     return n;
   },
   raf: function () { return RAF; },
+  montage: function () { return MONTAGE ? { n: MONTAGE.n, done: MONTAGE.done } : null; },
+  soilY: function (x) { return soilY(x); },
+  clearCooldown: function () { MISTED_AT = -999999; },
+  rewind: function (days) { G.lastSeen = nowMs() - days * 86400000; return G.lastSeen; },
+  catchUp: function () { runCatchUp(); return WARDIAN_TEST.montage(); },
   frames: function () { return FRAMES; },
   mistedAt: function () { return MISTED_AT; },
   parts: function () { return PARTS.length; },
