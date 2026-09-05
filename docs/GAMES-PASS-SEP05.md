@@ -112,7 +112,7 @@ are design calls.
 
 **Measured**: 412x915 in every trial (driver), 375x667 and 320x568 on home, picker, a trial and the
 dumpster (shots in the folder), `overflow.mjs` at 412/375/320 on the vendored page (rows below once
-the vendor lands). `check.js` upstream: (result below).
+the vendor lands). `check.js` upstream: 84 ok, 0 fail (83 plus the new door assertion, which was watched red against the shadowed id mutant). Live since 24420f3c on main, proved with `?probe=` and the `alleyA` marker.
 
 ## The Attic, played at 412x915 with real touch taps
 
