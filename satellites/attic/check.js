@@ -662,6 +662,22 @@ if (process.env.AT_NOBROWSER === '1') { console.log('\n(browser group skipped: A
     ok('a factory sealed find sits in a glass case', room.caseOk, room.caseOk);
     ok('every object stands on its plank: drawn bottom within a thumb of the board', room.seatOk, JSON.stringify({ min: room.seatMin, max: room.seatMax, seats: room.seats }));
 
+    group('the flip card front is used to its foot');
+    const fc = await page.evaluate(() => {
+      const D = window.ATTIC_DEV; const h = D.shelf()[0]; D.openCard(h);
+      const it = D.item(h);
+      const face = document.getElementById('fcFront').getBoundingClientRect();
+      const foot = document.querySelector('#fcFront .fcFoot'), fr = foot ? foot.getBoundingClientRect() : null;
+      const prov = foot ? foot.querySelector('.fcProv').textContent : '';
+      const meta = foot ? foot.querySelector('.fcMeta').textContent : '';
+      const plate = document.querySelector('#fcFront .gradeSlot').getBoundingClientRect();
+      const gap = fr ? Math.round(fr.top - plate.bottom) : -1;
+      D.closeCard();
+      return { hasFoot: !!foot, atFoot: fr ? Math.round(face.bottom - fr.bottom) : -1, prov: prov === it.provenance, metaOk: meta.indexOf(it.era) >= 0 && meta.indexOf(String(it.year)) >= 0, gap, faceH: Math.round(face.height) };
+    });
+    ok('the front carries the story and the paperwork line at its foot', fc.hasFoot && fc.prov && fc.metaOk && fc.atFoot >= 0 && fc.atFoot <= 24, JSON.stringify(fc));
+    ok('the bare felt between the plate and the foot is under a third of the face', fc.gap >= 0 && fc.gap < fc.faceH / 3, JSON.stringify({ gap: fc.gap, faceH: fc.faceH }));
+
     group('the wear line waits for the wipe');
     const wear = await page.evaluate(() => new Promise((res) => {
       const D = window.ATTIC_DEV;

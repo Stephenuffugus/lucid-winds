@@ -236,3 +236,7 @@ Both games scale a 540 wide stage to the phone. At 320x568 that scale is 0.59, s
 ### Litter Bug Bugdex sorts (Sep 05, later)
 
 NEWEST, GRADE and LEVEL under the family chips; newest first is the default now. Shot: `lb-dex-sort.png`.
+
+### Two composition fixes (Sep 05, late)
+
+Litter Bug: the Bugdex header no longer eats half the screen (family chips on one row, short names). The Attic: the flip card front carries the story and the paperwork line at its foot instead of bare felt. Shots: `lb-dex-header.png`, `attic-flip-front-foot.png`. Seen and left: on some board games the 70s price gun sticker lands on the players pill (hash placed, pre-existing).

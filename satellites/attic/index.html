@@ -406,6 +406,12 @@
 .fcFace{ background:#221b14; border:1px solid #4a3b26; border-radius:12px; padding:14px;
   -webkit-backface-visibility:hidden; backface-visibility:hidden;
   box-shadow:0 10px 34px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.04) }
+/* the front is a column the height of the back, so its lower half used to be bare felt. The
+   story and the paperwork line sit at the foot now, like the label under a museum object. */
+#fcFront{ display:flex; flex-direction:column; min-height:560px; box-sizing:border-box }
+.fcFoot{ margin-top:auto; padding-top:14px }
+.fcProv{ font-size:.82rem; line-height:1.5; color:#c4b294; font-style:italic; border-left:2px solid #4a3b26; padding-left:10px }
+.fcMeta{ margin-top:10px; font-family:ui-monospace, monospace; font-size:.6rem; letter-spacing:.16em; color:#8a7a5e; text-transform:uppercase; line-height:1.6 }
 .fcBack{ position:absolute; inset:0; transform:rotateY(180deg); overflow-y:auto }
 .fcFlipHint{ text-align:center; font-family:ui-monospace, monospace; font-size:.56rem;
   letter-spacing:.2em; color:#9a8a6e; margin:2px 0 12px }
@@ -1299,7 +1305,9 @@
       + (it.sub ? '<div class="sub">' + esc(it.sub) + '</div>' : '')
       + (it.error ? '<div class="err"><b>FACTORY ERROR</b><br>' + esc(it.error) + '</div>' : '')
       + '<div class="gradeSlot' + (wiped ? ' graded' : '') + '">' + plateHTML(it, wiped)
-      +   '<div class="wear">' + (wiped ? wearHTML(it) : '') + '</div></div>';
+      +   '<div class="wear">' + (wiped ? wearHTML(it) : '') + '</div></div>'
+      + '<div class="fcFoot"><div class="fcProv">' + esc(it.provenance) + '</div>'
+      +   '<div class="fcMeta">' + esc(it.cls) + ' &middot; ' + esc(it.era) + ', dated ' + it.year + ' &middot; found ' + esc(foundWhen(h, true)) + '</div></div>';
     document.getElementById('fcBack').innerHTML =
       '<div class="fcHead">' + ATTIC_OBJECT.renderItem(h, 64, { dusty: !wiped }).svg
       + '<div><div class="s">' + esc(it.cls) + '</div><div class="t">' + esc(it.name) + '</div></div></div>'
