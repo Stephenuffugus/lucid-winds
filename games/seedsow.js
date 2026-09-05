@@ -52,7 +52,7 @@ window._gameFns.seedsow=function SS(a){
       '.ss-store.opp{border-color:rgba(196,122,122,0.45)}',
       '.ss-store.opp .lbl{color:#e89a9a}',
       // Pits
-      '.ss-pit{aspect-ratio:1;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:Bebas Neue,sans-serif;font-size:1.05rem;color:var(--cream);min-height:46px;cursor:default;position:relative;z-index:2;transition:transform .15s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease;background:radial-gradient(ellipse at 50% 30%,rgba(32,22,10,0.6),rgba(12,8,4,0.85));border:2px solid rgba(90,70,40,0.5);box-shadow:inset 0 3px 10px rgba(0,0,0,0.55),inset 0 -1px 2px rgba(255,220,140,0.05);}',
+      '.ss-pit{aspect-ratio:1;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:Bebas Neue,sans-serif;font-size:1.05rem;color:var(--cream);min-height:48px;cursor:default;position:relative;z-index:2;transition:transform .15s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease;background:radial-gradient(ellipse at 50% 30%,rgba(32,22,10,0.6),rgba(12,8,4,0.85));border:2px solid rgba(90,70,40,0.5);box-shadow:inset 0 3px 10px rgba(0,0,0,0.55),inset 0 -1px 2px rgba(255,220,140,0.05);}',
       '.ss-pit .cnt{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-shadow:0 1px 3px rgba(0,0,0,0.8);font-weight:500;z-index:3;}',
       '.ss-pit.playable{border-color:#7ab356;background:radial-gradient(ellipse at 50% 30%,rgba(42,70,28,0.7),rgba(18,28,12,0.85));cursor:pointer;box-shadow:inset 0 3px 10px rgba(0,0,0,0.45),0 0 10px rgba(122,179,86,0.25);}',
       '.ss-pit.playable:hover{transform:translateY(-2px);box-shadow:inset 0 3px 10px rgba(0,0,0,0.35),0 6px 14px rgba(122,179,86,0.35);}',
@@ -73,11 +73,11 @@ window._gameFns.seedsow=function SS(a){
       '.ss-tools{display:flex;gap:6px;justify-content:center;padding:4px 0;flex-wrap:wrap;}',
       '.ss-tools .gb{min-height:48px;padding:6px 14px;font-size:0.68rem;letter-spacing:0.06em;}',
       // Float banner
-      '.ss-banner{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(13,16,12,0.9);border:1.5px solid var(--gold);color:var(--gold);padding:8px 18px;border-radius:20px;font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.14em;z-index:100;animation:ssBanner 1.6s ease both;pointer-events:none;box-shadow:0 6px 18px rgba(0,0,0,0.6);}',
+      '.ss-banner{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(13,16,12,0.9);border:1.5px solid var(--gold);color:var(--gold);padding:8px 18px;border-radius:20px;font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.14em;z-index:100;animation:ssBanner 1.6s ease both;pointer-events:none;box-shadow:0 6px 18px rgba(0,0,0,0.6);;max-width:88%;white-space:normal;text-align:center}',
       '@keyframes ssBanner{0%{opacity:0;transform:translate(-50%,-50%) scale(0.7)}15%{opacity:1;transform:translate(-50%,-50%) scale(1.12)}30%,70%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-80%) scale(1)}}',
       // Rules modal
       '#SSrulesOV{position:fixed;inset:0;z-index:200000;background:rgba(5,8,4,0.88);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:16px;animation:ssFade .25s ease;}',
-      '#SSrulesOV .card{max-width:420px;width:100%;max-height:84vh;overflow-y:auto;padding:22px 20px;background:linear-gradient(180deg,rgba(18,22,14,0.98),rgba(10,12,8,0.98));border:1.5px solid rgba(200,168,75,0.35);border-radius:14px;box-shadow:0 32px 64px rgba(0,0,0,0.7);font-family:DM Mono,monospace;color:var(--cream);font-size:0.72rem;line-height:1.6;}',
+      '#SSrulesOV .card{max-width:420px;width:100%;max-height:78vh;overflow-y:auto;padding:22px 20px;background:linear-gradient(180deg,rgba(18,22,14,0.98),rgba(10,12,8,0.98));border:1.5px solid rgba(200,168,75,0.35);border-radius:14px;box-shadow:0 32px 64px rgba(0,0,0,0.7);font-family:DM Mono,monospace;color:var(--cream);font-size:0.8rem;line-height:1.6;}',
       '@keyframes ssFade{from{opacity:0}to{opacity:1}}',
       '#SSrulesOV h2{font-family:Bebas Neue,sans-serif;font-size:1rem;letter-spacing:0.14em;color:var(--gold);border-bottom:1px solid rgba(200,168,75,0.3);margin:14px 0 8px;padding-bottom:4px;}'
     ].join('');

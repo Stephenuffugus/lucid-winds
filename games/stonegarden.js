@@ -67,6 +67,7 @@ function startGame(pan,a){
   var W=360,H=580;
   var GROUND_Y=H-36;
   var TRAY_W=64;                         // width of each tray column
+  var TRAY_IN=8;                         // stones sit 8px in from the canvas edge: a wide flat stone at TRAY_W/2 was cut by the frame
   var TRAY_SLOTS=4;                      // rocks per tray
   var TOPPLE_X_SLACK=140;
   var TOPPLE_Y=H+200;
@@ -243,8 +244,8 @@ function startGame(pan,a){
   function fillTrays(){
     trayL=[];trayR=[];
     for(var i=0;i<TRAY_SLOTS;i++){
-      trayL.push(createRock(pickShape(),TRAY_W/2,traySlotY(i)));
-      trayR.push(createRock(pickShape(),W-TRAY_W/2,traySlotY(i)));
+      trayL.push(createRock(pickShape(),TRAY_W/2+TRAY_IN,traySlotY(i)));
+      trayR.push(createRock(pickShape(),W-TRAY_W/2-TRAY_IN,traySlotY(i)));
     }
     // Trays are NOT in the physics world — they're rendered manually, so
     // static flags are unnecessary. They were also FATAL: a picked-up tray
@@ -260,10 +261,10 @@ function startGame(pan,a){
     // ROTATE button drives angle externally so players can freeze a
     // piece at a chosen orientation by grabbing it mid-spin.
     for(var i=0;i<trayL.length;i++){
-      if(trayL[i])Body.setPosition(trayL[i].body,{x:TRAY_W/2,y:traySlotY(i)});
+      if(trayL[i])Body.setPosition(trayL[i].body,{x:TRAY_W/2+TRAY_IN,y:traySlotY(i)});
     }
     for(var j=0;j<trayR.length;j++){
-      if(trayR[j])Body.setPosition(trayR[j].body,{x:W-TRAY_W/2,y:traySlotY(j)});
+      if(trayR[j])Body.setPosition(trayR[j].body,{x:W-TRAY_W/2-TRAY_IN,y:traySlotY(j)});
     }
   }
   function spinTrayStones(dAngle){
@@ -510,15 +511,15 @@ function startGame(pan,a){
       var r=trayL[i];if(!r)continue;
       drawStoneBody(r.body,r.w,r.h,r.color,r.shade,1);
       ctx.fillStyle='rgba(200,168,75,0.8)';
-      ctx.font='bold 10px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
-      ctx.fillText('+'+r.pts,TRAY_W/2,traySlotY(i)+r.h/2+10);
+      ctx.font='bold 12px "DM Mono",monospace';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText('+'+r.pts,TRAY_W/2+TRAY_IN,traySlotY(i)+r.h/2+10);
     }
     for(var j=0;j<trayR.length;j++){
       var r2=trayR[j];if(!r2)continue;
       drawStoneBody(r2.body,r2.w,r2.h,r2.color,r2.shade,1);
       ctx.fillStyle='rgba(200,168,75,0.8)';
-      ctx.font='bold 10px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
-      ctx.fillText('+'+r2.pts,W-TRAY_W/2,traySlotY(j)+r2.h/2+10);
+      ctx.font='bold 12px "DM Mono",monospace';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText('+'+r2.pts,W-TRAY_W/2-TRAY_IN,traySlotY(j)+r2.h/2+10);
     }
     ctx.textBaseline='alphabetic';
   }
@@ -549,7 +550,7 @@ function startGame(pan,a){
     sky.addColorStop(0,'#0f1410');sky.addColorStop(0.6,'#131a14');sky.addColorStop(1,'#181c14');
     ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
     // Stars
-    ctx.fillStyle='rgba(232,220,200,0.06)';
+    ctx.fillStyle='rgba(232,220,200,0.22)';   /* 0.06 was invisible at 375: no star showed */
     for(var st=0;st<8;st++){
       var sx=((st*137)%W),sy=(st*29)%(H*0.4);
       ctx.fillRect(sx,sy,1,1);
@@ -601,7 +602,7 @@ function startGame(pan,a){
     }
     // HUD
     ctx.save();
-    ctx.fillStyle='rgba(13,16,12,0.55)';ctx.fillRect(0,0,W,28);
+    ctx.fillStyle='rgba(13,16,12,0.8)';ctx.fillRect(0,0,W,28);   /* the HUD strip barely separated from the sky at 0.55 */
     ctx.fillStyle='#e8dcc8';ctx.font='bold 13px DM Sans,sans-serif';
     ctx.textAlign='left';ctx.textBaseline='middle';
     ctx.fillText('SCORE '+score,8,14);

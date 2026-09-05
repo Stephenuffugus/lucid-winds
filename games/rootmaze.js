@@ -478,7 +478,7 @@ function drawTile(ctx, x, y, tile, opts){
   ctx.beginPath(); ctx.arc(cx, cy, Math.max(3, Math.floor(lw*0.45)), 0, Math.PI*2); ctx.fill();
   // Treasure
   if(tile.treasure){
-    ctx.font=Math.floor(CELL*0.34)+'px sans-serif';
+    ctx.font=Math.floor(CELL*0.55)+'px sans-serif';   /* 0.34 of a 44px cell was a 15px treasure */
     ctx.textAlign='center';
     ctx.textBaseline='middle';
     ctx.fillStyle='#fff';

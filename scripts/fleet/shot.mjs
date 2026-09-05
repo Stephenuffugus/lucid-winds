@@ -1,6 +1,6 @@
 /* One screenshot of a page from where the player stands, how-to sheet seeded closed, the
    music unlock card dismissed, an optional start tap.
-     node scripts/fleet/shot.mjs <path> <out.png> [startRegex] [W] [H]
+     node scripts/fleet/shot.mjs <path> <out.png> [tapRegex[,tapRegex...]] [W] [H]
    e.g. node scripts/fleet/shot.mjs /play/doubleshutter.html /tmp/ds.png "roll" */
 import puppeteer from "puppeteer";
 import { createServer } from "http"; import { readFileSync, existsSync, statSync } from "fs"; import { join, extname } from "path";
@@ -18,6 +18,6 @@ await pg.goto("http://127.0.0.1:"+port+path,{waitUntil:"load",timeout:45000});
 await new Promise(r=>setTimeout(r,3000));
 const dismiss=()=>pg.evaluate(()=>{const l=[...document.querySelectorAll("button")].find(e=>/^later$/i.test(e.textContent.trim())); if(l) l.click(); const d=document.getElementById("shell-dir-play"); if(d) d.click();});
 await dismiss();
-if(startRe){ const hit=await pg.evaluate((src)=>{const re=new RegExp(src,"i"); const b=[...document.querySelectorAll("button,a,[role=button]")].filter(e=>{const r=e.getBoundingClientRect();return r.width>60&&r.height>28}).find(e=>re.test(e.textContent.trim())&&!/later|play it now/i.test(e.textContent)); if(b){b.click();return b.textContent.trim().slice(0,20)} return null;}, startRe); await new Promise(r=>setTimeout(r,2500)); await dismiss(); console.log("tap: "+hit); }
+for(const oneRe of (startRe?startRe.split(","):[])){ const hit=await pg.evaluate((src)=>{const re=new RegExp(src,"i"); const b=[...document.querySelectorAll("button,a,[role=button]")].filter(e=>{const r=e.getBoundingClientRect();return r.width>60&&r.height>28}).find(e=>re.test(e.textContent.trim())&&!/later|play it now/i.test(e.textContent)); if(b){b.click();return b.textContent.trim().slice(0,20)} return null;}, oneRe); await new Promise(r=>setTimeout(r,2500)); await dismiss(); console.log("tap: "+hit); }
 await pg.screenshot({path:out}); console.log("wrote "+out);
 await b.close(); s.close();

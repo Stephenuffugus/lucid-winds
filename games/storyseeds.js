@@ -104,12 +104,13 @@ window._gameFns.storyseeds=function SS(a){
   function render(){
     var streak=getStreak();
     var h='';
-    h+='<div style="text-align:center;padding:12px 8px;">';
+    /* the prompt as one card (emoji, line, category under a thin rule) instead of three loose type sizes */
+    h+='<div style="text-align:center;padding:14px 12px 10px;margin:0 0 10px;background:rgba(26,31,23,.55);border:1px solid rgba(200,168,75,.25);border-radius:12px;">';
     h+='<div style="font-size:1.8rem;margin-bottom:6px;">'+currentPrompt.icon+'</div>';
     h+='<div style="font-family:Crimson Text,Georgia,serif;font-size:1rem;font-style:italic;color:var(--cream);line-height:1.5;max-width:340px;margin:0 auto;">"'+currentPrompt.text+'"</div>';
-    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.12em;color:var(--sage);margin-top:8px;">'+currentPrompt.category+'</div>';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.14em;color:var(--gold);margin-top:10px;padding-top:8px;border-top:1px solid rgba(200,168,75,.25);">'+currentPrompt.category+'</div>';
     h+='</div>';
-    h+='<textarea id="SSta" oninput="_SSIn()" placeholder="Begin writing here..." style="width:100%;min-height:220px;background:rgba(26,36,22,0.3);border:1px solid rgba(122,179,86,0.3);border-radius:10px;color:var(--cream);font-family:Crimson Text,Georgia,serif;font-size:0.95rem;line-height:1.6;padding:12px;resize:vertical;outline:none;box-sizing:border-box;"></textarea>';
+    h+='<textarea id="SSta" oninput="_SSIn()" placeholder="Begin writing here..." style="width:100%;min-height:220px;background:rgba(26,36,22,0.42);border:1px solid rgba(122,179,86,0.3);border-radius:10px;box-shadow:inset 0 2px 10px rgba(0,0,0,.4);color:var(--cream);font-family:Crimson Text,Georgia,serif;font-size:0.95rem;line-height:1.6;padding:12px;resize:vertical;outline:none;box-sizing:border-box;"></textarea>';
     if(streak>0){
       h+='<div style="text-align:center;font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--gold);letter-spacing:0.12em;padding:8px;">🔥 '+streak+' DAY STREAK</div>';
     }
@@ -179,3 +180,16 @@ window._gameFns.storyseeds=function SS(a){
   render();
 };
 })();
+
+/* Story Seeds is the one native set in Crimson Text (the prompt line), and play/shell.css does not
+   load it, so the prompt fell back to Georgia and read as a form. Loaded here, by this game only,
+   rather than adding a face to every native's shell import. */
+(function(){
+  try{
+    if(document.getElementById('ss-crimson'))return;
+    var l=document.createElement('link');l.id='ss-crimson';l.rel='stylesheet';
+    l.href='https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;1,400;1,600&display=swap';
+    document.head.appendChild(l);
+  }catch(e){}
+})();
+
