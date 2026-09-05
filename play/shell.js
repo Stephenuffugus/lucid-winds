@@ -458,7 +458,9 @@
     var pend = document.getElementById('shell-pend');
     var btn = document.getElementById('shell-signin');
     if (bal) bal.textContent = state.bal || 0;
-    if (pend) pend.textContent = state.pending > 0 ? ('(+' + state.pending + ' pending)') : '';
+    // the word "pending" is a span so phones under 400px can drop it and keep "(+8)";
+    // state.pending is a number (see the typeof guards where it is read)
+    if (pend) pend.innerHTML = state.pending > 0 ? ('(+' + (state.pending | 0) + '<span class="sb-pend-word"> pending</span>)') : '';
     if (btn) {
       // Plant minting lives only inside Lucid Winds. Standalone shells
       // are the play surface — signed-in players use the link to visit
@@ -833,7 +835,8 @@
     var button = musMakeButton();
     if(!button) return;
     function go(){ if(global.SWSPlayer) global.SWSPlayer.init({ button: button }); }
-    function withPlayer(){ if(global.SWSPlayer) go(); else musLoadScript('/music-player.js', go); }
+    // ⛔ versioned: the host edge pins a bare URL for days (HOST CACHING LAW)
+    function withPlayer(){ if(global.SWSPlayer) go(); else musLoadScript('/music-player.js?v=20260905a', go); }
     if(global.LW_TRACKS) withPlayer();
     else musLoadScript('/music-tracks.js?v=2026.09.02.03', withPlayer);
   }

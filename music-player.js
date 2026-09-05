@@ -302,7 +302,13 @@
     // has ever been opened it pulses gently so new players find the music.
     (function(){
       try{
-        if((btn.textContent||'').replace(/\s/g,'').length<=2){
+        // ⛔ The label needs 96px and a phone header under 400px has no 96px to give:
+        // measured Sep 04 2026 with a pending chip in the wallet, this pill left the
+        // game title 0px wide at 320 and clipped "Sign in" at 320 and 375 (the two
+        // commonest widths). Under 400px the button keeps its glyph and its pulse,
+        // and the pulse is what draws the eye; the label appears where there is room.
+        var roomy = true; try{ roomy = !window.matchMedia || window.matchMedia('(min-width: 400px)').matches; }catch(e){}
+        if(roomy && (btn.textContent||'').replace(/\s/g,'').length<=2){
           btn.innerHTML='&#9835; Music';
           if(!btn.style.minWidth) btn.style.minWidth='96px';
           btn.style.whiteSpace='nowrap';

@@ -63,6 +63,8 @@ The whole rebuild pipeline lives in the session scratchpad and is re-runnable:
 |---|---|---|
 | **Bebas Neue now loads** | `play/shell.css:7` | Sprout ENTER key **6px overflow → 5.3px clearance** each side |
 | **Per-game backdrop hook** | `play/shell.js` `init()` | file present → applies with scrim; absent → old gradient untouched |
+| **JOB 4: header no longer clips "Sign in"** (Fable) | `play/shell.css`, `play/shell.js`, `music-player.js` | with the SDK's own `(+8 pending)` chip: overflow **17px→0 at 320, 15px→0 at 375**, header 61px on one line at 320/360/375/390. Cause was the music button's attract state forcing `min-width:96px` in the header row (Stephen's 7/17 glow-up), now glyph+pulse under 400px; feedback button hidden under 400 (was 360); "pending" word dropped under 400; wallet's "☀ 0" no longer wraps |
+| **JOB 3: the ♫ Music chip stops landing on game UI** (Fable) | `music-unlocks.js` | scorer: header/HUD bars and bordered panels are never "free"; candidates bottom row first (a title lives top left); reseat at 3/6/10/15s and on resize, never a dragged chip; 48px glyph when nothing is free; scrim. Measured on Petal Alchemy (off `#pa-top` to empty black after the tap), Rootbound, Deepwell (compact at the LAMP card's empty end, was on the row), Aura Farm, Bridgevine, Burr Blast (bottom-left over empty dark) |
 | **`overflow-x` un-clamped** | `play/shell.css` | sticky header **0/45 → 45/45**; 9 of 66 now sidescroll |
 | **Meshy double-spend** | `satellites/ripcord/tools/forge3d/meshy_api.py` | kill+rerun **2 POSTs → 1** |
 

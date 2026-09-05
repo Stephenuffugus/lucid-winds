@@ -126,7 +126,7 @@
     S.playerCbs.push(cb); if (S.playerCbs.length > 1) return;
     addChip();                                                        /* Listen now may come before the settle delay: place it now */
     function done() { var api = null; try { var d = window.document, btn = S.chip || d.getElementById('shell-music-btn') || null; if (window.SWSPlayer && window.SWSPlayer.init) api = window.SWSPlayer.init(btn ? { button: btn } : {}); } catch (e) {} api = api || window.SWS_MUSIC || null; var cbs = S.playerCbs; S.playerCbs = []; var i; for (i = 0; i < cbs.length; i++) { try { cbs[i](api); } catch (e) {} } }
-    function withTracks() { try { if (typeof window.LW_FOLD_GAME_UNLOCKS === 'function') window.LW_FOLD_GAME_UNLOCKS(); } catch (e) {} if (window.SWSPlayer) done(); else loadScript('/music-player.js', done); }
+    function withTracks() { try { if (typeof window.LW_FOLD_GAME_UNLOCKS === 'function') window.LW_FOLD_GAME_UNLOCKS(); } catch (e) {} if (window.SWSPlayer) done(); else loadScript('/music-player.js?v=20260905a', done); }
     if (window.LW_TRACKS) withTracks(); else loadScript('/music-tracks.js', withTracks);
   }
   function playById(id) { ensurePlayer(function (api) { try { if (!api || !api.play) return; var L = window.LW_TRACKS || [], i; for (i = 0; i < L.length; i++) if (L[i] && L[i].id === id) { api.play(i); return; } } catch (e) {} }); }
@@ -149,7 +149,7 @@
         + '#' + CARD_ID + ' .swsm-btns{display:flex;gap:10px}'
         + '#' + CARD_ID + ' button{flex:1;min-height:48px;border-radius:14px;font-size:16px;font-weight:600;font-family:inherit;cursor:pointer;border:1px solid rgba(200,168,75,0.7);background:transparent;color:#e8dcc8}'
         + '#' + CARD_ID + ' button.swsm-primary{background:#c8a84b;color:#0d100c;border-color:#c8a84b}'
-        + '#' + CHIP_ID + '{position:fixed;z-index:2147481000;height:48px;min-width:96px;padding:0 16px;border-radius:14px;border:1px solid rgba(200,168,75,0.6);background:rgba(13,16,12,0.86);color:#e8dcc8;font:600 14px system-ui,sans-serif;white-space:nowrap;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,0.5)}';
+        + '#' + CHIP_ID + '{position:fixed;z-index:2147481000;height:48px;min-width:96px;padding:0 16px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);box-shadow:0 2px 10px rgba(0,0,0,.45);border-radius:14px;border:1px solid rgba(200,168,75,0.6);background:rgba(13,16,12,0.86);color:#e8dcc8;font:600 14px system-ui,sans-serif;white-space:nowrap;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,0.5)} #' + CHIP_ID + '.swsm-tight{min-width:48px;width:48px;padding:0;font-size:20px;text-align:center}';
       (d.head || d.documentElement).appendChild(st); } catch (e) {}
   }
 
@@ -174,10 +174,18 @@
         var el = stack[i]; if (!el || el.id === CHIP_ID || el.id === CARD_ID || (el.closest && el.closest('#' + CARD_ID))) continue;   /* look through our own card */
         if (el === d.body || el === d.documentElement) return 0;
         var r = el.getBoundingClientRect(); if (r.width * r.height >= area * 0.9) continue;
+        /* a header or HUD bar is never a free corner, whatever its pixel scores as: the shell's
+           .shell-hdr (the chip sat on #shell-title in Klondike, Block Drop, Speed Sort), a game's
+           own top bar (#hud in Rootbound, #pa-top in Petal Alchemy), anything pinned across the top */
+        if (el.closest && el.closest('.shell-hdr,header,nav,[role="banner"],#hud,.hud,#pa-top')) return 3;
+        if (r.top <= 8 && r.height <= 80 && r.width >= window.innerWidth * 0.5) return 3;
         if (el.closest && el.closest('button,a,[role="button"],input,select,canvas,[onclick]')) return 3;
         var cs = window.getComputedStyle(el);
         if (cs && cs.cursor === 'pointer') return 3;                     /* a div that acts as a button (Deepwell's close glyph) */
         if (textAt(el, x, y)) return 2;                                   /* text AT THE POINT, not anywhere in the element */
+        /* a bordered or shadowed panel smaller than the screen is a card, a row, a tile: its
+           empty half is not background (the chip sat inside Deepwell's LAMP shop row, scored 1) */
+        if (r.width * r.height < area * 0.6 && ((parseFloat(cs.borderTopWidth) > 0 && cs.borderTopStyle !== 'none') || (cs.boxShadow && cs.boxShadow !== 'none') || parseFloat(cs.borderTopLeftRadius) > 0)) return 1.5;   /* worse than background, better than the row's own text */
         return ((cs.backgroundImage && cs.backgroundImage !== 'none') || (cs.backgroundColor && cs.backgroundColor !== 'transparent' && cs.backgroundColor.replace(/\s/g, '') !== 'rgba(0,0,0,0)')) ? 1 : 0;
       }
     } catch (e) {}
@@ -186,19 +194,61 @@
   /* a GRID along the top edge (left to right), then the bottom edge (left to right, stopping short of the feedback fab's
      corner), then the side edges at mid height. Three corners were too coarse: on a busy hub every corner scores, and the
      least bad corner was still somebody's close button. The chip is 97x48; each candidate is its centre. */
-  function freeCorner() {
+  function freeCorner(prefer) {
     var W = window.innerWidth || 375, H = window.innerHeight || 667, spots = [], x, i, sc;
     var T = 'top:calc(10px + env(safe-area-inset-top,0px));', B = 'bottom:calc(10px + env(safe-area-inset-bottom,0px));';
-    for (x = 10; x + 97 <= W - 10; x += 48) spots.push({ css: 'left:' + x + 'px;' + T, x: x + 48, y: 34 });
+    /* ⛔ order is the tie break, and the first version listed the top row first: on a title
+       screen every slot scores "text", so the chip took spot 0, top left, which is where the
+       game's own title lives (Petal Alchemy, Rootbound). Bottom row first, sides, top last. */
     for (x = 10; x + 97 <= W - 130; x += 48) spots.push({ css: 'left:' + x + 'px;' + B, x: x + 48, y: H - 34 });   /* never the bottom right: the feedback fab's */
     spots.push({ css: 'left:10px;top:' + Math.round(H / 2 - 24) + 'px;', x: 58, y: H / 2 });
     spots.push({ css: 'right:10px;top:' + Math.round(H / 2 - 24) + 'px;', x: W - 58, y: H / 2 });
+    for (x = 10; x + 97 <= W - 10; x += 48) spots.push({ css: 'left:' + x + 'px;' + T, x: x + 48, y: 34 });
     /* the chip is 97px wide: score its whole footprint (left end, centre, right end), worst point wins */
     /* the chip is 97x48: score a 3x3 grid over its footprint, worst point wins (a centre line alone let it clip a title's top) */
     function footprint(sp) { var worst = 0, dx, dy, sc; for (dy = -16; dy <= 16; dy += 16) for (dx = -40; dx <= 40; dx += 40) { sc = occupancy(sp.x + dx, sp.y + dy); if (sc > worst) worst = sc; if (worst >= 3) return worst; } return worst; }
-    var best = spots[0], bestScore = Infinity;
-    for (i = 0; i < spots.length; i++) { sc = footprint(spots[i]); if (sc === 0) return spots[i].css; if (sc < bestScore) { bestScore = sc; best = spots[i]; } }
+    var best = spots[0], bestScore = Infinity, cur = null, curScore = Infinity;
+    for (i = 0; i < spots.length; i++) {
+      sc = footprint(spots[i]);
+      if (prefer && spots[i].css === prefer) { cur = spots[i]; curScore = sc; }
+      if (sc < bestScore) { bestScore = sc; best = spots[i]; }
+    }
+    /* a reseat only moves the chip for a strictly better spot: equal is not a reason to jump */
+    if (cur && curScore <= bestScore) { best = cur; bestScore = curScore; }
+    freeCorner.lastScore = bestScore;
     return best.css;
+  }
+  function applyCorner(b, css) {
+    b.setAttribute('data-corner', css); b.setAttribute('style', css); b.style.height = '48px'; b.style.touchAction = 'none';
+    /* when every corner is somebody's text or control (Deepwell's shop list under the unlock
+       card fills the screen), the chip is a 48px glyph and covers half as much; a later reseat
+       that finds a free corner gives it its word back */
+    var tight = (freeCorner.lastScore || 0) >= 1.5;
+    if (tight !== b._tight) {
+      b._tight = tight;
+      b.textContent = tight ? '\u266B' : '\u266B Music';
+      if (tight) b.classList.add('swsm-tight'); else b.classList.remove('swsm-tight');
+    }
+  }
+  /* The chip used to be placed ONCE, 900 ms after load, against the BOOT layout, and never
+     again: 101 of the 186 audited games had it sitting on their own UI once the real screen
+     drew (Sep 04 2026). It now re-checks its corner a few times over the first fifteen
+     seconds and on resize, and never moves a chip the player has dragged. */
+  function reseat() {
+    try {
+      var b = S.chip; if (!b || b._moved || !window.document.body.contains(b)) return;
+      if (lsGet('sws_music_chip_pos')) return;                                   /* the player put it there */
+      var css = freeCorner(b.getAttribute('data-corner'));
+      if (css && css !== b.getAttribute('data-corner')) applyCorner(b, css);
+    } catch (e) {}
+  }
+  function scheduleReseat() {
+    try {
+      var i, at = [3000, 6000, 10000, 15000];
+      for (i = 0; i < at.length; i++) window.setTimeout(reseat, at[i]);
+      var t = null;
+      window.addEventListener('resize', function () { if (t) window.clearTimeout(t); t = window.setTimeout(reseat, 250); });
+    } catch (e) {}
   }
   /* drag a fixed element anywhere; remembers where it was left. A move over 8px swallows the click. */
   function drag(el, key) {
@@ -225,11 +275,11 @@
       S.chipPlaced = true;
       ensureStyle();
       var b = d.createElement('button'); b.id = CHIP_ID; b.type = 'button'; b.textContent = '\u266B Music'; b.setAttribute('aria-label', 'Open the soundtrack');
-      var corner = freeCorner(); b.setAttribute('data-corner', corner); b.setAttribute('style', corner); b.style.height = '48px';
-      b.style.touchAction = 'none';
+      applyCorner(b, freeCorner(null));
       b.addEventListener('click', function () { if (b._moved) { b._moved = false; return; } ensurePlayer(function (api) { try { if (api && api.open) api.open(); } catch (e) {} }); });
       drag(b, 'sws_music_chip_pos');
       d.body.appendChild(b); S.chip = b;
+      scheduleReseat();
     } catch (e) {}
   }
 

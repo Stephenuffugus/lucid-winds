@@ -160,7 +160,9 @@ body { display: flex; flex-direction: column; }
   flex: 1;
   text-align: center;
   letter-spacing: 0.3px;
-  /* Truncate if game name is long */
+  /* Truncate if game name is long. min-width:0 is what lets a flex child shrink
+     under its content; overflow:hidden implies it, but say it. */
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -221,10 +223,20 @@ body { display: flex; flex-direction: column; }
   .shell-howto { min-width: 38px; padding: 4px 9px; }
   .shell-wallet button#shell-signin { padding: 6px 10px; }
 }
-/* Smallest phones (<=360px): drop the least-critical chrome (the bug/idea
-   button, also reachable from the portal) so the sign-in CTA never clips. */
-@media (max-width: 360px) {
+/* Phones under 400px: drop the least-critical chrome (the bug/idea button, also
+   reachable from the portal) so the sign-in CTA never clips, and shorten the
+   pending chip to "(+8)". ⛔ This block used to start at 360px and was tuned on an
+   EMPTY wallet: measured Sep 04 2026 with the SDK's own "(+8 pending)" chip in
+   place, the header overflowed 17px at 320 and 15px at 375 (the two commonest
+   phone widths) and clipped "Sign in", while 360 and 390 read 0. Six fixed-width
+   items share this row (back, ?, feedback, music, wallet, sign in); the title is
+   the only one that yields. Re-check with a pending balance, never a fresh browser. */
+@media (max-width: 400px) {
   #shell-feedback { display: none; }
+  .shell-wallet #shell-pend .sb-pend-word { display: none; }
+  .shell-wallet > span { white-space: nowrap; }   /* "☀ 0" wrapped onto two lines at 320 */
+}
+@media (max-width: 360px) {
   .shell-hdr { gap: 7px; padding-left: 8px; padding-right: 8px; }
 }
 
