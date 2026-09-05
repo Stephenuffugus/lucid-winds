@@ -135,6 +135,10 @@ A visual phase is not done until you have looked at the screenshot and named thr
 | 2 | Asterism | `docs/handoffs-uploaded/six-20260905/6handoffs/HANDOFF-ASTERISM.md` | `plans/asterism/HANDOFF-ASTERISM.md` (written 2026-09-05, Fable; the star catalogue is packed at `plans/asterism/hyg-asterism.json`) | the real sky from Columbus at a frozen time with Vega overhead, three real taps join Vega, Deneb and Altair, a typed name saves to the almanac. That is P1 step 4 | not started |
 | 3 | Swell | `docs/handoffs-uploaded/six-20260905/6handoffs/HANDOFF-SWELL.md` | `plans/swell/HANDOFF-SWELL.md` (written 2026-09-05, Fable; the three moods are data in section 4) | one finger held for six seconds swells strings to choir and lets go into a cadence that ends on the tonic, rendered to `docs/shots/p0-swell.wav` for Stephen to hear. That is P0 step 5 | not started |
 
+| 4 | Wardian | `docs/handoffs-uploaded/six-20260905/6handoffs/HANDOFF-WARDIAN.md` | `plans/wardian/HANDOFF-WARDIAN.md` (written 2026-09-05, Fable; nothing dies is a gate) | a fern unfurls over real minutes in a jar whose light follows the phone clock, a swipe mists it, a tap rolls the pillbug, and a 30 day headless run never removes a plant. That is P1 step 2 | not started |
+| 5 | | | | | not started |
+| 6 | | | | | not started |
+
 (Rows are added as handoffs land. A row's SESSION STATE is written by Opus: `DONE P1` and so on,
 or `BLOCKED <gate>`.)
 
