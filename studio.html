@@ -39,7 +39,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 input[type=range]:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 
 /* Section tabs */
-.gs-sections{display:flex;gap:4px;padding:8px 12px;background:rgba(13,16,12,.4);border-bottom:1px solid rgba(74,124,53,.06)}
+.gs-sections{display:flex;gap:4px;padding:8px 12px;background:rgba(13,16,12,.4);border-bottom:1px solid rgba(74,124,53,.06);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .gs-sec{font-family:'Bebas Neue',sans-serif;font-size:clamp(.85rem,2.5vw,1rem);padding:8px 16px;border-radius:6px;cursor:pointer;border:1.5px solid rgba(74,124,53,.15);color:var(--muted);letter-spacing:.06em;transition:all .15s;min-height:48px;display:flex;align-items:center}
 .gs-sec:hover{background:rgba(42,48,37,.3);border-color:rgba(74,124,53,.3)}
 .gs-sec.active{border-color:var(--gold);color:var(--gold);background:rgba(200,168,75,.06)}
@@ -50,7 +50,9 @@ input[type=range]:focus-visible{outline:2px solid var(--gold);outline-offset:2px
 
 /* Layer strip */
 .gs-layer{border-bottom:1px solid rgba(74,124,53,.06);transition:all .2s}
-.gs-layer-head{display:flex;align-items:center;gap:6px;padding:6px 10px;cursor:pointer;background:rgba(16,20,14,.4)}
+.gs-layer-head{display:flex;align-items:center;gap:6px;padding:6px 10px;cursor:pointer;background:rgba(16,20,14,.4);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 28px),transparent 100%);mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 28px),transparent 100%)}
+.gs-layer-head::-webkit-scrollbar{display:none}
+.gs-layer-head>*{flex:none}
 .gs-layer-head:active{background:rgba(16,20,14,.7)}
 .gs-layer-name{font-family:'Bebas Neue',sans-serif;font-size:.75rem;letter-spacing:.06em;flex:1}
 .gs-layer.ly-drums .gs-layer-name{color:#e88a4a}
@@ -1819,8 +1821,8 @@ var GS = (function(){
         +'<div class="gs-layer-name">'+lt.name+(lt.type==='note'?' <span style="font-size:.65rem;color:var(--muted);font-family:DM Mono,monospace">Oct '+lt.octave+'</span>':'')+'</div>'
         +'<div class="gs-chip" title="Roll a fresh idea" onclick="event.stopPropagation();GS.diceLayer(\''+lt.id+'\')">🎲</div>'
         +(lt.id==='chords'?'<div class="gs-chip'+(chordMode?' on':'')+'" title="One tap places a full chord" onclick="event.stopPropagation();GS.toggleChordMode()">♪♪♪</div>':'')
-        +(lt.type==='note'?'<div style="display:flex;gap:2px" onclick="event.stopPropagation()"><div class="gs-mute" onclick="GS.octShift(\''+lt.id+'\',-1)" style="font-size:.65rem;padding:6px 8px;min-height:36px">▼</div><div class="gs-mute" onclick="GS.octShift(\''+lt.id+'\',1)" style="font-size:.65rem;padding:6px 8px;min-height:36px">▲</div></div>':'')
-        +(lt.id!=='drums'?'<select class="gs-mute" style="font-size:.65rem;padding:4px 6px;max-width:90px;background:rgba(26,31,23,.8);color:var(--cream);border-radius:4px;min-height:36px" onclick="event.stopPropagation()" onchange="GS.setPreset(\''+lt.id+'\',this.value)">'+getPresetOptions(lt.id)+'</select>':'')
+        +(lt.type==='note'?'<div style="display:flex;gap:2px" onclick="event.stopPropagation()"><div class="gs-mute" onclick="GS.octShift(\''+lt.id+'\',-1)" style="font-size:.7rem;padding:6px 8px;min-height:48px">▼</div><div class="gs-mute" onclick="GS.octShift(\''+lt.id+'\',1)" style="font-size:.7rem;padding:6px 8px;min-height:48px">▲</div></div>':'')
+        +(lt.id!=='drums'?'<select class="gs-mute" style="font-size:.7rem;padding:4px 6px;max-width:150px;background:rgba(26,31,23,.8);color:var(--cream);border-radius:4px;min-height:48px" onclick="event.stopPropagation()" onchange="GS.setPreset(\''+lt.id+'\',this.value)">'+getPresetOptions(lt.id)+'</select>':'')
         +'<div class="gs-layer-mini">'+miniHtml+'</div>'
         +'<input type="range" min="0" max="100" value="'+(ld.vol!==undefined?ld.vol:80)+'" style="width:40px;accent-color:'+(({drums:'#e88a4a',bass:'#c75050',chords:'#a0c4e8',melody:'#c8a84b'})[lt.id]||'var(--sage)')+'" onclick="event.stopPropagation()" oninput="event.stopPropagation();GS.setVol(\''+lt.id+'\',this.value)">'
         +'<div class="gs-mute'+(ld.mute?' on':'')+'" onclick="event.stopPropagation();GS.toggleMute(\''+lt.id+'\')">M</div>'

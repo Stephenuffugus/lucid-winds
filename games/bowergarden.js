@@ -639,7 +639,7 @@ window._gameFns.bowergarden = function BG(a){
     var d=bidDecisions[seat];if(!d)return '';
     var fresh = (seat===lastBidSeat) ? ';animation:bgBidFlash .6s ease-out' : '';
     if(d==='pass'){
-      return '<span class="bg-bidtag" style="display:inline-block;padding:1px 6px;margin-left:5px;font-size:0.48rem;font-family:Georgia,serif;font-style:italic;color:rgba(232,220,200,0.55);background:rgba(0,0,0,0.3);border:1px solid rgba(232,220,200,0.2);border-radius:3px;vertical-align:middle'+fresh+'">passed</span>';
+      return '<span class="bg-bidtag" style="display:inline-block;padding:1px 6px;margin-left:5px;font-size:0.68rem;font-family:Georgia,serif;font-style:italic;color:rgba(232,220,200,0.85);background:rgba(0,0,0,0.3);border:1px solid rgba(232,220,200,0.25);border-radius:3px;vertical-align:middle'+fresh+'">passed</span>';
     }
     if(d.kind==='order'||d.kind==='call'){
       var red=(d.suit==='hearts'||d.suit==='diamonds');
@@ -701,7 +701,7 @@ window._gameFns.bowergarden = function BG(a){
     // Persistent trump chip (center) + dealer name (left) + alone badge
     var h='<div style="display:flex;gap:8px;align-items:center;justify-content:space-between;padding:4px 2px 10px;">';
     // Dealer name
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.52rem;letter-spacing:0.12em;color:rgba(232,220,200,0.6);text-transform:uppercase;">Dealer<br/><span style="color:#f5ebd0;font-family:Georgia,serif;font-size:0.85rem;letter-spacing:0;text-transform:none;">'+PLAYER_NAMES[dealer]+'</span></div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.68rem;letter-spacing:0.12em;color:rgba(232,220,200,0.7);text-transform:uppercase;">Dealer<br/><span style="color:#f5ebd0;font-family:Georgia,serif;font-size:0.85rem;letter-spacing:0;text-transform:none;">'+PLAYER_NAMES[dealer]+'</span></div>';
     // Trump/prompt chip — same pill shape either way so the header height
     // stays stable between hands (no jumpy layout when the old trump clears).
     if(trumpSuit){
@@ -712,7 +712,7 @@ window._gameFns.bowergarden = function BG(a){
       h+='<div style="display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border:2px solid '+borderCol+';border-radius:999px;background:linear-gradient(180deg,rgba(0,0,0,0.4),rgba(0,0,0,0.65));box-shadow:0 0 14px '+borderCol+'55,inset 0 1px 0 rgba(255,255,255,0.1);">';
       h+='<span style="font-size:1.6rem;line-height:1;color:'+pipCol+';text-shadow:0 2px 4px rgba(0,0,0,0.6);">'+_pip(trumpSuit)+'</span>';
       h+='<div style="font-family:Georgia,serif;line-height:1.1;">';
-      h+='<div style="font-size:0.52rem;font-style:italic;color:rgba(232,220,200,0.65);letter-spacing:0.06em;">Strong</div>';
+      h+='<div style="font-size:0.68rem;font-style:italic;color:rgba(232,220,200,0.75);letter-spacing:0.06em;">Strong</div>';
       h+='<div style="font-size:0.85rem;color:#f5ebd0;text-transform:capitalize;">'+trumpSuit+'</div>';
       h+='</div>';
       if(callerName)h+='<div style="font-family:Georgia,serif;font-style:italic;font-size:0.6rem;color:'+borderCol+';padding-left:8px;border-left:1px solid rgba(255,255,255,0.15);">'+callerName+' called</div>';
@@ -803,7 +803,9 @@ window._gameFns.bowergarden = function BG(a){
     for(var w=0;w<wCt;w++)h+='<div class="'+dealCls(WEST,w,wCt)+'" style="'+_cdBackCss(32,46,4)+'margin-top:'+(w===0?'0':'-32px')+';"></div>';
     h+='</div></div>';
     // Trick area — bumped min-height
-    h+='<div style="position:relative;min-height:236px;background:rgba(26,31,23,0.3);border-radius:8px;">';
+    /* the trick well was a flat lighter rectangle with a hard edge; a radial that fades to nothing at
+       the rim makes it an inlay in the felt instead of a box on it (fleet audit row 172) */
+    h+='<div style="position:relative;min-height:236px;background:radial-gradient(ellipse at 50% 50%,rgba(26,31,23,0.55) 0%,rgba(26,31,23,0.35) 55%,rgba(26,31,23,0) 78%);border-radius:50%/40%;">';
     if(phase==='dealing'){
       // The deck at table center: wiggles during the shuffle, counts
       // down as the batches go out.
@@ -929,7 +931,7 @@ window._gameFns.bowergarden = function BG(a){
     // Call UI
     if(phase==='call1'&&currentPlayer===SOUTH){
       h+='<div style="padding:8px;text-align:center;background:rgba(26,31,23,0.5);border-radius:8px;margin:6px 0;">';
-      h+='<div style="font-size:0.6rem;color:var(--muted);margin-bottom:6px;">Make '+_pip(upcard.suit)+' your Strong suit?</div>';
+      h+='<div style="font-size:0.72rem;color:#e8dcc8;margin-bottom:6px;">Make '+_pip(upcard.suit)+' your Strong suit?</div>';
       h+='<div style="display:flex;gap:6px;justify-content:center;">';
       h+='<button class="gb" onclick="_BGORD()" style="min-height:44px;padding:8px 16px;background:rgba(200,168,75,0.15);border-color:rgba(200,168,75,0.4);color:var(--gold);">CALL '+_pip(upcard.suit)+' STRONG</button>';
       h+='<button class="gb" onclick="_BGP1()" style="min-height:44px;padding:8px 16px;">PASS</button>';
@@ -937,7 +939,7 @@ window._gameFns.bowergarden = function BG(a){
     }
     if(phase==='call2'&&currentPlayer===SOUTH){
       h+='<div style="padding:8px;text-align:center;background:rgba(26,31,23,0.5);border-radius:8px;margin:6px 0;">';
-      h+='<div style="font-size:0.6rem;color:var(--muted);margin-bottom:6px;">Pick your Strong suit (not '+_pip(upcard.suit)+'):</div>';
+      h+='<div style="font-size:0.72rem;color:#e8dcc8;margin-bottom:6px;">Pick your Strong suit (not '+_pip(upcard.suit)+'):</div>';
       h+='<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">';
       for(var si=0;si<SUITS.length;si++){
         if(SUITS[si]===upcard.suit)continue;

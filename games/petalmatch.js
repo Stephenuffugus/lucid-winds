@@ -650,9 +650,9 @@ window._gameFns.petalmatch = function PM(a){
 
   walletInfo.innerHTML=petalGlyph(15)+
     '<strong id="PMpet" style="color:#7ab356;font-size:0.8rem;">0</strong>'+
-    '<span style="letter-spacing:0.06em;">PETALS</span>'+
+    '<span style="letter-spacing:0.06em;color:#e8dcc8;text-shadow:0 1px 3px rgba(0,0,0,.85);">PETALS</span>'+
     '<span id="PMstk" style="color:#c8a84b;letter-spacing:0.05em;"></span>'+
-    '<span style="color:#5a614f;font-size:0.55rem;margin-left:4px;">'+PM_BUILD+'</span>';
+    ((function(){ try{ return localStorage.getItem('sws_dev_ok')==='1'; }catch(e){ return false; } })() ? '<span style="color:#5a614f;font-size:0.7rem;margin-left:4px;">'+PM_BUILD+'</span>' : '');
 
   var boostBtn=document.createElement('button');
   boostBtn.type='button';

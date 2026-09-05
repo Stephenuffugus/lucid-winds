@@ -1024,7 +1024,7 @@ window._lwGameEnd=function(o){
     if(window._lwGameEndDead)return; // player left the game inside the delay window
     var old=document.getElementById('LWGE');if(old)old.remove();
     var ov=document.createElement('div');ov.id='LWGE';
-    ov.style.cssText='position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at 50% 40%,'+(o.won?'rgba(122,179,86,0.3)':'rgba(199,138,80,0.16)')+' 0%,rgba(13,16,12,0.92) 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;font-family:Georgia,serif;';
+    ov.style.cssText='position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at 50% 40%,'+(o.won?'rgba(122,179,86,0.3)':'rgba(199,138,80,0.16)')+' 0%,rgba(13,16,12,0.985) 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;font-family:Georgia,serif;';
     ov.innerHTML='<div style="font-size:3rem;line-height:1;">'+(o.won?'\ud83c\udfc6':'\ud83c\udf42')+'</div>'
       +'<div style="font-size:1.7rem;font-weight:700;color:'+(o.won?'#7ab356':'#c78a50')+';letter-spacing:0.08em;margin-top:12px;text-align:center;">'+o.title+'</div>'
       +(o.line?'<div style="font-size:0.98rem;color:#e8dcc8;margin-top:10px;text-align:center;">'+o.line+'</div>':'')
