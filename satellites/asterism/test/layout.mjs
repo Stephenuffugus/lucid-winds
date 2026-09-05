@@ -120,6 +120,29 @@ for (const size of SIZES) {
     say(false, tag + '  Vega and Deneb are on the screen so the rest of the screens can be reached');
   }
 
+  /* NOTHING HANGS OFF THE SIDE OF ITS OWN CONTAINER.
+     ⛔ The page level scrollWidth check misses this entirely, because a sheet
+     with its own overflow swallows it, and centre() scrolls an element into
+     view before measuring, which hides it a second time. SHARE was half off the
+     right edge of the myth sheet and every gate was green. */
+  const spill = await dev(() => {
+    const bad = [];
+    document.querySelectorAll('.screen.on, .sheet.on').forEach(box => {
+      const br = box.getBoundingClientRect();
+      box.querySelectorAll('button, input, canvas, .card').forEach(el => {
+        const cs = getComputedStyle(el);
+        if (cs.display === 'none' || cs.visibility === 'hidden' || el.hidden) return;
+        const r = el.getBoundingClientRect();
+        if (r.width < 1) return;
+        if (r.right > br.right + 1.5 || r.left < br.left - 1.5) {
+          bad.push((el.id || el.className || el.tagName) + ' by ' +
+            Math.max(r.right - br.right, br.left - r.left).toFixed(0) + ' px');
+        }
+      });
+    });
+    return bad;
+  });
+  say(spill.length === 0, tag + '  nothing hangs off the side of its sheet' + (spill.length ? ': ' + spill.join(', ') : ''));
   const wide = await dev(() => document.documentElement.scrollWidth > window.innerWidth + 1);
   say(!wide, tag + '  nothing pushes the page sideways');
   say(errors.length === 0, tag + '  nothing on the console' + (errors.length ? ': ' + errors.join(' | ') : ''));

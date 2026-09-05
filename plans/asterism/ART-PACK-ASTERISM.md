@@ -1,70 +1,99 @@
-# Asterism, Art Pack (four sheets, paste ready)
+# Asterism art pack
 
-**For:** Stephen's Midjourney month. Relax mode, four variations per prompt, upscale only the pick. The app ships with no
-image files: the sky is real stars drawn by code, the parchment is CSS, the ground is a drawn silhouette, the Plate poster has
-a drawn border. These four sheets are upgrades. Bring the PNGs to `satellites/asterism/art-drop/` (never overwrite a raw
-file) and the ART-LEDGER row moves from LISTED to DROPPED.
+Four sheets, paste ready. **The app ships finished without any of them**: the sky is drawn from the
+real catalogue and the type is a system serif. Only the plate frame changes what a player sees at
+export; the rest are quiet upgrades. `satellites/asterism/ART_ASSETS.md` lists the exact paths the
+code reads, each behind an `onerror` that leaves the drawn version alone.
 
-**The look, in one line:** a vintage celestial atlas, engraved, cream ink on deep indigo, gold hairlines, planetarium hush.
-Nothing sci fi, nothing neon.
-
-**Locked suffix for every Asterism prompt** (paste it on the end of each one; reuse the seed of the first pick on the others):
-
-```
---style raw --s 150 --chaos 5 --no text, letters, numbers, watermark, people, faces, planets, moon
-```
+The `--ar` and `--style` flags are Midjourney syntax, not player copy.
 
 ---
 
-## Sheet 1 of 4: Plate poster frame (4:5)
+## 1. `plate-frame.png` — the border for the Plate poster
 
-File back: `plate-frame.png`. The border for the Plate poster layout. The centre must be EMPTY deep indigo; the app draws
-the stars and the myth inside it. Delivered at 1200x1500 (the host resizes anything over 1600 px); drawn at 2048x2560.
-
-```
-an ornate engraved border frame for a vintage celestial atlas plate, cream and pale gold fine line engraving on deep indigo, corner ornaments of laurel and small compass roses, a thin double rule inside the ornaments, the entire centre of the image left as empty flat deep indigo with no stars and no drawing, symmetrical, antique copperplate engraving style, high detail on the border only --ar 4:5
-```
-
-Pick the one whose centre is truly empty and whose border is symmetrical; a border that leans is useless.
-
-## Sheet 2 of 4: Parchment (1:1, tileable)
-
-File back: `parchment.png`. Tiled at 20 percent opacity under the myth text and the almanac spread.
+The centre must be EMPTY: the chart and the myth are drawn inside it. This is the one sheet that
+changes a keepsake, so it is first.
 
 ```
-seamless tileable texture of old parchment paper, warm cream with faint fibre and gentle mottling, no creases, no burns, no edges, no writing, evenly lit, subtle, flat, repeating pattern --ar 1:1 --tile
+an antique celestial atlas engraving border, empty centre, fine copperplate line
+work, a thin double rule with small astronomical ornaments at the four corners,
+brass and bone on deep indigo, no stars inside the frame, no text, no figures,
+symmetrical, --ar 4:5 --style raw --stylize 200
 ```
 
-Pick the flattest one; anything with a visible edge or a dark blotch will show as a repeat.
-
-## Sheet 3 of 4: Ground silhouette (wide)
-
-File back: `hills.png`. The horizon strip: rolling hills and a treeline in pure black on pure white, so Fable can key the
-white to transparent. Ohio first; a Pennsylvania treeline skin later.
+Quieter alternative, if the first is too busy against a star chart:
 
 ```
-a horizon strip of gently rolling Ohio farm hills with a scattered treeline and one small barn, drawn as a pure black silhouette on a pure white background, no gradient, no sky, no stars, no grey, clean hard edge, wide panorama --ar 21:9
+a plain engraved double rule border with a single small compass rose at each
+corner, warm gold line on near black, empty middle, no text, no illustration,
+--ar 4:5 --style raw --stylize 120
 ```
 
-Pick the one with the most white and the cleanest edge; the hills should sit in the bottom third.
-
-## Sheet 4 of 4: Icon mark (1:1)
-
-File back: `icon-mark.png`. The PWA icon, only if it beats the drawn one; the mark must sit inside the central 80 percent.
-
-```
-app icon, seven small cream stars joined by a thin gold hairline into a simple asterism shape on deep indigo, centred, generous margin, flat engraved line style, three colours only cream gold and indigo, no border, no text --ar 1:1
-```
-
-Pick the one with the fewest strokes. If none beats the drawn icon, skip it.
+Delivered 4:5. Goes in as `art/plate-frame.png` at 1200x1500. **The host resizes anything over 1600 px
+on a side**, so never deliver larger; the poster draws it scaled up at 2048x2560.
 
 ---
 
-## Delivery table
+## 2. `parchment.png` — the myth sheet
 
-| Sheet | Ratio | File back | Where it lands |
-|---|---|---|---|
-| 1 Plate frame | 4:5 | `plate-frame.png` | `satellites/asterism/art/plate-frame.png` 1200x1500 |
-| 2 Parchment | 1:1 tile | `parchment.png` | `satellites/asterism/art/parchment.jpg` 1024x1024 q75 |
-| 3 Hills | 21:9 | `hills.png` | `satellites/asterism/art/hills.png` 1600x400 with alpha (Fable keys it) |
-| 4 Icon mark | 1:1 | `icon-mark.png` | `icon-512.png`, `icon-192.png`, `icon-maskable-512.png` |
+Tiled at 20 percent behind dark serif text, so it must be pale, even, and almost featureless. Any
+strong mark in it will read through the words.
+
+```
+a sheet of pale aged paper, even tone, very faint fibre and a soft warm stain
+toward the edges, no folds, no burn, no writing, no border, flat lighting,
+seamless, --ar 1:1 --style raw --stylize 80
+```
+
+Goes in as `art/parchment.jpg`, 1024x1024, q75.
+
+---
+
+## 3. `hills.png` — the ground
+
+Keyed from white, so the app can lay it over any sky colour. It replaces a horizon that is currently
+drawn from a fixed noise and looks like a ridgeline, which is honest but generic.
+
+```
+a silhouette of low rolling hills with a ragged treeline, pure black shape on
+pure white, no sky, no detail inside the silhouette, no texture, wide,
+--ar 4:1 --style raw --stylize 50
+```
+
+A second one worth having, for the Ohio nod the design asks for:
+
+```
+a silhouette of a flat farm horizon with one barn, a line of trees and a single
+grain silo, pure black on pure white, no sky, wide, --ar 4:1 --style raw --stylize 50
+```
+
+Fable keys it and delivers `art/hills.png` at 1600x400 with alpha.
+
+---
+
+## 4. `icon-mark.png` — only if it beats the drawn one
+
+The drawn icon already ships: four stars of different brightnesses joined by a gold line, with a faint
+field behind them. A painted one only replaces it if it reads better at 48 px.
+
+```
+app icon, four stars of different sizes joined by a thin gold line into an
+irregular four sided shape, on deep indigo, a few faint stars behind, flat,
+minimal, centred, no text, --ar 1:1 --style raw --stylize 100
+```
+
+512, 192, and a **maskable 512 with the mark inside the central 80 percent**: Android crops maskable
+icons to an arbitrary shape, and a corner radius over 50 in viewBox units collapses the tile to a
+circle whose transparent corners composite to BLACK on an iOS home screen.
+
+---
+
+## What NOT to draw
+
+- **No zodiac glyphs, no astrology.** This app is the real sky and somebody's own shapes.
+- **No telescope, no observatory, no astronaut.** Nobody in this app is an expert.
+- **No named constellation figures.** The whole point is that the official 88 are not here.
+- **No lens flare, no nebula photograph, no Hubble colour.** The sky in the app is what a person sees
+  from a field, which is faint white and blue and amber points on almost black.
+- **No swirl or spiral galaxy.** The Milky Way in the app is a dim mottled band, because that is what
+  it looks like from the ground.

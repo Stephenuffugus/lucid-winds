@@ -91,7 +91,13 @@ html,body{margin:0;padding:0;height:100%;background:var(--ink);color:var(--cream
 .btn.small{min-height:48px;font-size:.8rem;letter-spacing:.13em}
 .btn.ghost{border-color:rgba(124,135,168,.34);color:var(--dim)}
 .btn[disabled]{opacity:.4}
+/* ⛔ A CHILD'S CEILING IS ITS PARENT. Two .btn in a row each carried
+   width:100% and max-width:330px, so the second one hung off the right edge of
+   the sheet: on the myth sheet, SHARE was half off the screen. flex:1 1 0 with
+   min-width:0 is the fleet's rule for this and it is the third time it has been
+   written down. */
 .row{display:flex;gap:10px;width:100%;max-width:330px}
+.row > *{flex:1 1 0;min-width:0;width:auto;max-width:none}
 .cap{font-size:.7rem;letter-spacing:.22em;color:var(--dim);margin:12px 0 6px;
   width:100%;max-width:330px;text-align:left;text-transform:uppercase}
 .lede{font-size:.88rem;line-height:1.75;color:var(--cream);width:100%;
@@ -127,7 +133,9 @@ input:focus{outline:1px solid var(--gold)}
 #cityList button{display:block;width:100%;text-align:left;background:none;border:0;
   border-bottom:1px solid rgba(36,48,85,.6);color:var(--cream);font-family:var(--serif);
   font-size:.85rem;padding:12px 14px;min-height:48px}
-#toast{position:fixed;left:50%;top:12%;transform:translateX(-50%);
+/* the toast lives near the BOTTOM. At twelve percent from the top it sat over
+   the poster preview, over the almanac list and over the sky itself. */
+#toast{position:fixed;left:50%;bottom:calc(14px + var(--safeB));transform:translateX(-50%);
   background:rgba(10,16,34,.95);border:1px solid rgba(232,201,122,.34);color:var(--cream);
   padding:10px 16px;border-radius:12px;font-size:.82rem;z-index:40;opacity:0;
   pointer-events:none;transition:opacity 180ms ease-out;max-width:84%;text-align:center}
@@ -486,6 +494,18 @@ function angSep(ra1H, dec1, ra2H, dec2) {
   return Math.acos(clamp(Math.sin(d1) * Math.sin(d2) + Math.cos(d1) * Math.cos(d2) * Math.cos(dRa), -1, 1)) * RAD;
 }
 function galacticBand(raH, decDeg) { return Math.abs(angSep(raH, decDeg, GAL_POLE_RA, GAL_POLE_DEC) - 90); }
+/* galactic to equatorial, so the pale road can be drawn where it actually is.
+   The three constants are the IAU 1958 definition; TEST checks the answer
+   against a published one, the galactic centre at 17h 45m 40s, minus 28.94. */
+var GAL_A = 192.85948, GAL_D = 27.12825, GAL_L_NCP = 122.93192;
+function galToEq(lDeg, bDeg) {
+  var b = bDeg * DEG, dl = (GAL_L_NCP - lDeg) * DEG;
+  var sd = Math.sin(GAL_D * DEG), cd = Math.cos(GAL_D * DEG);
+  var dec = Math.asin(clamp(sd * Math.sin(b) + cd * Math.cos(b) * Math.cos(dl), -1, 1));
+  var ra = GAL_A * DEG + Math.atan2(Math.cos(b) * Math.sin(dl),
+    cd * Math.sin(b) - sd * Math.cos(b) * Math.cos(dl));
+  return { ra: mod(ra * RAD, 360) / 15, dec: dec * RAD };
+}
 
 /* the month in which a right ascension transits at nine in the evening */
 var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
@@ -1221,12 +1241,15 @@ function drawGround(g) {
      band that stops at the highest point of the ridge it left a hard horizontal
      seam straight across the screen; clipped INSIDE the ground it lit the land,
      which is backwards. The light near a horizon is in the air. */
-  var glow = g.createLinearGradient(0, minY - 130, 0, Math.min(CSSH, maxY + 30));
+  /* the top of the glow has to arrive from nothing, or its own gradient shows
+     as a soft horizontal band halfway up the screen */
+  var glow = g.createLinearGradient(0, minY - 190, 0, Math.min(CSSH, maxY + 30));
   glow.addColorStop(0, 'rgba(96,116,170,0)');
-  glow.addColorStop(0.75, 'rgba(96,116,170,.16)');
-  glow.addColorStop(1, 'rgba(110,132,190,.30)');
+  glow.addColorStop(0.45, 'rgba(96,116,170,.03)');
+  glow.addColorStop(0.82, 'rgba(96,116,170,.14)');
+  glow.addColorStop(1, 'rgba(110,132,190,.28)');
   g.fillStyle = glow;
-  g.fillRect(0, minY - 130, CSSW, Math.min(CSSH, maxY + 30) - (minY - 130) + 2);
+  g.fillRect(0, minY - 190, CSSW, Math.min(CSSH, maxY + 30) - (minY - 190) + 2);
   g.fillStyle = '#04060E';
   g.fill();
   g.strokeStyle = 'rgba(150,165,205,.26)'; g.lineWidth = 1; g.stroke();
@@ -1244,6 +1267,7 @@ function renderLayer() {
   LCTX.clearRect(0, 0, CSSW, CSSH);
   LCTX.fillStyle = skyPalette(sa);
   LCTX.fillRect(0, 0, CSSW, CSSH);
+  if (sa < CONFIG.SUN_DUSK) drawMilkyWay(LCTX);
   G.screenOfStar = {};
   G.visible = [];
   var i, drawn = 0;
@@ -1286,6 +1310,40 @@ function renderLayer() {
   drawGround(LCTX);
   G.drawnCount = drawn;
   G.layerDirty = false;
+}
+/* the pale road. Drawn into the star layer, so it costs nothing per frame, and
+   brightest toward the galactic centre in Sagittarius, which is where it is. */
+function drawMilkyWay(g) {
+  var J = jd(G.whenMs), lat = G.place.lat, lon = G.place.lon;
+  var l, b, prev = g.globalCompositeOperation;
+  g.globalCompositeOperation = 'lighter';
+  for (l = 0; l < 360; l += 4) {
+    /* toward the centre it is a bright bulge, away from it a thin lane */
+    var toCentre = Math.abs(mod(l + 180, 360) - 180);
+    var strength = 0.55 + 0.45 * Math.cos(toCentre * DEG);
+    var width = 9 + 7 * Math.cos(toCentre * DEG);
+    for (b = -14; b <= 14; b += 3.5) {
+      var eq = galToEq(l, b);
+      var p = altAz(eq.ra, eq.dec, lat, lon, J);
+      if (p.alt < -3) continue;
+      var s = project(p.alt, p.az, G.view.alt, G.view.az, G.view.fov, CSSW, CSSH);
+      if (s.behind || s.x < -60 || s.x > CSSW + 60 || s.y < -60 || s.y > CSSH + 60) continue;
+      var fall = Math.exp(-(b / width) * (b / width));
+      /* patchy, not a beam. The first pass painted a smooth cone at three times
+         this brightness and it read as a searchlight across the sky, washing out
+         the faint stars the pale road is actually made of. */
+      var mottle = 0.45 + 0.55 * Math.abs(Math.sin(l * 0.37 + b * 1.7) * Math.cos(l * 0.113 - b * 0.91));
+      var a = 0.017 * strength * fall * mottle * (p.alt < 0 ? 0.2 : 1);
+      if (a < 0.0025) continue;
+      var r = Math.max(11, (Math.min(CSSW, CSSH) / G.view.fov) * 4.0);
+      var gr = g.createRadialGradient(s.x, s.y, 0, s.x, s.y, r);
+      gr.addColorStop(0, 'rgba(150,168,214,' + a.toFixed(4) + ')');
+      gr.addColorStop(1, 'rgba(150,168,214,0)');
+      g.fillStyle = gr;
+      g.beginPath(); g.arc(s.x, s.y, r, 0, 6.2832); g.fill();
+    }
+  }
+  g.globalCompositeOperation = prev;
 }
 function drawMoon(g) {
   var J = jd(G.whenMs);
@@ -1348,12 +1406,23 @@ function drawConstellation(g, hips, edges, born, alpha) {
     for (j = 1; j <= upto; j++) g.lineTo(pts[j][0], pts[j][1]);
     g.stroke();
   }
+  /* a picked star GLOWS. A thin ring around it, next to the star's own glint
+     cross, read as a gunsight, which is the wrong idea for a thing you are
+     making up a story about. */
   for (i = 0; i < hips.length; i++) {
     var st = G.screenOfStar[cat.byHip[hips[i]]];
     if (!st) continue;
-    g.globalAlpha = (alpha === undefined ? 1 : alpha);
-    g.strokeStyle = '#E8C97A'; g.lineWidth = 1.2;
-    g.beginPath(); g.arc(st.x, st.y, 6, 0, 6.2832); g.stroke();
+    var aa = (alpha === undefined ? 1 : alpha);
+    var gg = g.createRadialGradient(st.x, st.y, 0.5, st.x, st.y, 11);
+    gg.addColorStop(0, 'rgba(255,240,200,.85)');
+    gg.addColorStop(0.38, 'rgba(232,201,122,.38)');
+    gg.addColorStop(1, 'rgba(232,201,122,0)');
+    g.globalAlpha = aa;
+    g.fillStyle = gg;
+    g.beginPath(); g.arc(st.x, st.y, 11, 0, 6.2832); g.fill();
+    g.globalAlpha = aa * 0.55;
+    g.strokeStyle = '#E8C97A'; g.lineWidth = 1;
+    g.beginPath(); g.arc(st.x, st.y, 4.2, 0, 6.2832); g.stroke();
   }
   g.restore();
 }
@@ -1780,6 +1849,19 @@ function suiteSunMoon(T) {
   T.assert('a full moon shows almost all of it', mFull.lit > 0.98);
   T.assert('the moon keeps to the zodiac band', Math.abs(moon(jd(Date.UTC(2026, 3, 3, 0))).dec) < 30);
 
+  /* the galactic centre and the galactic pole, both published positions, which
+     pin the whole transform the pale road is drawn from */
+  var gc = galToEq(0, 0);
+  T.near('the galactic centre is at 17h 45m 40s', gc.ra, 17.7614, 0.01);
+  T.near('and declination minus 28.94', gc.dec, -28.936, 0.05);
+  var np = galToEq(0, 90);
+  T.near('the north galactic pole is at 12h 51m 26s', np.ra, 12.8575, 0.01);
+  T.near('and declination 27.13', np.dec, 27.128, 0.02);
+  T.near('a point on the galactic equator reads as zero from the pole', galacticBand(gc.ra, gc.dec), 0, 0.2);
+  T.near('and the pole itself reads as ninety', galacticBand(np.ra, np.dec), 90, 0.2);
+  T.assert('Deneb sits in the pale road', galacticBand(20.6905, 45.28) < 5);
+  T.assert('and Arcturus does not', galacticBand(14.2610, 19.182) > 50);
+
   /* the sun, from the shape of a day rather than from a table */
   var lat = 39.96, lon = -83, h, hi = -99, lo = 99;
   for (h = 0; h < 24; h++) {
@@ -2008,6 +2090,12 @@ function refreshChip() {
 function typeOut(el, text, done) {
   clearInterval(G.typeT);
   var i = 0, step = Math.max(1, Math.round(CONFIG.TYPE_CPS / 20));
+  /* RESERVE THE ROOM FIRST. Typing into a box that grows pushes ANOTHER, SHARE
+     and KEEP IT down the screen under the reader's thumb for four seconds. */
+  var paper = $('mythPaper');
+  el.textContent = text;
+  paper.style.minHeight = '';
+  paper.style.minHeight = paper.getBoundingClientRect().height + 'px';
   el.textContent = '';
   G.typing = true;
   G.typeT = setInterval(function () {
@@ -2045,11 +2133,19 @@ function drawChartTo(g, w, h, entry, layout) {
     sx2 += Math.sin(p.az * DEG); cy2 += Math.cos(p.az * DEG);
   }
   cAlt /= stars.length; cAz = mod(Math.atan2(sx2, cy2) * RAD, 360);
+  /* THE FRAME FITS THE SHAPE. A fixed sixty degree field left a three star
+     constellation as a small mark in the middle of a poster; the field is the
+     shape's own span with room around it. */
+  var span = 0;
+  for (i = 0; i < stars.length; i++) for (var j2 = i + 1; j2 < stars.length; j2++) {
+    var sep = angSep(stars[i].ra, stars[i].dec, stars[j2].ra, stars[j2].dec);
+    if (sep > span) span = sep;
+  }
   var chartH = layout === 'minimal' ? h : Math.round(h * 0.58);
   g.fillStyle = layout === 'minimal' ? '#000000' : '#070A1A';
   g.fillRect(0, 0, w, h);
   /* the sky around it, faint, so the shape has a field to sit in */
-  var fov = 60;
+  var fov = clamp(span * 1.9 + 12, 22, 110);
   var lim = layout === 'minimal' ? 4.4 : 5.0;
   for (i = 0; i < cat.n; i++) {
     if (cat.mag[i] > lim) continue;

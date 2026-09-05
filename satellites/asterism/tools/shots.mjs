@@ -17,12 +17,22 @@ import { serve, open, ROOT, tap, tapAt, sleep, waitFrames } from '../test/harnes
 const OUT = join(ROOT, 'docs', 'shots');
 if (!existsSync(OUT)) mkdirSync(OUT, { recursive: true });
 const only = process.argv[2];
-const SIZES = { tall: { width: 412, height: 915 }, mid: { width: 375, height: 667 }, small: { width: 320, height: 568 } };
+/* evidence at 1.5x, not 2x. A parchment full of gradient at two device pixels
+   per css pixel pushed one shot past the 200 KB evidence limit, and nobody
+   reading a screenshot needs the last half of a pixel. */
+const SIZES = { tall: { width: 412, height: 915, deviceScaleFactor: 1.5 },
+  mid: { width: 375, height: 667, deviceScaleFactor: 1.5 },
+  small: { width: 320, height: 568, deviceScaleFactor: 1.5 } };
 const { base, close } = await serve();
 const wrote = [];
+/* ⛔ THE FILTER GATES THE SHUTTER, NEVER THE WALK. `node tools/shots.mjs
+   p2-myth` used to skip the drawing and the naming as well as the other shots,
+   press SAVE with nothing drawn, and write a picture of an empty sky over the
+   myth sheet. shoot() checks the name; nothing else does. */
 const want = n => !only || only === n;
 
 async function shoot(page, name) {
+  if (!want(name)) return;
   const buf = await page.screenshot({ type: 'png' });
   writeFileSync(join(OUT, name + '.png'), buf);
   const kb = statSync(join(OUT, name + '.png')).size / 1024;
@@ -44,42 +54,38 @@ async function drawTriangle(page) {
     const p = await page.evaluate((h) => window.ASTERISM_DEV.screenOfHip(h), hip);
     if (!p) { console.log('  (hip ' + hip + ' is not on screen at this size)'); continue; }
     await tapAt(page, p.x, p.y);
-    await waitFrames(page, 3);
+    /* the line eases in over 350 ms; a shot three frames after the tap catches
+       it half drawn and looks like a bug rather than like a drawing */
+    await waitFrames(page, 26);
   }
 }
 
 for (const key of Object.keys(SIZES)) {
   const { browser, page } = await seeded(SIZES[key]);
-  if (want('p1-sky-' + key)) await shoot(page, 'p1-sky-' + key);
-  if (want('p1-draw-' + key) || (key === 'mid' && want('p1-draw'))) {
-    await drawTriangle(page);
-    await shoot(page, key === 'mid' ? 'p1-draw' : 'p1-draw-' + key);
-  }
+  await shoot(page, 'p1-sky-' + key);
+  await drawTriangle(page);
+  await shoot(page, key === 'mid' ? 'p1-draw' : 'p1-draw-' + key);
   if (key === 'mid') {
-    if (want('p1-name')) {
-      await tap(page, '#btnDraw');
-      await sleep(200);
-      await tap(page, '#btnDice');
-      await sleep(200);
-      await shoot(page, 'p1-name');
-    }
-    if (want('p2-myth')) {
-      await tap(page, '#btnNameSave');
-      await page.waitForFunction(() => (window.ASTERISM_DEV.myth() || '').length > 90, { timeout: 20000 }).catch(() => {});
-      await shoot(page, 'p2-myth');
-    }
-    if (want('p2-almanac')) {
-      await page.waitForFunction(() => !window.ASTERISM_DEV.typing(), { timeout: 30000 }).catch(() => {});
-      await tap(page, '#btnMythKeep');
-      await sleep(300);
-      await tap(page, '#btnMenu'); await sleep(200);
-      await tap(page, '#btnAlmanac'); await sleep(400);
-      await shoot(page, 'p2-almanac');
-      await tap(page, '.card'); await sleep(400);
-      if (want('p2-spread')) await shoot(page, 'p2-spread');
-      await tap(page, '#btnPoster'); await sleep(500);
-      if (want('p2-poster')) await shoot(page, 'p2-poster');
-    }
+    await tap(page, '#btnDraw');
+    await sleep(200);
+    await tap(page, '#btnDice');
+    await sleep(200);
+    await shoot(page, 'p1-name');
+    await tap(page, '#btnNameSave');
+    await page.waitForFunction(() => (window.ASTERISM_DEV.myth() || '').length > 90, { timeout: 20000 }).catch(() => {});
+    await shoot(page, 'p2-myth');
+    await page.waitForFunction(() => !window.ASTERISM_DEV.typing(), { timeout: 30000 }).catch(() => {});
+    await tap(page, '#btnMythKeep');
+    await sleep(300);
+    await tap(page, '#btnMenu'); await sleep(200);
+    await tap(page, '#btnAlmanac'); await sleep(400);
+    await shoot(page, 'p2-almanac');
+    await tap(page, '.card'); await sleep(400);
+    await shoot(page, 'p2-spread');
+    await tap(page, '#btnPoster'); await sleep(500);
+    /* the toast from KEEP IT has to be gone before the poster is photographed */
+    await page.waitForFunction(() => !document.getElementById('toast').classList.contains('on'), { timeout: 8000 }).catch(() => {});
+    await shoot(page, 'p2-poster');
   }
   await browser.close();
   console.log('  (' + SIZES[key].width + 'x' + SIZES[key].height + ' done)');

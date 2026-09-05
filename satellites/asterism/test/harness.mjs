@@ -44,14 +44,14 @@ export async function serve() {
 }
 
 export async function open(base, opts = {}) {
-  const { width = 375, height = 667, path = '/index.html' } = opts;
+  const { width = 375, height = 667, path = '/index.html', deviceScaleFactor = 2 } = opts;
   const browser = await puppeteer.launch({
     headless: 'new', protocolTimeout: 120000,
     args: ['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu',
       '--autoplay-policy=no-user-gesture-required']
   });
   const page = await browser.newPage();
-  await page.setViewport({ width, height, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+  await page.setViewport({ width, height, deviceScaleFactor, isMobile: true, hasTouch: true });
   const errors = [];
   page.on('pageerror', e => errors.push('pageerror: ' + e.message));
   page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
