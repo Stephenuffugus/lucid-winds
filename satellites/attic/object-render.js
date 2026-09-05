@@ -655,8 +655,9 @@
     }
     g += '<text x="' + (sx + sw - 4) + '" y="' + (sy2 + sh - 5) + '" text-anchor="end" font-family="ui-monospace, monospace" font-size="8" fill="#24301c" opacity="0.7">' + (100 + hb(h, 26) % 900) + '</text>';
     // printed title on the bezel
-    g += '<text x="' + (bx + bw / 2) + '" y="' + (by + 22) + '" text-anchor="middle" font-family="ui-monospace, monospace" font-size="7.5" letter-spacing="2.5" fill="#ffffff" opacity="0.72">' + esc(String(it.sub).split('·')[0].trim().toUpperCase().slice(0, 24)) + '</text>'
-      + '<text x="' + (bx + bw / 2) + '" y="' + (by + 158) + '" text-anchor="middle" font-family="' + look.f + '" font-weight="800" font-size="' + fit(it.name, 18, bw - 26) + '" fill="#ffffff">' + esc(String(it.name).slice(0, 28)) + '</text>';
+    /* ⛔ inkOn(shell), never #ffffff: a pale 1990s shell made the printed title white on grey */
+    g += '<text x="' + (bx + bw / 2) + '" y="' + (by + 22) + '" text-anchor="middle" font-family="ui-monospace, monospace" font-size="7.5" letter-spacing="2.5" fill="' + inkOn(shell) + '" opacity="0.72">' + esc(String(it.sub).split('·')[0].trim().toUpperCase().slice(0, 24)) + '</text>'
+      + '<text x="' + (bx + bw / 2) + '" y="' + (by + 158) + '" text-anchor="middle" font-family="' + look.f + '" font-weight="800" font-size="' + fit(it.name, 18, bw - 26) + '" fill="' + inkOn(shell) + '">' + esc(String(it.name).slice(0, 28)) + '</text>';
     // d pad and buttons
     var dx2 = bx + 44, dy2 = by + 202;
     g += '<rect x="' + (dx2 - 9) + '" y="' + (dy2 - 27) + '" width="18" height="54" rx="4" fill="#211f1c"/>'

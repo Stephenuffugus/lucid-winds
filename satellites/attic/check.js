@@ -93,7 +93,9 @@ INLINE.forEach((b, i) => {
 });
 const srcs = []; { const re = /<script[^>]*\bsrc="([^"]+)"/g; let m; while ((m = re.exec(SRC))) srcs.push(m[1]); }
 ok('every script src resolves to a file on disk',
-  srcs.every(s2 => fs.existsSync(path.join(ROOT, s2))), srcs.join(' '));
+  /* a root absolute src (the arcade's /music-unlocks.js include, Sep 02) lives at the repo
+     root, two levels up from this folder, not beside the page */
+  srcs.every(s2 => fs.existsSync(s2.charAt(0) === '/' ? path.join(ROOT, '..', '..', s2) : path.join(ROOT, s2))), srcs.join(' '));
 ok('the page loads all four modules',
   ['attic-engine.js', 'attic-econ.js', 'sleeve-render.js', 'object-render.js'].every(f => srcs.indexOf(f) >= 0), srcs.join(' '));
 const BODY = SRC.slice(SRC.indexOf('<body'));

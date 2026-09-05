@@ -56,11 +56,14 @@
       + ' l0 ' + (bh * 0.13)
       + ' q -' + (bw * 0.38) + ' ' + (amp * 0.2) + ' -' + (bw * 0.6) + ' ' + (-amp * 0.35)
       + ' q -' + (bw * 0.3) + ' ' + (-amp * 0.35) + ' -' + (bw * 0.4) + ' ' + (amp * 0.6) + ' Z';
-    /* two layers at 0.79 compound to 0.956, and it took that much: at 0.91 a
-       high contrast title plate (the record's, after the STACK layout got one)
-       still punched through and the band name was readable under the dust. */
-    w += '<rect x="' + bx + '" y="' + by + '" width="' + bw + '" height="' + bh + '" fill="#5c5142" opacity="0.79"/>';
-    w += '<path fill-rule="evenodd" fill="#5c5142" opacity="0.79" d="M' + bx + ' ' + by + ' h' + bw + ' v' + bh + ' h-' + bw + ' Z ' + swipe + '"/>';
+    /* ⛔ 2026-09-05: two layers at 0.79 compounded to 0.956 and the object under them was gone.
+       The fleet audit and Stephen both read the dusty card as a broken image. The grade is
+       withheld by drawing NO wear in the dusty render (that is what the leak gate measures), not
+       by hiding the object, so the dust sits at 0.62 with a 0.42 second layer off the swipe:
+       the thing shows through as a shape and a colour, the title mostly does not, and the wipe
+       is a reveal instead of an un-blank. */
+    w += '<rect x="' + bx + '" y="' + by + '" width="' + bw + '" height="' + bh + '" fill="#5c5142" opacity="0.62"/>';
+    w += '<path fill-rule="evenodd" fill="#5c5142" opacity="0.42" d="M' + bx + ' ' + by + ' h' + bw + ' v' + bh + ' h-' + bw + ' Z ' + swipe + '"/>';
     /* cloudiness: where the dust has drifted and where it has not */
     for (i = 0; i < 16; i++) {
       cx = bx + 4 + (b(i) * (i + 5)) % Math.max(1, bw - 8);

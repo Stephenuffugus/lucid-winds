@@ -47,14 +47,18 @@
      crates clearly you have made the cream body text harder to read.
      ⛔ pointer-events:none on the whole layer. It is scenery, not surface. */
   .atticbg { position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
+  /* 2026-09-05: the room's own tones were within four points of the page ground and read as
+     three brown smudges. They sit about eighteen points up now and ONE scrim holds the whole
+     plate back, so the rafters and crates read as furniture and the cream copy still wins. */
+  .atticbg::after { content:""; position:absolute; inset:0; background:rgba(23,19,16,0.34); }
   .atticbg svg { position:absolute; inset:0; width:100%; height:100%; }
   .motes { position:absolute; inset:0; }
-  .mote { position:absolute; width:3px; height:3px; border-radius:50%;
-    background:#e8d7a8; opacity:0; animation:drift linear infinite; }
+  .mote { position:absolute; width:4px; height:4px; border-radius:50%;
+    background:#e8d7a8; opacity:0; animation:drift linear infinite; filter:blur(0.4px); }
   @keyframes drift {
     0%   { transform:translate3d(0,0,0) scale(0.7); opacity:0; }
-    12%  { opacity:0.5; }
-    88%  { opacity:0.32; }
+    12%  { opacity:0.45; }
+    88%  { opacity:0.28; }
     100% { transform:translate3d(-26px,-160px,0) scale(1.15); opacity:0; }
   }
   @media (prefers-reduced-motion:reduce) { .mote { animation:none; opacity:0.22; } }
@@ -195,7 +199,7 @@
   .cls { font-family:ui-monospace, monospace; font-size:0.62rem; letter-spacing:0.28em; color:#d9a94e; }
   .nm { font-size:1.15rem; line-height:1.25; margin:4px 0 2px; color:#f0e4c8; }
   .sub { font-size:0.82rem; color:#b8a888; font-style:italic; line-height:1.4; }
-  .meta { font-family:ui-monospace, monospace; font-size:0.68rem; color:#8a7a5e; margin-top:10px; line-height:1.7; }
+  .meta { font-family:ui-monospace, monospace; font-size:0.68rem; color:#9a8a6e; margin-top:10px; line-height:1.7; }
   .prov { font-size:0.8rem; color:#c4b294; margin-top:10px; line-height:1.5; border-left:2px solid #4a3b26; padding-left:10px; }
   .err {
     margin-top:10px; padding:7px 10px; border:1px dashed #b4652f; border-radius:6px;
@@ -207,8 +211,8 @@
   .gradeBtn {
     width:100%; min-height:52px; border:1px solid #4a3b26; border-radius:8px;
     background:linear-gradient(180deg, #33281c, #241b12);
-    color:#b8a888; font-family:ui-monospace, monospace; font-size:0.72rem;
-    letter-spacing:0.24em; cursor:pointer;
+    color:#c8b898; font-family:ui-monospace, monospace; font-size:0.72rem;
+    letter-spacing:0.1em; cursor:pointer;
   }
   .gradePlate {
     display:none; width:100%; min-height:52px; border-radius:8px;
@@ -346,7 +350,7 @@
   padding:4px 8px; border-radius:20px; border:1px solid #4a3b26; color:#a8906a; white-space:nowrap }
 .shChip.sealed{ color:#171310; border-color:#f5d87a; font-weight:bold;
   background:linear-gradient(100deg, #b8892e, #f5d87a 50%, #b8892e) }
-.shWhen{ font-family:ui-monospace, monospace; font-size:.54rem; color:#6f6350; white-space:nowrap }
+.shWhen{ font-family:ui-monospace, monospace; font-size:.6rem; color:#9a8a6e; white-space:nowrap }
 .shMore{ width:100%; min-height:48px; margin-top:14px; background:#1c1610; border:1px solid #4a3b26;
   border-radius:9px; color:#c4b294; font-family:ui-monospace, monospace; font-size:.64rem;
   letter-spacing:.18em; cursor:pointer }
@@ -369,7 +373,7 @@
   box-shadow:0 10px 34px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.04) }
 .fcBack{ position:absolute; inset:0; transform:rotateY(180deg); overflow-y:auto }
 .fcFlipHint{ text-align:center; font-family:ui-monospace, monospace; font-size:.56rem;
-  letter-spacing:.2em; color:#6f6350; margin:2px 0 12px }
+  letter-spacing:.2em; color:#9a8a6e; margin:2px 0 12px }
 .fcRow{ display:flex; gap:10px; padding:8px 0; border-top:1px solid #2e2418; font-size:.76rem; line-height:1.45 }
 .fcRow .k{ flex:none; width:96px; font-family:ui-monospace, monospace; font-size:.58rem;
   letter-spacing:.14em; color:#8a7a5e; padding-top:2px }
@@ -378,7 +382,7 @@
 .fcHead svg{ width:64px; height:64px; flex:none; border-radius:4px }
 .fcHead .t{ font-size:.92rem; line-height:1.2; color:#f0e4c8 }
 .fcHead .s{ font-family:ui-monospace, monospace; font-size:.58rem; letter-spacing:.16em; color:#d9a94e }
-.fcHash{ font-family:ui-monospace, monospace; font-size:.56rem; color:#6f6350; line-height:1.6;
+.fcHash{ font-family:ui-monospace, monospace; font-size:.6rem; color:#9a8a6e; line-height:1.6;
   word-break:break-all }
 .fcBtns{ display:grid; grid-template-columns:1fr 1fr; gap:9px }
 .fcBtns button{ min-height:48px; background:#1c1610; border:1px solid #4a3b26; border-radius:9px;
@@ -468,30 +472,32 @@
   <svg viewBox="0 0 420 900" preserveAspectRatio="xMidYMax slice" focusable="false">
     <defs>
       <linearGradient id="atBeam" x1="0.2" y1="0" x2="0.8" y2="1">
-        <stop offset="0" stop-color="#e8c977" stop-opacity="0.1"/>
-        <stop offset="0.55" stop-color="#e8c977" stop-opacity="0.05"/>
+        <stop offset="0" stop-color="#e8c977" stop-opacity="0.18"/>
+        <stop offset="0.55" stop-color="#e8c977" stop-opacity="0.09"/>
         <stop offset="1" stop-color="#e8c977" stop-opacity="0"/>
       </linearGradient>
       <radialGradient id="atBulb" cx="0.5" cy="0.5" r="0.5">
-        <stop offset="0" stop-color="#f0d68a" stop-opacity="0.12"/>
+        <stop offset="0" stop-color="#f0d68a" stop-opacity="0.2"/>
         <stop offset="1" stop-color="#f0d68a" stop-opacity="0"/>
       </radialGradient>
     </defs>
     <rect width="420" height="900" fill="#171310"/>
     <!-- the roof slope and its rafters -->
-    <path d="M0 0 L420 0 L420 74 L0 128 Z" fill="#1d1710"/>
-    <path d="M0 118 L420 64 L420 82 L0 136 Z" fill="#241c13"/>
-    <path d="M56 0 L84 0 L128 900 L96 900 Z" fill="#1b150e"/>
-    <path d="M352 0 L378 0 L410 900 L382 900 Z" fill="#1b150e"/>
+    <path d="M0 0 L420 0 L420 74 L0 128 Z" fill="#2a2016"/>
+    <path d="M0 118 L420 64 L420 82 L0 136 Z" fill="#37291b"/>
+    <path d="M56 0 L84 0 L128 900 L96 900 Z" fill="#271e14"/>
+    <path d="M352 0 L378 0 L410 900 L382 900 Z" fill="#271e14"/>
+    <path d="M0 0 L420 0 L420 74 L0 128 Z" fill="none" stroke="#3d3021" stroke-width="2"/>
     <!-- the round window, and the one shaft of light in the room -->
     <!-- ⛔ THE WINDOW AND THE BULB BOTH SAT BEHIND BODY COPY. The bulb's glow
          landed in the middle of the pitch paragraph and the window's cross bars
          ran through WANT LIST. Both moved out to the margins and dimmed: art
          behind text always wants to be further back than it feels like it
          should be, and further OVER too. -->
-    <circle cx="368" cy="150" r="50" fill="#1e180e"/>
-    <circle cx="368" cy="150" r="50" fill="none" stroke="#2b2418" stroke-width="5"/>
-    <path d="M368 100 L368 200 M318 150 L418 150" stroke="#2b2418" stroke-width="4"/>
+    <circle cx="368" cy="150" r="50" fill="#2b2412"/>
+    <circle cx="368" cy="150" r="42" fill="#3a3320" opacity="0.55"/>
+    <circle cx="368" cy="150" r="50" fill="none" stroke="#4a3d2a" stroke-width="5"/>
+    <path d="M368 100 L368 200 M318 150 L418 150" stroke="#4a3d2a" stroke-width="4"/>
     <path d="M330 124 L410 124 L420 700 L150 790 Z" fill="url(#atBeam)"/>
     <!-- the bulb on its flex, hard left, clear of the column of copy -->
     <!-- ⛔ QUIETER, NOT MOVED. Moving the bulb out of the paragraph put a
@@ -500,20 +506,21 @@
          from. Both the shade and the window are outlines a shade off the page
          ground now: present if you look for them, invisible if you are reading. -->
     <path d="M42 0 L42 120" stroke="#241d14" stroke-width="2"/>
-    <path d="M26 120 L58 120 L51 142 L33 142 Z" fill="none" stroke="#2b2418" stroke-width="2"/>
-    <circle cx="42" cy="150" r="5" fill="#f0d68a" opacity="0.3"/>
+    <path d="M26 120 L58 120 L51 142 L33 142 Z" fill="#2a2016" stroke="#4a3d2a" stroke-width="2"/>
+    <circle cx="42" cy="150" r="5" fill="#f0d68a" opacity="0.5"/>
     <circle cx="42" cy="152" r="54" fill="url(#atBulb)"/>
     <!-- the floor and what is stacked on it -->
-    <rect y="806" width="420" height="94" fill="#1a140e"/>
-    <path d="M0 806 L420 806" stroke="#2b2318" stroke-width="3"/>
-    <g fill="#1f1810">
+    <rect y="806" width="420" height="94" fill="#241b13"/>
+    <path d="M0 806 L420 806" stroke="#463826" stroke-width="3"/>
+    <path d="M0 836 L420 836 M0 868 L420 868" stroke="#2e2419" stroke-width="2"/>
+    <g fill="#2d2318">
       <rect x="-14" y="676" width="132" height="130" rx="3"/>
       <rect x="12" y="600" width="92" height="78" rx="3"/>
       <rect x="288" y="700" width="146" height="106" rx="3"/>
       <rect x="316" y="628" width="86" height="74" rx="3"/>
       <rect x="150" y="742" width="120" height="64" rx="3"/>
     </g>
-    <g fill="none" stroke="#2b2318" stroke-width="2">
+    <g fill="none" stroke="#463826" stroke-width="2">
       <rect x="-14" y="676" width="132" height="130" rx="3"/>
       <rect x="12" y="600" width="92" height="78" rx="3"/>
       <rect x="288" y="700" width="146" height="106" rx="3"/>
@@ -522,7 +529,7 @@
       <path d="M-14 720 L118 720 M12 638 L104 638 M288 748 L434 748 M150 772 L270 772"/>
     </g>
     <!-- a chair nobody has sat in for thirty years -->
-    <g stroke="#241c13" stroke-width="5" fill="none">
+    <g stroke="#3d2f1f" stroke-width="5" fill="none">
       <path d="M196 806 L196 700 L246 700 L246 806 M196 748 L246 748 M204 700 L204 664 L240 664 L240 700"/>
     </g>
   </svg>
@@ -791,6 +798,9 @@
     toastT = setTimeout(function () { el.style.opacity = '0'; }, ms || 2800);
   }
   function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+  /* the arcade's shared ♫ chip picks its corner against whatever is on screen when it looks.
+     Every screen change here asks it to look again, so it never sits on the object art. */
+  function reseatChip() { try { if (window.SWSMusic && window.SWSMusic.reseat) setTimeout(window.SWSMusic.reseat, 120); } catch (e) {} }
 
   /* ── THE WANT LIST ──────────────────────────────────────────────────
      Eight grails, drawn once per device and never re-rolled, so a player has
@@ -1037,6 +1047,7 @@
 
     if (pulls.indexOf(h) < 0) { pulls.unshift(h); saveShelf(); markFound(h); }
     renderShelf();
+    reseatChip();
   }
 
   function renderShelf() {
@@ -1144,8 +1155,8 @@
       cards[j].onclick = function () { openFlip(this.getAttribute('data-h')); };
     }
   }
-  function openShelfSheet() { paintShelfSheet(true); document.getElementById('shelfSheet').className = 'on'; }
-  function closeShelfSheet() { document.getElementById('shelfSheet').className = ''; }
+  function openShelfSheet() { paintShelfSheet(true); document.getElementById('shelfSheet').className = 'on'; reseatChip(); }
+  function closeShelfSheet() { document.getElementById('shelfSheet').className = ''; reseatChip(); }
 
   /* ── THE OBJECT CARD ────────────────────────────────────────────────── */
   var FC_H = null, FC_BLOB = null;
@@ -1277,7 +1288,7 @@
         x.fillStyle = wiped ? lk[0] : '#8a8378'; x.font = '24px ui-monospace, monospace';
       }
       x.fillText(label, W / 2, py + 41);
-      x.fillStyle = '#6f6350'; x.font = '14px ui-monospace, monospace';
+      x.fillStyle = '#9a8a6e'; x.font = '14px ui-monospace, monospace';
       x.fillText(h.slice(0, 24) + '  ' + (found[h] ? foundWhen(h, true) : ''), W / 2, 894);
       x.fillStyle = '#8a7a5e'; x.font = '14px ui-monospace, monospace';
       x.fillText('one of one  ' + String.fromCharCode(183) + '  Sky Wolf Studio', W / 2, 922);
@@ -1727,7 +1738,7 @@
   (function firstRun() {
     var K = 'attic_how_v1';
     var sheetEl = document.getElementById('howSheet');
-    function close() { try { lsSet(K, '1'); } catch (e) {} sheetEl.className = ''; }
+    function close() { try { lsSet(K, '1'); } catch (e) {} sheetEl.className = ''; reseatChip(); }
     document.getElementById('howGo').onclick = close;
     if (lsGet(K) === '1') return;
     sheetEl.className = 'on';

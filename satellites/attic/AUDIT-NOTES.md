@@ -1,5 +1,25 @@
 # THE ATTIC — audit, 2026-08-16
 
+> **2026-09-05, the games pass (Stephen: "needs built a lot more, not playable").**
+> Played end to end at 412x915 with real touch taps (`docs/GAMES-PASS-SEP05.md` has the
+> walk and the shots). No wall stops a player; the fleet audit's row 144 findings were
+> all true and are fixed in this pass: the dusty render let nothing through (grime
+> 0.79 x 0.79 = 0.956 over the object) and read as a failed image, now 0.62 + 0.42 off
+> the swipe so the thing shows as a shape and a colour and the wipe is a reveal; the
+> room's tones sat within four points of the ground and read as three smudges, now
+> about eighteen points up with ONE 0.34 scrim on `.atticbg::after`; the handheld's
+> title was `#ffffff` on whatever shell it rolled (white on a pale 1990s shell), it is
+> `inkOn(shell)` now; the hash and date lines were `#6f6350` on `#1e1811` (2.2:1) and
+> are `#9a8a6e`; the WIPE button's .24em tracking wrapped it at 375, .1em now; motes
+> 4 px at 0.45. The shared ♫ chip is asked to `reseat()` after every card, sheet and
+> the rules close, but it still scores the art box as free and parks on its left edge
+> (music-unlocks.js, not this file).
+> **Measured, not asserted:** DUST OFF is not forty seconds of committed dragging. One
+> raster of 24 touch swipes across the 346 px panel cleared 92% and found all 10 stubs
+> with 83 s still on the clock. It pays whoever drags. That is an economy call and is
+> left as is. Title uniqueness over 1000 pulls per class: 74.5% (COMIC) to 94.6%
+> (CEREAL) unique, table in the games pass ledger.
+
 > **2026-08-24 UPDATE, READ THIS FIRST.**
 > The gate moved: **`node satellites/attic/check.js`** is the suite now, in the
 > house pattern the rest of the fleet uses (vm + DOM stub, `ok()`/`group()`,
