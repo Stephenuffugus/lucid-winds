@@ -15,8 +15,12 @@ the game folder; you do not fetch anything from the network at night.
 
 - 2026-09-05 Fable: plan written, catalogue packed and checked (Vega, Polaris, Sirius, Altair, Deneb, Betelgeuse all present
   with the right numbers). Nothing built.
-- 2026-09-05 Opus: P0 step 1, `tools/check.js` with one gate and no `sim.js` to run, red, pasted in section 13. Next action:
-  P0 step 1 continued, the scaffold and the ASTRO layer in `satellites/asterism/index.html`.
+- 2026-09-05 Opus: P0 step 1, `tools/check.js` with one gate and no `sim.js` to run, red, pasted in section 13.
+- 2026-09-05 Opus: **P0 done except the boot gate.** CONFIG, DATA (catalogue loader, the 88 regions with their charted
+  English names, 172 cities, 30 prompts), ASTRO and the whole MYTH grammar are in `index.html`; `sim.js` runs them
+  headless with `--test`, `--myth=N` and `--sky=lat,lon,iso`. 97 assertions green, 5000 myths green, both watched to
+  fail. The `--sky` listing is in section 13 and it is right by eye. Next action: P0 step 3, `test/boot.mjs`, which
+  needs the SKY layer to draw something, so it goes with P1 step 1.
 
 ---
 
@@ -454,6 +458,95 @@ Error: Cannot find module '/workspaces/lucid-winds/satellites/asterism/sim.js'
 
 
 ---
+
+### P0 steps 2 and 4, the astronomy with published answers (2026-09-05)
+
+```
+$ node satellites/asterism/tools/check.js
+astro           pass  0s
+myth            pass  3s
+
+ALL GATES PASSED
+
+$ node sim.js --test
+PASSED 97 / FAILED 0   (total 97)
+ASTERISM TEST OK
+
+$ node sim.js --myth=5000
+5000 myths: 5000 distinct, 67 to 116 words
+ASTERISM MYTH OK
+```
+
+**Both watched to fail.**
+
+```
+$ (the sign of the longitude term flipped in lstHours)
+FAIL  local sidereal time is Greenwich plus the longitude in hours   [expected about 13.164, got 0.2307]
+FAIL  and east of Greenwich it runs ahead   [expected about 19.697375, got 17.697375]
+FAIL  local sidereal time at Columbus on 2026-07-15 04:00 UT   [expected about 18.002, got 5.0684]
+FAIL  Vega is 82.78 degrees up   [expected about 82.78, got -8.406]
+FAIL  and 96.75 degrees round from north, east of south   [expected about 96.75, got 341.91]
+FAIL  which puts it east of the meridian, not west
+
+$ (a dash put into one ORIGIN_OPEN fragment)
+FAIL  no dash, no exclamation point and no always, never or forever in the corpus
+      [dash in ORIGIN_OPEN: Long before the lighthouse - before any of it,]
+```
+
+**What the gates caught before any of it was drawn.**
+
+1. `unproject` was out by 38 degrees at the edge of a 90 degree field. The forward map uses
+   `k = 1 / (1 + cos c)`, which is the standard `2R` stereographic form with R a half, so the inverse
+   is `c = 2 atan(rho)`; the textbook R = 1 version, `c = 2 atan(rho / 2)`, was in there. Nothing else
+   would have shown it: every star still lands somewhere plausible, and only a tap would have been
+   wrong, silently, forever.
+2. Four whole SHAPE lists read as unreachable because the myth gate matched a fragment by the text
+   before its first slot, and those fragments START with `{N}`. The gate matches the longest literal
+   run now. A gate that says a correct corpus is broken teaches you to ignore it just as fast as one
+   that cannot fail.
+3. Reading the myths, not the counters, found two things no counter would: a copper kettle that kept
+   the mice honest for eleven years (a loop drew its noun from creatures and its deed from vessels,
+   so the two are now separate archetypes with separate deeds), and star counts printed as digits,
+   which reads as a receipt rather than as a myth.
+4. The reachability check is now SKIPPED below 2000 seeds and says so. At 300 seeds a twelve fragment
+   list legitimately misses one and the gate went red on correct code.
+
+### The sky, for a human to check against a planetarium app
+
+```
+$ node sim.js --sky=39.96,-83,2026-07-15T04:00:00Z
+the sky from 39.96, -83.00 at 2026-07-15T04:00:00Z
+JD 2461236.66667   LST 18.0018 h   sun altitude -24.4
+moon: phase 0.029 (1 percent lit)  alt -19.4  az 324.5
+
+869 stars above the horizon. The twenty brightest:
+  name                 mag     alt      az
+  Arcturus             -0.05    37.9   263.7
+  Vega                  0.03    82.8    96.4
+  Altair                0.76    50.3   134.0
+  Spica                 0.98     8.5   247.6
+  Antares               1.06    20.3   201.6
+  Deneb                 1.25    60.2    66.3
+  Shaula                1.62    12.7   185.4
+  Alioth                1.76    39.2   315.4
+  Mirfak                1.79     6.1    24.1
+  Kaus Australis        1.79    15.4   174.9
+  Dubhe                 1.81    28.5   328.5
+  Alkaid                1.85    45.5   304.0
+  Sargas                1.86     6.9   184.2
+  Polaris               1.97    39.5     0.8
+  Nunki                 2.05    22.5   166.6
+  Alpheratz             2.07    16.7    65.8
+  Mirach                2.07    10.8    52.2
+  Kochab                2.07    49.4   342.0
+  Rasalhague            2.08    62.0   193.2
+  Almach                2.10     8.1    39.8
+```
+
+Read it by eye: Polaris stands due north at 39.5 degrees, which is the latitude. Vega is 82.8 degrees
+up, near the zenith, in the middle of July at midnight. Arcturus is going down in the west, Antares is
+low in the south, Deneb is climbing in the north east, and the moon is a day old and below the
+horizon. That is the sky over Columbus on that night.
 
 ## 14. THE OVERNIGHT PROTOCOL
 

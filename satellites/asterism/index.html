@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>ASTERISM</title>
+<meta name="description" content="The real night sky over your head, right now. Join the stars into a shape of your own, name it, and read the myth the sky writes for it.">
+<meta name="theme-color" content="#070A1A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ASTERISM">
+<link rel="manifest" href="./manifest.webmanifest?v=20260905a">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260905a">
+<link rel="icon" href="./icon-192.png?v=20260905a">
+<link rel="canonical" href="https://lucidwinds.com/satellites/asterism/">
+<style>
+/*  ASTERISM
+    game id: asterism   accent chalk gold #E8C97A on indigo
+    Planetarium hush. The type is half the app: a system serif, small caps for
+    names, generous letter spacing. No font files, no network.
+    The BOTTOM LEFT of the sky screen is empty on purpose: the fleet's music
+    chip and its folded pill seat themselves there. */
+:root{
+  --ink:#070A1A; --ink2:#0C1226; --panel:#121A33; --line:#243055;
+  --gold:#E8C97A; --cream:#E8E2D2; --dim:#7C87A8; --warm:#C9A86A;
+  --serif:Georgia,"Iowan Old Style","Palatino Linotype","Book Antiqua","Times New Roman",serif;
+  --safeT:env(safe-area-inset-top,0px);
+  --safeB:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%;background:var(--ink);color:var(--cream);
+  font-family:var(--serif);overscroll-behavior:none;-webkit-user-select:none;user-select:none}
+#app{position:fixed;inset:0;overflow:hidden;background:var(--ink)}
+#sky{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+
+/* ---------- the sky screen furniture ---------- */
+#chrome{position:absolute;inset:0;pointer-events:none;z-index:5}
+.chip{position:absolute;pointer-events:auto;background:rgba(10,16,34,.72);
+  border:1px solid rgba(232,201,122,.28);color:var(--cream);border-radius:14px;
+  min-height:48px;padding:8px 14px;font-size:.8rem;letter-spacing:.05em;
+  font-family:var(--serif);display:flex;flex-direction:column;justify-content:center;
+  text-align:left;line-height:1.35;max-width:62vw}
+.chip .sub{font-size:.72rem;color:var(--dim);letter-spacing:.06em}
+#chipPlace{left:calc(12px + env(safe-area-inset-left,0px));top:calc(10px + var(--safeT))}
+.iconbtn{position:absolute;pointer-events:auto;background:rgba(10,16,34,.72);
+  border:1px solid rgba(232,201,122,.28);color:var(--gold);border-radius:14px;
+  display:flex;align-items:center;justify-content:center;padding:0;line-height:1;
+  font-family:var(--serif);font-size:1.05rem}
+#btnMenu{right:calc(12px + env(safe-area-inset-right,0px));top:calc(10px + var(--safeT));
+  width:48px;height:48px}
+#btnDraw{right:calc(14px + env(safe-area-inset-right,0px));bottom:calc(18px + var(--safeB));
+  width:56px;height:56px;border-radius:50%;font-size:.66rem;letter-spacing:.12em}
+#btnUndo{right:calc(80px + env(safe-area-inset-right,0px));bottom:calc(22px + var(--safeB));
+  width:48px;height:48px;border-radius:50%;font-size:.62rem;letter-spacing:.1em}
+#btnUndo[hidden]{display:none}
+#starLabel{position:absolute;pointer-events:none;font-size:.78rem;letter-spacing:.1em;
+  color:var(--gold);text-shadow:0 0 12px rgba(0,0,0,.95);opacity:0;
+  transition:opacity 260ms ease-out;white-space:nowrap;transform:translate(-50%,0)}
+#starLabel.on{opacity:.95}
+#promptCard{position:absolute;left:50%;transform:translateX(-50%);
+  top:calc(70px + var(--safeT));width:86%;max-width:330px;pointer-events:auto;
+  background:rgba(10,16,34,.86);border:1px solid rgba(232,201,122,.24);
+  border-radius:16px;padding:14px 16px;font-size:.82rem;line-height:1.6;color:var(--cream)}
+#promptCard[hidden]{display:none}
+#promptCard .cap{font-size:.68rem;letter-spacing:.2em;color:var(--dim);
+  text-transform:uppercase;margin-bottom:6px}
+#promptCard button{margin-top:10px}
+
+/* ---------- sheets and screens ---------- */
+.screen{position:absolute;inset:0;z-index:10;background:var(--ink);
+  display:none;flex-direction:column;align-items:center;
+  padding:calc(18px + var(--safeT)) 18px calc(18px + var(--safeB));
+  overflow-y:auto;overscroll-behavior:contain}
+.screen.on{display:flex}
+.sheet{position:absolute;left:0;right:0;bottom:0;top:auto;z-index:12;
+  background:var(--ink2);border-top:1px solid var(--line);
+  border-radius:20px 20px 0 0;max-height:88%;display:none;flex-direction:column;
+  align-items:center;padding:18px 18px calc(20px + var(--safeB));overflow-y:auto;
+  overscroll-behavior:contain}
+.sheet.on{display:flex}
+.spacer{flex:1 1 auto;min-height:8px}
+.btn{pointer-events:auto;width:100%;max-width:330px;min-height:56px;
+  background:rgba(18,26,51,.9);border:1px solid rgba(232,201,122,.4);
+  color:var(--gold);border-radius:14px;font-size:.95rem;letter-spacing:.16em;
+  margin:6px 0;padding:14px 16px;font-family:var(--serif);text-transform:uppercase}
+.btn.small{min-height:48px;font-size:.8rem;letter-spacing:.13em}
+.btn.ghost{border-color:rgba(124,135,168,.34);color:var(--dim)}
+.btn[disabled]{opacity:.4}
+.row{display:flex;gap:10px;width:100%;max-width:330px}
+.cap{font-size:.7rem;letter-spacing:.22em;color:var(--dim);margin:12px 0 6px;
+  width:100%;max-width:330px;text-align:left;text-transform:uppercase}
+.lede{font-size:.88rem;line-height:1.75;color:var(--cream);width:100%;
+  max-width:330px;margin:8px 0}
+.tiny{font-size:.7rem;line-height:1.7;color:var(--dim);width:100%;max-width:330px;margin:6px 0}
+.title{font-size:1.3rem;letter-spacing:.2em;color:var(--gold);font-variant:small-caps;
+  text-align:center;margin:4px 0 2px}
+input[type=text],input[type=date],input[type=number]{width:100%;max-width:330px;min-height:48px;
+  background:rgba(7,10,26,.9);border:1px solid rgba(232,201,122,.3);color:var(--cream);
+  border-radius:12px;padding:10px 14px;font-family:var(--serif);font-size:1rem;margin:6px 0}
+input:focus{outline:1px solid var(--gold)}
+.card{pointer-events:auto;width:100%;max-width:330px;min-height:88px;
+  background:rgba(18,26,51,.86);border:1px solid rgba(232,201,122,.22);
+  border-radius:14px;margin:6px 0;padding:12px 14px;display:flex;align-items:center;
+  gap:12px;color:var(--cream);font-family:var(--serif);text-align:left}
+.card canvas{width:64px;height:64px;flex:0 0 64px;border-radius:10px;background:#050814}
+.card .nm{font-size:.98rem;font-variant:small-caps;letter-spacing:.1em;color:var(--gold)}
+.card .sub{font-size:.7rem;color:var(--dim);letter-spacing:.05em;margin-top:3px;line-height:1.5}
+#mythPaper{width:100%;max-width:330px;margin:10px 0;padding:18px 18px 20px;
+  border-radius:10px;color:#2A2318;font-size:.92rem;line-height:1.85;
+  background:linear-gradient(160deg,#EFE4C8 0%,#E6D8B6 55%,#DCCBA4 100%);
+  box-shadow:inset 0 0 44px rgba(120,96,52,.28);min-height:120px;text-align:left}
+#mythPaper .nm{font-variant:small-caps;letter-spacing:.14em;font-size:1.1rem;
+  display:block;margin-bottom:10px;color:#3A2F1C}
+#cityList{width:100%;max-width:330px;max-height:220px;overflow-y:auto;
+  border:1px solid var(--line);border-radius:12px;margin:6px 0}
+#cityList button{display:block;width:100%;text-align:left;background:none;border:0;
+  border-bottom:1px solid rgba(36,48,85,.6);color:var(--cream);font-family:var(--serif);
+  font-size:.85rem;padding:12px 14px;min-height:48px}
+#toast{position:fixed;left:50%;top:12%;transform:translateX(-50%);
+  background:rgba(10,16,34,.95);border:1px solid rgba(232,201,122,.34);color:var(--cream);
+  padding:10px 16px;border-radius:12px;font-size:.82rem;z-index:40;opacity:0;
+  pointer-events:none;transition:opacity 180ms ease-out;max-width:84%;text-align:center}
+#toast.on{opacity:1}
+#testPanel{position:absolute;inset:0;z-index:60;background:#04070f;color:#cfe;overflow:auto;
+  font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;padding:14px;display:none;
+  white-space:pre-wrap}
+#testPanel.on{display:block}
+.fail{color:#ff8080}.pass{color:#9be36b}
+@media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
+</style>
+<script src="/music-unlocks.js?v=20260905a" defer></script>
+</head>
+<body>
+<h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">ASTERISM</h1>
+<div id="app">
+  <canvas id="sky"></canvas>
+
+  <div id="chrome">
+    <button class="chip" id="chipPlace"><span id="placeName">Columbus, Ohio</span><span class="sub" id="placeTime">tonight</span></button>
+    <button class="iconbtn" id="btnMenu" aria-label="Menu">&#9776;</button>
+    <button class="iconbtn" id="btnUndo" hidden>UNDO</button>
+    <button class="iconbtn" id="btnDraw">DRAW</button>
+    <div id="starLabel"></div>
+    <div id="promptCard" hidden>
+      <div class="cap">Prompt of the night</div>
+      <div id="promptText"></div>
+      <button class="btn small ghost" id="btnPromptOk">GOT IT</button>
+    </div>
+  </div>
+
+  <div class="screen" id="scrHow">
+    <div class="spacer"></div>
+    <div class="title">ASTERISM</div>
+    <p class="lede">This is your sky, right now.</p>
+    <p class="lede">Tap a star, then another.</p>
+    <p class="lede">Name what you made and the sky will tell you its story.</p>
+    <div class="spacer"></div>
+    <button class="btn" id="btnHowOk">GOT IT</button>
+  </div>
+
+  <div class="sheet" id="scrMenu">
+    <div class="cap">ASTERISM</div>
+    <button class="btn" id="btnAlmanac">ALMANAC</button>
+    <button class="btn small" id="btnBirth">BIRTH SKY</button>
+    <button class="btn small" id="btnPromptShow">PROMPT OF THE NIGHT</button>
+    <button class="btn small" id="btnSettings">SETTINGS</button>
+    <button class="btn small ghost" id="btnAbout">ABOUT</button>
+    <button class="btn small ghost" id="btnMenuClose">CLOSE</button>
+  </div>
+
+  <div class="sheet" id="scrName">
+    <div class="cap">Name what you made</div>
+    <input type="text" id="nameField" placeholder="Space Dog" maxlength="48" autocomplete="off">
+    <div class="row">
+      <button class="btn small" id="btnDice">ROLL A NAME</button>
+      <button class="btn small ghost" id="btnNameCancel">BACK</button>
+    </div>
+    <button class="btn" id="btnNameSave">SAVE IT</button>
+  </div>
+
+  <div class="sheet" id="scrMyth">
+    <div id="mythPaper"><span class="nm" id="mythName"></span><span id="mythText"></span></div>
+    <div class="row">
+      <button class="btn small" id="btnAnother">ANOTHER</button>
+      <button class="btn small ghost" id="btnMythShare">SHARE</button>
+    </div>
+    <button class="btn" id="btnMythKeep">KEEP IT</button>
+  </div>
+
+  <div class="screen" id="scrAlmanac">
+    <div class="cap">The almanac</div>
+    <div id="almanacList" style="width:100%;max-width:330px"></div>
+    <p class="tiny" id="almanacEmpty" hidden>Nothing charted yet. Join a few stars and name them.</p>
+    <div class="spacer"></div>
+    <button class="btn small ghost" id="btnAlmBack">BACK</button>
+  </div>
+
+  <div class="screen" id="scrSpread">
+    <div class="title" id="spreadName"></div>
+    <div class="tiny" id="spreadWhen" style="text-align:center"></div>
+    <canvas id="spreadChart" width="660" height="660" style="width:100%;max-width:300px;margin:10px 0;border-radius:12px;background:#050814"></canvas>
+    <div id="spreadMyth" style="width:100%;max-width:330px;font-size:.88rem;line-height:1.85;color:var(--cream)"></div>
+    <div class="tiny" id="spreadWell"></div>
+    <button class="btn small" id="btnShowSky">SHOW ON SKY</button>
+    <button class="btn small" id="btnPoster">MAKE A POSTER</button>
+    <button class="btn small" id="btnShare">SHARE A LINK</button>
+    <button class="btn small ghost" id="btnDelete">DELETE</button>
+    <button class="btn small ghost" id="btnSpreadBack">BACK</button>
+  </div>
+
+  <div class="screen" id="scrPoster">
+    <div class="cap">Poster</div>
+    <canvas id="posterPreview" width="512" height="640" style="width:100%;max-width:256px;border-radius:8px;background:#050814"></canvas>
+    <div class="row">
+      <button class="btn small" data-layout="chart" id="btnLayChart">CHART</button>
+      <button class="btn small" data-layout="minimal" id="btnLayMin">MINIMAL</button>
+    </div>
+    <button class="btn small" data-layout="plate" id="btnLayPlate">PLATE</button>
+    <button class="btn" id="btnExport">EXPORT</button>
+    <button class="btn small ghost" id="btnPosterBack">BACK</button>
+  </div>
+
+  <div class="sheet" id="scrPlace">
+    <div class="cap" id="placeCap">Place and time</div>
+    <div class="row">
+      <button class="btn small" id="btnModeTonight">TONIGHT</button>
+      <button class="btn small ghost" id="btnModeBirth">A DATE</button>
+    </div>
+    <div id="tonightBox" style="width:100%;max-width:330px">
+      <div class="cap">Hour of the night</div>
+      <input type="range" id="hourScrub" min="0" max="1439" value="0" style="width:100%;height:48px">
+      <div class="tiny" id="hourLabel"></div>
+    </div>
+    <div id="birthBox" style="width:100%;max-width:330px" hidden>
+      <div class="cap">The night</div>
+      <input type="date" id="birthDate">
+      <div class="tiny">The sky as it stood at about nine in the evening, where you say.</div>
+    </div>
+    <div class="cap">Where you are</div>
+    <input type="text" id="citySearch" placeholder="Search a city" autocomplete="off">
+    <div id="cityList"></div>
+    <div class="row">
+      <input type="number" id="latField" step="0.01" placeholder="Latitude">
+      <input type="number" id="lonField" step="0.01" placeholder="Longitude">
+    </div>
+    <button class="btn small" id="btnGeo">USE MY LOCATION</button>
+    <div class="tiny" id="geoState"></div>
+    <button class="btn" id="btnPlaceGo">GO</button>
+    <button class="btn small ghost" id="btnPlaceClose">CLOSE</button>
+  </div>
+
+  <div class="sheet" id="scrSettings">
+    <div class="cap">Settings</div>
+    <button class="btn small" id="btnSound">SOUND ON</button>
+    <button class="btn small" id="btnTwinkle">TWINKLE ON</button>
+    <button class="btn small" id="btnMotion">MOTION ON</button>
+    <div class="cap">Your almanac</div>
+    <button class="btn small ghost" id="btnExportAlm">COPY MY ALMANAC</button>
+    <input type="text" id="importField" placeholder="Paste an almanac here" autocomplete="off">
+    <button class="btn small ghost" id="btnImportAlm">BRING IT IN</button>
+    <button class="btn small ghost" id="btnSettingsClose">CLOSE</button>
+  </div>
+
+  <div class="screen" id="scrAbout">
+    <div class="spacer"></div>
+    <div class="title">ASTERISM</div>
+    <p class="lede" style="text-align:center">The sky is still hiring gods</p>
+    <p class="tiny">An asterism is the real name for a star pattern nobody made official. The Big Dipper is one. So is anything you draw here.</p>
+    <p class="tiny" id="hygCredit">Star data from the HYG database by David Nash, astronexus.com, CC BY SA 4.0</p>
+    <p class="tiny">Sky Wolf Studio</p>
+    <div class="spacer"></div>
+    <button class="btn small ghost" id="btnAboutBack">BACK</button>
+  </div>
+
+  <div id="toast"></div>
+  <div id="testPanel"></div>
+</div>
+
+<script>
+/* ============================================================================
+   ASTERISM   game id: asterism
+   Single file, no deps, no frameworks, no fonts and no data from the network.
+   Layer order per HANDOFF-ASTERISM section 4:
+   CONFIG, DATA, ASTRO, SKY, DRAW, MYTH, ALMANAC, POSTER, SHARE, AUDIO, INPUT,
+   TEST, BOOT. The MYTH GRAMMAR sits inside the ASTRO_EXPORT block with CONFIG,
+   DATA and ASTRO, because sim.js runs all four headless.
+
+   THE RULE OF THE EXPORT BLOCK
+     Nothing between ASTRO_EXPORT_START and ASTRO_EXPORT_END may touch document,
+     window, performance or Math.random. sim.js runs that block in plain Node
+     so the astronomy and the myths have one implementation, and the numbers can
+     be checked against published values rather than against themselves.
+
+   TIME
+     Every ASTRO call takes UTC milliseconds. `Date` in a browser is local, so a
+     Julian Day is always built from getTime() or Date.UTC, never from
+     getHours(). A sign error in the hour angle mirrors the whole sky east to
+     west and every star still looks plausible, which is why the Vega azimuth is
+     asserted and not just its altitude.
+   ========================================================================== */
+
+// ---- ASTRO_EXPORT_START ----
+/* ========================= 1. CONFIG ========================= */
+var CONFIG = Object.freeze({
+  GAME_ID: 'asterism',
+  SAVE_KEY: 'lw_asterism_v1',
+  SAVE_V: 1,
+
+  FALLBACK_PLACE: Object.freeze({ name: 'Columbus, Ohio', lat: 39.96, lon: -83.00 }),
+
+  FOV_MIN: 30, FOV_MAX: 120, FOV_DEFAULT: 90,
+  PICK_PX: 28, MAX_STARS_PER: 60, LABEL_MS: 1200, DRAG_SLOP_PX: 10,
+
+  TWINKLE_MAG: 3.0, TWINKLE_AMP: 0.15, TWINKLE_MAX: 60,
+  MAG_LIMIT_DARK: 5.0, MAG_LIMIT_DUSK: 2.0, MAG_LIMIT_TWILIGHT: 3.5,
+  SUN_DARK: -18, SUN_DUSK: -6,
+
+  TYPE_CPS: 30, REROLL_MAX: 3,
+  POSTER_W: 2048, POSTER_H: 2560,
+  GEO_TIMEOUT_MS: 6000,
+
+  /* the myth's own limits, asserted by test/myth.mjs */
+  MYTH_MIN_WORDS: 60, MYTH_MAX_WORDS: 140,
+  /* the sky the almanac quotes is the sky at about nine in the evening; the app
+     has no time zone table and says "about nine", never a minute (3.7) */
+  EVENING_HOUR: 21
+});
+
+/* ========================= 2. RNG ========================= */
+function makeRNG(seed) {
+  var a = seed >>> 0;
+  var r = function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    var t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  r.int = function (n) { return Math.floor(r() * n); };
+  r.range = function (lo, hi) { return lo + Math.floor(r() * (hi - lo + 1)); };
+  r.pick = function (arr) { return arr[Math.floor(r() * arr.length)]; };
+  r.seed = seed >>> 0;
+  return r;
+}
+function seedFromString(s) {
+  var h = 2166136261 >>> 0, i;
+  for (i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return h >>> 0;
+}
+function mixSeed(seed, salt) {
+  var h = (seed ^ 0x9E3779B9) >>> 0;
+  h = Math.imul(h ^ (salt + 0x85EBCA6B), 0x27D4EB2D) >>> 0;
+  h ^= h >>> 15; h = Math.imul(h, 0x165667B1) >>> 0; h ^= h >>> 13;
+  return h >>> 0;
+}
+function dailySeedFor(dateStr) { return seedFromString(dateStr + CONFIG.GAME_ID); }
+
+/* ========================= 3. ASTRO ========================= */
+/* Degrees at every edge, radians only inside a function. */
+var DEG = Math.PI / 180, RAD = 180 / Math.PI;
+function mod(x, m) { return ((x % m) + m) % m; }
+function clamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
+
+/* Julian Day from a UTC millisecond timestamp. */
+function jd(msUtc) { return msUtc / 86400000 + 2440587.5; }
+
+/* Greenwich mean sidereal time in hours. The constant 18.697374558 IS the
+   published GMST at J2000.0, which is why the test can assert it exactly. */
+function gmstHours(J) { return mod(18.697374558 + 24.06570982441908 * (J - 2451545.0), 24); }
+/* east positive longitude */
+function lstHours(J, lonDeg) { return mod(gmstHours(J) + lonDeg / 15, 24); }
+
+/* Altitude and azimuth, azimuth measured from north through east. */
+function altAz(raH, decDeg, latDeg, lonDeg, J) {
+  var H = (lstHours(J, lonDeg) - raH) * 15;
+  var sd = Math.sin(decDeg * DEG), cd = Math.cos(decDeg * DEG);
+  var sl = Math.sin(latDeg * DEG), cl = Math.cos(latDeg * DEG);
+  var ch = Math.cos(H * DEG), sh = Math.sin(H * DEG);
+  var alt = Math.asin(clamp(sd * sl + cd * cl * ch, -1, 1)) * RAD;
+  var az = mod(Math.atan2(-sh * cd, cl * sd - sl * cd * ch) * RAD, 360);
+  return { alt: alt, az: az, ha: H };
+}
+/* the inverse, for a tap and for the Birth Sky pipeline */
+function altAzToRaDec(alt, az, latDeg, lonDeg, J) {
+  var sa = Math.sin(alt * DEG), ca = Math.cos(alt * DEG);
+  var sl = Math.sin(latDeg * DEG), cl = Math.cos(latDeg * DEG);
+  var dec = Math.asin(clamp(sa * sl + ca * cl * Math.cos(az * DEG), -1, 1)) * RAD;
+  var H = Math.atan2(-Math.sin(az * DEG) * ca, sa * cl - ca * sl * Math.cos(az * DEG)) * RAD;
+  return { ra: mod(lstHours(J, lonDeg) - H / 15, 24), dec: dec };
+}
+
+/* USNO low precision sun. Used for the palette and the magnitude limit only. */
+function sunLambda(J) {
+  var n = J - 2451545.0;
+  var L = mod(280.460 + 0.9856474 * n, 360);
+  var g = mod(357.528 + 0.9856003 * n, 360);
+  return mod(L + 1.915 * Math.sin(g * DEG) + 0.020 * Math.sin(2 * g * DEG), 360);
+}
+function obliquity(J) { return 23.439 - 0.0000004 * (J - 2451545.0); }
+function sunRaDec(J) {
+  var lam = sunLambda(J) * DEG, eps = obliquity(J) * DEG;
+  return {
+    ra: mod(Math.atan2(Math.cos(eps) * Math.sin(lam), Math.cos(lam)) * RAD, 360) / 15,
+    dec: Math.asin(Math.sin(eps) * Math.sin(lam)) * RAD
+  };
+}
+function sunAlt(J, lat, lon) { var s = sunRaDec(J); return altAz(s.ra, s.dec, lat, lon, J).alt; }
+
+/* Low precision moon: longitude, latitude, and a phase taken from the real
+   ELONGATION rather than from a mean lunation. Both agree with the January 2000
+   new and full moons; the elongation is three times closer, and it is free
+   because both longitudes are already here. */
+function moonLonLat(J) {
+  var d = J - 2451545.0;
+  var L = mod(218.316 + 13.176396 * d, 360);
+  var M = mod(134.963 + 13.064993 * d, 360);
+  var F = mod(93.272 + 13.229350 * d, 360);
+  return { lon: mod(L + 6.289 * Math.sin(M * DEG), 360), lat: 5.128 * Math.sin(F * DEG) };
+}
+function eclToEq(lonDeg, latDeg, J) {
+  var eps = obliquity(J) * DEG, l = lonDeg * DEG, b = latDeg * DEG;
+  var x = Math.cos(b) * Math.cos(l);
+  var y = Math.cos(eps) * Math.cos(b) * Math.sin(l) - Math.sin(eps) * Math.sin(b);
+  var z = Math.sin(eps) * Math.cos(b) * Math.sin(l) + Math.cos(eps) * Math.sin(b);
+  return { ra: mod(Math.atan2(y, x) * RAD, 360) / 15, dec: Math.asin(clamp(z, -1, 1)) * RAD };
+}
+function moon(J) {
+  var m = moonLonLat(J);
+  var eq = eclToEq(m.lon, m.lat, J);
+  var phase = mod((m.lon - sunLambda(J)) / 360, 1);
+  return { ra: eq.ra, dec: eq.dec, phase: phase, lit: (1 - Math.cos(phase * 2 * Math.PI)) / 2 };
+}
+
+/* Stereographic projection about the view centre. Returns screen pixels and a
+   flag for anything behind the view cap. */
+function project(alt, az, viewAlt, viewAz, fovDeg, w, h) {
+  var a = alt * DEG, A = az * DEG, a0 = viewAlt * DEG, A0 = viewAz * DEG;
+  var dA = A - A0;
+  var cosc = Math.sin(a0) * Math.sin(a) + Math.cos(a0) * Math.cos(a) * Math.cos(dA);
+  var cosc_c = clamp(cosc, -1, 1);
+  var ang = Math.acos(cosc_c) * RAD;
+  var short = Math.min(w, h);
+  /* the field of view is measured across the short axis, so the scale is the
+     stereographic radius of half that field */
+  var kHalf = Math.tan((fovDeg / 4) * DEG);
+  var scale = (short / 2) / kHalf;
+  var denom = 1 + cosc_c;
+  if (denom < 1e-9) return { x: 0, y: 0, behind: true, ang: ang };
+  var k = 1 / denom;
+  var x = k * Math.cos(a) * Math.sin(dA);
+  var y = k * (Math.cos(a0) * Math.sin(a) - Math.sin(a0) * Math.cos(a) * Math.cos(dA));
+  return { x: w / 2 + x * scale, y: h / 2 - y * scale, behind: ang > 100, ang: ang };
+}
+function unproject(px, py, viewAlt, viewAz, fovDeg, w, h) {
+  var short = Math.min(w, h);
+  var kHalf = Math.tan((fovDeg / 4) * DEG);
+  var scale = (short / 2) / kHalf;
+  var x = (px - w / 2) / scale, y = (h / 2 - py) / scale;
+  var rho = Math.sqrt(x * x + y * y);
+  if (rho < 1e-12) return { alt: viewAlt, az: viewAz };
+  /* the forward map uses k = 1 / (1 + cos c), which is the standard 2R form
+     with R a half, so the inverse is c = 2 atan(rho / 2R) = 2 atan(rho). The
+     textbook R = 1 version, c = 2 atan(rho / 2), is out by 38 degrees at the
+     edge of a 90 degree field and the round trip gate caught it. */
+  var c = 2 * Math.atan(rho);
+  var a0 = viewAlt * DEG, A0 = viewAz * DEG;
+  var alt = Math.asin(clamp(Math.cos(c) * Math.sin(a0) + y * Math.sin(c) * Math.cos(a0) / rho, -1, 1));
+  var az = A0 + Math.atan2(x * Math.sin(c), rho * Math.cos(a0) * Math.cos(c) - y * Math.sin(a0) * Math.sin(c));
+  return { alt: alt * RAD, az: mod(az * RAD, 360) };
+}
+
+/* how near a point of sky is to the galactic plane, in degrees */
+var GAL_POLE_RA = 12.857, GAL_POLE_DEC = 27.13;
+function angSep(ra1H, dec1, ra2H, dec2) {
+  var d1 = dec1 * DEG, d2 = dec2 * DEG, dRa = (ra1H - ra2H) * 15 * DEG;
+  return Math.acos(clamp(Math.sin(d1) * Math.sin(d2) + Math.cos(d1) * Math.cos(d2) * Math.cos(dRa), -1, 1)) * RAD;
+}
+function galacticBand(raH, decDeg) { return Math.abs(angSep(raH, decDeg, GAL_POLE_RA, GAL_POLE_DEC) - 90); }
+
+/* the month in which a right ascension transits at nine in the evening */
+var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'];
+function wellPlacedMonth(raH, lonDeg, year) {
+  var best = 0, bestD = 999, m;
+  for (m = 0; m < 12; m++) {
+    /* the 15th of the month, at nine in the evening LOCAL, which with no time
+       zone table is longitude time (3.7) */
+    var J = jd(Date.UTC(year || 2026, m, 15, 0, 0, 0)) + (CONFIG.EVENING_HOUR - lonDeg / 15) / 24;
+    var l = lstHours(J, lonDeg);
+    var d = Math.abs(mod(l - raH + 12, 24) - 12);
+    if (d < bestD) { bestD = d; best = m; }
+  }
+  return MONTHS[best];
+}
+
+/* ========================= 4. DATA ========================= */
+/* The catalogue is a file, not a blob inside this page, because HYG is
+   CC BY SA 4.0 and the share alike obligation should attach to the data rather
+   than to the whole app (HANDOFF-ASTERISM 3.2). The credit is in the About
+   sheet and on every exported poster. */
+function buildCatalogue(json) {
+  var rows = json.stars, n = rows.length, i;
+  var cat = {
+    n: n,
+    ra: new Float32Array(n), dec: new Float32Array(n),
+    mag: new Float32Array(n), ci: new Float32Array(n),
+    hip: new Int32Array(n),
+    proper: new Array(n), con: new Array(n), bayer: new Array(n),
+    byHip: {}, bands: [], source: json.source
+  };
+  for (i = 0; i < 24; i++) cat.bands.push([]);
+  for (i = 0; i < n; i++) {
+    var r = rows[i];
+    cat.ra[i] = r[0]; cat.dec[i] = r[1]; cat.mag[i] = r[2]; cat.ci[i] = r[3];
+    cat.proper[i] = r[4] || ''; cat.con[i] = r[5] || ''; cat.bayer[i] = r[6] || '';
+    cat.hip[i] = r[7] | 0;
+    if (cat.hip[i] > 0) cat.byHip[cat.hip[i]] = i;
+    cat.bands[Math.min(23, Math.max(0, Math.floor(r[0])))].push(i);
+  }
+  return cat;
+}
+/* a star a finger may pick: it has a HIP so a share link survives a catalogue
+   update (3.11), and it is bright enough to be drawn */
+function pickable(cat, i, magLimit) { return cat.hip[i] > 0 && cat.mag[i] <= magLimit; }
+/* what a star is called, for the label and for the myth */
+function starName(cat, i) {
+  if (cat.proper[i]) return cat.proper[i];
+  var b = cat.bayer[i], c = CON_PLAIN[cat.con[i]];
+  if (b && c) return b + ' of ' + c;
+  return c ? 'a star of ' + c : 'an unnamed star';
+}
+
+/* The 88 regions. Latin for the record, and the charted English name the myth
+   uses, because "in the region the old charts call the Lyre" reads and
+   "in Lyr" does not. TEST asserts every code in the catalogue has both. */
+var CON_NAMES = {
+  And:'Andromeda', Ant:'Antlia', Aps:'Apus', Aql:'Aquila', Aqr:'Aquarius', Ara:'Ara',
+  Ari:'Aries', Aur:'Auriga', Boo:'Bootes', CMa:'Canis Major', CMi:'Canis Minor',
+  CVn:'Canes Venatici', Cae:'Caelum', Cam:'Camelopardalis', Cap:'Capricornus',
+  Car:'Carina', Cas:'Cassiopeia', Cen:'Centaurus', Cep:'Cepheus', Cet:'Cetus',
+  Cha:'Chamaeleon', Cir:'Circinus', Cnc:'Cancer', Col:'Columba', Com:'Coma Berenices',
+  CrA:'Corona Australis', CrB:'Corona Borealis', Crt:'Crater', Cru:'Crux', Crv:'Corvus',
+  Cyg:'Cygnus', Del:'Delphinus', Dor:'Dorado', Dra:'Draco', Equ:'Equuleus', Eri:'Eridanus',
+  For:'Fornax', Gem:'Gemini', Gru:'Grus', Her:'Hercules', Hor:'Horologium', Hya:'Hydra',
+  Hyi:'Hydrus', Ind:'Indus', LMi:'Leo Minor', Lac:'Lacerta', Leo:'Leo', Lep:'Lepus',
+  Lib:'Libra', Lup:'Lupus', Lyn:'Lynx', Lyr:'Lyra', Men:'Mensa', Mic:'Microscopium',
+  Mon:'Monoceros', Mus:'Musca', Nor:'Norma', Oct:'Octans', Oph:'Ophiuchus', Ori:'Orion',
+  Pav:'Pavo', Peg:'Pegasus', Per:'Perseus', Phe:'Phoenix', Pic:'Pictor',
+  PsA:'Piscis Austrinus', Psc:'Pisces', Pup:'Puppis', Pyx:'Pyxis', Ret:'Reticulum',
+  Scl:'Sculptor', Sco:'Scorpius', Sct:'Scutum', Ser:'Serpens', Sex:'Sextans', Sge:'Sagitta',
+  Sgr:'Sagittarius', Tau:'Taurus', Tel:'Telescopium', TrA:'Triangulum Australe',
+  Tri:'Triangulum', Tuc:'Tucana', UMa:'Ursa Major', UMi:'Ursa Minor', Vel:'Vela',
+  Vir:'Virgo', Vol:'Volans', Vul:'Vulpecula'
+};
+var CON_PLAIN = {
+  And:'the Chained Woman', Ant:'the Air Pump', Aps:'the Bird of Paradise', Aql:'the Eagle',
+  Aqr:'the Water Bearer', Ara:'the Altar', Ari:'the Ram', Aur:'the Charioteer',
+  Boo:'the Herdsman', CMa:'the Great Dog', CMi:'the Little Dog', CVn:'the Hunting Dogs',
+  Cae:'the Chisel', Cam:'the Giraffe', Cap:'the Sea Goat', Car:'the Keel',
+  Cas:'the Seated Queen', Cen:'the Centaur', Cep:'the King', Cet:'the Whale',
+  Cha:'the Chameleon', Cir:'the Compasses', Cnc:'the Crab', Col:'the Dove',
+  Com:"the Queen's Hair", CrA:'the Southern Crown', CrB:'the Northern Crown',
+  Crt:'the Cup', Cru:'the Cross', Crv:'the Crow', Cyg:'the Swan', Del:'the Dolphin',
+  Dor:'the Swordfish', Dra:'the Dragon', Equ:'the Little Horse', Eri:'the River',
+  For:'the Furnace', Gem:'the Twins', Gru:'the Crane', Her:'the Kneeling Man',
+  Hor:'the Clock', Hya:'the Water Snake', Hyi:'the Lesser Water Snake', Ind:'the Indian',
+  LMi:'the Little Lion', Lac:'the Lizard', Leo:'the Lion', Lep:'the Hare',
+  Lib:'the Scales', Lup:'the Wolf', Lyn:'the Lynx', Lyr:'the Lyre', Men:'the Table Mountain',
+  Mic:'the Microscope', Mon:'the Unicorn', Mus:'the Fly', Nor:'the Set Square',
+  Oct:'the Octant', Oph:'the Serpent Bearer', Ori:'the Hunter', Pav:'the Peacock',
+  Peg:'the Winged Horse', Per:'the Hero', Phe:'the Phoenix', Pic:'the Easel',
+  PsA:'the Southern Fish', Psc:'the Fishes', Pup:'the Stern', Pyx:'the Compass',
+  Ret:'the Net', Scl:'the Sculptor', Sco:'the Scorpion', Sct:'the Shield',
+  Ser:'the Serpent', Sex:'the Sextant', Sge:'the Arrow', Sgr:'the Archer',
+  Tau:'the Bull', Tel:'the Telescope', TrA:'the Southern Triangle', Tri:'the Triangle',
+  Tuc:'the Toucan', UMa:'the Great Bear', UMi:'the Little Bear', Vel:'the Sails',
+  Vir:'the Maiden', Vol:'the Flying Fish', Vul:'the Little Fox'
+};
+
+/* Somewhere to stand. Every US state capital, every capital worth a name, and
+   the cities people actually mean. Longitude is east positive. */
+var CITIES = [
+['Columbus, Ohio','US',39.96,-83.00],['Cleveland, Ohio','US',41.50,-81.69],
+['Cincinnati, Ohio','US',39.10,-84.51],['Toledo, Ohio','US',41.65,-83.54],
+['Athens, Ohio','US',39.33,-82.10],['Montgomery, Alabama','US',32.38,-86.30],
+['Juneau, Alaska','US',58.30,-134.42],['Phoenix, Arizona','US',33.45,-112.07],
+['Little Rock, Arkansas','US',34.75,-92.29],['Sacramento, California','US',38.58,-121.49],
+['Denver, Colorado','US',39.74,-104.99],['Hartford, Connecticut','US',41.76,-72.68],
+['Dover, Delaware','US',39.16,-75.52],['Tallahassee, Florida','US',30.44,-84.28],
+['Atlanta, Georgia','US',33.75,-84.39],['Honolulu, Hawaii','US',21.31,-157.86],
+['Boise, Idaho','US',43.62,-116.20],['Springfield, Illinois','US',39.80,-89.64],
+['Indianapolis, Indiana','US',39.77,-86.16],['Des Moines, Iowa','US',41.59,-93.62],
+['Topeka, Kansas','US',39.05,-95.68],['Frankfort, Kentucky','US',38.20,-84.87],
+['Baton Rouge, Louisiana','US',30.45,-91.19],['Augusta, Maine','US',44.31,-69.78],
+['Annapolis, Maryland','US',38.98,-76.49],['Boston, Massachusetts','US',42.36,-71.06],
+['Lansing, Michigan','US',42.73,-84.56],['Saint Paul, Minnesota','US',44.95,-93.09],
+['Jackson, Mississippi','US',32.30,-90.18],['Jefferson City, Missouri','US',38.58,-92.17],
+['Helena, Montana','US',46.59,-112.04],['Lincoln, Nebraska','US',40.81,-96.68],
+['Carson City, Nevada','US',39.16,-119.77],['Concord, New Hampshire','US',43.21,-71.54],
+['Trenton, New Jersey','US',40.22,-74.76],['Santa Fe, New Mexico','US',35.69,-105.94],
+['Albany, New York','US',42.65,-73.76],['Raleigh, North Carolina','US',35.78,-78.64],
+['Bismarck, North Dakota','US',46.81,-100.78],['Oklahoma City, Oklahoma','US',35.47,-97.52],
+['Salem, Oregon','US',44.94,-123.04],['Harrisburg, Pennsylvania','US',40.27,-76.88],
+['Providence, Rhode Island','US',41.82,-71.41],['Columbia, South Carolina','US',34.00,-81.03],
+['Pierre, South Dakota','US',44.37,-100.35],['Nashville, Tennessee','US',36.16,-86.78],
+['Austin, Texas','US',30.27,-97.74],['Salt Lake City, Utah','US',40.76,-111.89],
+['Montpelier, Vermont','US',44.26,-72.58],['Richmond, Virginia','US',37.54,-77.44],
+['Olympia, Washington','US',47.04,-122.90],['Charleston, West Virginia','US',38.35,-81.63],
+['Madison, Wisconsin','US',43.07,-89.40],['Cheyenne, Wyoming','US',41.14,-104.82],
+['New York City','US',40.71,-74.01],['Chicago','US',41.88,-87.63],
+['Los Angeles','US',34.05,-118.24],['Houston','US',29.76,-95.37],
+['Philadelphia','US',39.95,-75.17],['San Antonio','US',29.42,-98.49],
+['San Diego','US',32.72,-117.16],['Dallas','US',32.78,-96.80],
+['San Francisco','US',37.77,-122.42],['Seattle','US',47.61,-122.33],
+['Miami','US',25.76,-80.19],['Detroit','US',42.33,-83.05],
+['Pittsburgh','US',40.44,-79.996],['Portland, Oregon','US',45.52,-122.68],
+['Las Vegas','US',36.17,-115.14],['New Orleans','US',29.95,-90.07],
+['Anchorage','US',61.22,-149.90],['Toronto','CA',43.65,-79.38],
+['Montreal','CA',45.50,-73.57],['Vancouver','CA',49.28,-123.12],
+['Calgary','CA',51.05,-114.07],['Ottawa','CA',45.42,-75.70],
+['Mexico City','MX',19.43,-99.13],['Guadalajara','MX',20.66,-103.35],
+['Havana','CU',23.11,-82.37],['Kingston','JM',17.97,-76.79],
+['San Juan','PR',18.47,-66.11],['Guatemala City','GT',14.63,-90.51],
+['Panama City','PA',8.98,-79.52],['Bogota','CO',4.71,-74.07],
+['Quito','EC',-0.18,-78.47],['Lima','PE',-12.05,-77.04],
+['La Paz','BO',-16.50,-68.15],['Santiago','CL',-33.45,-70.67],
+['Buenos Aires','AR',-34.60,-58.38],['Montevideo','UY',-34.90,-56.16],
+['Sao Paulo','BR',-23.55,-46.63],['Rio de Janeiro','BR',-22.91,-43.17],
+['Brasilia','BR',-15.79,-47.88],['Caracas','VE',10.48,-66.90],
+['Reykjavik','IS',64.15,-21.94],['Dublin','IE',53.35,-6.26],
+['London','GB',51.51,-0.13],['Edinburgh','GB',55.95,-3.19],
+['Cardiff','GB',51.48,-3.18],['Belfast','GB',54.60,-5.93],
+['Paris','FR',48.86,2.35],['Madrid','ES',40.42,-3.70],
+['Barcelona','ES',41.39,2.17],['Lisbon','PT',38.72,-9.14],
+['Rome','IT',41.90,12.50],['Milan','IT',45.46,9.19],
+['Berlin','DE',52.52,13.40],['Munich','DE',48.14,11.58],
+['Amsterdam','NL',52.37,4.90],['Brussels','BE',50.85,4.35],
+['Zurich','CH',47.38,8.54],['Vienna','AT',48.21,16.37],
+['Prague','CZ',50.08,14.44],['Warsaw','PL',52.23,21.01],
+['Budapest','HU',47.50,19.04],['Bucharest','RO',44.43,26.10],
+['Athens','GR',37.98,23.73],['Istanbul','TR',41.01,28.98],
+['Kyiv','UA',50.45,30.52],['Moscow','RU',55.76,37.62],
+['Stockholm','SE',59.33,18.07],['Oslo','NO',59.91,10.75],
+['Copenhagen','DK',55.68,12.57],['Helsinki','FI',60.17,24.94],
+['Cairo','EG',30.04,31.24],['Marrakesh','MA',31.63,-7.99],
+['Lagos','NG',6.52,3.38],['Accra','GH',5.60,-0.19],
+['Nairobi','KE',-1.29,36.82],['Addis Ababa','ET',9.03,38.74],
+['Kinshasa','CD',-4.44,15.27],['Cape Town','ZA',-33.92,18.42],
+['Johannesburg','ZA',-26.20,28.05],['Dakar','SN',14.72,-17.47],
+['Tel Aviv','IL',32.09,34.78],['Dubai','AE',25.20,55.27],
+['Riyadh','SA',24.71,46.68],['Tehran','IR',35.69,51.39],
+['Karachi','PK',24.86,67.01],['Delhi','IN',28.61,77.21],
+['Mumbai','IN',19.08,72.88],['Bengaluru','IN',12.97,77.59],
+['Chennai','IN',13.08,80.27],['Kolkata','IN',22.57,88.36],
+['Kathmandu','NP',27.72,85.32],['Dhaka','BD',23.81,90.41],
+['Colombo','LK',6.93,79.86],['Bangkok','TH',13.76,100.50],
+['Hanoi','VN',21.03,105.85],['Singapore','SG',1.35,103.82],
+['Kuala Lumpur','MY',3.14,101.69],['Jakarta','ID',-6.21,106.85],
+['Manila','PH',14.60,120.98],['Hong Kong','HK',22.32,114.17],
+['Beijing','CN',39.90,116.41],['Shanghai','CN',31.23,121.47],
+['Seoul','KR',37.57,126.98],['Tokyo','JP',35.68,139.69],
+['Kyoto','JP',35.01,135.77],['Sapporo','JP',43.06,141.35],
+['Taipei','TW',25.03,121.57],['Ulaanbaatar','MN',47.89,106.91],
+['Perth','AU',-31.95,115.86],['Adelaide','AU',-34.93,138.60],
+['Melbourne','AU',-37.81,144.96],['Sydney','AU',-33.87,151.21],
+['Brisbane','AU',-27.47,153.03],['Darwin','AU',-12.46,130.84],
+['Auckland','NZ',-36.85,174.76],['Wellington','NZ',-41.29,174.78],
+['Christchurch','NZ',-43.53,172.64],['Suva','FJ',-18.14,178.44],
+['Honiara','SB',-9.43,159.95],['Papeete','PF',-17.54,-149.57],
+['Nuuk','GL',64.18,-51.72],['Longyearbyen','SJ',78.22,15.63],
+['McMurdo Station','AQ',-77.85,166.67]
+];
+
+/* Thirty prompts. One a night, chosen by the date, dismissable, never a chore. */
+var PROMPTS = [
+'Draw something with exactly six stars.',
+'Draw a shape you could carry in one hand.',
+'Draw the animal you would be at midnight.',
+'Draw a door and leave it open.',
+'Draw something your grandmother would recognise.',
+'Draw the road home from where you are standing.',
+'Draw a thing with a head and no body.',
+'Draw what you lost this year.',
+'Draw a shape that has to close.',
+'Draw a boat, then decide where it is going.',
+'Draw the smallest thing you can find up there.',
+'Draw a ladder that goes somewhere good.',
+'Draw a bird that is not flying.',
+'Draw the tool you use most.',
+'Draw a shape with one bright star and four dim ones.',
+'Draw something with a tail.',
+'Draw a knot you know how to tie.',
+'Draw a house with a light on.',
+'Draw the letter your name starts with.',
+'Draw the shape of a song you like.',
+'Draw a bridge between two bright stars.',
+'Draw something that is asleep.',
+'Draw a hand reaching for something.',
+'Draw a cup that is full.',
+'Draw a fence with a gap in it.',
+'Draw the weather you want tomorrow.',
+'Draw a creature nobody has met.',
+'Draw a tree in winter.',
+'Draw the thing you would run back inside for.',
+'Draw a shape and give it your favourite word for a name.'
+];
+
+/* ========================= 5. MYTH ========================= */
+/* The grammar sits inside the export block because sim.js reads five thousand
+   myths out of it and a person reads a hundred of them in the morning.
+   Voice rules from HAIKU_PRINCIPLES.md at the repo root: concrete images over
+   morals, no absolutes as a crutch (always, never, forever are banned and the
+   gate greps for them), personification only of real things doing observable
+   things. Every omen is gentle, by design: found keys, good bread, a brave
+   first day. */
+
+var ORIGIN_OPEN = [
+  'Before the rivers chose their beds,',
+  'When the hills were still deciding their shapes,',
+  'In the years when the sea came further inland,',
+  'Back when every road was a footpath,',
+  'Before anyone had thought to name a month,',
+  'While the first orchards were still saplings,',
+  'In a winter that outstayed its welcome,',
+  'When the wells were new and the buckets were old,',
+  'Before the second bridge was built,',
+  'In the season the wheat came up crooked,',
+  'When the roof of the old barn was still thatch,',
+  'Long before the lighthouse,',
+  'On the night the last wolf left the valley,',
+  'In the summer the well ran clear again,',
+  "When the coast was two days' walk further out,",
+  'Before the harbour had a name worth painting,',
+  'In the year the bees came early,',
+  'When the miller still counted in handfuls,',
+  'On an evening with no moon to speak of,',
+  'Before the road went around the marsh instead of through it,'
+];
+
+var ARCH_NOUN = {
+  /* A loop is a creature OR a vessel, and the two keep separate deeds. Mixed
+     together, a copper kettle kept the mice honest for eleven years and a boat
+     with a patched hull answered a knock. Charming twice and nonsense the rest
+     of the time, which is not the trade a grammar should make. */
+  creature: [
+    'a hare with one ear down', 'a dog that would not be fed',
+    'a cat the colour of wet slate', 'an owl who kept accounts',
+    'a goat that opened gates', 'a fox who slept in the bread oven',
+    'a heron who stood in the shallows all day', 'a sow with a temper',
+    'a moth the size of a hand', 'a toad who lived under the step',
+    'a pony nobody could catch', 'a magpie with a taste for buttons'
+  ],
+  vessel: [
+    'a cooking pot with no bottom to it', 'a boat with a patched hull',
+    'a copper kettle', 'a basket woven from river reed',
+    'a lantern with a cracked pane', 'a drum with a loose skin',
+    'a bucket on a fraying rope', 'a cart with one good wheel',
+    'a jug kept for the good cider', 'a cradle handed round the village',
+    'a bread oven built into a wall', 'a chest with a lock and no key'
+  ],
+  journey: [
+    'a walk that took four seasons', 'a river that changed its mind twice',
+    'a rope handed down a well', 'an eel the length of a barn',
+    'a cart track older than the town', 'a thread pulled from a hem',
+    'a snake that measured fields', 'a ferry with one oar',
+    'a stair cut into a cliff', 'a night crossing with no lamp',
+    'a line of footprints in flour', 'a drovers road over the tops'
+  ],
+  tree: [
+    'a hawthorn on a boundary', 'a stag with seven points',
+    'a family who argued at dinner', 'an apple tree grafted twice',
+    'a hand with the fingers spread', 'a candlestick with four arms',
+    'a river with three mouths', 'an elk standing in shallow water',
+    'a household of four and a lodger', 'an oak split by lightning and living',
+    'a set of antlers hung beside a door', 'a rowan growing out of a wall'
+  ],
+  seed: [
+    'a seed nobody planted', 'an eye that would not close',
+    'an ember carried in a shell', 'a coin worn smooth',
+    'a pearl in a coat pocket', 'a knot of bright thread',
+    'a marble lost under a floorboard', 'a hazelnut kept for luck',
+    'a spark in damp kindling', 'a tooth under a pillow',
+    'a bead from a broken string', 'a stone warmed in a fist'
+  ]
+};
+
+var DEED = {
+  creature: [
+    'It kept the mice honest for eleven years.',
+    'It ate the last of the salt and asked for more.',
+    'It stood at the gate and would not be moved.',
+    'It slept on the warm bricks and woke the household.',
+    'It answered a knock that nobody else heard.',
+    'It walked a child home in weather that turned.',
+    'It got into the dairy twice and was forgiven twice.',
+    'It sat out a thunderstorm on the ridge of the roof.',
+    'It followed a plough for a whole spring.',
+    'It learned the sound of one particular gate.'
+  ],
+  vessel: [
+    'It kept the door shut through a bad winter.',
+    'It carried water for a house that had none.',
+    'It fed nine people from a pot meant for three.',
+    'It went out on the tide and came back heavier.',
+    'It ferried a child across when the ford was high.',
+    'It held the yeast alive through a hard January.',
+    'It went round the village and came back to the right house.',
+    'It was mended four times and used for twenty years.',
+    'It stood in the corner and everyone knew what was in it.',
+    'It took the weight of more than it was built for.'
+  ],
+  journey: [
+    'It went out past the last field and kept going.',
+    'It found water where the maps said rock.',
+    'It carried a message that arrived too late to matter.',
+    'It wore a groove in the hill that is still there.',
+    'It ran under three bridges and came out clean.',
+    'It took a man to his brother and back again.',
+    'It followed the coast until the coast ran out.',
+    'It brought salt one way and wool the other.',
+    'It went down the well and came up with a name.',
+    'It crossed in the dark and left no wake.'
+  ],
+  tree: [
+    'It gave shade to people who forgot to thank it.',
+    'It held the bank together through four floods.',
+    'It fed a village in a year with no grain.',
+    'It grew crooked around a fence and kept the fence up.',
+    'It sheltered a hedgehog and a bad idea.',
+    'It dropped fruit into a lane and made friends.',
+    'It split down the middle and lived on both sides.',
+    'It stood while the barn came down beside it.',
+    'It kept a nest through a storm that took the roof.',
+    'It marked the boundary better than the deed did.'
+  ],
+  seed: [
+    'It kept a fire alive across a wet night.',
+    'It stayed in a pocket through a long argument.',
+    'It waited under the floor for eighty years.',
+    'It was traded twice and spent by nobody.',
+    'It was the one thing carried out of the fire.',
+    'It was found by a child who told no one.',
+    'It sat in a jar on a shelf and was looked at daily.',
+    'It was buried at a doorstep for luck and the luck came.',
+    'It rolled into a crack in the hearth and stayed warm.',
+    'It was given, refused, and given again.'
+  ]
+};
+
+var SHAPE = {
+  loop: [
+    'It is {N} stars and it closes.',
+    'The line comes back to where it started, {N} stars later.',
+    '{N} stars, and the last one shakes hands with the first.',
+    'It shuts. {N} stars, and no way out of it.',
+    'Count {N} and you are back at the beginning.',
+    'A closed shape of {N} stars, which is rarer up there than it sounds.'
+  ],
+  chain: [
+    'It runs {N} stars from one end to the other and does not come back.',
+    '{N} stars in a line, going somewhere.',
+    'It starts at one star and finishes {N} stars later.',
+    'A run of {N}, open at both ends.',
+    '{N} stars, and the last one is still leaving.',
+    'It goes {N} stars and then it stops, which is its own kind of ending.'
+  ],
+  branched: [
+    'It is {N} stars with a fork in it.',
+    '{N} stars, and it cannot decide which way to go.',
+    'It splits. {N} stars and two answers.',
+    'A shape of {N} stars that grew a second arm.',
+    '{N} stars, branching the way water does.',
+    'It divides partway along, {N} stars in all.'
+  ],
+  compact: [
+    '{N} stars, close enough to cover with a thumb.',
+    'A small thing, {N} stars, held together.',
+    '{N} stars in a handful.',
+    'It is {N} stars and it takes up almost no sky.',
+    'Small, {N} stars, and easy to miss.',
+    '{N} stars packed tight enough to look like one from the road.'
+  ]
+};
+
+var FALL = [
+  'When it was done, nothing on the ground was the right size for it.',
+  'The people who owed it thanks could not agree on the words.',
+  'It was carried up the hill for safe keeping and stayed there.',
+  'A dispute over who owned it was settled by putting it out of reach.',
+  'It went up the way smoke does, without being asked.',
+  'It was set among the stars so that it could be pointed at.',
+  'The sky took it in the way a shelf takes a thing you cannot throw away.',
+  'It was lifted on a night with no cloud and there was no argument about it.',
+  'It stepped up itself, one star at a time, and looked back once.',
+  'Someone put it where the weather could not reach it.',
+  'It was hung up like a coat and left there.',
+  'It went up before anyone thought to write it down.'
+];
+
+var PLACED = [
+  'It has hung there since, a little further west each year.',
+  'It sits where it was put, and the sky turns around it.',
+  'It comes up in its season and goes down without fuss.',
+  'It keeps the same shape it had on the ground.',
+  'The stars around it have not managed to move it.',
+  'It leans a fraction more each century, and nobody minds.',
+  'It rises late in the year and early in the spring.',
+  'It is rarely where it was expected and exactly where it is.',
+  'It stays, and that is the whole of it.',
+  'It is easier to find than to describe.',
+  'It waits out the daylight and comes back.',
+  'It is the last thing over the roofline in June.'
+];
+
+var OMEN = [
+  'Whoever finds it is due a good week.',
+  'See it low in the trees and the bread will rise.',
+  'It is a good sign for anyone starting somewhere new.',
+  'Find it and your keys are in the coat you wore yesterday.',
+  'It stands for a first day that goes better than feared.',
+  'When it is clear, the rain falls on the field that wanted it.',
+  'It is a promise that the letter is already in the post.',
+  'It means the person you are thinking of is thinking back.',
+  'Sailors read it to mean the wind would turn kind.',
+  'It is a fair night for a difficult conversation.',
+  'Whoever sees it first is owed a favour and should ask.',
+  'It says the loaf will come out the right colour.',
+  'It is a sign the cough will be gone by market day.',
+  'Under it, an apology lands the way it was meant.',
+  'It means the road is open and the gate is unlocked.',
+  'It is the shape people watch when a child is late home.',
+  'It promises the fire will catch on the first match.',
+  'It means what was lent will come back.',
+  'It is a good omen for anyone who has just moved house.',
+  'Under it, a stranger gives directions and they are right.',
+  'It says the last bus is running.',
+  'It means the dog comes back before dark.',
+  'It is a sign to plant early and not to hurry.',
+  'It is watched by people waiting for a train that is late.',
+  'It means the neighbour will take the parcel in.',
+  'It stands for work finished on a Friday.',
+  'Under it, an old song comes back with all its words.',
+  'It says the ice is thick enough at the edges only.',
+  'It means the argument is over even if nobody says so.',
+  'It is a good night to write the thing you have been putting off.'
+];
+
+var STAR_HOOK = [
+  'Its heart is the star the old charts call {STAR}.',
+  'The brightest of it is {STAR}, and {STAR} does the work.',
+  'Everything in it is arranged around {STAR}.',
+  '{STAR} sits at the point people notice first.',
+  'The star called {STAR} holds the shape up.',
+  'It is easiest to find by {STAR}, which is hard to miss.',
+  '{STAR} carries the light for the rest of them.',
+  'Follow {STAR} and the rest of it arrives.'
+];
+
+var REGION_HOOK = [
+  'It stands in the country of {REGION}.',
+  'You will find it in {REGION}, which was there first.',
+  'It shares its sky with {REGION}.',
+  'It keeps to itself in {REGION}.',
+  'The old charts put it beside {REGION}.',
+  'It lies in the part of the sky given to {REGION}.'
+];
+
+/* the extra sentence a shape earns by where it happens to sit */
+var PLACE_HOOK = {
+  milky: [
+    'It stands in the spilled light, which suits it.',
+    'The pale road runs behind it.',
+    'It keeps company with the crowded part of the sky.'
+  ],
+  horizon: [
+    'It sits low, and the trees take it early.',
+    'You get it for an hour and then the roofs have it.',
+    'It keeps near the ground, the way some things do.'
+  ]
+};
+
+var NAME_ADJ = ['Stitched','Patient','Borrowed','Salt','Winter','Quiet','Crooked','Second',
+  'Long','Little','Copper','Broken','Kind','Late','Amber','Hollow','Wandering','Sleeping',
+  'Bright','Old','Half','Northern','Bramble','Iron','Green','Solemn','Lucky','Weathered',
+  'Wide','Hungry','Rope','Paper','Glass','Grey','Honest','Empty','Willing','First',
+  'Distant','Frost'];
+var NAME_NOUN = ['Hare','Comet','Door','Kettle','Ladder','Ferry','Orchard','Lantern','Bell',
+  'Harrow','Cradle','Anvil','Heron','Sparrow','Thimble','Bridge','Wheel','Gate','Loom','Kite',
+  'Basket','Hound','Otter','Chimney','Well','Sail','Plough','Coat','Whistle','Nest','Bee',
+  'Fox','Lamp','Barrow','Bench','Cup','Fiddle','Wren','Anchor','Beacon'];
+var NAME_TAIL = ['Ajar','Unlit','Returning','at Anchor','in Winter','Half Mended','Going Out','That Waits'];
+
+/* ---- the shape the player actually drew ---------------------------------- */
+/* Gnomonic tangent plane about the centroid, so the numbers are degrees of sky
+   and not pixels: the same drawing analysed from a phone and from a poster
+   gives the same myth. */
+function shapeGeometry(pts) {
+  var i, n = pts.length, cx = 0, cy = 0;
+  for (i = 0; i < n; i++) { cx += pts[i].ra; cy += pts[i].dec; }
+  cx /= n; cy /= n;
+  var out = [];
+  for (i = 0; i < n; i++) {
+    out.push({ x: (pts[i].ra - cx) * 15 * Math.cos(cy * DEG), y: pts[i].dec - cy });
+  }
+  return { pts: out, ra: cx, dec: cy };
+}
+function features(stars, edges, extra) {
+  var i, n = stars.length;
+  var deg = [], j;
+  for (i = 0; i < n; i++) deg.push(0);
+  for (i = 0; i < edges.length; i++) { deg[edges[i][0]]++; deg[edges[i][1]]++; }
+  var branched = false;
+  for (i = 0; i < n; i++) if (deg[i] >= 3) branched = true;
+  /* a loop is a cycle: with n nodes, more than n-1 edges in one component */
+  var loop = edges.length >= n && n >= 3;
+  var geo = shapeGeometry(stars);
+  var p = geo.pts;
+  /* principal extent by the covariance of the points */
+  var sxx = 0, syy = 0, sxy = 0;
+  for (i = 0; i < n; i++) { sxx += p[i].x * p[i].x; syy += p[i].y * p[i].y; sxy += p[i].x * p[i].y; }
+  sxx /= n; syy /= n; sxy /= n;
+  var tr = sxx + syy, det = sxx * syy - sxy * sxy;
+  var l1 = tr / 2 + Math.sqrt(Math.max(0, tr * tr / 4 - det));
+  var l2 = tr / 2 - Math.sqrt(Math.max(0, tr * tr / 4 - det));
+  var L = 2 * Math.sqrt(Math.max(1e-9, l1)), W = 2 * Math.sqrt(Math.max(1e-9, l2));
+  var span = 0;
+  for (i = 0; i < n; i++) for (j = i + 1; j < n; j++) {
+    var d = Math.sqrt((p[i].x - p[j].x) * (p[i].x - p[j].x) + (p[i].y - p[j].y) * (p[i].y - p[j].y));
+    if (d > span) span = d;
+  }
+  var aspect = span < 10 ? 'compact' : ((L / Math.max(0.4, W)) > 2.2 ? 'long' : 'tall');
+  /* how evenly the stars sit around the middle */
+  var rs = [], mean = 0;
+  for (i = 0; i < n; i++) { rs.push(Math.sqrt(p[i].x * p[i].x + p[i].y * p[i].y)); mean += rs[i]; }
+  mean /= n;
+  var varr = 0;
+  for (i = 0; i < n; i++) varr += (rs[i] - mean) * (rs[i] - mean);
+  var symmetry = mean > 0 ? clamp(1 - Math.sqrt(varr / n) / mean, 0, 1) : 1;
+
+  var bright = 0, faint = 0;
+  for (i = 1; i < n; i++) {
+    if (stars[i].mag < stars[bright].mag) bright = i;
+    if (stars[i].mag > stars[faint].mag) faint = i;
+  }
+  var counts = {}, region = stars[0].con || '', bestC = 0;
+  for (i = 0; i < n; i++) {
+    var c = stars[i].con || '';
+    counts[c] = (counts[c] || 0) + 1;
+    if (counts[c] > bestC) { bestC = counts[c]; region = c; }
+  }
+  var band = 0;
+  for (i = 0; i < n; i++) band += galacticBand(stars[i].ra, stars[i].dec);
+  band /= n;
+  var kind = loop ? 'loop' : (branched ? 'branched' : (aspect === 'compact' ? 'compact' : 'chain'));
+  return {
+    count: n, kind: kind, aspect: aspect, symmetry: symmetry, span: span,
+    bright: bright, faint: faint, brightName: stars[bright].proper || '',
+    region: region, regionName: CON_PLAIN[region] || CON_NAMES[region] || '',
+    milky: band < 15, meanAlt: (extra && extra.meanAlt !== undefined) ? extra.meanAlt : 90,
+    horizon: !!(extra && extra.meanAlt !== undefined && extra.meanAlt < 20),
+    ra: geo.ra, dec: geo.dec
+  };
+}
+function archetype(f, seed) {
+  if (f.kind === 'loop') return (seed !== undefined && (mixSeed(seed, 5) & 1)) ? 'vessel' : 'creature';
+  if (f.kind === 'branched') return 'tree';
+  if (f.count >= 5 || f.aspect === 'long') return 'journey';
+  return 'seed';
+}
+
+function pickFrom(list, seed, salt) { return list[mixSeed(seed, salt) % list.length]; }
+/* the myth. Three beats and a shape sentence: ORIGIN and what it did, why it
+   went up and how it sits, then the star, the region and the omen. */
+function mythFor(f, seed) {
+  var arch = archetype(f, seed);
+  var s1 = pickFrom(ORIGIN_OPEN, seed, 11);
+  var s2 = pickFrom(ARCH_NOUN[arch], seed, 23);
+  var s3 = pickFrom(DEED[arch], seed, 31);
+  var shapeKey = f.kind === 'compact' ? 'compact' : f.kind;
+  var s4 = pickFrom(SHAPE[shapeKey], seed, 41).split('{N}').join(numberWord(f.count));
+  var s5 = pickFrom(FALL, seed, 53);
+  var s6 = pickFrom(PLACED, seed, 61);
+  var out = [s1 + ' there was ' + s2 + '. ' + s3, s4, s5 + ' ' + s6];
+  if (f.brightName) out.push(pickFrom(STAR_HOOK, seed, 71).split('{STAR}').join(f.brightName));
+  if (f.regionName) out.push(pickFrom(REGION_HOOK, seed, 83).split('{REGION}').join(f.regionName));
+  if (f.milky) out.push(pickFrom(PLACE_HOOK.milky, seed, 89));
+  else if (f.horizon) out.push(pickFrom(PLACE_HOOK.horizon, seed, 97));
+  out.push(pickFrom(OMEN, seed, 101));
+  return out.join(' ');
+}
+function rollName(seed) {
+  var k = mixSeed(seed, 7) % 4;
+  var adj = pickFrom(NAME_ADJ, seed, 13);
+  var noun = pickFrom(NAME_NOUN, seed, 17);
+  if (k === 0) return 'The ' + adj + ' ' + noun;
+  if (k === 1) return 'Grandmother ' + noun;
+  if (k === 2) return 'The ' + noun + ' ' + pickFrom(NAME_TAIL, seed, 19);
+  return adj + ' ' + noun;
+}
+var NUM_WORDS = ['zero','one','two','three','four','five','six','seven','eight','nine','ten',
+  'eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen','twenty'];
+function numberWord(n) { return (n >= 0 && n <= 20) ? NUM_WORDS[n] : String(n); }
+function wordCount(t) { return t.split(/\s+/).filter(function (w) { return w.length; }).length; }
+/* a constellation's HIP list turned into the star records the shape analysis
+   and the myth read. A HIP the catalogue no longer knows is dropped, which is
+   the whole reason share links carry HIP numbers and not row indices (3.11). */
+function starsOf(cat, hips) {
+  var out = [], i, k;
+  for (i = 0; i < hips.length; i++) {
+    k = cat.byHip[hips[i]];
+    if (k === undefined) continue;
+    out.push({ i: k, hip: hips[i], ra: cat.ra[k], dec: cat.dec[k], mag: cat.mag[k],
+      ci: cat.ci[k], proper: cat.proper[k], con: cat.con[k], bayer: cat.bayer[k] });
+  }
+  return out;
+}
+// ---- ASTRO_EXPORT_END ----
+
+// ---- TEST_EXPORT_START ----
+/* ========================= 12. TEST ========================= */
+/* Harness copied from satellites/deepwell/index.html line 1550, with Fathom's
+   per suite isolation so a suite that throws is one red line and not a stack.
+   Runs at ?test=1 in the page and inside sim.js --test in Node, over the same
+   source. The astronomy assertions use PUBLISHED numbers and geometric
+   identities, never numbers this code produced. */
+var TEST = {
+  results: [],
+  assert: function (name, cond, detail) { this.results.push({ name: name, pass: !!cond, detail: detail || '' }); },
+  eq: function (name, a, b) { this.assert(name, a === b, 'expected ' + b + ', got ' + a); },
+  near: function (name, a, b, tol) { this.assert(name, Math.abs(a - b) <= tol, 'expected about ' + b + ', got ' + a); },
+  report: function () {
+    var p = 0, f = 0, fails = [], i;
+    for (i = 0; i < this.results.length; i++) {
+      if (this.results[i].pass) p++; else { f++; fails.push(this.results[i]); }
+    }
+    return { passed: p, failed: f, total: this.results.length, failures: fails };
+  },
+  runSuite: function (name, fn, arg) {
+    try { fn(this, arg); }
+    catch (e) { this.assert('the ' + name + ' suite ran to the end', false, String(e && e.message || e)); }
+  },
+  run: function (extra) {
+    this.results = [];
+    var cat = extra && extra.cat;
+    this.runSuite('time', suiteTime);
+    this.runSuite('altaz', suiteAltAz);
+    this.runSuite('projection', suiteProjection);
+    this.runSuite('sunmoon', suiteSunMoon);
+    this.runSuite('wellplaced', suiteWellPlaced);
+    if (cat) this.runSuite('catalogue', suiteCatalogue, cat);
+    this.runSuite('shape', suiteShape);
+    this.runSuite('myth', suiteMyth, cat);
+    this.runSuite('copy', suiteCopy);
+    if (extra && extra.src) this.runSuite('purity', suitePurity, extra.src);
+    return this.report();
+  }
+};
+
+function suiteTime(T) {
+  /* two published anchors, neither of them ours */
+  T.near('GMST at 2000-01-01 00:00 UT is 6h 39m 52s', gmstHours(jd(Date.UTC(2000, 0, 1, 0, 0, 0))), 6.6645, 0.001);
+  T.near('GMST at J2000.0 is the published constant', gmstHours(2451545.0), 18.697375, 0.001);
+  T.near('a Julian Day is 2440587.5 at the unix epoch', jd(0), 2440587.5, 1e-9);
+  T.near('and 2451545.0 at J2000 noon', jd(Date.UTC(2000, 0, 1, 12, 0, 0)), 2451545.0, 1e-9);
+  T.near('sidereal time gains about 3m 56s a day', mod(gmstHours(2451546.0) - gmstHours(2451545.0), 24) * 60, 3.9427, 0.01);
+  T.near('local sidereal time is Greenwich plus the longitude in hours',
+    lstHours(2451545.0, -83), mod(18.697375 - 83 / 15, 24), 0.001);
+  T.near('and east of Greenwich it runs ahead', lstHours(2451545.0, 15), mod(18.697375 + 1, 24), 0.001);
+}
+
+function suiteAltAz(T) {
+  /* GEOMETRY, not a number we computed: a star on the meridian sits at
+     90 minus the difference between the latitude and its declination, due
+     south from the northern hemisphere. */
+  var J0 = jd(Date.UTC(2026, 0, 15, 0, 0, 0)), i;
+  for (i = 0; i < 60; i++) {
+    var l = lstHours(J0, 0), d = 6.7525 - l;
+    if (d > 12) d -= 24; if (d < -12) d += 24;
+    J0 += d / 24 / 1.0027379;
+  }
+  var sir = altAz(6.7525, -16.716, 40, 0, J0);
+  T.near('Sirius on the meridian from 40 north is 33.28 degrees up', sir.alt, 33.284, 0.05);
+  T.near('and due south', sir.az, 180, 0.5);
+
+  /* Polaris sits at the latitude, from anywhere, at any hour. A sign error in
+     the hour angle does not show here, which is what the Vega line is for. */
+  var places = [[40, -83, Date.UTC(2026, 2, 1, 3)], [51, 0, Date.UTC(2026, 7, 9, 22)],
+    [25, 55, Date.UTC(2026, 10, 2, 17)], [60, -149, Date.UTC(2026, 4, 20, 9)],
+    [35, 139, Date.UTC(2026, 1, 11, 13)]];
+  for (i = 0; i < places.length; i++) {
+    var p = altAz(2.5297, 89.264, places[i][0], places[i][1], jd(places[i][2]));
+    T.near('Polaris stands at the latitude from ' + places[i][0] + ' north', p.alt, places[i][0], 1.0);
+  }
+
+  /* the sign convention pin: east positive longitude, azimuth from north
+     through east. Mirror the sky and this line goes red while every star still
+     looks plausible. */
+  var JV = jd(Date.UTC(2026, 6, 15, 4, 0, 0));
+  T.near('local sidereal time at Columbus on 2026-07-15 04:00 UT', lstHours(JV, -83), 18.002, 0.005);
+  var v = altAz(18.6156, 38.784, 40, -83, JV);
+  T.near('Vega is 82.78 degrees up', v.alt, 82.78, 0.05);
+  T.near('and 96.75 degrees round from north, east of south', v.az, 96.75, 0.05);
+  T.assert('which puts it east of the meridian, not west', v.az < 180);
+
+  /* alt az and back again */
+  var back = altAzToRaDec(v.alt, v.az, 40, -83, JV);
+  T.near('alt az converts back to the right right ascension', back.ra, 18.6156, 0.002);
+  T.near('and the right declination', back.dec, 38.784, 0.002);
+
+  var below = altAz(6.7525, -16.716, 60, -83, jd(Date.UTC(2026, 5, 21, 12)));
+  T.assert('a star can be below the horizon and say so', below.alt < 0);
+}
+
+function suiteProjection(T) {
+  var r = makeRNG(4242), i, worst = 0, behindSeen = false;
+  for (i = 0; i < 200; i++) {
+    var alt = r() * 80 + 5, az = r() * 360;
+    var p = project(alt, az, 45, 180, 90, 375, 667);
+    if (p.behind) continue;
+    var u = unproject(p.x, p.y, 45, 180, 90, 375, 667);
+    var d = angSep(az / 15, alt, u.az / 15, u.alt);
+    if (d > worst) worst = d;
+  }
+  T.assert('project and unproject round trip inside 0.01 degrees (worst ' + worst.toFixed(5) + ')', worst < 0.01);
+  var far = project(-60, 0, 60, 180, 120, 375, 667);
+  T.assert('a point more than 100 degrees from the view centre is flagged behind', far.behind);
+  var centre = project(45, 180, 45, 180, 90, 375, 667);
+  T.near('the view centre lands in the middle of the screen, x', centre.x, 187.5, 0.001);
+  T.near('and y', centre.y, 333.5, 0.001);
+  /* the field of view is measured across the SHORT axis */
+  var edge = project(45, 180 + 45 / Math.cos(45 * DEG), 45, 180, 90, 375, 667);
+  T.assert('a point about half a field away lands near the short edge', edge.x > 300 && edge.x < 460);
+  var tight = project(50, 180, 45, 180, 30, 375, 667);
+  var wide = project(50, 180, 45, 180, 120, 375, 667);
+  T.assert('a narrower field spreads the same stars further apart',
+    Math.abs(tight.y - 333.5) > Math.abs(wide.y - 333.5) * 3);
+}
+
+function suiteSunMoon(T) {
+  /* two published moments: the new moon of 2000-01-06 and the full moon of
+     2000-01-21, which was the night of a total lunar eclipse. */
+  var err = function (x, want) { var e = Math.abs(x - want); return e > 0.5 ? 1 - e : e; };
+  var mNew = moon(jd(Date.UTC(2000, 0, 6, 18, 14)));
+  var mFull = moon(jd(Date.UTC(2000, 0, 21, 4, 40)));
+  T.assert('the moon is new at the new moon of January 2000 (phase ' + mNew.phase.toFixed(4) + ')', err(mNew.phase, 0) < 0.01);
+  T.assert('and full at the full moon of January 2000 (phase ' + mFull.phase.toFixed(4) + ')', err(mFull.phase, 0.5) < 0.01);
+  T.assert('a new moon shows almost no lit face', mNew.lit < 0.02);
+  T.assert('a full moon shows almost all of it', mFull.lit > 0.98);
+  T.assert('the moon keeps to the zodiac band', Math.abs(moon(jd(Date.UTC(2026, 3, 3, 0))).dec) < 30);
+
+  /* the sun, from the shape of a day rather than from a table */
+  var lat = 39.96, lon = -83, h, hi = -99, lo = 99;
+  for (h = 0; h < 24; h++) {
+    var a = sunAlt(jd(Date.UTC(2026, 5, 21, h, 0, 0)), lat, lon);
+    if (a > hi) hi = a; if (a < lo) lo = a;
+  }
+  T.near('the midsummer sun climbs to 73.5 degrees over Columbus', hi, 73.5, 1.5);
+  T.assert('and gets well below the horizon at night', lo < -20);
+  var dec21 = sunAlt(jd(Date.UTC(2026, 11, 21, 17, 20, 0)), lat, lon);
+  T.near('the midwinter noon sun is 26.6 degrees up', dec21, 26.6, 1.5);
+  T.assert('the sun is south of the equator in December', sunRaDec(jd(Date.UTC(2026, 11, 21, 12))).dec < -22);
+  T.assert('and north of it in June', sunRaDec(jd(Date.UTC(2026, 5, 21, 12))).dec > 22);
+  T.assert('midnight in Ohio in July is properly dark',
+    sunAlt(jd(Date.UTC(2026, 6, 15, 4, 0, 0)), lat, lon) < CONFIG.SUN_DARK);
+}
+
+function suiteWellPlaced(T) {
+  var o = wellPlacedMonth(5.5, -83, 2026);
+  T.assert('Orion is a winter evening (' + o + ')', o === 'January' || o === 'February');
+  var v = wellPlacedMonth(18.6, -83, 2026);
+  T.assert('Vega is a summer evening (' + v + ')', v === 'July' || v === 'August');
+  var s = wellPlacedMonth(16.5, -83, 2026);
+  T.assert('Scorpius is early summer (' + s + ')', s === 'June' || s === 'July');
+  var p = wellPlacedMonth(0.5, -83, 2026);
+  T.assert('Pegasus is an autumn evening (' + p + ')', p === 'October' || p === 'November' || p === 'September');
+}
+
+function suiteCatalogue(T, cat) {
+  T.eq('the catalogue holds 1792 stars', cat.n, 1792);
+  var vi = cat.byHip[91262];
+  T.assert('Vega is in it', vi !== undefined);
+  T.near('Vega is magnitude 0.03', cat.mag[vi], 0.03, 0.001);
+  T.near('Vega is at right ascension 18.6156 hours', cat.ra[vi], 18.6156, 0.001);
+  T.eq('Vega is in Lyra', cat.con[vi], 'Lyr');
+  T.eq('and it is called Vega', cat.proper[vi], 'Vega');
+  T.assert('Deneb and Altair are there too', cat.byHip[102098] !== undefined && cat.byHip[97649] !== undefined);
+  var i, codes = {}, named = 0, noHip = 0, bright = 0;
+  for (i = 0; i < cat.n; i++) {
+    codes[cat.con[i]] = 1;
+    if (cat.proper[i]) named++;
+    if (cat.hip[i] <= 0) noHip++;
+    if (cat.mag[i] <= 5.0) bright++;
+  }
+  T.eq('all 88 regions appear', Object.keys(codes).length, 88);
+  var missing = [];
+  for (i in codes) { if (!CON_NAMES[i]) missing.push(i + ' has no Latin name'); if (!CON_PLAIN[i]) missing.push(i + ' has no charted name'); }
+  T.assert('every region has a Latin name and a charted name' + (missing.length ? ': ' + missing.join(', ') : ''), missing.length === 0);
+  T.eq('the count of named stars', named, 548);
+  T.assert('1637 stars are magnitude 5.0 or brighter', bright === 1637);
+  T.assert('a handful have no Hipparcos number and are not pickable (' + noHip + ')', noHip > 0 && noHip < 40);
+  var badPick = 0;
+  for (i = 0; i < cat.n; i++) if (pickable(cat, i, 5.0) && cat.hip[i] <= 0) badPick++;
+  T.eq('nothing pickable is missing its Hipparcos number', badPick, 0);
+  var banded = 0;
+  for (i = 0; i < 24; i++) banded += cat.bands[i].length;
+  T.eq('every star sits in exactly one right ascension band', banded, cat.n);
+  T.assert('the licence travels with the data', /CC BY.?SA 4\.0/.test(cat.source));
+  T.assert('a star with a proper name is called by it', starName(cat, vi) === 'Vega');
+  var anon = -1;
+  for (i = 0; i < cat.n; i++) if (!cat.proper[i] && cat.bayer[i]) { anon = i; break; }
+  T.assert('a star with no name is called by its letter and its region', anon >= 0 && starName(cat, anon).indexOf(' of ') > 0);
+}
+
+function suiteShape(T) {
+  var mk = function (ra, dec, mag, proper, con) { return { ra: ra, dec: dec, mag: mag, proper: proper || '', con: con || 'Lyr' }; };
+  var tri = [mk(18.6, 38.8, 0.03, 'Vega'), mk(20.7, 45.3, 1.25, 'Deneb', 'Cyg'), mk(19.8, 8.9, 0.76, 'Altair', 'Aql')];
+  var fTri = features(tri, [[0, 1], [1, 2], [2, 0]]);
+  T.eq('a closed triangle is a loop', fTri.kind, 'loop');
+  T.eq('and it knows it has three stars', fTri.count, 3);
+  T.eq('and that Vega is the brightest of them', fTri.brightName, 'Vega');
+  T.eq('a loop is a creature or a vessel', archetype(fTri), 'creature');
+
+  var chain = [mk(1, 10, 2), mk(2, 12, 3), mk(3, 14, 3.5), mk(4, 16, 4), mk(5, 18, 4.5), mk(6, 20, 5)];
+  var fCh = features(chain, [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5]]);
+  T.eq('an open run of six is a chain', fCh.kind, 'chain');
+  T.eq('and a chain of five or more is a journey', archetype(fCh), 'journey');
+
+  var br = [mk(1, 10, 2), mk(2, 11, 3), mk(3, 12, 3), mk(2.4, 14, 4), mk(2.6, 8, 4)];
+  var fBr = features(br, [[0, 1], [1, 2], [1, 3], [1, 4]]);
+  T.eq('a fork is branched', fBr.kind, 'branched');
+  T.eq('and branched is a tree or a family', archetype(fBr), 'tree');
+
+  var tight = [mk(6.0, 20.0, 3), mk(6.02, 20.1, 4), mk(6.04, 19.9, 4.5)];
+  var fTi = features(tight, [[0, 1], [1, 2]]);
+  T.eq('three stars a thumb wide are compact', fTi.aspect, 'compact');
+  T.eq('and a compact shape is a seed, an eye or an ember', archetype(fTi), 'seed');
+
+  T.assert('a symmetric shape scores higher than a lopsided one',
+    features([mk(6, 20, 2), mk(6, 22, 2), mk(8, 21, 2)], [[0, 1], [1, 2], [2, 0]]).symmetry >
+    features([mk(6, 20, 2), mk(6.1, 20.1, 2), mk(14, 40, 2)], [[0, 1], [1, 2]]).symmetry);
+  T.assert('the region is the one most of the stars are in', fTri.region === 'Lyr' || fTri.region === 'Cyg' || fTri.region === 'Aql');
+  T.assert('the shape is measured in degrees of sky, not pixels', fCh.span > 5 && fCh.span < 200);
+}
+
+function suiteMyth(T, cat) {
+  var mk = function (ra, dec, mag, proper, con) { return { ra: ra, dec: dec, mag: mag, proper: proper || '', con: con || 'Lyr' }; };
+  var tri = [mk(18.6156, 38.784, 0.03, 'Vega', 'Lyr'), mk(20.6905, 45.28, 1.25, 'Deneb', 'Cyg'), mk(19.8464, 8.868, 0.76, 'Altair', 'Aql')];
+  var f = features(tri, [[0, 1], [1, 2], [2, 0]]);
+  var a = mythFor(f, 12345), b = mythFor(f, 12345);
+  T.eq('the same seed writes the same myth', a, b);
+  T.assert('a different seed writes a different one', mythFor(f, 12346) !== a);
+  T.assert('the myth names the brightest star by its real name', a.indexOf('Vega') >= 0);
+  T.assert('the myth is between 60 and 140 words (' + wordCount(a) + ')',
+    wordCount(a) >= CONFIG.MYTH_MIN_WORDS && wordCount(a) <= CONFIG.MYTH_MAX_WORDS);
+  T.assert('the myth says how many stars it has, in words', a.indexOf('three') >= 0);
+  T.assert('and never in digits', !/\b\d+ stars\b/.test(a));
+  T.eq('a loop can be a vessel as well as a creature',
+    (function () { var i, k = {}; for (i = 0; i < 40; i++) k[archetype(f, i * 31)] = 1; return Object.keys(k).sort().join(','); })(),
+    'creature,vessel');
+  var n1 = rollName(999), n2 = rollName(999);
+  T.eq('the dice are seeded too', n1, n2);
+  T.assert('a rolled name is short enough to write on a poster', n1.length <= 34);
+  var i, seen = {}, dup = 0;
+  for (i = 0; i < 400; i++) { var nm = rollName(i * 7919); if (seen[nm]) dup++; seen[nm] = 1; }
+  T.assert('four hundred rolls give at least 300 different names (' + Object.keys(seen).length + ')', Object.keys(seen).length >= 300);
+}
+
+function suiteCopy(T) {
+  var lists = { ORIGIN_OPEN: ORIGIN_OPEN, FALL: FALL, PLACED: PLACED, OMEN: OMEN,
+    STAR_HOOK: STAR_HOOK, REGION_HOOK: REGION_HOOK, PROMPTS: PROMPTS,
+    NAME_ADJ: NAME_ADJ, NAME_NOUN: NAME_NOUN, NAME_TAIL: NAME_TAIL };
+  var k, i, bad = [];
+  for (k in ARCH_NOUN) lists['ARCH_NOUN.' + k] = ARCH_NOUN[k];
+  for (k in DEED) lists['DEED.' + k] = DEED[k];
+  for (k in SHAPE) lists['SHAPE.' + k] = SHAPE[k];
+  for (k in PLACE_HOOK) lists['PLACE_HOOK.' + k] = PLACE_HOOK[k];
+  var total = 0;
+  for (k in lists) {
+    total += lists[k].length;
+    for (i = 0; i < lists[k].length; i++) {
+      var t = lists[k][i];
+      if (/[-‐-―−]/.test(t)) bad.push('dash in ' + k + ': ' + t);
+      if (t.indexOf('!') >= 0) bad.push('exclamation in ' + k + ': ' + t);
+      if (/\b(always|never|forever)\b/i.test(t)) bad.push('an absolute in ' + k + ': ' + t);
+    }
+  }
+  T.assert('no dash, no exclamation point and no always, never or forever in the corpus'
+    + (bad.length ? ' [' + bad.slice(0, 3).join(' | ') + ']' : ''), bad.length === 0);
+  T.assert('the corpus is at least 250 fragments (' + total + ')', total >= 250);
+  T.eq('twenty ways to open a myth', ORIGIN_OPEN.length, 20);
+  T.eq('thirty omens', OMEN.length, 30);
+  T.eq('thirty prompts', PROMPTS.length, 30);
+  var arch = ['creature', 'vessel', 'journey', 'tree', 'seed'], ai, nBad = [];
+  for (ai = 0; ai < arch.length; ai++) {
+    if (!ARCH_NOUN[arch[ai]] || ARCH_NOUN[arch[ai]].length !== 12) nBad.push(arch[ai] + ' nouns');
+    if (!DEED[arch[ai]] || DEED[arch[ai]].length !== 10) nBad.push(arch[ai] + ' deeds');
+  }
+  T.assert('twelve nouns and ten deeds for each of the five archetypes' + (nBad.length ? ': ' + nBad.join(', ') : ''), nBad.length === 0);
+  var cityBad = [];
+  for (i = 0; i < CITIES.length; i++) {
+    var c = CITIES[i];
+    if (Math.abs(c[2]) > 90 || Math.abs(c[3]) > 180) cityBad.push(c[0]);
+  }
+  T.assert('every city is somewhere on Earth' + (cityBad.length ? ': ' + cityBad.join(', ') : ''), cityBad.length === 0);
+  T.assert('there are at least 120 places to stand (' + CITIES.length + ')', CITIES.length >= 120);
+  T.assert('and Columbus is the first of them', CITIES[0][0] === CONFIG.FALLBACK_PLACE.name);
+}
+
+function suitePurity(T, src) {
+  var code = src.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^[ \t]*\/\/.*$/gm, ' ');
+  T.assert('the comment stripper left the code behind', code.length > 8000);
+  T.assert('ASTRO never rolls an unseeded die', code.indexOf('Math.random') < 0);
+  T.assert('ASTRO never touches the document', code.indexOf('document.') < 0);
+  T.assert('ASTRO never touches the window', code.indexOf('window.') < 0);
+  T.assert('ASTRO never reads a clock of its own', code.indexOf('Date.now') < 0 && code.indexOf('performance.now') < 0);
+  T.assert('and Date is only ever used to BUILD a UTC timestamp', code.indexOf('getHours') < 0 && code.indexOf('getMonth') < 0);
+}
+// ---- TEST_EXPORT_END ----

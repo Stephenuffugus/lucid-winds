@@ -22,7 +22,8 @@ const ROOT = join(__dirname, '..');
 const FAST = process.argv.includes('--fast');
 
 const GATES = [
-  { name: 'astro', cmd: ['sim.js', '--test'], need: 'ASTERISM TEST OK' }
+  { name: 'astro', cmd: ['sim.js', '--test'],       need: 'ASTERISM TEST OK' },
+  { name: 'myth',  cmd: ['sim.js', '--myth=5000'],  need: 'ASTERISM MYTH OK', slow: true }
 ];
 
 /* Browser gates drive the real page in a real browser with real pointer events
