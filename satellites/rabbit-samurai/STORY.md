@@ -108,8 +108,13 @@ whoever paid for it.
   shows no card; reduced motion shows no fade. Shoot the card at 412x915 and look at it.
 
 ## Also from the same playtest, not this job's scope
-- "We can make the graphics better too." The painted layer hook is live (`bgLayer`, 1080x640 per
-  world, far and near), see `ASSETS.md`; nothing painted has been dropped in yet.
+- "We can make the graphics better too." **Procedural pass built Sep 05:** each world has a sky
+  (stars, a crescent and cloud bands on the Peaks; a moon with a halo and the canopy hanging in from the
+  top in the Grove; a rock ceiling with a lit edge and swaying roots in the Burrows; a warm haze and a
+  low moon in the Yards), a third distant parallax layer, tiles that vary from their own hash (crate
+  stamps, moss, cracks, root fibres), grass tufts, snow and pebbles on the ground line, dark undersides
+  on roofs and ledges, and a soft vignette. The painted layer hook is still live (`bgLayer`, 1080x640
+  per world, far and near), see `ASSETS.md`; painted art drops in over all of this.
 - "The levels should get more intricate as you go." `genLevel` ramps pits, platforms and enemies
   by `diff = stage + world`; the shapes themselves stay the same four. New shapes per world (a
   crate maze, a burrow with a ceiling, grove canopies you swing under, peak ledges with wind) are a
