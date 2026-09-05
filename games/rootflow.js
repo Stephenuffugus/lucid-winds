@@ -10,8 +10,8 @@ var _e=LWG.e,_play=LWG.play,_playWin=LWG.playWin,_setDiff=LWG.setDiff,sm=LWG.sm,
 
 // ── Config ──────────────────────────────────────────────────────────────
 var COLORS=[
-  '#E07A7A','#6BAD4A','#5B9BD5','#D4A843','#E08A4A',
-  '#B578C2','#6BC7D4','#E8A0BF','#E8DCC8','#8B5A2B'
+  '#E07A7A','#6BAD4A','#A0C4E8','#D4A843','#E08A4A',
+  '#B58FB5','#7FB8B0','#E8A0BF','#E8DCC8','#8B5A2B'
 ];
 // Colorblind cue: each color also gets a distinct glyph so twin dots can be
 // matched by shape, not just hue (fleet standard — same fix as Flood Fill).
@@ -38,7 +38,7 @@ var CANDIDATES_PER_PUZZLE=25;
     '@keyframes rfFade{0%{opacity:0;transform:translateY(4px)}100%{opacity:1;transform:translateY(0)}}',
     '@keyframes rfPop{0%{transform:scale(0.5);opacity:0}55%{transform:scale(1.15);opacity:1}100%{transform:scale(1);opacity:1}}',
     '@keyframes rfGlow{0%,100%{box-shadow:0 0 14px var(--rfc,rgba(255,216,106,0.6))}50%{box-shadow:0 0 24px var(--rfc,rgba(255,216,106,0.9))}}',
-    '#RFpan{max-width:min(100vw,560px);margin:0 auto;padding:6px;user-select:none;-webkit-user-select:none;box-sizing:border-box;font-family:Georgia,serif;animation:rfFade .3s ease}',
+    '#RFpan{max-width:min(100%,560px);min-width:0;margin:0 auto;padding:6px;user-select:none;-webkit-user-select:none;box-sizing:border-box;font-family:Georgia,serif;animation:rfFade .3s ease}',
     // Tier picker
     '.RFtierPick{display:flex;flex-direction:column;align-items:center;gap:14px;padding:26px 12px 14px;animation:rfFade .3s ease}',
     '.RFtierTitle{font-family:Bebas Neue,sans-serif;font-size:1.7rem;letter-spacing:0.22em;color:#c8a84b}',
@@ -58,7 +58,7 @@ var CANDIDATES_PER_PUZZLE=25;
     '.RFstatus em{color:#c8a84b;font-style:normal;font-weight:700}',
     // Board
     '.RFboardWrap{display:flex;justify-content:center;padding:4px 0}',
-    '.RFgrid{display:inline-grid;gap:2px;background:rgba(13,16,12,0.55);border:2px solid rgba(74,124,53,0.3);border-radius:10px;padding:6px;touch-action:none}',
+    '.RFgrid{display:inline-grid;gap:2px;background:rgba(16,20,14,0.85);border:2px solid rgba(74,124,53,0.45);border-radius:10px;padding:8px;touch-action:none;box-shadow:inset 0 0 24px rgba(0,0,0,.55),0 6px 20px rgba(0,0,0,.4)}',
     '.RFcell{box-sizing:border-box;position:relative;background:rgba(13,16,12,0.45);border-radius:4px;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:none}',
     '.RFcell.filled{background:transparent}',
     // Pipe arms extend from edge toward center with 10% overlap at the middle
@@ -74,11 +74,11 @@ var CANDIDATES_PER_PUZZLE=25;
     '.RFcell.connected .RFcore.dot{box-shadow:0 0 14px var(--rfc,transparent),inset 0 2px 0 rgba(255,255,255,0.25),inset 0 -2px 0 rgba(0,0,0,0.22)}',
     // Progress pips
     '.RFprog{display:flex;justify-content:center;gap:6px;padding:4px 0}',
-    '.RFpip{width:14px;height:14px;border-radius:50%;background:rgba(40,48,36,0.8);border:1.5px solid rgba(74,124,53,0.3);transition:transform .2s ease,box-shadow .2s ease;display:flex;align-items:center;justify-content:center;font-size:8px;line-height:1;color:rgba(255,255,255,0.35)}',
+    '.RFpip{width:22px;height:22px;border-radius:50%;background:rgba(40,48,36,0.8);border:1.5px solid rgba(74,124,53,0.3);transition:transform .2s ease,box-shadow .2s ease;display:flex;align-items:center;justify-content:center;font-size:12px;line-height:1;color:rgba(255,255,255,0.35)}',
     '.RFpip.on{background:var(--rfc,#8fc57a);border-color:transparent;transform:scale(1.15);box-shadow:0 0 6px var(--rfc,rgba(255,216,106,0.6));color:rgba(0,0,0,0.5)}',
     // Controls
     '.RFctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:6px;padding:6px 2px}',
-    '.RFbtn{min-height:48px;padding:8px 10px;font-family:Georgia,serif;font-size:0.74rem;letter-spacing:0.1em;border-radius:9px;background:rgba(26,31,23,0.8);border:1.5px solid rgba(220,180,120,0.32);color:#e8dcc8;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;display:flex;align-items:center;justify-content:center;gap:4px}',
+    '.RFbtn{min-height:48px;padding:8px 10px;font-family:Georgia,serif;font-size:0.8rem;letter-spacing:0.1em;border-radius:9px;background:rgba(26,31,23,0.8);border:1.5px solid rgba(220,180,120,0.32);color:#e8dcc8;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;display:flex;align-items:center;justify-content:center;gap:4px}',
     '.RFbtn:active{transform:scale(0.96);background:rgba(200,168,75,0.2)}',
     '.RFbtn.primary{background:linear-gradient(180deg,rgba(122,179,86,0.3),rgba(74,124,53,0.4));border-color:rgba(122,179,86,0.55);color:#8fc57a;font-weight:700}',
     '.RFbtn[disabled]{opacity:0.4;pointer-events:none}',
@@ -445,7 +445,7 @@ function buildDOM(host){
   gridEl.addEventListener('touchmove', onTouchMove, {passive:false});
   gridEl.addEventListener('touchend', onPointerUp);
   gridEl.addEventListener('touchcancel', onPointerUp);
-  ctrlRow=document.createElement('div'); ctrlRow.className='RFctrls'; pan.appendChild(ctrlRow);
+  ctrlRow=document.createElement('div'); ctrlRow.className='RFctrls'; pan.appendChild(ctrlRow); ctrlRow.style.cssText='display:grid;grid-template-columns:repeat(2,1fr);gap:8px;max-width:360px;margin:8px auto;padding:0 4px';
 }
 
 function onPointerDown(e){
@@ -650,7 +650,7 @@ function updateControls(){
   if(!ctrlRow)return;
   ctrlRow.innerHTML='';
   if(S.phase==='won')return;
-  ctrlRow.appendChild(mkBtn('💡 HINT','default',useHint,S.hintsLeft<=0));
+  ctrlRow.appendChild(mkBtn('💡 HINT','primary',useHint,S.hintsLeft<=0));
   ctrlRow.appendChild(mkBtn('↺ RESET','default',resetPuzzle));
   ctrlRow.appendChild(mkBtn('↻ NEW','default',function(){ newPuzzle(); }));
   ctrlRow.appendChild(mkBtn('← TIER','default',function(){ requestNewGame(); }));

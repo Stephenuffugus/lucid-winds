@@ -629,7 +629,7 @@ function GCH(a){
     var myVal = ptype ? (PIECE_VAL[ptype] || 0) : 0;
     // Check detection — does postB leave the opponent's king in check?
     var givesCheck = inCheck(postB, W);
-    if(givesCheck) return prefix + 'Check!';
+    if(givesCheck) return prefix + 'Check';
     // Castling: king moved 2 cols
     if(ptype === KING && Math.abs(mv.tc - mv.fc) === 2){
       return prefix + (mv.tc > mv.fc ? 'Castles short' : 'Castles long');
@@ -1408,7 +1408,7 @@ function GCH(a){
         if(turn===W){
           // Player is in check — AI just delivered it. Show AI's comment
           // alongside the check warning so they see what the engine did.
-          sm(_lastAIComment? _lastAIComment+' · Check!' : 'Check!');
+          sm(_lastAIComment? _lastAIComment+' · Check' : 'Check');
         } else {
           sm('Computer is in check');
         }

@@ -139,7 +139,7 @@
       e.preventDefault();
       var l=toLocal(p.x,p.y);drawSym(lastX,lastY,l.x,l.y);lastX=l.x;lastY=l.y}
     function onU(e){
-      if(_bwDrawingPath&&_bwCustomPath.length>2){_bwDrawingPath=false;sm('Custom path set! ('+_bwCustomPath.length+' points)');return}
+      if(_bwDrawingPath&&_bwCustomPath.length>2){_bwDrawingPath=false;sm('Custom path set ('+_bwCustomPath.length+' points)');return}
       drawing=false}
     canvas.addEventListener('mousedown',onD);canvas.addEventListener('mousemove',onM);
     canvas.addEventListener('mouseup',onU);canvas.addEventListener('mouseleave',onU);
@@ -284,7 +284,7 @@
       if(p==='custom'){_bwCustomPath=[];_bwDrawingPath=true;sm('Draw a path on canvas, then tap DRAW PATH again')}
       else{_bwDrawingPath=false;cx=W/2;cy=H/2}
     };
-    window._BWFreeze=function(){spinOn=!spinOn;var btn=document.getElementById('BWfrz');if(btn){btn.textContent=spinOn?'❄ FREEZE':'▶ RESUME';btn.className='gb'+(spinOn?'':' gon')}sm(spinOn?'Spinning':'Frozen, screenshot or save!')};
+    window._BWFreeze=function(){spinOn=!spinOn;var btn=document.getElementById('BWfrz');if(btn){btn.textContent=spinOn?'❄ FREEZE':'▶ RESUME';btn.className='gb'+(spinOn?'':' gon')}sm(spinOn?'Spinning':'Frozen, screenshot or save')};
     window._BWClear=function(){bufX.clearRect(0,0,bufC.width,bufC.height);rotAngle=0;strokes=0;_bwCustomPath=[];_bwDrawingPath=false;_bwPathIdx=0;_bwPathT=0;cx=W/2;cy=H/2;var pb=document.getElementById('BWpath');if(pb)pb.textContent='◯ SPIN';sm('Canvas cleared')};
     // Track whether this session has already minted a hash so save can't
     // be tap-farmed for unlimited Sunbeams. Same pattern as pixelgarden.
@@ -298,7 +298,7 @@
       sx.beginPath();sx.arc(cx,cy,radius,0,Math.PI*2);sx.strokeStyle='rgba(74,124,53,0.3)';sx.lineWidth=2;sx.stroke();
       sx.fillStyle='rgba(232,220,200,0.2)';sx.font='10px Bebas Neue,sans-serif';sx.textAlign='center';sx.fillText('BLOOM WHEEL, LUCID WINDS',cx,H-10);
       var lk=document.createElement('a');lk.download='bloom-wheel-'+Date.now()+'.png';lk.href=sc.toDataURL('image/png');lk.click();
-      _playWin();sm('Mandala saved!');
+      _playWin();sm('Mandala saved');
       if(g&&g.firstWin){_e('game_win');_sr('bloomwheel',{w:true,s:Math.round((Date.now()-startT)/1000)});}
       else _e('milestone');
     };

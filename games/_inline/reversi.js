@@ -262,7 +262,7 @@
           line:'lichen '+p2+', moss '+p1,sub:'best streak '+stats.best,
           retry:function(){window._RVN();},retryLabel:'↻ NEW GAME',viewLabel:'view the board'});
       }else{
-        _e('milestone');sm('Draw! '+p1+' to '+p2);_sr('reversi',{w:false,s:p1});
+        _e('milestone');sm('Draw, '+p1+' to '+p2);_sr('reversi',{w:false,s:p1});
         stats.d++;stats.streak=0;saveStats();renderStats();
         if(window._lwGameEnd)_lwGameEnd({won:false,title:'DRAW',
           line:'moss '+p1+', lichen '+p2,sub:'best streak '+stats.best,

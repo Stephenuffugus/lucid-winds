@@ -22,7 +22,7 @@ if(!document.getElementById('c4-drop-style')){
     '@keyframes c4hintPulse{0%,100%{box-shadow:inset 0 0 0 2px rgba(200,168,75,0.75),0 0 12px rgba(200,168,75,0.45)}50%{box-shadow:inset 0 0 0 2px rgba(200,168,75,1),0 0 22px rgba(200,168,75,0.85)}}',
     '.c4-hint{animation:c4hintPulse 1.4s ease-in-out infinite}',
     // Stephen 2026-05-11: gold-pulse the winning 4-in-a-row on game end.
-    '@keyframes c4winpulse{0%,100%{box-shadow:inset 0 0 4px rgba(0,0,0,.3),0 0 0 0 rgba(200,168,75,.65),0 0 18px 4px rgba(200,168,75,.45);transform:scale(1)}50%{box-shadow:inset 0 0 4px rgba(0,0,0,.3),0 0 0 4px rgba(200,168,75,.9),0 0 28px 10px rgba(200,168,75,.7);transform:scale(1.08)}}',
+    '@keyframes c4winpulse{0%,100%{box-shadow:inset 0 0 4px rgba(0,0,0,.3),0 0 0 0 rgba(200,168,75,.65),0 0 28px 9px rgba(200,168,75,.55);transform:scale(1)}50%{box-shadow:inset 0 0 4px rgba(0,0,0,.3),0 0 0 4px rgba(200,168,75,.9),0 0 28px 10px rgba(200,168,75,.7);transform:scale(1.08)}}',
     '.c4-winline{animation:c4winpulse 1.1s ease-in-out infinite;z-index:2;position:relative}',
     // CSS-based flower placeholders — each is a radial gradient stack
     // plus a thin rim. Meant to read as "distinct petal pair" without
@@ -39,7 +39,7 @@ if(!document.getElementById('c4-drop-style')){
     '.c4-toprow{display:flex;justify-content:center;gap:6px;padding:4px 0 6px;flex-wrap:wrap}',
     '.c4-toprow .gb{min-height:48px;padding:8px 12px;font-size:0.72rem;font-weight:500}',
     '.c4-picker{display:flex;gap:8px;justify-content:center;padding:6px 0;flex-wrap:wrap}',
-    '.c4-swatch{position:relative;overflow:hidden;width:34px;height:34px;border-radius:50%;border:2px solid rgba(74,124,53,0.25);cursor:pointer;transition:transform .15s ease,border-color .18s ease}',
+    '.c4-swatch{position:relative;overflow:hidden;width:42px;height:42px;border-radius:50%;border:2px solid rgba(74,124,53,0.25);cursor:pointer;transition:transform .15s ease,border-color .18s ease}',
     '.c4-swatch.on{border-color:var(--gold);transform:scale(1.12);box-shadow:0 0 10px rgba(200,168,75,0.45)}',
     '.c4-swatch-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:48px;min-height:48px;padding:4px;cursor:pointer}',
     '.c4-swatch-lbl{font-family:DM Mono,monospace;font-size:0.7rem;font-weight:500;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase}',
@@ -99,7 +99,7 @@ function GC4(a){
   // viewport so 7 columns × cell+gap+padding land ≥48px touch targets on
   // real phones (was clamp(280,88vw,420) → ~39px cells at 360vw).
   var gd=document.createElement('div');gd.id='C4g';
-  gd.style.cssText='display:grid;grid-template-columns:repeat('+COLS+',1fr);grid-template-rows:repeat('+ROWS+',1fr);gap:clamp(1px,0.4vw,6px);width:min(calc(100vw - 8px),420px);margin:0 0 0 calc((100% - min(100vw - 8px,420px))/2);padding:clamp(2px,0.5vw,10px);background:linear-gradient(180deg,rgba(48,36,20,.95),rgba(32,24,14,.98));border-radius:clamp(8px,2.5vw,14px);border:2px solid rgba(80,60,30,.4);box-shadow:0 4px 20px rgba(0,0,0,.5),inset 0 1px 0 rgba(120,90,40,.15)';
+  gd.style.cssText='display:grid;grid-template-columns:repeat('+COLS+',1fr);grid-template-rows:repeat('+ROWS+',1fr);gap:clamp(1px,0.4vw,6px);width:min(calc(100vw - 8px),420px);margin:0 0 0 calc((100% - min(100vw - 8px,420px))/2);padding:clamp(2px,0.5vw,10px);background:linear-gradient(180deg,rgba(48,36,20,.95),rgba(32,24,14,.98));border-radius:clamp(8px,2.5vw,14px);border:2px solid rgba(80,60,30,.4);box-shadow:0 4px 20px rgba(0,0,0,.5),0 0 44px rgba(122,179,86,.12),inset 0 1px 0 rgba(120,90,40,.15)';
   a.appendChild(gd);
 
   // Secondary row — Undo / Hint
@@ -272,7 +272,7 @@ function GC4(a){
   }
 
   // Encouraging copy
-  var _c4Enc=['Nice try! Go again 🌱','Almost had it! One more? 🌿','The garden grows through practice 🌻','Every loss plants a seed of wisdom 🍃','You learn more from losses, rematch? 🌸'];
+  var _c4Enc=['Nice try, go again 🌱','Almost had it, one more? 🌿','The garden grows through practice 🌻','Every loss plants a seed of wisdom 🍃','You learn more from losses, rematch? 🌸'];
   var _c4Win=['Brilliant! You bloomed! 🌸','Your garden flourishes! 🌺','Masterful placement! 🌻','The grove is proud! 🌿','Four in a Row champion! 🏆'];
 
   function _recordResult(kind){
@@ -293,7 +293,7 @@ function GC4(a){
       _sr('c4',{w:false});
       _recordResult('loss');
     }else if(isFull()){
-      over=true;sm('A draw! Well matched, try again? 🌿');
+      over=true;sm('A draw, well matched. Try again? 🌿');
       _sr('c4',{w:false});_recordResult('draw');
     }else{
       turn=1;sm('Your turn');
@@ -308,7 +308,7 @@ function GC4(a){
     d.className=d.className.replace(/\bc4-(rose|sun|iris|tulip|lily|dahlia)\b/g,'').trim();
     if(v===0){
       d.style.background='rgba(10,8,4,.7)';
-      d.style.boxShadow='inset 0 2px 6px rgba(0,0,0,.6)';
+      d.style.boxShadow='inset 0 2px 6px rgba(0,0,0,.6),inset 0 -1px 0 rgba(150,110,50,.18)';
       return;
     }
     var theme=THEMES[currentTheme];
@@ -362,7 +362,7 @@ function GC4(a){
       gd.innerHTML='';
       for(var r=0;r<ROWS;r++)for(var c=0;c<COLS;c++){
         var d=document.createElement('div');
-        d.style.cssText='position:relative;aspect-ratio:1;border-radius:50%;cursor:pointer;overflow:hidden;-webkit-tap-highlight-color:transparent;transition:background .22s ease,box-shadow .22s ease,transform .12s ease;background:rgba(10,8,4,.7);box-shadow:inset 0 2px 6px rgba(0,0,0,.6)';
+        d.style.cssText='position:relative;aspect-ratio:1;border-radius:50%;cursor:pointer;overflow:hidden;-webkit-tap-highlight-color:transparent;transition:background .22s ease,box-shadow .22s ease,transform .12s ease;background:rgba(10,8,4,.7);box-shadow:inset 0 2px 6px rgba(0,0,0,.6),inset 0 -1px 0 rgba(150,110,50,.18)';
         d.setAttribute('data-c',c);
         d.setAttribute('data-r',r);
         d.onclick=function(){
@@ -378,7 +378,7 @@ function GC4(a){
             return;
           }
           if(isFull()){
-            over=true;sm('A draw! Well matched, try again? 🌿');
+            over=true;sm('A draw, well matched. Try again? 🌿');
             rn();_sr('c4',{w:false});_recordResult('draw');
             return;
           }
@@ -412,7 +412,7 @@ function GC4(a){
         var isWin=check(1),isLoss=!isWin&&check(2);
         var title=isWin?'YOU BLOOMED':(isLoss?'GAME OVER':'DRAW');
         var titleColor=isLoss?'var(--cream)':'var(--gold)';
-        var msg=isWin?_c4Win[Math.floor(Math.random()*_c4Win.length)]:(isLoss?_c4Enc[Math.floor(Math.random()*_c4Enc.length)]:'A draw! Well matched.');
+        var msg=isWin?_c4Win[Math.floor(Math.random()*_c4Win.length)]:(isLoss?_c4Enc[Math.floor(Math.random()*_c4Enc.length)]:'A draw, well matched.');
         ob.innerHTML='<div style="text-align:center;padding:clamp(8px,3vw,16px);background:rgba(26,31,23,.85);border:1px solid rgba(74,124,53,.15);border-radius:12px;margin:8px auto;max-width:320px">'
           +'<div style="font-family:Bebas Neue,sans-serif;font-size:clamp(.8rem,2.5vw,1.1rem);color:'+titleColor+';letter-spacing:.08em;margin-bottom:6px">'+title+'</div>'
           +'<div style="font-size:clamp(.7rem,1.6vw,.85rem);color:var(--muted);margin-bottom:10px">'+msg+'</div>'

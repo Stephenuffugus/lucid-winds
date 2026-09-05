@@ -105,10 +105,12 @@ window._gameFns.vinewords=function VW(a){
   // re-home its children (IDs intact, so all updates keep working).
   try{
     var _guBar=a.querySelector('.gu-bar');
-    if(_guBar&&getComputedStyle(_guBar).display==='none'){
+    if(_guBar){
       var _hud=document.createElement('div');
-      _hud.style.cssText='display:flex;justify-content:center;gap:6px;padding:6px 0 2px;font-family:DM Mono,monospace;font-size:0.85rem;color:var(--cream,#e8dcc8);';
-      while(_guBar.firstChild)_hud.appendChild(_guBar.firstChild);
+      _hud.style.cssText='display:flex;justify-content:center;gap:6px;padding:8px 0 4px;font-family:DM Mono,monospace;font-size:0.85rem;color:var(--cream,#e8dcc8);position:sticky;top:0;z-index:6;background:rgba(13,16,12,0.94);';
+      var _left=_guBar.querySelector('.gu-left')||_guBar;
+      while(_left.firstChild)_hud.appendChild(_left.firstChild);
+      _guBar.parentNode.removeChild(_guBar);
       a.appendChild(_hud);
     }
   }catch(e){}
@@ -125,10 +127,11 @@ window._gameFns.vinewords=function VW(a){
 
   var btnRow=document.createElement('div');
   btnRow.style.cssText='display:flex;gap:6px;justify-content:center;padding:2px 0 8px;';
+  var _vwst=document.createElement('style');_vwst.textContent='#VWsubmit:not([disabled]){background:rgba(122,179,86,.28);border-color:rgba(122,179,86,.6);color:#7ab356}';pan.appendChild(_vwst);
   btnRow.innerHTML=''+
     '<button id="VWsubmit" class="gb" style="min-height:48px;padding:8px 18px;font-size:0.82rem;letter-spacing:0.1em;">✓ SUBMIT</button>'+
     '<button id="VWclear" class="gb" style="min-height:48px;padding:8px 18px;font-size:0.82rem;letter-spacing:0.1em;">✗ CLEAR</button>'+
-    '<button id="VWpause" class="gb" style="min-height:48px;padding:8px 18px;font-size:0.82rem;letter-spacing:0.1em;">⏸ PAUSE</button>';
+    '<button id="VWpause" class="gb" style="min-height:48px;padding:8px 18px;font-size:0.82rem;letter-spacing:0.1em;color:var(--muted,#8a9178);border-color:rgba(138,145,120,0.3);">PAUSE</button>';
   pan.appendChild(btnRow);
 
   // Board wrapper holds canvas for path drawing + cell grid
@@ -421,14 +424,14 @@ window._gameFns.vinewords=function VW(a){
   document.getElementById('VWpause').onclick=function(){
     if(!playing)return;
     paused=!paused;
-    this.textContent=paused?'▶ RESUME':'⏸ PAUSE';
+    this.textContent=paused?'RESUME':'PAUSE';
     // Cover the letters while paused — a frozen clock over a fully visible
     // board was free planning time.
     try{
       var bw=gridHost||document.getElementById('VWgrid');
       if(bw){bw.style.filter=paused?'blur(14px)':'';bw.style.pointerEvents=paused?'none':'';}
     }catch(e){}
-    if(paused){sm('Paused, board hidden');}else{sm('Go!');}
+    if(paused){sm('Paused, board hidden');}else{sm('Go');}
   };
 
   // ── Timer ──
@@ -498,7 +501,7 @@ window._gameFns.vinewords=function VW(a){
     }
     saveStats(stats);
     var be=document.getElementById('VWbest');if(be)be.textContent=stats.best;
-    sm('Time! Score '+score+' / '+maxScore);
+    sm('Time. Score '+score+' / '+maxScore);
     _sr('vinewords',{w:won,s:score});
     renderSummary(maxScore);
   }
@@ -561,7 +564,7 @@ window._gameFns.vinewords=function VW(a){
     if(replayRound)restoreBoard();
     else buildGrid();
     path=[];foundSet={};foundList=[];score=0;timeLeft=duration;playing=true;paused=false;
-    var pb=document.getElementById('VWpause');if(pb)pb.textContent='⏸ PAUSE';
+    var pb=document.getElementById('VWpause');if(pb)pb.textContent='PAUSE';
     var se=document.getElementById('VWs');if(se)se.textContent='0';
     var we=document.getElementById('VWwords');if(we)we.textContent='0';
     var te=document.getElementById('VWt');if(te){te.textContent=formatTime(duration);te.classList.remove('vw-urgent');}

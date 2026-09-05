@@ -370,7 +370,7 @@
       dice=new Array(6).fill(0);kept=new Array(6).fill(false);justRolled=new Array(6).fill(false);
       turn=0;rolling=false;busted=false;curP=0;gameOver=false;finalRound=false;finalStart=-1;overlay=null;
       players=[];for(var i=0;i<numPlayers;i++)players.push({banked:0});
-      sm(numPlayers>1?('P1, 🎲 Roll (first to '+target+')'):'🎲 Roll!');
+      sm(numPlayers>1?('P1, 🎲 Roll (first to '+target+')'):'🎲 Roll');
       rn();
     };
     // Re-render on dice-style change. Self-unregisters once the game is gone.

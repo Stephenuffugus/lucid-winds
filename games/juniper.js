@@ -310,9 +310,9 @@ window._gameFns.juniper = function Juniper(a){
       laidOff = lo.laidOff;
     }
     var pts=0,winner='',msg='',kind=type;
-    if(type==='gin'){pts=ddw+25;winner=who;msg=(who==='player'?'GIN! +':'Computer GIN! +')+pts;}
+    if(type==='gin'){pts=ddw+25;winner=who;msg=(who==='player'?'GIN! +':'Computer gin, +')+pts;}
     else{
-      if(ddw<=kdw){pts=(kdw-ddw)+25;winner=who==='player'?'ai':'player';kind='undercut';msg='UNDERCUT! '+(winner==='player'?'You':'Computer')+' +'+pts;}
+      if(ddw<=kdw){pts=(kdw-ddw)+25;winner=who==='player'?'ai':'player';kind='undercut';msg='Undercut, '+(winner==='player'?'You':'Computer')+' +'+pts;}
       else{pts=ddw-kdw;winner=who;msg=(who==='player'?'You':'Computer')+' knock +'+pts;}
     }
     if(winner==='player'){playerScore+=pts;playerWins++;_e('milestone');}

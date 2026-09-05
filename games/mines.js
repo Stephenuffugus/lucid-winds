@@ -112,7 +112,7 @@ function GN(a){
     _e('game_loss'); _play('lose');
     render(); gd.classList.remove('mn-shake'); void gd.offsetWidth; gd.classList.add('mn-shake');
     if(daily) markDaily(elapsed,false);
-    updateHeader(); sm('🦠 Root rot! Tap NEW to try again'); _sr('mines',{w:false,s:rv});
+    updateHeader(); sm('🦠 Root rot. Tap NEW to try again'); _sr('mines',{w:false,s:rv});
   }
   function checkWin(){
     if(over) return; if(rv!==sf) return;

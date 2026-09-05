@@ -493,8 +493,8 @@ window._gameFns.numbergarden=function NG(a){
     genProblem();
     if(timerInterval)clearInterval(timerInterval);
     timerInterval=setInterval(tickTimer,200);
-    var msg={add:'GO! 60 seconds, ADD',sub:'GO! 60s, SUB',mul:'GO! 60s, MUL',mix:'GO! 60s, MIX',tables:'GO! Times tables',make10:'GO! Complements to 10',make100:'GO! Complements to 100',span:'GO! Watch the digits, recall the sequence',flash:'GO! Watch the numbers, sum them'};
-    sm(msg[mode]||'GO!');
+    var msg={add:'Go, 60 seconds, ADD',sub:'Go, 60s, SUB',mul:'Go, 60s, MUL',mix:'Go, 60s, MIX',tables:'Go, times tables',make10:'Go, complements to 10',make100:'Go, complements to 100',span:'Go, watch the digits, recall the sequence',flash:'Go, watch the numbers, sum them'};
+    sm(msg[mode]||'GO');
   };
   window._NGrules=function(){
     var existing=document.getElementById('NGrulesOV');

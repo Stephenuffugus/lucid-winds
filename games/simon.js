@@ -92,7 +92,7 @@ function GS(a){var sq=[],pi=0,rd=0,br=0,pl=false,pt=false,ac=null,gen=0;
   }
 
   function fl(i,d){var e=document.getElementById('s'+i);if(!e)return;e.classList.add('lt');tn(FR[i],d);setTimeout(function(){e.classList.remove('lt')},d)}
-  function ps(){pl=true;pt=false;sm('Watch...');var i=0,sp=Math.max(220,480-rd*12),g=gen;var iv=setInterval(function(){if(g!==gen){clearInterval(iv);return}if(i>=sq.length){clearInterval(iv);pl=false;pt=true;pi=0;sm('Your turn!');return}fl(sq[i],sp*.7);i++},sp)}
+  function ps(){pl=true;pt=false;sm('Watch...');var i=0,sp=Math.max(220,480-rd*12),g=gen;var iv=setInterval(function(){if(g!==gen){clearInterval(iv);return}if(i>=sq.length){clearInterval(iv);pl=false;pt=true;pi=0;sm('Your turn');return}fl(sq[i],sp*.7);i++},sp)}
   // Simon is memory-endurance: play until you forget. Every 5 rounds
   // fires a milestone (caps at progCap per session via _e). No 'game_win'
   // event mid-game — that was kicking up the play-again overlay and

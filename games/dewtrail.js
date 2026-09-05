@@ -17,11 +17,13 @@ if(!document.getElementById('dt-style')){
   st.textContent=[
     '.dt-wrap{max-width:430px;margin:0 auto;padding:4px 8px;user-select:none;-webkit-user-select:none;}',
     '.dt-grid{display:grid;gap:4px;margin:6px auto;touch-action:none;width:100%;max-width:400px;}',
-    '.dt-c{position:relative;aspect-ratio:1;min-width:0;border-radius:10px;background:rgba(26,31,23,0.55);border:1.5px solid rgba(74,124,53,0.18);display:flex;align-items:center;justify-content:center;transition:background .12s,border-color .12s;}',
+    '.dt-c{position:relative;aspect-ratio:1;min-width:0;border-radius:10px;background:#151a12;border:1.5px solid rgba(74,124,53,0.35);display:flex;align-items:center;justify-content:center;transition:background .12s,border-color .12s;}',
     '.dt-c.on{background:linear-gradient(160deg,rgba(122,179,86,0.34),rgba(74,124,53,0.5));border-color:rgba(122,179,86,0.55);box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);}',
     '.dt-c.head{box-shadow:0 0 14px rgba(140,200,255,0.5),inset 0 1px 0 rgba(255,255,255,0.12);border-color:rgba(140,200,255,0.7);}',
     '.dt-num{font-family:Bebas Neue,sans-serif;font-size:clamp(1rem,4.5vw,1.5rem);color:var(--cream,#e8dcc8);background:rgba(13,16,12,0.85);border:1.5px solid rgba(200,168,75,0.5);border-radius:999px;min-width:58%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;line-height:1;z-index:2;pointer-events:none;}',
     '.dt-c.got .dt-num{border-color:rgba(122,179,86,0.9);color:#cfe8b8;}',
+    '.dt-num.start{background:rgba(122,179,86,0.3);border:2px solid var(--gold,#c8a84b);}',
+    '.dt-board{padding:10px;border-radius:16px;border:1px solid rgba(200,168,75,0.22);background:rgba(13,16,12,0.45);box-shadow:inset 0 0 30px rgba(0,0,0,0.5),0 6px 20px rgba(0,0,0,0.4);margin:4px auto;}',
     '.dt-drop{width:26%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 35% 30%,#cfe9ff,#6fa8d8 70%);opacity:0.9;pointer-events:none;}',
     // path bridges between adjacent visited cells
     '.dt-c .dt-br{position:absolute;background:rgba(122,179,86,0.5);z-index:1;pointer-events:none;}',
@@ -365,17 +367,17 @@ window._gameFns.dewtrail=function DT(a){
       h+='<div class="dt-row"><button class="dt-btn gold" onclick="_DTshare()">📤 SHARE</button><button class="dt-btn" onclick="_DTP()">PRACTICE</button></div></div>';
       pan.innerHTML=h;return;
     }
-    h+='<div class="dt-grid" id="DTg" style="grid-template-columns:repeat('+N+',1fr)">';
+    h+='<div class="dt-board"><div class="dt-grid" id="DTg" style="grid-template-columns:repeat('+N+',1fr)">';
     for(var i=0;i<N*N;i++){
       var w=puzzle.wpOf[i];
-      h+='<div class="dt-c" data-i="'+i+'">'+(w!==undefined?'<div class="dt-num">'+w+'</div>':'<div class="dt-drop"></div>')+'</div>';
+      h+='<div class="dt-c" data-i="'+i+'">'+(w!==undefined?'<div class="dt-num'+(w===1?' start':'')+'">'+w+'</div>':'<div class="dt-drop"></div>')+'</div>';
     }
-    h+='</div>';
+    h+='</div></div>';
     if(won){
       h+='<div class="dt-done"><div class="big">'+(mode==='daily'?'TRAIL COMPLETE · ':'SOLVED · ')+fmt(elapsed)+'</div>';
       h+='<div class="dt-row"><button class="dt-btn gold" onclick="_DTshare()">📤 SHARE</button>'+(mode==='daily'?'<button class="dt-btn" onclick="_DTP()">PRACTICE</button>':'<button class="dt-btn" onclick="_DTP()">ANOTHER</button>')+'</div></div>';
     }else{
-      h+='<div style="text-align:center;font-family:Georgia,serif;font-style:italic;font-size:0.78rem;color:var(--muted,#8a9178);padding:2px 0 6px;">Drag one trail from 1, touch every cell, numbers in order.</div>';
+      h+='<div style="text-align:center;font-family:Georgia,serif;font-style:italic;font-size:0.82rem;color:rgba(232,220,200,0.72);padding:4px 0 8px;">Drag one trail from 1, touch every cell, numbers in order.</div>';
       h+='<div class="dt-row">'+(mode==='practice'?'<button class="dt-btn" onclick="_DTD()">TODAY\'S DAILY</button>':'')+'<button class="dt-btn" onclick="_DTR()">↺ RESTART</button>'+(mode==='daily'?'<button class="dt-btn" onclick="_DTP()">PRACTICE</button>':'')+'</div>';
     }
     pan.innerHTML=h;

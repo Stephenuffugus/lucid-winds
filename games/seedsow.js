@@ -426,7 +426,7 @@ window._gameFns.seedsow=function SS(a){
     h+='<h2>🌱 Mancala: How to Play</h2>';
     h+='<p>A classic Kalah-style Mancala. You control the <strong style="color:#8fc57a">bottom row</strong> and the <strong>green store</strong> on the right. The AI owns the top row and the coral store on the left.</p>';
     h+='<h2>Your turn</h2>';
-    h+='<p>Tap one of your pits. The seeds inside sow counterclockwise, one per pit: into your row, into your store, into the computer\'s row, past the computer\'s store (skipped!), back to yours.</p>';
+    h+='<p>Tap one of your pits. The seeds inside sow counterclockwise, one per pit: into your row, into your store, into the computer\'s row, past the computer\'s store (skipped), back to yours.</p>';
     h+='<h2>Free turn</h2>';
     h+='<p>If your last seed lands in <strong style="color:var(--gold)">your store</strong>, you play again.</p>';
     h+='<h2>Capture</h2>';

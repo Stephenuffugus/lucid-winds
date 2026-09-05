@@ -140,7 +140,7 @@ window._gameFns.cribbage = function CRIB(a){
     aiDiscards.forEach(function(idx){G.crib.push(G.aHand.splice(idx,1)[0]);});
     G.starter=G.deck.pop();
     if(G.starter.rank===10){
-      if(G.dealer==='player'){addP(2);sm('Nibs! +2');}
+      if(G.dealer==='player'){addP(2);sm('Nibs, +2');}
       else{addA(2);sm('Computer nibs +2');}
       if(checkWin())return;
     }

@@ -95,7 +95,15 @@ canvas{display:block; touch-action:none; border-radius:16px;
 
 /* ---- store ---- */
 #storeBtn{border-color:rgba(255,210,120,.5);background:rgba(255,210,120,.14);color:#ffd98a}
-@media (max-width:440px){ .brand{display:none} }
+@media (max-width:440px){ .brand{display:none}
+  /* Sep 05: seven children in a 54px no-wrap bar summed to 508px on a 412 phone and the restart
+     button sat 75px off the right edge. Tighter chrome and one preview tile under 440px. */
+  .topbar{gap:6px; padding:0 8px}
+  .topbar .pill{padding:4px 8px; font-size:12px}
+  .next .qtile.small{display:none}
+  .iconbtn{width:30px; height:30px}
+}
+@media (max-width:340px){ .topbar{gap:4px; padding:0 6px} .topbar .score{min-width:0; gap:0} .topbar .score .lbl{display:none} .topbar .score .val{font-size:20px} .topbar .pill{padding:3px 6px; font-size:11px} .topbar #helpBtn{display:none} }
 .store{gap:8px}
 .storebal{font-size:15px;font-weight:800;color:#ffd98a}
 .storegrid{width:100%;max-width:360px;max-height:58vh;overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding:2px 4px}

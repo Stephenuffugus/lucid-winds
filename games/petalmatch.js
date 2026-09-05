@@ -2514,7 +2514,7 @@ window._gameFns.petalmatch = function PM(a){
        Everything below is Journey's business. */
     if(mode==='timed'){
       if(timedOver)return;
-      if(!findValidSwap()){ sm('No moves, shuffling!'); shuffleGrid(); }
+      if(!findValidSwap()){ sm('No moves, shuffling'); shuffleGrid(); }
       lastInputAt=Date.now();hintCells=null;
       return;
     }
@@ -2593,7 +2593,7 @@ window._gameFns.petalmatch = function PM(a){
       return;
     }
     if(!findValidSwap()){
-      sm('No moves, shuffling!');
+      sm('No moves, shuffling');
       shuffleGrid();
     }
     lastInputAt=Date.now();hintCells=null;

@@ -192,7 +192,7 @@ window._gameFns.stopten=function ST(a){
   function renderStats(){
     var p=stats.w+stats.l;
     var pct=p?Math.round(stats.w/p*100):0;
-    statsRow.innerHTML='played <strong>'+p+'</strong> · hit <strong>'+pct+'%</strong> · streak <strong>'+stats.streak+'</strong> · best ±<strong>'+(stats.best?stats.best.toFixed(2)+'s':'·')+'</strong>';
+    statsRow.innerHTML='played <strong>'+p+'</strong> · hit <strong>'+pct+'%</strong> · streak <strong>'+stats.streak+'</strong> · best <strong>'+(stats.best?'±'+stats.best.toFixed(2)+'s':'none yet')+'</strong>';
   }
 
   function tick(){
@@ -532,13 +532,13 @@ window._gameFns.stopten=function ST(a){
   };
   function _copyToClip(t){
     if(navigator.clipboard&&navigator.clipboard.writeText){
-      navigator.clipboard.writeText(t).then(function(){sm('Copied!');}).catch(function(){_fallbackClip(t);});
+      navigator.clipboard.writeText(t).then(function(){sm('Copied');}).catch(function(){_fallbackClip(t);});
     }else _fallbackClip(t);
   }
   function _fallbackClip(t){
     var ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.left='-9999px';
     document.body.appendChild(ta);ta.select();
-    try{document.execCommand('copy');sm('Copied!');}catch(e){}
+    try{document.execCommand('copy');sm('Copied');}catch(e){}
     document.body.removeChild(ta);
   }
   window._STN=function(){

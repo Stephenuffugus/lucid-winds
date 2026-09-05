@@ -335,7 +335,7 @@
       }else if(turn%3===0)_e('milestone');
       rn();
     }
-    window._YN=function(){dice=[0,0,0,0,0];kept=new Array(5).fill(false);rolls=0;turn=1;scores={};overlay=null;yRolling=false;justRolled=new Array(5).fill(false);document.getElementById('Yt').textContent='1';document.getElementById('Yr').textContent='0';sm('Tap ROLL to begin!');rn()};
+    window._YN=function(){dice=[0,0,0,0,0];kept=new Array(5).fill(false);rolls=0;turn=1;scores={};overlay=null;yRolling=false;justRolled=new Array(5).fill(false);document.getElementById('Yt').textContent='1';document.getElementById('Yr').textContent='0';sm('Tap ROLL to begin');rn()};
     // Re-render on dice-style change. Self-unregisters once the game is gone.
     var _yStyleListener=function(){
       if(!document.body.contains(a)){window.removeEventListener('lw-dice-style-change',_yStyleListener);return;}

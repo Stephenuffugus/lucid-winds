@@ -355,7 +355,7 @@ function showReaction(){
     if(S.exData.phase!=='wait')return;
     S.exData.phase='go'; S.exData.goTime=Date.now();
     var t=pan.querySelector('#DBrt');
-    if(t){ t.className='go'; t.textContent='TAP!'; }
+    if(t){ t.className='go'; t.textContent='TAP'; }
   }, delay);
   pan.querySelector('#DBrt').addEventListener('click', function(){
     if(S.exData.phase==='wait'){

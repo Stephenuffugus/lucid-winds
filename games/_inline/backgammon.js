@@ -122,8 +122,8 @@
       if(mv.from==='bar'){setBar(w,getBar(w)-1)}else{B[mv.from]+=(w==='human'?-1:1)}
       if(mv.to==='off'){if(w==='human')BO_H++;else BO_A++}
       else{
-        if(w==='human'&&B[mv.to]===-1){B[mv.to]=0;B[0]=(B[0]||0)-1;if(!sim)sm('Hit! Sent to bar')}
-        else if(w==='ai'&&B[mv.to]===1){B[mv.to]=0;B[25]=(B[25]||0)+1;if(!sim)sm('AI hits your seed!')}
+        if(w==='human'&&B[mv.to]===-1){B[mv.to]=0;B[0]=(B[0]||0)-1;if(!sim)sm('Hit, sent to bar')}
+        else if(w==='ai'&&B[mv.to]===1){B[mv.to]=0;B[25]=(B[25]||0)+1;if(!sim)sm('AI hits your seed')}
         B[mv.to]+=(w==='human'?1:-1);
       }
       for(var i=0;i<MOVES_LEFT.length;i++){if(MOVES_LEFT[i]===mv.die){MOVES_LEFT.splice(i,1);break}}
@@ -192,7 +192,7 @@
         if(!chosen){SEL=-1;VALID_DESTS=[];selectPt(p);return}
         BG_UNDO.push(snapshotState());BG_HINT=null;
         applyMove(chosen,'human');_play('tap');SEL=-1;VALID_DESTS=[];
-        if(BO_H>=15){_e('game_win');_playWin();sm('All seeds home!');_sr('backgammon',{w:true,s:1,lo:1});_bgGameOver(true);rn();return}
+        if(BO_H>=15){_e('game_win');_playWin();sm('All seeds home');_sr('backgammon',{w:true,s:1,lo:1});_bgGameOver(true);rn();return}
         if(MOVES_LEFT.length>0){var rem=getValidMoves('human');if(rem.length===0){sm('No more moves');MOVES_LEFT=[];endTurn()}else rn()}
         else endTurn();
       }
@@ -305,7 +305,7 @@
         if(MOVES_LEFT.length===0){endTurn();return}
         var moves=getValidMoves('ai');if(moves.length===0){MOVES_LEFT=[];endTurn();return}
         var best=_bestMoveFor('ai');
-        if(best){applyMove(best,'ai');if(BO_A>=15){_e('game_loss');sm('AI wins!');_sr('backgammon',{w:false,s:0});_bgGameOver(false);rn();return}}
+        if(best){applyMove(best,'ai');if(BO_A>=15){_e('game_loss');sm('AI wins');_sr('backgammon',{w:false,s:0});_bgGameOver(false);rn();return}}
         var _g2=BG_GEN;
         if(MOVES_LEFT.length>0)bgSchedule(function(){if(_g2===BG_GEN)aiPlay();},250);
         else bgSchedule(function(){if(_g2===BG_GEN)endTurn();},250);
@@ -435,7 +435,7 @@
       if(!mv)return;
       BG_UNDO.push(snapshotState());BG_HINT=null;
       applyMove(mv,'human');_play('tap');SEL=-1;VALID_DESTS=[];
-      if(BO_H>=15){_e('game_win');_playWin();sm('All seeds home!');_sr('backgammon',{w:true,s:1,lo:1});_bgGameOver(true);rn();return}
+      if(BO_H>=15){_e('game_win');_playWin();sm('All seeds home');_sr('backgammon',{w:true,s:1,lo:1});_bgGameOver(true);rn();return}
       if(MOVES_LEFT.length>0){var rem=getValidMoves('human');if(rem.length===0){MOVES_LEFT=[];endTurn()}else rn()}
       else endTurn();
     };

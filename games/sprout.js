@@ -453,7 +453,7 @@ window._gameFns.sprout=function GPW(a){
 
   function copyToClip(text){
     if(navigator.clipboard&&navigator.clipboard.writeText){
-      navigator.clipboard.writeText(text).then(function(){showMsg('Copied!');}).catch(function(){fallbackCopy(text);});
+      navigator.clipboard.writeText(text).then(function(){showMsg('Copied');}).catch(function(){fallbackCopy(text);});
     }else{
       fallbackCopy(text);
     }
@@ -461,7 +461,7 @@ window._gameFns.sprout=function GPW(a){
   function fallbackCopy(text){
     var ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.left='-9999px';
     document.body.appendChild(ta);ta.select();
-    try{document.execCommand('copy');showMsg('Copied!');}catch(e){showMsg('Copy failed');}
+    try{document.execCommand('copy');showMsg('Copied');}catch(e){showMsg('Copy failed');}
     document.body.removeChild(ta);
   }
 

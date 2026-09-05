@@ -255,13 +255,13 @@ window._gameFns.livingstones = function LS(a){
   function renderBoard(){
     var p=currentPuzzles[puzzleIdx];
     var px=Math.min(380,window.innerWidth-40);
-    var margin=Math.floor(px/(boardSize+1));
-    var cell=margin,total=margin*(boardSize+1);
-    var svg='<svg width="'+total+'" height="'+total+'" style="background:#2a2418;border-radius:6px;display:block;margin:8px auto;touch-action:none;">';
+    var cell=Math.floor(px/(boardSize+0.1));
+    var margin=Math.floor(cell*0.55),total=margin*2+(boardSize-1)*cell;
+    var svg='<svg width="'+total+'" height="'+total+'" style="background:#2a2418;border-radius:6px;display:block;margin:8px auto;touch-action:none;filter:drop-shadow(0 6px 18px rgba(0,0,0,.65));">';
     for(var i=0;i<boardSize;i++){
       var xy=margin+i*cell;
-      svg+='<line x1="'+margin+'" y1="'+xy+'" x2="'+(margin+(boardSize-1)*cell)+'" y2="'+xy+'" stroke="rgba(140,120,80,0.4)" stroke-width="1"/>';
-      svg+='<line x1="'+xy+'" y1="'+margin+'" x2="'+xy+'" y2="'+(margin+(boardSize-1)*cell)+'" stroke="rgba(140,120,80,0.4)" stroke-width="1"/>';
+      svg+='<line x1="'+margin+'" y1="'+xy+'" x2="'+(margin+(boardSize-1)*cell)+'" y2="'+xy+'" stroke="#3b2a16" stroke-width="1.2"/>';
+      svg+='<line x1="'+xy+'" y1="'+margin+'" x2="'+xy+'" y2="'+(margin+(boardSize-1)*cell)+'" stroke="#3b2a16" stroke-width="1.2"/>';
     }
     var sr=cell*0.42;
     for(var r=0;r<boardSize;r++){
@@ -278,7 +278,7 @@ window._gameFns.livingstones = function LS(a){
     h+=svg;
     var dots='';
     for(var d=0;d<currentPuzzles.length;d++){
-      var ds='display:inline-block;width:10px;height:10px;border-radius:50%;margin:0 3px;border:1px solid rgba(122,179,86,0.3);';
+      var ds='display:inline-block;width:12px;height:12px;border-radius:50%;margin:0 3px;border:1px solid rgba(122,179,86,0.55);';
       if(solvedSet[difficulty+'_'+d])ds+='background:#7ab356;border-color:#7ab356;';
       if(d===puzzleIdx)ds+='box-shadow:0 0 6px rgba(200,168,75,0.6);border-color:#c8a84b;';
       dots+='<div style="'+ds+'"></div>';
