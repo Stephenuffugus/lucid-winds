@@ -1,0 +1,14 @@
+import puppeteer from "puppeteer"; import { createServer } from "http"; import fs from "fs"; import path from "path";
+const ROOT="/workspaces/lucid-winds"; const OUT=process.argv[2]||"lt13/after/pollen-seats.png"; const W=+process.argv[3]||412, H=+process.argv[4]||915;
+const M={".html":"text/html",".js":"text/javascript",".css":"text/css",".png":"image/png",".jpg":"image/jpeg",".svg":"image/svg+xml",".json":"application/json",".webp":"image/webp"};
+const s=createServer((q,r)=>{const u=decodeURIComponent(q.url.split("?")[0]);const p=path.join(ROOT,u.endsWith("/")?u+"index.html":u); if(!fs.existsSync(p)||fs.statSync(p).isDirectory()){r.writeHead(404);return r.end()} r.writeHead(200,{"content-type":M[path.extname(p)]||"application/octet-stream"});r.end(fs.readFileSync(p))});
+await new Promise(r=>s.listen(0,"127.0.0.1",r)); const port=s.address().port;
+const b=await puppeteer.launch({headless:"new",args:["--no-sandbox","--disable-gpu","--mute-audio"]}); const pg=await b.newPage();
+await pg.setViewport({width:W,height:H,deviceScaleFactor:2,isMobile:true,hasTouch:true});
+await pg.evaluateOnNewDocument(()=>{try{localStorage.setItem("sws_dev_ok","1");localStorage.setItem("sws_dir_pollen","1");}catch(e){}});
+await pg.goto(`http://127.0.0.1:${port}/play/pollen.html`,{waitUntil:"load",timeout:45000}); await new Promise(r=>setTimeout(r,3000));
+const info=await pg.evaluate(()=>{ const later=[...document.querySelectorAll("button")].find(e=>/^later$/i.test(e.textContent.trim())); if(later) later.click(); const ov=document.getElementById("PNrulesOV"); const btns=ov?[...ov.querySelectorAll("button")].map(b=>b.textContent.trim().slice(0,20)):null; if(ov) ov.remove(); return {rules:!!ov, btns, setup:!!document.getElementById("PNsetupOV")}; });
+console.log(JSON.stringify(info)); await new Promise(r=>setTimeout(r,600));
+const seats=await pg.evaluate(()=>{ const ov=document.getElementById("PNsetupOV"); if(!ov) return null; return [...ov.querySelectorAll("input")].map(inp=>{ const r=inp.getBoundingClientRect(); const c=document.createElement("span"); c.style.cssText="position:absolute;visibility:hidden;white-space:nowrap;font:"+getComputedStyle(inp).font; c.textContent=inp.value; document.body.appendChild(c); const tw=c.getBoundingClientRect().width; c.remove(); return {value:inp.value,inputW:r.width|0,textW:tw|0,fits:tw<=r.width-16}; }); });
+console.log("seats: "+JSON.stringify(seats));
+await pg.screenshot({path:OUT}); console.log("wrote "+OUT); await b.close(); s.close();

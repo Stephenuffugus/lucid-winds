@@ -49,7 +49,6 @@ async function waitScreen(id, ms){ const t0=Date.now(); while(Date.now()-t0<ms){
 async function bootShots(){
   await pg.goto(`http://127.0.0.1:${port}/index.html?lbtest=1`,{waitUntil:"load",timeout:45000}); await sleep(1500);
   log("boot screen: "+await cur()); await shot("boot"); log("boot text: "+JSON.stringify(await visibleText()).slice(0,600));
-  if((await cur())==="s-open"){ await shot("open-beat1"); await tap(/^skip$/i); await sleep(600); }
   if((await cur())==="s-how"){ await tap(/^got it$/i); await sleep(600); }
   await shot("home"); log("home text: "+JSON.stringify(await visibleText()).slice(0,400));
   await tap(/^bugdex$/i); await sleep(600); await shot("dex-empty"); log("dex text: "+JSON.stringify(await visibleText()));
@@ -58,7 +57,7 @@ async function bootShots(){
   await tap(/^back$/i); await sleep(400);
   await tap(/how to play/i); await sleep(500); await shot("howto-again"); await tap(/^got it$/i); await sleep(400);
 }
-async function goHome(){ for(let i=0;i<4;i++){ const c=await cur(); if(c==="s-home") return true; if(c==="s-done"){ await tap(/^home$/i); } else if(c==="s-how"){ await tap(/^got it$/i); } else if(c==="s-open"){ await tap(/^skip$/i); } else if(c==="s-mint"){ await tap(/into the bugdex/i); } else if(c==="s-arena"){ await tap(/leave the dumpster|back to the ladder/i); } else { await tap(/^back$/i); } await sleep(500); } return (await cur())==="s-home"; }
+async function goHome(){ for(let i=0;i<4;i++){ const c=await cur(); if(c==="s-home") return true; if(c==="s-done"){ await tap(/^home$/i); } else if(c==="s-how"){ await tap(/^got it$/i); } else if(c==="s-mint"){ await tap(/into the bugdex/i); } else if(c==="s-arena"){ await tap(/leave the dumpster|back to the ladder/i); } else { await tap(/^back$/i); } await sleep(500); } return (await cur())==="s-home"; }
 async function openBlock(){ if((await cur())!=="s-block"){ if((await cur())==="s-done"){ await tap(/another block|that is the lot/i); } else { await goHome(); await tap(/scavenge|picked clean/i); } await sleep(600); } log("block screen: "+await cur()); }
 async function playSort(){
   await openBlock(); await shot("block-picker"); log("block text: "+JSON.stringify(await visibleText()));
@@ -131,16 +130,21 @@ async function doArena(){
   await tap(/back to the ladder/i); await sleep(800); await shot("dump-after"); await tap(/^back$/i); await sleep(500); await shot("home-after-arena");
 }
 try{
-  if(STAGES.includes("boot")) await bootShots(); else { await pg.goto(`http://127.0.0.1:${port}/index.html?lbtest=1`,{waitUntil:"load"}); await sleep(1200); if((await cur())==="s-open"){ await tap(/^skip$/i); await sleep(500);} if((await cur())==="s-how"){ await tap(/^got it$/i); await sleep(500);} await shot("home-resume"); }
-  if(STAGES.includes("sort")) await playSort();
-  if(STAGES.includes("grub")) await playGrub();
-  if(STAGES.includes("wire")) await playWire();
-  if(STAGES.includes("pry")) await playPry();
-  if(STAGES.includes("mint")) await doMint();
-  if(STAGES.includes("dump")) await doDump();
-  if(STAGES.includes("arena")) await doArena();
-  if(STAGES.includes("day2")){ log("day2: reload with clock +1 day"); await pg.evaluateOnNewDocument(()=>{ const R=Date.now; Date.now=()=>R()+864e5; }); await pg.goto(`http://127.0.0.1:${port}/index.html?lbtest=1`,{waitUntil:"load"}); await sleep(1200); await shot("day2-home"); log("day2 home: "+JSON.stringify(await visibleText())); await tap(/dumpster/i); await sleep(700); await shot("day2-dump"); }
-  const save=await pg.evaluate(()=>window.LB_DEV?JSON.stringify(window.LB_DEV.save()):null); log("SAVE: "+(save||"").slice(0,300));
+  await pg.goto(`http://127.0.0.1:${port}/index.html?lbtest=1`,{waitUntil:"load"}); await sleep(1200);
+  if((await cur())==="s-how"){ await tap(/^got it$/i); await sleep(400);}
+  /* eight bugs through the real mint path (shinies set, the jar tapped) */
+  for(let i=0;i<8;i++){ await pg.evaluate(()=>window.LB_DEV.setShinies(30)); await pg.evaluate(()=>window.LB_DEV.show('s-home')); await pg.evaluate(()=>{ const D=window.LB_DEV; D.save(); document.getElementById('b-mint').style.display=''; }); if(!(await tap(/a bug is ready/i))) break; await sleep(1400); if(i===0){ await shot("mint-lore"); log("mint text: "+JSON.stringify(await visibleText()).slice(0,700)); } await tap(/into the bugdex/i); await sleep(500); }
+  await tap(/^bugdex$/i); await sleep(700); await shot("dex-chips"); log("dex text: "+JSON.stringify(await visibleText()).slice(0,600));
+  const chips=await pg.evaluate(()=>[...document.querySelectorAll('#x-chips .chip')].map(c=>{ const r=c.getBoundingClientRect(); return c.textContent+' '+(r.width|0)+'x'+(r.height|0); })); log("chips: "+JSON.stringify(chips));
+  /* tap the first family chip with a count, then ALL */
+  const fam=await pg.evaluate(()=>{ const cs=[...document.querySelectorAll('#x-chips .chip')].slice(1); const c=cs.find(x=>+x.querySelector('b').textContent>0); return c?c.textContent.replace(/\d+$/,''):null; });
+  if(fam){ await tap(new RegExp('^'+fam), '.chip'); await sleep(500); await shot("dex-filtered"); log("filtered cards: "+await pg.evaluate(()=>document.querySelectorAll('#x-grid .card').length)); }
+  await tap(/^ALL/, '.chip'); await sleep(400);
+  await tap(/.+/, ".card"); await sleep(600); await shot("spec-front"); log("spec text: "+JSON.stringify(await visibleText()).slice(0,900));
+  await tap(/.+/, "#sp-card"); await sleep(900); await shot("spec-back");
+  const png=await pg.evaluate(()=>new Promise(res=>{ const D=window.LB_DEV; D.renderCard(D.dex()[0], cv=>res(cv.toDataURL('image/png'))); }));
+  fs.writeFileSync(OUT+"/"+(process.env.PFX||"")+"card.png", Buffer.from(png.split(',')[1],'base64')); log("card png written");
+  await pg.setViewport({width:320,height:568,deviceScaleFactor:2,isMobile:true,hasTouch:true}); await sleep(400); await tap(/^back$/i); await sleep(500); await shot("dex-320");
 }catch(e){ log("DRIVER ERROR: "+e.message); await shot("error"); }
 log("page errors: "+JSON.stringify(errs));
 await b.close(); s.close();

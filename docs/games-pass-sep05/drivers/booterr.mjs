@@ -1,0 +1,11 @@
+import puppeteer from "puppeteer"; import { createServer } from "http"; import fs from "fs"; import path from "path";
+const ROOT=process.env.ROOT||"/workspaces/Litter_Bug"; const PATHX=process.env.PATHX||"/index.html?lbtest=1";
+const M={".html":"text/html",".js":"text/javascript",".css":"text/css",".png":"image/png",".json":"application/json"};
+const s=createServer((q,r)=>{const u=decodeURIComponent(q.url.split("?")[0]);const p=path.join(ROOT,u.endsWith("/")?u+"index.html":u); if(!fs.existsSync(p)||fs.statSync(p).isDirectory()){r.writeHead(404);return r.end()} r.writeHead(200,{"content-type":M[path.extname(p)]||"application/octet-stream"});r.end(fs.readFileSync(p))});
+await new Promise(r=>s.listen(0,"127.0.0.1",r)); const port=s.address().port;
+const b=await puppeteer.launch({headless:"new",args:["--no-sandbox","--disable-gpu"]}); const pg=await b.newPage();
+pg.on("pageerror",e=>console.log("PAGEERROR",String(e).slice(0,300))); pg.on("console",m=>{ if(m.type()==="error") console.log("CONSOLE",m.text().slice(0,300)); });
+await pg.setViewport({width:412,height:915,deviceScaleFactor:2,isMobile:true,hasTouch:true});
+await pg.goto(`http://127.0.0.1:${port}${PATHX}`,{waitUntil:"load"}); await new Promise(r=>setTimeout(r,1200));
+console.log(await pg.evaluate(()=>({dev:typeof window.LB_DEV, dump:document.getElementById('b-dump')&&document.getElementById('b-dump').style.display, scr:document.querySelector('.screen.on')?.id})));
+await b.close(); s.close();

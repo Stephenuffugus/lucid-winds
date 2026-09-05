@@ -49,7 +49,6 @@ async function waitScreen(id, ms){ const t0=Date.now(); while(Date.now()-t0<ms){
 async function bootShots(){
   await pg.goto(`http://127.0.0.1:${port}/index.html?lbtest=1`,{waitUntil:"load",timeout:45000}); await sleep(1500);
   log("boot screen: "+await cur()); await shot("boot"); log("boot text: "+JSON.stringify(await visibleText()).slice(0,600));
-  if((await cur())==="s-open"){ await shot("open-beat1"); await tap(/^skip$/i); await sleep(600); }
   if((await cur())==="s-how"){ await tap(/^got it$/i); await sleep(600); }
   await shot("home"); log("home text: "+JSON.stringify(await visibleText()).slice(0,400));
   await tap(/^bugdex$/i); await sleep(600); await shot("dex-empty"); log("dex text: "+JSON.stringify(await visibleText()));
@@ -58,7 +57,7 @@ async function bootShots(){
   await tap(/^back$/i); await sleep(400);
   await tap(/how to play/i); await sleep(500); await shot("howto-again"); await tap(/^got it$/i); await sleep(400);
 }
-async function goHome(){ for(let i=0;i<4;i++){ const c=await cur(); if(c==="s-home") return true; if(c==="s-done"){ await tap(/^home$/i); } else if(c==="s-how"){ await tap(/^got it$/i); } else if(c==="s-open"){ await tap(/^skip$/i); } else if(c==="s-mint"){ await tap(/into the bugdex/i); } else if(c==="s-arena"){ await tap(/leave the dumpster|back to the ladder/i); } else { await tap(/^back$/i); } await sleep(500); } return (await cur())==="s-home"; }
+async function goHome(){ for(let i=0;i<4;i++){ const c=await cur(); if(c==="s-home") return true; if(c==="s-done"){ await tap(/^home$/i); } else if(c==="s-how"){ await tap(/^got it$/i); } else if(c==="s-mint"){ await tap(/into the bugdex/i); } else if(c==="s-arena"){ await tap(/leave the dumpster|back to the ladder/i); } else { await tap(/^back$/i); } await sleep(500); } return (await cur())==="s-home"; }
 async function openBlock(){ if((await cur())!=="s-block"){ if((await cur())==="s-done"){ await tap(/another block|that is the lot/i); } else { await goHome(); await tap(/scavenge|picked clean/i); } await sleep(600); } log("block screen: "+await cur()); }
 async function playSort(){
   await openBlock(); await shot("block-picker"); log("block text: "+JSON.stringify(await visibleText()));
@@ -131,16 +130,34 @@ async function doArena(){
   await tap(/back to the ladder/i); await sleep(800); await shot("dump-after"); await tap(/^back$/i); await sleep(500); await shot("home-after-arena");
 }
 try{
-  if(STAGES.includes("boot")) await bootShots(); else { await pg.goto(`http://127.0.0.1:${port}/index.html?lbtest=1`,{waitUntil:"load"}); await sleep(1200); if((await cur())==="s-open"){ await tap(/^skip$/i); await sleep(500);} if((await cur())==="s-how"){ await tap(/^got it$/i); await sleep(500);} await shot("home-resume"); }
-  if(STAGES.includes("sort")) await playSort();
-  if(STAGES.includes("grub")) await playGrub();
-  if(STAGES.includes("wire")) await playWire();
-  if(STAGES.includes("pry")) await playPry();
-  if(STAGES.includes("mint")) await doMint();
-  if(STAGES.includes("dump")) await doDump();
-  if(STAGES.includes("arena")) await doArena();
-  if(STAGES.includes("day2")){ log("day2: reload with clock +1 day"); await pg.evaluateOnNewDocument(()=>{ const R=Date.now; Date.now=()=>R()+864e5; }); await pg.goto(`http://127.0.0.1:${port}/index.html?lbtest=1`,{waitUntil:"load"}); await sleep(1200); await shot("day2-home"); log("day2 home: "+JSON.stringify(await visibleText())); await tap(/dumpster/i); await sleep(700); await shot("day2-dump"); }
-  const save=await pg.evaluate(()=>window.LB_DEV?JSON.stringify(window.LB_DEV.save()):null); log("SAVE: "+(save||"").slice(0,300));
+  await pg.goto(`http://127.0.0.1:${port}/index.html?lbtest=1`,{waitUntil:"load"}); await sleep(1200);
+  if((await cur())==="s-how"){ await shot("howto"); log("howto text: "+JSON.stringify(await visibleText())); await tap(/^got it$/i); await sleep(500);}
+  const feat=await pg.evaluate(()=>window.LB_DEV.featured()); log("featured today: "+feat);
+  await tap(/scavenge/i); await sleep(700); await shot("picker-day1"); log("picker text: "+JSON.stringify(await visibleText()));
+  const order=await pg.evaluate(()=>[...document.querySelectorAll('#s-block [data-job]')].map(b=>b.getAttribute('data-job')+(b.classList.contains('primary')?'*':'')));
+  log("picker order: "+JSON.stringify(order));
+  const chip=await pg.evaluate(()=>{ const c=document.querySelector('#s-block .fb'); if(!c) return null; const r=c.getBoundingClientRect(); const hit=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2); return {w:r.width,h:r.height,top:r.top,visible:!!hit&&(hit===c||c.contains(hit)),hit:hit&&hit.className}; });
+  log("TODAY chip: "+JSON.stringify(chip));
+  const play={sort:playSort,grub:playGrub,wire:playWire,pry:playPry};
+  const t0=Date.now(); await play[feat](); const el=(Date.now()-t0)/1000;
+  log("featured block played in "+el.toFixed(1)+"s wall, state "+JSON.stringify(await state()));
+  log("done text: "+JSON.stringify(await visibleText()));
+  await shot("done-featured");
+  await tap(/another block|that is the lot/i); await sleep(700); await shot("picker-after-clean"); log("picker text 2: "+JSON.stringify(await visibleText()));
+  /* a second block, not featured */
+  const other=["sort","grub","wire","pry"].filter(k=>k!==feat)[0];
+  await play[other](); log("other block done text: "+JSON.stringify(await visibleText())); await shot("done-other");
+  await tap(/^home$/i); await sleep(500);
+  if(await tap(/a bug is ready/i)){ await sleep(1500); await shot("mint"); await tap(/into the bugdex/i); await sleep(600); }
+  await tap(/^bugdex$/i); await sleep(700); await shot("dex-families"); log("dex text: "+JSON.stringify(await visibleText()));
+  const fam=await pg.evaluate(()=>[...document.querySelectorAll('#x-fam .gcell')].map(c=>c.textContent.trim()));
+  log("families: "+JSON.stringify(fam));
+  await tap(/^back$/i); await sleep(400);
+  log("day2: reload with clock +1 day"); await pg.evaluateOnNewDocument(()=>{ const R=Date.now; Date.now=()=>R()+864e5; });
+  await pg.goto(`http://127.0.0.1:${port}/index.html?lbtest=1`,{waitUntil:"load"}); await sleep(1200);
+  const feat2=await pg.evaluate(()=>window.LB_DEV.featured()); log("featured day 2: "+feat2);
+  await tap(/scavenge/i); await sleep(700); await shot("picker-day2"); log("picker day2 text: "+JSON.stringify(await visibleText()));
+  const save=await pg.evaluate(()=>window.LB_DEV?JSON.stringify(window.LB_DEV.save()):null); log("SAVE: "+(save||"").slice(0,400));
 }catch(e){ log("DRIVER ERROR: "+e.message); await shot("error"); }
 log("page errors: "+JSON.stringify(errs));
 await b.close(); s.close();

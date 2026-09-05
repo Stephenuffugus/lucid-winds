@@ -1,0 +1,13 @@
+import puppeteer from "puppeteer"; import { createServer } from "http"; import fs from "fs"; import path from "path";
+const ROOT="/workspaces/Litter_Bug";
+const M={".html":"text/html",".js":"text/javascript",".css":"text/css",".png":"image/png",".json":"application/json"};
+const s=createServer((q,r)=>{const u=decodeURIComponent(q.url.split("?")[0]);const p=path.join(ROOT,u.endsWith("/")?u+"index.html":u); if(!fs.existsSync(p)||fs.statSync(p).isDirectory()){r.writeHead(404);return r.end()} r.writeHead(200,{"content-type":M[path.extname(p)]||"application/octet-stream"});r.end(fs.readFileSync(p))});
+await new Promise(r=>s.listen(0,"127.0.0.1",r)); const port=s.address().port;
+const b=await puppeteer.launch({headless:"new",args:["--no-sandbox","--disable-gpu"]}); const pg=await b.newPage();
+pg.on("pageerror",e=>console.log("PAGEERROR",String(e).slice(0,300)));
+await pg.setViewport({width:412,height:915,deviceScaleFactor:2,isMobile:true,hasTouch:true});
+await pg.goto(`http://127.0.0.1:${port}/index.html?lbtest=1`,{waitUntil:"load"}); await new Promise(r=>setTimeout(r,1000));
+console.log(await pg.evaluate(()=>{ const d=document.getElementById('b-dump'); const r=d.getBoundingClientRect(); return {disp:d.style.display, cs:getComputedStyle(d).display, rect:[r.x|0,r.y|0,r.width|0,r.height|0], text:d.textContent, html:d.outerHTML.slice(0,200)}; }));
+await pg.evaluate(()=>document.getElementById('b-how-go').click()); await new Promise(r=>setTimeout(r,500));
+console.log(await pg.evaluate(()=>{ const d=document.getElementById('b-dump'); const r=d.getBoundingClientRect(); return {disp:d.style.display, cs:getComputedStyle(d).display, rect:[r.x|0,r.y|0,r.width|0,r.height|0], text:d.textContent, scr:document.querySelector('.screen.on').id}; }));
+await b.close(); s.close();

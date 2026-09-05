@@ -1,0 +1,14 @@
+import puppeteer from "puppeteer"; import { createServer } from "http"; import fs from "fs"; import path from "path";
+const ROOT="/workspaces/lucid-winds"; const OUT=process.argv[2];
+const M={".html":"text/html",".js":"text/javascript",".css":"text/css",".png":"image/png",".jpg":"image/jpeg",".svg":"image/svg+xml",".json":"application/json",".webp":"image/webp"};
+const s=createServer((q,r)=>{const u=decodeURIComponent(q.url.split("?")[0]);const p=path.join(ROOT,u.endsWith("/")?u+"index.html":u); if(!fs.existsSync(p)||fs.statSync(p).isDirectory()){r.writeHead(404);return r.end()} r.writeHead(200,{"content-type":M[path.extname(p)]||"application/octet-stream"});r.end(fs.readFileSync(p))});
+await new Promise(r=>s.listen(0,"127.0.0.1",r)); const port=s.address().port;
+const b=await puppeteer.launch({headless:"new",args:["--no-sandbox","--disable-gpu","--mute-audio"]}); const pg=await b.newPage();
+await pg.setViewport({width:412,height:915,deviceScaleFactor:2,isMobile:true,hasTouch:true});
+await pg.evaluateOnNewDocument(()=>{try{localStorage.setItem("sws_dev_ok","1");localStorage.setItem("sws_dir_sokoban","1");}catch(e){}});
+await pg.goto(`http://127.0.0.1:${port}/play/sokoban.html`,{waitUntil:"load",timeout:45000}); await new Promise(r=>setTimeout(r,3000));
+await pg.evaluate(()=>{ const l=[...document.querySelectorAll("button")].find(e=>/^later$/i.test(e.textContent.trim())); if(l) l.click(); });
+const arrow=await pg.evaluate(()=>{ const imgs=[...document.querySelectorAll("img,button,div")].filter(e=>{ const r=e.getBoundingClientRect(); return r.width>40&&r.width<120&&r.height>40&&r.top>300&&r.top<600&&e.children.length<=1&&!/skc|skg/.test(e.className); }); imgs.sort((a,b)=>b.getBoundingClientRect().left-a.getBoundingClientRect().left); const e=imgs[0]; if(!e) return null; const r=e.getBoundingClientRect(); return {x:r.left+r.width/2,y:r.top+r.height/2,tag:e.tagName,cls:e.className,src:(e.src||"").slice(-30)}; });
+console.log("arrow:",JSON.stringify(arrow)); if(arrow){ await pg.touchscreen.tap(arrow.x,arrow.y); } await new Promise(r=>setTimeout(r,1800));
+console.log("LWGE up:", await pg.evaluate(()=>!!document.getElementById("LWGE")));
+await pg.screenshot({path:OUT}); console.log("wrote "+OUT); await b.close(); s.close();

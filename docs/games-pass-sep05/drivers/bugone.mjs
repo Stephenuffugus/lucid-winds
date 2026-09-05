@@ -1,0 +1,7 @@
+import puppeteer from "puppeteer"; import fs from "fs";
+const which=process.argv[2]||"after"; const src=fs.readFileSync(which==="before"?"bug-engine.before.js":"/workspaces/Litter_Bug/bug-engine.js","utf8");
+const b=await puppeteer.launch({headless:"new",args:["--no-sandbox","--disable-gpu"]}); const pg=await b.newPage(); await pg.setViewport({width:420,height:140,deviceScaleFactor:3});
+await pg.setContent(`<body style="margin:0;background:#0b0d10"><div id="s" style="display:flex;gap:8px;padding:8px"></div></body>`);
+await pg.addScriptTag({content:src});
+const info=await pg.evaluate(()=>{ const grow=l=>Math.max(1,Math.round(7+l*0.8)); const hs=["b96525c728658b68e968801887738eb0cde0532fc11e15d7146c12d87fe71981","815e74794564ed9197d2540aedd549f80ddef361bd403c0c43b912e41c7ff876","deadbeefcafef00d1234567890abcdef1122334455667788990011223344aabb","5e8004f4b621ac0fce2820d75f72606b28f05335500db59438c823b419a9b0ac"]; let h=''; for(const x of hs){ h+='<div style="background:#131a22;border:1px solid #28323d;border-radius:10px;padding:4px">'+window.BUG_ENGINE._generateBugSVG(x,84,grow(30))+'</div>'; } document.getElementById('s').innerHTML=h; const s=window.BUG_ENGINE._generateBugSVG(hs[0],84,grow(30)); return {len:s.length, shadows:(s.match(/translate\(1\.4 1\.6\)/g)||[]).length, filt:(s.match(/<filter/g)||[]).length}; });
+console.log(which, JSON.stringify(info)); await pg.screenshot({path:"lb/bugone-"+which+".png"}); await b.close();
