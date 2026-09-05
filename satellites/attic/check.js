@@ -33,7 +33,7 @@ try {
   SRC = fs.readFileSync(FILE, 'utf8');
   /* AT_ENGINE points the node side at a copy of the engine, so a mutant can be watched */
   ATTIC = require(process.env.AT_ENGINE ? path.resolve(process.env.AT_ENGINE) : path.join(ROOT, 'attic-engine.js'));
-  ECON = require(path.join(ROOT, 'attic-econ.js'));
+  ECON = require(process.env.AT_ECON ? path.resolve(process.env.AT_ECON) : path.join(ROOT, 'attic-econ.js'));   /* AT_ECON: a mutant economy to watch */
   SLEEVE = require(path.join(ROOT, 'sleeve-render.js'));
   OBJ = require(process.env.AT_OBJECT ? path.resolve(process.env.AT_OBJECT) : path.join(ROOT, 'object-render.js'));   /* AT_OBJECT: a mutant renderer to watch */
 } catch (e) {
@@ -410,6 +410,16 @@ function twoTabs(E) {
   const end = E.readWallet(disk2, 5);
   return { start: E.readWallet(disk0, 5).tix, end: end.tix };
 }
+group('a scrapped find stays scrapped');
+{
+  const A = 'a'.repeat(64), B = 'b'.repeat(64);
+  const merged = ECON.mergeShelfToDisk(JSON.stringify([A, B]), [A], { [B]: Date.now() });
+  ok('the shelf merge drops a hash with a tombstone even when the disk still holds it', merged.length === 1 && merged[0] === A, JSON.stringify(merged));
+  const plain = ECON.mergeShelfToDisk(JSON.stringify([A, B]), [A]);
+  ok('without a tombstone the union still keeps both tabs\' finds', plain.length === 2, JSON.stringify(plain));
+  const old = ECON.readGone(JSON.stringify({ [B]: Date.now() - ECON.GONE_TTL - 1000 }));
+  ok('a tombstone older than a week is let go', Object.keys(old).length === 0, JSON.stringify(old));
+}
 group('the economy cannot be minted out of nothing');
 {
   const S = solvency(ECON);
@@ -617,6 +627,32 @@ if (process.env.AT_NOBROWSER === '1') { console.log('\n(browser group skipped: A
     ok('and it is still clearable inside ninety seconds', dust.full.cleared >= 0.9, pct(dust.full.cleared));
     ok('clearing it turns up the stubs', dust.full.found >= 8, dust.full.found + ' of 10');
 
+    group('the shelf is a room: a plank under every row, a case around a sealed find');
+    const room = await page.evaluate(() => {
+      const D = window.ATTIC_DEV;
+      /* a sealed find on the shelf, wiped, so the case has something to hold */
+      const base = D.shelf()[0]; const sealedH = base.slice(0, 4) + 'ff' + base.slice(6);
+      D.addPull(sealedH); D.revealed()[sealedH] = 1;
+      D.openShelf();
+      const cards = [...document.querySelectorAll('#shGrid .shCard')];
+      const parts = cards.every(c => c.querySelector('.shObj svg') && c.querySelector('.shPlank') && c.querySelector('.shLabel .shName'));
+      const planks = cards.slice(0, 2).map(c => c.querySelector('.shPlank').getBoundingClientRect());
+      const sameRow = planks.length === 2 && Math.abs(planks[0].top - planks[1].top) < 1 && Math.abs(planks[0].right - planks[1].left) < 1;
+      const plankH = planks.length ? planks[0].height : 0;
+      const wall = getComputedStyle(document.getElementById('shelfSheet')).backgroundImage;
+      const sealed = document.querySelector('#shGrid .shCard.sealed .shObj');
+      const cs = sealed ? getComputedStyle(sealed, '::before') : null;
+      const caseOk = !!cs && parseFloat(cs.borderTopWidth) >= 1 && cs.backgroundImage !== 'none';
+      const cardBox = getComputedStyle(cards[0]).borderTopWidth;
+      D.dropPull(sealedH); delete D.revealed()[sealedH];
+      D.closeShelf();
+      return { n: cards.length, parts, sameRow, plankH: Math.round(plankH), wall: wall !== 'none', caseOk, cardBox };
+    });
+    ok('every find stands on a plank with its label under the board', room.n >= 4 && room.parts, JSON.stringify(room));
+    ok('two finds in a row share one continuous plank', room.sameRow && room.plankH >= 10, JSON.stringify({ sameRow: room.sameRow, plankH: room.plankH }));
+    ok('the wall is boards, and the cards have no box of their own', room.wall && room.cardBox === '0px', JSON.stringify({ wall: room.wall, cardBox: room.cardBox }));
+    ok('a factory sealed find sits in a glass case', room.caseOk, room.caseOk);
+
     group('the wear line waits for the wipe');
     const wear = await page.evaluate(() => new Promise((res) => {
       const D = window.ATTIC_DEV;
@@ -673,12 +709,17 @@ if (process.env.AT_NOBROWSER === '1') { console.log('\n(browser group skipped: A
     const persisted = await page.evaluate(() => {
       const D = window.ATTIC_DEV;
       D.dustEnd();
-      return { shelf: D.shelf().length, tix: D.wallet().tix };
+      /* scrap one through the real button: before 2026-09-05 it came back on reload, ticket paid */
+      D.setTix(30); document.getElementById('go').click();
+      const beforeScrap = D.shelf().length;
+      document.getElementById('scrap').click();
+      return { shelf: D.shelf().length, tix: D.wallet().tix, beforeScrap };
     });
     await page.reload({ waitUntil: 'domcontentloaded' });
     await new Promise(r => setTimeout(r, 700));
     const after = await page.evaluate(() => ({ shelf: window.ATTIC_DEV.shelf().length, tix: window.ATTIC_DEV.wallet().tix }));
     ok('the shelf survives a reload', after.shelf === persisted.shelf && after.shelf > 0, JSON.stringify({ persisted, after }));
+    ok('a scrapped find does not come back on reload', persisted.shelf === persisted.beforeScrap - 1 && after.shelf === persisted.shelf, JSON.stringify({ persisted, after }));
     ok('the wallet survives a reload', after.tix === persisted.tix, JSON.stringify({ persisted, after }));
 
     group('no console errors anywhere in that session');

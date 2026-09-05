@@ -202,3 +202,7 @@ A synth in the page in the attic's voice: rummage rustle, the wipe, a plate stin
 ### Litter Bug vocabulary 2 (Sep 05, later)
 
 Segment shapes (teardrop scales, flat, ringed), an oil slick sweep, wing tints and a second leg pair on the thorax, all cosmetic, every grade unmoved over 3000 bugs. Sheet: `lb-vocab2-sheet.png`.
+
+### The Attic shelf pass (Sep 05, later)
+
+The shelf is a room: boards on the wall, one plank under every row with the finds standing on it, labels under the board, a glass case around a factory sealed find. On the way the gate found that SCRAP did not survive a reload (the union merge kept the disk copy, ticket paid; scrap, reload, scrap again). Fixed with a week long tombstone per scrapped hash. Shots: `attic-shelf-room.png`, `attic-shelf-room-320.png`. ⚠️ The music chip from the shell covers THE SHELF title on this sheet; that is music-unlocks.js, outside this terminal's fence.

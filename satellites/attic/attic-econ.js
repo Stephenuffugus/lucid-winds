@@ -245,10 +245,34 @@
 
   /* the shelf is written newest first, so a merge from a stale tab keeps
      both tabs' finds without either losing one */
-  function mergeShelfToDisk(diskRaw, mine) {
-    var disk = readShelf(diskRaw), out = [], seen = {}, i;
-    for (i = 0; i < mine.length; i++) if (!seen[mine[i]]) { seen[mine[i]] = 1; out.push(mine[i]); }
-    for (i = 0; i < disk.length; i++) if (!seen[disk[i]]) { seen[disk[i]] = 1; out.push(disk[i]); }
+  /* ⛔ THE UNION BROUGHT SCRAPPED FINDS BACK (found 2026-09-05 by a gate that reloaded the
+     page). The merge keeps both tabs' finds, which is right, but it kept the DISK copy of a
+     find the player had just scrapped, so every scrap came back on the next load with its
+     ticket already paid: scrap, reload, scrap again. `gone` is a tombstone map (hash to
+     the time it was scrapped), kept for a week, and no merge or boot read lets a hash
+     through while its tombstone stands. */
+  var GONE_TTL = 7 * 864e5;
+  function readGone(raw) {
+    var out = {}, p = null, k, v, now = Date.now();
+    try { p = (typeof raw === 'string') ? JSON.parse(raw) : raw; } catch (e) { p = null; }
+    if (!isObj(p)) return out;
+    for (k in p) {
+      if (!p.hasOwnProperty(k) || !/^[0-9a-f]{64}$/.test(k)) continue;
+      v = Number(p[k]);
+      if (!isFinite(v) || v <= 0 || now - v > GONE_TTL) continue;
+      out[k] = Math.floor(v);
+    }
+    return out;
+  }
+  function mergeGoneToDisk(diskRaw, mine) {
+    var d = readGone(diskRaw), k;
+    for (k in mine) if (mine.hasOwnProperty(k) && (!d[k] || mine[k] > d[k])) d[k] = mine[k];
+    return JSON.stringify(readGone(d));
+  }
+  function mergeShelfToDisk(diskRaw, mine, gone) {
+    var disk = readShelf(diskRaw), out = [], seen = {}, i, g = gone || {};
+    for (i = 0; i < mine.length; i++) if (!seen[mine[i]] && !g[mine[i]]) { seen[mine[i]] = 1; out.push(mine[i]); }
+    for (i = 0; i < disk.length; i++) if (!seen[disk[i]] && !g[disk[i]]) { seen[disk[i]] = 1; out.push(disk[i]); }
     return out.slice(0, SHELF_MAX);
   }
 
@@ -259,7 +283,7 @@
     newWallet: newWallet, readWallet: readWallet, mergeToDisk: mergeToDisk, writable: writable,
     grantDaily: grantDaily, spend: spend, payReveal: payReveal, payScrap: payScrap,
     payGrails: payGrails, dustLeft: dustLeft, bankDust: bankDust,
-    readShelf: readShelf, mergeShelfToDisk: mergeShelfToDisk,
+    readShelf: readShelf, mergeShelfToDisk: mergeShelfToDisk, readGone: readGone, mergeGoneToDisk: mergeGoneToDisk, GONE_TTL: GONE_TTL,
     readFound: readFound, mergeFoundToDisk: mergeFoundToDisk,
     STREAK_EVERY: STREAK_EVERY, dailyReady: dailyReady, claimDaily: claimDaily,
     weekOf: weekOf, wantedReady: wantedReady, payWanted: payWanted
