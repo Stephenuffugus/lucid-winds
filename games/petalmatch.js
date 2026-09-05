@@ -555,7 +555,7 @@ window._gameFns.petalmatch = function PM(a){
   bshadow.alt='';
   bshadow.src=PM_RT+'board-shadow.png?v=g1';
   bshadow.onerror=function(){ if(this.parentNode)this.parentNode.removeChild(this); };
-  bshadow.style.cssText='position:absolute;left:-2%;top:1%;width:104%;height:104%;'+
+  bshadow.style.cssText='position:absolute;left:-1%;top:1%;width:102%;height:104%;'+
     'z-index:0;pointer-events:none;opacity:0.85;';
   bwWrap.appendChild(bshadow);
   bwWrap.appendChild(boardWrap);

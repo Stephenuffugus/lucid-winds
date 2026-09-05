@@ -77,7 +77,7 @@ function seasonForLevel(lv){ return SEASONS[Math.floor((lv-1)/10)%SEASONS.length
     '@keyframes pfFlash{0%,100%{filter:brightness(1)}50%{filter:brightness(2.4) saturate(0.2)}}',
     '@keyframes pfShake{10%,90%{transform:translate(-1px,0)}20%,80%{transform:translate(2px,0)}30%,50%,70%{transform:translate(-3px,0)}40%,60%{transform:translate(3px,0)}}',
     // Container
-    '#PFpan{max-width:min(100vw,520px);margin:0 auto;padding:6px;user-select:none;-webkit-user-select:none;box-sizing:border-box;position:relative;animation:pfFade .4s ease;font-family:Georgia,serif}',
+    '#PFpan{max-width:min(100%,520px);margin:0 auto;padding:6px;user-select:none;-webkit-user-select:none;box-sizing:border-box;position:relative;animation:pfFade .4s ease;font-family:Georgia,serif}',
     // Top HUD
     '.PFtopBar{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:4px 4px 6px}',
     '.PFtopItem{text-align:center}',
@@ -91,7 +91,7 @@ function seasonForLevel(lv){ return SEASONS[Math.floor((lv-1)/10)%SEASONS.length
     '.PFpvBox canvas{display:block}',
     // Play zone
     '.PFplayzone{display:flex;gap:clamp(6px,2vw,14px);align-items:stretch;justify-content:center;padding:2px 0}',
-    '.PFsideCtrl{flex:0 0 auto;width:62px;display:grid;grid-template-rows:1fr 2fr;gap:14px}',
+    '.PFsideCtrl{flex:0 0 auto;width:clamp(48px,13vw,58px);display:grid;grid-template-rows:1fr 2fr;gap:14px}',
     '.PFbigBtn{background:rgba(26,36,22,0.85);border:1.5px solid rgba(122,179,86,0.3);border-radius:12px;color:#e8dcc8;font-size:1.7rem;font-family:Georgia,serif;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:transform .08s ease,background .12s ease;display:flex;align-items:center;justify-content:center;min-height:48px;padding:0;line-height:1}',
     '.PFbigBtn:active,.PFbigBtn.pressed{background:rgba(122,179,86,0.3);transform:scale(0.96)}',
     '.PFbigBtn.arrow{font-size:2.1rem}',
@@ -1030,14 +1030,25 @@ function buildLayout(a){
 
 function sizeCanvases(){
   dpr=window.devicePixelRatio||1;
-  // Available width = pan width minus 2 side columns (62px each) minus gaps + padding
-  var panW=Math.min(window.innerWidth, 520) - 12;
-  var sideTotal=62*2 + 28; // 2 cols (62) + 2 rail-to-board gaps (~14 each)
+  // ⛔ never size from window.innerWidth: it follows the LAYOUT viewport, and any overflow at
+  // first paint (the default 300px canvases) had already widened it (412 read 451), so the
+  // board was sized from a lie and the play zone hung 38px off the right of every phone for
+  // as long as it existed. The shell mount keeps the true device width.
+  var panEl=document.getElementById('PFpan');
+  var mount=document.getElementById('shell-mount')||document.getElementById('fg-ag');
+  var trueW=panEl?panEl.clientWidth:(mount?mount.clientWidth:Math.min(window.innerWidth, window.screen&&window.screen.width||window.innerWidth));
+  var panW=Math.min(trueW, 520) - 12; // the pan's own padding
+  // side columns and gaps as they really are (the rails narrow on small phones)
+  var pz=boardCanvas.closest?boardCanvas.closest('.PFplayzone'):null;
+  var rail=pz?pz.querySelector('.PFsideCtrl'):null;
+  var railW=rail?rail.getBoundingClientRect().width:62;
+  var pzGap=pz?(parseFloat(getComputedStyle(pz).columnGap)||parseFloat(getComputedStyle(pz).gap)||14):14;
+  var sideTotal=railW*2 + pzGap*2 + 4;
   var availW=Math.max(200, panW - sideTotal);
   // Available height = viewport minus topBar (~42) + preview (~66) + actionRow (~64) + margins (~80)
   var availH=Math.max(320, window.innerHeight - 260);
   CELL=Math.floor(Math.min(availW/COLS, availH/ROWS));
-  CELL=Math.max(18, Math.min(CELL, 32));
+  CELL=Math.max(16, Math.min(CELL, 32)); // 16 lets a 320 phone hold rails + board
   boardCanvas.width=COLS*CELL*dpr; boardCanvas.height=ROWS*CELL*dpr;
   boardCanvas.style.width=(COLS*CELL)+'px'; boardCanvas.style.height=(ROWS*CELL)+'px';
   boardCtx.setTransform(dpr,0,0,dpr,0,0);
@@ -1049,6 +1060,12 @@ function sizeCanvases(){
 
   // Preview cell size — scale with CELL but cap for legibility
   SIDE_CELL=Math.max(12, Math.min(16, Math.floor(CELL*0.5)));
+  // ⛔ and cap it against the row it lives in: HOLD (4 cells + 9px chrome) + 10px gap + NEXT
+  // (5 slots of 4 cells + 4 gaps + 9px chrome) must fit the preview row, or the NEXT strip
+  // ran 42px off the right edge of a 412 phone and the whole page could pan sideways
+  var prowEl=nextBox&&nextBox.parentNode&&nextBox.parentNode.parentNode;
+  var rowW=prowEl?prowEl.clientWidth-4:0;
+  if(rowW>0){ var fitS=Math.floor((rowW-28-4*NEXT_SLOT_GAP)/24); SIDE_CELL=Math.max(9, Math.min(SIDE_CELL, fitS)); }
   // Hold canvas: 4 cols × 2 rows
   holdCanvas.width=4*SIDE_CELL*dpr; holdCanvas.height=2*SIDE_CELL*dpr;
   holdCanvas.style.width=(4*SIDE_CELL)+'px'; holdCanvas.style.height=(2*SIDE_CELL)+'px';

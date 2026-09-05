@@ -99,7 +99,7 @@ function GC4(a){
   // viewport so 7 columns × cell+gap+padding land ≥48px touch targets on
   // real phones (was clamp(280,88vw,420) → ~39px cells at 360vw).
   var gd=document.createElement('div');gd.id='C4g';
-  gd.style.cssText='display:grid;grid-template-columns:repeat('+COLS+',1fr);grid-template-rows:repeat('+ROWS+',1fr);gap:clamp(1px,0.4vw,6px);width:min(calc(100vw - 8px),420px);margin:0 auto;padding:clamp(2px,0.5vw,10px);background:linear-gradient(180deg,rgba(48,36,20,.95),rgba(32,24,14,.98));border-radius:clamp(8px,2.5vw,14px);border:2px solid rgba(80,60,30,.4);box-shadow:0 4px 20px rgba(0,0,0,.5),inset 0 1px 0 rgba(120,90,40,.15)';
+  gd.style.cssText='display:grid;grid-template-columns:repeat('+COLS+',1fr);grid-template-rows:repeat('+ROWS+',1fr);gap:clamp(1px,0.4vw,6px);width:min(calc(100vw - 8px),420px);margin:0 0 0 calc((100% - min(100vw - 8px,420px))/2);padding:clamp(2px,0.5vw,10px);background:linear-gradient(180deg,rgba(48,36,20,.95),rgba(32,24,14,.98));border-radius:clamp(8px,2.5vw,14px);border:2px solid rgba(80,60,30,.4);box-shadow:0 4px 20px rgba(0,0,0,.5),inset 0 1px 0 rgba(120,90,40,.15)';
   a.appendChild(gd);
 
   // Secondary row — Undo / Hint

@@ -151,9 +151,9 @@
       var bs=bankStyle();
       var rollDisabled=rolling||busted||gameOver;
       var bankDisabled=rolling||liveTurn()<=0||busted||gameOver;
-      h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;">';
-      h+='<div style="font-family:Georgia,serif;font-style:italic;font-size:0.7rem;color:rgba(232,220,200,0.65);flex:1;min-width:110px;">'+hint+'</div>';
-      h+='<div style="display:flex;gap:6px;flex-shrink:0;">';
+      h+='<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">';
+      h+='<div style="font-family:Georgia,serif;font-style:italic;font-size:0.7rem;color:rgba(232,220,200,0.65);flex:1 1 140px;min-width:0;text-align:center;">'+hint+'</div>';
+      h+='<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;">';
       h+='<button class="gb" onclick="_FR()" '+(rollDisabled?'disabled':'')+' style="min-height:48px;padding:10px 14px;font-size:0.7rem;font-family:Georgia,serif;font-weight:700;background:'+(rollDisabled?'rgba(0,0,0,0.4)':'linear-gradient(180deg,rgba(255,180,90,0.3),rgba(200,130,60,0.4))')+';border:'+(rollDisabled?'1px solid rgba(232,220,200,0.25)':'2px solid #ffb45a')+';color:'+(rollDisabled?'rgba(232,220,200,0.4)':'#fff0d6')+';border-radius:6px;cursor:'+(rollDisabled?'not-allowed':'pointer')+';'+(rollDisabled?'':'box-shadow:inset 0 1px 0 rgba(255,255,255,0.15),0 2px 5px rgba(0,0,0,0.5);')+'">🎲 Roll</button>';
       h+='<button class="gb" onclick="_FB()" '+(bankDisabled?'disabled':'')+' style="min-height:48px;padding:10px 14px;font-size:0.7rem;font-family:Georgia,serif;font-weight:700;background:'+bs.bg+';border:2px solid '+bs.bdr+';color:'+bs.col+';border-radius:6px;cursor:'+(bankDisabled?'not-allowed':'pointer')+';'+bs.gl+'">💰 Bank'+(liveTurn()>0?' '+liveTurn():'')+'</button>';
       h+='<button class="gb" onclick="_FN()" title="New game" style="min-height:48px;padding:10px 12px;font-size:0.7rem;font-family:Georgia,serif;background:linear-gradient(180deg,rgba(122,179,86,0.3),rgba(74,124,53,0.4));border:1px solid rgba(122,179,86,0.55);color:#f5ebd0;border-radius:6px;cursor:pointer;">↻</button>';

@@ -29,7 +29,7 @@ if(!document.getElementById('STstyle')){
     'body.game-active:has(#fg-ag[data-game="stopten"]) .gcr .gb{min-height:48px!important;padding:8px 14px!important;font-size:0.68rem!important;letter-spacing:0.08em!important;}',
     'body.game-active:has(#fg-ag[data-game="stopten"]) .gcr{gap:6px!important;padding:4px 8px!important;align-items:center!important;}',
     // Frame + panel
-    '#STpan{padding-top:4px;box-sizing:border-box;max-width:100%;overflow-x:hidden;}',
+    '#STpan{padding-top:4px;box-sizing:border-box;max-width:100%;min-width:0;overflow-x:hidden;}',
     '.st-frame{position:relative;width:calc(100% - 24px);max-width:360px;box-sizing:border-box;margin:8px auto;padding:18px 16px 20px;background:linear-gradient(180deg,rgba(28,34,22,0.9),rgba(16,20,12,0.96));border:3px solid transparent;border-radius:18px;box-shadow:0 14px 36px rgba(0,0,0,0.55),inset 0 2px 0 rgba(255,220,140,0.06),inset 0 -2px 6px rgba(0,0,0,0.3);background-clip:padding-box;}',
     // Decorative gradient border drawn INSIDE the frame footprint
     // (inset:0 rather than -3px). Previously the pseudo stuck 3px out
@@ -152,7 +152,7 @@ window._gameFns.stopten=function ST(a){
   mm(a);
   var statsRow=document.createElement('div');statsRow.className='st-stats';statsRow.id='STstats';a.appendChild(statsRow);
   var pan=document.createElement('div');pan.id='STpan';
-  pan.style.cssText='max-width:440px;margin:0 auto;padding:6px;';
+  pan.style.cssText='max-width:min(100%,440px);margin:0 auto;padding:6px;';
   a.appendChild(pan);
   mc(a).innerHTML='<button class="gb" onclick="_STR()" style="min-height:48px;padding:8px 18px;font-size:0.75rem;letter-spacing:0.1em">📖 RULES</button>'
     +'<button class="gb" onclick="_STN()">↻ New Game</button>';
