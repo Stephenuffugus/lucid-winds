@@ -13,6 +13,8 @@ a fleet law and is listed in section 3 with its reason.
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
 - 2026-09-05 Fable: plan written. Nothing built. Next action: section 5, P0, step 1 (the scaffold).
+- 2026-09-05 Opus: P0 step 1 done, `tools/check.js` exists with the `test` gate and it is RED (no sim.js yet), pasted in
+  section 13. Next action: P0 step 1 continued, write `satellites/fathom/index.html` (CONFIG, RNG, GEN, SIM, VIEW, BOOT).
 
 ---
 
@@ -451,9 +453,27 @@ one is not playable by morning, the order for the others was wrong.
 
 ## 13. EVIDENCE LEDGER (fill in place, with commands and their real output, most recent last)
 
+### P0 step 1, the gate that fails (2026-09-05)
+
 ```
-(empty; the first entry is P0 step 4, the two gates watched to fail)
+$ node satellites/fathom/tools/check.js
+test            FAIL  0s
+
+================================================================
+
+--- test (wanted: FATHOM TEST OK) ---
+
+Error: Cannot find module '/workspaces/lucid-winds/satellites/fathom/sim.js'
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1456:15)
+
+(tail)
+  code: 'MODULE_NOT_FOUND',
+  requireStack: []
+}
+
+1 GATE FAILED
 ```
+
 
 ---
 
