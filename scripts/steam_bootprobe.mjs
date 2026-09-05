@@ -69,7 +69,8 @@ async function boot(path, label){
       title: document.title,
       signIn: visLike(/^sign in$/i),
       support: visLike(/support the studio/i),
-      arcade: visLike(/sky wolf studios arcade/i)
+      arcade: visLike(/sky wolf studios arcade/i),
+      wishlist: visLike(/wishlist jumping jimothy/i)
     };
   });
   return { pg, ctx, state, tapped, external };
@@ -84,6 +85,7 @@ if (!steam.tapped) die('never got past the splash — the build may not boot');
 if (steam.state.signIn) die('Sign in is visible in the Steam build');
 if (steam.state.support) die('Support the Studio is visible in the Steam build');
 if (steam.state.arcade) die('Arcade button is visible in the Steam build');
+if (steam.state.wishlist) die('Wishlist button is visible in the Steam build (a paying player does not need to wishlist)');
 const ext = steam.external.filter(u => !/favicon/.test(u));
 if (ext.length) die('Steam build made external requests: ' + ext.slice(0, 3).join(', '));
 await steam.pg.screenshot({ path: join(OUT, 'bootprobe-steam.png') });
@@ -95,6 +97,7 @@ const web = await boot('satellites/stream-hop/index.html', 'web');
 console.log('web build:', JSON.stringify(web.state), 'tapped:', web.tapped);
 if (web.state.flag) die('web build has the Steam flag set');
 if (!web.tapped) die('web build never got past the splash');
+if (!web.state.wishlist) die('Wishlist button is missing from the WEB build');
 if (!web.state.support && !web.state.signIn && !web.state.arcade)
   die('web build shows NONE of the gated surfaces — the A/B proves nothing');
 await web.ctx.close();

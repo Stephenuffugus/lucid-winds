@@ -685,6 +685,9 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
         <button class="btn sm" id="b-set" aria-label="Settings"><img class="bicon" id="ic-set" alt="" style="width:40px;height:40px">Settings</button>
       </div>
       <button class="btn sm" id="b-support"><img class="bicon" id="ic-support" alt="" style="width:40px;height:40px">Support the Studio</button>
+      <!-- Web and itch only (STORE_BUILD hides it): the Steam page is where wishlists
+           come from, and the free web copy is where the players already are. -->
+      <button class="btn ghost sm" id="b-wishlist" style="border-color:rgba(200,168,75,0.42)">Wishlist Jumping Jimothy on Steam</button>
       <button class="btn ghost sm" id="b-exit">◄ Sky Wolf Studio Arcade</button>
       <!-- ⛔ NOT A LINK, and not a button. On a bought desktop game the arcade
            back-link is hidden (see STEAM_BUILD below), which left nothing saying
@@ -1110,7 +1113,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v8.8';
+var BUILD='v8.9';
 var curScreen='s-splash';
 var _leaveTimer=null;
 /* dir is optional: 'push' swooshes in from the right (going deeper), 'pop' swooshes back
@@ -5181,6 +5184,7 @@ function boot(){
   tap('mus-back', function(){ JMUS.endTease(); show(musFrom,'pop'); });
   tap('b-exit', function(){ if(window.SWS_EXIT)SWS_EXIT(); });
   tap('b-support', function(){ SUP.status(''); sfx('ui'); SUP.render(); show('s-support','push'); });
+  tap('b-wishlist', function(){ sfx('ui'); try{ window.open('https://store.steampowered.com/app/5043360/','_blank','noopener'); }catch(e){ location.href='https://store.steampowered.com/app/5043360/'; } });
   tap('sup-back', function(){ show('s-title','pop'); });
   tap('sup-buy', SUP.buy);
   tap('sup-card', SUP.buyCard);
@@ -5311,7 +5315,7 @@ function boot(){
   /* 2026-08-16 audit: drifted a THIRD time, 73 against jimothy-v77. The two
      numbers are the same number now; test/jimothy-check.js fails the build if
      they ever separate again. */
-  var SWV='80';
+  var SWV='81';
   if('serviceWorker' in navigator){ try{
     /* ⛔ AUTO-UPDATE. The SW is network-first + skipWaiting + clients.claim, so a fresh
        deploy is fetched immediately — but an already-OPEN page keeps showing the version
@@ -5696,7 +5700,7 @@ var SUP=(function(){
     if(STORE_BUILD){ var fbb=$('b-feedback'); if(fbb)fbb.style.display='none';
       var fbg=$('go-feedback'); if(fbg)fbg.style.display='none'; }
     var tb=$('b-support'); if(tb)tb.innerHTML='<img class="bicon" src="assets/ui/glyph-support.png?a='+ARTV+'" alt="" style="width:40px;height:40px">'+(sup?'Thank you, supporter':'Support the Studio');
-    if(STORE_BUILD){ var tsup=$('b-support'); if(tsup)tsup.style.display='none'; }
+    if(STORE_BUILD){ var tsup=$('b-support'); if(tsup)tsup.style.display='none'; var twl=$('b-wishlist'); if(twl)twl.style.display='none'; }
     var ms=$('mus-sup'); if(ms)ms.style.display=(sup||STORE_BUILD)?'none':'';
     var bs=$('bin-sup'); if(bs){ bs.style.display=(sup||STORE_BUILD)?'none':'';
       /* ⛔ the pack copy QUOTES the list — packCount() is the single source of truth, so
