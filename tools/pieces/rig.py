@@ -101,11 +101,18 @@ def setup_rig():
     # low enough that the object still has a side and therefore weight.
     cam_data = bpy.data.cameras.new('rig_cam')
     cam_data.type = 'ORTHO'                     # ortho: a token is a token at any position
-    cam_data.ortho_scale = 1.55
+    # ⛔ per set framing. The first dice set was photographed at 1.55 and every die's top
+    # vertex was 57 px (11% of the master) above the frame: the tops came out sliced flat,
+    # and it took the cutter's edge check to say so (opaque run 199 px wide on row 0).
+    # A cube seen from this camera spans about 1.63 units tall; a disc about 0.7.
+    scale, lift = FRAMING.get(CURRENT_SET, FRAMING['default'])
+    cam_data.ortho_scale = scale
     cam = bpy.data.objects.new('rig_cam', cam_data)
     bpy.context.collection.objects.link(cam)
     cam.location = Vector((1.6, -1.9, 1.5))
     cam.rotation_euler = (math.radians(55), 0, math.radians(40))
+    # `lift` slides the frame up its own screen axis so a tall piece sits centred
+    cam.location += cam.rotation_euler.to_matrix() @ Vector((0, lift, 0))
     scn.camera = cam
 
     def lamp(name, kind, energy, loc, size=2.0, color=(1, 1, 1)):
@@ -312,6 +319,13 @@ def make_tile(col, face_col, label):
 
 
 # ── sets ──────────────────────────────────────────────────────────────────────
+# ortho scale and a screen-up shift of the frame, per set; see setup_rig
+FRAMING = {
+    'default': (1.55, 0.0),
+    'dice': (1.75, 0.20),
+}
+CURRENT_SET = 'default'
+
 SETS = {
     # Pips are dark on every light body: at 48px on a board the pip COUNT is the only
     # thing a player needs to read, and cream-on-sage does not carry it.
@@ -398,6 +412,8 @@ def main():
         if s not in SETS:
             sys.exit('unknown set %r. --list to see them.' % s)
         print('set: %s' % s)
+        global CURRENT_SET
+        CURRENT_SET = s
         for name, build in SETS[s]:
             made.append(render_one(name, build, os.path.join(OUT, s)))
     print('\n%d sprites in %s' % (len(made), os.path.relpath(OUT, HERE)))

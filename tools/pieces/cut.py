@@ -31,11 +31,43 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, 'out')
 
 
+def edge_fade(a, margin):
+    """Fade the alpha to zero over the outer `margin` pixels on every side.
+
+    The rig's soft key throws a contact shadow that does not end inside the frame: the
+    first disc cuts had alpha 40 in the bottom left CORNER (dice 55 to 66), so a sprite
+    set down on a board showed a straight line where its shadow stopped at the tile
+    edge. The piece itself sits well inside; only the shadow's tail is touched."""
+    w, h = a.size
+    px = a.load()
+    m = max(1, margin)
+    for y in range(h):
+        fy = min(1.0, min(y, h - 1 - y) / m)
+        for x in range(w):
+            fx = min(1.0, min(x, w - 1 - x) / m)
+            f = min(fx, fy)
+            if f < 1.0:
+                f = f * f * (3 - 2 * f)          # smoothstep, no visible ring
+                # the fade is for the SHADOW, not the piece: a die fills its tile and its top
+                # vertex sits inside the band, and the first fade made it translucent (alpha
+                # 217 at the top). Weight the fade by how transparent the pixel already is:
+                # opaque piece pixels keep their alpha, the shadow's tail goes to zero, and
+                # the silhouette lands in between with no seam.
+                v = px[x, y]
+                # shadow never exceeds half alpha, the piece never drops under it, so
+                # everything below 128 is fully faded and 128 to 255 eases in: a linear
+                # weight let a border shadow pixel of alpha 80 keep a third of itself
+                k = max(0.0, (v - 128) / 127.0)
+                keep = k * k * (3 - 2 * k)
+                px[x, y] = int(v * (keep + (1.0 - keep) * f))
+    return a
+
+
 def cut(src, dst, size):
     im = Image.open(src).convert('RGBA')
     im = im.resize((size, size), Image.LANCZOS)
     # quantize the colour while KEEPING alpha: split, quantize RGB, reattach.
-    a = im.getchannel('A')
+    a = edge_fade(im.getchannel('A'), size // 5)
     rgb = im.convert('RGB').quantize(colors=255, method=Image.MEDIANCUT).convert('RGB')
     out = rgb.convert('RGBA')
     out.putalpha(a)

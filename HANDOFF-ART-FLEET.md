@@ -3,12 +3,25 @@
 
 ## SESSION STATE — the next action
 
-1. **Three Director calls are OPEN.** They are listed in §5. Do not guess them.
-2. **Nothing is committed.** Fable is in the same tree, so `git add` **fenced paths only,
-   never `-A`**, and `git pull --rebase` first (memory: `feedback` tandem rule).
-3. If you want to just keep building: render the next piece set
-   (`blender -b --factory-startup -P tools/pieces/rig.py -- --set discs`), then
-   `python3 tools/pieces/cut.py --set discs`. ~2.5 min per piece on these 2 cores.
+**2026-09-04 late, Fable.** Opus's four claims were verified before anything was built on them:
+Meshy ledger proven both ways (old file 2 POSTs, fixed 1), backdrop hook applies only when the file
+exists, overflow-x measured (sticky 45 of 45, rootrush slide peaks 356 px under 375), Bebas loaded
+8 of 8 in the after column (the before control was invalid, see §6). The two boards with genuinely
+untappable content are fixed and measured (Shut the Box 18 of 18 tiles on screen at 48 px, Word
+Search 100 of 100 cells, 33 px at 375 and 28 at 320, zero sidescroll on both). Dice set rendered
+and cut to 128 px ship sprites; discs 4 of 5 rendered when Blender was killed for memory, the last
+one is rendering again. **Committed** on `add-sproing-jumper` as `40466406` (fenced: play/shell.*,
+shared.css, forge3d, tools/pieces rig + cutter + dice sprites, these docs). Render masters stay out
+of git; the rig regenerates them.
+
+1. **Three Director calls are still OPEN** in §5. Do not guess them.
+2. **Next build work, in order:** the remaining seven sidescrolling natives from
+   `FLEET-ART-DETAIL-NATIVES.md` (petalfall 79, farkle 71, reversi 34, stopten 10, merge 7,
+   backgammon 5, c4 4 px), each measured at 375 and 320 and LOOKED at; then the disc sprites
+   into whichever game asked for them; then stones, rings, tiles through the same rig.
+3. **Keepsies took the evening** (Stephen's phone notes on the end game); that work is its own
+   commit `bc7be9c2` and its own handoff, `HANDOFF-KEEPSIES.md`.
+4. Tandem tree still: `git add` fenced paths only, `git pull --rebase --autostash` first.
 
 ---
 
@@ -44,7 +57,7 @@ The whole rebuild pipeline lives in the session scratchpad and is re-runnable:
 
 ---
 
-## 3. Shipped this session — 4 fixes, each MEASURED (uncommitted)
+## 3. Shipped this session — 4 fixes, each MEASURED (verified by Fable, committed 40466406)
 
 | fix | file | measured before → after |
 |---|---|---|
@@ -111,6 +124,23 @@ light-surface variant only.**
 "during"). 18 is the counted number. See §6.
 
 ---
+
+### 4b. What the first cuts taught (Fable, Sep 04 late)
+
+- **Look at the numbers, not only the sheet.** The dice looked fine on a contact sheet and every
+  one had its top vertex sliced flat: the cutter's edge check found alpha 255 on row 0 of every die,
+  and the opaque run there was already 199 px wide (of a 428 px equator), so about 57 px of die sat
+  above the frame. `rig.py` now frames per set (`FRAMING`: dice 1.75 with the camera lifted 0.20 up
+  its own screen axis; discs and the default stay at 1.55). Re-rendered with `--force`.
+- **The shadow must end inside the tile.** The soft key throws a contact shadow that ran off the
+  bottom left of every sprite (alpha 40 in the corner on discs, 55 to 66 on dice), which on a
+  butted board draws a straight line where the shadow stops. `cut.py` fades alpha to zero over the
+  outer fifth, weighted so anything under half alpha (all shadow) fades fully and the opaque piece
+  is untouched; a plain fade made the die tops translucent (217), a linear weight let border shadow
+  keep a third of itself (alpha 20). Every sprite now reads 0 on all four edges except a piece that
+  genuinely touches the frame, which is the framing's fault, not the cutter's.
+- The honest test is a sheet of tiles BUTTED against each other on a tan ground, not sprites spaced
+  out on dark (that hid both faults).
 
 ## 5. ⚖️ OPEN — Director calls, do not guess
 
