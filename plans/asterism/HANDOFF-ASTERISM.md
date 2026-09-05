@@ -14,7 +14,9 @@ the game folder; you do not fetch anything from the network at night.
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
 - 2026-09-05 Fable: plan written, catalogue packed and checked (Vega, Polaris, Sirius, Altair, Deneb, Betelgeuse all present
-  with the right numbers). Nothing built. Next action: section 5, P0, step 1.
+  with the right numbers). Nothing built.
+- 2026-09-05 Opus: P0 step 1, `tools/check.js` with one gate and no `sim.js` to run, red, pasted in section 13. Next action:
+  P0 step 1 continued, the scaffold and the ASTRO layer in `satellites/asterism/index.html`.
 
 ---
 
@@ -434,9 +436,22 @@ the poster and the link for the next session; a sky with a myth and no poster is
 
 ## 13. EVIDENCE LEDGER (fill in place, with commands and their real output, most recent last)
 
+### P0 step 1, the gate that fails (2026-09-05)
+
 ```
-(empty; the first entry is P0 step 4, both gates watched to fail, and the --sky listing)
+$ node satellites/asterism/tools/check.js
+astro           FAIL  0s
+
+================================================================
+
+--- astro (wanted: ASTERISM TEST OK) ---
+
+Error: Cannot find module '/workspaces/lucid-winds/satellites/asterism/sim.js'
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1456:15)
+
+1 GATE FAILED
 ```
+
 
 ---
 
