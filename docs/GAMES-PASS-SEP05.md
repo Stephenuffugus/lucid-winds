@@ -162,3 +162,15 @@ Stephen still owes (`design-briefs/flagship-attic.md`).
 **Art the code cannot make**: the DETAIL row's four files stand (`bg-attic-540x960.png`,
 `dust-veil-300x300.png`, `shelf-plank-540x120.png`, `ticket-64x64.png`). The drawn room and the
 drawn dust are now good enough to ship; the plate and the veil would be upgrades.
+
+## Sep 05, later: the art lists and the bug coherence pass
+
+- **Art lists**: one `ART_ASSETS.md` in every game folder (183 games, 745 files), index at
+  `ART-ASSETS-INDEX.md`. Natives under `assets/games/<id>/`, satellites in their folder, vendored ones and
+  Flock the World under `docs/art-lists/<slug>/`.
+- **Litter Bug renderer**: the flower renderer's tricks carried over (painted offset shadows under legs and
+  wings, a catch light per segment, coxa sockets, legs dimmed under wings). Sheet:
+  `lb-bug-coherence-sheet.png` (the 84px "after" cells in that sheet are dark because two engines shared one
+  page and their gradient ids collided; `lb-bug-84px-after.png` is the honest 84px render). Upstream
+  Litter_Bug, re-vendored. The bigger look change still waits on the painted places and the style hero in
+  `satellites/litter-bug/ART_ASSETS.md`.
