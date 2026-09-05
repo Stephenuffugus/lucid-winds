@@ -167,13 +167,44 @@
     } catch (e) { return !!(el.textContent || '').replace(/\s/g, ''); }
     return false;
   }
+  /* A 2d canvas can be read: a flat patch (a platformer's sky, the dark under a comic panel, an
+     idle title canvas) is background, a drawn patch (a pad, a HUD, artwork) is content. WebGL
+     and tainted canvases cannot be read and count as content. */
+  function canvasScore(el, x, y) {
+    try {
+      var ctx = el.getContext && el.getContext('2d'); if (!ctx) return 2;
+      var r = el.getBoundingClientRect(); if (!r.width || !r.height) return 2;
+      var sx = el.width / r.width, sy = el.height / r.height;
+      var cx = Math.round((x - r.left) * sx), cy = Math.round((y - r.top) * sy), half = Math.max(4, Math.round(20 * sx));
+      var x0 = Math.max(0, cx - half), y0 = Math.max(0, cy - half);
+      var w = Math.min(el.width - x0, half * 2), h = Math.min(el.height - y0, half * 2); if (w < 2 || h < 2) return 2;
+      var d = ctx.getImageData(x0, y0, w, h).data, i, lo = [255, 255, 255], hi = [0, 0, 0], step = 16;
+      for (i = 0; i < d.length; i += step) { for (var c = 0; c < 3; c++) { var v = d[i + c]; if (v < lo[c]) lo[c] = v; if (v > hi[c]) hi[c] = v; } }
+      var range = Math.max(hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]);
+      /* a flat patch of canvas scores a hair above plain page background: Burr Blast's comic
+         frame lost to the empty dark under its buttons only once these stopped tying */
+      return range < 28 ? 1.2 : 2;
+    } catch (e) { return 2; }
+  }
   function occupancy(x, y) {
     try {
-      var d = window.document, stack = d.elementsFromPoint ? d.elementsFromPoint(x, y) : [d.elementFromPoint(x, y)], area = window.innerWidth * window.innerHeight, i;
+      var d = window.document, stack = d.elementsFromPoint ? d.elementsFromPoint(x, y) : [d.elementFromPoint(x, y)], area = window.innerWidth * window.innerHeight, i, wrappers = [];
       for (i = 0; i < stack.length; i++) {
         var el = stack[i]; if (!el || el.id === CHIP_ID || el.id === CARD_ID || (el.closest && el.closest('#' + CARD_ID))) continue;   /* look through our own card */
         if (el === d.body || el === d.documentElement) return 0;
-        var r = el.getBoundingClientRect(); if (r.width * r.height >= area * 0.9) continue;
+        var r = el.getBoundingClientRect();
+        /* a full screen CANVAS is the game, not a wrapper to look through: Rabbit Ronin draws its
+           HUD, its pads and its rabbit on one canvas, and skipping it scored every corner free. It
+           scores like text, not like a button: Aura Farm's idle canvas behind its menu modal must
+           lose to the menu's buttons, and a canvas game still ties every corner and takes a side. */
+        if (el.tagName === 'CANVAS') {
+          /* a canvas the looked-through overlay does NOT contain is behind that overlay (Burr
+             Blast's idle game canvas under its story screen, Aura Farm's under its menu): it is
+             the overlay's ground, not a surface. A canvas inside the wrapper is the surface. */
+          for (var k = 0; k < wrappers.length; k++) if (!wrappers[k].contains(el)) return 1;
+          return canvasScore(el, x, y);
+        }
+        if (r.width * r.height >= area * 0.9) { wrappers.push(el); continue; }
         /* a header or HUD bar is never a free corner, whatever its pixel scores as: the shell's
            .shell-hdr (the chip sat on #shell-title in Klondike, Block Drop, Speed Sort), a game's
            own top bar (#hud in Rootbound, #pa-top in Petal Alchemy), anything pinned across the top */
@@ -182,7 +213,11 @@
         if (el.closest && el.closest('button,a,[role="button"],input,select,canvas,[onclick]')) return 3;
         var cs = window.getComputedStyle(el);
         if (cs && cs.cursor === 'pointer') return 3;                     /* a div that acts as a button (Deepwell's close glyph) */
-        if (textAt(el, x, y)) return 2;                                   /* text AT THE POINT, not anywhere in the element */
+        if (textAt(el, x, y)) {
+          /* text in the top band is a HUD or a title (Rabbit Ronin's level name, a score): worse than a
+             canvas corner, so on a canvas game the chip takes the sky, not the readout */
+          return y < 80 ? 3.2 : 2;                                         /* text AT THE POINT, not anywhere in the element */
+        }
         /* a bordered or shadowed panel smaller than the screen is a card, a row, a tile: its
            empty half is not background (the chip sat inside Deepwell's LAMP shop row, scored 1) */
         if (r.width * r.height < area * 0.6 && ((parseFloat(cs.borderTopWidth) > 0 && cs.borderTopStyle !== 'none') || (cs.boxShadow && cs.boxShadow !== 'none') || parseFloat(cs.borderTopLeftRadius) > 0)) return 1.5;   /* worse than background, better than the row's own text */
@@ -200,9 +235,12 @@
     /* ⛔ order is the tie break, and the first version listed the top row first: on a title
        screen every slot scores "text", so the chip took spot 0, top left, which is where the
        game's own title lives (Petal Alchemy, Rootbound). Bottom row first, sides, top last. */
-    for (x = 10; x + 97 <= W - 130; x += 48) spots.push({ css: 'left:' + x + 'px;' + B, x: x + 48, y: H - 34 });   /* never the bottom right: the feedback fab's */
+    /* sides first: on a canvas game every corner ties, and the middle of the sides is play area
+       (sky in a platformer) while the bottom is pads and the top is the HUD. Then the bottom row,
+       then the top row last. */
     spots.push({ css: 'left:10px;top:' + Math.round(H / 2 - 24) + 'px;', x: 58, y: H / 2 });
     spots.push({ css: 'right:10px;top:' + Math.round(H / 2 - 24) + 'px;', x: W - 58, y: H / 2 });
+    for (x = 10; x + 97 <= W - 130; x += 48) spots.push({ css: 'left:' + x + 'px;' + B, x: x + 48, y: H - 34 });   /* never the bottom right: the feedback fab's */
     for (x = 10; x + 97 <= W - 10; x += 48) spots.push({ css: 'left:' + x + 'px;' + T, x: x + 48, y: 34 });
     /* the chip is 97px wide: score its whole footprint (left end, centre, right end), worst point wins */
     /* the chip is 97x48: score a 3x3 grid over its footprint, worst point wins (a centre line alone let it clip a title's top) */
@@ -213,8 +251,10 @@
       if (prefer && spots[i].css === prefer) { cur = spots[i]; curScore = sc; }
       if (sc < bestScore) { bestScore = sc; best = spots[i]; }
     }
-    /* a reseat only moves the chip for a strictly better spot: equal is not a reason to jump */
-    if (cur && curScore <= bestScore) { best = cur; bestScore = curScore; }
+    /* a reseat keeps a corner that is FREE (background at most): a chip sitting on something is
+       moved to the first candidate of equal score, so a canvas game that scores every corner the
+       same still ends up bottom left and not on its own HUD (Rabbit Ronin after Start Dojo) */
+    if (cur && curScore <= bestScore && curScore <= 1) { best = cur; bestScore = curScore; }
     freeCorner.lastScore = bestScore;
     return best.css;
   }
@@ -242,12 +282,31 @@
       if (css && css !== b.getAttribute('data-corner')) applyCorner(b, css);
     } catch (e) {}
   }
+  /* for probes: every candidate corner with its score, and a reseat on demand (hung on the api
+     object at the end, because the IIFE finishes with window.SWSMusic = api) */
+  function cornersDebug() {
+      var W = window.innerWidth || 375, H = window.innerHeight || 667, out = [], x;
+      var T = 'top:calc(10px + env(safe-area-inset-top,0px));', B = 'bottom:calc(10px + env(safe-area-inset-bottom,0px));';
+      var spots = [{ css: 'left:10px;top:' + Math.round(H / 2 - 24) + 'px;', x: 58, y: H / 2 }, { css: 'right:10px;top:' + Math.round(H / 2 - 24) + 'px;', x: W - 58, y: H / 2 }];
+      for (x = 10; x + 97 <= W - 130; x += 48) spots.push({ css: 'left:' + x + 'px;' + B, x: x + 48, y: H - 34 });
+      for (x = 10; x + 97 <= W - 10; x += 48) spots.push({ css: 'left:' + x + 'px;' + T, x: x + 48, y: 34 });
+      for (var i = 0; i < spots.length; i++) { var worst = 0, dx, dy, sc; for (dy = -16; dy <= 16; dy += 16) for (dx = -40; dx <= 40; dx += 40) { sc = occupancy(spots[i].x + dx, spots[i].y + dy); if (sc > worst) worst = sc; } out.push({ css: spots[i].css, score: worst }); }
+      return out;
+  }
+  function reseatDebug() { reseat(); return S.chip ? S.chip.getAttribute('data-corner') : null; }
   function scheduleReseat() {
     try {
-      var i, at = [3000, 6000, 10000, 15000];
+      var i, at = [3000, 6000, 10000, 15000, 20000, 30000, 45000, 60000];
       for (i = 0; i < at.length; i++) window.setTimeout(reseat, at[i]);
-      var t = null;
+      /* and a slow standing check after that: screens change at their own times (a drawer closes,
+         a run starts), and one check is fourteen spots by nine points of elementsFromPoint, a
+         millisecond. It never moves a corner that is already free, so it cannot wander. */
+      window.setInterval(reseat, 20000);
+      var t = null, c = null;
       window.addEventListener('resize', function () { if (t) window.clearTimeout(t); t = window.setTimeout(reseat, 250); });
+      /* a screen change almost always follows a tap (Start Dojo, Free Alchemy, Play it now): re-check
+         a moment after any click, so the chip settles on the real screen and not the one it booted on */
+      window.document.addEventListener('click', function () { if (c) window.clearTimeout(c); c = window.setTimeout(reseat, 1500); }, true);
     } catch (e) {}
   }
   /* drag a fixed element anywhere; remembers where it was left. A move over 8px swallows the click. */
@@ -470,6 +529,7 @@
     /* a game may open the shared player itself (the uniform chip does the same) */
     openPlayer: function () { try { ensurePlayer(function (api) { try { if (api && api.open) api.open(); } catch (e) {} }); } catch (e) {} }
   };
+  try { api.corners = cornersDebug; api.reseat = reseatDebug; } catch (e) {}
   window.SWSMusic = api;
 
   try {

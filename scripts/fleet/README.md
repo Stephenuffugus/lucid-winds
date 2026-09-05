@@ -38,3 +38,9 @@ None of them touch the tree; they measure and screenshot into a directory you pa
   Four in a Row. ⛔ label every contact sheet tile; an unlabelled sheet is read in the wrong order.
 - `satshoot.mjs` — the satellite version; Sprout Dice, Rootbound and Twin Lanterns each need their
   own three taps written into `EXTRA` before it reaches a play frame.
+- `chipprobe_diag.mjs` — the same, plus `window.SWSMusic.corners()` (every candidate corner with its
+  score) and `.reseat()`; this is how the canvas cases were understood. ⛔ the "under" name lists only
+  the top two elements of the stack; a canvas three deep still scores.
+- `shot.mjs` — one screenshot from where the player stands: how-to sheet seeded closed, music card
+  dismissed, an optional start tap by regex. `shot_tap.mjs` adds `TAP_CELLS=1` for a filled Nonogram.
+
