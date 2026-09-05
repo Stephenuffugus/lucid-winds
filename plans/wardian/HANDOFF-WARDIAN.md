@@ -11,7 +11,9 @@ this file wins; every difference is in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
-- 2026-09-05 Fable: plan written. Nothing built. Next action: section 5, P0, step 1.
+- 2026-09-05 Fable: plan written. Nothing built.
+- 2026-09-05 Opus: P0 step 1, `tools/check.js` with one gate and no `sim.js` to run, red. Next action: P0 step 1
+  continued, CONFIG, SPECIES, ENV, FLORA and SIM in `satellites/wardian/index.html`.
 
 ---
 
