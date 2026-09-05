@@ -30,6 +30,11 @@ function createWindow() {
   });
 
   Menu.setApplicationMenu(null);
+  /* F11 or Alt+Enter toggles fullscreen; with no application menu there is no default binding */
+  win.webContents.on('before-input-event', (e, input) => {
+    if (input.type !== 'keyDown') return;
+    if (input.key === 'F11' || (input.alt && input.key === 'Enter')) { win.setFullScreen(!win.isFullScreen()); e.preventDefault(); }
+  });
   win.loadFile(path.join(__dirname, 'app', 'index.html'));
 
   /* any outward link opens in the player's browser, never inside the game */

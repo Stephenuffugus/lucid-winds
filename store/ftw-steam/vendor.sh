@@ -24,6 +24,15 @@ s = open(p, encoding='utf-8').read()
 s = re.sub(r'<script src="/dev-gate\.js[^"]*"></script>\s*', '', s)
 assert 'dev-gate' not in s, 'dev gate survived the strip'
 
+# 1b) the studio soundtrack unlocks (music-unlocks.js) live on our host and stream
+#     tracks from /music. A Steam build reaches for nothing, so the include goes.
+n = len(re.findall(r'<script src="/music-unlocks\.js"[^>]*></script>\s*', s))
+assert n == 1, 'expected one music-unlocks include, found %d' % n
+s = re.sub(r'<script src="/music-unlocks\.js"[^>]*></script>\s*', '', s)
+assert 'music-unlocks' not in s, 'music include survived the strip'
+assert not re.search(r'(src|href)="/(?!/)', s), 'a root-absolute URL is still in the desktop build: ' + str(re.findall(r'(?:src|href)="/[^"]{0,40}', s)[:3])
+print('  stripped the portal music include; no root-absolute URLs remain')
+
 # 2) no service worker in a desktop build (splash-hang class of bug, no point)
 s = re.sub(r"navigator\.serviceWorker\.register\([^)]*\)", "Promise.resolve({scope:'desktop'})", s)
 

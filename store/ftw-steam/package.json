@@ -9,12 +9,15 @@
   "scripts": {
     "vendor": "./vendor.sh",
     "start": "npm run vendor && electron .",
-    "dist:win": "npm run vendor && electron-builder --win --x64",
-    "dist:mac": "npm run vendor && electron-builder --mac --universal"
+    "dist:win": "npm run vendor && electron-builder --win --x64 && npm run brand",
+    "dist:mac": "npm run vendor && electron-builder --mac --universal",
+    "brand": "node tools/brand_exe.mjs \"dist/win-unpacked/Flock the World.exe\" capsules/out/ftw.ico"
   },
   "devDependencies": {
     "electron": "^32.0.0",
-    "electron-builder": "^25.0.0"
+    "electron-builder": "^25.0.0",
+    "resedit": "^2.0.0",
+    "pe-library": "^1.0.0"
   },
   "build": {
     "appId": "com.skywolfstudio.flocktheworld",
