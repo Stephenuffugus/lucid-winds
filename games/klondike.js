@@ -43,9 +43,10 @@ function GKL(a){
   function dealtTotal(){var n=0;for(var d=0;d<7;d++)n+=dealt[d];return n;}
   // sel = {src:'tab'|'waste', col:N, idx:N} or null
   ms(a,'Moves: <strong id="KLmv">0</strong>');mm(a);
-  var gd=document.createElement('div');gd.id='KLgd';a.appendChild(gd);
+  var gd=document.createElement('div');gd.id='KLgd';gd.style.cssText='padding:0 10px;box-sizing:border-box;max-width:100%;';a.appendChild(gd);
   var _kStyleLbl='🃏 Style';
-  mc(a).innerHTML='<select class="gsl" id="KLdraw" onchange="_KLDraw(this.value)"><option value="1" selected>Draw 1</option><option value="3">Draw 3</option></select> <button class="gb" id="KLundoBtn" onclick="_KLUndo()" disabled style="opacity:0.45;">↶ Undo</button> <button class="gb" id="KLautoBtn" onclick="_KLAuto()" style="display:none;background:rgba(200,168,75,0.18);border-color:rgba(200,168,75,0.5);color:var(--gold);">✨ Auto</button> <button class="gb" onclick="_KLN()">↻ New Game</button> <button class="gb" id="KLstyle" onclick="_KLToggleStyle()" style="font-size:0.7rem;">'+_kStyleLbl+'</button>';
+  var _kc=mc(a);_kc.style.cssText='display:grid;grid-template-columns:repeat(2,1fr);gap:8px;max-width:360px;margin:6px auto;padding:0 6px;';
+  _kc.innerHTML='<select class="gsl" id="KLdraw" onchange="_KLDraw(this.value)"><option value="1" selected>Draw 1</option><option value="3">Draw 3</option></select> <button class="gb" id="KLundoBtn" onclick="_KLUndo()" disabled style="opacity:0.65;min-height:48px;">↶ Undo</button> <button class="gb" id="KLautoBtn" onclick="_KLAuto()" style="display:none;background:rgba(200,168,75,0.18);border-color:rgba(200,168,75,0.5);color:var(--gold);">✨ Auto</button> <button class="gb" onclick="_KLN()" style="min-height:48px;">↻ New Game</button> <button class="gb" id="KLstyle" onclick="_KLToggleStyle()" style="font-size:0.78rem;min-height:48px;">'+_kStyleLbl+'</button>';
   // Snapshot the full game state so undo can restore it exactly. Plain JSON
   // round-trip because every card is a flat {s,r,up} object. Called BEFORE
   // any mutation — every move, stock draw, and stock recycle.

@@ -48,7 +48,7 @@ function GGF(a){
   ms(a,'Left: <strong id="GFsc">35</strong>');mm(a);
   var gd=document.createElement('div');gd.id='GFgd';a.appendChild(gd);
   var _gfStyleLbl='🃏 Style';
-  mc(a).innerHTML='<button class="gb" id="GFundoBtn" onclick="_GFUndo()" disabled style="opacity:0.45;">↶ Undo</button> <button class="gb" onclick="_GFN()">↻ New Game</button> <button class="gb" id="GFstyle" onclick="_GFToggleStyle()" style="font-size:0.7rem;">'+_gfStyleLbl+'</button>';
+  mc(a).innerHTML='<button class="gb" id="GFundoBtn" onclick="_GFUndo()" disabled style="opacity:0.65;">↶ Undo</button> <button class="gb" onclick="_GFN()">↻ New Game</button> <button class="gb" id="GFstyle" onclick="_GFToggleStyle()" style="font-size:0.78rem;">'+_gfStyleLbl+'</button>';
   function snapshot(){
     history.push(JSON.stringify({cols:cols, stock:stock, waste:waste, score:score}));
     refreshUndoBtn();
@@ -235,7 +235,7 @@ function GGF(a){
     }else if(stockShown>0){
       stEl.className='gc gc-dn';
       _cdBackStyle(stEl);
-      stEl.innerHTML='<span style="color:rgba(245,240,225,.95);font-size:clamp(.62rem,2vw,.82rem);font-weight:700;text-shadow:0 1px 4px rgba(0,0,0,.95),0 0 10px rgba(0,0,0,.85)">'+stockShown+'</span>';
+      stEl.innerHTML='<span style="color:rgba(245,240,225,.95);font-size:clamp(.8rem,2.2vw,.9rem);font-weight:700;background:rgba(13,16,12,.6);padding:2px 9px;border-radius:12px;text-shadow:0 1px 4px rgba(0,0,0,.95)">'+stockShown+'</span>';
       // The deck being squared up into a pile is its own beat of the deal.
       if(pop)stEl.classList.add('cd-deal-in');
       if(!dealing){
@@ -244,7 +244,7 @@ function GGF(a){
       }
     }else{
       stEl.className='gc gc-empty';
-      stEl.innerHTML='<span style="color:var(--muted);font-size:clamp(.5rem,1.5vw,.7rem)">empty</span>';
+      stEl.innerHTML='<span style="color:var(--muted);font-size:clamp(.72rem,1.8vw,.8rem)">empty</span>';
     }
     stEl.style.width=gfW;stEl.style.height=gfH;
     topRow.appendChild(stEl);

@@ -283,8 +283,8 @@ function GFC(a){
         // player couldn't see the game's namesake mechanic. Brighter dash +
         // a FREE label.
         el=document.createElement('div');el.className='gc gc-empty';
-        el.style.border='1.5px dashed rgba(122,179,86,0.55)';
-        el.innerHTML='<span style="display:flex;align-items:center;justify-content:center;height:100%;font-family:DM Mono,monospace;font-size:0.48rem;letter-spacing:0.12em;color:rgba(122,179,86,0.6);pointer-events:none">FREE</span>';
+        el.style.border='1px solid rgba(122,179,86,0.35)';el.style.boxShadow='inset 0 0 14px rgba(0,0,0,.5)';
+        el.innerHTML='<span style="display:flex;align-items:center;justify-content:center;height:100%;font-family:DM Mono,monospace;font-size:0.72rem;letter-spacing:0.12em;color:rgba(122,179,86,0.85);pointer-events:none">FREE</span>';
       }
       el.style.width=fcW;el.style.height=fcH;el.style.fontSize=fcF;
       if(srcHead&&srcIsSingle&&!free[i]&&i!==srcFreeIdx)el.classList.add('gc-legal');

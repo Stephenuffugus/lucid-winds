@@ -80,7 +80,7 @@ function _cdSetStyle(s){
 var _DECKS=[
   {id:'floral', name:'Floral',  tag:'Semi-traditional · line art', unlocked:true},
   {id:'classic',name:'Classic', tag:'Standard pips · familiar',       unlocked:true},
-  {id:'lw',     name:'Garden',  tag:'Botanical reskin · mushroom·bee·flower·bird', unlocked:true}
+  {id:'lw',     name:'Garden',  tag:'Botanical reskin', unlocked:true}
 ];
 
 // Preload card images (only relevant for LW style — classic is pure CSS)
@@ -453,7 +453,7 @@ function _cdOpenStylePicker(){
     h+='<div style="flex-shrink:0;">'+_cdDeckPreviewHTML(d.id)+'</div>';
     h+='<div style="flex:1;min-width:0;">';
     h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.06em;color:var(--cream);">'+d.name+(sel?' <span style="color:var(--gold);font-size:0.65rem;letter-spacing:0.12em;">· ACTIVE</span>':'')+'</div>';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--sage);opacity:0.85;margin-top:2px;">'+d.tag+'</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--sage);opacity:0.85;margin-top:2px;overflow-wrap:anywhere;">'+d.tag+'</div>';
     if(locked)h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-top:4px;">🔒 Locked</div>';
     h+='</div>';
     h+='</button>';

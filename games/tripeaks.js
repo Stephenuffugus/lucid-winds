@@ -199,7 +199,7 @@ function GTP(a){
     // Row 0: 3 peak tops (indices 0,6,12) with gaps
     var rows=TIERS;
     // 10-column base row drives sizing.
-    var fit=window._cdFit?window._cdFit(10,{maxW:64,gap:2,pad:6}):{w:'clamp(42px,9.5vw,62px)',h:'clamp(59px,13.3vw,87px)',font:'clamp(.6rem,1.7vw,.8rem)',gap:'2px',raw:{w:62,h:87}};
+    var fit=window._cdFit?window._cdFit(10,{maxW:64,gap:2,pad:16}):{w:'clamp(42px,9.5vw,62px)',h:'clamp(59px,13.3vw,87px)',font:'clamp(.6rem,1.7vw,.8rem)',gap:'2px',raw:{w:62,h:87}};
     var tpW=fit.w,tpH=fit.h,tpF=fit.font;
     var rowOverlap = Math.round(fit.raw.h * 0.23); // overlap between rows
     // Inter-peak gap scales with card width — wider at top, narrower at base.
@@ -235,7 +235,7 @@ function GTP(a){
           if(ri<3)cd.classList.add('gc-peek');
           if(!peaks[pi].up){cd.className='gc gc-dn';_cdBackStyle(cd);cd.style.width=tpW;cd.style.height=tpH;cd.innerHTML='';}
           else if(isExposed(pi)){cd.style.cursor='pointer';(function(ii){cd.onclick=function(){tapPeak(ii)}})(pi);}
-          else{cd.style.opacity='.5';}
+          else{cd.style.filter='brightness(.5) saturate(.8)';cd.style.boxShadow='inset 0 2px 0 rgba(200,168,75,.5),0 2px 6px rgba(0,0,0,.5)';}
           // Only the tier that just landed pops. Set last: the face-down branch
           // above reassigns className outright and would wipe it.
           if(tierNew(ri))cd.classList.add('cd-deal-in');

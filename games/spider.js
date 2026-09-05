@@ -41,7 +41,8 @@ function GSP(a){
   ms(a,'Runs: <strong id="SPrn">0</strong>/8 · Moves: <strong id="SPmv">0</strong>');mm(a);
   var gd=document.createElement('div');gd.id='SPgd';a.appendChild(gd);
   var _spStyleLbl='🃏 Style';
-  mc(a).innerHTML='<select class="gsl" id="SPsuit" onchange="_SPS(this.value)"><option value="1" selected>1 Suit</option><option value="2">2 Suits</option><option value="4">4 Suits</option></select> <button class="gb" id="SPundoBtn" onclick="_SPUndo()" disabled style="opacity:0.45;">↶ Undo</button> <button class="gb" onclick="_SPN()">↻ New Game</button> <button class="gb" id="SPstyle" onclick="_SPToggleStyle()" style="font-size:0.7rem;">'+_spStyleLbl+'</button>';
+  var _sc=mc(a);_sc.style.cssText='display:grid;grid-template-columns:repeat(2,1fr);gap:8px;max-width:360px;margin:6px auto;padding:0 6px;';
+  _sc.innerHTML='<select class="gsl" id="SPsuit" onchange="_SPS(this.value)"><option value="1" selected>1 Suit</option><option value="2">2 Suits</option><option value="4">4 Suits</option></select> <button class="gb" id="SPundoBtn" onclick="_SPUndo()" disabled style="opacity:0.45;">↶ Undo</button> <button class="gb" onclick="_SPN()">↻ New Game</button> <button class="gb" id="SPstyle" onclick="_SPToggleStyle()" style="font-size:0.7rem;">'+_spStyleLbl+'</button>';
   function snapshot(){
     history.push(JSON.stringify({tab:tab, stock:stock, completed:completed, moves:moves}));
     refreshUndoBtn();
