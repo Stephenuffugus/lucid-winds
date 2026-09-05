@@ -15,7 +15,7 @@
  * so the constants in tuning.json mean the same thing for a 12 mm Peewee and a
  * 35 mm arena marble.
  */
-import { sin, cos, normalize, rotateAxis, clamp, DEG, len2, powSixteenths, invertMonotone } from './dmath.js?v=20260904d';
+import { sin, cos, normalize, rotateAxis, clamp, DEG, len2, powSixteenths, invertMonotone } from './dmath.js?v=20260905a';
 
 const UP = { x: 0, y: 1, z: 0 };
 

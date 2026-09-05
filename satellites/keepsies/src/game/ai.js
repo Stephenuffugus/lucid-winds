@@ -21,9 +21,9 @@
  * `{batch:true}` takes a fixed small N and a shorter marble time cap and no
  * wall clock deadline at all.
  */
-import { snapshot, restore, disposeWorld, impulse, step, atRest, specOf, positionOf, ringDistance, removeMarble, setTimestep } from '../core/physics.js?v=20260904d';
-import { aimToImpulse, makeAim, dirFromDeg, powerForSpeed } from '../core/snap.js?v=20260904d';
-import { atan2, clamp, len2, DEG } from '../core/dmath.js?v=20260904d';
+import { snapshot, restore, disposeWorld, impulse, step, atRest, specOf, positionOf, ringDistance, removeMarble, setTimestep } from '../core/physics.js?v=20260905a';
+import { aimToImpulse, makeAim, dirFromDeg, powerForSpeed } from '../core/snap.js?v=20260905a';
+import { atan2, clamp, len2, DEG } from '../core/dmath.js?v=20260905a';
 
 /**
  * @param {object} W the live world

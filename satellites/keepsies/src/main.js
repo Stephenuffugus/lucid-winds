@@ -9,36 +9,36 @@
  * DIRECTIONS BEFORE PLAY. The rules card is shown before the first match of the
  * mode, which is a studio standard and not a preference.
  */
-import { detectQuality } from './render/quality.js?v=20260904d';
-import { createStage, createOrbitRig, resize, draw, drawScene, drawInset, THREE } from './render/scene.js?v=20260904d';
-import { spyglassFor, scopePxPerM } from './core/spyglass.js?v=20260904d';
-import { buildRingerGround } from './render/arenaEnv.js?v=20260904d';
-import { makeMarbleMesh, makeContactShadow, placeContactShadow } from './render/marbleMesh.js?v=20260904d';
-import { attachCameraControls } from './input/cameraCtl.js?v=20260904d';
-import { createKnuckle } from './input/knuckle.js?v=20260904d';
-import { createPullback } from './input/pullback.js?v=20260904d';
-import * as AUDIO from './audio/synth.js?v=20260904d';
-import { initPhysics, positionOf, specOf, velocityOf, place, removeMarble } from './core/physics.js?v=20260904d';
-import { createRinger } from './game/ringer.js?v=20260904d';
-import { RINGER_TECHNIQUES } from './core/techniques.js?v=20260904d';
-import { launchSpeed } from './core/snap.js?v=20260904d';
-import { clamp, len2, DEG } from './core/dmath.js?v=20260904d';
-import * as SAVE from './meta/save.js?v=20260904d';
-import { createCalibration, calibrationFrom } from './meta/onboarding.js?v=20260904d';
-import { playPotCeremony } from './render/ceremony.js?v=20260904d';
+import { detectQuality } from './render/quality.js?v=20260905a';
+import { createStage, createOrbitRig, resize, draw, drawScene, drawInset, THREE } from './render/scene.js?v=20260905a';
+import { spyglassFor, scopePxPerM } from './core/spyglass.js?v=20260905a';
+import { buildRingerGround } from './render/arenaEnv.js?v=20260905a';
+import { makeMarbleMesh, makeContactShadow, placeContactShadow } from './render/marbleMesh.js?v=20260905a';
+import { attachCameraControls } from './input/cameraCtl.js?v=20260905a';
+import { createKnuckle } from './input/knuckle.js?v=20260905a';
+import { createPullback } from './input/pullback.js?v=20260905a';
+import * as AUDIO from './audio/synth.js?v=20260905a';
+import { initPhysics, positionOf, specOf, velocityOf, place, removeMarble } from './core/physics.js?v=20260905a';
+import { createRinger } from './game/ringer.js?v=20260905a';
+import { RINGER_TECHNIQUES } from './core/techniques.js?v=20260905a';
+import { launchSpeed } from './core/snap.js?v=20260905a';
+import { clamp, len2, DEG } from './core/dmath.js?v=20260905a';
+import * as SAVE from './meta/save.js?v=20260905a';
+import { createCalibration, calibrationFrom } from './meta/onboarding.js?v=20260905a';
+import { playPotCeremony } from './render/ceremony.js?v=20260905a';
 import { createTurntable, createThumbnailer, useMaterialFactory, groupForGrid, starterGrant, provenance, hardnessWord, weightWord, TIER_ORDER, TIER_LABEL }
-  from './meta/collection.js?v=20260904d';
-import * as MARBLEMESH from './render/marbleMesh.js?v=20260904d';
-import { bodySpec } from './core/marbleBody.js?v=20260904d';
-import { createEconomy } from './meta/economy.js?v=20260904d';
-import { createDrops } from './meta/drops.js?v=20260904d';
-import * as RANSOM from './meta/ransom.js?v=20260904d';
-import * as PROG from './meta/progression.js?v=20260904d';
-import { createOnboarding, dustyLine } from './meta/beats.js?v=20260904d';
+  from './meta/collection.js?v=20260905a';
+import * as MARBLEMESH from './render/marbleMesh.js?v=20260905a';
+import { bodySpec } from './core/marbleBody.js?v=20260905a';
+import { createEconomy } from './meta/economy.js?v=20260905a';
+import { createDrops } from './meta/drops.js?v=20260905a';
+import * as RANSOM from './meta/ransom.js?v=20260905a';
+import * as PROG from './meta/progression.js?v=20260905a';
+import { createOnboarding, dustyLine } from './meta/beats.js?v=20260905a';
 import { tierMatchOk, matchTheirStake, escrow, settle, recoverOnBoot, potUp, currentPot }
-  from './game/match.js?v=20260904d';
-import { makeRng } from './core/rng.js?v=20260904d';
-import { makeMarbleMaterial } from './render/marbleMesh.js?v=20260904d';
+  from './game/match.js?v=20260905a';
+import { makeRng } from './core/rng.js?v=20260905a';
+import { makeMarbleMaterial } from './render/marbleMesh.js?v=20260905a';
 
 const $ = (id) => document.getElementById(id);
 const TEST = /[?&]keepsiestest=1/.test(location.search);
@@ -53,6 +53,7 @@ const G = {
   placeDrag: null, lastToast: 0, sunbeams: 0, said: '', lastFramedTurn: -1,
   save: null, calibrator: null, lastRollAudio: 0, warming: false,
   assist: true, lastAssist: 0, lastShooter: 0,
+  scopeHold: false, nudgeTimer: 0, snapShown: false, aimUiOn: false,
   houseRules: { keepsies: true, slips: true, bombing: false, poison: false, ringSizeFt: 10 },
   catalog: null, turntable: null, thumbs: null, filter: 'all', inspecting: null, econ: null,
   drops: null, dropRng: null, stake: [], theirStake: [], anteOk: false
@@ -74,7 +75,7 @@ const HOUSE_RULES = [
 /* ------------------------------------------------------------------- boot */
 
 async function boot() {
-  const res = await fetch('src/data/tuning.json?v=20260904d');
+  const res = await fetch('src/data/tuning.json?v=20260905a');
   if (!res.ok) throw new Error('tuning.json did not load: ' + res.status);
   G.tuning = await res.json();
   G.save = SAVE.load();
@@ -84,10 +85,10 @@ async function boot() {
   AUDIO.configure(G.tuning);
   AUDIO.setEnabled(G.save.settings.sound !== false);
 
-  const cat = await fetch('src/data/marbles.json?v=20260904d');
+  const cat = await fetch('src/data/marbles.json?v=20260905a');
   if (!cat.ok) throw new Error('marbles.json did not load: ' + cat.status);
   G.catalog = await cat.json();
-  const dt = await fetch('src/data/droptables.json?v=20260904d');
+  const dt = await fetch('src/data/droptables.json?v=20260905a');
   if (!dt.ok) throw new Error('droptables.json did not load: ' + dt.status);
   G.dropTables = await dt.json();
 
@@ -222,6 +223,29 @@ function wireButtons() {
     showScreen('setup'); buildHouseRules(); buildAnte();
   });
   $('toTitle').addEventListener('click', () => { endMatch(); showScreen('title'); });
+  /* the fine aim, the Zoom and the snap card (Sep 05, Stephen's phone) */
+  for (const [id, dir] of [['nudgeL', -1], ['nudgeR', 1]]) {
+    const b = $(id);
+    const stop = () => { if (G.nudgeTimer) { clearTimeout(G.nudgeTimer); clearInterval(G.nudgeTimer); G.nudgeTimer = 0; } };
+    b.addEventListener('pointerdown', (e) => {
+      e.preventDefault(); stop();
+      if (!nudgeAim(dir)) return;
+      const C = G.tuning.render.spyglass || {};
+      /* a tap is one step. The repeat waits the way a keyboard does, so a slow frame between
+         a thumb's down and up (measured: most of a second on the test rig) is still one step */
+      G.nudgeTimer = setTimeout(() => {
+        G.nudgeTimer = setInterval(() => { if (!nudgeAim(dir)) stop(); }, C.nudgeRepeatMs == null ? 140 : C.nudgeRepeatMs);
+      }, C.nudgeRepeatDelayMs == null ? 350 : C.nudgeRepeatDelayMs);
+    });
+    for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) b.addEventListener(ev, stop);
+  }
+  $('scopeBtn').addEventListener('click', () => { setScopeHold(!G.scopeHold); });
+  $('snapHelp').addEventListener('click', () => { openSnapCard(); });
+  $('snapGo').addEventListener('click', () => {
+    $('snapCard').hidden = true;
+    SAVE.merge({ seen: { snapHelp: true } });
+    G.save = SAVE.load();
+  });
   $('topDown').addEventListener('click', () => {
     G.topDown = !G.topDown;
     $('topDown').textContent = G.topDown ? 'Side on' : 'Top down';
@@ -967,7 +991,7 @@ function groundPoint(x, y) {
     openBelowPx across on the main screen, a square scope opens at the top: the same dirt through
     a narrow lens from the main camera's own position, down the aim line, with the cone's width
     at that range as a bracket. The main camera and the cone are not touched. */
-function updateSpyglass(st, t) {
+function updateSpyglass(st, t, force) {
   const C = G.tuning.render.spyglass;
   if (!C || !G.spy || G.screen !== 'match' || G.usePullback) return hideSpyglass();
   const taw = G.R.shooterTaw();
@@ -979,7 +1003,8 @@ function updateSpyglass(st, t) {
   const r = specOf(G.R.world, s.mib.id).radius;
   const c = G.rig.project(s.mib.x, r, s.mib.z), e = G.rig.project(s.mib.x, r * 2, s.mib.z);
   const mainPx = Math.abs(e.y - c.y) * 2;
-  if (!(mainPx < (C.openBelowPx == null ? 14 : C.openBelowPx))) return hideSpyglass();
+  // held open by the Zoom button it stays open whatever size the marble is on the main screen
+  if (!(force || G.scopeHold) && !(mainPx < (C.openBelowPx == null ? 14 : C.openBelowPx))) return hideSpyglass();
   const size = C.sizePx || 180, top = C.top == null ? 96 : C.top;
   const el = $('spyglass');
   el.hidden = false;
@@ -1035,21 +1060,99 @@ function onBrace(st) {
   // the warming shimmer, while the taw is being rubbed
   if (st.warmed && !G.warming) { G.warming = true; AUDIO.startWarming(); }
   else if (!st.warmed && G.warming) { G.warming = false; AUDIO.stopWarming(); }
+  updateSpyglass(st, t);
   // DIRECTION ONLY, never a predicted path. That is DESIGN 7.1 and it is not
   // negotiable in ranked play, so it is not built at all. It starts OUTSIDE the
   // reticle so the two do not read as one shape.
-  line.hidden = false;
-  line.style.left = t.x + 'px';
-  line.style.top = (t.y - px - 6) + 'px';
-  line.style.width = '54px';
-  line.style.transform = 'rotate(-90deg)';
-  updateSpyglass(st, t);
+  drawAimLine(t, px);
   // the drop shot only exists when the rule is on AND your taw is inside the
   // ring, so the game says so at the moment it becomes possible
   if (G.R.canBomb() && G.said.indexOf('drop shot') < 0 && G.R.state.phase === 'aim') {
     say('Your shooter is inside the ring, so a snap toward yourself is a drop shot.');
   }
   drawAssist(st, t);
+}
+
+/**
+ * The aim line, on the dirt: from just outside the reticle along the aim azimuth
+ * (camera forward through the shooter, DESIGN 7.7) to the range of the marble the
+ * scope is looking at, or 1.2 m when nothing is ahead. Projected, so it
+ * foreshortens with the camera the way the shot will. Direction only.
+ * (Sep 05, Stephen: "deviating makes the ball go off line": this is the line.)
+ */
+function drawAimLine(t, px) {
+  const line = $('aimline');
+  if (!G.R || !t) { line.hidden = true; return; }
+  const taw = G.R.shooterTaw();
+  if (!G.R.world.marbles.has(taw.id)) { line.hidden = true; return; }
+  const tp = positionOf(G.R.world, taw.id), r = specOf(G.R.world, taw.id).radius;
+  const az = G.rig.state.azimuth + Math.PI;
+  let d = 1.2;
+  if (G.spy && G.spy.on && G.spy.info && G.spy.info.range > 0.3) d = G.spy.info.range;
+  const e = G.rig.project(tp.x + Math.sin(az) * d, r, tp.z + Math.cos(az) * d);
+  const dx = e.x - t.x, dy = e.y - t.y, L = Math.hypot(dx, dy);
+  if (!e.visible || L < px + 14) { line.hidden = true; return; }
+  const ang = Math.atan2(dy, dx), start = px + 6;
+  line.hidden = false;
+  line.style.left = (t.x + Math.cos(ang) * start) + 'px';
+  line.style.top = (t.y + Math.sin(ang) * start) + 'px';
+  line.style.width = Math.max(0, Math.min(L - start, 420)) + 'px';
+  line.style.transform = 'rotate(' + (ang * 180 / Math.PI).toFixed(2) + 'deg)';
+  G.aimLineInfo = { x: t.x, y: t.y, angleDeg: ang * 180 / Math.PI, length: L - start, endX: e.x, endY: e.y };
+}
+
+/**
+ * The fine aim. Turns the player's orbit offset, which is the aim (DESIGN 7.7), by a
+ * step: coarse with the scope closed, fine with it open. The frame loop rebuilds the
+ * camera from userAz, so writing it is what survives; wantAzimuth is nudged too so the
+ * damping starts from the new value at once.
+ * Sign: aim RIGHT on screen is a smaller azimuth (proved by test/aimnudge.mjs, which
+ * watches the aim line's end move right).
+ */
+function nudgeAim(dir) {
+  if (!G.R || !canAim() || G.usePullback || G.screen !== 'match' || G.paused) return false;
+  const C = G.tuning.render.spyglass || {};
+  const fine = !!(G.scopeHold || (G.spy && G.spy.on));
+  const deg = fine ? (C.nudgeFineDeg == null ? 0.5 : C.nudgeFineDeg) : (C.nudgeCoarseDeg == null ? 2 : C.nudgeCoarseDeg);
+  const step = deg * Math.PI / 180 * NUDGE_SIGN * dir;
+  G.rig.state.userAz = (G.rig.state.userAz || 0) + step;
+  G.rig.state.wantAzimuth += step;
+  return true;
+}
+const NUDGE_SIGN = -1;
+
+function setScopeHold(on) {
+  G.scopeHold = !!on;
+  $('scopeBtn').classList.toggle('on', G.scopeHold);
+  $('scopeBtn').textContent = G.scopeHold ? 'Zoom on' : 'Zoom';
+  if (!G.scopeHold && !(G.knuckle && G.knuckle.state().bracing)) { hideSpyglass(); $('aimline').hidden = true; }
+}
+
+/** The scope and the line while the thumb is NOT down: the wide cone, the reticle away. */
+function holdScope() {
+  const t = G.R.tawOnScreen(G.rig);
+  if (!t) { hideSpyglass(); $('aimline').hidden = true; return; }
+  const T = G.tuning.snap;
+  updateSpyglass({ coneDeg: T.coneWideDeg, settle01: 0 }, t, true);
+  drawAimLine(t, (t.grabR || t.r * 1.6) * 0.7);
+}
+
+function openSnapCard() { $('snapCard').hidden = false; }
+
+/** The aim buttons and the Zoom belong to the human's aim phase and nothing else. */
+function updateAimUi() {
+  const on = G.screen === 'match' && !!G.R && canAim() && !G.usePullback && !G.paused && G.R.match.players.length > 1;
+  if (on !== G.aimUiOn) {
+    G.aimUiOn = on;
+    $('aimNudge').hidden = !on;
+    $('scopeBtn').hidden = !on;
+    if (!on && G.nudgeTimer) { clearInterval(G.nudgeTimer); G.nudgeTimer = 0; }
+  }
+  // the first time a real aim is asked for, the card explains the snap once
+  if (on && !G.snapShown && !TEST && !(G.save && G.save.seen && G.save.seen.snapHelp)) {
+    G.snapShown = true;
+    openSnapCard();
+  }
 }
 
 /**
@@ -1115,6 +1218,9 @@ function onAim(aim) {
 function describe(aim, imp) {
   if (aim.bomb) return 'Straight down on top of them.';
   if (aim.wildness01 >= 0.5) return 'That was a wild one.';
+  // the snap pointed off the aim line and took the shot with it (DESIGN 7.7's fine angle)
+  if (Math.abs(aim.fineDeg || 0) >= 5) return 'Your snap turned the shot ' + Math.round(Math.abs(aim.fineDeg))
+    + ' degrees ' + (aim.fineDeg * NUDGE_SIGN > 0 ? 'right' : 'left') + ' of the line.';
   if (aim.contactOffset.y <= -0.35) return 'Low across the ball.';
   if (aim.contactOffset.y >= 0.35) return 'Over the top of it.';
   if (Math.abs(aim.contactOffset.x) >= 0.4) return 'A bit of english on that one.';
@@ -1502,7 +1608,13 @@ function frame(now) {
     // a thumb held perfectly still sends no pointermove, and the settle is a
     // clock: read it every frame so the reticle tightens whether or not the
     // browser has anything to say
-    if (!G.usePullback && G.knuckle) { const ks = G.knuckle.state(); if (ks.bracing) onBrace(ks); else if (G.spy && G.spy.on) hideSpyglass(); }
+    updateAimUi();
+    if (!G.usePullback && G.knuckle) {
+      const ks = G.knuckle.state();
+      if (ks.bracing) onBrace(ks);
+      else if (G.scopeHold && canAim()) holdScope();
+      else { if (G.spy && G.spy.on) hideSpyglass(); if (G.scopeHold) $('aimline').hidden = true; }
+    }
     if (now - G.lastRollAudio > 60) { G.lastRollAudio = now; updateRollingAudio(); }
     if (!$('toast').hidden && now - G.lastToast > 2400) $('toast').hidden = true;
   }
@@ -1623,6 +1735,12 @@ function installDevHook() {
     wipeSave: () => { G.save = SAVE.wipe(); G.calib = calibrationFrom(G.save, G.tuning); G.seenRules = false; return true; },
     /** Drive the whole Knuckle from a synthesised path. Returns the AimSource. */
     flick(samples) { return G.knuckle._feed(samples, G.R ? G.R.tawOnScreen(G.rig) : null); },
+    /* the fine aim and the snap card, for test/aimnudge.mjs */
+    nudge(dir) { return nudgeAim(dir); },
+    scopeHold(on) { setScopeHold(on); return G.scopeHold; },
+    aimUi() { return { nudge: !$('aimNudge').hidden, scope: !$('scopeBtn').hidden, scopeOn: G.scopeHold, spy: !!(G.spy && G.spy.on), line: !$('aimline').hidden, lineInfo: G.aimLineInfo || null }; },
+    snapCard() { return { open: !$('snapCard').hidden, seen: !!(G.save && G.save.seen && G.save.seen.snapHelp) }; },
+    said() { return G.said; },
     /** Drive the pull back fallback the same way. */
     drag(from, to, offset) { return G.pullback._feed(from, to, G.R ? G.R.tawOnScreen(G.rig) : null, offset); },
     setPullback(on) { G.usePullback = !!on; },

@@ -13,7 +13,7 @@
  * 4. A wipe is the only thing that bypasses the merge.
  */
 import { blank, migrate, load, update, merge, wipe, backendName, SCHEMA_VERSION }
-  from '../src/meta/save.js?v=20260904d';
+  from '../src/meta/save.js?v=20260905a';
 
 const fails = [];
 const say = (ok, line) => { console.log((ok ? '  ok    ' : '  FAIL  ') + line); if (!ok) fails.push(line); };

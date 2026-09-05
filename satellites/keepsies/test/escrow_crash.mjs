@@ -44,8 +44,8 @@ globalThis.localStorage = {
   setItem: (k, v) => { const d = disk(); d[k] = String(v); writeFileSync(FILE, JSON.stringify(d)); },
   removeItem: (k) => { const d = disk(); delete d[k]; writeFileSync(FILE, JSON.stringify(d)); }
 };
-const SAVE = await import(${JSON.stringify(join(ROOT, 'src/meta/save.js'))} + '?v=20260904d');
-const M = await import(${JSON.stringify(join(ROOT, 'src/game/match.js'))} + '?v=20260904d');
+const SAVE = await import(${JSON.stringify(join(ROOT, 'src/meta/save.js'))} + '?v=20260905a');
+const M = await import(${JSON.stringify(join(ROOT, 'src/game/match.js'))} + '?v=20260905a');
 const mode = process.argv[2];
 
 if (mode === 'seed') {

@@ -24,8 +24,8 @@
  * carries `touch-action: none` and `user-select: none`, and the brace takes
  * setPointerCapture, or the snap never arrives at all.
  */
-import { clamp, len2, DEG } from '../core/dmath.js?v=20260904d';
-import { makeAim } from '../core/snap.js?v=20260904d';
+import { clamp, len2, DEG } from '../core/dmath.js?v=20260905a';
+import { makeAim } from '../core/snap.js?v=20260905a';
 
 /** A CSS pixel is about 0.264 mm of real glass, and that is already device
  *  independent: devicePixelRatio would count the same thing twice. */
@@ -353,6 +353,8 @@ export function createKnuckle(canvas, tuning, hooks) {
       warmed: S.warmed
     });
     aim.thumbSpeed = v;
+    // how far the flick pointed off the aim line, in degrees, so the game can say so
+    aim.fineDeg = fine / DEG;
     aim.softNudge = v <= T.softNudgeTo;
     aim.knuckledDown = S.secondFinger;
     // ⛔ A SLIP IS DECLARED HERE, never pressed. The thumb left the canvas mid

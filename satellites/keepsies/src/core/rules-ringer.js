@@ -11,7 +11,7 @@
  * win, and 7 + 7 is fourteen. Somebody gets there. The only way a game ends
  * without a winner is abandonment, which the pot returns from.
  */
-import { clamp, sin, cos } from './dmath.js?v=20260904d';
+import { clamp, sin, cos } from './dmath.js?v=20260905a';
 
 export const PHASE = { LAG: 'lag', TURN: 'turn', SHOT: 'shot', RESOLVE: 'resolve', OVER: 'over' };
 

@@ -51,6 +51,7 @@ const GATES = [
 const BROWSER_GATES = [
   { name: 'render',      cmd: ['test/render.mjs'],      need: 'RENDER OK' },
   { name: 'knuckle',     cmd: ['test/knuckle.mjs'],     need: 'KNUCKLE OK' },
+  { name: 'aimnudge',    cmd: ['test/aimnudge.mjs'],    need: 'AIM NUDGE OK' },
   { name: 'audio_budget', cmd: ['test/audio_budget.mjs'], need: 'AUDIO BUDGET OK' },
   { name: 'playthrough', cmd: ['test/playthrough.mjs'], need: 'PLAYTHROUGH OK', slow: true }
 ];

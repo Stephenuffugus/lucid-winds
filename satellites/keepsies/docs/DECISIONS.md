@@ -539,3 +539,22 @@ scattered full board that must keep the sports framing; it read 5.50 m on the ol
 after. Every number that was checked here came from a printed line nobody asked for; the frames
 looked fine.
 
+
+**2026-09-05 — the fine aim is the orbit, a step at a time; the scope can be held; the snap is explained.**
+Stephen, on his phone: "the zoom in aim helps but maybe a button to incrementally aim too while
+zoomed or before zoom would make it so I didn't have to spend so long trying to get the aim just
+right. then we need to explain how flicking actually works and deviating makes the ball go off
+line too." DESIGN 7.7 already makes the aim camera forward plus the snap's fine angle, so a fine
+aim is a small orbit: the two round buttons at mid height turn `userAz` by two degrees a tap with
+the scope closed and half a degree with it open (the settled cone is a degree and a half either
+side, so three fine taps cross it), and repeat while held after a 350 ms wait, the way a keyboard
+does, because the test rig showed a "tap" whose down and up land a frame apart reads as a hold.
+Sign: aim right is a smaller azimuth, proved by the aim line's far end moving right on screen.
+The Zoom button holds the scope open before the thumb is down, at the wide cone, so the line can
+be walked onto the marble first and the snap only has to be straight; the aim line is now drawn
+on the dirt from the reticle to the scope's range, projected, direction only (DESIGN 7.1 stands,
+no path). The snap card (The snap, in the corner row, and once at the first aim of the first
+match) says the five things in pictures and lines, and `describe()` now names a pull: a snap
+five degrees or more off the line says how many and which way. Gate `test/aimnudge.mjs`,
+sixteen assertions with real pointer and touch events; watched to fail with the coarse step at
+zero. Shots `docs/shots/k3-aim-*.png` at 375 and 412.

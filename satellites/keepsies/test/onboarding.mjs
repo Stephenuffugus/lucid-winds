@@ -28,8 +28,8 @@ import { dirname, join } from 'node:path';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const T = JSON.parse(readFileSync(join(ROOT, 'src/data/tuning.json'), 'utf8'));
 const C = JSON.parse(readFileSync(join(ROOT, 'src/data/marbles.json'), 'utf8'));
-const SAVE = await import(join(ROOT, 'src/meta/save.js') + '?v=20260904d');
-const O = await import(join(ROOT, 'src/meta/beats.js') + '?v=20260904d');
+const SAVE = await import(join(ROOT, 'src/meta/save.js') + '?v=20260905a');
+const O = await import(join(ROOT, 'src/meta/beats.js') + '?v=20260905a');
 
 const fails = [];
 const say = (ok, line) => { console.log((ok ? '  ok    ' : '  FAIL  ') + line); if (!ok) fails.push(line); };

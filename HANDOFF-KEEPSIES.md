@@ -6,6 +6,16 @@ There is no code. The design is complete and unusually good, and it is also wron
 
 ---
 
+## SESSION STATE (2026-09-05 evening, Fable): K2.6, the fine aim and the snap card
+Stephen's phone note (fine aim buttons, explain the snap and the pull) built and gated:
+`test/aimnudge.mjs` (registered in check.js browser gates, watched to fail), `docs/DECISIONS.md`
+K2.6 entry, `PLAYTESTS.md` Sep 05 entry, shots `docs/shots/k3-aim-*.png`. Build stamp 20260905a.
+Gates: `node tools/check.js` at stamp 20260905a printed 1 GATE FAILED, `playthrough` ("the pot
+ceremony ran before the card, and it did NOT", the ceremony caught mid flight under the full run's
+contention); rerun ALONE twice, PLAYTHROUGH OK both times, per the browser gate rule. Every other
+gate green including the new `aimnudge` (16 of 16; red with the coarse step at 0).
+Next action: his phone. Then K3 stays blocked on the three Director calls.
+
 ## THE PROMPT (paste as is into a fresh Opus session; the same prompt resumes a later session)
 
 ```

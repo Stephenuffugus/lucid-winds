@@ -23,8 +23,8 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { bodySpec } from '../src/core/marbleBody.js?v=20260904d';
-import { weightWord, hardnessWord } from '../src/meta/words.js?v=20260904d';
+import { bodySpec } from '../src/core/marbleBody.js?v=20260905a';
+import { weightWord, hardnessWord } from '../src/meta/words.js?v=20260905a';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const T = JSON.parse(readFileSync(join(ROOT, 'src/data/tuning.json'), 'utf8'));

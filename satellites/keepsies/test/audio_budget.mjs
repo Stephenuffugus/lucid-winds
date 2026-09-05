@@ -62,7 +62,7 @@ await page.waitForFunction(() => window.KEEPSIES_DEV && window.KEEPSIES_DEV.stat
 
 /* ---- 1 to 3: a break, rendered offline ---- */
 const measured = await page.evaluate(async () => {
-  const A = await import('./src/audio/synth.js?v=20260904d');
+  const A = await import('./src/audio/synth.js?v=20260905a');
   const t = window.KEEPSIES_DEV.tuning();
   A.configure(t);
   const hits = [];
@@ -98,7 +98,7 @@ say(measured.loud.voices <= 20 * 5 && measured.loud.voices > 0,
 
 /* ---- 4: the rolling cap, and which loop it drops ---- */
 const roll = await page.evaluate(async () => {
-  const A = await import('./src/audio/synth.js?v=20260904d');
+  const A = await import('./src/audio/synth.js?v=20260905a');
   const t = window.KEEPSIES_DEV.tuning();
   A.configure(t);
   A.setEnabled(true);

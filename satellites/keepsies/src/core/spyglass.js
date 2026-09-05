@@ -18,7 +18,7 @@
  * This file decides WHERE it looks and WHAT it marks. render/scene.js draws it, main.js
  * wires it, and test/spyglass.mjs gates this maths without a world.
  */
-import { sin, cos, clamp, DEG } from './dmath.js?v=20260904d';
+import { sin, cos, clamp, DEG } from './dmath.js?v=20260905a';
 
 /**
  * @param {object} inp

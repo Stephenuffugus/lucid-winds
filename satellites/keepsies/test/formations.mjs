@@ -12,7 +12,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { FORMATIONS, FORMATION_NAMES } from '../src/game/ringer.js?v=20260904d';
+import { FORMATIONS, FORMATION_NAMES } from '../src/game/ringer.js?v=20260905a';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const T = JSON.parse(readFileSync(join(HERE, '..', 'src', 'data', 'tuning.json'), 'utf8'));

@@ -6,9 +6,9 @@
 <meta name="theme-color" content="#0d100c">
 <meta name="description" content="Snap real marbles for keeps in the playground game and a marble battle arena, and risk the most beautiful thing you own.">
 <title>Keepsies</title>
-<link rel="manifest" href="manifest.json?v=20260904d">
-<link rel="icon" href="icon-192.png?v=20260904d">
-<link rel="apple-touch-icon" href="icon-192.png?v=20260904d">
+<link rel="manifest" href="manifest.json?v=20260905a">
+<link rel="icon" href="icon-192.png?v=20260905a">
+<link rel="apple-touch-icon" href="icon-192.png?v=20260905a">
 <style>
 :root{
   --dirt:#4a3f31; --bg:#0d100c; --chalk:#e8dcc8; --brass:#c8a84b;
@@ -331,6 +331,25 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
 #corners button{pointer-events:auto;min-height:48px;min-width:104px;font-size:.78rem;
   background:rgba(13,16,12,.66);color:var(--chalk);border:1px solid rgba(152,160,134,.45);
   letter-spacing:.1em}
+#corners{gap:8px}
+#corners button{min-width:0;flex:1 1 0;padding:0 8px}
+/* the fine aim: a round 56 px button on each side at mid height, where an off hand thumb
+   lands while the other holds the shooter; the Zoom under the score row on the right */
+#aimNudge{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);display:flex;
+  justify-content:space-between;padding:0 8px;pointer-events:none}
+#aimNudge button{pointer-events:auto;width:56px;height:56px;min-width:0;min-height:0;padding:0;
+  border-radius:50%;font-size:1.1rem;background:rgba(13,16,12,.7);color:var(--chalk);
+  border:1px solid rgba(200,168,75,.55);touch-action:none;user-select:none;-webkit-user-select:none}
+#aimNudge button:active{background:rgba(200,168,75,.35)}
+#scopeBtn{position:absolute;right:10px;top:calc(60px + env(safe-area-inset-top,0px));pointer-events:auto;
+  min-height:48px;min-width:64px;padding:0 12px;font-size:.72rem;letter-spacing:.12em;
+  background:rgba(13,16,12,.66);color:var(--chalk);border:1px solid rgba(152,160,134,.45)}
+#scopeBtn.on{color:var(--brass);border-color:var(--brass)}
+/* the card fits a 667 px phone with Got it on screen: the art is capped and the copy is short */
+#snapArt{width:100%;max-width:22rem;max-height:118px;height:auto;display:block}
+.snapRules{font-size:.9rem}
+.snapRules li{margin:.35rem 0}
+#snapCard{gap:10px}
 #assist .dot{position:absolute;width:5px;height:5px;margin:-2px 0 0 -2px;border-radius:50%;
   background:rgba(232,220,200,.6)}
 #slipCard{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);text-align:center;
@@ -430,7 +449,16 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
        render on the same canvas -->
   <div id="spyglass" hidden><div id="spyHair"></div><div id="spyCone"></div></div>
   <div id="power" hidden><div id="powerFill"></div></div>
+  <!-- the fine aim (Sep 05, Stephen): two buttons that turn the aim line a step at a time, and
+       a Zoom that opens the scope before the thumb is down, so the line can be walked onto the
+       marble first and the snap only has to be straight -->
+  <div id="aimNudge" hidden>
+    <button id="nudgeL" aria-label="Aim left">&#9664;</button>
+    <button id="nudgeR" aria-label="Aim right">&#9654;</button>
+  </div>
+  <button id="scopeBtn" hidden>Zoom</button>
   <div id="corners">
+    <button id="snapHelp">The snap</button>
     <button id="topDown">Top down</button>
     <button id="pause">Pause</button>
   </div>
@@ -512,6 +540,43 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
   <button id="rsLater" class="quiet">Let it go for now</button>
 </div>
 
+<!-- how the snap works, in pictures (Sep 05, Stephen: "we need to explain how flicking actually
+     works and deviating makes the ball go off line too") -->
+<div id="snapCard" class="veil" hidden>
+  <h2>The snap</h2>
+  <svg id="snapArt" viewBox="0 0 320 150" aria-hidden="true">
+    <rect x="0" y="0" width="320" height="150" rx="12" fill="#1a1d17"/>
+    <line x1="60" y1="118" x2="60" y2="22" stroke="#c8a84b" stroke-width="2" stroke-dasharray="4 4"/>
+    <circle cx="60" cy="118" r="13" fill="#7fb0d6" stroke="#e8dcc8" stroke-width="1.5"/>
+    <circle cx="60" cy="118" r="21" fill="none" stroke="#c8a84b" stroke-width="2"/>
+    <circle cx="60" cy="24" r="6" fill="#e0b060"/>
+    <path d="M60 104 L60 60" stroke="#e8dcc8" stroke-width="4" stroke-linecap="round"/>
+    <path d="M52 68 L60 58 L68 68" fill="none" stroke="#e8dcc8" stroke-width="4" stroke-linecap="round"/>
+    <text x="60" y="142" font-size="10" fill="#e8dcc8" text-anchor="middle" font-family="system-ui">straight up the line</text>
+    <line x1="180" y1="118" x2="180" y2="22" stroke="#c8a84b" stroke-width="2" stroke-dasharray="4 4"/>
+    <circle cx="180" cy="118" r="13" fill="#7fb0d6" stroke="#e8dcc8" stroke-width="1.5"/>
+    <circle cx="180" cy="24" r="6" fill="#e0b060"/>
+    <path d="M180 104 L204 62" stroke="#d86a5a" stroke-width="4" stroke-linecap="round"/>
+    <path d="M194 66 L206 58 L206 71" fill="none" stroke="#d86a5a" stroke-width="4" stroke-linecap="round"/>
+    <line x1="180" y1="118" x2="236" y2="24" stroke="#d86a5a" stroke-width="1.5" stroke-dasharray="3 4"/>
+    <text x="196" y="142" font-size="10" fill="#e8dcc8" text-anchor="middle" font-family="system-ui">off the line, off the shot</text>
+    <circle cx="286" cy="60" r="13" fill="#7fb0d6" stroke="#e8dcc8" stroke-width="1.5"/>
+    <circle cx="286" cy="70" r="3" fill="#c8a84b"/>
+    <text x="286" y="96" font-size="9" fill="#98a086" text-anchor="middle" font-family="system-ui">low, backspin</text>
+    <circle cx="286" cy="118" r="13" fill="#7fb0d6" stroke="#e8dcc8" stroke-width="1.5"/>
+    <circle cx="286" cy="108" r="3" fill="#c8a84b"/>
+    <text x="286" y="142" font-size="9" fill="#98a086" text-anchor="middle" font-family="system-ui">high, follow</text>
+  </svg>
+  <ul class="rules snapRules">
+    <li><b>Line it up first.</b> The gold line is where a straight snap goes. Turn it with the arrows or by dragging the dirt. Zoom shows it land.</li>
+    <li><b>Hold still.</b> Thumb on the shooter. The ring goes gold when your aim has settled.</li>
+    <li><b>Snap straight up the line.</b> Speed is power. Distance is nothing.</li>
+    <li><b>Leave the line and the shot leaves with you.</b> Ten degrees off is ten degrees off, up to twenty five. The game says when a snap pulled.</li>
+    <li><b>Where your thumb sits is spin.</b> Low is backspin, the stop shot. High is follow. A hook is a wild one.</li>
+  </ul>
+  <button id="snapGo">Got it</button>
+</div>
+
 <div id="pauseCard" class="veil" hidden>
   <h2>Paused</h2>
   <button id="resume">Resume</button>
@@ -561,6 +626,6 @@ window._sbCapEarn=function(n,tag){
   return granted;
 };
 </script>
-<script type="module" src="src/main.js?v=20260904d"></script>
+<script type="module" src="src/main.js?v=20260905a"></script>
 </body>
 </html>

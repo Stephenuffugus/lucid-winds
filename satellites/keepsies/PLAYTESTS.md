@@ -74,3 +74,26 @@ reads as "my cone", whether the lean from the ring edge feels closer or merely d
 whether 1.7 s to a settled bracket is patience or a wait. Every number is in `tuning.json`
 under `render.ringerCam` and `render.spyglass`.
 
+
+## 2026-09-05, Stephen, his phone, evening
+
+His words, as typed: "keepsies still needs a ton of work. look at what's out there and consider
+what we can do to improve. the zoom in aim helps but maybe a button to incrementally aim too while
+zoomed or before zoom would make it so i didnt have to spend so long trying to get the aim just
+right. then we need to explain how flixking actually works and deviating makes the ball go off
+line too. it tough"
+
+What is out there: every pool game on a phone has a fine aim beside the drag (8 Ball Pool's
+aiming wheel and its power bar are the whole control scheme), and every golf game a nudge. The
+marble games on the stores are tap to shoot with nothing to aim. So Keepsies keeps its one
+gesture and gains the one thing the pool games have: a step aim beside it.
+
+Built the same evening (Fable), all in `docs/DECISIONS.md`: the two aim buttons (two degrees a
+tap, half a degree with the scope open, hold to repeat), the Zoom button that holds the scope open
+before the brace, the aim line drawn on the dirt to the marble the scope is looking at, the snap
+card, and the game naming a pull ("Your snap turned the shot 13 degrees right of the line").
+
+What only he can answer on the phone: whether half a degree is the right fine step or whether it
+wants a quarter, whether the buttons sit where an off hand thumb lands (they are at mid height,
+56 px, both sides), whether the line under the message bubble reads, and whether the card should
+also open from the rules screen.

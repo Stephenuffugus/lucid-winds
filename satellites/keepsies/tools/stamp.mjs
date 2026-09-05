@@ -70,7 +70,7 @@ const version = JSON.parse(readFileSync(join(ROOT, 'src/version.json'), 'utf8'))
 const BUILD = BUMP || version.build;
 
 /* ⛔ AND EVERY LITERAL `?v=` TOKEN, WHATEVER IT IS ATTACHED TO. A test that builds
-   its import as `join(ROOT, 'x.js') + '?v=20260904d'`, a manifest's `"src":`, a
+   its import as `join(ROOT, 'x.js') + '?v=20260905a'`, a manifest's `"src":`, a
    `start_url`: none of those are a `from` or an `import(`, and the first bump
    left six files a build behind. Node then held TWO copies of `save.js`, one per
    query, and the progression gate wiped one and read the other. */
