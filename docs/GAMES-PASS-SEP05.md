@@ -206,3 +206,7 @@ Segment shapes (teardrop scales, flat, ringed), an oil slick sweep, wing tints a
 ### The Attic shelf pass (Sep 05, later)
 
 The shelf is a room: boards on the wall, one plank under every row with the finds standing on it, labels under the board, a glass case around a factory sealed find. On the way the gate found that SCRAP did not survive a reload (the union merge kept the disk copy, ticket paid; scrap, reload, scrap again). Fixed with a week long tombstone per scrapped hash. Shots: `attic-shelf-room.png`, `attic-shelf-room-320.png`. ⚠️ The music chip from the shell covers THE SHELF title on this sheet; that is music-unlocks.js, outside this terminal's fence.
+
+### Litter Bug open (Sep 05, later)
+
+The first run opens on three beats over the alley (the alley, the jar with a bug behind the glass, the padlocked dumpster) with NEXT, SKIP and a dot strip; the rules stay under HOW TO PLAY. Shots: `lb-open-beat1.png`, `lb-open-beat2.png`, `lb-open-beat3.png`.
