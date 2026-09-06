@@ -14,6 +14,7 @@ copy), then this file, then the design. Where they differ, this file wins; every
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
 - 2026-09-05 Fable: plan written. Nothing built. Next action: section 5, P0, step 1.
+- 2026-09-06 Opus B: P0 step 1 done, red, output in section 13. Next action: section 5, P0, step 1, the scaffold (SKELETON and IDENTITY, pure, inside `index.html`) and `tools/variety.mjs`.
 
 ---
 
@@ -318,8 +319,31 @@ reveal and skip the chisel; the pick and the cracks are the morning's session.
 
 ## 13. EVIDENCE LEDGER (fill in place, with commands and their real output, most recent last)
 
+### P0 step 1, 2026-09-06. The gate, before there is anything to gate.
+
+`tools/check.js` written with one gate, `sim` (`node sim.js --test`, wants `STRATA TEST OK`). There
+is no `sim.js` yet, so it is red, which is the point.
+
 ```
-(empty; the first entry is P0 step 3, the variety sheet count, twice if it had to deepen)
+$ flock -w 2400 /tmp/sws-gate.lock node tools/check.js
+sim             FAIL  0s
+
+================================================================
+
+--- sim (wanted: STRATA TEST OK) ---
+
+Error: Cannot find module '/workspaces/lucid-winds/satellites/strata/sim.js'
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1456:15)
+
+(tail)
+  code: 'MODULE_NOT_FOUND',
+  requireStack: []
+}
+
+Node.js v24.14.0
+
+
+1 GATE FAILED
 ```
 
 ---
