@@ -12,7 +12,7 @@ for a player, then by cost. Each line says what I would do if the call were mine
 2. **Swell, `satellites/swell/docs/shots/p0-swell.wav`.** Dawn, one finger, six seconds. Four
    numbers wait on your ear: the string brightness at the top of the sweep, the timpani at the
    cadence (the spike at ten seconds, the loudest thing in the file), the hall at 0.28 wet, and
-   whether six seconds of hold is enough of an arc. Storm and Lullaby have never been rendered.
+   whether six seconds of hold is enough of an arc. Storm and Lullaby are rendered now too (Sep 06 night): `p0-storm.wav` and `p0-lullaby.wav` beside it, all three at the same level by measurement.
 3. **Strata's clink and Gerplunk's ticks** are synthesised and unheard. The clink is the heartbeat
    moment of Strata.
 

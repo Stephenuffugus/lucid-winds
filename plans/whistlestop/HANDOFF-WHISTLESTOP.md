@@ -20,6 +20,28 @@ inherits), then this file, then the design. Where they differ, this file wins; e
 - 2026-09-06 Opus B: **DONE P3.** All four phases built and green. Twelve gates in `tools/check.js`, every one watched to fail, both columns in section 13. Twenty six screenshots opened with the Read tool; eleven real faults came out of them and are listed in section 13. Morning report in section 15, with puzzles 3 to 6 designed as data. Nothing is half finished.
 - 2026-09-06 Opus B: P0 DONE. Six gates green (`sim` 131 assertions, `lint`, `solve`, `lap`, `mutants` 13, `boot`), every one watched to fail, output pasted in section 13. Four of the thirteen mutations survived the first run and all four were holes in my own assertions; all four assertions rewritten. Next action: section 5, P1, step 1, VIEW and EDITOR in `index.html` (the rug, the tray, snapping with the klk, the chime, undo and redo, pan and zoom, the handles).
 
+- 2026-09-06 night, Fable: **THE RAILWAY FITS THE SCREEN, THE SCENERY FITS THE RAILWAY** (the
+  evening handoff's section 7 item 1, the thin list's first line). Before: a prop at the scenery
+  ring's edge pushed `fitView` out until the loop was 67 percent of a 412 phone's width (measured
+  off the Sep 06 pm shot). Now `fitView` reads `railFit()`, the railway alone with a margin in
+  SCREEN pixels (32 upright, 28 on its side, because a 0.4U margin put the outermost curve's
+  centreline twenty pixels from the glass, inside Android's back gesture strip), and `makeProps`
+  clips its ring to the frame that fit shows less a tree's width, so the groups land on the empty
+  floors above and below the loop on a tall phone and nothing binds. Two new assertions in
+  `test/layout.mjs` on the portrait sizes: the railway is at least three quarters of the width,
+  measured off `railBounds()` through the page's own screen mapping, and every prop is on the
+  screen with it; the old fit (`sceneBounds` in `railFit`) turns the first red. Hooks `rail` and
+  `props` on `WHISTLESTOP_TEST`. The train labels' canvas font floor was 9 px, under the 0.7 rem
+  law the lint cannot see on a canvas; 12 now. Stamp `20260906h`. A first run put one prop of thirteen off the frame (a group's members
+  spread from a centre checked alone); every member is checked where it will stand now, and the
+  scale is drawn at placement. `node tools/check.js` ALL GATES PASSED, eight of eight; the layout
+  gate reads 84, 83 and 80 percent at 412, 375 and 320 with 13 of 13 props on the screen, and 67,
+  64 and 69 under the old fit. The 412x915 shot was reshot and opened: the loop fills the width
+  with a hand's width to the glass, the house and signboard above it, the cow inside, the bushes
+  at its edge.
+  **Thin still:** the Crossing's two spurs mirror each other; Swap's lower two levers sit thirty
+  pixels apart; pinch and pan is call C12; pass through is C13.
+
 ---
 
 ## 0. RULES OF ENGAGEMENT

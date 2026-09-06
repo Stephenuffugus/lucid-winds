@@ -96,9 +96,10 @@ queued above under A or C.
    moved off the chip on Sep 06 morning; check it shows at 412x915 on a fresh save). **Queued as
    C2, an hour: shoot a fresh save at 412x915 and confirm the first line is on the screen where a
    thumb looks, then the same at 320x568.**
-3. Storm and Lullaby have never been rendered to a wav (call A2). **Queued as C3, twenty
-   minutes: render both to `docs/shots/` with the existing tool and run them through the three
-   numbers (peak, rms, share above 3 kHz).**
+3. Storm and Lullaby had never been rendered to a wav (call A2). **Done, Sep 06 night:**
+   `docs/shots/p0-storm.wav` and `p0-lullaby.wav`, through the page's own engine like Dawn. The
+   three moods sit together: peak 0.39, 0.41, 0.36; rms 0.060, 0.056, 0.062; 1.2, 2.2 and 1.4
+   percent of their energy above 3 kHz. Nothing in the numbers is an alarm; the rest is his ear.
 
 ### Wardian (p3-412-day, p2-pouch, reshot Sep 06 night, opened)
 
