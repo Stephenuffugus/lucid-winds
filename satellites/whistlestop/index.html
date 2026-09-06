@@ -100,12 +100,13 @@ html,body{margin:0;padding:0;height:100%;background:var(--floor);color:var(--ink
    left 120 by 120, which belongs to the fleet's music chip. Portrait wraps the
    tray into rows above that corner instead. */
 @media (orientation:portrait){
-  /* the whistle used to sit alone on the floor strip below the tray on a tall
-     phone. It now shares the tray's bottom edge, and the tray moves left to
-     leave it the thumb corner. */
-  #btnWhistle{bottom:calc(126px + var(--safeB))}
-  #tray{left:calc(14px + var(--safeL));right:auto;transform:none;
-    width:min(300px,calc(100vw - 104px - var(--safeL) - var(--safeR)));
+  /* ⛔ 2026-09-06: moving the whistle up to the tray's bottom edge and the tray
+     left to make room put the middle of a rug piece under the tray at 375x667
+     (the build gate's portrait tap picked nothing) and there was no lock time
+     to shoot it, so it was reverted. The whistle alone on the floor strip is
+     still an open fault in the plan's report. */
+  #btnWhistle{bottom:calc(52px + var(--safeB))}
+  #tray{left:50%;right:auto;transform:translateX(-50%);width:min(300px,96vw);
     bottom:calc(126px + var(--safeB));flex-wrap:wrap;justify-content:center;
     overflow-x:hidden;overflow-y:auto;max-height:40%;
     border:3px solid var(--ink);border-radius:18px;
@@ -1976,10 +1977,7 @@ function fitCanvas() {
 function rugRect() {
   var b = sceneBounds(), pad = CONFIG.RUG_PAD * U;
   var x0 = b.x0 - pad, y0 = b.y0 - pad, x1 = b.x1 + pad, y1 = b.y1 + pad;
-  var wantW = ((V.w - V.padL - V.padR) / V.zoom) * 0.82;
-  /* the band between the goal line and the tray, not the whole screen, so the
-     fringe shows above the tray instead of running under it */
-  var wantH = ((V.h - V.padT - V.padB) / V.zoom) * 0.94;
+  var wantW = ((V.w - V.padL - V.padR) / V.zoom) * 0.82, wantH = (V.h / V.zoom) * 0.82;
   var cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
   if (x1 - x0 < wantW) { x0 = cx - wantW / 2; x1 = cx + wantW / 2; }
   if (y1 - y0 < wantH) { y0 = cy - wantH / 2; y1 = cy + wantH / 2; }
