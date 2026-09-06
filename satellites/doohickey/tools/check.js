@@ -34,6 +34,10 @@ const GATES = [
 ];
 const BROWSER_GATES = [
   { name: 'edit', cmd: ['test/edit.mjs'], need: 'EDIT OK' },
+  /* the ear gate: peak, rms and the share above 3 kHz off the loudest run,
+     rendered offline through the real voices. A voice count says nothing at all
+     about how loud a voice is, and that is how a fire alarm shipped. */
+  { name: 'audio', cmd: ['test/audio.mjs'], need: 'AUDIO OK' },
   { name: 'run', cmd: ['test/run.mjs'], need: 'RUN OK' },
   { name: 'share', cmd: ['test/share.mjs'], need: 'SHARE OK' },
   { name: 'film', cmd: ['test/film.mjs'], need: 'FILM OK', slow: true },

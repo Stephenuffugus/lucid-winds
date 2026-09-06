@@ -3208,14 +3208,20 @@ function saveSandbox() {
    domino in a run is a step higher, and the ladder resets after a second of
    quiet, so a long cascade sounds like a run up the keys. */
 var AUDIO = {
-  ac: null, master: null, stream: null, on: true,
+  ac: null, master: null, stream: null, on: true, inject: null,
   step: 0, lastClack: 0,
   LADDER: [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24, 26, 28, 31],
   open: function () {
     if (this.ac || !this.on) return this.ac;
-    var C = window.AudioContext || window.webkitAudioContext;
-    if (!C) return null;
-    this.ac = new C();
+    /* the ear gate's offline context, swapped in for the length of one render.
+       open() builds the master and the limiter, which are the whole mix bus, so
+       a gate has to come THROUGH here and not around it. */
+    if (this.inject) this.ac = this.inject;
+    else {
+      var C = window.AudioContext || window.webkitAudioContext;
+      if (!C) return null;
+      this.ac = new C();
+    }
     this.master = this.ac.createGain();
     this.master.gain.value = 0.6;
     /* a limiter, so a twelve domino run does not clip */
@@ -3316,6 +3322,81 @@ var AUDIO = {
     } else if (what === 'whirr') {
       this.noise(t, 0.5, 420, 1.2, 0.02);
     }
+  },
+  /* ⛔ THE EAR GATE'S RENDER. The loudest run this machine can make, through the
+     REAL play(), tone(), noise() and env() and the real master and limiter, into
+     an OfflineAudioContext. Three numbers come back: the peak, so the phone is
+     not clipping; the rms, so it is audible and not shouting; and the share of
+     energy above 3 kHz, which is where a smoke detector lives and where a phone
+     speaker is loudest. Sep 06: a sibling game's chirp was an oscillator wired
+     straight into an envelope gain and Stephen said the fleet "sounded like fire
+     alarms". Counting voices would not have caught it. This would.
+     ⛔ NEVER measure a wav made for the ear: a render tool normalises its file,
+     so its peak is the tool's and not the game's. */
+  renderLoudRun: function (seconds, opts) {
+    var OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (!OAC) return Promise.reject(new Error('no OfflineAudioContext'));
+    var o = opts || {}, sr = 44100, dur = seconds || 8, self = this;
+    var octx = new OAC(1, Math.ceil(sr * dur), sr);
+    /* an offline context's currentTime is nailed to zero until it renders, and
+       play() schedules at currentTime, so the clock is the one thing the shim
+       adds; every node it makes is the offline context's own. */
+    var shim = {
+      currentTime: 0, sampleRate: octx.sampleRate, destination: octx.destination, state: 'running',
+      resume: function () {},
+      createGain: function () { return octx.createGain(); },
+      createOscillator: function () { return octx.createOscillator(); },
+      createBufferSource: function () { return octx.createBufferSource(); },
+      createBiquadFilter: function () { return octx.createBiquadFilter(); },
+      createDynamicsCompressor: function () { return octx.createDynamicsCompressor(); },
+      createBuffer: function (a, b, c) { return octx.createBuffer(a, b, c); }
+    };
+    var sv = { ac: this.ac, master: this.master, comp: this.comp, on: this.on,
+      step: this.step, lastClack: this.lastClack, stream: this.stream };
+    this.ac = null; this.master = null; this.comp = null; this.stream = null;
+    this.on = true; this.step = 0; this.lastClack = 0;
+    this.inject = shim;
+    this.open();
+    /* THE LOUDEST RUN, at rates no machine can reach: a marble ticking sixteen
+       times a second, a domino every eighth note so the clack ladder climbs to
+       its top step and stays there, and every other voice the board owns laid
+       over the top of it. A real cascade is quieter than this by a long way. */
+    var t;
+    if (o.only) {
+      for (t = 0.05; t < dur - 0.1; t += (o.every || 0.5)) { shim.currentTime = t; this.play(o.only, o.arg); }
+    } else {
+      for (t = 0.05; t < dur - 0.1; t += 0.06) { shim.currentTime = t; this.play('tick', 400); }
+      for (t = 0.10; t < dur - 0.1; t += 0.125) { shim.currentTime = t; this.play('clack'); }
+      for (t = 0.30; t < dur - 0.1; t += 0.5) { shim.currentTime = t; this.play('thunk'); }
+      for (t = 0.40; t < dur - 0.1; t += 0.5) { shim.currentTime = t; this.play('boing'); }
+      for (t = 0.55; t < dur - 0.1; t += 0.5) { shim.currentTime = t; this.play('squeak'); }
+      for (t = 0.65; t < dur - 0.1; t += 0.5) { shim.currentTime = t; this.play('pop'); }
+      for (t = 0.75; t < dur - 0.1; t += 0.7) { shim.currentTime = t; this.play('mrrp'); }
+      for (t = 0.85; t < dur - 0.1; t += 0.35) { shim.currentTime = t; this.play('click'); }
+      for (t = 1.00; t < dur - 0.1; t += 1.0) { shim.currentTime = t; this.play('ding'); }
+      for (t = 0.00; t < dur - 0.1; t += 0.5) { shim.currentTime = t; this.play('whirr'); }
+    }
+    this.inject = null;
+    this.ac = sv.ac; this.master = sv.master; this.comp = sv.comp; this.on = sv.on;
+    this.step = sv.step; this.lastClack = sv.lastClack; this.stream = sv.stream;
+    return octx.startRendering().then(function (buf) { return self.ear(buf, sr); });
+  },
+  /* peak, rms and the share of energy above 3 kHz. The split is a second order
+     Butterworth high pass run over the rendered samples in JavaScript, because
+     a smoke detector lives up there and a kitchen full of dominoes does not. */
+  ear: function (buf, sr) {
+    var d = buf.getChannelData(0), n = d.length, i, peak = 0, tot = 0, hi = 0;
+    var w0 = 2 * Math.PI * 3000 / sr, cw = Math.cos(w0), sw = Math.sin(w0), al = sw / (2 * 0.7071);
+    var b0 = (1 + cw) / 2, b1 = -(1 + cw), b2 = (1 + cw) / 2, a0 = 1 + al, a1 = -2 * cw, a2 = 1 - al;
+    var x1 = 0, x2 = 0, y1 = 0, y2 = 0, x, y;
+    for (i = 0; i < n; i++) {
+      x = d[i];
+      y = (b0 * x + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2) / a0;
+      x2 = x1; x1 = x; y2 = y1; y1 = y;
+      tot += x * x; hi += y * y;
+      if (Math.abs(x) > peak) peak = Math.abs(x);
+    }
+    return { peak: peak, rms: Math.sqrt(tot / n), highFraction: tot > 0 ? hi / tot : 0, seconds: n / sr };
   },
   /* the film needs the same audio the player hears */
   tapStream: function () {
@@ -3813,6 +3894,8 @@ window.DOOHICKEY_TEST = {
     return importFromHash();
   },
   audio: function () { return AUDIO; },
+  /* the ear gate: the loudest run, rendered offline through the real voices */
+  renderAudio: function (seconds, opts) { return AUDIO.renderLoudRun(seconds, opts); },
   film: function () { return FILM; },
   startFilm: function () { return startFilm(); },
   stopFilm: function () { stopFilm(); },
