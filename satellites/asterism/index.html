@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ASTERISM">
-<link rel="manifest" href="./manifest.webmanifest?v=20260906g">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260906g">
-<link rel="icon" href="./icon-192.png?v=20260906g">
+<link rel="manifest" href="./manifest.webmanifest?v=20260907a">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260907a">
+<link rel="icon" href="./icon-192.png?v=20260907a">
 <link rel="canonical" href="https://lucidwinds.com/satellites/asterism/">
 <style>
 /*  ASTERISM
@@ -163,7 +163,7 @@ input:focus{outline:1px solid var(--gold)}
 .fail{color:#ff8080}.pass{color:#9be36b}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260906g" defer></script>
+<script src="/music-unlocks.js?v=20260907a" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">ASTERISM</h1>
@@ -1606,11 +1606,18 @@ function featuresOf(entry) {
 /* ========================= 9. AUDIO ========================= */
 var AUDIO = (function () {
   var ac = null, master = null, noiseBuf = null, air = null, on = true, voices = 0;
+  /* the ear gate's offline context, swapped in for the length of one render.
+     start() builds the AIR TONE, which is the bed of the whole app, so the gate
+     has to go through start() and not around it. */
+  var inject = null;
   function start() {
     if (ac) { if (ac.state === 'suspended') ac.resume(); return; }
-    var AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC) return;
-    ac = new AC();
+    if (inject) { ac = inject; }
+    else {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      ac = new AC();
+    }
     master = ac.createGain(); master.gain.value = on ? 0.9 : 0; master.connect(ac.destination);
     var n = ac.sampleRate * 1.5, b = ac.createBuffer(1, n, ac.sampleRate), d = b.getChannelData(0), i;
     for (i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
@@ -1657,11 +1664,90 @@ var AUDIO = (function () {
       o.type = 'sine'; o.frequency.setValueAtTime(fr[i] * 0.98, t0);
       o.frequency.linearRampToValueAtTime(fr[i], t0 + 1.4);
       env(g, t0 + i * 0.08, 0.13, 1.5);
-      o.connect(g); g.connect(master); o.start(t0); o.stop(t0 + 1.7);
+      o.connect(g); g.connect(master);
+      /* ⛔⛔ THE SWELL OPENED WITH A FULL SCALE BLAST, and every gate in this
+         game was green while it did. A fresh GainNode's gain is ONE. The second
+         and third voices started at t0 but their envelopes did not begin until
+         t0 plus 80 and 160 ms, so for that long each sine went to the master at
+         AMPLITUDE ONE, not at 0.13. The ear gate measured the loudest minute at
+         1.907 peak, which is clipping, and the number that told on it was the
+         peak and nothing else: the voice count was right, the pitches were
+         right, the envelope in the code read 0.13. A voice starts when its
+         envelope starts. */
+      o.start(t0 + i * 0.08); o.stop(t0 + i * 0.08 + 1.7);
       voices++; o.onended = function () { voices--; };
     }
   }
+  /* ========== THE EAR GATE (test/audio.mjs) ==========
+     Stephen, Sep 06: the sound effects "sounded like fire alarms. They made
+     everybody in my house flinch and scared my animals." The cause in that game
+     was a trill oscillator wired into an envelope gain, so a chirp written as
+     0.022 was a half scale 4 kHz tone, and EVERY gate was green because no gate
+     had ever rendered the thing the speaker plays: the loudest thing in the
+     game was the one thing nothing measured.
+     This renders the sky's LOUDEST MINUTE offline through the same start(),
+     chime(), scratch() and swell() the speaker uses, air tone and all, and
+     reports peak, rms and the share of energy above 3 kHz.
+     ⛔ NEVER measure a wav made for the ear: a render tool normalises, and a
+     normalised file says 0.86 whatever the master is doing.
+     ⛔ An offline context's currentTime never advances while you schedule, so
+     every voice would stack at zero. `shim` is the real offline context with a
+     clock this function turns by hand. */
+  function renderLoudMinute(seconds) {
+    var OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (!OAC) return Promise.reject(new Error('no OfflineAudioContext'));
+    var sr = 22050, dur = seconds || 60;
+    var octx = new OAC(1, Math.ceil(sr * dur), sr);
+    var shim = {
+      currentTime: 0, sampleRate: octx.sampleRate, destination: octx.destination, state: 'running',
+      resume: function () {},
+      createGain: function () { return octx.createGain(); },
+      createOscillator: function () { return octx.createOscillator(); },
+      createBufferSource: function () { return octx.createBufferSource(); },
+      createBiquadFilter: function () { return octx.createBiquadFilter(); },
+      createBuffer: function (a, b, c) { return octx.createBuffer(a, b, c); }
+    };
+    var sac = ac, sm = master, snb = noiseBuf, sair = air, son = on, sv = voices;
+    ac = null; master = null; noiseBuf = null; air = null; on = true; voices = 0;
+    inject = shim;
+    start();
+    /* THE LOUDEST MINUTE: a finger walking a constellation as fast as a tap can
+       land, which is about four stars a second, with a miss between every pair
+       (the scratch) and a myth swell every six seconds. Nobody draws this fast.
+       A ceiling has to sit above the roof.
+       ⛔ THE MAGNITUDE WALKS. Chiming the same magnitude four times a second
+       rings the SAME sine over and over, and sines at one pitch overlapping at
+       a quarter second sum COHERENTLY: the first draft of this schedule
+       measured 1.91 peak, and every bit of the excess was a resonance the
+       schedule invented rather than one the game can make. Real stars have
+       different magnitudes, so the walk covers the chime's whole range. */
+    var t, k = 0;
+    for (t = 0.1; t < dur; t += 0.25) { shim.currentTime = t; chime(-1 + (k++ % 13) * 0.5); }
+    for (t = 0.22; t < dur; t += 0.5) { shim.currentTime = t; scratch(); }
+    for (t = 1.0; t < dur - 2; t += 6) { shim.currentTime = t; swell(); }
+    ac = sac; master = sm; noiseBuf = snb; air = sair; on = son; voices = sv;
+    inject = null;
+    return octx.startRendering().then(function (buf) { return ear(buf, sr); });
+  }
+  /* peak, rms, and the share of energy above 3 kHz. The split is a second order
+     Butterworth high pass run in JavaScript over the rendered buffer, because a
+     smoke detector lives up there and a night sky does not. */
+  function ear(buf, sr) {
+    var d = buf.getChannelData(0), n = d.length, i, peak = 0, tot = 0, hi = 0;
+    var w0 = 2 * Math.PI * 3000 / sr, cw = Math.cos(w0), sw = Math.sin(w0), al = sw / (2 * 0.7071);
+    var b0 = (1 + cw) / 2, b1 = -(1 + cw), b2 = (1 + cw) / 2, a0 = 1 + al, a1 = -2 * cw, a2 = 1 - al;
+    var x1 = 0, x2 = 0, y1 = 0, y2 = 0, x, y;
+    for (i = 0; i < n; i++) {
+      x = d[i];
+      y = (b0 * x + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2) / a0;
+      x2 = x1; x1 = x; y2 = y1; y1 = y;
+      tot += x * x; hi += y * y;
+      if (Math.abs(x) > peak) peak = Math.abs(x);
+    }
+    return { peak: peak, rms: Math.sqrt(tot / n), highFraction: tot > 0 ? hi / tot : 0, seconds: n / sr };
+  }
   return { start: start, setOn: setOn, chime: chime, scratch: scratch, swell: swell,
+    renderLoudMinute: renderLoudMinute,
     ready: function () { return !!ac; }, voices: function () { return voices + (ac ? 2 : 0); } };
 })();
 
@@ -2048,7 +2134,7 @@ function suitePurity(T, src) {
 // ---- TEST_EXPORT_END ----
 
 /* ========================= 13. BOOT ========================= */
-var STAMP = '20260906g';
+var STAMP = '20260907a';
 var G = {
   cat: null, place: null, whenMs: 0, mode: 'tonight',
   view: { alt: 55, az: 180, fov: CONFIG.FOV_DEFAULT },
@@ -2730,7 +2816,9 @@ window.ASTERISM_DEV = {
   save: function () { return SAVE.read(); },
   myth: function () { return $('mythText').textContent; },
   typing: function () { return !!G.typing; },
-  voices: function () { return AUDIO.voices(); }
+  voices: function () { return AUDIO.voices(); },
+  /* the ear gate's render: the loudest minute, offline, through the real AUDIO */
+  renderAudio: function (seconds) { return AUDIO.renderLoudMinute(seconds); }
 };
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
