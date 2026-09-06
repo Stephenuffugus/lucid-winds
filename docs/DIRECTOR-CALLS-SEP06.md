@@ -155,6 +155,20 @@ here. Nothing in this section is started.
     412 tonight. If your phone locked to portrait, that is the arcade frame, not the game. Tell me
     what you saw.
 
+36. **Windup, the level of the tine (Fable, Sep 06 night).** ⛔ My first number was wrong and is
+    corrected here: the tine wav is NORMALISED by its own tool for listening, so its 0.86 peak was
+    the tool's, not the game's. The game's raw render, which is what the speaker gets, peaked at
+    1.01 with the master at 0.85 on the loudest overlap of Twinkle at the auto tempo, which is
+    clipping on a phone; the tine gate's bar was too short to reach it. The master is 0.5 now and
+    the raw peak is 0.6, and the wav sounds the same because the tool lifts it. Your ear decides
+    the taste; the clipping was a fault and stays fixed. The ear gate item (Opus A9) says never
+    to measure a normalised file.
+
+37. **Wardian, BUY in the pouch (Fable, Sep 06 night, from the shot).** Every seed and every
+    thing for the jar carries a BUY button priced in spores. Spores come from play and no money is
+    near it, but BUY is a store's word and the one a store reviewer looks for. My call: PLANT on a
+    seed, TAKE on a thing, the spores line unchanged. Ten minutes.
+
 ## Answered this afternoon without you (say so if wrong)
 
 Fathom occlusion built. Inkswing Double Link built. Strata plate built and hung on the hall

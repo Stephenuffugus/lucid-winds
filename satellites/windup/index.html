@@ -1,9 +1,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#C9A227">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260906e">
-<link rel="icon" href="./icon-192.png?v=20260906e">
-<link rel="manifest" href="./manifest.webmanifest?v=20260906e">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260906h">
+<link rel="icon" href="./icon-192.png?v=20260906h">
+<link rel="manifest" href="./manifest.webmanifest?v=20260906h">
 <title>WINDUP</title>
 <style>
 :root{
@@ -192,7 +192,11 @@ var CONFIG = Object.freeze({
   /* the voice */
   TINE_DECAY_LOW_S: 1.8, TINE_DECAY_HIGH_S: 0.8,
   DETUNE_CENTS: 3, LEVEL_JITTER_DB: 1,
-  VOICES_MAX: 24, MASTER: 0.85, WET: 0.18,
+  /* ⛔ 0.5, NOT 0.85. The rendered tine wav measured 0.86 peak and 0.23 rms over
+     ten seconds, twice Swell's level and ten times Gerplunk's bed, on the day
+     Gerplunk's bed was reported as a fire alarm. A music box is a quiet thing
+     and the fleet's music chip plays beside it. Stephen's ear decides (call 36). */
+  VOICES_MAX: 24, MASTER: 0.5, WET: 0.18,
   PARTIAL_A: 4.2, PARTIAL_B: 6.3, PARTIAL_A_GAIN: 0.18, PARTIAL_B_GAIN: 0.07,
   SHIMMER: 12, SHIMMER_GAIN: 0.03, SHIMMER_S: 0.3,
   CLICK_MS: 3, CLICK_HP_HZ: 4000
@@ -1026,7 +1030,7 @@ function stealVoices(A, now) {
   }
 }
 /* ============================ 17. THE PAGE ============================ */
-var STAMP = '20260906e';
+var STAMP = '20260906h';
 function el(id) { return document.getElementById(id); }
 var V = { cv: null, ctx: null, W: 0, H: 0, dpr: 1, t: 0 };
 var G = { screen: 'box', strip: null, audio: null, ready: false,
@@ -1592,7 +1596,7 @@ function drawPunch(ctx) {
   ctx.fillStyle = pg;
   ctx.fillRect(P.x, P.y, P.w, P.h);
   /* the rows, lettered, with the octaves picked out */
-  ctx.font = '600 11px ui-rounded, system-ui, sans-serif';
+  ctx.font = '600 12px ui-rounded, system-ui, sans-serif';
   ctx.textAlign = 'right';
   ctx.textBaseline = 'middle';
   for (i = 0; i < CONFIG.ROWS; i++) {
@@ -2492,7 +2496,7 @@ function stripPng(strip) {
     c.fill();
   }
   c.fillStyle = '#5A3A22';
-  c.font = '600 11px ui-rounded, system-ui, sans-serif';
+  c.font = '600 12px ui-rounded, system-ui, sans-serif';
   c.fillText((strip.name || 'A song') + (strip.by ? ', punched by ' + strip.by : ''), pad, pad + 4);
   return cv;
 }

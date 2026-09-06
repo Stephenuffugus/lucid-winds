@@ -59,6 +59,15 @@ every difference is in section 3 with its reason.
   hear. If he wants the paper richer, the next step is a second ink per paper
   (a lighter stripe under the confetti, a moon on the night sky).
 
+- 2026-09-06 night, Fable: **MASTER 0.85 to 0.5, and the note letters at 12 px.** The tine wav
+  read 0.86 peak, and that number was the wav tool's own normalisation, not the game (the tool
+  lifts or cuts the file to 0.86 for the ear; it printed "peak 0.596 lifted by 1.44" at the new
+  master). The game's raw render at 0.85 peaked at 1.01 on the loudest overlap of Twinkle at the
+  auto tempo, clipping on a phone, which the tine gate's one bar never reached. Raw peak 0.6 now.
+  Director call G36 carries the taste half. Two canvas fonts at 11 px raised to 12 (the 0.7 rem
+  law the lint cannot see on a canvas, Opus list A11). Stamp `20260906h`. `node tools/check.js`
+  ALL GATES PASSED, eight of eight, wav re rendered. **Next action:** his ear; print a strip (E20).
+
 ---
 
 ## 0. RULES OF ENGAGEMENT

@@ -89,6 +89,10 @@ this file wins; every difference is in section 3 with its reason.
   docs shots were not reshot.
   **Next action:** his thumb on the pull and THROW AGAIN; call 34 for the ladder.
 
+- 2026-09-06 night, Fable: four canvas fonts at 10 and 11 px (the sling's degrees, the hangar
+  card's small print) raised to 12, the 0.7 rem law the lint cannot see on a canvas (Opus list
+  A11 teaches it to). Stamp `20260906i`. Gates in the chain report below.
+
 ---
 
 ## 0. RULES OF ENGAGEMENT
