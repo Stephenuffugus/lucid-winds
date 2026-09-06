@@ -17,7 +17,7 @@
  *   5. no dash and no exclamation point in anything a player reads
  *   6. the brand is Sky Wolf Studio, singular
  *   7. no shadowBlur: a rug full of track and three trains is a slideshow with it
- *   8. no font smaller than 0.7 rem
+ *   8. no font smaller than 0.7 rem, in the CSS and on the canvas
  *   9. the SIM block has no clock, no page and no unspecified maths
  */
 import { readFileSync } from 'node:fs';
@@ -110,6 +110,53 @@ say(blur.length === 0, 'no shadowBlur anywhere: a rug of track and three trains 
 const rems = [...HTML.matchAll(/font-size:\s*([0-9.]+)rem/g)].map(m => Number(m[1]));
 const tiny = rems.filter(r => r < 0.7);
 say(tiny.length === 0, 'no text under 0.7 rem' + (tiny.length ? ': ' + tiny.join(', ') : ' (smallest ' + Math.min.apply(null, rems) + ')'));
+
+/* 8b. the same law, read on the canvas. The gate above greps `font-size: Nrem`
+   out of the CSS and nothing else, so the train labels here sat under a
+   Math.max(9, ...) floor for weeks with the gate green over them, and it took
+   a grep by hand on the sixth of September to find it. This one reads the
+   script: every size in every font string the code hands a canvas, whether it
+   is a plain literal, a Math.max floor under a computed size, or neither. 0.7
+   rem at a 16 px root is 11.2 px, so 11.2 px is the floor here.
+   A size with no readable floor prints as a note and not as a failure. That is
+   a choice, and the reason is that the number is not in the file: a size of
+   Math.round(w * 0.02) is whatever w turns out to be, so red there would be a
+   guess, and a gate that cries on code it cannot read gets ignored along with
+   the ones that can. The note names the lines so a person can go and look. */
+const blank = n => new Array(n + 1).join(' ');
+const SCAN = blank(sOpen + 8) + JS.replace(/\/\*[\s\S]*?\*\//g, m => blank(m.length))
+  .replace(/^[ \t]*\/\/.*$/gm, m => blank(m.length));
+const LINES = HTML.split('\n');
+const lineOf = i => HTML.slice(0, i).split('\n').length;
+const FAMILY = /(?:serif|sans-serif|monospace|system-ui|ui-[a-z]|cursive|fantasy|Georgia|Arial|Helvetica|Roboto|Segoe|Trebuchet|Menlo|Courier|Verdana|Tahoma|Times|Iowan|Charter|Optima|Palatino|Baskerville|Futura|Impact|Consolas|Cambria|Garamond)/;
+const fontRhs = [...SCAN.matchAll(/\.font(?:Size)?\s*=\s*[^;\n]{0,240}/g)].map(m => [m.index, m.index + m[0].length]);
+const canvasPx = [], unreadable = [];
+for (const hit of SCAN.matchAll(/px\b/g)) {
+  const at = hit.index;
+  /* the look ahead stops at the end of the family list. A flat 90 characters
+     ran out of one statement and into the next, and read the 10px in
+     `transform = 'translate(10px, 4px)'` as a font because a real font string
+     sat two lines under it. Watched to do exactly that before it was cut. */
+  const tail = SCAN.slice(at + 2, at + 90).split(/[;\n,]/)[0].split(/['"`](?![A-Za-z])/)[0];
+  if (!FAMILY.test(tail) && !fontRhs.some(r => at >= r[0] && at <= r[1])) continue;
+  const head = SCAN.slice(Math.max(0, at - 200), at);
+  const lit = /([0-9]+(?:\.[0-9]+)?)\s*$/.exec(head);
+  const floor = [...head.split(/[;\n]/).pop().matchAll(/Math\.max\s*\(\s*([0-9]+(?:\.[0-9]+)?)\s*,/g)].pop();
+  const where = 'index.html:' + lineOf(at) + '  ' + LINES[lineOf(at) - 1].trim().slice(0, 88);
+  if (lit) canvasPx.push({ px: Number(lit[1]), where: where });
+  else if (floor) canvasPx.push({ px: Number(floor[1]), where: where });
+  else unreadable.push(where);
+}
+const under = canvasPx.filter(f => f.px < 11.2);
+say(under.length === 0, 'no canvas font under 11.2 px, which is 0.7 rem at a 16 px root'
+  + (under.length ? ', ' + under.length + ' of them:\n          '
+      + under.map(f => f.px + 'px  ' + f.where).join('\n          ')
+    : ' (' + canvasPx.length + ' read)'));
+console.log('  note    ' + (unreadable.length
+  ? unreadable.length + ' canvas font size(s) are computed at runtime, this gate cannot read them, so look:\n          '
+    + unreadable.join('\n          ')
+  : 'every canvas font size in the file is a literal or a floor, none computed'));
+
 
 /* 9. the determinism law, as a grep over the shipped file */
 const rawA = JS.indexOf('SIM_EXPORT_START'), rawB = JS.indexOf('SIM_EXPORT_END');
