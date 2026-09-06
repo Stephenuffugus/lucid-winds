@@ -11,11 +11,16 @@ this file wins; every difference is in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
-- 2026-09-06 Opus: P0 step 1 done. `tools/check.js` exists with one gate that
-  fails and the failure is in section 13. Next action: P0 step 2, the scaffold.
-  Write CONFIG, MODEL, DERIVE, FLIGHT, WIND and CLASSIFY into
-  `satellites/airworthy/index.html` between the SIM_EXPORT markers, exactly as
-  section 4 spells them out, then `sim.js` with `--test`, `--fly` and `--medals`.
+- 2026-09-06 Opus: **P0 is DONE and pushed.** `node satellites/airworthy/tools/check.js`
+  prints ALL GATES PASSED: one gate, `sim`, 76 assertions. Four mutations
+  watched to fail. Section 13 carries the Porpoise trace, the table of the six
+  names, and every correction the model needed, of which there were ten: the
+  plan's model as written does not fly.
+  **Next action:** P1 step 1, the FIELD. Draw The Gym into `#stage` in
+  `satellites/airworthy/index.html`: the diorama, the slingshot from Keepsies'
+  `pullback.js`, the flight camera leading the plane, the dotted pencil trail,
+  and the result card. The shot to make first is `docs/shots/p1-swoop.png`, six
+  panels at half second intervals of the Porpoise.
 
 ---
 
@@ -378,6 +383,152 @@ Error: Cannot find module '/workspaces/lucid-winds/satellites/airworthy/sim.js'
 
 1 GATE FAILED
 ```
+
+### P0 steps 2 to 4, the model with the nostalgia as a test (2026-09-06)
+
+```
+$ node sim.js --test
+PASSED 76 / FAILED 0   (total 76)
+AIRWORTHY TEST OK
+```
+
+**The Porpoise, in numbers.** This is the product, and it is a phugoid: up,
+over, down, up again.
+
+```
+spec  {"nose":"blunt","noseFolds":1,"wing":0.6,"fins":"none","dihedral":0.4,"precision":0.8,"elev":6,"ail":0,"clip":"none"}
+mass 4.50 g   area 260 cm2   AR 3.02   margin 4.8 percent chord   stall 12.0 deg
+launched at 5 degrees, power 0.5
+
+     t       x       y   pitch       V   alpha
+   0.01    0.06    1.60     5.6    7.50     0.0
+   0.26    1.53    1.90    20.4    4.96     2.3
+   0.51    2.44    2.27    29.7    3.12     4.3
+   0.76    2.96    2.51    34.4    1.66    12.1
+   1.01    3.30    2.44    21.8    1.78    61.6
+   1.26    3.74    1.99    -9.5    3.14    34.8
+   1.51    4.50    1.58   -11.7    3.56     3.9
+   1.76    5.35    1.40    -3.9    3.36     4.4
+   2.01    6.13    1.33     3.1    2.96     5.4
+   2.26    6.80    1.33     8.7    2.46     7.4
+   2.51    7.35    1.34    12.8    1.95    11.0
+   2.76    7.79    1.28    10.7    1.92    35.8
+   3.01    8.29    0.92    -7.5    2.95    30.7
+   3.26    9.02    0.57    -9.1    3.35     4.4
+   3.51    9.82    0.43    -1.9    3.13     4.9
+   3.76   10.55    0.38     4.4    2.75     6.1
+   4.01   11.18    0.37     9.4    2.28     8.4
+   4.26   11.68    0.38    13.0    1.82    12.8
+   4.51   12.12    0.24     5.4    2.20    39.2
+
+lands at 12.45 m after 4.67 s, 3 stalls, veer 0.017
+descent 7.4 deg, pitch swing 24.7 deg, period 1.75 s, speed at 3 s 2.74 m/s
+=> The Porpoise
+
+AIRWORTHY FLY OK
+```
+
+Read the height column: 1.60 up to 2.51, down to 1.33, level, then down again,
+with the pitch swinging plus 34 to minus 12 to plus 13. Three stalls, a period
+of 1.75 seconds, and it lands 12.5 metres away after 4.7 seconds. Two bends of
+the elevator turn it into a Cruiser that goes 13.3 metres with its nose never
+more than ten degrees past the wind.
+
+**The six names, measured** (launched at five degrees, the floater and the dart
+at their own throws):
+
+```
+name      class          desc   amp   per pk stl maxA  V3 Vmean  dist    t
+cruiser   The Cruiser      5.2  11.1  3.95  2   0   10  3.1   3.8  17.7   4.8
+porpoise  The Porpoise     7.4  24.7  1.75  3   3   62  2.7   2.9  12.5   4.7
+tumbler   The Tumbler      8.4  24.8  1.25  4   4   77  2.1   2.5  10.9   4.7
+lawndart  The Lawn Dart    8.9  13.2  0.00  0   0    2  5.8   5.8  10.3   1.8
+floater   The Floater      8.5   5.5  0.00  1   0   12  2.3   2.3  10.8   4.7
+fixed     The Cruiser      6.9   7.9  0.00  1   0   10  2.3   2.8  13.3   4.9
+dart      The Dart         4.3  15.8  0.00  1   0    8  4.7   5.5  21.4   4.0
+```
+
+Four mutations watched to fail, each restored:
+
+```
+$ node sim.js --test --over=CMQ=0            (the pitch damping removed)
+FAIL  the cruiser fold flies like The Cruiser (swing 92 deg ...)  [expected cruiser, got porpoise]
+FAIL  the tumbler fold flies like The Tumbler (swing 195 deg ...) [expected tumbler, got porpoise]
+FAIL  and its swing takes between 1.2 and 3.5 seconds (0.18 s)
+
+$ node sim.js --test --over=CM_STALL=0       (the post stall pitch down removed)
+FAIL  the porpoise fold flies like The Porpoise ...   [expected porpoise, got tumbler]
+FAIL  the plane you start with is a porpoise          [expected porpoise, got tumbler]
+
+$ # the induced drag factor set to zero
+FAIL  a wide wing pays more induced drag for its lift (0.000 to 0.000)
+FAIL  and at a trimmed glide it is a real share of the drag (0 percent)
+
+$ # the stability term's sign flipped
+FAIL  the cruiser fold flies like The Cruiser   [expected cruiser, got porpoise]
+FAIL  the lawndart fold flies like The Lawn Dart [expected lawnDart, got porpoise]
+FAIL  the dart fold flies like The Dart          [expected dart, got tumbler]
+```
+
+**THE MODEL AS THE PLAN WROTE IT DOES NOT FLY.** Every plane it names dives into
+the floor inside a second, and the phugoid the whole game is built on does not
+exist. The plan says, in section 5, that if the Porpoise assertion fails the
+model is wrong and not the test, so here is every correction, each forced by a
+measurement.
+
+- **The pitch damping is stiff and explicit Euler cannot carry it.** A paper
+  plane's moment of inertia is about nine millionths, so the damping term alone
+  gives hundreds of radians per second squared per radian per second: at 120 Hz
+  it multiplies the pitch rate by about minus six every step and the flight is
+  Infinity inside a fifth of a second. The moment is split into the part that
+  depends on the pitch rate and the part that does not, and the first is
+  integrated implicitly. Same physics, unconditionally stable.
+- **The stability sign is inverted.** The plan writes `Cm = Cm0 + margin * CL`
+  with `margin = cp - cg` and calls positive stable. With a plus, a stable plane
+  DIVERGES. It is minus: the moment about the cg falls as lift rises when the
+  cg is ahead of the lift, and that is what stability is.
+- **cp has to sit behind cg.** The plan puts cg between 0.24 and 0.42 of the
+  chord and cp between 0.25 and 0.28, which makes every plane it names unstable,
+  including the ones it calls Cruisers. A low aspect ratio flat plate carries
+  its lift well back; 0.45 puts cp behind every cg the folds can produce, so a
+  nose heavy plane is stable and a tail heavy one is not, which is the point of
+  the folds.
+- **Cm0 has to be positive** and is 0.0312, sized so a mid plane with no trim
+  settles at a lift coefficient near a quarter. With the plan's minus 0.02 every
+  plane trims to NEGATIVE lift.
+- **Positive elevator is the trailing edge UP and pitches the nose up.** The
+  plan's parenthetical says the opposite of its own formula. This is the reading
+  that makes the plan's own porpoise spec porpoise and its two bends of minus
+  four fix it, and it is what a child means by "bend the back up so it climbs".
+- **A stalled wing pushes its own nose down.** Without that term a plane trimmed
+  beyond its stall pitches up for ever, because the lift falls and the restoring
+  term falls with it: the pitch goes from six degrees to a hundred and twenty
+  and never comes back. That is not a porpoise, it is a slow loop. With it, the
+  plane pitches up, stalls, is shoved down, picks up speed and pitches up again,
+  which IS the porpoise.
+- **The drag is a folded sheet of paper, not a sailplane.** The plan's 0.012 to
+  0.020 give a glide ratio over twenty and a thirty metre flight across a gym.
+  Tripled, the flights are eight to twenty two metres, which is the size of the
+  room the game is set in.
+- **The wing needs real authority.** At the plan's 0.010 to 0.030 square metres
+  a wide winged plane's loading is only sixteen percent under a narrow one's,
+  and a Floater flies exactly like a Cruiser: no classifier can tell them apart
+  because there is nothing to tell.
+- **The gentlest throw is 3 metres a second, not 4.** A wide winged floater
+  trims at under three, so a floor of four means every throw in the game is at
+  least half again its trim speed and it zooms and stalls: there is no way to
+  throw a floater gently, and the Floater is one of the six names.
+- **The archetype thresholds come from the model.** The plan asks for a Lawn Dart
+  at 35 degrees of descent and a Dart over 7 metres a second, and this model
+  produces neither for any fold: thrown from head height a paper plane glides at
+  four to eleven degrees and travels at two to six metres a second. What
+  separates the six is the mean speed, the pitch swing, the airtime, and above
+  all how far past the stall the nose gets: a porpoise reaches 62 degrees of
+  angle of attack and a tumbler 77, while their pitch swings are the same to
+  within a tenth of a degree.
+- **A wrap by `while` hangs the gate.** `while (a > PI) a -= 2 PI` on an angle
+  that has gone to Infinity never returns, and the whole run hangs with nothing
+  to read. It is arithmetic now, with a finite check in front of it.
 
 ---
 
