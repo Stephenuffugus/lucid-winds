@@ -101,8 +101,14 @@ C12.
   Seven of the twelve keep `ART_ASSETS.md` at the satellite root (Fathom, Asterism, Swell,
   Wardian, Doohickey, Whistlestop, Updraft), three keep it in `docs/` (Airworthy, Windup,
   Inkswing), Gerplunk has neither, and Strata had both, which is how two files of the same name
-  came to say different things. Half an hour to move the seven into `docs/` and fix the
-  references, and it should be done before anyone writes another one.
+  came to say different things. **MOSTLY DONE 2026-09-07:** twelve files moved into `docs/` for
+  Fathom, Swell, Wardian, Doohickey, Whistlestop and Updraft, and eight references updated.
+  Eleven of the twelve now agree; Asterism is still at the root and Gerplunk has neither file.
+  ⛔ THREE PLACES STILL TEACH THE OLD CONVENTION and the next game written will land its docs at
+  the root again: `ART-ASSETS-INDEX.md:23`, `portal/index.html:1118`, and, the live risk because
+  it CREATES the file rather than describing it, `docs/games-pass-sep05/drivers/artwrite.py:69`
+  and `:89`. Also `plans/fathom/ART-PACK-FATHOM.md:4` and `plans/swell/ART-PACK-SWELL.md:5` still
+  point at the old paths, one word each, and six other plans carry the same stale tree line.
 - **C10. Asterism's poster PREVIEW draws its text at about five CSS pixels. STILL OPEN, and now
   measured, with one wrong answer ruled out.** ⛔ Flooring the type at the display scale was tried
   on 2026-09-07 and SHIPPING IT WOULD HAVE BEEN WORSE than the fault: every size in `renderPoster`
