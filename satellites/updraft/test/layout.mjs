@@ -68,6 +68,25 @@ for (const size of SIZES) {
   await check('#btnResume', 'RESUME', 56);
   await check('#btnLand', 'LAND IT');
   await check('#btnMoodPick', 'MOOD');
+  /* P2: the mood picker is a screen of three 72 px cards, reached from the pause button and the play chip */
+  await tap(page, '#btnMoodPick');
+  await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'mood', { timeout: 15000 });
+  await check('#moodGentle', 'GENTLE card', 72);
+  await check('#moodFresh', 'FRESH card', 72);
+  await check('#moodBlustery', 'BLUSTERY card', 72);
+  await check('#btnMoodBack', 'BACK from mood');
+  await tap(page, '#moodGentle');
+  await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'pause', { timeout: 15000 });
+  const chip = await dev(() => document.getElementById('btnMood').textContent);
+  say(chip === 'GENTLE', tag + '  a card picks the mood and returns to pause (chip reads ' + chip + ')');
+  await tap(page, '#btnResume');
+  await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'play', { timeout: 15000 });
+  await tap(page, '#btnMood');
+  await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'mood', { timeout: 15000 });
+  await tap(page, '#btnMoodBack');
+  await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'play', { timeout: 15000 });
+  await tap(page, '#btnPause');
+  await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'pause', { timeout: 15000 });
   await check('#btnSound2', 'SOUND in pause');
   await check('#btnMotion2', 'MOTION in pause');
   await check('#btnQuit', 'BACK TO THE TITLE');
