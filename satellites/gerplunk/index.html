@@ -1799,7 +1799,10 @@ function buildShore() {
     b.addEventListener('click', (function (id) { return function () { if (G.stoneId !== id) pickStone(id); }; })(st.id));
     shore.appendChild(b);
   }
-  pickStone(G.stoneId && G.offer.indexOf(G.stoneId) >= 0 ? G.stoneId : G.offer[0]);
+  /* a fresh hand holds the skimmer, not whatever the bed rolled first: the same good
+     throw gave one skip on the sandstone and eight on the skimmer, and the first
+     flick a player ever makes should show the trill the game is named for */
+  pickStone(G.stoneId && G.offer.indexOf(G.stoneId) >= 0 ? G.stoneId : (G.offer.indexOf('skimmer') >= 0 ? 'skimmer' : G.offer[0]));
   hideLine();
 }
 function showLine(text, ms) {
