@@ -1,11 +1,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
 <meta name="theme-color" content="#1B1A24">
-<link rel="icon" href="./icon-192.png?v=20260906d">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260906d">
-<link rel="manifest" href="./manifest.webmanifest?v=20260906d">
+<link rel="icon" href="./icon-192.png?v=20260906e">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260906e">
+<link rel="manifest" href="./manifest.webmanifest?v=20260906e">
 <title>GERPLUNK</title>
-<script src="/music-unlocks.js?v=20260906d" defer></script>
+<script src="/music-unlocks.js?v=20260906e" defer></script>
 <style>
 :root{
   --dusk:#1B1A24; --water:#2E3646; --water-lo:#232A38; --gold:#E8B36A; --gold-lo:#A9793F;
@@ -94,6 +94,18 @@ h2{font-size:1.3rem;letter-spacing:.2em;margin:0 0 14px;font-weight:700;color:va
 .btn.primary{background:rgba(232,179,106,.18);border-color:var(--gold)}
 .about{font-size:.82rem;line-height:1.6;color:var(--cream);max-width:320px;margin:10px 0;opacity:.88}
 .brand{font-size:.7rem;letter-spacing:.24em;color:var(--muted);margin-top:14px}
+#dailyStrip{position:absolute;left:50%;top:calc(var(--safeT) + 14px);transform:translateX(-50%);font-size:.72rem;letter-spacing:.08em;
+  color:var(--cream);opacity:0;transition:opacity .3s;white-space:nowrap;pointer-events:none}
+#dailyStrip.on{opacity:.85}
+#cardSlots{display:flex;gap:8px;margin:12px 0}
+#cardSlots .slot{width:54px;height:64px;border:1px solid rgba(232,179,106,.5);border-radius:10px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;background:rgba(232,179,106,.08)}
+#cardSlots .slot b{font-size:1.4rem;color:var(--gold);font-weight:700}
+#cardSlots .slot i{font-style:normal;font-size:.7rem;color:var(--muted);margin-top:2px}
+#cardSlots .slot.empty{opacity:.35}
+#shareOut{display:none;width:100%;max-width:300px;min-height:48px;margin:6px 0;padding:0 12px;border-radius:10px;border:1px solid rgba(232,179,106,.5);
+  background:rgba(0,0,0,.35);color:var(--cream);font:inherit;font-size:.72rem}
+#shareOut.on{display:block}
 #testPanel{position:absolute;inset:0;display:none;background:rgba(0,0,0,.92);color:var(--cream);
   font:.72rem/1.5 ui-monospace,monospace;white-space:pre-wrap;padding:16px;overflow:auto;z-index:50}
 #testPanel.on{display:block}
@@ -105,6 +117,7 @@ h2{font-size:1.3rem;letter-spacing:.2em;margin:0 0 14px;font-weight:700;color:va
     <div id="post"><div id="tally">0</div><div id="marks"></div><div id="tallyLbl">skips</div><div id="best">best 0</div></div>
     <button id="btnMenu" aria-label="Menu">MENU</button>
     <div id="plunk">gerplunk</div>
+    <div id="dailyStrip"></div>
     <div id="line"></div>
     <div id="shore"></div>
   </div>
@@ -122,8 +135,20 @@ h2{font-size:1.3rem;letter-spacing:.2em;margin:0 0 14px;font-weight:700;color:va
     <button id="btnMotion" class="btn">MOTION ON</button>
     <p class="about">A lake at golden hour, a stone in your hand, and one flick. Throw across and up the water, and curl the wrist at the end for spin. Slide your thumb slowly first to turn the shore.</p>
     <p class="about">The plunk takes its name from the Stone Skipping and Gerplunking Club of Mackinac Island.</p>
+    <button id="btnDaily" class="btn">DAILY LAKE</button>
     <button id="btnBack" class="btn primary">BACK TO THE LAKE</button>
     <button id="btnExit" class="btn">LEAVE THE LAKE</button>
+    <div class="brand">SKY WOLF STUDIO</div>
+  </div>
+  <div id="scrCard" class="scr" hidden>
+    <h2>THE DAILY LAKE</h2>
+    <p id="cardDay" class="about"></p>
+    <div id="cardSlots"></div>
+    <p id="cardSum" class="about"></p>
+    <input id="shareOut" type="text" readonly aria-label="Share link">
+    <button id="btnShare" class="btn primary">SHARE THE LAKE</button>
+    <button id="btnThrowMine" class="btn primary">THROW YOURS</button>
+    <button id="btnCardBack" class="btn">BACK TO THE LAKE</button>
     <div class="brand">SKY WOLF STUDIO</div>
   </div>
   <div id="testPanel"></div>
@@ -249,6 +274,8 @@ var CONFIG = {
      skips, and no rare stone shows before this many (D36) */
   BED_GIFT_CAREER: 30,
   BED_RARE_CAREER: 50,
+  /* the daily lake is five throws of the day's stone (D38) */
+  DAILY_THROWS: 5,
   /* the headset's soft and hard throw band, m/s of hand, and the roll rate that
      means full spin. A thumb's hardest is 0.74 m/s of glass and an arm's hardest
      is 9 m/s of air; each producer maps its own hardest onto the same number so
@@ -295,7 +322,7 @@ function mixSeed(seed, salt) {
   return h >>> 0;
 }
 function dailySeedFor(dateStr) { return seedFromString(dateStr + CONFIG.GAME_ID); }
-var STREAM_LAKE = 1, STREAM_THROW = 2, STREAM_BED = 3, STREAM_AMBIENT = 4;
+var STREAM_LAKE = 1, STREAM_THROW = 2, STREAM_BED = 3, STREAM_AMBIENT = 4, STREAM_DAILY = 5;
 
 /* ============================ 3. STONES ============================ */
 /* ⛔ EIGHT STONES AND THEY ARE DATA, NOT CODE. mass in kg, flat 0 to 1 (how much
@@ -353,6 +380,34 @@ function bedFor(dateStr, career) {
   }
   if (career < CONFIG.BED_GIFT_CAREER && out.indexOf('skimmer') < 0) out[2] = 'skimmer';
   return out;
+}
+/* ============================ 3c. THE DAILY LAKE ============================ */
+/* Everyone throws the same stone on the same water for five throws, and the
+   LINK CARRIES THE NUMBERS (plan 3.6), never a replay: the recipient sees your
+   five and throws their own on the same lake. The day's stone is never a rare,
+   so nobody's daily is behind a career. Pure, so the sim can walk it. */
+function dailyStoneFor(dateStr) {
+  var rng = makeRNG(mixSeed(dailySeedFor(dateStr), STREAM_DAILY)), pool = [], i;
+  for (i = 0; i < STONES.length; i++) if (STONES[i].rarity !== 'rare') pool.push(STONES[i].id);
+  return pool[rng.int(pool.length)];
+}
+function dailyLink(dateStr, stoneId, throws) {
+  var sk = [], di = [], i;
+  for (i = 0; i < throws.length; i++) { sk.push(throws[i].skips); di.push(Math.round(throws[i].dist * 10) / 10); }
+  return '#d=' + dateStr + '.' + stoneId + '.' + sk.join(',') + '.' + di.join(',');
+}
+function parseDailyLink(hash) {
+  var m = /^#d=(\d{4}-\d{2}-\d{2})\.([a-z]+)\.([\d,]+)\.([\d.,]+)$/.exec(hash || ''), i, sk, di, out = [];
+  if (!m) return null;
+  if (!stoneById(m[2]) || m[2] !== dailyStoneFor(m[1])) return null;
+  sk = m[3].split(','); di = m[4].split(',');
+  if (sk.length < 1 || sk.length > CONFIG.DAILY_THROWS || sk.length !== di.length) return null;
+  for (i = 0; i < sk.length; i++) {
+    var a = parseInt(sk[i], 10), b = parseFloat(di[i]);
+    if (!(a >= 0 && a <= 99) || !(b >= 0 && b <= 999)) return null;
+    out.push({ skips: a, dist: b });
+  }
+  return { day: m[1], stone: m[2], throws: out };
 }
 /* the two derived numbers, kept in one place so the model and the shore view can
    never disagree about what a stone is */
@@ -739,6 +794,7 @@ var TEST = {
     this.runSuite('stones', suiteStones);
     this.runSuite('bed', suiteBed);
     this.runSuite('faces', suiteFaces);
+    this.runSuite('daily', suiteDaily);
     this.runSuite('window', suiteWindow);
     this.runSuite('skips', suiteSkips);
     this.runSuite('trill', suiteTrill);
@@ -864,6 +920,23 @@ function suiteFaces(T) {
     worse + ' angles worse, ' + better + ' better, ' + sumBay + ' vs ' + sumMain);
   T.assert('the face steps at the point, not before it',
     faceOf(-CONFIG.FACE_DEG + 0.5, 'glass', 1).face === 'main' && faceOf(-CONFIG.FACE_DEG, 'glass', 1).face === 'lee');
+}
+function suiteDaily(T) {
+  var d, days = [], seen = {}, rare = 0, i;
+  for (d = 0; d < 60; d++) days.push(new Date(Date.UTC(2026, 8, 1) + d * 864e5).toISOString().slice(0, 10));
+  for (i = 0; i < days.length; i++) { var st = dailyStoneFor(days[i]); seen[st] = 1; if (stoneById(st).rarity === 'rare') rare++; }
+  T.assert('the daily stone is the same for the same date', dailyStoneFor('2026-09-06') === dailyStoneFor('2026-09-06'));
+  T.assert('and moves with the date', Object.keys(seen).length >= 3, Object.keys(seen).join(' '));
+  T.eq('and is never a rare, so no daily hides behind a career', rare, 0);
+  var th = [{ skips: 7, dist: 12.34 }, { skips: 0, dist: 1 }, { skips: 15, dist: 26.05 }, { skips: 3, dist: 5.5 }, { skips: 9, dist: 14 }];
+  var st6 = dailyStoneFor('2026-09-06'), link = dailyLink('2026-09-06', st6, th), back = parseDailyLink(link);
+  T.assert('the link carries the five numbers and the stone', !!back && back.day === '2026-09-06' && back.stone === st6 && back.throws.length === 5, link);
+  T.assert('and the counts survive the round trip exactly', !!back && back.throws.every(function (t, i) { return t.skips === th[i].skips; }));
+  T.assert('and the distances to a tenth', !!back && Math.abs(back.throws[0].dist - 12.3) < 1e-9);
+  T.assert('a link with the wrong stone for its date is refused', parseDailyLink('#d=2026-09-06.brick.1,2,3.1,2,3') === null);
+  T.assert('a link with six throws is refused', parseDailyLink(dailyLink('2026-09-06', st6, th.concat([{ skips: 1, dist: 1 }]))) === null);
+  T.assert('garbage is refused, not a card', parseDailyLink('#d=<script>') === null && parseDailyLink('') === null && parseDailyLink(null) === null);
+  T.assert('a partial day of three throws still links', !!parseDailyLink(dailyLink('2026-09-06', st6, th.slice(0, 3))));
 }
 function suiteWindow(T) {
   var sk = windowFor(stoneById('skimmer'), 'glass');
@@ -1321,7 +1394,7 @@ function suiteCopy(T) {
    Nothing below reaches into the model except through newThrow, runThrow,
    plantYaw, motionFromSamples and throwFromMotion, and the picture is drawn
    from the model's own trace, so the count and the picture cannot disagree. */
-var STAMP = '20260906d';
+var STAMP = '20260906e';
 var $ = function (id) { return document.getElementById(id); };
 var CV, CTX, W = 375, H = 667, DPR = 1;
 
@@ -1348,7 +1421,8 @@ var G = {
   lastThrow: null, lastResult: null, throws: 0,
   seam: null, seamYaw: null,
   hold: false, holdT: 0, lineTimer: 0, tallyShown: 0,
-  lastSamples: null
+  lastSamples: null,
+  dailyOn: false, dailyView: null, forcedDay: null, cardTimer: 0
 };
 function nowMs() { return performance.now(); }
 /* ⛔ WHEN THE STONE RUNS OUT OF SPEED, THE SINK IS A BEAT AFTER THE LAST HIT.
@@ -1364,7 +1438,7 @@ function sinkTimeOf(res) { return res.ended === 'slow' ? res.time + 0.12 : res.t
 var SAVE = {
   blank: function () {
     return { v: CONFIG.SAVE_V, best: 0, bestDist: 0, career: 0, throws: 0, yaw: CONFIG.YAW_START_DEG,
-      sound: 1, motion: 1, seen: { how: 0 }, bestByStone: {} };
+      sound: 1, motion: 1, seen: { how: 0 }, bestByStone: {}, daily: { day: '', throws: [] } };
   },
   read: function () {
     var s = this.blank(), raw, o, k;
@@ -1375,6 +1449,7 @@ var SAVE = {
     for (k in s) if (o[k] !== undefined) s[k] = o[k];
     if (!s.bestByStone) s.bestByStone = {};
     if (!s.seen) s.seen = { how: 0 };
+    if (!s.daily || !s.daily.throws) s.daily = { day: '', throws: [] };
     return s;
   },
   /* read, modify, write: two tabs must never clobber each other's bests */
@@ -1395,7 +1470,7 @@ function todayStr() {
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 function setupDay() {
-  G.day = todayStr();
+  G.day = G.forcedDay || todayStr();
   var rng = makeRNG(mixSeed(dailySeedFor(G.day), STREAM_LAKE));
   G.wind = 0.4 + rng() * (CONFIG.WIND_MAX - 0.4);
   G.windDir = (rng() * 2 - 1) * 18;
@@ -1416,6 +1491,83 @@ function throwEnv(yaw, trace) {
   var f = faceOf(yaw, G.water, crosswind(yaw));
   return { water: f.water, wind: f.wind, reach: f.reach, trace: !!trace };
 }
+
+/* ============================ 13b. THE DAILY LAKE ============================ */
+var DAILY = {
+  mine: function () {
+    var d = G.save.daily;
+    return d.day === G.day ? d.throws.slice() : [];
+  },
+  complete: function () { return this.mine().length >= CONFIG.DAILY_THROWS; },
+  start: function () {
+    if (this.complete()) { this.showCard({ day: G.day, stone: dailyStoneFor(G.day), throws: this.mine() }, true); return; }
+    G.dailyOn = true;
+    G.stoneId = dailyStoneFor(G.day);
+    $('shore').hidden = true;
+    $('btnDaily').textContent = 'LEAVE THE DAILY LAKE';
+    this.strip();
+    showScreen('lake');
+    showLine('The daily lake. Everyone throws the ' + stoneById(G.stoneId).name + ' today.', 3200);
+  },
+  leave: function () {
+    G.dailyOn = false;
+    $('shore').hidden = false;
+    $('dailyStrip').classList.remove('on');
+    $('btnDaily').textContent = 'DAILY LAKE';
+    buildShore();
+    showScreen('lake');
+  },
+  strip: function () {
+    var n = this.mine().length, el = $('dailyStrip');
+    el.textContent = 'Daily lake, ' + stoneById(dailyStoneFor(G.day)).name + ', throw ' + Math.min(n + 1, CONFIG.DAILY_THROWS) + ' of ' + CONFIG.DAILY_THROWS;
+    el.classList.add('on');
+  },
+  record: function (res) {
+    var self = this;
+    G.save = SAVE.write(function (s) {
+      if (s.daily.day !== G.day) s.daily = { day: G.day, throws: [] };
+      if (s.daily.throws.length < CONFIG.DAILY_THROWS) s.daily.throws.push({ skips: res.skips, dist: Math.round(res.distance * 10) / 10 });
+    });
+    this.strip();
+    if (this.complete()) {
+      if (G.cardTimer) clearTimeout(G.cardTimer);
+      G.cardTimer = setTimeout(function () { self.showCard({ day: G.day, stone: dailyStoneFor(G.day), throws: self.mine() }, true); }, 2600);
+    }
+  },
+  showCard: function (card, mine) {
+    var i, best = 0, total = 0, slots = $('cardSlots'), html = '';
+    for (i = 0; i < CONFIG.DAILY_THROWS; i++) {
+      var t = card.throws[i];
+      html += '<div class="slot' + (t ? '' : ' empty') + '"><b>' + (t ? t.skips : '') + '</b><i>' + (t ? t.dist.toFixed(1) + ' m' : '') + '</i></div>';
+      if (t) { total += t.skips; if (t.skips > best) best = t.skips; }
+    }
+    slots.innerHTML = html;
+    $('cardDay').textContent = (mine ? 'Your five on ' : 'Five on ') + card.day + ', the ' + stoneById(card.stone).name;
+    $('cardSum').textContent = 'best ' + best + ', ' + total + ' skips in ' + card.throws.length;
+    $('btnShare').hidden = !mine;
+    $('btnThrowMine').hidden = mine || this.complete();
+    $('shareOut').classList.remove('on');
+    G.cardShown = card;
+    showScreen('card');
+  },
+  link: function () {
+    var m = this.mine();
+    return location.origin + location.pathname + dailyLink(G.day, dailyStoneFor(G.day), m);
+  },
+  share: function () {
+    var url = this.link(), m = this.mine(), sk = m.map(function (t) { return t.skips; }).join(', ');
+    var text = 'My five on the daily lake, ' + sk + '. Throw yours.';
+    var fallback = function () {
+      var out = $('shareOut'); out.value = url; out.classList.add('on');
+      try { out.focus(); out.select(); } catch (e) {}
+      try { if (navigator.clipboard) navigator.clipboard.writeText(url); } catch (e) {}
+    };
+    try {
+      if (navigator.share) navigator.share({ title: 'Gerplunk', text: text, url: url }).catch(fallback);
+      else fallback();
+    } catch (e) { fallback(); }
+  }
+};
 
 /* ============================ 14. AUDIO ============================ */
 /* Synthesised, nothing recorded. Every tick is scheduled at the sim's own hit
@@ -1892,6 +2044,7 @@ function afterSink(P) {
   });
   $('best').textContent = 'best ' + G.save.best;
   refreshRecords();
+  if (G.dailyOn) DAILY.record(res);
   if (res.skips > best && best > 0) {
     try { parent.postMessage({ sws: 'earn', moment: 'gerplunk-best', detail: res.skips }, '*'); } catch (e) {}
   }
@@ -2005,6 +2158,7 @@ function showScreen(name) {
   G.screen = name;
   $('scrTitle').hidden = name !== 'title';
   $('scrSheet').hidden = name !== 'sheet';
+  $('scrCard').hidden = name !== 'card';
   $('hud').style.visibility = name === 'lake' ? 'visible' : 'hidden';
   if (name === 'lake' && !G.save.seen.how) showLine('Flick a stone across the water.', 0);
 }
@@ -2026,6 +2180,10 @@ function wire() {
   press('btnPlay', function () { if (AUDIO.ensure()) AUDIO.ambience(dailySeedFor(G.day)); showScreen('lake'); });
   press('btnMenu', function () { showScreen('sheet'); });
   press('btnBack', function () { showScreen('lake'); });
+  press('btnDaily', function () { if (G.dailyOn) DAILY.leave(); else DAILY.start(); });
+  press('btnCardBack', function () { showScreen('lake'); });
+  press('btnThrowMine', function () { DAILY.start(); });
+  press('btnShare', function () { DAILY.share(); });
   press('btnExit', function () { window.SWS_EXIT(); });
   press('btnSound', function () {
     G.sound = G.sound ? 0 : 1; AUDIO.setOn(!!G.sound);
@@ -2089,6 +2247,10 @@ function frame() {
 function boot() {
   CV = $('stage'); CTX = CV.getContext('2d');
   G.save = SAVE.read();
+  /* a link is an invitation: the card first, on the sender's lake */
+  var inv = null;
+  try { inv = parseDailyLink(location.hash); } catch (e) { inv = null; }
+  if (inv) { G.dailyView = inv; G.forcedDay = inv.day; }
   G.sound = G.save.sound; G.motion = G.save.motion; G.yaw = G.save.yaw;
   if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) G.motion = 0;
   AUDIO.setOn(!!G.sound);
@@ -2101,6 +2263,7 @@ function boot() {
   refreshToggles();
   $('best').textContent = 'best ' + G.save.best;
   showScreen('title');
+  if (G.dailyView) DAILY.showCard(G.dailyView, false);
   requestAnimationFrame(frame);
   if (location.search.indexOf('test=1') >= 0) {
     var rep = TEST.run(), out = 'GERPLUNK self test\n\n', i;
@@ -2128,6 +2291,12 @@ window.GERPLUNK_DEV = {
   bed: function (career) { return bedFor(G.day, career); },
   day: function () { return { day: G.day, wind: G.wind, windDir: G.windDir, water: G.water, face: faceOf(yawNow(), G.water, crosswind(yawNow())) }; },
   face: function (yaw) { return faceOf(yaw, G.water, crosswind(yaw)); },
+  daily: function () { return { on: G.dailyOn, day: G.day, stone: dailyStoneFor(G.day), throws: DAILY.mine(), complete: DAILY.complete(), shoreHidden: $('shore').hidden }; },
+  dailyLink: function () { return DAILY.link(); },
+  card: function () {
+    var slots = Array.prototype.map.call(document.querySelectorAll('#cardSlots .slot b'), function (b) { return b.textContent; });
+    return { day: $('cardDay').textContent, sum: $('cardSum').textContent, slots: slots, share: !$('btnShare').hidden, throwMine: !$('btnThrowMine').hidden, out: $('shareOut').classList.contains('on') ? $('shareOut').value : '' };
+  },
   state: function () {
     return {
       inFlight: !!G.play && !G.play.sunk, sunk: !!G.play && G.play.sunk, playT: playT(),

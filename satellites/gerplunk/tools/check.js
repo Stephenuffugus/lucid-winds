@@ -35,7 +35,8 @@ const GATES = [
 const BROWSER_GATES = [
   { name: 'flick',  cmd: ['test/flick.mjs'],  need: 'FLICK OK' },
   { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK' },
-  { name: 'audio',  cmd: ['test/audio.mjs'],  need: 'AUDIO OK' }
+  { name: 'audio',  cmd: ['test/audio.mjs'],  need: 'AUDIO OK' },
+  { name: 'daily',  cmd: ['test/daily.mjs'],  need: 'DAILY OK' }
 ];
 
 const results = [];

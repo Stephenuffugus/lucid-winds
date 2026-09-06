@@ -70,6 +70,13 @@ say(perfect.peak > 0.2, 'and it is not silence either: ' + perfect.peak.toFixed(
 const sink = await render({ v: 12, theta: 45, spin: 1, stone: 'skimmer', seed: 99 });
 say(sink.skips === 0 && sink.onsets.length === 1, 'a throw that never skips renders the plunk alone: ' + sink.onsets.length + ' onset for ' + sink.skips + ' skips');
 
+/* 6. the spit: a perfect throw turned twenty degrees left runs up on the stones
+   and CLICKS, one onset, at the beach, with no bob beat before it */
+const beached = await render({ v: 12, theta: 20, spin: 1, stone: 'skimmer', seed: 99, yaw: -20 });
+say(beached.ended === 'beached' && beached.skips > 0 && beached.skips < perfect.skips, 'turned into the lee the perfect throw beaches on the spit after ' + beached.skips + ' skips (' + beached.ended + ')');
+say(beached.onsets.length === beached.skips + 1, 'and the click is its own onset: ' + beached.onsets.length + ' onsets for ' + beached.skips + ' skips');
+say(Math.abs(beached.sink - beached.time) < 1e-9, 'a beached stone stops when it lands, no bob beat: sink ' + (beached.sink * 1000).toFixed(0) + ' ms against ' + (beached.time * 1000).toFixed(0));
+
 await browser.close();
 close();
 console.log('');
