@@ -31,12 +31,19 @@ async function shoot(size) {
   await tap(page, '#btnPlay');
   await page.waitForFunction(() => window.GERPLUNK_DEV.screen() === 'lake', { timeout: 20000 });
   await tap(page, '.stone[data-id="skimmer"]');
+  /* ⛔ SQUARE UP TO THE OPEN LAKE. A fresh save faces nine degrees off centre, and in a
+     square frame at that stance the point and its spit fill the whole left half as a
+     black slab, which is what the first tile shot showed. Straight ahead is the main
+     water, which is what the game is a picture of. */
+  await page.evaluate(() => window.GERPLUNK_DEV.setYaw(7));
   await waitFrames(page, 2);
   await flick(page, stroke({ x0: Math.round(size * 0.3), y0: Math.round(size * 0.7), arc: 300, ms: 150, rise: 0.55, hook: 0.7 }));
   await page.waitForFunction(() => window.GERPLUNK_DEV.lastResult() !== null, { timeout: 10000 });
   const res = await page.evaluate(() => window.GERPLUNK_DEV.lastResult());
   /* hold with three rings on the water and the stone up */
-  const hold = Math.min(res.time * 0.62, 2.0);
+  /* early enough that the stone is still near and big in the frame, with its first
+     rings opening behind it; at 0.62 of the flight it was a speck at the far end */
+  const hold = Math.min(res.time * 0.46, 1.5);
   await page.evaluate((t) => { window.GERPLUNK_DEV.hold(t); document.getElementById('hud').style.visibility = 'hidden'; }, hold);
   await waitFrames(page, 4);
   const varc = await page.evaluate(() => {

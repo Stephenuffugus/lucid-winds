@@ -2529,6 +2529,10 @@ window.GERPLUNK_DEV = {
   screen: function () { return G.screen; },
   frames: function () { return G.frames; },
   yaw: function () { return yawNow(); },
+  /* the tile is staged, not stumbled into: a fresh save faces nine degrees off centre so
+     the seam is visibly bent on throw one, and at that stance the spit fills the left half
+     of a square frame. The shot tool squares up to the open lake with this. */
+  setYaw: function (deg) { G.yaw = deg; G.liveYaw = null; },
   stone: function () { return G.stoneId; },
   offer: function () { return G.offer.slice(); },
   bed: function (career) { return bedFor(G.day, career); },
