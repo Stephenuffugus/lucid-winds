@@ -903,9 +903,16 @@ function identity(sp, seed, dedication) {
 
 function bandLines(seed) {
   var r = makeRNG(mixSeed(seed, 41)), out = [], i, k;
+  /* ⛔ bands of the SAME thickness with the SAME wave are six identical hills.
+     Real bedding is thick then thin then thick, and each bed has its own
+     wavelength. */
+  var cuts = [], acc = 0;
+  for (i = 0; i < CONFIG.BANDS; i++) { var w0 = rf(r, 0.6, 1.6); cuts.push(w0); acc += w0; }
+  var run = 0;
   for (i = 1; i < CONFIG.BANDS; i++) {
-    var base = CONFIG.GRID_H * i / CONFIG.BANDS;
-    var wob = [], amp = rf(r, 4, 13), ph = rf(r, 0, 6.28), f = rf(r, 1.2, 2.8);
+    run += cuts[i - 1];
+    var base = CONFIG.GRID_H * run / acc;
+    var wob = [], amp = rf(r, 3, 11), ph = rf(r, 0, 6.28), f = rf(r, 0.9, 3.4);
     for (k = 0; k <= CONFIG.GRID_W; k++) {
       wob.push(base + dsin(ph + f * k / CONFIG.GRID_W * 6.2831853) * amp
         + dsin(ph * 2 + 3.1 * k / CONFIG.GRID_W * 6.2831853) * amp * 0.35);
@@ -1028,10 +1035,13 @@ function makeSite(seed, depth) {
    as one running at sixty. A rate is expressed as what one full sweep of the
    tool over a cell takes away. */
 
+var LAM_F = [0.34, 1.15, 0.62, 1.9, 0.46, 0.86];
+var LAM_T = [0.010, -0.026, 0.032, -0.008, 0.020, -0.036];
 function newDig(site) {
   var W = CONFIG.GRID_W, H = CONFIG.GRID_H, n = W * H;
   var d = { W: W, H: H,
     density: new Float32Array(n),
+    grain: new Float32Array(n),
     bone: new Int16Array(n),          /* 0 empty, else specimen*1000 + boneIndex + 1 */
     site: site, specimens: site.specimens,
     cleared: 0, firstClink: false, scanUsed: 0, pressure: 0, events: [] };
@@ -1043,9 +1053,19 @@ function newDig(site) {
       i = y * W + x;
       var b2 = bandAt(site.lines, x, y);
       /* deeper rock is harder, and the top of the cliff is loose dust */
-      var base = 0.46 + 0.075 * b2 + rf(r, -0.05, 0.05);
+      var base = 0.44 + 0.078 * b2 + rf(r, -0.055, 0.055);
       if (y < 10) base = rf(r, 0.15, 0.4);
       d.density[i] = clamp(base, 0.08, 1);
+      /* the grain, and the laminae: a shade per cell that the painter reads
+         but no tool ever changes, so brushing does not scrub the rock's own
+         texture off it */
+      /* ⛔ ONE frequency across the whole cliff is corduroy. Each bed gets its
+         own lamination spacing and its own tilt, which is what a road cutting
+         actually looks like. */
+      var lf = LAM_F[b2], lt = LAM_T[b2];
+      var lam = dsin(y * lf + x * lt + dsin(x * 0.05 + b2 * 2.1) * 2.2) * 0.5 + 0.5;
+      d.grain[i] = clamp(0.5 + (rf(r, -1, 1) * 0.26) + (lam > 0.88 ? -0.36 : 0)
+        + (lam < 0.09 ? 0.22 : 0), 0, 1);
     }
     void band;
   }
@@ -1061,8 +1081,10 @@ function newDig(site) {
       bs[bi].clear = 0;
     }
   }
-  /* a bone lies in ground that gives more easily than the rock around it */
-  for (i = 0; i < n; i++) if (d.bone[i]) d.density[i] = Math.min(d.density[i], 0.44);
+  /* ⛔ NOTHING is done to the rock over a bone. The first build softened it so
+     the brush could finish the job, and the painter maps density to colour, so
+     every skeleton showed as a pale patch in a dark band before a brush had
+     touched it. The chisel is what deep hard rock is for. */
   return d;
 }
 /* scanline fill of a polygon into the grid, tagging cells and counting them */
@@ -1263,7 +1285,29 @@ function traceFit(bn, path) {
   }
   return path.length ? sum / path.length : 0;
 }
+/* ⛔ A TRACE STARTS ON THE BONE. Without that rule every brush stroke that
+   happened to run along a freed bone lifted it, so a player cleaning the rock
+   around a rib kept accidentally pulling it out of the ground, and the plaster
+   jacket gesture the design asks for was not a gesture at all. The stroke has
+   to BEGIN on something already free. */
+function startsOnFreed(d, path) {
+  if (!path.length) return null;
+  var p0 = path[0], si, bi, best = null, bd = CONFIG.TRACE_TOL;
+  for (si = 0; si < d.specimens.length; si++) {
+    var bs = d.specimens[si].bones;
+    for (bi = 0; bi < bs.length; bi++) {
+      if (!canExtract(bs[bi])) continue;
+      var sp = denseSpine(bs[bi].spine, 16), k;
+      for (k = 0; k < sp.length; k++) {
+        var dd = len2(p0.x - sp[k].x, p0.y - sp[k].y);
+        if (dd < bd) { bd = dd; best = bs[bi]; }
+      }
+    }
+  }
+  return best;
+}
 function tryExtract(d, path) {
+  if (!startsOnFreed(d, path)) return null;
   var si, bi, best = null, bestScore = 0;
   for (si = 0; si < d.specimens.length; si++) {
     var bs = d.specimens[si].bones;
@@ -1311,6 +1355,329 @@ function conditionWord(outN, cracked, total) {
   return 'Patched';
 }
 // ---- SIM_EXPORT_END ----
+
+
+/* ========================= 16. THE GAME'S STATE ========================= */
+var STAMP = '20260906a';
+var REDUCED = false;
+var G = {
+  screen: 'Title', mode: 'dig',
+  seed: 0, depth: 0, site: null, dig: null,
+  tool: 'brush', stroke: null, path: [], tracing: false,
+  freeze: 0, clinkAt: -1, scan: 0,
+  banner: 0, museum: [], who: '',
+  lifted: 0
+};
+var V = { cv: null, ctx: null, off: null, offCtx: null, img: null,
+  zoom: 1, cx: 0, cy: 0, w: 1, h: 1, dpr: 1, padT: 58, padB: 46, userMoved: false };
+var FRAMES = 0, RAF = 0, LAST = 0, HINT_T = 0;
+function el(id) { return document.getElementById(id); }
+
+/* ========================= 17. VIEW ========================= */
+/* ⛔ THE CLIFF IS ONE putImageData, NOT SIXTY THOUSAND fillRects. Two hundred
+   by three hundred cells repainted per frame is fine as an image and a
+   slideshow as rectangles. */
+var PAL = {
+  /* six bands with real distance between them, warm at the top and cold and
+     hard at the bottom, so the eye can count the layers */
+  rock: [
+    [0xB4, 0x92, 0x62], [0xA0, 0x77, 0x4A], [0x8C, 0x64, 0x3E],
+    [0x74, 0x55, 0x3A], [0x5E, 0x47, 0x36], [0x4A, 0x3B, 0x30]
+  ],
+  dust: [0xDF, 0xC9, 0xA2], cavity: [0x22, 0x1A, 0x11],
+  bone: [0xFA, 0xF2, 0xDC], boneEdge: '#6B5433', crack: '#8A3A2A'
+};
+function fitCanvas() {
+  var cv = V.cv;
+  if (!cv) return;
+  var w = Math.max(1, cv.clientWidth), h = Math.max(1, cv.clientHeight);
+  V.dpr = Math.min(2.5, window.devicePixelRatio || 1);
+  cv.width = Math.round(w * V.dpr); cv.height = Math.round(h * V.dpr);
+  V.w = w; V.h = h;
+  if (!V.off) {
+    V.off = document.createElement('canvas');
+    V.off.width = CONFIG.GRID_W; V.off.height = CONFIG.GRID_H;
+    V.offCtx = V.off.getContext('2d');
+    V.img = V.offCtx.createImageData(CONFIG.GRID_W, CONFIG.GRID_H);
+  }
+  if (!V.userMoved) fitView();
+}
+function fitZoom() {
+  return Math.max(0.2, Math.max((V.w - 4) / CONFIG.GRID_W, V.h / CONFIG.GRID_H));
+}
+function fitView() {
+  /* COVER, not fit: a cliff face runs off the edges of the screen, and what is
+     off the edge is reached by a pinch. Fitting the whole grid into a tall
+     phone left a hundred pixels of dead brown above the rock and a hundred
+     below it. */
+  V.zoom = fitZoom();
+  V.cx = CONFIG.GRID_W / 2; V.cy = CONFIG.GRID_H / 2;
+  V.userMoved = false;
+}
+function clampView() {
+  var z0 = fitZoom();
+  V.zoom = clamp(V.zoom, z0 * 0.78, z0 * 3.2);
+  var halfW = (V.w - 76) / 2 / V.zoom, halfH = V.h / 2 / V.zoom;
+  V.cx = clamp(V.cx, Math.min(CONFIG.GRID_W / 2, halfW), Math.max(CONFIG.GRID_W / 2, CONFIG.GRID_W - halfW));
+  V.cy = clamp(V.cy, Math.min(CONFIG.GRID_H / 2, halfH), Math.max(CONFIG.GRID_H / 2, CONFIG.GRID_H - halfH));
+}
+function midX() { return (V.w - 76) / 2; }
+function midY() { return V.padT + (V.h - V.padT - V.padB) / 2; }
+function sx(x) { return (x - V.cx) * V.zoom + midX(); }
+function sy(y) { return (y - V.cy) * V.zoom + midY(); }
+function ss(v) { return v * V.zoom; }
+function gx(px) { return (px - midX()) / V.zoom + V.cx; }
+function gy(py) { return (py - midY()) / V.zoom + V.cy; }
+
+function paintCliff() {
+  var d = G.dig, data = V.img.data, W = d.W, H = d.H, i, n = W * H;
+  for (i = 0; i < n; i++) {
+    var den = d.density[i], o = i * 4, c;
+    if (d.bone[i]) {
+      /* ⛔ A BURIED BONE MUST LOOK EXACTLY LIKE ROCK. The first build painted
+         bone cells by a different route, without the rock's own grain, so
+         every skeleton showed through the cliff as smooth rectangles and the
+         player knew where to dig before lifting a brush. The rock over a bone
+         is painted by the SAME maths as the rock beside it, and the bone only
+         begins to come up once the cover is thinner than rock ever starts at. */
+      var band = PAL.rock[bandOfIndex(d, i)];
+      var kb = clamp(den / 0.62, 0, 1), gb = (d.grain[i] - 0.5) * 46;
+      var r0 = clamp(PAL.dust[0] + (band[0] - PAL.dust[0]) * kb + gb, 0, 255);
+      var g0 = clamp(PAL.dust[1] + (band[1] - PAL.dust[1]) * kb + gb * 0.9, 0, 255);
+      var b0 = clamp(PAL.dust[2] + (band[2] - PAL.dust[2]) * kb + gb * 0.7, 0, 255);
+      var t = clamp((0.34 - den) / 0.30, 0, 1);
+      t = t * t * (3 - 2 * t);
+      data[o] = r0 + (PAL.bone[0] - r0) * t;
+      data[o + 1] = g0 + (PAL.bone[1] - g0) * t;
+      data[o + 2] = b0 + (PAL.bone[2] - b0) * t;
+    } else if (den <= 0.03) {
+      data[o] = PAL.cavity[0]; data[o + 1] = PAL.cavity[1]; data[o + 2] = PAL.cavity[2];
+    } else {
+      c = PAL.rock[bandOfIndex(d, i)];
+      var k = clamp(den / 0.62, 0, 1);
+      var g2 = (d.grain[i] - 0.5) * 46;
+      data[o] = clamp(PAL.dust[0] + (c[0] - PAL.dust[0]) * k + g2, 0, 255);
+      data[o + 1] = clamp(PAL.dust[1] + (c[1] - PAL.dust[1]) * k + g2 * 0.9, 0, 255);
+      data[o + 2] = clamp(PAL.dust[2] + (c[2] - PAL.dust[2]) * k + g2 * 0.7, 0, 255);
+    }
+    data[o + 3] = 255;
+  }
+  V.offCtx.putImageData(V.img, 0, 0);
+}
+var BAND_CACHE = null;
+function bandOfIndex(d, i) {
+  if (!BAND_CACHE || BAND_CACHE.length !== d.W * d.H) {
+    BAND_CACHE = new Uint8Array(d.W * d.H);
+    var x, y;
+    for (y = 0; y < d.H; y++) for (x = 0; x < d.W; x++) {
+      BAND_CACHE[y * d.W + x] = bandAt(d.site.lines, x, y);
+    }
+  }
+  return BAND_CACHE[i];
+}
+/* ⛔ THE BANDS NEED A LINE. Six earth tones with wavy boundaries and no edge
+   between them read as camouflage, and superposition, which is the one piece
+   of real geology this game teaches, is invisible. */
+function drawBands(c) {
+  var lines = G.dig.site.lines, i, x;
+  c.save();
+  c.lineWidth = Math.max(1, ss(1.1));
+  for (i = 0; i < lines.length; i++) {
+    c.strokeStyle = 'rgba(46,36,24,0.34)';
+    c.beginPath();
+    for (x = 0; x <= CONFIG.GRID_W; x += 4) {
+      var yy = sy(lines[i][x]);
+      if (x === 0) c.moveTo(sx(x), yy); else c.lineTo(sx(x), yy);
+    }
+    c.stroke();
+    c.strokeStyle = 'rgba(232,214,180,0.22)';
+    c.beginPath();
+    for (x = 0; x <= CONFIG.GRID_W; x += 4) {
+      var yy2 = sy(lines[i][x]) + Math.max(1, ss(1.4));
+      if (x === 0) c.moveTo(sx(x), yy2); else c.lineTo(sx(x), yy2);
+    }
+    c.stroke();
+  }
+  c.restore();
+}
+/* the bones the player can see, outlined so a shape reads out of the rock */
+function drawBoneEdges(c) {
+  var d = G.dig, si, bi, k;
+  for (si = 0; si < d.specimens.length; si++) {
+    var bs = d.specimens[si].bones;
+    for (bi = 0; bi < bs.length; bi++) {
+      var bn = bs[bi];
+      if (bn.missing || bn.out || bn.clear < 0.12) continue;
+      c.save();
+      c.globalAlpha = clamp(bn.clear * 1.4, 0, 1);
+      c.strokeStyle = PAL.boneEdge;
+      c.lineWidth = Math.max(1, ss(0.9));
+      c.beginPath();
+      c.moveTo(sx(bn.poly[0].x), sy(bn.poly[0].y));
+      for (k = 1; k < bn.poly.length; k++) c.lineTo(sx(bn.poly[k].x), sy(bn.poly[k].y));
+      c.closePath();
+      c.stroke();
+      /* ⛔ a flat cream shape with a line round it is a paper cutout stuck on
+         the rock. A bone has a lit edge and a shaded one, and a light along
+         its length, which is what makes it read as a solid thing lying in a
+         hollow rather than as a sticker. */
+      c.save();
+      c.clip();
+      c.globalAlpha = 0.30 * clamp(bn.clear * 1.4, 0, 1);
+      c.strokeStyle = '#8C7245';
+      c.lineWidth = Math.max(2, ss(2.6));
+      c.beginPath();
+      c.moveTo(sx(bn.poly[0].x), sy(bn.poly[0].y));
+      for (k = 1; k < bn.poly.length; k++) c.lineTo(sx(bn.poly[k].x), sy(bn.poly[k].y));
+      c.closePath();
+      c.stroke();
+      c.restore();
+      c.globalAlpha = 0.34 * clamp(bn.clear * 1.4, 0, 1);
+      c.strokeStyle = '#FFFBF0';
+      c.lineWidth = Math.max(1, ss(0.8));
+      var hs = denseSpine(bn.spine, 6);
+      c.beginPath();
+      for (k = 0; k < hs.length; k++) {
+        if (k === 0) c.moveTo(sx(hs[k].x), sy(hs[k].y)); else c.lineTo(sx(hs[k].x), sy(hs[k].y));
+      }
+      c.stroke();
+      c.globalAlpha = clamp(bn.clear * 1.4, 0, 1);
+      if (bn.cracked) {
+        /* the honest scar a museum leaves showing */
+        c.strokeStyle = PAL.crack;
+        c.lineWidth = Math.max(1.4, ss(1.4));
+        var sp = denseSpine(bn.spine, 5);
+        c.beginPath();
+        for (k = 0; k < sp.length; k++) {
+          var jitter = ((k * 37) % 7 - 3) * 0.6;
+          if (k === 0) c.moveTo(sx(sp[k].x + jitter), sy(sp[k].y - jitter));
+          else c.lineTo(sx(sp[k].x + jitter), sy(sp[k].y - jitter));
+        }
+        c.stroke();
+      }
+      if (canExtract(bn)) {
+        c.globalAlpha = 0.55 + 0.35 * (REDUCED ? 1 : 0.5 + 0.5 * dsin(FRAMES * 0.09));
+        c.strokeStyle = '#F6E7B8';
+        c.lineWidth = Math.max(2, ss(1.6));
+        c.stroke();
+      }
+      c.restore();
+    }
+  }
+}
+/* the dust: bounded, pooled, and poured rather than faded */
+var DUST = [];
+function spawnDust(x, y, n, power) {
+  if (REDUCED) return;
+  var r = DUST_RNG, i;
+  for (i = 0; i < n && DUST.length < CONFIG.DUST_MAX; i++) {
+    DUST.push({ x: x + rf(r, -4, 4), y: y + rf(r, -4, 4),
+      vx: rf(r, -5, 5) * power, vy: rf(r, -7, 1) * power,
+      life: rf(r, 0.35, 0.95), age: 0, s: rf(r, 0.4, 1.0) });
+  }
+}
+var DUST_RNG = makeRNG(20260906);
+function stepDust(dt) {
+  var i;
+  for (i = DUST.length - 1; i >= 0; i--) {
+    var p = DUST[i];
+    p.age += dt;
+    p.vy += 48 * dt;
+    p.x += p.vx * dt; p.y += p.vy * dt;
+    if (p.age > p.life) DUST.splice(i, 1);
+  }
+}
+function drawDust(c) {
+  var i;
+  c.save();
+  c.fillStyle = '#E4CFA4';
+  for (i = 0; i < DUST.length; i++) {
+    var p = DUST[i];
+    c.globalAlpha = 0.5 * (1 - p.age / p.life);
+    c.fillRect(sx(p.x), sy(p.y), Math.max(1, ss(p.s)), Math.max(1, ss(p.s)));
+  }
+  c.restore();
+}
+/* the pressure ring: a small ring AROUND the finger, never under it */
+function drawPressure(c) {
+  if (!G.stroke || G.tool !== 'chisel') return;
+  var p = G.stroke;
+  var v = clamp(G.dig.pressure, 0, 1);
+  if (v <= 0.02) return;
+  c.save();
+  c.lineWidth = 4;
+  c.strokeStyle = v >= CONFIG.CHISEL_WARN ? '#C1483B' : '#C09A4E';
+  c.beginPath();
+  c.arc(p.px, p.py, 30, -1.5707963, -1.5707963 + 6.2831853 * v);
+  c.stroke();
+  c.restore();
+}
+function drawScan(c) {
+  if (G.scan <= 0) return;
+  var d = G.dig, best = null, si, bi;
+  for (si = 0; si < d.specimens.length; si++) {
+    var bs = d.specimens[si].bones;
+    for (bi = 0; bi < bs.length; bi++) if (!bs[bi].missing && (!best || bs[bi].cells > best.cells)) best = bs[bi];
+  }
+  if (!best) return;
+  var cx = 0, cy = 0, k;
+  for (k = 0; k < best.poly.length; k++) { cx += best.poly[k].x; cy += best.poly[k].y; }
+  cx /= best.poly.length; cy /= best.poly.length;
+  c.save();
+  c.globalAlpha = clamp(G.scan / 4, 0, 1) * 0.8;
+  c.strokeStyle = '#B9C6C4';
+  c.lineWidth = 3;
+  var t = (4 - G.scan) * 1.6;
+  for (k = 0; k < 3; k++) {
+    var rr = ss(8 + ((t + k * 0.7) % 2.1) * 26);
+    c.globalAlpha = clamp(G.scan / 4, 0, 1) * 0.7 * (1 - ((t + k * 0.7) % 2.1) / 2.1);
+    c.beginPath(); c.arc(sx(cx), sy(cy), rr, 0, 6.2831853); c.stroke();
+  }
+  c.restore();
+}
+function frame(ts) {
+  RAF = requestAnimationFrame(frame);
+  FRAMES++;
+  var dt = LAST ? Math.min(0.05, (ts - LAST) / 1000) : 1 / 60;
+  LAST = ts;
+  tick(dt);
+  var c = V.ctx;
+  if (!c || !G.dig) return;
+  c.setTransform(V.dpr, 0, 0, V.dpr, 0, 0);
+  c.fillStyle = '#4A3722';
+  c.fillRect(0, 0, V.w, V.h);
+  paintCliff();
+  c.imageSmoothingEnabled = true;
+  c.drawImage(V.off, sx(0), sy(0), ss(CONFIG.GRID_W), ss(CONFIG.GRID_H));
+  drawBands(c);
+  drawBoneEdges(c);
+  drawScan(c);
+  drawDust(c);
+  drawPressure(c);
+  if (G.freeze > 0) {
+    /* the first clink: a beat where the world stops and the bone flashes */
+    c.save();
+    c.globalAlpha = clamp(G.freeze * 2.2, 0, 0.55);
+    c.fillStyle = '#F6E7B8';
+    c.fillRect(0, 0, V.w, V.h);
+    c.restore();
+  }
+}
+function tick(dt) {
+  /* the finger resting is charged here, by the wall clock, whether or not it
+     has moved */
+  if (G.stroke && G.dig && G.screen === 'Dig') {
+    var ev = stroke(G.dig, G.tool, G.stroke.gx, G.stroke.gy, G.stroke.gx, G.stroke.gy, dt);
+    applyStrokeFeel(ev, { x: G.stroke.gx, y: G.stroke.gy }, 0);
+  }
+  if (G.freeze > 0) G.freeze -= dt;
+  if (G.scan > 0) G.scan -= dt;
+  if (HINT_T > 0) {
+    HINT_T -= dt;
+    if (HINT_T <= 0) { el('banner').classList.remove('on'); el('siteChip').style.opacity = ''; }
+  }
+  stepDust(dt);
+}
 
 // ---- TEST_EXPORT_START ----
 /* ========================= 15. TEST ========================= */
@@ -1668,6 +2035,23 @@ function brushClean(d, bn, passes) {
 }
 
 function suiteSediment(T) {
+  /* ⛔ THE ANSWER MUST NOT BE VISIBLE BEFORE THE QUESTION. A cell with a bone
+     under it and a cell without one, both still buried, have to be the same
+     kind of rock: the whole game is not knowing where to dig. */
+  (function () {
+    var rr = digRig(), dd = rr.d, i2, n2 = dd.W * dd.H, sb = 0, sn = 0, nb = 0, nn = 0;
+    for (i2 = 0; i2 < n2; i2++) {
+      if (dd.bone[i2]) { sb += dd.density[i2]; nb++; } else { sn += dd.density[i2]; nn++; }
+    }
+    T.assert('the rock over a bone is exactly the rock beside it, before a brush touches it ('
+      + (sb / Math.max(1, nb)).toFixed(3) + ' against ' + (sn / Math.max(1, nn)).toFixed(3) + ')',
+      nb > 200 && Math.abs(sb / nb - sn / nn) < 0.05);
+    var gb2 = 0, gn2 = 0;
+    for (i2 = 0; i2 < n2; i2++) { if (dd.bone[i2]) gb2 += dd.grain[i2]; else gn2 += dd.grain[i2]; }
+    T.assert('and the grain runs across both alike ('
+      + (gb2 / Math.max(1, nb)).toFixed(3) + ' against ' + (gn2 / Math.max(1, nn)).toFixed(3) + ')',
+      Math.abs(gb2 / Math.max(1, nb) - gn2 / Math.max(1, nn)) < 0.12);
+  })();
   var r = digRig(), d = r.d, i, n = d.W * d.H;
   T.eq('the cliff is two hundred by three hundred cells', n, CONFIG.GRID_W * CONFIG.GRID_H);
   var boned = 0, lo = 9, hi = -9;
@@ -1687,8 +2071,9 @@ function suiteSediment(T) {
     bottom / (d.W * 6) > top / (d.W * 6) + 0.15);
   var soft = 0, hard = 0, sn = 0, hn = 0;
   for (i = 0; i < n; i++) { if (d.bone[i]) { soft += d.density[i]; sn++; } else { hard += d.density[i]; hn++; } }
-  T.assert('a bone lies in ground that gives more easily than the rock around it ('
-    + (soft / sn).toFixed(2) + ' against ' + (hard / hn).toFixed(2) + ')', soft / sn < hard / hn);
+  T.assert('the rock over a bone is exactly the rock beside it ('
+    + (soft / sn).toFixed(3) + ' against ' + (hard / hn).toFixed(3) + ')',
+    Math.abs(soft / sn - hard / hn) < 0.06);
   T.assert('every bone cell belongs to a bone the game can name', (function () {
     var k, ok = true;
     for (k = 0; k < n && ok; k++) if (d.bone[k] && !boneOf(d, d.bone[k])) ok = false;
@@ -1780,6 +2165,18 @@ function suiteExtract(T) {
   var got = tryExtract(d, right);
   T.assert('a trace along a bone lifts THAT bone and not the one beside it',
     !!got && got.bone === bn);
+  /* ⛔ and a stroke that merely CROSSES a freed bone is digging, not lifting */
+  (function () {
+    var d3 = digRig().d, b3 = pickBone(d3, 'rib');
+    brushClean(d3, b3, 14);
+    var sp3 = denseSpine(b3.spine, 20);
+    var away = sp3.map(function (p) { return { x: p.x, y: p.y }; });
+    away.unshift({ x: sp3[0].x + 60, y: sp3[0].y + 60 });
+    T.assert('a stroke that starts out in the rock does not lift a bone it runs over',
+      tryExtract(d3, away) === null);
+    T.assert('and the same stroke started ON the bone does',
+      !!tryExtract(d3, sp3));
+  })();
   T.assert('and it is out of the rock now', bn.out);
   var i, still = 0;
   for (i = 0; i < d.W * d.H; i++) if (d.bone[i] && boneOf(d, d.bone[i]) === bn) still++;
@@ -1856,6 +2253,502 @@ function suitePurity(T, src) {
   T.assert('and the rules are the shipped ones (' + code.length + ' characters)', code.length > 12000);
 }
 // ---- TEST_EXPORT_END ----
+
+/* ========================= 18. AUDIO ========================= */
+/* Granular and synthesised: the tak, the tik, the shhh, and the one bright
+   clink the whole game is built around. The context is opened inside the first
+   pointerdown, because one made any earlier stays suspended on a phone and
+   every scheduled grain lands in silence with no error at all. */
+var AUDIO = {
+  ctx: null, master: null, on: true, grain: 0,
+  resume: function () {
+    if (!this.ctx) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      this.ctx = new AC();
+      this.master = this.ctx.createGain();
+      this.master.gain.value = 0.65;
+      this.master.connect(this.ctx.destination);
+    }
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+  },
+  noise: function (dur) {
+    var n = Math.max(1, Math.floor(this.ctx.sampleRate * dur));
+    var buf = this.ctx.createBuffer(1, n, this.ctx.sampleRate);
+    var d = buf.getChannelData(0), i, seed = 1;
+    for (i = 0; i < n; i++) { seed = (seed * 1103515245 + 12345) & 0x7fffffff; d[i] = (seed / 1073741824) - 1; }
+    var src = this.ctx.createBufferSource();
+    src.buffer = buf;
+    return src;
+  },
+  env: function (node, t, a, d, peak) {
+    var g = this.ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(peak, t + a);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + a + d);
+    node.connect(g); g.connect(this.master);
+    return g;
+  },
+  tone: function (type, f, t, a, d, peak, f2) {
+    var o = this.ctx.createOscillator();
+    o.type = type;
+    o.frequency.setValueAtTime(f, t);
+    if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + a + d);
+    this.env(o, t, a, d, peak);
+    o.start(t); o.stop(t + a + d + 0.05);
+  },
+  band: function (t, f, dur, peak, type, q) {
+    var s = this.noise(dur), bp = this.ctx.createBiquadFilter();
+    bp.type = type || 'bandpass';
+    bp.frequency.value = f;
+    bp.Q.value = q === undefined ? 1.2 : q;
+    s.connect(bp);
+    this.env(bp, t, 0.002, dur, peak);
+    s.start(t); s.stop(t + dur + 0.05);
+  },
+  play: function (id) {
+    if (!this.on || !this.ctx) return;
+    var t = this.ctx.currentTime;
+    if (id === 'tak') { this.band(t, 900, 0.05, 0.30, 'bandpass', 1.1); this.tone('triangle', 220, t, 0.002, 0.05, 0.1, 110); }
+    else if (id === 'tik') { this.band(t, 2600, 0.026, 0.16, 'bandpass', 3.2); }
+    else if (id === 'shhh') { this.band(t, 5200, 0.05, 0.045, 'highpass', 0.7); }
+    else if (id === 'clink') {
+      /* the heartbeat moment: the first time a tool finds a bone */
+      this.tone('sine', 2093, t, 0.003, 1.9, 0.15);
+      this.tone('sine', 3136, t, 0.003, 1.2, 0.06);
+      this.tone('sine', 1568, t, 0.004, 2.1, 0.05);
+      this.band(t, 4200, 0.03, 0.1, 'bandpass', 4);
+    }
+    else if (id === 'crack') { this.band(t, 1500, 0.09, 0.42, 'bandpass', 0.9); this.tone('square', 180, t, 0.001, 0.05, 0.13, 90); }
+    else if (id === 'warn') { this.tone('sine', 330, t, 0.02, 0.16, 0.07, 300); }
+    else if (id === 'jacket') { this.band(t, 1800, 0.42, 0.10, 'bandpass', 0.5); this.band(t + 0.1, 900, 0.3, 0.06, 'lowpass', 0.6); }
+    else if (id === 'scan') { this.tone('sine', 700, t, 0.05, 0.9, 0.05, 1500); this.tone('sine', 1050, t + 0.08, 0.05, 0.8, 0.03, 1900); }
+    else if (id === 'click') { this.band(t, 2000, 0.02, 0.1, 'bandpass', 3); }
+    else if (id === 'keep') { this.tone('triangle', 523.25, t, 0.01, 0.3, 0.12); this.tone('triangle', 783.99, t + 0.1, 0.012, 0.5, 0.12); }
+  },
+  /* the brush is a GRAIN PER FOUR CELLS of travel, not a note per frame */
+  grainFor: function (cells) {
+    if (!this.on || !this.ctx) return 0;
+    this.grain += cells / 4;
+    var fired = 0;
+    while (this.grain >= 1 && fired < 3) { this.grain -= 1; this.play('shhh'); fired++; }
+    if (this.grain > 3) this.grain = 3;
+    return fired;
+  }
+};
+var EVENT_LOG = [];
+(function () {
+  var real = AUDIO.play;
+  AUDIO.play = function (id) { EVENT_LOG.push(id); if (EVENT_LOG.length > 500) EVENT_LOG.shift(); real.call(AUDIO, id); };
+})();
+
+/* ========================= 19. INPUT ========================= */
+/* One pointer digs and, on the way up, is also read as a TRACE: there is no
+   trace tool and no mode, because the gesture that frees a bone and the
+   gesture that lifts it are the same gesture, and the last sweep of the brush
+   is the one that takes it out of the ground. */
+var POINTERS = {}, PINCH = null;
+function localPt(e) {
+  var r = V.cv.getBoundingClientRect();
+  return { x: e.clientX - r.left, y: e.clientY - r.top };
+}
+function onDown(e) {
+  AUDIO.resume();
+  var p = localPt(e);
+  POINTERS[e.pointerId] = p;
+  var ids = Object.keys(POINTERS);
+  if (ids.length === 2) {
+    var a = POINTERS[ids[0]], b = POINTERS[ids[1]];
+    PINCH = { d: len2(a.x - b.x, a.y - b.y), zoom: V.zoom,
+      mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2, cx: V.cx, cy: V.cy };
+    G.stroke = null;
+    return;
+  }
+  if (ids.length > 2 || G.screen !== 'Dig') return;
+  G.stroke = { px: p.x, py: p.y, gx: gx(p.x), gy: gy(p.y), id: e.pointerId, cells: 0 };
+  G.path = [{ x: G.stroke.gx, y: G.stroke.gy }];
+}
+function onMove(e) {
+  var p = localPt(e);
+  if (POINTERS[e.pointerId]) { POINTERS[e.pointerId].x = p.x; POINTERS[e.pointerId].y = p.y; }
+  if (PINCH) {
+    var ids = Object.keys(POINTERS);
+    if (ids.length < 2) return;
+    var a = POINTERS[ids[0]], b = POINTERS[ids[1]];
+    var dd = len2(a.x - b.x, a.y - b.y);
+    if (PINCH.d > 20) V.zoom = clamp(PINCH.zoom * (dd / PINCH.d), CONFIG.ZOOM_MIN, CONFIG.ZOOM_MAX);
+    var mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+    V.cx = PINCH.cx - (mx - PINCH.mx) / V.zoom;
+    V.cy = PINCH.cy - (my - PINCH.my) / V.zoom;
+    V.userMoved = true;
+    clampView();
+    return;
+  }
+  if (!G.stroke || G.stroke.id !== e.pointerId || !G.dig) return;
+  var ng = { x: gx(p.x), y: gy(p.y) };
+  var moved = len2(ng.x - G.stroke.gx, ng.y - G.stroke.gy);
+  /* ⛔⛔ TRAVEL ONLY. The rest is charged by the CLOCK in tick, not here. The
+     first build passed a sixtieth of a second per pointermove, so the pressure
+     meter measured MOVE EVENTS rather than time: a finger held perfectly still
+     on a bone generates no pointermove at all, so it filled nothing and
+     cracked nothing, which is the exact opposite of the rule the chisel is
+     built around. Every headless assertion passed, because a headless test
+     hands the rest its own dt. */
+  var ev = stroke(G.dig, G.tool, G.stroke.gx, G.stroke.gy, ng.x, ng.y, 0);
+  applyStrokeFeel(ev, ng, moved);
+  G.stroke.gx = ng.x; G.stroke.gy = ng.y;
+  G.stroke.px = p.x; G.stroke.py = p.y;
+  G.stroke.cells += moved;
+  G.path.push({ x: ng.x, y: ng.y });
+  if (G.path.length > 300) G.path.shift();
+}
+function applyStrokeFeel(ev, at, moved) {
+  if (!ev) return;
+  if (ev.removed > 0.02) spawnDust(at.x, at.y, Math.min(6, Math.round(ev.removed * 6)),
+    G.tool === 'pick' ? 1.4 : G.tool === 'chisel' ? 1.0 : 0.5);
+  if (G.tool === 'brush') AUDIO.grainFor(moved);
+  else if (G.tool === 'chisel' && moved > 1) AUDIO.play('tik');
+  else if (G.tool === 'pick' && moved > 2) AUDIO.play('tak');
+  if (ev.firstTouch && !G.dig.firstClink) {
+    G.dig.firstClink = true;
+    G.freeze = 0.4;
+    AUDIO.play('clink');
+    try { if (navigator.vibrate) navigator.vibrate(20); } catch (e2) {}
+    banner('Something is under there.');
+  }
+  if (ev.warn) AUDIO.play('warn');
+  if (ev.cracked) { AUDIO.play('crack'); banner('That one is cracked now.'); }
+}
+function onUp(e) {
+  delete POINTERS[e.pointerId];
+  if (Object.keys(POINTERS).length < 2) PINCH = null;
+  if (!G.stroke || G.stroke.id !== e.pointerId) { G.stroke = null; return; }
+  var path = G.path.slice();
+  G.stroke = null;
+  G.path = [];
+  if (!G.dig || path.length < 6) return;
+  var got = tryExtract(G.dig, path);
+  if (got) {
+    G.lifted++;
+    AUDIO.play('jacket');
+    banner(got.bone.cracked ? 'Lifted, and it is repaired.' : 'Lifted.');
+    refreshChrome();
+  }
+}
+function banner(msg) {
+  var b = el('banner');
+  b.textContent = msg;
+  b.classList.add('on');
+  /* ⛔ ONE MESSAGE AT A TIME. The banner is pinned to the top middle and the
+     site chip to the top left, and on a 375 wide phone they sat on each other. */
+  el('siteChip').style.opacity = '0';
+  HINT_T = 3.4;
+}
+function toast(msg) {
+  var t = el('toast');
+  t.textContent = msg;
+  t.classList.add('on');
+  clearTimeout(t._t);
+  t._t = setTimeout(function () { t.classList.remove('on'); }, 2200);
+}
+
+/* ========================= 20. SAVE ========================= */
+var SAVE = null;
+function blankSave() {
+  return { v: CONFIG.SAVE_V, who: '', museum: [], unlocked: 0,
+    settings: { sound: 1, motion: 1 }, seen: { how: 0 } };
+}
+function readSave() {
+  try {
+    var raw = localStorage.getItem(CONFIG.SAVE_KEY);
+    if (!raw) return blankSave();
+    var d = JSON.parse(raw);
+    if (!d || d.v !== CONFIG.SAVE_V) return blankSave();
+    var b = blankSave(), k;
+    for (k in b) if (d[k] === undefined) d[k] = b[k];
+    return d;
+  } catch (e) { return blankSave(); }
+}
+function saveNow() {
+  try {
+    var disk = readSave();
+    disk.settings = SAVE.settings;
+    disk.seen = SAVE.seen;
+    disk.who = SAVE.who;
+    /* the museum only ever grows: two tabs must not lose a specimen */
+    var have = {}, i;
+    for (i = 0; i < disk.museum.length; i++) have[disk.museum[i].seed + ':' + disk.museum[i].name] = 1;
+    for (i = 0; i < SAVE.museum.length; i++) {
+      var m = SAVE.museum[i];
+      if (!have[m.seed + ':' + m.name]) disk.museum.push(m);
+    }
+    disk.unlocked = Math.max(disk.unlocked || 0, SAVE.unlocked || 0);
+    SAVE = disk;
+    localStorage.setItem(CONFIG.SAVE_KEY, JSON.stringify(disk));
+  } catch (e) {}
+}
+
+/* ========================= 21. SCREENS ========================= */
+var SCREENS = ['Title', 'How'];
+function showScreen(name) {
+  var i;
+  for (i = 0; i < SCREENS.length; i++) {
+    var s2 = el('scr' + SCREENS[i]);
+    if (s2) s2.classList.toggle('on', SCREENS[i] === name);
+  }
+  G.screen = name;
+  refreshChrome();
+}
+function refreshChrome() {
+  var digging = G.screen === 'Dig';
+  el('rail').hidden = !digging;
+  el('siteChip').hidden = !digging;
+  el('btnMenu').hidden = !digging;
+  el('btnBack').hidden = true;
+  var st = G.dig ? specimenState(G.dig.specimens[0]) : null;
+  el('btnMount').hidden = !(digging && st && st.canMount);
+  if (digging && G.dig) {
+    var spec = G.dig.specimens[0];
+    el('siteChip').querySelector('.er').textContent = spec.identity.eraName;
+    el('siteChip').querySelector('.dp').textContent = spec.identity.epoch + ', '
+      + G.lifted + ' of ' + spec.bones.length + ' lifted';
+  }
+  var t;
+  for (t in TOOLS) {
+    var b = el('t' + t.charAt(0).toUpperCase() + t.slice(1));
+    if (b) b.classList.toggle('on', G.tool === t);
+  }
+  el('tScan').disabled = !G.dig || G.dig.scanUsed >= CONFIG.SCAN_PER_SITE;
+}
+function newSite(seed, depth) {
+  G.seed = seed === undefined ? (seedFromString('site' + (SAVE.museum.length) + ':' + Math.floor(FRAMES))) : seed;
+  G.depth = depth || 0;
+  G.site = makeSite(G.seed, G.depth);
+  G.dig = newDig(G.site);
+  G.lifted = 0;
+  G.tool = 'brush';
+  BAND_CACHE = null;
+  DUST.length = 0;
+  V.userMoved = false;
+  fitView();
+  showScreen('Dig');
+  if (!SAVE.seen.how) { SAVE.seen.how = 1; saveNow(); banner('Brush. Something is under there.'); }
+}
+
+/* ========================= 22. BOOT ========================= */
+function boot() {
+  V.cv = el('board');
+  V.ctx = V.cv.getContext('2d');
+  REDUCED = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  SAVE = readSave();
+  if (!SAVE.settings.motion) REDUCED = true;
+  AUDIO.on = !!SAVE.settings.sound;
+  G.who = SAVE.who || '';
+  fitCanvas();
+
+  el('btnSound').textContent = SAVE.settings.sound ? 'SOUND ON' : 'SOUND OFF';
+  el('btnMotion').textContent = SAVE.settings.motion ? 'MOTION ON' : 'MOTION OFF';
+  el('whoField').value = SAVE.who || '';
+
+  el('btnDig').addEventListener('click', function () { AUDIO.resume(); newSite(); });
+  el('btnMuseum').addEventListener('click', function () {
+    toast(SAVE.museum.length ? 'The hall opens in the next session.' : 'Nothing in the hall yet.');
+  });
+  el('btnHow').addEventListener('click', function () { showScreen('How'); });
+  el('btnHowBack').addEventListener('click', function () { showScreen('Title'); });
+  el('btnMenu').addEventListener('click', function () { AUDIO.resume(); el('scrMenu').classList.add('on'); });
+  el('btnMenuClose').addEventListener('click', function () { el('scrMenu').classList.remove('on'); });
+  el('btnNewSite').addEventListener('click', function () {
+    el('scrMenu').classList.remove('on');
+    newSite(seedFromString('s' + FRAMES + ':' + SAVE.museum.length), G.depth);
+  });
+  el('btnToMuseum').addEventListener('click', function () {
+    el('scrMenu').classList.remove('on'); toast('The hall opens in the next session.');
+  });
+  el('btnToJournal').addEventListener('click', function () {
+    el('scrMenu').classList.remove('on'); toast('The journal opens in the next session.');
+  });
+  el('btnSound').addEventListener('click', function () {
+    SAVE.settings.sound = SAVE.settings.sound ? 0 : 1;
+    AUDIO.on = !!SAVE.settings.sound;
+    if (AUDIO.on) { AUDIO.resume(); AUDIO.play('click'); }
+    this.textContent = SAVE.settings.sound ? 'SOUND ON' : 'SOUND OFF';
+    saveNow();
+  });
+  el('btnMotion').addEventListener('click', function () {
+    SAVE.settings.motion = SAVE.settings.motion ? 0 : 1;
+    REDUCED = !SAVE.settings.motion
+      || !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    this.textContent = SAVE.settings.motion ? 'MOTION ON' : 'MOTION OFF';
+    saveNow();
+  });
+  el('whoField').addEventListener('change', function () {
+    SAVE.who = cleanName(this.value);
+    this.value = SAVE.who;
+    saveNow();
+  });
+  el('btnMount').addEventListener('click', function () { openNameSheet(); });
+  el('btnNameClose').addEventListener('click', function () { el('nameSheet').classList.remove('on'); });
+  el('btnKeep').addEventListener('click', function () { keepSpecimen(); });
+
+  var t;
+  for (t in TOOLS) {
+    (function (name) {
+      var b = el('t' + name.charAt(0).toUpperCase() + name.slice(1));
+      if (b) b.addEventListener('click', function () { G.tool = name; AUDIO.resume(); AUDIO.play('click'); refreshChrome(); });
+    })(t);
+  }
+  el('tScan').addEventListener('click', function () {
+    if (!G.dig || G.dig.scanUsed >= CONFIG.SCAN_PER_SITE) return;
+    G.dig.scanUsed++;
+    G.scan = 4;
+    AUDIO.resume(); AUDIO.play('scan');
+    banner('Something big sleeps there.');
+    refreshChrome();
+  });
+
+  V.cv.addEventListener('pointerdown', onDown);
+  V.cv.addEventListener('pointermove', onMove);
+  V.cv.addEventListener('pointerup', onUp);
+  V.cv.addEventListener('pointercancel', function (e) { delete POINTERS[e.pointerId]; PINCH = null; G.stroke = null; G.path = []; });
+  window.addEventListener('pointerup', function (e) { if (G.stroke && G.stroke.id === e.pointerId) onUp(e); });
+  window.addEventListener('resize', fitCanvas);
+  window.addEventListener('orientationchange', function () { setTimeout(fitCanvas, 120); });
+  window.addEventListener('blur', function () { POINTERS = {}; PINCH = null; G.stroke = null; G.path = []; });
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) saveNow(); else LAST = 0;
+  });
+  window.addEventListener('storage', function (e) { if (e.key === CONFIG.SAVE_KEY) SAVE = readSave(); });
+
+  showScreen('Title');
+  RAF = requestAnimationFrame(frame);
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('./sw.js?v=' + STAMP).catch(function () {});
+    });
+  }
+  try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {}
+  window.addEventListener('load', function () { try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {} });
+}
+function openNameSheet() {
+  var spec = G.dig.specimens[0];
+  var st = specimenState(spec);
+  var id = identity(spec.species, spec.seed, '');
+  el('nsBino').textContent = id.binomial;
+  el('nsMeta').textContent = id.eraName + ', ' + id.epoch + '. ' + id.diet.charAt(0).toUpperCase()
+    + id.diet.slice(1) + ', about the size of a ' + id.sizeWord + '. ' + st.condition + '.';
+  el('nsHist').textContent = id.history;
+  el('dedField').value = '';
+  el('nameSheet').classList.add('on');
+}
+function keepSpecimen() {
+  var spec = G.dig.specimens[0];
+  var ded = cleanName(el('dedField').value);
+  var id = identity(spec.species, spec.seed, ded);
+  var st = specimenState(spec);
+  SAVE.museum.push({ seed: spec.seed, era: spec.era, name: id.binomial,
+    who: SAVE.who || 'a field hand', condition: st.condition, dedicated: id.dedicated });
+  saveNow();
+  el('nameSheet').classList.remove('on');
+  AUDIO.play('keep');
+  banner(id.binomial + ' goes in the hall.');
+  refreshChrome();
+}
+
+/* Everything the gates reach for. Nothing here changes a rule; it puts the
+   game in a state and reports what is on the screen, and every stroke a gate
+   makes is still a real pointer event on the canvas. */
+window.STRATA_TEST = {
+  game: function () { return G; },
+  view: function () { return V; },
+  dig: function () { return G.dig; },
+  frames: function () { return FRAMES; },
+  screen: function () { return G.screen; },
+  site: function (seed, depth) { newSite(seed === undefined ? 4242 : seed, depth || 0); },
+  toScreen: function (x, y) { return { x: sx(x), y: sy(y) }; },
+  toGrid: function (px, py) { return { x: gx(px), y: gy(py) }; },
+  tool: function (t) { if (t) { G.tool = t; refreshChrome(); } return G.tool; },
+  bones: function (si) { return G.dig.specimens[si || 0].bones; },
+  startsOnFreed: function (path) { return !!startsOnFreed(G.dig, path); },
+  boneAt: function (si, bi) { return G.dig.specimens[si || 0].bones[bi]; },
+  /* the biggest bone whose spine describes its shape, which is the one a gate
+     wants to work on */
+  workableBone: function () {
+    var bs = G.dig.specimens[0].bones, i, best = null, LIN = { rib: 1, leg: 1, arm: 1, wing: 1, flipper: 1 };
+    for (i = 0; i < bs.length; i++) {
+      if (bs[i].missing || !bs[i].cells || !LIN[bs[i].kind]) continue;
+      if (!best || bs[i].cells > best.cells) best = bs[i];
+    }
+    return best ? { id: best.id, kind: best.kind, cells: best.cells,
+      spine: best.spine, clear: best.clear, cracked: best.cracked, out: best.out } : null;
+  },
+  /* ⛔ the biggest workable bone A THUMB CAN ACTUALLY REACH: on the screen,
+     clear of the tool rail and clear of the chrome. A gate that takes its
+     coordinates from the thing it is testing cannot see a thing that is in the
+     wrong place, and a bone under the rail is exactly that. */
+  reachableBone: function () {
+    var bs = G.dig.specimens[0].bones, i, best = null;
+    var LIN = { rib: 1, leg: 1, arm: 1, wing: 1, flipper: 1 };
+    for (i = 0; i < bs.length; i++) {
+      var b = bs[i];
+      if (b.missing || b.out || !b.cells || !LIN[b.kind]) continue;
+      var sp = denseSpine(b.spine, 9), k, ok = true;
+      for (k = 0; k < sp.length; k++) {
+        var p = { x: sx(sp[k].x), y: sy(sp[k].y) };
+        if (p.x < 30 || p.x > V.w - 92 || p.y < V.padT + 26 || p.y > V.h - 40) ok = false;
+      }
+      if (!ok) continue;
+      if (!best || b.cells > best.cells) best = b;
+    }
+    return best ? { id: best.id, kind: best.kind, cells: best.cells } : null;
+  },
+  boneById: function (id) {
+    var bs = G.dig.specimens[0].bones, i;
+    for (i = 0; i < bs.length; i++) if (bs[i].id === id) return bs[i];
+    return null;
+  },
+  densityAt: function (x, y) {
+    var ix = Math.round(y) * G.dig.W + Math.round(x);
+    return G.dig.density[ix];
+  },
+  pressure: function () { return G.dig.pressure; },
+  clean: function (id, passes) {
+    var bn = this.boneById(id);
+    if (!bn) return 0;
+    var sp = denseSpine(bn.spine, 14), i, k;
+    for (k = 0; k < (passes || 14); k++) {
+      for (i = 0; i + 1 < sp.length; i++) {
+        stroke(G.dig, 'brush', sp[i].x, sp[i].y, sp[i + 1].x, sp[i + 1].y, 0.02);
+        stroke(G.dig, 'brush', sp[i].x, sp[i].y - 3, sp[i + 1].x, sp[i + 1].y - 3, 0.02);
+        stroke(G.dig, 'brush', sp[i].x, sp[i].y + 3, sp[i + 1].x, sp[i + 1].y + 3, 0.02);
+      }
+    }
+    return bn.clear;
+  },
+  liftAll: function () {
+    var bs = G.dig.specimens[0].bones, i;
+    for (i = 0; i < bs.length; i++) if (!bs[i].missing) { this.clean(bs[i].id, 8); }
+    for (i = 0; i < bs.length; i++) if (!bs[i].missing && canExtract(bs[i])) { bs[i].out = true; G.lifted++; }
+    refreshChrome();
+    return specimenState(G.dig.specimens[0]);
+  },
+  state: function () { return specimenState(G.dig.specimens[0]); },
+  lifted: function () { return G.lifted; },
+  events: function () { return EVENT_LOG; },
+  clearEvents: function () { EVENT_LOG.length = 0; },
+  dust: function () { return DUST.length; },
+  freeze: function () { return G.freeze; },
+  save: function () { return SAVE; },
+  audio: function () { return AUDIO; },
+  identityOf: function (ded) {
+    var spec = G.dig.specimens[0];
+    return identity(spec.species, spec.seed, ded || '');
+  }
+};
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+else boot();
+
 </script>
 </body>
 </html>
