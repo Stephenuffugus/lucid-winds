@@ -30,6 +30,7 @@ const BROWSER_GATES = [
   { name: 'boot', cmd: ['test/boot.mjs'], need: 'BOOT OK' },
   { name: 'touch', cmd: ['test/touch.mjs'], need: 'TOUCH OK' },
   { name: 'settings', cmd: ['test/settings.mjs'], need: 'SETTINGS OK' },
+  { name: 'audio', cmd: ['test/audio.mjs'], need: 'AUDIO OK' },
   { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK', slow: true }
 ];
 

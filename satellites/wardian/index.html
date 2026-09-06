@@ -2363,8 +2363,66 @@ var SFX = {
       g.gain.setValueAtTime(0.10, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
       o.start(t); o.stop(t + 0.24);
     }
+  },
+  /* ========== THE EAR GATE (test/audio.mjs) ==========
+     Stephen, Sep 06: the sound effects "sounded like fire alarms. They made
+     everybody in my house flinch and scared my animals." The cause in that game
+     was a trill oscillator wired into an envelope gain, so a chirp written as
+     0.022 was a half scale 4 kHz tone, and EVERY gate was green because no gate
+     had ever rendered the thing the speaker plays.
+     This renders the jar's LOUDEST MINUTE offline through the same play() the
+     speaker uses and reports peak, rms and the share of energy above 3 kHz.
+     ⛔ NEVER measure a wav made for the ear: a render tool normalises, and a
+     normalised file says 0.86 whatever the master is doing.
+     ⛔ An offline context's currentTime never advances while you schedule, so
+     play() would stack the whole minute at zero. `shim` is the real offline
+     context with a clock this function turns by hand. */
+  renderLoudMinute: function (seconds) {
+    var OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (!OAC) return Promise.reject(new Error('no OfflineAudioContext'));
+    var sr = 22050, dur = seconds || 60;
+    var octx = new OAC(1, Math.ceil(sr * dur), sr);
+    var shim = {
+      currentTime: 0, sampleRate: octx.sampleRate, destination: octx.destination, state: 'running',
+      resume: function () {},
+      createGain: function () { return octx.createGain(); },
+      createOscillator: function () { return octx.createOscillator(); },
+      createBufferSource: function () { return octx.createBufferSource(); },
+      createBiquadFilter: function () { return octx.createBiquadFilter(); },
+      createBuffer: function (a, b, c) { return octx.createBuffer(a, b, c); }
+    };
+    var saveAc = this.ac, saveOn = this.on;
+    this.ac = shim; this.on = true;
+    /* THE LOUDEST MINUTE, and it is louder than a hand can play: a mist every
+       1.2 s, which is faster than the swipe down can be repeated, a tonk on the
+       glass every 0.7 s in between, and a chime every 10 s, which would be six
+       discoveries in a minute in a game that gives you eleven in a season. A
+       ceiling has to sit above the roof. */
+    var t;
+    for (t = 0.2; t < dur; t += 1.2) { shim.currentTime = t; this.play('mist'); }
+    for (t = 0.55; t < dur; t += 0.7) { shim.currentTime = t; this.play('tonk'); }
+    for (t = 2.0; t < dur - 1; t += 10) { shim.currentTime = t; this.play('chime'); }
+    this.ac = saveAc; this.on = saveOn;
+    return octx.startRendering().then(function (buf) { return SFX_EAR(buf, sr); });
   }
 };
+/* peak, rms, and the share of energy above 3 kHz. The split is a second order
+   Butterworth high pass run in JavaScript over the rendered buffer, because a
+   smoke detector lives up there and a jar on a windowsill does not. */
+function SFX_EAR(buf, sr) {
+  var d = buf.getChannelData(0), n = d.length, i, peak = 0, tot = 0, hi = 0;
+  var w0 = 2 * Math.PI * 3000 / sr, cw = Math.cos(w0), sw = Math.sin(w0), al = sw / (2 * 0.7071);
+  var b0 = (1 + cw) / 2, b1 = -(1 + cw), b2 = (1 + cw) / 2, a0 = 1 + al, a1 = -2 * cw, a2 = 1 - al;
+  var x1 = 0, x2 = 0, y1 = 0, y2 = 0, x, y;
+  for (i = 0; i < n; i++) {
+    x = d[i];
+    y = (b0 * x + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2) / a0;
+    x2 = x1; x1 = x; y2 = y1; y1 = y;
+    tot += x * x; hi += y * y;
+    if (Math.abs(x) > peak) peak = Math.abs(x);
+  }
+  return { peak: peak, rms: Math.sqrt(tot / n), highFraction: tot > 0 ? hi / tot : 0, seconds: n / sr };
+}
 
 /* ========================= 19. THE WORDS ========================= */
 /* The Jarwright. Short sentences, warm, a little odd, concrete. She never asks
@@ -3015,6 +3073,8 @@ function runPanel() {
    only lets a test move the clock and put a bug where it can be tapped. */
 window.WARDIAN_TEST = {
   state: function () { return G; },
+  /* the ear gate's render: the loudest minute, offline, through the real SFX */
+  renderAudio: function (seconds) { return SFX.renderLoudMinute(seconds); },
   view: function () { return V; },
   /* run n ticks, misting on the policy a cared for jar gets, so a shot is of a
      jar somebody looked after and not of one left in a cupboard */
