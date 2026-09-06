@@ -159,3 +159,25 @@ build over it.
 OLD railway had while the camera pulls back for the new one immediately afterwards, and the cow
 came out half off the left edge: the same "one prop lands off the frame" fault the layout gate
 caught on Sep 06 night, arriving by a different door.
+
+**D-C6 (2026-09-07, Opus) — the two spurs stop rhyming, and Swap's lower two levers stop reading
+as one.** Both were the last two lines of the Sep 06 look pass.
+- **The Crossing's spurs were mirror images at the same forty five degrees**, because both lines
+  carried a `yR` in the same place: two problems that look like one problem seen twice. Blue's
+  switch is a `yL` now, so the two lines diverge instead of rhyming. It costs no index, because a
+  yL is a yR's own reflection, and `--solve` still gives three flips, 6.73 s and three stars with
+  nothing at all still never getting home.
+- **Swap's station switch stood one tile below the loop's lower switch**, about thirty screen
+  pixels, and the look pass read the two lever dots as one cluster: a puzzle asking a child to
+  tell apart two things it has drawn as one thing. Two straights between them now, about forty
+  six pixels at 412, which is wider than the tap radius so the two are separately reachable as
+  well as separately readable. Every index past ten moved by one and the stations, the levers,
+  the trains, both `from` cursors and the solution moved with it; `--solve` still gives two flips
+  and three stars, home at 9.95 s where it was 9.53, and nothing at all still bumps.
+
+**D-C6b (2026-09-07, Opus) — the camera reads the answer off the puzzle now.** `tools/shots.mjs`
+had the literals 2 and 11 typed into it for Swap's two flips, and the moment Swap grew a tile
+piece 11 became a straight, `g.junctions[...]` came back undefined and the tool died with "Cannot
+set properties of undefined". A camera that hardcodes a puzzle's internals breaks on the day the
+puzzle is edited, which is the day somebody most wants to look at it. It walks
+`state().puzzle.solution` instead, so it cannot drift again.

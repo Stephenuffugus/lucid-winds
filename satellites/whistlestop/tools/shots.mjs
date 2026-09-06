@@ -130,10 +130,17 @@ for (const [w, h, tag] of [[667, 375, 'wide'], [375, 667, 'tall']]) {
     if (want('p2-swap')) await shot('p2-swap-' + tag);
     /* the two flips the answer needs, and then the moment the two trains are
        abreast: one on the loop, one on the single line it was blocking */
+    /* ⛔ THE ANSWER IS READ OFF THE PUZZLE, NOT TYPED IN HERE. These were the
+       literals 2 and 11, and when Swap grew one tile between its lower two
+       switches on 2026-09-07 every index past ten moved by one: piece 11 became
+       a straight, `g.junctions[...]` came back undefined and the tool died with
+       "Cannot set properties of undefined". A camera that hardcodes a puzzle's
+       internals breaks the day the puzzle is edited, which is the day somebody
+       most wants to look at it. */
     await page.evaluate(() => {
-      const g = WHISTLESTOP_TEST.state().g;
-      g.junctions[g.pieces[2].nodes[0]].lever = 1;
-      g.junctions[g.pieces[11].nodes[0]].lever = 0;
+      const st = WHISTLESTOP_TEST.state(), g = st.g;
+      const sol = st.puzzle.solution;
+      for (const step of sol) g.junctions[g.pieces[step.piece].nodes[0]].lever = step.to;
     });
     await tap(page, '#btnWhistle');
     await page.evaluate(() => WHISTLESTOP_TEST.advance(4.7));

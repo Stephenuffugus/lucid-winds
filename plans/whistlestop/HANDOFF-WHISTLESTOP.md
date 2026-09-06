@@ -60,6 +60,29 @@ inherits), then this file, then the design. Where they differ, this file wins; e
   **Thin still:** the Crossing's two spurs mirror each other; Swap's lower two levers sit thirty
   pixels apart; pinch and pan is call C12; pass through is C13.
 
+- 2026-09-07 Opus (lead): **C5 AND C6 ARE DONE.** Stamp `20260907b` in three places.
+  `node tools/check.js` ALL GATES PASSED, twelve of twelve.
+  **C5, the props:** every group in `PROP_GROUPS` carries a written reason, how near the line
+  that reason puts it, and whether it turns to look at the railway, and `trackSideOf` mirrors the
+  ones that face. ⛔ And nothing stands inside the railway any more, which was NOT a placement
+  bug but a STALENESS bug: the scenery is laid once and then stays put, which is right for
+  building beside, but laid once and never again a loop built AROUND a cow leaves the cow in the
+  middle of it for good. That is exactly how the shot tool produced the picture every time. It re
+  lays only when the railway has grown over it, and the camera refits FIRST, because laid against
+  the old frame the cow came out half off the left edge. D-C5, D-C5b.
+  **C6, the spurs and the levers:** Blue's switch in The Crossing is a `yL`, so the two spurs
+  diverge instead of rhyming, at no index cost. Swap has two straights between its lower two
+  switches instead of one, about forty six pixels at 412 where it was thirty, which is wider than
+  the tap radius; every index past ten moved and the stations, levers, trains, both cursors and
+  the solution moved with it. `--solve` unchanged on both: three flips at 6.73 s and two flips at
+  9.95 s, three stars, and the do nothing case still fails the same way. D-C6.
+  ⛔ **AND THE CAMERA HAD THE ANSWER TYPED INTO IT.** `tools/shots.mjs` carried the literals 2 and
+  11 for Swap's two flips, and the moment Swap grew a tile the tool died with "Cannot set
+  properties of undefined". It reads `state().puzzle.solution` now. D-C6b.
+  **Shots opened:** `p3-412x915.png`, `p2-swap-tall.png`, `p2-crossing-tall.png`.
+  **Next action:** calls C12 and C13 (fit or pinch, and pass through) are Stephen's. Nothing here
+  is half built.
+
 ---
 
 ## 0. RULES OF ENGAGEMENT
