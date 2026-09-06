@@ -22,6 +22,13 @@ live on main, and gated; each game's stamp moved with it.
 | Airworthy | 20260906g | THE RING SLALOM, the design's fourth challenge type, with its own gates and measured medals |
 | Doohickey | 20260906g | three levels teaching three parts that had none (builder); the share gate now opens a link COLD |
 | Asterism | 20260906g | the first screen is a veil over the real sky rather than flat ink |
+| Whistlestop | 20260906g | the lever you aim at was EIGHT PIXELS in a puzzle (world scaled glyph, screen pixel tap radius); SWAP as the sixth puzzle on a passing loop; the portrait fit centres on the railway; buffer stops on every open end |
+| Inkswing | 20260906g | on a tall phone the ink rail lies down so the drawing gets the full width, a fifth bigger on a 412 phone |
+
+**Every one of the twelve was checked live at the end of the session: the stamp in each
+file is the stamp the host serves.** Fathom 20260906e, Swell and Wardian 20260906d, Gerplunk
+Updraft and Strata 20260906f, Asterism Doohickey Airworthy Inkswing and Whistlestop 20260906g,
+Windup 20260906e.
 
 **Four scars this session added, all of one shape: something that copies a whitelist of
 fields silently deletes the rest.**
@@ -38,6 +45,11 @@ fields silently deletes the rest.**
 4. **A gate that sets state is not a gate that boots into it.** Doohickey's share gate set
    `location.hash` on an already open page; a stranger pastes an address and the page boots
    with the hash on it. Different code paths, and only the second is the feature.
+
+5. **A glyph drawn at world scale with a tap radius in screen pixels shrinks exactly when the
+   camera pulls back**, which is when the player needs it most: Whistlestop's lever was 8 px of
+   gold in a puzzle and 22 on the build screen, and no gate could see it because the gate read
+   the constant rather than the canvas.
 
 **Two more worth carrying.** The fleet's music chip reseats into the freest corner and will
 CHASE a shrinking element (it followed Strata's journal title through two rounds of padding);
