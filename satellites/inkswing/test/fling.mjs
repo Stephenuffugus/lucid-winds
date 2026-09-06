@@ -174,6 +174,14 @@ try {
     await put('pointerdown', at.x, at.y);
     for (let i = 1; i <= 12; i++) { await put('pointermove', at.x - (at.x + 300) * i / 12, at.y); await sleep(30); }
     await sleep(200);
+    /* ⛔ measured WHILE HELD, which is where the old clamp let go of the paper: the
+       bob could be parked a whole sheet's width past the edge (the release
+       assertion below passed on the old page, because the throw's reach scale
+       pulled the pen back to the edge; the hand was still off the paper) */
+    const held = await T(() => { const h = window.INKSWING_TEST.state().held; return h ? h.x : null; });
+    const halfW = await T(() => window.INKSWING_TEST.config().SHEET_W / 2);
+    say(held !== null && Math.abs(held) <= halfW - 40, 'a bob dragged past the left edge is held inside the paper ('
+      + (held === null ? 'not held' : held.toFixed(0)) + ' units, the edge is ' + (-halfW).toFixed(0) + ')');
     await put('pointerup', -300, at.y);
     await waitFrames(page, 3);
     const pen = await T(() => window.INKSWING_TEST.penScreen());
