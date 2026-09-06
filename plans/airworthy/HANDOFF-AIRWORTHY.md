@@ -11,16 +11,14 @@ this file wins; every difference is in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
-- 2026-09-06 Opus: **P0 is DONE and pushed.** `node satellites/airworthy/tools/check.js`
-  prints ALL GATES PASSED: one gate, `sim`, 76 assertions. Four mutations
-  watched to fail. Section 13 carries the Porpoise trace, the table of the six
-  names, and every correction the model needed, of which there were ten: the
-  plan's model as written does not fly.
-  **Next action:** P1 step 1, the FIELD. Draw The Gym into `#stage` in
-  `satellites/airworthy/index.html`: the diorama, the slingshot from Keepsies'
-  `pullback.js`, the flight camera leading the plane, the dotted pencil trail,
-  and the result card. The shot to make first is `docs/shots/p1-swoop.png`, six
-  panels at half second intervals of the Porpoise.
+- 2026-09-06 Opus: **P0 and P1 are DONE and pushed.** Four gates, 76
+  assertions, six mutations watched to fail. The morning report is at the top of
+  section 15; the ten corrections the plan's model needed are in section 13;
+  the calls are in `satellites/airworthy/docs/DECISIONS.md`.
+  **Next action:** P2 step 1, the WORKSHOP. A portrait sheet of paper drawn top
+  down, each fold choice an animated crease with the precision bar, and the spec
+  preview that names the archetype only after the first flight. The FIELD and
+  the model are done and every number in them is measured.
 
 ---
 
@@ -530,6 +528,80 @@ measurement.
   that has gone to Infinity never returns, and the whole run hangs with nothing
   to read. It is arithmetic now, with a finite check in front of it.
 
+
+### P1, throw it, watch it, fix it (2026-09-06)
+
+```
+$ node tools/check.js
+sim             pass  0s
+lint            pass  0s
+throw           pass  4s
+layout          pass  8s
+
+ALL GATES PASSED
+```
+
+`test/throw.mjs` in both orientations: a real 90 px pull back at 20 degrees
+launches at 19.9 degrees and 0.65 power, the plane goes down the gym, the card
+comes up with the archetype on it, and a real tap on TRIM plus the elevator dial
+plus THROW IT relaunches inside 66 milliseconds and turns the porpoise into a
+cruiser.
+
+Two mutations watched to fail:
+
+```
+$ # the pull back angle ignored
+FAIL  landscape: at the angle the drag asked for (5.0 degrees, wanted 20)
+
+$ # the trim dial wired to nothing
+FAIL  landscape: the dial bends the elevators (6)
+```
+
+### The P1 shots, opened and read
+
+**`p1-swoop.png`**, six panels at half second intervals, is the feel test and it
+passes: the plane climbs to 2.8 metres with its nose high, levels at 2.3, noses
+over at 1.6, and settles to 0.7, with the dotted pencil trail arcing behind it
+and the floor and its metre marks in every frame. It does not read as a sine
+wave.
+
+**The first cut of that strip failed the test and it was the CAMERA, not the
+model.** Tracking the plane's height as well as its distance glued it to one spot
+in the frame and pushed the floor out of shot, so six panels showed a plane in
+the middle of a beige rectangle and the swoop was visible only as a faint line.
+The camera scrolls sideways and holds its height now.
+
+Three faults still in it: the plane's attitude is hard to read after the first
+panel, because at this size a paper dart is mostly a dark arrowhead; the trail
+runs off the left edge in the later panels, so the beginning of the swoop is
+lost; and the gym's windows are plain rectangles floating in beige rather than
+anything that says room.
+
+**`p1-result.png`** — the card over the gym: the name, the line, and the numbers,
+with TRIM and THROW AGAIN side by side. Three faults: THROW AGAIN wrapped onto
+two lines until it was told not to; the card covers the middle of the trail,
+which is the thing the player just watched; and the plane at the end of its
+flight is half behind it.
+
+**`p1-fixed.png`** — the same plane after two bends: "The Cruiser. Steady all the
+way down. This is the one you keep. 10.2 m in 3.2 s, 1 stall, glide 9 degrees."
+Three faults: the trail behind it is a straight diagonal with none of the drama
+of the porpoise, which is correct and makes a dull picture; the card hides most
+of it; and nothing on the card says what changed, so a player who did not watch
+closely has to infer that the trim did it.
+
+**`p1-sling.png`** — the slingshot mid pull: a dashed line back to the finger, a
+solid arrow forward along the launch angle, a power bar and the angle in degrees.
+Three faults: the arrow and the dashed line cross each other at the plane and the
+crossing is muddy; the power bar sits below the plane where a thumb covers it;
+and there is no mark for what a normal throw is, so the bar has no scale a player
+can read.
+
+**`p1-portrait.png`** — the same gym at 375 by 667. Three faults: the gym is a
+narrow slice, so the plane leaves the frame almost at once and the camera does
+all the work; the distance marks are the only clue to how far it has gone; and
+there is a great deal of empty ceiling above the flight.
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL
@@ -540,6 +612,63 @@ tunnel, layout`.
 ---
 
 ## 15. THE MORNING REPORT
+
+### Airworthy, built 2026-09-06
+
+**Where it is.** P0 and P1 are done, committed and pushed on
+`add-sproing-jumper`. `node satellites/airworthy/tools/check.js` prints ALL
+GATES PASSED across four gates: `sim` (76 assertions), `lint`, `throw`,
+`layout`. Six mutations watched to fail. P2 (the workshop and the hangar) and P3
+(the wind tunnel, sound, share) are NOT started.
+
+**What it is.** A gym, a paper plane, and a slingshot. You pull back and let go,
+the plane flies the flight the model gives it, a dotted pencil trail records
+where it went, and a card tells you what it just did and offers to trim it. The
+plane you start with porpoises, and two bends of the elevator turn it into a
+Cruiser that goes further. That loop is the whole design and it works.
+
+**What I would look at first.** `docs/shots/p1-swoop.png`. The plan's P1 step 2
+says the swoop has to make you smile with recognition, and that strip is the
+case for it. Then `p1-result.png` and `p1-fixed.png` side by side, which are the
+before and after of the fix.
+
+**THE PLAN'S MODEL DOES NOT FLY, and this is the thing to read.** Taken
+literally, every plane the plan names dives into the floor inside a second and
+the phugoid the whole game is built on does not exist. Ten corrections were
+needed and all ten are in section 13 with their measurements. The three that
+matter: the pitch damping is stiff and explicit Euler turns a flight into
+Infinity inside a fifth of a second; the stability term's sign is inverted, so a
+stable plane diverges; and a stalled wing has to push its own nose down, or a
+plane trimmed past its stall pitches up for ever and the porpoise is a slow loop.
+None of that is a criticism of the plan, which said in advance that the model
+was the thing to fix if the Porpoise failed. It is a note that the coefficients
+in section 4 are a sketch and not a model.
+
+**What is thin.** Three things.
+
+1. **A steep throw undoes the fix.** At eight degrees the two bends turn the
+   porpoise into a cruiser; at sixteen the fixed plane porpoises again. That is
+   true of a real plane and it is also a way for a player to conclude the trim
+   does nothing. The result card's line is the only thing telling them.
+2. **The archetypes are named from the flight, not the fold.** A player who
+   changes one fold and gets the same name learns nothing. The tunnel's
+   predicted archetype, which is P3, is what closes that loop.
+3. **There is only one course and one plane.** The workshop, the tunnel and the
+   hangar are all unbuilt, so the game is currently one throw repeated. The loop
+   is right; there is not yet much of it.
+
+**For Fable, to check independently.** Three things.
+
+- The four gates, run cold: `cd satellites/airworthy && node tools/check.js`.
+- `node sim.js --fly=porpoise`, and read the height column: 1.60 up to 2.51,
+  down to 1.33, level, down again. That is the product in numbers.
+- The six shots, opened rather than listed.
+
+**Next action:** P2 step 1, the WORKSHOP. A portrait sheet of paper drawn top
+down in `satellites/airworthy/index.html`, each fold choice an animated crease,
+the precision bar per crease, and the spec preview that names the archetype only
+after the first flight. Then the hangar, then P3's wind tunnel.
+
 
 The template in `plans/fathom/HANDOFF-FATHOM.md` section 15, with this file's phases. Add one line: **the Porpoise trace**,
 pasted.
