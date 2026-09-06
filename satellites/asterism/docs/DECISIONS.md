@@ -93,3 +93,12 @@ Why: at the default view a square tile cropped Vega off the top and left the rig
 **2026-09-05 — the thumb tool checks that its own tile has a sky AND the gold shape in it.**
 Why: counting bright pixels alone put the bar in the wrong place and rejected three good tiles; a real
 star field on a 512 square is about one percent bright pixels.
+
+**2026-09-06 (Opus) — the first screen of a game about the sky now shows the sky.**
+The how screen painted the flat ink colour over the canvas, so the first thing a new
+player met was three lines of type in a void, and the sky had to be taken on trust until
+they pressed GOT IT. It is a veil now, a gradient of the same ink at 82, 62 and 86 percent
+down the screen, so the real stars, the real Milky Way and the real horizon are behind the
+words and the words are still comfortably readable over them. The three lines are centred
+under the title as well; left aligned against a centred word the block read lopsided. The
+layout gate is unchanged and green: nothing moved, only what is behind it.

@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ASTERISM">
-<link rel="manifest" href="./manifest.webmanifest?v=20260906e">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260906e">
-<link rel="icon" href="./icon-192.png?v=20260906e">
+<link rel="manifest" href="./manifest.webmanifest?v=20260906g">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260906g">
+<link rel="icon" href="./icon-192.png?v=20260906g">
 <link rel="canonical" href="https://lucidwinds.com/satellites/asterism/">
 <style>
 /*  ASTERISM
@@ -77,6 +77,14 @@ html,body{margin:0;padding:0;height:100%;background:var(--ink);color:var(--cream
   padding:calc(18px + var(--safeT)) 18px calc(18px + var(--safeB));
   overflow-y:auto;overscroll-behavior:contain}
 .screen.on{display:flex}
+/* ⛔ THE FIRST SCREEN OF A GAME ABOUT THE SKY SHOWED NO SKY. The how screen painted the
+   flat ink over the canvas, so a new player met three lines of type in a void and had to
+   take the sky on trust until they pressed a button. It is a veil now: the real sky, the
+   real stars, dimmed just enough to read over. */
+#scrHow{background:linear-gradient(180deg, rgba(4,8,20,.82), rgba(4,8,20,.62) 45%, rgba(4,8,20,.86))}
+/* and the three lines sit under the title rather than beside it: left aligned against a
+   centred word the block read lopsided */
+#scrHow .lede{text-align:center;max-width:300px}
 .sheet{position:absolute;left:0;right:0;bottom:0;top:auto;z-index:12;
   background:var(--ink2);border-top:1px solid var(--line);
   border-radius:20px 20px 0 0;max-height:88%;display:none;flex-direction:column;
@@ -155,7 +163,7 @@ input:focus{outline:1px solid var(--gold)}
 .fail{color:#ff8080}.pass{color:#9be36b}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260906e" defer></script>
+<script src="/music-unlocks.js?v=20260906g" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">ASTERISM</h1>
@@ -2040,7 +2048,7 @@ function suitePurity(T, src) {
 // ---- TEST_EXPORT_END ----
 
 /* ========================= 13. BOOT ========================= */
-var STAMP = '20260906e';
+var STAMP = '20260906g';
 var G = {
   cat: null, place: null, whenMs: 0, mode: 'tonight',
   view: { alt: 55, az: 180, fov: CONFIG.FOV_DEFAULT },
