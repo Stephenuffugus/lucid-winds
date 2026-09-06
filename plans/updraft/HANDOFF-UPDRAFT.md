@@ -146,7 +146,7 @@ sim.js                --test, --fly=<mood>,<script> (a hold/release/slide script
 sw.js  manifest.webmanifest  icon-192.png  icon-512.png  icon-maskable-512.png
 tools/check.js  tools/icons.mjs  tools/thumb.mjs  tools/shots.mjs
 test/fly.mjs  test/audio.mjs  test/layout.mjs
-docs/DECISIONS.md  docs/shots/  BUILD-NOTES.md  ART_ASSETS.md
+docs/DECISIONS.md  docs/shots/  docs/BUILD-NOTES.md  docs/ART_ASSETS.md
 ```
 
 Layers: `CONFIG, RNG, KITES, WIND, FLIGHT, TAIL, TRICKS, FIELD, AUDIO, WEATHER, CLOCK, JOURNAL, SHARE, INPUT, SAVE, TEST,

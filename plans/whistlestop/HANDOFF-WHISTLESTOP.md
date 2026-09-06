@@ -144,7 +144,7 @@ sim.js                --test, --solve (every puzzle's solution wins and the empt
 sw.js  manifest.webmanifest  icon-192.png  icon-512.png  icon-maskable-512.png
 tools/check.js  tools/icons.mjs  tools/thumb.mjs  tools/shots.mjs
 test/build.mjs  test/run.mjs  test/share.mjs  test/layout.mjs
-docs/DECISIONS.md  docs/shots/  BUILD-NOTES.md  ART_ASSETS.md
+docs/DECISIONS.md  docs/shots/  docs/BUILD-NOTES.md  docs/ART_ASSETS.md
 ```
 
 Layers: `CONFIG, RNG, PIECES, GRAPH, TRAINS, SIM, PUZZLES, VIEW, EDITOR, AUDIO, SHARE, SAVE, TEST, BOOT`. `SIM_EXPORT`

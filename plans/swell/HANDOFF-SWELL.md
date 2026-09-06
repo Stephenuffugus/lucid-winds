@@ -141,7 +141,7 @@ sim.js                --test (the theory, headless), --walk=<mood>,<seeds> (prin
 sw.js  manifest.webmanifest  icon-192.png  icon-512.png  icon-maskable-512.png
 tools/check.js  tools/icons.mjs  tools/thumb.mjs  tools/shots.mjs
 test/render.mjs  test/hold.mjs  test/record.mjs  test/layout.mjs
-docs/DECISIONS.md  docs/shots/  BUILD-NOTES.md  ART_ASSETS.md
+docs/DECISIONS.md  docs/shots/  docs/BUILD-NOTES.md  docs/ART_ASSETS.md
 ```
 
 Layers in `index.html`: `CONFIG, THEORY, MOODS, SCHEDULER, SYNTH, ENGINE, AURORA, INPUT, RECORD, AMBIENT, SAVE, TEST, BOOT`.

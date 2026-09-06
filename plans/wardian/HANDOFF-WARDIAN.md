@@ -137,7 +137,7 @@ sim.js                --test, --days=N (run N simulated days under a policy, pri
 sw.js  manifest.webmanifest  icon-192.png  icon-512.png  icon-maskable-512.png
 tools/check.js  tools/icons.mjs  tools/thumb.mjs  tools/shots.mjs
 test/boot.mjs  test/touch.mjs  test/journal.mjs  test/layout.mjs
-docs/DECISIONS.md  docs/shots/  BUILD-NOTES.md  ART_ASSETS.md
+docs/DECISIONS.md  docs/shots/  docs/BUILD-NOTES.md  docs/ART_ASSETS.md
 ```
 
 Layers: `CONFIG, RNG, SPECIES, ENV, FLORA, FAUNA, SIM, CLOCK, WEATHER, VIEW, INPUT, JOURNAL, ECONOMY, SAVE, TEST, BOOT`.

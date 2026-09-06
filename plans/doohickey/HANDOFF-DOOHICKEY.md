@@ -35,7 +35,7 @@ this file wins; every difference is in section 3 with its reason.
   eleven gates; 121 assertions; seventeen mutations watched to fail, seven of
   them re-runnable through `test/mutants.mjs`. The morning report is at the top
   of section 15 and names the three thin places. Calls in
-  `satellites/doohickey/docs/DECISIONS.md`, scars in `BUILD-NOTES.md`.
+  `satellites/doohickey/docs/DECISIONS.md`, scars in `docs/BUILD-NOTES.md`.
   **Next action:** the levels use the bottom sixth of the board and the top half
   is empty in five of six. Rebuild them upward against `sim.js --solve`, which
   is the tool that placed every coordinate in the first place.
@@ -198,7 +198,7 @@ sim.js                --test, --solve (every level's solution wins, the empty tr
 sw.js  manifest.webmanifest  icon-192.png  icon-512.png  icon-maskable-512.png
 tools/check.js  tools/icons.mjs  tools/thumb.mjs  tools/shots.mjs
 test/mutants.mjs  test/edit.mjs  test/run.mjs  test/share.mjs  test/film.mjs  test/layout.mjs
-docs/DECISIONS.md  docs/shots/  BUILD-NOTES.md  ART_ASSETS.md
+docs/DECISIONS.md  docs/shots/  docs/BUILD-NOTES.md  docs/ART_ASSETS.md
 ```
 
 Layers: `CONFIG, RNG, DMATH, PHYS, PARTS, LEVELS, MACHINE, SIM, VIEW, EDITOR, AUDIO, SHARE, FILM, SAVE, TEST, BOOT`.

@@ -180,7 +180,7 @@ icon-192.png  icon-512.png  icon-maskable-512.png     from tools/icons.mjs
 tools/check.js             the one command; prints ALL GATES PASSED
 tools/icons.mjs  tools/thumb.mjs  tools/shots.mjs
 test/boot.mjs  test/play.mjs  test/level1.mjs  test/layout.mjs   browser gates, real input
-docs/DECISIONS.md  docs/shots/  BUILD-NOTES.md  ART_ASSETS.md
+docs/DECISIONS.md  docs/shots/  docs/BUILD-NOTES.md  docs/ART_ASSETS.md
 ```
 
 Layer order inside `index.html`: `CONFIG, RNG, DATA, GEN, SIM, VIEW, AUDIO, INPUT, SAVE, TEST, BOOT`. `SIM_EXPORT` markers wrap
@@ -372,7 +372,7 @@ Fable). The game must never wait on it.
 | `key-art.png` | portal thumb and store tile | 1:1 | `docs/thumb.png` 512x512 png under 150 KB; also the source for a painted icon if it reads at 48 px |
 | `icon-mark.png` | PWA icon and favicon, if better than the drawn one | 1:1 | 512, 192 and a maskable 512 with the mark inside the central 80 percent |
 
-`ART_ASSETS.md` in the game folder lists these three with the exact paths the code reads, so a drop can be wired in ten
+`docs/ART_ASSETS.md` in the game folder lists these three with the exact paths the code reads, so a drop can be wired in ten
 minutes. The code reads `art/title-bg.jpg` if it exists (an `Image` with `onerror` leaving the drawn title alone) and nothing
 else.
 
