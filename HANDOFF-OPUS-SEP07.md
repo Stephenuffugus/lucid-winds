@@ -194,7 +194,15 @@ saw in Airworthy landscape (G35). 8. Wardian's BUY (G37). 9. The rest of section
 
 ## 6. THE DAY'S LEDGER (Opus appends one line per finished item, the morning report at the top when stopping)
 
-(empty; Opus writes here)
+- **A1 Gerplunk, the throw reference and the spin ring.** `20260907a`, live (probe grepped
+  `drawSpinRing`, `curlSoFar` and the stamp on the host). `docs/THROW-REFERENCE.md` written
+  first and it is FOR STEPHEN: it found that spin was read only from the last fifth of a second
+  of the flick, so the wind up he asked to see was worth nothing. Spin is banked over the slow
+  segments now, two turns of the thumb is full, the wrist adds to it, and a stroke with no
+  loops commits exactly what it always did. The ring is a gauge whose sweep IS the bank, with
+  its own dark ground, gone the frame the arm is fast, no sparkle. Seven gates green twice, sim
+  178/0, eleven new assertions watched to fail in both directions and two browser ones that
+  read the canvas. Three gate lessons in the plan's SESSION STATE.
 
 ## 7. THE PROMPT TO PASTE INTO OPUS (Sep 07)
 
