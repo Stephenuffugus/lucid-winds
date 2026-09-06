@@ -102,3 +102,31 @@ down the screen, so the real stars, the real Milky Way and the real horizon are 
 words and the words are still comfortably readable over them. The three lines are centred
 under the title as well; left aligned against a centred word the block read lopsided. The
 layout gate is unchanged and green: nothing moved, only what is behind it.
+
+**D-C1 (2026-09-07, Opus) — something stands on the land.** The look pass named the bottom
+quarter of a tall phone as a flat field, the same spare band Airworthy, Doohickey and Inkswing
+all had. The ridge was drawn and then nothing stood on it and nothing was nearer than it, so the
+land was a colour rather than a place.
+- **A treeline on the ridge**, conifers and round crowns as silhouettes, because at that distance
+  a tree is a hole in the sky.
+- **A fence across the lower band**, with two rails and posts, running a little off level and
+  higher at its far end because it is further away, and the grass grows thicker at the feet of
+  the posts.
+⛔ SEEDED FROM THE PLACE, never from the clock, because this file's own promise is that "a place
+gets the same horizon every night".
+⛔ AND THE FIRST FOREGROUND WAS A ROW OF GRASS HEADS at one height and one spacing along the
+bottom edge, which read as a barcode and left two hundred and forty pixels of flat ground between
+it and the trees. A foreground needs a REASON to be there, which is the lesson Whistlestop's
+unmotivated props taught: you are standing at the edge of a field looking up, so there is a
+fence, and it is one object with a middle plane rather than a scatter.
+
+**D-C1b (2026-09-07, Opus) — the gate measures a COLOUR CLASS, not a region, and it took three
+goes to see that.** Counting how many pixels differ from the modal colour in a band read 21.5
+against 19.2 at 375 over the bottom quarter, then 22.9 against 19.9 over 0.78 to 0.94, then
+NOTHING AT ALL over a band anchored to the ridge's own foot: the first two still held sky, whose
+gradient dominated the count, and the third excluded the fence entirely at the shorter sizes
+because the ridge dips lower there. A region that has to be right at three aspect ratios is the
+wrong tool. Anything STANDING on the land is darker than the land, wherever the ridge falls, so
+that is what is counted: 3.89, 4.09 and 4.11 percent with the furniture and exactly zero without,
+at all three sizes. It is a class and not a constant, so painting the trees a different dark
+still holds it.

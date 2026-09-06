@@ -145,6 +145,17 @@ for (const size of SIZES) {
   say(spill.length === 0, tag + '  nothing hangs off the side of its sheet' + (spill.length ? ': ' + spill.join(', ') : ''));
   const wide = await dev(() => document.documentElement.scrollWidth > window.innerWidth + 1);
   say(!wide, tag + '  nothing pushes the page sideways');
+  /* ⛔ SOMETHING STANDS ON THE LAND. On the look pass the bottom quarter of a
+     tall phone was named as a flat field: the ridge is drawn and then nothing
+     stands on it and nothing is nearer than it, so the land is a colour rather
+     than a place. No assertion here could see it, because they are all about
+     stars, positions and copy. Anything standing on the land is DARKER than the
+     land, at any size and wherever the ridge falls, so that is what is counted,
+     and with the treeline and the fence taken out it reads exactly zero. */
+  const ground = await dev(() => window.ASTERISM_DEV.groundInk());
+  say(ground.pct >= 1.5, tag + '  something stands on the land: ' + ground.pct
+    + ' percent of the lower half is darker than the ground it is on');
+
   say(errors.length === 0, tag + '  nothing on the console' + (errors.length ? ': ' + errors.join(' | ') : ''));
   await browser.close();
 }

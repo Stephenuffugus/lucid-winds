@@ -12,7 +12,7 @@
    Bump SHELL_VERSION on every deploy, AND the ?v= on the registration in
    index.html in lockstep — this host edge-pins bare sw.js URLs for 7 days. */
 
-const SHELL_VERSION = "asterism-shell-20260907a";
+const SHELL_VERSION = "asterism-shell-20260907b";
 const SFX_CACHE     = "asterism-unused-v1"; // no recorded audio: every sound is synthesised
 const NAV_TIMEOUT_MS = 8000;
 
@@ -24,7 +24,7 @@ const SHELL_ASSETS = [
   "./icon-512.png",
   "./icon-maskable-512.png",
   /* the sky itself: without this the app opens to an empty dome offline */
-  "./data/hyg-asterism.json?v=20260907a"
+  "./data/hyg-asterism.json?v=20260907b"
 ];
 
 self.addEventListener("install", event => {
