@@ -38,6 +38,7 @@ const BROWSER_GATES = [
   { name: 'build', cmd: ['test/build.mjs'], need: 'BUILD OK' },
   { name: 'run', cmd: ['test/run.mjs'], need: 'RUN OK' },
   { name: 'share', cmd: ['test/share.mjs'], need: 'SHARE OK' },
+  { name: 'sound', cmd: ['test/sound.mjs'], need: 'SOUND OK' },
   { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK', slow: true }
 ];
 

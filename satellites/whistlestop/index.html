@@ -1733,6 +1733,7 @@ var G = {
   puzzleId: -1,
   slot: 0,
   running: false,
+  props: [],
   selected: -1,
   ghost: null,
   pending: '',            /* a colour waiting for a tap on the track */
@@ -1768,9 +1769,22 @@ function measureChrome() {
   }
   if (V.padT + V.padB > V.h * 0.7) { V.padT = V.h * 0.12; V.padB = V.h * 0.2; }
 }
+/* the railway plus everything standing beside it, because a fit that leaves
+   the scenery out puts half a copse off the top of the screen */
+function sceneBounds() {
+  var b = layoutBounds(G.layout), i;
+  for (i = 0; i < G.props.length; i++) {
+    var pr = G.props[i], r = pr.size * 0.62 * U;
+    if (pr.x - r < b.x0) b.x0 = pr.x - r;
+    if (pr.x + r > b.x1) b.x1 = pr.x + r;
+    if (pr.y - r * 1.1 < b.y0) b.y0 = pr.y - r * 1.1;
+    if (pr.y + r * 0.4 > b.y1) b.y1 = pr.y + r * 0.4;
+  }
+  return b;
+}
 function fitView() {
   measureChrome();
-  var b = layoutBounds(G.layout), pad = 0.45 * U;
+  var b = sceneBounds(), pad = 0.45 * U;
   var bw = (b.x1 - b.x0) + pad * 2, bh = (b.y1 - b.y0) + pad * 2;
   var availH = Math.max(40, V.h - V.padT - V.padB);
   V.zoom = clamp(Math.min(V.w / bw, availH / bh), CONFIG.ZOOM_MIN * 0.5, CONFIG.ZOOM_MAX);
@@ -1793,7 +1807,7 @@ function fitCanvas() {
    of a tall phone leaves two empty floors and reads as a letterbox rather than
    as a Sunday morning. */
 function rugRect() {
-  var b = layoutBounds(G.layout), pad = CONFIG.RUG_PAD * U;
+  var b = sceneBounds(), pad = CONFIG.RUG_PAD * U;
   var x0 = b.x0 - pad, y0 = b.y0 - pad, x1 = b.x1 + pad, y1 = b.y1 + pad;
   var wantW = (V.w / V.zoom) * 0.82, wantH = (V.h / V.zoom) * 0.82;
   var cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
@@ -1854,6 +1868,11 @@ function rebuild(keepLevers) {
   if (G.st) { st.flips = G.st.flips; st.everStopped = G.st.everStopped; st.t = G.st.t; }
   G.st = st;
   TRACK.key = '';
+  /* the scenery is laid once, the first time there is a railway worth
+     decorating, and then it stays put for the life of the rug */
+  if (!G.props.length && G.layout.pieces.length >= 3) {
+    G.props = makeProps(seedFromString(G.propSeed || 'rug'), rugRect());
+  }
   if (lost) toast(lost === 1 ? 'A train came off with its track.' : 'Two trains came off with their track.');
   return st;
 }
@@ -2253,6 +2272,197 @@ function drawBody(c, pose, colour, isEngine, stopped) {
   }
   c.restore();
 }
+/* ========================= 11B. THE SCENERY ========================= */
+/* Decor only, and deliberately so: BRIO's own app owns deep decoration and
+   this game spends its depth on dispatch. The props are drawn from a seed the
+   rug carries, so they do not rearrange themselves every time a piece is put
+   down, and a prop that ends up under new track simply hides.
+   The cow looks up as a train goes past, which is the one prop that is allowed
+   to notice anything. */
+/* ⛔ NOT NINE PROPS AT NINE RANDOM POINTS. The first draft scattered four
+   separate trees, a water tower on its own and a cow in the middle of the
+   loop, and the result read exactly as random as it was. Things on a rug come
+   in groups because somebody put them there: a copse, a yard with its water
+   tower beside the station, a cow in a field with a bush. Three or four
+   GROUPS are placed, and the things inside a group are placed around it. */
+var PROP_GROUPS = [
+  { name: 'copse', of: [['tree', 0, 0], ['tree', 0.62, 0.34], ['tree', -0.5, 0.4], ['bush', 0.16, -0.42]] },
+  { name: 'yard', of: [['house', 0, 0], ['tower', 0.86, 0.16], ['bush', -0.6, 0.3]] },
+  { name: 'field', of: [['cow', 0, 0], ['bush', 0.7, 0.2], ['bush', -0.62, 0.34]] },
+  { name: 'copse', of: [['tree', 0, 0], ['tree', 0.55, -0.28], ['bush', -0.42, 0.3]] }
+];
+function makeProps(seed, b) {
+  var rng = makeRNG(mixSeed(seed, 77)), out = [], tries, i, k;
+  if (!G.st || !G.layout.pieces.length) return out;
+  /* ⛔ NOT AGAINST THE CAMERA. Three drafts of this placed the groups inside
+     whatever the camera happened to be showing at that instant, and three
+     times the camera moved afterwards, because bringing the tray in refits the
+     view and so does the next piece the player puts down. Scenery cannot chase
+     a camera. It is laid in the ring around the RAILWAY, which never moves
+     under it, and the camera is the thing that gives way: fitView takes the
+     props into its fit, so nothing of the scenery can ever be off the screen. */
+  var lb = layoutBounds(G.layout), far = 1.35 * U;
+  var x0 = lb.x0 - far, x1 = lb.x1 + far, y0 = lb.y0 - far, y1 = lb.y1 + far;
+  void b;
+  var want = 3 + (rng() < 0.5 ? 1 : 0);
+  /* ⛔ ONE OF EACH, AND ONE PER CORNER. Drawing the group with replacement put
+     two cows on one small rug, which reads as a duplication rather than as a
+     farm; and drawing the centres at random put every group along one edge.
+     The groups are shuffled and taken without replacement, and each one is
+     offered a different quarter of the ring around the railway first. */
+  var bag = PROP_GROUPS.slice(), centres = [];
+  for (i = bag.length - 1; i > 0; i--) {
+    var j2 = Math.floor(rng() * (i + 1)), tmp = bag[i]; bag[i] = bag[j2]; bag[j2] = tmp;
+  }
+  var quads = [[0, 0], [1, 0], [0, 1], [1, 1]];
+  for (i = quads.length - 1; i > 0; i--) {
+    var j3 = Math.floor(rng() * (i + 1)), t2 = quads[i]; quads[i] = quads[j3]; quads[j3] = t2;
+  }
+  var mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
+  for (i = 0; i < want && i < bag.length; i++) {
+    var grp = bag[i];
+    var placed = false;
+    for (var pass = 0; pass < 2 && !placed; pass++) {
+      var qx0 = pass ? x0 : (quads[i][0] ? mx : x0), qx1 = pass ? x1 : (quads[i][0] ? x1 : mx);
+      var qy0 = pass ? y0 : (quads[i][1] ? my : y0), qy1 = pass ? y1 : (quads[i][1] ? y1 : my);
+      for (tries = 0; tries < 60; tries++) {
+        var cx = qx0 + rng() * (qx1 - qx0), cy = qy0 + rng() * (qy1 - qy0);
+        if (nearTrack(cx, cy, 1.4 * U)) continue;
+        if (grp.name === 'yard' && !nearTrack(cx, cy, 2.6 * U)) continue;
+        var clash = false;
+        for (k = 0; k < centres.length; k++) if (len2(centres[k].x - cx, centres[k].y - cy) < 2.9 * U) clash = true;
+        if (clash) continue;
+        centres.push({ x: cx, y: cy, g: grp });
+        placed = true;
+        break;
+      }
+    }
+  }
+  for (i = 0; i < centres.length; i++) {
+    var c = centres[i], scale = 1.05 + rng() * 0.45;
+    for (k = 0; k < c.g.of.length; k++) {
+      var spec = c.g.of[k];
+      out.push({ kind: spec[0], x: c.x + spec[1] * U * scale, y: c.y + spec[2] * U * scale,
+        size: (spec[0] === 'bush' ? 0.9 : 1.25) * scale, tint: rng(), look: 0, mooed: -99,
+        group: c.g.name });
+    }
+  }
+  return out;
+}
+function nearTrack(x, y, d) {
+  var i, k;
+  for (i = 0; i < G.st.g.edges.length; i++) {
+    var e = G.st.g.edges[i];
+    for (k = 0; k <= 6; k++) {
+      var pt = edgePoint(e, e.len * k / 6);
+      if (len2(pt.x - x, pt.y - y) < d) return true;
+    }
+  }
+  return false;
+}
+function stepProps(dt) {
+  var i, k;
+  for (i = 0; i < G.props.length; i++) {
+    var pr = G.props[i];
+    if (pr.kind !== 'cow') continue;
+    var near = 0;
+    for (k = 0; k < G.st.trains.length; k++) {
+      if (G.st.trains[k].speedIx <= 0) continue;
+      var e0 = bodyPose(G.st.g, G.st.trains[k], 0);
+      var d = len2(e0.x - pr.x, e0.y - pr.y);
+      if (d < 2.6 * U) near = Math.max(near, 1 - d / (2.6 * U));
+    }
+    var was = pr.look;
+    pr.look += (near - pr.look) * Math.min(1, dt * 3);
+    if (was < 0.45 && pr.look >= 0.45 && G.st.t - pr.mooed > 60) { pr.mooed = G.st.t; AUDIO.play('moo'); }
+  }
+}
+function drawProps(c) {
+  var i;
+  for (i = 0; i < G.props.length; i++) {
+    var pr = G.props[i];
+    if (nearTrack(pr.x, pr.y, 0.62 * U)) continue;
+    var x = sx(pr.x), y = sy(pr.y), z = ss(pr.size * U);
+    c.save();
+    c.strokeStyle = PAL.ink;
+    c.lineWidth = Math.max(1.2, z * 0.045);
+    /* every prop puts a soft shadow on the wool, which is what makes a thing
+       sit ON a rug rather than float above it */
+    c.globalAlpha = 0.22;
+    c.fillStyle = PAL.shade;
+    c.beginPath(); c.ellipse(x, y + z * 0.06, z * 0.28, z * 0.11, 0, 0, 6.2832); c.fill();
+    c.globalAlpha = 1;
+    if (pr.kind === 'tree') {
+      c.fillStyle = '#8A6534';
+      roundRect(c, x - z * 0.05, y - z * 0.24, z * 0.1, z * 0.28, z * 0.03);
+      c.fill(); c.stroke();
+      c.fillStyle = pr.tint > 0.5 ? '#5E8C4F' : '#4E7A44';
+      c.beginPath(); c.arc(x, y - z * 0.38, z * 0.22, 0, 6.2832); c.fill(); c.stroke();
+      c.beginPath(); c.arc(x - z * 0.15, y - z * 0.26, z * 0.16, 0, 6.2832); c.fill(); c.stroke();
+      c.beginPath(); c.arc(x + z * 0.15, y - z * 0.26, z * 0.16, 0, 6.2832); c.fill(); c.stroke();
+    } else if (pr.kind === 'bush') {
+      c.fillStyle = pr.tint > 0.5 ? '#6B9A58' : '#5E8C4F';
+      c.beginPath(); c.arc(x - z * 0.1, y - z * 0.08, z * 0.12, 0, 6.2832); c.fill(); c.stroke();
+      c.beginPath(); c.arc(x + z * 0.08, y - z * 0.1, z * 0.14, 0, 6.2832); c.fill(); c.stroke();
+    } else if (pr.kind === 'house') {
+      c.fillStyle = PAL.cream;
+      roundRect(c, x - z * 0.26, y - z * 0.34, z * 0.52, z * 0.36, z * 0.03);
+      c.fill(); c.stroke();
+      c.fillStyle = pr.tint > 0.5 ? PAL.red : PAL.blue;
+      c.beginPath();
+      c.moveTo(x - z * 0.32, y - z * 0.33);
+      c.lineTo(x, y - z * 0.56);
+      c.lineTo(x + z * 0.32, y - z * 0.33);
+      c.closePath(); c.fill(); c.stroke();
+      c.fillStyle = PAL.groove;
+      roundRect(c, x - z * 0.07, y - z * 0.2, z * 0.14, z * 0.2, z * 0.02);
+      c.fill();
+    } else if (pr.kind === 'tower') {
+      c.strokeStyle = PAL.ink;
+      c.beginPath();
+      c.moveTo(x - z * 0.16, y); c.lineTo(x - z * 0.08, y - z * 0.28);
+      c.moveTo(x + z * 0.16, y); c.lineTo(x + z * 0.08, y - z * 0.28);
+      c.stroke();
+      c.fillStyle = '#B98D53';
+      roundRect(c, x - z * 0.2, y - z * 0.52, z * 0.4, z * 0.26, z * 0.05);
+      c.fill(); c.stroke();
+      c.fillStyle = PAL.groove;
+      roundRect(c, x - z * 0.22, y - z * 0.58, z * 0.44, z * 0.08, z * 0.03);
+      c.fill(); c.stroke();
+    } else if (pr.kind === 'cow') {
+      /* legs first, thick enough to survive at the zoom a whole loop is seen at */
+      c.strokeStyle = PAL.ink;
+      c.lineWidth = Math.max(1.6, z * 0.05);
+      c.lineCap = 'round';
+      c.beginPath();
+      c.moveTo(x - z * 0.14, y - z * 0.08); c.lineTo(x - z * 0.14, y);
+      c.moveTo(x + z * 0.12, y - z * 0.08); c.lineTo(x + z * 0.12, y);
+      c.stroke();
+      c.lineWidth = Math.max(1.2, z * 0.045);
+      c.fillStyle = '#F6EBD6';
+      roundRect(c, x - z * 0.22, y - z * 0.3, z * 0.44, z * 0.24, z * 0.09);
+      c.fill(); c.stroke();
+      c.fillStyle = PAL.ink;
+      c.beginPath(); c.ellipse(x - z * 0.05, y - z * 0.22, z * 0.08, z * 0.055, 0.3, 0, 6.2832); c.fill();
+      c.beginPath(); c.ellipse(x + z * 0.1, y - z * 0.13, z * 0.05, z * 0.035, -0.2, 0, 6.2832); c.fill();
+      /* the head, which comes up when a train goes by */
+      var lift = pr.look * z * 0.16;
+      c.fillStyle = '#F6EBD6';
+      c.beginPath();
+      c.arc(x + z * 0.27, y - z * 0.26 - lift, z * 0.115, 0, 6.2832);
+      c.fill(); c.stroke();
+      /* two ears and an eye, which is all a cow needs at this size */
+      c.beginPath(); c.ellipse(x + z * 0.2, y - z * 0.35 - lift, z * 0.05, z * 0.03, -0.6, 0, 6.2832);
+      c.fill(); c.stroke();
+      c.beginPath(); c.ellipse(x + z * 0.35, y - z * 0.35 - lift, z * 0.05, z * 0.03, 0.6, 0, 6.2832);
+      c.fill(); c.stroke();
+      c.fillStyle = PAL.ink;
+      c.beginPath(); c.arc(x + z * 0.31, y - z * 0.28 - lift, z * 0.025, 0, 6.2832); c.fill();
+    }
+    c.restore();
+  }
+}
+
 var PUFFS = [];
 function puffFrom(pose, dt, tr) {
   if (REDUCED || PUFFS.length > 26) return;
@@ -2386,6 +2596,7 @@ function frame(ts) {
   paintTrackCache();
   c.clearRect(0, 0, V.w, V.h);
   c.drawImage(TRACK.cv, 0, 0, V.w, V.h);
+  drawProps(c);
   drawLevers(c, G.st.g);
   drawPuffs(c);
   drawTrains(c, G.st.g);
@@ -2436,6 +2647,22 @@ var AUDIO = {
     this.env(o, t, a, d, peak);
     o.start(t); o.stop(t + a + d + 0.05);
   },
+  /* a tone with the top taken off it. A sawtooth is a buzzer until something
+     rolls its harmonics away; the cow was measured at nine hundred Hz before
+     this existed, which is a wasp. */
+  toneLP: function (type, f, t, a, d, peak, cut, f2) {
+    var o = this.ctx.createOscillator();
+    o.type = type;
+    o.frequency.setValueAtTime(f, t);
+    if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + a + d);
+    var lp = this.ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = cut;
+    lp.Q.value = 0.7;
+    o.connect(lp);
+    this.env(lp, t, a, d, peak);
+    o.start(t); o.stop(t + a + d + 0.05);
+  },
   thud: function (t, f, dur, peak, band, q) {
     var s = this.noise(dur);
     var bp = this.ctx.createBiquadFilter();
@@ -2458,10 +2685,12 @@ var AUDIO = {
       this.tone('triangle', 783.99, t + 0.18, 0.012, 0.5, 0.15);
     } else if (id === 'whistle') {
       /* two wooden hoots a fourth apart, with the breath in front of them */
-      this.thud(t, 1600, 0.06, 0.06, 'bandpass', 0.8);
-      this.tone('sine', 660, t + 0.01, 0.05, 0.42, 0.16);
-      this.tone('sine', 880, t + 0.01, 0.06, 0.42, 0.12);
-      this.tone('sine', 1320, t + 0.02, 0.06, 0.3, 0.04);
+      /* the design asks for half a second of hoot. Measured at a twelfth of
+         its peak the first draft sounded for 210 ms, which is a beep. */
+      this.thud(t, 1600, 0.07, 0.06, 'bandpass', 0.8);
+      this.tone('sine', 660, t + 0.01, 0.06, 0.76, 0.16);
+      this.tone('sine', 880, t + 0.01, 0.07, 0.76, 0.12);
+      this.tone('sine', 1320, t + 0.02, 0.07, 0.5, 0.04);
     } else if (id === 'clack') { this.thud(t, 1700, 0.028, 0.11, 'bandpass', 3.0); }
     else if (id === 'couple') { this.thud(t, 700, 0.06, 0.2, 'bandpass', 1.6); }
     else if (id === 'bell') {
@@ -2476,8 +2705,9 @@ var AUDIO = {
     else if (id === 'bump') { this.thud(t, 380, 0.1, 0.28, 'lowpass', 0.7); }
     else if (id === 'click') { this.thud(t, 1900, 0.02, 0.12, 'bandpass', 3); }
     else if (id === 'moo') {
-      this.tone('sawtooth', 138, t, 0.09, 0.55, 0.055, 116);
-      this.tone('sawtooth', 69, t, 0.09, 0.55, 0.035, 58);
+      this.toneLP('sawtooth', 138, t, 0.11, 0.62, 0.085, 430, 112);
+      this.toneLP('sawtooth', 69, t, 0.11, 0.62, 0.06, 260, 56);
+      this.toneLP('triangle', 276, t + 0.02, 0.1, 0.5, 0.03, 600, 224);
     }
   },
   /* the clickety clack, budgeted. Three trains at full speed is the ambience
@@ -2511,6 +2741,7 @@ function tick(dt) {
     if (tr.speedIx > 0) { moving++; bogies += (tr.cars + 1) * 2; fastest = Math.max(fastest, CONFIG.SPEEDS[tr.speedIx]); }
   }
   stepPuffs(dt);
+  stepProps(dt);
   if (!moving) { G.running = false; return; }
   for (i = 0; i < G.st.trains.length; i++) {
     if (G.st.trains[i].speedIx > 0) puffFrom(bodyPose(G.st.g, G.st.trains[i], 0), dt, G.st.trains[i]);
@@ -2992,6 +3223,8 @@ function openSandbox(slot, layout) {
   G.result = null;
   G.undo.length = 0; G.redo.length = 0;
   refreshUndo();
+  G.props = [];
+  G.propSeed = 'rug' + slot;
   G.layout = layout || newLayout();
   G.st = null;
   rebuild(false);
@@ -2999,6 +3232,7 @@ function openSandbox(slot, layout) {
   V.userMoved = false;
   fitView();
   showScreen('Play');
+  if (!V.userMoved) fitView();
   el('winCard').classList.remove('on');
   if (!SAVE.seen.how) { hint('Drag a piece onto the rug. The ends snap together.'); SAVE.seen.how = 1; saveNow(); }
 }
@@ -3034,12 +3268,16 @@ function startPuzzle(id) {
   G.result = null;
   G.undo.length = 0; G.redo.length = 0;
   G.selected = -1;
+  G.props = [];
+  G.propSeed = 'puzzle' + id;
   G.st = makePuzzle(pz);
+  G.props = makeProps(seedFromString(G.propSeed), null);
   G.st.stationSpec = pz.stations;
   G.layout = G.st.layout;
   V.userMoved = false;
   fitView();
   showScreen('Play');
+  if (!V.userMoved) fitView();
   updateGoal();
   el('winCard').classList.remove('on');
   hint(id === 0 ? 'Tap the switch, then pull the whistle.' : 'Look at where they must both go.');
