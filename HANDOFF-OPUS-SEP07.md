@@ -269,46 +269,52 @@ saw in Airworthy landscape (G35). 8. Wardian's BUY (G37). 9. The rest of section
 
 ### THE MORNING REPORT, Sep 07, Opus
 
-**WHAT IS LIVE.** All of section A, every item, on `main` and verified by probe against the host.
-Twelve games at these stamps: Fathom, Asterism, Doohickey, Airworthy, Inkswing, Updraft
-`20260907a`; Gerplunk `20260907b`; Swell and Wardian `20260906d`; Windup and Whistlestop
-`20260906h`; Strata `20260906f`. The portal now pins every one of the twelve to the stamp that
-game actually ships; ten of them had been pinned at `20260906b`, which none of them has carried
-for a day, so the shelf was serving a stale tile and a stale cache key for each. The plural brand
-is gone from the whole old fleet, 206 occurrences in 136 files, including eleven places a player
-reads.
+**WHAT IS LIVE.** All of section A, and C1, C2, C5, C7, C8 and C9 of section C. Everything is on
+`main` and every game was verified by probe against the host. All twelve now carry today's stamp
+except Wardian, which needed no change: Fathom, Swell, Windup, Whistlestop, Inkswing and Strata
+at `20260907a`; Asterism, Doohickey, Airworthy, Gerplunk and Updraft at `20260907b`; Wardian
+`20260906d`. The portal pins every one of them to the stamp that game actually ships. The plural
+brand is gone from the whole old fleet, 206 occurrences in 136 files.
 
-**WHAT IS HALF BUILT.** Nothing. Every item that was started is green, committed, pushed and
-live, and every game's own suite passes.
+**WHAT IS HALF BUILT.** Nothing. Every game's own suite passes and nothing is uncommitted.
 
 **WHAT I WOULD PUT IN FRONT OF STEPHEN, RANKED.**
 
-1. **Two games were CLIPPING and every gate was green over it.** Fathom's singback peaked at
-   1.293 and Asterism's swell at 1.907 on their loudest minute. A fresh GainNode's gain is one,
-   and both games started three sines at once while staggering their envelopes, so each voice
-   went out at full scale for 45 to 90 ms. Fixed, and both now measure 0.42 and 0.37. **This is
-   the case for finishing the ear gate in the other six games** (A9 covered four of ten).
-2. **His ear, on four things.** Gerplunk's bed (`docs/shots/p4-bed-and-throws.wav`), Windup's tine
-   at the new level (call 36), Swell's three moods, and now Fathom and Asterism at their fixed
-   level. Nobody has heard any of it, which is still the largest unknown in the twelve.
-3. **Gerplunk's turn (call 22)** is the one thing he asked for that is still not started, because
-   it is his number. Two hours the moment he picks.
+1. **THREE GAMES WERE CLIPPING AND EVERY GATE WAS GREEN OVER ALL THREE.** Fathom's singback
+   peaked at **1.293**, Asterism's swell at **1.907**, and Windup, the quietest game in the
+   fleet, at **1.364**. Two of them are the same bug: a fresh GainNode's gain is ONE, and both
+   games start three sines at t0 while staggering their envelopes, so each voice goes out at full
+   scale for 45 to 90 ms. Windup's is different and worse in its way: `softCurve`, the waveshaper
+   whose own comment calls it "the ceiling", had a slope of 1.649 at the origin, so it was a
+   4.3 dB BOOST and a master of 0.5 was really 0.82. All three fixed and measured. **Nobody had
+   ever measured any of it**, which is the whole argument for the ear gate, and it is now in ten
+   of the twelve.
+2. **His ear.** Gerplunk's bed, Windup's tine at the new level and the new curve, Swell's three
+   moods, and now Fathom, Asterism and Windup at their fixed levels. Still the largest unknown.
+3. **Gerplunk's turn (call 22)** is the one thing he asked for that is not started, because it is
+   his number. Two hours the moment he picks.
 4. **Airworthy's WHISTLE_UP is 0.6 and that is a taste.** Measured, not picked: at 1.5 a whistled
-   plane went 13.7 percent further, which is a save rather than a nudge. Five percent is where it
-   sits. His to raise.
-5. **Wardian's pouch still says BUY** (call 37, ten minutes, waiting on his word), and **Stream Hop
-   says the plural brand in copy a player reads eight days from a Steam release** (call 38, his
-   game, his call).
-6. **Five new calls from today:** 38 Stream Hop, 39 a Steam probe that may never have passed,
-   40 the devcontainer name, 41 Wardian has no master gain anywhere, 42 Strata's brush is a
-   quarter of its energy above 3 kHz.
-7. **Five new items queued in section C:** C7 Strata's second skeleton can be dug and never
-   mounted (a real fault), C8 two stale Strata docs, C10 Asterism's poster PREVIEW draws text at
-   about five CSS pixels, C11 Fathom's tile reads as a broken image on the shelf. C9 is done.
+   plane went 13.7 percent further, which is a save rather than a nudge.
+5. **Wardian's pouch still says BUY** (call 37, ten minutes, waiting on his word), and **Stream
+   Hop says the plural brand in copy a player reads eight days from a Steam release** (call 38,
+   his game, his call).
+6. **Seven new calls today:** 38 Stream Hop, 39 a Steam probe that may never have passed, 40 the
+   devcontainer name, 41 Wardian has no master gain, 42 Strata's brush is a quarter of its energy
+   above 3 kHz, 43 Updraft has no master gain either and is the loudest bed of the ten, 44
+   Airworthy is an eighth as loud as Updraft and they sit side by side on the shelf.
+7. **What is left in section C:** C6 (Whistlestop's mirrored spurs and its two crowded levers),
+   C10 (Asterism's poster preview, now MEASURED and with the obvious fix ruled out by trying it
+   and shooting it), C11 (Fathom's tile reads as a broken image on the shelf), C12 (the fleet
+   does not agree where a game's docs live).
 
-**WHAT IS LEFT ON THE LIST.** A9 for the other six games (Doohickey, Airworthy, Windup,
-Whistlestop, Updraft, Swell). Then section C, then the polish loop. Section B is untouched by the
-rule and waits on him.
+**THE THING I WOULD WANT HIM TO KNOW ABOUT HOW TODAY WENT.** Almost every fault found today was
+invisible to a green gate, and about half of them were found by opening a picture. The other half
+were found by writing an assertion and then discovering the assertion was wrong: a probe counting
+warm pixels that was really measuring the sun's reflection on a lake, a nib measured by pixels
+touched when the difference was sub pixel, a "no marker pen" check that could not fail because it
+only looked at the two ends of a slider, a corner check that scanned three container selectors
+and had never once seen the two biggest buttons in the game. Every one of those is written down
+in the game's DECISIONS.md next to the thing it was guarding.
 
 - **A1 Gerplunk, the throw reference and the spin ring.** `20260907a`, live (probe grepped
   `drawSpinRing`, `curlSoFar` and the stamp on the host). `docs/THROW-REFERENCE.md` written
