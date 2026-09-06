@@ -51,6 +51,8 @@ every difference is in section 3 with its reason.
   `tools/check.js` was queued behind the shared lock at 14:22Z; if a line
   below this one does not say it passed, it did not get the lock before the
   stop and the morning runs it first.
+  14:23Z: `node tools/check.js` ALL GATES PASSED, eight of eight (sim lint
+  tine crank gift pdf layout wav).
   **Next action:** run `node tools/check.js` once under the lock for the full
   eight; then Stephen presses PLAY in the punch editor on his phone and listens
   for the swirl to be even, which is the one thing the offline gate cannot
