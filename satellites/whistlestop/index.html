@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="WHISTLESTOP">
-<link rel="manifest" href="./manifest.webmanifest?v=20260906g">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260906g">
-<link rel="icon" href="./icon-192.png?v=20260906g">
+<link rel="manifest" href="./manifest.webmanifest?v=20260906h">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260906h">
+<link rel="icon" href="./icon-192.png?v=20260906h">
 <link rel="canonical" href="https://lucidwinds.com/satellites/whistlestop/">
 <style>
 /*  WHISTLESTOP
@@ -184,7 +184,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--floor);color:var(--ink
 .swatch{width:34px;height:34px;border-radius:10px;border:3px solid var(--ink);flex:0 0 auto}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260906g" defer></script>
+<script src="/music-unlocks.js?v=20260906h" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">WHISTLESTOP</h1>
@@ -1932,7 +1932,7 @@ function suitePurity(T, src) {
 
 
 /* ========================= 10. THE GAME'S STATE ========================= */
-var STAMP = '20260906g';
+var STAMP = '20260906h';
 var REDUCED = false;
 var G = {
   mode: 'build',          /* build or puzzle */
@@ -2057,17 +2057,38 @@ function fitView() {
      the tree. A prop is allowed to push the ZOOM out so that it still fits,
      and nothing more, so the half extent is measured from the railway's
      middle to whichever scene edge is further away. */
-  var b = sceneBounds(), rb = railBounds();
-  var pad = (V.h > V.w ? 0.4 : 0.45) * U;
-  var cx = (rb.x0 + rb.x1) / 2, cy = (rb.y0 + rb.y1) / 2;
-  var bw = Math.max(cx - b.x0, b.x1 - cx, (rb.x1 - rb.x0) / 2) * 2 + pad * 2;
-  var bh = Math.max(cy - b.y0, b.y1 - cy, (rb.y1 - rb.y0) / 2) * 2 + pad * 2;
-  var availH = Math.max(40, V.h - V.padT - V.padB);
-  var availW = Math.max(40, V.w - V.padL - V.padR);
-  V.zoom = clamp(Math.min(availW / bw, availH / bh), CONFIG.ZOOM_MIN * 0.5, CONFIG.ZOOM_MAX);
-  V.cx = cx; V.cy = cy;
+  /* ⛔⛔ THE RAILWAY FITS THE SCREEN, THE SCENERY FITS THE RAILWAY. Letting a
+     prop push the zoom out made the railway 65 percent of a 412 phone's width
+     where it had been 78 (the thin list, Sep 06): a tree at the ring's edge
+     bought itself forty pixels of margin and the puzzle paid for it. The fit
+     reads the railway alone now; makeProps lays the scenery INSIDE the frame
+     that fit gives (railFit below, the same maths with no side effects), so
+     nothing is cropped and nothing binds. */
+  var f = railFit();
+  V.zoom = f.zoom;
+  V.cx = f.cx; V.cy = f.cy;
   V.userMoved = false;
   TRACK.key = '';
+}
+/* the railway's own fit, with no side effects: zoom and centre for the
+   current chrome pads. fitView commits it; makeProps reads it to know the frame. */
+function railFit() {
+  var rb = railBounds();
+  /* ⛔ THE MARGIN IS SCREEN PIXELS, NOT A SHARE OF A UNIT. With the railway
+     binding the fit, a 0.4U margin put the outermost curve's centreline
+     twenty pixels from the glass, inside Android's back gesture strip, where a
+     sideways drag on that piece leaves the game. Thirty two pixels each side
+     upright, whatever the zoom. */
+  var padPx = V.h > V.w ? 32 : 28;
+  var cx = (rb.x0 + rb.x1) / 2, cy = (rb.y0 + rb.y1) / 2;
+  var bw = Math.max(1, rb.x1 - rb.x0), bh = Math.max(1, rb.y1 - rb.y0);
+  var availH = Math.max(40, V.h - V.padT - V.padB);
+  var availW = Math.max(40, V.w - V.padL - V.padR);
+  var zoom = clamp(Math.min((availW - 2 * padPx) / bw, (availH - 2 * padPx) / bh), CONFIG.ZOOM_MIN * 0.5, CONFIG.ZOOM_MAX);
+  /* the frame, in world units, that this zoom shows between the pads */
+  var hw = availW / zoom / 2, hh = availH / zoom / 2;
+  var midOff = ((V.padT - V.padB) / 2) / zoom;
+  return { zoom: zoom, cx: cx, cy: cy, x0: cx - hw, x1: cx + hw, y0: cy - hh + midOff, y1: cy + hh + midOff };
 }
 function fitCanvas() {
   var cv = V.cv;
@@ -2077,6 +2098,13 @@ function fitCanvas() {
   cv.width = Math.round(w * V.dpr); cv.height = Math.round(h * V.dpr);
   V.w = w; V.h = h;
   if (!V.userMoved) fitView();
+  /* ⛔ THE SCENERY IS LAID FOR AN ORIENTATION. Laid for a wide frame and then
+     turned upright (the shot tool does this; so does a phone), the copses sat
+     off the sides of the tall frame and the loop stood with one house and a
+     cow. Same seed, same groups, laid again for the frame the screen has. */
+  if (G.props.length && G.propSeed && G.propsUpright !== (V.h > V.w)) {
+    G.props = makeProps(seedFromString(G.propSeed), null);
+  }
   TRACK.key = '';
 }
 /* the rug the track lies on. It is the layout with a border, grown until it
@@ -2674,6 +2702,7 @@ var PROP_GROUPS = [
 function makeProps(seed, b) {
   var rng = makeRNG(mixSeed(seed, 77)), out = [], tries, i, k;
   if (!G.st || !G.layout.pieces.length) return out;
+  G.propsUpright = V.h > V.w;
   /* ⛔ NOT AGAINST THE CAMERA. Three drafts of this placed the groups inside
      whatever the camera happened to be showing at that instant, and three
      times the camera moved afterwards, because bringing the tray in refits the
@@ -2684,6 +2713,22 @@ function makeProps(seed, b) {
   var lb = layoutBounds(G.layout), far = 1.35 * U;
   var x0 = lb.x0 - far, x1 = lb.x1 + far, y0 = lb.y0 - far, y1 = lb.y1 + far;
   void b;
+  /* ⛔ AND INSIDE THE FRAME. The ring is clipped to what the railway's own fit
+     shows (railFit, no side effects), less a tree's width, so on a tall phone
+     the groups land on the empty floors above and below the loop and on a wide
+     one at its sides, and none of them can ask the camera for room. A ring
+     edge that falls outside the frame is simply not offered. */
+  /* the edge is a bush's half width, not a tree's: every member is checked against
+     the frame on its own below, so a wider edge here only ate the band. With the
+     tray up on a 412 phone the strip of legal centres above the loop was eleven
+     pixels tall at 0.7U and the copses could not stand; 0.35U gives it forty. */
+  var fr = railFit(), edge = 0.35 * U;
+  G.propsUpright = V.h > V.w;
+  if (fr.x0 + edge > x0) x0 = fr.x0 + edge;
+  if (fr.x1 - edge < x1) x1 = fr.x1 - edge;
+  if (fr.y0 + edge > y0) y0 = fr.y0 + edge;
+  if (fr.y1 - edge < y1) y1 = fr.y1 - edge;
+  if (x1 - x0 < U || y1 - y0 < U) return out;
   var want = 3 + (rng() < 0.5 ? 1 : 0);
   /* ⛔ ONE OF EACH, AND ONE PER CORNER. Drawing the group with replacement put
      two cows on one small rug, which reads as a duplication rather than as a
@@ -2705,21 +2750,50 @@ function makeProps(seed, b) {
     for (var pass = 0; pass < 2 && !placed; pass++) {
       var qx0 = pass ? x0 : (quads[i][0] ? mx : x0), qx1 = pass ? x1 : (quads[i][0] ? x1 : mx);
       var qy0 = pass ? y0 : (quads[i][1] ? my : y0), qy1 = pass ? y1 : (quads[i][1] ? y1 : my);
-      for (tries = 0; tries < 60; tries++) {
+      /* ⛔ EVERY MEMBER INSIDE THE FRAME, not only the centre: a group spreads
+         up to 0.86 of a unit from its centre at the largest scale, and a
+         centre checked alone put one prop of thirteen off the screen (the
+         layout gate, Sep 06 night). The scale is drawn here so the members
+         can be checked where they will actually stand. The clearances are the
+         MEMBERS' (0.8U from the rails, a tree's half width from the glass);
+         the centre asks only a unit, because with the railway filling the
+         width the band above and below it is under two units tall and a
+         centre held 1.4U off the rails could stand nowhere, so the house and
+         both copses vanished and the cow stood alone (seen in the 412x915
+         shot). A group that will not fit in sixty tries is offered once more
+         as its first member alone, smaller: a lone tree by the line is a
+         thing a Sunday morning has. */
+      for (tries = 0; tries < 90; tries++) {
         var cx = qx0 + rng() * (qx1 - qx0), cy = qy0 + rng() * (qy1 - qy0);
-        if (nearTrack(cx, cy, 1.4 * U)) continue;
+        var members = tries < 60 ? grp.of : [grp.of[0]];
+        var sc = tries < 60 ? 1.05 + rng() * 0.45 : 0.85 + rng() * 0.2;
+        if (nearTrack(cx, cy, 1.0 * U)) continue;
         if (grp.name === 'yard' && !nearTrack(cx, cy, 2.6 * U)) continue;
-        var clash = false;
-        for (k = 0; k < centres.length; k++) if (len2(centres[k].x - cx, centres[k].y - cy) < 2.9 * U) clash = true;
+        /* a lone tree keeps a tree's distance, a group keeps a group's: with the
+           tray up the band beside the loop is a strip, and at 2.4U between
+           centres one house filled the whole of it (the tool's 412 shot, four
+           props of thirteen). Singles stand 1.1U apart, groups 2.4U. */
+        var clash = false, keep = members.length > 1 ? 2.4 * U : 1.1 * U;
+        for (k = 0; k < centres.length; k++) {
+          var need = Math.max(keep, centres[k].g.of.length > 1 ? 1.6 * U : 1.1 * U);
+          if (len2(centres[k].x - cx, centres[k].y - cy) < need) clash = true;
+        }
         if (clash) continue;
-        centres.push({ x: cx, y: cy, g: grp });
+        var off = false, m;
+        for (m = 0; m < members.length; m++) {
+          var mx2 = cx + members[m][1] * U * sc, my2 = cy + members[m][2] * U * sc, mr = 0.36 * U * sc;
+          if (mx2 - mr < fr.x0 || mx2 + mr > fr.x1 || my2 - mr < fr.y0 || my2 + mr * 0.5 > fr.y1) { off = true; break; }
+          if (nearTrack(mx2, my2, 0.8 * U)) { off = true; break; }
+        }
+        if (off) continue;
+        centres.push({ x: cx, y: cy, g: members === grp.of ? grp : { name: grp.name, of: members }, scale: sc });
         placed = true;
         break;
       }
     }
   }
   for (i = 0; i < centres.length; i++) {
-    var c = centres[i], scale = 1.05 + rng() * 0.45;
+    var c = centres[i], scale = c.scale;
     for (k = 0; k < c.g.of.length; k++) {
       var spec = c.g.of[k];
       out.push({ kind: spec[0], x: c.x + spec[1] * U * scale, y: c.y + spec[2] * U * scale,
@@ -2912,7 +2986,7 @@ function drawTrains(c, g) {
     /* the name flag over the engine */
     var e0 = bodies[0];
     var label = tr.fault ? tr.name + ' bumped' : tr.name;
-    c.font = '700 ' + Math.max(9, Math.round(ss(0.17 * U))) + 'px ui-rounded, "Trebuchet MS", system-ui, sans-serif';
+    c.font = '700 ' + Math.max(12, Math.round(ss(0.17 * U))) + 'px ui-rounded, "Trebuchet MS", system-ui, sans-serif';
     var tw = c.measureText(label).width;
     var fx = sx(e0.x), fy = sy(e0.y) - ss(0.62 * U);
     /* ⛔ in a head on bump the two engines stand a body apart and their two
@@ -2932,7 +3006,7 @@ function drawTrains(c, g) {
   /* every stem first and every flag after, so a lifted flag's stem passes
      UNDER the flag below it rather than through the word, and no flag is
      painted over by the next train's bodies */
-  var font = '700 ' + Math.max(9, Math.round(ss(0.17 * U))) + 'px ui-rounded, "Trebuchet MS", system-ui, sans-serif';
+  var font = '700 ' + Math.max(12, Math.round(ss(0.17 * U))) + 'px ui-rounded, "Trebuchet MS", system-ui, sans-serif';
   c.strokeStyle = PAL.ink;
   c.lineWidth = Math.max(1, ss(0.026 * U));
   c.beginPath();
@@ -3764,7 +3838,6 @@ function startPuzzle(id) {
   BUMP_SAID = 0;
   G.propSeed = 'puzzle' + id;
   G.st = makePuzzle(pz);
-  G.props = makeProps(seedFromString(G.propSeed), null);
   G.st.stationSpec = pz.stations;
   G.layout = G.st.layout;
   V.userMoved = false;
@@ -3772,6 +3845,12 @@ function startPuzzle(id) {
   showScreen('Play');
   updateGoal();
   if (!V.userMoved) fitView();
+  /* ⛔ THE SCENERY IS LAID AFTER THE SCREEN IS UP. Laid before it, makeProps
+     read the PREVIOUS puzzle's layout for its ring and the select screen's
+     chrome for its frame, so one prop of thirteen stood outside the frame the
+     play screen actually has (the layout gate, Sep 06 night, at 375 and 412).
+     The fit no longer depends on the props, so nothing has to be refitted. */
+  G.props = makeProps(seedFromString(G.propSeed), null);
   el('winCard').classList.remove('on');
   hint(id === 0 ? 'Tap the switch, then pull the whistle.' : 'Look at where they must both go.');
 }
@@ -4054,6 +4133,8 @@ window.WHISTLESTOP_TEST = {
   game: function () { return G; },
   view: function () { return V; },
   rug: function () { return rugRect(); },
+  rail: function () { return railBounds(); },
+  props: function () { return G.props; },
   frames: function () { return FRAMES; },
   layout: function () { return G.layout; },
   pieces: function () { return G.layout.pieces; },

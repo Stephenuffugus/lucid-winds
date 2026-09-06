@@ -84,6 +84,23 @@ for (const [w, h] of SIZES) {
   });
   say(!goal.hidden && goal.w > 100 && goal.text > 20, at + ' the puzzle screen: the goal is written on it ('
     + goal.text + ' characters)');
+  /* ⛔ THE RAILWAY IS THE THING ON THE SCREEN. Upright, the railway's own width
+     has to be at least three quarters of the screen's: on Sep 06 a tree at the
+     scenery ring's edge pushed the fit out until the loop was 65 percent of a
+     412 phone, and nothing measured it. Measured off railBounds through the
+     page's own screen mapping, on the portrait sizes where the width binds. */
+  if (h > w) {
+    const rail = await page.evaluate(() => {
+      const b = WHISTLESTOP_TEST.rail(), a = WHISTLESTOP_TEST.toScreen(b.x0, b.y0), c = WHISTLESTOP_TEST.toScreen(b.x1, b.y1);
+      const props = WHISTLESTOP_TEST.props().map(p => WHISTLESTOP_TEST.toScreen(p.x, p.y));
+      return { frac: (c.x - a.x) / window.innerWidth, left: a.x, right: c.x, props: props.length,
+        onScreen: props.filter(p => p.x > 0 && p.x < window.innerWidth && p.y > 0 && p.y < window.innerHeight).length };
+    });
+    say(rail.frac >= 0.75, at + ' the railway is at least three quarters of the width ('
+      + (rail.frac * 100).toFixed(0) + ' percent, ' + rail.left.toFixed(0) + ' to ' + rail.right.toFixed(0) + ')');
+    say(rail.props > 0 && rail.onScreen === rail.props, at + ' and every prop is on the screen with it ('
+      + rail.onScreen + ' of ' + rail.props + ')');
+  }
 
   /* ---- the win card, reached by actually winning ---- */
   await page.evaluate(() => {

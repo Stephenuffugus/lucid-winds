@@ -37,8 +37,26 @@ inherits), then this file, then the design. Where they differ, this file wins; e
   scale is drawn at placement. `node tools/check.js` ALL GATES PASSED, eight of eight; the layout
   gate reads 84, 83 and 80 percent at 412, 375 and 320 with 13 of 13 props on the screen, and 67,
   64 and 69 under the old fit. The 412x915 shot was reshot and opened: the loop fills the width
-  with a hand's width to the glass, the house and signboard above it, the cow inside, the bushes
-  at its edge.
+  with a hand's width to the glass. ⛔ A second look at that shot found the house and both copses
+  GONE and the cow standing alone: with the railway filling the width the band above and below
+  it is under two units tall, and a centre held 1.4U off the rails could stand nowhere in it.
+  The clearances are the members' now (0.8U from the rails, a tree's half width from the glass)
+  and the centre asks a unit; a group that will not fit in sixty tries is offered once more as
+  its first member alone, smaller. Check rerun: ALL GATES PASSED, 13 of 13 props on screen at all
+  three portrait sizes. Three more things the shot tool's build screen taught, each fixed:
+  the scenery was laid BEFORE `showScreen('Play')` in `startPuzzle`, so it read the previous
+  puzzle's layout and the select screen's pads (moved after); scenery laid for one orientation
+  stayed put when the phone turned, so the copses sat off the sides of a tall frame (re laid on
+  an orientation change, same seed); and scenery laid at three pieces stood where the loop was
+  about to be built (re laid when the layout's bounds outgrow the ones it was laid for by half a
+  unit). With the tray up the band beside the loop is a strip, so a lone tree keeps a tree's
+  distance (1.1U) rather than a group's (2.4U). Every rerun: ALL GATES PASSED, 13 of 13 props on
+  screen at 412, 375 and 320 on the puzzle path. The final 412x915 (the tool's built loop with
+  the tray up) was opened: the loop at 84 percent with a hand's width to the glass, the house
+  above it, the cow and its bushes inside, a lone tree at the loop's right; the strip under the
+  loop stays empty on the build screen because the tray takes 280 px of a 915 screen, which is
+  the C5 pass's question (a shorter tray, or the tray as a drawer). **Next action:** C5 and C6
+  in the Opus list; the calls C12 and C13.
   **Thin still:** the Crossing's two spurs mirror each other; Swap's lower two levers sit thirty
   pixels apart; pinch and pan is call C12; pass through is C13.
 

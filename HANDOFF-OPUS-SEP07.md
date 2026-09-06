@@ -178,7 +178,8 @@ queued above under A or C.
 - Windup: the tine level 0.85 to 0.5 (call G36), the wav re rendered, stamp `h`.
 - Airworthy: four canvas fonts under the 0.7 rem floor raised, stamp `i`.
 - Updraft: the altitude readout on a pill so it reads on an evening sky, the first hint off the
-  kite, stamp `h`.
+  kite and clear of the chip corner, seven gates green, stamp `h`, live.
+- Swell: Storm and Lullaby rendered to wav beside Dawn, all three at one level by measurement.
 - Sweeps over all twelve: the tremolo wired into a gain (only Gerplunk had it), canvas fonts
   under 11.2 px (Airworthy, Windup, Whistlestop, fixed), dashes and exclamation points in canvas
   text (none), the plural brand (none in the twelve, 96 files in the old fleet, A12).
