@@ -7,6 +7,10 @@ games without losing a step.
 **Branch:** `add-sproing-jumper`. Everything below is committed AND pushed, and `main` is
 level with the branch (Hostinger deploys main). Nothing is only in a working tree.
 
+> **READ `HANDOFF-FABLE-SEP06-EVENING.md` FIRST.** Written at 16:35 UTC as Stephen started
+> testing the twelve on his phone. It carries the live stamps, the thin list, and the rule for
+> taking his notes when he comes back. This file stays the record of state and law.
+
 ---
 
 ## 0a. WHAT THE 15:00Z TO 16:30Z SESSION DID (Opus, lead)
