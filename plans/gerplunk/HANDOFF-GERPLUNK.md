@@ -79,10 +79,12 @@ on branch `add-sproing-jumper` tonight.
   buried it (17 onsets for 17 skips and a plunk). The page now gives a slow
   ending a 120 ms beat before the plunk, in the sound and the picture (D34).
   Lap, crickets and the loon are in, synthesised, from the seeded stream (D35).
-  **Thin:** no slow motion on a record; the tally is a number rather
-  than marks on a post; the sink rings stack into a spring on a straight throw;
-  the seam ends in a hard edge at the shore; the thumb's bottom third is empty
-  water. The three faces of the lake are P2, so the turn changes where the stone
+  13:26Z: the count is drawn as marks on the post (four strokes and a strike)
+  beside the number the gates read; the camera drifts home to the shore once
+  the rings have gone, so the seam is never drawn from behind the lens.
+  **Thin:** no slow motion on a record; the sink rings stack into a spring on a
+  straight throw; the folk line can sit across the near rings of a short throw;
+  the thumb's bottom third is empty water; the shore is drawn by CSS, not art. The three faces of the lake are P2, so the turn changes where the stone
   lands and how the seam bends but not yet the water it lands on.
   **Next action:** P2 step 1 (section 5): the
   stone in the palm, the pebble bed by career, RECORDS per stone, in
