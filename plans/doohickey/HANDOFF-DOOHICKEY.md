@@ -12,14 +12,18 @@ this file wins; every difference is in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
-- 2026-09-06 Opus: **P0 is DONE and pushed.** `node satellites/doohickey/tools/check.js`
-  prints ALL GATES PASSED across five gates: `sim` (109 assertions), `solve`,
-  `replay`, `dominoes`, `mutants`. Section 13 carries the replay hash, the
-  domino table, the level table and the mutant table. Next action: P1 step 1,
-  the VIEW. Draw the scene into `#board` in `satellites/doohickey/index.html`:
-  the cream paper and its grid, the static segments, then a `drawPart` per type
-  reading the same geometry PARTS builds, then the camera. The shot to make
-  first is `docs/shots/p1-cascade.png` at 667x375.
+- 2026-09-06 Opus: **P0 and P1 are DONE and pushed.**
+  `node satellites/doohickey/tools/check.js` prints ALL GATES PASSED across
+  eight gates: `sim` (109 assertions), `lint`, `solve`, `replay`, `dominoes`,
+  `mutants`, `edit`, `layout`. Ten mutations watched to fail, in section 13 with
+  their output. Calls in `satellites/doohickey/docs/DECISIONS.md`.
+  **Next action:** P2 step 1, the win flow and the remaining parts in the
+  editor. The seesaw, fan, balloon and bucket already build and draw; what is
+  missing is the slow replay of the last three seconds behind the win card, the
+  confetti, and the sandbox with its three slots. Then P2 step 2, the level
+  select is already there and needs its stars wired to the save, and P2 step 4,
+  `test/run.mjs`: load level 1, place its solution through the TEST hook, press
+  the real GO button, and the bell arrives inside ten seconds of wall time.
 
 ---
 
@@ -490,6 +494,72 @@ were placed by hand and five of them missed: a marble dropped at x=96 sails past
 a plank that spans 134 to 226, and the whole board reads as "physics broken"
 when it is only arithmetic. The heartbeat had the same fault, and read zero
 dominoes for the same reason.
+
+
+### P1, the board and the editor (2026-09-06)
+
+```
+$ node tools/check.js
+sim             pass  11s
+lint            pass  0s
+solve           pass  2s
+replay          pass  3s
+dominoes        pass  27s
+mutants         pass  69s
+edit            pass  4s
+layout          pass  6s
+
+ALL GATES PASSED
+```
+
+`test/edit.mjs` drives real pointers at 667x375 and 375x667: a drag from the
+tray places a plank whose centre is on a cell and takes the count down, the
+handles are 48 px and 72 px ABOVE the part, a tap on the dial turns it exactly
+one detent, a drop onto an occupied cell shows the red ghost and places nothing,
+undo takes back the last thing done one step at a time and redo brings it back,
+dragging a part off the sheet returns it to the tray, two fingers spreading
+zoom, and stopping a run leaves the machine byte for byte as it was.
+
+Three mutations watched to fail:
+
+```
+$ # the overlap test made impossible to trigger
+FAIL  landscape: dropping onto an occupied cell shows the red ghost
+FAIL  portrait: dropping onto an occupied cell shows the red ghost
+
+$ # the handle row put under the finger instead of above it
+FAIL  landscape: and the handles sit above the part, not under the thumb (-40 px above)
+
+$ # the tray put back along the bottom in portrait
+FAIL  375x667 the bottom left 120 by 120 is empty: tile out, tile
+```
+
+### The P1 shots, opened and read
+
+**`p1-cascade-wide.png`** — the row caught mid fall, leaning progressively, the
+marble at the left end where it started the chain, the bell next in line, dust
+under the falling dominoes. It reads as a cascade. Three faults: the action is a
+thin strip along the bottom sixth of the board and the whole upper half is empty
+paper; the marble is small and dark against cream and is easy to lose beside the
+dominoes; and the dust is so faint it needs looking for.
+
+**`p1-editor-wide.png`** — the tray dock with five tiles and their counts, a
+selected plank ringed in gold dashes with its four handles above it, GO in the
+sky. Three faults: the part count runs under the undo button at the left edge;
+the seesaw's pin dot reads as a smudge rather than a pivot; and the domino row
+and the bell have a gap between them that makes the last link look accidental.
+
+**`p1-ghost-wide.png`** — a domino ghost over an occupied cell, red, with the
+cell it would land in outlined. Three faults: the red ghost and the red dominoes
+are the same red, so at a glance the ghost reads as another domino; the cell
+outline is thin enough to lose against the grid; and nothing says WHY it will
+not fit.
+
+**`p1-cascade-tall.png`** and the other portrait shots — the scene letterboxes
+to a band in the middle with the tray wrapped below it. Three faults: the band
+is 375 by 211 in a 667 tall window, which is a small stage; the top fifth is
+empty paper doing nothing; and a player holding the phone upright has no hint
+that turning it sideways doubles the board.
 
 ---
 
