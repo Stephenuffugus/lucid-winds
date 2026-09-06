@@ -24,8 +24,8 @@ try {
   await tap(page, '#btnChallenges');
   await waitFrames(page, 3);
   const cards = await T(() => [...document.querySelectorAll('.ch-card')].map(c => c.getAttribute('data-ch')));
-  say(cards.length === 6, 'six of them are listed (' + cards.length + ')');
-  for (const id of ['gym-far', 'yard-hang']) {
+  say(cards.length === 10, 'ten of them are listed (' + cards.length + ')');
+  for (const id of ['gym-far', 'yard-hang', 'canyon-hang', 'stadium-far']) {
     const c = await centre(page, '.ch-card[data-ch="' + id + '"]');
     say(!!c && c.onTop && c.h >= 47.5, id + ' is reachable and ' + (c ? c.h.toFixed(0) : 0) + ' px tall');
   }

@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="AIRWORTHY">
-<link rel="manifest" href="./manifest.webmanifest?v=20260906c">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260906c">
-<link rel="icon" href="./icon-192.png?v=20260906c">
+<link rel="manifest" href="./manifest.webmanifest?v=20260906d">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260906d">
+<link rel="icon" href="./icon-192.png?v=20260906d">
 <link rel="canonical" href="https://lucidwinds.com/satellites/airworthy/">
 <style>
 /*  AIRWORTHY
@@ -234,7 +234,7 @@ body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
 #testPanel.on{display:block}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260906c" defer></script>
+<script src="/music-unlocks.js?v=20260906d" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">AIRWORTHY</h1>
@@ -557,6 +557,13 @@ function windAt(air, x, y, t) {
       /* ⛔ y is HEIGHT here, so an updraught is POSITIVE. Written the other way
          a thermal pushed the plane into the ground and shortened the flight. */
       wy += f.up * (1 - d / f.radius);
+    } else if (f.kind === 'ridge' || f.kind === 'sink') {
+      /* a wall's worth of air. Ridge lift stands up along a cliff and sink
+         falls in the lee of it; both are a band of the floor, both fade over
+         the last metre at each end so the plane crosses an edge, not a step. */
+      if (x < f.x0 || x > f.x1 || y < 0 || y > f.top) continue;
+      var edge = Math.min(1, Math.min(x - f.x0, f.x1 - x));
+      wy += (f.kind === 'ridge' ? f.up : -f.down) * edge;
     } else if (f.kind === 'gust') {
       var g = f.rng ? f.rng : null;
       if (!g) continue;
@@ -884,9 +891,31 @@ var COURSES = {
     rings: [{ x: 5.5, y0: 2.4, y1: 4.4 }, { x: 13.5, y0: 1.8, y1: 3.8 }],
     zone: { x: 8, w: 3, name: 'the paddling pool' },
     far: 26
+  },
+  /* the design's third course: ridge lift along the walls, a sink in the lee,
+     long glide heaven for a floater */
+  canyon: {
+    id: 'canyon', name: 'The Canyon',
+    fields: [
+      { kind: 'ridge', x0: 3, x1: 9.5, up: 1.3, top: 5.5 },
+      { kind: 'sink', x0: 11, x1: 14.5, down: 1.1, top: 5.5 },
+      { kind: 'ridge', x0: 16.5, x1: 24, up: 1.1, top: 5.5 }
+    ],
+    /* two rock arches */
+    rings: [{ x: 7, y0: 1.8, y1: 3.8 }, { x: 18, y0: 1.2, y1: 3.2 }],
+    zone: { x: 15.5, w: 3.2, name: 'the sandbar' },
+    far: 32
+  },
+  /* the fourth: a swirling gust that is part of the ground, and a ring slalom */
+  stadium: {
+    id: 'stadium', name: 'The Stadium',
+    fields: [gustField(seedFromString('stadium'), 0.7)],
+    rings: [{ x: 5, y0: 2.2, y1: 4.2 }, { x: 10, y0: 1.2, y1: 3.2 }, { x: 15, y0: 2.0, y1: 4.0 }],
+    zone: { x: 12, w: 3, name: 'the centre circle' },
+    far: 30
   }
 };
-var COURSE_ORDER = ['gym', 'yard'];
+var COURSE_ORDER = ['gym', 'yard', 'canyon', 'stadium'];
 function courseAir(courseId, salt) {
   var c = COURSES[courseId];
   var air = { fields: c.fields.slice() };
@@ -927,7 +956,27 @@ var CHALLENGES = [
     ask: 'Put it in the pool', high: 0, unit: 'm',
     throw: { angle: 16, power: 0.62 },
     reference: { nose: 'locked', noseFolds: 1, wing: 0.383, fins: 'none', dihedral: 0.396, precision: 1, elev: -6, ail: 0, clip: 'none' },
-    medals: { bronze: 2.47, silver: 1.27, gold: 0.37 } }
+    medals: { bronze: 2.47, silver: 1.27, gold: 0.37 } },
+  { id: 'canyon-hang', course: 'canyon', kind: 'airtime', name: 'The long glide',
+    ask: 'Ride the wall and stay up', high: 1, unit: 's',
+    throw: { angle: 20, power: 0.55 },
+    reference: { nose: 'pointed', noseFolds: 2, wing: 0.45, fins: 'none', dihedral: 0.697, precision: 1, elev: 2, ail: 0, clip: 'none' },
+    medals: { bronze: 3, silver: 3.9, gold: 5.1 } },
+  { id: 'canyon-bar', course: 'canyon', kind: 'accuracy', name: 'The sandbar',
+    ask: 'Put it down on the sand', high: 0, unit: 'm',
+    throw: { angle: 10, power: 0.62 },
+    reference: { nose: 'pointed', noseFolds: 2, wing: 1, fins: 'none', dihedral: 0.4, precision: 0.8, elev: 0, ail: 0, clip: 'none' },
+    medals: { bronze: 3.51, silver: 2.23, gold: 1.27 } },
+  { id: 'stadium-far', course: 'stadium', kind: 'distance', name: 'Across the pitch',
+    ask: 'Through the swirl to the far stand', high: 1, unit: 'm',
+    throw: { angle: 6, power: 0.95 },
+    reference: { nose: 'locked', noseFolds: 3, wing: 0.15, fins: 'none', dihedral: 0.4, precision: 0.8, elev: 0, ail: 0, clip: 'none' },
+    medals: { bronze: 7.3, silver: 9.4, gold: 11.7 } },
+  { id: 'stadium-hang', course: 'stadium', kind: 'airtime', name: 'Over the stands',
+    ask: 'Let the swirl carry it', high: 1, unit: 's',
+    throw: { angle: 34, power: 0.42 },
+    reference: { nose: 'pointed', noseFolds: 2, wing: 0.991, fins: 'none', dihedral: 0.357, precision: 1, elev: 8, ail: 0, clip: 'none' },
+    medals: { bronze: 2.1, silver: 2.2, gold: 2.5 } }
 ];
 /* MEDALS_END */
 function challengeById(id) {
@@ -1268,7 +1317,7 @@ function suiteVeer(T) {
    hole the design warns about and the reason the challenges prescribe throws. */
 function suiteChallenges(T) {
   var i, j;
-  T.eq('there are six challenges', CHALLENGES.length, 6);
+  T.eq('there are ten challenges', CHALLENGES.length, 10);
   var byCourse = {};
   for (i = 0; i < CHALLENGES.length; i++) {
     var ch = CHALLENGES[i];
@@ -1287,6 +1336,8 @@ function suiteChallenges(T) {
   }
   T.eq('three of them are in the gym', byCourse.gym, 3);
   T.eq('and three in the backyard', byCourse.yard, 3);
+  T.eq('two in the canyon', byCourse.canyon, 2);
+  T.eq('and two in the stadium', byCourse.stadium, 2);
   var kinds = {};
   for (i = 0; i < CHALLENGES.length; i++) kinds[CHALLENGES[i].kind] = 1;
   T.assert('and between them they ask for distance, airtime and accuracy',
@@ -1304,7 +1355,7 @@ function suiteChallenges(T) {
     }
     if (gold > most) most = gold;
   }
-  T.assert('no one fold takes gold on all six (the best takes ' + most + ')', most < CHALLENGES.length);
+  T.assert('no one fold takes gold on all ten (the best takes ' + most + ')', most < CHALLENGES.length);
   T.assert('and the best fold does take gold somewhere (' + most + ')', most >= 1);
   /* ⛔ the six not being won by ONE fold is a low bar and it passed while five
      of the six were being won by one fold. The property that actually matters
@@ -1330,6 +1381,23 @@ function suiteChallenges(T) {
   T.eq('and up and down', w1.y, w2.y);
   T.assert('the backyard has weather and the gym does not',
     COURSES.yard.fields.length > 0 && COURSES.gym.fields.length === 0);
+  /* the canyon: lift along the wall, sink in the lee, nothing between */
+  var cAir = courseAir('canyon');
+  T.assert('the canyon wall lifts (' + windAt(cAir, 6, 2, 0).y.toFixed(2) + ')', windAt(cAir, 6, 2, 0).y > 0.8);
+  T.assert('and the lee sinks (' + windAt(cAir, 12.5, 2, 0).y.toFixed(2) + ')', windAt(cAir, 12.5, 2, 0).y < -0.8);
+  T.eq('with still air between the two', windAt(cAir, 10.2, 2, 0).y, 0);
+  T.eq('and still air above the wall', windAt(cAir, 6, 7, 0).y, 0);
+  var flo = newSpec({ nose: 'pointed', noseFolds: 2, wing: 0.99, elev: 8, precision: 1 });
+  var inGym = fly(flo, { angle: 20, power: 0.55, air: courseAir('gym'), course: 'gym' }).airtime;
+  var inCan = fly(flo, { angle: 20, power: 0.55, air: cAir, course: 'canyon' }).airtime;
+  T.assert('a floater hangs longer in the canyon than in the gym (' + inCan.toFixed(2) + ' s against '
+    + inGym.toFixed(2) + ' s)', inCan > inGym * 1.15);
+  /* the stadium: its swirl is part of the ground and it moves */
+  T.eq('the stadium has a gust of its own', COURSES.stadium.fields[0].kind, 'gust');
+  var sAir = courseAir('stadium');
+  T.assert('and the swirl is a different wind a second later',
+    Math.abs(windAt(sAir, 5, 2, 0.5).x - windAt(sAir, 5, 2, 1.5).x) > 0.05);
+  T.eq('the stadium hangs three rings to slalom', COURSES.stadium.rings.length, 3);
   /* the gates */
   var gymRes = flyChallenge(newSpec(NAMED_SPECS.cruiser.spec), challengeById('gym-far'), { angle: 8, power: 0.6 });
   var hits = ringsHit(gymRes, 'gym');
@@ -1510,14 +1578,20 @@ function fitCanvas() {
 /* one room, two dressings. The measure along the floor is the same in both,
    because it is the thing the player is actually reading. */
 function drawGym(ctx) { drawCourse(ctx, G.course || 'gym'); }
+/* a far thing slides at a fraction of the camera; px cannot do that because it
+   subtracts the whole camera */
+function pxFar(u, k) { return (u - V.camX * k) * V.ppm + V.W * 0.28; }
+var COURSE_PAPER = { gym: '#EFE9DC', yard: '#E4E5D2', canyon: '#F3E3C8', stadium: '#E3E9EC' };
+var COURSE_SKY = { gym: '#DCD3C0', yard: '#CBD8DC', canyon: '#EFBE8C', stadium: '#BCCFDF' };
+var COURSE_FLOOR = { gym: '#E2DACA', yard: '#A8B87E', canyon: '#D9B98A', stadium: '#8DB56E' };
 function drawCourse(ctx, id) {
-  var yard = id === 'yard';
-  ctx.fillStyle = yard ? '#E4E5D2' : '#EFE9DC';
+  var yard = id === 'yard', canyon = id === 'canyon', stadium = id === 'stadium';
+  ctx.fillStyle = COURSE_PAPER[id] || COURSE_PAPER.gym;
   ctx.fillRect(0, 0, V.W, V.H);
   var horizon = py(4.2);
   var g = ctx.createLinearGradient(0, 0, 0, horizon);
-  g.addColorStop(0, yard ? '#CBD8DC' : '#DCD3C0');
-  g.addColorStop(1, yard ? '#E4E5D2' : '#EFE9DC');
+  g.addColorStop(0, COURSE_SKY[id] || COURSE_SKY.gym);
+  g.addColorStop(1, COURSE_PAPER[id] || COURSE_PAPER.gym);
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, V.W, Math.max(0, horizon));
   var i, x0 = Math.floor(V.camX / 4) * 4 - 8;
@@ -1538,6 +1612,64 @@ function drawCourse(ctx, id) {
       ctx.ellipse(cx3, cy3, cw, cw * 0.34, 0, 0, 6.2832);
       ctx.ellipse(cx3 + cw * 0.6, cy3 + cw * 0.1, cw * 0.6, cw * 0.26, 0, 0, 6.2832);
       ctx.fill();
+    }
+  } else if (canyon) {
+    /* the far wall, a long way off, slides at half the camera. Its top is a
+       broken line of buttes and its face carries the strata every canyon has,
+       so it reads as rock and not as a brown sky. */
+    var fw, fwx, sx3 = pxFar(0, 0.5), u0 = Math.floor((V.camX * 0.5 - V.W * 0.28 / V.ppm) / 2.4) * 2.4 - 4.8;
+    ctx.fillStyle = 'rgba(176,108,70,.46)';
+    ctx.beginPath();
+    ctx.moveTo(-40, py(0));
+    for (fw = 0; fw < 30; fw++) {
+      var u = u0 + fw * 2.4;
+      fwx = pxFar(u, 0.5);
+      if (fwx > V.W + 80) break;
+      var bump = 1.3 * Math.abs(Math.sin(u * 0.71)) + 0.7 * Math.abs(Math.cos(u * 0.37));
+      ctx.lineTo(fwx, py(3.6 + bump));
+      ctx.lineTo(fwx + V.ppm * 1.1, py(3.6 + bump));
+    }
+    ctx.lineTo(V.W + 40, py(0));
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(120,64,40,.28)';
+    ctx.lineWidth = 1.5;
+    for (fw = 0; fw < 5; fw++) {
+      ctx.beginPath();
+      ctx.moveTo(0, py(0.9 + fw * 0.75));
+      ctx.lineTo(V.W, py(0.9 + fw * 0.75 + (fw % 2 ? 0.12 : -0.08)));
+      ctx.stroke();
+    }
+    void sx3;
+  } else if (stadium) {
+    /* the far stand: four tiers of seats that slide at two thirds of the
+       camera, and two floodlight masts over them. Seats are dots in rows, which
+       is what a stand is from the pitch. */
+    var tier, seat, tx0 = Math.floor((V.camX * 0.65 - V.W * 0.28 / V.ppm) / 0.5) * 0.5 - 2;
+    ctx.fillStyle = 'rgba(96,104,118,.34)';
+    ctx.fillRect(0, py(6.2), V.W, py(1.3) - py(6.2));
+    for (tier = 0; tier < 4; tier++) {
+      var ty = py(1.9 + tier * 1.05);
+      ctx.fillStyle = tier % 2 ? 'rgba(60,110,159,.40)' : 'rgba(212,132,42,.36)';
+      for (seat = 0; seat < 120; seat++) {
+        var sxx = pxFar(tx0 + seat * 0.5, 0.65);
+        if (sxx < -10) continue;
+        if (sxx > V.W + 10) break;
+        ctx.fillRect(sxx, ty - V.ppm * 0.28, Math.max(3, V.ppm * 0.3), Math.max(3, V.ppm * 0.28));
+      }
+      ctx.strokeStyle = 'rgba(51,48,42,.30)';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(0, ty); ctx.lineTo(V.W, ty); ctx.stroke();
+    }
+    var mast;
+    for (mast = 0; mast < 6; mast++) {
+      var mxx = pxFar(mast * 14 + 2, 0.65);
+      if (mxx < -30 || mxx > V.W + 30) continue;
+      ctx.strokeStyle = 'rgba(51,48,42,.45)';
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(mxx, py(6.2)); ctx.lineTo(mxx, Math.min(py(11), V.H * 0.06)); ctx.stroke();
+      ctx.fillStyle = 'rgba(200,168,75,.5)';
+      ctx.fillRect(mxx - V.ppm * 0.55, Math.min(py(11), V.H * 0.06), V.ppm * 1.1, Math.max(4, V.ppm * 0.35));
     }
   } else {
     /* ⛔ THE ROOF IS ANCHORED TO THE FRAME, NOT TO THE WORLD, and it is the only
@@ -1604,6 +1736,43 @@ function drawCourse(ctx, id) {
       ctx.stroke();
     }
     ctx.beginPath(); ctx.moveTo(0, py(1.25)); ctx.lineTo(V.W, py(1.25)); ctx.stroke();
+  } else if (canyon) {
+    /* scrub and boulders along the floor, in the world, so the ground has scale */
+    var sc, scx, s0 = Math.floor(V.camX / 1.7) * 1.7 - 5;
+    for (sc = 0; sc < 30; sc++) {
+      var su = s0 + sc * 1.7;
+      scx = px(su);
+      if (scx < -30) continue;
+      if (scx > V.W + 30) break;
+      var big = Math.abs(Math.sin(su * 2.3)) > 0.6;
+      if (big) {
+        ctx.fillStyle = 'rgba(150,96,64,.55)';
+        ctx.beginPath();
+        ctx.ellipse(scx, py(0) - V.ppm * 0.16, V.ppm * 0.42, V.ppm * 0.2, 0, 0, 6.2832);
+        ctx.fill();
+      } else {
+        ctx.strokeStyle = 'rgba(96,120,70,.6)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(scx - V.ppm * 0.14, py(0)); ctx.lineTo(scx - V.ppm * 0.05, py(0.28));
+        ctx.moveTo(scx, py(0)); ctx.lineTo(scx + V.ppm * 0.02, py(0.36));
+        ctx.moveTo(scx + V.ppm * 0.14, py(0)); ctx.lineTo(scx + V.ppm * 0.06, py(0.26));
+        ctx.stroke();
+      }
+    }
+  } else if (stadium) {
+    /* the hoardings round the pitch, blank boards, and the touchline */
+    var hb, hbx, h0 = Math.floor(V.camX / 2) * 2 - 4;
+    for (hb = 0; hb < 30; hb++) {
+      hbx = px(h0 + hb * 2);
+      if (hbx < -60) continue;
+      if (hbx > V.W + 60) break;
+      ctx.fillStyle = hb % 2 ? 'rgba(255,255,255,.75)' : 'rgba(60,110,159,.28)';
+      ctx.fillRect(hbx, py(0.95), V.ppm * 2, py(0.15) - py(0.95));
+      ctx.strokeStyle = 'rgba(51,48,42,.45)';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(hbx, py(0.95), V.ppm * 2, py(0.15) - py(0.95));
+    }
   } else {
     /* the painted stripe every school hall has, so the wall between the roof and
        the windows is a wall and not a colour swatch */
@@ -1630,8 +1799,19 @@ function drawCourse(ctx, id) {
   }
   /* the floor, with its lines every metre and a fat one every five */
   var fy = py(0);
-  ctx.fillStyle = yard ? '#A8B87E' : '#E2DACA';
+  ctx.fillStyle = COURSE_FLOOR[id] || COURSE_FLOOR.gym;
   ctx.fillRect(0, fy, V.W, V.H - fy);
+  if (stadium) {
+    /* the pitch is mown in stripes */
+    var mow, mw0 = Math.floor(V.camX / 3) * 3 - 6;
+    ctx.fillStyle = 'rgba(255,255,255,.10)';
+    for (mow = 0; mow < 20; mow++) {
+      if (mow % 2) continue;
+      var mwx = px(mw0 + mow * 3);
+      if (mwx < -100 || mwx > V.W + 100) continue;
+      ctx.fillRect(mwx, fy, V.ppm * 3, V.H - fy);
+    }
+  }
   ctx.strokeStyle = 'rgba(51,48,42,.5)';
   ctx.lineWidth = 2;
   ctx.beginPath(); ctx.moveTo(0, fy); ctx.lineTo(V.W, fy); ctx.stroke();
@@ -1716,6 +1896,47 @@ function drawProps(ctx, id) {
       ctx.lineTo(fx + size * 0.3, fyy - size * 0.14);
       ctx.lineWidth = 1.5;
       ctx.stroke();
+    } else if (f.kind === 'ridge' || f.kind === 'sink') {
+      /* the band of air windAt lifts or drops, chevrons pointing the way it
+         goes, and under a ridge the near wall it stands on */
+      var bx0 = px(f.x0), bx1 = px(f.x1), lift = f.kind === 'ridge';
+      if (bx1 < -20 || bx0 > V.W + 20) continue;
+      var col = lift ? '60,110,159' : '110,106,96';
+      var gb = ctx.createLinearGradient(0, fy, 0, py(f.top));
+      gb.addColorStop(0, 'rgba(' + col + ',' + (lift ? '.16' : '.14') + ')');
+      gb.addColorStop(1, 'rgba(' + col + ',0)');
+      ctx.fillStyle = gb;
+      ctx.fillRect(bx0, py(f.top), bx1 - bx0, fy - py(f.top));
+      ctx.strokeStyle = 'rgba(' + col + ',.55)';
+      ctx.lineWidth = 2;
+      var cv, ch2, n = Math.max(2, Math.round((f.x1 - f.x0) / 1.6));
+      for (cv = 0; cv < n; cv++) {
+        var cxv = px(f.x0 + (cv + 0.5) * (f.x1 - f.x0) / n);
+        for (ch2 = 0; ch2 < 3; ch2++) {
+          var phase = ((V.t * 0.0009 + ch2 * 0.33 + cv * 0.17) % 1);
+          var cyv = lift ? fy - (0.5 + phase * (f.top - 1)) * V.ppm : py(f.top) + (0.3 + phase * (f.top - 1)) * V.ppm;
+          var d3 = lift ? -1 : 1;
+          ctx.beginPath();
+          ctx.moveTo(cxv - 6, cyv - d3 * 6);
+          ctx.lineTo(cxv, cyv);
+          ctx.lineTo(cxv + 6, cyv - d3 * 6);
+          ctx.stroke();
+        }
+      }
+      if (lift) {
+        /* the wall itself, a wedge of rock rising to the far end of the band */
+        ctx.fillStyle = 'rgba(160,96,60,.62)';
+        ctx.beginPath();
+        ctx.moveTo(bx0, fy);
+        ctx.lineTo(bx1, fy);
+        ctx.lineTo(bx1, fy - V.ppm * 1.1);
+        ctx.lineTo(bx0 + (bx1 - bx0) * 0.55, fy - V.ppm * 0.7);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(51,48,42,.55)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
     } else if (f.kind === 'thermal') {
       /* the column of warm air, drawn where windAt actually lifts, and then the
          grill under it */
@@ -3022,7 +3243,7 @@ function toTunnel() {
 }
 
 /* ========================= 17. THE FIELD ========================= */
-var STAMP = '20260906c';
+var STAMP = '20260906d';
 var G = {
   screen: 'title', spec: null, res: null, live: null, liveT: 0, flying: false,
   trail: [], ghost: null, best: null, lastClass: null, throws: 0,

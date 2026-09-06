@@ -200,6 +200,44 @@ await withPage(375, 667, async (page, shot) => {
   await page.evaluate(() => { AIRWORTHY_TEST.finish(); });
   await waitFrames(page, 3);
   if (want('p3-yard-result')) await shot('p3-yard-result');
+  /* the canyon riding its wall, and the stadium's slalom in its swirl */
+  await page.evaluate(() => {
+    AIRWORTHY_TEST.toChallenge('canyon-hang', { nose: 'pointed', noseFolds: 2, wing: 0.45, elev: 2 });
+    AIRWORTHY_TEST.launch();
+    AIRWORTHY_TEST.advance(2.4);
+  });
+  await waitFrames(page, 3);
+  if (want('p4-canyon')) await shot('p4-canyon');
+  await page.evaluate(() => { AIRWORTHY_TEST.finish(); });
+  await page.evaluate(() => {
+    AIRWORTHY_TEST.toChallenge('stadium-far', { nose: 'locked', noseFolds: 3, wing: 0.15, elev: 0 });
+    AIRWORTHY_TEST.launch();
+    AIRWORTHY_TEST.advance(1.1);
+  });
+  await waitFrames(page, 3);
+  if (want('p4-stadium')) await shot('p4-stadium');
+  await page.evaluate(() => { AIRWORTHY_TEST.finish(); });
+});
+/* the same two on a tall phone */
+await withPage(412, 915, async (page, shot) => {
+  await page.evaluate(() => {
+    AIRWORTHY_TEST.toChallenge('canyon-hang', { nose: 'pointed', noseFolds: 2, wing: 0.45, elev: 2 });
+    AIRWORTHY_TEST.launch();
+    AIRWORTHY_TEST.advance(2.4);
+  });
+  await waitFrames(page, 3);
+  if (want('p4-canyon-tall')) await shot('p4-canyon-tall');
+  await page.evaluate(() => { AIRWORTHY_TEST.finish(); });
+  await page.evaluate(() => {
+    AIRWORTHY_TEST.toChallenge('stadium-far', { nose: 'locked', noseFolds: 3, wing: 0.15, elev: 0 });
+    AIRWORTHY_TEST.launch();
+    AIRWORTHY_TEST.advance(1.1);
+  });
+  await waitFrames(page, 3);
+  if (want('p4-stadium-tall')) await shot('p4-stadium-tall');
+  await page.evaluate(() => { AIRWORTHY_TEST.finish(); });
+});
+await withPage(375, 667, async (page, shot) => {
   /* the accuracy mark, and the gym's banners */
   await page.evaluate(() => {
     AIRWORTHY_TEST.toChallenge('gym-desk', { nose: 'blunt', noseFolds: 3, wing: 0.7, fins: 'up', elev: -4 });
