@@ -14,9 +14,32 @@ on branch `add-sproing-jumper` tonight.
 
 - 2026-09-05 Fable: plan written. Nothing built. Next action: section 5, P0, step 1.
 - 2026-09-06 Opus: P0 step 1, `tools/check.js` with one gate and no `sim.js` to
-  run, red, pasted in section 13. **Next action:** P0 step 2, `sim.js` with
-  CONFIG, RNG, STONES, MODEL and FLICK and the assertions listed in the plan's
-  P0 step 2.
+  run, red, pasted in section 13.
+- 2026-09-06 Opus: **P0 IS DONE, steps 1 to 4.** `node sim.js --test` prints
+  PASSED 110 / FAILED 0 and `node tools/check.js` prints ALL GATES PASSED. Every
+  assertion watched to fail under a CONFIG mutation, including the plan's own two
+  (SPIN_DECAY 0.6 kills the fifteen skip assertion, DRIFT0_DEG 0 kills the no
+  spin one). CONFIG, RNG, STONES, MODEL and FLICK are pure, `sim.js` has
+  `--test`, `--throw`, `--stones` and `--sweep`, and the scaffold (sw.js,
+  manifest, icons, lint) is in.
+  ⛔ THE PLAN'S COLLISION MODEL WAS WRONG and is corrected: see section 15 and
+  docs/DECISIONS.md D1. Restitution collapses the bounce height independently of
+  speed and the trill turned into the stone falling through the timestep. The
+  impulse is lift, per Bocquet, whom the design note cites.
+  ⛔ THE TUNED CONSTANTS ARE A MEASUREMENT. The plan's LOSS0 0.12 and SPIN_DECAY
+  0.06 gave ten skips against a gate that asks for fifteen. `node sim.js --sweep`
+  walks the grid, reports every point that passes all seven P0 assertions at
+  once, and FAILS if the shipped constants are not among them.
+  ⛔ AIM DID NOT EXIST IN THE PLAN and now does, as the fourth axis of the throw
+  tuple. A single stroke only carries three numbers, so aim comes from where the
+  stroke starts. Stephen asked for a unique aim and flick mechanic on 2026-09-06
+  and a design panel on that question was still running when this was written;
+  what is built is a defensible baseline, not the final answer.
+  **Next action:** P1 step 1, the LAKE render, the shore with three stones, the
+  flight camera, the rings, the ticks and the plunk. Then P1 step 2, which is the
+  feel test: shoot `docs/shots/p1-flight.png` and `p1-gerplunk.png` at 375x667,
+  OPEN them, and fix the water before P2 if it reads as stripes rather than a
+  lake at dusk.
 
 ---
 
@@ -333,6 +356,95 @@ Error: Cannot find module '/workspaces/lucid-winds/satellites/gerplunk/sim.js'
 
 1 GATE FAILED
 ```
+
+
+### P0 steps 2 to 4, 2026-09-06: the physics, tuned and proved
+
+```
+$ node sim.js --test
+PASSED 110 / FAILED 0   (total 110)
+GERPLUNK TEST OK
+
+$ node sim.js --stones
+every stone off one perfect flick, 12 m/s at the magic angle with full spin, on glass
+
+  stone            rarity      skips     dist      time   first leap   ended
+  Sandstone        common         15    16.1m     1.95s        2.67m   plowed
+  Shale            common         16    23.1m     2.58s        3.93m   plowed
+  Granite Chunk    common          2     3.2m     0.38s        0.53m   tumbled
+  Perfect Skimmer  uncommon       17    28.7m     3.37s        4.63m   slow
+  Heavy Flat       uncommon       15    29.4m     4.86s        5.25m   slow
+  Sea Glass        rare           16    25.0m     2.49s        3.97m   plowed
+  Fossil Stone     rare           17    27.0m     3.50s        4.48m   slow
+  Lucky Quartz     rare           17    27.8m     3.37s        4.58m   slow
+GERPLUNK STONES OK
+```
+
+The trill, every interval of the seventeen skip throw, in seconds. This is the
+one the plan's P0 step 2 asks for and it is also the measurement that exposed the
+collision model:
+
+```
+0.267  0.383  0.342  0.308  0.283  0.258  0.225  0.208  0.183  0.175
+0.150  0.133  0.117  0.100  0.092  0.075  0.067
+```
+
+Built with the plan's `vz = -vz * E0 * lift * flat` instead, the same throw gave:
+
+```
+   5  t 0.808  x 9.13m  int 0.033s
+   6  t 0.817  x 9.19m  int 0.008s
+   7  t 0.825  x 9.23m  int 0.008s
+   8  t 0.833  x 9.27m  int 0.008s
+   9  t 0.842  x 9.31m  int 0.008s
+  10  t 0.850  x 9.33m  int 0.008s
+```
+
+Five skips inside three hundredths of a second covering fourteen centimetres,
+every interval pinned to the 1/120 s timestep. Not a trill.
+
+What a bad throw does, which is the skill gradient:
+
+```
+  no spin      3 skips  11.1m  tumbled
+  too steep    0 skips   3.5m  tumbled
+  too flat     1 skips   3.5m  tumbled
+  half spin    5 skips  15.1m  tumbled
+```
+
+Every assertion watched to fail:
+
+```
+$ node sim.js --test --over=SPIN_DECAY=0.6
+FAIL  a perfect skimmer at the magic angle with full spin skips at least fifteen times   [4 skips]
+$ node sim.js --test --over=DRIFT0_DEG=0
+FAIL  the same throw with no spin tumbles in three or fewer   [20 skips]
+$ node sim.js --test --over=IRREG=0
+FAIL  the granite chunk never beats four skips however it is thrown   [best was 7]
+$ node sim.js --test --over=MASS_LIFT_P=0
+FAIL  and its leaps are longer, which is the whole reason to pick it   [2.77m vs 5.83m]
+$ node sim.js --test --over=CURL_REF=100000
+FAIL  a hard wrist roll is worth at least six tenths of the spin   [0.00]
+$ node sim.js --test --over=METRES_PER_CSS_PX=0.000528
+FAIL  and an ordinary stroke still has somewhere to go   [14.00 against a ceiling of 14]
+FAIL  a thumb crossing 320 pixels in 60 milliseconds is moving 1.41 metres per second   [got 2.816]
+$ node sim.js --test --over=HOOK_WINDOW=1.0
+FAIL  the wrist does not change the angle the arm threw at   [the angle moved 0.868 degrees]
+```
+
+And the sweep, which refuses to agree with itself if the shipped numbers drift:
+
+```
+$ node sim.js --sweep
+swept 192 points of SPIN_DECAY, LOSS0, MASS_LIFT_P, IRREG
+30 of them satisfy every P0 assertion at once
+the shipped constants (SPIN_DECAY 0.015, LOSS0 0.08, MASS_LIFT_P 1.05, IRREG 28)
+are in the passing set.
+GERPLUNK SWEEP OK
+```
+
+It earned its keep the hour it was written: it caught IRREG still sitting at 6
+while the comment above it claimed 28.
 
 ## 14. THE OVERNIGHT PROTOCOL
 
