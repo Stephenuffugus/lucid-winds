@@ -13,6 +13,10 @@ on branch `add-sproing-jumper` tonight.
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
 - 2026-09-05 Fable: plan written. Nothing built. Next action: section 5, P0, step 1.
+- 2026-09-06 Opus: P0 step 1, `tools/check.js` with one gate and no `sim.js` to
+  run, red, pasted in section 13. **Next action:** P0 step 2, `sim.js` with
+  CONFIG, RNG, STONES, MODEL and FLICK and the assertions listed in the plan's
+  P0 step 2.
 
 ---
 
@@ -309,6 +313,26 @@ before the rings; sound is the score.
 ```
 
 ---
+
+
+### P0 step 1, 2026-09-06: the gate, failing
+
+`satellites/gerplunk/tools/check.js` cloned from Fathom's, cut down to one gate,
+run before a line of the game exists:
+
+```
+$ node tools/check.js
+sim             FAIL  0s
+
+================================================================
+
+--- sim (wanted: GERPLUNK TEST OK) ---
+Error: Cannot find module '/workspaces/lucid-winds/satellites/gerplunk/sim.js'
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1456:15)
+  code: 'MODULE_NOT_FOUND',
+
+1 GATE FAILED
+```
 
 ## 14. THE OVERNIGHT PROTOCOL
 
