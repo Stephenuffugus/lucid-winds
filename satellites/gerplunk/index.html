@@ -1599,7 +1599,9 @@ function afterSink(P) {
   if (res.skips > best && best > 0) {
     try { parent.postMessage({ sws: 'earn', moment: 'gerplunk-best', detail: res.skips }, '*'); } catch (e) {}
   }
-  var line = res.skips >= 10 ? '' : adviceFor(th);
+  /* the folk line after every sink; a throw that went a long way is told so
+     rather than nagged */
+  var line = res.skips >= 12 ? 'That one went a long way.' : adviceFor(th);
   if (line) setTimeout(function () { showLine(line, 3000); }, 500);
 }
 

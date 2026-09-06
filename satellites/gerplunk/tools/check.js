@@ -22,7 +22,9 @@ const ROOT = join(__dirname, '..');
 const FAST = process.argv.includes('--fast');
 
 const GATES = [
-  { name: 'sim',     cmd: ['sim.js', '--test'],            need: 'GERPLUNK TEST OK' }
+  { name: 'lint',    cmd: ['tools/lint.mjs'],              need: 'LINT OK' },
+  { name: 'sim',     cmd: ['sim.js', '--test'],            need: 'GERPLUNK TEST OK' },
+  { name: 'sweep',   cmd: ['sim.js', '--sweep'],           need: 'GERPLUNK SWEEP OK', slow: true }
 ];
 
 /* Browser gates drive the real page in a real browser with real pointer events
@@ -31,6 +33,8 @@ const GATES = [
    ignore gates. They are also the ones that flake under contention on a two
    core box, so a failure here is rerun ALONE, twice, before it is believed. */
 const BROWSER_GATES = [
+  { name: 'flick',  cmd: ['test/flick.mjs'],  need: 'FLICK OK' },
+  { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK' }
 ];
 
 const results = [];
