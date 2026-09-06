@@ -62,7 +62,24 @@ Each line: game, the item, size, the plan, and whether it waits on a Director ca
 
 ### C. Found in the Sep 06 night look pass (Fable), added below as they were found
 
-(see section 3)
+(see section 3, and the items Opus added below)
+
+- **C7. Strata, the second skeleton can be dug and can never be mounted.** Found 2026-09-07 while
+  refreshing the Strata docs. At depth 1 or deeper, 42 percent of sites carry two animals
+  (`makeSite`, `satellites/strata/index.html:1176`), and `stroke` and `tryExtract` loop over
+  every specimen, so the second animal's bones really do come free and count toward the lifted
+  tally. But `refreshChrome`, the site chip, `openMount` and `openNameSheet` all read
+  `G.dig.specimens[0]` and nothing else: the chip counts "N of M lifted" against the first
+  animal alone, and every bone lifted off the second is discarded when a new site opens. The sim
+  gate asserts the two animals are PLACED and no gate asks whether the second can be mounted.
+  Half a day, and the gate to write first is the one that digs a two animal site and mounts both.
+- **C8. Strata, two stale doc files at the satellite root.** `satellites/strata/ART_ASSETS.md`
+  and `BUILD-NOTES.md` sit beside the true ones in `docs/` and are now wrong in four named
+  places. Two files of the same name saying different things is worse than one wrong file.
+  Delete them. Ten minutes.
+- **C9. The portal pins Strata at `?v=20260906b`** for both the URL and the thumb while the game
+  ships a later stamp (`portal/index.html:1049`). Ten minutes, and worth a sweep of the other
+  eleven at the same time.
 
 ## 3. THE LOOK PASS, GAME BY GAME
 
@@ -203,6 +220,18 @@ saw in Airworthy landscape (G35). 8. Wardian's BUY (G37). 9. The rest of section
   its own dark ground, gone the frame the arm is fast, no sparkle. Seven gates green twice, sim
   178/0, eleven new assertions watched to fail in both directions and two browser ones that
   read the canvas. Three gate lessons in the plan's SESSION STATE.
+- **A2 Inkswing, the nib and the colour wheel.** `20260907a`, live (probe grepped `inkFromWheel`,
+  `nibScale` and `ink-more`). `docs/REFERENCE.md` written first and its finding is FOR STEPHEN:
+  every harmonograph in the world is a panel of sliders you set and then run, and not one can be
+  thrown. Three nibs, a hue ring whose depth walks the ink family and cannot reach a marker pen,
+  layers keyed by the colour, a version 4 link that still opens version 3 links as what they
+  were. Seven gates green, sim 118/0, six mutations watched. Three faults the gates found, all
+  fixed: a nib is a wetness as much as a width (the width band is sub pixel at the scale the
+  sheet is drawn); the gate that found it was counting touched pixels and could not see it; and
+  EVERY full screen in the game had its last button in the music chip's corner.
+- **A8 Strata, the docs refresh.** `ART_ASSETS.md` and `BUILD-NOTES.md` rewritten against the
+  file, plus a morning report in the plan. No stamp, docs only. ⛔ It found a real fault, queued
+  as C7 below: at a large site the SECOND skeleton can be dug and can never be mounted.
 
 ## 7. THE PROMPT TO PASTE INTO OPUS (Sep 07)
 
