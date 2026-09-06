@@ -258,5 +258,18 @@ await withPage(320, 568, async (page, shot) => {
   if (want('p3-tunnel-320')) await shot('p3-tunnel-320');
 });
 
+/* ---- P3. THE FOUR SIZES the plan names, on the shot that matters most ---- */
+for (const [w, h, tag] of [[412, 915, 'p3-412'], [375, 667, 'p3-375'], [320, 568, 'p3-320'], [915, 412, 'p3-915']]) {
+  await withPage(w, h, async (page, shot) => {
+    await page.evaluate(() => {
+      AIRWORTHY_TEST.toChallenge('gym-far', { nose: 'locked', noseFolds: 3, wing: 0.15, elev: 0 });
+      AIRWORTHY_TEST.launch();
+      AIRWORTHY_TEST.advance(1.3);
+    });
+    await waitFrames(page, 3);
+    if (want(tag)) await shot(tag);
+  });
+}
+
 s.close();
 console.log('shots done');

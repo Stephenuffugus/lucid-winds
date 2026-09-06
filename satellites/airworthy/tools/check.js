@@ -36,6 +36,7 @@ const BROWSER_GATES = [
   { name: 'fold', cmd: ['test/fold.mjs'], need: 'FOLD OK' },
   { name: 'tunnel', cmd: ['test/tunnel.mjs'], need: 'TUNNEL OK' },
   { name: 'challenge', cmd: ['test/challenge.mjs'], need: 'CHALLENGE OK', slow: true },
+  { name: 'sound', cmd: ['test/sound.mjs'], need: 'SOUND OK', slow: true },
   { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK', slow: true }
 ];
 

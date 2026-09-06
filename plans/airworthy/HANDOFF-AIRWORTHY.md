@@ -11,15 +11,14 @@ this file wins; every difference is in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
-- 2026-09-06 Opus: **P0, P1 and P2 are DONE and pushed.** Five gates, 76 sim
-  assertions, ten mutations watched to fail. The morning report is at the top of
-  section 15; the ten corrections the plan's model needed are in section 13;
-  the calls are in `satellites/airworthy/docs/DECISIONS.md`.
-  **Next action:** P3 step 1, the WIND TUNNEL. The chamber, the particles, the
-  lift and drag vectors, the lever and dial, and the chalk readouts, all of them
-  reading off `derive` so the tunnel cannot lie about the field. Then
-  `test/tunnel.mjs`, whose point is that the tunnel's glide ratio matches the
-  field's measured one within 15 percent.
+- 2026-09-06 Opus: **P0, P1, P2 and P3 are DONE and pushed.** Eight gates, 123
+  sim assertions, and every assertion in every gate watched to fail at least
+  once. The morning report is at the top of section 15, the ledgers are in
+  section 13 and every call is in `satellites/airworthy/docs/DECISIONS.md`.
+  **Next action:** nothing is half built. The plan is complete through P3. What
+  is open is in the morning report under "what is thin": no painted art, the
+  Stunt and Canyon and Stadium courses the design names are not built, nobody
+  has played it on a phone and nobody has HEARD it.
 
 ---
 
@@ -919,6 +918,97 @@ $ (medals not written to the save)
 6. The thermal column was a rectangle with hard sides and read as a wall.
 
 
+### P3 step 5 ledger, the sound, the sizes and the tile (2026-09-06)
+
+`node test/sound.mjs`
+
+```
+ok    nothing opens an audio engine before a gesture
+  ok    a tap on the tunnel opens it (running)
+  ok    and the rush is one held voice, not a note a frame (1)
+  ok    more wind is more rush (0.0208 to 0.1688)
+  ok    and a higher one (633 Hz to 1185 Hz)
+  ok    and it is still one voice after all that
+  ok    the dial is past the stall
+  ok    and the rush opens out with it (Q 1.15 to 0.31)
+  ok    with the paper buzzing (0.0000 to 0.0249)
+  ok    the air rushes past a plane in flight (0.0558)
+  ok    both are still in the air when the buzz is read
+  ok    a sloppy fold with an aileron on it slides and a square one does not (veer 0.106 against 0.000)
+  ok    and only the sloppy one buzzes (0.0058 against 0.0000)
+  ok    and it all goes quiet when the plane is down
+  ok    SOUND OFF turns it off
+  ok    and nothing is left running under it (rush 0.0000, flutter 0.0000)
+  ok    no page errors
+
+SOUND OK
+```
+
+`node tools/check.js`
+
+```
+sim             pass  0s
+lint            pass  0s
+throw           pass  4s
+fold            pass  8s
+tunnel          pass  3s
+challenge       pass  3s
+sound           pass  6s
+layout          pass  9s
+
+ALL GATES PASSED
+```
+
+**All five sound assertions watched red**, two of them only after every backstop
+was taken out, which is worth writing down: the first mutation of each pair
+LOOKED like the gate was decoration and was actually a second guard doing its
+job.
+
+```
+$ (the held voice recreated every frame)
+  FAIL  and a higher one (689 Hz to 735 Hz)
+  FAIL  and the rush opens out with it (Q 0.77 to 0.63)
+$ (the stall not changing the rush)
+  FAIL  and the rush opens out with it (Q 1.15 to 1.15)
+$ (the flutter not wired to veer)
+  FAIL  and only the sloppy one buzzes (0.0000 against 0.0000)
+$ (EVERY guard against opening the engine outside a gesture removed)
+  FAIL  nothing opens an audio engine before a gesture
+$ (EVERY guard against SOUND OFF removed from the held voices)
+  FAIL  and nothing is left running under it (rush 0.0042, flutter 0.0048)
+```
+
+**Two real bugs the sound gate found in the code around it.**
+
+1. The frame loop was opening the AudioContext, from the first paint, before
+   anybody had touched the screen. Headless this is invisible because of the
+   autoplay flag; on a phone that context is born suspended and stays that way.
+2. The flutter was tuned to veers the game never reaches. Veer builds on a time
+   constant of about seven seconds and a flight lasts three, so a buzz that
+   started at 0.12 and needed 0.8 to be loud was a cue nobody would ever hear.
+
+**Shots at the four sizes the plan names**, plus the tile:
+`p3-412.png`, `p3-375.png`, `p3-320.png`, `p3-915.png`, `docs/thumb.png`.
+
+What looking at 412 by 915 found, which no gate would have:
+
+- **A tall phone is not a bigger phone.** Scaled by the width alone the flight
+  sat in a two hundred pixel band at the bottom and two thirds of the screen was
+  blank paper. The room is drawn closer on a tall screen, the floor is dropped
+  to 86 percent, and the gym grew a ceiling: roof trusses with lamps hanging off
+  them and a painted stripe down the wall. The ceiling is anchored to the FRAME
+  and not to the world, which is the one thing in the game that is, and the
+  comment in `drawCourse` says so and says why.
+- The trusses were drawn with their apex ABOVE the roof line and poked up into
+  the back button and the readout. They hang down now.
+- The portal tile went through four framings. A whole room wide it was ninety
+  percent empty paper with a banner in the middle; cropped tight at device ratio
+  one it was a blurry aeroplane with a staircase for an edge; in the backyard it
+  had three faint blue rules across it, which were the fan's jet. It is now a
+  plane at the top of a hard throw, above the gym's high windows where the wall
+  is plain, at three times the pixels.
+
+
 ## 14. THE OVERNIGHT PROTOCOL
 
 As `plans/fathom/HANDOFF-FATHOM.md` section 14, with `P0, P1, P2, P3` of this file and the browser gates `throw, fold,
@@ -928,13 +1018,67 @@ tunnel, layout`.
 
 ## 15. THE MORNING REPORT
 
-### Airworthy, built 2026-09-06
+### Airworthy, finished 2026-09-06
 
-**P2 is done as well.** The workshop and the hangar are built, `test/fold.mjs`
-is the fifth gate, and four more mutations are watched in section 13. What
-follows was written at the end of P1 and still stands, with P2's numbers folded
-in: five gates, 76 sim assertions, ten mutations watched to fail. P3 (the wind
-tunnel, the Backyard, the medals and the rest of the sound) is NOT started.
+**Where it is.** P0, P1, P2 and P3 are done, committed and pushed on
+`add-sproing-jumper`. Eight gates green: `sim` (123 assertions), `lint`,
+`throw`, `fold`, `tunnel`, `challenge`, `sound`, `layout`, plus two tools that
+refuse to lie, `sim.js --medals` and `tools/thumb.mjs`. Every assertion in every
+gate has been watched to fail at least once, and the ones that took a second and
+third mutation to turn red are named in section 13.
+
+**What it is.** You fold a paper plane through six real creases, throw it, watch
+it porpoise, and fix it with the elevator. There is a wind tunnel that cannot
+lie to you about the field, because it has no model of its own: it calls the
+same lift curve and the same drag polar the aeroplane flies on, and the gate
+proves that by measuring an actual flight rather than by reading a variable.
+There are two courses and six challenges, and the medals on them were measured
+by flying forty folds through every one, not guessed.
+
+**The three best things in it.**
+
+1. The tunnel found a hole in the flight model. Drawn against the same drag the
+   plane flies on, the drag arrow got SHORTER when the wing let go, because
+   induced drag follows CL and CL falls in a stall. A stalled wing is a barn
+   door and it was getting cheaper to push through the air. That is a bug you
+   cannot see in a number and can hardly miss in a picture.
+2. The challenges ask for different folds and it is proved rather than hoped:
+   the fold that goes furthest has a wing of 0.15 and the fold that hangs
+   longest has a wing of 0.99, and an assertion fails if that gap closes. The
+   plan's own test for this hole (no fold golds all six) PASSED while the hole
+   was open, so a sharper one was written next to it.
+3. Every threshold in the file was written by a tool that flew for them, and the
+   tool refuses to write a set where one plane wins everything.
+
+**What is thin, honestly.**
+
+- **No painted art at all.** Every room, plane and prop is drawn by code. It
+  holds together and it is consistent, but it is the plainest part of the game
+  and the one a player will judge first. `docs/ART_ASSETS.md` says exactly what
+  would need painting.
+- **Nobody has played it on a phone and nobody has heard it.** The headless
+  browser runs with the one flag a real phone does not have. The sound gate can
+  prove the graph responds; it cannot prove the graph makes a sound.
+- **A tall phone still has a lot of wall on it.** The room is drawn closer and
+  the gym grew a ceiling, which turns blank paper into a room, but at 412 by 915
+  the flight still lives in the lower half. The honest alternative was showing
+  four metres of room across the width, and the flight is the subject.
+- **Four of the six courses in the design are not built.** Stunt, the Canyon and
+  the Stadium are named in the design and the plan puts them after this slice.
+- The gym's accuracy mark is a desk at 8.5 m because that is where forty planes
+  come down from the throw that challenge sets. If the throw is ever retuned the
+  mark has to move with it, and `suiteChallenges` will go red if it does not.
+
+**Two Director calls waiting.**
+
+1. **The challenges take the throw off you.** Fold and trim are yours, the arm
+   is the challenge's. It is what makes the six ask for six different planes,
+   and it is a real change from a game whose other half is a slingshot. The gym
+   with no challenge selected still has the free sling.
+2. **The starting plane porpoises and it takes most of the elevator slider to
+   settle it,** from plus four down to about minus four. That is the opening
+   lesson working, but it is a big drag for a first ever interaction and a
+   smaller airframe bias would make it two nudges instead.
 
 ### Airworthy, built 2026-09-06
 
