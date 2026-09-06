@@ -139,7 +139,10 @@ html,body{margin:0;padding:0;height:100%;background:#8CC6F0;color:var(--ink);
     <div id="titleWord">UPDRAFT</div>
     <div class="title-line">Go fly a kite. Right now.</div>
     <button class="btn lead" id="btnPlay">TO THE FIELD</button>
-    <button class="btn small" id="btnHow">HOW TO FLY</button>
+    <div class="toggles">
+      <button class="btn small" id="btnHow">HOW TO FLY</button>
+      <button class="btn small" id="btnDaily">DAILY WIND</button>
+    </div>
     <div class="toggles">
       <button class="btn small" id="btnSound">SOUND ON</button>
       <button class="btn small" id="btnMotion">MOTION ON</button>
@@ -200,6 +203,9 @@ html,body{margin:0;padding:0;height:100%;background:#8CC6F0;color:var(--ink);
     <div class="jrow" id="jLong"></div>
     <div class="jrow" id="jHours"></div>
     <div class="jrow" id="jFlights"></div>
+    <div class="cap" style="margin-top:14px">THE DAILY WIND</div>
+    <div class="jrow" id="jDaily"></div>
+    <button class="btn small" id="btnShareJ" hidden>SHARE THE WIND</button>
     <div class="cap" style="margin-top:14px">STAMPS</div>
     <div id="jStamps"></div>
     <button class="btn small ghost" id="btnJournalBack">BACK</button>
@@ -213,6 +219,7 @@ html,body{margin:0;padding:0;height:100%;background:#8CC6F0;color:var(--ink);
     <div class="stat" id="endTime"></div>
     <div class="stat" id="endTricks"></div>
     <button class="btn lead" id="btnAgain">FLY AGAIN</button>
+    <button class="btn small" id="btnShare" hidden>SHARE THE WIND</button>
     <button class="btn small" id="btnJournal2">JOURNAL</button>
     <button class="btn small ghost" id="btnEndTitle">BACK TO THE TITLE</button>
     <div class="spacer"></div>
@@ -368,7 +375,7 @@ function step(st, dt) {
   if (st.ended) {
     st.t += dt;
     /* the landing flourish: for SETTLE_S after a clean landing or a tumble the tail keeps moving in a ground breeze and lays out over the grass; a snap freezes at once */
-    if (st.ended !== 'snap' && st.t - st.endT <= C.SETTLE_S) { st.vAz = 0; st.vEl = 0; stepTail(st, dt, C.SETTLE_WIND * (st.az < 0 ? -1 : 1), 0); }
+    if (st.ended !== 'snap' && st.ended !== 'daily' && st.t - st.endT <= C.SETTLE_S) { st.vAz = 0; st.vEl = 0; stepTail(st, dt, C.SETTLE_WIND * (st.az < 0 ? -1 : 1), 0); }
     return st;
   }
   var p = kitePos(st);
@@ -1395,6 +1402,37 @@ var WEATHER = (function () {
 })();
 
 /* ========================= 13. BOOT ========================= */
+/* ========================= 12c. THE DAILY WIND ========================= */
+/* One wind a day, the same gusts for everyone who flies it: the seed is the
+   date, the mood comes from that seed, Real Wind stays out of it. Three
+   minutes (DAILY_FLIGHT_S) and the flight is called; the tally is the best
+   altitude and the stamps, kept in the journal and carried in a #w= link:
+   #w=<date>.<altitude>.<stamp initials>. The recipient flies the same date. */
+var DAILY = (function () {
+  var INITIAL = { 'Loop': 'L', 'Figure 8': 'F', 'Dive Bomb': 'D', 'Stall Save': 'S', 'Sky Write': 'W', 'High Park': 'H' };
+  var NAMES = { L: 'Loop', F: 'Figure 8', D: 'Dive Bomb', S: 'Stall Save', W: 'Sky Write', H: 'High Park' };
+  function today() { var d = new Date(), m = d.getMonth() + 1, day = d.getDate(); return d.getFullYear() + '-' + (m < 10 ? '0' : '') + m + '-' + (day < 10 ? '0' : '') + day; }
+  function seedFor(date) { return seedFromString('daily' + date); }
+  function moodFor(date) { var r = makeRNG(mixSeed(seedFor(date), 7))(); return r < 0.4 ? 'gentle' : r < 0.8 ? 'fresh' : 'blustery'; }
+  function link(t) { return location.origin + location.pathname + '#w=' + t.date + '.' + t.alt + '.' + t.tricks.map(function (n) { return INITIAL[n] || ''; }).join(''); }
+  function parse(hash) {
+    var m = /#w=(\d{4}-\d{2}-\d{2})(?:\.(\d+))?(?:\.([LFDSWH]*))?/.exec(hash || '');
+    if (!m) return null;
+    return { date: m[1], alt: m[2] ? parseInt(m[2], 10) : 0, tricks: (m[3] || '').split('').map(function (c) { return NAMES[c]; }) };
+  }
+  function words(t) { return (t.alt ? t.alt + ' m' : 'the grass') + (t.tricks.length ? ' and ' + t.tricks.join(', ') : ''); }
+  return { today: today, seedFor: seedFor, moodFor: moodFor, link: link, parse: parse, words: words };
+})();
+function shareDaily(t) {
+  var url = DAILY.link(t), text = 'I flew the Daily Wind to ' + DAILY.words(t) + '. Your turn, same gusts.';
+  var fallback = function () {
+    try { navigator.clipboard.writeText(url).then(function () { toast('Link copied. Anyone who opens it flies the same wind.'); }, function () { toast(url); }); }
+    catch (e) { toast(url); }
+  };
+  if (navigator.share) { try { navigator.share({ title: 'Updraft, the Daily Wind', text: text, url: url }).then(null, function (e) { if (!e || e.name !== 'AbortError') fallback(); }); return; } catch (e) {} }
+  fallback();
+}
+
 var STAMP = '20260906e';
 function showScreen(name) {
   var ids = { title: 'scrTitle', how: 'scrHow', pause: 'scrPause', mood: 'scrMood', kites: 'scrKites', journal: 'scrJournal', end: 'scrEnd' }, k;
@@ -1412,21 +1450,24 @@ function showStamp(name) {
   clearTimeout(showStamp.h); showStamp.h = setTimeout(function () { s.classList.remove('on'); }, 2400);
 }
 function refreshChip() {
-  $('btnMood').textContent = WEATHER.chip() || G.mood.toUpperCase();
+  $('btnMood').textContent = (G.st && G.st.daily) ? 'DAILY' : (WEATHER.chip() || G.mood.toUpperCase());
   $('windLine').textContent = WEATHER.hudLine();
 }
-function newRun() {
-  var seed = seedFromString('free' + Date.now());
-  if (WEATHER.isOn()) WEATHER.refresh(refreshChip);
-  var rw = WEATHER.flightWind();
-  G.st = newFlight({ mood: rw ? rw.mood : G.mood, seed: seed, kite: G.save.kite, wind: rw ? { base: rw.base } : undefined });
+function newRun(o) {
+  var daily = o && o.daily ? o.daily : null;
+  var seed = daily ? DAILY.seedFor(daily) : seedFromString('free' + Date.now());
+  if (WEATHER.isOn() && !daily) WEATHER.refresh(refreshChip);
+  var rw = daily ? null : WEATHER.flightWind();
+  G.st = newFlight({ mood: daily ? DAILY.moodFor(daily) : rw ? rw.mood : G.mood, seed: seed, kite: G.save.kite, wind: rw ? { base: rw.base } : undefined });
+  G.st.daily = daily;
+  if (daily) { toast('The Daily Wind, ' + G.st.mood + ', three minutes. Everyone flies these gusts.'); }
   G.flightN++;
   G.acc = 0; G.last = 0;
   refreshChip();
   if (!G.hintShown.hold) { hint('Hold to pull the string. Let go to give it line.'); G.hintShown.hold = 1; }
 }
 function endFlight(st) {
-  var word = st.ended === 'clean' ? 'A CLEAN LANDING' : st.ended === 'snap' ? 'THE LINE SNAPPED' : 'A TUMBLE IN THE GRASS';
+  var word = st.ended === 'clean' ? 'A CLEAN LANDING' : st.ended === 'snap' ? 'THE LINE SNAPPED' : st.ended === 'daily' ? 'TIME. THE DAILY WIND IS FLOWN' : 'A TUMBLE IN THE GRASS';
   $('endWord').textContent = word;
   $('endAlt').textContent = 'HIGHEST ' + Math.round(st.maxAlt) + ' M';
   $('endTime').textContent = 'IN THE AIR ' + Math.round(st.airTime) + ' S';
@@ -1437,7 +1478,12 @@ function endFlight(st) {
     if (st.airTime > s.journal.longest) s.journal.longest = Math.round(st.airTime);
     s.journal.hours += st.airTime / 3600; s.journal.flights++;
     names.forEach(function (n) { s.journal.tricks[n] = (s.journal.tricks[n] || 0) + 1; });
+    if (st.daily) {
+      var t = { date: st.daily, alt: Math.round(st.maxAlt), tricks: names.slice() }, old = s.journal.daily;
+      if (!old || old.date !== t.date || t.alt > old.alt || t.tricks.length > old.tricks.length) s.journal.daily = t;
+    }
   });
+  $('btnShare').hidden = !st.daily;
   if (st.ended === 'snap') toast('It fluttered off over the trees. A friend hands you another.');
   showScreen('end');
 }
@@ -1445,7 +1491,7 @@ function simTick(dtReal) {
   var st = G.st, C = CONFIG, dt = 1 / C.SIM_HZ, n = 0, evBefore, i;
   if (!st || G.screen !== 'play') return;
   G.acc += Math.min(0.25, dtReal) * G.timeScale;
-  while (G.acc >= dt && n < 30) {
+  while (G.acc >= dt && n < 30 * Math.max(1, G.timeScale)) { /* a dev clock above 1 may take more steps a frame; the player clock never does */
     evBefore = st.events.length;
     step(st, dt);
     for (i = evBefore; i < st.events.length; i++) {
@@ -1458,11 +1504,12 @@ function simTick(dtReal) {
       if (e.e === 'freed') toast('Free. Mabel lets go this time.');
       if (e.e === 'launched' && !G.hintShown.lean) { hint('Slide your thumb to lean.'); G.hintShown.lean = 1; }
     }
+    if (st.daily && !st.ended && st.t >= C.DAILY_FLIGHT_S) { st.ended = 'daily'; st.endT = st.t; st.events.push({ t: st.t, e: 'daily' }); }
     if (st.strain && !st.strainBuzzed) { st.strainBuzzed = true; haptic(30); }
     if (!st.strain) st.strainBuzzed = false;
     G.acc -= dt; n++;
   }
-  if (st.ended && !st.endShown) { st.endShown = true; setTimeout(function () { if (G.st === st) endFlight(st); }, st.ended === 'snap' ? 700 : Math.round(CONFIG.SETTLE_S * 1000) + 200); }
+  if (st.ended && !st.endShown) { st.endShown = true; setTimeout(function () { if (G.st === st) endFlight(st); }, (st.ended === 'snap' || st.ended === 'daily') ? 700 : Math.round(CONFIG.SETTLE_S * 1000) + 200); }
   $('altTag').textContent = Math.round(altitude(st)) + ' M';
 }
 function frame(ts) {
@@ -1539,6 +1586,8 @@ function openJournal(from) {
   $('jLong').innerHTML = '<i>LONGEST FLIGHT</i><span>' + j.longest + ' S</span>';
   $('jHours').innerHTML = '<i>HOURS IN THE AIR</i><span>' + (Math.round(j.hours * 10) / 10) + '</span>';
   $('jFlights').innerHTML = '<i>FLIGHTS</i><span>' + j.flights + '</span>';
+  $('jDaily').innerHTML = j.daily ? '<i>' + j.daily.date + '</i><span>' + DAILY.words(j.daily).toUpperCase() + '</span>' : '<i>NOT FLOWN YET</i><span>3 MIN, ONE WIND</span>';
+  $('btnShareJ').hidden = !j.daily;
   names.forEach(function (n) { var c = j.tricks[n] || 0; if (c) { any = true; html += '<div class="jrow"><b>' + n + '</b><span>' + c + '</span></div>'; } });
   $('jStamps').innerHTML = any ? html : '<div class="none">No stamps yet. Loops, dives and saves come from your thumb.</div>';
   showScreen('journal');
@@ -1574,6 +1623,9 @@ function wire() {
   function tapOn(id, fn) { $(id).addEventListener('click', fn); }
   tapOn('btnPlay', function () { AUDIO.unlock(); newRun(); showScreen('play'); });
   tapOn('btnHow', function () { showScreen('how'); });
+  tapOn('btnDaily', function () { AUDIO.unlock(); newRun({ daily: G.dailyFrom ? G.dailyFrom.date : DAILY.today() }); showScreen('play'); });
+  tapOn('btnShare', function () { if (G.save.journal.daily) shareDaily(G.save.journal.daily); });
+  tapOn('btnShareJ', function () { if (G.save.journal.daily) shareDaily(G.save.journal.daily); });
   tapOn('btnHowOk', function () { showScreen('title'); });
   tapOn('btnPause', function () { if (G.st) setInput(G.st, false, 0); G.ptr = null; showScreen('pause'); });
   tapOn('btnResume', function () { showScreen('play'); });
@@ -1624,6 +1676,12 @@ function boot() {
   if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) G.motion = 0;
   var hm = location.search.match(/hour=([0-9.]+)/);
   G.hourOverride = hm ? parseFloat(hm[1]) : null;
+  G.dailyFrom = DAILY.parse(location.hash);
+  if (G.dailyFrom) {
+    $('btnDaily').textContent = 'FLY THEIR WIND';
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+    setTimeout(function () { toast('A friend flew the wind of ' + G.dailyFrom.date + ' to ' + DAILY.words(G.dailyFrom) + '. Your turn.'); }, 600);
+  }
   AUDIO.setOn(!!G.sound);
   fitCanvas();
   bindInput();
@@ -1647,6 +1705,7 @@ function boot() {
    Nothing here drives the game: every gate presses the real canvas. */
 window.UPDRAFT_DEV = {
   stamp: STAMP,
+  daily: function () { return { from: G.dailyFrom, flying: G.st ? G.st.daily : null, seed: G.st ? G.st.seed : null, journal: G.save.journal.daily || null, link: G.save.journal.daily ? DAILY.link(G.save.journal.daily) : null, seedFor: DAILY.seedFor, moodFor: DAILY.moodFor }; },
   weather: function () { return { status: WEATHER.state.status, mph: WEATHER.state.mph, fetches: WEATHER.state.fetches, line: WEATHER.line() }; },
   screen: function () { return G.screen; },
   frames: function () { return G.frames; },
@@ -1654,7 +1713,7 @@ window.UPDRAFT_DEV = {
     var st = G.st; if (!st) return null;
     var s = snapshot(st);
     s.hold = st.hold; s.lean = st.lean; s.hRate = st.hRate; s.tN = st.tN; s.strain = st.strain; s.launched = st.launched; s.reel = st.reelSpeed > 0;
-    s.events = st.events.length; s.maxAlt = st.maxAlt; s.snagged = st.snagged; s.windBase = st.wind.base; s.mood = st.mood;
+    s.events = st.events.length; s.maxAlt = st.maxAlt; s.snagged = st.snagged; s.windBase = st.wind.base; s.mood = st.mood; s.seed = st.seed; s.endT = st.endT;
     return s;
   },
   kiteScreen: function () { return G.st ? kiteScreen(G.st) : null; },

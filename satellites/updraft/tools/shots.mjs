@@ -201,6 +201,25 @@ if (want('p3-realwind')) {
   save('p3-realwind-field', await page.screenshot({ type: 'png' }));
   await browser.close();
 }
+if (want('p3-daily')) {
+  /* a friend's link on the title, then the journal with the day kept and SHARE */
+  const { browser, page } = await open(base, { width: 375, height: 667, query: '#w=2026-09-06.41.LD' });
+  await page.setViewport({ width: 375, height: 667, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
+  await page.waitForFunction(() => document.getElementById('toast').classList.contains('on'), { timeout: 5000 }).catch(() => {});
+  await waitFrames(page, 2);
+  save('p3-daily-title', await page.screenshot({ type: 'png' }));
+  await page.evaluate(() => localStorage.setItem('lw_updraft_v1', JSON.stringify({ v: 1, journal: { bestAlt: 67, longest: 214, tricks: { 'Loop': 4, 'Dive Bomb': 2 }, hours: 0.42, flights: 9, daily: { date: '2026-09-06', alt: 41, tricks: ['Loop', 'Dive Bomb'] } }, kite: 'diamond', mood: 'fresh' })));
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForFunction(() => window.UPDRAFT_DEV && window.UPDRAFT_DEV.screen() === 'title', { timeout: 20000 });
+  await toField(page);
+  await tap(page, '#btnPause');
+  await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'pause', { timeout: 20000 });
+  await tap(page, '#btnJournal');
+  await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'journal', { timeout: 20000 });
+  await waitFrames(page, 3);
+  save('p3-daily-journal', await page.screenshot({ type: 'png' }));
+  await browser.close();
+}
 close();
 const over = wrote.filter(w => w.kb > 200);
 console.log('\n' + wrote.length + ' shots' + (over.length ? ', ' + over.length + ' OVER the limit' : ', all under 200 KB'));

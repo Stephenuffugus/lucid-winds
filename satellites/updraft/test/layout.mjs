@@ -27,6 +27,7 @@ for (const size of SIZES) {
   }
   await check('#btnPlay', 'TO THE FIELD', 56);
   await check('#btnHow', 'HOW TO FLY');
+  await check('#btnDaily', 'DAILY WIND');
   await check('#btnSound', 'SOUND');
   await check('#btnMotion', 'MOTION');
   await tap(page, '#btnHow');
