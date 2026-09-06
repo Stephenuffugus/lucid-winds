@@ -23,6 +23,21 @@ this file wins; every difference is in section 3 with its reason.
   **Next action for whoever opens this:** nothing is half finished. The open questions are in the morning report and
   the biggest of them is Stephen's ear.
 
+- 2026-09-07 Opus (lead): **C2 IS DONE, AND ITS ANSWER IS YES.** Stamp `20260907a` in three
+  places. `node tools/check.js` ALL GATES PASSED over the seven.
+  The first line IS on a fresh save at all three sizes, fully on the screen at forty percent of
+  the height: 412x915 top 339, 375x667 top 239, 320x568 top 200, opacity 0.72, and it reads.
+  **What looking at it found instead:** a first arrival is a black rectangle with one line of
+  text and a gold REC button, and the brightest thing on the screen is a control rather than the
+  invitation. The floor breathes now, in the mood's own colour, until a hand has held it once.
+  D-C2. ⛔ The first go at the glow was invisible at 0.055 alpha on #08070C, and the frame loop
+  had to be told not to halt on it, because a resting glow that freezes two seconds in is a still
+  picture. ⛔ And the assertion could not fail TWICE: it sat where the gate had already held the
+  screen so it was reading the swell's own wash, and its loop check read `rafOn` before the idle
+  stop could have run. Both fixed, both watched to fail. D-C2b.
+  **Next action:** the top two fifths staying black THROUGH the swell is item 1 of the look pass
+  and is his ear and eye, not mine. Nothing here is half built.
+
 ---
 
 ## 0. RULES OF ENGAGEMENT

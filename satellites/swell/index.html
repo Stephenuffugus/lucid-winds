@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="SWELL">
-<link rel="manifest" href="./manifest.webmanifest?v=20260906d">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260906d">
-<link rel="icon" href="./icon-192.png?v=20260906d">
+<link rel="manifest" href="./manifest.webmanifest?v=20260907a">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260907a">
+<link rel="icon" href="./icon-192.png?v=20260907a">
 <link rel="canonical" href="https://lucidwinds.com/satellites/swell/">
 <style>
 /*  SWELL
@@ -112,7 +112,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--ink);color:var(--cream
 #testPanel.on{display:block}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260906d" defer></script>
+<script src="/music-unlocks.js?v=20260907a" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">SWELL</h1>
@@ -1222,7 +1222,7 @@ function suitePurity(T, src) {
 // ---- TEST_EXPORT_END ----
 
 /* ========================= 13. AURORA, INPUT, BOOT ========================= */
-var STAMP = '20260906d';
+var STAMP = '20260907a';
 var G = {
   screen: 'podium', save: null, mood: 'dawn', settings: { tilt: 0, motion: 1 },
   motion: 1, frames: 0, rafOn: false, lastTouch: 0, quiet: 0,
@@ -1325,6 +1325,26 @@ function paint() {
   CTX.fillRect(0, 0, CSSW, CSSH);
   var held = ENG.drawHeld(now), fade = ENG.drawFade(now), any = 0, i;
   var inten = intensityAt(held, 1) * fade;
+  /* ⛔ THE ROOM EXISTS BEFORE THE SOUND DOES. A first arrival at 412 by 915 was
+     a black rectangle with one line of text on it and a gold REC button in the
+     corner, which is indistinguishable from a page that failed to load, and the
+     brightest thing on the screen was a control rather than the invitation. The
+     game's own idea is that light rises out of the floor when you hold, so
+     before the first hold the floor breathes at a fraction of that, slowly, in
+     the mood's own colour. It says where the light comes from and it says the
+     screen is awake. Gone for good once a hand has held it. */
+  if (G.save && !G.save.seen.held && inten < 0.02) {
+    var br = 0.5 + 0.5 * Math.sin((G.frames / 60) * 0.55);
+    /* ⛔ the first go at this was 0.055 to 0.10 alpha and it was invisible on a
+       ground of #08070C: a glow nobody can see is the same black screen with
+       more code behind it. Measured by opening the shot, not by reasoning. */
+    var rest = CTX.createLinearGradient(0, CSSH, 0, CSSH * 0.52);
+    rest.addColorStop(0, hexA(mood.colour.wash, 0.16 + 0.10 * br));
+    rest.addColorStop(0.45, hexA(mood.colour.wash, 0.05 + 0.035 * br));
+    rest.addColorStop(1, 'rgba(0,0,0,0)');
+    CTX.fillStyle = rest;
+    CTX.fillRect(0, CSSH * 0.52, CSSW, CSSH * 0.48);
+  }
   /* the wash: the room warms as the tension climbs */
   if (inten > 0.01) {
     var wash = CTX.createLinearGradient(0, CSSH, 0, CSSH * 0.35);
@@ -1383,7 +1403,13 @@ function paint() {
 function frame() {
   G.frames++;
   paint();
-  var silent = (ENG.state() === 'idle') && !Object.keys(G.fingers).length && (G.anyLight || 0) < 0.01;
+  /* ⛔ AND THE LOOP MAY NOT STOP WHILE THE INVITATION IS BREATHING. The frame
+     loop halts after two seconds of silence, which is the battery pass made a
+     rule; a resting glow that freezes two seconds in is a still picture, not an
+     invitation. A screen nobody has ever held is not silent. This costs a first
+     visit and nothing after it. */
+  var waiting = !!(G.save && !G.save.seen.held);
+  var silent = !waiting && (ENG.state() === 'idle') && !Object.keys(G.fingers).length && (G.anyLight || 0) < 0.01;
   if (silent) {
     G.quiet++;
     /* 3.11: the frame loop STOPS when there is nothing to draw, which is the
@@ -1428,6 +1454,7 @@ function bindInput() {
     if (!ctx) return;
     try { CV.setPointerCapture(e.pointerId); } catch (err) {}
     $('firstLine').classList.add('gone');
+    if (G.save && !G.save.seen.held) G.save = SAVE.write(function (sv) { sv.seen.held = 1; });
     hush(true);
     wake();
     G.fingers[e.pointerId] = { x: e.clientX / CSSW, y: e.clientY / CSSH, t0: Date.now(),
@@ -1795,6 +1822,23 @@ window.SWELL_DEV = {
   chordLog: function () { return ENG.chordLog(); },
   oscPeak: function () { return ENG.oscPeak(); },
   hushed: function () { return document.getElementById('chrome').classList.contains('hush'); },
+  /* how much light is on the RESTING screen, read off the canvas. A first
+     arrival was a black rectangle with one line of text on it, which is
+     indistinguishable from a page that failed to load, and no gate could tell
+     the difference either: every existing assertion here is about the sound or
+     about where an element sits. This counts pixels in the lower half that are
+     brighter than the ground the game paints. */
+  restLight: function () {
+    var d = CTX.getImageData(0, Math.round(CSSH * 0.55 * DPR), CV.width,
+      CV.height - Math.round(CSSH * 0.55 * DPR)).data;
+    var i, lit = 0;
+    for (i = 0; i < d.length; i += 4) {
+      /* the ground is #08070C, so anything meaningfully above it is light */
+      if (d[i] + d[i + 1] + d[i + 2] > 44) lit++;
+    }
+    return { lit: Math.round(lit / (DPR * DPR)), seenHeld: !!(G.save && G.save.seen.held),
+      raf: G.rafOn };
+  },
   recording: function () { return !!G.recorder; },
   lastRecording: function () {
     return G.lastBlob ? { size: G.lastBlob.size, type: G.lastBlob.type, name: G.lastName, path: G.lastPath || null } : null;

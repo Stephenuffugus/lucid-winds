@@ -91,3 +91,37 @@ keepsake.
 **2026-09-05 — `art/plates.json` says which mood plates exist.**
 Why: probing for the three image files directly put three 404s on the console of every boot, forever,
 for art that has not been made yet.
+
+**D-C2 (2026-09-07, Opus) — C2's question is answered yes, and looking at it found the real
+thing.** The first line, "Hold anywhere. Let go when it feels right.", IS on a fresh save at all
+three sizes, fully on the screen, at forty percent of the height where a thumb looks: measured at
+412x915 (top 339, bottom 393), 375x667 (239 to 294) and 320x568 (200 to 255), at 0.72 opacity,
+and it reads.
+
+**What the shot showed instead:** a first arrival is a black rectangle with one line of text on
+it and a gold REC button in the corner. The brightest thing on the screen is a control rather
+than the invitation, and the whole thing is indistinguishable from a page that failed to load.
+No assertion in this game could tell the difference, because every one of them is about the
+sound or about where an element sits.
+
+**The fix is the game's own idea.** Light rises out of the floor when you hold, so before the
+first hold the floor breathes at a fraction of that, slowly, in the mood's own colour, and it is
+gone for good once a hand has held it once (`seen.held`).
+⛔ THE FIRST GO WAS INVISIBLE, at 0.055 to 0.10 alpha on a ground of #08070C: a glow nobody can
+see is the same black screen with more code behind it. Found by opening the shot, not by
+reasoning about the number. It is 0.16 to 0.26 at the floor now.
+⛔ AND THE FRAME LOOP HAD TO BE TOLD. It halts after two seconds of silence, which is the battery
+pass made a rule, and a resting glow that freezes two seconds in is a still picture rather than
+an invitation. A screen nobody has ever held is not silent. It costs a first visit and nothing
+after it.
+
+**D-C2b (2026-09-07, Opus) — the assertion was wrong twice before it was right, both times in
+the same way: it could not fail.**
+1. It sat at the BOTTOM of the layout gate, by which point the gate had already held the screen,
+   so `seen.held` was set and the "floor is lit" reading was the swell's own wash. It reads on
+   the fresh page now, before the gate has touched anything, and with the glow removed it reports
+   zero lit pixels.
+2. The "the loop is still running" check read `rafOn` four frames after load, which is before the
+   thing that would stop it has had a chance to run: the mutation that lets the loop stop left it
+   GREEN. It waits two and a half seconds now, past the idle stop, and that mutation turns it red
+   at all four sizes.

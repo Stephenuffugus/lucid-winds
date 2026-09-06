@@ -30,6 +30,31 @@ for (const size of SIZES) {
   await page.waitForFunction(() => window.SWELL_DEV && window.SWELL_DEV.frames() > 2, { timeout: 30000 });
   await waitFrames(page, 4);
 
+  /* ⛔ A FIRST ARRIVAL IS NOT A BLACK RECTANGLE, and this is measured HERE, on
+     the fresh page, before this gate has touched anything. The first draft of it
+     sat at the bottom of the file, by which point the gate had already held the
+     screen, so `seen.held` was set and the "floor is lit" reading was the
+     SWELL'S OWN WASH: a probe passing for the wrong reason. Before anyone has
+     held it, the screen was the ground colour, one line of text and a gold REC
+     button, which is indistinguishable from a page that failed to load, and no
+     assertion in this game could tell the difference because every one of them
+     is about the sound or about where an element sits. The game's own idea is
+     that light rises out of the floor, so the floor breathes until a hand has
+     held it once. */
+  const rest = await dev(() => window.SWELL_DEV.restLight());
+  say(!rest.seenHeld, tag + '  this is a screen nobody has held yet');
+  say(rest.lit > 4000, tag + '  and its floor is lit, so it does not read as a page that failed to load ('
+    + rest.lit + ' lit pixels below the middle)');
+  /* ⛔ AND THE LOOP IS CHECKED AFTER THE IDLE STOP HAS HAD ITS CHANCE. The frame
+     loop halts after two seconds of silence, so reading `rafOn` four frames
+     after load is reading it before the thing that would stop it has run: the
+     mutation that lets the loop stop left this assertion GREEN. Two and a half
+     seconds is past the stop. */
+  await sleep(2600);
+  const still = await dev(() => window.SWELL_DEV.restLight());
+  say(still.raf, tag + '  and two and a half seconds later the frame loop is still running, so the invitation breathes rather than freezing');
+  say(still.lit > 4000, tag + '  and the floor is still lit then (' + still.lit + ')');
+
   async function check(sel, label, min) {
     const c = await centre(page, sel);
     const need = min || 48;
