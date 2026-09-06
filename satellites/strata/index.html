@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="STRATA">
-<link rel="manifest" href="./manifest.webmanifest?v=20260906d">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260906d">
-<link rel="icon" href="./icon-192.png?v=20260906d">
+<link rel="manifest" href="./manifest.webmanifest?v=20260906e">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260906e">
+<link rel="icon" href="./icon-192.png?v=20260906e">
 <link rel="canonical" href="https://lucidwinds.com/satellites/strata/">
 <style>
 /*  STRATA
@@ -169,6 +169,13 @@ input[type=text]{width:100%;min-height:48px;border:3px solid var(--ink);border-r
 .plinth{flex:0 0 auto;width:190px;display:flex;flex-direction:column;align-items:center;gap:0;
   background:transparent;border:0;padding:0;font-family:inherit;color:var(--paper)}
 .plinth canvas{width:190px;height:210px;display:block}
+/* the wall above the plinths carried nothing (the Sep 06 report); on a tall phone each
+   specimen's plate hangs there, framed, the same card MAKE A PLATE shares */
+.plinth .frame{display:none}
+@media (min-height:760px){
+  .plinth .frame{display:block;width:132px;height:165px;margin:0 0 14px;border:5px solid #3B2A18;
+    box-shadow:0 6px 14px rgba(0,0,0,.45),inset 0 0 0 2px #C9A96A}
+}
 .plinth .base{width:190px;height:26px;background:var(--paper2);border:3px solid var(--ink);
   border-radius:5px 5px 0 0}
 .plinth .placard{width:190px;min-height:70px;background:var(--brass);border:3px solid var(--ink);
@@ -179,7 +186,7 @@ input[type=text]{width:100%;min-height:48px;border:3px solid var(--ink);border-r
 #hallEmpty[hidden]{display:none}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260906d" defer></script>
+<script src="/music-unlocks.js?v=20260906e" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">STRATA</h1>
@@ -1453,7 +1460,7 @@ function conditionWord(outN, cracked, total) {
 
 
 /* ========================= 16. THE GAME'S STATE ========================= */
-var STAMP = '20260906d';
+var STAMP = '20260906e';
 var REDUCED = false;
 var G = {
   screen: 'Title', mode: 'dig',
@@ -2953,6 +2960,12 @@ function plinthFor(m, ix) {
   b.setAttribute('data-seed', m.seed);
   b.setAttribute('data-ix', ix);
   b.addEventListener('click', function () { openSpecimen(parseInt(b.getAttribute('data-ix'), 10)); });
+  /* the framed plate on the wall, drawn small from the same renderer; CSS decides
+     whether the phone is tall enough to show it */
+  var fr = document.createElement('canvas');
+  fr.className = 'frame'; fr.width = 264; fr.height = 330;
+  b.appendChild(fr);
+  try { var fc = fr.getContext('2d'); fc.scale(264 / 1080, 330 / 1350); renderPlate(fc, 1080, 1350, m); } catch (e) {}
   var cv = document.createElement('canvas');
   cv.width = 380; cv.height = 420;
   b.appendChild(cv);
