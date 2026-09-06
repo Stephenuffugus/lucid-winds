@@ -342,3 +342,21 @@ edge. A perfect throw is not taxed by rough water, only the ordinary ones
 either side of the magic angle are, which is what makes the bay worth the greed
 and the lee the place for a count on a bad day. `throwEnv` reads the face, so
 the seam previews it and the count obeys it. The land itself is not drawn yet.
+
+**D38 (2026-09-06, Opus) — the share card is 1080x1350 and its arc is the model's own
+trace, not a drawing of one.** The plan's section 4 asks for a replay image with the arc,
+the rings, the count, the date and the stone's name. The five throws on a daily card carry
+only a skip count and a distance, so a card built from those alone would have to invent the
+shape of the throw. Instead `DAILY.record` now keeps `xs`, the x of every skip event the
+model already produced, in the save only: the `#d=` link still packs skips and distances
+and the daily gate still pins that shape, so nothing about sharing a lake changes. The card
+draws the best of the five from those positions, one ring where each skip landed and the
+plunk where it went in, so the trill a good throw makes is visible in the picture. A throw
+saved before this existed has no `xs` and falls back to a shortening series that sums to
+its real distance; the counts and distances printed are always the stored ones.
+
+**D39 (2026-09-06, Opus) — SHARE sends the picture with the link when the browser can carry
+a file, and SAVE THE CARD is always there.** `navigator.share` with files is not everywhere,
+and a lake nobody can see is a worse invitation than one they can. The button tries files
+plus text plus url, falls back to the link share, then to the visible link field. A second
+button writes the png to the downloads, so the card is reachable on every browser.

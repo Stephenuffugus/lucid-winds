@@ -93,6 +93,20 @@ if (th) {
 const res = await dev(() => window.GERPLUNK_DEV.lastResult());
 say(!!res && res.skips >= 6, 'at least six skip events: ' + (res ? res.skips + ' skips, ' + res.distance.toFixed(1) + ' m, ' + res.ended : 'no result'));
 
+/* 4b. THE RECORD IS WATCHED. A throw that beats the hand's best slows from the moment
+   the last skip lands until the plunk, so the final leap is seen rather than gone. The
+   ratio is a literal here on purpose: the last stretch takes about three times as long
+   to watch as it took to happen. Reading CONFIG.SLOW_MO and dividing by it would be a
+   test of arithmetic, not of the game. */
+const sm = await dev(() => window.GERPLUNK_DEV.slowmo());
+say(!!sm && sm.slowFrom !== null && Math.abs(sm.slowFrom - sm.lastSkip) < 1e-9,
+  'the first throw is a record and it slows from the last skip (' + (sm ? sm.slowFrom : 'no play') + ')');
+const stretch = sm && sm.slowFrom !== null ? (sm.sinkWall - sm.slowFrom) / Math.max(1e-6, sm.sinkSim - sm.slowFrom) : 0;
+say(stretch > 2.7 && stretch < 3.2,
+  'and the last stretch takes about three times as long to watch: ' + stretch.toFixed(2) + ' times');
+say(!!sm && sm.sinkWall > sm.sinkSim, 'so the plunk lands later on the screen than in the model ('
+  + (sm ? sm.sinkWall.toFixed(2) + ' s against ' + sm.sinkSim.toFixed(2) : '?') + ')');
+
 /* 5. the tally grows, and ends on the count */
 const post = await dev(() => {
   const el = document.getElementById('tally'), r = el.getBoundingClientRect(), cs = getComputedStyle(document.getElementById('hud'));
@@ -143,6 +157,12 @@ await page.waitForFunction(() => window.GERPLUNK_DEV.save().throws === 2, { time
 const lob = await dev(() => ({ res: window.GERPLUNK_DEV.lastResult(), th: window.GERPLUNK_DEV.lastThrow(), throws: window.GERPLUNK_DEV.save().throws }));
 say(lob.throws === 2, 'the lob was a throw (' + (lob.th ? 'v ' + lob.th.v.toFixed(1) + ', theta ' + lob.th.theta.toFixed(1) : 'none') + ')');
 say(lob.throws === 2 && lob.res.skips <= 2, 'and it died inside two skips: ' + (lob.res ? lob.res.skips : '?'));
+/* and a throw that beats nothing is not slowed: the record is the whole reason to slow */
+const smLob = await dev(() => window.GERPLUNK_DEV.slowmo());
+say(!!smLob && smLob.slowFrom === null,
+  'a lob that beats no record plays at the model\'s own speed (slowFrom ' + (smLob ? smLob.slowFrom : '?') + ')');
+say(!!smLob && Math.abs(smLob.sinkWall - smLob.sinkSim) < 1e-9,
+  'so its plunk lands on the screen when the model sank it');
 const yawLob = await dev(() => window.GERPLUNK_DEV.yaw());
 say(Math.abs(yawLob - yawSD) < 1.5, 'and being a throw it did not turn the lake (' + yawSD.toFixed(1) + ' then ' + yawLob.toFixed(1) + ')');
 

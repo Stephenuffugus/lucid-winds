@@ -191,6 +191,46 @@ on branch `add-sproing-jumper` tonight.
   **Next action:** the SHARE IMAGE at 1080x1350 (plan section 4 SHARE, the Attic path in
   `satellites/attic/index.html` near 1446), then P3 step 1.
 
+- 2026-09-06 15:25Z Opus (lead): **THE SHARE IMAGE IS BUILT, AND P3's ONE REAL GAP,
+  SLOW MOTION ON A RECORD, WITH IT.** Stamp 20260906f.
+  **The card.** `SHARE` renders 1080x1350: the lake at dusk, the sun road opening toward
+  the viewer, the best of the five drawn from the model's OWN skip positions with a ring
+  where each landed and the plunk where it went in, then the day in words, the stone, the
+  five counts with their distances and the summary. `DAILY.record` now keeps `xs` in the
+  save only; the `#d=` link is untouched, so the daily gate's link shape still holds.
+  SHARE sends the picture with the link when `navigator.canShare({files})` allows it and
+  falls back to the link then the visible field; SAVE THE CARD writes the png anywhere.
+  D38 and D39 in `docs/DECISIONS.md`. Three rounds of looking: the first card's foot ran
+  off the bottom edge and the summary, the wordmark and the brand piled up; the sun road
+  stood as a vertical column through the arc; a grey pebble sat detached at the near
+  shore. Now the foot is laid out from the bottom up, the road fades out before the throw,
+  and the plunk closes the run.
+  **Slow motion on a record.** `CONFIG.SLOW_MO` 0.34. A throw that beats the hand's best
+  for its stone slows from the moment the LAST SKIP lands until the plunk, so the final
+  leap and the sink are watched. The trill is never touched: every tick has already been
+  scheduled at the model's own time, and only the plunk is moved, to the wall time the
+  screen will show it at (`wallOf`). Reduced motion and a throw under two skips are never
+  slowed. Five assertions in `test/flick.mjs`, watched to fail at `SLOW_MO: 1`:
+  ```
+  ok    the first throw is a record and it slows from the last skip (1.508)
+  ok    and the last stretch takes about three times as long to watch: 2.94 times
+  ok    so the plunk lands later on the screen than in the model (1.73 s against 1.58)
+  ok    a lob that beats no record plays at the model's own speed (slowFrom null)
+  ok    so its plunk lands on the screen when the model sank it
+  --- with SLOW_MO: 1 ---
+  FAIL  and the last stretch takes about three times as long to watch: 1.00 times
+  FAIL  so the plunk lands later on the screen than in the model (1.48 s against 1.48)
+  ```
+  The ratio is a literal in the gate on purpose: reading `CONFIG.SLOW_MO` and dividing by
+  it would be a test of arithmetic rather than of the game.
+  **What P3 still owes:** step 2 only, the shots at four sizes, `tools/thumb.mjs`, the
+  `ART_ASSETS.md` and `BUILD-NOTES.md` refresh and the morning report. P3 step 1's other
+  four items were already built: the wind and the water by day in `setupDay`, reduced
+  motion through `G.motion` and `prefers-reduced-motion`, and the loon and the crickets in
+  `AUDIO.ambience`.
+  **Next action:** `tools/shots.mjs` at 412x915, 375x667, 320x568 and 667x375 including a
+  card shot, then `tools/thumb.mjs`, then the two docs and the morning report.
+
 ---
 
 ## 0. RULES OF ENGAGEMENT
