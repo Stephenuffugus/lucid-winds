@@ -36,6 +36,7 @@ const BROWSER_GATES = [
   { name: 'dig', cmd: ['test/dig.mjs'], need: 'DIG OK' },
   { name: 'mount', cmd: ['test/mount.mjs'], need: 'MOUNT OK' },
   { name: 'share', cmd: ['test/share.mjs'], need: 'SHARE OK' },
+  { name: 'audio', cmd: ['test/audio.mjs'], need: 'AUDIO OK' },
   { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK', slow: true }
 ];
 

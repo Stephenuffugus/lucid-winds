@@ -2499,8 +2499,89 @@ var AUDIO = {
     while (this.grain >= 1 && fired < 3) { this.grain -= 1; this.play('shhh'); fired++; }
     if (this.grain > 3) this.grain = 3;
     return fired;
+  },
+  /* ========== THE EAR GATE (test/audio.mjs) ==========
+     Stephen, Sep 06: the sound effects "sounded like fire alarms. They made
+     everybody in my house flinch and scared my animals." The cause in that game
+     was a trill oscillator wired into an envelope gain, so a chirp written as
+     0.022 was a half scale 4 kHz tone, and EVERY gate was green because no gate
+     had ever rendered the thing the speaker plays.
+     This renders the dig's LOUDEST MINUTE offline through the same play() and
+     grainFor() the speaker uses, and reports peak, rms and the share of energy
+     above 3 kHz.
+     ⛔ NEVER measure a wav made for the ear: a render tool normalises, and a
+     normalised file says 0.86 whatever the master is doing.
+     ⛔ An offline context's currentTime never advances while you schedule, so
+     play() would stack the whole minute at zero. `shim` is the real offline
+     context with a clock this function turns by hand. */
+  renderLoudMinute: function (seconds) {
+    var OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (!OAC) return Promise.reject(new Error('no OfflineAudioContext'));
+    var sr = 22050, dur = seconds || 60;
+    var octx = new OAC(1, Math.ceil(sr * dur), sr);
+    var shim = {
+      currentTime: 0, sampleRate: octx.sampleRate, destination: octx.destination, state: 'running',
+      resume: function () {},
+      createGain: function () { return octx.createGain(); },
+      createOscillator: function () { return octx.createOscillator(); },
+      createBufferSource: function () { return octx.createBufferSource(); },
+      createBiquadFilter: function () { return octx.createBiquadFilter(); },
+      createBuffer: function (a, b, c) { return octx.createBuffer(a, b, c); }
+    };
+    var saveCtx = this.ctx, saveMaster = this.master, saveOn = this.on, saveGrain = this.grain;
+    this.ctx = shim; this.on = true; this.grain = 0;
+    this.master = octx.createGain();
+    this.master.gain.value = 0.65;
+    this.master.connect(octx.destination);
+    /* THE LOUDEST MINUTE, at the code's OWN ceilings and not at a polite guess.
+       grainFor caps at three grains a call and onMove calls it once a frame, so
+       thirty seconds of brushing at 60 fps with twelve cells of travel a frame
+       is 180 shhh a second, which is the most hiss this game can make. The
+       second half is the pick, which fires a tak on any move over two cells, so
+       once a frame. Over the top of both, the punctuation of a good dig: a
+       clink and a crack and a lift, oftener than a dig gives them. */
+    /* ⛔ THE WINDOW IS SHORT AND THE RATES ARE NOT. 180 grains a second is
+       three nodes each, so a full minute of this schedule builds sixteen
+       thousand nodes and the offline render stops being a gate and becomes a
+       hang. The three numbers are RATE statistics, not duration statistics:
+       a sibling game measured the same peak and rms at six, twenty and sixty
+       seconds of the same schedule to within a thousandth. Twenty seconds of
+       the ceiling is the ceiling. */
+    var f, t;
+    for (f = 0; f < Math.floor(dur * 30); f++) { shim.currentTime = 0.05 + f / 60; this.grainFor(12); }
+    for (f = 0; f < Math.floor(dur * 30); f++) { shim.currentTime = dur / 2 + f / 60; this.play('tak'); }
+    for (t = 1; t < dur; t += 4) { shim.currentTime = t; this.play('clink'); }
+    for (t = 2.5; t < dur; t += 4) { shim.currentTime = t; this.play('crack'); }
+    for (t = 3.5; t < dur; t += 4) { shim.currentTime = t; this.play('warn'); }
+    for (t = 5; t < dur - 1; t += 6) { shim.currentTime = t; this.play('jacket'); }
+    for (t = 6; t < dur - 1; t += 6) { shim.currentTime = t; this.play('keep'); }
+    for (t = 7; t < dur - 1; t += 6) { shim.currentTime = t; this.play('scan'); }
+    for (t = 8; t < dur - 1; t += 6) { shim.currentTime = t; this.play('click'); }
+    for (t = dur / 4; t < dur / 2; t += 1 / 60) { shim.currentTime = t; this.play('tik'); }
+    this.ctx = saveCtx; this.master = saveMaster; this.on = saveOn; this.grain = saveGrain;
+    /* play() is wrapped by the EVENT_LOG recorder, so a minute of rendering
+       leaves five hundred phantom entries behind for the next gate to read */
+    EVENT_LOG.length = 0;
+    return octx.startRendering().then(function (buf) { return AUDIO_EAR(buf, sr); });
   }
 };
+/* peak, rms, and the share of energy above 3 kHz. The split is a second order
+   Butterworth high pass run in JavaScript over the rendered buffer, because a
+   smoke detector lives up there and a brush on old sandstone does not. */
+function AUDIO_EAR(buf, sr) {
+  var d = buf.getChannelData(0), n = d.length, i, peak = 0, tot = 0, hi = 0;
+  var w0 = 2 * Math.PI * 3000 / sr, cw = Math.cos(w0), sw = Math.sin(w0), al = sw / (2 * 0.7071);
+  var b0 = (1 + cw) / 2, b1 = -(1 + cw), b2 = (1 + cw) / 2, a0 = 1 + al, a1 = -2 * cw, a2 = 1 - al;
+  var x1 = 0, x2 = 0, y1 = 0, y2 = 0, x, y;
+  for (i = 0; i < n; i++) {
+    x = d[i];
+    y = (b0 * x + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2) / a0;
+    x2 = x1; x1 = x; y2 = y1; y1 = y;
+    tot += x * x; hi += y * y;
+    if (Math.abs(x) > peak) peak = Math.abs(x);
+  }
+  return { peak: peak, rms: Math.sqrt(tot / n), highFraction: tot > 0 ? hi / tot : 0, seconds: n / sr };
+}
 var EVENT_LOG = [];
 (function () {
   var real = AUDIO.play;
@@ -3666,6 +3747,8 @@ window.STRATA_TEST = {
   freeze: function () { return G.freeze; },
   save: function () { return SAVE; },
   audio: function () { return AUDIO; },
+  /* the ear gate's render: the loudest minute, offline, through the real AUDIO */
+  renderAudio: function (seconds) { return AUDIO.renderLoudMinute(seconds); },
   mount: function () { openMount(); },
   mountState: function () {
     var bs = MOUNT.spec ? MOUNT.spec.bones : [], i, out = 0, done = 0;
