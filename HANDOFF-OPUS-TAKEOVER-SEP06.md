@@ -78,6 +78,7 @@ Airworthy, Windup, Gerplunk, Whistlestop, Strata, Wardian and Fathom were re run
   the two gates, then commit with stamp 20260906e in all three places.
 - Gerplunk: the last builder commit `f727ddc8` (DAILY, the card, share by link, hidden buttons that rendered because `.btn{display:block}` beat `hidden`) was committed WITHOUT rerunning the seven browser gates, the lock was busy. First thing: `cd satellites/gerplunk && flock -w 1800 /tmp/sws-gate.lock node tools/check.js`, fix what is red, then P3 step 1.
 - Windup's caption nudge landed: gift and layout gates green, stamp 20260906e.
+- Updraft: the builder's last commits (`81fb7981`, `66fd1940`, stamp 20260906e) add the landing flourish, Real Wind as the fourth mood card (off by default), and the Daily Wind. `test/daily.mjs` has NOT been watched to fail and the full `check.js` table was not rerun after the Daily Wind. Second thing: `cd satellites/updraft && flock -w 1800 /tmp/sws-gate.lock node tools/check.js`, then mutate `DAILY.seedFor` and watch daily go red. Faults it named: the daily date reads raw, the journal date wraps.
 - Gerplunk and Updraft builders were told to stop and commit at 14:56. If their fences show
   uncommitted edits, read the diff, run `sim.js --test` and lint, and commit only what is green.
 - Fathom's arcade tile was shot before occlusion; it still reads. Reshoot with
