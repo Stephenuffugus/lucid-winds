@@ -1,9 +1,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
 <meta name="theme-color" content="#1B1A24">
-<link rel="icon" href="./icon-192.png?v=20260906a">
-<link rel="manifest" href="./manifest.webmanifest?v=20260906a">
+<link rel="icon" href="./icon-192.png?v=20260906b">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260906b">
+<link rel="manifest" href="./manifest.webmanifest?v=20260906b">
 <title>GERPLUNK</title>
+<script src="/music-unlocks.js?v=20260906b" defer></script>
 <style>
 :root{
   --dusk:#1B1A24; --water:#2E3646; --water-lo:#232A38; --gold:#E8B36A; --gold-lo:#A9793F;
@@ -16,9 +18,107 @@ html,body{margin:0;height:100%;overscroll-behavior:none;background:var(--dusk);c
   font-family:ui-rounded,'Avenir Next',system-ui,-apple-system,sans-serif}
 body{touch-action:none;user-select:none;-webkit-user-select:none}
 #wrap{position:fixed;inset:0;overflow:hidden}
-#stage{position:absolute;inset:0;width:100%;height:100%;display:block}
+#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+#hud{position:absolute;inset:0;pointer-events:none}
+#hud button,#hud .stone{pointer-events:auto}
+/* the tally post, top left, like marks on a fence post */
+#post{position:absolute;left:12px;top:calc(var(--safeT) + 10px);min-width:64px;padding:8px 10px 7px;
+  background:rgba(20,18,15,.62);border:1px solid rgba(232,179,106,.28);border-radius:8px;
+  text-align:center;color:var(--cream)}
+#tally{font-size:1.9rem;line-height:1;font-weight:700;letter-spacing:.02em;color:var(--gold)}
+#tallyLbl{font-size:.7rem;letter-spacing:.14em;color:var(--muted);margin-top:3px;text-transform:uppercase}
+#best{font-size:.72rem;letter-spacing:.08em;color:var(--cream);margin-top:5px;opacity:.85}
+#btnMenu{position:absolute;right:calc(var(--safeR) + 12px);top:calc(var(--safeT) + 10px);width:52px;height:52px;
+  border-radius:12px;border:1px solid rgba(232,179,106,.3);background:rgba(20,18,15,.62);color:var(--cream);
+  font:inherit;font-size:.72rem;letter-spacing:.12em}
+/* the one line of copy, sitting on the water just above the shore */
+#line{position:absolute;left:8%;right:8%;bottom:172px;text-align:center;font-size:.92rem;line-height:1.5;
+  letter-spacing:.04em;color:var(--cream);text-shadow:0 1px 6px rgba(0,0,0,.7);opacity:0;
+  transition:opacity 500ms ease}
+#line.on{opacity:1}
+#plunk{position:absolute;left:0;right:0;text-align:center;font-size:.9rem;letter-spacing:.2em;
+  color:rgba(242,232,213,.85);opacity:0;pointer-events:none;transition:opacity 400ms ease;font-style:italic}
+#plunk.on{opacity:1}
+/* the shore: a dark pebble bank across the bottom with three stones on it */
+#shore{position:absolute;left:0;right:0;bottom:0;height:150px;
+  background:linear-gradient(180deg,rgba(20,18,15,0) 0%,rgba(26,23,19,.85) 26%,#17150F 60%,#12100C 100%)}
+#shore::before{content:"";position:absolute;inset:36px 0 0 0;opacity:.35;
+  background-image:radial-gradient(circle at 20% 30%,#4a4238 0 2px,transparent 3px),
+    radial-gradient(circle at 70% 60%,#3d372f 0 2px,transparent 3px),
+    radial-gradient(circle at 45% 80%,#524a3f 0 1.5px,transparent 2.5px),
+    radial-gradient(circle at 88% 25%,#3a342c 0 2px,transparent 3px);
+  background-size:53px 41px,67px 47px,41px 37px,79px 59px}
+.stone{position:absolute;bottom:calc(30px + var(--safeB));width:64px;height:64px;border:0;background:transparent;
+  padding:0;color:var(--cream);font:inherit}
+.stone .rock{display:block;width:54px;height:44px;margin:0 auto;
+  border-radius:48% 52% 45% 55% / 55% 45% 55% 45%;
+  background:radial-gradient(circle at 35% 30%,#8C8676,#4B463F 70%,#2E2A25);
+  box-shadow:0 3px 6px rgba(0,0,0,.5), inset 0 -2px 3px rgba(0,0,0,.35);
+  transition:transform 220ms ease,box-shadow 220ms ease}
+.stone .nm{display:block;font-size:.7rem;letter-spacing:.06em;margin-top:5px;white-space:nowrap;
+  color:var(--muted);text-shadow:0 1px 3px rgba(0,0,0,.8)}
+.stone.picked .rock{transform:translateY(-8px) scale(1.08);box-shadow:0 8px 10px rgba(0,0,0,.55),0 0 0 2px rgba(232,179,106,.65)}
+.stone.picked .nm{color:var(--gold)}
+.stone[data-id="sandstone"] .rock{background:radial-gradient(circle at 35% 30%,#C9A67A,#8A6E4A 70%,#4E3D28)}
+.stone[data-id="shale"] .rock{background:radial-gradient(circle at 35% 30%,#7C8288,#464B52 70%,#25282C);height:34px}
+.stone[data-id="granite"] .rock{background:radial-gradient(circle at 40% 35%,#A8A39A,#6B655C 60%,#3A3631);
+  border-radius:40% 60% 55% 45% / 60% 40% 60% 40%;height:50px;width:50px}
+.stone[data-id="skimmer"] .rock{background:radial-gradient(circle at 35% 30%,#9E9A92,#5E5A54 70%,#2F2C28);height:30px;width:58px;border-radius:50%}
+.stone[data-id="heavyflat"] .rock{background:radial-gradient(circle at 35% 30%,#6F6A63,#403C37 70%,#1F1D1A);height:38px;width:58px}
+.stone[data-id="seaglass"] .rock{background:radial-gradient(circle at 35% 30%,#BFE3CF,#5FA484 70%,#2C5F48);height:36px;opacity:.92}
+.stone[data-id="fossil"] .rock{background:radial-gradient(circle at 60% 55%,#8E8270 0 4px,#B7AB93 6px,#6B6252 70%,#3A342B);height:38px}
+.stone[data-id="quartz"] .rock{background:radial-gradient(circle at 35% 30%,#FFF6E6,#D8C6A8 60%,#8C7A5C);height:36px}
+/* the screens */
+.scr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:calc(var(--safeT) + 20px) 24px calc(var(--safeB) + 20px);text-align:center}
+.scr[hidden]{display:none}
+#scrTitle{background:linear-gradient(180deg,rgba(27,26,36,.18) 0%,rgba(27,26,36,.05) 40%,rgba(18,16,12,.9) 100%)}
+#scrSheet{background:rgba(18,16,12,.94)}
+.spacer{flex:1}
+h1{font-size:2.6rem;letter-spacing:.22em;margin:0 0 6px;font-weight:700;color:var(--cream);
+  text-shadow:0 2px 12px rgba(0,0,0,.6)}
+h2{font-size:1.3rem;letter-spacing:.2em;margin:0 0 14px;font-weight:700;color:var(--cream)}
+.tag{font-size:.95rem;letter-spacing:.12em;color:var(--gold);text-shadow:0 1px 6px rgba(0,0,0,.6);margin-bottom:26px}
+.btn{display:block;width:100%;max-width:300px;min-height:56px;margin:8px 0;padding:0 18px;border-radius:14px;
+  border:1px solid rgba(232,179,106,.5);background:rgba(20,18,15,.72);color:var(--cream);font:inherit;
+  font-size:.95rem;letter-spacing:.14em}
+.btn.primary{background:rgba(232,179,106,.18);border-color:var(--gold)}
+.about{font-size:.82rem;line-height:1.6;color:var(--cream);max-width:320px;margin:10px 0;opacity:.88}
+.brand{font-size:.7rem;letter-spacing:.24em;color:var(--muted);margin-top:14px}
+#testPanel{position:absolute;inset:0;display:none;background:rgba(0,0,0,.92);color:var(--cream);
+  font:.72rem/1.5 ui-monospace,monospace;white-space:pre-wrap;padding:16px;overflow:auto;z-index:50}
+#testPanel.on{display:block}
 </style>
-<div id="wrap"><canvas id="stage"></canvas></div>
+<body>
+<div id="wrap">
+  <canvas id="stage"></canvas>
+  <div id="hud">
+    <div id="post"><div id="tally">0</div><div id="tallyLbl">skips</div><div id="best">best 0</div></div>
+    <button id="btnMenu" aria-label="Menu">MENU</button>
+    <div id="plunk">gerplunk</div>
+    <div id="line"></div>
+    <div id="shore"></div>
+  </div>
+  <div id="scrTitle" class="scr">
+    <div class="spacer"></div>
+    <h1>GERPLUNK</h1>
+    <div class="tag">Angle. Speed. Spin. Peace.</div>
+    <button id="btnPlay" class="btn primary">TO THE LAKE</button>
+    <div class="spacer"></div>
+    <div class="brand">SKY WOLF STUDIO</div>
+  </div>
+  <div id="scrSheet" class="scr" hidden>
+    <h2>GERPLUNK</h2>
+    <button id="btnSound" class="btn">SOUND ON</button>
+    <button id="btnMotion" class="btn">MOTION ON</button>
+    <p class="about">A lake at golden hour, a stone in your hand, and one flick. Throw across and up the water, and curl the wrist at the end for spin. Slide your thumb slowly first to turn the shore.</p>
+    <p class="about">The plunk takes its name from the Stone Skipping and Gerplunking Club of Mackinac Island.</p>
+    <button id="btnBack" class="btn primary">BACK TO THE LAKE</button>
+    <button id="btnExit" class="btn">LEAVE THE LAKE</button>
+    <div class="brand">SKY WOLF STUDIO</div>
+  </div>
+  <div id="testPanel"></div>
+</div>
 <script>
 // ---- SIM_EXPORT_START ----
 /* ============================ 1. CONFIG ============================ */
@@ -169,20 +269,6 @@ function seedFromString(s) {
   for (i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
   return h >>> 0;
 }
-/* stream splitter: the cave of seed S is the same cave whatever the lurkers
-   later roll, because they roll on a different stream. */
-function mixSeed(seed, salt) {
-  var h = (seed ^ 0x9E3779B9) >>> 0;
-  h = Math.imul(h ^ (salt + 0x85EBCA6B), 0x27D4EB2D) >>> 0;
-  h ^= h >>> 15; h = Math.imul(h, 0x165667B1) >>> 0; h ^= h >>> 13;
-  return h >>> 0;
-}
-function dailySeedFor(dateStr) { return seedFromString(dateStr + CONFIG.GAME_ID); }
-function seedFromString(s) {
-  var h = 2166136261 >>> 0, i;
-  for (i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
-  return h >>> 0;
-}
 /* stream splitter: the lake of a day is the same lake whatever the throws later
    roll, because they roll on a different stream. */
 function mixSeed(seed, salt) {
@@ -307,11 +393,17 @@ function runThrow(th, env) {
   var events = [], lastT = 0, guard = Math.ceil(CONFIG.FLIGHT_MAX_S / dt);
   var ended = '';
   var steps = 0;
+  /* ⛔ THE TRACE IS THE MODEL'S OWN PATH, recorded rather than re simulated.
+     The page plays a throw back by walking this, so there is exactly one
+     physics and the picture cannot drift from the count. Off by default: the
+     harness runs thousands of throws and never needs it. */
+  var trace = env.trace ? [{ t: 0, x: 0, y: 0, z: st.z }] : null;
   while (steps++ < guard) {
     st.vz -= CONFIG.G * dt;
     st.vy += wind * dt;
     st.x += st.vx * dt; st.y += st.vy * dt; st.z += st.vz * dt;
     st.t += dt;
+    if (trace) trace.push({ t: st.t, x: st.x, y: st.y, z: st.z < 0 ? 0 : st.z });
     if (st.z <= 0 && st.vz < 0) {
       st.z = 0;
       var speed = st.vx;
@@ -353,7 +445,8 @@ function runThrow(th, env) {
   return {
     skips: events.length, events: events, ended: ended,
     distance: events.length ? events[events.length - 1].x : st.x,
-    time: st.t, stone: stone.id
+    time: st.t, stone: stone.id, trace: trace,
+    sinkX: st.x, sinkY: st.y
   };
 }
 
@@ -402,6 +495,18 @@ function segSpeed(s, i) {
    ⛔ there is no viewport argument any more. Nothing in this layer needs to know
    how wide the screen is, which is a stronger device independence than a screen
    fraction ever was. */
+/* the plant on its own, over segments 1 to `upto`, so the page can turn the
+   lake LIVE under the thumb from the same rule the release commits. Nothing
+   here is a second implementation: motionFromSamples calls this. */
+function plantYaw(samples, yaw0, upto) {
+  var yaw = yaw0 === undefined ? 0 : yaw0, i;
+  for (i = 1; i <= upto && i < samples.length; i++) {
+    var w = 1 - smoothstep(CONFIG.TURN_FADE_LO, CONFIG.THROW_SPEED, segSpeed(samples, i));
+    yaw = clamp(yaw + w * (samples[i].x - samples[i - 1].x) * CONFIG.METRES_PER_CSS_PX * CONFIG.TURN_DEG_PER_M,
+      -CONFIG.YAW_MAX_DEG, CONFIG.YAW_MAX_DEG);
+  }
+  return yaw;
+}
 function motionFromSamples(samples, yaw0) {
   var n = samples.length, i;
   if (n < 3) return null;
@@ -425,12 +530,7 @@ function motionFromSamples(samples, yaw0) {
      ⛔ the clamp is INSIDE the loop, because the player watched the world stop
      at the edge of the shore and the number that gets committed has to be the
      number they saw stop. */
-  var yaw = yaw0 === undefined ? 0 : yaw0;
-  for (i = 1; i <= armStart; i++) {
-    var w = 1 - smoothstep(CONFIG.TURN_FADE_LO, CONFIG.THROW_SPEED, segSpeed(samples, i));
-    yaw = clamp(yaw + w * (samples[i].x - samples[i - 1].x) * CONFIG.METRES_PER_CSS_PX * CONFIG.TURN_DEG_PER_M,
-      -CONFIG.YAW_MAX_DEG, CONFIG.YAW_MAX_DEG);
-  }
+  var yaw = plantYaw(samples, yaw0, armStart);
 
   /* SPEED, over the release window, as arc length rather than net displacement,
      with the window floored at the arm onset so the still beat of a long plant
@@ -1081,7 +1181,665 @@ function suiteCopy(T) {
   }
   T.assert('no stone line uses a dash or an exclamation point', bad.length === 0, bad.join('; '));
   T.assert('the studio is singular everywhere in the stone lines',
-    STONES.every(function (s) { return s.line.indexOf('Sky Wolf Studios') < 0; }));
+    STONES.every(function (s) { return s.line.indexOf('Sky Wolf Studio' + 's') < 0; }));
 }
 // ---- TEST_EXPORT_END ----
+
+/* ============================ 10. THE PAGE ============================ */
+/* Everything below is the phone: the lake, the sound, the save, the thumb.
+   Nothing below reaches into the model except through newThrow, runThrow,
+   plantYaw, motionFromSamples and throwFromMotion, and the picture is drawn
+   from the model's own trace, so the count and the picture cannot disagree. */
+var STAMP = '20260906b';
+var $ = function (id) { return document.getElementById(id); };
+var CV, CTX, W = 375, H = 667, DPR = 1;
+
+/* the lake's own numbers. Drawing, never physics. */
+var LAKE = {
+  HORIZON: 0.40,          /* of the height */
+  SHORE_H: 150,           /* the pebble bank the stones sit on, CSS px */
+  K: 14,                  /* metres ahead of the camera that sit halfway up the water */
+  Z_PX: 3.6,              /* screen pixels per metre of height at a metre of scale */
+  TREE_PX_PER_DEG: 8,     /* the treeline scrolls this much per degree of yaw */
+  RING_LIFE: 2.2,         /* seconds a ring keeps spreading */
+  RING_SPEED: 1.5,        /* metres per second of ring radius */
+  ROWS_M: 1.15,           /* metres between shimmer rows in the world */
+  ROWS_FAR: 90            /* metres of water drawn ahead of the camera */
+};
+
+/* ============================ 11. STATE ============================ */
+var G = {
+  screen: 'title', frames: 0, save: null, sound: 1, motion: 1,
+  yaw: 0, liveYaw: null, cam: 0, camTarget: 0,
+  stoneId: 'sandstone', offer: [],
+  day: null, wind: 0, windDir: 0, water: 'glass',
+  touch: null, play: null, rings: [], plunkAt: 0,
+  lastThrow: null, lastResult: null, throws: 0,
+  seam: null, seamYaw: null,
+  hold: false, holdT: 0, lineTimer: 0, tallyShown: 0,
+  lastSamples: null
+};
+function nowMs() { return performance.now(); }
+
+/* ============================ 12. SAVE ============================ */
+var SAVE = {
+  blank: function () {
+    return { v: CONFIG.SAVE_V, best: 0, bestDist: 0, career: 0, throws: 0, yaw: CONFIG.YAW_START_DEG,
+      sound: 1, motion: 1, seen: { how: 0 }, bestByStone: {} };
+  },
+  read: function () {
+    var s = this.blank(), raw, o, k;
+    try { raw = localStorage.getItem(CONFIG.SAVE_KEY); } catch (e) { raw = null; }
+    if (!raw) return s;
+    try { o = JSON.parse(raw); } catch (e) { return s; }
+    if (!o || typeof o !== 'object') return s;
+    for (k in s) if (o[k] !== undefined) s[k] = o[k];
+    if (!s.bestByStone) s.bestByStone = {};
+    if (!s.seen) s.seen = { how: 0 };
+    return s;
+  },
+  /* read, modify, write: two tabs must never clobber each other's bests */
+  write: function (fn) {
+    var s = this.read();
+    fn(s);
+    try { localStorage.setItem(CONFIG.SAVE_KEY, JSON.stringify(s)); } catch (e) {}
+    return s;
+  }
+};
+
+/* ============================ 13. THE DAY ============================ */
+/* the wind and the water are seeded by the date, never real. The wind has a
+   DIRECTION inside the shore's own turn, so a player can turn into it and watch
+   the seam straighten, which is how the wind is taught without a word. */
+function todayStr() {
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function setupDay() {
+  G.day = todayStr();
+  var rng = makeRNG(mixSeed(dailySeedFor(G.day), STREAM_LAKE));
+  G.wind = 0.4 + rng() * (CONFIG.WIND_MAX - 0.4);
+  G.windDir = (rng() * 2 - 1) * 18;
+  var w = rng();
+  G.water = w < 0.55 ? 'glass' : (w < 0.88 ? 'ripple' : 'chop');
+  /* the shore's three. The skimmer is always on the bank tonight; the bed with
+     its rarity by career is P2 and this is written in DECISIONS. */
+  var bed = makeRNG(mixSeed(dailySeedFor(G.day), STREAM_BED));
+  var pool = ['sandstone', 'shale', 'granite', 'heavyflat'];
+  var a = pool[bed.int(pool.length)], b;
+  do { b = pool[bed.int(pool.length)]; } while (b === a);
+  G.offer = [a, b, 'skimmer'];
+  G.seam = null;
+}
+/* the crosswind the model sees for a throw down this yaw, m/s lateral */
+function crosswind(yaw) {
+  return G.wind * Math.sin((G.windDir - yaw) * Math.PI / 180);
+}
+function throwEnv(yaw, trace) {
+  return { water: G.water, wind: crosswind(yaw), trace: !!trace };
+}
+
+/* ============================ 14. AUDIO ============================ */
+/* Synthesised, nothing recorded. Every tick is scheduled at the sim's own hit
+   time from the moment the throw leaves the hand, never at frame time. */
+var AUDIO = (function () {
+  var ac = null, master = null, on = true, live = [], ticks = 0;
+  var SERIES = [659.25, 587.33, 493.88, 440, 392, 329.63, 293.66, 246.94, 220, 196, 164.81, 146.83];
+  function ensure() {
+    if (ac) { if (ac.state === 'suspended') ac.resume(); return true; }
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return false;
+    try { ac = new AC(); } catch (e) { return false; }
+    master = ac.createGain(); master.gain.value = on ? 0.8 : 0; master.connect(ac.destination);
+    return true;
+  }
+  function keep(node, until) { live.push({ node: node, until: until }); }
+  function tick(at, i) {
+    if (!ac) return;
+    var o = ac.createOscillator(), g = ac.createGain();
+    o.type = 'sine'; o.frequency.value = SERIES[i % SERIES.length] * (i >= SERIES.length ? 0.5 : 1);
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(0.5, at + 0.006);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + 0.11);
+    o.connect(g); g.connect(master);
+    o.start(at); o.stop(at + 0.13);
+    keep(o, at + 0.13);
+    ticks++;
+  }
+  function plunk(at) {
+    if (!ac) return;
+    var o = ac.createOscillator(), g = ac.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(150, at); o.frequency.exponentialRampToValueAtTime(95, at + 0.25);
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(0.7, at + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + 0.42);
+    o.connect(g); g.connect(master); o.start(at); o.stop(at + 0.45); keep(o, at + 0.45);
+    /* the splash: 80 ms of noise through a low pass */
+    var n = ac.sampleRate * 0.1, buf = ac.createBuffer(1, n, ac.sampleRate), d = buf.getChannelData(0), i;
+    for (i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+    var src = ac.createBufferSource(); src.buffer = buf;
+    var f = ac.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 1800;
+    var ng = ac.createGain(); ng.gain.setValueAtTime(0.35, at); ng.gain.exponentialRampToValueAtTime(0.0001, at + 0.1);
+    src.connect(f); f.connect(ng); ng.connect(master); src.start(at); src.stop(at + 0.11); keep(src, at + 0.11);
+  }
+  function setdown() {
+    if (!ac) return;
+    var at = ac.currentTime, o = ac.createOscillator(), g = ac.createGain();
+    o.type = 'triangle'; o.frequency.value = 220;
+    g.gain.setValueAtTime(0.0001, at); g.gain.exponentialRampToValueAtTime(0.12, at + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + 0.08);
+    o.connect(g); g.connect(master); o.start(at); o.stop(at + 0.09);
+  }
+  /* a new throw cuts the old one's ticks; a lake does not echo the last stone */
+  function cut() {
+    var i;
+    for (i = 0; i < live.length; i++) { try { live[i].node.stop(); } catch (e) {} }
+    live = [];
+  }
+  return {
+    ensure: ensure,
+    schedule: function (res) {
+      if (!ensure()) return 0;
+      cut();
+      var t0 = ac.currentTime + 0.03, i;
+      for (i = 0; i < res.events.length; i++) tick(t0 + res.events[i].t, i);
+      plunk(t0 + res.time);
+      return res.events.length;
+    },
+    setdown: setdown,
+    setOn: function (v) { on = !!v; if (master) master.gain.value = on ? 0.8 : 0; },
+    ticks: function () { return ticks; },
+    ready: function () { return !!ac; }
+  };
+})();
+
+/* ============================ 15. THE LAKE ============================ */
+function horizonY() { return Math.round(H * LAKE.HORIZON); }
+function shoreY() { return H - LAKE.SHORE_H + 30; }
+/* a point rel metres ahead of the camera, lat metres to the right, z up */
+function proj(rel, lat, z) {
+  var hy = horizonY(), sy = shoreY();
+  var r = rel < 0.05 ? 0.05 : rel;
+  var f = r / (r + LAKE.K);
+  var y = sy - (sy - hy) * f;
+  var s = CONFIG.PX_PER_M * (W / 375) * LAKE.K / (r + LAKE.K) * 2.2;
+  return { x: W / 2 + lat * s, y: y - z * s * LAKE.Z_PX, s: s, f: f };
+}
+function treeH(wx, seed) {
+  /* a continuous treeline: summed sines with seeded phases, so scrolling
+     never shows a seam and the same lake is the same lake every day */
+  var a = Math.sin(wx * 0.021 + seed * 1.7) * 9 + Math.sin(wx * 0.053 + seed * 0.4) * 6
+    + Math.sin(wx * 0.137 + seed * 2.9) * 4 + Math.sin(wx * 0.31 + seed) * 2;
+  return a + 4 * Math.abs(Math.sin(wx * 0.45 + seed));
+}
+function drawSky(t) {
+  var hy = horizonY();
+  var g = CTX.createLinearGradient(0, 0, 0, hy);
+  g.addColorStop(0, '#1B1A2C'); g.addColorStop(0.42, '#3B2C48'); g.addColorStop(0.72, '#8E4A3C');
+  g.addColorStop(0.9, '#D07C48'); g.addColorStop(1, '#E9B36A');
+  CTX.fillStyle = g; CTX.fillRect(0, 0, W, hy + 2);
+  /* the sun, low, moving with the turn */
+  var sx = W / 2 - (yawNow() + 6) * LAKE.TREE_PX_PER_DEG * 0.7, sy = hy - 14;
+  var rg = CTX.createRadialGradient(sx, sy, 2, sx, sy, 70);
+  rg.addColorStop(0, 'rgba(255,236,190,0.95)'); rg.addColorStop(0.18, 'rgba(255,214,140,0.7)');
+  rg.addColorStop(0.5, 'rgba(240,160,90,0.18)'); rg.addColorStop(1, 'rgba(240,140,80,0)');
+  CTX.fillStyle = rg; CTX.beginPath(); CTX.arc(sx, sy, 70, 0, Math.PI * 2); CTX.fill();
+  CTX.fillStyle = 'rgba(255,240,205,0.95)'; CTX.beginPath(); CTX.arc(sx, sy, 9, 0, Math.PI * 2); CTX.fill();
+  return sx;
+}
+function drawTrees() {
+  var hy = horizonY(), off = yawNow() * LAKE.TREE_PX_PER_DEG, x, seed = 3;
+  /* the far bank, hazy, then the near trees, black */
+  CTX.fillStyle = 'rgba(70,52,66,0.75)';
+  CTX.beginPath(); CTX.moveTo(0, hy + 1);
+  for (x = 0; x <= W; x += 6) CTX.lineTo(x, hy - 10 - Math.max(0, treeH((x + off) * 0.6 + 900, 7) * 0.6));
+  CTX.lineTo(W, hy + 1); CTX.closePath(); CTX.fill();
+  CTX.fillStyle = '#141618';
+  CTX.beginPath(); CTX.moveTo(0, hy + 2);
+  for (x = 0; x <= W; x += 3) {
+    var h = 16 + treeH(x + off, seed);
+    /* a gap in the trees a few degrees left of centre, the landmark the fresh
+       save faces, so a turn has something to be measured against */
+    var gap = Math.abs((x + off) - (W / 2 + 60));
+    if (gap < 46) h *= 0.35 + 0.65 * (gap / 46);
+    CTX.lineTo(x, hy - h);
+  }
+  CTX.lineTo(W, hy + 2); CTX.closePath(); CTX.fill();
+  /* and the trees again, upside down in the water, softly */
+  CTX.fillStyle = 'rgba(18,20,24,0.38)';
+  CTX.beginPath(); CTX.moveTo(0, hy);
+  for (x = 0; x <= W; x += 3) {
+    var h2 = 16 + treeH(x + off, seed);
+    var gap2 = Math.abs((x + off) - (W / 2 + 60));
+    if (gap2 < 46) h2 *= 0.35 + 0.65 * (gap2 / 46);
+    CTX.lineTo(x, hy + h2 * 0.45);
+  }
+  CTX.lineTo(W, hy); CTX.closePath(); CTX.fill();
+}
+function drawWater(t, sunX) {
+  var hy = horizonY(), sy = shoreY();
+  var g = CTX.createLinearGradient(0, hy, 0, H);
+  g.addColorStop(0, '#7B5E62'); g.addColorStop(0.08, '#5C4E5E'); g.addColorStop(0.3, '#3B4256');
+  g.addColorStop(0.7, '#2A3244'); g.addColorStop(1, '#1D2331');
+  CTX.fillStyle = g; CTX.fillRect(0, hy, W, H - hy);
+  /* haze where the water meets the trees */
+  var hz = CTX.createLinearGradient(0, hy, 0, hy + 70);
+  hz.addColorStop(0, 'rgba(233,179,106,0.32)'); hz.addColorStop(1, 'rgba(233,179,106,0)');
+  CTX.fillStyle = hz; CTX.fillRect(0, hy, W, 70);
+  /* the shimmer rows: fixed in the world, so they slide under the camera */
+  var tt = G.motion ? t : 0;
+  var cam = G.cam, first = Math.floor(cam / LAKE.ROWS_M), i, lastY = -99;
+  var chop = G.water === 'chop' ? 1.6 : (G.water === 'ripple' ? 1.15 : 0.8);
+  for (i = first; i * LAKE.ROWS_M < cam + LAKE.ROWS_FAR; i++) {
+    var wx = i * LAKE.ROWS_M, rel = wx - cam;
+    if (rel < 0.3) continue;
+    var p = proj(rel, 0, 0);
+    var jit = Math.sin(i * 12.9898) * 1.5;
+    var y = p.y + jit;
+    if (Math.abs(y - lastY) < 2.5) continue;
+    lastY = y;
+    var far = p.f;
+    var thick = Math.max(1, (1 - far) * 3.2);
+    var seg, n = 8, segW = W / n;
+    for (seg = 0; seg < n; seg++) {
+      var ph = i * 0.73 + seg * 1.31;
+      var wave = Math.sin(ph + tt * (0.9 + chop * 0.4) + Math.sin(i * 0.37) * 2);
+      var x0 = seg * segW + Math.sin(ph * 3.1) * segW * 0.45;
+      var len = segW * (0.25 + 0.45 * (0.5 + 0.5 * Math.sin(ph * 2.3 + tt * 0.5)));
+      /* the sun path: gold, a narrow road far off that widens toward you.
+         Off the path the water only catches light where a wave crest happens
+         to face the sky, so most of it stays dark. */
+      var dx = (x0 + len / 2) - sunX, spread = 9 + (1 - far) * W * 0.26;
+      var sun = Math.exp(-(dx * dx) / (2 * spread * spread)) * (0.45 + 0.55 * far);
+      var flick = 0.5 + 0.5 * Math.sin(ph * 5.7 + tt * (2.2 + chop));
+      if (sun > 0.04) {
+        CTX.fillStyle = 'rgba(255,208,135,' + (Math.min(0.9, sun * (0.3 + 0.65 * flick))).toFixed(3) + ')';
+      } else if (wave > 0.25) {
+        var a = (0.03 + 0.07 * (wave - 0.25) / 0.75) * (0.45 + 0.55 * far);
+        CTX.fillStyle = 'rgba(190,186,204,' + a.toFixed(3) + ')';
+      } else continue;
+      CTX.fillRect(x0, y, len, thick);
+    }
+  }
+  /* the bank's shadow on the near water */
+  var nb = CTX.createLinearGradient(0, sy - 60, 0, H);
+  nb.addColorStop(0, 'rgba(16,14,12,0)'); nb.addColorStop(1, 'rgba(16,14,12,0.55)');
+  CTX.fillStyle = nb; CTX.fillRect(0, sy - 60, W, H - sy + 60);
+}
+/* THE SEAM. A lane of calm water that is the model's own trace of a nominal
+   good throw down the current line, bent by today's crosswind. It cannot lie
+   about the wind because it is the wind. It only draws when the stone is in
+   the hand, since in flight the real stone is the instrument. */
+function seamFor(yaw) {
+  var q = Math.round(yaw * 2) / 2;
+  if (G.seam && G.seamYaw === q) return G.seam;
+  var res = runThrow(newThrow({ v: 10, theta: CONFIG.MAGIC_DEG, spin: 1, yaw: q, stone: 'skimmer', seed: 7 }),
+    throwEnv(q, true));
+  var pts = [], i, step = Math.max(1, Math.floor(res.trace.length / 40));
+  for (i = 0; i < res.trace.length; i += step) pts.push({ x: res.trace[i].x, y: res.trace[i].y });
+  pts.push({ x: res.sinkX, y: res.sinkY });
+  G.seam = pts; G.seamYaw = q;
+  return pts;
+}
+function drawSeam() {
+  var pts = seamFor(yawNow()), i, p, q, hy = horizonY();
+  /* the calm: the lane is the base water with the shimmer wiped off it, so it
+     reads as glass rather than as a shadow. A polygon a metre either side of
+     the trace, which the perspective narrows toward the trees on its own. */
+  var g = CTX.createLinearGradient(0, hy, 0, H);
+  g.addColorStop(0, 'rgba(123,94,98,0.7)'); g.addColorStop(0.08, 'rgba(92,78,94,0.7)');
+  g.addColorStop(0.3, 'rgba(59,66,86,0.72)'); g.addColorStop(0.7, 'rgba(42,50,68,0.72)'); g.addColorStop(1, 'rgba(29,35,49,0.72)');
+  CTX.fillStyle = g;
+  CTX.beginPath();
+  for (i = 0; i < pts.length; i++) {
+    p = proj(pts[i].x - G.cam, pts[i].y - 1.1, 0);
+    if (i === 0) CTX.moveTo(p.x, p.y); else CTX.lineTo(p.x, p.y);
+  }
+  for (i = pts.length - 1; i >= 0; i--) {
+    q = proj(pts[i].x - G.cam, pts[i].y + 1.1, 0);
+    CTX.lineTo(q.x, q.y);
+  }
+  CTX.closePath(); CTX.fill();
+  /* one thread of light down its middle, the way a slick shows on a lake */
+  CTX.strokeStyle = 'rgba(242,232,213,0.13)'; CTX.lineWidth = 1;
+  CTX.beginPath();
+  for (i = 0; i < pts.length; i++) {
+    p = proj(pts[i].x - G.cam, pts[i].y, 0);
+    if (i === 0) CTX.moveTo(p.x, p.y); else CTX.lineTo(p.x, p.y);
+  }
+  CTX.stroke();
+}
+function drawRings(t) {
+  var i, r, age, rad, p, alpha;
+  for (i = G.rings.length - 1; i >= 0; i--) {
+    r = G.rings[i]; age = t - r.t;
+    if (age < 0) continue;
+    if (age > LAKE.RING_LIFE * r.k) { G.rings.splice(i, 1); continue; }
+    rad = 0.25 + age * LAKE.RING_SPEED * r.k;
+    p = proj(r.x - G.cam, r.y, 0);
+    alpha = (1 - age / (LAKE.RING_LIFE * r.k)) * 0.6;
+    CTX.strokeStyle = 'rgba(242,232,213,' + alpha.toFixed(3) + ')';
+    CTX.lineWidth = Math.max(0.8, 1.8 * (1 - p.f));
+    CTX.beginPath(); CTX.ellipse(p.x, p.y, rad * p.s, rad * p.s * (0.16 + 0.22 * (1 - p.f)), 0, 0, Math.PI * 2); CTX.stroke();
+    if (r.k > 1) {
+      CTX.strokeStyle = 'rgba(242,232,213,' + (alpha * 0.5).toFixed(3) + ')';
+      CTX.beginPath(); CTX.ellipse(p.x, p.y, rad * p.s * 0.55, rad * p.s * 0.55 * (0.16 + 0.22 * (1 - p.f)), 0, 0, Math.PI * 2); CTX.stroke();
+    }
+  }
+}
+function drawStone(pos) {
+  var p = proj(pos.x - G.cam, pos.y, pos.z), sh = proj(pos.x - G.cam, pos.y, 0);
+  var rx = Math.max(5, p.s * 0.75), ry = rx * 0.55;
+  /* the shadow on the water says how high it is */
+  CTX.fillStyle = 'rgba(10,12,18,' + (0.35 * Math.max(0, 1 - pos.z)).toFixed(3) + ')';
+  CTX.beginPath(); CTX.ellipse(sh.x, sh.y, rx * 0.9, ry * 0.5, 0, 0, Math.PI * 2); CTX.fill();
+  CTX.fillStyle = '#2A2724';
+  CTX.beginPath(); CTX.ellipse(p.x, p.y, rx, ry, -0.25, 0, Math.PI * 2); CTX.fill();
+  CTX.fillStyle = 'rgba(255,225,170,0.85)';
+  CTX.beginPath(); CTX.ellipse(p.x - rx * 0.3, p.y - ry * 0.35, rx * 0.28, ry * 0.28, 0, 0, Math.PI * 2); CTX.fill();
+}
+function yawNow() { return G.liveYaw === null ? G.yaw : G.liveYaw; }
+
+/* ============================ 16. THE THROW ============================ */
+function playT() {
+  if (!G.play) return 0;
+  if (G.hold) return G.holdT;
+  return (nowMs() - G.play.t0) / 1000;
+}
+function stonePos(t) {
+  var tr = G.play.res.trace, i = Math.floor(t * CONFIG.SIM_HZ);
+  if (i >= tr.length) i = tr.length - 1;
+  if (i < 0) i = 0;
+  return tr[i];
+}
+function startThrow(th) {
+  var res = runThrow(th, throwEnv(th.yaw, true));
+  G.play = { th: th, res: res, t0: nowMs(), next: 0, sunk: false, shown: 0 };
+  G.rings = [];
+  G.lastThrow = th; G.lastResult = res; G.throws++;
+  G.tallyShown = 0; $('tally').textContent = '0';
+  G.camTarget = 0;
+  hideLine();
+  $('plunk').classList.remove('on');
+  AUDIO.schedule(res);
+  try { navigator.vibrate && navigator.vibrate(12); } catch (e) {}
+}
+function stepThrow() {
+  var P = G.play, t = playT(), ev = P.res.events, i;
+  while (P.next < ev.length && ev[P.next].t <= t) {
+    G.rings.push({ x: ev[P.next].x, y: ev[P.next].y, t: ev[P.next].t, k: 1 });
+    P.next++;
+    G.tallyShown = P.next;
+    $('tally').textContent = String(P.next);
+  }
+  if (!P.sunk && t >= P.res.time) {
+    P.sunk = true;
+    G.rings.push({ x: P.res.sinkX, y: P.res.sinkY, t: P.res.time, k: 1.7 });
+    var sp = proj(P.res.sinkX - G.cam, P.res.sinkY, 0);
+    $('plunk').style.top = Math.round(sp.y - 22) + 'px';
+    $('plunk').classList.add('on');
+    setTimeout(function () { $('plunk').classList.remove('on'); }, 1700);
+    afterSink(P);
+  }
+  /* the camera follows six metres behind and never past the last ring */
+  var pos = P.sunk ? { x: P.res.sinkX } : stonePos(t);
+  G.camTarget = Math.max(0, Math.min(pos.x, P.res.sinkX) - CONFIG.CAM_LEAD_M);
+}
+function afterSink(P) {
+  var res = P.res, th = P.th, best = G.save.best;
+  G.save = SAVE.write(function (s) {
+    s.career += res.skips; s.throws += 1; s.yaw = G.yaw;
+    if (res.skips > s.best) s.best = res.skips;
+    if (res.distance > s.bestDist) s.bestDist = res.distance;
+    var b = s.bestByStone[th.stone] || 0;
+    if (res.skips > b) s.bestByStone[th.stone] = res.skips;
+    s.seen.how = 1;
+  });
+  $('best').textContent = 'best ' + G.save.best;
+  if (res.skips > best && best > 0) {
+    try { parent.postMessage({ sws: 'earn', moment: 'gerplunk-best', detail: res.skips }, '*'); } catch (e) {}
+  }
+  var line = res.skips >= 10 ? '' : adviceFor(th);
+  if (line) setTimeout(function () { showLine(line, 3000); }, 500);
+}
+
+/* ============================ 17. INPUT ============================ */
+function samplesFrom(e) {
+  var list = (e.getCoalescedEvents && e.getCoalescedEvents()) || [];
+  if (!list.length) list = [e];
+  var out = [], i;
+  for (i = 0; i < list.length; i++) out.push({ x: list[i].clientX, y: list[i].clientY, t: list[i].timeStamp });
+  return out;
+}
+function onDown(e) {
+  if (G.screen !== 'lake') return;
+  if (G.touch) return;
+  e.preventDefault();
+  AUDIO.ensure();
+  try { CV.setPointerCapture(e.pointerId); } catch (x) {}
+  G.touch = { id: e.pointerId, samples: [{ x: e.clientX, y: e.clientY, t: e.timeStamp }], yaw0: G.yaw, detent: Math.floor(G.yaw / 5) };
+  G.liveYaw = G.yaw;
+  G.camTarget = 0;
+}
+function onMove(e) {
+  var T = G.touch;
+  if (!T || e.pointerId !== T.id) return;
+  e.preventDefault();
+  var s = samplesFrom(e), i;
+  for (i = 0; i < s.length; i++) {
+    if (s[i].t <= T.samples[T.samples.length - 1].t) s[i].t = T.samples[T.samples.length - 1].t + 0.5;
+    T.samples.push(s[i]);
+  }
+  G.liveYaw = plantYaw(T.samples, T.yaw0, T.samples.length - 1);
+  var d = Math.floor(G.liveYaw / 5);
+  if (d !== T.detent) { T.detent = d; try { navigator.vibrate && navigator.vibrate(6); } catch (x) {} }
+}
+function onUp(e) {
+  var T = G.touch;
+  if (!T || e.pointerId !== T.id) return;
+  e.preventDefault();
+  T.samples.push({ x: e.clientX, y: e.clientY, t: Math.max(e.timeStamp, T.samples[T.samples.length - 1].t + 0.5) });
+  G.touch = null;
+  G.lastSamples = T.samples;
+  var m = motionFromSamples(T.samples, T.yaw0);
+  if (m) {
+    var th = throwFromMotion(m, G.stoneId, mixSeed(dailySeedFor(G.day), 100 + G.throws));
+    G.yaw = th.yaw; G.liveYaw = null;
+    startThrow(th);
+  } else {
+    /* the set down: the turn survives, the stone goes back in the palm */
+    G.yaw = G.liveYaw === null ? G.yaw : G.liveYaw; G.liveYaw = null;
+    G.save = SAVE.write(function (s) { s.yaw = G.yaw; });
+    AUDIO.setdown();
+  }
+}
+function onCancel(e) {
+  var T = G.touch;
+  if (!T || e.pointerId !== T.id) return;
+  G.touch = null;
+  G.yaw = G.liveYaw === null ? G.yaw : G.liveYaw; G.liveYaw = null;
+}
+function pickStone(id) {
+  G.stoneId = id;
+  var els = document.querySelectorAll('.stone'), i;
+  for (i = 0; i < els.length; i++) els[i].classList.toggle('picked', els[i].getAttribute('data-id') === id);
+  var st = stoneById(id);
+  showLine(st.name + '. ' + st.line, 2400);
+}
+function buildShore() {
+  var shore = $('shore'), i, xs = [0.38, 0.59, 0.80];
+  shore.innerHTML = '';
+  for (i = 0; i < G.offer.length; i++) {
+    var st = stoneById(G.offer[i]), b = document.createElement('button');
+    b.className = 'stone'; b.setAttribute('data-id', st.id); b.setAttribute('aria-label', st.name);
+    b.style.left = 'calc(' + (xs[i] * 100) + '% - 32px)';
+    b.innerHTML = '<span class="rock"></span><span class="nm">' + st.name + '</span>';
+    b.addEventListener('pointerup', (function (id) { return function (e) { e.preventDefault(); pickStone(id); }; })(st.id));
+    b.addEventListener('click', (function (id) { return function () { if (G.stoneId !== id) pickStone(id); }; })(st.id));
+    shore.appendChild(b);
+  }
+  pickStone(G.stoneId && G.offer.indexOf(G.stoneId) >= 0 ? G.stoneId : G.offer[0]);
+  hideLine();
+}
+function showLine(text, ms) {
+  var el = $('line');
+  el.textContent = text; el.classList.add('on');
+  if (G.lineTimer) clearTimeout(G.lineTimer);
+  G.lineTimer = ms ? setTimeout(hideLine, ms) : 0;
+}
+function hideLine() { $('line').classList.remove('on'); if (G.lineTimer) { clearTimeout(G.lineTimer); G.lineTimer = 0; } }
+
+/* ============================ 18. SCREENS ============================ */
+function showScreen(name) {
+  G.screen = name;
+  $('scrTitle').hidden = name !== 'title';
+  $('scrSheet').hidden = name !== 'sheet';
+  $('hud').style.visibility = name === 'lake' ? 'visible' : 'hidden';
+  if (name === 'lake' && !G.save.seen.how) showLine('Flick a stone across the water.', 0);
+}
+function refreshToggles() {
+  $('btnSound').textContent = G.sound ? 'SOUND ON' : 'SOUND OFF';
+  $('btnMotion').textContent = G.motion ? 'MOTION ON' : 'MOTION OFF';
+}
+function press(id, fn) {
+  var el = $(id), armed = false;
+  el.addEventListener('pointerdown', function (e) { armed = true; });
+  el.addEventListener('pointerup', function (e) { if (armed) { armed = false; e.preventDefault(); fn(); } });
+  el.addEventListener('click', function (e) { if (armed) { armed = false; fn(); } });
+}
+function wire() {
+  CV.addEventListener('pointerdown', onDown);
+  CV.addEventListener('pointermove', onMove);
+  CV.addEventListener('pointerup', onUp);
+  CV.addEventListener('pointercancel', onCancel);
+  press('btnPlay', function () { AUDIO.ensure(); showScreen('lake'); });
+  press('btnMenu', function () { showScreen('sheet'); });
+  press('btnBack', function () { showScreen('lake'); });
+  press('btnExit', function () { window.SWS_EXIT(); });
+  press('btnSound', function () {
+    G.sound = G.sound ? 0 : 1; AUDIO.setOn(!!G.sound);
+    G.save = SAVE.write(function (s) { s.sound = G.sound; }); refreshToggles();
+  });
+  press('btnMotion', function () {
+    G.motion = G.motion ? 0 : 1;
+    G.save = SAVE.write(function (s) { s.motion = G.motion; }); refreshToggles();
+  });
+  window.addEventListener('blur', function () { if (G.touch) { G.touch = null; G.liveYaw = null; } });
+}
+
+/* ============================ 19. FRAME ============================ */
+function fitCanvas() {
+  var vv = window.visualViewport;
+  var w = Math.round(vv ? vv.width : document.documentElement.clientWidth);
+  var h = Math.round(vv ? vv.height : document.documentElement.clientHeight);
+  if (w < 1 || h < 1) return;
+  DPR = Math.min(2, window.devicePixelRatio || 1);
+  if (w === W && h === H && CV.width === Math.round(w * DPR)) return;
+  W = w; H = h;
+  CV.width = Math.round(W * DPR); CV.height = Math.round(H * DPR);
+  CV.style.width = W + 'px'; CV.style.height = H + 'px';
+  G.seam = null;
+}
+function frame() {
+  G.frames++;
+  var t = nowMs() / 1000;
+  var k = G.motion ? 0.12 : 1;
+  G.cam += (G.camTarget - G.cam) * k;
+  if (Math.abs(G.camTarget - G.cam) < 0.01) G.cam = G.camTarget;
+  if (G.play) stepThrow();
+  CTX.setTransform(DPR, 0, 0, DPR, 0, 0);
+  var sunX = drawSky(t);
+  drawWater(t, sunX);
+  drawTrees();
+  /* the seam shows while the stone is in the hand: before the first throw,
+     under a live thumb, and once the last throw's rings have gone */
+  if (G.screen === 'lake' && (G.touch || !G.play || (G.play.sunk && G.rings.length === 0))) drawSeam();
+  drawRings(G.play ? playT() : 0);
+  if (G.play && !G.play.sunk) drawStone(stonePos(playT()));
+  requestAnimationFrame(frame);
+}
+
+/* ===== Sky Wolf Studio embed protocol ===== */
+(function () {
+  var framed = false; try { framed = window.parent !== window; } catch (e) { framed = true; }
+  window.SWS_EXIT = function () {
+    if (framed) { try { parent.postMessage({ sws: 'close' }, '*'); } catch (e) {} return; }
+    if (document.referrer.indexOf('/portal') >= 0 && history.length > 1) history.back();
+    else location.replace('https://lucidwinds.com/portal/');
+  };
+  if (framed) {
+    try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {}
+    window.addEventListener('load', function () { try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {} });
+  }
+})();
+
+/* ============================ 20. BOOT ============================ */
+function boot() {
+  CV = $('stage'); CTX = CV.getContext('2d');
+  G.save = SAVE.read();
+  G.sound = G.save.sound; G.motion = G.save.motion; G.yaw = G.save.yaw;
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) G.motion = 0;
+  AUDIO.setOn(!!G.sound);
+  setupDay();
+  fitCanvas();
+  window.addEventListener('resize', fitCanvas);
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', fitCanvas);
+  wire();
+  buildShore();
+  refreshToggles();
+  $('best').textContent = 'best ' + G.save.best;
+  showScreen('title');
+  requestAnimationFrame(frame);
+  if (location.search.indexOf('test=1') >= 0) {
+    var rep = TEST.run(), out = 'GERPLUNK self test\n\n', i;
+    for (i = 0; i < rep.failures.length; i++) out += 'FAIL  ' + rep.failures[i].name + '   ' + rep.failures[i].detail + '\n';
+    out += '\nPASSED ' + rep.passed + ' / FAILED ' + rep.failed + ' (total ' + rep.total + ')';
+    $('testPanel').textContent = out; $('testPanel').classList.add('on');
+    window.__TEST__ = rep;
+  }
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('./sw.js?v=' + STAMP).catch(function () {});
+    });
+  }
+}
+/* the read only hook the browser gates use to READ what the page believes.
+   Nothing here drives a throw: every gate presses the real canvas. The two
+   camera liberties, hold and seek, exist for the shot tools and are named. */
+window.GERPLUNK_DEV = {
+  stamp: STAMP,
+  screen: function () { return G.screen; },
+  frames: function () { return G.frames; },
+  yaw: function () { return yawNow(); },
+  stone: function () { return G.stoneId; },
+  offer: function () { return G.offer.slice(); },
+  day: function () { return { day: G.day, wind: G.wind, windDir: G.windDir, water: G.water }; },
+  state: function () {
+    return {
+      inFlight: !!G.play && !G.play.sunk, sunk: !!G.play && G.play.sunk, playT: playT(),
+      shown: G.tallyShown, rings: G.rings.length, cam: G.cam,
+      tally: $('tally').textContent, line: $('line').classList.contains('on') ? $('line').textContent : ''
+    };
+  },
+  lastThrow: function () { return G.lastThrow; },
+  lastResult: function () {
+    var r = G.lastResult;
+    return r ? { skips: r.skips, distance: r.distance, ended: r.ended, time: r.time } : null;
+  },
+  samples: function () {
+    var s = G.lastSamples;
+    return s ? { n: s.length, ms: s[s.length - 1].t - s[0].t } : null;
+  },
+  ticks: function () { return AUDIO.ticks(); },
+  audioReady: function () { return AUDIO.ready(); },
+  save: function () { return SAVE.read(); },
+  layout: function () { return { W: W, H: H, horizon: horizonY(), shore: shoreY() }; },
+  /* camera only */
+  hold: function (t) { G.hold = t !== null && t !== undefined; if (G.hold) G.holdT = t; },
+  seek: function (t) { if (G.play) G.play.t0 = nowMs() - t * 1000; }
+};
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+else boot();
 </script>
+</body>
+</html>
