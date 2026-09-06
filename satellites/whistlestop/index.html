@@ -1300,16 +1300,32 @@ var PUZZLES = [
       ["p", "curveL"],
       ["p", "curveL"],
       ["from", 11, 2],
-      ["p", "curveL"]
+      ["p", "curveL"],
+      /* ⛔ the two termini swing OUT, in opposite directions, and they are the
+         difference between a puzzle and a thread. The spine alone measured
+         3.3 U wide by 15 tall, and on a 375 wide phone that is a railway a
+         hundred pixels across with a hand of empty wool either side of it.
+         Two curves at each end turn the line through ninety degrees and the
+         footprint becomes 7.7 by 18.7, which is 2.43 to one and inside the
+         rule in DECISIONS. It also reads as a railway: a straight run with a
+         station swung out at each end of it. */
+      ["from", 0, 0],
+      ["p", "curveR"],
+      ["p", "curveR"],
+      ["p", "straight"],
+      ["from", 12, 1],
+      ["p", "curveR"],
+      ["p", "curveR"],
+      ["p", "straight"]
     ],
     stations: [
-      { piece: 0, end: 0, colour: "blue", name: "Blue" },
-      { piece: 12, end: 1, colour: "red", name: "Red" }
+      { piece: 18, end: 1, colour: "blue", name: "Blue" },
+      { piece: 21, end: 1, colour: "red", name: "Red" }
     ],
     levers: { 2: 0, 9: 0, 11: 1 },
     trains: [
-      { colour: "red", piece: 0, edge: 0, s: 0, dir: 1, cars: 3 },
-      { colour: "blue", piece: 12, edge: 0, s: 1, dir: -1, cars: 3 }
+      { colour: "red", piece: 18, edge: 0, s: 1, dir: -1, cars: 3 },
+      { colour: "blue", piece: 21, edge: 0, s: 1, dir: -1, cars: 3 }
     ],
     solution: [
       { atS: 0.10, piece: 2, to: 1 },

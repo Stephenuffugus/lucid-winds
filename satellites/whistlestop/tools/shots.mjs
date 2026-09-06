@@ -122,6 +122,26 @@ for (const [w, h, tag] of [[667, 375, 'wide'], [375, 667, 'tall']]) {
   });
 }
 
+/* ---- Swap, the sixth puzzle: two trains changing ends on a passing loop ---- */
+for (const [w, h, tag] of [[667, 375, 'wide'], [375, 667, 'tall']]) {
+  await withPage(w, h, async (page, shot) => {
+    await page.evaluate(() => WHISTLESTOP_TEST.puzzle(5));
+    await settle(page);
+    if (want('p2-swap')) await shot('p2-swap-' + tag);
+    /* the two flips the answer needs, and then the moment the two trains are
+       abreast: one on the loop, one on the single line it was blocking */
+    await page.evaluate(() => {
+      const g = WHISTLESTOP_TEST.state().g;
+      g.junctions[g.pieces[2].nodes[0]].lever = 1;
+      g.junctions[g.pieces[11].nodes[0]].lever = 0;
+    });
+    await tap(page, '#btnWhistle');
+    await page.evaluate(() => WHISTLESTOP_TEST.advance(4.7));
+    await waitFrames(page, 3);
+    if (want('p2-swap')) await shot('p2-swappass-' + tag);
+  });
+}
+
 /* ---- the rug, built and running, at four phone sizes ---- */
 for (const [w, h] of [[915, 412], [667, 375], [412, 915], [375, 667], [320, 568]]) {
   await withPage(w, h, async (page, shot) => {

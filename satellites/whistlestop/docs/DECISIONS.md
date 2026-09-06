@@ -114,3 +114,12 @@ getting past each other is not the whole job. A fourth switch with its own
 spur above the loop was built, measured and thrown away: no solution needed it,
 and a switch the answer never touches is scenery with a lever on it. Leave
 every lever alone and the two trains meet nose to nose on the single line.
+
+**Swap's two termini swing out, and that is what stops it being a thread.**
+The spine (two switches, a passing loop, a third switch, two buffers) measured
+3.3 U wide by 15 tall, and on a 375 wide phone that is a railway a hundred
+pixels across with a hand of empty wool either side of it. Two curves at each
+end turn the line through ninety degrees in opposite directions and the
+footprint becomes 7.7 by 18.7, which is 2.43 to one and inside the rule three
+entries above. It also reads as a railway rather than a diagram: a straight run
+with a station swung out at each end of it, in opposite corners of the rug.
