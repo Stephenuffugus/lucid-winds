@@ -1,7 +1,7 @@
 /* The throw and the fix, driven by real pointers in both orientations.
    ⛔ nothing here calls launch() to prove the slingshot works: the flights that
    matter start from a real drag on the canvas. */
-import { serve, open, reporter, waitFrames, sleep, tap, centre, drag, dragEnd } from './harness.mjs';
+import { serve, open, reporter, waitFrames, sleep, tap, centre, drag, dragEnd, pinch } from './harness.mjs';
 
 const s = await serve();
 const { fails, say } = reporter();
@@ -112,6 +112,42 @@ for (const [W, H, tag] of [[667, 375, 'landscape'], [375, 667, 'portrait']]) {
   }
   say(await page.evaluate(() => AIRWORTHY_TEST.result().distance) > 0,
     tag + ': and the fixed plane went somewhere');
+
+  /* ⛔ PINCH PULLS THE ROOM BACK, and it must not launch anything. Two fingers
+     on a canvas whose one finger gesture is a slingshot is exactly the shape
+     that fires a throw nobody asked for. */
+  await page.evaluate(() => { AIRWORTHY_TEST.toField(); });
+  await waitFrames(page, 3);
+  const z0 = await page.evaluate(() => ({ zoom: AIRWORTHY_TEST.zoom(), ppm: AIRWORTHY_TEST.view().ppm }));
+  await pinch(page, W / 2, H / 2, 220, 90);
+  await waitFrames(page, 3);
+  const zOut = await page.evaluate(() => ({ zoom: AIRWORTHY_TEST.zoom(),
+    ppm: AIRWORTHY_TEST.view().ppm, flying: AIRWORTHY_TEST.state().flying }));
+  say(zOut.zoom < z0.zoom * 0.75, tag + ': pinching in pulls the room back ('
+    + z0.zoom.toFixed(2) + ' to ' + zOut.zoom.toFixed(2) + ')');
+  say(zOut.ppm < z0.ppm * 0.8, tag + ': and the scale really moves with it ('
+    + z0.ppm.toFixed(1) + ' to ' + zOut.ppm.toFixed(1) + ' pixels a metre)');
+  say(!zOut.flying, tag + ': and two fingers do NOT throw the plane');
+  await pinch(page, W / 2, H / 2, 90, 260);
+  await waitFrames(page, 3);
+  const zIn = await page.evaluate(() => AIRWORTHY_TEST.zoom());
+  say(zIn > zOut.zoom * 1.4, tag + ': and spreading brings it back in ('
+    + zOut.zoom.toFixed(2) + ' to ' + zIn.toFixed(2) + ')');
+  await pinch(page, W / 2, H / 2, 300, 20);
+  await pinch(page, W / 2, H / 2, 300, 20);
+  await waitFrames(page, 3);
+  const floor = await page.evaluate(() => AIRWORTHY_TEST.zoom());
+  say(floor >= 0.45 - 1e-6, tag + ': and it stops rather than shrinking to nothing (' + floor.toFixed(2) + ')');
+  /* one finger still throws it */
+  await page.evaluate(() => { AIRWORTHY_TEST.toField(); });
+  await waitFrames(page, 3);
+  const home2 = await page.evaluate(() => AIRWORTHY_TEST.home());
+  await drag(page, home2.x, home2.y, home2.x - 70, home2.y + 40, 8);
+  await dragEnd(page, home2.x - 70, home2.y + 40);
+  await waitFrames(page, 3);
+  say(await page.evaluate(() => AIRWORTHY_TEST.state().flying),
+    tag + ': and one finger still throws it after all that');
+  await page.evaluate(() => { AIRWORTHY_TEST.finish(); });
 
   say(errors.length === 0, tag + ': nothing landed on the console' + (errors.length ? ': ' + errors[0] : ''));
   await browser.close();

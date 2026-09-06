@@ -258,6 +258,18 @@ await withPage(320, 568, async (page, shot) => {
   if (want('p3-tunnel-320')) await shot('p3-tunnel-320');
 });
 
+/* ---- P3. Pinched all the way out: the whole throw in one frame ---- */
+await withPage(667, 375, async (page, shot) => {
+  await page.evaluate(() => {
+    AIRWORTHY_TEST.toField({ nose: 'locked', noseFolds: 3, wing: 0.15, elev: 0, precision: 1 });
+    AIRWORTHY_TEST.view().zoom = 0.5;
+    AIRWORTHY_TEST.launch(8, 0.95);
+    AIRWORTHY_TEST.finish();
+  });
+  await waitFrames(page, 4);
+  if (want('p3-pinched')) await shot('p3-pinched');
+});
+
 /* ---- P3. The shelf with medals on it, and the result card's two rows ---- */
 await withPage(375, 667, async (page, shot) => {
   await page.evaluate(() => {

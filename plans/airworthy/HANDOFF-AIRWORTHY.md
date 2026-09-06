@@ -15,13 +15,14 @@ this file wins; every difference is in section 3 with its reason.
   sim assertions, and every assertion in every gate watched to fail at least
   once. The morning report is at the top of section 15, the ledgers are in
   section 13 and every call is in `satellites/airworthy/docs/DECISIONS.md`.
-  Section 6, THE SCREENS, has since been read clause by clause against the
-  shipped file and the four things it named that were missing are built (the
-  result card's CHALLENGES button, the archetype line named once, the trim
-  panel's two degree detents, and medals on the hangar cards, which needed a
-  hangar entry to remember what it won).
+  Sections 6 (THE SCREENS) and 4 (ARCHITECTURE LAW) have since been read clause
+  by clause against the shipped file and everything they named that was missing
+  is built: the result card's CHALLENGES button, the archetype line named once,
+  the trim panel's two degree detents, medals on the hangar cards (which needed
+  a hangar entry to remember what it won), the flight's `ring` and `zone`
+  events, and pinch to pull the room back in the field.
   **Next action:** nothing is half built. The plan is complete through P3 and
-  section 6 is closed. What is open is in the morning report under "what is
+  sections 4 and 6 are closed. 129 sim assertions and eight gates. What is open is in the morning report under "what is
   thin": no painted art, the Stunt and Canyon and Stadium courses the design
   names are not built, nobody has played it on a phone and nobody has HEARD it.
 
@@ -1101,6 +1102,96 @@ them, each with the gold it won.
 Stamp bumped to `20260906b` in `index.html` and `sw.js` together.
 
 
+### P3, closing section 4 against the built game (2026-09-06)
+
+Section 6 was read clause by clause and closed; section 4, ARCHITECTURE LAW, had
+two clauses left in it.
+
+**1. *"Events: `launch`, `stall`, `land`, `ring`, `zone`."*** A flight carried
+launch, stall and land. The gates and the mark were worked out by the SCREEN,
+after the fact, from `ringsHit`, and the zone was worked out again by `scoreOf`.
+Two consequences: a player who flew between both banners was told nothing about
+it, because the banners were drawn hit or missed and never said out loud; and
+there were two places that knew where the plane went. The flight emits `ring`
+and `zone` now, the result card reads them, and six assertions hold them to the
+one answer, including that the zone event's miss and the accuracy score are the
+same number to within a billionth.
+
+**2. *"INPUT. Pointer events; the slingshot; taps for creases; drags for dials;
+pinch in the field."*** There was no pinch. A twenty metre throw does not fit on
+a phone at the scale a fold is legible at, so the room now pulls back under two
+fingers, clamped between 0.45 and 1.8. It is a VIEW change and nothing else:
+zoom is a multiplier on the base scale, so the flight, the camera's own
+following and every measurement stay exactly where they were.
+
+```
+  ok    landscape: pinching in pulls the room back (1.00 to 0.45)
+  ok    landscape: and the scale really moves with it (55.6 to 25.0 pixels a metre)
+  ok    landscape: and two fingers do NOT throw the plane
+  ok    landscape: and spreading brings it back in (0.45 to 1.30)
+  ok    landscape: and it stops rather than shrinking to nothing (0.45)
+  ok    landscape: and one finger still throws it after all that
+```
+
+**Watched red, sim first.**
+
+```
+$ (a ring event for every ring, hit or not)
+  FAIL  and every ring event matches what ringsHit counts   [expected 1, got 2]
+$ (the zone event fired wherever it lands)
+  FAIL  and a plane that misses it says nothing   [expected 0, got 1]
+$ (the zone event reporting the wrong miss)
+  FAIL  and the zone event agrees with the score (0.41 against 0.01)
+$ (free flight allowed to leak course events)
+  FAIL  the archetypes suite ran to the end   [Cannot read properties of undefined]
+```
+
+**And the pinch.**
+
+```
+$ (no pinch at all)          FAIL  pinching in pulls the room back (1.00 to 1.00)
+$ (zoom moved, scale not)    FAIL  and the scale really moves with it (55.6 to 55.6 pixels a metre)
+$ (no floor on the zoom)     FAIL  and it stops rather than shrinking to nothing (0.01)
+$ (ALL THREE guards against a pinch becoming a throw removed)
+                             FAIL  and two fingers do NOT throw the plane
+```
+
+That last one is worth the space. Two fingers on a canvas whose one finger
+gesture is a slingshot is exactly the shape that fires a throw nobody asked for,
+and it took removing three separate guards before the assertion could go red:
+the second finger nulls the pull, the move handler nulls it again, and the up
+handler refuses. Two mutations in a row looked like the gate was decoration and
+both times it was another guard doing its job.
+
+**Shots, opened and read.** `p3-pinched.png` (the whole throw in one frame),
+`p3-result-rows.png`, `p3-shelf.png`, and every earlier one re-taken.
+
+- The landscape result card was 250 of the 375 pixels of height: a card about
+  where the plane came down, covering the room it came down in. It is a right
+  hand panel now and the camera settles the landing in the left fifth, so the
+  trail and the plane are both in shot beside it.
+- Four buttons in one row was tried first and two of them ran off the edge of a
+  430 pixel card.
+- ⛔ AND THE CSS SCAR: the landscape rule was written ABOVE the rule it
+  overrides. At equal specificity the later one wins, so it did nothing at all,
+  and the first shot after "fixing" it was identical to the one before.
+
+`node tools/check.js`
+
+```
+sim             pass  0s
+lint            pass  0s
+throw           pass  6s
+fold            pass  8s
+tunnel          pass  3s
+challenge       pass  4s
+sound           pass  6s
+layout          pass  8s
+
+ALL GATES PASSED
+```
+
+
 ## 14. THE OVERNIGHT PROTOCOL
 
 As `plans/fathom/HANDOFF-FATHOM.md` section 14, with `P0, P1, P2, P3` of this file and the browser gates `throw, fold,
@@ -1141,6 +1232,13 @@ by flying forty folds through every one, not guessed.
    was open, so a sharper one was written next to it.
 3. Every threshold in the file was written by a tool that flew for them, and the
    tool refuses to write a set where one plane wins everything.
+
+**Sections 4 and 6 are closed too.** Section 4 had two clauses left in it: the
+flight's `ring` and `zone` events, which the screen had been working out for
+itself after the fact so that a player who flew between both banners was never
+told, and pinch in the field, which did not exist at all. Both are built and
+gated. The pinch assertion that two fingers must not throw the plane took three
+guards removed before it could go red.
 
 **Section 6 is closed too.** The phases were done and the screens spec was not.
 Read clause by clause it named four things that did not exist: a way back to the

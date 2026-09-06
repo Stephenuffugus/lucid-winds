@@ -83,6 +83,19 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
   z-index:14;width:88%;max-width:360px;background:var(--sheet);border:2px solid var(--ink);
   border-radius:16px;box-shadow:0 4px 0 var(--ink);padding:14px;display:none;flex-direction:column;gap:8px}
 #resultCard.on{display:flex}
+#resultCard .rows{display:flex;flex-direction:column;gap:6px;width:100%}
+/* ⛔ in landscape the card was 250 of the 375 pixels of height, so a result card
+   about where the plane came down covered the room it came down in. Its four
+   card moves to the right hand half instead and the camera puts the landing in
+   the left fifth. Four buttons in one row was tried first and two of them ran
+   off the edge of a 430 pixel card. THE MEDIA QUERY MUST COME AFTER the rule it
+   overrides: at equal specificity the later one wins, and put above it this did
+   nothing at all. */
+@media (orientation:landscape){
+  #resultCard{left:auto;right:calc(12px + var(--safeR));transform:none;
+    bottom:calc(12px + var(--safeB));max-width:min(58%,430px);width:min(58%,430px);
+    padding:10px 14px calc(10px + var(--safeB))}
+}
 #resultCard .row .btn{white-space:nowrap;font-size:.84rem;letter-spacing:.03em;padding:10px 8px}
 #resultName{font-size:1.15rem;font-weight:700;text-align:center}
 #resultLine{font-size:.82rem;color:var(--pencil);text-align:center;line-height:1.6}
@@ -222,13 +235,15 @@ body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
   <div id="resultCard">
     <div id="resultName"></div>
     <div id="resultLine"></div>
-    <div class="row">
-      <button class="btn" id="btnTrim">TRIM</button>
-      <button class="btn go" id="btnAgain">THROW AGAIN</button>
-    </div>
-    <div class="row">
-      <button class="btn ghost" id="btnResultChallenges">CHALLENGES</button>
-      <button class="btn ghost" id="btnResultDone">DONE</button>
+    <div class="rows">
+      <div class="row">
+        <button class="btn" id="btnTrim">TRIM</button>
+        <button class="btn go" id="btnAgain">THROW AGAIN</button>
+      </div>
+      <div class="row">
+        <button class="btn ghost" id="btnResultChallenges">CHALLENGES</button>
+        <button class="btn ghost" id="btnResultDone">DONE</button>
+      </div>
     </div>
   </div>
 
@@ -711,6 +726,20 @@ function fly(spec, opts) {
   trace.push({ t: st.t, x: st.x, y: st.y, theta: st.theta, V: Math.sqrt(st.vx * st.vx + st.vy * st.vy),
     alpha: 0, veer: st.veer });
   events.push({ kind: st.why === 'spiral' ? 'spiral' : 'land', t: st.t, x: st.x, y: st.y });
+  /* ⛔ the gates and the mark are EVENTS, not something the screen works out for
+     itself. Drawn hit or missed and never said out loud, a player who flew
+     between both banners was told nothing about it. The flight knows; it should
+     say so, and then the result card and the sim both read the one answer. */
+  if (o.course && COURSES[o.course]) {
+    var res0 = { trace: trace }, hits = ringsHit(res0, o.course), rr;
+    for (rr = 0; rr < hits.length; rr++) {
+      if (hits[rr]) {
+        events.push({ kind: 'ring', ring: rr, x: COURSES[o.course].rings[rr].x });
+      }
+    }
+    var z = COURSES[o.course].zone;
+    if (Math.abs(st.x - z.x) <= z.w / 2) events.push({ kind: 'zone', x: st.x, off: st.x - z.x });
+  }
   return {
     spec: spec, derived: D, trace: trace, events: events, stalls: stalls,
     distance: st.x, airtime: st.t, endY: st.y, veer: st.veer, why: st.why
@@ -896,8 +925,14 @@ function flyChallenge(spec, ch, throwOpts) {
   return fly(spec, {
     angle: o.angle === undefined ? 8 : o.angle,
     power: o.power === undefined ? 0.5 : o.power,
-    air: courseAir(ch.course, ch.id)
+    air: courseAir(ch.course, ch.id),
+    course: ch.course
   });
+}
+function eventsOfKind(res, kind) {
+  var out = [], i;
+  for (i = 0; i < res.events.length; i++) if (res.events[i].kind === kind) out.push(res.events[i]);
+  return out;
 }
 /* what the challenge measures. Distance and airtime want more, the accuracy
    challenges want less, and every comparison in here goes through betterOf so
@@ -1290,6 +1325,30 @@ function suiteChallenges(T) {
   var thru = { trace: [{ x: 0, y: 3 }, { x: 20, y: 3 }] };
   T.eq('and one straight through the middle takes both',
     ringsHit(thru, 'gym').join(','), 'true,true');
+  /* ⛔ the gates and the mark come back as EVENTS on the flight, so the screen
+     and the sim are reading one answer rather than each working it out. */
+  var evRes = flyChallenge(newSpec(NAMED_SPECS.cruiser.spec), challengeById('gym-far'), { angle: 12, power: 0.6 });
+  var kinds = {}, ei;
+  for (ei = 0; ei < evRes.events.length; ei++) kinds[evRes.events[ei].kind] = 1;
+  T.assert('a flight opens with a launch and closes on the ground',
+    kinds.launch && (kinds.land || kinds.spiral));
+  T.eq('and every ring event matches what ringsHit counts',
+    eventsOfKind(evRes, 'ring').length,
+    ringsHit(evRes, 'gym').filter(function (h) { return h; }).length);
+  var deskRes = flyChallenge(newSpec(challengeById('gym-desk').reference),
+    challengeById('gym-desk'), challengeById('gym-desk').throw);
+  T.eq('a plane that lands on the mark says so, once', eventsOfKind(deskRes, 'zone').length, 1);
+  T.assert('and the zone event agrees with the score ('
+    + Math.abs(eventsOfKind(deskRes, 'zone')[0].off).toFixed(2) + ' against '
+    + scoreOf(challengeById('gym-desk'), deskRes).toFixed(2) + ')',
+    Math.abs(Math.abs(eventsOfKind(deskRes, 'zone')[0].off)
+      - scoreOf(challengeById('gym-desk'), deskRes)) < 1e-9);
+  var missRes = flyChallenge(newSpec({ nose: 'locked', noseFolds: 3, wing: 0.12, elev: 0 }),
+    challengeById('gym-desk'), challengeById('gym-desk').throw);
+  T.eq('and a plane that misses it says nothing', eventsOfKind(missRes, 'zone').length, 0);
+  /* free flight has no course events at all, because nothing is being scored */
+  T.eq('a flight with no course named carries no gate events',
+    eventsOfKind(fly(newSpec(), { angle: 8, power: 0.5 }), 'ring').length, 0);
   /* the accuracy zones sit where planes actually land, not where a designer
      would like them to */
   for (i = 0; i < CHALLENGES.length; i++) {
@@ -1401,7 +1460,7 @@ function suitePurity(T, src) {
 /* ========================= 16. VIEW ========================= */
 /* Canvas 2D, DPR aware. The world is metres; the camera leads the plane and the
    trail is a pencil dotted line. Paper white, pencil grey, one blue crease. */
-var V = { cv: null, ctx: null, W: 0, H: 0, dpr: 1, ppm: 40, camX: 0, camY: 0, t: 0 };
+var V = { zoom: 1, cv: null, ctx: null, W: 0, H: 0, dpr: 1, ppm: 40, camX: 0, camY: 0, t: 0 };
 var REDUCED = false;
 
 function px(x) { return (x - V.camX) * V.ppm + V.W * 0.28; }
@@ -1427,7 +1486,8 @@ function fitCanvas() {
      paper. On a tall screen the room is drawn closer and the floor is dropped,
      which spends the extra height on the flight instead of on nothing. */
   var tall = V.H / V.W > 1.75;
-  V.ppm = Math.max(14, Math.min(V.W / (tall ? 9.5 : 12), V.H / 4.6));
+  V.base = Math.max(14, Math.min(V.W / (tall ? 9.5 : 12), V.H / 4.6));
+  V.ppm = V.base * (V.zoom || 1);
   V.ground = tall ? 0.86 : 0.78;
 }
 
@@ -3014,7 +3074,8 @@ function pullAngle(dx, dy) {
 function launch(angle, power) {
   var ch = G.challenge;
   if (ch) { angle = ch.throw.angle; power = ch.throw.power; }
-  G.res = fly(G.spec, { angle: angle, power: power, air: courseAir(G.course, ch ? ch.id : null) });
+  G.res = fly(G.spec, { angle: angle, power: power, course: G.course,
+    air: courseAir(G.course, ch ? ch.id : null) });
   G.lastClass = classify(G.res);
   G.live = { i: 0, t: 0 };
   G.flying = true;
@@ -3023,6 +3084,15 @@ function launch(angle, power) {
   el('resultCard').classList.remove('on');
   haptic(12);
   return G.res;
+}
+/* what it flew through on the way, in the words a person would use */
+function gateLine(res) {
+  var rings = COURSES[G.course].rings.length, got = eventsOfKind(res, 'ring').length;
+  var what = G.course === 'yard' ? 'the washing' : 'the banners';
+  if (!rings) return '';
+  if (got === rings) return '<br>Through all of ' + what;
+  if (got) return '<br>Through ' + got + ' of ' + rings + ', ' + what;
+  return '';
 }
 var MEDAL_MARK = { gold: '\u25CF', silver: '\u25CF', bronze: '\u25CF' };
 function medalWord(m) { return m ? m.charAt(0).toUpperCase() + m.slice(1) : ''; }
@@ -3061,18 +3131,22 @@ function endFlight() {
       : sc.toFixed(ch.kind === 'airtime' ? 1 : 1) + ' ' + ch.unit;
     line += med ? '<br>' + medalWord(med) + ', and your best is ' + medalWord(SAVE.medals[ch.id])
       : '<br>Bronze wants ' + ch.medals.bronze + ' ' + ch.unit;
+    line += gateLine(r);
     /* the archetype is named ONCE, the first time you fly one, and then it gets
        out of the way of the score */
     if (firstOfKind) line += '<br>' + G.lastClass.line;
   } else {
     line = r.distance.toFixed(1) + ' m in ' + r.airtime.toFixed(1) + ' s'
       + (r.stalls ? ', ' + r.stalls + (r.stalls === 1 ? ' stall' : ' stalls') : '')
-      + ', glide ' + st.descent.toFixed(0) + ' degrees';
+      + ', glide ' + st.descent.toFixed(0) + ' degrees' + gateLine(r);
   }
   if (G.hangarId) hangarRecord(G.hangarId, r, G.lastClass.id, ch ? ch.id : null, G.lastMedal);
   saveNow();
-  /* settle the camera on the landing, because where it came down IS the result */
-  V.camX = Math.max(0, r.distance - 5);
+  /* ⛔ settle the camera on the landing, because where it came down IS the
+     result, and put it where the CARD IS NOT: the card takes the bottom in
+     portrait and the right hand half in landscape, so the landing goes to the
+     left fifth of the frame either way. */
+  V.camX = Math.max(0, r.distance - (0.22 - 0.28) * V.W / V.ppm);
   el('resultName').textContent = ch ? ch.name : G.lastClass.name;
   el('resultLine').innerHTML = (ch ? '' : G.lastClass.line + '<br>') + line;
   el('resultCard').classList.add('on');
@@ -3192,7 +3266,45 @@ function kick() { if (!RAF && !document.hidden) RAF = requestAnimationFrame(fram
 /* ========================= 18. INPUT ========================= */
 function bindInput() {
   var cv = V.cv;
+  /* ⛔ PINCH IN THE FIELD. A twenty metre throw does not fit on a phone at the
+     scale a fold is legible at, so the room pulls back under two fingers. It is
+     a VIEW change and nothing else: the flight, the camera's own following and
+     every measurement stay exactly where they were, which is why zoom is a
+     multiplier on the base scale rather than a new scale. */
+  var PINCH = null;
+  var PTRS = {};
+  function pinchGap() {
+    var ids = Object.keys(PTRS);
+    if (ids.length < 2) return 0;
+    var a = PTRS[ids[0]], b = PTRS[ids[1]];
+    return Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
+  }
   cv.addEventListener('pointerdown', function (e) {
+    if (G.screen !== 'field') return;
+    PTRS[e.pointerId] = { x: e.clientX, y: e.clientY };
+    if (Object.keys(PTRS).length === 2) {
+      PULL = null;
+      PINCH = { gap: pinchGap(), zoom: V.zoom || 1 };
+    }
+  }, true);
+  cv.addEventListener('pointermove', function (e) {
+    if (!PTRS[e.pointerId]) return;
+    PTRS[e.pointerId] = { x: e.clientX, y: e.clientY };
+    if (!PINCH) return;
+    var g = pinchGap();
+    if (PINCH.gap > 8 && g > 8) {
+      V.zoom = clamp(PINCH.zoom * (g / PINCH.gap), 0.45, 1.8);
+      fitCanvas();
+    }
+  }, true);
+  function pinchEnd(e) {
+    delete PTRS[e.pointerId];
+    if (Object.keys(PTRS).length < 2) PINCH = null;
+  }
+  cv.addEventListener('pointerup', pinchEnd, true);
+  cv.addEventListener('pointercancel', pinchEnd, true);
+  cv.addEventListener('pointerdown', function (e) {
+    if (PINCH) return;
     /* ⛔ in a challenge the throw is the challenge's, so the sling does not
        answer the canvas at all: a pull that quietly overrode a prescribed throw
        would make every medal mean something different. */
@@ -3204,12 +3316,14 @@ function bindInput() {
     el('resultCard').classList.remove('on');
   });
   cv.addEventListener('pointermove', function (e) {
+    if (PINCH) { PULL = null; return; }
     if (!PULL || PULL.id !== e.pointerId) return;
     PULL.to = { x: e.clientX, y: e.clientY };
     PULL.dx = e.clientX - PULL.from.x;
     PULL.dy = e.clientY - PULL.from.y;
   });
   function up(e) {
+    if (PINCH) { PULL = null; return; }
     if (!PULL || PULL.id !== e.pointerId) return;
     var power = pullPower(PULL.dx, PULL.dy), angle = pullAngle(PULL.dx, PULL.dy);
     PULL = null;
@@ -3435,6 +3549,7 @@ function boot() {
 window.AIRWORTHY_TEST = {
   state: function () { return G; },
   view: function () { return V; },
+  zoom: function () { return V.zoom; },
   frames: function () { return FRAMES; },
   toField: function (over) { toField(newSpec(over || START_SPEC)); },
   /* ⛔ the spec you are working on. The workshop edits SHOP.spec and the gym
