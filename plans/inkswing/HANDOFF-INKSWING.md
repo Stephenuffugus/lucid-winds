@@ -72,6 +72,75 @@ on branch `add-sproing-jumper` tonight.
   dev console), and his call on whether the second link should be visibly
   wilder (a lighter second bob, k below 1, is one number in CONFIG).
 
+- 2026-09-06 evening, Fable, PLANNED FOR OPUS after Stephen's phone notes (his words are in
+  `docs/DIRECTOR-CALLS-SEP06.md` section G, items 27 to 33):
+  **P4 step 1, THE NIB AND THE COLOUR WHEEL (his 18, 21, 25).** Exact next action: (1) in the SIM
+  block, a throw gains `w` (a nib: 0 fine, 1 medium, 2 broad; `strokeSpan` scales `INK_W_MIN` and
+  `INK_W_MAX` by 0.6, 1.0, 1.6) and `rgb` (three bytes; when present it beats `ink`); `packSheet`
+  writes a v2 header byte and v1 links still unpack (the five inks map to their hexes); `layerFor`
+  keys layers by the hex, `LAYERS_MAX` 4 becomes 6. Sim assertions: pack and unpack round trip a
+  v2 sheet with three nibs and three custom colours to the byte, a v1 link from before tonight
+  still opens, a broad nib's trace is wider than a fine nib's at the same speed; each watched to
+  fail. (2) On the page: the rail keeps the five inks and gains a sixth chip MORE that opens a
+  sheet with a hue ring (a 240 px canvas ring, a tap picks a hue, a slider under it picks the
+  depth) and a row of three nib buttons, each a 48 px target by `elementFromPoint` at 320, 375 and
+  412; the rail chip shows the current colour. (3) Gates: `test/share.mjs` opens a v1 link and a v2
+  link cold; `test/fling.mjs` throws once fine and once broad and asserts the broad throw lays at
+  least 1.4 times the ink (`inkedFraction`); `test/layout.mjs` measures the wheel sheet's targets
+  and keeps the bottom left 120 by 120 clear. (4) Shoot 412x915 with the wheel open and OPEN it.
+  Files: `satellites/inkswing/index.html` sections 4, 17, 19, the rail CSS at the top; the three
+  gates. About a day. Stamp to the next letter in three places.
+  **P4 step 2, THE TWIN (his 28), only after Stephen answers call 31:** rig five, two independent
+  pendulums with two pens; a throw gains `pen` (0 or 1); `posAt` returns both pens; `strokeSpan`
+  strokes both; two bobs drawn and each grab throws its own; unlock at 20 kept drawings. Sim: two
+  throws on different pens never add; the share round trips the pen index. Fling: a real grab on
+  each bob makes a throw on its own pen and both lay ink at once.
+  **P4 step 3, THE PALETTE THAT FOLDS AWAY (his 22), after call 28.** Half a day: the rail collapses
+  to one chip on a tall phone and the sheet takes the band (`fitCanvas` bottom on tall).
+  **P4 step 4, THE BUCKET (his 19, 20) and THE CROP (his 23), after calls 27 and 29.**
+  What was DONE tonight is the entry below this one.
+
+- 2026-09-06 evening, Fable, DONE after Stephen's phone notes (his words, verbatim, then what
+  was found): **"It won't let me run it more than once. Once I run it once, it's done. I should be
+  able to keep layering and keep layering if I want."** A FAULT, confirmed in code before the
+  shot: the sheet clock stopped at `DRAW_MAX_S` flat, so a throw released after the first had run
+  out (or after FINISH) was born at the horizon and ended the same frame. `horizonOf(sheet)` in the
+  SIM block, the last throw's release plus ninety seconds, is the horizon now, and `step`,
+  `finishNow`, `redrawAll`, `traceOf` and the poster read it; the share decoder's `t0` clamp is the
+  16 bit ceiling rather than four horizons. ⛔ The sim assertion "a trace never runs past the
+  drawing limit" ASSERTED THE PIN and is rewritten to the horizon, and two new sim assertions
+  (the horizon moves; a throw released at the old horizon still travels 2000 units) went red
+  under a flat `horizonOf` mutation. ⛔ The fling gate's "a second fling is a second throw"
+  COUNTED THROWS, never ink, and its second fling landed while the first was still swinging; it
+  now presses FINISH first and asks for ink on top, and the old page fails it exactly there
+  ("drawing false", "1224 to 1224").
+  **"I tried to redraw the thing and it would freeze up off screen and I would have to go
+  sideways... a mess to try and get it back on screen."** A FAULT: `dragTo` clamped the bob to a
+  whole sheet's width EACH WAY, so it could be parked two sheets off the paper, and the dead
+  throw above then froze the pen at the edge where the 44 px grab could not reach it. The drag
+  clamps 60 units inside the paper now. The gate drags the bob off the left edge, lets go slowly,
+  and asks for the pen thirty pixels inside the screen; the old page put it at eleven.
+  **"The sand drawing was absolutely horrible. It seemed to do two different colors. Stuff
+  lingered on screen after I tried to clear it. It wasn't articulate at all."** Three FAULTS and a
+  taste: (1) baked grains were three quarters the size and dimmer than live ones (two tones), one
+  size and one alpha now; (2) FINISH on a sand tray called the ink stroker, laying dark ink under
+  the grains, it pours sand now; (3) the brush cleared the layer and left the throw list and the
+  clock running, so the pour resumed on the clean tray, and the fling gate's own comment called
+  that "correct behaviour" and stopped the pen first to pass; the brush is the sand's tear off now
+  and a new assertion brushes with the pen DOWN. The jitter is 1.3 units rather than 2.2 (taste,
+  his eye decides; call 33). Shot `docs/shots/`: opened, one tone, a crisp light on dark line.
+  **"We need a hide pendulum button."** Built: HIDE RIG / SHOW RIG in the top bar, 48 px,
+  `SETTINGS.rig`, hidden only on an explicit nought so old saves keep their rig. The gate counts
+  the brass under the bob before and after.
+  **Found by opening the 412x915 shot, not in his notes:** with all four action buttons up the ink
+  rail sat under UNDO and TEAR OFF on a tall phone; the layout gate had measured the chips on an
+  empty sheet where two buttons are hidden. Rail at 132 px, and the gate measures the chips again
+  with the four buttons up.
+  Stamp `20260906h` in three places. `node tools/check.js`: ALL GATES PASSED, seven of seven
+  (sim 101, fling with nine new assertions). Nothing half built.
+  **Next action:** the P4 plan above once Stephen answers calls 27 to 33; his thumb on the layering
+  and the sand first.
+
 ---
 
 ## 0. RULES OF ENGAGEMENT

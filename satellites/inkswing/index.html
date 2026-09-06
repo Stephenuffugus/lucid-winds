@@ -1,9 +1,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#2B3A67">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260906g">
-<link rel="icon" href="./icon-192.png?v=20260906g">
-<link rel="manifest" href="./manifest.webmanifest?v=20260906g">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260906h">
+<link rel="icon" href="./icon-192.png?v=20260906h">
+<link rel="manifest" href="./manifest.webmanifest?v=20260906h">
 <title>INKSWING</title>
 <style>
 :root{
@@ -36,8 +36,13 @@ body{touch-action:none;user-select:none;-webkit-user-select:none}
 /* the rail lies down on a tall phone so the sheet can have the whole width. It sits in
    the band the layout maths reserves for it, clear of the actions and of the bottom left
    120 by 120 the fleet keeps for the music chip. */
+/* ⛔ 132, NOT 96. The action block is two rows of 48 with an 8 px gap on a 16 px
+   floor, so its top is 120 px up; at 96 the rail's lower half sat under UNDO and
+   TEAR OFF (seen in a 412 by 915 shot on Sep 06, with the four buttons up). The
+   layout gate had measured the chips on an EMPTY sheet, where two of the four
+   buttons are hidden, so it could not see it. */
 @media (min-height:800px){
-  #inkRail{right:auto;left:50%;top:auto;bottom:calc(96px + var(--safeB));
+  #inkRail{right:auto;left:50%;top:auto;bottom:calc(132px + var(--safeB));
     transform:translateX(-50%);flex-direction:row;gap:8px}
 }
 .chip{width:48px;height:48px;border-radius:14px;border:2px solid rgba(251,246,232,.35);
@@ -96,6 +101,7 @@ body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
   <div id="chrome">
     <button class="btn" id="rigChip">The Single</button>
     <div id="gap"></div>
+    <button class="btn" id="btnRigHide">HIDE RIG</button>
     <button class="btn icon" id="btnMenu" aria-label="Menu">&#9776;</button>
   </div>
   <div id="hint"></div>
@@ -354,11 +360,25 @@ function posAt(sheet, t) {
   }
   return { x: x, y: y };
 }
+/* ⛔ THE HORIZON IS PER THROW, NOT PER SHEET. Every throw draws for DRAW_MAX_S
+   after its own release. The sheet's clock used to stop at DRAW_MAX_S flat, so
+   once the first throw had run out, or FINISH had been pressed, every later
+   throw was born at the horizon and ended the same frame: "it won't let me run
+   it more than once, once I run it once it's done" (Stephen, Sep 06). The sim
+   assertion that guarded the old rule asserted the pin itself, and the fling
+   gate counted throws rather than ink. */
+function horizonOf(sheet) {
+  var h = CONFIG.DRAW_MAX_S, i;
+  for (i = 0; i < sheet.throws.length; i++) {
+    if (sheet.throws[i].t0 + CONFIG.DRAW_MAX_S > h) h = sheet.throws[i].t0 + CONFIG.DRAW_MAX_S;
+  }
+  return h;
+}
 /* the path, sampled so that no straight segment is longer than SEG_MAX_LEN: a
    fast pen needs more points than a slow one and a fixed step gives a polygon
    at the start and a waste of memory at the end */
 function traceOf(sheet, seconds, fromT) {
-  var t = fromT || 0, end = Math.min(seconds, CONFIG.DRAW_MAX_S);
+  var t = fromT || 0, end = Math.min(seconds, horizonOf(sheet));
   var out = [], last = posAt(sheet, t), guard = 0;
   out.push({ t: t, x: last.x, y: last.y });
   var step = 1 / 120;
@@ -694,7 +714,7 @@ function unpackSheet(txt) {
       pend.push({ w: clamp(we, 0.2, 40), wEff: clamp(we, 0.2, 40),
         A: clamp(A, -4000, 4000), phi: clamp(phi, -7, 7) });
     }
-    out.push({ t0: clamp(t0, 0, CONFIG.DRAW_MAX_S * 4), ink: ink, damp: damp, pend: pend });
+    out.push({ t0: clamp(t0, 0, 6553.5), ink: ink, damp: damp, pend: pend });
   }
   return newSheet({ rig: rig, lengths: lengths, bob: bob, mode: mode, throws: out });
 }
@@ -1015,8 +1035,19 @@ function suiteTrace(T) {
   T.near('a throw that has not happened yet changes nothing before it', early.x, oneOnly.x, 1e-12);
   var later = posAt(two, 9), firstAt9 = posAt(newSheet({ rig: 'crossed', throws: [two.throws[0]] }), 9);
   T.assert('and once it has, the two curves add', Math.abs(later.x - firstAt9.x) > 1);
-  T.assert('a trace never runs past the drawing limit',
-    traceOf(sh, CONFIG.DRAW_MAX_S * 4)[traceOf(sh, CONFIG.DRAW_MAX_S * 4).length - 1].t <= CONFIG.DRAW_MAX_S + 1e-9);
+  T.assert('a trace never runs past the sheet\'s horizon',
+    traceOf(sh, CONFIG.DRAW_MAX_S * 4)[traceOf(sh, CONFIG.DRAW_MAX_S * 4).length - 1].t <= horizonOf(sh) + 1e-9);
+  /* ⛔ the assertion that would have caught Sep 06's "it won't let me run it
+     more than once": a throw released at the old flat horizon has its own
+     ninety seconds, and the pen moves through them */
+  var late = newSheet({ rig: 'single' });
+  late.throws.push(flingToThrow(late, { x: 200, y: 100 }, { x: -300, y: 400 }, 0, 'irongall'));
+  late.throws.push(flingToThrow(late, { x: -150, y: 220 }, { x: 500, y: 100 }, CONFIG.DRAW_MAX_S, 'sepia'));
+  T.near('the horizon moves with the last throw', horizonOf(late), 2 * CONFIG.DRAW_MAX_S, 1e-9);
+  var tl = traceOf(late, CONFIG.DRAW_MAX_S * 4, CONFIG.DRAW_MAX_S), tli, travel = 0;
+  for (tli = 1; tli < tl.length; tli++) travel += Math.hypot(tl[tli].x - tl[tli - 1].x, tl[tli].y - tl[tli - 1].y);
+  T.assert('a throw released after the first has finished still draws (' + travel.toFixed(0)
+    + ' units of pen travel after the old horizon)', tl.length > 500 && travel > 2000);
 }
 
 function suiteLink(T) {
@@ -1176,13 +1207,13 @@ function suitePurity(T, src) {
 }
 // ---- TEST_EXPORT_END ----
 /* ============================ 16. THE PAGE ============================ */
-var STAMP = '20260906g';
+var STAMP = '20260906h';
 function el(id) { return document.getElementById(id); }
 var V = { cv: null, ctx: null, W: 0, H: 0, dpr: 1, t: 0, ppu: 0.34, ox: 0, oy: 0 };
 var G = { screen: 'sheet', sheet: null, t: 0, drawing: false, since: 0,
   pen: { x: 0, y: 0 }, held: null, grabbed: false, samples: [], ink: 'irongall',
   poster: 'plate' };
-var SETTINGS = { sound: 1, motion: 1, tilt: 0 };
+var SETTINGS = { sound: 1, motion: 1, tilt: 0, rig: 1 };
 var SAVE = { v: CONFIG.SAVE_V, name: '', folio: [], rigsUnlocked: 1, settings: SETTINGS, seen: {} };
 var RAF = 0, LAST = 0, FRAMES = 0, REDUCED = false;
 
@@ -1346,7 +1377,7 @@ function redrawAll(sheet, upTo) {
   if (!sheet.throws.length) return;
   SAND.live = [];
   SAND.seq = 0;
-  var to = Math.min(upTo === undefined ? G.t : upTo, CONFIG.DRAW_MAX_S);
+  var to = Math.min(upTo === undefined ? G.t : upTo, horizonOf(sheet));
   if (sheet.mode === 'sand') pourSand(sheet, 0, to);
   else strokeSpan(sheet, 0, to);
 }
@@ -1405,7 +1436,16 @@ function grainAt(i, salt) {
 }
 /* the brass arm hanging from the top of the frame, the bob on the end of it, and
    the pen under the bob */
+/* ⛔ THE RIG CAN BE PUT AWAY. "We need a hide pendulum button so people can look
+   at the art without it being in their way" (Stephen, Sep 06). The bob is
+   still where it is and still answers a grab; only the drawing of it stops.
+   ⛔ hidden is an explicit nought: a save written before this field existed has
+   no `rig` at all, and reading that as hidden would open every old player's
+   sheet with the rig gone. */
+function rigHidden() { return SETTINGS.rig === 0; }
+function syncRigButton() { el('btnRigHide').textContent = rigHidden() ? 'SHOW RIG' : 'HIDE RIG'; }
 function drawRig(ctx) {
+  if (rigHidden()) return;
   var pen = G.pen;
   var topY = Math.max(20, V.oy - (CONFIG.SHEET_H / 2) * V.ppu - 44);
   var bx = sx(pen.x), by = sy(pen.y);
@@ -1516,9 +1556,14 @@ function grabAt(x, y) {
 }
 function dragTo(x, y, ts) {
   if (!G.grabbed) return;
-  /* the bob follows the finger in SHEET units, and the pen is lifted */
-  var u = { x: clamp((x - V.ox) / V.ppu, -CONFIG.SHEET_W, CONFIG.SHEET_W),
-    y: clamp((y - V.oy) / V.ppu, -CONFIG.SHEET_H, CONFIG.SHEET_H) };
+  /* the bob follows the finger in SHEET units, and the pen is lifted.
+     ⛔ CLAMPED TO THE PAPER, not to a sheet's width EACH WAY: the old clamp let
+     the bob be parked two sheets off the paper, where the 44 px grab could not
+     reach it, and a slow release there left the pen frozen off screen ("it
+     would freeze up off screen and it was a mess to get it back", Stephen,
+     Sep 06). */
+  var u = { x: clamp((x - V.ox) / V.ppu, -CONFIG.SHEET_W / 2 + 60, CONFIG.SHEET_W / 2 - 60),
+    y: clamp((y - V.oy) / V.ppu, -CONFIG.SHEET_H / 2 + 60, CONFIG.SHEET_H / 2 - 60) };
   G.held = u;
   G.samples.push({ x: u.x, y: u.y, t: ts });
   while (G.samples.length > 24) G.samples.shift();
@@ -1559,23 +1604,27 @@ function step(dtMs) {
   if (G.grabbed) { G.pen = G.held || G.pen; return; }
   if (SAND.brushing) { brushOff(dtMs); return; }
   if (!G.drawing) { G.pen = G.sheet.throws.length ? posAt(G.sheet, G.t) : penRest(); return; }
-  var from = G.t;
-  G.t = Math.min(CONFIG.DRAW_MAX_S, G.t + dtMs / 1000);
+  var from = G.t, hz = horizonOf(G.sheet);
+  G.t = Math.min(hz, G.t + dtMs / 1000);
   if (G.sheet.mode === 'sand') pourSand(G.sheet, from, G.t);
   else strokeSpan(G.sheet, from, G.t);
   G.pen = posAt(G.sheet, G.t);
   soundTick();
-  if (G.t >= CONFIG.DRAW_MAX_S) { G.drawing = false; soundStop(); }
+  if (G.t >= hz) { G.drawing = false; soundStop(); }
 }
 /* let it finish: the rest of the closed form, drawn over two seconds, never
    skipping a segment */
 function finishNow() {
   if (!G.sheet.throws.length) return 0;
-  var from = G.t;
-  G.finishTo = CONFIG.DRAW_MAX_S;
+  var from = G.t, end = horizonOf(G.sheet);
+  G.finishTo = end;
   G.finishing = FINISH_STEPS;
-  strokeSpan(G.sheet, from, CONFIG.DRAW_MAX_S);
-  G.t = CONFIG.DRAW_MAX_S;
+  /* ⛔ FINISH on a sand tray poured ink: it called the ink stroker whatever the
+     mode, so a finished sand drawing got dark ink lines under pale grains, two
+     colours on one tray (Stephen, Sep 06) */
+  if (G.sheet.mode === 'sand') pourSand(G.sheet, from, end);
+  else strokeSpan(G.sheet, from, end);
+  G.t = end;
   G.pen = posAt(G.sheet, G.t);
   G.drawing = false;
   soundStop();
@@ -1849,7 +1898,7 @@ function pourSand(sheet, fromT, toT) {
   for (i = 1; i < tr.length; i++) {
     var a = tr[i - 1], b = tr[i];
     var d = Math.hypot(b.x - a.x, b.y - a.y);
-    var n = Math.max(1, Math.round(d / 0.4)), k;
+    var n = Math.max(1, Math.round(d / 0.35)), k;
     /* the cap is on the whole pour, not on the call: written per call it was
        invisible in play, where a call is one frame, and it silently truncated
        every BULK pour. Opening a shared sand drawing, or turning the phone,
@@ -1857,21 +1906,27 @@ function pourSand(sheet, fromT, toT) {
     for (k = 0; k < n && made < CONFIG.SAND_GRAINS_MAX; k++) {
       var f = k / n;
       var seed = ++SAND.seq;
-      var jx = (grainAt(seed, 3) - 0.5) * 2.2, jy = (grainAt(seed, 5) - 0.5) * 2.2;
+      /* ⛔ 2.2 units of jitter read as fuzz, not sand: "it wasn't articulate at all" */
+      var jx = (grainAt(seed, 3) - 0.5) * 1.3, jy = (grainAt(seed, 5) - 0.5) * 1.3;
       SAND.live.push({ x: a.x + (b.x - a.x) * f + jx, y: a.y + (b.y - a.y) * f + jy, i: seed });
       made++;
     }
   }
   while (SAND.live.length > SAND_LIVE_MAX) {
-    var g = SAND.live.shift();
-    c.fillStyle = sandColour(g.i) + '0.85)';
-    c.fillRect(lx(g.x) - px * 0.6, ly(g.y) - px * 0.6, Math.max(1.4, px * 1.5), Math.max(1.4, px * 1.5));
+    /* ⛔ THE BAKED GRAIN IS THE SAME GRAIN. Baked at 0.85 alpha and three
+       quarters of the live size, the old trail went dim and fine while the
+       fresh trail was bright and coarse: "it seemed to do two different
+       colors" (Stephen, Sep 06). One size, one alpha, in both places. */
+    var g = SAND.live.shift(), gs = Math.max(1.6 * V.dpr, px * 1.6);
+    c.fillStyle = sandColour(g.i) + '0.9)';
+    c.fillRect(lx(g.x) - gs / 2, ly(g.y) - gs / 2, gs, gs);
   }
   return made;
 }
 function drawLiveSand(ctx) {
-  /* a grain has to be seeable on felt at a third of a pixel to the unit */
-  var i, px = Math.max(1.6, V.ppu * 2.0);
+  /* a grain has to be seeable on felt at a third of a pixel to the unit, and it
+     is the size the baked grain will be */
+  var i, px = Math.max(1.6, V.ppu * 1.6);
   for (i = 0; i < SAND.live.length; i++) {
     var g = SAND.live[i];
     ctx.fillStyle = sandColour(g.i) + '0.9)';
@@ -1918,14 +1973,14 @@ function brushOff(dtMs) {
   SAND.brushing = Math.max(0, SAND.brushing - (dtMs || 32) / 1000);
   if (!SAND.live.length || SAND.brushing <= 0) {
     SAND.live = [];
-    var k;
-    for (k = 0; k < LAYERS.list.length; k++) {
-      if (LAYERS.list[k].ink === 'sand') {
-        LAYERS.list[k].ctx.clearRect(0, 0, LAYERS.list[k].cv.width, LAYERS.list[k].cv.height);
-      }
-    }
     SAND.brushing = 0;
     sandHiss(0);
+    /* ⛔ A BRUSHED TRAY IS A CLEAN TRAY. Clearing the layer alone left the throw
+       list and the sheet clock running, so the pour resumed on the clean tray
+       the next frame ("stuff lingered on screen after I tried to clear it",
+       Stephen, Sep 06), and a kept or shared tray poured it all back. The
+       brush is the sand's tear off: same rig, same tuning, nothing on it. */
+    tearOff();
   }
   return gone;
 }
@@ -1968,7 +2023,7 @@ function posterCanvas(sheet, kind, name) {
     c.strokeRect(mx - 18, my - 18, aw + 36, ah + 36);
   }
   /* every throw, at print size, one segment at a time */
-  var tr = traceOf(sheet, CONFIG.DRAW_MAX_S), i;
+  var tr = traceOf(sheet, horizonOf(sheet)), i;
   c.lineCap = 'round';
   c.lineJoin = 'round';
   for (i = 1; i < tr.length; i++) {
@@ -2157,6 +2212,13 @@ function bindInput() {
     G.held = null;
   });
   el('btnFinish').addEventListener('click', function () { finishNow(); });
+  el('btnRigHide').addEventListener('click', function () {
+    SETTINGS.rig = rigHidden() ? 1 : 0;
+    syncRigButton();
+    saveNow();
+    toast(rigHidden() ? 'The rig is put away' : 'The rig is back');
+  });
+  syncRigButton();
   el('btnTear').addEventListener('click', function () {
     if (this.textContent === 'TEAR OFF') {
       this.textContent = 'SURE';
@@ -2327,6 +2389,7 @@ window.INKSWING_TEST = {
   pen: function () { return G.pen; },
   penScreen: function () { return { x: sx(G.pen.x), y: sy(G.pen.y) }; },
   layers: function () { return LAYERS.list.length; },
+  layerInks: function () { return LAYERS.list.map(function (l) { return l.ink; }); },
   inked: function () {
     /* how much of the sheet has ink on it, counted off the layers themselves */
     var n = 0, i;

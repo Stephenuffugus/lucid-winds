@@ -7,7 +7,7 @@
  * makes of that is measured, and then the ink that appears on the sheet is
  * counted off the layers themselves rather than taken on trust.
  */
-import { serve, open, reporter, waitFrames, centre, tap } from './harness.mjs';
+import { serve, open, reporter, waitFrames, centre, tap, sleep } from './harness.mjs';
 
 const site = await serve();
 const { browser, page, errors } = await open(site.base, { width: 375, height: 667 });
@@ -135,6 +135,82 @@ try {
   say((await T(() => window.INKSWING_TEST.sheet().throws.length)) === 1,
     'one press on TEAR OFF only asks the question');
 
+  /* ---- LAYERING: a throw after the first has FINISHED still draws (Sep 06:
+     "it won't let me run it more than once, once I run it once it's done"). The
+     second fling above lands while the first is still swinging, so it never
+     saw this; this one presses FINISH first, which is what a player does. ---- */
+  await tap(page, '#btnTear'); await waitFrames(page, 2);
+  await tap(page, '#btnTear'); await waitFrames(page, 3);
+  await fling(-60, 60);
+  await waitFrames(page, 2);
+  await tap(page, '#btnFinish');
+  await waitFrames(page, 3);
+  const fin = await T(() => ({ drawing: window.INKSWING_TEST.drawing(), t: window.INKSWING_TEST.t(),
+    inked: window.INKSWING_TEST.inked() }));
+  say(!fin.drawing && fin.t >= 90, 'FINISH runs the first throw out (t ' + fin.t.toFixed(0) + ', pen up)');
+  await fling(70, -50);
+  await waitFrames(page, 2);
+  const second = await T(() => ({ drawing: window.INKSWING_TEST.drawing(), n: window.INKSWING_TEST.sheet().throws.length }));
+  say(second.n === 2 && second.drawing, 'a fling after FINISH is a second throw and the pen is DOWN ('
+    + second.n + ' throws, drawing ' + second.drawing + ')');
+  await T(() => window.INKSWING_TEST.advance(3));
+  await waitFrames(page, 3);
+  const layered = await T(() => window.INKSWING_TEST.inked());
+  say(layered > fin.inked + 200, 'and it lays ink on top of the finished drawing (' + fin.inked + ' to ' + layered + ')');
+
+  /* ---- THE BOB STAYS ON THE PAPER (Sep 06: "it would freeze up off screen and
+     it was a mess to get it back"). Dragged past the edge of the sheet and let
+     go slowly, it is still where a thumb can find it. ---- */
+  await T(() => { window.INKSWING_TEST.state().drawing = false; });
+  await waitFrames(page, 2);
+  {
+    const at = await T(() => window.INKSWING_TEST.penScreen());
+    const vp = await T(() => ({ w: window.innerWidth, h: window.innerHeight }));
+    const put = (type, x, y) => T((type, x, y) => {
+      const el = document.getElementById('stage');
+      el.dispatchEvent(new PointerEvent(type, { pointerId: 32, pointerType: 'touch',
+        isPrimary: true, bubbles: true, cancelable: true, clientX: x, clientY: y }));
+    }, type, x, y);
+    await put('pointerdown', at.x, at.y);
+    for (let i = 1; i <= 12; i++) { await put('pointermove', at.x - (at.x + 300) * i / 12, at.y); await sleep(30); }
+    await sleep(200);
+    await put('pointerup', -300, at.y);
+    await waitFrames(page, 3);
+    const pen = await T(() => window.INKSWING_TEST.penScreen());
+    /* ⛔ thirty pixels, not eight: on the old page the pen sat eleven pixels
+       from the edge, technically on the screen and nowhere a thumb could land */
+    say(pen.x > 30 && pen.x < vp.w - 30, 'a bob dragged off the left edge and let go is still where a thumb can find it ('
+      + pen.x.toFixed(0) + ' of ' + vp.w + ')');
+    const onBob2 = await T((x, y) => { const e = document.elementFromPoint(x, y); return e ? e.id : null; },
+      Math.round(Math.max(1, Math.min(vp.w - 1, pen.x))), Math.round(pen.y));
+    say(onBob2 === 'stage', 'and a thumb can land on it (' + onBob2 + ')');
+  }
+
+  /* ---- HIDE RIG (Sep 06: "a hide pendulum button so people can look at the
+     art without it being in their way") ---- */
+  await T(() => { window.INKSWING_TEST.state().drawing = false; });
+  await waitFrames(page, 2);
+  const brassAt = () => T(() => {
+    const p = window.INKSWING_TEST.penScreen(), cv = document.getElementById('stage'), c = cv.getContext('2d');
+    const k = cv.width / window.innerWidth;
+    const d = c.getImageData(Math.round(p.x * k) - 6, Math.round(p.y * k) - 6, 12, 12).data;
+    let gold = 0;
+    for (let i = 0; i < d.length; i += 4) if (d[i] > 100 && d[i] > d[i + 1] && d[i + 1] > d[i + 2] && d[i] - d[i + 2] > 45) gold++;
+    return gold;
+  });
+  const shownRig = await brassAt();
+  say(shownRig > 20, 'the brass bob is drawn on the sheet (' + shownRig + ' gold samples)');
+  const hideBtn = await centre(page, '#btnRigHide');
+  say(!!hideBtn && hideBtn.onTop && hideBtn.h >= 47.5, 'HIDE RIG is a 48 px target (' + (hideBtn ? hideBtn.h.toFixed(0) : 'missing') + ')');
+  await tap(page, '#btnRigHide');
+  await waitFrames(page, 3);
+  const hiddenRig = await brassAt();
+  say(hiddenRig === 0, 'HIDE RIG takes the rig off the picture (' + hiddenRig + ' gold samples)');
+  say((await T(() => document.getElementById('btnRigHide').textContent)) === 'SHOW RIG', 'and the button now says SHOW RIG');
+  await tap(page, '#btnRigHide');
+  await waitFrames(page, 3);
+  say((await brassAt()) > 20, 'and SHOW RIG brings it back');
+
   /* ---- SAND: poured, piled, and tipped off ---- */
   await T(() => {
     const S = window.INKSWING_TEST.sim();
@@ -190,6 +266,51 @@ try {
   say(brushed.s.live === 0 && brushed.inked < 0.0001,
     'and the brush takes the whole tray back to felt (' + brushed.s.live + ' grains, '
     + (brushed.inked * 100).toFixed(4) + ' percent)');
+  /* ⛔ AND A BRUSH WHILE THE PEN IS STILL DOWN. This gate's author saw the tray
+     "fill up again behind the brush", called it correct, and stopped the pen
+     first so the assertion above would pass. Stephen saw the same thing on his
+     phone (Sep 06: "stuff lingered on screen after I tried to clear it"). A
+     brushed tray is a clean tray whatever the pen was doing, and the pour goes
+     with it, so a kept tray is not poured back. */
+  await T(() => {
+    const S = window.INKSWING_TEST.sim();
+    const sh = S.newSheet({ rig: 'single', mode: 'sand' });
+    sh.throws.push(S.flingToThrow(sh, { x: 300, y: 200 }, { x: -460, y: 620 }, 0, 'irongall'));
+    window.INKSWING_TEST.loadSheet(sh);
+    window.INKSWING_TEST.state().drawing = true;
+    window.INKSWING_TEST.advance(4);
+  });
+  await waitFrames(page, 2);
+  await T(() => { window.INKSWING_TEST.brush(); });
+  for (let i = 0; i < 120 && (await T(() => window.INKSWING_TEST.sand().brushing)); i++) {
+    await waitFrames(page, 3);
+  }
+  await T(() => window.INKSWING_TEST.advance(3));
+  await waitFrames(page, 4);
+  const stillClean = await T(() => ({ s: window.INKSWING_TEST.sand(), inked: window.INKSWING_TEST.inkedFraction(),
+    drawing: window.INKSWING_TEST.drawing(), throws: window.INKSWING_TEST.sheet().throws.length }));
+  say(stillClean.s.live === 0 && stillClean.inked < 0.0001 && !stillClean.drawing,
+    'a tray brushed while the pen was still down STAYS clean (' + stillClean.s.live + ' grains, '
+    + (stillClean.inked * 100).toFixed(4) + ' percent, drawing ' + stillClean.drawing + ')');
+  say(stillClean.throws === 0, 'and the pour went with it, so a kept tray is not poured back (' + stillClean.throws + ' throws)');
+  /* ⛔ FINISH on a sand tray pours sand, not ink: it used to call the ink
+     stroker whatever the mode, which put dark ink lines under the pale grains */
+  await T(() => {
+    const S = window.INKSWING_TEST.sim();
+    const sh = S.newSheet({ rig: 'single', mode: 'sand' });
+    sh.throws.push(S.flingToThrow(sh, { x: 300, y: 200 }, { x: -460, y: 620 }, 0, 'irongall'));
+    window.INKSWING_TEST.loadSheet(sh);
+    window.INKSWING_TEST.state().drawing = true;
+    window.INKSWING_TEST.advance(2);
+  });
+  await waitFrames(page, 2);
+  await tap(page, '#btnFinish');
+  await waitFrames(page, 3);
+  const finSand = await T(() => ({ inks: window.INKSWING_TEST.layerInks ? window.INKSWING_TEST.layerInks() : ['no hook'],
+    drawing: window.INKSWING_TEST.drawing() }));
+  say(!finSand.drawing && finSand.inks.length > 0 && finSand.inks.every(k => k === 'sand'),
+    'FINISH on a sand tray lays only sand (' + finSand.inks.join(', ') + ')');
+
   /* and back in ink, a tilt does nothing at all */
   await T(() => {
     const S = window.INKSWING_TEST.sim();

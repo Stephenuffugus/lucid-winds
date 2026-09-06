@@ -19,7 +19,7 @@ for (const [W, H, tag] of SIZES) {
   const T = (fn, ...a) => page.evaluate(fn, ...a);
 
   /* ---- the sheet screen ---- */
-  for (const [sel, min] of [['#rigChip', 48], ['#btnMenu', 48]]) {
+  for (const [sel, min] of [['#rigChip', 48], ['#btnRigHide', 48], ['#btnMenu', 48]]) {
     const c = await centre(page, sel);
     say(!!c && c.onTop && c.h >= min - 0.5,
       tag + ': ' + sel + ' is ' + (c ? c.h.toFixed(0) : 0) + ' px and reachable (floor ' + min + ')');
@@ -58,11 +58,21 @@ for (const [W, H, tag] of SIZES) {
     say(!!c && c.onTop && c.h >= 47.5,
       tag + ': ' + id + ' is ' + (c ? c.h.toFixed(0) : 0) + ' px and reachable');
   }
+  /* ⛔ AND THE CHIPS ARE MEASURED AGAIN NOW, with all four buttons up. Measured
+     only on the empty sheet above, the rail on a tall phone sat under UNDO and
+     TEAR OFF for a day and this gate said none of them was covered. */
+  const chips2 = await T(() => [...document.querySelectorAll('#inkRail .chip')].map(b => {
+    const r = b.getBoundingClientRect();
+    const t = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    return { id: b.id, on: t === b || b.contains(t), top: t ? (t.id || t.tagName) : 'nothing' };
+  }));
+  say(chips2.every(c => c.on), tag + ': and with the four buttons up no chip is under a button'
+    + (chips2.every(c => c.on) ? '' : ' (' + chips2.filter(c => !c.on).map(c => c.id + ' under ' + c.top).join(', ') + ')'));
 
   /* ⛔ the bottom left 120 by 120 belongs to the fleet's music chip */
   const clash = await T(() => {
     const H = window.innerHeight;
-    const ids = ['rigChip', 'btnMenu', 'btnKeep', 'btnTear', 'btnUndo', 'btnFinish', 'btnShare'];
+    const ids = ['rigChip', 'btnRigHide', 'btnMenu', 'btnKeep', 'btnTear', 'btnUndo', 'btnFinish', 'btnShare'];
     return ids.filter(id => {
       const e = document.getElementById(id);
       if (!e || e.hidden) return false;
@@ -103,7 +113,7 @@ for (const [W, H, tag] of SIZES) {
     const V = window.INKSWING_TEST.view(), C = window.INKSWING_TEST.config();
     const sheet = { l: V.ox - C.SHEET_W * V.ppu / 2, r: V.ox + C.SHEET_W * V.ppu / 2,
       t: V.oy - C.SHEET_H * V.ppu / 2, b: V.oy + C.SHEET_H * V.ppu / 2 };
-    const ids = ['btnKeep', 'btnTear', 'btnUndo', 'btnFinish', 'btnShare', 'rigChip', 'btnMenu'];
+    const ids = ['btnKeep', 'btnTear', 'btnUndo', 'btnFinish', 'btnShare', 'rigChip', 'btnRigHide', 'btnMenu'];
     return ids.filter(id => {
       const e = document.getElementById(id);
       if (!e || e.hidden) return false;
