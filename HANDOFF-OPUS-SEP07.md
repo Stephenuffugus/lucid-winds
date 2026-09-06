@@ -88,6 +88,14 @@ Each line: game, the item, size, the plan, and whether it waits on a Director ca
   and the preview is not. Half a day: draw the preview at its own scale rather than shrinking
   the poster, or floor the sizes in CSS pixels. Add a lint or layout assertion that reads the
   DISPLAYED size, since neither existing gate can see a scaled canvas.
+- **C11. Fathom's arcade tile reads as a broken image on the shelf.** Reshot 2026-09-07 with
+  occlusion and it does now show the right thing, a ping whose ring is whole while only the walls
+  the sound REACHED are lit. But it is about eighty five percent black, the lit walls are two
+  pixel cyan lines that will nearly vanish at the size a shelf renders a tile, and the subject
+  sits above centre with an empty band under it. Darkness is Fathom's identity and a tile that
+  reads as a failed load is still a fault. Two hours: `tools/thumb.mjs`, bigger line weight,
+  the subject filling more of the frame, and a faint floor so the tile has a bottom. Judge it
+  against the other eleven on the shelf, not on its own.
 - **C9. The portal pins Strata at `?v=20260906b`** for both the URL and the thumb while the game
   ships a later stamp (`portal/index.html:1049`). Ten minutes, and worth a sweep of the other
   eleven at the same time.
@@ -312,6 +320,12 @@ saw in Airworthy landscape (G35). 8. Wardian's BUY (G37). 9. The rest of section
   `20260907a`, peaks now 0.42 and 0.37. Wardian and Strata measured clean. Every band was
   measured first and each one watched to fail under a real alarm mutation. Strata's 26.5 percent
   above 3 kHz is the number to watch if Stephen ever calls the brush harsh.
+- **A10 Fathom's arcade tile, and C9 with it.** Reshot with occlusion, and the same for the five
+  other games whose art changed today (Gerplunk, Updraft, Doohickey, Inkswing, Airworthy). Then
+  the whole portal repinned: every one of the twelve had its `?v=` and its thumb `?v=` set to the
+  stamp that game actually ships, which closes C9 and the eleven others like it. Ten of the
+  twelve were pinned at `20260906b`, a stamp none of them has carried for a day. ⛔ Fathom's tile
+  is right and still reads as a broken image on a shelf: queued as C11.
 
 ## 7. THE PROMPT TO PASTE INTO OPUS (Sep 07)
 
