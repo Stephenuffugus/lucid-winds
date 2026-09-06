@@ -14,7 +14,8 @@ copy), then this file, then the design. Where they differ, this file wins; every
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
 - 2026-09-05 Fable: plan written. Nothing built. Next action: section 5, P0, step 1.
-- 2026-09-06 Opus B: **P0 DONE.** SKELETON and IDENTITY built, 65 assertions green, the variety sheet passed at TWELVE of fifty after two rounds at nought and about four; all three counts and what was wrong each time are in section 13. Next action: section 5, P1, step 1, SEDIMENT and the brush.
+- 2026-09-06 Opus B: **DONE P3.** All four phases built and green. Seven gates in `tools/check.js`, every one watched to fail, both columns in section 13. The variety sheet passed at TWELVE of fifty after failing at nought and about four. Morning report in section 15, combined with Whistlestop's, whose own report is in its own plan. Nothing is half finished.
+- 2026-09-06 Opus B: P0 DONE. SKELETON and IDENTITY built, 65 assertions green, the variety sheet passed at TWELVE of fifty after two rounds at nought and about four; all three counts and what was wrong each time are in section 13. Next action: section 5, P1, step 1, SEDIMENT and the brush.
 - 2026-09-06 Opus B: P0 step 1 done, red, output in section 13. Next action: section 5, P0, step 1, the scaffold (SKELETON and IDENTITY, pure, inside `index.html`) and `tools/variety.mjs`.
 
 ---
@@ -541,6 +542,113 @@ share, layout`.
 ---
 
 ## 15. THE MORNING REPORT
+
+### Combined morning report, 2026-09-06, Opus B (rows 10 and 12)
+
+**Whistlestop's own report is in `plans/whistlestop/HANDOFF-WHISTLESTOP.md` section 15.** This is
+Strata's, and then one paragraph on the pair.
+
+---
+
+### Strata, 2026-09-06
+
+**Phases:** P0 done (`b9f3f388`, `fb469438`), P1 done (`782f9b30`, `543365d7`, `66e63982`), P2 done
+(`e3c2f662`, `2e105fab`), P3 done (`74b8d89a`, `e290ddc0` and the commit this report is in).
+Strata is **DONE P3**.
+
+**Gates:** `ALL GATES PASSED`, seven of them, none skipped: `sim lint census dig mount share
+layout`. 103 assertions in `sim.js --test`. Every browser gate was watched to fail on the assertion
+that guards its rule, and both columns are in section 13.
+
+**The variety sheet, which is the gate a person reads, passed at TWELVE of fifty** after failing at
+nought and at about four. All three counts and what was wrong each time are in section 13. The
+sheet is `docs/shots/p0-variety.png` and it is the first thing to open.
+
+**Play it:** `satellites/strata/index.html`. DIG opens a cliff. Brush with the thumb; the rock comes
+away and something turns up. The chisel is quicker and cracks a bone if you rest on one; the pick
+cracks whatever it touches. When a bone is free it glows, and a stroke that STARTS on it and runs
+along its length lifts it out. At sixty percent MOUNT appears; the bench has the crate on it and
+each bone goes in its slot. Name it, after somebody if you like, and it goes on a plinth. Tap a
+plinth to send it to another phone.
+
+**Look at:** these five first.
+
+1. `docs/shots/p0-variety.png` — fifty animals from the grammar. **Wrong with it:** the head is a
+   solid block that merges into the neck, because the cranium and the jaw are one shape until the
+   game outlines them separately; the plated species still read heavier than they should; and a few
+   of the widest animals touch the edge of their cell, which is the sheet's fit rather than the
+   grammar.
+2. `docs/shots/p1-rib-tall.png` — a bone half out of the rock, which is the whole game. **Wrong
+   with it:** the excavated hollow around it is a hard edged dark shape rather than a softening of
+   the rock; the bone's own surface is one flat cream with a single highlight; and nine tenths of
+   the screen is undisturbed cliff, which is honest for a dig in progress and makes a poor picture.
+3. `docs/shots/p2-mounted.png` — a skeleton set on the armature. **Wrong with it:** the tray tiles
+   below it are a row of near identical small rectangles, because a skeleton IS thirty similar
+   vertebrae and the tray does not group them; the bronze infill still pulls the eye more than it
+   should; and the ribcage overlaps itself into a solid mass in the middle.
+4. `docs/shots/p2-hall-two.png` — two specimens on plinths. **Wrong with it:** the wall takes the
+   top half of the screen and has nothing on it; the wall and floor line cuts across the plinth
+   bases; and both animals happen to be in similar poses, which sells the variety short.
+5. `docs/thumb.png` — the arcade tile. **Wrong with it:** the skull reads as a blank pale wedge
+   rather than a head at tile size; there is no single strong shape to carry it at forty eight
+   pixels; and the bit dropping that keeps it under 150 KB has posterised the rock into bands.
+
+**Decided without you** (all of `satellites/strata/docs/DECISIONS.md`, these three matter most):
+
+- *"An animal has ONE BODY LENGTH and every part of it is a fraction of that."* The first grammar
+  sized the spine per vertebra and everything else absolutely, so proportions were a function of a
+  dice roll and fifty animals were fifty identical centipedes.
+- *"The pressure meter is charged in the frame loop, by the wall clock."* Charged per pointermove it
+  measured MOVE EVENTS, and a finger held perfectly still generates none, so the one rule the chisel
+  exists for was inverted in the shipped game while every headless assertion passed.
+- *"The share link carries a SEED, not a skeleton."* Seventy one characters, everything regenerated
+  on the other phone, and what the link does add is cleaned on the way in.
+
+**Blocked:** none.
+
+**For Fable:** nothing outside the fence was touched. To list it: `docs/thumb.png` (143 KB) goes to
+`portal-assets/thumbs/strata.png`, and the card is in section 8 of this plan. Every line of it is
+true now, including the one the plan added as a condition: **the variety sheet count in the ledger
+is twelve, not five.**
+
+**For Stephen:**
+
+- **Open `docs/shots/p0-variety.png` and tell me which five you would keep.** The plan asks for that
+  by name and it is the one judgement in this game that no gate can make. I counted twelve; if you
+  count four, the grammar goes back on the bench.
+- **The crate is fifty bones in one scrolling row.** A whole animal is thirty to seventy four bones,
+  and the mounting bench offers them in a single horizontal strip where six are visible at a time.
+  There is an ALL button, and I expect most people will press it every time, which makes the drag a
+  decoration. The honest options are: group the tray by kind (all the ribs under one tile), or make
+  mounting a smaller job by only asking for the ten bones that matter. That is a design call.
+- **The museum is a hall and a placard and nothing else yet.** No poster plate, no journal, no
+  rename, and the wings do not exist. The hall reads alive with placards alone, which the design
+  says, but the PLATE export is the fridge marketing and it is not built.
+- **Nobody has heard it and nobody has played it on a phone.** The tak, the tik, the shhh and the
+  first clink are all synthesised and all unheard; the clink in particular is the heartbeat moment
+  and no gate can say whether it lands.
+- **The phone checklist** for the Pixel 9: brush a skull out with the thumb, crack a rib on purpose
+  with the pick, feel whether the shiver arrives in time to stop you with the chisel, mount it, name
+  it after someone, and send it to Jessie.
+
+---
+
+### The two of them together
+
+Whistlestop and Strata are both DONE P3, with twelve gates and seven gates, and both were finished
+by looking rather than by testing. Between them the screenshots found nineteen faults that no
+assertion could see, and three of those faults were the SAME fault made twice in one night by the
+same builder: a title screen that was a flat rectangle, a tray whose tiles each fitted their own
+piece to their own box, and a camera that did not know where the chrome was. They are written into
+both plans' ledgers in those words so the next reader gets them for nothing.
+
+The other thing worth carrying: five separate assertions in this run reported PASS on code that was
+broken, and every one of them was found by breaking the code on purpose rather than by reading it.
+Whistlestop's `test/mutants.mjs` is the shape that catches them, and Strata does not have one; that
+is the first thing I would add to Strata if there were another hour.
+
+---
+
 
 The template in `plans/fathom/HANDOFF-FATHOM.md` section 15, with this file's phases. Add one line: **the variety count**
 and the path of the sheet.

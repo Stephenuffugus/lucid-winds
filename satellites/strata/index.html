@@ -2904,12 +2904,16 @@ function mountLocal(e) {
 function openHall() {
   var hall = el('hall');
   hall.innerHTML = '';
-  var i;
-  el('hallEmpty').hidden = SAVE.museum.length > 0;
-  el('hallCount').textContent = SAVE.museum.length
+  var i, crates = SAVE.crates || [];
+  /* ⛔ the count has to count what is ON THE SCREEN. A crate standing on a
+     plinth beside one specimen under a header reading "1 specimen" is a header
+     that is quietly wrong. */
+  var nc = crates.length;
+  var line = SAVE.museum.length
     ? SAVE.museum.length + (SAVE.museum.length === 1 ? ' specimen' : ' specimens')
     : 'The hall';
-  var crates = SAVE.crates || [];
+  if (nc) line += (SAVE.museum.length ? ', and ' : '') + nc + (nc === 1 ? ' crate' : ' crates');
+  el('hallCount').textContent = line;
   el('hallEmpty').hidden = SAVE.museum.length > 0 || crates.length > 0;
   for (i = 0; i < crates.length; i++) hall.appendChild(cratePlinth(crates[i], i));
   for (i = 0; i < SAVE.museum.length; i++) hall.appendChild(plinthFor(SAVE.museum[i], i));
