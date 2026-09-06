@@ -69,7 +69,13 @@ placement bug but a STALENESS bug: the scenery is laid once and then stays put, 
 for building beside, but laid once and never again a loop built AROUND a cow leaves the cow in
 the middle of it for good. It re lays only when the railway has grown over it, and the camera
 refits first, because laid against the old frame the cow came out half off the left edge.
-**Also done: C1, C2, C8, C9. C10 is measured and one wrong fix is ruled out, see its line.** C1 Asterism now has a treeline on the ridge and a
+**Also done: C1, C2, C6, C8, C9, and C12 to eleven of twelve games.** C6: The Crossing's two
+spurs no longer rhyme (Blue's switch is a left hand one, at no index cost) and Swap's lower two
+levers are forty six pixels apart where they were thirty, both with `--solve` unchanged. ⛔ It
+also found that the shot tool had Swap's answer TYPED INTO IT as the literals 2 and 11, and died
+the moment the puzzle grew a tile.
+**C10 and C11 are both still open, both now MEASURED, and each has one wrong fix ruled out by
+trying it and shooting the result.** See their lines. C1 Asterism now has a treeline on the ridge and a
 fence in the field, both seeded from the place, and a gate that counts anything darker than the
 land (3.9 percent with it, exactly zero without). C2's question is answered yes, the first line
 IS on a fresh save at all three sizes, and looking at it found the real thing: the screen it
