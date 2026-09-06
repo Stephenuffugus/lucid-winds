@@ -569,6 +569,138 @@ grain was placed by modular arithmetic and landed in diagonal dashes. A
 night jar was brighter than the noon one. And the fronds went bald for the last
 fifth of their length.
 
+
+### P2, the things that arrive and the voice (2026-09-05)
+
+```
+$ node sim.js --test
+PASSED 122 / FAILED 0   (total 122)
+
+$ node tools/check.js
+sim  lint  journal  boot  touch  layout        ALL GATES PASSED
+```
+
+The arrival days the plan puts numbers on, measured on a twenty day run:
+
+```
+daily    springtail day 1, glowbeetle day 4, pillbug day 6   (the plan allows 4, 6, 9)
+twoDay   springtail day 1, pillbug day 6, glowbeetle day 7
+never    nothing arrives, and nothing is lost
+```
+
+Two mutations watched to fail:
+
+```
+$ # SPRINGTAIL_MOIST back to the surface a sealed jar can never reach
+FAIL  under twoDay mist every animal finds the jar inside a month: springtail never came
+
+$ # a line in the journal given an order to the player
+FAIL  and the species pages and letters never give an order: species moss, species pillbug
+```
+
+That second one is not a mutation. It is what `test/journal.mjs` found the first
+time it ran, on lines I had written and thought were fine: "Press a finger to
+it" and "Tap the glass near her". Both are now description.
+
+`test/layout.mjs` was also decoration on its first run: it measured a pouch
+button below the fold and called it covered. It scrolls each one into view first
+now, and passes at 320, 375 and 412.
+
+### P3, the sky, the rares and the photograph (2026-09-06)
+
+```
+$ node tools/check.js
+sim             pass  1s
+lint            pass  0s
+journal         pass  0s
+boot            pass  3s
+touch           pass  8s
+settings        pass  6s
+layout          pass  6s
+
+ALL GATES PASSED
+
+$ node sim.js --catchup=30
+away 30 days: 2016 ticks run (the cap is 2016), 14 nights passed
+  before {"fern":2}  segments 2
+  after  {"fern":2,"mooncap":1}  segments 34
+WARDIAN CATCHUP OK
+
+$ node tools/thumb.mjs
+  docs/thumb.png  99 KB   512x512   lit 42%  green 3.5%  warm 25.3%
+THUMB OK
+```
+
+Four more mutations watched to fail:
+
+```
+$ # a location added to the photograph's stamp
+FAIL  and it carries no coordinates
+
+$ # the weather switch on by default
+FAIL  the jar does not listen to the sky until it is asked
+
+$ # the moon cap taken off the moon
+FAIL  and a full moon at night brings the moon cap   [expected mooncap, got null]
+FAIL  and the moon cap is rare rather than absent (0 nights in the year)
+
+$ # the thumb tool pointed at a two in the morning jar
+REFUSED to write the thumb: too dark (17 percent lit), no warmth in it (0.0 percent)
+```
+
+### The P2 and P3 shots, opened and read
+
+**`p2-journal.png`** — eleven pages, each with a plate drawn by the same
+renderer as the plant in the jar. Three faults: the unmet pages repeat one
+sentence six times down the screen; the plates are pencil on cream and sit low
+in value against the paper; and the spore count is a small line under the title
+where a reader looks for it at the top right.
+
+**`p2-pillbug.png`** — the phone screen with a four times crop beside it. She
+reads as a dark bead with a lit rim on the soil. Three faults: at phone size she
+is nine pixels and could be a pebble; the segment arcs on the rolled body are
+too faint to see without the crop; and the crop panel is nearest neighbour, so
+the evidence is blockier than the game.
+
+**`p2-night-beetle.png`** — the beetle awake on the soil with a green light and
+a short trail. Three faults: the trail is five dots rather than a smear; the
+light does not fall on the frond above it; and the rest of the jar is so dark
+that the beetle is the only thing in the frame with any information in it.
+
+**`p2-pouch.png`** — seeds, things for the jar, and where it stands, each a 64 px
+row with a buy button. Three faults: the seed rows have no picture while the
+journal pages do; every row is the same height and colour, so the three sections
+run together; and a bought seed says nothing about where it goes until you go
+back to the jar.
+
+**`p3-photo.png`** — the jar at 1080 by 1440 with "Sept 6, morning" under it.
+Three faults: the top third is empty air above the plants; the stamp sits on a
+wide band of table with nothing else in it; and the room's gradient bands
+visibly at this size.
+
+**`p3-rain.png`** — rain running down the outside of the glass on a grey
+afternoon. Three faults: the streaks are all near vertical where real rain on
+glass beads and runs; they cross the soil, which is correct but reads as
+ambiguous; and the jar's interior is dimmed by the weather while the room
+outside it is not.
+
+**`p3-snow.png`** — frost creeping in from the four corners of the glass at two
+in the morning. Three faults: the top left corner is a smudge rather than
+crystals; the frost spikes are the same value as the condensation; and the jar
+is so dark at that hour that the frost is most of what you can see.
+
+**`p3-320-day.png`**, **`p3-375-day.png`**, **`p3-412-day.png`** and their night
+pairs — the same jar on three phones. Three faults across the set: at 320 the
+first line of copy sits right on the jar's bottom rim; at 412 there is a band of
+empty room above the jar that the other two do not have; and the day shots at
+all three widths put the horizon at exactly the same height, so the composition
+does not use the extra room a taller phone gives it.
+
+**`docs/thumb.png`** — the portal tile, the jar at dusk with two beetles lit.
+Three faults: one beetle is half off the left edge and reads as a stray light;
+the soil is nearly half the tile; and the trimmed colour depth bands the air
+into visible stripes.
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL
@@ -579,6 +711,88 @@ layout`.
 ---
 
 ## 15. THE MORNING REPORT
+
+### Wardian, built 2026-09-05 into 2026-09-06
+
+**Where it is.** P0, P1, P2 and P3 are done, committed and pushed on
+`add-sproing-jumper`. `node satellites/wardian/tools/check.js` prints ALL GATES
+PASSED across seven gates: `sim` (122 assertions), `lint`, `journal`, `boot`,
+`touch`, `settings`, `layout`. Every gate has been watched to fail, and two of
+them had to be REWRITTEN because the first watch showed they could not fail.
+Twelve mutations in total are in the ledger at section 13, each with its real
+output.
+
+**What it is.** A sealed jar that lives on the phone's clock. Moss spreads, ferns
+put up crowns of fronds that unroll from croziers over forty ticks, a glass vine
+climbs the wall, a ghost mushroom comes up at night, a dew sprout opens a droplet
+when the air is wet. Springtails arrive on the first mist, a pillbug rolls into a
+bead when you tap the glass near her, a glowbeetle walks the glass at dusk with a
+light on. Three shy species answer real weather with a clock fallback, so a
+player who leaves the weather switch alone still meets all eight plants inside a
+year. You mist by swiping down, you plant with spores, you move the stones with a
+long press, and you can photograph it. Nothing in the jar can die, get sick or
+leave, and that is a gate over thirty simulated days under every watering policy,
+enforced twice: as an assertion and as a grep for `plants.splice` in the shipped
+file.
+
+**What I would look at first.** The jar itself, at
+`satellites/wardian/docs/shots/p1-jar-day.png` and `p1-jar-night.png`, and then
+`p1-unfurl.png`, which is the six frame strip of a frond opening. The plan says
+watching a fern unfurl has to be worth thirty seconds; that strip is my case
+that it is.
+
+**What the shots caught that no gate would have.** Nine things, and this is the
+part worth reading. The plants were laid out in world units and drawn as pixels,
+so both ferns stood in the ROOM above the jar. `mixHex` could not parse its own
+output, so the moss rendered black. The soil grain was scattered by modular
+arithmetic and landed in diagonal dashes. A `destination-out` fade meant to
+soften the glass sheen erased the jar and left a black slab. The hour ADDED light
+at every phase, so the night jar was brighter than the noon one. The fronds went
+bald for the last fifth of their length. Rain fell INSIDE the sealed jar. The
+glowbeetle's light spilled out through the glass into the room. And the beetle
+was still glowing at four in the afternoon, because `asleep` is only refreshed on
+a tick and a tick is ten minutes. Twelve automated gates were green through most
+of that.
+
+**What is thin.** Three things.
+
+1. **The middle of the first fortnight is quiet.** Under a mist every second day
+   the two starting ferns reach the top of their ladder on day three and the
+   segment count sits at 23 until the first leaves fall on day thirteen. The
+   pouch is the answer, and by day fourteen the jar has 146 spores, which is nine
+   seeds. But a player who does not open the pouch sees moss move and nothing
+   else for ten days. I would want the Director's eye on that before it ships.
+2. **Humidity cannot separate a cared for jar from a neglected one.** Every jar
+   runs damp by the afternoon, which is what a sealed jar IS, so the dew sprout's
+   `needHumidity` gate opens most afternoons in any jar. It is pretty and it is
+   honest, but it is not a reward for care. The dew sprout's assertion drives the
+   air directly for that reason, and says so.
+3. **No painted art and no sound files.** Every pixel is drawn by code and every
+   sound is synthesised. `ART_ASSETS.md` lists what painted art would replace and
+   the rules it has to keep. Nothing waits on it.
+
+**What I did not do.** The plan's section 7 art pack is not written; the code
+draws everything and `ART_ASSETS.md` covers what a painted version would have to
+be. There is no portal listing edit, which section 8 says is Fable's.
+
+**For Fable, to check independently.** Four things.
+
+- The seven gates, run cold: `cd satellites/wardian && node tools/check.js`.
+- The claim that no gate can pass while broken: pick any assertion in
+  `sim.js --test` and break the code under it.
+- The shots, opened rather than listed. Every one of them is under 200 KB and
+  taken at the player's own pixels, and the two close ups carry a magnified crop
+  beside the phone frame.
+- **A stray, reported rather than hidden.** Four image files outside this fence
+  (`satellites/asterism/docs/thumb.png` and three Fathom shots) came up modified
+  by a few bytes during this session, from a shot tool being re-run. I restored
+  all four to HEAD rather than commit the churn, and `git status` for those three
+  satellites is clean. Worth a look, because I cannot fully account for when they
+  were touched.
+
+**Next action if the night continues:** row 5 of the spine, Doohickey, starting
+at its P0 step 1.
+
 
 The template in `plans/fathom/HANDOFF-FATHOM.md` section 15, with this file's phases. Add one line: **the census** for the
 14 day catch up, pasted.
