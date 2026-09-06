@@ -93,6 +93,46 @@ this file wins; every difference is in section 3 with its reason.
   card's small print) raised to 12, the 0.7 rem law the lint cannot see on a canvas (Opus list
   A11 teaches it to). Stamp `20260906i`. Gates in the chain report below.
 
+- 2026-09-07 Opus (lead): **A5 IS DONE. THE GUST WHISTLE, THE LAST NAMED THING IN THE DESIGN
+  THAT WAS NOT BUILT.** Stamp `20260907a` in three places. `node tools/check.js` ALL GATES
+  PASSED, nine of nine, first run. `sim.js --test` 181 / 0 (was 171).
+  **The reference note first:** `satellites/airworthy/docs/REFERENCE.md`. Its finding is why
+  every rule below exists: almost every paper plane game in the world lets you steer the whole
+  flight, and in none of them does the shape of the plane survive contact with a boost button.
+  The fold is this game's bet. So the whistle is a CALL and not a control.
+  **What landed.** One tap while the plane is in the air, once per flight, half a second of
+  rising air under it. Earned by the first silver in the gym, read off the medals. Never
+  offered inside a challenge. `fly()` takes `nudge: {t, up}` and appends a `whistle` field to a
+  COPY of the air, so there is still one implementation of the wind; the page re flies from the
+  tap and every step before it is bit for bit the flight already on the screen, so the plane
+  does not jump. A short breathy rise for the sound, filtered noise rather than a tone, because
+  a tone at that level is what "fire alarms" meant on Sep 06.
+  **WHISTLE_UP was measured, not picked.** At the first number, 1.5, a whistled cruiser went
+  13.7 percent further, which is a save rather than a nudge and is exactly the failure the
+  reference note warns about. Walked it: 0.4 gives 3.2 percent, 0.6 gives 5.0, 0.8 gives 6.8,
+  1.0 gives 8.6, 1.2 gives 10.6. Shipped at 0.6, with the band asserted tight enough to go red
+  in both directions. Stephen's to raise.
+  **⛔⛔ AND IT FOUND SOMETHING OLD: THROW IT HAS BEEN SITTING IN THE MUSIC CHIP'S CORNER SINCE
+  IT WAS BUILT.** A 190 px button centred on a 412 phone runs from 111 to 301 and the corner is
+  the left 120. Two reasons no gate saw it, and they are both in the family: the corner check
+  scanned `#chrome button, #resultCard button, #scrTrim button`, and THROW IT is a SIBLING of
+  the chrome rather than a child; and when the selector was widened to every button the mutation
+  STILL passed, because THROW IT is only up inside a challenge and the scan was running on a gym
+  field where neither big button exists. The selector is the law now and the state is set twice,
+  once with THROW IT up and once with the plane in the air. Fixed and watched to fail: six red
+  lines naming both buttons and their left edges (111 at 412, 93 at 375, 65 at 320).
+  **Watched to fail:** WHISTLE_UP=0 and 1.2 and WHISTLE_S=0.1 in the sim; the whistle offered
+  inside a challenge, and the once per flight flag cleared, in `test/play.mjs`; the buttons put
+  back at the centre, in `test/layout.mjs`.
+  **One ordering fault in my own gate:** the whistle test seeded a silver medal to earn the
+  whistle, which made a LATER assertion, "nothing has been won yet", false. A gate that has to
+  dirty a later assertion to test an earlier one is in the wrong order; the whole whistle
+  session moved to after the medals.
+  **Shots opened:** `docs/shots/p4-whistle-412.png` and `p4-whistle-375.png`, mid flight, which
+  is the only moment the button exists. The corner fault was found by opening the first one.
+  **Next action:** the upgrade ladder (call G34, B8) is still Stephen's. Nothing here is half
+  built. Call 35 still waits on what he saw in landscape.
+
 ---
 
 ## 0. RULES OF ENGAGEMENT

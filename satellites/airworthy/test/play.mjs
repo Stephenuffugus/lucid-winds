@@ -120,6 +120,17 @@ try {
   say(!!flown.klass, 'with what kind of plane it turned out to be (' + flown.klass + ')');
   say(flown.hangar.klass === flown.klass, 'and the shelf remembers that about it');
 
+  /* ---- 4b. THE GUST WHISTLE (design 6, A5). One tap mid flight, once, and only
+     once it has been earned. Everything here is a real pointer at a point
+     elementFromPoint agrees a thumb would land on; nothing calls blowWhistle. */
+  const w0 = await T(() => window.AIRWORTHY_TEST.whistle());
+  say(!w0.earned && !w0.shown, 'the whistle is not there before it is earned ('
+    + JSON.stringify(w0) + ')');
+  /* ⛔ the rest of the whistle is at the END of this session, after the medals,
+     and deliberately: earning it seeds a silver, and a silver seeded here would
+     make "nothing has been won yet" false further down. A gate that has to
+     dirty a later assertion to test an earlier one is in the wrong order. */
+
   /* ---- 5. trim it and throw it again ---- */
   await reach('#btnTrim', 'TRIM');
   await tap(page, '#btnTrim');
@@ -169,6 +180,12 @@ try {
     await tap(page, '.ch-card[data-ch="' + ch + '"]');
     await waitFrames(page, 3);
     await tap(page, '#btnSling');
+    if (ch === 'gym-far') {
+      await waitFrames(page, 3);
+      const inCh = await T(() => window.AIRWORTHY_TEST.whistle());
+      say(inCh.flying && !inCh.shown,
+        'and inside a challenge the whistle is not offered (' + JSON.stringify(inCh) + ')');
+    }
     await waitFrames(page, 2);
     await T(() => window.AIRWORTHY_TEST.finish());
     await waitFrames(page, 3);
@@ -194,6 +211,60 @@ try {
   const shelf = await T(() => document.querySelector('.plane-card').textContent);
   say(shelf.indexOf('of six') >= 0, 'the shelf shows what it won: "'
     + shelf.replace(/\s+/g, ' ').trim().slice(0, 70) + '"');
+
+  /* ---- 7b. THE GUST WHISTLE (design 6, A5), earned, called and refused ----
+     Everything here is a real pointer at a point elementFromPoint agrees a thumb
+     would land on. Nothing calls blowWhistle. */
+  await T(() => document.querySelector('#btnHangarBack, #btnBack').click());
+  await waitFrames(page, 2);
+  await T(() => window.AIRWORTHY_TEST.earnWhistle());
+  await T(() => window.AIRWORTHY_TEST.toField());
+  await waitFrames(page, 3);
+  const home2 = await T(() => window.AIRWORTHY_TEST.home());
+  await drag(page, home2.x, home2.y, home2.x - 80, home2.y + 44, 8);
+  await dragEnd(page, home2.x - 80, home2.y + 44);
+  await waitFrames(page, 3);
+  say(await T(() => window.AIRWORTHY_TEST.state().flying), 'with a silver in the gym, it is in the air again');
+  const before = await T(() => window.AIRWORTHY_TEST.result().distance);
+  const wUp = await centre(page, '#btnWhistle');
+  say(!!wUp && wUp.onTop && wUp.h >= 47.5, 'and the WHISTLE is up, in the air, where a thumb lands on it ('
+    + (wUp ? wUp.w.toFixed(0) + 'x' + wUp.h.toFixed(0) + (wUp.onTop ? '' : ', COVERED') : 'missing') + ')');
+  say(await T(() => document.getElementById('btnSling').hidden),
+    'and THROW IT is not up at the same time, because they share a corner');
+  await tap(page, '#btnWhistle');
+  await waitFrames(page, 3);
+  const w1 = await T(() => window.AIRWORTHY_TEST.whistle());
+  const after = await T(() => window.AIRWORTHY_TEST.result().distance);
+  say(w1.used > 0, 'a real tap calls it, ' + (w1.used || 0).toFixed(2) + ' seconds into the flight');
+  say(!w1.shown, 'and it goes away, because it is once in a flight');
+  say(after > before, 'and the flight it is now flying goes further than the one it was ('
+    + before.toFixed(2) + ' then ' + after.toFixed(2) + ' m)');
+  await T(() => window.AIRWORTHY_TEST.finish());
+  await waitFrames(page, 3);
+  /* ⛔ AND STILL NEVER IN A CHALLENGE, now that it HAS been earned. This is the
+     half the loop above could not check: the challenges hand you the throw so
+     six of them ask for six planes, and the medal tables were measured by a
+     tool that never whistled. */
+  await T(() => document.getElementById('btnResultDone').click());
+  await waitFrames(page, 2);
+  await tap(page, '#btnBack');
+  await waitFrames(page, 2);
+  await tap(page, '#btnChallenges');
+  await waitFrames(page, 2);
+  await tap(page, '.ch-card[data-ch="gym-hang"]');
+  await waitFrames(page, 3);
+  await tap(page, '#btnSling');
+  await waitFrames(page, 3);
+  const inCh2 = await T(() => window.AIRWORTHY_TEST.whistle());
+  say(inCh2.flying && inCh2.earned && !inCh2.shown,
+    'earned and in the air inside a challenge, and it is still not offered ('
+    + JSON.stringify(inCh2) + ')');
+  await T(() => window.AIRWORTHY_TEST.finish());
+  await waitFrames(page, 3);
+  await T(() => document.getElementById('btnResultDone').click());
+  await waitFrames(page, 2);
+  await tap(page, '#btnBack');
+  await waitFrames(page, 2);
 
   /* ---- 8. and none of it needed a dash or a shout ---- */
   /* ⛔ EVERY SCREEN, not the last one. Read off document.body at the end this

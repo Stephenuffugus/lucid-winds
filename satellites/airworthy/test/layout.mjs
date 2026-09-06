@@ -26,17 +26,54 @@ for (const [w, h] of WIDTHS) {
     say(!!r && r.w >= 48 && r.h >= 48 && r.onTop, at + ' ' + sel + ' is a real target in the gym');
   }
 
-  /* the music chip's corner */
-  const corner = await page.evaluate(() => {
+  /* ⛔ THE MUSIC CHIP'S CORNER, AND EVERY BUTTON ON THE PAGE. This scanned
+     `#chrome button, #resultCard button, #scrTrim button` and THROW IT is a
+     SIBLING of the chrome, not a child of it, so the two biggest buttons in the
+     game were never once looked at. THROW IT, centred at 190 px wide, ran from
+     111 to 301 on a 412 phone and had sat in the chip's corner since it was
+     built. The selector is the LAW now, every visible button, not a list of
+     places somebody remembered. Found 2026-09-07 by opening a shot. */
+  const scanCorner = () => page.evaluate(() => {
     const out = [];
-    for (const el of document.querySelectorAll('#chrome button, #resultCard button, #scrTrim button')) {
+    for (const el of document.querySelectorAll('button')) {
       const r = el.getBoundingClientRect();
-      if (r.width < 1) continue;
-      if (r.left < 120 && r.bottom > innerHeight - 120) out.push(el.id || el.className);
+      if (r.width < 1 || r.height < 1) continue;
+      if (el.hidden || getComputedStyle(el).visibility === 'hidden') continue;
+      if (r.left < 120 && r.bottom > innerHeight - 120) out.push((el.id || el.className) + ' at ' + r.left.toFixed(0));
     }
     return out;
   });
+  const corner = await scanCorner();
   say(corner.length === 0, at + ' the bottom left 120 by 120 is empty' + (corner.length ? ': ' + corner.join(', ') : ''));
+  /* ⛔⛔ AND AGAIN WITH THE TWO BIG BUTTONS ACTUALLY ON THE SCREEN. THROW IT is
+     only up inside a challenge and WHISTLE only while the plane is in the air,
+     so the scan above runs on a gym field where neither exists: widening the
+     selector to every button changed nothing at all until the STATE was set
+     too. That is the empty screen scar, twice in one assertion. */
+  await page.evaluate(() => { AIRWORTHY_TEST.toChallenge('gym-far'); });
+  await waitFrames(page, 3);
+  const slingUp = await page.evaluate(() => !document.getElementById('btnSling').hidden);
+  say(slingUp, at + ' THROW IT is on the screen so it can be measured');
+  const cornerA = await scanCorner();
+  say(cornerA.length === 0, at + ' and with THROW IT up the corner is still empty'
+    + (cornerA.length ? ': ' + cornerA.join(', ') : ''));
+  await page.evaluate(() => {
+    AIRWORTHY_TEST.toField();
+    AIRWORTHY_TEST.earnWhistle();
+    AIRWORTHY_TEST.launch(8, 0.6);
+    AIRWORTHY_TEST.advance(0.6);
+  });
+  await waitFrames(page, 3);
+  const whUp = await page.evaluate(() => !document.getElementById('btnWhistle').hidden);
+  say(whUp, at + ' the WHISTLE is on the screen so it can be measured');
+  const cornerB = await scanCorner();
+  say(cornerB.length === 0, at + ' and with the WHISTLE up the corner is still empty'
+    + (cornerB.length ? ': ' + cornerB.join(', ') : ''));
+  const wRect = await centre(page, '#btnWhistle');
+  say(!!wRect && wRect.h >= 47.5 && wRect.onTop, at + ' and it is a real target ('
+    + (wRect ? wRect.w.toFixed(0) + 'x' + wRect.h.toFixed(0) + (wRect.onTop ? '' : ', COVERED') : 'missing') + ')');
+  await page.evaluate(() => { AIRWORTHY_TEST.finish(); AIRWORTHY_TEST.toField(); });
+  await waitFrames(page, 3);
   const wide = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
   say(wide <= 1, at + ' the page does not scroll sideways (' + wide + ' px over)');
 

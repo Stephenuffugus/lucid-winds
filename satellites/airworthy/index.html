@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="AIRWORTHY">
-<link rel="manifest" href="./manifest.webmanifest?v=20260906i">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260906i">
-<link rel="icon" href="./icon-192.png?v=20260906i">
+<link rel="manifest" href="./manifest.webmanifest?v=20260907a">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260907a">
+<link rel="icon" href="./icon-192.png?v=20260907a">
 <link rel="canonical" href="https://lucidwinds.com/satellites/airworthy/">
 <style>
 /*  AIRWORTHY
@@ -195,10 +195,20 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
 /* ⛔ bottom centre in landscape is the middle of the course, and the button sat
    on the grill. Portrait keeps it under the flight, landscape puts it in the
    right hand corner, which is the one the fleet's music chip does not own. */
-#btnSling{position:absolute;left:50%;bottom:calc(20px + var(--safeB));transform:translateX(-50%);
-  z-index:7;min-width:190px}
+/* ⛔ CENTRED IN WHAT IS LEFT OF THE WIDTH, NOT IN THE WIDTH. A 190 px button
+   centred on a 412 phone runs from 111 to 301, and 111 is inside the bottom
+   left 120 by 120 that belongs to the fleet's music chip. It has been that way
+   for THROW IT since it was built and no gate saw it, because the corner check
+   scanned `#chrome button` and these two are siblings of the chrome, not
+   children of it. Left, right and width with an auto margin centres it in the
+   band that starts where the chip's corner ends. */
+#btnSling,#btnWhistle{position:absolute;left:calc(126px + var(--safeL));right:calc(14px + var(--safeR));
+  bottom:calc(20px + var(--safeB));transform:none;margin:0 auto;
+  width:190px;max-width:calc(100% - 154px);z-index:7}
+#btnWhistle{background:var(--sky);border-color:var(--ink)}
 @media (orientation:landscape){
-  #btnSling{left:auto;right:calc(14px + var(--safeR));transform:none;min-width:150px}
+  #btnSling,#btnWhistle{left:auto;right:calc(14px + var(--safeR));margin:0;width:auto;
+    max-width:none;min-width:150px}
 }
 #challengeList{width:100%;max-width:380px;display:flex;flex-direction:column;gap:8px}
 .ch-card{width:100%;min-height:64px;border:2px solid var(--ink);border-radius:12px;
@@ -234,7 +244,7 @@ body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
 #testPanel.on{display:block}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260906i" defer></script>
+<script src="/music-unlocks.js?v=20260907a" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">AIRWORTHY</h1>
@@ -382,6 +392,7 @@ body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
   </div>
 
   <button class="btn go big" id="btnSling" hidden>THROW IT</button>
+  <button class="btn big" id="btnWhistle" hidden>WHISTLE</button>
   <div id="toast"></div>
   <div id="testPanel"></div>
 </div>
@@ -414,6 +425,21 @@ var CONFIG = Object.freeze({
   PRECISION_ZONE: 0.18, PRECISION_SWEEP_S: 1.2,
   TRIM_ELEV_MIN: -12, TRIM_ELEV_MAX: 12, TRIM_AIL_MIN: -8, TRIM_AIL_MAX: 8,
   GHOST_SAMPLE_HZ: 20, HANGAR_MAX: 24,
+  /* THE GUST WHISTLE (design 6, docs/REFERENCE.md). One tap while the plane is
+     in the air, once per flight, puts a small parcel of rising air under it for
+     half a second. It is a CALL, not a control: it does not steer, it adds no
+     speed, and it cannot save a plane that has already let go, because a
+     separated wing is a barn door and does not care what the air under it is
+     doing. That last one is physics rather than a rule, which is the best kind.
+     ⛔ WHISTLE_UP is the number that decides whether the fold still matters, and
+     it was MEASURED rather than picked. At 1.5 a whistled cruiser went 13.7
+     percent further, which is two and a half metres on a seventeen metre flight
+     and is not a nudge, it is a save. Walking it: 0.4 gives 3.2 percent, 0.6
+     gives 5.0, 0.8 gives 6.8, 1.0 gives 8.6, 1.2 gives 10.6. At 0.6 it is the
+     difference between a good throw and a very good one, which is what
+     docs/REFERENCE.md section 6 says it has to be, and the band asserted around
+     it is tight enough to go red in both directions. Stephen's to raise. */
+  WHISTLE_S: 0.5, WHISTLE_UP: 0.6,
 
   RHO: 1.2, G: 9.81, SPAN: 0.28,
   /* ⛔ SIGNS. The plan's labels contradict its own formulas, and taken
@@ -564,6 +590,15 @@ function windAt(air, x, y, t) {
       if (x < f.x0 || x > f.x1 || y < 0 || y > f.top) continue;
       var edge = Math.min(1, Math.min(x - f.x0, f.x1 - x));
       wy += (f.kind === 'ridge' ? f.up : -f.down) * edge;
+    } else if (f.kind === 'whistle') {
+      /* ⛔ ONE implementation of the wind, which is this game's own law. The
+         whistle is a field like every other field rather than a special case
+         inside the integrator, so the tunnel, the ghost and the flight all see
+         the same air. It rises and falls over its half second instead of
+         switching on, so the plane is lifted and not kicked. */
+      var dtw = t - f.t0;
+      if (dtw < 0 || dtw > f.dur) continue;
+      wy += f.up * Math.sin(Math.PI * dtw / f.dur);
     } else if (f.kind === 'gust') {
       var g = f.rng ? f.rng : null;
       if (!g) continue;
@@ -718,6 +753,16 @@ function fly(spec, opts) {
   var o = opts || {};
   var D = derive(spec);
   var air = o.air || stillAir();
+  /* THE WHISTLE, if one was called. The air is COPIED rather than added to, so a
+     course's air is never left with a whistle in it for the next flight, and the
+     field only exists between t and t plus WHISTLE_S: every step before that is
+     bit for bit the flight that was already being watched, which is what lets
+     the page re fly mid playback without the plane jumping. */
+  if (o.nudge && o.nudge.up) {
+    var fs = (air.fields || []).slice();
+    fs.push({ kind: 'whistle', t0: o.nudge.t, dur: CONFIG.WHISTLE_S, up: o.nudge.up });
+    air = { fields: fs };
+  }
   var st = flightState(o.angle === undefined ? 5 : o.angle, o.power === undefined ? 0.5 : o.power);
   /* a launch is normally thrown flat on: the nose points where it is going, so
      alpha starts at zero. alpha0 lets a measurement launch the plane already at
@@ -1517,6 +1562,53 @@ function suiteChallenges(T) {
 }
 function suiteWind(T) {
   var still = flyNamed('cruiser');
+  /* ⛔ THE GUST WHISTLE (design 6, A5). One tap, once, half a second of rising
+     air under the plane, and the whole thing has to stay a deterministic
+     function of the plane, the throw, the air and the call. */
+  var base = fly(newSpec(NAMED_SPECS.cruiser.spec), { angle: 5, power: 0.5 });
+  var blown = fly(newSpec(NAMED_SPECS.cruiser.spec), { angle: 5, power: 0.5,
+    nudge: { t: 0.8, up: CONFIG.WHISTLE_UP } });
+  T.assert('a whistled flight lands further than the same flight without it ('
+    + base.distance.toFixed(2) + ' then ' + blown.distance.toFixed(2) + ')',
+    blown.distance > base.distance + 0.05);
+  /* ⛔ AND NOT MUCH FURTHER, which is the assertion the mechanic lives or dies
+     on. docs/REFERENCE.md section 2: the moment a nudge can save a bad plane the
+     fold stops mattering and this becomes every other paper plane game. A few
+     percent is the difference between a good throw and a very good one. */
+  var gain = (blown.distance - base.distance) / base.distance;
+  T.assert('and by a few percent rather than by a lot (' + (gain * 100).toFixed(1) + ' percent)',
+    gain > 0.03 && gain < 0.075);
+  /* ⛔ THE FLIGHT BEFORE THE CALL IS THE FLIGHT THAT WAS ALREADY BEING WATCHED,
+     bit for bit. This is what lets the page re fly from the tap without the
+     plane jumping, and it is a property of the field's own window rather than
+     of anyone's care, so it is measured. */
+  var same = true, ii, tb = base.trace, tn = blown.trace;
+  for (ii = 0; ii < tb.length && ii < tn.length; ii++) {
+    if (tb[ii].t > 0.8) break;
+    if (tb[ii].x !== tn[ii].x || tb[ii].y !== tn[ii].y) same = false;
+  }
+  T.assert('and every step before the call is identical to the unwhistled flight', same);
+  T.eq('the same call twice is the same flight', 
+    fly(newSpec(NAMED_SPECS.cruiser.spec), { angle: 5, power: 0.5, nudge: { t: 0.8, up: CONFIG.WHISTLE_UP } }).distance,
+    blown.distance);
+  T.assert('a call with no lift in it changes nothing at all',
+    fly(newSpec(NAMED_SPECS.cruiser.spec), { angle: 5, power: 0.5, nudge: { t: 0.8, up: 0 } }).distance === base.distance);
+  /* ⛔ AND IT CANNOT RESCUE A WING THAT HAS ALREADY LET GO. A separated wing is a
+     barn door and does not care what the air under it is doing. Physics, not a
+     rule, and the lawn dart is the plane that proves it. */
+  var dartBase = fly(newSpec(NAMED_SPECS.lawndart.spec), { angle: 5, power: 0.5 });
+  var dartBlown = fly(newSpec(NAMED_SPECS.lawndart.spec), { angle: 5, power: 0.5,
+    nudge: { t: 0.5, up: CONFIG.WHISTLE_UP } });
+  T.assert('a whistle does not turn a bad plane into a good one ('
+    + dartBase.distance.toFixed(2) + ' then ' + dartBlown.distance.toFixed(2) + ')',
+    (dartBlown.distance - dartBase.distance) / Math.max(0.01, base.distance) < 0.05);
+  /* the air the whistle rides in is a field like every other field */
+  var wOff = windAt({ fields: [{ kind: 'whistle', t0: 1, dur: 0.5, up: 2 }] }, 0, 1, 0.2);
+  var wOn = windAt({ fields: [{ kind: 'whistle', t0: 1, dur: 0.5, up: 2 }] }, 0, 1, 1.25);
+  T.eq('the whistle is nothing before its moment', wOff.y, 0);
+  T.assert('and it is rising air at its middle (' + wOn.y.toFixed(3) + ')', wOn.y > 1.9);
+  T.eq('and nothing again after it', windAt({ fields: [{ kind: 'whistle', t0: 1, dur: 0.5, up: 2 }] }, 0, 1, 1.9).y, 0);
+  T.eq('and it never blows sideways', wOn.x, 0);
   var head = fly(newSpec(NAMED_SPECS.cruiser.spec), {
     angle: 5, power: 0.5,
     air: { fields: [{ kind: 'fan', x: 30, y: 1.5, dir: Math.PI, speed: 3, reach: 40, width: 4 }] }
@@ -3037,6 +3129,27 @@ var AUDIO = {
     this._fl.g.gain.setTargetAtTime(L * 0.05, t, 0.07);
     this._fl.o.frequency.setTargetAtTime(38 + L * 46, t, 0.1);
   },
+  /* THE WHISTLE, the sound of the call. A short breathy rise, filtered noise
+     rather than a tone, because a tone at this level reads as an alarm and the
+     fleet learned that the hard way on Sep 06. Quiet: it sits under the rush of
+     the flight, it does not replace it. */
+  whistle: function () {
+    var ac = this.on ? this.open() : null;
+    if (!ac || ac.state === 'suspended') return;
+    var t = ac.currentTime, n = ac.sampleRate * 0.5;
+    var buf = ac.createBuffer(1, n, ac.sampleRate), d = buf.getChannelData(0), i;
+    for (i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1);
+    var src = ac.createBufferSource(); src.buffer = buf;
+    var bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 6;
+    bp.frequency.setValueAtTime(520, t);
+    bp.frequency.exponentialRampToValueAtTime(1150, t + 0.34);
+    var g = ac.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.05, t + 0.09);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+    src.connect(bp); bp.connect(g); g.connect(this.master);
+    src.start(t); src.stop(t + 0.52);
+  },
   quiet: function () { this.setRush(0, 700, 0.7); this.flutter(0); },
   play: function (what) {
     var ac = this.on ? this.open() : null;
@@ -3386,7 +3499,7 @@ function toTunnel() {
 }
 
 /* ========================= 17. THE FIELD ========================= */
-var STAMP = '20260906i';
+var STAMP = '20260907a';
 var G = {
   screen: 'title', spec: null, res: null, live: null, liveT: 0, flying: false,
   trail: [], ghost: null, best: null, lastClass: null, throws: 0,
@@ -3465,12 +3578,44 @@ function pullAngle(dx, dy) {
   var a = Math.atan2(dy, -dx) / DEG;
   return clamp(a, CONFIG.LAUNCH_ANGLE_MIN, CONFIG.LAUNCH_ANGLE_MAX);
 }
+/* ⛔ EARNED, NOT GIVEN (docs/REFERENCE.md A2). The first silver in the gym opens
+   the whistle: a player who has not yet folded a plane that flies well has
+   nothing to whistle at, and the gym is where you learn what a good one is.
+   Read off the medals rather than off a flag, so a save that was carried in
+   from before tonight opens it the moment it should. */
+var MEDAL_RANK_W = { bronze: 1, silver: 2, gold: 3 };
+function whistleEarned() {
+  var i;
+  for (i = 0; i < CHALLENGES.length; i++) {
+    if (CHALLENGES[i].course !== 'gym') continue;
+    if ((MEDAL_RANK_W[SAVE.medals[CHALLENGES[i].id]] || 0) >= 2) return true;
+  }
+  return false;
+}
+/* the call itself: re fly from where the plane is, with the nudge in the air at
+   that moment. `fly` is deterministic and the whistle's field only exists inside
+   its own half second, so every step before the tap is bit for bit the flight
+   that was already on the screen and the plane does not jump. */
+function blowWhistle() {
+  if (!G.flying || G.challenge || G.whistled || !whistleEarned() || !G.live) return false;
+  G.whistled = G.live.t;
+  G.res = fly(G.spec, { angle: G.lastAngle, power: G.lastPower, course: G.course,
+    air: courseAir(G.course, null), challenge: null,
+    nudge: { t: G.live.t, up: CONFIG.WHISTLE_UP } });
+  G.lastClass = classify(G.res);
+  haptic(18);
+  if (AUDIO && AUDIO.whistle) AUDIO.whistle();
+  toast('A gust, under the wing');
+  return true;
+}
 function launch(angle, power) {
   var ch = G.challenge;
   if (ch) { angle = ch.throw.angle; power = ch.throw.power; }
   G.res = fly(G.spec, { angle: angle, power: power, course: G.course,
     air: courseAir(G.course, ch ? ch.id : null), challenge: ch || null });
   G.lastClass = classify(G.res);
+  G.lastAngle = angle; G.lastPower = power;
+  G.whistled = 0;
   G.live = { i: 0, t: 0 };
   G.flying = true;
   G.trail = [];
@@ -3608,6 +3753,12 @@ function frame(ts) {
   if (G.screen === 'field') {
     el('btnSling').hidden = !G.challenge || G.flying
       || el('resultCard').classList.contains('on') || el('scrTrim').classList.contains('on');
+    /* ⛔ THE WHISTLE IS UP ONLY WHILE THE PLANE IS IN THE AIR, only once in a
+       flight, only when it has been earned, and NEVER in a challenge. The
+       challenges hand you the throw so that six of them ask for six planes
+       (call C8); a nudge inside one would make one plane do for all of them, and
+       the medals were measured by a tool that never whistled. */
+    el('btnWhistle').hidden = !(G.flying && !G.challenge && whistleEarned() && !G.whistled);
   }
   var ctx = V.ctx;
   audioFrame();
@@ -3870,6 +4021,7 @@ function bindInput() {
     el('resultCard').classList.remove('on');
     toChallenges();
   });
+  el('btnWhistle').addEventListener('click', function () { blowWhistle(); });
   el('btnAgain').addEventListener('click', function () {
     el('resultCard').classList.remove('on');
     V.camX = 0; V.camY = 0;
@@ -3992,6 +4144,9 @@ window.AIRWORTHY_TEST = {
   result: function () { return G.res ? { distance: G.res.distance, airtime: G.res.airtime,
     stalls: G.res.stalls, klass: G.lastClass ? G.lastClass.id : null } : null; },
   klass: function () { return G.lastClass ? G.lastClass.id : null; },
+  whistle: function () { return { earned: whistleEarned(), used: G.whistled,
+    shown: !document.getElementById('btnWhistle').hidden, flying: G.flying }; },
+  earnWhistle: function () { SAVE.medals['gym-far'] = 'silver'; },
   pullAngle: pullAngle,
   pullPower: pullPower,
   home: function () { return { x: px(0), y: py(1.6) }; },

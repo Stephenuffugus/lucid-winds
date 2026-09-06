@@ -381,5 +381,23 @@ for (const [w, h, tag] of [[412, 915, 'p3-412'], [375, 667, 'p3-375'], [320, 568
   });
 }
 
+/* P4: the WHISTLE, up in the air, on the phone Stephen carries and on the small
+   one. Shot mid flight with the plane still up, because that is the only moment
+   the button exists. */
+for (const [w, h, tag] of [[412, 915, 'p4-whistle-412'], [375, 667, 'p4-whistle-375']]) {
+  await withPage(w, h, async (page, shot) => {
+    await page.evaluate(() => {
+      AIRWORTHY_TEST.toField({ noseFolds: 3, nose: 'pointed', wing: 0.5, elev: 0 });
+      AIRWORTHY_TEST.earnWhistle();
+      AIRWORTHY_TEST.launch(8, 0.6);
+      AIRWORTHY_TEST.advance(0.9);
+    });
+    await waitFrames(page, 3);
+    const st = await page.evaluate(() => AIRWORTHY_TEST.whistle());
+    console.log('  (the whistle: ' + JSON.stringify(st) + ')');
+    if (want(tag)) await shot(tag);
+  });
+}
+
 s.close();
 console.log('shots done');

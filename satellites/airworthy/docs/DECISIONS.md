@@ -161,3 +161,40 @@ is in the plan's section 13; these are the calls.
   overwritten every throw is a mirror, and a mirror cannot be beaten.
 - The thresholds are written by `node sim.js --medals --write` between the
   MEDALS markers. Hand editing one makes a medal mean nothing.
+
+**D-A5 (2026-09-07, Opus) — the gust whistle is a CALL, not a control.** Design item 6, taken
+out of the build slice (plan 3.4) and built now. `docs/REFERENCE.md` is the note behind it and
+its finding is the reason for every rule here: almost every paper plane game in the world lets
+you steer the whole flight, and in none of them does the shape of the plane survive contact with
+a boost button. Airworthy's bet is that the FOLD is the game. So: one tap, once in a flight,
+half a second of rising air under the plane, and nothing else. It does not steer, it adds no
+speed, and it cannot rescue a wing that has already let go, because a separated wing is a barn
+door and does not care what the air under it is doing. That last one is physics rather than a
+rule, which is the best kind, and the lawn dart is the plane that proves it in the sim.
+- **Earned:** the first silver in the gym, read off the medals rather than a flag, so a save
+  carried in from before tonight opens it the moment it should.
+- **Never in a challenge.** The challenges hand you the throw so that six of them ask for six
+  planes (call C8), and the medal tables were measured by a tool that never whistled.
+- **The sim owns it.** `fly()` takes `nudge: {t, up}` and appends a `whistle` field to a COPY of
+  the air, so there is still ONE implementation of the wind and the whole flight is still a
+  deterministic function of the plane, the throw, the air and the call. The page re flies from
+  the moment of the tap, and every step before it is bit for bit the flight that was already on
+  the screen, so the plane does not jump. That is asserted.
+
+**D-A5b (2026-09-07, Opus) — WHISTLE_UP is 0.6 and it was MEASURED, not picked.** At the first
+number, 1.5, a whistled cruiser flew 13.7 percent further, which is two and a half metres on a
+seventeen metre flight and is a save rather than a nudge. Walking it: 0.4 gives 3.2 percent, 0.6
+gives 5.0, 0.8 gives 6.8, 1.0 gives 8.6, 1.2 gives 10.6. Five percent is the difference between
+a good throw and a very good one, which is what the reference note says it has to be. The band
+asserted around it goes red in both directions, and if Stephen wants it to matter more it is one
+constant and it is his.
+
+**D-A5c (2026-09-07, Opus) — THROW IT had been sitting in the music chip's corner since it was
+built, and no gate could see it.** A 190 px button centred on a 412 phone runs from 111 to 301,
+and the bottom left 120 by 120 belongs to the fleet's chip. Two separate reasons nobody caught
+it: the corner check scanned `#chrome button, #resultCard button, #scrTrim button` and THROW IT
+is a SIBLING of the chrome rather than a child of it; and even after the selector was widened to
+every button on the page the mutation stayed green, because THROW IT is only up inside a
+challenge and the scan was running on a gym field where neither big button exists. The selector
+is the law now and the STATE is set twice, once with THROW IT up and once with the plane in the
+air. Both buttons centre in the band that starts where the chip's corner ends.
