@@ -119,6 +119,38 @@ input[type=text]{width:100%;min-height:48px;border:3px solid var(--ink);border-r
 #testPanel{position:absolute;inset:0;z-index:60;background:#1A1409;color:#dfe;overflow:auto;
   font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;padding:14px;display:none;white-space:pre-wrap}
 #testPanel.on{display:block}
+/* ---- the mounting bench ---- */
+#scrMount{background:var(--paper);justify-content:flex-start;padding:0}
+#mountBar,#hallBar{display:flex;align-items:center;gap:10px;width:100%;
+  padding:calc(10px + var(--safeT)) 14px 8px;border-bottom:3px solid var(--ink);background:var(--paper2)}
+#mountBar .btn,#hallBar .btn{position:static}
+#mountCount,#hallCount{flex:1;font-size:.84rem;font-weight:700;letter-spacing:.03em;text-align:center}
+#mountCv{flex:1 1 auto;width:100%;min-height:0;display:block;touch-action:none;background:var(--paper)}
+#boneTray{display:flex;gap:8px;align-items:center;overflow-x:auto;overflow-y:hidden;width:100%;
+  padding:8px 14px;border-top:3px solid var(--ink);background:var(--paper2);min-height:76px}
+.btile{flex:0 0 auto;width:58px;height:58px;border:3px solid var(--ink);border-radius:12px;
+  background:var(--paper);padding:0;font-family:inherit}
+.btile canvas{width:100%;height:100%;display:block;border-radius:9px}
+.btile.gone{opacity:.28}
+#btnKeepIt{position:static;margin:10px 14px calc(14px + var(--safeB));width:calc(100% - 28px);max-width:360px}
+/* ---- the hall: a ROOM. A row of plinths on a brown field is a warehouse;
+   a wall, a floor and a rail make it somewhere somebody would walk. ---- */
+#scrHall{background:linear-gradient(to bottom,#7A6244 0%,#6E5638 63%,#54402A 63.4%,#4A3826 100%);
+  justify-content:flex-start;padding:0}
+#hall{flex:1 1 auto;width:100%;min-height:0;display:flex;gap:16px;align-items:center;
+  justify-content:safe center;
+  overflow-x:auto;overflow-y:hidden;padding:10px 14px calc(14px + var(--safeB))}
+.plinth{flex:0 0 auto;width:190px;display:flex;flex-direction:column;align-items:center;gap:0;
+  background:transparent;border:0;padding:0;font-family:inherit;color:var(--paper)}
+.plinth canvas{width:190px;height:210px;display:block}
+.plinth .base{width:190px;height:26px;background:var(--paper2);border:3px solid var(--ink);
+  border-radius:5px 5px 0 0}
+.plinth .placard{width:190px;min-height:70px;background:var(--brass);border:3px solid var(--ink);
+  border-radius:0 0 8px 8px;padding:7px 9px;text-align:center;color:#2A2113;white-space:pre-line}
+.plinth .placard .nm{font-size:.78rem;font-weight:700;font-style:italic;display:block;line-height:1.25}
+.plinth .placard .sub{font-size:.7rem;display:block;margin-top:3px;line-height:1.35;white-space:pre-line}
+#hallEmpty{color:var(--paper);margin:0 auto calc(24px + var(--safeB))}
+#hallEmpty[hidden]{display:none}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
 <script src="/music-unlocks.js?v=20260906a" defer></script>
@@ -189,6 +221,26 @@ input[type=text]{width:100%;min-height:48px;border:3px solid var(--ink);border-r
       <button class="btn big" id="btnKeep">KEEP IT</button>
       <button class="btn ghost" id="btnNameClose">NOT YET</button>
     </div>
+  </div>
+
+  <div class="screen" id="scrMount">
+    <div id="mountBar">
+      <button class="btn icon" id="btnMountBack">&#8592;</button>
+      <div id="mountCount"></div>
+      <button class="btn" id="btnPlaceAll">ALL</button>
+    </div>
+    <canvas id="mountCv"></canvas>
+    <div id="boneTray"></div>
+    <button class="btn big" id="btnKeepIt" disabled>NAME IT</button>
+  </div>
+
+  <div class="screen" id="scrHall">
+    <div id="hallBar">
+      <button class="btn icon" id="btnHallBack">&#8592;</button>
+      <div id="hallCount"></div>
+    </div>
+    <div id="hall"></div>
+    <p class="tiny" id="hallEmpty">Nothing in the hall yet. Dig something up.</p>
   </div>
 
   <div id="toast"></div>
@@ -974,10 +1026,13 @@ function placeSpecimen(sp, seed, region) {
       dx = dcos(a2) * d; dy = dsin(a2) * d;
     }
     var gone = src.kind !== 'skull' && r() < CONFIG.MISSING_CHANCE;
-    var poly = [], spine = [];
+    var poly = [], spine = [], clean = [];
     for (k = 0; k < src.poly.length; k++) {
       var q = rotatePt(src.poly[k], best.a, cx, cy);
       poly.push({ x: q.x * scale + ox + dx, y: q.y * scale + oy + dy });
+      /* the same bone WITHOUT the ground's scatter: this is what the armature
+         is, and putting a bone on it is exactly what undoes the disarticulation */
+      clean.push({ x: q.x * scale + ox, y: q.y * scale + oy });
     }
     for (k = 0; k < src.spine.length; k++) {
       var q2 = rotatePt(src.spine[k], best.a, cx, cy);
@@ -985,7 +1040,8 @@ function placeSpecimen(sp, seed, region) {
     }
     if (gone) missing++;
     out.push({ id: src.id, kind: src.kind, parent: src.parent, fragile: src.fragile,
-      poly: poly, spine: spine, missing: gone, cracked: false, out: false, cells: 0, clear: 0 });
+      poly: poly, mount: clean, spine: spine, missing: gone, cracked: false, out: false,
+      cells: 0, clear: 0 });
   }
   /* never take so much that there is nothing to find */
   if (missing > out.length * 0.18) {
@@ -1680,6 +1736,7 @@ function tick(dt) {
     if (HINT_T <= 0) { el('banner').classList.remove('on'); el('siteChip').style.opacity = ''; }
   }
   stepDust(dt);
+  if (G.screen === 'Mount') drawMount();
 }
 
 // ---- TEST_EXPORT_START ----
@@ -2492,7 +2549,7 @@ function saveNow() {
 }
 
 /* ========================= 21. SCREENS ========================= */
-var SCREENS = ['Title', 'How'];
+var SCREENS = ['Title', 'How', 'Mount', 'Hall'];
 function showScreen(name) {
   var i;
   for (i = 0; i < SCREENS.length; i++) {
@@ -2538,6 +2595,296 @@ function newSite(seed, depth) {
   if (!SAVE.seen.how) { SAVE.seen.how = 1; saveNow(); banner('Brush. Something is under there.'); }
 }
 
+/* ========================= 23. MOUNT ========================= */
+/* The armature is the skeleton the ground gave up, drawn faint; a bone that
+   was lifted is a SLOT waiting for it, and one that never came out of the rock
+   is bronze infill, which is what a real museum does and is why a patched
+   specimen is still a specimen. */
+var MOUNT = { cv: null, ctx: null, w: 1, h: 1, scale: 1, ox: 0, oy: 0,
+  placed: {}, drag: null, spec: null };
+
+function openMount() {
+  MOUNT.spec = G.dig.specimens[0];
+  MOUNT.placed = {};
+  MOUNT.drag = null;
+  MOUNT.cv = el('mountCv');
+  MOUNT.ctx = MOUNT.cv.getContext('2d');
+  showScreen('Mount');
+  layoutMount();
+  paintTray();
+  refreshMount();
+}
+function layoutMount() {
+  var cv = MOUNT.cv;
+  var w = Math.max(1, cv.clientWidth), h = Math.max(1, cv.clientHeight);
+  var dpr = Math.min(2.5, window.devicePixelRatio || 1);
+  cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+  MOUNT.w = w; MOUNT.h = h; MOUNT.dpr = dpr;
+  var bs = MOUNT.spec.bones, b = { x0: 1e9, y0: 1e9, x1: -1e9, y1: -1e9 }, i, k;
+  for (i = 0; i < bs.length; i++) for (k = 0; k < (bs[i].mount || bs[i].poly).length; k++) {
+    var p = (bs[i].mount || bs[i].poly)[k];
+    if (p.x < b.x0) b.x0 = p.x;
+    if (p.x > b.x1) b.x1 = p.x;
+    if (p.y < b.y0) b.y0 = p.y;
+    if (p.y > b.y1) b.y1 = p.y;
+  }
+  MOUNT.scale = Math.min((w - 30) / Math.max(1, b.x1 - b.x0), (h - 30) / Math.max(1, b.y1 - b.y0));
+  /* the measure every tray tile is drawn at: the biggest bone on the animal,
+     so a small one looks small */
+  var span = 1, q, m2, spans = [];
+  for (q = 0; q < bs.length; q++) {
+    var qb = { x0: 1e9, y0: 1e9, x1: -1e9, y1: -1e9 };
+    var qp = bs[q].mount || bs[q].poly;
+    for (m2 = 0; m2 < qp.length; m2++) {
+      var pp = qp[m2];
+      if (pp.x < qb.x0) qb.x0 = pp.x;
+      if (pp.x > qb.x1) qb.x1 = pp.x;
+      if (pp.y < qb.y0) qb.y0 = pp.y;
+      if (pp.y > qb.y1) qb.y1 = pp.y;
+    }
+    spans.push(Math.max(qb.x1 - qb.x0, qb.y1 - qb.y0));
+  }
+  /* ⛔ NOT the biggest bone. Sizing every tile to the largest turned the ribs
+     and the vertebrae into three pixel specks, which is the same fault as
+     sizing each one to itself, in the other direction. The measure is a bone
+     two thirds of the way up the range, and anything bigger is clamped down to
+     fit its own tile. */
+  spans.sort(function (a2, b2) { return a2 - b2; });
+  MOUNT.tileSpan = Math.max(1, spans[Math.floor(spans.length * 0.68)] || 1);
+  void span;
+  MOUNT.ox = w / 2 - (b.x0 + b.x1) / 2 * MOUNT.scale;
+  MOUNT.oy = h / 2 - (b.y0 + b.y1) / 2 * MOUNT.scale;
+}
+function mx(x) { return x * MOUNT.scale + MOUNT.ox; }
+function my(y) { return y * MOUNT.scale + MOUNT.oy; }
+function boneCentre(bn) {
+  var poly = bn.mount || bn.poly, cx = 0, cy = 0, k;
+  for (k = 0; k < poly.length; k++) { cx += poly[k].x; cy += poly[k].y; }
+  return { x: cx / poly.length, y: cy / poly.length };
+}
+/* on the bench a bone is drawn where it BELONGS, not where the ground left it */
+function pathOf(c, bn, fx, fy) {
+  var poly = bn.mount || bn.poly, k;
+  c.beginPath();
+  c.moveTo(fx(poly[0].x), fy(poly[0].y));
+  for (k = 1; k < poly.length; k++) c.lineTo(fx(poly[k].x), fy(poly[k].y));
+  c.closePath();
+}
+function drawMount() {
+  var c = MOUNT.ctx;
+  if (!c || !MOUNT.spec) return;
+  c.setTransform(MOUNT.dpr, 0, 0, MOUNT.dpr, 0, 0);
+  c.clearRect(0, 0, MOUNT.w, MOUNT.h);
+  var bs = MOUNT.spec.bones, i;
+  /* ⛔ THE SILHOUETTE FIRST. Fifty dotted outlines on top of one another is a
+     thicket, not an animal, and a player mounting a skeleton has to be able to
+     see what it is going to be. The whole shape goes down faint underneath,
+     and the slots are drawn over it. */
+  c.save();
+  c.globalAlpha = 0.16;
+  c.fillStyle = '#8A7350';
+  for (i = 0; i < bs.length; i++) { pathOf(c, bs[i], mx, my); c.fill(); }
+  c.restore();
+  for (i = 0; i < bs.length; i++) {
+    var bn = bs[i];
+    var isPlaced = !!MOUNT.placed[bn.id];
+    var lifted = bn.out;
+    c.save();
+    pathOf(c, bn, mx, my);
+    if (isPlaced) {
+      c.fillStyle = bn.cracked ? '#EADCBE' : '#F7EDD6';
+      c.fill();
+      c.strokeStyle = '#6B5433';
+      c.lineWidth = 1.6;
+      c.stroke();
+      if (bn.cracked) {
+        /* the glued seam, left showing: an honest scar, the way a museum does */
+        c.strokeStyle = '#A2543A';
+        c.lineWidth = 2;
+        var sp = denseSpine(bn.spine, 5), k;
+        c.beginPath();
+        for (k = 0; k < sp.length; k++) {
+          var j = ((k * 31) % 7 - 3) * 0.5;
+          if (k === 0) c.moveTo(mx(sp[k].x + j), my(sp[k].y - j));
+          else c.lineTo(mx(sp[k].x + j), my(sp[k].y - j));
+        }
+        c.stroke();
+      }
+    } else if (lifted) {
+      /* an empty slot: the shape, dotted, waiting for its bone */
+      c.strokeStyle = '#B49A6C';
+      c.setLineDash([5, 4]);
+      c.lineWidth = 1.6;
+      c.stroke();
+      c.setLineDash([]);
+    } else {
+      /* bronze infill for what the ground kept */
+      /* bronze, and QUIETER than a real bone: the first draft made the pieces
+         the ground kept the only solid shapes on the bench, so the eye read
+         the missing parts as the specimen */
+      c.fillStyle = '#B98A3E';
+      c.globalAlpha = 0.32;
+      c.fill();
+      c.globalAlpha = 0.7;
+      c.strokeStyle = '#8A6524';
+      c.lineWidth = 1.1;
+      c.stroke();
+      c.globalAlpha = 1;
+    }
+    c.restore();
+  }
+  if (MOUNT.drag) {
+    var bn2 = MOUNT.drag.bone, cen = boneCentre(bn2);
+    var dx = MOUNT.drag.x - mx(cen.x), dy = MOUNT.drag.y - my(cen.y);
+    c.save();
+    c.globalAlpha = 0.85;
+    pathOf(c, bn2, function (x) { return mx(x) + dx; }, function (y) { return my(y) + dy; });
+    c.fillStyle = '#F7EDD6';
+    c.fill();
+    c.strokeStyle = '#33291C';
+    c.lineWidth = 2;
+    c.stroke();
+    c.restore();
+    /* the slot it belongs in, lit while it is in the air */
+    c.save();
+    c.strokeStyle = '#5E8C4F';
+    c.lineWidth = 3;
+    pathOf(c, bn2, mx, my);
+    c.stroke();
+    c.restore();
+  }
+}
+function paintTray() {
+  var tray = el('boneTray');
+  tray.innerHTML = '';
+  var bs = MOUNT.spec.bones, i;
+  for (i = 0; i < bs.length; i++) {
+    if (!bs[i].out) continue;
+    tray.appendChild(boneTile(bs[i]));
+  }
+}
+function boneTile(bn) {
+  var b = document.createElement('button');
+  b.className = 'btile' + (MOUNT.placed[bn.id] ? ' gone' : '');
+  b.type = 'button';
+  b.setAttribute('data-bone', bn.id);
+  b.setAttribute('aria-label', bn.kind);
+  var cv = document.createElement('canvas');
+  cv.width = 108; cv.height = 108;
+  b.appendChild(cv);
+  var c = cv.getContext('2d');
+  var bb = { x0: 1e9, y0: 1e9, x1: -1e9, y1: -1e9 }, k;
+  for (k = 0; k < bn.poly.length; k++) {
+    var p = bn.poly[k];
+    if (p.x < bb.x0) bb.x0 = p.x;
+    if (p.x > bb.x1) bb.x1 = p.x;
+    if (p.y < bb.y0) bb.y0 = p.y;
+    if (p.y > bb.y1) bb.y1 = p.y;
+  }
+  /* ⛔ ONE MEASURE for every tile. Fitting each bone to its own box drew a rib,
+     a vertebra and a skull as the same rounded rectangle, and the tray a child
+     picks from was fifty identical tiles. Learned on Whistlestop's piece tray
+     and made again here. */
+  /* ⛔ the canvas is 108 device pixels drawn through a 2x transform, so the
+     drawing space is 54 across. The first version worked out its scale against
+     108 and then halved every coordinate, so every bone came out at half the
+     size it was meant to and the tray was a row of empty boxes. */
+  var own = Math.max(1, Math.max(bb.x1 - bb.x0, bb.y1 - bb.y0));
+  var sc = Math.min(46 / Math.max(1, MOUNT.tileSpan), 46 / own);
+  var fx = function (x) { return 27 + (x - (bb.x0 + bb.x1) / 2) * sc; };
+  var fy = function (y) { return 27 + (y - (bb.y0 + bb.y1) / 2) * sc; };
+  c.setTransform(2, 0, 0, 2, 0, 0);
+  c.clearRect(0, 0, 54, 54);
+  pathOf(c, bn, fx, fy);
+  c.fillStyle = bn.cracked ? '#EADCBE' : '#F7EDD6';
+  c.fill();
+  c.strokeStyle = '#6B5433';
+  c.lineWidth = 1;
+  c.stroke();
+  return b;
+}
+function placeBone(id) {
+  if (MOUNT.placed[id]) return false;
+  MOUNT.placed[id] = true;
+  AUDIO.play('click');
+  refreshMount();
+  return true;
+}
+function refreshMount() {
+  var bs = MOUNT.spec.bones, i, out = 0, done = 0;
+  for (i = 0; i < bs.length; i++) {
+    if (bs[i].out) { out++; if (MOUNT.placed[bs[i].id]) done++; }
+  }
+  var st = specimenState(MOUNT.spec);
+  el('mountCount').textContent = done + ' of ' + out + ' set, ' + (st.fraction * 100).toFixed(0)
+    + ' percent of the animal';
+  el('btnKeepIt').disabled = !(done === out && out > 0);
+  var tiles = document.querySelectorAll('#boneTray .btile'), k;
+  for (k = 0; k < tiles.length; k++) {
+    tiles[k].classList.toggle('gone', !!MOUNT.placed[parseInt(tiles[k].getAttribute('data-bone'), 10)]);
+  }
+}
+function mountLocal(e) {
+  var r = MOUNT.cv.getBoundingClientRect();
+  return { x: e.clientX - r.left, y: e.clientY - r.top };
+}
+
+/* ========================= 24. THE HALL ========================= */
+function openHall() {
+  var hall = el('hall');
+  hall.innerHTML = '';
+  var i;
+  el('hallEmpty').hidden = SAVE.museum.length > 0;
+  el('hallCount').textContent = SAVE.museum.length
+    ? SAVE.museum.length + (SAVE.museum.length === 1 ? ' specimen' : ' specimens')
+    : 'The hall';
+  for (i = 0; i < SAVE.museum.length; i++) hall.appendChild(plinthFor(SAVE.museum[i]));
+  showScreen('Hall');
+}
+function plinthFor(m) {
+  var b = document.createElement('button');
+  b.className = 'plinth';
+  b.type = 'button';
+  b.setAttribute('data-seed', m.seed);
+  var cv = document.createElement('canvas');
+  cv.width = 380; cv.height = 420;
+  b.appendChild(cv);
+  var base = document.createElement('div');
+  base.className = 'base';
+  b.appendChild(base);
+  var pl = document.createElement('div');
+  pl.className = 'placard';
+  pl.innerHTML = '<span class="nm"></span><span class="sub"></span>';
+  b.appendChild(pl);
+  var sp = species(m.seed, m.era);
+  var bs = bones(sp), bb = boneBounds(bs), i, k;
+  var c = cv.getContext('2d');
+  c.setTransform(2, 0, 0, 2, 0, 0);
+  var sc = Math.min(174 / Math.max(1, bb.x1 - bb.x0), 194 / Math.max(1, bb.y1 - bb.y0));
+  var fx = function (x) { return 95 + (x - (bb.x0 + bb.x1) / 2) * sc; };
+  /* ⛔ FEET ON THE PLINTH. Centring the skeleton in its canvas left it
+     floating a finger's width above the stone it is supposed to be standing
+     on, which is the one thing a mounted skeleton must not do. */
+  var fy = function (y) { return 206 - (bb.y1 - y) * sc; };
+  for (i = 0; i < bs.length; i++) {
+    c.beginPath();
+    c.moveTo(fx(bs[i].poly[0].x), fy(bs[i].poly[0].y));
+    for (k = 1; k < bs[i].poly.length; k++) c.lineTo(fx(bs[i].poly[k].x), fy(bs[i].poly[k].y));
+    c.closePath();
+    c.fillStyle = '#F4E8CB';
+    c.fill();
+    c.strokeStyle = '#6B5433';
+    c.lineWidth = 0.7;
+    c.stroke();
+  }
+  var id = identity(sp, m.seed, m.dedicated ? m.name.split(' ')[1] : '');
+  pl.querySelector('.nm').textContent = m.name;
+  /* ⛔ three lines, and they have to BE three lines: textContent with newlines
+     in it runs them together unless the box is told to keep them. */
+  pl.querySelector('.sub').textContent = id.eraName + '\n' + m.who + '\n' + m.condition;
+  return b;
+}
+
 /* ========================= 22. BOOT ========================= */
 function boot() {
   V.cv = el('board');
@@ -2554,9 +2901,7 @@ function boot() {
   el('whoField').value = SAVE.who || '';
 
   el('btnDig').addEventListener('click', function () { AUDIO.resume(); newSite(); });
-  el('btnMuseum').addEventListener('click', function () {
-    toast(SAVE.museum.length ? 'The hall opens in the next session.' : 'Nothing in the hall yet.');
-  });
+  el('btnMuseum').addEventListener('click', function () { openHall(); });
   el('btnHow').addEventListener('click', function () { showScreen('How'); });
   el('btnHowBack').addEventListener('click', function () { showScreen('Title'); });
   el('btnMenu').addEventListener('click', function () { AUDIO.resume(); el('scrMenu').classList.add('on'); });
@@ -2566,7 +2911,7 @@ function boot() {
     newSite(seedFromString('s' + FRAMES + ':' + SAVE.museum.length), G.depth);
   });
   el('btnToMuseum').addEventListener('click', function () {
-    el('scrMenu').classList.remove('on'); toast('The hall opens in the next session.');
+    el('scrMenu').classList.remove('on'); openHall();
   });
   el('btnToJournal').addEventListener('click', function () {
     el('scrMenu').classList.remove('on'); toast('The journal opens in the next session.');
@@ -2590,7 +2935,47 @@ function boot() {
     this.value = SAVE.who;
     saveNow();
   });
-  el('btnMount').addEventListener('click', function () { openNameSheet(); });
+  el('btnMount').addEventListener('click', function () { AUDIO.resume(); openMount(); });
+  el('btnMountBack').addEventListener('click', function () { showScreen('Dig'); });
+  el('btnHallBack').addEventListener('click', function () { showScreen('Title'); });
+  el('btnPlaceAll').addEventListener('click', function () {
+    var bs = MOUNT.spec.bones, i, n = 0;
+    for (i = 0; i < bs.length; i++) if (bs[i].out && !MOUNT.placed[bs[i].id]) { MOUNT.placed[bs[i].id] = true; n++; }
+    if (n) AUDIO.play('click');
+    refreshMount();
+  });
+  el('btnKeepIt').addEventListener('click', function () { openNameSheet(); });
+  /* a bone dragged out of the tray onto its slot. A tap on a tile places it
+     too, because forty drags is a chore and a child will find the tap. */
+  el('boneTray').addEventListener('pointerdown', function (e) {
+    var tile = e.target.closest ? e.target.closest('.btile') : null;
+    if (!tile) return;
+    var id = parseInt(tile.getAttribute('data-bone'), 10);
+    if (MOUNT.placed[id]) return;
+    var bn = null, bs = MOUNT.spec.bones, i;
+    for (i = 0; i < bs.length; i++) if (bs[i].id === id) bn = bs[i];
+    if (!bn) return;
+    e.preventDefault();
+    var p = mountLocal(e);
+    MOUNT.drag = { bone: bn, id: e.pointerId, x: p.x, y: p.y, moved: false };
+  });
+  window.addEventListener('pointermove', function (e) {
+    if (!MOUNT.drag || MOUNT.drag.id !== e.pointerId) return;
+    var p = mountLocal(e);
+    if (len2(p.x - MOUNT.drag.x, p.y - MOUNT.drag.y) > CONFIG.TAP_SLOP) MOUNT.drag.moved = true;
+    MOUNT.drag.x = p.x; MOUNT.drag.y = p.y;
+  });
+  window.addEventListener('pointerup', function (e) {
+    if (!MOUNT.drag || MOUNT.drag.id !== e.pointerId) return;
+    var bn = MOUNT.drag.bone, moved = MOUNT.drag.moved;
+    var p = { x: MOUNT.drag.x, y: MOUNT.drag.y };
+    MOUNT.drag = null;
+    if (!moved) { placeBone(bn.id); return; }
+    var cen = boneCentre(bn);
+    var d = len2(p.x - mx(cen.x), p.y - my(cen.y));
+    if (d <= MOUNT_SNAP) placeBone(bn.id);
+    else toast('Not its place. Try the shape it fits.');
+  });
   el('btnNameClose').addEventListener('click', function () { el('nameSheet').classList.remove('on'); });
   el('btnKeep').addEventListener('click', function () { keepSpecimen(); });
 
@@ -2615,7 +3000,7 @@ function boot() {
   V.cv.addEventListener('pointerup', onUp);
   V.cv.addEventListener('pointercancel', function (e) { delete POINTERS[e.pointerId]; PINCH = null; G.stroke = null; G.path = []; });
   window.addEventListener('pointerup', function (e) { if (G.stroke && G.stroke.id === e.pointerId) onUp(e); });
-  window.addEventListener('resize', fitCanvas);
+  window.addEventListener('resize', function () { fitCanvas(); if (G.screen === 'Mount') layoutMount(); });
   window.addEventListener('orientationchange', function () { setTimeout(fitCanvas, 120); });
   window.addEventListener('blur', function () { POINTERS = {}; PINCH = null; G.stroke = null; G.path = []; });
   document.addEventListener('visibilitychange', function () {
@@ -2633,6 +3018,9 @@ function boot() {
   try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {}
   window.addEventListener('load', function () { try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {} });
 }
+/* a generous snap, because the slot is a whole bone and the finger is a
+   thumb: forty pixels is about a fingertip and a half */
+var MOUNT_SNAP = 46;
 function openNameSheet() {
   var spec = G.dig.specimens[0];
   var st = specimenState(spec);
@@ -2654,8 +3042,9 @@ function keepSpecimen() {
   saveNow();
   el('nameSheet').classList.remove('on');
   AUDIO.play('keep');
-  banner(id.binomial + ' goes in the hall.');
-  refreshChrome();
+  /* the hall opening on the specimen IS the message; a toast on top of the
+     placard was covering the line it was announcing */
+  openHall();
 }
 
 /* Everything the gates reach for. Nothing here changes a rule; it puts the
@@ -2746,6 +3135,23 @@ window.STRATA_TEST = {
   freeze: function () { return G.freeze; },
   save: function () { return SAVE; },
   audio: function () { return AUDIO; },
+  mount: function () { openMount(); },
+  mountState: function () {
+    var bs = MOUNT.spec ? MOUNT.spec.bones : [], i, out = 0, done = 0;
+    for (i = 0; i < bs.length; i++) if (bs[i].out) { out++; if (MOUNT.placed[bs[i].id]) done++; }
+    return { out: out, done: done, ready: !el('btnKeepIt').disabled };
+  },
+  slotScreen: function (id) {
+    var bs = MOUNT.spec.bones, i;
+    for (i = 0; i < bs.length; i++) if (bs[i].id === id) {
+      var c2 = boneCentre(bs[i]);
+      return { x: mx(c2.x), y: my(c2.y) };
+    }
+    return null;
+  },
+  placedIds: function () { return Object.keys(MOUNT.placed).map(Number); },
+  hall: function () { openHall(); },
+  museum: function () { return SAVE.museum; },
   identityOf: function (ded) {
     var spec = G.dig.specimens[0];
     return identity(spec.species, spec.seed, ded || '');
