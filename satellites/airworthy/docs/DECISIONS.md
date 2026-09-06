@@ -63,7 +63,40 @@ is in the plan's section 13; these are the calls.
   A live integration would give the same answer and could drift from the trace
   that the result card and the ghost are built from.
 
+## The workshop
+
+- **Six creases, five of them a choice.** The last one is "press every crease
+  flat", which carries only the precision bar: a real plane's last fold is not a
+  decision, it is a thumbnail down a seam.
+- **The precision of a plane is the MEAN of its creases**, so one bad fold does
+  not ruin it and six good ones are worth something. A press in the middle of
+  the bar scores one and a press at the edge scores near nothing.
+- **The label on the precision bar sits above the marker's lane.** Behind it, a
+  five pixel bar sweeping through a line of text makes both unreadable.
+- **In landscape the workshop's chrome is a column down the side.** Stacked
+  under the paper it takes 307 pixels of a 375 pixel screen and there is no
+  paper left to fold. The plan calls the workshop portrait; this is what
+  "landscape widens the same room" means for it.
+- **The sheet is drawn top down with its creases**, and the "N of 6 creases
+  pressed" label is centred over the PAPER rather than the window, because in
+  landscape the window's middle is behind the chrome.
+- **The preview names the archetype only after the first flight**, as the plan
+  asks. Before that it shows mass, area and stability margin, which are facts
+  rather than a spoiler.
+
+## The hangar
+
+- **A hangar card is a PLAN view, from above.** The gym draws the plane in
+  profile, and in profile a wide wing and a narrow one are the same picture: a
+  hangar of profiles is a row of identical grey arrowheads and the folds that
+  make each plane different are exactly what you cannot see.
+- **Delete asks twice** by turning into REALLY, rather than opening a dialog.
+- **The names come from a list of twelve** and are handed out in order, so a
+  hangar reads as a shelf of planes somebody named rather than "Plane 4".
+- **A toast on a list screen comes from the top.** Anchored to the bottom it
+  sits on the button at the end of the list.
+
 ## Scope
 
-- **The workshop, the wind tunnel, the hangar, sound and share links are P2 and
-  P3.** The buttons that lead to them say so rather than doing nothing.
+- **The wind tunnel, the courses, the medals and the rest of the sound are P3.**
+  The buttons that lead to them say so rather than doing nothing.

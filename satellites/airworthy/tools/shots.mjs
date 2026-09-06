@@ -106,5 +106,83 @@ await withPage(375, 667, async (page, shot) => {
   if (want('p1-portrait')) await shot('p1-portrait');
 });
 
+/* the workshop, mid fold */
+await withPage(375, 667, async (page, shot) => {
+  await page.evaluate(() => {
+    AIRWORTHY_TEST.shopStart();
+    const s = AIRWORTHY_TEST.shop();
+    /* three creases already made, on the fourth */
+    s.choice[0] = 'pointed'; s.hits.push(0.94);
+    s.choice[1] = 2; s.hits.push(0.88);
+    s.choice[2] = 0.5; s.hits.push(0.96);
+    s.step = 3;
+    AIRWORTHY_TEST.shopRender();
+    AIRWORTHY_TEST.shopMarker(0.42);
+  });
+  await waitFrames(page, 3);
+  if (want('p2-workshop')) await shot('p2-workshop');
+  /* the moment a crease is pressed */
+  await page.evaluate(() => {
+    const s = AIRWORTHY_TEST.shop();
+    s.choice[3] = 'up';
+    AIRWORTHY_TEST.shopRender();
+    AIRWORTHY_TEST.shopMarker(0.5);
+  });
+  await waitFrames(page, 2);
+  await page.evaluate(() => {
+    const bar = document.getElementById('shopBar');
+    const r = bar.getBoundingClientRect();
+    bar.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 9, pointerType: 'touch',
+      isPrimary: true, bubbles: true, cancelable: true,
+      clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 }));
+  });
+  await waitFrames(page, 3);
+  if (want('p2-crease')) await shot('p2-crease');
+});
+
+/* the workshop in landscape, where the chrome is a column down the side */
+await withPage(667, 375, async (page, shot) => {
+  await page.evaluate(() => {
+    AIRWORTHY_TEST.shopStart();
+    const s = AIRWORTHY_TEST.shop();
+    s.choice[0] = 'pointed'; s.hits.push(0.94);
+    s.choice[1] = 3; s.hits.push(0.88);
+    s.step = 2;
+    AIRWORTHY_TEST.shopRender();
+    AIRWORTHY_TEST.shopMarker(0.55);
+  });
+  await waitFrames(page, 3);
+  if (want('p2-workshop-wide')) await shot('p2-workshop-wide');
+});
+
+/* the hangar with three planes in it */
+await withPage(375, 667, async (page, shot) => {
+  await page.evaluate(() => {
+    const specs = [
+      { nose: 'pointed', noseFolds: 3, wing: 0.5, fins: 'none', dihedral: 0.4 },
+      { nose: 'blunt', noseFolds: 1, wing: 0.95, fins: 'up', dihedral: 1 },
+      { nose: 'locked', noseFolds: 3, wing: 0.15, fins: 'down', dihedral: 0 }
+    ];
+    for (const sp of specs) {
+      AIRWORTHY_TEST.shopStart(sp);
+      const s = AIRWORTHY_TEST.shop();
+      for (let i = 0; i < AIRWORTHY_TEST.folds().length; i++) {
+        const f = AIRWORTHY_TEST.folds()[i];
+        if (f.field) s.choice[i] = sp[f.field] !== undefined ? sp[f.field] : AIRWORTHY_TEST.spec()[f.field];
+        s.hits.push(0.9);
+      }
+      s.step = AIRWORTHY_TEST.folds().length - 1;
+      document.getElementById('btnShopNext').click();
+      AIRWORTHY_TEST.launch(8, 0.5);
+      AIRWORTHY_TEST.finish();
+    }
+    document.getElementById('btnHangar').click();
+    const first = document.querySelector('.plane-card');
+    if (first) first.click();
+  });
+  await waitFrames(page, 3);
+  if (want('p2-hangar')) await shot('p2-hangar');
+});
+
 s.close();
 console.log('shots done');
