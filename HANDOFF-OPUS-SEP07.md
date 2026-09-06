@@ -232,6 +232,18 @@ saw in Airworthy landscape (G35). 8. Wardian's BUY (G37). 9. The rest of section
 - **A8 Strata, the docs refresh.** `ART_ASSETS.md` and `BUILD-NOTES.md` rewritten against the
   file, plus a morning report in the plan. No stamp, docs only. ⛔ It found a real fault, queued
   as C7 below: at a large site the SECOND skeleton can be dug and can never be mounted.
+- **A3 Whistlestop, the props stop binding the zoom.** SKIPPED, already done by Fable on the
+  night of Sep 06: the railway is 84 percent of a 412 phone where it was 67, the gate measures
+  it off `railBounds()` and the old fit turns it red at all three sizes.
+- **A4 Doohickey, the portrait stage.** `20260907a`, live (probe grepped `goalCard` and
+  `drawerFront`). Three objects where there were three margins: a job card with the level's
+  name and what it is for, the board on a full width page whose graph paper runs across all of
+  it, and a drawer sized from what is in it with GO moved onto its front where a thumb is. The
+  marble carries a ring. Eleven gates green first run. The law it turns on is asserted and
+  watched to fail: the board is exactly as big as the width allows at all three portrait sizes.
+  Three faults found by LOOKING (three creams that read as one field, a page narrower than the
+  board it carried, a centred scrolling tray that clipped its own first row) and one by the
+  gate (the drawer's front stopped clearing the music chip's corner at 375).
 
 ## 7. THE PROMPT TO PASTE INTO OPUS (Sep 07)
 
