@@ -1,9 +1,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#C9A227">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260906h">
-<link rel="icon" href="./icon-192.png?v=20260906h">
-<link rel="manifest" href="./manifest.webmanifest?v=20260906h">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260907a">
+<link rel="icon" href="./icon-192.png?v=20260907a">
+<link rel="manifest" href="./manifest.webmanifest?v=20260907a">
 <title>WINDUP</title>
 <style>
 :root{
@@ -890,14 +890,24 @@ function makeImpulse(ctx, seconds, curve) {
   }
   return buf;
 }
-/* tanh, scaled so the loudest thing that can ever leave is 0.95 */
+/* tanh, UNITY AT SMALL SIGNAL and asymptotic to 0.95, so the loudest thing that
+   can ever leave is 0.95 and a quiet note leaves at the level the code wrote.
+   ⛔ THE FAULT THIS REPLACES, found by test/audio.mjs on Sep 07: the curve used
+   to be 0.95 * tanh(1.6x) / tanh(1.6), whose SLOPE AT ZERO IS 1.649. A node put
+   on the end of the chain to be a ceiling was a four and a third decibel BOOST
+   on everything under it, so CONFIG.MASTER 0.5 was really 0.82, one line of a
+   music box measured 0.187 rms, and fifteen tines on one step rendered a peak
+   of 1.364 through a 2x oversampled shaper that is supposed to stop at 0.95.
+   0.95 * tanh(x / 0.95) has the same shape and the same ceiling with a slope of
+   exactly one at the origin: it costs nothing on one note, which is what the
+   old comment claimed and the old curve did not do. */
 var _softCurve = null;
 function softCurve() {
   if (_softCurve) return _softCurve;
   var n = 2048, c = new Float32Array(n), i;
   for (i = 0; i < n; i++) {
     var x = (i / (n - 1)) * 2 - 1;
-    c[i] = 0.95 * Math.tanh(x * 1.6) / Math.tanh(1.6);
+    c[i] = 0.95 * Math.tanh(x / 0.95);
   }
   _softCurve = c;
   return c;
@@ -924,7 +934,15 @@ function buildAudio(ctx) {
      bends the top off a chord instead of squaring it. */
   var ceiling = ctx.createWaveShaper();
   ceiling.curve = softCurve();
-  ceiling.oversample = '2x';
+  /* ⛔ 'none', NOT '2x'. A memoryless shaper is bounded by its own curve and
+     nothing else, which is the only way this node is a ceiling at all. With 2x
+     oversampling the reconstruction filter RANG 37 percent past the curve, so
+     fifteen tines on one step rendered 1.022 out of a node whose curve stops at
+     0.744 (test/audio.mjs, Sep 07). Measured both ways on the same passage: the
+     share of energy above 3 kHz is 1.30 percent either way, so the aliasing the
+     oversampling was there to prevent was not audible in the numbers and the
+     overshoot was. */
+  ceiling.oversample = 'none';
   master.connect(dry); dry.connect(limiter);
   master.connect(plate); plate.connect(wet); wet.connect(limiter);
   limiter.connect(ceiling);
@@ -1030,7 +1048,7 @@ function stealVoices(A, now) {
   }
 }
 /* ============================ 17. THE PAGE ============================ */
-var STAMP = '20260906h';
+var STAMP = '20260907a';
 function el(id) { return document.getElementById(id); }
 var V = { cv: null, ctx: null, W: 0, H: 0, dpr: 1, t: 0 };
 var G = { screen: 'box', strip: null, audio: null, ready: false,
@@ -1522,8 +1540,8 @@ function bed(A) {
   A.bed = { src: src, bp: bp, g: g };
   return A.bed;
 }
-function bedLevel(speed) {
-  var A = G.audio;
+function bedLevel(speed, A) {
+  A = A || G.audio;
   if (!A || !A.ctx) return;
   var b = bed(A);
   if (!b) return;
@@ -1532,8 +1550,8 @@ function bedLevel(speed) {
   b.bp.frequency.setTargetAtTime(600 + clamp(speed, 0, 8) * 90, t, 0.1);
 }
 /* a tick every fifteen degrees of crank, which is the pin wheel turning */
-function bedTicks(delta) {
-  var A = G.audio;
+function bedTicks(delta, A) {
+  A = A || G.audio;
   if (!A || !delta) return;
   G.tickAcc += Math.abs(delta);
   var per = 15 * Math.PI / 180;
@@ -1550,6 +1568,73 @@ function bedTicks(delta) {
     o.connect(hp); hp.connect(g); g.connect(A.master);
     o.start(t);
   }
+}
+
+/* ⛔ THE EAR GATE'S RENDER, AND NEVER A WAV MADE FOR THE EAR. tools/tinewav.mjs
+   NORMALISES the file it writes, so its peak is the tool's and not the box's:
+   a reading of 0.86 off that file once said the game was loud on a day the
+   game was clipping, which is a different fault entirely. This renders the
+   LOUDEST PASSAGE the box can make through the real buildAudio, tine, bed and
+   bedTicks into an OfflineAudioContext, and test/audio.mjs reads peak, rms and
+   the share of energy above 3 kHz off the samples.
+
+   The passage: the crank held at the speed ceiling bedLevel clamps to, so the
+   bed and its pin wheel ticks run flat out for the whole take, and over that
+   all fifteen tines struck together as often as the retrigger rule allows,
+   which is a fifteen note chord every two steps. A player cannot punch a
+   louder strip. */
+function renderLoudPassage(seconds, opts) {
+  var OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+  if (!OAC) return Promise.reject(new Error('no OfflineAudioContext'));
+  var o = opts || {}, sr = 44100, dur = seconds || 10;
+  var octx = new OAC(2, Math.ceil(sr * dur), sr);
+  /* the engine is bound to whatever context it is handed; the only thing this
+     shim adds is a clock a gate can move, because an offline context's
+     currentTime is nailed to zero until it renders */
+  var shim = {
+    currentTime: 0, sampleRate: octx.sampleRate, destination: octx.destination, state: 'running',
+    resume: function () {},
+    createGain: function () { return octx.createGain(); },
+    createOscillator: function () { return octx.createOscillator(); },
+    createBufferSource: function () { return octx.createBufferSource(); },
+    createBiquadFilter: function () { return octx.createBiquadFilter(); },
+    createDynamicsCompressor: function () { return octx.createDynamicsCompressor(); },
+    createConvolver: function () { return octx.createConvolver(); },
+    createWaveShaper: function () { return octx.createWaveShaper(); },
+    createBuffer: function (a, b, c) { return octx.createBuffer(a, b, c); }
+  };
+  var A = buildAudio(shim), savedAcc = G.tickAcc, i, r, f;
+  var rows = o.rows === undefined ? CONFIG.ROWS : o.rows;
+  var speed = o.crank === undefined ? 8 : o.crank;
+  G.tickAcc = 0;
+  bedLevel(speed, A);
+  for (f = 0; f < Math.floor(dur * 60); f++) { shim.currentTime = f / 60; bedTicks(speed / 60, A); }
+  var per = stepSeconds() * CONFIG.MIN_GAP_STEPS, t, k = 0;
+  for (t = 0.05; t < dur - 0.05; t += per) {
+    shim.currentTime = t;
+    for (r = 0; r < rows; r++) tine(A, r, t, k++);
+  }
+  G.tickAcc = savedAcc;
+  return octx.startRendering().then(function (buf) { return ear(buf, sr); });
+}
+/* peak, rms and the share of energy above 3 kHz. The split is a second order
+   Butterworth high pass run over the rendered samples, because a smoke detector
+   lives up there and a music box does not. */
+function ear(buf, sr) {
+  var n = buf.length, ch = buf.numberOfChannels, c, i, peak = 0, tot = 0, hi = 0;
+  var w0 = 2 * Math.PI * 3000 / sr, cw = Math.cos(w0), sw = Math.sin(w0), al = sw / (2 * 0.7071);
+  var b0 = (1 + cw) / 2, b1 = -(1 + cw), b2 = (1 + cw) / 2, a0 = 1 + al, a1 = -2 * cw, a2 = 1 - al;
+  for (c = 0; c < ch; c++) {
+    var d = buf.getChannelData(c), x1 = 0, x2 = 0, y1 = 0, y2 = 0, x, y;
+    for (i = 0; i < n; i++) {
+      x = d[i];
+      y = (b0 * x + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2) / a0;
+      x2 = x1; x1 = x; y2 = y1; y1 = y;
+      tot += x * x; hi += y * y;
+      if (Math.abs(x) > peak) peak = Math.abs(x);
+    }
+  }
+  return { peak: peak, rms: Math.sqrt(tot / (n * ch)), highFraction: tot > 0 ? hi / tot : 0, seconds: n / sr };
 }
 
 /* ============================ 21. THE PUNCH ============================ */
@@ -2732,7 +2817,10 @@ window.WINDUP_TEST = {
     G.advanceMm = 0; G.readAt = -leadSteps(); G.lastFired = [];
     el('nameChip').textContent = G.strip.name;
   },
-  made: function () { return G.audio ? G.audio.made : 0; }
+  made: function () { return G.audio ? G.audio.made : 0; },
+  /* the ear gate: the loudest passage, rendered offline through the real
+     functions and measured. NEVER off tools/tinewav.mjs, which normalises. */
+  renderAudio: function (seconds, opts) { return renderLoudPassage(seconds, opts); }
 };
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);

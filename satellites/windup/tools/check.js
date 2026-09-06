@@ -27,6 +27,9 @@ const GATES = [
 ];
 const BROWSER_GATES = [
   { name: 'tine', cmd: ['test/tine.mjs'], need: 'TINE OK' },
+  /* the ear gate: peak, rms and the share above 3 kHz off the loudest passage,
+     rendered offline through the real functions. NEVER off the normalised wav. */
+  { name: 'audio', cmd: ['test/audio.mjs'], need: 'AUDIO OK' },
   { name: 'crank', cmd: ['test/crank.mjs'], need: 'CRANK OK' },
   { name: 'gift', cmd: ['test/gift.mjs'], need: 'GIFT OK' },
   { name: 'pdf', cmd: ['test/pdf.mjs'], need: 'PDF OK' },
