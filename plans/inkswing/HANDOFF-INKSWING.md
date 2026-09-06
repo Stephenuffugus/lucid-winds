@@ -12,7 +12,34 @@ on branch `add-sproing-jumper` tonight.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
-- 2026-09-05 Fable: plan written. Nothing built. Next action: section 5, P0, step 1.
+- 2026-09-05 Fable: plan written. Nothing built.
+- 2026-09-06 Opus: **P0 step 1 done.** The scaffold and `tools/check.js` exist and
+  the gate is RED, which is the point of it.
+
+```
+sim             FAIL  0s
+lint            FAIL  0s
+fling           FAIL  0s
+
+================================================================
+
+--- sim (wanted: INKSWING TEST OK) ---
+Error: ENOENT: no such file or directory, open '/workspaces/lucid-winds/satellites/inkswing/index.html'
+
+--- lint (wanted: LINT OK) ---
+Error: Cannot find module '/workspaces/lucid-winds/satellites/inkswing/tools/lint.mjs'
+
+--- fling (wanted: FLING OK) ---
+Error: Cannot find module '/workspaces/lucid-winds/satellites/inkswing/test/fling.mjs'
+
+3 GATES FAILED
+```
+
+  **Next action:** P0 step 2, the SIM layer: CONFIG, RNG, RIGS, MOTION and FLING
+  between the `SIM_EXPORT` markers, then the assertion suite. The two pieces of
+  maths to get exactly right are in section 3.4 and 3.5: the fling mapping
+  (`A = sqrt(x0^2 + (v0/w)^2)`, `phi = atan2(x0 w, v0)`) and the amplitude
+  detune (`w_eff = w (1 - A^2 / (16 L^2))`).
 
 ---
 
