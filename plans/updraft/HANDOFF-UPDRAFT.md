@@ -13,10 +13,11 @@ on branch `add-sproing-jumper` tonight.
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
 - 2026-09-05 Fable: plan written. Nothing built. Next action: section 5, P0, step 1.
-- 2026-09-06 13:25Z, a 110 minute builder (Fable 5.1): **P0 DONE** (`fd30aaa2`), **P1 steps 1, 2, 3, 5 DONE** (`9df87105`): the page plays on a phone, `ALL GATES PASSED` (lint, test, fly, layout), shots opened and judged (section 13). NOT built: P1 step 4 `test/audio.mjs`, all of P2 (gusts on screen, mood picker screen, snap and soft loss copy, Mabel rescue copy exists but no P2 shots, trick stamps ARE on screen, no journal screen, no kite picker), all of P3. Corrections to the plan's numbers in `satellites/updraft/docs/DECISIONS.md` (thirteen lines; the big ones: REEL_RATE 2.5 with REEL_BOOST 6, PAYOUT_RATE 10 only while the kite pulls, STALL_V 1.6, EL_MAX 1.0, apparent mass 0.4 kg).
-  **Next action:** `satellites/updraft/test/audio.mjs`, P1 step 4: extract the `AUDIO` IIFE from index.html (from `var AUDIO = (function () {` to `})();`), evaluate it with CONFIG in Node, and assert `levelsFor(st)` over a scripted Blustery flight: the bed gain rises with `st.gust`, the whine is nonzero only when `st.tN >= STRAIN_AT`, every level under 0.99; wire it into `tools/check.js` as gate `audio` needing `AUDIO OK`; watch it fail with `STRAIN_AT` overridden. Then P2 step 1 (the mood picker screen is the pause MOOD button today, cycling gentle, fresh, blustery).
-  **Faults seen in the shots, for the next session (the morning reader's list):** the line still reads nearly straight under a 20 N hold at 60 m (VIEW.lineGain 4.0, minSag 0.035; raise or draw the bow perpendicular to the line); the dandelion seeds read as bubbles in the sky; the sunny patch reads as a puddle; the tall title (412x915) leaves the lower half empty; the hand is a gold reel that reads as a coin on the grass; Mabel's crown is three flat circles; a freshly placed kite's tail hangs straight down for a second (the tile shows this).
+- 2026-09-06 13:33Z, a 110 minute builder (Fable 5.1): **P0 DONE** (`fd30aaa2`), **P1 DONE** (`9df87105`, `c2b39b31`, `314f70bf`): the page plays on a phone; `ALL GATES PASSED` five gates (lint, test 71 assertions, audio, fly with real pointers, layout at 375, 320 and 412 wide); every gate watched to fail once (section 13); shots opened and judged. NOT built: all of P2 (the mood picker is the pause MOOD button cycling gentle, fresh, blustery; gusts, Mabel and the snap all RUN in the model and on screen but have no P2 shots; trick stamps ARE on screen in calligraphy; no journal screen, no kite picker, no unlocks) and all of P3 (no Real Wind, no daily, no share; the sky DOES follow the device clock, `?hour=19` forces dusk). Corrections to the plan's numbers are in `satellites/updraft/docs/DECISIONS.md` (fourteen lines; the big ones: REEL_RATE 2.5 with REEL_BOOST 6, PAYOUT_RATE 10 only while the kite pulls, STALL_V 1.6, EL_MAX 1.0, apparent mass 0.4 kg, own speed only ever subtracts from airspeed).
+  **Next action:** P2 step 1 in `satellites/updraft/index.html`: a MOOD screen (`#scrMood`, three 72 px cards Gentle, Fresh, Blustery reached from the pause MOOD button and the top left chip) replacing `cycleMood`; then the soft loss copy on a snap (the end screen already says THE LINE SNAPPED and toasts the friend); then `tools/shots.mjs p2-mabel` (place the kite at az 0.70, el 0.2, L 34 and wait for `state().snagged`), `p2-stamp` (the loop script from `sim.js` SCRIPTS.loop with a real thumb), `p2-journal`. Add `#scrMood` buttons to `test/layout.mjs`.
+  **Faults seen in the shots, for the next session (the morning reader's list):** `p1-dive.png` came out five panels not six (two 0.4 s thresholds crossed in one slow frame; make the capture loop catch up); the hint sits across the grass in every panel; the dandelion tufts are small; the real thumb dive in the strip did not stamp Dive Bomb (the sim script does; the thumb's timing under swiftshader is coarse, worth a phone check); `p1-park.png` the kite at 67 m is a small mark and its tail a stub, honest for the distance but thin; the reel at the bottom reads as a gold coin; Mabel's crown is six flat circles; the tall title still leaves the lower third empty; `docs/thumb.png` a freshly placed kite's tail hangs straight down for a second.
   **Director call taken:** none beyond DECISIONS.md. The name UPDRAFT, Blustery only snap, Real Wind in settings stand as the plan says.
+  **For Fable:** the card in section 8 is true: `docs/thumb.png` is 32 KB, the stamp is `20260906a`, no dashes in the copy. Nothing outside the fence was touched. Music chip seat: the bottom left 120x120 is asserted free at three widths.
 
 ---
 
@@ -466,6 +467,33 @@ $ node test/fly.mjs   (the green run, what a real thumb did)
 $ node test/layout.mjs   LAYOUT OK at 375x667, 320x568, 412x915 (every button 48 px and on top at its centre; bottom left 120x120 free)
 $ node tools/thumb.mjs   docs/thumb.png  512 px  31.8 KB  THUMB OK
 $ node tools/shots.mjs   title-tall 40 KB, title-mid 29 KB, title-small 27 KB, p1-dive 84 KB (six panels, 0.4 s apart), p1-park 44 KB (dusk), p1-grass 45 KB, p1-launch 41 KB. All opened with the Read tool; faults in SESSION STATE.
+
+2026-09-06 13:32Z  P1 step 4, test/audio.mjs, and its watched failure
+
+$ node test/audio.mjs
+  ok    the flight gave 600 samples before it ended (still flying)
+  ok    the bed rises with the gust: 0.279 at gust 0.42, 0.121 at gust -0.48
+  ok    the whine is silent under STRAIN_AT (590 samples, loudest 0.000)
+  ok    and sounds above it (10 samples, quietest 0.040)
+  ok    the whine's pitch rises with tension
+  ok    the peak stays under 0.99 (0.314)
+  ok    the bed on the grass is quieter than aloft (0.089 vs 0.149)
+  ok    no flight is a soft bed and no whine
+AUDIO OK
+
+$ node test/audio.mjs --over=STRAIN_AT=0
+  FAIL  the whine is silent under STRAIN_AT (0 samples, loudest -Infinity)
+  FAIL  and sounds above it (600 samples, quietest 0.000)
+  FAIL  the whine's pitch rises with tension
+3 AUDIO FAILURE(S)
+
+$ flock -w 1800 /tmp/sws-gate.lock node tools/check.js   (after the bow fix, commit 314f70bf)
+lint            pass  0s
+test            pass  0s
+audio           pass  0s
+fly             pass  14s
+layout          pass  17s
+ALL GATES PASSED
 ```
 
 ---
