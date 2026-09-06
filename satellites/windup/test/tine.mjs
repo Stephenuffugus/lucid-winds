@@ -160,9 +160,11 @@ try {
     const S = window.WINDUP_TEST.sim();
     const per = 60 / window.WINDUP_TEST.config().AUTO_BPM / 2;
     const strip = S.newStrip(S.STARTERS.twinkle);
-    const holes = strip.holes.slice().sort((a, b) => a[0] - b[0]);
-    const last = holes[holes.length - 1][0];
-    const secs = Math.min(9, 0.06 + (last + 2) * per);
+    /* nine seconds of the strip; the holes the render can hold are the ones
+       the count is against, or a long strip fails a scheduler that is right */
+    const secs = 9;
+    const holes = strip.holes.slice().sort((a, b) => a[0] - b[0])
+      .filter(h => 0.06 + h[0] * per < secs - 0.25);
     const ctx = new OfflineAudioContext(2, Math.round(SR * secs), SR);
     const A = window.WINDUP_TEST.buildAudio(ctx);
     const T0 = 0.06;
@@ -216,7 +218,10 @@ try {
     const sorted = log.slice().sort((a, b) => a - b);
     let bunched = 0;
     for (let i = 1; i < sorted.length; i++) if (sorted[i] - sorted[i - 1] > 1e-6 && sorted[i] - sorted[i - 1] < per * 0.6) bunched++;
-    return { holes: holes.length, scheduled: log.length, steps: steps.length, onGrid, rises, bunched, worst };
+    /* the scheduler hands over a note past the clip line into its lookahead,
+       which is its job; the count is of the notes inside the window */
+    const inWindow = log.filter(w => w < secs - 0.25).length;
+    return { holes: holes.length, scheduled: inWindow, steps: steps.length, onGrid, rises, bunched, worst };
   }, legacy);
   say(auto.scheduled === auto.holes, 'through a 200 ms stall the auto play hands every hole to the audio clock ('
     + auto.scheduled + ' of ' + auto.holes + ')');

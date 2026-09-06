@@ -22,6 +22,36 @@ every difference is in section 3 with its reason.
   section 15 says what is thin and names three Director calls, the first of which
   is Stephen printing one strip and laying it on a real one before the PDF
   leaves beta. ⛔ AND HE HAS NOT HEARD IT: `docs/shots/p0-tine.wav`.
+- 2026-09-06 14:2xZ (a second builder, 25 minutes): **THE AUTO PLAY IS THE
+  SWELL SCHEDULER** (`b7a026b4` and the commit after it). `punchPlayTick` no
+  longer advances the paper by the frame's dt: `autoBegin` fixes a step zero on
+  the audio clock, `autoFill` hands every hole due inside `AUTO_LOOKAHEAD`
+  (100 ms) to `tine()` at its exact time, `autoTimer` tops the queue up every
+  `AUTO_TICK_MS` (25 ms) by setTimeout, and the frame reads the paper's drawn
+  position off `autoStepAt(ctx.currentTime)`. The PLAY button starts and stops
+  the timer; `punchClose` stops it; the strip's end stops it and puts PLAY
+  back on the button. The crank path is untouched and `test/crank.mjs` is
+  green exactly as it was. `test/tine.mjs` grew four assertions that drive the
+  scheduler with the gate's own clock against an OfflineAudioContext through a
+  200 ms hole in the ticks at one second: every note inside the window handed
+  over, every one on the strip's grid within 5 ms, none bunched, and the
+  rendered buffer rising at every grid time. `node test/tine.mjs --legacy`
+  drives the OLD per frame advance through the same stall and goes red on
+  three of the four (one note dropped, 0 of 13 on the grid, worst 313 ms).
+  The three wrapping papers were then looked at (`docs/shots/p2-gift.png`,
+  `p2-gift-night.png`): random dots over stripes read as noise, the ribbon
+  read as tape. Each paper now has a lattice repeat (confetti, a six armed
+  flake, a star field with a big star every fifth cell), a laid grain, and the
+  ribbon a satin highlight and a shadow edge; the second look caught the loose
+  end inheriting the shadow's black and it was fixed. Stamp 20260906d.
+  Gates at the stop: sim 119 green, lint green, crank green, tine (see the
+  line below), the others not rerun by this builder because index.html only
+  changed in the auto play and the wrapping paper.
+  **Next action:** run `node tools/check.js` once under the lock for the full
+  eight; then Stephen presses PLAY in the punch editor on his phone and listens
+  for the swirl to be even, which is the one thing the offline gate cannot
+  hear. If he wants the paper richer, the next step is a second ink per paper
+  (a lighter stripe under the confetti, a moon on the night sky).
 
 ---
 
