@@ -26,12 +26,16 @@ const FAST = process.argv.includes('--fast');
 
 const GATES = [
   { name: 'sim', cmd: ['sim.js', '--test'], need: 'DOOHICKEY TEST OK' },
+  { name: 'lint', cmd: ['tools/lint.mjs'], need: 'LINT OK' },
   { name: 'solve', cmd: ['sim.js', '--solve'], need: 'DOOHICKEY SOLVE OK' },
   { name: 'replay', cmd: ['sim.js', '--replay=100'], need: 'DOOHICKEY REPLAY OK' },
   { name: 'dominoes', cmd: ['sim.js', '--dominoes=100'], need: 'DOOHICKEY DOMINO OK', slow: true },
   { name: 'mutants', cmd: ['test/mutants.mjs'], need: 'MUTANTS OK', slow: true }
 ];
-const BROWSER_GATES = [];
+const BROWSER_GATES = [
+  { name: 'edit', cmd: ['test/edit.mjs'], need: 'EDIT OK' },
+  { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK', slow: true }
+];
 
 const results = [];
 try {

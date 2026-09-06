@@ -56,5 +56,38 @@ for (const [w, h, tag] of [[667, 375, 'wide'], [375, 667, 'tall']]) {
   });
 }
 
+/* the editor with a part selected and its handles up, and a red ghost */
+for (const [w, h, tag] of [[667, 375, 'wide'], [375, 667, 'tall']]) {
+  await withPage(w, h, async (page, shot) => {
+    await page.evaluate(() => { DOOHICKEY_TEST.start(5); DOOHICKEY_TEST.solution(); });
+    await waitFrames(page, 2);
+    await page.evaluate(() => {
+      const p = DOOHICKEY_TEST.parts()[1];
+      const pt = DOOHICKEY_TEST.toScreen(p.x, p.y);
+      const cv = document.getElementById('board');
+      const o = { pointerId: 31, pointerType: 'touch', isPrimary: true, bubbles: true,
+        cancelable: true, clientX: pt.x, clientY: pt.y };
+      cv.dispatchEvent(new PointerEvent('pointerdown', o));
+      cv.dispatchEvent(new PointerEvent('pointerup', o));
+    });
+    await waitFrames(page, 2);
+    if (want('p1-editor')) await shot('p1-editor-' + tag);
+    /* and a ghost that does not fit */
+    await page.evaluate(() => {
+      const tile = document.querySelector('#tray .tile[data-part="domino"]');
+      const r = tile.getBoundingClientRect();
+      const p = DOOHICKEY_TEST.parts()[6];
+      const to = DOOHICKEY_TEST.toScreen(p.x, p.y);
+      const id = 32;
+      const mk = (t, x, y) => new PointerEvent(t, { pointerId: id, pointerType: 'touch',
+        isPrimary: true, bubbles: true, cancelable: true, clientX: x, clientY: y });
+      tile.dispatchEvent(mk('pointerdown', r.left + r.width / 2, r.top + r.height / 2));
+      window.dispatchEvent(mk('pointermove', to.x, to.y));
+    });
+    await waitFrames(page, 2);
+    if (want('p1-ghost')) await shot('p1-ghost-' + tag);
+  });
+}
+
 s.close();
 console.log('shots done');

@@ -46,7 +46,15 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
 .btn.stop{background:var(--red);color:#FFF7E4}
 .btn.ghost{background:transparent;box-shadow:none;border-color:var(--line);color:#6B5C42}
 .btn[disabled]{opacity:.42}
-#btnGo{position:absolute;right:calc(14px + var(--safeR));bottom:calc(84px + var(--safeB));min-width:96px}
+/* ⛔ NOT the bottom right corner, and NOT the bottom centre either. In
+   landscape the scene is 16:9 and so is the screen, so every button sits ON the
+   board and the only question is what it covers. The bottom right holds the
+   bell in four levels out of six; the bottom centre holds the floor, which is
+   where dominoes and bells live. The top centre is sky in every level, so both
+   GO and STOP live there. */
+#btnGo{position:absolute;left:50%;transform:translateX(-50%);
+  top:calc(10px + var(--safeT));min-width:120px}
+#btnGo:active{transform:translateX(-50%) translateY(2px)}
 /* ⛔ NOT the bottom right corner. That is where a level's bell tends to sit,
    and a button over the goal hides the one thing the player is watching. A run
    stops on a tap anywhere, so this only has to be findable, not enormous. */
@@ -55,13 +63,23 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
 #btnUndo{position:absolute;left:calc(14px + var(--safeL));top:calc(12px + var(--safeT))}
 #btnRedo{position:absolute;left:calc(70px + var(--safeL));top:calc(12px + var(--safeT))}
 #btnMenu{position:absolute;right:calc(14px + var(--safeR));top:calc(12px + var(--safeT))}
-#partCount{position:absolute;left:50%;transform:translateX(-50%);top:calc(18px + var(--safeT));
+#partCount{position:absolute;left:calc(14px + var(--safeL));top:calc(70px + var(--safeT));
   pointer-events:none;font-size:.82rem;font-weight:700;letter-spacing:.08em;color:#6B5C42}
 #tray{position:absolute;left:0;right:0;bottom:0;height:76px;pointer-events:auto;
   background:var(--paper2);border-top:3px solid var(--ink);
   display:flex;gap:8px;align-items:center;overflow-x:auto;overflow-y:hidden;
   padding:6px calc(120px + var(--safeR)) calc(6px + var(--safeB)) calc(126px + var(--safeL))}
 #tray[hidden]{display:none}
+/* ⛔ in portrait the tray CANNOT be a scrolling row along the bottom: with five
+   part types it scrolls straight into the bottom left 120 by 120, which belongs
+   to the fleet's music chip. Below the letterboxed scene, wrapped into rows,
+   clear of that corner. */
+@media (orientation:portrait){
+  #tray{top:auto;bottom:calc(136px + var(--safeB));height:auto;max-height:150px;
+    flex-wrap:wrap;justify-content:flex-start;overflow-x:hidden;overflow-y:auto;
+    border-bottom:3px solid var(--ink);
+    padding:8px calc(12px + var(--safeR)) 8px calc(12px + var(--safeL))}
+}
 .tile{flex:0 0 auto;width:56px;height:56px;border:3px solid var(--ink);border-radius:12px;
   background:var(--paper);position:relative;padding:0;font-family:inherit}
 .tile canvas{width:100%;height:100%;display:block;border-radius:9px}
@@ -1774,7 +1792,7 @@ function suiteCopy(T) {
 function suitePurity(T, src) {
   var code = src.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^[ \t]*\/\/.*$/gm, ' ');
   T.assert('the comment stripper left the code behind', code.length > 12000);
-  T.assert('and it took the prose with it', code.indexOf('DETERMINISM IS LAW') < 0);
+  T.assert('and it took the prose with it', code.indexOf("the design" + "'s words") < 0);
   var banned = ['Math.random', 'Math.sin', 'Math.cos', 'Math.atan2', 'Math.pow', 'Math.exp', 'Math.hypot'];
   var found = [], i;
   for (i = 0; i < banned.length; i++) if (code.indexOf(banned[i]) >= 0) found.push(banned[i]);
@@ -1812,10 +1830,14 @@ function fitCanvas() {
   cv.height = Math.round(V.H * V.dpr);
   /* ⛔ canvas.width CLEARS the context, so the transform is set after it */
   V.ctx.setTransform(V.dpr, 0, 0, V.dpr, 0, 0);
-  var trayH = TRAY_SHOWING ? 76 : 0;
+  /* landscape: the tray is a dock along the bottom and the scene sits above it.
+     portrait: the scene letterboxes to the width and there is room to spare, so
+     the scene is nudged up out of the tray's way rather than shrunk. */
+  var portrait = V.H > V.W;
+  var trayH = TRAY_SHOWING ? (portrait ? 0 : 76) : 0;
   V.k = Math.min(V.W / CONFIG.SCENE_W, (V.H - trayH) / CONFIG.SCENE_H);
   V.ox = 0;
-  V.oy = -trayH / 2;
+  V.oy = portrait && TRAY_SHOWING ? -Math.min(110, (V.H - CONFIG.SCENE_H * V.k) / 2 - 10) : -trayH / 2;
 }
 
 /* ---- the paper ---- */
@@ -2117,6 +2139,7 @@ function showScreen(name) {
   G.screen = name === 'Build' ? 'build' : name.toLowerCase();
   var inBuild = (name === 'Build');
   el('tray').hidden = !inBuild || G.running;
+  if (!inBuild || G.running) { SEL = -1; GHOST = null; hideHandles(); }
   TRAY_SHOWING = !el('tray').hidden;
   el('btnGo').hidden = !inBuild || G.running;
   el('btnStop').hidden = !inBuild || !G.running;
@@ -2141,6 +2164,8 @@ function startLevel(id) {
   showScreen('Build');
   renderTray();
   updateCount();
+  UNDO.length = 0; REDO.length = 0;
+  SEL = -1; GHOST = null; hideHandles(); refreshEditChrome();
 }
 /* the board you edit is a world too, so the picture is the same one you run */
 function rebuildPreview() {
@@ -2170,7 +2195,12 @@ function renderTray() {
   }
   bar.innerHTML = html;
   var tiles = bar.querySelectorAll('.tile'), i;
-  for (i = 0; i < tiles.length; i++) drawTile(tiles[i].querySelector('canvas'), tiles[i].getAttribute('data-part'));
+  for (i = 0; i < tiles.length; i++) {
+    drawTile(tiles[i].querySelector('canvas'), tiles[i].getAttribute('data-part'));
+    tiles[i].addEventListener('pointerdown', function (e) {
+      trayPointerDown(e, this.getAttribute('data-part'));
+    });
+  }
 }
 /* the tray tile is drawn by the SAME code as the part on the board */
 function drawTile(cv, type) {
@@ -2256,8 +2286,10 @@ function frame(ts) {
   LAST = ts; V.t = ts; FRAMES++;
   if (G.running) { tickRun(dt); easeCamera(G.world, dt); }
   stepPuffs(dt);
-  if (G.world) drawScene(V.ctx, G.world, G.level, G.touched);
-  else { drawPaper(V.ctx); }
+  if (G.world) {
+    drawScene(V.ctx, G.world, G.level, G.touched);
+    if (!G.running) { drawSelection(V.ctx); drawGhost(V.ctx); }
+  } else drawPaper(V.ctx);
   RAF = requestAnimationFrame(frame);
 }
 function kick() { if (!RAF && !document.hidden) RAF = requestAnimationFrame(frame); }
@@ -2314,6 +2346,31 @@ function boot() {
   el('btnStop').addEventListener('click', function () { stopRun(); });
   el('btnMenu').addEventListener('click', function () { el('scrMenu').classList.add('on'); });
   el('btnMenuClose').addEventListener('click', function () { el('scrMenu').classList.remove('on'); });
+  el('btnSound').addEventListener('click', function () {
+    SAVE.settings.sound = SAVE.settings.sound ? 0 : 1;
+    this.textContent = SAVE.settings.sound ? 'SOUND ON' : 'SOUND OFF';
+    saveNow();
+  });
+  el('btnMotion').addEventListener('click', function () {
+    SAVE.settings.motion = SAVE.settings.motion ? 0 : 1;
+    REDUCED = !SAVE.settings.motion
+      || !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    this.textContent = SAVE.settings.motion ? 'MOTION ON' : 'MOTION OFF';
+    saveNow();
+  });
+  el('btnFree').addEventListener('click', function () {
+    SAVE.settings.freePlace = SAVE.settings.freePlace ? 0 : 1;
+    this.textContent = SAVE.settings.freePlace ? 'PLACE ANYWHERE' : 'SNAP TO THE GRID';
+    saveNow();
+  });
+  el('btnClear').addEventListener('click', function () {
+    if (!G.machine.parts.length) { toast('The board is already empty.'); return; }
+    pushUndo();
+    G.machine.parts.length = 0;
+    SEL = -1; hideHandles();
+    rebuildPreview(); renderTray(); updateCount();
+    el('scrMenu').classList.remove('on');
+  });
   el('btnLevels').addEventListener('click', function () {
     el('scrMenu').classList.remove('on'); renderLevelList(); showScreen('Select');
   });
@@ -2333,6 +2390,19 @@ function boot() {
     if (document.hidden) { if (RAF) cancelAnimationFrame(RAF); RAF = 0; LAST = 0; saveNow(); }
     else kick();
   });
+  bindEditor();
+  /* the ghost follows the finger even after it leaves the tray tile, so the
+     move and up listeners live on the window, not on the tile */
+  window.addEventListener('pointermove', function (e) {
+    if (GHOST && GHOST.from < 0 && GHOST.id === e.pointerId) updateGhost(e.clientX, e.clientY);
+  });
+  window.addEventListener('pointerup', function (e) {
+    if (GHOST && GHOST.from < 0 && GHOST.id === e.pointerId) {
+      var w = { x: unsx(e.clientX), y: unsy(e.clientY) };
+      if (w.x < 0 || w.x > CONFIG.SCENE_W || w.y < 0 || w.y > CONFIG.SCENE_H) GHOST = null;
+      else dropGhost();
+    }
+  });
   kick();
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
@@ -2341,6 +2411,311 @@ function boot() {
   }
   try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {}
   window.addEventListener('load', function () { try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {} });
+}
+
+/* ========================= 18. EDITOR ========================= */
+/* The genre's scar is a touch editor that fails silently: you drop a part, it
+   does not go where you meant, and the machine quietly does not work. So the
+   ghost is red on a real overlap test, the snap is visible, and every handle is
+   48 px ABOVE the finger rather than under it. */
+var SEL = -1, GHOST = null, DRAG = null, LP = 0, PRESS = null;
+var POINTERS = {}, PINCH = null;
+var UNDO = [], REDO = [];
+
+function snapshot() { return JSON.stringify(G.machine.parts); }
+function pushUndo() {
+  UNDO.push(snapshot());
+  if (UNDO.length > CONFIG.UNDO_MAX) UNDO.shift();
+  REDO.length = 0;
+  refreshEditChrome();
+}
+function applyParts(json) {
+  G.machine.parts = JSON.parse(json);
+  rebuildPreview(); renderTray(); updateCount(); refreshEditChrome();
+}
+function undo() {
+  if (!UNDO.length) return false;
+  REDO.push(snapshot());
+  applyParts(UNDO.pop());
+  SEL = -1; hideHandles();
+  return true;
+}
+function redo() {
+  if (!REDO.length) return false;
+  UNDO.push(snapshot());
+  applyParts(REDO.pop());
+  SEL = -1; hideHandles();
+  return true;
+}
+function refreshEditChrome() {
+  el('btnUndo').disabled = !UNDO.length;
+  el('btnRedo').disabled = !REDO.length;
+}
+
+function snapPos(x, y) {
+  if (SAVE.settings.freePlace) return { x: Math.round(x), y: Math.round(y) };
+  var c = CONFIG.CELL;
+  return { x: Math.round(x / c) * c, y: Math.round(y / c) * c };
+}
+function snapRot(rot) {
+  if (SAVE.settings.freePlace) return rot;
+  return detentAngle(detentIndex(rot));
+}
+/* ⛔ a real separating axis test through the ENGINE'S OWN collide, not a
+   bounding box. A box test says a tilted plank overlaps things it does not
+   touch, and the player learns to distrust the red. */
+function ghostOverlaps(part, ignoreIndex) {
+  var m = newMachine(), i, k;
+  for (i = 0; i < G.machine.parts.length; i++) {
+    if (i === ignoreIndex) continue;
+    m.parts.push(G.machine.parts[i]);
+  }
+  var w = buildWorld(G.level, m);
+  var before = w.bodies.length;
+  PARTS[part.type].make(w, part.x, part.y, part.rot || 0);
+  for (i = 0; i < w.bodies.length; i++) w.bodies[i].updateAABB();
+  for (i = before; i < w.bodies.length; i++) {
+    for (k = 0; k < before; k++) {
+      var man = PHYS.collide(w.bodies[i], w.bodies[k]);
+      /* touching is not overlapping: a domino STANDS on the floor */
+      if (man && man.penetration > 1.5) return true;
+    }
+  }
+  return false;
+}
+function inBounds(part) {
+  var p = PARTS[part.type], half = Math.max(p.w || 20, p.h || 20) / 2;
+  return part.x > half * 0.4 && part.x < CONFIG.SCENE_W - half * 0.4
+    && part.y > half * 0.4 && part.y < CONFIG.SCENE_H - half * 0.4;
+}
+function partAt(wx2, wy2) {
+  var i, best = -1, bd = 1e9;
+  for (i = G.machine.parts.length - 1; i >= 0; i--) {
+    var p = G.machine.parts[i], def = PARTS[p.type];
+    var reach = Math.max(def.w || 24, def.h || 24) / 2 + 8;
+    var d = len2(p.x - wx2, p.y - wy2);
+    if (d < reach && d < bd) { bd = d; best = i; }
+  }
+  return best;
+}
+function hideHandles() { el('handles').classList.remove('on'); }
+function showHandles() {
+  if (SEL < 0 || G.running) { hideHandles(); return; }
+  var p = G.machine.parts[SEL];
+  var h = el('handles');
+  h.classList.add('on');
+  /* ⛔ 72 px ABOVE the part, clamped inside the viewport. Under the finger is
+     under the thumb, and a thumb hides what it is pressing. */
+  var px = sx(p.x), py = sy(p.y) - 72;
+  var w = h.offsetWidth || 216, hh = h.offsetHeight || 48;
+  h.style.left = Math.round(clamp(px - w / 2, 8, V.W - w - 8)) + 'px';
+  h.style.top = Math.round(clamp(py - hh / 2, 8, V.H - hh - 90)) + 'px';
+}
+function buildHandles() {
+  el('handles').innerHTML =
+    '<button class="btn icon" id="hRot" aria-label="Turn it">&#8635;</button>'
+    + '<button class="btn icon" id="hFlip" aria-label="Flip it">&#8646;</button>'
+    + '<button class="btn icon" id="hDup" aria-label="One more">&#43;</button>'
+    + '<button class="btn icon" id="hDel" aria-label="Take it away">&#215;</button>';
+  el('hRot').addEventListener('click', function () {
+    if (SEL < 0) return;
+    pushUndo();
+    var p = G.machine.parts[SEL];
+    p.rot = snapRot(p.rot + CONFIG.ROT_DETENT_DEG * DEG);
+    rebuildPreview(); showHandles(); haptic(8);
+  });
+  el('hFlip').addEventListener('click', function () {
+    if (SEL < 0) return;
+    pushUndo();
+    var p = G.machine.parts[SEL];
+    p.flip = p.flip ? 0 : 1;
+    p.rot = snapRot(-p.rot);
+    rebuildPreview(); showHandles(); haptic(8);
+  });
+  el('hDup').addEventListener('click', function () {
+    if (SEL < 0) return;
+    var p = G.machine.parts[SEL];
+    if (trayLeft(p.type) <= 0) { toast('There are no more of those in the tray.'); return; }
+    var copy = { type: p.type, x: p.x + CONFIG.CELL, y: p.y, rot: p.rot, flip: p.flip };
+    if (!inBounds(copy) || ghostOverlaps(copy, -1)) { toast('There is no room beside it.'); return; }
+    pushUndo();
+    G.machine.parts.push(copy);
+    SEL = G.machine.parts.length - 1;
+    rebuildPreview(); renderTray(); updateCount(); showHandles(); haptic(8);
+  });
+  el('hDel').addEventListener('click', function () {
+    if (SEL < 0) return;
+    pushUndo();
+    G.machine.parts.splice(SEL, 1);
+    SEL = -1;
+    rebuildPreview(); renderTray(); updateCount(); hideHandles(); haptic(10);
+  });
+}
+
+/* ---- the tray, dragged out ---- */
+function trayPointerDown(e, type) {
+  if (G.running) return;
+  if (trayLeft(type) <= 0) { toast('The tray is out of those.'); return; }
+  var w = { x: unsx(e.clientX), y: unsy(e.clientY) };
+  GHOST = { type: type, x: w.x, y: w.y, rot: 0, flip: 0, from: -1, ok: false, id: e.pointerId };
+  updateGhost(e.clientX, e.clientY);
+}
+function updateGhost(px, py) {
+  if (!GHOST) return;
+  var w = { x: unsx(px), y: unsy(py) };
+  var snapped = snapPos(w.x, w.y);
+  GHOST.x = snapped.x; GHOST.y = snapped.y;
+  GHOST.ok = inBounds(GHOST) && !ghostOverlaps(GHOST, GHOST.from);
+}
+function dropGhost() {
+  if (!GHOST) return;
+  var g = GHOST;
+  GHOST = null;
+  if (!g.ok) {
+    if (g.from >= 0) { toast('It does not fit there.'); }
+    else toast('It does not fit there.');
+    return;
+  }
+  pushUndo();
+  if (g.from >= 0) {
+    var p = G.machine.parts[g.from];
+    p.x = g.x; p.y = g.y;
+    SEL = g.from;
+  } else {
+    G.machine.parts.push({ type: g.type, x: g.x, y: g.y, rot: g.rot, flip: g.flip });
+    SEL = G.machine.parts.length - 1;
+  }
+  rebuildPreview(); renderTray(); updateCount(); showHandles();
+  haptic(8);
+}
+function returnToTray(index) {
+  pushUndo();
+  G.machine.parts.splice(index, 1);
+  SEL = -1;
+  rebuildPreview(); renderTray(); updateCount(); hideHandles();
+  toast('Back in the tray.');
+}
+
+/* ---- the board's own pointers ---- */
+function bindEditor() {
+  var cv = V.cv;
+  buildHandles();
+  cv.addEventListener('pointerdown', function (e) {
+    POINTERS[e.pointerId] = { x: e.clientX, y: e.clientY };
+    if (Object.keys(POINTERS).length === 2 && !GHOST) { startPinch(); return; }
+    if (G.running) { stopRun(); return; }
+    if (el('winCard').classList.contains('on')) return;
+    PRESS = { x: e.clientX, y: e.clientY, t: performance.now(), moved: 0, id: e.pointerId };
+    var w = { x: unsx(e.clientX), y: unsy(e.clientY) };
+    var hit = partAt(w.x, w.y);
+    if (hit >= 0) {
+      SEL = hit;
+      showHandles();
+      DRAG = { index: hit, ox: G.machine.parts[hit].x - w.x, oy: G.machine.parts[hit].y - w.y };
+    } else {
+      SEL = -1; hideHandles();
+    }
+  });
+  cv.addEventListener('pointermove', function (e) {
+    if (POINTERS[e.pointerId]) { POINTERS[e.pointerId].x = e.clientX; POINTERS[e.pointerId].y = e.clientY; }
+    if (PINCH) { movePinch(); return; }
+    if (GHOST) { updateGhost(e.clientX, e.clientY); return; }
+    if (!PRESS) return;
+    PRESS.moved = Math.max(PRESS.moved, len2(e.clientX - PRESS.x, e.clientY - PRESS.y));
+    if (DRAG && PRESS.moved > CONFIG.TAP_SLOP) {
+      var p = G.machine.parts[DRAG.index];
+      GHOST = { type: p.type, x: p.x, y: p.y, rot: p.rot, flip: p.flip, from: DRAG.index, ok: true, id: e.pointerId };
+      DRAG = null;
+      hideHandles();
+      updateGhost(e.clientX, e.clientY);
+    }
+  });
+  function up(e) {
+    delete POINTERS[e.pointerId];
+    if (PINCH && Object.keys(POINTERS).length < 2) PINCH = null;
+    if (GHOST && GHOST.id === e.pointerId) {
+      /* dragged off the sheet: it goes back in the tray */
+      var w = { x: unsx(e.clientX), y: unsy(e.clientY) };
+      var off = w.x < 0 || w.x > CONFIG.SCENE_W || w.y < 0 || w.y > CONFIG.SCENE_H;
+      var from = GHOST.from;
+      if (off && from >= 0) { GHOST = null; returnToTray(from); }
+      else if (off) { GHOST = null; }
+      else dropGhost();
+    }
+    DRAG = null; PRESS = null;
+    clearTimeout(LP);
+  }
+  cv.addEventListener('pointerup', up);
+  cv.addEventListener('pointercancel', function (e) {
+    delete POINTERS[e.pointerId];
+    GHOST = null; DRAG = null; PRESS = null; PINCH = null;
+  });
+  el('btnUndo').addEventListener('click', function () { if (!undo()) toast('Nothing to undo.'); });
+  el('btnRedo').addEventListener('click', function () { if (!redo()) toast('Nothing to redo.'); });
+}
+/* two fingers: a pinch is a zoom and a pan at once */
+function pointerPair() {
+  var ks = Object.keys(POINTERS);
+  if (ks.length < 2) return null;
+  return [POINTERS[ks[0]], POINTERS[ks[1]]];
+}
+function startPinch() {
+  var pr = pointerPair();
+  if (!pr) return;
+  var d = len2(pr[0].x - pr[1].x, pr[0].y - pr[1].y);
+  if (d < CONFIG.PINCH_MIN_D) return;
+  PINCH = { d0: d, zoom0: V.zoom, cx0: (pr[0].x + pr[1].x) / 2, cy0: (pr[0].y + pr[1].y) / 2,
+    camX0: V.camX, camY0: V.camY };
+  GHOST = null; DRAG = null; PRESS = null;
+  hideHandles();
+}
+function movePinch() {
+  var pr = pointerPair();
+  if (!pr || !PINCH) return;
+  var d = len2(pr[0].x - pr[1].x, pr[0].y - pr[1].y);
+  if (d < 1) return;
+  V.zoom = clamp(PINCH.zoom0 * (d / PINCH.d0), CONFIG.ZOOM_MIN, CONFIG.ZOOM_MAX);
+  var cx = (pr[0].x + pr[1].x) / 2, cy = (pr[0].y + pr[1].y) / 2;
+  V.camX = PINCH.camX0 - (cx - PINCH.cx0) / (V.k * V.zoom);
+  V.camY = PINCH.camY0 - (cy - PINCH.cy0) / (V.k * V.zoom);
+}
+
+/* the ghost, and the selection ring, drawn over the board */
+function drawGhost(ctx) {
+  if (!GHOST) return;
+  var w = buildWorld({ scene: [], fixed: [], bonus: [] },
+    withParts([{ type: GHOST.type, x: GHOST.x, y: GHOST.y, rot: GHOST.rot }]));
+  var i;
+  ctx.save();
+  ctx.globalAlpha = 0.72;
+  for (i = 0; i < w.bodies.length; i++) {
+    var b = w.bodies[i];
+    bodyOutline(ctx, b, 1);
+    ctx.fillStyle = GHOST.ok ? 'rgba(78,154,82,.42)' : 'rgba(216,80,60,.42)';
+    ctx.fill();
+    ctx.strokeStyle = GHOST.ok ? '#4E9A52' : '#D8503C';
+    ctx.lineWidth = Math.max(2, ss(3));
+    ctx.stroke();
+  }
+  ctx.restore();
+  /* the cell it will land in, so the snap is visible rather than a surprise */
+  if (!SAVE.settings.freePlace) {
+    ctx.strokeStyle = GHOST.ok ? 'rgba(78,154,82,.7)' : 'rgba(216,80,60,.7)';
+    ctx.lineWidth = Math.max(1, ss(1.5));
+    ctx.strokeRect(sx(GHOST.x - CONFIG.CELL / 2), sy(GHOST.y - CONFIG.CELL / 2), ss(CONFIG.CELL), ss(CONFIG.CELL));
+  }
+}
+function drawSelection(ctx) {
+  if (SEL < 0 || G.running || SEL >= G.machine.parts.length) return;
+  var p = G.machine.parts[SEL], def = PARTS[p.type];
+  var r = Math.max(def.w || 24, def.h || 24) / 2 + 8;
+  ctx.strokeStyle = '#E8B33C';
+  ctx.lineWidth = Math.max(2, ss(3));
+  ctx.setLineDash([ss(6), ss(5)]);
+  ctx.beginPath();
+  ctx.arc(sx(p.x), sy(p.y), ss(r), 0, 6.2832);
+  ctx.stroke();
+  ctx.setLineDash([]);
 }
 
 window.DOOHICKEY_TEST = {
@@ -2382,6 +2757,13 @@ window.DOOHICKEY_TEST = {
   toWorld: function (px, py) { return { x: unsx(px), y: unsy(py) }; },
   screen: function () { return G.screen; },
   showScreen: function (n) { showScreen(n); },
+  select: function () { return SEL; },
+  ghost: function () { return GHOST; },
+  undoDepth: function () { return UNDO.length; },
+  redoDepth: function () { return REDO.length; },
+  trayLeft: function (t) { return trayLeft(t); },
+  parts: function () { return G.machine.parts; },
+  overlaps: function (p) { return ghostOverlaps(p, -1); },
   save: function () { return SAVE; }
 };
 

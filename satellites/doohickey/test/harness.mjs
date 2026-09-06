@@ -139,3 +139,23 @@ export async function waitFrames(page, n) {
   const now = await page.evaluate(() => window.DOOHICKEY_TEST.frames());
   await page.waitForFunction((f) => window.DOOHICKEY_TEST.frames() > f, { timeout: 40000 }, now + n);
 }
+
+/* A real two finger pinch: two pointers down, both moving apart or together,
+   both up. The page's own pinch handler is what turns this into a field of
+   view; nothing here writes to the app. */
+export async function pinch(page, cx, cy, fromGap, toGap, steps = 8) {
+  const put = (type, id, x, y) => page.evaluate((type, id, x, y) => {
+    const el = document.getElementById('board');
+    el.dispatchEvent(new PointerEvent(type, { pointerId: id, pointerType: 'touch',
+      isPrimary: id === 31, bubbles: true, cancelable: true, clientX: x, clientY: y }));
+  }, type, id, x, y);
+  await put('pointerdown', 31, cx - fromGap / 2, cy);
+  await put('pointerdown', 32, cx + fromGap / 2, cy);
+  for (let i = 1; i <= steps; i++) {
+    const g = fromGap + (toGap - fromGap) * i / steps;
+    await put('pointermove', 31, cx - g / 2, cy);
+    await put('pointermove', 32, cx + g / 2, cy);
+  }
+  await put('pointerup', 31, cx - toGap / 2, cy);
+  await put('pointerup', 32, cx + toGap / 2, cy);
+}
