@@ -174,12 +174,18 @@ Plain text with blank lines between paragraphs renders correctly no matter how i
 pasted. The AI disclosure box is rendered by Valve automatically from the separate form,
 so the About body does not repeat it.
 
-**Paste this exactly, no tags, keep the blank lines:**
+**LIVE since 2026-09-06 (Stephen's hook, ChatGPT polished, verified on the live page, zero brackets):**
 
 ```
-Jimothy is a raccoon. He is round, he is hungry, and the best dumpster in Seattle is a hundred levels away.
+Jimothy is Seattle's happiest little trash nugget.
 
-Hop him across traffic, ride a dumpster lid down the canal, and grab every bottlecap on the way. Every clean hop forward builds your Feast Trail. Make it to a safe curb and it banks for a big score. One bad hop and the whole trail is gone. That is the game, and it is why a two minute run still stings.
+He loves snacks, shiny things, questionable decisions, and one dumpster in particular that just happens to be 100 levels away.
+
+Getting there is your problem.
+
+Hop through traffic, dodge buses, surf a dumpster lid down the canal, and scoop up every bottlecap you can along the way. Every clean hop builds your Feast Trail. Reach a safe curb and you bank it for a bigger score. Get flattened halfway there and you lose the whole thing.
+
+It is easy to understand, hard to put down, and extremely easy to blame on Jimothy when you completely screw up a perfectly good run.
 
 WHAT YOU GET
 
