@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="WHISTLESTOP">
-<link rel="manifest" href="./manifest.webmanifest?v=20260906c">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260906c">
-<link rel="icon" href="./icon-192.png?v=20260906c">
+<link rel="manifest" href="./manifest.webmanifest?v=20260906d">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260906d">
+<link rel="icon" href="./icon-192.png?v=20260906d">
 <link rel="canonical" href="https://lucidwinds.com/satellites/whistlestop/">
 <style>
 /*  WHISTLESTOP
@@ -100,8 +100,12 @@ html,body{margin:0;padding:0;height:100%;background:var(--floor);color:var(--ink
    left 120 by 120, which belongs to the fleet's music chip. Portrait wraps the
    tray into rows above that corner instead. */
 @media (orientation:portrait){
-  #btnWhistle{bottom:calc(52px + var(--safeB))}
-  #tray{left:50%;right:auto;transform:translateX(-50%);width:min(300px,96vw);
+  /* the whistle used to sit alone on the floor strip below the tray on a tall
+     phone. It now shares the tray's bottom edge, and the tray moves left to
+     leave it the thumb corner. */
+  #btnWhistle{bottom:calc(126px + var(--safeB))}
+  #tray{left:calc(14px + var(--safeL));right:auto;transform:none;
+    width:min(300px,calc(100vw - 104px - var(--safeL) - var(--safeR)));
     bottom:calc(126px + var(--safeB));flex-wrap:wrap;justify-content:center;
     overflow-x:hidden;overflow-y:auto;max-height:40%;
     border:3px solid var(--ink);border-radius:18px;
@@ -175,7 +179,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--floor);color:var(--ink
 .swatch{width:34px;height:34px;border-radius:10px;border:3px solid var(--ink);flex:0 0 auto}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260906c" defer></script>
+<script src="/music-unlocks.js?v=20260906d" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">WHISTLESTOP</h1>
@@ -884,7 +888,9 @@ function stepSim(st, dt) {
   for (i in hit) {
     var t2 = st.trains[i];
     t2.p = before[i].p; t2.dir = before[i].dir;
-    if (!t2.collided) st.events.push({ t: 'clonk', train: t2 });
+    /* fault: a train that was MOVING at the moment of the bump. A train standing
+       still was hit; the one rolling into it is the one to look at. */
+    if (!t2.collided) st.events.push({ t: 'clonk', train: t2, fault: t2.speedIx > 0 });
     t2.collided = true; t2.speedIx = 0;
     st.collided = true; st.everStopped = true;
   }
@@ -1129,11 +1135,14 @@ var PUZZLES = [
       ['rep', 3, 'straight'],
       ['from', 4, 2],
       ['p', 'straight'],
-      ['at', 9.8, -1.9, 90],
+      /* the blue line runs UP the rug from the bottom, so Blue's station is top
+         right and Red's is bottom right: two destinations, two directions. It
+         used to run down and both stations met in the bottom right corner. */
+      ['at', 9.8, 13.1, 270],
       ['rep', 4, 'straight'],
-      ['p', 'yL'],
+      ['p', 'yR'],
       ['rep', 2, 'straight'],
-      ['from', 8, 3],
+      ['from', 8, 2],
       ['p', 'straight']
     ],
     stations: [
@@ -1150,6 +1159,104 @@ var PUZZLES = [
       { atS: 0.10, piece: 17, to: 1 },
       { atS: 3.00, piece: 17, to: 0 }
     ]
+  },
+  {
+    id: 2, name: "The Passing Loop",
+    goal: "Get both trains past each other and home.",
+    par: 1, rails: 1,
+    /* real railroading's oldest puzzle. One line, two switches facing each
+       other, a loop between them, a train at each end heading for the other
+       end. The loop has to be ENTERED, not waited in, because the third star
+       forbids a stop. Authored top to bottom so a phone held upright holds it.
+       The far switch is laid facing back up the line and its straight end
+       lands on the last straight of the main line, which the snap closes; the
+       loop's second curve lands 0.07 U short of the far switch's fork, well
+       inside MERGE_EPS. */
+    build: [
+      ["at", 4.5, 1, 90],
+      ["rep", 2, "straight"],
+      ["p", "yR"],
+      ["rep", 6, "straight"],
+      ["at", 4.5, 11, 270],
+      ["p", "yL"],
+      ["from", 9, 0],
+      ["rep", 2, "straight"],
+      ["from", 2, 2],
+      ["p", "curveL"],
+      ["p", "curveL"]
+    ],
+    stations: [
+      { piece: 11, end: 1, colour: "red", name: "Red" },
+      { piece: 0, end: 0, colour: "blue", name: "Blue" }
+    ],
+    levers: { 2: 0, 9: 0 },
+    trains: [
+      { colour: "red", piece: 0, edge: 0, s: 0, dir: 1, cars: 3 },
+      { colour: "blue", piece: 11, edge: 0, s: 1, dir: -1, cars: 3 }
+    ],
+    solution: [{ atS: 0.10, piece: 2, to: 1 }]
+  },
+  {
+    id: 3, name: "Three Trains",
+    goal: "Get all three trains home with one lever.",
+    par: 3, rails: 1,
+    /* one switch, three trains in a row behind it, three stations of three
+       colours. Green wants the branch, Blue wants the straight, Red wants the
+       branch again but only as far as the first joint past the curve, so the
+       lever has to be right at three different moments and the third one is
+       the same setting as the first. The three sit 3 U apart on the approach,
+       which is a train and a third of clear track between each pair. */
+    build: [
+      ["at", 4.5, 0.5, 90],
+      ["rep", 8, "straight"],
+      ["p", "yR"],
+      ["rep", 3, "straight"],
+      ["from", 8, 2],
+      ["p", "curveL"],
+      ["rep", 3, "straight"]
+    ],
+    stations: [
+      { piece: 11, end: 1, colour: "blue", name: "Blue" },
+      { piece: 15, end: 1, colour: "green", name: "Green" },
+      { piece: 12, end: 1, colour: "red", name: "Red" }
+    ],
+    levers: { 8: 0 },
+    trains: [
+      { colour: "green", piece: 7, edge: 0, s: 0, dir: 1, cars: 2 },
+      { colour: "blue", piece: 4, edge: 0, s: 0, dir: 1, cars: 2 },
+      { colour: "red", piece: 1, edge: 0, s: 0, dir: 1, cars: 2 }
+    ],
+    solution: [
+      { atS: 0.10, piece: 8, to: 1 },
+      { atS: 1.50, piece: 8, to: 0 },
+      { atS: 2.70, piece: 8, to: 1 }
+    ]
+  },
+  {
+    id: 4, name: "Round and Round",
+    goal: "Red goes round once, then home.",
+    par: 1, rails: 1,
+    /* the eight curve ring with one switch in it and a spur off the switch to
+       the station. The lever starts set for the ring, so the train laps it
+       (7.46 s a lap at speed two) until the lever is thrown; the first puzzle
+       in the set where the flip happens at a MOMENT rather than before the
+       whistle. The sim cannot forbid an early flip, because a single switch in
+       a ring is always met facing from the same side, and that is recorded
+       in DECISIONS. Nothing at all never gets home: it circles for ever. */
+    build: [
+      ["at", 5, 4.5, 0],
+      ["p", "yR"],
+      ["from", 0, 2],
+      ["rep", 7, "curveR"],
+      ["from", 0, 1],
+      ["rep", 2, "straight"]
+    ],
+    stations: [
+      { piece: 9, end: 1, colour: "red", name: "Red" }
+    ],
+    levers: { 0: 1 },
+    trains: [{ colour: "red", piece: 4, edge: 0, s: 0, dir: 1, cars: 3 }],
+    solution: [{ atS: 5.00, piece: 0, to: 0 }]
   }
 ];
 
@@ -1743,7 +1850,7 @@ function suitePurity(T, src) {
 
 
 /* ========================= 10. THE GAME'S STATE ========================= */
-var STAMP = '20260906c';
+var STAMP = '20260906d';
 var REDUCED = false;
 var G = {
   mode: 'build',          /* build or puzzle */
@@ -1849,6 +1956,12 @@ function fitView() {
   var availW = Math.max(40, V.w - V.padL - V.padR);
   V.zoom = clamp(Math.min(availW / bw, availH / bh), CONFIG.ZOOM_MIN * 0.5, CONFIG.ZOOM_MAX);
   V.cx = (b.x0 + b.x1) / 2; V.cy = (b.y0 + b.y1) / 2;
+  /* when the width binds on a tall phone the height has slack; split it so the
+     railway sits nearer the tray than the goal line (three tenths below, seven
+     above), because a hundred pixels of wool between the loop and the tray
+     read as a dead band while the same room under the goal line reads as air */
+  var slackH = availH - bh * V.zoom;
+  if (slackH > 0) V.cy -= (slackH * 0.2) / V.zoom;
   V.userMoved = false;
   TRACK.key = '';
 }
@@ -1869,7 +1982,10 @@ function fitCanvas() {
 function rugRect() {
   var b = sceneBounds(), pad = CONFIG.RUG_PAD * U;
   var x0 = b.x0 - pad, y0 = b.y0 - pad, x1 = b.x1 + pad, y1 = b.y1 + pad;
-  var wantW = ((V.w - V.padL - V.padR) / V.zoom) * 0.82, wantH = (V.h / V.zoom) * 0.82;
+  var wantW = ((V.w - V.padL - V.padR) / V.zoom) * 0.82;
+  /* the band between the goal line and the tray, not the whole screen, so the
+     fringe shows above the tray instead of running under it */
+  var wantH = ((V.h - V.padT - V.padB) / V.zoom) * 0.94;
   var cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
   if (x1 - x0 < wantW) { x0 = cx - wantW / 2; x1 = cx + wantW / 2; }
   if (y1 - y0 < wantH) { y0 = cy - wantH / 2; y1 = cy + wantH / 2; }
@@ -2644,7 +2760,7 @@ function drawTrains(c, g) {
     }
     /* the name flag over the engine */
     var e0 = bodies[0];
-    var label = tr.name;
+    var label = tr.fault ? tr.name + ' bumped' : tr.name;
     c.font = '700 ' + Math.max(9, Math.round(ss(0.17 * U))) + 'px ui-rounded, "Trebuchet MS", system-ui, sans-serif';
     var tw = c.measureText(label).width;
     var fx = sx(e0.x), fy = sy(e0.y) - ss(0.62 * U);
@@ -2655,7 +2771,7 @@ function drawTrains(c, g) {
     c.moveTo(fx, sy(e0.y) - ss(0.2 * U));
     c.lineTo(fx, fy + 8);
     c.stroke();
-    c.fillStyle = PAL.cream;
+    c.fillStyle = tr.fault ? '#F3C2B4' : PAL.cream;
     c.lineWidth = Math.max(1.2, ss(0.03 * U));
     roundRect(c, fx - tw / 2 - 5, fy - 8, tw + 10, 16, 5);
     c.fill(); c.stroke();
@@ -2893,6 +3009,9 @@ function consumeEvents(evs) {
     if (e.t === 'bump') AUDIO.play('bump');
     else if (e.t === 'clonk') {
       AUDIO.play('clonk'); AUDIO.play('huff');
+      /* the flag over the engine says BUMPED from here until the restart, so a
+         child can see WHICH train ran into the other */
+      e.train.fault = !!e.fault;
       /* ⛔ THE BUMP IS THE MOMENT THE SECOND PUZZLE IS ABOUT and the first
          build drew nothing at all for it: the two trains simply stopped, in a
          picture identical to two trains parked. A cartoon huff of steam, and a
