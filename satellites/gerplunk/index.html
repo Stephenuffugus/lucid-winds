@@ -1445,6 +1445,22 @@ var AUDIO = (function () {
     o.start(at); o.stop(at + 0.13);
     return o;
   }
+  /* a stone that runs up on the spit does not plunk, it clicks on stone: a
+     short bright knock, the same [osc, noise] shape as the plunk so keep() holds it */
+  function click(ctx, out, at) {
+    var o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'triangle'; o.frequency.setValueAtTime(1400, at); o.frequency.exponentialRampToValueAtTime(700, at + 0.05);
+    g.gain.setValueAtTime(0.0001, at); g.gain.exponentialRampToValueAtTime(0.5, at + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, at + 0.09);
+    o.connect(g); g.connect(out); o.start(at); o.stop(at + 0.1);
+    var n = Math.floor(ctx.sampleRate * 0.04), buf = ctx.createBuffer(1, n, ctx.sampleRate), d = buf.getChannelData(0), i;
+    for (i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+    var src = ctx.createBufferSource(); src.buffer = buf;
+    var f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 3200; f.Q.value = 1.2;
+    var ng = ctx.createGain(); ng.gain.setValueAtTime(0.4, at); ng.gain.exponentialRampToValueAtTime(0.0001, at + 0.04);
+    src.connect(f); f.connect(ng); ng.connect(out); src.start(at); src.stop(at + 0.05);
+    return [o, src];
+  }
+  function sinkSound(ctx, out, at, res) { return res.ended === 'beached' ? click(ctx, out, at) : plunk(ctx, out, at); }
   function plunk(ctx, out, at) {
     var o = ctx.createOscillator(), g = ctx.createGain();
     o.type = 'sine'; o.frequency.setValueAtTime(150, at); o.frequency.exponentialRampToValueAtTime(95, at + 0.25);
@@ -1472,7 +1488,7 @@ var AUDIO = (function () {
     var out = octx.createGain(); out.gain.value = 0.8; out.connect(octx.destination);
     var t0 = 0.05, i;
     for (i = 0; i < res.events.length; i++) tick(octx, out, t0 + res.events[i].t, i);
-    plunk(octx, out, t0 + sinkTimeOf(res));
+    sinkSound(octx, out, t0 + sinkTimeOf(res), res);
     return octx.startRendering().then(function (buf) {
       var d = buf.getChannelData(0), peak = 0, j, k, sum, win = Math.floor(sr * 0.005), env = [];
       for (j = 0; j < d.length; j++) if (Math.abs(d[j]) > peak) peak = Math.abs(d[j]);
@@ -1562,7 +1578,7 @@ var AUDIO = (function () {
       cut();
       var t0 = ac.currentTime + 0.03, i, o;
       for (i = 0; i < res.events.length; i++) { o = tick(ac, master, t0 + res.events[i].t, i); keep(o, t0 + res.events[i].t + 0.13); ticks++; }
-      var ts = sinkTimeOf(res), pl = plunk(ac, master, t0 + ts);
+      var ts = sinkTimeOf(res), pl = sinkSound(ac, master, t0 + ts, res);
       keep(pl[0], t0 + ts + 0.45); keep(pl[1], t0 + ts + 0.11);
       return res.events.length;
     },
@@ -1609,6 +1625,40 @@ function drawSky(t) {
   CTX.fillStyle = 'rgba(255,240,205,0.95)'; CTX.beginPath(); CTX.arc(sx, sy, 9, 0, Math.PI * 2); CTX.fill();
   return sx;
 }
+/* THE LAND OF THE THREE FACES (D37). Neither piece pops in at the model's
+   twelve degree step; both sit in the world and slide with the turn so that
+   they cross the throw line exactly where the model says the face changes.
+   The bay mouth: right of this world coordinate the near trees fall away to a
+   low far shore, so turned twelve degrees right the opening starts at centre
+   and the water runs to the horizon. */
+function bayOpen(wx) {
+  var start = W / 2 + CONFIG.FACE_DEG * LAKE.TREE_PX_PER_DEG, d = wx - start;
+  return d <= 0 ? 1 : Math.max(0.12, 1 - d / 90);
+}
+/* the point and its spit, to the left: a tongue of land whose edge, in metres
+   of lateral, slides with the yaw and covers the throw line at LEE_REACH_M
+   once the yaw is twelve degrees left, which is where runThrow beaches. */
+function drawLand() {
+  var yaw = yawNow(), reach = CONFIG.LEE_REACH_M, cam = G.cam;
+  var edge = 0.4 - (yaw + CONFIG.FACE_DEG) * 1.2;
+  /* a point, not a pier: the tip is at the spit, the shore behind it sweeps
+     back LEFT into the distance until it meets the treeline at the horizon */
+  var pts = [[reach, edge - 60], [reach, edge], [reach + 2.5, edge + 0.9], [reach + 8, edge + 1.4], [reach + 20, edge + 0.4],
+    [reach + 45, edge - 3], [reach + 120, edge - 14], [reach + 600, edge - 90], [reach + 600, edge - 300]];
+  var i, p, top = [], rim = [];
+  for (i = 0; i < pts.length; i++) {
+    var rel = Math.max(0.3, pts[i][0] - cam);
+    top.push(proj(rel, pts[i][1], 0.16)); rim.push(proj(rel, pts[i][1], 0));
+  }
+  /* the wet edge first, then the land on top of it */
+  CTX.fillStyle = 'rgba(58,52,48,0.9)';
+  CTX.beginPath(); for (i = 0; i < rim.length; i++) { p = rim[i]; if (i) CTX.lineTo(p.x, p.y); else CTX.moveTo(p.x, p.y); } CTX.closePath(); CTX.fill();
+  CTX.fillStyle = '#17191B';
+  CTX.beginPath(); for (i = 0; i < top.length; i++) { p = top[i]; if (i) CTX.lineTo(p.x, p.y); else CTX.moveTo(p.x, p.y); } CTX.closePath(); CTX.fill();
+  /* a stony lip where the land meets the water */
+  CTX.strokeStyle = 'rgba(214,182,140,0.28)'; CTX.lineWidth = 1;
+  CTX.beginPath(); for (i = 1; i < 7; i++) { p = rim[i]; if (i > 1) CTX.lineTo(p.x, p.y); else CTX.moveTo(p.x, p.y); } CTX.stroke();
+}
 function drawTrees() {
   var hy = horizonY(), off = yawNow() * LAKE.TREE_PX_PER_DEG, x, seed = 3;
   /* the far bank, hazy, then the near trees, black */
@@ -1624,6 +1674,7 @@ function drawTrees() {
        save faces, so a turn has something to be measured against */
     var gap = Math.abs((x + off) - (W / 2 + 60));
     if (gap < 46) h *= 0.35 + 0.65 * (gap / 46);
+    h *= bayOpen(x + off);
     CTX.lineTo(x, hy - h);
   }
   CTX.lineTo(W, hy + 2); CTX.closePath(); CTX.fill();
@@ -1634,6 +1685,7 @@ function drawTrees() {
     var h2 = 16 + treeH(x + off, seed);
     var gap2 = Math.abs((x + off) - (W / 2 + 60));
     if (gap2 < 46) h2 *= 0.35 + 0.65 * (gap2 / 46);
+    h2 *= bayOpen(x + off);
     CTX.lineTo(x, hy + h2 * 0.45);
   }
   CTX.lineTo(W, hy); CTX.closePath(); CTX.fill();
@@ -2010,6 +2062,7 @@ function frame() {
   var sunX = drawSky(t);
   drawWater(t, sunX);
   drawTrees();
+  drawLand();
   /* the seam shows while the stone is in the hand: before the first throw,
      under a live thumb, and once the last throw's rings have gone */
   if (G.screen === 'lake' && (G.touch || !G.play || (G.play.sunk && G.rings.length === 0))) drawSeam();
