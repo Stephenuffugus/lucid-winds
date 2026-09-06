@@ -2800,27 +2800,39 @@ function drawTrains(c, g) {
         fy -= 22; fr.y0 -= 22; fr.y1 -= 22; guard++; k = -1;
       }
     }
+    fr.fx = fx; fr.fy = fy; fr.tw = tw; fr.label = label; fr.tr = tr; fr.ey = sy(e0.y);
     flags.push(fr);
+  }
+  /* every stem first and every flag after, so a lifted flag's stem passes
+     UNDER the flag below it rather than through the word, and no flag is
+     painted over by the next train's bodies */
+  var font = '700 ' + Math.max(9, Math.round(ss(0.17 * U))) + 'px ui-rounded, "Trebuchet MS", system-ui, sans-serif';
+  c.strokeStyle = PAL.ink;
+  c.lineWidth = Math.max(1, ss(0.026 * U));
+  c.beginPath();
+  for (i = 0; i < flags.length; i++) {
     /* the stem, so the flag belongs to this engine and not to the rug */
+    c.moveTo(flags[i].fx, flags[i].ey - ss(0.2 * U));
+    c.lineTo(flags[i].fx, flags[i].fy + 8);
+  }
+  c.stroke();
+  for (i = 0; i < flags.length; i++) {
+    var f = flags[i], ft = f.tr;
+    c.font = font;
     c.strokeStyle = PAL.ink;
-    c.lineWidth = Math.max(1, ss(0.026 * U));
-    c.beginPath();
-    c.moveTo(fx, sy(e0.y) - ss(0.2 * U));
-    c.lineTo(fx, fy + 8);
-    c.stroke();
-    c.fillStyle = tr.fault ? '#F3C2B4' : PAL.cream;
+    c.fillStyle = ft.fault ? '#F3C2B4' : PAL.cream;
     c.lineWidth = Math.max(1.2, ss(0.03 * U));
-    roundRect(c, fx - tw / 2 - 5, fy - 8, tw + 10, 16, 5);
+    roundRect(c, f.fx - f.tw / 2 - 5, f.fy - 8, f.tw + 10, 16, 5);
     c.fill(); c.stroke();
-    c.fillStyle = PAL[tr.colour] || PAL.ink;
+    c.fillStyle = PAL[ft.colour] || PAL.ink;
     c.textAlign = 'center'; c.textBaseline = 'middle';
-    c.fillText(label, fx, fy);
+    c.fillText(f.label, f.fx, f.fy);
     /* speed pips, so the tap that changes speed has something to change */
-    if (tr.speedIx > 0) {
+    if (ft.speedIx > 0) {
       c.fillStyle = PAL.ink;
-      for (k = 0; k < tr.speedIx; k++) {
+      for (k = 0; k < ft.speedIx; k++) {
         c.beginPath();
-        c.arc(fx - (tr.speedIx - 1) * 2.5 + k * 5, fy + 13, 1.9, 0, 6.2832);
+        c.arc(f.fx - (ft.speedIx - 1) * 2.5 + k * 5, f.fy + 13, 1.9, 0, 6.2832);
         c.fill();
       }
     }
