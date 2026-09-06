@@ -193,7 +193,11 @@ var CONFIG = Object.freeze({
   SAND_GRAINS_MAX: 60000, TILT_DEG: 12, SAND_SLIDE_UNITS_PER_S: 300,
   /* the rig's arm length in sheet units, which is what the amplitude detune is
      measured against */
-  RIG_LEN: 620
+  RIG_LEN: 620,
+  /* the double link: integrated at a fixed rate, and the second link's share
+     (its mass and its reach, 1 is the real rig; 0 is a test knob that makes it
+     the single, see doubleTraj) */
+  DOUBLE_HZ: 240, DOUBLE_LINK2: 1
 });
 
 /* ============================ 2. RNG ============================ */
@@ -328,6 +332,7 @@ function axisTerms(rig, thr, axisIndex) {
 function posAt(sheet, t) {
   var rig = RIGS[sheet.rig] || RIGS.single;
   var x = 0, y = 0, k, a;
+  if (rig.numeric) return doublePosAt(sheet, t, CONFIG.DOUBLE_LINK2);
   for (k = 0; k < sheet.throws.length; k++) {
     var thr = sheet.throws[k];
     var dt = t - thr.t0;
@@ -364,6 +369,134 @@ function traceOf(sheet, seconds, fromT) {
   return out;
 }
 
+/* ====================== 5b. THE DOUBLE LINK (numeric) ====================== */
+/* ⛔ THE DOUBLE LINK IS INTEGRATED, NOT SOLVED. Two links hang in a chain: link
+   1 from the beam, link 2 from the bob of link 1, and the pen on the bob of link
+   2. Linearised, with both bobs the same weight, link 1 restoring at w1 (its
+   note, lengths[0]) and link 2 restoring at w2 (lengths[1]) about link 1, per
+   axis with p1 the first bob and p2 the pen:
+       p1'' = -(1 + k) w1^2 p1 + k w2^2 (p2 - p1) - 2 d p1'
+       p2'' =                    - w2^2 (p2 - p1) - 2 d p2'
+   k is the second link's share (CONFIG.DOUBLE_LINK2, 1 on the real rig); at
+   k = 0 the first line is the single pendulum exactly and the pen is p1, which
+   is the limit suiteDouble checks against the closed form. The energy
+   E = p1'^2 / 2 + k p2'^2 / 2 + (1 + k) w1^2 p1^2 / 2 + k w2^2 (p2 - p1)^2 / 2
+   has dE/dt = -2 d (p1'^2 + k p2'^2), so it can only fall, and suiteDouble
+   holds it to that.
+   ⛔ RUNGE KUTTA, NOT SEMI IMPLICIT EULER. The plan named symplectic Euler at
+   240 Hz, and at 240 Hz symplectic Euler's position samples wobble by w h / 2
+   of the amplitude: a two octave pendulum at w = 9.6 wobbles two percent, six
+   units on a three hundred unit swing, sixty times the 0.05 the plan's own
+   limit assertion allows. Fourth order at the same fixed step is inside 0.002
+   over twenty seconds and costs a few milliseconds per throw.
+   ⛔ AND IT IS CACHED PER THROW so posAt stays a lookup: the system is linear,
+   so the throws add, and each throw is one Float64 trajectory at DOUBLE_HZ
+   over DRAW_MAX_S. Past the horizon the pen rides the damping envelope down
+   from the last sample. */
+var DOUBLE_CACHE = { keys: [], map: {} };
+/* where the throw was let go: stored on a real fling, derived from the terms
+   of a throw that came in over a link */
+function releaseOf(thr) {
+  if (thr.rel) return thr.rel;
+  var out = { x: 0, y: 0, vx: 0, vy: 0 }, i;
+  for (i = 0; i < 2; i++) {
+    var p = thr.pend[i];
+    var wd = wDamped(p.wEff, thr.damp);
+    var x = p.A * Math.sin(p.phi);
+    var v = p.A * (wd * Math.cos(p.phi) - thr.damp * Math.sin(p.phi));
+    if (i === 0) { out.x = x; out.vx = v; } else { out.y = x; out.vy = v; }
+  }
+  return out;
+}
+function doubleKey(sheet, thr, k) {
+  var r = releaseOf(thr);
+  return [sheet.lengths[1], thr.damp, k, thr.pend[0].wEff, thr.pend[1].wEff,
+    r.x, r.y, r.vx, r.vy].join(',');
+}
+/* one throw's trajectory: x, y and the energy, sampled at DOUBLE_HZ */
+function doubleTraj(sheet, thr, k) {
+  var key = doubleKey(sheet, thr, k);
+  if (DOUBLE_CACHE.map[key]) return DOUBLE_CACHE.map[key];
+  var hz = CONFIG.DOUBLE_HZ, h = 1 / hz, n = Math.round(CONFIG.DRAW_MAX_S * hz) + 1;
+  var r = releaseOf(thr), d = thr.damp;
+  var w1x = thr.pend[0].wEff, w1y = thr.pend[1].wEff;
+  var w2 = wForSemitone(sheet.lengths[1]);
+  var w1x2 = w1x * w1x, w1y2 = w1y * w1y, w22 = w2 * w2;
+  /* state: p1, q1, p2, q2 for x then for y (q is the velocity) */
+  var s = [r.x, r.vx, r.x, r.vx, r.y, r.vy, r.y, r.vy];
+  var X = new Float64Array(n), Y = new Float64Array(n), E = new Float64Array(n);
+  function deriv(u, out) {
+    var a;
+    for (a = 0; a < 8; a += 4) {
+      var w12 = a ? w1y2 : w1x2;
+      var p1 = u[a], q1 = u[a + 1], p2 = u[a + 2], q2 = u[a + 3];
+      out[a] = q1;
+      out[a + 1] = -(1 + k) * w12 * p1 + k * w22 * (p2 - p1) - 2 * d * q1;
+      out[a + 2] = q2;
+      out[a + 3] = -w22 * (p2 - p1) - 2 * d * q2;
+    }
+  }
+  function energy(u) {
+    var e = 0, a;
+    for (a = 0; a < 8; a += 4) {
+      var w12 = a ? w1y2 : w1x2;
+      var p1 = u[a], q1 = u[a + 1], p2 = u[a + 2], q2 = u[a + 3];
+      e += q1 * q1 / 2 + k * q2 * q2 / 2 + (1 + k) * w12 * p1 * p1 / 2 + k * w22 * (p2 - p1) * (p2 - p1) / 2;
+    }
+    return e;
+  }
+  var k1 = [0, 0, 0, 0, 0, 0, 0, 0], k2 = k1.slice(), k3 = k1.slice(), k4 = k1.slice(), tmp = k1.slice();
+  var i, j;
+  for (i = 0; i < n; i++) {
+    X[i] = s[0] + k * (s[2] - s[0]);
+    Y[i] = s[4] + k * (s[6] - s[4]);
+    E[i] = energy(s);
+    if (i === n - 1) break;
+    deriv(s, k1);
+    for (j = 0; j < 8; j++) tmp[j] = s[j] + h / 2 * k1[j];
+    deriv(tmp, k2);
+    for (j = 0; j < 8; j++) tmp[j] = s[j] + h / 2 * k2[j];
+    deriv(tmp, k3);
+    for (j = 0; j < 8; j++) tmp[j] = s[j] + h * k3[j];
+    deriv(tmp, k4);
+    for (j = 0; j < 8; j++) s[j] += h / 6 * (k1[j] + 2 * k2[j] + 2 * k3[j] + k4[j]);
+  }
+  var out = { x: X, y: Y, e: E, hz: hz, n: n };
+  DOUBLE_CACHE.keys.push(key);
+  DOUBLE_CACHE.map[key] = out;
+  while (DOUBLE_CACHE.keys.length > 24) delete DOUBLE_CACHE.map[DOUBLE_CACHE.keys.shift()];
+  return out;
+}
+function doublePosAt(sheet, t, k) {
+  var x = 0, y = 0, i;
+  for (i = 0; i < sheet.throws.length; i++) {
+    var thr = sheet.throws[i];
+    var dt = t - thr.t0;
+    if (dt < 0) continue;
+    var tr = doubleTraj(sheet, thr, k);
+    var f = dt * tr.hz, at = Math.floor(f);
+    if (at >= tr.n - 1) {
+      var tail = Math.exp(-thr.damp * (dt - (tr.n - 1) / tr.hz));
+      x += tr.x[tr.n - 1] * tail;
+      y += tr.y[tr.n - 1] * tail;
+    } else {
+      var u = f - at;
+      x += tr.x[at] + (tr.x[at + 1] - tr.x[at]) * u;
+      y += tr.y[at] + (tr.y[at + 1] - tr.y[at]) * u;
+    }
+  }
+  return { x: x, y: y };
+}
+/* how far the pen reaches on one throw, per axis, over the whole trajectory */
+function doubleReach(sheet, thr, k) {
+  var tr = doubleTraj(sheet, thr, k), rx = 0, ry = 0, i;
+  for (i = 0; i < tr.n; i++) {
+    if (Math.abs(tr.x[i]) > rx) rx = Math.abs(tr.x[i]);
+    if (Math.abs(tr.y[i]) > ry) ry = Math.abs(tr.y[i]);
+  }
+  return { x: rx, y: ry };
+}
+
 /* ============================ 6. FLING ============================ */
 /* ⛔ THE FLING IS MAPPED EXACTLY, NOT BY TASTE. A wilder throw is wilder art
    because the maths says so.
@@ -388,7 +521,10 @@ function flingToThrow(sheet, x0, v0, t0, ink, bob) {
     var px = i === 0 ? x0.x : x0.y;
     var pv = i === 0 ? v0.x : v0.y;
     pv = clamp(pv, -CONFIG.V_MAX, CONFIG.V_MAX);
-    var w = wForSemitone(lengths[i]);
+    /* ⛔ ON THE DOUBLE LINK BOTH COMPONENTS ARE LINK 1: it hangs from the beam
+       and takes the whole throw on both axes; link 2 takes its note from
+       lengths[1] inside the integrator and gets no throw of its own. */
+    var w = wForSemitone(lengths[rig.numeric ? 0 : i]);
     /* the amplitude the throw would make if the pendulum were not detuned, then
        the detune, then the amplitude again at the detuned frequency: one pass is
        enough, the correction is under a percent */
@@ -413,7 +549,27 @@ function flingToThrow(sheet, x0, v0, t0, ink, bob) {
   var room = Math.min(reachX > 0 ? (CONFIG.SHEET_W * 0.46) / reachX : 1,
     reachY > 0 ? (CONFIG.SHEET_H * 0.46) / reachY : 1);
   if (room < 1) { pend[0].A *= room; pend[1].A *= room; }
-  return { t0: t0 || 0, ink: ink || 'irongall', damp: damp, pend: pend };
+  var thr = { t0: t0 || 0, ink: ink || 'irongall', damp: damp, pend: pend };
+  if (rig.numeric) {
+    /* ⛔ THE NUMERIC RIG KEEPS THE RELEASE ITSELF, position and velocity, which
+       is what the integrator starts from; the terms above are for the link and
+       the hum. And its reach is not the sum of two amplitudes: link 2 can be
+       pumped by link 1 to well past where it was let go, so the reach is read
+       off the trajectory and, the system being linear, the whole throw is
+       scaled back onto the sheet in one pass. */
+    var rm = room < 1 ? room : 1;
+    var vx = clamp(v0.x, -CONFIG.V_MAX, CONFIG.V_MAX) * rm;
+    var vy = clamp(v0.y, -CONFIG.V_MAX, CONFIG.V_MAX) * rm;
+    thr.rel = { x: x0.x * rm, y: x0.y * rm, vx: vx, vy: vy };
+    var reach = doubleReach(sheet, thr, CONFIG.DOUBLE_LINK2);
+    var room2 = Math.min(reach.x > 0 ? (CONFIG.SHEET_W * 0.46) / reach.x : 1,
+      reach.y > 0 ? (CONFIG.SHEET_H * 0.46) / reach.y : 1);
+    if (room2 < 1) {
+      pend[0].A *= room2; pend[1].A *= room2;
+      thr.rel = { x: thr.rel.x * room2, y: thr.rel.y * room2, vx: thr.rel.vx * room2, vy: thr.rel.vy * room2 };
+    }
+  }
+  return thr;
 }
 function newSheet(over) {
   var s = { v: 1, id: 1, rig: 'single', lengths: null, bob: 'brass', mode: 'ink',
@@ -538,6 +694,7 @@ var TEST = {
     this.runSuite('ratios', suiteRatios);
     this.runSuite('trace', suiteTrace);
     this.runSuite('link', suiteLink);
+    this.runSuite('double', suiteDouble);
     if (extra && extra.src) this.runSuite('purity', suitePurity, extra.src);
     return this.report();
   }
@@ -870,6 +1027,100 @@ function suiteLink(T) {
     hostile && hostile.throws.every(function (t) {
       return t.pend.every(function (p) { return Math.abs(p.A) <= 4000 && p.wEff <= 40; });
     }));
+}
+
+function suiteDouble(T) {
+  T.assert('the double link is the numeric rig', !!RIGS.double.numeric);
+  var sh = newSheet({ rig: 'double', lengths: [12, 17] });
+  sh.throws.push(flingToThrow(sh, { x: 260, y: 90 }, { x: -420, y: 620 }, 0, 'irongall'));
+  var thr = sh.throws[0];
+  T.assert('a throw on it keeps the release itself, position and velocity',
+    !!thr.rel && Math.abs(thr.rel.x - 260) < 1e-9 && Math.abs(thr.rel.vy - 620) < 1e-9);
+  var p0 = posAt(sh, 0);
+  T.assert('and the pen starts exactly where it was let go (' + p0.x.toFixed(3) + ', ' + p0.y.toFixed(3) + ')',
+    Math.abs(p0.x - 260) < 1e-9 && Math.abs(p0.y - 90) < 1e-9);
+  /* ⛔ ENERGY NEVER RISES WITH NO THROW. Nothing feeds the rig after the hand
+     lets go, so every sample of the energy is at most the one before it. */
+  var tr = doubleTraj(sh, thr, CONFIG.DOUBLE_LINK2), i, rises = 0, worstRise = 0;
+  for (i = 1; i < tr.n; i++) {
+    if (tr.e[i] > tr.e[i - 1] + tr.e[0] * 1e-12) { rises++; worstRise = Math.max(worstRise, tr.e[i] - tr.e[i - 1]); }
+  }
+  T.eq('the energy never rises with no throw (' + tr.n + ' samples, worst rise ' + worstRise.toExponential(1) + ')', rises, 0);
+  T.assert('and it has fallen by the end (' + (tr.e[tr.n - 1] / tr.e[0]).toFixed(3) + ' of what it started with)',
+    tr.e[tr.n - 1] < tr.e[0] * 0.5);
+  /* ⛔ THE SAME SHEET TWICE IS THE SAME TRACE, on this phone and on the other. */
+  var again = newSheet({ rig: 'double', lengths: [12, 17] });
+  again.throws.push(flingToThrow(again, { x: 260, y: 90 }, { x: -420, y: 620 }, 0, 'irongall'));
+  /* ⛔ with the cache emptied BETWEEN the two, so the second is a second
+     integration and not a lookup of the first */
+  var a = traceOf(sh, 30);
+  DOUBLE_CACHE.keys = []; DOUBLE_CACHE.map = {};
+  var b = traceOf(again, 30);
+  var sameTrace = JSON.stringify(a) === JSON.stringify(b), firstOff = -1, si;
+  if (!sameTrace) for (si = 0; si < Math.min(a.length, b.length); si++) {
+    if (a[si].x !== b[si].x || a[si].y !== b[si].y) { firstOff = si; break; }
+  }
+  T.assert('the same sheet twice gives the same trace, with the cache emptied between'
+    + (sameTrace ? '' : ' (first differs at point ' + firstOff + ' of ' + a.length + ' and ' + b.length + ')'), sameTrace);
+  T.assert('and it is a real trace, thousands of points (' + a.length + ')', a.length > 2000);
+  /* ⛔ THE SINGLE LINK LIMIT. With the second link's share at nought the rig IS
+     the single, and the integrator has to land on the closed form inside a
+     twentieth of a unit for twenty seconds, or it is the wrong integrator. */
+  var lim = newSheet({ rig: 'double', lengths: [12, 12] });
+  lim.throws.push(flingToThrow(lim, { x: 260, y: 90 }, { x: -420, y: 620 }, 0, 'irongall'));
+  var one = newSheet({ rig: 'single', lengths: [12, 12] });
+  one.throws.push(flingToThrow(one, { x: 260, y: 90 }, { x: -420, y: 620 }, 0, 'irongall'));
+  var t, worst = 0;
+  for (t = 0; t <= 20; t += 0.05) {
+    var n = doublePosAt(lim, t, 0), c = posAt(one, t);
+    worst = Math.max(worst, Math.hypot(n.x - c.x, n.y - c.y));
+  }
+  T.assert('with link 2 at nought the integrator matches the closed form single inside 0.05 over twenty seconds (worst '
+    + worst.toFixed(4) + ')', worst < 0.05);
+  var high = newSheet({ rig: 'double', lengths: [24, 24] });
+  high.throws.push(flingToThrow(high, { x: 200, y: 100 }, { x: -900, y: 1100 }, 0, 'irongall'));
+  var oneHigh = newSheet({ rig: 'single', lengths: [24, 24] });
+  oneHigh.throws.push(flingToThrow(oneHigh, { x: 200, y: 100 }, { x: -900, y: 1100 }, 0, 'irongall'));
+  var worstHigh = 0;
+  for (t = 0; t <= 20; t += 0.05) {
+    var n2 = doublePosAt(high, t, 0), c2 = posAt(oneHigh, t);
+    worstHigh = Math.max(worstHigh, Math.hypot(n2.x - c2.x, n2.y - c2.y));
+  }
+  T.assert('and at the top of the slider too, where a first order step would wobble by units (worst '
+    + worstHigh.toFixed(4) + ')', worstHigh < 0.05);
+  /* ⛔ THE PEN NEVER LEAVES THE SHEET, and the rig that tests it hardest is the
+     one tuned to a unison, where link 1 pumps link 2 the most. */
+  var tunings = [[12, 12], [0, 24], [12, 17], [24, 0], [7, 7]], q, worstX = 0, worstY = 0;
+  for (q = 0; q < tunings.length; q++) {
+    var res = newSheet({ rig: 'double', lengths: tunings[q] });
+    /* one throw at a time: two throws still swinging add on every rig, and
+       that is layering, not the rig's reach */
+    res.throws.push(flingToThrow(res, { x: 900, y: 900 }, { x: 9999, y: -9999 }, 0, 'sepia'));
+    var rt = traceOf(res, CONFIG.DRAW_MAX_S), ri;
+    for (ri = 0; ri < rt.length; ri++) {
+      worstX = Math.max(worstX, Math.abs(rt[ri].x));
+      worstY = Math.max(worstY, Math.abs(rt[ri].y));
+    }
+  }
+  T.assert('the pen never leaves the sheet, even thrown as hard as a hand can on a unison ('
+    + worstX.toFixed(0) + ' by ' + worstY.toFixed(0) + ' of a sheet ' + CONFIG.SHEET_W + ' by ' + CONFIG.SHEET_H + ')',
+    worstX <= CONFIG.SHEET_W / 2 && worstY <= CONFIG.SHEET_H / 2);
+  /* and it is a different drawing from the single, which is the point of it */
+  var far = 0;
+  for (t = 0; t <= 20; t += 0.5) {
+    var dn = posAt(lim, t), ds = posAt(one, t);
+    far = Math.max(far, Math.hypot(dn.x - ds.x, dn.y - ds.y));
+  }
+  T.assert('and with the second link on, the same throw is a different drawing (' + far.toFixed(0) + ' units apart at most)', far > 100);
+  /* the link carries it: a throw that came back without its release is drawn the same */
+  var back = unpackSheet(packSheet(sh));
+  var linkWorst = 0;
+  for (t = 0; t <= 30; t += 0.5) {
+    var la = posAt(sh, t), lb = posAt(back, t);
+    linkWorst = Math.max(linkWorst, Math.hypot(la.x - lb.x, la.y - lb.y));
+  }
+  T.assert('a double link drawing survives the link without its release (worst ' + linkWorst.toFixed(3) + ')',
+    !back.throws[0].rel && linkWorst < 1.5);
 }
 
 function suitePurity(T, src) {
@@ -1296,7 +1547,10 @@ function hum(A, thr) {
   A.voices = [];
   A.hz = [];
   for (i = 0; i < 2; i++) {
-    var hz = clamp(thr.pend[i].wEff * CONFIG.SOUND_HZ_PER_W, 40, 2000);
+    /* on the double link both terms are link 1, so link 2 hums its own note */
+    var wHum = (i === 1 && (RIGS[G.sheet.rig] || RIGS.single).numeric)
+      ? wForSemitone(G.sheet.lengths[1]) : thr.pend[i].wEff;
+    var hz = clamp(wHum * CONFIG.SOUND_HZ_PER_W, 40, 2000);
     var o = A.ctx.createOscillator();
     o.type = 'sine';
     o.frequency.value = hz;
