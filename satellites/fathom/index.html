@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="FATHOM">
-<link rel="manifest" href="./manifest.webmanifest?v=20260906e">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260906e">
-<link rel="icon" href="./icon-192.png?v=20260906e">
+<link rel="manifest" href="./manifest.webmanifest?v=20260907a">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260907a">
+<link rel="icon" href="./icon-192.png?v=20260907a">
 <link rel="canonical" href="https://lucidwinds.com/satellites/fathom/">
 <style>
 /*  FATHOM
@@ -133,7 +133,7 @@ html,body{margin:0;padding:0;height:100%;background:#000;color:var(--cream);
 .fail{color:#ff8080}.pass{color:#9be36b}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260906e" defer></script>
+<script src="/music-unlocks.js?v=20260907a" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">FATHOM</h1>
@@ -1743,11 +1743,18 @@ var AUDIO = (function () {
     }
     return b;
   }
+  /* the ear gate's offline context, swapped in for the length of one render.
+     start() builds the DRONE and the ECHO BUS, which are the bed of the whole
+     cave, so the gate has to go through start() and not around it. */
+  var inject = null;
   function start() {
     if (ac) { if (ac.state === 'suspended') ac.resume(); return; }
-    var AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC) return;
-    ac = new AC();
+    if (inject) { ac = inject; }
+    else {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      ac = new AC();
+    }
     master = ac.createGain();
     master.gain.value = on ? 0.8 : 0;
     master.connect(ac.destination);
@@ -1817,7 +1824,14 @@ var AUDIO = (function () {
       o.type = 'sine'; o.frequency.value = freqs[i];
       env(g, t0 + i * 0.045, vol * (i === 0 ? 1 : 0.62), 0.9);
       o.connect(g); g.connect(p || master);
-      o.start(t0); o.stop(t0 + 1.05);
+      /* ⛔⛔ THE SINGBACK OPENED WITH A FULL SCALE BLAST, and every gate in this
+         game was green while it did, the voice budget included. A fresh
+         GainNode's gain is ONE. The second and third voices started at t0 but
+         their envelopes did not begin until t0 plus 45 and 90 ms, so for that
+         long each sine went to the master at AMPLITUDE ONE, not at 0.25 times
+         distance. The ear gate measured the loudest minute at 1.293 peak, which
+         is clipping. A voice starts when its envelope starts. */
+      o.start(t0 + i * 0.045); o.stop(t0 + i * 0.045 + 1.05);
       voices++; o.onended = function () { voices--; };
     }
   }
@@ -1891,10 +1905,99 @@ var AUDIO = (function () {
     for (i = 0; i < slithers.length; i++) { try { slithers[i].src.stop(); } catch (e) {} }
     slithers = [];
   }
+  /* ========== THE EAR GATE (test/audio.mjs) ==========
+     Stephen, Sep 06: the sound effects "sounded like fire alarms. They made
+     everybody in my house flinch and scared my animals." The cause in that game
+     was a trill oscillator wired into an envelope gain, so a chirp written as
+     0.022 was a half scale 4 kHz tone, and EVERY gate was green because no gate
+     had ever rendered the thing the speaker plays: the loudest thing in the
+     game was the one thing nothing measured. Fathom counts VOICES, which says
+     nothing at all about how loud a voice is.
+     This renders the cave's LOUDEST MINUTE offline through start(), ping(),
+     hum(), singback(), pickup(), caught(), bindLurkers(), updateLurkers() and
+     ambient(), the same functions the speaker uses, drone and echo bus and all,
+     and reports peak, rms and the share of energy above 3 kHz.
+     ⛔ NEVER measure a wav made for the ear: a render tool normalises, and a
+     normalised file says 0.86 whatever the master is doing.
+     ⛔ An offline context's currentTime never advances while you schedule, so
+     every voice would stack at zero. `shim` is the real offline context with a
+     clock this function turns by hand. */
+  function renderLoudMinute(seconds, opts) {
+    var OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (!OAC) return Promise.reject(new Error('no OfflineAudioContext'));
+    var o = opts || {}, sr = 22050, dur = seconds || 60;
+    /* the two knobs a person needs to ask WHICH voice is loud: how often a
+       stone is thrown, and how many lurkers are on top of the diver. The gate
+       takes the defaults, which are the ceiling. */
+    var pingEvery = o.pingEvery || 0.5, nLurk = o.lurkers === undefined ? CONFIG.MAX_LURKERS : o.lurkers;
+    var octx = new OAC(1, Math.ceil(sr * dur), sr);
+    var shim = {
+      currentTime: 0, sampleRate: octx.sampleRate, destination: octx.destination, state: 'running',
+      resume: function () {},
+      createGain: function () { return octx.createGain(); },
+      createOscillator: function () { return octx.createOscillator(); },
+      createBufferSource: function () { return octx.createBufferSource(); },
+      createBiquadFilter: function () { return octx.createBiquadFilter(); },
+      createStereoPanner: function () { return octx.createStereoPanner(); },
+      createDelay: function (m) { return octx.createDelay(m); },
+      createBuffer: function (x, y, z) { return octx.createBuffer(x, y, z); }
+    };
+    var sv = { ac: ac, master: master, noiseBuf: noiseBuf, brownBuf: brownBuf, slithers: slithers,
+      drone: drone, dripT: dripT, on: on, voices: voices,
+      echoDelay: echoDelay, echoFb: echoFb, echoWet: echoWet };
+    ac = null; master = null; slithers = []; drone = null; dripT = 0; on = true; voices = 0;
+    echoDelay = null; echoFb = null; echoWet = null;
+    inject = shim;
+    start();
+    /* THE LOUDEST MINUTE, at the code's OWN ceilings. MAX_LURKERS is eight and
+       updateLurkers gives a lurker its loudest slither at zero distance, so the
+       bed is eight of them sitting on top of the diver for the whole minute,
+       which is worse than the game can arrange. Over that: a stone thrown twice
+       a second, which is faster than a thumb, every ping into the echo bus with
+       the nearest wall at RING_MAX_R so the room rings its longest; a hum at
+       its own HUM_COOLDOWN_MS; a singback close enough to be at full volume; a
+       pickup between them; and a catch every eight seconds, which would be
+       seven deaths a minute. */
+    var i, lurk = { lurkers: [], p: { x: 0, y: 0 } };
+    for (i = 0; i < nLurk; i++) lurk.lurkers.push({ x: 0, y: 0 });
+    bindLurkers(nLurk);
+    updateLurkers(lurk, 0);
+    var rnd = function () { return 0; }, f, t;
+    for (f = 0; f < Math.floor(dur * 60); f++) { shim.currentTime = f / 60; ambient(1 / 60, rnd); }
+    for (t = 0.1; t < dur; t += pingEvery) { shim.currentTime = t; ping(CONFIG.RING_MAX_R); }
+    for (t = 0.3; t < dur; t += CONFIG.HUM_COOLDOWN_MS / 1000) { shim.currentTime = t; hum(); }
+    for (t = 0.7; t < dur; t += 1.5) { shim.currentTime = t; singback(0, 40); }
+    for (t = 1.1; t < dur; t += 1.0) { shim.currentTime = t; pickup(t % 2 < 1); }
+    for (t = 2.0; t < dur - 1; t += 8) { shim.currentTime = t; caught(); }
+    stopAll();
+    ac = sv.ac; master = sv.master; noiseBuf = sv.noiseBuf; brownBuf = sv.brownBuf;
+    slithers = sv.slithers; drone = sv.drone; dripT = sv.dripT; on = sv.on; voices = sv.voices;
+    echoDelay = sv.echoDelay; echoFb = sv.echoFb; echoWet = sv.echoWet;
+    inject = null;
+    return octx.startRendering().then(function (buf) { return ear(buf, sr); });
+  }
+  /* peak, rms, and the share of energy above 3 kHz. The split is a second order
+     Butterworth high pass run in JavaScript over the rendered buffer, because a
+     smoke detector lives up there and a flooded cave does not. */
+  function ear(buf, sr) {
+    var d = buf.getChannelData(0), n = d.length, i, peak = 0, tot = 0, hi = 0;
+    var w0 = 2 * Math.PI * 3000 / sr, cw = Math.cos(w0), sw = Math.sin(w0), al = sw / (2 * 0.7071);
+    var b0 = (1 + cw) / 2, b1 = -(1 + cw), b2 = (1 + cw) / 2, a0 = 1 + al, a1 = -2 * cw, a2 = 1 - al;
+    var x1 = 0, x2 = 0, y1 = 0, y2 = 0, x, y;
+    for (i = 0; i < n; i++) {
+      x = d[i];
+      y = (b0 * x + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2) / a0;
+      x2 = x1; x1 = x; y2 = y1; y1 = y;
+      tot += x * x; hi += y * y;
+      if (Math.abs(x) > peak) peak = Math.abs(x);
+    }
+    return { peak: peak, rms: Math.sqrt(tot / n), highFraction: tot > 0 ? hi / tot : 0, seconds: n / sr };
+  }
   return {
     start: start, setOn: setOn, ping: ping, singback: singback, hum: hum,
     pickup: pickup, caught: caught, bindLurkers: bindLurkers,
     updateLurkers: updateLurkers, ambient: ambient, stopAll: stopAll,
+    renderLoudMinute: renderLoudMinute,
     voices: function () { return voices + slithers.length + (ac ? PERMANENT : 0); },
     ready: function () { return !!ac; }, ctx: ctx
   };
@@ -2581,7 +2684,7 @@ function suitePurity(T, src) {
 // ---- TEST_EXPORT_END ----
 
 /* ========================= 11. BOOT ========================= */
-var STAMP = '20260906e';
+var STAMP = '20260907a';
 var G = {
   screen: 'title', st: null, mode: 'campaign', level: 0, depth: 1,
   keys: {}, joy: null, reticle: null, pendingThrow: null, pendingHum: false,
@@ -2916,6 +3019,8 @@ window.FATHOM_DEV = {
   stick: function () { return G.joy ? { dx: G.joy.dx, dy: G.joy.dy } : null; },
   save: function () { return SAVE.read(); },
   voices: function () { return AUDIO.voices(); },
+  /* the ear gate's render: the loudest minute, offline, through the real AUDIO */
+  renderAudio: function (seconds, opts) { return AUDIO.renderLoudMinute(seconds, opts); },
   audioReady: function () { return AUDIO.ready(); },
   scale: function () { return { SCALE: SCALE, CSSW: CSSW, CSSH: CSSH, camx: CAM.x, camy: CAM.y }; },
   world: function (px, py) { return { x: toWorldX(px), y: toWorldY(py) }; },
