@@ -13,17 +13,16 @@ every difference is in section 3 with its reason.
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
 - 2026-09-05 Fable: plan written. Nothing built.
-- 2026-09-06 Opus: **P0 IS DONE.** Four gates green: `sim` (94 assertions),
-  `lint`, `tine` (rendered into an OfflineAudioContext and measured), `wav`.
-  Every gate watched to fail, including both mutations the plan names. The rules,
-  the link format, the seed melody, the three starters and the tine voice are
-  built; `docs/shots/p0-tine.wav` is waiting for Stephen's ear.
-  **Next action:** P1 step 1, the BOX render and the CRANK. The box is drawn on
-  the canvas (velvet, walnut, the brass comb with fifteen tines, the strip window,
-  the crank with its handle); the crank reads an unwrapped angle about a known
-  hub and advances the paper; the PLAYER fires a tine at the exact crossing.
-  Then P1 step 3 is a STOP AND LOOK: shoot the box and read it, and if it is a
-  rectangle with a circle, fix the drawing before anything else.
+- 2026-09-06 Opus: **P0 AND P1 ARE DONE.** Six gates green: `sim` (94
+  assertions), `lint`, `tine`, `crank`, `layout`, `wav`. Every gate watched to
+  fail. The box is drawn and has been looked at three times; the crank turns the
+  paper and nothing else does; the punch editor punches, refuses and rolls dice;
+  the three starters are on the shelf.
+  **Next action:** P2 step 1, the GIFT. The `#g=` link that carries the strip,
+  the wrap and the dedication; the recipient's wrapped box with a ribbon that
+  takes a real 60 px drag to pull off; the lid opening; the card; SAVE TO MY
+  SHELF. Then `test/gift.mjs`, whose point is that a fresh context opening the
+  link plays the same first notes the sender's strip did.
 
 ---
 
@@ -449,6 +448,110 @@ own, the C above it, then the first seven notes of Twinkle at the auto tempo.
 The tool autocorrelates the first two notes before it writes the file and
 refuses to write one that does not contain them: they measure 264.1 Hz and
 531.3 Hz against 261.6 and 523.3, which is the resolution of the method.
+
+---
+
+### P1, the box, the crank and the punch (2026-09-06)
+
+`node test/crank.mjs`
+
+```
+ok    the crank has a hub a thumb can circle (113 px)
+  ok    and nothing is sitting on top of it (stage)
+  ok    two turns of the crank move the paper about 18.8 eighths (18.8, off by 0.0 percent)
+  ok    and every hole the read line passed sounded, in order, and nothing else ([4,8,12] against [4,8,12])
+  ok    the notes came out in the order they are punched
+  ok    turning it back rewinds the paper (75 mm to 38 mm)
+  ok    and a music box played backwards says nothing (0)
+  ok    letting go stops the crank
+  ok    and the tines are still ringing (6)
+  ok    the mechanism goes quiet on its own (bed at 0.0001)
+  ok    while the comb is still going (6)
+  ok    PUNCH is a 56 px target on the box screen (56 px)
+  ok    and it opens the strip
+  ok    a tap on the paper punches the cell it landed on ([[4,6]])
+  ok    and a second tap on it takes the hole out again
+  ok    a hole one eighth from another in the same row is refused
+  ok    and the paper shows where it would have gone ([5,6])
+  ok    and it says why: "The tine is still singing."
+  ok    while the same eighth in the row above is fine, because that is a different tine
+  ok    no page errors
+
+CRANK OK
+```
+
+`node test/layout.mjs` (the tail; it runs at 412, 375 and 320)
+
+```
+  ok    320: #btnClear is 48 px and reachable
+  ok    320: #btnPunchDone is 48 px and reachable
+  ok    320: a strip row is at least 24 px tall (28.5)
+  ok    320: and an eighth is at least 22 px wide (23.2)
+  ok    320: every one of the fifteen rows takes a tap at its middle and near both its edges and punches THAT row (45 of 45)
+  ok    320: nothing landed on the console
+
+LAYOUT OK
+```
+
+`node tools/check.js`
+
+```
+sim             pass  0s
+lint            pass  0s
+tine            pass  7s
+crank           pass  7s
+layout          pass  12s
+wav             pass  4s
+
+ALL GATES PASSED
+```
+
+**⛔ THE ONE LAW, HELD BY A GATE.** The strip is the clock. `test/crank.mjs`
+never calls the player and never sets a position: a pointer goes down on the
+hub, travels round it the way a thumb does, and what the game does with that is
+measured. Two turns move the paper 18.8 eighths against the 18.8 the config
+asks for, off by 0.0 percent.
+
+```
+$ (the paper advanced by wall time instead of by angle)
+  FAIL  two turns of the crank move the paper about 18.8 eighths (11.0, off by 41.5 percent)
+  FAIL  turning it back rewinds the paper (44 mm to 83 mm)
+  FAIL  and a music box played backwards says nothing (2)
+$ (the angle unwrap taken out, so it jumps at the seam)
+  FAIL  two turns of the crank move the paper about 18.8 eighths (2.0, off by 89.6 percent)
+  FAIL  and every hole the read line passed sounded, in order, and nothing else ([4,4,8] against [])
+$ (a box that plays backwards)
+  FAIL  and a music box played backwards says nothing (1)
+$ (a mechanism that never stops)
+  FAIL  the mechanism goes quiet on its own (bed at 0.0336)
+$ (strip rows too thin to aim at)
+  FAIL  375: a strip row is at least 24 px tall (16.5)
+$ (a tap that lands on the row above)
+  FAIL  every one of the fifteen rows takes a tap at its middle and near both its edges (3 of 45)
+$ (PUNCH back in the music chip's corner)
+  FAIL  320: the bottom left 120 by 120 is left for the music chip
+```
+
+**P1 step 3 was a STOP AND LOOK, and it stopped the build twice.** The plan says
+if the box reads as a rectangle with a circle then fix the drawing before
+anything else, and the first two shots did exactly that.
+
+1. Fifteen test keys sat across the bottom third of the screen, over the PUNCH
+   button. The plan said TEST MODE ONLY and the code had not.
+2. The crank's handle swept across the comb and its knob hung off the side of
+   the case. No music box has ever had its crank there.
+3. The strip was a window inside the box, so the box read as a panel with dots
+   on it rather than as a thing with paper going through it.
+4. On the second pass the crank, now on a bare shaft below the case, read as a
+   lollipop lying on the cloth.
+5. The holes were specks: drawn at a third of a seven pixel row pitch.
+6. The top and bottom rows of the strip, the ones you have to aim at, were the
+   darkest part of the picture, because the mouth shadow was far too strong.
+
+What is there now: the cloth has a nap, the walnut has grain that follows the
+board and one knot in it, the brass has a specular edge, the case sits in its
+own shadow, the paper comes out of both sides and curls, and the crank is
+mounted on a bracket off the case's right shoulder.
 
 ---
 

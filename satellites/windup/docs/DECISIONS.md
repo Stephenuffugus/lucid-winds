@@ -46,3 +46,29 @@ wrong, and what was chosen instead. Written as it happened.
   first two notes and refuses to write one that does not contain the pitches it
   claims. The only ear in the studio should not be spent on a file that is ten
   seconds of the wrong note.
+
+## P1, the box, the crank, the punch
+
+- **The paper runs edge to edge THROUGH the case, and a length of it hangs out
+  of both sides.** The first drawing put the strip in a window inside the box
+  and it read as a panel with dots on it. A strip going in one side and out the
+  other is the one thing that says music box at a glance.
+- **The case ends above the crank and a walnut bracket holds it.** Drawn to the
+  plan's hub position with the box the height it wanted, the handle swept across
+  the comb and the knob hung off the side of the case, which is not where a
+  crank is on any music box ever made. Then, mounted on a bare shaft, it read as
+  a lollipop lying on the cloth.
+- **The mouth shadow is a light touch.** At the strength it was first drawn, the
+  top and bottom of the strip went into shadow inside the case, so the highest
+  and lowest rows, the ones a player has to aim at, were the darkest thing on
+  the screen.
+- **The test keyboard is TEST MODE ONLY and it was not.** Fifteen key buttons
+  sat across the bottom third of the very first shot, on top of the PUNCH
+  button. It is behind `?keys=1` now.
+- **PUNCH moves to the right hand corner under 360 px wide.** Centred, its left
+  edge lands at 95 px on a 320 wide phone, inside the 120 by 120 the fleet's
+  music chip owns.
+- **A hole is drawn at half the row pitch, not a third.** At seven pixels a row
+  a hole drawn at a third of that is a speck, and the strip read as a white band
+  with grey specks on it. The paper is warmer and a shade darker for the same
+  reason.
