@@ -50,3 +50,15 @@ The base magnitude is the real number; the snap rule reads the mood (3.3, Bluste
 
 **A failed feed is asked again no sooner than ten minutes on.**
 Without the floor every new flight re-asked a dead feed (the gate counted three calls in a minute). The card says the feed failed and the picked mood flies.
+
+**A date a player reads is spoken, and a friend's invitation is a line, not a toast.**
+The Daily Wind toast and the journal row both printed the raw ISO day, so a player read
+"the wind of 2026-09-06", which is unreadable and carries two dashes into player copy that
+the studio's copy law forbids. `DAILY.day()` speaks it ("6 September", the year only when
+it is not this one) and `DAILY.day(d, 1)` shortens it for the journal's narrow left column,
+which now carries the height alone and leaves the stamps to the list below it. The
+invitation moved out of the toast entirely: floating, it covered the title art at 26 percent,
+the wordmark and TO THE FIELD at 46, and the sound row at the foot, so it is now a quoted
+line in the title's own column, above the button it explains. `test/daily.mjs` used to pin
+the literal string with the ISO date in it, which made the gate the bug's protector; it
+holds the law instead now, that the day is named in words and no dash of any kind appears.

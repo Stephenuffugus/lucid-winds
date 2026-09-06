@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="UPDRAFT">
-<link rel="manifest" href="./manifest.webmanifest?v=20260906e">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260906e">
-<link rel="icon" href="./icon-192.png?v=20260906e">
+<link rel="manifest" href="./manifest.webmanifest?v=20260906f">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260906f">
+<link rel="icon" href="./icon-192.png?v=20260906f">
 <link rel="canonical" href="https://lucidwinds.com/satellites/updraft/">
 <style>
 /*  UPDRAFT
@@ -92,6 +92,16 @@ html,body{margin:0;padding:0;height:100%;background:#8CC6F0;color:var(--ink);
 .card.sel b::after{content:"  \2713"}
 .title-line{font-size:.8rem;letter-spacing:.11em;color:var(--ink);opacity:.8;
   text-align:center;margin:2px 0 18px;line-height:1.7;padding:0 6px}
+/* ⛔ A FRIEND'S INVITATION IS CONTENT, NOT A TOAST. Floating, it covered the title art
+   at 26 percent, the wordmark and TO THE FIELD at 46, and the sound row at the foot
+   (three Sep 06 shots). It is a line in the column now, above the button it explains,
+   and it pushes nothing off a 915 tall phone. */
+/* not the buttons' cream, or it reads as a fourth button: a quieter panel with a
+   gold rule down its left edge, the way a quoted line is set */
+#titleFrom{opacity:1;color:var(--ink);background:rgba(255,255,255,.34);
+  border-left:3px solid rgba(214,110,74,.75);border-radius:0 12px 12px 0;
+  padding:10px 14px;max-width:330px;margin:0 0 18px;font-size:.78rem;text-align:left}
+#titleFrom[hidden]{display:none}
 .lede{font-size:.9rem;line-height:1.7;color:var(--ink);text-align:left;
   width:100%;max-width:330px;margin:9px 0}
 .cap{font-size:.75rem;letter-spacing:.16em;color:var(--ink);opacity:.7;margin:14px 0 4px;
@@ -105,19 +115,25 @@ html,body{margin:0;padding:0;height:100%;background:#8CC6F0;color:var(--ink);
 .toggles .btn{margin:7px 0}
 .stat{font-size:.8rem;color:var(--cream);letter-spacing:.13em;margin:5px 0;text-transform:uppercase}
 #endWord{font-size:1.4rem;letter-spacing:.2em;color:var(--cream);margin:6px 0 2px}
-#toast{position:fixed;left:50%;top:26%;transform:translateX(-50%);
+/* ⛔ THE TOAST NEVER COVERS A CONTROL OR THE ART. 26 percent put it over the title's
+   art panel, the one picture on the screen; 46 percent moved it onto the wordmark and
+   the top half of TO THE FIELD (both Sep 06 daily title shots). In play it keeps the
+   middle, where nothing is; on the title it drops to the empty band under the last
+   button and over the brand. */
+#toast{position:fixed;left:50%;top:46%;transform:translateX(-50%);
   background:rgba(255,244,224,.94);border:1px solid rgba(32,48,58,.25);
   color:var(--ink);padding:10px 16px;border-radius:12px;font-size:.85rem;
   z-index:40;opacity:0;pointer-events:none;transition:opacity 180ms ease-out;
   max-width:90%;text-align:center}
 #toast.on{opacity:1}
+#toast.low{top:auto;bottom:calc(58px + var(--safeB))}
 #testPanel{position:absolute;inset:0;z-index:60;background:#04070a;color:#cfe;
   overflow:auto;font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;
   padding:14px;display:none;white-space:pre-wrap}
 #testPanel.on{display:block}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260906e" defer></script>
+<script src="/music-unlocks.js?v=20260906f" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">UPDRAFT</h1>
@@ -138,6 +154,7 @@ html,body{margin:0;padding:0;height:100%;background:#8CC6F0;color:var(--ink);
     <canvas id="titleArt" width="660" height="360" aria-label="A kite over a field"></canvas>
     <div id="titleWord">UPDRAFT</div>
     <div class="title-line">Go fly a kite. Right now.</div>
+    <div class="title-line" id="titleFrom" hidden></div>
     <button class="btn lead" id="btnPlay">TO THE FIELD</button>
     <div class="toggles">
       <button class="btn small" id="btnHow">HOW TO FLY</button>
@@ -1420,8 +1437,27 @@ var DAILY = (function () {
     if (!m) return null;
     return { date: m[1], alt: m[2] ? parseInt(m[2], 10) : 0, tricks: (m[3] || '').split('').map(function (c) { return NAMES[c]; }) };
   }
-  function words(t) { return (t.alt ? t.alt + ' m' : 'the grass') + (t.tricks.length ? ' and ' + t.tricks.join(', ') : ''); }
-  return { today: today, seedFor: seedFor, moodFor: moodFor, link: link, parse: parse, words: words };
+  /* ⛔ A DATE A PLAYER READS IS SPOKEN, NEVER AN ISO STRING. The toast said "the wind
+     of 2026-09-06" and the journal row said "2026-09-06", which is both unreadable and
+     two dashes in player copy, which the studio's copy law forbids. day() speaks it,
+     and shortDay() fits the journal's narrow left column. */
+  var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+    'August', 'September', 'October', 'November', 'December'];
+  function day(dateStr, short) {
+    var p = String(dateStr || '').split('-');
+    if (p.length !== 3) return String(dateStr || '');
+    var m = MONTHS[parseInt(p[1], 10) - 1] || p[1], d = parseInt(p[2], 10);
+    if (short) m = m.slice(0, 3);
+    var out = d + ' ' + m;
+    if (p[0] !== String(new Date().getFullYear())) out += ' ' + p[0];
+    return out;
+  }
+  /* a number and its unit are one word, so "41 m" never breaks across two lines */
+  function words(t) { return (t.alt ? t.alt + '\u00a0m' : 'the grass') + (t.tricks.length ? ' and ' + t.tricks.join(', ') : ''); }
+  /* the journal's own row has a narrow left column, so it carries the height only and
+     leaves the tricks to the STAMPS list right below it */
+  function shortWords(t) { return t.alt ? t.alt + '\u00a0m' : 'the grass'; }
+  return { today: today, seedFor: seedFor, moodFor: moodFor, link: link, parse: parse, words: words, shortWords: shortWords, day: day };
 })();
 function shareDaily(t) {
   var url = DAILY.link(t), text = 'I flew the Daily Wind to ' + DAILY.words(t) + '. Your turn, same gusts.';
@@ -1433,15 +1469,16 @@ function shareDaily(t) {
   fallback();
 }
 
-var STAMP = '20260906e';
+var STAMP = '20260906f';
 function showScreen(name) {
   var ids = { title: 'scrTitle', how: 'scrHow', pause: 'scrPause', mood: 'scrMood', kites: 'scrKites', journal: 'scrJournal', end: 'scrEnd' }, k;
   for (k in ids) $(ids[k]).classList.toggle('on', k === name);
   G.screen = name;
   $('hud').style.display = (name === 'play') ? '' : 'none';
 }
-function toast(msg) {
+function toast(msg, low) {
   var t = $('toast'); t.textContent = msg; t.classList.add('on');
+  if (low) t.classList.add('low'); else t.classList.remove('low');
   clearTimeout(toast.h); toast.h = setTimeout(function () { t.classList.remove('on'); }, 2200);
 }
 function hint(msg) { var h = $('hint'); h.textContent = msg; h.classList.add('on'); clearTimeout(hint.h); hint.h = setTimeout(function () { h.classList.remove('on'); }, 5000); }
@@ -1584,9 +1621,9 @@ function openJournal(from) {
   if (G.st) setInput(G.st, false, 0); G.ptr = null;
   $('jAlt').innerHTML = '<i>HIGHEST</i><span>' + j.bestAlt + ' M</span>';
   $('jLong').innerHTML = '<i>LONGEST FLIGHT</i><span>' + j.longest + ' S</span>';
-  $('jHours').innerHTML = '<i>HOURS IN THE AIR</i><span>' + (Math.round(j.hours * 10) / 10) + '</span>';
+  $('jHours').innerHTML = '<i>HOURS IN THE AIR</i><span>' + (Math.round(j.hours * 10) / 10) + '\u00a0H</span>';
   $('jFlights').innerHTML = '<i>FLIGHTS</i><span>' + j.flights + '</span>';
-  $('jDaily').innerHTML = j.daily ? '<i>' + j.daily.date + '</i><span>' + DAILY.words(j.daily).toUpperCase() + '</span>' : '<i>NOT FLOWN YET</i><span>3 MIN, ONE WIND</span>';
+  $('jDaily').innerHTML = j.daily ? '<i>' + DAILY.day(j.daily.date, 1).toUpperCase() + '</i><span>' + DAILY.shortWords(j.daily).toUpperCase() + '</span>' : '<i>NOT FLOWN YET</i><span>3 MIN, ONE WIND</span>';
   $('btnShareJ').hidden = !j.daily;
   names.forEach(function (n) { var c = j.tricks[n] || 0; if (c) { any = true; html += '<div class="jrow"><b>' + n + '</b><span>' + c + '</span></div>'; } });
   $('jStamps').innerHTML = any ? html : '<div class="none">No stamps yet. Loops, dives and saves come from your thumb.</div>';
@@ -1680,7 +1717,10 @@ function boot() {
   if (G.dailyFrom) {
     $('btnDaily').textContent = 'FLY THEIR WIND';
     try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
-    setTimeout(function () { toast('A friend flew the wind of ' + G.dailyFrom.date + ' to ' + DAILY.words(G.dailyFrom) + '. Your turn.'); }, 600);
+    var fl = $('titleFrom');
+    /* the button below already says the turn is yours, so the line stops at the deed */
+    fl.textContent = 'A friend flew the wind of ' + DAILY.day(G.dailyFrom.date) + ' to ' + DAILY.words(G.dailyFrom) + '.';
+    fl.hidden = false;
   }
   AUDIO.setOn(!!G.sound);
   fitCanvas();

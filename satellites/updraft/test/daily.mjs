@@ -37,9 +37,25 @@ let seedA, moodA;
   await browser.defaultBrowserContext().overridePermissions(base, ['clipboard-write', 'clipboard-read']);
   const btn = await dev(page, () => document.getElementById('btnDaily').textContent);
   say(btn === 'FLY THEIR WIND', 'the title button knows a friend sent the wind (' + btn + ')');
-  await page.waitForFunction(() => document.getElementById('toast').classList.contains('on'), { timeout: 5000 }).catch(() => {});
-  const t0 = await dev(page, () => document.getElementById('toast').textContent);
-  say(t0 === 'A friend flew the wind of 2026-09-06 to 41 m and Loop, Dive Bomb. Your turn.', 'the link is read back into words: "' + t0 + '"');
+  /* ⛔ THIS PAIR OF ASSERTIONS USED TO PIN THE BUG. They required the literal string
+     "the wind of 2026-09-06", so an ISO date in player copy, with its two dashes, was
+     the thing the gate protected. They hold the LAW now: the invitation names the day
+     in words, carries the height it was flown to, and contains no dash of any kind.
+     The invitation is also a line in the title's column rather than a floating toast,
+     because as a toast it covered the art, then the wordmark, then the sound row. */
+  await page.waitForFunction(() => {
+    const el = document.getElementById('titleFrom');
+    return el && !el.hidden && el.textContent.length > 10;
+  }, { timeout: 5000 }).catch(() => {});
+  const t0 = await dev(page, () => {
+    const el = document.getElementById('titleFrom');
+    const cs = el ? getComputedStyle(el) : null;
+    return { text: el ? el.textContent : '', shown: !!el && !el.hidden && cs.display !== 'none' && cs.visibility !== 'hidden' };
+  });
+  say(t0.shown, 'the friend\'s line is showing on the title, not hidden behind a toast');
+  say(/6 September/.test(t0.text), 'and it names the day in words: "' + t0.text + '"');
+  say(/41/.test(t0.text) && /Loop/.test(t0.text), 'with the height and the stamps it was flown to');
+  say(!/[-\u2013\u2014]/.test(t0.text), 'and no dash of any kind in it, which an ISO date would carry');
   const hashGone = await dev(page, () => location.hash === '');
   say(hashGone, 'the address no longer carries the tally (a reload is a fresh day)');
   const c = await centre(page, '#btnDaily');
@@ -70,7 +86,10 @@ let seedA, moodA;
   say(/Link copied|#w=2026-09-06/.test(t1), 'a tap on SHARE copies the link or shows it: "' + t1 + '"');
   await tap(page, '#btnJournal2'); await screen(page, 'journal');
   const row = await dev(page, () => document.getElementById('jDaily').textContent);
-  say(/2026-09-06/.test(row), 'the journal row names the day: "' + row + '"');
+  say(/6 SEP/.test(row), 'the journal row names the day in words: "' + row + '"');
+  say(!/[-\u2013\u2014]/.test(row), 'and carries no dash, so it cannot be an ISO date again');
+  say(/\bM\b/.test(row) && !/LOOP|DIVE/.test(row),
+    'and it carries the height only, the stamps are the list below it: "' + row + '"');
   const sj = await centre(page, '#btnShareJ');
   say(!!sj && sj.h >= 48 && sj.onTop, 'SHARE THE WIND in the journal, 48 px and on top');
   say(errors.length === 0, 'nothing on the console' + (errors.length ? ': ' + errors.join(' | ') : ''));
