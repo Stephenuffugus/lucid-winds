@@ -186,7 +186,9 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
 .plane-card{width:100%;min-height:72px;border:2px solid var(--ink);border-radius:12px;
   background:var(--sheet);box-shadow:0 2px 0 var(--ink);display:flex;align-items:center;gap:10px;
   padding:10px 12px;font-family:inherit;text-align:left;color:var(--ink)}
-.plane-card canvas{width:56px;height:44px;flex:0 0 56px}
+/* ⛔ 56 by 44 was too small to tell a wing of 0.15 from a wing of 0.99, which
+   is the one thing the card exists to show. */
+.plane-card canvas{width:76px;height:58px;flex:0 0 76px}
 .plane-card .nm{font-size:.94rem;font-weight:700;display:block}
 .plane-card .sub{font-size:.74rem;color:var(--pencil);display:block;margin-top:2px}
 .plane-card.on{border-color:var(--crease);box-shadow:0 2px 0 var(--crease)}
@@ -224,16 +226,28 @@ body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
       <button class="btn" id="btnTrim">TRIM</button>
       <button class="btn go" id="btnAgain">THROW AGAIN</button>
     </div>
-    <button class="btn ghost" id="btnResultDone">DONE</button>
+    <div class="row">
+      <button class="btn ghost" id="btnResultChallenges">CHALLENGES</button>
+      <button class="btn ghost" id="btnResultDone">DONE</button>
+    </div>
   </div>
 
   <div class="sheet" id="scrTrim">
     <div class="col">
       <div class="cap">Bend it a hair</div>
       <div class="dial"><span class="lbl">Elevator</span>
-        <input type="range" id="dialElev" min="-12" max="12" step="1" value="0"><span class="val" id="valElev">0</span></div>
+        <input type="range" id="dialElev" min="-12" max="12" step="2" value="0" list="detents2">
+        <span class="val" id="valElev">0</span></div>
       <div class="dial"><span class="lbl">Aileron</span>
-        <input type="range" id="dialAil" min="-8" max="8" step="1" value="0"><span class="val" id="valAil">0</span></div>
+        <input type="range" id="dialAil" min="-8" max="8" step="2" value="0" list="detents2">
+        <span class="val" id="valAil">0</span></div>
+      <datalist id="detents2">
+        <option value="-12"></option><option value="-10"></option><option value="-8"></option>
+        <option value="-6"></option><option value="-4"></option><option value="-2"></option>
+        <option value="0"></option><option value="2"></option><option value="4"></option>
+        <option value="6"></option><option value="8"></option><option value="10"></option>
+        <option value="12"></option>
+      </datalist>
       <div class="cap">Paperclip</div>
       <div class="row">
         <button class="btn small" id="clipNone">NONE</button>
@@ -2246,11 +2260,19 @@ function hangarFind(id) {
   for (i = 0; i < SAVE.hangar.length; i++) if (SAVE.hangar[i].id === id) return SAVE.hangar[i];
   return null;
 }
-function hangarRecord(id, res, klass) {
+function hangarRecord(id, res, klass, chId, medal) {
   var e = hangarFind(id);
   if (!e) return;
   e.throws++;
   e.klass = klass;
+  /* ⛔ the medals live on the PLANE as well as on the challenge, because the
+     hangar is a shelf and a shelf with nothing on it is a list. A challenge
+     remembers the best anybody has done; an entry remembers what THIS fold won,
+     which is the only reason to keep an old fold around. */
+  if (chId && medal) {
+    if (!e.medals) e.medals = {};
+    if (!e.medals[chId] || MEDAL_RANK[medal] > MEDAL_RANK[e.medals[chId]]) e.medals[chId] = medal;
+  }
   if (!e.best || res.distance > e.best.distance) {
     e.best = { distance: res.distance, airtime: res.airtime };
   }
@@ -2263,6 +2285,20 @@ function cloneSpec(spec) {
     clip: spec.clip };
 }
 var HANGAR_SEL = -1;
+/* what this fold has won, as a row of dots a person can read at a glance */
+function hangarMedalRow(e) {
+  if (!e.medals) return '';
+  var order = ['gold', 'silver', 'bronze'], tint = { gold: '#C8A84B', silver: '#9AA0A6', bronze: '#A9713F' };
+  var count = { gold: 0, silver: 0, bronze: 0 }, k, out = '', i;
+  for (k in e.medals) if (count[e.medals[k]] !== undefined) count[e.medals[k]]++;
+  for (i = 0; i < order.length; i++) {
+    var n = count[order[i]], j;
+    for (j = 0; j < n; j++) out += '<span style="color:' + tint[order[i]] + '">\u25CF</span>';
+  }
+  if (!out) return '';
+  return '<span class="sub">' + out + ' ' + (count.gold + count.silver + count.bronze)
+    + ' of six</span>';
+}
 function renderHangar() {
   var html = '', i;
   if (!SAVE.hangar.length) {
@@ -2271,11 +2307,11 @@ function renderHangar() {
   for (i = 0; i < SAVE.hangar.length; i++) {
     var e = SAVE.hangar[i];
     html += '<button class="plane-card' + (e.id === HANGAR_SEL ? ' on' : '') + '" data-id="' + e.id + '">'
-      + '<canvas width="112" height="88" data-plane="' + e.id + '"></canvas>'
+      + '<canvas width="152" height="116" data-plane="' + e.id + '"></canvas>'
       + '<span><span class="nm">' + e.name + '</span><span class="sub">'
       + (e.klass ? ARCHETYPES[e.klass].name : 'not flown yet')
       + (e.best ? ' &middot; ' + e.best.distance.toFixed(1) + ' m' : '')
-      + '</span></span></button>';
+      + '</span>' + hangarMedalRow(e) + '</span></button>';
   }
   el('hangarList').innerHTML = html;
   var cards = el('hangarList').querySelectorAll('.plane-card'), k;
@@ -2300,7 +2336,9 @@ function renderHangar() {
 function drawPlanView(ctx, spec, W, H) {
   var len = Math.min(W * 0.86, H * 1.6);
   var cx = W / 2, cy = H / 2;
-  var half = len * (0.16 + 0.30 * clamp(spec.wing, 0, 1));
+  /* the span is what the player CHOSE, so it is drawn with the range it has:
+     a narrow dart and a wide floater come out nearly three to one */
+  var half = len * (0.13 + 0.38 * clamp(spec.wing, 0, 1));
   var nose = cy - len * 0.5, tail = cy + len * 0.5;
   ctx.save();
   /* nose to the RIGHT, the way it flies */
@@ -2903,7 +2941,7 @@ function toTunnel() {
 }
 
 /* ========================= 17. THE FIELD ========================= */
-var STAMP = '20260906a';
+var STAMP = '20260906b';
 var G = {
   screen: 'title', spec: null, res: null, live: null, liveT: 0, flying: false,
   trail: [], ghost: null, best: null, lastClass: null, throws: 0,
@@ -2992,13 +3030,15 @@ function endFlight() {
   G.flying = false;
   var r = G.res, ch = G.challenge;
   SAVE.seen.flown = 1;
-  if (G.hangarId) hangarRecord(G.hangarId, r, G.lastClass.id);
   if (!G.best || r.distance > G.best.distance) {
     G.best = { distance: r.distance, airtime: r.airtime, trail: G.trail.slice() };
     if (!ch) G.ghost = G.best.trail;
   }
   var st = traceStats(r), line = '';
   G.lastScore = null; G.lastMedal = null;
+  if (!SAVE.seen.arch) SAVE.seen.arch = {};
+  var firstOfKind = !SAVE.seen.arch[G.lastClass.id];
+  SAVE.seen.arch[G.lastClass.id] = 1;
   if (ch) {
     var sc = scoreOf(ch, r), med = medalOf(ch, sc);
     G.lastScore = sc; G.lastMedal = med;
@@ -3021,11 +3061,15 @@ function endFlight() {
       : sc.toFixed(ch.kind === 'airtime' ? 1 : 1) + ' ' + ch.unit;
     line += med ? '<br>' + medalWord(med) + ', and your best is ' + medalWord(SAVE.medals[ch.id])
       : '<br>Bronze wants ' + ch.medals.bronze + ' ' + ch.unit;
+    /* the archetype is named ONCE, the first time you fly one, and then it gets
+       out of the way of the score */
+    if (firstOfKind) line += '<br>' + G.lastClass.line;
   } else {
     line = r.distance.toFixed(1) + ' m in ' + r.airtime.toFixed(1) + ' s'
       + (r.stalls ? ', ' + r.stalls + (r.stalls === 1 ? ' stall' : ' stalls') : '')
       + ', glide ' + st.descent.toFixed(0) + ' degrees';
   }
+  if (G.hangarId) hangarRecord(G.hangarId, r, G.lastClass.id, ch ? ch.id : null, G.lastMedal);
   saveNow();
   /* settle the camera on the landing, because where it came down IS the result */
   V.camX = Math.max(0, r.distance - 5);
@@ -3292,6 +3336,10 @@ function bindInput() {
     saveNow();
   });
   el('btnResultDone').addEventListener('click', function () { el('resultCard').classList.remove('on'); });
+  el('btnResultChallenges').addEventListener('click', function () {
+    el('resultCard').classList.remove('on');
+    toChallenges();
+  });
   el('btnAgain').addEventListener('click', function () {
     el('resultCard').classList.remove('on');
     V.camX = 0; V.camY = 0;
@@ -3432,12 +3480,18 @@ window.AIRWORTHY_TEST = {
       flutter: AUDIO._fl ? AUDIO._fl.g.gain.value : 0
     };
   },
-  toChallenge: function (id, over) { toField(newSpec(over || START_SPEC), id); },
+  toChallenge: function (id, over) {
+    if (over) G.hangarId = null;
+    toField(newSpec(over || START_SPEC), id);
+  },
+  /* what the challenge LIST does: this challenge, the plane you are holding */
+  pickChallenge: function (id) { toField(G.spec, id); },
   challenge: function () { return G.challenge; },
   challenges: function () { return CHALLENGES; },
   course: function () { return G.course; },
   score: function () { return { score: G.lastScore, medal: G.lastMedal }; },
   medals: function () { return SAVE.medals; },
+  seen: function () { return SAVE.seen; },
   ghost: function () { return G.ghost; },
   courses: function () { return COURSES; },
   /* the tunnel, as the gate must read it: what is DRAWN, not what is meant.

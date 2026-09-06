@@ -258,6 +258,40 @@ await withPage(320, 568, async (page, shot) => {
   if (want('p3-tunnel-320')) await shot('p3-tunnel-320');
 });
 
+/* ---- P3. The shelf with medals on it, and the result card's two rows ---- */
+await withPage(375, 667, async (page, shot) => {
+  await page.evaluate(() => {
+    /* three folds on the shelf, each having won something different */
+    const folds = [
+      { nose: 'blunt', noseFolds: 3, wing: 0.699, fins: 'up', dihedral: 0.815, precision: 1, elev: -4, ch: 'gym-desk' },
+      { nose: 'locked', noseFolds: 3, wing: 0.15, fins: 'none', dihedral: 0.4, precision: 1, elev: 0, ch: 'gym-far' },
+      { nose: 'pointed', noseFolds: 2, wing: 0.99, fins: 'none', dihedral: 0.36, precision: 1, elev: 8, ch: 'yard-hang' }
+    ];
+    for (const f of folds) {
+      AIRWORTHY_TEST.shopStart(f);
+      const sh = AIRWORTHY_TEST.shop(), fl = AIRWORTHY_TEST.folds();
+      for (let i = 0; i < fl.length; i++) {
+        if (fl[i].field) sh.choice[i] = f[fl[i].field] !== undefined ? f[fl[i].field] : AIRWORTHY_TEST.spec()[fl[i].field];
+        sh.hits.push(1);
+      }
+      sh.step = fl.length - 1;
+      document.getElementById('btnShopNext').click();
+      AIRWORTHY_TEST.pickChallenge(f.ch);
+      AIRWORTHY_TEST.launch();
+      AIRWORTHY_TEST.finish();
+    }
+  });
+  await waitFrames(page, 3);
+  if (want('p3-result-rows')) await shot('p3-result-rows');
+  await page.evaluate(() => {
+    document.getElementById('btnResultDone').click();
+    document.getElementById('btnBack').click();
+    document.getElementById('btnHangar').click();
+  });
+  await waitFrames(page, 3);
+  if (want('p3-shelf')) await shot('p3-shelf');
+});
+
 /* ---- P3. THE FOUR SIZES the plan names, on the shot that matters most ---- */
 for (const [w, h, tag] of [[412, 915, 'p3-412'], [375, 667, 'p3-375'], [320, 568, 'p3-320'], [915, 412, 'p3-915']]) {
   await withPage(w, h, async (page, shot) => {

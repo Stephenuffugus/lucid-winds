@@ -124,6 +124,101 @@ try {
   const kept = await T(() => Object.assign({}, window.AIRWORTHY_TEST.medals()));
   say(kept['gym-desk'] === 'gold', 'and it is still there after a reload (' + JSON.stringify(kept) + ')');
 
+  /* ---- the way back, and the trim panel's detents ---- */
+  await T(() => {
+    window.AIRWORTHY_TEST.toChallenge('gym-far', { nose: 'locked', noseFolds: 3, wing: 0.15, elev: 0 });
+    window.AIRWORTHY_TEST.launch();
+    window.AIRWORTHY_TEST.finish();
+  });
+  await waitFrames(page, 3);
+  const back = await centre(page, '#btnResultChallenges');
+  say(!!back && back.onTop && back.h >= 47.5,
+    'the result card offers a way back to the challenges (' + (back ? back.h.toFixed(0) : 0) + ' px)');
+  await tap(page, '#btnResultChallenges');
+  await waitFrames(page, 3);
+  say(await T(() => window.AIRWORTHY_TEST.screen()) === 'challenges', 'and it goes there');
+
+  await T(() => window.AIRWORTHY_TEST.toChallenge('gym-far'));
+  await waitFrames(page, 2);
+  await T(() => { window.AIRWORTHY_TEST.launch(); window.AIRWORTHY_TEST.finish(); });
+  await waitFrames(page, 3);
+  await tap(page, '#btnTrim');
+  await waitFrames(page, 3);
+  const trim = await centre(page, '#dialElev');
+  say(!!trim && trim.onTop && trim.h >= 47.5,
+    'the trim panel opens and the elevator is a 48 px slider (' + (trim ? trim.h.toFixed(0) : 0) + ' px)');
+  const detent = await T(() => {
+    const d = document.getElementById('dialElev'), a = document.getElementById('dialAil');
+    d.value = '-3'; a.value = '5';
+    return { elev: Number(d.value), ail: Number(a.value), step: d.step };
+  });
+  say(detent.elev % 2 === 0 && detent.ail % 2 === 0,
+    'and both trim sliders detent every two degrees: minus three landed on '
+    + detent.elev + ', five landed on ' + detent.ail);
+
+  /* ---- a fold on the shelf remembers what it won ---- */
+  await T(() => {
+    /* fold and save one through the workshop, the way a player does */
+    AIRWORTHY_TEST.shopStart({ nose: 'blunt', noseFolds: 3, wing: 0.699, fins: 'up',
+      dihedral: 0.815, precision: 1, elev: -4 });
+    const sh = AIRWORTHY_TEST.shop(), folds = AIRWORTHY_TEST.folds();
+    const want = { nose: 'blunt', noseFolds: 3, wing: 0.699, fins: 'up', dihedral: 0.815, elev: -4 };
+    for (let i = 0; i < folds.length; i++) {
+      if (folds[i].field) sh.choice[i] = want[folds[i].field] !== undefined
+        ? want[folds[i].field] : AIRWORTHY_TEST.spec()[folds[i].field];
+      sh.hits.push(1);
+    }
+    sh.step = folds.length - 1;
+    document.getElementById('btnShopNext').click();
+  });
+  await waitFrames(page, 3);
+  const inHangar = await T(() => ({ n: window.AIRWORTHY_TEST.hangar().length,
+    id: window.AIRWORTHY_TEST.state().hangarId }));
+  say(inHangar.n >= 1 && inHangar.id, 'a fold saved out of the workshop lands in the hangar');
+  await T(() => {
+    const spec = window.AIRWORTHY_TEST.spec();
+    window.AIRWORTHY_TEST.state().challenge = null;
+    document.getElementById('btnChallenges').click();
+  });
+  await waitFrames(page, 2);
+  await tap(page, '.ch-card[data-ch="gym-desk"]');
+  await waitFrames(page, 3);
+  await T(() => { window.AIRWORTHY_TEST.launch(); window.AIRWORTHY_TEST.finish(); });
+  await waitFrames(page, 3);
+  const won = await T(() => {
+    const h = window.AIRWORTHY_TEST.hangar()[0];
+    return { medals: h.medals || null, medal: window.AIRWORTHY_TEST.score().medal };
+  });
+  say(!!won.medals && won.medals['gym-desk'] === won.medal && !!won.medal,
+    'and the medal it wins is written onto that fold, not just onto the challenge ('
+    + JSON.stringify(won.medals) + ')');
+  await T(() => document.getElementById('btnBack').click());
+  await waitFrames(page, 2);
+  await T(() => document.getElementById('btnHangar').click());
+  await waitFrames(page, 3);
+  const card = await T(() => document.querySelector('.plane-card').textContent);
+  say(card.indexOf('of six') >= 0, 'and the shelf shows it: "'
+    + card.replace(/\s+/g, ' ').trim().slice(0, 70) + '"');
+
+  /* ---- the archetype is named ONCE ---- */
+  await T(() => {
+    window.AIRWORTHY_TEST.seen().arch = {};
+    window.AIRWORTHY_TEST.toChallenge('gym-far', { nose: 'locked', noseFolds: 3, wing: 0.15, elev: 0 });
+    window.AIRWORTHY_TEST.launch();
+    window.AIRWORTHY_TEST.finish();
+  });
+  await waitFrames(page, 3);
+  const first = await T(() => document.getElementById('resultLine').textContent);
+  await T(() => { window.AIRWORTHY_TEST.launch(); window.AIRWORTHY_TEST.finish(); });
+  await waitFrames(page, 3);
+  const second = await T(() => document.getElementById('resultLine').textContent);
+  const klass = await T(() => window.AIRWORTHY_TEST.klass());
+  say(first.length > second.length,
+    'a challenge names the archetype the first time you fly one ("' + first.trim() + '")');
+  say(second.length < first.length && second.indexOf('flat') < 0,
+    'and gets out of the way of the score after that ("' + second.trim() + '")');
+  say(!!klass, 'and it knew what it was (' + klass + ')');
+
   say(errors.length === 0, 'no page errors' + (errors.length ? ': ' + errors.slice(0, 3).join(' | ') : ''));
 } finally {
   await browser.close();

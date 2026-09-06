@@ -15,10 +15,15 @@ this file wins; every difference is in section 3 with its reason.
   sim assertions, and every assertion in every gate watched to fail at least
   once. The morning report is at the top of section 15, the ledgers are in
   section 13 and every call is in `satellites/airworthy/docs/DECISIONS.md`.
-  **Next action:** nothing is half built. The plan is complete through P3. What
-  is open is in the morning report under "what is thin": no painted art, the
-  Stunt and Canyon and Stadium courses the design names are not built, nobody
-  has played it on a phone and nobody has HEARD it.
+  Section 6, THE SCREENS, has since been read clause by clause against the
+  shipped file and the four things it named that were missing are built (the
+  result card's CHALLENGES button, the archetype line named once, the trim
+  panel's two degree detents, and medals on the hangar cards, which needed a
+  hangar entry to remember what it won).
+  **Next action:** nothing is half built. The plan is complete through P3 and
+  section 6 is closed. What is open is in the morning report under "what is
+  thin": no painted art, the Stunt and Canyon and Stadium courses the design
+  names are not built, nobody has played it on a phone and nobody has HEARD it.
 
 ---
 
@@ -1009,6 +1014,93 @@ What looking at 412 by 915 found, which no gate would have:
   is plain, at three times the pixels.
 
 
+### P3, closing section 6 against the built game (2026-09-06)
+
+The phases were done; section 6, THE SCREENS, was not. Read clause by clause
+against the shipped file, four things were missing and one was a real bug.
+
+**Missing, now built.**
+
+1. *"the result card: distance or time or zone, the medal, the archetype line
+   (first time), TRIM (48), THROW AGAIN (56), CHALLENGES (48)"*. There was no
+   CHALLENGES button: from a result the only way back to the list was the back
+   arrow and the title screen. Two rows now.
+2. *"the archetype line (first time)"*. A challenge named the archetype never
+   and free flight named it every time. It is named once, the first time you fly
+   one, and then it gets out of the way of the score.
+3. *"Trim panel. Elevator and aileron as 48 px tall sliders with detents at 2
+   degrees"*. They stepped by one, with no detents at all.
+4. *"Hangar. Cards 72 px tall: name, archetype, medals"*. The cards had no
+   medals on them, and could not have: a medal was recorded against the
+   CHALLENGE and nothing was recorded against the fold that won it. A hangar
+   entry now carries its own medals and the shelf shows them as dots.
+
+**And the bug looking found.** The cards were 56 by 44 rendered, and at that
+size a wing of 0.15 and a wing of 0.99 are the same picture, which is the exact
+fault P2 fixed by moving to a plan view and did not fix far enough. 76 by 58,
+and the span drawn across the range the player actually has.
+
+`node test/challenge.mjs` (the six new assertions at the end)
+
+```
+  ok    the result card offers a way back to the challenges (48 px)
+  ok    and it goes there
+  ok    the trim panel opens and the elevator is a 48 px slider (48 px)
+  ok    and both trim sliders detent every two degrees: minus three landed on -2, five landed on 6
+  ok    a fold saved out of the workshop lands in the hangar
+  ok    and the medal it wins is written onto that fold, not just onto the challenge ({"gym-desk":"gold"})
+  ok    and the shelf shows it: "KestrelThe Cruiser · 8.5 m● 1 of six"
+  ok    a challenge names the archetype the first time you fly one ("18.9 mGold, and your best is GoldFast and flat. It gets there and it does not hang about.")
+  ok    and gets out of the way of the score after that ("18.9 mGold, and your best is Gold")
+  ok    and it knew what it was (dart)
+  ok    no page errors
+
+CHALLENGE OK
+```
+
+**All six watched red.**
+
+```
+$ (the CHALLENGES button hidden)
+  FAIL  the result card offers a way back to the challenges (0 px)
+$ (the trim sliders back to step one)
+  FAIL  and both trim sliders detent every two degrees: minus three landed on -3, five landed on 6
+$ (the medal not passed to hangarRecord)
+  FAIL  and the medal it wins is written onto that fold, not just onto the challenge (null)
+  FAIL  and the shelf shows it: "KestrelThe Cruiser · 8.5 m"
+$ (hangarMedalRow returning nothing)
+  FAIL  and the shelf shows it: "KestrelThe Cruiser · 8.5 m"
+$ (the archetype named every time)
+  FAIL  a challenge names the archetype the first time you fly one
+  FAIL  and gets out of the way of the score after that
+```
+
+`node tools/check.js`
+
+```
+sim             pass  0s
+lint            pass  0s
+throw           pass  5s
+fold            pass  9s
+tunnel          pass  3s
+challenge       pass  4s
+sound           pass  6s
+layout          pass  10s
+
+ALL GATES PASSED
+```
+
+**A test hook that was lying, found by looking at the shot it produced.**
+`AIRWORTHY_TEST.toChallenge(id)` with no spec flew START_SPEC, so the first
+shelf shot showed three folds that had all been flown as the starting plane:
+three identical thumbnails, and archetypes that belonged to a plane nobody
+folded. There is now `pickChallenge(id)`, which is what the challenge LIST
+does, and the shot shows a wide Tumbler, a needle Dart and a Cruiser between
+them, each with the gold it won.
+
+Stamp bumped to `20260906b` in `index.html` and `sw.js` together.
+
+
 ## 14. THE OVERNIGHT PROTOCOL
 
 As `plans/fathom/HANDOFF-FATHOM.md` section 14, with `P0, P1, P2, P3` of this file and the browser gates `throw, fold,
@@ -1049,6 +1141,16 @@ by flying forty folds through every one, not guessed.
    was open, so a sharper one was written next to it.
 3. Every threshold in the file was written by a tool that flew for them, and the
    tool refuses to write a set where one plane wins everything.
+
+**Section 6 is closed too.** The phases were done and the screens spec was not.
+Read clause by clause it named four things that did not exist: a way back to the
+challenges from a result, the archetype line named once rather than never or
+always, detents at two degrees on the trim sliders, and medals on the hangar
+cards. That last one could not have existed: a medal was recorded against the
+challenge and nothing at all was recorded against the fold that won it, so the
+shelf was a list rather than a shelf. Looking at the first shot of it also
+caught the cards at 56 by 44, where a wing of 0.15 and a wing of 0.99 are the
+same picture, which is the exact fault P2 fixed once and did not fix far enough.
 
 **What is thin, honestly.**
 
