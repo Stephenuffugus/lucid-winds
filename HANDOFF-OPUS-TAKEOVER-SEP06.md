@@ -76,6 +76,8 @@ Airworthy, Windup, Gerplunk, Whistlestop, Strata, Wardian and Fathom were re run
   `satellites/windup/index.html` is clean in `git status`; its gift and layout gates were queued
   at 14:55 into `scratchpad/gates-windup.txt`. If uncommitted: run `node tools/lint.mjs`, then
   the two gates, then commit with stamp 20260906e in all three places.
+- Gerplunk: the last builder commit `f727ddc8` (DAILY, the card, share by link, hidden buttons that rendered because `.btn{display:block}` beat `hidden`) was committed WITHOUT rerunning the seven browser gates, the lock was busy. First thing: `cd satellites/gerplunk && flock -w 1800 /tmp/sws-gate.lock node tools/check.js`, fix what is red, then P3 step 1.
+- Windup's caption nudge landed: gift and layout gates green, stamp 20260906e.
 - Gerplunk and Updraft builders were told to stop and commit at 14:56. If their fences show
   uncommitted edits, read the diff, run `sim.js --test` and lint, and commit only what is green.
 - Fathom's arcade tile was shot before occlusion; it still reads. Reshoot with
