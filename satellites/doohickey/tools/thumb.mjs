@@ -19,10 +19,14 @@ const { browser, page } = await open(s.base, { width: 700, height: 700, deviceSc
 
 /* mid cascade, chrome hidden: the tile is a picture of the game happening */
 await page.evaluate(() => {
-  DOOHICKEY_TEST.start(1);
+  /* The Zigzag (level 8): four planks down the whole height of the board and the
+     marble halfway down them, so the tile is a picture of the game and not a
+     strip of floor (the first tile framed the domino row, 200 px of a 432 board,
+     and sat as a band on the shelf). */
+  DOOHICKEY_TEST.start(8);
   DOOHICKEY_TEST.solution();
   DOOHICKEY_TEST.go();
-  DOOHICKEY_TEST.advance(2.45);
+  DOOHICKEY_TEST.advance(2.6);
   for (const id of ['btnGo', 'btnStop', 'btnUndo', 'btnRedo', 'btnMenu', 'partCount', 'tray'])
     document.getElementById(id).style.display = 'none';
 });
@@ -36,7 +40,7 @@ const b64 = await page.evaluate(async () => {
   /* frame the ROW and the bell, not the empty sky above them */
   /* the row is 300 to 500 on the floor and the bell is at 500: frame THAT, with
      enough sky above it to read as a board and not as a crop */
-  const a = DOOHICKEY_TEST.toScreen(246, 262), b = DOOHICKEY_TEST.toScreen(556, 438);
+  const a = DOOHICKEY_TEST.toScreen(20, 16), b = DOOHICKEY_TEST.toScreen(420, 416);
   const dpr = src.width / src.clientWidth;
   const sx = a.x * dpr, sy = a.y * dpr;
   const sw = (b.x - a.x) * dpr, sh = (b.y - a.y) * dpr;
@@ -67,7 +71,8 @@ const measured = await page.evaluate(async (b) => {
     const r = d[i], g = d[i + 1], bb = d[i + 2];
     n++;
     if (r + g + bb > 300) lit++;
-    if (r > g + 50 && r > bb + 50 && r > 120) red++;
+    /* planks are the purple of the zigzag tile; the domino red guard belonged to the old level 1 tile */
+    if (r > g + 30 && bb > g + 40 && r > 110 && r < 170) red++;
     if (r > 180 && g > 130 && bb < 120) gold++;
   }
   return { lit: lit / n, red: red / n, gold: gold / n, w: im.width, h: im.height };
@@ -77,7 +82,7 @@ await browser.close(); s.close();
 
 const problems = [];
 if (measured.lit < 0.55) problems.push('too dark for a cream game (' + (measured.lit * 100).toFixed(0) + ' percent lit)');
-if (measured.red < 0.008) problems.push('no dominoes in it (' + (measured.red * 100).toFixed(2) + ' percent red)');
+if (measured.red < 0.004) problems.push('no planks in it (' + (measured.red * 100).toFixed(2) + ' percent plank purple)');
 if (measured.gold < 0.001) problems.push('no bell in it (' + (measured.gold * 100).toFixed(3) + ' percent gold)');
 if (buf.length > 150 * 1024) problems.push('too heavy (' + (buf.length / 1024).toFixed(0) + ' KB)');
 if (problems.length) {
