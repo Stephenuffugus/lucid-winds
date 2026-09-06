@@ -97,8 +97,36 @@ PDF leaves beta.
 
 ### Row 8, INKSWING
 
-**In progress. P0, P1 and P2 are done and pushed.** Five gates: `sim` (84
-assertions), `lint`, `fling`, `sound`, `layout`. Every assertion watched to
+**DONE, P0 to P3, and pushed.** Seven gates: `sim` (87 assertions), `lint`,
+`fling` (31), `sound` (17), `share` (19), `poster` (16), `layout` (69). The
+codespace closed during P3 step 1; nothing was lost, the work in the tree was
+green and is committed as `cc432ee8`. Full morning report in
+`plans/inkswing/HANDOFF-INKSWING.md` section 15.
+
+**⛔⛔ READ THIS ONE FIRST, IT IS THE MOST USEFUL THING IN THE RUN. The layout
+gate's most important assertion had never once been able to fail.** It checked
+that no button sits on the paper, over `btnKeep, btnTear, btnUndo, btnFinish`,
+and every one of those is `hidden` until a sheet has a throw on it. The gate
+never put a throw on one, so it filtered an EMPTY LIST every time and reported
+clean. The music chip corner check had the identical hole, and `btnShare` was in
+neither list. It was found by opening `docs/shots/p3-sand.png` and seeing UNDO
+sitting on the paper while the gate was green. Three real faults were under it:
+the sheet ran under the ink rail so the colour chips covered the right third of
+every drawing; the sheet hung from the top of its band so a 412 by 915 phone got
+three hundred pixels of dead floor; and the four action buttons were four
+different widths right aligned into a staircase 224 px tall that stood on the
+paper. All three fixed, the gate rewritten to load a drawing and assert the
+buttons are showing BEFORE it measures, and watched to fail on the real bug.
+**This is worth grepping the other eleven games for**: any assertion whose
+subject is conditionally hidden, disabled or unmounted at the moment it is
+measured.
+
+**P3 step 4, the Double Link, is NOT built.** The plan made it conditional on
+steps 1 to 3 landing early and they did not. Nothing depends on it.
+
+The P2 record, unchanged:
+
+Five gates at P2 were: `sim` (84 assertions), `lint`, `fling`, `sound`, `layout`. Every assertion watched to
 fail, and two of the sound ones were REWRITTEN because they passed with the code
 under them deleted (they were offline renders that scheduled their own decay and
 set their own master gain, so they were tests of the test).
@@ -149,6 +177,13 @@ on the other phone was a different drawing.
 5. **A tall phone is not a bigger phone.** Both games put their whole subject in
    a band at one end of a 412 by 915 screen. Draw the room closer on a tall
    aspect and centre the subject in what is left.
+6. **⛔⛔ A gate that measures a hidden element measures nothing, and it reports
+   PASS.** Added 2026-09-06 from Inkswing. Every `filter(...)` style assertion
+   whose subject can be `hidden`, `disabled`, `display:none` or not yet mounted
+   at the moment it runs is a candidate: it will quietly return an empty list and
+   the suite will go green. The fix is the same everywhere: put the game in the
+   state where the thing EXISTS, assert that it exists and how many, and only
+   then measure it. Worth one grep across all twelve games.
 
 ---
 

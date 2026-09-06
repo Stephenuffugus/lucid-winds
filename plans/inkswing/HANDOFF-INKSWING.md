@@ -20,10 +20,20 @@ on branch `add-sproing-jumper` tonight.
   the bob choice, the hum, the paper whisper and the rip.
   ⛔ One finding is a Director call and it is in the morning report: the sliders
   are equal tempered, so nothing ever closes exactly.
-  **Next action:** P3 step 1, SAND mode: the grains poured by the pen, the baked
-  layer past SAND_GRAINS_MAX, the hiss, tilt to erase behind the Settings
-  toggle, and the brush off button for phones without tilt and for reduced
-  motion. Then the poster, the share link and the daily ratio.
+- 2026-09-06 Opus (after the codespace closed mid phase): **P3 IS DONE, and the
+  whole plan with it.** The codespace was closed during P3 step 1 and the work
+  in the tree was uncommitted; nothing was lost, it was green, and it is
+  committed as `cc432ee8`. Seven gates now: `sim` (87), `lint`, `fling` (31),
+  `sound` (17), `share` (19), `poster` (16), `layout` (69).
+  Sand, the poster at print size, the share link and the daily ratio, the tile,
+  `docs/ART_ASSETS.md` and `docs/BUILD-NOTES.md`.
+  ⛔⛔ The layout gate's most important assertion had never been able to fail.
+  Found by opening a screenshot. It is in the morning report in section 15 and
+  it is the single most useful thing this phase produced.
+  P3 step 4, the Double Link, is NOT built: it was conditional in the plan on
+  steps 1 to 3 landing early and they did not.
+  **Next action: none. The plan is finished.** Fable reviews it per the spine
+  section 6.
 
 ---
 
@@ -551,4 +561,106 @@ poster, share, layout`.
 
 ## 15. THE MORNING REPORT
 
-The template in `plans/fathom/HANDOFF-FATHOM.md` section 15, with this file's phases.
+*Written 2026-09-06 by Opus at the end of P3. The template is
+`plans/fathom/HANDOFF-FATHOM.md` section 15.*
+
+### What Inkswing is now
+
+A brass pendulum on a sheet of paper. You grab the bob and throw it, and the pen
+under it draws what the throw actually does: an ellipse that precesses and decays
+into a spiral, or on the crossed and gimbal rigs a knot whose shape is the ratio
+between two pendulum lengths. The lengths are set as notes, so a 3:2 knot is a
+fifth. You layer inks, you tear the sheet off, you make a poster of it at print
+size, and you send the drawing to someone as a link.
+
+The whole plan is built, P0 through P3, except P3 step 4.
+
+### The gates
+
+`node satellites/inkswing/tools/check.js` prints ALL GATES PASSED across seven:
+
+```
+sim             pass  0s     87 assertions
+lint            pass  0s
+fling           pass  9s     31 assertions
+sound           pass  3s     17 assertions
+share           pass  3s     19 assertions
+poster          pass  3s     16 assertions
+layout          pass  3s     69 assertions
+ALL GATES PASSED
+```
+
+Every assertion in every gate has been watched to fail at least once.
+
+### ⛔⛔ The finding worth the whole phase: a gate that could not fail
+
+The layout gate's most important assertion is "no button is sitting on the
+paper", and the drawing is the product, so that is the one rule the layout has.
+It checked the buttons `btnKeep, btnTear, btnUndo, btnFinish`. Every one of those
+is `hidden` until a sheet has a throw on it, and the gate never put a throw on
+one, so for its whole life the assertion filtered an **empty list** and reported
+clean. The music chip corner check had the same hole. `btnShare` was in neither
+list.
+
+It was found by opening `docs/shots/p3-sand.png` and seeing UNDO sitting on the
+paper while the gate was green. The gate now loads a drawing, lets the frame run
+so `syncActions` un hides the buttons, asserts that four of them are actually
+showing before it measures anything, and then measures. It was watched to fail on
+the real bug at 375 and at 320 before a line of the layout was touched.
+
+Three real faults were hiding under it, all found by looking at the shots and all
+fixed:
+
+1. **The sheet ran under the ink rail.** It was centred in the full viewport
+   width while a column of 48 px colour chips sits on the right edge, so the
+   right third of every drawing was behind the colours. It is centred in what is
+   left after the rail now.
+2. **The sheet hung from the top of its band**, so on a 412 by 915 phone, where
+   the sheet's 1000 by 1250 aspect makes the width bind, three hundred pixels of
+   empty floor opened between the paper and the buttons and the composition fell
+   apart on exactly the phone Stephen carries. It is centred in the band.
+3. **The actions were a staircase that stood on the drawing.** A column of four
+   up the right side is 224 px tall, which reached into the paper, and the four
+   were four different widths right aligned, so nothing shared an edge with
+   anything. They are a two by two block in the bottom right now, one width, every
+   edge shared, clear of the fleet's music chip corner, and the band they reserve
+   fell from 186 px to 152 px, so the drawing got bigger on every phone.
+
+### What I looked at, and the faults I can still name
+
+`docs/shots/p3-412.png`, `p3-375.png`, `p3-320.png`, `p3-sand.png`,
+`p3-poster.png` and `docs/thumb.png`, all opened.
+
+- **412 still reads as three separated bands.** The sheet is 1000 by 1250 and the
+  rail takes 58 px off the width, so on a 412 by 915 phone the sheet physically
+  cannot fill the height; there is about 150 px of empty ground above it and 150
+  below. Centring is the best answer available without cropping the sheet, and
+  the sheet's aspect is a design fact rather than a bug, so this is written down
+  rather than chased.
+- **The tile has the brass arm running dead centre** from the top edge through
+  the middle, splitting the knot in two and pulling the eye out of the frame.
+- **The poster's drawing is not centred in its rule box** and there is a visible
+  seam across the paper gradient from the posterization that keeps the files
+  under the size limit.
+
+### Director calls waiting
+
+1. **The sliders are equal tempered, so nothing ever closes exactly.** Carried
+   from P2 and still open. The lengths are set as notes and the intervals are
+   named as notes, but equal temperament means a "fifth" is 2^(7/12), not 3/2, so
+   a knot set to a fifth never quite closes and drifts forever. Just intonation
+   would make the named intervals close exactly and make the drawings finite and
+   symmetric, at the cost of the note names being slightly off a piano. My read
+   is that this game is about the drawing and not about the piano, so just
+   intonation is the better default with equal temperament behind the Settings
+   toggle, but it changes every drawing the game makes and that is his call, not
+   mine.
+2. **P3 step 4, the Double Link, is not built.** The plan made it conditional on
+   steps 1 to 3 landing early. They did not. It is a clean addition later and
+   nothing depends on it.
+
+### Where the work is
+
+Branch `add-sproing-jumper`, commits `8f51e7c4` through `e95ac564`. Not on main.
+`satellites/inkswing/docs/BUILD-NOTES.md` has the scars, `docs/ART_ASSETS.md`
+has what is drawn and what ships.
