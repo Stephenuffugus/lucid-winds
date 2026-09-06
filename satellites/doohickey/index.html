@@ -116,9 +116,14 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
 .card .sub{font-size:.76rem;color:#6B5C42;display:block;margin-top:2px}
 .card .stars{margin-left:auto;font-size:1rem;letter-spacing:.1em;color:var(--yellow)}
 .card.locked{opacity:.45;box-shadow:none}
+/* the replay is the point of the win screen, so in landscape the card takes one
+   side and leaves the board visible beside it rather than sitting on top of it */
 #winCard{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:14;
   width:86%;max-width:340px;background:var(--paper);border:3px solid var(--ink);border-radius:18px;
   box-shadow:0 5px 0 var(--ink);padding:18px;display:none;flex-direction:column;gap:10px;align-items:stretch}
+@media (orientation:landscape){
+  #winCard{left:calc(16px + var(--safeL));transform:translateY(-50%);width:44%;max-width:320px}
+}
 #winCard.on{display:flex}
 #winStars{font-size:2rem;text-align:center;letter-spacing:.14em;color:var(--yellow)}
 #winLine{text-align:center;font-size:.9rem;color:#6B5C42}
@@ -157,7 +162,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
       <button class="btn" id="btnShare">SHARE</button>
       <button class="btn" id="btnFilm">FILM IT</button>
     </div>
-    <button class="btn ghost" id="btnWinMenu">MENU</button>
+    <button class="btn" id="btnWinMenu" style="background:var(--paper2)">MENU</button>
   </div>
 
   <div class="screen on" id="scrTitle">
@@ -2113,6 +2118,7 @@ function drawScene(ctx, world, level, touched) {
   drawRopes(ctx, world);
   for (i = 0; i < world.bodies.length; i++) if (world.bodies[i].kind !== 'scene') drawBody(ctx, world.bodies[i]);
   drawPuffs(ctx);
+  drawConfetti(ctx);
   ctx.restore();
 }
 
@@ -2157,6 +2163,7 @@ function startLevel(id) {
   G.running = false;
   G.result = null;
   G.touched = [];
+  G.sandbox = -1;
   var i;
   for (i = 0; i < G.level.bonus.length; i++) G.touched.push(0);
   rebuildPreview();
@@ -2176,6 +2183,15 @@ function rebuildPreview() {
     G.world.bodies[i].vel = v(0, 0);
     G.world.bodies[i].angVel = 0;
   }
+}
+/* ⛔ ONE function for "the machine changed". It used to be three lines repeated
+   at seven call sites, and two of them forgot the sandbox save, so a table you
+   built through one path was kept and through another was lost. */
+function machineChanged() {
+  rebuildPreview();
+  renderTray();
+  updateCount();
+  if (G.sandbox >= 0) saveSandbox();
 }
 function updateCount() {
   el('partCount').textContent = G.machine.parts.length + ' of ' + G.level.par + ' parts';
@@ -2225,6 +2241,7 @@ function goRun() {
   G.result = null;
   G.runT = 0;
   ACC = 0;
+  TAPE.length = 0; REPLAY = null; CONFETTI.length = 0;
   G.world = buildWorld(G.level, cloneMachine(G.machine));
   /* dust where things actually hit, not on a timer. The sim reports the
      impulse; the view decides whether it was worth a puff. */
@@ -2242,7 +2259,9 @@ function goRun() {
 function stopRun() {
   if (!G.running) return;
   G.running = false;
-  PUFFS.length = 0;
+  REPLAY = null;
+  PUFFS.length = 0; CONFETTI.length = 0;
+  el('winCard').classList.remove('on');
   rebuildPreview();
   resetCamera();
   showScreen('Build');
@@ -2253,6 +2272,7 @@ function tickRun(dt) {
   ACC += Math.min(0.25, dt / 1000);
   while (ACC >= step && guard < 12) {
     G.world.step(step);
+    tapeFrame(G.world);
     G.runT += step;
     touchedBonus(G.world, G.level, G.touched);
     if (!G.result && bellRung(G.world)) {
@@ -2267,6 +2287,12 @@ function tickRun(dt) {
   if (G.runT > CONFIG.RUN_MAX_S && !G.result) { toast('It ran out of time. Have another go.'); stopRun(); }
 }
 function onWin() {
+  startReplay();
+  confetti(70);
+  if (G.levelId >= 0) {
+    SAVE.stars[G.levelId] = Math.max(SAVE.stars[G.levelId] || 0, G.result.stars);
+    saveNow();
+  }
   /* the card owns the screen: nothing else is left underneath it */
   el('btnStop').hidden = true;
   el('tray').hidden = true;
@@ -2284,8 +2310,12 @@ function frame(ts) {
   if (document.hidden) return;
   var dt = LAST ? Math.min(120, ts - LAST) : 16;
   LAST = ts; V.t = ts; FRAMES++;
-  if (G.running) { tickRun(dt); easeCamera(G.world, dt); }
+  if (G.running) {
+    if (REPLAY) { stepReplay(dt); easeCamera(G.world, dt); }
+    else { tickRun(dt); easeCamera(G.world, dt); }
+  }
   stepPuffs(dt);
+  stepConfetti(dt);
   if (G.world) {
     drawScene(V.ctx, G.world, G.level, G.touched);
     if (!G.running) { drawSelection(V.ctx); drawGhost(V.ctx); }
@@ -2337,7 +2367,7 @@ function boot() {
   fitCanvas();
   showScreen('Title');
   el('btnPlay').addEventListener('click', function () { renderLevelList(); showScreen('Select'); });
-  el('btnSandbox').addEventListener('click', function () { toast('The sandbox comes with the next pass.'); });
+  el('btnSandbox').addEventListener('click', function () { renderSlots(); showScreen('Sand'); });
   el('btnHow').addEventListener('click', function () { showScreen('How'); });
   el('btnHowBack').addEventListener('click', function () { showScreen('Title'); });
   el('btnSelectBack').addEventListener('click', function () { showScreen('Title'); });
@@ -2368,7 +2398,7 @@ function boot() {
     pushUndo();
     G.machine.parts.length = 0;
     SEL = -1; hideHandles();
-    rebuildPreview(); renderTray(); updateCount();
+    machineChanged();
     el('scrMenu').classList.remove('on');
   });
   el('btnLevels').addEventListener('click', function () {
@@ -2379,11 +2409,12 @@ function boot() {
   });
   el('btnNext').addEventListener('click', function () {
     el('winCard').classList.remove('on');
-    if (G.result) SAVE.stars[G.levelId] = Math.max(SAVE.stars[G.levelId] || 0, G.result.stars);
-    saveNow();
-    if (G.levelId + 1 < LEVELS.length) startLevel(G.levelId + 1);
+    stopRun();
+    if (G.levelId >= 0 && G.levelId + 1 < LEVELS.length) startLevel(G.levelId + 1);
     else { renderLevelList(); showScreen('Select'); }
   });
+  el('btnShare').addEventListener('click', function () { toast('Sharing comes with the next pass.'); });
+  el('btnFilm').addEventListener('click', function () { toast('Filming comes with the next pass.'); });
   window.addEventListener('resize', fitCanvas);
   window.addEventListener('orientationchange', function () { setTimeout(fitCanvas, 120); });
   document.addEventListener('visibilitychange', function () {
@@ -2413,6 +2444,124 @@ function boot() {
   window.addEventListener('load', function () { try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {} });
 }
 
+/* ========================= 17B. THE WIN ========================= */
+/* The last three seconds, kept as poses and played back at a third speed behind
+   the card. It is a RECORDING, not a re-simulation: re-running would be exact
+   too, but this costs nothing and cannot drift from what the player saw. */
+var TAPE = [], TAPE_MAX = Math.round(3 * CONFIG.PHYS_HZ), REPLAY = null;
+function tapeFrame(world) {
+  var i, poses = [];
+  for (i = 0; i < world.bodies.length; i++) {
+    var b = world.bodies[i];
+    poses.push(b.pos.x, b.pos.y, b.angle);
+  }
+  TAPE.push(poses);
+  if (TAPE.length > TAPE_MAX) TAPE.shift();
+}
+function startReplay() {
+  if (!TAPE.length) return;
+  REPLAY = { i: 0, acc: 0, poses: TAPE.slice() };
+}
+function stepReplay(dt) {
+  if (!REPLAY) return;
+  REPLAY.acc += dt;
+  var per = 1000 / (CONFIG.PHYS_HZ * 0.34);
+  while (REPLAY.acc >= per) {
+    REPLAY.acc -= per;
+    REPLAY.i++;
+    if (REPLAY.i >= REPLAY.poses.length) REPLAY.i = 0;
+  }
+  var poses = REPLAY.poses[REPLAY.i], i;
+  for (i = 0; i < G.world.bodies.length && i * 3 + 2 < poses.length; i++) {
+    G.world.bodies[i].pos = v(poses[i * 3], poses[i * 3 + 1]);
+    G.world.bodies[i].angle = poses[i * 3 + 2];
+  }
+}
+var CONFETTI = [];
+function confetti(n) {
+  if (REDUCED) return;
+  var i, cols = ['#D8503C', '#3D6FB4', '#E8B33C', '#4E9A52', '#8A5A9B'];
+  for (i = 0; i < n; i++) {
+    CONFETTI.push({
+      x: CONFIG.SCENE_W * (0.2 + Math.random() * 0.6), y: -10 - Math.random() * 60,
+      vx: (Math.random() - 0.5) * 90, vy: 40 + Math.random() * 120,
+      rot: Math.random() * 6.28, spin: (Math.random() - 0.5) * 6,
+      w: 5 + Math.random() * 5, h: 8 + Math.random() * 6,
+      col: cols[i % cols.length], life: 3600
+    });
+  }
+}
+function stepConfetti(dt) {
+  var i;
+  for (i = CONFETTI.length - 1; i >= 0; i--) {
+    var c = CONFETTI[i];
+    c.x += c.vx * dt * 0.001; c.y += c.vy * dt * 0.001;
+    c.vy += dt * 0.22; c.rot += c.spin * dt * 0.001;
+    c.life -= dt;
+    if (c.life <= 0 || c.y > CONFIG.SCENE_H + 40) CONFETTI.splice(i, 1);
+  }
+}
+function drawConfetti(ctx) {
+  var i;
+  for (i = 0; i < CONFETTI.length; i++) {
+    var c = CONFETTI[i];
+    ctx.save();
+    ctx.translate(sx(c.x), sy(c.y));
+    ctx.rotate(c.rot);
+    ctx.fillStyle = c.col;
+    ctx.fillRect(-ss(c.w) / 2, -ss(c.h) / 2, ss(c.w), ss(c.h));
+    ctx.restore();
+  }
+}
+
+/* ========================= 17C. THE SANDBOX ========================= */
+/* Three slots on one big empty board with every part in the tray. No goal, no
+   par, nothing to win: it is a table with a box of bits on it. */
+var SANDBOX_LEVEL = {
+  id: 99, name: 'The Sandbox', par: CONFIG.BODY_MAX,
+  scene: [GROUND].concat(WALLS),
+  fixed: [{ type: 'bell', x: 700, y: 402 }],
+  tray: { marble: 6, plank: 8, domino: 16, seesaw: 2, fan: 2, balloon: 3, bucket: 2 },
+  bonus: [], goal: 'bell', solution: []
+};
+function renderSlots() {
+  var html = '', i;
+  for (i = 0; i < 3; i++) {
+    var m = SAVE.sandbox && SAVE.sandbox[i];
+    var n = m ? (unpackMachine(m) || { machine: { parts: [] } }).machine.parts.length : 0;
+    html += '<button class="card" data-slot="' + i + '"><span>'
+      + '<span class="nm">Table ' + (i + 1) + '</span>'
+      + '<span class="sub">' + (n ? n + ' parts on it' : 'empty') + '</span></span></button>';
+  }
+  el('slotList').innerHTML = html;
+  var cards = el('slotList').querySelectorAll('.card'), k;
+  for (k = 0; k < cards.length; k++) {
+    cards[k].addEventListener('click', function () {
+      openSandbox(parseInt(this.getAttribute('data-slot'), 10));
+    });
+  }
+}
+function openSandbox(slot) {
+  G.sandbox = slot;
+  G.level = SANDBOX_LEVEL;
+  G.levelId = -1;
+  G.machine = newMachine();
+  var saved = SAVE.sandbox && SAVE.sandbox[slot];
+  if (saved) {
+    var got = unpackMachine(saved);
+    if (got) G.machine = got.machine;
+  }
+  G.running = false; G.result = null; G.touched = [];
+  rebuildPreview(); resetCamera(); showScreen('Build'); renderTray(); updateCount();
+  UNDO.length = 0; REDO.length = 0; SEL = -1; GHOST = null; hideHandles(); refreshEditChrome();
+}
+function saveSandbox() {
+  if (G.sandbox < 0) return;
+  if (!SAVE.sandbox) SAVE.sandbox = [null, null, null];
+  SAVE.sandbox[G.sandbox] = packMachine(99, G.machine);
+  saveNow();
+}
+
 /* ========================= 18. EDITOR ========================= */
 /* The genre's scar is a touch editor that fails silently: you drop a part, it
    does not go where you meant, and the machine quietly does not work. So the
@@ -2431,7 +2580,7 @@ function pushUndo() {
 }
 function applyParts(json) {
   G.machine.parts = JSON.parse(json);
-  rebuildPreview(); renderTray(); updateCount(); refreshEditChrome();
+  machineChanged(); refreshEditChrome();
 }
 function undo() {
   if (!UNDO.length) return false;
@@ -2541,14 +2690,14 @@ function buildHandles() {
     pushUndo();
     G.machine.parts.push(copy);
     SEL = G.machine.parts.length - 1;
-    rebuildPreview(); renderTray(); updateCount(); showHandles(); haptic(8);
+    machineChanged(); showHandles(); haptic(8);
   });
   el('hDel').addEventListener('click', function () {
     if (SEL < 0) return;
     pushUndo();
     G.machine.parts.splice(SEL, 1);
     SEL = -1;
-    rebuildPreview(); renderTray(); updateCount(); hideHandles(); haptic(10);
+    machineChanged(); hideHandles(); haptic(10);
   });
 }
 
@@ -2585,14 +2734,14 @@ function dropGhost() {
     G.machine.parts.push({ type: g.type, x: g.x, y: g.y, rot: g.rot, flip: g.flip });
     SEL = G.machine.parts.length - 1;
   }
-  rebuildPreview(); renderTray(); updateCount(); showHandles();
+  machineChanged(); showHandles();
   haptic(8);
 }
 function returnToTray(index) {
   pushUndo();
   G.machine.parts.splice(index, 1);
   SEL = -1;
-  rebuildPreview(); renderTray(); updateCount(); hideHandles();
+  machineChanged(); hideHandles();
   toast('Back in the tray.');
 }
 
@@ -2728,12 +2877,12 @@ window.DOOHICKEY_TEST = {
     for (i = 0; i < parts.length; i++) {
       G.machine.parts.push({ type: parts[i].type, x: parts[i].x, y: parts[i].y, rot: parts[i].rot || 0, flip: 0 });
     }
-    rebuildPreview(); renderTray(); updateCount();
+    machineChanged();
     return G.machine.parts.length;
   },
   solution: function () {
     G.machine = machineFromSolution(G.level);
-    rebuildPreview(); renderTray(); updateCount();
+    machineChanged();
     return G.machine.parts.length;
   },
   go: function () { goRun(); },
@@ -2764,6 +2913,12 @@ window.DOOHICKEY_TEST = {
   trayLeft: function (t) { return trayLeft(t); },
   parts: function () { return G.machine.parts; },
   overlaps: function (p) { return ghostOverlaps(p, -1); },
+  result: function () { return G.result; },
+  replaying: function () { return !!REPLAY; },
+  confetti: function () { return CONFETTI.length; },
+  tape: function () { return TAPE.length; },
+  sandbox: function (slot) { openSandbox(slot); },
+  slots: function () { return SAVE.sandbox || [null, null, null]; },
   save: function () { return SAVE; }
 };
 

@@ -89,5 +89,35 @@ for (const [w, h, tag] of [[667, 375, 'wide'], [375, 667, 'tall']]) {
   });
 }
 
+/* the win, the level list and the sandbox */
+await withPage(667, 375, async (page, shot) => {
+  await page.evaluate(() => { DOOHICKEY_TEST.start(0); DOOHICKEY_TEST.solution(); DOOHICKEY_TEST.go(); });
+  await page.evaluate(() => DOOHICKEY_TEST.advance(3.2));
+  await waitFrames(page, 6);
+  if (want('p2-win')) await shot('p2-win');
+  await page.evaluate(() => { DOOHICKEY_TEST.stop(); DOOHICKEY_TEST.showScreen('Select'); });
+  await sleep(150);
+  if (want('p2-select')) await shot('p2-select');
+  await page.evaluate(() => {
+    DOOHICKEY_TEST.sandbox(1);
+    DOOHICKEY_TEST.place([
+      { type: 'plank', x: 168, y: 168, rot: 20 * Math.PI / 180 },
+      { type: 'plank', x: 312, y: 240, rot: 14 * Math.PI / 180 },
+      { type: 'seesaw', x: 456, y: 384, rot: -8 * Math.PI / 180 },
+      { type: 'balloon', x: 600, y: 288 },
+      { type: 'marble', x: 120, y: 96 },
+      { type: 'domino', x: 528, y: 402 }, { type: 'domino', x: 552, y: 402 },
+      { type: 'domino', x: 576, y: 402 }, { type: 'domino', x: 600, y: 402 }
+    ]);
+  });
+  await waitFrames(page, 3);
+  if (want('p2-sandbox')) await shot('p2-sandbox');
+});
+await withPage(375, 667, async (page, shot) => {
+  await page.evaluate(() => { DOOHICKEY_TEST.start(3); DOOHICKEY_TEST.solution(); });
+  await waitFrames(page, 3);
+  if (want('p2-portrait')) await shot('p2-portrait');
+});
+
 s.close();
 console.log('shots done');
