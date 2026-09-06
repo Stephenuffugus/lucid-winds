@@ -77,7 +77,9 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
 .card .nm{font-size:.96rem;font-weight:700;display:block}
 .card .sub{font-size:.75rem;color:var(--pencil);display:block;margin-top:2px}
 .card .medal{margin-left:auto;font-size:1.1rem}
-#resultCard{position:absolute;left:50%;bottom:calc(18px + var(--safeB));transform:translateX(-50%);
+/* ⛔ the card sat on the floor line, so the one thing a result is about, WHERE
+   IT CAME DOWN, was behind the card. It rides above the ground instead. */
+#resultCard{position:absolute;left:50%;bottom:calc(25% + var(--safeB));transform:translateX(-50%);
   z-index:14;width:88%;max-width:360px;background:var(--sheet);border:2px solid var(--ink);
   border-radius:16px;box-shadow:0 4px 0 var(--ink);padding:14px;display:none;flex-direction:column;gap:8px}
 #resultCard.on{display:flex}
@@ -162,6 +164,24 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
     border-top:0;border-left:2px solid var(--ink);justify-content:center;overflow-y:auto;
     padding:calc(8px + var(--safeT)) calc(14px + var(--safeR)) calc(8px + var(--safeB)) 14px}
 }
+/* ⛔ bottom centre in landscape is the middle of the course, and the button sat
+   on the grill. Portrait keeps it under the flight, landscape puts it in the
+   right hand corner, which is the one the fleet's music chip does not own. */
+#btnSling{position:absolute;left:50%;bottom:calc(20px + var(--safeB));transform:translateX(-50%);
+  z-index:7;min-width:190px}
+@media (orientation:landscape){
+  #btnSling{left:auto;right:calc(14px + var(--safeR));transform:none;min-width:150px}
+}
+#challengeList{width:100%;max-width:380px;display:flex;flex-direction:column;gap:8px}
+.ch-card{width:100%;min-height:64px;border:2px solid var(--ink);border-radius:12px;
+  background:var(--sheet);box-shadow:0 2px 0 var(--ink);display:flex;align-items:center;gap:10px;
+  padding:9px 12px;font-family:inherit;text-align:left;color:var(--ink)}
+.ch-card .med{flex:0 0 34px;font-size:1.5rem;text-align:center;line-height:1}
+.ch-card .nm{font-size:.92rem;font-weight:700;display:block}
+.ch-card .sub{font-size:.74rem;color:var(--pencil);display:block;margin-top:2px}
+.ch-card .best{font-size:.74rem;font-weight:700;display:block;margin-top:2px}
+.ch-head{font-size:.74rem;letter-spacing:.18em;text-transform:uppercase;color:var(--pencil);
+  margin:6px 0 0}
 #hangarList{width:100%;max-width:360px;display:flex;flex-direction:column;gap:8px}
 .plane-card{width:100%;min-height:72px;border:2px solid var(--ink);border-radius:12px;
   background:var(--sheet);box-shadow:0 2px 0 var(--ink);display:flex;align-items:center;gap:10px;
@@ -230,6 +250,7 @@ body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
       <p class="tag">Every crease counts.</p>
       <button class="btn big go" id="btnFly">TO THE GYM</button>
       <button class="btn" id="btnWorkshop">THE WORKSHOP</button>
+      <button class="btn" id="btnChallenges">THE CHALLENGES</button>
       <button class="btn" id="btnHangar">THE HANGAR</button>
       <button class="btn" id="btnTunnel">THE WIND TUNNEL</button>
       <button class="btn ghost" id="btnHow">HOW</button>
@@ -306,6 +327,17 @@ body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
     </div>
   </div>
 
+  <div class="screen" id="scrChallenges">
+    <div class="col">
+      <div class="title" style="font-size:1.3rem">The challenges</div>
+      <p class="lede">Six of them, and no one plane wins them all. The throw is
+      set on each, so what you bring is the fold.</p>
+      <div id="challengeList"></div>
+      <button class="btn ghost" id="btnChallengesBack">BACK</button>
+    </div>
+  </div>
+
+  <button class="btn go big" id="btnSling" hidden>THROW IT</button>
   <div id="toast"></div>
   <div id="testPanel"></div>
 </div>
@@ -768,6 +800,207 @@ function classify(res) {
   if (s.vMean < CLASS_LIMITS.FLOAT_SPEED && s.amp < CLASS_LIMITS.FLOAT_AMP) return ARCHETYPES.floater;
   return ARCHETYPES.cruiser;
 }
+/* ================= 8. COURSES, CHALLENGES AND MEDALS ================= */
+/* ⛔ THE AIR OF A CHALLENGE NEVER CHANGES. The plan wanted a gust seeded by the
+   day. A medal earned on a still Tuesday and a medal earned into Friday's gust
+   are not the same medal, and the thresholds this file carries were measured
+   once by a tool that cannot know what day the player will fly. So a gust is
+   seeded from the CHALLENGE, is part of that challenge for ever, and the tool
+   and the thumb fly the same air. Free flight has no gust at all. */
+var COURSES = {
+  gym: {
+    id: 'gym', name: 'The Gym',
+    fields: [],
+    /* two banners hung from the roof beams, as gates to fly through */
+    rings: [{ x: 6.5, y0: 2.1, y1: 4.1 }, { x: 12, y0: 1.5, y1: 3.5 }],
+    zone: { x: 8.5, w: 2.6, name: 'the teacher’s desk' },
+    far: 22
+  },
+  yard: {
+    id: 'yard', name: 'The Backyard',
+    fields: [
+      { kind: 'fan', x: 8, y: 1.4, dir: Math.PI, speed: 3.2, reach: 6, width: 2.8 },
+      { kind: 'thermal', x: 12.5, radius: 2.6, up: 1.6 }
+    ],
+    /* the washing line, twice */
+    rings: [{ x: 5.5, y0: 2.4, y1: 4.4 }, { x: 13.5, y0: 1.8, y1: 3.8 }],
+    zone: { x: 8, w: 3, name: 'the paddling pool' },
+    far: 26
+  }
+};
+var COURSE_ORDER = ['gym', 'yard'];
+function courseAir(courseId, salt) {
+  var c = COURSES[courseId];
+  var air = { fields: c.fields.slice() };
+  if (salt) air.fields.push(gustField(mixSeed(seedFromString(courseId), seedFromString(salt)), 0.35));
+  return air;
+}
+/* MEDALS_START  ⛔ written by `node sim.js --medals --write`. Measured, never
+   guessed: forty planes through every challenge, and the fortieth, seventieth
+   and ninetieth of them set bronze, silver and gold. Hand editing these is how
+   a medal stops meaning anything. */
+var CHALLENGES = [
+  { id: 'gym-far', course: 'gym', kind: 'distance', name: 'The long one',
+    ask: 'Send it down the hall', high: 1, unit: 'm',
+    throw: { angle: 6, power: 0.95 },
+    reference: { nose: 'locked', noseFolds: 3, wing: 0.15, fins: 'none', dihedral: 0.4, precision: 0.8, elev: 0, ail: 0, clip: 'none' },
+    medals: { bronze: 10, silver: 11.6, gold: 14.8 } },
+  { id: 'gym-hang', course: 'gym', kind: 'airtime', name: 'The long hang',
+    ask: 'Keep it up as long as you can', high: 1, unit: 's',
+    throw: { angle: 34, power: 0.42 },
+    reference: { nose: 'pointed', noseFolds: 2, wing: 0.991, fins: 'none', dihedral: 0.357, precision: 1, elev: 8, ail: 0, clip: 'none' },
+    medals: { bronze: 2.1, silver: 2.3, gold: 3.4 } },
+  { id: 'gym-desk', course: 'gym', kind: 'accuracy', name: 'The desk',
+    ask: 'Land it on the desk', high: 0, unit: 'm',
+    throw: { angle: 8, power: 0.5 },
+    reference: { nose: 'blunt', noseFolds: 3, wing: 0.699, fins: 'up', dihedral: 0.815, precision: 1, elev: -4, ail: 0, clip: 'none' },
+    medals: { bronze: 1.9, silver: 0.86, gold: 0.08 } },
+  { id: 'yard-far', course: 'yard', kind: 'distance', name: 'Past the fence',
+    ask: 'Through the fan and out', high: 1, unit: 'm',
+    throw: { angle: 6, power: 0.95 },
+    reference: { nose: 'pointed', noseFolds: 1, wing: 0.257, fins: 'none', dihedral: 0.579, precision: 1, elev: 4, ail: 0, clip: 'nose' },
+    medals: { bronze: 7.9, silver: 9.8, gold: 21.4 } },
+  { id: 'yard-hang', course: 'yard', kind: 'airtime', name: 'Ride the grill',
+    ask: 'Find the warm air over the grill', high: 1, unit: 's',
+    throw: { angle: 34, power: 0.42 },
+    reference: { nose: 'pointed', noseFolds: 2, wing: 0.991, fins: 'none', dihedral: 0.357, precision: 1, elev: 8, ail: 0, clip: 'none' },
+    medals: { bronze: 2.3, silver: 2.7, gold: 3.3 } },
+  { id: 'yard-pool', course: 'yard', kind: 'accuracy', name: 'The paddling pool',
+    ask: 'Put it in the pool', high: 0, unit: 'm',
+    throw: { angle: 16, power: 0.62 },
+    reference: { nose: 'locked', noseFolds: 1, wing: 0.383, fins: 'none', dihedral: 0.396, precision: 1, elev: -6, ail: 0, clip: 'none' },
+    medals: { bronze: 2.47, silver: 1.27, gold: 0.37 } }
+];
+/* MEDALS_END */
+function challengeById(id) {
+  var i;
+  for (i = 0; i < CHALLENGES.length; i++) if (CHALLENGES[i].id === id) return CHALLENGES[i];
+  return null;
+}
+function flyChallenge(spec, ch, throwOpts) {
+  var o = throwOpts || {};
+  return fly(spec, {
+    angle: o.angle === undefined ? 8 : o.angle,
+    power: o.power === undefined ? 0.5 : o.power,
+    air: courseAir(ch.course, ch.id)
+  });
+}
+/* what the challenge measures. Distance and airtime want more, the accuracy
+   challenges want less, and every comparison in here goes through betterOf so
+   that one fact lives in one place. */
+function scoreOf(ch, res) {
+  if (ch.kind === 'distance') return res.distance;
+  if (ch.kind === 'airtime') return res.airtime;
+  return Math.abs(res.distance - COURSES[ch.course].zone.x);
+}
+function betterOf(ch, a, b) { return ch.high ? a > b : a < b; }
+function medalOf(ch, score) {
+  if (score === null || score === undefined || !isFinite(score)) return null;
+  if (!betterOf(ch, ch.medals.bronze, score)) {
+    if (!betterOf(ch, ch.medals.silver, score)) {
+      if (!betterOf(ch, ch.medals.gold, score)) return 'gold';
+      return 'silver';
+    }
+    return 'bronze';
+  }
+  return null;
+}
+var MEDAL_RANK = { bronze: 1, silver: 2, gold: 3 };
+/* the gates the flight passed through, worked out from the trace afterwards so
+   that the flight itself has nothing to know about props */
+function ringsHit(res, courseId) {
+  var rings = COURSES[courseId].rings, out = [], i, j, tr = res.trace;
+  for (i = 0; i < rings.length; i++) {
+    var r = rings[i], hit = false;
+    for (j = 1; j < tr.length; j++) {
+      var a = tr[j - 1], b = tr[j];
+      if ((a.x - r.x) * (b.x - r.x) > 0) continue;
+      var u = Math.abs(b.x - a.x) < 1e-9 ? 0 : (r.x - a.x) / (b.x - a.x);
+      var y = a.y + (b.y - a.y) * u;
+      if (y >= r.y0 && y <= r.y1) { hit = true; break; }
+    }
+    out.push(hit);
+  }
+  return out;
+}
+/* THE BANK. Forty planes: the ones with names, and enough seeded ones to fill
+   the spread. Deterministic, so the tool that sets the thresholds and the test
+   that checks them are looking at the same forty. */
+/* ⛔ the SIM stands alone. These seven are the same shapes the test layer names,
+   written out here because a bank that reads NAMED_SPECS makes the game's medals
+   depend on the test file. */
+var BANK_SEEDS = [
+  { noseFolds: 3, nose: 'pointed', wing: 0.5, elev: 0 },
+  { noseFolds: 1, nose: 'blunt', wing: 0.6, elev: 6 },
+  { noseFolds: 1, nose: 'blunt', wing: 0.9, elev: 12, fins: 'none' },
+  { noseFolds: 3, nose: 'pointed', clip: 'nose' },
+  { wing: 1.0, noseFolds: 2 },
+  { noseFolds: 3, nose: 'locked', wing: 0.15, elev: 0 },
+  { noseFolds: 1, nose: 'blunt', wing: 0.6, elev: -2 }
+];
+function medalBank() {
+  var out = [], r = makeRNG(90210), i;
+  for (i = 0; i < BANK_SEEDS.length; i++) out.push(newSpec(BANK_SEEDS[i]));
+  var noses = ['blunt', 'pointed', 'locked'], fins = ['none', 'up', 'down'];
+  for (i = out.length; i < 40; i++) {
+    out.push(newSpec({
+      nose: noses[Math.floor(r() * 3)],
+      noseFolds: 1 + Math.floor(r() * 3),
+      wing: 0.1 + r() * 0.9,
+      fins: fins[Math.floor(r() * 3)],
+      dihedral: r(),
+      precision: 1,
+      elev: Math.round((r() * 2 - 1) * 8),
+      ail: 0,
+      clip: r() < 0.15 ? 'nose' : 'none'
+    }));
+  }
+  return out;
+}
+/* every plane in the bank, thrown the same three ways, best result kept: a
+   distance challenge should not be won or lost on one arm */
+var MEDAL_THROWS = [{ angle: 8, power: 0.5 }, { angle: 18, power: 0.75 }, { angle: 2, power: 0.9 }];
+/* ⛔ AN ACCURACY CHALLENGE WITH A FREE THROW IS NOT AN ACCURACY CHALLENGE. Take
+   the best of three throws and any plane with the range simply throws softer
+   until it lands on the mark, so landing on a mark asked nothing of the fold and
+   ONE plane took gold in five of the six. The two accuracy challenges hand you
+   the throw. You fold and trim something that lands there. */
+function throwsFor(ch) { return ch.throw ? [ch.throw] : MEDAL_THROWS; }
+function bestScore(spec, ch) {
+  var best = null, i, ts = throwsFor(ch);
+  for (i = 0; i < ts.length; i++) {
+    var sc = scoreOf(ch, flyChallenge(spec, ch, ts[i]));
+    if (best === null || betterOf(ch, sc, best)) best = sc;
+  }
+  return best;
+}
+function medalTable() {
+  var bank = medalBank(), out = [], i, j;
+  for (i = 0; i < CHALLENGES.length; i++) {
+    var ch = CHALLENGES[i], scores = [];
+    for (j = 0; j < bank.length; j++) scores.push({ spec: bank[j], score: bestScore(bank[j], ch) });
+    scores.sort(function (a, b) { return ch.high ? b.score - a.score : a.score - b.score; });
+    var pick = function (frac) { return scores[clamp(Math.round(frac * (scores.length - 1)), 0, scores.length - 1)].score; };
+    var gold = pick(0.10), silver = pick(0.30), bronze = pick(0.60);
+    /* ⛔ a gold on an accuracy challenge has to mean you actually hit the thing.
+       Taken from the percentile alone, gold on the desk was three and a half
+       metres off a desk two and a half metres wide. */
+    if (ch.kind === 'accuracy') {
+      var half = COURSES[ch.course].zone.w / 2;
+      if (gold > half) gold = half;
+      if (silver > half * 2) silver = half * 2;
+      if (!betterOf(ch, silver, gold)) silver = gold + half * 0.6;
+      if (!betterOf(ch, bronze, silver)) bronze = silver + half * 0.8;
+    }
+    out.push({
+      ch: ch, scores: scores, gold: gold, silver: silver, bronze: bronze,
+      /* counted from the GOOD end of the sorted list, so the tenth best of forty
+         sets gold whichever direction the challenge is measured in */
+      best: scores[0]
+    });
+  }
+  return out;
+}
 // ---- SIM_EXPORT_END ----
 
 // ---- TEST_EXPORT_START ----
@@ -792,6 +1025,7 @@ var TEST = {
     this.runSuite('the fix', suiteTheFix);
     this.runSuite('veer', suiteVeer);
     this.runSuite('wind', suiteWind);
+    this.runSuite('challenges', suiteChallenges);
     this.runSuite('determinism', suiteDeterminism);
     this.runSuite('copy', suiteCopy);
     if (extra && extra.src) this.runSuite('purity', suitePurity, extra.src);
@@ -964,6 +1198,98 @@ function suiteVeer(T) {
     vee < flat * 0.65 && vee > flat * 0.35);
 }
 
+/* THE MEDALS. Everything in here is about the thresholds meaning something:
+   that they are in order, that the plane the tool named as the reference really
+   does take gold, and that no single fold takes gold everywhere, which is the
+   hole the design warns about and the reason the challenges prescribe throws. */
+function suiteChallenges(T) {
+  var i, j;
+  T.eq('there are six challenges', CHALLENGES.length, 6);
+  var byCourse = {};
+  for (i = 0; i < CHALLENGES.length; i++) {
+    var ch = CHALLENGES[i];
+    byCourse[ch.course] = (byCourse[ch.course] || 0) + 1;
+    T.assert(ch.id + ' names a course that exists', !!COURSES[ch.course]);
+    T.assert(ch.id + ' prescribes its throw', !!ch.throw && ch.throw.power > 0);
+    T.assert(ch.id + ' carries a reference fold', !!ch.reference);
+    /* ordered from the good end, whichever end that is */
+    T.assert(ch.id + ' has its medals in order (' + ch.medals.bronze + ' ' + ch.medals.silver
+      + ' ' + ch.medals.gold + ')',
+      betterOf(ch, ch.medals.silver, ch.medals.bronze) && betterOf(ch, ch.medals.gold, ch.medals.silver));
+    var res = flyChallenge(newSpec(ch.reference), ch, ch.throw);
+    var sc = scoreOf(ch, res);
+    T.eq(ch.id + ': the reference fold takes gold (' + sc.toFixed(2) + ' against ' + ch.medals.gold + ')',
+      medalOf(ch, sc), 'gold');
+  }
+  T.eq('three of them are in the gym', byCourse.gym, 3);
+  T.eq('and three in the backyard', byCourse.yard, 3);
+  var kinds = {};
+  for (i = 0; i < CHALLENGES.length; i++) kinds[CHALLENGES[i].kind] = 1;
+  T.assert('and between them they ask for distance, airtime and accuracy',
+    kinds.distance && kinds.airtime && kinds.accuracy);
+  /* ⛔ THE HOLE THE DESIGN NAMES. If one fold takes gold on all six then the
+     challenges are all asking the same question and the workshop is decoration.
+     It is the reason each challenge hands you its throw: with a free throw one
+     plane took gold in five of the six, because any plane with the range can
+     throw softer until it lands on a mark. */
+  var bank = medalBank(), most = 0, gold;
+  for (j = 0; j < bank.length; j++) {
+    gold = 0;
+    for (i = 0; i < CHALLENGES.length; i++) {
+      if (medalOf(CHALLENGES[i], bestScore(bank[j], CHALLENGES[i])) === 'gold') gold++;
+    }
+    if (gold > most) most = gold;
+  }
+  T.assert('no one fold takes gold on all six (the best takes ' + most + ')', most < CHALLENGES.length);
+  T.assert('and the best fold does take gold somewhere (' + most + ')', most >= 1);
+  /* ⛔ the six not being won by ONE fold is a low bar and it passed while five
+     of the six were being won by one fold. The property that actually matters
+     is the trade off: a plane that goes far is not a plane that hangs. */
+  var winnerOf = function (ch) {
+    var bestSpec = null, bestSc = null, n;
+    for (n = 0; n < bank.length; n++) {
+      var sc2 = bestScore(bank[n], ch);
+      if (bestSc === null || betterOf(ch, sc2, bestSc)) { bestSc = sc2; bestSpec = bank[n]; }
+    }
+    return bestSpec;
+  };
+  var far = winnerOf(challengeById('gym-far')), hang = winnerOf(challengeById('gym-hang'));
+  T.assert('the fold that goes furthest is not the fold that hangs longest (wings '
+    + far.wing.toFixed(2) + ' and ' + hang.wing.toFixed(2) + ')', hang.wing - far.wing > 0.3);
+  var yfar = winnerOf(challengeById('yard-far')), yhang = winnerOf(challengeById('yard-hang'));
+  T.assert('and the same is true in the backyard (wings ' + yfar.wing.toFixed(2)
+    + ' and ' + yhang.wing.toFixed(2) + ')', yhang.wing - yfar.wing > 0.3);
+  /* the air of a challenge is the same air every time it is flown */
+  var a1 = courseAir('yard', 'yard-far'), a2 = courseAir('yard', 'yard-far');
+  var w1 = windAt(a1, 6, 2, 1.5), w2 = windAt(a2, 6, 2, 1.5);
+  T.eq('a challenge flies the same air every time, sideways', w1.x, w2.x);
+  T.eq('and up and down', w1.y, w2.y);
+  T.assert('the backyard has weather and the gym does not',
+    COURSES.yard.fields.length > 0 && COURSES.gym.fields.length === 0);
+  /* the gates */
+  var gymRes = flyChallenge(newSpec(NAMED_SPECS.cruiser.spec), challengeById('gym-far'), { angle: 8, power: 0.6 });
+  var hits = ringsHit(gymRes, 'gym');
+  T.eq('the gym hangs two banners', hits.length, 2);
+  var low = { trace: [{ x: 0, y: 0.2 }, { x: 20, y: 0.2 }] };
+  T.eq('a flight along the floor goes under both of them',
+    ringsHit(low, 'gym').join(','), 'false,false');
+  var thru = { trace: [{ x: 0, y: 3 }, { x: 20, y: 3 }] };
+  T.eq('and one straight through the middle takes both',
+    ringsHit(thru, 'gym').join(','), 'true,true');
+  /* the accuracy zones sit where planes actually land, not where a designer
+     would like them to */
+  for (i = 0; i < CHALLENGES.length; i++) {
+    var c2 = CHALLENGES[i];
+    if (c2.kind !== 'accuracy') continue;
+    var lands = [], k;
+    for (k = 0; k < bank.length; k++) lands.push(flyChallenge(bank[k], c2, c2.throw).distance);
+    lands.sort(function (a, b) { return a - b; });
+    var med = lands[Math.floor(lands.length / 2)];
+    T.assert(c2.id + ': the mark is where the planes come down (mark ' + COURSES[c2.course].zone.x
+      + ' m, the middle of forty lands at ' + med.toFixed(1) + ' m)',
+      Math.abs(COURSES[c2.course].zone.x - med) < 2.5);
+  }
+}
 function suiteWind(T) {
   var still = flyNamed('cruiser');
   var head = fly(newSpec(NAMED_SPECS.cruiser.spec), {
@@ -1085,26 +1411,52 @@ function fitCanvas() {
 }
 
 /* ---- the room ---- */
-function drawGym(ctx) {
-  ctx.fillStyle = '#EFE9DC';
+/* one room, two dressings. The measure along the floor is the same in both,
+   because it is the thing the player is actually reading. */
+function drawGym(ctx) { drawCourse(ctx, G.course || 'gym'); }
+function drawCourse(ctx, id) {
+  var yard = id === 'yard';
+  ctx.fillStyle = yard ? '#E4E5D2' : '#EFE9DC';
   ctx.fillRect(0, 0, V.W, V.H);
-  /* the far wall and its line of high windows */
   var horizon = py(4.2);
   var g = ctx.createLinearGradient(0, 0, 0, horizon);
-  g.addColorStop(0, '#DCD3C0');
-  g.addColorStop(1, '#EFE9DC');
+  g.addColorStop(0, yard ? '#CBD8DC' : '#DCD3C0');
+  g.addColorStop(1, yard ? '#E4E5D2' : '#EFE9DC');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, V.W, Math.max(0, horizon));
   var i, x0 = Math.floor(V.camX / 4) * 4 - 8;
-  ctx.strokeStyle = 'rgba(110,106,96,.30)';
-  ctx.lineWidth = 2;
-  for (i = 0; i < 14; i++) {
-    var wx2 = x0 + i * 4;
-    ctx.strokeRect(px(wx2), py(4.0), Math.max(6, V.ppm * 1.6), Math.max(6, V.ppm * 0.9));
+  if (yard) {
+    /* the neighbour's fence, board by board, and a hedge behind it */
+    /* ⛔ a two and a half metre fence across the whole frame is a fence the
+       plane flies THROUGH, and the flight is the thing you came to watch. The
+       boards come down to waist height and the hedge behind them sits low, so
+       the air the plane uses is empty. */
+    ctx.fillStyle = 'rgba(108,128,84,.30)';
+    ctx.fillRect(0, py(1.9), V.W, Math.max(2, py(0) - py(1.9)));
+    ctx.strokeStyle = 'rgba(120,98,72,.40)';
+    ctx.lineWidth = 2;
+    var b0 = Math.floor(V.camX / 0.6) * 0.6 - 2;
+    for (i = 0; i < 90; i++) {
+      var bx = px(b0 + i * 0.6);
+      if (bx < -10) continue;
+      if (bx > V.W + 10) break;
+      ctx.beginPath();
+      ctx.moveTo(bx, py(1.25));
+      ctx.lineTo(bx, py(0));
+      ctx.stroke();
+    }
+    ctx.beginPath(); ctx.moveTo(0, py(1.25)); ctx.lineTo(V.W, py(1.25)); ctx.stroke();
+  } else {
+    ctx.strokeStyle = 'rgba(110,106,96,.30)';
+    ctx.lineWidth = 2;
+    for (i = 0; i < 14; i++) {
+      var wx2 = x0 + i * 4;
+      ctx.strokeRect(px(wx2), py(4.0), Math.max(6, V.ppm * 1.6), Math.max(6, V.ppm * 0.9));
+    }
   }
   /* the floor, with its lines every metre and a fat one every five */
   var fy = py(0);
-  ctx.fillStyle = '#E2DACA';
+  ctx.fillStyle = yard ? '#A8B87E' : '#E2DACA';
   ctx.fillRect(0, fy, V.W, V.H - fy);
   ctx.strokeStyle = 'rgba(51,48,42,.5)';
   ctx.lineWidth = 2;
@@ -1130,10 +1482,219 @@ function drawGym(ctx) {
     }
   }
   ctx.textAlign = 'left';
+  drawProps(ctx, id);
+}
+/* THE PROPS ARE THE RULES, DRAWN. The banner is where ringsHit reads it, the
+   mark is the zone the accuracy challenge scores against, and the fan and the
+   thermal are drawn from the very fields windAt sums. Nothing here is decor
+   with its own numbers. */
+function drawProps(ctx, id) {
+  var c = COURSES[id], i, fy = py(0);
+  for (i = 0; i < c.fields.length; i++) {
+    var f = c.fields[i];
+    if (f.kind === 'fan') {
+      /* ⛔ THE WEATHER IS INFORMATION. "Through the fan" and "find the warm air"
+         are the asks, so where the fan blows and where the grill lifts have to
+         be visible from the launch mark, at the size the field is drawn. A
+         tasteful smudge is a puzzle with the clue removed. */
+      var fx = px(f.x), fyy = py(f.y);
+      var size = Math.max(20, V.ppm * 0.8);
+      var dxs = Math.cos(f.dir), dys = Math.sin(f.dir), k;
+      /* the jet first, under the fan itself */
+      for (k = 0; k < 5; k++) {
+        var off = (k - 2) / 2 * f.width;
+        var ax = f.x + -dys * off, ay = f.y + dxs * off;
+        var bx2 = px(ax + dxs * f.reach), by2 = py(ay + dys * f.reach);
+        var gj = ctx.createLinearGradient(px(ax), py(ay), bx2, by2);
+        gj.addColorStop(0, 'rgba(60,110,159,.55)');
+        gj.addColorStop(1, 'rgba(60,110,159,0)');
+        ctx.strokeStyle = gj;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(px(ax), py(ay));
+        ctx.lineTo(bx2, by2);
+        ctx.stroke();
+        /* a chevron partway down it so the direction is not a guess */
+        var mx2 = px(ax + dxs * f.reach * 0.42), my2 = py(ay + dys * f.reach * 0.42);
+        ctx.strokeStyle = 'rgba(60,110,159,.45)';
+        ctx.beginPath();
+        ctx.moveTo(mx2 - dxs * 7 - dys * 5, my2 + dys * 7 - dxs * 5);
+        ctx.lineTo(mx2, my2);
+        ctx.lineTo(mx2 - dxs * 7 + dys * 5, my2 + dys * 7 + dxs * 5);
+        ctx.stroke();
+      }
+      ctx.fillStyle = '#EFE9DC';
+      ctx.strokeStyle = 'rgba(51,48,42,.8)';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(fx, fyy + size / 2);
+      ctx.lineTo(fx, fy);
+      ctx.stroke();
+      ctx.fillRect(fx - size / 2, fyy - size / 2, size, size);
+      ctx.strokeRect(fx - size / 2, fyy - size / 2, size, size);
+      ctx.beginPath();
+      ctx.arc(fx, fyy, size * 0.32, 0, 6.2832);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(fx - size * 0.3, fyy - size * 0.14);
+      ctx.lineTo(fx + size * 0.3, fyy + size * 0.14);
+      ctx.moveTo(fx - size * 0.3, fyy + size * 0.14);
+      ctx.lineTo(fx + size * 0.3, fyy - size * 0.14);
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    } else if (f.kind === 'thermal') {
+      /* the column of warm air, drawn where windAt actually lifts, and then the
+         grill under it */
+      var gx = px(f.x), gw = Math.max(20, V.ppm * 0.85);
+      var cx0 = px(f.x - f.radius), cx1 = px(f.x + f.radius);
+      /* ⛔ a rectangle with hard sides reads as a wall, and this is warm air.
+         Three strips, each narrower and fainter, give it an edge that fades. */
+      var st2;
+      for (st2 = 0; st2 < 3; st2++) {
+        var shrink = st2 * 0.28;
+        var gc = ctx.createLinearGradient(0, fy, 0, py(6));
+        gc.addColorStop(0, 'rgba(212,132,42,' + (0.10 + st2 * 0.05).toFixed(3) + ')');
+        gc.addColorStop(1, 'rgba(212,132,42,0)');
+        ctx.fillStyle = gc;
+        ctx.fillRect(cx0 + (cx1 - cx0) * shrink / 2, py(6),
+          (cx1 - cx0) * (1 - shrink), fy - py(6));
+      }
+      ctx.strokeStyle = 'rgba(212,132,42,.45)';
+      ctx.lineWidth = 1.5;
+      var w2, seg;
+      for (w2 = 0; w2 < 3; w2++) {
+        var wob = px(f.x + (w2 - 1) * f.radius * 0.55);
+        ctx.beginPath();
+        ctx.moveTo(wob, fy - gw * 0.7);
+        for (seg = 1; seg <= 7; seg++) {
+          ctx.lineTo(wob + Math.sin(seg * 1.2 + w2 * 2 + V.t * 0.0016) * V.ppm * 0.16,
+            fy - gw * 0.7 - seg * V.ppm * 0.34);
+        }
+        ctx.stroke();
+      }
+      ctx.fillStyle = '#3A3A36';
+      ctx.strokeStyle = 'rgba(51,48,42,.85)';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(gx - gw * 0.3, fy);
+      ctx.lineTo(gx - gw * 0.22, fy - gw * 0.42);
+      ctx.moveTo(gx + gw * 0.3, fy);
+      ctx.lineTo(gx + gw * 0.22, fy - gw * 0.42);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.ellipse(gx, fy - gw * 0.5, gw * 0.42, gw * 0.2, 0, 0, 6.2832);
+      ctx.fill();
+      ctx.stroke();
+    }
+  }
+  /* the banners, or the washing line */
+  for (i = 0; i < c.rings.length; i++) {
+    var r = c.rings[i], rx = px(r.x);
+    if (rx < -60 || rx > V.W + 60) continue;
+    /* ⛔ a dashed vertical line is not a gap, it is a scratch. The gap is drawn
+       as the two things it is BETWEEN: a bar above and a bar below, with the
+       air between them tinted, so a player can see what to aim at from the
+       launch mark. */
+    var hit = G.res ? ringsHit(G.res, id)[i] : false;
+    var bar = Math.max(10, V.ppm * 0.5);
+    var yTop = py(r.y1), yBot = py(r.y0);
+    ctx.fillStyle = hit ? 'rgba(60,110,159,.14)' : 'rgba(110,106,96,.10)';
+    ctx.fillRect(rx - bar * 0.55, yTop, bar * 1.1, yBot - yTop);
+    ctx.strokeStyle = hit ? 'rgba(60,110,159,.9)' : 'rgba(51,48,42,.6)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(rx - bar, yTop);
+    ctx.lineTo(rx + bar, yTop);
+    ctx.moveTo(rx - bar, yBot);
+    ctx.lineTo(rx + bar, yBot);
+    ctx.stroke();
+    /* ⛔ a bare bar next to the gym's windows is another window. The gym hangs a
+       school banner off the top bar and the yard pegs a shirt to the line, so
+       the thing you are aiming between is a thing and not a stroke. */
+    if (id === 'gym') {
+      ctx.fillStyle = hit ? 'rgba(60,110,159,.55)' : 'rgba(200,168,75,.55)';
+      ctx.fillRect(rx - bar * 0.8, yTop - V.ppm * 0.5, bar * 1.6, V.ppm * 0.5);
+      ctx.strokeStyle = 'rgba(51,48,42,.55)';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(rx - bar * 0.8, yTop - V.ppm * 0.5, bar * 1.6, V.ppm * 0.5);
+      ctx.beginPath();
+      ctx.moveTo(rx - bar * 0.8, yTop);
+      ctx.lineTo(rx, yTop + V.ppm * 0.22);
+      ctx.lineTo(rx + bar * 0.8, yTop);
+      ctx.stroke();
+    } else {
+      ctx.fillStyle = hit ? 'rgba(60,110,159,.45)' : 'rgba(232,220,200,.85)';
+      ctx.strokeStyle = 'rgba(51,48,42,.5)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(rx - bar * 0.55, yBot);
+      ctx.lineTo(rx - bar * 0.8, yBot + V.ppm * 0.55);
+      ctx.lineTo(rx + bar * 0.8, yBot + V.ppm * 0.55);
+      ctx.lineTo(rx + bar * 0.55, yBot);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }
+    /* what holds it up: a line to the roof, or to the ground */
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = hit ? 'rgba(60,110,159,.5)' : 'rgba(110,106,96,.4)';
+    ctx.beginPath();
+    ctx.moveTo(rx, yTop - V.ppm * 0.55);
+    ctx.lineTo(rx, yTop);
+    ctx.moveTo(rx, yBot);
+    ctx.lineTo(rx, yBot + V.ppm * 0.45);
+    ctx.stroke();
+  }
+  /* the mark, drawn only when something is being scored against it */
+  if (G.challenge && G.challenge.kind === 'accuracy') {
+    var z = c.zone, zx0 = px(z.x - z.w / 2), zx1 = px(z.x + z.w / 2);
+    ctx.lineWidth = 2;
+    if (id === 'gym') {
+      /* a desk: a top you can land on and two legs under it */
+      var dh = Math.max(10, V.ppm * 0.72);
+      ctx.fillStyle = 'rgba(60,110,159,.22)';
+      ctx.fillRect(zx0, fy - dh, zx1 - zx0, dh);
+      ctx.strokeStyle = 'rgba(60,110,159,.85)';
+      ctx.beginPath();
+      ctx.moveTo(zx0 - 4, fy - dh);
+      ctx.lineTo(zx1 + 4, fy - dh);
+      ctx.moveTo(zx0 + 6, fy - dh);
+      ctx.lineTo(zx0 + 6, fy);
+      ctx.moveTo(zx1 - 6, fy - dh);
+      ctx.lineTo(zx1 - 6, fy);
+      ctx.stroke();
+    } else {
+      /* a paddling pool, seen from the side */
+      ctx.fillStyle = 'rgba(60,110,159,.28)';
+      ctx.strokeStyle = 'rgba(60,110,159,.85)';
+      var ph = Math.max(7, V.ppm * 0.34);
+      ctx.beginPath();
+      ctx.moveTo(zx0, fy - ph);
+      ctx.lineTo(zx0 + ph * 0.5, fy);
+      ctx.lineTo(zx1 - ph * 0.5, fy);
+      ctx.lineTo(zx1, fy - ph);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }
+    ctx.fillStyle = 'rgba(60,110,159,.9)';
+    ctx.font = '700 11px ui-rounded, system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(z.name, (zx0 + zx1) / 2, fy + 20);
+    ctx.textAlign = 'left';
+  }
 }
 /* ---- the plane ---- */
+/* THE THREE LANES. Veer is a real number the flight carries, and a plane that
+   is drifting away from you is further off, so it sits a little higher in the
+   frame and draws a little smaller. It is the only depth this side view has,
+   and without it a plane veering out of the room looks exactly like one flying
+   straight. */
+function laneOf(veer) { return clamp(veer || 0, -1, 1); }
 function drawPlane(ctx, x, y, theta, veer, spec) {
-  drawPlaneAt(ctx, px(x), py(y), V.ppm * 0.42, theta, veer, spec);
+  var lane = laneOf(veer);
+  drawPlaneAt(ctx, px(x), py(y) - lane * V.ppm * 0.34, V.ppm * 0.42 * (1 - 0.16 * lane),
+    theta, veer, spec);
 }
 /* the same paper, in SCREEN points, so the tunnel and the field cannot drift
    into drawing two different aeroplanes */
@@ -1797,7 +2358,8 @@ function importFromHash() {
 
 /* ========================= 16E. SAVE AND SOUND ========================= */
 var SETTINGS = { sound: 1, motion: 1, steadyHands: 0 };
-var SAVE = { v: CONFIG.SAVE_V, hangar: [], nextId: 1, seen: {}, settings: SETTINGS };
+var SAVE = { v: CONFIG.SAVE_V, hangar: [], nextId: 1, seen: {}, settings: SETTINGS,
+  medals: {}, scores: {}, ghosts: {} };
 function saveNow() {
   try {
     SAVE.settings = SETTINGS;
@@ -2147,6 +2709,40 @@ function tunRender() {
      under the panel, and the aeroplane was drawn in the part nobody can see. */
   tunLayout();
 }
+function renderChallenges() {
+  var host = el('challengeList'), i, out = '', last = '';
+  host.innerHTML = '';
+  for (i = 0; i < CHALLENGES.length; i++) {
+    var ch = CHALLENGES[i];
+    if (ch.course !== last) {
+      last = ch.course;
+      var h = document.createElement('p');
+      h.className = 'ch-head';
+      h.textContent = COURSES[ch.course].name;
+      host.appendChild(h);
+    }
+    var med = SAVE.medals[ch.id], best = SAVE.scores[ch.id];
+    var b = document.createElement('button');
+    b.className = 'ch-card';
+    b.setAttribute('data-ch', ch.id);
+    b.innerHTML = '<span class="med" style="color:' + (med === 'gold' ? '#C8A84B'
+      : med === 'silver' ? '#9AA0A6' : med === 'bronze' ? '#A9713F' : 'rgba(110,106,96,.35)') + '">'
+      + (med ? '\u25CF' : '\u25CB') + '</span><span><span class="nm">' + ch.name
+      + '</span><span class="sub">' + ch.ask + '</span>'
+      + '<span class="sub">bronze ' + ch.medals.bronze + ' \u00B7 silver ' + ch.medals.silver
+      + ' \u00B7 gold ' + ch.medals.gold + ' ' + ch.unit
+      + (ch.high ? '' : ' from the middle') + '</span>'
+      + (best === undefined ? '' : '<span class="best">your best '
+        + (ch.kind === 'accuracy' ? best.toFixed(2) : best.toFixed(1)) + ' ' + ch.unit
+        + (med ? ', ' + medalWord(med) : '') + '</span>') + '</span>';
+    host.appendChild(b);
+  }
+  return out;
+}
+function toChallenges() {
+  renderChallenges();
+  showScreen('Challenges');
+}
 function toTunnel() {
   G.spec = G.spec || newSpec();
   el('dialTunElev').value = String(G.spec.elev);
@@ -2161,7 +2757,8 @@ function toTunnel() {
 var STAMP = '20260906a';
 var G = {
   screen: 'title', spec: null, res: null, live: null, liveT: 0, flying: false,
-  trail: [], ghost: null, best: null, lastClass: null, throws: 0
+  trail: [], ghost: null, best: null, lastClass: null, throws: 0,
+  course: 'gym', challenge: null, lastScore: null, lastMedal: null
 };
 var RAF = 0, LAST = 0, FRAMES = 0, PULL = null;
 
@@ -2175,7 +2772,7 @@ function toast(msg) {
 function haptic(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }
 
 function showScreen(name) {
-  var all = ['scrTitle', 'scrHow', 'scrHangar'], i;
+  var all = ['scrTitle', 'scrHow', 'scrHangar', 'scrChallenges'], i;
   for (i = 0; i < all.length; i++) el(all[i]).classList.toggle('on', 'scr' + name === all[i]);
   G.screen = name.toLowerCase();
   var field = (name === 'Field'), shop = (name === 'Workshop'), tun = (name === 'Tunnel');
@@ -2184,26 +2781,33 @@ function showScreen(name) {
   document.body.classList.toggle('listing', !field && !shop && !tun);
   if (!shop) SHOP.on = false;
   el('btnBack').hidden = !(field || shop || tun);
+  if (!field) el('btnSling').hidden = true;
   el('btnMenu').hidden = !field;
   el('hud').hidden = !field;
   if (!field) { el('resultCard').classList.remove('on'); el('scrTrim').classList.remove('on'); }
   fitCanvas();
   if (tun) tunLayout();
 }
-function toField(spec) {
+function toField(spec, challengeId) {
   G.spec = spec || G.spec || newSpec();
+  G.challenge = challengeId ? challengeById(challengeId) : null;
+  G.course = G.challenge ? G.challenge.course : 'gym';
   G.res = null; G.live = null; G.flying = false; G.trail = [];
+  G.best = null;
+  G.ghost = (G.challenge && SAVE.ghosts[G.challenge.id]) ? SAVE.ghosts[G.challenge.id] : null;
   V.camX = 0; V.camY = 0;
+  el('btnSling').hidden = !G.challenge;
   showScreen('Field');
   updateHud();
 }
 function updateHud() {
-  var D = derive(G.spec);
+  var D = derive(G.spec), ch = G.challenge;
   var name = G.flying ? 'In the air'
-    : (G.lastClass ? G.lastClass.name : 'Not flown yet');
+    : (ch ? ch.name : (G.lastClass ? G.lastClass.name : 'Not flown yet'));
   var line = G.flying
     ? (G.live ? G.live.x.toFixed(1) + ' m out, ' + G.live.y.toFixed(1) + ' m up' : '')
-    : (G.best ? 'best ' + G.best.distance.toFixed(1) + ' m' : 'pull back and let go');
+    : (ch ? 'gold at ' + ch.medals.gold + ' ' + ch.unit + (ch.high ? '' : ' from the middle')
+      : (G.best ? 'best ' + G.best.distance.toFixed(1) + ' m' : 'pull back and let go'));
   el('hud').innerHTML = name + '<br>' + line
     + '  &middot;  elev ' + (G.spec.elev > 0 ? '+' : '') + G.spec.elev
     + '  &middot;  ' + (D.mass * 1000).toFixed(1) + ' g';
@@ -2221,7 +2825,9 @@ function pullAngle(dx, dy) {
   return clamp(a, CONFIG.LAUNCH_ANGLE_MIN, CONFIG.LAUNCH_ANGLE_MAX);
 }
 function launch(angle, power) {
-  G.res = fly(G.spec, { angle: angle, power: power });
+  var ch = G.challenge;
+  if (ch) { angle = ch.throw.angle; power = ch.throw.power; }
+  G.res = fly(G.spec, { angle: angle, power: power, air: courseAir(G.course, ch ? ch.id : null) });
   G.lastClass = classify(G.res);
   G.live = { i: 0, t: 0 };
   G.flying = true;
@@ -2231,22 +2837,51 @@ function launch(angle, power) {
   haptic(12);
   return G.res;
 }
+var MEDAL_MARK = { gold: '\u25CF', silver: '\u25CF', bronze: '\u25CF' };
+function medalWord(m) { return m ? m.charAt(0).toUpperCase() + m.slice(1) : ''; }
 function endFlight() {
   G.flying = false;
-  var r = G.res;
+  var r = G.res, ch = G.challenge;
   SAVE.seen.flown = 1;
   if (G.hangarId) hangarRecord(G.hangarId, r, G.lastClass.id);
-  saveNow();
   if (!G.best || r.distance > G.best.distance) {
     G.best = { distance: r.distance, airtime: r.airtime, trail: G.trail.slice() };
-    G.ghost = G.best.trail;
+    if (!ch) G.ghost = G.best.trail;
   }
-  var st = traceStats(r);
-  el('resultName').textContent = G.lastClass.name;
-  el('resultLine').innerHTML = G.lastClass.line + '<br>'
-    + r.distance.toFixed(1) + ' m in ' + r.airtime.toFixed(1) + ' s'
-    + (r.stalls ? ', ' + r.stalls + (r.stalls === 1 ? ' stall' : ' stalls') : '')
-    + ', glide ' + st.descent.toFixed(0) + ' degrees';
+  var st = traceStats(r), line = '';
+  G.lastScore = null; G.lastMedal = null;
+  if (ch) {
+    var sc = scoreOf(ch, r), med = medalOf(ch, sc);
+    G.lastScore = sc; G.lastMedal = med;
+    /* ⛔ the ghost that is worth flying against is the best flight on THIS
+       challenge, not the last one: a ghost overwritten every throw is a mirror,
+       and a mirror cannot be beaten. */
+    var was = SAVE.scores[ch.id];
+    if (was === undefined || betterOf(ch, sc, was)) {
+      SAVE.scores[ch.id] = sc;
+      SAVE.ghosts[ch.id] = G.trail.slice();
+      G.ghost = SAVE.ghosts[ch.id];
+    }
+    if (med && (!SAVE.medals[ch.id] || MEDAL_RANK[med] > MEDAL_RANK[SAVE.medals[ch.id]])) {
+      SAVE.medals[ch.id] = med;
+    }
+    line = ch.kind === 'accuracy'
+      ? (sc <= COURSES[ch.course].zone.w / 2
+        ? 'In, ' + sc.toFixed(2) + ' m from the middle'
+        : sc.toFixed(2) + ' m short of the middle')
+      : sc.toFixed(ch.kind === 'airtime' ? 1 : 1) + ' ' + ch.unit;
+    line += med ? '<br>' + medalWord(med) + ', and your best is ' + medalWord(SAVE.medals[ch.id])
+      : '<br>Bronze wants ' + ch.medals.bronze + ' ' + ch.unit;
+  } else {
+    line = r.distance.toFixed(1) + ' m in ' + r.airtime.toFixed(1) + ' s'
+      + (r.stalls ? ', ' + r.stalls + (r.stalls === 1 ? ' stall' : ' stalls') : '')
+      + ', glide ' + st.descent.toFixed(0) + ' degrees';
+  }
+  saveNow();
+  /* settle the camera on the landing, because where it came down IS the result */
+  V.camX = Math.max(0, r.distance - 5);
+  el('resultName').textContent = ch ? ch.name : G.lastClass.name;
+  el('resultLine').innerHTML = (ch ? '' : G.lastClass.line + '<br>') + line;
   el('resultCard').classList.add('on');
   updateHud();
   haptic(18);
@@ -2293,6 +2928,11 @@ function frame(ts) {
   var dt = LAST ? Math.min(120, ts - LAST) : 16;
   LAST = ts; V.t = ts; FRAMES++;
   if (G.flying) stepFlight(dt);
+  /* nothing to press while it is in the air */
+  if (G.screen === 'field') {
+    el('btnSling').hidden = !G.challenge || G.flying
+      || el('resultCard').classList.contains('on') || el('scrTrim').classList.contains('on');
+  }
   var ctx = V.ctx;
   if (G.screen === 'workshop') {
     shopStepSweep(dt);
@@ -2324,7 +2964,10 @@ function kick() { if (!RAF && !document.hidden) RAF = requestAnimationFrame(fram
 function bindInput() {
   var cv = V.cv;
   cv.addEventListener('pointerdown', function (e) {
-    if (G.screen !== 'field' || G.flying) return;
+    /* ⛔ in a challenge the throw is the challenge's, so the sling does not
+       answer the canvas at all: a pull that quietly overrode a prescribed throw
+       would make every medal mean something different. */
+    if (G.screen !== 'field' || G.flying || G.challenge) return;
     if (el('scrTrim').classList.contains('on')) return;
     var home = { x: px(0), y: py(1.6) };
     PULL = { from: home, to: { x: e.clientX, y: e.clientY }, dx: e.clientX - home.x,
@@ -2386,6 +3029,19 @@ function bindInput() {
     this.textContent = 'DELETE';
     saveNow();
     renderHangar();
+  });
+  el('btnChallenges').addEventListener('click', function () { toChallenges(); });
+  el('btnChallengesBack').addEventListener('click', function () { showScreen('Title'); });
+  el('challengeList').addEventListener('click', function (e) {
+    var t = e.target;
+    while (t && t !== this && !t.getAttribute('data-ch')) t = t.parentNode;
+    if (!t || t === this) return;
+    toField(G.spec, t.getAttribute('data-ch'));
+  });
+  el('btnSling').addEventListener('click', function () {
+    if (G.flying || !G.challenge) return;
+    V.camX = 0; V.camY = 0;
+    launch(G.challenge.throw.angle, G.challenge.throw.power);
   });
   el('btnTunnel').addEventListener('click', function () { toTunnel(); });
   el('dialWind').addEventListener('input', function () {
@@ -2451,6 +3107,7 @@ function bindInput() {
   el('btnAgain').addEventListener('click', function () {
     el('resultCard').classList.remove('on');
     V.camX = 0; V.camY = 0;
+    if (G.challenge) { launch(G.challenge.throw.angle, G.challenge.throw.power); return; }
     launch(G.lastAngle === undefined ? DEFAULT_ANGLE : G.lastAngle, G.lastPower === undefined ? DEFAULT_POWER : G.lastPower);
   });
   el('btnTrim').addEventListener('click', function () {
@@ -2548,7 +3205,10 @@ window.AIRWORTHY_TEST = {
      edits G.spec, and a hook that always returned the gym's made every fold in
      the workshop look like it had done nothing. */
   spec: function () { return SHOP.on ? SHOP.spec : G.spec; },
-  launch: function (a, p) { G.lastAngle = a; G.lastPower = p; return launch(a, p); },
+  launch: function (a, p) {
+    if (a === undefined && G.challenge) { return launch(G.challenge.throw.angle, G.challenge.throw.power); }
+    G.lastAngle = a; G.lastPower = p; return launch(a, p);
+  },
   advance: function (secs) { stepFlight(secs * 1000); return G.live; },
   finish: function () {
     var guard = 0;
@@ -2573,6 +3233,14 @@ window.AIRWORTHY_TEST = {
   shopNext: function () { return shopNext(); },
   shopSweeping: function () { return SHOP.sweeping; },
   folds: function () { return FOLDS; },
+  toChallenge: function (id, over) { toField(newSpec(over || START_SPEC), id); },
+  challenge: function () { return G.challenge; },
+  challenges: function () { return CHALLENGES; },
+  course: function () { return G.course; },
+  score: function () { return { score: G.lastScore, medal: G.lastMedal }; },
+  medals: function () { return SAVE.medals; },
+  ghost: function () { return G.ghost; },
+  courses: function () { return COURSES; },
   /* the tunnel, as the gate must read it: what is DRAWN, not what is meant.
      A lift arrow that collapses on the slate but not on the glass is the bug
      this hook exists to catch. */

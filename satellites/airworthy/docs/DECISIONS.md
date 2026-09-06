@@ -137,3 +137,27 @@ is in the plan's section 13; these are the calls.
 - Noted for later: the sim fixtures fly at 5 degrees while the field's default
   throw is 8. Both are honest, but the fixtures would describe the game the
   player plays a little better at 8.
+
+## P3 step 2, the courses, the challenges and the medals
+
+- **Every challenge prescribes its throw.** With a free throw the six collapse
+  into two: any plane with the range throws softer until it lands on an accuracy
+  mark, and a good glider wins distance and airtime both. Measured: one fold
+  took gold in five of the six. With the throws set, the distance winner has a
+  wing of 0.15 and the airtime winner a wing of 0.99, and no fold takes more
+  than three. The sling stays free in the gym with no challenge selected.
+- **A challenge's air never changes.** The plan wanted a gust seeded by the day.
+  A medal earned on a still Tuesday and one earned into Friday's gust are not
+  the same medal, and the thresholds in the file were measured once. The gust is
+  seeded from the challenge id, so the tool and the thumb fly the same air.
+- **Gold on an accuracy challenge means you hit the thing.** Taken from the
+  percentile alone, gold on a desk two and a half metres wide was three and a
+  half metres off it. Gold is capped at the zone's half width.
+- **The marks moved to where planes actually land.** The desk was at 14.5 m and
+  the middle of forty planes lands at 8.5 m from that throw. A mark nobody
+  reaches is not a challenge, it is a wall. The test asserts the mark is within
+  2.5 m of the median landing.
+- **The ghost is your best flight on that challenge, not your last.** A ghost
+  overwritten every throw is a mirror, and a mirror cannot be beaten.
+- The thresholds are written by `node sim.js --medals --write` between the
+  MEDALS markers. Hand editing one makes a medal mean nothing.

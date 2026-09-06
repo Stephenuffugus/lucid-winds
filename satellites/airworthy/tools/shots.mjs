@@ -184,6 +184,41 @@ await withPage(375, 667, async (page, shot) => {
   if (want('p2-hangar')) await shot('p2-hangar');
 });
 
+/* ---- P3. THE CHALLENGES AND THE BACKYARD ---- */
+await withPage(375, 667, async (page, shot) => {
+  await page.evaluate(() => document.getElementById('btnChallenges').click());
+  await waitFrames(page, 3);
+  if (want('p3-challenges')) await shot('p3-challenges');
+  /* the backyard, mid flight, with the fan and the grill in shot */
+  await page.evaluate(() => {
+    AIRWORTHY_TEST.toChallenge('yard-hang', { nose: 'pointed', noseFolds: 2, wing: 0.95, elev: 6 });
+    AIRWORTHY_TEST.launch();
+    AIRWORTHY_TEST.advance(1.6);
+  });
+  await waitFrames(page, 3);
+  if (want('p3-yard')) await shot('p3-yard');
+  await page.evaluate(() => { AIRWORTHY_TEST.finish(); });
+  await waitFrames(page, 3);
+  if (want('p3-yard-result')) await shot('p3-yard-result');
+  /* the accuracy mark, and the gym's banners */
+  await page.evaluate(() => {
+    AIRWORTHY_TEST.toChallenge('gym-desk', { nose: 'blunt', noseFolds: 3, wing: 0.7, fins: 'up', elev: -4 });
+    AIRWORTHY_TEST.launch();
+    AIRWORTHY_TEST.advance(1.1);
+  });
+  await waitFrames(page, 3);
+  if (want('p3-desk')) await shot('p3-desk');
+});
+await withPage(667, 375, async (page, shot) => {
+  await page.evaluate(() => {
+    AIRWORTHY_TEST.toChallenge('yard-far', { nose: 'pointed', noseFolds: 1, wing: 0.26, elev: 4, clip: 'nose' });
+    AIRWORTHY_TEST.launch();
+    AIRWORTHY_TEST.advance(1.2);
+  });
+  await waitFrames(page, 3);
+  if (want('p3-yard-wide')) await shot('p3-yard-wide');
+});
+
 /* ---- P3. THE WIND TUNNEL ---- */
 const setDial = (page, id, v) => page.evaluate((id, v) => {
   const d = document.getElementById(id);

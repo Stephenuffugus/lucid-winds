@@ -33,7 +33,11 @@ var HTML = fs.readFileSync(HTML_PATH, 'utf8');
 var SIM_SRC = extract(HTML, '// ---- SIM_EXPORT_START ----', '// ---- SIM_EXPORT_END ----');
 var TEST_SRC = extract(HTML, '// ---- TEST_EXPORT_START ----', '// ---- TEST_EXPORT_END ----');
 
-var EXPORTS = ['CONFIG', 'CLIP_MASS', 'makeRNG', 'seedFromString', 'mixSeed', 'dailySeedFor',
+var EXPORTS = ['COURSES', 'COURSE_ORDER', 'CHALLENGES', 'challengeById', 'courseAir',
+  'flyChallenge', 'scoreOf', 'betterOf', 'medalOf', 'MEDAL_RANK', 'ringsHit',
+  'medalBank', 'medalTable', 'bestScore', 'throwsFor', 'MEDAL_THROWS',
+  'tunnelReading', 'trimLaunch', 'measuredGlide', 'trimAlpha',
+  'CONFIG', 'CLIP_MASS', 'makeRNG', 'seedFromString', 'mixSeed', 'dailySeedFor',
   'clamp', 'DEG', 'newSpec', 'derive', 'stillAir', 'windAt', 'gustField',
   'flightState', 'flightStep', 'fly', 'ARCHETYPES', 'traceStats', 'classify', 'TEST'];
 
@@ -138,11 +142,77 @@ function runFly(arg) {
   console.log('');
   console.log('AIRWORTHY FLY OK');
 }
+/* THE MEDALS. Forty planes, every challenge, and the thresholds fall out of
+   where they actually land: the fortieth from the good end sets bronze, the
+   thirtieth silver, the tenth gold. `--write` puts them back into index.html
+   between the MEDALS markers, which is the only way they are ever allowed to
+   change. Hand editing a threshold makes a medal mean nothing. */
+/* the reference spec as source a person can read: a wing of 0.9914924636250362
+   is a random number that got into the shipped file, not a fold anybody made */
+function refText(sp) {
+  var k, out = [], v;
+  for (k in sp) {
+    v = sp[k];
+    out.push(k + ': ' + (typeof v === 'number' ? (Math.round(v * 1000) / 1000) : "'" + v + "'"));
+  }
+  return '{ ' + out.join(', ') + ' }';
+}
+function runMedals(write) {
+  var t = S.medalTable(), i, lines = [];
+  var round = function (ch, v) { return ch.kind === 'accuracy' ? Math.round(v * 100) / 100 : Math.round(v * 10) / 10; };
+  console.log('forty planes, every challenge, thrown the way that challenge prescribes\n');
+  console.log('  challenge    kind        bronze   silver     gold     best   the plane that took it');
+  for (i = 0; i < t.length; i++) {
+    var r = t[i], ch = r.ch, sp = r.best.spec;
+    console.log('  ' + ch.id.padEnd(12) + ch.kind.padEnd(10)
+      + round(ch, r.bronze).toFixed(2).padStart(8) + round(ch, r.silver).toFixed(2).padStart(9)
+      + round(ch, r.gold).toFixed(2).padStart(9) + r.best.score.toFixed(2).padStart(9)
+      + '   wing ' + sp.wing.toFixed(2) + ' ' + sp.nose + ' folds ' + sp.noseFolds
+      + ' elev ' + sp.elev + (sp.clip !== 'none' ? ' clip ' + sp.clip : ''));
+    lines.push({ ch: ch, bronze: round(ch, r.bronze), silver: round(ch, r.silver), gold: round(ch, r.gold), ref: sp });
+  }
+  var bank = S.medalBank(), best = 0, j, k;
+  var live = lines.map(function (l) {
+    return Object.assign({}, l.ch, { medals: { bronze: l.bronze, silver: l.silver, gold: l.gold } });
+  });
+  for (j = 0; j < bank.length; j++) {
+    var g = 0;
+    for (k = 0; k < live.length; k++) if (S.medalOf(live[k], S.bestScore(bank[j], live[k])) === 'gold') g++;
+    if (g > best) best = g;
+  }
+  console.log('\nthe most golds any one plane in the bank takes: ' + best + ' of ' + live.length);
+  if (best >= live.length) {
+    console.log('ONE PLANE WINS EVERYTHING. The challenges are not asking for different folds.');
+    process.exit(4);
+  }
+  if (write) {
+    var src = HTML, out = '', i2;
+    var head = src.indexOf('var CHALLENGES = [');
+    var tail = src.indexOf('/* MEDALS_END */');
+    if (head < 0 || tail < 0) throw new Error('the MEDALS markers are gone');
+    out = 'var CHALLENGES = [\n';
+    for (i2 = 0; i2 < lines.length; i2++) {
+      var l = lines[i2], c = l.ch;
+      out += "  { id: '" + c.id + "', course: '" + c.course + "', kind: '" + c.kind + "', name: '" + c.name + "',\n"
+        + "    ask: '" + c.ask + "', high: " + (c.high ? 1 : 0) + ", unit: '" + c.unit + "',\n"
+        + "    throw: { angle: " + c.throw.angle + ", power: " + c.throw.power + " },\n"
+        + "    reference: " + refText(l.ref) + ",\n"
+        + "    medals: { bronze: " + l.bronze + ", silver: " + l.silver + ", gold: " + l.gold + " } }"
+        + (i2 === lines.length - 1 ? '\n' : ',\n');
+    }
+    out += '];\n';
+    fs.writeFileSync(path.join(__dirname, 'index.html'), src.slice(0, head) + out + src.slice(tail));
+    console.log('\nwritten into index.html between the MEDALS markers');
+  }
+  console.log('AIRWORTHY MEDALS OK');
+}
+
 var a = process.argv.slice(2);
-if (a.indexOf('--test') >= 0) runTests();
+if (a.indexOf('--medals') >= 0) runMedals(a.indexOf('--write') >= 0);
+else if (a.indexOf('--test') >= 0) runTests();
 else if (argOf('fly')) runFly(argOf('fly'));
 else {
-  console.log('usage: --test | --fly=SPEC[,course,angle,power] [--over=KEY=VAL]');
+  console.log('usage: --test | --medals [--write] | --fly=SPEC[,course,angle,power] [--over=KEY=VAL]');
   console.log('  SPEC is a name (cruiser porpoise tumbler lawndart floater)');
   console.log('  or a list like wing:0.8/noseFolds:1/elev:6');
   process.exit(2);

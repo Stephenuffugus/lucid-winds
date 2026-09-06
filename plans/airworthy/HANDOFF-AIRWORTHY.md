@@ -794,6 +794,131 @@ past the stall fixes it; the sweep and everything it moved is in
    aeroplane was drawn in the part nobody can see.
 
 
+### P3 step 2 ledger, the courses, the challenges and the medals (2026-09-06)
+
+`node sim.js --medals`
+
+```
+forty planes, every challenge, thrown the way that challenge prescribes
+
+  challenge    kind        bronze   silver     gold     best   the plane that took it
+  gym-far     distance     10.00    11.60    14.80    18.90   wing 0.15 locked folds 3 elev 0
+  gym-hang    airtime       2.10     2.30     3.40     3.77   wing 0.99 pointed folds 2 elev 8
+  gym-desk    accuracy      1.90     0.86     0.08     0.00   wing 0.70 blunt folds 3 elev -4
+  yard-far    distance      7.90     9.80    21.40    29.84   wing 0.26 pointed folds 1 elev 4 clip nose
+  yard-hang   airtime       2.30     2.70     3.30     3.82   wing 0.99 pointed folds 2 elev 8
+  yard-pool   accuracy      2.47     1.27     0.37     0.01   wing 0.38 locked folds 1 elev -6
+
+the most golds any one plane in the bank takes: 3 of 6
+AIRWORTHY MEDALS OK
+```
+
+`node test/challenge.mjs`
+
+```
+ok    the title offers the challenges and a thumb lands on it (48 px)
+  ok    six of them are listed (6)
+  ok    gym-far is reachable and 71 px tall
+  ok    yard-hang is reachable and 71 px tall
+  ok    and the list says what a medal wants before you fly
+  ok    with no dash and no shouting in it
+  ok    picking one takes you to the backyard for it (field, yard, yard-hang)
+  ok    and the backyard has its fan and its thermal (2)
+  ok    the throw button is there and reachable (56 px)
+  ok    and a pull back on the canvas does NOT launch it, because the throw is set
+  ok    the button does
+  ok    from the mark
+  ok    the result card comes up
+  ok    named for the challenge, not the plane (Ride the grill)
+  ok    and it is scored in seconds of air (3.62)
+  ok    the line has no dash in it: "3.6 sGold, and your best is Gold"
+  ok    a first flight leaves a ghost (41 points)
+  ok    a worse plane scores worse (2.05 against 3.62)
+  ok    and the ghost is still the better flight (41 points, unchanged)
+  ok    the fold the medal tool named for the desk takes gold on it (0.01 m off, medal gold)
+  ok    and it is kept
+  ok    and the list shows it: "●The deskLand it on the deskbronze 1.9 · silver 0.86 · gold 0.08 m from the midd"
+  ok    and it is still there after a reload ({"yard-hang":"gold","gym-desk":"gold"})
+  ok    no page errors
+
+CHALLENGE OK
+```
+
+`node tools/check.js`
+
+```
+sim             pass  0s
+lint            pass  0s
+throw           pass  4s
+fold            pass  8s
+tunnel          pass  3s
+challenge       pass  3s
+layout          pass  9s
+
+ALL GATES PASSED
+```
+
+**Two design holes found by measuring, not by thinking.**
+
+1. **An accuracy challenge with a free throw is not an accuracy challenge.** Best
+   of three throws and any plane with the range simply throws softer until it
+   lands on the mark, so landing on a mark asked nothing of the fold. One plane
+   took gold in five of the six.
+2. **Distance and airtime are the same challenge if the throw is free.** A good
+   glider goes far AND hangs, so both were won by one fold. Each challenge now
+   prescribes its throw: distance is flat and hard, airtime is lofted and gentle,
+   the accuracy pair are fixed. The winners are now a wing of 0.15 and a wing of
+   0.99, which is the trade off the workshop is for.
+
+The suite gained an assertion for that, because the plan's own test (no fold
+golds all six) PASSED in the broken state:
+
+```
+$ (throwsFor returning MEDAL_THROWS for every challenge, so the throw is free again)
+  FAIL  and the same is true in the backyard (wings 0.26 and 0.30)
+```
+
+**Every new gate watched red.** The sim's:
+
+```
+$ (a gold nobody can reach)         FAIL  gym-far: the reference fold takes gold (18.90 against 40)
+$ (medals out of order)             FAIL  gym-hang has its medals in order (3.4 2.3 2.1)
+$ (a mark nowhere near the planes)  FAIL  gym-desk: the mark is where the planes come down
+                                          (mark 17.5 m, the middle of forty lands at 8.5 m)
+$ (air that is not the same twice)  FAIL  a challenge flies the same air every time, sideways
+```
+
+And the browser's:
+
+```
+$ (the sling allowed to override a prescribed throw)
+  FAIL  and a pull back on the canvas does NOT launch it, because the throw is set
+$ (the ghost overwritten every flight)
+  FAIL  and the ghost is still the better flight (38 points, unchanged)
+$ (medals not written to the save)
+  FAIL  and it is kept
+  FAIL  and it is still there after a reload ({})
+```
+
+**Shots, opened and read.** `p3-challenges.png`, `p3-yard.png`,
+`p3-yard-wide.png`, `p3-yard-result.png`, `p3-desk.png`. What looking found:
+
+1. The backyard's fence was two and a half metres tall across the whole frame,
+   so the plane flew THROUGH the fence. It is waist height now.
+2. The fan was a smudge and the thermal a scratch at the edge of the screen. The
+   asks are "through the fan" and "find the warm air", so both are drawn from
+   the very fields windAt sums, at a size you can aim at from the launch mark.
+3. THROW IT sat in the middle of the course in landscape, on top of the grill,
+   and stayed up during the flight and under the result card. It hides while the
+   plane is in the air and moves to the right hand corner in landscape.
+4. The result card sat exactly on the floor line, so where the plane came down,
+   which is what a result IS, was behind the card.
+5. The gym's banners were bare rectangles indistinguishable from the gym's
+   windows, and the desk was a blue smear on the floor. A banner hangs off the
+   top bar now and the desk has legs.
+6. The thermal column was a rectangle with hard sides and read as a wall.
+
+
 ## 14. THE OVERNIGHT PROTOCOL
 
 As `plans/fathom/HANDOFF-FATHOM.md` section 14, with `P0, P1, P2, P3` of this file and the browser gates `throw, fold,
