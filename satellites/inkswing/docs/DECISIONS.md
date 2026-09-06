@@ -89,3 +89,36 @@
 - **The shot tool empties the first boot hint rather than watching for it.** A
   MutationObserver that removes the class the observer watches is a loop, and it
   hung the render thread until the tool timed out.
+
+## P3 step 4, the Double Link (2026-09-06, the afternoon builder)
+
+- **Rig 4 is integrated, not solved, and it is deterministic.** Two coupled
+  damped links, linearised, at a fixed 240 Hz step, one Float64 trajectory per
+  throw cached by the throw's numbers, so `posAt` stays a lookup with linear
+  interpolation and `traceOf` did not change. No seeded stream is needed: the
+  model has no dice in it.
+- **Runge Kutta, not the plan's semi implicit Euler.** Measured, not argued: the
+  plan's own limit assertion (the single link limit inside 0.05 units over
+  twenty seconds) was run with symplectic Euler at 240 Hz in the integrator's
+  place and missed by 3.0 units at C4 and 6.8 at C5, the first order method's
+  amplitude wobble of w h / 2. Fourth order at the same step lands inside 0.002.
+- **The hand holds the pen, not the chain.** Started with both links straight
+  along the pull, the rig drew the Single's ellipses with a wobble nobody could
+  see (opened in `docs/shots/p3-double.png`, first cut). The release now puts
+  the chain in its own rest shape under a sideways pull: the first bob at
+  w2^2 / (w2^2 + 2 w1^2) of the pull, which excites the second mode from the
+  first swing.
+- **The reach is read off the trajectory.** Link 2 can be pumped by link 1 to
+  well past where it was let go, so the sum of two amplitudes is not the reach;
+  the trajectory is integrated once, its widest point measured, and (the system
+  being linear) the throw is scaled back onto the sheet in one pass. One throw
+  at a time: two throws still swinging add on every rig, and that is layering.
+- **Its terms are both link 1.** The link packs A, phi and wEff per pendulum;
+  on this rig pend[0] and pend[1] are link 1's x and y terms and link 2 takes
+  its note from `lengths[1]`, which the link also carries. A throw that came in
+  over a link has no release stored and `releaseOf` derives it from the terms;
+  the assertion holds the two drawings inside 1.5 units.
+- **The hum's second voice is link 2's note**, read from `lengths[1]`, since
+  both terms are link 1 and would otherwise hum a unison.
+- **The rig list counts the folio when it is opened.** Filled any way but by the
+  keep button (the gate, a sheet kept off a link) the count was stale.

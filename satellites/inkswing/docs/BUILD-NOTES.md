@@ -86,7 +86,9 @@ rather than suppressed in the game.
 
 ## What is not done
 
-- The Double Link, P3 step 4 of the plan, which was conditional on the rest of
-  P3 landing early and did not.
+- ~~The Double Link, P3 step 4 of the plan~~ built 2026-09-06 afternoon: see
+  `DECISIONS.md`, P3 step 4. Twelve more assertions in `sim.js --test` (99),
+  seven more in `test/fling.mjs` (38), `docs/shots/p3-double.png` and
+  `p3-double-375.png` opened.
 - The equal tempered slider question in the plan's section 15, which is a
   Director call and not a bug.

@@ -1,9 +1,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#2B3A67">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260906a">
-<link rel="icon" href="./icon-192.png?v=20260906a">
-<link rel="manifest" href="./manifest.webmanifest?v=20260906a">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260906d">
+<link rel="icon" href="./icon-192.png?v=20260906d">
+<link rel="manifest" href="./manifest.webmanifest?v=20260906d">
 <title>INKSWING</title>
 <style>
 :root{
@@ -422,9 +422,19 @@ function doubleTraj(sheet, thr, k) {
   var w1x = thr.pend[0].wEff, w1y = thr.pend[1].wEff;
   var w2 = wForSemitone(sheet.lengths[1]);
   var w1x2 = w1x * w1x, w1y2 = w1y * w1y, w22 = w2 * w2;
+  /* ⛔ THE HAND HOLDS THE PEN, NOT THE CHAIN. Pulled sideways at the bottom
+     bob, a chain of two hangs as a chain: link 1 carries both bobs and tilts
+     less, link 2 carries one and tilts more, so the first bob sits at a
+     fraction f of the pull, f = w2^2 / (w2^2 + (1 + k) w1^2), and the drag
+     velocity is shared the same way. Started with both links straight along
+     the pull it drew the Single's ellipses with a wobble nobody could see; from
+     the chain's own rest shape the second mode is in it from the first swing.
+     With no second link (k = 0) the pull is all link 1's. */
+  var fx = k ? w22 / (w22 + (1 + k) * w1x2) : 1, fy = k ? w22 / (w22 + (1 + k) * w1y2) : 1;
   /* state: p1, q1, p2, q2 for x then for y (q is the velocity) */
-  var s = [r.x, r.vx, r.x, r.vx, r.y, r.vy, r.y, r.vy];
+  var s = [r.x * fx, r.vx * fx, r.x, r.vx, r.y * fy, r.vy * fy, r.y, r.vy];
   var X = new Float64Array(n), Y = new Float64Array(n), E = new Float64Array(n);
+  var X1 = new Float64Array(n), Y1 = new Float64Array(n);
   function deriv(u, out) {
     var a;
     for (a = 0; a < 8; a += 4) {
@@ -450,6 +460,7 @@ function doubleTraj(sheet, thr, k) {
   for (i = 0; i < n; i++) {
     X[i] = s[0] + k * (s[2] - s[0]);
     Y[i] = s[4] + k * (s[6] - s[4]);
+    X1[i] = s[0]; Y1[i] = s[4];
     E[i] = energy(s);
     if (i === n - 1) break;
     deriv(s, k1);
@@ -461,7 +472,7 @@ function doubleTraj(sheet, thr, k) {
     deriv(tmp, k4);
     for (j = 0; j < 8; j++) s[j] += h / 6 * (k1[j] + 2 * k2[j] + 2 * k3[j] + k4[j]);
   }
-  var out = { x: X, y: Y, e: E, hz: hz, n: n };
+  var out = { x: X, y: Y, x1: X1, y1: Y1, e: E, hz: hz, n: n };
   DOUBLE_CACHE.keys.push(key);
   DOUBLE_CACHE.map[key] = out;
   while (DOUBLE_CACHE.keys.length > 24) delete DOUBLE_CACHE.map[DOUBLE_CACHE.keys.shift()];
@@ -483,6 +494,28 @@ function doublePosAt(sheet, t, k) {
       var u = f - at;
       x += tr.x[at] + (tr.x[at + 1] - tr.x[at]) * u;
       y += tr.y[at] + (tr.y[at + 1] - tr.y[at]) * u;
+    }
+  }
+  return { x: x, y: y };
+}
+/* where the FIRST bob is, the knuckle of the chain, so the rig can be drawn as
+   the chain it is; the throws add here too */
+function doubleLink1At(sheet, t, k) {
+  var x = 0, y = 0, i;
+  for (i = 0; i < sheet.throws.length; i++) {
+    var thr = sheet.throws[i];
+    var dt = t - thr.t0;
+    if (dt < 0) continue;
+    var tr = doubleTraj(sheet, thr, k);
+    var f = dt * tr.hz, at = Math.floor(f);
+    if (at >= tr.n - 1) {
+      var tail = Math.exp(-thr.damp * (dt - (tr.n - 1) / tr.hz));
+      x += tr.x1[tr.n - 1] * tail;
+      y += tr.y1[tr.n - 1] * tail;
+    } else {
+      var u = f - at;
+      x += tr.x1[at] + (tr.x1[at + 1] - tr.x1[at]) * u;
+      y += tr.y1[at] + (tr.y1[at + 1] - tr.y1[at]) * u;
     }
   }
   return { x: x, y: y };
@@ -1136,7 +1169,7 @@ function suitePurity(T, src) {
 }
 // ---- TEST_EXPORT_END ----
 /* ============================ 16. THE PAGE ============================ */
-var STAMP = '20260906a';
+var STAMP = '20260906d';
 function el(id) { return document.getElementById(id); }
 var V = { cv: null, ctx: null, W: 0, H: 0, dpr: 1, t: 0, ppu: 0.34, ox: 0, oy: 0 };
 var G = { screen: 'sheet', sheet: null, t: 0, drawing: false, since: 0,
@@ -1375,8 +1408,32 @@ function drawRig(ctx) {
   ctx.lineWidth = 7;
   ctx.beginPath();
   ctx.moveTo(V.ox, topY);
+  /* ⛔ THE DOUBLE LINK IS DRAWN AS A CHAIN. One rod from the beam to the bob
+     showed a Single with a different name; the knuckle is the first bob, where
+     the integrator says it is, and the rod bends there while it draws. */
+  var rigNow = RIGS[G.sheet.rig] || RIGS.single;
+  var knuckle = null;
+  if (rigNow.numeric && G.sheet.throws.length && !G.grabbed) {
+    var k1 = doubleLink1At(G.sheet, G.t, CONFIG.DOUBLE_LINK2);
+    /* the knuckle's x is the first bob's, from the model; its height on the
+       rod is the links' share of the chain, a link's length going as one over
+       its rate squared, so a higher note is a shorter link */
+    var wa = wForSemitone(G.sheet.lengths[0]), wb = wForSemitone(G.sheet.lengths[1]);
+    var share = (wb * wb) / (wa * wa + wb * wb);
+    knuckle = { x: sx(k1.x), y: topY + (by - topY) * share };
+    ctx.lineTo(knuckle.x, knuckle.y);
+  }
   ctx.lineTo(bx, by);
   ctx.stroke();
+  if (knuckle) {
+    ctx.fillStyle = '#B08D3E';
+    ctx.beginPath();
+    ctx.arc(knuckle.x, knuckle.y, 6, 0, 6.2832);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(30,20,4,.6)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
   /* the pivot */
   ctx.fillStyle = '#B08D3E';
   ctx.beginPath();
