@@ -21,8 +21,11 @@ this file wins; every difference is in section 3 with its reason.
   the trim panel's two degree detents, medals on the hangar cards (which needed
   a hangar entry to remember what it won), the flight's `ring` and `zone`
   events, and pinch to pull the room back in the field.
+  There is now a ninth gate, `test/play.mjs`, which plays one whole session with
+  nothing but a thumb, and it found three dashes in the shipped game that the
+  lint could not see because they were computed at run time.
   **Next action:** nothing is half built. The plan is complete through P3 and
-  sections 4 and 6 are closed. 129 sim assertions and eight gates. What is open is in the morning report under "what is
+  sections 4, 6 and 10 are closed. 129 sim assertions and nine gates. What is open is in the morning report under "what is
   thin": no painted art, the Stunt and Canyon and Stadium courses the design
   names are not built, nobody has played it on a phone and nobody has HEARD it.
 
@@ -1192,6 +1195,120 @@ ALL GATES PASSED
 ```
 
 
+### P3, one session end to end, and the dashes it found (2026-09-06)
+
+Every gate up to here proves a ROOM works. Nothing proved the rooms were
+JOINED, and a broken join leaves every one of them green while the game is
+unplayable. `test/play.mjs` is one session with nothing but a thumb: cold open,
+fold a plane crease by crease, read it in the tunnel and bend the elevator
+there, take it to the gym, throw it with a real pull, trim it, throw it again,
+go to a challenge, win something, and find that medal on the shelf.
+
+```
+ok    the game opens on the title
+  ok    with an empty hangar
+  ok    the workshop is where a thumb can reach it (48 px)
+  ok    a fold saved out of the workshop is the first thing on the shelf
+  ok    and it puts you on the field holding it
+  ok    the tunnel is where a thumb can reach it (48 px)
+  ok    the slate tells you what it will do before you throw it
+  ok    including the glide it will hold (3.25 to 1)
+  ok    bending the elevator down in the tunnel really bends it (-7)
+  ok    and the tunnel answers straight away (3.3 to -5.5 degrees)
+  ok    FLY IT is where a thumb can reach it (56 px)
+  ok    FLY IT takes it to the gym
+  ok    with the bend you just put in it
+  ok    a pull back and a release throws it
+  ok    and the result card comes up
+  ok    with what kind of plane it turned out to be (cruiser)
+  ok    and the shelf remembers that about it
+  ok    TRIM is where a thumb can reach it (48 px)
+  ok    the elevator is where a thumb can reach it (48 px)
+  ok    THROW IT is where a thumb can reach it (48 px)
+  ok    a bend and THROW IT sends it again
+  ok    the way to the challenges is where a thumb can reach it (48 px)
+  ok    which opens the list
+  ok    nothing has been won yet
+  ok    picking one off the list sets it up (gym-far)
+  ok    THROW IT is where a thumb can reach it (56 px)
+  ok    a plane a person folded by tapping wins something on one of the six (bronze, after 2)
+  ok    the challenge keeps it
+  ok    and so does the fold that won it ({"gym-hang":"bronze"})
+  ok    the hangar is where a thumb can reach it (48 px)
+  ok    the shelf shows what it won: "KestrelThe Cruiser · 9.4 m● 1 of six"
+  ok    nothing a player read on any screen had a dash in it (112 lines)
+  ok    and nothing shouted
+  ok    no page errors
+
+PLAY OK
+```
+
+The plane a person folds by tapping the LAST choice of every crease won a bronze
+on its second challenge, which is the first evidence in this build that the game
+is playable by somebody who is not the person who wrote it.
+
+**Watched red on three broken joins.**
+
+```
+$ (FLY IT handing you a different plane than the one in the tunnel)
+  FAIL  with the bend you just put in it
+$ (the challenge list not setting the challenge up)
+  FAIL  picking one off the list sets it up (null)
+  FAIL  THROW IT is where a thumb can reach it (0 px)
+  FAIL  a plane a person folded by tapping wins something on one of the six (nothing, after 6)
+$ (a dash in a challenge's one line ask)
+  FAIL  nothing a player read on any screen had a dash in it: ["Send it down the hall - hard"]
+```
+
+The second of those THREW a puppeteer stack trace on the first run instead of
+naming the join, which is worth as much as a red gate that says nothing. Every
+read of a thing that might not be there is null safe now, so the gate diagnoses
+rather than dies.
+
+**⛔ AND IT FOUND THREE DASHES IN THE SHIPPED GAME.** The lint's copy check
+reads text nodes and `textContent = '...'` string literals; these were computed
+at run time and it could not see them:
+
+```
+"-10"                              the elevator dial's readout
+"best 9.4 m · elev -7 · 6.5 g"     the field's own heading
+"gold at 14.8 m · elev -10 · 6.5 g"
+```
+
+A minus sign in front of a number is a dash on the screen whatever a
+mathematician would call it, and the studio law does not carve out numerals. It
+also reads worse than the alternative: what the player DID was bend the elevator
+seven degrees down, so it says "elev 7 down", the aileron says "straight" or "3
+right", and the tunnel's angle says "5.0 down". The tunnel's slate had been
+saying it that way since the day it was built.
+
+That change made the values twice as wide, which took the width out of the
+sliders: in the tunnel's two column grid the angle dial was left about eighty
+pixels of travel to aim with. The value moved onto the label's line and the
+slider takes the full width under it.
+
+**The copy check itself was nearly decoration.** Read off `document.body` at the
+end of the run it only ever saw the hangar, and a dash sitting in the challenge
+list went straight past it. It walks the screens now and keeps what it saw at
+four points during play.
+
+`node tools/check.js` (nine gates)
+
+```
+sim             pass  0s
+lint            pass  0s
+throw           pass  6s
+fold            pass  8s
+tunnel          pass  3s
+challenge       pass  4s
+sound           pass  6s
+play            pass  5s
+layout          pass  10s
+
+ALL GATES PASSED
+```
+
+
 ## 14. THE OVERNIGHT PROTOCOL
 
 As `plans/fathom/HANDOFF-FATHOM.md` section 14, with `P0, P1, P2, P3` of this file and the browser gates `throw, fold,
@@ -1232,6 +1349,16 @@ by flying forty folds through every one, not guessed.
    was open, so a sharper one was written next to it.
 3. Every threshold in the file was written by a tool that flew for them, and the
    tool refuses to write a set where one plane wins everything.
+
+**There is a ninth gate that plays the game.** Every other one proves a room
+works; a broken join between rooms leaves all of them green and the game
+unplayable. `test/play.mjs` folds a plane by tapping, reads it in the tunnel,
+bends the elevator there, throws it in the gym, trims it, wins a medal on a
+challenge and finds it on the shelf, all with real pointers. The plane it folds
+by taking the last choice of every crease wins a bronze on its second challenge,
+which is the first evidence in this build that somebody other than its author
+can play it. It also caught three dashes in the shipped game, in readouts
+computed at run time where the lint cannot see them.
 
 **Sections 4 and 6 are closed too.** Section 4 had two clauses left in it: the
 flight's `ring` and `zone` events, which the screen had been working out for

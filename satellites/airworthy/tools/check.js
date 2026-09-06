@@ -37,6 +37,9 @@ const BROWSER_GATES = [
   { name: 'tunnel', cmd: ['test/tunnel.mjs'], need: 'TUNNEL OK' },
   { name: 'challenge', cmd: ['test/challenge.mjs'], need: 'CHALLENGE OK', slow: true },
   { name: 'sound', cmd: ['test/sound.mjs'], need: 'SOUND OK', slow: true },
+  /* the one that proves the rooms are JOINED: one session, thumb only, cold
+     open to a medal on the shelf */
+  { name: 'play', cmd: ['test/play.mjs'], need: 'PLAY OK', slow: true },
   { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK', slow: true }
 ];
 

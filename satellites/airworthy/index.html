@@ -101,7 +101,9 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
 #resultLine{font-size:.82rem;color:var(--pencil);text-align:center;line-height:1.6}
 .dial{width:100%;display:flex;align-items:center;gap:10px;min-height:48px}
 .dial .lbl{font-size:.78rem;color:var(--pencil);width:74px;flex:0 0 74px}
-.dial .val{font-size:.82rem;font-weight:700;width:52px;flex:0 0 52px;text-align:right}
+.dial .val{font-size:.82rem;font-weight:700;width:74px;flex:0 0 74px;text-align:right;
+  white-space:nowrap}
+@media (max-width:340px){.dial .val{width:64px;flex:0 0 64px;font-size:.76rem}}
 .dial input[type=range]{flex:1 1 0;min-width:0;height:48px;background:transparent;accent-color:var(--crease)}
 /* the workshop: the paper fills the middle, the choices sit under it */
 #shop{position:absolute;left:0;right:0;bottom:0;z-index:6;pointer-events:auto;
@@ -155,8 +157,14 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
    the player came here to look at was the smallest thing on it. The slate pairs
    up into four rows and the dials into two, and the chamber gets it back. */
 #tunDials{display:grid;grid-template-columns:1fr 1fr;gap:2px 12px;width:100%;max-width:380px}
-#tunnel .dial{max-width:none;flex-wrap:wrap;gap:0 6px}
-#tunnel .dial .lbl{flex:1 0 100%;font-size:.7rem}
+/* ⛔ the value moved onto the LABEL's line. Spelled out as words rather than as
+   a signed number, "5.0 down" is twice as wide as "5.0" and it was taking that
+   width out of the slider, which in a two column grid left the angle dial about
+   eighty pixels of travel to aim with. */
+#tunnel .dial{max-width:none;flex-wrap:wrap;gap:0 6px;align-items:center}
+#tunnel .dial .lbl{flex:1 1 auto;order:0;font-size:.7rem}
+#tunnel .dial .val{order:0;flex:0 0 auto;width:auto;font-size:.74rem}
+#tunnel .dial input[type=range]{order:1;flex:1 0 100%}
 #tunnel .row{max-width:380px;margin-top:2px}
 #tunReadout{width:100%;max-width:380px;background:#3A3A36;color:#EFE9DC;border-radius:10px;
   padding:7px 10px;font-size:.72rem;line-height:1.5;display:grid;
@@ -2952,9 +2960,10 @@ function tunRender() {
   }
   el('tunReadout').innerHTML = out;
   el('valWind').textContent = TUN.wind.toFixed(1);
-  el('valAlpha').textContent = TUN.alphaDeg.toFixed(1);
-  el('valTunElev').textContent = String(spec.elev);
-  el('valTunAil').textContent = String(spec.ail);
+  el('valAlpha').textContent = TUN.alphaDeg === 0 ? 'level'
+    : (TUN.alphaDeg > 0 ? TUN.alphaDeg.toFixed(1) + ' up' : (-TUN.alphaDeg).toFixed(1) + ' down');
+  el('valTunElev').textContent = trimWord(spec.elev);
+  el('valTunAil').textContent = ailWord(spec.ail);
   /* ⛔ THE PANEL DECIDES THE CHAMBER, AND THE PANEL IS NOT ITS FINAL HEIGHT
      UNTIL THE SLATE IS IN IT. Measured before this ran, the chamber came out
      two hundred and thirty pixels tall on a 320 wide phone, its lower half hid
@@ -3061,7 +3070,7 @@ function updateHud() {
     : (ch ? 'gold at ' + ch.medals.gold + ' ' + ch.unit + (ch.high ? '' : ' from the middle')
       : (G.best ? 'best ' + G.best.distance.toFixed(1) + ' m' : 'pull back and let go'));
   el('hud').innerHTML = name + '<br>' + line
-    + '  &middot;  elev ' + (G.spec.elev > 0 ? '+' : '') + G.spec.elev
+    + '  &middot;  elev ' + trimWord(G.spec.elev)
     + '  &middot;  ' + (D.mass * 1000).toFixed(1) + ' g';
 }
 
@@ -3101,6 +3110,19 @@ function gateLine(res) {
 }
 var MEDAL_MARK = { gold: '\u25CF', silver: '\u25CF', bronze: '\u25CF' };
 function medalWord(m) { return m ? m.charAt(0).toUpperCase() + m.slice(1) : ''; }
+/* ⛔ NO MINUS SIGNS IN FRONT OF A PLAYER. The studio law says no dashes of any
+   kind in player copy and a readout that says "elev -7" is a dash on the
+   screen, whatever a mathematician would call it. It also reads worse: an
+   elevator bent seven degrees DOWN is what the player did, and that is what it
+   should say. The tunnel's slate has said it this way since it was built. */
+function trimWord(n) {
+  if (!n) return 'level';
+  return (n > 0 ? n + ' up' : (-n) + ' down');
+}
+function ailWord(n) {
+  if (!n) return 'straight';
+  return (n > 0 ? n + ' right' : (-n) + ' left');
+}
 function endFlight() {
   G.flying = false;
   var r = G.res, ch = G.challenge;
@@ -3469,8 +3491,8 @@ function bindInput() {
     el('resultCard').classList.remove('on');
     el('dialElev').value = G.spec.elev;
     el('dialAil').value = G.spec.ail;
-    el('valElev').textContent = G.spec.elev;
-    el('valAil').textContent = G.spec.ail;
+    el('valElev').textContent = trimWord(G.spec.elev);
+    el('valAil').textContent = ailWord(G.spec.ail);
     syncClipButtons();
     el('scrTrim').classList.add('on');
   });
@@ -3482,12 +3504,12 @@ function bindInput() {
   });
   el('dialElev').addEventListener('input', function () {
     G.spec.elev = parseInt(this.value, 10);
-    el('valElev').textContent = (G.spec.elev > 0 ? '+' : '') + G.spec.elev;
+    el('valElev').textContent = trimWord(G.spec.elev);
     updateHud();
   });
   el('dialAil').addEventListener('input', function () {
     G.spec.ail = parseInt(this.value, 10);
-    el('valAil').textContent = (G.spec.ail > 0 ? '+' : '') + G.spec.ail;
+    el('valAil').textContent = ailWord(G.spec.ail);
     updateHud();
   });
   var clips = [['clipNone', 'none'], ['clipNose', 'nose'], ['clipMid', 'mid']], ci;
