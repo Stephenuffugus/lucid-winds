@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="FATHOM">
-<link rel="manifest" href="./manifest.webmanifest?v=20260906d">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260906d">
-<link rel="icon" href="./icon-192.png?v=20260906d">
+<link rel="manifest" href="./manifest.webmanifest?v=20260906e">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260906e">
+<link rel="icon" href="./icon-192.png?v=20260906e">
 <link rel="canonical" href="https://lucidwinds.com/satellites/fathom/">
 <style>
 /*  FATHOM
@@ -133,7 +133,7 @@ html,body{margin:0;padding:0;height:100%;background:#000;color:var(--cream);
 .fail{color:#ff8080}.pass{color:#9be36b}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260906d" defer></script>
+<script src="/music-unlocks.js?v=20260906e" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">FATHOM</h1>
@@ -265,6 +265,10 @@ var CONFIG = Object.freeze({
 
   /* the ping */
   RING_SPEED: 300, RING_MAX_R: 340, MAX_RIPPLES: 6,
+  /* a ping lights what it can reach, not what is inside its circle: 1 casts a ray
+     from the sound to every face and cache before lighting it (design 11, v1.1,
+     built 2026-09-06); 0 is the launch slice, every face inside the ring */
+  OCCLUDE: 1,
   WALL_FADE_MS: 2500, PICKUP_FADE_MS: 2500, CREATURE_FADE_MS: 1200,
 
   /* the hum */
@@ -365,7 +369,7 @@ var STREAM_CAVE = 1, STREAM_LURKER = 2, STREAM_AMBIENT = 3;
 var LEVELS = [
   {
     id: 'first-water', name: 'FIRST WATER',
-    hint: 'Tap to throw a stone. The sound shows you the cave.',
+    hint: 'Tap to throw a stone. The sound shows you the cave.',
     grid: [
       '##############################',
       '##############################',
@@ -703,6 +707,21 @@ function cellAt(grid, tx, ty) {
   return row.charAt(tx);
 }
 function gridOpen(grid, tx, ty) { return isOpenCh(cellAt(grid, tx, ty)) && cellAt(grid, tx, ty) !== WALL; }
+/* Does a sound made at (x0,y0) reach (x1,y1), or is there rock in the way? The
+   ray is sampled every quarter tile and stops a third of a tile short of its
+   target, so a wall face's own tile never counts against the face. A state with
+   no grid (the ripple suite's bare wall) is all water and hears everything. */
+function soundReaches(grid, x0, y0, x1, y1) {
+  if (!grid) return true;
+  var T = CONFIG.TILE, dx = x1 - x0, dy = y1 - y0, d = Math.sqrt(dx * dx + dy * dy);
+  if (d < T * 0.5) return true;
+  var stepLen = T * 0.25, stop = d - T * 0.34, s2;
+  for (s2 = stepLen; s2 < stop; s2 += stepLen) {
+    var x = x0 + dx * s2 / d, y = y0 + dy * s2 / d;
+    if (cellAt(grid, Math.floor(x / T), Math.floor(y / T)) === WALL) return false;
+  }
+  return true;
+}
 
 /* Every boundary between water and rock becomes an axis aligned edge whose
    normal points INTO the water. There are TWO views of those edges and the
@@ -1098,7 +1117,7 @@ function newRun(opts) {
   var level = opts.level || 0;
   var depth = opts.depth || 1;
   var seed = (opts.seed === undefined || opts.seed === null) ? 1 : (opts.seed >>> 0);
-  var grid = mode === 'deep' ? caveGrid(seed, depth) : LEVELS[level].grid;
+  var grid = opts.grid || (mode === 'deep' ? caveGrid(seed, depth) : LEVELS[level].grid);
   var segs = gridToSegments(grid);
   var hash = buildHash(segs);
   var walls = gridEdges(grid);
@@ -1274,17 +1293,21 @@ function update(st, input, dt) {
       var si = cand[j];
       if (R.lit[si]) continue;
       var q = nearestOnSeg(st.walls[si], R.x, R.y);
-      if (q.d > R.rPrev && q.d <= R.r) { R.lit[si] = 1; st.walls[si].litAt = st.now; }
+      if (q.d > R.rPrev && q.d <= R.r) {
+        /* reached by the wavefront: lit if the sound got there without going through rock */
+        R.lit[si] = 1;
+        if (!CONFIG.OCCLUDE || soundReaches(st.grid, R.x, R.y, q.x, q.y)) st.walls[si].litAt = st.now;
+      }
     }
     for (j = 0; j < st.caches.length; j++) {
       if (st.caches[j].taken || R.litE['c' + j]) continue;
       var dc = distOf(R.x, R.y, st.caches[j].x, st.caches[j].y);
-      if (dc > R.rPrev && dc <= R.r) { R.litE['c' + j] = 1; st.caches[j].litAt = st.now; }
+      if (dc > R.rPrev && dc <= R.r) { R.litE['c' + j] = 1; if (!CONFIG.OCCLUDE || soundReaches(st.grid, R.x, R.y, st.caches[j].x, st.caches[j].y)) st.caches[j].litAt = st.now; }
     }
     for (j = 0; j < st.pearls.length; j++) {
       if (st.pearls[j].taken || R.litE['p' + j]) continue;
       var dp = distOf(R.x, R.y, st.pearls[j].x, st.pearls[j].y);
-      if (dp > R.rPrev && dp <= R.r) { R.litE['p' + j] = 1; st.pearls[j].litAt = st.now; }
+      if (dp > R.rPrev && dp <= R.r) { R.litE['p' + j] = 1; if (!CONFIG.OCCLUDE || soundReaches(st.grid, R.x, R.y, st.pearls[j].x, st.pearls[j].y)) st.pearls[j].litAt = st.now; }
     }
     if (!R.litE.x) {
       var dx2 = distOf(R.x, R.y, st.exit.x, st.exit.y);
@@ -2053,6 +2076,7 @@ var TEST = {
     this.runSuite('rng', suiteRNG);
     this.runSuite('geometry', suiteGeometry);
     this.runSuite('ripple', suiteRipple);
+    this.runSuite('occlusion', suiteOcclusion);
     this.runSuite('throw', suiteThrow);
     this.runSuite('levels', suiteLevels);
     this.runSuite('economy', suiteEconomy);
@@ -2220,6 +2244,38 @@ function suiteRipple(T) {
   T.assert('never more ripples alive than the budget', st3.ripples.length <= CONFIG.MAX_RIPPLES);
 }
 
+function suiteOcclusion(T) {
+  /* A ping lights what the sound reaches. A pillar between the start and the
+     right wall keeps the wall dark behind it while the wall above the start and
+     the pillar's own near face light. Physical facts as literals: tiles are 24
+     units, the start is tile (2,4), the pillar is column 4 rows 3 to 5. */
+  var g = ['#########', '#.......#', '#.......#', '#...#...#', '#.S.#..X#', '#...#...#', '#.......#', '#.......#', '#########'];
+  var st = newRun({ mode: 'campaign', level: 0, seed: 1, grid: g });
+  T.eq('the hand drawn cave starts at tile 2,4', st.p.x + ',' + st.p.y, '60,108');
+  T.assert('a pillar sits between the start and the right wall', cellAt(g, 4, 4) === WALL && cellAt(g, 6, 4) !== WALL);
+  update(st, { throwX: st.p.x + 2, throwY: st.p.y }, CONFIG.STEP);
+  var i;
+  for (i = 0; i < 120; i++) update(st, {}, CONFIG.STEP);
+  function face(x, y0, y1, x2, xEnd) {
+    var k, w;
+    for (k = 0; k < st.walls.length; k++) {
+      w = st.walls[k];
+      if (x !== null && Math.abs(w.x1 - x) < 1 && Math.abs(w.x2 - x) < 1 && Math.min(w.y1, w.y2) >= y0 - 1 && Math.max(w.y1, w.y2) <= y1 + 1) return w;
+      if (x === null && Math.abs(w.y1 - y0) < 1 && Math.abs(w.y2 - y0) < 1 && Math.min(w.x1, w.x2) >= x2 - 1 && Math.max(w.x1, w.x2) <= xEnd + 1) return w;
+    }
+    return null;
+  }
+  var behind = face(192, 96, 120), near = face(96, 96, 120), above = face(null, 24, null, 48, 72);
+  T.assert('the right wall has a face on the start row', !!behind);
+  T.assert('the pillar has a face toward the start', !!near);
+  T.assert('the top wall has a face above the start', !!above);
+  T.assert('the pillar face toward the sound is lit', !!near && near.litAt > 0);
+  T.assert('the top wall above the sound is lit', !!above && above.litAt > 0);
+  T.assert('the right wall behind the pillar stays dark, the sound did not go through rock', !!behind && behind.litAt < 0);
+  T.assert('the ring itself reaches that far, 340 against a wall 132 away (it is the rock, not the range)', CONFIG.RING_MAX_R >= 140);
+  T.assert('a sound with nothing in the way reaches its target', soundReaches(g, 60, 108, 60, 24));
+  T.assert('and a sound with the pillar in the way does not', !soundReaches(g, 60, 108, 192, 108));
+}
 function suiteThrow(T) {
   var st = newRun({ mode: 'campaign', level: 0, seed: 3 });
   var s0 = st.stones;
@@ -2525,7 +2581,7 @@ function suitePurity(T, src) {
 // ---- TEST_EXPORT_END ----
 
 /* ========================= 11. BOOT ========================= */
-var STAMP = '20260906d';
+var STAMP = '20260906e';
 var G = {
   screen: 'title', st: null, mode: 'campaign', level: 0, depth: 1,
   keys: {}, joy: null, reticle: null, pendingThrow: null, pendingHum: false,
