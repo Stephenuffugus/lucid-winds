@@ -167,3 +167,80 @@ wildly asymmetric when it was not; and it did not normalise arc length, so
 hooking harder secretly made the stroke faster. Both are called out in a comment
 above the generator, because an assertion is only ever as good as the thing
 driving it.
+
+## The aim mechanic, decided 2026-09-06
+
+Stephen asked for a unique aim and flick mechanic. Four independent designs were
+produced from different angles, judged against each other by three lenses (the
+thumb, the feel, the machine), and merged. Design 2's spine won on the thumb
+lens outright; design 1 tied on total but the thumb lens scored it 4 of 10 and
+named an ergonomic fatal that design 1's own author had named first, and a body
+fact is not a tuning constant.
+
+**D18. Aim is THE PLANT: integrated lateral thumb travel while the hand is slow,
+inside the same unbroken touch as the throw, and it is sticky across throws.**
+It replaces the P0 baseline of reading aim from where the stroke started. Two
+reasons, both measured. Positional aim is not reachable: a right thumb cannot
+reach the left third of a 375 px screen without changing grip, so it silently
+costs half the axis to half the players. And the plant is paid once per session
+rather than once per throw, because the lake stays where you left it and a
+rethrow down the same line is a bare flick.
+
+**D19. One constant, `THROW_SPEED`, has two roles that cannot disagree.** A
+segment at or above it is the throw, so a throw can never turn the lake; a
+release slower than it is not a throw at all, so the stone goes quietly back in
+the palm. Written as two constants they would drift apart and there would be a
+band of speeds that both aimed and threw.
+
+**D20. The arm onset stops on TWO consecutive slow segments, not one.** A single
+stalled coalesced sample inside a real flick would otherwise split the throw and
+hand its back half to the plant, turning the lake by the amount you just threw.
+
+**D21. ⛔⛔ RISE IS LINEAR IN THE ANGLE, AND THIS WAS A REAL BUG, NOT A
+PREFERENCE.** `motionFromPose` computed rise as an angle while `motionFromSamples`
+computed it as a sine, so the identical physical throw arrived as **theta 26.38
+from a phone and 21.00 from a headset**. The seam had rotted the hour it was
+written and every assertion was green, because the device assertions checked that
+the pose path produced a plausible SPEED and that two phone widths agreed with
+each other. Neither ever compared the two devices to one another, which is the
+one thing a seam is for. There is now an assertion that walks the same physical
+throw down both paths at five angles and requires the answers to match; they
+agree to the second decimal at every angle. As a side benefit the magic angle now
+sits at a 41.5 degree thumb diagonal, which is what a thumb sweeping a portrait
+phone actually does, instead of a cramped 27.5.
+
+**D22. The arm and wrist split by ARC LENGTH, not by sample index.** By index the
+split moves with the sampling rate, so the same physical throw read on a 120 Hz
+panel and a 45 Hz one gave different angles. By arc it is a property of the path.
+The residue is that a harder wrist roll lengthens the path slightly and walks the
+split point along it, which leaves about half a degree of coupling: near the magic
+angle the model prices that at about one skip in eighteen. A residue that depends
+on the player's wrist beats one that depends on their hardware.
+
+**D23. The magic angle is asserted to actually BE magic.** The game's premise is
+"learn the magic angle with your thumb", so if the model's best angle were
+somewhere else it would teach a skill that does not pay and every piece of folk
+wisdom would point the wrong way. Nothing else checked it: the fifteen skip
+assertion only asks that a throw AT the magic angle is good, never that it is the
+best. Swept over 24 seeds at every degree from 10 to 32, the model peaks at 21
+against a MAGIC_DEG of 20, on a single clean hill.
+
+**D24. Two more probes that could not fail.** The headset throw assertions built
+their pose stream FROM `CONFIG.U_HARD_XR`, so the constant could be set to forty
+and the assertion still passed. They now use the physical numbers written out
+literally (9.0 m/s is a hard human throw, 1.2 m/s is a limp one, 30 rad/s is a
+real skipping roll) because those are facts about arms rather than about this
+game, and if CONFIG disagrees with them then CONFIG is wrong.
+
+### Taken from the panel but NOT built tonight, because they are P1 and P2
+
+The three faces of the lake (`SHORE_REACH`, `SHORE_SHELTER`), which is what gives
+aim a job: short sheltered water to the left that forgives a bad angle, the main
+lake ahead where the record lives, the open bay to the right that runs forever
+and where the wind has nothing to stop it. The bent seam of calm water that
+previews the throw and straightens as you turn into the wind, which is how a
+player learns the wind without being told. The treeline scrolling at
+`TREE_PX_PER_DEG` so the turn reads as your body rather than as a slider. The
+five degree haptic detents. `YAW_START_DEG -9` so a fresh save is visibly facing
+off centre and the world is discoverably turnable on throw one. These are written
+up in the plan's section 15 for P1 and P2.

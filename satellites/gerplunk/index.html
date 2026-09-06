@@ -110,6 +110,33 @@ var CONFIG = {
   CURL_REF: 26,
   /* how far off the centre line the shore lets you aim */
   YAW_MAX_DEG: 25,
+  /* ⛔ THE PLANT. Aim is integrated lateral thumb travel while the hand is SLOW,
+     inside the same unbroken touch as the throw. 480 degrees per metre of glass
+     is 0.1267 degrees per CSS pixel: 197 px of drag covers the whole 25 degree
+     half axis, a five degree turn is 39 px of thumb, and an unintended 20 px
+     wobble costs 2.5 degrees. It is RELATIVE, not positional, which is the whole
+     reason it beat reading aim from where the stroke starts: a right thumb
+     cannot reach the left third of a 375 px screen without changing grip, so a
+     positional aim silently costs left handed players half the axis. */
+  TURN_DEG_PER_M: 480,
+  /* below this the plant turns the lake at full gain; the fade runs from here up
+     to THROW_SPEED where it is exactly zero, so the plant rule and the throw
+     rule meet at the same number and there is no branch and no cliff anywhere */
+  TURN_FADE_LO: 0.11,
+  /* ⛔ ONE CONSTANT WITH TWO ROLES THAT CANNOT DISAGREE. A segment at or above
+     it is the throw, so a throw can never turn the lake; and a release slower
+     than it is not a throw at all, so the stone goes quietly back in the palm.
+     0.20 m/s of glass is 758 px/s, which is v 3.8, which the model still runs
+     out to six skips: the weakest throw the game accepts is still a throw. */
+  THROW_SPEED: 0.20,
+  /* a fresh save faces the gap in the treeline rather than dead ahead, so the
+     world is visibly turnable on throw one */
+  YAW_START_DEG: -9,
+  /* the headset's soft and hard throw band, m/s of hand, and the roll rate that
+     means full spin. A thumb's hardest is 0.74 m/s of glass and an arm's hardest
+     is 9 m/s of air; each producer maps its own hardest onto the same number so
+     throwFromMotion never learns which device threw. */
+  U_SOFT_XR: 1.2, U_HARD_XR: 9.0, SPIN_FULL_XR: 30,
 
   PX_PER_M: 9, CAM_LEAD_M: 6,
   WIND_MAX: 1.2,
@@ -361,99 +388,149 @@ function newMotion(o) {
   return { speed: o.speed || 0, rise: o.rise || 0, curl: o.curl || 0, aim: o.aim || 0 };
 }
 function clamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
+function smoothstep(a, b, x) { var t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); }
+/* metres per second of real glass across one segment of the path */
+function segSpeed(s, i) {
+  var dx = s[i].x - s[i - 1].x, dy = s[i].y - s[i - 1].y, dt = (s[i].t - s[i - 1].t) / 1000;
+  return dt > 0 ? Math.sqrt(dx * dx + dy * dy) * CONFIG.METRES_PER_CSS_PX / dt : 0;
+}
 
-/* THE PHONE. Pointer samples in CSS pixels and milliseconds, plus the viewport
-   width so the start position reads as a line rather than as a pixel. */
-function motionFromSamples(samples, viewW) {
-  var n = samples.length;
-  if (n < 3) return newMotion({});
-  var last = samples[n - 1], i;
-  /* ⛔ RELEASE SPEED IS THE LAST 60 ms, NOT THE WHOLE STROKE. A player who
-     wanders to the line they want and then snaps has a slow average and a fast
-     release, and it is the release that throws the stone. */
+/* THE PHONE. One unbroken touch with a slow part and a fast part: the PLANT,
+   where sliding sideways turns the whole lake, and the THROW. `yaw0` is the yaw
+   carried in from the last throw, because the lake stays where you left it.
+   Returns null when the release was not a throw at all.
+   ⛔ there is no viewport argument any more. Nothing in this layer needs to know
+   how wide the screen is, which is a stronger device independence than a screen
+   fraction ever was. */
+function motionFromSamples(samples, yaw0) {
+  var n = samples.length, i;
+  if (n < 3) return null;
+  var last = samples[n - 1];
+
+  /* ⛔ THE ARM ONSET, FOUND BY WALKING BACK FROM THE RELEASE, and it stops on TWO
+     consecutive slow segments rather than one. A single stalled coalesced sample
+     inside a real flick would otherwise split the throw in half and hand the
+     back half to the plant, which would turn the lake by the amount you just
+     threw. Two in a row cannot happen inside a flick. */
+  var armStart = 0, slow = 0;
+  for (i = n - 1; i >= 1; i--) {
+    if (segSpeed(samples, i) < CONFIG.THROW_SPEED) { slow++; if (slow >= 2) { armStart = i + 1; break; } }
+    else slow = 0;
+  }
+  if (armStart > n - 2) armStart = n - 2;
+
+  /* THE PLANT. Every segment strictly before the arm onset turns the lake,
+     weighted by a fade whose top is exactly the arm onset's own threshold, so
+     the two rules meet at zero and there is no mode boundary to fall through.
+     ⛔ the clamp is INSIDE the loop, because the player watched the world stop
+     at the edge of the shore and the number that gets committed has to be the
+     number they saw stop. */
+  var yaw = yaw0 === undefined ? 0 : yaw0;
+  for (i = 1; i <= armStart; i++) {
+    var w = 1 - smoothstep(CONFIG.TURN_FADE_LO, CONFIG.THROW_SPEED, segSpeed(samples, i));
+    yaw = clamp(yaw + w * (samples[i].x - samples[i - 1].x) * CONFIG.METRES_PER_CSS_PX * CONFIG.TURN_DEG_PER_M,
+      -CONFIG.YAW_MAX_DEG, CONFIG.YAW_MAX_DEG);
+  }
+
+  /* SPEED, over the release window, as arc length rather than net displacement,
+     with the window floored at the arm onset so the still beat of a long plant
+     can never be averaged into the throw. */
   var cut = last.t - CONFIG.RELEASE_WINDOW_MS, first = 0;
   for (i = n - 1; i >= 0; i--) { if (samples[i].t <= cut) { first = i; break; } }
-  var a = samples[first], dt = (last.t - a.t) / 1000;
-  /* ⛔ SPEED IS ARC LENGTH, NOT NET DISPLACEMENT. Measured as endpoint minus
-     endpoint, a hooked release reads SLOWER than a straight one of the same hand
-     speed, because the curve doubles back on itself. The hand did not slow down.
-     Arc length is what the hand actually travelled. */
+  first = Math.min(Math.max(first, armStart), n - 2);
   var arc = 0;
   for (i = first + 1; i < n; i++) {
-    var px = samples[i].x - samples[i - 1].x, py = samples[i].y - samples[i - 1].y;
-    arc += Math.sqrt(px * px + py * py);
+    var ax = samples[i].x - samples[i - 1].x, ay = samples[i].y - samples[i - 1].y;
+    arc += Math.sqrt(ax * ax + ay * ay);
   }
-  var speed = dt > 0 ? (arc * CONFIG.METRES_PER_CSS_PX) / dt : 0;
+  var dtr = (last.t - samples[first].t) / 1000;
+  var speed = dtr > 0 ? (arc * CONFIG.METRES_PER_CSS_PX) / dtr : 0;
 
-  /* ⛔⛔ THE ARM SETS THE ANGLE AND THE WRIST ADDS THE SPIN, so the rise is read
-     from the part of the stroke BEFORE the hook window and the curl from the
-     part after it. Read over the whole path instead, the two fight: a hard hook
-     drags the endpoint sideways, which changes the overall rise, so curling your
-     wrist harder also flattened your throw and there was no way to ask for spin
-     without giving up angle. Measured 2026-09-06: the same stroke hooked one way
-     came out at 17.6 degrees and hooked the other way at 31.1, from an arm that
-     did the identical thing. Split at HOOK_WINDOW they are independent. */
-  var s0 = samples[0];
-  var armEnd = samples[Math.max(1, Math.floor((n - 1) * (1 - CONFIG.HOOK_WINDOW)))];
-  var tx = armEnd.x - s0.x, ty = armEnd.y - s0.y;
-  var tlen = Math.sqrt(tx * tx + ty * ty);
-  var rise = tlen > 0 ? clamp(Math.max(0, -ty) / tlen, 0, 1) : 0;
+  /* ⛔ THE SET DOWN. A release slower than a throw is not a throw: the stone goes
+     back in the palm and the plant's yaw survives for the next touch. Changing
+     your mind has to be free, or every accidental touch costs a stone. */
+  if (speed < CONFIG.THROW_SPEED) return null;
 
-  /* the curl of the last HOOK_WINDOW of the path, as a signed curvature in 1/m
-     of glass. Three points define a circle; its signed reciprocal radius is the
-     curvature and the sign is which way the wrist rolled. */
-  /* ⛔ TOTAL SIGNED TURNING OVER ARC LENGTH, not an average of three point
-     circle curvatures. The three point estimate is dominated by whichever
-     samples happen to be closest together, so it is a sampling rate measurement
-     as much as a shape one, and it was not even monotonic: a harder hook came
-     back with LESS spin than a soft one. Turning per metre of path is the
-     textbook mean curvature and it is monotonic in how hard the wrist rolled. */
-  var k0 = Math.max(0, Math.floor((n - 1) * (1 - CONFIG.HOOK_WINDOW)));
+  /* ⛔⛔ THE ARM AND WRIST SPLIT BY ARC LENGTH, NOT BY SAMPLE INDEX. By index the
+     split moves with the sampling rate, so the same physical throw read at 120 Hz
+     and at 45 Hz gave different angles. By arc it is a property of the path. */
+  var s0 = samples[armStart], total = 0;
+  for (i = armStart + 1; i < n; i++) {
+    var bx = samples[i].x - samples[i - 1].x, by = samples[i].y - samples[i - 1].y;
+    total += Math.sqrt(bx * bx + by * by);
+  }
+  var want = total * (1 - CONFIG.HOOK_WINDOW), run = 0, qi = armStart + 1, Q = samples[n - 1];
+  for (i = armStart + 1; i < n; i++) {
+    var cx = samples[i].x - samples[i - 1].x, cy = samples[i].y - samples[i - 1].y;
+    var seg = Math.sqrt(cx * cx + cy * cy);
+    if (run + seg >= want && seg > 1e-9) {
+      var f = (want - run) / seg;
+      Q = { x: samples[i - 1].x + cx * f, y: samples[i - 1].y + cy * f };
+      qi = i;
+      break;
+    }
+    run += seg;
+  }
+
+  /* ⛔⛔ RISE IS LINEAR IN THE ANGLE, NOT IN ITS SINE, and this was a real bug
+     rather than a preference. `motionFromPose` already returned an angle, so the
+     identical physical throw arrived as theta 26.38 from a phone and 21.00 from
+     a headset: the seam had rotted the hour it was written, and the assertion
+     that was supposed to guard it only ever checked the pose path's SPEED. As an
+     angle they agree, and there is an assertion below that fails if they ever
+     stop agreeing.
+     It is also the better ergonomics. The magic angle now sits at a 41.5 degree
+     thumb diagonal, which is what a thumb sweeping across a portrait phone
+     actually does; under the sine the same natural sweep read five degrees past
+     magic and about three skips down. */
+  var upo = Math.max(0, -(Q.y - s0.y)), acr = Math.abs(Q.x - s0.x);
+  var rise = clamp((Math.atan2(upo, acr) * 180 / Math.PI) / 90, 0, 1);
+
+  /* CURL, total signed turning per metre of glass over the arc after Q, which is
+     exactly the last HOOK_WINDOW of the ARM's path. */
   var turn = 0, hookArc = 0;
-  for (i = k0 + 2; i < n; i++) {
-    var p = samples[i - 2], q = samples[i - 1], r = samples[i];
-    var ax = q.x - p.x, ay = q.y - p.y, bx = r.x - q.x, by = r.y - q.y;
-    var la = Math.sqrt(ax * ax + ay * ay), lb = Math.sqrt(bx * bx + by * by);
+  for (i = qi + 1; i < n; i++) {
+    var p = samples[i - 2] || s0, q = samples[i - 1], r = samples[i];
+    var ax2 = q.x - p.x, ay2 = q.y - p.y, bx2 = r.x - q.x, by2 = r.y - q.y;
+    var la = Math.sqrt(ax2 * ax2 + ay2 * ay2), lb = Math.sqrt(bx2 * bx2 + by2 * by2);
     if (la < 1e-6 || lb < 1e-6) continue;
-    /* the signed angle from segment a to segment b */
-    turn += Math.atan2(ax * by - ay * bx, ax * bx + ay * by);
+    turn += Math.atan2(ax2 * by2 - ay2 * bx2, ax2 * bx2 + ay2 * by2);
     hookArc += lb;
   }
   var curl = hookArc > 1e-6 ? turn / (hookArc * CONFIG.METRES_PER_CSS_PX) : 0;
 
-  /* ⛔ AIM IS A FRACTION OF THE WIDTH, NEVER A PIXEL, so a 320 wide phone and a
-     412 wide phone aim at the same place for the same thumb. */
-  var aim = viewW > 0 ? clamp(((s0.x / viewW) - 0.5) * 2, -1, 1) : 0;
-  return newMotion({ speed: speed, rise: rise, curl: curl, aim: aim });
+  return newMotion({ speed: speed, rise: rise, curl: curl, aim: yaw / CONFIG.YAW_MAX_DEG });
 }
 
 /* THE HEADSET. Not wired to anything tonight, and it is here so the seam is
    provably real rather than promised. A 6DoF pose stream reports position in
-   METRES and orientation in radians, so the speed needs no conversion at all,
-   the rise is the pitch of the hand's velocity, the curl is the roll rate about
-   the forward axis at release, and the aim is the yaw of the hand against the
-   body's forward. Every one of those is already a physical quantity, which is
-   exactly why the phone path converts its pixels into physical quantities too
-   instead of handing the model screen units. */
-function motionFromPose(poses) {
+   METRES, so nothing needs converting; each producer maps its own hardest throw
+   onto the same number, and `throwFromMotion` never learns which device threw.
+   ⛔ its rise is an ANGLE and always was, which is how the phone's sine was
+   caught. Do not change one of these without the other. */
+function motionFromPose(poses, stance) {
   var n = poses.length;
-  if (n < 2) return newMotion({});
+  if (n < 2) return null;
   var last = poses[n - 1], cut = last.t - CONFIG.RELEASE_WINDOW_MS, first = 0, i;
   for (i = n - 1; i >= 0; i--) { if (poses[i].t <= cut) { first = i; break; } }
   var a = poses[first], dt = (last.t - a.t) / 1000;
-  if (dt <= 0) return newMotion({});
+  if (dt <= 0) return null;
   var dx = last.x - a.x, dy = last.y - a.y, dz = last.z - a.z;
-  var speed = Math.sqrt(dx * dx + dy * dy + dz * dz) / dt;
+  var raw = Math.sqrt(dx * dx + dy * dy + dz * dz) / dt;
+  /* the arm's band mapped onto the glass equivalent range the one gain expects */
+  var speed = clamp((raw - CONFIG.U_SOFT_XR) / (CONFIG.U_HARD_XR - CONFIG.U_SOFT_XR), 0, 1)
+    * (CONFIG.V_MAX_FLICK / CONFIG.SPEED_GAIN);
   var horiz = Math.sqrt(dx * dx + dz * dz);
-  var rise = clamp(horiz > 0 ? Math.atan2(Math.max(0, dy), horiz) / (Math.PI / 2) : 0, 0, 1);
-  var curl = ((last.roll - a.roll) / dt) / (Math.PI * 2) * CONFIG.CURL_REF;
-  var aim = clamp((last.yaw || 0) / (CONFIG.YAW_MAX_DEG * Math.PI / 180), -1, 1);
-  return newMotion({ speed: speed, rise: rise, curl: curl, aim: aim });
+  var rise = clamp((Math.atan2(Math.max(0, dy), horiz) * 180 / Math.PI) / 90, 0, 1);
+  var roll = ((last.roll - a.roll) / dt) / CONFIG.SPIN_FULL_XR * CONFIG.CURL_REF;
+  var aim = clamp(((last.yaw || 0) - (stance || 0)) / (CONFIG.YAW_MAX_DEG * Math.PI / 180), -1, 1);
+  return newMotion({ speed: speed, rise: rise, curl: roll, aim: aim });
 }
 
 /* THE ONE PLACE A MOTION BECOMES A THROW. Monotonic in every input by
    construction, which the gate checks rather than trusts. */
 function throwFromMotion(m, stone, seed) {
+  if (!m) return null;
   var v = clamp(m.speed * CONFIG.SPEED_GAIN, 0, CONFIG.V_MAX_FLICK);
   var theta = CONFIG.WINDOW_LO_DEG + (CONFIG.WINDOW_HI_DEG - CONFIG.WINDOW_LO_DEG) * clamp(m.rise, 0, 1);
   var spin = clamp(m.curl / CONFIG.CURL_REF, -CONFIG.SPIN_MAX, CONFIG.SPIN_MAX);
@@ -608,6 +685,33 @@ function suiteSkips(T) {
   }
   T.eq('no throw in four hundred is still in the air at the guard', stuck, 0);
   T.eq('and none of them outlasts FLIGHT_MAX_S', late, 0);
+  /* ⛔⛔ THE MAGIC ANGLE HAS TO ACTUALLY BE MAGIC. The whole game is "learn the
+     magic angle with your thumb", so if this model's best angle to throw at were
+     somewhere else, the game would be teaching a skill that does not pay and
+     every piece of folk wisdom it gives would point the wrong way. Nothing else
+     in this suite checks it: the fifteen skip assertion only asks that a throw
+     AT the magic angle is good, never that it is the BEST. Swept over forty
+     seeds because a single seed reads a degree or two off. */
+  var best = -1, bestTh = 0, th2, sd, mean, up = 0, down = 0, prev = -1;
+  for (th2 = 10; th2 <= 32; th2++) {
+    mean = 0;
+    for (sd = 0; sd < 24; sd++) {
+      mean += runThrow(newThrow({ v: 12, theta: th2, spin: 1, stone: 'skimmer', seed: 500 + sd })).skips;
+    }
+    mean /= 24;
+    if (mean > best) { best = mean; bestTh = th2; }
+    if (prev >= 0) { if (mean > prev + 0.05) up++; else if (mean < prev - 0.05) down++; }
+    prev = mean;
+  }
+  T.assert('the best angle to throw at IS the magic angle',
+    Math.abs(bestTh - CONFIG.MAGIC_DEG) <= 2,
+    'the model peaks at ' + bestTh + ' degrees with ' + best.toFixed(2)
+    + ' skips, and MAGIC_DEG is ' + CONFIG.MAGIC_DEG);
+  /* ⛔ and it is ONE hill, so "flatter" and "higher" are always true advice. A
+     model with a second peak would make the folk wisdom lie half the time. */
+  T.assert('and it is a single hill, so the advice is never wrong', up <= 12 && down <= 12,
+    up + ' rises and ' + down + ' falls across the sweep');
+
   T.assert('a throw far outside the window never skips at all',
     throwOf({ stone: 'skimmer', theta: 45 }).skips === 0);
   T.assert('a throw below the minimum speed sinks',
@@ -697,6 +801,7 @@ function strokeOf(o) {
   var n = o.n === undefined ? 16 : o.n;
   var baseY = o.baseY === undefined ? 400 : o.baseY;
   var across = Math.sqrt(Math.max(0, 1 - rise * rise));
+  if (o.mirror) across = -across;
   var ux = across, uy = -rise, px = -uy, py = ux;
   var pts = [], i, u, w, h;
   for (i = 0; i < n; i++) {
@@ -716,8 +821,23 @@ function strokeOf(o) {
   }
   return out;
 }
-function flickOf(o, viewW) {
-  return throwFromMotion(motionFromSamples(strokeOf(o), viewW || 375), o.stone || 'skimmer', o.seed || 99);
+/* an optional PLANT in front of the throw: a slow lateral slide of `plantPx`
+   CSS pixels over `plantMs`, which is what turns the lake. */
+function plantThen(o) {
+  var s = strokeOf(o), px = o.plantPx || 0, ms = o.plantMs || 400;
+  if (!px) return s;
+  var steps = o.plantN || 12, out = [], i, x0 = s[0].x - px, y0 = s[0].y;
+  for (i = 0; i < steps; i++) {
+    out.push({ x: x0 + px * (i / steps), y: y0, t: -ms + ms * (i / steps) });
+  }
+  for (i = 0; i < s.length; i++) out.push({ x: s[i].x, y: s[i].y, t: s[i].t });
+  var shift = out[0].t;
+  for (i = 0; i < out.length; i++) out[i].t -= shift;
+  return out;
+}
+function motionOf(o) { return motionFromSamples(plantThen(o), o.yaw0 || 0); }
+function flickOf(o) {
+  return throwFromMotion(motionOf(o), o.stone || 'skimmer', o.seed || 99);
 }
 function suiteFlick(T) {
   /* the three the plan's P0 asks for by name */
@@ -740,40 +860,90 @@ function suiteFlick(T) {
      giving up angle, which is not a mechanic, it is a tax. */
   var thetas = [-1, -0.5, 0, 0.5, 1].map(function (h) { return flickOf({ hook: h }).theta; });
   var spread = Math.max.apply(null, thetas) - Math.min.apply(null, thetas);
-  T.assert('the wrist does not change the angle the arm threw at', spread < 0.001,
+  /* ⛔ NOT EXACTLY ZERO, AND THE REASON IS WORTH KNOWING. The split point is
+     found at a fraction of the ARM'S ARC LENGTH, and a harder wrist roll makes
+     the path slightly longer, which walks the split point a little further along
+     it. Half a degree is what is left. Near the magic angle the model prices
+     half a degree at about one skip in eighteen, and the alternative, splitting
+     by sample index, was worse in a way that mattered more: it moved the angle
+     with the SAMPLING RATE, so the same throw read differently on a 120 Hz panel
+     and a 45 Hz one. A residue that depends on the player's wrist beats one that
+     depends on their hardware. */
+  T.assert('the wrist barely changes the angle the arm threw at', spread < 0.6,
     'across five hooks the angle moved ' + spread.toFixed(3) + ' degrees');
   T.assert('and the hook is symmetric, left and right cost the same',
     Math.abs(Math.abs(flickOf({ hook: 1 }).spin) - Math.abs(flickOf({ hook: -1 }).spin)) < 1e-9);
   T.assert('and it puts the spin the way the wrist rolled',
     flickOf({ hook: 1 }).spin > 0 && flickOf({ hook: -1 }).spin < 0);
 
-  /* aim is the fourth axis and it comes from where the stroke STARTED, which is
-     the only reason there are four axes in a gesture that carries three */
-  var left = flickOf({ startX: 30 }), mid = flickOf({ startX: 187 }), right = flickOf({ startX: 345 });
-  T.assert('starting further left aims further left', left.yaw < mid.yaw && mid.yaw < right.yaw,
-    [left.yaw, mid.yaw, right.yaw].map(function (x) { return x.toFixed(1); }).join(' then '));
-  T.assert('aiming never costs you the angle', Math.abs(left.theta - right.theta) < 1e-9,
-    left.theta.toFixed(3) + ' against ' + right.theta.toFixed(3));
-  T.assert('and it never costs you the speed', Math.abs(left.v - right.v) < 1e-9);
-  T.assert('aim stays inside the shore', Math.abs(left.yaw) <= CONFIG.YAW_MAX_DEG
-    && Math.abs(right.yaw) <= CONFIG.YAW_MAX_DEG);
+  /* ⛔ THE PLANT IS THE FOURTH AXIS. A stroke on glass carries a speed, a
+     direction and a curvature, which is three, and a throw needs four. The
+     fourth comes from the slow part of the SAME touch: sliding sideways before
+     you throw turns the whole lake. */
+  var still = flickOf({}), turnR = flickOf({ plantPx: 120 }), turnL = flickOf({ plantPx: -120 });
+  T.assert('sliding right before the throw turns the lake right', turnR.yaw > still.yaw,
+    still.yaw.toFixed(2) + ' then ' + turnR.yaw.toFixed(2));
+  T.assert('and sliding left turns it left', turnL.yaw < still.yaw,
+    still.yaw.toFixed(2) + ' then ' + turnL.yaw.toFixed(2));
+  T.assert('and the two are mirror images of each other',
+    Math.abs(turnR.yaw + turnL.yaw) < 1e-9, turnR.yaw.toFixed(4) + ' against ' + turnL.yaw.toFixed(4));
+  T.assert('a throw with no plant in front of it does not move the lake',
+    Math.abs(still.yaw) < 1e-9, still.yaw.toFixed(6));
+  /* ⛔⛔ AND THE THROW ITSELF MAY NEVER TURN THE LAKE. This is the assertion the
+     whole mechanic rests on: the plant and the throw are one unbroken touch, so
+     if a fast sideways sweep could also aim, then every hard throw across the
+     screen would swing the lake under it and the player could never hold a line. */
+  var acrossR = flickOf({ rise: 0.25 }), acrossL = flickOf({ rise: 0.25, mirror: true });
+  T.assert('a fast throw across the screen does not aim',
+    Math.abs(acrossR.yaw) < 1e-9 && Math.abs(acrossL.yaw) < 1e-9,
+    acrossR.yaw.toFixed(6) + ' and ' + acrossL.yaw.toFixed(6));
+  T.assert('aiming never costs you the angle',
+    Math.abs(turnL.theta - turnR.theta) < 1e-9, turnL.theta.toFixed(4) + ' against ' + turnR.theta.toFixed(4));
+  T.assert('and it never costs you the speed', Math.abs(turnL.v - turnR.v) < 1e-9);
+  T.assert('aim stays inside the shore', Math.abs(flickOf({ plantPx: 4000 }).yaw) <= CONFIG.YAW_MAX_DEG
+    && Math.abs(flickOf({ plantPx: -4000 }).yaw) <= CONFIG.YAW_MAX_DEG);
+  /* ⛔ THE LAKE STAYS WHERE YOU LEFT IT. Aim is carried in from the last throw,
+     so the hundredth rethrow down the same line is a bare flick with no aiming
+     in it at all. That is what keeps a per throw aim cost from becoming a tax. */
+  T.assert('the lake stays where the last throw left it',
+    Math.abs(flickOf({ yaw0: 11 }).yaw - 11) < 1e-9, flickOf({ yaw0: 11 }).yaw.toFixed(4));
+  T.assert('and a plant turns it on from there',
+    flickOf({ yaw0: 11, plantPx: 60 }).yaw > 11);
 
-  /* ⛔ THE SAME THUMB ON TWO PHONES THROWS THE SAME STONE. Aim is a fraction of
-     the width and speed is metres of glass, so neither may move with the
-     viewport. A gesture measured in screen pixels would fail both. */
-  var narrow = throwFromMotion(motionFromSamples(strokeOf({ startX: 320 * 0.25 }), 320), 'skimmer', 9);
-  var wide = throwFromMotion(motionFromSamples(strokeOf({ startX: 412 * 0.25 }), 412), 'skimmer', 9);
-  T.assert('a quarter of the way across aims the same on a 320 and on a 412',
-    Math.abs(narrow.yaw - wide.yaw) < 1e-9, narrow.yaw.toFixed(3) + ' against ' + wide.yaw.toFixed(3));
-  var sameStroke320 = throwFromMotion(motionFromSamples(strokeOf({}), 320), 'skimmer', 9);
-  var sameStroke412 = throwFromMotion(motionFromSamples(strokeOf({}), 412), 'skimmer', 9);
-  T.assert('and the same physical stroke throws at the same speed on both',
-    Math.abs(sameStroke320.v - sameStroke412.v) < 1e-9);
+  /* ⛔ THE SAME THUMB THROWS THE SAME STONE WHEREVER IT LANDS ON THE GLASS.
+     Aim is RELATIVE travel now, not a position, which is why: a right thumb
+     cannot reach the left third of a 375 wide screen without changing grip, so
+     a positional aim would silently cost half the axis to half the players. */
+  var atLeft = flickOf({ startX: 40, plantPx: 120 }), atRight = flickOf({ startX: 300, plantPx: 120 });
+  T.assert('the same gesture aims the same wherever on the water it is made',
+    Math.abs(atLeft.yaw - atRight.yaw) < 1e-9, atLeft.yaw.toFixed(4) + ' against ' + atRight.yaw.toFixed(4));
+  T.assert('and throws at the same speed and angle',
+    Math.abs(atLeft.v - atRight.v) < 1e-9 && Math.abs(atLeft.theta - atRight.theta) < 1e-9);
+
+  /* ⛔ AND THE MEASUREMENT DOES NOT MOVE WITH THE SAMPLING RATE. Split by sample
+     index instead of by arc length, the same physical throw read on a 120 Hz
+     panel and a 45 Hz one came out at different angles. */
+  var rates = [22, 14, 11, 9].map(function (ms) {
+    return flickOf({ n: Math.max(4, Math.round(180 / ms)), hook: 0.6 });
+  });
+  var thSpread = Math.max.apply(null, rates.map(function (t) { return t.theta; }))
+    - Math.min.apply(null, rates.map(function (t) { return t.theta; }));
+  T.assert('the same throw reads the same angle at four different sample rates',
+    thSpread < 0.5, 'the angle moved ' + thSpread.toFixed(3) + ' degrees');
+
+  /* ⛔ A RELEASE THAT IS NOT A THROW IS NOT A THROW. Putting the stone back down
+     has to be free or every stray touch costs a stone. */
+  T.assert('setting the stone back down is not a throw', flickOf({ arc: 40, ms: 600 }) === null);
+  T.assert('and it is not an error either', motionOf({ arc: 40, ms: 600 }) === null);
 
   /* the ends of the range */
-  T.assert('a gentle push does not reach the water',
-    runThrow(flickOf({ arc: 60, ms: 300, rise: 0.9 })).skips <= 2,
-    String(runThrow(flickOf({ arc: 60, ms: 300, rise: 0.9 })).skips) + ' skips');
+  /* ⛔ a gentle push is not a weak throw any more, it is a SET DOWN, because the
+     one constant that says "this segment was the throw" also says "this release
+     was a throw". The weakest release the game still accepts is the interesting
+     case, so that is what is asserted. */
+  T.assert('the weakest release the game accepts is still a throw',
+    runThrow(flickOf({ arc: 270, ms: 300 })).skips >= 1,
+    String(runThrow(flickOf({ arc: 270, ms: 300 })).skips) + ' skips');
   T.assert('the hardest flick a thumb can make is capped', flickOf({ arc: 900, ms: 90 }).v <= CONFIG.V_MAX_FLICK);
   T.assert('a good stroke clears eight metres per second', flickOf({}).v > 8, flickOf({}).v.toFixed(2));
   /* ⛔ AND IT LEAVES ROOM TO THROW HARDER. A gain that saturates an ordinary
@@ -787,7 +957,7 @@ function suiteFlick(T) {
   /* the glass unit itself, pinned. 320 CSS px in 60 ms is 320 * 0.000264 m in
      0.06 s, which is 1.408 metres per second of hand however it is dressed up. */
   var unit = motionFromSamples([{ x: 0, y: 400, t: 0 }, { x: 160, y: 400, t: 30 },
-    { x: 320, y: 400, t: 60 }], 375);
+    { x: 320, y: 400, t: 60 }], 0);
   T.near('a thumb crossing 320 pixels in 60 milliseconds is moving 1.41 metres per second',
     unit.speed, 1.408, 0.005);
   /* ⛔ and the wrist has to be worth using. Monotonic spin that never gets past
@@ -801,8 +971,10 @@ function suiteFlick(T) {
   T.assert('spin never leaves minus one to one',
     Math.abs(flickOf({ hook: 6 }).spin) <= CONFIG.SPIN_MAX && Math.abs(flickOf({ hook: -6 }).spin) <= CONFIG.SPIN_MAX);
   T.assert('a tap with no movement is not a throw', motionFromSamples(
-    [{ x: 100, y: 400, t: 0 }, { x: 100, y: 400, t: 40 }, { x: 100, y: 400, t: 90 }], 375).speed === 0);
-  T.assert('and one sample is not a throw either', motionFromSamples([{ x: 1, y: 1, t: 0 }], 375).speed === 0);
+    [{ x: 100, y: 400, t: 0 }, { x: 100, y: 400, t: 40 }, { x: 100, y: 400, t: 90 }], 0) === null);
+  T.assert('and one sample is not a throw either', motionFromSamples([{ x: 1, y: 1, t: 0 }], 0) === null);
+  T.assert('nor is a long slow plant with no throw on the end of it',
+    motionFromSamples(plantThen({ arc: 30, ms: 500, plantPx: 200 }), 0) === null);
 
   /* ⛔ THE HEADSET PATH IS REAL, NOT PROMISED. A pose stream moving a hand at a
      known speed in metres has to arrive at the model as that same speed, with no
@@ -811,20 +983,78 @@ function suiteFlick(T) {
   for (i = 0; i <= 6; i++) {
     poses.push({ x: 0, y: 0, z: -0.5 * (i / 6), roll: 0, yaw: 0, t: i * 10 });
   }
-  var pm = motionFromPose(poses);
-  T.near('a hand moving half a metre in sixty milliseconds reads as 8.33 metres per second',
-    pm.speed, 8.333, 0.02);
-  T.assert('and a pose stream needs no pixels to say so', pm.aim === 0 && pm.curl === 0);
+  var pm = motionFromPose(poses, 0);
+  T.assert('a pose stream needs no pixels to make a throw', pm.aim === 0 && pm.curl === 0);
+  /* ⛔ EACH DEVICE MAPS ITS OWN HARDEST ONTO THE SAME NUMBER. A thumb's hardest
+     is about 0.74 m/s of glass and an arm's is nine metres a second of air, and
+     the one gain in throwFromMotion has to serve both, so the pose path maps its
+     band rather than handing over raw hand speed. The property worth asserting
+     is not the raw number, it is that a full strength throw is a full strength
+     throw on either device and that a limp one is not. */
+  /* ⛔⛔ THE PHYSICAL NUMBERS ARE WRITTEN OUT HERE ON PURPOSE, not read from
+     CONFIG. Built from CONFIG.U_HARD_XR the pose scales with the constant it is
+     meant to be checking, so U_HARD_XR could be set to forty and this assertion
+     would still pass: a probe that cannot fail. 9.0 m/s is a hard human overarm
+     throw and 1.2 m/s is a limp one, and those are facts about arms rather than
+     about this game, so if CONFIG ever disagrees with them, CONFIG is wrong. */
+  var hardPose = [], softPose = [], q;
+  for (q = 0; q <= 6; q++) {
+    hardPose.push({ x: 0, y: 0, z: -9.0 * 0.06 * (q / 6), roll: 0, yaw: 0, t: q * 10 });
+    softPose.push({ x: 0, y: 0, z: -1.2 * 0.06 * (q / 6), roll: 0, yaw: 0, t: q * 10 });
+  }
+  T.near('an arm at full strength throws exactly as hard as a thumb at full strength',
+    throwFromMotion(motionFromPose(hardPose, 0), 'skimmer', 1).v, CONFIG.V_MAX_FLICK, 0.01);
+  T.near('and a limp one throws nothing',
+    throwFromMotion(motionFromPose(softPose, 0), 'skimmer', 1).v, 0, 0.01);
+  /* ⛔ and the same for the wrist, for the same reason. About 30 rad/s, roughly
+     five turns a second, is what the literature gives for a real skipping stone;
+     a gentle 8 rad/s is a wrist that barely rolled and must not read as full. */
+  var rollAt = function (rate) {
+    var out = [], k;
+    for (k = 0; k <= 6; k++) out.push({ x: 0, y: 0, z: -0.3 * (k / 6), roll: rate * 0.06 * (k / 6), yaw: 0, t: k * 10 });
+    return throwFromMotion(motionFromPose(out, 0), 'skimmer', 1).spin;
+  };
+  T.assert('a real skipping roll in a headset is full spin', Math.abs(rollAt(30)) >= 0.9,
+    rollAt(30).toFixed(2));
+  T.assert('and a wrist that barely rolled is not', Math.abs(rollAt(8)) < 0.6, rollAt(8).toFixed(2));
   var turning = [], j;
   for (j = 0; j <= 6; j++) turning.push({ x: 0, y: 0, z: -0.1 * j, roll: 0.4 * j, yaw: 0, t: j * 10 });
   T.assert('a rolling wrist in a headset produces spin', motionFromPose(turning).curl > 0);
+
+  /* ⛔⛔⛔ THE ASSERTION THAT SHOULD HAVE EXISTED FROM THE FIRST HOUR. The seam is
+     only worth anything if the two devices AGREE, and the first version of it did
+     not: `motionFromSamples` returned the SINE of the throw angle while
+     `motionFromPose` returned the angle, so the identical physical throw arrived
+     as theta 26.38 from a phone and 21.00 from a headset. Every other assertion
+     in this suite was green. The old device assertions checked that the pose path
+     produced a plausible SPEED and that two phone widths agreed with each other;
+     neither of them ever compared the two devices to one another, which is the
+     one thing a seam is for. This walks the same physical throw down both paths
+     at five angles and requires the ANSWERS to match, not the units. */
+  var d, phone, headset, worst = 0, worstAt = '';
+  for (d = 15; d <= 75; d += 15) {
+    var rad = d * Math.PI / 180, k, ps = [], qs = [];
+    for (k = 0; k <= 12; k++) {
+      var u = k / 12;
+      /* the phone: a thumb path at d degrees above the horizontal of the glass */
+      ps.push({ x: 187 + 260 * u * Math.cos(rad), y: 400 - 260 * u * Math.sin(rad), t: u * 110 });
+      /* the headset: a hand travelling at d degrees above the horizontal of the room */
+      qs.push({ x: 0, y: 0.9 * u * Math.sin(rad), z: -0.9 * u * Math.cos(rad), roll: 0, yaw: 0, t: u * 110 });
+    }
+    phone = motionFromSamples(ps, 0);
+    headset = motionFromPose(qs, 0);
+    var gap = Math.abs(throwFromMotion(phone, 'skimmer', 1).theta - throwFromMotion(headset, 'skimmer', 1).theta);
+    if (gap > worst) { worst = gap; worstAt = d + ' degrees'; }
+  }
+  T.assert('a thumb and a hand throwing at the same angle throw the same stone',
+    worst < 0.6, 'the two devices disagreed by ' + worst.toFixed(2) + ' degrees at ' + worstAt);
 
   /* the folk wisdom, which is copy and therefore under the studio laws */
   /* ⛔ each of these isolates ONE fault, which means every OTHER axis has to be
      good. Written with the default hook of zero, a steep throw came back with
      "more spin" and the assertion looked like a bug in the advice when it was a
      bug in the throw being asked about. */
-  var lines = [adviceFor(flickOf({ rise: 0.95, hook: 0.5 })), adviceFor(flickOf({ arc: 70, ms: 320, hook: 0.5 })),
+  var lines = [adviceFor(flickOf({ rise: 0.95, hook: 0.5 })), adviceFor(flickOf({ arc: 300, ms: 320, hook: 0.5 })),
     adviceFor(flickOf({ hook: 0 })), adviceFor(flickOf({ rise: 0.1, hook: 0.5 }))];
   var bad = [];
   for (i = 0; i < lines.length; i++) {
@@ -836,7 +1066,7 @@ function suiteFlick(T) {
   T.assert('a steep throw with everything else right is told to go flatter',
     adviceFor(flickOf({ rise: 0.95, hook: 0.5 })).indexOf('Flatter') === 0);
   T.assert('a weak throw with everything else right is told to go faster',
-    adviceFor(flickOf({ arc: 70, ms: 320, rise: 0.55, hook: 0.5 })).indexOf('Faster') === 0);
+    adviceFor(flickOf({ arc: 300, ms: 320, rise: 0.55, hook: 0.5 })).indexOf('Faster') === 0);
   T.assert('and a throw with no wrist in it is told about the wrist',
     adviceFor(flickOf({ hook: 0 })).indexOf('More spin') === 0);
 }
