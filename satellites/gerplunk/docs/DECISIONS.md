@@ -105,3 +105,65 @@ tonight. What is done for it is that `newThrow` is a DEVICE INDEPENDENT tuple:
 is a pixel and nothing in it is a screen, so a thumb path and a 6DoF pose stream
 can both produce one and the model cannot tell which did. That seam is the whole
 WebXR preparation and it costs nothing now.
+
+## P0 step 2, the flick mapping
+
+**D10. The seam is `MOTION`, and it is the only thing that crosses.** A device
+produces a MOTION, `throwFromMotion` turns a MOTION into a THROW, and the model
+only ever sees a THROW. `motionFromSamples` is the phone; `motionFromPose` is the
+headset and is written and asserted even though nothing calls it tonight, so the
+seam is provably real rather than promised. This is the whole WebXR preparation
+and it costs nothing now.
+
+**D11. Thumb speed converts through METRES_PER_CSS_PX, never through PX_PER_M.**
+The plan says `v = speed_px_per_s / PX_PER_M * 0.2`. `PX_PER_M` is how big the
+lake is DRAWN, so that ties how hard you threw to how zoomed the camera is, and
+retuning the art would silently retune every throw in the game. A CSS pixel is
+about 0.264 mm of real glass, the fleet's number from Keepsies, so thumb speed
+through it is metres per second of actual hand movement, which is the same
+quantity a 6DoF controller reports natively. An assertion pins it: 320 pixels in
+60 milliseconds is 1.408 m/s, and a doubled or halved constant fails it.
+
+**D12. A single stroke carries three numbers and the throw needs four, so aim
+comes from where the stroke STARTS.** A path on glass has a speed, a direction
+and a curvature. That is three. Reading yaw out of the stroke's direction and
+theta out of the same stroke's rise makes them fight: a throw aimed hard left is
+mostly across the screen, so its rise collapses and every aimed throw comes out
+flat. Aiming would cost you the angle. Start position is a decision the player is
+already making, it is free, and it decouples. Assertions hold it: the same stroke
+started at three different places gives three different yaws and identical theta
+and speed.
+
+**D13. The arm sets the angle, the wrist adds the spin, and they are measured
+from different parts of the stroke.** Read over the whole path, a hard hook drags
+the endpoint sideways and changes the rise: measured 2026-09-06, the same arm
+motion came out at 17.6 degrees hooked one way and 31.1 the other, so there was
+no way to ask for spin without giving up angle. That is not a mechanic, it is a
+tax. The rise is now read before `HOOK_WINDOW` and the curl after it, and an
+assertion requires the angle to move less than a thousandth of a degree across
+five different hooks.
+
+**D14. Release speed is arc length, not net displacement.** Endpoint to endpoint,
+a hooked release reads slower than a straight one at the same hand speed, because
+the curve doubles back. The hand did not slow down.
+
+**D15. Curl is total signed turning over arc length, not an average of three
+point curvatures.** The three point estimate is dominated by whichever samples
+happen to be closest together, which makes it a sampling rate measurement as much
+as a shape one, and it was not even monotonic: a harder hook came back with less
+spin than a soft one.
+
+**D16. Two of the constants were only caught by MAGNITUDE assertions.** With
+ordering assertions alone, `CURL_REF` could be a hundred thousand and
+`METRES_PER_CSS_PX` could be wrong by a factor of two while every test stayed
+green: spin stayed monotonic at zero, and a wrong glass unit just saturated every
+throw at the cap. Monotonicity says the axis points the right way; it never says
+the axis is worth using.
+
+**D17. The test's stroke generator was wrong twice before the game was.** Its
+hook displaced along a screen axis rather than perpendicular to the stroke, so a
+left hook shortened the path and a right hook lengthened it and the game looked
+wildly asymmetric when it was not; and it did not normalise arc length, so
+hooking harder secretly made the stroke faster. Both are called out in a comment
+above the generator, because an assertion is only ever as good as the thing
+driving it.
