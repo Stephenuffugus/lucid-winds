@@ -3041,12 +3041,18 @@ function loadSave() {
 /* Paper sounds, synthesised, opened inside the first gesture. The full kit is
    P3; these two are the ones a crease needs. */
 var AUDIO = {
-  ac: null, on: true,
+  ac: null, on: true, inject: null,
   open: function () {
     if (this.ac || !this.on) return this.ac;
-    var C = window.AudioContext || window.webkitAudioContext;
-    if (!C) return null;
-    this.ac = new C();
+    /* the ear gate's offline context, swapped in for the length of one render.
+       open() builds the master, which is the whole mix bus, so a gate has to
+       come THROUGH here and not around it. */
+    if (this.inject) this.ac = this.inject;
+    else {
+      var C = window.AudioContext || window.webkitAudioContext;
+      if (!C) return null;
+      this.ac = new C();
+    }
     this.master = this.ac.createGain();
     this.master.gain.value = 0.5;
     this.master.connect(this.ac.destination);
@@ -3151,6 +3157,79 @@ var AUDIO = {
     src.start(t); src.stop(t + 0.52);
   },
   quiet: function () { this.setRush(0, 700, 0.7); this.flutter(0); },
+  /* ⛔ THE EAR GATE'S RENDER. The loudest half minute this hangar can make,
+     through the REAL rush, flutter, whistle and play, into an
+     OfflineAudioContext. Three numbers come back: the peak, so the phone is not
+     clipping; the rms, so it is audible and not shouting; and the share of
+     energy above 3 kHz, which is where a smoke detector lives and where a phone
+     speaker is loudest. On Sep 06 Stephen said the fleet's effects "sounded like
+     fire alarms": the cause was an oscillator wired straight into an envelope
+     gain, and every voice count in that game was green.
+     ⛔ NEVER measure a wav made for the ear: a render tool normalises its file,
+     so its peak is the tool's and not the game's. */
+  renderLoudFlight: function (seconds, opts) {
+    var OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (!OAC) return Promise.reject(new Error('no OfflineAudioContext'));
+    var o = opts || {}, sr = 44100, dur = seconds || 12, self = this;
+    var octx = new OAC(1, Math.ceil(sr * dur), sr);
+    /* an offline context's currentTime is nailed to zero until it renders, and
+       every one of these voices schedules at currentTime, so the clock is the
+       one thing the shim adds; every node it makes is the offline context's. */
+    var shim = {
+      currentTime: 0, sampleRate: octx.sampleRate, destination: octx.destination, state: 'running',
+      resume: function () {},
+      createGain: function () { return octx.createGain(); },
+      createOscillator: function () { return octx.createOscillator(); },
+      createBufferSource: function () { return octx.createBufferSource(); },
+      createBiquadFilter: function () { return octx.createBiquadFilter(); },
+      createBuffer: function (a, b, c) { return octx.createBuffer(a, b, c); }
+    };
+    var sv = { ac: this.ac, master: this.master, on: this.on, rush: this._rush, fl: this._fl, bb: this._bb };
+    this.ac = null; this.master = null; this.on = true;
+    this._rush = null; this._fl = null; this._bb = null;
+    this.inject = shim;
+    this.open();
+    /* THE LOUDEST FLIGHT, at the code's own ceilings: the rush held at level 1,
+       which setRush scales to 0.17, the flutter held at 1, which is a plane
+       veering as hard as it can for the whole flight, the whistle of the call
+       every second and a half, and a crease, a snap, a toss, a landing and the
+       six kid clap laid over the top. Nothing a player flies is this busy. */
+    var t;
+    if (o.only) {
+      for (t = 0.1; t < dur - 0.9; t += (o.every || 1.0)) { shim.currentTime = t; this.play(o.only); }
+    } else {
+      shim.currentTime = 0;
+      this.setRush(1, 1400, 2.0);
+      this.flutter(1);
+      for (t = 0.4; t < dur - 0.9; t += 1.5) { shim.currentTime = t; this.whistle(); }
+      for (t = 0.2; t < dur - 0.9; t += 0.5) { shim.currentTime = t; this.play('crease'); }
+      for (t = 0.35; t < dur - 0.9; t += 0.5) { shim.currentTime = t; this.play('snap'); }
+      for (t = 0.9; t < dur - 0.9; t += 2.0) { shim.currentTime = t; this.play('toss'); }
+      for (t = 1.4; t < dur - 0.9; t += 2.0) { shim.currentTime = t; this.play('land'); }
+      for (t = 2.0; t < dur - 1.0; t += 4.0) { shim.currentTime = t; this.play('clap'); }
+    }
+    this.inject = null;
+    this.ac = sv.ac; this.master = sv.master; this.on = sv.on;
+    this._rush = sv.rush; this._fl = sv.fl; this._bb = sv.bb;
+    return octx.startRendering().then(function (buf) { return self.ear(buf, sr); });
+  },
+  /* peak, rms and the share of energy above 3 kHz. The split is a second order
+     Butterworth high pass run over the rendered samples in JavaScript, because
+     a smoke detector lives up there and a paper aeroplane does not. */
+  ear: function (buf, sr) {
+    var d = buf.getChannelData(0), n = d.length, i, peak = 0, tot = 0, hi = 0;
+    var w0 = 2 * Math.PI * 3000 / sr, cw = Math.cos(w0), sw = Math.sin(w0), al = sw / (2 * 0.7071);
+    var b0 = (1 + cw) / 2, b1 = -(1 + cw), b2 = (1 + cw) / 2, a0 = 1 + al, a1 = -2 * cw, a2 = 1 - al;
+    var x1 = 0, x2 = 0, y1 = 0, y2 = 0, x, y;
+    for (i = 0; i < n; i++) {
+      x = d[i];
+      y = (b0 * x + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2) / a0;
+      x2 = x1; x1 = x; y2 = y1; y1 = y;
+      tot += x * x; hi += y * y;
+      if (Math.abs(x) > peak) peak = Math.abs(x);
+    }
+    return { peak: peak, rms: Math.sqrt(tot / n), highFraction: tot > 0 ? hi / tot : 0, seconds: n / sr };
+  },
   play: function (what) {
     var ac = this.on ? this.open() : null;
     if (!ac || ac.state === 'suspended') return;
@@ -4173,6 +4252,11 @@ window.AIRWORTHY_TEST = {
       flutter: AUDIO._fl ? AUDIO._fl.g.gain.value : 0
     };
   },
+  /* the ear gate: the loudest flight, rendered offline through the real voices.
+     ⛔ A VOICE COUNT SAYS NOTHING ABOUT HOW LOUD A VOICE IS, which is exactly
+     how a fire alarm shipped in a sibling game on Sep 06. sound() above counts;
+     this measures. */
+  renderAudio: function (seconds, opts) { return AUDIO.renderLoudFlight(seconds, opts); },
   toChallenge: function (id, over) {
     if (over) G.hangarId = null;
     toField(newSpec(over || START_SPEC), id);

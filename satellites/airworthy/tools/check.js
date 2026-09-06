@@ -37,6 +37,11 @@ const BROWSER_GATES = [
   { name: 'tunnel', cmd: ['test/tunnel.mjs'], need: 'TUNNEL OK' },
   { name: 'challenge', cmd: ['test/challenge.mjs'], need: 'CHALLENGE OK', slow: true },
   { name: 'sound', cmd: ['test/sound.mjs'], need: 'SOUND OK', slow: true },
+  /* the ear gate. sound.mjs above COUNTS rushes and reads a gain off one node;
+     this one renders the loudest flight offline through the real voices and
+     measures peak, rms and the share above 3 kHz off the samples. A count says
+     nothing about a level, and that is how a fire alarm shipped. */
+  { name: 'audio', cmd: ['test/audio.mjs'], need: 'AUDIO OK' },
   /* the one that proves the rooms are JOINED: one session, thumb only, cold
      open to a medal on the shelf */
   { name: 'play', cmd: ['test/play.mjs'], need: 'PLAY OK', slow: true },
