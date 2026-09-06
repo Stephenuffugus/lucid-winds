@@ -10,6 +10,42 @@ short way in: what was built, what to run, and what I already know is thin.
 
 ---
 
+## FABLE'S REVIEW, 2026-09-06 12:48Z to 13:45Z (under a three hour reset clock)
+
+**All twelve are LIVE on the arcade as of 13:41Z**, beta, in the In development tab
+(`localStorage.sws_dev_ok=1` opens them; beta rows never appear on the public shelves
+by design, `portal/index.html` line ~1790). Deployed in five pushes to main, each
+verified by curl for a marker only the new build has.
+
+**Order that worked:** list and deploy the ten first (13:00Z), then review in passes.
+Gerplunk P1 and Updraft P0+P1 were built in the same hour by two fenced background
+builders and listed at 13:36Z and 13:41Z.
+
+**Found by PLAYING at 320x568 with real touches, not by any gate:**
+1. `.screen{justify-content:center; overflow-y:auto}` in Doohickey, Airworthy,
+   Whistlestop, Strata clipped its own top when taller than the phone (the level list
+   at 667x375 began 16 px above the edge). Fixed with two auto margin flex items.
+2. Swell's first line sat at 50 percent height with pointer events off, invisible to
+   the music chip's probe, so the chip parked on the word Hold. Moved to 40 percent.
+3. The music chip sat on Airworthy's result card (the card's text tied the gym floor
+   at 2) and in the middle of Fathom's cave (every seat tied at 1.2 and the side seats
+   were listed first). `music-unlocks.js` changed three ways: panel text 2.5 and panel
+   padding 2.2, reseat 1.5/4.5/8 s after any pointerup, bottom row first. Fifteen seats
+   re-probed across nine older games. Eight games stamped 20260906c for it.
+4. Asterism almanac rows ran the name into the place. Airworthy THROW AGAIN lost a
+   letter at 320. Gerplunk's default stone tumbled on the first flick (now the skimmer).
+
+**Verified by my own runs, not by claim:** Whistlestop 12 gates, Strata 7, Airworthy 9,
+Gerplunk 6, Updraft 5 (fly flaked once on the tap-is-a-hold race, passed twice alone),
+layout gates of the four screen fixed games, lints of all eight restamped games.
+
+**Left thin on purpose:** Wardian's first run hint crosses the jar's soil at 320x568;
+nobody has heard Windup's `p0-tine.wav` or Swell's `p0-swell.wav`; Inkswing Double Link;
+Gerplunk P2 and P3; Updraft P2 and P3. The Director calls in each plan's section 15 are
+all still open.
+
+---
+
 ## HOW TO CHECK ANY OF IT, IN FOUR COMMANDS
 
 ```
