@@ -360,3 +360,38 @@ a file, and SAVE THE CARD is always there.** `navigator.share` with files is not
 and a lake nobody can see is a worse invitation than one they can. The button tries files
 plus text plus url, falls back to the link share, then to the visible link field. A second
 button writes the png to the downloads, so the card is reachable on every browser.
+
+**D40 (2026-09-07, Opus) — spin is BANKED during the wind up, not only snapped at the
+release.** `docs/THROW-REFERENCE.md` is the research note behind this and it goes to Stephen
+before anything else in P4. Until now `curl` was read only over the last forty percent of the
+ARM's arc, so a thumb that circled slowly and then flicked straight committed nothing: the one
+input he asked to see (transcript 10, 13, 15, 16) was a thing that happened to a throw rather
+than a thing a player could do, and there was nothing steady to draw a ring for. `curlSoFar`
+now accumulates signed turning over the SLOW segments, the same segments the plant reads,
+normalised so `SPIN_LOOPS` (2) full turns of the thumb is full spin, and `motionFromSamples`
+adds it to the wrist's curl. A stroke with no loops in front of it commits exactly what it
+committed before, to the last decimal, and the eleven new sim assertions are watched to fail in
+both directions (SPIN_LOOPS 1000 kills the bank, 0.2 makes it a hair trigger and the bowed
+slide assertion catches that one).
+⛔ THE WIND UP MAY NOT SWING THE SHORE, and it does not, because the plant integrates dx and a
+closed loop's dx sums to zero. That is a property of the maths rather than of anyone's
+intention, so it is asserted in both the sim (exactly zero) and the browser (the circle closed,
+inside the same touch).
+
+**D41 (2026-09-07, Opus) — the ring is the gauge and the sweep IS the bank.** No sparkle, by his
+note and by the fleet's rule about particles that carry no information. Drawn only while the
+touch is down and the hand is slow, gone the frame the arm is fast, radius growing from 26 to
+42 px, the fill sweeping the way the thumb is turning so the sign is readable without a number,
+one haptic pulse when it fills. Three things were wrong in the first shot and all three are
+fixed: the fill had a tenth of a turn added to it as a floor, so 0.71 of a bank read as nearly
+full; the track behind it was at 0.16 alpha, so there was nothing to read the fraction against;
+and a cream arc laid across the pale band where the sun's reflection meets the black headland
+lost half of itself. The ring now carries its own dark ground, a legible track and a tick at
+the start of the fill, which is the same lesson as Updraft's altitude readout on a pill.
+
+**D42 (2026-09-07, Opus) — the ring is proved by reading the CANVAS, not by reading a number.**
+`GERPLUNK_DEV.ink(cx, cy, rLo, rHi)` reports the brightest pixel in an annulus around the thumb.
+The gate reads the water at the exact point the thumb will hold, with no touch on the screen,
+then reads it again mid wind up; emptying `drawSpinRing` turns it red, and deleting the line
+that stops drawing once the arm is fast turns the companion assertion red. A gate that watched
+`G.spin` would have passed over a ring that was never painted.

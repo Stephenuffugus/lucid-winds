@@ -14,7 +14,7 @@
  */
 import { writeFileSync, mkdirSync, existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { serve, open, ROOT, tap, flick, stroke, waitFrames } from '../test/harness.mjs';
+import { serve, open, ROOT, tap, flick, hold, stroke, waitFrames } from '../test/harness.mjs';
 
 const OUT = join(ROOT, 'docs', 'shots');
 if (!existsSync(OUT)) mkdirSync(OUT, { recursive: true });
@@ -129,6 +129,20 @@ for (const key of Object.keys(SIZES)) {
       console.log('  (' + size.width + 'x' + size.height + ' done)');
       continue;
     }
+  }
+  /* P4: the WIND UP, the thumb still down and the spin ring part filled. The
+     thumb is held mid circle rather than at the throw, because the ring is the
+     only thing in the game that exists before the stone leaves and it is the
+     thing this shot is for. It is taken at 412 and at 375. */
+  if ((key === 'tall' || key === 'mid') && want('p4-windup-' + key)) {
+    if (key === 'tall') await toLake(page);
+    const y0 = Math.round(size.height * 0.72), x0 = Math.round(size.width * 0.32);
+    const pts = stroke({ x0, y0, arc: 300, ms: 150, rise: 0.55, hook: 0, n: 14, loops: 2 });
+    await hold(page, pts.slice(0, 36));
+    await waitFrames(page, 4);
+    const sp = await page.evaluate(() => window.GERPLUNK_DEV.spin());
+    console.log('  (the wind up: bank ' + sp.bank.toFixed(2) + ' at ' + sp.x.toFixed(0) + ',' + sp.y.toFixed(0) + ')');
+    await shoot(page, 'p4-windup-' + key);
   }
   if (key !== 'mid' && want('p1-lake-' + key)) {
     await toLake(page);

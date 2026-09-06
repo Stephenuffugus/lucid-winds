@@ -1,11 +1,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
 <meta name="theme-color" content="#1B1A24">
-<link rel="icon" href="./icon-192.png?v=20260906h">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260906h">
-<link rel="manifest" href="./manifest.webmanifest?v=20260906h">
+<link rel="icon" href="./icon-192.png?v=20260907a">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260907a">
+<link rel="manifest" href="./manifest.webmanifest?v=20260907a">
 <title>GERPLUNK</title>
-<script src="/music-unlocks.js?v=20260906h" defer></script>
+<script src="/music-unlocks.js?v=20260907a" defer></script>
 <style>
 :root{
   --dusk:#1B1A24; --water:#2E3646; --water-lo:#232A38; --gold:#E8B36A; --gold-lo:#A9793F;
@@ -39,9 +39,18 @@ body{touch-action:none;user-select:none;-webkit-user-select:none}
   border-radius:12px;border:1px solid rgba(232,179,106,.3);background:rgba(20,18,15,.62);color:var(--cream);
   font:inherit;font-size:.72rem;letter-spacing:.12em}
 /* the one line of copy, sitting on the water just above the shore */
+/* pointer-events:none on the line ITSELF. It sits ON THE WATER at bottom 172px,
+   which on a 667 tall phone is exactly the band a thumb throws from, so if it
+   ever took a hit it would eat a throw for the two and a half seconds it is up.
+   ⛔ IT DOES NOT TODAY, and I nearly shipped a comment saying it did: #hud is
+   already pointer-events:none and only buttons and stones are auto, so the line
+   was never a control. What proved that was the mutation, which took this line
+   back out and the gate stayed green. It is kept because the guarantee belongs
+   to the readout rather than to its parent, and the assertion in
+   test/flick.mjs section 7 is what actually holds the law. */
 #line{position:absolute;left:8%;right:8%;bottom:172px;text-align:center;font-size:.92rem;line-height:1.5;
   letter-spacing:.04em;color:var(--cream);text-shadow:0 1px 6px rgba(0,0,0,.7);opacity:0;
-  transition:opacity 500ms ease}
+  pointer-events:none;transition:opacity 500ms ease}
 #line.on{opacity:1}
 #plunk{position:absolute;left:0;right:0;text-align:center;font-size:.9rem;letter-spacing:.2em;
   color:rgba(242,232,213,.85);opacity:0;pointer-events:none;transition:opacity 400ms ease;font-style:italic}
@@ -221,6 +230,16 @@ var CONFIG = {
 
   /* the hand */
   RELEASE_WINDOW_MS: 60, HOOK_WINDOW: 0.4, SPIN_MAX: 1.0,
+  /* ⛔ THE SPIN BANK (P4, docs/THROW-REFERENCE.md). Until now spin lived ONLY in
+     the last fifth of a second of the flick, so a player who wound the thumb in
+     circles and then flicked straight committed nothing: the one input Stephen
+     asked to see was a thing that happened to a throw rather than a thing you
+     could do. Turning the thumb while the hand is SLOW now banks spin, the way
+     the reference's wind up does, and the wrist snap adds to it. Two full turns
+     of the thumb is full spin, which is about 430 px of thumb at a 34 px radius:
+     enough that a bowed slide cannot buy it by accident, few enough that two
+     unhurried circles get there. */
+  SPIN_LOOPS: 2,
   /* ⛔ the stone leaves the hand a little above the water. Not in the plan's
      CONFIG and the model needs it, so it is here and it is in DECISIONS.md. */
   RELEASE_Z: 0.35,
@@ -627,6 +646,32 @@ function plantYaw(samples, yaw0, upto) {
   }
   return yaw;
 }
+/* THE SPIN BANK on its own, over segments 1 to `upto`, so the page can draw the
+   ring LIVE under the thumb from the same rule the release commits. Returns a
+   SIGNED FRACTION of full spin, not a curvature: the wind up is counted in turns
+   of the thumb, and the wrist snap is counted in curvature, and they are added
+   in the one place that owns the motion.
+   ⛔ it is weighted by the SAME slowness fade as plantYaw, so the wind up and the
+   plant agree about what slow means and there is no third mode to fall through.
+   ⛔ AND A WHOLE LOOP NETS NO TURN OF THE LAKE, which is why the two can share a
+   touch at all: the plant integrates dx and a circle's dx sums to zero, so a
+   player winding up is not also swinging the shore. There is an assertion for
+   exactly that, because it is a property of the maths rather than of intent.
+   ⛔ segments under half a pixel carry no direction, only sampling noise, and
+   summing their angles is how a straight slide would accumulate a phantom spin. */
+function curlSoFar(samples, upto) {
+  var turn = 0, i, top = Math.min(upto, samples.length - 1);
+  for (i = 2; i <= top; i++) {
+    var w = 1 - smoothstep(CONFIG.TURN_FADE_LO, CONFIG.THROW_SPEED, segSpeed(samples, i));
+    if (w <= 0) continue;
+    var ax = samples[i - 1].x - samples[i - 2].x, ay = samples[i - 1].y - samples[i - 2].y;
+    var bx = samples[i].x - samples[i - 1].x, by = samples[i].y - samples[i - 1].y;
+    var la = Math.sqrt(ax * ax + ay * ay), lb = Math.sqrt(bx * bx + by * by);
+    if (la < 0.5 || lb < 0.5) continue;
+    turn += w * Math.atan2(ax * by - ay * bx, ax * bx + ay * by);
+  }
+  return clamp(turn / (CONFIG.SPIN_LOOPS * 2 * Math.PI), -1, 1);
+}
 function motionFromSamples(samples, yaw0) {
   var n = samples.length, i;
   if (n < 3) return null;
@@ -718,6 +763,13 @@ function motionFromSamples(samples, yaw0) {
     hookArc += lb;
   }
   var curl = hookArc > 1e-6 ? turn / (hookArc * CONFIG.METRES_PER_CSS_PX) : 0;
+
+  /* AND THE BANK. What the wind up put on the stone before the arm moved. The
+     reference banks spin during the hold and the snap only throws it; ours did
+     the opposite, so the wind up was worth nothing and there was nothing steady
+     to draw. Both count now, and a stroke with no loops in front of it commits
+     exactly what it committed before, to the last decimal. */
+  curl += curlSoFar(samples, armStart) * CONFIG.CURL_REF;
 
   return newMotion({ speed: speed, rise: rise, curl: curl, aim: yaw / CONFIG.YAW_MAX_DEG });
 }
@@ -1133,13 +1185,32 @@ function strokeOf(o) {
   return out;
 }
 /* an optional PLANT in front of the throw: a slow lateral slide of `plantPx`
-   CSS pixels over `plantMs`, which is what turns the lake. */
+   CSS pixels over `plantMs`, which is what turns the lake, and an optional
+   WIND UP in front of that: `loops` slow circles of `loopR` px that bank spin.
+   The circle is centred a radius ABOVE the point the next part starts from and
+   is walked with the angle increasing, so it begins and ends on that point and
+   the path never jumps. `bow` bends an otherwise straight plant, which is the
+   accident the bank has to survive. */
 function plantThen(o) {
   var s = strokeOf(o), px = o.plantPx || 0, ms = o.plantMs || 400;
-  if (!px) return s;
-  var steps = o.plantN || 12, out = [], i, x0 = s[0].x - px, y0 = s[0].y;
-  for (i = 0; i < steps; i++) {
-    out.push({ x: x0 + px * (i / steps), y: y0, t: -ms + ms * (i / steps) });
+  var loops = o.loops || 0, out = [], i;
+  if (!px && !loops) return s;
+  var x0 = s[0].x - px, y0 = s[0].y;
+  if (loops) {
+    var R = o.loopR === undefined ? 34 : o.loopR, per = o.loopMs === undefined ? 700 : o.loopMs;
+    var lN = o.loopN === undefined ? 24 : o.loopN, sgn = loops < 0 ? -1 : 1, total = Math.abs(loops);
+    var steps = Math.round(lN * total), cx = x0, cy = y0 - R, a;
+    for (i = 0; i < steps; i++) {
+      a = Math.PI / 2 + sgn * 2 * Math.PI * (i / lN);
+      out.push({ x: cx + R * Math.cos(a), y: cy + R * Math.sin(a), t: -ms - per * total + per * total * (i / steps) });
+    }
+  }
+  if (px) {
+    var pN = o.plantN || 12, bow = o.bow || 0;
+    for (i = 0; i < pN; i++) {
+      var u = i / pN;
+      out.push({ x: x0 + px * u, y: y0 - bow * Math.sin(Math.PI * u), t: -ms + ms * u });
+    }
   }
   for (i = 0; i < s.length; i++) out.push({ x: s[i].x, y: s[i].y, t: s[i].t });
   var shift = out[0].t;
@@ -1186,6 +1257,53 @@ function suiteFlick(T) {
     Math.abs(Math.abs(flickOf({ hook: 1 }).spin) - Math.abs(flickOf({ hook: -1 }).spin)) < 1e-9);
   T.assert('and it puts the spin the way the wrist rolled',
     flickOf({ hook: 1 }).spin > 0 && flickOf({ hook: -1 }).spin < 0);
+
+  /* ⛔ THE WIND UP IS THE OTHER HALF OF SPIN (P4, docs/THROW-REFERENCE.md).
+     Before this the only way to spin a stone was to hook the last fifth of a
+     second of the flick. A thumb that circles slowly and then throws STRAIGHT
+     now arrives with the spin it wound on, which is the whole shape of the
+     reference and the reason there is anything to draw a ring for. */
+  var noWind = flickOf({ hook: 0 }), oneLoop = flickOf({ hook: 0, loops: 1 }), twoLoops = flickOf({ hook: 0, loops: 2 });
+  T.assert('a straight flick with no wind up puts no spin on the stone',
+    Math.abs(noWind.spin) < 0.05, noWind.spin.toFixed(4));
+  T.assert('one slow loop of the thumb banks about half the spin',
+    Math.abs(oneLoop.spin - 0.5) < 0.06, oneLoop.spin.toFixed(3));
+  T.assert('two loops fill it, on a flick with no wrist in it at all',
+    twoLoops.spin > 0.6, twoLoops.spin.toFixed(3));
+  T.assert('and winding the other way banks it the other way',
+    Math.abs(flickOf({ hook: 0, loops: -2 }).spin + twoLoops.spin) < 1e-9,
+    flickOf({ hook: 0, loops: -2 }).spin.toFixed(3));
+  T.assert('the wind up and the wrist add rather than replace each other',
+    flickOf({ hook: 0.5, loops: 1 }).spin > flickOf({ hook: 0.5 }).spin + 0.3,
+    flickOf({ hook: 0.5 }).spin.toFixed(3) + ' then ' + flickOf({ hook: 0.5, loops: 1 }).spin.toFixed(3));
+  T.assert('and the bank still cannot push spin past one',
+    flickOf({ hook: 1, loops: 3 }).spin <= CONFIG.SPIN_MAX,
+    flickOf({ hook: 1, loops: 3 }).spin.toFixed(3));
+  /* ⛔⛔ AND THE WIND UP DOES NOT SWING THE SHORE. The plant and the bank read
+     the same slow segments, so if a circle turned the lake the player could not
+     load a throw without losing the line they aimed it on. It does not, because
+     the plant integrates dx and a closed loop's dx sums to zero, and that is a
+     property of the maths rather than of anyone's intent, so it is asserted. */
+  T.assert('two loops of the thumb leave the lake exactly where it was',
+    Math.abs(motionOf({ hook: 0, loops: 2 }).aim) < 1e-9,
+    motionOf({ hook: 0, loops: 2 }).aim.toFixed(9));
+  /* ⛔ THE ACCIDENT THE BANK HAS TO SURVIVE: a plant is a sideways slide and a
+     real thumb does not slide straight. A 200 px slide that bows 15 px is a
+     curved path and it must not buy spin the player did not ask for. */
+  var bowed = flickOf({ hook: 0, plantPx: 200, bow: 15 });
+  T.assert('a bowed slide banks under a tenth of the spin two loops bank',
+    Math.abs(bowed.spin) < 0.1, bowed.spin.toFixed(4));
+  T.assert('and it still turns the lake, which is what it was for',
+    motionOf({ hook: 0, plantPx: 200, bow: 15 }).aim > 0.5,
+    motionOf({ hook: 0, plantPx: 200, bow: 15 }).aim.toFixed(3));
+  /* the live reading the ring is drawn from is the same function the release
+     commits, walked to a point part way through the touch */
+  var wound = plantThen({ hook: 0, loops: 2 });
+  T.assert('the bank read half way through two loops is about half full',
+    Math.abs(curlSoFar(wound, Math.floor(24)) - 0.5) < 0.06,
+    curlSoFar(wound, 24).toFixed(3));
+  T.assert('and read at the first sample it is nothing',
+    curlSoFar(wound, 1) === 0, String(curlSoFar(wound, 1)));
 
   /* ⛔ THE PLANT IS THE FOURTH AXIS. A stroke on glass carries a speed, a
      direction and a curvature, which is three, and a throw needs four. The
@@ -1401,7 +1519,7 @@ function suiteCopy(T) {
    Nothing below reaches into the model except through newThrow, runThrow,
    plantYaw, motionFromSamples and throwFromMotion, and the picture is drawn
    from the model's own trace, so the count and the picture cannot disagree. */
-var STAMP = '20260906h';
+var STAMP = '20260907a';
 var $ = function (id) { return document.getElementById(id); };
 var CV, CTX, W = 375, H = 667, DPR = 1;
 
@@ -1415,7 +1533,9 @@ var LAKE = {
   RING_LIFE: 2.2,         /* seconds a ring keeps spreading */
   RING_SPEED: 1.5,        /* metres per second of ring radius */
   ROWS_M: 1.15,           /* metres between shimmer rows in the world */
-  ROWS_FAR: 90            /* metres of water drawn ahead of the camera */
+  ROWS_FAR: 90,           /* metres of water drawn ahead of the camera */
+  SPIN_R0: 26,            /* the spin ring under an empty thumb, CSS px */
+  SPIN_R1: 42             /* and at full spin, still inside a thumb's own shadow */
 };
 
 /* ============================ 11. STATE ============================ */
@@ -1428,7 +1548,7 @@ var G = {
   lastThrow: null, lastResult: null, throws: 0,
   seam: null, seamYaw: null,
   hold: false, holdT: 0, lineTimer: 0, tallyShown: 0,
-  lastSamples: null,
+  lastSamples: null, spin: 0, spinAt: null,
   dailyOn: false, dailyView: null, forcedDay: null, cardTimer: 0
 };
 function nowMs() { return performance.now(); }
@@ -2296,6 +2416,58 @@ function drawStone(pos) {
 }
 function yawNow() { return G.liveYaw === null ? G.yaw : G.liveYaw; }
 
+/* THE SPIN RING (P4, docs/THROW-REFERENCE.md A2). While the touch is down and
+   the hand is still slow, a thin ring under the thumb draws the loop the thumb
+   is making: it sweeps the way you are winding and closes as the bank fills.
+   Gone the instant the arm is fast, because by then the stone has left.
+   ⛔ NO SPARKLE, by his note and by the fleet's rule: the ring is information,
+   and information is the only thing this game draws that is not the lake. What
+   fills is the ring itself, so a player learns the threshold with their thumb.
+   ⛔ it is drawn from `G.spin`, which is `curlSoFar` over the live samples, the
+   same function the release commits, so the ring cannot say one thing and the
+   throw do another. */
+function drawSpinRing() {
+  var T = G.touch; if (!T) return;
+  var s = T.samples, n = s.length; if (n < 2) return;
+  if (segSpeed(s, n - 1) >= CONFIG.THROW_SPEED) return;
+  var bank = G.spin, a = Math.abs(bank), last = s[n - 1], TOP = -Math.PI / 2;
+  var r = LAKE.SPIN_R0 + (LAKE.SPIN_R1 - LAKE.SPIN_R0) * a;
+  CTX.save();
+  CTX.lineCap = 'butt';
+  /* ⛔ A DARK LINE UNDER EVERYTHING FIRST. The first shot of this ring put a
+     cream arc across the pale band where the sun's reflection meets the black
+     headland, and half of it vanished. Same lesson as Updraft's altitude
+     readout on a pill: a mark that has to read on any water carries its own
+     ground. */
+  CTX.strokeStyle = 'rgba(10,12,18,0.45)'; CTX.lineWidth = 4.6;
+  CTX.beginPath(); CTX.arc(last.x, last.y, r, 0, Math.PI * 2); CTX.stroke();
+  /* the track the fill is read against */
+  CTX.strokeStyle = 'rgba(242,232,213,0.30)'; CTX.lineWidth = 1.2;
+  CTX.beginPath(); CTX.arc(last.x, last.y, r, 0, Math.PI * 2); CTX.stroke();
+  /* and the mark the fill starts from, so a part filled ring is legible as a
+     fraction rather than as a circle with a nick out of it */
+  CTX.strokeStyle = 'rgba(242,232,213,0.55)'; CTX.lineWidth = 1.2;
+  CTX.beginPath(); CTX.moveTo(last.x, last.y - r - 3.5); CTX.lineTo(last.x, last.y - r + 3.5); CTX.stroke();
+  if (a > 0.02) {
+    /* ⛔ THE SWEEP IS THE BANK, with no floor added to make a little look like
+       something. A gauge that starts a tenth of the way round says you have
+       wound spin you have not wound, and the first shot of it read as nearly
+       full at 0.71 for exactly that reason. */
+    var sweep = a * Math.PI * 2 * (bank < 0 ? -1 : 1);
+    CTX.strokeStyle = 'rgba(255,231,186,' + (0.55 + 0.35 * a).toFixed(3) + ')';
+    CTX.lineWidth = 2.2 + 2.2 * a;
+    CTX.beginPath();
+    CTX.arc(last.x, last.y, r, TOP, TOP + sweep, bank < 0);
+    CTX.stroke();
+    /* full, and the ring closes and takes the sun */
+    if (a >= 0.999) {
+      CTX.strokeStyle = 'rgba(255,214,140,0.5)'; CTX.lineWidth = 1;
+      CTX.beginPath(); CTX.arc(last.x, last.y, r + 5, 0, Math.PI * 2); CTX.stroke();
+    }
+  }
+  CTX.restore();
+}
+
 /* ============================ 16. THE THROW ============================ */
 /* the count on the post, as a number the gates can read and as the marks a
    fence post would carry: four strokes, then a strike through them */
@@ -2415,8 +2587,9 @@ function onDown(e) {
   e.preventDefault();
   if (AUDIO.ensure()) AUDIO.ambience(dailySeedFor(G.day));
   try { CV.setPointerCapture(e.pointerId); } catch (x) {}
-  G.touch = { id: e.pointerId, samples: [{ x: e.clientX, y: e.clientY, t: e.timeStamp }], yaw0: G.yaw, detent: Math.floor(G.yaw / 5) };
+  G.touch = { id: e.pointerId, samples: [{ x: e.clientX, y: e.clientY, t: e.timeStamp }], yaw0: G.yaw, detent: Math.floor(G.yaw / 5), spun: 0 };
   G.liveYaw = G.yaw;
+  G.spin = 0;
   G.camTarget = 0;
 }
 function onMove(e) {
@@ -2435,6 +2608,12 @@ function onMove(e) {
   }
   var d = Math.floor(G.liveYaw / 5);
   if (d !== T.detent) { T.detent = d; try { navigator.vibrate && navigator.vibrate(6); } catch (x) {} }
+  /* the wind up, live, from the same rule the release commits */
+  G.spin = curlSoFar(T.samples, T.samples.length - 1);
+  if (!T.spun && Math.abs(G.spin) >= 0.999) {
+    T.spun = 1;
+    try { navigator.vibrate && navigator.vibrate(18); } catch (x) {}
+  }
 }
 function onUp(e) {
   var T = G.touch;
@@ -2443,6 +2622,8 @@ function onUp(e) {
   T.samples.push({ x: e.clientX, y: e.clientY, t: Math.max(e.timeStamp, T.samples[T.samples.length - 1].t + 0.5) });
   G.touch = null;
   G.lastSamples = T.samples;
+  G.spinAt = curlSoFar(T.samples, T.samples.length - 1);
+  G.spin = 0;
   var m = motionFromSamples(T.samples, T.yaw0);
   if (m) {
     var th = throwFromMotion(m, G.stoneId, mixSeed(dailySeedFor(G.day), 100 + G.throws));
@@ -2458,7 +2639,7 @@ function onUp(e) {
 function onCancel(e) {
   var T = G.touch;
   if (!T || e.pointerId !== T.id) return;
-  G.touch = null;
+  G.touch = null; G.spin = 0;
   G.yaw = G.liveYaw === null ? G.yaw : G.liveYaw; G.liveYaw = null;
 }
 function pickStone(id) {
@@ -2578,6 +2759,7 @@ function frame() {
   if (G.screen === 'lake' && (G.touch || !G.play || (G.play.sunk && G.rings.length === 0))) drawSeam();
   drawRings(G.play ? playT() : 0);
   if (G.play && !G.play.sunk) drawStone(stonePos(playT()));
+  if (G.screen === 'lake') drawSpinRing();
   requestAnimationFrame(frame);
 }
 
@@ -2678,6 +2860,36 @@ window.GERPLUNK_DEV = {
   samples: function () {
     var s = G.lastSamples;
     return s ? { n: s.length, ms: s[s.length - 1].t - s[0].t } : null;
+  },
+  /* THE SPIN RING'S OWN EYE. `bank` is what the thumb has wound so far and
+     `at` is what the last release committed. `ink` reads the CANVAS on a circle
+     of radius r around the thumb and reports the brightest pixel it finds, so
+     the gate proves the ring was DRAWN rather than that a number changed. A
+     drawSpinRing that returns early leaves the water there, and the water at
+     dusk is dark. */
+  spin: function () {
+    var T = G.touch, s = T && T.samples;
+    return { bank: G.spin, at: G.spinAt, down: !!T,
+      x: s ? s[s.length - 1].x : null, y: s ? s[s.length - 1].y : null };
+  },
+  ink: function (cx, cy, rLo, rHi) {
+    var pad = Math.ceil(rHi) + 3;
+    var x0 = Math.max(0, Math.round((cx - pad) * DPR)), y0 = Math.max(0, Math.round((cy - pad) * DPR));
+    var x1 = Math.min(CV.width, Math.round((cx + pad) * DPR)), y1 = Math.min(CV.height, Math.round((cy + pad) * DPR));
+    if (x1 <= x0 || y1 <= y0) return -1;
+    var img = CTX.getImageData(x0, y0, x1 - x0, y1 - y0).data;
+    var best = 0, px, py, dx, dy, d, v;
+    for (py = y0; py < y1; py++) {
+      for (px = x0; px < x1; px++) {
+        dx = px / DPR - cx; dy = py / DPR - cy;
+        d = Math.sqrt(dx * dx + dy * dy);
+        if (d < rLo || d > rHi) continue;
+        var o = ((py - y0) * (x1 - x0) + (px - x0)) * 4;
+        v = (img[o] + img[o + 1] + img[o + 2]) / 3;
+        if (v > best) best = v;
+      }
+    }
+    return best;
   },
   ticks: function () { return AUDIO.ticks(); },
   audioReady: function () { return AUDIO.ready(); },

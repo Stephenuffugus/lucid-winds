@@ -29,7 +29,7 @@
  * ⛔ every subject is asserted to EXIST and be VISIBLE before it is measured.
  * A gate that measures a hidden element measures nothing and reports PASS.
  */
-import { serve, open, reporter, tap, centre, flick, stroke, waitFrames, sleep } from './harness.mjs';
+import { serve, open, reporter, tap, centre, flick, hold, moveOn, resume, stroke, waitFrames, sleep } from './harness.mjs';
 
 const { base, close } = await serve();
 const { browser, page, errors } = await open(base);
@@ -136,6 +136,23 @@ const line1 = await page.waitForFunction(() => {
   return el.classList.contains('on') && el.textContent.length > 8 ? el.textContent : null;
 }, { timeout: 6000 }).then(h => h.jsonValue()).catch(() => null);
 say(!!line1 && !/[-!]/.test(line1), 'the readout line appears after the sink: ' + JSON.stringify(line1));
+/* ⛔ THE LINE MAY NOT EAT A THROW. It sits ON THE WATER, 172 px off the bottom,
+   which on a 667 tall phone is the band a thumb throws from, and it is up for
+   two and a half seconds after every sink. Nothing in this file had ever asked
+   whether a thumb can throw THROUGH it: every earlier flick starts where the
+   line is not, or after it has gone. It cannot eat a throw today, because #hud
+   is pointer-events:none, and that is a property of the parent that a later
+   hand could take away in one word. So the law is asserted where it belongs:
+   while the line is SHOWING, the water under it is still the water. */
+const underLine = await dev((px, py) => {
+  const el = document.getElementById('line');
+  const on = el.classList.contains('on'), r = el.getBoundingClientRect();
+  const hit = document.elementFromPoint(px, py);
+  return { on: on, top: r.top, bottom: r.bottom, over: py >= r.top && py <= r.bottom, hit: hit ? (hit.id || hit.tagName) : null };
+}, x0, y0);
+say(underLine.on && underLine.over, 'the readout line is showing and it covers the throw point ('
+  + underLine.top.toFixed(0) + ' to ' + underLine.bottom.toFixed(0) + ', thumb at ' + y0 + ')');
+say(underLine.hit === 'stage', 'and a thumb there still lands on the water, not on the line: ' + underLine.hit);
 const best = await dev(() => ({ text: document.getElementById('best').textContent, save: window.GERPLUNK_DEV.save() }));
 say(!!res && best.text === 'best ' + res.skips && best.save.best === res.skips && best.save.throws === 1,
   'the best is on the post and in the save: ' + best.text + ', save best ' + best.save.best + ', throws ' + best.save.throws);
@@ -176,6 +193,128 @@ const yawB = await dev(() => window.GERPLUNK_DEV.yaw());
 const saved = await dev(() => window.GERPLUNK_DEV.save().yaw);
 say(yawB > yawA + 5, 'a 120 px slide before the throw turned the lake right: ' + yawA.toFixed(1) + ' to ' + yawB.toFixed(1) + ' degrees');
 say(Math.abs(saved - yawB) < 1e-6, 'and the turn is in the save for next time: ' + saved.toFixed(1));
+
+/* 11. THE WIND UP AND THE SPIN RING (P4, docs/THROW-REFERENCE.md)
+
+   ⛔ THE THING THIS HAS TO PROVE IS THAT A PICTURE WAS DRAWN, not that a number
+   moved. So the ring is measured by reading the CANVAS on the annulus the ring
+   would occupy, before the touch and again mid wind up, and the assertion is
+   that the water there got brighter. Emptying drawSpinRing leaves the water and
+   turns it red; changing the ring's colour or radius by a hair does not, which
+   is the right sensitivity for a drawing.
+   ⛔ and the wind up may not swing the shore. The plant and the bank read the
+   same slow segments, so the yaw is read on both sides of the loops. */
+/* ⛔ a fixed sleep is not a settle. The wound throw below is a record, so it
+   runs long AND in slow motion, and 2600 ms lands in the middle of it. Wait for
+   the sink, the rings and the readout line, or the next gesture starts on top
+   of the last one. */
+const settle = async () => {
+  await page.waitForFunction(() => window.GERPLUNK_DEV.state().sunk, { timeout: 40000 }).catch(() => {});
+  await page.waitForFunction(() => window.GERPLUNK_DEV.state().rings === 0 && !window.GERPLUNK_DEV.state().line,
+    { timeout: 20000 }).catch(() => {});
+  await waitFrames(page, 2);
+};
+await settle();
+const yawW0 = await dev(() => window.GERPLUNK_DEV.yaw());
+const wound = stroke({ x0, y0, arc: 320, ms: 170, rise: 0.55, hook: 0, n: 14, loops: 2 });
+const LOOPPTS = 48;                      /* loopN 24 times two loops */
+const HOLD_AT = 36;                      /* a loop and a half, so the ring is part filled */
+/* the control is read at the EXACT point the thumb will be holding, with no
+   touch on the screen, so the comparison is the same water either way */
+const holdPt = wound[HOLD_AT - 1], fastPt = wound[LOOPPTS + 7];
+const waterInk = await dev((cx, cy) => window.GERPLUNK_DEV.ink(cx, cy, 23, 45), holdPt.x, holdPt.y);
+const waterInkFast = await dev((cx, cy) => window.GERPLUNK_DEV.ink(cx, cy, 23, 45), fastPt.x, fastPt.y);
+await hold(page, wound.slice(0, HOLD_AT));
+await waitFrames(page, 3);
+const sp = await dev(() => window.GERPLUNK_DEV.spin());
+say(sp.down && sp.bank > 0.55 && sp.bank < 0.9,
+  'a loop and a half of the thumb banks most of the spin: ' + (sp.bank === undefined ? '?' : sp.bank.toFixed(3)));
+const rNow = 26 + 16 * Math.abs(sp.bank || 0);
+const ringInk = await dev((cx, cy, lo, hi) => window.GERPLUNK_DEV.ink(cx, cy, lo, hi), sp.x, sp.y, rNow - 3, rNow + 3);
+say(ringInk > waterInk + 25,
+  'and a ring is DRAWN under the thumb at that radius: the water there reads ' + waterInk.toFixed(0)
+  + ' and with the ring on it ' + ringInk.toFixed(0) + ' (radius ' + rNow.toFixed(1) + ' px)');
+/* ⛔ THE WIND UP MAY NOT SWING THE SHORE, and the honest form of that law is a
+   comparison rather than a zero. The plant and the bank read the same slow
+   segments, so a circle DOES travel sideways and part way round one the lake
+   has genuinely moved a little. What must be true is that it is worth almost
+   nothing: three hundred px of thumb spent on loops turns the lake by less than
+   a fifth of what a hundred and twenty px spent on a SLIDE turned it, measured
+   above rather than assumed. At a whole number of loops it comes back. */
+const yawMid = await dev(() => window.GERPLUNK_DEV.yaw());
+const slideWorth = Math.abs(yawB - yawA);
+say(Math.abs(yawMid - yawW0) < 0.2 * slideWorth,
+  'a loop and a half of thumb turns the lake ' + Math.abs(yawMid - yawW0).toFixed(2)
+  + ' degrees where a 120 px slide turned it ' + slideWorth.toFixed(2));
+/* ⛔ AND AT THE END OF THE WIND UP THE LAKE IS BACK WHERE IT STARTED. The
+   measurement is taken HERE, with the circle closed and the thumb still down,
+   and not after the throw, and the reason is worth writing down because it cost
+   an hour: on two cores the ARM'S dispatch stretches, a 13 ms step becomes 60,
+   and at 24 px a step that is 410 px per second, which is under the game's own
+   TURN_FADE_LO. The game then reads the first inch of the flick as a slow hand
+   and turns the lake with it, WHICH IS CORRECT, and the end to end assertion
+   was measuring the driver's timers rather than the mechanic. The end to end
+   version of this law lives in the sim, where the clock is exact
+   ('two loops of the thumb leave the lake exactly where it was'). */
+await moveOn(page, wound.slice(HOLD_AT, LOOPPTS + 1));
+await waitFrames(page, 2);
+const closed = await dev(() => ({ yaw: window.GERPLUNK_DEV.yaw(), bank: window.GERPLUNK_DEV.spin().bank }));
+say(Math.abs(closed.yaw - yawW0) < 0.6,
+  'and with the circle closed the lake is back where it started: ' + yawW0.toFixed(2)
+  + ' then ' + closed.yaw.toFixed(2) + ' degrees');
+say(closed.bank > 0.9, 'with the bank full: ' + closed.bank.toFixed(3));
+const throwsBefore = await dev(() => window.GERPLUNK_DEV.save().throws);
+await resume(page, wound.slice(LOOPPTS));
+await page.waitForFunction((n) => window.GERPLUNK_DEV.save().throws === n, { timeout: 30000 }, throwsBefore + 1).catch(() => {});
+const wt = await dev(() => window.GERPLUNK_DEV.lastThrow());
+say(!!wt && Math.abs(wt.spin) > 0.6,
+  'and the straight flick after it commits the spin that was wound: |spin| ' + (wt ? Math.abs(wt.spin).toFixed(3) : 'no throw'));
+
+/* the control: the SAME flick with no loops in front of it puts nothing on */
+/* ⛔ AND IT HAS TO ACTUALLY THROW. On two cores a 170 ms arm can be dispatched
+   over 500 ms, which the game correctly reads as a set down, and then
+   lastThrow() is the PREVIOUS throw and the assertion below reads the wound
+   throw's spin and calls it the control's. That is how a green gate lies about
+   a number it never measured. So the count is watched, and a release that came
+   out slow is thrown again rather than believed. */
+const throwFresh = async (opts, what) => {
+  for (let go = 0; go < 3; go++) {
+    await settle();
+    const before = await dev(() => window.GERPLUNK_DEV.save().throws);
+    const r = await flick(page, stroke(Object.assign({ x0, y0 }, opts)));
+    if (r.el !== 'stage') return { ok: false, why: 'the stroke landed on ' + r.el };
+    const got = await page.waitForFunction((n) => window.GERPLUNK_DEV.save().throws === n,
+      { timeout: 20000 }, before + 1).then(() => true).catch(() => false);
+    if (got) return { ok: true, th: await dev(() => window.GERPLUNK_DEV.lastThrow()), tries: go + 1 };
+  }
+  return { ok: false, why: 'three releases in a row read as a set down (' + what + ')' };
+};
+const plain = await throwFresh({ arc: 320, ms: 170, rise: 0.55, hook: 0, n: 14 }, 'the control');
+say(plain.ok, 'the control flick with no wind up threw' + (plain.ok ? ' (' + plain.tries + ' attempt(s))' : ': ' + plain.why));
+say(plain.ok && Math.abs(plain.th.spin) < 0.1,
+  'and it puts nothing on the stone: |spin| ' + (plain.ok ? Math.abs(plain.th.spin).toFixed(4) : '?'));
+
+/* 11b. AND THE RING IS GONE THE MOMENT THE ARM IS FAST, which is the half of
+   the rule that a bank reading alone cannot see: the ring is a wind up gauge,
+   not a throw decoration, and the last thing a player should be looking at as
+   the stone leaves is a widget. */
+await settle();
+const wound2 = stroke({ x0, y0, arc: 320, ms: 170, rise: 0.55, hook: 0, n: 14, loops: 2 });
+/* the arm's samples are dispatched back to back with no wait between them, so
+   the release window is unambiguously FAST however loaded the box is. Under a
+   timer the same eight points can stretch to half a second on two cores, which
+   is a slow hand, and the ring would be right to still be drawn. */
+await hold(page, wound2.slice(0, LOOPPTS).concat(
+  wound2.slice(LOOPPTS, LOOPPTS + 8).map(p => ({ x: p.x, y: p.y, dt: 0 }))));
+await waitFrames(page, 3);
+const spFast = await dev(() => window.GERPLUNK_DEV.spin());
+const fastInk = await dev((cx, cy) => window.GERPLUNK_DEV.ink(cx, cy, 23, 45), spFast.x, spFast.y);
+say(spFast.down && spFast.bank > 0.8,
+  'with the arm already moving the bank is still full: ' + (spFast.bank === undefined ? '?' : spFast.bank.toFixed(3)));
+say(fastInk < waterInkFast + 25,
+  'and no ring is drawn there any more: ' + fastInk.toFixed(0) + ' against water ' + waterInkFast.toFixed(0));
+await resume(page, wound2.slice(LOOPPTS + 8));
+await waitFrames(page, 2);
 
 await browser.close();
 close();

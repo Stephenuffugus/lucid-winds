@@ -301,6 +301,58 @@ on branch `add-sproing-jumper` tonight.
   **Next action:** his ear on `docs/shots/p4-bed-and-throws.wav` and his thumb on the lake; then
   the P4 plan above once he answers calls 22 to 26.
 
+- 2026-09-07 Opus (lead): **A1 IS DONE. P4 STEP 1: THE THROW REFERENCE AND THE SPIN
+  RING.** Stamp `20260907a` in three places. `node tools/check.js` ALL GATES PASSED over
+  the seven, twice; `node sim.js --test` 178 / 0 (was 167); `--sweep` still finds the
+  shipped constants in the passing set.
+  **The research note first, as the plan asked:** `satellites/gerplunk/docs/THROW-REFERENCE.md`,
+  what the reference actually reads from a thumb set beside our four number tuple, four
+  things adopted, five refused with the reason, and the one thing the older stone
+  skipping games teach. Sources listed; anything from memory rather than a source is
+  marked. **It goes to Stephen before anything else in P4.**
+  **What it found, and it is the reason the ring exists:** our `curl` was read ONLY over
+  the last forty percent of the arm's arc, so a thumb that circled and then flicked
+  straight committed nothing. The input he asked to see was a thing that happened to a
+  throw. `curlSoFar(samples, upto)` now banks signed turning over the SLOW segments, the
+  same ones the plant reads, `SPIN_LOOPS` 2 full turns is full spin, and the wrist adds to
+  it. A stroke with no loops commits what it always did, to the last decimal (D40).
+  **The ring** (D41): drawn under the thumb while the hand is slow, the sweep IS the bank
+  with no floor, a legible track and a start tick to read the fraction against, its own
+  dark ground so it reads on the pale band and on the black headland, gone the frame the
+  arm is fast, one haptic pulse when it fills. No sparkle.
+  **The gate reads the CANVAS** (D42): `GERPLUNK_DEV.ink(cx, cy, rLo, rHi)` and the water
+  measured at the exact hold point with no touch on the screen, so the assertion is that a
+  picture was painted. Watched to fail twice, in opposite directions: `drawSpinRing`
+  emptied turns the ring assertion red (179 against 175 water), and deleting the fast arm
+  check turns the companion red (209 against 90).
+  **Four things this cost, all worth carrying:**
+  1. ⛔ A GATE'S GESTURE IS NOT THE GESTURE IT INTENDED. The end to end version of "the
+     wind up does not swing the shore" was flaky at one in three: on two cores the ARM's
+     dispatch stretches, a 13 ms step becomes 60, and at 24 px that is 410 px per second,
+     under the game's own `TURN_FADE_LO`, so the game correctly read the first inch of the
+     flick as a slow hand and turned the lake. The assertion was measuring the driver's
+     timers. It is taken now with the circle closed and the thumb still down, inside the
+     same touch; the end to end form lives in the sim where the clock is exact.
+  2. ⛔ AND A RELEASE THAT CAME OUT SLOW IS NOT A CONTROL. The control throw silently read
+     as a set down, `lastThrow()` returned the PREVIOUS throw, and the gate reported the
+     wound throw's spin as the control's and went green. It now watches the throw count
+     and throws again rather than believing it; it reported "2 attempt(s)" on the very
+     next run, so the flake was real.
+  3. ⛔ I NEARLY SHIPPED A COMMENT CLAIMING A FAULT I HAD NOT VERIFIED. The readout line
+     sits on the water where a thumb throws from and I wrote it up as having eaten the
+     touch. The mutation disproved it: `#hud` is already pointer-events:none. The comment
+     is corrected in both files and the assertion is kept, because that guarantee belongs
+     to the readout rather than to its parent.
+  4. The harness grew a `loops` option on `stroke()`, and `hold` / `moveOn` / `resume`, so
+     a gate can look at the screen twice inside one unbroken touch.
+  Shots: `docs/shots/p4-windup-tall.png` (412x915) and `p4-windup-mid.png` (375x667), both
+  OPENED. The first pair were reshot: the fill had a floor added to it and read as nearly
+  full at 0.71, the track was invisible so there was nothing to read the fraction against,
+  and the cream arc lost half of itself across the sun's reflection.
+  **Next action:** P4 step 2, THE TURN, is still B1 and waits on call 22. The next thing
+  that needs no call is A7, the land at the lee and the bay (a flat dusk silhouette, a
+  straight far shore, no stone in the palm view). Nothing here is half built.
+
 ---
 
 ## 0. RULES OF ENGAGEMENT
