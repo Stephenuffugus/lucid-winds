@@ -12,18 +12,15 @@ this file wins; every difference is in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
-- 2026-09-06 Opus: **P0 and P1 are DONE and pushed.**
+- 2026-09-06 Opus: **P0, P1, P2 and P3 are DONE and pushed.**
   `node satellites/doohickey/tools/check.js` prints ALL GATES PASSED across
-  eight gates: `sim` (109 assertions), `lint`, `solve`, `replay`, `dominoes`,
-  `mutants`, `edit`, `layout`. Ten mutations watched to fail, in section 13 with
-  their output. Calls in `satellites/doohickey/docs/DECISIONS.md`.
-  **Next action:** P2 step 1, the win flow and the remaining parts in the
-  editor. The seesaw, fan, balloon and bucket already build and draw; what is
-  missing is the slow replay of the last three seconds behind the win card, the
-  confetti, and the sandbox with its three slots. Then P2 step 2, the level
-  select is already there and needs its stars wired to the save, and P2 step 4,
-  `test/run.mjs`: load level 1, place its solution through the TEST hook, press
-  the real GO button, and the bell arrives inside ten seconds of wall time.
+  eleven gates; 121 assertions; seventeen mutations watched to fail, seven of
+  them re-runnable through `test/mutants.mjs`. The morning report is at the top
+  of section 15 and names the three thin places. Calls in
+  `satellites/doohickey/docs/DECISIONS.md`, scars in `BUILD-NOTES.md`.
+  **Next action:** the levels use the bottom sixth of the board and the top half
+  is empty in five of six. Rebuild them upward against `sim.js --solve`, which
+  is the tool that placed every coordinate in the first place.
 
 ---
 
@@ -561,6 +558,100 @@ is 375 by 211 in a 667 tall window, which is a small stage; the top fifth is
 empty paper doing nothing; and a player holding the phone upright has no hint
 that turning it sideways doubles the board.
 
+
+### P2 and P3, winning, sound, links, film and the cat (2026-09-06)
+
+```
+$ node tools/check.js
+sim             pass  13s
+lint            pass  0s
+solve           pass  2s
+replay          pass  3s
+dominoes        pass  27s
+mutants         pass  81s
+edit            pass  4s
+run             pass  5s
+share           pass  6s
+film            pass  7s
+layout          pass  6s
+
+ALL GATES PASSED
+```
+
+121 assertions. Seven more mutations watched to fail, each restored:
+
+```
+$ # level 2's far bank moved out of the seesaw's reach
+1 LEVEL PROBLEM(S)
+
+$ # the replay never starts
+FAIL  and the last three seconds play behind it
+
+$ # a spring pad that only gives back what it took
+FAIL  a spring pad throws a marble back up higher than it fell from (rose to 204, dropped from 180)
+
+$ # the cat's wake radius set to nothing
+FAIL  a marble that comes within forty units wakes her
+
+$ # the share link drops the rotation byte
+FAIL  and every part is where it was: part 0 turned
+
+$ # the film's blob read before onstop
+FAIL  and a blob comes back from onstop, not from stop()
+
+$ # the overlap test made impossible to trigger, and the handle row put under the finger
+FAIL  landscape: dropping onto an occupied cell shows the red ghost
+FAIL  landscape: and the handles sit above the part, not under the thumb (-40 px above)
+```
+
+**Three faults the gates found in the game rather than in themselves.**
+
+- **The share format could not carry the board.** A link stores one byte of
+  rotation as a 15 degree detent, and the levels hold 26, 24, 22, 20, 16, 10, 8
+  and -10 degrees. The machine you sent was not the machine that arrived, and a
+  domino run is chaotic enough to end differently. There is now ONE rotation
+  grid for the whole game: 240 steps of 1.5 degrees, which fits in a byte and
+  makes every 15 degree detent exact.
+- **A spring pad cannot be built out of restitution.** The solver takes the
+  MINIMUM restitution of the pair, so a pad of 1.4 under a marble of 0.35 is a
+  0.35 bounce, the same as a plank. The pad pushes instead.
+- **"The machine changed" was three lines repeated at eight call sites**, and two
+  of them forgot to save the sandbox, so a table built through one path was kept
+  and through another was lost.
+
+### The P2 and P3 shots, opened and read
+
+**`p2-win.png`** — three gold stars, "4 parts, par 4", the card on the left with
+the board and its bell visible beside it, confetti falling. Three faults: at the
+instant of the shot the confetti is all still in the top strip and reads as
+debris rather than celebration; the replay behind the card had eased its camera
+somewhere with nothing in it, so the right half is an empty shelf; and the card
+covers the undo and redo buttons, which are greyed and useless at that moment
+anyway but look broken.
+
+**`p2-sandbox.png`** — a table with a marble, two ramps, a seesaw, a balloon on
+its rope, four dominoes and the bell, and a seven tile tray. Three faults: the
+balloon's cargo is a small purple square that reads as a dropped part rather
+than as something hanging; the last domino and the bell have a gap that makes
+the final link look accidental; and the tray runs off the right edge at 667 wide
+with no sign that it scrolls.
+
+**`p3-parts.png`** — the spring pad, the switch, the fan and its cone, and the
+cat asleep. Three faults: the fan's cone is a large pale wedge that reads as a
+torch beam rather than as moving air; the switch plate is a small gold sliver;
+and the cat's paws sit on the bottom edge of her body rather than under it, so
+she looks stuck to a wall.
+
+**`docs/thumb.png`** — the portal tile: a marble, a cascade caught mid fall with
+dust under it, and the bell. Three faults: the action is in the bottom third and
+the top half is empty paper; the dominoes are small at tile size; and the gap
+between the last domino and the bell is the same gap that bothers the sandbox
+shot.
+
+**`p1-cascade-wide.png`** — read at P1 and still the best picture of the game.
+Three faults: the action is a thin strip along the bottom sixth of the board; the
+marble is small and dark against cream; and the dust needs looking for.
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL
@@ -571,6 +662,77 @@ share, film, layout`.
 ---
 
 ## 15. THE MORNING REPORT
+
+### Doohickey, built 2026-09-06
+
+**Where it is.** P0, P1, P2 and P3 are done, committed and pushed on
+`add-sproing-jumper`. `node satellites/doohickey/tools/check.js` prints ALL
+GATES PASSED across eleven gates: `sim` (121 assertions), `lint`, `solve`,
+`replay`, `dominoes`, `mutants`, `edit`, `run`, `share`, `film`, `layout`.
+Seventeen mutations are in the ledger at section 13 with their real output, and
+`test/mutants.mjs` makes seven of them re-runnable on demand.
+
+**What it is.** Drag ramps, dominoes, a seesaw, a fan, a balloon, a bucket, a
+spring pad, a switch and a cat onto a sheet of graph paper, press GO, and watch
+a marble set the whole silly thing off into a bell. Six levels with authored
+solutions, three stars each, a sandbox with three tables, a share link that is
+seven bytes a part, and a film you can record off the canvas with the game's own
+sound in it. Determinism is enforced twice: as a hundred replays landing on one
+hash, and as a grep over the shipped file for every unspecified `Math` call.
+
+**What I would look at first.** `docs/shots/p1-cascade-wide.png`, then
+`docs/thumb.png`. The plan says the cascade has to be reliable and delightful;
+reliable is 100 of 100 trials at three spacings, and those two pictures are my
+case for delightful. Then `docs/shots/p1-editor-wide.png` for the editor, which
+is the thing the genre usually gets wrong.
+
+**What the gates found that no amount of looking would have.** The world takes
+gravity as a number and silently produced NaN when handed a vector. The solver
+takes the minimum restitution of a pair, which killed both the bouncy mutant and
+the spring pad. The rope's inequality was written twice so neither half could be
+tested. And the share format could not carry the angles the board holds.
+
+**What the looking found that no gate would have.** A button in the bottom right
+covers the bell in four levels out of six. A tray that scrolls along the bottom
+scrolls into the fleet music chip's corner. Level 1's cascade ran BACKWARDS,
+away from the bell, and the gate was perfectly happy because the marble rang the
+bell on its own. And five of the first six levels had the marble missing the
+first plank entirely, which reads as "the physics is broken" and is only
+arithmetic.
+
+**What is thin.** Three things.
+
+1. **The levels use the bottom sixth of the board.** Every one of them is a ramp
+   into something on the floor, because that is what I could verify quickly
+   against the simulator. The board is 768 by 432 and the top half is empty in
+   five levels out of six. This is the thing I would spend the next hour on.
+2. **The portrait layout is a small stage.** The scene letterboxes to 375 by 211
+   in a 667 tall window, with the tray wrapped below it. It works, it passes the
+   layout gate at 320, 375 and 412, and it is a worse game than landscape. There
+   is no hint to the player that turning the phone doubles the board.
+3. **The cat is P3 and it shows.** She wakes, bats and walks off, and she is a
+   purple box with a face. The design calls her the shareable moment; she is not
+   one yet.
+
+**What I did not do.** The daily Doohickey (the plan puts it at v1.1), the rope
+and pulley part (the plan parks it), and the art pack sheets: the parts are drawn
+by code and `ART_ASSETS.md` says what painted art would replace and the rules it
+has to keep.
+
+**For Fable, to check independently.** Four things.
+
+- The eleven gates, run cold: `cd satellites/doohickey && node tools/check.js`.
+- `node test/mutants.mjs`, which re-breaks seven things on purpose and asserts
+  the sim gate dies each time. Two of those mutants survived their first run and
+  each survival was a real hole in the assertions.
+- The shots, opened rather than listed. Nineteen of them, all under 200 KB, all
+  at the player's own pixels, in both orientations.
+- `node sim.js --replay=100`. If that ever prints two hashes, every share link in
+  the game is a lie.
+
+**Next action if the night continues:** row 6 of the spine, Airworthy, starting
+at its P0 step 1.
+
 
 The template in `plans/fathom/HANDOFF-FATHOM.md` section 15, with this file's phases. Add one line: **the domino table**,
 pasted.
