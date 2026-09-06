@@ -62,3 +62,27 @@ reasonable way, with the reason. Dated 2026-09-05 unless it says otherwise.
 
 - **Photo, journal entries, pouch buying, weather and tilt are P2 and P3.** The
   buttons exist and say so rather than doing nothing.
+
+**D-PL1 (2026-09-07, Opus, the polish loop) — the seal is measured now, not promised.** `draw`
+has carried this game's own law in a comment since it was written: everything inside the jar is
+clipped to the jar, "which is a thing a sealed jar cannot do". Every layer that draws life does
+clip itself, and nothing had ever checked. `WARDIAN_TEST.outsideInk` counts the pixels in a ring
+just outside the glass that are brighter than the room behind it, with two pixels of slack for
+the glass's own antialiased edge. It reads zero, and the brightest thing out there is the room at
+38 to 69 of 255.
+⛔⛔ AND THE ASSERTION COULD NOT FAIL FOR THREE ROUNDS, in three different ways, all mine:
+1. **Nothing in the jar could leak.** Measured on whatever frame the gate happened to be on,
+   there were no particles alive at all, so removing the clip left it green, and so did removing
+   the clip AND making the particles drift seven hundred units sideways. The jar is misted first
+   now, which is the one thing in this game that throws anything loose, and the gate asserts that
+   twenty six motes exist before it asserts that none of them got out.
+2. **The cooldown would not clear.** The hook set `MISTED_AT` to zero, but the cooldown is
+   measured against `nowMs()`, which a few hundred milliseconds after a page loads is a small
+   number, so `doMist` quietly returned false. It is a large negative number now.
+3. **⛔ A DUPLICATE KEY IN AN OBJECT LITERAL SILENTLY WINS.** `WARDIAN_TEST` already had a `mist`
+   key below the one I added, so my hook was never called at all: `T.mist()` ran the old one,
+   which only raises humidity, and the gate reported nought motes three times while looking like
+   the game was at fault. Nothing in the file, the lint or the console says a word about it. The
+   hook is `mistPuff` now.
+With a real leak (unclipped, and a mote that drifts) it goes red at all three sizes, 47, 26 and
+2 bright pixels.

@@ -93,6 +93,28 @@ for (const [w, h] of WIDTHS) {
   say(pr.small === 0, at + ' and every buy button is a 48 px target (' + pr.small + ' too small)');
   say(pr.over === 0, at + ' and none of them is covered (' + pr.over + (pr.over ? ': ' + pr.names.join(', ') : '') + ')');
 
+  /* ⛔ NOTHING ESCAPES THE JAR. It is this game's own law, written into `draw`
+     beside the clip: everything inside the jar is clipped to the jar, "which is
+     a thing a sealed jar cannot do". Every layer that draws life clips itself
+     and that has been true by inspection; this is the line that makes it true by
+     measurement. Counted in a ring just outside the glass, which is where a leak
+     would land, with two pixels of slack for the glass's own antialiased edge.
+     The brightest thing out there is the room at 38 of 255. */
+  /* ⛔⛔ AND THE JAR HAS TO HAVE SOMETHING IN IT THAT COULD LEAK. Measured on the
+     frame the gate happened to be on, this assertion could not fail: there were
+     no particles alive at all, so removing the clip AND making the particles
+     drift seven hundred units sideways both left it green. A probe that cannot
+     fail is not evidence, and this one was mine. The jar is misted first, which
+     is the one thing in the game that throws anything loose. */
+  await page.evaluate(() => { window.WARDIAN_TEST.mistPuff(); });
+  await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+  const puffed = await page.evaluate(() => window.WARDIAN_TEST.particles());
+  say(puffed > 8, at + ' the jar has been misted and there is something loose in it (' + puffed + ' motes)');
+  const leak = await page.evaluate(() => window.WARDIAN_TEST.outsideInk());
+  say(leak.tot > 20000, at + ' there is a ring outside the jar to look at (' + leak.tot + ' px)');
+  say(leak.out === 0, at + ' and nothing at all has escaped it (' + leak.out
+    + ' bright pixels, brightest ' + leak.worst.toFixed(0) + ' of 255)');
+
   say(errors.length === 0, at + ' nothing landed on the console' + (errors.length ? ': ' + errors[0] : ''));
   await browser.close();
 }

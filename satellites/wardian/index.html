@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="WARDIAN">
-<link rel="manifest" href="./manifest.webmanifest?v=20260906d">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260906d">
-<link rel="icon" href="./icon-192.png?v=20260906d">
+<link rel="manifest" href="./manifest.webmanifest?v=20260907a">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260907a">
+<link rel="icon" href="./icon-192.png?v=20260907a">
 <link rel="canonical" href="https://lucidwinds.com/satellites/wardian/">
 <style>
 /*  WARDIAN
@@ -127,7 +127,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--room);color:var(--crea
 #testPanel.on{display:block}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260906d" defer></script>
+<script src="/music-unlocks.js?v=20260907a" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">WARDIAN</h1>
@@ -2103,7 +2103,7 @@ function draw(state) {
 }
 
 /* ========================= 17. INPUT ========================= */
-var STAMP = '20260906d';
+var STAMP = '20260907a';
 var PREFERS_STILL = false;
 var G = null, RAF = 0, LAST = 0, SHIVER = 0, MISTED_AT = 0, MONTAGE = null, FRAMES = 0;
 /* ⛔ ONE clock on the page. The HUD read Date.now() while the jar's light came
@@ -3071,7 +3071,55 @@ function runPanel() {
 
 /* the hook the browser gates drive. It never changes what the game does, it
    only lets a test move the clock and put a bug where it can be tapped. */
+/* ⛔ NOTHING ESCAPES THE JAR, MEASURED. It is this game's own law, written into
+   `draw` beside the clip: "everything inside the jar is CLIPPED to the jar ...
+   which is a thing a sealed jar cannot do". Every layer that draws life clips
+   itself, and the assertion is that the clip is not a promise: it counts the
+   pixels outside the jar's own outline that are brighter than the room behind
+   it. The band it looks in is a ring just outside the glass, because that is
+   where a leak would land. */
+function outsideInk() {
+  var pad = Math.round(26 * V.k);
+  var x0 = Math.max(0, Math.round(wx(-RIM)) - pad), y0 = Math.max(0, Math.round(wy(-RIM)) - pad);
+  var x1 = Math.min(V.W, Math.round(wx(-RIM) + (JAR_W + RIM * 2) * V.k) + pad);
+  var y1 = Math.min(V.H, Math.round(wy(-RIM) + (JAR_H + RIM * 2) * V.k) + pad);
+  var jx0 = wx(-RIM), jy0 = wy(-RIM);
+  var jx1 = jx0 + (JAR_W + RIM * 2) * V.k, jy1 = jy0 + (JAR_H + RIM * 2) * V.k;
+  var d = V.ctx.getImageData(Math.round(x0 * V.dpr), Math.round(y0 * V.dpr),
+    Math.round((x1 - x0) * V.dpr), Math.round((y1 - y0) * V.dpr)).data;
+  var wpx = Math.round((x1 - x0) * V.dpr), hpx = Math.round((y1 - y0) * V.dpr);
+  var px, py, i, out = 0, tot = 0, worst = 0;
+  for (py = 0; py < hpx; py++) {
+    for (px = 0; px < wpx; px++) {
+      var cx = x0 + px / V.dpr, cy = y0 + py / V.dpr;
+      /* two pixels of slack for the glass's own antialiased edge */
+      if (cx > jx0 - 2 && cx < jx1 + 2 && cy > jy0 - 2 && cy < jy1 + 2) continue;
+      tot++;
+      i = (py * wpx + px) * 4;
+      var v = (d[i] + d[i + 1] + d[i + 2]) / 3;
+      if (v > worst) worst = v;
+      if (v > 96) out++;
+    }
+  }
+  return { out: out, tot: tot, worst: worst };
+}
 window.WARDIAN_TEST = {
+  outsideInk: outsideInk,
+  /* the cooldown is measured against nowMs(), which a few hundred milliseconds
+     after a page loads is a small number, so zeroing MISTED_AT does not clear
+     it and doMist quietly returns false. */
+  /* ⛔ NOT `mist`. This object ALREADY had a `mist` key, below, and in an object
+     literal the later one silently wins: my hook was never called, `T.mist()`
+     ran the old one which only raises humidity, no particle was ever made, and
+     the assertion that needed one reported nought motes three times while
+     looking like the game was at fault. A duplicate key in an object literal is
+     a silent override and nothing in this file would have told me.
+     ⛔ and MISTED_AT is set to a large NEGATIVE number, not to zero: the
+     cooldown is measured against nowMs(), which a few hundred milliseconds
+     after a page loads is a small number, so zeroing it does not clear it and
+     doMist quietly returns false. */
+  mistPuff: function () { MISTED_AT = -1e9; return { ok: doMist(), n: PARTS.length }; },
+  particles: function () { return PARTS.length; },
   state: function () { return G; },
   /* the ear gate's render: the loudest minute, offline, through the real SFX */
   renderAudio: function (seconds) { return SFX.renderLoudMinute(seconds); },
