@@ -81,6 +81,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
   z-index:14;width:88%;max-width:360px;background:var(--sheet);border:2px solid var(--ink);
   border-radius:16px;box-shadow:0 4px 0 var(--ink);padding:14px;display:none;flex-direction:column;gap:8px}
 #resultCard.on{display:flex}
+#resultCard .row .btn{white-space:nowrap;font-size:.84rem;letter-spacing:.03em;padding:10px 8px}
 #resultName{font-size:1.15rem;font-weight:700;text-align:center}
 #resultLine{font-size:.82rem;color:var(--pencil);text-align:center;line-height:1.6}
 .dial{width:100%;display:flex;align-items:center;gap:10px;min-height:48px}
@@ -243,9 +244,12 @@ function seedFromString(str) {
   return h >>> 0;
 }
 function mixSeed(seed, salt) { return (Math.imul(seed ^ salt, 2654435761) >>> 0); }
+/* ⛔ the day number by ARITHMETIC, not by asking a Date. The SIM is pure and a
+   grep for a clock in it cannot tell a Date that was handed a number from one
+   that read the wall. */
 function dailySeedFor(id, ms) {
-  var d = new Date(ms === undefined ? 0 : ms);
-  return seedFromString(id + ':' + d.getUTCFullYear() + '-' + d.getUTCMonth() + '-' + d.getUTCDate());
+  var day = Math.floor((ms === undefined ? 0 : ms) / 86400000);
+  return seedFromString(id + ':' + day);
 }
 function clamp(x, lo, hi) { return x < lo ? lo : (x > hi ? hi : x); }
 var DEG = Math.PI / 180;
@@ -819,7 +823,7 @@ function suiteCopy(T) {
 function suitePurity(T, src) {
   var code = src.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^[ \t]*\/\/.*$/gm, ' ');
   T.assert('the comment stripper left the code behind', code.length > 8000);
-  T.assert('and it took the prose with it', code.indexOf('ONE SOURCE OF TRUTH') < 0);
+  T.assert('and it took the prose with it', code.indexOf('the play' + 'ground meaning holds') < 0);
   T.assert('the SIM never rolls an unseeded die', code.indexOf('Math.random') < 0);
   T.assert('and never touches the document or the window',
     code.indexOf('document.') < 0 && code.indexOf('window.') < 0);
@@ -832,3 +836,466 @@ function suitePurity(T, src) {
     derives.length >= 1 && code.indexOf('function derive(') >= 0);
 }
 // ---- TEST_EXPORT_END ----
+
+/* ========================= 16. VIEW ========================= */
+/* Canvas 2D, DPR aware. The world is metres; the camera leads the plane and the
+   trail is a pencil dotted line. Paper white, pencil grey, one blue crease. */
+var V = { cv: null, ctx: null, W: 0, H: 0, dpr: 1, ppm: 40, camX: 0, camY: 0, t: 0 };
+var REDUCED = false;
+
+function px(x) { return (x - V.camX) * V.ppm + V.W * 0.28; }
+function py(y) { return V.H * 0.78 - (y - V.camY) * V.ppm; }
+function unpx(sx2) { return (sx2 - V.W * 0.28) / V.ppm + V.camX; }
+function unpy(sy2) { return (V.H * 0.78 - sy2) / V.ppm + V.camY; }
+
+function fitCanvas() {
+  var cv = V.cv, r = cv.getBoundingClientRect();
+  V.W = Math.max(1, Math.round(r.width));
+  V.H = Math.max(1, Math.round(r.height));
+  V.dpr = Math.min(2.5, window.devicePixelRatio || 1);
+  cv.width = Math.round(V.W * V.dpr);
+  cv.height = Math.round(V.H * V.dpr);
+  /* ⛔ canvas.width CLEARS the context, so the transform is set after it */
+  V.ctx.setTransform(V.dpr, 0, 0, V.dpr, 0, 0);
+  /* the gym is about 22 metres long; show 14 of them across the short side */
+  /* the gym is about twenty metres long. Show enough of it that a plane can be
+     seen to rise and fall, which means the vertical scale decides. */
+  V.ppm = Math.max(14, Math.min(V.W / 12, V.H / 4.6));
+}
+
+/* ---- the room ---- */
+function drawGym(ctx) {
+  ctx.fillStyle = '#EFE9DC';
+  ctx.fillRect(0, 0, V.W, V.H);
+  /* the far wall and its line of high windows */
+  var horizon = py(4.2);
+  var g = ctx.createLinearGradient(0, 0, 0, horizon);
+  g.addColorStop(0, '#DCD3C0');
+  g.addColorStop(1, '#EFE9DC');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, V.W, Math.max(0, horizon));
+  var i, x0 = Math.floor(V.camX / 4) * 4 - 8;
+  ctx.strokeStyle = 'rgba(110,106,96,.30)';
+  ctx.lineWidth = 2;
+  for (i = 0; i < 14; i++) {
+    var wx2 = x0 + i * 4;
+    ctx.strokeRect(px(wx2), py(4.0), Math.max(6, V.ppm * 1.6), Math.max(6, V.ppm * 0.9));
+  }
+  /* the floor, with its lines every metre and a fat one every five */
+  var fy = py(0);
+  ctx.fillStyle = '#E2DACA';
+  ctx.fillRect(0, fy, V.W, V.H - fy);
+  ctx.strokeStyle = 'rgba(51,48,42,.5)';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(0, fy); ctx.lineTo(V.W, fy); ctx.stroke();
+  var m0 = Math.floor(V.camX) - 4;
+  for (i = 0; i < 40; i++) {
+    var mx = m0 + i;
+    if (mx < 0) continue;
+    var sx2 = px(mx);
+    if (sx2 < -20 || sx2 > V.W + 20) continue;
+    var five = mx % 5 === 0;
+    ctx.strokeStyle = five ? 'rgba(51,48,42,.45)' : 'rgba(110,106,96,.22)';
+    ctx.lineWidth = five ? 2 : 1;
+    ctx.beginPath();
+    ctx.moveTo(sx2, fy);
+    ctx.lineTo(sx2, fy + (five ? 22 : 10));
+    ctx.stroke();
+    if (five && mx > 0) {
+      ctx.fillStyle = 'rgba(110,106,96,.75)';
+      ctx.font = '600 11px ui-rounded, system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(mx + ' m', sx2, fy + 36);
+    }
+  }
+  ctx.textAlign = 'left';
+}
+/* ---- the plane ---- */
+function drawPlane(ctx, x, y, theta, veer, spec) {
+  var s = V.ppm * 0.42;
+  var lean = clamp(veer || 0, -1, 1);
+  ctx.save();
+  ctx.translate(px(x), py(y));
+  ctx.rotate(-theta);
+  /* a paper dart in profile: a long triangle with a folded keel under it, and
+     it foreshortens as it banks away from you */
+  ctx.scale(1, 1 - 0.35 * Math.abs(lean));
+  ctx.beginPath();
+  ctx.moveTo(s * 1.5, 0);
+  ctx.lineTo(-s * 1.1, -s * 0.52);
+  ctx.lineTo(-s * 0.75, 0);
+  ctx.lineTo(-s * 1.1, s * 0.30);
+  ctx.closePath();
+  ctx.fillStyle = '#FBF8F1';
+  ctx.fill();
+  ctx.strokeStyle = '#33302A';
+  ctx.lineWidth = Math.max(1.2, s * 0.10);
+  ctx.stroke();
+  /* the crease down the spine, and the elevator bend at the back */
+  ctx.strokeStyle = '#3C6E9F';
+  ctx.lineWidth = Math.max(0.8, s * 0.06);
+  ctx.beginPath();
+  ctx.moveTo(s * 1.35, 0);
+  ctx.lineTo(-s * 0.8, 0);
+  ctx.stroke();
+  if (spec && spec.elev) {
+    ctx.beginPath();
+    ctx.moveTo(-s * 0.95, 0);
+    ctx.lineTo(-s * 1.25, -clamp(spec.elev, -12, 12) * s * 0.035);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+/* the trail, drawn as a pencil dotted line */
+function drawTrail(ctx, trail, alpha, dash) {
+  if (!trail || trail.length < 2) return;
+  var i;
+  ctx.save();
+  /* a pencil line, dark enough to be the record of the flight */
+  ctx.strokeStyle = 'rgba(51,48,42,' + alpha + ')';
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  if (dash) ctx.setLineDash([2, 6]);
+  ctx.beginPath();
+  ctx.moveTo(px(trail[0].x), py(trail[0].y));
+  for (i = 1; i < trail.length; i++) ctx.lineTo(px(trail[i].x), py(trail[i].y));
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+/* the slingshot, while a finger is down */
+function drawSling(ctx, from, to, power, angle) {
+  ctx.save();
+  ctx.strokeStyle = '#3C6E9F';
+  ctx.lineWidth = 3;
+  ctx.setLineDash([6, 4]);
+  ctx.beginPath();
+  ctx.moveTo(from.x, from.y);
+  ctx.lineTo(to.x, to.y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  /* the arrow the plane will actually go along */
+  var a = angle * DEG;
+  var len = 30 + power * 70;
+  var tx = from.x + Math.cos(a) * len, ty = from.y - Math.sin(a) * len;
+  ctx.strokeStyle = '#33302A';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(from.x, from.y);
+  ctx.lineTo(tx, ty);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(tx, ty);
+  ctx.lineTo(tx - Math.cos(a - 0.4) * 12, ty + Math.sin(a - 0.4) * 12);
+  ctx.moveTo(tx, ty);
+  ctx.lineTo(tx - Math.cos(a + 0.4) * 12, ty + Math.sin(a + 0.4) * 12);
+  ctx.stroke();
+  /* the power meter */
+  ctx.fillStyle = 'rgba(51,48,42,.16)';
+  ctx.fillRect(from.x - 44, from.y + 30, 88, 10);
+  ctx.fillStyle = '#3C6E9F';
+  ctx.fillRect(from.x - 44, from.y + 30, 88 * clamp(power, 0, 1), 10);
+  ctx.strokeStyle = '#33302A';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(from.x - 44, from.y + 30, 88, 10);
+  ctx.fillStyle = '#33302A';
+  ctx.font = '600 12px ui-rounded, system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(Math.round(angle) + ' degrees', from.x, from.y + 60);
+  ctx.textAlign = 'left';
+  ctx.restore();
+}
+
+/* ========================= 17. THE FIELD ========================= */
+var STAMP = '20260906a';
+var G = {
+  screen: 'title', spec: null, res: null, live: null, liveT: 0, flying: false,
+  trail: [], ghost: null, best: null, lastClass: null, throws: 0
+};
+var RAF = 0, LAST = 0, FRAMES = 0, PULL = null;
+
+function el(id) { return document.getElementById(id); }
+function toast(msg) {
+  var t = el('toast');
+  t.textContent = msg; t.classList.add('on');
+  clearTimeout(toast._h);
+  toast._h = setTimeout(function () { t.classList.remove('on'); }, 1900);
+}
+function haptic(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }
+
+function showScreen(name) {
+  var all = ['scrTitle', 'scrHow'], i;
+  for (i = 0; i < all.length; i++) el(all[i]).classList.toggle('on', 'scr' + name === all[i]);
+  G.screen = name.toLowerCase();
+  var field = (name === 'Field');
+  el('btnBack').hidden = !field;
+  el('btnMenu').hidden = !field;
+  el('hud').hidden = !field;
+  if (!field) { el('resultCard').classList.remove('on'); el('scrTrim').classList.remove('on'); }
+  fitCanvas();
+}
+function toField(spec) {
+  G.spec = spec || G.spec || newSpec();
+  G.res = null; G.live = null; G.flying = false; G.trail = [];
+  V.camX = 0; V.camY = 0;
+  showScreen('Field');
+  updateHud();
+}
+function updateHud() {
+  var D = derive(G.spec);
+  var name = G.flying ? 'In the air'
+    : (G.lastClass ? G.lastClass.name : 'Not flown yet');
+  var line = G.flying
+    ? (G.live ? G.live.x.toFixed(1) + ' m out, ' + G.live.y.toFixed(1) + ' m up' : '')
+    : (G.best ? 'best ' + G.best.distance.toFixed(1) + ' m' : 'pull back and let go');
+  el('hud').innerHTML = name + '<br>' + line
+    + '  &middot;  elev ' + (G.spec.elev > 0 ? '+' : '') + G.spec.elev
+    + '  &middot;  ' + (D.mass * 1000).toFixed(1) + ' g';
+}
+
+/* the throw: a pull back from the plane, released the other way */
+function pullPower(dx, dy) {
+  var len = Math.sqrt(dx * dx + dy * dy);
+  return clamp(len / 140, 0, 1);
+}
+function pullAngle(dx, dy) {
+  /* the plane goes OPPOSITE the drag, and the angle is clamped to what an arm
+     can do */
+  var a = Math.atan2(dy, -dx) / DEG;
+  return clamp(a, CONFIG.LAUNCH_ANGLE_MIN, CONFIG.LAUNCH_ANGLE_MAX);
+}
+function launch(angle, power) {
+  G.res = fly(G.spec, { angle: angle, power: power });
+  G.lastClass = classify(G.res);
+  G.live = { i: 0, t: 0 };
+  G.flying = true;
+  G.trail = [];
+  G.throws++;
+  el('resultCard').classList.remove('on');
+  haptic(12);
+  return G.res;
+}
+function endFlight() {
+  G.flying = false;
+  var r = G.res;
+  if (!G.best || r.distance > G.best.distance) {
+    G.best = { distance: r.distance, airtime: r.airtime, trail: G.trail.slice() };
+    G.ghost = G.best.trail;
+  }
+  var st = traceStats(r);
+  el('resultName').textContent = G.lastClass.name;
+  el('resultLine').innerHTML = G.lastClass.line + '<br>'
+    + r.distance.toFixed(1) + ' m in ' + r.airtime.toFixed(1) + ' s'
+    + (r.stalls ? ', ' + r.stalls + (r.stalls === 1 ? ' stall' : ' stalls') : '')
+    + ', glide ' + st.descent.toFixed(0) + ' degrees';
+  el('resultCard').classList.add('on');
+  updateHud();
+  haptic(18);
+}
+/* the flight plays at real speed off the trace the sim already produced */
+function stepFlight(dt) {
+  if (!G.flying || !G.res) return;
+  G.live.t += dt / 1000;
+  var tr = G.res.trace, i = G.live.i;
+  while (i < tr.length - 1 && tr[i + 1].t <= G.live.t) i++;
+  G.live.i = i;
+  var a = tr[i], b = tr[Math.min(tr.length - 1, i + 1)];
+  var span = Math.max(1e-6, b.t - a.t), u = clamp((G.live.t - a.t) / span, 0, 1);
+  G.live.x = a.x + (b.x - a.x) * u;
+  G.live.y = a.y + (b.y - a.y) * u;
+  G.live.theta = a.theta + (b.theta - a.theta) * u;
+  G.live.veer = a.veer + (b.veer - a.veer) * u;
+  if (!G.trail.length || Math.abs(G.live.x - G.trail[G.trail.length - 1].x) > 0.12) {
+    G.trail.push({ x: G.live.x, y: G.live.y });
+  }
+  /* ⛔ the camera scrolls SIDEWAYS and holds its height. Tracking the plane's
+     y as well glues it to one spot in the frame and takes the floor out of
+     shot, and then the swoop the whole game is about is invisible: six panels
+     of a plane in the middle of a beige rectangle. It only rises to follow a
+     plane that is about to leave the top. */
+  var lead = clamp((b.x - a.x) / span * 0.35, 0, 3);
+  V.camX += ((G.live.x + lead) - V.camX) * Math.min(1, dt * 0.006);
+  var ceiling = V.camY + (V.H * 0.62) / V.ppm;
+  var want = V.camY;
+  if (G.live.y > ceiling - 0.6) want = G.live.y - (V.H * 0.62) / V.ppm + 0.6;
+  else if (G.live.y < V.camY - 0.4) want = G.live.y + 0.4;
+  V.camY += (want - V.camY) * Math.min(1, dt * 0.004);
+  /* ⛔ never above zero unless the plane forces it: the floor is the only
+     height reference in the room, and a camera that lifts off it takes the
+     swoop with it */
+  if (V.camY < 0) V.camY = 0;
+  updateHud();
+  if (G.live.t >= tr[tr.length - 1].t) endFlight();
+}
+
+function frame(ts) {
+  RAF = 0;
+  if (document.hidden) return;
+  var dt = LAST ? Math.min(120, ts - LAST) : 16;
+  LAST = ts; V.t = ts; FRAMES++;
+  if (G.flying) stepFlight(dt);
+  var ctx = V.ctx;
+  if (G.screen === 'field') {
+    drawGym(ctx);
+    if (G.ghost && G.ghost !== G.trail) drawTrail(ctx, G.ghost, 0.28, true);
+    drawTrail(ctx, G.trail, 0.75, true);
+    if (G.flying && G.live) drawPlane(ctx, G.live.x, G.live.y, G.live.theta, G.live.veer, G.spec);
+    else if (!G.res) drawPlane(ctx, 0, 1.6, 5 * DEG, 0, G.spec);
+    else if (G.res) {
+      var last = G.res.trace[G.res.trace.length - 1];
+      drawPlane(ctx, last.x, last.y, last.theta, last.veer, G.spec);
+    }
+    if (PULL) {
+      drawSling(ctx, PULL.from, PULL.to, pullPower(PULL.dx, PULL.dy), pullAngle(PULL.dx, PULL.dy));
+    }
+  } else {
+    drawGym(ctx);
+  }
+  RAF = requestAnimationFrame(frame);
+}
+function kick() { if (!RAF && !document.hidden) RAF = requestAnimationFrame(frame); }
+
+/* ========================= 18. INPUT ========================= */
+function bindInput() {
+  var cv = V.cv;
+  cv.addEventListener('pointerdown', function (e) {
+    if (G.screen !== 'field' || G.flying) return;
+    if (el('scrTrim').classList.contains('on')) return;
+    var home = { x: px(0), y: py(1.6) };
+    PULL = { from: home, to: { x: e.clientX, y: e.clientY }, dx: e.clientX - home.x,
+      dy: e.clientY - home.y, id: e.pointerId };
+    el('resultCard').classList.remove('on');
+  });
+  cv.addEventListener('pointermove', function (e) {
+    if (!PULL || PULL.id !== e.pointerId) return;
+    PULL.to = { x: e.clientX, y: e.clientY };
+    PULL.dx = e.clientX - PULL.from.x;
+    PULL.dy = e.clientY - PULL.from.y;
+  });
+  function up(e) {
+    if (!PULL || PULL.id !== e.pointerId) return;
+    var power = pullPower(PULL.dx, PULL.dy), angle = pullAngle(PULL.dx, PULL.dy);
+    PULL = null;
+    if (power < 0.08) return;
+    V.camX = 0; V.camY = 0;
+    G.lastAngle = angle; G.lastPower = power;
+    launch(angle, power);
+  }
+  cv.addEventListener('pointerup', up);
+  cv.addEventListener('pointercancel', function () { PULL = null; });
+
+  el('btnFly').addEventListener('click', function () { toField(newSpec(START_SPEC)); });
+  el('btnWorkshop').addEventListener('click', function () { toast('The workshop comes in the next pass.'); });
+  el('btnTunnel').addEventListener('click', function () { toast('The wind tunnel comes in the next pass.'); });
+  el('btnHow').addEventListener('click', function () { showScreen('How'); });
+  el('btnHowBack').addEventListener('click', function () { showScreen('Title'); });
+  el('btnBack').addEventListener('click', function () { showScreen('Title'); });
+  el('btnMenu').addEventListener('click', function () { el('scrMenu').classList.add('on'); });
+  el('btnMenuClose').addEventListener('click', function () { el('scrMenu').classList.remove('on'); });
+  el('btnResultDone').addEventListener('click', function () { el('resultCard').classList.remove('on'); });
+  el('btnAgain').addEventListener('click', function () {
+    el('resultCard').classList.remove('on');
+    V.camX = 0; V.camY = 0;
+    launch(G.lastAngle === undefined ? DEFAULT_ANGLE : G.lastAngle, G.lastPower === undefined ? DEFAULT_POWER : G.lastPower);
+  });
+  el('btnTrim').addEventListener('click', function () {
+    el('resultCard').classList.remove('on');
+    el('dialElev').value = G.spec.elev;
+    el('dialAil').value = G.spec.ail;
+    el('valElev').textContent = G.spec.elev;
+    el('valAil').textContent = G.spec.ail;
+    syncClipButtons();
+    el('scrTrim').classList.add('on');
+  });
+  el('btnTrimDone').addEventListener('click', function () {
+    el('scrTrim').classList.remove('on');
+    V.camX = 0; V.camY = 0;
+    updateHud();
+    launch(G.lastAngle === undefined ? DEFAULT_ANGLE : G.lastAngle, G.lastPower === undefined ? DEFAULT_POWER : G.lastPower);
+  });
+  el('dialElev').addEventListener('input', function () {
+    G.spec.elev = parseInt(this.value, 10);
+    el('valElev').textContent = (G.spec.elev > 0 ? '+' : '') + G.spec.elev;
+    updateHud();
+  });
+  el('dialAil').addEventListener('input', function () {
+    G.spec.ail = parseInt(this.value, 10);
+    el('valAil').textContent = (G.spec.ail > 0 ? '+' : '') + G.spec.ail;
+    updateHud();
+  });
+  var clips = [['clipNone', 'none'], ['clipNose', 'nose'], ['clipMid', 'mid']], ci;
+  for (ci = 0; ci < clips.length; ci++) {
+    (function (id, val) {
+      el(id).addEventListener('click', function () { G.spec.clip = val; syncClipButtons(); updateHud(); });
+    })(clips[ci][0], clips[ci][1]);
+  }
+}
+function syncClipButtons() {
+  el('clipNone').classList.toggle('on', G.spec.clip === 'none');
+  el('clipNose').classList.toggle('on', G.spec.clip === 'nose');
+  el('clipMid').classList.toggle('on', G.spec.clip === 'mid');
+}
+
+/* the plane the gym starts you with is the one the design is about: a badly
+   trimmed one that porpoises, so the first thing you ever do is fix it */
+var START_SPEC = { noseFolds: 1, nose: 'blunt', wing: 0.6, elev: 6, precision: 0.8 };
+/* the throw a repeat uses when the player has not made one of their own. Eight
+   degrees at half power is a normal overarm toss, and at that throw the starting
+   plane porpoises and two bends of the elevator turn it into a keeper, which is
+   the loop the whole game is built on. A steeper throw re excites it, which is
+   true and is what the result card's line is for. */
+var DEFAULT_ANGLE = 8, DEFAULT_POWER = 0.5;
+
+function boot() {
+  V.cv = el('stage');
+  V.ctx = V.cv.getContext('2d');
+  REDUCED = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  G.spec = newSpec(START_SPEC);
+  fitCanvas();
+  bindInput();
+  showScreen('Title');
+  window.addEventListener('resize', fitCanvas);
+  window.addEventListener('orientationchange', function () { setTimeout(fitCanvas, 120); });
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) { if (RAF) cancelAnimationFrame(RAF); RAF = 0; LAST = 0; }
+    else kick();
+  });
+  kick();
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('./sw.js?v=' + STAMP).catch(function () {});
+    });
+  }
+  try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {}
+  window.addEventListener('load', function () { try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {} });
+}
+
+window.AIRWORTHY_TEST = {
+  state: function () { return G; },
+  view: function () { return V; },
+  frames: function () { return FRAMES; },
+  toField: function (over) { toField(newSpec(over || START_SPEC)); },
+  spec: function () { return G.spec; },
+  launch: function (a, p) { G.lastAngle = a; G.lastPower = p; return launch(a, p); },
+  advance: function (secs) { stepFlight(secs * 1000); return G.live; },
+  finish: function () {
+    var guard = 0;
+    while (G.flying && guard < 4000) { stepFlight(50); guard++; }
+    return G.res;
+  },
+  result: function () { return G.res ? { distance: G.res.distance, airtime: G.res.airtime,
+    stalls: G.res.stalls, klass: G.lastClass ? G.lastClass.id : null } : null; },
+  klass: function () { return G.lastClass ? G.lastClass.id : null; },
+  pullAngle: pullAngle,
+  pullPower: pullPower,
+  home: function () { return { x: px(0), y: py(1.6) }; },
+  toScreen: function (x, y) { return { x: px(x), y: py(y) }; },
+  screen: function () { return G.screen; },
+  setTrim: function (e2, a2) { G.spec.elev = e2; if (a2 !== undefined) G.spec.ail = a2; updateHud(); }
+};
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+else boot();
+</script>
+</body>
+</html>

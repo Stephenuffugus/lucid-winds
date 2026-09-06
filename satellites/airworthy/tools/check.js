@@ -28,9 +28,13 @@ const ROOT = join(__dirname, '..');
 const FAST = process.argv.includes('--fast');
 
 const GATES = [
-  { name: 'sim', cmd: ['sim.js', '--test'], need: 'AIRWORTHY TEST OK' }
+  { name: 'sim', cmd: ['sim.js', '--test'], need: 'AIRWORTHY TEST OK' },
+  { name: 'lint', cmd: ['tools/lint.mjs'], need: 'LINT OK' }
 ];
-const BROWSER_GATES = [];
+const BROWSER_GATES = [
+  { name: 'throw', cmd: ['test/throw.mjs'], need: 'THROW OK' },
+  { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK', slow: true }
+];
 
 const results = [];
 try {
