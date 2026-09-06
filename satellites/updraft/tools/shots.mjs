@@ -59,12 +59,14 @@ if (want('p1-dive')) {
   await page.setViewport({ width: 375, height: 667, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
   await toField(page);
   await page.evaluate(() => window.UPDRAFT_DEV.place({ L: 20, el: 1.0, az: 0, launched: true }));
+  await page.evaluate(() => window.UPDRAFT_DEV.timeScale(0.2));
   await waitFrames(page, 2);
   const home = { x: 187, y: 470 };
   const panels = [];
   let next = 0.9;
   await flyScript(page, home, [{ t: 0, hold: true, lean: 0.8 }, { t: 1.4, hold: true, lean: 0 }, { t: 1.9, hold: true, lean: 1 }, { t: 3.1, hold: true, lean: 0 }, { t: 4.5, hold: false, lean: 0 }], 4.6,
-    async (t) => { if (t >= next && panels.length < 6) { panels.push(await page.screenshot({ type: 'png' })); next += 0.4; } });
+    async (t) => { if (t >= next && panels.length < 6) { panels.push(await page.screenshot({ type: 'png' })); next += 0.4; if (t >= next) next = t + 0.4; } });
+  /* a slow frame can cross two thresholds at once; the next panel is then 0.4 s from NOW so the strip is always six */
   const st = await page.evaluate(() => window.UPDRAFT_DEV.state());
   console.log('  dive strip: ' + panels.length + ' panels, stamps ' + JSON.stringify(st.stamps) + ', min alt seen in sim ' + st.alt.toFixed(1));
   save('p1-dive', await strip(browser, panels, 0.5));
