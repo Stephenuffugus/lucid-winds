@@ -164,78 +164,39 @@ strongest differentiator against every other $2.99 casual game on Steam.
 
 ---
 
-## 1.3 About This Game (Steam BBCode, paste as is)
+## 1.3 About This Game — ⛔ PLAIN TEXT ONLY (rewritten 2026-09-06)
+
+⛔⛔ **The BBCode version that used to live here went LIVE as raw `[h2]`/`[b]`/`[list]`
+tags printed on the store page** (confirmed by fetching store.steampowered.com/app/5043360
+on 2026-09-06). Steam did not render it, the page looked broken, and people said so when
+Stephen shared the wishlist link. Never paste tagged copy into the About field again.
+Plain text with blank lines between paragraphs renders correctly no matter how it is
+pasted. The AI disclosure box is rendered by Valve automatically from the separate form,
+so the About body does not repeat it.
+
+**Paste this exactly, no tags, keep the blank lines:**
 
 ```
-[h2]Jimothy is a very round raccoon with a very long way to go.[/h2]
-Seattle is wet, the traffic does not care, and the greatest dumpster feast in town is a hundred levels away. Hop him across the streets, ride a dumpster lid down the canal, grab every bottlecap you can reach, and get him there.
+Jimothy is a raccoon. He is round, he is hungry, and the best dumpster in Seattle is a hundred levels away.
 
-Every clean hop forward grows your [b]Feast Trail[/b]. Reach a safe curb and it banks for a big score. One bad hop and the trail is gone. That is the whole game, and it is the reason a two minute run keeps mattering.
+Hop him across traffic, ride a dumpster lid down the canal, and grab every bottlecap on the way. Every clean hop forward builds your Feast Trail. Make it to a safe curb and it banks for a big score. One bad hop and the whole trail is gone. That is the game, and it is why a two minute run still stings.
 
-[hr][/hr]
-[h2]Five ways to play[/h2]
-[list]
-[*][b]Adventure.[/b] 100 levels across ten Seattle chapters, from Pike Place to Downtown at Dusk. Three stars on every level: finish it, hit its feast goal, clear out its bottlecaps.
-[*][b]Daily.[/b] One course a day, the same road for every player in the world, and your first run of the day is the one that counts. No continues, no second attempt, no way to farm it. Play it again as much as you like for practice.
-[*][b]Endless.[/b] No finish line. The deep end keeps deepening.
-[*][b]Rush.[/b] Sixty seconds. Nothing chases you. The clock is the pressure.
-[*][b]Zen.[/b] No street sweeper, no ramp, no rush. It never speeds up. Some evenings that is the point.
-[/list]
+WHAT YOU GET
 
-[hr][/hr]
-[h2]A hundred levels that stay put[/h2]
-Every Adventure level is a fixed course. Level 47 is the same road on your first attempt and your fortieth, so a level you keep failing is a level you can learn, not a slot machine you keep pulling.
+100 levels across ten Seattle chapters. Every level is a fixed course, so the one you keep dying on is one you can actually learn.
 
-[list]
-[*][b]Every fifth level is a twist:[/b] Rush Hour, Steam Night, Gull Swarm.
-[*][b]Every tenth level is a proper set piece:[/b] Storm Watch, Ferry Crossing, Rail Yard, Blackout.
-[*][b]Every twenty fifth level lends you somebody else's whiskers.[/b] You play it as a critter you do not own yet. You give it back at the end.
-[*][b]Level 100 is the feast.[/b] The road does not stop there. The last three chapters keep cycling and the difficulty keeps creeping, so there is always a further out you have not seen.
-[/list]
+A Daily course. Same road for every player in the world, and only your first run of the day counts.
 
-[hr][/hr]
-[h2]Forty five to play as[/h2]
-[list]
-[*][b]Twelve Seattle critters[/b] out of the Prize Bin, bought with bottlecaps you found in the road. The bin never hands you the same one twice.
-[*][b]Fourteen costumes[/b], included from the start in this version, because you already bought the game.
-[*][b]Ten you cannot buy at any price[/b], handed to you as you clear the campaign, one every ten levels from ten to a hundred.
-[*][b]Seven found out on the street[/b]. Nobody will tell you how. One of them takes all eight hidden Seattle landmarks.
-[*][b]One that only a code opens.[/b] Unlock codes go out in posts and videos and to the people who helped make this. They work offline in this version too.
-[*][b]And Jimothy[/b], who you start with.
-[/list]
+Endless, Rush and Zen for when you want no finish line, sixty seconds on the clock, or nothing chasing you at all.
 
-[hr][/hr]
-[h2]The rest of it[/h2]
-[list]
-[*][b]Nine power ups[/b] on the safe rows: Coffee, Double Shot, Umbrella, Snacks, Walk Signal, Hi Vis Vest, Rain Boots, Street Lamp, Salmon Dinner.
-[*][b]Eight hidden Seattle landmarks[/b] to find, from Rachel the Pig to the Gum Wall.
-[*][b]Twenty six badges[/b], five of which can only be earned in the season they belong to.
-[*][b]Weather that turns mid run.[/b] Rain, fog, and the gull that has been waiting for the fog.
-[*][b]Seven original songs[/b], earned as you play.
-[/list]
+45 critters and costumes to unlock and eight hidden Seattle landmarks to find.
 
-[hr][/hr]
-[h2]What this version is[/h2]
-[list]
-[*][b]Everything is included.[/b] No downloadable content, no in game purchases, no currency to buy. The costume pack that is sold elsewhere is simply yours here.
-[*][b]No account and no internet.[/b] It never connects to anything. Your bottlecaps, costumes and streaks live on your machine.
-[*][b]It runs in a portrait window[/b], because that is the shape it was built in and stretching it would ruin it.
-[*][b]About the art.[/b] The artwork was pre generated with AI tools, then cut, curated and animated by the developer. Nothing is generated while you play.
-[/list]
+No account. No internet. No in game purchases. Everything is in the box and it all lives on your machine.
+
+Out September 18. Wishlist it and Steam will let you know.
 ```
 
-**If you upload the two optional extra images** (see the asset manifest), insert
-these two lines where marked. If you do not upload them, leave them out; a broken
-`[img]` renders as raw text and looks terrible.
-
-```
-[img]{STEAM_APP_IMAGE}/extras/five-modes-616.png[/img]
-[img]{STEAM_APP_IMAGE}/extras/the-cast-616.png[/img]
-```
-- `five-modes-616.png` goes directly under the `[h2]Five ways to play[/h2]` line.
-- `the-cast-616.png` goes directly under the `[h2]Forty five to play as[/h2]` line.
-
-### What I changed from the old About copy, and why
+### (superseded) What I changed from the old About copy, and why
 
 | Old line | Problem | Fix |
 |---|---|---|
@@ -530,30 +491,7 @@ so it uses the same fields. What changes is **emphasis**: there is no gameplay a
 visitor can verify, no reviews, and exactly one action available, which is
 Wishlist. Copy that reads like a manual is wasted here.
 
-**During the Coming Soon window only**, replace the About This Game body with
-this shorter version. Swap the full version back in on release day.
-
-```
-[h2]Jimothy is a very round raccoon with a very long way to go.[/h2]
-Seattle is wet, the traffic does not care, and the greatest dumpster feast in town is a hundred levels away.
-
-Hop him across the streets. Ride a dumpster lid down the canal. Grab every bottlecap you can reach. Every clean hop forward grows your [b]Feast Trail[/b], reaching a safe curb banks it for a big score, and one bad hop takes the lot.
-
-[hr][/hr]
-[h2]In the box[/h2]
-[list]
-[*][b]100 levels[/b] across ten Seattle chapters, and every one of them is a fixed course. A level you keep failing is a level you can learn.
-[*][b]A Daily[/b] course, the same road for every player in the world, and your first run of the day is the one that counts.
-[*][b]Endless, Rush and Zen[/b] for when you have two minutes, sixty seconds, or nothing in particular to prove.
-[*][b]45 critters and costumes[/b] to unlock, and eight hidden Seattle landmarks to find.
-[*][b]No account, no internet, no in game purchases.[/b] Everything is included and it all lives on your machine.
-[/list]
-
-[hr][/hr]
-[b]Out September 2026. Wishlist it and Steam will tell you the day it lands.[/b]
-
-[i]The artwork in this game was pre generated with AI tools, then cut, curated and animated by the developer. Nothing is generated while you play.[/i]
-```
+⛔ The BBCode Coming Soon body that was here is what went live as raw tags. Use the plain text in 1.3 for both the Coming Soon window and release day.
 
 ### Coming Soon checklist
 - Short description: **unchanged**. It is the one field that appears in wishlist
