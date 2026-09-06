@@ -123,3 +123,11 @@ end turn the line through ninety degrees in opposite directions and the
 footprint becomes 7.7 by 18.7, which is 2.43 to one and inside the rule three
 entries above. It also reads as a railway rather than a diagram: a straight run
 with a station swung out at each end of it, in opposite corners of the rug.
+
+**Every open end gets a buffer stop drawn on it, not just the ends with a station.**
+To the sim every open end IS a buffer: a train that reaches one turns round and
+comes back, and there are two assertions on exactly that. Only station ends were
+ever drawn with a stop, so a dead end siding was a length of track that stopped
+in the middle of the rug for no reason a child could see, and Swap's whole trap
+looked like an unfinished piece. Six of the six puzzles had at least one bare
+end and The Crossing had four. The rug must not lie about the rails.

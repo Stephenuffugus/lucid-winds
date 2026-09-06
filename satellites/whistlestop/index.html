@@ -2414,6 +2414,7 @@ function paintTrackCache() {
     upto = eg;
   }
   drawTrack(c, G.st.g, upto);
+  drawBuffers(c, G.st.g);
   drawStations(c, G.st.g);
   TRACK.key = key;
 }
@@ -2432,6 +2433,31 @@ function stationPose(g, st) {
     + (nd.y - dsin(perp) * U - mcy) * (nd.y - dsin(perp) * U - mcy);
   if (out < inn) perp += DPI;
   return { nd: nd, perp: perp, x: nd.x + dcos(perp) * 0.92 * U, y: nd.y + dsin(perp) * 0.92 * U };
+}
+/* ⛔ every open end is a buffer to the SIM: a train that reaches one turns
+   round and comes back, and there are assertions on both of those. Only the
+   ends with a station on them were ever DRAWN with a buffer stop, so a dead
+   end siding, which is the whole trap in Swap, was a length of track that
+   stopped in the middle of the rug for no reason a child could see. The rug
+   must not lie about the rails. Station ends are skipped because drawStations
+   puts the same stop there, on top of its platform. */
+function drawBuffers(c, g) {
+  var ends = openEnds(g), i, k, skip = {};
+  for (k = 0; k < g.stations.length; k++) skip[g.stations[k].node] = 1;
+  c.strokeStyle = PAL.ink;
+  c.lineWidth = Math.max(1.5, ss(0.05 * U));
+  c.fillStyle = PAL.groove;
+  for (i = 0; i < ends.length; i++) {
+    var e = ends[i];
+    if (skip[e.id]) continue;
+    c.save();
+    c.translate(sx(e.x), sy(e.y));
+    c.rotate(e.h);
+    c.beginPath();
+    c.rect(-ss(0.07 * U), -ss(0.26 * U), ss(0.14 * U), ss(0.52 * U));
+    c.fill(); c.stroke();
+    c.restore();
+  }
 }
 function drawStations(c, g) {
   var i;
