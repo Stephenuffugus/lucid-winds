@@ -213,3 +213,43 @@ In order of value on his phone. Each game's plan SESSION STATE names the exact n
 - The one list for Stephen: `docs/DIRECTOR-CALLS-SEP06.md`.
 - Memory: `project_opus_takeover_sep06.md` and `project_twelve_review_sep06.md`, with index lines
   under HOT in `MEMORY.md`.
+
+---
+
+## 11. WHAT HAPPENED WHEN THE NOTES CAME (Fable, Sep 06, 17:00 to 18:00 UTC)
+
+Stephen dictated notes on three games: Gerplunk, Inkswing, Airworthy. They are transcribed as 45
+numbered lines in his words and sorted (FAULT / TASTE / KNOWN / NEW WORK) in the session's report;
+the durable record is in three places:
+
+- **Faults, fixed and live at stamp `20260906h`:** each game's `plans/<game>/HANDOFF-<GAME>.md`
+  SESSION STATE has a DONE entry with his words verbatim and what was found.
+  - Airworthy: the pull could not fill the meter on a 412 phone (plane at 28 percent, 140 px
+    pull); THROW AGAIN re fired the last throw; no coach at the plane. All three built; landscape
+    already worked.
+  - Inkswing: a throw after the first had finished died the same frame (the sheet clock was
+    capped at 90 s; now a per throw horizon); the bob could be parked off the paper; sand had two
+    tones, FINISH poured ink on sand, the brush left the pour running; HIDE RIG built; and, found
+    in the 412x915 shot, the ink rail sat under UNDO with four buttons up.
+  - Gerplunk: "fire alarms": the cricket's trill oscillator was wired INTO the envelope gain, so
+    a 0.022 chirp was a half scale 4 kHz tone chopped at 30 Hz. Rewired and tamed; the audio gate
+    now renders the bed and measures it. A second lesson teaches the turn. His ear:
+    `https://lucidwinds.com/satellites/gerplunk/docs/shots/p4-bed-and-throws.wav`.
+- **Taste and new work, not started:** `docs/DIRECTOR-CALLS-SEP06.md` section G, items 22 to 35,
+  each with a recommendation and a cost.
+- **Plans for Opus:** the PLANNED entries in the Gerplunk and Inkswing SESSION STATEs (Gerplunk
+  P4: the Pokémon Go throw reference and the spin ring; Inkswing P4: the nib and the colour wheel,
+  then the Twin). Airworthy has nothing planned until he answers call 34.
+
+**Four more gate scars from this hour, same family as section 9:**
+7. **A gate built from its constant.** Airworthy's throw gate wanted power 0.64 for a 90 px pull,
+   which is 90 over 140; it protected the number, not the law.
+8. **A gate that measures the empty screen.** Inkswing's layout gate measured the ink chips on a
+   sheet with no throws, where two of the four buttons are hidden, and said none was covered.
+9. **A gate whose author saw the bug.** Inkswing's fling gate said in its own comment that the
+   tray "fills up again behind the brush, which is correct behaviour" and stopped the pen first.
+10. **A gate that never listened.** Gerplunk's audio gate rendered ticks and never the bed, so
+    the loudest thing in the game was the one thing it could not hear.
+
+**Stamps now:** Airworthy, Inkswing, Gerplunk `20260906h`, each verified live by probe. The other
+nine are as in section 3. Next letter is `i`, then the next day's date.
