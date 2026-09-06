@@ -73,10 +73,15 @@ Each line: game, the item, size, the plan, and whether it waits on a Director ca
   animal alone, and every bone lifted off the second is discarded when a new site opens. The sim
   gate asserts the two animals are PLACED and no gate asks whether the second can be mounted.
   Half a day, and the gate to write first is the one that digs a two animal site and mounts both.
-- **C8. Strata, two stale doc files at the satellite root.** `satellites/strata/ART_ASSETS.md`
-  and `BUILD-NOTES.md` sit beside the true ones in `docs/` and are now wrong in four named
-  places. Two files of the same name saying different things is worse than one wrong file.
-  Delete them. Ten minutes.
+- **C8. DONE 2026-09-07.** The two stale Strata docs at the satellite root are deleted; the true
+  ones in `docs/` were rewritten against the file the same day. The root copy opened by claiming
+  the game "ships with zero image files", which is false: it ships four generated PNGs.
+  ⛔ **What it turned up, queued as C12:** the fleet does not agree where a game's docs live.
+  Seven of the twelve keep `ART_ASSETS.md` at the satellite root (Fathom, Asterism, Swell,
+  Wardian, Doohickey, Whistlestop, Updraft), three keep it in `docs/` (Airworthy, Windup,
+  Inkswing), Gerplunk has neither, and Strata had both, which is how two files of the same name
+  came to say different things. Half an hour to move the seven into `docs/` and fix the
+  references, and it should be done before anyone writes another one.
 - **C10. Asterism's poster PREVIEW draws its text at about five CSS pixels.** Found 2026-09-07
   by the new canvas font lint, which could read the sizes as computed expressions but not their
   values. `renderPoster` sets `g.font = Math.round(w * 0.0NN) + 'px ' + serif` at six places
