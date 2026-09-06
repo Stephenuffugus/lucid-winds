@@ -169,6 +169,28 @@ here. Nothing in this section is started.
     near it, but BUY is a store's word and the one a store reviewer looks for. My call: PLANT on a
     seed, TAKE on a thing, the spores line unchanged. Ten minutes.
 
+38. **Stream Hop says SKY WOLF STUDIOS in its shop copy, and Stream Hop is Jimothy (Opus,
+    2026-09-07).** The brand law is Sky Wolf Studio, singular, and the whole old fleet was
+    swept today, 206 occurrences across 136 files, every one verified. `satellites/stream-hop/`
+    was swept and then BACKED OUT byte for byte when its service worker cache turned out to be
+    named `jimothy-v81`: that game is Jimothy under another folder name and the do not touch
+    rule covers it. What is waiting there: `index.html` lines 832 and 879 read "SKY WOLF
+    STUDIOS account" in copy a player reads, plus two comments and two lines in the store
+    listing docs. My call: fix it, because it is a player facing brand error eight days from a
+    Steam release and it is one word in two places. It is your game, so it is your word. Ten
+    minutes when you say so.
+39. **A Steam probe that may never have passed (Opus, 2026-09-07).**
+    `scripts/steam_bootprobe.mjs:72` reads `arcade: visLike(/sky wolf studios arcade/i)`. Every
+    arcade exit button in the rest of the fleet has said "Sky Wolf Studio Arcade", singular, for
+    a long time. So either that probe has been quietly reporting false on every run, or
+    Jimothy's Steam build really does still say the plural on its title screen and nobody has
+    looked. It is a gate on a fenced game so I did not touch it. Five minutes to open it, and
+    it is worth doing before the Steam build goes out.
+40. **`.devcontainer/devcontainer.json` still says "Sky Wolf Studios" (Opus, 2026-09-07).** The
+    fix is right and editing that file can prompt a container rebuild on a live codespace, so
+    it was left. Nobody but us reads it. My call: change it the next time the box is restarted
+    anyway, not in the middle of a working day.
+
 ## Answered this afternoon without you (say so if wrong)
 
 Fathom occlusion built. Inkswing Double Link built. Strata plate built and hung on the hall

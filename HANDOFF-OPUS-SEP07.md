@@ -244,6 +244,17 @@ saw in Airworthy landscape (G35). 8. Wardian's BUY (G37). 9. The rest of section
   Three faults found by LOOKING (three creams that read as one field, a page narrower than the
   board it carried, a centred scrolling tray that clipped its own first row) and one by the
   gate (the drawer's front stopped clearing the music chip's corner at 375).
+- **A12 the plural brand across the old fleet.** 206 occurrences in 136 files, six commits,
+  pushed and live (the portal's apps page now returns zero plurals). Eleven of them were copy a
+  player actually reads: the portal page's title, og:title, badge, footer and JSON LD; the GAME
+  tab's studio category label inside Lucid Winds itself; Wireworm's share card; the Stripe
+  checkout line item; and four game titles and banners. Wireworm's shell version was bumped
+  because it caches its own index. ⛔ IT ALSO FOUND WHY THE PLURAL WAS EVERYWHERE: eight of the
+  briefs that a new game is built from were teaching it, including a copy verbatim embed banner,
+  so every satellite was born with it. Fixed at source. Three things went to the Director's list
+  rather than being done: Stream Hop is Jimothy under another folder name and says the plural in
+  shop copy (call 38), a Steam probe looks for the plural and may never have passed (39), and
+  the devcontainer name (40).
 
 ## 7. THE PROMPT TO PASTE INTO OPUS (Sep 07)
 
