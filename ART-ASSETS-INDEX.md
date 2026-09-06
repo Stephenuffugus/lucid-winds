@@ -20,8 +20,9 @@ copies are cut under new names.
 
 ## Everything else (parked until batch 1 is in)
 
-One `ART_ASSETS.md` per game, in the game's own folder. Natives keep theirs in `assets/games/<id>/`
-(drop the files there too); satellites in `satellites/<slug>/`; the eleven vendored satellites in
+One `ART_ASSETS.md` per game. Natives keep theirs in `assets/games/<id>/`
+(drop the files there too); satellites in `satellites/<slug>/docs/`, which is where eleven of the
+twelve new games keep theirs and is the convention as of 2026-09-07; the eleven vendored satellites in
 `docs/art-lists/<slug>/` because their folders are byte copies of their upstream repos. Order is the
 Sep 04 audit rank (the games that change the most first). "first ask" is the row that matters most.
 

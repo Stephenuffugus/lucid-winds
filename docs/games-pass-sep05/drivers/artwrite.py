@@ -66,8 +66,13 @@ for g in G:
     if g['slug']=='flock-the-world': g['folder']='docs/art-lists/flock-the-world/'
     if not rows: continue
     body=write(g, rows, note)
-    path=R+g['folder']+'ART_ASSETS.md'
-    os.makedirs(R+g['folder'], exist_ok=True)
+    # a satellite keeps its docs in docs/, which is where eleven of the twelve
+    # new games keep theirs and is the convention as of 2026-09-07. This script
+    # CREATES the file, so it was the one place that would have put the old
+    # convention back after the sweep.
+    sub = 'docs/' if g['folder'].startswith('satellites/') else ''
+    path=R+g['folder']+sub+'ART_ASSETS.md'
+    os.makedirs(R+g['folder']+sub, exist_ok=True)
     MARK='Written Sep 05 2026 from the fleet art audit'
     if os.path.exists(path) and MARK not in open(path).read():
         s=open(path).read()

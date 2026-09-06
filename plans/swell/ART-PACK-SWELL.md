@@ -2,7 +2,7 @@
 
 Four sheets, paste ready. **The app ships finished without any of them**: the aurora is generated
 from the engine's own state and stays generated. Only the three mood plates change what a player
-sees, and they sit behind the picker cards at 45 percent. `satellites/swell/ART_ASSETS.md` says
+sees, and they sit behind the picker cards at 45 percent. `satellites/swell/docs/ART_ASSETS.md` says
 exactly how a delivered plate gets wired in, which is: drop the file in `art/` and add its mood id to
 `art/plates.json`.
 

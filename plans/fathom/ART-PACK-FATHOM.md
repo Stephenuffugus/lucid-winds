@@ -1,7 +1,7 @@
 # Fathom art pack
 
 Three sheets, paste ready. **The game ships finished without any of them**: sonar line art on black
-IS the design, and `satellites/fathom/ART_ASSETS.md` lists the exact paths the code reads so a drop
+IS the design, and `satellites/fathom/docs/ART_ASSETS.md` lists the exact paths the code reads so a drop
 can be wired in ten minutes. Nothing waits on this.
 
 The `--ar` and `--style` flags below are Midjourney syntax, not player copy; the no dashes law
