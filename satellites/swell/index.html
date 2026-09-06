@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="SWELL">
-<link rel="manifest" href="./manifest.webmanifest?v=20260906c">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260906c">
-<link rel="icon" href="./icon-192.png?v=20260906c">
+<link rel="manifest" href="./manifest.webmanifest?v=20260906d">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260906d">
+<link rel="icon" href="./icon-192.png?v=20260906d">
 <link rel="canonical" href="https://lucidwinds.com/satellites/swell/">
 <style>
 /*  SWELL
@@ -91,8 +91,10 @@ html,body{margin:0;padding:0;height:100%;background:var(--ink);color:var(--cream
   flex:0 0 auto;background:rgba(24,21,33,.92);border:1px solid rgba(232,179,106,.24);
   border-radius:16px;margin:6px 0;padding:14px 18px;text-align:left;color:var(--cream);
   font-family:inherit;overflow:hidden}
-.moodcard.on{border-color:var(--amber)}
-.moodcard .nm{display:block;font-size:1rem;letter-spacing:.22em;color:var(--amber);text-transform:uppercase}
+.moodcard.on{border-color:var(--amber);box-shadow:0 0 0 1px var(--amber) inset,0 0 26px rgba(232,179,106,.22)}
+/* the one that is playing says so: a thin border alone did not read (the Sep 06 shot) */
+.moodcard.on::after{content:'PLAYING';position:absolute;right:14px;top:14px;z-index:2;font-size:.7rem;letter-spacing:.22em;color:var(--amber);opacity:.9}
+.moodcard .nm{display:block;font-size:1rem;font-weight:700;letter-spacing:.22em;color:var(--amber);text-transform:uppercase}
 .moodcard .sub{display:block;font-size:.75rem;color:var(--dim);margin-top:5px;letter-spacing:.03em}
 .moodcard .plate{position:absolute;inset:0;background-size:cover;background-position:center;
   opacity:.45;pointer-events:none}
@@ -110,7 +112,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--ink);color:var(--cream
 #testPanel.on{display:block}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260906c" defer></script>
+<script src="/music-unlocks.js?v=20260906d" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">SWELL</h1>
@@ -137,8 +139,9 @@ html,body{margin:0;padding:0;height:100%;background:var(--ink);color:var(--cream
     <div class="cap">Choose a mood</div>
     <div class="spacer" style="flex:0.6"></div>
     <div id="moodCards" style="width:100%;max-width:340px"></div>
-    <div class="spacer"></div>
+    <div class="spacer" style="flex:0.25"></div>
     <button class="btn small ghost" id="btnMoodsBack">BACK</button>
+    <div class="spacer" style="flex:0.35"></div>
   </div>
 
   <div class="screen" id="scrAmbient">
@@ -1219,7 +1222,7 @@ function suitePurity(T, src) {
 // ---- TEST_EXPORT_END ----
 
 /* ========================= 13. AURORA, INPUT, BOOT ========================= */
-var STAMP = '20260906c';
+var STAMP = '20260906d';
 var G = {
   screen: 'podium', save: null, mood: 'dawn', settings: { tilt: 0, motion: 1 },
   motion: 1, frames: 0, rafOn: false, lastTouch: 0, quiet: 0,

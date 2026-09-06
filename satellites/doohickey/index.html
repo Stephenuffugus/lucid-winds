@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="DOOHICKEY">
-<link rel="manifest" href="./manifest.webmanifest?v=20260906c">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260906c">
-<link rel="icon" href="./icon-192.png?v=20260906c">
+<link rel="manifest" href="./manifest.webmanifest?v=20260906d">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260906d">
+<link rel="icon" href="./icon-192.png?v=20260906d">
 <link rel="canonical" href="https://lucidwinds.com/satellites/doohickey/">
 <style>
 /*  DOOHICKEY
@@ -140,7 +140,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
 #testPanel.on{display:block}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260906c" defer></script>
+<script src="/music-unlocks.js?v=20260906d" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">DOOHICKEY</h1>
@@ -1366,7 +1366,68 @@ var LEVELS = [
       for (i = 0; i < 8; i++) out.push({ type: 'domino', x: 540 + i * 21, y: 402 });
       return out;
     })()
+  },
+  /* ---- the four that use the top of the board (Fable, 2026-09-06). The first six
+     all ran along the floor; the morning report called the empty top half the
+     thing to spend the next hour on. Each of these was laid out against
+     sim.js --solve and traced step by step, not placed by eye. The catapult that
+     was tried first is not here: a seesaw is ten marbles heavy and never launches
+     anything, which the trace showed in one run. ---- */
+  {
+    id: 6, name: 'Four Flights', par: 5,
+    scene: [GROUND].concat(WALLS),
+    fixed: [{ type: 'bell', x: 720, y: 402 }],
+    tray: { marble: 1, plank: 4 },
+    bonus: [{ x: 330, y: 180 }, { x: 610, y: 330 }],
+    goal: 'bell',
+    solution: [
+      { type: 'plank', x: 140, y: 90, rot: 18 * DEG },
+      { type: 'plank', x: 280, y: 170, rot: 16 * DEG },
+      { type: 'plank', x: 420, y: 250, rot: 16 * DEG },
+      { type: 'plank', x: 560, y: 330, rot: 14 * DEG },
+      { type: 'marble', x: 104, y: 50 }
+    ]
+  },
+  {
+    id: 7, name: 'Skyward', par: 3,
+    scene: [GROUND].concat(WALLS).concat([seg(0, 120, 320, 120)]),
+    fixed: [{ type: 'bell', x: 380, y: 60 }, { type: 'fan', x: 200, y: 330, rot: 0 }],
+    tray: { balloon: 1, plank: 2 },
+    bonus: [{ x: 320, y: 235 }],
+    goal: 'bell',
+    solution: [
+      { type: 'balloon', x: 260, y: 340 }
+    ]
+  },
+  {
+    id: 8, name: 'The Zigzag', par: 5,
+    scene: [GROUND].concat(WALLS),
+    fixed: [{ type: 'bell', x: 48, y: 402 }],
+    tray: { marble: 1, plank: 4 },
+    bonus: [{ x: 176, y: 110 }, { x: 176, y: 290 }],
+    goal: 'bell',
+    solution: [
+      { type: 'plank', x: 120, y: 80, rot: 18 * DEG },
+      { type: 'plank', x: 230, y: 170, rot: -18 * DEG },
+      { type: 'plank', x: 120, y: 260, rot: 18 * DEG },
+      { type: 'plank', x: 230, y: 350, rot: -18 * DEG },
+      { type: 'marble', x: 84, y: 40 }
+    ]
+  },
+  {
+    id: 9, name: 'The Slope', par: 10,
+    scene: [GROUND].concat(WALLS).concat([seg(0, 200, 320, 268)]),
+    fixed: [{ type: 'bell', x: 306, y: 246 }],
+    tray: { marble: 1, plank: 1, domino: 8 },
+    bonus: [{ x: 90, y: 200 }],
+    goal: 'bell',
+    solution: (function () {
+      var out = [{ type: 'marble', x: 24, y: 170 }], i;
+      for (i = 0; i < 8; i++) out.push({ type: 'domino', x: 120 + i * 21, y: 200 + (120 + i * 21) * 0.2125 - 22, rot: 12 * DEG });
+      return out;
+    })()
   }
+
 ];
 
 /* ========================= 9. SIM ========================= */
@@ -1867,7 +1928,7 @@ function suiteSerialisation(T) {
 
 function suiteLevels(T) {
   var i, k;
-  T.eq('there are six levels', LEVELS.length, 6);
+  T.eq('there are ten levels', LEVELS.length, 10);
   for (i = 0; i < LEVELS.length; i++) {
     var lv = LEVELS[i], m = machineFromSolution(lv);
     var res = runMachine(lv, m);
@@ -2404,7 +2465,7 @@ function drawScene(ctx, world, level, touched) {
 }
 
 /* ========================= 17. THE GAME ========================= */
-var STAMP = '20260906c';
+var STAMP = '20260906d';
 var G = {
   screen: 'title', levelId: 0, machine: newMachine(), world: null, level: null,
   running: false, touched: [], result: null, runT: 0, sandbox: -1
@@ -2626,7 +2687,7 @@ function renderLevelList() {
   }
 }
 
-var SAVE = { v: CONFIG.SAVE_V, stars: [0, 0, 0, 0, 0, 0], settings: { sound: 1, motion: 1, freePlace: 0 } };
+var SAVE = { v: CONFIG.SAVE_V, stars: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], settings: { sound: 1, motion: 1, freePlace: 0 } };
 function saveNow() {
   try { localStorage.setItem(CONFIG.SAVE_KEY, JSON.stringify(SAVE)); } catch (e) {}
 }

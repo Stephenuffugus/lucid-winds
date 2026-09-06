@@ -81,6 +81,27 @@ const placard = await b.page.evaluate(() => {
 say(!!placard && placard.indexOf('on loan from') >= 0,
   'and the placard says whose museum it came out of (' + (placard || '').replace(/\n/g, ' / ') + ')');
 
+/* the plate: a 1080 by 1350 card with bones on it, from the same seed (Fable, 2026-09-06) */
+const plate = await b.page.evaluate(() => {
+  const m = STRATA_TEST.museum()[0];
+  const cv = STRATA_TEST.plate(m);
+  const c = cv.getContext('2d');
+  const d = c.getImageData(0, 0, cv.width, cv.height).data;
+  let bone = 0, rock = 0, paper = 0;
+  for (let i = 0; i < d.length; i += 16) {
+    const r = d[i], g = d[i + 1], bl = d[i + 2];
+    if (r > 235 && g > 220 && bl > 185) bone++;
+    else if (r > 120 && r < 150 && g > 95 && g < 115 && bl < 80) rock++;
+    else if (r > 225 && g > 210 && bl > 180) paper++;
+  }
+  const btn = document.getElementById('btnSpPlate');
+  return { w: cv.width, h: cv.height, bone, rock, paper, btnText: btn ? btn.textContent : null };
+});
+say(plate.w === 1080 && plate.h === 1350, 'the plate is 1080 by 1350 (' + plate.w + 'x' + plate.h + ')');
+say(plate.bone > 400, 'and bones are drawn on it (' + plate.bone + ' bone samples)');
+say(plate.rock > 4000, 'inside a rock frame (' + plate.rock + ' rock samples)');
+say(plate.btnText === 'MAKE A PLATE', 'and the plinth sheet offers MAKE A PLATE');
+
 /* ⛔ the SKELETON was regenerated here, not sent: the same seed, the same bones */
 const same = await b.page.evaluate((seed, era) => {
   const cv = document.querySelector('#hall .plinth:not(.crate) canvas');

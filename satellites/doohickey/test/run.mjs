@@ -15,7 +15,7 @@ say(!!play && play.h >= 56 && play.onTop, 'PLAY is a 56 px target on top');
 await tap(page, '#btnPlay');
 await waitFrames(page, 2);
 const cards = await page.evaluate(() => document.querySelectorAll('#levelList .card').length);
-say(cards === 6, 'and it opens a list of six levels (' + cards + ')');
+say(cards === 10, 'and it opens a list of ten levels (' + cards + ')');
 const locked = await page.evaluate(() =>
   [...document.querySelectorAll('#levelList .card')].map(c => c.hasAttribute('disabled')));
 say(locked[0] === false && locked[5] === true, 'with the later ones locked until the one before is cleared');
