@@ -141,6 +141,50 @@ on branch `add-sproing-jumper` tonight.
   **Next action:** the P4 plan above once Stephen answers calls 27 to 33; his thumb on the layering
   and the sand first.
 
+- 2026-09-07 Opus (lead): **A2 IS DONE. P4 STEP 1: THE NIB AND THE COLOUR WHEEL, WITH A
+  VERSIONED SHARE LINK.** Stamp `20260907a` in three places. `node tools/check.js` ALL GATES
+  PASSED over the seven; `node sim.js --test` 118 / 0 (was 101).
+  **The reference note first:** `satellites/inkswing/docs/REFERENCE.md`, the harmonograph
+  tools and the paint apps, four things adopted, five refused with the reason, and the one
+  risk this build carries (section 6, which is a call Stephen can overturn with two numbers).
+  Its finding: every serious harmonograph in the world is a PANEL OF SLIDERS you set and then
+  run, and not one of them can be thrown. That is our whole idea and nothing here dilutes it.
+  **What landed.** Three nibs (fine, medium, broad) and a hue ring with a depth slider behind
+  a sixth chip on the rail. The nib is a scale on the speed curve the pen already had, not a
+  second stroke engine; medium is exactly one, so every drawing made before tonight redraws to
+  the pixel. Layers key by the COLOUR now and there is room for six. The link is version 4 and
+  version 3 still opens as the medium nib and the named ink it was packed with. D-P4a to
+  D-P4e in `docs/DECISIONS.md`.
+  **Three things the gates found that the build had wrong, each fixed:**
+  1. ⛔ A NIB IS A WETNESS AS MUCH AS A WIDTH. The sheet is a thousand units drawn into about
+     three hundred pixels, so the whole width band is sub pixel and scaling the width alone
+     moved the ink laid by three tenths of one percent. Measured, not guessed. `NIB_INK_*`
+     scales the alpha too and the broad nib now lays 1.81 times the ink of the fine one.
+  2. ⛔ AND THE GATE THAT FOUND IT WAS WRONG FIRST: it counted TOUCHED PIXELS, which cannot
+     see a sub pixel width change, and reported 1.00 times while the difference was real.
+     `INKSWING_TEST.inkMass` sums alpha, which is what a nib changes.
+  3. ⛔ EVERY FULL SCREEN SAT IN THE MUSIC CHIP'S CORNER. At 375 by 667 the colour sheet's
+     BACK ended at 647 on a 667 screen, and the rig, the menu, the folio and the poster had
+     the same shape before it. The foot padding is 140 px, and the corner is checked SCROLLED
+     TO THE END, because these are scrolling columns.
+  **And one assertion of mine that could not fail:** the wheel's "no marker pen" check
+  measured chroma at depth nought and depth one only, where lightness alone caps chroma, so
+  raising the saturation ceiling to 0.95 left it green. It sweeps the whole depth band now and
+  goes red at 0.48.
+  **Watched to fail, all of it:** NIB_BROAD=1.0 and NIB_MED=1.4 (sim), WHEEL_SAT_HI=0.95,
+  WHEEL_SAT_LO=0.9, WHEEL_LUM_LO=0.5, WHEEL_LUM_HI=0.98 (sim), the nib ink scales flattened to
+  one (fling, 1.16 times), version 3 links refused (share), and the nib and colour dropped
+  from the packed byte (share, and the pen lands 305 units away).
+  **Shots opened:** `docs/shots/p4-wheel-412.png`, `p4-wheel-375.png`, `p4-nibs-412.png`. The
+  first pair were reshot: the swatch was three even beziers that read as marker pen and made
+  BROAD look like MEDIUM, the ring was a saturated colour wheel on black rather than inks on
+  paper, and the column hung from the top of a 412 by 915 screen with two thirds of it empty.
+  The swatch is the game's own line now, a decaying spiral through the same width and alpha
+  law, on a plate of the paper the sheet is made of.
+  **Next action:** P4 step 2, the Twin, is B4 and waits on call 31; steps 3 and 4 wait on 28,
+  27 and 29. Nothing here is half built. The next item that needs no call is A4, Doohickey's
+  portrait stage.
+
 ---
 
 ## 0. RULES OF ENGAGEMENT

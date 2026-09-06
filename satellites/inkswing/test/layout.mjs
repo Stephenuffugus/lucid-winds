@@ -30,7 +30,13 @@ for (const [W, H, tag] of SIZES) {
     const t = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
     return { id: b.id, w: r.width, h: r.height, on: t === b || b.contains(t) };
   }));
-  say(chips.length === 5, tag + ': five inks are on the rail (' + chips.length + ')');
+  /* ⛔ SIX: the five named inks and the one that opens the wheel. Widened to the
+     LAW rather than to the number: the five named ones must be there and the
+     wheel must be last, because the named inks are the ones worth reaching for
+     first (docs/REFERENCE.md A3). */
+  say(chips.length === 6, tag + ': five inks and the wheel are on the rail (' + chips.length + ')');
+  say(chips.length === 6 && chips[5].id === 'ink-more',
+    tag + ': and the wheel is the last chip, not the first (' + chips.map(c => c.id).join(', ') + ')');
   say(chips.every(c => c.h >= 47.5 && c.w >= 47.5),
     tag + ': and every one of them is a 48 px target');
   say(chips.every(c => c.on), tag + ': and none of them is covered');
@@ -125,6 +131,70 @@ for (const [W, H, tag] of SIZES) {
   say(over.length === 0, tag + ': no button is sitting on the paper'
     + (over.length ? ': ' + over.join(', ') : ''));
 
+  /* ---- the colour sheet ---- */
+  await T(() => document.getElementById('ink-more').click());
+  await waitFrames(page, 3);
+  say((await T(() => window.INKSWING_TEST.screen())) === 'colour',
+    tag + ': the last chip opens the colour sheet');
+  for (const sel of ['#hueRing', '#depth', '#nibFine', '#nibMed', '#nibBroad', '#btnColourUse', '#btnColourBack']) {
+    const c = await centre(page, sel);
+    say(!!c && c.onTop && c.h >= 47.5,
+      tag + ': ' + sel + ' is ' + (c ? c.h.toFixed(0) : 0) + ' px and reachable');
+  }
+  /* ⛔ measured off the rect, not off a field. The first draft of this line read
+     `ring.inView`, which this harness's centre() does not return, so it was
+     undefined and the assertion could only ever fail. A gate that cannot pass is
+     the same fault as one that cannot fail, wearing the other coat. */
+  /* ⛔ back to the top first. centre() scrolls what it measures, so by the time
+     the loop above reached BACK the sheet was scrolled and the ring read as
+     forty pixels off the top of the screen. The claim is that it is all there
+     when the sheet OPENS, so that is where it is measured from. */
+  const ring = await T(() => {
+    document.getElementById('scrColour').scrollTop = 0;
+    const r = document.getElementById('hueRing').getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height,
+      left: r.left, top: r.top, right: r.right, bottom: r.bottom,
+      W: window.innerWidth, H: window.innerHeight };
+  });
+  say(ring.left >= 0 && ring.top >= 0 && ring.right <= ring.W && ring.bottom <= ring.H,
+    tag + ': the whole hue ring is on the screen (' + ring.left.toFixed(0) + ' to '
+    + ring.right.toFixed(0) + ' across, ' + ring.top.toFixed(0) + ' to ' + ring.bottom.toFixed(0) + ' down)');
+  /* ⛔ AND EVERY FULL SCREEN LEAVES THE MUSIC CHIP'S CORNER ALONE, SCROLLED TO
+     THE END. These screens are scrolling columns of full width buttons, so the
+     honest check is at the bottom of the scroll, where the last button lands.
+     Only what is actually inside the viewport counts: a button below the fold is
+     not in the corner. */
+  const cornerCheck = (id) => T((id) => {
+    const sc = document.getElementById(id);
+    sc.scrollTop = sc.scrollHeight;
+    const H = window.innerHeight;
+    return [...sc.querySelectorAll('button, input, canvas')].filter(e => {
+      const r = e.getBoundingClientRect();
+      return r.width > 0 && r.top < H && r.bottom > 0 && r.left < 120 && r.bottom > H - 120;
+    }).map(e => e.id || e.textContent.trim().slice(0, 12));
+  }, id);
+  const clash2 = await cornerCheck('scrColour');
+  say(clash2.length === 0, tag + ': and the colour sheet leaves the bottom left corner alone'
+    + (clash2.length ? ': ' + clash2.join(', ') : ''));
+  await T(() => { document.getElementById('scrColour').scrollTop = 0; });
+  /* a tap on the ring picks a hue, and USE THIS INK puts it on the rail */
+  const before = await T(() => window.INKSWING_TEST.mixed());
+  await tapAt(page, Math.round(ring.x + ring.w * 0.36), Math.round(ring.y));
+  await waitFrames(page, 2);
+  await T(() => document.getElementById('btnColourUse').click());
+  await waitFrames(page, 3);
+  const after = await T(() => ({ mixed: window.INKSWING_TEST.mixed(),
+    screen: window.INKSWING_TEST.screen(),
+    chip: (document.getElementById('ink-more') || {}).className }));
+  say(before === null && /^#[0-9a-f]{6}$/.test(after.mixed || ''),
+    tag + ': a tap on the ring and USE THIS INK mixes an ink (' + after.mixed + ')');
+  say(after.screen === 'sheet' && (after.chip || '').indexOf('on') >= 0,
+    tag + ': and it closes back to the sheet with the chip marked (' + after.chip + ')');
+  await T(() => document.getElementById('ink-irongall').click());
+  await waitFrames(page, 2);
+  say((await T(() => window.INKSWING_TEST.mixed())) === null,
+    tag + ': and picking a named ink puts the mixed one away again');
+
   /* ---- the rig screen ---- */
   await T(() => document.getElementById('rigChip').click());
   await waitFrames(page, 3);
@@ -138,6 +208,9 @@ for (const [W, H, tag] of SIZES) {
     return { h: r.height, id: b.getAttribute('data-rig') };
   }));
   say(cards.length === 4, tag + ': the four rigs are all listed (' + cards.length + ')');
+  const clash3 = await cornerCheck('scrRig');
+  say(clash3.length === 0, tag + ': and the rig screen leaves the corner alone too'
+    + (clash3.length ? ': ' + clash3.join(', ') : ''));
   say(cards.every(c => c.h >= 72), tag + ': and every card is 72 px tall ('
     + cards.map(c => c.h.toFixed(0)).join(',') + ')');
 

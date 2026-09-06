@@ -132,3 +132,44 @@ reserved, so the sheet is 384 wide, a fifth more drawing on the phone Stephen ca
 Under 800 tall the column stays, because a short phone has no height to spend. Checked at
 412, 375 and 320: five chips, none under 48 px, none covered by anything, the bottom left
 120 by 120 still clear for the fleet's music chip, and the layout gate green at all three.
+
+**D-P4a (2026-09-07, Opus) — a throw carries a NIB and a MIXED COLOUR, and the link carries
+both.** `docs/REFERENCE.md` is the note behind this. Three nibs, fine, medium and broad, and a
+hue ring with a depth slider behind a sixth chip on the rail. Two things about the shape are
+deliberate. The nib is a SCALE on the speed curve the pen already had rather than a second
+stroke engine, and medium is exactly one on both scales, so every drawing made before tonight
+redraws to the pixel. The five named inks stay and they stay FIRST on the rail: named colours
+with a history are worth more here than a hex field, and a wheel is what you reach for second.
+
+**D-P4b (2026-09-07, Opus) — the link is version 4 and version 3 still opens.** The per throw
+byte is the ink index in the low three bits, the nib in the next two, and the top bit set when
+three bytes of colour follow. A version 3 sheet opens as the medium nib and the named ink it was
+packed with, which is what it was. Somebody already has one of those links.
+
+**D-P4c (2026-09-07, Opus) — a nib is a WETNESS as much as a width, and the measurement found
+it.** The sheet is a thousand units drawn into about three hundred pixels, so the whole width
+band, 0.6 to 2.4 units, is between a fifth of a pixel and a whole one. Scaling the width alone
+moved the ink laid by three tenths of one percent, measured off the layers, and the eye would
+never have seen it. `NIB_INK_*` scales the alpha as well, and the broad nib now lays 1.81 times
+the ink of the fine one. ⛔ The gate that found this was itself wrong first: it counted TOUCHED
+PIXELS and reported the broad nib at 1.00 times the fine one. A count cannot see a width change
+that is sub pixel. `INKSWING_TEST.inkMass` sums alpha, which is what a nib changes.
+
+**D-P4d (2026-09-07, Opus) — the depth slider walks the ink family and cannot reach a marker
+pen.** A wheel hands a player sixteen million colours and the five named inks were doing a real
+job: all dark, all a little desaturated, all of them ink on paper. Depth walks saturation up and
+lightness down together, so the pale end is a wash and the deep end is a near black of that hue,
+and no point on the slider is fluorescent. Stephen can overturn it with two numbers and it is
+worth telling him, because if he wants the fluorescents that is a different game.
+⛔ The assertion that guards this COULD NOT FAIL at first: it measured chroma at depth nought and
+depth one only, and at the deep end lightness alone caps chroma however saturated the mix is, so
+raising the saturation ceiling to 0.95 left it green. A fluorescent is high chroma at MIDDLING
+lightness. The sweep walks the depth now.
+
+**D-P4e (2026-09-07, Opus) — every full screen leaves the music chip's corner alone, scrolled to
+the end.** Found by the colour sheet's own layout assertion and it was true of the rig, the menu,
+the folio and the poster before it: these screens are scrolling columns of full width buttons, so
+the last button in the column sat in the bottom left 120 by 120 the fleet keeps for the chip. The
+foot padding is 140 px now. The column also centres with an auto MARGIN and never with
+justify-content, because centring a scrolling box that way clips the top of a column taller than
+the screen with no way to scroll back to it.

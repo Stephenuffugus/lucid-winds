@@ -20,8 +20,10 @@ try {
   await TA(() => {
     const S = window.INKSWING_TEST.sim();
     const sh = S.newSheet({ rig: 'crossed', lengths: [12, 19] });
+    /* one named ink on the medium nib, and one MIXED ink on the broad nib, so
+       the link carries a version four sheet with both kinds of throw on it */
     sh.throws.push(S.flingToThrow(sh, { x: 300, y: 220 }, { x: -480, y: 640 }, 0, 'indigo'));
-    sh.throws.push(S.flingToThrow(sh, { x: -240, y: 180 }, { x: 520, y: 300 }, 9, 'oxblood'));
+    sh.throws.push(S.flingToThrow(sh, { x: -240, y: 180 }, { x: 520, y: 300 }, 9, 'oxblood', 'brass', 2, [110, 40, 62]));
     window.INKSWING_TEST.loadSheet(sh);
     window.INKSWING_TEST.state().drawing = true;
     window.INKSWING_TEST.advance(20);
@@ -40,7 +42,8 @@ try {
     const out = [];
     for (let t = 0; t <= 30; t += 0.5) { const p = S.posAt(sh, t); out.push([p.x, p.y]); }
     return { path: out, rig: sh.rig, lengths: sh.lengths, throws: sh.throws.length,
-      inks: sh.throws.map(t => t.ink) };
+      inks: sh.throws.map(t => t.ink), nibs: sh.throws.map(t => t.w),
+      rgbs: sh.throws.map(t => t.rgb) };
   });
 } finally {
   await A.browser.close();
@@ -58,7 +61,8 @@ try {
     const out = [];
     for (let t = 0; t <= 30; t += 0.5) { const p = S.posAt(sh, t); out.push([p.x, p.y]); }
     return { path: out, rig: sh.rig, lengths: sh.lengths, throws: sh.throws.length,
-      inks: sh.throws.map(t => t.ink), screen: window.INKSWING_TEST.screen(),
+      inks: sh.throws.map(t => t.ink), nibs: sh.throws.map(t => t.w),
+      rgbs: sh.throws.map(t => t.rgb), screen: window.INKSWING_TEST.screen(),
       folio: window.INKSWING_TEST.folio().length, drawing: window.INKSWING_TEST.drawing() };
   });
   say(got.rig === want.rig, 'the rig came down the link (' + got.rig + ')');
@@ -67,6 +71,13 @@ try {
   say(got.throws === want.throws, 'and both throws (' + got.throws + ')');
   say(JSON.stringify(got.inks) === JSON.stringify(want.inks),
     'and the inks they were thrown in (' + JSON.stringify(got.inks) + ')');
+  /* ⛔ THE NIB AND THE MIXED INK COME DOWN THE LINK TOO, or a drawing made with
+     them is a different drawing on the other phone, which is the one thing this
+     format exists to prevent. */
+  say(JSON.stringify(got.nibs) === JSON.stringify(want.nibs),
+    'and the nib each was thrown with (' + JSON.stringify(got.nibs) + ')');
+  say(JSON.stringify(got.rgbs) === JSON.stringify(want.rgbs),
+    'and the mixed ink, to the byte (' + JSON.stringify(got.rgbs) + ')');
   /* ⛔ THE ASSERTION THE WHOLE FORMAT EXISTS FOR */
   let worst = 0;
   for (let i = 0; i < want.path.length; i++) {
@@ -90,6 +101,25 @@ try {
   await B.page.reload({ waitUntil: 'load' });
   await B.page.waitForFunction(() => window.INKSWING_TEST && window.INKSWING_TEST.frames() > 2, { timeout: 30000 });
   say((await TB(() => window.INKSWING_TEST.folio().length)) === 1, 'and it is still there after a reload');
+
+  /* ⛔ AND A LINK FROM BEFORE THE NIB EXISTED STILL OPENS. Somebody already has
+     one. A version three sheet is packed here by hand, byte for byte in the old
+     shape, and asked to open as the medium nib and the named ink it was. */
+  const v3 = await TB(() => {
+    const S = window.INKSWING_TEST.sim();
+    const b = [3, 1, 12, 19, 0, 0, 1, 2];
+    const put16 = v => { v = Math.max(0, Math.min(65535, Math.round(v))); b.push(v & 255, (v >> 8) & 255); };
+    put16(0);
+    for (let p = 0; p < 2; p++) { put16(300 * 8 + 32768); put16((0.4 + Math.PI) * 8000); put16(3.2 * 6000); }
+    const txt = S.bytesToB64u(b);
+    const sh = S.unpackSheet(txt);
+    return sh ? { n: sh.throws.length, ink: sh.throws[0].ink, w: sh.throws[0].w,
+      rgb: sh.throws[0].rgb, rig: sh.rig } : null;
+  });
+  say(!!v3 && v3.n === 1, 'a version three link, packed by hand in the old shape, still opens');
+  say(!!v3 && v3.w === 1 && v3.rgb === null && v3.ink === 'oxblood',
+    'and it opens as the medium nib and the ink it was packed with ('
+    + (v3 ? v3.ink + ', nib ' + v3.w + ', mixed ' + v3.rgb : 'nothing') + ')');
 
   /* ⛔ a link is a stranger's text */
   const junk = await TB(() => window.INKSWING_TEST.openLink('#s=absolutely-not-a-drawing'));

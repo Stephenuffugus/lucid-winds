@@ -1,9 +1,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#2B3A67">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260906h">
-<link rel="icon" href="./icon-192.png?v=20260906h">
-<link rel="manifest" href="./manifest.webmanifest?v=20260906h">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260907a">
+<link rel="icon" href="./icon-192.png?v=20260907a">
+<link rel="manifest" href="./manifest.webmanifest?v=20260907a">
 <title>INKSWING</title>
 <style>
 :root{
@@ -48,6 +48,16 @@ body{touch-action:none;user-select:none;-webkit-user-select:none}
 .chip{width:48px;height:48px;border-radius:14px;border:2px solid rgba(251,246,232,.35);
   padding:0;box-shadow:0 2px 0 rgba(0,0,0,.35)}
 .chip.on{border-color:#FBF6E8;transform:scale(1.06)}
+/* the sixth chip: the mixed ink when there is one, a hue ring when there is not.
+   It is LAST on the rail on purpose, because the five named inks are the ones
+   worth reaching for first (docs/REFERENCE.md A3). */
+#ink-more{position:relative}
+#ink-more.wheel{background:conic-gradient(#6B2230,#5B3A22,#4A5B22,#2E6B5E,#2B3A67,#4A2B67,#6B2230)}
+#ink-more::after{content:"";position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;
+  border-radius:50%;background:rgba(21,26,34,.72);box-shadow:inset 0 0 0 1px rgba(251,246,232,.5)}
+#hueRing{display:block;margin:2px auto;width:240px;height:240px;max-width:100%;touch-action:none}
+#nibFine,#nibMed,#nibBroad{position:relative}
+.btn.picked{background:var(--brass);border-color:#5C4A1D;box-shadow:0 2px 0 #5C4A1D;color:#1B1408}
 /* ⛔ the actions are a BLOCK in the bottom right, not a column up the side. A
    column of four is 224 px tall and it reached up into the paper, which is the
    one thing the layout gate forbids. Two by two is 120 px, it shares every
@@ -66,10 +76,24 @@ body{touch-action:none;user-select:none;-webkit-user-select:none}
   padding:10px 16px;border-radius:12px;font-size:.86rem;text-align:center;max-width:80%;
   opacity:0;transition:opacity 220ms ease-out;pointer-events:none}
 #hint.on{opacity:1}
+/* ⛔ 140 AT THE FOOT, NOT 20, AND IT IS THE MUSIC CHIP'S CORNER. Every screen in
+   this game is a scrolling column of full width buttons, so the last button in
+   the column sat in the bottom left 120 by 120 the fleet keeps for the chip: at
+   375 by 667 the colour sheet's BACK ended at 647 on a 667 screen, and on the
+   screens that scroll you could always bring one there. The foot padding means
+   that scrolled all the way to the end the last button is still clear of it.
+   Found 2026-09-07 by the colour sheet's own layout assertion; it was true of
+   the rig, the menu, the folio and the poster before that and nothing looked. */
 .screen{position:absolute;inset:0;z-index:8;background:#151A22;color:var(--cream);display:none;
-  overflow-y:auto;padding:calc(16px + var(--safeT)) 16px calc(20px + var(--safeB))}
-.screen.on{display:block}
-.screen .col{max-width:420px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+  overflow-y:auto;padding:calc(16px + var(--safeT)) 16px calc(140px + var(--safeB))}
+/* ⛔ margin:auto ON THE COLUMN, never justify-content:center ON THE SCREEN. A
+   short column hung from the top left two thirds of a 412 by 915 phone as dead
+   dark ground, which is the spare band fault the whole fleet keeps finding; and
+   centring it with justify-content on a scrolling box CLIPS THE TOP of a column
+   taller than the screen, with no way to scroll back up to it, which is a scar
+   from Sep 06. An auto margin centres what fits and pushes nothing off. */
+.screen.on{display:flex}
+.screen .col{max-width:420px;width:100%;margin:auto;display:flex;flex-direction:column;gap:10px}
 .title{font-size:1.5rem;font-weight:800;letter-spacing:.1em;text-align:center;color:var(--brass)}
 .lede{font-size:.92rem;line-height:1.5;text-align:center;margin:0;color:var(--cream)}
 .tiny{font-size:.76rem;color:var(--muted);text-align:center;margin:2px 0}
@@ -140,6 +164,24 @@ body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
     </div>
   </div>
 
+  <div class="screen" id="scrColour">
+    <div class="col">
+      <div class="title" style="font-size:1.2rem">Mix an ink</div>
+      <canvas id="hueRing" width="240" height="240" aria-label="Hue ring"></canvas>
+      <div class="dial"><span class="lbl">Depth</span><span class="val" id="valDepth">deep</span>
+        <input type="range" id="depth" min="0" max="100" step="1" value="72"></div>
+      <p class="cap">The nib</p>
+      <div class="row">
+        <button class="btn" id="nibFine">FINE</button>
+        <button class="btn" id="nibMed">MEDIUM</button>
+        <button class="btn" id="nibBroad">BROAD</button>
+      </div>
+      <p class="tiny" id="colourLine">A wash at the pale end, a near black at the deep end.</p>
+      <button class="btn big go" id="btnColourUse">USE THIS INK</button>
+      <button class="btn ghost" id="btnColourBack">BACK</button>
+    </div>
+  </div>
+
   <div class="screen" id="scrMenu">
     <div class="col">
       <div class="title">INKSWING</div>
@@ -201,7 +243,30 @@ var CONFIG = Object.freeze({
   DRAW_MAX_S: 90, FINISH_ANIM_S: 2,
   GRAB_R: 44, RELEASE_WINDOW_MS: 60, V_MAX: 1400,
   INK_W_MIN: 0.6, INK_W_MAX: 2.4, WET_EDGE: 0.18, SEG_MAX_LEN: 1.5,
-  LAYERS_MAX: 4, FOLIO_MAX: 48,
+  /* THE NIB. Three widths, each a SCALE on the speed curve the pen already has
+     rather than a second stroke engine (docs/REFERENCE.md A1). ⛔ MEDIUM IS
+     EXACTLY ONE, which is why every drawing made before tonight redraws to the
+     pixel and a link from before tonight opens as medium. */
+  NIB_FINE: 0.6, NIB_MED: 1.0, NIB_BROAD: 1.6,
+  /* ⛔ AND A NIB CHANGES HOW MUCH INK GOES DOWN, not only how wide the line is,
+     which on a phone is most of what a nib IS. The sheet is a thousand units
+     drawn into about three hundred pixels, so the whole width band, 0.6 to 2.4
+     units, is between a fifth of a pixel and a whole one: scaling the width
+     alone moved the ink laid by a third of one percent, measured, and the eye
+     would never have seen it. A broad nib is wetter. Medium is one on both
+     scales, so a drawing made before tonight redraws to the pixel. */
+  NIB_INK_FINE: 0.78, NIB_INK_MED: 1.0, NIB_INK_BROAD: 1.3,
+  /* THE INK FAMILY, the wheel's one rule. Depth walks from a wash to a near
+     black of the chosen hue and never reaches a saturation a marker pen would
+     use: the five named inks sit between 0.32 and 0.51 saturated and 0.17 and
+     0.30 light, and this band is that band opened up rather than thrown out.
+     docs/REFERENCE.md section 6 says why, and it is Stephen's to overturn with
+     two numbers. */
+  WHEEL_SAT_LO: 0.28, WHEEL_SAT_HI: 0.54, WHEEL_LUM_HI: 0.60, WHEEL_LUM_LO: 0.18,
+  /* ⛔ SIX, NOT FOUR. Four was enough when there were five inks; a wheel makes
+     the count meaningless, so layers key by the COLOUR and there is room for a
+     hand that mixes. */
+  LAYERS_MAX: 6, FOLIO_MAX: 48,
   SOUND_GAIN: 0.04, SOUND_HZ_PER_W: 60,
   SAND_GRAINS_MAX: 60000, TILT_DEG: 12, SAND_SLIDE_UNITS_PER_S: 300,
   /* the rig's arm length in sheet units, which is what the amplitude detune is
@@ -314,6 +379,41 @@ var INKS = Object.freeze([
   { id: 'verdigris', name: 'Verdigris', hex: '#2E6B5E' },
   { id: 'indigo', name: 'Indigo', hex: '#2B3A67' }
 ]);
+function inkHex(id) {
+  var i;
+  for (i = 0; i < INKS.length; i++) if (INKS[i].id === id) return INKS[i].hex;
+  return INKS[0].hex;
+}
+function nibScale(w) {
+  return w === 0 ? CONFIG.NIB_FINE : (w === 2 ? CONFIG.NIB_BROAD : CONFIG.NIB_MED);
+}
+function nibInk(w) {
+  return w === 0 ? CONFIG.NIB_INK_FINE : (w === 2 ? CONFIG.NIB_INK_BROAD : CONFIG.NIB_INK_MED);
+}
+function hex2(v) { var h = clamp(Math.round(v), 0, 255).toString(16); return h.length < 2 ? '0' + h : h; }
+function rgbHex(rgb) { return '#' + hex2(rgb[0]) + hex2(rgb[1]) + hex2(rgb[2]); }
+/* THE WHEEL, as one pure function the page and the gate share. `hue` is degrees
+   and `depth` is nought to one; what comes back is a colour that could have been
+   an ink. Written out rather than pulled from a library because the SIM block is
+   the only place either side is allowed to compute it. */
+function inkFromWheel(hue, depth) {
+  var d = clamp(depth, 0, 1);
+  var sat = CONFIG.WHEEL_SAT_LO + (CONFIG.WHEEL_SAT_HI - CONFIG.WHEEL_SAT_LO) * d;
+  var lum = CONFIG.WHEEL_LUM_HI + (CONFIG.WHEEL_LUM_LO - CONFIG.WHEEL_LUM_HI) * d;
+  var h = ((hue % 360) + 360) % 360 / 360;
+  var q = lum < 0.5 ? lum * (1 + sat) : lum + sat - lum * sat;
+  var p = 2 * lum - q;
+  function ch(t) {
+    if (t < 0) t += 1; else if (t > 1) t -= 1;
+    if (t < 1 / 6) return p + (q - p) * 6 * t;
+    if (t < 1 / 2) return q;
+    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+    return p;
+  }
+  return [Math.round(ch(h + 1 / 3) * 255), Math.round(ch(h) * 255), Math.round(ch(h - 1 / 3) * 255)];
+}
+/* what a throw is actually drawn in: a custom colour beats a named ink */
+function colourOf(t) { return t && t.rgb ? rgbHex(t.rgb) : inkHex(t ? t.ink : 'irongall'); }
 
 /* ============================ 5. MOTION ============================ */
 /* ⛔ THE AMPLITUDE DETUNE IS THE REAL PENDULUM, NOT A FUDGE. A pendulum swung
@@ -565,7 +665,10 @@ function doubleReach(sheet, thr, k) {
    reproduces the release VELOCITY out by d times x0. The plan's own assertion
    asks for the round trip inside 1e-6 and that is off by about two units on a
    hard throw. The damping is carried. */
-function flingToThrow(sheet, x0, v0, t0, ink, bob) {
+/* ⛔ `nib` and `rgb` are optional and they are the LAST arguments on purpose:
+   every call in the test suite and in the page that predates them keeps working
+   and gets the medium nib and the named ink, which is what it drew before. */
+function flingToThrow(sheet, x0, v0, t0, ink, bob, nib, rgb) {
   var rig = RIGS[sheet.rig] || RIGS.single;
   var damp = bob === 'felt' ? CONFIG.DAMP_FELT : (bob === 'sand' ? CONFIG.DAMP_SAND : CONFIG.DAMP_BRASS);
   var lengths = sheet.lengths || rig.lengths;
@@ -609,7 +712,9 @@ function flingToThrow(sheet, x0, v0, t0, ink, bob) {
   var room = Math.min(reachX > 0 ? (CONFIG.SHEET_W * 0.46) / reachX : 1,
     reachY > 0 ? (CONFIG.SHEET_H * 0.46) / reachY : 1);
   if (room < 1) { pend[0].A *= room; pend[1].A *= room; }
-  var thr = { t0: t0 || 0, ink: ink || 'irongall', damp: damp, pend: pend };
+  var thr = { t0: t0 || 0, ink: ink || 'irongall', damp: damp, pend: pend,
+    w: nib === 0 || nib === 2 ? nib : 1,
+    rgb: rgb && rgb.length === 3 ? [clamp(rgb[0] | 0, 0, 255), clamp(rgb[1] | 0, 0, 255), clamp(rgb[2] | 0, 0, 255)] : null };
   if (rig.numeric) {
     /* ⛔ THE NUMERIC RIG KEEPS THE RELEASE ITSELF, position and velocity, which
        is what the integrator starts from; the terms above are for the link and
@@ -667,8 +772,14 @@ function get16(b, at) { return (b[at] | (b[at + 1] << 8)) >>> 0; }
 /* ⛔ a throw is stored as its FLING, not as its terms: four numbers a person
    could have made with a finger, so a link can never describe a swing the rig
    could not produce. */
+/* ⛔ VERSION 4 CARRIES THE NIB AND THE COLOUR, AND VERSION 3 STILL OPENS. A link
+   is a stranger's text and the strangers who already have one are the reason the
+   old branch stays: a v3 sheet unpacks as medium nibs and named inks, which is
+   exactly what it was when it was packed. The per throw byte is the ink index in
+   the low three bits, the nib in the next two, and the top bit set when three
+   bytes of colour follow. */
 function packSheet(sheet) {
-  var b = [3], i;
+  var b = [4], i;
   b.push(RIG_ORDER.indexOf(sheet.rig) < 0 ? 0 : RIG_ORDER.indexOf(sheet.rig));
   b.push(clamp(sheet.lengths[0] | 0, 0, CONFIG.SEMITONES), clamp(sheet.lengths[1] | 0, 0, CONFIG.SEMITONES));
   b.push(sheet.bob === 'felt' ? 1 : (sheet.bob === 'sand' ? 2 : 0));
@@ -676,7 +787,10 @@ function packSheet(sheet) {
   b.push(Math.min(255, sheet.throws.length));
   for (i = 0; i < sheet.throws.length && i < 255; i++) {
     var t = sheet.throws[i];
-    b.push(Math.max(0, INKS.map(function (k) { return k.id; }).indexOf(t.ink)));
+    var idx = Math.max(0, INKS.map(function (k) { return k.id; }).indexOf(t.ink));
+    var nib = t.w === 0 || t.w === 2 ? t.w : 1;
+    b.push((idx & 7) | (nib << 5) | (t.rgb ? 128 : 0));
+    if (t.rgb) b.push(clamp(t.rgb[0] | 0, 0, 255), clamp(t.rgb[1] | 0, 0, 255), clamp(t.rgb[2] | 0, 0, 255));
     put16(b, clamp(t.t0 * 10, 0, 65535));
     var p;
     for (p = 0; p < 2; p++) {
@@ -693,7 +807,8 @@ function packSheet(sheet) {
 }
 function unpackSheet(txt) {
   var b = b64uToBytes(String(txt || ''));
-  if (b.length < 7 || b[0] !== 3) return null;
+  if (b.length < 7 || (b[0] !== 3 && b[0] !== 4)) return null;
+  var ver = b[0];
   var rig = RIG_ORDER[b[1]] || 'single';
   var lengths = [clamp(b[2], 0, CONFIG.SEMITONES), clamp(b[3], 0, CONFIG.SEMITONES)];
   var bob = ['brass', 'felt', 'sand'][b[4]] || 'brass';
@@ -702,7 +817,17 @@ function unpackSheet(txt) {
   var damp = bob === 'felt' ? CONFIG.DAMP_FELT : (bob === 'sand' ? CONFIG.DAMP_SAND : CONFIG.DAMP_BRASS);
   for (i = 0; i < n; i++) {
     if (at + 13 > b.length) break;
-    var ink = (INKS[b[at++]] || INKS[0]).id;
+    var ink, nib = 1, rgb = null;
+    if (ver === 3) { ink = (INKS[b[at++]] || INKS[0]).id; }
+    else {
+      var f = b[at++];
+      ink = (INKS[f & 7] || INKS[0]).id;
+      nib = (f >> 5) & 3; if (nib > 2) nib = 1;
+      if (f & 128) {
+        if (at + 3 + 12 > b.length) break;
+        rgb = [b[at], b[at + 1], b[at + 2]]; at += 3;
+      }
+    }
     var t0 = get16(b, at) / 10; at += 2;
     var pend = [], p;
     for (p = 0; p < 2; p++) {
@@ -714,7 +839,7 @@ function unpackSheet(txt) {
       pend.push({ w: clamp(we, 0.2, 40), wEff: clamp(we, 0.2, 40),
         A: clamp(A, -4000, 4000), phi: clamp(phi, -7, 7) });
     }
-    out.push({ t0: clamp(t0, 0, 6553.5), ink: ink, damp: damp, pend: pend });
+    out.push({ t0: clamp(t0, 0, 6553.5), ink: ink, damp: damp, pend: pend, w: nib, rgb: rgb });
   }
   return newSheet({ rig: rig, lengths: lengths, bob: bob, mode: mode, throws: out });
 }
@@ -1085,6 +1210,77 @@ function suiteLink(T) {
   for (i = 0; i < 4; i++) big.throws.push(flingToThrow(big, { x: 200, y: 200 }, { x: 400, y: 400 }, i * 8, 'sepia'));
   T.assert('and a full sheet of four throws is still short (' + packSheet(big).length + ')',
     packSheet(big).length < 200);
+  /* ⛔ THE NIB AND THE MIXED COLOUR SURVIVE THE LINK TO THE BYTE (P4 step 1).
+     A drawing is its throw list, so a nib and a colour are numbers on a throw
+     and never a picture in a link. */
+  var v2 = newSheet({ rig: 'crossed' });
+  var mix = [[110, 40, 62], [46, 107, 94], [30, 30, 30]];
+  for (i = 0; i < 3; i++) {
+    v2.throws.push(flingToThrow(v2, { x: 200, y: 140 }, { x: -400, y: 520 }, i * 7,
+      INKS[i].id, 'brass', i, mix[i]));
+  }
+  var v2back = unpackSheet(packSheet(v2));
+  T.assert('a sheet with three nibs and three mixed inks comes back', !!v2back && v2back.throws.length === 3);
+  if (v2back) {
+    T.assert('every nib survives the link', v2back.throws.map(function (t) { return t.w; }).join(',') === '0,1,2',
+      v2back.throws.map(function (t) { return t.w; }).join(','));
+    var exact = true;
+    for (i = 0; i < 3; i++) {
+      var g = v2back.throws[i].rgb;
+      if (!g || g[0] !== mix[i][0] || g[1] !== mix[i][1] || g[2] !== mix[i][2]) exact = false;
+    }
+    T.assert('and every mixed colour comes back to the byte', exact,
+      JSON.stringify(v2back.throws.map(function (t) { return t.rgb; })));
+  }
+  /* ⛔ AND A LINK FROM BEFORE TONIGHT STILL OPENS, as the medium nib and the
+     named ink it was packed as. Someone already has one of these. */
+  var v1 = bytesToB64u([3, 1, 12, 19, 0, 0, 1,
+    2, 0x10, 0x27, 0x00, 0x40, 0x00, 0x40, 0x00, 0x40, 0x00, 0x40, 0x00, 0x40]);
+  var v1back = unpackSheet(v1);
+  T.assert('a version three link still opens', !!v1back && v1back.throws.length === 1);
+  if (v1back) {
+    T.eq('and it opens on the named ink it was packed with', v1back.throws[0].ink, INKS[2].id);
+    T.eq('with the medium nib, which is what it was drawn at', v1back.throws[0].w, 1);
+    T.eq('and no mixed colour', v1back.throws[0].rgb, null);
+  }
+  /* ⛔ THE BROAD NIB HAS TO ACTUALLY BE BROADER, and by enough to see. This is
+     the assertion NIB_BROAD exists for: a scale of one would leave every
+     ordering assertion above green and the nib a name with nothing behind it. */
+  T.assert('a broad nib is more than half again the width of a fine one',
+    nibScale(2) / nibScale(0) > 2.3, (nibScale(2) / nibScale(0)).toFixed(2));
+  T.eq('and the medium nib is exactly what the pen always was', nibScale(1), 1);
+  T.eq('an unknown nib index is the medium one', nibScale(7), 1);
+  /* THE WHEEL stays inside the ink family, whatever hue is asked for */
+  /* ⛔ THE WHOLE BAND, NOT ITS ENDS, and the first draft of this assertion COULD
+     NOT FAIL. It measured chroma at depth nought and depth one only, and at the
+     deep end lightness alone caps chroma however saturated the mix is: raising
+     WHEEL_SAT_HI to 0.95 left it green. A fluorescent is high chroma at MIDDLING
+     lightness, which is the middle of the slider, so the sweep walks the depth. */
+  var h, dd, worstSat = 0, worstLum = 0, lightest = 0;
+  for (h = 0; h < 360; h += 7) {
+    for (dd = 0; dd <= 1.0001; dd += 0.1) {
+      var c3 = inkFromWheel(h, dd);
+      var mx3 = Math.max(c3[0], c3[1], c3[2]) / 255, mn3 = Math.min(c3[0], c3[1], c3[2]) / 255;
+      worstSat = Math.max(worstSat, mx3 - mn3);
+    }
+    var deep = inkFromWheel(h, 1), pale = inkFromWheel(h, 0);
+    var mx = Math.max(deep[0], deep[1], deep[2]) / 255, mn = Math.min(deep[0], deep[1], deep[2]) / 255;
+    worstLum = Math.max(worstLum, (mx + mn) / 2);
+    lightest = Math.max(lightest, (Math.max(pale[0], pale[1], pale[2]) + Math.min(pale[0], pale[1], pale[2])) / 510);
+  }
+  T.assert('no depth of any hue makes a marker pen (worst chroma ' + worstSat.toFixed(2) + ')', worstSat < 0.42);
+  T.assert('the deep end of every hue is dark enough to be ink (lightest ' + worstLum.toFixed(2) + ')', worstLum < 0.32);
+  T.assert('and the pale end is a wash rather than white (' + lightest.toFixed(2) + ')',
+    lightest > 0.5 && lightest < 0.82);
+  T.assert('the wheel goes all the way round and comes back',
+    rgbHex(inkFromWheel(0, 0.7)) === rgbHex(inkFromWheel(360, 0.7)));
+  T.assert('and two hues a third of the circle apart are different inks',
+    rgbHex(inkFromWheel(0, 0.7)) !== rgbHex(inkFromWheel(120, 0.7)));
+  T.eq('a mixed colour beats the named ink on the same throw',
+    colourOf({ ink: 'sepia', rgb: [17, 34, 51] }), '#112233');
+  T.eq('and with no mixed colour the named ink is what is drawn',
+    colourOf({ ink: 'sepia', rgb: null }), inkHex('sepia'));
+
   /* ⛔ a link is a stranger's text */
   T.eq('rubbish in a link is nothing out', unpackSheet('not a drawing at all'), null);
   T.eq('and an empty one', unpackSheet(''), null);
@@ -1207,13 +1403,15 @@ function suitePurity(T, src) {
 }
 // ---- TEST_EXPORT_END ----
 /* ============================ 16. THE PAGE ============================ */
-var STAMP = '20260906h';
+var STAMP = '20260907a';
 function el(id) { return document.getElementById(id); }
 var V = { cv: null, ctx: null, W: 0, H: 0, dpr: 1, t: 0, ppu: 0.34, ox: 0, oy: 0 };
 var G = { screen: 'sheet', sheet: null, t: 0, drawing: false, since: 0,
   pen: { x: 0, y: 0 }, held: null, grabbed: false, samples: [], ink: 'irongall',
+  /* the nib and the mixed colour: `rgb` null means the named ink on the rail */
+  nib: 1, rgb: null, hue: 208, depth: 0.72,
   poster: 'plate' };
-var SETTINGS = { sound: 1, motion: 1, tilt: 0, rig: 1 };
+var SETTINGS = { sound: 1, motion: 1, tilt: 0, rig: 1, nib: 1, hue: 208, depth: 0.72, mixed: 0 };
 var SAVE = { v: CONFIG.SAVE_V, name: '', folio: [], rigsUnlocked: 1, settings: SETTINGS, seen: {} };
 var RAF = 0, LAST = 0, FRAMES = 0, REDUCED = false;
 
@@ -1287,36 +1485,37 @@ function layerSize() {
   return { w: Math.max(2, Math.round(CONFIG.SHEET_W * V.ppu * V.dpr)),
     h: Math.max(2, Math.round(CONFIG.SHEET_H * V.ppu * V.dpr)) };
 }
-function newLayer(ink) {
+function newLayer(col) {
   var sz = layerSize();
   var cv = document.createElement('canvas');
   cv.width = sz.w; cv.height = sz.h;
   var c = cv.getContext('2d');
   c.lineCap = 'round';
   c.lineJoin = 'round';
-  return { cv: cv, ctx: c, ink: ink, from: 0 };
+  return { cv: cv, ctx: c, col: col, from: 0 };
 }
 function resetLayers() {
   LAYERS.list = [];
   var sz = layerSize();
   LAYERS.w = sz.w; LAYERS.h = sz.h; LAYERS.dpr = V.dpr;
 }
-function layerFor(ink) {
+/* ⛔ LAYERS ARE KEYED BY THE COLOUR ITSELF, not by an ink's name, because a
+   wheel has no names. The key is a hex string, or the literal 'sand', which is
+   its own layer and always was. */
+function layerFor(col) {
   var i;
-  for (i = 0; i < LAYERS.list.length; i++) if (LAYERS.list[i].ink === ink) return LAYERS.list[i];
+  for (i = 0; i < LAYERS.list.length; i++) if (LAYERS.list[i].col === col) return LAYERS.list[i];
   if (LAYERS.list.length >= CONFIG.LAYERS_MAX) return LAYERS.list[LAYERS.list.length - 1];
-  var l = newLayer(ink);
+  var l = newLayer(col);
   LAYERS.list.push(l);
   return l;
 }
+/* the colour the next throw will lay: the mixed one if there is one, else the
+   named ink on the rail. One place, so the chip, the pen and the throw agree. */
+function currentHex() { return G.rgb ? rgbHex(G.rgb) : inkHex(G.ink); }
 /* sheet units to layer pixels */
 function lx(u) { return (u + CONFIG.SHEET_W / 2) * V.ppu * V.dpr; }
 function ly(u) { return (u + CONFIG.SHEET_H / 2) * V.ppu * V.dpr; }
-function inkHex(id) {
-  var i;
-  for (i = 0; i < INKS.length; i++) if (INKS[i].id === id) return INKS[i].hex;
-  return INKS[0].hex;
-}
 /* ⛔ THE LINE IS NOT A VECTOR STROKE. A pen that moves slowly leaves more ink and
    pools at the ends of a swing; one that whips across the sheet leaves a hair.
    Without this the drawing reads as clip art, which is the thing the plan's feel
@@ -1340,13 +1539,16 @@ function strokeSpan(sheet, fromT, toT) {
        and the dark end is capped so that crossings build tone instead of
        saturating. */
     var f = Math.pow(clamp(1 - speed / CONFIG.V_MAX, 0, 1), 1.8);
-    var w = CONFIG.INK_W_MIN + (CONFIG.INK_W_MAX - CONFIG.INK_W_MIN) * f;
     var thr = throwAt(sheet, b.t);
-    var layer = layerFor(thr ? thr.ink : 'irongall');
+    /* the nib scales the whole width band, so a broad nib is the same pen
+       pressed harder rather than a second kind of line */
+    var w = (CONFIG.INK_W_MIN + (CONFIG.INK_W_MAX - CONFIG.INK_W_MIN) * f) * nibScale(thr ? thr.w : 1);
+    var layer = layerFor(colourOf(thr));
     var c = layer.ctx;
     var px = V.ppu * V.dpr;
-    c.strokeStyle = inkHex(layer.ink);
-    c.globalAlpha = 0.34 + 0.26 * f;
+    var wet = nibInk(thr ? thr.w : 1);
+    c.strokeStyle = layer.col;
+    c.globalAlpha = clamp((0.34 + 0.26 * f) * wet, 0, 0.95);
     c.lineWidth = Math.max(0.6, w * px);
     c.beginPath();
     c.moveTo(lx(a.x), ly(a.y));
@@ -1354,7 +1556,7 @@ function strokeSpan(sheet, fromT, toT) {
     c.stroke();
     /* the wet edge: where the pen dawdles, the ink spreads */
     if (speed < CONFIG.V_MAX * 0.15) {
-      c.globalAlpha = CONFIG.WET_EDGE * clamp(1 - speed / (CONFIG.V_MAX * 0.15), 0, 1);
+      c.globalAlpha = CONFIG.WET_EDGE * wet * clamp(1 - speed / (CONFIG.V_MAX * 0.15), 0, 1);
       c.lineWidth = Math.max(1, (w + 0.9) * px);
       c.stroke();
     }
@@ -1383,10 +1585,10 @@ function redrawAll(sheet, upTo) {
 }
 function undoLayer() {
   if (!LAYERS.list.length) return false;
-  var gone = LAYERS.list.pop().ink;
+  var gone = LAYERS.list.pop().col;
   var keep = [], i;
   for (i = 0; i < G.sheet.throws.length; i++) {
-    if (G.sheet.throws[i].ink !== gone) keep.push(G.sheet.throws[i]);
+    if (colourOf(G.sheet.throws[i]) !== gone) keep.push(G.sheet.throws[i]);
   }
   G.sheet.throws = keep;
   redrawAll(G.sheet);
@@ -1510,16 +1712,19 @@ function drawRig(ctx) {
   ctx.lineWidth = 2;
   ctx.stroke();
   /* the pen, under the bob, down on the paper while it draws */
-  ctx.strokeStyle = G.drawing ? inkHex(G.ink) : 'rgba(120,110,90,.7)';
-  ctx.lineWidth = 3;
+  /* the pen carries the colour AND the nib the next throw will use, so the
+     choice is visible on the rig rather than only on a chip */
+  var nibW = nibScale(G.nib);
+  ctx.strokeStyle = G.drawing ? currentHex() : 'rgba(120,110,90,.7)';
+  ctx.lineWidth = 2 + 1.6 * nibW;
   ctx.beginPath();
   ctx.moveTo(bx, by + r - 2);
   ctx.lineTo(bx, by + r + (G.drawing ? 16 : 8));
   ctx.stroke();
   if (G.drawing) {
-    ctx.fillStyle = inkHex(G.ink);
+    ctx.fillStyle = currentHex();
     ctx.beginPath();
-    ctx.arc(bx, by + r + 16, 2.6, 0, 6.2832);
+    ctx.arc(bx, by + r + 16, 1.9 + 1.1 * nibW, 0, 6.2832);
     ctx.fill();
   }
   /* the ring a thumb may land in, while it is held */
@@ -1591,7 +1796,7 @@ function release() {
   var speed = Math.hypot(v.x, v.y), reach = Math.hypot(x0.x, x0.y);
   /* a tap on the bob is not a throw */
   if (speed < 30 && reach < 20) return null;
-  var thr = flingToThrow(G.sheet, x0, v, G.t, G.ink, G.sheet.bob);
+  var thr = flingToThrow(G.sheet, x0, v, G.t, G.ink, G.sheet.bob, G.nib, G.rgb);
   G.sheet.throws.push(thr);
   G.drawing = true;
   G.since = G.t;
@@ -1773,13 +1978,14 @@ function haptic(ms) {
   try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {}
 }
 function showScreen(name) {
-  var all = ['scrRig', 'scrMenu', 'scrFolio', 'scrPoster', 'scrKeep'], i;
+  var all = ['scrRig', 'scrColour', 'scrMenu', 'scrFolio', 'scrPoster', 'scrKeep'], i;
   for (i = 0; i < all.length; i++) el(all[i]).classList.toggle('on', 'scr' + name === all[i]);
   G.screen = name.toLowerCase();
   document.body.classList.toggle('listing', name !== 'Sheet');
   /* ⛔ the rig list counts the folio when it is OPENED, not when it was last
      drawn, so a rig that came open since is open the moment you look */
   if (name === 'Rig') renderRigScreen();
+  if (name === 'Colour') renderColourScreen();
   fitCanvas();
 }
 function saveNow() {
@@ -1799,6 +2005,13 @@ function loadSave() {
       if (!SAVE.seen) SAVE.seen = {};
       if (o.settings) SETTINGS = o.settings;
       SAVE.settings = SETTINGS;
+      /* ⛔ read each field on its own and default it. A save written before the
+         nib existed has none of these, and a whitelist rebuild of SETTINGS is
+         how Strata's journal counters were swallowed on Sep 06. */
+      if (SETTINGS.nib === 0 || SETTINGS.nib === 2) G.nib = SETTINGS.nib; else G.nib = 1;
+      if (typeof SETTINGS.hue === 'number') G.hue = SETTINGS.hue;
+      if (typeof SETTINGS.depth === 'number') G.depth = clamp(SETTINGS.depth, 0, 1);
+      if (SETTINGS.mixed) G.rgb = inkFromWheel(G.hue, G.depth);
     }
   } catch (e) {}
 }
@@ -1823,6 +2036,36 @@ function boot() {
   el('btnMenuClose').addEventListener('click', function () { showScreen('Sheet'); });
   el('rigChip').addEventListener('click', function () { showScreen('Rig'); });
   el('btnRigBack').addEventListener('click', function () { showScreen('Sheet'); });
+  /* THE COLOUR SHEET */
+  el('hueRing').addEventListener('pointerdown', function (e) {
+    e.preventDefault(); hueFromTap(e);
+    /* ⛔ in a try, like every other capture in the fleet: a synthetic pointer has
+       no active id and the call throws, which lands on the console as a page
+       error and fails the gate that watches the console. */
+    try { this.setPointerCapture(e.pointerId); } catch (x) {}
+  });
+  el('hueRing').addEventListener('pointermove', function (e) { if (e.buttons) hueFromTap(e); });
+  el('depth').addEventListener('input', function () {
+    G.depth = clamp(Number(this.value) / 100, 0, 1);
+    el('valDepth').textContent = depthWord(G.depth);
+    drawHueRing();
+  });
+  function pickNib(n) {
+    G.nib = n; SETTINGS.nib = n; saveNow();
+    renderColourScreen();
+    toast(n === 0 ? 'Fine nib' : (n === 2 ? 'Broad nib' : 'Medium nib'));
+  }
+  el('nibFine').addEventListener('click', function () { pickNib(0); });
+  el('nibMed').addEventListener('click', function () { pickNib(1); });
+  el('nibBroad').addEventListener('click', function () { pickNib(2); });
+  el('btnColourUse').addEventListener('click', function () {
+    G.rgb = inkFromWheel(G.hue, G.depth);
+    SETTINGS.hue = G.hue; SETTINGS.depth = G.depth; SETTINGS.mixed = 1; saveNow();
+    buildInkRail();
+    showScreen('Sheet');
+    toast('Mixed, ' + depthWord(G.depth));
+  });
+  el('btnColourBack').addEventListener('click', function () { showScreen('Sheet'); });
   el('btnFolioBack').addEventListener('click', function () { showScreen('Menu'); });
   el('btnPosterBack').addEventListener('click', function () { showScreen('Menu'); });
   el('btnFolio').addEventListener('click', function () { showScreen('Folio'); });
@@ -1948,7 +2191,7 @@ function slideSand(dirX, dirY, dtMs) {
   var gone = SAND.live.length - keep.length;
   SAND.live = keep;
   var layer = null, k;
-  for (k = 0; k < LAYERS.list.length; k++) if (LAYERS.list[k].ink === 'sand') layer = LAYERS.list[k];
+  for (k = 0; k < LAYERS.list.length; k++) if (LAYERS.list[k].col === 'sand') layer = LAYERS.list[k];
   if (layer) {
     var c2 = layer.ctx;
     c2.save();
@@ -2033,11 +2276,11 @@ function posterCanvas(sheet, kind, name) {
     var d = Math.hypot(b.x - a.x, b.y - a.y);
     var speed = d / dt;
     var f = Math.pow(clamp(1 - speed / CONFIG.V_MAX, 0, 1), 1.8);
-    var w = CONFIG.INK_W_MIN + (CONFIG.INK_W_MAX - CONFIG.INK_W_MIN) * f;
     var thr = throwAt(sheet, b.t);
-    var hex = inkHex(thr ? thr.ink : 'irongall');
+    var w = (CONFIG.INK_W_MIN + (CONFIG.INK_W_MAX - CONFIG.INK_W_MIN) * f) * nibScale(thr ? thr.w : 1);
+    var hex = colourOf(thr);
     c.strokeStyle = dark ? paleInk(hex) : hex;
-    c.globalAlpha = 0.34 + 0.26 * f;
+    c.globalAlpha = clamp((0.34 + 0.26 * f) * nibInk(thr ? thr.w : 1), 0, 0.95);
     c.lineWidth = Math.max(1, w * k);
     c.beginPath();
     c.moveTo(cx + a.x * k, cy + a.y * k);
@@ -2168,19 +2411,109 @@ function buildInkRail() {
   for (i = 0; i < INKS.length; i++) {
     (function (ink) {
       var b = document.createElement('button');
-      b.className = 'chip' + (ink.id === G.ink ? ' on' : '');
+      b.className = 'chip' + (!G.rgb && ink.id === G.ink ? ' on' : '');
       b.id = 'ink-' + ink.id;
       b.setAttribute('data-ink', ink.id);
       b.setAttribute('aria-label', ink.name);
       b.style.background = ink.hex;
       b.addEventListener('click', function () {
         G.ink = ink.id;
+        /* picking a named ink puts the mixed one away, so the rail always shows
+           what the next throw will lay */
+        G.rgb = null; SETTINGS.mixed = 0; saveNow();
         buildInkRail();
         toast(ink.name);
       });
       host.appendChild(b);
     })(INKS[i]);
   }
+  var m = document.createElement('button');
+  m.className = 'chip' + (G.rgb ? ' on' : ' wheel');
+  m.id = 'ink-more';
+  m.setAttribute('aria-label', 'Mix an ink');
+  if (G.rgb) m.style.background = rgbHex(G.rgb);
+  m.addEventListener('click', function () { showScreen('Colour'); });
+  host.appendChild(m);
+}
+/* THE HUE RING. Drawn at the depth the slider is on, so the ring shows the ink
+   family rather than a rainbow the game cannot make. A tap picks the hue by
+   angle; the middle is the swatch of what is chosen. */
+function drawHueRing() {
+  var cv = el('hueRing'); if (!cv) return;
+  var d = Math.min(2.5, window.devicePixelRatio || 1);
+  if (cv.width !== Math.round(240 * d)) { cv.width = Math.round(240 * d); cv.height = Math.round(240 * d); }
+  var c = cv.getContext('2d');
+  c.setTransform(d, 0, 0, d, 0, 0);
+  c.clearRect(0, 0, 240, 240);
+  var cx = 120, cy = 120, rOut = 108, rIn = 66, a;
+  /* ⛔ THE RING IS INK ON PAPER, NOT LIGHT ON BLACK. On the dark screen the bare
+     hue ring read as a saturated colour wheel out of any design tool, which is
+     the one thing docs/REFERENCE.md R1 says this is not. On a plate of the same
+     paper the sheet is, every colour on it reads as an ink, which is what it is. */
+  c.fillStyle = '#F0E8D5';
+  c.beginPath(); c.arc(cx, cy, rOut + 6, 0, 6.2832); c.fill();
+  c.strokeStyle = 'rgba(30,20,4,.28)'; c.lineWidth = 1;
+  c.beginPath(); c.arc(cx, cy, rOut + 6, 0, 6.2832); c.stroke();
+  for (a = 0; a < 360; a += 1.5) {
+    var rgb = inkFromWheel(a, G.depth);
+    c.fillStyle = rgbHex(rgb);
+    c.beginPath();
+    c.arc(cx, cy, rOut, (a - 1) * Math.PI / 180, (a + 1.6) * Math.PI / 180);
+    c.arc(cx, cy, rIn, (a + 1.6) * Math.PI / 180, (a - 1) * Math.PI / 180, true);
+    c.closePath();
+    c.fill();
+  }
+  /* where the hand is, on the ring */
+  var hx = cx + Math.cos(G.hue * Math.PI / 180) * (rOut + rIn) / 2;
+  var hy = cy + Math.sin(G.hue * Math.PI / 180) * (rOut + rIn) / 2;
+  c.strokeStyle = '#FBF6E8'; c.lineWidth = 3;
+  c.beginPath(); c.arc(hx, hy, 15, 0, 6.2832); c.stroke();
+  c.strokeStyle = 'rgba(21,26,34,.75)'; c.lineWidth = 1.5;
+  c.beginPath(); c.arc(hx, hy, 17.5, 0, 6.2832); c.stroke();
+  /* ⛔ AND THE SWATCH IS THE GAME'S OWN LINE, not three wavy strokes. The first
+     draft drew three even beziers and they read as marker pen: uniform weight,
+     no wet ends, and BROAD looked like MEDIUM. What a nib does here is what it
+     does on the sheet, so the swatch is a decaying spiral drawn segment by
+     segment through the same width and alpha law strokeSpan uses, with the same
+     nib scales on it. It thins where it whips and pools where it turns. */
+  c.fillStyle = '#F0E8D5';
+  c.beginPath(); c.arc(cx, cy, rIn - 6, 0, 6.2832); c.fill();
+  var cur = rgbHex(inkFromWheel(G.hue, G.depth));
+  var nw = nibScale(G.nib), ni = nibInk(G.nib);
+  c.lineCap = 'round'; c.strokeStyle = cur;
+  var px = null, py = null, th;
+  for (th = 0; th <= 9.2; th += 0.055) {
+    var rr = 44 * Math.exp(-th * 0.14);
+    var qx = cx + Math.cos(th * 1.62) * rr, qy = cy + Math.sin(th) * rr * 0.72;
+    if (px !== null) {
+      /* the speed along the curve is the thing the pen answers to */
+      var sp = Math.hypot(qx - px, qy - py) / 0.055;
+      var f = Math.pow(clamp(1 - sp / 210, 0, 1), 1.8);
+      c.lineWidth = Math.max(0.5, (0.5 + 1.9 * f) * nw);
+      c.globalAlpha = clamp((0.30 + 0.30 * f) * ni, 0, 0.95);
+      c.beginPath(); c.moveTo(px, py); c.lineTo(qx, qy); c.stroke();
+    }
+    px = qx; py = qy;
+  }
+  c.globalAlpha = 1;
+}
+function depthWord(d) {
+  return d < 0.22 ? 'a wash' : (d < 0.45 ? 'pale' : (d < 0.7 ? 'middling' : (d < 0.9 ? 'deep' : 'near black')));
+}
+function renderColourScreen() {
+  el('depth').value = String(Math.round(G.depth * 100));
+  el('valDepth').textContent = depthWord(G.depth);
+  el('nibFine').classList.toggle('picked', G.nib === 0);
+  el('nibMed').classList.toggle('picked', G.nib === 1);
+  el('nibBroad').classList.toggle('picked', G.nib === 2);
+  drawHueRing();
+}
+function hueFromTap(e) {
+  var cv = el('hueRing'), r = cv.getBoundingClientRect();
+  var x = e.clientX - r.left - r.width / 2, y = e.clientY - r.top - r.height / 2;
+  if (Math.hypot(x, y) < r.width * 0.2) return;
+  G.hue = ((Math.atan2(y, x) * 180 / Math.PI) + 360) % 360;
+  drawHueRing();
 }
 function bindInput() {
   var cv = V.cv, PT = null;
@@ -2384,12 +2717,17 @@ window.INKSWING_TEST = {
     return { RIGS: RIGS, RIG_ORDER: RIG_ORDER, INKS: INKS, newSheet: newSheet,
       flingToThrow: flingToThrow, posAt: posAt, traceOf: traceOf, packSheet: packSheet,
       unpackSheet: unpackSheet, noteName: noteName, intervalName: intervalName,
-      wForSemitone: wForSemitone, wEff: wEff, wDamped: wDamped };
+      wForSemitone: wForSemitone, wEff: wEff, wDamped: wDamped,
+      bytesToB64u: bytesToB64u, nibScale: nibScale, inkFromWheel: inkFromWheel,
+      rgbHex: rgbHex, colourOf: colourOf, inkHex: inkHex };
   },
   pen: function () { return G.pen; },
   penScreen: function () { return { x: sx(G.pen.x), y: sy(G.pen.y) }; },
   layers: function () { return LAYERS.list.length; },
-  layerInks: function () { return LAYERS.list.map(function (l) { return l.ink; }); },
+  layerInks: function () { return LAYERS.list.map(function (l) { return l.col; }); },
+  nib: function () { return G.nib; },
+  mixed: function () { return G.rgb ? rgbHex(G.rgb) : null; },
+  setNib: function (n) { G.nib = n; },
   inked: function () {
     /* how much of the sheet has ink on it, counted off the layers themselves */
     var n = 0, i;
@@ -2407,6 +2745,19 @@ window.INKSWING_TEST = {
      the LAYOUT as much as of the drawing: making room under the paper for the
      buttons shrank every layer and every gate written against a raw count went
      red on a drawing that was perfectly fine. */
+  /* ⛔ HOW MUCH INK WENT DOWN, not how many pixels were touched. A nib on a
+     phone is mostly a wetness, because the whole width band is sub pixel at the
+     scale the sheet is drawn, and a count of touched pixels cannot see it: fine
+     against broad measured 1.00 times by count and the difference was real. */
+  inkMass: function () {
+    var sum = 0, i;
+    for (i = 0; i < LAYERS.list.length; i++) {
+      var l = LAYERS.list[i];
+      var d = l.ctx.getImageData(0, 0, l.cv.width, l.cv.height).data, k;
+      for (k = 3; k < d.length; k += 4 * 7) sum += d[k];
+    }
+    return sum * 7 / 255;
+  },
   inkedFraction: function () {
     var sz = LAYERS.list.length ? LAYERS.list[0].cv : null;
     if (!sz) return 0;

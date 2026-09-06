@@ -380,6 +380,55 @@ try {
   });
   say(dblAgree < 1e-9, 'with the bob exactly where the integrator puts it (' + dblAgree.toExponential(1) + ')');
 
+  /* ⛔ THE NIB HAS TO SHOW ON THE PAPER. Two identical throws, one on the fine
+     nib and one on the broad, drawn on a fresh sheet each time and measured off
+     the LAYERS rather than off a constant: the broad one has to lay half again
+     as much ink. A nib that only changed a number would pass every assertion in
+     the sim and leave the drawing identical. */
+  const inkFor = async (nib) => {
+    await T((nib) => {
+      const S = window.INKSWING_TEST.sim();
+      const sh = S.newSheet({ rig: 'single', mode: 'ink' });
+      sh.throws.push(S.flingToThrow(sh, { x: 300, y: 200 }, { x: -460, y: 620 }, 0, 'irongall', 'brass', nib));
+      window.INKSWING_TEST.loadSheet(sh);
+      window.INKSWING_TEST.state().drawing = true;
+      window.INKSWING_TEST.advance(9);
+      window.INKSWING_TEST.state().drawing = false;
+    }, nib);
+    await waitFrames(page, 3);
+    return T(() => ({ mass: window.INKSWING_TEST.inkMass(), frac: window.INKSWING_TEST.inkedFraction() }));
+  };
+  const fine = await inkFor(0), med = await inkFor(1), broad = await inkFor(2);
+  say(fine.frac > 0.001 && broad.frac > 0.001, 'all three nibs draw something ('
+    + [fine, med, broad].map(x => (x.frac * 100).toFixed(2)).join(', ') + ' percent of the sheet)');
+  /* ⛔ MEASURED AS INK, NOT AS PIXELS TOUCHED. The first draft counted touched
+     pixels and reported the broad nib at 1.00 times the fine one, which was the
+     MEASUREMENT being wrong rather than the nib: the sheet is a thousand units
+     drawn into about three hundred, so the whole width band is sub pixel and a
+     count cannot see a width change. What a nib changes on a phone is how much
+     ink went down, so that is what is summed. */
+  say(broad.mass > fine.mass * 1.4, 'and the broad nib lays at least half again the ink the fine one does: '
+    + (broad.mass / Math.max(1e-9, fine.mass)).toFixed(2) + ' times');
+  say(med.mass > fine.mass && med.mass < broad.mass,
+    'with the medium nib between them (' + [fine, med, broad].map(x => x.mass.toFixed(0)).join(', ') + ')');
+
+  /* ⛔ AND A MIXED INK GETS ITS OWN LAYER, keyed by the colour rather than by a
+     name, which is what UNDO takes off. */
+  await T(() => {
+    const S = window.INKSWING_TEST.sim();
+    const sh = S.newSheet({ rig: 'single', mode: 'ink' });
+    sh.throws.push(S.flingToThrow(sh, { x: 300, y: 200 }, { x: -460, y: 620 }, 0, 'irongall'));
+    sh.throws.push(S.flingToThrow(sh, { x: -260, y: 180 }, { x: 500, y: 320 }, 4, 'irongall', 'brass', 1, [110, 40, 62]));
+    window.INKSWING_TEST.loadSheet(sh);
+    window.INKSWING_TEST.state().drawing = true;
+    window.INKSWING_TEST.advance(12);
+    window.INKSWING_TEST.state().drawing = false;
+  });
+  await waitFrames(page, 3);
+  const cols = await T(() => window.INKSWING_TEST.layerInks());
+  say(cols.length === 2 && cols.indexOf('#6e283e') >= 0,
+    'a mixed ink is its own layer, keyed by the colour (' + cols.join(', ') + ')');
+
   say(errors.length === 0, 'no page errors' + (errors.length ? ': ' + errors.slice(0, 3).join(' | ') : ''));
 } finally {
   await browser.close();

@@ -180,5 +180,39 @@ for (const [w, h, tag] of [[412, 915, 'p3-double'], [375, 667, 'p3-double-375']]
   });
 }
 
+/* P4: the colour sheet with the wheel open, at 412 and at 375, and the sheet
+   itself with a mixed ink on the broad nib so the nib is visible on paper */
+for (const [w, h, tag] of [[412, 915, 'p4-wheel-412'], [375, 667, 'p4-wheel-375']]) {
+  await withPage(w, h, async (page, shot) => {
+    await page.evaluate(() => {
+      INKSWING_TEST.state().hue = 348;
+      INKSWING_TEST.state().depth = 0.78;
+      INKSWING_TEST.setNib(2);
+      document.getElementById('ink-more').click();
+    });
+    await waitFrames(page, 4);
+    if (want(tag)) await shot(tag);
+  });
+}
+for (const [w, h, tag] of [[412, 915, 'p4-nibs-412']]) {
+  await withPage(w, h, async (page, shot) => {
+    await page.evaluate(() => {
+      const S = INKSWING_TEST.sim();
+      const sh = S.newSheet({ rig: 'crossed', lengths: [12, 19] });
+      /* the same throw three times, on the three nibs, in three inks: one
+         picture that says what a nib is */
+      sh.throws.push(S.flingToThrow(sh, { x: 300, y: 230 }, { x: -470, y: 620 }, 0, 'indigo', 'brass', 0));
+      sh.throws.push(S.flingToThrow(sh, { x: -280, y: 200 }, { x: 500, y: 420 }, 9, 'sepia', 'brass', 1));
+      sh.throws.push(S.flingToThrow(sh, { x: 240, y: -220 }, { x: -380, y: -540 }, 18, 'oxblood', 'brass', 2, [122, 44, 68]));
+      INKSWING_TEST.loadSheet(sh);
+      INKSWING_TEST.state().drawing = true;
+      INKSWING_TEST.advance(34);
+      INKSWING_TEST.state().drawing = false;
+    });
+    await waitFrames(page, 3);
+    if (want(tag)) await shot(tag);
+  });
+}
+
 s.close();
 console.log('shots done');
