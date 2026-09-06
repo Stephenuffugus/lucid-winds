@@ -602,6 +602,11 @@ $ (sinkTimeOf made to return res.time)
 
 The suite at 13:22Z: lint, sim, sweep, flick 19s, layout 13s, audio 5s, ALL GATES PASSED.
 
+The listed path, booted through the repo root server with the real `/music-unlocks.js`
+at 412x915 (13:26Z): no console errors, no failed requests, the worker registered
+under `/satellites/gerplunk/`, and the music chip seated at 10,857 (97x48) in the
+empty bottom left, clear of Sandstone. Shot: `docs/shots/p1-lake-tall.png`.
+
 The shots, all opened, faults named in SESSION STATE: `docs/shots/p1-flight.png`
 (stone up between skips two and three with the shadow under it and the sun
 road behind), `p1-gerplunk.png` (the word on the water, the rings, the folk
