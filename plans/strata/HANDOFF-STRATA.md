@@ -44,9 +44,16 @@ copy), then this file, then the design. Where they differ, this file wins; every
   yet" and the sites count must have survived the merge), the NAMED case in `test/share.mjs`
   (which puts a specimen on a plinth by link first). Seven gates green, `docs/shots/p3-journal.png`
   and `p3-journal-small.png` opened at 412x915 and 320x568.
-  **Next action:** the RENAME on the specimen sheet (the museum's other missing piece), then
-  the plan's P3 step 4 refresh of `ART_ASSETS.md` and `BUILD-NOTES.md`. The fifty bone crate
-  is a Director call and waits for Stephen.
+  **And the RENAME is built too**, which closes the museum's other missing piece. RENAME IT
+  on the plinth sheet opens a field on the name that is there and takes the other buttons
+  away while it is up; KEEP THE NAME runs the same `cleanBinomial` an incoming link goes
+  through, so a renamed specimen cannot carry anything a sent one could not, and it writes
+  the save WHOLE (the museum merges by seed and name, so a merge would bring the old name
+  back). Walked with real taps in `test/share.mjs`: the button is 48 px and on top, a single
+  word is refused with nothing written, and a two word name reaches both the disk and the
+  placard in the hall. `docs/shots/p3-rename.png` opened.
+  **Next action:** the plan's P3 step 4 refresh of `ART_ASSETS.md` and `BUILD-NOTES.md`, then
+  the morning report. The fifty bone crate is a Director call and waits for Stephen.
 
 ---
 

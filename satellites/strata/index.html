@@ -144,6 +144,9 @@ html,body{margin:0;padding:0;height:100%;background:var(--rock2);color:var(--ink
 #jourBody .first i{font-style:normal;font-size:.74rem;letter-spacing:.14em;color:#6B5B3E}
 #jourBody .first b{font-style:italic;font-weight:400;font-size:.92rem;color:var(--ink);text-align:right}
 #jourBody .first b.none{font-style:normal;color:#9A8A6A}
+#spRename{width:100%;display:flex;flex-direction:column;align-items:stretch}
+#spRename[hidden]{display:none}
+#spRenameNote{margin:2px 0 8px;text-align:center}
 #jourBody .jspec{padding:9px 2px;border-bottom:1px solid rgba(107,84,51,.16)}
 #jourBody .jspec b{display:block;font-style:italic;font-weight:400;font-size:.95rem;color:var(--ink)}
 #jourBody .jspec i{display:block;font-style:normal;font-size:.74rem;letter-spacing:.06em;color:#6B5B3E;margin-top:2px}
@@ -331,6 +334,13 @@ input[type=text]{width:100%;min-height:48px;border:3px solid var(--ink);border-r
       <div class="bino" id="spName"></div>
       <p class="tiny" id="spMeta" style="text-align:center"></p>
       <p class="hist" id="spHist"></p>
+      <div id="spRename" hidden>
+        <input type="text" id="spNameField" maxlength="40" aria-label="The name on the placard">
+        <p class="tiny" id="spRenameNote">Two words, the way a species is written.</p>
+        <button class="btn big" id="btnSpRenameKeep">KEEP THE NAME</button>
+        <button class="btn ghost" id="btnSpRenameCancel">LEAVE IT</button>
+      </div>
+      <button class="btn" id="btnSpRename">RENAME IT</button>
       <button class="btn big" id="btnSpPlate">MAKE A PLATE</button>
       <button class="btn big" id="btnSpShare">SEND IT TO SOMEBODY</button>
       <button class="btn ghost" id="btnSpRemove">TAKE IT DOWN</button>
@@ -3130,6 +3140,12 @@ function openSpecimen(ix) {
     + id.diet.slice(1) + ', about the size of a ' + id.sizeWord + '. ' + m.condition + '. '
     + (m.from ? 'On loan from ' + m.from + '.' : 'Found by ' + m.who + '.');
   el('spHist').textContent = id.history;
+  el('spRename').hidden = true;
+  el('btnSpRename').hidden = false;
+  el('btnSpPlate').hidden = false;
+  el('btnSpShare').hidden = false;
+  el('btnSpRemove').hidden = false;
+  el('btnSpClose').hidden = false;
   el('specSheet').classList.add('on');
 }
 
@@ -3411,6 +3427,40 @@ function boot() {
   });
   el('btnSpPlate').addEventListener('click', function () {
     if (SPEC_IX >= 0) exportPlate(SAVE.museum[SPEC_IX]);
+  });
+  /* RENAME. The museum is the player's, so the name on the placard is theirs to change;
+     a specimen that arrived in somebody else's crate keeps its sender on the placard and
+     only the name moves. The same cleaner an incoming link goes through runs here, so a
+     renamed specimen cannot carry anything a sent one could not. */
+  function showRename(on) {
+    el('spRename').hidden = !on;
+    el('btnSpRename').hidden = on;
+    el('btnSpPlate').hidden = on;
+    el('btnSpShare').hidden = on;
+    el('btnSpRemove').hidden = on;
+    /* LEAVE IT is the way out while a name is being typed, so CLOSE would be a second
+       word for the same door */
+    el('btnSpClose').hidden = on;
+    if (on) { try { el('spNameField').focus(); } catch (e) {} }
+  }
+  el('btnSpRename').addEventListener('click', function () {
+    if (SPEC_IX < 0) return;
+    el('spNameField').value = SAVE.museum[SPEC_IX].name;
+    showRename(true);
+  });
+  el('btnSpRenameCancel').addEventListener('click', function () { showRename(false); });
+  el('btnSpRenameKeep').addEventListener('click', function () {
+    if (SPEC_IX < 0) return;
+    var want = cleanBinomial(el('spNameField').value);
+    if (!want) { el('spRenameNote').textContent = 'Two words, the way a species is written.'; return; }
+    SAVE.museum[SPEC_IX].name = want;
+    /* the museum merges by seed and name, so a rename has to be written whole or the old
+       name comes back on the next merge */
+    try { localStorage.setItem(CONFIG.SAVE_KEY, JSON.stringify(SAVE)); } catch (e) {}
+    el('spName').textContent = want;
+    showRename(false);
+    AUDIO.play('keep');
+    openHall();
   });
   el('btnSpRemove').addEventListener('click', function () {
     if (SPEC_IX < 0) return;

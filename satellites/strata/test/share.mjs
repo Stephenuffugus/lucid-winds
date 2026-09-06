@@ -125,6 +125,43 @@ await waitFrames(b.page, 2);
 say((await b.page.evaluate(() => STRATA_TEST.frames())) > alive, 'a link with rubbish in it does not stop the game');
 say((await b.page.evaluate(() => STRATA_TEST.crates())).length === junk,
   'and nothing arrives from it (' + (await b.page.evaluate(() => STRATA_TEST.crates())).length + ' crates)');
+/* RENAME. The museum is the player's, so the name on the placard is theirs to change, and
+   a rename has to reach the disk AND the placard or it is a label that lies. (Opus, 2026-09-06) */
+await b.page.evaluate(() => { document.querySelector('#hall .plinth:not(.crate)').click(); });
+await new Promise(r => setTimeout(r, 400));
+const renameBtn = await centre(b.page, '#btnSpRename');
+say(!!renameBtn && renameBtn.w >= 48 && renameBtn.h >= 48 && renameBtn.onTop,
+  'RENAME IT is a 48 px target on the plinth sheet');
+await tap(b.page, '#btnSpRename');
+await new Promise(r => setTimeout(r, 300));
+const pre = await b.page.evaluate(() => ({
+  field: document.getElementById('spNameField').value,
+  open: !document.getElementById('spRename').hidden,
+  othersGone: document.getElementById('btnSpPlate').hidden && document.getElementById('btnSpShare').hidden
+    && document.getElementById('btnSpClose').hidden
+}));
+say(pre.open && pre.othersGone, 'it opens a field and takes the other buttons away while it is up');
+say(pre.field.split(' ').length === 2, 'and the field starts on the name that is there (' + pre.field + ')');
+/* a one word name is refused rather than written: the placard is a binomial */
+await b.page.evaluate(() => { document.getElementById('spNameField').value = 'Justoneword'; });
+await tap(b.page, '#btnSpRenameKeep');
+await new Promise(r => setTimeout(r, 300));
+const refused = await b.page.evaluate(() => ({
+  stillOpen: !document.getElementById('spRename').hidden,
+  saved: JSON.parse(localStorage.getItem('lw_strata_v1')).museum[0].name
+}));
+say(refused.stillOpen && refused.saved.split(' ').length === 2,
+  'a single word is refused and nothing is written (' + refused.saved + ')');
+await b.page.evaluate(() => { document.getElementById('spNameField').value = 'Pennysaurus stephani'; });
+await tap(b.page, '#btnSpRenameKeep');
+await new Promise(r => setTimeout(r, 600));
+const renamed = await b.page.evaluate(() => ({
+  saved: JSON.parse(localStorage.getItem('lw_strata_v1')).museum[0].name,
+  placard: (document.querySelector('#hall .plinth:not(.crate) .placard .nm') || {}).textContent
+}));
+say(renamed.saved === 'Pennysaurus stephani', 'a two word name is written to the disk (' + renamed.saved + ')');
+say(renamed.placard === 'Pennysaurus stephani', 'and the placard in the hall carries it (' + renamed.placard + ')');
+
 /* the field journal names the specimen against its body plan, which is the one place a
    plan is spoken aloud. The layout gate proves the empty case; this one mounts a real
    specimen first, so it proves the named case. (Opus, 2026-09-06) */
