@@ -1617,39 +1617,50 @@ function drawCourse(ctx, id) {
     /* the far wall, a long way off, slides at half the camera. Its top is a
        broken line of buttes and its face carries the strata every canyon has,
        so it reads as rock and not as a brown sky. */
-    var fw, fwx, sx3 = pxFar(0, 0.5), u0 = Math.floor((V.camX * 0.5 - V.W * 0.28 / V.ppm) / 2.4) * 2.4 - 4.8;
-    ctx.fillStyle = 'rgba(176,108,70,.46)';
-    ctx.beginPath();
-    ctx.moveTo(-40, py(0));
-    for (fw = 0; fw < 30; fw++) {
-      var u = u0 + fw * 2.4;
-      fwx = pxFar(u, 0.5);
-      if (fwx > V.W + 80) break;
-      var bump = 1.3 * Math.abs(Math.sin(u * 0.71)) + 0.7 * Math.abs(Math.cos(u * 0.37));
-      ctx.lineTo(fwx, py(3.6 + bump));
-      ctx.lineTo(fwx + V.ppm * 1.1, py(3.6 + bump));
-    }
-    ctx.lineTo(V.W + 40, py(0));
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(120,64,40,.28)';
-    ctx.lineWidth = 1.5;
-    for (fw = 0; fw < 5; fw++) {
+    /* ⛔ LOOKED AT: a wall that topped out at five metres left two thirds of
+       a phone blank peach, and strata drawn straight across the frame ran
+       through the flight lane like wires. The wall now climbs to nine, and
+       each stratum is the same silhouette traced lower, so the lines belong
+       to the rock and stop where the rock does. */
+    var fw, u0 = Math.floor((V.camX * 0.5 - V.W * 0.28 / V.ppm) / 2.4) * 2.4 - 4.8, drop;
+    var wallPath = function (down) {
       ctx.beginPath();
-      ctx.moveTo(0, py(0.9 + fw * 0.75));
-      ctx.lineTo(V.W, py(0.9 + fw * 0.75 + (fw % 2 ? 0.12 : -0.08)));
+      ctx.moveTo(-40, py(0));
+      for (fw = 0; fw < 30; fw++) {
+        var u = u0 + fw * 2.4;
+        var fwx = pxFar(u, 0.5);
+        if (fwx > V.W + 80) break;
+        var bump = 2.6 * Math.abs(Math.sin(u * 0.71)) + 1.6 * Math.abs(Math.cos(u * 0.37));
+        ctx.lineTo(fwx, py(4.8 + bump - down));
+        ctx.lineTo(fwx + V.ppm * 1.1, py(4.8 + bump - down));
+      }
+      ctx.lineTo(V.W + 40, py(0));
+    };
+    wallPath(0);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(176,108,70,.46)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(120,64,40,.30)';
+    ctx.lineWidth = 1.5;
+    for (drop = 1; drop < 6; drop++) {
+      wallPath(drop * 0.9);
       ctx.stroke();
     }
-    void sx3;
   } else if (stadium) {
     /* the far stand: four tiers of seats that slide at two thirds of the
        camera, and two floodlight masts over them. Seats are dots in rows, which
        is what a stand is from the pitch. */
     var tier, seat, tx0 = Math.floor((V.camX * 0.65 - V.W * 0.28 / V.ppm) / 0.5) * 0.5 - 2;
+    /* ⛔ LOOKED AT: a stand to six metres left the top half of the frame
+       blank and no mast reached the shot. The stand goes to eight and a half
+       with a roof edge, its lowest tier sits above the hoardings, and a mast
+       comes every eight metres. */
     ctx.fillStyle = 'rgba(96,104,118,.34)';
-    ctx.fillRect(0, py(6.2), V.W, py(1.3) - py(6.2));
-    for (tier = 0; tier < 4; tier++) {
-      var ty = py(1.9 + tier * 1.05);
+    ctx.fillRect(0, py(8.5), V.W, py(1.3) - py(8.5));
+    ctx.fillStyle = 'rgba(70,76,88,.5)';
+    ctx.fillRect(0, py(8.5), V.W, Math.max(4, V.ppm * 0.3));
+    for (tier = 0; tier < 6; tier++) {
+      var ty = py(2.6 + tier * 1.0);
       ctx.fillStyle = tier % 2 ? 'rgba(60,110,159,.40)' : 'rgba(212,132,42,.36)';
       for (seat = 0; seat < 120; seat++) {
         var sxx = pxFar(tx0 + seat * 0.5, 0.65);
@@ -1662,14 +1673,16 @@ function drawCourse(ctx, id) {
       ctx.beginPath(); ctx.moveTo(0, ty); ctx.lineTo(V.W, ty); ctx.stroke();
     }
     var mast;
-    for (mast = 0; mast < 6; mast++) {
-      var mxx = pxFar(mast * 14 + 2, 0.65);
+    for (mast = 0; mast < 8; mast++) {
+      var mxx = pxFar(mast * 8 - 6, 0.65);
       if (mxx < -30 || mxx > V.W + 30) continue;
       ctx.strokeStyle = 'rgba(51,48,42,.45)';
       ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.moveTo(mxx, py(6.2)); ctx.lineTo(mxx, Math.min(py(11), V.H * 0.06)); ctx.stroke();
+      /* the lamp head stays under the readout, never behind it */
+      var mtop = Math.max(py(11), V.H * 0.14);
+      ctx.beginPath(); ctx.moveTo(mxx, py(8.5)); ctx.lineTo(mxx, mtop); ctx.stroke();
       ctx.fillStyle = 'rgba(200,168,75,.5)';
-      ctx.fillRect(mxx - V.ppm * 0.55, Math.min(py(11), V.H * 0.06), V.ppm * 1.1, Math.max(4, V.ppm * 0.35));
+      ctx.fillRect(mxx - V.ppm * 0.55, mtop, V.ppm * 1.1, Math.max(4, V.ppm * 0.35));
     }
   } else {
     /* ⛔ THE ROOF IS ANCHORED TO THE FRAME, NOT TO THE WORLD, and it is the only
