@@ -562,6 +562,62 @@ share, layout`.
 
 ---
 
+### The last run of the night, 2026-09-06. A gate that was recording the room.
+
+The suite had been green for hours. Run it once more before stopping and the
+sound gate went red on one line:
+
+```
+--- sound (wanted: SOUND OK) ---
+  ok    and a station bell is nothing like a buffer (1227 Hz against 288 Hz)
+  FAIL  and a cow is the lowest thing on the rug (501 Hz)
+  ok    three trains at full speed do clack (180 in a second)
+
+1 SOUND FAILURE(S)
+```
+
+The protocol says rerun it alone twice and two passes is a pass. It passed twice:
+
+```
+=== run 1 ===
+  ok    and a cow is the lowest thing on the rug (375 Hz)
+SOUND OK
+=== run 2 ===
+  ok    and a cow is the lowest thing on the rug (375 Hz)
+SOUND OK
+```
+
+**That is not a flake and banking it would have been the wrong call.** 375 and 501
+out of three fixed oscillators with no noise in them is not core contention, it is
+two different sounds. The cause: this gate swaps the game's audio context for an
+OfflineAudioContext and then AWAITS the render, and the game does not stop for
+that. The title screen runs a demo layout, its trains clack over every joint, and
+every one of those clacks was being scheduled onto the offline context, because
+that is the context the game's own AUDIO object was pointing at. **The gate was
+recording the cue plus the room.**
+
+Proved by rendering the same cue twice in one page, once with a door on play and
+once with six of the game's own clacks let in:
+
+```
+  door SHUT (only the cow) : 375 Hz   -> PASSES
+  door OPEN (cow + 6 clacks): 879 Hz   -> FAILS
+```
+
+Fixed in the gate, not in the game and not in the threshold: every capture now
+wraps `A.play` so only the cue being recorded reaches the offline context. Full
+suite twice after:
+
+```
+sim pass, lint pass, solve pass, lap pass, mutants pass, boot pass, build pass,
+run pass, share pass, sound pass, layout pass, thumb pass
+ALL GATES PASSED          (twice)
+```
+
+**The lesson, which is the sixth of its kind tonight: a green rerun is an answer
+to the question "does it pass", and the question was "why did it not".**
+
+
 ## 15. THE MORNING REPORT
 
 ### Morning report, 2026-09-06, Whistlestop
@@ -574,6 +630,13 @@ Whistlestop is **DONE P3**.
 `sim lint solve lap mutants boot build run share sound layout thumb`.
 131 assertions in `sim.js --test`, thirteen mutations in `test/mutants.mjs`, and every browser gate
 watched to fail on the assertion that guards its rule. Both columns are in section 13.
+
+**The last gate of the night went red and it was right to.** The sound gate failed on the cow, then
+passed twice when rerun alone, which the protocol calls a pass. It was not one. The gate swaps the
+game's audio context for an offline one and then awaits the render, and the game keeps playing into
+it the whole time, so it was recording the cue plus the demo layout's trains. Same cue, one page:
+375 Hz behind a door, 879 Hz with six of the game's own clacks let in. Fixed in the gate, not in the
+threshold, and the suite is green twice since. The whole of it is at the end of section 13.
 
 **Play it:** `satellites/whistlestop/index.html`. The title runs a little railway behind it. BUILD
 opens one of three rugs; drag pieces out of the tray and the ends snap, the klk on every joint and

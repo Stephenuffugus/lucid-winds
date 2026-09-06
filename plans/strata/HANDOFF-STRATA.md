@@ -647,6 +647,12 @@ broken, and every one of them was found by breaking the code on purpose rather t
 Whistlestop's `test/mutants.mjs` is the shape that catches them, and Strata does not have one; that
 is the first thing I would add to Strata if there were another hour.
 
+And a sixth, the other way round, on the very last run: Whistlestop's sound gate went RED on working
+code, passed twice when rerun alone, and the protocol would have called that a pass. It was a gate
+recording the room, because it swaps the game's audio context for an offline one and the game keeps
+playing into it while it renders. Two green reruns answer the question "does it pass". The question
+was "why did it not". It is written up at the end of that plan's section 13.
+
 ---
 
 

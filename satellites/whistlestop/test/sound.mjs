@@ -18,6 +18,17 @@
  *      apart with the phone in a pocket
  *   5. the clickety clack is budgeted: three trains at full speed cannot make
  *      more taps per second than the budget allows
+ *
+ * ⛔⛔ THE GAME KEEPS PLAYING WHILE YOU RECORD. This gate swaps the game's audio
+ * context for an offline one and then AWAITS the render, and the game does not
+ * stop for that: the title screen runs a demo layout, its trains clack over
+ * every joint, and every one of those clacks was landing in the buffer being
+ * measured, because the context they were being scheduled onto was the offline
+ * one. The cow measured 375 Hz alone and 501 Hz inside the suite off the same
+ * three oscillators, and 400 is where the assertion sits. So every capture
+ * below puts a DOOR on play() first: only the cue being recorded goes through,
+ * and everything the game plays into the microphone is dropped on the floor.
+ * Found on the last run of the night by refusing to bank two green reruns.
  */
 import { serve, open, reporter, waitFrames, tap } from './harness.mjs';
 
@@ -32,8 +43,11 @@ const CUES = ['klk', 'set', 'chime', 'whistle', 'clack', 'couple', 'bell', 'clon
   'flip', 'bump', 'click', 'moo'];
 const rendered = await page.evaluate(async (cues) => {
   const A = WHISTLESTOP_TEST.audio();
+  const realPlay = A.play;
   const out = {};
   for (const id of cues) {
+    /* ⛔ the door: only the cue being recorded reaches the offline context */
+    A.play = function (pid) { if (pid !== id) return; return realPlay.call(this, pid); };
     const off = new OfflineAudioContext(1, 44100 * 1.6, 44100);
     const keepCtx = A.ctx, keepMaster = A.master, keepOn = A.on;
     A.ctx = off;
@@ -43,7 +57,7 @@ const rendered = await page.evaluate(async (cues) => {
     A.on = true;
     A.play(id);
     const buf = await off.startRendering();
-    A.ctx = keepCtx; A.master = keepMaster; A.on = keepOn;
+    A.ctx = keepCtx; A.master = keepMaster; A.on = keepOn; A.play = realPlay;
     const d = buf.getChannelData(0);
     let peak = 0, sum = 0;
     for (let i = 0; i < d.length; i++) {
@@ -101,12 +115,14 @@ const partials = await page.evaluate(async () => {
   /* the two tones, found by correlating the render against 660 and 880 Hz */
   const A = WHISTLESTOP_TEST.audio();
   const off = new OfflineAudioContext(1, 44100, 44100);
-  const k = { ctx: A.ctx, m: A.master, on: A.on };
+  const k = { ctx: A.ctx, m: A.master, on: A.on, p: A.play };
   A.ctx = off; A.master = off.createGain(); A.master.gain.value = 1;
   A.master.connect(off.destination); A.on = true;
+  /* ⛔ the door, again: the demo layout is clacking while this renders */
+  A.play = function (pid) { if (pid !== 'whistle') return; return k.p.call(this, pid); };
   A.play('whistle');
   const buf = await off.startRendering();
-  A.ctx = k.ctx; A.master = k.m; A.on = k.on;
+  A.ctx = k.ctx; A.master = k.m; A.on = k.on; A.play = k.p;
   const d = buf.getChannelData(0);
   const power = (f) => {
     let re = 0, im = 0;
@@ -130,12 +146,14 @@ say(partials.f660 > partials.f770 * 1.6 && partials.f880 > partials.f770 * 1.6,
 const chime = await page.evaluate(async () => {
   const A = WHISTLESTOP_TEST.audio();
   const off = new OfflineAudioContext(1, 44100, 44100);
-  const k = { ctx: A.ctx, m: A.master, on: A.on };
+  const k = { ctx: A.ctx, m: A.master, on: A.on, p: A.play };
   A.ctx = off; A.master = off.createGain(); A.master.gain.value = 1;
   A.master.connect(off.destination); A.on = true;
+  /* ⛔ the door, again: the demo layout is clacking while this renders */
+  A.play = function (pid) { if (pid !== 'chime') return; return k.p.call(this, pid); };
   A.play('chime');
   const buf = await off.startRendering();
-  A.ctx = k.ctx; A.master = k.m; A.on = k.on;
+  A.ctx = k.ctx; A.master = k.m; A.on = k.on; A.play = k.p;
   const d = buf.getChannelData(0);
   const power = (f, a, b) => {
     let re = 0, im = 0;
