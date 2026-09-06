@@ -125,6 +125,23 @@ await waitFrames(b.page, 2);
 say((await b.page.evaluate(() => STRATA_TEST.frames())) > alive, 'a link with rubbish in it does not stop the game');
 say((await b.page.evaluate(() => STRATA_TEST.crates())).length === junk,
   'and nothing arrives from it (' + (await b.page.evaluate(() => STRATA_TEST.crates())).length + ' crates)');
+/* the field journal names the specimen against its body plan, which is the one place a
+   plan is spoken aloud. The layout gate proves the empty case; this one mounts a real
+   specimen first, so it proves the named case. (Opus, 2026-09-06) */
+await b.page.evaluate(() => { document.getElementById('scrMenu').classList.add('on'); });
+await b.page.waitForFunction(() => document.getElementById('btnToJournal'), { timeout: 5000 }).catch(() => {});
+await tap(b.page, '#btnToJournal');
+await new Promise(r => setTimeout(r, 500));
+const jour = await b.page.evaluate(() => ({
+  on: document.getElementById('scrJournal').classList.contains('on'),
+  spec: document.getElementById('jSpec').textContent,
+  firsts: Array.prototype.map.call(document.querySelectorAll('#jFirsts .first'), e => e.textContent)
+}));
+say(jour.on, 'the field journal opens from the menu');
+say(jour.spec === '1', 'and it counts the specimen that arrived by link (' + jour.spec + ')');
+say(jour.firsts.length === 4 && jour.firsts.some(t => !/not met yet/.test(t)),
+  'and names it against its body plan: ' + jour.firsts.join(' | '));
+
 say(b.errors.length === 0, 'nothing landed on the console' + (b.errors.length ? ': ' + b.errors[0] : ''));
 await b.browser.close();
 

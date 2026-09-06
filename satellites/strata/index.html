@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="STRATA">
-<link rel="manifest" href="./manifest.webmanifest?v=20260906e">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260906e">
-<link rel="icon" href="./icon-192.png?v=20260906e">
+<link rel="manifest" href="./manifest.webmanifest?v=20260906f">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260906f">
+<link rel="icon" href="./icon-192.png?v=20260906f">
 <link rel="canonical" href="https://lucidwinds.com/satellites/strata/">
 <style>
 /*  STRATA
@@ -117,6 +117,37 @@ html,body{margin:0;padding:0;height:100%;background:var(--rock2);color:var(--ink
 .title{font-size:2rem;font-weight:800;letter-spacing:.16em;text-align:center;margin:0 0 2px}
 .tag{font-size:.86rem;text-align:center;color:#6B5B3E;margin:0 0 16px;line-height:1.6}
 .cap{font-size:.74rem;letter-spacing:.18em;color:#6B5B3E;text-transform:uppercase;margin:8px 0 2px}
+/* THE FIELD JOURNAL. Tan paper, ruled rows, the same hand as the placards. */
+#scrJournal{background:var(--paper);align-items:stretch;justify-content:flex-start;overflow-y:auto}
+/* ⛔ the shared screen centres with two auto margin flex items, which is right for a
+   short column of buttons and wrong for a page of rows: it left the journal floating in
+   the middle with two hundred pixels of empty paper over and under it. This page starts
+   at the top and runs down, like a page. */
+#scrJournal::before,#scrJournal::after{margin:0;flex:0 0 0}
+/* the bar shares the body's column, so the title sits over the first row and not
+   inset from it */
+/* ⛔ THE TOP BAND IS THE CHIP'S, SO NOTHING OF OURS LIVES IN IT. The fleet's music chip
+   seats itself in the freest corner it can find, and on a page of rows that is the top
+   right. Padding the bar only made the chip follow the title as it shrank, twice. The bar
+   carries the back arrow alone now and the title sits in the body, under the band the
+   chip chooses from, where it cannot be chased. */
+#jourBar{display:flex;align-items:center;width:100%;max-width:360px;margin:0 auto;
+  padding:calc(10px + var(--safeT)) 16px 4px;flex:0 0 auto;box-sizing:border-box}
+#jourTitle{margin:2px 0 6px}
+#jourBody{width:100%;max-width:360px;margin:0 auto;padding:6px 16px calc(24px + var(--safeB))}
+#jourBody .jrow{display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+  padding:11px 2px;border-bottom:1px solid rgba(107,84,51,.22)}
+#jourBody .jrow i{font-style:normal;font-size:.74rem;letter-spacing:.14em;color:#6B5B3E}
+#jourBody .jrow span{font-size:1.05rem;color:var(--ink);font-weight:700}
+#jourBody .first{display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+  padding:10px 2px;border-bottom:1px solid rgba(107,84,51,.16)}
+#jourBody .first i{font-style:normal;font-size:.74rem;letter-spacing:.14em;color:#6B5B3E}
+#jourBody .first b{font-style:italic;font-weight:400;font-size:.92rem;color:var(--ink);text-align:right}
+#jourBody .first b.none{font-style:normal;color:#9A8A6A}
+#jourBody .jspec{padding:9px 2px;border-bottom:1px solid rgba(107,84,51,.16)}
+#jourBody .jspec b{display:block;font-style:italic;font-weight:400;font-size:.95rem;color:var(--ink)}
+#jourBody .jspec i{display:block;font-style:normal;font-size:.74rem;letter-spacing:.06em;color:#6B5B3E;margin-top:2px}
+#jourBody #jListCap[hidden]{display:none}
 .lede{font-size:.94rem;line-height:1.7;margin:6px 0}
 .tiny{font-size:.78rem;line-height:1.6;color:#6B5B3E;margin:4px 0}
 .card{width:100%;min-height:64px;border:3px solid var(--ink);border-radius:14px;background:var(--paper);
@@ -186,7 +217,7 @@ input[type=text]{width:100%;min-height:48px;border:3px solid var(--ink);border-r
 #hallEmpty[hidden]{display:none}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260906e" defer></script>
+<script src="/music-unlocks.js?v=20260906f" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">STRATA</h1>
@@ -265,6 +296,24 @@ input[type=text]{width:100%;min-height:48px;border:3px solid var(--ink);border-r
     <canvas id="mountCv"></canvas>
     <div id="boneTray"></div>
     <button class="btn big" id="btnKeepIt" disabled>NAME IT</button>
+  </div>
+
+  <div class="screen" id="scrJournal">
+    <div id="jourBar">
+      <button class="btn icon" id="btnJourBack">&#8592;</button>
+    </div>
+    <div id="jourBody">
+      <div class="cap" id="jourTitle">The field journal</div>
+      <div class="jrow"><i>SPECIMENS MOUNTED</i><span id="jSpec"></span></div>
+      <div class="jrow"><i>SITES OPENED</i><span id="jSites"></span></div>
+      <div class="jrow"><i>BONES LIFTED</i><span id="jBones"></span></div>
+      <div class="jrow"><i>DEEPEST CUT</i><span id="jDeep"></span></div>
+      <div class="cap" style="margin-top:22px">First of its kind</div>
+      <div id="jFirsts"></div>
+      <div class="cap" style="margin-top:22px" id="jListCap">The collection</div>
+      <div id="jList"></div>
+      <p class="tiny" id="jourEmpty" hidden>Nothing in the journal yet. Open a site and brush.</p>
+    </div>
   </div>
 
   <div class="screen" id="scrHall">
@@ -1460,7 +1509,7 @@ function conditionWord(outN, cracked, total) {
 
 
 /* ========================= 16. THE GAME'S STATE ========================= */
-var STAMP = '20260906e';
+var STAMP = '20260906f';
 var REDUCED = false;
 var G = {
   screen: 'Title', mode: 'dig',
@@ -2536,6 +2585,7 @@ function onUp(e) {
   var got = tryExtract(G.dig, path);
   if (got) {
     G.lifted++;
+    SAVE.bones = (SAVE.bones || 0) + 1;
     AUDIO.play('jacket');
     banner(got.bone.cracked ? 'Lifted, and it is repaired.' : 'Lifted.');
     refreshChrome();
@@ -2562,6 +2612,9 @@ function toast(msg) {
 var SAVE = null;
 function blankSave() {
   return { v: CONFIG.SAVE_V, who: '', museum: [], crates: [], unlocked: 0,
+    /* what the field journal counts. A jar of numbers is not a journal, but a journal
+       with no numbers in it is a list of names, so it keeps both. */
+    sites: 0, bones: 0, deepest: 0,
     settings: { sound: 1, motion: 1 }, seen: { how: 0 } };
 }
 function readSave() {
@@ -2589,6 +2642,15 @@ function saveNow() {
       if (!have[m.seed + ':' + m.name]) disk.museum.push(m);
     }
     disk.unlocked = Math.max(disk.unlocked || 0, SAVE.unlocked || 0);
+    /* ⛔ EVERY FIELD THE GAME KEEPS HAS TO BE NAMED HERE. saveNow rebuilds the save from
+       what is on disk and copies a whitelist over it, which is what makes two tabs safe;
+       a field that is not on the list is silently dropped on the next write. The journal's
+       counters were added and not listed, so a real dig incremented them and the very same
+       call threw them away, and the journal read zeros while the game had counted. They
+       merge upward like the unlock, so two tabs cannot lose a count either. */
+    disk.sites = Math.max(disk.sites || 0, SAVE.sites || 0);
+    disk.bones = Math.max(disk.bones || 0, SAVE.bones || 0);
+    disk.deepest = Math.max(disk.deepest || 0, SAVE.deepest || 0);
     disk.crates = SAVE.crates || [];
     SAVE = disk;
     localStorage.setItem(CONFIG.SAVE_KEY, JSON.stringify(disk));
@@ -2596,7 +2658,7 @@ function saveNow() {
 }
 
 /* ========================= 21. SCREENS ========================= */
-var SCREENS = ['Title', 'How', 'Mount', 'Hall'];
+var SCREENS = ['Title', 'How', 'Mount', 'Hall', 'Journal'];
 function showScreen(name) {
   var i;
   for (i = 0; i < SCREENS.length; i++) {
@@ -2669,6 +2731,9 @@ function newSite(seed, depth) {
   G.site = makeSite(G.seed, G.depth);
   G.dig = newDig(G.site);
   G.lifted = 0;
+  SAVE.sites = (SAVE.sites || 0) + 1;
+  if (G.depth > (SAVE.deepest || 0)) SAVE.deepest = G.depth;
+  saveNow();
   G.tool = 'brush';
   BAND_CACHE = null;
   DUST.length = 0;
@@ -2913,6 +2978,52 @@ function mountLocal(e) {
 }
 
 /* ========================= 24. THE HALL ========================= */
+/* ===================== 24b. THE FIELD JOURNAL ===================== */
+/* The menu's JOURNAL button used to toast "the journal opens in the next session",
+   which is a promise the game did not keep. It keeps it now. Everything on the page is
+   read from what the save already holds or regenerated from a specimen's seed, so the
+   journal cannot say a thing the museum does not. */
+var PLAN_WORD = { biped: 'On two legs', quadruped: 'On four legs', flippers: 'In the water', wings: 'In the air' };
+/* a name can come from a stranger's link, so it is set as text, never as markup. The
+   plinth builds its placard with textContent for the same reason; this is the one place
+   the journal writes html, so it does the escaping itself. */
+function escText(t) {
+  return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function openJournal() {
+  var m = SAVE.museum || [], i;
+  el('jSpec').textContent = String(m.length);
+  el('jSites').textContent = String(SAVE.sites || 0);
+  el('jBones').textContent = String(SAVE.bones || 0);
+  el('jDeep').textContent = ['a shallow cut', 'a deeper cut', 'a deep cut', 'the oldest rock'][clamp(SAVE.deepest || 0, 0, 3)];
+  /* the firsts: the earliest specimen in the museum built on each body plan. The plan is
+     regenerated from the seed, the same call the plinth and the plate make. */
+  var first = {}, order = ['biped', 'quadruped', 'flippers', 'wings'];
+  for (i = 0; i < m.length; i++) {
+    var sp = species(m[i].seed, m[i].era);
+    if (sp && !first[sp.plan]) first[sp.plan] = m[i];
+  }
+  var html = '';
+  for (i = 0; i < order.length; i++) {
+    var k = order[i], f = first[k];
+    html += '<div class="first"><i>' + PLAN_WORD[k].toUpperCase() + '</i>'
+      + (f ? '<b>' + escText(f.name) + '</b>' : '<b class="none">not met yet</b>') + '</div>';
+  }
+  el('jFirsts').innerHTML = html;
+  /* the written record, which is what a journal is and what the hall is not: the hall
+     is pictures on plinths, this is the list in a hand. Newest first, because the last
+     thing out of the rock is the thing you want to read about. */
+  var list = '';
+  for (i = m.length - 1; i >= 0; i--) {
+    var e = m[i], id2 = identity(species(e.seed, e.era), e.seed, e.dedicated ? String(e.name).split(' ')[1] : '');
+    list += '<div class="jspec"><b>' + escText(e.name) + '</b><i>' + escText(id2.eraName)
+      + ', ' + escText(e.condition) + (e.from ? ', on loan from ' + escText(e.from) : '') + '</i></div>';
+  }
+  el('jList').innerHTML = list;
+  el('jListCap').hidden = !m.length;
+  el('jourEmpty').hidden = !!(m.length || SAVE.sites);
+  showScreen('Journal');
+}
 function openHall() {
   var hall = el('hall');
   hall.innerHTML = '';
@@ -3261,8 +3372,9 @@ function boot() {
     el('scrMenu').classList.remove('on'); openHall();
   });
   el('btnToJournal').addEventListener('click', function () {
-    el('scrMenu').classList.remove('on'); toast('The journal opens in the next session.');
+    el('scrMenu').classList.remove('on'); openJournal();
   });
+  el('btnJourBack').addEventListener('click', function () { showScreen('Title'); });
   el('btnSound').addEventListener('click', function () {
     SAVE.settings.sound = SAVE.settings.sound ? 0 : 1;
     AUDIO.on = !!SAVE.settings.sound;

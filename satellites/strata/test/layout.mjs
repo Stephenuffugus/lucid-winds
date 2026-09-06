@@ -134,6 +134,44 @@ for (const [w, h] of SIZES) {
   say(!!who && who.h >= 48 && who.onTop, at + ' the field name box is a 48 px target on top');
   const brand = await page.evaluate(() => document.querySelector('#scrMenu .tiny').textContent.trim());
   say(brand === 'Sky Wolf Studio', at + ' the menu says who made it (' + brand + ')');
+  /* ---- the field journal, which the menu used to promise and not open ---- */
+  await tap(page, '#btnToJournal');
+  await waitFrames(page, 3);
+  say((await page.evaluate(() => STRATA_TEST.screen())) === 'Journal', at + ' THE JOURNAL opens the journal');
+  const jrows = await page.evaluate(() => {
+    const out = [];
+    for (const id of ['jSpec', 'jSites', 'jBones', 'jDeep']) {
+      const e = document.getElementById(id);
+      const r = e.getBoundingClientRect();
+      out.push({ id: id, text: e.textContent, shown: r.width > 0 && r.height > 0 });
+    }
+    return out;
+  });
+  say(jrows.every(r => r.shown && r.text.length > 0),
+    at + ' and every count on it is showing and filled: ' + jrows.map(r => r.text).join(', '));
+  /* ⛔ the count is the SAVE's and it has to survive the save's own merge: saveNow
+     rebuilds from disk and copies a whitelist, so a counter that is not on that list is
+     written and dropped in the same call. This walk pressed DIG once, so a zero here
+     means the field never reached the disk. */
+  say(Number(jrows[1].text) >= 1, at + ' the sites count survived the save merge (' + jrows[1].text + ')');
+  const firsts = await page.evaluate(() => Array.prototype.map.call(document.querySelectorAll('#jFirsts .first'),
+    e => ({ t: e.textContent, h: e.getBoundingClientRect().height })));
+  say(firsts.length === 4 && firsts.every(f => f.h > 0),
+    at + ' four body plans are listed, all showing (' + firsts.length + ')');
+  /* this walk mounts nothing (it closes the name sheet with NOT YET), so the journal must
+     say so rather than leave the rows blank. The named case is proved in test/share.mjs,
+     which does put a specimen on a plinth. */
+  say(firsts.every(f => /not met yet/.test(f.t)),
+    at + ' and with nothing mounted every plan says so: ' + firsts.map(f => f.t).join(' | '));
+  /* the page starts at the top rather than floating in the middle of the paper */
+  const jtop = await page.evaluate(() => document.getElementById('jourBar').getBoundingClientRect().top);
+  say(jtop < 120, at + ' the journal starts at the top of the page (' + jtop.toFixed(0) + ' px down)');
+  await group(page, at, 'the journal', '#btnJourBack', 1);
+  /* BACK from the journal is the title, and the menu sheet it was opened from is still
+     up behind it, so that is what closes next */
+  await tap(page, '#btnJourBack');
+  await waitFrames(page, 2);
+  say((await page.evaluate(() => STRATA_TEST.screen())) === 'Title', at + ' and BACK from the journal is the title');
   await tap(page, '#btnMenuClose');
   await waitFrames(page, 2);
 

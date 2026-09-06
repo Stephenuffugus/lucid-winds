@@ -18,6 +18,36 @@ copy), then this file, then the design. Where they differ, this file wins; every
 - 2026-09-06 Opus B: P0 DONE. SKELETON and IDENTITY built, 65 assertions green, the variety sheet passed at TWELVE of fifty after two rounds at nought and about four; all three counts and what was wrong each time are in section 13. Next action: section 5, P1, step 1, SEDIMENT and the brush.
 - 2026-09-06 Opus B: P0 step 1 done, red, output in section 13. Next action: section 5, P0, step 1, the scaffold (SKELETON and IDENTITY, pure, inside `index.html`) and `tools/variety.mjs`.
 
+- 2026-09-06 15:45Z Opus (lead): **THE FIELD JOURNAL IS BUILT**, which closes the first of
+  the two things the morning report listed as missing from the museum. Stamp 20260906f.
+  The menu's JOURNAL button toasted "the journal opens in the next session"; it opens now:
+  specimens mounted, sites opened, bones lifted, the deepest cut in words, FIRST OF ITS
+  KIND (the earliest specimen on each of the four body plans, regenerated from its seed
+  with the same `species` call the plinth and the plate make), and THE COLLECTION, the
+  written record with each animal's era and condition, newest first, which is what a
+  journal is and what the hall (pictures on plinths) is not.
+  ⛔ **The counters read zero on the page while the game was counting**, and the layout gate
+  caught it: `saveNow` rebuilds the save from disk and copies a WHITELIST over it, which is
+  what makes two tabs safe, so `sites`, `bones` and `deepest` were written and dropped in
+  the same call. They are on the list now and merge upward like `unlocked`.
+  ⛔ **The shared `.screen` rule centres its column with two auto margin flex items**, right
+  for a stack of buttons and wrong for a page of rows: the journal floated in the middle of
+  the paper with two hundred pixels empty above and below.
+  ⛔ **The fleet's music chip chased the title.** It seats in the freest corner it finds; on
+  a page of rows that is the top right, and it landed across the word "journal". Padding the
+  bar only made the chip follow the title as it shrank, twice, measured both times. The top
+  band is the chip's now: the bar carries the back arrow alone and the title sits in the
+  body. Verified by walking every element of the page against the chip's rectangle after it
+  had settled: nothing of ours is under it.
+  Assertions split so neither can pass on a walk that never made the thing it is about: the
+  EMPTY case in `test/layout.mjs` (which mounts nothing, so all four plans must read "not met
+  yet" and the sites count must have survived the merge), the NAMED case in `test/share.mjs`
+  (which puts a specimen on a plinth by link first). Seven gates green, `docs/shots/p3-journal.png`
+  and `p3-journal-small.png` opened at 412x915 and 320x568.
+  **Next action:** the RENAME on the specimen sheet (the museum's other missing piece), then
+  the plan's P3 step 4 refresh of `ART_ASSETS.md` and `BUILD-NOTES.md`. The fifty bone crate
+  is a Director call and waits for Stephen.
+
 ---
 
 ## 0. RULES OF ENGAGEMENT

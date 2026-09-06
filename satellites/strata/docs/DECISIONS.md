@@ -70,3 +70,28 @@ ornament. Nothing else changes.
 **A dedication is never title cased and never corrected.** It is a nine year
 old's spelling of somebody they love. It is stripped to letters and spaces,
 capped at twenty four, and otherwise left exactly as it was typed.
+
+**2026-09-06 (Opus) — the field journal, and the save whitelist that swallowed its counters.**
+The menu's JOURNAL button toasted "the journal opens in the next session", which is a promise
+the game made to the player and did not keep. It opens now: specimens mounted, sites opened,
+bones lifted, the deepest cut in words, and FIRST OF ITS KIND, the earliest specimen in the
+museum built on each of the four body plans, regenerated from its seed with the same `species`
+call the plinth and the plate make, so the journal cannot name an animal the museum does not
+hold. With nothing mounted every plan reads "not met yet" rather than leaving the rows blank.
+
+⛔ The counters were added to the blank save and incremented in `newSite` and on a lift, and
+they still read zero on the page. `saveNow` rebuilds the save from what is on disk and copies a
+WHITELIST of fields over it, which is what makes two tabs safe; a field that is not named there
+is written and dropped in the same call. `sites`, `bones` and `deepest` are on the list now and
+merge upward like `unlocked`, so two tabs cannot lose a count either. The layout gate caught it:
+it presses DIG once, so a zero in the sites row can only mean the field never reached the disk,
+and that is the assertion it now carries.
+
+⛔ The shared `.screen` rule centres its column with two auto margin flex items, which is right
+for a short stack of buttons and wrong for a page of rows: the journal floated in the middle of
+the paper with two hundred pixels empty above and below it. `#scrJournal::before` and `::after`
+drop those margins, so the journal starts at the top and runs down, like a page.
+
+The empty case is proved in `test/layout.mjs`, which mounts nothing, and the named case in
+`test/share.mjs`, which puts a real specimen on a plinth by link first. Splitting them that way
+means neither assertion can pass on a walk that never produced the thing it is about.
