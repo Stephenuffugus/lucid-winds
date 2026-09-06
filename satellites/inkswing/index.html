@@ -1,9 +1,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#2B3A67">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260906d">
-<link rel="icon" href="./icon-192.png?v=20260906d">
-<link rel="manifest" href="./manifest.webmanifest?v=20260906d">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260906g">
+<link rel="icon" href="./icon-192.png?v=20260906g">
+<link rel="manifest" href="./manifest.webmanifest?v=20260906g">
 <title>INKSWING</title>
 <style>
 :root{
@@ -33,6 +33,13 @@ body{touch-action:none;user-select:none;-webkit-user-select:none}
 #gap{flex:1 1 auto}
 #inkRail{position:absolute;right:calc(6px + var(--safeR));top:50%;transform:translateY(-50%);
   z-index:5;display:flex;flex-direction:column;gap:6px}
+/* the rail lies down on a tall phone so the sheet can have the whole width. It sits in
+   the band the layout maths reserves for it, clear of the actions and of the bottom left
+   120 by 120 the fleet keeps for the music chip. */
+@media (min-height:800px){
+  #inkRail{right:auto;left:50%;top:auto;bottom:calc(96px + var(--safeB));
+    transform:translateX(-50%);flex-direction:row;gap:8px}
+}
 .chip{width:48px;height:48px;border-radius:14px;border:2px solid rgba(251,246,232,.35);
   padding:0;box-shadow:0 2px 0 rgba(0,0,0,.35)}
 .chip.on{border-color:#FBF6E8;transform:scale(1.06)}
@@ -1169,7 +1176,7 @@ function suitePurity(T, src) {
 }
 // ---- TEST_EXPORT_END ----
 /* ============================ 16. THE PAGE ============================ */
-var STAMP = '20260906d';
+var STAMP = '20260906g';
 function el(id) { return document.getElementById(id); }
 var V = { cv: null, ctx: null, W: 0, H: 0, dpr: 1, t: 0, ppu: 0.34, ox: 0, oy: 0 };
 var G = { screen: 'sheet', sheet: null, t: 0, drawing: false, since: 0,
@@ -1198,6 +1205,14 @@ function fitCanvas() {
      runs UNDER it and the right hand third of every drawing was covered by the
      colours. The sheet is centred in what is LEFT after the rail. */
   var pad = 14, top = 96, bottom = 152, rail = 58;
+  /* ⛔ ON A TALL PHONE THE RAIL LIES DOWN. The sheet is 1000 by 1250, so on a 412 by 915
+     screen the WIDTH binds: the drawing came out 322 by 400 with two hundred and eighty
+     pixels of dead ground under it and a column of colours eating the right edge. With
+     the rail as a row beneath the sheet the full width is the sheet's, which is a fifth
+     more drawing on the phone Stephen carries, and the ground it leaves is the row.
+     Under 800 tall the column stays: a short phone has no height to spend. */
+  var tall = V.H >= 800;
+  if (tall) { rail = 0; bottom = 152 + 62; }
   var boxW = V.W - pad * 2 - rail, boxH = V.H - top - bottom;
   V.ppu = Math.min(boxW / CONFIG.SHEET_W, boxH / CONFIG.SHEET_H);
   V.ox = pad + boxW / 2;

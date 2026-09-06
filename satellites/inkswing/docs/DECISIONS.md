@@ -122,3 +122,13 @@
   both terms are link 1 and would otherwise hum a unison.
 - **The rig list counts the folio when it is opened.** Filled any way but by the
   keep button (the gate, a sheet kept off a link) the count was stale.
+
+**2026-09-06 (Opus) — on a tall phone the ink rail lies down, and the drawing gets the width.**
+The sheet is 1000 by 1250, so on a 412 by 915 screen the WIDTH binds: with a column of five
+48 px colour chips pinned to the right edge, the drawing came out 322 by 400 with two
+hundred and eighty pixels of dead ground beneath it. Measured, not guessed. At 800 px tall
+or more the rail becomes a row under the sheet and the layout maths gives back the 58 px it
+reserved, so the sheet is 384 wide, a fifth more drawing on the phone Stephen carries.
+Under 800 tall the column stays, because a short phone has no height to spend. Checked at
+412, 375 and 320: five chips, none under 48 px, none covered by anything, the bottom left
+120 by 120 still clear for the fleet's music chip, and the layout gate green at all three.
