@@ -12,11 +12,14 @@ this file wins; every difference is in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
-- 2026-09-06 Opus: P0 step 1 done. `tools/check.js` exists with one gate that
-  fails, and the failure is in section 13. Next action: P0 step 2, the scaffold
-  and PHYS. Copy `var PHYS = (function(){` out of `satellites/burr-blast/index.html`
-  into `satellites/doohickey/index.html`, apply section 3.4 (the DMATH swap),
-  then add PinJoint, Rope, the fan cone and buoyancy.
+- 2026-09-06 Opus: **P0 is DONE and pushed.** `node satellites/doohickey/tools/check.js`
+  prints ALL GATES PASSED across five gates: `sim` (109 assertions), `solve`,
+  `replay`, `dominoes`, `mutants`. Section 13 carries the replay hash, the
+  domino table, the level table and the mutant table. Next action: P1 step 1,
+  the VIEW. Draw the scene into `#board` in `satellites/doohickey/index.html`:
+  the cream paper and its grid, the static segments, then a `drawPart` per type
+  reading the same geometry PARTS builds, then the camera. The shot to make
+  first is `docs/shots/p1-cascade.png` at 667x375.
 
 ---
 
@@ -383,6 +386,110 @@ Error: Cannot find module '/workspaces/lucid-winds/satellites/doohickey/sim.js'
 
 1 GATE FAILED
 ```
+
+### P0 steps 2 to 5, the engine with a heartbeat (2026-09-06)
+
+```
+$ node tools/check.js
+sim             pass  10s
+solve           pass  2s
+replay          pass  3s
+dominoes        pass  30s
+mutants         pass  66s
+
+ALL GATES PASSED
+```
+
+109 assertions. The replay hash, which is the determinism law as one line:
+
+```
+$ node sim.js --replay=100
+100 runs of a 12 part machine
+  b0550c3b  x100
+
+DOOHICKEY REPLAY OK
+```
+
+The heartbeat, a hundred trials at each spacing, each trial with a seeded
+jitter of two percent on the gap and a degree on the lean:
+
+```
+spacing   trials   all fell   worst last fall
+  0.55        100        100            2.52s
+  0.65        100        100            2.71s
+  0.75        100        100            2.96s
+
+DOOHICKEY DOMINO OK
+```
+
+Every level, won by its own solution, inside par, three stars, and none of them
+winning with an empty tray:
+
+```
+level                    parts  par   goal at   stars  bonus
+  The Bell on the Shelf       4    4     2.85s      3  1
+  A Row of Dominoes          11   11     3.63s      3  1
+  The Gap in the Floor        4    4     3.56s      3  1
+  The Fan and the Balloon     1    3     4.04s      3  1
+  The Bucket on the Post      6    6     3.77s      3  1
+  All Together               12   12     4.24s      3  1,1
+
+DOOHICKEY SOLVE OK
+```
+
+The seven mutants, each a single change to a scratch copy, each of which has to
+turn the sim gate red:
+
+```
+$ node test/mutants.mjs
+  ok    the unmutated game passes, so the mutants below mean something
+  ok    the gate dies when gravity turned off: a marble dropped on the floor comes to rest on it   [expected about 409, got 120]
+  ok    the gate dies when every contact made superelastic: a marble dropped on the floor comes to rest on it   [expected about 409, got 3759.4]
+  ok    the gate dies when sleeping disabled: and it is asleep within three seconds
+  ok    the gate dies when the rope made into a rod: a slack rope does nothing at all: it does not shove the cargo out to its full length (57.0 apart sideways, the rope is 60)
+  ok    the gate dies when the fan cone opened to the whole room: and a balloon behind the fan is not pushed (281 from 250)
+  ok    the gate dies when an unspecified sine put back in: the SIM calls no unspecified maths: Math.sin, Math.cos
+  ok    the gate dies when the domino cascade broken by friction: and the last of them is down inside four seconds at 0.75 (4.16s)
+
+MUTANTS OK
+```
+
+**Three of those mutants survived their first run, and each survival was a real
+fault.**
+
+- **The bouncy mutant.** `MARBLE_REST: 2` changed nothing, because the solver
+  takes the MINIMUM restitution of the pair and the floor is 0.05. The mutant
+  now targets the pair's own number, and a new assertion watches for energy
+  being created: a dropped marble may not bounce back higher than it fell from.
+  Nothing in the file had been watching for that at all.
+- **The rope mutant, twice.** The inequality was written in TWO places, an early
+  return and a clamp, so a mutation of either one left the other doing the job
+  and no gate could see it. The clamp alone is a complete rope, so the early
+  return is gone and the inequality now exists once. And the assertion that was
+  meant to catch it ("never longer than its length") is true of a rod as well;
+  it now tests the pair SIDEWAYS, where gravity does not act along the rope, so
+  any separation that appears came from the constraint.
+
+**Two numbers moved from the plan, both recorded here.**
+
+- `DOMINO_W` 10 to 8. At the 0.55 spacing the plan's ten wide domino left a gap
+  of 7.6 units and a leaning domino could not reach the next one: 67 of 100
+  trials. At 8 it is 100 of 100 at all three spacings with the plan's friction
+  untouched, and it is what a domino looks like.
+- The balloon's cargo, 0.5 to 0.16. The cargo has to be lighter than the
+  balloon's spare lift or the pair sinks, and close to it or the pair rises so
+  fast the fan cannot steer it and the level is a formality.
+
+**One bug the sim found that no gate would have.** The world takes gravity as a
+NUMBER and makes the vector itself. Passed a vector it read `{x,y}` as a scalar
+and every body integrated to NaN on the first step, silently: no error, no
+warning, just a marble at NaN.
+
+**Every level was laid out against the simulator, not by eye.** The first six
+were placed by hand and five of them missed: a marble dropped at x=96 sails past
+a plank that spans 134 to 226, and the whole board reads as "physics broken"
+when it is only arithmetic. The heartbeat had the same fault, and read zero
+dominoes for the same reason.
 
 ---
 

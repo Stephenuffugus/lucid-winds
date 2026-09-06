@@ -1,0 +1,1783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>DOOHICKEY</title>
+<meta name="description" content="Build something needlessly complicated. Watch it almost work. Drag ramps, dominoes, fans and balloons onto the board, press GO, and watch a marble set the whole silly thing off.">
+<meta name="theme-color" content="#F4EBD3">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DOOHICKEY">
+<link rel="manifest" href="./manifest.webmanifest?v=20260906a">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260906a">
+<link rel="icon" href="./icon-192.png?v=20260906a">
+<link rel="canonical" href="https://lucidwinds.com/satellites/doohickey/">
+<style>
+/*  DOOHICKEY
+    game id: doohickey   cream paper, saturated primaries, fat outlines
+    ⛔ DETERMINISM IS LAW. Nothing in the SIM export may call Math.random or a
+    transcendental: a shared machine has to run the same on the other phone or
+    the link is a lie. tools/lint.mjs greps for it.
+    The BOTTOM LEFT 120x120 belongs to the fleet's music chip. */
+:root{
+  --paper:#F4EBD3; --paper2:#EADFC0; --ink:#2C2418; --line:#C9B98E;
+  --red:#D8503C; --blue:#3D6FB4; --yellow:#E8B33C; --green:#4E9A52; --plum:#8A5A9B;
+  --safeT:env(safe-area-inset-top,0px);
+  --safeB:env(safe-area-inset-bottom,0px);
+  --safeL:env(safe-area-inset-left,0px);
+  --safeR:env(safe-area-inset-right,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink);
+  font-family:ui-rounded,"Trebuchet MS","Segoe UI",system-ui,sans-serif;
+  overscroll-behavior:none;-webkit-user-select:none;user-select:none}
+#app{position:fixed;inset:0;overflow:hidden;background:var(--paper)}
+#board{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+
+#chrome{position:absolute;inset:0;pointer-events:none;z-index:5}
+.btn{pointer-events:auto;background:var(--paper);border:3px solid var(--ink);color:var(--ink);
+  border-radius:14px;min-height:48px;padding:10px 16px;font-family:inherit;font-size:.92rem;
+  font-weight:700;letter-spacing:.06em;box-shadow:0 3px 0 var(--ink);text-transform:uppercase}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
+.btn.big{min-height:56px;font-size:1rem;padding:12px 22px}
+.btn.icon{min-width:48px;min-height:48px;padding:0;display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+.btn.go{background:var(--green);color:#FFF7E4;border-color:var(--ink)}
+.btn.stop{background:var(--red);color:#FFF7E4}
+.btn.ghost{background:transparent;box-shadow:none;border-color:var(--line);color:#6B5C42}
+.btn[disabled]{opacity:.42}
+#btnGo{position:absolute;right:calc(14px + var(--safeR));bottom:calc(84px + var(--safeB));min-width:96px}
+#btnStop{position:absolute;right:calc(14px + var(--safeR));bottom:calc(14px + var(--safeB));min-width:96px}
+#btnUndo{position:absolute;left:calc(14px + var(--safeL));top:calc(12px + var(--safeT))}
+#btnRedo{position:absolute;left:calc(70px + var(--safeL));top:calc(12px + var(--safeT))}
+#btnMenu{position:absolute;right:calc(14px + var(--safeR));top:calc(12px + var(--safeT))}
+#partCount{position:absolute;left:50%;transform:translateX(-50%);top:calc(16px + var(--safeT));
+  pointer-events:none;font-size:.82rem;font-weight:700;letter-spacing:.08em;color:#6B5C42}
+#tray{position:absolute;left:0;right:0;bottom:0;height:76px;pointer-events:auto;
+  background:var(--paper2);border-top:3px solid var(--ink);
+  display:flex;gap:8px;align-items:center;overflow-x:auto;overflow-y:hidden;
+  padding:6px calc(120px + var(--safeR)) calc(6px + var(--safeB)) calc(126px + var(--safeL))}
+#tray[hidden]{display:none}
+.tile{flex:0 0 auto;width:56px;height:56px;border:3px solid var(--ink);border-radius:12px;
+  background:var(--paper);position:relative;padding:0;font-family:inherit}
+.tile canvas{width:100%;height:100%;display:block;border-radius:9px}
+.tile .n{position:absolute;right:-4px;top:-6px;min-width:22px;height:22px;border-radius:11px;
+  background:var(--ink);color:var(--paper);font-size:.7rem;font-weight:700;line-height:22px;text-align:center}
+.tile.out{opacity:.35}
+.tile.on{background:var(--yellow)}
+#handles{position:absolute;pointer-events:auto;display:none;gap:6px;z-index:8}
+#handles.on{display:flex}
+#handles .btn{min-width:48px;min-height:48px;padding:0;font-size:1rem}
+
+.screen{position:absolute;inset:0;z-index:10;background:var(--paper);display:none;
+  flex-direction:column;align-items:center;justify-content:center;
+  padding:calc(18px + var(--safeT)) 18px calc(18px + var(--safeB));
+  overflow-y:auto;overscroll-behavior:contain}
+.screen.on{display:flex}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:12;background:var(--paper);
+  border-top:3px solid var(--ink);border-radius:18px 18px 0 0;max-height:88%;
+  display:none;flex-direction:column;align-items:center;
+  padding:18px 18px calc(20px + var(--safeB));overflow-y:auto;overscroll-behavior:contain}
+.sheet.on{display:flex}
+.col{width:100%;max-width:360px;display:flex;flex-direction:column;align-items:stretch;gap:10px}
+.row{display:flex;gap:10px;width:100%;max-width:360px}
+.row > *{flex:1 1 0;min-width:0;width:auto;max-width:none}
+.title{font-size:2rem;font-weight:800;letter-spacing:.10em;text-align:center;margin:0 0 2px}
+.tag{font-size:.92rem;text-align:center;color:#6B5C42;margin:0 0 18px;line-height:1.6}
+.cap{font-size:.74rem;letter-spacing:.18em;color:#6B5C42;text-transform:uppercase;margin:10px 0 2px}
+.lede{font-size:.94rem;line-height:1.7;margin:6px 0}
+.tiny{font-size:.78rem;line-height:1.6;color:#6B5C42;margin:4px 0}
+.card{width:100%;min-height:64px;border:3px solid var(--ink);border-radius:14px;background:var(--paper);
+  box-shadow:0 3px 0 var(--ink);display:flex;align-items:center;gap:12px;padding:10px 14px;
+  font-family:inherit;text-align:left;color:var(--ink)}
+.card .nm{font-size:.98rem;font-weight:700;display:block}
+.card .sub{font-size:.76rem;color:#6B5C42;display:block;margin-top:2px}
+.card .stars{margin-left:auto;font-size:1rem;letter-spacing:.1em;color:var(--yellow)}
+.card.locked{opacity:.45;box-shadow:none}
+#winCard{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:14;
+  width:86%;max-width:340px;background:var(--paper);border:3px solid var(--ink);border-radius:18px;
+  box-shadow:0 5px 0 var(--ink);padding:18px;display:none;flex-direction:column;gap:10px;align-items:stretch}
+#winCard.on{display:flex}
+#winStars{font-size:2rem;text-align:center;letter-spacing:.14em;color:var(--yellow)}
+#winLine{text-align:center;font-size:.9rem;color:#6B5C42}
+#toast{position:fixed;left:50%;bottom:calc(96px + var(--safeB));transform:translateX(-50%);
+  background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:12px;font-size:.84rem;
+  z-index:40;opacity:0;pointer-events:none;transition:opacity 170ms ease-out;max-width:84%;text-align:center}
+#toast.on{opacity:1}
+#testPanel{position:absolute;inset:0;z-index:60;background:#161208;color:#dfe;overflow:auto;
+  font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;padding:14px;display:none;white-space:pre-wrap}
+#testPanel.on{display:block}
+@media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
+</style>
+<script src="/music-unlocks.js?v=20260906a" defer></script>
+</head>
+<body>
+<h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">DOOHICKEY</h1>
+<div id="app">
+  <canvas id="board"></canvas>
+
+  <div id="chrome">
+    <button class="btn icon" id="btnUndo" aria-label="Undo">&#8630;</button>
+    <button class="btn icon" id="btnRedo" aria-label="Redo">&#8631;</button>
+    <button class="btn icon" id="btnMenu" aria-label="Menu">&#9776;</button>
+    <div id="partCount"></div>
+    <button class="btn big go" id="btnGo">GO</button>
+    <button class="btn big stop" id="btnStop" hidden>STOP</button>
+  </div>
+  <div id="tray" hidden></div>
+  <div id="handles"></div>
+
+  <div id="winCard">
+    <div id="winStars"></div>
+    <div id="winLine"></div>
+    <button class="btn big" id="btnNext">NEXT</button>
+    <div class="row">
+      <button class="btn" id="btnShare">SHARE</button>
+      <button class="btn" id="btnFilm">FILM IT</button>
+    </div>
+    <button class="btn ghost" id="btnWinMenu">MENU</button>
+  </div>
+
+  <div class="screen on" id="scrTitle">
+    <div class="col">
+      <div class="title">DOOHICKEY</div>
+      <p class="tag">Build something needlessly complicated. Watch it almost work.</p>
+      <button class="btn big" id="btnPlay">PLAY</button>
+      <button class="btn" id="btnSandbox">SANDBOX</button>
+      <button class="btn ghost" id="btnHow">HOW</button>
+    </div>
+  </div>
+
+  <div class="screen" id="scrSelect">
+    <div class="col">
+      <div class="cap">Pick one</div>
+      <div id="levelList"></div>
+      <button class="btn ghost" id="btnSelectBack">BACK</button>
+    </div>
+  </div>
+
+  <div class="screen" id="scrSand">
+    <div class="col">
+      <div class="cap">Sandbox</div>
+      <div id="slotList"></div>
+      <button class="btn ghost" id="btnSandBack">BACK</button>
+    </div>
+  </div>
+
+  <div class="screen" id="scrHow">
+    <div class="col">
+      <div class="title" style="font-size:1.4rem">How it goes</div>
+      <p class="lede">Drag parts from the tray. Turn them with the dial.</p>
+      <p class="lede">Press GO and watch.</p>
+      <p class="lede">Tap to stop and fix it.</p>
+      <button class="btn ghost" id="btnHowBack">BACK</button>
+    </div>
+  </div>
+
+  <div class="sheet" id="scrMenu">
+    <div class="col">
+      <div class="cap">Doohickey</div>
+      <button class="btn" id="btnLevels">LEVELS</button>
+      <button class="btn" id="btnSound">SOUND ON</button>
+      <button class="btn" id="btnMotion">MOTION ON</button>
+      <button class="btn" id="btnFree">SNAP TO THE GRID</button>
+      <button class="btn ghost" id="btnClear">CLEAR THE BOARD</button>
+      <p class="tiny">Sky Wolf Studio</p>
+      <button class="btn ghost" id="btnMenuClose">CLOSE</button>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+  <div id="testPanel"></div>
+</div>
+
+<script>
+/* ============================================================================
+   DOOHICKEY
+   One file, no framework, no build step. The rules live between the
+   SIM_EXPORT markers and sim.js reads them through those markers, so the
+   headless runner and the thumb play the same game.
+
+   ⛔ DETERMINISM IS LAW (the design's words). Inside the SIM export there is
+   no Math.random, no Date, no document, and no transcendental Math call:
+   sin, cos and atan2 come from DMATH, which is built from + - * / and
+   Math.sqrt only. A machine shared by link has to run the same on the other
+   person's phone, and a domino run is chaotic enough that one bit of drift in
+   the last place becomes a different fall.
+   ========================================================================== */
+'use strict';
+
+// ---- SIM_EXPORT_START ----
+/* ========================= 1. CONFIG ========================= */
+var CONFIG = Object.freeze({
+  GAME_ID: 'doohickey', SAVE_KEY: 'lw_doohickey_v1', SAVE_V: 1,
+
+  SCENE_W: 768, SCENE_H: 432, CELL: 24, ROT_DETENT_DEG: 15,
+  PHYS_HZ: 120, ITERATIONS: 10, GRAVITY: 900, SLEEP_V: 2, SLEEP_S: 0.5,
+  BODY_MAX: 120, CONSTRAINT_MAX: 40, UNDO_MAX: 20, RUN_MAX_S: 45,
+
+  MARBLE_R: 9, MARBLE_MASS: 1, MARBLE_REST: 0.35, MARBLE_FRICTION: 0.25,
+  /* the plan's 10 wide jammed at the 0.55 spacing (67 of 100 trials): the gap
+     is only 7.6 units and a leaning domino could not reach the next. 8 is
+     100 of 100 at all three spacings with the plan's friction untouched, and
+     it is what a domino looks like. */
+  DOMINO_W: 8, DOMINO_H: 32, DOMINO_MASS: 0.6, DOMINO_REST: 0.05, DOMINO_FRICTION: 0.45,
+  PLANK_L: 96, PLANK_T: 8, SEESAW_L: 144,
+  FAN_RANGE: 220, FAN_HALF_ANGLE_DEG: 18, FAN_FORCE: 2600, FAN_MIN_DIST: 20,
+  BALLOON_R: 14, BALLOON_LIFT: 1.6, STRING_L: 60,
+  BUCKET_W: 44, BUCKET_H: 36, BELL_R: 16, BELL_SPEED: 40, SPRING_REST: 1.4,
+
+  TAP_SLOP: 10, PINCH_MIN_D: 30, ZOOM_MIN: 0.6, ZOOM_MAX: 2.2,
+  BAUMGARTE: 0.2, ALLOWED_PEN: 0.5
+});
+
+/* ========================= 2. RNG ========================= */
+/* Seeded, in the sim, for jitter in the domino trials and nothing else. */
+function makeRNG(seed) {
+  var a = (seed >>> 0) || 1;
+  function r() {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    var t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+  r.state = function () { return a >>> 0; };
+  return r;
+}
+function seedFromString(str) {
+  var h = 2166136261, i;
+  for (i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+function mixSeed(seed, salt) { return (Math.imul(seed ^ salt, 2654435761) >>> 0); }
+
+/* ========================= 3. DMATH ========================= */
+/* Copied from satellites/keepsies/src/core/dmath.js, whose header explains
+   why it exists: ECMAScript does not specify the last bit of Math.sin, and a
+   domino run turns one bit into a different fall. Built from + - * / and
+   Math.sqrt only. */
+var DPI = 3.141592653589793, DHALF_PI = 1.5707963267948966;
+var TWO_PI_HI = 6.28125, TWO_PI_MID = 0.001935307179586477,
+  TWO_PI_LO = -7.471323344099423e-20, INV_TWO_PI = 0.15915494309189535;
+var SIXTH_PI = 0.5235987755982989, SQRT3 = 1.7320508075688772,
+  TAN_TWELFTH_PI = 0.26794919243112270;
+var S1 = -0.16666666666666666, S2 = 0.008333333333333333, S3 = -0.0001984126984126984,
+  S4 = 2.7557319223985893e-06, S5 = -2.505210838544172e-08, S6 = 1.6059043836821613e-10,
+  S7 = -7.647163731819816e-13, S8 = 2.8114572543455206e-15, S9 = -8.22063524662433e-18;
+var C1 = -0.5, C2 = 0.041666666666666664, C3 = -0.001388888888888889,
+  C4 = 2.48015873015873e-05, C5 = -2.755731922398589e-07, C6 = 2.08767569878681e-09,
+  C7 = -1.1470745597729725e-11, C8 = 4.779477332387385e-14, C9 = -1.5619206968586225e-16;
+function dreduce(x) {
+  var k = Math.floor(x * INV_TWO_PI + 0.5);
+  return ((x - k * TWO_PI_HI) - k * TWO_PI_MID) - k * TWO_PI_LO;
+}
+function sinCore(r) {
+  var z = r * r;
+  return r * (1 + z * (S1 + z * (S2 + z * (S3 + z * (S4 + z * (S5 + z * (S6 + z * (S7 + z * (S8 + z * S9)))))))));
+}
+function cosCore(r) {
+  var z = r * r;
+  return 1 + z * (C1 + z * (C2 + z * (C3 + z * (C4 + z * (C5 + z * (C6 + z * (C7 + z * (C8 + z * C9))))))));
+}
+function dsin(x) {
+  var r = dreduce(x);
+  if (r > DHALF_PI) r = DPI - r;
+  else if (r < -DHALF_PI) r = -DPI - r;
+  return sinCore(r);
+}
+function dcos(x) {
+  var r = dreduce(x), flip = 1;
+  if (r > DHALF_PI) { r = DPI - r; flip = -1; }
+  else if (r < -DHALF_PI) { r = -DPI - r; flip = -1; }
+  return flip * cosCore(r);
+}
+function atanSmall(t) {
+  var z = t * t;
+  return t * (1 + z * (-0.3333333333333333 + z * (0.2 + z * (-0.14285714285714285 + z * (0.1111111111111111
+    + z * (-0.09090909090909091 + z * (0.07692307692307693 + z * (-0.06666666666666667
+      + z * (0.058823529411764705 + z * -0.05263157894736842)))))))));
+}
+function datan(x) {
+  var neg = x < 0, a = neg ? -x : x, big = false, r;
+  if (a > 1) { a = 1 / a; big = true; }
+  if (a > TAN_TWELFTH_PI) r = SIXTH_PI + atanSmall((a * SQRT3 - 1) / (SQRT3 + a));
+  else r = atanSmall(a);
+  if (big) r = DHALF_PI - r;
+  return neg ? -r : r;
+}
+function datan2(y, x) {
+  if (x === 0) { if (y > 0) return DHALF_PI; if (y < 0) return -DHALF_PI; return 0; }
+  var a = datan(y / x);
+  if (x > 0) return a;
+  return y >= 0 ? a + DPI : a - DPI;
+}
+function len2(x, y) { return Math.sqrt(x * x + y * y); }
+var DEG = 0.017453292519943295;
+
+/* ========================= 4. VECTORS ========================= */
+/* Copied with the engine from satellites/burr-blast/index.html. */
+function v(x,y){ return {x:x,y:y}; }
+function vadd(a,b){ return {x:a.x+b.x, y:a.y+b.y}; }
+function vsub(a,b){ return {x:a.x-b.x, y:a.y-b.y}; }
+function vmul(a,s){ return {x:a.x*s, y:a.y*s}; }
+function vdot(a,b){ return a.x*b.x + a.y*b.y; }
+function vcross(a,b){ return a.x*b.y - a.y*b.x; }          /* scalar z of 2D cross */
+function vcrossSV(s,a){ return {x:-s*a.y, y:s*a.x}; }       /* scalar x vector */
+function vlen(a){ return Math.sqrt(a.x*a.x + a.y*a.y); }
+function vlen2(a){ return a.x*a.x + a.y*a.y; }
+function vnorm(a){ var l=vlen(a); return l>1e-9 ? {x:a.x/l, y:a.y/l} : {x:0,y:0}; }
+function vperp(a){ return {x:-a.y, y:a.x}; }
+/* ⛔ the DMATH pair here, not the built in one. This is the single place the
+   engine reached for a transcendental and it is the one that matters: every
+   polygon vertex in the world goes through this function every step, and the
+   built in version is allowed to differ in its last bit between engines. */
+function vrot(a,ang){ var c=dcos(ang), s=dsin(ang); return {x:a.x*c - a.y*s, y:a.x*s + a.y*c}; }
+function clamp(x,lo,hi){ return x<lo?lo:(x>hi?hi:x); }
+/* ========================= 5. PHYS ========================= */
+/* The sequential impulse engine from satellites/burr-blast/index.html, copied
+   whole, with section 3.4 of the plan applied: vrot goes through DMATH. What
+   is added below it, and is NOT in Burr Blast: PinJoint, Rope, the fan cone,
+   the balloon's buoyancy, a fixed iteration order, and stateHash. */
+var PHYS = (function(){
+
+  var _idc = 1;
+
+  /* ---- Body factory ---- */
+  function Body(opts){
+    this.id = _idc++;
+    this.shape = opts.shape;                 // 'circle' | 'poly'
+    this.pos = v(opts.x||0, opts.y||0);
+    this.vel = v(0,0);
+    this.angle = opts.angle||0;
+    this.angVel = 0;
+    this.force = v(0,0);
+    this.torque = 0;
+    this.isStatic = !!opts.isStatic;
+    this.restitution = (opts.restitution!=null)?opts.restitution:0.1;
+    this.friction = (opts.friction!=null)?opts.friction:0.5;
+    this.radius = Math.max(0.5, opts.radius||0);   // circle (floor avoids degenerate 0-mass anchors)
+    this.verts = opts.verts||null;           // poly local verts (CCW)
+    this.normals = null;                     // poly face normals (local)
+    this.w = opts.w||0; this.h = opts.h||0;  // render helpers for boxes
+    // mass / inertia
+    var density = (opts.density!=null)?opts.density:1;
+    this.mat = opts.mat||'wood';
+    this._computeMass(density);
+    if(this.isStatic){ this.invMass=0; this.invInertia=0; this.mass=Infinity; this.inertia=Infinity; }
+    // sleeping
+    this.awake = true; this.sleepTime = 0; this.canSleep = (opts.canSleep!=null)?opts.canSleep:true;
+    if(this.isStatic){ this.awake=false; }
+    // game-layer fields (physics ignores these except reporting)
+    this.dead = false;
+    this.game = opts.game || {};             // { hp, kind, isPest, ... }
+    if(this.verts) this._buildNormals();
+    this._aabb = {minx:0,miny:0,maxx:0,maxy:0};
+    this.updateAABB();
+  }
+
+  Body.prototype._computeMass = function(density){
+    if(this.shape==='circle'){
+      var r=this.radius; var m=Math.PI*r*r*density;
+      this.mass=m; this.invMass=m>0?1/m:0;
+      var I=m*r*r*0.5; this.inertia=I; this.invInertia=I>0?1/I:0;
+    } else {
+      // polygon mass + inertia about centroid (verts assumed centered near origin)
+      var area=0, I=0, vs=this.verts, n=vs.length;
+      var cx=0, cy=0;
+      for(var i=0;i<n;i++){
+        var p1=vs[i], p2=vs[(i+1)%n];
+        var cr=vcross(p1,p2);
+        area += cr*0.5;
+        cx += (p1.x+p2.x)*cr; cy += (p1.y+p2.y)*cr;
+        var intx2 = p1.x*p1.x + p1.x*p2.x + p2.x*p2.x;
+        var inty2 = p1.y*p1.y + p1.y*p2.y + p2.y*p2.y;
+        I += (0.25/3.0)*cr*(intx2+inty2);
+      }
+      area=Math.abs(area);
+      var m=area*density;
+      this.mass=m; this.invMass=m>0?1/m:0;
+      I=Math.abs(I)*density;
+      this.inertia=I; this.invInertia=I>0?1/I:0;
+    }
+    // guard degenerate (near-zero-area) dynamic bodies from becoming immovable anchors
+    if(this.mass>0 && this.mass<0.02){ this.mass=0.02; this.invMass=50; }
+    if(this.inertia>0 && this.inertia<0.02){ this.inertia=0.02; this.invInertia=50; }
+  };
+
+  Body.prototype._buildNormals = function(){
+    var vs=this.verts, n=vs.length, ns=[];
+    for(var i=0;i<n;i++){
+      var e=vsub(vs[(i+1)%n], vs[i]);
+      ns.push(vnorm(v(e.y, -e.x)));   // outward normal for CCW winding
+    }
+    this.normals=ns;
+  };
+
+  /* world-space vertex i */
+  Body.prototype.wvert = function(i){ return vadd(this.pos, vrot(this.verts[i], this.angle)); };
+  Body.prototype.wnorm = function(i){ return vrot(this.normals[i], this.angle); };
+
+  Body.prototype.updateAABB = function(){
+    var a=this._aabb;
+    if(this.shape==='circle'){
+      a.minx=this.pos.x-this.radius; a.maxx=this.pos.x+this.radius;
+      a.miny=this.pos.y-this.radius; a.maxy=this.pos.y+this.radius;
+    } else {
+      var minx=1e9,miny=1e9,maxx=-1e9,maxy=-1e9;
+      for(var i=0;i<this.verts.length;i++){
+        var p=this.wvert(i);
+        if(p.x<minx)minx=p.x; if(p.x>maxx)maxx=p.x;
+        if(p.y<miny)miny=p.y; if(p.y>maxy)maxy=p.y;
+      }
+      a.minx=minx;a.miny=miny;a.maxx=maxx;a.maxy=maxy;
+    }
+  };
+
+  Body.prototype.applyImpulse = function(imp, contact){
+    if(this.invMass===0) return;
+    this.vel = vadd(this.vel, vmul(imp, this.invMass));
+    this.angVel += this.invInertia * vcross(vsub(contact, this.pos), imp);
+  };
+
+  Body.prototype.wake = function(){ if(this.isStatic)return; this.awake=true; this.sleepTime=0; };
+
+  /* box helper: centered w x h poly */
+  function boxVerts(w,h){
+    var hw=w/2, hh=h/2;
+    return [ v(-hw,-hh), v(hw,-hh), v(hw,hh), v(-hw,hh) ];  // CCW in screen coords (y-down): actually see note
+  }
+
+  /* ---------- collision manifolds ---------- */
+  // returns {normal, penetration, contacts:[...], count} in world space, or null
+  function collide(a,b){
+    if(a.shape==='circle' && b.shape==='circle') return circleCircle(a,b);
+    if(a.shape==='circle' && b.shape==='poly')   return circlePoly(a,b,false);
+    if(a.shape==='poly'   && b.shape==='circle'){ var m=circlePoly(b,a,true); return m; }
+    return polyPoly(a,b);
+  }
+
+  function circleCircle(a,b){
+    var d=vsub(b.pos,a.pos); var dist=vlen(d); var r=a.radius+b.radius;
+    if(dist>=r) return null;
+    var n = dist>1e-9 ? vmul(d,1/dist) : v(0,-1);
+    var pen = r-dist;
+    var contact = vadd(a.pos, vmul(n, a.radius - pen*0.5));
+    return { normal:n, penetration:pen, contacts:[contact], count:1 };
+  }
+
+  // circle (c) vs poly (p). flip=true means original call was poly,circle so
+  // normal must point from A(poly) to B(circle) = -n. We compute n from poly->circle.
+  function circlePoly(c,p,flip){
+    // transform circle center into poly local space
+    var local = vrot(vsub(c.pos, p.pos), -p.angle);
+    var vs=p.verts, ns=p.normals, n=vs.length;
+    var sep=-1e9, best=0;
+    for(var i=0;i<n;i++){
+      var s=vdot(ns[i], vsub(local, vs[i]));
+      if(s>c.radius) return null;
+      if(s>sep){ sep=s; best=i; }
+    }
+    var va=vs[best], vb=vs[(best+1)%n];
+    var normalLocal, contactLocal, pen;
+    if(sep < 1e-6){
+      // center inside poly
+      normalLocal = ns[best];
+      pen = c.radius - sep;
+      contactLocal = vsub(local, vmul(normalLocal, c.radius));
+    } else {
+      // determine voronoi region of the closest edge
+      var d1=vdot(vsub(local,va), vsub(vb,va));
+      var d2=vdot(vsub(local,vb), vsub(va,vb));
+      if(d1<=0){
+        var dva=vsub(local,va); if(vlen2(dva)>c.radius*c.radius) return null;
+        normalLocal = vlen2(dva)>1e-9 ? vnorm(dva) : ns[best];   // guard exact-vertex zero normal
+        pen=c.radius-vlen(dva); contactLocal=va;
+      } else if(d2<=0){
+        var dvb=vsub(local,vb); if(vlen2(dvb)>c.radius*c.radius) return null;
+        normalLocal = vlen2(dvb)>1e-9 ? vnorm(dvb) : ns[best];
+        pen=c.radius-vlen(dvb); contactLocal=vb;
+      } else {
+        normalLocal=ns[best]; pen=c.radius-sep;
+        contactLocal=vsub(local, vmul(normalLocal, c.radius));
+      }
+    }
+    // to world
+    var worldN = vrot(normalLocal, p.angle);         // points poly -> circle
+    var worldC = vadd(p.pos, vrot(contactLocal, p.angle));
+    // collide(a,b) with a=circle,b=poly (flip=false): normal must point A->B = circle->poly = -worldN
+    // with flip=true a=poly,b=circle: normal A->B = poly->circle = worldN
+    var normal = flip ? worldN : vmul(worldN,-1);
+    return { normal:normal, penetration:pen, contacts:[worldC], count:1 };
+  }
+
+  /* ---- poly-poly via SAT + reference/incident clipping (box2d-lite) ---- */
+  function findAxisOfLeastPenetration(a,b){
+    var best=-1e9, idx=0;
+    for(var i=0;i<a.verts.length;i++){
+      var nW=a.wnorm(i);
+      var vW=a.wvert(i);
+      // support point of b along -nW
+      var s=support(b, vmul(nW,-1));
+      var d=vdot(nW, vsub(s, vW));
+      if(d>best){ best=d; idx=i; }
+    }
+    return {sep:best, idx:idx};
+  }
+  function support(body, dir){
+    var best=-1e9, bp=null;
+    for(var i=0;i<body.verts.length;i++){
+      var p=body.wvert(i); var d=vdot(p,dir);
+      if(d>best){ best=d; bp=p; }
+    }
+    return bp;
+  }
+  function polyPoly(a,b){
+    var pa=findAxisOfLeastPenetration(a,b);
+    if(pa.sep>=0) return null;
+    var pb=findAxisOfLeastPenetration(b,a);
+    if(pb.sep>=0) return null;
+    var refBody,incBody,refIdx,flip;
+    if(pa.sep >= pb.sep - 0.0005){ refBody=a; incBody=b; refIdx=pa.idx; flip=false; }
+    else { refBody=b; incBody=a; refIdx=pb.idx; flip=true; }
+
+    var refNorm=refBody.wnorm(refIdx);
+    // incident face: the incident poly's face most anti-parallel to refNorm
+    var incN=incBody.verts.length, incIdx=0, minDot=1e9;
+    for(var i=0;i<incN;i++){ var d=vdot(incBody.wnorm(i), refNorm); if(d<minDot){ minDot=d; incIdx=i; } }
+    var inc1=incBody.wvert(incIdx), inc2=incBody.wvert((incIdx+1)%incN);
+
+    // reference edge endpoints
+    var r1=refBody.wvert(refIdx), r2=refBody.wvert((refIdx+1)%refBody.verts.length);
+    var refDir=vnorm(vsub(r2,r1));
+    // clip incident segment to the side planes of the reference face
+    var cp=[inc1,inc2];
+    cp=clipSeg(cp, vmul(refDir,-1), -vdot(refDir,r1));
+    if(cp.length<2) return null;
+    cp=clipSeg(cp, refDir, vdot(refDir,r2));
+    if(cp.length<2) return null;
+    // keep points below the reference face (penetrating)
+    var refFaceN=refNorm;
+    var frontOffset=vdot(refFaceN, r1);
+    var contacts=[], pens=[];
+    for(var k=0;k<cp.length;k++){
+      var sepp=vdot(refFaceN, cp[k]) - frontOffset;
+      if(sepp<=0){ contacts.push(cp[k]); pens.push(-sepp); }
+    }
+    if(contacts.length===0) return null;
+    var pen=0; for(var q=0;q<pens.length;q++) pen+=pens[q]; pen/=pens.length;
+    // normal must point from A to B
+    var normal = flip ? vmul(refNorm,-1) : refNorm;
+    return { normal:normal, penetration:pen, contacts:contacts, count:contacts.length };
+  }
+  function clipSeg(seg, n, offset){
+    var out=[];
+    var d1=vdot(n,seg[0])-offset;
+    var d2=vdot(n,seg[1])-offset;
+    if(d1<=0) out.push(seg[0]);
+    if(d2<=0) out.push(seg[1]);
+    if(d1*d2<0){
+      var t=d1/(d1-d2);
+      out.push(vadd(seg[0], vmul(vsub(seg[1],seg[0]), t)));
+    }
+    return out;
+  }
+
+  /* ---------------- World ---------------- */
+  function World(opts){
+    this.constraints = [];
+    this.forces = [];
+    opts=opts||{};
+    this.gravity = v(0, opts.gravity!=null?opts.gravity:1800);
+    this.bodies = [];
+    this.iterations = opts.iterations||10;
+    this.onContact = null;   // callback(a,b,impulseMag,contactPt)
+    this._slop = 0.05;
+    this._warm = {};         // per-pair impulse cache for warm-starting the solver
+  }
+  World.prototype.add = function(body){ this.bodies.push(body); return body; };
+  World.prototype.remove = function(body){
+    var i=this.bodies.indexOf(body); if(i>=0) this.bodies.splice(i,1);
+  };
+
+  World.prototype.step = function(dt){
+    var bodies=this.bodies, i, n=bodies.length;
+    // purge dead
+    for(i=n-1;i>=0;i--){ if(bodies[i].dead) bodies.splice(i,1); }
+    n=bodies.length;
+
+    // ADDED for Doohickey: field forces (a fan's cone, a balloon's buoyancy)
+    // are applied into body.force BEFORE the integrate, in creation order.
+    if(this.forces) for(var ff=0; ff<this.forces.length; ff++) this.forces[ff](this, dt);
+
+    // integrate forces
+    for(i=0;i<n;i++){
+      var bd=bodies[i];
+      if(bd.isStatic || !bd.awake) continue;
+      bd.vel = vadd(bd.vel, vmul(vadd(this.gravity, vmul(bd.force, bd.invMass)), dt));
+      bd.angVel += bd.torque*bd.invInertia*dt;
+      // damping (mild — keeps stacks calm)
+      bd.vel = vmul(bd.vel, 1/(1+dt*0.15));
+      bd.angVel *= 1/(1+dt*0.4);
+    }
+
+    // broadphase + narrowphase (O(n^2) with an AABB early-out; profiling showed the solver
+    // over actual contacts — not pair enumeration — is the real cost at fort densities, so a
+    // spatial hash gave no speedup. Keep forts to a few dozen dynamic blocks instead.)
+    for(i=0;i<n;i++) bodies[i].updateAABB();
+    var manifolds=[];
+    for(i=0;i<n;i++){
+      var A=bodies[i];
+      for(var j=i+1;j<n;j++){
+        var B=bodies[j];
+        if(A.invMass===0 && B.invMass===0) continue;
+        if(!A.awake && !B.awake) continue;
+        if(!aabbOverlap(A._aabb,B._aabb)) continue;
+        var m=collide(A,B);
+        if(m){ m.a=A; m.b=B; manifolds.push(m); prestep(m,this,dt); }
+      }
+    }
+
+    // solve velocity constraints (warm-started via cache seeded in prestep)
+    // ADDED for Doohickey: joints solve inside the same loop as the contacts,
+    // in creation order, after them. A seesaw is a plank pinned to the scene
+    // and a balloon is a body on a rope, so both have to hold while the
+    // contacts around them are still being resolved.
+    var cons = this.constraints;
+    for(var it=0; it<this.iterations; it++){
+      for(var k=0;k<manifolds.length;k++) solveManifold(manifolds[k]);
+      if(cons) for(var cj=0;cj<cons.length;cj++) cons[cj].solve(dt);
+    }
+    // write accumulated impulses back for next-frame warm start (purges untouched pairs)
+    var warmNew={};
+    for(var w=0;w<manifolds.length;w++){ var mf0=manifolds[w], arr=[];
+      for(var ci=0;ci<mf0._c.length;ci++) arr.push(mf0._c[ci].pn);
+      warmNew[mf0._key]=arr; }
+    this._warm=warmNew;
+
+    // integrate velocities into positions
+    for(i=0;i<n;i++){
+      var b2=bodies[i];
+      if(b2.isStatic || !b2.awake) continue;
+      b2.pos = vadd(b2.pos, vmul(b2.vel, dt));
+      b2.angle += b2.angVel*dt;
+      b2.force=v(0,0); b2.torque=0;
+    }
+
+    // positional correction — a SEPARATE position-only pass (no velocity change) so the
+    // Baumgarte bias never inflates restitution; this is what makes contacts thud + settle.
+    for(var pc=0;pc<manifolds.length;pc++) positionalCorrection(manifolds[pc], this);
+
+    // report contact impulses to game layer + wake pairs
+    if(this.onContact){
+      for(var c=0;c<manifolds.length;c++){
+        var mf=manifolds[c];
+        // report by CLOSING SPEED (0 at rest) so resting support never reads as a hit
+        if(mf._approach>36){
+          this.onContact(mf.a, mf.b, mf._approach, mf._impulse, mf.contacts[0]);
+        }
+      }
+    }
+
+    // sleeping
+    this._updateSleep(dt);
+  };
+
+  function aabbOverlap(a,b){ return a.minx<=b.maxx && a.maxx>=b.minx && a.miny<=b.maxy && a.maxy>=b.miny; }
+
+  function prestep(m,world,dt){
+    var a=m.a,b=m.b, t=vperp(m.normal);
+    m.e=Math.min(a.restitution,b.restitution);
+    m.df=Math.sqrt(a.friction*b.friction);
+    m._impulse=0;
+    m._approach=0;      // fastest closing speed among contacts (0 at rest)
+    m._c=[];
+    m._key = (a.id<b.id ? a.id+'_'+b.id : b.id+'_'+a.id);
+    var cached = world._warm[m._key];
+    // wake sleeping bodies that are being touched by an awake body
+    if(a.awake && !b.awake) b.wake();
+    if(b.awake && !a.awake) a.wake();
+    for(var i=0;i<m.contacts.length;i++){
+      var cp=m.contacts[i];
+      var ra=vsub(cp,a.pos), rb=vsub(cp,b.pos);
+      var rnA=vcross(ra,m.normal), rnB=vcross(rb,m.normal);
+      var kn=a.invMass+b.invMass + a.invInertia*rnA*rnA + b.invInertia*rnB*rnB;
+      var rtA=vcross(ra,t), rtB=vcross(rb,t);
+      var kt=a.invMass+b.invMass + a.invInertia*rtA*rtA + b.invInertia*rtB*rtB;
+      var rv=vsub( vadd(b.vel, vcrossSV(b.angVel,rb)), vadd(a.vel, vcrossSV(a.angVel,ra)) );
+      var vn=vdot(rv,m.normal);
+      if(-vn > m._approach) m._approach = -vn;   // closing speed for damage gauge
+      // restitution ONLY (no Baumgarte here — penetration is fixed by positionalCorrection)
+      var restBias = (vn < -200) ? -m.e*vn : 0;
+      // warm start the NORMAL impulse only (order-insensitive for a stack). Warm-starting
+      // friction too kicks tall stacks sideways when the contact-point order swaps frames.
+      var pn0=0;
+      if(cached && cached[i]!=null) pn0=cached[i];
+      a.applyImpulse(vmul(m.normal,-pn0), cp);
+      b.applyImpulse(vmul(m.normal, pn0), cp);
+      m._c.push({ ra:ra, rb:rb, mn:kn>0?1/kn:0, mt:kt>0?1/kt:0, pn:pn0, pt:0, bias: restBias });
+    }
+  }
+
+  // position-only de-penetration (Randy-Gaul style): keeps restitution honest + stacks stable
+  function positionalCorrection(m, world){
+    var a=m.a, b=m.b;
+    var corr = Math.min(m.penetration, 12) - world._slop;
+    if(corr<=0) return;
+    var im = a.invMass + b.invMass; if(im<=0) return;
+    var scalar = (corr / im) * 0.4;                 // 40% per step
+    var moveA = Math.min(scalar*a.invMass, 4), moveB = Math.min(scalar*b.invMass, 4);
+    if(a.invMass>0) a.pos = vsub(a.pos, vmul(m.normal, moveA));
+    if(b.invMass>0) b.pos = vadd(b.pos, vmul(m.normal, moveB));
+  }
+
+  function solveManifold(m){
+    var a=m.a,b=m.b, n=m.normal, t=vperp(n);
+    for(var i=0;i<m._c.length;i++){
+      var c=m._c[i];
+      // normal impulse
+      var rv=vsub( vadd(b.vel, vcrossSV(b.angVel,c.rb)), vadd(a.vel, vcrossSV(a.angVel,c.ra)) );
+      var vn=vdot(rv,n);
+      var dPn=c.mn*(-(vn) + c.bias);
+      var newPn=Math.max(c.pn+dPn,0);
+      dPn=newPn-c.pn; c.pn=newPn;
+      var Pn=vmul(n,dPn);
+      a.applyImpulse(vmul(Pn,-1), vadd(a.pos,c.ra));
+      b.applyImpulse(Pn, vadd(b.pos,c.rb));
+      m._impulse += Math.abs(dPn);
+      // friction impulse
+      rv=vsub( vadd(b.vel, vcrossSV(b.angVel,c.rb)), vadd(a.vel, vcrossSV(a.angVel,c.ra)) );
+      var vt=vdot(rv,t);
+      var dPt=c.mt*(-vt);
+      var maxPt=m.df*c.pn;
+      var oldPt=c.pt;
+      c.pt=clamp(oldPt+dPt, -maxPt, maxPt);
+      dPt=c.pt-oldPt;
+      var Pt=vmul(t,dPt);
+      a.applyImpulse(vmul(Pt,-1), vadd(a.pos,c.ra));
+      b.applyImpulse(Pt, vadd(b.pos,c.rb));
+    }
+  }
+
+  World.prototype._updateSleep = function(dt){
+    // hysteresis: settle below 12 px/s, only fully wake above 20 px/s — stops solver
+    // jitter from repeatedly crossing a single threshold and never letting a stack rest.
+    var sleepLo=12*12, wakeHi=20*20, angLo=0.14*0.14;
+    for(var i=0;i<this.bodies.length;i++){
+      var b=this.bodies[i];
+      if(b.isStatic) continue;
+      if(!b.canSleep){ b.awake=true; continue; }
+      if(vlen2(b.vel)>wakeHi || b.angVel*b.angVel>0.6*0.6){
+        b.sleepTime=0; b.awake=true;
+      } else if(vlen2(b.vel)<sleepLo && b.angVel*b.angVel<angLo){
+        b.sleepTime+=dt;
+        if(b.sleepTime>0.6){ b.awake=false; b.vel=v(0,0); b.angVel=0; }
+      } else {
+        b.awake=true; b.sleepTime=0;
+      }
+    }
+  };
+
+  return {
+    Body:Body, World:World, boxVerts:boxVerts,
+    v:v, vadd:vadd, vsub:vsub, vmul:vmul, vlen:vlen, vnorm:vnorm, vdot:vdot,
+    collide:collide
+  };
+})();
+
+/* ---- ADDED FOR DOOHICKEY: constraints, field forces, and the hash ---- */
+/* Burr Blast has no joints. A seesaw is a plank pinned to the scene, a balloon
+   is a body on a rope, and a bucket hangs on one, so Doohickey needs two.
+   Both are solved by impulse inside the iteration loop, in creation order. */
+
+/* A point to point joint. The anchor is given in world space at build time and
+   remembered as a local offset in each body. */
+function PinJoint(a, b, anchorX, anchorY) {
+  this.a = a; this.b = b;
+  this.la = vrot(vsub(v(anchorX, anchorY), a.pos), -a.angle);
+  this.lb = b ? vrot(vsub(v(anchorX, anchorY), b.pos), -b.angle) : v(anchorX, anchorY);
+  this.px = 0; this.py = 0;
+}
+PinJoint.prototype.solve = function (dt) {
+  var a = this.a, b = this.b;
+  var ra = vrot(this.la, a.angle), rb = b ? vrot(this.lb, b.angle) : v(0, 0);
+  var pa = vadd(a.pos, ra), pb = b ? vadd(b.pos, rb) : this.lb;
+  var va = vadd(a.vel, vcrossSV(a.angVel, ra));
+  var vb = b ? vadd(b.vel, vcrossSV(b.angVel, rb)) : v(0, 0);
+  var rv = vsub(vb, va);
+  /* the 2x2 effective mass of the pair at the anchor */
+  var ima = a.invMass, imb = b ? b.invMass : 0;
+  var iia = a.invInertia, iib = b ? b.invInertia : 0;
+  var k11 = ima + imb + iia * ra.y * ra.y + iib * rb.y * rb.y;
+  var k12 = -iia * ra.x * ra.y - iib * rb.x * rb.y;
+  var k22 = ima + imb + iia * ra.x * ra.x + iib * rb.x * rb.x;
+  var det = k11 * k22 - k12 * k12;
+  if (det > -1e-12 && det < 1e-12) return;
+  var inv = 1 / det;
+  /* Baumgarte: pull the anchors back together over time rather than snapping */
+  var ex = (pb.x - pa.x) * CONFIG.BAUMGARTE / dt;
+  var ey = (pb.y - pa.y) * CONFIG.BAUMGARTE / dt;
+  var bx = -(rv.x + ex), by = -(rv.y + ey);
+  var ix = inv * (k22 * bx - k12 * by);
+  var iy = inv * (-k12 * bx + k11 * by);
+  var P = v(ix, iy);
+  a.wake(); if (b) b.wake();
+  a.applyImpulse(vmul(P, -1), pa);
+  if (b) b.applyImpulse(P, pb);
+};
+
+/* A rope. An INEQUALITY: it pulls when it is longer than maxLen and does
+   nothing at all when it is slack. ⛔ solved as an equality it becomes a rod
+   and a balloon pushes its cargo down. */
+function Rope(a, b, maxLen) {
+  this.a = a; this.b = b; this.maxLen = maxLen;
+}
+Rope.prototype.solve = function (dt) {
+  var a = this.a, b = this.b;
+  var d = vsub(b.pos, a.pos);
+  var dist = vlen(d);
+  /* ⛔ there is ONE guard here on purpose. An early `if (dist <= maxLen) return`
+     says the same thing as the clamp at the bottom, and with the inequality
+     written in two places a mutation of either one changes nothing at all, so
+     no gate can ever see it. The clamp alone is a complete rope: when the rope
+     is slack the bias is negative and large, the impulse comes out positive,
+     and the clamp puts it back to zero. */
+  if (dist < 1e-9) return;
+  var n = vmul(d, 1 / dist);
+  var rv = vdot(vsub(b.vel, a.vel), n);
+  var bias = (dist - this.maxLen) * CONFIG.BAUMGARTE / dt;
+  var im = a.invMass + b.invMass;
+  if (im < 1e-12) return;
+  var j = -(rv + bias) / im;
+  if (j > 0) j = 0;            /* THE INEQUALITY: it only ever pulls */
+  var P = vmul(n, j);
+  a.wake(); b.wake();
+  a.vel = vsub(a.vel, vmul(P, a.invMass));
+  b.vel = vadd(b.vel, vmul(P, b.invMass));
+};
+
+/* A fan blows every awake body inside a cone. The force falls as 1 over the
+   distance with a floor, so a body sitting on the grille is not launched. */
+function fanForce(fan) {
+  return function (world, dt) {
+    if (!fan.on) return;
+    var dir = vrot(v(1, 0), fan.angle), i;
+    var cosHalf = dcos(CONFIG.FAN_HALF_ANGLE_DEG * DEG);
+    for (i = 0; i < world.bodies.length; i++) {
+      var b = world.bodies[i];
+      if (b.isStatic || !b.awake) continue;
+      var to = vsub(b.pos, fan.pos);
+      var dist = vlen(to);
+      if (dist > CONFIG.FAN_RANGE || dist < 1e-6) continue;
+      var u = vmul(to, 1 / dist);
+      if (vdot(u, dir) < cosHalf) continue;
+      var mag = CONFIG.FAN_FORCE * b.mass / (dist < CONFIG.FAN_MIN_DIST ? CONFIG.FAN_MIN_DIST : dist);
+      b.force = vadd(b.force, vmul(dir, mag));
+    }
+  };
+}
+/* A balloon pulls up with a multiple of its own weight while it is inflated. */
+function buoyancy(balloon) {
+  return function () {
+    if (balloon.popped || balloon.isStatic) return;
+    balloon.force = vadd(balloon.force,
+      v(0, -CONFIG.GRAVITY * CONFIG.BALLOON_LIFT * balloon.mass));
+  };
+}
+
+/* FNV-1a over every body's position, velocity, angle and spin, rounded to a
+   millionth, in id order. Two runs of the same machine must give one hash. */
+function stateHash(world) {
+  var h = 2166136261, i, k, b, nums;
+  var list = world.bodies.slice().sort(function (x, y) { return x.id - y.id; });
+  for (i = 0; i < list.length; i++) {
+    b = list[i];
+    nums = [b.pos.x, b.pos.y, b.vel.x, b.vel.y, b.angle, b.angVel];
+    for (k = 0; k < nums.length; k++) {
+      var q = Math.round(nums[k] * 1e6) | 0;
+      h ^= (q & 255); h = Math.imul(h, 16777619);
+      h ^= ((q >> 8) & 255); h = Math.imul(h, 16777619);
+      h ^= ((q >> 16) & 255); h = Math.imul(h, 16777619);
+      h ^= ((q >> 24) & 255); h = Math.imul(h, 16777619);
+    }
+  }
+  return (h >>> 0).toString(16);
+}
+
+/* ========================= 6. PARTS ========================= */
+/* Eight in the slice. Each `make` puts its bodies, constraints and forces into
+   the world and hands back what the run needs to watch it. Density is derived
+   from the mass the plan names, so the numbers in CONFIG are the ones that
+   matter and the engine's density is an implementation detail. */
+function circleDensity(mass, r) { return mass / (Math.PI * r * r); }
+function boxDensity(mass, w, h) { return mass / (w * h); }
+
+var PARTS = {
+  marble: {
+    label: 'Marble', tray: 1, w: 18, h: 18, colour: '#3D6FB4',
+    make: function (world, x, y) {
+      var b = world.add(new PHYS.Body({
+        shape: 'circle', x: x, y: y, radius: CONFIG.MARBLE_R,
+        density: circleDensity(CONFIG.MARBLE_MASS, CONFIG.MARBLE_R),
+        restitution: CONFIG.MARBLE_REST, friction: CONFIG.MARBLE_FRICTION
+      }));
+      b.kind = 'marble';
+      return { bodies: [b] };
+    }
+  },
+  plank: {
+    label: 'Plank', tray: 4, w: CONFIG.PLANK_L, h: CONFIG.PLANK_T, colour: '#8A5A9B',
+    make: function (world, x, y, rot) {
+      var b = world.add(new PHYS.Body({
+        shape: 'poly', x: x, y: y, angle: rot, isStatic: true,
+        verts: PHYS.boxVerts(CONFIG.PLANK_L, CONFIG.PLANK_T),
+        w: CONFIG.PLANK_L, h: CONFIG.PLANK_T,
+        restitution: 0.05, friction: 0.5
+      }));
+      b.kind = 'plank';
+      return { bodies: [b] };
+    }
+  },
+  domino: {
+    label: 'Domino', tray: 8, w: CONFIG.DOMINO_W, h: CONFIG.DOMINO_H, colour: '#D8503C',
+    make: function (world, x, y, rot) {
+      var b = world.add(new PHYS.Body({
+        shape: 'poly', x: x, y: y, angle: rot,
+        verts: PHYS.boxVerts(CONFIG.DOMINO_W, CONFIG.DOMINO_H),
+        w: CONFIG.DOMINO_W, h: CONFIG.DOMINO_H,
+        density: boxDensity(CONFIG.DOMINO_MASS, CONFIG.DOMINO_W, CONFIG.DOMINO_H),
+        restitution: CONFIG.DOMINO_REST, friction: CONFIG.DOMINO_FRICTION
+      }));
+      b.kind = 'domino';
+      return { bodies: [b] };
+    }
+  },
+  seesaw: {
+    label: 'Seesaw', tray: 1, w: CONFIG.SEESAW_L, h: CONFIG.PLANK_T, colour: '#4E9A52',
+    make: function (world, x, y, rot) {
+      var plank = world.add(new PHYS.Body({
+        shape: 'poly', x: x, y: y, angle: rot,
+        verts: PHYS.boxVerts(CONFIG.SEESAW_L, CONFIG.PLANK_T),
+        w: CONFIG.SEESAW_L, h: CONFIG.PLANK_T,
+        density: boxDensity(2.4, CONFIG.SEESAW_L, CONFIG.PLANK_T),
+        restitution: 0.05, friction: 0.5
+      }));
+      plank.kind = 'seesaw';
+      plank.canSleep = false;
+      var pin = new PinJoint(plank, null, x, y);
+      world.constraints.push(pin);
+      return { bodies: [plank], constraints: [pin] };
+    }
+  },
+  fan: {
+    label: 'Fan', tray: 1, w: 40, h: 40, colour: '#3D6FB4',
+    make: function (world, x, y, rot) {
+      var b = world.add(new PHYS.Body({
+        shape: 'poly', x: x, y: y, angle: rot, isStatic: true,
+        verts: PHYS.boxVerts(34, 40), w: 34, h: 40,
+        restitution: 0.05, friction: 0.6
+      }));
+      b.kind = 'fan';
+      b.on = true;
+      var f = fanForce(b);
+      world.forces.push(f);
+      return { bodies: [b], forces: [f] };
+    }
+  },
+  balloon: {
+    label: 'Balloon', tray: 1, w: CONFIG.BALLOON_R * 2, h: CONFIG.BALLOON_R * 2, colour: '#D8503C',
+    make: function (world, x, y) {
+      var b = world.add(new PHYS.Body({
+        shape: 'circle', x: x, y: y, radius: CONFIG.BALLOON_R,
+        density: circleDensity(0.3, CONFIG.BALLOON_R),
+        restitution: 0.2, friction: 0.4
+      }));
+      b.kind = 'balloon';
+      b.canSleep = false;
+      var f = buoyancy(b);
+      world.forces.push(f);
+      /* the cargo hangs under it on a rope */
+      var cargo = world.add(new PHYS.Body({
+        shape: 'poly', x: x, y: y + CONFIG.STRING_L, angle: 0,
+        verts: PHYS.boxVerts(20, 14), w: 20, h: 14,
+        /* The cargo has to be LIGHTER than the balloon's spare lift or the pair
+           sinks: the spare is (LIFT - 1) times the balloon's mass, which is
+           0.18, and 0.5 sank it. It also has to be close to it, or the pair
+           rises so fast that the fan cannot steer it and the level is a
+           formality. 0.16 leaves a rise of about 39 units per second squared
+           against a sideways push of about 17, which is a real diagonal. */
+        density: boxDensity(0.16, 20, 14), restitution: 0.05, friction: 0.6
+      }));
+      cargo.kind = 'cargo';
+      cargo.canSleep = false;
+      var rope = new Rope(b, cargo, CONFIG.STRING_L);
+      world.constraints.push(rope);
+      return { bodies: [b, cargo], constraints: [rope], forces: [f] };
+    }
+  },
+  bell: {
+    label: 'Bell', tray: 0, w: CONFIG.BELL_R * 2, h: CONFIG.BELL_R * 2, colour: '#E8B33C',
+    make: function (world, x, y) {
+      var b = world.add(new PHYS.Body({
+        shape: 'circle', x: x, y: y, radius: CONFIG.BELL_R, isStatic: true,
+        restitution: 0.3, friction: 0.3
+      }));
+      b.kind = 'bell';
+      return { bodies: [b] };
+    }
+  },
+  bucket: {
+    label: 'Bucket', tray: 1, w: CONFIG.BUCKET_W, h: CONFIG.BUCKET_H, colour: '#8A5A9B',
+    make: function (world, x, y) {
+      /* three thin planks in a U, welded by being one body is not possible in
+         this engine, so the floor carries the mass and the walls are pinned */
+      var hw = CONFIG.BUCKET_W / 2, hh = CONFIG.BUCKET_H / 2, out = [], cons = [];
+      var floor = world.add(new PHYS.Body({
+        shape: 'poly', x: x, y: y + hh, angle: 0,
+        verts: PHYS.boxVerts(CONFIG.BUCKET_W, 6), w: CONFIG.BUCKET_W, h: 6,
+        density: boxDensity(0.5, CONFIG.BUCKET_W, 6), restitution: 0.02, friction: 0.7
+      }));
+      floor.kind = 'bucket';
+      floor.canSleep = false;
+      out.push(floor);
+      var side;
+      for (side = -1; side <= 1; side += 2) {
+        var wall = world.add(new PHYS.Body({
+          shape: 'poly', x: x + side * hw, y: y, angle: 0,
+          verts: PHYS.boxVerts(5, CONFIG.BUCKET_H), w: 5, h: CONFIG.BUCKET_H,
+          density: boxDensity(0.2, 5, CONFIG.BUCKET_H), restitution: 0.02, friction: 0.7
+        }));
+        wall.kind = 'bucketWall';
+        wall.canSleep = false;
+        out.push(wall);
+        var j = new PinJoint(wall, floor, x + side * hw, y + hh);
+        world.constraints.push(j); cons.push(j);
+      }
+      return { bodies: out, constraints: cons };
+    }
+  }
+};
+var PART_ORDER = ['marble', 'plank', 'domino', 'seesaw', 'fan', 'balloon', 'bucket', 'bell'];
+
+/* ========================= 7. MACHINE ========================= */
+/* The edit state and the seven bytes a part costs in a share link. */
+function newMachine() { return { parts: [] }; }
+function cloneMachine(m) {
+  var out = { parts: [] }, i;
+  for (i = 0; i < m.parts.length; i++) {
+    var p = m.parts[i];
+    out.parts.push({ type: p.type, x: p.x, y: p.y, rot: p.rot, flip: p.flip || 0 });
+  }
+  return out;
+}
+function detentIndex(rot) {
+  var deg = rot / DEG, n = Math.round(deg / CONFIG.ROT_DETENT_DEG);
+  n = n % 24; if (n < 0) n += 24;
+  return n;
+}
+function detentAngle(i) { return i * CONFIG.ROT_DETENT_DEG * DEG; }
+function packMachine(levelId, m) {
+  var bytes = [levelId & 255, m.parts.length & 255], i;
+  for (i = 0; i < m.parts.length; i++) {
+    var p = m.parts[i];
+    var x = Math.round(p.x) & 65535, y = Math.round(p.y) & 65535;
+    bytes.push(PART_ORDER.indexOf(p.type) & 255);
+    bytes.push(x & 255, (x >> 8) & 255);
+    bytes.push(y & 255, (y >> 8) & 255);
+    bytes.push(detentIndex(p.rot) & 255);
+    bytes.push((p.flip ? 1 : 0) & 255);
+  }
+  return bytes;
+}
+function unpackMachine(bytes) {
+  if (!bytes || bytes.length < 2) return null;
+  var levelId = bytes[0], n = bytes[1], m = newMachine(), i, o = 2;
+  if (bytes.length < 2 + n * 7) return null;
+  for (i = 0; i < n; i++) {
+    var type = PART_ORDER[bytes[o]];
+    if (!type) return null;
+    m.parts.push({
+      type: type,
+      x: bytes[o + 1] | (bytes[o + 2] << 8),
+      y: bytes[o + 3] | (bytes[o + 4] << 8),
+      rot: detentAngle(bytes[o + 5]),
+      flip: bytes[o + 6] ? 1 : 0
+    });
+    o += 7;
+  }
+  return { levelId: levelId, machine: m };
+}
+
+/* ========================= 8. LEVELS ========================= */
+/* Six, each with the solution that the gate runs. A level whose solution does
+   not fire the goal, or that fires it with an empty tray, is a broken level and
+   `sim.js --solve` says so. */
+function seg(x1, y1, x2, y2) { return { x1: x1, y1: y1, x2: x2, y2: y2 }; }
+var FLOOR = seg(0, 424, 768, 424);
+
+var WALLS = [seg(0, 0, 0, 432), seg(768, 0, 768, 432), seg(0, 0, 768, 0)];
+var GROUND = seg(0, 424, 768, 424);
+
+/* Every one of these was laid out against the simulator, not by eye. The
+   numbers are where they are because sim.js --solve says the marble arrives. */
+var LEVELS = [
+  {
+    id: 0, name: 'The Bell on the Shelf', par: 4,
+    scene: [GROUND].concat(WALLS).concat([seg(500, 338, 768, 348)]),
+    fixed: [{ type: 'bell', x: 690, y: 322 }],
+    tray: { marble: 1, plank: 3 },
+    bonus: [{ x: 300, y: 215 }],
+    goal: 'bell',
+    solution: [
+      { type: 'plank', x: 170, y: 150, rot: 20 * DEG },
+      { type: 'plank', x: 300, y: 230, rot: 16 * DEG },
+      { type: 'plank', x: 440, y: 285, rot: 10 * DEG },
+      { type: 'marble', x: 130, y: 90 }
+    ]
+  },
+  {
+    id: 1, name: 'A Row of Dominoes', par: 11,
+    scene: [GROUND].concat(WALLS),
+    fixed: [{ type: 'bell', x: 580, y: 402 }],
+    tray: { marble: 1, plank: 2, domino: 8 },
+    bonus: [{ x: 230, y: 250 }],
+    goal: 'bell',
+    solution: (function () {
+      var out = [
+        { type: 'plank', x: 150, y: 180, rot: 24 * DEG },
+        { type: 'plank', x: 290, y: 300, rot: 20 * DEG },
+        { type: 'marble', x: 108, y: 120 }
+      ], i;
+      for (i = 0; i < 8; i++) out.push({ type: 'domino', x: 390 + i * 21, y: 402 });
+      return out;
+    })()
+  },
+  {
+    id: 2, name: 'The Gap in the Floor', par: 4,
+    scene: [seg(0, 424, 300, 424), seg(460, 424, 768, 424),
+      seg(300, 424, 300, 432), seg(460, 424, 460, 432)].concat(WALLS),
+    fixed: [{ type: 'bell', x: 690, y: 402 }],
+    tray: { marble: 1, plank: 2, seesaw: 1 },
+    bonus: [{ x: 250, y: 270 }],
+    goal: 'bell',
+    solution: [
+      { type: 'plank', x: 180, y: 250, rot: 22 * DEG },
+      { type: 'plank', x: 270, y: 330, rot: 16 * DEG },
+      { type: 'seesaw', x: 370, y: 386, rot: -10 * DEG },
+      { type: 'marble', x: 140, y: 190 }
+    ]
+  },
+  {
+    id: 3, name: 'The Fan and the Balloon', par: 3,
+    scene: [GROUND].concat(WALLS),
+    fixed: [{ type: 'bell', x: 320, y: 40 }, { type: 'fan', x: 110, y: 290, rot: 0 }],
+    tray: { balloon: 1, plank: 2 },
+    bonus: [{ x: 250, y: 180 }],
+    goal: 'bell',
+    solution: [
+      { type: 'balloon', x: 230, y: 330 }
+    ]
+  },
+  {
+    id: 4, name: 'The Bucket on the Post', par: 6,
+    scene: [GROUND].concat(WALLS).concat([seg(430, 300, 430, 390)]),
+    fixed: [{ type: 'bell', x: 430, y: 404 }],
+    tray: { marble: 3, plank: 2, bucket: 1 },
+    bonus: [{ x: 250, y: 200 }],
+    goal: 'bell',
+    solution: [
+      { type: 'plank', x: 180, y: 150, rot: 22 * DEG },
+      { type: 'plank', x: 300, y: 230, rot: 16 * DEG },
+      { type: 'bucket', x: 430, y: 278 },
+      { type: 'marble', x: 140, y: 90 },
+      { type: 'marble', x: 164, y: 60 },
+      { type: 'marble', x: 188, y: 30 }
+    ]
+  },
+  {
+    id: 5, name: 'All Together', par: 12,
+    scene: [seg(0, 424, 300, 424), seg(460, 424, 768, 424),
+      seg(300, 424, 300, 432), seg(460, 424, 460, 432)].concat(WALLS),
+    fixed: [{ type: 'bell', x: 720, y: 402 }],
+    tray: { marble: 1, plank: 3, seesaw: 1, domino: 8, balloon: 1 },
+    bonus: [{ x: 230, y: 256 }, { x: 433, y: 382 }],
+    goal: 'bell',
+    solution: (function () {
+      var out = [
+        { type: 'plank', x: 180, y: 250, rot: 22 * DEG },
+        { type: 'plank', x: 270, y: 330, rot: 16 * DEG },
+        { type: 'seesaw', x: 370, y: 386, rot: -10 * DEG },
+        { type: 'marble', x: 140, y: 190 }
+      ], i;
+      for (i = 0; i < 8; i++) out.push({ type: 'domino', x: 540 + i * 21, y: 402 });
+      return out;
+    })()
+  }
+];
+
+/* ========================= 9. SIM ========================= */
+/* buildWorld is pure over (level, machine): the same pair always gives the same
+   bodies in the same order with the same ids. runMachine steps it at a fixed
+   rate and reports what happened. */
+function buildWorld(level, machine) {
+  /* ⛔ the world takes gravity as a NUMBER (it makes the vector itself). Passed
+     a vector it read {x,y} as a scalar and every body integrated to NaN on the
+     first step, silently: no error, just a marble at NaN. */
+  var world = new PHYS.World({ gravity: CONFIG.GRAVITY, iterations: CONFIG.ITERATIONS });
+  var made = [], i;
+  /* the scene's static segments first, so their ids are lowest and stable */
+  for (i = 0; i < level.scene.length; i++) {
+    var s = level.scene[i];
+    var mx = (s.x1 + s.x2) / 2, my = (s.y1 + s.y2) / 2;
+    var dx = s.x2 - s.x1, dy = s.y2 - s.y1;
+    var len = len2(dx, dy), ang = datan2(dy, dx);
+    var b = world.add(new PHYS.Body({
+      shape: 'poly', x: mx, y: my, angle: ang, isStatic: true,
+      verts: PHYS.boxVerts(len, 12), w: len, h: 12,
+      restitution: 0.05, friction: 0.6
+    }));
+    b.kind = 'scene';
+  }
+  for (i = 0; i < level.fixed.length; i++) {
+    var f = level.fixed[i];
+    made.push(PARTS[f.type].make(world, f.x, f.y, f.rot || 0));
+  }
+  for (i = 0; i < machine.parts.length; i++) {
+    var p = machine.parts[i];
+    if (!PARTS[p.type]) continue;
+    made.push(PARTS[p.type].make(world, p.x, p.y, p.rot || 0));
+  }
+  world.made = made;
+  return world;
+}
+function bellBodies(world) {
+  var out = [], i;
+  for (i = 0; i < world.bodies.length; i++) if (world.bodies[i].kind === 'bell') out.push(world.bodies[i]);
+  return out;
+}
+/* the goal: anything hits the bell hard enough to ring it */
+function bellRung(world) {
+  var bells = bellBodies(world), i, k;
+  for (i = 0; i < world.bodies.length; i++) {
+    var b = world.bodies[i];
+    if (b.isStatic || b.kind === 'bell') continue;
+    var sp = vlen(b.vel);
+    if (sp < CONFIG.BELL_SPEED) continue;
+    for (k = 0; k < bells.length; k++) {
+      var d = vsub(b.pos, bells[k].pos);
+      var reach = CONFIG.BELL_R + (b.shape === 'circle' ? b.radius : Math.max(b.w, b.h) / 2) + 2;
+      if (vlen(d) <= reach) return true;
+    }
+  }
+  return false;
+}
+function touchedBonus(world, level, touched) {
+  var i, k;
+  for (k = 0; k < level.bonus.length; k++) {
+    if (touched[k]) continue;
+    for (i = 0; i < world.bodies.length; i++) {
+      var b = world.bodies[i];
+      if (b.isStatic || !b.awake) continue;
+      if (vlen(vsub(b.pos, level.bonus[k])) < 26) { touched[k] = 1; break; }
+    }
+  }
+  return touched;
+}
+/* one run, headless. dt is fixed; there is no wall clock in here. */
+function runMachine(level, machine, maxS) {
+  var world = buildWorld(level, machine);
+  var dt = 1 / CONFIG.PHYS_HZ;
+  var steps = Math.round((maxS === undefined ? CONFIG.RUN_MAX_S : maxS) * CONFIG.PHYS_HZ);
+  var touched = [], i, goalAt = -1;
+  for (i = 0; i < level.bonus.length; i++) touched.push(0);
+  for (i = 0; i < steps; i++) {
+    world.step(dt);
+    touchedBonus(world, level, touched);
+    if (goalAt < 0 && bellRung(world)) goalAt = i / CONFIG.PHYS_HZ;
+  }
+  var allBonus = true;
+  for (i = 0; i < touched.length; i++) if (!touched[i]) allBonus = false;
+  return {
+    world: world, goal: goalAt >= 0, goalAt: goalAt, bonus: touched, allBonus: allBonus,
+    hash: stateHash(world), parts: machine.parts.length
+  };
+}
+function starsFor(level, machine, res) {
+  if (!res.goal) return 0;
+  if (machine.parts.length > level.par) return 1;
+  return res.allBonus ? 3 : 2;
+}
+function machineFromSolution(level) {
+  var m = newMachine(), i;
+  for (i = 0; i < level.solution.length; i++) {
+    var p = level.solution[i];
+    m.parts.push({ type: p.type, x: p.x, y: p.y, rot: p.rot || 0, flip: 0 });
+  }
+  return m;
+}
+/* the heartbeat: a row of dominoes with a marble rolled into it */
+function dominoTrial(spacingRatio, seed, count) {
+  var rng = makeRNG(seed), n = count || 12;
+  var level = {
+    id: 99, name: 'trial', par: 99, bonus: [], goal: 'bell',
+    scene: [FLOOR, seg(0, 0, 0, 432), seg(768, 0, 768, 432)],
+    fixed: [], tray: {}, solution: []
+  };
+  var m = newMachine(), i;
+  /* ⛔ the marble has to start ABOVE the plank. A plank at 140 spans 97 to 183,
+     and a marble dropped at 60 misses it entirely, rolls the other way, and the
+     whole heartbeat reads zero with nothing obviously wrong. */
+  m.parts.push({ type: 'plank', x: 140, y: 300, rot: 26 * DEG });
+  m.parts.push({ type: 'marble', x: 106, y: 220, rot: 0 });
+  var gap = CONFIG.DOMINO_H * spacingRatio;
+  var x0 = 260;
+  for (i = 0; i < n; i++) {
+    var jitterX = (rng() - 0.5) * 0.04 * gap;
+    var lean = (rng() - 0.5) * 2 * DEG;
+    m.parts.push({
+      type: 'domino',
+      x: x0 + i * gap + jitterX,
+      y: 424 - CONFIG.DOMINO_H / 2 - 6,
+      rot: lean
+    });
+  }
+  var world = buildWorld(level, m);
+  var dt = 1 / CONFIG.PHYS_HZ, step, fell = [], lastAt = -1;
+  var dominoes = [];
+  for (i = 0; i < world.bodies.length; i++) if (world.bodies[i].kind === 'domino') dominoes.push(world.bodies[i]);
+  /* ⛔ "fallen" is NOT "lying flat". In a tight row a domino topples onto the
+     next one and rests at about asin(gap / height), which at the 0.55 spacing
+     is 33 degrees. Measuring for 51 degrees called a perfectly good cascade a
+     failure. A domino has fallen when it has left upright by 20 degrees and is
+     still there at the end. */
+  var over = 0.35, at = [];
+  for (i = 0; i < dominoes.length; i++) { fell.push(0); at.push(-1); }
+  var norm = function (a) {
+    while (a > DPI) a -= 2 * DPI;
+    while (a < -DPI) a += 2 * DPI;
+    return a < 0 ? -a : a;
+  };
+  for (step = 0; step < CONFIG.PHYS_HZ * 8; step++) {
+    world.step(dt);
+    for (i = 0; i < dominoes.length; i++) {
+      if (at[i] >= 0) continue;
+      if (norm(dominoes[i].angle) > over) at[i] = step / CONFIG.PHYS_HZ;
+    }
+  }
+  var allFell = true, nFell = 0;
+  for (i = 0; i < dominoes.length; i++) {
+    fell[i] = (at[i] >= 0 && norm(dominoes[i].angle) > over) ? 1 : 0;
+    if (fell[i]) { nFell++; if (at[i] > lastAt) lastAt = at[i]; } else allFell = false;
+  }
+  return { all: allFell, n: nFell, of: dominoes.length, lastAt: lastAt };
+}
+function dominoSweep(spacingRatio, trials) {
+  var i, ok = 0, worst = 0, fails = [];
+  for (i = 0; i < trials; i++) {
+    var r = dominoTrial(spacingRatio, 1000 + i, 12);
+    if (r.all) { ok++; if (r.lastAt > worst) worst = r.lastAt; }
+    else if (fails.length < 3) fails.push('seed ' + (1000 + i) + ': ' + r.n + ' of ' + r.of);
+  }
+  return { ok: ok, of: trials, worst: worst, fails: fails };
+}
+// ---- SIM_EXPORT_END ----
+
+// ---- TEST_EXPORT_START ----
+/* ========================= 15. TEST ========================= */
+var TEST = {
+  results: [],
+  assert: function (n, c, d) { this.results.push({ name: n, pass: !!c, detail: d || '' }); },
+  eq: function (n, a, b) { this.assert(n, a === b, 'expected ' + b + ', got ' + a); },
+  near: function (n, a, b, tol) { this.assert(n, Math.abs(a - b) <= tol, 'expected about ' + b + ', got ' + a); },
+  report: function () {
+    var p = 0, f = 0, fails = [], i;
+    for (i = 0; i < this.results.length; i++) { if (this.results[i].pass) p++; else { f++; fails.push(this.results[i]); } }
+    return { passed: p, failed: f, total: this.results.length, failures: fails };
+  },
+  runSuite: function (n, fn, a) {
+    try { fn(this, a); } catch (e) { this.assert('the ' + n + ' suite ran to the end', false, String(e && e.message || e)); }
+  },
+  run: function (extra) {
+    this.results = [];
+    this.runSuite('dmath', suiteDMath);
+    this.runSuite('resting', suiteResting);
+    this.runSuite('rolling', suiteRolling);
+    this.runSuite('joints', suiteJoints);
+    this.runSuite('forces', suiteForces);
+    this.runSuite('sleep', suiteSleep);
+    this.runSuite('determinism', suiteDeterminism);
+    this.runSuite('serialisation', suiteSerialisation);
+    this.runSuite('levels', suiteLevels);
+    this.runSuite('heartbeat', suiteHeartbeat);
+    this.runSuite('copy', suiteCopy);
+    if (extra && extra.src) this.runSuite('purity', suitePurity, extra.src);
+    return this.report();
+  }
+};
+
+/* a bare scene with a floor and nothing else, for the physics suites */
+function bench() {
+  return {
+    id: 90, name: 'bench', par: 99, bonus: [], goal: 'bell',
+    scene: [GROUND].concat(WALLS), fixed: [], tray: {}, solution: []
+  };
+}
+function withParts(parts) {
+  var m = newMachine(), i;
+  for (i = 0; i < parts.length; i++) {
+    m.parts.push({ type: parts[i].type, x: parts[i].x, y: parts[i].y, rot: parts[i].rot || 0, flip: 0 });
+  }
+  return m;
+}
+/* one step, for the assertions that care what a single solve does */
+function world4step(w) { w.step(1 / CONFIG.PHYS_HZ); return w; }
+function stepFor(world, secs) {
+  var i, n = Math.round(secs * CONFIG.PHYS_HZ);
+  for (i = 0; i < n; i++) world.step(1 / CONFIG.PHYS_HZ);
+  return world;
+}
+function findKind(world, kind) {
+  var i, out = [];
+  for (i = 0; i < world.bodies.length; i++) if (world.bodies[i].kind === kind) out.push(world.bodies[i]);
+  return out;
+}
+
+function suiteDMath(T) {
+  var i, worstS = 0, worstC = 0, worstA = 0;
+  for (i = -40; i <= 40; i++) {
+    var x = i * 0.37;
+    worstS = Math.max(worstS, Math.abs(dsin(x) - Math.sin(x)));
+    worstC = Math.max(worstC, Math.abs(dcos(x) - Math.cos(x)));
+  }
+  T.assert('the deterministic sine matches the built in one to a millionth of a millionth ('
+    + worstS.toExponential(1) + ')', worstS < 1e-12);
+  T.assert('and so does the cosine (' + worstC.toExponential(1) + ')', worstC < 1e-12);
+  for (i = 0; i < 60; i++) {
+    var a = (i / 60) * 6.2 - 3.1;
+    var y = dsin(a), x2 = dcos(a);
+    worstA = Math.max(worstA, Math.abs(datan2(y, x2) - Math.atan2(y, x2)));
+  }
+  T.assert('and atan2 agrees on every quadrant (' + worstA.toExponential(1) + ')', worstA < 1e-11);
+  T.near('sine of nothing is nothing', dsin(0), 0, 1e-15);
+  T.near('cosine of nothing is one', dcos(0), 1, 1e-15);
+  T.near('and a quarter turn is one', dsin(DHALF_PI), 1, 1e-12);
+  T.eq('atan2 straight up is a quarter turn', datan2(1, 0), DHALF_PI);
+  T.eq('atan2 of nothing at all is nothing', datan2(0, 0), 0);
+  T.near('the length of a three four five triangle is five', len2(3, 4), 5, 1e-15);
+  /* the same call twice is the same bits, which is the whole point */
+  T.eq('the same angle gives the same bits twice', dsin(1.234567) === dsin(1.234567), true);
+}
+
+function suiteResting(T) {
+  var w = buildWorld(bench(), withParts([{ type: 'marble', x: 200, y: 120 }]));
+  var m = findKind(w, 'marble')[0];
+  stepFor(w, 3);
+  T.near('a marble dropped on the floor comes to rest on it', m.pos.y, 424 - 6 - CONFIG.MARBLE_R, 1.5);
+  T.assert('and it is asleep within three seconds', !m.awake);
+  T.assert('and it did not wander sideways (' + m.pos.x.toFixed(1) + ')', Math.abs(m.pos.x - 200) < 1.5);
+  var w2 = buildWorld(bench(), withParts([
+    { type: 'plank', x: 300, y: 300, rot: 0 },
+    { type: 'marble', x: 300, y: 200 }
+  ]));
+  var m2 = findKind(w2, 'marble')[0];
+  stepFor(w2, 3);
+  T.near('a marble dropped on a plank comes to rest on the plank', m2.pos.y,
+    300 - CONFIG.PLANK_T / 2 - CONFIG.MARBLE_R, 1.5);
+  T.assert('and it sleeps there too', !m2.awake);
+  var stack = buildWorld(bench(), withParts([
+    { type: 'domino', x: 400, y: 402 }, { type: 'domino', x: 424, y: 402 }
+  ]));
+  stepFor(stack, 3);
+  var ds = findKind(stack, 'domino'), i, standing = 0;
+  for (i = 0; i < ds.length; i++) if (Math.abs(ds[i].angle) < 0.2) standing++;
+  T.eq('two dominoes stood on the floor are still standing three seconds later', standing, 2);
+  T.assert('and both are asleep', !ds[0].awake && !ds[1].awake);
+}
+
+/* the value here is RECORDED, not derived: the assertion is that it does not
+   move, because a change in it means the friction or the solver changed. */
+var ROLL_SPEED = null;
+function suiteRolling(T) {
+  var w = buildWorld(bench(), withParts([
+    { type: 'plank', x: 200, y: 200, rot: 20 * DEG },
+    { type: 'marble', x: 160, y: 150 }
+  ]));
+  var m = findKind(w, 'marble')[0];
+  stepFor(w, 1.2);
+  var sp = vlen(m.vel);
+  ROLL_SPEED = sp;
+  T.assert('a marble rolls down a twenty degree plank and picks up speed (' + sp.toFixed(1) + ' units a second)',
+    sp > 120 && sp < 320);
+  /* the frictionless drop over that height would be sqrt(2 g h); friction and
+     rolling take a share of it, and the share is what is being watched */
+  var w2 = buildWorld(bench(), withParts([
+    { type: 'plank', x: 200, y: 200, rot: 20 * DEG },
+    { type: 'marble', x: 160, y: 150 }
+  ]));
+  var m2 = findKind(w2, 'marble')[0];
+  stepFor(w2, 1.2);
+  T.near('and the same roll twice gives the same speed', vlen(m2.vel), sp, 1e-9);
+  var flat = buildWorld(bench(), withParts([
+    { type: 'plank', x: 300, y: 300, rot: 0 },
+    { type: 'marble', x: 300, y: 200 }
+  ]));
+  var mf = findKind(flat, 'marble')[0];
+  stepFor(flat, 3);
+  T.assert('a marble on a level plank does not roll away (' + Math.abs(mf.pos.x - 300).toFixed(2) + ')',
+    Math.abs(mf.pos.x - 300) < 2);
+  /* ⛔ nothing here watched for energy being CREATED. A restitution over one
+     is a marble that bounces higher than it was dropped from, and every other
+     assertion in this file was happy with it. */
+  var drop = buildWorld(bench(), withParts([{ type: 'marble', x: 200, y: 100 }]));
+  var dm = findKind(drop, 'marble')[0], top = 999, i2;
+  var start = dm.pos.y, floorY = 424 - 6 - CONFIG.MARBLE_R;
+  for (i2 = 0; i2 < CONFIG.PHYS_HZ * 4; i2++) {
+    drop.step(1 / CONFIG.PHYS_HZ);
+    if (i2 > CONFIG.PHYS_HZ * 0.8 && dm.pos.y < top) top = dm.pos.y;
+  }
+  T.assert('a dropped marble never bounces back higher than it was dropped from (rose to '
+    + top.toFixed(0) + ' from ' + start.toFixed(0) + ')', top > start + 1);
+  T.assert('and the bounce keeps less than half the drop (' + ((floorY - top) / (floorY - start) * 100).toFixed(0)
+    + ' percent of the height)', (floorY - top) / (floorY - start) < 0.5);
+}
+
+function suiteJoints(T) {
+  var w = buildWorld(bench(), withParts([
+    { type: 'seesaw', x: 330, y: 340, rot: 0 },
+    { type: 'marble', x: 395, y: 300 }
+  ]));
+  var pl = findKind(w, 'seesaw')[0];
+  stepFor(w, 0.8);
+  T.assert('a marble on one end tips a pinned plank (' + (pl.angle / DEG).toFixed(0) + ' degrees)',
+    pl.angle > 0.2);
+  T.near('and the pin holds the middle of it where it was put', pl.pos.x, 330, 1.5);
+  T.near('and at the height it was put', pl.pos.y, 340, 1.5);
+  var w2 = buildWorld(bench(), withParts([{ type: 'seesaw', x: 330, y: 340, rot: 0 }]));
+  var pl2 = findKind(w2, 'seesaw')[0];
+  stepFor(w2, 3);
+  T.assert('an empty seesaw stays where it is', Math.abs(pl2.angle) < 0.2
+    && Math.abs(pl2.pos.y - 340) < 2);
+  /* the rope: an inequality, so it hangs slack and never pushes */
+  var w3 = buildWorld(bench(), withParts([{ type: 'balloon', x: 300, y: 200 }]));
+  var bal = findKind(w3, 'balloon')[0], cargo = findKind(w3, 'cargo')[0];
+  var d0 = vlen(vsub(cargo.pos, bal.pos));
+  stepFor(w3, 3);
+  var d1 = vlen(vsub(cargo.pos, bal.pos));
+  T.assert('a rope never stretches past its length (' + d1.toFixed(1) + ' of ' + CONFIG.STRING_L + ')',
+    d1 <= CONFIG.STRING_L + 2);
+  T.assert('and it started at its length', Math.abs(d0 - CONFIG.STRING_L) < 1);
+  /* ⛔ "never longer than its length" is true of a ROD as well, and so is "not
+     much changes in one step". The two are told apart SIDEWAYS: with the pair
+     level, gravity does not act along the rope at all, so any horizontal
+     separation that appears came from the constraint. A rope leaves them where
+     they are; a rod shoves them out to its full length. */
+  var w4 = buildWorld(bench(), withParts([{ type: 'balloon', x: 300, y: 200 }]));
+  var bal4 = findKind(w4, 'balloon')[0], cargo4 = findKind(w4, 'cargo')[0];
+  bal4.pos = v(300, 200); bal4.vel = v(0, 0);
+  cargo4.pos = v(320, 200); cargo4.vel = v(0, 0);
+  var i4;
+  for (i4 = 0; i4 < 12; i4++) world4step(w4);
+  var apart4 = Math.abs(cargo4.pos.x - bal4.pos.x);
+  T.assert('a slack rope does nothing at all: it does not shove the cargo out to its full length ('
+    + apart4.toFixed(1) + ' apart sideways, the rope is ' + CONFIG.STRING_L + ')',
+    apart4 < 30);
+}
+
+function suiteForces(T) {
+  var w = buildWorld(bench(), withParts([{ type: 'balloon', x: 300, y: 300 }]));
+  var bal = findKind(w, 'balloon')[0], cargo = findKind(w, 'cargo')[0];
+  var y0 = bal.pos.y, cy0 = cargo.pos.y;
+  stepFor(w, 3);
+  T.assert('a balloon rises (' + y0.toFixed(0) + ' to ' + bal.pos.y.toFixed(0) + ')', bal.pos.y < y0 - 60);
+  T.assert('and it lifts its cargo with it (' + cy0.toFixed(0) + ' to ' + cargo.pos.y.toFixed(0) + ')',
+    cargo.pos.y < cy0 - 40);
+  T.assert('and the rope is still the length it was',
+    vlen(vsub(cargo.pos, bal.pos)) <= CONFIG.STRING_L + 2);
+  /* the fan: it moves a balloon and it does not move a plank */
+  var f = buildWorld(bench(), withParts([
+    { type: 'fan', x: 110, y: 300, rot: 0 },
+    { type: 'balloon', x: 230, y: 330 }
+  ]));
+  var fb = findKind(f, 'balloon')[0];
+  stepFor(f, 3);
+  T.assert('a fan blows a balloon along its cone (' + fb.pos.x.toFixed(0) + ' from 230)', fb.pos.x > 250);
+  var f2 = buildWorld(bench(), withParts([
+    { type: 'fan', x: 110, y: 300, rot: 0 },
+    { type: 'plank', x: 230, y: 300, rot: 0 }
+  ]));
+  var fp = findKind(f2, 'plank')[0];
+  stepFor(f2, 3);
+  T.near('and it does not shift a plank', fp.pos.x, 230, 0.001);
+  /* behind the fan, nothing happens */
+  var f3 = buildWorld(bench(), withParts([
+    { type: 'fan', x: 400, y: 300, rot: 0 },
+    { type: 'balloon', x: 250, y: 330 }
+  ]));
+  var fb3 = findKind(f3, 'balloon')[0];
+  var bx = fb3.pos.x;
+  stepFor(f3, 2);
+  T.assert('and a balloon behind the fan is not pushed (' + fb3.pos.x.toFixed(0) + ' from ' + bx.toFixed(0) + ')',
+    Math.abs(fb3.pos.x - bx) < 12);
+  /* out of range, nothing happens */
+  var f4 = buildWorld(bench(), withParts([
+    { type: 'fan', x: 60, y: 300, rot: 0 },
+    { type: 'balloon', x: 60 + CONFIG.FAN_RANGE + 80, y: 330 }
+  ]));
+  var fb4 = findKind(f4, 'balloon')[0];
+  var bx4 = fb4.pos.x;
+  stepFor(f4, 2);
+  T.assert('and a balloon beyond the fan\'s reach is not pushed', Math.abs(fb4.pos.x - bx4) < 12);
+}
+
+function suiteSleep(T) {
+  var w = buildWorld(bench(), withParts([
+    { type: 'domino', x: 420, y: 402 },
+    { type: 'marble', x: 200, y: 120 }
+  ]));
+  var d = findKind(w, 'domino')[0], m = findKind(w, 'marble')[0];
+  stepFor(w, 3);
+  T.assert('a domino left alone falls asleep', !d.awake);
+  T.assert('and it is still standing', Math.abs(d.angle) < 0.2);
+  /* now roll something into it */
+  m.pos = v(d.pos.x - 40, d.pos.y);
+  m.vel = v(420, 0);
+  m.awake = true;
+  stepFor(w, 2);
+  T.assert('and a marble rolled into a sleeping domino wakes it and knocks it over ('
+    + (d.angle / DEG).toFixed(0) + ' degrees)', Math.abs(d.angle) > 0.35);
+  var st = buildWorld(bench(), withParts([{ type: 'marble', x: 200, y: 120 }]));
+  var sm = findKind(st, 'marble')[0];
+  stepFor(st, 3);
+  T.assert('a sleeping body has no speed left in it', vlen(sm.vel) < 0.01);
+  sm.wake();
+  T.assert('and waking it is a thing that can be done', sm.awake);
+}
+
+function suiteDeterminism(T) {
+  var lv = LEVELS[5], m = machineFromSolution(lv);
+  T.assert('the biggest level has a machine worth hashing (' + m.parts.length + ' parts)', m.parts.length >= 10);
+  var a = runMachine(lv, m, 6), b = runMachine(lv, m, 6);
+  T.eq('the same machine twice gives the same hash', a.hash, b.hash);
+  var c = runMachine(lv, m, 6);
+  T.eq('and a third time', c.hash, a.hash);
+  var m2 = cloneMachine(m);
+  m2.parts[0].x += 1;
+  var d = runMachine(lv, m2, 6);
+  T.assert('and moving one part by a single unit changes it', d.hash !== a.hash);
+  /* the order the parts are placed in must not matter to the ids, or two
+     players who built the same machine in a different order would diverge */
+  var rev = newMachine(), i;
+  for (i = m.parts.length - 1; i >= 0; i--) rev.parts.push(m.parts[i]);
+  T.assert('the hash is a function of the machine, not of the clock',
+    runMachine(lv, m, 2).hash === runMachine(lv, m, 2).hash);
+  var short1 = runMachine(lv, m, 1), short2 = runMachine(lv, m, 1);
+  T.eq('and a short run agrees with itself too', short1.hash, short2.hash);
+  T.assert('a longer run does not agree with a shorter one', short1.hash !== a.hash);
+}
+
+function suiteSerialisation(T) {
+  var rng = makeRNG(4242), i, k, bad = 0, first = null;
+  for (i = 0; i < 50; i++) {
+    var m = newMachine(), n = 1 + Math.floor(rng() * 18);
+    for (k = 0; k < n; k++) {
+      m.parts.push({
+        type: PART_ORDER[Math.floor(rng() * PART_ORDER.length)],
+        x: Math.floor(rng() * CONFIG.SCENE_W),
+        y: Math.floor(rng() * CONFIG.SCENE_H),
+        rot: detentAngle(Math.floor(rng() * 24)),
+        flip: rng() > 0.5 ? 1 : 0
+      });
+    }
+    var round = unpackMachine(packMachine(3, m));
+    if (!round || round.levelId !== 3 || round.machine.parts.length !== m.parts.length) { bad++; continue; }
+    for (k = 0; k < m.parts.length; k++) {
+      var p = m.parts[k], q = round.machine.parts[k];
+      if (p.type !== q.type || p.x !== q.x || p.y !== q.y || p.flip !== q.flip
+        || Math.abs(p.rot - q.rot) > 1e-9) { bad++; if (!first) first = k + ' of run ' + i; break; }
+    }
+  }
+  T.assert('fifty random machines survive the round trip' + (first ? ' (first break at part ' + first + ')' : ''), bad === 0);
+  T.eq('a machine costs seven bytes a part plus two', packMachine(0, machineFromSolution(LEVELS[5])).length,
+    2 + machineFromSolution(LEVELS[5]).parts.length * 7);
+  T.assert('and a hundred and twenty parts fit in the plan\'s budget',
+    2 + 120 * 7 <= 1200);
+  T.eq('rubbish is refused', unpackMachine([1]), null);
+  T.eq('and so is a truncated machine', unpackMachine([0, 4, 1, 2, 3]), null);
+  T.eq('a detent index round trips', detentIndex(detentAngle(7)), 7);
+  T.eq('and so does the one that wraps', detentIndex(detentAngle(23)), 23);
+}
+
+function suiteLevels(T) {
+  var i, k;
+  T.eq('there are six levels', LEVELS.length, 6);
+  for (i = 0; i < LEVELS.length; i++) {
+    var lv = LEVELS[i], m = machineFromSolution(lv);
+    var res = runMachine(lv, m);
+    T.assert('"' + lv.name + '" is won by its own solution'
+      + (res.goal ? ' at ' + res.goalAt.toFixed(1) + ' seconds' : ''), res.goal);
+    T.assert('and its solution is inside par (' + m.parts.length + ' of ' + lv.par + ')',
+      m.parts.length <= lv.par);
+    var empty = runMachine(lv, newMachine());
+    T.assert('and "' + lv.name + '" does not win by itself', !empty.goal);
+    T.assert('and every bonus in "' + lv.name + '" is touched by the solution ('
+      + res.bonus.join(',') + ')', res.allBonus);
+    T.eq('and three stars are reachable in "' + lv.name + '"', starsFor(lv, m, res), 3);
+    /* the tray has to be able to build the solution */
+    var need = {}, short = [];
+    for (k = 0; k < lv.solution.length; k++) need[lv.solution[k].type] = (need[lv.solution[k].type] || 0) + 1;
+    for (k in need) if ((lv.tray[k] || 0) < need[k]) short.push(k + ' needs ' + need[k] + ', tray has ' + (lv.tray[k] || 0));
+    T.assert('and the tray of "' + lv.name + '" holds what the solution uses'
+      + (short.length ? ': ' + short.join(', ') : ''), short.length === 0);
+  }
+}
+
+function suiteHeartbeat(T) {
+  /* the cascade, at the three spacings, with jitter. The full hundred trials
+     per spacing live in `sim.js --dominoes`; this is thirty, which is enough
+     to go red on a regression and quick enough to run on every commit. */
+  var ratios = [0.55, 0.65, 0.75], i;
+  for (i = 0; i < ratios.length; i++) {
+    var r = dominoSweep(ratios[i], 30);
+    T.assert('every domino falls at the ' + ratios[i] + ' spacing (' + r.ok + ' of ' + r.of + ')'
+      + (r.fails.length ? ': ' + r.fails[0] : ''), r.ok === r.of);
+    T.assert('and the last of them is down inside four seconds at ' + ratios[i]
+      + ' (' + r.worst.toFixed(2) + 's)', r.worst > 0 && r.worst <= 4);
+  }
+  var one = dominoTrial(0.65, 7, 12);
+  T.eq('a single trial knocks over all twelve', one.n, 12);
+  T.assert('and the cascade is not instant (' + one.lastAt.toFixed(2) + 's)', one.lastAt > 0.4);
+}
+
+function suiteCopy(T) {
+  var names = [], i, k;
+  for (i = 0; i < LEVELS.length; i++) names.push(LEVELS[i].name);
+  for (k in PARTS) names.push(PARTS[k].label);
+  var bad = [];
+  for (i = 0; i < names.length; i++) {
+    if (/[-‐-―−]/.test(names[i])) bad.push('dash in: ' + names[i]);
+    if (names[i].indexOf('!') >= 0) bad.push('exclamation in: ' + names[i]);
+    if (/^(Build|Make|Drag|Press|Put|Go|Try)\b/.test(names[i])) bad.push('an order, not a thing: ' + names[i]);
+  }
+  T.assert('every level and part is named after a THING, with no dash and no exclamation point'
+    + (bad.length ? ' [' + bad.join(' | ') + ']' : ''), bad.length === 0);
+  T.eq('there are eight parts', PART_ORDER.length, 8);
+  var missing = [];
+  for (i = 0; i < PART_ORDER.length; i++) if (!PARTS[PART_ORDER[i]]) missing.push(PART_ORDER[i]);
+  T.assert('and every one of them exists' + (missing.length ? ': ' + missing.join(', ') : ''), missing.length === 0);
+}
+
+function suitePurity(T, src) {
+  var code = src.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^[ \t]*\/\/.*$/gm, ' ');
+  T.assert('the comment stripper left the code behind', code.length > 12000);
+  T.assert('and it took the prose with it', code.indexOf('DETERMINISM IS LAW') < 0);
+  var banned = ['Math.random', 'Math.sin', 'Math.cos', 'Math.atan2', 'Math.pow', 'Math.exp', 'Math.hypot'];
+  var found = [], i;
+  for (i = 0; i < banned.length; i++) if (code.indexOf(banned[i]) >= 0) found.push(banned[i]);
+  T.assert('the SIM calls no unspecified maths' + (found.length ? ': ' + found.join(', ') : ''), found.length === 0);
+  T.assert('and it has no clock of its own',
+    code.indexOf('Date.now') < 0 && code.indexOf('performance.now') < 0 && code.indexOf('new Date') < 0);
+  T.assert('and it never touches the document or the window',
+    code.indexOf('document.') < 0 && code.indexOf('window.') < 0);
+  T.assert('and the exactly specified ones are still allowed',
+    code.indexOf('Math.sqrt') >= 0 && code.indexOf('Math.floor') >= 0);
+}
+// ---- TEST_EXPORT_END ----
