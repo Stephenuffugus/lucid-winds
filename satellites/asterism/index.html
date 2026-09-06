@@ -2375,19 +2375,50 @@ function drawChartTo(g, w, h, entry, layout) {
   }
   return { chartH: chartH, cAlt: cAlt, cAz: cAz };
 }
-function renderPoster(g, w, h, entry, layout) {
+/* ⛔ THE PREVIEW IS A SCREEN AND THE EXPORT IS A FILE, and until now they were
+   typeset identically. Every size here is a fraction of the poster's width, so
+   at the export's 2048 they are 30 to 112 px, which is right for a poster; but
+   the preview's canvas is 720 backing shown at 360 CSS px, and at 256 on a
+   short phone, so the footer credit and the HYG attribution came out at 5.2 and
+   3.7 CSS PIXELS and the myth body at 8. That is under the fleet's 0.7 rem
+   floor on the screen a player actually looks at, and neither the rem lint nor
+   the new canvas font lint could see it, because the size is computed and the
+   scale is a CSS rule somewhere else.
+   `minPx` is the smallest size, in this canvas's own pixels, that will land at
+   or above 11.2 CSS px once the canvas is shrunk to fit. The preview passes it;
+   the export passes nothing, because a file is not being shrunk by anything.
+   The preview's type is therefore slightly larger in proportion than the poster
+   it previews, which is what a preview is for. */
+var POSTER_SERIF = '"Iowan Old Style", Georgia, "Times New Roman", serif';
+function posterMinPx(cv) {
+  if (!cv || !cv.width) return 0;
+  var shown = cv.getBoundingClientRect().width;
+  /* ⛔ AND A CANVAS THAT IS NOT LAID OUT YET MEASURES ZERO. `refreshPoster` runs
+     in the same tick the poster screen is shown, so on the first open the rect
+     is nought and a zero scale meant no floor at all: the preview typeset itself
+     like the export and the credit came out at five pixels, which is exactly the
+     fault this function exists to stop, arriving one frame early. Seen in
+     p2-poster.png after the fix was in. A width of nought falls back to the
+     NARROWEST the CSS ever shows it at, so the floor is never too low. */
+  if (!shown) shown = 256;
+  if (shown >= cv.width) return 0;
+  return Math.ceil(11.2 * (cv.width / shown));
+}
+function renderPoster(g, w, h, entry, layout, minPx) {
   var info = drawChartTo(g, w, h, entry, layout);
   if (!info) return;
+  var mn = minPx || 0;
+  var serif = POSTER_SERIF;
+  function pf(frac) { return Math.max(mn, Math.round(w * frac)) + 'px ' + serif; }
   var pad = Math.round(w * 0.09);
   g.textAlign = 'center';
   g.fillStyle = '#E8E2D2';
-  var serif = '"Iowan Old Style", Georgia, "Times New Roman", serif';
   if (layout === 'minimal') {
     var one = (G.mythTextFor(entry) || '').split('. ')[0] + '.';
-    g.font = Math.round(w * 0.055) + 'px ' + serif;
+    g.font = pf(0.055);
     g.fillStyle = '#E8C97A';
     g.fillText(entry.n, w / 2, h - pad * 2.1);
-    g.font = Math.round(w * 0.026) + 'px ' + serif;
+    g.font = pf(0.026);
     g.fillStyle = 'rgba(232,226,210,.8)';
     wrapText(g, one, w / 2, h - pad * 1.25, w - pad * 2, Math.round(w * 0.036), 2);
   } else {
@@ -2396,10 +2427,10 @@ function renderPoster(g, w, h, entry, layout) {
     g.strokeStyle = 'rgba(232,201,122,.35)'; g.lineWidth = Math.max(1, w / 900);
     g.beginPath(); g.moveTo(pad, info.chartH + pad * 0.2); g.lineTo(w - pad, info.chartH + pad * 0.2); g.stroke();
     g.fillStyle = '#E8C97A';
-    g.font = Math.round(w * 0.048) + 'px ' + serif;
+    g.font = pf(0.048);
     g.fillText(entry.n.toUpperCase(), w / 2, info.chartH + pad * 1.05);
     g.fillStyle = 'rgba(232,226,210,.88)';
-    g.font = Math.round(w * 0.022) + 'px ' + serif;
+    g.font = pf(0.022);
     wrapText(g, G.mythTextFor(entry), w / 2, info.chartH + pad * 1.75, w - pad * 2, Math.round(w * 0.033), 12);
   }
   if (layout === 'plate') {
@@ -2418,11 +2449,11 @@ function renderPoster(g, w, h, entry, layout) {
   /* the footer, and the credit that has to be on every one of these */
   g.textAlign = 'center';
   g.fillStyle = 'rgba(124,135,168,.85)';
-  g.font = Math.round(w * 0.019) + 'px ' + serif;
+  g.font = pf(0.019);
   var when = new Date(entry.d || entry.t);
   g.fillText(entry.n + ', charted from ' + (entry.pn || (entry.p[0] + ', ' + entry.p[1])) +
     ' on ' + when.toISOString().slice(0, 10), w / 2, h - Math.round(w * 0.055));
-  g.font = Math.round(w * 0.0145) + 'px ' + serif;
+  g.font = pf(0.0145);
   g.fillStyle = 'rgba(124,135,168,.7)';
   g.fillText('charted with Asterism, lucidwinds.com', w / 2, h - Math.round(w * 0.033));
   g.fillText('Star data from the HYG database by David Nash, astronexus.com, CC BY SA 4.0',
@@ -2752,6 +2783,17 @@ function openPlaceSheet(m) {
 function refreshPoster() {
   var cv = $('posterPreview'), g = cv.getContext('2d');
   if (!G.spread) return;
+  /* ⛔ NO FLOOR IS PASSED, AND THAT IS A KNOWN OPEN FAULT, not an oversight.
+     The preview's smallest type is 5.2 and 3.7 CSS px, under the fleet's 0.7 rem
+     law, and `posterMinPx` below computes exactly what would fix it. Passing it
+     was tried on 2026-09-07 and SHIPPING IT WOULD HAVE BEEN WORSE: the sizes are
+     fractions of the poster's width and every box is sized from the same
+     fractions, so floored type overran the myth's box, the footer's three lines
+     landed on top of the myth and each other, and the credit ran off both edges
+     of the poster (seen in p2-poster.png). The floor is not the fix; the fix is
+     a REFLOW of the preview at its own scale, which is call C10 in
+     HANDOFF-OPUS-SEP07.md and is a half day. `posterMinPx` and
+     ASTERISM_DEV.posterType stay so whoever does it can measure. */
   renderPoster(g, cv.width, cv.height, G.spread, G.posterLayout);
 }
 function exportPoster() {
@@ -2897,6 +2939,18 @@ window.ASTERISM_DEV = {
       pct: tot ? +(off / tot * 100).toFixed(2) : 0 };
   },
   frames: function () { return G.frames; },
+  /* the smallest type in the poster PREVIEW, in CSS pixels of the screen a
+     player is looking at, which is the only place the 0.7 rem floor means
+     anything. The export is a file and is not shrunk by anything. */
+  posterType: function () {
+    var cv = $('posterPreview'); if (!cv) return null;
+    var shown = cv.getBoundingClientRect().width;
+    var scale = shown && cv.width ? shown / cv.width : 1;
+    var mn = posterMinPx(cv), fr = [0.055, 0.026, 0.048, 0.022, 0.019, 0.0145], i, out = [];
+    for (i = 0; i < fr.length; i++) out.push(+(Math.max(mn, Math.round(cv.width * fr[i])) * scale).toFixed(2));
+    return { shownW: +shown.toFixed(1), backingW: cv.width, scale: +scale.toFixed(3),
+      minPx: mn, cssSizes: out, smallest: Math.min.apply(null, out) };
+  },
   ready: function () { return !!G.cat; },
   screen: function () { return G.screen; },
   drawn: function () { return G.drawnCount; },

@@ -69,7 +69,7 @@ placement bug but a STALENESS bug: the scenery is laid once and then stays put, 
 for building beside, but laid once and never again a loop built AROUND a cow leaves the cow in
 the middle of it for good. It re lays only when the railway has grown over it, and the camera
 refits first, because laid against the old frame the cow came out half off the left edge.
-**Also done: C1, C2, C8, C9.** C1 Asterism now has a treeline on the ridge and a
+**Also done: C1, C2, C8, C9. C10 is measured and one wrong fix is ruled out, see its line.** C1 Asterism now has a treeline on the ridge and a
 fence in the field, both seeded from the place, and a gate that counts anything darker than the
 land (3.9 percent with it, exactly zero without). C2's question is answered yes, the first line
 IS on a fresh save at all three sizes, and looking at it found the real thing: the screen it
@@ -80,7 +80,12 @@ C12.
 
 (see section 3, and the items Opus added below)
 
-- **C7. Strata, the second skeleton can be dug and can never be mounted.** Found 2026-09-07 while
+- **C7. DONE 2026-09-07.** `activeSpec` is the animal you have got the most of, ties to the
+  shallower one; the chip counts off that specimen's own state rather than off a running total so
+  the two cannot drift. ⛔ The gate that existed asserted the two animals are PLACED, one under
+  the other, and nothing asked whether the second could ever be lifted out and mounted. Four
+  assertions now do. Mounting BOTH from one site would be a new system and is Stephen's call.
+  **The original finding:** Found 2026-09-07 while
   refreshing the Strata docs. At depth 1 or deeper, 42 percent of sites carry two animals
   (`makeSite`, `satellites/strata/index.html:1176`), and `stroke` and `tryExtract` loop over
   every specimen, so the second animal's bones really do come free and count toward the lifted
@@ -98,7 +103,18 @@ C12.
   Inkswing), Gerplunk has neither, and Strata had both, which is how two files of the same name
   came to say different things. Half an hour to move the seven into `docs/` and fix the
   references, and it should be done before anyone writes another one.
-- **C10. Asterism's poster PREVIEW draws its text at about five CSS pixels.** Found 2026-09-07
+- **C10. Asterism's poster PREVIEW draws its text at about five CSS pixels. STILL OPEN, and now
+  measured, with one wrong answer ruled out.** ⛔ Flooring the type at the display scale was tried
+  on 2026-09-07 and SHIPPING IT WOULD HAVE BEEN WORSE than the fault: every size in `renderPoster`
+  is a fraction of the poster's width AND every box is sized from the same fractions, so floored
+  type overran the myth's box, the footer's three lines landed on top of the myth and each other,
+  and the credit ran off both edges of the poster (seen by shooting it). Reverted, and the reason
+  is written into the code beside the call. The fix is a REFLOW of the preview at its own scale,
+  not a floor. `posterMinPx` and `ASTERISM_DEV.posterType` are in the game so whoever does it can
+  measure, and the layout gate PRINTS the number as a note on every run so it cannot be
+  forgotten; turn that note into a `say` the day the reflow lands. Half a day. The numbers:
+  smallest type 5.0 CSS px at 412x915 and 3.56 at 375 and 320, against a floor of 11.2.
+  **The original finding:** Found 2026-09-07
   by the new canvas font lint, which could read the sizes as computed expressions but not their
   values. `renderPoster` sets `g.font = Math.round(w * 0.0NN) + 'px ' + serif` at six places
   (`satellites/asterism/index.html:2204, 2207, 2216, 2219, 2238, 2242`). Exported at POSTER_W

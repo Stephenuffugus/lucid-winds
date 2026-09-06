@@ -152,6 +152,31 @@ for (const size of SIZES) {
      stars, positions and copy. Anything standing on the land is DARKER than the
      land, at any size and wherever the ridge falls, so that is what is counted,
      and with the treeline and the fence taken out it reads exactly zero. */
+  /* ⛔ THE POSTER PREVIEW IS A SCREEN AND THE 0.7 REM FLOOR APPLIES TO IT. Its
+     canvas is 720 backing shown at 360 CSS px, and at 256 on a short phone, and
+     every size in `renderPoster` is a fraction of the poster's WIDTH: the footer
+     credit and the HYG attribution came out at 5.2 and 3.7 CSS pixels and the
+     myth body at 8. Neither the rem lint nor the canvas font lint could see it,
+     because the size is computed and the scale is a CSS rule in another file.
+     Measured in the pixels a player is actually looking at. */
+  await dev(() => document.getElementById('scrPoster').classList.add('on'));
+  await waitFrames(page, 2);
+  const type = await dev(() => window.ASTERISM_DEV.posterType());
+  say(!!type && type.scale < 1, tag + '  the poster preview is shrunk to fit ('
+    + (type ? type.backingW + ' backing shown at ' + type.shownW : '?') + ')');
+  /* ⛔ THIS IS A REPORT, NOT AN ASSERTION, AND IT SAYS SO. The preview's smallest
+     type IS under the floor and that is call C10, open. It is not asserted
+     because the game would be red on main for a fault the fix is a half day
+     away from, and a gate nobody can make green is a gate everybody learns to
+     ignore. What the line does is put the number in front of whoever runs the
+     suite, every time, so it cannot be forgotten. Make it a `say` the day the
+     reflow lands. */
+  console.log('  note  ' + tag + '  the poster preview\'s smallest type is '
+    + (type ? type.smallest : '?') + ' CSS px, under the 11.2 floor, sizes '
+    + (type ? JSON.stringify(type.cssSizes) : '') + ' (call C10, open)');
+  await dev(() => document.getElementById('scrPoster').classList.remove('on'));
+  await waitFrames(page, 2);
+
   const ground = await dev(() => window.ASTERISM_DEV.groundInk());
   say(ground.pct >= 1.5, tag + '  something stands on the land: ' + ground.pct
     + ' percent of the lower half is darker than the ground it is on');
