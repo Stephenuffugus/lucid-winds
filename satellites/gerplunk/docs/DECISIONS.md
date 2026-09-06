@@ -244,3 +244,60 @@ player learns the wind without being told. The treeline scrolling at
 five degree haptic detents. `YAW_START_DEG -9` so a fresh save is visibly facing
 off centre and the world is discoverably turnable on throw one. These are written
 up in the plan's section 15 for P1 and P2.
+
+## P1, the lake, 2026-09-06
+
+**D25. The page plays the model's own trace; `runThrow` records it on request.**
+Rather than re integrating the flight at frame rate (a second physics that would
+drift from the count), `runThrow(th, {trace: true})` records every step at
+`SIM_HZ` and the page walks that by wall clock. Off by default, so the harness
+and the sweep never pay for it. The tick and plunk are scheduled from the
+events' own times at the moment of release, never at frame time.
+
+**D26. The plant is factored out as `plantYaw` so the live turn is the committed
+turn.** The page turns the lake under a moving thumb by calling the same
+function `motionFromSamples` calls at release. One rule, two callers; the
+assertion count did not move.
+
+**D27. The wind has a DIRECTION, seeded by the day, inside the shore's own
+turn.** `windDir` is drawn in plus or minus 18 degrees and the model's lateral
+wind is `wind * sin(windDir - yaw)`, so turning into the wind straightens the
+seam and turning across it bends it. That is what makes the seam an instrument
+rather than a decoration, and it costs the model nothing.
+
+**D28. The seam is the water with the shimmer wiped off it, not a stroke.** The
+first draft was a translucent dark stroke and it read as a plume of smoke on
+the shore shot. Calm water is water with no light catching on it, so the lane is
+a polygon a metre either side of the trace filled with the base water gradient,
+a faint glassy sheen, and one thread of light down the middle. It brightens
+under a live thumb.
+
+**D29. The Perfect Skimmer is always on the bank tonight.** The pebble bed by
+career is P2. Until it exists, slot three is the skimmer so the fifteen skip
+throw the design promises is reachable on throw one and the flick gate has a
+stone to name. The other two slots are drawn from the commons and Heavy Flat by
+the day's seed. The bed replaces this in `setupDay`.
+
+**D30. A line after EVERY sink.** The plan says the folk line appears after a
+sink. A throw of twelve or more is told "That one went a long way." rather than
+nagged about the axis it was least perfect on; below that it gets `adviceFor`.
+A great throw earning silence sounded right and was not assertable.
+
+**D31. A slow push is a plant, and the gate had it backwards.** The first draft
+of `test/flick.mjs` asserted that a 60 px push over 300 ms leaves the lake where
+it was. It does not and must not: a slow sideways slide is the plant (D18) and
+the turn surviving a set down is the whole reason changing your mind is free.
+The game was right; the gate now asserts the design.
+
+**D32. Portrait, over the shoulder, the shore is the UI.** The camera slides
+forward behind the stone at `CAM_LEAD_M` and never past the sink; the pebble
+bank with the three stones stays fixed at the bottom of the screen the whole
+time, because it is the hand, not the world. The water rows are fixed in the
+world and slide under the camera, so the flight reads as travel.
+
+**D33. The sun road is the only gold on the water.** The first render put gold
+dashes at even density across the whole lake and it read as stripes, exactly
+the fault the plan warned about. Now gold falls in a gaussian around the sun's
+reflection that widens toward the shore, and off the road a row only shows a
+segment where a wave crest happens to face the sky, so most of the water is
+dark. Seen, not reasoned: three rounds of shots.

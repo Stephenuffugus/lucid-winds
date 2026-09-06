@@ -55,6 +55,38 @@ on branch `add-sproing-jumper` tonight.
   water that previews the throw, the treeline scrolling at 8 px per degree, and
   the five degree haptic detents. P2 inherits the three faces of the lake, which
   is what gives aim a job at all.
+- 2026-09-06 13:15Z Fable (P1 builder, 110 minute fence): **P1 IS DONE, A PAGE A
+  PHONE CAN PLAY.** Commits 6546e966, 110cdc62 and the one this line is in.
+  `node tools/check.js` prints ALL GATES PASSED over five gates: lint, sim (126),
+  sweep, flick (real pointers, 33 assertions), layout (48 px by elementFromPoint
+  at 375x667, 320x568, 412x915). flick and layout were each watched to fail
+  (section 13). Icons, thumb (29 KB), shots at three widths, all opened.
+  What a thumb can do: title, TO THE LAKE, three stones on the bank (the
+  skimmer always among them tonight), a flick on the water skips the stone with
+  a tick per skip and the plunk, the tally grows on the post, the best is saved,
+  the folk line after every sink; a slow slide turns the lake (treeline and sun
+  scroll, 5 degree haptic detents) and the SEAM, the model's own trace of a
+  nominal throw bent by the day's crosswind, straightens as you turn into the
+  wind. MENU: sound, motion, about, leave.
+  ⛔ THE FLICK GATE'S FIRST DRAFT ASSERTED THE WRONG PREMISE: it expected a 60 px
+  push over 300 ms to leave the lake where it was. A slow sideways push IS the
+  plant (D18) and the turn survives a set down by design; the game was right and
+  the gate was rewritten to say what the design says. Lesson kept in the gate's
+  header.
+  **Thin:** no audio gate (P1 step 4, test/audio.mjs, not written); no loon,
+  crickets or lap; no slow motion on a record; the tally is a number rather
+  than marks on a post; the sink rings stack into a spring on a straight throw;
+  the seam ends in a hard edge at the shore; the thumb's bottom third is empty
+  water. The three faces of the lake are P2, so the turn changes where the stone
+  lands and how the seam bends but not yet the water it lands on.
+  **Next action:** P1 step 4, `test/audio.mjs` (offline render, one tick onset per
+  skip then the plunk, peak under 0.99, copy Keepsies' audio_budget shape),
+  wire it into tools/check.js, watch it fail. Then P2 step 1 (section 5): the
+  stone in the palm, the pebble bed by career, RECORDS per stone, in
+  `index.html` after section 13 THE DAY, replacing the fixed offer in
+  `setupDay` (the skimmer is pinned to slot three tonight so the gate can find
+  it; the bed must keep a real skimmer reachable or the flick gate must pick
+  whatever is on the bank).
 
 ---
 
@@ -460,6 +492,94 @@ GERPLUNK SWEEP OK
 
 It earned its keep the hour it was written: it caught IRREG still sitting at 6
 while the comment above it claimed 28.
+
+### P1, 2026-09-06: the page, the gates, and the two watched to fail
+
+```
+$ node tools/check.js
+lint            pass  0s
+sim             pass  0s
+sweep           pass  3s
+flick           pass  21s
+layout          pass  13s
+
+ALL GATES PASSED
+```
+
+The flick gate, the lines that carry the plan's P1 step 3 numbers, from a real
+14 sample stroke dispatched on the real canvas with real time between samples:
+
+```
+  ok    the page recorded the stroke: 15 samples over 184 ms
+  ok    v over 8: 9.90
+  ok    theta under 24: 17.5
+  ok    |spin| over 0.3: 0.81
+  ok    at least six skip events: 8 skips, 12.3 m, tumbled
+  ok    the tally grows in flight and matches the page: 1 on the post, 1 shown
+  ok    at the sink the post says 8 and the model counted 8
+  ok    one tick was scheduled per skip: 8 ticks for 8 skips
+  ok    the readout line appears after the sink: "A shade higher off the water."
+  ok    a 60 px push over 300 ms is a set down, not a throw
+  ok    and because it was slow and sideways it was a plant: the lake turned -9.0 to -2.9 and the turn survived the set down
+  ok    the lob was a throw (v 4.5, theta 27.3)
+  ok    and it died inside two skips: 1
+  ok    a 120 px slide before the throw turned the lake right: -2.9 to 10.8 degrees
+```
+
+Watched to fail. The post made to lie by one (`String(P.next + 1)`):
+
+```
+  FAIL  the tally grows in flight and matches the page: 2 on the post, 1 shown
+  FAIL  at the sink the post says 9 and the model counted 8
+2 FLICK FAILURE(S)
+```
+
+MENU shrunk to 40 px:
+
+```
+  FAIL  375x667  MENU  40x40
+  FAIL  320x568  MENU  40x40
+  FAIL  412x915  MENU  40x40
+3 LAYOUT FAILURE(S)
+```
+
+And the gate's own first draft going red on correct code, which is the
+finding worth keeping: it expected the slow push not to turn the lake.
+
+```
+  FAIL  while the throws before it, with no slide, did not move it (-9.0 then -2.9)
+```
+
+The throw table, `node sim.js --throw=12,20,1,skimmer`:
+
+```
+  skip      t        x        interval      vx     theta
+     1    0.267s     3.50m       0.267s    12.07     18.79
+     2    0.650s     8.13m       0.383s    11.09     18.10
+     3    0.983s    11.82m       0.333s    10.16     17.99
+     4    1.275s    14.79m       0.292s     9.31     17.94
+     5    1.542s    17.27m       0.267s     8.52     16.97
+     6    1.783s    19.33m       0.242s     7.76     17.42
+     7    1.992s    20.94m       0.208s     7.09     17.25
+     8    2.192s    22.36m       0.200s     6.47     17.86
+     9    2.367s    23.49m       0.175s     5.92     16.60
+    10    2.533s    24.48m       0.167s     5.38     16.42
+    11    2.675s    25.24m       0.142s     4.88     16.26
+    12    2.800s    25.85m       0.125s     4.42     15.57
+    13    2.917s    26.37m       0.117s     3.98     15.28
+    14    3.017s    26.77m       0.100s     3.57     14.31
+    15    3.100s    27.06m       0.083s     3.17     14.15
+    16    3.175s    27.30m       0.075s     2.81     12.54
+    17    3.242s    27.49m       0.067s     2.43     12.19
+  17 skips, 27.49 m, 3.24 s, and it ended: slow
+```
+
+The shots, all opened, faults named in SESSION STATE: `docs/shots/p1-flight.png`
+(stone up between skips two and three with the shadow under it and the sun
+road behind), `p1-gerplunk.png` (the word on the water, the rings, the folk
+line), `p1-shore.png` (the seam bending right with the crosswind),
+`title-tall.png`, `title-mid.png`, `title-small.png`, `p1-lake-tall.png`,
+`p1-lake-small.png`. `docs/thumb.png` 512 px, 29 KB.
 
 ## 14. THE OVERNIGHT PROTOCOL
 

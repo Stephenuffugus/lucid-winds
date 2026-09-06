@@ -36,7 +36,7 @@ async function shoot(size) {
   await page.waitForFunction(() => window.GERPLUNK_DEV.lastResult() !== null, { timeout: 10000 });
   const res = await page.evaluate(() => window.GERPLUNK_DEV.lastResult());
   /* hold with three rings on the water and the stone up */
-  const hold = Math.min(res.time * 0.5, 1.4);
+  const hold = Math.min(res.time * 0.62, 2.0);
   await page.evaluate((t) => { window.GERPLUNK_DEV.hold(t); document.getElementById('hud').style.visibility = 'hidden'; }, hold);
   await waitFrames(page, 4);
   const varc = await page.evaluate(() => {

@@ -55,7 +55,7 @@ body{touch-action:none;user-select:none;-webkit-user-select:none}
   background:radial-gradient(circle at 35% 30%,#8C8676,#4B463F 70%,#2E2A25);
   box-shadow:0 3px 6px rgba(0,0,0,.5), inset 0 -2px 3px rgba(0,0,0,.35);
   transition:transform 220ms ease,box-shadow 220ms ease}
-.stone .nm{display:block;font-size:.7rem;letter-spacing:.06em;margin-top:5px;white-space:nowrap;
+.stone .nm{display:block;font-size:.7rem;letter-spacing:.04em;margin:5px 0 0 -16px;width:96px;line-height:1.15;
   color:var(--muted);text-shadow:0 1px 3px rgba(0,0,0,.8)}
 .stone.picked .rock{transform:translateY(-8px) scale(1.08);box-shadow:0 8px 10px rgba(0,0,0,.55),0 0 0 2px rgba(232,179,106,.65)}
 .stone.picked .nm{color:var(--gold)}
@@ -75,7 +75,7 @@ body{touch-action:none;user-select:none;-webkit-user-select:none}
 #scrTitle{background:linear-gradient(180deg,rgba(27,26,36,.18) 0%,rgba(27,26,36,.05) 40%,rgba(18,16,12,.9) 100%)}
 #scrSheet{background:rgba(18,16,12,.94)}
 .spacer{flex:1}
-h1{font-size:2.6rem;letter-spacing:.22em;margin:0 0 6px;font-weight:700;color:var(--cream);
+h1{font-size:2.6rem;letter-spacing:.22em;margin:14vh 0 6px;font-weight:700;color:var(--cream);
   text-shadow:0 2px 12px rgba(0,0,0,.6)}
 h2{font-size:1.3rem;letter-spacing:.2em;margin:0 0 14px;font-weight:700;color:var(--cream)}
 .tag{font-size:.95rem;letter-spacing:.12em;color:var(--gold);text-shadow:0 1px 6px rgba(0,0,0,.6);margin-bottom:26px}
@@ -1500,8 +1500,12 @@ function drawSeam() {
     CTX.lineTo(q.x, q.y);
   }
   CTX.closePath(); CTX.fill();
+  /* and a glassy sheen over the calm, a shade lighter than the water round it,
+     stronger under a live thumb so the turn is something you can watch */
+  CTX.fillStyle = G.touch ? 'rgba(200,196,214,0.11)' : 'rgba(200,196,214,0.07)';
+  CTX.fill();
   /* one thread of light down its middle, the way a slick shows on a lake */
-  CTX.strokeStyle = 'rgba(242,232,213,0.13)'; CTX.lineWidth = 1;
+  CTX.strokeStyle = G.touch ? 'rgba(242,232,213,0.34)' : 'rgba(242,232,213,0.2)'; CTX.lineWidth = 1.2;
   CTX.beginPath();
   for (i = 0; i < pts.length; i++) {
     p = proj(pts[i].x - G.cam, pts[i].y, 0);
