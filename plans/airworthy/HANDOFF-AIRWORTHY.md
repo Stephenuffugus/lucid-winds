@@ -11,7 +11,11 @@ this file wins; every difference is in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
-- 2026-09-05 Fable: plan written. Nothing built. Next action: section 5, P0, step 1.
+- 2026-09-06 Opus: P0 step 1 done. `tools/check.js` exists with one gate that
+  fails and the failure is in section 13. Next action: P0 step 2, the scaffold.
+  Write CONFIG, MODEL, DERIVE, FLIGHT, WIND and CLASSIFY into
+  `satellites/airworthy/index.html` between the SIM_EXPORT markers, exactly as
+  section 4 spells them out, then `sim.js` with `--test`, `--fly` and `--medals`.
 
 ---
 
@@ -363,8 +367,16 @@ the elevator alone fixes the Porpoise.
 
 ## 13. EVIDENCE LEDGER (fill in place, with commands and their real output, most recent last)
 
+### P0 step 1, the gate that fails first (2026-09-06)
+
 ```
-(empty; the first entry is P0 step 3 and 4: the two mutations watched to fail and the Porpoise trace)
+$ node tools/check.js
+sim             FAIL  0s
+
+--- sim (wanted: AIRWORTHY TEST OK) ---
+Error: Cannot find module '/workspaces/lucid-winds/satellites/airworthy/sim.js'
+
+1 GATE FAILED
 ```
 
 ---
