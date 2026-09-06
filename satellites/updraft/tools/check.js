@@ -22,8 +22,7 @@ const FAST = process.argv.includes('--fast');
 
 const GATES = [
   { name: 'lint', cmd: ['tools/lint.mjs'], need: 'LINT OK' },
-  { name: 'test', cmd: ['sim.js', '--test'], need: 'UPDRAFT TEST OK' },
-  { name: 'audio', cmd: ['test/audio.mjs'], need: 'AUDIO OK' }
+  { name: 'test', cmd: ['sim.js', '--test'], need: 'UPDRAFT TEST OK' }
 ];
 
 /* Browser gates drive the real page with real pointer events and need
@@ -31,6 +30,11 @@ const GATES = [
    They flake under contention on a two core box: a failure here is rerun
    ALONE, twice, before it is believed. */
 const BROWSER_GATES = [
+  /* ⛔ audio is a BROWSER gate now. Its first half reads levelsFor in Node, but
+     its second half renders the loudest flight into an OfflineAudioContext
+     through the real voices and measures peak, rms and the share above 3 kHz off
+     the samples, because a model of a level is not a level. */
+  { name: 'audio', cmd: ['test/audio.mjs'], need: 'AUDIO OK' },
   { name: 'fly', cmd: ['test/fly.mjs'], need: 'FLY OK' },
   { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK' },
   { name: 'weather', cmd: ['test/weather.mjs'], need: 'WEATHER OK' },
