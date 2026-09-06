@@ -84,6 +84,7 @@ body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
   <div id="inkRail"></div>
   <div id="act">
     <button class="btn big go" id="btnFinish" hidden>FINISH</button>
+    <button class="btn" id="btnUndo">UNDO</button>
     <button class="btn" id="btnTear">TEAR OFF</button>
     <button class="btn big go" id="btnKeep">KEEP</button>
   </div>
@@ -836,7 +837,9 @@ function suitePurity(T, src) {
 var STAMP = '20260906a';
 function el(id) { return document.getElementById(id); }
 var V = { cv: null, ctx: null, W: 0, H: 0, dpr: 1, t: 0, ppu: 0.34, ox: 0, oy: 0 };
-var G = { screen: 'rig', sheet: null, audio: null, t: 0, drawing: false, since: 0 };
+var G = { screen: 'sheet', sheet: null, t: 0, drawing: false, since: 0,
+  pen: { x: 0, y: 0 }, held: null, grabbed: false, samples: [], ink: 'irongall',
+  poster: 'plate' };
 var SETTINGS = { sound: 1, motion: 1, tilt: 0 };
 var SAVE = { v: CONFIG.SAVE_V, name: '', folio: [], rigsUnlocked: 1, settings: SETTINGS, seen: {} };
 var RAF = 0, LAST = 0, FRAMES = 0, REDUCED = false;
@@ -862,24 +865,386 @@ function sy(u) { return V.oy + u * V.ppu; }
 function frame(ts) {
   RAF = 0;
   if (document.hidden) return;
+  var dt = LAST ? Math.min(120, ts - LAST) : 16;
   LAST = ts; V.t = ts; FRAMES++;
+  step(dt);
   drawScene(V.ctx);
+  syncActions();
   RAF = requestAnimationFrame(frame);
 }
+function syncActions() {
+  el('btnFinish').hidden = !G.drawing;
+  el('btnKeep').hidden = !(G.sheet && G.sheet.throws.length) || G.drawing;
+  el('btnTear').hidden = !(G.sheet && G.sheet.throws.length);
+  el('btnUndo').hidden = !(G.sheet && G.sheet.throws.length) || G.drawing;
+}
 function kick() { if (!RAF && !document.hidden) RAF = requestAnimationFrame(frame); }
-/* P0 draws the cream sheet and says what is coming; the rig is P1. */
+/* ============================ 17. THE SHEET ============================ */
+/* ⛔ THE DRAWING ACCUMULATES, IT IS NEVER REDRAWN FROM HISTORY PER FRAME. A
+   ninety second throw is thirty thousand points; re rendering all of them every
+   frame is a slideshow by the twentieth second. Each ink is its own offscreen
+   layer, which also makes undo a discard rather than a rebuild.
+   ⛔ and the layers are at SCREEN resolution, not at sheet resolution: a layer
+   the size of the poster is twenty megabytes and there can be four of them. The
+   poster re renders from the throw list, which is the whole point of the throw
+   list. */
+var LAYERS = { list: [], w: 0, h: 0, dpr: 1 };
+function layerSize() {
+  return { w: Math.max(2, Math.round(CONFIG.SHEET_W * V.ppu * V.dpr)),
+    h: Math.max(2, Math.round(CONFIG.SHEET_H * V.ppu * V.dpr)) };
+}
+function newLayer(ink) {
+  var sz = layerSize();
+  var cv = document.createElement('canvas');
+  cv.width = sz.w; cv.height = sz.h;
+  var c = cv.getContext('2d');
+  c.lineCap = 'round';
+  c.lineJoin = 'round';
+  return { cv: cv, ctx: c, ink: ink, from: 0 };
+}
+function resetLayers() {
+  LAYERS.list = [];
+  var sz = layerSize();
+  LAYERS.w = sz.w; LAYERS.h = sz.h; LAYERS.dpr = V.dpr;
+}
+function layerFor(ink) {
+  var i;
+  for (i = 0; i < LAYERS.list.length; i++) if (LAYERS.list[i].ink === ink) return LAYERS.list[i];
+  if (LAYERS.list.length >= CONFIG.LAYERS_MAX) return LAYERS.list[LAYERS.list.length - 1];
+  var l = newLayer(ink);
+  LAYERS.list.push(l);
+  return l;
+}
+/* sheet units to layer pixels */
+function lx(u) { return (u + CONFIG.SHEET_W / 2) * V.ppu * V.dpr; }
+function ly(u) { return (u + CONFIG.SHEET_H / 2) * V.ppu * V.dpr; }
+function inkHex(id) {
+  var i;
+  for (i = 0; i < INKS.length; i++) if (INKS[i].id === id) return INKS[i].hex;
+  return INKS[0].hex;
+}
+/* ⛔ THE LINE IS NOT A VECTOR STROKE. A pen that moves slowly leaves more ink and
+   pools at the ends of a swing; one that whips across the sheet leaves a hair.
+   Without this the drawing reads as clip art, which is the thing the plan's feel
+   test is looking for. */
+function strokeSpan(sheet, fromT, toT) {
+  var tr = traceOf(sheet, toT, fromT), i;
+  if (tr.length < 2) return 0;
+  var drawn = 0;
+  for (i = 1; i < tr.length; i++) {
+    var a = tr[i - 1], b = tr[i];
+    var dt = b.t - a.t;
+    if (dt <= 0) continue;
+    var d = Math.hypot(b.x - a.x, b.y - a.y);
+    var speed = d / dt;
+    /* ⛔ THE FEEL TEST IS ABOUT THIS LINE. Linear in speed and at a flat alpha
+       of nine tenths, every loop came out the same weight and the middle of the
+       drawing, where the pen is slowest and the loops crowd, went solid black.
+       A pen leaves a pale hair when it is whipped across the paper and a dark
+       wet mark where it turns around, and the difference has to be big enough to
+       see at two thirds of a pixel to the unit. Width AND alpha, both on a curve,
+       and the dark end is capped so that crossings build tone instead of
+       saturating. */
+    var f = Math.pow(clamp(1 - speed / CONFIG.V_MAX, 0, 1), 1.8);
+    var w = CONFIG.INK_W_MIN + (CONFIG.INK_W_MAX - CONFIG.INK_W_MIN) * f;
+    var thr = throwAt(sheet, b.t);
+    var layer = layerFor(thr ? thr.ink : 'irongall');
+    var c = layer.ctx;
+    var px = V.ppu * V.dpr;
+    c.strokeStyle = inkHex(layer.ink);
+    c.globalAlpha = 0.34 + 0.26 * f;
+    c.lineWidth = Math.max(0.6, w * px);
+    c.beginPath();
+    c.moveTo(lx(a.x), ly(a.y));
+    c.lineTo(lx(b.x), ly(b.y));
+    c.stroke();
+    /* the wet edge: where the pen dawdles, the ink spreads */
+    if (speed < CONFIG.V_MAX * 0.15) {
+      c.globalAlpha = CONFIG.WET_EDGE * clamp(1 - speed / (CONFIG.V_MAX * 0.15), 0, 1);
+      c.lineWidth = Math.max(1, (w + 0.9) * px);
+      c.stroke();
+    }
+    c.globalAlpha = 1;
+    drawn++;
+  }
+  return drawn;
+}
+function throwAt(sheet, t) {
+  var best = null, i;
+  for (i = 0; i < sheet.throws.length; i++) {
+    if (sheet.throws[i].t0 <= t && (!best || sheet.throws[i].t0 > best.t0)) best = sheet.throws[i];
+  }
+  return best;
+}
+/* everything drawn so far, from the throw list, onto fresh layers. Used on a
+   resize and when a link or a folio sheet is opened. */
+function redrawAll(sheet, upTo) {
+  resetLayers();
+  if (!sheet.throws.length) return;
+  strokeSpan(sheet, 0, Math.min(upTo === undefined ? G.t : upTo, CONFIG.DRAW_MAX_S));
+}
+function undoLayer() {
+  if (!LAYERS.list.length) return false;
+  var gone = LAYERS.list.pop().ink;
+  var keep = [], i;
+  for (i = 0; i < G.sheet.throws.length; i++) {
+    if (G.sheet.throws[i].ink !== gone) keep.push(G.sheet.throws[i]);
+  }
+  G.sheet.throws = keep;
+  redrawAll(G.sheet);
+  return true;
+}
+var SHEET_SEQ = 1;
+function tearOff() {
+  G.sheet = newSheet({ rig: G.sheet.rig, lengths: G.sheet.lengths.slice(),
+    bob: G.sheet.bob, mode: G.sheet.mode });
+  /* ⛔ a new sheet is a NEW sheet. Numbered off the folio it kept the same id
+     until something was kept, so two torn sheets in a row were the same sheet
+     as far as anything asking could tell. */
+  G.sheet.id = ++SHEET_SEQ;
+  G.t = 0;
+  G.drawing = false;
+  resetLayers();
+  soundStop();
+}
+
+/* ============================ 18. THE RIG, DRAWN ============================ */
+function drawPaper(ctx) {
+  var w = CONFIG.SHEET_W * V.ppu, h = CONFIG.SHEET_H * V.ppu;
+  var x = V.ox - w / 2, y = V.oy - h / 2;
+  ctx.fillStyle = 'rgba(0,0,0,.45)';
+  ctx.fillRect(x + 3, y + 5, w, h);
+  var g = ctx.createLinearGradient(x, y, x, y + h);
+  g.addColorStop(0, G.sheet.mode === 'sand' ? '#23271F' : '#F4EDDC');
+  g.addColorStop(1, G.sheet.mode === 'sand' ? '#171A15' : '#E7DCC2');
+  ctx.fillStyle = g;
+  ctx.fillRect(x, y, w, h);
+  /* the grain of the paper, seeded so it never crawls */
+  if (G.sheet.mode !== 'sand') {
+    var i, n = Math.min(700, Math.round(w * h / 700));
+    ctx.fillStyle = 'rgba(120,100,66,.05)';
+    for (i = 0; i < n; i++) {
+      ctx.fillRect(x + grainAt(i, 1) * w, y + grainAt(i, 2) * h, 1.4, 1.4);
+    }
+  }
+  ctx.strokeStyle = 'rgba(30,42,58,.30)';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(x, y, w, h);
+}
+function grainAt(i, salt) {
+  var h = (Math.imul(i | 0, 374761393) ^ Math.imul(salt | 0, 2246822519)) >>> 0;
+  h ^= h >>> 13; h = Math.imul(h, 1274126177) >>> 0;
+  return ((h ^ (h >>> 16)) >>> 8) / 16777216;
+}
+/* the brass arm hanging from the top of the frame, the bob on the end of it, and
+   the pen under the bob */
+function drawRig(ctx) {
+  var pen = G.pen;
+  var topY = Math.max(20, V.oy - (CONFIG.SHEET_H / 2) * V.ppu - 44);
+  var bx = sx(pen.x), by = sy(pen.y);
+  ctx.strokeStyle = 'rgba(0,0,0,.35)';
+  ctx.lineWidth = 9;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(V.ox + 2, topY + 3);
+  ctx.lineTo(bx + 2, by + 3);
+  ctx.stroke();
+  var g = ctx.createLinearGradient(V.ox, topY, bx, by);
+  g.addColorStop(0, '#D8B863');
+  g.addColorStop(1, '#7A6127');
+  ctx.strokeStyle = g;
+  ctx.lineWidth = 7;
+  ctx.beginPath();
+  ctx.moveTo(V.ox, topY);
+  ctx.lineTo(bx, by);
+  ctx.stroke();
+  /* the pivot */
+  ctx.fillStyle = '#B08D3E';
+  ctx.beginPath();
+  ctx.arc(V.ox, topY, 9, 0, 6.2832);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(30,20,4,.6)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  /* the bob */
+  var r = G.grabbed ? 22 : 19;
+  var bg = ctx.createRadialGradient(bx - 6, by - 7, 2, bx, by, r);
+  bg.addColorStop(0, '#F6E6BC');
+  bg.addColorStop(1, '#7A6127');
+  ctx.fillStyle = bg;
+  ctx.beginPath();
+  ctx.arc(bx, by, r, 0, 6.2832);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(30,20,4,.7)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  /* the pen, under the bob, down on the paper while it draws */
+  ctx.strokeStyle = G.drawing ? inkHex(G.ink) : 'rgba(120,110,90,.7)';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(bx, by + r - 2);
+  ctx.lineTo(bx, by + r + (G.drawing ? 16 : 8));
+  ctx.stroke();
+  if (G.drawing) {
+    ctx.fillStyle = inkHex(G.ink);
+    ctx.beginPath();
+    ctx.arc(bx, by + r + 16, 2.6, 0, 6.2832);
+    ctx.fill();
+  }
+  /* the ring a thumb may land in, while it is held */
+  if (G.grabbed) {
+    ctx.strokeStyle = 'rgba(176,141,62,.28)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(bx, by, CONFIG.GRAB_R, 0, 6.2832);
+    ctx.stroke();
+  }
+}
 function drawScene(ctx) {
   ctx.fillStyle = '#151A22';
   ctx.fillRect(0, 0, V.W, V.H);
-  ctx.fillStyle = '#F0E8D5';
-  ctx.fillRect(sx(-CONFIG.SHEET_W / 2), sy(-CONFIG.SHEET_H / 2),
-    CONFIG.SHEET_W * V.ppu, CONFIG.SHEET_H * V.ppu);
-  ctx.fillStyle = 'rgba(30,42,58,.4)';
-  ctx.font = '600 13px ui-rounded, system-ui, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('the rig is built in P1', V.W / 2, V.H / 2);
-  ctx.textAlign = 'left';
+  drawPaper(ctx);
+  var x = V.ox - (CONFIG.SHEET_W * V.ppu) / 2, y = V.oy - (CONFIG.SHEET_H * V.ppu) / 2;
+  var i;
+  for (i = 0; i < LAYERS.list.length; i++) {
+    ctx.drawImage(LAYERS.list[i].cv, x, y, CONFIG.SHEET_W * V.ppu, CONFIG.SHEET_H * V.ppu);
+  }
+  drawRig(ctx);
 }
+
+/* ============================ 19. THE THROW ============================ */
+function penRest() { return { x: 0, y: 0 }; }
+function grabAt(x, y) {
+  var pen = G.pen;
+  var d = Math.hypot(x - sx(pen.x), y - sy(pen.y));
+  if (d > CONFIG.GRAB_R) return false;
+  G.grabbed = true;
+  G.samples = [{ x: pen.x, y: pen.y, t: V.t }];
+  return true;
+}
+function dragTo(x, y, ts) {
+  if (!G.grabbed) return;
+  /* the bob follows the finger in SHEET units, and the pen is lifted */
+  var u = { x: clamp((x - V.ox) / V.ppu, -CONFIG.SHEET_W, CONFIG.SHEET_W),
+    y: clamp((y - V.oy) / V.ppu, -CONFIG.SHEET_H, CONFIG.SHEET_H) };
+  G.held = u;
+  G.samples.push({ x: u.x, y: u.y, t: ts });
+  while (G.samples.length > 24) G.samples.shift();
+}
+/* ⛔ THE RELEASE VELOCITY IS THE LAST SIXTY MILLISECONDS, not the last two
+   samples: a finger that pauses for one frame before letting go would otherwise
+   throw the pendulum with no speed at all. */
+function releaseVelocity() {
+  var s = G.samples, n = s.length;
+  if (n < 2) return { x: 0, y: 0 };
+  var last = s[n - 1], i = n - 1;
+  while (i > 0 && last.t - s[i - 1].t < CONFIG.RELEASE_WINDOW_MS) i--;
+  var first = s[i];
+  var dt = (last.t - first.t) / 1000;
+  if (dt <= 0) return { x: 0, y: 0 };
+  return { x: clamp((last.x - first.x) / dt, -CONFIG.V_MAX, CONFIG.V_MAX),
+    y: clamp((last.y - first.y) / dt, -CONFIG.V_MAX, CONFIG.V_MAX) };
+}
+function release() {
+  if (!G.grabbed) return null;
+  G.grabbed = false;
+  var v = releaseVelocity();
+  var x0 = G.held || penRest();
+  G.held = null;
+  var speed = Math.hypot(v.x, v.y), reach = Math.hypot(x0.x, x0.y);
+  /* a tap on the bob is not a throw */
+  if (speed < 30 && reach < 20) return null;
+  var thr = flingToThrow(G.sheet, x0, v, G.t, G.ink, G.sheet.bob);
+  G.sheet.throws.push(thr);
+  G.drawing = true;
+  G.since = G.t;
+  if (!SAVE.seen.thrown) { SAVE.seen.thrown = 1; saveNow(); }
+  soundStart();
+  haptic(12);
+  return thr;
+}
+function step(dtMs) {
+  if (G.grabbed) { G.pen = G.held || G.pen; return; }
+  if (!G.drawing) { G.pen = G.sheet.throws.length ? posAt(G.sheet, G.t) : penRest(); return; }
+  var from = G.t;
+  G.t = Math.min(CONFIG.DRAW_MAX_S, G.t + dtMs / 1000);
+  strokeSpan(G.sheet, from, G.t);
+  G.pen = posAt(G.sheet, G.t);
+  soundTick();
+  if (G.t >= CONFIG.DRAW_MAX_S) { G.drawing = false; soundStop(); }
+}
+/* let it finish: the rest of the closed form, drawn over two seconds, never
+   skipping a segment */
+function finishNow() {
+  if (!G.sheet.throws.length) return 0;
+  var from = G.t;
+  G.finishTo = CONFIG.DRAW_MAX_S;
+  G.finishing = FINISH_STEPS;
+  strokeSpan(G.sheet, from, CONFIG.DRAW_MAX_S);
+  G.t = CONFIG.DRAW_MAX_S;
+  G.pen = posAt(G.sheet, G.t);
+  G.drawing = false;
+  soundStop();
+  return 1;
+}
+var FINISH_STEPS = 0;
+
+/* ============================ 20. SOUND ============================ */
+/* One sine per pendulum, at the rate it swings times SOUND_HZ_PER_W, so a rig
+   set to a fifth hums a fifth. It is not music and it does not claim the fleet's
+   music slot. */
+var SND = { ctx: null, master: null, voices: [] };
+function audio() {
+  if (SND.ctx) return SND;
+  if (!SETTINGS.sound) return null;
+  var C = window.AudioContext || window.webkitAudioContext;
+  if (!C) return null;
+  var ctx = new C();
+  var master = ctx.createGain();
+  master.gain.value = 0;
+  var lim = ctx.createDynamicsCompressor();
+  lim.threshold.value = -8; lim.ratio.value = 12; lim.attack.value = 0.004;
+  master.connect(lim);
+  lim.connect(ctx.destination);
+  SND.ctx = ctx; SND.master = master;
+  return SND;
+}
+function soundStart() {
+  var A = audio();
+  if (!A) return;
+  if (A.ctx.state === 'suspended') A.ctx.resume();
+  soundStop();
+  var thr = G.sheet.throws[G.sheet.throws.length - 1], i;
+  for (i = 0; i < 2; i++) {
+    var o = A.ctx.createOscillator();
+    o.type = 'sine';
+    o.frequency.value = clamp(thr.pend[i].wEff * CONFIG.SOUND_HZ_PER_W, 40, 2000);
+    var g = A.ctx.createGain();
+    g.gain.value = CONFIG.SOUND_GAIN;
+    o.connect(g); g.connect(A.master);
+    o.start();
+    SND.voices.push({ o: o, g: g });
+  }
+  A.master.gain.setTargetAtTime(1, A.ctx.currentTime, 0.05);
+}
+function soundTick() {
+  var A = SND.ctx ? SND : null;
+  if (!A || !SND.voices.length) return;
+  /* the hum fades with the swing, because the pendulum is what is humming */
+  var thr = G.sheet.throws[G.sheet.throws.length - 1];
+  var life = Math.exp(-thr.damp * (G.t - thr.t0));
+  A.master.gain.setTargetAtTime(clamp(life, 0, 1), A.ctx.currentTime, 0.12);
+}
+function soundStop() {
+  if (!SND.ctx) { SND.voices = []; return; }
+  var t = SND.ctx.currentTime, i;
+  SND.master.gain.setTargetAtTime(0, t, 0.08);
+  for (i = 0; i < SND.voices.length; i++) {
+    try { SND.voices[i].o.stop(t + 0.5); } catch (e) {}
+  }
+  SND.voices = [];
+}
+
 function toast(msg) {
   var t = el('toast');
   t.textContent = msg;
@@ -931,7 +1296,16 @@ function boot() {
   loadSave();
   G.sheet = newSheet({ rig: 'single' });
   fitCanvas();
-  window.addEventListener('resize', function () { fitCanvas(); kick(); });
+  resetLayers();
+  buildInkRail();
+  window.addEventListener('resize', function () {
+    fitCanvas();
+    /* ⛔ THE LAYERS ARE AT SCREEN RESOLUTION, so a rotate or a resize has to
+       redraw them from the throw list. That is cheap and it is exactly what the
+       throw list is for. */
+    redrawAll(G.sheet);
+    kick();
+  });
   document.addEventListener('visibilitychange', function () { if (!document.hidden) kick(); });
   el('btnMenu').addEventListener('click', function () { showScreen('Menu'); });
   el('btnMenuClose').addEventListener('click', function () { showScreen('Sheet'); });
@@ -941,6 +1315,9 @@ function boot() {
   el('btnPosterBack').addEventListener('click', function () { showScreen('Menu'); });
   el('btnFolio').addEventListener('click', function () { showScreen('Folio'); });
   el('btnPoster').addEventListener('click', function () { showScreen('Poster'); });
+  bindInput();
+  syncActions();
+  if (!SAVE.seen.thrown) setTimeout(function () { hint('Grab the brass bob. Throw it.'); }, 700);
   kick();
   try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {}
   if ('serviceWorker' in navigator) {
@@ -949,6 +1326,158 @@ function boot() {
     });
   }
 }
+/* ============================ 21. INPUT ============================ */
+function buildInkRail() {
+  var host = el('inkRail'), i;
+  host.innerHTML = '';
+  for (i = 0; i < INKS.length; i++) {
+    (function (ink) {
+      var b = document.createElement('button');
+      b.className = 'chip' + (ink.id === G.ink ? ' on' : '');
+      b.id = 'ink-' + ink.id;
+      b.setAttribute('data-ink', ink.id);
+      b.setAttribute('aria-label', ink.name);
+      b.style.background = ink.hex;
+      b.addEventListener('click', function () {
+        G.ink = ink.id;
+        buildInkRail();
+        toast(ink.name);
+      });
+      host.appendChild(b);
+    })(INKS[i]);
+  }
+}
+function bindInput() {
+  var cv = V.cv, PT = null;
+  cv.addEventListener('pointerdown', function (e) {
+    if (G.screen !== 'sheet') return;
+    /* ⛔ one pointer at a time: a second finger on the bob while the first is
+       holding it would fight over the same throw. */
+    if (PT) return;
+    if (grabAt(e.clientX, e.clientY)) {
+      PT = e.pointerId;
+      e.preventDefault();
+    }
+  });
+  cv.addEventListener('pointermove', function (e) {
+    if (PT !== e.pointerId) return;
+    dragTo(e.clientX, e.clientY, e.timeStamp || V.t);
+  });
+  function up(e) {
+    if (PT !== e.pointerId) return;
+    PT = null;
+    dragTo(e.clientX, e.clientY, e.timeStamp || V.t);
+    release();
+  }
+  cv.addEventListener('pointerup', up);
+  cv.addEventListener('pointercancel', function (e) {
+    if (PT !== e.pointerId) return;
+    PT = null;
+    G.grabbed = false;
+    G.held = null;
+  });
+  el('btnFinish').addEventListener('click', function () { finishNow(); });
+  el('btnTear').addEventListener('click', function () {
+    if (this.textContent === 'TEAR OFF') {
+      this.textContent = 'SURE';
+      var b = this;
+      setTimeout(function () { if (b.textContent === 'SURE') b.textContent = 'TEAR OFF'; }, 2400);
+      return;
+    }
+    this.textContent = 'TEAR OFF';
+    tearOff();
+    toast('A clean sheet');
+  });
+  el('btnUndo').addEventListener('click', function () {
+    if (undoLayer()) { toast('That ink is off'); } else { toast('Nothing to take off'); }
+  });
+  el('btnKeep').addEventListener('click', function () { keepSheet(); });
+  el('lenA').addEventListener('input', function () { setLength(0, parseInt(this.value, 10)); });
+  el('lenB').addEventListener('input', function () { setLength(1, parseInt(this.value, 10)); });
+  el('bobBrass').addEventListener('click', function () { setBob('brass'); });
+  el('bobFelt').addEventListener('click', function () { setBob('felt'); });
+  el('modeInk').addEventListener('click', function () { setMode('ink'); });
+  el('modeSand').addEventListener('click', function () { setMode('sand'); });
+  el('btnSound').addEventListener('click', function () {
+    SETTINGS.sound = SETTINGS.sound ? 0 : 1;
+    this.textContent = SETTINGS.sound ? 'HUM ON' : 'HUM OFF';
+    if (!SETTINGS.sound) soundStop();
+    saveNow();
+  });
+  el('btnMotion').addEventListener('click', function () {
+    SETTINGS.motion = SETTINGS.motion ? 0 : 1;
+    this.textContent = SETTINGS.motion ? 'MOTION ON' : 'MOTION OFF';
+    REDUCED = !SETTINGS.motion;
+    saveNow();
+  });
+  el('btnName').addEventListener('click', function () {
+    var n = prompt('The name on the caption', SAVE.name || '');
+    if (n === null) return;
+    SAVE.name = String(n).slice(0, 32);
+    saveNow();
+    toast(SAVE.name ? 'Signed ' + SAVE.name : 'No name on it');
+  });
+  el('btnSound').textContent = SETTINGS.sound ? 'HUM ON' : 'HUM OFF';
+  el('btnMotion').textContent = SETTINGS.motion ? 'MOTION ON' : 'MOTION OFF';
+  renderRigScreen();
+}
+function setLength(which, n) {
+  G.sheet.lengths[which] = clamp(n | 0, 0, CONFIG.SEMITONES);
+  renderRigScreen();
+  saveNow();
+}
+function setBob(b) { G.sheet.bob = b; renderRigScreen(); }
+function setMode(m) { G.sheet.mode = m; renderRigScreen(); }
+function renderRigScreen() {
+  var sh = G.sheet;
+  el('lenA').value = String(sh.lengths[0]);
+  el('lenB').value = String(sh.lengths[1]);
+  el('valA').textContent = noteName(sh.lengths[0]);
+  el('valB').textContent = noteName(sh.lengths[1]);
+  var name = intervalName(wForSemitone(sh.lengths[0]), wForSemitone(sh.lengths[1]));
+  el('intervalLine').textContent = name ? 'That is ' + name : 'No interval either of them knows';
+  el('bobBrass').classList.toggle('on', sh.bob === 'brass');
+  el('bobFelt').classList.toggle('on', sh.bob === 'felt');
+  el('modeInk').classList.toggle('on', sh.mode === 'ink');
+  el('modeSand').classList.toggle('on', sh.mode === 'sand');
+  el('rigChip').textContent = (RIGS[sh.rig] || RIGS.single).name;
+  var host = el('rigList'), i;
+  host.innerHTML = '';
+  for (i = 0; i < RIG_ORDER.length; i++) {
+    (function (rig) {
+      var done = SAVE.folio.length;
+      var locked = done < rig.unlockAt;
+      var b = document.createElement('button');
+      b.className = 'card' + (sh.rig === rig.id ? ' on' : '');
+      b.setAttribute('data-rig', rig.id);
+      if (locked) b.setAttribute('disabled', 'disabled');
+      b.innerHTML = '<span class="nm">' + rig.name + '</span><span class="sub">'
+        + (locked ? 'Keep ' + rig.unlockAt + ' drawings to open this one, you have ' + done
+          : rig.axes.length + ' axes') + '</span>';
+      if (!locked) b.addEventListener('click', function () {
+        G.sheet.rig = rig.id;
+        G.sheet.lengths = rig.lengths.slice();
+        G.sheet.throws = [];
+        G.t = 0;
+        resetLayers();
+        renderRigScreen();
+      });
+      host.appendChild(b);
+    })(RIGS[RIG_ORDER[i]]);
+  }
+}
+function keepSheet() {
+  if (!G.sheet.throws.length) return;
+  SAVE.folio.unshift({ rig: G.sheet.rig, lengths: G.sheet.lengths.slice(),
+    bob: G.sheet.bob, mode: G.sheet.mode, throws: G.sheet.throws,
+    name: G.sheet.name || '', at: SAVE.folio.length + 1 });
+  while (SAVE.folio.length > CONFIG.FOLIO_MAX) SAVE.folio.pop();
+  saveNow();
+  renderRigScreen();
+  toast('In the folio');
+  haptic(14);
+}
+
 window.INKSWING_TEST = {
   frames: function () { return FRAMES; },
   screen: function () { return G.screen; },
@@ -963,7 +1492,39 @@ window.INKSWING_TEST = {
       flingToThrow: flingToThrow, posAt: posAt, traceOf: traceOf, packSheet: packSheet,
       unpackSheet: unpackSheet, noteName: noteName, intervalName: intervalName,
       wForSemitone: wForSemitone, wEff: wEff, wDamped: wDamped };
-  }
+  },
+  pen: function () { return G.pen; },
+  penScreen: function () { return { x: sx(G.pen.x), y: sy(G.pen.y) }; },
+  layers: function () { return LAYERS.list.length; },
+  inked: function () {
+    /* how much of the sheet has ink on it, counted off the layers themselves */
+    var n = 0, i;
+    for (i = 0; i < LAYERS.list.length; i++) {
+      var l = LAYERS.list[i];
+      var d = l.ctx.getImageData(0, 0, l.cv.width, l.cv.height).data, k;
+      for (k = 3; k < d.length; k += 4 * 17) if (d[k] > 8) n++;
+    }
+    /* ⛔ SAMPLED EVERY SEVENTEENTH PIXEL, AND IT SAYS SO. Returned as a raw
+       count of samples it reads as a pixel count seventeen times too small, and
+       a gate written against it asks for a drawing and accepts a dot. */
+    return n * 17;
+  },
+  t: function () { return G.t; },
+  drawing: function () { return G.drawing; },
+  setInk: function (id) { G.ink = id; buildInkRail(); },
+  ink: function () { return G.ink; },
+  folio: function () { return SAVE.folio; },
+  undo: function () { return undoLayer(); },
+  tear: function () { tearOff(); },
+  finish: function () { return finishNow(); },
+  redraw: function (sheet, upTo) { redrawAll(sheet || G.sheet, upTo); },
+  loadSheet: function (sh) {
+    G.sheet = sh;
+    G.t = 0; G.drawing = false;
+    resetLayers();
+    renderRigScreen();
+  },
+  advance: function (secs) { step(secs * 1000); }
 };
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
 else boot();

@@ -13,20 +13,18 @@ on branch `add-sproing-jumper` tonight.
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
 - 2026-09-05 Fable: plan written. Nothing built.
-- 2026-09-06 Opus: **P0 IS DONE.** Two gates green: `sim` (84 assertions) and
-  `lint`. Every assertion watched to fail, including the plan's own suggested
-  mutation. The motion, the fling mapping, the four rigs, the note and interval
-  naming and the share format are built and exact: the pen starts where it was
-  let go to nine decimal places and the closed form solves the equation an RK4
-  integration of it gives, to under a millionth of a unit over sixty seconds.
+- 2026-09-06 Opus: **P0 AND P1 ARE DONE.** Four gates green: `sim` (84
+  assertions), `lint`, `fling`, `layout`. Every assertion watched to fail. The
+  sheet, the brass rig, the grab and the fling with a real pointer, the live
+  draw accumulating on offscreen layers, the five inks, undo, tear off, let it
+  finish, the folio and the hum.
   ⛔ One finding is a Director call and it is in the morning report: the sliders
   are equal tempered, so nothing ever closes exactly.
-  **Next action:** P1 step 1, the SHEET and the rig view. The brass arm, the bob
-  and the pen drawn over the cream sheet; the grab and the fling with a real
-  pointer; the live draw accumulating on an offscreen layer at 2x DPR; the ink
-  width by speed and the wet edge. Then P1 step 2 is a STOP AND LOOK: shoot the
-  spiral at twenty seconds and at the end, and if the line reads as a uniform
-  vector stroke, fix the width and the wet edge before layering.
+  **Next action:** P2 step 1, the Crossed Pair and the Gimbal in the rig screen
+  with the note labels and the interval line (all built, needs its shots), then
+  P2 step 2, `test/sound.mjs`: with the pair set to a fifth the engine reports
+  two hum frequencies at a ratio of 1.5 within one percent and the render has
+  energy in it; with the toggle off the render is silent.
 
 ---
 
@@ -396,6 +394,77 @@ second); the closed form has to use the damped frequency or it does not solve
 the equation the gate integrates; and the link's frequency field overflowed
 sixteen bits at the top of the slider, so every high pendulum came back at 8.19
 and the drawing on the other phone was a different drawing.
+
+---
+
+### P1, the throw you can watch (2026-09-06)
+
+`node test/fling.mjs`
+
+```
+ok    the bob is on the sheet and nothing is on top of it (stage)
+  ok    and it is on the screen where a thumb can reach it (188,313)
+  ok    the sheet starts empty
+  ok    a drag on the bob and a release is one throw (1)
+  ok    and it is a real swing (350 units)
+  ok    and the pen is down
+  ok    three seconds of swinging puts ink on the paper (238 to 1003 inked pixels)
+  ok    and it is a drawing, not a dot (about 1003 inked pixels)
+  ok    and it keeps growing while the pendulum keeps swinging (1003 to 1037)
+  ok    the bob is exactly where the closed form puts it (0.0e+0)
+  ok    one ink is one layer
+  ok    the ink rail changes the ink
+  ok    a second fling is a second throw (2)
+  ok    in a second ink, on its own layer (2)
+  ok    UNDO is a 48 px target (48)
+  ok    UNDO takes the last ink off (1 layers)
+  ok    and its throw with it (1)
+  ok    and leaves the first drawing alone (about 1054 inked pixels)
+  ok    TEAR OFF leaves a blank sheet
+  ok    with no ink on it (0)
+  ok    and the clock back at nought
+  ok    and it is a new sheet (1 to 2)
+  ok    one press on TEAR OFF only asks the question
+  ok    no page errors
+
+FLING OK
+```
+
+`node tools/check.js`
+
+```
+sim             pass  0s
+lint            pass  0s
+fling           pass  3s
+layout          pass  5s
+
+ALL GATES PASSED
+```
+
+**Watched red.**
+
+```
+$ (the release velocity taken from the last two samples only)
+  FAIL  and it is a drawing, not a dot (about 578 inked pixels)
+  FAIL  and it keeps growing while the pendulum keeps swinging (578 to 578)
+$ (undo throwing the whole sheet away)
+  FAIL  UNDO takes the last ink off (0 layers)
+  FAIL  and its throw with it (0)
+$ (a tear off that needs only one press)
+  FAIL  one press on TEAR OFF only asks the question
+$ (the sheet drawn bigger than the screen)
+  FAIL  412: the whole sheet is on the screen (-63 to 475 across, 96 to 768 down)
+```
+
+**P1 step 2 is the feel test and the first line failed it.** The plan says that
+if the line reads as a uniform vector stroke then the width by speed and the wet
+edge are wrong and you fix them before layering. Linear in speed and at a flat
+alpha of nine tenths, every loop came out the same weight and the middle of the
+drawing, where the pen is slowest and the loops crowd, went solid black. At two
+thirds of a pixel to the sheet unit the difference between a whipped stroke and
+a dawdling one has to be carried by width AND alpha, both on a curve, with the
+dark end capped so that crossings build tone instead of saturating. Shots:
+`docs/shots/p1-spiral.png` at twenty seconds and `p1-done.png` at the end.
 
 ---
 

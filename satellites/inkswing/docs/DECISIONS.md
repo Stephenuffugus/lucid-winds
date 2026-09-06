@@ -40,3 +40,27 @@
 - **A brass bob rings for ten minutes.** At the ninety second drawing limit the
   swing is down to a third of what it started at, which is the spiral tightening.
   An assertion that wanted it still after five minutes was wanting a felt bob.
+
+## P1, the throw you can watch
+
+- **⛔ THE FEEL TEST WAS ABOUT THE LINE, AND THE FIRST LINE FAILED IT.** Linear in
+  speed and at a flat alpha of nine tenths, every loop came out the same weight
+  and the middle of the drawing, where the pen is slowest and the loops crowd,
+  went solid black. A pen leaves a pale hair when it is whipped across the paper
+  and a dark wet mark where it turns around, and at two thirds of a pixel to the
+  sheet unit that difference has to be carried by width AND alpha, both on a
+  curve, with the dark end capped so crossings build tone instead of saturating.
+- **The layers are at SCREEN resolution, not at sheet resolution.** A layer the
+  size of the poster is twenty megabytes and there can be four of them. The
+  poster re renders from the throw list, which is the whole point of the throw
+  list, and so does a resize.
+- **The release velocity is the last sixty milliseconds, not the last two
+  samples.** A finger that pauses for one frame before letting go would
+  otherwise throw the pendulum with no speed at all.
+- **A tear off takes two presses.** A drawing somebody spent a minute on must not
+  be one tap from gone.
+- **A new sheet gets a new number.** Numbered off the folio, two torn sheets in a
+  row had the same id until something was kept.
+- **`inked()` reports an estimate, not a sample count.** It samples every
+  seventeenth pixel, and returned raw it reads as a pixel count seventeen times
+  too small: a gate written against it asked for a drawing and accepted a dot.

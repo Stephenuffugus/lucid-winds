@@ -26,7 +26,8 @@ const GATES = [
   { name: 'lint', cmd: ['tools/lint.mjs'], need: 'LINT OK' }
 ];
 const BROWSER_GATES = [
-  { name: 'fling', cmd: ['test/fling.mjs'], need: 'FLING OK' }
+  { name: 'fling', cmd: ['test/fling.mjs'], need: 'FLING OK' },
+  { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK', slow: true }
 ];
 
 const results = [];
