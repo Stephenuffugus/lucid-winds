@@ -142,9 +142,36 @@ on branch `add-sproing-jumper` tonight.
   **Thin, seen:** the land is a flat dusk silhouette with no texture or trees
   on it; the bay's far shore is a straight low line; the audio gate has no
   beached case yet (renderAudio on a lee throw would prove the click).
-  **Next action:** P2 step 2, DAILY with five throws and the card, SHARE image
-  and link (section 5), then `test/daily.mjs`. A small one first: an audio
-  assertion that a beached throw renders one bright onset and no plunk.
+- 2026-09-06 14:58Z Fable (clock extended, then stopped by the coordinator):
+  **P2 STEP 2 IS BUILT: THE DAILY LAKE, THE CARD, SHARE BY LINK, test/daily.mjs.**
+  Commits 4911e4e4 and the one this line is in. Stamp 20260906e. `sim.js --test`
+  167 / 0 (dailyStoneFor, dailyLink, parseDailyLink pure in the SIM export,
+  watched to fail under DAILY_THROWS=6). DAILY LAKE on the sheet pins the
+  day's stone (never a rare) as the one stone on the bank, a strip under the
+  post counts the throws, the card comes up 2.6 s after the fifth sink, SHARE
+  is navigator.share with a text field fallback, and a `#d=` link opens a fresh
+  browser on the sender's card with THROW YOURS on the same lake. The audio
+  gate proves the beached click (three assertions). `test/daily.mjs` drives it
+  with five real flicks and a second browser and is registered in check.js;
+  it printed DAILY OK at 14:48Z before the card fixes below.
+  ⛔ THE EYE CAUGHT WHAT THE GATE DID NOT: on the first card shot THROW YOURS
+  showed on my own card and SHARE on the recipient's, because `.btn{display:
+  block}` beat the `hidden` attribute and the gate read the attribute. Fixed
+  (`.btn[hidden]{display:none}`) and the DEV card hook now reports computed
+  display, so the gate can fail on it. Also from the shots: the strip collided
+  with the post and MENU (moved under them), the bank was a void (the day's
+  one stone now sits on it), the slots sat over the treeline (card backdrop),
+  and the date carried dashes in player copy (now "6 September 2026").
+  ⛔ NOT RERUN AFTER THOSE FIXES: the browser gates. The last daily run had one
+  red line, the gate comparing the ISO day to the worded date; fixed to read
+  `d2.day`, syntax checked, lint, sim and sweep green, but the lock was not
+  free at the stop. p2-daily, p2-card, p2-card-link shot and opened after the
+  fixes and they read.
+  **Next action:** `flock -w 1800 /tmp/sws-gate.lock node tools/check.js`
+  (seven gates now); if daily flakes inside the suite, twice alone (the first
+  flick after entering the daily can take 2.4 s of dispatch under swiftshader
+  and read as a set down, which is the two cores). Then the SHARE IMAGE
+  (1080x1350, plan section 4 SHARE) which is not built; then P3 step 1.
 
 ---
 
@@ -715,6 +742,20 @@ $ flock -w 1800 /tmp/sws-gate.lock node test/layout.mjs   LAYOUT OK
 $ flock -w 1800 /tmp/sws-gate.lock node test/audio.mjs    AUDIO OK
 ```
 p1-shore, p2-lee, p2-bay opened after each of the three rounds; faults and fixes in SESSION STATE.
+
+### P2 step 2, 2026-09-06 14:58Z: the daily lake
+
+```
+$ node sim.js --test                       PASSED 167 / FAILED 0   GERPLUNK TEST OK
+$ node sim.js --test --over=DAILY_THROWS=6
+FAIL  a link with six throws is refused    PASSED 166 / FAILED 1
+$ flock -w 1800 /tmp/sws-gate.lock node test/daily.mjs     (14:48Z, before the card fixes)
+DAILY OK
+$ flock -w 1800 /tmp/sws-gate.lock node test/daily.mjs     (14:57Z, after the card fixes)
+FAIL  on the same day with the same stone: heavyflat on 2026-09-06   (the gate's ISO against the worded date; fixed, not rerun)
+$ node tools/lint.mjs   LINT OK     $ node sim.js --sweep   GERPLUNK SWEEP OK
+```
+Shots opened after the fixes: `docs/shots/p2-daily.png`, `p2-card.png`, `p2-card-link.png`.
 
 ## 14. THE OVERNIGHT PROTOCOL
 

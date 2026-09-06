@@ -95,7 +95,42 @@ for (const key of Object.keys(SIZES)) {
         await shoot(page, name);
       }
     }
-  } else if (want('p1-lake-' + key)) {
+  }
+  if (key === 'mid' && (want('p2-daily') || want('p2-card') || want('p2-card-link'))) {
+    /* the daily lake: a save with two throws today shows the strip on the lake;
+       five throws today shows the card; a link opens a fresh page on the sender's card */
+    const day = await page.evaluate(() => window.GERPLUNK_DEV.daily().day);
+    const five = [{ skips: 7, dist: 12.3 }, { skips: 11, dist: 18.0 }, { skips: 4, dist: 6.9 }, { skips: 15, dist: 25.4 }, { skips: 9, dist: 14.1 }];
+    for (const [name, n] of [['p2-daily', 2], ['p2-card', 5]]) {
+      if (!want(name)) continue;
+      await page.evaluate(([day, throws]) => {
+        const s = JSON.parse(localStorage.getItem('lw_gerplunk_v1') || '{}');
+        s.daily = { day, throws }; s.seen = { how: 1 }; s.best = 15;
+        localStorage.setItem('lw_gerplunk_v1', JSON.stringify(s));
+      }, [day, five.slice(0, n)]);
+      await page.reload({ waitUntil: 'load' });
+      await page.waitForFunction(() => window.GERPLUNK_DEV && window.GERPLUNK_DEV.frames() > 2, { timeout: 20000 });
+      await tap(page, '#btnPlay');
+      await page.waitForFunction(() => window.GERPLUNK_DEV.screen() === 'lake', { timeout: 20000 });
+      await tap(page, '#btnMenu');
+      await page.waitForFunction(() => window.GERPLUNK_DEV.screen() === 'sheet', { timeout: 10000 });
+      await tap(page, '#btnDaily');
+      await waitFrames(page, 4);
+      console.log('  (' + name + ': screen ' + await page.evaluate(() => window.GERPLUNK_DEV.screen()) + ')');
+      await shoot(page, name);
+    }
+    if (want('p2-card-link')) {
+      const link = await page.evaluate(() => window.GERPLUNK_DEV.dailyLink());
+      await browser.close();
+      const fresh = await open(base, { width: size.width, height: size.height, query: link.slice(link.indexOf('#')) });
+      await waitFrames(fresh.page, 4);
+      await shoot(fresh.page, 'p2-card-link');
+      await fresh.browser.close();
+      console.log('  (' + size.width + 'x' + size.height + ' done)');
+      continue;
+    }
+  }
+  if (key !== 'mid' && want('p1-lake-' + key)) {
     await toLake(page);
     await waitFrames(page, 3);
     await shoot(page, 'p1-lake-' + key);

@@ -83,6 +83,7 @@ body{touch-action:none;user-select:none;-webkit-user-select:none}
 .scr[hidden]{display:none}
 #scrTitle{background:linear-gradient(180deg,rgba(27,26,36,.18) 0%,rgba(27,26,36,.05) 40%,rgba(18,16,12,.9) 100%)}
 #scrSheet{background:rgba(18,16,12,.94)}
+#scrCard{background:rgba(18,16,12,.84)}
 .spacer{flex:1}
 h1{font-size:2.6rem;letter-spacing:.22em;margin:14vh 0 6px;font-weight:700;color:var(--cream);
   text-shadow:0 2px 12px rgba(0,0,0,.6)}
@@ -91,10 +92,11 @@ h2{font-size:1.3rem;letter-spacing:.2em;margin:0 0 14px;font-weight:700;color:va
 .btn{display:block;width:100%;max-width:300px;min-height:56px;margin:8px 0;padding:0 18px;border-radius:14px;
   border:1px solid rgba(232,179,106,.5);background:rgba(20,18,15,.72);color:var(--cream);font:inherit;
   font-size:.95rem;letter-spacing:.14em}
+.btn[hidden]{display:none}
 .btn.primary{background:rgba(232,179,106,.18);border-color:var(--gold)}
 .about{font-size:.82rem;line-height:1.6;color:var(--cream);max-width:320px;margin:10px 0;opacity:.88}
 .brand{font-size:.7rem;letter-spacing:.24em;color:var(--muted);margin-top:14px}
-#dailyStrip{position:absolute;left:50%;top:calc(var(--safeT) + 14px);transform:translateX(-50%);font-size:.72rem;letter-spacing:.08em;
+#dailyStrip{position:absolute;left:50%;top:calc(var(--safeT) + 104px);transform:translateX(-50%);font-size:.72rem;letter-spacing:.08em;
   color:var(--cream);opacity:0;transition:opacity .3s;white-space:nowrap;pointer-events:none}
 #dailyStrip.on{opacity:.85}
 #cardSlots{display:flex;gap:8px;margin:12px 0}
@@ -1493,6 +1495,11 @@ function throwEnv(yaw, trace) {
 }
 
 /* ============================ 13b. THE DAILY LAKE ============================ */
+var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+function dayWords(dateStr) {
+  var p = dateStr.split('-');
+  return parseInt(p[2], 10) + ' ' + (MONTHS[parseInt(p[1], 10) - 1] || p[1]) + ' ' + p[0];
+}
 var DAILY = {
   mine: function () {
     var d = G.save.daily;
@@ -1503,7 +1510,8 @@ var DAILY = {
     if (this.complete()) { this.showCard({ day: G.day, stone: dailyStoneFor(G.day), throws: this.mine() }, true); return; }
     G.dailyOn = true;
     G.stoneId = dailyStoneFor(G.day);
-    $('shore').hidden = true;
+    G.offer = [G.stoneId];
+    buildShore();
     $('btnDaily').textContent = 'LEAVE THE DAILY LAKE';
     this.strip();
     showScreen('lake');
@@ -1511,7 +1519,7 @@ var DAILY = {
   },
   leave: function () {
     G.dailyOn = false;
-    $('shore').hidden = false;
+    G.offer = bedFor(G.day, G.save ? G.save.career : 0);
     $('dailyStrip').classList.remove('on');
     $('btnDaily').textContent = 'DAILY LAKE';
     buildShore();
@@ -1542,7 +1550,7 @@ var DAILY = {
       if (t) { total += t.skips; if (t.skips > best) best = t.skips; }
     }
     slots.innerHTML = html;
-    $('cardDay').textContent = (mine ? 'Your five on ' : 'Five on ') + card.day + ', the ' + stoneById(card.stone).name;
+    $('cardDay').textContent = (mine ? 'Your five on ' : 'Five on ') + dayWords(card.day) + ', the ' + stoneById(card.stone).name;
     $('cardSum').textContent = 'best ' + best + ', ' + total + ' skips in ' + card.throws.length;
     $('btnShare').hidden = !mine;
     $('btnThrowMine').hidden = mine || this.complete();
@@ -2118,7 +2126,7 @@ function pickStone(id) {
   showLine(st.name + '. ' + st.line + (b ? ' Your best with it is ' + b + '.' : ''), 2400);
 }
 function buildShore() {
-  var shore = $('shore'), i, xs = [0.38, 0.59, 0.80];
+  var shore = $('shore'), i, xs = G.offer.length === 1 ? [0.59] : [0.38, 0.59, 0.80];
   shore.innerHTML = '';
   for (i = 0; i < G.offer.length; i++) {
     var st = stoneById(G.offer[i]), b = document.createElement('button');
@@ -2291,11 +2299,15 @@ window.GERPLUNK_DEV = {
   bed: function (career) { return bedFor(G.day, career); },
   day: function () { return { day: G.day, wind: G.wind, windDir: G.windDir, water: G.water, face: faceOf(yawNow(), G.water, crosswind(yawNow())) }; },
   face: function (yaw) { return faceOf(yaw, G.water, crosswind(yaw)); },
-  daily: function () { return { on: G.dailyOn, day: G.day, stone: dailyStoneFor(G.day), throws: DAILY.mine(), complete: DAILY.complete(), shoreHidden: $('shore').hidden }; },
+  daily: function () {
+    var bank = Array.prototype.map.call(document.querySelectorAll('.stone'), function (b) { return b.getAttribute('data-id'); });
+    return { on: G.dailyOn, day: G.day, stone: dailyStoneFor(G.day), throws: DAILY.mine(), complete: DAILY.complete(), bank: bank };
+  },
   dailyLink: function () { return DAILY.link(); },
   card: function () {
     var slots = Array.prototype.map.call(document.querySelectorAll('#cardSlots .slot b'), function (b) { return b.textContent; });
-    return { day: $('cardDay').textContent, sum: $('cardSum').textContent, slots: slots, share: !$('btnShare').hidden, throwMine: !$('btnThrowMine').hidden, out: $('shareOut').classList.contains('on') ? $('shareOut').value : '' };
+    var shown = function (id) { var el = $(id); return getComputedStyle(el).display !== 'none' && el.getBoundingClientRect().height > 0; };
+    return { day: $('cardDay').textContent, sum: $('cardSum').textContent, slots: slots, share: shown('btnShare'), throwMine: shown('btnThrowMine'), out: $('shareOut').classList.contains('on') ? $('shareOut').value : '' };
   },
   state: function () {
     return {

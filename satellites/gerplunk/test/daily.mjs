@@ -44,7 +44,7 @@ await page.waitForFunction(() => window.GERPLUNK_DEV.screen() === 'lake' && wind
 const d0 = await dev(() => window.GERPLUNK_DEV.daily());
 const stone0 = await dev(() => window.GERPLUNK_DEV.stone());
 say(d0.on, 'the daily lake is on');
-say(d0.shoreHidden, 'and the bank is gone: one stone today');
+say(d0.bank.length === 1 && d0.bank[0] === d0.stone, 'and the bank holds one stone today, the day\'s: ' + d0.bank.join(' '));
 say(stone0 === d0.stone, 'the day\'s stone is in the hand, not the skimmer the player picked: ' + stone0 + ' (day says ' + d0.stone + ')');
 say(d0.throws.length === 0, 'nothing thrown yet');
 
@@ -101,7 +101,7 @@ say(s2 === 'card', 'a fresh browser opened on the link lands on the card: ' + s2
 const card2 = await fresh.page.evaluate(() => window.GERPLUNK_DEV.card());
 const d2 = await fresh.page.evaluate(() => window.GERPLUNK_DEV.daily());
 say(card2.slots.join(',') === card.slots.join(','), 'and it shows the sender\'s five: ' + card2.slots.join(' '));
-say(d2.stone === mine.stone && card2.day.indexOf(mine.day) >= 0, 'on the same day with the same stone: ' + d2.stone + ' on ' + d2.day);
+say(d2.stone === mine.stone && d2.day === mine.day, 'on the same day with the same stone: ' + d2.stone + ' on ' + d2.day);
 say(!card2.share && card2.throwMine, 'THROW YOURS is there and SHARE is not, because these are not mine');
 const bt = await hit(fresh.page, '#btnThrowMine');
 say(bt.ok && bt.w >= 48 && bt.h >= 48, 'THROW YOURS at ' + bt.w.toFixed(0) + 'x' + bt.h.toFixed(0) + ' and a thumb lands on it');
