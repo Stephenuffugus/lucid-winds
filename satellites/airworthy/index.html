@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="AIRWORTHY">
-<link rel="manifest" href="./manifest.webmanifest?v=20260906g">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260906g">
-<link rel="icon" href="./icon-192.png?v=20260906g">
+<link rel="manifest" href="./manifest.webmanifest?v=20260906h">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260906h">
+<link rel="icon" href="./icon-192.png?v=20260906h">
 <link rel="canonical" href="https://lucidwinds.com/satellites/airworthy/">
 <style>
 /*  AIRWORTHY
@@ -234,7 +234,7 @@ body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
 #testPanel.on{display:block}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260906g" defer></script>
+<script src="/music-unlocks.js?v=20260906h" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">AIRWORTHY</h1>
@@ -1612,12 +1612,12 @@ function suitePurity(T, src) {
 /* ========================= 16. VIEW ========================= */
 /* Canvas 2D, DPR aware. The world is metres; the camera leads the plane and the
    trail is a pencil dotted line. Paper white, pencil grey, one blue crease. */
-var V = { zoom: 1, cv: null, ctx: null, W: 0, H: 0, dpr: 1, ppm: 40, camX: 0, camY: 0, t: 0 };
+var V = { zoom: 1, cv: null, ctx: null, W: 0, H: 0, dpr: 1, ppm: 40, camX: 0, camY: 0, t: 0, ox: 105 };
 var REDUCED = false;
 
-function px(x) { return (x - V.camX) * V.ppm + V.W * 0.28; }
+function px(x) { return (x - V.camX) * V.ppm + V.ox; }
 function py(y) { return V.H * (V.ground || 0.78) - (y - V.camY) * V.ppm; }
-function unpx(sx2) { return (sx2 - V.W * 0.28) / V.ppm + V.camX; }
+function unpx(sx2) { return (sx2 - V.ox) / V.ppm + V.camX; }
 function unpy(sy2) { return (V.H * (V.ground || 0.78) - sy2) / V.ppm + V.camY; }
 
 function fitCanvas() {
@@ -1641,6 +1641,14 @@ function fitCanvas() {
   V.base = Math.max(14, Math.min(V.W / (tall ? 9.5 : 12), V.H / 4.6));
   V.ppm = V.base * (V.zoom || 1);
   V.ground = tall ? 0.86 : 0.78;
+  /* ⛔ THE PLANE SITS WHERE A THUMB CAN PULL IT ALL THE WAY BACK. At 28 percent
+     of the width the plane was 115 px from the left edge of a 412 phone and a
+     full pull is 140 px, so the thumb ran off the glass at 81 percent power and
+     the meter never filled (Stephen, Sep 06: "I can't pull it all the way back,
+     infuriating"). In portrait it sits at 36 percent; in landscape 28 percent
+     already leaves 256 px. pullFull() then caps the full pull inside whatever
+     room is left, so the meter fills before the edge on a 320 as well. */
+  V.ox = Math.round(V.W * (V.W < 600 ? 0.36 : 0.28));
 }
 
 /* ---- the room ---- */
@@ -1649,7 +1657,7 @@ function fitCanvas() {
 function drawGym(ctx) { drawCourse(ctx, G.course || 'gym'); }
 /* a far thing slides at a fraction of the camera; px cannot do that because it
    subtracts the whole camera */
-function pxFar(u, k) { return (u - V.camX * k) * V.ppm + V.W * 0.28; }
+function pxFar(u, k) { return (u - V.camX * k) * V.ppm + V.ox; }
 var COURSE_PAPER = { gym: '#EFE9DC', yard: '#E4E5D2', canyon: '#F3E3C8', stadium: '#E3E9EC' };
 var COURSE_SKY = { gym: '#DCD3C0', yard: '#CBD8DC', canyon: '#EFBE8C', stadium: '#BCCFDF' };
 var COURSE_FLOOR = { gym: '#E2DACA', yard: '#A8B87E', canyon: '#D9B98A', stadium: '#8DB56E' };
@@ -1691,7 +1699,7 @@ function drawCourse(ctx, id) {
        through the flight lane like wires. The wall now climbs to nine, and
        each stratum is the same silhouette traced lower, so the lines belong
        to the rock and stop where the rock does. */
-    var fw, u0 = Math.floor((V.camX * 0.5 - V.W * 0.28 / V.ppm) / 2.4) * 2.4 - 4.8, drop;
+    var fw, u0 = Math.floor((V.camX * 0.5 - V.ox / V.ppm) / 2.4) * 2.4 - 4.8, drop;
     var wallPath = function (down) {
       ctx.beginPath();
       ctx.moveTo(-40, py(0));
@@ -1719,7 +1727,7 @@ function drawCourse(ctx, id) {
     /* the far stand: four tiers of seats that slide at two thirds of the
        camera, and two floodlight masts over them. Seats are dots in rows, which
        is what a stand is from the pitch. */
-    var tier, seat, tx0 = Math.floor((V.camX * 0.65 - V.W * 0.28 / V.ppm) / 0.5) * 0.5 - 2;
+    var tier, seat, tx0 = Math.floor((V.camX * 0.65 - V.ox / V.ppm) / 0.5) * 0.5 - 2;
     /* ⛔ LOOKED AT: a stand to six metres left the top half of the frame
        blank and no mast reached the shot. The stand goes to eight and a half
        with a roof edge, its lowest tier sits above the hoardings, and a mast
@@ -2293,6 +2301,42 @@ function drawSling(ctx, from, to, power, angle) {
   ctx.textAlign = 'center';
   ctx.fillText(Math.round(angle) + ' degrees', from.x, from.y + 60);
   ctx.textAlign = 'left';
+  ctx.restore();
+}
+
+/* THE FIRST THROW IS TAUGHT ON THE FLOOR, NOT IN THE READOUT. The hud said
+   "pull back and let go" in thirteen pixel grey at the top of the screen and
+   the Director, on a phone, reported no explanation of throwing at all (Sep
+   06). A coach that is not where the thumb goes is not a coach. This one is
+   drawn at the plane until the first flight has landed: a dashed pull running
+   back from the tail with a thumb travelling along it, and the words above the
+   plane, clear of the music chip's corner. Nothing in it is a button. */
+function drawCoach(ctx) {
+  var home = { x: px(0), y: py(1.6) };
+  var t = (V.t || 0) / 1000, pulse = 0.5 + 0.5 * Math.sin(t * 3);
+  var len = Math.round(Math.min(pullFull(), home.x - 18) * 0.8);
+  var ax = home.x - 24, bx = ax - len;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(60,110,159,' + (0.55 + 0.4 * pulse).toFixed(2) + ')';
+  ctx.lineWidth = 3;
+  ctx.setLineDash([7, 5]);
+  ctx.beginPath(); ctx.moveTo(ax, home.y); ctx.lineTo(bx, home.y); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.beginPath();
+  ctx.moveTo(bx, home.y); ctx.lineTo(bx + 12, home.y - 8);
+  ctx.moveTo(bx, home.y); ctx.lineTo(bx + 12, home.y + 8);
+  ctx.stroke();
+  var f = (t % 1.6) / 1.6, dx = ax - (ax - bx) * Math.min(1, f * 1.25);
+  ctx.fillStyle = 'rgba(60,110,159,.85)';
+  ctx.beginPath(); ctx.arc(dx, home.y, 7, 0, Math.PI * 2); ctx.fill();
+  var tx = Math.max(12, bx), ty = home.y - 46;
+  ctx.fillStyle = '#33302A';
+  ctx.font = '700 15px ui-rounded, system-ui, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('Pull the plane back, then let go', tx, ty);
+  ctx.fillStyle = '#6B6558';
+  ctx.font = '600 13px ui-rounded, system-ui, sans-serif';
+  ctx.fillText('It flies the other way', tx, ty + 20);
   ctx.restore();
 }
 
@@ -3342,11 +3386,11 @@ function toTunnel() {
 }
 
 /* ========================= 17. THE FIELD ========================= */
-var STAMP = '20260906g';
+var STAMP = '20260906h';
 var G = {
   screen: 'title', spec: null, res: null, live: null, liveT: 0, flying: false,
   trail: [], ghost: null, best: null, lastClass: null, throws: 0,
-  course: 'gym', challenge: null, lastScore: null, lastMedal: null
+  course: 'gym', challenge: null, lastScore: null, lastMedal: null, armed: false
 };
 var RAF = 0, LAST = 0, FRAMES = 0, PULL = null;
 
@@ -3381,6 +3425,7 @@ function toField(spec, challengeId) {
   G.challenge = challengeId ? challengeById(challengeId) : null;
   G.course = G.challenge ? G.challenge.course : 'gym';
   G.res = null; G.live = null; G.flying = false; G.trail = [];
+  G.armed = false;
   G.best = null;
   G.ghost = (G.challenge && SAVE.ghosts[G.challenge.id]) ? SAVE.ghosts[G.challenge.id] : null;
   V.camX = 0; V.camY = 0;
@@ -3400,16 +3445,19 @@ function updateHud() {
           + ' of ' + ringsFor(G.course, G.challenge).length + ' gates, ' + G.live.y.toFixed(1) + ' m up'
         : G.live.x.toFixed(1) + ' m out, ' + G.live.y.toFixed(1) + ' m up') : '')
     : (ch ? 'gold at ' + ch.medals.gold + ' ' + ch.unit + (ch.high ? '' : ' from the middle')
-      : (G.best ? 'best ' + G.best.distance.toFixed(1) + ' m' : 'pull back and let go'));
+      : (G.armed || !G.best ? 'pull back and let go' : 'best ' + G.best.distance.toFixed(1) + ' m'));
   el('hud').innerHTML = name + '<br>' + line
     + '  &middot;  elev ' + trimWord(G.spec.elev)
     + '  &middot;  ' + (D.mass * 1000).toFixed(1) + ' g';
 }
 
 /* the throw: a pull back from the plane, released the other way */
+/* the pull that fills the meter: 140 px, or the room between the plane and the
+   left edge less a thumb's width, whichever is less */
+function pullFull() { return Math.max(60, Math.min(140, (V.ox || 140) - 16)); }
 function pullPower(dx, dy) {
   var len = Math.sqrt(dx * dx + dy * dy);
-  return clamp(len / 140, 0, 1);
+  return clamp(len / pullFull(), 0, 1);
 }
 function pullAngle(dx, dy) {
   /* the plane goes OPPOSITE the drag, and the angle is clamped to what an arm
@@ -3505,7 +3553,7 @@ function endFlight() {
      result, and put it where the CARD IS NOT: the card takes the bottom in
      portrait and the right hand half in landscape, so the landing goes to the
      left fifth of the frame either way. */
-  V.camX = Math.max(0, r.distance - (0.22 - 0.28) * V.W / V.ppm);
+  V.camX = Math.max(0, r.distance - (0.22 * V.W - V.ox) / V.ppm);
   el('resultName').textContent = ch ? ch.name : G.lastClass.name;
   el('resultLine').innerHTML = (ch ? '' : G.lastClass.line + '<br>') + line;
   el('resultCard').classList.add('on');
@@ -3574,13 +3622,16 @@ function frame(ts) {
     if (G.ghost && G.ghost !== G.trail) drawTrail(ctx, G.ghost, 0.42, true, true);
     drawTrail(ctx, G.trail, 0.75, true);
     if (G.flying && G.live) drawPlane(ctx, G.live.x, G.live.y, G.live.theta, G.live.veer, G.spec);
-    else if (!G.res) drawPlane(ctx, 0, 1.6, 5 * DEG, 0, G.spec);
+    else if (!G.res || G.armed) drawPlane(ctx, 0, 1.6, 5 * DEG, 0, G.spec);
     else if (G.res) {
       var last = G.res.trace[G.res.trace.length - 1];
       drawPlane(ctx, last.x, last.y, last.theta, last.veer, G.spec);
     }
     if (PULL) {
       drawSling(ctx, PULL.from, PULL.to, pullPower(PULL.dx, PULL.dy), pullAngle(PULL.dx, PULL.dy));
+    } else if (!G.flying && !G.challenge && !SAVE.seen.flown && (!G.res || G.armed)
+      && !el('resultCard').classList.contains('on') && !el('scrTrim').classList.contains('on')) {
+      drawCoach(ctx);
     }
   } else {
     drawGym(ctx);
@@ -3669,17 +3720,22 @@ function bindInput() {
        would make every medal mean something different. */
     if (G.screen !== 'field' || G.flying || G.challenge) return;
     if (el('scrTrim').classList.contains('on')) return;
+    /* ⛔ THE PULL IS MEASURED FROM WHERE THE THUMB WENT DOWN, not from the
+       plane. Measured from the plane, a thumb that landed to the right of it
+       started at full forward power and a wrong angle, and a thumb on the
+       plane had only the plane's distance from the edge to pull with. The
+       sling is still drawn from the plane, displaced by what the thumb did. */
     var home = { x: px(0), y: py(1.6) };
-    PULL = { from: home, to: { x: e.clientX, y: e.clientY }, dx: e.clientX - home.x,
-      dy: e.clientY - home.y, id: e.pointerId };
+    PULL = { from: home, down: { x: e.clientX, y: e.clientY }, to: { x: home.x, y: home.y },
+      dx: 0, dy: 0, id: e.pointerId };
     el('resultCard').classList.remove('on');
   });
   cv.addEventListener('pointermove', function (e) {
     if (PINCH) { PULL = null; return; }
     if (!PULL || PULL.id !== e.pointerId) return;
-    PULL.to = { x: e.clientX, y: e.clientY };
-    PULL.dx = e.clientX - PULL.from.x;
-    PULL.dy = e.clientY - PULL.from.y;
+    PULL.dx = e.clientX - PULL.down.x;
+    PULL.dy = e.clientY - PULL.down.y;
+    PULL.to = { x: PULL.from.x + PULL.dx, y: PULL.from.y + PULL.dy };
   });
   function up(e) {
     if (PINCH) { PULL = null; return; }
@@ -3689,6 +3745,7 @@ function bindInput() {
     if (power < 0.08) return;
     V.camX = 0; V.camY = 0;
     G.lastAngle = angle; G.lastPower = power;
+    G.armed = false;
     launch(angle, power);
   }
   cv.addEventListener('pointerup', up);
@@ -3817,7 +3874,14 @@ function bindInput() {
     el('resultCard').classList.remove('on');
     V.camX = 0; V.camY = 0;
     if (G.challenge) { launch(G.challenge.throw.angle, G.challenge.throw.power); return; }
-    launch(G.lastAngle === undefined ? DEFAULT_ANGLE : G.lastAngle, G.lastPower === undefined ? DEFAULT_POWER : G.lastPower);
+    /* ⛔ in the gym THROW AGAIN puts the plane back in your hand. It used to
+       re fire the last angle and power on its own, so a player who wanted a
+       different throw had no way to ask for one (Stephen, Sep 06: "when you
+       click through again you should be able to reset the angle and throw").
+       The trim panel's THROW IT still repeats the last throw on purpose, so
+       the only thing that changed between two flights is the trim. */
+    G.armed = true;
+    updateHud();
   });
   el('btnTrim').addEventListener('click', function () {
     el('resultCard').classList.remove('on');
