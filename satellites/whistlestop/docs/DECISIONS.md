@@ -52,3 +52,27 @@ you cannot see is not a puzzle, and the player can pinch to get closer.
 **The tap radius on a lever or a train drawn into the canvas is 26 CSS px.**
 That is a 52 px target, over the studio's 48, and it is measured in screen pixels
 rather than world units so that zooming out never shrinks a control below the law.
+
+**A single switch in a ring is always met facing from the same side, so Round and Round cannot forbid an early flip.**
+The train arrives at the stem every lap; the two fork ends both lead back to the
+stem, so a train that enters the ring from a spur meets the switch trailing for
+ever and never gets a choice. The puzzle therefore starts with the lever set
+for the ring and the train already on it; the lever thrown before the whistle
+also wins, and the sim only proves the thrown at a moment solution and that
+doing nothing circles for ever. Forcing the moment needs a second train or a
+buffer on the spur, which is the Director's call.
+
+**Swap is not a dead end siding.** A train that backs into a siding comes out of
+it heading back where it came from, and the other train's station is there.
+The passing loop is the only two switch shape in the piece set that lets two
+trains change ends without one of them stopping, so Swap was not built on a
+siding and stays as data in the plan.
+
+**The train at fault in a bump is the one that was moving.** The sim records it
+on the clonk event before it stops the train, and the name flag says "bumped"
+with a pink tint from then until the restart. Two moving trains are both at
+fault, which is true.
+
+**In portrait the whistle shares the tray's bottom edge.** It used to sit alone
+on the floor strip under the tray. The tray moved left to leave the whistle the
+thumb corner, and the bottom left 120 by 120 is still the music chip's.

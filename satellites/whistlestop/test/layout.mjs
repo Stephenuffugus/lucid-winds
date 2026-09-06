@@ -20,6 +20,8 @@ const R = n => Math.round(n);
 const SIZES = [[667, 375], [915, 412], [375, 667], [320, 568], [412, 915]];
 
 /* measure a named group of controls: it must be there, all of it, showing */
+/* the list has one card per puzzle in PUZZLES; five since 2026-09-06 */
+const PUZZLE_COUNT = 5;
 async function group(page, at, what, sel, want, minH) {
   const got = await page.evaluate((sel) => [...document.querySelectorAll(sel)].map(e => {
     if (e.scrollIntoView) e.scrollIntoView({ block: 'center', inline: 'center' });
@@ -61,7 +63,7 @@ for (const [w, h] of SIZES) {
   /* ---- the puzzle list ---- */
   await tap(page, '#btnPuzzles');
   await waitFrames(page, 2);
-  await group(page, at, 'the puzzle list', '#puzzleList .card', 2, 64);
+  await group(page, at, 'the puzzle list', '#puzzleList .card', PUZZLE_COUNT, 64);
   await group(page, at, 'the puzzle list', '#scrSelect .btn.ghost', 1);
 
   /* ---- a puzzle, being played ---- */

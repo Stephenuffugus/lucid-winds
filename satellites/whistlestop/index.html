@@ -1956,12 +1956,6 @@ function fitView() {
   var availW = Math.max(40, V.w - V.padL - V.padR);
   V.zoom = clamp(Math.min(availW / bw, availH / bh), CONFIG.ZOOM_MIN * 0.5, CONFIG.ZOOM_MAX);
   V.cx = (b.x0 + b.x1) / 2; V.cy = (b.y0 + b.y1) / 2;
-  /* when the width binds on a tall phone the height has slack; split it so the
-     railway sits nearer the tray than the goal line (three tenths below, seven
-     above), because a hundred pixels of wool between the loop and the tray
-     read as a dead band while the same room under the goal line reads as air */
-  var slackH = availH - bh * V.zoom;
-  if (slackH > 0) V.cy -= (slackH * 0.2) / V.zoom;
   V.userMoved = false;
   TRACK.key = '';
 }
