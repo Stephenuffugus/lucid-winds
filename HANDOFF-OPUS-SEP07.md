@@ -281,11 +281,12 @@ saw in Airworthy landscape (G35). 8. Wardian's BUY (G37). 9. The rest of section
 
 ### THE MORNING REPORT, Sep 07, Opus
 
-**WHAT IS LIVE.** All of section A, and C1, C2, C5, C7, C8 and C9 of section C. Everything is on
-`main` and every game was verified by probe against the host. All twelve now carry today's stamp
-except Wardian, which needed no change: Fathom, Swell, Windup, Whistlestop, Inkswing and Strata
-at `20260907a`; Asterism, Doohickey, Airworthy, Gerplunk and Updraft at `20260907b`; Wardian
-`20260906d`. The portal pins every one of them to the stamp that game actually ships. The plural
+**WHAT IS LIVE.** All of section A. All of section C except C10 and C11, which are both open and
+both now MEASURED with one wrong fix each ruled out by trying it and shooting the result. The
+polish loop's first pass. Everything is on `main` and every game was verified by probe against
+the host. **All twelve games carry today's stamp**: Fathom, Swell, Windup, Inkswing, Strata and
+Wardian at `20260907a`; Asterism, Doohickey, Airworthy, Gerplunk, Whistlestop and Updraft at
+`20260907b`. The portal pins every one of them to the stamp that game actually ships. The plural
 brand is gone from the whole old fleet, 206 occurrences in 136 files.
 
 **WHAT IS HALF BUILT.** Nothing. Every game's own suite passes and nothing is uncommitted.
@@ -293,16 +294,16 @@ brand is gone from the whole old fleet, 206 occurrences in 136 files.
 **WHAT I WOULD PUT IN FRONT OF STEPHEN, RANKED.**
 
 1. **THREE GAMES WERE CLIPPING AND EVERY GATE WAS GREEN OVER ALL THREE.** Fathom's singback
-   peaked at **1.293**, Asterism's swell at **1.907**, and Windup, the quietest game in the
-   fleet, at **1.364**. Two of them are the same bug: a fresh GainNode's gain is ONE, and both
-   games start three sines at t0 while staggering their envelopes, so each voice goes out at full
-   scale for 45 to 90 ms. Windup's is different and worse in its way: `softCurve`, the waveshaper
-   whose own comment calls it "the ceiling", had a slope of 1.649 at the origin, so it was a
-   4.3 dB BOOST and a master of 0.5 was really 0.82. All three fixed and measured. **Nobody had
-   ever measured any of it**, which is the whole argument for the ear gate, and it is now in ten
-   of the twelve.
+   peaked at **1.293**, Asterism's swell at **1.907**, and Windup, the quietest game in the fleet,
+   at **1.364**. Two of them are the same bug: a fresh GainNode's gain is ONE, and both games
+   start three sines at t0 while staggering their envelopes, so each voice goes out at full scale
+   for 45 to 90 ms. Windup's is worse in its way: the waveshaper whose own comment calls it "the
+   ceiling" had a slope of 1.649 at the origin, so it was a 4.3 dB BOOST and a master of 0.5 was
+   really 0.82. All three fixed and measured. **Nobody had ever measured any of it.** The ear gate
+   is in ten of the twelve now.
 2. **His ear.** Gerplunk's bed, Windup's tine at the new level and the new curve, Swell's three
-   moods, and now Fathom, Asterism and Windup at their fixed levels. Still the largest unknown.
+   moods, and now Fathom, Asterism and Windup at their fixed levels. Still the largest unknown in
+   the twelve.
 3. **Gerplunk's turn (call 22)** is the one thing he asked for that is not started, because it is
    his number. Two hours the moment he picks.
 4. **Airworthy's WHISTLE_UP is 0.6 and that is a taste.** Measured, not picked: at 1.5 a whistled
@@ -314,10 +315,9 @@ brand is gone from the whole old fleet, 206 occurrences in 136 files.
    devcontainer name, 41 Wardian has no master gain, 42 Strata's brush is a quarter of its energy
    above 3 kHz, 43 Updraft has no master gain either and is the loudest bed of the ten, 44
    Airworthy is an eighth as loud as Updraft and they sit side by side on the shelf.
-7. **What is left in section C:** C6 (Whistlestop's mirrored spurs and its two crowded levers),
-   C10 (Asterism's poster preview, now MEASURED and with the obvious fix ruled out by trying it
-   and shooting it), C11 (Fathom's tile reads as a broken image on the shelf), C12 (the fleet
-   does not agree where a game's docs live).
+7. **What is left on the list:** C10 (Asterism's poster preview) and C11 (Fathom's tile), both
+   with their obvious fix already ruled out and the reason written into the code, and the second
+   pass of the polish loop. Section B is untouched by the rule and waits on him.
 
 **THE THING I WOULD WANT HIM TO KNOW ABOUT HOW TODAY WENT.** Almost every fault found today was
 invisible to a green gate, and about half of them were found by opening a picture. The other half
