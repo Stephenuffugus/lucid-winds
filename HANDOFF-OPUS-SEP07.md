@@ -293,6 +293,25 @@ saw in Airworthy landscape (G35). 8. Wardian's BUY (G37). 9. The rest of section
   read statically is a NOTE naming the lines, not a guess. All twelve pass and there are zero
   live violations, because the three the Sep 06 grep found were fixed by hand; the gate holds
   the line from here. ⛔ It found one thing for the list: Asterism's poster preview (call 41).
+- **A7 Gerplunk, the land.** `20260907b`, live. Both thin list items closed with no art: the
+  point was one flat black polygon with a ruled top edge and is now a wooded shore with a
+  gradient mass and a skyline drawn from the same continuous sines the far bank uses; and the
+  stone you picked is held at the right edge of the frame and goes when the stone goes, which
+  also fills the empty bottom third. ⛔ THREE OF MY OWN PROBES WERE WRONG FIRST and all three are
+  written down: the trees vanished at distance so the gate correctly measured a ruled line, the
+  palm probe was counting the SUN'S ROAD on the water (273 with the stone, 258 without), and its
+  colour threshold was chosen rather than read off the canvas. One assertion was deleted for
+  being decoration, a step count whose bands are one apart at 320.
+- **A9 an ear gate in four games** (Fathom, Asterism, Wardian, Strata; the other six are left).
+  ⛔⛔ **IT FOUND TWO REAL CLIPPING FAULTS OF THE SAME SHAPE, and every existing gate in both
+  games was green over them, voice counters included.** A fresh GainNode's gain is ONE: Fathom's
+  singback and Asterism's swell each start three sines at t0 but stagger their envelopes by 45
+  and 90 ms, so for that long each of those voices went to the master at amplitude one rather
+  than at a quarter of distance. Fathom's loudest minute peaked at **1.293** and Asterism's at
+  **1.907**, which is clipping on the moment each game is proudest of. Both fixed, both stamped
+  `20260907a`, peaks now 0.42 and 0.37. Wardian and Strata measured clean. Every band was
+  measured first and each one watched to fail under a real alarm mutation. Strata's 26.5 percent
+  above 3 kHz is the number to watch if Stephen ever calls the brush harsh.
 
 ## 7. THE PROMPT TO PASTE INTO OPUS (Sep 07)
 

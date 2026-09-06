@@ -190,6 +190,17 @@ here. Nothing in this section is started.
     fix is right and editing that file can prompt a container rebuild on a live codespace, so
     it was left. Nobody but us reads it. My call: change it the next time the box is restarted
     anyway, not in the middle of a working day.
+41. **Wardian has no master gain at all (Opus, 2026-09-07, found by the new ear gate).** Every
+    voice in that game connects straight to `destination`, so there is nowhere to turn anything
+    down after the fact. It measures clean today (peak 0.160, rms 0.0155), so nothing is wrong
+    with it; it is that if your ear ever says the jar is loud, there is no one number to move.
+    An hour to put a master in and route every voice through it. My call: do it, because the two
+    clipping faults found today were both a level nobody could reach.
+42. **Strata's brush is a quarter of its energy above 3 kHz (Opus, 2026-09-07).** 26.5 percent,
+    by far the highest of the four games measured today. It passes because a hiss is not a tone
+    and the level is low (peak 0.344, rms 0.0287), and the brush is the sound the player makes
+    most. Nothing to do unless your ear says it is harsh, and if it does, this is the number and
+    the fix is the high pass at 5200 Hz.
 
 ## Answered this afternoon without you (say so if wrong)
 
