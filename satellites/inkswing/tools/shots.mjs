@@ -163,5 +163,22 @@ for (const [w, h, tag] of [[412, 915, 'p3-412'], [375, 667, 'p3-375'], [320, 568
   });
 }
 
+/* the Double Link, mid draw, on Stephen's phone and on the small one: a knot
+   that is not the closed form's, because link 2 is being pumped by link 1 */
+for (const [w, h, tag] of [[412, 915, 'p3-double'], [375, 667, 'p3-double-375']]) {
+  await withPage(w, h, async (page, shot) => {
+    await page.evaluate(() => {
+      const S = INKSWING_TEST.sim();
+      const sh = S.newSheet({ rig: 'double', lengths: [12, 17] });
+      sh.throws.push(S.flingToThrow(sh, { x: 260, y: 90 }, { x: -420, y: 620 }, 0, 'irongall'));
+      INKSWING_TEST.loadSheet(sh);
+      INKSWING_TEST.state().drawing = true;
+      INKSWING_TEST.advance(30);
+    });
+    await waitFrames(page, 3);
+    if (want(tag)) await shot(tag);
+  });
+}
+
 s.close();
 console.log('shots done');

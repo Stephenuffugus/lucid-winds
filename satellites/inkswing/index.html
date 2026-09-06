@@ -1656,6 +1656,9 @@ function showScreen(name) {
   for (i = 0; i < all.length; i++) el(all[i]).classList.toggle('on', 'scr' + name === all[i]);
   G.screen = name.toLowerCase();
   document.body.classList.toggle('listing', name !== 'Sheet');
+  /* ⛔ the rig list counts the folio when it is OPENED, not when it was last
+     drawn, so a rig that came open since is open the moment you look */
+  if (name === 'Rig') renderRigScreen();
   fitCanvas();
 }
 function saveNow() {

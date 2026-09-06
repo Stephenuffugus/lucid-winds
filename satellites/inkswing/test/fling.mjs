@@ -209,6 +209,48 @@ try {
     'ink does not pour off when the phone is tipped (' + (inkBefore * 100).toFixed(3)
     + ' percent before and after)');
 
+  /* ---- THE DOUBLE LINK: opened on the rig screen, and thrown by a real finger ---- */
+  /* ⛔ the rig is locked until twelve drawings are kept, so the gate keeps
+     twelve and then opens it the way a thumb would, off the rig screen */
+  await T(() => {
+    for (let i = 0; i < 12; i++) INKSWING_TEST.save().folio.push({ rig: 'single', lengths: [12, 12], throws: [] });
+    INKSWING_TEST.state().drawing = false;
+  });
+  await tap(page, '#rigChip');
+  await waitFrames(page, 3);
+  const dblCard = await centre(page, '.card[data-rig="double"]');
+  say(!!dblCard && dblCard.onTop && dblCard.h >= 47.5,
+    'with twelve drawings kept the Double Link is a 48 px card on the rig screen ('
+    + (dblCard ? dblCard.h.toFixed(0) : 0) + ')');
+  say(!(await T(() => document.querySelector('.card[data-rig="double"]').disabled)), 'and it is open');
+  await tap(page, '.card[data-rig="double"]');
+  await waitFrames(page, 2);
+  say((await T(() => window.INKSWING_TEST.sheet().rig)) === 'double', 'tapping it puts the Double Link on the sheet');
+  await tap(page, '#btnRigBack');
+  await waitFrames(page, 3);
+  const dblBefore = await T(() => window.INKSWING_TEST.inkedFraction());
+  await fling(-64, 64);
+  await waitFrames(page, 3);
+  const dbl = await T(() => {
+    const sh = window.INKSWING_TEST.sheet();
+    const t = sh.throws[0];
+    return { rig: sh.rig, n: sh.throws.length, rel: t ? t.rel : null, drawing: window.INKSWING_TEST.drawing() };
+  });
+  say(dbl.rig === 'double' && dbl.n === 1 && !!dbl.rel && Math.hypot(dbl.rel.vx, dbl.rel.vy) > 100,
+    'a real fling on the Double Link is one throw that keeps its release ('
+    + (dbl.rel ? Math.hypot(dbl.rel.vx, dbl.rel.vy).toFixed(0) : 0) + ' units a second)');
+  await T(() => window.INKSWING_TEST.advance(4));
+  await waitFrames(page, 3);
+  const dblAfter = await T(() => window.INKSWING_TEST.inkedFraction());
+  say(dblAfter > dblBefore + 0.001, 'and it draws ink (' + (dblAfter * 100).toFixed(3) + ' percent of the sheet)');
+  const dblAgree = await T(() => {
+    const S = window.INKSWING_TEST.sim();
+    const p = S.posAt(window.INKSWING_TEST.sheet(), window.INKSWING_TEST.t());
+    const pen = window.INKSWING_TEST.pen();
+    return Math.hypot(p.x - pen.x, p.y - pen.y);
+  });
+  say(dblAgree < 1e-9, 'with the bob exactly where the integrator puts it (' + dblAgree.toExponential(1) + ')');
+
   say(errors.length === 0, 'no page errors' + (errors.length ? ': ' + errors.slice(0, 3).join(' | ') : ''));
 } finally {
   await browser.close();
