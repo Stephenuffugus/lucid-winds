@@ -77,6 +77,17 @@ Each line: game, the item, size, the plan, and whether it waits on a Director ca
   and `BUILD-NOTES.md` sit beside the true ones in `docs/` and are now wrong in four named
   places. Two files of the same name saying different things is worse than one wrong file.
   Delete them. Ten minutes.
+- **C10. Asterism's poster PREVIEW draws its text at about five CSS pixels.** Found 2026-09-07
+  by the new canvas font lint, which could read the sizes as computed expressions but not their
+  values. `renderPoster` sets `g.font = Math.round(w * 0.0NN) + 'px ' + serif` at six places
+  (`satellites/asterism/index.html:2204, 2207, 2216, 2219, 2238, 2242`). Exported at POSTER_W
+  2048 those are correct. But `refreshPoster` draws the same function into `#posterPreview` at a
+  backing width of 720 shown at `max-width:360px`, and at `max-height:700px` it is 256: on the
+  screen the player actually looks at, the footer credit and the HYG attribution land at about
+  five CSS pixels and the myth body at eight, which is under the 0.7 rem law. The export is fine
+  and the preview is not. Half a day: draw the preview at its own scale rather than shrinking
+  the poster, or floor the sizes in CSS pixels. Add a lint or layout assertion that reads the
+  DISPLAYED size, since neither existing gate can see a scaled canvas.
 - **C9. The portal pins Strata at `?v=20260906b`** for both the URL and the thumb while the game
   ships a later stamp (`portal/index.html:1049`). Ten minutes, and worth a sweep of the other
   eleven at the same time.
@@ -267,6 +278,21 @@ saw in Airworthy landscape (G35). 8. Wardian's BUY (G37). 9. The rest of section
   scanned three container selectors and that button is a sibling of the chrome, and even widened
   to every button the check was running on a screen where neither big button exists. Nine gates
   green.
+- **A6 Updraft, the kite at 67 m and the reel.** `20260907a`, live (probe grepped `drawReel`,
+  `kiteInk`). All three thin list items were exactly as described in a fresh 412x915 shot and all
+  three are fixed: the kite's size floor was twelve pixels and its sail two flat triangles, the
+  reel was two flat ellipses, the crown was six flat circles. And a fourth the shot found that
+  was on no list: the hint, the first thing a new player is ever told, is dark ink on dark grass
+  and could not be read. It stands on paper now. ⛔ One of my own fixes was worse than the fault
+  for a round, seen by reshooting. The gate counts PIXELS off the canvas rather than reading the
+  size number, because a size can be right while the drawing is a mark.
+- **A11 the lint reads canvas fonts, all twelve.** No stamp, tooling only. Every lint now walks
+  the script block, reads every `px` in font context (a literal, or a `Math.max` floor), and
+  refuses anything under 11.2 px, which is 0.7 rem at a 16 px root. Watched to fail in five
+  games with a real 10 px insertion, each removed and verified byte identical. A size it cannot
+  read statically is a NOTE naming the lines, not a guess. All twelve pass and there are zero
+  live violations, because the three the Sep 06 grep found were fixed by hand; the gate holds
+  the line from here. ⛔ It found one thing for the list: Asterism's poster preview (call 41).
 
 ## 7. THE PROMPT TO PASTE INTO OPUS (Sep 07)
 
