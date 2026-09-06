@@ -69,7 +69,7 @@ are yours alone and are marked **STEPHEN**. Everything else is copied straight f
 
 | Field | Value |
 |---|---|
-| App signing | Use **Play App Signing** (Google holds the signing key; you keep the upload key). **STEPHEN** generates the upload keystore on his own machine, backs it up off the codespace. |
+| App signing | Use **Play App Signing** (Google holds the signing key; you keep the upload key). **DONE Sep 06 (option 2):** Fable generated the upload keystore and re signed the bundle; both are in the private vault release `vault-20260906-ftw-upload` with the README that carries the password and the Console steps. Upload `flock-the-world-1.0-upload-signed.aab`. After the first upload, send Fable the APP SIGNING key's SHA-256 from Setup, App signing, for assetlinks. |
 | App bundle | the signed `.aab` from `store/ftw-play/twa/app-release-bundle.aab` (see BUILD.md) |
 | Release name | 1.0.0 (1) |
 | Release notes | First release. Four win doors, three operations, three resistance levels. No ads, no accounts, works offline. |

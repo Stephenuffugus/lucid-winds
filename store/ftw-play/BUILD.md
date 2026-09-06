@@ -32,7 +32,17 @@ BUBBLEWRAP_KEYSTORE_PASSWORD=android BUBBLEWRAP_KEY_PASSWORD=android \
 ```
 Outputs: `app-release-bundle.aab` (what Play takes), `app-release-signed.apk` (sideload to test).
 
-## Signing for the store (STEPHEN, on his own machine)
+## Signing for the store (DONE Sep 06 by Fable, option 2)
+
+The upload keystore is `~/.ftw-keys/flock-upload.keystore` on the codespace (alias `upload`, never
+in a repo) and in the private vault release `vault-20260906-ftw-upload` with its password in the
+README there. The bundle `flock-the-world-1.0-upload-signed.aab` in that release is
+`twa/app-release-bundle.aab` with its debug signature stripped and re signed with that key
+(jarsigner, SHA256withRSA, verified). To sign a new bundle: strip `META-INF/*.SF`, `*.RSA` and
+`MANIFEST.MF`, then `jarsigner -keystore ~/.ftw-keys/flock-upload.keystore -sigalg SHA256withRSA
+-digestalg SHA-256 -signedjar out.aab in.aab upload`. The old text follows for the record.
+
+## Signing for the store (the original note, STEPHEN on his own machine, superseded)
 
 Play App Signing: Google keeps the app signing key, you keep an **upload key**. Generate it once,
 back it up off the codespace:
