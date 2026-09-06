@@ -353,6 +353,25 @@ on branch `add-sproing-jumper` tonight.
   that needs no call is A7, the land at the lee and the bay (a flat dusk silhouette, a
   straight far shore, no stone in the palm view). Nothing here is half built.
 
+- 2026-09-07 Opus (lead): **A7 IS DONE. THE LAND, AND THE STONE IN THE PALM.** Stamp
+  `20260907b` in three places. `node tools/check.js` ALL GATES PASSED over the seven.
+  Both thin list items are closed and neither needed any art: the point is a wooded shore with
+  a gradient mass and a skyline drawn from the same continuous sines the far bank uses, and the
+  stone you picked is held at the right edge of the frame and goes when the stone goes, which
+  also fills the empty bottom third the thin list names. D43.
+  **⛔ THREE OF MY OWN PROBES WERE WRONG FIRST** and each is worth carrying (D44): the trees
+  vanished at distance and the gate correctly measured a ruled line; the palm probe counted warm
+  pixels and was measuring the SUN'S ROAD on the water, 273 with the stone against 258 without;
+  and its colour threshold was chosen rather than read, at a red floor of 90 when the middle of
+  the stone is 78. The land edge probe's first find was real: it was reading the two pixel strip
+  where the far treeline's polygon closes under the horizon, at the same y in every column.
+  **⛔ AND ONE ASSERTION WAS DELETED FOR BEING DECORATION.** The boundary's step count separates
+  30/28/23 wooded from 20/21/19 ruled, which at 320 is a margin of one. Only `turns`, how often
+  the skyline changes direction, holds: 8 to 10 against 4. Watched to fail with the trees taken
+  out and with the hand keeping the stone in flight.
+  Shots opened: `p2-lee.png` three times, `p2-bay.png`.
+  **Next action:** P4 step 2, the turn, still waits on call 22. Nothing here is half built.
+
 ---
 
 ## 0. RULES OF ENGAGEMENT

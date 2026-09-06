@@ -395,3 +395,41 @@ The gate reads the water at the exact point the thumb will hold, with no touch o
 then reads it again mid wind up; emptying `drawSpinRing` turns it red, and deleting the line
 that stops drawing once the arm is fast turns the companion assertion red. A gate that watched
 `G.spin` would have passed over a ring that was never painted.
+
+**D43 (2026-09-07, Opus) — the land is a wooded point, and the hand is not empty.** Both are on
+the thin list and both were exactly as it says.
+- **The point was one flat black polygon with a ruled top edge** running off the left of the
+  screen: a piece of cardboard laid on the water. Three things, all code drawing. The mass is a
+  gradient, near land a shade warmer than far, because the tip is sixteen metres away and the
+  shoulder is half a kilometre. A treeline stands on its landward edge, drawn from the SAME
+  continuous `treeH` sum of sines the far bank uses so the two read as one country and it scrolls
+  with the yaw. And the wet lip takes a little of the sun near the tip, where the water is bright.
+- **There was no stone in the palm** and the thumb's bottom third was empty water, both on the
+  thin list. The stone you picked is now held at the right edge, cut by the frame's bottom, out
+  of the seam's way and a long way from the bottom left 120 by 120 the music chip owns. It goes
+  when the stone goes.
+⛔ THE FIRST DRAFT OF THE HAND DREW TWO ROUND FINGERTIPS ON THE FACE OF THE STONE and it read as
+a pair of eyes on a tan blob, which is worse than the empty water it was meant to fill. A hand at
+the bottom of a frame is one shape rising from off screen with the stone cradled in it.
+
+**D44 (2026-09-07, Opus) — three probes for this were wrong before they were right, and each one
+was wrong in a way worth naming.**
+1. **The trees vanished.** At `min(1, s * 0.055)` the scale at the far end of the point, six
+   hundred metres out, was near zero, so six hundred pixels of skyline drew as a ruled line and
+   the gate measured a deviation of nought. A treeline at six hundred metres is still a fringe:
+   the height falls with distance to a floor of two and a half pixels rather than to nothing.
+2. **The palm probe was measuring the lake.** It counted warm pixels in a box, and the sun's road
+   lies across that water at the stance the gate looks from: 273 with the stone in hand and 258
+   without. A stone is a SHAPE, so what is measured now is the longest unbroken run of stone
+   coloured pixels down the middle of the palm, 46 with it and 3 without. Its threshold was then
+   read OFF THE CANVAS rather than chosen: down the middle of the stone the pixels are 78,61,40,
+   and at a red floor of 90 the probe could not see the stone it was written for.
+3. **The land edge probe found a ruled line and it was right.** It was reading the two pixel
+   strip where the far treeline's polygon closes just under the horizon, at the same y in every
+   column, which is precisely the fault the assertion forbids. The run had to be fourteen device
+   rows, and the dark threshold had to rise from 34 to 44 because the land is a gradient now and
+   its near end is lighter than its old flat black.
+⛔ AND ONE ASSERTION WAS DELETED FOR BEING DECORATION: with the trees the boundary steps 30, 28
+and 23 times at the three sizes and without them 20, 21 and 19. At 320 the two bands are one
+apart. Only `turns`, how often the skyline changes DIRECTION, separates cleanly: 8 to 10 wooded
+against 4 ruled. A diagonal steps on its own and never turns.
