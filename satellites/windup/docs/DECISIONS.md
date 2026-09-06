@@ -100,3 +100,29 @@ wrong, and what was chosen instead. Written as it happened.
   plays, and only SAVE TO MY SHELF puts it on their shelf. The suite checks that
   a freshly opened link leaves the shelf holding only the three that come in the
   box.
+
+## P3, export and polish
+
+- **The PDF is written by hand.** A PDF is a header, a handful of objects, a
+  cross reference table and a trailer. Pulling in a library to emit four hundred
+  circles would have been the largest dependency in the fleet. Each hole is four
+  Bezier curves because a PDF has no circle, and each curve is on its own line
+  so a person and a gate can both read the content stream.
+- **A4, one page per 250 mm of strip, cut marks on both edges, and the beta
+  label printed on the page itself** rather than only on the button, because the
+  page is what ends up next to the scissors.
+- **Swing is for the auto play and nothing else.** When a hand is on the crank
+  the hand is the timing, and a game that pushed a player's own off beats around
+  would be arguing with them.
+- **Chord hints are off by default**, as the design asks. They are a crutch that
+  turns a music box into a spreadsheet.
+- **With motion off a tine still LIGHTS, it just does not bend.** The flick is
+  how a player sees which note sounded, so it may be quietened but never taken
+  away.
+- **The counting of timers became a reading of them.** "Nothing schedules a note
+  by wall time" was written as "at most four setTimeouts" and cried on correct
+  code as soon as the exporter needed one to stop a recording and one to revoke
+  a blob URL.
+- **The assembly is centred in the room.** Hung off the bottom of the screen the
+  case sat in the lower half of a 412 by 915 phone with two hundred and eighty
+  pixels of empty cloth above it.

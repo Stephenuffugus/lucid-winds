@@ -26,7 +26,7 @@ var TEST_SRC = extract(HTML, '// ---- TEST_EXPORT_START ----', '// ---- TEST_EXP
 var EXPORTS = ['CONFIG', 'makeRNG', 'seedFromString', 'mixSeed', 'clamp',
   'newStrip', 'canPunch', 'punch', 'unpunch', 'stripLength', 'holesAt', 'sortHoles',
   'packStrip', 'unpackStrip', 'seedMelody', 'STARTERS', 'noteHz', 'decayFor',
-  'jitterFor', 'packGift', 'unpackGift', 'WRAPS', 'stepSeconds', 'stepAt', 'mmForSteps', 'dbToGain', 'envSeconds', 'TEST'];
+  'jitterFor', 'packGift', 'unpackGift', 'WRAPS', 'swingOffset', 'stepSeconds', 'stepAt', 'mmForSteps', 'dbToGain', 'envSeconds', 'TEST'];
 
 function build(over) {
   var src = SIM_SRC, k;

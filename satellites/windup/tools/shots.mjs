@@ -98,5 +98,30 @@ await withPage(375, 667, async (page, shot) => {
   if (want('p2-shelf')) await shot('p2-shelf');
 });
 
+/* the three sizes the plan names, on the shot that matters most */
+for (const [w, h, tag] of [[412, 915, 'p3-412'], [375, 667, 'p3-375'], [320, 568, 'p3-320']]) {
+  await withPage(w, h, async (page, shot) => {
+    await page.evaluate(() => {
+      WINDUP_TEST.state().advanceMm = 20 * WINDUP_TEST.config().MM_PER_STEP;
+      WINDUP_TEST.state().crankAngle = 1.4;
+      WINDUP_TEST.state().flick[11] = 1;
+      WINDUP_TEST.state().flick[7] = 0.4;
+    });
+    await waitFrames(page, 3);
+    if (want(tag)) await shot(tag);
+  });
+}
+/* the punch editor with the chord hints on, which is the option most people
+   will never turn on and which has to look right for the ones who do */
+await withPage(375, 667, async (page, shot) => {
+  await page.evaluate(() => {
+    WINDUP_TEST.settings().hints = 1;
+    document.getElementById('btnPunch').click();
+    WINDUP_TEST.punch().play = 4;
+  });
+  await waitFrames(page, 3);
+  if (want('p3-hints')) await shot('p3-hints');
+});
+
 s.close();
 console.log('shots done');

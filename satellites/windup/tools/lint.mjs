@@ -106,11 +106,16 @@ say(SIM.indexOf('createOscillator') < 0 && SIM.indexOf('AudioContext') < 0
   && SIM.indexOf('currentTime') < 0, 'and no audio node and no context time');
 const canPunches = (SIM.match(/function canPunch\(/g) || []).length;
 say(canPunches === 1, 'and there is exactly one rule about where a hole may go (' + canPunches + ')');
-/* ⛔ nothing schedules a NOTE by wall time. setTimeout is allowed for a toast
-   and for the auto play's scheduler tick, and both are named here so that a
-   third one has to be argued for. */
-const timers = [...CODE.matchAll(/set(?:Timeout|Interval)\s*\(/g)].length;
-say(timers <= 4, 'nothing new schedules itself by wall time (' + timers + ' timers)');
+/* ⛔ NOTHING SCHEDULES A NOTE BY WALL TIME, which is the law. Counting timers
+   was the first way this was written and it cried on correct code the moment
+   the exporter needed one to stop a recording and one to revoke a blob URL: a
+   count is a proxy for the law, not the law. What matters is what a timer DOES,
+   so this reads the body of every one of them. */
+const timers = [...CODE.matchAll(/set(?:Timeout|Interval)\s*\(/g)];
+const noteTimers = timers.filter(m => CODE.slice(m.index, m.index + 260).indexOf('tine(') >= 0);
+say(noteTimers.length === 0,
+  'no timer anywhere fires a note (' + timers.length + ' timers, ' + noteTimers.length + ' of them touching a tine)');
+say(timers.length <= 10, 'and the page has not filled up with them (' + timers.length + ')');
 /* ⛔ no space before the paren. With `\s*` in it this matched the PROSE of an
    assertion, "far enough apart for the tine (2 steps)", and reported the game
    as broken while it was perfectly correct. */

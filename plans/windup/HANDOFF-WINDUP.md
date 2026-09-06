@@ -13,16 +13,15 @@ every difference is in section 3 with its reason.
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
 - 2026-09-05 Fable: plan written. Nothing built.
-- 2026-09-06 Opus: **P0, P1 AND P2 ARE DONE.** Seven gates green: `sim` (112
-  assertions), `lint`, `tine`, `crank`, `gift`, `layout`, `wav`. Every gate
-  watched to fail. The box, the crank, the punch editor, the shelf, and the gift:
-  a link that carries the song, the name, the signature, the line and the
-  wrapping, opened in a browser that has never seen the game, with a ribbon that
-  takes sixty pixels of real drag.
-  **Next action:** P3 step 1, EXPORT. The audio recording off the master, the
-  strip PNG at four pixels a step, and the hand written PDF with its beta label,
-  then `test/pdf.mjs`: the Blob starts with `%PDF-1.4`, has one `/Page` per
-  250 mm, and the hole count in the content stream equals the strip's.
+- 2026-09-06 Opus: **THE WHOLE PLAN IS DONE, P0 through P3.** Eight gates green:
+  `sim` (119 assertions), `lint`, `tine`, `crank`, `gift`, `pdf`, `layout`,
+  `wav`. Every gate watched to fail. The box, the crank, the punch editor, the
+  shelf, the gift with its ribbon, the audio recording, the strip picture and
+  the hand written printable PDF.
+  **Next action:** nothing is half built. The morning report at the top of
+  section 15 says what is thin and names three Director calls, the first of which
+  is Stephen printing one strip and laying it on a real one before the PDF
+  leaves beta. ⛔ AND HE HAS NOT HEARD IT: `docs/shots/p0-tine.wav`.
 
 ---
 
@@ -646,6 +645,106 @@ end; it hangs down off the crossing now with a knot and its own shadow.
 
 ---
 
+### P3, export and polish (2026-09-06)
+
+`node test/pdf.mjs`
+
+```
+ok    it is a PDF, and it says so in the first eight bytes
+  ok    and it ends the way one does
+  ok    and it carries a cross reference table
+  ok    and a trailer that points at the catalogue
+  ok    one page for every 250 mm of strip: 100 eighths is 400 mm, so 2 pages (2)
+  ok    and every hole on the strip is drawn on it (42 of 42)
+  ok    each one drawn as four curves, because a PDF has no circle (168)
+  ok    and the only font in it is one every reader has
+  ok    and it says beta on the page itself
+  ok    and who made it
+  ok    and what the song is called
+  ok    the page is A4 in points (595.28 by 841.89)
+  ok    a strip longer than a page runs onto the next one (4)
+  ok    and no hole is lost at the join (120)
+  ok    and the sheets say which is which
+  ok    an empty strip is still a page of blank paper you can cut out
+  ok    the strip picture is a picture (268 by 180)
+  ok    with holes in it (1073 dark pixels)
+  ok    and it is paper with holes, not a black rectangle
+  ok    #btnExpAudio is a 56 px target (56)
+  ok    #btnExpImage is a 56 px target (56)
+  ok    #btnExpPdf is a 56 px target (56)
+  ok    and the screen says the printable strip is beta
+  ok    no page errors
+
+PDF OK
+```
+
+`node sim.js --test`
+
+```
+PASSED 119 / FAILED 0   (total 119)
+WINDUP TEST OK
+```
+
+`node tools/thumb.mjs`
+
+```
+512x512  53 KB  16.5 percent paper, 1.9 percent brass, 21.5 percent walnut, brass by fifth: 1.6 0.3 4.3 2.7 0.5
+docs/thumb.png written
+THUMB OK
+```
+
+`node tools/check.js`
+
+```
+sim             pass  0s
+lint            pass  0s
+tine            pass  6s
+crank           pass  7s
+gift            pass  6s
+pdf             pass  2s
+layout          pass  13s
+wav             pass  4s
+
+ALL GATES PASSED
+```
+
+**Watched red.**
+
+```
+$ (holes that fall off the end of a page)
+  FAIL  and every hole on the strip is drawn on it (36 of 42)
+  FAIL  and no hole is lost at the join (61)
+$ (one page however long the strip is)
+  FAIL  one page for every 250 mm of strip: 100 eighths is 400 mm, so 2 pages (1)
+$ (the beta label quietly dropped)
+  FAIL  and it says beta on the page itself
+$ (a strip picture that is a black rectangle)
+  FAIL  and it is paper with holes, not a black rectangle
+```
+
+**The lint gate had to stop counting and start reading.** "Nothing schedules a
+note by wall time" was written as "at most four setTimeouts", and it went red on
+correct code the moment the exporter needed one to stop a recording and one to
+revoke a blob URL. A count is a proxy for a law, not the law: it reads the body
+of every timer now and asks whether any of them touches a tine.
+
+**Shots at the three sizes, opened and read.** `p3-412.png`, `p3-375.png`,
+`p3-320.png`, `p3-hints.png`, and `docs/thumb.png`.
+
+- A tall phone is not a bigger phone. Hung off the bottom of the screen, the
+  case sat in the lower half of a 412 by 915 with two hundred and eighty pixels
+  of empty cloth over it. The case grows with the screen and the assembly is
+  centred in the room.
+- The portal tile went through four framings. Anchored to the top of the case it
+  had two fifths of empty cloth under it; sized off the case alone the crank's
+  knob was cut in half by the right edge.
+- The tile tool's own check was nearly a coin toss: brass over the whole tile is
+  about two percent whatever it looks like, and the threshold sat exactly on the
+  measured value. It measures fifth by fifth now, where the comb and the crank
+  actually are.
+
+---
+
 ## 14. THE OVERNIGHT PROTOCOL
 
 As `plans/fathom/HANDOFF-FATHOM.md` section 14, with `P0, P1, P2, P3` of this file and the browser gates `tine, crank,
@@ -655,4 +754,69 @@ gift, pdf, layout`.
 
 ## 15. THE MORNING REPORT
 
-The template in `plans/fathom/HANDOFF-FATHOM.md` section 15, with this file's phases. Add one line: **Listen to:** the WAV.
+### Windup, finished 2026-09-06
+
+**⛔ LISTEN TO THIS FIRST:** `satellites/windup/docs/shots/p0-tine.wav`, ten
+seconds. One middle C on its own, the C above it, then the first seven notes of
+Twinkle at the auto tempo. The design says one note has to sound like a memory
+and that is your ear, not a gate. Nobody in this build has heard it.
+
+**Where it is.** P0, P1, P2 and P3 are done, committed and pushed on
+`add-sproing-jumper`. Eight gates green: `sim` (119 assertions), `lint`, `tine`,
+`crank`, `gift`, `pdf`, `layout`, `wav`, plus two tools that refuse to lie
+(`tools/thumb.mjs` and `tools/tinewav.mjs`). Every assertion in every gate has
+been watched to fail.
+
+**What it is.** A little brass and walnut music box on a velvet cloth. Feed it a
+paper strip, punch holes with your finger, then turn the crank yourself and hear
+your melody plink out at exactly the speed your finger cranks. Wrap it as a
+gift: send a link and the person on the other end sees a ribboned box, pulls the
+ribbon, reads your line and cranks your song.
+
+**The three best things in it.**
+
+1. The crank really is the clock. `test/crank.mjs` drives a real pointer in a
+   circle round the hub and measures what the game does with it: two turns move
+   the paper 18.8 eighths against the 18.8 the config asks for. Advance it by
+   wall time instead and that reads 11.0, and the box starts playing backwards.
+2. The gift is a present, not a dialog. It opens in a browser that has never
+   seen the game, carrying the song, the name, the signature, the line and the
+   wrapping in a link 122 characters long, and it takes sixty pixels of real
+   drag on the ribbon to open.
+3. The printable strip is a real PDF written by hand, one page per 250 mm, with
+   every hole on it and cut marks down both edges.
+
+**What is thin, honestly.**
+
+- **Nobody has heard it and nobody has played it on a phone.** The test browser
+  has the one autoplay flag a phone does not.
+- **Nobody has printed a strip.** `MM_PER_STEP` is 4 and `ROW_PITCH_MM` is 2 and
+  those are the plan's numbers, not measured ones. The button says beta and the
+  page says beta.
+- **No painted art at all.** The case, the cloth and the three wrapping papers
+  are drawn by code. The wraps are the weakest thing to look at and they are the
+  first thing a person receiving a gift sees. `docs/ART_ASSETS.md` says what
+  would change the most.
+- **The auto play is a tick, not the Swell scheduler.** The plan pointed at
+  Swell's two clock lookahead scheduler and this uses a per frame advance. It
+  holds at sixty frames a second and it will drift on a slow phone. It is the
+  one place the build knowingly took the smaller thing, because the crank is the
+  product and the button is not.
+- **A tall phone still has cloth to spare.** The case grows with the screen and
+  the assembly is centred, but at 412 by 915 there is a lot of table.
+
+**Three Director calls waiting.**
+
+1. **The printable strip's spacing.** Print one and lay it on a real Kikkerland
+   strip. Until then the PDF stays beta. This is the one number in the game that
+   costs a person paper if it is wrong.
+2. **Happy Birthday opens on two of the same note**, and a real fifteen note box
+   cannot play those an eighth apart, because the tine is still moving. The
+   starter is punched with them a quarter apart, which is what a real strip
+   does, and it changes the rhythm of the pickup. If that reads wrong to you it
+   is the rule that has to move, not the song.
+3. **The name.** WINDUP is your folder and title. Tinkerbox and The Little Crank
+   were the alternates and they stay here, parked.
+
+**And the answers section 10 asked for.** Fifteen notes only. The signature line
+is on by default and editable. The crank has a hub so it needs no circle fit.
