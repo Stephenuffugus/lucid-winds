@@ -120,6 +120,18 @@ html,body{margin:0;padding:0;height:100%;background:var(--floor);color:var(--ink
   padding:calc(18px + var(--safeT)) 18px calc(18px + var(--safeB));
   overflow-y:auto;overscroll-behavior:contain}
 .screen.on{display:flex}
+/* the title lets the rug through: a scrim, not a fill */
+/* light where the railway is, dark where the buttons are: a scrim that is one
+   flat wash over everything turns the rug to mud and the wood loses the one
+   thing it has, which is being the brightest thing in the room */
+#scrTitle{background:linear-gradient(to bottom,rgba(110,82,50,.08) 0%,rgba(110,82,50,.13) 34%,rgba(92,66,36,.42) 50%,rgba(78,54,24,.74) 66%,rgba(78,54,24,.88) 100%);
+  justify-content:flex-end}
+#scrTitle .title{text-shadow:0 2px 6px rgba(60,40,18,.75);color:#FBF3E2}
+#scrTitle .tag{color:#EFDCC0;text-shadow:0 1px 4px rgba(60,40,18,.7)}
+#scrTitle .btn.ghost{border-color:#E8D4B2;color:#F3E4CE;background:rgba(78,54,24,.35)}
+@media (orientation:landscape){
+  #scrTitle{background:linear-gradient(to bottom,rgba(110,82,50,.08) 0%,rgba(96,70,40,.40) 28%,rgba(78,54,24,.74) 46%,rgba(78,54,24,.9) 100%)}
+}
 .sheet{position:absolute;left:0;right:0;bottom:0;z-index:12;background:var(--card);
   border-top:3px solid var(--ink);border-radius:18px 18px 0 0;max-height:90%;
   display:none;flex-direction:column;align-items:center;
@@ -129,7 +141,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--floor);color:var(--ink
 .row{display:flex;gap:10px;width:100%;max-width:360px}
 .row > *{flex:1 1 0;min-width:0;width:auto;max-width:none}
 .title{font-size:2rem;font-weight:800;letter-spacing:.12em;text-align:center;margin:0 0 2px}
-.tag{font-size:.92rem;text-align:center;color:#6B5636;margin:0 0 16px;line-height:1.6}
+.tag{font-size:.86rem;text-align:center;color:#6B5636;margin:0 0 16px;line-height:1.6}
 .cap{font-size:.74rem;letter-spacing:.18em;color:#6B5636;text-transform:uppercase;margin:8px 0 2px}
 .lede{font-size:.94rem;line-height:1.7;margin:6px 0}
 .tiny{font-size:.78rem;line-height:1.6;color:#6B5636;margin:4px 0}
@@ -193,7 +205,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--floor);color:var(--ink
     <div class="col">
       <div class="title">WHISTLESTOP</div>
       <p class="tag">You have built the track. Now run the railroad.</p>
-      <button class="btn big" id="btnBuild">BUILD</button>
+      <button class="btn big on" id="btnBuild">BUILD</button>
       <button class="btn" id="btnPuzzles">PUZZLES</button>
       <button class="btn ghost" id="btnHow">HOW</button>
     </div>
@@ -1737,6 +1749,7 @@ var G = {
   puzzleId: -1,
   slot: 0,
   running: false,
+  demo: false,
   props: [],
   selected: -1,
   ghost: null,
@@ -1767,6 +1780,16 @@ function wy(py) { return (py - midY()) / V.zoom + V.cy; }
 function measureChrome() {
   var t = el('tray'), g = el('goalLine'), wc = el('winCard'), r;
   V.padT = 58;
+  /* on the title the railway runs in the clear band above the buttons */
+  /* upright there is a clear band above the buttons and the railway runs in
+     it; on its side there is no such band, so the railway is a full bleed
+     backdrop behind the fade instead of a smudge squeezed into the top */
+  if (G.demo) {
+    V.padL = 0; V.padR = 0;
+    if (V.h > V.w) { V.padT = 24; V.padB = Math.round(V.h * 0.56); }
+    else { V.padT = 8; V.padB = 8; }
+    return;
+  }
   V.padL = 0; V.padR = 0;
   /* ⛔ the win card takes half a landscape screen and the first build left the
      railway centred behind it, so the moment the player won they could no
@@ -2835,7 +2858,8 @@ function tick(dt) {
     HINT_T -= dt;
     if (HINT_T <= 0) { el('hint').classList.remove('on'); el('goalLine').classList.remove('behind'); }
   }
-  if (!G.st || G.screen !== 'Play') return;
+  if (!G.st) return;
+  if (G.screen !== 'Play' && !G.demo) return;
   var moving = 0, bogies = 0, fastest = 0, i;
   for (i = 0; i < G.st.trains.length; i++) {
     var tr = G.st.trains[i];
@@ -3311,13 +3335,39 @@ function importFromHash() {
 
 /* ========================= 17. THE SCREENS ========================= */
 var SCREENS = ['Title', 'Select', 'Sand', 'How'];
+/* a small railway with one train on it, running behind the title */
+function startDemo() {
+  G.demo = true;
+  G.mode = 'build';
+  G.puzzleId = -1;
+  G.props = [];
+  G.propSeed = 'demo';
+  G.selected = -1;
+  G.layout = buildLayout([['at', 4.2, 3.2, 0], ['rep', 2, 'straight'], ['rep', 4, 'curveR'],
+    ['rep', 2, 'straight'], ['rep', 4, 'curveR']]);
+  G.st = null;
+  rebuild(false);
+  G.st.stationSpec = null;
+  var tr = newTrain('red', 'Red');
+  tr.cars = 3;
+  tr.home = null;
+  seedRoute(G.st.g, tr, G.st.g.pieces[0].edges[0], 0, 1);
+  tr.speedIx = 2;
+  G.st.trains.push(tr);
+  V.userMoved = false;
+  measureChrome();
+  fitView();
+}
 function showScreen(name) {
   var i;
   for (i = 0; i < SCREENS.length; i++) {
     var s = el('scr' + SCREENS[i]);
     if (s) s.classList.toggle('on', SCREENS[i] === name);
   }
+  var was = G.screen;
   G.screen = name;
+  if (name === 'Title') { if (!G.demo || was === 'Play') startDemo(); }
+  else if (name !== 'Play') G.demo = false;
   chromeFor(name);
   if (name !== 'Play') { hideHandles(); el('winCard').classList.remove('on'); }
 }
@@ -3361,6 +3411,7 @@ function openSandbox(slot, layout) {
   G.slot = slot;
   G.puzzleId = -1;
   G.result = null;
+  G.demo = false;
   G.undo.length = 0; G.redo.length = 0;
   refreshUndo();
   G.props = [];
@@ -3407,6 +3458,7 @@ function startPuzzle(id) {
   G.mode = 'puzzle';
   G.puzzleId = id;
   G.result = null;
+  G.demo = false;
   G.undo.length = 0; G.redo.length = 0;
   G.selected = -1;
   G.props = [];

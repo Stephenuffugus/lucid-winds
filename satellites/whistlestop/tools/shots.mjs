@@ -53,6 +53,22 @@ async function withPage(w, h, fn) {
 /* the hint fades on its own; a shot is judged on the composition */
 const settle = async (page) => { await sleep(3800); await waitFrames(page, 2); };
 
+/* ---- the feel test the plan makes a hard stop: a loop and NO TRAINS ---- */
+for (const [w, h, tag] of [[667, 375, 'wide'], [375, 667, 'tall']]) {
+  await withPage(w, h, async (page, shot) => {
+    await tap(page, '#btnBuild');
+    await waitFrames(page, 2);
+    await tap(page, '#slotList .card');
+    await waitFrames(page, 2);
+    await page.evaluate(() => {
+      WHISTLESTOP_TEST.buildOps([['at', 5.2, 2.6, 0], ['rep', 2, 'straight'], ['rep', 4, 'curveR'],
+        ['rep', 2, 'straight'], ['rep', 4, 'curveR']]);
+    });
+    await settle(page);
+    if (want('p1-loop')) await shot('p1-loop-' + tag);
+  });
+}
+
 /* ---- the title, and the two lists ---- */
 for (const [w, h, tag] of [[667, 375, 'wide'], [375, 667, 'tall']]) {
   await withPage(w, h, async (page, shot) => {
