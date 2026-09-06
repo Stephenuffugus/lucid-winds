@@ -165,6 +165,23 @@ if (want('p2-kites')) {
   save('p2-kites', await page.screenshot({ type: 'png' }));
   await browser.close();
 }
+if (want('p2-landing')) {
+  /* the landing flourish: the kite placed low on a released line in Gentle sinks to the grass; the shot is 0.9 s of sim after the model says it landed */
+  const { browser, page } = await open(base, { width: 375, height: 667 });
+  await page.setViewport({ width: 375, height: 667, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
+  await page.evaluate(() => localStorage.setItem('lw_updraft_v1', JSON.stringify({ v: 1, journal: { bestAlt: 0, longest: 0, tricks: {}, hours: 0, flights: 0 }, kite: 'diamond', mood: 'gentle' })));
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForFunction(() => window.UPDRAFT_DEV && window.UPDRAFT_DEV.screen() === 'title', { timeout: 20000 });
+  await toField(page);
+  await page.evaluate(() => window.UPDRAFT_DEV.place({ L: 14, el: 0.35, az: 0.1, launched: true }));
+  await page.waitForFunction(() => { const s = window.UPDRAFT_DEV.state(); return s && s.ended; }, { timeout: 60000 }).catch(() => console.log('  p2-landing: no landing in 60 s'));
+  const t0 = await page.evaluate(() => window.UPDRAFT_DEV.state().t);
+  await untilSim(page, t0 + 0.9, 10000).catch(() => {});
+  const st = await page.evaluate(() => window.UPDRAFT_DEV.state());
+  console.log('  landing: ended ' + st.ended + ' tip ' + JSON.stringify(st.tip) + ' screen ' + await page.evaluate(() => window.UPDRAFT_DEV.screen()));
+  save('p2-landing', await page.screenshot({ type: 'png' }));
+  await browser.close();
+}
 close();
 const over = wrote.filter(w => w.kb > 200);
 console.log('\n' + wrote.length + ' shots' + (over.length ? ', ' + over.length + ' OVER the limit' : ', all under 200 KB'));

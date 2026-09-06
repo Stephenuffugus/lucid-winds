@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="UPDRAFT">
-<link rel="manifest" href="./manifest.webmanifest?v=20260906d">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260906d">
-<link rel="icon" href="./icon-192.png?v=20260906d">
+<link rel="manifest" href="./manifest.webmanifest?v=20260906e">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260906e">
+<link rel="icon" href="./icon-192.png?v=20260906e">
 <link rel="canonical" href="https://lucidwinds.com/satellites/updraft/">
 <style>
 /*  UPDRAFT
@@ -103,11 +103,11 @@ html,body{margin:0;padding:0;height:100%;background:#8CC6F0;color:var(--ink);
 .toggles .btn{margin:7px 0}
 .stat{font-size:.8rem;color:var(--cream);letter-spacing:.13em;margin:5px 0;text-transform:uppercase}
 #endWord{font-size:1.4rem;letter-spacing:.2em;color:var(--cream);margin:6px 0 2px}
-#toast{position:fixed;left:50%;top:14%;transform:translateX(-50%);
+#toast{position:fixed;left:50%;top:26%;transform:translateX(-50%);
   background:rgba(255,244,224,.94);border:1px solid rgba(32,48,58,.25);
   color:var(--ink);padding:10px 16px;border-radius:12px;font-size:.85rem;
   z-index:40;opacity:0;pointer-events:none;transition:opacity 180ms ease-out;
-  max-width:84%;text-align:center}
+  max-width:90%;text-align:center}
 #toast.on{opacity:1}
 #testPanel{position:absolute;inset:0;z-index:60;background:#04070a;color:#cfe;
   overflow:auto;font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;
@@ -115,7 +115,7 @@ html,body{margin:0;padding:0;height:100%;background:#8CC6F0;color:var(--ink);
 #testPanel.on{display:block}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260906d" defer></script>
+<script src="/music-unlocks.js?v=20260906e" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">UPDRAFT</h1>
@@ -236,6 +236,7 @@ var CONFIG = Object.freeze({
   LEAN_TURN_RATE: 2.2, WINDOW_FLOOR: 0, EL_MAX: 1.0,
   SNAP_TENSION: 1.0, SNAP_HOLD_S: 0.4, STRAIN_AT: 0.75,
   TAIL_PTS: 16, TAIL_SEG: 0.35, TAIL_AIRF: 0.94, TAIL_DRAG: 15, TAIL_CRACK_V: 12,
+  SETTLE_S: 1.4, SETTLE_WIND: 5, /* the landing flourish: the tail lays out over the grass for this long, in this much ground wind */
   APPARENT_MASS: 0.4, LINE_MASS: 0.002, MOTION_CD: 1.2, MOTION_V0: 2, RHO: 1.2, G: 9.81,
   MABEL_X: 22, MABEL_Z: 26, MABEL_R: 7, MABEL_SNAG_H: 12, MABEL_WIGGLE: 3, MABEL_WIGGLE_S: 4, MABEL_GRACE_S: 3,
   CAM_LEAD: 0.35, GROUND_Y: 0,
@@ -360,7 +361,12 @@ function setInput(st, hold, lean) {
 }
 function step(st, dt) {
   var C = CONFIG, k = st.kite;
-  if (st.ended) { st.t += dt; return st; }
+  if (st.ended) {
+    st.t += dt;
+    /* the landing flourish: for SETTLE_S after a clean landing or a tumble the tail keeps moving in a ground breeze and lays out over the grass; a snap freezes at once */
+    if (st.ended !== 'snap' && st.t - st.endT <= C.SETTLE_S) { st.vAz = 0; st.vEl = 0; stepTail(st, dt, C.SETTLE_WIND * (st.az < 0 ? -1 : 1), 0); }
+    return st;
+  }
   var p = kitePos(st);
   var w = windAt(st.wind, p.x, p.y, p.z, st.t);
   st.gust = gustAt(st.wind, p.x, p.z, st.t);
@@ -535,6 +541,7 @@ function stepTail(st, dt, windAz, windEl) {
     p.w = p.pw + vw + (C.TAIL_DRAG * (awW * dt - vw) - C.G) * dt * dt;
   }
   pts[0].u = 0; pts[0].w = -0.3; pts[0].pu = 0; pts[0].pw = -0.3;
+  if (st.ended) { for (i = 1; i < n; i++) { if (pts[i].w < -0.34) { pts[i].w = -0.34; pts[i].pw = pts[i].w; } } } /* the grass is a floor once the kite is down */
   var pass;
   for (pass = 0; pass < 2; pass++) {
     for (i = 1; i < n; i++) {
@@ -663,6 +670,7 @@ var TEST = {
     this.runSuite('launch', suiteLaunch);
     this.runSuite('loop', suiteLoop);
     this.runSuite('descend', suiteDescend);
+    this.runSuite('settle', suiteSettle);
     this.runSuite('stall', suiteStall);
     this.runSuite('dive', suiteDive);
     this.runSuite('park', suitePark);
@@ -780,6 +788,22 @@ function suiteDescend(T) {
   T.assert('a release at 40 m in Gentle lands within 60 s', st.ended && tLand <= 60, 'ended ' + st.ended + ' at ' + tLand);
   T.assert('and it descended steadily', rises === 0, rises + ' rises of over a metre');
   T.assert('and softly', st.ended === 'clean' || st.ended === 'tumble');
+}
+function suiteSettle(T) {
+  /* the landing flourish: after a landing the tail lays out over the grass instead of hanging under the kite, the kite stays down, and the tail is still a chain */
+  var st = newFlight({ mood: 'gentle', seed: 1, wind: CLEAN, L: 50, el: 0.9273, launched: true });
+  runScript(st, [{ t: 0, hold: false, lean: 0 }], 60);
+  var tip0 = st.tail.pts[15], w0 = tip0.w, n = 0, dt = 1 / CONFIG.SIM_HZ, worst = 0, i;
+  T.assert('the glide landed', !!st.ended && st.ended !== 'snap', 'ended ' + st.ended);
+  while (st.t - st.endT < 1.5) {
+    step(st, dt); n++;
+    var ls = tailLengths(st); for (i = 0; i < ls.length; i++) worst = Math.max(worst, Math.abs(ls[i] - CONFIG.TAIL_SEG) / CONFIG.TAIL_SEG);
+  }
+  var tip = st.tail.pts[15];
+  T.assert('within 1.5 s the tail lies along the grass, the tip 2 m or more to the side', Math.abs(tip.u) >= 2, 'tip u ' + tip.u.toFixed(2) + ' (was hanging at w ' + w0.toFixed(2) + ')');
+  T.assert('and not under it', tip.w >= -0.5, 'tip w ' + tip.w.toFixed(2));
+  T.assert('the tail is still a chain within 1 percent through the settle', worst <= 0.01, 'worst ' + (worst * 100).toFixed(2) + ' percent');
+  T.assert('and the kite stays down, the flight still ended', st.ended && st.el === 0 && altitude(st) === 0, 'el ' + st.el + ' ended ' + st.ended);
 }
 function suiteStall(T) {
   /* at the side of the window (az 1.2) the Diamond is below stall speed even in Fresh;
@@ -1059,8 +1083,16 @@ function drawMabel(st) {
     g.beginPath(); g.arc(mx + blobs[i][0] * r, crownY + blobs[i][1] * r, blobs[i][2] * r, 0, TAU); g.fill();
   }
   if (st && st.snagged) {
-    g.strokeStyle = 'rgba(255,244,224,0.7)'; g.lineWidth = 1.5; g.setLineDash([4, 5]);
-    g.beginPath(); g.arc(mx, crownY, r * 1.1, 0, TAU); g.stroke(); g.setLineDash([]);
+    /* Mabel's own mark: a ring of leaves shaken loose, drifting round the crown while she holds the kite */
+    var t = G.motion ? st.t : 0, j;
+    for (j = 0; j < 8; j++) {
+      var a = t * 0.5 + j * TAU / 8, rr = r * (1.12 + 0.06 * Math.sin(t * 2 + j));
+      var lx = mx + Math.cos(a) * rr, ly = crownY + Math.sin(a) * rr * 0.9;
+      g.save(); g.translate(lx, ly); g.rotate(a + t * 1.7); g.scale(1, 0.55);
+      g.fillStyle = j % 2 ? '#7AB356' : '#C8A84B'; g.beginPath(); g.arc(0, 0, Math.max(3, r * 0.09), 0, TAU); g.fill();
+      g.strokeStyle = 'rgba(255,244,224,0.8)'; g.lineWidth = 1; g.stroke();
+      g.restore();
+    }
   }
 }
 function drawLine(st, ks) {
@@ -1110,7 +1142,13 @@ function drawTail(st, ks) {
   }
 }
 function drawKite(st, ks) {
-  var g = CTX, s = ks.size, h = st.heading;
+  var g = CTX, s = ks.size, h = st.heading, lay = 0;
+  if (st.ended && st.ended !== 'snap') {
+    lay = Math.min(1, (st.t - st.endT) / 0.8);
+    var hTo = st.ended === 'clean' ? (st.az < 0 ? -1 : 1) * Math.PI / 2 : st.heading + 2.6;
+    h = h + (hTo - h) * lay;
+    g.save(); g.translate(ks.x, ks.y); g.scale(1, 1 - 0.62 * lay); g.translate(-ks.x, -ks.y);
+  }
   var nx = Math.sin(h), ny = -Math.cos(h);
   var wob = G.motion ? (1 - Math.min(1, st.tN)) * Math.sin(st.t * 37) * s * 0.06 : 0;
   var nose = [ks.x + nx * s, ks.y + ny * s], tail = [ks.x - nx * s * 0.95, ks.y - ny * s * 0.95];
@@ -1122,6 +1160,7 @@ function drawKite(st, ks) {
   g.strokeStyle = 'rgba(32,48,58,0.8)'; g.lineWidth = Math.max(1, s * 0.06);
   g.beginPath(); g.moveTo(nose[0], nose[1]); g.lineTo(right[0], right[1]); g.lineTo(tail[0], tail[1]); g.lineTo(left[0], left[1]); g.closePath(); g.stroke();
   g.beginPath(); g.moveTo(nose[0], nose[1]); g.lineTo(tail[0], tail[1]); g.moveTo(left[0], left[1]); g.lineTo(right[0], right[1]); g.stroke();
+  if (lay) g.restore();
 }
 function render() {
   var st = G.st;
@@ -1197,10 +1236,33 @@ var AUDIO = (function () {
       s.start(); s.stop(ctx.currentTime + 0.12);
     } catch (e) {}
   }
+  function chord() {
+    if (!ctx || !on) return;
+    try {
+      var t = ctx.currentTime, i, hz = [330, 415.3, 495];
+      for (i = 0; i < hz.length; i++) {
+        var o = ctx.createOscillator(), gn = ctx.createGain();
+        o.type = 'sine'; o.frequency.value = hz[i]; gn.gain.value = 0;
+        gn.gain.setTargetAtTime(0.05, t + i * 0.06, 0.08); gn.gain.setTargetAtTime(0, t + 0.6 + i * 0.06, 0.4);
+        o.connect(gn); gn.connect(ctx.destination); o.start(t); o.stop(t + 2.4);
+      }
+    } catch (e) {}
+  }
+  function thud() {
+    if (!ctx || !on) return;
+    try {
+      var s = ctx.createBufferSource(); s.buffer = noiseBuf;
+      var gn = ctx.createGain(); gn.gain.value = 0.3;
+      var f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 180;
+      s.connect(f); f.connect(gn); gn.connect(ctx.destination);
+      gn.gain.setTargetAtTime(0, ctx.currentTime + 0.02, 0.07);
+      s.start(); s.stop(ctx.currentTime + 0.3);
+    } catch (e) {}
+  }
   return {
     setOn: function (v) { on = !!v; if (on) { ensure(); resume(); } else if (ctx) { bedGain.gain.value = 0; whineGain.gain.value = 0; } },
     unlock: function () { if (on) { ensure(); resume(); } },
-    tick: tick, crack: crack, levelsFor: levelsFor, state: state
+    tick: tick, crack: crack, chord: chord, thud: thud, levelsFor: levelsFor, state: state
   };
 })();
 function haptic(ms) { if (!G.haptics) return; try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }
@@ -1260,7 +1322,7 @@ var SAVE = {
 };
 
 /* ========================= 13. BOOT ========================= */
-var STAMP = '20260906d';
+var STAMP = '20260906e';
 function showScreen(name) {
   var ids = { title: 'scrTitle', how: 'scrHow', pause: 'scrPause', mood: 'scrMood', kites: 'scrKites', journal: 'scrJournal', end: 'scrEnd' }, k;
   for (k in ids) $(ids[k]).classList.toggle('on', k === name);
@@ -1311,6 +1373,8 @@ function simTick(dtReal) {
       var e = st.events[i];
       if (e.e === 'crack') { AUDIO.crack(); haptic(10); }
       if (e.e === 'stamp') { showStamp(e.name); haptic(15); }
+      if (e.e === 'clean') { AUDIO.chord(); haptic(20); }
+      if (e.e === 'tumble') { AUDIO.thud(); haptic(25); }
       if (e.e === 'snag') toast('Mabel has it. Wiggle the line: pull, let go, pull.');
       if (e.e === 'freed') toast('Free. Mabel lets go this time.');
       if (e.e === 'launched' && !G.hintShown.lean) { hint('Slide your thumb to lean.'); G.hintShown.lean = 1; }
@@ -1319,7 +1383,7 @@ function simTick(dtReal) {
     if (!st.strain) st.strainBuzzed = false;
     G.acc -= dt; n++;
   }
-  if (st.ended && !st.endShown) { st.endShown = true; setTimeout(function () { if (G.st === st) endFlight(st); }, 700); }
+  if (st.ended && !st.endShown) { st.endShown = true; setTimeout(function () { if (G.st === st) endFlight(st); }, st.ended === 'snap' ? 700 : Math.round(CONFIG.SETTLE_S * 1000) + 200); }
   $('altTag').textContent = Math.round(altitude(st)) + ' M';
 }
 function frame(ts) {
@@ -1423,7 +1487,7 @@ function wire() {
   tapOn('btnHowOk', function () { showScreen('title'); });
   tapOn('btnPause', function () { if (G.st) setInput(G.st, false, 0); G.ptr = null; showScreen('pause'); });
   tapOn('btnResume', function () { showScreen('play'); });
-  tapOn('btnLand', function () { if (G.st) { G.st.ended = G.st.onGround ? 'clean' : 'tumble'; G.st.endT = G.st.t; } showScreen('play'); });
+  tapOn('btnLand', function () { if (G.st) { G.st.ended = G.st.onGround ? 'clean' : 'tumble'; G.st.endT = G.st.t; G.st.events.push({ t: G.st.t, e: G.st.ended }); } showScreen('play'); });
   tapOn('btnMoodPick', function () { openMood('pause'); });
   tapOn('btnMood', function () { openMood('play'); });
   ['Gentle', 'Fresh', 'Blustery'].forEach(function (n) { tapOn('mood' + n, function () { pickMood(n.toLowerCase()); }); });
