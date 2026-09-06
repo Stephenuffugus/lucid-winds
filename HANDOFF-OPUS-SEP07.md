@@ -255,6 +255,18 @@ saw in Airworthy landscape (G35). 8. Wardian's BUY (G37). 9. The rest of section
   rather than being done: Stream Hop is Jimothy under another folder name and says the plural in
   shop copy (call 38), a Steam probe looks for the plural and may never have passed (39), and
   the devcontainer name (40).
+- **A5 Airworthy, the gust whistle unlock.** `20260907a`, live (probe grepped `btnWhistle`,
+  `blowWhistle`, `WHISTLE_UP`). The last named thing in the design that was not built. One tap
+  while the plane is in the air, once per flight, half a second of rising air under it, earned by
+  the first silver in the gym, never offered in a challenge. `docs/REFERENCE.md` written first
+  and its finding is the reason for every rule: no other paper plane game's fold survives contact
+  with a boost button. WHISTLE_UP was MEASURED, not picked: the first number gave 13.7 percent
+  more distance, which is a save; it ships at five percent with the band red in both directions.
+  ⛔⛔ AND IT FOUND SOMETHING OLD: THROW IT has been sitting in the music chip's corner since it
+  was built, at 111 px on a 412 phone, for two reasons that are the same family: the corner check
+  scanned three container selectors and that button is a sibling of the chrome, and even widened
+  to every button the check was running on a screen where neither big button exists. Nine gates
+  green.
 
 ## 7. THE PROMPT TO PASTE INTO OPUS (Sep 07)
 
