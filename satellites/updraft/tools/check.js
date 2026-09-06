@@ -22,7 +22,8 @@ const FAST = process.argv.includes('--fast');
 
 const GATES = [
   { name: 'lint', cmd: ['tools/lint.mjs'], need: 'LINT OK' },
-  { name: 'test', cmd: ['sim.js', '--test'], need: 'UPDRAFT TEST OK' }
+  { name: 'test', cmd: ['sim.js', '--test'], need: 'UPDRAFT TEST OK' },
+  { name: 'audio', cmd: ['test/audio.mjs'], need: 'AUDIO OK' }
 ];
 
 /* Browser gates drive the real page with real pointer events and need

@@ -77,7 +77,9 @@ html,body{margin:0;padding:0;height:100%;background:#8CC6F0;color:var(--ink);
   width:100%;max-width:330px;margin:9px 0}
 .cap{font-size:.75rem;letter-spacing:.16em;color:var(--ink);opacity:.7;margin:14px 0 4px;
   width:100%;max-width:330px;text-align:left}
-#titleArt{width:100%;max-width:330px;height:180px;display:block;margin-top:6px;margin-bottom:6px}
+#titleArt{width:100%;max-width:330px;height:clamp(180px,30vh,300px);display:block;margin-top:6px;margin-bottom:6px}
+#titleWord{margin-top:2px}
+@media (min-height:800px){.btn{margin:10px 0}#titleWord{font-size:2.6rem}}
 #titleWord{font-size:2.2rem;letter-spacing:.32em;color:var(--cream);margin:0 0 2px;
   text-shadow:0 2px 0 rgba(32,48,58,.35);padding-left:.32em}
 .toggles{display:flex;gap:10px;width:100%;max-width:330px;margin-top:4px}
@@ -897,9 +899,10 @@ var CV, CTX, W = 375, H = 667, DPR = 1;
 var VIEW = {
   horizon: 0.66,       /* of H */
   azPx: 0, elPx: 0,    /* set by fitCanvas */
-  lineGain: 4.0,       /* the bow, amplified for the eye: at 1.0 a 20 N line drew straight in every panel of p1-dive */
-  lineW: 0.08,         /* N per m of line, drawn heavier than nylon so the catenary reads */
-  minSag: 0.035,        /* of L; a line is never drawn dead straight */
+  lineGain: 2.0,       /* the bow, amplified for the eye: at 1.0 a 20 N line drew straight in every panel of p1-dive */
+  lineW: 0.02,         /* N per m of line, drawn heavier than nylon so the catenary reads */
+  maxSag: 0.08,        /* of L; the first draw at 0.25 swung the line off the screen */
+  minSag: 0.03,        /* of L; a line is never drawn dead straight */
   clouds: [], flowers: [], seeds: [], lastHour: -1, sky: null
 };
 function $(id) { return document.getElementById(id); }
@@ -970,16 +973,19 @@ function drawField(st, dtFrame) {
   g.fillStyle = gg; g.fillRect(0, hy, W, H - hy);
   /* the sunny patch */
   var px = azToX(Math.atan2(CONFIG.THERMAL_X, CONFIG.THERMAL_Z)), py = hy + 0.06 * VIEW.elPx;
-  g.fillStyle = sky.sun; g.globalAlpha = 0.28;
-  g.beginPath(); g.ellipse(px, py, W * 0.16, W * 0.035, 0, 0, TAU); g.fill(); g.globalAlpha = 1;
+  var pg = g.createRadialGradient(px, py, 0, px, py, W * 0.17);
+  pg.addColorStop(0, 'rgba(255,241,192,0.55)'); pg.addColorStop(1, 'rgba(255,241,192,0)');
+  g.fillStyle = pg; g.save(); g.translate(px, py); g.scale(1, 0.22); g.beginPath(); g.arc(0, 0, W * 0.17, 0, TAU); g.fill(); g.restore();
   /* dandelion seeds rising out of it */
-  g.strokeStyle = 'rgba(255,255,255,0.8)'; g.lineWidth = 1;
   for (i = 0; i < VIEW.seeds.length; i++) {
     var sd = VIEW.seeds[i], ph = ((st ? st.t : 0) * 0.05 + sd.y) % 1;
     var sx = px + (sd.x - 0.5) * W * 0.22 + Math.sin(ph * 9 + sd.p) * 6, sy = py - ph * H * 0.32;
-    g.beginPath(); g.arc(sx, sy, 2.2, 0, TAU); g.stroke();
-    g.beginPath(); g.moveTo(sx, sy); g.lineTo(sx + 1.5, sy + 4); g.stroke();
+    g.globalAlpha = 0.75 * (1 - ph * 0.6);
+    g.strokeStyle = '#FFF4E0'; g.lineWidth = 0.8;
+    var q; for (q = 0; q < 5; q++) { var qa = q * 1.26 + sd.p; g.beginPath(); g.moveTo(sx, sy); g.lineTo(sx + Math.cos(qa) * 2.6, sy + Math.sin(qa) * 2.6); g.stroke(); }
+    g.beginPath(); g.moveTo(sx, sy); g.lineTo(sx + 1, sy + 4); g.stroke();
   }
+  g.globalAlpha = 1;
   /* wildflowers with a little parallax */
   for (i = 0; i < VIEW.flowers.length; i++) {
     var f = VIEW.flowers[i], fy = hy + 6 + f.y * f.y * (H - hy - 10), fx = ((f.x * W - (st ? st.az : 0) * 10 * f.y) % W + W) % W;
@@ -1009,10 +1015,12 @@ function drawLine(st, ks) {
   var g = CTX, C = CONFIG;
   var hx = W / 2, hy = H - 44;
   var T = Math.max(0.05, st.tension);
-  var sagM = Math.min(0.25 * st.L, Math.max(VIEW.minSag * st.L, VIEW.lineW * st.L * st.L / (8 * T)));
+  var sagM = Math.min(VIEW.maxSag * st.L, Math.max(VIEW.minSag * st.L, VIEW.lineW * st.L * st.L / (8 * T)));
   if (st.onGround) sagM = 0.12 * st.L;
   var sagPx = sagM / Math.max(1, st.L) * VIEW.elPx * VIEW.lineGain;
-  var mx = (hx + ks.x) / 2, my = (hy + ks.y) / 2 + sagPx * 2;
+  var cdx = ks.x - hx, cdy = ks.y - hy, cl = Math.sqrt(cdx * cdx + cdy * cdy) || 1;
+  var side = (st.az >= 0 ? -1 : 1);
+  var mx = (hx + ks.x) / 2 + side * (-cdy / cl) * sagPx, my = (hy + ks.y) / 2 + (cdx / cl) * side * sagPx + sagPx;
   g.strokeStyle = 'rgba(255,255,255,0.55)'; g.lineWidth = 1.2;
   g.beginPath(); g.moveTo(hx, hy); g.quadraticCurveTo(mx, my, ks.x, ks.y); g.stroke();
   g.strokeStyle = 'rgba(32,48,58,0.35)'; g.lineWidth = 0.6;
