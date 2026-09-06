@@ -77,6 +77,12 @@ html,body{margin:0;padding:0;height:100%;background:#8CC6F0;color:var(--ink);
 .card b{font-size:1rem;letter-spacing:.18em;font-weight:600}
 .card span{font-size:.78rem;line-height:1.5;opacity:.8}
 .card.sel{border-color:var(--red);background:rgba(255,244,224,1)}
+.jrow{width:100%;max-width:330px;display:flex;align-items:center;justify-content:space-between;font-size:.85rem;letter-spacing:.12em;
+  padding:9px 4px;border-bottom:1px solid rgba(32,48,58,.18);color:var(--ink)}
+.jrow i{font-style:normal;opacity:.65}
+#jStamps{width:100%;max-width:330px;margin-bottom:10px}
+#jStamps .jrow b{font-family:"Brush Script MT","Segoe Script","Snell Roundhand",cursive;font-weight:400;font-size:1.3rem;letter-spacing:.02em}
+#jStamps .none{font-size:.82rem;line-height:1.6;opacity:.75;padding:8px 4px}
 .card.sel b::after{content:"  \2713"}
 .title-line{font-size:.8rem;letter-spacing:.11em;color:var(--ink);opacity:.8;
   text-align:center;margin:2px 0 18px;line-height:1.7;padding:0 6px}
@@ -150,6 +156,7 @@ html,body{margin:0;padding:0;height:100%;background:#8CC6F0;color:var(--ink);
     <button class="btn" id="btnResume">RESUME</button>
     <button class="btn small" id="btnLand">LAND IT</button>
     <button class="btn small" id="btnMoodPick">MOOD</button>
+    <button class="btn small" id="btnJournal">JOURNAL</button>
     <div class="toggles">
       <button class="btn small" id="btnSound2">SOUND ON</button>
       <button class="btn small" id="btnMotion2">MOTION ON</button>
@@ -168,6 +175,19 @@ html,body{margin:0;padding:0;height:100%;background:#8CC6F0;color:var(--ink);
     <div class="spacer"></div>
   </div>
 
+  <div class="screen" id="scrJournal">
+    <div class="spacer"></div>
+    <div class="cap">THE JOURNAL</div>
+    <div class="jrow" id="jAlt"></div>
+    <div class="jrow" id="jLong"></div>
+    <div class="jrow" id="jHours"></div>
+    <div class="jrow" id="jFlights"></div>
+    <div class="cap" style="margin-top:14px">STAMPS</div>
+    <div id="jStamps"></div>
+    <button class="btn small ghost" id="btnJournalBack">BACK</button>
+    <div class="spacer"></div>
+  </div>
+
   <div class="screen veil" id="scrEnd">
     <div class="spacer"></div>
     <div id="endWord">A CLEAN LANDING</div>
@@ -175,6 +195,7 @@ html,body{margin:0;padding:0;height:100%;background:#8CC6F0;color:var(--ink);
     <div class="stat" id="endTime"></div>
     <div class="stat" id="endTricks"></div>
     <button class="btn lead" id="btnAgain">FLY AGAIN</button>
+    <button class="btn small" id="btnJournal2">JOURNAL</button>
     <button class="btn small ghost" id="btnEndTitle">BACK TO THE TITLE</button>
     <div class="spacer"></div>
   </div>
@@ -1227,7 +1248,7 @@ var SAVE = {
 /* ========================= 13. BOOT ========================= */
 var STAMP = '20260906d';
 function showScreen(name) {
-  var ids = { title: 'scrTitle', how: 'scrHow', pause: 'scrPause', mood: 'scrMood', end: 'scrEnd' }, k;
+  var ids = { title: 'scrTitle', how: 'scrHow', pause: 'scrPause', mood: 'scrMood', journal: 'scrJournal', end: 'scrEnd' }, k;
   for (k in ids) $(ids[k]).classList.toggle('on', k === name);
   G.screen = name;
   $('hud').style.display = (name === 'play') ? '' : 'none';
@@ -1308,6 +1329,18 @@ function openMood(from) {
   ['gentle', 'fresh', 'blustery'].forEach(function (m) { $('mood' + m.charAt(0).toUpperCase() + m.slice(1)).classList.toggle('sel', m === G.mood); });
   showScreen('mood');
 }
+function openJournal(from) {
+  var j = G.save.journal, names = ['Loop', 'Figure 8', 'Dive Bomb', 'Stall Save', 'Sky Write', 'High Park'], html = '', any = false;
+  G.journalFrom = from;
+  if (G.st) setInput(G.st, false, 0); G.ptr = null;
+  $('jAlt').innerHTML = '<i>HIGHEST</i><span>' + j.bestAlt + ' M</span>';
+  $('jLong').innerHTML = '<i>LONGEST FLIGHT</i><span>' + j.longest + ' S</span>';
+  $('jHours').innerHTML = '<i>HOURS IN THE AIR</i><span>' + (Math.round(j.hours * 10) / 10) + '</span>';
+  $('jFlights').innerHTML = '<i>FLIGHTS</i><span>' + j.flights + '</span>';
+  names.forEach(function (n) { var c = j.tricks[n] || 0; if (c) { any = true; html += '<div class="jrow"><b>' + n + '</b><span>' + c + '</span></div>'; } });
+  $('jStamps').innerHTML = any ? html : '<div class="none">No stamps yet. Loops, dives and saves come from your thumb.</div>';
+  showScreen('journal');
+}
 function pickMood(m) {
   var changed = m !== G.mood;
   G.mood = m;
@@ -1346,6 +1379,9 @@ function wire() {
   tapOn('btnMoodPick', function () { openMood('pause'); });
   tapOn('btnMood', function () { openMood('play'); });
   ['Gentle', 'Fresh', 'Blustery'].forEach(function (n) { tapOn('mood' + n, function () { pickMood(n.toLowerCase()); }); });
+  tapOn('btnJournal', function () { openJournal('pause'); });
+  tapOn('btnJournal2', function () { openJournal('end'); });
+  tapOn('btnJournalBack', function () { showScreen(G.journalFrom === 'end' ? 'end' : 'pause'); });
   tapOn('btnMoodBack', function () { showScreen(G.moodFrom === 'pause' ? 'pause' : G.st ? 'play' : 'title'); });
   tapOn('btnQuit', function () { G.st = null; showScreen('title'); });
   tapOn('btnAgain', function () { newRun(); showScreen('play'); });
