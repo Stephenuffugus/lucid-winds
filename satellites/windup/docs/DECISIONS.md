@@ -72,3 +72,31 @@ wrong, and what was chosen instead. Written as it happened.
   a hole drawn at a third of that is a speck, and the strip read as a white band
   with grey specks on it. The paper is warmer and a shade darker for the same
   reason.
+
+## P2, the gift
+
+- **The margin is part of the mapping, and two bugs lived there.** Start the read
+  line at exactly step zero and a hole at step zero is never crossed, so the
+  first note of every song a player punches is silent. Start the LINE in the
+  margin but leave `stepAt` measuring from zero and the line leaps the whole
+  margin on the first frame, so the first note plays the instant a strip loads,
+  before anybody has touched the crank. `stepAt` subtracts the margin, and the
+  read line begins where the box grips the paper.
+- **The gift link is a stranger's text and it is treated that way.** The holes
+  are clamped by `unpackStrip`, the name is cut at 60 bytes, the signature at 40
+  and the dedication at 140, and everything that reaches the DOM goes through an
+  escape. A four hundred letter name and a nine hundred letter dedication are in
+  the suite.
+- **⛔ THE RIBBON END WAS OFF THE SCREEN and the gate could not see it,** because
+  the gate asked the GAME where the end was and then tapped there. Hung off the
+  right of a box that is nearly the full width of the phone, neither the end nor
+  the words under it were on the display, and every assertion still passed. The
+  gate now asks the SCREEN: the end has to be inside the viewport with forty
+  pixels of room around it, and `elementFromPoint` has to agree nothing is on
+  top of it.
+- **Sixty pixels of real drag, not a tap.** A present you open with a tap is a
+  dialog. Let go short of it and the ribbon springs back.
+- **A gift is not saved until the recipient says so.** It opens as a parcel, it
+  plays, and only SAVE TO MY SHELF puts it on their shelf. The suite checks that
+  a freshly opened link leaves the shelf holding only the three that come in the
+  box.

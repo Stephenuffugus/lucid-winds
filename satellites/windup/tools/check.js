@@ -28,6 +28,7 @@ const GATES = [
 const BROWSER_GATES = [
   { name: 'tine', cmd: ['test/tine.mjs'], need: 'TINE OK' },
   { name: 'crank', cmd: ['test/crank.mjs'], need: 'CRANK OK' },
+  { name: 'gift', cmd: ['test/gift.mjs'], need: 'GIFT OK' },
   { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK', slow: true },
   /* not a test of the game so much as of the one file a person is asked to
      listen to: it refuses to write a wav that does not contain the notes it

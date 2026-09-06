@@ -59,5 +59,44 @@ await withPage(375, 667, async (page, shot) => {
   if (want('p1-punch')) await shot('p1-punch');
 });
 
+/* the parcel, wrapped, and the same one with the ribbon half off */
+for (const [wrap, tag] of [['birthday', 'p2-gift'], ['nightsky', 'p2-gift-night']]) {
+  await withPage(375, 667, async (page, shot) => {
+    const link = await page.evaluate((wrap) => {
+      WINDUP_TEST.setStrip([[0, 7], [2, 7], [4, 11], [6, 11], [8, 12], [10, 12], [12, 11]], 'For Jessie');
+      const st = WINDUP_TEST.strip();
+      st.by = 'Stephen';
+      st.dedication = 'Turn it slowly, the way we used to';
+      st.wrap = wrap;
+      return WINDUP_TEST.packGift(st);
+    }, wrap);
+    await page.evaluate((link) => { WINDUP_TEST.openLink('#g=' + link); }, link);
+    await waitFrames(page, 3);
+    if (want(tag)) await shot(tag);
+    if (tag === 'p2-gift') {
+      await page.evaluate(() => { WINDUP_TEST.gift().opened = 0.55; });
+      await waitFrames(page, 3);
+      if (want('p2-gift-pulling')) await shot('p2-gift-pulling');
+      await page.evaluate(() => {
+        WINDUP_TEST.gift().opened = 1;
+        document.getElementById('giftFrom').textContent = 'From Stephen';
+        document.getElementById('giftNote').textContent = 'Turn it slowly, the way we used to';
+        document.getElementById('scrGift').classList.add('on');
+      });
+      await waitFrames(page, 3);
+      if (want('p2-gift-card')) await shot('p2-gift-card');
+    }
+  });
+}
+/* the shelf */
+await withPage(375, 667, async (page, shot) => {
+  await page.evaluate(() => {
+    document.getElementById('btnMenu').click();
+    document.getElementById('btnShelf').click();
+  });
+  await waitFrames(page, 3);
+  if (want('p2-shelf')) await shot('p2-shelf');
+});
+
 s.close();
 console.log('shots done');

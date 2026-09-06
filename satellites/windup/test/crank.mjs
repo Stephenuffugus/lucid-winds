@@ -59,14 +59,19 @@ try {
 
   /* ---- two turns forward ---- */
   await T(() => window.WINDUP_TEST.clearFired());
+  /* ⛔ the CHANGE in the read line, not its absolute position: the paper starts
+     in the margin, so an absolute reading is a measurement of the margin as
+     much as of the turn. */
+  const start = await T(() => window.WINDUP_TEST.readAt());
   await turn(2);
   await waitFrames(page, 4);
   const after = await T(() => ({ mm: window.WINDUP_TEST.advance(),
     read: window.WINDUP_TEST.readAt(), fired: window.WINDUP_TEST.fired() }));
+  const moved = after.read - start;
   const wantSteps = perTurn * 2;
-  const off = Math.abs(after.read - wantSteps) / wantSteps * 100;
+  const off = Math.abs(moved - wantSteps) / wantSteps * 100;
   say(off < 10, 'two turns of the crank move the paper about ' + wantSteps.toFixed(1)
-    + ' eighths (' + after.read.toFixed(1) + ', off by ' + off.toFixed(1) + ' percent)');
+    + ' eighths (' + moved.toFixed(1) + ', off by ' + off.toFixed(1) + ' percent)');
   const want = [4, 8, 12].filter(s => s <= after.read);
   const got = after.fired.map(f => f.step);
   say(JSON.stringify(got) === JSON.stringify(want),

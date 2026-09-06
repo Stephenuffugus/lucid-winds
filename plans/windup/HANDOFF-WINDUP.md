@@ -13,16 +13,16 @@ every difference is in section 3 with its reason.
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
 - 2026-09-05 Fable: plan written. Nothing built.
-- 2026-09-06 Opus: **P0 AND P1 ARE DONE.** Six gates green: `sim` (94
-  assertions), `lint`, `tine`, `crank`, `layout`, `wav`. Every gate watched to
-  fail. The box is drawn and has been looked at three times; the crank turns the
-  paper and nothing else does; the punch editor punches, refuses and rolls dice;
-  the three starters are on the shelf.
-  **Next action:** P2 step 1, the GIFT. The `#g=` link that carries the strip,
-  the wrap and the dedication; the recipient's wrapped box with a ribbon that
-  takes a real 60 px drag to pull off; the lid opening; the card; SAVE TO MY
-  SHELF. Then `test/gift.mjs`, whose point is that a fresh context opening the
-  link plays the same first notes the sender's strip did.
+- 2026-09-06 Opus: **P0, P1 AND P2 ARE DONE.** Seven gates green: `sim` (112
+  assertions), `lint`, `tine`, `crank`, `gift`, `layout`, `wav`. Every gate
+  watched to fail. The box, the crank, the punch editor, the shelf, and the gift:
+  a link that carries the song, the name, the signature, the line and the
+  wrapping, opened in a browser that has never seen the game, with a ribbon that
+  takes sixty pixels of real drag.
+  **Next action:** P3 step 1, EXPORT. The audio recording off the master, the
+  strip PNG at four pixels a step, and the hand written PDF with its beta label,
+  then `test/pdf.mjs`: the Blob starts with `%PDF-1.4`, has one `/Page` per
+  250 mm, and the hole count in the content stream equals the strip's.
 
 ---
 
@@ -552,6 +552,97 @@ What is there now: the cloth has a nap, the walnut has grain that follows the
 board and one knot in it, the brass has a specular edge, the case sits in its
 own shadow, the paper comes out of both sides and curls, and the crank is
 mounted on a bracket off the case's right shoulder.
+
+---
+
+### P2, the gift (2026-09-06)
+
+`node test/gift.mjs`
+
+```
+ok    #giveName is reachable and 48 px (floor 48)
+  ok    #giveNote is reachable and 76 px (floor 48)
+  ok    #btnShare is reachable and 56 px (floor 56)
+  ok    the three wrappings are all reachable (birthday, snowfall, nightsky)
+  ok    giving it away makes a link (122 characters)
+  ok    and it is short enough to send in a message
+  ok    and it remembers which paper was chosen
+  ok    the link opens as a parcel
+  ok    and it is still wrapped
+  ok    the song came with its name (For Jessie)
+  ok    and who it is from (Stephen)
+  ok    and what it says
+  ok    and the paper it is wrapped in
+  ok    and the notes are the ones that were punched
+  ok    and it is not on their shelf yet, only the three that come in the box
+  ok    the ribbon end is on the screen with room for a thumb around it (326,285 on 375x667)
+  ok    and nothing is sitting on top of it (stage)
+  ok    a short tug on the ribbon does not open it
+  ok    a real pull takes the ribbon off
+  ok    and the card is there
+  ok    with the line they wrote on it: "Turn it slowly, the way we used to"
+  ok    and who it came from: "From Stephen"
+  ok    one turn of their crank plays the notes the sender punched ([[0,7],[2,7],[4,11],[6,11]])
+  ok    SAVE TO MY SHELF keeps it (["For Jessie","Twinkle Twinkle","Happy Birthday","A Lullaby"])
+  ok    and it is still there after a reload
+  ok    no page errors
+
+GIFT OK
+```
+
+`node tools/check.js`
+
+```
+sim             pass  0s
+lint            pass  0s
+tine            pass  7s
+crank           pass  7s
+gift            pass  6s
+layout          pass  13s
+wav             pass  4s
+
+ALL GATES PASSED
+```
+
+**The gift gate found two bugs in the PLAYER that the crank gate could not.**
+It is the only gate that opens a link in a browser which has never seen this
+game, and it is the only one that starts a strip from the very beginning.
+
+1. A hole at step zero never sounded. The read line started at exactly step
+   zero and the player only fires on a crossing, so the first note of every song
+   a player punches was silent.
+2. Fixed naively, by starting the LINE in the margin and leaving the mapping
+   measuring from zero, the line leapt the whole margin on the first frame and
+   the first note played the instant a strip loaded, before anybody had touched
+   the crank.
+
+**⛔ AND THE ONE THAT MATTERS MOST: THE RIBBON END WAS OFF THE SCREEN.** Hung
+off the right of a box that is nearly the full width of a phone, neither the end
+nor the words under it were on the display. Nobody could have opened the
+present. Every assertion in the gate still passed, because the gate asked the
+GAME where the end was and then tapped there. A gate that takes its coordinates
+from the thing it is testing cannot see a thing in the wrong place. It asks the
+SCREEN now: inside the viewport, forty pixels of room, and `elementFromPoint`
+agreeing that nothing is on top of it.
+
+```
+$ (a ribbon that comes off at a touch)
+  FAIL  a short tug on the ribbon does not open it
+$ (the line they wrote left out of the link)
+  FAIL  and what it says
+  FAIL  with the line they wrote on it: ""
+$ (a gift that puts itself on the recipient's shelf)
+  FAIL  and it is not on their shelf yet, only the three that come in the box
+$ (the wrapping thrown away)
+  FAIL  and the paper it is wrapped in
+$ (the margin taken back out of the mapping)
+  FAIL  one turn of their crank plays the notes the sender punched ([[2,7],[4,11],[6,11],[8,12]])
+```
+
+**Shots, opened and read.** `p2-gift.png`, `p2-gift-night.png`,
+`p2-gift-pulling.png`, `p2-gift-card.png`, `p2-shelf.png`. The ribbon end was
+first drawn as a bulge sitting on the ribbon it came from rather than as a loose
+end; it hangs down off the crossing now with a knot and its own shadow.
 
 ---
 
