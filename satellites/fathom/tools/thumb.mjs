@@ -54,6 +54,13 @@ async function shoot(size) {
     return s.ripples.length >= n && s.ripples[n - 1][2] > r;
   }, { timeout: 25000 }, n, r).then(() => true).catch(() => false);
 
+  /* ⛔ TWO STONES LIT 2.6 PERCENT OF THE TILE and the result read as a broken
+     image on the shelf: eighty five percent black, two pixel lines, the subject
+     above centre with an empty band under it. Darkness is Fathom's identity and
+     a tile that reads as a failed load is still a fault (C11). FOUR stones,
+     thrown to the four quarters so the cave is sketched all the way round the
+     player rather than up one side, and the shot is taken while all four rings
+     are still alive. */
   await throwAt(-40, -110);
   await ringAt(1, 150);
   await throwAt(90, 70);
@@ -76,7 +83,19 @@ async function shoot(size) {
   return { buf, lit };
 }
 
-const MIN_LIT = 0.006;   // six pixels in a thousand, which a blank tile cannot reach
+/* ⛔ SIX IN A THOUSAND ONLY CATCHES A BLANK TILE, and a tile can be far from
+   blank and still read as a broken image on a shelf beside eleven others: this
+   one is about eighty five percent black with two pixel lines (C11, open). The
+   floor is 0.02, which the two stone tile clears at 2.63 percent and a failed
+   sequence does not, so the number defends the picture and not only the
+   pipeline.
+   ⛔ AND FOUR STONES IS NOT THE ANSWER, tried 2026-09-07: the hand does not
+   carry four, so throws three and four land on nothing, `ringAt` waits its full
+   twenty five seconds twice, and by the shutter the first two rings have expired
+   and every wall has faded. It came out at 0.64 percent, a QUARTER of the two
+   stone tile, which is the exact failure this file's own header describes. The
+   composition fix is a tighter camera or a heavier line, not more stones. */
+const MIN_LIT = 0.02;
 let size = 512, got = null;
 for (let attempt = 1; attempt <= 4 && !got; attempt++) {
   const r = await shoot(size);
