@@ -35,6 +35,8 @@ const GATES = [
 const BROWSER_GATES = [
   { name: 'edit', cmd: ['test/edit.mjs'], need: 'EDIT OK' },
   { name: 'run', cmd: ['test/run.mjs'], need: 'RUN OK' },
+  { name: 'share', cmd: ['test/share.mjs'], need: 'SHARE OK' },
+  { name: 'film', cmd: ['test/film.mjs'], need: 'FILM OK', slow: true },
   { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK', slow: true }
 ];
 

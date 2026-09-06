@@ -1083,7 +1083,120 @@ var PARTS = {
     }
   }
 };
-var PART_ORDER = ['marble', 'plank', 'domino', 'seesaw', 'fan', 'balloon', 'bucket', 'bell'];
+/* the last three, in the order the design asks for: the cat is last because it
+   is the one with a mind of its own */
+PARTS.spring = {
+  label: 'Spring pad', tray: 1, w: 56, h: 10, colour: '#4E9A52',
+  make: function (world, x, y, rot) {
+    var b = world.add(new PHYS.Body({
+      shape: 'poly', x: x, y: y, angle: rot, isStatic: true,
+      verts: PHYS.boxVerts(56, 10), w: 56, h: 10,
+      restitution: 0.2, friction: 0.3
+    }));
+    b.kind = 'spring';
+    b.fired = 0;
+    /* ⛔ a high restitution does NOT make a springy pad: the solver takes the
+       MINIMUM restitution of the pair, so a bouncy pad under a dull marble is
+       a dull bounce. A pad PUSHES: anything that lands on it going down leaves
+       going up, faster than it came, which is what SPRING_REST means. */
+    var f = function (w2) {
+      var i, any = 0;
+      for (i = 0; i < w2.bodies.length; i++) {
+        var o = w2.bodies[i];
+        if (o.isStatic) continue;
+        var dx = o.pos.x - b.pos.x, dy = o.pos.y - b.pos.y;
+        if (dx > 34 || dx < -34 || dy > 4 || dy < -26) continue;
+        any = 1;
+        if (o.vel.y > 20 && !b.fired) {
+          o.wake();
+          o.vel = v(o.vel.x, -o.vel.y * CONFIG.SPRING_REST);
+          b.fired = 6;
+        }
+      }
+      if (b.fired > 0) b.fired--;
+      if (!any) b.fired = 0;
+    };
+    world.forces.push(f);
+    return { bodies: [b], forces: [f] };
+  }
+};
+PARTS.switchPlate = {
+  label: 'Switch', tray: 1, w: 48, h: 10, colour: '#E8B33C',
+  make: function (world, x, y, rot) {
+    var b = world.add(new PHYS.Body({
+      shape: 'poly', x: x, y: y, angle: rot, isStatic: true,
+      verts: PHYS.boxVerts(48, 14), w: 48, h: 14,
+      restitution: 0.02, friction: 0.7
+    }));
+    b.kind = 'switchPlate';
+    b.pressed = 0;
+    /* a body resting on the plate turns every fan in the jar the other way */
+    var f = function (w2) {
+      var i, on = 0;
+      for (i = 0; i < w2.bodies.length; i++) {
+        var o = w2.bodies[i];
+        if (o.isStatic) continue;
+        var dx = o.pos.x - b.pos.x, dy = o.pos.y - b.pos.y;
+        if (dx < 26 && dx > -26 && dy < 0 && dy > -26) { on = 1; break; }
+      }
+      if (on === b.pressed) return;
+      b.pressed = on;
+      for (i = 0; i < w2.bodies.length; i++) if (w2.bodies[i].kind === 'fan') w2.bodies[i].on = !on;
+    };
+    world.forces.push(f);
+    return { bodies: [b], forces: [f] };
+  }
+};
+PARTS.cat = {
+  label: 'The cat', tray: 1, w: 46, h: 30, colour: '#8A5A9B',
+  make: function (world, x, y, rot) {
+    var b = world.add(new PHYS.Body({
+      shape: 'poly', x: x, y: y, angle: rot,
+      verts: PHYS.boxVerts(46, 30), w: 46, h: 30,
+      density: boxDensity(3, 46, 30), restitution: 0.02, friction: 0.8
+    }));
+    b.kind = 'cat';
+    b.asleep = 1; b.batted = 0; b.walk = 0;
+    /* she sleeps until something comes near or a bell goes off, then she bats
+       the nearest marble once and walks off. She is never removed mid bat. */
+    var f = function (w2, dt) {
+      var i, near = null, nd = 1e9;
+      for (i = 0; i < w2.bodies.length; i++) {
+        var o = w2.bodies[i];
+        if (o === b) continue;
+        var d = len2(o.pos.x - b.pos.x, o.pos.y - b.pos.y);
+        if (o.kind === 'marble' && d < nd) { nd = d; near = o; }
+        if (b.asleep && !o.isStatic && d < 40) b.asleep = 0;
+        if (b.asleep && o.kind === 'bell' && d < 200) {
+          var k, ringing = 0;
+          for (k = 0; k < w2.bodies.length; k++) {
+            var q = w2.bodies[k];
+            if (q.isStatic || q.kind === 'bell') continue;
+            if (vlen(q.vel) >= CONFIG.BELL_SPEED
+              && len2(q.pos.x - o.pos.x, q.pos.y - o.pos.y) <= CONFIG.BELL_R + 20) ringing = 1;
+          }
+          if (ringing) b.asleep = 0;
+        }
+      }
+      if (b.asleep) return;
+      if (!b.batted && near && nd < 90) {
+        b.batted = 1;
+        var dir = near.pos.x >= b.pos.x ? 1 : -1;
+        near.wake();
+        near.vel = v(dir * 260, -140);
+      }
+      if (b.batted) {
+        b.walk += dt;
+        b.vel = v((b.pos.x < CONFIG.SCENE_W / 2 ? -1 : 1) * 60, b.vel.y);
+        if (b.walk > 2 && !b.dead) b.dead = true;
+      }
+    };
+    world.forces.push(f);
+    return { bodies: [b], forces: [f] };
+  }
+};
+var PART_ORDER = ['marble', 'plank', 'domino', 'seesaw', 'fan', 'balloon', 'bucket', 'bell',
+  'spring', 'switchPlate', 'cat'];
 
 /* ========================= 7. MACHINE ========================= */
 /* The edit state and the seven bytes a part costs in a share link. */
@@ -1096,12 +1209,21 @@ function cloneMachine(m) {
   }
   return out;
 }
+/* ⛔ ONE rotation grid for the whole game. A share link carries one byte of
+   rotation, and if the board can hold an angle the byte cannot, then the
+   machine you send is not the machine that arrives, and a domino run is chaotic
+   enough to end differently. 240 steps of 1.5 degrees fit in a byte AND make
+   every 15 degree detent exact, so the dial lands on 10 of them at a time and
+   free placement lands on one of them too. */
+var ROT_STEPS = 240, ROT_STEP_DEG = 360 / ROT_STEPS;
 function detentIndex(rot) {
-  var deg = rot / DEG, n = Math.round(deg / CONFIG.ROT_DETENT_DEG);
-  n = n % 24; if (n < 0) n += 24;
+  var n = Math.round((rot / DEG) / ROT_STEP_DEG);
+  n = n % ROT_STEPS; if (n < 0) n += ROT_STEPS;
   return n;
 }
-function detentAngle(i) { return i * CONFIG.ROT_DETENT_DEG * DEG; }
+function detentAngle(i) { return i * ROT_STEP_DEG * DEG; }
+/* the angle any part in this game is allowed to hold */
+function onRotGrid(rot) { return detentAngle(detentIndex(rot)); }
 function packMachine(levelId, m) {
   var bytes = [levelId & 255, m.parts.length & 255], i;
   for (i = 0; i < m.parts.length; i++) {
@@ -1339,7 +1461,10 @@ function machineFromSolution(level) {
   var m = newMachine(), i;
   for (i = 0; i < level.solution.length; i++) {
     var p = level.solution[i];
-    m.parts.push({ type: p.type, x: p.x, y: p.y, rot: p.rot || 0, flip: 0 });
+    /* the authored angles go on the same grid as everything else, so a shared
+       solution is byte for byte the one the author placed */
+    m.parts.push({ type: p.type, x: Math.round(p.x), y: Math.round(p.y),
+      rot: onRotGrid(p.rot || 0), flip: 0 });
   }
   return m;
 }
@@ -1436,6 +1561,7 @@ var TEST = {
     this.runSuite('determinism', suiteDeterminism);
     this.runSuite('serialisation', suiteSerialisation);
     this.runSuite('levels', suiteLevels);
+    this.runSuite('late parts', suiteLateParts);
     this.runSuite('heartbeat', suiteHeartbeat);
     this.runSuite('copy', suiteCopy);
     if (extra && extra.src) this.runSuite('purity', suitePurity, extra.src);
@@ -1759,6 +1885,77 @@ function suiteLevels(T) {
   }
 }
 
+/* the three that came last: a pad that gives a marble back more than it
+   arrived with, a plate that turns the fans round, and a cat */
+function suiteLateParts(T) {
+  var w = buildWorld(bench(), withParts([
+    { type: 'spring', x: 300, y: 380, rot: 0 },
+    { type: 'marble', x: 300, y: 180 }
+  ]));
+  var m = findKind(w, 'marble')[0], top = 999, i;
+  for (i = 0; i < CONFIG.PHYS_HZ * 3; i++) {
+    w.step(1 / CONFIG.PHYS_HZ);
+    if (i > CONFIG.PHYS_HZ * 0.7 && m.pos.y < top) top = m.pos.y;
+  }
+  T.assert('a spring pad throws a marble back up higher than it fell from (rose to '
+    + top.toFixed(0) + ', dropped from 180)', top < 180);
+  var plain = buildWorld(bench(), withParts([
+    { type: 'plank', x: 300, y: 380, rot: 0 },
+    { type: 'marble', x: 300, y: 180 }
+  ]));
+  var pm = findKind(plain, 'marble')[0], ptop = 999;
+  for (i = 0; i < CONFIG.PHYS_HZ * 3; i++) {
+    plain.step(1 / CONFIG.PHYS_HZ);
+    if (i > CONFIG.PHYS_HZ * 0.7 && pm.pos.y < ptop) ptop = pm.pos.y;
+  }
+  T.assert('and a plank does not (' + ptop.toFixed(0) + ')', top < ptop - 30);
+
+  /* the switch turns every fan the other way while something rests on it */
+  var sw = buildWorld(bench(), withParts([
+    { type: 'fan', x: 110, y: 300, rot: 0 },
+    { type: 'switchPlate', x: 400, y: 402, rot: 0 }
+  ]));
+  var fan = findKind(sw, 'fan')[0], plate = findKind(sw, 'switchPlate')[0];
+  stepFor(sw, 0.2);
+  T.assert('a fan starts turned on', fan.on === true || fan.on === 1);
+  T.assert('and the plate starts unpressed', !plate.pressed);
+  sw.add(new PHYS.Body({ shape: 'circle', x: 400, y: 386, radius: CONFIG.MARBLE_R,
+    density: circleDensity(CONFIG.MARBLE_MASS, CONFIG.MARBLE_R) })).kind = 'marble';
+  stepFor(sw, 0.5);
+  T.assert('something resting on the plate presses it', !!plate.pressed);
+  T.assert('and that turns the fan off', !fan.on);
+
+  /* the cat */
+  var c1 = buildWorld(bench(), withParts([
+    { type: 'cat', x: 400, y: 396, rot: 0 },
+    { type: 'marble', x: 200, y: 396 }
+  ]));
+  var cat = findKind(c1, 'cat')[0], mb = findKind(c1, 'marble')[0];
+  stepFor(c1, 0.4);
+  T.assert('a cat well away from anything stays asleep', !!cat.asleep);
+  mb.pos = v(cat.pos.x - 34, cat.pos.y);
+  mb.vel = v(20, 0);
+  mb.wake();
+  stepFor(c1, 0.2);
+  T.assert('a marble that comes within forty units wakes her', !cat.asleep);
+  T.assert('and she bats it away hard (' + vlen(mb.vel).toFixed(0) + ' units a second)', vlen(mb.vel) > 200);
+  stepFor(c1, 2.6);
+  T.assert('and then she walks off and is gone', findKind(c1, 'cat').length === 0);
+
+  var c2 = buildWorld(bench(), withParts([
+    { type: 'cat', x: 400, y: 396, rot: 0 },
+    { type: 'bell', x: 540, y: 396 },
+    { type: 'marble', x: 200, y: 396 }
+  ]));
+  var cat2 = findKind(c2, 'cat')[0], bell2 = findKind(c2, 'bell')[0], mb2 = findKind(c2, 'marble')[0];
+  stepFor(c2, 0.3);
+  T.assert('a cat two hundred units from a quiet bell stays asleep', !!cat2.asleep);
+  mb2.pos = v(bell2.pos.x - 20, bell2.pos.y);
+  mb2.vel = v(300, 0);
+  mb2.wake();
+  stepFor(c2, 0.2);
+  T.assert('and a bell going off within two hundred units wakes her too', !cat2.asleep);
+}
 function suiteHeartbeat(T) {
   /* the cascade, at the three spacings, with jitter. The full hundred trials
      per spacing live in `sim.js --dominoes`; this is thirty, which is enough
@@ -1788,7 +1985,7 @@ function suiteCopy(T) {
   }
   T.assert('every level and part is named after a THING, with no dash and no exclamation point'
     + (bad.length ? ' [' + bad.join(' | ') + ']' : ''), bad.length === 0);
-  T.eq('there are eight parts', PART_ORDER.length, 8);
+  T.eq('there are eleven parts', PART_ORDER.length, 11);
   var missing = [];
   for (i = 0; i < PART_ORDER.length; i++) if (!PARTS[PART_ORDER[i]]) missing.push(PART_ORDER[i]);
   T.assert('and every one of them exists' + (missing.length ? ': ' + missing.join(', ') : ''), missing.length === 0);
@@ -1888,7 +2085,8 @@ function bodyOutline(ctx, b, squash) {
 var PART_COLOUR = {
   marble: '#3D6FB4', plank: '#8A5A9B', domino: '#D8503C', seesaw: '#4E9A52',
   fan: '#3D6FB4', balloon: '#D8503C', cargo: '#8A5A9B', bell: '#E8B33C',
-  bucket: '#8A5A9B', bucketWall: '#8A5A9B', scene: '#B9A87C'
+  bucket: '#8A5A9B', bucketWall: '#8A5A9B', scene: '#B9A87C',
+  spring: '#4E9A52', switchPlate: '#E8B33C', cat: '#8A5A9B'
 };
 function drawBody(ctx, b) {
   var col = PART_COLOUR[b.kind] || '#9A8B72';
@@ -1968,7 +2166,7 @@ function drawBody(ctx, b) {
       var half = CONFIG.FAN_HALF_ANGLE_DEG * DEG;
       var g2 = ctx.createLinearGradient(sx(b.pos.x), sy(b.pos.y),
         sx(b.pos.x + dcos(b.angle) * CONFIG.FAN_RANGE), sy(b.pos.y + dsin(b.angle) * CONFIG.FAN_RANGE));
-      g2.addColorStop(0, 'rgba(61,111,180,.20)');
+      g2.addColorStop(0, 'rgba(61,111,180,.16)');
       g2.addColorStop(1, 'rgba(61,111,180,0)');
       ctx.fillStyle = g2;
       ctx.beginPath();
@@ -1980,6 +2178,85 @@ function drawBody(ctx, b) {
       ctx.closePath();
       ctx.fill();
     }
+  } else if (b.kind === 'spring') {
+    /* a zigzag along the pad, so it reads as a spring and not as a green plank */
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = Math.max(1.2, ss(2));
+    ctx.beginPath();
+    var zi;
+    for (zi = 0; zi <= 8; zi++) {
+      var zp = vadd(b.pos, vrot(v(-24 + zi * 6, (zi % 2 ? -3 : 3)), b.angle));
+      if (zi === 0) ctx.moveTo(sx(zp.x), sy(zp.y)); else ctx.lineTo(sx(zp.x), sy(zp.y));
+    }
+    ctx.stroke();
+  } else if (b.kind === 'switchPlate') {
+    ctx.fillStyle = b.pressed ? '#4E9A52' : 'rgba(44,36,24,.25)';
+    ctx.beginPath();
+    ctx.arc(sx(b.pos.x), sy(b.pos.y), ss(4), 0, 6.2832);
+    ctx.fill();
+  } else if (b.kind === 'cat') {
+    /* two ears, two eyes and a tail: asleep the eyes are lines */
+    var cx2 = sx(b.pos.x), cy2 = sy(b.pos.y);
+    ctx.fillStyle = PART_COLOUR.cat;
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = Math.max(1.5, ss(3));
+    var ear;
+    for (ear = -1; ear <= 1; ear += 2) {
+      ctx.beginPath();
+      ctx.moveTo(cx2 + ear * ss(13), cy2 - ss(14));
+      ctx.lineTo(cx2 + ear * ss(18), cy2 - ss(26));
+      ctx.lineTo(cx2 + ear * ss(5), cy2 - ss(16));
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+    }
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = Math.max(1.2, ss(2.4));
+    var eye;
+    for (eye = -1; eye <= 1; eye += 2) {
+      ctx.beginPath();
+      if (b.asleep) {
+        ctx.moveTo(cx2 + eye * ss(9) - ss(4), cy2 - ss(3));
+        ctx.lineTo(cx2 + eye * ss(9) + ss(4), cy2 - ss(3));
+      } else {
+        ctx.arc(cx2 + eye * ss(9), cy2 - ss(3), ss(3), 0, 6.2832);
+      }
+      ctx.stroke();
+    }
+    /* a nose, whiskers and two paws: without them she is a purple box */
+    ctx.fillStyle = INK;
+    ctx.beginPath();
+    ctx.moveTo(cx2 - ss(3), cy2 + ss(4));
+    ctx.lineTo(cx2 + ss(3), cy2 + ss(4));
+    ctx.lineTo(cx2, cy2 + ss(8));
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(44,36,24,.55)';
+    ctx.lineWidth = Math.max(0.8, ss(1.4));
+    var wi;
+    for (wi = -1; wi <= 1; wi += 2) {
+      var k2;
+      for (k2 = -1; k2 <= 1; k2++) {
+        ctx.beginPath();
+        ctx.moveTo(cx2 + wi * ss(5), cy2 + ss(5));
+        ctx.lineTo(cx2 + wi * ss(20), cy2 + ss(5) + k2 * ss(4));
+        ctx.stroke();
+      }
+    }
+    ctx.fillStyle = PART_COLOUR.cat;
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = Math.max(1.2, ss(2.2));
+    var paw;
+    for (paw = -1; paw <= 1; paw += 2) {
+      ctx.beginPath();
+      ctx.ellipse(cx2 + paw * ss(11), cy2 + ss(15), ss(7), ss(4), 0, 0, 6.2832);
+      ctx.fill(); ctx.stroke();
+    }
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = Math.max(1.5, ss(3));
+    ctx.beginPath();
+    ctx.moveTo(cx2 + ss(23), cy2 + ss(6));
+    ctx.quadraticCurveTo(cx2 + ss(38), cy2 + ss(2), cx2 + ss(33), cy2 - ss(12));
+    ctx.stroke();
   } else if (b.kind === 'balloon') {
     ctx.fillStyle = 'rgba(255,255,255,.45)';
     ctx.beginPath();
@@ -2249,6 +2526,7 @@ function goRun() {
      not four. Read the engine rather than the plan's one line summary of it. */
   G.world.onContact = function (a, b, approach, impulse, pt) {
     if (approach > 90 && pt) puff(pt.x, pt.y, approach > 320 ? 3 : 1);
+    soundFromContact(a, b, approach);
   };
   var i;
   G.touched = [];
@@ -2365,7 +2643,11 @@ function boot() {
   loadSave();
   if (!SAVE.settings.motion) REDUCED = true;
   fitCanvas();
+  AUDIO.on = !!SAVE.settings.sound;
   showScreen('Title');
+  el('btnSound').textContent = SAVE.settings.sound ? 'SOUND ON' : 'SOUND OFF';
+  el('btnMotion').textContent = SAVE.settings.motion ? 'MOTION ON' : 'MOTION OFF';
+  el('btnFree').textContent = SAVE.settings.freePlace ? 'PLACE ANYWHERE' : 'SNAP TO THE GRID';
   el('btnPlay').addEventListener('click', function () { renderLevelList(); showScreen('Select'); });
   el('btnSandbox').addEventListener('click', function () { renderSlots(); showScreen('Sand'); });
   el('btnHow').addEventListener('click', function () { showScreen('How'); });
@@ -2378,6 +2660,8 @@ function boot() {
   el('btnMenuClose').addEventListener('click', function () { el('scrMenu').classList.remove('on'); });
   el('btnSound').addEventListener('click', function () {
     SAVE.settings.sound = SAVE.settings.sound ? 0 : 1;
+    AUDIO.on = !!SAVE.settings.sound;
+    if (AUDIO.on) { AUDIO.resume(); AUDIO.play('click'); }
     this.textContent = SAVE.settings.sound ? 'SOUND ON' : 'SOUND OFF';
     saveNow();
   });
@@ -2413,8 +2697,12 @@ function boot() {
     if (G.levelId >= 0 && G.levelId + 1 < LEVELS.length) startLevel(G.levelId + 1);
     else { renderLevelList(); showScreen('Select'); }
   });
-  el('btnShare').addEventListener('click', function () { toast('Sharing comes with the next pass.'); });
-  el('btnFilm').addEventListener('click', function () { toast('Filming comes with the next pass.'); });
+  el('btnShare').addEventListener('click', function () { copyLink(); });
+  el('btnFilm').addEventListener('click', function () {
+    el('winCard').classList.remove('on');
+    stopRun();
+    if (startFilm()) { toast('Filming. It stops when the run does.'); goRun(); }
+  });
   window.addEventListener('resize', fitCanvas);
   window.addEventListener('orientationchange', function () { setTimeout(fitCanvas, 120); });
   document.addEventListener('visibilitychange', function () {
@@ -2440,6 +2728,8 @@ function boot() {
       navigator.serviceWorker.register('./sw.js?v=' + STAMP).catch(function () {});
     });
   }
+  importFromHash();
+  window.addEventListener('hashchange', importFromHash);
   try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {}
   window.addEventListener('load', function () { try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {} });
 }
@@ -2521,7 +2811,8 @@ var SANDBOX_LEVEL = {
   id: 99, name: 'The Sandbox', par: CONFIG.BODY_MAX,
   scene: [GROUND].concat(WALLS),
   fixed: [{ type: 'bell', x: 700, y: 402 }],
-  tray: { marble: 6, plank: 8, domino: 16, seesaw: 2, fan: 2, balloon: 3, bucket: 2 },
+  tray: { marble: 6, plank: 8, domino: 16, seesaw: 2, fan: 2, balloon: 3, bucket: 2,
+    spring: 2, switchPlate: 2, cat: 1 },
   bonus: [], goal: 'bell', solution: []
 };
 function renderSlots() {
@@ -2560,6 +2851,248 @@ function saveSandbox() {
   if (!SAVE.sandbox) SAVE.sandbox = [null, null, null];
   SAVE.sandbox[G.sandbox] = packMachine(99, G.machine);
   saveNow();
+}
+
+/* ========================= 17D. AUDIO ========================= */
+/* Synthesised, no files, opened inside the first pointerdown because a context
+   made before a gesture stays suspended on a real phone and every scheduled
+   note lands in silence with no error. The clack ladder is the joke: each
+   domino in a run is a step higher, and the ladder resets after a second of
+   quiet, so a long cascade sounds like a run up the keys. */
+var AUDIO = {
+  ac: null, master: null, stream: null, on: true,
+  step: 0, lastClack: 0,
+  LADDER: [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24, 26, 28, 31],
+  open: function () {
+    if (this.ac || !this.on) return this.ac;
+    var C = window.AudioContext || window.webkitAudioContext;
+    if (!C) return null;
+    this.ac = new C();
+    this.master = this.ac.createGain();
+    this.master.gain.value = 0.6;
+    /* a limiter, so a twelve domino run does not clip */
+    var comp = this.ac.createDynamicsCompressor();
+    comp.threshold.value = -12; comp.ratio.value = 12; comp.attack.value = 0.003;
+    this.master.connect(comp);
+    comp.connect(this.ac.destination);
+    this.comp = comp;
+    return this.ac;
+  },
+  resume: function () {
+    var ac = this.open();
+    if (ac && ac.state === 'suspended') ac.resume();
+    return ac;
+  },
+  env: function (node, t, a, d, peak) {
+    var g = this.ac.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(peak, t + a);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + a + d);
+    node.connect(g); g.connect(this.master);
+    return g;
+  },
+  tone: function (freq, t, a, d, peak, type) {
+    var o = this.ac.createOscillator();
+    o.type = type || 'sine';
+    o.frequency.setValueAtTime(freq, t);
+    this.env(o, t, a, d, peak);
+    o.start(t); o.stop(t + a + d + 0.05);
+    return o;
+  },
+  noise: function (t, dur, freq, q, peak) {
+    var n = Math.max(1, Math.round(this.ac.sampleRate * dur));
+    var buf = this.ac.createBuffer(1, n, this.ac.sampleRate), d = buf.getChannelData(0), i;
+    for (i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2);
+    var src = this.ac.createBufferSource();
+    src.buffer = buf;
+    var bp = this.ac.createBiquadFilter();
+    bp.type = 'bandpass'; bp.frequency.value = freq; bp.Q.value = q;
+    src.connect(bp);
+    this.env(bp, t, 0.004, dur, peak);
+    src.start(t); src.stop(t + dur + 0.02);
+  },
+  play: function (what, arg) {
+    var ac = this.on ? this.open() : null;
+    if (!ac) return;
+    if (ac.state === 'suspended') return;
+    var t = ac.currentTime;
+    if (what === 'clack') {
+      /* the ladder */
+      if (t - this.lastClack > 1) this.step = 0;
+      this.lastClack = t;
+      var semis = this.LADDER[Math.min(this.LADDER.length - 1, this.step)];
+      this.step++;
+      var f = 196 * Math.pow(2, semis / 12);
+      this.tone(f, t, 0.004, 0.09, 0.14, 'triangle');
+      this.noise(t, 0.05, f * 2.2, 6, 0.08);
+    } else if (what === 'tick') {
+      this.noise(t, 0.035, 900 + Math.min(2600, (arg || 100) * 4), 8, 0.05);
+    } else if (what === 'ding') {
+      this.tone(1318.5, t, 0.004, 1.1, 0.20, 'sine');
+      this.tone(1975.5, t, 0.004, 0.8, 0.09, 'sine');
+      this.tone(2637.0, t, 0.004, 0.5, 0.05, 'sine');
+    } else if (what === 'thunk') {
+      this.tone(90, t, 0.005, 0.16, 0.22, 'sine');
+      this.noise(t, 0.09, 320, 3, 0.10);
+    } else if (what === 'squeak') {
+      var o = this.ac.createOscillator();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(520, t);
+      o.frequency.exponentialRampToValueAtTime(1400, t + 0.16);
+      this.env(o, t, 0.01, 0.16, 0.05);
+      o.start(t); o.stop(t + 0.2);
+    } else if (what === 'pop') {
+      this.noise(t, 0.06, 1600, 2, 0.16);
+      this.tone(220, t, 0.003, 0.07, 0.10, 'square');
+    } else if (what === 'mrrp') {
+    var mo = this.ac.createOscillator();
+    mo.type = 'sawtooth';
+    mo.frequency.setValueAtTime(360, t);
+    mo.frequency.exponentialRampToValueAtTime(520, t + 0.12);
+    mo.frequency.exponentialRampToValueAtTime(300, t + 0.34);
+    var lp = this.ac.createBiquadFilter();
+    lp.type = 'lowpass'; lp.frequency.value = 1400;
+    mo.connect(lp);
+    this.env(lp, t, 0.03, 0.34, 0.09);
+    mo.start(t); mo.stop(t + 0.4);
+  } else if (what === 'boing') {
+      var b = this.ac.createOscillator();
+      b.type = 'sine';
+      b.frequency.setValueAtTime(180, t);
+      b.frequency.exponentialRampToValueAtTime(760, t + 0.12);
+      b.frequency.exponentialRampToValueAtTime(240, t + 0.3);
+      this.env(b, t, 0.006, 0.3, 0.14);
+      b.start(t); b.stop(t + 0.36);
+    } else if (what === 'click') {
+      this.noise(t, 0.02, 2400, 10, 0.06);
+    } else if (what === 'whirr') {
+      this.noise(t, 0.5, 420, 1.2, 0.02);
+    }
+  },
+  /* the film needs the same audio the player hears */
+  tapStream: function () {
+    var ac = this.open();
+    if (!ac || this.stream) return this.stream;
+    var dest = ac.createMediaStreamDestination();
+    this.comp.connect(dest);
+    this.stream = dest.stream;
+    return this.stream;
+  }
+};
+function soundFromContact(a, b, approach) {
+  if (!AUDIO.on) return;
+  var kinds = [a.kind, b.kind];
+  if (kinds.indexOf('bell') >= 0 && approach > CONFIG.BELL_SPEED) { AUDIO.play('ding'); return; }
+  if (kinds.indexOf('domino') >= 0 && approach > 60) { AUDIO.play('clack'); return; }
+  if (kinds.indexOf('balloon') >= 0 && approach > 60) { AUDIO.play('squeak'); return; }
+  if (kinds.indexOf('bucket') >= 0 && approach > 120) { AUDIO.play('thunk'); return; }
+  if (kinds.indexOf('spring') >= 0 && approach > 60) { AUDIO.play('boing'); return; }
+  if (kinds.indexOf('switchPlate') >= 0 && approach > 40) { AUDIO.play('click'); return; }
+  if (kinds.indexOf('cat') >= 0 && approach > 60) { AUDIO.play('mrrp'); return; }
+  if (kinds.indexOf('marble') >= 0 && approach > 80) AUDIO.play('tick', approach);
+}
+
+/* ========================= 17E. SHARE AND FILM ========================= */
+/* A machine is a level id and seven bytes a part, base64url in the fragment.
+   Opening one loads the level with the machine already on the board. */
+function b64u(bytes) {
+  var bin = '', i;
+  for (i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function unb64u(str) {
+  try {
+    var b = atob(str.replace(/-/g, '+').replace(/_/g, '/'));
+    var out = [], i;
+    for (i = 0; i < b.length; i++) out.push(b.charCodeAt(i));
+    return out;
+  } catch (e) { return null; }
+}
+function shareLink() {
+  var id = G.levelId >= 0 ? G.levelId : 99;
+  return location.origin + location.pathname + '#m=' + b64u(packMachine(id, G.machine));
+}
+function copyLink() {
+  var link = shareLink();
+  if (navigator.share) {
+    navigator.share({ title: 'DOOHICKEY', text: 'Here is a thing I built.', url: link })
+      .catch(function () { fallbackCopy(link); });
+    return;
+  }
+  fallbackCopy(link);
+}
+function fallbackCopy(link) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(link).then(function () { toast('The link is on the clipboard.'); },
+      function () { toast(link); });
+  } else toast(link);
+}
+function importFromHash() {
+  var h = location.hash || '';
+  if (h.indexOf('#m=') !== 0) return false;
+  var bytes = unb64u(h.slice(3));
+  if (!bytes) return false;
+  var got = unpackMachine(bytes);
+  if (!got) return false;
+  try { history.replaceState(null, '', location.pathname); } catch (e) {}
+  if (got.levelId === 99) { openSandbox(0); G.machine = got.machine; }
+  else if (got.levelId >= 0 && got.levelId < LEVELS.length) {
+    startLevel(got.levelId);
+    G.machine = got.machine;
+  } else return false;
+  machineChanged();
+  toast('Somebody built this. Press GO.');
+  return true;
+}
+
+var FILM = { rec: null, chunks: [], on: false };
+var FILM_MIME = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4'];
+function startFilm() {
+  if (FILM.on) return false;
+  if (!V.cv.captureStream || typeof MediaRecorder === 'undefined') {
+    toast('This browser will not film.');
+    return false;
+  }
+  var stream = V.cv.captureStream(30), i, a = AUDIO.tapStream();
+  if (a) { var tr = a.getAudioTracks(); for (i = 0; i < tr.length; i++) stream.addTrack(tr[i]); }
+  var mime = '';
+  for (i = 0; i < FILM_MIME.length; i++) {
+    if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(FILM_MIME[i])) { mime = FILM_MIME[i]; break; }
+  }
+  try { FILM.rec = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream); }
+  catch (e) { toast('This browser will not film.'); return false; }
+  FILM.chunks = [];
+  FILM.rec.ondataavailable = function (e) { if (e.data && e.data.size) FILM.chunks.push(e.data); };
+  /* ⛔ the blob arrives in onstop, never after stop() returns */
+  FILM.rec.onstop = function () {
+    FILM.on = false;
+    var blob = new Blob(FILM.chunks, { type: FILM.rec.mimeType || 'video/webm' });
+    FILM.blob = blob;
+    offerFilm(blob);
+  };
+  FILM.rec.start();
+  FILM.on = true;
+  setTimeout(function () { stopFilm(); }, 30000);
+  return true;
+}
+function stopFilm() {
+  if (!FILM.on || !FILM.rec) return;
+  try { FILM.rec.stop(); } catch (e) { FILM.on = false; }
+}
+function offerFilm(blob) {
+  var name = 'doohickey.' + ((blob.type.indexOf('mp4') >= 0) ? 'mp4' : 'webm');
+  var file = null;
+  try { file = new File([blob], name, { type: blob.type }); } catch (e) {}
+  if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+    navigator.share({ files: [file], text: 'My doohickey.' }).catch(function () {});
+    return;
+  }
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+  toast('The film is in your downloads.');
 }
 
 /* ========================= 18. EDITOR ========================= */
@@ -2607,8 +3140,11 @@ function snapPos(x, y) {
   return { x: Math.round(x / c) * c, y: Math.round(y / c) * c };
 }
 function snapRot(rot) {
-  if (SAVE.settings.freePlace) return rot;
-  return detentAngle(detentIndex(rot));
+  /* free placement means free POSITION and the fine rotation grid; it never
+     means an angle a share link cannot carry */
+  if (SAVE.settings.freePlace) return onRotGrid(rot);
+  var d = CONFIG.ROT_DETENT_DEG * DEG;
+  return onRotGrid(Math.round(rot / d) * d);
 }
 /* ⛔ a real separating axis test through the ENGINE'S OWN collide, not a
    bounding box. A box test says a tilted plank overlaps things it does not
@@ -2750,6 +3286,9 @@ function bindEditor() {
   var cv = V.cv;
   buildHandles();
   cv.addEventListener('pointerdown', function (e) {
+    /* ⛔ the context is opened HERE, inside a gesture. Made any earlier it
+       stays suspended on a phone and every note lands in silence. */
+    AUDIO.resume();
     POINTERS[e.pointerId] = { x: e.clientX, y: e.clientY };
     if (Object.keys(POINTERS).length === 2 && !GHOST) { startPinch(); return; }
     if (G.running) { stopRun(); return; }
@@ -2919,6 +3458,15 @@ window.DOOHICKEY_TEST = {
   tape: function () { return TAPE.length; },
   sandbox: function (slot) { openSandbox(slot); },
   slots: function () { return SAVE.sandbox || [null, null, null]; },
+  link: function () { return shareLink(); },
+  importHash: function (h) {
+    try { history.replaceState(null, '', location.pathname + h); } catch (e) {}
+    return importFromHash();
+  },
+  audio: function () { return AUDIO; },
+  film: function () { return FILM; },
+  startFilm: function () { return startFilm(); },
+  stopFilm: function () { stopFilm(); },
   save: function () { return SAVE; }
 };
 

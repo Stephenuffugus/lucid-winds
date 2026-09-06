@@ -119,5 +119,30 @@ await withPage(375, 667, async (page, shot) => {
   if (want('p2-portrait')) await shot('p2-portrait');
 });
 
+/* the same board on four phones, both ways round */
+for (const [w, h] of [[915, 412], [667, 375], [412, 915], [375, 667]]) {
+  await withPage(w, h, async (page, shot) => {
+    await page.evaluate(() => { DOOHICKEY_TEST.start(5); DOOHICKEY_TEST.solution(); });
+    await waitFrames(page, 3);
+    if (want('p3-size')) await shot('p3-' + w + 'x' + h);
+  });
+}
+/* the three that came last, on the sandbox table */
+await withPage(667, 375, async (page, shot) => {
+  await page.evaluate(() => {
+    DOOHICKEY_TEST.sandbox(2);
+    DOOHICKEY_TEST.place([
+      { type: 'spring', x: 216, y: 384 },
+      { type: 'switchPlate', x: 384, y: 408 },
+      { type: 'fan', x: 96, y: 288 },
+      { type: 'cat', x: 552, y: 384 },
+      { type: 'marble', x: 216, y: 168 },
+      { type: 'balloon', x: 312, y: 264 }
+    ]);
+  });
+  await waitFrames(page, 3);
+  if (want('p3-parts')) await shot('p3-parts');
+});
+
 s.close();
 console.log('shots done');
