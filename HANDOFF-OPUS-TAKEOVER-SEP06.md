@@ -9,6 +9,41 @@ level with the branch (Hostinger deploys main). Nothing is only in a working tre
 
 ---
 
+## 0a. WHAT THE 15:00Z TO 16:30Z SESSION DID (Opus, lead)
+
+Both debts closed, then six games taken further. Every item below is committed, pushed,
+live on main, and gated; each game's stamp moved with it.
+
+| game | stamp | what landed |
+|---|---|---|
+| Gerplunk | 20260906f | debt cleared (seven gates cold, all green); the SHARE CARD at 1080x1350 drawn from the model's own skip positions; SLOW MOTION on a record; the tile reshot facing the open lake |
+| Updraft | 20260906f | debt cleared (seven gates, then the seedFor mutation watched to fail); spoken dates everywhere; the friend's invitation moved out of the toast into the title's column |
+| Strata | 20260906f | THE FIELD JOURNAL (counters, firsts by body plan, the written collection) and RENAME on the plinth sheet |
+| Airworthy | 20260906g | THE RING SLALOM, the design's fourth challenge type, with its own gates and measured medals |
+| Doohickey | 20260906g | three levels teaching three parts that had none (builder); the share gate now opens a link COLD |
+| Asterism | 20260906g | the first screen is a veil over the real sky rather than flat ink |
+
+**Four scars this session added, all of one shape: something that copies a whitelist of
+fields silently deletes the rest.**
+1. Strata's `saveNow` rebuilds the save from disk and copies named fields, so the journal's
+   new counters were written and dropped in the same call and the page read zeros.
+2. Airworthy's `sim.js --medals --write` rebuilds the whole CHALLENGES block from what the
+   tool measured, so the ring slalom's own gates vanished on the first write and the
+   challenge silently went back to flying scenery. Both writers now carry the field through,
+   and in Airworthy's case that was proved by running the writer again and checking the line
+   survived.
+3. **A gate can pin the bug.** Updraft's daily gate REQUIRED the literal string containing an
+   ISO date, so the gate was protecting a copy law violation. When a fix turns a gate red,
+   ask whether the assertion held the law or an old string.
+4. **A gate that sets state is not a gate that boots into it.** Doohickey's share gate set
+   `location.hash` on an already open page; a stranger pastes an address and the page boots
+   with the hash on it. Different code paths, and only the second is the feature.
+
+**Two more worth carrying.** The fleet's music chip reseats into the freest corner and will
+CHASE a shrinking element (it followed Strata's journal title through two rounds of padding);
+put nothing of yours in the top band. And a ratio in a gate is a literal, never the constant
+divided out, or the test is arithmetic rather than the game.
+
 ## 0. THE FIRST FIVE MINUTES ON A FRESH BOX
 
 1. `cd /workspaces/lucid-winds && git status --short | grep -v '^??' | grep -v docs/shots`
