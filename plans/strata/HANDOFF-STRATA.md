@@ -14,6 +14,7 @@ copy), then this file, then the design. Where they differ, this file wins; every
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
 - 2026-09-05 Fable: plan written. Nothing built. Next action: section 5, P0, step 1.
+- 2026-09-06 Opus B: **P0 DONE.** SKELETON and IDENTITY built, 65 assertions green, the variety sheet passed at TWELVE of fifty after two rounds at nought and about four; all three counts and what was wrong each time are in section 13. Next action: section 5, P1, step 1, SEDIMENT and the brush.
 - 2026-09-06 Opus B: P0 step 1 done, red, output in section 13. Next action: section 5, P0, step 1, the scaffold (SKELETON and IDENTITY, pure, inside `index.html`) and `tools/variety.mjs`.
 
 ---
@@ -345,6 +346,91 @@ Node.js v24.14.0
 
 1 GATE FAILED
 ```
+
+
+### P0 steps 2 and 3, 2026-09-06. The grammar, and the variety sheet three times.
+
+```
+$ node sim.js --test
+PASSED 65 / FAILED 0   (total 65)
+STRATA TEST OK
+
+$ node sim.js --census=3000
+  3000 animals
+  plan       biped 23.2%         flippers 18.6%      quadruped 41.9%     wings 16.4%
+  size       bus 15.1%           dog 36.7%           horse 29.6%         mouse 18.6%
+  skull      beak 28.5%          crest 25.1%         dome 10.1%          longjaw 36.3%
+  ornament   frill 12.0%         none 35.3%          plates 19.9%        sail 13.5%   spines 19.3%
+  bones       39 to 74, mean 55.8
+STRATA CENSUS OK
+```
+
+**THE VARIETY SHEET, THE GATE A HUMAN READS. Three rounds, and the counts are the point.**
+
+| round | how many of fifty I would take a screenshot of | what was wrong |
+|---|---|---|
+| 1 | **0** | fifty of the same dashed centipede |
+| 2 | about **4** | real skeletons, and forty six of them curled into a prawn |
+| 3 | **12** | passes, at more than twice the plan's floor of five |
+
+**Round 1, nought of fifty.** Not one. Every animal was a dotted line of identical rectangles
+curving gently, with a few scratches near the middle: a bicycle chain, not a skeleton. Measuring it
+rather than squinting at it named the cause in one line:
+
+```
+$ node -e "...measure seed 0..."
+body box        11.8 x 11.5
+skull box       1.2 x 2.6
+skull as a fraction of the body: 10.1%
+vertebrae       16 over 11.8 units
+total curl      -1.73 radians
+ribs            6
+```
+
+**There was no body length.** The spine was built at one unit per vertebra and everything hung on
+it was sized in absolute units, so an animal's proportions were a function of how many vertebrae it
+happened to roll. A skull came out at a TENTH of the body where a real one is a quarter; six ribs
+stood in for a ribcage; and the curvature accumulated PER VERTEBRA, so a forty vertebra animal
+curled through two hundred and eighty degrees into a question mark. Rewritten: one body length,
+every section and every part a fraction of it, and every turn per unit of LENGTH.
+
+**Round 2, about four of fifty.** A completely different sheet: ribcages, heads, limbs, real
+animals. And forty six of them were the same prawn, because the curl was one wide range and almost
+every draw landed in the middle of it. An animal lies in the ground in one of a few ATTITUDES, and
+the attitude is the first thing an eye reads, so the pose became a choice from five (`laid`,
+`arched`, `curled`, `reared`, `slumped`), each with its own narrow curl, lift and tail carriage.
+The same round added `spineClear`, because some necks lifted back over the trunk and put the skull
+in among the ribs where nothing about the animal could be read at all.
+
+**Round 3, twelve of fifty.** Named, so the count can be argued with: Dracotheroops (a long low
+quadruped with its head up), Stenognathynx (an upright biped, bird like), Amblyplaxia (a wedge of
+armour), Corvinothois (a broad plated swimmer), Sarcodonellus (a light quadruped with a long
+straight tail), Pachyrhynax (a domed biped, chunky), Microvenatyx (small and delicate with an
+upcurved tail), Corvimorphops (a winged thing on stilts), Amblytherooceros (a spindly wader),
+Nyctignathes (spiky and upright), Cryoankylon (small, domed and hunched), Thalapodia (a fan of
+spines on long legs).
+
+**Three things still wrong with the sheet**, written down rather than chased: the head is a solid
+block that merges into the neck on a silhouette, because the cranium and the jaw are one shape
+until the game draws them as separate outlined bones; the plated species still read heavier than
+they should even after the plates were narrowed below their own spacing; and a few of the widest
+animals touch the edge of their cell on the sheet, which is the sheet's fit rather than the
+grammar.
+
+**Watched to fail.** The plan's step 4 named two:
+
+```
+=== the plan draw is forced to biped ===
+  FAIL  all four body plans turn up inside two hundred seeds (biped 200, quadruped 0, flippers 0, wings 0)
+  FAIL  a swimmer has a shorter tail than a walker (0.0 against 8.6)
+=== a dash is added to a history fragment ===
+  FAIL  no dash in anything the earth says about an animal: and sang through its crest at dusk
+```
+
+And one the suite caught by itself on its first run, which is exactly what it is for: the fragment
+*"The spine curves to the left in every specimen found."* used the word EVERY, and a generated
+history that claims a creature always or never did something is a lie about an animal nobody has
+ever dug up. Rewritten as *"in the specimens found so far"*.
 
 ---
 

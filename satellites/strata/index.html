@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>STRATA</title>
+<meta name="description" content="Brush and chisel a cliff face until a creature nobody has ever seen comes out of the stone. Every skeleton is generated once. Mount it, name it, and hang it in a museum that is only yours.">
+<meta name="theme-color" content="#8A6A44">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="STRATA">
+<link rel="manifest" href="./manifest.webmanifest?v=20260906a">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260906a">
+<link rel="icon" href="./icon-192.png?v=20260906a">
+<link rel="canonical" href="https://lucidwinds.com/satellites/strata/">
+<style>
+/*  STRATA
+    game id: strata   field journal romance, canvas tents, tan paper, careful hands
+    ⛔ A SPECIMEN IS ITS SEED. The skeleton, its name and its history regenerate
+    exactly from one number, and the share link and the museum both rest on
+    that. Nothing in the SIM export touches a clock, a document, a window or an
+    unspecified Math call. tools/lint.mjs greps for it.
+    ⛔ The BOTTOM LEFT 120x120 belongs to the fleet's music chip. */
+:root{
+  --paper:#EFE2C8; --paper2:#E1D0AC; --ink:#33291C; --line:#BFA87C;
+  --rock:#8A6A44; --rock2:#6E5335; --bone:#F4E8CB; --bone2:#C6AE81;
+  --brass:#C09A4E; --rust:#A2543A; --moss:#6C7A4B; --sky:#B9C6C4;
+  --safeT:env(safe-area-inset-top,0px);
+  --safeB:env(safe-area-inset-bottom,0px);
+  --safeL:env(safe-area-inset-left,0px);
+  --safeR:env(safe-area-inset-right,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+/* ⛔ LOAD BEARING: every button below sets display:flex in its own rule, and an
+   id rule beats the user agent's [hidden]{display:none} on specificity. Without
+   this line the whole tool rail sits on the title screen. Learned on
+   Whistlestop by opening a screenshot. */
+[hidden]{display:none!important}
+html,body{margin:0;padding:0;height:100%;background:var(--rock2);color:var(--ink);
+  font-family:ui-rounded,"Trebuchet MS","Segoe UI",system-ui,sans-serif;
+  overscroll-behavior:none;-webkit-user-select:none;user-select:none}
+#app{position:fixed;inset:0;overflow:hidden;background:var(--rock2)}
+#board{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+
+#chrome{position:absolute;inset:0;pointer-events:none;z-index:5}
+.btn{pointer-events:auto;background:var(--paper);border:3px solid var(--ink);color:var(--ink);
+  border-radius:14px;min-height:48px;padding:10px 16px;font-family:inherit;font-size:.92rem;
+  font-weight:700;letter-spacing:.06em;box-shadow:0 3px 0 var(--ink);text-transform:uppercase}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
+.btn.big{min-height:56px;font-size:1rem;padding:12px 22px}
+.btn.icon{min-width:48px;min-height:48px;padding:0;display:flex;align-items:center;justify-content:center;font-size:1.05rem}
+.btn.ghost{background:transparent;box-shadow:none;border-color:var(--line);color:#6B5B3E}
+.btn.on{background:var(--brass);color:#2A2113}
+.btn[disabled]{opacity:.4}
+
+/* the tool rail: the right edge, thumb side, one 56 px tile per tool */
+#rail{position:absolute;right:calc(10px + var(--safeR));top:50%;transform:translateY(-50%);
+  display:flex;flex-direction:column;gap:10px;pointer-events:auto;z-index:6}
+#rail[hidden]{display:none}
+.tool{width:58px;height:58px;min-height:58px;border-radius:16px;padding:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  background:var(--paper);border:3px solid var(--ink);box-shadow:0 3px 0 var(--ink);
+  font-family:inherit;color:var(--ink)}
+.tool .gl{font-size:1.2rem;line-height:1}
+.tool .nm{font-size:.7rem;font-weight:700;letter-spacing:.04em}
+.tool.on{background:var(--brass)}
+.tool:disabled{opacity:.4}
+
+#btnMenu{position:absolute;right:calc(14px + var(--safeR));top:calc(12px + var(--safeT))}
+#btnBack{position:absolute;left:calc(14px + var(--safeL));top:calc(12px + var(--safeT))}
+#siteChip{position:absolute;left:calc(14px + var(--safeL));top:calc(12px + var(--safeT));
+  min-height:48px;display:flex;flex-direction:column;justify-content:center;
+  background:rgba(239,226,200,.92);border:3px solid var(--ink);border-radius:14px;
+  padding:6px 14px;pointer-events:auto;box-shadow:0 3px 0 var(--ink)}
+#siteChip .er{font-size:.82rem;font-weight:700;letter-spacing:.02em}
+#siteChip .dp{font-size:.7rem;color:#6B5B3E}
+#banner{position:absolute;left:50%;transform:translateX(-50%);top:calc(13px + var(--safeT));
+  pointer-events:none;font-size:.8rem;font-weight:700;color:var(--ink);
+  background:rgba(239,226,200,.94);border-radius:12px;padding:6px 12px;max-width:60%;
+  text-align:center;line-height:1.35;border:2px solid var(--line);
+  opacity:0;transition:opacity 220ms ease-out;z-index:7}
+#banner.on{opacity:1}
+#btnMount{position:absolute;left:50%;transform:translateX(-50%);
+  bottom:calc(14px + var(--safeB));min-width:190px}
+#btnMount:active{transform:translateX(-50%) translateY(2px)}
+
+.screen{position:absolute;inset:0;z-index:10;background:var(--rock);display:none;
+  flex-direction:column;align-items:center;justify-content:center;
+  padding:calc(18px + var(--safeT)) 18px calc(18px + var(--safeB));
+  overflow-y:auto;overscroll-behavior:contain}
+.screen.on{display:flex}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:12;background:var(--paper);
+  border-top:3px solid var(--ink);border-radius:18px 18px 0 0;max-height:92%;
+  display:none;flex-direction:column;align-items:center;
+  padding:18px 18px calc(20px + var(--safeB));overflow-y:auto;overscroll-behavior:contain}
+.sheet.on{display:flex}
+.col{width:100%;max-width:360px;display:flex;flex-direction:column;align-items:stretch;gap:10px}
+.row{display:flex;gap:10px;width:100%;max-width:360px}
+.row > *{flex:1 1 0;min-width:0;width:auto;max-width:none}
+.title{font-size:2rem;font-weight:800;letter-spacing:.16em;text-align:center;margin:0 0 2px}
+.tag{font-size:.86rem;text-align:center;color:#6B5B3E;margin:0 0 16px;line-height:1.6}
+.cap{font-size:.74rem;letter-spacing:.18em;color:#6B5B3E;text-transform:uppercase;margin:8px 0 2px}
+.lede{font-size:.94rem;line-height:1.7;margin:6px 0}
+.tiny{font-size:.78rem;line-height:1.6;color:#6B5B3E;margin:4px 0}
+.card{width:100%;min-height:64px;border:3px solid var(--ink);border-radius:14px;background:var(--paper);
+  box-shadow:0 3px 0 var(--ink);display:flex;align-items:center;gap:12px;padding:10px 14px;
+  font-family:inherit;text-align:left;color:var(--ink)}
+.card .nm{font-size:.98rem;font-weight:700;display:block;font-style:italic}
+.card .sub{font-size:.76rem;color:#6B5B3E;display:block;margin-top:2px}
+.card.locked{opacity:.45;box-shadow:none}
+input[type=text]{width:100%;min-height:48px;border:3px solid var(--ink);border-radius:14px;
+  background:#FBF4E2;color:var(--ink);font-family:inherit;font-size:1rem;padding:10px 14px}
+#nameSheet .bino{font-size:1.15rem;font-weight:700;font-style:italic;text-align:center;margin:2px 0}
+#nameSheet .hist{font-size:.86rem;line-height:1.65;text-align:center;color:#4B3D28;margin:4px 0 8px}
+#toast{position:fixed;left:50%;bottom:calc(120px + var(--safeB));transform:translateX(-50%);
+  background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:12px;font-size:.84rem;
+  z-index:40;opacity:0;pointer-events:none;transition:opacity 170ms ease-out;max-width:84%;text-align:center}
+#toast.on{opacity:1}
+#testPanel{position:absolute;inset:0;z-index:60;background:#1A1409;color:#dfe;overflow:auto;
+  font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;padding:14px;display:none;white-space:pre-wrap}
+#testPanel.on{display:block}
+@media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
+</style>
+<script src="/music-unlocks.js?v=20260906a" defer></script>
+</head>
+<body>
+<h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">STRATA</h1>
+<div id="app">
+  <canvas id="board"></canvas>
+
+  <div id="chrome">
+    <div id="siteChip" hidden><span class="er"></span><span class="dp"></span></div>
+    <button class="btn icon" id="btnBack" hidden>&#8592;</button>
+    <button class="btn icon" id="btnMenu" aria-label="Menu">&#9776;</button>
+    <div id="banner"></div>
+    <button class="btn big" id="btnMount" hidden>MOUNT IT</button>
+  </div>
+
+  <div id="rail" hidden>
+    <button class="tool" id="tBrush" data-tool="brush"><span class="gl">&#129529;</span><span class="nm">BRUSH</span></button>
+    <button class="tool" id="tChisel" data-tool="chisel"><span class="gl">&#128296;</span><span class="nm">CHISEL</span></button>
+    <button class="tool" id="tPick" data-tool="pick"><span class="gl">&#9935;</span><span class="nm">PICK</span></button>
+    <button class="tool" id="tScan" data-tool="scan"><span class="gl">&#128269;</span><span class="nm">SCAN</span></button>
+  </div>
+
+  <div class="screen on" id="scrTitle">
+    <div class="col">
+      <div class="title">STRATA</div>
+      <p class="tag">Every fossil is the only one.</p>
+      <button class="btn big on" id="btnDig">DIG</button>
+      <button class="btn" id="btnMuseum">MUSEUM</button>
+      <button class="btn ghost" id="btnHow">HOW</button>
+    </div>
+  </div>
+
+  <div class="screen" id="scrHow">
+    <div class="col">
+      <div class="title" style="font-size:1.4rem">How it goes</div>
+      <p class="lede">Brush the dust away. Something is under there.</p>
+      <p class="lede">The chisel is quicker, and it cracks a bone if you rest on one. The pick cracks anything it touches.</p>
+      <p class="lede">Trace a freed bone along its length to lift it out. Mount it, name it, and hang it up.</p>
+      <button class="btn ghost" id="btnHowBack">BACK</button>
+    </div>
+  </div>
+
+  <div class="sheet" id="scrMenu">
+    <div class="col">
+      <div class="cap">Strata</div>
+      <button class="btn" id="btnToMuseum">THE MUSEUM</button>
+      <button class="btn" id="btnToJournal">THE JOURNAL</button>
+      <button class="btn" id="btnNewSite">A NEW SITE</button>
+      <button class="btn" id="btnSound">SOUND ON</button>
+      <button class="btn" id="btnMotion">MOTION ON</button>
+      <div class="cap">Your name, for the placards</div>
+      <input type="text" id="whoField" maxlength="24" placeholder="A field name">
+      <p class="tiny">Sky Wolf Studio</p>
+      <button class="btn ghost" id="btnMenuClose">CLOSE</button>
+    </div>
+  </div>
+
+  <div class="sheet" id="nameSheet">
+    <div class="col">
+      <div class="cap">A species nobody has seen</div>
+      <div class="bino" id="nsBino"></div>
+      <p class="tiny" id="nsMeta" style="text-align:center"></p>
+      <p class="hist" id="nsHist"></p>
+      <div class="cap">Name it for somebody</div>
+      <input type="text" id="dedField" maxlength="24" placeholder="A name, if you like">
+      <button class="btn big" id="btnKeep">KEEP IT</button>
+      <button class="btn ghost" id="btnNameClose">NOT YET</button>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+  <div id="testPanel"></div>
+</div>
+
+<script>
+/* ============================================================================
+   STRATA
+   One file, no framework, no build step. The rules live between the
+   SIM_EXPORT markers and sim.js reads them through those markers, so the
+   headless runner and the thumb generate the same animals.
+
+   ⛔ A SPECIMEN IS ITS SEED. `species(seed)` and `identity(sp, seed, ded)` are
+   pure functions of one number. The share link carries the seed and nothing
+   else that matters, and the museum stores the seed rather than the bones,
+   which is why a link from a stranger cannot smuggle a skeleton in.
+
+   ⛔ DETERMINISM. Inside the SIM export there is no Math.random, no Date, no
+   document, no window and no transcendental Math call: sin, cos and atan2 come
+   from DMATH, built from + - * / and Math.sqrt only.
+   ========================================================================== */
+'use strict';
+
+// ---- SIM_EXPORT_START ----
+/* ========================= 1. CONFIG ========================= */
+/* A number that has to change changes HERE and nowhere else. sim.js --over
+   runs any sweep against an override without editing the shipped file. */
+var CONFIG = Object.freeze({
+  GAME_ID: 'strata', SAVE_KEY: 'lw_strata_v1', SAVE_V: 1,
+
+  GRID_W: 200, GRID_H: 300,
+
+  PICK_R: 14, PICK_RATE: 1.0,
+  CHISEL_R: 8, CHISEL_RATE: 0.5, CHISEL_FILL: 1.0, CHISEL_DRAIN: 2.0, CHISEL_WARN: 0.6,
+  BRUSH_R: 10, BRUSH_RATE: 0.15,
+
+  EXTRACT_CLEAR: 0.85,   /* of a bone's cells cleared before it can be traced */
+  TRACE_TOL: 12,         /* cells the trace may stray from the bone's spine */
+  TRACE_COVER: 0.70,     /* of the spine the trace must run along */
+  MOUNT_MIN: 0.60,       /* of the skeleton's bones before it can be mounted */
+
+  BONES_MIN: 12, BONES_MAX: 80,
+  SITE_SMALL: 1, SITE_LARGE: 2,
+  BANDS: 6, SCAN_PER_SITE: 1,
+  DUST_MAX: 400,
+  MISSING_CHANCE: 0.05,      /* a bone the ground never gave back */
+  SCATTER_CHANCE: 0.20,      /* a bone the ground moved */
+  SCATTER_MIN: 2, SCATTER_MAX: 6,
+  DEEP_UNLOCK_A: 2, DEEP_UNLOCK_B: 5, DEEP_UNLOCK_C: 9,
+  WING_A: 4, WING_B: 8, WING_C: 12,
+  ZOOM_MIN: 0.7, ZOOM_MAX: 2.5, TAP_SLOP: 10
+});
+/* ========================= 2. RNG ========================= */
+/* Seeded. Used for the random layouts the serialisation gate round trips and
+   for nothing the player sees. */
+function makeRNG(seed) {
+  var a = (seed >>> 0) || 1;
+  function r() {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    var t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+  r.state = function () { return a >>> 0; };
+  return r;
+}
+function seedFromString(str) {
+  var h = 2166136261, i;
+  for (i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+function mixSeed(seed, salt) { return (Math.imul(seed ^ salt, 2654435761) >>> 0); }
+
+/* ========================= 3. DMATH ========================= */
+/* Copied from satellites/doohickey/index.html, whose header explains why it
+   exists: ECMAScript does not specify the last bit of Math.sin, and a layout
+   sent by link has to run the same on the other phone. Built from + - * / and
+   Math.sqrt only. */
+var DPI = 3.141592653589793, DHALF_PI = 1.5707963267948966, DTWO_PI = 6.283185307179586;
+var TWO_PI_HI = 6.28125, TWO_PI_MID = 0.001935307179586477,
+  TWO_PI_LO = -7.471323344099423e-20, INV_TWO_PI = 0.15915494309189535;
+var SIXTH_PI = 0.5235987755982989, SQRT3 = 1.7320508075688772,
+  TAN_TWELFTH_PI = 0.26794919243112270;
+var S1 = -0.16666666666666666, S2 = 0.008333333333333333, S3 = -0.0001984126984126984,
+  S4 = 2.7557319223985893e-06, S5 = -2.505210838544172e-08, S6 = 1.6059043836821613e-10,
+  S7 = -7.647163731819816e-13, S8 = 2.8114572543455206e-15, S9 = -8.22063524662433e-18;
+var C1 = -0.5, C2 = 0.041666666666666664, C3 = -0.001388888888888889,
+  C4 = 2.48015873015873e-05, C5 = -2.755731922398589e-07, C6 = 2.08767569878681e-09,
+  C7 = -1.1470745597729725e-11, C8 = 4.779477332387385e-14, C9 = -1.5619206968586225e-16;
+function dreduce(x) {
+  var k = Math.floor(x * INV_TWO_PI + 0.5);
+  return ((x - k * TWO_PI_HI) - k * TWO_PI_MID) - k * TWO_PI_LO;
+}
+function sinCore(r) {
+  var z = r * r;
+  return r * (1 + z * (S1 + z * (S2 + z * (S3 + z * (S4 + z * (S5 + z * (S6 + z * (S7 + z * (S8 + z * S9)))))))));
+}
+function cosCore(r) {
+  var z = r * r;
+  return 1 + z * (C1 + z * (C2 + z * (C3 + z * (C4 + z * (C5 + z * (C6 + z * (C7 + z * (C8 + z * C9))))))));
+}
+function dsin(x) {
+  var r = dreduce(x);
+  if (r > DHALF_PI) r = DPI - r;
+  else if (r < -DHALF_PI) r = -DPI - r;
+  return sinCore(r);
+}
+function dcos(x) {
+  var r = dreduce(x), flip = 1;
+  if (r > DHALF_PI) { r = DPI - r; flip = -1; }
+  else if (r < -DHALF_PI) { r = -DPI - r; flip = -1; }
+  return flip * cosCore(r);
+}
+function atanSmall(t) {
+  var z = t * t;
+  return t * (1 + z * (-0.3333333333333333 + z * (0.2 + z * (-0.14285714285714285 + z * (0.1111111111111111
+    + z * (-0.09090909090909091 + z * (0.07692307692307693 + z * (-0.06666666666666667
+      + z * (0.058823529411764705 + z * -0.05263157894736842)))))))));
+}
+function datan(x) {
+  var neg = x < 0, a = neg ? -x : x, big = false, r;
+  if (a > 1) { a = 1 / a; big = true; }
+  if (a > TAN_TWELFTH_PI) r = SIXTH_PI + atanSmall((a * SQRT3 - 1) / (SQRT3 + a));
+  else r = atanSmall(a);
+  if (big) r = DHALF_PI - r;
+  return neg ? -r : r;
+}
+function datan2(y, x) {
+  if (x === 0) { if (y > 0) return DHALF_PI; if (y < 0) return -DHALF_PI; return 0; }
+  var a = datan(y / x);
+  if (x > 0) return a;
+  return y >= 0 ? a + DPI : a - DPI;
+}
+function len2(x, y) { return Math.sqrt(x * x + y * y); }
+var DEG = 0.017453292519943295;
+/* the shortest way round from a to b, in radians, in (-pi, pi] */
+function angDiff(a, b) {
+  var d = (b - a) % DTWO_PI;
+  if (d > DPI) d -= DTWO_PI;
+  if (d <= -DPI) d += DTWO_PI;
+  return d;
+}
+function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
+
+
+/* ========================= 4. SKELETON ========================= */
+/* THE SOUL. Every parameter comes off its own seeded stream, so adding a rule
+   to the ornaments cannot change anybody's spine.
+   ⛔ THE PARAMETERS ARE CORRELATED ON PURPOSE. A grammar that draws every
+   number independently makes fifty plausible animals that all look the same:
+   a long neck goes with a small skull, flippers go with a short tail, wings go
+   with a light build, and a bus sized thing is rarely a biped. The variety
+   sheet in tools/variety.mjs is the gate on whether that worked, and it is
+   read by a person. */
+
+var PLANS = ['biped', 'quadruped', 'flippers', 'wings'];
+var SIZES = [
+  { k: 'mouse', s: 0.34 }, { k: 'dog', s: 0.78 },
+  { k: 'horse', s: 1.7 }, { k: 'bus', s: 3.6 }
+];
+var SKULLS = ['longjaw', 'beak', 'crest', 'dome'];
+var ORNAMENTS = ['none', 'plates', 'spines', 'frill', 'sail'];
+
+/* a weighted pick from a table of [value, weight] */
+function pickW(r, table) {
+  var total = 0, i;
+  for (i = 0; i < table.length; i++) total += table[i][1];
+  var x = r() * total;
+  for (i = 0; i < table.length; i++) { x -= table[i][1]; if (x <= 0) return table[i][0]; }
+  return table[table.length - 1][0];
+}
+function ri(r, lo, hi) { return lo + Math.floor(r() * (hi - lo + 1)); }
+function rf(r, lo, hi) { return lo + r() * (hi - lo); }
+
+/* era 0 is the top of the cliff and the youngest; era 5 is the deepest and the
+   strangest. Everything that biases with depth reads this number. */
+function species(seed, era) {
+  era = era === undefined ? 0 : clamp(era, 0, CONFIG.BANDS - 1);
+  var deep = era / (CONFIG.BANDS - 1);          /* 0 shallow, 1 deep */
+  var rPlan = makeRNG(mixSeed(seed, 11));
+  var rSpine = makeRNG(mixSeed(seed, 12));
+  var rSkull = makeRNG(mixSeed(seed, 13));
+  var rLimb = makeRNG(mixSeed(seed, 14));
+  var rOrn = makeRNG(mixSeed(seed, 15));
+
+  var plan = pickW(rPlan, [
+    ['biped', 3 - 1.4 * deep],
+    ['quadruped', 4 - 1.2 * deep],
+    ['flippers', 0.6 + 2.2 * deep],
+    ['wings', 0.5 + 2.0 * deep]
+  ]);
+  var sizeIx = pickW(rPlan, [
+    [0, 2.4 - 1.4 * deep], [1, 3.0 - 0.4 * deep],
+    [2, 1.6 + 1.0 * deep], [3, 0.5 + 1.8 * deep]
+  ]);
+  /* a winged thing is light: it never comes out bus sized */
+  if (plan === 'wings' && sizeIx > 2) sizeIx = 2;
+  /* and a bus sized thing rarely stands on two legs */
+  if (sizeIx === 3 && plan === 'biped' && rPlan() < 0.7) plan = 'quadruped';
+  var size = SIZES[sizeIx];
+
+  /* ⛔⛔ THE FIRST VARIETY SHEET WAS FIFTY OF THE SAME CENTIPEDE, and the
+     reason was here: there was no BODY LENGTH. The spine was one unit per
+     vertebra and everything hung on it was sized in absolute units, so an
+     animal's proportions were a function of how many vertebrae it happened to
+     roll. A skull came out at a tenth of the body where a real one is a
+     quarter, six ribs stood in for a ribcage, and the curvature accumulated
+     PER VERTEBRA so a long animal curled through two hundred and eighty
+     degrees into a question mark. Everything below is now a fraction of one
+     body length, and every curve is per unit of LENGTH. */
+  var nNeck = ri(rSpine, 3, 10);
+  if (plan === 'flippers' && rSpine() < 0.55) nNeck = ri(rSpine, 7, 14);   /* the long necked swimmers */
+  if (plan === 'wings') nNeck = ri(rSpine, 3, 7);
+  var nTrunk = ri(rSpine, 7, 14);
+  var nTail = ri(rSpine, 5, 12);
+  if (plan === 'flippers') nTail = ri(rSpine, 4, 7);
+  var tail = rSpine() < (plan === 'quadruped' ? 0.34 : 0.14) ? 'club' : 'whip';
+
+  /* the three sections as fractions of ONE body length, which is what makes a
+     long necked animal long in the NECK rather than simply enormous */
+  var fNeck = rf(rSpine, 0.13, 0.24) + (nNeck > 9 ? rf(rSpine, 0.06, 0.18) : 0);
+  var fTrunk = rf(rSpine, 0.26, 0.40);
+  var fTail = rf(rSpine, 0.24, 0.46) + (tail === 'whip' ? rf(rSpine, 0.0, 0.14) : 0);
+  if (plan === 'flippers') fTail *= 0.62;
+  var fSum = fNeck + fTrunk + fTail;
+  fNeck /= fSum; fTrunk /= fSum; fTail /= fSum;
+
+  /* ⛔ the correlation that does the most work: a long neck carries a small
+     head, and a short thick neck carries a heavy one. Independent draws here
+     were what made every animal on the first sheet the same animal. */
+  var skullScale = clamp(1.25 - 0.055 * nNeck + rf(rSkull, -0.09, 0.09), 0.55, 1.35);
+  var skull = pickW(rSkull, [
+    ['longjaw', 3 + (nNeck > 9 ? -1.4 : 0.8)],
+    ['beak', 2 + (plan === 'wings' ? 2.4 : 0)],
+    ['crest', 1.4 + 1.6 * deep],
+    ['dome', 1.2 + (skullScale > 1.05 ? 2.0 : -0.6)]
+  ]);
+  /* a head is a QUARTER of an animal, near enough, not a tenth of one */
+  var fSkull = (skull === 'longjaw' ? rf(rSkull, 0.22, 0.32)
+    : skull === 'beak' ? rf(rSkull, 0.17, 0.26)
+    : rf(rSkull, 0.15, 0.23)) * skullScale;
+  var fSkullH = fSkull * (skull === 'dome' ? rf(rSkull, 0.62, 0.86)
+    : skull === 'longjaw' ? rf(rSkull, 0.26, 0.40) : rf(rSkull, 0.40, 0.60));
+  var jawDeep = rf(rSkull, 0.30, 0.62) + (skull === 'dome' ? 0.14 : 0);
+  var digits = ri(rLimb, 2, 5);
+  if (plan === 'flippers') digits = ri(rLimb, 4, 5);
+
+  /* girth, and the ribcage that hangs on it */
+  var fGirth = rf(rSpine, 0.048, 0.082) * (sizeIx >= 2 ? 1.12 : 1);
+  var fRib = rf(rSpine, 0.15, 0.30) + (plan === 'flippers' ? 0.06 : 0);
+  var ribPairs = clamp(Math.min(nTrunk, ri(rSpine, 5, 8)), 4, 8);
+
+  /* limbs, also as fractions of the body */
+  var fUpper = rf(rLimb, 0.15, 0.26);
+  var fLower = fUpper * rf(rLimb, 0.7, 1.25);
+  var fFoot = fUpper * rf(rLimb, 0.35, 0.7);
+  if (plan === 'biped') { fUpper *= 1.5; fLower *= 1.45; fFoot *= 1.1; }
+  if (plan === 'wings') { fLower = fUpper * rf(rLimb, 1.6, 2.6); fFoot = fUpper * rf(rLimb, 1.3, 2.2); }
+  if (plan === 'flippers') { fUpper *= 0.75; fLower = fUpper * rf(rLimb, 0.5, 0.8); fFoot = fUpper * rf(rLimb, 0.6, 1.0); }
+  /* how far the limbs stand out from under the body: a sprawler and an animal
+     that stands upright read completely differently at a glance */
+  var sprawl = rf(rLimb, -0.16, 0.62) * (plan === 'flippers' ? 1.5 : 1);
+
+  var ornament = pickW(rOrn, [
+    ['none', 4.5 - 3.0 * deep],
+    ['plates', 1.0 + 1.6 * deep],
+    ['spines', 1.2 + 1.5 * deep],
+    ['frill', 0.5 + 1.4 * deep],
+    ['sail', 0.4 + 1.8 * deep]
+  ]);
+  var ornCount = ornament === 'none' ? 0 : ri(rOrn, 5, 9);
+  var fOrn = ornament === 'sail' ? rf(rOrn, 0.16, 0.34) : rf(rOrn, 0.08, 0.19);
+
+  /* ⛔ CURVATURE IS PER UNIT OF LENGTH, not per vertebra. Per vertebra, an
+     animal with forty of them curled through four radians.
+     ⛔⛔ AND IT IS A POSE, NOT A CONTINUUM. The second variety sheet was a much
+     better animal and still fifty of the same one, because the curl was drawn
+     from one wide range and almost every draw came out somewhere in the middle
+     of it: fifty prawns. An animal lies in the ground in one of a few
+     attitudes, and the attitude is the first thing the eye reads. */
+  var pose = pickW(rSpine, [
+    ['laid', 3.2], ['arched', 2.4], ['curled', 2.0], ['reared', 1.6], ['slumped', 1.8]
+  ]);
+  var curl, neckLift, neckS, tailDrop;
+  if (pose === 'laid') { curl = rf(rSpine, -0.05, 0.05); neckLift = rf(rSpine, -0.30, -0.08); tailDrop = rf(rSpine, -0.10, 0.14); }
+  else if (pose === 'arched') { curl = rf(rSpine, -0.20, -0.10); neckLift = rf(rSpine, -0.52, -0.26); tailDrop = rf(rSpine, -0.34, -0.14); }
+  else if (pose === 'curled') { curl = rf(rSpine, 0.10, 0.19); neckLift = rf(rSpine, -0.34, -0.14); tailDrop = rf(rSpine, 0.22, 0.44); }
+  else if (pose === 'reared') { curl = rf(rSpine, -0.12, 0.0); neckLift = rf(rSpine, -0.86, -0.50); tailDrop = rf(rSpine, -0.22, 0.06); }
+  else { curl = rf(rSpine, 0.02, 0.12); neckLift = rf(rSpine, -0.12, 0.10); tailDrop = rf(rSpine, 0.10, 0.30); }
+  neckS = rf(rSpine, 0, 1) < 0.38 ? rf(rSpine, 0.5, 1.1) : 0;   /* an S bend in some necks */
+
+  return {
+    seed: seed, era: era, plan: plan, sizeIx: sizeIx, sizeKey: size.k, scale: size.s,
+    nNeck: nNeck, nTrunk: nTrunk, nTail: nTail, tail: tail,
+    fNeck: fNeck, fTrunk: fTrunk, fTail: fTail, pose: pose,
+    skull: skull, skullScale: skullScale, fSkull: fSkull, fSkullH: fSkullH, jawDeep: jawDeep,
+    digits: digits, fUpper: fUpper, fLower: fLower, fFoot: fFoot, sprawl: sprawl,
+    fGirth: fGirth, fRib: fRib, ribPairs: ribPairs,
+    ornament: ornament, ornCount: ornCount, fOrn: fOrn,
+    curl: curl, neckLift: neckLift, neckS: neckS, tailDrop: tailDrop
+  };
+}
+
+/* ONE BODY LENGTH. Everything on an animal is a fraction of this number, which
+   is the whole reason a long necked one reads as long necked rather than as
+   simply bigger. */
+var BL = 10;
+/* The spine, as a chain of vertebra centres from the tail tip to the head.
+   Each section is a fixed FRACTION of the body, so more vertebrae means
+   smaller ones rather than a longer animal, and every turn is per unit of
+   length so a long spine does not curl up into a spiral. */
+function spineOf(sp) {
+  var nT = sp.nTail, nB = sp.nTrunk, nN = sp.nNeck;
+  var lT = sp.fTail * BL, lB = sp.fTrunk * BL, lN = sp.fNeck * BL;
+  var stepT = lT / nT, stepB = lB / nB, stepN = lN / nN;
+  var n = nT + nB + nN, i;
+  var pts = [], ang = 0, x = 0, y = 0;
+  var hip = nT, shoulder = nT + nB - 1;
+  for (i = 0; i < n; i++) {
+    var step = i < hip ? stepT : (i <= shoulder ? stepB : stepN);
+    if (i > 0) { x += dcos(ang) * step; y += dsin(ang) * step; }
+    pts.push({ x: x, y: y, r: vertR(sp, i, hip, shoulder), len: step });
+    if (i < hip) ang += sp.tailDrop * step * (1 - 0.6 * i / Math.max(1, hip));
+    else if (i <= shoulder) ang += sp.curl * step;
+    else {
+      /* the neck lifts, and some of them lift then fall back: an S bend is the
+         single most recognisable thing a neck can do */
+      var t = (i - shoulder) / Math.max(1, nN);
+      ang += (sp.neckLift + sp.neckS * dsin(t * 3.1415927)) * step;
+    }
+  }
+  return { pts: pts, hip: hip, shoulder: shoulder, headAng: ang, bl: BL };
+}
+/* ⛔ A HEAD INSIDE ITS OWN RIBCAGE IS NOT A SKELETON. Some necks lifted back
+   over the trunk and put the skull among the ribs, where nothing about the
+   animal could be read. The neck is straightened until the head stands clear,
+   which is a bounded loop and not a search. */
+function spineClear(sp) {
+  var work = sp, S = spineOf(work), tries = 0;
+  while (tries < 6 && headBuried(work, S)) {
+    work = Object.create(work);
+    work.neckLift = work.neckLift * 0.55;
+    work.neckS = work.neckS * 0.4;
+    work.curl = work.curl * 0.7;
+    S = spineOf(work);
+    tries++;
+  }
+  return { sp: work, S: S, straightened: tries };
+}
+function headBuried(sp, S) {
+  var P = S.pts, head = P[P.length - 1], i;
+  var need = sp.fGirth * BL * 2.6 + sp.fRib * BL * 0.8;
+  for (i = 0; i <= S.shoulder; i++) {
+    if (len2(P[i].x - head.x, P[i].y - head.y) < need) return true;
+  }
+  return false;
+}
+function vertR(sp, i, hip, shoulder) {
+  var g = sp.fGirth * BL, t;
+  if (i < hip) {
+    t = i / Math.max(1, hip);
+    var base = g * (0.16 + 0.84 * t * t);
+    if (sp.tail === 'club' && i < 2) base = g * 0.95;
+    return base;
+  }
+  if (i <= shoulder) return g;
+  t = (i - shoulder) / Math.max(1, sp.nNeck);
+  return g * (1 - 0.45 * t);
+}
+
+/* a rounded box polygon around a point, along a direction */
+function boxPoly(cx, cy, ang, len, wid) {
+  var c = dcos(ang), s = dsin(ang), out = [], i;
+  var k = [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]];
+  for (i = 0; i < 4; i++) {
+    var lx = k[i][0] * len, ly = k[i][1] * wid;
+    out.push({ x: cx + lx * c - ly * s, y: cy + lx * s + ly * c });
+  }
+  return out;
+}
+function taperPoly(x0, y0, x1, y1, w0, w1) {
+  var dx = x1 - x0, dy = y1 - y0, l = len2(dx, dy);
+  if (l < 1e-9) l = 1e-9;
+  var nx = -dy / l, ny = dx / l;
+  return [
+    { x: x0 + nx * w0 / 2, y: y0 + ny * w0 / 2 },
+    { x: x1 + nx * w1 / 2, y: y1 + ny * w1 / 2 },
+    { x: x1 - nx * w1 / 2, y: y1 - ny * w1 / 2 },
+    { x: x0 - nx * w0 / 2, y: y0 - ny * w0 / 2 }
+  ];
+}
+
+/* Every bone in body units, each one hung off its parent so the armature is a
+   TREE and the gate can prove nothing floats. */
+function bones(sp0) {
+  var fixed = spineClear(sp0);
+  var sp = fixed.sp, S = fixed.S, P = S.pts, out = [], i, k;
+  var rT = makeRNG(mixSeed(sp.seed, 21));
+  function ang(i) {
+    var a = P[Math.min(i + 1, P.length - 1)], b = P[Math.max(i - 1, 0)];
+    return datan2(a.y - b.y, a.x - b.x);
+  }
+  function push(kind, poly, spinePts, fragile, parent) {
+    out.push({ id: out.length, kind: kind, poly: poly, spine: spinePts,
+      fragile: !!fragile, parent: parent === undefined ? -1 : parent });
+    return out.length - 1;
+  }
+  /* --- the spine: vertebrae that TOUCH, so it reads as a backbone rather than
+     as a dashed line, which is what the first variety sheet showed fifty of --- */
+  var vertId = [], rootIx = S.hip;
+  for (i = 0; i < P.length; i++) {
+    var a = ang(i), r = P[i].r, lenV = P[i].len * 1.05;
+    var poly = boxPoly(P[i].x, P[i].y, a, lenV, r * 2);
+    var sp2 = [
+      { x: P[i].x - dcos(a) * lenV * 0.4, y: P[i].y - dsin(a) * lenV * 0.4 },
+      { x: P[i].x + dcos(a) * lenV * 0.4, y: P[i].y + dsin(a) * lenV * 0.4 }
+    ];
+    vertId.push(push('vertebra', poly, sp2, r < sp.fGirth * BL * 0.4, -2));
+  }
+  for (i = 0; i < vertId.length; i++) {
+    out[vertId[i]].parent = (i === rootIx) ? -1 : vertId[i < rootIx ? i + 1 : i - 1];
+  }
+  /* --- the ribcage: a real one, both sides, curving down and back --- */
+  var ribFrom = S.hip + 1, ribTo = S.shoulder - 1;
+  var pairs = Math.min(sp.ribPairs, Math.max(1, ribTo - ribFrom + 1));
+  for (k = 0; k < pairs; k++) {
+    var ix = Math.round(ribFrom + (ribTo - ribFrom) * (pairs === 1 ? 0.5 : k / (pairs - 1)));
+    if (ix < 1 || ix >= P.length - 1) continue;
+    var aa = ang(ix), nx = -dsin(aa), ny = dcos(aa);
+    /* the cage is deepest in the middle and shallower at both ends */
+    var taperK = pairs === 1 ? 1 : 1 - 0.42 * Math.abs(k - (pairs - 1) / 2) / ((pairs - 1) / 2);
+    var ribLen = sp.fRib * BL * taperK;
+    var wid = sp.fGirth * BL * 0.42;
+    for (var side = -1; side <= 1; side += 2) {
+      var bx = P[ix].x + nx * P[ix].r * 0.7 * side, by = P[ix].y + ny * P[ix].r * 0.7 * side;
+      var mx = bx + nx * ribLen * 0.62 * side + dcos(aa) * ribLen * 0.10;
+      var my = by + ny * ribLen * 0.62 * side + dsin(aa) * ribLen * 0.10;
+      var ex = bx + nx * ribLen * side * 0.98 - dcos(aa) * ribLen * 0.42;
+      var ey = by + ny * ribLen * side * 0.98 - dsin(aa) * ribLen * 0.42;
+      push('rib', taperPoly(bx, by, mx, my, wid, wid * 0.8).concat(
+        taperPoly(mx, my, ex, ey, wid * 0.8, wid * 0.5)),
+        [{ x: bx, y: by }, { x: mx, y: my }, { x: ex, y: ey }], true, vertId[ix]);
+    }
+  }
+  /* --- the skull: a QUARTER of the animal, near enough, and unmistakably a
+     head, because on the first sheet nobody could find one --- */
+  var hx = P[P.length - 1].x, hy = P[P.length - 1].y, ha = S.headAng;
+  var sl = sp.fSkull * BL, sh = sp.fSkullH * BL;
+  var cx2 = hx + dcos(ha) * sl * 0.42, cy2 = hy + dsin(ha) * sl * 0.42;
+  var ux = -dsin(ha), uy = dcos(ha);
+  var cranium;
+  function at(f, u) { return { x: hx + dcos(ha) * sl * f + ux * sh * u, y: hy + dsin(ha) * sl * f + uy * sh * u }; }
+  if (sp.skull === 'dome') {
+    cranium = [at(-0.05, 0.15), at(0.08, -0.62), at(0.42, -0.78), at(0.76, -0.5),
+      at(1.0, -0.12), at(0.92, 0.28), at(0.5, 0.4), at(0.06, 0.4)];
+  } else if (sp.skull === 'beak') {
+    cranium = [at(-0.05, 0.2), at(0.05, -0.5), at(0.36, -0.56), at(1.05, -0.04),
+      at(0.36, 0.2), at(0.06, 0.42)];
+  } else if (sp.skull === 'longjaw') {
+    cranium = [at(-0.02, 0.24), at(0.04, -0.46), at(0.3, -0.52), at(1.02, -0.2),
+      at(1.04, 0.02), at(0.34, 0.16), at(0.05, 0.44)];
+  } else {
+    cranium = [at(-0.04, 0.22), at(0.02, -0.5), at(0.3, -0.68), at(0.72, -0.52),
+      at(1.0, -0.1), at(0.62, 0.22), at(0.08, 0.44)];
+  }
+  var skullId = push('skull', cranium, [at(0.02, 0), at(0.95, -0.1)], false, vertId[vertId.length - 1]);
+  /* the eye socket is drawn by VIEW, not by a bone; the jaw is a bone */
+  var jaw = [at(0.02, 0.3), at(0.98, 0.06), at(1.0, 0.26), at(0.05, 0.62)];
+  if (sp.skull === 'longjaw') jaw = [at(0.02, 0.3), at(1.05, 0.1), at(1.05, 0.3), at(0.05, 0.66)];
+  push('jaw', jaw, [at(0.05, 0.44), at(1.0, 0.16)], true, skullId);
+  if (sp.skull === 'crest') {
+    push('crest', [at(0.1, -0.55), at(-0.55, -1.7), at(0.15, -1.95), at(0.55, -0.8)],
+      [at(0.12, -0.6), at(-0.2, -1.8)], true, skullId);
+  }
+  if (sp.ornament === 'frill') {
+    push('frill', [at(0.0, -0.5), at(-0.75, -1.9), at(-1.6, -0.4), at(-1.5, 0.7), at(-0.6, 1.35), at(0.0, 0.5)],
+      [at(0, 0), at(-1.3, 0.1)], true, skullId);
+  }
+
+  /* --- limbs --- */
+  function limb(atIx, back, kind, up, lo, ft, splay) {
+    var b = P[atIx], parent = vertId[atIx];
+    var a0 = 1.5707963 + splay + sp.sprawl * (back ? -0.35 : 0.35);
+    var x1 = b.x + dcos(a0) * up, y1 = b.y + dsin(a0) * up;
+    var a1 = a0 + (back ? 1 : -1) * rf(rT, 0.3, 0.85);
+    var x2 = x1 + dcos(a1) * lo, y2 = y1 + dsin(a1) * lo;
+    var a2 = a1 + (back ? -1 : 1) * rf(rT, 0.3, 1.0);
+    var x3 = x2 + dcos(a2) * ft, y3 = y2 + dsin(a2) * ft;
+    var w = sp.fGirth * BL * (kind === 'flipper' ? 1.2 : 0.95);
+    var idA = push(kind, taperPoly(b.x, b.y, x1, y1, w * 1.15, w * 0.85), [{ x: b.x, y: b.y }, { x: x1, y: y1 }], false, parent);
+    var idB = push(kind, taperPoly(x1, y1, x2, y2, w * 0.85, w * 0.62), [{ x: x1, y: y1 }, { x: x2, y: y2 }], false, idA);
+    push(kind, taperPoly(x2, y2, x3, y3, w * 0.62, kind === 'flipper' ? w * 2.2 : w * 0.9),
+      [{ x: x2, y: y2 }, { x: x3, y: y3 }], true, idB);
+    return idB;
+  }
+  var hipIx = S.hip, shIx = S.shoulder;
+  var U0 = sp.fUpper * BL, L0 = sp.fLower * BL, F0 = sp.fFoot * BL;
+  if (sp.plan === 'quadruped') {
+    limb(hipIx, true, 'leg', U0 * 1.1, L0 * 1.05, F0, -0.16);
+    limb(hipIx, true, 'leg', U0, L0, F0, 0.14);
+    limb(shIx, false, 'leg', U0 * 0.92, L0 * 0.9, F0 * 0.9, -0.12);
+    limb(shIx, false, 'leg', U0 * 0.86, L0 * 0.86, F0 * 0.9, 0.18);
+  } else if (sp.plan === 'biped') {
+    limb(hipIx, true, 'leg', U0, L0, F0, -0.1);
+    limb(hipIx, true, 'leg', U0 * 0.95, L0 * 0.95, F0, 0.2);
+    limb(shIx, false, 'arm', U0 * 0.34, L0 * 0.3, F0 * 0.5, -0.55);
+    limb(shIx, false, 'arm', U0 * 0.31, L0 * 0.28, F0 * 0.5, -0.25);
+  } else if (sp.plan === 'flippers') {
+    limb(hipIx, true, 'flipper', U0, L0, F0, -0.34);
+    limb(hipIx, true, 'flipper', U0 * 0.95, L0, F0, 0.34);
+    limb(shIx, false, 'flipper', U0 * 1.1, L0, F0, -0.38);
+    limb(shIx, false, 'flipper', U0 * 1.05, L0, F0, 0.38);
+  } else {
+    limb(hipIx, true, 'leg', U0 * 0.7, L0 * 0.55, F0 * 0.6, -0.12);
+    limb(hipIx, true, 'leg', U0 * 0.66, L0 * 0.55, F0 * 0.6, 0.18);
+    limb(shIx, false, 'wing', U0, L0, F0, -1.05);
+    limb(shIx, false, 'wing', U0 * 0.95, L0 * 0.96, F0 * 0.95, -0.6);
+  }
+
+  /* --- the ornament pass --- */
+  if (sp.ornament === 'plates' || sp.ornament === 'spines' || sp.ornament === 'sail') {
+    var from = Math.max(1, S.hip - 2), to = Math.min(P.length - 2, S.shoulder + 1);
+    for (k = 0; k < sp.ornCount; k++) {
+      var ix2 = Math.round(from + (to - from) * (k + 0.5) / sp.ornCount);
+      if (ix2 < 1 || ix2 >= P.length - 1) continue;
+      var av = ang(ix2), vx = -dsin(av), vy = dcos(av);
+      var hgt = sp.fOrn * BL * (sp.ornament === 'sail'
+        ? (0.45 + 0.85 * dsin(3.1415927 * (k + 0.5) / sp.ornCount))
+        : rf(rT, 0.7, 1.25));
+      /* ⛔ a plate wide enough to touch the plate next to it turns an armoured
+         animal into one solid wedge, and on the variety sheet every plated
+         species was the same blob. They are narrower than their spacing now. */
+      var gapU = (to - from) / Math.max(1, sp.ornCount) * (sp.fTrunk * BL / Math.max(1, sp.nTrunk));
+      var wid2 = sp.ornament === 'plates' ? Math.min(sp.fGirth * BL * 1.35, gapU * 0.62)
+        : sp.fGirth * BL * (sp.ornament === 'sail' ? 0.30 : 0.38);
+      var bx2 = P[ix2].x - vx * P[ix2].r, by2 = P[ix2].y - vy * P[ix2].r;
+      push(sp.ornament === 'plates' ? 'plate' : 'spike',
+        [{ x: bx2 - dcos(av) * wid2 / 2, y: by2 - dsin(av) * wid2 / 2 },
+         { x: bx2 - vx * hgt + dcos(av) * wid2 * 0.1, y: by2 - vy * hgt + dsin(av) * wid2 * 0.1 },
+         { x: bx2 + dcos(av) * wid2 / 2, y: by2 + dsin(av) * wid2 / 2 }],
+        [{ x: bx2, y: by2 }, { x: bx2 - vx * hgt, y: by2 - vy * hgt }], true, vertId[ix2]);
+    }
+  }
+  return out;
+}
+
+/* the box a set of bones lives in, in body units */
+function boneBounds(bs) {
+  var b = { x0: 1e9, y0: 1e9, x1: -1e9, y1: -1e9 }, i, k;
+  for (i = 0; i < bs.length; i++) {
+    for (k = 0; k < bs[i].poly.length; k++) {
+      var p = bs[i].poly[k];
+      if (p.x < b.x0) b.x0 = p.x;
+      if (p.x > b.x1) b.x1 = p.x;
+      if (p.y < b.y0) b.y0 = p.y;
+      if (p.y > b.y1) b.y1 = p.y;
+    }
+  }
+  return b;
+}
+/* every bone reaches the root by its parents, or the armature is not a tree */
+function armatureOk(bs) {
+  var i, k, n;
+  for (i = 0; i < bs.length; i++) {
+    n = i;
+    for (k = 0; k < bs.length + 2; k++) {
+      if (bs[n].parent < 0) break;
+      if (bs[n].parent >= bs.length) return false;
+      n = bs[n].parent;
+    }
+    if (bs[n].parent >= 0) return false;
+  }
+  return true;
+}
+
+/* ========================= 5. IDENTITY ========================= */
+/* The name, the era and the one line of natural history, all off the seed.
+   ⛔ The words gate is Asterism's: every fragment has to be reachable, no
+   fragment may swallow its slot, and nothing a player reads carries a dash, an
+   exclamation point or an absolute. A generated history that says a creature
+   ALWAYS did something is a lie about an animal nobody has ever dug up. */
+
+var GEN_A = ['Vexi', 'Thala', 'Cryo', 'Meso', 'Draco', 'Steno', 'Aula', 'Corvi', 'Bary', 'Litho',
+  'Nycti', 'Ambly', 'Ptero', 'Gnatho', 'Rhino', 'Chasmo', 'Eury', 'Micro', 'Pachy', 'Sarco',
+  'Tricho', 'Umbri', 'Xero', 'Zeno', 'Ferro', 'Halo'];
+var GEN_B = ['can', 'thero', 'saur', 'don', 'rhyn', 'ceph', 'pod', 'gnath', 'lith', 'phor',
+  'morph', 'cheir', 'derm', 'notho', 'spond', 'mimo', 'venat', 'plax', 'stego', 'ankyl'];
+var GEN_C = ['us', 'on', 'ia', 'ax', 'es', 'or', 'is', 'um', 'ops', 'yx', 'ura', 'ithes',
+  'ellus', 'atus', 'ynx', 'oceros'];
+var SPECIES_W = ['gracilis', 'robustus', 'minor', 'major', 'altus', 'brevis', 'longus', 'niger',
+  'albus', 'ferox', 'mirabilis', 'elegans', 'pallidus', 'umbrosus', 'lucidus', 'obscurus',
+  'paludis', 'litoris', 'montis', 'silvae', 'fluminis', 'campi', 'antrum', 'boreus', 'australis',
+  'orientis', 'occidens', 'hiemalis', 'vernalis', 'aestivus', 'autumnalis', 'nocturnus',
+  'matutinus', 'vesperis', 'placidus', 'agilis', 'tardus', 'velox', 'humilis', 'sublimis',
+  'asper', 'levis', 'durus', 'tener', 'crassus', 'tenuis', 'latus', 'angustus', 'rotundus',
+  'acutus', 'planus', 'cavus', 'plenus', 'inanis', 'primus', 'ultimus', 'medius', 'solus',
+  'gregarius', 'errans', 'quietus', 'vigilans', 'somnians', 'cantans', 'silens', 'fodiens',
+  'natans', 'volans', 'currens', 'stans', 'sedens', 'petrosus', 'harenae', 'nivis', 'pluvius',
+  'ventosus', 'nebulae', 'aurorae', 'crepusculi', 'stellaris', 'lunaris'];
+
+var ERA_WORD = ['Emberwash', 'Coldreach', 'Saltmarch', 'Ashfen', 'Longdrift', 'Ironrise',
+  'Glasswater', 'Duskmoor', 'Thornbed', 'Palefield', 'Slowtide', 'Redmarl', 'Greenshale',
+  'Deepgrain', 'Stillwater', 'Windrow', 'Bittersand', 'Quietflow', 'Highchalk', 'Blackturn',
+  'Foglow', 'Sunder', 'Loamgate', 'Nightflint', 'Warmshelf', 'Farbank', 'Oldgrass',
+  'Silthollow', 'Copperfen', 'Milkstone'];
+var EPOCH = ['Cenian', 'Verdian', 'Thessic', 'Lurian', 'Ambric', 'Nerine', 'Calvian', 'Orthic',
+  'Pellian', 'Ranthic', 'Solvian', 'Tarnic', 'Umbrian', 'Vessian', 'Wardic', 'Yarnic',
+  'Zephric', 'Braxic', 'Denthic', 'Ellian'];
+var BAND_PREFIX = ['Upper', 'Upper', 'Middle', 'Middle', 'Lower', 'Lower'];
+
+var HAB = ['Waded the shallow deltas', 'Hunted the cold shelf', 'Kept to the reed beds',
+  'Followed the seasonal floods', 'Nested on the chalk cliffs', 'Grazed the ash plains',
+  'Swam the warm inland sea', 'Sheltered under fallen trunks', 'Worked the tidal flats',
+  'Crossed the dune fields at night', 'Lived along the slow rivers', 'Climbed the fern canopy',
+  'Denned in the limestone hollows', 'Walked the salt pans', 'Fed in the drowned forest',
+  'Held the high ridges', 'Rooted through the leaf litter', 'Waited in the shallows',
+  'Ranged the open scrub', 'Kept near the hot springs', 'Drifted the cold currents',
+  'Foraged the burnt ground', 'Slept out the dry months', 'Followed the herd trails',
+  'Hunted the shoreline at dawn', 'Sifted the river mouth', 'Nested in the cliff colonies',
+  'Wintered in the sheltered bays', 'Browsed the low willow', 'Patrolled the estuary channels'];
+var HAB2 = ['and sang through its crest at dusk', 'and travelled in loose family groups',
+  'and moulted twice a year', 'and swallowed stones to grind its food',
+  'and drummed on hollow wood', 'and carried its young on its back',
+  'and left long trackways in the mud', 'and fed mostly at first light',
+  'and defended a patch of gravel', 'and slept standing in the shallows',
+  'and traded burrows with its neighbours', 'and moved by night in the dry season',
+  'and rubbed its plates smooth on stone', 'and stripped bark with its front teeth',
+  'and swallowed fish whole', 'and dug for roots with its foreclaws',
+  'and held its tail clear of the ground', 'and gathered in numbers to breed',
+  'and hissed rather than called', 'and shed and regrew its teeth',
+  'and lined its nest with fern', 'and drank at the same bend for years',
+  'and grew slowly for a decade', 'and stood watch while the others fed',
+  'and rolled in the ash to be rid of parasites', 'and followed the storms inland',
+  'and cracked shells against its own ribs', 'and swam with its neck held low',
+  'and marked its range with scratches', 'and rested through the middle of the day'];
+var PART = ['Its hind claws show a healed break.', 'One rib carries the mark of an old wound.',
+  'The crest is thinner in the smaller specimens.', 'Its teeth were replaced through life.',
+  'The tail vertebrae fuse late.', 'A bony ring supported the eye.',
+  'The shoulder girdle is unusually deep.', 'Its skull sutures stayed open into adulthood.',
+  'The last two plates are asymmetric.', 'Growth rings suggest a long life.',
+  'The forelimb kept five digits.', 'Its neck bones are hollow and light.',
+  'The jaw hinge allowed a wide gape.', 'Wear on the beak points to a hard diet.',
+  'The spine curves to the left in the specimens found so far.',
+  'A second row of teeth sat behind the first.', 'The pelvis is fused in older animals.',
+  'Its foot bones suggest a soft pad.', 'The braincase is small for the skull.',
+  'One vertebra shows a fused fracture.', 'The ribs thin sharply towards the hip.',
+  'Its ornament grew heavier with age.', 'The lower jaw held a keratin sheath.',
+  'Fine grooves run along the femur.', 'The nostrils sat high on the snout.',
+  'Its limb bones are dense for a swimmer.', 'The tail tip is missing in most finds.',
+  'A muscle scar marks the upper arm.', 'The shoulder blade is broader than the hip.',
+  'Its youngest bones are barely mineralised.'];
+
+var DIETS = ['a hunter', 'a fish eater', 'a browser', 'a grazer', 'a forager', 'a shore feeder',
+  'an omnivore', 'a bone crusher'];
+function dietOf(sp, r) {
+  if (sp.plan === 'flippers') return r() < 0.75 ? 'a fish eater' : 'a shore feeder';
+  if (sp.skull === 'longjaw') return r() < 0.7 ? 'a hunter' : 'a bone crusher';
+  if (sp.skull === 'beak') return r() < 0.55 ? 'a forager' : 'a grazer';
+  if (sp.skull === 'dome') return r() < 0.6 ? 'a browser' : 'an omnivore';
+  return r() < 0.5 ? 'a grazer' : 'a browser';
+}
+/* a dedication becomes an epithet the way a real one does: strip it to letters,
+   drop a trailing vowel, add an i. Penny keeps its y and becomes pennyi.
+   ⛔ it is never title cased and never corrected: it is a nine year old's
+   spelling of somebody they love (the Wardian rule). */
+function cleanName(s) {
+  var out = '', i, ch;
+  s = String(s === undefined || s === null ? '' : s);
+  for (i = 0; i < s.length && out.length < 24; i++) {
+    ch = s.charAt(i);
+    if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch === ' ') out += ch;
+  }
+  return out.replace(/\s+/g, ' ').replace(/^ | $/g, '');
+}
+function epithetFor(name) {
+  var s = cleanName(name).toLowerCase().replace(/ /g, '');
+  if (!s) return '';
+  var last = s.charAt(s.length - 1);
+  if ('aeiou'.indexOf(last) >= 0) s = s.slice(0, -1);
+  return s + 'i';
+}
+function identity(sp, seed, dedication) {
+  var rN = makeRNG(mixSeed(seed, 31));
+  var rH = makeRNG(mixSeed(seed, 32));
+  var rE = makeRNG(mixSeed(seed, 33));
+  var genus = GEN_A[Math.floor(rN() * GEN_A.length)]
+    + GEN_B[Math.floor(rN() * GEN_B.length)]
+    + GEN_C[Math.floor(rN() * GEN_C.length)];
+  var ded = epithetFor(dedication);
+  var epithet = ded || SPECIES_W[Math.floor(rN() * SPECIES_W.length)];
+  var eraName = 'The ' + ERA_WORD[Math.floor(rE() * ERA_WORD.length)];
+  var epoch = BAND_PREFIX[clamp(sp.era, 0, BAND_PREFIX.length - 1)] + ' '
+    + EPOCH[Math.floor(rE() * EPOCH.length)];
+  var history = HAB[Math.floor(rH() * HAB.length)] + ' '
+    + HAB2[Math.floor(rH() * HAB2.length)] + '. '
+    + PART[Math.floor(rH() * PART.length)];
+  return {
+    genus: genus, epithet: epithet, binomial: genus + ' ' + epithet,
+    dedicated: !!ded, diet: dietOf(sp, rH),
+    eraName: eraName, epoch: epoch, history: history,
+    sizeWord: sp.sizeKey, plan: sp.plan
+  };
+}
+
+/* ========================= 6. SITE ========================= */
+/* Where the animal lies in the rock, and what the rock is doing around it.
+   ⛔ superposition: band 0 is the top of the cliff and the youngest, band 5 is
+   the bottom and the oldest, and the deeper specimen in a two skeleton site is
+   always the lower one. The settings screen says so in one line, because that
+   is the education door this game opens. */
+
+function bandLines(seed) {
+  var r = makeRNG(mixSeed(seed, 41)), out = [], i, k;
+  for (i = 1; i < CONFIG.BANDS; i++) {
+    var base = CONFIG.GRID_H * i / CONFIG.BANDS;
+    var wob = [], amp = rf(r, 4, 13), ph = rf(r, 0, 6.28), f = rf(r, 1.2, 2.8);
+    for (k = 0; k <= CONFIG.GRID_W; k++) {
+      wob.push(base + dsin(ph + f * k / CONFIG.GRID_W * 6.2831853) * amp
+        + dsin(ph * 2 + 3.1 * k / CONFIG.GRID_W * 6.2831853) * amp * 0.35);
+    }
+    out.push(wob);
+  }
+  return out;
+}
+function bandAt(lines, x, y) {
+  var i, cx = clamp(Math.round(x), 0, CONFIG.GRID_W);
+  for (i = 0; i < lines.length; i++) if (y < lines[i][cx]) return i;
+  return lines.length;
+}
+
+function rotatePt(p, a, cx, cy) {
+  var c = dcos(a), s = dsin(a), dx = p.x - cx, dy = p.y - cy;
+  return { x: cx + dx * c - dy * s, y: cy + dx * s + dy * c };
+}
+/* Lay a skeleton into a rectangle of grid cells: turn it whichever way fits
+   best, scale it so its size class still reads, tilt it a little because
+   nothing in the ground is square, then let the ground move a few bones and
+   keep one or two of them. */
+function placeSpecimen(sp, seed, region) {
+  var bs = bones(sp), i, k;
+  var b = boneBounds(bs);
+  var cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2;
+  var r = makeRNG(mixSeed(seed, 42));
+  var tilt = rf(r, -0.32, 0.32);
+  var best = null;
+  for (k = 0; k < 2; k++) {
+    var a = tilt + k * 1.5707963;
+    var bb = { x0: 1e9, y0: 1e9, x1: -1e9, y1: -1e9 }, j, m;
+    for (j = 0; j < bs.length; j++) for (m = 0; m < bs[j].poly.length; m++) {
+      var p = rotatePt(bs[j].poly[m], a, cx, cy);
+      if (p.x < bb.x0) bb.x0 = p.x;
+      if (p.x > bb.x1) bb.x1 = p.x;
+      if (p.y < bb.y0) bb.y0 = p.y;
+      if (p.y > bb.y1) bb.y1 = p.y;
+    }
+    var w = Math.max(0.01, bb.x1 - bb.x0), h = Math.max(0.01, bb.y1 - bb.y0);
+    var fit = Math.min((region.x1 - region.x0) / w, (region.y1 - region.y0) / h);
+    if (!best || fit > best.fit) best = { a: a, bb: bb, fit: fit };
+  }
+  /* the size class still has to read: a mouse does not fill the same cliff a
+     bus does, it just has to fit inside it */
+  var sizeF = 0.52 + 0.48 * (sp.scale / SIZES[SIZES.length - 1].s);
+  var scale = best.fit * 0.9 * sizeF;
+  var w2 = (best.bb.x1 - best.bb.x0) * scale, h2 = (best.bb.y1 - best.bb.y0) * scale;
+  var ox = (region.x0 + region.x1) / 2 - (best.bb.x0 + best.bb.x1) / 2 * scale;
+  var oy = (region.y0 + region.y1) / 2 - (best.bb.y0 + best.bb.y1) / 2 * scale;
+  void w2; void h2;
+
+  var out = [], missing = 0;
+  for (i = 0; i < bs.length; i++) {
+    var src = bs[i];
+    var dx = 0, dy = 0;
+    if (src.kind !== 'skull' && r() < CONFIG.SCATTER_CHANCE) {
+      var a2 = rf(r, 0, 6.2831853), d = rf(r, CONFIG.SCATTER_MIN, CONFIG.SCATTER_MAX);
+      dx = dcos(a2) * d; dy = dsin(a2) * d;
+    }
+    var gone = src.kind !== 'skull' && r() < CONFIG.MISSING_CHANCE;
+    var poly = [], spine = [];
+    for (k = 0; k < src.poly.length; k++) {
+      var q = rotatePt(src.poly[k], best.a, cx, cy);
+      poly.push({ x: q.x * scale + ox + dx, y: q.y * scale + oy + dy });
+    }
+    for (k = 0; k < src.spine.length; k++) {
+      var q2 = rotatePt(src.spine[k], best.a, cx, cy);
+      spine.push({ x: q2.x * scale + ox + dx, y: q2.y * scale + oy + dy });
+    }
+    if (gone) missing++;
+    out.push({ id: src.id, kind: src.kind, parent: src.parent, fragile: src.fragile,
+      poly: poly, spine: spine, missing: gone, cracked: false, out: false, cells: 0, clear: 0 });
+  }
+  /* never take so much that there is nothing to find */
+  if (missing > out.length * 0.18) {
+    for (i = out.length - 1; i >= 0 && missing > out.length * 0.18; i--) {
+      if (out[i].missing) { out[i].missing = false; missing--; }
+    }
+  }
+  return out;
+}
+/* is every corner of every bone inside the cliff */
+function bonesInside(placed) {
+  var i, k;
+  for (i = 0; i < placed.length; i++) {
+    for (k = 0; k < placed[i].poly.length; k++) {
+      var p = placed[i].poly[k];
+      if (p.x < 0 || p.y < 0 || p.x > CONFIG.GRID_W || p.y > CONFIG.GRID_H) return false;
+    }
+  }
+  return true;
+}
+/* one site: the bands, one or two specimens, the deeper one lower */
+function makeSite(seed, depth) {
+  var r = makeRNG(mixSeed(seed, 43));
+  var lines = bandLines(seed);
+  var large = depth >= 1 && r() < 0.42;
+  var specs = [], i;
+  var n = large ? CONFIG.SITE_LARGE : CONFIG.SITE_SMALL;
+  for (i = 0; i < n; i++) {
+    /* the deeper animal comes out of an older, stranger band */
+    var era = clamp(Math.floor(rf(r, 0, CONFIG.BANDS)) + (i === 1 ? 2 : 0)
+      + Math.floor(depth * 0.7), 0, CONFIG.BANDS - 1);
+    var sSeed = mixSeed(seed, 100 + i);
+    var sp = species(sSeed, era);
+    var y0 = n === 1 ? CONFIG.GRID_H * 0.16 : (i === 0 ? CONFIG.GRID_H * 0.08 : CONFIG.GRID_H * 0.54);
+    var y1 = n === 1 ? CONFIG.GRID_H * 0.9 : (i === 0 ? CONFIG.GRID_H * 0.46 : CONFIG.GRID_H * 0.94);
+    var region = { x0: CONFIG.GRID_W * 0.08, y0: y0, x1: CONFIG.GRID_W * 0.92, y1: y1 };
+    specs.push({ seed: sSeed, species: sp, era: era,
+      identity: identity(sp, sSeed, ''), bones: placeSpecimen(sp, sSeed, region) });
+  }
+  return { seed: seed, depth: depth, lines: lines, specimens: specs, large: large };
+}
+// ---- SIM_EXPORT_END ----
+
+// ---- TEST_EXPORT_START ----
+/* ========================= 15. TEST ========================= */
+var TEST = {
+  results: [],
+  assert: function (n, c, d) { this.results.push({ name: n, pass: !!c, detail: d || '' }); },
+  eq: function (n, a, b) { this.assert(n, a === b, 'expected ' + b + ', got ' + a); },
+  near: function (n, a, b, tol) { this.assert(n, Math.abs(a - b) <= tol, 'expected about ' + b + ', got ' + a); },
+  report: function () {
+    var p = 0, f = 0, fails = [], i;
+    for (i = 0; i < this.results.length; i++) { if (this.results[i].pass) p++; else { f++; fails.push(this.results[i]); } }
+    return { passed: p, failed: f, total: this.results.length, failures: fails };
+  },
+  runSuite: function (n, fn, a) {
+    try { fn(this, a); } catch (e) { this.assert('the ' + n + ' suite ran to the end', false, String(e && e.stack || e)); }
+  },
+  run: function (extra) {
+    this.results = [];
+    this.runSuite('skeleton', suiteSkeleton);
+    this.runSuite('correlation', suiteCorrelation);
+    this.runSuite('placement', suitePlacement);
+    this.runSuite('names', suiteNames);
+    this.runSuite('words', suiteWords);
+    this.runSuite('site', suiteSite);
+    this.runSuite('determinism', suiteDeterm);
+    if (extra && extra.src) this.runSuite('purity', suitePurity, extra.src);
+    return this.report();
+  }
+};
+
+function suiteSkeleton(T) {
+  var i, worstLo = 1e9, worstHi = -1, badTree = 0, era;
+  for (i = 0; i < 500; i++) {
+    var sp = species(mixSeed(9000, i), i % CONFIG.BANDS);
+    var bs = bones(sp);
+    worstLo = Math.min(worstLo, bs.length);
+    worstHi = Math.max(worstHi, bs.length);
+    if (!armatureOk(bs)) badTree++;
+  }
+  T.assert('five hundred animals all have between ' + CONFIG.BONES_MIN + ' and ' + CONFIG.BONES_MAX
+    + ' bones (' + worstLo + ' to ' + worstHi + ')',
+    worstLo >= CONFIG.BONES_MIN && worstHi <= CONFIG.BONES_MAX);
+  T.eq('and every bone on every one of them hangs off the spine', badTree, 0);
+
+  /* all four body plans and all four size classes turn up inside two hundred */
+  var plans = {}, sizes = {};
+  for (i = 0; i < 200; i++) {
+    var s2 = species(mixSeed(4242, i), i % CONFIG.BANDS);
+    plans[s2.plan] = (plans[s2.plan] || 0) + 1;
+    sizes[s2.sizeKey] = (sizes[s2.sizeKey] || 0) + 1;
+  }
+  T.eq('all four body plans turn up inside two hundred seeds ('
+    + PLANS.map(function (p) { return p + ' ' + (plans[p] || 0); }).join(', ') + ')',
+    PLANS.filter(function (p) { return plans[p] > 0; }).length, 4);
+  T.eq('and all four size classes do too ('
+    + SIZES.map(function (s) { return s.k + ' ' + (sizes[s.k] || 0); }).join(', ') + ')',
+    SIZES.filter(function (s) { return sizes[s.k] > 0; }).length, 4);
+
+  /* deeper is stranger: the ornament rate has to climb with the band */
+  var shallow = 0, deep = 0;
+  for (i = 0; i < 600; i++) {
+    if (species(mixSeed(777, i), 0).ornament !== 'none') shallow++;
+    if (species(mixSeed(777, i), CONFIG.BANDS - 1).ornament !== 'none') deep++;
+  }
+  T.assert('the deep bands wear more ornament than the top one (' + shallow + ' of 600 against '
+    + deep + ')', deep > shallow * 1.5);
+  var shallowBig = 0, deepBig = 0;
+  for (i = 0; i < 600; i++) {
+    if (species(mixSeed(31, i), 0).sizeIx >= 2) shallowBig++;
+    if (species(mixSeed(31, i), CONFIG.BANDS - 1).sizeIx >= 2) deepBig++;
+  }
+  T.assert('and they are bigger down there (' + shallowBig + ' of 600 against ' + deepBig + ')',
+    deepBig > shallowBig * 1.15);
+  era = species(mixSeed(1, 1), 9);
+  T.assert('an era past the bottom band is held at the bottom band', era.era === CONFIG.BANDS - 1);
+
+  /* the parts a skeleton has to have, and the ones that come in pairs */
+  var kinds = {}, ribsOdd = 0;
+  for (i = 0; i < 200; i++) {
+    var s3 = species(mixSeed(808, i), i % CONFIG.BANDS);
+    var b3 = bones(s3), ribs = 0, k;
+    for (k = 0; k < b3.length; k++) {
+      kinds[b3[k].kind] = (kinds[b3[k].kind] || 0) + 1;
+      if (b3[k].kind === 'rib') ribs++;
+    }
+    if (ribs % 2 !== 0) ribsOdd++;
+  }
+  T.assert('every animal has a spine, ribs, a skull and a jaw',
+    kinds.vertebra > 0 && kinds.rib > 0 && kinds.skull > 0 && kinds.jaw > 0);
+  T.assert('and limbs of some sort', (kinds.leg || 0) + (kinds.flipper || 0) + (kinds.wing || 0) > 0);
+  T.eq('and its ribs come in pairs', ribsOdd, 0);
+  T.assert('a club tail really is fatter at the tip than a whip is', (function () {
+    var club = 0, whip = 0, cn = 0, wn = 0, j;
+    for (j = 0; j < 600; j++) {
+      var sx2 = species(mixSeed(414, j), j % CONFIG.BANDS);
+      var r0 = vertR(sx2, 0, sx2.nTail, sx2.nTail + sx2.nTrunk - 1);
+      if (sx2.tail === 'club') { club += r0; cn++; } else { whip += r0; wn++; }
+    }
+    return cn > 10 && wn > 10 && club / cn > whip / wn * 1.5;
+  })());
+}
+
+/* ⛔ THE CORRELATIONS ARE THE WHOLE GRAMMAR. A generator that draws every
+   number on its own makes fifty plausible animals that are all the same
+   animal, and the variety sheet is the only thing that can see it. These are
+   the correlations the sheet was made to show, asserted so they cannot drift
+   back out. */
+function suiteCorrelation(T) {
+  var i, longNeck = 0, longNeckSkull = 0, shortNeck = 0, shortNeckSkull = 0;
+  var wingBus = 0, flipTail = 0, otherTail = 0, flips = 0, others = 0;
+  for (i = 0; i < 900; i++) {
+    var sp = species(mixSeed(6161, i), i % CONFIG.BANDS);
+    if (sp.nNeck >= 10) { longNeck++; longNeckSkull += sp.skullScale; }
+    if (sp.nNeck <= 5) { shortNeck++; shortNeckSkull += sp.skullScale; }
+    if (sp.plan === 'wings' && sp.sizeIx === 3) wingBus++;
+    if (sp.plan === 'flippers') { flips++; flipTail += sp.nTail; }
+    else { others++; otherTail += sp.nTail; }
+  }
+  T.assert('a long neck carries a smaller head than a short one ('
+    + (longNeckSkull / Math.max(1, longNeck)).toFixed(2) + ' against '
+    + (shortNeckSkull / Math.max(1, shortNeck)).toFixed(2) + ')',
+    longNeck > 20 && shortNeck > 20 && longNeckSkull / longNeck < shortNeckSkull / shortNeck - 0.15);
+  T.eq('nothing with wings comes out the size of a bus', wingBus, 0);
+  T.assert('a swimmer has a shorter tail than a walker ('
+    + (flipTail / Math.max(1, flips)).toFixed(1) + ' against '
+    + (otherTail / Math.max(1, others)).toFixed(1) + ')',
+    flips > 20 && flipTail / flips < otherTail / others - 1.5);
+}
+
+function suitePlacement(T) {
+  var i, outside = 0, skullGone = 0, worstMissing = 0;
+  for (i = 0; i < 300; i++) {
+    var seed = mixSeed(5150, i);
+    var sp = species(seed, i % CONFIG.BANDS);
+    var region = { x0: CONFIG.GRID_W * 0.08, y0: CONFIG.GRID_H * 0.16,
+      x1: CONFIG.GRID_W * 0.92, y1: CONFIG.GRID_H * 0.9 };
+    var placed = placeSpecimen(sp, seed, region);
+    if (!bonesInside(placed)) outside++;
+    var miss = 0, k;
+    for (k = 0; k < placed.length; k++) {
+      if (placed[k].missing) miss++;
+      if (placed[k].missing && placed[k].kind === 'skull') skullGone++;
+    }
+    worstMissing = Math.max(worstMissing, miss / placed.length);
+  }
+  T.eq('three hundred animals all lie inside the cliff', outside, 0);
+  T.eq('and the ground never keeps the skull', skullGone, 0);
+  T.assert('and never keeps more than a fifth of the rest ('
+    + (worstMissing * 100).toFixed(0) + ' percent at the worst)', worstMissing <= 0.19);
+
+  /* and it fills the hole it is given, or the dig is a speck in a cliff */
+  var region2 = { x0: CONFIG.GRID_W * 0.08, y0: CONFIG.GRID_H * 0.16,
+    x1: CONFIG.GRID_W * 0.92, y1: CONFIG.GRID_H * 0.9 };
+  var small = 0, worstFill = 1;
+  for (i = 0; i < 200; i++) {
+    var seed2 = mixSeed(2323, i);
+    var sp3 = species(seed2, i % CONFIG.BANDS);
+    var pl = placeSpecimen(sp3, seed2, region2);
+    var bb = { x0: 1e9, y0: 1e9, x1: -1e9, y1: -1e9 }, k2, m2;
+    for (k2 = 0; k2 < pl.length; k2++) for (m2 = 0; m2 < pl[k2].poly.length; m2++) {
+      var p2 = pl[k2].poly[m2];
+      if (p2.x < bb.x0) bb.x0 = p2.x;
+      if (p2.x > bb.x1) bb.x1 = p2.x;
+      if (p2.y < bb.y0) bb.y0 = p2.y;
+      if (p2.y > bb.y1) bb.y1 = p2.y;
+    }
+    var fill = Math.max((bb.x1 - bb.x0) / (region2.x1 - region2.x0),
+      (bb.y1 - bb.y0) / (region2.y1 - region2.y0));
+    worstFill = Math.min(worstFill, fill);
+    if (fill < 0.35) small++;
+  }
+  T.eq('and no animal is a speck in the middle of a cliff (worst fill '
+    + (worstFill * 100).toFixed(0) + ' percent)', small, 0);
+}
+
+function suiteNames(T) {
+  var seen = {}, i, n = 5000, uniq = 0;
+  for (i = 0; i < n; i++) {
+    var seed = mixSeed(20260906, i);
+    var sp = species(seed, i % CONFIG.BANDS);
+    var id = identity(sp, seed, '');
+    if (!seen[id.binomial]) { seen[id.binomial] = 1; uniq++; }
+  }
+  T.assert('five thousand seeds give at least four thousand nine hundred and fifty different names ('
+    + uniq + ')', uniq >= 4950);
+  var sp2 = species(7, 0);
+  T.eq('a species named for Penny is pennyi', identity(sp2, 7, 'Penny').epithet, 'pennyi');
+  T.eq('and one named for Anna drops the last vowel', identity(sp2, 7, 'Anna').epithet, 'anni');
+  T.eq('and one named for Jessie keeps both of its i sounds', identity(sp2, 7, 'Jessie').epithet, 'jessii');
+  T.eq('a name with rubbish in it is cleaned rather than refused', epithetFor('  P3nny!  '), 'pnnyi');
+  T.eq('a name is never title cased on the way in', cleanName('penny from next door'), 'penny from next door');
+  T.eq('and it is capped at twenty four letters', cleanName('abcdefghijklmnopqrstuvwxyzabc').length, 24);
+  T.eq('an empty dedication leaves the generated epithet alone', identity(sp2, 7, '  ').dedicated, false);
+  T.assert('and a real one is marked as a dedication', identity(sp2, 7, 'Penny').dedicated === true);
+  var id2 = identity(sp2, 7, '');
+  T.assert('a genus is capitalised and an epithet is not (' + id2.binomial + ')',
+    id2.genus.charAt(0) === id2.genus.charAt(0).toUpperCase()
+    && id2.epithet === id2.epithet.toLowerCase());
+  T.eq('and a binomial is exactly two words', id2.binomial.split(' ').length, 2);
+  T.assert('an era reads as a place and an age (' + id2.eraName + ', ' + id2.epoch + ')',
+    id2.eraName.indexOf('The ') === 0 && id2.epoch.split(' ').length === 2);
+  T.assert('and the band decides whether it is upper, middle or lower',
+    identity(species(7, 0), 7, '').epoch.indexOf('Upper') === 0
+    && identity(species(7, 5), 7, '').epoch.indexOf('Lower') === 0);
+  T.assert('a diet is one of the ones this game knows', DIETS.indexOf(id2.diet) >= 0);
+}
+
+function suiteWords(T) {
+  var banks = { HAB: HAB, HAB2: HAB2, PART: PART, ERA_WORD: ERA_WORD, EPOCH: EPOCH,
+    SPECIES_W: SPECIES_W, GEN_A: GEN_A, GEN_B: GEN_B, GEN_C: GEN_C };
+  var k, i, all = [];
+  for (k in banks) {
+    T.assert('the ' + k + ' bank is deep enough to not repeat itself (' + banks[k].length + ')',
+      banks[k].length >= (k === 'GEN_C' ? 16 : k === 'EPOCH' ? 20 : 20));
+    for (i = 0; i < banks[k].length; i++) all.push(banks[k][i]);
+  }
+  var dashed = [], banged = [], abso = [];
+  var ABSOLUTES = ['never', 'always', 'every', 'nothing', 'none', 'cannot', 'must', 'perfect', 'infinite'];
+  for (i = 0; i < all.length; i++) {
+    var t = all[i];
+    if (/[-‐-―−]/.test(t)) dashed.push(t);
+    if (t.indexOf('!') >= 0) banged.push(t);
+    var low = ' ' + t.toLowerCase() + ' ', j;
+    for (j = 0; j < ABSOLUTES.length; j++) if (low.indexOf(' ' + ABSOLUTES[j] + ' ') >= 0) abso.push(t);
+  }
+  T.eq('no dash in anything the earth says about an animal' + (dashed.length ? ': ' + dashed[0] : ''), dashed.length, 0);
+  T.eq('and no exclamation point' + (banged.length ? ': ' + banged[0] : ''), banged.length, 0);
+  T.eq('and nothing claims a creature ALWAYS or NEVER did something'
+    + (abso.length ? ': ' + abso[0] : ''), abso.length, 0);
+
+  /* reachability and the swallow test, over five thousand animals */
+  var hits = { HAB: {}, HAB2: {}, PART: {} }, words = { lo: 1e9, hi: 0 };
+  for (i = 0; i < 5000; i++) {
+    var seed = mixSeed(31337, i);
+    var sp = species(seed, i % CONFIG.BANDS);
+    var id = identity(sp, seed, '');
+    var parts = id.history.split('. ');
+    var h = id.history.split(/\s+/).length;
+    words.lo = Math.min(words.lo, h);
+    words.hi = Math.max(words.hi, h);
+    var kk;
+    for (kk = 0; kk < HAB.length; kk++) if (id.history.indexOf(HAB[kk]) === 0) hits.HAB[kk] = (hits.HAB[kk] || 0) + 1;
+    for (kk = 0; kk < HAB2.length; kk++) if (id.history.indexOf(HAB2[kk]) > 0) hits.HAB2[kk] = (hits.HAB2[kk] || 0) + 1;
+    for (kk = 0; kk < PART.length; kk++) if (parts[parts.length - 1] === PART[kk]) hits.PART[kk] = (hits.PART[kk] || 0) + 1;
+  }
+  var missing = [], hogs = [];
+  for (k in hits) {
+    var bank = banks[k], j2;
+    for (j2 = 0; j2 < bank.length; j2++) {
+      var c = hits[k][j2] || 0;
+      if (c === 0) missing.push(k + '[' + j2 + ']');
+      if (c > 5000 * 0.6) hogs.push(k + '[' + j2 + '] ' + c);
+    }
+  }
+  T.eq('every fragment of the history turns up over five thousand animals'
+    + (missing.length ? ': ' + missing.slice(0, 3).join(', ') : ''), missing.length, 0);
+  T.eq('and no fragment swallows its own slot' + (hogs.length ? ': ' + hogs[0] : ''), hogs.length, 0);
+  T.assert('a history is between twelve and forty words (' + words.lo + ' to ' + words.hi + ')',
+    words.lo >= 12 && words.hi <= 40);
+}
+
+function suiteSite(T) {
+  var s = makeSite(1234, 0), i, k;
+  T.eq('a site has five band lines between six bands', s.lines.length, CONFIG.BANDS - 1);
+  var crossed = 0;
+  for (i = 0; i + 1 < s.lines.length; i++) {
+    for (k = 0; k <= CONFIG.GRID_W; k++) if (s.lines[i][k] >= s.lines[i + 1][k]) crossed++;
+  }
+  T.eq('and no band line ever crosses the one under it', crossed, 0);
+  T.eq('the top of the cliff is the first band', bandAt(s.lines, 100, 0), 0);
+  T.eq('and the bottom is the last one', bandAt(s.lines, 100, CONFIG.GRID_H), CONFIG.BANDS - 1);
+  T.assert('a small site holds one animal', s.specimens.length >= 1);
+
+  /* superposition: in a two animal site the older one is lower */
+  var found = null;
+  for (i = 0; i < 60 && !found; i++) { var t = makeSite(mixSeed(88, i), 3); if (t.large) found = t; }
+  T.assert('a deep site sometimes holds two animals', !!found);
+  if (found) {
+    var a = found.specimens[0], b = found.specimens[1];
+    var ay = 0, by = 0, n;
+    for (n = 0; n < a.bones.length; n++) ay += a.bones[n].poly[0].y;
+    for (n = 0; n < b.bones.length; n++) by += b.bones[n].poly[0].y;
+    T.assert('and the older one lies under the younger one ('
+      + (ay / a.bones.length).toFixed(0) + ' against ' + (by / b.bones.length).toFixed(0) + ')',
+      by / b.bones.length > ay / a.bones.length);
+    T.assert('and it comes out of an older band (' + a.era + ' against ' + b.era + ')', b.era >= a.era);
+  }
+}
+
+function suiteDeterm(T) {
+  var seed = mixSeed(4242, 17);
+  var a = species(seed, 3), b = species(seed, 3);
+  T.eq('the same seed gives the same animal', JSON.stringify(a), JSON.stringify(b));
+  T.eq('and the same bones', JSON.stringify(bones(a)), JSON.stringify(bones(b)));
+  T.eq('and the same name and history',
+    JSON.stringify(identity(a, seed, '')), JSON.stringify(identity(b, seed, '')));
+  var region = { x0: 20, y0: 40, x1: 180, y1: 260 };
+  T.eq('and the ground puts it in the same place',
+    JSON.stringify(placeSpecimen(a, seed, region)), JSON.stringify(placeSpecimen(b, seed, region)));
+  T.assert('and a different seed gives a different animal',
+    JSON.stringify(species(mixSeed(4242, 18), 3)) !== JSON.stringify(a));
+  T.eq('and the same site twice', JSON.stringify(makeSite(99, 2)), JSON.stringify(makeSite(99, 2)));
+}
+
+function suitePurity(T, src) {
+  var code = src.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^[ \t]*\/\/.*$/gm, ' ');
+  var banned = ['Math.random', 'Math.sin', 'Math.cos', 'Math.atan2', 'Math.tan', 'Math.hypot',
+    'Date.now', 'new Date'];
+  var found = [], i;
+  for (i = 0; i < banned.length; i++) if (code.indexOf(banned[i]) >= 0) found.push(banned[i]);
+  T.eq('the rules call no maths nobody has pinned down' + (found.length ? ': ' + found.join(', ') : ''), found.length, 0);
+  T.assert('and they never touch the page', code.indexOf('document.') < 0 && code.indexOf('window.') < 0);
+  T.assert('and the deterministic maths really is in there', code.indexOf('Math.sqrt') >= 0);
+  T.assert('and the rules are the shipped ones (' + code.length + ' characters)', code.length > 12000);
+}
+// ---- TEST_EXPORT_END ----
+</script>
+</body>
+</html>
