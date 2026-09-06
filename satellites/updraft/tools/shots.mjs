@@ -182,6 +182,25 @@ if (want('p2-landing')) {
   save('p2-landing', await page.screenshot({ type: 'png' }));
   await browser.close();
 }
+if (want('p3-realwind')) {
+  /* Real Wind on, from an hour cache written into the save before boot (no network in a shot); the mood screen with the fourth card, then the field with the wind line */
+  const { browser, page } = await open(base, { width: 375, height: 667 });
+  await page.setViewport({ width: 375, height: 667, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
+  await page.evaluate(() => localStorage.setItem('lw_updraft_v1', JSON.stringify({ v: 1, journal: { bestAlt: 0, longest: 0, tricks: {}, hours: 0, flights: 0 }, kite: 'diamond', mood: 'fresh', settings: { sound: 1, motion: 1, realWind: 1, haptics: 1 }, weatherCache: { t: Math.floor(Date.now() / 1000), mph: 9.2, dir: 270 } })));
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForFunction(() => window.UPDRAFT_DEV && window.UPDRAFT_DEV.screen() === 'title', { timeout: 20000 });
+  await toField(page);
+  await tap(page, '#btnMood');
+  await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'mood', { timeout: 20000 });
+  await waitFrames(page, 3);
+  save('p3-realwind', await page.screenshot({ type: 'png' }));
+  await tap(page, '#btnMoodBack');
+  await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'play', { timeout: 20000 });
+  await page.evaluate(() => window.UPDRAFT_DEV.place({ L: 30, el: 0.8, az: 0.1, launched: true }));
+  await untilSim(page, 2);
+  save('p3-realwind-field', await page.screenshot({ type: 'png' }));
+  await browser.close();
+}
 close();
 const over = wrote.filter(w => w.kb > 200);
 console.log('\n' + wrote.length + ' shots' + (over.length ? ', ' + over.length + ' OVER the limit' : ', all under 200 KB'));

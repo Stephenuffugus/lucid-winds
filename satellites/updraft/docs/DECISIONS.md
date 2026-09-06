@@ -41,3 +41,12 @@ A perspective from the hand puts a kite beside the player off the screen; the pl
 
 **tools/shots.mjs and tools/thumb.mjs use UPDRAFT_DEV.place to put the kite aloft. test/*.mjs never do.**
 A camera may take that liberty; a gate may not.
+
+**Real Wind is the fourth card on the MOOD screen, not a Settings toggle.**
+There is no Settings screen tonight (sound, motion and haptics sit on the title and pause screens), and the mood screen is where a player chooses the wind; the card is the toggle, the waiting state, the honesty line and today's numbers in one place. It defaults off and nothing is fetched until it is tapped; the boot only marks the toggle and reads the hour cache on the next flight or the next visit to the card.
+
+**Real Wind picks the mood whose RULES apply by band: under 4 m/s Gentle, under 6.7 m/s Fresh, else Blustery.**
+The base magnitude is the real number; the snap rule reads the mood (3.3, Blustery only), so a 16 mph day can snap and a 9 mph day cannot. Under 3 mph the honesty line flies Gentle's 2.7 m/s and never the real number.
+
+**A failed feed is asked again no sooner than ten minutes on.**
+Without the floor every new flight re-asked a dead feed (the gate counted three calls in a minute). The card says the feed failed and the picked mood flies.

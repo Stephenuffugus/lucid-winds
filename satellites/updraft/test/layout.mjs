@@ -74,6 +74,7 @@ for (const size of SIZES) {
   await check('#moodGentle', 'GENTLE card', 72);
   await check('#moodFresh', 'FRESH card', 72);
   await check('#moodBlustery', 'BLUSTERY card', 72);
+  await check('#moodReal', 'REAL WIND card', 72);
   await check('#btnMoodBack', 'BACK from mood');
   await tap(page, '#moodGentle');
   await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'pause', { timeout: 15000 });

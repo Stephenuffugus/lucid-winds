@@ -43,6 +43,8 @@ html,body{margin:0;padding:0;height:100%;background:#8CC6F0;color:var(--ink);
 #btnMood{left:calc(12px + env(safe-area-inset-left,0px));top:calc(10px + var(--safeT))}
 #btnPause{right:calc(12px + env(safe-area-inset-right,0px));top:calc(10px + var(--safeT));
   width:48px;height:48px;padding:0;font-size:1.1rem}
+#windLine{position:absolute;left:calc(12px + env(safe-area-inset-left,0px));top:calc(64px + var(--safeT));
+  font-size:.7rem;letter-spacing:.08em;color:rgba(32,48,58,.7);text-shadow:0 0 6px rgba(255,244,224,.9);pointer-events:none}
 #altTag{position:absolute;left:50%;transform:translateX(-50%);top:calc(22px + var(--safeT));
   font-size:.75rem;letter-spacing:.2em;color:rgba(32,48,58,.55)}
 #hint{position:absolute;left:50%;transform:translateX(-50%);
@@ -124,6 +126,7 @@ html,body{margin:0;padding:0;height:100%;background:#8CC6F0;color:var(--ink);
 
   <div id="hud">
     <button class="chip" id="btnMood" aria-label="Wind mood">FRESH</button>
+    <div id="windLine"></div>
     <div id="altTag"></div>
     <button class="chip" id="btnPause" aria-label="Pause">&#9613;&#9613;</button>
     <div id="stamp"></div>
@@ -177,6 +180,7 @@ html,body{margin:0;padding:0;height:100%;background:#8CC6F0;color:var(--ink);
     <button class="card" id="moodGentle" data-mood="gentle"><b>GENTLE</b><span>A soft breeze. Slow climbs, long glides, the line never snaps.</span></button>
     <button class="card" id="moodFresh" data-mood="fresh"><b>FRESH</b><span>A good day. Gusts you can feel and nothing breaks.</span></button>
     <button class="card" id="moodBlustery" data-mood="blustery"><b>BLUSTERY</b><span>It fights you. Hold on through a gust peak and the line goes.</span></button>
+    <button class="card" id="moodReal"><b>REAL WIND</b><span id="moodRealLine"></span></button>
     <button class="btn small ghost" id="btnMoodBack">BACK</button>
     <div class="spacer"></div>
   </div>
@@ -284,7 +288,7 @@ var TAU = Math.PI * 2;
 function makeWind(mood, seed, opts) {
   var o = opts || {}, r = makeRNG(mixSeed(seed >>> 0, 1));
   return {
-    mood: mood, base: CONFIG.MOODS[mood], gustAmp: CONFIG.GUST_AMP[mood],
+    mood: mood, base: (o.base !== undefined && o.base !== null) ? o.base : CONFIG.MOODS[mood], gustAmp: CONFIG.GUST_AMP[mood],
     gusts: o.gusts !== undefined ? !!o.gusts : true,
     gustFixed: (o.gustFixed === undefined) ? null : o.gustFixed,
     thermal: o.thermal !== undefined ? !!o.thermal : true,
@@ -1321,6 +1325,75 @@ var SAVE = {
   }
 };
 
+/* ========================= 12b. WEATHER ========================= */
+/* Real Wind, behind a toggle that defaults OFF. Nothing is fetched until the
+   player turns it on; then geolocation (6 s, a visible waiting state), then
+   Open-Meteo with no key, cached an hour in the save; any failure falls back
+   silently to the mood's wind. Under 3 mph the app says so and flies Gentle:
+   it never invents wind. Direction is where the wind comes FROM; it changes
+   the words and never the flight (the player always faces downwind). */
+var WEATHER = (function () {
+  var st = { status: 'off', mph: 0, dir: 0, at: 0, err: '', fetches: 0, failAt: 0 };
+  var CACHE_S = 3600, CALM_MPH = 3, RETRY_S = 600; /* a failed feed is asked again no sooner than ten minutes on */
+  function dirWord(d) { var names = ['north', 'north east', 'east', 'south east', 'south', 'south west', 'west', 'north west']; return names[Math.round((((d % 360) + 360) % 360) / 45) % 8]; }
+  function url(lat, lng) { return 'https://api.open-meteo.com/v1/forecast?latitude=' + lat.toFixed(3) + '&longitude=' + lng.toFixed(3) + '&current=windspeed_10m,winddirection_10m&windspeed_unit=mph'; }
+  function fromCache() {
+    var c = G.save && G.save.weatherCache;
+    if (c && typeof c.mph === 'number' && (Date.now() / 1000 - c.t) < CACHE_S) { st.status = 'ok'; st.mph = c.mph; st.dir = c.dir || 0; st.at = c.t; return true; }
+    return false;
+  }
+  function locate(cb) {
+    if (!navigator.geolocation) { cb(null); return; }
+    var done = false, h = setTimeout(function () { if (!done) { done = true; cb(null); } }, 6000);
+    try {
+      navigator.geolocation.getCurrentPosition(
+        function (p) { if (done) return; done = true; clearTimeout(h); cb({ lat: p.coords.latitude, lng: p.coords.longitude }); },
+        function () { if (done) return; done = true; clearTimeout(h); cb(null); },
+        { timeout: 6000, maximumAge: 600000 });
+    } catch (e) { if (!done) { done = true; clearTimeout(h); cb(null); } }
+  }
+  function refresh(cb) {
+    var done = cb || function () {};
+    if (st.status === 'off') { done(); return; }
+    if (fromCache()) { done(); return; }
+    if (st.status === 'fail' && Date.now() / 1000 - st.failAt < RETRY_S) { done(); return; }
+    st.status = 'waiting'; done();
+    locate(function (pos) {
+      if (!pos) { st.status = 'fail'; st.failAt = Date.now() / 1000; st.err = 'no location'; done(); return; }
+      st.fetches++;
+      fetch(url(pos.lat, pos.lng)).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }).then(function (j) {
+        var c = j && j.current;
+        if (!c || typeof c.windspeed_10m !== 'number') { st.status = 'fail'; st.failAt = Date.now() / 1000; st.err = 'no answer'; done(); return; }
+        st.status = 'ok'; st.mph = c.windspeed_10m; st.dir = c.winddirection_10m || 0; st.at = Math.floor(Date.now() / 1000);
+        G.save = SAVE.write(function (s) { s.weatherCache = { t: st.at, mph: st.mph, dir: st.dir }; });
+        done();
+      });
+    });
+  }
+  function setOn(v, cb) {
+    st.status = v ? 'waiting' : 'off';
+    G.save = SAVE.write(function (s) { s.settings.realWind = v ? 1 : 0; });
+    if (v) refresh(cb); else if (cb) cb();
+  }
+  /* what a flight gets: the base in m/s and the mood whose rules apply, or null for the picked mood */
+  function flightWind() {
+    if (st.status !== 'ok') return null;
+    if (st.mph < CALM_MPH) return { base: CONFIG.MOODS.gentle, mood: 'gentle', calm: true };
+    var ms = st.mph * 0.44704;
+    return { base: ms, mood: ms < 4 ? 'gentle' : ms < 6.7 ? 'fresh' : 'blustery', calm: false };
+  }
+  function line() {
+    if (st.status === 'off') return 'Off. Tap to fly in the wind outside your window. It asks where you are.';
+    if (st.status === 'waiting') return 'Finding the wind outside.';
+    if (st.status === 'fail') return 'Could not read the wind today. Flying the mood you picked. Tap to turn it off.';
+    if (st.mph < CALM_MPH) return 'Barely a breath today. The Gentle field is open. Tap to turn it off.';
+    return Math.round(st.mph) + ' mph from the ' + dirWord(st.dir) + '. Tap to turn it off.';
+  }
+  function chip() { if (st.status !== 'ok') return null; return st.mph < CALM_MPH ? 'CALM' : Math.round(st.mph) + ' MPH'; }
+  function hudLine() { if (st.status !== 'ok') return ''; return st.mph < CALM_MPH ? 'barely a breath, the Gentle field' : Math.round(st.mph) + ' mph from the ' + dirWord(st.dir); }
+  return { state: st, setOn: setOn, refresh: refresh, flightWind: flightWind, line: line, chip: chip, hudLine: hudLine, dirWord: dirWord, url: url, isOn: function () { return st.status !== 'off'; } };
+})();
+
 /* ========================= 13. BOOT ========================= */
 var STAMP = '20260906e';
 function showScreen(name) {
@@ -1338,12 +1411,18 @@ function showStamp(name) {
   var s = $('stamp'); s.textContent = name; s.classList.add('on'); G.stampT = G.st ? G.st.t : 0;
   clearTimeout(showStamp.h); showStamp.h = setTimeout(function () { s.classList.remove('on'); }, 2400);
 }
+function refreshChip() {
+  $('btnMood').textContent = WEATHER.chip() || G.mood.toUpperCase();
+  $('windLine').textContent = WEATHER.hudLine();
+}
 function newRun() {
   var seed = seedFromString('free' + Date.now());
-  G.st = newFlight({ mood: G.mood, seed: seed, kite: G.save.kite });
+  if (WEATHER.isOn()) WEATHER.refresh(refreshChip);
+  var rw = WEATHER.flightWind();
+  G.st = newFlight({ mood: rw ? rw.mood : G.mood, seed: seed, kite: G.save.kite, wind: rw ? { base: rw.base } : undefined });
   G.flightN++;
   G.acc = 0; G.last = 0;
-  $('btnMood').textContent = G.mood.toUpperCase();
+  refreshChip();
   if (!G.hintShown.hold) { hint('Hold to pull the string. Let go to give it line.'); G.hintShown.hold = 1; }
 }
 function endFlight(st) {
@@ -1406,7 +1485,18 @@ function openMood(from) {
   G.moodFrom = from;
   if (G.st) setInput(G.st, false, 0); G.ptr = null;
   ['gentle', 'fresh', 'blustery'].forEach(function (m) { $('mood' + m.charAt(0).toUpperCase() + m.slice(1)).classList.toggle('sel', m === G.mood); });
+  if (WEATHER.isOn()) WEATHER.refresh(refreshRealCard);
+  refreshRealCard();
   showScreen('mood');
+}
+function refreshRealCard() {
+  var realOk = WEATHER.state.status === 'ok';
+  $('moodRealLine').textContent = WEATHER.line();
+  $('moodReal').classList.toggle('sel', realOk);
+  /* one tick on the screen: the wind that will fly; the picked mood is the fallback while Real Wind reads */
+  ['gentle', 'fresh', 'blustery'].forEach(function (m) { $('mood' + m.charAt(0).toUpperCase() + m.slice(1)).classList.toggle('sel', m === G.mood && !realOk); });
+  $('moodReal').classList.toggle('locked', WEATHER.state.status === 'waiting');
+  refreshChip();
 }
 /* kites unlock by hours and feats, never currency (plan 3.8; CONFIG.UNLOCK) */
 function kiteUnlocked(id, j) {
@@ -1457,9 +1547,9 @@ function pickMood(m) {
   var changed = m !== G.mood;
   G.mood = m;
   G.save = SAVE.write(function (s) { s.mood = G.mood; });
-  $('btnMood').textContent = G.mood.toUpperCase();
-  if (G.st && G.st.onGround && !G.st.launched) { G.st = newFlight({ mood: G.mood, seed: G.st.seed, kite: G.save.kite }); }
-  else if (G.st && changed) toast('The next flight is ' + G.mood + '.');
+  refreshChip();
+  if (G.st && G.st.onGround && !G.st.launched && !WEATHER.flightWind()) { G.st = newFlight({ mood: G.mood, seed: G.st.seed, kite: G.save.kite }); }
+  else if (G.st && changed) toast(WEATHER.flightWind() ? 'Real Wind is on. ' + G.mood.charAt(0).toUpperCase() + G.mood.slice(1) + ' is the fallback.' : 'The next flight is ' + G.mood + '.');
   showScreen(G.moodFrom === 'pause' ? 'pause' : G.st ? 'play' : 'title');
 }
 function drawTitleArt() {
@@ -1496,6 +1586,10 @@ function wire() {
   tapOn('btnJournal', function () { openJournal('pause'); });
   tapOn('btnJournal2', function () { openJournal('end'); });
   tapOn('btnJournalBack', function () { showScreen(G.journalFrom === 'end' ? 'end' : 'pause'); });
+  tapOn('moodReal', function () {
+    if (WEATHER.isOn()) { WEATHER.setOn(false); refreshRealCard(); toast('Real Wind is off. The next flight is ' + G.mood + '.'); }
+    else { WEATHER.setOn(true, refreshRealCard); refreshRealCard(); }
+  });
   tapOn('btnMoodBack', function () { showScreen(G.moodFrom === 'pause' ? 'pause' : G.st ? 'play' : 'title'); });
   tapOn('btnQuit', function () { G.st = null; showScreen('title'); });
   tapOn('btnAgain', function () { newRun(); showScreen('play'); });
@@ -1526,6 +1620,7 @@ function boot() {
   CV = $('board'); CTX = CV.getContext('2d');
   G.save = SAVE.read();
   G.sound = G.save.settings.sound; G.motion = G.save.settings.motion; G.haptics = G.save.settings.haptics; G.mood = G.save.mood || 'fresh';
+  if (G.save.settings.realWind) { WEATHER.state.status = 'waiting'; } /* the cache is read on the next flight or the mood screen; nothing is fetched on boot */
   if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) G.motion = 0;
   var hm = location.search.match(/hour=([0-9.]+)/);
   G.hourOverride = hm ? parseFloat(hm[1]) : null;
@@ -1552,13 +1647,14 @@ function boot() {
    Nothing here drives the game: every gate presses the real canvas. */
 window.UPDRAFT_DEV = {
   stamp: STAMP,
+  weather: function () { return { status: WEATHER.state.status, mph: WEATHER.state.mph, fetches: WEATHER.state.fetches, line: WEATHER.line() }; },
   screen: function () { return G.screen; },
   frames: function () { return G.frames; },
   state: function () {
     var st = G.st; if (!st) return null;
     var s = snapshot(st);
     s.hold = st.hold; s.lean = st.lean; s.hRate = st.hRate; s.tN = st.tN; s.strain = st.strain; s.launched = st.launched; s.reel = st.reelSpeed > 0;
-    s.events = st.events.length; s.maxAlt = st.maxAlt; s.snagged = st.snagged;
+    s.events = st.events.length; s.maxAlt = st.maxAlt; s.snagged = st.snagged; s.windBase = st.wind.base; s.mood = st.mood;
     return s;
   },
   kiteScreen: function () { return G.st ? kiteScreen(G.st) : null; },
