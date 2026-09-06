@@ -11,14 +11,15 @@ this file wins; every difference is in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
-- 2026-09-06 Opus: **P0 and P1 are DONE and pushed.** Four gates, 76
-  assertions, six mutations watched to fail. The morning report is at the top of
+- 2026-09-06 Opus: **P0, P1 and P2 are DONE and pushed.** Five gates, 76 sim
+  assertions, ten mutations watched to fail. The morning report is at the top of
   section 15; the ten corrections the plan's model needed are in section 13;
   the calls are in `satellites/airworthy/docs/DECISIONS.md`.
-  **Next action:** P2 step 1, the WORKSHOP. A portrait sheet of paper drawn top
-  down, each fold choice an animated crease with the precision bar, and the spec
-  preview that names the archetype only after the first flight. The FIELD and
-  the model are done and every number in them is measured.
+  **Next action:** P3 step 1, the WIND TUNNEL. The chamber, the particles, the
+  lift and drag vectors, the lever and dial, and the chalk readouts, all of them
+  reading off `derive` so the tunnel cannot lie about the field. Then
+  `test/tunnel.mjs`, whose point is that the tunnel's glide ratio matches the
+  field's measured one within 15 percent.
 
 ---
 
@@ -602,6 +603,84 @@ narrow slice, so the plane leaves the frame almost at once and the camera does
 all the work; the distance marks are the only clue to how far it has gone; and
 there is a great deal of empty ceiling above the flight.
 
+
+### P2, the workshop and the hangar (2026-09-06)
+
+```
+$ node tools/check.js
+sim             pass  0s
+lint            pass  0s
+throw           pass  4s
+fold            pass  9s
+layout          pass  9s
+
+ALL GATES PASSED
+```
+
+`test/fold.mjs` folds a whole plane with a real thumb in both orientations: it
+taps into the workshop, walks all six creases tapping the second chip of each
+and pressing the bar in the middle, and checks that what comes out is the nine
+numbers that were tapped. Then a press at the edge of the bar (a sloppy crease,
+0.06 out of one), Steady Hands (every crease perfect and no bar to hit), SAVE
+into the hangar, and the `#p=` link opened in a FRESH context with every fold
+intact and the workshop showing those creases.
+
+Four mutations watched to fail, each restored:
+
+```
+$ # the chips wired to nothing
+FAIL  portrait: the spec is the choices that were tapped: fins is none, tapped up, dihedral is 0.4, tapped 0.5
+
+$ # every crease scored perfect however it was pressed
+FAIL  portrait: a press at the edge is a sloppy crease (1.00)
+
+$ # the share link drops the wing width
+FAIL  and every fold came through: wing
+
+$ # the hangar never saves
+FAIL  portrait: saving puts it in the hangar (0)
+```
+
+**Two layout faults the gates caught.** In landscape the workshop's chrome took
+307 pixels of a 375 pixel screen and there was no paper left to fold; it is a
+column down the side now, which is what the plan's "landscape widens the same
+room" means for a portrait workshop. And the "N of 6 creases pressed" label was
+centred on the window, whose middle in landscape sits behind that column.
+
+**One fault in the test hook rather than the game.** It returned the gym's spec
+while the workshop was editing its own, so every fold in the workshop looked
+like it had done nothing and three assertions went red on correct code. The hook
+returns the spec you are working on.
+
+### The P2 shots, opened and read
+
+**`p2-workshop.png`** — the sheet with its centre crease, two nose fold
+triangles, the wing folds with arrows showing which way the paper goes and the
+winglet tabs, over "CREASE 4 OF 6", the three chips, the precision bar and the
+running spec. Three faults: the nose fold triangles are drawn with dashed lines
+that appear to escape the top edge of the paper; the winglet tabs read as two
+small pale windows rather than folded tabs; and the spec line under the bar is
+small and grey for something that is the whole point of the choices above it.
+
+**`p2-crease.png`** — the moment after a press: the chosen chip filled blue, the
+bar reading "pressed, 83 out of a hundred", the marker parked in the zone. Three
+faults: the number is the only feedback, and a crease that scores 83 looks
+exactly like one that scores 100 on the paper itself; the bar keeps its label
+after the press when it could say what to do next; and there is nothing between
+83 and a shrug to tell the player whether that was good.
+
+**`p2-workshop-wide.png`** — the same room turned sideways: paper on the left,
+chrome in a column on the right. Three faults: the back arrow overlaps the top
+left corner of the paper; the paper is tall and narrow in a wide window, so
+there is dead space either side of it; and the two rooms are separated by a
+plain rule rather than anything that says the chrome is a workbench.
+
+**`p2-hangar.png`** — three planes, each a plan view from above, with its name,
+archetype and best throw, the selected one ringed in blue. Three faults: the
+winglets are drawn at the tail and overlap the trailing edge, so they do not
+read; the nose folds cluster near the tip as a bundle of lines; and two planes
+with wings 0.15 and 0.5 apart are only subtly different at card size.
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL
@@ -615,11 +694,19 @@ tunnel, layout`.
 
 ### Airworthy, built 2026-09-06
 
-**Where it is.** P0 and P1 are done, committed and pushed on
+**P2 is done as well.** The workshop and the hangar are built, `test/fold.mjs`
+is the fifth gate, and four more mutations are watched in section 13. What
+follows was written at the end of P1 and still stands, with P2's numbers folded
+in: five gates, 76 sim assertions, ten mutations watched to fail. P3 (the wind
+tunnel, the Backyard, the medals and the rest of the sound) is NOT started.
+
+### Airworthy, built 2026-09-06
+
+**Where it is.** P0, P1 and P2 are done, committed and pushed on
 `add-sproing-jumper`. `node satellites/airworthy/tools/check.js` prints ALL
-GATES PASSED across four gates: `sim` (76 assertions), `lint`, `throw`,
-`layout`. Six mutations watched to fail. P2 (the workshop and the hangar) and P3
-(the wind tunnel, sound, share) are NOT started.
+GATES PASSED across five gates: `sim` (76 assertions), `lint`, `throw`, `fold`,
+`layout`. Ten mutations watched to fail. P3 (the wind tunnel, the Backyard, the
+medals and the rest of the sound) is NOT started.
 
 **What it is.** A gym, a paper plane, and a slingshot. You pull back and let go,
 the plane flies the flight the model gives it, a dotted pencil trail records
@@ -653,9 +740,11 @@ in section 4 are a sketch and not a model.
 2. **The archetypes are named from the flight, not the fold.** A player who
    changes one fold and gets the same name learns nothing. The tunnel's
    predicted archetype, which is P3, is what closes that loop.
-3. **There is only one course and one plane.** The workshop, the tunnel and the
-   hangar are all unbuilt, so the game is currently one throw repeated. The loop
-   is right; there is not yet much of it.
+3. **There is one course and no medals.** The workshop and the hangar are built
+   now, so you can fold a plane, name it, fly it, trim it and keep it. What is
+   missing is a reason to fold a second one: the Gym has no challenges, no
+   thresholds and no ghosts, and the tunnel that would let you predict a fold
+   before you throw it is P3.
 
 **For Fable, to check independently.** Three things.
 
@@ -664,10 +753,14 @@ in section 4 are a sketch and not a model.
   down to 1.33, level, down again. That is the product in numbers.
 - The six shots, opened rather than listed.
 
-**Next action:** P2 step 1, the WORKSHOP. A portrait sheet of paper drawn top
-down in `satellites/airworthy/index.html`, each fold choice an animated crease,
-the precision bar per crease, and the spec preview that names the archetype only
-after the first flight. Then the hangar, then P3's wind tunnel.
+**Next action:** P3 step 1, the WIND TUNNEL. The chamber in the upper half with
+200 pooled particles advected left to right, their paths bent above the wing by
+`CL`, shed behind the nose by `CD0` and detached past `alphaStall`; the live lift
+and drag vectors; the wind lever and the angle dial; and the chalk readouts,
+every one of which reads off `derive` so the tunnel cannot lie about the field.
+`test/tunnel.mjs` then asserts that the tunnel's glide ratio equals the field's
+measured ratio for the same spec within 15 percent, which is the one source of
+truth law, measured.
 
 
 The template in `plans/fathom/HANDOFF-FATHOM.md` section 15, with this file's phases. Add one line: **the Porpoise trace**,
