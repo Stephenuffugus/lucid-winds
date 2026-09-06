@@ -1897,15 +1897,20 @@ function drawPlaneAt(ctx, cx, cy, s, theta, veer, spec, dark) {
   ctx.restore();
 }
 /* the trail, drawn as a pencil dotted line */
-function drawTrail(ctx, trail, alpha, dash) {
+/* ⛔ THE GHOST IS A TARGET, so it cannot be pencil grey on beige paper. Drawn
+   in the same ink as the live trail, only fainter, the best flight you have
+   made on a challenge read as smudging rather than as the thing to beat. It is
+   drawn in the crease blue, which is the colour this game uses for everything
+   that is a FOLD or a MEASUREMENT rather than a mark on the floor. */
+function drawTrail(ctx, trail, alpha, dash, ghost) {
   if (!trail || trail.length < 2) return;
   var i;
   ctx.save();
   /* a pencil line, dark enough to be the record of the flight */
-  ctx.strokeStyle = 'rgba(51,48,42,' + alpha + ')';
-  ctx.lineWidth = 3;
+  ctx.strokeStyle = ghost ? 'rgba(60,110,159,' + alpha + ')' : 'rgba(51,48,42,' + alpha + ')';
+  ctx.lineWidth = ghost ? 3.5 : 3;
   ctx.lineCap = 'round';
-  if (dash) ctx.setLineDash([2, 6]);
+  if (dash) ctx.setLineDash(ghost ? [3, 7] : [2, 6]);
   ctx.beginPath();
   ctx.moveTo(px(trail[0].x), py(trail[0].y));
   for (i = 1; i < trail.length; i++) ctx.lineTo(px(trail[i].x), py(trail[i].y));
@@ -3212,7 +3217,7 @@ function frame(ts) {
     drawTunnel(ctx);
   } else if (G.screen === 'field') {
     drawGym(ctx);
-    if (G.ghost && G.ghost !== G.trail) drawTrail(ctx, G.ghost, 0.28, true);
+    if (G.ghost && G.ghost !== G.trail) drawTrail(ctx, G.ghost, 0.42, true, true);
     drawTrail(ctx, G.trail, 0.75, true);
     if (G.flying && G.live) drawPlane(ctx, G.live.x, G.live.y, G.live.theta, G.live.veer, G.spec);
     else if (!G.res) drawPlane(ctx, 0, 1.6, 5 * DEG, 0, G.spec);

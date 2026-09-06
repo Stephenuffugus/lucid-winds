@@ -258,6 +258,23 @@ await withPage(320, 568, async (page, shot) => {
   if (want('p3-tunnel-320')) await shot('p3-tunnel-320');
 });
 
+/* ---- P3. The ghost of your best flight, on the second throw ---- */
+await withPage(375, 667, async (page, shot) => {
+  await page.evaluate(() => {
+    /* a good flight first, then a worse plane on the same challenge, caught mid
+       air so the ghost of the better one is beside it */
+    AIRWORTHY_TEST.toChallenge('gym-hang', { nose: 'pointed', noseFolds: 2, wing: 0.99, elev: 8, precision: 1 });
+    AIRWORTHY_TEST.launch();
+    AIRWORTHY_TEST.finish();
+    document.getElementById('btnResultDone').click();
+    AIRWORTHY_TEST.toChallenge('gym-hang', { nose: 'locked', noseFolds: 3, wing: 0.2, elev: 0, precision: 1 });
+    AIRWORTHY_TEST.launch();
+    AIRWORTHY_TEST.advance(1.6);
+  });
+  await waitFrames(page, 3);
+  if (want('p3-ghost')) await shot('p3-ghost');
+});
+
 /* ---- P3. Pinched all the way out: the whole throw in one frame ---- */
 await withPage(667, 375, async (page, shot) => {
   await page.evaluate(() => {

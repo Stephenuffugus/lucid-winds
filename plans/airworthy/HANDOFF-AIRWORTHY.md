@@ -1269,6 +1269,21 @@ same picture, which is the exact fault P2 fixed once and did not fix far enough.
   come down from the throw that challenge sets. If the throw is ever retuned the
   mark has to move with it, and `suiteChallenges` will go red if it does not.
 
+**The four answers section 10 asked me to carry up here.**
+
+1. **The name is AIRWORTHY**, which is Stephen's folder and title. The
+   alternates, parked and not chosen: Every Crease Counts, Field Day, The Fold,
+   Maiden. "Every crease counts" survives as the line under the title.
+2. **The precision mini skill is kept**, with Steady Hands in the settings, which
+   centres every crease and leaves the aileron split as the only source of veer.
+3. **No mid flight control.** The gust whistle is not built.
+4. **Portrait everywhere, landscape widens**, which is the one answer that
+   departs from the design's recommendation and is Stephen's to overturn. The
+   shots to judge it on are `p3-375.png` and `p3-915.png` (the same throw, same
+   moment, both orientations), `p2-workshop.png` against `p2-workshop-wide.png`,
+   and `p3-tunnel.png` against `p3-tunnel-wide.png`. Nothing rotates, nothing
+   asks you to turn the phone, and the manifest says `any`.
+
 **Two Director calls waiting.**
 
 1. **The challenges take the throw off you.** Fold and trim are yours, the arm
