@@ -12,6 +12,24 @@ this file wins; every difference is in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-06 afternoon, builder: **THIRTEEN levels.** Three added that use the
+  height and teach the three parts nothing was teaching: The Spring in the Well
+  (spring pad), The Crosswind (switch plate), The Cat on the Shelf (the cat).
+  `node satellites/doohickey/tools/check.js` prints ALL GATES PASSED across the
+  same eleven gates; `sim` is now 179 assertions, up from 121. Stamp 20260906g.
+  Every gate that counted to ten was widened to its law first. Shots at
+  `docs/shots/l1[012]-*-{tall,wide}-edit.png`, opened and read in section 13.
+  **Next action:** a cold load of a share link lands on the TITLE screen, not on
+  the board. `location.hash = '#m=...'` on an already open page works, and
+  `test/share.mjs` only ever exercises that path, so the gate is green and the
+  link a stranger taps is not. Reproduce with
+  `node test/share.mjs` shaped as a `page.goto(base + '#m=' + link)` and watch
+  `DOOHICKEY_TEST.screen()` read `title`; fix `importFromHash` at boot (it is
+  called, so suspect the order against `kick()` and the first `showScreen`), and
+  make the gate load the link COLD rather than by hashchange.
+  Then the portrait stage: 412x915 gives a 412 by 230 board with more empty
+  cream above and below it than there is board.
+
 - 2026-09-06 Opus: **P0, P1, P2 and P3 are DONE and pushed.**
   `node satellites/doohickey/tools/check.js` prints ALL GATES PASSED across
   eleven gates; 121 assertions; seventeen mutations watched to fail, seven of
@@ -736,3 +754,133 @@ at its P0 step 1.
 
 The template in `plans/fathom/HANDOFF-FATHOM.md` section 15, with this file's phases. Add one line: **the domino table**,
 pasted.
+
+### Three levels that use the height, and the gates that stopped counting to ten (2026-09-06 afternoon)
+
+The three parts that shipped in P3 had no level. The spring pad, the switch
+plate and the cat were reachable only in the sandbox, so the campaign never
+taught them, and the ten levels all ran along the floor. These three are the
+answer to both at once: each teaches one of those parts and each hangs its
+machine off the top of the board.
+
+```
+$ node sim.js --solve
+  level                    parts  par   goal at   stars  bonus
+  The Bell on the Shelf       4    4     2.85s      3  1
+  A Row of Dominoes          10   10     2.99s      3  1
+  The Gap in the Floor        4    4     3.57s      3  1
+  The Fan and the Balloon     1    3     4.04s      3  1
+  The Bucket on the Post      6    6     3.74s      3  1
+  All Together               12   12     4.15s      3  1,1
+  Four Flights                5    5     3.18s      3  1,1
+  Skyward                     1    3     3.93s      3  1
+  The Zigzag                  5    5     6.25s      3  1,1
+  The Slope                   9   10     2.31s      3  1
+  The Spring in the Well      4    4     2.94s      3  1,1
+  The Crosswind               3    4     3.92s      3  1,1
+  The Cat on the Shelf        3    4     4.43s      3  1
+
+DOOHICKEY SOLVE OK
+
+$ node tools/check.js
+sim             pass  17s      (179 assertions, was 121)
+lint            pass  0s
+solve           pass  3s
+replay          pass  4s
+dominoes        pass  39s
+mutants         pass  111s
+edit            pass  5s
+run             pass  5s
+share           pass  6s
+film            pass  7s
+layout          pass  8s
+
+ALL GATES PASSED
+```
+
+**THE EMPTY TRAY CHECK CANNOT SEE A DECORATIVE PART.** `--solve` asks whether a
+level wins with nothing placed. It cannot ask whether the level wins with
+everything placed EXCEPT the one part the level exists for, because every other
+part is still on the board and the marble still runs. So a level can teach the
+spring pad while the spring pad does nothing. Levels now carry `teaches:` and
+the suite takes that part back out of the solution and asserts the win stops.
+Watched to fail by moving The Crosswind's bell into the balloon's drift, where
+the balloon reaches it with the fan running and the switch is scenery:
+
+```
+FAIL  and "The Crosswind" stops winning when its switchPlate is taken out
+PASSED 178 / FAILED 1   (total 179)
+```
+
+**THREE GATES WERE PINNING THE GAME RATHER THAN GUARDING IT**, and they were
+widened BEFORE the levels went in, not after they went red. `T.eq('there are ten
+levels', LEVELS.length, 10)` is a literal; the law is a floor plus an index, so
+it is now `LEVELS.length >= 10` and `LEVELS[i].id === i` for every i (watched to
+fail by setting The Crosswind's id to 99). `test/run.mjs` and `test/layout.mjs`
+compared the card count to 10; they now read the count off the page through a
+new `DOOHICKEY_TEST.levelCount()` and assert a card for every level. And the
+save's `stars` array was ten zeroes typed out, so an eleventh level read
+`undefined` stars and the twelfth would never have unlocked: it is built from
+`LEVELS.length` and a save written before a level was added is padded on load.
+
+Two more mutations watched to fail, each restored:
+
+```
+$ # the cat that never swings
+FAIL  "The Cat on the Shelf" is won by its own solution
+FAIL  and she bats it away hard (6 units a second)
+
+$ # a spring pad that only gives back what it took
+FAIL  "The Spring in the Well" is won by its own solution
+FAIL  a spring pad throws a marble back up higher than it fell from (rose to 338, dropped from 180)
+```
+
+**Every one of the three was traced, not placed by eye.** The tracer loads the
+SIM out of a scratch copy and prints every dynamic body's position and velocity
+every fifteen hundredths of a second. The Cat on the Shelf, read off its trace:
+the marble rolls down a plank onto the shelf, runs right and reaches the cat at
+1.5 s, she wakes and bats it BACK to the left at 251 units a second, it runs off
+the left end of the shelf at 3.0 s, falls, and rolls into the bell in the corner
+at 4.43 s while she walks off the right side. The bonus stars in all three sit
+on sampled points of the real path rather than on a guess about it.
+
+The Crosswind's first draft was wrong in a way only the trace showed: the marble
+missed the plate entirely and finished in the right corner, and the balloon rose
+on its own to the ceiling and stalled there under a bell it could not reach. The
+plate is now directly under a straight drop and the bell is directly above the
+balloon's release, so the level is exactly the sentence it wants to be: the wind
+pushes the balloon off the line to the bell, and a marble landing on the plate
+cuts the wind.
+
+### The three shots, opened and read (412x915, the Director's pixels)
+
+**`l10-spring-tall-edit.png`** — the four part machine on the board, two ramps
+into a spring pad on the floor and the bell high on the right. Three faults: the
+board is a 412 by 230 band with MORE empty cream above and below it than there
+is board, which is the morning report's second thin item and is the loudest
+thing in the frame; the spring pad is a green dashed sliver about twenty screen
+pixels wide that reads as a scuff on the paper, so the part the level exists to
+teach is the least visible thing in it; and both bonus stars are cream on cream
+and have to be hunted for.
+
+**`l11-crosswind-tall-edit.png`** — the fan and its cone on the left, the balloon
+on its string, the bell above it, the marble over the plate on the right. Three
+faults: the fan's cone is a pale wedge that stops short of the balloon and does
+not read as wind, and the balloon sits below its centreline, so the premise of
+the level is invisible in the still; the switch plate is a small gold bar in the
+bottom right that is the same colour and about the same size as the bell, so the
+two things that matter most read as the same object; and nothing connects the
+marble to the plate two hundred units below it.
+
+**`l12-cat-tall-edit.png`** — the plank, the shelf, the cat, the bell in the
+bottom left. Three faults: the cat reads as a purple crate with ears and does
+not read as ASLEEP, which is the whole reason she is a puzzle; she overhangs the
+right end of her shelf and looks about to fall off it; and the bell is jammed
+into the corner where the floor meets the wall at the same size as a tray icon,
+so the goal is the least readable thing on the board.
+
+**A fault the shots found that the share gate could not.** The first pass shot
+each level by loading its share link COLD, and every one of them came up on the
+TITLE screen with no machine. Setting `location.hash` on an already open page
+works, and that is the only path `test/share.mjs` ever takes, so the gate is
+green and the link a stranger taps is not. This is the next action.
