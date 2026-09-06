@@ -34,7 +34,8 @@ const GATES = [
    core box, so a failure here is rerun ALONE, twice, before it is believed. */
 const BROWSER_GATES = [
   { name: 'flick',  cmd: ['test/flick.mjs'],  need: 'FLICK OK' },
-  { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK' }
+  { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK' },
+  { name: 'audio',  cmd: ['test/audio.mjs'],  need: 'AUDIO OK' }
 ];
 
 const results = [];

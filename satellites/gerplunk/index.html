@@ -1220,6 +1220,14 @@ var G = {
   lastSamples: null
 };
 function nowMs() { return performance.now(); }
+/* ⛔ WHEN THE STONE RUNS OUT OF SPEED, THE SINK IS A BEAT AFTER THE LAST HIT.
+   The model ends a 'slow' throw at the instant of its final skip, so the plunk
+   would land on top of the last tick of the trill and bury it: the audio gate
+   heard seventeen onsets for seventeen skips and a plunk. A stone that has
+   stopped skipping bobs once and goes under, so the page gives it 120 ms. A
+   tumble or a plow sinks at the failed contact, which is already after the
+   last tick by one whole leap. */
+function sinkTimeOf(res) { return res.ended === 'slow' ? res.time + 0.12 : res.time; }
 
 /* ============================ 12. SAVE ============================ */
 var SAVE = {
@@ -1294,33 +1302,61 @@ var AUDIO = (function () {
     return true;
   }
   function keep(node, until) { live.push({ node: node, until: until }); }
-  function tick(at, i) {
-    if (!ac) return;
-    var o = ac.createOscillator(), g = ac.createGain();
+  /* the tick and the plunk take their context and their output, so the same
+     two functions play through the speaker and render into the audio gate's
+     offline buffer. One voice, two listeners. */
+  function tick(ctx, out, at, i) {
+    var o = ctx.createOscillator(), g = ctx.createGain();
     o.type = 'sine'; o.frequency.value = SERIES[i % SERIES.length] * (i >= SERIES.length ? 0.5 : 1);
     g.gain.setValueAtTime(0.0001, at);
     g.gain.exponentialRampToValueAtTime(0.5, at + 0.006);
     g.gain.exponentialRampToValueAtTime(0.0001, at + 0.11);
-    o.connect(g); g.connect(master);
+    o.connect(g); g.connect(out);
     o.start(at); o.stop(at + 0.13);
-    keep(o, at + 0.13);
-    ticks++;
+    return o;
   }
-  function plunk(at) {
-    if (!ac) return;
-    var o = ac.createOscillator(), g = ac.createGain();
+  function plunk(ctx, out, at) {
+    var o = ctx.createOscillator(), g = ctx.createGain();
     o.type = 'sine'; o.frequency.setValueAtTime(150, at); o.frequency.exponentialRampToValueAtTime(95, at + 0.25);
     g.gain.setValueAtTime(0.0001, at);
     g.gain.exponentialRampToValueAtTime(0.7, at + 0.012);
     g.gain.exponentialRampToValueAtTime(0.0001, at + 0.42);
-    o.connect(g); g.connect(master); o.start(at); o.stop(at + 0.45); keep(o, at + 0.45);
+    o.connect(g); g.connect(out); o.start(at); o.stop(at + 0.45);
     /* the splash: 80 ms of noise through a low pass */
-    var n = ac.sampleRate * 0.1, buf = ac.createBuffer(1, n, ac.sampleRate), d = buf.getChannelData(0), i;
+    var n = Math.floor(ctx.sampleRate * 0.1), buf = ctx.createBuffer(1, n, ctx.sampleRate), d = buf.getChannelData(0), i;
     for (i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
-    var src = ac.createBufferSource(); src.buffer = buf;
-    var f = ac.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 1800;
-    var ng = ac.createGain(); ng.gain.setValueAtTime(0.35, at); ng.gain.exponentialRampToValueAtTime(0.0001, at + 0.1);
-    src.connect(f); f.connect(ng); ng.connect(master); src.start(at); src.stop(at + 0.11); keep(src, at + 0.11);
+    var src = ctx.createBufferSource(); src.buffer = buf;
+    var f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 1800;
+    var ng = ctx.createGain(); ng.gain.setValueAtTime(0.35, at); ng.gain.exponentialRampToValueAtTime(0.0001, at + 0.1);
+    src.connect(f); f.connect(ng); ng.connect(out); src.start(at); src.stop(at + 0.11);
+    return [o, src];
+  }
+  /* THE AUDIO GATE'S EAR. Renders a result's ticks and plunk into an offline
+     buffer through the same two functions and reports the peak and the onsets
+     it can hear, so "one tick per skip" is measured in the sound rather than
+     counted in a variable. */
+  function renderOffline(res) {
+    var OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (!OAC) return Promise.reject(new Error('no OfflineAudioContext'));
+    var sr = 22050, dur = sinkTimeOf(res) + 0.9, octx = new OAC(1, Math.ceil(sr * dur), sr);
+    var out = octx.createGain(); out.gain.value = 0.8; out.connect(octx.destination);
+    var t0 = 0.05, i;
+    for (i = 0; i < res.events.length; i++) tick(octx, out, t0 + res.events[i].t, i);
+    plunk(octx, out, t0 + sinkTimeOf(res));
+    return octx.startRendering().then(function (buf) {
+      var d = buf.getChannelData(0), peak = 0, j, k, sum, win = Math.floor(sr * 0.005), env = [];
+      for (j = 0; j < d.length; j++) if (Math.abs(d[j]) > peak) peak = Math.abs(d[j]);
+      for (j = 0; j + win <= d.length; j += win) {
+        sum = 0; for (k = 0; k < win; k++) sum += d[j + k] * d[j + k];
+        env.push(Math.sqrt(sum / win));
+      }
+      var onsets = [], armed = true;
+      for (j = 0; j < env.length; j++) {
+        if (armed && env[j] > 0.06) { onsets.push(j * 0.005 - t0); armed = false; }
+        else if (!armed && env[j] < 0.015) armed = true;
+      }
+      return { peak: peak, onsets: onsets, seconds: dur };
+    });
   }
   function setdown() {
     if (!ac) return;
@@ -1329,6 +1365,59 @@ var AUDIO = (function () {
     g.gain.setValueAtTime(0.0001, at); g.gain.exponentialRampToValueAtTime(0.12, at + 0.01);
     g.gain.exponentialRampToValueAtTime(0.0001, at + 0.08);
     o.connect(g); g.connect(master); o.start(at); o.stop(at + 0.09);
+  }
+  /* THE AMBIENCE. Water lap as filtered noise swells every three to six
+     seconds, a cricket bed as a 4 kHz chirp train, and a loon every forty to
+     ninety seconds: a sine gliding 660 to 880 with vibrato over 1.2 s. The
+     timings come from the seeded ambient stream so the same evening is the
+     same evening. Gains are small on purpose; the ticks are the score. */
+  var amb = null;
+  function noiseBuf(sec) {
+    var n = Math.floor(ac.sampleRate * sec), b = ac.createBuffer(1, n, ac.sampleRate), d = b.getChannelData(0), i;
+    for (i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+    return b;
+  }
+  function lap(at, rng) {
+    var src = ac.createBufferSource(); src.buffer = noiseBuf(1.2);
+    var f = ac.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 320 + rng() * 500; f.Q.value = 0.7;
+    var g = ac.createGain();
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(0.05 + rng() * 0.04, at + 0.35 + rng() * 0.3);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + 1.1);
+    src.connect(f); f.connect(g); g.connect(master); src.start(at); src.stop(at + 1.2);
+  }
+  function chirp(at, rng) {
+    var o = ac.createOscillator(), g = ac.createGain(), am = ac.createOscillator(), ag = ac.createGain();
+    o.type = 'sine'; o.frequency.value = 3900 + rng() * 500;
+    am.type = 'sine'; am.frequency.value = 26 + rng() * 10; ag.gain.value = 0.5;
+    am.connect(ag); ag.connect(g.gain);
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(0.022, at + 0.03);
+    g.gain.setValueAtTime(0.022, at + 0.25 + rng() * 0.2);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + 0.5);
+    o.connect(g); g.connect(master); o.start(at); am.start(at); o.stop(at + 0.55); am.stop(at + 0.55);
+  }
+  function loon(at) {
+    var o = ac.createOscillator(), g = ac.createGain(), v = ac.createOscillator(), vg = ac.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(660, at); o.frequency.linearRampToValueAtTime(880, at + 0.5);
+    o.frequency.setValueAtTime(880, at + 0.8); o.frequency.linearRampToValueAtTime(700, at + 1.2);
+    v.frequency.value = 5.5; vg.gain.value = 14; v.connect(vg); vg.connect(o.frequency);
+    g.gain.setValueAtTime(0.0001, at); g.gain.exponentialRampToValueAtTime(0.09, at + 0.15);
+    g.gain.setValueAtTime(0.09, at + 0.9); g.gain.exponentialRampToValueAtTime(0.0001, at + 1.25);
+    o.connect(g); g.connect(master); o.start(at); v.start(at); o.stop(at + 1.3); v.stop(at + 1.3);
+  }
+  function ambience(seed) {
+    if (!ac || amb) return;
+    var rng = makeRNG(mixSeed(seed, STREAM_AMBIENT));
+    var nextLap = ac.currentTime + 1, nextChirp = ac.currentTime + 0.5, nextLoon = ac.currentTime + 20 + rng() * 40;
+    amb = setInterval(function () {
+      if (!ac || ac.state !== 'running') return;
+      var now = ac.currentTime, horizon = now + 1.5;
+      while (nextLap < horizon) { lap(nextLap, rng); nextLap += 3 + rng() * 3; }
+      while (nextChirp < horizon) { chirp(nextChirp, rng); nextChirp += 0.6 + rng() * 0.7; }
+      if (nextLoon < horizon) { loon(nextLoon); nextLoon += 40 + rng() * 50; }
+    }, 700);
   }
   /* a new throw cuts the old one's ticks; a lake does not echo the last stone */
   function cut() {
@@ -1341,12 +1430,15 @@ var AUDIO = (function () {
     schedule: function (res) {
       if (!ensure()) return 0;
       cut();
-      var t0 = ac.currentTime + 0.03, i;
-      for (i = 0; i < res.events.length; i++) tick(t0 + res.events[i].t, i);
-      plunk(t0 + res.time);
+      var t0 = ac.currentTime + 0.03, i, o;
+      for (i = 0; i < res.events.length; i++) { o = tick(ac, master, t0 + res.events[i].t, i); keep(o, t0 + res.events[i].t + 0.13); ticks++; }
+      var ts = sinkTimeOf(res), pl = plunk(ac, master, t0 + ts);
+      keep(pl[0], t0 + ts + 0.45); keep(pl[1], t0 + ts + 0.11);
       return res.events.length;
     },
     setdown: setdown,
+    ambience: ambience,
+    renderOffline: renderOffline,
     setOn: function (v) { on = !!v; if (master) master.gain.value = on ? 0.8 : 0; },
     ticks: function () { return ticks; },
     ready: function () { return !!ac; }
@@ -1500,6 +1592,10 @@ function drawSeam() {
     CTX.lineTo(q.x, q.y);
   }
   CTX.closePath(); CTX.fill();
+  /* the near end fades into the bank's shadow rather than ending in an edge */
+  var sy = shoreY(), fade = CTX.createLinearGradient(0, sy - 90, 0, sy + 10);
+  fade.addColorStop(0, 'rgba(16,14,12,0)'); fade.addColorStop(1, 'rgba(16,14,12,0.8)');
+  CTX.fillStyle = fade; CTX.fill();
   /* and a glassy sheen over the calm, a shade lighter than the water round it,
      stronger under a live thumb so the turn is something you can watch */
   CTX.fillStyle = G.touch ? 'rgba(200,196,214,0.11)' : 'rgba(200,196,214,0.07)';
@@ -1576,9 +1672,9 @@ function stepThrow() {
     G.tallyShown = P.next;
     $('tally').textContent = String(P.next);
   }
-  if (!P.sunk && t >= P.res.time) {
+  if (!P.sunk && t >= sinkTimeOf(P.res)) {
     P.sunk = true;
-    G.rings.push({ x: P.res.sinkX, y: P.res.sinkY, t: P.res.time, k: 1.7 });
+    G.rings.push({ x: P.res.sinkX, y: P.res.sinkY, t: sinkTimeOf(P.res), k: 1.7 });
     var sp = proj(P.res.sinkX - G.cam, P.res.sinkY, 0);
     $('plunk').style.top = Math.round(sp.y - 22) + 'px';
     $('plunk').classList.add('on');
@@ -1621,7 +1717,7 @@ function onDown(e) {
   if (G.screen !== 'lake') return;
   if (G.touch) return;
   e.preventDefault();
-  AUDIO.ensure();
+  if (AUDIO.ensure()) AUDIO.ambience(dailySeedFor(G.day));
   try { CV.setPointerCapture(e.pointerId); } catch (x) {}
   G.touch = { id: e.pointerId, samples: [{ x: e.clientX, y: e.clientY, t: e.timeStamp }], yaw0: G.yaw, detent: Math.floor(G.yaw / 5) };
   G.liveYaw = G.yaw;
@@ -1718,7 +1814,7 @@ function wire() {
   CV.addEventListener('pointermove', onMove);
   CV.addEventListener('pointerup', onUp);
   CV.addEventListener('pointercancel', onCancel);
-  press('btnPlay', function () { AUDIO.ensure(); showScreen('lake'); });
+  press('btnPlay', function () { if (AUDIO.ensure()) AUDIO.ambience(dailySeedFor(G.day)); showScreen('lake'); });
   press('btnMenu', function () { showScreen('sheet'); });
   press('btnBack', function () { showScreen('lake'); });
   press('btnExit', function () { window.SWS_EXIT(); });
@@ -1840,6 +1936,12 @@ window.GERPLUNK_DEV = {
   audioReady: function () { return AUDIO.ready(); },
   save: function () { return SAVE.read(); },
   layout: function () { return { W: W, H: H, horizon: horizonY(), shore: shoreY() }; },
+  /* the audio gate's ear: run a named throw through the model and render its
+     ticks and plunk offline, reporting what can be HEARD in the buffer */
+  renderAudio: function (spec) {
+    var res = runThrow(newThrow(spec), throwEnv(spec.yaw || 0, false));
+    return AUDIO.renderOffline(res).then(function (r) { r.skips = res.skips; r.time = res.time; r.sink = sinkTimeOf(res); r.ended = res.ended; r.events = res.events.map(function (e) { return e.t; }); return r; });
+  },
   /* camera only */
   hold: function (t) { G.hold = t !== null && t !== undefined; if (G.hold) G.holdT = t; },
   seek: function (t) { if (G.play) G.play.t0 = nowMs() - t * 1000; }

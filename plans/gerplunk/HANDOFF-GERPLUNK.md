@@ -73,15 +73,18 @@ on branch `add-sproing-jumper` tonight.
   plant (D18) and the turn survives a set down by design; the game was right and
   the gate was rewritten to say what the design says. Lesson kept in the gate's
   header.
-  **Thin:** no audio gate (P1 step 4, test/audio.mjs, not written); no loon,
-  crickets or lap; no slow motion on a record; the tally is a number rather
+  13:23Z: `test/audio.mjs` written and wired, SIX gates now. It found a real
+  audible flaw the hour it was written: a throw that ends slow sinks AT its
+  last hit in the model, so the plunk landed on the last tick of the trill and
+  buried it (17 onsets for 17 skips and a plunk). The page now gives a slow
+  ending a 120 ms beat before the plunk, in the sound and the picture (D34).
+  Lap, crickets and the loon are in, synthesised, from the seeded stream (D35).
+  **Thin:** no slow motion on a record; the tally is a number rather
   than marks on a post; the sink rings stack into a spring on a straight throw;
   the seam ends in a hard edge at the shore; the thumb's bottom third is empty
   water. The three faces of the lake are P2, so the turn changes where the stone
   lands and how the seam bends but not yet the water it lands on.
-  **Next action:** P1 step 4, `test/audio.mjs` (offline render, one tick onset per
-  skip then the plunk, peak under 0.99, copy Keepsies' audio_budget shape),
-  wire it into tools/check.js, watch it fail. Then P2 step 1 (section 5): the
+  **Next action:** P2 step 1 (section 5): the
   stone in the palm, the pebble bed by career, RECORDS per stone, in
   `index.html` after section 13 THE DAY, replacing the fixed offer in
   `setupDay` (the skimmer is pinned to slot three tonight so the gate can find
@@ -573,6 +576,29 @@ The throw table, `node sim.js --throw=12,20,1,skimmer`:
     17    3.242s    27.49m       0.067s     2.43     12.19
   17 skips, 27.49 m, 3.24 s, and it ended: slow
 ```
+
+The audio gate, and the finding it made (the beat removed by mutation):
+
+```
+  ok    the middling throw is a ten skip throw: 10 skips
+  ok    it renders one onset per skip and one for the plunk: 11 onsets for 10 skips
+  ok    and every tick of the trill is its own onset: 18 onsets for 17 skips
+  ok    the last two hits are under 90 ms apart, which is the trill: 67 ms
+  ok    every tick lands within 16 ms of its skip: worst 13.3 ms
+  ok    and the plunk lands at the sink: 3370 ms against 3362 (slow)
+  ok    a stone that ran out of speed goes under a beat after its last tick: 120 ms
+  ok    the peak stays under 0.99: 0.570 and 0.803
+  ok    a throw that never skips renders the plunk alone: 1 onset for 0 skips
+AUDIO OK
+
+$ (sinkTimeOf made to return res.time)
+  FAIL  it renders one onset per skip and one for the plunk: 10 onsets for 10 skips
+  FAIL  and every tick of the trill is its own onset: 17 onsets for 17 skips
+  FAIL  a stone that ran out of speed goes under a beat after its last tick: 0 ms
+3 AUDIO FAILURE(S)
+```
+
+The suite at 13:22Z: lint, sim, sweep, flick 19s, layout 13s, audio 5s, ALL GATES PASSED.
 
 The shots, all opened, faults named in SESSION STATE: `docs/shots/p1-flight.png`
 (stone up between skips two and three with the shadow under it and the sun

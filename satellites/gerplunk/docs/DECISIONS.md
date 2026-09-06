@@ -301,3 +301,19 @@ the fault the plan warned about. Now gold falls in a gaussian around the sun's
 reflection that widens toward the shore, and off the road a row only shows a
 segment where a wave crest happens to face the sky, so most of the water is
 dark. Seen, not reasoned: three rounds of shots.
+
+**D34. A slow ending sinks a beat after its last tick.** The model ends a
+'slow' throw at the instant of its final skip, so the plunk was scheduled on
+top of the last tick of the trill and buried it; the audio gate heard seventeen
+onsets for seventeen skips and a plunk. A stone that has stopped skipping bobs
+once and goes under, so `sinkTimeOf` gives a slow ending 120 ms, in the sound
+and in the picture. A tumble or a plow sinks at the failed contact, which is
+already a whole leap after the last tick. The model is untouched; this is the
+page's reading of it.
+
+**D35. The ambience is synthesised from the seeded stream.** Lap (band passed
+noise swells every three to six seconds), crickets (a 4 kHz sine amplitude
+modulated near 30 Hz, half second chirps), and the loon (660 to 880 Hz with
+vibrato over 1.2 s, every forty to ninety seconds), all at small gains so the
+ticks stay the score. Started on the first gesture, because a context cannot
+open without one.
