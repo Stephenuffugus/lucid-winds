@@ -29,7 +29,7 @@ var TEST_SRC = extract(HTML, '// ---- TEST_EXPORT_START ----', '// ---- TEST_EXP
 
 var EXPORTS = ['CONFIG', 'makeRNG', 'seedFromString', 'mixSeed', 'dailySeedFor',
   'STONES', 'stoneById', 'liftOf', 'stabOf', 'waterFactor', 'windowFor',
-  'newThrow', 'runThrow', 'bedFor', 'TEST'];
+  'newThrow', 'runThrow', 'bedFor', 'faceOf', 'TEST'];
 
 /* A SIM built against an overridden CONFIG. The override is a SOURCE level
    substitution of the numeric literal, not a mutation, because CONFIG is frozen

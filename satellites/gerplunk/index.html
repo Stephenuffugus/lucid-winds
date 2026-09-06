@@ -219,6 +219,10 @@ var CONFIG = {
   CURL_REF: 26,
   /* how far off the centre line the shore lets you aim */
   YAW_MAX_DEG: 25,
+  /* the three faces of one lake (D37): left of minus FACE_DEG is the lee past
+     the point, sheltered water that ends at the spit LEE_REACH_M out; right of
+     FACE_DEG is the bay mouth, rougher water with the wind free on it */
+  FACE_DEG: 12, LEE_WIND: 0.35, BAY_WIND: 1.5, LEE_REACH_M: 16,
   /* ⛔ THE PLANT. Aim is integrated lateral thumb travel while the hand is SLOW,
      inside the same unbroken touch as the throw. 480 degrees per metre of glass
      is 0.1267 degrees per CSS pixel: 197 px of drag covers the whole 25 degree
@@ -377,6 +381,17 @@ function windowFor(stone, water) {
     hi: CONFIG.MAGIC_DEG + (CONFIG.WINDOW_HI_DEG - CONFIG.MAGIC_DEG) * k
   };
 }
+/* ⛔ THE THREE FACES OF THE LAKE, which is the job aim has. Left past the point
+   the water is always glass, the wind is cut to a third, and the spit stops the
+   stone at LEE_REACH_M, so a bad angle forgives but the record cannot live
+   there. Straight ahead is the day's water and the day's wind. Right past the
+   bay mouth the water is a step rougher and the wind runs free. Pure: yaw in
+   degrees, the day's water name, the crosswind already resolved for this yaw. */
+function faceOf(yaw, water, wind) {
+  if (yaw <= -CONFIG.FACE_DEG) return { face: 'lee', water: 'glass', wind: wind * CONFIG.LEE_WIND, reach: CONFIG.LEE_REACH_M };
+  if (yaw >= CONFIG.FACE_DEG) return { face: 'bay', water: water === 'glass' ? 'ripple' : 'chop', wind: wind * CONFIG.BAY_WIND, reach: 0 };
+  return { face: 'main', water: water, wind: wind, reach: 0 };
+}
 /* A THROW is the device independent tuple. Nothing in it is a pixel, nothing in
    it is a screen, and that is deliberate: a thumb path on a phone and a 6DoF
    controller pose in a headset both have to be able to produce one of these.
@@ -445,6 +460,8 @@ function runThrow(th, env) {
     st.x += st.vx * dt; st.y += st.vy * dt; st.z += st.vz * dt;
     st.t += dt;
     if (trace) trace.push({ t: st.t, x: st.x, y: st.y, z: st.z < 0 ? 0 : st.z });
+    /* the spit: in the lee the water ends and the stone runs up on the stones */
+    if (env.reach && st.x >= env.reach) { ended = 'beached'; break; }
     if (st.z <= 0 && st.vz < 0) {
       st.z = 0;
       var speed = st.vx;
@@ -721,6 +738,7 @@ var TEST = {
     this.runSuite('rng', suiteRNG);
     this.runSuite('stones', suiteStones);
     this.runSuite('bed', suiteBed);
+    this.runSuite('faces', suiteFaces);
     this.runSuite('window', suiteWindow);
     this.runSuite('skips', suiteSkips);
     this.runSuite('trill', suiteTrill);
@@ -809,6 +827,43 @@ function suiteBed(T) {
   T.assert('past the gift the skimmer is earned, not given', lateGift < 300, String(lateGift));
   T.assert('the bed leans on its own stream, not the lake\'s',
     mixSeed(dailySeedFor('2026-09-06'), STREAM_BED) !== mixSeed(dailySeedFor('2026-09-06'), STREAM_LAKE));
+}
+function suiteFaces(T) {
+  var lee = faceOf(-20, 'chop', 1), main = faceOf(0, 'chop', 1), bay = faceOf(20, 'chop', 1);
+  T.eq('left past the point is the lee', lee.face, 'lee');
+  T.eq('straight ahead is the main water', main.face, 'main');
+  T.eq('right past the bay mouth is the bay', bay.face, 'bay');
+  T.eq('the lee is glass whatever the day', lee.water, 'glass');
+  T.eq('the main water is the day\'s water', main.water, 'chop');
+  T.eq('the bay roughens a glass day to ripple', faceOf(20, 'glass', 1).water, 'ripple');
+  T.eq('and a ripple day to chop', faceOf(20, 'ripple', 1).water, 'chop');
+  T.assert('the lee shelters the wind and the bay does not', lee.wind < main.wind && main.wind < bay.wind,
+    lee.wind + ' ' + main.wind + ' ' + bay.wind);
+  T.assert('the lee ends at the spit and the others run on', lee.reach > 0 && main.reach === 0 && bay.reach === 0);
+  var env = function (f) { return { water: f.water, wind: f.wind, reach: f.reach }; };
+  var off = { v: 8, theta: 13, spin: 1, stone: 'skimmer', seed: 99 };
+  var offLee = runThrow(newThrow(off), env(lee)), offMain = runThrow(newThrow(off), env(main));
+  T.assert('an off magic throw on a chop day skips in the lee and dies on the main water',
+    offLee.skips >= 5 && offMain.skips <= 1, offLee.skips + ' vs ' + offMain.skips);
+  var perfect = { v: 12, theta: CONFIG.MAGIC_DEG, spin: 1, stone: 'skimmer', seed: 99 };
+  var pLee = runThrow(newThrow(perfect), env(faceOf(-20, 'glass', 0)));
+  var pMain = runThrow(newThrow(perfect), env(faceOf(0, 'glass', 0)));
+  T.eq('a perfect throw in the lee runs up on the spit', pLee.ended, 'beached');
+  T.assert('so the record lives on the main water', pMain.skips > pLee.skips && pMain.ended !== 'beached',
+    pMain.skips + ' vs ' + pLee.skips);
+  T.assert('and the spit is where the stone stopped', Math.abs(pLee.sinkX - CONFIG.LEE_REACH_M) < 0.5, String(pLee.sinkX));
+  /* the bay never taxes the magic angle itself, which is what makes it worth the
+     greed; it taxes the ordinary throw either side of it, and never pays one */
+  var th, sumBay = 0, sumMain = 0, worse = 0, better = 0;
+  for (th = 10; th <= 32; th += 2) {
+    var o = { v: 10, theta: th, spin: 0.8, stone: 'skimmer', seed: 99 };
+    var mB = runThrow(newThrow(o), env(faceOf(20, 'glass', 0))).skips, mM = runThrow(newThrow(o), env(faceOf(0, 'glass', 0))).skips;
+    sumBay += mB; sumMain += mM; if (mB < mM) worse++; if (mB > mM) better++;
+  }
+  T.assert('ordinary throws die in the bay that live on the main water', worse >= 2 && better === 0 && sumBay < sumMain,
+    worse + ' angles worse, ' + better + ' better, ' + sumBay + ' vs ' + sumMain);
+  T.assert('the face steps at the point, not before it',
+    faceOf(-CONFIG.FACE_DEG + 0.5, 'glass', 1).face === 'main' && faceOf(-CONFIG.FACE_DEG, 'glass', 1).face === 'lee');
 }
 function suiteWindow(T) {
   var sk = windowFor(stoneById('skimmer'), 'glass');
@@ -1355,8 +1410,11 @@ function setupDay() {
 function crosswind(yaw) {
   return G.wind * Math.sin((G.windDir - yaw) * Math.PI / 180);
 }
+/* the model's environment for a throw down this yaw is the FACE of the lake
+   the yaw looks at, so the water the stone lands on changes as the world turns */
 function throwEnv(yaw, trace) {
-  return { water: G.water, wind: crosswind(yaw), trace: !!trace };
+  var f = faceOf(yaw, G.water, crosswind(yaw));
+  return { water: f.water, wind: f.wind, reach: f.reach, trace: !!trace };
 }
 
 /* ============================ 14. AUDIO ============================ */
@@ -1593,7 +1651,8 @@ function drawWater(t, sunX) {
   /* the shimmer rows: fixed in the world, so they slide under the camera */
   var tt = G.motion ? t : 0;
   var cam = G.cam, first = Math.floor(cam / LAKE.ROWS_M), i, lastY = -99;
-  var chop = G.water === 'chop' ? 1.6 : (G.water === 'ripple' ? 1.15 : 0.8);
+  var fw = faceOf(yawNow(), G.water, 0).water;
+  var chop = fw === 'chop' ? 1.6 : (fw === 'ripple' ? 1.15 : 0.8);
   for (i = first; i * LAKE.ROWS_M < cam + LAKE.ROWS_FAR; i++) {
     var wx = i * LAKE.ROWS_M, rel = wx - cam;
     if (rel < 0.3) continue;
@@ -1786,7 +1845,7 @@ function afterSink(P) {
   }
   /* the folk line after every sink; a throw that went a long way is told so
      rather than nagged */
-  var line = res.skips >= 12 ? 'That one went a long way.' : adviceFor(th);
+  var line = res.ended === 'beached' ? 'It ran up onto the spit.' : (res.skips >= 12 ? 'That one went a long way.' : adviceFor(th));
   if (line) setTimeout(function () { showLine(line, 3000); }, 500);
 }
 
@@ -2014,7 +2073,8 @@ window.GERPLUNK_DEV = {
   stone: function () { return G.stoneId; },
   offer: function () { return G.offer.slice(); },
   bed: function (career) { return bedFor(G.day, career); },
-  day: function () { return { day: G.day, wind: G.wind, windDir: G.windDir, water: G.water }; },
+  day: function () { return { day: G.day, wind: G.wind, windDir: G.windDir, water: G.water, face: faceOf(yawNow(), G.water, crosswind(yawNow())) }; },
+  face: function (yaw) { return faceOf(yaw, G.water, crosswind(yaw)); },
   state: function () {
     return {
       inFlight: !!G.play && !G.play.sunk, sunk: !!G.play && G.play.sunk, playT: playT(),
