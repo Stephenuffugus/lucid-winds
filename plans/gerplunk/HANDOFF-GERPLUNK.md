@@ -35,11 +35,26 @@ on branch `add-sproing-jumper` tonight.
   stroke starts. Stephen asked for a unique aim and flick mechanic on 2026-09-06
   and a design panel on that question was still running when this was written;
   what is built is a defensible baseline, not the final answer.
+- 2026-09-06 Opus: **THE AIM MECHANIC IS DECIDED AND BUILT.** 126 assertions.
+  Aim is THE PLANT: lateral thumb travel while the hand is slow, inside the same
+  unbroken touch as the throw, sticky across throws. Chosen from a four design,
+  three lens panel; the merge and every dropped idea are in docs/DECISIONS.md
+  D18 to D24.
+  ⛔⛔ It also found that the WebXR seam was broken the hour it was written and
+  every gate was green: the phone returned the SINE of the throw angle and the
+  headset returned the angle, so the same physical throw was theta 26.38 on a
+  phone and 21.00 in a headset. The device assertions never compared the two
+  devices to each other. Fixed, and there is now an assertion that does.
   **Next action:** P1 step 1, the LAKE render, the shore with three stones, the
   flight camera, the rings, the ticks and the plunk. Then P1 step 2, which is the
   feel test: shoot `docs/shots/p1-flight.png` and `p1-gerplunk.png` at 375x667,
   OPEN them, and fix the water before P2 if it reads as stripes rather than a
   lake at dusk.
+  ⛔ P1 INHERITS FOUR THINGS FROM THE AIM PANEL, all in section 15 below: the
+  world turns under the thumb rather than a cursor moving, the bent seam of calm
+  water that previews the throw, the treeline scrolling at 8 px per degree, and
+  the five degree haptic detents. P2 inherits the three faces of the lake, which
+  is what gives aim a job at all.
 
 ---
 
@@ -454,6 +469,57 @@ daily, layout`.
 ---
 
 ## 15. THE MORNING REPORT
+
+### Carried into P1 and P2 from the aim design panel, 2026-09-06
+
+Built tonight: the plant, `THROW_SPEED` as one constant with two roles, the arm
+onset on two consecutive slow segments, the arc length arm and wrist split, the
+angle form of rise, and the set down.
+
+**P1 owes the turn a body.** The world yaws under the thumb: the treeline
+scrolls at about 8 px per degree so a landmark at one end of the axis is off
+screen at the other, the sun path on the water swings, the shoreline pivots. That
+is the difference between standing at a lake and dragging a cursor. A five degree
+haptic detent lets a player count the turn without looking at it, 39 px of thumb
+per tick.
+
+**P1 owes the turn an instrument: the seam.** A lane of the water goes calm from
+under the thumb out to the far trees, drawn as the MODEL'S OWN TRACE at a nominal
+good throw, so it cannot lie about the wind. It is BENT by the day's wind and it
+straightens as the player turns into it. This is how the wind is taught without a
+word of copy, and it is the only instrument the game has.
+⛔ If P1 runs out of clock, ship the seam against a fixed world rather than
+cutting the seam. Never cut the seam.
+
+**P2 owes aim a job: three faces of one lake.** Left past the point, short water
+in the lee that forgives a bad angle, which is where you go for a count when it
+is choppy. Straight ahead, the main water, where the record lives. Right past the
+bay mouth, water that runs forever with nothing to stop the wind, which is where
+you go when you are being greedy and where half your throws die at six. Proven in
+the shipped model: an off magic throw (theta 13) on chop gives 13 skips at the
+spit, 0 on the main lake and 0 in the bay. The anchors are `SHORE_REACH` and
+`SHORE_SHELTER` in the panel output.
+
+**Five Director calls, with recommendations, none of them blocking:**
+
+1. **The starting stance.** A fresh save faces 9 degrees off centre so the seam
+   is visibly bent on throw one and the lake is discoverably turnable. Costs
+   nothing mechanically. Recommendation: keep it.
+2. **The daily lake and the line.** Either everyone throws the same line so five
+   results compare cleanly, or everyone picks their own and the wind and the
+   three faces are part of the puzzle. Recommendation: let them pick, because
+   forcing the line deletes the only thing aim is for.
+3. **The dead band.** A release under 758 px/s of thumb is a set down rather than
+   a weak throw, which deletes a real one to six skip band from the bottom of the
+   range. Recommendation: keep it, it is what makes changing your mind free. It
+   is a taste call.
+4. **`TURN_DEG_PER_M` 480.** The one number only his thumb can settle: 197 px of
+   drag covers the whole aim axis. Too fast to sit on a line, drop toward 320;
+   needs a re grip to reach the spit, raise toward 640.
+5. **The theta mapping is free tonight and not free later.** Moving flatness from
+   the sine of the angle to the angle itself re grades every throw. No records
+   exist yet, so it costs nothing now. Taken tonight for that reason.
+
 
 The template in `plans/fathom/HANDOFF-FATHOM.md` section 15, with this file's phases. Add one line: **the throw table**
 from `--throw`, pasted.
