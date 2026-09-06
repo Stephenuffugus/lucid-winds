@@ -55,6 +55,165 @@ copy), then this file, then the design. Where they differ, this file wins; every
   **Next action:** the plan's P3 step 4 refresh of `ART_ASSETS.md` and `BUILD-NOTES.md`, then
   the morning report. The fifty bone crate is a Director call and waits for Stephen.
 
+- 2026-09-07 fenced builder: **THE DOCS REFRESH IS DONE** (item A8 of the Opus list).
+  `satellites/strata/docs/ART_ASSETS.md` and `satellites/strata/docs/BUILD-NOTES.md` are
+  rewritten against `index.html` at stamp `20260906f`, every line number checked. The
+  morning report is below. ⛔ It found one FAULT, not a gap: a large site's second
+  skeleton can be dug and can never be mounted. **Next action:** the fix and its
+  assertion, written out at the end of the report.
+
+### MORNING REPORT, 2026-09-07 (item A8 of the Opus list, the docs refresh)
+
+Written by a fenced builder beside the lead. Nothing outside
+`satellites/strata/docs/` and this file was touched, and nothing was pushed.
+
+**WHAT IS LIVE.** Stamp **`20260906f`**, read out of the file at `index.html:1522`
+and confirmed on the host: `curl` of `https://lucidwinds.com/satellites/strata/`
+returns `var STAMP = '20260906f'`. `sw.js` carries `strata-shell-20260906f` and the
+three `?v=` in the head are the same string, so the stamp is in its three places.
+Everything the plan calls the game is built and reachable: the dig with its four
+tools, the pressure ring, the trace, the mounting bench with the bronze infill and
+the glued seams, the name sheet, the hall with plinths and placards, the framed
+plate on the wall, the plate export at 1080 by 1350, the field journal, the rename,
+and the share link with its crate. Four generated PNGs ship, three icons and the
+arcade tile. There is no painted art in the game.
+
+The gates rerun clean today on the two that need no browser: `sim.js --test` gives
+**103 of 103** and `STRATA TEST OK`, `sim.js --census=3000` gives `STRATA CENSUS OK`
+with quadruped at 41.9 percent, the widest single choice, well inside the sixty
+percent rule. The four browser gates were not run this session, because the fence
+this builder works under forbids opening Chrome.
+
+**WHAT LANDED.** `satellites/strata/docs/ART_ASSETS.md` and
+`satellites/strata/docs/BUILD-NOTES.md`, both rewritten against `index.html` line by
+line rather than against the older documents. ART_ASSETS now says plainly at the top
+that there is no painted art and everything is generated, lists the four image files
+that do ship and the tool that rebuilds each, and gives a painter a path and a pixel
+size per item for the things worth painting. BUILD-NOTES gives the file map with
+verified line numbers, the constants and what each one does, the gate table with the
+command to run under the lock, and a ranked list of what is thin.
+
+⛔ **The older copies at `satellites/strata/ART_ASSETS.md` and
+`satellites/strata/BUILD-NOTES.md` are still on disk and are now wrong in four named
+places.** They were outside this builder's fence. Whoever has the fence to do it
+should delete them, because two files of the same name saying different things is
+worse than one file saying the wrong thing.
+
+**WHAT THE CODE SAID THAT THE DOCS DID NOT.**
+
+1. ⛔ **A large site's second skeleton can be dug and can never be mounted.** At depth
+   1 or deeper, 42 percent of sites carry two animals (`makeSite`, 1176). The tools
+   and the trace loop over every specimen (`stroke` 1294, `tryExtract` 1474), so the
+   deeper animal's bones really do come free and count toward the lifted tally. But
+   `refreshChrome` 2689, the site chip 2692, `openMount` 2765 and `openNameSheet` 3555
+   all read `G.dig.specimens[0]` and nothing else. The chip reads "N of M lifted"
+   against the FIRST animal's bone count, and every bone lifted off the second one is
+   thrown away when a new site opens. The sim gate asserts the two animals are placed
+   (2127) and no gate asks whether the second one can be mounted. This is the only
+   thing found today that is a fault rather than a gap.
+2. The old ART_ASSETS said the game **ships with zero image files**. It ships four
+   PNGs. They are generated rather than painted, which is the true sentence, and it
+   is not the same sentence.
+3. The old ART_ASSETS said the dust is **pooled**. `spawnDust` 1731 pushes and
+   `stepDust` 1741 splices. It is bounded at `DUST_MAX` 400 and pooling it is still
+   worth doing.
+4. The old ART_ASSETS said the hall is a **two stop gradient**. It is four stops with
+   a hard floor line at 63 percent, and each plinth now hangs a framed plate above it
+   on a phone at least 760 tall.
+5. The old ART_ASSETS said the painted paper hook is "the canvas stays transparent".
+   `#mountCv` at line 188 paints `background:var(--paper)` itself, so a tile behind it
+   would be invisible until that line comes off.
+6. The plan's section 4 says the plate is **2048x2560**. `exportPlate` at 3281 renders
+   **1080x1350**. The code is the smaller and the plan was never corrected.
+7. `sim.js` line 29 names **`test/mutants.mjs`** and points its `STRATA_HTML` override
+   at it. That file does not exist. The Sep 06 morning report already said a mutation
+   gate was the first thing to add with another hour.
+8. `WING_A`, `WING_B` and `WING_C` are in CONFIG at 399 and are **read nowhere**.
+   `SAVE.unlocked` is merged upward in `saveNow` 2654 and is never set and never read.
+   The museum wings are not built.
+9. The **portal card is two stamps behind**: `portal/index.html:1049` pins
+   `/satellites/strata/?v=20260906b` and the thumb at `?v=20260906b` while the game
+   ships `20260906f`.
+10. The plan's P2 step 4 asks for `docs/shots/p2-plate.png`. There is no such file.
+
+**WHAT IS THIN, AND WHY IT IS STILL THIN.** The full ranked list is section 6 of
+`docs/BUILD-NOTES.md`. In short:
+
+- The second skeleton, above. Nobody has played a large site to the end.
+- **Nobody has heard any of it and there is no ear gate.** Item A9 of the Opus list
+  puts one in every game with sound. Strata is on that list and has not had it.
+- **The brush is the quietest sound in the game and it is the first gesture** a player
+  makes. The `shhh` at 2479 is a 5.2 kHz highpassed burst of 0.05 seconds at peak
+  0.045, against the pick's `tak` at 0.30 and the crack at 0.42, fired once per four
+  cells of travel. See the note at the end of this report.
+- **The fifty bone crate** is Director call 15 and is not started.
+- **The variety count is the builder's twelve** and Director call 17 asks for
+  Stephen's own five.
+- **The wings do not exist** and no gate misses them.
+- **No mutation gate**, so no assertion here has been proved to be worth anything by
+  breaking the code under it, except the ones the builders watched fail by hand.
+- **The lint's text floor reads CSS `rem` only** (line 110 of `tools/lint.mjs`), which
+  is item A11. Strata has no violation today, because its only canvas fonts are 22 px
+  to 66 px on a 1080 wide plate, but the gate cannot see them.
+- **The five picture faults** named in the Sep 06 morning report are all still true.
+
+**WHAT WAITS ON STEPHEN.** Three calls, in `docs/DIRECTOR-CALLS-SEP06.md`. None of
+them is started and none should be.
+
+1. **Call 3, the clink.** The heartbeat moment of Strata is synthesised and unheard.
+   The whole sound bed is unheard.
+2. **Call 15, the fifty bone crate.** Group the tray by kind, or ask only for the ten
+   bones that matter, or leave it. The ALL button makes the drag optional today.
+3. **Call 17, the variety sheet.** Open `docs/shots/p0-variety.png` and say which five
+   you would keep. The builder counted twelve. If Stephen counts four the grammar goes
+   back on the bench, and that decision sits under everything else in this game.
+
+**THE EXACT NEXT ACTION** for whoever picks Strata up:
+
+Fix the large site's second skeleton. Either the bench offers both animals, or the
+game stops generating a second one it cannot finish. The cheapest honest version is
+that MOUNT works on whichever specimen is furthest along and the site chip counts
+that same specimen, so the numbers on the screen and the button agree. Before the
+build, ask which gate should have caught it and write that assertion into
+`test/mount.mjs`: open a site at depth 1 that `makeSite` gives two specimens, lift a
+bone off `specimens[1]` with the test hook, and assert the site chip's total and the
+MOUNT button both refer to the animal the player is actually working. Watch it fail
+against HEAD first, which it will, then build. Then shoot 412x915 and 375x667 on a
+two skeleton site and OPEN the shots.
+
+Behind that, in order: item A9, the ear gate, which renders the loudest minute
+through the real `AUDIO` functions into an `OfflineAudioContext` and reports peak,
+rms and the share of energy above 3 kHz, never from a wav made for the ear. Then item
+A11, teaching `tools/lint.mjs` to read canvas font literals. Then `test/mutants.mjs`.
+Then the missing `docs/shots/p2-plate.png` and the portal card's stale `?v=`.
+
+### A NOTE, NOT A BUILD: the brighter brush grain and the short hiss
+
+The Opus list, section 3, Strata, says exactly this belongs in the docs refresh as a
+note and not as a build, so it is written down here and no code was changed for it.
+
+The look pass on the night of Sep 06 found that the brush's dust is a faint pale
+patch on the second band and that the feedback for the very first gesture is quiet on
+a phone in daylight. Two things would answer it, and both are small:
+
+- **A brighter grain in the brushed patch.** `drawDust` at 1751 fills each grain with
+  a flat `#E4CFA4` at half alpha or less, one small rectangle per grain, at most 400
+  of them. Lifting the fill toward `PAL.bone` and holding the alpha up for the first
+  fifth of a grain's life would make the pour read as dust coming off rather than as
+  a smear. The place to change it is the fill and the alpha ramp in `drawDust`, not
+  `DUST_MAX`, because raising the count costs fill rate on a phone and the grains are
+  already bounded for that reason.
+- **A short hiss.** The `shhh` at 2479 is 0.05 seconds of 5.2 kHz highpassed noise at
+  peak 0.045, which is the quietest cue in the game by a factor of six against the
+  pick's `tak`. A slightly longer grain at a slightly higher peak, still well under
+  the `tak`, would let the first stroke be heard without turning the brush into the
+  loudest thing on the screen.
+
+Neither is written into the code and neither should be until somebody has heard the
+bed, which is Director call 3. A level decision made by eye on a waveform is the
+mistake the Windup tine wav taught the fleet on Sep 06: a file normalised for the ear
+measured loud while the game was clipping, which is a different fault.
+
 ---
 
 ## 0. RULES OF ENGAGEMENT
