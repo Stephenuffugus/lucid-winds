@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-/* Airworthy's three PWA icons, rendered from one motif.
+/* Windup's three PWA icons, rendered from one motif.
  *
  *   node tools/icons.mjs
  *
- * The motif is the game in one picture: a jar with a lid, one frond inside it,
- * and the light of a window on the glass. No letter, no face, nothing that
- * stops reading at 48 px.
+ * The motif is the game in one picture: a paper strip with three punched holes
+ * running across a walnut box, and the crank handle on the right. No letter, no
+ * face, nothing that stops reading at 48 px.
  *
  * Maskable note, carried in every fleet icon script: Android crops a maskable
  * icon to an arbitrary shape and only the central 80 percent is guaranteed
@@ -21,31 +21,37 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const BG = '#EFE9DC';
-const INK = '#33302A';
-const PAPER = '#FBF8F1';
-const CREASE = '#3C6E9F';
+const BG = '#2A1D16';
+const INK = '#1A120C';
+const PAPER = '#F2E7CE';
+const BRASS = '#C9A227';
+const WALNUT = '#5A3A22';
 
 function mark(scale) {
   const s = scale;
-  /* the game in one picture: a paper dart climbing, with its dotted trail
-     behind it. No letter, nothing that stops reading at 48 px. */
+  /* the game in one picture: the strip with its holes going into the box, and
+     the crank waiting to be turned */
   return `
   <g transform="translate(256,256) scale(${s}) translate(-256,-256)">
-    <path d="M56 402 C120 382 190 344 258 292" fill="none" stroke="${INK}"
-          stroke-width="13" stroke-linecap="round" stroke-dasharray="3 26" opacity=".72"/>
-    <g transform="translate(300 240) rotate(-30)">
-      <path d="M150 0 L-84 -60 L-40 0 L-84 34 Z" fill="${PAPER}" stroke="${INK}"
-            stroke-width="13" stroke-linejoin="round"/>
-      <path d="M140 0 L-66 -22" stroke="${CREASE}" stroke-width="11" stroke-linecap="round"/>
+    <rect x="40" y="196" width="300" height="120" rx="14" fill="${PAPER}"/>
+    <circle cx="112" cy="238" r="19" fill="${INK}"/>
+    <circle cx="196" cy="274" r="19" fill="${INK}"/>
+    <circle cx="280" cy="230" r="19" fill="${INK}"/>
+    <rect x="300" y="150" width="150" height="212" rx="20" fill="${WALNUT}"
+          stroke="${INK}" stroke-width="12"/>
+    <rect x="318" y="176" width="114" height="26" rx="8" fill="${BRASS}" opacity=".85"/>
+    <g stroke="${BRASS}" stroke-width="9" stroke-linecap="round">
+      <path d="M330 232 L420 232"/><path d="M330 258 L420 258"/><path d="M330 284 L420 284"/>
     </g>
-    <path d="M40 424 L472 424" stroke="${INK}" stroke-width="16" stroke-linecap="round"/>
+    <circle cx="375" cy="336" r="26" fill="none" stroke="${BRASS}" stroke-width="13"/>
+    <path d="M375 336 L426 300" stroke="${BRASS}" stroke-width="15" stroke-linecap="round"/>
+    <circle cx="430" cy="297" r="17" fill="${BRASS}"/>
   </g>`;
 }
 const svg = (rounded, scale) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <rect width="512" height="512" ${rounded ? 'rx="96"' : ''} fill="${BG}"/>
   <radialGradient id="w" cx="34%" cy="22%" r="72%">
-    <stop offset="0" stop-color="#FFFFFF" stop-opacity=".45"/>
+    <stop offset="0" stop-color="#FFE9A8" stop-opacity=".30"/>
     <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
   </radialGradient>
   <rect width="512" height="512" ${rounded ? 'rx="96"' : ''} fill="url(#w)"/>

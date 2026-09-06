@@ -26,7 +26,11 @@ const GATES = [
   { name: 'lint', cmd: ['tools/lint.mjs'], need: 'LINT OK' }
 ];
 const BROWSER_GATES = [
-  { name: 'tine', cmd: ['test/tine.mjs'], need: 'TINE OK' }
+  { name: 'tine', cmd: ['test/tine.mjs'], need: 'TINE OK' },
+  /* not a test of the game so much as of the one file a person is asked to
+     listen to: it refuses to write a wav that does not contain the notes it
+     claims */
+  { name: 'wav', cmd: ['tools/tinewav.mjs'], need: 'WAV OK', slow: true }
 ];
 
 const results = [];

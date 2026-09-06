@@ -1,0 +1,1068 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#C9A227">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260906a">
+<link rel="icon" href="./icon-192.png?v=20260906a">
+<link rel="manifest" href="./manifest.webmanifest?v=20260906a">
+<title>WINDUP</title>
+<style>
+:root{
+  --velvet:#2A1D16; --velvet-lo:#1C130E; --walnut:#5A3A22; --walnut-lo:#3E2716;
+  --brass:#C9A227; --brass-lo:#8E6F16; --paper:#F2E7CE; --ink:#2B1F14;
+  --cream:#EFE3C8; --muted:#A2907A; --line:rgba(43,31,20,.28);
+  --safeT:env(safe-area-inset-top,0px); --safeB:env(safe-area-inset-bottom,0px);
+  --safeR:env(safe-area-inset-right,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overscroll-behavior:none;background:var(--velvet-lo);
+  color:var(--cream);font-family:ui-rounded,'Avenir Next',system-ui,-apple-system,sans-serif}
+body{touch-action:none;user-select:none;-webkit-user-select:none}
+#wrap{position:fixed;inset:0;overflow:hidden}
+#stage{position:absolute;inset:0;width:100%;height:100%;display:block}
+#chrome{position:absolute;top:calc(8px + var(--safeT));left:8px;right:8px;z-index:5;
+  display:flex;align-items:flex-start;gap:8px;pointer-events:none}
+#chrome > *{pointer-events:auto}
+.btn{min-height:48px;min-width:48px;border:2px solid var(--brass-lo);border-radius:12px;
+  background:var(--paper);color:var(--ink);font-family:inherit;font-size:.92rem;font-weight:700;
+  letter-spacing:.04em;padding:10px 16px;box-shadow:0 2px 0 var(--brass-lo)}
+.btn.big{min-height:56px;font-size:1rem}
+.btn.go{background:var(--brass);border-color:#6F5610;box-shadow:0 2px 0 #6F5610;color:#2B1F14}
+.btn.ghost{background:transparent;box-shadow:none;border-color:var(--muted);color:var(--cream)}
+.btn.icon{padding:0;width:48px;font-size:1.15rem}
+.btn[disabled]{opacity:.45}
+#nameChip{flex:0 1 auto;max-width:52%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#spacer{flex:1 1 auto}
+#hint{position:absolute;left:50%;transform:translateX(-50%);top:calc(70px + var(--safeT));
+  z-index:6;background:rgba(28,19,14,.86);color:var(--cream);border:1px solid var(--brass-lo);
+  padding:10px 16px;border-radius:12px;font-size:.86rem;text-align:center;max-width:80%;
+  opacity:0;transition:opacity 220ms ease-out;pointer-events:none}
+#hint.on{opacity:1}
+.screen{position:absolute;inset:0;z-index:8;background:var(--velvet);display:none;
+  overflow-y:auto;padding:calc(16px + var(--safeT)) 16px calc(20px + var(--safeB))}
+.screen.on{display:block}
+.screen .col{max-width:420px;margin:0 auto;display:flex;flex-direction:column;gap:10px;
+  align-items:stretch}
+.title{font-size:1.6rem;font-weight:800;letter-spacing:.1em;text-align:center;color:var(--brass)}
+.lede{font-size:.92rem;line-height:1.5;color:var(--cream);text-align:center;margin:0}
+.tiny{font-size:.76rem;color:var(--muted);text-align:center;margin:2px 0}
+.cap{font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);
+  margin:6px 0 0}
+.row{display:flex;gap:8px}
+.row .btn{flex:1 1 0}
+input[type=text],textarea{width:100%;min-height:48px;border:2px solid var(--brass-lo);
+  border-radius:12px;background:var(--paper);color:var(--ink);font-family:inherit;
+  font-size:1rem;padding:10px 12px}
+textarea{min-height:76px;resize:none}
+#punchBar{position:absolute;left:0;right:0;bottom:0;z-index:6;background:rgba(28,19,14,.94);
+  border-top:2px solid var(--brass-lo);padding:8px 10px calc(10px + var(--safeB));
+  display:none;gap:8px}
+#punchBar.on{display:flex}
+#punchBar .btn{flex:1 1 0;padding:10px 6px;font-size:.84rem}
+#toast{position:fixed;left:50%;bottom:calc(96px + var(--safeB));transform:translateX(-50%);
+  background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:10px;font-size:.82rem;
+  z-index:40;opacity:0;pointer-events:none;transition:opacity 170ms ease-out;max-width:84%;
+  text-align:center}
+#toast.on{opacity:1}
+body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
+#testPanel{position:fixed;left:0;bottom:0;z-index:60;display:none}
+</style>
+<div id="wrap">
+  <canvas id="stage"></canvas>
+
+  <div id="chrome">
+    <button class="btn" id="nameChip">Twinkle Twinkle</button>
+    <div id="spacer"></div>
+    <button class="btn icon" id="btnMenu" aria-label="Menu">&#9776;</button>
+  </div>
+  <div id="hint"></div>
+
+  <button class="btn big go" id="btnPunch" style="position:absolute;left:50%;transform:translateX(-50%);bottom:calc(18px + var(--safeB));z-index:6">PUNCH</button>
+
+  <div id="punchBar">
+    <button class="btn" id="btnPlay">PLAY</button>
+    <button class="btn" id="btnDice">DICE</button>
+    <button class="btn" id="btnClear">CLEAR</button>
+    <button class="btn go" id="btnPunchDone">DONE</button>
+  </div>
+
+  <div class="screen" id="scrMenu">
+    <div class="col">
+      <div class="title">WINDUP</div>
+      <p class="lede">Punch a song. Crank it. Give it away.</p>
+      <button class="btn" id="btnShelf">THE SHELF</button>
+      <button class="btn" id="btnGive">GIVE IT AWAY</button>
+      <button class="btn" id="btnExport">EXPORT</button>
+      <button class="btn" id="btnSound">SOUND ON</button>
+      <button class="btn" id="btnMotion">MOTION ON</button>
+      <button class="btn" id="btnSwing">SWING ON</button>
+      <p class="tiny">Sky Wolf Studio</p>
+      <button class="btn ghost" id="btnMenuClose">CLOSE</button>
+    </div>
+  </div>
+
+  <div class="screen" id="scrShelf">
+    <div class="col">
+      <div class="title" style="font-size:1.3rem">The shelf</div>
+      <div id="shelfList"></div>
+      <button class="btn ghost" id="btnShelfBack">BACK</button>
+    </div>
+  </div>
+
+  <div class="screen" id="scrGive">
+    <div class="col">
+      <div class="title" style="font-size:1.3rem">Give it away</div>
+      <p class="cap">The song</p>
+      <input type="text" id="giveName" maxlength="40" placeholder="Twinkle Twinkle">
+      <p class="cap">A line for them</p>
+      <textarea id="giveNote" maxlength="90" placeholder="Happy birthday, from me"></textarea>
+      <p class="cap">The wrapping</p>
+      <div class="row" id="wrapRow">
+        <button class="btn" data-wrap="birthday">Birthday</button>
+        <button class="btn" data-wrap="snowfall">Snowfall</button>
+        <button class="btn" data-wrap="nightsky">Night Sky</button>
+      </div>
+      <p class="cap">Punched by</p>
+      <input type="text" id="giveBy" maxlength="24" placeholder="your name">
+      <button class="btn big go" id="btnShare">SHARE THE LINK</button>
+      <button class="btn ghost" id="btnGiveBack">BACK</button>
+    </div>
+  </div>
+
+  <div class="screen" id="scrExport">
+    <div class="col">
+      <div class="title" style="font-size:1.3rem">Export</div>
+      <button class="btn big" id="btnExpAudio">AUDIO</button>
+      <button class="btn big" id="btnExpImage">STRIP IMAGE</button>
+      <button class="btn big" id="btnExpPdf">PRINTABLE STRIP</button>
+      <p class="tiny">The printable strip is beta. Measure one against a real strip before you cut.</p>
+      <button class="btn ghost" id="btnExportBack">BACK</button>
+    </div>
+  </div>
+
+  <div class="screen" id="scrGift">
+    <div class="col">
+      <div class="title" style="font-size:1.3rem">For you</div>
+      <p class="lede" id="giftFrom"></p>
+      <p class="lede" id="giftNote"></p>
+      <button class="btn big go" id="btnGiftSave">SAVE TO MY SHELF</button>
+      <button class="btn" id="btnGiftOwn">MAKE YOUR OWN</button>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+  <div id="testPanel"></div>
+</div>
+<script>
+'use strict';
+// ---- SIM_EXPORT_START ----
+/* ============================ 1. CONFIG ============================ */
+/* ⛔ FROZEN. A number that sounds wrong changes here and is logged in
+   docs/DECISIONS.md; the structure does not change. */
+var CONFIG = Object.freeze({
+  GAME_ID: 'windup', SAVE_KEY: 'lw_windup_v1', SAVE_V: 1,
+  /* the real fifteen note diatonic box, low at the bottom of the strip as on
+     the paper: C4 up to C6 */
+  ROWS: 15,
+  ROW_MIDI: Object.freeze([60, 62, 64, 65, 67, 69, 71, 72, 74, 76, 77, 79, 81, 83, 84]),
+  ROW_NAME: Object.freeze(['C', 'D', 'E', 'F', 'G', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'A', 'B', 'C']),
+  /* ⛔ THE RETRIGGER RULE. A real tine is still moving: two holes in one row
+     closer than this are refused, and eight millimetres of paper is two eighths
+     at the default spacing. */
+  MIN_GAP_STEPS: 2,
+  STRIP_MIN_STEPS: 32, STRIP_MAX_STEPS: 512, TAIL_STEPS: 8,
+  SWING: 0.12,
+  /* the printable strip, in millimetres. MM_PER_STEP is the one Stephen checks
+     against a real Kikkerland strip before the PDF leaves beta. */
+  MM_PER_STEP: 4, PAPER_MM: 41, ROW_PITCH_MM: 2, HOLE_MM: 2.4, MARGIN_MM: 6.5,
+  /* the crank */
+  CRANK_R_PX: 140, CRANK_DEAD_PX: 20, MM_PER_RAD: 6,
+  AUTO_BPM: 96,
+  /* the voice */
+  TINE_DECAY_LOW_S: 1.8, TINE_DECAY_HIGH_S: 0.8,
+  DETUNE_CENTS: 3, LEVEL_JITTER_DB: 1,
+  VOICES_MAX: 24, MASTER: 0.85, WET: 0.18,
+  PARTIAL_A: 4.2, PARTIAL_B: 6.3, PARTIAL_A_GAIN: 0.18, PARTIAL_B_GAIN: 0.07,
+  SHIMMER: 12, SHIMMER_GAIN: 0.03, SHIMMER_S: 0.3,
+  CLICK_MS: 3, CLICK_HP_HZ: 4000
+});
+
+/* ============================ 2. RNG ============================ */
+/* mulberry32: small, fast, and the same on every phone, which is what a gift
+   link needs. */
+function makeRNG(seed) {
+  var a = (seed >>> 0) || 1;
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    var t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function seedFromString(s) {
+  var h = 2166136261, i;
+  s = String(s);
+  for (i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+function mixSeed(a, b) {
+  var h = (a ^ Math.imul(b >>> 0, 2654435761)) >>> 0;
+  h ^= h >>> 13; h = Math.imul(h, 1274126177) >>> 0; h ^= h >>> 16;
+  return h >>> 0;
+}
+function clamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
+
+/* ============================ 3. STRIP ============================ */
+/* A strip is a name, a signature and a sorted list of [step, row]. Nothing
+   else: the notes come from the rows and the timing comes from the crank. */
+function newStrip(over) {
+  var s = { v: 1, name: 'Untitled', by: '', holes: [], wrap: 'birthday', dedication: '' }, k;
+  if (over) for (k in over) s[k] = over[k];
+  s.holes = sortHoles((s.holes || []).map(function (h) { return [h[0] | 0, h[1] | 0]; }));
+  return s;
+}
+function sortHoles(holes) {
+  return holes.slice().sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; });
+}
+function holesAt(strip, row) {
+  var out = [], i;
+  for (i = 0; i < strip.holes.length; i++) if (strip.holes[i][1] === row) out.push(strip.holes[i]);
+  return out;
+}
+function holeIndex(strip, step, row) {
+  var i;
+  for (i = 0; i < strip.holes.length; i++) {
+    if (strip.holes[i][0] === step && strip.holes[i][1] === row) return i;
+  }
+  return -1;
+}
+
+/* ============================ 4. RULES ============================ */
+/* ⛔ THE REFUSAL IS PER ROW, NOT PER STRIP. A beginner's first bar is all one
+   row and a whole strip rule would refuse the second note they ever punch. */
+function canPunch(strip, step, row) {
+  if (!(step >= 0) || step > CONFIG.STRIP_MAX_STEPS) return false;
+  if (!(row >= 0) || row >= CONFIG.ROWS) return false;
+  var i;
+  for (i = 0; i < strip.holes.length; i++) {
+    var h = strip.holes[i];
+    if (h[1] !== row) continue;
+    if (Math.abs(h[0] - step) < CONFIG.MIN_GAP_STEPS) return false;
+  }
+  return true;
+}
+function punch(strip, step, row) {
+  if (!canPunch(strip, step, row)) return false;
+  strip.holes.push([step | 0, row | 0]);
+  strip.holes = sortHoles(strip.holes);
+  return true;
+}
+function unpunch(strip, step, row) {
+  var i = holeIndex(strip, step, row);
+  if (i < 0) return false;
+  strip.holes.splice(i, 1);
+  return true;
+}
+/* the paper runs on past the last hole so the tines can ring out */
+function stripLength(strip) {
+  var last = 0, i;
+  for (i = 0; i < strip.holes.length; i++) if (strip.holes[i][0] > last) last = strip.holes[i][0];
+  return clamp(last + CONFIG.TAIL_STEPS, CONFIG.STRIP_MIN_STEPS, CONFIG.STRIP_MAX_STEPS);
+}
+
+/* ---- the link. step u16, row u8, base64url, under a kilobyte for 300 holes ---- */
+var B64U = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+function bytesToB64u(b) {
+  var out = '', i;
+  for (i = 0; i < b.length; i += 3) {
+    var n = (b[i] << 16) | ((b[i + 1] || 0) << 8) | (b[i + 2] || 0);
+    out += B64U[(n >> 18) & 63] + B64U[(n >> 12) & 63];
+    if (i + 1 < b.length) out += B64U[(n >> 6) & 63];
+    if (i + 2 < b.length) out += B64U[n & 63];
+  }
+  return out;
+}
+function b64uToBytes(s) {
+  var out = [], i, n, c = 0, bits = 0;
+  for (i = 0; i < s.length; i++) {
+    var v = B64U.indexOf(s.charAt(i));
+    if (v < 0) continue;
+    c = (c << 6) | v; bits += 6;
+    if (bits >= 8) { bits -= 8; out.push((c >> bits) & 255); }
+  }
+  return out;
+}
+/* ⛔ DELTA AND ROW IN ONE BYTE. The plan asked for step u16 plus row u8 and for
+   three hundred holes to fit in a kilobyte, and those two cannot both be true:
+   three bytes a hole is 900 bytes of payload and base64 makes that 1204
+   characters. Holes are sorted, so what a link actually needs is the GAP since
+   the last one, and a gap of fourteen eighths or less and a row on a fifteen
+   tine comb both fit in a nibble. Three hundred holes now cost about four
+   hundred characters. The high nibble 15 escapes to a two byte gap for a rest
+   longer than fourteen eighths, and the low nibble can never be 15 because the
+   comb stops at row 14. */
+function packStrip(strip) {
+  var b = [], i, prev = 0;
+  b.push(1);
+  b.push(strip.holes.length & 255, (strip.holes.length >> 8) & 255);
+  for (i = 0; i < strip.holes.length; i++) {
+    var st = clamp(strip.holes[i][0] | 0, 0, CONFIG.STRIP_MAX_STEPS);
+    var rw = clamp(strip.holes[i][1] | 0, 0, CONFIG.ROWS - 1);
+    var d = st - prev;
+    prev = st;
+    if (d >= 0 && d <= 14) b.push((d << 4) | rw);
+    else {
+      if (d < 0) d = 0;
+      b.push(0xF0 | rw, d & 255, (d >> 8) & 255);
+    }
+  }
+  return bytesToB64u(b);
+}
+function unpackStrip(txt) {
+  var b = b64uToBytes(String(txt || ''));
+  if (b.length < 3 || b[0] !== 1) return null;
+  var n = b[1] | (b[2] << 8), holes = [], at = 3, step = 0, i;
+  if (n < 0 || n > 4096) return null;
+  for (i = 0; i < n; i++) {
+    if (at >= b.length) break;
+    var byte = b[at++], rw = byte & 15, d = byte >> 4;
+    if (d === 15) {
+      if (at + 1 >= b.length) break;
+      d = b[at] | (b[at + 1] << 8);
+      at += 2;
+    }
+    step += d;
+    /* ⛔ a gift link is data from a stranger: every step and row is clamped
+       before anything is drawn or sounded with it. */
+    holes.push([clamp(step, 0, CONFIG.STRIP_MAX_STEPS), clamp(rw, 0, CONFIG.ROWS - 1)]);
+    step = clamp(step, 0, CONFIG.STRIP_MAX_STEPS);
+  }
+  return sortHoles(holes);
+}
+
+/* ============================ 5. SEED ============================ */
+/* Four bars over I vi IV V in C, one note a beat on a chord tone and a passing
+   tone on some of the off beats. Rows 3 to 12, so it sits in the middle of the
+   comb where the box sounds best, and it can never break the retrigger rule
+   because it checks. */
+var CHORDS = Object.freeze([
+  Object.freeze([4, 7, 9, 11]),      /* I   G4 C5 E5 G5 */
+  Object.freeze([5, 7, 9, 12]),      /* vi  A4 C5 E5 A5 */
+  Object.freeze([3, 5, 7, 10, 12]),  /* IV  F4 A4 C5 F5 A5 */
+  Object.freeze([4, 6, 8, 11])       /* V   G4 B4 D5 G5 */
+]);
+var SEED_LO = 3, SEED_HI = 12;
+function nearestIn(list, want, r) {
+  var best = list[0], bd = 1e9, i;
+  for (i = 0; i < list.length; i++) {
+    var d = Math.abs(list[i] - want) + (r ? r() * 1.4 : 0);
+    if (d < bd) { bd = d; best = list[i]; }
+  }
+  return best;
+}
+function seedMelody(seed) {
+  var r = makeRNG(seed >>> 0);
+  var strip = newStrip({ name: 'A little one', holes: [] });
+  var prev = 7, bar, beat;
+  for (bar = 0; bar < 4; bar++) {
+    var chord = CHORDS[bar];
+    for (beat = 0; beat < 4; beat++) {
+      var step = bar * 8 + beat * 2;
+      var row = nearestIn(chord, prev + Math.round((r() - 0.5) * 4), r);
+      row = clamp(row, SEED_LO, SEED_HI);
+      if (!punch(strip, step, row)) {
+        /* the rule refused it, so take the nearest chord tone that is free */
+        var k;
+        for (k = 0; k < chord.length; k++) {
+          if (punch(strip, step, clamp(chord[k], SEED_LO, SEED_HI))) { row = chord[k]; break; }
+        }
+      }
+      prev = row;
+      /* a passing tone on about half the off beats, between this note and the
+         next scale step, never in a row that would be refused */
+      if (r() < 0.5) {
+        var dir = r() < 0.5 ? 1 : -1;
+        var pass = clamp(row + dir, SEED_LO, SEED_HI);
+        if (pass !== row) punch(strip, step + 1, pass);
+      }
+    }
+  }
+  return strip;
+}
+
+/* ---- the three that come in the box ---- */
+var STARTERS = Object.freeze({
+  twinkle: {
+    name: 'Twinkle Twinkle',
+    holes: [[0, 7], [2, 7], [4, 11], [6, 11], [8, 12], [10, 12], [12, 11],
+      [16, 10], [18, 10], [20, 9], [22, 9], [24, 8], [26, 8], [28, 7],
+      [32, 11], [34, 11], [36, 10], [38, 10], [40, 9], [42, 9], [44, 8],
+      [48, 11], [50, 11], [52, 10], [54, 10], [56, 9], [58, 9], [60, 8],
+      [64, 7], [66, 7], [68, 11], [70, 11], [72, 12], [74, 12], [76, 11],
+      [80, 10], [82, 10], [84, 9], [86, 9], [88, 8], [90, 8], [92, 7]]
+  },
+  birthday: {
+    name: 'Happy Birthday',
+    holes: [[0, 4], [2, 4], [4, 5], [6, 4], [8, 7], [10, 6],
+      [14, 4], [16, 4], [18, 5], [20, 4], [22, 8], [24, 7],
+      [28, 4], [30, 4], [32, 11], [34, 9], [36, 7], [38, 6], [40, 5],
+      [44, 10], [46, 10], [48, 9], [50, 7], [52, 8], [54, 7]]
+  },
+  lullaby: {
+    name: 'A Lullaby',
+    holes: [[0, 4], [2, 4], [4, 6], [8, 4], [10, 4], [12, 6],
+      [16, 4], [18, 6], [20, 8], [22, 7], [24, 6], [26, 5], [28, 5], [30, 4],
+      [34, 5], [36, 7], [38, 6], [40, 5], [42, 4], [44, 6], [46, 8],
+      [50, 7], [52, 6], [54, 5], [56, 4], [58, 6], [60, 4]]
+  }
+});
+
+/* ============================ 6. THE TINE, IN NUMBERS ============================ */
+/* Everything the voice needs that is not a Web Audio node lives here, so the
+   headless suite can check the shape of a note without a browser. */
+function noteHz(row) {
+  var midi = CONFIG.ROW_MIDI[clamp(row | 0, 0, CONFIG.ROWS - 1)];
+  return 440 * Math.pow(2, (midi - 69) / 12);
+}
+/* ⛔ a short tine rings for less time. The low end of the comb is a long bar
+   and the high end is a stub, so the decay runs from LOW at row 0 to HIGH at
+   row 14, linear in row. */
+function decayFor(row) {
+  var t = clamp(row | 0, 0, CONFIG.ROWS - 1) / (CONFIG.ROWS - 1);
+  return CONFIG.TINE_DECAY_LOW_S + (CONFIG.TINE_DECAY_HIGH_S - CONFIG.TINE_DECAY_LOW_S) * t;
+}
+/* ⛔ keyed by the HOLE INDEX, not by a running counter: a gift has to sound the
+   same on the recipient's phone as it did on the sender's, and it will only do
+   that if the jitter is a function of the strip rather than of the session. */
+function jitterFor(index) {
+  var r = makeRNG(mixSeed(0x57494E44, (index | 0) + 1));
+  return {
+    cents: (r() * 2 - 1) * CONFIG.DETUNE_CENTS,
+    db: (r() * 2 - 1) * CONFIG.LEVEL_JITTER_DB
+  };
+}
+/* ⛔ THE DECAY IS THE TIME TO A TENTH, and it has to be said out loud because
+   the obvious reading is wrong. Ramped straight from its peak to the floor over
+   `seconds`, a note is at eight tenths of one percent of its loudest by the
+   time a second has passed: on paper it decays over 1.8 seconds and to an ear
+   it is a click. A tine falls twenty decibels in `seconds` and carries on down
+   the same slope, which is what leaves it still ringing, quietly, a second
+   later. ENV_TAIL is how far that slope has to run to reach the floor. */
+var ENV_TAIL = 3.5;
+function envSeconds(seconds) { return Math.max(0.02, seconds) * ENV_TAIL; }
+function dbToGain(db) { return Math.pow(10, db / 20); }
+/* ⛔ AUTO_BPM IS IN QUARTER NOTES, and a step is an EIGHTH. Read as eighths a
+   minute it makes every note of Twinkle a second and a quarter long, which is
+   not a music box, it is a doorbell winding down. */
+function stepSeconds() { return 60 / CONFIG.AUTO_BPM / 2; }
+/* where the read line is, in steps, for a strip that has been advanced this far
+   in millimetres. The crank and the auto play both come through here so there
+   is one answer to where the paper is. */
+function stepAt(advanceMm) { return advanceMm / CONFIG.MM_PER_STEP; }
+function mmForSteps(steps) { return steps * CONFIG.MM_PER_STEP; }
+// ---- SIM_EXPORT_END ----
+// ---- TEST_EXPORT_START ----
+/* ============================ 15. TEST ============================ */
+/* The assertion harness. Shape copied from satellites/airworthy. Every
+   assertion here has been watched to fail; the ones that took work are named in
+   the plan's evidence ledger. */
+var TEST = {
+  results: [],
+  assert: function (name, ok, detail) {
+    this.results.push({ name: name, ok: !!ok, detail: detail || '' });
+    return !!ok;
+  },
+  eq: function (name, got, want) {
+    var ok = got === want;
+    return this.assert(name, ok, ok ? '' : 'expected ' + want + ', got ' + got);
+  },
+  near: function (name, got, want, tol) {
+    var ok = Math.abs(got - want) <= tol;
+    return this.assert(name, ok, ok ? '' : 'expected ' + want + ' plus or minus ' + tol + ', got ' + got);
+  },
+  report: function () {
+    var passed = 0, failed = 0, fails = [], i;
+    for (i = 0; i < this.results.length; i++) {
+      if (this.results[i].ok) passed++; else { failed++; fails.push(this.results[i]); }
+    }
+    return { passed: passed, failed: failed, total: this.results.length, failures: fails };
+  },
+  runSuite: function (n, fn, a) {
+    try { fn(this, a); } catch (e) { this.assert('the ' + n + ' suite ran to the end', false, String(e && e.message || e)); }
+  },
+  run: function (extra) {
+    this.results = [];
+    this.runSuite('comb', suiteComb);
+    this.runSuite('rules', suiteRules);
+    this.runSuite('strip', suiteStrip);
+    this.runSuite('link', suiteLink);
+    this.runSuite('starters', suiteStarters);
+    this.runSuite('seed', suiteSeed);
+    this.runSuite('tine', suiteTine);
+    if (extra && extra.src) this.runSuite('purity', suitePurity, extra.src);
+    return this.report();
+  }
+};
+
+function suiteComb(T) {
+  T.eq('the comb has fifteen tines', CONFIG.ROWS, 15);
+  T.eq('and fifteen notes for them', CONFIG.ROW_MIDI.length, 15);
+  T.eq('and fifteen letters', CONFIG.ROW_NAME.length, 15);
+  T.eq('it starts at C4', CONFIG.ROW_MIDI[0], 60);
+  T.eq('and ends two octaves up', CONFIG.ROW_MIDI[14], 84);
+  var i, rising = true, diatonic = true;
+  for (i = 1; i < CONFIG.ROW_MIDI.length; i++) {
+    if (CONFIG.ROW_MIDI[i] <= CONFIG.ROW_MIDI[i - 1]) rising = false;
+    var d = CONFIG.ROW_MIDI[i] - CONFIG.ROW_MIDI[i - 1];
+    if (d !== 1 && d !== 2) diatonic = false;
+  }
+  T.assert('every row is higher than the one below it', rising);
+  T.assert('and every step is a tone or a semitone, which is what diatonic means', diatonic);
+  T.near('row 0 is middle C at 261.6 Hz (' + noteHz(0).toFixed(1) + ')', noteHz(0), 261.63, 0.1);
+  T.near('row 7 is the C above it (' + noteHz(7).toFixed(1) + ')', noteHz(7), 523.25, 0.1);
+  T.near('and row 7 is exactly twice row 0', noteHz(7) / noteHz(0), 2, 0.001);
+  T.near('row 14 is twice row 7', noteHz(14) / noteHz(7), 2, 0.001);
+  /* ⛔ a row off the end of the comb must not make a note off the end of the
+     world: the gift link is data from a stranger. */
+  T.eq('a row below the comb is pulled onto it', noteHz(-4), noteHz(0));
+  T.eq('and a row above it too', noteHz(99), noteHz(14));
+}
+
+function suiteRules(T) {
+  var s = newStrip({});
+  T.assert('an empty strip takes a hole anywhere', canPunch(s, 10, 5));
+  punch(s, 10, 5);
+  T.eq('and then it has one', s.holes.length, 1);
+  /* ⛔ THE RETRIGGER RULE, which is the whole reason a music box strip is not a
+     piano roll: the tine is still singing. */
+  T.assert('a hole in the same row one step away is refused', !canPunch(s, 11, 5));
+  T.assert('and one step the other way too', !canPunch(s, 9, 5));
+  T.assert('the same hole twice is refused', !canPunch(s, 10, 5));
+  T.assert('two steps away is fine', canPunch(s, 12, 5));
+  T.assert('and two steps the other way', canPunch(s, 8, 5));
+  /* ⛔ PER ROW, NOT PER STRIP. A beginner's first bar is all one row, and a
+     whole strip rule would refuse the second note they ever punched. */
+  T.assert('a hole one step away in ANOTHER row is fine', canPunch(s, 11, 6));
+  T.assert('and right underneath it', canPunch(s, 10, 6));
+  T.assert('a row off the comb is refused', !canPunch(s, 20, 15));
+  T.assert('and a negative one', !canPunch(s, 20, -1));
+  T.assert('and a step past the end of the paper', !canPunch(s, CONFIG.STRIP_MAX_STEPS + 1, 3));
+  T.assert('a punch that breaks the rule changes nothing',
+    !punch(s, 11, 5) && s.holes.length === 1);
+  T.assert('unpunching a hole that is there works', unpunch(s, 10, 5));
+  T.eq('and the strip is empty again', s.holes.length, 0);
+  T.assert('unpunching one that is not there does nothing', !unpunch(s, 10, 5));
+  T.assert('and now the row is free again', canPunch(s, 10, 5) && canPunch(s, 11, 5));
+}
+
+function suiteStrip(T) {
+  var s = newStrip({});
+  punch(s, 30, 2); punch(s, 4, 9); punch(s, 12, 0); punch(s, 4, 1);
+  var sorted = true, i;
+  for (i = 1; i < s.holes.length; i++) {
+    if (s.holes[i][0] < s.holes[i - 1][0]) sorted = false;
+    if (s.holes[i][0] === s.holes[i - 1][0] && s.holes[i][1] < s.holes[i - 1][1]) sorted = false;
+  }
+  T.assert('punching out of order still leaves the strip sorted', sorted);
+  T.eq('and two holes at one step sort by row', s.holes[0][1], 1);
+  T.eq('a row can be read off on its own', holesAt(s, 2).length, 1);
+  T.eq('and an empty one is empty', holesAt(s, 7).length, 0);
+  /* the paper runs on past the last hole so the tines can ring out */
+  var short2 = newStrip({});
+  punch(short2, 2, 3);
+  T.eq('a strip with one hole near the start is still the minimum length',
+    stripLength(short2), CONFIG.STRIP_MIN_STEPS);
+  var mid = newStrip({});
+  punch(mid, 100, 3);
+  T.eq('past that it is the last hole plus a tail', stripLength(mid), 108);
+  var far = newStrip({});
+  far.holes = [[CONFIG.STRIP_MAX_STEPS, 3]];
+  T.eq('and it never runs past the end of the paper', stripLength(far), CONFIG.STRIP_MAX_STEPS);
+  T.eq('an empty strip is the minimum', stripLength(newStrip({})), CONFIG.STRIP_MIN_STEPS);
+}
+
+function suiteLink(T) {
+  var r = makeRNG(1234), n, bad = 0, worst = 0;
+  for (n = 0; n < 200; n++) {
+    var s = newStrip({}), tries = 5 + Math.floor(r() * 60), k;
+    for (k = 0; k < tries; k++) {
+      punch(s, Math.floor(r() * 200), Math.floor(r() * CONFIG.ROWS));
+    }
+    var txt = packStrip(s), back = unpackStrip(txt);
+    if (JSON.stringify(back) !== JSON.stringify(s.holes)) bad++;
+    if (txt.length > worst) worst = txt.length;
+  }
+  T.eq('two hundred random strips survive the round trip', bad, 0);
+  T.assert('and the longest of them is a short link (' + worst + ' characters)', worst < 1200);
+  var big = newStrip({}), i;
+  for (i = 0; i < 300; i++) big.holes.push([i * 2, i % CONFIG.ROWS]);
+  T.assert('three hundred holes fit under a kilobyte (' + packStrip(big).length + ')',
+    packStrip(big).length < 1024);
+  /* ⛔ THE LINK IS DATA FROM A STRANGER. Everything that comes back out of it is
+     clamped before anything is drawn or sounded with it. */
+  T.eq('rubbish in the link is nothing out', unpackStrip('this is not a strip at all'), null);
+  T.eq('an empty link is nothing', unpackStrip(''), null);
+  T.eq('and a null one', unpackStrip(null), null);
+  var hostile = bytesToB64u([1, 2, 0, 255, 255, 200, 255, 255, 99]);
+  var got = unpackStrip(hostile);
+  T.assert('a link claiming row two hundred comes back inside the comb',
+    got && got.every(function (h) { return h[1] >= 0 && h[1] < CONFIG.ROWS; }));
+  T.assert('and a step past the end of the paper comes back on it',
+    got && got.every(function (h) { return h[0] >= 0 && h[0] <= CONFIG.STRIP_MAX_STEPS; }));
+  var claim = bytesToB64u([1, 255, 255]);
+  T.assert('a link that claims sixty five thousand holes and has none does not hang',
+    (unpackStrip(claim) || []).length === 0);
+}
+
+function suiteStarters(T) {
+  var names = ['twinkle', 'birthday', 'lullaby'], i;
+  T.eq('three songs come in the box', names.length, 3);
+  for (i = 0; i < names.length; i++) {
+    var st = newStrip(STARTERS[names[i]]), fresh = newStrip({}), clean = true, inRange = true, k;
+    for (k = 0; k < st.holes.length; k++) {
+      var h = st.holes[k];
+      if (h[1] < 0 || h[1] >= CONFIG.ROWS) inRange = false;
+      if (!punch(fresh, h[0], h[1])) clean = false;
+    }
+    T.assert(names[i] + ' is punchable on a real strip (' + st.holes.length + ' holes)', clean);
+    T.assert('and every hole of it is on the comb', inRange);
+    T.assert('and it is long enough to be a tune (' + stripLength(st) + ' steps)',
+      st.holes.length >= 20 && stripLength(st) >= 40);
+    T.assert('and it has a name', !!STARTERS[names[i]].name);
+  }
+  /* ⛔ the one that would have caught the real mistake: Happy Birthday opens on
+     two of the same note, and on a real box those cannot be an eighth apart. */
+  var b = newStrip(STARTERS.birthday);
+  T.eq('Happy Birthday opens on two of the same note', b.holes[0][1], b.holes[1][1]);
+  T.assert('and they are far enough apart for the tine (' + (b.holes[1][0] - b.holes[0][0]) + ' steps)',
+    b.holes[1][0] - b.holes[0][0] >= CONFIG.MIN_GAP_STEPS);
+}
+
+function suiteSeed(T) {
+  var n, bad = 0, low = 999, high = 0, outOfRange = 0, dull = 0;
+  for (n = 0; n < 500; n++) {
+    var m = seedMelody(n), fresh = newStrip({}), k, rows = {};
+    for (k = 0; k < m.holes.length; k++) {
+      var h = m.holes[k];
+      if (h[1] < SEED_LO || h[1] > SEED_HI) outOfRange++;
+      if (!punch(fresh, h[0], h[1])) bad++;
+      rows[h[1]] = 1;
+    }
+    if (Object.keys(rows).length < 3) dull++;
+    if (m.holes.length < low) low = m.holes.length;
+    if (m.holes.length > high) high = m.holes.length;
+  }
+  T.eq('five hundred rolls of the dice are all punchable', bad, 0);
+  T.eq('and all of them sit in the middle of the comb', outOfRange, 0);
+  T.assert('and none of them is one note over and over (' + dull + ')', dull === 0);
+  T.assert('a rolled melody is between sixteen and thirty two holes (' + low + ' to ' + high + ')',
+    low >= 16 && high <= 32);
+  var a = seedMelody(77), b = seedMelody(77);
+  T.eq('the same roll gives the same melody', JSON.stringify(a.holes), JSON.stringify(b.holes));
+  var c = seedMelody(78);
+  T.assert('and a different roll gives a different one',
+    JSON.stringify(a.holes) !== JSON.stringify(c.holes));
+  T.assert('a rolled melody starts on the first beat', a.holes[0][0] === 0);
+  T.assert('and it is four bars long', stripLength(a) >= 32 && a.holes[a.holes.length - 1][0] < 32);
+}
+
+function suiteTine(T) {
+  T.near('a tine falls to a tenth in the time the config names, and the tail is'
+    + ' three and a half times that', envSeconds(1), ENV_TAIL, 1e-9);
+  T.assert('a low tine rings longer than a high one ('
+    + decayFor(0).toFixed(2) + ' s against ' + decayFor(14).toFixed(2) + ' s)',
+    decayFor(0) > decayFor(14));
+  var i, falling = true;
+  for (i = 1; i < CONFIG.ROWS; i++) if (decayFor(i) > decayFor(i - 1)) falling = false;
+  T.assert('and every tine up the comb rings a little less than the one below it', falling);
+  T.near('the bottom of the comb is configured long decay', decayFor(0), CONFIG.TINE_DECAY_LOW_S, 1e-9);
+  T.near('and the top is the short one', decayFor(14), CONFIG.TINE_DECAY_HIGH_S, 1e-9);
+  /* ⛔ KEYED BY THE HOLE, NOT BY THE SESSION. A gift has to sound the same on
+     the recipient's phone, and it only will if the jitter is a function of the
+     strip. */
+  var j1 = jitterFor(12), j2 = jitterFor(12);
+  T.eq('the same hole is detuned the same way twice', j1.cents, j2.cents);
+  T.eq('and levelled the same way', j1.db, j2.db);
+  T.assert('a different hole is not', jitterFor(13).cents !== j1.cents);
+  var worstC = 0, worstD = 0, k;
+  for (k = 0; k < 400; k++) {
+    var j = jitterFor(k);
+    if (Math.abs(j.cents) > worstC) worstC = Math.abs(j.cents);
+    if (Math.abs(j.db) > worstD) worstD = Math.abs(j.db);
+  }
+  T.assert('no hole is detuned further than the config allows (' + worstC.toFixed(2) + ' cents)',
+    worstC <= CONFIG.DETUNE_CENTS + 1e-9);
+  T.assert('and none is louder than it allows (' + worstD.toFixed(2) + ' dB)',
+    worstD <= CONFIG.LEVEL_JITTER_DB + 1e-9);
+  T.near('a decibel of level is about twelve percent of gain', dbToGain(1), 1.122, 0.001);
+  T.near('and nothing is unity by accident', dbToGain(0), 1, 1e-9);
+  /* ⛔ the tempo, asserted, because the config says 96 and a step is an EIGHTH */
+  T.near('an eighth at the auto tempo is a third of a second ('
+    + stepSeconds().toFixed(3) + ')', stepSeconds(), 0.3125, 1e-9);
+  T.near('so a bar of four beats is two and a half seconds', stepSeconds() * 8, 2.5, 1e-9);
+  T.near('the paper moves four millimetres a step', mmForSteps(1), CONFIG.MM_PER_STEP, 1e-9);
+  T.near('and the read line and the paper agree', stepAt(mmForSteps(37)), 37, 1e-9);
+  /* one turn of the crank, in steps, is what makes the gesture feel right */
+  T.near('one whole turn of the crank is nine and a bit steps ('
+    + (2 * Math.PI * CONFIG.MM_PER_RAD / CONFIG.MM_PER_STEP).toFixed(2) + ')',
+    2 * Math.PI * CONFIG.MM_PER_RAD / CONFIG.MM_PER_STEP, 9.42, 0.01);
+}
+
+/* ⛔ the SIM layer is the rules, and the rules may not know what a browser is.
+   This reads the shipped text of the block, not the objects it made. */
+function suitePurity(T, src) {
+  var code = String(src).replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^[ \t]*\/\/.*$/gm, ' ');
+  T.assert('the rules have no document', code.indexOf('document.') < 0);
+  T.assert('and no window', code.indexOf('window.') < 0);
+  T.assert('and no clock', code.indexOf('Date.now') < 0 && code.indexOf('new Date') < 0);
+  T.assert('and no unseeded die', code.indexOf('Math.random') < 0);
+  T.assert('and no audio node', code.indexOf('createOscillator') < 0 && code.indexOf('AudioContext') < 0);
+  T.assert('and the block is really in the shipped file (' + code.length + ' characters)',
+    code.length > 6000);
+  T.assert('and it still has the maths it is allowed', code.indexOf('Math.pow') >= 0);
+}
+// ---- TEST_EXPORT_END ----
+/* ============================ 16. VOICE ============================ */
+/* ⛔ THE ENGINE IS BOUND TO A CONTEXT, NOT TO THE PAGE. Every node in here is
+   built on whatever context it is handed, which is the only reason
+   test/tine.mjs can render a note into an OfflineAudioContext and measure it.
+   An engine that reaches for a global context cannot be measured at all. */
+function makeImpulse(ctx, seconds, curve) {
+  var n = Math.max(1, Math.round(ctx.sampleRate * seconds));
+  var buf = ctx.createBuffer(2, n, ctx.sampleRate), ch, i;
+  /* seeded, so the plate is the same room on every phone */
+  var r = makeRNG(0x504C4154);
+  for (ch = 0; ch < 2; ch++) {
+    var d = buf.getChannelData(ch);
+    for (i = 0; i < n; i++) d[i] = (r() * 2 - 1) * Math.pow(1 - i / n, curve);
+  }
+  return buf;
+}
+/* tanh, scaled so the loudest thing that can ever leave is 0.95 */
+var _softCurve = null;
+function softCurve() {
+  if (_softCurve) return _softCurve;
+  var n = 2048, c = new Float32Array(n), i;
+  for (i = 0; i < n; i++) {
+    var x = (i / (n - 1)) * 2 - 1;
+    c[i] = 0.95 * Math.tanh(x * 1.6) / Math.tanh(1.6);
+  }
+  _softCurve = c;
+  return c;
+}
+function buildAudio(ctx) {
+  var master = ctx.createGain();
+  master.gain.value = CONFIG.MASTER;
+  /* ⛔ a limiter, not a hope. Fifteen tines at once is a chord a player can
+     make with one hole per row and it must not clip. */
+  var limiter = ctx.createDynamicsCompressor();
+  limiter.threshold.value = -6;
+  limiter.knee.value = 0;
+  limiter.ratio.value = 20;
+  limiter.attack.value = 0.003;
+  limiter.release.value = 0.25;
+  var dry = ctx.createGain(); dry.gain.value = 1;
+  var plate = ctx.createConvolver();
+  plate.buffer = makeImpulse(ctx, 1.6, 2.4);
+  var wet = ctx.createGain(); wet.gain.value = CONFIG.WET;
+  /* ⛔ A LIMITER HAS AN ATTACK, AND A COMB DOES NOT. Fifteen tines struck on
+     the same eighth put fifteen attack clicks through the compressor's three
+     millisecond attack before it has closed, and the render peaked at 0.997.
+     A soft knee after it is the ceiling: it costs nothing on one note and it
+     bends the top off a chord instead of squaring it. */
+  var ceiling = ctx.createWaveShaper();
+  ceiling.curve = softCurve();
+  ceiling.oversample = '2x';
+  master.connect(dry); dry.connect(limiter);
+  master.connect(plate); plate.connect(wet); wet.connect(limiter);
+  limiter.connect(ceiling);
+  ceiling.connect(ctx.destination);
+  return { ctx: ctx, master: master, limiter: limiter, plate: plate, wet: wet,
+    dry: dry, ceiling: ceiling, voices: [], made: 0, bed: null };
+}
+/* one note off one tine. `when` is context time; `index` is the HOLE's index,
+   which is what makes a gift sound the same on the other phone. */
+function tine(A, row, when, index) {
+  if (!A) return null;
+  var ctx = A.ctx, j = jitterFor(index === undefined ? 0 : index);
+  var f = noteHz(row) * Math.pow(2, j.cents / 1200);
+  var dec = decayFor(row);
+  var level = 0.34 * dbToGain(j.db);
+  stealVoices(A, when);
+  var out = ctx.createGain();
+  out.gain.value = 1;
+  out.connect(A.master);
+  /* the bar itself */
+  var fund = ctx.createOscillator();
+  fund.type = 'sine';
+  fund.frequency.value = f;
+  var fg = ctx.createGain();
+  env(fg.gain, when, level, dec);
+  fund.connect(fg); fg.connect(out);
+  /* ⛔ TWO PARTIALS, NOT A HARMONIC SERIES. A clamped bar is inharmonic and its
+     overtones are not multiples of the fundamental; more than two of them and
+     it stops being a music box and starts being a bell. */
+  var pa = ctx.createOscillator();
+  pa.type = 'sine'; pa.frequency.value = f * CONFIG.PARTIAL_A;
+  var pag = ctx.createGain();
+  env(pag.gain, when, level * CONFIG.PARTIAL_A_GAIN, dec * 0.55);
+  pa.connect(pag); pag.connect(out);
+  var pb = ctx.createOscillator();
+  pb.type = 'sine'; pb.frequency.value = f * CONFIG.PARTIAL_B;
+  var pbg = ctx.createGain();
+  env(pbg.gain, when, level * CONFIG.PARTIAL_B_GAIN, dec * 0.4);
+  pb.connect(pbg); pbg.connect(out);
+  /* the shimmer that says brass */
+  var sh = ctx.createOscillator();
+  sh.type = 'sine'; sh.frequency.value = f * CONFIG.SHIMMER;
+  var shg = ctx.createGain();
+  env(shg.gain, when, level * CONFIG.SHIMMER_GAIN, CONFIG.SHIMMER_S);
+  sh.connect(shg); shg.connect(out);
+  /* the pin letting go of the tine: three milliseconds of bright noise */
+  var click = ctx.createBufferSource();
+  click.buffer = clickBuffer(A);
+  var hp = ctx.createBiquadFilter();
+  hp.type = 'highpass'; hp.frequency.value = CONFIG.CLICK_HP_HZ;
+  var cg = ctx.createGain();
+  cg.gain.setValueAtTime(level * 0.5, when);
+  cg.gain.exponentialRampToValueAtTime(0.0001, when + CONFIG.CLICK_MS / 1000 + 0.01);
+  click.connect(hp); hp.connect(cg); cg.connect(out);
+  var stop = when + envSeconds(dec) + 0.05;
+  fund.start(when); fund.stop(stop);
+  pa.start(when); pa.stop(when + envSeconds(dec * 0.55) + 0.05);
+  pb.start(when); pb.stop(when + envSeconds(dec * 0.4) + 0.05);
+  sh.start(when); sh.stop(when + envSeconds(CONFIG.SHIMMER_S) + 0.05);
+  click.start(when);
+  A.made += 5;
+  var v = { out: out, until: stop, level: level, row: row };
+  A.voices.push(v);
+  return v;
+}
+/* ⛔ never to zero: an exponential ramp to zero is silence in the spec and a
+   click in every engine. The shape is described where ENV_TAIL is defined. */
+function env(param, when, peak, seconds) {
+  var top = Math.max(0.0002, peak);
+  var sec = Math.max(0.02, seconds);
+  param.setValueAtTime(0.0001, when);
+  param.exponentialRampToValueAtTime(top, when + 0.002);
+  param.exponentialRampToValueAtTime(top * 0.1, when + sec);
+  param.exponentialRampToValueAtTime(0.0001, when + sec * ENV_TAIL);
+}
+function clickBuffer(A) {
+  if (A._click) return A._click;
+  var ctx = A.ctx, n = Math.max(1, Math.round(ctx.sampleRate * CONFIG.CLICK_MS / 1000));
+  var buf = ctx.createBuffer(1, n, ctx.sampleRate), d = buf.getChannelData(0), i;
+  var r = makeRNG(0x434C4B21);
+  for (i = 0; i < n; i++) d[i] = (r() * 2 - 1) * (1 - i / n);
+  A._click = buf;
+  return buf;
+}
+/* the quietest ringing tine gives way first, which is what a real comb does
+   when a pin catches a bar that is still moving */
+function stealVoices(A, now) {
+  var live = [], i;
+  for (i = 0; i < A.voices.length; i++) if (A.voices[i].until > now) live.push(A.voices[i]);
+  A.voices = live;
+  while (A.voices.length >= CONFIG.VOICES_MAX) {
+    var worst = 0;
+    for (i = 1; i < A.voices.length; i++) {
+      if (A.voices[i].level < A.voices[worst].level) worst = i;
+    }
+    var v = A.voices[worst];
+    try {
+      v.out.gain.cancelScheduledValues(now);
+      v.out.gain.setValueAtTime(v.out.gain.value || 1, now);
+      v.out.gain.exponentialRampToValueAtTime(0.0001, now + 0.04);
+    } catch (e) {}
+    A.voices.splice(worst, 1);
+  }
+}
+/* ============================ 17. THE PAGE ============================ */
+var STAMP = '20260906a';
+function el(id) { return document.getElementById(id); }
+var V = { cv: null, ctx: null, W: 0, H: 0, dpr: 1, t: 0 };
+var G = { screen: 'box', strip: null, audio: null, ready: false };
+var SETTINGS = { sound: 1, motion: 1, swing: 0 };
+var SAVE = { v: CONFIG.SAVE_V, by: '', shelf: [], wrapsSeen: {}, settings: SETTINGS, seen: {} };
+var RAF = 0, LAST = 0, FRAMES = 0;
+
+function fitCanvas() {
+  var cv = V.cv, r = cv.getBoundingClientRect();
+  V.W = Math.max(1, Math.round(r.width));
+  V.H = Math.max(1, Math.round(r.height));
+  V.dpr = Math.min(2.5, window.devicePixelRatio || 1);
+  cv.width = Math.round(V.W * V.dpr);
+  cv.height = Math.round(V.H * V.dpr);
+  /* ⛔ canvas.width CLEARS the context, so the transform is set after it */
+  V.ctx.setTransform(V.dpr, 0, 0, V.dpr, 0, 0);
+}
+/* P0 draws the cloth and says what is coming; the box itself is P1. */
+function drawScene(ctx) {
+  var g = ctx.createLinearGradient(0, 0, 0, V.H);
+  g.addColorStop(0, '#33241A');
+  g.addColorStop(1, '#1A120C');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, V.W, V.H);
+  ctx.fillStyle = 'rgba(201,162,39,.5)';
+  ctx.font = '600 13px ui-rounded, system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('the box is built in P1', V.W / 2, V.H / 2);
+  ctx.textAlign = 'left';
+}
+function frame(ts) {
+  RAF = 0;
+  if (document.hidden) return;
+  LAST = ts; V.t = ts; FRAMES++;
+  drawScene(V.ctx);
+  RAF = requestAnimationFrame(frame);
+}
+function kick() { if (!RAF && !document.hidden) RAF = requestAnimationFrame(frame); }
+
+/* ---- audio, opened inside a gesture and never before ---- */
+function audio() {
+  if (G.audio) return G.audio;
+  if (!SETTINGS.sound) return null;
+  var C = window.AudioContext || window.webkitAudioContext;
+  if (!C) return null;
+  G.audio = buildAudio(new C());
+  return G.audio;
+}
+function resumeAudio() {
+  var A = audio();
+  if (A && A.ctx.state === 'suspended') A.ctx.resume();
+  return A;
+}
+function toast(msg) {
+  var t = el('toast');
+  t.textContent = msg;
+  t.classList.add('on');
+  clearTimeout(toast._h);
+  toast._h = setTimeout(function () { t.classList.remove('on'); }, 1900);
+}
+function showScreen(name) {
+  var all = ['scrMenu', 'scrShelf', 'scrGive', 'scrExport', 'scrGift'], i;
+  for (i = 0; i < all.length; i++) el(all[i]).classList.toggle('on', 'scr' + name === all[i]);
+  G.screen = name.toLowerCase();
+  document.body.classList.toggle('listing', name !== 'Box');
+  fitCanvas();
+}
+function saveNow() {
+  try {
+    SAVE.settings = SETTINGS;
+    localStorage.setItem(CONFIG.SAVE_KEY, JSON.stringify(SAVE));
+  } catch (e) {}
+}
+function loadSave() {
+  try {
+    var raw = localStorage.getItem(CONFIG.SAVE_KEY);
+    if (!raw) return;
+    var o = JSON.parse(raw);
+    if (o && o.v === CONFIG.SAVE_V) {
+      SAVE = o;
+      if (!SAVE.shelf) SAVE.shelf = [];
+      if (!SAVE.seen) SAVE.seen = {};
+      if (o.settings) SETTINGS = o.settings;
+      SAVE.settings = SETTINGS;
+    }
+  } catch (e) {}
+}
+
+/* ---- the test keyboard: fifteen tines, one press each. TEST MODE ONLY, and
+   it is how P0 is heard before there is a box to crank. ---- */
+function buildTestKeys() {
+  var host = el('testPanel'), i;
+  host.style.display = 'flex';
+  host.style.flexWrap = 'wrap';
+  host.style.maxWidth = '100%';
+  for (i = 0; i < CONFIG.ROWS; i++) {
+    (function (row) {
+      var b = document.createElement('button');
+      b.className = 'btn';
+      b.id = 'key' + row;
+      b.style.minWidth = '48px';
+      b.style.padding = '10px 4px';
+      b.textContent = CONFIG.ROW_NAME[row];
+      b.addEventListener('pointerdown', function () {
+        var A = resumeAudio();
+        if (A) tine(A, row, A.ctx.currentTime + 0.005, row);
+      });
+      host.appendChild(b);
+    })(i);
+  }
+}
+
+function boot() {
+  V.cv = el('stage');
+  V.ctx = V.cv.getContext('2d');
+  loadSave();
+  G.strip = newStrip(STARTERS.twinkle);
+  el('nameChip').textContent = G.strip.name;
+  fitCanvas();
+  window.addEventListener('resize', function () { fitCanvas(); kick(); });
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) kick(); });
+  el('btnMenu').addEventListener('click', function () { showScreen('Menu'); });
+  el('btnMenuClose').addEventListener('click', function () { showScreen('Box'); });
+  el('btnShelfBack').addEventListener('click', function () { showScreen('Menu'); });
+  el('btnGiveBack').addEventListener('click', function () { showScreen('Menu'); });
+  el('btnExportBack').addEventListener('click', function () { showScreen('Menu'); });
+  el('btnShelf').addEventListener('click', function () { showScreen('Shelf'); });
+  el('btnGive').addEventListener('click', function () { showScreen('Give'); });
+  el('btnExport').addEventListener('click', function () { showScreen('Export'); });
+  el('btnSound').addEventListener('click', function () {
+    SETTINGS.sound = SETTINGS.sound ? 0 : 1;
+    this.textContent = SETTINGS.sound ? 'SOUND ON' : 'SOUND OFF';
+    if (SETTINGS.sound) resumeAudio();
+    saveNow();
+  });
+  el('btnMotion').addEventListener('click', function () {
+    SETTINGS.motion = SETTINGS.motion ? 0 : 1;
+    this.textContent = SETTINGS.motion ? 'MOTION ON' : 'MOTION OFF';
+    saveNow();
+  });
+  el('btnSwing').addEventListener('click', function () {
+    SETTINGS.swing = SETTINGS.swing ? 0 : 1;
+    this.textContent = SETTINGS.swing ? 'SWING ON' : 'SWING OFF';
+    saveNow();
+  });
+  el('btnSound').textContent = SETTINGS.sound ? 'SOUND ON' : 'SOUND OFF';
+  el('btnMotion').textContent = SETTINGS.motion ? 'MOTION ON' : 'MOTION OFF';
+  el('btnSwing').textContent = SETTINGS.swing ? 'SWING ON' : 'SWING OFF';
+  buildTestKeys();
+  G.ready = true;
+  kick();
+  try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {}
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('./sw.js?v=' + STAMP).catch(function () {});
+    });
+  }
+}
+
+/* ---- the hook every browser gate reads. It says WHAT happened; it never
+   drives anything a thumb should. ---- */
+window.WINDUP_TEST = {
+  frames: function () { return FRAMES; },
+  screen: function () { return G.screen; },
+  state: function () { return G; },
+  strip: function () { return G.strip; },
+  save: function () { return SAVE; },
+  settings: function () { return SETTINGS; },
+  config: function () { return CONFIG; },
+  /* the whole SIM layer, so a browser gate and sim.js agree by construction */
+  sim: function () {
+    return { newStrip: newStrip, canPunch: canPunch, punch: punch, unpunch: unpunch,
+      stripLength: stripLength, packStrip: packStrip, unpackStrip: unpackStrip,
+      seedMelody: seedMelody, STARTERS: STARTERS, noteHz: noteHz, decayFor: decayFor,
+      jitterFor: jitterFor };
+  },
+  /* ⛔ the audio ENGINE BUILDER, handed out so a gate can render into an
+     OfflineAudioContext. Nothing here plays into the page. */
+  buildAudio: buildAudio,
+  tine: tine,
+  audio: function () { return G.audio; },
+  voices: function () { return G.audio ? G.audio.voices.length : 0; },
+  made: function () { return G.audio ? G.audio.made : 0; }
+};
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+else boot();
+</script>

@@ -13,10 +13,17 @@ every difference is in section 3 with its reason.
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
 - 2026-09-05 Fable: plan written. Nothing built.
-- 2026-09-06 Opus: **P0 step 1 done.** The scaffold and `tools/check.js` exist and
-  the gate is RED, which is the point of it. **Next action:** P0 step 2, the SIM
-  layer: CONFIG, RNG, STRIP, RULES, SEED in `index.html` between the
-  `SIM_EXPORT` markers, then the assertion suite `sim.js --test` runs.
+- 2026-09-06 Opus: **P0 IS DONE.** Four gates green: `sim` (94 assertions),
+  `lint`, `tine` (rendered into an OfflineAudioContext and measured), `wav`.
+  Every gate watched to fail, including both mutations the plan names. The rules,
+  the link format, the seed melody, the three starters and the tine voice are
+  built; `docs/shots/p0-tine.wav` is waiting for Stephen's ear.
+  **Next action:** P1 step 1, the BOX render and the CRANK. The box is drawn on
+  the canvas (velvet, walnut, the brass comb with fifteen tines, the strip window,
+  the crank with its handle); the crank reads an unwrapped angle about a known
+  hub and advances the paper; the PLAYER fires a tine at the exact crossing.
+  Then P1 step 3 is a STOP AND LOOK: shoot the box and read it, and if it is a
+  rectangle with a circle, fix the drawing before anything else.
 
 ---
 
@@ -352,6 +359,96 @@ agrees is reachable), `sw.js` with its own cache name, the manifest, and the
 icon tool. `sim.js` reads the SIM and TEST layers out of `index.html` through
 marker comments, so there is one implementation of the rules and the bot punches
 the same strip a thumb does.
+
+---
+
+### P0 steps 2 to 4, the rules, the voice and the file to listen to (2026-09-06)
+
+`node sim.js --test`
+
+```
+PASSED 94 / FAILED 0   (total 94)
+WINDUP TEST OK
+```
+
+`node test/tine.mjs`
+
+```
+ok    the engine can be built on a context this file hands it
+  ok    a middle C has real energy in its first fifty milliseconds (-17.7 dBFS)
+  ok    and at one and a fifth seconds it is still ringing and well down (27.9 percent of its loudest window)
+  ok    one note does not clip (0.580)
+  ok    and it is loudest at the start, the way a plucked bar is (0.15 s)
+  ok    the top of the comb dies before the bottom (0.96 s against 2.03 s to a tenth)
+  ok    and the difference is about the one the config asks for (heard 1.07 s, asked 1.00 s)
+  ok    fifteen tines at once do not clip (0.949)
+  ok    and they are not silent either (0.949)
+  ok    two hundred notes in a second never leave more than 24 tines ringing at once (24)
+  ok    the first seconds of Twinkle put real notes on the paper (9)
+  ok    and the tune does not clip (0.836)
+  ok    and it is not a whisper (rms 0.2744)
+  ok    and it is not mostly silence (0 quiet windows of 60)
+  ok    no page errors
+
+TINE OK
+```
+
+`node tools/tinewav.mjs`
+
+```
+the first note measures 264.1 Hz (middle C is 261.63, off by 0.9 percent)
+  the second measures 531.3 Hz (the C above is 523.25, off by 1.5 percent)
+  p0-tine.wav  861 KB  10 s mono at 44100, peak 0.833 lifted by 1.03, 7 notes of Twinkle
+WAV OK
+```
+
+`node tools/check.js`
+
+```
+sim             pass  0s
+lint            pass  0s
+tine            pass  5s
+wav             pass  3s
+
+ALL GATES PASSED
+```
+
+**Watched red, every new gate.**
+
+```
+$ (TINE_DECAY_LOW_S set to 0.05, the plan's own suggested mutation)
+  FAIL  and at one and a fifth seconds it is still ringing and well down (0.2 percent)
+  FAIL  the top of the comb dies before the bottom (0.96 s against 0.12 s to a tenth)
+$ (MASTER set to 3, the plan's other one)
+  FAIL  fifteen tines at once do not clip (1.195)
+  FAIL  and it is loudest at the start, the way a plucked bar is (0.30 s)
+$ (the soft ceiling taken out of the master chain)
+  FAIL  fifteen tines at once do not clip (0.997)
+$ (a comb whose tines all ring the same, against the RULES gate)
+  FAIL  a low tine rings longer than a high one (1.80 s against 1.80 s)
+  FAIL  and the top is the short one   [expected 0.8, got 1.8]
+$ (the retrigger rule removed, against the RULES gate)
+  FAIL  a hole in the same row one step away is refused
+  FAIL  and one step the other way too
+  FAIL  the same hole twice is refused
+```
+
+**Three things the plan was wrong about, all in `docs/DECISIONS.md` with their
+numbers:** the link format could not hit its own size claim, the decay read the
+obvious way makes a click rather than a note, and a limiter alone does not hold
+fifteen attacks struck together.
+
+**⛔ AND THE ONE THAT MATTERS MOST.** Happy Birthday opens on two of the same
+note. On a real fifteen note box those cannot be an eighth apart, because the
+tine is still moving, so the starter is punched with them a quarter apart the
+way a real strip does it. There is an assertion about it now, so that nobody
+later "fixes" the rhythm back into something the box cannot play.
+
+**Listen to:** `docs/shots/p0-tine.wav`, 861 KB, ten seconds. One middle C on its
+own, the C above it, then the first seven notes of Twinkle at the auto tempo.
+The tool autocorrelates the first two notes before it writes the file and
+refuses to write one that does not contain them: they measure 264.1 Hz and
+531.3 Hz against 261.6 and 523.3, which is the resolution of the method.
 
 ---
 

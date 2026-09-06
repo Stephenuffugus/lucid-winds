@@ -26,7 +26,7 @@ var TEST_SRC = extract(HTML, '// ---- TEST_EXPORT_START ----', '// ---- TEST_EXP
 var EXPORTS = ['CONFIG', 'makeRNG', 'seedFromString', 'mixSeed', 'clamp',
   'newStrip', 'canPunch', 'punch', 'unpunch', 'stripLength', 'holesAt', 'sortHoles',
   'packStrip', 'unpackStrip', 'seedMelody', 'STARTERS', 'noteHz', 'decayFor',
-  'jitterFor', 'TEST'];
+  'jitterFor', 'stepSeconds', 'stepAt', 'mmForSteps', 'dbToGain', 'envSeconds', 'TEST'];
 
 function build(over) {
   var src = SIM_SRC, k;
@@ -83,7 +83,7 @@ function runPlay(name) {
     + S.stripLength(strip) + ' steps');
   console.log('');
   console.log('   step  row  note      at (s)');
-  var perStep = 60 / S.CONFIG.AUTO_BPM, i;
+  var perStep = S.stepSeconds(), i;
   for (i = 0; i < strip.holes.length; i++) {
     var h = strip.holes[i];
     console.log('  ' + String(h[0]).padStart(5) + String(h[1]).padStart(5)
