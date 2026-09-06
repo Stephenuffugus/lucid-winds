@@ -6,7 +6,8 @@
  *
  * p1-dive is a six panel strip at 0.4 s of SIM time between panels: a real
  * thumb (pointer events) leans the kite into a dive and pulls it out.
- * p1-park is a high park at dusk (?hour=19). title-* are the title at the
+ * p1-park is a high park at dusk (?hour=19). p2-mood is the mood screen, p2-mabel
+ * the kite snagged in the crown, p2-stamp a Loop stamp flown by a real thumb. title-* are the title at the
  * three widths. The one liberty a camera takes that a gate may not: the kite
  * is PLACED aloft through UPDRAFT_DEV.place so the strip is the dive and not
  * twenty seconds of launching. It says so here.
@@ -92,6 +93,45 @@ if (want('p1-launch')) {
   for (let i = 0; i < 4; i++) { await thumbDown(page, home.x, home.y); await sleep(600); await thumbUp(page, home.x, home.y); await sleep(600); }
   await waitFrames(page, 2);
   save('p1-launch', await page.screenshot({ type: 'png' }));
+  await browser.close();
+}
+if (want('p2-mood')) {
+  const { browser, page } = await open(base, { width: 375, height: 667 });
+  await page.setViewport({ width: 375, height: 667, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
+  await toField(page);
+  await tap(page, '#btnMood');
+  await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'mood', { timeout: 20000 });
+  await waitFrames(page, 3);
+  save('p2-mood', await page.screenshot({ type: 'png' }));
+  await browser.close();
+}
+if (want('p2-mabel')) {
+  /* the kite placed low and to the right, into Mabel's crown; the shot is taken once the model says snagged */
+  const { browser, page } = await open(base, { width: 375, height: 667 });
+  await page.setViewport({ width: 375, height: 667, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
+  await toField(page);
+  await page.evaluate(() => window.UPDRAFT_DEV.place({ L: 34, el: 0.2, az: 0.70, launched: true }));
+  await page.waitForFunction(() => { const s = window.UPDRAFT_DEV.state(); return s && s.snagged; }, { timeout: 30000 }).catch(() => console.log('  p2-mabel: no snag in 30 s'));
+  await waitFrames(page, 4);
+  const st = await page.evaluate(() => window.UPDRAFT_DEV.state());
+  console.log('  mabel: snagged ' + st.snagged + ' at alt ' + st.alt.toFixed(1));
+  save('p2-mabel', await page.screenshot({ type: 'png' }));
+  await browser.close();
+}
+if (want('p2-stamp')) {
+  /* SCRIPTS.loop from sim.js, flown by a real thumb: hold with a lean of 0.8 for 3 s from 40 m; the shot is the stamp */
+  const { browser, page } = await open(base, { width: 375, height: 667 });
+  await page.setViewport({ width: 375, height: 667, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
+  await toField(page);
+  await page.evaluate(() => window.UPDRAFT_DEV.place({ L: 40, el: 0.68, az: 0, launched: true }));
+  await waitFrames(page, 2);
+  const home = { x: 187, y: 470 };
+  let shot = null;
+  await flyScript(page, home, [{ t: 0, hold: true, lean: 0.8 }, { t: 5, hold: false, lean: 0 }], 6,
+    async () => { if (!shot) { const on = await page.evaluate(() => document.getElementById('stamp').classList.contains('on')); if (on) { await waitFrames(page, 2); shot = await page.screenshot({ type: 'png' }); } } });
+  const st = await page.evaluate(() => window.UPDRAFT_DEV.state());
+  console.log('  stamp: ' + JSON.stringify(st.stamps) + (shot ? '' : '  NO STAMP SEEN, shooting the end'));
+  save('p2-stamp', shot || await page.screenshot({ type: 'png' }));
   await browser.close();
 }
 close();
