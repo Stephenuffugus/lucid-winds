@@ -111,5 +111,57 @@ await withPage(375, 667, async (page, shot) => {
   if (want('p2-rig')) await shot('p2-rig');
 });
 
+/* sand: poured, and mid brush */
+await withPage(375, 667, async (page, shot) => {
+  await page.evaluate(() => {
+    const S = INKSWING_TEST.sim();
+    const sh = S.newSheet({ rig: 'gimbal', lengths: [12, 19], mode: 'sand' });
+    sh.throws.push(S.flingToThrow(sh, { x: 300, y: 240 }, { x: -460, y: 600 }, 0, 'irongall'));
+    INKSWING_TEST.loadSheet(sh);
+    INKSWING_TEST.state().drawing = true;
+    /* poured the way it is poured in play, a frame at a time */
+    for (let i = 0; i < 320; i++) INKSWING_TEST.advance(0.05);
+    INKSWING_TEST.state().drawing = false;
+  });
+  await waitFrames(page, 3);
+  if (want('p3-sand')) await shot('p3-sand');
+});
+/* the poster, as a picture of a picture */
+await withPage(375, 667, async (page, shot, save) => {
+  const png = await page.evaluate(async () => {
+    const S = INKSWING_TEST.sim();
+    const sh = S.newSheet({ rig: 'crossed', lengths: [12, 19] });
+    sh.id = 3;
+    sh.throws.push(S.flingToThrow(sh, { x: 320, y: 240 }, { x: -500, y: 660 }, 0, 'indigo'));
+    sh.throws.push(S.flingToThrow(sh, { x: -260, y: 200 }, { x: 540, y: 320 }, 10, 'oxblood'));
+    INKSWING_TEST.loadSheet(sh);
+    INKSWING_TEST.save().name = 'Stephen';
+    const big = INKSWING_TEST.poster('plate');
+    /* down to something a person can look at in a folder */
+    const cv = document.createElement('canvas');
+    cv.width = 560; cv.height = 700;
+    const c = cv.getContext('2d');
+    c.drawImage(big, 0, 0, 560, 700);
+    return cv.toDataURL('image/png').split(',')[1];
+  });
+  if (want('p3-poster')) await save('p3-poster', Buffer.from(png, 'base64'));
+});
+/* the three sizes the plan names */
+for (const [w, h, tag] of [[412, 915, 'p3-412'], [375, 667, 'p3-375'], [320, 568, 'p3-320']]) {
+  await withPage(w, h, async (page, shot) => {
+    await page.evaluate(() => {
+      const S = INKSWING_TEST.sim();
+      const sh = S.newSheet({ rig: 'crossed', lengths: [12, 19] });
+      sh.throws.push(S.flingToThrow(sh, { x: 300, y: 230 }, { x: -470, y: 620 }, 0, 'indigo'));
+      INKSWING_TEST.loadSheet(sh);
+      INKSWING_TEST.setInk('indigo');
+      INKSWING_TEST.state().drawing = true;
+      INKSWING_TEST.advance(22);
+    });
+    await waitFrames(page, 3);
+    if (want(tag)) await shot(tag);
+  });
+}
+
 s.close();
 console.log('shots done');

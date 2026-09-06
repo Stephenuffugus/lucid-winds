@@ -135,6 +135,80 @@ try {
   say((await T(() => window.INKSWING_TEST.sheet().throws.length)) === 1,
     'one press on TEAR OFF only asks the question');
 
+  /* ---- SAND: poured, piled, and tipped off ---- */
+  await T(() => {
+    const S = window.INKSWING_TEST.sim();
+    const sh = S.newSheet({ rig: 'single', mode: 'sand' });
+    sh.throws.push(S.flingToThrow(sh, { x: 300, y: 200 }, { x: -460, y: 620 }, 0, 'irongall'));
+    window.INKSWING_TEST.loadSheet(sh);
+    window.INKSWING_TEST.state().drawing = true;
+    window.INKSWING_TEST.advance(4);
+  });
+  await waitFrames(page, 3);
+  const sand = await T(() => ({ s: window.INKSWING_TEST.sand(),
+    inked: window.INKSWING_TEST.inkedFraction() }));
+  say(sand.s.live > 200, 'sand mode pours real grains that are still loose ('
+    + sand.s.live + ' of them)');
+  await T(() => { window.INKSWING_TEST.advance(20); });
+  await waitFrames(page, 3);
+  const piled = await T(() => ({ s: window.INKSWING_TEST.sand(),
+    inked: window.INKSWING_TEST.inkedFraction() }));
+  say(piled.s.live <= 2500, 'and it never carries more than a few thousand loose at once ('
+    + piled.s.live + ')');
+  say(piled.inked > 0.0005, 'while the older ones are baked into the tray ('
+    + (piled.inked * 100).toFixed(3) + ' percent of it)');
+  /* ⛔ TILT ONLY EVER MOVES SAND. Ink is permanent and that contrast is the
+     point of having two materials. */
+  /* ⛔ measured as the grains MOVING, not as them leaving: one tilt at thirty two
+     milliseconds slides a grain about ten units on a sheet twelve hundred deep,
+     so counting what fell off the edge measures nothing. */
+  const beforeTip = await T(() => window.INKSWING_TEST.sand());
+  await T(() => {
+    window.INKSWING_TEST.settings().tilt = 1;
+    for (let i = 0; i < 12; i++) window.INKSWING_TEST.tilt(30, 0);
+  });
+  await waitFrames(page, 2);
+  const tipped = await T(() => window.INKSWING_TEST.sand());
+  say(tipped.cy > beforeTip.cy + 20,
+    'tipping the phone slides the loose grains down it (centre of the sand from '
+    + beforeTip.cy.toFixed(0) + ' to ' + tipped.cy.toFixed(0) + ')');
+  /* ⛔ the pen has to have STOPPED first, or the tray fills up again behind the
+     brush, which is correct behaviour and made this assertion look broken. */
+  await T(() => { window.INKSWING_TEST.state().drawing = false; window.INKSWING_TEST.brush(); });
+  /* ⛔ AND IT HAS TO SLIDE, not just vanish. A brush that clears the tray on a
+     timer without moving anything passes "the tray is clean" perfectly. */
+  await waitFrames(page, 4);
+  const midBrush = await T(() => window.INKSWING_TEST.sand());
+  say(midBrush.live === 0 || midBrush.cy > tipped.cy,
+    'the brush is sweeping the sand down the tray, not just deleting it (centre '
+    + tipped.cy.toFixed(0) + ' to ' + midBrush.cy.toFixed(0) + ')');
+  for (let i = 0; i < 120 && (await T(() => window.INKSWING_TEST.sand().brushing)); i++) {
+    await waitFrames(page, 3);
+  }
+  const brushed = await T(() => ({ s: window.INKSWING_TEST.sand(),
+    inked: window.INKSWING_TEST.inkedFraction() }));
+  say(brushed.s.live === 0 && brushed.inked < 0.0001,
+    'and the brush takes the whole tray back to felt (' + brushed.s.live + ' grains, '
+    + (brushed.inked * 100).toFixed(4) + ' percent)');
+  /* and back in ink, a tilt does nothing at all */
+  await T(() => {
+    const S = window.INKSWING_TEST.sim();
+    const sh = S.newSheet({ rig: 'single', mode: 'ink' });
+    sh.throws.push(S.flingToThrow(sh, { x: 300, y: 200 }, { x: -460, y: 620 }, 0, 'irongall'));
+    window.INKSWING_TEST.loadSheet(sh);
+    window.INKSWING_TEST.state().drawing = true;
+    window.INKSWING_TEST.advance(8);
+    window.INKSWING_TEST.state().drawing = false;
+  });
+  await waitFrames(page, 3);
+  const inkBefore = await T(() => window.INKSWING_TEST.inkedFraction());
+  await T(() => { window.INKSWING_TEST.tilt(40, 40); window.INKSWING_TEST.tilt(40, 40); });
+  await waitFrames(page, 3);
+  const inkAfter = await T(() => window.INKSWING_TEST.inkedFraction());
+  say(inkBefore > 0.0005 && Math.abs(inkAfter - inkBefore) < 1e-9,
+    'ink does not pour off when the phone is tipped (' + (inkBefore * 100).toFixed(3)
+    + ' percent before and after)');
+
   say(errors.length === 0, 'no page errors' + (errors.length ? ': ' + errors.slice(0, 3).join(' | ') : ''));
 } finally {
   await browser.close();

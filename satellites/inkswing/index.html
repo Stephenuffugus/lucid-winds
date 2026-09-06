@@ -86,6 +86,7 @@ body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
     <button class="btn big go" id="btnFinish" hidden>FINISH</button>
     <button class="btn" id="btnUndo">UNDO</button>
     <button class="btn" id="btnTear">TEAR OFF</button>
+    <button class="btn" id="btnShare">SHARE</button>
     <button class="btn big go" id="btnKeep">KEEP</button>
   </div>
 
@@ -109,6 +110,8 @@ body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
         <button class="btn" id="modeInk">INK</button>
         <button class="btn" id="modeSand">SAND</button>
       </div>
+      <button class="btn" id="btnBrush">BRUSH IT OFF</button>
+      <p class="tiny">Ink stays. Sand does not.</p>
       <button class="btn ghost" id="btnRigBack">BACK</button>
     </div>
   </div>
@@ -364,12 +367,15 @@ function flingToThrow(sheet, x0, v0, t0, ink, bob) {
   var lengths = sheet.lengths || rig.lengths;
   var pend = [], i;
   for (i = 0; i < 2; i++) {
-    /* each pendulum takes the component of the throw on the axis it drives */
-    var on = 'x';
-    var a;
-    for (a = 0; a < rig.axes.length; a++) if (rig.axes[a].pend === i) { on = rig.axes[a].on; break; }
-    var px = on === 'x' ? x0.x : x0.y;
-    var pv = on === 'x' ? v0.x : v0.y;
+    /* ⛔ EACH PENDULUM TAKES ONE COMPONENT OF THE THROW, ALWAYS THE SAME ONE.
+       Taken from the axis a pendulum happens to DRIVE, the two pendulums of the
+       gimbal both took the throw's x, one of them with the paper's minus sign,
+       and they cancelled at the moment of release: the rig drew a figure forty
+       units across next to the bob. Two pendulums hang on perpendicular axes and
+       a fling has two components; the first takes x and the second takes y, and
+       what each of them then drives is the rig's business. */
+    var px = i === 0 ? x0.x : x0.y;
+    var pv = i === 0 ? v0.x : v0.y;
     pv = clamp(pv, -CONFIG.V_MAX, CONFIG.V_MAX);
     var w = wForSemitone(lengths[i]);
     /* the amplitude the throw would make if the pendulum were not detuned, then
@@ -382,6 +388,20 @@ function flingToThrow(sheet, x0, v0, t0, ink, bob) {
     var phi = Math.atan2(px * wd, pv + damp * px);
     pend.push({ w: w, wEff: we, A: A, phi: phi });
   }
+  /* ⛔ THE ARM CANNOT SWING WIDER THAN THE TABLE. A gimbal fed a hard throw
+     reaches a thousand and sixty units across a sheet a thousand wide, and the
+     ends of the figure are drawn off the edge of the paper and lost. A real rig
+     has a limit and so does this one: the widest the axes can reach together is
+     scaled back onto the sheet, which keeps a wilder throw wilder right up to
+     the edge and no further. */
+  var reachX = 0, reachY = 0, ax;
+  for (ax = 0; ax < rig.axes.length; ax++) {
+    var A2 = Math.abs(pend[rig.axes[ax].pend].A);
+    if (rig.axes[ax].on === 'x') reachX += A2; else reachY += A2;
+  }
+  var room = Math.min(reachX > 0 ? (CONFIG.SHEET_W * 0.46) / reachX : 1,
+    reachY > 0 ? (CONFIG.SHEET_H * 0.46) / reachY : 1);
+  if (room < 1) { pend[0].A *= room; pend[1].A *= room; }
   return { t0: t0 || 0, ink: ink || 'irongall', damp: damp, pend: pend };
 }
 function newSheet(over) {
@@ -672,6 +692,26 @@ function suiteFling(T) {
   /* the bob choice is the damping */
   var brass = flingToThrow(newSheet({}), { x: 200, y: 0 }, { x: 0, y: 0 }, 0, 'sepia', 'brass');
   var felt = flingToThrow(newSheet({}), { x: 200, y: 0 }, { x: 0, y: 0 }, 0, 'sepia', 'felt');
+  /* the arm cannot swing wider than the table */
+  var wildest = ['single', 'crossed', 'gimbal', 'double'], q, worstX = 0, worstY = 0;
+  for (q = 0; q < wildest.length; q++) {
+    var wsh = newSheet({ rig: wildest[q], lengths: [3, 23] });
+    wsh.throws.push(flingToThrow(wsh, { x: 900, y: 900 }, { x: 9999, y: -9999 }, 0, 'sepia'));
+    var wtr = traceOf(wsh, 20), wi;
+    for (wi = 0; wi < wtr.length; wi++) {
+      if (Math.abs(wtr[wi].x) > worstX) worstX = Math.abs(wtr[wi].x);
+      if (Math.abs(wtr[wi].y) > worstY) worstY = Math.abs(wtr[wi].y);
+    }
+  }
+  T.assert('the wildest throw any rig will take stays on the paper across ('
+    + (worstX * 2).toFixed(0) + ' of ' + CONFIG.SHEET_W + ')', worstX * 2 <= CONFIG.SHEET_W);
+  T.assert('and down it (' + (worstY * 2).toFixed(0) + ' of ' + CONFIG.SHEET_H + ')',
+    worstY * 2 <= CONFIG.SHEET_H);
+  var soft2 = newSheet({ rig: 'single' });
+  soft2.throws.push(flingToThrow(soft2, { x: 60, y: 40 }, { x: -80, y: 90 }, 0, 'sepia'));
+  var softA = soft2.throws[0].pend[0].A;
+  T.assert('while a gentle throw is left exactly as it was thrown ('
+    + softA.toFixed(1) + ' units)', softA > 60 && softA < 90);
   T.assert('a felt bob dies faster than a brass one (' + felt.damp + ' against ' + brass.damp + ')',
     felt.damp > brass.damp);
   T.eq('and brass is the one the config names', brass.damp, CONFIG.DAMP_BRASS);
@@ -880,6 +920,7 @@ function syncActions() {
   el('btnKeep').hidden = !(G.sheet && G.sheet.throws.length) || G.drawing;
   el('btnTear').hidden = !(G.sheet && G.sheet.throws.length);
   el('btnUndo').hidden = !(G.sheet && G.sheet.throws.length) || G.drawing;
+  el('btnShare').hidden = !(G.sheet && G.sheet.throws.length) || G.drawing;
 }
 function kick() { if (!RAF && !document.hidden) RAF = requestAnimationFrame(frame); }
 /* ============================ 17. THE SHEET ============================ */
@@ -984,7 +1025,11 @@ function throwAt(sheet, t) {
 function redrawAll(sheet, upTo) {
   resetLayers();
   if (!sheet.throws.length) return;
-  strokeSpan(sheet, 0, Math.min(upTo === undefined ? G.t : upTo, CONFIG.DRAW_MAX_S));
+  SAND.live = [];
+  SAND.seq = 0;
+  var to = Math.min(upTo === undefined ? G.t : upTo, CONFIG.DRAW_MAX_S);
+  if (sheet.mode === 'sand') pourSand(sheet, 0, to);
+  else strokeSpan(sheet, 0, to);
 }
 function undoLayer() {
   if (!LAYERS.list.length) return false;
@@ -1018,8 +1063,8 @@ function drawPaper(ctx) {
   ctx.fillStyle = 'rgba(0,0,0,.45)';
   ctx.fillRect(x + 3, y + 5, w, h);
   var g = ctx.createLinearGradient(x, y, x, y + h);
-  g.addColorStop(0, G.sheet.mode === 'sand' ? '#23271F' : '#F4EDDC');
-  g.addColorStop(1, G.sheet.mode === 'sand' ? '#171A15' : '#E7DCC2');
+  g.addColorStop(0, G.sheet.mode === 'sand' ? '#2C312A' : '#F4EDDC');
+  g.addColorStop(1, G.sheet.mode === 'sand' ? '#1A1E18' : '#E7DCC2');
   ctx.fillStyle = g;
   ctx.fillRect(x, y, w, h);
   /* the grain of the paper, seeded so it never crawls */
@@ -1112,6 +1157,7 @@ function drawScene(ctx) {
   for (i = 0; i < LAYERS.list.length; i++) {
     ctx.drawImage(LAYERS.list[i].cv, x, y, CONFIG.SHEET_W * V.ppu, CONFIG.SHEET_H * V.ppu);
   }
+  if (G.sheet.mode === 'sand') drawLiveSand(ctx);
   drawRig(ctx);
 }
 
@@ -1168,10 +1214,12 @@ function release() {
 }
 function step(dtMs) {
   if (G.grabbed) { G.pen = G.held || G.pen; return; }
+  if (SAND.brushing) { brushOff(dtMs); return; }
   if (!G.drawing) { G.pen = G.sheet.throws.length ? posAt(G.sheet, G.t) : penRest(); return; }
   var from = G.t;
   G.t = Math.min(CONFIG.DRAW_MAX_S, G.t + dtMs / 1000);
-  strokeSpan(G.sheet, from, G.t);
+  if (G.sheet.mode === 'sand') pourSand(G.sheet, from, G.t);
+  else strokeSpan(G.sheet, from, G.t);
   G.pen = posAt(G.sheet, G.t);
   soundTick();
   if (G.t >= CONFIG.DRAW_MAX_S) { G.drawing = false; soundStop(); }
@@ -1381,7 +1429,43 @@ function boot() {
   el('btnPosterBack').addEventListener('click', function () { showScreen('Menu'); });
   el('btnFolio').addEventListener('click', function () { showScreen('Folio'); });
   el('btnPoster').addEventListener('click', function () { showScreen('Poster'); });
+  el('posterList').addEventListener('click', function (e) {
+    var t = e.target;
+    while (t && t !== this && !t.getAttribute('data-poster')) t = t.parentNode;
+    if (!t || t === this) return;
+    G.poster = t.getAttribute('data-poster');
+    var kids = this.children, i;
+    for (i = 0; i < kids.length; i++) kids[i].classList.toggle('on', kids[i] === t);
+  });
+  el('btnPosterExport').addEventListener('click', function () { exportPoster(); });
+  el('btnDaily').addEventListener('click', function () {
+    var d = dailyRig(Date.now());
+    G.sheet = newSheet({ rig: d.rig, lengths: d.lengths });
+    G.t = 0;
+    resetLayers();
+    renderRigScreen();
+    showScreen('Sheet');
+    toast('Today it is ' + (RIGS[d.rig] || RIGS.single).name.toLowerCase().replace('the ', '')
+      + ', ' + noteName(d.lengths[0]) + ' against ' + noteName(d.lengths[1]));
+  });
+  el('btnKeepMine').addEventListener('click', function () {
+    keepSheet();
+    el('scrKeep').classList.remove('on');
+    document.body.classList.remove('listing');
+    G.screen = 'sheet';
+  });
+  el('btnKeepOwn').addEventListener('click', function () {
+    el('scrKeep').classList.remove('on');
+    document.body.classList.remove('listing');
+    G.sheet = newSheet({ rig: G.sheet.rig, lengths: G.sheet.lengths.slice() });
+    G.t = 0;
+    resetLayers();
+    G.screen = 'sheet';
+    hint('Grab the brass bob. Throw it.');
+  });
   bindInput();
+  /* a link opens as a drawing being made, not as a finished picture */
+  if (openLink(location.hash)) { G.drawing = true; }
   syncActions();
   if (!SAVE.seen.thrown) setTimeout(function () { hint('Grab the brass bob. Throw it.'); }, 700);
   kick();
@@ -1392,7 +1476,288 @@ function boot() {
     });
   }
 }
-/* ============================ 21. INPUT ============================ */
+/* ============================ 20B. THE SAND ============================ */
+/* ⛔ THE RECENT GRAINS ARE REAL AND THE OLD ONES ARE BAKED. Sixty thousand live
+   particles at sixty frames a second on two cores is not a phone game, and it is
+   not what the material is about either: what a player does with sand is pour it,
+   watch the last of it settle, and tip the tray. So the newest few thousand
+   grains are a live list that can slide, and everything older is stamped into the
+   layer underneath them, which is what the plan means by a baked layer.
+   ⛔ AND INK IS PERMANENT. Tilt only ever moves sand; the material contrast is
+   the point of having two of them. */
+var SAND = { live: [], seq: 0, brushing: 0 };
+var SAND_LIVE_MAX = 2500;
+function sandColour(i) {
+  var t = grainAt(i, 77);
+  return 'rgba(' + Math.round(226 + t * 24) + ',' + Math.round(214 + t * 26) + ','
+    + Math.round(178 + t * 30) + ',';
+}
+function pourSand(sheet, fromT, toT) {
+  var tr = traceOf(sheet, toT, fromT), i, made = 0;
+  if (tr.length < 2) return 0;
+  var layer = layerFor('sand');
+  var c = layer.ctx, px = V.ppu * V.dpr;
+  for (i = 1; i < tr.length; i++) {
+    var a = tr[i - 1], b = tr[i];
+    var d = Math.hypot(b.x - a.x, b.y - a.y);
+    var n = Math.max(1, Math.round(d / 0.4)), k;
+    /* the cap is on the whole pour, not on the call: written per call it was
+       invisible in play, where a call is one frame, and it silently truncated
+       every BULK pour. Opening a shared sand drawing, or turning the phone,
+       poured the first second and a half of it and stopped. */
+    for (k = 0; k < n && made < CONFIG.SAND_GRAINS_MAX; k++) {
+      var f = k / n;
+      var seed = ++SAND.seq;
+      var jx = (grainAt(seed, 3) - 0.5) * 2.2, jy = (grainAt(seed, 5) - 0.5) * 2.2;
+      SAND.live.push({ x: a.x + (b.x - a.x) * f + jx, y: a.y + (b.y - a.y) * f + jy, i: seed });
+      made++;
+    }
+  }
+  while (SAND.live.length > SAND_LIVE_MAX) {
+    var g = SAND.live.shift();
+    c.fillStyle = sandColour(g.i) + '0.85)';
+    c.fillRect(lx(g.x) - px * 0.6, ly(g.y) - px * 0.6, Math.max(1.4, px * 1.5), Math.max(1.4, px * 1.5));
+  }
+  return made;
+}
+function drawLiveSand(ctx) {
+  /* a grain has to be seeable on felt at a third of a pixel to the unit */
+  var i, px = Math.max(1.6, V.ppu * 2.0);
+  for (i = 0; i < SAND.live.length; i++) {
+    var g = SAND.live[i];
+    ctx.fillStyle = sandColour(g.i) + '0.9)';
+    ctx.fillRect(sx(g.x) - px / 2, sy(g.y) - px / 2, px, px);
+  }
+}
+/* tip the tray: the live grains slide and the baked layer wipes the same way */
+function slideSand(dirX, dirY, dtMs) {
+  var d = Math.hypot(dirX, dirY);
+  if (d < 1e-6) return 0;
+  var step = CONFIG.SAND_SLIDE_UNITS_PER_S * (dtMs / 1000);
+  var ux = dirX / d * step, uy = dirY / d * step, i, keep = [];
+  for (i = 0; i < SAND.live.length; i++) {
+    var g = SAND.live[i];
+    g.x += ux + (grainAt(g.i, 11) - 0.5) * step * 0.4;
+    g.y += uy + (grainAt(g.i, 13) - 0.5) * step * 0.4;
+    if (Math.abs(g.x) < CONFIG.SHEET_W / 2 + 8 && Math.abs(g.y) < CONFIG.SHEET_H / 2 + 8) keep.push(g);
+  }
+  var gone = SAND.live.length - keep.length;
+  SAND.live = keep;
+  var layer = null, k;
+  for (k = 0; k < LAYERS.list.length; k++) if (LAYERS.list[k].ink === 'sand') layer = LAYERS.list[k];
+  if (layer) {
+    var c2 = layer.ctx;
+    c2.save();
+    c2.globalCompositeOperation = 'destination-out';
+    c2.globalAlpha = clamp(step / 90, 0.02, 0.5);
+    c2.fillStyle = '#000';
+    c2.fillRect(0, 0, layer.cv.width, layer.cv.height);
+    c2.restore();
+  }
+  return gone;
+}
+/* ⛔ a BRUSH is a sweep, not a tilt. At the tilt rate a full tray takes four
+   seconds to clear and it reads as a stall rather than as a gesture. */
+var BRUSH_RATE = 3.4, BRUSH_S = 1.6;
+function brushOff(dtMs) {
+  sandHiss(1);
+  var gone = slideSand(0, 1, (dtMs || 32) * BRUSH_RATE);
+  /* ⛔ A SWEEP TAKES AS LONG AS A SWEEP TAKES, and then it is done. Ending it
+     only when the last grain has fallen off the edge leaves a hundred stragglers
+     that started at the top of the tray, and the tray sits half swept for
+     seconds. It runs for one and six tenths and then the tray is clean. */
+  SAND.brushing = Math.max(0, SAND.brushing - (dtMs || 32) / 1000);
+  if (!SAND.live.length || SAND.brushing <= 0) {
+    SAND.live = [];
+    var k;
+    for (k = 0; k < LAYERS.list.length; k++) {
+      if (LAYERS.list[k].ink === 'sand') {
+        LAYERS.list[k].ctx.clearRect(0, 0, LAYERS.list[k].cv.width, LAYERS.list[k].cv.height);
+      }
+    }
+    SAND.brushing = 0;
+    sandHiss(0);
+  }
+  return gone;
+}
+function sandHiss(on) {
+  var A = SND.engine;
+  if (!A) return;
+  A.whisper.gain.setTargetAtTime(on ? 0.06 : 0, A.ctx.currentTime, 0.08);
+  A.wbp.frequency.setTargetAtTime(on ? 5200 : 2600, A.ctx.currentTime, 0.1);
+}
+
+/* ============================ 21. THE POSTER ============================ */
+/* ⛔ THE POSTER IS RE DRAWN FROM THE THROW LIST at print size, never scaled up
+   from the screen. That is the whole reason a sheet is stored as its throws: a
+   drawing made on a phone has to come out at two thousand pixels without a
+   single soft edge. */
+var POSTER_W = 2048, POSTER_H = 2560;
+var POSTER_KINDS = Object.freeze(['plate', 'dark', 'bare']);
+function posterCanvas(sheet, kind, name) {
+  var cv = document.createElement('canvas');
+  cv.width = POSTER_W; cv.height = POSTER_H;
+  var c = cv.getContext('2d');
+  var dark = kind === 'dark';
+  var bare = kind === 'bare';
+  /* the ground */
+  var g = c.createLinearGradient(0, 0, 0, POSTER_H);
+  if (dark) { g.addColorStop(0, '#22261F'); g.addColorStop(1, '#14170F'); }
+  else { g.addColorStop(0, '#F6EFDD'); g.addColorStop(1, '#EADFC4'); }
+  c.fillStyle = g;
+  c.fillRect(0, 0, POSTER_W, POSTER_H);
+  /* the art sits in a plate with a margin, and the caption lives under it */
+  var mx = bare ? POSTER_W * 0.06 : POSTER_W * 0.12;
+  var my = bare ? POSTER_H * 0.06 : POSTER_H * 0.10;
+  var capH = bare ? 0 : POSTER_H * 0.10;
+  var aw = POSTER_W - mx * 2, ah = POSTER_H - my * 2 - capH;
+  var k = Math.min(aw / CONFIG.SHEET_W, ah / CONFIG.SHEET_H);
+  var cx = POSTER_W / 2, cy = my + ah / 2;
+  if (!bare) {
+    c.strokeStyle = dark ? 'rgba(240,232,213,.22)' : 'rgba(30,42,58,.22)';
+    c.lineWidth = 3;
+    c.strokeRect(mx - 18, my - 18, aw + 36, ah + 36);
+  }
+  /* every throw, at print size, one segment at a time */
+  var tr = traceOf(sheet, CONFIG.DRAW_MAX_S), i;
+  c.lineCap = 'round';
+  c.lineJoin = 'round';
+  for (i = 1; i < tr.length; i++) {
+    var a = tr[i - 1], b = tr[i];
+    var dt = b.t - a.t;
+    if (dt <= 0) continue;
+    var d = Math.hypot(b.x - a.x, b.y - a.y);
+    var speed = d / dt;
+    var f = Math.pow(clamp(1 - speed / CONFIG.V_MAX, 0, 1), 1.8);
+    var w = CONFIG.INK_W_MIN + (CONFIG.INK_W_MAX - CONFIG.INK_W_MIN) * f;
+    var thr = throwAt(sheet, b.t);
+    var hex = inkHex(thr ? thr.ink : 'irongall');
+    c.strokeStyle = dark ? paleInk(hex) : hex;
+    c.globalAlpha = 0.34 + 0.26 * f;
+    c.lineWidth = Math.max(1, w * k);
+    c.beginPath();
+    c.moveTo(cx + a.x * k, cy + a.y * k);
+    c.lineTo(cx + b.x * k, cy + b.y * k);
+    c.stroke();
+  }
+  c.globalAlpha = 1;
+  if (!bare) {
+    /* ⛔ the caption is the brass line the design asks for, and it says what the
+       drawing IS: the rig, the interval and the inks. */
+    var rig = RIGS[sheet.rig] || RIGS.single;
+    var interval = intervalName(wForSemitone(sheet.lengths[0]), wForSemitone(sheet.lengths[1]));
+    var inks = {}, n = 0, kk;
+    for (i = 0; i < sheet.throws.length; i++) inks[sheet.throws[i].ink] = 1;
+    for (kk in inks) n++;
+    var line = 'Fig. ' + (sheet.id || 1)
+      + (name ? ', thrown by ' + name : '')
+      + ', ' + rig.name.toLowerCase().replace('the ', '')
+      + (interval ? ', ' + interval : '')
+      + ', ' + n + (n === 1 ? ' ink' : ' inks');
+    c.fillStyle = dark ? '#C9BE9A' : '#5A4A2E';
+    c.font = '600 46px ui-rounded, Georgia, serif';
+    c.textAlign = 'center';
+    c.fillText(line, POSTER_W / 2, POSTER_H - capH * 0.55);
+    c.fillStyle = dark ? 'rgba(201,190,154,.65)' : 'rgba(90,74,46,.65)';
+    c.font = '500 32px ui-rounded, Georgia, serif';
+    c.fillText('Inkswing, Sky Wolf Studio', POSTER_W / 2, POSTER_H - capH * 0.22);
+    c.textAlign = 'left';
+  }
+  return cv;
+}
+/* an ink light enough to read on felt */
+function paleInk(hex) {
+  var r = parseInt(hex.slice(1, 3), 16), g2 = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+  var mix = function (v) { return Math.round(v + (245 - v) * 0.62); };
+  return 'rgb(' + mix(r) + ',' + mix(g2) + ',' + mix(b) + ')';
+}
+function exportPoster() {
+  if (!G.sheet.throws.length) { toast('Throw the pendulum first'); return null; }
+  var cv = posterCanvas(G.sheet, G.poster, SAVE.name);
+  cv.toBlob(function (b) {
+    if (!b) { toast('That did not save'); return; }
+    handOver(b, 'inkswing-' + (G.sheet.id || 1) + '-' + G.poster + '.png', 'Inkswing');
+    toast('The poster is ready');
+  }, 'image/png');
+  return cv;
+}
+function handOver(blob, filename, label) {
+  try {
+    if (navigator.canShare && window.File) {
+      var f = new File([blob], filename, { type: blob.type });
+      if (navigator.canShare({ files: [f] })) {
+        navigator.share({ files: [f], title: label }).catch(function () {});
+        return 'share';
+      }
+    }
+  } catch (e) {}
+  try {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 4000);
+    return 'download';
+  } catch (e2) { return 'no'; }
+}
+
+/* ============================ 22. SHARE ============================ */
+/* ⛔ A LINK CARRIES THE THROWS, NOT A PICTURE. It opens on the other phone and
+   the pendulum draws it again from the beginning, which is why it is four dozen
+   characters instead of a megabyte. */
+function shareLink() {
+  return location.origin + location.pathname + '#s=' + packSheet(G.sheet);
+}
+function shareSheet() {
+  if (!G.sheet.throws.length) { toast('Throw the pendulum first'); return null; }
+  var url = shareLink();
+  if (navigator.share) {
+    navigator.share({ title: 'Inkswing', text: 'A drawing I threw', url: url }).catch(function () {});
+    return url;
+  }
+  try {
+    navigator.clipboard.writeText(url);
+    toast('The link is copied');
+  } catch (e) {
+    toast('The link is in the address bar');
+    try { history.replaceState(null, '', '#s=' + packSheet(G.sheet)); } catch (e2) {}
+  }
+  return url;
+}
+function openLink(hash) {
+  var m = String(hash || '').match(/[#&]s=([A-Za-z0-9\-_]+)/);
+  if (!m) return false;
+  var sh = unpackSheet(m[1]);
+  if (!sh || !sh.throws.length) return false;
+  G.sheet = sh;
+  G.t = 0;
+  G.drawing = true;
+  G.since = 0;
+  G.given = 1;
+  resetLayers();
+  renderRigScreen();
+  el('keepLine').textContent = 'Someone threw this on '
+    + (RIGS[sh.rig] || RIGS.single).name.toLowerCase().replace('the ', 'the ')
+    + '. Watch it draw, then keep it if you like it.';
+  el('scrKeep').classList.add('on');
+  document.body.classList.add('listing');
+  G.screen = 'keep';
+  return true;
+}
+/* ⛔ the daily ratio: one rig setting a day, the same for everybody, from the
+   day number rather than from a clock inside the rules */
+function dailyRig(nowMs) {
+  var r = makeRNG(dailySeedFor(nowMs));
+  var rig = RIG_ORDER[Math.floor(r() * 3)];
+  var a = 5 + Math.floor(r() * 12);
+  var picks = [12, 17, 19, 24, 16, 21];
+  var b = picks[Math.floor(r() * picks.length)];
+  return { rig: rig, lengths: [a, clamp(b, 0, CONFIG.SEMITONES)] };
+}
+
+/* ============================ 23. INPUT ============================ */
 function buildInkRail() {
   var host = el('inkRail'), i;
   host.innerHTML = '';
@@ -1459,12 +1824,21 @@ function bindInput() {
     if (undoLayer()) { toast('That ink is off'); } else { toast('Nothing to take off'); }
   });
   el('btnKeep').addEventListener('click', function () { keepSheet(); });
+  el('btnShare').addEventListener('click', function () { shareSheet(); });
   el('lenA').addEventListener('input', function () { setLength(0, parseInt(this.value, 10)); });
   el('lenB').addEventListener('input', function () { setLength(1, parseInt(this.value, 10)); });
   el('bobBrass').addEventListener('click', function () { setBob('brass'); });
   el('bobFelt').addEventListener('click', function () { setBob('felt'); });
   el('modeInk').addEventListener('click', function () { setMode('ink'); });
   el('modeSand').addEventListener('click', function () { setMode('sand'); });
+  el('btnBrush').addEventListener('click', function () {
+    if (G.sheet.mode !== 'sand') { toast('Ink stays where it is put'); return; }
+    SAND.brushing = BRUSH_S;
+    showScreen('Sheet');
+    toast('Tipping the tray');
+  });
+  el('btnTilt').addEventListener('click', function () { askTilt(); });
+  el('btnTilt').textContent = SETTINGS.tilt ? 'TILT ON' : 'TILT OFF';
   el('btnSound').addEventListener('click', function () {
     SETTINGS.sound = SETTINGS.sound ? 0 : 1;
     this.textContent = SETTINGS.sound ? 'HUM ON' : 'HUM OFF';
@@ -1494,7 +1868,48 @@ function setLength(which, n) {
   saveNow();
 }
 function setBob(b) { G.sheet.bob = b; renderRigScreen(); }
-function setMode(m) { G.sheet.mode = m; renderRigScreen(); }
+function setMode(m) {
+  G.sheet.mode = m;
+  G.sheet.throws = [];
+  G.t = 0;
+  SAND.live = [];
+  resetLayers();
+  renderRigScreen();
+}
+/* ⛔ TILT IS ASKED FOR ON A TAP AND NEVER ON BOOT. iOS refuses the permission
+   outright if it is not inside a gesture, and a game that asks for a motion
+   sensor before you have touched it is a game people close. */
+function askTilt() {
+  if (SETTINGS.tilt) {
+    SETTINGS.tilt = 0;
+    el('btnTilt').textContent = 'TILT OFF';
+    saveNow();
+    return;
+  }
+  var go = function () {
+    SETTINGS.tilt = 1;
+    el('btnTilt').textContent = 'TILT ON';
+    saveNow();
+    toast('Tip the phone to pour the sand off');
+    window.addEventListener('deviceorientation', onTilt);
+  };
+  try {
+    if (window.DeviceOrientationEvent && DeviceOrientationEvent.requestPermission) {
+      DeviceOrientationEvent.requestPermission().then(function (r) {
+        if (r === 'granted') go(); else toast('That is fine, the brush works too');
+      }).catch(function () { toast('That is fine, the brush works too'); });
+      return;
+    }
+  } catch (e) {}
+  if (window.DeviceOrientationEvent) go();
+  else toast('This phone has no tilt, the brush works');
+}
+function onTilt(e) {
+  if (!SETTINGS.tilt || G.sheet.mode !== 'sand' || REDUCED) return;
+  var beta = e.beta || 0, gamma = e.gamma || 0;
+  if (Math.abs(beta) < CONFIG.TILT_DEG && Math.abs(gamma) < CONFIG.TILT_DEG) return;
+  slideSand(gamma, beta, 32);
+}
 function renderRigScreen() {
   var sh = G.sheet;
   el('lenA').value = String(sh.lengths[0]);
@@ -1601,6 +2016,18 @@ window.INKSWING_TEST = {
     renderRigScreen();
   },
   advance: function (secs) { step(secs * 1000); },
+  shareLink: shareLink,
+  openLink: openLink,
+  poster: function (kind) { return posterCanvas(G.sheet, kind || G.poster, SAVE.name); },
+  dailyRig: dailyRig,
+  sand: function () {
+    var i, cx = 0, cy = 0;
+    for (i = 0; i < SAND.live.length; i++) { cx += SAND.live[i].x; cy += SAND.live[i].y; }
+    var n = Math.max(1, SAND.live.length);
+    return { live: SAND.live.length, brushing: SAND.brushing, cx: cx / n, cy: cy / n };
+  },
+  brush: function () { SAND.brushing = BRUSH_S; },
+  tilt: function (beta, gamma) { onTilt({ beta: beta, gamma: gamma }); },
   /* ⛔ handed out so a gate can render the hum into an OfflineAudioContext and
      measure what the ear would actually get */
   buildSound: buildSound,
