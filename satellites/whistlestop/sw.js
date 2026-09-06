@@ -12,7 +12,7 @@
    Bump SHELL_VERSION on every deploy, AND the ?v= on the registration in
    index.html in lockstep — this host edge-pins bare sw.js URLs for 7 days. */
 
-const SHELL_VERSION = "whistlestop-shell-20260906b";
+const SHELL_VERSION = "whistlestop-shell-20260906c";
 const SFX_CACHE     = "whistlestop-unused-v1"; // no recorded audio: every sound is synthesised
 const NAV_TIMEOUT_MS = 8000;
 

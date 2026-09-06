@@ -255,13 +255,19 @@
     /* sides first: on a canvas game every corner ties, and the middle of the sides is play area
        (sky in a platformer) while the bottom is pads and the top is the HUD. Then the bottom row,
        then the top row last. */
+    /* ⛔ Sep 06 2026: the bottom row goes FIRST after all. The fleet reserves the bottom left
+       120 by 120 for this chip (Doohickey's tray, Updraft's thumb rest and every new plan keep it
+       empty), and with the sides listed first a tap anywhere canvas game that scored every seat
+       the same (Fathom's cave, flat dark, 1.2 everywhere) got the chip in the middle of its left
+       edge, in the play area. Drawn pads at the bottom still lose: a patch with pixels in it
+       scores 2 against a flat patch's 1.2, and a real button scores 3. */
+    for (x = 10; x + 97 <= W - 130; x += 48) spots.push({ css: 'left:' + x + 'px;' + B, x: x + 48, y: H - 34 });   /* never the bottom right: the feedback fab's */
     spots.push({ css: 'left:10px;top:' + Math.round(H / 2 - 24) + 'px;', x: 58, y: H / 2 });
     spots.push({ css: 'right:10px;top:' + Math.round(H / 2 - 24) + 'px;', x: W - 58, y: H / 2 });
     /* three quarters down as well: a menu that ends above its footer leaves its free band there
        (Cipher Bloom's chip sat on the Gallery button with 150px of empty dark below the menu) */
     spots.push({ css: 'left:10px;top:' + Math.round(H * 0.75 - 24) + 'px;', x: 58, y: H * 0.75 });
     spots.push({ css: 'right:10px;top:' + Math.round(H * 0.75 - 24) + 'px;', x: W - 58, y: H * 0.75 });
-    for (x = 10; x + 97 <= W - 130; x += 48) spots.push({ css: 'left:' + x + 'px;' + B, x: x + 48, y: H - 34 });   /* never the bottom right: the feedback fab's */
     for (x = 10; x + 97 <= W - 10; x += 48) spots.push({ css: 'left:' + x + 'px;' + T, x: x + 48, y: 34 });
     /* the chip is 97px wide: score its whole footprint (left end, centre, right end), worst point wins */
     /* the chip is 97x48: score a 3x3 grid over its footprint, worst point wins (a centre line alone let it clip a title's top) */
