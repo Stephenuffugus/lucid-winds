@@ -12,7 +12,11 @@ this file wins; every difference is in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
-- 2026-09-05 Fable: plan written. Nothing built. Next action: section 5, P0, step 1.
+- 2026-09-06 Opus: P0 step 1 done. `tools/check.js` exists with one gate that
+  fails, and the failure is in section 13. Next action: P0 step 2, the scaffold
+  and PHYS. Copy `var PHYS = (function(){` out of `satellites/burr-blast/index.html`
+  into `satellites/doohickey/index.html`, apply section 3.4 (the DMATH swap),
+  then add PinJoint, Rope, the fan cone and buoyancy.
 
 ---
 
@@ -368,8 +372,16 @@ and bucket for the next session; three honest levels beat six untested ones.
 
 ## 13. EVIDENCE LEDGER (fill in place, with commands and their real output, most recent last)
 
+### P0 step 1, the gate that fails first (2026-09-06)
+
 ```
-(empty; the first entry is P0 step 2 to 5: the replay hash, the mutants table, the domino table, the heartbeat watched to fail)
+$ node tools/check.js
+sim             FAIL  0s
+
+--- sim (wanted: DOOHICKEY TEST OK) ---
+Error: Cannot find module '/workspaces/lucid-winds/satellites/doohickey/sim.js'
+
+1 GATE FAILED
 ```
 
 ---
