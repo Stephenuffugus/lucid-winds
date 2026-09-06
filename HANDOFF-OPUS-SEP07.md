@@ -230,6 +230,49 @@ saw in Airworthy landscape (G35). 8. Wardian's BUY (G37). 9. The rest of section
 
 ## 6. THE DAY'S LEDGER (Opus appends one line per finished item, the morning report at the top when stopping)
 
+### THE MORNING REPORT, Sep 07, Opus
+
+**WHAT IS LIVE.** All of section A, every item, on `main` and verified by probe against the host.
+Twelve games at these stamps: Fathom, Asterism, Doohickey, Airworthy, Inkswing, Updraft
+`20260907a`; Gerplunk `20260907b`; Swell and Wardian `20260906d`; Windup and Whistlestop
+`20260906h`; Strata `20260906f`. The portal now pins every one of the twelve to the stamp that
+game actually ships; ten of them had been pinned at `20260906b`, which none of them has carried
+for a day, so the shelf was serving a stale tile and a stale cache key for each. The plural brand
+is gone from the whole old fleet, 206 occurrences in 136 files, including eleven places a player
+reads.
+
+**WHAT IS HALF BUILT.** Nothing. Every item that was started is green, committed, pushed and
+live, and every game's own suite passes.
+
+**WHAT I WOULD PUT IN FRONT OF STEPHEN, RANKED.**
+
+1. **Two games were CLIPPING and every gate was green over it.** Fathom's singback peaked at
+   1.293 and Asterism's swell at 1.907 on their loudest minute. A fresh GainNode's gain is one,
+   and both games started three sines at once while staggering their envelopes, so each voice
+   went out at full scale for 45 to 90 ms. Fixed, and both now measure 0.42 and 0.37. **This is
+   the case for finishing the ear gate in the other six games** (A9 covered four of ten).
+2. **His ear, on four things.** Gerplunk's bed (`docs/shots/p4-bed-and-throws.wav`), Windup's tine
+   at the new level (call 36), Swell's three moods, and now Fathom and Asterism at their fixed
+   level. Nobody has heard any of it, which is still the largest unknown in the twelve.
+3. **Gerplunk's turn (call 22)** is the one thing he asked for that is still not started, because
+   it is his number. Two hours the moment he picks.
+4. **Airworthy's WHISTLE_UP is 0.6 and that is a taste.** Measured, not picked: at 1.5 a whistled
+   plane went 13.7 percent further, which is a save rather than a nudge. Five percent is where it
+   sits. His to raise.
+5. **Wardian's pouch still says BUY** (call 37, ten minutes, waiting on his word), and **Stream Hop
+   says the plural brand in copy a player reads eight days from a Steam release** (call 38, his
+   game, his call).
+6. **Five new calls from today:** 38 Stream Hop, 39 a Steam probe that may never have passed,
+   40 the devcontainer name, 41 Wardian has no master gain anywhere, 42 Strata's brush is a
+   quarter of its energy above 3 kHz.
+7. **Five new items queued in section C:** C7 Strata's second skeleton can be dug and never
+   mounted (a real fault), C8 two stale Strata docs, C10 Asterism's poster PREVIEW draws text at
+   about five CSS pixels, C11 Fathom's tile reads as a broken image on the shelf. C9 is done.
+
+**WHAT IS LEFT ON THE LIST.** A9 for the other six games (Doohickey, Airworthy, Windup,
+Whistlestop, Updraft, Swell). Then section C, then the polish loop. Section B is untouched by the
+rule and waits on him.
+
 - **A1 Gerplunk, the throw reference and the spin ring.** `20260907a`, live (probe grepped
   `drawSpinRing`, `curlSoFar` and the stamp on the host). `docs/THROW-REFERENCE.md` written
   first and it is FOR STEPHEN: it found that spin was read only from the last fifth of a second
