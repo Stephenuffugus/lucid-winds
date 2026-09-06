@@ -62,7 +62,14 @@ Each line: game, the item, size, the plan, and whether it waits on a Director ca
 
 ### C. Found in the Sep 06 night look pass (Fable), added below as they were found
 
-**DONE 2026-09-07 by Opus: C1, C2, C8, C9.** C1 Asterism now has a treeline on the ridge and a
+**DONE 2026-09-07 by Opus: C1, C2, C5, C8, C9.** C5 Whistlestop's prop groups each carry a
+written reason, how near the line that reason puts them, and whether they turn to look at the
+railway; nothing stands inside the railway's footprint any more. ⛔ That last one was not a
+placement bug but a STALENESS bug: the scenery is laid once and then stays put, which is right
+for building beside, but laid once and never again a loop built AROUND a cow leaves the cow in
+the middle of it for good. It re lays only when the railway has grown over it, and the camera
+refits first, because laid against the old frame the cow came out half off the left edge.
+**Also done: C1, C2, C8, C9.** C1 Asterism now has a treeline on the ridge and a
 fence in the field, both seeded from the place, and a gate that counts anything darker than the
 land (3.9 percent with it, exactly zero without). C2's question is answered yes, the first line
 IS on a fresh save at all three sizes, and looking at it found the real thing: the screen it
@@ -377,6 +384,20 @@ rule and waits on him.
   `20260907a`, peaks now 0.42 and 0.37. Wardian and Strata measured clean. Every band was
   measured first and each one watched to fail under a real alarm mutation. Strata's 26.5 percent
   above 3 kHz is the number to watch if Stephen ever calls the brush harsh.
+- **A9 IS COMPLETE, ten of ten.** The second four (Doohickey, Airworthy, Windup, Updraft)
+  ⛔⛔ **FOUND A THIRD CLIPPING FAULT, and it was in the quietest game in the fleet.** Windup's
+  `softCurve`, the waveshaper whose own comment calls it "the ceiling", was
+  `0.95 * tanh(1.6x) / tanh(1.6)`: its slope at the origin is 1.649, so it was a 4.3 dB BOOST on
+  everything under its knee and `MASTER = 0.5` was really 0.82. It also ran at `2x` oversample,
+  whose reconstruction filter rang 37 percent past the curve's own bound. Peak **1.364**, rms
+  0.335. Now 0.744 and 0.216, with the same curve shape and the same asymptote and a slope of
+  exactly one. Stamp `20260907a`. Doohickey, Airworthy and Updraft measured clean.
+  ⛔ **Updraft's record chord is Fathom's fault line for line** and the only thing between it and
+  a peak of 2.94 is a single `gn.gain.value = 0` before the first ramp. It is written down beside
+  the assertion that guards it. Nobody delete that line.
+  ⛔ And one band the agent wrote was decoration and it said so: Windup's high band ceiling of 6
+  percent let its own alarm mutation through at 4.67, so it was tightened to 3 and watched to go
+  red.
 - **A10 Fathom's arcade tile, and C9 with it.** Reshot with occlusion, and the same for the five
   other games whose art changed today (Gerplunk, Updraft, Doohickey, Inkswing, Airworthy). Then
   the whole portal repinned: every one of the twelve had its `?v=` and its thumb `?v=` set to the

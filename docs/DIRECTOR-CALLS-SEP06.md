@@ -201,6 +201,17 @@ here. Nothing in this section is started.
     and the level is low (peak 0.344, rms 0.0287), and the brush is the sound the player makes
     most. Nothing to do unless your ear says it is harsh, and if it does, this is the number and
     the fix is the high pass at 5200 Hz.
+43. **Updraft has no master gain and no limiter either (Opus, 2026-09-07).** Same shape as call
+    41 for Wardian, and it matters more here: every voice connects straight to the destination
+    AND it is the loudest bed of the ten measured today, rms 0.103, more than twice Fathom's
+    loud minute. Nothing measures as a fault. But anything added later is added straight to the
+    peak with nothing to catch it, and two of the three clipping faults found today were exactly
+    that. An hour each for Wardian and Updraft. My call: do both.
+44. **Airworthy is very quiet and Updraft is not (Opus, 2026-09-07).** On its loudest possible
+    flight Airworthy measures rms 0.0164, an eighth of Updraft's 0.103, and the two sit side by
+    side on the arcade shelf. Neither is a fault by any number. It is your ear, and it is the
+    kind of thing a player feels as one game being broken rather than as two games being
+    different.
 
 ## Answered this afternoon without you (say so if wrong)
 
