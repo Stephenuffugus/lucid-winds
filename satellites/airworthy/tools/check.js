@@ -34,6 +34,7 @@ const GATES = [
 const BROWSER_GATES = [
   { name: 'throw', cmd: ['test/throw.mjs'], need: 'THROW OK' },
   { name: 'fold', cmd: ['test/fold.mjs'], need: 'FOLD OK' },
+  { name: 'tunnel', cmd: ['test/tunnel.mjs'], need: 'TUNNEL OK' },
   { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK', slow: true }
 ];
 

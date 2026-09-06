@@ -683,6 +683,117 @@ with wings 0.15 and 0.5 apart are only subtly different at card size.
 
 ---
 
+### P3 step 1 ledger, the wind tunnel (2026-09-06)
+
+`node test/tunnel.mjs`
+
+```
+  ok    the title screen offers the wind tunnel and a thumb lands on it
+  ok    and it opens the tunnel
+  ok    the chamber has real room on a 375 wide screen: 355 by 277
+  ok    #dialWind is reachable and 48.0 px tall (the floor is 48)
+  ok    #dialAlpha is reachable and 48.0 px tall (the floor is 48)
+  ok    #dialTunElev is reachable and 48.0 px tall (the floor is 48)
+  ok    #dialTunAil is reachable and 48.0 px tall (the floor is 48)
+  ok    #btnTunTrim is reachable and 56.0 px tall (the floor is 48)
+  ok    #btnTunFly is reachable and 56.0 px tall (the floor is 48)
+  ok    two hundred streaks are pooled, not allocated in the frame (200)
+  ok    and the air in it moves: eight streaks travelled 0.412 chamber widths in six frames
+  ok    the dial really moved, onto the peak and then deep past it: 11.5 then 27.5 degrees against a stall at 12.0
+  ok    and the tunnel knows which side it is on
+  ok    the lift arrow is at its longest on the peak (74.8 px)
+  ok    and past the stall it collapses by at least half: 74.8 px to 29.6 px
+  ok    while the drag arrow grows rather than shrinking: 13.0 px to 19.0 px
+  ok    the stability row is coloured by derive: margin 4.80 percent reads "mid" and derive says "mid"
+  ok    and it says it without a dash: "5 pc twitchy"
+  ok    the slate says 5.83 to 1 and the field flew 5.83 to 1, off by 0.1 percent  {"nose":"pointed","noseFolds":3,"wing":0.5,"elev":0}
+  ok    the slate says 7.84 to 1 and the field flew 7.84 to 1, off by 0.0 percent  {"nose":"pointed","noseFolds":3,"wing":0.35,"elev":2}
+  ok    the slate says 4.32 to 1 and the field flew 4.32 to 1, off by 0.1 percent  {"nose":"locked","noseFolds":3,"wing":0.15,"elev":0}
+  ok    the slate says 3.20 to 1 and the field flew 3.21 to 1, off by 0.1 percent  {"nose":"blunt","noseFolds":3,"wing":0.45,"elev":0,"fins":"up"}
+  ok    the slate says 7.55 to 1 and the field flew 7.55 to 1, off by 0.0 percent  {"nose":"pointed","noseFolds":2,"wing":0.25,"elev":0}
+  ok    and it was measured on 5 different planes, not one
+  ok    TRIMMED ANGLE puts the dial on the angle the plane settles at: dial 11.5, trim 11.76
+  ok    a press near the low end of the elevator dial bends it down: -10
+  ok    and the trimmed angle comes down with it: 11.76 to -6.88 degrees
+  ok    FLY IT goes to the field
+  ok    and it takes the elevator you just bent with it (-10)
+  ok    no page errors
+
+TUNNEL OK
+```
+
+`node tools/check.js`
+
+```
+sim             pass  0s
+lint            pass  0s
+throw           pass  4s
+fold            pass  8s
+tunnel          pass  3s
+layout          pass  9s
+
+ALL GATES PASSED
+```
+
+**Every new assertion watched red before it was believed.**
+
+The two the room is FOR:
+
+```
+$ (the tunnel given its own lift curve, CLt = D.CLa * at * 1.22)
+  ok    the slate says 6.59 to 1 and the field flew 5.83 to 1, off by 13.1 percent
+  FAIL  the slate says 5.02 to 1 and the field flew 4.32 to 1, off by 16.3 percent
+  FAIL  the slate says 3.75 to 1 and the field flew 3.21 to 1, off by 16.9 percent
+
+$ (a wing that keeps its lift past the stall, liftCoefficient returns D.CLa * D.alphaStall)
+  FAIL  and past the stall it collapses by at least half: 74.8 px to 78.1 px
+
+$ (a slate that colours the margin by mood, the row hard coded to 'good')
+  FAIL  the stability row is coloured by derive: margin 4.80 percent reads "good" and derive says "mid"
+```
+
+And the two that replaced the tied one in the sim:
+
+```
+$ node sim.js --test --over=CM_STALL=0
+  FAIL  a tumbler stalls at least twice (1)
+$ node sim.js --test --over=CMQ=-40
+  FAIL  a tumbler stalls at least twice (1)
+$ (the tumbler fixture given a narrow wing and a hard throw)
+  FAIL  and it pays more for it than a porpoise does (10.1 m against 9.5 m)
+```
+
+**The drag arrow shrinking past the stall was a hole in the FLIGHT MODEL, not a
+drawing bug.** Induced drag follows CL and CL falls in a stall, so a separated
+wing was getting cheaper to push through the air. `CD_STALL` at 0.45 per radian
+past the stall fixes it; the sweep and everything it moved is in
+`docs/DECISIONS.md`.
+
+**Shots, opened and read.** `docs/shots/p3-tunnel.png`,
+`p3-tunnel-stall.png`, `p3-tunnel-dive.png`, `p3-tunnel-wide.png`,
+`p3-tunnel-320.png`. Eight faults found by looking and fixed:
+
+1. The chamber was a 160 px letterbox on a 667 screen: the panel's seven slate
+   rows and four stacked dials ate two thirds of the room. Paired into four and
+   two, the glass now takes 46 percent.
+2. The streaks were one pixel specks. Drawn frame to frame they are a smear on a
+   fast machine and dots on a slow one. Now each is drawn ALONG the local flow
+   and as long as the flow is fast, so the speed up over the wing is the picture.
+3. Over half the streaks were seeded outside the glass and clipped, so the top of
+   the chamber looked like still air when it was empty.
+4. THE PLANE WAS MOUNTED BACKWARDS IN THE JET. The gym draws its nose at plus x
+   because it flies left to right; the tunnel's air runs left to right past a
+   plane that stands still, so the drawing has to be mirrored.
+5. Dark ink on a dark chamber left a white sliver with no silhouette.
+6. TRIMMED ANGLE rounded up onto the stall and answered itself with STALLED
+   across the glass.
+7. The four column slate truncated every value: "11.8 deg...", "The Porp...",
+   "far more ...". A slate nobody can finish reading teaches nothing.
+8. On a 320 wide phone the chamber was measured BEFORE the slate was put in the
+   panel, so it came out 230 px tall, half of it hid under the panel, and the
+   aeroplane was drawn in the part nobody can see.
+
+
 ## 14. THE OVERNIGHT PROTOCOL
 
 As `plans/fathom/HANDOFF-FATHOM.md` section 14, with `P0, P1, P2, P3` of this file and the browser gates `throw, fold,

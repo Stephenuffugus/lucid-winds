@@ -81,14 +81,20 @@ for (const [W, H, tag] of [[667, 375, 'landscape'], [375, 667, 'portrait']]) {
   const dial = await centre(page, '#dialElev');
   say(!!dial && dial.h >= 48 && dial.onTop, tag + ': the elevator dial is a 48 px target');
   /* a range input is moved by a real drag along it */
+  /* ⛔ this bend was minus two until post stall drag went into the model and the
+     starting plane's elevator came down from six to four with it. A stalled
+     wing now costs the plane speed, the swing runs deeper, and minus two no
+     longer settles it: minus four does. The assertion below is the same one it
+     always was, that a trimmed porpoise becomes a keeper. Only the bend the
+     model needs has moved. */
   await page.evaluate(() => {
     const d = document.getElementById('dialElev');
-    d.value = '-2';
+    d.value = '-4';
     d.dispatchEvent(new Event('input', { bubbles: true }));
   });
   await waitFrames(page, 2);
   const elev = await page.evaluate(() => AIRWORTHY_TEST.spec().elev);
-  say(elev === -2, tag + ': the dial bends the elevators (' + elev + ')');
+  say(elev === -4, tag + ': the dial bends the elevators (' + elev + ')');
   const t0 = Date.now();
   await tap(page, '#btnTrimDone');
   await waitFrames(page, 3);

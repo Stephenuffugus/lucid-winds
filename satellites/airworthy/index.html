@@ -128,6 +128,40 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
 #shopSpec{font-size:.74rem;color:var(--pencil);text-align:center;line-height:1.5}
 
 /* the hangar */
+/* the tunnel: the chamber is the canvas, the slate and the dials sit under it */
+#tunnel{position:absolute;left:0;right:0;bottom:0;z-index:6;pointer-events:auto;
+  background:var(--paper);border-top:2px solid var(--ink);
+  padding:6px 12px calc(8px + var(--safeB));display:none;flex-direction:column;gap:3px;
+  align-items:center}
+#tunnel.on{display:flex}
+/* ⛔ THE CHAMBER IS THE ROOM. Stacked one to a line the slate ran seven rows
+   and the four dials another two hundred pixels, and the glass box came out a
+   letterbox slot a hundred and sixty pixels tall on a 667 screen: the one thing
+   the player came here to look at was the smallest thing on it. The slate pairs
+   up into four rows and the dials into two, and the chamber gets it back. */
+#tunDials{display:grid;grid-template-columns:1fr 1fr;gap:2px 12px;width:100%;max-width:380px}
+#tunnel .dial{max-width:none;flex-wrap:wrap;gap:0 6px}
+#tunnel .dial .lbl{flex:1 0 100%;font-size:.7rem}
+#tunnel .row{max-width:380px;margin-top:2px}
+#tunReadout{width:100%;max-width:380px;background:#3A3A36;color:#EFE9DC;border-radius:10px;
+  padding:7px 10px;font-size:.72rem;line-height:1.5;display:grid;
+  grid-template-columns:auto 1fr auto 1fr;gap:1px 8px}
+#tunReadout .v{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#tunReadout .k.wide{grid-column:1/2;padding-top:3px}
+#tunReadout .v.wide{grid-column:2/-1;font-size:.86rem;padding-top:2px}
+/* ⛔ 0.68 rem broke the fleet's floor of 0.7. On the smallest screen the slate
+   buys its room out of the gaps and the padding, never out of the type. */
+@media (max-width:340px){#tunReadout{font-size:.7rem;gap:1px 5px;padding:6px 7px}}
+#tunReadout .k{opacity:.72}
+#tunReadout .v{text-align:right;font-weight:700}
+#tunReadout .good{color:#8FD08A}
+#tunReadout .mid{color:#E8C46A}
+#tunReadout .bad{color:#E8897A}
+@media (orientation:landscape){
+  #tunnel{left:auto;top:0;bottom:0;width:min(58%,380px);
+    border-top:0;border-left:2px solid var(--ink);justify-content:center;overflow-y:auto;
+    padding:calc(8px + var(--safeT)) calc(14px + var(--safeR)) calc(8px + var(--safeB)) 14px}
+}
 #hangarList{width:100%;max-width:360px;display:flex;flex-direction:column;gap:8px}
 .plane-card{width:100%;min-height:72px;border:2px solid var(--ink);border-radius:12px;
   background:var(--sheet);box-shadow:0 2px 0 var(--ink);display:flex;align-items:center;gap:10px;
@@ -239,6 +273,24 @@ body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
     </div>
   </div>
 
+  <div id="tunnel">
+    <div id="tunReadout"></div>
+    <div id="tunDials">
+      <div class="dial"><span class="lbl">Wind</span>
+        <input type="range" id="dialWind" min="3" max="15" step="0.5" value="8"><span class="val" id="valWind">8</span></div>
+      <div class="dial"><span class="lbl">Angle</span>
+        <input type="range" id="dialAlpha" min="-5" max="28" step="0.5" value="4"><span class="val" id="valAlpha">4</span></div>
+      <div class="dial"><span class="lbl">Elevator</span>
+        <input type="range" id="dialTunElev" min="-12" max="12" step="1" value="0"><span class="val" id="valTunElev">0</span></div>
+      <div class="dial"><span class="lbl">Aileron</span>
+        <input type="range" id="dialTunAil" min="-8" max="8" step="1" value="0"><span class="val" id="valTunAil">0</span></div>
+    </div>
+    <div class="row">
+      <button class="btn" id="btnTunTrim">TRIMMED ANGLE</button>
+      <button class="btn go big" id="btnTunFly">FLY IT</button>
+    </div>
+  </div>
+
   <div class="screen" id="scrHangar">
     <div class="col">
       <div class="cap">The hangar</div>
@@ -306,7 +358,7 @@ var CONFIG = Object.freeze({
      few degrees HAS to be able to push a marginal plane past what its wing can
      hold: that is what a porpoise IS. */
   CM0: 0.0312, CM_ELEV_PER_DEG: 0.012, CMQ: -8, I_FACTOR: 0.08,
-  STALL_DROP: 2.5, CL_FLOOR: 0.3, AR_MIN: 1.2, AR_MAX: 3.5, CM_STALL: -0.9,
+  STALL_DROP: 2.5, CL_FLOOR: 0.3, CD_STALL: 0.45, AR_MIN: 1.2, AR_MAX: 3.5, CM_STALL: -0.9,
   VEER_GAIN: 0.02, VEER_DAMP: 0.5, VEER_MAX: 1
 });
 var CLIP_MASS = Object.freeze({ none: 0, nose: 0.001, mid: 0.001 });
@@ -444,6 +496,78 @@ function gustField(seed, amp) {
 }
 
 /* ========================= 6. FLIGHT ========================= */
+/* ⛔ ONE lift curve and ONE drag polar, and the tunnel calls these too. The law
+   of this game is that the tunnel cannot lie about the field, and the only way
+   to make that true rather than hoped for is to have one implementation. */
+function liftCoefficient(D, alpha) {
+  if (alpha < D.alphaStall) return D.CLa * alpha;
+  return Math.max(CONFIG.CL_FLOOR, D.CLa * D.alphaStall - (alpha - D.alphaStall) * CONFIG.STALL_DROP);
+}
+/* ⛔ THE TUNNEL FOUND THIS ONE. Drawn against the same drag the plane flies on,
+   the drag arrow SHRANK when the wing let go, because induced drag follows CL
+   and CL falls in a stall. A separated wing is a barn door: its drag climbs
+   steeply, and without that term a stalled plane speeds up instead of dropping
+   out of the sky. The tunnel exists to be looked at, and this is what looking
+   at it caught. */
+function dragCoefficient(D, CL, alpha) {
+  var CD = D.CD0 + D.k * CL * CL;
+  if (alpha !== undefined && alpha > D.alphaStall) CD += CONFIG.CD_STALL * (alpha - D.alphaStall);
+  return CD;
+}
+/* the angle the plane settles at on its own: where the pitching moment is zero */
+function trimAlpha(D) {
+  var CLtrim = (D.Cm0 + D.CmElev + D.CmClip) / D.margin;
+  var a = CLtrim / D.CLa;
+  return clamp(a, -0.12, D.alphaStall * 0.98);
+}
+/* what the tunnel puts on its slate, every number of it off derive */
+function tunnelReading(spec, alphaDeg, V) {
+  var D = derive(spec);
+  var alpha = alphaDeg * DEG;
+  var CL = liftCoefficient(D, alpha), CD = dragCoefficient(D, CL, alpha);
+  var qd = 0.5 * CONFIG.RHO * V * V;
+  var at = trimAlpha(D);
+  var CLt = liftCoefficient(D, at), CDt = dragCoefficient(D, CLt);
+  /* the most this wing can make at this wind. The arrows are drawn against it
+     rather than against the plane's weight, because a tunnel run at eight
+     metres a second makes fifteen times the weight of a paper plane and every
+     arrow pins at the top of the glass with nothing to see. */
+  var CLmax = D.CLa * D.alphaStall;
+  return {
+    CLmax: CLmax, Lmax: qd * D.S * CLmax,
+    derived: D, alpha: alpha, alphaDeg: alphaDeg, V: V,
+    CL: CL, CD: CD, lift: qd * D.S * CL, drag: qd * D.S * CD,
+    stalled: alpha >= D.alphaStall, stallDeg: D.alphaStall / DEG,
+    trimDeg: at / DEG, glide: CDt > 1e-9 ? CLt / CDt : 0,
+    loading: D.loading, marginPct: D.margin * 100,
+    weight: D.mass * CONFIG.G
+  };
+}
+/* the throw that starts a plane in its own trimmed glide, so a measurement of
+   the field is a measurement of the glide and not of the zoom that a hard throw
+   puts in front of it */
+function trimLaunch(spec) {
+  var D = derive(spec);
+  var at = trimAlpha(D);
+  var CL = liftCoefficient(D, at), CD = dragCoefficient(D, CL);
+  if (CL < 0.05) return null;              /* it does not glide, it falls */
+  var gamma = -Math.atan2(CD, CL);
+  var V = Math.sqrt(2 * D.mass * CONFIG.G * Math.cos(gamma) / (CONFIG.RHO * D.S * CL));
+  var power = (V - CONFIG.LAUNCH_V_MIN) / (CONFIG.LAUNCH_V_MAX - CONFIG.LAUNCH_V_MIN);
+  if (power < 0 || power > 1) return null; /* outside what an arm can throw */
+  return { angle: gamma / DEG, power: power, alpha0: at, V: V, gamma: gamma };
+}
+/* the glide ratio the FIELD actually flew, over the settled part of the flight:
+   a plane thrown well above its trim speed zooms first, and the zoom is not the
+   glide. */
+function measuredGlide(res) {
+  var tr = res.trace;
+  if (tr.length < 6) return 0;
+  var i0 = Math.floor(tr.length * 0.6), a = tr[i0], b = tr[tr.length - 1];
+  var dx = b.x - a.x, dy = a.y - b.y;
+  if (dy <= 1e-6) return 0;
+  return dx / dy;
+}
 /* Semi implicit Euler at SIM_HZ. Every coefficient in here comes out of derive
    and nothing computes one of its own. y is HEIGHT: up is positive. */
 function flightState(angleDeg, power) {
@@ -451,7 +575,7 @@ function flightState(angleDeg, power) {
   var a = angleDeg * DEG;
   return {
     x: 0, y: 1.6, vx: Math.cos(a) * v, vy: Math.sin(a) * v,
-    theta: a, q: 0, veer: 0, t: 0, alive: 1, why: ''
+    theta: a, q: 0, veer: 0, t: 0, alive: 1, why: '', v0: v
   };
 }
 function flightStep(st, D, air, dt) {
@@ -466,11 +590,9 @@ function flightStep(st, D, air, dt) {
   var alpha = st.theta - gamma;
   if (!isFinite(alpha)) alpha = 0;
   alpha = alpha - 2 * Math.PI * Math.round(alpha / (2 * Math.PI));
-  var CL;
-  if (alpha < D.alphaStall) CL = D.CLa * alpha;
-  else CL = Math.max(CONFIG.CL_FLOOR, D.CLa * D.alphaStall - (alpha - D.alphaStall) * CONFIG.STALL_DROP);
+  var CL = liftCoefficient(D, alpha);
   var stalled = alpha >= D.alphaStall;
-  var CD = D.CD0 + D.k * CL * CL;
+  var CD = dragCoefficient(D, CL, alpha);
   var qd = 0.5 * CONFIG.RHO * V * V;
   var L = qd * D.S * CL, Dg = qd * D.S * CD;
   /* lift is perpendicular to the relative wind, drag is against it */
@@ -514,6 +636,12 @@ function fly(spec, opts) {
   var D = derive(spec);
   var air = o.air || stillAir();
   var st = flightState(o.angle === undefined ? 5 : o.angle, o.power === undefined ? 0.5 : o.power);
+  /* a launch is normally thrown flat on: the nose points where it is going, so
+     alpha starts at zero. alpha0 lets a measurement launch the plane already at
+     its trimmed angle, and y0 gives it a taller drop to settle in. Neither is
+     reachable from the thumb. */
+  if (o.alpha0) st.theta += o.alpha0;
+  if (o.y0 !== undefined) st.y = o.y0;
   var dt = 1 / CONFIG.SIM_HZ;
   var maxT = o.maxT === undefined ? CONFIG.FLIGHT_MAX_S : o.maxT;
   var trace = [], events = [{ kind: 'launch', t: 0, x: 0, y: st.y }];
@@ -772,8 +900,16 @@ function suiteArchetypes(T) {
   T.assert('a tumbler gets its nose further past the stall than a porpoise ('
     + tus.maxAlpha.toFixed(0) + ' against ' + pos.maxAlpha.toFixed(0) + ' degrees)',
     tus.maxAlpha > pos.maxAlpha);
-  T.assert('and it stalls more often (' + tu.stalls + ' against ' + po.stalls + ')',
-    tu.stalls > po.stalls);
+  /* ⛔ this was 'and it stalls MORE OFTEN than a porpoise' until the tunnel put
+     post stall drag into the model. With a separated wing paying for itself,
+     both of them now stall exactly twice inside the shorter flight that drag
+     buys, and the count stopped separating them. It never was the definition:
+     the plan calls a tumbler two or more stalls, and what still tells them
+     apart is how deep the nose goes and what the flight costs. */
+  T.assert('a tumbler stalls at least twice (' + tu.stalls + ')', tu.stalls >= 2);
+  T.assert('and it pays more for it than a porpoise does ('
+    + tu.distance.toFixed(1) + ' m against ' + po.distance.toFixed(1) + ' m)',
+    tu.distance < po.distance);
   var ld = flyNamed('lawndart');
   T.assert('a lawn dart is down inside two and a half seconds (' + ld.airtime.toFixed(1) + ')',
     ld.airtime < 2.5);
@@ -997,10 +1133,14 @@ function drawGym(ctx) {
 }
 /* ---- the plane ---- */
 function drawPlane(ctx, x, y, theta, veer, spec) {
-  var s = V.ppm * 0.42;
+  drawPlaneAt(ctx, px(x), py(y), V.ppm * 0.42, theta, veer, spec);
+}
+/* the same paper, in SCREEN points, so the tunnel and the field cannot drift
+   into drawing two different aeroplanes */
+function drawPlaneAt(ctx, cx, cy, s, theta, veer, spec, dark) {
   var lean = clamp(veer || 0, -1, 1);
   ctx.save();
-  ctx.translate(px(x), py(y));
+  ctx.translate(cx, cy);
   ctx.rotate(-theta);
   /* a paper dart in profile: a long triangle with a folded keel under it, and
      it foreshortens as it banks away from you */
@@ -1013,8 +1153,10 @@ function drawPlane(ctx, x, y, theta, veer, spec) {
   ctx.closePath();
   ctx.fillStyle = '#FBF8F1';
   ctx.fill();
-  ctx.strokeStyle = '#33302A';
-  ctx.lineWidth = Math.max(1.2, s * 0.10);
+  /* ⛔ dark ink on a dark chamber is a white sliver with no silhouette. In the
+     tunnel the paper is outlined in the room's own pale grey. */
+  ctx.strokeStyle = dark ? '#B9B2A0' : '#33302A';
+  ctx.lineWidth = Math.max(1.2, s * (dark ? 0.06 : 0.10));
   ctx.stroke();
   /* the crease down the spine, and the elevator bend at the back */
   ctx.strokeStyle = '#3C6E9F';
@@ -1024,9 +1166,12 @@ function drawPlane(ctx, x, y, theta, veer, spec) {
   ctx.lineTo(-s * 0.8, 0);
   ctx.stroke();
   if (spec && spec.elev) {
+    /* the bent flap sits ON the tail, not hanging in the air behind it: at gym
+       scale the overhang was a couple of pixels, in the tunnel it was a stick
+       poking out of the back of the plane */
     ctx.beginPath();
-    ctx.moveTo(-s * 0.95, 0);
-    ctx.lineTo(-s * 1.25, -clamp(spec.elev, -12, 12) * s * 0.035);
+    ctx.moveTo(-s * 0.72, 0);
+    ctx.lineTo(-s * 0.99, -clamp(spec.elev, -12, 12) * s * 0.024);
     ctx.stroke();
   }
   ctx.restore();
@@ -1716,6 +1861,302 @@ var AUDIO = {
   }
 };
 
+/* ========================= 16F. THE WIND TUNNEL ========================= */
+/* ⛔ THE ONE LAW OF THIS ROOM: the tunnel cannot lie about the field. It does
+   not have a model. Every number on the slate comes back from tunnelReading,
+   which lives in the SIM layer beside the flight and calls the same
+   liftCoefficient and the same dragCoefficient the aeroplane flies on. If the
+   slate is wrong, the flight is wrong too, and test/tunnel.mjs measures the
+   field to prove they still agree. */
+var TUN = {
+  wind: 8, alphaDeg: 4, parts: [], seeded: false,
+  liftLen: 0, dragLen: 0, rect: null, reading: null
+};
+var TUN_N = 200;             /* pooled, never allocated in the frame */
+var TUN_WX = 0.42;           /* where the wing sits across the chamber */
+var TUN_C = 0.26;            /* and how much of it the chord takes up */
+
+function tunHash(i, salt) {
+  var h = (i * 2654435761 + salt * 40503) >>> 0;
+  h ^= h >>> 15; h = (h * 2246822507) >>> 0; h ^= h >>> 13;
+  return (h >>> 8) / 16777216;
+}
+/* ⛔ seeded across the CHAMBER, not across a guess. Seeded to plus or minus a
+   half while the box was 0.45 tall, more than half the streaks lived outside
+   the glass and were clipped away, and the top of the chamber looked like still
+   air when it was simply empty. */
+function tunSeed() {
+  var half = TUN.half || 0.3;
+  TUN.parts.length = 0;
+  for (var i = 0; i < TUN_N; i++) {
+    var y = (i / (TUN_N - 1) - 0.5) * 2 * half * 0.94 + (tunHash(i, 3) - 0.5) * 0.01;
+    TUN.parts.push({ x: tunHash(i, 5), y: y, y0: y, n: tunHash(i, 9) * 6.283 });
+  }
+  TUN.seeded = true;
+}
+/* the flow at a point of the chamber, in chamber widths per second.
+   A bound vortex is the cheapest honest picture of a wing: faster over the top,
+   upwash in front, downwash behind, and all of it scaled by the same CL the
+   plane flies on. */
+/* ⛔ VISUAL GAIN, and the plan's law about it: the mapping stays monotonic in
+   CL, so more lift is always more bend. A true bound vortex on a paper wing
+   bends the streamlines by about a tenth of the free stream and on a phone that
+   is a picture of perfectly straight air. The gain is a magnifying glass on the
+   real number, not a second number. */
+var TUN_GAIN = 3.6;
+function tunFlow(x, y, R, U, out) {
+  var dx = x - TUN_WX, dy = y;
+  var circ = 0.5 * R.CL * TUN_C * U * TUN_GAIN;
+  var r2 = dx * dx + dy * dy + 0.0025;
+  /* the glass walls are close, and a bare vortex reaches the corners: without
+     this the free stream at the top of the chamber is visibly sheared and the
+     wing looks like it is bending the whole room */
+  var reach = Math.exp(-r2 / 0.30);
+  var u = U + (circ / 6.2832) * (dy / r2) * reach;
+  var v = -(circ / 6.2832) * (dx / r2) * reach;
+  out.u = u; out.v = v;
+  return out;
+}
+function tunStep(dt) {
+  if (!TUN.seeded) tunSeed();
+  var R = TUN.reading || tunnelReading(G.spec, TUN.alphaDeg, TUN.wind);
+  var U = 0.055 * TUN.wind;
+  var sep = R.stalled
+    ? clamp((R.alpha - R.derived.alphaStall) / (14 * DEG), 0.15, 1) : 0;
+  var wake = R.derived.CD0 * 14;
+  var t = V.t * 0.001, i, p, f = { u: 0, v: 0 };
+  var step = Math.min(0.05, dt * 0.001);
+  for (i = 0; i < TUN.parts.length; i++) {
+    p = TUN.parts[i];
+    tunFlow(p.x, p.y, R, U, f);
+    var dx = p.x - TUN_WX;
+    /* the wing sheds behind itself: a thin band of jitter whose width is the
+       drag the nose is making */
+    if (dx > 0.02 && Math.abs(p.y) < 0.10) {
+      f.v += Math.sin(t * 9 + p.n + dx * 24) * wake * 0.02;
+    }
+    /* past the stall the top surface lets go: the streaks over the wing slow
+       down and break up, and they do it more the deeper the stall */
+    /* the wake is a WEDGE off the top of the wing that widens downstream, not
+       the whole upper half of the room: scattered everywhere it read as a dirty
+       tunnel rather than as this wing letting go */
+    var band = 0.05 + 0.55 * Math.max(0, dx + 0.06);
+    if (sep > 0 && p.y > -0.03 && p.y < band && dx > -0.06) {
+      var shelter = clamp(1 - p.y / band, 0, 1);
+      f.u *= 1 - 0.62 * sep * shelter;
+      f.v += Math.sin(t * 13 + p.n * 3 + p.x * 30) * 0.10 * sep * shelter;
+      f.v += Math.sin(t * 21 + p.n) * 0.05 * sep * shelter;
+    }
+    p.x += f.u * step;
+    p.y += f.v * step;
+    if (p.x > 1.02 || p.y > TUN.half + 0.06 || p.y < -TUN.half - 0.06) {
+      p.x = -0.02; p.y = p.y0; p.px = p.x; p.py = p.y;
+    }
+  }
+}
+/* where the glass box sits on the canvas: everything the panel is not */
+function tunLayout() {
+  var cr = V.cv.getBoundingClientRect(), pr = el('tunnel').getBoundingClientRect();
+  var top = 56 + (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--safeT')) || 0);
+  var land = pr.left > cr.left + 8;
+  var x = 10, y = top, w = (land ? pr.left - cr.left : cr.width) - 20, h;
+  h = (land ? cr.height : pr.top - cr.top) - top - 10;
+  w = Math.max(60, w); h = Math.max(60, h);
+  /* the air runs across, so the glass is never taller than it is wide: in
+     landscape the panel takes the side and what was left was a portrait box
+     with the aeroplane squeezed into the middle of it */
+  if (h > w * 0.78) { y += (h - w * 0.78) / 2; h = w * 0.78; }
+  TUN.rect = { x: x, y: y, w: w, h: h };
+  var half = TUN.rect.h / TUN.rect.w / 2;
+  if (!TUN.half || Math.abs(half - TUN.half) > 0.02) { TUN.half = half; TUN.seeded = false; }
+  return TUN.rect;
+}
+function drawTunnel(ctx) {
+  ctx.fillStyle = '#EFE9DC';
+  ctx.fillRect(0, 0, V.W, V.H);
+  var r = TUN.rect || tunLayout();
+  var R = TUN.reading || tunnelReading(G.spec, TUN.alphaDeg, TUN.wind);
+  /* the glass box */
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(r.x, r.y, r.w, r.h);
+  ctx.fillStyle = '#26261F';
+  ctx.fill();
+  ctx.clip();
+  var cx = r.x + r.w * 0.5, cy = r.y + r.h * 0.5;
+  var sx = r.w, sy = r.w;             /* one scale, so the flow is not sheared */
+  /* ⛔ a streak is drawn along the FLOW and as long as the flow is fast, not
+     from wherever the last frame happened to land. Drawn frame to frame they
+     were one pixel dots on a slow machine and a smear on a fast one, and the
+     speed up over the wing, which is the whole picture, was invisible either
+     way. Now the air over the wing draws longer strokes than the air under it,
+     and a separated wing draws short scribbles. */
+  var i, p, U = 0.055 * TUN.wind, f = { u: 0, v: 0 };
+  var bodyR = Math.min(r.w * 0.16, r.h * 0.34) * 1.4, bodyX = r.x + TUN_WX * sx;
+  ctx.lineCap = 'round';
+  for (i = 0; i < TUN.parts.length; i++) {
+    p = TUN.parts[i];
+    if (p.x < -0.05) continue;
+    tunFlow(p.x, p.y, R, U, f);
+    var sp = Math.sqrt(f.u * f.u + f.v * f.v);
+    if (sp < 1e-5) continue;
+    var L = clamp(sp * sx * 0.17, 3, 46);
+    var ux = f.u / sp * L * 0.5, uy = -f.v / sp * L * 0.5;
+    var ax = r.x + p.x * sx, ay = cy - p.y * sy;
+    if (Math.abs(ax - bodyX) < bodyR * 1.10 && Math.abs(ay - cy) < bodyR * 0.34) continue;
+    var hot = clamp(sp / (U * 1.35), 0.3, 1.25);
+    ctx.strokeStyle = 'rgba(150,196,226,' + (0.12 + 0.44 * Math.min(1, hot)).toFixed(3) + ')';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(ax - ux, ay - uy);
+    ctx.lineTo(ax + ux, ay + uy);
+    ctx.stroke();
+  }
+  /* the plane, nose up by the angle on the dial */
+  /* ⛔ IT FACES THE WIND. In the gym the plane flies left to right so its nose
+     is drawn at plus x; in the tunnel the plane stands still and the air runs
+     left to right past it, so the same drawing must be mirrored or the model is
+     mounted backwards in the jet. */
+  var s = Math.min(r.w * 0.16, r.h * 0.34);
+  ctx.save();
+  ctx.translate(r.x + TUN_WX * sx, cy);
+  ctx.scale(-1, 1);
+  drawPlaneAt(ctx, 0, 0, s, R.alpha, 0, R.derived.spec, true);
+  ctx.restore();
+  /* lift and drag, drawn to the same scale so they can be compared by eye, and
+     a weight tick to compare the lift against */
+  var unit = Math.min(r.h * 0.36, r.w * 0.22);
+  var ref = R.Lmax > 1e-9 ? R.Lmax : 1;
+  var L = clamp(R.lift / ref, -1.2, 1.2) * unit, Dg = clamp(R.drag / ref, 0, 1.2) * unit;
+  TUN.liftLen = Math.abs(L); TUN.dragLen = Dg;
+  tunArrow(ctx, r.x + TUN_WX * sx, cy, 0, -L, '#8FD08A', 'LIFT');
+  tunArrow(ctx, r.x + TUN_WX * sx, cy, Dg, 0, '#E8897A', 'DRAG');
+  /* where its own weight would reach on the same scale, so the arrow is not
+     just long, it is long ENOUGH */
+  var wy = clamp(R.weight / ref, 0, 1.2) * unit;
+  ctx.strokeStyle = 'rgba(232,220,200,.55)';
+  ctx.setLineDash([4, 4]);
+  ctx.lineWidth = 1;
+  /* a short mark at the far left with its name above it, nowhere near the
+     paper: run across the chamber it drew a line through the aeroplane and sat
+     its label on the wing */
+  ctx.beginPath();
+  ctx.moveTo(r.x + r.w - (r.w < 320 ? 62 : 86), cy - wy);
+  ctx.lineTo(r.x + r.w - 10, cy - wy);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(232,220,200,.62)';
+  ctx.font = '600 10px ui-sans-serif, system-ui, sans-serif';
+  ctx.textAlign = 'right';
+  ctx.fillText(r.w < 320 ? 'ITS WEIGHT' : 'ITS OWN WEIGHT', r.x + r.w - 10, cy - wy - 5);
+  ctx.textAlign = 'left';
+  ctx.fillText('WIND', r.x + 8, r.y + 16);
+  /* which way it blows, because a streak drawn as a stroke has no direction */
+  ctx.strokeStyle = 'rgba(232,220,200,.62)';
+  ctx.lineWidth = 1.4;
+  ctx.beginPath();
+  ctx.moveTo(r.x + 42, r.y + 12);
+  ctx.lineTo(r.x + 66, r.y + 12);
+  ctx.moveTo(r.x + 60, r.y + 8);
+  ctx.lineTo(r.x + 66, r.y + 12);
+  ctx.lineTo(r.x + 60, r.y + 16);
+  ctx.stroke();
+  if (R.stalled) {
+    ctx.fillStyle = 'rgba(232,137,122,.92)';
+    ctx.font = '700 13px ui-sans-serif, system-ui, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText('STALLED', r.x + r.w - 10, r.y + 18);
+  }
+  ctx.restore();
+  ctx.strokeStyle = '#33302A';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(r.x, r.y, r.w, r.h);
+}
+function tunArrow(ctx, x, y, dx, dy, col, label) {
+  var len = Math.sqrt(dx * dx + dy * dy);
+  if (len < 3) return;
+  ctx.save();
+  ctx.strokeStyle = col; ctx.fillStyle = col;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x + dx, y + dy);
+  ctx.stroke();
+  var ux = dx / len, uy = dy / len, hx = x + dx, hy = y + dy;
+  ctx.beginPath();
+  ctx.moveTo(hx, hy);
+  ctx.lineTo(hx - ux * 9 - uy * 5, hy - uy * 9 + ux * 5);
+  ctx.lineTo(hx - ux * 9 + uy * 5, hy - uy * 9 - ux * 5);
+  ctx.closePath();
+  ctx.fill();
+  ctx.font = '700 10px ui-sans-serif, system-ui, sans-serif';
+  /* the head, and then clear of it: the up arrow labels above its point, the
+     back arrow labels beyond its point */
+  if (Math.abs(uy) > Math.abs(ux)) { ctx.textAlign = 'center'; ctx.fillText(label, hx, hy - 7); }
+  else { ctx.textAlign = 'left'; ctx.fillText(label, hx + 6, hy + 4); }
+  ctx.restore();
+}
+/* the slate. Every row is a number the field will honour. */
+function tunRows(R) {
+  var g = R.glide, m = R.marginPct;
+  var cls = classify(fly(R.derived.spec, { angle: DEFAULT_ANGLE, power: DEFAULT_POWER }));
+  /* ⛔ four columns on a 375 wide phone gave every value an ellipsis: "11.8
+     deg...", "The Porp...", "far more ...". A slate nobody can finish reading
+     teaches nothing. The pairs are terse, and the one that is the headline gets
+     the whole width to itself. */
+  return [
+    ['Glide', g > 0.2 ? g.toFixed(1) + ' to 1' : 'none',
+      g >= 5 ? 'good' : (g >= 3.2 ? 'mid' : 'bad')],
+    ['Trim', tunAngleWord(R.trimDeg), ''],
+    ['Stalls at', R.stallDeg.toFixed(1) + ' deg', ''],
+    ['Lift', R.lift <= 0 ? 'downward'
+      : (R.lift / R.weight > 4 ? 'plenty' : (R.lift / R.weight).toFixed(1) + ' weights'),
+      R.stalled ? 'bad' : (R.lift / R.weight >= 1 ? 'good' : 'mid')],
+    ['Loading', Math.round(R.loading * 1000) + ' g', ''],
+    ['Balance', tunMarginWord(m), m > 5 ? 'good' : (m >= 0 ? 'mid' : 'bad')],
+    ['It flies as', cls.name, 'wide']
+  ];
+}
+function tunAngleWord(d) {
+  if (d > 0.05) return d.toFixed(1) + ' deg up';
+  if (d < -0.05) return (-d).toFixed(1) + ' deg down';
+  return 'level';
+}
+function tunMarginWord(m) {
+  if (m < 0) return 'tail heavy';
+  if (m < 5) return m.toFixed(0) + ' pc twitchy';
+  return m.toFixed(1) + ' pc of chord';
+}
+function tunRender() {
+  var spec = G.spec;
+  TUN.reading = tunnelReading(spec, TUN.alphaDeg, TUN.wind);
+  var rows = tunRows(TUN.reading), out = '', i;
+  for (i = 0; i < rows.length; i++) {
+    out += '<span class="k' + (rows[i][2] === 'wide' ? ' wide' : '') + '">' + rows[i][0]
+      + '</span><span class="v ' + (rows[i][2] === 'wide' ? 'wide' : rows[i][2]) + '">'
+      + rows[i][1] + '</span>';
+  }
+  el('tunReadout').innerHTML = out;
+  el('valWind').textContent = TUN.wind.toFixed(1);
+  el('valAlpha').textContent = TUN.alphaDeg.toFixed(1);
+  el('valTunElev').textContent = String(spec.elev);
+  el('valTunAil').textContent = String(spec.ail);
+  /* ⛔ THE PANEL DECIDES THE CHAMBER, AND THE PANEL IS NOT ITS FINAL HEIGHT
+     UNTIL THE SLATE IS IN IT. Measured before this ran, the chamber came out
+     two hundred and thirty pixels tall on a 320 wide phone, its lower half hid
+     under the panel, and the aeroplane was drawn in the part nobody can see. */
+  tunLayout();
+}
+function toTunnel() {
+  G.spec = G.spec || newSpec();
+  el('dialTunElev').value = String(G.spec.elev);
+  el('dialTunAil').value = String(G.spec.ail);
+  showScreen('Tunnel');
+  tunSeed();
+  tunLayout();
+  tunRender();
+}
+
 /* ========================= 17. THE FIELD ========================= */
 var STAMP = '20260906a';
 var G = {
@@ -1737,15 +2178,17 @@ function showScreen(name) {
   var all = ['scrTitle', 'scrHow', 'scrHangar'], i;
   for (i = 0; i < all.length; i++) el(all[i]).classList.toggle('on', 'scr' + name === all[i]);
   G.screen = name.toLowerCase();
-  var field = (name === 'Field'), shop = (name === 'Workshop');
+  var field = (name === 'Field'), shop = (name === 'Workshop'), tun = (name === 'Tunnel');
   el('shop').classList.toggle('on', shop);
-  document.body.classList.toggle('listing', !field && !shop);
+  el('tunnel').classList.toggle('on', tun);
+  document.body.classList.toggle('listing', !field && !shop && !tun);
   if (!shop) SHOP.on = false;
-  el('btnBack').hidden = !(field || shop);
+  el('btnBack').hidden = !(field || shop || tun);
   el('btnMenu').hidden = !field;
   el('hud').hidden = !field;
   if (!field) { el('resultCard').classList.remove('on'); el('scrTrim').classList.remove('on'); }
   fitCanvas();
+  if (tun) tunLayout();
 }
 function toField(spec) {
   G.spec = spec || G.spec || newSpec();
@@ -1854,6 +2297,9 @@ function frame(ts) {
   if (G.screen === 'workshop') {
     shopStepSweep(dt);
     drawSheet(ctx);
+  } else if (G.screen === 'tunnel') {
+    tunStep(dt);
+    drawTunnel(ctx);
   } else if (G.screen === 'field') {
     drawGym(ctx);
     if (G.ghost && G.ghost !== G.trail) drawTrail(ctx, G.ghost, 0.28, true);
@@ -1941,7 +2387,38 @@ function bindInput() {
     saveNow();
     renderHangar();
   });
-  el('btnTunnel').addEventListener('click', function () { toast('The wind tunnel comes in the next pass.'); });
+  el('btnTunnel').addEventListener('click', function () { toTunnel(); });
+  el('dialWind').addEventListener('input', function () {
+    TUN.wind = parseFloat(this.value); tunRender();
+  });
+  el('dialAlpha').addEventListener('input', function () {
+    TUN.alphaDeg = parseFloat(this.value); tunRender();
+  });
+  el('dialTunElev').addEventListener('input', function () {
+    G.spec.elev = parseInt(this.value, 10);
+    tunRender();
+  });
+  el('dialTunElev').addEventListener('change', function () { saveNow(); });
+  el('dialTunAil').addEventListener('input', function () {
+    G.spec.ail = parseInt(this.value, 10);
+    tunRender();
+  });
+  el('dialTunAil').addEventListener('change', function () { saveNow(); });
+  el('btnTunTrim').addEventListener('click', function () {
+    var R = tunnelReading(G.spec, TUN.alphaDeg, TUN.wind);
+    /* ⛔ a plane trimmed AT its stall is the porpoise, and the trim angle is
+       clamped to just under the stall in the model. Landing the dial on it to
+       the nearest half degree rounded UP and the slate answered TRIMMED ANGLE
+       with STALLED across it. Round down, and stay a notch clear. */
+    TUN.alphaDeg = Math.floor(clamp(R.trimDeg, -5, R.stallDeg - 0.5) * 2) / 2;
+    el('dialAlpha').value = String(TUN.alphaDeg);
+    tunRender();
+    haptic(8);
+  });
+  el('btnTunFly').addEventListener('click', function () {
+    saveNow();
+    toField(G.spec);
+  });
   el('btnHow').addEventListener('click', function () { showScreen('How'); });
   el('btnHowBack').addEventListener('click', function () { showScreen('Title'); });
   el('btnBack').addEventListener('click', function () {
@@ -2016,7 +2493,13 @@ function syncClipButtons() {
 
 /* the plane the gym starts you with is the one the design is about: a badly
    trimmed one that porpoises, so the first thing you ever do is fix it */
-var START_SPEC = { noseFolds: 1, nose: 'blunt', wing: 0.6, elev: 6, precision: 0.8 };
+/* ⛔ elev was 6 until post stall drag went into the model. A stalled wing now
+   pays for itself, the deceleration deepens the swing, and at six degrees of up
+   elevator the plane the game hands you TUMBLES out of the sky on a hard throw
+   instead of porpoising. Four porpoises across the whole pull, from a timid
+   throw to a full one, which is what the opening lesson needs: a wobble you can
+   see and fix, not a crash. */
+var START_SPEC = { noseFolds: 1, nose: 'blunt', wing: 0.6, elev: 4, precision: 0.8 };
 /* the throw a repeat uses when the player has not made one of their own. Eight
    degrees at half power is a normal overarm toss, and at that throw the starting
    plane porpoises and two bends of the elevator turn it into a keeper, which is
@@ -2090,6 +2573,29 @@ window.AIRWORTHY_TEST = {
   shopNext: function () { return shopNext(); },
   shopSweeping: function () { return SHOP.sweeping; },
   folds: function () { return FOLDS; },
+  /* the tunnel, as the gate must read it: what is DRAWN, not what is meant.
+     A lift arrow that collapses on the slate but not on the glass is the bug
+     this hook exists to catch. */
+  tunnel: function () {
+    return {
+      wind: TUN.wind, alphaDeg: TUN.alphaDeg,
+      liftLen: TUN.liftLen, dragLen: TUN.dragLen,
+      stalled: !!(TUN.reading && TUN.reading.stalled),
+      glide: TUN.reading ? TUN.reading.glide : 0,
+      trimDeg: TUN.reading ? TUN.reading.trimDeg : 0,
+      marginPct: TUN.reading ? TUN.reading.marginPct : 0,
+      rect: TUN.rect, parts: TUN.parts.length
+    };
+  },
+  tunSample: function (n) {
+    var o = [], i, step = Math.max(1, Math.floor(TUN.parts.length / (n || 8)));
+    for (i = 0; i < TUN.parts.length; i += step) o.push({ x: TUN.parts[i].x, y: TUN.parts[i].y });
+    return o;
+  },
+  tunnelReading: function (spec, a, w) { return tunnelReading(spec || G.spec, a, w); },
+  trimLaunch: function (spec) { return trimLaunch(spec || G.spec); },
+  measuredGlide: function (res) { return measuredGlide(res || G.res); },
+  fly: function (spec, opts) { return fly(spec || G.spec, opts || {}); },
   settings: function () { return SETTINGS; },
   save: function () { return SAVE; },
   hangar: function () { return SAVE.hangar; },

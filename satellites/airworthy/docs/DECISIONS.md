@@ -100,3 +100,40 @@ is in the plan's section 13; these are the calls.
 
 - **The wind tunnel, the courses, the medals and the rest of the sound are P3.**
   The buttons that lead to them say so rather than doing nothing.
+
+## P3 step 1, the wind tunnel
+
+- **A stalled wing is a barn door, and the tunnel is what found it.** Drawn
+  against the same drag the plane flies on, the drag arrow SHRANK when the wing
+  let go, because induced drag follows CL and CL falls in a stall. Added
+  `CD_STALL` at 0.45 per radian past the stall. Swept 0.3, 0.45, 0.6, 1.2 against
+  the archetype table: at 0.6 and above the starting plane tumbles instead of
+  porpoising, at 0.45 every archetype still classifies and nothing that does not
+  stall changes by a millimetre.
+- **The starting plane's elevator came down from 6 to 4.** With post stall drag
+  the swing runs deeper, and at 6 the plane the game hands you tumbles on a hard
+  throw. At 4 it porpoises across the whole pull, from a timid throw to a full
+  one, which is what the opening lesson needs.
+- **The throw gate's bend moved from minus two to minus four** for the same
+  reason. The assertion is unchanged: a trimmed porpoise becomes a keeper.
+- **One sim assertion was replaced, not weakened.** "A tumbler stalls more often
+  than a porpoise" tied at two against two once drag shortened both flights. The
+  count never was the definition; the plan calls a tumbler two or more stalls.
+  It is now two assertions: the tumbler stalls at least twice, and it pays more
+  for it than a porpoise does. Both watched red.
+- **The angle dial runs to 28 degrees, not the plan's 20.** The plan's own gate
+  wants the lift arrow to collapse by at least half past the stall, and with the
+  plan's own STALL_DROP of 2.5 the deepest stall reachable at 20 degrees is a 42
+  percent drop. The dial is the cheap end to move; the coefficients are the end
+  with seventy seven assertions on them.
+- **The arrows are drawn against the most lift the wing can make at this wind,
+  not against the plane's weight.** A tunnel run at eight metres a second makes
+  a paper plane fifteen times its own weight in lift and every arrow pins at the
+  top of the glass. Its weight is still marked, as a line to clear.
+- **The streamlines carry a visual gain of 3.6.** A true bound vortex on a paper
+  wing bends the flow about a tenth of the free stream, which on a phone is a
+  picture of straight air. The gain is a magnifying glass on the real CL and the
+  mapping stays monotonic, which is the plan's own law for this picture.
+- Noted for later: the sim fixtures fly at 5 degrees while the field's default
+  throw is 8. Both are honest, but the fixtures would describe the game the
+  player plays a little better at 8.

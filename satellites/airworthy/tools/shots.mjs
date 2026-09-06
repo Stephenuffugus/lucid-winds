@@ -184,5 +184,44 @@ await withPage(375, 667, async (page, shot) => {
   if (want('p2-hangar')) await shot('p2-hangar');
 });
 
+/* ---- P3. THE WIND TUNNEL ---- */
+const setDial = (page, id, v) => page.evaluate((id, v) => {
+  const d = document.getElementById(id);
+  d.value = String(v);
+  d.dispatchEvent(new Event('input', { bubbles: true }));
+}, id, v);
+
+await withPage(375, 667, async (page, shot) => {
+  await page.evaluate(() => document.getElementById('btnTunnel').click());
+  await waitFrames(page, 4);
+  await page.evaluate(() => document.getElementById('btnTunTrim').click());
+  await waitFrames(page, 30);
+  if (want('p3-tunnel')) await shot('p3-tunnel');
+  await setDial(page, 'dialAlpha', 27.5);
+  await waitFrames(page, 40);
+  if (want('p3-tunnel-stall')) await shot('p3-tunnel-stall');
+  /* the worst case on purpose: a plane that does not glide at all, on the
+     smallest screen the fleet supports */
+  await setDial(page, 'dialTunElev', -12);
+  await setDial(page, 'dialAlpha', -5);
+  await waitFrames(page, 30);
+  if (want('p3-tunnel-dive')) await shot('p3-tunnel-dive');
+});
+await withPage(667, 375, async (page, shot) => {
+  await page.evaluate(() => document.getElementById('btnTunnel').click());
+  await waitFrames(page, 4);
+  await setDial(page, 'dialWind', 14);
+  await setDial(page, 'dialAlpha', 8);
+  await waitFrames(page, 40);
+  if (want('p3-tunnel-wide')) await shot('p3-tunnel-wide');
+});
+await withPage(320, 568, async (page, shot) => {
+  await page.evaluate(() => document.getElementById('btnTunnel').click());
+  await waitFrames(page, 4);
+  await page.evaluate(() => document.getElementById('btnTunTrim').click());
+  await waitFrames(page, 30);
+  if (want('p3-tunnel-320')) await shot('p3-tunnel-320');
+});
+
 s.close();
 console.log('shots done');
